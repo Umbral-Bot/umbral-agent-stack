@@ -1,0 +1,27 @@
+# ============================================================
+# OpenClaw systemd service template
+# ============================================================
+# Copiar a ~/.config/systemd/user/openclaw.service
+# Ajustar paths según instalación real.
+# Luego: systemctl --user daemon-reload && systemctl --user restart openclaw
+# ============================================================
+
+[Unit]
+Description=OpenClaw Gateway
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=%h/.config/openclaw/env
+ExecStart=/usr/local/bin/openclaw serve
+Restart=on-failure
+RestartSec=5
+WorkingDirectory=%h
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

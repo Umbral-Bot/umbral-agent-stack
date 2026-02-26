@@ -1,0 +1,39 @@
+# ============================================================
+# LiteLLM Config — Placeholder (Fase 2)
+# ============================================================
+# TODO: Configurar providers reales cuando se implemente Fase 2.
+# Documentación: https://docs.litellm.ai/docs/proxy/configs
+# ============================================================
+
+model_list:
+  # --- OpenAI ---
+  - model_name: gpt-4
+    litellm_params:
+      model: openai/gpt-4
+      api_key: os.environ/OPENAI_API_KEY
+
+  # --- Codex ---
+  # TODO: Verificar nombre de modelo exacto para Codex 5.3
+  - model_name: codex
+    litellm_params:
+      model: openai/openai-codex/gpt-5.3-codex
+      api_key: os.environ/OPENAI_API_KEY
+
+  # --- Anthropic (opcional) ---
+  # - model_name: claude-sonnet
+  #   litellm_params:
+  #     model: anthropic/claude-sonnet-4-20250514
+  #     api_key: os.environ/ANTHROPIC_API_KEY
+
+litellm_settings:
+  # Caching con Redis (cuando esté disponible)
+  # cache: true
+  # cache_params:
+  #   type: redis
+  #   host: redis
+  #   port: 6379
+  drop_params: true
+  set_verbose: false
+
+general_settings:
+  master_key: CHANGE_ME_LITELLM_MASTER_KEY

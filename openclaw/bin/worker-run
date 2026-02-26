@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# ============================================================
+# worker-run — Envía una tarea al worker HTTP (FastAPI)
+# ============================================================
+# Uso:
+#   worker-run '{"task":"ping","input":{}}'
+#   echo '{"task":"ping","input":{}}' | worker-run
+#
+# Requiere:
+#   - WORKER_URL  (ej: http://100.x.y.z:8088)
+#   - WORKER_TOKEN
+#
+# Nota sobre "Extra data":
+#   Si se pasa JSON por argumento Y hay algo en stdin, puede
+#   causar errores de parsing. El script prioriza argumento;
+#   si no hay, lee stdin.
+# ============================================================
+set -euo pipefail
+
+# --- Validar variables ---
+if [ -z "${WORKER_URL:-}" ]; then
+  echo "ERROR: WORKER_URL not set" >&2
+  exit 1
+fi
+
+if [ -z "${WORKER_TOKEN:-}" ]; then
+  echo "ERROR: WORKER_TOKEN not set" >&2
+  exit 1
+fi
+
+# --- Obtener JSON body ---
+if [ $# -ge 1 ]; then
+  BODY="$1"
+else
+  # Leer de stdin
+  BODY=$(cat)
+fi
+
+if [ -z "${BODY:-}" ]; then
+  echo "ERROR: No JSON body provided. Pass as argument or pipe via stdin." >&2
+  echo "Usage: worker-run '{\"task\":\"ping\",\"input\":{}}'" >&2
+  exit 1
+fi
+
+# --- Validar JSON con python3 ---
+echo "$BODY" | python3 -c "import sys, json; json.load(sys.stdin)" 2>/dev/null || {
+  echo "ERROR: Invalid JSON body" >&2
+  exit 1
+}
+
+# --- Enviar request ---
+# IMPORTANTE: usar comillas simples en el header para evitar
+# problemas con '!' en el token (bash history expansion)
+curl -s -X POST "${WORKER_URL}/run" \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer ${WORKER_TOKEN}" \
+  -d "$BODY"
+
+echo  # newline after response

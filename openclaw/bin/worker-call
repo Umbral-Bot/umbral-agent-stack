@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# ============================================================
+# worker-call — Wrapper simplificado para llamar al worker
+# ============================================================
+# Uso:
+#   worker-call ping                     # tarea ping sin input
+#   worker-call ping '{"msg":"hello"}'   # tarea con input
+#
+# Construye el JSON automáticamente a partir de los argumentos.
+# Para JSON arbitrario completo, usar worker-run directamente.
+# ============================================================
+set -euo pipefail
+
+# --- Validar variables ---
+if [ -z "${WORKER_URL:-}" ]; then
+  echo "ERROR: WORKER_URL not set" >&2
+  exit 1
+fi
+
+if [ -z "${WORKER_TOKEN:-}" ]; then
+  echo "ERROR: WORKER_TOKEN not set" >&2
+  exit 1
+fi
+
+# --- Parse args ---
+if [ $# -lt 1 ]; then
+  echo "Usage: worker-call <task> [input_json]" >&2
+  echo "  worker-call ping" >&2
+  echo "  worker-call ping '{\"msg\":\"hello\"}'" >&2
+  exit 1
+fi
+
+TASK="$1"
+INPUT="${2:-{}}"
+
+# --- Construir JSON con python3 (seguro contra inyecciones) ---
+BODY=$(python3 -c "
+import json, sys
+task = sys.argv[1]
+input_str = sys.argv[2]
+try:
+    input_data = json.loads(input_str)
+except json.JSONDecodeError:
+    print(f'ERROR: Invalid input JSON: {input_str}', file=sys.stderr)
+    sys.exit(1)
+print(json.dumps({'task': task, 'input': input_data}))
+" "$TASK" "$INPUT")
+
+# --- Enviar via worker-run ---
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+echo "$BODY" | "${SCRIPT_DIR}/worker-run"

@@ -1,0 +1,46 @@
+# ============================================================
+# Docker Compose — Hostinger VPS (Fase 2 Scaffold)
+# ============================================================
+# TODO: Este archivo es un SCAFFOLD para la Fase 2.
+# NO está en uso actualmente. Requiere:
+#   - Docker instalado en el VPS
+#   - Configurar litellm_config.yaml
+#   - Verificar recursos disponibles (RAM, CPU)
+# ============================================================
+
+services:
+  # --- LiteLLM Proxy ---
+  # TODO: Configurar providers en litellm_config.yaml
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: litellm
+    ports:
+      - "127.0.0.1:4000:4000"  # Solo loopback, no exponer
+    volumes:
+      - ./litellm_config.yaml:/app/config.yaml
+    environment:
+      - OPENAI_API_KEY=CHANGE_ME_OPENAI_KEY
+      # - ANTHROPIC_API_KEY=CHANGE_ME_ANTHROPIC_KEY
+    command: ["--config", "/app/config.yaml"]
+    restart: unless-stopped
+    depends_on:
+      - redis
+
+  # --- Redis (State Store) ---
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "127.0.0.1:6379:6379"  # Solo loopback
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+  # --- OpenClaw (futuro: containerizado) ---
+  # TODO: Evaluar si migrar OpenClaw a Docker
+  # openclaw:
+  #   image: openclaw:latest
+  #   ...
+
+volumes:
+  redis_data:

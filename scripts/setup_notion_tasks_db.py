@@ -89,21 +89,24 @@ def main() -> int:
     try:
         r = create_db({"type": "page_id", "page_id": NOTION_PARENT})
         err = r.text or ""
-        page_id = None
         if r.status_code == 400 and "parented by a database" in err:
-            r_search = httpx.post(
-                f"{NOTION_BASE}/search",
+            r_page = httpx.post(
+                f"{NOTION_BASE}/pages",
                 headers=HEADERS,
-                json={"filter": {"property": "object", "value": "page"}, "page_size": 5},
-                timeout=10,
+                json={
+                    "parent": {"type": "workspace", "workspace": True},
+                    "properties": {
+                        "title": {"title": [{"text": {"content": "Umbral — Tareas Kanban"}}]}
+                    },
+                },
+                timeout=15,
             )
-            if r_search.status_code == 200:
-                for item in r_search.json().get("results", []):
-                    pid = item.get("id")
-                    if pid and pid != NOTION_PARENT:
-                        r = create_db({"type": "page_id", "page_id": pid})
-                        if r.status_code < 400:
-                            break
+            if r_page.status_code == 200:
+                page_id = r_page.json()["id"]
+                r = create_db({"type": "page_id", "page_id": page_id})
+            else:
+                print("ERROR: El ID es una base de datos. Crear página falló:", r_page.text[:300], file=sys.stderr)
+                return 2
         r.raise_for_status()
         data = r.json()
         db_id = data["id"]

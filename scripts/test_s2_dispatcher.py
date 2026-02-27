@@ -40,7 +40,7 @@ def main():
     envelope = {
         "schema_version": "0.1",
         "task_id": task_id,
-        "team": "system",
+        "team": "improvement",
         "task_type": "testing",
         "task": "ping",
         "input": {"message": "hello from dispatcher test via redis", "ts": time.time()}

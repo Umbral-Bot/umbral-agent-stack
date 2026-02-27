@@ -23,19 +23,35 @@ ssh vps-umbral 'ls -la ~/.openclaw/workspace/'
 
 Debe existir `IDENTITY.md` y `SOUL.md`.
 
-### 3. Dispatcher y Notion poller (si los usás)
+### 3. Dispatcher (obligatorio para E2E)
 
-En la VPS, en sesiones separadas o como servicios:
-
+**Opción A — systemd:**
 ```bash
-cd ~/umbral-agent-stack
-export $(grep -v '^#' ~/.config/openclaw/env | xargs)
-export PYTHONPATH=$HOME/umbral-agent-stack
-python3 -m dispatcher.service     # Cola → Worker
-python3 -m dispatcher.notion_poller   # Notion → Cola
+mkdir -p ~/.config/systemd/user
+sed "s|%h|$HOME|g" ~/umbral-agent-stack/openclaw/systemd/openclaw-dispatcher.service.template > ~/.config/systemd/user/openclaw-dispatcher.service
+systemctl --user daemon-reload
+systemctl --user enable --now openclaw-dispatcher
+systemctl --user status openclaw-dispatcher
 ```
 
-### 4. Test E2E
+**Opción B — manual (background):**
+```bash
+cd ~/umbral-agent-stack
+source .venv/bin/activate && set -a && source ~/.config/openclaw/env && set +a
+export PYTHONPATH=$HOME/umbral-agent-stack
+nohup python3 -m dispatcher.service >> /tmp/dispatcher.log 2>&1 &
+```
+
+### 4. Notion poller (opcional)
+
+En sesión separada o como servicio:
+```bash
+cd ~/umbral-agent-stack && source .venv/bin/activate && set -a && source ~/.config/openclaw/env && set +a
+export PYTHONPATH=$HOME/umbral-agent-stack
+python3 -m dispatcher.notion_poller
+```
+
+### 5. Test E2E
 
 ```bash
 cd ~/umbral-agent-stack

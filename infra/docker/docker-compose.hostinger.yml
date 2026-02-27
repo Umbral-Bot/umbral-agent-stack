@@ -1,46 +1,48 @@
-# ============================================================
-# Docker Compose — Hostinger VPS (Fase 2 Scaffold)
-# ============================================================
-# TODO: Este archivo es un SCAFFOLD para la Fase 2.
-# NO está en uso actualmente. Requiere:
-#   - Docker instalado en el VPS
-#   - Configurar litellm_config.yaml
-#   - Verificar recursos disponibles (RAM, CPU)
-# ============================================================
+# Umbral Agent Stack — VPS Docker Services
+# Usa: docker compose -f infra/docker/docker-compose.hostinger.yml up -d
+
+version: "3.9"
 
 services:
-  # --- LiteLLM Proxy ---
-  # TODO: Configurar providers en litellm_config.yaml
-  litellm:
-    image: ghcr.io/berriai/litellm:main-latest
-    container_name: litellm
-    ports:
-      - "127.0.0.1:4000:4000"  # Solo loopback, no exponer
-    volumes:
-      - ./litellm_config.yaml:/app/config.yaml
-    environment:
-      - OPENAI_API_KEY=CHANGE_ME_OPENAI_KEY
-      # - ANTHROPIC_API_KEY=CHANGE_ME_ANTHROPIC_KEY
-    command: ["--config", "/app/config.yaml"]
-    restart: unless-stopped
-    depends_on:
-      - redis
-
-  # --- Redis (State Store) ---
+  # ---------------------------------------------------------------------------
+  # Redis — Cola de tareas + estado transaccional
+  # ---------------------------------------------------------------------------
   redis:
     image: redis:7-alpine
-    container_name: redis
+    container_name: umbral-redis
+    restart: unless-stopped
     ports:
-      - "127.0.0.1:6379:6379"  # Solo loopback
+      - "127.0.0.1:6379:6379" # Solo localhost, no exponer públicamente
     volumes:
       - redis_data:/data
-    restart: unless-stopped
-
-  # --- OpenClaw (futuro: containerizado) ---
-  # TODO: Evaluar si migrar OpenClaw a Docker
-  # openclaw:
-  #   image: openclaw:latest
-  #   ...
+    command: >
+      redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --save 60 100 --appendonly yes
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+  # ---------------------------------------------------------------------------
+  # LiteLLM — Proxy multi-modelo (S4)
+  # ---------------------------------------------------------------------------
+  # litellm:
+  #   image: ghcr.io/berriai/litellm:main-latest
+  #   container_name: umbral-litellm
+  #   restart: unless-stopped
+  #   ports:
+  #     - "127.0.0.1:4000:4000"
+  #   volumes:
+  #     - ./litellm_config.yaml:/app/config.yaml
+  #   environment:
+  #     - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY:-CHANGE_ME_litellm_key}
+  #     - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+  #     - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+  #     - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+  #   command: ["--config", "/app/config.yaml", "--port", "4000"]
+  #   depends_on:
+  #     redis:
+  #       condition: service_healthy
 
 volumes:
   redis_data:
+    driver: local

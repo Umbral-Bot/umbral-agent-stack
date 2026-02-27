@@ -13,8 +13,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 
-# Set a test token before importing the app
-os.environ.setdefault("WORKER_TOKEN", "test-token-12345")
+# Force-set a test token before importing the app.
+# Uses os.environ[...] (not setdefault) so it overrides any existing value.
+os.environ["WORKER_TOKEN"] = "test-token-12345"
 
 
 from worker.app import app  # noqa: E402

@@ -44,8 +44,8 @@ def main() -> int:
         print("NOTION_TASKS_PARENT_PAGE_ID (o NOTION_DASHBOARD_PAGE_ID) no definido.", file=sys.stderr)
         return 1
 
+    # Si NOTION_PARENT es una DB (error 400 al crear), usar workspace
     payload = {
-        "parent": {"type": "page_id", "page_id": NOTION_PARENT},
         "title": [{"type": "text", "text": {"content": "Tareas Umbral — Kanban"}}],
         "properties": {
             "Tarea": {"title": {}},
@@ -78,13 +78,18 @@ def main() -> int:
         },
     }
 
-    try:
-        r = httpx.post(
+    def create_db(parent_obj):
+        return httpx.post(
             f"{NOTION_BASE}/databases",
             headers=HEADERS,
-            json=payload,
+            json={"parent": parent_obj, **payload},
             timeout=15,
         )
+
+    try:
+        r = create_db({"type": "page_id", "page_id": NOTION_PARENT})
+        if r.status_code == 400 and "parented by a database" in (r.text or ""):
+            r = create_db({"type": "workspace", "workspace": True})
         r.raise_for_status()
         data = r.json()
         db_id = data["id"]

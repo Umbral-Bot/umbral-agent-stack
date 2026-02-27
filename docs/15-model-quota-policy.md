@@ -85,3 +85,15 @@ class QuotaTracker:
 - Si no hay cuota disponible en ningún proveedor: encolar con status `blocked` + alerta
 - Si un proveedor no responde en 30s: fallback automático sin esperar
 - Idioma de logs y trazas: español
+
+## Referencia de implementación (S4)
+
+- **ModelRouter**: `dispatcher/model_router.py` — selección por `task_type`, fallback chain, umbrales warn/restrict.
+- **QuotaTracker**: `dispatcher/quota_tracker.py` — contador por proveedor en Redis, ventanas configurables.
+- **Config**: `config/quota_policy.yaml` — `providers` (limit_requests, window_seconds, warn, restrict) y `routing` (preferido + fallback_chain).
+- El Dispatcher inyecta `selected_model` en el input de cada tarea; si `requires_approval` bloquea con `quota_exceeded_approval_required`.
+- Registrar uso real (`QuotaTracker.record_usage`) cuando se invoque un LLM (p. ej. desde Worker o LiteLLM).
+
+## OpenClaw y cuota Claude
+
+Cuando OpenClaw usa Anthropic (Claude) y se agotan los tokens, el gateway puede **congelarse**. Conviene cambiar de modelo **antes** del límite (preventivo) y tener un script que cambie a fallback y reinicie cuando ya ocurrió (reactivo). Ver [docs/19-openclaw-claude-quota.md](19-openclaw-claude-quota.md) y `scripts/openclaw_quota_guard.py`.

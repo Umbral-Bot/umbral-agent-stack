@@ -1,0 +1,23 @@
+# Worker FastAPI en la VPS (modo "mientras" — sin depender de la VM)
+# Copiar a ~/.config/systemd/user/openclaw-worker-vps.service
+# systemctl --user daemon-reload
+# systemctl --user enable --now openclaw-worker-vps
+#
+# Requiere en env: WORKER_TOKEN. Opcional: NOTION_* para tareas Notion.
+# Ajustar REPO_PATH si el repo está en otra ruta.
+
+[Unit]
+Description=Umbral Worker (VPS)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/umbral-agent-stack
+Environment=PYTHONPATH=%h/umbral-agent-stack
+EnvironmentFile=%h/.config/openclaw/env
+ExecStart=/usr/bin/python3 -m uvicorn worker.app:app --host 127.0.0.1 --port 8088 --log-level info
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

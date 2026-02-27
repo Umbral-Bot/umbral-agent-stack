@@ -104,6 +104,10 @@ Dejalo corriendo en una terminal (o systemd/nohup). Los comentarios que empiezan
 
 **Equipos y workers:** Los equipos y supervisores se definen en [config/teams.yaml](config/teams.yaml) (supervisor, roles, `requires_vm`, `notion_page_id` opcional). El Dispatcher usa **N workers en paralelo** (env `DISPATCHER_WORKERS`, default 2).
 
+### S4 — ModelRouter + Cuotas
+
+El Dispatcher selecciona el modelo LLM por `task_type` y estado de cuotas (doc [15](docs/15-model-quota-policy.md)). Config en [config/quota_policy.yaml](config/quota_policy.yaml): proveedores (límites, ventanas, warn/restrict) y routing (preferido + fallback chain). Uso persistido en Redis vía **QuotaTracker** (`dispatcher/quota_tracker.py`). Si la cuota supera el umbral restrict y no hay fallback válido, la tarea se bloquea con `quota_exceeded_approval_required`. El Worker recibe `selected_model` en el `input` para uso futuro en llamadas LLM.
+
 ### Ejemplo desde VPS (curl)
 
 ```bash
@@ -167,6 +171,8 @@ WORKER_TOKEN=test python -m pytest tests/ -v
 | [01-architecture](docs/01-architecture-v2.3.md) | Arquitectura v2.8 objetivo |
 | [14-codex-plan](docs/14-codex-plan.md) | **Plan Maestro v2.8** |
 | [15-model-quota](docs/15-model-quota-policy.md) | **Política multi-modelo y cuotas** |
+| [19-openclaw-claude-quota](docs/19-openclaw-claude-quota.md) | OpenClaw: evitar freeze cuando se acaba cuota Claude (preventivo + reactivo) |
+| [20-vm-to-vps-worker-migration](docs/20-vm-to-vps-worker-migration.md) | Migrar Worker VM→VPS (usar mientras), certeza de config, tarea Codex |
 | [ADRs](docs/adr/) | **Decisiones arquitectónicas (001-004)** |
 | [02-implementation-log](docs/02-implementation-log.md) | Cronología de implementación |
 | [03-setup-vps](docs/03-setup-vps-openclaw.md) | Setup VPS + OpenClaw |
@@ -195,7 +201,7 @@ WORKER_TOKEN=test python -m pytest tests/ -v
 | **S1** | ✅ Hecho | TaskEnvelope v0.1 + gobernanza |
 | **S2** | ✅ Hecho | Orquestación split (Dispatcher + Redis + E2E VM) |
 | **S3** | ✅ Hecho | Equipos + Notion (poller XX:10, teams.yaml, N workers) |
-| **S4** | 📋 | ModelRouter + cuotas multi-modelo |
+| **S4** | ✅ Hecho | ModelRouter + QuotaTracker (Redis + fallback + bloqueo por aprobación) |
 | **S5** | 📋 | Herramientas Windows (PAD/RPA) |
 | **S6** | 📋 | Observabilidad (Langfuse + evals) |
 | **S7** | 📋 | Hardening transversal |

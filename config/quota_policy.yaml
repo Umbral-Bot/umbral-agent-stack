@@ -1,0 +1,45 @@
+# S4 — Política de cuotas por proveedor (doc 15)
+# Ventanas: 5h=18000, 3h=10800, diario=86400, mensual=2592000
+
+providers:
+  claude_pro:
+    limit_requests: 200      # por ventana (proxy para uso 5h)
+    window_seconds: 18000   # 5h
+    warn: 0.80
+    restrict: 0.90
+  chatgpt_plus:
+    limit_requests: 300
+    window_seconds: 10800   # 3h
+    warn: 0.70
+    restrict: 0.90
+  gemini_pro:
+    limit_requests: 500
+    window_seconds: 86400   # 1 día
+    warn: 0.80
+    restrict: 0.95
+  copilot_pro:
+    limit_requests: 400
+    window_seconds: 2592000 # 30 días
+    warn: 0.70
+    restrict: 0.85
+
+# Routing por task_type (preferido + fallback chain)
+routing:
+  coding:
+    preferred: chatgpt_plus
+    fallback_chain: [copilot_pro, claude_pro, gemini_pro]
+  ms_stack:
+    preferred: copilot_pro
+    fallback_chain: [chatgpt_plus, claude_pro, gemini_pro]
+  writing:
+    preferred: claude_pro
+    fallback_chain: [chatgpt_plus, gemini_pro]
+  research:
+    preferred: gemini_pro
+    fallback_chain: [chatgpt_plus, claude_pro]
+  critical:
+    preferred: claude_pro
+    fallback_chain: [chatgpt_plus]
+  general:
+    preferred: chatgpt_plus
+    fallback_chain: [claude_pro, gemini_pro]

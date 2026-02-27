@@ -14,6 +14,7 @@ from .notion import (
     handle_notion_poll_comments,
     handle_notion_update_dashboard,
 )
+from .windows import handle_windows_pad_run_flow
 
 # Each handler: (input: dict) -> dict
 TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
@@ -22,4 +23,5 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "notion.add_comment": handle_notion_add_comment,
     "notion.poll_comments": handle_notion_poll_comments,
     "notion.update_dashboard": handle_notion_update_dashboard,
+    "windows.pad.run_flow": handle_windows_pad_run_flow,
 }

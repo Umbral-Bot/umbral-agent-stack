@@ -1,0 +1,50 @@
+# ============================================================
+# Langfuse — Observabilidad LLM (S6)
+# ============================================================
+# Desplegar en VM para tracing de LiteLLM/OpenClaw.
+#
+# Uso:
+#   export LANGFUSE_DB_PASSWORD=xxx
+#   export LANGFUSE_NEXTAUTH_SECRET=xxx
+#   export LANGFUSE_SALT=xxx
+#   docker compose -f docker-compose.langfuse.yml up -d
+#
+# Tras levantar: crear proyecto en UI (http://localhost:3000)
+# y configurar LANGFUSE_PUBLIC_KEY / LANGFUSE_SECRET_KEY en LiteLLM.
+# ============================================================
+
+services:
+  langfuse:
+    image: langfuse/langfuse:latest
+    container_name: langfuse
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://langfuse:${LANGFUSE_DB_PASSWORD:-CHANGE_ME_DB_PASSWORD}@postgres:5432/langfuse
+      - NEXTAUTH_SECRET=${LANGFUSE_NEXTAUTH_SECRET:-CHANGE_ME_NEXTAUTH_SECRET}
+      - SALT=${LANGFUSE_SALT:-CHANGE_ME_SALT}
+      - NEXTAUTH_URL=http://localhost:3000
+      - TELEMETRY_ENABLED=false
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: langfuse-postgres
+    environment:
+      - POSTGRES_USER=langfuse
+      - POSTGRES_PASSWORD=${LANGFUSE_DB_PASSWORD:-CHANGE_ME_DB_PASSWORD}
+      - POSTGRES_DB=langfuse
+    volumes:
+      - langfuse_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U langfuse"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  langfuse_postgres_data:

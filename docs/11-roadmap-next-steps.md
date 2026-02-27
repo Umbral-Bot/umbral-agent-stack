@@ -12,9 +12,9 @@
 | **S2** | Orquestación split (Dispatcher + Redis + VM runtime) | 📋 |
 | **S3** | Equipos + Notion operativo (Marketing, Asesoría, Mejora) | 📋 |
 | **S4** | ModelRouter + cuotas (5 proveedores LLM) | 📋 |
-| **S5** | Herramientas Windows (PAD/RPA + MCP tools) | 📋 |
-| **S6** | Observabilidad (Langfuse + evals + ciclo OODA) | 📋 |
-| **S7** | Hardening (secretos, ACL Tailscale, sanitización) | 📋 |
+| **S5** | Herramientas Windows (PAD/RPA + MCP tools) | ✅ Parcial |
+| **S6** | Observabilidad (Langfuse + evals + ciclo OODA) | ✅ Parcial |
+| **S7** | Hardening (secretos, ACL Tailscale, sanitización) | ✅ Parcial |
 
 ## S0 — Normalización (✅ Completado)
 
@@ -63,24 +63,24 @@
 - [x] Umbrales warn/restrict por proveedor en `quota_policy.yaml`
 - [x] Aprobación humana: tareas con cuota > restrict se bloquean con `quota_exceeded_approval_required` (Telegram/Notion pendiente notificación)
 
-## S5 — Herramientas Windows
+## S5 — Herramientas Windows (✅ Parcial)
 
-- [ ] ToolPolicy con allowlist
-- [ ] Conector PAD (Power Automate Desktop)
+- [x] ToolPolicy con allowlist (`config/tool_policy.yaml`, `worker/tool_policy.py`)
+- [x] Conector PAD: `windows.pad.run_flow` (`worker/tasks/windows.py`, runbook `runbook-pad-flow.md`)
 - [ ] MCP tools para Windows
 - [ ] Artifacts y auditoría de ejecución
 
-## S6 — Observabilidad
+## S6 — Observabilidad (✅ Parcial)
 
-- [ ] Langfuse en VM (Docker)
-- [ ] Tracing de todas las LLM calls
-- [ ] Evals automáticos (Self-Evaluation agent)
-- [ ] Reporte semanal automático (OODA)
+- [x] Langfuse en VM (Docker): `infra/docker/docker-compose.langfuse.yml`, doc 24
+- [x] Config LiteLLM para callbacks `langfuse_otel`
+- [x] Stub reporte OODA: `scripts/ooda_report.py`, doc 25
+- [ ] Evals automáticos (Self-Evaluation agent) — doc 25
 
-## S7 — Hardening
+## S7 — Hardening (✅ Parcial)
 
-- [ ] Gestión de secretos (vault o equivalente)
-- [ ] ACL Tailscale (restricción por nodo)
-- [ ] Sanitización de inputs
-- [ ] Rate limiting en Worker
-- [ ] Trazabilidad completa end-to-end
+- [ ] Gestión de secretos (vault o equivalente) — doc 26
+- [ ] ACL Tailscale (restricción por nodo) — doc 26
+- [x] Sanitización de inputs: `worker/sanitize.py`
+- [x] Rate limiting en Worker: `worker/rate_limit.py`
+- [x] Trazabilidad end-to-end: trace_id en envelope

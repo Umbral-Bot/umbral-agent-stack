@@ -27,6 +27,8 @@ from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from .config import WORKER_TOKEN
+from .rate_limit import check_rate_limit
+from .sanitize import sanitize_input, sanitize_task_name
 from .models import (
     LegacyRunRequest,
     TaskEnvelope,
@@ -120,6 +122,7 @@ async def health():
 
 @app.post("/run")
 async def run_task(
+    request: Request,
     body: Dict[str, Any],
     authorization: str = Header(None),
 ):
@@ -131,8 +134,15 @@ async def run_task(
       - Legacy: {task, input}
 
     Ambos se normalizan a TaskEnvelope internamente.
+    S7: rate limiting y sanitización de inputs.
     """
     _authenticate(authorization)
+
+    # S7: rate limit (por IP del cliente)
+    client_key = request.client.host if request.client else "unknown"
+    allowed, _ = check_rate_limit(client_key)
+    if not allowed:
+        raise HTTPException(status_code=429, detail="Rate limit exceeded. Retry later.")
 
     # --- Parse: detect envelope vs legacy ---
     try:
@@ -143,6 +153,13 @@ async def run_task(
             envelope = legacy.to_envelope()
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Invalid request body: {exc}")
+
+    # S7: sanitize task name and input size
+    try:
+        sanitize_task_name(envelope.task)
+        sanitize_input(envelope.input)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
     # --- Dispatch task ---
     handler = TASK_HANDLERS.get(envelope.task)

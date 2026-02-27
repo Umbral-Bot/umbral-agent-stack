@@ -55,13 +55,13 @@
 - [x] Canales Notion por equipo: `notion_page_id` en `config/teams.yaml` por equipo; poller puede extenderse a múltiples páginas
 - [x] Delegación paralela: Dispatcher con N workers (`DISPATCHER_WORKERS`, default 2), cada uno con su conexión Redis y WorkerClient
 
-## S4 — ModelRouter + Cuotas
+## S4 — ModelRouter + Cuotas ✅
 
-- [ ] ModelRouter engine (selección por `task_type`)
-- [ ] QuotaTracker persistente en Redis
-- [ ] Fallback chain automático
-- [ ] Umbrales warn/restrict por proveedor
-- [ ] Aprobación humana vía Telegram/Notion
+- [x] ModelRouter engine (selección por `task_type`): `dispatcher/model_router.py` + `config/quota_policy.yaml`
+- [x] QuotaTracker persistente en Redis: `dispatcher/quota_tracker.py`
+- [x] Fallback chain automático (por task_type; doc 15)
+- [x] Umbrales warn/restrict por proveedor en `quota_policy.yaml`
+- [x] Aprobación humana: tareas con cuota > restrict se bloquean con `quota_exceeded_approval_required` (Telegram/Notion pendiente notificación)
 
 ## S5 — Herramientas Windows
 

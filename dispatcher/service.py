@@ -16,7 +16,9 @@ from typing import Any, Dict
 import redis
 
 from dispatcher.health import HealthMonitor
+from dispatcher.model_router import ModelRouter, load_quota_policy
 from dispatcher.queue import TaskQueue
+from dispatcher.quota_tracker import QuotaTracker
 from dispatcher.router import TeamRouter
 from dispatcher.team_config import get_team_capabilities
 from client.worker_client import WorkerClient
@@ -32,6 +34,7 @@ def _run_worker(
     worker_url: str,
     worker_token: str,
     hm: HealthMonitor,
+    model_router: ModelRouter,
     worker_id: int,
 ) -> None:
     """One worker thread: own Redis connection from pool, own WorkerClient, same health monitor."""
@@ -48,9 +51,23 @@ def _run_worker(
         task_id = envelope["task_id"]
         team = envelope.get("team", "system")
         task = envelope.get("task", "unknown")
-        input_data = envelope.get("input", {})
+        task_type = envelope.get("task_type", "general")
+        input_data = dict(envelope.get("input", {}))
 
-        logger.info("[worker %d] Executing task %s (task=%s, team=%s)", worker_id, task_id, task, team)
+        # S4: selección de modelo por task_type y cuotas
+        decision = model_router.select_model(task_type)
+        if decision.requires_approval:
+            reason = "quota_exceeded_approval_required"
+            logger.warning("[worker %d] Task %s blocked: %s (model=%s)", worker_id, task_id, reason, decision.model)
+            queue.block_task(task_id, reason)
+            continue
+        selected_model = decision.model
+        input_data["selected_model"] = selected_model
+
+        logger.info(
+            "[worker %d] Executing task %s (task=%s, team=%s, model=%s)",
+            worker_id, task_id, task, team, selected_model,
+        )
 
         team_info = capabilities.get(team)
         if team_info and team_info.get("requires_vm") and not hm.vm_online:
@@ -97,8 +114,13 @@ def main():
     hm.on_vm_back = router.on_vm_back
     hm.start()
 
+    # S4: ModelRouter + QuotaTracker (cuotas en Redis)
+    _, provider_config = load_quota_policy()
+    quota_tracker = QuotaTracker(r, provider_config)
+    model_router = ModelRouter(quota_tracker)
+
     logger.info(
-        "Dispatcher Service started. %d worker(s), queue '%s'.",
+        "Dispatcher Service started. %d worker(s), queue '%s', ModelRouter+QuotaTracker enabled.",
         num_workers,
         queue.QUEUE_PENDING,
     )
@@ -107,7 +129,7 @@ def main():
     for i in range(num_workers):
         t = threading.Thread(
             target=_run_worker,
-            args=(pool, worker_url, worker_token, hm, i + 1),
+            args=(pool, worker_url, worker_token, hm, model_router, i + 1),
             daemon=True,
         )
         t.start()

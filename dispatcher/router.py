@@ -2,49 +2,20 @@
 Dispatcher — TeamRouter.
 
 Enruta TaskEnvelopes al equipo correcto y gestiona la dispatch logic.
-Opera en el Control Plane (VPS).
+Opera en el Control Plane (VPS). Equipos y supervisores se cargan desde config/teams.yaml (S3).
 """
 
 import logging
 from typing import Any, Callable, Dict, Optional
 
-from .health import HealthMonitor, SystemLevel
+from .health import HealthMonitor
 from .queue import TaskQueue
+from .team_config import get_team_capabilities
 
 logger = logging.getLogger("dispatcher.router")
 
-
-# ---------------------------------------------------------------------------
-# Equipos disponibles y sus capacidades
-# ---------------------------------------------------------------------------
-
-TEAM_CAPABILITIES = {
-    "marketing": {
-        "description": "Estrategia y ejecución digital",
-        "requires_vm": False,  # Puede operar con LLM-only
-        "roles": ["supervisor", "seo", "social_media", "copywriting"],
-    },
-    "advisory": {
-        "description": "Asesoría personal y financiera",
-        "requires_vm": False,
-        "roles": ["supervisor", "financial", "lifestyle"],
-    },
-    "improvement": {
-        "description": "Mejora continua del sistema (OODA)",
-        "requires_vm": True,  # Necesita acceso a Langfuse, ChromaDB
-        "roles": ["supervisor", "sota_research", "self_evaluation", "implementation"],
-    },
-    "lab": {
-        "description": "Experimentos y pruebas",
-        "requires_vm": True,
-        "roles": ["researcher"],
-    },
-    "system": {
-        "description": "Tareas internas del sistema",
-        "requires_vm": False,
-        "roles": ["ping", "health", "admin"],
-    },
-}
+# Compat: tests y otros pueden importar TEAM_CAPABILITIES (carga desde YAML o default)
+TEAM_CAPABILITIES = get_team_capabilities()
 
 
 class TeamRouter:
@@ -62,16 +33,19 @@ class TeamRouter:
         queue: TaskQueue,
         health: HealthMonitor,
         on_alert: Optional[Callable[[str, Dict[str, Any]], None]] = None,
+        team_capabilities: Optional[Dict[str, Dict[str, Any]]] = None,
     ):
         """
         Args:
             queue: TaskQueue para encolar/bloquear
             health: HealthMonitor para saber estado del sistema
             on_alert: callback(message, context) para alertar a David
+            team_capabilities: dict de equipos (si None, se carga desde config/teams.yaml o default)
         """
         self.queue = queue
         self.health = health
         self.on_alert = on_alert
+        self._capabilities = team_capabilities if team_capabilities is not None else get_team_capabilities()
 
     def dispatch(self, envelope: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -88,15 +62,15 @@ class TeamRouter:
         task = envelope.get("task", "unknown")
 
         # Validar equipo
-        if team not in TEAM_CAPABILITIES:
+        if team not in self._capabilities:
             logger.warning("Unknown team '%s' for task %s", team, task_id)
             return {
                 "action": "rejected",
                 "task_id": task_id,
-                "reason": f"Unknown team: {team}. Available: {list(TEAM_CAPABILITIES.keys())}",
+                "reason": f"Unknown team: {team}. Available: {list(self._capabilities.keys())}",
             }
 
-        team_info = TEAM_CAPABILITIES[team]
+        team_info = self._capabilities[team]
 
         # ¿VM requerida y no disponible?
         if team_info["requires_vm"] and not self.health.vm_online:
@@ -151,12 +125,12 @@ class TeamRouter:
 
     def get_team_info(self, team: str) -> Optional[Dict[str, Any]]:
         """Retorna info del equipo o None si no existe."""
-        return TEAM_CAPABILITIES.get(team)
+        return self._capabilities.get(team)
 
     def list_teams(self) -> Dict[str, Any]:
         """Lista equipos disponibles con su estado."""
         teams = {}
-        for name, info in TEAM_CAPABILITIES.items():
+        for name, info in self._capabilities.items():
             available = True
             if info["requires_vm"] and not self.health.vm_online:
                 available = False

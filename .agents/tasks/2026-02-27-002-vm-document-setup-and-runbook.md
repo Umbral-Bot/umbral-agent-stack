@@ -1,13 +1,13 @@
 ---
 id: "2026-02-27-002"
 title: "VM: documentar configuración exacta del Worker y runbook para levantar todo"
-status: pending
+status: done
 assigned_to: codex
 created_by: cursor
 priority: high
 sprint: S3/S4
 created_at: "2026-02-27"
-updated_at: "2026-02-27"
+updated_at: "2026-02-27T13:23:02-03:00"
 ---
 
 ## Objetivo
@@ -52,3 +52,20 @@ En la VM Windows (PCRick) donde corre el Worker: documentar la configuración re
 ### [cursor] 2026-02-27
 
 Tarea creada para tener certeza de la configuración de Rick en la VM y poder replicar o migrar. Codex puede ejecutar en la VM los comandos necesarios (nssm, Get-Service, inspección del proceso, etc.) y dejar el runbook en el repo.
+
+### [codex] 2026-02-27 13:23 -03:00
+
+Se documento la configuracion real del servicio `openclaw-worker` en esta VM y se creo el runbook solicitado en `runbooks/runbook-vm-worker-setup.md`.
+
+Hallazgos documentados (sin secretos):
+- NSSM usa `C:\Users\Rick\AppData\Local\Programs\Python\Python311\python.exe`.
+- Comando real: `-m uvicorn worker.app:app --host 0.0.0.0 --port 8088 --log-level info`.
+- `AppDirectory` real: `C:\GitHub\umbral-agent-stack` (corre desde repo, no desde `C:\openclaw-worker\app.py`).
+- Env inyectadas por NSSM detectadas: `WORKER_TOKEN` y `PYTHONPATH` (`PYTHONPATH=C:\GitHub\umbral-agent-stack`).
+- Logs configurados en `C:\openclaw-worker\service-stdout.log` y `C:\openclaw-worker\service-stderr.log`.
+
+Verificaciones ejecutadas:
+- Servicio `openclaw-worker` en `Running`, `Automatic`, cuenta `LocalSystem`.
+- Puerto `8088` escuchando en `0.0.0.0`.
+- Regla de firewall `OpenClaw Worker 8088` presente y habilitada.
+- `GET http://localhost:8088/health` responde OK.

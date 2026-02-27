@@ -284,3 +284,82 @@ def update_dashboard_page(page_id: str | None, metrics: dict[str, Any]) -> dict[
 
     logger.info("Dashboard page %s updated with %d metrics", page_id[:8], len(metrics))
     return {"updated": True, "blocks_appended": len(blocks)}
+
+
+def upsert_task(
+    task_id: str,
+    status: str,
+    team: str,
+    task: str,
+    input_summary: str | None = None,
+    error: str | None = None,
+    result_summary: str | None = None,
+) -> dict[str, Any]:
+    """
+    Crea o actualiza una página en la DB "Tareas Umbral" (Kanban tracking).
+    Busca por Task ID; si existe actualiza; si no existe crea.
+
+    Estados: En cola, En curso, Hecho, Bloqueado, Fallido
+    """
+    if not config.NOTION_API_KEY or not config.NOTION_TASKS_DB_ID:
+        logger.debug("Notion tasks DB not configured (NOTION_TASKS_DB_ID); skipping upsert_task")
+        return {"skipped": True, "reason": "NOTION_TASKS_DB_ID not set"}
+
+    db_id = config.NOTION_TASKS_DB_ID
+    status_map = {
+        "queued": "En cola",
+        "running": "En curso",
+        "done": "Hecho",
+        "failed": "Fallido",
+        "blocked": "Bloqueado",
+    }
+    notion_status = status_map.get(status, status)
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    title_text = task[:2000] if task else f"Task {task_id[:8]}"
+    input_preview = (input_summary or "")[:200] if input_summary else "—"
+    error_preview = (error or "")[:200] if error else ""
+    result_preview = (result_summary or "")[:200] if result_summary else ""
+    resumen = result_preview if result_preview else (error_preview if error_preview else input_preview)
+
+    properties: dict[str, Any] = {
+        "Tarea": {"title": [{"text": {"content": title_text}}]},
+        "Estado": {"select": {"name": notion_status}},
+        "Agente": {"select": {"name": team}},
+        "Task ID": {"rich_text": [{"text": {"content": task_id[:2000]}}]},
+        "Actualizada": {"date": {"start": now}},
+        "Resumen": {"rich_text": [{"text": {"content": resumen[:2000] or "—"}}]},
+    }
+
+    with httpx.Client(timeout=TIMEOUT) as client:
+        # Query by Task ID
+        resp = client.post(
+            f"{NOTION_BASE_URL}/databases/{db_id}/query",
+            headers=_headers(),
+            json={"filter": {"property": "Task ID", "rich_text": {"equals": task_id}}},
+        )
+        data = _check_response(resp, "query tasks")
+        results = data.get("results", [])
+
+        if results:
+            page_id = results[0]["id"]
+            client.patch(
+                f"{NOTION_BASE_URL}/pages/{page_id}",
+                headers=_headers(),
+                json={"properties": properties},
+            )
+            logger.info("Updated task %s in Notion (status=%s)", task_id[:8], notion_status)
+            return {"page_id": page_id, "updated": True}
+        else:
+            properties["Creada"] = {"date": {"start": now}}
+            resp = client.post(
+                f"{NOTION_BASE_URL}/pages",
+                headers=_headers(),
+                json={
+                    "parent": {"database_id": db_id},
+                    "properties": properties,
+                },
+            )
+            result = _check_response(resp, "create task")
+            logger.info("Created task %s in Notion (status=%s)", task_id[:8], notion_status)
+            return {"page_id": result["id"], "url": result.get("url", ""), "created": True}

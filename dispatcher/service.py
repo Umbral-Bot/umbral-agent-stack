@@ -24,6 +24,34 @@ from dispatcher.team_config import get_team_capabilities
 from client.worker_client import WorkerClient
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+
+
+def _notion_upsert(
+    wc: WorkerClient,
+    task_id: str,
+    status: str,
+    team: str,
+    task: str,
+    input_summary: str | None = None,
+    error: str | None = None,
+    result_summary: str | None = None,
+) -> None:
+    """Actualiza el Kanban de Notion. Fire-and-forget; no bloquea el flujo."""
+    try:
+        wc.run(
+            "notion.upsert_task",
+            {
+                "task_id": task_id,
+                "status": status,
+                "team": team,
+                "task": task,
+                "input_summary": input_summary,
+                "error": error,
+                "result_summary": result_summary,
+            },
+        )
+    except Exception as e:
+        logger.debug("Notion upsert_task skipped or failed: %s", e)
 logger = logging.getLogger("dispatcher.service")
 
 DEFAULT_WORKERS = 2
@@ -61,6 +89,7 @@ def _run_worker(
         if decision.requires_approval:
             reason = "quota_exceeded_approval_required"
             logger.warning("[worker %d] Task %s blocked: %s (model=%s)", worker_id, task_id, reason, decision.model)
+            _notion_upsert(wc_local, task_id, "blocked", team, task, error=reason)
             queue.block_task(task_id, reason)
             continue
         selected_model = decision.model
@@ -73,6 +102,7 @@ def _run_worker(
         if requires_vm and not hm.vm_online and wc_vm is not None:
             reason = f"VM offline; task {task_id} (team={team}) requires VM."
             logger.warning("[worker %d] %s", worker_id, reason)
+            _notion_upsert(wc_local, task_id, "blocked", team, task, error=reason[:500])
             queue.block_task(task_id, reason)
             continue
 
@@ -83,11 +113,17 @@ def _run_worker(
         )
 
         wc = wc_vm if use_vm else wc_local
+        _notion_upsert(wc_local, task_id, "running", team, task, input_summary=str(input_data)[:300])
         try:
             result = wc.run(task, input_data)
             queue.complete_task(task_id, result)
+            _notion_upsert(
+                wc_local, task_id, "done", team, task,
+                result_summary=str(result.get("result", result))[:300] if isinstance(result, dict) else str(result)[:300],
+            )
             logger.info("[worker %d] Task %s completed via %s Worker", worker_id, task_id, target)
         except Exception as e:
+            _notion_upsert(wc_local, task_id, "failed", team, task, error=str(e)[:500])
             logger.error("[worker %d] Task %s failed: %s", worker_id, task_id, str(e))
             queue.fail_task(task_id, str(e))
 

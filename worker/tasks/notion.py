@@ -77,6 +77,40 @@ def handle_notion_poll_comments(input_data: Dict[str, Any]) -> Dict[str, Any]:
     )
 
 
+def handle_notion_upsert_task(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Crea o actualiza una tarea en la DB Kanban (Tareas Umbral).
+
+    Input:
+        task_id (str, required): ID de la tarea.
+        status (str, required): queued|running|done|failed|blocked.
+        team (str, required): equipo/agente.
+        task (str, required): nombre de la tarea.
+        input_summary (str, optional): resumen del input.
+        error (str, optional): mensaje de error si status=failed.
+        result_summary (str, optional): resumen del resultado.
+
+    Returns:
+        {"page_id": "...", "updated": True} o {"skipped": True, "reason": "..."}
+    """
+    task_id = input_data.get("task_id")
+    status = input_data.get("status")
+    team = input_data.get("team")
+    task = input_data.get("task")
+    if not all([task_id, status, team, task]):
+        raise ValueError("'task_id', 'status', 'team' and 'task' are required in input")
+
+    return notion_client.upsert_task(
+        task_id=task_id,
+        status=status,
+        team=team,
+        task=task,
+        input_summary=input_data.get("input_summary"),
+        error=input_data.get("error"),
+        result_summary=input_data.get("result_summary"),
+    )
+
+
 def handle_notion_update_dashboard(input_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Actualiza la página Dashboard en Notion con métricas (doc 22).

@@ -1,6 +1,6 @@
-# Runbook: Worker en la VPS (usar mientras sin VM)
+# Runbook: Worker en la VPS (VPS autosuficiente + VM opcional)
 
-Para operar Rick con el Worker en la VPS en lugar de la VM. Ver [docs/20-vm-to-vps-worker-migration.md](../docs/20-vm-to-vps-worker-migration.md).
+El Dispatcher usa **siempre** un Worker local en la VPS (`WORKER_URL=http://127.0.0.1:8088`). Opcionalmente, si definís `WORKER_URL_VM`, las tareas que requieren VM (improvement, lab) van a la VM cuando está online. Ver [docs/21-vps-autosufficient-dual-worker.md](../docs/21-vps-autosufficient-dual-worker.md).
 
 ## 1. Dependencias
 
@@ -52,13 +52,18 @@ systemctl --user enable --now openclaw-worker-vps
 systemctl --user status openclaw-worker-vps
 ```
 
-## 4. Apuntar el Dispatcher al Worker en la VPS
+## 4. Variables del Dispatcher (doble Worker)
 
 En `~/.config/openclaw/env` (o donde definas las variables del Dispatcher):
 
 ```bash
+# Worker local (VPS) — siempre
 WORKER_URL=http://127.0.0.1:8088
 WORKER_TOKEN=el_mismo_valor_que_el_worker
+REDIS_URL=redis://localhost:6379/0
+
+# VM opcional: si la definís, improvement/lab van a la VM cuando esté online
+WORKER_URL_VM=http://IP_TAILSCALE_VM:8088
 ```
 
 Reiniciar Dispatcher y, si usás el Notion poller, reiniciarlo también.
@@ -73,6 +78,6 @@ curl -s -X POST http://127.0.0.1:8088/run \
   -d '{"task":"ping","input":{"msg":"from vps"}}'
 ```
 
-## 6. Volver a usar la VM
+## 6. Uso con VM
 
-Poner en env `WORKER_URL=http://IP_TAILSCALE_VM:8088` (ej. `http://100.109.16.40:8088`), reiniciar Dispatcher. Opcional: parar el Worker en la VPS con `systemctl --user stop openclaw-worker-vps`.
+Con el esquema dual no hace falta “volver” a la VM: si definiste `WORKER_URL_VM`, el Dispatcher envía improvement/lab a la VM cuando está online. El Worker en la VPS sigue atendiendo el resto. Si querés dejar de usar la VM, quitá o comentá `WORKER_URL_VM` y reiniciá el Dispatcher.

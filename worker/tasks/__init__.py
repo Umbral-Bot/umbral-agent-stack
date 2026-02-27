@@ -12,6 +12,7 @@ from .notion import (
     handle_notion_write_transcript,
     handle_notion_add_comment,
     handle_notion_poll_comments,
+    handle_notion_update_dashboard,
 )
 
 # Each handler: (input: dict) -> dict
@@ -20,4 +21,5 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "notion.write_transcript": handle_notion_write_transcript,
     "notion.add_comment": handle_notion_add_comment,
     "notion.poll_comments": handle_notion_poll_comments,
+    "notion.update_dashboard": handle_notion_update_dashboard,
 }

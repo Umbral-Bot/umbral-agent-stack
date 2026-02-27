@@ -198,3 +198,89 @@ def poll_comments(
         )
 
     return {"comments": comments, "count": len(comments)}
+
+
+def update_dashboard_page(page_id: str | None, metrics: dict[str, Any]) -> dict[str, Any]:
+    """
+    Reemplaza el contenido de la página Dashboard con un snapshot de métricas.
+    Archiva los bloques hijos existentes y añade nuevos (doc 22).
+
+    Args:
+        page_id: ID de la página Dashboard. Default: NOTION_DASHBOARD_PAGE_ID.
+        metrics: Dict nombre_metric -> valor (str o número). Ej: {"Estado general": "Operativo", "Worker VPS": "OK"}.
+
+    Returns:
+        {"updated": True, "blocks_appended": N}.
+    """
+    if not config.NOTION_API_KEY:
+        raise RuntimeError("NOTION_API_KEY not configured")
+    if page_id is None:
+        page_id = config.NOTION_DASHBOARD_PAGE_ID
+    if not page_id:
+        raise ValueError("NOTION_DASHBOARD_PAGE_ID not set and page_id not provided")
+
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    blocks: list[dict[str, Any]] = []
+
+    # Título de sección + última actualización
+    blocks.append({
+        "object": "block",
+        "type": "heading_2",
+        "heading_2": {"rich_text": [{"type": "text", "text": {"content": "Dashboard Rick — Estado del proyecto"}}]},
+    })
+    blocks.append({
+        "object": "block",
+        "type": "paragraph",
+        "paragraph": {"rich_text": [{"type": "text", "text": {"content": f"Última actualización: {now}"}}]},
+    })
+
+    for name, value in metrics.items():
+        text = str(value)[:2000]
+        blocks.append({
+            "object": "block",
+            "type": "heading_3",
+            "heading_3": {"rich_text": [{"type": "text", "text": {"content": name[:2000]}}]},
+        })
+        blocks.append({
+            "object": "block",
+            "type": "paragraph",
+            "paragraph": {"rich_text": [{"type": "text", "text": {"content": text}}]},
+        })
+
+    with httpx.Client(timeout=TIMEOUT) as client:
+        # 1. Listar hijos y archivar (paginated)
+        next_cursor = None
+        while True:
+            params: dict[str, Any] = {"page_size": 100}
+            if next_cursor:
+                params["start_cursor"] = next_cursor
+            resp = client.get(
+                f"{NOTION_BASE_URL}/blocks/{page_id}/children",
+                headers=_headers(),
+                params=params,
+            )
+            data = _check_response(resp, "list block children")
+            for block in data.get("results", []):
+                bid = block.get("id")
+                if bid and block.get("type") != "child_page":
+                    client.patch(
+                        f"{NOTION_BASE_URL}/blocks/{bid}",
+                        headers=_headers(),
+                        json={"archived": True},
+                    )
+            next_cursor = data.get("next_cursor")
+            if not next_cursor:
+                break
+
+        # 2. Añadir nuevos bloques (máx 100 por request)
+        for i in range(0, len(blocks), 100):
+            chunk = blocks[i : i + 100]
+            resp = client.patch(
+                f"{NOTION_BASE_URL}/blocks/{page_id}/children",
+                headers=_headers(),
+                json={"children": chunk},
+            )
+            _check_response(resp, "append dashboard blocks")
+
+    logger.info("Dashboard page %s updated with %d metrics", page_id[:8], len(metrics))
+    return {"updated": True, "blocks_appended": len(blocks)}

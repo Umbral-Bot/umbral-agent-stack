@@ -20,6 +20,7 @@ WORKER_PORT: int = int(os.environ.get("WORKER_PORT", "8088"))
 NOTION_API_KEY: str | None = os.environ.get("NOTION_API_KEY")
 NOTION_CONTROL_ROOM_PAGE_ID: str | None = os.environ.get("NOTION_CONTROL_ROOM_PAGE_ID")
 NOTION_GRANOLA_DB_ID: str | None = os.environ.get("NOTION_GRANOLA_DB_ID")
+NOTION_DASHBOARD_PAGE_ID: str | None = os.environ.get("NOTION_DASHBOARD_PAGE_ID")
 NOTION_API_VERSION: str = os.environ.get("NOTION_API_VERSION", "2022-06-28")
 
 # ---------------------------------------------------------------------------

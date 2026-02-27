@@ -1,9 +1,9 @@
 """
 Dispatcher Service Loop.
 
-Polls the Redis TaskQueue with N worker threads (delegación paralela, S3).
-Interacts with the execution VM through WorkerClient.
-Blocks un-executable tasks when VM is down (managed by HealthMonitor).
+VPS autosuficiente: Worker local (WORKER_URL) siempre; VM opcional (WORKER_URL_VM).
+- Sin VM o VM caída: todas las tareas van al Worker local (VPS).
+- Con VM online: tareas con requires_vm=True van a la VM; el resto al Worker local.
 """
 
 import logging
@@ -11,7 +11,7 @@ import os
 import sys
 import threading
 import time
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import redis
 
@@ -33,14 +33,16 @@ def _run_worker(
     pool: redis.ConnectionPool,
     worker_url: str,
     worker_token: str,
+    worker_url_vm: Optional[str],
     hm: HealthMonitor,
     model_router: ModelRouter,
     worker_id: int,
 ) -> None:
-    """One worker thread: own Redis connection from pool, own WorkerClient, same health monitor."""
+    """Worker thread: local WorkerClient siempre; VM WorkerClient solo si WORKER_URL_VM está definido."""
     r = redis.Redis(connection_pool=pool, decode_responses=True)
     queue = TaskQueue(r)
-    wc = WorkerClient(base_url=worker_url, token=worker_token)
+    wc_local = WorkerClient(base_url=worker_url, token=worker_token)
+    wc_vm = WorkerClient(base_url=worker_url_vm, token=worker_token) if worker_url_vm else None
     capabilities = get_team_capabilities()
 
     while True:
@@ -64,23 +66,28 @@ def _run_worker(
         selected_model = decision.model
         input_data["selected_model"] = selected_model
 
-        logger.info(
-            "[worker %d] Executing task %s (task=%s, team=%s, model=%s)",
-            worker_id, task_id, task, team, selected_model,
-        )
-
         team_info = capabilities.get(team)
-        if team_info and team_info.get("requires_vm") and not hm.vm_online:
-            reason = f"VM went offline while task {task_id} was waiting in queue."
+        requires_vm = team_info and team_info.get("requires_vm", False)
+        use_vm = requires_vm and hm.vm_online and wc_vm is not None
+
+        if requires_vm and not hm.vm_online and wc_vm is not None:
+            reason = f"VM offline; task {task_id} (team={team}) requires VM."
             logger.warning("[worker %d] %s", worker_id, reason)
             queue.block_task(task_id, reason)
             continue
 
+        target = "VM" if use_vm else "VPS"
+        logger.info(
+            "[worker %d] Executing task %s (task=%s, team=%s, model=%s) -> %s",
+            worker_id, task_id, task, team, selected_model, target,
+        )
+
         if not team_info or team_info.get("requires_vm", True):
+            wc = wc_vm if use_vm else wc_local
             try:
                 result = wc.run(task, input_data)
                 queue.complete_task(task_id, result)
-                logger.info("[worker %d] Task %s completed via VM Worker", worker_id, task_id)
+                logger.info("[worker %d] Task %s completed via %s Worker", worker_id, task_id, target)
             except Exception as e:
                 logger.error("[worker %d] Task %s failed: %s", worker_id, task_id, str(e))
                 queue.fail_task(task_id, str(e))
@@ -92,7 +99,8 @@ def _run_worker(
 
 def main():
     redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
-    worker_url = os.environ.get("WORKER_URL", "http://localhost:8088")
+    worker_url = os.environ.get("WORKER_URL", "http://127.0.0.1:8088")
+    worker_url_vm = os.environ.get("WORKER_URL_VM", "").strip() or None
     worker_token = os.environ.get("WORKER_TOKEN", "")
     num_workers = int(os.environ.get("DISPATCHER_WORKERS", str(DEFAULT_WORKERS)))
 
@@ -104,8 +112,10 @@ def main():
     r = redis.Redis(connection_pool=pool)
     queue = TaskQueue(r)
 
+    # HealthMonitor vigila la VM (si hay WORKER_URL_VM); si no hay VM, vm_online queda False
+    hm_url = worker_url_vm if worker_url_vm else "http://127.0.0.1:1"
     hm = HealthMonitor(
-        worker_url=worker_url,
+        worker_url=hm_url,
         worker_token=worker_token,
         check_interval=10,
         failure_threshold=2,
@@ -120,16 +130,18 @@ def main():
     model_router = ModelRouter(quota_tracker)
 
     logger.info(
-        "Dispatcher Service started. %d worker(s), queue '%s', ModelRouter+QuotaTracker enabled.",
+        "Dispatcher started. %d worker(s), queue '%s'. Local=%s VM=%s",
         num_workers,
         queue.QUEUE_PENDING,
+        worker_url,
+        worker_url_vm or "—",
     )
 
     threads = []
     for i in range(num_workers):
         t = threading.Thread(
             target=_run_worker,
-            args=(pool, worker_url, worker_token, hm, model_router, i + 1),
+            args=(pool, worker_url, worker_token, worker_url_vm, hm, model_router, i + 1),
             daemon=True,
         )
         t.start()

@@ -83,6 +83,7 @@ Copiar `.env.example` → `.env` y rellenar con valores reales.
 | `notion.write_transcript` | `{title, content, source?, date?}` | Crea página en Granola Inbox DB |
 | `notion.add_comment` | `{text, page_id?}` | Comenta en Control Room (o página específica) |
 | `notion.poll_comments` | `{since?, limit?, page_id?}` | Lee comentarios recientes |
+| `notion.update_dashboard` | `{metrics: {nombre: valor}}` | Actualiza página Dashboard en Notion (doc 22) |
 
 ### S3 — Loop Notion ↔ Rick (poller)
 
@@ -173,6 +174,8 @@ WORKER_TOKEN=test python -m pytest tests/ -v
 | [15-model-quota](docs/15-model-quota-policy.md) | **Política multi-modelo y cuotas** |
 | [19-openclaw-claude-quota](docs/19-openclaw-claude-quota.md) | OpenClaw: evitar freeze cuando se acaba cuota Claude (preventivo + reactivo) |
 | [20-vm-to-vps-worker-migration](docs/20-vm-to-vps-worker-migration.md) | Migrar Worker VM→VPS (usar mientras), certeza de config, tarea Codex |
+| [21-vps-autosufficient-dual-worker](docs/21-vps-autosufficient-dual-worker.md) | VPS autosuficiente + VM opcional (WORKER_URL + WORKER_URL_VM) |
+| [22-notion-dashboard-gerencial](docs/22-notion-dashboard-gerencial.md) | Dashboard en Notion (estado gerencial, actualización desde VPS) |
 | [ADRs](docs/adr/) | **Decisiones arquitectónicas (001-004)** |
 | [02-implementation-log](docs/02-implementation-log.md) | Cronología de implementación |
 | [03-setup-vps](docs/03-setup-vps-openclaw.md) | Setup VPS + OpenClaw |

@@ -1,8 +1,13 @@
 """
-Umbral Agent Stack — Worker HTTP (FastAPI)
+Umbral Agent Stack — Worker HTTP (FastAPI) v0.3.0
 
 Servicio worker que recibe tareas desde el VPS (OpenClaw) vía Tailscale.
 Escucha en 0.0.0.0:8088, autenticado por Bearer token.
+
+Soporta:
+    - TaskEnvelope v0.1 (formato completo con trazabilidad)
+    - Legacy {task, input} (backward compat, se convierte a envelope)
+    - GET /tasks/{task_id} para consultar estado de tareas
 
 Uso:
     # Dev
@@ -14,13 +19,20 @@ Uso:
 
 import logging
 import time
-from typing import Any, Dict
+from collections import OrderedDict
+from datetime import datetime, timezone
+from typing import Any, Dict, Union
 
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
 
 from .config import WORKER_TOKEN
+from .models import (
+    LegacyRunRequest,
+    TaskEnvelope,
+    TaskResult,
+    TaskStatus,
+)
 from .tasks import TASK_HANDLERS
 
 # ---------------------------------------------------------------------------
@@ -44,39 +56,49 @@ else:
 logger.info("Registered tasks: %s", list(TASK_HANDLERS.keys()))
 
 # ---------------------------------------------------------------------------
+# In-memory task store (bounded, most recent 1000)
+# ---------------------------------------------------------------------------
+MAX_TASK_HISTORY = 1000
+_task_store: OrderedDict[str, TaskResult] = OrderedDict()
+
+
+def _store_task(result: TaskResult) -> None:
+    """Store a task result, evicting oldest if over limit."""
+    _task_store[result.task_id] = result
+    while len(_task_store) > MAX_TASK_HISTORY:
+        _task_store.popitem(last=False)
+
+
+# ---------------------------------------------------------------------------
 # App
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="Umbral Worker",
-    description="Worker HTTP para ejecución de tareas desde OpenClaw (VPS).",
-    version="0.2.0",
+    description="Worker HTTP para ejecución de tareas desde OpenClaw (VPS). "
+    "Soporta TaskEnvelope v0.1 y formato legacy.",
+    version="0.3.0",
 )
 
+
 # ---------------------------------------------------------------------------
-# Models
+# Auth helper
 # ---------------------------------------------------------------------------
 
 
-class RunRequest(BaseModel):
-    """Payload para POST /run."""
+def _authenticate(authorization: str | None) -> None:
+    """Validate Bearer token. Raises HTTPException on failure."""
+    if not WORKER_TOKEN:
+        logger.error("WORKER_TOKEN not configured on server")
+        raise HTTPException(status_code=500, detail="WORKER_TOKEN not configured on server")
 
-    task: str
-    input: Dict[str, Any] = {}
+    if not authorization:
+        logger.warning("Request to /run without Authorization header")
+        raise HTTPException(status_code=401, detail="Invalid or missing token")
 
-
-class RunResponse(BaseModel):
-    """Respuesta de POST /run."""
-
-    ok: bool
-    task: str
-    result: Dict[str, Any] = {}
-
-
-class HealthResponse(BaseModel):
-    """Respuesta de GET /health."""
-
-    ok: bool
-    ts: int
+    parts = authorization.split(" ", 1)
+    if len(parts) != 2 or parts[0].lower() != "bearer" or parts[1] != WORKER_TOKEN:
+        logger.warning("Request to /run with invalid token")
+        raise HTTPException(status_code=401, detail="Invalid or missing token")
 
 
 # ---------------------------------------------------------------------------
@@ -84,60 +106,154 @@ class HealthResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-@app.get("/health", response_model=HealthResponse)
+@app.get("/health")
 async def health():
     """Health check — no requiere autenticación."""
-    return HealthResponse(ok=True, ts=int(time.time()))
+    return {
+        "ok": True,
+        "ts": int(time.time()),
+        "version": "0.3.0",
+        "tasks_registered": list(TASK_HANDLERS.keys()),
+        "tasks_in_memory": len(_task_store),
+    }
 
 
-@app.post("/run", response_model=RunResponse)
+@app.post("/run")
 async def run_task(
-    body: RunRequest,
+    body: Dict[str, Any],
     authorization: str = Header(None),
 ):
     """
     Ejecuta una tarea. Requiere Authorization: Bearer <token>.
+
+    Acepta dos formatos:
+      - TaskEnvelope v0.1: {schema_version, task_id, team, task_type, task, input, ...}
+      - Legacy: {task, input}
+
+    Ambos se normalizan a TaskEnvelope internamente.
     """
+    _authenticate(authorization)
 
-    # --- Check WORKER_TOKEN is configured ---
-    if not WORKER_TOKEN:
-        logger.error("WORKER_TOKEN not configured on server")
-        raise HTTPException(
-            status_code=500,
-            detail="WORKER_TOKEN not configured on server",
-        )
-
-    # --- Validate auth header ---
-    if not authorization:
-        logger.warning("Request to /run without Authorization header")
-        raise HTTPException(status_code=401, detail="Invalid or missing token")
-
-    # Parse "Bearer <token>"
-    parts = authorization.split(" ", 1)
-    if len(parts) != 2 or parts[0].lower() != "bearer" or parts[1] != WORKER_TOKEN:
-        logger.warning("Request to /run with invalid token")
-        raise HTTPException(status_code=401, detail="Invalid or missing token")
+    # --- Parse: detect envelope vs legacy ---
+    try:
+        if "schema_version" in body:
+            envelope = TaskEnvelope(**body)
+        else:
+            legacy = LegacyRunRequest(**body)
+            envelope = legacy.to_envelope()
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Invalid request body: {exc}")
 
     # --- Dispatch task ---
-    handler = TASK_HANDLERS.get(body.task)
+    handler = TASK_HANDLERS.get(envelope.task)
     if handler is None:
-        logger.warning("Unknown task: %s", body.task)
+        logger.warning("Unknown task: %s (task_id=%s)", envelope.task, envelope.task_id)
+        # Store as failed
+        _store_task(
+            TaskResult(
+                task_id=envelope.task_id,
+                task=envelope.task,
+                status=TaskStatus.FAILED,
+                error=f"Unknown task: {envelope.task}. Available: {list(TASK_HANDLERS.keys())}",
+            )
+        )
         raise HTTPException(
             status_code=400,
-            detail=f"Unknown task: {body.task}. Available: {list(TASK_HANDLERS.keys())}",
+            detail=f"Unknown task: {envelope.task}. Available: {list(TASK_HANDLERS.keys())}",
         )
 
-    logger.info("Executing task: %s", body.task)
+    # --- Execute ---
+    logger.info(
+        "Executing task: %s (task_id=%s, team=%s, type=%s, trace=%s)",
+        envelope.task,
+        envelope.task_id,
+        envelope.team,
+        envelope.task_type,
+        envelope.trace_id,
+    )
+    started_at = datetime.now(timezone.utc).isoformat()
+
     try:
-        result = handler(body.input)
+        result_data = handler(envelope.input)
     except ValueError as exc:
-        logger.warning("Task %s input error: %s", body.task, exc)
+        logger.warning("Task %s input error: %s", envelope.task, exc)
+        _store_task(
+            TaskResult(
+                task_id=envelope.task_id,
+                task=envelope.task,
+                status=TaskStatus.FAILED,
+                error=str(exc),
+                started_at=started_at,
+                completed_at=datetime.now(timezone.utc).isoformat(),
+            )
+        )
         raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:
-        logger.exception("Task %s failed: %s", body.task, exc)
+        logger.exception("Task %s failed: %s", envelope.task, exc)
+        _store_task(
+            TaskResult(
+                task_id=envelope.task_id,
+                task=envelope.task,
+                status=TaskStatus.FAILED,
+                error=str(exc),
+                started_at=started_at,
+                completed_at=datetime.now(timezone.utc).isoformat(),
+            )
+        )
         raise HTTPException(status_code=500, detail=f"Task failed: {str(exc)}")
 
-    return RunResponse(ok=True, task=body.task, result=result)
+    # --- Success ---
+    completed_at = datetime.now(timezone.utc).isoformat()
+    task_result = TaskResult(
+        task_id=envelope.task_id,
+        task=envelope.task,
+        status=TaskStatus.DONE,
+        result=result_data,
+        started_at=started_at,
+        completed_at=completed_at,
+    )
+    _store_task(task_result)
+
+    return {
+        "ok": True,
+        "task_id": envelope.task_id,
+        "task": envelope.task,
+        "team": envelope.team,
+        "trace_id": envelope.trace_id,
+        "result": result_data,
+    }
+
+
+@app.get("/tasks/{task_id}")
+async def get_task(task_id: str, authorization: str = Header(None)):
+    """Consultar estado de una tarea por task_id. Requiere auth."""
+    _authenticate(authorization)
+
+    task_result = _task_store.get(task_id)
+    if task_result is None:
+        raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
+
+    return task_result.model_dump()
+
+
+@app.get("/tasks")
+async def list_tasks(
+    authorization: str = Header(None),
+    limit: int = 20,
+    team: str | None = None,
+    status: str | None = None,
+):
+    """Listar tareas recientes. Filtrable por team y status."""
+    _authenticate(authorization)
+
+    tasks = list(reversed(_task_store.values()))
+
+    if team:
+        tasks = [t for t in tasks if t.task.startswith(team) or team in str(t.task_id)]
+    if status:
+        tasks = [t for t in tasks if t.status == status]
+
+    return {"tasks": [t.model_dump() for t in tasks[:limit]], "total": len(tasks)}
 
 
 # ---------------------------------------------------------------------------

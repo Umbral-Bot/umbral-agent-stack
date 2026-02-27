@@ -1,0 +1,21 @@
+# Dispatcher Service — Cola Redis → Worker
+# Copiar a ~/.config/systemd/user/openclaw-dispatcher.service
+# systemctl --user enable --now openclaw-dispatcher
+#
+# Requiere: WORKER_URL, WORKER_TOKEN, REDIS_URL en ~/.config/openclaw/env
+
+[Unit]
+Description=Umbral Dispatcher (Redis queue → Worker)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/umbral-agent-stack
+Environment=PYTHONPATH=%h/umbral-agent-stack
+EnvironmentFile=%h/.config/openclaw/env
+ExecStart=/usr/bin/python3 -m dispatcher.service
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target

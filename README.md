@@ -1,23 +1,27 @@
 # Umbral Agent Stack
 
-> Arquitectura híbrida para un sistema de agentes AI: VPS gateway (OpenClaw + Telegram) + Worker local (Windows FastAPI) conectados por Tailscale.
+> Sistema multi-agente, multi-modelo: **Rick** (meta-orquestador) gestiona equipos de agentes AI en una arquitectura split — Control Plane (VPS 24/7) + Execution Plane (VM Windows) — conectados por Tailscale, coordinados vía Notion y Redis.
 
 ---
 
-## 🏗️ Arquitectura Actual (v1.5)
+## 🏗️ Arquitectura (v2.8)
 
 ```
-Usuario ──► Telegram ──► VPS (OpenClaw 24/7) ──Tailscale──► Worker Windows (FastAPI :8088)
-                              │
-                              ├── OpenAI Codex 5.3 (LLM default)
-                              └── Control UI (localhost:18789 vía SSH tunnel)
+David ──► Telegram/Notion ──► VPS (Control Plane 24/7) ──Tailscale──► VM Windows (Execution Plane)
+                                    │                                         │
+                                    ├── Rick (meta-orquestador)               ├── LangGraph runtime
+                                    ├── ModelRouter → TeamRouter              ├── Worker FastAPI :8088
+                                    ├── LiteLLM (5 LLMs)                     ├── PAD/RPA adapters
+                                    └── Redis (cola+estado)                   └── Langfuse + ChromaDB
 ```
 
-- **VPS (Hostinger, Ubuntu 24 LTS)**: OpenClaw Gateway corriendo 24/7 como servicio systemd, con Telegram habilitado.
-- **Worker Windows (Hyper-V o host)**: FastAPI + Uvicorn en `0.0.0.0:8088`, ejecutado como servicio (NSSM).
-- **Red privada**: Tailscale conecta VPS ↔ Windows. Sin puertos públicos expuestos.
-- **LLM**: OpenAI Codex (`openai-codex/gpt-5.3-codex`) como provider principal.
-- **Acceso UI**: Exclusivamente por SSH port-forwarding (`18789`/`18791`).
+- **Control Plane (VPS Hostinger)**: Rick + OpenClaw + Dispatcher + LiteLLM + Redis → 24/7
+- **Execution Plane (VM Windows)**: Worker + LangGraph + PAD/RPA + ChromaDB + Langfuse
+- **5 LLMs**: Claude Pro, ChatGPT Plus, Gemini Pro, Copilot Pro, Notion AI
+- **3 Equipos**: Marketing, Asesoría Personal, Mejora Continua
+- **Red privada**: Tailscale mesh sin puertos públicos expuestos
+
+> 📋 **Plan Maestro**: [docs/14-codex-plan.md](docs/14-codex-plan.md) | **Política Cuotas**: [docs/15-model-quota-policy.md](docs/15-model-quota-policy.md) | **ADRs**: [docs/adr/](docs/adr/)
 
 ## 🚀 Quickstart
 
@@ -132,7 +136,7 @@ WORKER_TOKEN=test python -m pytest tests/ -v
 ├── tests/             # Tests mínimos (pytest)
 ├── openclaw/          # Config templates, scripts, systemd units
 ├── scripts/           # Scripts de utilidad (VPS bash + Windows PS1)
-├── infra/             # Docker compose scaffolds (Fase 2/3), diagramas
+├── infra/             # Docker compose scaffolds, diagramas
 └── changelog/         # Log de cambios por fecha
 ```
 
@@ -141,17 +145,18 @@ WORKER_TOKEN=test python -m pytest tests/ -v
 | Doc | Descripción |
 |-----|-------------|
 | [00-overview](docs/00-overview.md) | Visión general del sistema |
-| [01-architecture](docs/01-architecture-v2.3.md) | Arquitectura v2.3 y variaciones |
+| [01-architecture](docs/01-architecture-v2.3.md) | Arquitectura v2.8 objetivo |
+| [14-codex-plan](docs/14-codex-plan.md) | **Plan Maestro v2.8** |
+| [15-model-quota](docs/15-model-quota-policy.md) | **Política multi-modelo y cuotas** |
+| [ADRs](docs/adr/) | **Decisiones arquitectónicas (001-004)** |
 | [02-implementation-log](docs/02-implementation-log.md) | Cronología de implementación |
 | [03-setup-vps](docs/03-setup-vps-openclaw.md) | Setup VPS + OpenClaw |
-| [04-setup-telegram](docs/04-setup-telegram-vps.md) | Telegram en VPS |
 | [05-setup-tailscale](docs/05-setup-tailscale.md) | Tailscale VPS ↔ Windows |
 | [06-setup-worker](docs/06-setup-worker-windows.md) | Worker Windows (FastAPI) |
 | [07-api-contract](docs/07-worker-api-contract.md) | Contrato API del worker |
-| [08-operations](docs/08-operations-runbook.md) | Runbook de operaciones |
-| [09-troubleshooting](docs/09-troubleshooting.md) | Problemas comunes y soluciones |
-| [10-security](docs/10-security-notes.md) | Notas de seguridad |
-| [11-roadmap](docs/11-roadmap-next-steps.md) | Roadmap y próximos pasos |
+| [11-roadmap](docs/11-roadmap-next-steps.md) | Roadmap por sprints (S0-S7) |
+| [12-vps-audit](docs/12-vps-audit-2026-02-26.md) | Auditoría VPS |
+| [13-vm-audit](docs/13-vm-audit-2026-02-26.md) | Auditoría VM |
 
 ## ⚠️ Seguridad
 
@@ -164,10 +169,15 @@ WORKER_TOKEN=test python -m pytest tests/ -v
 
 ## 📋 Estado del Proyecto
 
-| Fase | Estado | Descripción |
-|------|--------|-------------|
-| **1.0** | ✅ Hecho | VPS + OpenClaw + Telegram |
-| **1.5** | ✅ Hecho | Tailscale + Worker Windows + scripts |
-| **1.7** | ✅ Hecho | Notion Bridge + WorkerClient SDK + tests |
-| **2.0** | 📋 Planificado | LangGraph + LiteLLM + Redis |
-| **3.0** | 📋 Planificado | Langfuse + ChromaDB + PAD |
+| Sprint | Estado | Descripción |
+|--------|--------|-------------|
+| **Fase 1.0-1.7** | ✅ Hecho | VPS + OpenClaw + Telegram + Tailscale + Worker + Notion Bridge |
+| **S0** | ✅ Hecho | Normalización docs/repo, ADRs, auditorías VPS/VM |
+| **S1** | 🔄 En progreso | TaskEnvelope v0.1 + gobernanza |
+| **S2** | 📋 | Orquestación split (Dispatcher + Redis + LangGraph) |
+| **S3** | 📋 | Equipos + Notion operativo |
+| **S4** | 📋 | ModelRouter + cuotas multi-modelo |
+| **S5** | 📋 | Herramientas Windows (PAD/RPA) |
+| **S6** | 📋 | Observabilidad (Langfuse + evals) |
+| **S7** | 📋 | Hardening transversal |
+

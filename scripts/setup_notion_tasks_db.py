@@ -88,8 +88,20 @@ def main() -> int:
 
     try:
         r = create_db({"type": "page_id", "page_id": NOTION_PARENT})
-        if r.status_code == 400 and "parented by a database" in (r.text or ""):
-            r = create_db({"type": "workspace", "workspace": True})
+        err = r.text or ""
+        block_id = None
+        if r.status_code == 400 and "parented by a database" in err:
+            r2 = httpx.get(
+                f"{NOTION_BASE}/databases/{NOTION_PARENT}",
+                headers=HEADERS,
+                timeout=5,
+            )
+            if r2.status_code == 200:
+                block_id = r2.json().get("parent", {}).get("block_id")
+                if block_id:
+                    r = create_db({"type": "block_id", "block_id": block_id})
+            if r.status_code == 400 and not block_id:
+                r = create_db({"type": "workspace", "workspace": True})
         r.raise_for_status()
         data = r.json()
         db_id = data["id"]

@@ -56,12 +56,80 @@ python -m uvicorn app:app --host 0.0.0.0 --port 8088 --log-level info
 nssm status openclaw-worker
 ```
 
+## 🔗 Worker + Notion Bridge
+
+El worker expone un bus HTTP para ejecutar tareas, incluyendo integración con Notion como **bus de coordinación** entre David, Rick (OpenClaw/Worker) y agentes.
+
+### Variables de entorno requeridas
+
+| Variable | Dónde | Descripción |
+|----------|-------|-------------|
+| `WORKER_TOKEN` | VPS + Windows | Token Bearer compartido |
+| `WORKER_URL` | VPS | URL del worker (e.g. `http://100.109.16.40:8088`) |
+| `NOTION_API_KEY` | Windows | Token de la integración Notion |
+| `NOTION_CONTROL_ROOM_PAGE_ID` | Windows | ID de la página "OpenClaw Control Room" |
+| `NOTION_GRANOLA_DB_ID` | Windows | ID de la DB "Granola Inbox" |
+
+Copiar `.env.example` → `.env` y rellenar con valores reales.
+
+### Tareas disponibles en `/run`
+
+| Task | Input | Descripción |
+|------|-------|-------------|
+| `ping` | `{}` o cualquier JSON | Echo de prueba |
+| `notion.write_transcript` | `{title, content, source?, date?}` | Crea página en Granola Inbox DB |
+| `notion.add_comment` | `{text, page_id?}` | Comenta en Control Room (o página específica) |
+| `notion.poll_comments` | `{since?, limit?, page_id?}` | Lee comentarios recientes |
+
+### Ejemplo desde VPS (curl)
+
+```bash
+# Health check
+curl http://100.109.16.40:8088/health
+
+# Ping (usar comillas simples — evita "event not found" si el token tiene "!")
+curl -s -X POST http://100.109.16.40:8088/run \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer MI_TOKEN_AQUI' \
+  -d '{"task":"ping","input":{"msg":"hola"}}'
+
+# Escribir comentario en Notion Control Room
+curl -s -X POST http://100.109.16.40:8088/run \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer MI_TOKEN_AQUI' \
+  -d '{"task":"notion.add_comment","input":{"text":"Test desde VPS"}}'
+```
+
+### WorkerClient SDK (Python)
+
+```python
+from client.worker_client import WorkerClient
+
+wc = WorkerClient()  # lee WORKER_URL y WORKER_TOKEN de env
+wc.ping()
+wc.notion_add_comment("Hello from VPS")
+wc.notion_poll_comments(since="2026-02-26T00:00:00Z")
+```
+
+### Tests
+
+```bash
+pip install -r worker/requirements.txt
+WORKER_TOKEN=test python -m pytest tests/ -v
+```
+
 ## 📂 Estructura del Repositorio
 
 ```
+├── client/            # WorkerClient SDK (Python)
 ├── docs/              # Documentación completa paso a paso
 ├── runbooks/          # Procedimientos operativos (runbooks)
 ├── worker/            # Código FastAPI del worker
+│   ├── app.py         #   App principal (endpoints)
+│   ├── config.py      #   Variables de entorno centralizadas
+│   ├── notion_client.py #  Cliente Notion API
+│   └── tasks/         #   Handlers de tareas (ping, notion.*)
+├── tests/             # Tests mínimos (pytest)
 ├── openclaw/          # Config templates, scripts, systemd units
 ├── scripts/           # Scripts de utilidad (VPS bash + Windows PS1)
 ├── infra/             # Docker compose scaffolds (Fase 2/3), diagramas
@@ -100,5 +168,6 @@ nssm status openclaw-worker
 |------|--------|-------------|
 | **1.0** | ✅ Hecho | VPS + OpenClaw + Telegram |
 | **1.5** | ✅ Hecho | Tailscale + Worker Windows + scripts |
+| **1.7** | ✅ Hecho | Notion Bridge + WorkerClient SDK + tests |
 | **2.0** | 📋 Planificado | LangGraph + LiteLLM + Redis |
 | **3.0** | 📋 Planificado | Langfuse + ChromaDB + PAD |

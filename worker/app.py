@@ -6,20 +6,22 @@ Escucha en 0.0.0.0:8088, autenticado por Bearer token.
 
 Uso:
     # Dev
-    WORKER_TOKEN=mi_token python -m uvicorn app:app --host 0.0.0.0 --port 8088
+    WORKER_TOKEN=mi_token python -m uvicorn worker.app:app --host 0.0.0.0 --port 8088
 
     # Producción (NSSM)
     Ver scripts/setup-openclaw-service.ps1
 """
 
 import logging
-import os
 import time
 from typing import Any, Dict
 
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+
+from .config import WORKER_TOKEN
+from .tasks import TASK_HANDLERS
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -31,11 +33,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger("worker")
 
-# ---------------------------------------------------------------------------
-# Config
-# ---------------------------------------------------------------------------
-WORKER_TOKEN: str | None = os.environ.get("WORKER_TOKEN")
-
 if WORKER_TOKEN:
     logger.info("WORKER_TOKEN loaded from environment (%d chars)", len(WORKER_TOKEN))
 else:
@@ -44,13 +41,15 @@ else:
         "Set the WORKER_TOKEN environment variable before starting."
     )
 
+logger.info("Registered tasks: %s", list(TASK_HANDLERS.keys()))
+
 # ---------------------------------------------------------------------------
 # App
 # ---------------------------------------------------------------------------
 app = FastAPI(
     title="Umbral Worker",
     description="Worker HTTP para ejecución de tareas desde OpenClaw (VPS).",
-    version="0.1.0",
+    version="0.2.0",
 )
 
 # ---------------------------------------------------------------------------
@@ -79,25 +78,6 @@ class HealthResponse(BaseModel):
     ok: bool
     ts: int
 
-
-# ---------------------------------------------------------------------------
-# Task Handlers
-# ---------------------------------------------------------------------------
-# Diccionario extensible de handlers por tarea.
-# Cada handler recibe el input dict y devuelve un result dict.
-
-
-def _handle_ping(input_data: Dict[str, Any]) -> Dict[str, Any]:
-    """Echo de prueba — devuelve el input recibido."""
-    return {"echo": input_data}
-
-
-TASK_HANDLERS: Dict[str, callable] = {
-    "ping": _handle_ping,
-    # Agregar más handlers aquí:
-    # "exec": _handle_exec,
-    # "file_read": _handle_file_read,
-}
 
 # ---------------------------------------------------------------------------
 # Endpoints
@@ -150,6 +130,9 @@ async def run_task(
     logger.info("Executing task: %s", body.task)
     try:
         result = handler(body.input)
+    except ValueError as exc:
+        logger.warning("Task %s input error: %s", body.task, exc)
+        raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:
         logger.exception("Task %s failed: %s", body.task, exc)
         raise HTTPException(status_code=500, detail=f"Task failed: {str(exc)}")

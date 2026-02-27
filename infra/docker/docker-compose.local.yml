@@ -1,0 +1,52 @@
+# ============================================================
+# Docker Compose — Local VM (Fase 3 Scaffold)
+# ============================================================
+# TODO: Este archivo es un SCAFFOLD para la Fase 3.
+# NO está en uso actualmente. Para ejecutar en VM local:
+#   - Docker + Docker Compose instalado
+#   - Configurar variables de entorno
+# ============================================================
+
+services:
+  # --- Langfuse (Observabilidad LLM) ---
+  # TODO: Configurar NEXTAUTH_SECRET, SALT, etc.
+  langfuse:
+    image: langfuse/langfuse:latest
+    container_name: langfuse
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://langfuse:CHANGE_ME_DB_PASSWORD@postgres:5432/langfuse
+      - NEXTAUTH_SECRET=CHANGE_ME_NEXTAUTH_SECRET
+      - SALT=CHANGE_ME_SALT
+      - NEXTAUTH_URL=http://localhost:3000
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  # --- PostgreSQL (backend Langfuse) ---
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=langfuse
+      - POSTGRES_PASSWORD=CHANGE_ME_DB_PASSWORD
+      - POSTGRES_DB=langfuse
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # --- ChromaDB (Vector Store) ---
+  # TODO: Configurar persistencia y auth
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: chromadb
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  chroma_data:

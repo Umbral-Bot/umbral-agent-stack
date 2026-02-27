@@ -1,0 +1,56 @@
+%% Umbral Agent Stack — Architecture Diagram
+%% Fuente canónica para el diagrama de arquitectura.
+%% Renderizar con: https://mermaid.live/ o integración Mermaid en Markdown.
+
+graph LR
+    subgraph Internet
+        User["👤 Usuario"]
+        TG["📱 Telegram API"]
+        LLM_API["🧠 OpenAI API"]
+    end
+
+    subgraph VPS["🖥️ VPS Hostinger (Ubuntu 24)"]
+        OC["OpenClaw Gateway<br/>systemd 24/7"]
+        OC_UI["Control UI<br/>:18789 (loopback)"]
+    end
+
+    subgraph Tailscale["🔒 Tailscale Mesh"]
+        TS_VPS["VPS Node"]
+        TS_WIN["Windows Node"]
+    end
+
+    subgraph Windows["💻 Windows 11"]
+        Worker["⚙️ Worker FastAPI<br/>:8088 (NSSM)"]
+    end
+
+    User -->|mensaje| TG
+    TG -->|webhook/poll| OC
+    OC -->|API call| LLM_API
+    OC --> OC_UI
+    OC -->|HTTP POST /run| TS_VPS
+    TS_VPS ---|WireGuard| TS_WIN
+    TS_WIN --> Worker
+    Worker -->|response| TS_WIN
+
+    %% === FASE 2/3 — TODO ===
+    subgraph "Fase 2 (TODO)"
+        LG["LangGraph<br/>(orquestador)"]
+        LL["LiteLLM Proxy<br/>:4000"]
+        RD["Redis<br/>:6379"]
+    end
+
+    subgraph "Fase 3 (TODO)"
+        LF["Langfuse<br/>:3000"]
+        PG["PostgreSQL"]
+        CH["ChromaDB<br/>:8000"]
+        PAD["PAD"]
+    end
+
+    %% Styling
+    style LG fill:#444,stroke:#888,color:#aaa
+    style LL fill:#444,stroke:#888,color:#aaa
+    style RD fill:#444,stroke:#888,color:#aaa
+    style LF fill:#333,stroke:#666,color:#999
+    style PG fill:#333,stroke:#666,color:#999
+    style CH fill:#333,stroke:#666,color:#999
+    style PAD fill:#333,stroke:#666,color:#999

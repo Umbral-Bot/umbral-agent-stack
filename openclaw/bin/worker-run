@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# worker-run — Quick wrapper to call Worker /run from VPS
+# Deployed at: ~/bin/worker-run
+#
+# Usage:
+#   worker-run ping
+#   worker-run ping '{"msg":"hola"}'
+#
+# Diferencia con worker-call:
+#   worker-run es la versión simple (sin stdin, sin python3 JSON builder).
+#   worker-call es la versión robusta (con JSON validation vía python3).
+#
+# Requiere: WORKER_URL y WORKER_TOKEN en el entorno
+set -euo pipefail
+
+: "${WORKER_URL:?WORKER_URL no definido}"
+: "${WORKER_TOKEN:?WORKER_TOKEN no definido}"
+
+TASK="${1:-ping}"
+INPUT="${2:-{}}"
+
+curl -sS "${WORKER_URL}/run" \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer ${WORKER_TOKEN}" \
+  -d "{\"task\":\"${TASK}\",\"input\":${INPUT}}"

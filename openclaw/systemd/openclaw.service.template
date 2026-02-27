@@ -1,0 +1,14 @@
+[Unit]
+Description=OpenClaw Gateway
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=%h/.npm-global/bin/openclaw gateway
+Restart=always
+RestartSec=10
+Environment=NODE_ENV=production
+EnvironmentFile=%h/.config/openclaw/env
+
+[Install]
+WantedBy=default.target

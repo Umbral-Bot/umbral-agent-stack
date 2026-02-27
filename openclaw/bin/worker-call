@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# worker-call — Robust wrapper to call Worker /run from VPS
+# Deployed at: ~/bin/worker-call
+#
+# Usage:
+#   worker-call ping                          # tarea sin input
+#   worker-call ping '{"msg":"hola"}'         # tarea con input JSON
+#   echo '{"msg":"hola"}' | worker-call ping  # input por stdin
+#
+# Requiere: WORKER_URL y WORKER_TOKEN en el entorno
+# (cargados por systemd EnvironmentFile o export manual)
+set -euo pipefail
+set +H 2>/dev/null || true   # evita problemas con "!" en tokens en shells interactivos
+
+: "${WORKER_URL:?WORKER_URL no definido}"
+: "${WORKER_TOKEN:?WORKER_TOKEN no definido}"
+
+TASK="${1:?task requerido}"
+
+# Si viene 2º argumento, úsalo como JSON. Si no, lee stdin.
+if [[ $# -ge 2 ]]; then
+  INPUT_JSON="$2"
+else
+  INPUT_JSON="$(cat)"
+  [[ -z "${INPUT_JSON}" ]] && INPUT_JSON="{}"
+fi
+
+python3 - "$TASK" "$INPUT_JSON" <<'PY' | curl -sS "${WORKER_URL}/run" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${WORKER_TOKEN}" \
+  --data-binary @-
+import json, sys
+task = sys.argv[1]
+inp_str = sys.argv[2]
+inp = json.loads(inp_str)
+print(json.dumps({"task": task, "input": inp}))
+PY

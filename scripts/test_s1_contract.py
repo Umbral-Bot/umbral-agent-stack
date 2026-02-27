@@ -1,11 +1,21 @@
 #!/usr/bin/env python3
-"""S1 Contract Validation — run from VPS against VM worker."""
+"""S1 Contract Validation — run from VPS against VM worker.
+
+Requires env: WORKER_URL (e.g. http://100.109.16.40:8088), WORKER_TOKEN.
+Example: export WORKER_URL=http://100.109.16.40:8088 WORKER_TOKEN=xxx; python3 scripts/test_s1_contract.py
+"""
 import json
+import os
+import sys
 import urllib.request
 import urllib.error
 
-URL = "http://100.109.16.40:8088"
-TOKEN = "test-token-12345"
+URL = os.environ.get("WORKER_URL", "").rstrip("/")
+TOKEN = os.environ.get("WORKER_TOKEN", "")
+if not URL or not TOKEN:
+    print("ERROR: Defina WORKER_URL y WORKER_TOKEN.")
+    print("  Ejemplo: export WORKER_URL=http://IP_TAILSCALE_VM:8088 WORKER_TOKEN=tu-token")
+    sys.exit(1)
 AUTH = {"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"}
 
 def post(path, payload, headers=AUTH):
@@ -46,7 +56,7 @@ print(f"   {data}")
 code, data = post("/run", {
     "schema_version": "0.1",
     "team": "system",
-    "task_type": "health",
+    "task_type": "general",
     "task": "ping",
     "input": {"e2e": True}
 })

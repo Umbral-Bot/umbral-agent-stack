@@ -1,8 +1,14 @@
 # Deploy Worker v0.3.0 (TaskEnvelope) en la VM Hyper-V
-# Ejecutar como: .\deploy-vm.ps1
+# Ejecutar como: $env:WORKER_TOKEN='tu-token'; .\deploy-vm.ps1
 
 $ErrorActionPreference = "Continue"
-$TOKEN = "test-token-12345"
+
+if (-not $env:WORKER_TOKEN) {
+    Write-Host "ERROR: WORKER_TOKEN no definido." -ForegroundColor Red
+    Write-Host "  Ejecuta: `$env:WORKER_TOKEN='tu-token-secreto'; .\deploy-vm.ps1" -ForegroundColor Yellow
+    exit 1
+}
+$TOKEN = $env:WORKER_TOKEN
 
 $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 Write-Host "========================================" -ForegroundColor Cyan

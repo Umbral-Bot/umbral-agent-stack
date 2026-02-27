@@ -84,6 +84,24 @@ Copiar `.env.example` → `.env` y rellenar con valores reales.
 | `notion.add_comment` | `{text, page_id?}` | Comenta en Control Room (o página específica) |
 | `notion.poll_comments` | `{since?, limit?, page_id?}` | Lee comentarios recientes |
 
+### S3 — Loop Notion ↔ Rick (poller)
+
+En la VPS podés levantar el **Notion poller**: revisa comentarios de la página Control Room (vía Worker) y encola tareas. Se coordina con el agente de Notion **"Enlace Notion ↔ Rick"** (que corre cada hora en punto): **Rick revisa a las XX:10** de cada hora para ver mensajes que Enlace o David dejaron. Ver [docs/18-notion-enlace-rick-convention.md](docs/18-notion-enlace-rick-convention.md).
+
+```bash
+# En la VPS (misma env que el Dispatcher)
+cd ~/umbral-agent-stack
+export WORKER_URL="http://IP_TAILSCALE_VM:8088"
+export WORKER_TOKEN="tu-token"
+export REDIS_URL="redis://localhost:6379/0"
+export PYTHONPATH=$(pwd)
+# Por defecto: poll a las XX:10 de cada hora. Para otro minuto: NOTION_POLL_AT_MINUTE=15
+# Para poll continuo cada N segundos: NOTION_POLL_INTERVAL_SEC=300
+python3 -m dispatcher.notion_poller
+```
+
+Dejalo corriendo en una terminal (o systemd/nohup). Los comentarios que empiezan por `Rick:` se ignoran (son nuestras respuestas).
+
 ### Ejemplo desde VPS (curl)
 
 ```bash
@@ -173,8 +191,8 @@ WORKER_TOKEN=test python -m pytest tests/ -v
 | **Fase 1.0-1.7** | ✅ Hecho | VPS + OpenClaw + Telegram + Tailscale + Worker + Notion Bridge |
 | **S0** | ✅ Hecho | Normalización docs/repo, ADRs, auditorías VPS/VM |
 | **S1** | ✅ Hecho | TaskEnvelope v0.1 + gobernanza |
-| **S2** | � En progreso | Orquestación split (Dispatcher + Redis + LangGraph) |
-| **S3** | 📋 | Equipos + Notion operativo |
+| **S2** | ✅ Hecho | Orquestación split (Dispatcher + Redis + E2E VM) |
+| **S3** | 🟡 En progreso | Equipos + Notion operativo (Notion poller + loop) |
 | **S4** | 📋 | ModelRouter + cuotas multi-modelo |
 | **S5** | 📋 | Herramientas Windows (PAD/RPA) |
 | **S6** | 📋 | Observabilidad (Langfuse + evals) |

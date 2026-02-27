@@ -49,10 +49,10 @@
 
 ## S3 — Equipos + Notion
 
-- [ ] TeamRouter (despacho por `team` field)
+- [x] TeamRouter (despacho por `team` field)
+- [x] Loop bidireccional Notion ↔ Rick (polling + dispatch): `dispatcher/notion_poller.py` — poll Control Room vía Worker, encola tarea por comentario nuevo, responde con `notion.add_comment`
 - [ ] Definición de supervisores (config YAML)
 - [ ] Canales Notion por equipo (DBs/páginas dedicadas)
-- [ ] Loop bidireccional Notion ↔ Rick (polling + dispatch)
 - [ ] Delegación paralela a múltiples agentes
 
 ## S4 — ModelRouter + Cuotas

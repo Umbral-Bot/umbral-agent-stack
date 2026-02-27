@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 """
-Crea una página "Dashboard Rick" con el enlace al Kanban, y la añade como subpágina
-de la base de datos indicada. La nueva página será visible como subpágina/fila.
+Crea una página "Dashboard Rick — Kanban" con el enlace al Kanban.
+La crea como subpágina de NOTION_DASHBOARD_PAGE_ID (si existe) o de NOTION_MAIN_DB_ID.
 
-Requiere: NOTION_API_KEY, NOTION_TASKS_DB_ID (Kanban), y una de:
-  - NOTION_MAIN_DB_ID (base de datos donde crear la página)
-  - O NOTION_DASHBOARD_PARENT_PAGE_ID (página padre)
+Requiere: NOTION_API_KEY, NOTION_TASKS_DB_ID (Kanban).
+Opcional: NOTION_DASHBOARD_PAGE_ID (página padre preferida) o NOTION_MAIN_DB_ID (DB como padre).
 
-Salida: imprime el ID de la nueva página. Añadir a env como NOTION_DASHBOARD_PAGE_ID.
+Salida: imprime el ID de la nueva página.
 """
 import os
 import sys
@@ -20,7 +19,8 @@ import httpx
 
 NOTION_API_KEY = os.environ.get("NOTION_API_KEY")
 NOTION_TASKS_DB_ID = os.environ.get("NOTION_TASKS_DB_ID")
-NOTION_MAIN_DB_ID = os.environ.get("NOTION_MAIN_DB_ID", "3145f443fb5c80e189b1da79122feeb0")
+NOTION_DASHBOARD_PAGE_ID = os.environ.get("NOTION_DASHBOARD_PAGE_ID")
+NOTION_MAIN_DB_ID = os.environ.get("NOTION_MAIN_DB_ID")
 NOTION_VERSION = os.environ.get("NOTION_API_VERSION", "2022-06-28")
 NOTION_BASE = "https://api.notion.com/v1"
 
@@ -38,35 +38,35 @@ def main() -> int:
 
     kanban_url = f"https://www.notion.so/{NOTION_TASKS_DB_ID.replace('-', '')}"
 
-    # 1. Obtener schema de la base de datos
-    r_db = httpx.get(
-        f"{NOTION_BASE}/databases/{NOTION_MAIN_DB_ID}",
-        headers=HEADERS,
-        timeout=10,
-    )
-    if r_db.status_code != 200:
-        print(f"Error al obtener DB: {r_db.status_code} {r_db.text[:300]}", file=sys.stderr)
-        return 2
+    parent = None
+    page_props = {"title": {"title": [{"text": {"content": "Dashboard Rick — Kanban"}}]}}
+    if NOTION_DASHBOARD_PAGE_ID:
+        parent = {"type": "page_id", "page_id": NOTION_DASHBOARD_PAGE_ID}
+    elif NOTION_MAIN_DB_ID:
+        r_db = httpx.get(
+            f"{NOTION_BASE}/databases/{NOTION_MAIN_DB_ID}",
+            headers=HEADERS,
+            timeout=10,
+        )
+        if r_db.status_code != 200:
+            print(f"Error al obtener DB: {r_db.status_code}. Comparte la DB con la integración.", file=sys.stderr)
+            return 2
+        props = r_db.json().get("properties", {})
+        title_prop = next((n for n, p in props.items() if p.get("type") == "title"), None)
+        if not title_prop:
+            print("La base de datos no tiene propiedad title.", file=sys.stderr)
+            return 2
+        parent = {"type": "database_id", "database_id": NOTION_MAIN_DB_ID}
+        page_props = {title_prop: {"title": [{"text": {"content": "Dashboard Rick — Kanban"}}]}}
+    else:
+        print("NOTION_DASHBOARD_PAGE_ID o NOTION_MAIN_DB_ID requerido.", file=sys.stderr)
+        return 1
 
-    props = r_db.json().get("properties", {})
-    title_prop = None
-    for name, p in props.items():
-        if p.get("type") == "title":
-            title_prop = name
-            break
-    if not title_prop:
-        print("La base de datos no tiene propiedad title.", file=sys.stderr)
-        return 2
-
-    # 2. Crear nueva página (fila) en la base de datos
-    page_props = {title_prop: {"title": [{"text": {"content": "Dashboard Rick — Kanban"}}]}}
+    payload = {"parent": parent, "properties": page_props}
     r_page = httpx.post(
         f"{NOTION_BASE}/pages",
         headers=HEADERS,
-        json={
-            "parent": {"type": "database_id", "database_id": NOTION_MAIN_DB_ID},
-            "properties": page_props,
-        },
+        json=payload,
         timeout=15,
     )
     if r_page.status_code != 200:

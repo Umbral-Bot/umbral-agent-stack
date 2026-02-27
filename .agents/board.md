@@ -8,17 +8,19 @@
 | Aspecto | Estado |
 |---------|--------|
 | Protocolo inter-agentes | ✅ Activo |
-| Tareas pendientes | 0 |
+| Tareas pendientes | 1 |
 | Tareas en progreso | 0 |
 | Tareas bloqueadas | 0 |
 
 ## Tareas activas
 
-_No hay tareas activas en este momento. Cursor creará tareas según las necesidades de David._
+| ID | Título | Asignado | Estado |
+|----|--------|----------|--------|
+| 2026-02-27-001 | VPS: Git (PAT/SSH), clonar, tests | antigravity | pending |
 
 ## Tareas completadas recientes
 
-_Ninguna aún — este board acaba de ser creado._
+_Ninguna aún._
 
 ## Notas
 

@@ -12,6 +12,7 @@ from .notion import (
     handle_notion_write_transcript,
     handle_notion_add_comment,
     handle_notion_poll_comments,
+    handle_notion_upsert_task,
     handle_notion_update_dashboard,
 )
 from .windows import handle_windows_pad_run_flow
@@ -22,6 +23,7 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "notion.write_transcript": handle_notion_write_transcript,
     "notion.add_comment": handle_notion_add_comment,
     "notion.poll_comments": handle_notion_poll_comments,
+    "notion.upsert_task": handle_notion_upsert_task,
     "notion.update_dashboard": handle_notion_update_dashboard,
     "windows.pad.run_flow": handle_windows_pad_run_flow,
 }

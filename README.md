@@ -48,16 +48,15 @@ curl -s -X POST http://WINDOWS_TAILSCALE_IP:8088/run \
 ### Windows — Levantar worker (modo dev)
 
 ```powershell
-cd C:\openclaw-worker
+cd C:\GitHub\umbral-agent-stack
 $env:WORKER_TOKEN="CHANGE_ME_WORKER_TOKEN"
-python -m uvicorn app:app --host 0.0.0.0 --port 8088 --log-level info
+python -m uvicorn worker.app:app --host 0.0.0.0 --port 8088 --log-level info
 ```
 
-### Windows — Levantar worker (servicio NSSM)
-
+### Windows — Desplegar y reiniciar servicio (NSSM)
+Para actualizar con los últimos cambios de `main`, instalar dependencias y reiniciar el servicio NSSM en Windows:
 ```powershell
-.\scripts\setup-openclaw-service.ps1
-nssm status openclaw-worker
+.\scripts\deploy-vm.ps1
 ```
 
 ## 🔗 Worker + Notion Bridge
@@ -173,8 +172,8 @@ WORKER_TOKEN=test python -m pytest tests/ -v
 |--------|--------|-------------|
 | **Fase 1.0-1.7** | ✅ Hecho | VPS + OpenClaw + Telegram + Tailscale + Worker + Notion Bridge |
 | **S0** | ✅ Hecho | Normalización docs/repo, ADRs, auditorías VPS/VM |
-| **S1** | 🔄 En progreso | TaskEnvelope v0.1 + gobernanza |
-| **S2** | 📋 | Orquestación split (Dispatcher + Redis + LangGraph) |
+| **S1** | ✅ Hecho | TaskEnvelope v0.1 + gobernanza |
+| **S2** | � En progreso | Orquestación split (Dispatcher + Redis + LangGraph) |
 | **S3** | 📋 | Equipos + Notion operativo |
 | **S4** | 📋 | ModelRouter + cuotas multi-modelo |
 | **S5** | 📋 | Herramientas Windows (PAD/RPA) |

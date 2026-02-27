@@ -55,11 +55,11 @@ echo "=== 5. Rick identity (workspace) ==="
 mkdir -p "$OPENCLAW_WS"
 if [ -d "$TEMPLATES" ]; then
   for f in IDENTITY.md SOUL.md; do
-    if [ ! -f "$OPENCLAW_WS/$f" ] && [ -f "$TEMPLATES/$f" ]; then
+    if [ -f "$TEMPLATES/$f" ]; then
       cp "$TEMPLATES/$f" "$OPENCLAW_WS/$f"
-      echo "   Copiado $f a ~/.openclaw/workspace"
+      echo "   Sync: $f -> ~/.openclaw/workspace (traspaso identidad Rick)"
     else
-      echo "   $f ya existe o template no disponible"
+      echo "   Template $f no encontrado"
     fi
   done
 else

@@ -82,19 +82,14 @@ def _run_worker(
             worker_id, task_id, task, team, selected_model, target,
         )
 
-        if not team_info or team_info.get("requires_vm", True):
-            wc = wc_vm if use_vm else wc_local
-            try:
-                result = wc.run(task, input_data)
-                queue.complete_task(task_id, result)
-                logger.info("[worker %d] Task %s completed via %s Worker", worker_id, task_id, target)
-            except Exception as e:
-                logger.error("[worker %d] Task %s failed: %s", worker_id, task_id, str(e))
-                queue.fail_task(task_id, str(e))
-        else:
-            time.sleep(1)
-            queue.complete_task(task_id, {"status": "ok", "mock": "llm_only_vps"})
-            logger.info("[worker %d] Task %s completed via VPS Mock", worker_id, task_id)
+        wc = wc_vm if use_vm else wc_local
+        try:
+            result = wc.run(task, input_data)
+            queue.complete_task(task_id, result)
+            logger.info("[worker %d] Task %s completed via %s Worker", worker_id, task_id, target)
+        except Exception as e:
+            logger.error("[worker %d] Task %s failed: %s", worker_id, task_id, str(e))
+            queue.fail_task(task_id, str(e))
 
 
 def main():

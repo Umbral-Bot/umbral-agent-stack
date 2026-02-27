@@ -1,0 +1,38 @@
+# S3 — Equipos y supervisores (Rick / Control Plane)
+# Cada equipo puede tener: supervisor, descripción, requires_vm, roles, notion_page_id (canal opcional).
+
+teams:
+  marketing:
+    supervisor: "Marketing Supervisor"
+    description: "Estrategia y ejecución digital"
+    requires_vm: false
+    roles: [supervisor, seo, social_media, copywriting]
+    notion_page_id: null  # Opcional: ID página Notion para canal del equipo
+
+  advisory:
+    supervisor: "Asesoría Personal Supervisor"
+    description: "Asesoría personal y financiera"
+    requires_vm: false
+    roles: [supervisor, financial, lifestyle]
+    notion_page_id: null
+
+  improvement:
+    supervisor: "Mejora Continua Supervisor"
+    description: "Mejora continua del sistema (OODA)"
+    requires_vm: true
+    roles: [supervisor, sota_research, self_evaluation, implementation]
+    notion_page_id: null
+
+  lab:
+    supervisor: null
+    description: "Experimentos y pruebas"
+    requires_vm: true
+    roles: [researcher]
+    notion_page_id: null
+
+  system:
+    supervisor: null
+    description: "Tareas internas del sistema"
+    requires_vm: false
+    roles: [ping, health, admin]
+    notion_page_id: null

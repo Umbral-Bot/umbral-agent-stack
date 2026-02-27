@@ -102,6 +102,8 @@ python3 -m dispatcher.notion_poller
 
 Dejalo corriendo en una terminal (o systemd/nohup). Los comentarios que empiezan por `Rick:` se ignoran (son nuestras respuestas).
 
+**Equipos y workers:** Los equipos y supervisores se definen en [config/teams.yaml](config/teams.yaml) (supervisor, roles, `requires_vm`, `notion_page_id` opcional). El Dispatcher usa **N workers en paralelo** (env `DISPATCHER_WORKERS`, default 2).
+
 ### Ejemplo desde VPS (curl)
 
 ```bash
@@ -192,7 +194,7 @@ WORKER_TOKEN=test python -m pytest tests/ -v
 | **S0** | ✅ Hecho | Normalización docs/repo, ADRs, auditorías VPS/VM |
 | **S1** | ✅ Hecho | TaskEnvelope v0.1 + gobernanza |
 | **S2** | ✅ Hecho | Orquestación split (Dispatcher + Redis + E2E VM) |
-| **S3** | 🟡 En progreso | Equipos + Notion operativo (Notion poller + loop) |
+| **S3** | ✅ Hecho | Equipos + Notion (poller XX:10, teams.yaml, N workers) |
 | **S4** | 📋 | ModelRouter + cuotas multi-modelo |
 | **S5** | 📋 | Herramientas Windows (PAD/RPA) |
 | **S6** | 📋 | Observabilidad (Langfuse + evals) |

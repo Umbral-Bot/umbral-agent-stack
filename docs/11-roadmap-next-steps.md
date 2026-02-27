@@ -47,13 +47,13 @@
 - [ ] Modo degradado implementado (ADR-003)
 - [ ] Health Monitor con alertas a Telegram
 
-## S3 — Equipos + Notion
+## S3 — Equipos + Notion ✅
 
 - [x] TeamRouter (despacho por `team` field)
-- [x] Loop bidireccional Notion ↔ Rick (polling + dispatch): `dispatcher/notion_poller.py` — poll Control Room vía Worker, encola tarea por comentario nuevo, responde con `notion.add_comment`
-- [ ] Definición de supervisores (config YAML)
-- [ ] Canales Notion por equipo (DBs/páginas dedicadas)
-- [ ] Delegación paralela a múltiples agentes
+- [x] Loop bidireccional Notion ↔ Rick (polling + dispatch): `dispatcher/notion_poller.py` — poll Control Room vía Worker, encola tarea por comentario nuevo, responde con `notion.add_comment`; horario XX:10 (doc 18)
+- [x] Definición de supervisores (config YAML): `config/teams.yaml` + `dispatcher/team_config.py` (supervisor, roles, requires_vm, notion_page_id por equipo)
+- [x] Canales Notion por equipo: `notion_page_id` en `config/teams.yaml` por equipo; poller puede extenderse a múltiples páginas
+- [x] Delegación paralela: Dispatcher con N workers (`DISPATCHER_WORKERS`, default 2), cada uno con su conexión Redis y WorkerClient
 
 ## S4 — ModelRouter + Cuotas
 

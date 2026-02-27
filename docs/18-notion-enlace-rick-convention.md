@@ -31,6 +31,10 @@ El agente **Enlace Notion ↔ Rick** solo lee/escribe en:
 - **Enlace → Rick:** Enlace deja comentarios o ítems en Bandeja Puente; Rick (el poller) revisa a las XX:10 y procesa comentarios nuevos en la página que use el poller (p. ej. Control Room). En Notion, cuando se mencione a Rick, usar **@Rick** (usuario de Notion).
 - Comentarios que empiezan por **"Rick:"** los ignora el poller (son respuestas automáticas nuestras) para no reaccionar en bucle.
 
+## Canales Notion por equipo (S3)
+
+En `config/teams.yaml` cada equipo puede tener un `notion_page_id` (opcional). Si lo definís, ese equipo tiene una página/database dedicada en Notion como canal. Hoy el poller sigue usando una sola página (Control Room) configurada en el Worker; en una versión futura el poller puede leer varias páginas (una por equipo) usando esos IDs.
+
 ## Bandeja Puente
 
 Enlace mantiene estados: **Pendiente**, **En curso**, **Bloqueado**, **Resuelto**, y direcciones **Rick→Notion** / **Notion→Rick**. Rick (el stack) no lee hoy la Bandeja Puente por API; solo lee comentarios de la página configurada en el Worker (p. ej. Control Room). Si más adelante Rick debe reaccionar a ítems de Bandeja Puente, se puede añadir otro poll o integración.

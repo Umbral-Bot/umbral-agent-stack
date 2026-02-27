@@ -75,3 +75,23 @@ def handle_notion_poll_comments(input_data: Dict[str, Any]) -> Dict[str, Any]:
         since=input_data.get("since"),
         limit=input_data.get("limit", 20),
     )
+
+
+def handle_notion_update_dashboard(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Actualiza la página Dashboard en Notion con métricas (doc 22).
+
+    Input:
+        metrics (dict, required): { "Nombre métrica": "valor", ... }.
+        page_id (str, optional): ID de la página. Default: NOTION_DASHBOARD_PAGE_ID.
+
+    Returns:
+        {"updated": True, "blocks_appended": N}
+    """
+    metrics = input_data.get("metrics")
+    if not metrics or not isinstance(metrics, dict):
+        raise ValueError("'metrics' (dict) is required in input")
+    return notion_client.update_dashboard_page(
+        page_id=input_data.get("page_id"),
+        metrics=metrics,
+    )

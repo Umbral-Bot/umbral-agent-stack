@@ -1,7 +1,7 @@
 ---
 id: "2026-02-27-001"
 title: "VPS: arreglar Git (PAT/SSH), clonar repo, instalar deps y ejecutar tests"
-status: pending
+status: done
 assigned_to: antigravity
 created_by: cursor
 priority: high
@@ -23,12 +23,12 @@ En la VPS (Hostinger) el clone del repo falló por autenticación Git. Hay que c
 
 ## Criterios de aceptación
 
-- [ ] En la VPS, Git configurado con PAT o SSH para `github.com` / org `Umbral-Bot`.
-- [ ] Repo clonado: `git clone https://github.com/Umbral-Bot/umbral-agent-stack.git` (o equivalente SSH) en un directorio conocido.
-- [ ] Dependencias instaladas desde el repo (ej. `pip3 install -r worker/requirements.txt` o las que usen los tests).
-- [ ] Ejecutar tests: `WORKER_TOKEN=test python -m pytest tests/ -q` (o equivalente) y anotar resultado (X passed, Y failed).
-- [ ] Si hay Redis en la VPS, ejecutar script S2: `REDIS_URL=... WORKER_URL=... WORKER_TOKEN=... python scripts/test_s2_dispatcher.py` y anotar resultado.
-- [ ] Añadir una entrada en el Log de este archivo con: resultado de pytest, resultado de S2 (si aplica), y cualquier error o bloqueo.
+- [x] En la VPS, Git configurado con PAT o SSH para `github.com` / org `Umbral-Bot`.
+- [x] Repo clonado: `git clone https://github.com/Umbral-Bot/umbral-agent-stack.git` (o equivalente SSH) en un directorio conocido.
+- [x] Dependencias instaladas desde el repo (ej. `pip3 install -r worker/requirements.txt` o las que usen los tests).
+- [x] Ejecutar tests: `WORKER_TOKEN=test python -m pytest tests/ -q` (o equivalente) y anotar resultado (X passed, Y failed).
+- [x] Si hay Redis en la VPS, ejecutar script S2: `REDIS_URL=... WORKER_URL=... WORKER_TOKEN=... python scripts/test_s2_dispatcher.py` y anotar resultado.
+- [x] Añadir una entrada en el Log de este archivo con: resultado de pytest, resultado de S2 (si aplica), y cualquier error o bloqueo.
 
 ## Referencias
 
@@ -41,3 +41,18 @@ En la VPS (Hostinger) el clone del repo falló por autenticación Git. Hay que c
 ### [cursor] 2026-02-27
 
 Tarea creada tras verificar el output de Antigravity en la VPS. El clone falló por auth; no se ejecutó ningún test del repo. Objetivo: dejar la VPS en estado de repo clonado + tests ejecutables y documentar resultados.
+
+### [antigravity] 2026-02-27 13:06
+
+1. **Autenticación Git SSH configurada**: Se generó llave ed25519 en la VPS alojada en Hostinger y el desarrollador la añadió como *Deploy Key* en GitHub sin acceso de escritura temporal para habilitar el copiado seguro y autorizado con Git Pull/Clone.
+2. **Repositorio descargado**: Debido a que ya había un directorio con código obsoleto local en VPS, se usó Git Checkouts y Git Pull sobre los remotos a SSH (`git@github.com:Umbral-Bot/umbral-agent-stack.git`) actualizandolo con las revisiones origin/main actualizadas al 27 de febrero.
+3. **Dependencias**: Se creó virtualenv local `.venv` debido a restricciones de Python global manejado por apt `externally-managed-environment`. Dentro del entorno fueron instalados `worker/requirements.txt`, `dispatcher/requirements.txt`, `pytest` y dependencias adicionales omitidas.
+4. **Pytest Run Results**:
+   **Ejecutado**: `WORKER_TOKEN=test python -m pytest tests/ -q`
+   **Resultados**: ✅ 45 passed in 1.30s
+5. **test_s2_dispatcher.py Run Results**:
+   **Ejecutado**: `REDIS_URL=redis://localhost:6379/0 WORKER_URL=http://localhost:8088 WORKER_TOKEN=test python scripts/test_s2_dispatcher.py` (Se tuvo que instalar Rich adicionalmente previamente).
+   **Resultados**:
+   ✅ `[1s] Status: done`
+   `Result: {"ok": true, "task_id": "199a182f...b22f0622597", "task": "ping" }`
+   La prueba S2 resultó Exitosa comunicándose Correctamente contra el Worker Local por encoladores Redis confirmando Dispatching Completado.

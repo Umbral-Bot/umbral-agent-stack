@@ -91,21 +91,19 @@ def main() -> int:
         err = r.text or ""
         page_id = None
         if r.status_code == 400 and "parented by a database" in err:
-            r2 = httpx.get(
-                f"{NOTION_BASE}/databases/{NOTION_PARENT}",
+            r_search = httpx.post(
+                f"{NOTION_BASE}/search",
                 headers=HEADERS,
-                timeout=5,
+                json={"filter": {"property": "object", "value": "page"}, "page_size": 5},
+                timeout=10,
             )
-            if r2.status_code == 200:
-                block_id = r2.json().get("parent", {}).get("block_id")
-                if block_id:
-                    r3 = httpx.get(f"{NOTION_BASE}/blocks/{block_id}", headers=HEADERS, timeout=5)
-                    if r3.status_code == 200:
-                        page_id = r3.json().get("parent", {}).get("page_id")
-                        if page_id:
-                            r = create_db({"type": "page_id", "page_id": page_id})
-            if r.status_code == 400 and not page_id:
-                r = create_db({"type": "workspace", "workspace": True})
+            if r_search.status_code == 200:
+                for item in r_search.json().get("results", []):
+                    pid = item.get("id")
+                    if pid and pid != NOTION_PARENT:
+                        r = create_db({"type": "page_id", "page_id": pid})
+                        if r.status_code < 400:
+                            break
         r.raise_for_status()
         data = r.json()
         db_id = data["id"]

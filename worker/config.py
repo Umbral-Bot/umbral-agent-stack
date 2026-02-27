@@ -13,6 +13,7 @@ import os
 # ---------------------------------------------------------------------------
 WORKER_TOKEN: str | None = os.environ.get("WORKER_TOKEN")
 WORKER_PORT: int = int(os.environ.get("WORKER_PORT", "8088"))
+WORKER_RATE_LIMIT_PER_MIN: int = int(os.environ.get("WORKER_RATE_LIMIT_PER_MIN", "120"))
 
 # ---------------------------------------------------------------------------
 # Notion

@@ -1,0 +1,20 @@
+# S5 — Política de herramientas Windows (ToolPolicy)
+# Solo las herramientas listadas aquí pueden ser invocadas por Rick desde la VM.
+
+tools:
+  pad:
+    description: Power Automate Desktop flows
+    allowed_flows:
+      - EchoTest       # Flujo de prueba (crear en PAD)
+      # - MiFlujoRPA   # Añadir flujos reales aquí
+    default_timeout_sec: 60
+
+  scripts:
+    description: Scripts PowerShell permitidos
+    allowed:
+      - Get-SystemInfo   # Ejemplo: script que devuelve info del sistema
+    base_path: C:\GitHub\umbral-agent-stack\scripts\windows
+
+  mcp:
+    description: MCP tools para Windows (futuro)
+    enabled: false

@@ -1,7 +1,8 @@
 # ============================================================
 # LiteLLM Config — Placeholder (Fase 2)
 # ============================================================
-# TODO: Configurar providers reales cuando se implemente Fase 2.
+# Cuando activemos LiteLLM como proxy, estos modelos servirán de puente
+# entre Rick (Dispatcher/Worker) y los providers (OpenAI, Codex, Gemini, etc.).
 # Documentación: https://docs.litellm.ai/docs/proxy/configs
 # ============================================================
 
@@ -25,7 +26,26 @@ model_list:
   #     model: anthropic/claude-sonnet-4-20250514
   #     api_key: os.environ/ANTHROPIC_API_KEY
 
+  # --- Google Gemini (Google AI Studio) ---
+  # Usamos GOOGLE_API_KEY / GOOGLE_API_KEY_NANO desde el entorno.
+  # Pro principal (3.1 customtools) — mapeado desde gemini_pro en ModelRouter.
+  - model_name: gemini_pro
+    litellm_params:
+      # Ver nombres reales de modelo en OpenClaw / AI Studio
+      model: google/gemini-3.1-pro-preview-customtools
+      api_key: os.environ/GOOGLE_API_KEY
+
+  # Flash rápido (por defecto cuando pedimos \"Gemini rápido\")
+  - model_name: gemini_flash
+    litellm_params:
+      model: google/gemini-flash-latest
+      api_key: os.environ/GOOGLE_API_KEY
+
 litellm_settings:
+  # --- S6: Langfuse tracing (descomentar cuando Langfuse esté activo) ---
+  # Requiere env: LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_OTEL_HOST
+  # callbacks: ["langfuse_otel"]
+  #
   # Caching con Redis (cuando esté disponible)
   # cache: true
   # cache_params:

@@ -39,6 +39,17 @@ La integración de Notion debe tener acceso a la página padre (Dashboard o Cont
 
 En la DB creada: + Nueva vista → Board → agrupar por "Estado".
 
+## Enlace en otra página
+
+Para añadir un enlace al Kanban en una página (ej. Dashboard):
+
+```bash
+export TARGET_PAGE_ID=xxx   # o usa NOTION_DASHBOARD_PAGE_ID del env
+python scripts/link_kanban_to_page.py
+```
+
+Sin `TARGET_PAGE_ID`, usa `NOTION_DASHBOARD_PAGE_ID`. La página debe estar compartida con la integración de Notion.
+
 ## Uso
 
 Sin `NOTION_TASKS_DB_ID`, el Dispatcher sigue funcionando; `notion.upsert_task` devuelve `skipped`.

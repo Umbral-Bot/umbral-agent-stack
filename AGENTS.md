@@ -1,5 +1,18 @@
 # AGENTS.md
 
+## Coordinación inter-agentes
+
+Este repositorio es trabajado por múltiples agentes AI de forma coordinada.
+Antes de empezar cualquier trabajo, lee el protocolo y el board:
+
+1. **Protocolo**: [`.agents/PROTOCOL.md`](.agents/PROTOCOL.md) — reglas de coordinación, formato de tareas, ciclo de vida.
+2. **Board**: [`.agents/board.md`](.agents/board.md) — estado actual de tareas asignadas.
+3. **Tareas**: [`.agents/tasks/`](.agents/tasks/) — archivos individuales por tarea.
+
+> Si sos Antigravity o Codex, buscá tareas con `assigned_to` igual a tu nombre y seguí las instrucciones del protocolo.
+
+---
+
 ## Cursor Cloud specific instructions
 
 ### Overview

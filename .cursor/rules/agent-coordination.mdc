@@ -1,0 +1,28 @@
+---
+description: Protocolo de coordinación inter-agentes. Cursor es el lead y debe revisar el board al inicio.
+globs:
+alwaysApply: true
+---
+
+# Coordinación Inter-Agentes
+
+Este repositorio es trabajado por múltiples agentes AI (Cursor, Antigravity, Codex).
+Cursor actúa como **lead/orquestador**.
+
+## Al inicio de cada sesión
+
+1. Lee `.agents/board.md` para conocer el estado actual de tareas.
+2. Si hay tareas con `status: done` de otros agentes, revisa su trabajo (lee el Log en el archivo de tarea).
+3. Si hay tareas `blocked`, evalúa cómo desbloquearlas.
+
+## Al crear trabajo para otros agentes
+
+1. Crea un archivo en `.agents/tasks/YYYY-MM-DD-NNN-slug.md` siguiendo el formato en `.agents/PROTOCOL.md`.
+2. Actualiza `.agents/board.md` con el resumen.
+3. Informa a David qué agente debe ejecutar la tarea y qué prompt de inicio usar.
+
+## Referencia
+
+- Protocolo completo: `.agents/PROTOCOL.md`
+- Board actual: `.agents/board.md`
+- Tareas: `.agents/tasks/`

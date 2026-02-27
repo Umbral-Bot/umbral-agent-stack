@@ -1,62 +1,86 @@
 # 11 — Roadmap y Próximos Pasos
 
-## Prioridades
+> Plan detallado: [docs/14-codex-plan.md](14-codex-plan.md)
+> Política de cuotas: [docs/15-model-quota-policy.md](15-model-quota-policy.md)
 
-### P0 — Inmediato
+## Roadmap por Sprint
 
-- [ ] **Integrar OpenClaw → Worker para tareas reales**: Extender el handler del worker más allá de `ping` para ejecutar tareas mínimas reales (ej: file operations, shell commands controlados).
-- [ ] **Health router / modo degradado**: Cuando la VM Windows esté apagada, OpenClaw debe detectarlo y operar en modo degradado (solo LLM, sin worker).
-- [ ] **Monitoreo básico**: Script/cron que verifica worker health cada N minutos y alerta por Telegram si falla.
+| Sprint | Objetivo | Estado |
+|--------|----------|--------|
+| **S0** | Normalización docs/repo | ✅ Completado |
+| **S1** | TaskEnvelope + gobernanza | 🔄 En progreso |
+| **S2** | Orquestación split (Dispatcher + Redis + VM runtime) | 📋 |
+| **S3** | Equipos + Notion operativo (Marketing, Asesoría, Mejora) | 📋 |
+| **S4** | ModelRouter + cuotas (5 proveedores LLM) | 📋 |
+| **S5** | Herramientas Windows (PAD/RPA + MCP tools) | 📋 |
+| **S6** | Observabilidad (Langfuse + evals + ciclo OODA) | 📋 |
+| **S7** | Hardening (secretos, ACL Tailscale, sanitización) | 📋 |
 
-### P1 — Fase 2 (LangGraph + LiteLLM + Redis)
+## S0 — Normalización (✅ Completado)
 
-- [ ] **LangGraph**: Instalar en VPS (Docker). Orquestador de agentes con grafos.
-  - Docker compose scaffold en `infra/docker/docker-compose.hostinger.yml`.
-- [ ] **LiteLLM Proxy**: Instalar en VPS (Docker). Proxy unificado para LLMs.
-  - Config scaffold en `infra/docker/litellm_config.yaml`.
-- [ ] **Redis**: Instalar en VPS (Docker). State store para LangGraph.
-  - Incluido en `docker-compose.hostinger.yml`.
-- [ ] **Conectar OpenClaw → LangGraph → Worker**: Pipeline completo de orquestación.
+- [x] Plan maestro v2.8 → `docs/14-codex-plan.md`
+- [x] Política multi-modelo → `docs/15-model-quota-policy.md`
+- [x] ADR-001: Ubicación de Rick
+- [x] ADR-002: Notion vs Queue
+- [x] ADR-003: Modo Degradado
+- [x] ADR-004: Política de Cuotas
+- [x] Actualizar `00-overview.md` con split Control/Execution Plane
+- [x] Actualizar `01-architecture-v2.3.md` con arquitectura objetivo
+- [x] Auditoría VPS (`docs/12-vps-audit-2026-02-26.md`)
+- [x] Auditoría VM (`docs/13-vm-audit-2026-02-26.md`)
 
-### P2 — Fase 3 (Observabilidad + RAG + PAD)
+## S1 — TaskEnvelope + Gobernanza (🔄 En progreso)
 
-- [ ] **Langfuse**: Instalar en VM local (Docker). Observabilidad y tracing de LLM calls.
-  - Docker compose scaffold en `infra/docker/docker-compose.local.yml`.
-- [ ] **ChromaDB**: Instalar en VM local (Docker). Vector store para RAG.
-  - Incluido en `docker-compose.local.yml`.
-- [ ] **PostgreSQL**: Backend para Langfuse.
-  - Incluido en `docker-compose.local.yml`.
-- [ ] **PAD (Process Automation & Deployment)**: Integración de automatización.
-  - Diseño y planning por definir.
+- [ ] Definir schema TaskEnvelope v0.1 (8 campos core)
+- [ ] Crear `worker/models/envelope.py`
+- [ ] Refactorizar `worker/app.py` para aceptar envelope
+- [ ] Backward compat con formato actual `{task, input}`
+- [ ] Endpoint `GET /tasks/{task_id}` para consultar estado
+- [ ] Tests actualizados
+- [ ] Deploy a VM
 
-## Diagrama de Roadmap
+## S2 — Orquestación Split
 
-```
-Fase 1.0 ✅ ──► Fase 1.5 ✅ ──► Fase 2.0 📋 ──► Fase 3.0 📋
-OpenClaw         Tailscale        LangGraph        Langfuse
-Telegram         Worker HTTP      LiteLLM          ChromaDB
-                 NSSM             Redis            PAD
-                 Scripts
-```
+- [ ] Dispatcher en VPS (recibe TaskEnvelope, enruta a equipo)
+- [ ] Redis queue en VPS (Docker)
+- [ ] LangGraph runtime en VM (Docker)
+- [ ] Modo degradado implementado (ADR-003)
+- [ ] Health Monitor con alertas a Telegram
 
-## Notas Técnicas para Fase 2
+## S3 — Equipos + Notion
 
-### Docker en VPS (Hostinger)
+- [ ] TeamRouter (despacho por `team` field)
+- [ ] Definición de supervisores (config YAML)
+- [ ] Canales Notion por equipo (DBs/páginas dedicadas)
+- [ ] Loop bidireccional Notion ↔ Rick (polling + dispatch)
+- [ ] Delegación paralela a múltiples agentes
 
-- Verificar que Docker está permitido en el plan.
-- Considerar recursos (RAM, CPU) para Redis + LiteLLM.
-- Si recursos son limitados, priorizar LiteLLM sobre Redis (Redis puede postergarse).
+## S4 — ModelRouter + Cuotas
 
-### LangGraph — Decisiones pendientes
+- [ ] ModelRouter engine (selección por `task_type`)
+- [ ] QuotaTracker persistente en Redis
+- [ ] Fallback chain automático
+- [ ] Umbrales warn/restrict por proveedor
+- [ ] Aprobación humana vía Telegram/Notion
 
-- ¿Grafos estáticos o dinámicos?
-- ¿Persistencia de estado en Redis o filesystem?
-- ¿Qué tareas del worker se convierten en nodos del grafo?
+## S5 — Herramientas Windows
 
-### LiteLLM — Providers planificados
+- [ ] ToolPolicy con allowlist
+- [ ] Conector PAD (Power Automate Desktop)
+- [ ] MCP tools para Windows
+- [ ] Artifacts y auditoría de ejecución
 
-| Provider | Prioridad | Estado |
-|----------|-----------|--------|
-| OpenAI Codex | P0 | ✅ Via OpenClaw |
-| Anthropic | P2 | ⚠️ Configurado, opcional |
-| Local models | P2 | 📋 Pendiente |
+## S6 — Observabilidad
+
+- [ ] Langfuse en VM (Docker)
+- [ ] Tracing de todas las LLM calls
+- [ ] Evals automáticos (Self-Evaluation agent)
+- [ ] Reporte semanal automático (OODA)
+
+## S7 — Hardening
+
+- [ ] Gestión de secretos (vault o equivalente)
+- [ ] ACL Tailscale (restricción por nodo)
+- [ ] Sanitización de inputs
+- [ ] Rate limiting en Worker
+- [ ] Trazabilidad completa end-to-end

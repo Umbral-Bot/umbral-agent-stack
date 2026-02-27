@@ -2,6 +2,7 @@
 # Ejecutar como: .\deploy-vm.ps1
 
 $ErrorActionPreference = "Continue"
+$TOKEN = "test-token-12345"
 
 $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 Write-Host "========================================" -ForegroundColor Cyan
@@ -26,28 +27,6 @@ if ($port8088) {
 }
 else {
     Write-Host "    (nada escucha en 8088)" -ForegroundColor DarkYellow
-}
-
-# Buscar NSSM
-$nssmExe = Get-Command nssm -ErrorAction SilentlyContinue
-$serviceName = $null
-if ($nssmExe) {
-    Write-Host "  NSSM encontrado" -ForegroundColor Green
-    $svcNames = @("UmbralWorker", "umbral-worker", "worker", "rick-worker")
-    foreach ($svc in $svcNames) {
-        $st = nssm status $svc 2>$null
-        if ($st -and $st -ne "") {
-            Write-Host "    Servicio $svc : $st" -ForegroundColor Green
-            $serviceName = $svc
-            break
-        }
-    }
-    if (-not $serviceName) {
-        Write-Host "    (ningun servicio umbral encontrado)" -ForegroundColor DarkYellow
-    }
-}
-else {
-    Write-Host "  NSSM no encontrado" -ForegroundColor DarkYellow
 }
 Write-Host ""
 
@@ -92,7 +71,7 @@ else {
 
 # Verificar que worker/app.py existe
 if (-not (Test-Path "$repoRoot\worker\app.py")) {
-    Write-Host "  ERROR: worker/app.py no existe. Verificar repo." -ForegroundColor Red
+    Write-Host "  ERROR: worker/app.py no existe." -ForegroundColor Red
     exit 1
 }
 Write-Host "  worker/app.py encontrado" -ForegroundColor Green
@@ -109,7 +88,6 @@ python -m pip install -r "$repoRoot\worker\requirements.txt" --quiet 2>&1
 Write-Host "  Instalando test deps..." -ForegroundColor Gray
 python -m pip install pytest httpx fakeredis --quiet 2>&1
 
-# Verificar imports clave
 $mods = @("fastapi", "uvicorn", "pydantic", "httpx", "pytest")
 foreach ($m in $mods) {
     $ver = python -c "import $m; print($m.__version__)" 2>&1
@@ -122,7 +100,7 @@ foreach ($m in $mods) {
 }
 Write-Host ""
 
-# --- FASE 3: Verificar archivos v0.3.0 ---
+# --- FASE 3: Archivos v0.3.0 ---
 Write-Host "[FASE 3] Archivos v0.3.0..." -ForegroundColor Yellow
 
 $files = @("$repoRoot\worker\app.py", "$repoRoot\worker\models\__init__.py", "$repoRoot\tests\test_worker.py")
@@ -148,6 +126,7 @@ Write-Host ""
 Write-Host "[FASE 4] Ejecutar tests..." -ForegroundColor Yellow
 
 $env:PYTHONPATH = $repoRoot
+$env:WORKER_TOKEN = $TOKEN
 Push-Location "$repoRoot\worker"
 python -m pytest "$repoRoot\tests\test_worker.py" -v 2>&1
 $testResult = $LASTEXITCODE
@@ -174,25 +153,14 @@ if ($existing) {
     Start-Sleep -Seconds 2
 }
 
-# Configurar variables de entorno
-$env:WORKER_TOKEN = "supersecrettoken"
+# Configurar entorno e iniciar
+$env:WORKER_TOKEN = $TOKEN
 $env:PYTHONPATH = $repoRoot
 
-if ($serviceName -and $nssmExe) {
-    Write-Host "  Reconfigurando servicio $serviceName..." -ForegroundColor Gray
-    nssm set $serviceName AppDirectory "$repoRoot" 2>&1 | Out-Null
-    nssm set $serviceName AppParameters "-m uvicorn worker.app:app --host 0.0.0.0 --port 8088" 2>&1 | Out-Null
-    nssm start $serviceName 2>&1 | Out-Null
-    Start-Sleep -Seconds 3
-    $st = nssm status $serviceName
-    Write-Host "  Servicio: $st" -ForegroundColor Green
-}
-else {
-    Write-Host "  Iniciando worker manualmente..." -ForegroundColor Gray
-    Start-Process -FilePath python -ArgumentList "-m", "uvicorn", "worker.app:app", "--host", "0.0.0.0", "--port", "8088" -WorkingDirectory $repoRoot -WindowStyle Hidden
-    Start-Sleep -Seconds 4
-    Write-Host "  Worker iniciado en background" -ForegroundColor Green
-}
+Write-Host "  Iniciando worker (WORKER_TOKEN=$TOKEN)..." -ForegroundColor Gray
+Start-Process -FilePath python -ArgumentList "-m", "uvicorn", "worker.app:app", "--host", "0.0.0.0", "--port", "8088" -WorkingDirectory $repoRoot -WindowStyle Hidden
+Start-Sleep -Seconds 4
+Write-Host "  Worker iniciado en background" -ForegroundColor Green
 Write-Host ""
 
 # --- FASE 6: Verificacion final ---
@@ -215,7 +183,7 @@ catch {
 # Legacy format
 Write-Host "  Test legacy format..." -ForegroundColor Gray
 try {
-    $headers = @{ "Authorization" = "Bearer supersecrettoken"; "Content-Type" = "application/json" }
+    $headers = @{ "Authorization" = "Bearer $TOKEN"; "Content-Type" = "application/json" }
     $bodyObj = @{ task = "ping"; input = @{ hello = "deploy-test" } }
     $bodyJson = $bodyObj | ConvertTo-Json -Compress
     $legacy = Invoke-RestMethod -Uri "http://localhost:8088/run" -Method POST -Headers $headers -Body $bodyJson -TimeoutSec 5
@@ -247,7 +215,7 @@ catch {
 # GET /tasks
 Write-Host "  Test GET /tasks..." -ForegroundColor Gray
 try {
-    $authH = @{ "Authorization" = "Bearer supersecrettoken" }
+    $authH = @{ "Authorization" = "Bearer $TOKEN" }
     $tasks = Invoke-RestMethod -Uri "http://localhost:8088/tasks" -Method GET -Headers $authH -TimeoutSec 5
     $tCount = @($tasks).Count
     Write-Host "  Tasks: $tCount tareas en store" -ForegroundColor Green

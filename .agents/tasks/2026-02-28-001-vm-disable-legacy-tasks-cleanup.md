@@ -1,13 +1,13 @@
 ---
 id: "2026-02-28-001"
 title: "VM: deshabilitar tasks legacy y limpiar Gateway (regularización fase 1)"
-status: assigned
+status: blocked
 assigned_to: codex
 created_by: cursor
 priority: high
 sprint: S4
 created_at: "2026-02-28"
-updated_at: "2026-02-28T00:00:00-03:00"
+updated_at: "2026-02-27T23:27:20-03:00"
 ---
 
 ## Objetivo
@@ -70,3 +70,28 @@ Ejecutar la fase 1 del plan de regularización documentado en `docs/audits/vm-op
 
 ### [cursor] 2026-02-28 00:00
 Tarea creada. Fase 1 del plan de regularización. Codex debe deshabilitar las 4 tasks legacy, respaldar scripts, verificar Worker sano y pushear.
+
+### [codex] 2026-02-27 23:27 -03:00
+Ejecucion parcial completada. Se aplico Fase 1 con un bloqueo de permisos de admin sobre una task.
+
+Hecho:
+- Backup de `C:\Users\Rick\.openclaw\workspace\scripts\` a `C:\Users\Rick\.openclaw\workspace\scripts-backup-2026-02-28\` (7 archivos).
+- Deshabilitadas:
+  - `OpenClaw-TelegramAudioAgent`
+  - `Rick-Granola-Sync-Daily`
+  - `Rick-Multiagent-Progress-30min`
+- Verificaciones OK:
+  - `openclaw-worker` en `Running`
+  - `GET http://localhost:8088/health` OK
+  - `0.0.0.0:8088` en `LISTEN`
+  - Puerto `18789` sin listener
+
+Bloqueo:
+- No se pudo deshabilitar `OpenClaw Gateway` por permisos:
+  - `Disable-ScheduledTask -TaskName "OpenClaw Gateway"` -> `Acceso denegado`
+  - `schtasks /Change /TN "OpenClaw Gateway" /Disable` -> `Acceso denegado`
+- Requiere abrir PowerShell como Administrador y ejecutar:
+  - `Disable-ScheduledTask -TaskName "OpenClaw Gateway"`
+
+Documentacion actualizada:
+- `docs/audits/vm-openclaw-audit-2026-02-27.md` (seccion "Fase 1 ejecutada")

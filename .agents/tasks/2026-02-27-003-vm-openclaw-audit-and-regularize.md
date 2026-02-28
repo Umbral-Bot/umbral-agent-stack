@@ -1,13 +1,13 @@
 ---
 id: "2026-02-27-003"
 title: "VM: auditar OpenClaw instalado, proyectos y automatizaciones — regularizar"
-status: assigned
+status: done
 assigned_to: codex
 created_by: cursor
 priority: high
 sprint: S4
 created_at: "2026-02-27"
-updated_at: "2026-02-27T14:00:00-03:00"
+updated_at: "2026-02-27T23:14:24-03:00"
 ---
 
 ## Objetivo
@@ -62,3 +62,20 @@ En la VM Windows (PCRick) donde corre el Worker: auditar qué hay instalado de O
 
 ### [cursor] 2026-02-27 14:00
 Tarea creada. Asignada a Codex para ejecutar en la VM. David indicó que OpenClaw en la VM tenía proyectos y automatizaciones; se requiere inventario y plan de regularización según arquitectura.
+
+### [codex] 2026-02-27 23:14 -03:00
+Auditoria completada y documentada en `docs/audits/vm-openclaw-audit-2026-02-27.md`.
+
+Hallazgos principales (sin secretos):
+- OpenClaw CLI instalado en VM (`openclaw@2026.2.25`) y runtime en `C:\Users\Rick\.openclaw\`.
+- Solo hay servicio Windows `openclaw-worker`; no hay servicio gateway, pero si tasks programadas de OpenClaw/automatizaciones.
+- Tasks detectadas: `OpenClaw Gateway`, `OpenClaw-TelegramAudioAgent`, `Rick-Granola-Sync-Daily`, `Rick-Multiagent-Progress-30min`.
+- Workspace activo en VM (`C:\Users\Rick\.openclaw\workspace`) con proyecto `multiagent`, scripts de Notion/Granola y RPA.
+- Evidencia de desvio arquitectonico: la VM mantiene tareas de control/integracion que deberian estar en VPS.
+
+Archivos tocados:
+- `docs/audits/vm-openclaw-audit-2026-02-27.md` (nuevo)
+- `runbooks/runbook-vm-worker-setup.md` (actualizado para explicitar que gateway no debe correr en VM)
+
+Resultado:
+- Se dejo plan concreto de regularizacion por etapas (que queda en VM, que migrar/desactivar y pasos sugeridos sin ejecutar cambios destructivos).

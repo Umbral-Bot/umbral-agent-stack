@@ -4,6 +4,16 @@
 
 Documentar la configuracion actual del Worker en esta VM y dejar pasos reproducibles para levantarlo desde cero usando NSSM.
 
+## Alcance operativo de esta VM
+
+Segun arquitectura (ADR-001), esta VM debe operar como **Execution Plane**:
+- SI: `openclaw-worker` (FastAPI) y componentes de ejecucion Windows (PAD/RPA).
+- NO: OpenClaw Gateway/Rick como plano de control principal.
+
+Por lo tanto:
+- No iniciar ni mantener en produccion un gateway OpenClaw local en esta VM.
+- El gateway de control (Rick/OpenClaw) debe correr en la VPS.
+
 ## Configuracion actual documentada (captura: 2026-02-27)
 
 Servicio:
@@ -144,4 +154,3 @@ nssm get openclaw-worker AppDirectory
 $envExtra = nssm get openclaw-worker AppEnvironmentExtra
 $envExtra -split "`r?`n" | Where-Object {$_ -match '^[A-Za-z_][A-Za-z0-9_]*='} | ForEach-Object { ($_ -split '=',2)[0] }
 ```
-

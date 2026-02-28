@@ -16,6 +16,7 @@ from .notion import (
     handle_notion_update_dashboard,
 )
 from .windows import handle_windows_pad_run_flow
+from .observability import handle_ooda_report, handle_self_eval
 
 # Each handler: (input: dict) -> dict
 TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
@@ -26,4 +27,6 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "notion.upsert_task": handle_notion_upsert_task,
     "notion.update_dashboard": handle_notion_update_dashboard,
     "windows.pad.run_flow": handle_windows_pad_run_flow,
+    "system.ooda_report": handle_ooda_report,
+    "system.self_eval": handle_self_eval,
 }

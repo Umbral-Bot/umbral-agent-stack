@@ -70,12 +70,14 @@
 - [ ] MCP tools para Windows
 - [ ] Artifacts y auditoría de ejecución
 
-## S6 — Observabilidad (✅ Parcial)
+## S6 — Observabilidad (✅ Completo)
 
 - [x] Langfuse en VM (Docker): `infra/docker/docker-compose.langfuse.yml`, doc 24
 - [x] Config LiteLLM para callbacks `langfuse_otel`
-- [x] Stub reporte OODA: `scripts/ooda_report.py`, doc 25
-- [ ] Evals automáticos (Self-Evaluation agent) — doc 25
+- [x] Reporte OODA conectado a Redis: `scripts/ooda_report.py`, doc 25
+- [x] Self-Evaluation agent: `scripts/evals_self_check.py`, doc 25
+- [x] Worker tasks: `system.ooda_report`, `system.self_eval` en `worker/tasks/observability.py`
+- [x] Tests: `tests/test_observability.py` (9 tests)
 
 ## S7 — Hardening (✅ Parcial)
 

@@ -224,7 +224,7 @@ def main() -> int:
             f"{WORKER_URL}/run",
             json=request_body,
             headers={"Authorization": f"Bearer {WORKER_TOKEN}", "Content-Type": "application/json"},
-            timeout=30,
+            timeout=90,
         )
         r.raise_for_status()
         data = r.json()

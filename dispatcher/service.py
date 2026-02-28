@@ -22,6 +22,7 @@ from dispatcher.quota_tracker import QuotaTracker
 from dispatcher.router import TeamRouter
 from dispatcher.team_config import get_team_capabilities
 from client.worker_client import WorkerClient
+from infra.ops_logger import ops_log
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 
@@ -89,10 +90,12 @@ def _run_worker(
         if decision.requires_approval:
             reason = "quota_exceeded_approval_required"
             logger.warning("[worker %d] Task %s blocked: %s (model=%s)", worker_id, task_id, reason, decision.model)
+            ops_log.task_blocked(task_id, task, team, reason)
             _notion_upsert(wc_local, task_id, "blocked", team, task, error=reason)
             queue.block_task(task_id, reason)
             continue
         selected_model = decision.model
+        ops_log.model_selected(task_id, task_type, selected_model, decision.reason if hasattr(decision, "reason") else "")
         input_data["selected_model"] = selected_model
 
         team_info = capabilities.get(team)
@@ -114,16 +117,21 @@ def _run_worker(
 
         wc = wc_vm if use_vm else wc_local
         _notion_upsert(wc_local, task_id, "running", team, task, input_summary=str(input_data)[:300])
+        t_start = time.time()
         try:
             result = wc.run(task, input_data)
+            duration_ms = (time.time() - t_start) * 1000
             queue.complete_task(task_id, result)
             model_router.quota.record_usage(selected_model)
+            ops_log.task_completed(task_id, task, team, selected_model, duration_ms, worker=target.lower())
             _notion_upsert(
                 wc_local, task_id, "done", team, task,
                 result_summary=str(result.get("result", result))[:300] if isinstance(result, dict) else str(result)[:300],
             )
             logger.info("[worker %d] Task %s completed via %s Worker (model=%s)", worker_id, task_id, target, selected_model)
         except Exception as e:
+            duration_ms = (time.time() - t_start) * 1000
+            ops_log.task_failed(task_id, task, team, str(e), model=selected_model)
             _notion_upsert(wc_local, task_id, "failed", team, task, error=str(e)[:500])
             logger.error("[worker %d] Task %s failed: %s", worker_id, task_id, str(e))
             queue.fail_task(task_id, str(e))

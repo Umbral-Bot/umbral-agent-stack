@@ -200,14 +200,129 @@ def poll_comments(
     return {"comments": comments, "count": len(comments)}
 
 
+def _block_heading2(text: str) -> dict[str, Any]:
+    return {"object": "block", "type": "heading_2", "heading_2": {"rich_text": [{"type": "text", "text": {"content": text[:2000]}}]}}
+
+def _block_heading3(text: str) -> dict[str, Any]:
+    return {"object": "block", "type": "heading_3", "heading_3": {"rich_text": [{"type": "text", "text": {"content": text[:2000]}}]}}
+
+def _block_paragraph(text: str) -> dict[str, Any]:
+    return {"object": "block", "type": "paragraph", "paragraph": {"rich_text": [{"type": "text", "text": {"content": text[:2000]}}]}}
+
+def _block_callout(text: str, emoji: str = "🟢") -> dict[str, Any]:
+    return {"object": "block", "type": "callout", "callout": {"rich_text": [{"type": "text", "text": {"content": text[:2000]}}], "icon": {"type": "emoji", "emoji": emoji}}}
+
+def _block_divider() -> dict[str, Any]:
+    return {"object": "block", "type": "divider", "divider": {}}
+
+def _block_table(headers: list[str], rows: list[list[str]]) -> dict[str, Any]:
+    width = len(headers)
+    table_rows = []
+    header_cells = [[{"type": "text", "text": {"content": h[:200]}}] for h in headers]
+    table_rows.append({"type": "table_row", "table_row": {"cells": header_cells}})
+    for row in rows:
+        cells = [[{"type": "text", "text": {"content": str(c)[:200]}}] for c in row]
+        while len(cells) < width:
+            cells.append([{"type": "text", "text": {"content": "—"}}])
+        table_rows.append({"type": "table_row", "table_row": {"cells": cells[:width]}})
+    return {
+        "object": "block",
+        "type": "table",
+        "table": {"table_width": width, "has_column_header": True, "has_row_header": False, "children": table_rows},
+    }
+
+def _block_toggle(text: str, children: list[dict[str, Any]]) -> dict[str, Any]:
+    return {"object": "block", "type": "toggle", "toggle": {"rich_text": [{"type": "text", "text": {"content": text[:2000]}}], "children": children}}
+
+
+def _build_dashboard_v2_blocks(data: dict[str, Any]) -> list[dict[str, Any]]:
+    """Construye bloques ricos para dashboard v2."""
+    blocks: list[dict[str, Any]] = []
+    ts = data.get("timestamp", "?")
+    overall = data.get("overall_status", "?")
+
+    emoji_map = {"Operativo": "🟢", "Parcial (Redis offline)": "🟡", "Degradado": "🔴"}
+    status_emoji = emoji_map.get(overall, "⚪")
+
+    blocks.append(_block_heading2("Dashboard Rick"))
+    blocks.append(_block_callout(f"Estado: {overall}  —  {ts}", status_emoji))
+    blocks.append(_block_divider())
+
+    # Workers
+    blocks.append(_block_heading3("Workers"))
+    vps = data.get("vps_worker", {})
+    vm = data.get("vm_worker")
+    worker_rows = [["VPS", vps.get("status", "?"), str(len(vps.get("tasks", []))) + " tareas"]]
+    if vm:
+        worker_rows.append(["VM", vm.get("status", "?"), str(len(vm.get("tasks", []))) + " tareas"])
+    blocks.append(_block_table(["Worker", "Estado", "Tasks"], worker_rows))
+
+    # Redis
+    rd = data.get("redis", {})
+    redis_text = f"Pendientes: {rd.get('pending', 0)} | Bloqueadas: {rd.get('blocked', 0)}"
+    if not rd.get("connected"):
+        redis_text = "Redis offline"
+    blocks.append(_block_paragraph(redis_text))
+    blocks.append(_block_divider())
+
+    # Cuotas por modelo
+    quotas = data.get("quotas", [])
+    if quotas:
+        blocks.append(_block_heading3("Cuotas por Modelo"))
+        quota_rows = []
+        for q in quotas:
+            bar = "█" * int(q["pct"] / 10) + "░" * (10 - int(q["pct"] / 10))
+            quota_rows.append([q["provider"], f"{q['used']}/{q['limit']}", f"{q['pct']}%  {bar}", f"{q['window_h']}h"])
+        blocks.append(_block_table(["Proveedor", "Usado/Limite", "Uso", "Ventana"], quota_rows))
+        blocks.append(_block_divider())
+
+    # Equipos
+    teams = data.get("teams", [])
+    if teams:
+        blocks.append(_block_heading3("Equipos"))
+        team_rows = []
+        for t in teams:
+            vm_flag = "VM" if t.get("requires_vm") else "VPS"
+            team_rows.append([t["team"], t.get("supervisor", "—"), t.get("description", ""), vm_flag])
+        blocks.append(_block_table(["Equipo", "Supervisor", "Descripcion", "Plano"], team_rows))
+        blocks.append(_block_divider())
+
+    # Tareas recientes
+    recent = data.get("recent_tasks", [])
+    if recent:
+        blocks.append(_block_heading3("Tareas Recientes"))
+        task_rows = []
+        for t in recent:
+            status_icon = "✅" if t["status"] == "done" else "❌"
+            task_rows.append([f"{status_icon} {t['task']}", t["team"], f"{t['duration_s']}s", t["task_id"]])
+        blocks.append(_block_table(["Tarea", "Equipo", "Duracion", "ID"], task_rows))
+        blocks.append(_block_divider())
+
+    # Ops summary
+    ops = data.get("ops_summary", {})
+    if ops.get("total_events", 0) > 0:
+        blocks.append(_block_heading3("Operaciones (ops_log)"))
+        blocks.append(_block_callout(
+            f"Completadas: {ops.get('completed', 0)} | Fallidas: {ops.get('failed', 0)} | "
+            f"Tasa exito: {ops.get('success_rate', 0)}%",
+            "📊",
+        ))
+        models = ops.get("models_used", {})
+        if models:
+            model_rows = [[m, str(c)] for m, c in sorted(models.items(), key=lambda x: -x[1])]
+            blocks.append(_block_toggle("Modelos usados (detalle)", [_block_table(["Modelo", "Requests"], model_rows)]))
+
+    return blocks
+
+
 def update_dashboard_page(page_id: str | None, metrics: dict[str, Any]) -> dict[str, Any]:
     """
     Reemplaza el contenido de la página Dashboard con un snapshot de métricas.
-    Archiva los bloques hijos existentes y añade nuevos (doc 22).
+    Soporta v2 (bloques ricos) y v1 (simple heading+paragraph).
 
     Args:
         page_id: ID de la página Dashboard. Default: NOTION_DASHBOARD_PAGE_ID.
-        metrics: Dict nombre_metric -> valor (str o número). Ej: {"Estado general": "Operativo", "Worker VPS": "OK"}.
+        metrics: Dict con datos del dashboard (v2 si tiene "dashboard_v2": True).
 
     Returns:
         {"updated": True, "blocks_appended": N}.
@@ -219,36 +334,16 @@ def update_dashboard_page(page_id: str | None, metrics: dict[str, Any]) -> dict[
     if not page_id:
         raise ValueError("NOTION_DASHBOARD_PAGE_ID not set and page_id not provided")
 
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    blocks: list[dict[str, Any]] = []
-
-    # Título de sección + última actualización
-    blocks.append({
-        "object": "block",
-        "type": "heading_2",
-        "heading_2": {"rich_text": [{"type": "text", "text": {"content": "Dashboard Rick — Estado del proyecto"}}]},
-    })
-    blocks.append({
-        "object": "block",
-        "type": "paragraph",
-        "paragraph": {"rich_text": [{"type": "text", "text": {"content": f"Última actualización: {now}"}}]},
-    })
-
-    for name, value in metrics.items():
-        text = str(value)[:2000]
-        blocks.append({
-            "object": "block",
-            "type": "heading_3",
-            "heading_3": {"rich_text": [{"type": "text", "text": {"content": name[:2000]}}]},
-        })
-        blocks.append({
-            "object": "block",
-            "type": "paragraph",
-            "paragraph": {"rich_text": [{"type": "text", "text": {"content": text}}]},
-        })
+    if metrics.get("dashboard_v2"):
+        blocks = _build_dashboard_v2_blocks(metrics)
+    else:
+        now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        blocks = [_block_heading2("Dashboard Rick — Estado del proyecto"), _block_paragraph(f"Última actualización: {now}")]
+        for name, value in metrics.items():
+            blocks.append(_block_heading3(str(name)))
+            blocks.append(_block_paragraph(str(value)[:2000]))
 
     with httpx.Client(timeout=TIMEOUT) as client:
-        # 1. Listar hijos y archivar (paginated)
         next_cursor = None
         while True:
             params: dict[str, Any] = {"page_size": 100}
@@ -272,7 +367,6 @@ def update_dashboard_page(page_id: str | None, metrics: dict[str, Any]) -> dict[
             if not next_cursor:
                 break
 
-        # 2. Añadir nuevos bloques (máx 100 por request)
         for i in range(0, len(blocks), 100):
             chunk = blocks[i : i + 100]
             resp = client.patch(
@@ -282,7 +376,7 @@ def update_dashboard_page(page_id: str | None, metrics: dict[str, Any]) -> dict[
             )
             _check_response(resp, "append dashboard blocks")
 
-    logger.info("Dashboard page %s updated with %d metrics", page_id[:8], len(metrics))
+    logger.info("Dashboard page %s updated with %d blocks", page_id[:8], len(blocks))
     return {"updated": True, "blocks_appended": len(blocks)}
 
 

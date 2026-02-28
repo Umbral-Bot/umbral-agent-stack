@@ -8,11 +8,23 @@
 
 ## Secretos
 
-Actualmente: variables de entorno (`WORKER_TOKEN`, `NOTION_API_KEY`, etc.). Rotación documentada en `docs/10-security-notes.md`.
+**Implementado**: `infra/secrets.py` — `SecretStore` con prioridad:
+1. Variables de entorno (siempre disponible).
+2. Archivo cifrado `secrets.enc` (Fernet, requiere `UMBRAL_SECRETS_KEY`).
+3. Archivo plano `secrets.json` (solo dev local).
+
+**CLI**: `scripts/manage_secrets.py` — genkey, encrypt, audit, list.
+
+Para migrar a archivo cifrado:
+```bash
+python scripts/manage_secrets.py genkey
+export UMBRAL_SECRETS_KEY=<clave-generada>
+python scripts/manage_secrets.py encrypt --input ~/.config/umbral/secrets.json
+```
 
 Opciones futuras:
 - **HashiCorp Vault** o **Azure Key Vault** para rotación automática.
-- Mantener env vars como fallback para dev local.
+- Mantener SecretStore como wrapper unificado.
 
 ## ACL Tailscale
 

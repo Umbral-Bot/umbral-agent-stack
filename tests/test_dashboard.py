@@ -59,6 +59,11 @@ class TestOpsLogger:
 
 
 class TestDashboardReportPayload:
+    def _mock_payload(self):
+        return {
+            "status": "OK", "tasks": ["ping"],
+        }
+
     def test_build_dashboard_payload_basic(self, monkeypatch):
         monkeypatch.setenv("WORKER_URL", "http://127.0.0.1:8088")
         monkeypatch.setenv("WORKER_TOKEN", "test")
@@ -67,10 +72,14 @@ class TestDashboardReportPayload:
         from scripts.dashboard_report_vps import build_dashboard_payload
         with patch("scripts.dashboard_report_vps._worker_health", return_value={"status": "OK", "tasks": ["ping"]}), \
              patch("scripts.dashboard_report_vps._redis_stats", return_value={"pending": 0, "blocked": 0, "connected": True}), \
-             patch("scripts.dashboard_report_vps._quota_stats", return_value=[{"provider": "gemini_pro", "used": 10, "limit": 500, "pct": 2.0, "window_h": 24.0}]), \
-             patch("scripts.dashboard_report_vps._team_stats", return_value=[{"team": "system", "supervisor": "—", "description": "Internal", "requires_vm": False}]), \
-             patch("scripts.dashboard_report_vps._recent_tasks", return_value=[{"task": "ping", "team": "system", "status": "done", "duration_s": 0.1, "task_id": "abc12345"}]), \
-             patch("scripts.dashboard_report_vps._ops_log_summary", return_value={"total_events": 5, "completed": 4, "failed": 1, "success_rate": 80.0, "models_used": {"gemini": 4}}):
+             patch("scripts.dashboard_report_vps._quota_stats", return_value=[{"provider": "gemini_pro", "used": 10, "limit": 500, "pct": 2.0, "window_h": 24.0, "resets_in_min": None}]), \
+             patch("scripts.dashboard_report_vps._team_stats", return_value=[{"team": "system", "supervisor": "—", "description": "Internal", "requires_vm": False, "completed": 3, "active": 1}]), \
+             patch("scripts.dashboard_report_vps._recent_tasks", return_value=[{"task": "ping", "team": "system", "status": "done", "duration_s": 0.1, "task_id": "abc12345", "when": "14:00 28/02"}]), \
+             patch("scripts.dashboard_report_vps._running_tasks", return_value=[]), \
+             patch("scripts.dashboard_report_vps._ops_log_summary", return_value={"total_events": 5, "completed": 4, "failed": 1, "completed_today": 4, "success_rate": 80.0, "models_used": {"gemini": 4}, "trend": "+20% vs ayer"}), \
+             patch("scripts.dashboard_report_vps._system_uptime", return_value="2d 5h"), \
+             patch("scripts.dashboard_report_vps._last_error", return_value=None), \
+             patch("scripts.dashboard_report_vps._active_alerts", return_value=[]):
             payload = build_dashboard_payload()
 
         assert payload["dashboard_v2"] is True
@@ -78,6 +87,21 @@ class TestDashboardReportPayload:
         assert len(payload["quotas"]) == 1
         assert len(payload["teams"]) == 1
         assert len(payload["recent_tasks"]) == 1
+        assert payload["uptime"] == "2d 5h"
+        assert payload["running_tasks"] == []
+        assert payload["active_alerts"] == []
+
+    def test_fingerprint_changes_with_data(self, monkeypatch):
+        monkeypatch.setenv("WORKER_URL", "http://127.0.0.1:8088")
+        monkeypatch.setenv("WORKER_TOKEN", "test")
+        monkeypatch.setenv("REDIS_URL", "redis://localhost:6379/0")
+
+        from scripts.dashboard_report_vps import _payload_fingerprint
+        fp1 = _payload_fingerprint({"status": "OK", "pending": 0, "timestamp": "t1"})
+        fp2 = _payload_fingerprint({"status": "OK", "pending": 0, "timestamp": "t2"})
+        fp3 = _payload_fingerprint({"status": "OK", "pending": 5, "timestamp": "t1"})
+        assert fp1 == fp2, "timestamp changes should not affect fingerprint"
+        assert fp1 != fp3, "data changes should affect fingerprint"
 
 
 class TestNotionBlocks:
@@ -91,34 +115,46 @@ class TestNotionBlocks:
             "vm_worker": {"status": "OK", "tasks": ["ping", "notion.poll_comments"]},
             "redis": {"pending": 2, "blocked": 0, "connected": True},
             "quotas": [
-                {"provider": "gemini_pro", "used": 50, "limit": 500, "pct": 10.0, "window_h": 24.0},
-                {"provider": "claude_pro", "used": 180, "limit": 200, "pct": 90.0, "window_h": 5.0},
+                {"provider": "gemini_pro", "used": 50, "limit": 500, "pct": 10.0, "window_h": 24.0, "resets_in_min": 120},
+                {"provider": "claude_pro", "used": 180, "limit": 200, "pct": 90.0, "window_h": 5.0, "resets_in_min": 30},
             ],
             "teams": [
-                {"team": "system", "supervisor": "—", "description": "Internal", "requires_vm": False},
-                {"team": "marketing", "supervisor": "Marketing Supervisor", "description": "SEO", "requires_vm": False},
+                {"team": "system", "supervisor": "—", "description": "Internal", "requires_vm": False, "completed": 10, "active": 1},
+                {"team": "marketing", "supervisor": "Marketing Supervisor", "description": "SEO", "requires_vm": False, "completed": 5, "active": 0},
             ],
             "recent_tasks": [
-                {"task": "ping", "team": "system", "status": "done", "duration_s": 0.1, "task_id": "abc12345"},
+                {"task": "ping", "team": "system", "status": "done", "duration_s": 0.1, "task_id": "abc12345", "when": "14:00 28/02"},
+            ],
+            "running_tasks": [
+                {"task": "notion.poll_comments", "team": "system", "elapsed": "5s"},
             ],
             "ops_summary": {
                 "total_events": 10,
                 "completed": 8,
                 "failed": 2,
+                "completed_today": 3,
                 "success_rate": 80.0,
                 "models_used": {"gemini_pro": 5, "claude_pro": 3},
+                "trend": "+10% vs ayer",
             },
+            "uptime": "1d 3h",
+            "last_error": "bad_task — timeout connecting",
+            "active_alerts": ["CUOTA CRITICA: claude_pro al 90%"],
         }
         blocks = _build_dashboard_v2_blocks(data)
         assert len(blocks) > 10
 
         types = [b["type"] for b in blocks]
+        assert "heading_1" in types
         assert "heading_2" in types
         assert "callout" in types
         assert "table" in types
         assert "divider" in types
-        assert "heading_3" in types
-        assert "toggle" in types
+        assert "paragraph" in types
+
+        callouts = [b for b in blocks if b["type"] == "callout"]
+        assert any("green_background" in str(c) for c in callouts), "Operativo should use green_background"
+        assert any("red_background" in str(c) for c in callouts), "Alert or error should use red_background"
 
     def test_build_dashboard_v2_minimal(self):
         from worker.notion_client import _build_dashboard_v2_blocks
@@ -133,6 +169,42 @@ class TestNotionBlocks:
         assert len(blocks) >= 4
         callout = [b for b in blocks if b["type"] == "callout"]
         assert any("Degradado" in str(c) for c in callout)
+        assert any("red_background" in str(c) for c in callout)
+
+    def test_rich_text_annotations(self):
+        from worker.notion_client import _rich
+        normal = _rich("hello")
+        assert "annotations" not in normal
+        bold = _rich("hello", bold=True)
+        assert bold["annotations"]["bold"] is True
+        colored = _rich("hello", color="red")
+        assert colored["annotations"]["color"] == "red"
+
+    def test_in_trash_used_for_deletion(self):
+        """Verify update_dashboard_page uses in_trash (not deprecated archived)."""
+        import inspect
+        from worker.notion_client import update_dashboard_page
+        source = inspect.getsource(update_dashboard_page)
+        assert '"in_trash": True' in source or "'in_trash': True" in source or '"in_trash"' in source
+        assert '"archived": True' not in source, "Should use in_trash instead of deprecated archived"
+
+    def test_quota_zone(self):
+        from worker.notion_client import _quota_zone
+        assert _quota_zone(50) == "OK"
+        assert _quota_zone(75) == "ALERTA"
+        assert _quota_zone(95) == "CRITICO"
+
+    def test_column_list_block(self):
+        from worker.notion_client import _block_column_list, _block_paragraph
+        cols = _block_column_list([
+            [_block_paragraph("Col 1")],
+            [_block_paragraph("Col 2")],
+        ])
+        assert cols["type"] == "column_list"
+        children = cols["column_list"]["children"]
+        assert len(children) == 2
+        assert children[0]["type"] == "column"
+        assert children[0]["column"]["width_ratio"] == 0.5
 
 
 class TestEffectivenessReport:

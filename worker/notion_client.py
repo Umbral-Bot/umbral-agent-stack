@@ -200,30 +200,54 @@ def poll_comments(
     return {"comments": comments, "count": len(comments)}
 
 
-def _block_heading2(text: str) -> dict[str, Any]:
-    return {"object": "block", "type": "heading_2", "heading_2": {"rich_text": [{"type": "text", "text": {"content": text[:2000]}}]}}
+PROVIDER_LABELS = {
+    "claude_pro": "Claude Pro",
+    "chatgpt_plus": "ChatGPT Plus",
+    "gemini_pro": "Gemini Pro",
+    "copilot_pro": "Copilot Pro",
+}
 
-def _block_heading3(text: str) -> dict[str, Any]:
-    return {"object": "block", "type": "heading_3", "heading_3": {"rich_text": [{"type": "text", "text": {"content": text[:2000]}}]}}
 
-def _block_paragraph(text: str) -> dict[str, Any]:
-    return {"object": "block", "type": "paragraph", "paragraph": {"rich_text": [{"type": "text", "text": {"content": text[:2000]}}]}}
+def _rich(text: str, bold: bool = False, color: str = "default") -> dict[str, Any]:
+    rt: dict[str, Any] = {"type": "text", "text": {"content": text[:2000]}}
+    if bold or color != "default":
+        rt["annotations"] = {"bold": bold, "italic": False, "strikethrough": False, "underline": False, "code": False, "color": color}
+    return rt
 
-def _block_callout(text: str, emoji: str = "🟢") -> dict[str, Any]:
-    return {"object": "block", "type": "callout", "callout": {"rich_text": [{"type": "text", "text": {"content": text[:2000]}}], "icon": {"type": "emoji", "emoji": emoji}}}
+
+def _block_heading1(text: str, toggleable: bool = False) -> dict[str, Any]:
+    return {"object": "block", "type": "heading_1", "heading_1": {"rich_text": [_rich(text)], "color": "default", "is_toggleable": toggleable}}
+
+def _block_heading2(text: str, toggleable: bool = False) -> dict[str, Any]:
+    return {"object": "block", "type": "heading_2", "heading_2": {"rich_text": [_rich(text)], "color": "default", "is_toggleable": toggleable}}
+
+def _block_heading3(text: str, toggleable: bool = False) -> dict[str, Any]:
+    return {"object": "block", "type": "heading_3", "heading_3": {"rich_text": [_rich(text)], "color": "default", "is_toggleable": toggleable}}
+
+def _block_paragraph(text: str, color: str = "default") -> dict[str, Any]:
+    return {"object": "block", "type": "paragraph", "paragraph": {"rich_text": [_rich(text)], "color": color}}
+
+def _block_paragraph_rich(parts: list[dict[str, Any]], color: str = "default") -> dict[str, Any]:
+    return {"object": "block", "type": "paragraph", "paragraph": {"rich_text": parts, "color": color}}
+
+def _block_callout(text: str, emoji: str = "🟢", color: str = "default") -> dict[str, Any]:
+    return {"object": "block", "type": "callout", "callout": {"rich_text": [_rich(text)], "icon": {"type": "emoji", "emoji": emoji}, "color": color}}
 
 def _block_divider() -> dict[str, Any]:
     return {"object": "block", "type": "divider", "divider": {}}
 
-def _block_table(headers: list[str], rows: list[list[str]]) -> dict[str, Any]:
+def _block_table(headers: list[str], rows: list[list[str]], bold_header: bool = True) -> dict[str, Any]:
     width = len(headers)
     table_rows = []
-    header_cells = [[{"type": "text", "text": {"content": h[:200]}}] for h in headers]
+    if bold_header:
+        header_cells = [[_rich(h[:200], bold=True)] for h in headers]
+    else:
+        header_cells = [[_rich(h[:200])] for h in headers]
     table_rows.append({"type": "table_row", "table_row": {"cells": header_cells}})
     for row in rows:
-        cells = [[{"type": "text", "text": {"content": str(c)[:200]}}] for c in row]
+        cells = [[_rich(str(c)[:200])] for c in row]
         while len(cells) < width:
-            cells.append([{"type": "text", "text": {"content": "—"}}])
+            cells.append([_rich("—")])
         table_rows.append({"type": "table_row", "table_row": {"cells": cells[:width]}})
     return {
         "object": "block",
@@ -232,85 +256,172 @@ def _block_table(headers: list[str], rows: list[list[str]]) -> dict[str, Any]:
     }
 
 def _block_toggle(text: str, children: list[dict[str, Any]]) -> dict[str, Any]:
-    return {"object": "block", "type": "toggle", "toggle": {"rich_text": [{"type": "text", "text": {"content": text[:2000]}}], "children": children}}
+    return {"object": "block", "type": "toggle", "toggle": {"rich_text": [_rich(text)], "children": children}}
+
+def _block_column_list(columns: list[list[dict[str, Any]]]) -> dict[str, Any]:
+    """Creates a column_list with N columns. Each column is a list of child blocks."""
+    col_blocks = []
+    n = len(columns)
+    for col_children in columns:
+        col_blocks.append({
+            "object": "block",
+            "type": "column",
+            "column": {"width_ratio": round(1.0 / n, 2), "children": col_children},
+        })
+    return {"object": "block", "type": "column_list", "column_list": {"children": col_blocks}}
+
+def _block_bulleted(text: str, color: str = "default") -> dict[str, Any]:
+    return {"object": "block", "type": "bulleted_list_item", "bulleted_list_item": {"rich_text": [_rich(text)], "color": color}}
+
+def _block_quote(text: str, color: str = "default") -> dict[str, Any]:
+    return {"object": "block", "type": "quote", "quote": {"rich_text": [_rich(text)], "color": color}}
+
+
+def _quota_zone(pct: float) -> str:
+    if pct >= 90:
+        return "CRITICO"
+    if pct >= 70:
+        return "ALERTA"
+    return "OK"
 
 
 def _build_dashboard_v2_blocks(data: dict[str, Any]) -> list[dict[str, Any]]:
-    """Construye bloques ricos para dashboard v2."""
+    """Construye bloques ricos para dashboard v2 con layout avanzado."""
     blocks: list[dict[str, Any]] = []
     ts = data.get("timestamp", "?")
     overall = data.get("overall_status", "?")
 
     emoji_map = {"Operativo": "🟢", "Parcial (Redis offline)": "🟡", "Degradado": "🔴"}
+    color_map = {"Operativo": "green_background", "Parcial (Redis offline)": "yellow_background", "Degradado": "red_background"}
     status_emoji = emoji_map.get(overall, "⚪")
+    status_color = color_map.get(overall, "default")
 
-    blocks.append(_block_heading2("Dashboard Rick"))
-    blocks.append(_block_callout(f"Estado: {overall}  —  {ts}", status_emoji))
+    blocks.append(_block_heading1("Dashboard Rick"))
+    blocks.append(_block_callout(f"Estado: {overall}  —  {ts}", status_emoji, status_color))
+
+    # KPI summary row
+    ops = data.get("ops_summary", {})
+    rd = data.get("redis", {})
+    alerts = data.get("active_alerts", [])
+    kpi_parts = [
+        _rich("Tareas hoy: ", bold=True),
+        _rich(str(ops.get("completed_today", ops.get("completed", 0)))),
+        _rich("  |  Exito: ", bold=True),
+        _rich(f"{ops.get('success_rate', 0)}%"),
+        _rich("  |  Cola: ", bold=True),
+        _rich(str(rd.get("pending", 0))),
+        _rich("  |  Alertas: ", bold=True),
+        _rich(str(len(alerts)), color="red" if alerts else "default"),
+    ]
+    blocks.append(_block_paragraph_rich(kpi_parts))
     blocks.append(_block_divider())
 
-    # Workers
-    blocks.append(_block_heading3("Workers"))
+    # Active alerts
+    if alerts:
+        blocks.append(_block_callout("  ".join(alerts), "🚨", "red_background"))
+
+    # Infrastructure: Workers + Redis in columns
+    blocks.append(_block_heading2("Infraestructura"))
     vps = data.get("vps_worker", {})
     vm = data.get("vm_worker")
-    worker_rows = [["VPS", vps.get("status", "?"), str(len(vps.get("tasks", []))) + " tareas"]]
-    if vm:
-        worker_rows.append(["VM", vm.get("status", "?"), str(len(vm.get("tasks", []))) + " tareas"])
-    blocks.append(_block_table(["Worker", "Estado", "Tasks"], worker_rows))
+    vps_icon = "🟢" if vps.get("status") == "OK" else "🔴"
+    vm_icon = "🟢" if vm and vm.get("status") == "OK" else ("🔴" if vm else "⚫")
+    redis_icon = "🟢" if rd.get("connected") else "🔴"
 
-    # Redis
-    rd = data.get("redis", {})
-    redis_text = f"Pendientes: {rd.get('pending', 0)} | Bloqueadas: {rd.get('blocked', 0)}"
-    if not rd.get("connected"):
-        redis_text = "Redis offline"
-    blocks.append(_block_paragraph(redis_text))
+    infra_rows = [
+        [f"{vps_icon} Worker VPS", vps.get("status", "?"), f'{len(vps.get("tasks", []))} tareas'],
+    ]
+    if vm:
+        infra_rows.append([f"{vm_icon} Worker VM", vm.get("status", "?"), f'{len(vm.get("tasks", []))} tareas'])
+    infra_rows.append([f"{redis_icon} Redis", "Conectado" if rd.get("connected") else "Offline", f'Cola: {rd.get("pending", 0)} | Bloq: {rd.get("blocked", 0)}'])
+
+    uptime = data.get("uptime")
+    if uptime:
+        infra_rows.append(["⏱ Uptime", uptime, ""])
+
+    blocks.append(_block_table(["Componente", "Estado", "Detalle"], infra_rows))
     blocks.append(_block_divider())
 
-    # Cuotas por modelo
+    # Quotas
     quotas = data.get("quotas", [])
     if quotas:
-        blocks.append(_block_heading3("Cuotas por Modelo"))
+        blocks.append(_block_heading2("Cuotas por Modelo"))
         quota_rows = []
         for q in quotas:
-            bar = "█" * int(q["pct"] / 10) + "░" * (10 - int(q["pct"] / 10))
-            quota_rows.append([q["provider"], f"{q['used']}/{q['limit']}", f"{q['pct']}%  {bar}", f"{q['window_h']}h"])
-        blocks.append(_block_table(["Proveedor", "Usado/Limite", "Uso", "Ventana"], quota_rows))
+            label = PROVIDER_LABELS.get(q["provider"], q["provider"])
+            pct = q["pct"]
+            bar = "█" * int(pct / 10) + "░" * (10 - int(pct / 10))
+            zone = _quota_zone(pct)
+            zone_icon = {"OK": "🟢", "ALERTA": "🟡", "CRITICO": "🔴"}.get(zone, "⚪")
+            remaining = q["limit"] - q["used"]
+            resets_in = q.get("resets_in_min")
+            reset_str = f"{resets_in} min" if resets_in else f"{q['window_h']}h ventana"
+            quota_rows.append([
+                f"{zone_icon} {label}",
+                f"{q['used']}/{q['limit']}",
+                f"{pct}% {bar}",
+                f"{remaining} restantes",
+                reset_str,
+            ])
+        blocks.append(_block_table(["Proveedor", "Usado/Limite", "Uso", "Restante", "Reinicio"], quota_rows))
         blocks.append(_block_divider())
 
-    # Equipos
+    # Teams with dynamic stats
     teams = data.get("teams", [])
     if teams:
-        blocks.append(_block_heading3("Equipos"))
+        blocks.append(_block_heading2("Equipos"))
         team_rows = []
         for t in teams:
             vm_flag = "VM" if t.get("requires_vm") else "VPS"
-            team_rows.append([t["team"], t.get("supervisor", "—"), t.get("description", ""), vm_flag])
-        blocks.append(_block_table(["Equipo", "Supervisor", "Descripcion", "Plano"], team_rows))
+            completed = t.get("completed", 0)
+            active = t.get("active", 0)
+            status_str = f"{active} activas, {completed} completadas" if (active or completed) else "Sin actividad"
+            team_rows.append([t["team"].capitalize(), t.get("supervisor", "—"), vm_flag, status_str])
+        blocks.append(_block_table(["Equipo", "Supervisor", "Plano", "Actividad"], team_rows))
         blocks.append(_block_divider())
 
-    # Tareas recientes
+    # Recent tasks with timestamps
     recent = data.get("recent_tasks", [])
     if recent:
-        blocks.append(_block_heading3("Tareas Recientes"))
+        blocks.append(_block_heading2("Tareas Recientes"))
         task_rows = []
         for t in recent:
             status_icon = "✅" if t["status"] == "done" else "❌"
-            task_rows.append([f"{status_icon} {t['task']}", t["team"], f"{t['duration_s']}s", t["task_id"]])
-        blocks.append(_block_table(["Tarea", "Equipo", "Duracion", "ID"], task_rows))
+            when = t.get("when", "")
+            task_rows.append([f"{status_icon} {t['task']}", t["team"], f"{t['duration_s']}s", when, t["task_id"]])
+        blocks.append(_block_table(["Tarea", "Equipo", "Duracion", "Cuando", "ID"], task_rows))
+
+        # Last error if any failures
+        last_error = data.get("last_error")
+        if last_error:
+            blocks.append(_block_callout(f"Ultimo error: {last_error}", "⚠️", "red_background"))
         blocks.append(_block_divider())
 
-    # Ops summary
-    ops = data.get("ops_summary", {})
+    # Running tasks
+    running = data.get("running_tasks", [])
+    if running:
+        blocks.append(_block_heading3("En ejecucion ahora"))
+        run_rows = [[t["task"], t["team"], t.get("elapsed", "?")] for t in running]
+        blocks.append(_block_table(["Tarea", "Equipo", "Tiempo"], run_rows))
+        blocks.append(_block_divider())
+
+    # Operations summary
     if ops.get("total_events", 0) > 0:
-        blocks.append(_block_heading3("Operaciones (ops_log)"))
-        blocks.append(_block_callout(
-            f"Completadas: {ops.get('completed', 0)} | Fallidas: {ops.get('failed', 0)} | "
-            f"Tasa exito: {ops.get('success_rate', 0)}%",
-            "📊",
-        ))
+        blocks.append(_block_heading2("Operaciones"))
+        trend = ops.get("trend", "")
+        trend_text = f"  ({trend})" if trend else ""
+
+        ops_parts = [
+            _rich("Completadas: ", bold=True), _rich(str(ops.get("completed", 0))),
+            _rich("  |  Fallidas: ", bold=True), _rich(str(ops.get("failed", 0)), color="red" if ops.get("failed", 0) > 0 else "default"),
+            _rich("  |  Tasa exito: ", bold=True), _rich(f"{ops.get('success_rate', 0)}%{trend_text}"),
+        ]
+        blocks.append(_block_paragraph_rich(ops_parts))
+
         models = ops.get("models_used", {})
         if models:
-            model_rows = [[m, str(c)] for m, c in sorted(models.items(), key=lambda x: -x[1])]
-            blocks.append(_block_toggle("Modelos usados (detalle)", [_block_table(["Modelo", "Requests"], model_rows)]))
+            model_rows = [[PROVIDER_LABELS.get(m, m), str(c)] for m, c in sorted(models.items(), key=lambda x: -x[1])]
+            blocks.append(_block_table(["Modelo", "Requests"], model_rows))
 
     return blocks
 
@@ -355,14 +466,13 @@ def update_dashboard_page(page_id: str | None, metrics: dict[str, Any]) -> dict[
                 params=params,
             )
             data = _check_response(resp, "list block children")
-            for block in data.get("results", []):
-                bid = block.get("id")
-                if bid and block.get("type") != "child_page":
-                    client.patch(
-                        f"{NOTION_BASE_URL}/blocks/{bid}",
-                        headers=_headers(),
-                        json={"archived": True},
-                    )
+            block_ids = [b["id"] for b in data.get("results", []) if b.get("id") and b.get("type") != "child_page"]
+            for bid in block_ids:
+                client.patch(
+                    f"{NOTION_BASE_URL}/blocks/{bid}",
+                    headers=_headers(),
+                    json={"in_trash": True},
+                )
             next_cursor = data.get("next_cursor")
             if not next_cursor:
                 break

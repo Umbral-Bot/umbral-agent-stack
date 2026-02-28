@@ -17,7 +17,7 @@ from . import config
 logger = logging.getLogger("worker.notion")
 
 NOTION_BASE_URL = "https://api.notion.com/v1"
-TIMEOUT = 30.0
+TIMEOUT = 60.0
 
 
 # ---------------------------------------------------------------------------

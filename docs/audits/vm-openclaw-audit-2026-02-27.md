@@ -129,3 +129,27 @@ Recomendaciones inmediatas:
 - Tratar `workspace/.env` de VM como material sensible y rotar tokens usados por automatizaciones legacy una vez migradas.
 - Mantener este documento como baseline para cleanup por etapas.
 
+## 6) Fase 1 ejecutada (2026-02-27 23:25 -03:00)
+
+Acciones ejecutadas:
+- Backup de scripts legacy:
+  - Origen: `C:\Users\Rick\.openclaw\workspace\scripts\`
+  - Destino: `C:\Users\Rick\.openclaw\workspace\scripts-backup-2026-02-28\`
+  - Archivos respaldados: 7
+- Ruta documentada de Telegram Audio Agent: `G:\Mi unidad\Rick-David\telegram-audio-agent\`
+
+Estado de Scheduled Tasks despues de la ejecucion:
+- `OpenClaw-TelegramAudioAgent`: deshabilitada.
+- `Rick-Granola-Sync-Daily`: deshabilitada.
+- `Rick-Multiagent-Progress-30min`: deshabilitada.
+- `OpenClaw Gateway`: **pendiente** (no se pudo deshabilitar por permisos de administrador; error `Acceso denegado` con `Disable-ScheduledTask` y `schtasks /Change /Disable`).
+
+Verificacion de Worker (OK):
+- Servicio `openclaw-worker`: `Running`.
+- Health: `http://localhost:8088/health` responde `ok:true`.
+- Puerto `8088`: `LISTEN` en `0.0.0.0`.
+
+Verificacion Gateway local:
+- Puerto `18789`: sin listener (`NO_LISTENER_18789`).
+- No se observaron procesos `openclaw/node` activos al momento de la verificacion.
+

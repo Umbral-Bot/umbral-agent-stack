@@ -117,11 +117,12 @@ def _run_worker(
         try:
             result = wc.run(task, input_data)
             queue.complete_task(task_id, result)
+            model_router.quota.record_usage(selected_model)
             _notion_upsert(
                 wc_local, task_id, "done", team, task,
                 result_summary=str(result.get("result", result))[:300] if isinstance(result, dict) else str(result)[:300],
             )
-            logger.info("[worker %d] Task %s completed via %s Worker", worker_id, task_id, target)
+            logger.info("[worker %d] Task %s completed via %s Worker (model=%s)", worker_id, task_id, target, selected_model)
         except Exception as e:
             _notion_upsert(wc_local, task_id, "failed", team, task, error=str(e)[:500])
             logger.error("[worker %d] Task %s failed: %s", worker_id, task_id, str(e))

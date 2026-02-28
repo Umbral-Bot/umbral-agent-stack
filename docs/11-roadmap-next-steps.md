@@ -79,10 +79,12 @@
 - [x] Worker tasks: `system.ooda_report`, `system.self_eval` en `worker/tasks/observability.py`
 - [x] Tests: `tests/test_observability.py` (9 tests)
 
-## S7 — Hardening (✅ Parcial)
+## S7 — Hardening (✅ Completo)
 
-- [ ] Gestión de secretos (vault o equivalente) — doc 26
-- [ ] ACL Tailscale (restricción por nodo) — doc 26
+- [x] Gestión de secretos: `infra/secrets.py` (env + archivo cifrado Fernet + fallback plano)
+- [x] CLI secretos: `scripts/manage_secrets.py` (genkey, encrypt, audit, list)
+- [x] ACL Tailscale: `infra/tailscale_acl.py` (generador ACL + validador de nodos)
 - [x] Sanitización de inputs: `worker/sanitize.py`
 - [x] Rate limiting en Worker: `worker/rate_limit.py`
 - [x] Trazabilidad end-to-end: trace_id en envelope
+- [x] Tests: `tests/test_hardening.py` (18 tests)

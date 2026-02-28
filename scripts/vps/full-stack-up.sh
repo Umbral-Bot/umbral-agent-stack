@@ -54,7 +54,7 @@ echo ""
 echo "=== 5. Rick identity (workspace) ==="
 mkdir -p "$OPENCLAW_WS"
 if [ -d "$TEMPLATES" ]; then
-  for f in IDENTITY.md SOUL.md; do
+  for f in IDENTITY.md SOUL.md AGENTS.md TOOLS.md; do
     if [ -f "$TEMPLATES/$f" ]; then
       cp "$TEMPLATES/$f" "$OPENCLAW_WS/$f"
       echo "   Sync: $f -> ~/.openclaw/workspace (traspaso identidad Rick)"

@@ -1,13 +1,13 @@
 ---
 id: "2026-02-28-001"
 title: "VM: deshabilitar tasks legacy y limpiar Gateway (regularización fase 1)"
-status: blocked
+status: done
 assigned_to: codex
 created_by: cursor
 priority: high
 sprint: S4
 created_at: "2026-02-28"
-updated_at: "2026-02-27T23:27:20-03:00"
+updated_at: "2026-02-28T01:02:47-03:00"
 ---
 
 ## Objetivo
@@ -95,3 +95,17 @@ Bloqueo:
 
 Documentacion actualizada:
 - `docs/audits/vm-openclaw-audit-2026-02-27.md` (seccion "Fase 1 ejecutada")
+
+### [codex] 2026-02-28 01:02 -03:00
+Revalidacion completada y cierre de bloqueo.
+
+Hecho:
+- `OpenClaw Gateway` ahora figura `Disabled` junto con las otras 3 Scheduled Tasks.
+- `openclaw-worker` verificado `Running`.
+- `GET http://localhost:8088/health` verificado con `ok:true`.
+- Puerto `8088` en `LISTEN` y puerto `18789` sin listener.
+- Sin procesos `*openclaw*` extra fuera del proceso del worker.
+- Backup de scripts en `C:\Users\Rick\.openclaw\workspace\scripts-backup-2026-02-28\` (7 archivos) confirmado.
+
+Documentacion actualizada:
+- `docs/audits/vm-openclaw-audit-2026-02-27.md`: se removio estado pendiente de `OpenClaw Gateway` y se agrego revalidacion de Fase 1.

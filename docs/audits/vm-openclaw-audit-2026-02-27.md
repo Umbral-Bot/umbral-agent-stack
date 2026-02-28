@@ -142,7 +142,7 @@ Estado de Scheduled Tasks despues de la ejecucion:
 - `OpenClaw-TelegramAudioAgent`: deshabilitada.
 - `Rick-Granola-Sync-Daily`: deshabilitada.
 - `Rick-Multiagent-Progress-30min`: deshabilitada.
-- `OpenClaw Gateway`: **pendiente** (no se pudo deshabilitar por permisos de administrador; error `Acceso denegado` con `Disable-ScheduledTask` y `schtasks /Change /Disable`).
+- `OpenClaw Gateway`: deshabilitada (revalidado el 2026-02-28 01:02 -03:00).
 
 Verificacion de Worker (OK):
 - Servicio `openclaw-worker`: `Running`.
@@ -152,4 +152,10 @@ Verificacion de Worker (OK):
 Verificacion Gateway local:
 - Puerto `18789`: sin listener (`NO_LISTENER_18789`).
 - No se observaron procesos `openclaw/node` activos al momento de la verificacion.
+
+Revalidacion (2026-02-28 01:02 -03:00):
+- Las 4 Scheduled Tasks figuran en estado `Disabled`.
+- `openclaw-worker` sigue en `Running`.
+- `http://localhost:8088/health` responde `ok:true`.
+- `0.0.0.0:8088` permanece en `LISTEN`.
 

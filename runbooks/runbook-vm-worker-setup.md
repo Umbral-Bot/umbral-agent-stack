@@ -14,7 +14,7 @@ Por lo tanto:
 - No iniciar ni mantener en produccion un gateway OpenClaw local en esta VM.
 - El gateway de control (Rick/OpenClaw) debe correr en la VPS.
 
-## Configuracion actual documentada (captura: 2026-02-27)
+## Configuracion actual documentada (captura: 2026-02-28)
 
 Servicio:
 - Nombre: `openclaw-worker`
@@ -40,6 +40,12 @@ Red/health:
 
 Conclusion:
 - El Worker corre desde el repo (`worker.app:app`), no desde `C:\openclaw-worker\app.py`.
+
+Actualizacion 2026-02-28:
+- Backup del prototipo legado confirmado en `C:\openclaw-worker-backup-2026-02-28\`.
+- `GET http://localhost:8088/health` confirma tareas: `ping`, `notion.*`, `windows.pad.run_flow`.
+- Prueba `POST /run` con task `ping` OK.
+- PAD no instalado en esta VM (`Test-Path "C:\Program Files (x86)\Power Automate Desktop\PAD.Console.Host.exe"` -> `False`).
 
 ## Levantar todo desde cero en esta VM
 
@@ -144,6 +150,9 @@ nssm restart openclaw-worker
 Get-Content C:\openclaw-worker\service-stdout.log -Tail 50
 Get-Content C:\openclaw-worker\service-stderr.log -Tail 50
 ```
+
+Nota:
+- `Restart-Service`/`nssm restart` requiere PowerShell elevado (Administrador). Sin elevacion se obtiene `Acceso denegado`.
 
 ## Checklist rapido de auditoria (sin exponer secretos)
 

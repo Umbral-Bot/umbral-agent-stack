@@ -8,13 +8,15 @@
 | Aspecto | Estado |
 |---------|--------|
 | Protocolo inter-agentes | ✅ Activo |
-| Tareas pendientes | 0 |
+| Tareas pendientes | 1 |
 | Tareas en progreso | 0 |
 | Tareas bloqueadas | 0 |
 
 ## Tareas activas
 
-_Ninguna._
+| ID | Título | Asignado | Estado |
+|----|--------|----------|--------|
+| 2026-02-27-003 | VM: auditar OpenClaw instalado, proyectos y automatizaciones — regularizar | codex | assigned |
 
 ## Tareas completadas recientes
 

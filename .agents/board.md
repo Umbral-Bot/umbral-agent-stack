@@ -9,14 +9,14 @@
 |---------|--------|
 | Protocolo inter-agentes | ✅ Activo |
 | Tareas pendientes | 0 |
-| Tareas en progreso | 1 |
+| Tareas en progreso | 0 |
 | Tareas bloqueadas | 0 |
 
 ## Tareas activas
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|
-| 2026-02-28-001 | VM: deshabilitar tasks legacy y limpiar Gateway (regularización fase 1) | codex | assigned |
+| 2026-02-28-001 | VM: deshabilitar tasks legacy y limpiar Gateway (regularización fase 1) | codex | ✅ (parcial: falta OpenClaw Gateway por permisos admin) |
 
 ## Tareas completadas recientes
 

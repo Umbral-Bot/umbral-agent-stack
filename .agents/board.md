@@ -8,7 +8,7 @@
 | Aspecto | Estado |
 |---------|--------|
 | Protocolo inter-agentes | ✅ Activo |
-| Tareas pendientes | 1 |
+| Tareas pendientes | 0 |
 | Tareas en progreso | 0 |
 | Tareas bloqueadas | 0 |
 
@@ -17,7 +17,7 @@
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|
 | 2026-02-28-001 | VM: deshabilitar tasks legacy y limpiar Gateway (regularización fase 1) | codex | ✅ (parcial: falta OpenClaw Gateway por permisos admin) |
-| 2026-02-28-002 | VM: actualizar Worker al modular del repo y probar PAD | codex | assigned |
+| 2026-02-28-002 | VM: actualizar Worker al modular del repo y probar PAD | codex | ✅ (parcial: falta reiniciar servicio como Admin + instalar PAD) |
 
 ## Tareas completadas recientes
 

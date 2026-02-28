@@ -1,6 +1,6 @@
 # Agent Board — Umbral Agent Stack
 
-> Última actualización: 2026-02-27 por **cursor**
+> Última actualización: 2026-02-28 por **cursor**
 > Sprint activo: **S4** (ModelRouter + cuotas)
 
 ## Estado del sistema
@@ -8,15 +8,15 @@
 | Aspecto | Estado |
 |---------|--------|
 | Protocolo inter-agentes | ✅ Activo |
-| Tareas pendientes | 1 |
-| Tareas en progreso | 0 |
+| Tareas pendientes | 0 |
+| Tareas en progreso | 1 |
 | Tareas bloqueadas | 0 |
 
 ## Tareas activas
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|
-| 2026-02-27-003 | VM: auditar OpenClaw instalado, proyectos y automatizaciones — regularizar | codex | assigned |
+| 2026-02-28-001 | VM: deshabilitar tasks legacy y limpiar Gateway (regularización fase 1) | codex | assigned |
 
 ## Tareas completadas recientes
 
@@ -24,6 +24,7 @@
 |----|--------|----------|
 | 2026-02-27-001 | VPS: Git (Deploy Key), clonar, .venv, pytest + test_s2_dispatcher | antigravity | ✅ |
 | 2026-02-27-002 | VM: documentar setup Worker + runbook levantar todo | codex | ✅ |
+| 2026-02-27-003 | VM: auditar OpenClaw, proyectos y automatizaciones — regularizar | codex | ✅ |
 
 ## Notas
 

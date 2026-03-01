@@ -30,7 +30,8 @@
 
 - **Rick → Enlace:** Comentar en páginas del alcance con "Hola @Enlace," + solicitud.
 - **Enlace → Rick:** Revisar comentarios a las XX:10 en la página Control Room / configurada.
-- **Tareas al Worker:** Dispatcher encola en Redis; Worker ejecuta ping, notion.*, etc.
+- **Tareas al Worker:** Dispatcher encola en Redis; Worker ejecuta ping, notion.*, linear.*, etc.
+- **Rick → Linear:** Crear issues cuando David pida trabajo. Usar `linear.create_issue` (encolar tarea con title, team_key, description) o ejecutar `python scripts/linear_create_issue.py "Título" --team-key UMB`. Ver equipos con `linear.list_teams`.
 
 ## Referencias
 

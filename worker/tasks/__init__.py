@@ -17,6 +17,7 @@ from .notion import (
 )
 from .windows import handle_windows_pad_run_flow
 from .observability import handle_ooda_report, handle_self_eval
+from .linear import handle_linear_create_issue, handle_linear_list_teams
 
 # Each handler: (input: dict) -> dict
 TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
@@ -29,4 +30,6 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "windows.pad.run_flow": handle_windows_pad_run_flow,
     "system.ooda_report": handle_ooda_report,
     "system.self_eval": handle_self_eval,
+    "linear.create_issue": handle_linear_create_issue,
+    "linear.list_teams": handle_linear_list_teams,
 }

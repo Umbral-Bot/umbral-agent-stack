@@ -29,7 +29,8 @@ Cada tarea usa el LLM óptimo según su tipo. Las cuotas protegen suscripciones 
 |-----------|-----------|-------------|
 | Claude Pro | Razonamiento profundo, escritura, análisis largo | Cuota 5h estricta |
 | ChatGPT Plus | General purpose, coding, multimodal | Rate limits variables |
-| Gemini Pro | Research, grounding, contexto largo | Menos preciso en código |
+| Gemini Pro (3.1 customtools) | Research, grounding, contexto largo, tools | Preview / límites de capacidad más variables |
+| Gemini Flash | Rápido y barato para tareas ligeras | Menos potente que Pro |
 | Copilot Pro | MS stack, código, integración VS Code | Solo coding tasks |
 | Notion AI | Resúmenes, Q&A sobre workspace | Solo dentro de Notion |
 
@@ -93,6 +94,11 @@ class QuotaTracker:
 - **Config**: `config/quota_policy.yaml` — `providers` (limit_requests, window_seconds, warn, restrict) y `routing` (preferido + fallback_chain).
 - El Dispatcher inyecta `selected_model` en el input de cada tarea; si `requires_approval` bloquea con `quota_exceeded_approval_required`.
 - Registrar uso real (`QuotaTracker.record_usage`) cuando se invoque un LLM (p. ej. desde Worker o LiteLLM).
+
+**Mapeo sugerido de nombres (Rick → proveedores reales):**
+
+- `gemini_pro` → `google/gemini-3.1-pro-preview-customtools` (Pro 3.1 con tools, estable en tus pruebas).
+- \"Gemini rápido\" → `google/gemini-flash-latest`.
 
 ## OpenClaw y cuota Claude
 

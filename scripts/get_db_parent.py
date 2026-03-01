@@ -24,8 +24,10 @@ print(f"DB Parent: {p}")
 if p.get("type") == "block_id":
     block_id = p["block_id"]
     r2 = httpx.get(f"https://api.notion.com/v1/blocks/{block_id}", headers=H, timeout=10)
+    print(f"Block Status: {r2.status_code}")
     if r2.status_code == 200:
-        bp = r2.json().get("parent", {})
+        data = r2.json()
+        bp = data.get("parent", {})
         print(f"Block Parent: {bp}")
         if bp.get("type") == "page_id":
             page_id = bp["page_id"]

@@ -20,6 +20,12 @@ openclaw/env
 logs/
 service_out.txt
 test_out.txt
+worker_out.txt
+worker_err.txt
+
+# === Deployment artifacts ===
+update.zip
+vps_pub_key.txt
 
 # === Python ===
 __pycache__/

@@ -9,6 +9,8 @@
 | `ping`      | Health check; responde echo. |
 | `notion.poll_comments` | Lee comentarios de la página Control Room en Notion. |
 | `notion.upsert_task`   | Crea o actualiza tareas en base de datos Notion. |
+| `linear.create_issue` | Crea issue en Linear (title, team_key, description). |
+| `linear.list_teams`   | Lista equipos en Linear. |
 
 El Dispatcher encola tareas en Redis (`umbral:tasks:pending`) y el Worker las ejecuta vía HTTP. Requiere `WORKER_URL`, `WORKER_TOKEN`, `REDIS_URL`.
 
@@ -24,6 +26,12 @@ El Dispatcher encola tareas en Redis (`umbral:tasks:pending`) y el Worker las ej
 - **Gateway:** 24/7 en VPS; Telegram bot + Control UI (puertos 18789 ws, 18791 http).
 - **Modelos:** Configurados vía `openclaw config`; Gemini, Claude, etc. según cuotas.
 - **Workspace:** `~/.openclaw/workspace` — IDENTITY.md, SOUL.md, AGENTS.md, TOOLS.md.
+
+## Linear
+
+- **API:** Rick crea issues vía `linear.create_issue` (encolar tarea o script `scripts/linear_create_issue.py`).
+- **Equipos:** Usar `team_key` (ej. "UMB"). Ejecutar `linear.list_teams` para ver equipos.
+- **Variable:** `LINEAR_API_KEY` en `~/.config/openclaw/env` (VPS).
 
 ## Redis
 

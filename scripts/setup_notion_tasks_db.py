@@ -90,23 +90,14 @@ def main() -> int:
         r = create_db({"type": "page_id", "page_id": NOTION_PARENT})
         err = r.text or ""
         if r.status_code == 400 and "parented by a database" in err:
-            r_page = httpx.post(
-                f"{NOTION_BASE}/pages",
-                headers=HEADERS,
-                json={
-                    "parent": {"type": "workspace", "workspace": True},
-                    "properties": {
-                        "title": {"title": [{"text": {"content": "Umbral — Tareas Kanban"}}]}
-                    },
-                },
-                timeout=15,
-            )
-            if r_page.status_code == 200:
-                page_id = r_page.json()["id"]
-                r = create_db({"type": "page_id", "page_id": page_id})
-            else:
-                print("ERROR: El ID es una base de datos. Crear página falló:", r_page.text[:300], file=sys.stderr)
-                return 2
+            print("ERROR: El ID proporcionado es una BASE DE DATOS, no una PÁGINA.", file=sys.stderr)
+            print("", file=sys.stderr)
+            print("Necesitas el ID de una PÁGINA. Pasos:", file=sys.stderr)
+            print("1. Abre Notion y ve a una PÁGINA (ej: Dashboard Rick, Control Room, o crea una nueva).", file=sys.stderr)
+            print("2. Abre la URL de esa página. Formato: notion.so/Titulo-XXXXXXXXXXXX", file=sys.stderr)
+            print("3. Copia el ID (la parte final con guiones: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx).", file=sys.stderr)
+            print("4. Usa ese ID como NOTION_TASKS_PARENT_PAGE_ID", file=sys.stderr)
+            return 2
         r.raise_for_status()
         data = r.json()
         db_id = data["id"]

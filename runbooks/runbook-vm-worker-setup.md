@@ -144,9 +144,9 @@ $body = '{"task":"ping","input":{}}'
 Invoke-WebRequest -UseBasicParsing -Method Post -Uri http://localhost:8088/run -Headers $headers -Body $body
 ```
 
-## 7) Actualizar Worker tras merge (p. ej. windows.fs.*)
+## 7) Actualizar Worker tras merge (p. ej. windows.fs.*, write_bytes_b64)
 
-Si se ha mergeado código nuevo (p. ej. tareas `windows.fs.ensure_dirs`, `windows.fs.list`, etc.), el Worker en la VM debe usar ese código. Si `/health` no muestra `windows.fs.ensure_dirs` en `tasks_registered`:
+Si se ha mergeado código nuevo (p. ej. tareas `windows.fs.ensure_dirs`, `windows.fs.list`, `windows.fs.write_bytes_b64`, etc.), el Worker en la VM debe usar ese código. Si `/health` no muestra `windows.fs.ensure_dirs` en `tasks_registered`:
 
 1. **Comprobar NSSM:** el servicio debe tener `AppDirectory` = `C:\GitHub\umbral-agent-stack` (no `C:\openclaw-worker` ni otra ruta). Ver: `nssm get openclaw-worker AppDirectory`. Si es distinto: `nssm set openclaw-worker AppDirectory C:\GitHub\umbral-agent-stack`.
 2. **Actualizar y reiniciar** (en la VM, PowerShell como Administrador):
@@ -166,7 +166,43 @@ cd C:\GitHub\umbral-agent-stack
 
 3. **Comprobar:** `Invoke-RestMethod http://localhost:8088/health` debe incluir en `tasks_registered` las tareas `windows.fs.ensure_dirs`, `windows.fs.list`, etc.
 
-## 8) Operacion diaria
+## 8) Worker como usuario (acceso a G:\ y Drive)
+
+Por defecto el servicio corre como **LocalSystem**, que no tiene acceso a unidades montadas "por usuario" como Google Drive en `G:\`. Si `windows.fs.ensure_dirs` (o list/read_text/write_text) en `G:\Mi unidad\...` devuelve `[WinError 5] Acceso denegado`, hay que hacer que el servicio corra con el **usuario que tiene Drive montado** (ej. Rick).
+
+**En la VM, PowerShell como Administrador:**
+
+1. Abrir NSSM para el servicio:
+   ```powershell
+   nssm edit openclaw-worker
+   ```
+2. Pestaña **"Log on"** → marcar **"This account"**.
+3. Cuenta: el usuario de la VM (ej. `.\Rick` o `pcrick\rick`). Contraseña: la del usuario.
+4. **OK** y reiniciar:
+   ```powershell
+   nssm restart openclaw-worker
+   ```
+
+**Por línea de comandos** (sustituir usuario y contraseña):
+
+```powershell
+# Ejemplo: cuenta local Rick en máquina PCRick
+nssm set openclaw-worker ObjectName ".\Rick" "CONTRASEÑA_DE_RICK"
+nssm restart openclaw-worker
+```
+
+Si la VM está en dominio: `nssm set openclaw-worker ObjectName "pcrick\rick" "CONTRASEÑA"`.
+
+Comprobar que el Worker arrancó y que puede acceder a G:\:
+
+```powershell
+Invoke-RestMethod http://localhost:8088/health
+# Luego Rick puede probar desde la VPS: windows.fs.ensure_dirs en G:\Mi unidad\Rick-David\...
+```
+
+**Nota:** Los logs siguen en `C:\openclaw-worker\`. Si el servicio no arranca al cambiar de cuenta, revisar que el usuario tenga permisos sobre esa carpeta y sobre `C:\GitHub\umbral-agent-stack`.
+
+## 9) Operacion diaria
 
 ```powershell
 nssm status openclaw-worker
@@ -178,7 +214,7 @@ Get-Content C:\openclaw-worker\service-stderr.log -Tail 50
 Nota:
 - `Restart-Service`/`nssm restart` requiere PowerShell elevado (Administrador). Sin elevacion se obtiene `Acceso denegado`.
 
-## 9) Checklist rapido de auditoria (sin exponer secretos)
+## 10) Checklist rapido de auditoria (sin exponer secretos)
 
 ```powershell
 nssm get openclaw-worker Application

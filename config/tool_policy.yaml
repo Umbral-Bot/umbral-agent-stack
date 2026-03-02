@@ -20,6 +20,8 @@ tools:
     allowed_base_paths:
       - C:\\Windows\\Temp
       - G:\\Mi unidad\\Rick-David
+    # Límite para windows.fs.write_bytes_b64 (bytes). Default 5MB.
+    max_bytes_b64: 5000000
 
   mcp:
     description: MCP tools para Windows (futuro)

@@ -226,6 +226,11 @@ def handle_windows_firewall_allow_port(input_data: Dict[str, Any]) -> Dict[str, 
     port = int(port)
     name = input_data.get("name") or f"OpenClaw Worker {port}"
     try:
+        subprocess.run(
+            ["netsh", "advfirewall", "firewall", "delete", "rule", f"name={name}"],
+            capture_output=True,
+            timeout=5,
+        )
         r = subprocess.run(
             [
                 "netsh", "advfirewall", "firewall", "add", "rule",
@@ -234,6 +239,7 @@ def handle_windows_firewall_allow_port(input_data: Dict[str, Any]) -> Dict[str, 
                 "action=allow",
                 "protocol=TCP",
                 f"localport={port}",
+                "profile=any",
             ],
             capture_output=True,
             text=True,

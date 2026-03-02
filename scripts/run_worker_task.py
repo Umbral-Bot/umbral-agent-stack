@@ -3,8 +3,8 @@
 
 Uso:
   export WORKER_URL=http://100.109.16.40:8088 WORKER_TOKEN=xxx
-  python scripts/run_worker_task.py windows.open_notepad '{"text": "hola"}'
-  python scripts/run_worker_task.py ping '{}'
+  echo '{\"text\": \"hola\"}' | python scripts/run_worker_task.py windows.open_notepad
+  python scripts/run_worker_task.py ping
 """
 import json
 import os
@@ -24,8 +24,12 @@ def main():
     task = sys.argv[1]
     input_data = {}
     if len(sys.argv) > 2:
+        raw = sys.argv[2]
+    else:
+        raw = sys.stdin.read().strip() or "{}"
+    if raw:
         try:
-            input_data = json.loads(sys.argv[2])
+            input_data = json.loads(raw)
         except json.JSONDecodeError as e:
             print(f"JSON inválido: {e}", file=sys.stderr)
             sys.exit(2)

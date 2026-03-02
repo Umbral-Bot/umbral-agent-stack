@@ -127,7 +127,6 @@ def handle_windows_open_notepad(input_data: Dict[str, Any]) -> Dict[str, Any]:
     # fallos de SID mapeo en esta VM; por defecto crear sin /ru (sesión 0).
     run_as_user = (input_data.get("run_as_user") or "").strip()
     run_as_password = (input_data.get("run_as_password") or "").strip()
-    _debug_run_as = bool(run_as_user)
     try:
         fd, path = tempfile.mkstemp(suffix=".txt", prefix="umbral_")
         os.close(fd)
@@ -165,36 +164,19 @@ def handle_windows_open_notepad(input_data: Dict[str, Any]) -> Dict[str, Any]:
         )
         if r.returncode != 0:
             err = (r.stderr or r.stdout or "schtasks failed").strip()
-            logger.warning("schtasks create (with /ru) failed: %s", err)
-            if run_as_user:
-                cmd_fallback = [
-                    "schtasks", "/create", "/tn", task_name, "/tr", bat_path,
-                    "/sc", "onlogon", "/f",
-                ]
-                r2 = subprocess.run(
-                    cmd_fallback,
-                    capture_output=True,
-                    text=True,
-                    timeout=10,
-                    cwd=os.environ.get("SYSTEMROOT", "C:\\Windows"),
-                )
+            logger.warning("schtasks create failed: %s", err)
+            for fallback_sc in (["onstart"] if not run_as_user else []):
+                cmd_fb = ["schtasks", "/create", "/tn", task_name, "/tr", bat_path, "/sc", fallback_sc, "/f"]
+                r2 = subprocess.run(cmd_fb, capture_output=True, text=True, timeout=10, cwd=os.environ.get("SYSTEMROOT", "C:\\Windows"))
                 if r2.returncode == 0:
-                    return {
-                        "ok": True,
-                        "path": path,
-                        "scheduled": True,
-                        "session_zero": True,
-                        "debug_used_ru": _debug_run_as,
-                        "error": None,
-                    }
-            return {
-                "ok": False,
-                "path": path,
-                "scheduled": False,
-                "debug_used_ru": _debug_run_as,
-                "error": err,
-            }
-        return {"ok": True, "path": path, "scheduled": True, "debug_used_ru": _debug_run_as, "error": None}
+                    return {"ok": True, "path": path, "scheduled": True, "session_zero": True, "trigger": fallback_sc, "error": None}
+            if run_as_user:
+                cmd_fb = ["schtasks", "/create", "/tn", task_name, "/tr", bat_path, "/sc", "onlogon", "/f"]
+                r2 = subprocess.run(cmd_fb, capture_output=True, text=True, timeout=10, cwd=os.environ.get("SYSTEMROOT", "C:\\Windows"))
+                if r2.returncode == 0:
+                    return {"ok": True, "path": path, "scheduled": True, "session_zero": True, "error": None}
+            return {"ok": False, "path": path, "scheduled": False, "error": err}
+        return {"ok": True, "path": path, "scheduled": True, "error": None}
     except Exception as e:
         logger.exception("open_notepad failed: %s", e)
         return {"ok": False, "path": "", "scheduled": False, "error": str(e)}

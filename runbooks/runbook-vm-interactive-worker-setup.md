@@ -30,30 +30,19 @@ schtasks /create /tn $TaskName /tr $BatPath /sc onlogon /ru "pcrick\rick" /rp "C
 
 Sustituir `CONTRASEÑA_DE_RICK` por la contraseña real. Si falla con error de SID, probar formato `.\rick`.
 
-## 2) Inyectar WORKER_TOKEN en la sesión de Rick
+## 2) Token para el Worker interactivo
 
-La tarea ejecuta el .bat bajo Rick, pero el .bat no tiene acceso a variables de NSSM. Opciones:
+El .bat lee `WORKER_TOKEN` desde `C:\openclaw-worker\worker_token` si existe (una línea con el token).
 
-**A) Usar setx en el perfil de Rick (una vez):**
+En la VM (una vez):
 
 ```powershell
-setx WORKER_TOKEN "valor_del_token"
+if (-not (Test-Path C:\openclaw-worker)) { New-Item -ItemType Directory C:\openclaw-worker -Force }
+# Pegar el mismo token que usa el servicio NSSM (no commitear):
+Set-Content -Path C:\openclaw-worker\worker_token -Value "EL_MISMO_TOKEN_QUE_NSSM"
 ```
 
-Cerrar sesión y volver a entrar para que se cargue.
-
-**B) Crear un .bat wrapper que defina WORKER_TOKEN:**
-
-En `C:\GitHub\umbral-agent-stack\scripts\vm\start_interactive_worker.bat`:
-
-```batch
-@echo off
-set WORKER_TOKEN=valor_del_token
-cd /d C:\GitHub\umbral-agent-stack
-python -m uvicorn worker.app:app --host 0.0.0.0 --port 8089 --log-level info
-```
-
-(No hacer commit del token; usar un .bat.local o similar en .gitignore.)
+Alternativa: `setx WORKER_TOKEN "valor"` y cerrar sesión/volver a entrar.
 
 ## 3) Regla de firewall para 8089
 

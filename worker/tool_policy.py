@@ -77,3 +77,14 @@ def get_fs_allowed_base_paths() -> List[str]:
     if not isinstance(bases, list):
         return []
     return [str(x) for x in bases if isinstance(x, str) and x.strip()]
+
+
+def get_fs_max_bytes_b64() -> int:
+    """Max bytes allowed for base64 binary writes."""
+    policy = _load_policy()
+    fs = policy.get("tools", {}).get("fs", {})
+    val = fs.get("max_bytes_b64", 5_000_000)
+    try:
+        return int(val)
+    except Exception:
+        return 5_000_000

@@ -213,6 +213,41 @@ def handle_windows_write_worker_token(input_data: Dict[str, Any]) -> Dict[str, A
         return {"ok": False, "path": path, "error": str(e)}
 
 
+def handle_windows_firewall_allow_port(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Añade regla de firewall en la VM para permitir inbound en un puerto.
+    Input: port (int), name (str, opcional). Solo Windows.
+    """
+    if sys.platform != "win32":
+        return {"ok": False, "error": "Solo Windows."}
+    port = input_data.get("port")
+    if port is None:
+        port = 8089
+    port = int(port)
+    name = input_data.get("name") or f"OpenClaw Worker {port}"
+    try:
+        r = subprocess.run(
+            [
+                "netsh", "advfirewall", "firewall", "add", "rule",
+                f"name={name}",
+                "dir=in",
+                "action=allow",
+                "protocol=TCP",
+                f"localport={port}",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=15,
+            cwd=os.environ.get("SYSTEMROOT", "C:\\Windows"),
+        )
+        if r.returncode != 0 and "already exists" not in (r.stderr or "").lower():
+            return {"ok": False, "port": port, "error": (r.stderr or r.stdout or "netsh failed").strip()}
+        return {"ok": True, "port": port, "name": name, "error": None}
+    except Exception as e:
+        logger.exception("firewall_allow_port failed: %s", e)
+        return {"ok": False, "port": port, "error": str(e)}
+
+
 def handle_windows_start_interactive_worker(input_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Arranca el Worker interactivo (uvicorn puerto 8089) en segundo plano.

@@ -19,6 +19,7 @@ from .windows import (
     handle_windows_pad_run_flow,
     handle_windows_open_notepad,
     handle_windows_write_worker_token,
+    handle_windows_firewall_allow_port,
     handle_windows_start_interactive_worker,
 )
 from .observability import handle_ooda_report, handle_self_eval
@@ -35,6 +36,7 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "windows.pad.run_flow": handle_windows_pad_run_flow,
     "windows.open_notepad": handle_windows_open_notepad,
     "windows.write_worker_token": handle_windows_write_worker_token,
+    "windows.firewall_allow_port": handle_windows_firewall_allow_port,
     "windows.start_interactive_worker": handle_windows_start_interactive_worker,
     "system.ooda_report": handle_ooda_report,
     "system.self_eval": handle_self_eval,

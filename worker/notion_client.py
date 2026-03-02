@@ -324,15 +324,19 @@ def _build_dashboard_v2_blocks(data: dict[str, Any]) -> list[dict[str, Any]]:
     blocks.append(_block_heading2("Infraestructura"))
     vps = data.get("vps_worker", {})
     vm = data.get("vm_worker")
+    vm_int = data.get("vm_worker_interactive")
     vps_icon = "🟢" if vps.get("status") == "OK" else "🔴"
     vm_icon = "🟢" if vm and vm.get("status") == "OK" else ("🔴" if vm else "⚫")
+    vm_int_icon = "🟢" if vm_int and vm_int.get("status") == "OK" else ("🔴" if vm_int else "⚫")
     redis_icon = "🟢" if rd.get("connected") else "🔴"
 
     infra_rows = [
         [f"{vps_icon} Worker VPS", vps.get("status", "?"), f'{len(vps.get("tasks", []))} tareas'],
     ]
     if vm:
-        infra_rows.append([f"{vm_icon} Worker VM", vm.get("status", "?"), f'{len(vm.get("tasks", []))} tareas'])
+        infra_rows.append([f"{vm_icon} Worker VM (8088)", vm.get("status", "?"), f'{len(vm.get("tasks", []))} tareas'])
+    if vm_int is not None:
+        infra_rows.append([f"{vm_int_icon} Worker VM interactivo (8089)", vm_int.get("status", "?"), f'{len(vm_int.get("tasks", []))} tareas'])
     infra_rows.append([f"{redis_icon} Redis", "Conectado" if rd.get("connected") else "Offline", f'Cola: {rd.get("pending", 0)} | Bloq: {rd.get("blocked", 0)}'])
 
     uptime = data.get("uptime")

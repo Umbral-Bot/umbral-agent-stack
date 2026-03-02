@@ -32,6 +32,7 @@ NSSM (service config):
 Variables inyectadas por NSSM (sin secretos):
 - `WORKER_TOKEN` (valor oculto)
 - `PYTHONPATH` (`C:\GitHub\umbral-agent-stack`)
+- Opcional para `windows.open_notepad`: `OPENCLAW_NOTEPAD_RUN_AS_USER` (ej. `pcrick\rick`) y `OPENCLAW_NOTEPAD_RUN_AS_PASSWORD` (contraseña del usuario), para que el Bloc de notas se abra en la sesión del usuario al iniciar sesión; si no se definen, la tarea se ejecuta en sesión 0 y no se ve.
 
 Red/health:
 - Puerto escuchando: `0.0.0.0:8088`
@@ -116,6 +117,7 @@ nssm start $ServiceName
 Notas:
 - Reemplazar `CHANGE_ME_WORKER_TOKEN` por el token real.
 - Si se usan tareas Notion, agregar tambien `NOTION_API_KEY`, `NOTION_CONTROL_ROOM_PAGE_ID`, `NOTION_GRANOLA_DB_ID` en `AppEnvironmentExtra`.
+- Para que la tarea `windows.open_notepad` abra el Bloc en la sesión del usuario (no en sesión 0), agregar en `AppEnvironmentExtra`: `OPENCLAW_NOTEPAD_RUN_AS_USER=pcrick\rick` y `OPENCLAW_NOTEPAD_RUN_AS_PASSWORD=<contraseña>` (misma línea, separadas por `\n`).
 
 ## 5) Regla de firewall 8088
 

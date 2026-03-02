@@ -59,7 +59,19 @@ Alternativa: `setx WORKER_TOKEN "valor"` y cerrar sesión/volver a entrar.
 New-NetFirewallRule -DisplayName "OpenClaw Worker Interactive 8089" -Direction Inbound -LocalPort 8089 -Protocol TCP -Action Allow
 ```
 
-## 4) Verificación
+## 4) Inicio automático al logon (acceso directo en Startup)
+
+Para que el Worker interactivo arranque solo al iniciar sesión Rick, sin abrir el .bat a mano:
+
+**Desde la VPS** (tras actualizar la VM con `git pull` y `nssm restart openclaw-worker`):
+
+```bash
+python3 scripts/run_worker_task.py windows.add_interactive_worker_to_startup '{}'
+```
+
+Esto crea el acceso directo `StartInteractiveWorker.lnk` en la carpeta Inicio de Rick (`C:\Users\Rick\AppData\Roaming\...\Startup`). La próxima vez que Rick inicie sesión, el .bat se ejecutará y el puerto 8089 quedará activo.
+
+## 5) Verificación
 
 Con Rick logueado en la VM:
 
@@ -87,7 +99,17 @@ Y ejecutar:
 python3 scripts/run_worker_task.py windows.open_notepad "hola" --session interactive --run-now
 ```
 
-## 5) Env en VPS
+### Test post-reinicio
+
+Tras reiniciar la VM y que Rick inicie sesión (el acceso directo en Inicio arranca el .bat), desde la VPS:
+
+```bash
+python3 scripts/run_worker_task.py windows.open_notepad 'todo ok 999' --session interactive --run-now
+```
+
+Debe abrirse un Notepad con "todo ok 999" en el escritorio de la VM. Test documentado en `docs/33-test-post-reinicio-vm.md`.
+
+## 6) Env en VPS
 
 En `~/.config/openclaw/env`:
 
@@ -100,4 +122,5 @@ WORKER_TOKEN=xxx
 ## Referencias
 
 - Control dual: `docs/32-vps-vm-dual-session-control.md`
+- Test post-reinicio: `docs/33-test-post-reinicio-vm.md`
 - Worker setup: `runbooks/runbook-vm-worker-setup.md`

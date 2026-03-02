@@ -144,7 +144,29 @@ $body = '{"task":"ping","input":{}}'
 Invoke-WebRequest -UseBasicParsing -Method Post -Uri http://localhost:8088/run -Headers $headers -Body $body
 ```
 
-## 7) Operacion diaria
+## 7) Actualizar Worker tras merge (p. ej. windows.fs.*)
+
+Si se ha mergeado código nuevo (p. ej. tareas `windows.fs.ensure_dirs`, `windows.fs.list`, etc.), el Worker en la VM debe usar ese código. Si `/health` no muestra `windows.fs.ensure_dirs` en `tasks_registered`:
+
+1. **Comprobar NSSM:** el servicio debe tener `AppDirectory` = `C:\GitHub\umbral-agent-stack` (no `C:\openclaw-worker` ni otra ruta). Ver: `nssm get openclaw-worker AppDirectory`. Si es distinto: `nssm set openclaw-worker AppDirectory C:\GitHub\umbral-agent-stack`.
+2. **Actualizar y reiniciar** (en la VM, PowerShell como Administrador):
+
+```powershell
+cd C:\GitHub\umbral-agent-stack
+git pull origin main
+nssm restart openclaw-worker
+```
+
+O ejecutar el script de verificación (hace pull, restart y comprueba `/health`):
+
+```powershell
+cd C:\GitHub\umbral-agent-stack
+.\scripts\vm\update_worker_and_verify.ps1
+```
+
+3. **Comprobar:** `Invoke-RestMethod http://localhost:8088/health` debe incluir en `tasks_registered` las tareas `windows.fs.ensure_dirs`, `windows.fs.list`, etc.
+
+## 8) Operacion diaria
 
 ```powershell
 nssm status openclaw-worker
@@ -156,7 +178,7 @@ Get-Content C:\openclaw-worker\service-stderr.log -Tail 50
 Nota:
 - `Restart-Service`/`nssm restart` requiere PowerShell elevado (Administrador). Sin elevacion se obtiene `Acceso denegado`.
 
-## Checklist rapido de auditoria (sin exponer secretos)
+## 9) Checklist rapido de auditoria (sin exponer secretos)
 
 ```powershell
 nssm get openclaw-worker Application

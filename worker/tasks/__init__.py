@@ -15,7 +15,7 @@ from .notion import (
     handle_notion_upsert_task,
     handle_notion_update_dashboard,
 )
-from .windows import handle_windows_pad_run_flow
+from .windows import handle_windows_pad_run_flow, handle_windows_open_notepad
 from .observability import handle_ooda_report, handle_self_eval
 from .linear import handle_linear_create_issue, handle_linear_list_teams
 
@@ -28,6 +28,7 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "notion.upsert_task": handle_notion_upsert_task,
     "notion.update_dashboard": handle_notion_update_dashboard,
     "windows.pad.run_flow": handle_windows_pad_run_flow,
+    "windows.open_notepad": handle_windows_open_notepad,
     "system.ooda_report": handle_ooda_report,
     "system.self_eval": handle_self_eval,
     "linear.create_issue": handle_linear_create_issue,

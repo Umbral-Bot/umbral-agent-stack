@@ -113,8 +113,8 @@ def handle_windows_open_notepad(input_data: Dict[str, Any]) -> Dict[str, Any]:
 
     Input:
         text (str, optional): Texto a mostrar. Default: "hola".
+        run_now (bool, optional): Si true, abre Notepad inmediatamente además de programar (default: false).
         run_as_user (str, optional): Usuario con el que ejecutar al logon (ej. "pcrick\\rick").
-            Si no se pasa, se usa OPENCLAW_NOTEPAD_RUN_AS_USER del entorno.
 
     Returns:
         {"ok": bool, "path": str, "scheduled": bool, "error": str|None}
@@ -122,6 +122,7 @@ def handle_windows_open_notepad(input_data: Dict[str, Any]) -> Dict[str, Any]:
     if sys.platform != "win32":
         return {"ok": False, "path": "", "scheduled": False, "error": "Solo disponible en Windows."}
     text = (input_data.get("text") or "hola").strip() or "hola"
+    run_now = bool(input_data.get("run_now", False))
     task_name = "UmbralOpenNotepad"
     # Solo usar /ru si se pasa explícitamente en input. Las vars de entorno causan
     # fallos de SID mapeo en esta VM; por defecto crear sin /ru (sesión 0).
@@ -177,7 +178,14 @@ def handle_windows_open_notepad(input_data: Dict[str, Any]) -> Dict[str, Any]:
                 if r2.returncode == 0:
                     return {"ok": True, "path": path, "scheduled": True, "session_zero": True, "error": None}
             return {"ok": False, "path": path, "scheduled": False, "error": err}
-        return {"ok": True, "path": path, "scheduled": True, "error": None}
+        if run_now:
+            subprocess.run(
+                ["schtasks", "/run", "/tn", task_name],
+                capture_output=True,
+                timeout=10,
+                cwd=os.environ.get("SYSTEMROOT", "C:\\Windows"),
+            )
+        return {"ok": True, "path": path, "scheduled": True, "run_now": run_now, "error": None}
     except Exception as e:
         logger.exception("open_notepad failed: %s", e)
         return {"ok": False, "path": "", "scheduled": False, "error": str(e)}

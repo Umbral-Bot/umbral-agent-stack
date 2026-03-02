@@ -33,6 +33,8 @@ def main():
         input_data = defaults[task]
     elif task == "windows.open_notepad" and raw and not raw.strip().startswith("{"):
         input_data = {"text": raw}
+    if "--run-now" in sys.argv:
+        input_data["run_now"] = True
     else:
         if not raw:
             raw = "{}"

@@ -3,6 +3,8 @@
 ## Objetivo
 Permitir operaciones simples de archivos/carpetas en la VM (ej. `G:\\Mi unidad\\Rick-David`) sin depender de Power Automate Desktop.
 
+**Tras mergear** el PR que añade estas tareas: en la VM ejecutar `git pull origin main`, `nssm restart openclaw-worker`, y comprobar que `GET http://localhost:8088/health` incluye en `tasks_registered` las tareas `windows.fs.*`. Ver runbook: [runbook-vm-worker-setup.md](../runbooks/runbook-vm-worker-setup.md) sección "Actualizar Worker tras merge".
+
 ## Seguridad
 Se restringe por allowlist en `config/tool_policy.yaml`:
 

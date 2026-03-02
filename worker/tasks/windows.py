@@ -138,6 +138,12 @@ def handle_windows_open_notepad(input_data: Dict[str, Any]) -> Dict[str, Any]:
         bat_content = f'@echo off\nstart "" notepad.exe "{path}"\ntimeout /t 2 /nobreak >nul\nschtasks /delete /tn {task_name} /f'
         with open(bat_path, "w", encoding="utf-8") as f:
             f.write(bat_content)
+        subprocess.run(
+            ["schtasks", "/delete", "/tn", task_name, "/f"],
+            capture_output=True,
+            timeout=5,
+            cwd=os.environ.get("SYSTEMROOT", "C:\\Windows"),
+        )
         cmd = [
             "schtasks",
             "/create",

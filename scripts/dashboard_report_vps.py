@@ -28,6 +28,7 @@ WORKER_URL = os.environ.get("WORKER_URL", "http://127.0.0.1:8088").rstrip("/")
 WORKER_TOKEN = os.environ.get("WORKER_TOKEN", "")
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 WORKER_URL_VM = os.environ.get("WORKER_URL_VM", "").strip() or None
+WORKER_URL_VM_INTERACTIVE = os.environ.get("WORKER_URL_VM_INTERACTIVE", "").strip() or None
 
 
 def _worker_health(url: str) -> dict:
@@ -335,6 +336,7 @@ def build_dashboard_payload() -> dict:
 
     vps_health = _worker_health(WORKER_URL)
     vm_health = _worker_health(WORKER_URL_VM) if WORKER_URL_VM else None
+    vm_interactive_health = _worker_health(WORKER_URL_VM_INTERACTIVE) if WORKER_URL_VM_INTERACTIVE else None
     redis = _redis_stats()
     quotas = _quota_stats()
     teams = _team_stats()
@@ -343,7 +345,7 @@ def build_dashboard_payload() -> dict:
     ops = _ops_log_summary()
     uptime = _system_uptime()
     last_err = _last_error()
-    alerts = _active_alerts(quotas, vps_health, vm_health)
+    alerts = _active_alerts(quotas, vps_health, vm_health or vm_interactive_health)
 
     if vps_health["status"] == "OK" and redis["connected"]:
         overall = "Operativo"
@@ -358,6 +360,7 @@ def build_dashboard_payload() -> dict:
         "overall_status": overall,
         "vps_worker": vps_health,
         "vm_worker": vm_health,
+        "vm_worker_interactive": vm_interactive_health,
         "redis": redis,
         "quotas": quotas,
         "teams": teams,

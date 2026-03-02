@@ -19,7 +19,7 @@ tools:
     description: Operaciones simples de filesystem Windows (sin PAD)
     allowed_base_paths:
       - C:\\Windows\\Temp
-      # - G:\\Mi unidad\\Rick-David
+      - G:\\Mi unidad\\Rick-David
 
   mcp:
     description: MCP tools para Windows (futuro)

@@ -50,6 +50,8 @@ Rick necesita:
 - Token o SSH key para push (si corre en VM/VPS, configurar credenciales allí)
 - Instrucciones claras: "Siempre trabajar en ramas, nunca push a main, abrir PR para todo cambio"
 
+**Guía paso a paso del token (descargar, leer, commit, PR; sin merge):** [docs/34-rick-github-token-setup.md](34-rick-github-token-setup.md).
+
 ---
 
 ## Con quién trabajar qué: David ↔ Cursor vs Rick
@@ -101,5 +103,5 @@ Rick necesita:
 - [ ] Cuenta GitHub para Rick creada
 - [ ] Rick invitado como collaborator (Write)
 - [ ] Branch protection en `main` configurada
-- [ ] Rick tiene credenciales para push (token/SSH)
+- [ ] Rick tiene credenciales para push (token/SSH) — ver [doc 34](34-rick-github-token-setup.md)
 - [ ] Rick tiene instrucciones: ramas + PR, no push a main

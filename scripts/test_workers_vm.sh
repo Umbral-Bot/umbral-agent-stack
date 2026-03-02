@@ -19,7 +19,7 @@ if [ -z "$TOKEN" ]; then
 fi
 
 echo "=== Worker headless (sesion 0) $HEADLESS_URL ==="
-curl -sf -H "Authorization: Bearer $TOKEN" "$HEADLESS_URL/health" | head -1
+curl -sf -H "Authorization: Bearer $TOKEN" "$HEADLESS_URL/health" >/dev/null && echo "health OK" || echo "health fallo"
 python3 scripts/run_worker_task.py ping 2>/dev/null | grep -q '"ok"' && echo "ping OK" || echo "ping fallo"
 
 echo ""

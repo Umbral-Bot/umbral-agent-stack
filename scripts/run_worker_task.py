@@ -27,6 +27,8 @@ def main():
     input_data = {}
     if len(sys.argv) > 2:
         raw = sys.argv[2]
+    elif task in defaults:
+        raw = ""
     else:
         raw = sys.stdin.read().strip()
     if not raw and task in defaults:

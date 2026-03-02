@@ -2,11 +2,14 @@
 S5 — Tareas Windows (PAD/RPA, scripts).
 
 - windows.pad.run_flow: ejecuta un flujo de Power Automate Desktop (si está en allowlist).
+- windows.open_notepad: abre el Bloc de notas con un texto (prueba de conectividad VM).
 """
 
 import logging
+import os
 import subprocess
 import sys
+import tempfile
 from typing import Any, Dict
 
 from .. import tool_policy
@@ -98,3 +101,30 @@ def handle_windows_pad_run_flow(input_data: Dict[str, Any]) -> Dict[str, Any]:
             "output": "",
             "error": str(e),
         }
+
+
+def handle_windows_open_notepad(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Abre el Bloc de notas con el texto indicado (solo Windows). Útil para comprobar
+    que una orden desde la VPS llega a la VM.
+
+    Input:
+        text (str, optional): Texto a mostrar. Default: "hola".
+
+    Returns:
+        {"ok": bool, "path": str, "error": str|None}
+    """
+    if sys.platform != "win32":
+        return {"ok": False, "path": "", "error": "Solo disponible en Windows."}
+    text = (input_data.get("text") or "hola").strip() or "hola"
+    try:
+        fd, path = tempfile.mkstemp(suffix=".txt", prefix="umbral_")
+        os.close(fd)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(text)
+        # startfile abre con la app por defecto; notepad para .txt
+        os.startfile(path)
+        return {"ok": True, "path": path, "error": None}
+    except Exception as e:
+        logger.exception("open_notepad failed: %s", e)
+        return {"ok": False, "path": "", "error": str(e)}

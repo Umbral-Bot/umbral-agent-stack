@@ -41,8 +41,9 @@ El Dispatcher encola tareas en Redis (`umbral:tasks:pending`) y el Worker las ej
 
 ## VM (Execution Plane)
 
-- Worker FastAPI en `:8088` accesible por Tailscale (IP Tailscale de la VM).
-- PAD/RPA: Power Automate Desktop para automatizaciones Windows (futuro).
+- Worker FastAPI en `:8088` (headless) y `:8089` (interactivo) accesibles por Tailscale.
+- **Archivos en la VM:** tareas `windows.fs.*` (ensure_dirs, list, read_text, write_text) con política en `config/tool_policy.yaml` (ver rama/PR de Rick).
+- PAD/RPA: Power Automate Desktop para flujos allowlisted (`windows.pad.run_flow`).
 - El Dispatcher intenta VM primero; si falla, puede usar Worker en VPS.
 
 ## Convenciones

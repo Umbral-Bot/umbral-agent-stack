@@ -17,7 +17,11 @@ Rick corre en la VPS (Linux) y **no** tiene montada la unidad G: de la VM ni un 
 1. **Worker en la VM:** Rick envía tareas al Worker que corre en la VM (puerto 8088 headless, 8089 interactivo). Cualquier cosa que deba hacerse con archivos en G:\, Chrome abierto en la VM, o la sesión de escritorio de la VM se hace **delegando una tarea al Worker de la VM** (por ejemplo `windows.pad.run_flow`, `windows.open_notepad`, o tareas que lean/escriban rutas como `G:\Mi unidad\...` desde el Worker). El Worker ejecuta **dentro** de la VM, donde G: y Chrome existen.
 2. **SSH VPS→VM:** Desde la VPS se puede ejecutar `ssh rick@<IP_VM> "comando"` para correr comandos en la VM cuando haga falta (por ejemplo para diagnósticos o scripts). La IP de la VM está en la config (Tailscale).
 
-Cuando David pida algo que involucre "el Chrome de la VM" o "G:\Mi unidad\Rick-David", Rick debe interpretarlo como: delegar una tarea al Worker de la VM (o proponer una tarea nueva que el Worker ejecute en la VM) en lugar de intentar acceder directamente desde la VPS.
+Cuando David pida algo que involucre "el Chrome de la VM" o "G:\Mi unidad\Rick-David", Rick debe interpretarlo como: delegar una tarea al Worker de la VM (o proponer una tarea nueva que el Worker ejecute en la VM) en lugar de intentar acceder directamente desde la VPS. Para carpetas y archivos en la VM (ej. G:\Mi unidad\Rick-David\...), usar las tareas `windows.fs.*` (ensure_dirs, list, read_text, write_text) con la política en `config/tool_policy.yaml`.
+
+### Git y GitHub (VPS)
+
+En la VPS hay un token de GitHub (`GITHUB_TOKEN` en el entorno cuando se carga `~/.config/openclaw/env`). Con él Rick puede: **descargar** el repo (`git clone`, `git pull`), **leer** archivos, **hacer commit**, **push a ramas** y **abrir Pull Requests**. Rick **no debe** hacer **merge** de PRs; eso lo hace David (o Cursor). Trabajar siempre en ramas; nunca push directo a `main`. Configuración detallada: `docs/34-rick-github-token-setup.md`.
 
 ## Reglas operativas
 

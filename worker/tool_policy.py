@@ -15,6 +15,8 @@ _DEFAULT = {
     "tools": {
         "pad": {"allowed_flows": ["EchoTest"], "default_timeout_sec": 60},
         "scripts": {"allowed": ["Get-SystemInfo"], "base_path": "C:\\GitHub\\umbral-agent-stack\\scripts\\windows"},
+        # Windows filesystem tools (no PAD). Restrict to safe bases.
+        "fs": {"allowed_base_paths": ["C:\\Windows\\Temp"]},
         "mcp": {"enabled": False},
     }
 }
@@ -66,3 +68,12 @@ def get_scripts_base_path() -> str:
     """Ruta base de scripts permitidos."""
     policy = _load_policy()
     return policy.get("tools", {}).get("scripts", {}).get("base_path", "C:\\GitHub\\umbral-agent-stack\\scripts\\windows")
+
+
+def get_fs_allowed_base_paths() -> List[str]:
+    """Allowlist de rutas base para operaciones filesystem en Windows."""
+    policy = _load_policy()
+    bases = policy.get("tools", {}).get("fs", {}).get("allowed_base_paths", [])
+    if not isinstance(bases, list):
+        return []
+    return [str(x) for x in bases if isinstance(x, str) and x.strip()]

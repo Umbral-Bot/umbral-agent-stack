@@ -89,8 +89,10 @@ def main():
                         break
         if url_interactive:
             url = url_interactive.rstrip("/")
+    timeout = 60.0 if session == "interactive" else 30.0
+    timeout = float(os.environ.get("WORKER_TIMEOUT", timeout))
     try:
-        wc = WorkerClient(base_url=url, token=token)
+        wc = WorkerClient(base_url=url, token=token, timeout=timeout)
         out = wc.run(task, input_data)
         print(json.dumps(out, indent=2))
     except Exception as e:

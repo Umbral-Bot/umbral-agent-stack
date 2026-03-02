@@ -149,6 +149,7 @@ def handle_windows_open_notepad(input_data: Dict[str, Any]) -> Dict[str, Any]:
             "/tn", task_name,
             "/tr", bat_path,
             "/sc", "onlogon",
+            "/ru", "SYSTEM",
             "/f",
         ]
         if run_as_user:

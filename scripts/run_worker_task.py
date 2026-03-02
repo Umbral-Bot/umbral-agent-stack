@@ -45,8 +45,28 @@ def main():
     url = os.environ.get("WORKER_URL", "").rstrip("/")
     token = os.environ.get("WORKER_TOKEN", "")
     if not url or not token:
-        print("Defina WORKER_URL y WORKER_TOKEN.", file=sys.stderr)
-        sys.exit(3)
+        env_vars = {}
+        env_path = os.path.expanduser("~/.config/openclaw/env")
+        if os.path.isfile(env_path):
+            with open(env_path, encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith("#"):
+                        continue
+                    if "=" in line:
+                        k, v = line.split("=", 1)
+                        env_vars[k] = v.strip().strip('"').strip("'")
+            if not url:
+                if task.startswith("windows.") and env_vars.get("WORKER_URL_VM"):
+                    url = env_vars["WORKER_URL_VM"]
+                else:
+                    url = env_vars.get("WORKER_URL_VM") or env_vars.get("WORKER_URL") or ""
+            if not token:
+                token = env_vars.get("WORKER_TOKEN", "")
+            url = (url or "").rstrip("/")
+        if not url or not token:
+            print("Defina WORKER_URL y WORKER_TOKEN (o ~/.config/openclaw/env).", file=sys.stderr)
+            sys.exit(3)
     try:
         wc = WorkerClient(base_url=url, token=token)
         out = wc.run(task, input_data)

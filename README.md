@@ -178,6 +178,8 @@ WORKER_TOKEN=test python -m pytest tests/ -v
 | [22-notion-dashboard-gerencial](docs/22-notion-dashboard-gerencial.md) | Dashboard en Notion (estado gerencial, actualización desde VPS) |
 | [32-vps-vm-dual-session-control](docs/32-vps-vm-dual-session-control.md) | Control dual VPS→VM (sesión 0 y sesión 1 / Worker 8088 y 8089) |
 | [33-test-post-reinicio-vm](docs/33-test-post-reinicio-vm.md) | Test post-reinicio VM: verificación control dual (Notepad en sesión interactiva) |
+| [34-rick-github-token-setup](docs/34-rick-github-token-setup.md) | Token GitHub para Rick: descargar, leer, commit, PR (sin merge) |
+| [35-rick-google-cloud-apis](docs/35-rick-google-cloud-apis.md) | APIs Google Cloud para Rick (SIM, análisis de mercado; límite 255 USD, rotación key) |
 | [ADRs](docs/adr/) | **Decisiones arquitectónicas (001-004)** |
 | [02-implementation-log](docs/02-implementation-log.md) | Cronología de implementación |
 | [03-setup-vps](docs/03-setup-vps-openclaw.md) | Setup VPS + OpenClaw |

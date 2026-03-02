@@ -105,16 +105,16 @@ def handle_windows_pad_run_flow(input_data: Dict[str, Any]) -> Dict[str, Any]:
 
 def handle_windows_open_notepad(input_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Abre el Bloc de notas con el texto indicado en el próximo inicio de sesión (solo Windows).
-    El Worker corre como servicio (cuenta SYSTEM); si no se indica usuario, la tarea
-    programada se ejecuta en sesión 0 y el Bloc no se ve. Para que se abra en la sesión
-    del usuario, en la VM hay que definir OPENCLAW_NOTEPAD_RUN_AS_USER (ej. "pcrick\\rick")
-    y opcionalmente OPENCLAW_NOTEPAD_RUN_AS_PASSWORD.
+    Abre el Bloc de notas con el texto indicado (solo Windows).
+    - Si OPENCLAW_INTERACTIVE_SESSION=1 (Worker en puerto 8089/sesión usuario): abre Notepad
+      directamente en la sesión actual (Session 1).
+    - Si no: usa tarea programada (schtasks). El Worker como servicio (SYSTEM) ejecuta en
+      sesión 0; para ver el Bloc en la sesión del usuario hay que usar el Worker interactivo (8089).
 
     Input:
         text (str, optional): Texto a mostrar. Default: "hola".
-        run_now (bool, optional): Si true, abre Notepad inmediatamente además de programar (default: false).
-        run_as_user (str, optional): Usuario con el que ejecutar al logon (ej. "pcrick\\rick").
+        run_now (bool, optional): Si true, abre Notepad inmediatamente (default: false).
+        run_as_user (str, optional): Usuario con el que ejecutar al logon (solo si no es interactivo).
 
     Returns:
         {"ok": bool, "path": str, "scheduled": bool, "error": str|None}
@@ -123,16 +123,33 @@ def handle_windows_open_notepad(input_data: Dict[str, Any]) -> Dict[str, Any]:
         return {"ok": False, "path": "", "scheduled": False, "error": "Solo disponible en Windows."}
     text = (input_data.get("text") or "hola").strip() or "hola"
     run_now = bool(input_data.get("run_now", False))
-    task_name = "UmbralOpenNotepad"
-    # Solo usar /ru si se pasa explícitamente en input. Las vars de entorno causan
-    # fallos de SID mapeo en esta VM; por defecto crear sin /ru (sesión 0).
-    run_as_user = (input_data.get("run_as_user") or "").strip()
-    run_as_password = (input_data.get("run_as_password") or "").strip()
+    interactive = os.environ.get("OPENCLAW_INTERACTIVE_SESSION", "").strip() == "1"
     try:
         fd, path = tempfile.mkstemp(suffix=".txt", prefix="umbral_")
         os.close(fd)
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
+    except Exception as e:
+        logger.exception("open_notepad temp file failed: %s", e)
+        return {"ok": False, "path": "", "scheduled": False, "error": str(e)}
+    if interactive:
+        # Worker en sesión de usuario (8089): abrir Notepad directamente en esta sesión
+        try:
+            subprocess.Popen(
+                ["notepad.exe", path],
+                cwd=os.environ.get("SYSTEMROOT", "C:\\Windows"),
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            return {"ok": True, "path": path, "scheduled": False, "interactive": True, "error": None}
+        except Exception as e:
+            logger.exception("open_notepad interactive failed: %s", e)
+            return {"ok": False, "path": path, "scheduled": False, "error": str(e)}
+    task_name = "UmbralOpenNotepad"
+    run_as_user = (input_data.get("run_as_user") or "").strip()
+    run_as_password = (input_data.get("run_as_password") or "").strip()
+    try:
         dir_path = os.path.dirname(path)
         bat_path = os.path.join(dir_path, "umbral_open_notepad.bat")
         bat_content = f'@echo off\nstart "" notepad.exe "{path}"\ntimeout /t 2 /nobreak >nul\nschtasks /delete /tn {task_name} /f'

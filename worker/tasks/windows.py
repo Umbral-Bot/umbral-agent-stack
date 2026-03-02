@@ -127,6 +127,7 @@ def handle_windows_open_notepad(input_data: Dict[str, Any]) -> Dict[str, Any]:
     # fallos de SID mapeo en esta VM; por defecto crear sin /ru (sesión 0).
     run_as_user = (input_data.get("run_as_user") or "").strip()
     run_as_password = (input_data.get("run_as_password") or "").strip()
+    _debug_run_as = bool(run_as_user)
     try:
         fd, path = tempfile.mkstemp(suffix=".txt", prefix="umbral_")
         os.close(fd)
@@ -177,15 +178,17 @@ def handle_windows_open_notepad(input_data: Dict[str, Any]) -> Dict[str, Any]:
                         "path": path,
                         "scheduled": True,
                         "session_zero": True,
+                        "debug_used_ru": _debug_run_as,
                         "error": None,
                     }
             return {
                 "ok": False,
                 "path": path,
                 "scheduled": False,
+                "debug_used_ru": _debug_run_as,
                 "error": err,
             }
-        return {"ok": True, "path": path, "scheduled": True, "error": None}
+        return {"ok": True, "path": path, "scheduled": True, "debug_used_ru": _debug_run_as, "error": None}
     except Exception as e:
         logger.exception("open_notepad failed: %s", e)
         return {"ok": False, "path": "", "scheduled": False, "error": str(e)}

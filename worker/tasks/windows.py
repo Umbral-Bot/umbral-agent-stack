@@ -189,3 +189,53 @@ def handle_windows_open_notepad(input_data: Dict[str, Any]) -> Dict[str, Any]:
     except Exception as e:
         logger.exception("open_notepad failed: %s", e)
         return {"ok": False, "path": "", "scheduled": False, "error": str(e)}
+
+
+def handle_windows_write_worker_token(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Escribe el WORKER_TOKEN del entorno en C:\\openclaw-worker\\worker_token
+    para que el Worker interactivo (sesión 1) pueda leerlo al arrancar.
+    Solo Windows; el Worker debe tener WORKER_TOKEN en env (NSSM).
+    """
+    if sys.platform != "win32":
+        return {"ok": False, "error": "Solo Windows."}
+    token = os.environ.get("WORKER_TOKEN", "").strip()
+    if not token:
+        return {"ok": False, "error": "WORKER_TOKEN no definido en el entorno."}
+    path = r"C:\openclaw-worker\worker_token"
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(token)
+        return {"ok": True, "path": path, "error": None}
+    except Exception as e:
+        logger.exception("write_worker_token failed: %s", e)
+        return {"ok": False, "path": path, "error": str(e)}
+
+
+def handle_windows_start_interactive_worker(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Arranca el Worker interactivo (uvicorn puerto 8089) en segundo plano.
+    Ejecuta scripts/vm/start_interactive_worker.bat; el proceso queda en sesión 0
+    salvo que se haya arrancado por logon de Rick. Útil para tener 8089 escuchando.
+    """
+    if sys.platform != "win32":
+        return {"ok": False, "error": "Solo Windows."}
+    repo = os.environ.get("PYTHONPATH", "").strip() or r"C:\GitHub\umbral-agent-stack"
+    bat = os.path.join(repo, "scripts", "vm", "start_interactive_worker.bat")
+    if not os.path.isfile(bat):
+        return {"ok": False, "error": f"No existe {bat}"}
+    try:
+        flags = getattr(subprocess, "DETACHED_PROCESS", 0x00000008)
+        subprocess.Popen(
+            ["cmd", "/c", "start", "/b", "", bat],
+            cwd=repo,
+            creationflags=flags,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        return {"ok": True, "bat": bat, "error": None}
+    except Exception as e:
+        logger.exception("start_interactive_worker failed: %s", e)
+        return {"ok": False, "error": str(e)}

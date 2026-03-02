@@ -18,7 +18,8 @@
 |----|--------|----------|--------|
 | 2026-02-28-001 | VM: deshabilitar tasks legacy y limpiar Gateway (regularización fase 1) | codex | ✅ (parcial: falta OpenClaw Gateway por permisos admin) |
 | 2026-02-28-002 | VM: actualizar Worker al modular del repo y probar PAD | codex | ✅ (parcial: falta reiniciar servicio como Admin + instalar PAD) |
-| 2026-02-28-003 | VM: ejecutar runbook diagnóstico schtasks /ru y reportar resultados | codex | assigned |
+| 2026-02-28-003 | VM: ejecutar runbook diagnóstico schtasks /ru y reportar resultados | codex | blocked |
+| 2026-02-28-004 | VM: diagnóstico schtasks sin /ru — SID error pese a debug_used_ru: false | codex | assigned |
 
 ## Tareas completadas recientes
 

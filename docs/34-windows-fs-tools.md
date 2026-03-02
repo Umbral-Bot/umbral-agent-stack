@@ -18,6 +18,8 @@ tools:
 
 El Worker valida que cualquier `path` esté **dentro** de alguno de esos prefijos.
 
+**Acceso a G:\ (Google Drive):** Si el Worker corre como servicio con cuenta LocalSystem, no verá unidades montadas por usuario (ej. `G:\`). Para que `windows.fs.*` funcione en `G:\Mi unidad\...`, el servicio NSSM debe ejecutarse con el usuario que tiene Drive montado. Ver [runbook-vm-worker-setup.md](../runbooks/runbook-vm-worker-setup.md) sección "Worker como usuario (acceso a G:\)".
+
 ## Tareas
 - `windows.fs.ensure_dirs` — crea árbol de directorios
 - `windows.fs.list` — lista entradas

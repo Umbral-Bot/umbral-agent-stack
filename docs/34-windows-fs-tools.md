@@ -31,3 +31,6 @@ El Worker valida que cualquier `path` esté **dentro** de alguno de esos prefijo
 ```json
 { "task": "windows.fs.list", "input": {"path": "G:\\Mi unidad\\Rick-David", "limit": 200} }
 ```
+
+## Transferencia de binarios (opcional)
+- `windows.fs.write_bytes_b64`: escribir un archivo binario desde base64 (limitado por `tools.fs.max_bytes_b64`).

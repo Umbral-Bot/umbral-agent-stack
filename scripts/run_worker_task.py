@@ -31,6 +31,8 @@ def main():
         raw = sys.stdin.read().strip()
     if not raw and task in defaults:
         input_data = defaults[task]
+    elif task == "windows.open_notepad" and raw and not raw.strip().startswith("{"):
+        input_data = {"text": raw}
     else:
         if not raw:
             raw = "{}"

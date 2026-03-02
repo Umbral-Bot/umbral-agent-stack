@@ -29,6 +29,9 @@ from .windows_fs import (
     handle_windows_fs_read_text,
     handle_windows_fs_write_text,
 )
+from .windows_fs_bin import (
+    handle_windows_fs_write_bytes_b64,
+)
 from .observability import handle_ooda_report, handle_self_eval
 from .linear import handle_linear_create_issue, handle_linear_list_teams
 
@@ -50,6 +53,7 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "windows.fs.list": handle_windows_fs_list,
     "windows.fs.read_text": handle_windows_fs_read_text,
     "windows.fs.write_text": handle_windows_fs_write_text,
+    "windows.fs.write_bytes_b64": handle_windows_fs_write_bytes_b64,
     "system.ooda_report": handle_ooda_report,
     "system.self_eval": handle_self_eval,
     "linear.create_issue": handle_linear_create_issue,

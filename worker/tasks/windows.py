@@ -123,8 +123,10 @@ def handle_windows_open_notepad(input_data: Dict[str, Any]) -> Dict[str, Any]:
         return {"ok": False, "path": "", "scheduled": False, "error": "Solo disponible en Windows."}
     text = (input_data.get("text") or "hola").strip() or "hola"
     task_name = "UmbralOpenNotepad"
-    run_as_user = (input_data.get("run_as_user") or "").strip() or os.environ.get("OPENCLAW_NOTEPAD_RUN_AS_USER", "").strip()
-    run_as_password = (input_data.get("run_as_password") or "").strip() or os.environ.get("OPENCLAW_NOTEPAD_RUN_AS_PASSWORD", "").strip()
+    # Solo usar /ru si se pasa explícitamente en input. Las vars de entorno causan
+    # fallos de SID mapeo en esta VM; por defecto crear sin /ru (sesión 0).
+    run_as_user = (input_data.get("run_as_user") or "").strip()
+    run_as_password = (input_data.get("run_as_password") or "").strip()
     try:
         fd, path = tempfile.mkstemp(suffix=".txt", prefix="umbral_")
         os.close(fd)

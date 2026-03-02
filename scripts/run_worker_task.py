@@ -35,8 +35,12 @@ def main():
         input_data = {"text": raw}
     if "--run-now" in sys.argv:
         input_data["run_now"] = True
-    else:
-        if not raw:
+    if "--session" in sys.argv:
+        idx = sys.argv.index("--session")
+        if idx + 1 < len(sys.argv):
+            input_data["session"] = sys.argv[idx + 1]
+    if not input_data and raw:
+        if not raw.strip().startswith("{"):
             raw = "{}"
         if raw:
             try:
@@ -46,6 +50,7 @@ def main():
                 sys.exit(2)
     url = os.environ.get("WORKER_URL", "").rstrip("/")
     token = os.environ.get("WORKER_TOKEN", "")
+    session = input_data.get("session", "")
     if not url or not token:
         env_vars = {}
         env_path = os.path.expanduser("~/.config/openclaw/env")
@@ -59,16 +64,29 @@ def main():
                         k, v = line.split("=", 1)
                         env_vars[k] = v.strip().strip('"').strip("'")
             if not url:
-                if task.startswith("windows.") and env_vars.get("WORKER_URL_VM"):
+                session = input_data.get("session", "")
+                if session == "interactive" and env_vars.get("WORKER_URL_VM_INTERACTIVE"):
+                    url = env_vars["WORKER_URL_VM_INTERACTIVE"]
+                elif task.startswith("windows.") and env_vars.get("WORKER_URL_VM"):
                     url = env_vars["WORKER_URL_VM"]
                 else:
-                    url = env_vars.get("WORKER_URL_VM") or env_vars.get("WORKER_URL") or ""
+                    url = env_vars.get("WORKER_URL_VM_INTERACTIVE") or env_vars.get("WORKER_URL_VM") or env_vars.get("WORKER_URL") or ""
             if not token:
                 token = env_vars.get("WORKER_TOKEN", "")
             url = (url or "").rstrip("/")
         if not url or not token:
             print("Defina WORKER_URL y WORKER_TOKEN (o ~/.config/openclaw/env).", file=sys.stderr)
             sys.exit(3)
+    if session == "interactive":
+        url_interactive = os.environ.get("WORKER_URL_VM_INTERACTIVE") or ""
+        if not url_interactive and os.path.isfile(os.path.expanduser("~/.config/openclaw/env")):
+            with open(os.path.expanduser("~/.config/openclaw/env"), encoding="utf-8") as f:
+                for line in f:
+                    if line.strip().startswith("WORKER_URL_VM_INTERACTIVE="):
+                        url_interactive = line.split("=", 1)[1].strip().strip('"').strip("'")
+                        break
+        if url_interactive:
+            url = url_interactive.rstrip("/")
     try:
         wc = WorkerClient(base_url=url, token=token)
         out = wc.run(task, input_data)

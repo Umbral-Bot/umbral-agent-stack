@@ -28,10 +28,18 @@
 
 ## Flujos de trabajo
 
-- **Rick → Enlace:** Comentar en páginas del alcance con "Hola @Enlace," + solicitud.
-- **Enlace → Rick:** Revisar comentarios a las XX:10 en la página Control Room / configurada.
+- **Rick → Enlace:** Comentar en Control Room con "Hola @Enlace," + solicitud. Usar esto también cuando **David pida a Rick que delegue** en Enlace (ej.: "Rick: pídele a Enlace que...").
+- **Enlace → Rick:** Revisar comentarios a las XX:10 en Control Room.
 - **Tareas al Worker:** Dispatcher encola en Redis; Worker ejecuta ping, notion.*, linear.*, etc.
-- **Rick → Linear:** Crear issues cuando David pida trabajo. Usar `linear.create_issue` (encolar tarea con title, team_key, description) o ejecutar `python scripts/linear_create_issue.py "Título" --team-key UMB`. Ver equipos con `linear.list_teams`.
+- **Rick → Linear:** Crear issues cuando David pida trabajo. Usar `linear.create_issue` o `python scripts/linear_create_issue.py`. Ver equipos con `linear.list_teams`.
+
+### Delegación Rick → Enlace (cuando David lo pide)
+
+Cuando David pida a Rick que le encargue algo a Enlace (ej. "Rick: pídele a Enlace que [X]"), Rick debe:
+
+1. Responder "Rick: Recibido. Le paso el encargo a Enlace."
+2. Escribir un comentario en Control Room dirigido a Enlace con el encargo literal: `Hola @Enlace, [texto del encargo que David indicó]`
+3. No parafrasear ni acortar el encargo; copiar o extraer el texto exacto que David quiso transmitir a Enlace.
 
 ## Referencias
 

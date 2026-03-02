@@ -15,6 +15,15 @@ Levantar el Worker interactivo en la sesión del usuario (Rick) para que la VPS 
 - Python 3.11 instalado.
 - WORKER_TOKEN definido (mismo que el servicio).
 
+## 0) Actualizar Worker en la VM (una vez)
+
+En la VM: `cd C:\GitHub\umbral-agent-stack`, `git pull origin main`, `nssm restart openclaw-worker`.  
+Luego desde la VPS se puede crear el token y arrancar el interactivo con:
+
+```bash
+bash scripts/setup_interactive_worker_from_vps.sh
+```
+
 ## 1) Crear Tarea programada al logon de Rick
 
 Ejecutar en PowerShell **como Administrador**:

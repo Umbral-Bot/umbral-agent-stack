@@ -297,3 +297,44 @@ def handle_windows_start_interactive_worker(input_data: Dict[str, Any]) -> Dict[
     except Exception as e:
         logger.exception("start_interactive_worker failed: %s", e)
         return {"ok": False, "error": str(e)}
+
+
+def handle_windows_add_interactive_worker_to_startup(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Crea un acceso directo en la carpeta Inicio de Windows para que el Worker
+    interactivo (start_interactive_worker.bat) se ejecute al iniciar sesión el usuario.
+    Solo Windows. El Worker debe poder escribir en la carpeta del usuario (ej. ejecutar
+    como SYSTEM con acceso a C:\\Users\\<user>).
+    Input: username (str, opcional). Default: "Rick".
+    """
+    if sys.platform != "win32":
+        return {"ok": False, "error": "Solo Windows."}
+    username = (input_data.get("username") or "Rick").strip()
+    repo = os.environ.get("PYTHONPATH", "").strip() or r"C:\GitHub\umbral-agent-stack"
+    bat = os.path.join(repo, "scripts", "vm", "start_interactive_worker.bat")
+    if not os.path.isfile(bat):
+        return {"ok": False, "error": f"No existe {bat}"}
+    startup = os.path.join("C:\\Users", username, "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
+    link_path = os.path.join(startup, "StartInteractiveWorker.lnk")
+    try:
+        os.makedirs(startup, exist_ok=True)
+        ps = (
+            f'$w = New-Object -ComObject WScript.Shell; '
+            f'$s = $w.CreateShortcut("{link_path}"); '
+            f'$s.TargetPath = "{bat}"; '
+            f'$s.WorkingDirectory = "{repo}"; '
+            f'$s.Save()'
+        )
+        r = subprocess.run(
+            ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", ps],
+            capture_output=True,
+            text=True,
+            timeout=15,
+            cwd=os.environ.get("SYSTEMROOT", "C:\\Windows"),
+        )
+        if r.returncode != 0:
+            return {"ok": False, "error": (r.stderr or r.stdout or "PowerShell failed").strip()}
+        return {"ok": True, "startup": startup, "link": link_path, "error": None}
+    except Exception as e:
+        logger.exception("add_interactive_worker_to_startup failed: %s", e)
+        return {"ok": False, "error": str(e)}

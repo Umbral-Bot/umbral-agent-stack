@@ -105,26 +105,56 @@ def handle_windows_pad_run_flow(input_data: Dict[str, Any]) -> Dict[str, Any]:
 
 def handle_windows_open_notepad(input_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Abre el Bloc de notas con el texto indicado (solo Windows). Útil para comprobar
-    que una orden desde la VPS llega a la VM.
+    Abre el Bloc de notas con el texto indicado en el próximo inicio de sesión (solo Windows).
+    El Worker corre como servicio (antes de que nadie inicie sesión); esta tarea crea un
+    archivo .txt y programa "al iniciar sesión" que se abra con Notepad, así al ingresar
+    la contraseña en Hyper-V el usuario ya ve el Bloc de notas. Sirve para comprobar
+    control VPS → VM sin tocar la VM.
 
     Input:
         text (str, optional): Texto a mostrar. Default: "hola".
 
     Returns:
-        {"ok": bool, "path": str, "error": str|None}
+        {"ok": bool, "path": str, "scheduled": bool, "error": str|None}
     """
     if sys.platform != "win32":
-        return {"ok": False, "path": "", "error": "Solo disponible en Windows."}
+        return {"ok": False, "path": "", "scheduled": False, "error": "Solo disponible en Windows."}
     text = (input_data.get("text") or "hola").strip() or "hola"
+    task_name = "UmbralOpenNotepad"
     try:
         fd, path = tempfile.mkstemp(suffix=".txt", prefix="umbral_")
         os.close(fd)
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
-        # startfile abre con la app por defecto; notepad para .txt
-        os.startfile(path)
-        return {"ok": True, "path": path, "error": None}
+        # Programar "al iniciar sesión" para que Notepad se abra cuando el usuario entre
+        dir_path = os.path.dirname(path)
+        bat_path = os.path.join(dir_path, "umbral_open_notepad.bat")
+        bat_content = f'@echo off\nstart "" notepad.exe "{path}"\ntimeout /t 2 /nobreak >nul\nschtasks /delete /tn {task_name} /f'
+        with open(bat_path, "w", encoding="utf-8") as f:
+            f.write(bat_content)
+        r = subprocess.run(
+            [
+                "schtasks",
+                "/create",
+                "/tn", task_name,
+                "/tr", bat_path,
+                "/sc", "onlogon",
+                "/f",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            cwd=os.environ.get("SYSTEMROOT", "C:\\Windows"),
+        )
+        if r.returncode != 0:
+            logger.warning("schtasks create failed: %s %s", r.stdout, r.stderr)
+            return {
+                "ok": False,
+                "path": path,
+                "scheduled": False,
+                "error": r.stderr or r.stdout or "schtasks failed",
+            }
+        return {"ok": True, "path": path, "scheduled": True, "error": None}
     except Exception as e:
         logger.exception("open_notepad failed: %s", e)
-        return {"ok": False, "path": "", "error": str(e)}
+        return {"ok": False, "path": "", "scheduled": False, "error": str(e)}

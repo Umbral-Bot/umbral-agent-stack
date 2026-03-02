@@ -21,6 +21,7 @@ from .windows import (
     handle_windows_write_worker_token,
     handle_windows_firewall_allow_port,
     handle_windows_start_interactive_worker,
+    handle_windows_add_interactive_worker_to_startup,
 )
 from .observability import handle_ooda_report, handle_self_eval
 from .linear import handle_linear_create_issue, handle_linear_list_teams
@@ -38,6 +39,7 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "windows.write_worker_token": handle_windows_write_worker_token,
     "windows.firewall_allow_port": handle_windows_firewall_allow_port,
     "windows.start_interactive_worker": handle_windows_start_interactive_worker,
+    "windows.add_interactive_worker_to_startup": handle_windows_add_interactive_worker_to_startup,
     "system.ooda_report": handle_ooda_report,
     "system.self_eval": handle_self_eval,
     "linear.create_issue": handle_linear_create_issue,

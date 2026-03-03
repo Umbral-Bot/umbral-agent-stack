@@ -120,15 +120,16 @@ def main() -> int:
         print(f"   FAIL ({type(e).__name__}: {e})")
     print()
 
-    # 4) Linear (vía Worker)
+    # 4) Linear (vía Worker VM — LINEAR_API_KEY está en la VM)
     print("4) Linear (vía Worker)")
-    if not worker_url or not worker_token:
+    linear_worker = (os.environ.get("WORKER_URL_VM") or "").strip().rstrip("/") or worker_url
+    if not linear_worker or not worker_token:
         print("   SKIP (sin Worker)")
     else:
         try:
             import httpx
             r = httpx.post(
-                f"{worker_url}/run",
+                f"{linear_worker}/run",
                 json={"task": "linear.list_teams", "input": {}},
                 headers={"Authorization": f"Bearer {worker_token}", "Content-Type": "application/json"},
                 timeout=15,

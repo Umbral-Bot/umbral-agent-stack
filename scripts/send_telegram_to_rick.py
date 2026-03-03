@@ -7,9 +7,10 @@ Requiere: TELEGRAM_BOT_TOKEN y TELEGRAM_CHAT_ID en el entorno
 (o en .env en la raiz del repo). TELEGRAM_CHAT_ID suele ser el user id
 del allowlist (ej. 1813248373).
 
-Uso (en la VPS, donde esta el token de OpenClaw):
-  export $(grep -v '^#' ~/.config/openclaw/env | xargs)
-  python scripts/send_telegram_to_rick.py "Fix listo. En la VM: git pull, nssm restart. Re-proba linear.list_teams."
+Uso (en la VPS: primero git pull; no hay python global, usar .venv):
+  cd ~/umbral-agent-stack && git pull origin main
+  source .venv/bin/activate && export $(grep -v '^#' ~/.config/openclaw/env | xargs)
+  python scripts/send_telegram_to_rick.py "Mensaje para Rick"
 
 Uso (local con .env):
   python scripts/send_telegram_to_rick.py "Mensaje para Rick"

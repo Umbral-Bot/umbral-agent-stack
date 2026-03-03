@@ -2,7 +2,7 @@
 Linear API client — create/update issues for Rick.
 
 Uses GraphQL API: https://api.linear.app/graphql
-Auth: Authorization: Bearer <LINEAR_API_KEY>
+Auth: Personal API key as Authorization: <API_KEY> (sin prefijo Bearer; ver Linear docs).
 """
 
 from __future__ import annotations
@@ -19,8 +19,12 @@ TIMEOUT = 30.0
 
 
 def _headers(api_key: str) -> Dict[str, str]:
+    # Linear personal API keys: Authorization: <API_KEY> (no Bearer prefix).
+    key = api_key.strip()
+    if key.startswith("Bearer "):
+        key = key[7:].strip()
     return {
-        "Authorization": api_key if api_key.startswith("Bearer") else f"Bearer {api_key}",
+        "Authorization": key,
         "Content-Type": "application/json",
     }
 

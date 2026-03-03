@@ -53,6 +53,48 @@ def _notion_upsert(
         )
     except Exception as e:
         logger.debug("Notion upsert_task skipped or failed: %s", e)
+
+
+def _notify_linear_completion(
+    wc: "WorkerClient",
+    envelope: dict,
+    success: bool,
+    result: Any = None,
+    error: str = "",
+) -> None:
+    """
+    Si el envelope tiene linear_issue_id, actualiza el issue en Linear
+    con el estado final (Done / Cancelled) y un comentario con el resultado.
+    Fire-and-forget; no bloquea el flujo.
+    """
+    issue_id = envelope.get("linear_issue_id")
+    if not issue_id:
+        return
+
+    task = envelope.get("task", "unknown")
+    state_name = "Done" if success else "Cancelled"
+    emoji = "✅" if success else "❌"
+    body_lines = [f"{emoji} **Tarea `{task}` {'completada' if success else 'fallida'}**"]
+
+    if success and result is not None:
+        summary = str(result)[:400] if not isinstance(result, dict) else str(result.get("result", result))[:400]
+        body_lines += ["", f"**Resultado:**\n```\n{summary}\n```"]
+    elif error:
+        body_lines += ["", f"**Error:**\n```\n{error[:400]}\n```"]
+
+    try:
+        wc.run(
+            "linear.update_issue_status",
+            {
+                "issue_id": issue_id,
+                "state_name": state_name,
+                "comment": "\n".join(body_lines),
+            },
+        )
+    except Exception as e:
+        logger.debug("Linear update_issue_status skipped or failed: %s", e)
+
+
 logger = logging.getLogger("dispatcher.service")
 
 DEFAULT_WORKERS = 2
@@ -128,11 +170,13 @@ def _run_worker(
                 wc_local, task_id, "done", team, task,
                 result_summary=str(result.get("result", result))[:300] if isinstance(result, dict) else str(result)[:300],
             )
+            _notify_linear_completion(wc_local, envelope, success=True, result=result)
             logger.info("[worker %d] Task %s completed via %s Worker (model=%s)", worker_id, task_id, target, selected_model)
         except Exception as e:
             duration_ms = (time.time() - t_start) * 1000
             ops_log.task_failed(task_id, task, team, str(e), model=selected_model)
             _notion_upsert(wc_local, task_id, "failed", team, task, error=str(e)[:500])
+            _notify_linear_completion(wc_local, envelope, success=False, error=str(e))
             logger.error("[worker %d] Task %s failed: %s", worker_id, task_id, str(e))
             queue.fail_task(task_id, str(e))
 

@@ -143,3 +143,153 @@ def get_team_by_key(api_key: str, key: str) -> Optional[Dict[str, Any]]:
         if (t.get("name") or "").upper() == key_upper:
             return t
     return None
+
+
+# ---------------------------------------------------------------------------
+# Labels
+# ---------------------------------------------------------------------------
+
+def list_labels(api_key: str, team_id: str) -> List[Dict[str, Any]]:
+    """Lista los issue labels de un equipo Linear."""
+    q = """
+    query IssueLabels($teamId: String!) {
+      issueLabels(filter: { team: { id: { eq: $teamId } } }) {
+        nodes { id name color }
+      }
+    }
+    """
+    data = _gql(api_key, q, {"teamId": team_id})
+    return data.get("issueLabels", {}).get("nodes", [])
+
+
+def get_or_create_label(
+    api_key: str,
+    team_id: str,
+    name: str,
+    color: str = "#6B7280",
+) -> Optional[str]:
+    """
+    Retorna el id del label con ese nombre en el equipo.
+    Si no existe, lo crea. Retorna el label_id o None si falla.
+    """
+    for label in list_labels(api_key, team_id):
+        if label.get("name", "").lower() == name.lower():
+            return label["id"]
+
+    mutation = """
+    mutation IssueLabelCreate($input: IssueLabelCreateInput!) {
+      issueLabelCreate(input: $input) {
+        success
+        issueLabel { id name }
+      }
+    }
+    """
+    try:
+        data = _gql(api_key, mutation, {"input": {"teamId": team_id, "name": name, "color": color}})
+        created = data.get("issueLabelCreate", {}).get("issueLabel")
+        if created:
+            logger.info("[LinearClient] Label creado: '%s' → %s", name, created["id"])
+            return created["id"]
+    except Exception as e:
+        logger.warning("[LinearClient] No se pudo crear label '%s': %s", name, e)
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Workflow states
+# ---------------------------------------------------------------------------
+
+def list_states(api_key: str, team_id: str) -> List[Dict[str, Any]]:
+    """Lista los workflow states de un equipo."""
+    q = """
+    query WorkflowStates($teamId: String!) {
+      workflowStates(filter: { team: { id: { eq: $teamId } } }) {
+        nodes { id name type }
+      }
+    }
+    """
+    data = _gql(api_key, q, {"teamId": team_id})
+    return data.get("workflowStates", {}).get("nodes", [])
+
+
+def get_state_id_by_name(api_key: str, team_id: str, state_name: str) -> Optional[str]:
+    """Busca el ID de un workflow state por nombre (case-insensitive)."""
+    for state in list_states(api_key, team_id):
+        if state.get("name", "").lower() == state_name.lower():
+            return state["id"]
+    logger.warning("[LinearClient] State '%s' no encontrado en team %s", state_name, team_id)
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Update issue + comments
+# ---------------------------------------------------------------------------
+
+def add_comment(api_key: str, issue_id: str, body: str) -> Dict[str, Any]:
+    """Agrega un comentario a un issue de Linear."""
+    mutation = """
+    mutation CommentCreate($input: CommentCreateInput!) {
+      commentCreate(input: $input) {
+        success
+        comment { id body createdAt }
+      }
+    }
+    """
+    data = _gql(api_key, mutation, {"input": {"issueId": issue_id, "body": body}})
+    return data.get("commentCreate", {})
+
+
+def update_issue(
+    api_key: str,
+    issue_id: str,
+    state_id: Optional[str] = None,
+    assignee_id: Optional[str] = None,
+    label_ids: Optional[List[str]] = None,
+    comment: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Actualiza campos de un issue y/o agrega un comentario.
+
+    Args:
+        api_key: LINEAR_API_KEY
+        issue_id: UUID del issue en Linear
+        state_id: ID del nuevo workflow state
+        assignee_id: ID del nuevo assignee
+        label_ids: Lista de label IDs a asignar (reemplaza los existentes)
+        comment: Texto del comentario a agregar (separado del update)
+
+    Returns:
+        {"update": {...}, "comment": {...}}  (las claves presentes según lo que se hizo)
+    """
+    results: Dict[str, Any] = {}
+
+    input_fields: Dict[str, Any] = {}
+    if state_id:
+        input_fields["stateId"] = state_id
+    if assignee_id:
+        input_fields["assigneeId"] = assignee_id
+    if label_ids is not None:
+        input_fields["labelIds"] = label_ids
+
+    if input_fields:
+        mutation = """
+        mutation IssueUpdate($id: String!, $input: IssueUpdateInput!) {
+          issueUpdate(id: $id, input: $input) {
+            success
+            issue {
+              id
+              identifier
+              title
+              state { name }
+              updatedAt
+            }
+          }
+        }
+        """
+        data = _gql(api_key, mutation, {"id": issue_id, "input": input_fields})
+        results["update"] = data.get("issueUpdate", {})
+
+    if comment:
+        results["comment"] = add_comment(api_key, issue_id, comment)
+
+    return results

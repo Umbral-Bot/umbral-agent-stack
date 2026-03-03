@@ -33,7 +33,7 @@ from .windows_fs_bin import (
     handle_windows_fs_write_bytes_b64,
 )
 from .observability import handle_ooda_report, handle_self_eval
-from .linear import handle_linear_create_issue, handle_linear_list_teams
+from .linear import handle_linear_create_issue, handle_linear_list_teams, handle_linear_update_issue_status
 
 # Each handler: (input: dict) -> dict
 TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
@@ -58,4 +58,5 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "system.self_eval": handle_self_eval,
     "linear.create_issue": handle_linear_create_issue,
     "linear.list_teams": handle_linear_list_teams,
+    "linear.update_issue_status": handle_linear_update_issue_status,
 }

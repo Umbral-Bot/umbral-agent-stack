@@ -8,7 +8,7 @@ Checklist para comprobar que el stack cumple con los protocolos definidos: dashb
 
 Para comprobar que todo funciona **como está ahora** (env, Worker, Redis, Linear, tareas del Worker).
 
-**Importante (VPS):** El script `scripts/verify_stack_vps.py` está en el repo. En la VPS hay que hacer **`git pull`** (desde `~/umbral-agent-stack`) para que exista; si no, sale "No such file or directory".
+**Regla VPS:** En la VPS no hay `python` global; usar siempre **`.venv`** (`source .venv/bin/activate`). Scripts nuevos requieren **`git pull origin main`** antes de ejecutarlos (si no, "No such file or directory").
 
 **En la VPS (verificación completa — env, Redis, Linear, tareas):**
 ```bash

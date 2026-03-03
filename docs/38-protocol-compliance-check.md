@@ -2,6 +2,54 @@
 
 Checklist para comprobar que el stack cumple con los protocolos definidos: dashboard, Linear, Notion, board de agentes, etc. Revisar periódicamente (o cuando Cursor integre trabajo de otros agentes).
 
+---
+
+## Script de verificación (antes de n8n u otros cambios)
+
+Para comprobar que todo funciona **como está ahora** (env, Worker, Redis, Linear, tareas del Worker).
+
+**Importante (VPS):** El script `scripts/verify_stack_vps.py` está en el repo. En la VPS hay que hacer **`git pull`** (desde `~/umbral-agent-stack`) para que exista; si no, sale "No such file or directory".
+
+**En la VPS (verificación completa — env, Redis, Linear, tareas):**
+```bash
+cd ~/umbral-agent-stack && git pull origin main
+source .venv/bin/activate
+export $(grep -v '^#' ~/.config/openclaw/env | xargs)
+PYTHONPATH=. python scripts/verify_stack_vps.py
+```
+
+**Alternativa en la VPS (sin git pull):** Verificación rápida (solo OpenClaw, Tailscale, Worker health; no comprueba Redis/Notion/Linear):
+```bash
+cd ~/umbral-agent-stack
+export $(grep -v '^#' ~/.config/openclaw/env | xargs)
+bash scripts/vps/verify-openclaw.sh
+```
+
+**En local (Windows, leyendo `.env`):**
+```powershell
+cd C:\GitHub\umbral-agent-stack
+python scripts/verify_stack_vps.py
+```
+
+El script Python comprueba: variables de entorno necesarias, Worker `/health`, Redis, que el Worker tenga `notion.update_dashboard` y `linear.list_teams`, y prueba Linear llamando al Worker. No escribe en Notion. Tras ver que todo da OK, probar el dashboard real con `scripts/dashboard_report_vps.py` (sección 5 del output).
+
+---
+
+## Estado de verificación (2026-03-03)
+
+Verificación desde repo (código y config). Lo que requiere VPS o Notion/Linear solo se puede confirmar en el entorno real.
+
+| Área | En repo / config | En VPS o externo (confirmar con Rick/David) |
+|------|------------------|---------------------------------------------|
+| **.agents/** | OK: PROTOCOL.md, board.md, tasks con formato; 2026-03-03-001 y 002 done. | — |
+| **Dashboard** | OK: `notion.update_dashboard` en Worker; `dashboard_report_vps.py` y `dashboard-cron.sh` existen; `install-cron.sh` instala cron cada 15 min. | Cron instalado en VPS (`install-cron.sh` o crontab); `~/.config/openclaw/env` con `NOTION_DASHBOARD_PAGE_ID`, `NOTION_API_KEY`, `WORKER_URL`, `WORKER_TOKEN`, `REDIS_URL`; página Dashboard Rick actualizándose. |
+| **Notion Control Room** | OK: Worker usa `NOTION_CONTROL_ROOM_PAGE_ID`; doc 18 y 22 referencian. | `NOTION_CONTROL_ROOM_PAGE_ID` en env VPS/Worker; poller programado (XX:10); Enlace y Rick siguen convención. |
+| **Linear** | OK: `linear.create_issue`, `linear.list_teams` en Worker; AGENTS.md indica uso por Rick. | `LINEAR_API_KEY` en `~/.config/openclaw/env` (VPS); probar listar equipos / crear issue. |
+| **n8n** | OK: doc 37; script `n8n-path-and-service.sh`. | **Confirmado por Rick:** instalado, servicio user systemd activo, PATH configurado (2026-03-03). |
+| **Variables env** | `.env.example` tiene NOTION_DASHBOARD, WORKER_*, LINEAR, etc. Faltaba `NOTION_CONTROL_ROOM_PAGE_ID` en plantilla → añadido. | En VPS: `~/.config/openclaw/env` con todas las necesarias para Worker, dashboard y poller. |
+
+**Acciones pendientes (en la VPS o por David):** (1) Confirmar que el cron del dashboard está instalado y que el Dashboard Rick en Notion se actualiza. (2) Confirmar que `NOTION_CONTROL_ROOM_PAGE_ID` y `NOTION_DASHBOARD_PAGE_ID` están en el env de la VPS. (3) Probar Linear (listar equipos o crear issue de prueba).
+
 ## 1. Protocolo inter-agentes (`.agents/`)
 
 | Elemento | Qué comprobar | Referencia |

@@ -27,6 +27,15 @@ Rick (VPS) puede usar APIs de Google Cloud para el SIM, análisis de mercado y e
 - Si la key se envió por chat/Telegram, **rotar** cuando termine el setup: en GCP Console crear nueva key, actualizar en `~/.config/openclaw/env`, revocar la anterior.
 - No commitear valores reales; `env.template` y este doc solo referencian nombres de variables.
 
+## Proyecto dedicado para Custom Search (opcional)
+
+Si el proyecto principal da 403 con Custom Search JSON API, se puede usar un proyecto solo para esa API:
+
+- **Proyecto:** `rick-cse-umbral` (creado con gcloud: `gcloud projects create rick-cse-umbral`, API habilitada, facturación vinculada).
+- **API key:** Crear en ese proyecto (`gcloud services api-keys create --display-name="Rick Custom Search Umbral" --project=rick-cse-umbral`) y poner el valor en `GOOGLE_CSE_API_KEY_RICK_UMBRAL` en `.env` (local) y en `~/.config/openclaw/env` (VPS).
+
+**Nota:** El 403 "This project does not have the access to Custom Search JSON API" puede seguir apareciendo incluso con proyecto nuevo, API habilitada y facturación activa; es un problema conocido (API restringida/deprecada para proyectos nuevos). **Alternativa configurada:** Tavily Search (`TAVILY_API_KEY` + `scripts/web_discovery.py`). Azure Bing no disponible para cuentas nuevas. Ver [docs/36-rick-embudo-capabilities.md](36-rick-embudo-capabilities.md).
+
 ## Referencias
 
 - Creación y restricción de API key: Google Cloud Console → APIs y servicios → Credenciales.

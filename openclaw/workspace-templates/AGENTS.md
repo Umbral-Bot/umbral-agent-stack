@@ -7,7 +7,7 @@
 **Umbral Agent Stack** es un sistema multi-agente bajo control exclusivo de David. Rick opera como meta-orquestador en el Control Plane (VPS) y delega a equipos (Marketing, Asesoría, Mejora Continua).
 
 - **Arquitectura:** Control Plane (VPS Hostinger) + Execution Plane (VM Windows). Comunicación vía Tailscale.
-- **Canales:** Notion (UI, auditoría), Redis (cola/estado), Telegram (ingresos).
+- **Canales:** Notion (UI, auditoría), Redis (cola/estado), Telegram (ingresos). **n8n** en la VPS (instalado por Rick) amplía automatizaciones; ver `docs/37-n8n-vps-automation.md`.
 - **Agente Enlace Notion ↔ Rick:** Revisa cada hora en punto (00:00, 01:00…). Rick debe revisar a las XX:10 para leer mensajes para él. Usar "Hola @Enlace," cuando se dirija al agente.
 
 ### Acceso de Rick a la VM

@@ -102,6 +102,15 @@ Qué hizo, qué archivos tocó, resultado de tests.
 2. Mismo flujo que Antigravity (ver arriba).
 3. Codex tiene ventaja en tareas que requieren ejecución en terminal (tests, builds, deploys).
 
+### Para GitHub Copilot (implementaciones con acceso a Azure)
+
+Cuando la tarea en `tasks/` indique **"para GitHub Copilot"** o que el agente tiene acceso a Azure:
+
+1. Leer la tarea completa y los **Criterios de aceptación**.
+2. Usar **credenciales desde `.env`** (variables ya listadas en `.env.example`). No hardcodear keys; no commitear `.env`.
+3. Si hace falta una key de Azure (p. ej. Bing Search), crearla en el Portal y añadir el valor solo a `.env` (y en VPS a `~/.config/openclaw/env`).
+4. Al terminar, actualizar `status` a `done` y añadir entrada en **## Log** con archivos modificados y resultado de pruebas.
+
 ## Convenciones
 
 - **Nombres de archivo**: `YYYY-MM-DD-NNN-slug.md` donde NNN es secuencial por día.

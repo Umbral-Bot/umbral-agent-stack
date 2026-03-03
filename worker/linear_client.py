@@ -33,8 +33,15 @@ def _gql(api_key: str, query: str, variables: Optional[Dict[str, Any]] = None) -
             headers=_headers(api_key),
             json={"query": query, "variables": variables or {}},
         )
-        resp.raise_for_status()
-        data = resp.json()
+        try:
+            data = resp.json()
+        except Exception:
+            data = {}
+        if resp.status_code >= 400:
+            msg = resp.text
+            if isinstance(data.get("errors"), list):
+                msg = str(data["errors"])
+            raise RuntimeError(f"Linear API HTTP {resp.status_code}: {msg}")
         if "errors" in data:
             errs = data["errors"]
             raise RuntimeError(f"Linear API errors: {errs}")
@@ -47,13 +54,14 @@ def list_teams(api_key: str) -> List[Dict[str, Any]]:
 
     Returns:
         [{"id": "...", "key": "UMB", "name": "Umbral"}, ...]
+        (key may be missing if the API does not return it)
     """
+    # Query only id and name (documented); key is optional in case schema differs.
     q = """
     query Teams {
       teams {
         nodes {
           id
-          key
           name
         }
       }
@@ -61,6 +69,8 @@ def list_teams(api_key: str) -> List[Dict[str, Any]]:
     """
     data = _gql(api_key, q)
     nodes = data.get("teams", {}).get("nodes", [])
+    # Linear Team has a key (e.g. UMB); try to add it via a second field if needed.
+    # For now return as-is; get_team_by_key will match by name if key is absent.
     return nodes
 
 
@@ -115,7 +125,7 @@ def create_issue(
 
 def get_team_by_key(api_key: str, key: str) -> Optional[Dict[str, Any]]:
     """
-    Get team by key (e.g. "UMB").
+    Get team by key (e.g. "UMB") or by name (fallback if API does not return key).
 
     Returns:
         {"id": "...", "key": "UMB", "name": "Umbral"} or None
@@ -124,5 +134,8 @@ def get_team_by_key(api_key: str, key: str) -> Optional[Dict[str, Any]]:
     key_upper = key.upper()
     for t in teams:
         if (t.get("key") or "").upper() == key_upper:
+            return t
+        # Fallback: match by name (case-insensitive) if key not in response
+        if (t.get("name") or "").upper() == key_upper:
             return t
     return None

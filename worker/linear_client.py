@@ -152,7 +152,7 @@ def get_team_by_key(api_key: str, key: str) -> Optional[Dict[str, Any]]:
 def list_labels(api_key: str, team_id: str) -> List[Dict[str, Any]]:
     """Lista los issue labels de un equipo Linear."""
     q = """
-    query IssueLabels($teamId: String!) {
+    query IssueLabels($teamId: ID!) {
       issueLabels(filter: { team: { id: { eq: $teamId } } }) {
         nodes { id name color }
       }
@@ -202,7 +202,7 @@ def get_or_create_label(
 def list_states(api_key: str, team_id: str) -> List[Dict[str, Any]]:
     """Lista los workflow states de un equipo."""
     q = """
-    query WorkflowStates($teamId: String!) {
+    query WorkflowStates($teamId: ID!) {
       workflowStates(filter: { team: { id: { eq: $teamId } } }) {
         nodes { id name type }
       }

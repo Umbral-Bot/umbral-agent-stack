@@ -8,6 +8,7 @@ import pytest
 from worker.tasks.llm import (
     ANTHROPIC_MESSAGES_URL,
     GEMINI_BASE_URL,
+    GITHUB_MODELS_URL,
     OPENAI_CHAT_COMPLETIONS_URL,
     _detect_provider,
     handle_llm_generate,
@@ -48,15 +49,45 @@ def test_handle_llm_generate_requires_google_key(monkeypatch):
     "model,expected",
     [
         ("gemini-2.5-flash", "gemini"),
-        ("gpt-4o", "openai"),
-        ("o1", "openai"),
-        ("o3-mini", "openai"),
-        ("claude-3-5-sonnet", "anthropic"),
+        ("gemini-1.5-pro", "gemini"),
         ("unknown-model", "gemini"),
     ],
 )
-def test_detect_provider_cases(model, expected):
+def test_detect_provider_gemini_cases(model, expected, monkeypatch):
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     assert _detect_provider(model) == expected
+
+
+@pytest.mark.parametrize("model", ["gpt-4o", "o1", "o3-mini", "gpt-4o-mini"])
+def test_detect_provider_openai_models_use_github_models(model, monkeypatch):
+    """GPT models prefer GitHub Models (GITHUB_TOKEN) over native OPENAI_API_KEY."""
+    monkeypatch.setenv("GITHUB_TOKEN", "ghp_test_token")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    assert _detect_provider(model) == "github_models"
+
+
+@pytest.mark.parametrize("model", ["claude-3-5-sonnet", "claude-3-haiku", "claude-sonnet-4-20250514"])
+def test_detect_provider_claude_models_use_github_models(model, monkeypatch):
+    """Claude models prefer GitHub Models (GITHUB_TOKEN) over native ANTHROPIC_API_KEY."""
+    monkeypatch.setenv("GITHUB_TOKEN", "ghp_test_token")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
+    assert _detect_provider(model) == "github_models"
+
+
+def test_detect_provider_openai_fallback_without_github_token(monkeypatch):
+    """Falls back to native OpenAI API when GITHUB_TOKEN absent but OPENAI_API_KEY present."""
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    assert _detect_provider("gpt-4o") == "openai"
+
+
+def test_detect_provider_anthropic_fallback_without_github_token(monkeypatch):
+    """Falls back to native Anthropic API when GITHUB_TOKEN absent but ANTHROPIC_API_KEY present."""
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
+    assert _detect_provider("claude-3-5-sonnet") == "anthropic"
 
 
 def test_handle_llm_generate_success_with_mocked_gemini(monkeypatch):
@@ -106,6 +137,7 @@ def test_handle_llm_generate_success_with_mocked_gemini(monkeypatch):
 
 
 def test_openai_success_with_mocked_urllib(monkeypatch):
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
     monkeypatch.setenv("OPENAI_API_KEY", "openai-test-key")
     fake_payload = {
         "choices": [
@@ -151,6 +183,7 @@ def test_openai_success_with_mocked_urllib(monkeypatch):
 
 
 def test_anthropic_success_with_mocked_urllib(monkeypatch):
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "anthropic-test-key")
     fake_payload = {
         "content": [
@@ -194,15 +227,90 @@ def test_anthropic_success_with_mocked_urllib(monkeypatch):
     assert body["messages"][0] == {"role": "user", "content": "Resume este texto."}
 
 
-def test_missing_openai_api_key_raises_error(monkeypatch):
+def test_missing_all_keys_raises_error_for_openai_model(monkeypatch):
+    """Sin GITHUB_TOKEN ni OPENAI_API_KEY, lanza error claro."""
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
 
-    with pytest.raises(RuntimeError, match="OPENAI_API_KEY not configured"):
+    with pytest.raises(RuntimeError, match="GITHUB_TOKEN"):
         handle_llm_generate({"prompt": "hola", "model": "gpt-4o"})
 
 
-def test_missing_anthropic_api_key_raises_error(monkeypatch):
+def test_missing_all_keys_raises_error_for_anthropic_model(monkeypatch):
+    """Sin GITHUB_TOKEN ni ANTHROPIC_API_KEY, lanza error claro."""
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
 
-    with pytest.raises(RuntimeError, match="ANTHROPIC_API_KEY not configured"):
+    with pytest.raises(RuntimeError, match="GITHUB_TOKEN"):
         handle_llm_generate({"prompt": "hola", "model": "claude-sonnet-4-20250514"})
+
+
+def test_github_models_success_gpt4o(monkeypatch):
+    """GitHub Models provider con GPT-4o usando GITHUB_TOKEN."""
+    monkeypatch.setenv("GITHUB_TOKEN", "ghp_test_github_token")
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    fake_payload = {
+        "choices": [
+            {"message": {"content": "Respuesta via GitHub Models."}}
+        ],
+        "usage": {
+            "prompt_tokens": 10,
+            "completion_tokens": 7,
+            "total_tokens": 17,
+        },
+    }
+
+    with patch(
+        "worker.tasks.llm.urllib.request.urlopen",
+        return_value=_DummyResponse(fake_payload),
+    ) as mock_urlopen:
+        result = handle_llm_generate(
+            {"prompt": "Hola", "model": "gpt-4o", "max_tokens": 200}
+        )
+
+    assert result["model"] == "gpt-4o"
+    assert result["text"] == "Respuesta via GitHub Models."
+    assert result["usage"]["total_tokens"] == 17
+
+    req = mock_urlopen.call_args.args[0]
+    assert req.full_url == GITHUB_MODELS_URL
+    headers = _headers_lower(req)
+    assert headers["authorization"] == "Bearer ghp_test_github_token"
+    body = json.loads(req.data.decode("utf-8"))
+    assert body["model"] == "gpt-4o"
+
+
+def test_github_models_success_claude(monkeypatch):
+    """GitHub Models provider con Claude usando GITHUB_TOKEN."""
+    monkeypatch.setenv("GITHUB_TOKEN", "ghp_test_github_token")
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    fake_payload = {
+        "choices": [
+            {"message": {"content": "Respuesta Claude via GitHub Models."}}
+        ],
+        "usage": {"prompt_tokens": 8, "completion_tokens": 6, "total_tokens": 14},
+    }
+
+    with patch(
+        "worker.tasks.llm.urllib.request.urlopen",
+        return_value=_DummyResponse(fake_payload),
+    ) as mock_urlopen:
+        result = handle_llm_generate(
+            {"prompt": "Resume esto.", "model": "claude-3-5-sonnet-20241022"}
+        )
+
+    assert result["model"] == "claude-3-5-sonnet-20241022"
+    assert "GitHub Models" in result["text"]
+    req = mock_urlopen.call_args.args[0]
+    assert req.full_url == GITHUB_MODELS_URL
+    headers = _headers_lower(req)
+    assert headers["authorization"] == "Bearer ghp_test_github_token"
+
+
+def test_github_models_missing_token_raises(monkeypatch):
+    """Sin GITHUB_TOKEN, el provider github_models lanza error claro."""
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+
+    with pytest.raises(RuntimeError, match="GITHUB_TOKEN"):
+        handle_llm_generate({"prompt": "hola", "model": "gpt-4o"})

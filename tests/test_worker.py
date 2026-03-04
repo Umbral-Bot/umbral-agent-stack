@@ -43,7 +43,7 @@ class TestHealth:
         data = resp.json()
         assert data["ok"] is True
         assert "ts" in data
-        assert data["version"] == "0.3.0"
+        assert data["version"] == "0.4.0"
         assert "tasks_registered" in data
 
     def test_health_no_auth_required(self, client):

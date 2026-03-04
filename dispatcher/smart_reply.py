@@ -116,9 +116,36 @@ def _handle_question(text: str, comment_id: str, team: str, wc: WorkerClient) ->
         return
 
     # 4. Post answer
-    reply = f"{ECHO_PREFIX} {answer}\n\n(comment_id={short_id}...)"
+    # If the answer is too long (e.g. composite research report), create a dedicated page
+    if len(answer) > 1500 or answer.count("\n") > 15:
+        # Title based on the prompt/question
+        title = f"Respuesta a: {text[:60]}"
+        if len(text) > 60:
+            title += "..."
+            
+        try:
+            page_res = wc.run("notion.create_report_page", {
+                "title": title,
+                "content": answer,
+                "metadata": {
+                    "source": "smart_reply",
+                    "original_question": text[:200]
+                }
+            })
+            page_url = page_res.get("result", {}).get("page_url", "")
+            if page_url:
+                reply = f"{ECHO_PREFIX} He generado un informe detallado para tu consulta. Puedes leerlo aquí: {page_url}\n\n(comment_id={short_id}...)"
+            else:
+                reply = f"{ECHO_PREFIX} {answer[:1900]}...\n\n(comment_id={short_id}...)"
+        except Exception:
+            logger.exception("Failed to create report page for long answer, falling back to comment")
+            reply = f"{ECHO_PREFIX} {answer[:1900]}...\n\n(comment_id={short_id}...)"
+    else:
+        # Short answer fits in a comment
+        reply = f"{ECHO_PREFIX} {answer}\n\n(comment_id={short_id}...)"
+        
     _post_comment(wc, reply)
-    logger.info("Smart reply posted for question %s (research=%s)", short_id, bool(research_context))
+    logger.info("Smart reply posted for question %s (research=%s, length=%d)", short_id, bool(research_context), len(answer))
 
 
 def _handle_task(

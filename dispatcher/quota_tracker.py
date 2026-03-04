@@ -64,19 +64,33 @@ class QuotaTracker:
         Uso actual como fracción 0.0–1.0 del límite.
         Si no hay config, devuelve 0.0 (sin uso).
         """
+        details = self.get_quota_details(provider)
+        return details["fraction"] if details else 0.0
+
+    def get_quota_details(self, provider: str) -> Dict[str, Any] | None:
+        """
+        Devuelve uso actual, límite y fracción.
+        """
         if provider not in self.config:
-            return 0.0
+            return None
         self._ensure_window(provider)
         limit = int(self.config[provider].get("limit_requests", 100))
         key_used = self._key_used(provider)
         used = int(self.redis.get(key_used) or 0)
-        if limit <= 0:
-            return 0.0
-        return min(1.0, used / limit)
+        fraction = min(1.0, used / limit) if limit > 0 else 0.0
+        return {
+            "used": used,
+            "limit": limit,
+            "fraction": fraction
+        }
 
     def get_all_quota_states(self) -> Dict[str, float]:
-        """Estado de todos los proveedores configurados."""
+        """Estado de todos los proveedores configurados (solo fracción)."""
         return {p: self.get_quota_state(p) for p in self.config}
+
+    def get_all_quota_details(self) -> Dict[str, Dict[str, Any]]:
+        """Detalles de cuota de todos los proveedores."""
+        return {p: self.get_quota_details(p) for p in self.config if self.get_quota_details(p) is not None}
 
     def reset_window(self, provider: str) -> None:
         """Fuerza reinicio de ventana (p. ej. cron)."""

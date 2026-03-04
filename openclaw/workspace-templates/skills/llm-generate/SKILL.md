@@ -9,7 +9,7 @@ metadata:
   openclaw:
     emoji: "\U0001F9E0"
     requires:
-      env_any:
+      env:
         - OPENCLAW_GATEWAY_TOKEN
         - ANTHROPIC_API_KEY
         - AZURE_OPENAI_ENDPOINT

@@ -1,204 +1,221 @@
 ---
 name: linkedin-content
 description: >-
-  Estrategia de contenido para LinkedIn 2025-2026: algoritmo, formatos, hooks,
-  engagement y checklist pre-publicacion para consultores BIM/AEC.
-  Usar cuando: "publicar en linkedin", "post linkedin", "contenido linkedin",
-  "newsletter linkedin", "hook linkedin", "algoritmo linkedin".
+  Estrategia de contenido para LinkedIn de David Moreira: algoritmo 2025,
+  formatos de alto engagement, hooks de apertura, checklist pre-publicacion
+  y anti-patrones. Especializado en sector BIM/AEC para consultores independientes.
+  Use when "publicar en linkedin", "post linkedin", "contenido linkedin",
+  "newsletter linkedin", "carrusel linkedin", "hook linkedin", "algoritmo linkedin".
 metadata:
   openclaw:
-    emoji: "\U0001F4F2"
+    emoji: "\U0001F4F0"
     requires:
       env: []
 ---
 
 # LinkedIn Content — Skill de David Moreira
 
-Rick usa este skill para planificar, redactar y optimizar publicaciones de LinkedIn alineadas con el perfil de David Moreira (Arquitecto + BIM + IA + Citizen Developer) y el algoritmo actual de la plataforma.
+Rick usa este skill para ayudar a David a crear, planificar y optimizar contenido en LinkedIn como consultor independiente BIM/AEC/IA.
 
-## Algoritmo LinkedIn 2025-2026
+## Perfil de David en LinkedIn
 
-### Lo que prioriza
+| Campo | Valor |
+|-------|-------|
+| **Posicionamiento** | Arquitecto + BIM + IA + Citizen Developer |
+| **Audiencia objetivo** | Arquitectos, ingenieros, coordinadores BIM, PMs de construccion |
+| **Tono** | Directo, tecnico, con datos reales, sin jerga corporativa |
+| **Diferenciador** | Interseccion Power Platform + BIM + IA en espanol con metricas documentadas |
+
+## Algoritmo de LinkedIn 2025
+
+### Que prioriza
 
 | Factor | Detalle |
 |--------|---------|
-| **Dwell time** | Señal #1: tiempo que el usuario pasa leyendo el post |
-| **Comentarios** | Valen 2x mas que los likes |
-| **Primera hora** | Los primeros 60-90 min determinan el 70% del alcance final |
-| **Contenido nativo** | Posts sin enlaces externos tienen mayor distribucion |
-| **Experiencia vivida** | Contenido autentico y personal supera al generico |
+| **Relevancia > Recencia** | Contenido evergreen de valor resurge. Frecuencia importa menos que profundidad |
+| **Dwell time** | El tiempo que alguien lee tu post pesa mas que likes y comentarios |
+| **Autoridad de nicho** | Ser reconocido como experto en un tema especifico > actividad general |
+| **Contenido educativo** | How-tos, datos propios, frameworks originales: 2-3x mas distribucion |
+| **Comentarios de peso** | Comentarios de 15+ palabras valen 2.5x mas que un like en el algoritmo |
 
-### Lo que penaliza (anti-patrones)
+### Que penaliza
 
-- **Links externos** en el cuerpo del post: -60% de alcance
-- **Engagement bait** ("comenta SI o NO"): penalizado directamente
-- **Pods de engagement**: la plataforma los detecta y reduce alcance
-- **Frecuencia sin calidad**: publicar diario con contenido flojo destruye el alcance
-- **Solo texto corporativo**: suena a brochure, baja el dwell time
-- **Hashtags en exceso**: mas de 3 reduce la distribucion organica
-- **Publicar y desaparecer**: no responder comentarios en la primera hora mata el alcance
+| Anti-patron | Penalizacion |
+|-------------|-------------|
+| "Agree?", "Tag someone", "Comment YES" | -30% a -50% de alcance |
+| Links externos en el cuerpo del post | -60% de alcance (poner el link en comentarios) |
+| Comentarios cortos de IA ("Great post!") | Filtrados; no suman distribucion |
+| Alta frecuencia + baja calidad | Penaliza autoridad acumulada |
+| Engagement pods artificiales | Detectados y penalizados desde 2025 |
 
-## Formatos y rendimiento
+### Ventana critica
 
-### 1. Carrusel (formato top)
+Las primeras **60-90 minutos** definen el 70% del alcance total del post. Responder comentarios en ese periodo multiplica la distribucion.
 
-- **Alcance**: 4x mayor que posts de texto
-- **Engagement rate**: 24.42% (vs 6.67% texto simple)
-- **Dwell time**: 2-3 minutos por pieza
-- **Longitud optima**: 8-10 slides
-- **Estructura recomendada**:
-  - Slide 1: Hook visual + promesa clara
-  - Slides 2-8: Un punto accionable por slide
-  - Slide final: CTA directo (sin link) + firma David Moreira
+## Formatos y su Rendimiento
 
-**Para consultores BIM/AEC**: usar carruseles para "antes/despues de automatizar", "5 errores en coordinacion BIM", "como reduje 4h a 90s".
+| Formato | Engagement rate | Mejor uso |
+|---------|-----------------|-----------|
+| **Carrusel (PDF)** | 6.60% — 596% mas que texto | Case studies, guias paso a paso, listas de datos |
+| **Video nativo corto** | +200% de alcance vs. texto | Demos, behind-the-scenes, tips rapidos |
+| **Texto largo (900+ palabras)** | Alto en 2025-2026 | Reflexiones, lecciones de proyectos reales |
+| **Newsletter** | Crecimiento organico alto | Series tematicas, contenido semanal |
+| **Imagen + texto** | Estandar | Frases, datos aislados |
 
-### 2. Texto puro (subestimado)
+### Especificaciones tecnicas carrusel
 
-- **Tiempo de creacion**: 5 min vs 30-60 min de un carrusel
-- Ideal para reflexiones personales, opiniones y aprendizajes del dia
-- Maximo 1.300 caracteres visibles antes del "ver mas"
-- Hook en la primera linea es critico
+- Formato: PDF, PPTX o DOCX (subir como documento nativo)
+- Dimensiones: 1080×1350px (retrato) para maxima visibilidad mobile
+- Slides optimas: 6-10 por carrusel
+- Tamano maximo: <3MB para carga rapida
+- Primera slide = "portada gancho" con promesa clara
 
-### 3. Imagen unica
+## Hooks de Apertura — Modelos
 
-- Imagen vertical: +32% de alcance vs horizontal
-- Fotos personales autenticas > imagenes de stock
-- Ideal para capturas de pantalla de resultados, dashboards, o momentos reales en proyectos
+LinkedIn trunca a **210 caracteres** antes del boton "ver mas". Las primeras 2 lineas son criticas.
 
-### 4. Video (en declive)
+### Tipos de hooks efectivos
 
-- Alcanzo cayo 35% en 2025
-- Si se usa: menos de 30 segundos, subtitulos obligatorios
-- Preferir clips de proyectos reales sobre grabaciones de pantalla
-
-### 5. Newsletter (LinkedIn Articles)
-
-- No compite con posts en feed, tiene distribucion propia
-- Ideal para contenido largo y analitico (guias, casos de estudio)
-- Frecuencia recomendada: mensual o quincenal
-
-## Hooks de apertura — Formulas de alto engagement
-
-El hook es el 90% del exito de un post. David tiene 1.3 segundos para detener el scroll.
-
-### Reglas tecnicas
-
-- Maximo 2 lineas visibles antes del "ver mas"
-- Lineas 1 y 2: max 62 caracteres
-- Linea 3: max 50 caracteres
-- Sin negritas ni emojis excesivos en el hook
-- Nunca empezar con "Yo" ni con "Hoy quiero compartir"
-
-### Formulas que funcionan para David
-
-| Tipo | Formula | Ejemplo para BIM/AEC |
-|------|---------|----------------------|
-| **Como yo...** | Experiencia personal + resultado | "Reduje el proceso de coordinacion de 4h a 90 segundos." |
-| **Estadistica sorprendente** | Dato + contexto | "El 60% del tiempo de un coordinador BIM es automatizable." |
-| **Contrarian take** | Desafiar creencia comun | "Revit no es el problema. El problema es como lo usas." |
-| **Historia corta** | Situacion + tension | "Un cliente me llamo el viernes a las 5pm. El modelo tenia 3.000 conflictos sin resolver." |
-| **Pregunta directa** | Pain point especifico | "Tu equipo sigue coordinando conflictos en reuniones de 2 horas?" |
-| **Promesa clara** | Resultado tangible | "3 automatizaciones que cualquier arquitecto puede hacer esta semana." |
-
-## Estrategia de contenido para David (BIM/AEC)
-
-### Pilares tematicos (rotacion semanal)
-
-| Pilar | Frecuencia | Ejemplos |
-|-------|-----------|---------|
-| **Automatizacion** | 2x semana | Dynamo, Power Automate, Python aplicado a proyectos |
-| **BIM + IA** | 1x semana | Casos reales, metricas, resultados medibles |
-| **Docencia y formacion** | 1x semana | Reflexiones del Master AEC 4.0, ensenanzas para otros profesionales |
-| **Marca personal** | 1x semana | Historia personal, errores, aprendizajes del camino |
-
-### Frecuencia optima
-
-- **3-4 posts por semana** (calidad sobre cantidad)
-- Evitar publicar sabados y domingos (menor alcance organico)
-- Mejores horarios: martes a jueves, 8:00-9:00 o 12:00-13:00 (hora Chile)
-
-### Metricas de David citables en posts
-
-| Metrica | Contexto |
-|---------|---------|
-| -40% costos proyecto ejecutivo | OXXO Chile, BIM + automatizacion |
-| -20% tiempos de entrega | OXXO Chile |
-| +80 proyectos/anio | OXXO Chile, procesos estandarizados |
-| 4h → 90 segundos | Reduccion con Power Automate |
-| ~60% del tiempo del coordinador BIM | Es automatizable |
-
-## Checklist pre-publicacion
-
-Antes de publicar cualquier post, verificar:
-
-- [ ] Hook en la primera linea detiene el scroll (prueba: leerlo en 1 segundo)
-- [ ] No hay links externos en el cuerpo del post
-- [ ] Post tiene al menos un dato concreto o metrica
-- [ ] Maximo 3 hashtags al final (no en el cuerpo)
-- [ ] Hay una pregunta o CTA claro al final
-- [ ] El tono es directo y personal, no corporativo
-- [ ] Disponible para responder comentarios en la primera hora
-- [ ] No hay palabras prohibidas del anti-slop (ver skill consultor-bim)
-- [ ] Para carruseles: slide 1 es tan bueno que el usuario quiere pasar al siguiente
-
-## Templates de post
-
-### Template: Caso de exito (carrusel)
-
+**1. Dato especifico + revelacion**
 ```
-Slide 1 (Hook):
-[Resultado concreto].
-Cómo lo hice en [empresa/proyecto]:
-
-Slide 2: El problema original
-[Descripcion del problema con costo en tiempo/dinero]
-
-Slide 3-7: Los pasos
-Paso 1: [Herramienta + accion especifica]
-...
-
-Slide final:
-¿Coordinás proyectos BIM? Esto te puede ahorrar [X horas/semana].
-David Moreira | Arquitecto + BIM + IA
+Analice 6 proyectos BIM ejecutivos en OXXO Chile.
+El 60% del tiempo de coordinacion era 100% automatizable.
 ```
 
-### Template: Reflexion personal (texto)
-
+**2. Declaracion contraria**
 ```
-[Estadistica o hecho sorprendente].
-
-Cuando trabajaba en [empresa], vi esto de cerca:
-[1-2 oraciones de contexto real]
-
-Lo que aprendie:
-→ [Punto 1]
-→ [Punto 2]
-→ [Punto 3]
-
-¿Cual de estos te pasa en tu equipo?
+La mayoria de coordinadores BIM trabaja mas horas de las necesarias.
+No por falta de experiencia. Por falta de automatizacion.
 ```
 
-### Template: Tip accionable (texto + imagen)
-
+**3. Promesa con numero**
 ```
-[Nombre de la herramienta/tecnica] puede ahorrarte [X horas] a la semana.
-
-Esto es lo que hago:
-1. [Paso concreto]
-2. [Paso concreto]
-3. [Paso concreto]
-
-Resultado: [Metrica real]
-
-¿Lo usas? Cuéntame en los comentarios.
+3 errores que cometi al implementar BIM en retail.
+Y como los evitaria hoy.
 ```
 
-## Contenido que NO publicar
+**4. Confesion / vulnerabilidad**
+```
+Entregue un proyecto ejecutivo con 40% de errores de coordinacion.
+Ese fracaso cambio como trabajo.
+```
 
-- Opiniones politicas o sociales controversiales
-- Posts sobre herramientas sin caso real de uso
-- Felicitaciones genericas ("Muy orgulloso de anunciar...")
-- Contenido copiado de otros sin perspectiva propia
-- Anuncios de servicios directos sin valor previo
-- Posts que empiezan con "Estoy emocionado de compartir..."
+**5. Pregunta que duele**
+```
+Cuantas horas por semana dedicas a tareas que podrias no estar haciendo?
+```
+
+## Estrategia de Contenido para Consultores BIM/AEC
+
+### Pilares tematicos (rotar entre ellos)
+
+| Pilar | Tipo de post | Frecuencia sugerida |
+|-------|-------------|---------------------|
+| **Caso real** | "Hice X en proyecto Y, resultado: Z%" | 1/semana |
+| **Herramienta** | Tutorial, demo, antes/despues | 1/semana |
+| **Opinion sectorial** | Tendencia BIM/IA en AEC, donde va el mercado | 1 cada 2 semanas |
+| **Aprendizaje** | Error propio, leccion, framework | 1 cada 2 semanas |
+| **Educacion** | Carrusel explicativo de proceso o concepto | 1/semana |
+
+### Metricas citables de David (usar en posts)
+
+- -40% costos proyecto ejecutivo (OXXO Chile, BIM + automatizacion)
+- -20% tiempos de entrega (OXXO Chile)
+- +80 proyectos/anio entregados (procesos estandarizados)
+- De 4 horas a 90 segundos (Power Automate en reportes)
+- ~60% del tiempo de coordinador BIM es automatizable
+
+### Tematica especifica para David
+
+- Power Automate aplicado en proyectos AEC reales
+- Dynamo para coordinacion BIM (casos concretos)
+- IA aplicada a arquitectura (Copilot Studio, Azure AI en AEC)
+- Citizen Developer en el sector construccion
+- Diferencias Chile vs. LATAM en madurez BIM
+
+## Formatos Especificos para Cada Pilar
+
+### Caso real (texto largo)
+```
+[Contexto: 1-2 oraciones sobre el proyecto]
+[Problema: dato concreto del antes]
+[Solucion: que hice exactamente]
+[Resultado: metrica verificable]
+[Aplicable a ti si: condicion]
+```
+
+### Carrusel educativo (estructura)
+- Slide 1: Titulo gancho + promesa ("5 errores al implementar BIM")
+- Slides 2-8: Un punto por slide, con dato o ejemplo
+- Slide 9: Resumen o checklist
+- Slide 10: CTA directo ("Si estas en esto, escribeme.")
+
+### Newsletter (cadencia semanal)
+- Nombre sugerido: "BIM + IA para el sector AEC"
+- Estructura: 1 caso real + 1 herramienta + 1 recurso
+- Longitud: 400-600 palabras
+- Publicar martes o jueves (mayor apertura)
+
+## Checklist Pre-Publicacion
+
+Antes de publicar cualquier post verificar:
+
+- [ ] Las primeras 2 lineas funcionan solas como gancho sin ver el resto
+- [ ] No hay links externos en el cuerpo (moverlos a comentarios)
+- [ ] Hay al menos un dato concreto o metrica real
+- [ ] No contiene frases prohibidas (ver anti-patrones)
+- [ ] El post tiene espacios en blanco y parrafos cortos (maximo 3 lineas por parrafo)
+- [ ] Si es carrusel: primera slide tiene promesa clara, ultima slide tiene CTA
+- [ ] Se publicara en horario de alta actividad: 8-10h o 12-14h (zona Chile)
+- [ ] Se tiene tiempo para responder comentarios en los siguientes 90 minutos
+
+## Anti-Patrones (lo que NO hacer)
+
+| Prohibido | Razon |
+|-----------|-------|
+| "Comparte si te sirvio" | Engagement bait penalizado |
+| "Etiqueta a alguien que..." | Penalizado desde 2024 |
+| Links externos en el cuerpo | -60% alcance |
+| Posts de AI sin edicion humana | Texto generico sin datos = alcance bajo |
+| Texto corrido sin saltos de linea | Abandono de lectura = dwell time bajo |
+| "Mi experiencia me enseno que..." | Cliche; mejor ir directo a la leccion |
+| Publicar y desaparecer | Sin respuesta de comentarios = menor distribucion |
+| +3 hashtags genericos | Los hashtags ya no suman alcance en 2025 |
+
+## Reglas de Tono para David
+
+- **Con datos:** Toda afirmacion tiene un numero o caso detras
+- **Directo:** No hay intro innecesaria. Ir al grano
+- **Sin slop:** Prohibido "transformacion digital", "ecosistema", "sinergia", "potenciar"
+- **Primera persona real:** "En OXXO Chile hice X" > "Las empresas deben hacer X"
+- **Sin conclusion generica:** No terminar con "espero que les sirva" o "reflexionemos"
+
+## Templates de Post
+
+### Post corto (caso real, <300 palabras)
+```
+[Hook: dato o problema en 1-2 lineas]
+
+En [proyecto/empresa], [situacion concreta].
+
+El problema: [descripcion breve].
+
+Lo que hice: [accion especifica con herramienta].
+
+Resultado: [metrica concreta].
+
+Lo que cambiaria: [leccion honesta].
+
+[CTA directo sin "comparte si te sirve"]
+```
+
+### Post educativo (proceso o concepto)
+```
+[Hook: numero o promesa]
+
+[Contexto: 2-3 oraciones de por que importa]
+
+[Lista de puntos con saltos de linea]
+
+[Cierre: aplicacion practica para el lector]
+```

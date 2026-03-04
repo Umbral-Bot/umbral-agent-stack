@@ -1,207 +1,246 @@
 ---
 name: marca-personal
 description: >-
-  Narrativa, posicionamiento y estrategia de marca personal para David Moreira:
-  Arquitecto + BIM + IA + Citizen Developer en el sector AECO.
-  Usar cuando: "marca personal", "bio profesional", "propuesta de valor",
-  "posicionamiento", "perfil linkedin", "elevator pitch", "quién soy".
+  Marca personal de David Moreira: narrativa, propuesta de valor unica,
+  posicionamiento en sector AECO, bios en multiples formatos y estrategia
+  de contenidos como Arquitecto + BIM + IA + Citizen Developer.
+  Use when "marca personal", "bio profesional", "propuesta de valor",
+  "posicionamiento", "sobre mi", "perfil profesional", "quien es david".
 metadata:
   openclaw:
-    emoji: "\U0001F31F"
+    emoji: "\U0001F3AF"
     requires:
       env: []
 ---
 
 # Marca Personal — David Moreira Mercado
 
-Rick usa este skill para construir y comunicar la marca personal de David: su narrativa, propuesta de valor unica, bios en distintos formatos y estrategia de posicionamiento en el sector AECO.
+Rick usa este skill para ayudar a David a comunicar su marca personal: quien es, que hace, por que importa y como se diferencia en el sector AECO.
 
-## Perfil base
+## Identidad Central
+
+### Propuesta de valor unica
+
+> David Moreira convierte procesos lentos y manuales del sector AEC en flujos automatizados con BIM, Power Platform e IA — sin necesidad de un equipo de TI.
+
+**La interseccion diferenciadora:**
+
+```
+Arquitecto (experiencia de campo)
+    +
+BIM Expert (coordinacion real en proyectos)
+    +
+Power Platform (automatizacion sin codigo)
+    +
+IA aplicada (Copilot Studio, Azure AI, Python)
+    =
+Citizen Developer para el sector construccion
+```
+
+Este perfil tiene muy poca competencia en espanol. David combina:
+- Experiencia practica documentada (no solo teoria)
+- Metricas reales de proyectos (no estimaciones)
+- Formacion tecnica rigurosa (certificaciones verificables)
+- Capacidad de comunicar a no-tecnicos
+
+### Tagline principal
+
+> "Construccion 4.0 para arquitectos que no programan"
+
+### Taglines alternativos
+
+- "Del plano al dato. De Revit a Power BI."
+- "Automatizo lo que el sector AEC hace a mano."
+- "BIM + IA en espanol, con metricas reales."
+
+## Datos Profesionales
 
 | Campo | Valor |
 |-------|-------|
-| **Nombre** | David Moreira Mercado |
-| **Profesion** | Arquitecto |
+| **Nombre completo** | David Moreira Mercado |
+| **Profesion base** | Arquitecto (UTFSM, 2009-2016) |
+| **Ubicacion** | Santiago, Chile |
+| **Experiencia** | +10 anos en transformacion digital AEC |
 | **Especializacion** | BIM + Power Platform + Dynamo + IA aplicada |
-| **Nicho** | Consultoria y docencia en transformacion digital AEC |
-| **Pais** | Chile (Santiago) |
 | **Idiomas** | Espanol (nativo), Ingles (profesional) |
-| **Tagline** | "Construccion 4.0 para arquitectos que no programan" |
 
-## Propuesta de valor unica (UVP)
-
-La interseccion **Arquitecto + BIM + IA + Citizen Developer** en espanol es el nucleo de la marca de David. Muy pocos en el sector AECO combinan:
-
-1. Formacion academica de arquitecto (UTFSM)
-2. Experiencia practica con metricas documentadas (OXXO Chile, Borago)
-3. Dominio tecnico en automatizacion sin ser ingeniero de software
-4. Capacidad de enseniarlo a profesionales no tecnicos
-
-### Formula UVP
-
-```
-[Arquitecto] que [automatiza procesos con BIM + IA]
-para que [equipos AEC] puedan [reducir costos y tiempos]
-sin necesitar [programadores externos].
-```
-
-### Diferenciacion vs competencia
-
-| Vs. | Ventaja de David |
-|-----|-----------------|
-| Consultoras grandes | Sin overhead corporativo, contacto directo, resultados en semanas |
-| Freelancers tecnicos | Experiencia en gestion y liderazgo, no solo implementacion |
-| Capacitadores puros | Casos reales con metricas documentadas (no solo teoria) |
-| Otros consultores BIM | Unico que combina BIM + Power Platform + IA en espanol |
-
-## Metricas citables (pruebas de valor)
-
-| Metrica | Proyecto |
-|---------|---------|
-| -40% costos proyecto ejecutivo | OXXO Chile, BIM + automatizacion |
-| -20% tiempos de entrega | OXXO Chile, flujos automatizados |
-| +80 proyectos/anio entregados | OXXO Chile, procesos estandarizados |
-| 4 horas a 90 segundos | Tareas repetitivas con Power Automate |
-| ~60% del tiempo del coordinador BIM | Es automatizable |
-
-## Bios profesionales por formato
-
-### Bio LinkedIn (seccion Acerca de — 300 palabras)
-
-```
-Soy arquitecto de formacion y automatizador de procesos por conviction.
-
-Despues de anos coordinando proyectos BIM en Chile, llegue a una conclusion
-incómoda: el 60% del tiempo de un coordinador BIM es automatizable. Y eso
-significaba que mis equipos perdian horas en tareas que una maquina podia
-hacer mejor.
-
-Hoy ayudo a profesionales y empresas del sector AEC a implementar
-automatizacion real con BIM, Power Platform e IA — sin necesitar
-un equipo de IT.
-
-Lo que hago en la practica:
-• Reduzco procesos que tomaban 4 horas a menos de 90 segundos
-• Construyo flujos automatizados con Power Automate, Dynamo y Python
-• Conecto BIM con datos: Power BI, SharePoint, ACC Data Connector
-• Enseno a equipos no tecnicos a ser Citizen Developers
-
-Proyectos destacados:
-→ OXXO Chile: -40% costos, +80 proyectos/anio, -20% tiempos
-→ Restaurante Borago: digitalizacion de procesos operativos
-
-Credenciales:
-buildingSMART Professional Foundation 2025
-Autodesk Certified Instructor (ACI #86900)
-Ponente AI Construction Summit 2025 — Lima
-Docente Master AEC 4.0, Butic The New School
-
-Si coordinas proyectos BIM y sientes que tu equipo hace demasiado manual,
-hablemos.
-```
-
-### Bio corta LinkedIn (titular — 120 caracteres)
-
-```
-Arquitecto | BIM + IA + Power Platform | Automatizo procesos AEC | Docente Master AEC 4.0
-```
-
-### Bio Twitter/X (160 caracteres)
-
-```
-Arquitecto que automatiza con BIM + IA. Construcion 4.0 sin necesitar programadores. Consultor AEC en Chile 🇨🇱 | Docente | buildingSMART 2025
-```
-
-### Bio presentaciones (30 segundos — elevator pitch)
-
-```
-Soy David Moreira, arquitecto chileno especializado en transformacion digital
-para el sector de la construccion. Trabajo con equipos AEC para implementar
-automatizacion usando BIM, Power Platform e IA — con resultados medidos:
-40% menos costos, tiempos reducidos de horas a minutos. Tambien soy docente
-del Master AEC 4.0 en Butic y hablo en conferencias internacionales sobre
-IA aplicada a la construccion.
-```
-
-### Bio web/portafolio (parrafo corto)
-
-```
-Arquitecto con +10 anios en transformacion digital AEC. Especialista en BIM,
-automatizacion con Power Platform y IA aplicada. He reducido costos en 40%
-y tiempos de 4 horas a 90 segundos en proyectos reales. Autodesk Certified
-Instructor y buildingSMART Professional Foundation 2025.
-```
-
-## Posicionamiento estrategico en AECO
-
-### Nicho de mercado
-
-**Primario**: Empresas y profesionales AEC (arquitectos, coordinadores BIM, PMs de construccion) en Chile y Latam que quieren automatizar procesos sin contratar IT.
-
-**Secundario**: Formacion y capacitacion para equipos que quieren convertir a sus miembros en Citizen Developers.
-
-### Mensajes clave por audiencia
-
-| Audiencia | Mensaje principal |
-|-----------|------------------|
-| **Gerentes de proyecto** | "Reducis costos operativos sin contratar mas personal" |
-| **Coordinadores BIM** | "Automatiza las tareas repetitivas y enfocate en lo que importa" |
-| **Directores de empresa** | "ROI medible en semanas, no en anos" |
-| **Profesionales que quieren aprender** | "No necesitas programar para automatizar tu trabajo" |
-
-### Frameworks propios (diferenciadores narrativos)
-
-**Puentes Digitales**: La tecnologia construye puentes entre silos:
-- Diseno <> Construccion (Dynamo + Revit API)
-- Datos <> Decisiones (Power BI + ACC)
-- Campo <> Oficina (Power Apps + SharePoint)
-
-**Automatizacion Empatica**: La mejor automatizacion elimina frustracion, no trabajo. Alta automatizacion + Alta empatia = Adopcion real.
-
-**Framework Replicable de 4 Pasos**:
-1. Diagnostico empatico
-2. Diseno desde el terreno
-3. Registro estructurado
-4. Mejora continua
-
-## Estrategia de contenidos para marca personal
-
-### Los 3 tipos de contenido que construyen marca
-
-| Tipo | Objetivo | Frecuencia |
-|------|---------|-----------|
-| **Prueba** | Resultados medibles, casos reales, metricas | 2x semana |
-| **Educacion** | Tutoriales, conceptos, como se hace | 2x semana |
-| **Persona** | Historia, valores, detras de escena | 1x semana |
-
-### Pilares narrativos de David
-
-1. **Arquitecto que programa**: tension narrativa entre profesion tradicional y habilidades tecnicas
-2. **Resultados medibles**: cada historia tiene numeros, no generalidades
-3. **Enseno lo que hago**: no solo consultor, tambien educador
-4. **Chile y Latam**: voz local en un tema global
-
-### Contenido que NO encaja con la marca
-
-- Opiniones sobre temas fuera del sector AEC o tecnologia
-- Contenido motivacional generico sin respaldo practico
-- Fotos de vacaciones o vida personal sin conexion profesional
-- Tutoriales de herramientas que David no usa en proyectos reales
-
-## Credenciales y logros (para incluir en bios segun contexto)
+### Credenciales verificables
 
 - buildingSMART Professional Foundation (2025)
 - Autodesk Certified Instructor (ACI) ID: 86900
 - Master Programacion y Automatizacion BIM — Butic (2025)
 - Python Institute — Fundamentos Python 1 (2024)
-- Arquitecto — UTFSM (2009-2016)
 - Ponente AI Construction Summit 2025 (Lima)
 - Docente Master AEC 4.0 — Butic The New School
 
-## Tono de voz de la marca
+### Experiencia clave (cronologica inversa)
 
-- **Directo**: sin rodeos, sin corporativese
-- **Respaldado en datos**: toda afirmacion con metrica o caso concreto
-- **Ensenador**: comparte lo que sabe, no lo oculta
-- **Autentico**: habla de errores y aprendizajes, no solo de exitos
-- **Accesible**: explica lo tecnico para que lo entienda alguien sin formacion IT
+| Periodo | Rol | Organizacion |
+|---------|-----|--------------|
+| Oct 2024 - presente | Consultor Independiente | Propio |
+| Oct 2024 - Oct 2025 | Lider Transformacion Digital | Restaurante Borago |
+| Jul 2022 - Sep 2024 | Coordinador BIM | OXXO Chile |
+| Ene 2017 - Jul 2022 | Coordinador Proyectos BIM | Umbral Arquitectura |
+
+### Metricas citables (usar siempre, no hablar en abstracto)
+
+| Metrica | Contexto |
+|---------|----------|
+| -40% costos proyecto ejecutivo | OXXO Chile, BIM + automatizacion |
+| -20% tiempos de entrega | OXXO Chile, flujos automatizados |
+| +80 proyectos/anio entregados | OXXO Chile, procesos estandarizados |
+| 4 horas → 90 segundos | Reduccion tareas repetitivas con Power Automate |
+| ~60% tiempo coordinador BIM | Automatizable (diagnostico propio) |
+
+## Posicionamiento Estrategico en AECO
+
+### Vs. competencia directa
+
+| Competidor tipo | Diferencia de David |
+|----------------|---------------------|
+| Consultoras grandes BIM | Sin overhead corporativo. Contacto directo. Respuesta rapida. |
+| Freelancers tecnicos | David tiene experiencia en liderazgo y gestion, no solo implementacion |
+| Capacitadores puros | Experiencia reciente en proyectos reales con metricas documentadas |
+| Especialistas en IT/IA | Entiende el negocio de la construccion desde adentro (10+ anos) |
+
+### Nicho principal
+
+Arquitectos, coordinadores BIM y PMs de empresas AEC medianas (50-500 personas) que:
+- Entienden que necesitan automatizacion pero no tienen equipo de TI
+- Trabajan con Revit, Navisworks o ACC
+- Quieren reducir tiempo en tareas repetitivas sin aprender a programar
+
+### Nicho secundario
+
+Profesionales AEC independientes que quieren:
+- Capacitarse en herramientas de automatizacion
+- Posicionar su propia marca personal en el sector
+
+## Bios Profesionales por Formato
+
+### Bio LinkedIn (headline)
+
+```
+Arquitecto | BIM + Power Platform + IA aplicada | Citizen Developer AEC | Consultor independiente Santiago, Chile
+```
+
+### Bio LinkedIn (seccion Acerca de) — 300 palabras
+
+```
+Soy arquitecto con +10 anos en el sector AEC y me especializo en automatizar los procesos que mas tiempo consumen en proyectos de construccion.
+
+Combine BIM (Revit, Navisworks, ACC) con Power Platform (Automate, Apps, BI) e IA aplicada para reducir tiempos y errores en equipos que no tienen un area de TI.
+
+En OXXO Chile logre:
+- Reducir costos de proyecto ejecutivo un 40%
+- Bajar tiempos de entrega un 20%
+- Entregar +80 proyectos en un ano con el mismo equipo
+
+Antes eso tomaba 4 horas. Hoy toma 90 segundos.
+
+Soy Autodesk Certified Instructor (ACI #86900), buildingSMART Professional Foundation (2025) y docente en el Master AEC 4.0 de Butic.
+
+Trabajo con empresas de construccion y consultores independientes que quieren hacer mas con menos, sin contratar un programador.
+
+Si tu equipo gasta mas de 2 horas semanales en tareas que podrian ser automaticas, conversemos.
+```
+
+### Bio Twitter/X (160 caracteres)
+
+```
+Arquitecto | BIM + IA + Power Platform en proyectos AEC reales | -40% costos en OXXO Chile | Consultor independiente en Santiago
+```
+
+### Bio presentacion (para charlas y slides)
+
+```
+David Moreira Mercado
+Arquitecto y consultor especializado en transformacion digital AEC.
++10 anos coordinando proyectos con BIM y automatizando procesos con Power Platform e IA.
+buildingSMART Professional Foundation | ACI Autodesk #86900
+Ponente AI Construction Summit 2025 (Lima)
+Docente Master AEC 4.0 — Butic
+```
+
+### Bio correo electronico (firma)
+
+```
+David Moreira Mercado
+Consultor BIM | Power Platform | IA Aplicada
++56 9 XXXX XXXX | linkedin.com/in/davidmoreira
+```
+
+### Bio web (pagina "Sobre mi") — version larga
+
+```
+Soy David Moreira, arquitecto graduado de la UTFSM (2016) con mas de una decada trabajando en proyectos de construccion en Chile.
+
+Empece como coordinador de proyectos BIM en Umbral Arquitectura (2017-2022), donde desarrolle los primeros flujos de trabajo digitales del estudio. En 2022 me uni a OXXO Chile como Coordinador BIM, donde coordine mas de 80 proyectos en un ano y reduje costos de proyecto ejecutivo un 40% combinando BIM, Power Automate y Python.
+
+Hoy trabajo de forma independiente con empresas AEC y consultores que quieren hacer mas con los recursos que ya tienen.
+
+Mi area de trabajo:
+- Consultoria BIM: diagnostico, implementacion, coordinacion
+- Automatizacion: Power Automate, Power Apps, Dynamo, Python
+- IA aplicada: Copilot Studio, Azure AI, LLMs en flujos AEC
+- Formacion: workshops, cursos y mentoria para equipos
+
+Certificaciones: buildingSMART Professional Foundation (2025) | ACI Autodesk #86900 | Master BIM Automation Butic (2025)
+
+Si tienes un proyecto o quieres conversar sobre automatizacion en tu empresa, escribe directamente.
+```
+
+## Estrategia de Contenidos para Marca Personal
+
+### Frecuencia recomendada
+
+| Canal | Frecuencia | Tipo de contenido |
+|-------|------------|-------------------|
+| LinkedIn | 3-4 posts/semana | Casos reales + herramientas + opinion |
+| Newsletter | 1/semana | Profundidad: un tema desarrollado |
+| Web/Blog | 1-2/mes | Contenido evergreen SEO |
+
+### Pilares de contenido para David
+
+1. **Caso real con metrica**: "Hice X en Y, resultado fue Z"
+2. **Tutorial de herramienta**: Power Automate, Dynamo o IA en un caso AEC
+3. **Desmitificacion**: "BIM no es solo Revit" / "IA no reemplaza al arquitecto"
+4. **Opinion sectorial**: Donde va el mercado AECO en LATAM
+5. **Formacion**: Recurso, checklist o framework propio
+
+### Reglas de comunicacion de marca
+
+- Siempre con datos concretos, nunca afirmaciones vacias
+- Primera persona activa: "Hice", "Logre", "Vi" — no "Las empresas deben"
+- Sin jerga corporativa: prohibido "holistic", "ecosistema", "sinergia", "potenciar"
+- Mostrar el trabajo, no solo describir el perfil
+- Las credenciales van al final, no al inicio
+
+## Frameworks Propios de David
+
+### Puentes Digitales
+La tecnologia construye puentes entre silos del sector AEC:
+- Diseno ↔ Construccion (Dynamo + Revit API)
+- Datos ↔ Decisiones (Power BI + ACC)
+- Campo ↔ Oficina (Power Apps + SharePoint)
+
+### Automatizacion Empatica
+La mejor automatizacion elimina frustracion, no trabajo.
+Alta automatizacion + Alta empatia = Adopcion real del equipo.
+
+### Framework Replicable de 4 Pasos
+1. Diagnostico empatico (entender el dolor real del equipo)
+2. Diseno desde el terreno (prototipo rapido con el equipo)
+3. Registro estructurado (datos, metricas, trazabilidad)
+4. Mejora continua (iteracion basada en datos reales)
+
+## Checklist de Consistencia de Marca
+
+Antes de publicar cualquier pieza de contenido verificar:
+
+- [ ] Tiene un dato real o metrica concreta (no afirmacion generica)
+- [ ] El tono es directo, sin rodeos ni cierres corporativos
+- [ ] La propuesta de valor esta implicitamente clara
+- [ ] No usa palabras prohibidas (ver reglas anti-slop)
+- [ ] Si incluye bio, corresponde al formato del canal
+- [ ] Refleja el diferenciador real: Arquitecto + BIM + IA en AEC en espanol

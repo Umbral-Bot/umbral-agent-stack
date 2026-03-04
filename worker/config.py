@@ -25,6 +25,9 @@ NOTION_DASHBOARD_PAGE_ID: str | None = os.environ.get("NOTION_DASHBOARD_PAGE_ID"
 NOTION_TASKS_DB_ID: str | None = os.environ.get("NOTION_TASKS_DB_ID")
 NOTION_API_VERSION: str = os.environ.get("NOTION_API_VERSION", "2022-06-28")
 
+# Granola pipeline
+ENLACE_NOTION_USER_ID: str | None = os.environ.get("ENLACE_NOTION_USER_ID")
+
 # ---------------------------------------------------------------------------
 # Linear
 # ---------------------------------------------------------------------------

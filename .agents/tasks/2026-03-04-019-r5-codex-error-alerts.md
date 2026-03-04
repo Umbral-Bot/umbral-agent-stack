@@ -2,7 +2,7 @@
 id: "019"
 title: "Error Alert System — Notificaciones push de fallos"
 assigned_to: codex
-status: assigned
+status: done
 branch: feat/codex-error-alerts
 priority: critical
 round: 5
@@ -67,3 +67,17 @@ Crear `tests/test_alert_manager.py`:
 - `client/worker_client.py` — WorkerClient (para notion.add_comment)
 - `infra/ops_logger.py` — OpsLogger (referencia, no modificar)
 - `scripts/daily_digest.py` — agregar sección de alertas
+
+## Log
+### [codex] 2026-03-04 08:45
+- Implementado `dispatcher/alert_manager.py` con alertas `task_failed`, `worker_down`, `queue_overflow` y cooldown de 300s por clave.
+- Integrado en `dispatcher/service.py`:
+  - alerta al fallar tarea después de `queue.fail_task(...)`
+  - alerta de worker caído en `httpx.ConnectError`
+  - alerta de cola saturada cuando `pending_count > 50`
+  - todas las notificaciones como fire-and-forget en daemon threads
+- Actualizado `scripts/daily_digest.py` con sección `Alertas` cuando hay fallas en la ventana.
+- Añadidos tests en `tests/test_alert_manager.py` y ajustados tests de `_run_worker` por nueva firma.
+- Tests ejecutados:
+  - `python -m pytest tests/test_alert_manager.py tests/test_dispatcher_resilience.py tests/test_webhook_callback.py tests/test_daily_digest.py -v -p no:cacheprovider` → 63 passed
+  - `python -m pytest tests/ -q -p no:cacheprovider` → 327 passed, 1 skipped

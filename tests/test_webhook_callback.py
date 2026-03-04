@@ -122,6 +122,7 @@ def _run_one_worker_iteration(
                 None,
                 hm,
                 model_router,
+                None,
                 1,
             )
         except KeyboardInterrupt:

@@ -370,6 +370,38 @@ curl -s -X POST http://WINDOWS_TAILSCALE_IP:8088/run \
 
 ---
 
+### `GET /scheduled`
+
+Lista tareas programadas a futuro (Redis sorted set). Requiere auth.
+
+**Response (200):**
+```json
+{
+  "ok": true,
+  "scheduled": [
+    {
+      "task_id": "uuid",
+      "task": "ping",
+      "team": "system",
+      "run_at": "2026-03-04T12:00:00Z",
+      "created_at": "2026-03-04T03:00:00Z"
+    }
+  ],
+  "total": 1
+}
+```
+
+**Errores específicos:**
+- `503` — Redis no disponible
+
+**Ejemplo curl:**
+```bash
+curl -s "http://WINDOWS_TAILSCALE_IP:8088/scheduled" \
+  -H 'Authorization: Bearer $WORKER_TOKEN'
+```
+
+---
+
 ## Errores
 
 | Código | Descripción |

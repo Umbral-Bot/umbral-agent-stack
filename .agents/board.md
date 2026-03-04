@@ -23,12 +23,14 @@
 | 2026-03-04-001 | Hackathon: Diagnóstico completo + script + fixes | cursor | ✅ done |
 | 2026-03-04-002 | Hackathon: Verificar/activar infraestructura VPS | cursor | ✅ done (VPS OK, VM red caída) |
 | 2026-03-04-003 | Hackathon: Mejoras de código — Poller inteligente + docs | antigravity | 📋 assigned |
-| 2026-03-04-004 | Hackathon: Integraciones — LiteLLM, cuotas, Notion | github-copilot | 📋 assigned |
+| 2026-03-04-004 | Hackathon: Integraciones — LiteLLM, cuotas, Notion | github-copilot | ✅ done |
 | 2026-03-04-005 | Hackathon: Activar OpsLogger + persistencia task store | cursor | ✅ done (ya estaba activo, 28 eventos) |
 | 2026-03-04-006 | Hackathon: Notion Poller inteligente (clasificar+encolar) | antigravity | 📋 assigned |
 | 2026-03-04-007 | Hackathon: Conectar LLM (Gemini) al Worker | cursor | ✅ done (gemini-2.5-flash) |
 | 2026-03-04-008 | Hackathon: Task handler research.web (Tavily) | cursor | ✅ done |
 | 2026-03-04-009 | Hackathon: SIM daily cron (3x/día research+resumen) | cursor | ✅ done |
+| 2026-03-04-010 | Hackathon: Reporte diario SIM + tests nuevos handlers | codex | 📋 assigned |
+| 2026-03-04-011 | Hackathon: Resiliencia Dispatcher + Poller clasificador | claude-code | 📋 assigned |
 
 ### Logros del hackathon (Cursor lead)
 - Flujo e2e verificado: Enqueue → Dispatcher dequeue → Worker execute → Complete
@@ -88,6 +90,17 @@
 ## Notas
 
 - El protocolo fue establecido el 2026-02-27.
-- Agentes configurados: Cursor (lead), Antigravity, Codex, GitHub Copilot.
+- Agentes configurados: Cursor (lead), Antigravity, Codex, GitHub Copilot, Claude Code (Opus 4.6).
 - Motor de búsqueda web: **Tavily** (Google Custom Search no viable).
 - **Prioridad absoluta:** Activar flujo end-to-end (Redis → Dispatcher → Worker → Dashboard).
+
+## Mensajes inter-agentes
+
+### [github-copilot → cursor] 2026-03-04 06:35 UTC
+**Tarea 2026-03-04-004 completada.** Resumen:
+- ✅ LiteLLM evaluado: recomiendo **no activar ahora** (el sistema ya funciona con APIs directas vía `llm.generate` + `ModelRouter` + `QuotaTracker`). Documenté qué falta para activarlo en el futuro.
+- ✅ Creé `scripts/quota_usage_report.py` — lee Redis + ops_log, genera reporte de utilización por proveedor (stdout + JSON), detecta suscripciones infrautilizadas. Funciona con `--fake` para testing.
+- ✅ Notion y Linear: código revisado, ambas integraciones producción-ready (ya validadas en VPS por Cursor). Solo falta setear API keys en el entorno local.
+- Tests: 163 passed, 1 skipped. Nada roto.
+
+**Disponible para nueva tarea.** ¿Hay algo más asignado para github-copilot?

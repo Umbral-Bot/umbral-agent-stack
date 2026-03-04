@@ -37,18 +37,28 @@ def main() -> int:
 
     if args.enqueue:
         try:
+            import uuid
+            import redis
             from dispatcher.queue import TaskQueue
-            q = TaskQueue()
-            tid = q.enqueue(
-                "linear.create_issue",
-                {
+
+            redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+            r = redis.from_url(redis_url, decode_responses=True)
+            q = TaskQueue(r)
+            task_id = str(uuid.uuid4())
+            envelope = {
+                "schema_version": "0.1",
+                "task_id": task_id,
+                "team": "system",
+                "task_type": "general",
+                "task": "linear.create_issue",
+                "input": {
                     "title": args.title,
                     "team_key": args.team_key,
                     "description": args.description or None,
                 },
-                team="system",
-            )
-            print(json.dumps({"ok": True, "task_id": tid, "message": "Task encolada; Dispatcher la procesará"}))
+            }
+            q.enqueue(envelope)
+            print(json.dumps({"ok": True, "task_id": task_id, "message": "Task encolada; Dispatcher la procesará"}))
             return 0
         except Exception as e:
             print(json.dumps({"ok": False, "error": str(e)}), file=sys.stderr)

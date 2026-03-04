@@ -35,6 +35,7 @@ from pydantic import BaseModel, Field
 from .config import WORKER_TOKEN
 from .rate_limiter import RateLimiter
 from .sanitize import sanitize_input, sanitize_task_name
+from .tracing import flush as flush_tracing
 from .models import (
     LegacyRunRequest,
     TaskEnvelope,
@@ -124,6 +125,12 @@ app = FastAPI(
     "Soporta TaskEnvelope v0.1, formato legacy, y enqueue vía Redis.",
     version="0.4.0",
 )
+
+
+@app.on_event("shutdown")
+async def _on_shutdown():
+    """Flush pending telemetry before process exit."""
+    flush_tracing()
 
 
 # ---------------------------------------------------------------------------

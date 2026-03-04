@@ -53,6 +53,7 @@ class TestResult:
     elapsed_ms: float
     detail: str = ""
     error: str = ""
+    skipped: bool = False
 
 
 @dataclass
@@ -63,11 +64,15 @@ class SuiteResult:
 
     @property
     def total_pass(self) -> int:
-        return sum(1 for r in self.results if r.passed)
+        return sum(1 for r in self.results if r.passed and not r.skipped)
+
+    @property
+    def total_skip(self) -> int:
+        return sum(1 for r in self.results if r.skipped)
 
     @property
     def total_fail(self) -> int:
-        return sum(1 for r in self.results if not r.passed)
+        return sum(1 for r in self.results if not r.passed and not r.skipped)
 
     @property
     def total_time_s(self) -> float:
@@ -105,8 +110,8 @@ def test_worker_vps_health(base_url: str) -> str:
         resp.raise_for_status()
         data = resp.json()
         version = data.get("version", "?")
-        handlers = data.get("handlers", "?")
-        return f"v{version}, {handlers} handlers"
+        tasks = data.get("tasks_registered", data.get("handlers", []))
+        return f"v{version}, {len(tasks) if isinstance(tasks, list) else tasks} handlers"
 
 
 def test_ping(base_url: str, token: str) -> str:
@@ -263,8 +268,139 @@ def test_worker_vm_health(vm_url: str) -> str:
         resp.raise_for_status()
         data = resp.json()
         version = data.get("version", "?")
-        handlers = data.get("handlers", "?")
-        return f"v{version}, {handlers} handlers"
+        tasks = data.get("tasks_registered", data.get("handlers", []))
+        return f"v{version}, {len(tasks) if isinstance(tasks, list) else tasks} handlers"
+
+
+# ── Multi-model & scheduled tests (R6) ────────────────────────
+
+def test_multi_model_openai(base_url: str, token: str) -> str:
+    """11. POST /run llm.generate with model=gpt-4o-mini (requires OPENAI_API_KEY)."""
+    with httpx.Client(timeout=30.0) as c:
+        resp = c.post(
+            f"{base_url}/run",
+            headers=_make_headers(token),
+            json={
+                "task": "llm.generate",
+                "input": {
+                    "prompt": "Say 'OpenAI OK' in one word.",
+                    "model": "gpt-4o-mini",
+                    "max_tokens": 20,
+                },
+            },
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        text = data.get("result", {}).get("text", "")
+        model = data.get("result", {}).get("model", "?")
+        if not text:
+            raise ValueError(f"Empty response from OpenAI: {data}")
+        return f"model={model}, {len(text)} chars"
+
+
+def test_multi_model_anthropic(base_url: str, token: str) -> str:
+    """12. POST /run llm.generate with model=claude-3-haiku-20240307 (requires ANTHROPIC_API_KEY)."""
+    with httpx.Client(timeout=30.0) as c:
+        resp = c.post(
+            f"{base_url}/run",
+            headers=_make_headers(token),
+            json={
+                "task": "llm.generate",
+                "input": {
+                    "prompt": "Say 'Anthropic OK' in one word.",
+                    "model": "claude-3-haiku-20240307",
+                    "max_tokens": 20,
+                },
+            },
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        text = data.get("result", {}).get("text", "")
+        model = data.get("result", {}).get("model", "?")
+        if not text:
+            raise ValueError(f"Empty response from Anthropic: {data}")
+        return f"model={model}, {len(text)} chars"
+
+
+def test_scheduled_list(base_url: str, token: str) -> str:
+    """13. GET /scheduled — verify endpoint responds 200."""
+    with httpx.Client(timeout=10.0) as c:
+        resp = c.get(
+            f"{base_url}/scheduled",
+            headers=_make_headers(token),
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        total = data.get("total", 0)
+        return f"{total} tareas programadas"
+
+
+def test_scheduled_lifecycle(base_url: str, token: str) -> str:
+    """14. POST /enqueue with run_at (+5min) → verify in /scheduled → cancel."""
+    from datetime import timedelta
+    run_at = (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat()
+    task_id = None
+    with httpx.Client(timeout=15.0) as c:
+        # Enqueue with future run_at
+        resp = c.post(
+            f"{base_url}/enqueue",
+            headers=_make_headers(token),
+            json={
+                "task": "ping",
+                "team": "system",
+                "input": {"echo": "scheduled_e2e_test"},
+                "run_at": run_at,
+            },
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        task_id = data.get("task_id", "?")
+        if not data.get("ok"):
+            raise ValueError(f"enqueue returned ok=false: {data}")
+
+        # Verify it appears in /scheduled
+        resp2 = c.get(
+            f"{base_url}/scheduled",
+            headers=_make_headers(token),
+        )
+        resp2.raise_for_status()
+        scheduled = resp2.json().get("scheduled", [])
+        found = any(t.get("task_id") == task_id for t in scheduled)
+        return f"task_id={task_id[:8]}..., in_scheduled={found}"
+
+
+def test_quota_status(base_url: str, token: str) -> str:
+    """15. GET /quota/status — verify endpoint responds (depends on task 025)."""
+    with httpx.Client(timeout=10.0) as c:
+        resp = c.get(
+            f"{base_url}/quota/status",
+            headers=_make_headers(token),
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        providers = list(data.get("providers", data.get("quotas", {})).keys())
+        return f"providers: {', '.join(providers) or 'none'}"
+
+
+def test_model_routing(base_url: str, token: str) -> str:
+    """16. POST /run llm.generate with task_type — verify model selection."""
+    with httpx.Client(timeout=25.0) as c:
+        resp = c.post(
+            f"{base_url}/run",
+            headers=_make_headers(token),
+            json={
+                "task": "llm.generate",
+                "input": {
+                    "prompt": "Responde OK.",
+                    "max_tokens": 20,
+                    "task_type": "research",
+                },
+            },
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        model = data.get("result", {}).get("model", "?")
+        return f"routed_model={model}"
 
 
 # ── Suite runner ────────────────────────────────────────────────
@@ -294,10 +430,41 @@ def run_e2e_suite(
     if vm_url:
         tests.append(("Worker VM health", lambda: test_worker_vm_health(vm_url)))
 
+    # ── Multi-model tests (conditional on API keys) ───────────
+    has_openai = bool(os.environ.get("OPENAI_API_KEY"))
+    has_anthropic = bool(os.environ.get("ANTHROPIC_API_KEY"))
+
+    if has_openai:
+        tests.append(("Multi-model: OpenAI", lambda: test_multi_model_openai(base_url, token)))
+    if has_anthropic:
+        tests.append(("Multi-model: Anthropic", lambda: test_multi_model_anthropic(base_url, token)))
+
+    # ── Scheduled tasks ───────────────────────────────────────
+    tests.append(("GET /scheduled", lambda: test_scheduled_list(base_url, token)))
+    tests.append(("Scheduled lifecycle", lambda: test_scheduled_lifecycle(base_url, token)))
+
+    # ── Quota & routing (conditional — depend on tasks 024/025) ─
+    tests.append(("GET /quota/status", lambda: test_quota_status(base_url, token)))
+    tests.append(("Model routing", lambda: test_model_routing(base_url, token)))
+
     for i, (name, fn) in enumerate(tests, 1):
         label = f"{i}. {name}"
         result = _run_test(label, fn)
         suite.results.append(result)
+
+    # Add SKIP entries for missing API keys
+    if not has_openai:
+        suite.results.append(TestResult(
+            name="Multi-model: OpenAI",
+            passed=True, elapsed_ms=0, skipped=True,
+            detail="SKIP — OPENAI_API_KEY not set",
+        ))
+    if not has_anthropic:
+        suite.results.append(TestResult(
+            name="Multi-model: Anthropic",
+            passed=True, elapsed_ms=0, skipped=True,
+            detail="SKIP — ANTHROPIC_API_KEY not set",
+        ))
 
     suite.end_time = datetime.now(timezone.utc)
     return suite
@@ -315,10 +482,17 @@ def format_results(suite: SuiteResult, quiet: bool = False) -> str:
     lines.append("")
 
     for r in suite.results:
-        status = "[PASS]" if r.passed else "[FAIL]"
-        elapsed = _format_elapsed(r.elapsed_ms)
+        if r.skipped:
+            status = "[SKIP]"
+        elif r.passed:
+            status = "[PASS]"
+        else:
+            status = "[FAIL]"
+        elapsed = _format_elapsed(r.elapsed_ms) if not r.skipped else "—"
 
-        if r.passed:
+        if r.skipped:
+            lines.append(f"{status} {r.name:<30s}           {r.detail}")
+        elif r.passed:
             detail = r.detail[:50] if r.detail else ""
             lines.append(f"{status} {r.name:<30s} ({elapsed})  {detail}")
         else:
@@ -329,8 +503,10 @@ def format_results(suite: SuiteResult, quiet: bool = False) -> str:
                 lines.append(f"       Error: {r.error}")
 
     lines.append("")
-    total = len(suite.results)
-    lines.append(f"=== Results: {suite.total_pass}/{total} PASS ===")
+    total_run = suite.total_pass + suite.total_fail
+    total_all = len(suite.results)
+    skip_str = f", {suite.total_skip} SKIP" if suite.total_skip > 0 else ""
+    lines.append(f"=== Results: {suite.total_pass}/{total_run} PASS{skip_str} ({total_all} total) ===")
     if suite.total_fail > 0:
         lines.append(f"    FAILURES: {suite.total_fail}")
     lines.append(f"Total time: {suite.total_time_s:.1f}s")

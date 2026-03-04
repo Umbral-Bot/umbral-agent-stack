@@ -1,32 +1,53 @@
 # Agent Board — Umbral Agent Stack
 
 > Última actualización: 2026-03-04 por **cursor**
-> Sprint activo: **S5**
-> **HACKATHON — RONDA 3 EN CURSO**
+> Sprint activo: **S6-S7**
+> **HACKATHON — RONDAS 6 y 7 EN CURSO**
 
 ## Estado del sistema
 
 | Aspecto | Estado |
 |---------|--------|
 | Protocolo inter-agentes | ✅ Activo |
-| VPS (Control Plane) | ✅ Redis + Dispatcher + Worker + 6 crons |
+| VPS (Control Plane) | ✅ Redis + Dispatcher + Worker + 8 crons |
 | Notion Poller daemon | ✅ Corriendo (PID activo, polling cada 60s) |
-| Worker API | ✅ v0.4.0 — 24 handlers, 6 endpoints |
-| Crons activos | 6 (dashboard, health, supervisor, poller, SIM research, SIM report) |
-| PRs mergeados (hackathon) | 15 |
-| VM (Execution Plane) | 🔴 Red caída (APIPA) — requiere intervención manual |
+| Worker API | ✅ v0.4.0 — 28 handlers, 8 endpoints |
+| Crons activos | 8 (dashboard, health, supervisor, poller, SIM research, SIM report, daily digest, E2E validation) |
+| PRs mergeados (hackathon) | 26 |
+| VM (Execution Plane) | ✅ v0.4.0 — 25 handlers — reconectada |
 
-## Ronda 5 — Tareas Activas (2026-03-04)
+## Ronda 7 — Langfuse + Hardening (2026-03-04)
 
 | ID | Título | Asignado | Rama | Estado |
 |----|--------|----------|------|--------|
-| 019 | Error Alert System — Notificaciones push de fallos | codex | feat/codex-error-alerts | 📋 assigned |
-| 020 | Team Workflow Engine — Flujos por equipo | github-copilot | feat/copilot-team-workflows | 📋 assigned |
-| 021 | Scheduled Tasks Manager — Tareas programadas via Notion | antigravity | feat/antigravity-scheduled-tasks | 📋 assigned |
-| 022 | E2E Validation Suite — Prueba completa en producción | claude-code | feat/claude-e2e-validation | 📋 assigned |
+| 027 | Langfuse Tracing — Instrumentar LLM calls | codex | feat/codex-langfuse | 📋 assigned |
+| 028 | OODA Report con Langfuse — Reporte semanal | github-copilot | feat/copilot-ooda-langfuse | 📋 assigned |
+| 029 | Hardening Final — Rate limiting + sanitización | antigravity | feat/antigravity-hardening | 📋 assigned |
+| 030 | E2E Integration Final — Validación completa | claude-code | feat/claude-final-e2e | 📋 assigned |
 
-### Objetivo Ronda 5
-Madurar el sistema: alertas de errores, workflows por equipo, y tareas programadas desde Notion.
+### Objetivo Ronda 7
+Cerrar brechas de observabilidad (Langfuse) y seguridad (rate limiting, sanitización, secrets audit). Validación final.
+
+## Ronda 6 — Multi-Modelo (2026-03-04)
+
+| ID | Título | Asignado | Rama | Estado |
+|----|--------|----------|------|--------|
+| 023 | Multi-LLM Worker — OpenAI + Anthropic + Gemini | codex | feat/codex-multi-llm | 📋 assigned |
+| 024 | Dispatcher Model Routing — Integrar al flujo real | github-copilot | feat/copilot-model-routing | 📋 assigned |
+| 025 | Quota Dashboard — Reporte de uso en Notion | antigravity | feat/antigravity-quota-dashboard | 📋 assigned |
+| 026 | Multi-Model E2E + Scheduled Tasks Validation | claude-code | feat/claude-multi-model-e2e | 📋 assigned |
+
+### Objetivo Ronda 6
+Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enruta con ModelRouter, quota dashboard visual. Dependencias: 023 → 024 → 026.
+
+## Ronda 5 — Completada ✅
+
+| ID | Título | Asignado | Estado |
+|----|--------|----------|--------|
+| 019 | Error Alert System — Notificaciones push de fallos | codex | ✅ done (PR #23) |
+| 020 | Team Workflow Engine — Flujos por equipo | github-copilot | ✅ done (PR #24) |
+| 021 | Scheduled Tasks Manager — Tareas programadas via Notion | antigravity | ✅ done (PR #26) |
+| 022 | E2E Validation Suite — Prueba completa en producción | claude-code | ✅ done (PR #25) |
 
 ## Ronda 4 — Completada ✅
 
@@ -132,9 +153,16 @@ Madurar el sistema: alertas de errores, workflows por equipo, y tareas programad
 | 8:30, 14:30, 20:30 | sim-report-cron.sh | SIM report (LLM + Notion) |
 | 22:00 | daily-digest-cron.sh | Digest diario (Redis → LLM → Notion) |
 
-## Worker v0.4.0 — 25 handlers
+## Worker v0.4.0 — 28 handlers
 
-`ping` · `notion.*` (5) · `windows.*` (6) · `windows.fs.*` (5) · `system.*` (2) · `linear.*` (3) · `research.web` · `llm.generate` · **`composite.research_report`**
+`ping` · `notion.*` (6) · `windows.*` (6) · `windows.fs.*` (5) · `system.*` (2) · `linear.*` (3) · `research.web` · `llm.generate` · `composite.research_report` · `make.post_webhook` · `observability.*` (2)
+
+## Pendientes explícitamente diferidos
+
+| Item | Razón |
+|------|-------|
+| VM PAD/Power Automate | Requiere instalación manual de PAD en VM |
+| Telegram como canal | Fuera del scope del hackathon |
 
 ## Notas
 - Agentes: Cursor (lead), Antigravity, Codex, GitHub Copilot, Claude Code.

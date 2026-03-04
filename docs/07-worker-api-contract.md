@@ -488,6 +488,36 @@ curl -s "http://WINDOWS_TAILSCALE_IP:8088/providers/status" \
 
 ---
 
+### `GET /tools/inventory` *(v0.5.0+)*
+
+Inventario completo de tasks registradas en el Worker, skills detectados
+del directorio `openclaw/workspace-templates/skills/`, y categorización.
+
+**Response (200):**
+```json
+{
+  "timestamp": "2026-03-04T...",
+  "total_tasks": 33,
+  "tasks": [
+    {"name": "figma.get_file", "module": "figma", "category": "figma"},
+    {"name": "llm.generate", "module": "llm", "category": "ai"}
+  ],
+  "skills": ["figma"],
+  "skills_detail": [
+    {"name": "figma", "description": "Interact with Figma REST API..."}
+  ],
+  "categories": {"ai": 3, "figma": 5, "notion": 6, "windows": 11}
+}
+```
+
+**Ejemplo curl:**
+```bash
+curl -s "http://WINDOWS_TAILSCALE_IP:8088/tools/inventory" \
+  -H 'Authorization: Bearer $WORKER_TOKEN'
+```
+
+---
+
 ## Errores
 
 | Código | Descripción |

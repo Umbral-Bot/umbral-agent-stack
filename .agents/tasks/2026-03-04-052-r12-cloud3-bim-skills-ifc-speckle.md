@@ -189,4 +189,4 @@ Crear `tests/test_bim_skills.py` con tests de validación:
 - [x] `worker/templates/documents/propuesta_bim.docx` — regenerado con estructura BIM completa
 - [x] `worker/templates/documents/cotizacion_bim.docx` — regenerado con tabla de ítems
 - [x] `tests/test_bim_skills.py` — 13 tests (9+ requeridos)
-- [ ] PR abierto a `main`
+- [x] PR abierto a `main` — PR #62

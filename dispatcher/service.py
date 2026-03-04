@@ -29,23 +29,22 @@ from infra.ops_logger import ops_log
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 
 
-# S4: Mapeo de provider name → model string que entiende el Worker.
-# Para azure_foundry, el deployment real se toma de AZURE_OPENAI_DEPLOYMENT env var
-# en el Worker; este valor es el default/referencia.
+# S4: Mapeo de provider name (quota alias) → model string que entiende el Worker.
 PROVIDER_MODEL_MAP: Dict[str, str] = {
-    # Azure AI Foundry — prioridad máxima (deployment dedicado con cuota Azure)
-    "azure_foundry": "gpt-5.3-codex",      # deployment name; override con AZURE_OPENAI_DEPLOYMENT
-    # OpenAI Codex via GitHub Models — fallback
-    "openai_codex": "gpt-5.3-codex",
-    # Anthropic Pro
-    "claude_pro":   "claude-sonnet-4-6",
-    "claude_opus":  "claude-opus-4-6",
-    # Google AI Studio + Flash
-    "gemini_pro":   "gemini-3.1-pro-preview-customtools",
-    "gemini_flash": "gemini-flash-latest",
-    # Aliases legacy (compatibilidad)
-    "chatgpt_plus": "gpt-4o",
-    "copilot_pro":  "gpt-4o-mini",
+    # OpenAI / Codex
+    "azure_foundry": "gpt-5.3-codex",
+    "openai_codex":  "gpt-5.3-codex",
+    "chatgpt_plus":  "gpt-5.2",
+    # Anthropic
+    "claude_pro":    "claude-sonnet-4-6",
+    "claude_opus":   "claude-opus-4-6",
+    "claude_haiku":  "claude-haiku-4-5",
+    # Google AI Studio
+    "gemini_pro":        "gemini-3.1-pro-preview-customtools",
+    "gemini_flash":      "gemini-flash-latest",
+    "gemini_flash_lite": "gemini-flash-lite-latest",
+    # Google Vertex
+    "gemini_vertex":     "gemini_vertex",  # alias preservado → Worker detecta vertex provider
 }
 
 # Tareas LLM que reciben inyección de modelo

@@ -26,6 +26,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from client.worker_client import WorkerClient
 from dispatcher.queue import TaskQueue
+from dispatcher.smart_reply import handle_smart_reply
 
 logging.basicConfig(
     level=logging.INFO,
@@ -68,15 +69,16 @@ def _do_poll(wc: WorkerClient, queue: TaskQueue, r: redis.Redis) -> None:
             continue
 
         # Classify intent and route to team (S5 Hackathon — intelligent poller)
-        from dispatcher.intent_classifier import classify_intent, route_to_team, build_envelope as build_env
+        from dispatcher.intent_classifier import classify_intent, route_to_team
         intent = classify_intent(text)
         team = route_to_team(text)
-        envelope = build_env(text, comment_id, intent, team)
-        queue.enqueue(envelope)
+
+        # Smart reply: research + LLM + post answer (replaces old ack-only envelope)
         logger.info(
-            "Enqueued [%s→%s] for comment %s: %.40s...",
+            "Processing [%s→%s] for comment %s: %.40s...",
             intent.intent, team, comment_id[:8], text[:40],
         )
+        handle_smart_reply(text, comment_id, intent.intent, team, wc, queue)
 
     if latest_ts != last_ts:
         r.set(REDIS_KEY_LAST_TS, latest_ts)

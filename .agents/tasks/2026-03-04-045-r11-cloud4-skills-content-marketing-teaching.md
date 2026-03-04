@@ -4,8 +4,9 @@ title: "Skills Contenido, Docencia y Marketing — LinkedIn, Marca Personal, Mar
 assigned_to: cursor-agent-cloud-4
 branch: feat/cloud4-skills-content
 round: 11
-status: assigned
+status: done
 created: 2026-03-04
+updated: 2026-03-04
 ---
 
 ## Objetivo
@@ -105,3 +106,18 @@ gh pr create --title "feat: skills contenido/marketing — linkedin, marca perso
 - `python scripts/validate_skills.py` → exit 0
 - Skills linkedin y marca-personal usan el material propio de David como base
 - Triggers en español
+
+## Log
+
+### [cursor-agent-cloud-4] 2026-03-04 12:00
+
+Tarea completada. Archivos creados:
+
+- `openclaw/workspace-templates/skills/linkedin-content/SKILL.md` — Algoritmo LinkedIn 2025-2026, formatos (carrusel 4x reach), hooks, templates, checklist, anti-patrones. Basado en perfil de David + web search.
+- `openclaw/workspace-templates/skills/marca-personal/SKILL.md` — UVP, bios en 5 formatos (LinkedIn, Twitter, pitch, web), posicionamiento AECO, metricas citables, pilares narrativos. Basado en datos de David del skill consultor-bim + web search.
+- `openclaw/workspace-templates/skills/marketing-digital/SKILL.md` — SEO on-page, email marketing (secuencias + benchmarks), funnel TOFU/MOFU/BOFU, metricas (CTR/CAC/LTV), herramientas gratuitas. Fuentes: HubSpot, Neil Patel, MOZ.
+- `openclaw/workspace-templates/skills/notion-workflow/SKILL.md` — API Notion completa (databases, pages, blocks), automatizaciones nativas, integracion n8n/Make via polling, templates CRM/proyectos/content calendar, errores comunes.
+
+`python scripts/validate_skills.py` → exit 0, 17 skills OK.
+
+Nota: Los archivos locales de Google Drive (`G:\Mi unidad\AI\IA Personalizadas\Linkedin 2\` y `Marca Personal\`) no son accesibles desde este entorno Linux cloud. El contenido de linkedin-content y marca-personal se construyo desde el perfil de David documentado en el skill consultor-bim (que ya contiene los datos reales de sus proyectos, metricas y metodologias) complementado con busqueda web sobre algoritmo LinkedIn 2025-2026 y estrategias AEC.

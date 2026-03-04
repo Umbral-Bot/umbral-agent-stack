@@ -34,7 +34,7 @@ Documentación oficial: https://docs.n8n.io/
 | **Credential** | Autenticación almacenada de forma segura para servicios externos |
 | **Execution** | Una corrida del workflow (manual, trigger, programada) |
 
----
+## Expresiones n8n
 
 ## Nodos core más usados
 
@@ -89,6 +89,7 @@ Las expresiones se escriben entre `{{ }}` en cualquier campo de parámetro:
 
 ### Acceder a datos de nodos anteriores
 
+### Acceder a datos del nodo anterior
 ```javascript
 // Dato del nodo anterior (output[0])
 {{ $json.nombre }}
@@ -203,7 +204,7 @@ for item in _input.all():
 return results
 ```
 
----
+## Nodos principales
 
 ## Webhook — Configuración
 
@@ -228,7 +229,7 @@ return results
 }
 ```
 
----
+### Transformación de datos
 
 ## Credenciales — Configuración
 
@@ -242,7 +243,41 @@ Crear credencial: `Configuración → Credenciales → + Nueva credencial`
 
 Usar en expresiones: `{{ $credentials.MiCredencial.apiKey }}` (solo en Code node)
 
----
+### docker-compose.yml mínimo
+```yaml
+version: '3.8'
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=tu-dominio.com
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - WEBHOOK_URL=https://tu-dominio.com/
+      - N8N_ENCRYPTION_KEY=clave-secreta-32-chars
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=password-seguro
+      - N8N_SECURE_COOKIE=false
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_USER=n8n
+      - DB_POSTGRESDB_PASSWORD=n8n_password
+    volumes:
+      - n8n_data:/home/node/.n8n
+  
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: n8n
+      POSTGRES_USER: n8n
+      POSTGRES_PASSWORD: n8n_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
 ## Manejo de errores
 
@@ -302,7 +337,6 @@ docker run -d \
 ```
 
 ### Variables de entorno clave
-
 ```bash
 N8N_PORT=5678
 N8N_PROTOCOL=https
@@ -351,9 +385,25 @@ n8n puede actuar como orquestador externo que dispara tareas al Worker de Umbral
 }
 ```
 
----
+### Schedule → Fetch → Transform → Store
+```
+[Schedule 0 8 * * *] → [HTTP Request: GET /api/datos] →
+[Code: transformar] → [Google Sheets: append rows]
+```
 
-## Errores frecuentes y soluciones
+### Fan-out con Merge
+```
+[Trigger] → [Split In Batches] → [Loop: HTTP Request por item] → 
+[Aggregate: consolidar resultados] → [Notion: crear página con resumen]
+```
+
+### Error handling con Try/Catch
+```
+[Nodo con riesgo] → (en caso de error) → [Error Trigger] → 
+[Telegram: notificar error] → [Set: registrar en log]
+```
+
+## Errores frecuentes
 
 | Error | Causa | Solución |
 |-------|-------|----------|
@@ -379,9 +429,26 @@ n8n puede actuar como orquestador externo que dispara tareas al Worker de Umbral
 - **Split in Batches** antes de acciones con rate limit (APIs, email masivo).
 - **Pinning de datos**: en desarrollo, "pinear" datos de salida de nodos para iterar sin re-ejecutar triggers.
 
----
+## API de n8n (para integración)
 
-## Referencias
+```bash
+# Listar workflows
+GET /api/v1/workflows
+Authorization: Bearer <N8N_API_KEY>
+
+# Ejecutar workflow manualmente
+POST /api/v1/workflows/{id}/execute
+Content-Type: application/json
+{"runData": {}}
+
+# Obtener ejecuciones
+GET /api/v1/executions?workflowId={id}&status=success
+
+# Crear webhook URL programáticamente
+GET /api/v1/workflows/{id}/webhook-urls
+```
+
+## Documentación oficial
 
 - Documentación oficial: https://docs.n8n.io/
 - Nodos disponibles: https://docs.n8n.io/integrations/

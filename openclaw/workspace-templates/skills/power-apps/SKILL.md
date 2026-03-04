@@ -30,7 +30,7 @@ Documentación oficial: https://learn.microsoft.com/power-apps/
 | **Model-Driven App** | Basada en datos de Dataverse, estructura fija | CRM, tracking de casos, procesos complejos |
 | **Pages (Portal)** | Sitio web externo conectado a Dataverse | Portales de clientes, formularios públicos |
 
----
+## Power Fx — Fórmulas esenciales
 
 ## Power Fx — Fórmulas clave
 
@@ -243,7 +243,7 @@ Notify("Guardado", NotificationType.Success)
 varLoading
 ```
 
----
+## Conectores disponibles
 
 ## Model-Driven Apps
 
@@ -256,9 +256,25 @@ varLoading
 Tabla Dataverse → Formulario (campos) → Vista (listado) → App Model-Driven
 ```
 
----
+## Formularios (Forms)
 
-## Errores frecuentes y soluciones
+```powerfx
+// Vincular formulario a galería
+Form1.Item = Gallery1.Selected
+
+// Modo del formulario
+FormMode.New      // Crear
+FormMode.Edit     // Editar
+FormMode.View     // Ver
+
+// Verificar validez antes de guardar
+If(Form1.Valid, SubmitForm(Form1), Notify("Completar campos requeridos", NotificationType.Error))
+
+// Acción después de submit exitoso
+OnSuccess: Navigate(PantallaLista, ScreenTransition.None)
+```
+
+## Errores frecuentes
 
 | Error | Causa | Solución |
 |-------|-------|----------|

@@ -159,8 +159,7 @@ VentasEnvio = CALCULATE(
 )
 ```
 
-### Variables en DAX
-
+### Variables en DAX (VAR / RETURN)
 ```dax
 MargenConVar =
 VAR TotalIngresos = SUM(Ventas[Monto])
@@ -193,7 +192,15 @@ Categoria =
     )
 ```
 
----
+### Columnas calculadas (Calculated Columns)
+A diferencia de las medidas, se calculan en tiempo de refresh:
+```dax
+-- En tabla Ventas
+Categoria Precio =
+IF(
+    Ventas[Monto] > 1000, "Alto",
+    IF(Ventas[Monto] > 500, "Medio", "Bajo")
+)
 
 ## Power Query (M) — Transformaciones
 
@@ -272,7 +279,29 @@ Table.TransformColumns(tabla, {{"Email", each Text.BeforeDelimiter(_, "@")}})
 FechaInicio = #date(2025, 1, 1) meta [IsParameterQuery=true, Type="Date"]
 ```
 
----
+### Conectar a API REST en Power Query
+```m
+let
+    Url = "https://api.ejemplo.com/datos?page=1",
+    Headers = [#"Authorization" = "Bearer TOKEN", #"Content-Type" = "application/json"],
+    Respuesta = Web.Contents(Url, [Headers = Headers]),
+    Json = Json.Document(Respuesta),
+    Tabla = Table.FromList(Json[items], Splitter.SplitByNothing()),
+    Expandida = Table.ExpandRecordColumn(Tabla, "Column1", {"id", "nombre", "valor"})
+in
+    Expandida
+```
+
+## Fuentes de datos compatibles
+
+| Categoría | Ejemplos |
+|-----------|----------|
+| Archivos | Excel, CSV, JSON, XML, PDF, SharePoint Folder |
+| Bases de datos | SQL Server, Azure SQL, PostgreSQL, MySQL, Oracle |
+| Online Services | SharePoint, Dataverse, Dynamics 365, Salesforce |
+| Azure | Azure Blob, Azure Data Lake, Synapse, Cosmos DB |
+| APIs | OData, Web (REST), GraphQL (via Web) |
+| Power Platform | Power BI Datasets, Dataflows, Dataverse |
 
 ## API REST de Power BI
 
@@ -332,9 +361,7 @@ ADDCOLUMNS(
 - Relaciones de **muchos a uno** (muchos hechos → un registro de dimensión).
 - Evitar relaciones muchos-a-muchos; usar tabla puente si es necesario.
 
----
-
-## Errores frecuentes y soluciones
+## Errores frecuentes
 
 | Error | Causa | Solución |
 |-------|-------|----------|
@@ -358,7 +385,7 @@ ADDCOLUMNS(
 - Embedding de reportes en portal web de cliente con Row-Level Security (RLS).
 - Análisis de datos de Dataverse (model-driven apps + Power BI integrado).
 
----
+## Documentación oficial
 
 ## Referencias
 

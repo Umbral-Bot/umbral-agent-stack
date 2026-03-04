@@ -9,9 +9,12 @@ from __future__ import annotations
 import json
 import logging
 import os
+import time
 import urllib.error
 import urllib.request
 from typing import Any, Callable, Dict
+
+from worker.tracing import trace_llm_call
 
 logger = logging.getLogger("worker.tasks.llm")
 
@@ -61,13 +64,32 @@ def handle_llm_generate(input_data: Dict[str, Any]) -> Dict[str, Any]:
     system_prompt = str(input_data.get("system", ""))
 
     provider_fn = PROVIDERS.get(provider, _call_gemini)
-    return provider_fn(
+    t0 = time.monotonic()
+    result = provider_fn(
         prompt=prompt,
         model=model,
         max_tokens=max_tokens,
         temperature=temperature,
         system_prompt=system_prompt,
     )
+    duration_ms = (time.monotonic() - t0) * 1000.0
+
+    try:
+        trace_llm_call(
+            model=model,
+            provider=provider,
+            prompt=prompt,
+            system=system_prompt,
+            response_text=str(result.get("text", "")),
+            usage=result.get("usage", {}) or {},
+            duration_ms=duration_ms,
+            task_id=input_data.get("_task_id"),
+            task_type=input_data.get("_task_type"),
+        )
+    except Exception:
+        logger.warning("Tracing call failed unexpectedly", exc_info=True)
+
+    return result
 
 
 def _detect_provider(model: str) -> str:

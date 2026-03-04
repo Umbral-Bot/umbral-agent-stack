@@ -26,7 +26,7 @@
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|
-| 045 | Skills Contenido, Docencia y Marketing — LinkedIn, Marca Personal, Marketing Digital, Notion | cursor-agent-cloud-4 | ✅ done |
+| 042 | Skills BIM/AEC — Revit, Dynamo, Rhino, Navisworks, ACC, KUKA | cursor-agent-cloud-1 | ✅ done (PR #52) |
 
 ## Ronda 9 — Completada ✅
 

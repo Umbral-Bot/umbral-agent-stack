@@ -99,6 +99,7 @@ class EnqueueRequest(BaseModel):
     team: str = "system"
     task_type: str = "general"
     input: Dict[str, Any] = {}
+    callback_url: Optional[str] = Field(default=None, description="Webhook URL opcional para callback al completar/fallar")
 
 # ---------------------------------------------------------------------------
 # In-memory task store (bounded, most recent 1000)
@@ -355,6 +356,9 @@ async def enqueue_task(
         "created_at": now,
         "queued_at": time.time(),
     }
+    callback_url = body.callback_url.strip() if body.callback_url else ""
+    if callback_url:
+        envelope["callback_url"] = callback_url
 
     # Enqueue in Redis (same structure as TaskQueue.enqueue)
     from dispatcher.queue import TaskQueue

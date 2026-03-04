@@ -63,6 +63,7 @@ Ejecuta una tarea. Acepta dos formatos:
 | `input` | object | ✅ | Datos de entrada para el handler |
 | `trace_id` | string | — | UUID para correlación de trazas |
 | `status` | string | — | Estado (`queued`, `running`, `done`, `failed`) |
+| `callback_url` | string | — | Webhook opcional para callback al completar/fallar |
 
 #### Legacy (backward compat)
 
@@ -105,7 +106,8 @@ Pensado para servicios externos (Make.com, n8n, webhooks) que no necesitan Pytho
   "task": "research.web",
   "team": "marketing",
   "task_type": "research",
-  "input": { "query": "AI trends 2026" }
+  "input": { "query": "AI trends 2026" },
+  "callback_url": "https://hooks.make.com/tu-webhook"
 }
 ```
 
@@ -115,6 +117,7 @@ Pensado para servicios externos (Make.com, n8n, webhooks) que no necesitan Pytho
 | `team` | string | — | `"system"` | Equipo destino |
 | `task_type` | string | — | `"general"` | Tipo de tarea |
 | `input` | object | — | `{}` | Datos de entrada para el handler |
+| `callback_url` | string | — | `null` | URL webhook opcional para recibir resultado cuando termine la tarea |
 
 **Response (200):**
 ```json
@@ -128,6 +131,23 @@ Pensado para servicios externos (Make.com, n8n, webhooks) que no necesitan Pytho
 **Errores específicos:**
 - `400` — Nombre de tarea inválido (solo alfanuméricos + `.` + `_`)
 - `503` — Redis no disponible
+
+### Callback Webhook (opcional)
+
+Si `callback_url` viene en el `POST /enqueue`, el Dispatcher enviará un `POST`
+al webhook al terminar la tarea (éxito o fallo), con timeout de 10s y 1 retry
+si hay timeout o error 5xx.
+
+**Payload ejemplo:**
+```json
+{
+  "task_id": "uuid-generado",
+  "status": "done",
+  "task": "research.web",
+  "result": { "ok": true, "result": { "..." : "..." } },
+  "completed_at": 1741086000
+}
+```
 
 **Ejemplo curl:**
 ```bash

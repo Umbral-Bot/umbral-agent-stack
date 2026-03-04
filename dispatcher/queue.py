@@ -28,6 +28,7 @@ class TaskQueue:
 
     Hash:
         umbral:task:{task_id}  — estado completo de cada tarea
+        (incluye callback_url si la tarea fue encolada con webhook)
     """
 
     QUEUE_PENDING = "umbral:tasks:pending"
@@ -49,7 +50,9 @@ class TaskQueue:
         Encola una tarea para ejecución.
 
         Args:
-            envelope: TaskEnvelope como dict
+            envelope: TaskEnvelope como dict.
+                Puede incluir `callback_url` (opcional) para notificación webhook
+                cuando el Dispatcher termine la tarea.
 
         Returns:
             task_id

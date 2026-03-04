@@ -158,30 +158,6 @@ async def rate_limit_middleware(request: Request, call_next):
     return response
 
 
-# ---------------------------------------------------------------------------
-# Rate Limiting Middleware
-# ---------------------------------------------------------------------------
-rpm = int(os.environ.get("RATE_LIMIT_RPM", "60"))
-limiter = RateLimiter(max_requests=rpm, window_seconds=60)
-
-@app.middleware("http")
-async def rate_limit_middleware(request: Request, call_next):
-    if request.url.path == "/health":
-        return await call_next(request)
-    
-    client_id = request.client.host if request.client else "unknown"
-    allowed, remaining = limiter.is_allowed(client_id)
-    
-    if not allowed:
-        return JSONResponse(
-            status_code=429,
-            content={"detail": "Rate limit exceeded. Retry later."},
-            headers={"Retry-After": "60"}
-        )
-    
-    response = await call_next(request)
-    return response
-
 
 # ---------------------------------------------------------------------------
 # Auth helper
@@ -591,6 +567,108 @@ async def get_quota_status(
     return {
         "providers": providers,
         "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    }
+
+
+# ---------------------------------------------------------------------------
+# Provider model names (human-readable mapping)
+# ---------------------------------------------------------------------------
+_PROVIDER_MODELS = {
+    "azure_foundry":    "gpt-5.3-codex",
+    "claude_pro":       "claude-sonnet-4-6",
+    "claude_opus":      "claude-opus-4-6",
+    "claude_haiku":     "claude-haiku-4-5",
+    "gemini_pro":       "gemini-3.1-pro-preview-customtools",
+    "gemini_flash":     "gemini-flash-latest",
+    "gemini_flash_lite": "gemini-flash-lite-latest",
+    "gemini_vertex":    "gemini-3.1-pro-preview",
+}
+
+
+@app.get("/providers/status")
+async def get_provider_status(
+    authorization: str = Header(None),
+):
+    """
+    Dashboard de estado de providers: qué modelos están configurados,
+    su cuota actual y a qué task_types enrutan.
+    """
+    _authenticate(authorization)
+
+    r = _get_redis()
+    if r is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Redis not available. Cannot query provider status.",
+        )
+
+    # --- Load config ---
+    from dispatcher.model_router import (
+        get_configured_providers,
+        _load_quota_policy,
+        _PROVIDER_ENV_REQUIREMENTS,
+    )
+    from dispatcher.quota_tracker import QuotaTracker
+
+    routing, provider_config = _load_quota_policy()
+    configured = get_configured_providers()
+    all_known = set(provider_config.keys()) | set(_PROVIDER_ENV_REQUIREMENTS.keys())
+    unconfigured = sorted(all_known - configured)
+
+    # --- Quota data ---
+    tracker = QuotaTracker(r, provider_config)
+    details = tracker.get_all_quota_details()
+
+    # --- Build routing_preferred_for per provider ---
+    routing_map: dict[str, list[str]] = {}
+    for task_type, route in routing.items():
+        pref = route.get("preferred", "")
+        if pref:
+            routing_map.setdefault(pref, []).append(task_type)
+
+    # --- Assemble response ---
+    providers_out = {}
+    for provider in sorted(all_known):
+        is_configured = provider in configured
+        d = details.get(provider)
+
+        # Quota status
+        if d:
+            used = d["used"]
+            limit = d["limit"]
+            fraction = d["fraction"]
+            cfg = provider_config.get(provider, {})
+            warn = float(cfg.get("warn", 0.8))
+            restrict = float(cfg.get("restrict", 0.95))
+            if fraction >= 1.0:
+                q_status = "exceeded"
+            elif fraction >= restrict:
+                q_status = "restrict"
+            elif fraction >= warn:
+                q_status = "warn"
+            else:
+                q_status = "ok"
+        else:
+            used = 0
+            limit = int(provider_config.get(provider, {}).get("limit_requests", 0))
+            fraction = 0.0
+            q_status = "unknown" if not is_configured else "ok"
+
+        providers_out[provider] = {
+            "configured": is_configured,
+            "model": _PROVIDER_MODELS.get(provider, "unknown"),
+            "quota_used": used,
+            "quota_limit": limit,
+            "quota_fraction": round(fraction, 4),
+            "quota_status": q_status,
+            "routing_preferred_for": sorted(routing_map.get(provider, [])),
+        }
+
+    return {
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "configured": sorted(configured),
+        "unconfigured": unconfigured,
+        "providers": providers_out,
     }
 
 

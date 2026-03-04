@@ -186,8 +186,14 @@ class TestQuestionFlow:
 # ── Test handle_smart_reply: task intent ───────────────────────
 
 class TestTaskFlow:
-    def test_task_generates_plan_and_enqueues(self, wc, queue):
-        """task → LLM plan + post + enqueue."""
+    @patch("dispatcher.smart_reply._get_workflow_engine")
+    def test_task_generates_plan_and_enqueues(self, mock_get_engine, wc, queue):
+        """task without workflow → LLM plan + post + enqueue."""
+        # Force no-workflow path so we test the LLM plan fallback
+        _mock_engine = MagicMock()
+        _mock_engine.has_workflow.return_value = False
+        mock_get_engine.return_value = _mock_engine
+
         wc.run.side_effect = [
             _llm_result("1. Recopilar datos\n2. Generar gráficas\n3. Publicar"),  # llm
             _empty_result(),  # notion.add_comment
@@ -207,8 +213,13 @@ class TestTaskFlow:
         assert envelope["source"] == "smart_reply"
         assert envelope["input"]["original_request"] == COMMENT_TEXT_TASK
 
-    def test_task_llm_fails_posts_fallback(self, wc, queue):
-        """task but LLM fails → fallback."""
+    @patch("dispatcher.smart_reply._get_workflow_engine")
+    def test_task_llm_fails_posts_fallback(self, mock_get_engine, wc, queue):
+        """task without workflow, LLM fails → fallback."""
+        _mock_engine = MagicMock()
+        _mock_engine.has_workflow.return_value = False
+        mock_get_engine.return_value = _mock_engine
+
         wc.run.side_effect = [
             Exception("llm down"),
             _empty_result(),  # fallback post

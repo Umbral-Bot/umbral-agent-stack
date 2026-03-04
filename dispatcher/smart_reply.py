@@ -21,8 +21,28 @@ from client.worker_client import WorkerClient
 from dispatcher.queue import TaskQueue
 from dispatcher.scheduler import TaskScheduler
 from dispatcher.intent_classifier import IntentResult, build_envelope
+from dispatcher.workflow_engine import WorkflowEngine
 
 logger = logging.getLogger("dispatcher.smart_reply")
+
+# ── Workflow engine (lazy singleton) ────────────────────────────
+
+_workflow_engine: Optional[WorkflowEngine] = None
+
+
+def _get_workflow_engine(wc: WorkerClient) -> WorkflowEngine:
+    """Return a (lazily initialized) WorkflowEngine singleton."""
+    global _workflow_engine
+    if _workflow_engine is None:
+        from pathlib import Path
+
+        config_path = Path(__file__).resolve().parent.parent / "config" / "team_workflows.yaml"
+        _workflow_engine = WorkflowEngine(config_path, wc)
+        logger.info("WorkflowEngine initialized (teams: %s)", _workflow_engine.get_teams())
+    else:
+        # Update worker client in case it changed
+        _workflow_engine.wc = wc
+    return _workflow_engine
 
 ECHO_PREFIX = "Rick:"
 _RESEARCH_TIMEOUT = 15.0  # seconds for research.web call
@@ -179,9 +199,16 @@ def _handle_question(text: str, comment_id: str, team: str, wc: WorkerClient) ->
 def _handle_task(
     text: str, comment_id: str, team: str, wc: WorkerClient, queue: TaskQueue
 ) -> None:
-    """LLM decomposes task → post plan + enqueue sub-tasks."""
+    """Execute team workflow if available, else LLM plan + enqueue."""
     short_id = comment_id[:8]
 
+    # --- Try workflow engine first ---
+    engine = _get_workflow_engine(wc)
+    if engine.has_workflow(team):
+        _handle_task_with_workflow(text, comment_id, team, wc, engine)
+        return
+
+    # --- Fallback: LLM plan + enqueue (original behavior) ---
     prompt = f"Tarea solicitada: {text}\n\nDescompón en pasos concretos."
     plan = _do_llm_generate(wc, prompt, _TASK_PLAN_SYSTEM_PROMPT)
 
@@ -210,6 +237,84 @@ def _handle_task(
     }
     queue.enqueue(envelope)
     logger.info("Task plan posted and enqueued for team [%s], comment %s", team, short_id)
+
+
+def _handle_task_with_workflow(
+    text: str,
+    comment_id: str,
+    team: str,
+    wc: WorkerClient,
+    engine: WorkflowEngine,
+) -> None:
+    """Execute a team workflow and post the result."""
+    short_id = comment_id[:8]
+    workflow_name = engine.get_default_workflow(team)
+
+    # Extract a topic from the comment text (first 120 chars as topic)
+    topic = text.strip()[:120]
+
+    _post_comment(
+        wc,
+        f"{ECHO_PREFIX} Ejecutando workflow [{workflow_name}] para equipo [{team}]... (comment_id={short_id}...)",
+    )
+
+    context = {
+        "topic": topic,
+        "text": text,
+        "team": team,
+    }
+
+    result = engine.execute_workflow(team, workflow_name, context)
+
+    if result["ok"]:
+        final = result.get("final_result", "")
+        steps_info = f"{result['steps_completed']}/{result['steps_total']} pasos completados"
+
+        if final and len(final) > 1500:
+            # Long result → try Notion page
+            try:
+                page_res = wc.run("notion.create_report_page", {
+                    "title": f"[{team}] Workflow: {workflow_name} — {topic[:60]}",
+                    "content": final,
+                    "metadata": {
+                        "source": "workflow_engine",
+                        "team": team,
+                        "workflow": workflow_name,
+                    },
+                })
+                page_url = page_res.get("result", {}).get("page_url", "")
+                if page_url:
+                    reply = (
+                        f"{ECHO_PREFIX} Workflow [{workflow_name}] completado ({steps_info}).\n"
+                        f"Resultado detallado: {page_url}\n\n(comment_id={short_id}...)"
+                    )
+                else:
+                    reply = f"{ECHO_PREFIX} Workflow [{workflow_name}] completado ({steps_info}).\n\n{final[:1900]}\n\n(comment_id={short_id}...)"
+            except Exception:
+                logger.exception("Failed to create report page for workflow result")
+                reply = f"{ECHO_PREFIX} Workflow [{workflow_name}] completado ({steps_info}).\n\n{final[:1900]}\n\n(comment_id={short_id}...)"
+        elif final:
+            reply = (
+                f"{ECHO_PREFIX} Workflow [{workflow_name}] completado ({steps_info}).\n\n"
+                f"{final}\n\n(comment_id={short_id}...)"
+            )
+        else:
+            reply = f"{ECHO_PREFIX} Workflow [{workflow_name}] completado ({steps_info}). (comment_id={short_id}...)"
+
+        _post_comment(wc, reply)
+    else:
+        error = result.get("error", "unknown error")
+        reply = (
+            f"{ECHO_PREFIX} Workflow [{workflow_name}] para [{team}] terminó con errores: "
+            f"{error}\n\n(comment_id={short_id}...)"
+        )
+        _post_comment(wc, reply)
+
+    logger.info(
+        "Workflow '%s' for team '%s': ok=%s, %d/%d steps",
+        workflow_name, team, result["ok"],
+        result["steps_completed"], result["steps_total"],
+    )
 
 
 def _handle_instruction(text: str, comment_id: str, wc: WorkerClient) -> None:

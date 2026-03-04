@@ -1,47 +1,98 @@
 # 18 — Convención Enlace Notion ↔ Rick
 
 > Cómo se coordinan el agente de Notion **"Enlace Notion ↔ Rick"** y el Control Plane (Rick) vía comentarios y el poller.
+> Actualizado: 2026-03-04 (post-hackathon).
 
-## Horarios
+## Estado actual (post-hackathon)
 
 | Quién | Cuándo | Qué hace |
 |-------|--------|----------|
-| **Enlace Notion ↔ Rick** (agente en Notion) | Cada hora en punto (00:00, 01:00, 02:00, …) | Se activa; revisa comentarios de Rick y páginas del alcance; responde y actualiza Bandeja Puente. |
-| **Rick** (poller en VPS) | A las **XX:10** de cada hora | Llama al Worker para hacer `notion.poll_comments` en la página Control Room; encola tareas por cada comentario nuevo (p. ej. responder "Rick: Recibido."). |
+| **Enlace Notion ↔ Rick** (agente en Notion) | Cuando se menciona + cada hora | Revisa comentarios y páginas del alcance; responde a David y gestiona Bandeja Puente. |
+| **Rick** (poller daemon en VPS) | **Cada 60 segundos** (daemon continuo) | Pollea Control Room, clasifica intención (question/task/instruction), responde inteligentemente con research.web + llm.generate. |
 
-Rick revisa **10 minutos después** de Enlace para leer mensajes que Enlace (o David) dejaron para él.
+Rick ya no corre una vez por hora — tiene un daemon que pollea cada 60 segundos con smart reply.
 
-## Configuración del poller
+## Limitación técnica: @Enlace no es mención nativa
 
-Por defecto el poller corre **una vez por hora a las XX:10** (minuto 10). No hace falta definir nada más.
+La API de Notion (comments) solo acepta **texto plano** — no soporta rich text con mentions nativos.
+Cuando Rick escribe `@Enlace` en un comentario, es el **string literal** `@Enlace`, no una mención de Notion.
 
-- Para cambiar el minuto: `NOTION_POLL_AT_MINUTE=15` → Rick a las XX:15.
-- Para modo continuo (poll cada N segundos): `NOTION_POLL_INTERVAL_SEC=300` → cada 5 min (se ignora `NOTION_POLL_AT_MINUTE`).
+**Implicaciones para Enlace:**
+- Enlace debe buscar el texto exacto `@Enlace` en los comentarios (como string, no como mención nativa)
+- Tratarlo como si fuera una mención directa
+- Responder normalmente en la misma página
 
-## Alcance de Enlace (resumen)
+**Implicaciones para Rick:**
+- Cuando Rick quiera dirigirse a Enlace, escribe: `Hola @Enlace, [instrucción]`
+- No hay forma de hacer un tag real desde la API
+
+## Capacidades actuales de Rick
+
+Rick ahora tiene capacidades autónomas que antes no tenía:
+- **Smart reply:** busca en la web (Tavily) y genera respuestas con IA (Gemini 2.5 Flash)
+- **Composite research:** genera informes de mercado completos con múltiples fuentes
+- **Report pages:** crea páginas hijas en Notion con reportes largos
+- **SIM automático:** 3x/día investiga tendencias de mercado
+- **Daily digest:** resumen diario a las 22:00 UTC
+- **Webhook callbacks:** envía resultados a Make.com/n8n
+- **Team workflows:** flujos multi-paso por equipo (marketing, advisory, etc.)
+- **Scheduled tasks:** (en progreso) programar tareas futuras
+- **Error alerts:** notifica en Notion cuando una tarea falla
+
+## Rol de Enlace (actualizado)
+
+### Enlace SÍ debe
+- Responder cuando David lo mencione directamente (`@Enlace`)
+- Actuar como puente para cosas que Rick NO puede hacer:
+  - Leer/editar/reorganizar estructura de páginas Notion
+  - Gestionar Bandeja Puente (estados, prioridades)
+  - Analizar el workspace completo (proyectos, páginas, contenido)
+  - Tareas que requieran acceso a páginas fuera del alcance técnico de Rick
+- Escalar a David cuando algo no esté claro
+
+### Enlace NO debe
+- Responder a mensajes automáticos de Rick (los que empiezan con `Rick:`)
+- Responder reportes SIM, digests diarios, smart replies, confirmaciones de tareas
+- Responder preguntas generales de David en Control Room (Rick las responde automáticamente)
+- Confirmar recepción de mensajes de Rick (genera ruido)
+
+### Cómo distinguir quién escribe
+- `Rick:` al inicio → Sistema automático → **IGNORAR**
+- `@Enlace` en el texto sin prefijo `Rick:` → David pidiendo algo vía Rick → **RESPONDER**
+- Comentario de David directo → **RESPONDER** si es relevante
+
+## Regla anti-loop (CRÍTICA)
+
+- Comentarios que empiezan con `Rick:` son respuestas automáticas del sistema → Enlace DEBE ignorarlos
+- Esto incluye: reportes SIM, digests, smart replies, hackathon updates
+- Si Enlace responde a estos mensajes, Rick los detecta como nuevos comentarios y puede re-procesarlos, creando un loop
+
+## Configuración del poller (Rick)
+
+El poller ahora corre como **daemon continuo** (cada 60 segundos), no por cron horario.
+
+- Daemon: `scripts/vps/notion-poller-daemon.py` (PID file en `/tmp/notion_poller.pid`)
+- Watchdog: `scripts/vps/notion-poller-cron.sh` (cada 5 min verifica que el daemon esté vivo)
+- Variable legacy `NOTION_POLL_AT_MINUTE` ya no se usa en modo daemon
+
+## Alcance de Enlace
 
 El agente **Enlace Notion ↔ Rick** solo lee/escribe en:
+- OpenClaw (puede editar)
+- Asistentes Notion (puede comentar)
+- LLMs personalizados (puede comentar)
+- Referencias (puede comentar)
+- Proyectos Activos (puede comentar)
+- Fuentes (puede comentar)
+- Conceptos Fundamentales (puede comentar)
+- Bandeja Puente (puede editar contenido)
 
-- OpenClaw, Asistentes Notion, LLMs personalizados, Referencias, Proyectos Activos, Bandeja Puente, Fuentes, Conceptos Fundamentales, etc.  
-- Si algo sale de ese alcance, escala a David.
+Si algo sale de ese alcance, escala a David.
 
-## Reglas de comunicación
+## Canales Notion por equipo
 
-- **Rick → Enlace:** Rick (o el sistema) comenta en las páginas del alcance; Enlace reacciona cuando corre (cada hora en punto). Para que Enlace responda, conviene que Rick use el formato que Enlace espera (p. ej. "Hola @Enlace," si aplica).
-- **Enlace → Rick:** Enlace deja comentarios o ítems en Bandeja Puente; Rick (el poller) revisa a las XX:10 y procesa comentarios nuevos en la página que use el poller (p. ej. Control Room). En Notion, cuando se mencione a Rick, usar **@Rick** (usuario de Notion).
-- Comentarios que empiezan por **"Rick:"** los ignora el poller (son respuestas automáticas nuestras) para no reaccionar en bucle.
-
-## Canales Notion por equipo (S3)
-
-En `config/teams.yaml` cada equipo puede tener un `notion_page_id` (opcional). Si lo definís, ese equipo tiene una página/database dedicada en Notion como canal. Hoy el poller sigue usando una sola página (Control Room) configurada en el Worker; en una versión futura el poller puede leer varias páginas (una por equipo) usando esos IDs.
+En `config/teams.yaml` cada equipo puede tener un `notion_page_id` (opcional). Hoy el poller usa una sola página (Control Room). En `config/team_workflows.yaml` hay workflows definidos para marketing, advisory, improvement, lab y system.
 
 ## Bandeja Puente
 
-Enlace mantiene estados: **Pendiente**, **En curso**, **Bloqueado**, **Resuelto**, y direcciones **Rick→Notion** / **Notion→Rick**. Rick (el stack) no lee hoy la Bandeja Puente por API; solo lee comentarios de la página configurada en el Worker (p. ej. Control Room). Si más adelante Rick debe reaccionar a ítems de Bandeja Puente, se puede añadir otro poll o integración.
-
-## Referencia rápida del agente Enlace
-
-- **Trigger principal:** cada vez que **@Rick** comenta en una página del alcance.
-- **Formato que Enlace espera de Rick:** "Hola @Enlace," al inicio cuando Rick se dirija a Enlace.
-- **Respuestas:** lenguaje natural, sin headers tipo reporte ni metadatos clave-valor.
-- **Escalado:** si falta contexto o hay conflicto, Enlace pregunta a David.
+Enlace mantiene estados: **Pendiente**, **En curso**, **Bloqueado**, **Resuelto**, y direcciones **Rick→Notion** / **Notion→Rick**. Rick no lee la Bandeja Puente por API — solo lee comentarios de la Control Room.

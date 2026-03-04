@@ -17,6 +17,7 @@ import httpx
 import redis
 
 from dispatcher.health import HealthMonitor
+from dispatcher.alert_manager import AlertManager
 from dispatcher.model_router import ModelRouter, load_quota_policy
 from dispatcher.queue import TaskQueue
 from dispatcher.quota_tracker import QuotaTracker
@@ -215,6 +216,7 @@ def _run_worker(
     worker_url_vm: Optional[str],
     hm: HealthMonitor,
     model_router: ModelRouter,
+    alert_manager: Optional[AlertManager],
     worker_id: int,
 ) -> None:
     """Worker thread: local WorkerClient siempre; VM WorkerClient solo si WORKER_URL_VM está definido."""
@@ -225,6 +227,18 @@ def _run_worker(
     capabilities = get_team_capabilities()
 
     while True:
+        if alert_manager:
+            try:
+                pending_count = queue.pending_count()
+                if pending_count > 50:
+                    threading.Thread(
+                        target=alert_manager.alert_queue_overflow,
+                        args=(pending_count, 50),
+                        daemon=True,
+                    ).start()
+            except Exception as e:
+                logger.debug("Queue overflow alert check skipped: %s", e)
+
         envelope = queue.dequeue(timeout=2)
         if not envelope:
             continue
@@ -303,6 +317,13 @@ def _run_worker(
                     "[worker %d] %s Worker connection refused for task %s. Backing off 5s.",
                     worker_id, target, task_id,
                 )
+                if alert_manager:
+                    worker_ref = worker_url_vm if (use_vm and worker_url_vm) else worker_url
+                    threading.Thread(
+                        target=alert_manager.alert_worker_down,
+                        args=(worker_ref, str(e)),
+                        daemon=True,
+                    ).start()
 
             ops_log.task_failed(task_id, task, team, str(e), model=selected_model)
             threading.Thread(target=_notion_upsert, args=(wc_local, task_id, "failed", team, task), kwargs={"error": str(e)[:500]}, daemon=True).start()
@@ -310,6 +331,12 @@ def _run_worker(
             logger.error("[worker %d] Task %s failed: %s", worker_id, task_id, str(e))
             queue.fail_task(task_id, str(e))
             _trigger_webhook_callback(envelope, status="failed", task=task, error=str(e))
+            if alert_manager:
+                threading.Thread(
+                    target=alert_manager.alert_task_failed,
+                    args=(task_id, task, team, str(e), envelope),
+                    daemon=True,
+                ).start()
 
             if is_connect_error:
                 time.sleep(5)
@@ -346,6 +373,12 @@ def main():
     _, provider_config = load_quota_policy()
     quota_tracker = QuotaTracker(r, provider_config)
     model_router = ModelRouter(quota_tracker)
+    alert_wc = WorkerClient(base_url=worker_url, token=worker_token)
+    alert_manager = AlertManager(
+        worker_client=alert_wc,
+        control_room_page_id=os.environ.get("NOTION_CONTROL_ROOM_PAGE_ID"),
+        cooldown_seconds=300,
+    )
 
     logger.info(
         "Dispatcher started. %d worker(s), queue '%s'. Local=%s VM=%s",
@@ -359,7 +392,7 @@ def main():
     for i in range(num_workers):
         t = threading.Thread(
             target=_run_worker,
-            args=(pool, worker_url, worker_token, worker_url_vm, hm, model_router, i + 1),
+            args=(pool, worker_url, worker_token, worker_url_vm, hm, model_router, alert_manager, i + 1),
             daemon=True,
         )
         t.start()

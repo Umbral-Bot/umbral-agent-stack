@@ -3,9 +3,16 @@ ModelRouter — S4: selección de LLM por task_type y estado de cuotas.
 
 Usa config/quota_policy.yaml (routing + umbrales). Fallback chain cuando
 el preferido está en warn/restrict. Opción requires_approval cuando supera restrict.
+
+Env vars:
+    UMBRAL_DEFAULT_MODEL — override del modelo preferido para todos los task_types.
+        Ejemplo: UMBRAL_DEFAULT_MODEL=claude_pro fuerza Claude como preferido.
+        El fallback chain sigue aplicando si el override está en restrict.
+        Si no se define, se usa el routing de quota_policy.yaml.
 """
 
 import logging
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -83,6 +90,9 @@ class ModelRouter:
     def __init__(self, quota_tracker: QuotaTracker):
         self.quota = quota_tracker
         self.routing, self.provider_config = _load_quota_policy()
+        self._default_model = os.environ.get("UMBRAL_DEFAULT_MODEL", "").strip() or None
+        if self._default_model:
+            logger.info("UMBRAL_DEFAULT_MODEL override active: %s", self._default_model)
 
     def _thresholds(self, provider: str) -> tuple[float, float]:
         warn = 0.8
@@ -107,6 +117,18 @@ class ModelRouter:
         route = self.routing[task_type]
         preferred = route.get("preferred", "chatgpt_plus")
         fallback_chain: List[str] = route.get("fallback_chain") or []
+
+        # UMBRAL_DEFAULT_MODEL override: swap preferred, keep original as first fallback
+        if self._default_model and self._default_model != preferred:
+            if self._default_model in self.provider_config:
+                if preferred not in fallback_chain:
+                    fallback_chain = [preferred] + fallback_chain
+                preferred = self._default_model
+            else:
+                logger.warning(
+                    "UMBRAL_DEFAULT_MODEL='%s' not in provider config; ignoring override",
+                    self._default_model,
+                )
 
         if quota_state is None:
             quota_state = self.quota.get_all_quota_states()

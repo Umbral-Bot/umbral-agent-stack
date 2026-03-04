@@ -28,7 +28,7 @@ from collections import OrderedDict
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional, Union
 
-from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi import FastAPI, Header, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
@@ -415,6 +415,57 @@ async def get_task_status(
         "queued_at": data.get("queued_at"),
         "started_at": data.get("started_at"),
         "completed_at": data.get("completed_at"),
+    }
+
+
+@app.get("/task/history")
+async def get_task_history(
+    authorization: str = Header(None),
+    hours: int = Query(24, ge=1, le=24 * 30),
+    team: Optional[str] = None,
+    status: Optional[str] = None,
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+):
+    """
+    Consulta historial de tareas desde Redis (paginado).
+
+    Usa SCAN sobre `umbral:task:*` con filtros por ventana temporal, team y status.
+    """
+    _authenticate(authorization)
+
+    if status:
+        valid_status = {"queued", "running", "done", "failed", "blocked", "degraded"}
+        if status not in valid_status:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid status '{status}'. Valid: {sorted(valid_status)}",
+            )
+
+    r = _get_redis()
+    if r is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Redis not available. Cannot query task history.",
+        )
+
+    from dispatcher.task_history import TaskHistory
+
+    history = TaskHistory(r)
+    page = history.query(
+        hours=hours,
+        team=team,
+        status=status,
+        limit=limit,
+        offset=offset,
+    )
+    stats = history.stats(hours=hours)
+
+    return {
+        "tasks": page["tasks"],
+        "total": page["total"],
+        "page": page["page"],
+        "stats": stats,
     }
 
 

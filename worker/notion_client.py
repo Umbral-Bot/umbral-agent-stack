@@ -514,30 +514,28 @@ def upsert_task(
         return {"skipped": True, "reason": "NOTION_TASKS_DB_ID not set"}
 
     db_id = config.NOTION_TASKS_DB_ID
-    status_map = {
-        "queued": "En cola",
-        "running": "En curso",
-        "done": "Hecho",
-        "failed": "Fallido",
-        "blocked": "Bloqueado",
-    }
-    notion_status = status_map.get(status, status)
+    notion_status = status if status in ("queued", "running", "done", "failed", "blocked") else "queued"
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     title_text = task[:2000] if task else f"Task {task_id[:8]}"
     input_preview = (input_summary or "")[:200] if input_summary else "—"
     error_preview = (error or "")[:200] if error else ""
     result_preview = (result_summary or "")[:200] if result_summary else ""
-    resumen = result_preview if result_preview else (error_preview if error_preview else input_preview)
+    summary = result_preview if result_preview else (error_preview if error_preview else input_preview)
 
     properties: dict[str, Any] = {
-        "Tarea": {"title": [{"text": {"content": title_text}}]},
-        "Estado": {"select": {"name": notion_status}},
-        "Agente": {"select": {"name": team}},
+        "Task": {"title": [{"text": {"content": title_text}}]},
+        "Status": {"select": {"name": notion_status}},
+        "Team": {"select": {"name": team}},
         "Task ID": {"rich_text": [{"text": {"content": task_id[:2000]}}]},
-        "Actualizada": {"date": {"start": now}},
-        "Resumen": {"rich_text": [{"text": {"content": resumen[:2000] or "—"}}]},
+        "Result Summary": {"rich_text": [{"text": {"content": summary[:2000] or "—"}}]},
     }
+    if error_preview:
+        properties["Error"] = {"rich_text": [{"text": {"content": error_preview[:2000]}}]}
+    if input_preview and input_preview != "—":
+        properties["Input Summary"] = {"rich_text": [{"text": {"content": input_preview[:2000]}}]}
+    if team:
+        properties["Model"] = {"rich_text": [{"text": {"content": team}}]}
 
     with httpx.Client(timeout=TIMEOUT) as client:
         # Query by Task ID
@@ -559,7 +557,7 @@ def upsert_task(
             logger.info("Updated task %s in Notion (status=%s)", task_id[:8], notion_status)
             return {"page_id": page_id, "updated": True}
         else:
-            properties["Creada"] = {"date": {"start": now}}
+            properties["Created"] = {"date": {"start": now}}
             resp = client.post(
                 f"{NOTION_BASE_URL}/pages",
                 headers=_headers(),

@@ -9,6 +9,7 @@ Uso:
     python scripts/quota_usage_report.py              # stdout (para cron)
     python scripts/quota_usage_report.py --json       # salida JSON
     python scripts/quota_usage_report.py --json -o report.json  # archivo
+    python scripts/quota_usage_report.py --notion     # post resumen a Notion Control Room
 
 Requiere:
     - Redis accesible (REDIS_URL env) o --fake para pruebas sin Redis
@@ -380,6 +381,7 @@ def main():
     parser.add_argument("-o", "--output", type=str, help="Write output to file")
     parser.add_argument("--fake", action="store_true", help="Use fakeredis (for testing without Redis)")
     parser.add_argument("--hours", type=int, default=24, help="Ops log lookback hours (default: 24)")
+    parser.add_argument("--notion", action="store_true", help="Post summary to Notion Control Room")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose logging")
     args = parser.parse_args()
 
@@ -424,6 +426,51 @@ def main():
         print(f"Report written to {args.output}")
     else:
         print(output)
+
+    # Post to Notion Control Room
+    if args.notion:
+        _post_to_notion(quota_state, ops_analysis, underutilized)
+
+
+# ---------------------------------------------------------------------------
+# Notion integration
+# ---------------------------------------------------------------------------
+
+def _post_to_notion(
+    quota_state: Dict[str, Dict],
+    ops_analysis: Dict[str, Any],
+    underutilized: List[Dict],
+) -> None:
+    """Post a compact summary to the Notion Control Room page via notion_client.add_comment."""
+    try:
+        from worker import notion_client  # noqa: E402
+    except Exception as exc:
+        print(f"WARNING: Cannot import notion_client: {exc}", file=sys.stderr)
+        print("Hint: ensure NOTION_API_KEY and NOTION_CONTROL_ROOM_PAGE_ID are set", file=sys.stderr)
+        return
+
+    # Build a compact summary suitable for a Notion comment (max ~2000 chars)
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    lines = [f"📊 Quota Report — {now}"]
+
+    for provider, s in sorted(quota_state.items()):
+        icon = "🔴" if s["health"] == "RESTRICTED" else "🟡" if s["health"] == "WARNING" else "🟢"
+        lines.append(f"{icon} {provider}: {s['used']}/{s['limit']} ({s['pct']}%) [{s['health']}]")
+
+    lines.append(f"\nTasks 24h: {ops_analysis['tasks_completed']} ok / {ops_analysis['tasks_failed']} failed")
+
+    if underutilized:
+        lines.append("\n⚠ Underutilized:")
+        for u in underutilized:
+            lines.append(f"  • {u['provider']}: {u['reason']}")
+
+    text = "\n".join(lines)
+
+    try:
+        result = notion_client.add_comment(page_id=None, text=text)
+        print(f"Notion comment posted: {result.get('comment_id', 'ok')}")
+    except Exception as exc:
+        print(f"WARNING: Failed to post to Notion: {exc}", file=sys.stderr)
 
 
 if __name__ == "__main__":

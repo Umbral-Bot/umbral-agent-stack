@@ -4,7 +4,7 @@ title: "Granola → Notion Pipeline: transcripciones, compromisos, proactividad 
 assigned_to: cursor-agent-cloud-7
 branch: feat/cloud7-granola-notion-pipeline
 round: 11
-status: assigned
+status: done
 created: 2026-03-04
 ---
 
@@ -154,3 +154,28 @@ gh pr create \
 - `skills/granola-pipeline/SKILL.md` válido
 - Tests pasan
 - Variables de entorno documentadas en `.env.example`
+
+## Log
+
+### [cursor-agent-cloud-7] 2026-03-04
+
+**Investigación Granola plan básico:**
+- No tiene export automático a carpeta, ni webhook, ni API en plan básico
+- Almacena datos localmente en cache-v3.json (no documentado oficialmente)
+- Export individual via copy/paste en markdown; CSV bulk solo para notas > 30 días sin transcripts
+- Herramientas comunitarias (granola-to-markdown) leen el cache local
+
+**Arquitectura elegida: Opción D — Watcher en VM:**
+- Script Python monitorea carpeta de exports → POST al Worker local → Notion
+- Justificación: más simple, sin dependencias externas, latencia mínima
+
+**Archivos creados/modificados:**
+- `docs/50-granola-notion-pipeline.md` — investigación + arquitectura + diagrama Mermaid
+- `scripts/vm/granola_watcher.py` — watcher con modos: watchdog, polling, one-shot
+- `worker/tasks/granola.py` — 2 handlers: `granola.process_transcript`, `granola.create_followup`
+- `worker/tasks/__init__.py` — registrados los 2 handlers nuevos (total: 35)
+- `openclaw/workspace-templates/skills/granola-pipeline/SKILL.md` — skill completo
+- `.env.example` — 3 nuevas variables (GRANOLA_EXPORT_DIR, GRANOLA_PROCESSED_DIR, ENLACE_NOTION_USER_ID)
+- `tests/test_granola.py` — 23 tests (parser, handlers, watcher integration)
+
+**Tests:** 23/23 passed. Suite completa: 643 passed (49 pre-existing failures por rate limiting).

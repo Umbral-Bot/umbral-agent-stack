@@ -1,10 +1,11 @@
 ---
 name: acc-bim360
 description: >-
-  Autodesk Construction Cloud (ACC) y BIM 360 API via APS (Autodesk Platform Services):
-  gestión de proyectos, issues, RFIs, submittals, archivos y reportes de coordinación.
-  Use when "ACC", "BIM 360", "Autodesk Construction Cloud", "APS API", "BIM360 issues",
-  "RFI BIM360", "ACC API", "Forge BIM360", "archivos ACC", "submittals ACC".
+  API de Autodesk Construction Cloud (ACC) y BIM 360 para gestión de issues,
+  RFIs, submittals, documentos y modelos en la nube mediante APS.
+  Use when "ACC", "BIM360", "BIM 360", "Autodesk Construction Cloud",
+  "issues ACC", "RFI BIM360", "submittals", "ACC API", "APS construction",
+  "documentos ACC", "Autodesk Build", "ACC project", "BIM360 docs".
 metadata:
   openclaw:
     emoji: "\U0001F3D7\uFE0F"
@@ -14,261 +15,270 @@ metadata:
         - APS_CLIENT_SECRET
 ---
 
-# ACC / BIM 360 Skill — Autodesk Platform Services API
+# ACC / BIM 360 Skill — Autodesk Construction Cloud API
 
-Rick usa este skill para interactuar con la API de Autodesk Construction Cloud (ACC) y BIM 360 via APS (antes llamado Forge), incluyendo gestión de issues, RFIs, archivos y reportes.
+Rick usa este skill para interactuar con la API de Autodesk Construction Cloud (ACC) y BIM 360: issues, RFIs, submittals, documentos y gestión de proyectos.
 
-## Autenticación APS
+## Plataformas y productos
 
-### Credenciales requeridas
+| Producto | Descripción |
+|----------|-------------|
+| **ACC (Autodesk Construction Cloud)** | Plataforma unificada: Build, Design, Cost, Ops |
+| **Autodesk Build** | Gestión de campo: issues, RFIs, submittals, Daily Logs |
+| **BIM 360 Docs** | Gestión documental (migrado a ACC) |
+| **BIM 360 Design** | Colaboración de diseño con Revit (BIM Collaborate) |
+| **APS (Autodesk Platform Services)** | Layer de APIs que expone ACC/BIM360 |
 
-- `APS_CLIENT_ID`: Client ID de la app registrada en APS portal
-- `APS_CLIENT_SECRET`: Client Secret correspondiente
+## Autenticación — OAuth 2.0
 
-### Obtener token 2-legged (Client Credentials)
+### 2-Legged (Server-to-Server)
 
 ```python
-import requests
+import requests, os
 
-def get_token_2legged(client_id: str, client_secret: str) -> str:
-    url = "https://developer.api.autodesk.com/authentication/v2/token"
-    resp = requests.post(url, data={
-        "grant_type": "client_credentials",
-        "scope": "data:read data:write bucket:read bucket:create"
-    }, auth=(client_id, client_secret))
+def get_2legged_token(client_id: str, client_secret: str) -> str:
+    resp = requests.post(
+        "https://developer.api.autodesk.com/authentication/v2/token",
+        data={
+            "grant_type": "client_credentials",
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "scope": "data:read data:write account:read"
+        }
+    )
     resp.raise_for_status()
     return resp.json()["access_token"]
 
-token = get_token_2legged(APS_CLIENT_ID, APS_CLIENT_SECRET)
-headers = {"Authorization": f"Bearer {token}"}
-```
-
-### Token 3-legged (Authorization Code — requiere usuario)
-
-```
-1. Redirigir usuario a:
-   https://developer.api.autodesk.com/authentication/v2/authorize
-   ?response_type=code
-   &client_id={CLIENT_ID}
-   &redirect_uri={CALLBACK_URL}
-   &scope=data:read data:write
-
-2. Recibir code en callback
-3. POST a /authentication/v2/token con grant_type=authorization_code
-```
-
-## Data Management API — Archivos y Hubs
-
-### Listar hubs (cuentas)
-
-```python
-resp = requests.get(
-    "https://developer.api.autodesk.com/project/v1/hubs",
-    headers=headers
+TOKEN = get_2legged_token(
+    os.environ["APS_CLIENT_ID"],
+    os.environ["APS_CLIENT_SECRET"]
 )
-hubs = resp.json()["data"]
-for hub in hubs:
-    print(f"Hub: {hub['attributes']['name']} — ID: {hub['id']}")
+HEADERS = {"Authorization": f"Bearer {TOKEN}"}
 ```
 
-### Listar proyectos de un hub
+### 3-Legged (User OAuth)
+
+Para operaciones en nombre de un usuario:
+- Redirect URL: `https://developer.api.autodesk.com/authentication/v2/authorize`
+- Scopes requeridos: `data:read data:write account:read`
+- Callback → intercambiar code por access_token + refresh_token
+
+## Data Management — Proyectos y Hubs
 
 ```python
-hub_id = "b.xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-resp = requests.get(
-    f"https://developer.api.autodesk.com/project/v1/hubs/{hub_id}/projects",
-    headers=headers
-)
-projects = resp.json()["data"]
+BASE = "https://developer.api.autodesk.com"
+
+# Listar hubs (BIM 360 cuentas / ACC orgs)
+hubs = requests.get(f"{BASE}/project/v1/hubs", headers=HEADERS).json()
+
+# Listar proyectos de un hub
+hub_id = hubs["data"][0]["id"]
+projects = requests.get(f"{BASE}/project/v1/hubs/{hub_id}/projects", headers=HEADERS).json()
+
+# Listar contenidos de una carpeta (top-level)
+project_id = projects["data"][0]["id"]
+top_folder = requests.get(
+    f"{BASE}/project/v1/hubs/{hub_id}/projects/{project_id}/topFolders",
+    headers=HEADERS
+).json()
 ```
 
-### Listar contenido de una carpeta
+## Issues API (ACC Issues v2)
+
+### Listar issues
 
 ```python
-project_id = "b.xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-folder_urn = "urn:adsk.wipprod:fs.folder:co.xxxxxxxx"
+# ACC Issues v2
+project_id = "b.xxx"  # Sin prefijo "b."
 
-resp = requests.get(
-    f"https://developer.api.autodesk.com/data/v1/projects/{project_id}"
-    f"/folders/{folder_urn}/contents",
-    headers=headers
-)
-items = resp.json()["data"]
-for item in items:
-    print(f"{item['type']}: {item['attributes']['displayName']}")
+issues = requests.get(
+    f"https://developer.api.autodesk.com/construction/issues/v2/projects/{project_id}/issues",
+    headers=HEADERS,
+    params={"limit": 100, "status": "open"}
+).json()
+
+for issue in issues.get("results", []):
+    print(f"[{issue['displayId']}] {issue['title']} | Status: {issue['status']}")
 ```
 
-### Subir archivo a ACC
+### Crear issue
 
 ```python
-import base64
-
-# 1. Crear storage location (OSS)
-resp = requests.post(
-    f"https://developer.api.autodesk.com/data/v1/projects/{project_id}/storage",
-    headers={**headers, "Content-Type": "application/vnd.api+json"},
+new_issue = requests.post(
+    f"https://developer.api.autodesk.com/construction/issues/v2/projects/{project_id}/issues",
+    headers={**HEADERS, "Content-Type": "application/json"},
     json={
-        "jsonapi": {"version": "1.0"},
-        "data": {
-            "type": "objects",
-            "attributes": {"name": "modelo.rvt"},
-            "relationships": {
-                "target": {
-                    "data": {"type": "folders", "id": folder_urn}
-                }
-            }
-        }
-    }
-)
-object_id = resp.json()["data"]["id"]
-
-# 2. Subir contenido al OSS bucket
-bucket_key, object_name = object_id.split(":")[-1].split("/", 1)
-with open("modelo.rvt", "rb") as f:
-    requests.put(
-        f"https://developer.api.autodesk.com/oss/v2/buckets/{bucket_key}/objects/{object_name}",
-        headers={**headers, "Content-Type": "application/octet-stream"},
-        data=f
-    )
-```
-
-## Issues API (ACC)
-
-### Listar issues de un proyecto
-
-```python
-project_id_acc = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"  # sin prefijo "b."
-
-resp = requests.get(
-    f"https://developer.api.autodesk.com/construction/issues/v1/projects/{project_id_acc}/issues",
-    headers=headers,
-    params={
-        "limit": 100,
-        "offset": 0,
-        "filter[status]": "open"  # open, in_review, closed
-    }
-)
-issues = resp.json()["results"]
-for issue in issues:
-    print(f"Issue #{issue['displayId']}: {issue['title']} — {issue['status']}")
-```
-
-### Crear un issue
-
-```python
-resp = requests.post(
-    f"https://developer.api.autodesk.com/construction/issues/v1/projects/{project_id_acc}/issues",
-    headers={**headers, "Content-Type": "application/json"},
-    json={
-        "title": "Clash entre estructura y ducto HVAC - Nivel 3",
-        "description": "Viga V-305 intersecta con ducto de ventilación DAL-12",
+        "title": "Viga no coincide con plano",
+        "description": "Discrepancia en nivel 3 eje C-5",
         "status": "open",
         "issueTypeId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
         "issueSubtypeId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-        "dueDate": "2025-04-30",
-        "assignedTo": "user@empresa.com",
-        "rootCauseId": None
+        "dueDate": "2026-04-15",
+        "assignedTo": "user@example.com"
     }
-)
-new_issue = resp.json()
-print(f"Issue creado: #{new_issue['displayId']}")
+).json()
+
+print(f"Issue creado: {new_issue['displayId']}")
 ```
 
-### Actualizar estado de issue
+## RFI API v3 (ACC Build)
+
+La API RFI v3 reemplaza a la consolidada BIM 360 RFI API.
+
+### Buscar RFIs
 
 ```python
-issue_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-resp = requests.patch(
-    f"https://developer.api.autodesk.com/construction/issues/v1/projects/{project_id_acc}/issues/{issue_id}",
-    headers={**headers, "Content-Type": "application/json"},
-    json={"status": "closed"}
-)
-```
+# POST /search:rfis (nueva sintaxis v3)
+rfis = requests.post(
+    f"https://developer.api.autodesk.com/construction/rfis/v3/projects/{project_id}/rfis/search",
+    headers={**HEADERS, "Content-Type": "application/json"},
+    json={
+        "filter": {
+            "status": ["open", "answered"],
+            "discipline": ["Structural"]
+        },
+        "pagination": {"limit": 50, "offset": 0}
+    }
+).json()
 
-## RFIs API (ACC)
-
-### Listar RFIs
-
-```python
-resp = requests.get(
-    f"https://developer.api.autodesk.com/construction/rfis/v1/projects/{project_id_acc}/rfis",
-    headers=headers,
-    params={"limit": 50, "filter[status]": "open"}
-)
-rfis = resp.json()["results"]
-for rfi in rfis:
-    print(f"RFI #{rfi['displayId']}: {rfi['title']} — Due: {rfi['dueDate']}")
+for rfi in rfis.get("results", []):
+    print(f"RFI {rfi['number']}: {rfi['title']} | Estado: {rfi['status']}")
+    print(f"  Asignados: {[a['name'] for a in rfi.get('assignedTo', [])]}")
 ```
 
 ### Crear RFI
 
 ```python
-resp = requests.post(
-    f"https://developer.api.autodesk.com/construction/rfis/v1/projects/{project_id_acc}/rfis",
-    headers={**headers, "Content-Type": "application/json"},
+new_rfi = requests.post(
+    f"https://developer.api.autodesk.com/construction/rfis/v3/projects/{project_id}/rfis",
+    headers={**HEADERS, "Content-Type": "application/json"},
     json={
-        "title": "Aclaración de detalle de armadura en losa L-12",
-        "question": "¿Cuál es el diámetro de barras longitudinales en losa L-12, ejes D-E/3-4?",
-        "dueDate": "2025-04-15",
-        "assignedTo": "estructura@empresa.com",
-        "locationId": None
+        "title": "Aclaración especificación hormigón",
+        "question": "¿Cuál es la resistencia de diseño para fundaciones?",
+        "status": "draft",
+        "assignedTo": [{"userId": "xxx", "roleId": "projectCoordinator"}],
+        "dueDate": "2026-04-01",
+        "discipline": "Structural"
     }
-)
+).json()
 ```
 
-## Webhooks — Notificaciones en tiempo real
+## Submittals API
+
+### Listar submittals
 
 ```python
-# Crear webhook para notificación de nuevo issue
-resp = requests.post(
-    "https://developer.api.autodesk.com/webhooks/v1/systems/construction/events/issues.created/hooks",
-    headers={**headers, "Content-Type": "application/json"},
-    json={
-        "callbackUrl": "https://mi-servidor.com/webhook/issues",
-        "scope": {
-            "project": f"b.{project_id_acc}"
-        }
-    }
-)
+submittals = requests.get(
+    f"https://developer.api.autodesk.com/construction/submittals/v2/projects/{project_id}/items",
+    headers=HEADERS
+).json()
+
+for item in submittals.get("results", []):
+    print(f"Submittal {item['number']}: {item['title']} | Estado: {item['status']}")
 ```
 
-## Endpoints clave por módulo
+### Crear submittal item
 
-| Módulo | Endpoint base |
-|--------|--------------|
-| Autenticación | `/authentication/v2/token` |
-| Hubs y proyectos | `/project/v1/hubs/{hub_id}/projects` |
-| Data Management | `/data/v1/projects/{proj_id}/...` |
-| Issues | `/construction/issues/v1/projects/{proj_id}/issues` |
-| RFIs | `/construction/rfis/v1/projects/{proj_id}/rfis` |
-| Submittals | `/construction/submittals/v1/projects/{proj_id}/...` |
-| Transmittals | `/construction/transmittals/v1/projects/{proj_id}/...` |
-| Reportes | `/construction/reports/v1/projects/{proj_id}/...` |
-| Webhooks | `/webhooks/v1/systems/construction/events/...` |
+```python
+new_submittal = requests.post(
+    f"https://developer.api.autodesk.com/construction/submittals/v2/projects/{project_id}/items",
+    headers={**HEADERS, "Content-Type": "application/json"},
+    json={
+        "title": "Muestra pintura fachada",
+        "specSectionNumber": "09900",
+        "specSectionTitle": "Pintura",
+        "dueDate": "2026-03-20",
+        "assignedToId": "user-uuid"
+    }
+).json()
+```
 
-## Scopes de OAuth requeridos
+## Document Management — Subir archivo
 
-| Acción | Scope |
-|--------|-------|
-| Leer archivos | `data:read` |
+```python
+# 1. Crear storage location
+storage = requests.post(
+    f"{BASE}/data/v1/projects/{project_id}/storage",
+    headers={**HEADERS, "Content-Type": "application/json"},
+    json={
+        "jsonapi": {"version": "1.0"},
+        "data": {
+            "type": "objects",
+            "attributes": {"name": "planos_estructura.pdf"},
+            "relationships": {
+                "target": {"data": {"type": "folders", "id": folder_id}}
+            }
+        }
+    }
+).json()
+
+object_id = storage["data"]["id"]
+upload_url = storage["data"]["links"]["upload"]["href"]
+
+# 2. Upload con PUT
+with open("planos_estructura.pdf", "rb") as f:
+    requests.put(upload_url, data=f)
+
+# 3. Crear versión del ítem
+# ... (POST /data/v1/projects/{id}/items)
+```
+
+## Modelos y Viewer (Model Derivative)
+
+```python
+# Traducir modelo a SVF2 para Viewer
+urn = "dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6..."  # Base64 del object ID
+
+translation = requests.post(
+    f"{BASE}/modelderivative/v2/designdata/job",
+    headers={**HEADERS, "Content-Type": "application/json"},
+    json={
+        "input": {"urn": urn},
+        "output": {
+            "formats": [{"type": "svf2", "views": ["2d", "3d"]}]
+        }
+    }
+).json()
+
+# Verificar estado
+status = requests.get(
+    f"{BASE}/modelderivative/v2/designdata/{urn}/manifest",
+    headers=HEADERS
+).json()
+print(status["progress"])
+```
+
+## Scopes por operación
+
+| Operación | Scopes requeridos |
+|-----------|------------------|
+| Listar proyectos | `data:read` |
+| Crear issue | `data:write` |
+| Leer documentos | `data:read` |
 | Subir archivos | `data:write` |
-| Leer/escribir issues | `data:read data:write` |
-| Administrar proyectos | `account:read account:write` |
-| Webhooks | `data:read` |
+| Ver info de cuenta | `account:read` |
+| Traducir modelos | `data:read data:write` |
 
-## Errores comunes
+## Ejemplos de uso con Rick
 
-| Error HTTP | Causa | Solución |
-|-----------|-------|----------|
-| `401 Unauthorized` | Token expirado o inválido | Renovar token (expira en 3600s) |
-| `403 Forbidden` | Falta scope o acceso | Verificar scopes del token y permisos del usuario |
-| `404 Not Found` | ID de proyecto/folder incorrecto | Verificar IDs con list endpoints |
-| `429 Too Many Requests` | Rate limit superado | Implementar backoff exponencial |
+- **Rick: "Listame todos los issues abiertos de un proyecto ACC"** → Issues v2 API con `status=open`.
+- **Rick: "Creá un RFI en BIM 360 desde una observación de campo"** → POST `/construction/rfis/v3/projects/{id}/rfis`.
+- **Rick: "Cuántos submittals están pendientes de revisión?"** → GET submittals, filtrar por `status=pending_review`.
+- **Rick: "Subí este PDF a la carpeta de planos en ACC Docs"** → Storage + PUT upload + crear item versión.
+- **Rick: "Traducí el RVT a SVF2 para visualizarlo en el Viewer"** → Model Derivative API job.
 
-## Links oficiales
+## Recursos oficiales
 
-- [APS Developer Portal](https://aps.autodesk.com/) — Registro de apps y documentación
-- [APS BIM 360 Overview](https://aps.autodesk.com/developer/overview/bim-360) — Guía de integración
-- [APS API Reference](https://aps.autodesk.com/en/docs/acc/v1/reference/http/) — Referencia completa ACC
-- [Data Management API](https://aps.autodesk.com/en/docs/data/v2/reference/http/) — Archivos y carpetas
-- [Issues API](https://aps.autodesk.com/en/docs/acc/v1/reference/http/construction-issues-v1-issues-GET/) — Issues ACC
+- APS Developer Portal: https://aps.autodesk.com/developer/overview/bim-360
+- ACC Issues v2 API: https://aps.autodesk.com/en/docs/acc/v1/reference/http/issues-v2/
+- ACC RFI v3 API: https://aps.autodesk.com/blog/autodesk-build-rfi-v3-api-released
+- ACC Submittals API: https://aps.autodesk.com/blog/autodesk-construction-cloud-submittals-write-api-and-updates
+- Data Management API: https://aps.autodesk.com/en/docs/data/v2/
+
+## Notas
+
+- `project_id` siempre tiene prefijo `b.` en proyectos BIM 360/ACC (e.g. `b.abc123`).
+- La API RFI v3 usa `POST /search:rfis` en lugar de `GET /rfis` de la API anterior.
+- Los tokens 2-legged expiran en 3600s; implementar refresh automático.
+- BIM 360 Docs está siendo migrado a ACC; usar APIs ACC cuando sea posible.
+- `APS_CLIENT_ID` y `APS_CLIENT_SECRET` se obtienen en https://aps.autodesk.com/myapps/.

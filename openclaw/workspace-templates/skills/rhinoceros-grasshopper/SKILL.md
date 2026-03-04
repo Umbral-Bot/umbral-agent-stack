@@ -1,10 +1,11 @@
 ---
 name: rhinoceros-grasshopper
 description: >-
-  Scripting con RhinoCommon (.NET/Python), desarrollo de componentes Grasshopper,
-  GhPython, y automatización en Rhinoceros 3D para arquitectura y fabricación digital.
-  Use when "Rhino", "Grasshopper", "RhinoCommon", "GhPython", "componente GH",
-  "script Rhino", "Python Rhino", "Rhino API", "NURBS scripting".
+  Scripting con RhinoCommon, componentes Grasshopper y Python en Rhino/GH
+  para modelado paramétrico, automatización y fabricación digital.
+  Use when "Rhino", "Grasshopper", "GH script", "RhinoCommon", "Python Rhino",
+  "componente Grasshopper", "modelado paramétrico", "Rhino Python",
+  "algoritmo generativo", "script GH", "Rhino scripting".
 metadata:
   openclaw:
     emoji: "\U0001F98F"
@@ -12,260 +13,227 @@ metadata:
       env: []
 ---
 
-# Rhinoceros / Grasshopper Skill — RhinoCommon y GhPython
+# Rhinoceros & Grasshopper Skill — Scripting y Modelado Paramétrico
 
-Rick usa este skill para asistir con scripting en Rhino (RhinoCommon, RhinoScript), componentes de Grasshopper en Python (GhPython), y desarrollo de plugins con la API oficial de McNeel.
+Rick usa este skill para asistir con scripting en Rhino/GH, creación de componentes personalizados y automatización de geometría paramétrica.
 
-## RhinoCommon — Referencia rápida (Python)
+## Ecosistema Rhino/Grasshopper
 
-### Acceso al documento activo (RhinoScript)
+| Herramienta | Descripción |
+|-------------|-------------|
+| **Rhino 8** | Motor NURBS, CAD 3D profesional |
+| **Grasshopper** | Visual programming integrado en Rhino |
+| **RhinoCommon SDK** | API .NET de Rhino, accesible desde GH y scripts |
+| **RhinoScriptSyntax** | API Python de alto nivel (similar a RhinoScript VBScript) |
+| **Script Component (GH)** | Python 3, Python 2 (IronPython), C#, VB en Grasshopper |
+
+## Python en Grasshopper — Script Component
+
+El componente Script unificado de Rhino 8 soporta múltiples lenguajes.
+
+### Acceder al Script Component
+
+1. Pestaña **Maths** → panel **Script** → componente **Script**
+2. O buscar "Script" en la barra de búsqueda de GH
+
+### Estructura básica (Python 3)
 
 ```python
+# Inputs: x, y definidos en el ZUI del componente
+# Outputs: a, b, c... definidos en el ZUI
+
 import rhinoscriptsyntax as rs
-import Rhino
 import Rhino.Geometry as rg
 
-# Documento activo
-doc = Rhino.RhinoDoc.ActiveDoc
+# Crear un punto
+pt = rg.Point3d(x, y, 0)
 
-# Obtener objetos seleccionados
-ids = rs.GetObjects("Seleccionar objetos", preselect=True)
+# Crear una esfera
+sphere = rg.Sphere(pt, 1.0)
+brep = sphere.ToBrep()
+
+# Output
+a = brep
 ```
+
+### ZUI — Agregar inputs/outputs dinámicamente
+
+- Zoom in en el componente → aparecen botones "+" y "–"
+- Clic "+" bajo Inputs para agregar un nuevo parámetro
+- Clic derecho en el input → "Type hint" para tipar el parámetro (float, int, str, etc.)
+
+## RhinoCommon — Objetos clave
+
+| Namespace | Clases principales |
+|-----------|-------------------|
+| `Rhino.Geometry` | Point3d, Vector3d, Line, Curve, Surface, Brep, Mesh |
+| `Rhino.Geometry.Intersect` | Intersection (curva-curva, curva-superficie, etc.) |
+| `Rhino.Collections` | CurveList, Point3dList |
+| `Rhino.DocObjects` | RhinoObject, Layer, ObjectAttributes |
+| `Rhino.RhinoDoc` | Documento activo (add/delete objects) |
 
 ### Geometría básica
 
 ```python
 import Rhino.Geometry as rg
+import math
 
-# Punto
-pt = rg.Point3d(1.0, 2.0, 3.0)
-
-# Línea
-line = rg.Line(rg.Point3d(0,0,0), rg.Point3d(10,0,0))
-curve = line.ToNurbsCurve()
+# Punto y vector
+origin = rg.Point3d(0, 0, 0)
+normal = rg.Vector3d(0, 0, 1)
 
 # Plano
-plane = rg.Plane(origin, x_axis, y_axis)
+plane = rg.Plane(origin, normal)
 
-# Esfera
-sphere = rg.Sphere(rg.Point3d.Origin, radius=5.0)
-brep = sphere.ToBrep()
+# Curvas
+line = rg.Line(rg.Point3d(0, 0, 0), rg.Point3d(10, 0, 0))
+circle = rg.Circle(plane, 5.0)
+arc = rg.Arc(circle, math.pi / 2)
 
-# Superficie NURBS
-surface = rg.NurbsSurface.Create(degree_u=3, degree_v=3,
-    rational=False, u_count=4, v_count=4)
+# NURBS curve desde puntos
+pts = [rg.Point3d(i, math.sin(i), 0) for i in range(10)]
+nurbs = rg.NurbsCurve.Create(False, 3, pts)
+
+# Superficie de revolución
+surface = rg.RevSurface.Create(line.ToNurbsCurve(), rg.Line(origin, rg.Point3d(0, 10, 0)), 0, 2*math.pi)
 ```
 
-### Operaciones booleanas
+### Operaciones booleanas (Brep)
 
 ```python
-# Unión booleana (Brep)
-result = rg.Brep.CreateBooleanUnion([brep_a, brep_b], tolerance=0.001)
-
-# Diferencia
-result = rg.Brep.CreateBooleanDifference([brep_a], [brep_b], tolerance=0.001)
-
-# Intersección
-result = rg.Brep.CreateBooleanIntersection([brep_a], [brep_b], tolerance=0.001)
-```
-
-### Agregar objetos al documento
-
-```python
-import scriptcontext as sc
-
-# Agregar curva al documento activo
-guid = sc.doc.Objects.AddCurve(curve)
-
-# Agregar superficie
-guid = sc.doc.Objects.AddBrep(brep)
-
-# Agregar punto
-guid = sc.doc.Objects.AddPoint(pt)
-
-# Agregar con atributos
-attr = Rhino.DocObjects.ObjectAttributes()
-attr.LayerIndex = layer_index
-attr.ColorSource = Rhino.DocObjects.ObjectColorSource.ColorFromObject
-attr.ObjectColor = System.Drawing.Color.Red
-guid = sc.doc.Objects.AddCurve(curve, attr)
-```
-
-### Capas
-
-```python
-# Crear capa
-layer_idx = sc.doc.Layers.Add("Mi Capa", System.Drawing.Color.Blue)
-
-# Buscar capa por nombre
-layer_idx = sc.doc.Layers.FindByFullPath("Parent::Child", -1)
-
-# Cambiar capa de un objeto
-obj = sc.doc.Objects.Find(guid)
-obj.Attributes.LayerIndex = layer_idx
-obj.CommitChanges()
-```
-
-## Grasshopper — GhPython Script
-
-### Estructura del componente Python en GH
-
-```python
-# En un componente GhPython
-# Las entradas se declaran en el panel del componente
-# Por defecto hay: x, y (entradas), a (salida)
-
 import Rhino.Geometry as rg
-import ghpythonlib.components as ghcomp
 
-# Las entradas del componente son variables directas
-# Ejemplo con entradas 'puntos' y 'radio'
-resultado = []
-for pt in puntos:
-    circle = rg.Circle(rg.Plane(pt, rg.Vector3d.ZAxis), radio)
-    resultado.append(circle.ToNurbsCurve())
+box_a = rg.Box(rg.Plane.WorldXY, rg.Interval(-5, 5), rg.Interval(-5, 5), rg.Interval(0, 10))
+box_b = rg.Box(rg.Plane.WorldXY, rg.Interval(-3, 3), rg.Interval(-3, 3), rg.Interval(-1, 11))
 
-# Asignar a salida
-a = resultado
+brep_a = box_a.ToBrep()
+brep_b = box_b.ToBrep()
+
+# Diferencia booleana
+result = rg.Brep.CreateBooleanDifference([brep_a], [brep_b], 0.001)
+a = result
 ```
 
-### Acceso a Rhino doc desde GH
+### Mesh — Análisis y procesamiento
+
+```python
+import Rhino.Geometry as rg
+
+mesh = x  # Input: Mesh desde GH
+
+# Normales de vértices
+mesh.Normals.ComputeNormals()
+
+# Weld edges (suavizar)
+mesh.Weld(math.pi)
+
+# Estadísticas
+area = rg.AreaMassProperties.Compute(mesh).Area
+vertex_count = mesh.Vertices.Count
+
+a = area
+b = vertex_count
+```
+
+## RhinoScriptSyntax — API de alto nivel
+
+```python
+import rhinoscriptsyntax as rs
+
+# Seleccionar objeto
+obj_id = rs.GetObject("Seleccioná una curva", rs.filter.curve)
+
+# Propiedades
+length = rs.CurveLength(obj_id)
+domain = rs.CurveDomain(obj_id)
+
+# Dividir curva
+pts = rs.DivideCurve(obj_id, 10)  # 10 puntos equidistantes
+
+# Crear superficie desde borde
+srf = rs.AddPlanarSrf([obj_id])
+
+print(f"Longitud: {length:.2f} | Puntos: {len(pts)}")
+```
+
+## Componentes Grasshopper — Patrones comunes
+
+### Data Tree en Python
+
+```python
+import Grasshopper as gh
+from Grasshopper.Kernel.Data import GH_Path
+from Grasshopper import DataTree
+import Rhino.Geometry as rg
+
+# IN[0] es un DataTree
+input_tree = x  # tipo: DataTree[object]
+
+output_tree = DataTree[rg.Point3d]()
+
+for i, branch in enumerate(input_tree.Branches):
+    path = GH_Path(i)
+    for item in branch:
+        # Transformar cada punto
+        moved = rg.Point3d(item.X + 1, item.Y, item.Z)
+        output_tree.Add(moved, path)
+
+a = output_tree
+```
+
+### Acceso al documento Rhino desde GH
 
 ```python
 import Rhino
 import scriptcontext as sc
 
-# En Grasshopper, el contexto es diferente
-# Usar ghenv para acceder al componente
-ghenv.Component.Name = "Mi Script"
-ghenv.Component.NickName = "MS"
+doc = sc.doc  # Documento Rhino activo
+
+# Agregar objeto al documento
+pt = rg.Point3d(0, 0, 0)
+guid = doc.Objects.AddPoint(pt)
+
+# Acceder a capas
+layer_idx = doc.Layers.FindByFullPath("Default", False)
 ```
 
-### Manejo de datos en GH
+## Crear Custom Component (.ghpy / C#)
+
+Para componentes publicables, usar la clase `GH_Component` en C# o en Python con `ghpythonlib`:
 
 ```python
-# Convertir DataTree a lista de listas
-import ghpythonlib.treehelpers as th
-
-lista_de_listas = th.tree_to_list(IN_tree)
-tree_de_salida = th.list_to_tree(lista_de_listas)
+# Grasshopper Python Component heredando GH_Component (avanzado)
+# Ver: https://developer.rhino3d.com/guides/grasshopper/
 ```
 
-## Componente Grasshopper en C# (.NET)
-
-### Estructura mínima de plugin
-
-```csharp
-using Grasshopper.Kernel;
-using Rhino.Geometry;
-
-public class MiComponente : GH_Component
-{
-    public MiComponente()
-        : base("Mi Componente", "MiComp",
-               "Descripción", "Categoría", "Subcategoría") { }
-
-    protected override void RegisterInputParams(GH_InputParamManager pManager)
-    {
-        pManager.AddPointParameter("Punto", "P", "Punto de entrada", GH_ParamAccess.item);
-        pManager.AddNumberParameter("Radio", "R", "Radio de la esfera", GH_ParamAccess.item, 1.0);
-    }
-
-    protected override void RegisterOutputParams(GH_OutputParamManager pManager)
-    {
-        pManager.AddBrepParameter("Sólido", "S", "Esfera generada", GH_ParamAccess.item);
-    }
-
-    protected override void SolveInstance(IGH_DataAccess DA)
-    {
-        Point3d pt = Point3d.Origin;
-        double radio = 1.0;
-        if (!DA.GetData(0, ref pt)) return;
-        DA.GetData(1, ref radio);
-
-        var sphere = new Sphere(pt, radio);
-        DA.SetData(0, sphere.ToBrep());
-    }
-
-    public override Guid ComponentGuid => new Guid("xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx");
-}
-```
-
-## Transformaciones geométricas
-
-```python
-import Rhino.Geometry as rg
-
-# Transformación de traslación
-xform_move = rg.Transform.Translation(rg.Vector3d(10, 0, 0))
-brep.Transform(xform_move)
-
-# Rotación (ángulo en radianes)
-import math
-xform_rot = rg.Transform.Rotation(math.pi / 4, rg.Vector3d.ZAxis, rg.Point3d.Origin)
-brep.Transform(xform_rot)
-
-# Escala uniforme
-xform_scale = rg.Transform.Scale(rg.Point3d.Origin, 2.0)
-brep.Transform(xform_scale)
-
-# Proyección a plano
-xform_proj = rg.Transform.PlanarProjection(rg.Plane.WorldXY)
-```
-
-## Análisis de superficies
-
-```python
-# Punto en superficie por parámetros UV
-u, v = 0.5, 0.5
-pt = surface.PointAt(u, v)
-normal = surface.NormalAt(u, v)
-
-# Closest point
-ok, u, v = surface.ClosestPoint(query_point)
-if ok:
-    closest = surface.PointAt(u, v)
-
-# Rango de dominio
-u_domain = surface.Domain(0)  # u
-v_domain = surface.Domain(1)  # v
-```
-
-## Herramientas de fabricación digital desde Rhino/GH
-
-| Flujo | Herramienta | Descripción |
-|-------|-------------|-------------|
-| CNC | RhinoCAM, VisualCAM | Generación de toolpaths para fresado |
-| Corte láser | Nesting (plugins) | Optimización de piezas planas |
-| Robot industrial | KukaPRC, Robots (GH) | Programación de robots desde GH |
-| Impresión 3D | Slicer4Rhino, Grasshopper | Preparación de geometría |
-| Panelización | Lunchbox, Paneling Tools | División de superficies en paneles |
-
-## Plugins esenciales para AEC
+## Herramientas complementarias
 
 | Plugin | Función |
 |--------|---------|
-| **Ladybug Tools** | Análisis climático, radiación solar, viento |
-| **Karamba3D** | Análisis estructural (FEM) |
-| **Kangaroo** | Simulación física, optimización de formas |
-| **Human** | Interfaz, display avanzado, manejo de datos |
-| **Pufferfish** | Morphing, transiciones, blending de geometría |
-| **Lunchbox** | Panelización, estructuras, grillas |
-| **Clipper** | Operaciones booleanas 2D de polilíneas |
+| **Pufferfish** | Morphing y arrays paramétricos |
+| **Weaverbird** | Subdivisión de mesh |
+| **Lunchbox** | Paneles, estructuras, data management |
+| **Kangaroo** | Física y simulación |
+| **Human** | UI y display avanzado |
 
-## Errores comunes
+## Ejemplos de uso con Rick
 
-| Error | Causa | Solución |
-|-------|-------|----------|
-| `None` en salida GH | Operación geométrica fallida | Verificar tolerancias y validez de geometría |
-| Componente naranja | Advertencia no fatal | Revisar mensaje; puede continuar |
-| Componente rojo | Error fatal | Revisar entradas y typos en Python |
-| `IsValid = False` en Brep | Sólido mal construido | Usar `Brep.IsValid` + `Brep.Repair()` |
+- **Rick: "Creá una grilla de paneles hexagonales adaptada a una superficie"** → Grasshopper: divide surface + Python polygon generator.
+- **Rick: "Script Python para leer puntos de una curva y exportarlos a CSV"** → `rs.DivideCurve` + `csv` module.
+- **Rick: "Generá un componente GH que reciba un Brep y devuelva el centro de masa"** → `rg.VolumeMassProperties.Compute`.
+- **Rick: "Cómo accedo al documento Rhino desde dentro de Grasshopper"** → `import scriptcontext as sc; doc = sc.doc`.
 
-## Links oficiales
+## Recursos oficiales
 
-- [McNeel Developer Docs](https://developer.rhino3d.com/) — RhinoCommon, Grasshopper SDK, guías
-- [RhinoCommon API](https://developer.rhino3d.com/api/rhinocommon/) — Referencia completa de clases
-- [Grasshopper Developer](https://developer.rhino3d.com/guides/grasshopper/) — Guías para componentes
-- [RhinoPython Guides](https://developer.rhino3d.com/guides/rhinopython/) — Python en Rhino
-- [Food4Rhino](https://www.food4rhino.com/) — Repositorio de plugins
+- Rhino Developer Docs: https://developer.rhino3d.com/
+- Grasshopper Guides: https://developer.rhino3d.com/guides/grasshopper/
+- Python en GH: https://developer.rhino3d.com/guides/scripting/scripting-gh-python/
+- RhinoCommon API: https://developer.rhino3d.com/api/rhinocommon/
+- Discourse (foro): https://discourse.mcneel.com/
+
+## Notas
+
+- Rhino 8 usa Python 3 (CPython) en el Script Component; Rhino 7 usaba IronPython 2.7.
+- El ZUI (Zoomable User Interface) permite agregar inputs/outputs al Script Component haciendo zoom.
+- `rhinoscriptsyntax` es un wrapper de alto nivel sobre `RhinoCommon`; para control total, usar `Rhino.Geometry`.
+- Los plugins de Grasshopper se instalan desde PackageManager (`_TestPackageManager`) o Food4Rhino.

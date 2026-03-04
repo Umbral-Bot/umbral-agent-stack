@@ -1,220 +1,241 @@
 ---
 name: navisworks
 description: >-
-  Automatización de Autodesk Navisworks: clash detection, reportes, API .NET/COM,
-  exportación NWC/NWD y coordinación BIM. Use when "Navisworks", "clash detection",
-  "NWC", "NWD", "clash report", "Navisworks API", "coordinación Navisworks",
-  "TimeLiner", "exportar NWC", "interference check".
+  API de Autodesk Navisworks para clash detection, revisión de modelos federados,
+  exportación NWC/NWD y automatización mediante APS o .NET SDK.
+  Use when "Navisworks", "clash detection", "NWC", "NWD", "coordinación BIM",
+  "detección de colisiones", "Navisworks API", "modelo federado",
+  "Clash Detective", "TimeLiner", "NWF", "exportar NWC".
 metadata:
   openclaw:
     emoji: "\U0001F50D"
     requires:
-      env: []
+      env:
+        - APS_CLIENT_ID
+        - APS_CLIENT_SECRET
 ---
 
-# Navisworks Skill — Clash Detection y API
+# Navisworks Skill — Clash Detection, Revisión y API
 
-Rick usa este skill para asistir con automatización de Navisworks, scripting con la API .NET/COM, configuración de clash detection y generación de reportes de coordinación BIM.
+Rick usa este skill para asistir con Navisworks: clash detection automatizado, exportación de modelos, y scripting con la API .NET o APS.
 
-## Conceptos clave
+## Formatos de archivo
 
-| Término | Descripción |
+| Formato | Descripción |
 |---------|-------------|
-| **NWC** | Navisworks Cache — exportado desde Revit/Rhino; se actualiza automáticamente |
-| **NWD** | Navisworks Document — archivo consolidado con modelos y resultados |
-| **NWF** | Navisworks File — archivo de referencia que enlaza modelos externos |
-| **Clash Detective** | Módulo de detección de interferencias entre modelos |
-| **TimeLiner** | Módulo de simulación 4D (cronograma + modelo) |
-| **Animator** | Módulo de animación de objetos del modelo |
-| **Clash Test** | Una prueba de colisión entre dos grupos de selección |
-| **Clash Result** | Resultado individual de colisión con estado, comentarios, imagen |
+| **NWD** | Navisworks Document — modelo publicado con toda la data |
+| **NWC** | Navisworks Cache — generado automáticamente por CAD apps (Revit, AutoCAD) |
+| **NWF** | Navisworks File — referencia archivos fuente (no embebe geometría) |
 
-## Exportar NWC desde Revit
+**Jerarquía:** NWF referencia NWC/NWD → federar modelos en NWF → publicar como NWD.
 
-### Desde Revit (exportación manual)
+## Clash Detective — Conceptos clave
 
-1. Ir a **File → Export → NWC**
-2. Configurar opciones:
-   - **Coordinates:** Shared (para coordenadas compartidas entre disciplinas)
-   - **Export Scope:** Entire Model o Current View
-   - **Convert Element Properties:** Activado para exportar parámetros
+| Concepto | Descripción |
+|----------|-------------|
+| **Test** | Configuración de un clash: selección A vs B, tipo, tolerancia |
+| **Clash** | Colisión individual detectada entre dos objetos |
+| **Status** | New → Active → Reviewed → Approved → Resolved |
+| **Grouping** | Agrupar clashes por tipo, nivel, disciplina |
+| **Hard clash** | Intersección física de geometría |
+| **Clearance clash** | Dentro de distancia mínima (buffer) |
+| **Duplicate clash** | Clashes iguales detectados dos veces |
 
-### Exportar NWC con Revit API (automatizado)
+## API .NET — Modos de uso
 
-```python
-# IronPython en pyRevit o Dynamo
-from Autodesk.Revit.DB import NavisworksExportOptions, NavisworksExportScope, Transaction
-import clr
-clr.AddReference('RevitAPI')
+| Modo | Descripción |
+|------|-------------|
+| **Plug-in** | DLL cargado dentro de Navisworks |
+| **Automation** | Control de Navisworks desde app externa (COM/interop) |
+| **Embedded Control** | Visor NWD integrado en app .NET |
 
-options = NavisworksExportOptions()
-options.ExportScope = NavisworksExportScope.Model
-options.Coordinates = NavisworksCoordinates.Shared
-options.ConvertElementProperties = True
-options.ExportLinks = False
-options.ExportParts = True
-options.DivideFileIntoLevels = False
-
-doc.Export(r"C:\Coordinacion\NWC", "Estructura.nwc", options)
-```
-
-## Navisworks API (.NET / COM)
-
-### Referencia de assemblies
-
-```
-Autodesk.Navisworks.Api.dll        — API principal
-Autodesk.Navisworks.Clash.dll      — Clash Detective
-Autodesk.Navisworks.Timeliner.dll  — TimeLiner
-```
-
-### Abrir un archivo NWD con la API
+### Plug-in básico
 
 ```csharp
 using Autodesk.Navisworks.Api;
-using Autodesk.Navisworks.Api.Application;
+using Autodesk.Navisworks.Api.Plugins;
 
-// Inicializar la aplicación
-using (var nwApp = new Application())
+[Plugin("MyPlugin", "MYCO", DisplayName = "Mi Plugin")]
+[AddInPlugin(AddInLocation.Export)]
+public class MyPlugin : AddInPlugin
 {
-    nwApp.OpenFile(@"C:\Coordinacion\modelo.nwd");
-    Document doc = nwApp.ActiveDocument;
-
-    // Acceder al modelo
-    ModelItemCollection allItems = doc.Models.CreateCollectionFromRootItems();
-    Console.WriteLine($"Items en modelo: {allItems.Count}");
+    public override int Execute(params string[] parameters)
+    {
+        // Documento activo
+        Document doc = Application.ActiveDocument;
+        
+        // Árbol de modelo
+        ModelItemCollection rootItems = doc.Models.RootItems;
+        
+        // Iteración sobre ítems
+        foreach (ModelItem item in rootItems.DescendantsAndSelf)
+        {
+            Console.WriteLine(item.DisplayName);
+        }
+        
+        return 0;
+    }
 }
 ```
 
-### Clash Detective por API
+### Automation — Abrir NWD y exportar datos
 
 ```csharp
+// Modo Automation (desde app externa)
+using Autodesk.Navisworks.Api.Automation;
+
+var app = new NavisworksApplication();
+app.OpenFile(@"C:\models\federated.nwf");
+
+Document doc = app.Document;
+
+// Acceder a clash tests
+var clashPlugin = doc.GetClash();
+// Iterar tests y resultados...
+
+app.Dispose();
+```
+
+### Clash Detection — Leer resultados via API
+
+```csharp
+// Requiere referencia a Autodesk.Navisworks.Api.Clash
 using Autodesk.Navisworks.Api.Clash;
 
-ClashDetective clashDetective = doc.GetClash();
+Document doc = Application.ActiveDocument;
+ClashResultsData clashData = doc.GetClash().TestsData;
 
-// Crear nueva prueba de clash
-ClashTest test = clashDetective.Tests.Add();
-test.Name = "Estructura vs MEP";
-test.Type = ClashType.Hard;  // Hard, HardConservative, Clearance, Duplicate
-test.Tolerance = 0.001;      // Tolerancia en metros
-
-// Configurar selección A (ej: elementos de capa "Estructura")
-// y selección B (ej: elementos de capa "MEP")
-// ... (configuración por ModelItem selección)
-
-// Ejecutar prueba
-test.TestAgainstSelf = false;
-clashDetective.RunTest(test);
-
-// Leer resultados
-foreach (ClashResult result in test.Children.OfType<ClashResult>())
+foreach (ClashTest test in clashData.Tests)
 {
-    Console.WriteLine($"Clash: {result.DisplayName}, Status: {result.Status}");
-    Console.WriteLine($"  Punto: {result.Center}");
-    Console.WriteLine($"  Elem A: {result.CompositeItem1?.DisplayName}");
-    Console.WriteLine($"  Elem B: {result.CompositeItem2?.DisplayName}");
+    Console.WriteLine($"Test: {test.DisplayName} | Clashes: {test.ClashResults.Count}");
+    
+    foreach (ClashResult result in test.ClashResults)
+    {
+        Console.WriteLine($"  Clash: {result.DisplayName} | Status: {result.Status}");
+        Console.WriteLine($"  Item1: {result.CompositeItem1.DisplayName}");
+        Console.WriteLine($"  Item2: {result.CompositeItem2.DisplayName}");
+        Console.WriteLine($"  Punto: {result.Center}");
+    }
 }
 ```
 
-### Exportar reporte HTML de clashes
+## Exportar NWD con API (Navisworks 2026)
+
+Navisworks 2026 introduce `NwdExportOptions` para control granular de exportación.
 
 ```csharp
-// Con API de reporte
-ClashTest test = clashDetective.Tests["Estructura vs MEP"];
-test.ExportReport(
-    @"C:\Coordinacion\Reportes\clash_report.html",
-    ClashReportFormat.HtmlTabular
-);
+using Autodesk.Navisworks.Api;
+
+Document doc = Application.ActiveDocument;
+
+// Opciones de exportación NWD
+var exportOpts = new NwdExportOptions
+{
+    ExcludeHidden = true,           // No exportar objetos ocultos
+    EmbedTextures = true,           // Incrustar texturas
+    EmbedDatabase = false,          // No incrustar propiedades (IP)
+    EmbedReCapData = false
+};
+
+// Exportar
+doc.SaveFile(@"C:\output\model.nwd", exportOpts);
 ```
 
-## Clash Detection — Configuración recomendada
+## Exportar NWC desde Revit
 
-### Tipos de prueba
-
-| Tipo | Uso |
-|------|-----|
-| **Hard** | Intersección geométrica real (más común) |
-| **Hard Conservative** | Usa bounding box; menos preciso pero más rápido |
-| **Clearance** | Distancia mínima entre objetos (ej: 50mm de holgura) |
-| **Duplicate** | Detectar elementos duplicados |
-
-### Flujo de trabajo estándar
-
-1. **Exportar NWC** de cada disciplina (Estructura, Arquitectura, MEP, etc.)
-2. **Crear NWF o NWD** adjuntando todos los NWC
-3. **Configurar Clash Tests** por pares de disciplina:
-   - Estructura vs. MEP (Mecánico, Eléctrico, Plomería)
-   - Arquitectura vs. Estructura
-   - MEP Mecánico vs. MEP Eléctrico
-4. **Ejecutar todos los tests** (Run All Tests)
-5. **Agrupar resultados** por zona o disciplina
-6. **Exportar reporte** HTML/XML
-7. **Asignar clashes** a responsables con comentarios y fecha límite
-8. **Revisar en reunión BIM** semanal
-9. **Marcar clashes resueltos** como Approved o Resolved
-
-### Estados de un clash
-
-| Estado | Significado |
-|--------|-------------|
-| **New** | Detectado por primera vez |
-| **Active** | En revisión / pendiente de resolución |
-| **Reviewed** | Revisado pero no resuelto |
-| **Approved** | Aceptado como condición existente |
-| **Resolved** | Corregido en el modelo fuente |
-
-## TimeLiner — 4D BIM
-
-```
-1. Importar cronograma (CSV, Microsoft Project, Primavera P6)
-2. Vincular tareas del cronograma con conjuntos de selección del modelo
-3. Configurar tipo de tarea: Construction, Demolish, Temporary
-4. Reproducir simulación 4D
-5. Exportar video de simulación
-```
-
-### Estructura CSV para importar
-
-```csv
-Tarea,Inicio,Fin,Tipo
-"Excavación",01/03/2025,15/03/2025,Construction
-"Cimentación",16/03/2025,10/04/2025,Construction
-"Estructura Nivel 1",11/04/2025,30/04/2025,Construction
-```
-
-## Scripts de automatización (COM desde Python)
+El plugin de Navisworks para Revit genera NWC directamente.
 
 ```python
-import win32com.client
+# pyRevit script
+from Autodesk.Revit.DB import NavisworksExportOptions, NavisworksExportScope
+from pyrevit import revit
 
-# Abrir Navisworks via COM (requiere Navisworks instalado)
-nw = win32com.client.Dispatch("Navisworks.Application.2025")
-nw.Visible = True
-nw.OpenFile(r"C:\Coordinacion\modelo.nwd")
+doc = revit.doc
+export_path = r"C:\exports"
 
-doc = nw.ActiveDocument
-clash = doc.GetClash()
+opts = NavisworksExportOptions()
+opts.ExportScope = NavisworksExportScope.Model
+opts.Coordinates = NavisworksCoordinates.Shared
+opts.ExportElementIds = True
+opts.ExportRoomAsAttribute = True
 
-# Ejecutar todos los tests
-for test in clash.Tests:
-    test.Run()
-    print(f"Test: {test.Name} — {test.ClashResultCount} clashes")
-
-nw.Quit()
+doc.Export(export_path, "modelo.nwc", opts)
 ```
 
-## Errores comunes
+## Propiedades de modelo — Lectura
 
-| Error | Causa | Solución |
-|-------|-------|----------|
-| NWC desactualizado | Modelo Revit modificado después del export | Re-exportar NWC desde Revit |
-| Clashes en coordenadas incorrectas | Coordenadas locales vs. compartidas | Usar **Shared Coordinates** en todos los NWC |
-| Muchos falsos positivos | Tolerancia muy pequeña | Ajustar tolerancia a 0.01m–0.05m |
-| Clash test no corre | Selección A o B vacía | Verificar que los conjuntos de selección tienen elementos |
+```csharp
+// Acceder a propiedades de un ModelItem
+foreach (ModelItem item in rootItems.DescendantsAndSelf)
+{
+    foreach (PropertyCategory cat in item.PropertyCategories)
+    {
+        foreach (DataProperty prop in cat.Properties)
+        {
+            var val = prop.Value;
+            Console.WriteLine($"{cat.DisplayName} | {prop.DisplayName}: {val}");
+        }
+    }
+}
+```
 
-## Links oficiales
+## TimeLiner — Simulación 4D
 
-- [APS Navisworks Overview](https://aps.autodesk.com/developer/overview/navisworks) — SDK y API docs
-- [Navisworks Developer Guide](https://help.autodesk.com/view/NAV/2025/ENU/?guid=Nav_API_navisworks_api_html) — Referencia completa
-- [Navisworks Help](https://help.autodesk.com/view/NAV/2025/ENU/) — Guía de usuario oficial
+```csharp
+// Acceder a TimeLiner (simulación de construcción)
+Document doc = Application.ActiveDocument;
+TimelinerData timeliner = doc.GetTimeliner().SimulationData;
+
+foreach (TimelinerTask task in timeliner.Tasks)
+{
+    Console.WriteLine($"Tarea: {task.DisplayName}");
+    Console.WriteLine($"  Inicio: {task.PlannedStartDate} | Fin: {task.PlannedEndDate}");
+    Console.WriteLine($"  Estado: {task.Status}");
+}
+```
+
+## Workflow típico BIM con Navisworks
+
+1. **Exportar NWC** desde cada disciplina (Revit, Autocad MEP, etc.)
+2. **Federar** en NWF (agregar archivos NWC al modelo maestro)
+3. **Configurar Clash Tests** (Arq vs Estructura, Estructura vs MEP, etc.)
+4. **Ejecutar tests** y exportar reporte HTML/XML
+5. **Distribuir** reporte a equipos en ACC Issues
+6. **Actualizar NWC** → re-ejecutar tests → verificar resolución
+
+## Reporte de clashes — Exportación
+
+Navisworks permite exportar reportes en:
+- **HTML** (más usado para distribución)
+- **XML** (programático, parseable)
+- **CSV** (para Excel/Power BI)
+
+```csharp
+// Exportar reporte XML de clash test
+ClashTest test = clashData.Tests[0];
+test.ExportClashReport(@"C:\reports\clash_report.xml",
+                       ClashReportFormat.Xml);
+```
+
+## Ejemplos de uso con Rick
+
+- **Rick: "Automatizá la exportación de todos los modelos Revit a NWC"** → pyRevit batch script con NavisworksExportOptions.
+- **Rick: "Leé el reporte XML de Navisworks y convertilo a tabla Excel"** → Python `xml.etree.ElementTree` + `openpyxl`.
+- **Rick: "Cuántos clashes activos hay en el modelo federado?"** → API .NET: `ClashTest.ClashResults.Count(r => r.Status == ClashResultStatus.Active)`.
+- **Rick: "Cómo configuro un clash test entre estructura y MEP vía API?"** → `ClashTest.AddSelectionA/B` con `ModelItemCollection`.
+
+## Recursos oficiales
+
+- APS Navisworks Overview: https://aps.autodesk.com/developer/overview/navisworks
+- Navisworks 2026 SDK: descargable desde el portal APS
+- Navisworks API Forum: https://forums.autodesk.com/t5/navisworks-api-forum/
+- Developer Blog (2026 NwdExportOptions): https://blog.autodesk.io/navisworks-api-introducing-nwdexportoptions-in-navisworks-2026/
+- Clash Detective Help: https://help.autodesk.com/view/NAV/2026/
+
+## Notas
+
+- El SDK de Navisworks se instala por defecto con Navisworks Manage y Simulate.
+- Para Automation mode, Navisworks Manage debe estar instalado en la máquina.
+- NWF referencia archivos relativos; al mover el proyecto, actualizar las rutas.
+- Navisworks 2026 agrega `NwdExportOptions` como nueva API para control de exportación.
+- Para APS/cloud: usar `APS_CLIENT_ID` y `APS_CLIENT_SECRET` para autenticación.

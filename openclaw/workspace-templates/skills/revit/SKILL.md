@@ -1,212 +1,211 @@
 ---
 name: revit
 description: >-
-  Asistir con la API de Autodesk Revit para automatización con Python (pyRevit/IronPython),
-  scripting de Dynamo, creación de familias y gestión de parámetros.
-  Use when "Revit API", "pyRevit", "script Revit", "automatizar Revit",
-  "parámetros Revit", "familia Revit", "filtrar elementos Revit", "Revit Python".
+  Scripting, automatización y acceso a la API de Autodesk Revit mediante .NET,
+  pyRevit y Autodesk Platform Services (APS) Revit Automation API.
+  Use when "Revit API", "automatizar Revit", "pyRevit", "script Revit",
+  "exportar RVT", "familia Revit", "parámetros Revit", "APS Revit",
+  "modelo Revit", "elementos Revit Python".
 metadata:
   openclaw:
-    emoji: "\U0001F3E2"
+    emoji: "\U0001F3DB"
     requires:
-      env: []
+      env:
+        - APS_CLIENT_ID
+        - APS_CLIENT_SECRET
 ---
 
-# Revit Skill — API, pyRevit y Automatización
+# Revit Skill — API, pyRevit y APS Automation
 
-Rick usa este skill para asistir con scripting en Revit, uso de la Revit API en Python/IronPython, automatización con pyRevit y consultas sobre la estructura de datos del modelo BIM.
+Rick usa este skill para asistir con scripting en Revit, automatización de workflows BIM y acceso a la Revit Automation API de Autodesk Platform Services.
 
-## Referencia rápida de la API
+## Modalidades de acceso
 
-### Acceso al documento activo (IronPython/pyRevit)
+| Modalidad | Lenguaje | Contexto |
+|-----------|----------|---------|
+| **Revit API (.NET)** | C# / VB.NET | Addin dentro de Revit |
+| **pyRevit** | Python (IronPython/CPython) | Script en Revit desktop |
+| **APS Revit Automation API** | REST / Python SDK | Cloud sin instalación Revit |
+| **Dynamo** | DesignScript / Python | Visual programming en Revit |
 
-```python
-import clr
-clr.AddReference('RevitAPI')
-clr.AddReference('RevitAPIUI')
-from Autodesk.Revit.DB import *
-from Autodesk.Revit.UI import *
+## Revit API (.NET) — Conceptos clave
 
-doc = __revit__.ActiveUIDocument.Document
-uidoc = __revit__.ActiveUIDocument
+### Objetos principales
+
+| Objeto | Descripción |
+|--------|-------------|
+| `UIApplication` | Punto de entrada. Acceso a UI y sesión activa |
+| `Application` | Motor Revit. Acceso a documentos y config |
+| `Document` | Archivo RVT abierto. Contiene todos los elementos |
+| `Element` | Unidad base. Paredes, puertas, vistas, familias, etc. |
+| `FilteredElementCollector` | Query sobre elementos del modelo |
+| `Transaction` | Agrupa cambios al modelo (obligatorio para writes) |
+
+### Patrón básico de script
+
+```csharp
+// C# Addin
+using Autodesk.Revit.DB;
+using Autodesk.Revit.UI;
+
+public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
+{
+    Document doc = commandData.Application.ActiveUIDocument.Document;
+    
+    using (Transaction tx = new Transaction(doc, "Nombre operación"))
+    {
+        tx.Start();
+        // Modificaciones al modelo aquí
+        tx.Commit();
+    }
+    return Result.Succeeded;
+}
 ```
 
-### Transacciones (obligatorias para modificar el modelo)
+### pyRevit — Python en Revit
+
+pyRevit permite ejecutar Python directamente en Revit sin compilar un addin.
 
 ```python
-t = Transaction(doc, "Nombre de la transacción")
-t.Start()
-# ... modificaciones ...
-t.Commit()
+# pyRevit script
+from pyrevit import revit, DB, forms
+
+doc = revit.doc
+uidoc = revit.uidoc
+
+# Colector de elementos
+walls = DB.FilteredElementCollector(doc)\
+          .OfClass(DB.Wall)\
+          .WhereElementIsNotElementType()\
+          .ToElements()
+
+for wall in walls:
+    param = wall.get_Parameter(DB.BuiltInParameter.WALL_ATTR_WIDTH_PARAM)
+    print(f"Muro: {wall.Id} | Ancho: {param.AsDouble():.3f} ft")
 ```
 
-### Filtrar elementos por categoría
+### FilteredElementCollector — Patrones comunes
 
 ```python
-# Todos los muros
-collector = FilteredElementCollector(doc)\
-    .OfCategory(BuiltInCategory.OST_Walls)\
-    .WhereElementIsNotElementType()\
-    .ToElements()
+# Todas las puertas (instancias)
+doors = DB.FilteredElementCollector(doc)\
+          .OfCategory(DB.BuiltInCategory.OST_Doors)\
+          .WhereElementIsNotElementType()\
+          .ToElements()
 
-# Por clase de elemento
-rooms = FilteredElementCollector(doc)\
-    .OfClass(SpatialElement)\
-    .ToElements()
+# Todos los tipos de familia
+family_symbols = DB.FilteredElementCollector(doc)\
+                   .OfClass(DB.FamilySymbol)\
+                   .ToElements()
 
-# Con filtro de parámetro
-rule = ParameterFilterRuleFactory.CreateEqualsRule(
-    ElementId(BuiltInParameter.ELEM_LEVEL_PARAM),
-    level_id
-)
-param_filter = ElementParameterFilter(rule)
-filtered = FilteredElementCollector(doc)\
-    .WherePasses(param_filter)\
-    .ToElements()
+# Elementos en vista activa
+active_view = uidoc.ActiveView
+elems_in_view = DB.FilteredElementCollector(doc, active_view.Id)\
+                  .WhereElementIsNotElementType()\
+                  .ToElements()
 ```
 
-### Leer y escribir parámetros
+### Parámetros — Lectura y escritura
 
 ```python
 # Leer parámetro por nombre
-element = doc.GetElement(ElementId(12345))
-param = element.LookupParameter("Comentarios")
-value = param.AsString()  # o .AsDouble(), .AsInteger()
+wall = walls[0]
+mark = wall.LookupParameter("Mark")
+if mark:
+    print(mark.AsString())
 
 # Escribir parámetro (dentro de Transaction)
-param.Set("Nuevo valor")
+with revit.Transaction("Set Mark"):
+    mark.Set("Muro-001")
 
-# Parámetro compartido por GUID
-shared_param = element.get_Parameter(
-    Guid("xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx")
-)
-```
-
-### Crear elementos
-
-```python
-# Crear muro por línea
-line = Line.CreateBound(XYZ(0, 0, 0), XYZ(10, 0, 0))
-wall_type = doc.GetElement(wall_type_id)
+# Parámetros predefinidos (BuiltInParameter)
+level_id = wall.get_Parameter(DB.BuiltInParameter.WALL_BASE_CONSTRAINT).AsElementId()
 level = doc.GetElement(level_id)
-wall = Wall.Create(doc, line, wall_type.Id, level.Id, 3.0, 0.0, False, False)
+print(f"Nivel base: {level.Name}")
+```
 
-# Colocar familia (FamilyInstance)
-family_symbol = doc.GetElement(symbol_id)
-if not family_symbol.IsActive:
-    family_symbol.Activate()
-    doc.Regenerate()
-instance = doc.Create.NewFamilyInstance(
-    XYZ(0, 0, 0), family_symbol,
-    Structure.StructuralType.NonStructural
+## APS Revit Automation API — Cloud
+
+La Revit Automation API permite procesar archivos RVT en la nube sin Revit instalado.
+
+### Autenticación (2-legged OAuth)
+
+```python
+import requests
+
+def get_token(client_id: str, client_secret: str) -> str:
+    resp = requests.post(
+        "https://developer.api.autodesk.com/authentication/v2/token",
+        data={
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "grant_type": "client_credentials",
+            "scope": "data:read data:write"
+        }
+    )
+    return resp.json()["access_token"]
+```
+
+### Flujo típico: Extraer datos de RVT
+
+1. Subir RVT a OSS (Object Storage Service)
+2. Crear Activity con el Appbundle de Revit Engine
+3. Enviar WorkItem con parámetros
+4. Descargar resultado (JSON, IFC, NWC, etc.)
+
+```python
+# Crear WorkItem (Design Automation v3)
+workitem = {
+    "activityId": "revit.ExtractData+prod",
+    "arguments": {
+        "rvtFile": {"url": f"urn:adsk.objects:os.object:{bucket}/{file_key}"},
+        "result": {"url": f"urn:adsk.objects:os.object:{bucket}/output.json",
+                   "verb": "put"}
+    }
+}
+resp = requests.post(
+    "https://developer.api.autodesk.com/da/us-east/v3/workitems",
+    json=workitem,
+    headers={"Authorization": f"Bearer {token}"}
 )
 ```
 
-### Vistas y hojas
+## Exportación de modelos
+
+| Formato | Uso | API |
+|---------|-----|-----|
+| NWC | Navisworks clash detection | `NavisworksExportOptions` |
+| IFC | Interoperabilidad abierta | `IFCExportOptions` |
+| DWG | AutoCAD | `DWGExportOptions` |
+| PDF | Documentación | `PDFExportOptions` (Revit 2022+) |
 
 ```python
-# Obtener todas las vistas de plano
-views = FilteredElementCollector(doc)\
-    .OfClass(ViewPlan)\
-    .ToElements()
+# Exportar a NWC (pyRevit)
+from Autodesk.Revit.DB import NavisworksExportOptions
 
-# Vistas en hoja
-sheet = doc.GetElement(sheet_id)
-viewports = FilteredElementCollector(doc)\
-    .OfClass(Viewport)\
-    .ToElements()
-vp_on_sheet = [v for v in viewports if v.SheetId == sheet.Id]
+opts = NavisworksExportOptions()
+opts.ExportScope = DB.NavisworksExportScope.Model
+doc.Export(export_path, "model.nwc", opts)
 ```
 
-### Exportar a IFC/NWC
+## Ejemplos de uso con Rick
 
-```python
-# Exportar IFC
-options = IFCExportOptions()
-options.FileVersion = IFCVersion.IFC2x3CV2
-doc.Export(export_path, "modelo.ifc", options)
+- **Rick: "Listame todas las puertas con su nivel y marca"** → Script FilteredElementCollector con OST_Doors, lee Level y Mark.
+- **Rick: "Exporta el modelo a NWC automáticamente"** → pyRevit script con NavisworksExportOptions.
+- **Rick: "Crea un WorkItem APS para extraer datos del RVT en la nube"** → Usa APS Design Automation v3 REST API.
+- **Rick: "Genera un report de parámetros de muros en Excel"** → Colector de Wall + pandas/openpyxl.
 
-# Exportar NWC (Navisworks)
-nwc_options = NavisworksExportOptions()
-nwc_options.ExportScope = NavisworksExportScope.Model
-doc.Export(export_path, "modelo.nwc", nwc_options)
-```
+## Recursos oficiales
 
-## pyRevit — Estructura de extensión
+- API Reference 2026: https://www.revitapidocs.com/2026/
+- APS Developer Portal: https://aps.autodesk.com/developer/overview/revit
+- APS Design Automation: https://aps.autodesk.com/apis-and-services/revit-automation-api
+- pyRevit: https://github.com/pyrevitlabs/pyRevit
+- The Building Coder Blog: https://thebuildingcoder.typepad.com/
 
-```
-mi_extension.extension/
-  mi_panel.panel/
-    Mi_Herramienta.pushbutton/
-      script.py          # Código principal
-      icon.png           # Ícono 32x32
-      bundle.yaml        # Metadata (title, tooltip)
-```
+## Notas
 
-`bundle.yaml` mínimo:
-```yaml
-title: Mi Herramienta
-tooltip: Descripción de la herramienta
-```
-
-`script.py` mínimo:
-```python
-# -*- coding: utf-8 -*-
-from pyrevit import revit, DB, script
-
-doc = revit.doc
-output = script.get_output()
-output.print_md("## Resultado")
-```
-
-## Dynamo desde Revit API
-
-### Acceso a nodos desde Python en Dynamo
-
-```python
-# En un nodo Python de Dynamo
-import clr
-clr.AddReference('RevitNodes')
-import Revit
-clr.ImportExtensions(Revit.Elements)
-clr.ImportExtensions(Revit.GeometryConversion)
-
-clr.AddReference('RevitServices')
-import RevitServices
-from RevitServices.Persistence import DocumentManager
-from RevitServices.Transactions import TransactionManager
-
-doc = DocumentManager.Instance.CurrentDBDocument
-TransactionManager.Instance.EnsureInTransaction(doc)
-# ... modificaciones ...
-TransactionManager.Instance.TransactionTaskDone()
-```
-
-## Categorías BuiltInCategory más usadas en AEC
-
-| Nombre | BuiltInCategory |
-|--------|----------------|
-| Muros | `OST_Walls` |
-| Puertas | `OST_Doors` |
-| Ventanas | `OST_Windows` |
-| Pisos | `OST_Floors` |
-| Techos | `OST_Roofs` |
-| Habitaciones | `OST_Rooms` |
-| MEP Tuberías | `OST_PipeCurves` |
-| Estructura Columnas | `OST_StructuralColumns` |
-
-## Errores comunes
-
-| Error | Causa | Solución |
-|-------|-------|----------|
-| `InvalidOperationException` al modificar | Falta Transaction | Envolver en `t.Start() / t.Commit()` |
-| `NullReferenceException` en parámetro | Parámetro no existe en ese tipo | Verificar con `LookupParameter` ≠ None |
-| Familia no se coloca | `FamilySymbol` no activa | Llamar `symbol.Activate()` antes |
-| Modelo regenerado stale | Cambios sin regenerar | Llamar `doc.Regenerate()` |
-
-## Links oficiales
-
-- [Revit API Docs](https://www.revitapidocs.com/) — Referencia completa de clases y métodos
-- [APS Revit Overview](https://aps.autodesk.com/developer/overview/revit) — SDK y ejemplos
-- [pyRevit Docs](https://pyrevitlabs.notion.site/) — Guía de extensiones pyRevit
-- [Revit Developer Guide](https://help.autodesk.com/view/RVT/2025/ENU/?guid=Revit_API_Revit_API_Developers_Guide_html) — Guía oficial Autodesk
+- La Revit API nativa es .NET; Python se accede vía pyRevit (IronPython) o scripts en Dynamo.
+- Todos los cambios al modelo requieren una `Transaction` activa.
+- APS Design Automation necesita `APS_CLIENT_ID` y `APS_CLIENT_SECRET` con scopes `data:read data:write`.
+- El SDK de Revit 2026 está disponible en el portal APS para descarga.

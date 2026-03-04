@@ -403,6 +403,124 @@ def test_model_routing(base_url: str, token: str) -> str:
         return f"routed_model={model}"
 
 
+# ── Multi-model R8: provider-specific & routing tests ──────────
+
+def test_claude_provider(base_url: str, token: str) -> str:
+    """R8-1. POST /run llm.generate with Claude model — verify provider=anthropic."""
+    with httpx.Client(timeout=30.0) as c:
+        resp = c.post(
+            f"{base_url}/run",
+            headers=_make_headers(token),
+            json={
+                "task": "llm.generate",
+                "input": {
+                    "prompt": "Say 'Claude OK' in one word.",
+                    "model": "claude-sonnet-4-6",
+                    "max_tokens": 20,
+                },
+            },
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        text = data.get("result", {}).get("text", "")
+        provider = data.get("result", {}).get("provider", "?")
+        if not text:
+            raise ValueError(f"Empty response from Claude: {data}")
+        return f"provider={provider}, {len(text)} chars"
+
+
+def test_gemini_provider(base_url: str, token: str) -> str:
+    """R8-2. POST /run llm.generate with Gemini model — verify provider=gemini."""
+    with httpx.Client(timeout=30.0) as c:
+        resp = c.post(
+            f"{base_url}/run",
+            headers=_make_headers(token),
+            json={
+                "task": "llm.generate",
+                "input": {
+                    "prompt": "Say 'Gemini OK' in one word.",
+                    "model": "gemini-3.1-pro-preview-customtools",
+                    "max_tokens": 20,
+                },
+            },
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        text = data.get("result", {}).get("text", "")
+        provider = data.get("result", {}).get("provider", "?")
+        if not text:
+            raise ValueError(f"Empty response from Gemini: {data}")
+        return f"provider={provider}, {len(text)} chars"
+
+
+def test_vertex_provider(base_url: str, token: str) -> str:
+    """R8-3. POST /run llm.generate with Vertex alias — verify provider=vertex."""
+    with httpx.Client(timeout=30.0) as c:
+        resp = c.post(
+            f"{base_url}/run",
+            headers=_make_headers(token),
+            json={
+                "task": "llm.generate",
+                "input": {
+                    "prompt": "Say 'Vertex OK' in one word.",
+                    "model": "gemini_vertex",
+                    "max_tokens": 20,
+                },
+            },
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        text = data.get("result", {}).get("text", "")
+        provider = data.get("result", {}).get("provider", "?")
+        if not text:
+            raise ValueError(f"Empty response from Vertex: {data}")
+        return f"provider={provider}, {len(text)} chars"
+
+
+def test_routing_coding_selects_claude(base_url: str, token: str) -> str:
+    """R8-4. POST /run llm.generate task_type=coding — expect Claude model."""
+    with httpx.Client(timeout=25.0) as c:
+        resp = c.post(
+            f"{base_url}/run",
+            headers=_make_headers(token),
+            json={
+                "task": "llm.generate",
+                "input": {
+                    "prompt": "Responde OK.",
+                    "max_tokens": 20,
+                    "task_type": "coding",
+                },
+            },
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        model = data.get("result", {}).get("model", "?")
+        provider = data.get("result", {}).get("provider", "?")
+        return f"model={model}, provider={provider}"
+
+
+def test_routing_research_selects_gemini(base_url: str, token: str) -> str:
+    """R8-5. POST /run llm.generate task_type=research — expect Gemini model."""
+    with httpx.Client(timeout=25.0) as c:
+        resp = c.post(
+            f"{base_url}/run",
+            headers=_make_headers(token),
+            json={
+                "task": "llm.generate",
+                "input": {
+                    "prompt": "Responde OK.",
+                    "max_tokens": 20,
+                    "task_type": "research",
+                },
+            },
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        model = data.get("result", {}).get("model", "?")
+        provider = data.get("result", {}).get("provider", "?")
+        return f"model={model}, provider={provider}"
+
+
 # ── Suite runner ────────────────────────────────────────────────
 
 def run_e2e_suite(
@@ -447,6 +565,23 @@ def run_e2e_suite(
     tests.append(("GET /quota/status", lambda: test_quota_status(base_url, token)))
     tests.append(("Model routing", lambda: test_model_routing(base_url, token)))
 
+    # ── R8: Multi-model provider + routing tests ─────────────
+    has_google = bool(os.environ.get("GOOGLE_API_KEY"))
+    has_vertex = bool(
+        os.environ.get("GOOGLE_API_KEY_RICK_UMBRAL")
+        and os.environ.get("GOOGLE_CLOUD_PROJECT_RICK_UMBRAL")
+    )
+
+    if has_anthropic:
+        tests.append(("R8: Claude provider", lambda: test_claude_provider(base_url, token)))
+    if has_google:
+        tests.append(("R8: Gemini provider", lambda: test_gemini_provider(base_url, token)))
+    if has_vertex:
+        tests.append(("R8: Vertex provider", lambda: test_vertex_provider(base_url, token)))
+
+    tests.append(("R8: Routing coding→Claude", lambda: test_routing_coding_selects_claude(base_url, token)))
+    tests.append(("R8: Routing research→Gemini", lambda: test_routing_research_selects_gemini(base_url, token)))
+
     for i, (name, fn) in enumerate(tests, 1):
         label = f"{i}. {name}"
         result = _run_test(label, fn)
@@ -464,6 +599,23 @@ def run_e2e_suite(
             name="Multi-model: Anthropic",
             passed=True, elapsed_ms=0, skipped=True,
             detail="SKIP — ANTHROPIC_API_KEY not set",
+        ))
+        suite.results.append(TestResult(
+            name="R8: Claude provider",
+            passed=True, elapsed_ms=0, skipped=True,
+            detail="SKIP — ANTHROPIC_API_KEY not set",
+        ))
+    if not has_google:
+        suite.results.append(TestResult(
+            name="R8: Gemini provider",
+            passed=True, elapsed_ms=0, skipped=True,
+            detail="SKIP — GOOGLE_API_KEY not set",
+        ))
+    if not has_vertex:
+        suite.results.append(TestResult(
+            name="R8: Vertex provider",
+            passed=True, elapsed_ms=0, skipped=True,
+            detail="SKIP — Vertex env vars not set",
         ))
 
     suite.end_time = datetime.now(timezone.utc)

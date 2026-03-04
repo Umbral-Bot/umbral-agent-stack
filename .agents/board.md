@@ -26,7 +26,7 @@
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|
-| 043 | Skills Automatización Low-Code — Power Platform, n8n, Make, Copilot Studio | cursor-agent-cloud-2 | ✅ done |
+| 042 | Skills BIM/AEC — Revit, Dynamo, Rhino, Navisworks, ACC, KUKA | cursor-agent-cloud-1 | ✅ done (PR #52) |
 
 ## Ronda 9 — Completada ✅
 

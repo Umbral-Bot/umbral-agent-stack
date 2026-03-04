@@ -246,12 +246,14 @@ class TestBuildPlainReport:
     def test_shows_errors(self, sample_tasks):
         m = compute_metrics(sample_tasks)
         report = build_plain_report(m, pending=0, now=NOW, hours=24)
+        assert "Alertas:" in report
         assert "Tavily timeout" in report
 
     def test_empty_tasks_report(self):
         m = compute_metrics([])
         report = build_plain_report(m, pending=0, now=NOW, hours=24)
         assert "0 tareas ejecutadas" in report
+        assert "Alertas:" not in report
 
 
 # ======================================================================

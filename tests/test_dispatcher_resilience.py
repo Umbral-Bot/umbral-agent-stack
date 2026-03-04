@@ -140,6 +140,7 @@ def _run_one_iteration(redis_client, envelope, wc_side_effect=None):
                 None,
                 hm,
                 model_router,
+                None,
                 1,
             )
         except KeyboardInterrupt:

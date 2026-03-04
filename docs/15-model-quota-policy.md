@@ -173,3 +173,40 @@ No crea duplicados si el envelope ya tiene `linear_issue_id`.
 ## OpenClaw y cuota Claude
 
 Cuando OpenClaw usa Anthropic (Claude) y se agotan los tokens, el gateway puede **congelarse**. Conviene cambiar de modelo **antes** del límite (preventivo) y tener un script que cambie a fallback y reinicie cuando ya ocurrió (reactivo). Ver [docs/19-openclaw-claude-quota.md](19-openclaw-claude-quota.md) y `scripts/openclaw_quota_guard.py`.
+
+## OpenClaw Proxy Provider (Claude vía gateway local)
+
+El provider `openclaw_proxy` permite al Worker llamar a modelos Claude a través del
+[gateway OpenClaw](https://github.com/nicobistolfi/openclaw) corriendo en la misma VPS
+en `http://localhost:18789`. Usa la API `/v1/chat/completions` (compatible con OpenAI).
+
+### Configuración
+
+| Variable | Requerida | Descripción |
+|----------|-----------|-------------|
+| `OPENCLAW_GATEWAY_TOKEN` | Sí | Bearer token para auth del gateway |
+| `OPENCLAW_GATEWAY_URL` | No | URL base del gateway (default `http://localhost:18789`) |
+
+### Modelos disponibles
+
+| Router Key | Model ID | Uso |
+|------------|----------|-----|
+| `openclaw_claude_pro` | `anthropic/claude-sonnet-4-6` | Balance velocidad/calidad |
+| `openclaw_claude_opus` | `anthropic/claude-opus-4-6` | Máxima calidad |
+| `openclaw_claude_haiku` | `anthropic/claude-haiku-4-5` | Más rápido, más económico |
+
+### Auto-detección
+
+Modelos que contienen `claude` en el nombre se rutean automáticamente:
+1. Si `OPENCLAW_GATEWAY_TOKEN` está → `openclaw_proxy`
+2. Si no pero `ANTHROPIC_API_KEY` está → `anthropic` (directo)
+3. Si ninguno → error explicativo
+
+### Manejo de errores
+
+| Escenario | Resultado |
+|-----------|-----------|
+| Token ausente | `{"ok": false, "error": "OPENCLAW_GATEWAY_TOKEN not configured"}` |
+| Gateway caído | `RuntimeError: OpenClaw gateway unreachable at ...` |
+| HTTP error | `RuntimeError: OpenClaw proxy error {code}: ...` |
+| Respuesta inesperada | `RuntimeError: No choices in OpenClaw response: ...` |

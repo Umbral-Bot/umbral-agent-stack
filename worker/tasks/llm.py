@@ -8,6 +8,9 @@ Inventario de modelos disponibles:
   Anthropic (ANTHROPIC_API_KEY — token de sesión Pro):
     claude-haiku-4-5, claude-opus-4-6, claude-sonnet-4-6
 
+  OpenClaw Proxy (OPENCLAW_GATEWAY_TOKEN — gateway local puerto 18789):
+    anthropic/claude-* (Claude vía OpenClaw como intermediario)
+
   OpenAI (AZURE_OPENAI_* o GITHUB_TOKEN como fallback):
     gpt-5.2, gpt-5.3-codex (default/prioridad máxima)
 
@@ -25,7 +28,7 @@ Provider selection:
   OpenAI/Codex: azure_foundry → openai nativo (OPENAI_API_KEY)
               NOTA: gpt-5.3-codex y gpt-5.2 vía OAuth de ChatGPT Plus solo funcionan
               en OpenClaw (Telegram). El Worker los accede por Azure AI Foundry.
-  Claude:       anthropic nativo (ANTHROPIC_API_KEY — token sesión Pro)
+  Claude:       openclaw_proxy (OPENCLAW_GATEWAY_TOKEN) → anthropic nativo (ANTHROPIC_API_KEY)
   Gemini:       gemini (AI Studio) o vertex (si alias contiene "vertex")
 """
 
@@ -172,11 +175,14 @@ def _detect_provider(model: str, *, requested_alias: str = "") -> str:
         )
 
     if is_anthropic_model:
+        if os.environ.get("OPENCLAW_GATEWAY_TOKEN", "").strip():
+            return "openclaw_proxy"
         if os.environ.get("ANTHROPIC_API_KEY", "").strip():
             return "anthropic"
         raise RuntimeError(
-            "Modelos Claude requieren ANTHROPIC_API_KEY (token de sesión Pro). "
-            "Agregála en ~/.config/openclaw/env"
+            "Modelos Claude requieren OPENCLAW_GATEWAY_TOKEN (gateway local) "
+            "o ANTHROPIC_API_KEY (token de sesión Pro). "
+            "Agregá al menos uno en las env vars."
         )
 
     return "gemini"
@@ -584,10 +590,84 @@ def _call_vertex(
     }
 
 
+def _call_openclaw_proxy(
+    *,
+    prompt: str,
+    model: str,
+    max_tokens: int,
+    temperature: float,
+    system_prompt: str,
+) -> Dict[str, Any]:
+    """
+    Claude vía OpenClaw gateway corriendo en la misma VPS (puerto 18789).
+
+    Variables de entorno:
+        OPENCLAW_GATEWAY_TOKEN — Bearer token para auth del gateway (requerido)
+        OPENCLAW_GATEWAY_URL   — URL base del gateway (default: http://localhost:18789)
+    """
+    token = os.environ.get("OPENCLAW_GATEWAY_TOKEN", "").strip()
+    if not token:
+        return {"ok": False, "error": "OPENCLAW_GATEWAY_TOKEN not configured"}
+
+    base_url = os.environ.get("OPENCLAW_GATEWAY_URL", "http://localhost:18789").strip().rstrip("/")
+    url = f"{base_url}/v1/chat/completions"
+
+    messages: list = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+    messages.append({"role": "user", "content": prompt})
+
+    payload = json.dumps({
+        "model": model,
+        "messages": messages,
+        "max_tokens": max_tokens,
+        "temperature": temperature,
+    }).encode("utf-8")
+
+    req = urllib.request.Request(
+        url,
+        data=payload,
+        method="POST",
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=90) as resp:
+            data = json.loads(resp.read().decode())
+    except urllib.error.HTTPError as exc:
+        body_str = _safe_http_error_body(exc)
+        raise RuntimeError(f"OpenClaw proxy error {exc.code}: {body_str}")
+    except urllib.error.URLError as exc:
+        raise RuntimeError(f"OpenClaw gateway unreachable at {base_url}: {exc.reason}")
+    except Exception as exc:
+        raise RuntimeError(f"OpenClaw proxy request failed: {str(exc)[:300]}")
+
+    choices = data.get("choices", [])
+    if not choices:
+        raise RuntimeError(f"No choices in OpenClaw response: {json.dumps(data)[:500]}")
+    message = choices[0].get("message", {})
+    text = _extract_openai_text(message.get("content", ""))
+
+    usage = data.get("usage", {})
+    return {
+        "text": text,
+        "model": model,
+        "provider": "openclaw_proxy",
+        "usage": {
+            "prompt_tokens": usage.get("prompt_tokens", 0),
+            "completion_tokens": usage.get("completion_tokens", 0),
+            "total_tokens": usage.get("total_tokens", 0),
+        },
+    }
+
+
 PROVIDERS: Dict[str, Callable[..., Dict[str, Any]]] = {
     "gemini": _call_gemini,
     "vertex": _call_vertex,
     "azure_foundry": _call_azure_foundry,
     "openai": _call_openai,
     "anthropic": _call_anthropic,
+    "openclaw_proxy": _call_openclaw_proxy,
 }

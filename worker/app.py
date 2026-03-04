@@ -33,7 +33,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from .config import WORKER_TOKEN
-from .rate_limit import check_rate_limit
+from .rate_limiter import RateLimiter
 from .sanitize import sanitize_input, sanitize_task_name
 from .models import (
     LegacyRunRequest,
@@ -127,6 +127,31 @@ app = FastAPI(
 
 
 # ---------------------------------------------------------------------------
+# Rate Limiting Middleware
+# ---------------------------------------------------------------------------
+rpm = int(os.environ.get("RATE_LIMIT_RPM", "60"))
+limiter = RateLimiter(max_requests=rpm, window_seconds=60)
+
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    if request.url.path == "/health":
+        return await call_next(request)
+    
+    client_id = request.client.host if request.client else "unknown"
+    allowed, remaining = limiter.is_allowed(client_id)
+    
+    if not allowed:
+        return JSONResponse(
+            status_code=429,
+            content={"detail": "Rate limit exceeded. Retry later."},
+            headers={"Retry-After": "60"}
+        )
+    
+    response = await call_next(request)
+    return response
+
+
+# ---------------------------------------------------------------------------
 # Auth helper
 # ---------------------------------------------------------------------------
 
@@ -181,12 +206,6 @@ async def run_task(
     S7: rate limiting y sanitización de inputs.
     """
     _authenticate(authorization)
-
-    # S7: rate limit (por IP del cliente)
-    client_key = request.client.host if request.client else "unknown"
-    allowed, _ = check_rate_limit(client_key)
-    if not allowed:
-        raise HTTPException(status_code=429, detail="Rate limit exceeded. Retry later.")
 
     # --- Parse: detect envelope vs legacy ---
     try:
@@ -318,12 +337,6 @@ async def enqueue_task(
         {"ok": true, "task_id": "uuid", "queued": true}
     """
     _authenticate(authorization)
-
-    # Rate limit
-    client_key = request.client.host if request.client else "unknown"
-    allowed, _ = check_rate_limit(client_key)
-    if not allowed:
-        raise HTTPException(status_code=429, detail="Rate limit exceeded. Retry later.")
 
     # Sanitize
     try:

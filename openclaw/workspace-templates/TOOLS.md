@@ -28,6 +28,11 @@
 | `make.post_webhook` | Envía POST a webhook de Make.com. |
 | `windows.pad.run_flow` | Ejecuta flujo de Power Automate Desktop en VM. |
 | `windows.fs.*` | Operaciones de filesystem en la VM Windows. |
+| `granola.process_transcript` | Procesa transcripción Granola → Notion (extrae action items, crea página). |
+| `granola.create_followup` | Crea follow-up proactivo desde reunión: reminder, borrador de email, propuesta. |
+| `document.create_word` | Genera archivo Word (.docx) desde plantilla o desde cero con python-docx/docxtpl. |
+| `document.create_pdf` | Genera PDF desde HTML (weasyprint) o texto plano. |
+| `document.create_presentation` | Genera presentación PowerPoint (.pptx) con python-pptx. |
 
 El Dispatcher encola tareas en Redis (`umbral:tasks:pending`) y el Worker las ejecuta vía HTTP. Requiere `WORKER_URL`, `WORKER_TOKEN`, `REDIS_URL`.
 
@@ -49,6 +54,21 @@ El Dispatcher encola tareas en Redis (`umbral:tasks:pending`) y el Worker las ej
 - **API:** Rick crea issues vía `linear.create_issue` (encolar tarea o script `scripts/linear_create_issue.py`).
 - **Equipos:** Usar `team_key` (ej. "UMB"). Ejecutar `linear.list_teams` para ver equipos.
 - **Variable:** `LINEAR_API_KEY` en `~/.config/openclaw/env` (VPS).
+
+## Granola
+
+- **Pipeline:** Rick procesa transcripciones Granola → Notion vía `granola.process_transcript`.
+- **Watcher:** Script `scripts/vm/granola_watcher.py` monitorea carpeta `GRANOLA_EXPORT_DIR` en la VM y envía archivos `.md` automáticamente al Worker.
+- **Follow-up:** `granola.create_followup` genera reminders, borradores de email o propuestas desde action items extraídos.
+- **Variables:** `GRANOLA_EXPORT_DIR`, `GRANOLA_NOTION_DATABASE_ID` en el Worker.
+
+## Document Generation
+
+- **Word:** `document.create_word` — modo plantilla (docxtpl + Jinja2) o desde cero (python-docx).
+- **PDF:** `document.create_pdf` — desde HTML (weasyprint) o texto plano (fpdf2).
+- **PowerPoint:** `document.create_presentation` — slides con python-pptx, título/contenido/tabla.
+- **Plantillas BIM:** `worker/templates/documents/propuesta_bim.docx` y `cotizacion_bim.docx`.
+- **Variables:** sin variables de entorno requeridas; rutas de archivo como input.
 
 ## Figma
 

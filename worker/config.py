@@ -51,15 +51,21 @@ def require_worker_token() -> str:
     return WORKER_TOKEN
 
 
-def require_notion() -> tuple[str, str, str]:
-    """Raise if any Notion env var is missing. Returns (api_key, control_room_id, granola_db_id)."""
+def require_notion_core() -> tuple[str, str]:
+    """Raise if NOTION_API_KEY or NOTION_CONTROL_ROOM_PAGE_ID are missing."""
     missing = []
     if not NOTION_API_KEY:
         missing.append("NOTION_API_KEY")
     if not NOTION_CONTROL_ROOM_PAGE_ID:
         missing.append("NOTION_CONTROL_ROOM_PAGE_ID")
-    if not NOTION_GRANOLA_DB_ID:
-        missing.append("NOTION_GRANOLA_DB_ID")
     if missing:
         raise RuntimeError(f"Missing Notion env vars: {', '.join(missing)}")
-    return NOTION_API_KEY, NOTION_CONTROL_ROOM_PAGE_ID, NOTION_GRANOLA_DB_ID  # type: ignore
+    return NOTION_API_KEY, NOTION_CONTROL_ROOM_PAGE_ID  # type: ignore
+
+
+def require_notion() -> tuple[str, str, str]:
+    """Raise if any Notion env var is missing. Returns (api_key, control_room_id, granola_db_id)."""
+    api_key, control_room_id = require_notion_core()
+    if not NOTION_GRANOLA_DB_ID:
+        raise RuntimeError("Missing Notion env vars: NOTION_GRANOLA_DB_ID")
+    return api_key, control_room_id, NOTION_GRANOLA_DB_ID  # type: ignore

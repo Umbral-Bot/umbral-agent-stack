@@ -143,3 +143,31 @@ class WorkerClient:
         if page_id:
             input_data["page_id"] = page_id
         return self.run("notion.poll_comments", input_data)
+
+    def task_history(
+        self,
+        hours: int = 24,
+        team: str | None = None,
+        status: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> Dict[str, Any]:
+        """GET /task/history — Redis-backed task history with pagination/stats."""
+        params: Dict[str, Any] = {
+            "hours": hours,
+            "limit": limit,
+            "offset": offset,
+        }
+        if team:
+            params["team"] = team
+        if status:
+            params["status"] = status
+
+        with httpx.Client(timeout=self.timeout) as client:
+            resp = client.get(
+                f"{self.base_url}/task/history",
+                headers=self._headers(),
+                params=params,
+            )
+            resp.raise_for_status()
+            return resp.json()

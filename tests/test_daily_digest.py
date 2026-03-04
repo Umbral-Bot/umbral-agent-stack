@@ -36,6 +36,7 @@ from scripts.daily_digest import (  # noqa: E402
     build_plain_report,
     compute_metrics,
     count_pending,
+    fetch_task_history,
     generate_llm_summary,
     scan_recent_tasks,
 )
@@ -300,6 +301,50 @@ class TestGenerateLlmSummary:
         assert args[0][0] == "llm.generate"
         assert "prompt" in args[0][1]
         assert "test report" in args[0][1]["prompt"]
+
+
+# ======================================================================
+# fetch_task_history (Worker API)
+# ======================================================================
+
+
+class TestFetchTaskHistory:
+    def test_single_page(self):
+        mock_wc = MagicMock()
+        mock_wc.task_history.return_value = {
+            "tasks": [{"task_id": "t1", "status": "done"}],
+            "total": 1,
+            "page": {"offset": 0, "limit": 200, "has_more": False},
+            "stats": {"done": 1, "failed": 0, "queued": 0, "running": 0, "teams": {"system": 1}},
+        }
+
+        out = fetch_task_history(mock_wc, hours=24)
+        assert out["total"] == 1
+        assert len(out["tasks"]) == 1
+        assert out["stats"]["done"] == 1
+        mock_wc.task_history.assert_called_once()
+
+    def test_paginates_until_has_more_false(self):
+        mock_wc = MagicMock()
+        mock_wc.task_history.side_effect = [
+            {
+                "tasks": [{"task_id": "t1"}],
+                "total": 3,
+                "page": {"offset": 0, "limit": 2, "has_more": True},
+                "stats": {"done": 2, "failed": 1, "queued": 0, "running": 0, "teams": {"system": 3}},
+            },
+            {
+                "tasks": [{"task_id": "t2"}, {"task_id": "t3"}],
+                "total": 3,
+                "page": {"offset": 2, "limit": 2, "has_more": False},
+                "stats": {"done": 2, "failed": 1, "queued": 0, "running": 0, "teams": {"system": 3}},
+            },
+        ]
+
+        out = fetch_task_history(mock_wc, hours=24, page_size=2)
+        assert out["total"] == 3
+        assert [t["task_id"] for t in out["tasks"]] == ["t1", "t2", "t3"]
+        assert mock_wc.task_history.call_count == 2
 
 
 # ======================================================================

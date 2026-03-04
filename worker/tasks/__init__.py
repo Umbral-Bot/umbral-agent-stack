@@ -52,6 +52,10 @@ from .document_generator import (
     handle_document_create_pdf,
     handle_document_create_presentation,
 )
+from .granola import (
+    handle_granola_process_transcript,
+    handle_granola_create_followup,
+)
 
 # Each handler: (input: dict) -> dict
 TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
@@ -91,4 +95,6 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "document.create_word": handle_document_create_word,
     "document.create_pdf": handle_document_create_pdf,
     "document.create_presentation": handle_document_create_presentation,
+    "granola.process_transcript": handle_granola_process_transcript,
+    "granola.create_followup": handle_granola_create_followup,
 }

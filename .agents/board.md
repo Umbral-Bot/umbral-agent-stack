@@ -26,7 +26,7 @@
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|
-| 049 | Skills Generación de Documentos — Word, PDF, PPT | cursor-agent-cloud-8 | ✅ done |
+| 042 | Skills BIM/AEC — Revit, Dynamo, Rhino, Navisworks, ACC, KUKA | cursor-agent-cloud-1 | ✅ done (PR #52) |
 
 ## Ronda 9 — Completada ✅
 

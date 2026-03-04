@@ -4,7 +4,7 @@ title: "Skills Cloud, IA y Data — Azure, Google Cloud/Vertex, LangChain, MCP P
 assigned_to: cursor-agent-cloud-3
 branch: feat/cloud3-skills-cloud-ai
 round: 11
-status: assigned
+status: done
 created: 2026-03-04
 ---
 
@@ -66,3 +66,16 @@ gh pr create --title "feat: skills cloud/IA/data — azure, vertex, langchain, M
 - Azure skill cubre tanto plataforma general como Azure OpenAI
 - MCP skill incluye cómo crear un server propio
 - Big Data skill compara Pandas vs Polars con ejemplos
+
+## Log
+
+### [cursor-agent-cloud-3] 2026-03-04
+
+**Archivos creados:**
+- `openclaw/workspace-templates/skills/azure-platform/SKILL.md` — Azure Functions, Blob Storage, CosmosDB, Service Bus, App Service, Azure OpenAI con Azure CLI + Python SDK
+- `openclaw/workspace-templates/skills/google-cloud-vertex/SKILL.md` — Vertex AI, Gemini API, embeddings, multimodal, Imagen, gcloud CLI
+- `openclaw/workspace-templates/skills/langchain-langgraph/SKILL.md` — Chains, tools, ReAct agents, LangGraph state machines, memory, RAG
+- `openclaw/workspace-templates/skills/mcp-protocol/SKILL.md` — FastMCP server creation, tools/resources/prompts, transports, integración con OpenClaw
+- `openclaw/workspace-templates/skills/big-data-python/SKILL.md` — Pandas vs Polars vs Dask comparison con ejemplos equivalentes, ETL pipeline
+
+**Validación:** `python scripts/validate_skills.py` → 18/18 OK, exit 0

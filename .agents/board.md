@@ -22,7 +22,13 @@
 | PRs mergeados (hackathon) | 34 |
 | VM (Execution Plane) | ✅ v0.4.0 — 25 handlers — reconectada |
 
-## Ronda 9 — En curso
+## Ronda 11 — En curso
+
+| ID | Título | Asignado | Estado |
+|----|--------|----------|--------|
+| 047 | Skills Personales desde Google Drive — Docente AEC4.0, LinkedIn Content, Marca Personal DM | cursor-agent-cloud-6 | ✅ done |
+
+## Ronda 9 — Completada ✅
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|

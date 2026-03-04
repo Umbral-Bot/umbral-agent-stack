@@ -2,7 +2,7 @@
 id: "016"
 title: "Task History API + Redis Pagination"
 assigned_to: codex
-status: assigned
+status: done
 branch: feat/codex-task-history-api
 priority: high
 round: 4
@@ -73,3 +73,29 @@ Crear `tests/test_task_history.py`:
 - `dispatcher/queue.py` — TASK_KEY_PREFIX, TaskQueue (referencia)
 - `scripts/daily_digest.py` — actualizar para usar nuevo endpoint
 - `docs/07-worker-api-contract.md` — documentar
+
+## Log
+
+### [codex] 2026-03-04 05:14 -03:00
+- Implementado helper de historial en Redis:
+  - `dispatcher/task_history.py` con `TaskHistory(redis_client)`.
+  - `query(hours, team, status, limit, offset)` usando SCAN con cursor.
+  - `stats(hours)` con agregación por estado/equipo.
+- Implementado endpoint Worker:
+  - `GET /task/history` en `worker/app.py`.
+  - Filtros: `hours`, `team`, `status`, `limit`, `offset`.
+  - Respuesta: `tasks`, `total`, `page`, `stats`.
+  - Validación de `status` + manejo de Redis no disponible (503).
+- Actualizado cliente SDK:
+  - `client/worker_client.py`: nuevo método `task_history(...)`.
+- Actualizado digest:
+  - `scripts/daily_digest.py` ahora consume `GET /task/history` vía `WorkerClient`.
+  - Agregado `fetch_task_history(...)` con paginación.
+- Tests:
+  - Nuevo `tests/test_task_history.py` (query, filtros, hours, paginación, stats, Redis vacío, endpoint).
+  - Extendido `tests/test_daily_digest.py` con tests de `fetch_task_history`.
+- Documentación:
+  - `docs/07-worker-api-contract.md` actualizado con endpoint `GET /task/history`.
+- Validación ejecutada:
+  - `python -m pytest tests/test_task_history.py tests/test_enqueue_api.py tests/test_daily_digest.py -v -p no:cacheprovider`
+  - Resultado: `61 passed`.

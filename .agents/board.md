@@ -24,17 +24,26 @@
 | 2026-03-04-002 | Hackathon: Verificar/activar infraestructura VPS | cursor | ✅ done (VPS OK, VM red caída) |
 | 2026-03-04-003 | Hackathon: Mejoras de código — Poller inteligente + docs | antigravity | 📋 assigned |
 | 2026-03-04-004 | Hackathon: Integraciones — LiteLLM, cuotas, Notion | github-copilot | 📋 assigned |
-| 2026-03-04-005 | Hackathon: Activar OpsLogger + persistencia task store | codex | 📋 assigned |
+| 2026-03-04-005 | Hackathon: Activar OpsLogger + persistencia task store | cursor | ✅ done (ya estaba activo, 28 eventos) |
 | 2026-03-04-006 | Hackathon: Notion Poller inteligente (clasificar+encolar) | antigravity | 📋 assigned |
-| 2026-03-04-007 | Hackathon: Conectar LLM (Gemini) al Worker | github-copilot | 📋 assigned |
+| 2026-03-04-007 | Hackathon: Conectar LLM (Gemini) al Worker | cursor | ✅ done (gemini-2.5-flash) |
+| 2026-03-04-008 | Hackathon: Task handler research.web (Tavily) | cursor | ✅ done |
+| 2026-03-04-009 | Hackathon: SIM daily cron (3x/día research+resumen) | cursor | ✅ done |
 
 ### Logros del hackathon (Cursor lead)
 - Flujo e2e verificado: Enqueue → Dispatcher dequeue → Worker execute → Complete
 - Dashboard cron arreglado (chmod +x + bash explícito)
 - .env limpiado (null chars, duplicados)
 - Tailscale restaurado host↔VPS
-- Control Room Notion: acceso concedido
-- Linear issues priorizados (UMB-6..10)
+- Control Room Notion: acceso concedido, poll_comments y add_comment funcionando
+- Linear issues creados (UMB-14..16)
+- Task handler `research.web` implementado (Tavily API)
+- Task handler `llm.generate` implementado (Gemini 2.5 Flash)
+- SIM daily cron instalado (8:00, 14:00, 20:00 UTC) → 7 tareas/ejecución
+- OpsLogger: 28 eventos registrados, operacional
+- Rick comentó en Control Room Notion: reporte de estado del hackathon
+- 7 tareas SIM completadas en producción (6 research + 1 LLM summary)
+- Worker VPS reiniciado con 24 task handlers registrados
 - VM: red caída (APIPA), requiere reconexión manual
 
 ## Tareas anteriores (pre-hackathon)

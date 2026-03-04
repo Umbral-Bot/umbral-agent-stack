@@ -99,32 +99,41 @@
 
 ### P1 — Esta semana (que el sistema haga algo útil)
 
-| Acción | Responsable |
-|--------|------------|
-| Notion Poller inteligente (clasifica comentarios → encola tareas) | Antigravity |
-| Encolar al menos 1 tarea real desde un cron (ej. SIM research diario) | Codex |
-| Conectar al menos 1 LLM al sistema (Gemini via API key existente) | Copilot |
-| Linear issues con prioridad, labels, asignación | Cursor |
+| Acción | Responsable | Estado |
+|--------|------------|--------|
+| Notion Poller inteligente (clasifica comentarios → encola tareas) | Antigravity | 📋 Pendiente |
+| Encolar al menos 1 tarea real desde un cron (ej. SIM research diario) | ~~Codex~~ Cursor | ✅ Done — cron 3x/día, 7 tareas/ejecución |
+| Conectar al menos 1 LLM al sistema (Gemini via API key existente) | ~~Copilot~~ Cursor | ✅ Done — gemini-2.5-flash operacional |
+| Linear issues con prioridad, labels, asignación | Cursor | ✅ Done — UMB-14..16 creados |
+| Task handler `research.web` (Tavily) | Cursor | ✅ Done |
+| Task handler `llm.generate` (Gemini) | Cursor | ✅ Done |
+| Notion poll_comments / add_comment sin require GRANOLA_DB_ID | Cursor | ✅ Done — fix en config.py |
+| Worker reiniciado con 24 task handlers | Cursor | ✅ Done |
+| Rick reportó estado en Control Room Notion | Cursor | ✅ Done |
 
 ### P2 — Próximos días (tracking y mejora continua)
 
-| Acción | Responsable |
-|--------|------------|
-| Activar OpsLogger en Dispatcher (para que ops_log tenga datos) | Codex |
-| Health check automático diario (script que verifique todo) | Cursor |
-| Langfuse para observabilidad de LLM calls | Copilot |
+| Acción | Responsable | Estado |
+|--------|------------|--------|
+| OpsLogger en Dispatcher | ~~Codex~~ Cursor | ✅ Ya estaba activo, 28 eventos |
+| Health check automático diario | Cursor | Pendiente |
+| Langfuse para observabilidad de LLM calls | Copilot | Pendiente |
+| Arreglar red VM (APIPA → reconectar DHCP) | David (manual) | ❗ Bloqueante |
+| Compartir DB Kanban "Tareas Umbral" con integración Notion | David (manual) | Pendiente (ID: 3145f443-fb5c-814a-8764-efbd7203048d) |
 
 ---
 
-## 5. Métricas Actuales vs Objetivo
+## 5. Métricas: Antes vs Después del Hackathon
 
-| Métrica | Actual (real) | Objetivo hackathon |
-|---------|--------------|-------------------|
-| Tareas procesadas/día | 0 (5 total histórico, todas el 27/02) | >10 |
-| Modelos LLM activos | 0 | ≥1 |
-| Dashboard actualizado | Cada 15 min (arreglado hoy) | Cada 15 min |
-| Cuotas aprovechadas | 0% | >10% |
-| Equipos con actividad | 0 | ≥1 |
-| Notion Control Room funcional | No (sin permisos) | Sí |
-| Ops log con eventos | 0 | >20 |
-| Linear issues con asignación | 0/12 | 8/8 (los reales) |
+| Métrica | Antes (inicio hackathon) | Después (fin hackathon) | Objetivo |
+|---------|-------------------------|------------------------|----------|
+| Tareas procesadas/día | 0 (5 históricas, 27/02) | **21 hoy** (7/ejecución × 3 crons) | >10 ✅ |
+| Modelos LLM activos | 0 | **1 (Gemini 2.5 Flash)** | ≥1 ✅ |
+| Dashboard actualizado | Roto → arreglado hoy | Cada 15 min | Cada 15 min ✅ |
+| Cuotas aprovechadas | 0% | ~5% (Tavily + Gemini) | >10% 🔄 |
+| Equipos con actividad | 0 | **3 (marketing, advisory, improvement)** | ≥1 ✅ |
+| Notion Control Room funcional | No (sin permisos) | **Sí (poll + comment)** | Sí ✅ |
+| Ops log con eventos | 0 | **28 eventos** | >20 ✅ |
+| Linear issues asignados | 0 | **3 nuevos (UMB-14..16)** | 8/8 🔄 |
+| Task handlers en Worker | 22 | **24 (+research.web, +llm.generate)** | — |
+| Crons activos | 1 (dashboard) | **2 (dashboard + SIM)** | — |

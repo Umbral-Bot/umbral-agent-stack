@@ -21,6 +21,7 @@ Pillow es el fork activo de PIL (Python Imaging Library). Permite abrir, manipul
 
 ## Instalacion
 
+**Instalacion:**
 ```bash
 pip install Pillow
 ```

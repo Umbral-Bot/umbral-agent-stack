@@ -14,7 +14,7 @@ metadata:
       env: []
 ---
 
-# ffmpeg-python — Procesamiento de Video con Python
+# ffmpeg-python — Procesamiento de Video y Audio
 
 ffmpeg-python expone la potencia de FFmpeg a traves de una API Python fluida. Permite construir pipelines de video/audio complejos con filtros encadenados, sin necesidad de escribir comandos de terminal largos.
 
@@ -23,6 +23,7 @@ ffmpeg-python expone la potencia de FFmpeg a traves de una API Python fluida. Pe
 
 ## Instalacion
 
+**Instalacion:**
 ```bash
 pip install ffmpeg-python
 # Instalar el binario ffmpeg:
@@ -39,8 +40,7 @@ pip install ffmpeg-python
 
 Convierte un video de Premiere o Lumion a MP4 optimizado para subir a Notion o LinkedIn:
 
-```python
-import ffmpeg
+### 1. Comprimir y convertir videos de presentacion para compartir por web
 
 def comprimir_para_web(entrada: str, salida: str, max_width: int = 1920):
     """Comprime video manteniendo calidad para web. Ideal para Notion/LinkedIn."""

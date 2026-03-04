@@ -21,6 +21,7 @@ MoviePy v2 es una libreria Python para editar video de forma programatica. Permi
 
 ## Instalacion
 
+**Instalacion:**
 ```bash
 pip install moviepy
 # Requiere ffmpeg instalado en el sistema
@@ -37,7 +38,7 @@ pip install moviepy
 
 ---
 
-## Casos de uso
+---
 
 ### 1. Video resumen de proyecto — renders a video de presentacion
 

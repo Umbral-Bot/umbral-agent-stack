@@ -22,6 +22,7 @@ svgwrite genera archivos SVG (Scalable Vector Graphics) de forma programatica. L
 
 ## Instalacion
 
+**Instalacion:**
 ```bash
 pip install svgwrite
 # Para exportar SVG a PNG/PDF (opcional):

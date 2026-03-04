@@ -22,6 +22,7 @@ Playwright es la alternativa moderna a Selenium. Controla Chromium, Firefox y We
 
 ## Instalacion
 
+**Instalacion:**
 ```bash
 pip install playwright
 playwright install          # Descarga los 3 navegadores (~800MB)
@@ -30,7 +31,7 @@ playwright install chromium # Solo Chromium (mas liviano)
 
 ---
 
-## Casos de uso
+## Casos de uso para David (BIM / Consultoría / Docencia)
 
 ### 1. Monitorear precios de materiales de construccion — portal de proveedor
 

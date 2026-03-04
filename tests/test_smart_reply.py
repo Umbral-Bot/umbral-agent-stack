@@ -17,6 +17,7 @@ from unittest.mock import MagicMock, patch, call
 
 import pytest
 
+from dispatcher.intent_classifier import IntentResult
 from dispatcher.smart_reply import (
     handle_smart_reply,
     _do_research,
@@ -128,7 +129,7 @@ class TestQuestionFlow:
             _llm_result("BIM 2026 se enfoca en gemelos digitales."),  # llm.generate
             _empty_result(),       # notion.add_comment
         ]
-        handle_smart_reply(COMMENT_TEXT_QUESTION, COMMENT_ID, "question", "improvement", wc, queue)
+        handle_smart_reply(COMMENT_TEXT_QUESTION, COMMENT_ID, IntentResult("question", "high"), "improvement", wc, queue, MagicMock())
 
         assert wc.run.call_count == 3
         # First call: research
@@ -150,7 +151,7 @@ class TestQuestionFlow:
             _llm_result("Respuesta sin contexto web."),  # llm.generate
             _empty_result(),               # notion.add_comment
         ]
-        handle_smart_reply(COMMENT_TEXT_QUESTION, COMMENT_ID, "question", "system", wc, queue)
+        handle_smart_reply(COMMENT_TEXT_QUESTION, COMMENT_ID, IntentResult("question", "high"), "system", wc, queue, MagicMock())
 
         assert wc.run.call_count == 3
         posted_text = wc.run.call_args_list[2][0][1]["text"]
@@ -163,7 +164,7 @@ class TestQuestionFlow:
             Exception("Gemini down"),  # llm.generate fails
             _empty_result(),         # fallback notion.add_comment
         ]
-        handle_smart_reply(COMMENT_TEXT_QUESTION, COMMENT_ID, "question", "system", wc, queue)
+        handle_smart_reply(COMMENT_TEXT_QUESTION, COMMENT_ID, IntentResult("question", "high"), "system", wc, queue, MagicMock())
 
         # The last call should be the fallback comment
         posted_text = wc.run.call_args_list[-1][0][1]["text"]
@@ -176,7 +177,7 @@ class TestQuestionFlow:
             Exception("llm down"),
             _empty_result(),  # fallback post
         ]
-        handle_smart_reply(COMMENT_TEXT_QUESTION, COMMENT_ID, "question", "system", wc, queue)
+        handle_smart_reply(COMMENT_TEXT_QUESTION, COMMENT_ID, IntentResult("question", "high"), "system", wc, queue, MagicMock())
 
         posted_text = wc.run.call_args_list[-1][0][1]["text"]
         assert "Investigando" in posted_text
@@ -197,7 +198,7 @@ class TestTaskFlow:
             _llm_result("1. Recopilar datos\n2. Generar gráficas\n3. Publicar"),  # llm
             _empty_result(),  # notion.add_comment
         ]
-        handle_smart_reply(COMMENT_TEXT_TASK, COMMENT_ID, "task", "marketing", wc, queue)
+        handle_smart_reply(COMMENT_TEXT_TASK, COMMENT_ID, IntentResult("task", "high"), "marketing", wc, queue, MagicMock())
 
         # LLM called for plan
         assert wc.run.call_args_list[0][0][0] == "llm.generate"
@@ -223,7 +224,7 @@ class TestTaskFlow:
             Exception("llm down"),
             _empty_result(),  # fallback post
         ]
-        handle_smart_reply(COMMENT_TEXT_TASK, COMMENT_ID, "task", "marketing", wc, queue)
+        handle_smart_reply(COMMENT_TEXT_TASK, COMMENT_ID, IntentResult("task", "high"), "marketing", wc, queue, MagicMock())
 
         posted_text = wc.run.call_args_list[-1][0][1]["text"]
         assert "Tarea registrada" in posted_text
@@ -235,7 +236,7 @@ class TestTaskFlow:
 class TestInstructionFlow:
     def test_instruction_posts_confirmation(self, wc, queue):
         wc.run.return_value = _empty_result()
-        handle_smart_reply(COMMENT_TEXT_INSTRUCTION, COMMENT_ID, "instruction", "system", wc, queue)
+        handle_smart_reply(COMMENT_TEXT_INSTRUCTION, COMMENT_ID, IntentResult("instruction", "high"), "system", wc, queue, MagicMock())
 
         wc.run.assert_called_once_with("notion.add_comment", {
             "text": f"{ECHO_PREFIX} Instrucción registrada. Procesando configuración. (comment_id={COMMENT_ID[:8]}...)",
@@ -248,7 +249,7 @@ class TestInstructionFlow:
 class TestEchoFlow:
     def test_echo_posts_acknowledgment(self, wc, queue):
         wc.run.return_value = _empty_result()
-        handle_smart_reply(COMMENT_TEXT_ECHO, COMMENT_ID, "echo", "system", wc, queue)
+        handle_smart_reply(COMMENT_TEXT_ECHO, COMMENT_ID, IntentResult("echo", "high"), "system", wc, queue, MagicMock())
 
         wc.run.assert_called_once()
         posted_text = wc.run.call_args[0][1]["text"]
@@ -287,7 +288,7 @@ class TestPipelineResilience:
             _empty_result(),               # fallback comment
         ]
         # Should not raise
-        handle_smart_reply(COMMENT_TEXT_QUESTION, COMMENT_ID, "question", "system", wc, queue)
+        handle_smart_reply(COMMENT_TEXT_QUESTION, COMMENT_ID, IntentResult("question", "high"), "system", wc, queue, MagicMock())
         # Fallback should have been posted
         assert wc.run.call_count >= 2
 
@@ -318,13 +319,13 @@ class TestPollerIntegration:
         from dispatcher.notion_poller import _do_poll
         # Patch the import of smart_reply inside notion_poller
         with patch("dispatcher.notion_poller.handle_smart_reply", mock_smart):
-            _do_poll(wc, queue, r)
+            _do_poll(wc, queue, r, MagicMock())
 
         mock_smart.assert_called_once()
         args = mock_smart.call_args[0]
         assert args[0] == COMMENT_TEXT_QUESTION  # comment_text
         assert args[1] == COMMENT_ID             # comment_id
-        assert args[2] == "question"             # intent
+        assert args[2].intent == "question"             # intent
         assert args[4] is wc                     # wc
 
     @patch("dispatcher.notion_poller.handle_smart_reply")
@@ -347,6 +348,6 @@ class TestPollerIntegration:
 
         from dispatcher.notion_poller import _do_poll
         with patch("dispatcher.notion_poller.handle_smart_reply", mock_smart):
-            _do_poll(wc, queue, r)
+            _do_poll(wc, queue, r, MagicMock())
 
         mock_smart.assert_not_called()

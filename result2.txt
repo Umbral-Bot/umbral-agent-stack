@@ -1,0 +1,70 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.7, pytest-9.0.2, pluggy-1.6.0
+rootdir: C:\GitHub\umbral-agent-stack-antigravity
+plugins: anyio-4.12.1
+collected 324 items
+
+tests\test_composite_handler.py .......                                  [  2%]
+tests\test_daily_digest.py ...................................           [ 12%]
+tests\test_dashboard.py ..............                                   [ 17%]
+tests\test_dispatcher.py .......................                         [ 24%]
+tests\test_dispatcher_resilience.py ...................                  [ 30%]
+tests\test_enqueue_api.py ..................                             [ 35%]
+tests\test_hardening.py .....s............                               [ 41%]
+tests\test_intent_classifier.py .................................        [ 51%]
+tests\test_linear.py ....                                                [ 52%]
+tests\test_linear_team_router.py ...............................         [ 62%]
+tests\test_llm_handler.py ...                                            [ 63%]
+tests\test_make_webhook.py ...............................               [ 72%]
+tests\test_model_router.py ..............                                [ 77%]
+tests\test_notion_report_page.py ....                                    [ 78%]
+tests\test_observability.py .........                                    [ 81%]
+tests\test_research_handler.py ...                                       [ 82%]
+tests\test_sim_daily_report.py ...                                       [ 83%]
+tests\test_smart_reply.py ..................F.                           [ 89%]
+tests\test_task_history.py ........                                      [ 91%]
+tests\test_webhook_callback.py .....                                     [ 93%]
+tests\test_worker.py ......................                              [100%]
+
+================================== FAILURES ===================================
+____________ TestPollerIntegration.test_do_poll_calls_smart_reply _____________
+
+self = <tests.test_smart_reply.TestPollerIntegration object at 0x000001C5630B60D0>
+mock_smart = <MagicMock name='handle_smart_reply' id='1947282393136'>
+wc = <MagicMock id='1947282392464'>
+
+    @patch("dispatcher.notion_poller.handle_smart_reply")
+    def test_do_poll_calls_smart_reply(self, mock_smart, wc):
+        import fakeredis
+        r = fakeredis.FakeRedis(decode_responses=True)
+        from dispatcher.queue import TaskQueue
+        queue = TaskQueue(r)
+    
+        # Simulate a comment returned by poll
+        wc.notion_poll_comments.return_value = {
+            "comments": [
+                {
+                    "id": COMMENT_ID,
+                    "text": COMMENT_TEXT_QUESTION,
+                    "created_time": "2026-03-04T10:00:00Z",
+                }
+            ]
+        }
+    
+        from dispatcher.notion_poller import _do_poll
+        # Patch the import of smart_reply inside notion_poller
+        with patch("dispatcher.notion_poller.handle_smart_reply", mock_smart):
+            _do_poll(wc, queue, r, MagicMock())
+    
+        mock_smart.assert_called_once()
+        args = mock_smart.call_args[0]
+        assert args[0] == COMMENT_TEXT_QUESTION  # comment_text
+        assert args[1] == COMMENT_ID             # comment_id
+>       assert args[2] == "question"             # intent
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert IntentResult(intent='question', confidence='high', run_at=None, recurrence=None) == 'question'
+
+tests\test_smart_reply.py:317: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_smart_reply.py::TestPollerIntegration::test_do_poll_calls_smart_reply
+================== 1 failed, 322 passed, 1 skipped in 2.72s ===================

@@ -101,3 +101,37 @@ class TestLoadQuotaPolicy:
         assert "coding" in routing
         assert routing["coding"]["preferred"] == "chatgpt_plus"
         assert "claude_pro" in providers or len(providers) >= 0
+
+
+class TestUmbralDefaultModel:
+    """Tests for UMBRAL_DEFAULT_MODEL env var override."""
+
+    def test_default_model_overrides_preferred(self, quota_tracker, monkeypatch):
+        monkeypatch.setenv("UMBRAL_DEFAULT_MODEL", "gemini_pro")
+        router = ModelRouter(quota_tracker)
+        decision = router.select_model("coding")
+        # coding normally prefers chatgpt_plus, but override forces gemini_pro
+        assert decision.model == "gemini_pro"
+        assert decision.requires_approval is False
+
+    def test_default_model_invalid_provider_ignored(self, quota_tracker, monkeypatch):
+        monkeypatch.setenv("UMBRAL_DEFAULT_MODEL", "nonexistent_model")
+        router = ModelRouter(quota_tracker)
+        decision = router.select_model("coding")
+        # Should fall back to normal routing since override is invalid
+        assert decision.model == "chatgpt_plus"
+
+    def test_default_model_empty_string_no_effect(self, quota_tracker, monkeypatch):
+        monkeypatch.setenv("UMBRAL_DEFAULT_MODEL", "")
+        router = ModelRouter(quota_tracker)
+        decision = router.select_model("writing")
+        assert decision.model == "claude_pro"
+
+    def test_default_model_keeps_fallback_chain(self, quota_tracker, monkeypatch):
+        monkeypatch.setenv("UMBRAL_DEFAULT_MODEL", "gemini_pro")
+        router = ModelRouter(quota_tracker)
+        # If gemini_pro is restricted, fallback should still work
+        quota_state = {"gemini_pro": 0.96, "chatgpt_plus": 0.0, "claude_pro": 0.0, "copilot_pro": 0.0}
+        decision = router.select_model("coding", quota_state=quota_state)
+        # Should fall back since gemini_pro is over restrict (0.95 default for gemini)
+        assert decision.model != "gemini_pro" or decision.requires_approval is True

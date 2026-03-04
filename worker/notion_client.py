@@ -201,10 +201,14 @@ def poll_comments(
 
 
 PROVIDER_LABELS = {
-    "claude_pro": "Claude Pro",
-    "chatgpt_plus": "ChatGPT Plus",
-    "gemini_pro": "Gemini Pro",
-    "copilot_pro": "Copilot Pro",
+    "azure_foundry": "Azure Foundry (GPT-5.3 Codex)",
+    "claude_pro": "Claude Sonnet 4.6",
+    "claude_opus": "Claude Opus 4.6",
+    "claude_haiku": "Claude Haiku 4.5",
+    "gemini_pro": "Gemini Pro (customtools)",
+    "gemini_flash": "Gemini Flash",
+    "gemini_flash_lite": "Gemini Flash Lite",
+    "gemini_vertex": "Gemini Vertex 3.1 Pro",
 }
 
 

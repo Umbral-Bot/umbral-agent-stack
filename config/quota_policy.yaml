@@ -1,45 +1,98 @@
 # S4 — Política de cuotas por proveedor (doc 15)
-# Ventanas: 5h=18000, 3h=10800, diario=86400, mensual=2592000
+# Inventario real de modelos disponibles:
+#
+# Anthropic (token sesión Pro):
+#   claude-haiku-4-5, claude-opus-4-6, claude-sonnet-4-6
+#
+# OpenAI (OAuth ChatGPT Plus — solo funciona en OpenClaw, no en Worker):
+#   gpt-5.2, gpt-5.3-codex
+# Para el Worker: Azure AI Foundry es el único camino a GPT
+#
+# Google AI Studio (api-key):
+#   gemini-3.1-pro-preview-customtools (mejor), gemini-flash-latest, gemini-flash-lite-latest
+#
+# Google Vertex AI (api-key + project):
+#   gemini-3.1-pro-preview
+#
+# Azure AI Foundry (endpoint + key, en progreso):
+#   gpt-5.3-codex (deployment dedicado)
 
 providers:
+  # --- Azure AI Foundry (deployment dedicado) — PRIORIDAD 0 ---
+  azure_foundry:
+    limit_requests: 2000
+    window_seconds: 3600    # 1h
+    warn: 0.80
+    restrict: 0.95
+
+  # --- Anthropic Claude Sonnet (sesión Pro) ---
   claude_pro:
-    limit_requests: 200      # por ventana (proxy para uso 5h)
+    limit_requests: 200
     window_seconds: 18000   # 5h
     warn: 0.80
     restrict: 0.90
-  chatgpt_plus:
-    limit_requests: 300
-    window_seconds: 10800   # 3h
-    warn: 0.70
-    restrict: 0.90
+
+  # --- Anthropic Claude Opus (tareas críticas) ---
+  claude_opus:
+    limit_requests: 50
+    window_seconds: 18000   # 5h
+    warn: 0.60
+    restrict: 0.80
+
+  # --- Anthropic Claude Haiku (rápido/económico) ---
+  claude_haiku:
+    limit_requests: 500
+    window_seconds: 18000   # 5h
+    warn: 0.85
+    restrict: 0.95
+
+  # --- Google Gemini Pro (AI Studio, customtools — mejor Gemini) ---
   gemini_pro:
     limit_requests: 500
     window_seconds: 86400   # 1 día
     warn: 0.80
     restrict: 0.95
-  copilot_pro:
-    limit_requests: 400
-    window_seconds: 2592000 # 30 días
-    warn: 0.70
-    restrict: 0.85
 
-# Routing por task_type (preferido + fallback chain)
+  # --- Google Gemini Flash ---
+  gemini_flash:
+    limit_requests: 1000
+    window_seconds: 86400
+    warn: 0.85
+    restrict: 0.97
+
+  # --- Google Gemini Flash Lite ---
+  gemini_flash_lite:
+    limit_requests: 2000
+    window_seconds: 86400
+    warn: 0.90
+    restrict: 0.98
+
+  # --- Google Vertex (gemini-3.1-pro-preview) ---
+  gemini_vertex:
+    limit_requests: 300
+    window_seconds: 86400
+    warn: 0.80
+    restrict: 0.95
+
 routing:
   coding:
-    preferred: chatgpt_plus
-    fallback_chain: [copilot_pro, claude_pro, gemini_pro]
+    preferred: claude_pro
+    fallback_chain: [gemini_pro, azure_foundry, gemini_flash]
+  general:
+    preferred: claude_pro
+    fallback_chain: [gemini_pro, azure_foundry, gemini_flash]
   ms_stack:
-    preferred: copilot_pro
-    fallback_chain: [chatgpt_plus, claude_pro, gemini_pro]
+    preferred: claude_pro
+    fallback_chain: [gemini_pro, azure_foundry]
   writing:
     preferred: claude_pro
-    fallback_chain: [chatgpt_plus, gemini_pro]
+    fallback_chain: [claude_opus, gemini_pro]
   research:
     preferred: gemini_pro
-    fallback_chain: [chatgpt_plus, claude_pro]
+    fallback_chain: [gemini_vertex, claude_pro, gemini_flash]
   critical:
-    preferred: claude_pro
-    fallback_chain: [chatgpt_plus]
-  general:
-    preferred: chatgpt_plus
+    preferred: claude_opus
     fallback_chain: [claude_pro, gemini_pro]
+  light:
+    preferred: gemini_flash
+    fallback_chain: [gemini_flash_lite, claude_haiku, gemini_pro]

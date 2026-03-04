@@ -1,19 +1,45 @@
 """
 S7 — Sanitización de inputs.
 
-Validaciones básicas para prevenir abuse e injection.
+Validaciones para prevenir abuse e injection.
+Incluye detección de patrones de inyección, truncado de campos largos,
+y validación de tipos esperados.
 """
 
 import json
+import logging
 import re
 from typing import Any, Dict
+
+logger = logging.getLogger("worker.sanitize")
 
 # Límites
 MAX_TASK_NAME_LEN = 128
 MAX_INPUT_JSON_BYTES = 256 * 1024  # 256 KB
-MAX_STRING_VALUE_LEN = 4096
+MAX_STRING_VALUE_LEN = 10_000      # per-field max chars
 ALLOWED_TASK_PATTERN = re.compile(r"^[a-zA-Z0-9_.\-]+$")
 ALLOWED_FLOW_PATTERN = re.compile(r"^[a-zA-Z0-9_\-]+$")
+
+# Injection patterns
+_INJECTION_PATTERNS = [
+    re.compile(r";\s*(rm|del|drop|exec|system|eval)\b", re.IGNORECASE),
+    re.compile(r"\.\./\.\./"),                          # path traversal
+    re.compile(r"<script\b", re.IGNORECASE),            # XSS
+    re.compile(r"(\bUNION\b.*\bSELECT\b)", re.IGNORECASE),  # SQL injection
+    re.compile(r"\$\{.*\}"),                             # template injection
+    re.compile(r"`[^`]+`"),                              # command substitution
+]
+
+
+def _check_injection(value: str, field: str) -> None:
+    """Log WARNING if value matches known injection patterns."""
+    for pat in _INJECTION_PATTERNS:
+        if pat.search(value):
+            logger.warning(
+                "Possible injection attempt in field %r: matched pattern %s (truncated value: %.100r)",
+                field, pat.pattern, value[:100],
+            )
+            return
 
 
 def sanitize_task_name(task: str) -> str:
@@ -38,14 +64,37 @@ def sanitize_pad_flow_name(flow_name: str) -> str:
     return flow_name.strip()
 
 
+def _sanitize_value(value: Any, path: str = "root") -> Any:
+    """
+    Recursively sanitize a value:
+      - Truncate strings > MAX_STRING_VALUE_LEN
+      - Check strings for injection patterns
+      - Recurse into dicts and lists
+    Returns the sanitized value.
+    """
+    if isinstance(value, str):
+        _check_injection(value, path)
+        if len(value) > MAX_STRING_VALUE_LEN:
+            logger.warning("Truncating field %r from %d to %d chars", path, len(value), MAX_STRING_VALUE_LEN)
+            return value[:MAX_STRING_VALUE_LEN]
+        return value
+    if isinstance(value, dict):
+        return {k: _sanitize_value(v, f"{path}.{k}") for k, v in value.items()}
+    if isinstance(value, list):
+        return [_sanitize_value(v, f"{path}[{i}]") for i, v in enumerate(value)]
+    # primitives (int, float, bool, None) pass through
+    return value
+
+
 def sanitize_input(input_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Valida tamaño y estructura del input. No modifica contenido.
-    Raise ValueError si excede límites.
+    Valida tamaño y estructura del input. Trunca strings demasiado largos.
+    Detecta y loguea posibles intentos de inyección.
+    Raise ValueError si excede límites globales.
     """
     if not isinstance(input_data, dict):
         raise ValueError("input must be a JSON object")
     raw = json.dumps(input_data, default=str)
     if len(raw.encode("utf-8")) > MAX_INPUT_JSON_BYTES:
         raise ValueError(f"input too large (max {MAX_INPUT_JSON_BYTES // 1024} KB)")
-    return input_data
+    return _sanitize_value(input_data, "input")

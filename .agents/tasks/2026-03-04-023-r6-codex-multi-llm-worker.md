@@ -4,7 +4,7 @@ title: "Multi-LLM Worker — Soporte OpenAI + Anthropic + Gemini"
 assigned_to: codex
 branch: feat/codex-multi-llm
 round: 6
-status: assigned
+status: done
 created: 2026-03-04
 ---
 
@@ -81,3 +81,27 @@ Actualizar `tests/test_llm_handler.py`:
 ## Entregable
 
 PR a `main` desde `feat/codex-multi-llm` con todos los tests pasando.
+
+## Log
+
+### [codex] 2026-03-04 09:29
+- Refactor completo de `worker/tasks/llm.py` a arquitectura multi-provider con deteccion por modelo (`gemini`, `openai`, `anthropic`) y fallback default a Gemini.
+- Agregada compatibilidad backward para `selected_model` (ademas de `model`) y resolucion de aliases de routing (`gemini_pro`, `chatgpt_plus`, `claude_pro`, `copilot_pro`) a modelos reales de API.
+- Implementados providers:
+  - OpenAI (`/v1/chat/completions`, header `Authorization: Bearer ...`)
+  - Anthropic (`/v1/messages`, headers `x-api-key` + `anthropic-version`)
+  - Gemini existente mantenido como provider dedicado
+- Mensajes de error claros por API keys faltantes:
+  - `OPENAI_API_KEY not configured`
+  - `ANTHROPIC_API_KEY not configured`
+- Tests actualizados en `tests/test_llm_handler.py`:
+  - OpenAI success mock
+  - Anthropic success mock
+  - `_detect_provider` parametrizado
+  - errores por API key faltante
+- Docs actualizadas:
+  - `.env.example` (agregadas `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`)
+  - `docs/07-worker-api-contract.md` (campo `model`, proveedores/modelos soportados, errores de configuracion)
+- Tests ejecutados:
+  - `python -m pytest tests/test_llm_handler.py -v -p no:cacheprovider` -> 13 passed
+  - `python -m pytest tests/ -q -p no:cacheprovider` -> 376 passed, 1 skipped

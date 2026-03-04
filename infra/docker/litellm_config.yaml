@@ -7,38 +7,54 @@
 # ============================================================
 
 model_list:
-  # --- OpenAI ---
-  - model_name: gpt-4
+  # ============================================================
+  # Modelos disponibles (actualizados 2026-03-04)
+  # Proveedores activos: OpenAI Codex, Anthropic Pro, Google AI Studio
+  # ============================================================
+
+  # --- OpenAI Codex (ChatGPT Plus / GitHub Models OAuth) — PRIORIDAD 1 ---
+  - model_name: openai_codex
     litellm_params:
-      model: openai/gpt-4
-      api_key: os.environ/OPENAI_API_KEY
-
-  # --- Codex ---
-  # TODO: Verificar nombre de modelo exacto para Codex 5.3
-  - model_name: codex
+      model: openai/gpt-5.3-codex
+      api_key: os.environ/GITHUB_TOKEN          # vía GitHub Models
+      api_base: https://models.inference.ai.azure.com
+  - model_name: gpt_4o
     litellm_params:
-      model: openai/openai-codex/gpt-5.3-codex
-      api_key: os.environ/OPENAI_API_KEY
+      model: openai/gpt-4o
+      api_key: os.environ/GITHUB_TOKEN
+      api_base: https://models.inference.ai.azure.com
 
-  # --- Anthropic (opcional) ---
-  # - model_name: claude-sonnet
-  #   litellm_params:
-  #     model: anthropic/claude-sonnet-4-20250514
-  #     api_key: os.environ/ANTHROPIC_API_KEY
+  # --- Anthropic (Pro subscription: sonnet + opus + haiku) ---
+  - model_name: claude_pro
+    litellm_params:
+      model: anthropic/claude-sonnet-4-6
+      api_key: os.environ/ANTHROPIC_API_KEY
+  - model_name: claude_opus
+    litellm_params:
+      model: anthropic/claude-opus-4-6
+      api_key: os.environ/ANTHROPIC_API_KEY
+  - model_name: claude_haiku
+    litellm_params:
+      model: anthropic/claude-haiku-4-5
+      api_key: os.environ/ANTHROPIC_API_KEY
 
-  # --- Google Gemini (Google AI Studio) ---
-  # Usamos GOOGLE_API_KEY / GOOGLE_API_KEY_NANO desde el entorno.
-  # Pro principal (3.1 customtools) — mapeado desde gemini_pro en ModelRouter.
+  # --- Google Gemini (Google AI Studio + Vertex) ---
   - model_name: gemini_pro
     litellm_params:
-      # Ver nombres reales de modelo en OpenClaw / AI Studio
       model: google/gemini-3.1-pro-preview-customtools
       api_key: os.environ/GOOGLE_API_KEY
-
-  # Flash rápido (por defecto cuando pedimos \"Gemini rápido\")
+  - model_name: gemini_pro_vertex
+    litellm_params:
+      model: vertex_ai/gemini-3.1-pro-preview
+      vertex_project: os.environ/GOOGLE_CLOUD_PROJECT_RICK_UMBRAL
+      vertex_location: us-central1
   - model_name: gemini_flash
     litellm_params:
       model: google/gemini-flash-latest
+      api_key: os.environ/GOOGLE_API_KEY
+  - model_name: gemini_flash_lite
+    litellm_params:
+      model: google/gemini-flash-lite-latest
       api_key: os.environ/GOOGLE_API_KEY
 
 litellm_settings:

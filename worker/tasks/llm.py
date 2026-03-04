@@ -34,7 +34,7 @@ def handle_llm_generate(input_data: Dict[str, Any]) -> Dict[str, Any]:
     if not prompt:
         raise ValueError("'prompt' is required and cannot be empty")
 
-    model = input_data.get("model", "gemini-2.0-flash")
+    model = input_data.get("model", "gemini-2.5-flash")
     max_tokens = int(input_data.get("max_tokens", 1024))
     temperature = float(input_data.get("temperature", 0.7))
     system_prompt = input_data.get("system", "")

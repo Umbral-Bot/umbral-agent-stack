@@ -26,7 +26,7 @@
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|
-| 047 | Skills Personales desde Google Drive — Docente AEC4.0, LinkedIn Content, Marca Personal DM | cursor-agent-cloud-6 | ✅ done |
+| 042 | Skills BIM/AEC — Revit, Dynamo, Rhino, Navisworks, ACC, KUKA | cursor-agent-cloud-1 | ✅ done (PR #52) |
 
 ## Ronda 9 — Completada ✅
 

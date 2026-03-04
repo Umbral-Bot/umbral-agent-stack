@@ -4,7 +4,7 @@ title: "OpenClaw Skills: Notion + Windows"
 assigned_to: codex
 branch: feat/codex-skills-notion-windows
 round: 9
-status: assigned
+status: done
 created: 2026-03-04
 ---
 
@@ -83,3 +83,13 @@ gh pr create --title "feat: openclaw skills — notion + windows" --body "SKILL.
 - 2 SKILL.md creados con frontmatter YAML válido
 - Formato consistente con `skills/figma/SKILL.md`
 - Todas las tasks listadas con input/output documentado
+
+## Log
+
+### [codex] 2026-03-04 17:43
+- Creado `openclaw/workspace-templates/skills/notion/SKILL.md` con frontmatter YAML y documentacion completa de tasks `notion.*` (inputs, ejemplos JSON, outputs, triggers, requisitos y referencias).
+- Creado `openclaw/workspace-templates/skills/windows/SKILL.md` con frontmatter YAML y documentacion completa de tasks `windows.*` y `windows.fs.*` (inputs, ejemplos JSON, outputs, triggers, requisitos y notas de VM Windows).
+- Formato tomado de referencia `openclaw/workspace-templates/skills/figma/SKILL.md`.
+- Validacion de YAML ejecutada:
+  - `python -c "import yaml; yaml.safe_load(open('openclaw/workspace-templates/skills/notion/SKILL.md', encoding='utf-8').read().split('---')[1]); print('notion frontmatter ok')"`
+  - `python -c "import yaml; yaml.safe_load(open('openclaw/workspace-templates/skills/windows/SKILL.md', encoding='utf-8').read().split('---')[1]); print('windows frontmatter ok')"`

@@ -4,7 +4,7 @@ title: "Granola → Notion Pipeline: transcripciones, compromisos, proactividad 
 assigned_to: cursor-agent-cloud-7
 branch: feat/cloud7-granola-notion-pipeline
 round: 11
-status: assigned
+status: done
 created: 2026-03-04
 ---
 
@@ -154,3 +154,26 @@ gh pr create \
 - `skills/granola-pipeline/SKILL.md` válido
 - Tests pasan
 - Variables de entorno documentadas en `.env.example`
+
+## Log
+
+### [cursor-agent-cloud-7] 2026-03-04
+
+**Investigación Granola:**
+- Plan básico NO tiene API, webhook, ni export automático
+- Cache local (cache-v3.json) ya no incluye transcripts completos desde Feb 2026
+- Arquitectura recomendada: VM File Watcher (Opción A) — David copia notas a carpeta monitoreada
+
+**Archivos creados:**
+- `docs/50-granola-notion-pipeline.md` — investigación + arquitectura + setup
+- `scripts/vm/granola_watcher.py` — file watcher con watchdog + fallback polling
+- `worker/tasks/granola.py` — 2 handlers: `granola.process_transcript` + `granola.create_followup`
+- `openclaw/workspace-templates/skills/granola-pipeline/SKILL.md` — skill con triggers y proactividad
+- `tests/test_granola.py` — 32 tests unitarios
+
+**Archivos modificados:**
+- `worker/tasks/__init__.py` — registrar 2 nuevos handlers
+- `worker/config.py` — agregar `ENLACE_NOTION_USER_ID`
+- `.env.example` — agregar variables Granola
+
+**Tests:** 32/32 passed. Suite completa: 652 passed (49 pre-existentes fallan por rate limiting, sin relación).

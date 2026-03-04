@@ -24,6 +24,7 @@ logger = logging.getLogger("dispatcher.model_router")
 
 _PROVIDER_ENV_REQUIREMENTS: Dict[str, List[str]] = {
     "azure_foundry": ["AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_API_KEY"],
+    "openclaw_proxy": ["OPENCLAW_GATEWAY_TOKEN"],
     "claude_pro":    ["ANTHROPIC_API_KEY"],
     "claude_opus":   ["ANTHROPIC_API_KEY"],
     "claude_haiku":  ["ANTHROPIC_API_KEY"],

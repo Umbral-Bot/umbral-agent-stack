@@ -15,20 +15,42 @@ import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 from .quota_tracker import QuotaTracker
 
 logger = logging.getLogger("dispatcher.model_router")
 
+
+_PROVIDER_ENV_REQUIREMENTS: Dict[str, List[str]] = {
+    "azure_foundry": ["AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_API_KEY"],
+    "claude_pro":    ["ANTHROPIC_API_KEY"],
+    "claude_opus":   ["ANTHROPIC_API_KEY"],
+    "claude_haiku":  ["ANTHROPIC_API_KEY"],
+    "gemini_pro":    ["GOOGLE_API_KEY"],
+    "gemini_flash":  ["GOOGLE_API_KEY"],
+    "gemini_flash_lite": ["GOOGLE_API_KEY"],
+    "gemini_vertex": ["GOOGLE_API_KEY_RICK_UMBRAL", "GOOGLE_CLOUD_PROJECT_RICK_UMBRAL"],
+}
+
+
+def get_configured_providers() -> Set[str]:
+    """Return providers whose required env vars are all set (non-empty)."""
+    available: Set[str] = set()
+    for provider, env_vars in _PROVIDER_ENV_REQUIREMENTS.items():
+        if all(os.environ.get(v, "").strip() for v in env_vars):
+            available.add(provider)
+    return available
+
 # Default si no hay YAML (doc 15)
 DEFAULT_ROUTING = {
-    "coding": {"preferred": "chatgpt_plus", "fallback_chain": ["copilot_pro", "claude_pro", "gemini_pro"]},
-    "ms_stack": {"preferred": "copilot_pro", "fallback_chain": ["chatgpt_plus", "claude_pro", "gemini_pro"]},
-    "writing": {"preferred": "claude_pro", "fallback_chain": ["chatgpt_plus", "gemini_pro"]},
-    "research": {"preferred": "gemini_pro", "fallback_chain": ["chatgpt_plus", "claude_pro"]},
-    "critical": {"preferred": "claude_pro", "fallback_chain": ["chatgpt_plus"]},
-    "general": {"preferred": "chatgpt_plus", "fallback_chain": ["claude_pro", "gemini_pro"]},
+    "coding": {"preferred": "claude_pro", "fallback_chain": ["gemini_pro", "azure_foundry", "gemini_flash"]},
+    "ms_stack": {"preferred": "claude_pro", "fallback_chain": ["gemini_pro", "azure_foundry"]},
+    "writing": {"preferred": "claude_pro", "fallback_chain": ["claude_opus", "gemini_pro"]},
+    "research": {"preferred": "gemini_pro", "fallback_chain": ["gemini_vertex", "claude_pro", "gemini_flash"]},
+    "critical": {"preferred": "claude_opus", "fallback_chain": ["claude_pro", "gemini_pro"]},
+    "general": {"preferred": "claude_pro", "fallback_chain": ["gemini_pro", "azure_foundry", "gemini_flash"]},
+    "light": {"preferred": "gemini_flash", "fallback_chain": ["gemini_flash_lite", "claude_haiku", "gemini_pro"]},
 }
 
 HIGH_PRIORITY_TASK_TYPES = ("critical",)  # pueden usar preferido hasta restrict
@@ -90,9 +112,14 @@ class ModelRouter:
     def __init__(self, quota_tracker: QuotaTracker):
         self.quota = quota_tracker
         self.routing, self.provider_config = _load_quota_policy()
+        self._configured = get_configured_providers()
         self._default_model = os.environ.get("UMBRAL_DEFAULT_MODEL", "").strip() or None
         if self._default_model:
             logger.info("UMBRAL_DEFAULT_MODEL override active: %s", self._default_model)
+        logger.info("Configured providers: %s", sorted(self._configured) or "(none detected)")
+        unconfigured = set(self.provider_config.keys()) - self._configured
+        if unconfigured:
+            logger.info("Unconfigured providers (will be skipped): %s", sorted(unconfigured))
 
     def _thresholds(self, provider: str) -> tuple[float, float]:
         warn = 0.8
@@ -115,7 +142,7 @@ class ModelRouter:
         if task_type not in self.routing:
             task_type = "general"
         route = self.routing[task_type]
-        preferred = route.get("preferred", "chatgpt_plus")
+        preferred = route.get("preferred", "claude_pro")
         fallback_chain: List[str] = route.get("fallback_chain") or []
 
         # UMBRAL_DEFAULT_MODEL override: swap preferred, keep original as first fallback
@@ -130,6 +157,19 @@ class ModelRouter:
                     self._default_model,
                 )
 
+        # Filter out unconfigured providers (missing env vars)
+        configured = self._configured
+        if preferred not in configured:
+            for fb in fallback_chain:
+                if fb in configured:
+                    logger.info(
+                        "Preferred '%s' not configured, promoting '%s' for task_type '%s'",
+                        preferred, fb, task_type,
+                    )
+                    preferred = fb
+                    break
+        fallback_chain = [m for m in fallback_chain if m in configured and m != preferred]
+
         if quota_state is None:
             quota_state = self.quota.get_all_quota_states()
 
@@ -141,13 +181,11 @@ class ModelRouter:
         if state_preferred < restrict_p:
             if task_type in HIGH_PRIORITY_TASK_TYPES:
                 return ModelSelectionDecision(model=preferred, reason="high_priority_override")
-            # Probar fallback
             for model in fallback_chain:
                 s = quota_state.get(model, 0.0)
                 _, r = self._thresholds(model)
                 if s < r:
                     return ModelSelectionDecision(model=model, reason="fallback_under_restrict")
-            # Ningún fallback bajo restrict → usar preferido igual (degradado)
             return ModelSelectionDecision(model=preferred, reason="fallback_over_restrict_use_preferred")
 
         # Preferido >= restrict

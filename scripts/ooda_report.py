@@ -85,7 +85,8 @@ def _report_from_redis() -> Dict[str, Any]:
             break
 
     quota_states = {}
-    for provider in ("claude_pro", "chatgpt_plus", "gemini_pro", "copilot_pro"):
+    for provider in ("azure_foundry", "claude_pro", "claude_opus", "claude_haiku",
+                      "gemini_pro", "gemini_flash", "gemini_flash_lite", "gemini_vertex"):
         used = r.get(f"umbral:quota:{provider}:used")
         if used is not None:
             quota_states[provider] = int(used)

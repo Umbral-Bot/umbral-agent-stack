@@ -43,8 +43,7 @@ class TestQuotaStatus:
             assert "timestamp" in data
             assert "providers" in data
             
-            # Since the config has chatgpt_plus, gemini_pro, claude_pro, copilot_pro
-            # they should be listed, and usage should be 0 because redis is empty
+            # Providers from quota_policy.yaml should be listed with 0 usage
             assert "gemini_pro" in data["providers"]
             assert data["providers"]["gemini_pro"]["used"] == 0
             assert data["providers"]["gemini_pro"]["status"] == "ok"

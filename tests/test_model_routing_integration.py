@@ -41,22 +41,33 @@ def redis_client():
 
 @pytest.fixture
 def provider_config():
+    """Alineado con config/quota_policy.yaml."""
     return {
-        "azure_foundry": {"limit_requests": 2000, "window_seconds": 3600},
-        "openai_codex":  {"limit_requests": 200,  "window_seconds": 10800},
-        "claude_pro":    {"limit_requests": 100,  "window_seconds": 18000},
-        "claude_opus":   {"limit_requests": 50,   "window_seconds": 18000},
-        "gemini_pro":    {"limit_requests": 200,  "window_seconds": 86400},
-        "gemini_flash":  {"limit_requests": 500,  "window_seconds": 86400},
-        "copilot_pro":   {"limit_requests": 80,   "window_seconds": 2592000},
-        # Legacy alias
-        "chatgpt_plus":  {"limit_requests": 150,  "window_seconds": 10800},
+        "azure_foundry": {"limit_requests": 2000, "window_seconds": 3600, "warn": 0.80, "restrict": 0.95},
+        "claude_pro": {"limit_requests": 200, "window_seconds": 18000, "warn": 0.80, "restrict": 0.90},
+        "claude_opus": {"limit_requests": 50, "window_seconds": 18000, "warn": 0.60, "restrict": 0.80},
+        "claude_haiku": {"limit_requests": 500, "window_seconds": 18000, "warn": 0.85, "restrict": 0.95},
+        "gemini_pro": {"limit_requests": 500, "window_seconds": 86400, "warn": 0.80, "restrict": 0.95},
+        "gemini_flash": {"limit_requests": 1000, "window_seconds": 86400, "warn": 0.85, "restrict": 0.97},
+        "gemini_flash_lite": {"limit_requests": 2000, "window_seconds": 86400, "warn": 0.90, "restrict": 0.98},
+        "gemini_vertex": {"limit_requests": 300, "window_seconds": 86400, "warn": 0.80, "restrict": 0.95},
     }
 
 
 @pytest.fixture
 def quota_tracker(redis_client, provider_config):
     return QuotaTracker(redis_client, provider_config)
+
+
+@pytest.fixture(autouse=True)
+def _set_provider_env_vars(monkeypatch):
+    """Simula que los providers principales están configurados."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
+    monkeypatch.setenv("GOOGLE_API_KEY", "goog-test")
+    monkeypatch.setenv("GOOGLE_API_KEY_RICK_UMBRAL", "goog-vertex-test")
+    monkeypatch.setenv("GOOGLE_CLOUD_PROJECT_RICK_UMBRAL", "proj-test")
+    monkeypatch.delenv("AZURE_OPENAI_ENDPOINT", raising=False)
+    monkeypatch.delenv("AZURE_OPENAI_API_KEY", raising=False)
 
 
 @pytest.fixture
@@ -83,7 +94,10 @@ def _make_envelope(task: str, task_type: str = "general", **extra_input):
 class TestProviderModelMap:
     def test_all_providers_have_mapping(self):
         """Todos los providers activos deben tener mapping."""
-        expected = {"azure_foundry", "openai_codex", "claude_pro", "claude_opus", "gemini_pro", "gemini_flash"}
+        expected = {
+            "azure_foundry", "claude_pro", "claude_opus", "claude_haiku",
+            "gemini_pro", "gemini_flash", "gemini_flash_lite", "gemini_vertex",
+        }
         assert expected.issubset(set(PROVIDER_MODEL_MAP.keys()))
 
     def test_model_strings_are_not_empty(self):
@@ -92,11 +106,12 @@ class TestProviderModelMap:
 
     def test_known_mappings(self):
         assert PROVIDER_MODEL_MAP["azure_foundry"] == "gpt-5.3-codex"
-        assert PROVIDER_MODEL_MAP["openai_codex"] == "gpt-5.3-codex"
         assert PROVIDER_MODEL_MAP["claude_pro"] == "claude-sonnet-4-6"
         assert PROVIDER_MODEL_MAP["claude_opus"] == "claude-opus-4-6"
+        assert PROVIDER_MODEL_MAP["claude_haiku"] == "claude-haiku-4-5"
         assert PROVIDER_MODEL_MAP["gemini_pro"] == "gemini-3.1-pro-preview-customtools"
         assert PROVIDER_MODEL_MAP["gemini_flash"] == "gemini-flash-latest"
+        assert PROVIDER_MODEL_MAP["gemini_flash_lite"] == "gemini-flash-lite-latest"
 
 
 # ---------------------------------------------------------------------------
@@ -173,7 +188,10 @@ class TestModelInjection:
 
     def test_llm_task_blocked_when_quota_exceeded(self, quota_tracker, model_router):
         """Force all providers to 100% quota → requires_approval for LLM tasks."""
-        all_providers = ("azure_foundry", "openai_codex", "claude_pro", "claude_opus", "gemini_pro", "gemini_flash", "copilot_pro")
+        all_providers = (
+            "azure_foundry", "claude_pro", "claude_opus", "claude_haiku",
+            "gemini_pro", "gemini_flash", "gemini_flash_lite", "gemini_vertex",
+        )
         for provider in all_providers:
             cfg = quota_tracker.config.get(provider, {})
             limit = cfg.get("limit_requests", 100)
@@ -187,7 +205,10 @@ class TestModelInjection:
 
     def test_non_llm_task_not_blocked_even_if_quota_exceeded(self, quota_tracker, model_router):
         """Non-LLM tasks should proceed even when quota is exceeded."""
-        all_providers = ("azure_foundry", "openai_codex", "claude_pro", "claude_opus", "gemini_pro", "gemini_flash", "copilot_pro")
+        all_providers = (
+            "azure_foundry", "claude_pro", "claude_opus", "claude_haiku",
+            "gemini_pro", "gemini_flash", "gemini_flash_lite", "gemini_vertex",
+        )
         for provider in all_providers:
             cfg = quota_tracker.config.get(provider, {})
             limit = cfg.get("limit_requests", 100)
@@ -209,9 +230,8 @@ class TestQuotaPostExecution:
     def test_record_usage_after_execution(self, quota_tracker, model_router):
         """After successful execution, record_usage should increment quota."""
         decision = model_router.select_model("coding")
-        selected = decision.model  # openai_codex
+        selected = decision.model  # claude_pro (coding preferred)
 
-        # openai_codex is in config (limit=200); use explicitly to ensure increment
         if selected not in quota_tracker.config:
             pytest.skip(f"{selected} not in test provider_config")
 
@@ -223,13 +243,12 @@ class TestQuotaPostExecution:
 
     def test_quota_affects_subsequent_routing(self, quota_tracker, model_router):
         """Pushing preferred model past warn should trigger fallback for non-critical."""
-        # coding prefers azure_foundry (limit=2000, warn=0.80 → 1600 requests)
-        for _ in range(1650):
-            quota_tracker.record_usage("azure_foundry")
+        # coding prefers claude_pro (limit=200, warn=0.80 → 160 requests)
+        for _ in range(165):
+            quota_tracker.record_usage("claude_pro")
 
         decision = model_router.select_model("coding")
-        # Should fall back since azure_foundry is past warn
-        assert decision.model != "azure_foundry" or decision.reason != "under_quota"
+        assert decision.model != "claude_pro" or decision.reason != "under_quota"
 
 
 # ---------------------------------------------------------------------------
@@ -239,24 +258,24 @@ class TestQuotaPostExecution:
 class TestFallbackRouting:
     def test_fallback_when_preferred_past_warn(self, quota_tracker, model_router):
         """When preferred is past warn threshold, use fallback chain."""
-        # writing prefers claude_pro (limit=100, warn=0.8 → 80 requests)
-        for _ in range(85):
+        # writing prefers claude_pro (limit=200, warn=0.8 → 160 requests)
+        for _ in range(165):
             quota_tracker.record_usage("claude_pro")
 
         decision = model_router.select_model("writing")
-        # writing fallback=[azure_foundry, openai_codex, gemini_pro]
-        assert decision.model in ("azure_foundry", "openai_codex", "gemini_pro")
+        # writing fallback=[claude_opus, gemini_pro] (azure_foundry not configured)
+        assert decision.model in ("claude_opus", "gemini_pro")
         assert "fallback" in decision.reason
 
     def test_fallback_chain_skips_restricted_models(self, quota_tracker, model_router):
-        """If first fallback is also restricted, try next in chain."""
-        # writing: preferred=claude_pro, fallback=[azure_foundry, openai_codex, gemini_pro]
-        # Restrict claude_pro (95/100 > 90%) and azure_foundry (1910/2000=95.5% > 95%)
-        for _ in range(95):
+        """If preferred and first fallback are restricted, try next in chain."""
+        # writing: preferred=claude_pro, fallback=[claude_opus, azure_foundry, gemini_pro]
+        # Restrict claude_pro (restrict=0.90 → 180/200) AND claude_opus (restrict=0.80 → 40/50)
+        for _ in range(181):
             quota_tracker.record_usage("claude_pro")
-        for _ in range(1910):
-            quota_tracker.record_usage("azure_foundry")
+        for _ in range(41):
+            quota_tracker.record_usage("claude_opus")
 
         decision = model_router.select_model("writing")
-        # Should skip azure_foundry and end up on openai_codex or gemini_pro
-        assert decision.model in ("openai_codex", "gemini_pro")
+        # Should skip claude_pro and claude_opus → falls to gemini_pro
+        assert decision.model == "gemini_pro"

@@ -14,7 +14,7 @@ def test_build_visual_report_data():
         "timestamp": "2026-03-04T14:00:00Z",
         "providers": {
             "gemini_pro": {"used": 410, "limit": 500, "fraction": 0.82, "status": "warn"},
-            "chatgpt_plus": {"used": 69, "limit": 300, "fraction": 0.23, "status": "ok"},
+            "azure_foundry": {"used": 69, "limit": 300, "fraction": 0.23, "status": "ok"},
             "claude_pro": {"used": 200, "limit": 200, "fraction": 1.0, "status": "exceeded"},
             "something": {"used": 1500, "limit": 1000, "fraction": 1.5, "status": "restrict"}
         }
@@ -24,7 +24,7 @@ def test_build_visual_report_data():
     assert "gemini_pro" in report
     assert "82%" in report
     assert "WARN" in report
-    assert "chatgpt_plus" in report
+    assert "azure_foundry" in report
     assert "23%" in report
     assert "OK" in report
     assert "claude_pro" in report

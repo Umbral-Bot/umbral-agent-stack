@@ -20,10 +20,22 @@
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|
-| 2026-03-04-001 | Hackathon: Diagnóstico completo + script + fixes | cursor | 🔄 in_progress |
-| 2026-03-04-002 | Hackathon: Verificar/activar infraestructura VPS | codex | 📋 assigned |
+| 2026-03-04-001 | Hackathon: Diagnóstico completo + script + fixes | cursor | ✅ done |
+| 2026-03-04-002 | Hackathon: Verificar/activar infraestructura VPS | cursor | ✅ done (VPS OK, VM red caída) |
 | 2026-03-04-003 | Hackathon: Mejoras de código — Poller inteligente + docs | antigravity | 📋 assigned |
 | 2026-03-04-004 | Hackathon: Integraciones — LiteLLM, cuotas, Notion | github-copilot | 📋 assigned |
+| 2026-03-04-005 | Hackathon: Activar OpsLogger + persistencia task store | codex | 📋 assigned |
+| 2026-03-04-006 | Hackathon: Notion Poller inteligente (clasificar+encolar) | antigravity | 📋 assigned |
+| 2026-03-04-007 | Hackathon: Conectar LLM (Gemini) al Worker | github-copilot | 📋 assigned |
+
+### Logros del hackathon (Cursor lead)
+- Flujo e2e verificado: Enqueue → Dispatcher dequeue → Worker execute → Complete
+- Dashboard cron arreglado (chmod +x + bash explícito)
+- .env limpiado (null chars, duplicados)
+- Tailscale restaurado host↔VPS
+- Control Room Notion: acceso concedido
+- Linear issues priorizados (UMB-6..10)
+- VM: red caída (APIPA), requiere reconexión manual
 
 ## Tareas anteriores (pre-hackathon)
 

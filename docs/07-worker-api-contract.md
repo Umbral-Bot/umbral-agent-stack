@@ -431,6 +431,63 @@ curl -s "http://WINDOWS_TAILSCALE_IP:8088/scheduled" \
 
 ---
 
+### `GET /providers/status` *(v0.5.0+)*
+
+Dashboard de estado de providers. Muestra qué modelos están configurados,
+su cuota actual, nombre de modelo, y a qué `task_types` enrutan como preferido.
+
+**Response (200):**
+```json
+{
+  "timestamp": "2026-03-04T14:00:00Z",
+  "configured": ["claude_pro", "gemini_pro", "gemini_flash"],
+  "unconfigured": ["azure_foundry"],
+  "providers": {
+    "claude_pro": {
+      "configured": true,
+      "model": "claude-sonnet-4-6",
+      "quota_used": 30,
+      "quota_limit": 200,
+      "quota_fraction": 0.15,
+      "quota_status": "ok",
+      "routing_preferred_for": ["coding", "general", "ms_stack", "writing"]
+    },
+    "azure_foundry": {
+      "configured": false,
+      "model": "gpt-5.3-codex",
+      "quota_used": 0,
+      "quota_limit": 2000,
+      "quota_fraction": 0.0,
+      "quota_status": "unknown",
+      "routing_preferred_for": []
+    }
+  }
+}
+```
+
+**Campos por provider:**
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `configured` | bool | `true` si las env vars requeridas están presentes |
+| `model` | string | Nombre del modelo LLM asociado |
+| `quota_used` | int | Requests usados en la ventana actual |
+| `quota_limit` | int | Límite de requests por ventana |
+| `quota_fraction` | float | Fracción de uso (0.0–1.0) |
+| `quota_status` | string | `ok`, `warn`, `restrict`, `exceeded`, `unknown` |
+| `routing_preferred_for` | list[str] | Task types que prefieren este provider |
+
+**Errores específicos:**
+- `503` — Redis no disponible
+
+**Ejemplo curl:**
+```bash
+curl -s "http://WINDOWS_TAILSCALE_IP:8088/providers/status" \
+  -H 'Authorization: Bearer $WORKER_TOKEN'
+```
+
+---
+
 ## Errores
 
 | Código | Descripción |

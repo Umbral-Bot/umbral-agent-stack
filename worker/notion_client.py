@@ -123,7 +123,7 @@ def add_comment(page_id: str | None, text: str) -> dict[str, Any]:
     Returns:
         Notion comment object (dict).
     """
-    config.require_notion()
+    config.require_notion_core()
     if page_id is None:
         page_id = config.NOTION_CONTROL_ROOM_PAGE_ID
 
@@ -160,7 +160,7 @@ def poll_comments(
     Returns:
         Dict with "comments" list and "count".
     """
-    config.require_notion()
+    config.require_notion_core()
     if page_id is None:
         page_id = config.NOTION_CONTROL_ROOM_PAGE_ID
 

@@ -22,7 +22,13 @@
 | PRs mergeados (hackathon) | 34 |
 | VM (Execution Plane) | ✅ v0.4.0 — 25 handlers — reconectada |
 
-## Ronda 9 — En curso
+## Ronda 11 — En curso
+
+| ID | Título | Asignado | Estado |
+|----|--------|----------|--------|
+| 042 | Skills BIM/AEC — Revit, Dynamo, Rhino, Navisworks, ACC, KUKA | cursor-agent-cloud-1 | ✅ done (PR #52) |
+
+## Ronda 9 — Completada ✅
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|

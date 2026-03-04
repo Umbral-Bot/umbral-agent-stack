@@ -16,18 +16,26 @@
 | PRs mergeados (hackathon) | 15 |
 | VM (Execution Plane) | 🔴 Red caída (APIPA) — requiere intervención manual |
 
-## Ronda 4 — Tareas Activas (2026-03-04)
+## Ronda 5 — Tareas Activas (2026-03-04)
 
 | ID | Título | Asignado | Rama | Estado |
 |----|--------|----------|------|--------|
-| 016 | Task History API + Redis Pagination | codex | feat/codex-task-history-api | 📋 assigned |
-| 017 | Make.com Webhook Integration — SIM Pipeline | github-copilot | feat/copilot-make-webhook | 📋 assigned |
-| 018 | Notion Result Poster (smart reply + composite) | antigravity | feat/antigravity-notion-result-poster | 📋 assigned |
+| 019 | Error Alert System — Notificaciones push de fallos | codex | feat/codex-error-alerts | 📋 assigned |
+| 020 | Team Workflow Engine — Flujos por equipo | github-copilot | feat/copilot-team-workflows | 📋 assigned |
+| 021 | Scheduled Tasks Manager — Tareas programadas via Notion | antigravity | feat/antigravity-scheduled-tasks | 📋 assigned |
 
 > Claude Code en pausa hasta que se restablezcan los créditos.
 
-### Objetivo Ronda 4
-Cerrar el loop completo: historial consultable, resultados a Make.com, reportes SIM en páginas Notion.
+### Objetivo Ronda 5
+Madurar el sistema: alertas de errores, workflows por equipo, y tareas programadas desde Notion.
+
+## Ronda 4 — Completada ✅
+
+| ID | Título | Asignado | Estado |
+|----|--------|----------|--------|
+| 016 | Task History API + Redis Pagination | codex | ✅ done (PR #21) |
+| 017 | Make.com Webhook Integration — SIM Pipeline | github-copilot | ✅ done (PR #20) |
+| 018 | Notion Result Poster (smart reply + composite) | antigravity | ✅ done (PR #22) |
 
 ## Ronda 3 — Completada ✅
 

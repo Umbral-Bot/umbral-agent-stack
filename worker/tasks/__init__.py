@@ -47,6 +47,11 @@ from .figma import (
     handle_figma_add_comment,
     handle_figma_list_comments,
 )
+from .document_generator import (
+    handle_document_create_word,
+    handle_document_create_pdf,
+    handle_document_create_presentation,
+)
 
 # Each handler: (input: dict) -> dict
 TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
@@ -83,4 +88,7 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "figma.export_image": handle_figma_export_image,
     "figma.add_comment": handle_figma_add_comment,
     "figma.list_comments": handle_figma_list_comments,
+    "document.create_word": handle_document_create_word,
+    "document.create_pdf": handle_document_create_pdf,
+    "document.create_presentation": handle_document_create_presentation,
 }

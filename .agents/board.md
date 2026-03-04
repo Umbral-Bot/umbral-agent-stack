@@ -22,7 +22,13 @@
 | PRs mergeados (hackathon) | 34 |
 | VM (Execution Plane) | ✅ v0.4.0 — 25 handlers — reconectada |
 
-## Ronda 9 — En curso
+## Ronda 11 — En curso
+
+| ID | Título | Asignado | Estado |
+|----|--------|----------|--------|
+| 049 | Skills Generación de Documentos — Word, PDF, PPT | cursor-agent-cloud-8 | ✅ done |
+
+## Ronda 9 — Completada ✅
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|

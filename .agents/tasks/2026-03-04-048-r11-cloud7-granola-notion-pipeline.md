@@ -4,7 +4,7 @@ title: "Granola → Notion Pipeline: transcripciones, compromisos, proactividad 
 assigned_to: cursor-agent-cloud-7
 branch: feat/cloud7-granola-notion-pipeline
 round: 11
-status: assigned
+status: done
 created: 2026-03-04
 ---
 

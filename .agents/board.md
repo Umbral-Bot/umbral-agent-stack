@@ -11,7 +11,7 @@
 | Protocolo inter-agentes | ✅ Activo |
 | VPS (Control Plane) | ✅ Redis + Dispatcher + Worker + 11 crons |
 | Notion Poller daemon | ✅ Corriendo (PID activo, polling cada 60s) |
-| Worker API | ✅ v0.4.0 — 27 handlers, 10+ endpoints |
+| Worker API | ✅ v0.4.0 — 29 handlers, 10+ endpoints |
 | Multi-LLM | ✅ Gemini + OpenAI + Anthropic (model routing activo) |
 | Langfuse Tracing | ✅ Integrado (graceful degradation sin keys) |
 | Rate Limiting | ✅ 60 RPM (configurable via RATE_LIMIT_RPM) |
@@ -22,7 +22,13 @@
 | PRs mergeados (hackathon) | 34 |
 | VM (Execution Plane) | ✅ v0.4.0 — 25 handlers — reconectada |
 
-## Ronda 9 — En curso
+## Ronda 11 — En curso
+
+| ID | Título | Asignado | Estado |
+|----|--------|----------|--------|
+| 048 | Granola → Notion Pipeline | cursor-agent-cloud-7 | ✅ done |
+
+## Ronda 9 — Completada ✅
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|
@@ -167,7 +173,7 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 
 ## Worker v0.4.0 — 28 handlers
 
-`ping` · `notion.*` (6) · `windows.*` (6) · `windows.fs.*` (5) · `system.*` (2) · `linear.*` (3) · `research.web` · `llm.generate` · `composite.research_report` · `make.post_webhook` · `observability.*` (2)
+`ping` · `notion.*` (6) · `windows.*` (6) · `windows.fs.*` (5) · `system.*` (2) · `linear.*` (3) · `research.web` · `llm.generate` · `composite.research_report` · `make.post_webhook` · `observability.*` (2) · `granola.*` (2)
 
 ## Pendientes explícitamente diferidos
 

@@ -1,5 +1,5 @@
 """
-Umbral Agent Stack — Worker HTTP (FastAPI) v0.3.0
+Umbral Agent Stack — Worker HTTP (FastAPI) v0.4.0
 
 Servicio worker que recibe tareas desde el VPS (OpenClaw) vía Tailscale.
 Escucha en 0.0.0.0:8088, autenticado por Bearer token.
@@ -7,7 +7,9 @@ Escucha en 0.0.0.0:8088, autenticado por Bearer token.
 Soporta:
     - TaskEnvelope v0.1 (formato completo con trazabilidad)
     - Legacy {task, input} (backward compat, se convierte a envelope)
-    - GET /tasks/{task_id} para consultar estado de tareas
+    - POST /enqueue para encolar tareas vía Redis (servicios externos)
+    - GET /task/{task_id}/status para consultar estado desde Redis
+    - GET /tasks/{task_id} para consultar estado in-memory
 
 Uso:
     # Dev
@@ -17,14 +19,18 @@ Uso:
     Ver scripts/setup-openclaw-service.ps1
 """
 
+import json
 import logging
+import os
 import time
+import uuid
 from collections import OrderedDict
 from datetime import datetime, timezone
-from typing import Any, Dict, Union
+from typing import Any, Dict, Optional, Union
 
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
 
 from .config import WORKER_TOKEN
 from .rate_limit import check_rate_limit
@@ -57,6 +63,43 @@ else:
 
 logger.info("Registered tasks: %s", list(TASK_HANDLERS.keys()))
 
+
+# ---------------------------------------------------------------------------
+# Redis connection (lazy, for /enqueue and /task/{id}/status)
+# ---------------------------------------------------------------------------
+_redis_client = None
+
+
+def _get_redis():
+    """Lazy Redis client. Returns None if redis is unavailable."""
+    global _redis_client
+    if _redis_client is not None:
+        return _redis_client
+    try:
+        import redis as redis_lib
+        redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+        _redis_client = redis_lib.Redis.from_url(redis_url, decode_responses=True)
+        _redis_client.ping()
+        logger.info("Redis connected for /enqueue API (%s)", redis_url)
+        return _redis_client
+    except Exception as e:
+        logger.warning("Redis not available for /enqueue: %s", e)
+        _redis_client = None
+        return None
+
+
+# ---------------------------------------------------------------------------
+# Pydantic models for /enqueue
+# ---------------------------------------------------------------------------
+
+
+class EnqueueRequest(BaseModel):
+    """Request body for POST /enqueue."""
+    task: str
+    team: str = "system"
+    task_type: str = "general"
+    input: Dict[str, Any] = {}
+
 # ---------------------------------------------------------------------------
 # In-memory task store (bounded, most recent 1000)
 # ---------------------------------------------------------------------------
@@ -77,8 +120,8 @@ def _store_task(result: TaskResult) -> None:
 app = FastAPI(
     title="Umbral Worker",
     description="Worker HTTP para ejecución de tareas desde OpenClaw (VPS). "
-    "Soporta TaskEnvelope v0.1 y formato legacy.",
-    version="0.3.0",
+    "Soporta TaskEnvelope v0.1, formato legacy, y enqueue vía Redis.",
+    version="0.4.0",
 )
 
 
@@ -114,7 +157,7 @@ async def health():
     return {
         "ok": True,
         "ts": int(time.time()),
-        "version": "0.3.0",
+        "version": "0.4.0",
         "tasks_registered": list(TASK_HANDLERS.keys()),
         "tasks_in_memory": len(_task_store),
     }
@@ -251,6 +294,124 @@ async def get_task(task_id: str, authorization: str = Header(None)):
         raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
 
     return task_result.model_dump()
+
+
+# ---------------------------------------------------------------------------
+# Enqueue API (Redis-backed, for external services)
+# ---------------------------------------------------------------------------
+
+
+@app.post("/enqueue")
+async def enqueue_task(
+    request: Request,
+    body: EnqueueRequest,
+    authorization: str = Header(None),
+):
+    """
+    Encola una tarea en Redis para procesamiento asíncrono por el Dispatcher.
+
+    Pensado para servicios externos (Make.com, n8n, webhooks, cron) que
+    quieren enviar trabajo sin necesitar el SDK Python.
+
+    Returns:
+        {"ok": true, "task_id": "uuid", "queued": true}
+    """
+    _authenticate(authorization)
+
+    # Rate limit
+    client_key = request.client.host if request.client else "unknown"
+    allowed, _ = check_rate_limit(client_key)
+    if not allowed:
+        raise HTTPException(status_code=429, detail="Rate limit exceeded. Retry later.")
+
+    # Sanitize
+    try:
+        sanitize_task_name(body.task)
+        sanitize_input(body.input)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    # Redis required
+    r = _get_redis()
+    if r is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Redis not available. Cannot enqueue tasks.",
+        )
+
+    # Build envelope
+    task_id = str(uuid.uuid4())
+    trace_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    envelope = {
+        "schema_version": "0.1",
+        "task_id": task_id,
+        "team": body.team,
+        "task_type": body.task_type,
+        "task": body.task,
+        "input": body.input,
+        "status": "queued",
+        "trace_id": trace_id,
+        "created_at": now,
+        "queued_at": time.time(),
+    }
+
+    # Enqueue in Redis (same structure as TaskQueue.enqueue)
+    from dispatcher.queue import TaskQueue
+    queue = TaskQueue(r)
+    queue.enqueue(envelope)
+
+    logger.info(
+        "Enqueued task via API: %s (task=%s, team=%s, type=%s)",
+        task_id, body.task, body.team, body.task_type,
+    )
+
+    return {"ok": True, "task_id": task_id, "queued": True}
+
+
+@app.get("/task/{task_id}/status")
+async def get_task_status(
+    task_id: str,
+    authorization: str = Header(None),
+):
+    """
+    Consulta el estado de una tarea desde Redis.
+
+    Lee de umbral:task:{task_id}. Retorna el envelope completo incluyendo
+    status, result (si done), error (si failed), timestamps, etc.
+    """
+    _authenticate(authorization)
+
+    r = _get_redis()
+    if r is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Redis not available. Cannot query task status.",
+        )
+
+    task_key = f"umbral:task:{task_id}"
+    raw = r.get(task_key)
+    if raw is None:
+        raise HTTPException(status_code=404, detail=f"Task {task_id} not found in Redis")
+
+    try:
+        data = json.loads(raw)
+    except (json.JSONDecodeError, TypeError):
+        raise HTTPException(status_code=500, detail="Corrupt task data in Redis")
+
+    return {
+        "task_id": data.get("task_id", task_id),
+        "status": data.get("status", "unknown"),
+        "task": data.get("task", ""),
+        "team": data.get("team", ""),
+        "task_type": data.get("task_type", ""),
+        "result": data.get("result"),
+        "error": data.get("error"),
+        "created_at": data.get("created_at"),
+        "queued_at": data.get("queued_at"),
+        "started_at": data.get("started_at"),
+        "completed_at": data.get("completed_at"),
+    }
 
 
 @app.get("/tasks")

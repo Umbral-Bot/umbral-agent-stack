@@ -10,6 +10,7 @@ POLLER_LINE="*/5 * * * * bash $HOME/umbral-agent-stack/scripts/vps/notion-poller
 SIM_REPORT_LINE="30 8,14,20 * * * bash $HOME/umbral-agent-stack/scripts/vps/sim-report-cron.sh >> /tmp/sim_report.log 2>&1"
 DAILY_DIGEST_LINE="0 22 * * * bash $HOME/umbral-agent-stack/scripts/vps/daily-digest-cron.sh >> /tmp/daily_digest.log 2>&1"
 SIM_TO_MAKE_LINE="0 9,15,21 * * * bash $HOME/umbral-agent-stack/scripts/vps/sim-to-make-cron.sh >> /tmp/sim_to_make.log 2>&1"
+E2E_VALIDATION_LINE="0 6 * * * bash $HOME/umbral-agent-stack/scripts/vps/e2e-validation-cron.sh >> /tmp/e2e_validation.log 2>&1"
 
 # --- Dashboard cron ---
 if crontab -l 2>/dev/null | grep -qF "dashboard-cron.sh"; then
@@ -65,6 +66,14 @@ if crontab -l 2>/dev/null | grep -qF "sim-to-make-cron.sh"; then
 else
     (crontab -l 2>/dev/null; echo "$SIM_TO_MAKE_LINE") | crontab -
     echo "SIM-to-Make cron added."
+fi
+
+# --- E2E Validation cron ---
+if crontab -l 2>/dev/null | grep -qF "e2e-validation-cron.sh"; then
+    echo "E2E Validation cron already installed."
+else
+    (crontab -l 2>/dev/null; echo "$E2E_VALIDATION_LINE") | crontab -
+    echo "E2E Validation cron added."
 fi
 
 echo ""

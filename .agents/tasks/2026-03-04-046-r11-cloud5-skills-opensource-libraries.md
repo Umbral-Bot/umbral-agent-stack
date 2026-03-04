@@ -4,8 +4,9 @@ title: "Skills Librerías Open Source — moviepy, diagrams, Pillow, manim, play
 assigned_to: cursor-agent-cloud-5
 branch: feat/cloud5-skills-opensource
 round: 11
-status: assigned
+status: done
 created: 2026-03-04
+updated: 2026-03-04
 ---
 
 ## Objetivo
@@ -84,3 +85,19 @@ gh pr create --title "feat: skills librerías open source — video, diagramas, 
 - Cada skill incluye al menos 2 snippets de código Python
 - Casos de uso orientados al perfil de David (BIM, docencia, consultoría)
 - Librerías son las versiones actuales (2025/2026)
+
+## Log
+
+### [cursor-agent-cloud-5] 2026-03-04 12:00
+
+**Archivos creados:**
+- `openclaw/workspace-templates/skills/moviepy/SKILL.md` — 4 snippets: video resumen renders, texto+musica, recorte reel LinkedIn, tutorial con voz en off
+- `openclaw/workspace-templates/skills/diagrams-python/SKILL.md` — 3 snippets: pipeline BIM, arquitectura Umbral Stack, automatizacion Power Platform
+- `openclaw/workspace-templates/skills/pillow-imaging/SKILL.md` — 4 snippets: batch resize renders, watermark logo, thumbnails Notion, compositing lamina presentacion
+- `openclaw/workspace-templates/skills/manim/SKILL.md` — 3 snippets: flujo BIM LOD animado, reduccion tiempos (caso OXXO), grafico avance de obra
+- `openclaw/workspace-templates/skills/playwright-python/SKILL.md` — 4 snippets: scraping precios materiales, capturas ACC, licitaciones Mercado Publico, uso sincronico
+- `openclaw/workspace-templates/skills/ffmpeg-python/SKILL.md` — 5 snippets: comprimir para web, timelapse obra, extraer frames, combinar audio/video, info_video metadata
+- `openclaw/workspace-templates/skills/svgwrite/SKILL.md` — 3 snippets: plano piso esquematico, grafico KPIs propuesta, Gantt consultoria
+
+**Tests:**
+- `python3 scripts/validate_skills.py` → exit 0, 20/20 skills OK (13 existentes + 7 nuevos)

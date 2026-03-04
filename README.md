@@ -143,7 +143,21 @@ wc.notion_poll_comments(since="2026-02-26T00:00:00Z")
 
 ```bash
 pip install -r worker/requirements.txt
+
+# Unit tests (fast, mocked — 380+ tests)
 WORKER_TOKEN=test python -m pytest tests/ -v
+
+# E2E validation against live worker (16 tests)
+PYTHONPATH=. python scripts/e2e_validation.py
+
+# Smoke test post-deploy (<5s, 4 checks)
+PYTHONPATH=. python scripts/smoke_test.py
+
+# Integration tests (full pipeline, 7 tests)
+PYTHONPATH=. python scripts/integration_test.py
+
+# E2E with Notion reporting
+PYTHONPATH=. python scripts/e2e_validation.py --notion
 ```
 
 ## 📂 Estructura del Repositorio
@@ -218,4 +232,5 @@ WORKER_TOKEN=test python -m pytest tests/ -v
 | **S5** | 📋 | Herramientas Windows (PAD/RPA) |
 | **S6** | 📋 | Observabilidad (Langfuse + evals) |
 | **S7** | 📋 | Hardening transversal |
+| **Hackathon** | ✅ Hecho | Diagnóstico + E2E/Smoke/Integration tests + multi-model (Claude Code R6-R7) |
 

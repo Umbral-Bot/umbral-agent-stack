@@ -4,7 +4,7 @@ title: "Langfuse Tracing — Instrumentar LLM calls con observabilidad"
 assigned_to: codex
 branch: feat/codex-langfuse
 round: 7
-status: assigned
+status: done
 created: 2026-03-04
 ---
 
@@ -147,3 +147,29 @@ LANGFUSE_HOST=https://cloud.langfuse.com
 ## Entregable
 
 PR a `main` desde `feat/codex-langfuse` con todos los tests pasando.
+
+## Log
+
+### [codex] 2026-03-04 09:34
+- Agregado `langfuse` a `worker/requirements.txt` (sin dependencia en LiteLLM).
+- Creado `worker/tracing.py` con:
+  - init lazy de Langfuse (`_get_langfuse`) con `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_HOST`
+  - `trace_llm_call(...)` para trazas de `llm.generate`
+  - `flush()` para vaciar eventos pendientes
+  - degradacion graceful: sin keys o fallo de SDK no rompe flujo
+- Integrado tracing en `worker/tasks/llm.py`:
+  - medicion de latencia por llamada LLM
+  - envio de trazas tras llamadas exitosas para Gemini/OpenAI/Anthropic
+  - captura defensiva para que fallos de tracing no afecten la respuesta LLM
+- Integrado flush al shutdown del Worker en `worker/app.py` (`@app.on_event(\"shutdown\")`).
+- Actualizado `.env.example` con:
+  - `LANGFUSE_PUBLIC_KEY`
+  - `LANGFUSE_SECRET_KEY`
+  - `LANGFUSE_HOST`
+- Tests nuevos en `tests/test_tracing.py`:
+  - tracing disabled sin keys
+  - `trace_llm_call` con Langfuse mock
+  - `llm.generate` funciona con tracing habilitado y cuando tracing falla
+- Tests ejecutados:
+  - `WORKER_TOKEN=test-token-12345 python -m pytest tests/test_tracing.py tests/test_llm_handler.py tests/test_worker.py -v -p no:cacheprovider` -> 39 passed
+  - `WORKER_TOKEN=test-token-12345 python -m pytest tests/ -q -p no:cacheprovider` -> 380 passed, 1 skipped

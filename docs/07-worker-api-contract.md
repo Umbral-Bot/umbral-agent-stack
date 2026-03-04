@@ -313,8 +313,37 @@ Listar tareas recientes. Filtrable. Requiere auth.
 | `linear.list_teams` | Linear | Lista equipos de Linear |
 | `linear.update_issue_status` | Linear | Actualiza estado de issue |
 | `research.web` | Research | Búsqueda web (Tavily) |
-| `llm.generate` | LLM | Genera texto con Gemini |
+| `llm.generate` | LLM | Genera texto con Gemini, OpenAI o Anthropic (segun `model`) |
 | `composite.research_report` | Composite | Informe de mercado completo (research + LLM) |
+
+---
+
+### `llm.generate`
+
+Genera texto usando proveedor inferido por el campo `model`.
+
+**Input:**
+
+| Campo | Tipo | Requerido | Default | Descripcion |
+|-------|------|-----------|---------|-------------|
+| `prompt` | string | ✅ | — | Prompt principal para el modelo |
+| `model` | string | — | `gemini-2.5-flash` | Modelo a usar. Define proveedor automaticamente |
+| `selected_model` | string | — | — | Alias de compatibilidad desde Dispatcher (`chatgpt_plus`, `claude_pro`, etc.) |
+| `system` | string | — | `""` | Instruccion de sistema |
+| `max_tokens` | int | — | `1024` | Limite de tokens de salida |
+| `temperature` | float | — | `0.7` | Temperatura de muestreo |
+
+**Modelos soportados por proveedor:**
+
+- Gemini: `gemini-2.5-flash`, `gemini-2.0-flash`, `gemini_pro` (alias)
+- OpenAI: `gpt-4o`, `gpt-4o-mini`, `o1`, `o3-mini`, `gpt-4`, `chatgpt_plus` (alias), `copilot_pro` (alias)
+- Anthropic: `claude-sonnet-4-20250514`, `claude-3-5-sonnet`, `claude-3-haiku`, `claude_pro` (alias)
+
+**Errores de configuracion:**
+
+- Si se solicita OpenAI sin `OPENAI_API_KEY` -> error `OPENAI_API_KEY not configured`
+- Si se solicita Anthropic sin `ANTHROPIC_API_KEY` -> error `ANTHROPIC_API_KEY not configured`
+- Si no se envía `model`, se usa Gemini por defecto (backward compatibility)
 
 ---
 
@@ -366,6 +395,38 @@ curl -s -X POST http://WINDOWS_TAILSCALE_IP:8088/run \
       "language": "es"
     }
   }'
+```
+
+---
+
+### `GET /scheduled`
+
+Lista tareas programadas a futuro (Redis sorted set). Requiere auth.
+
+**Response (200):**
+```json
+{
+  "ok": true,
+  "scheduled": [
+    {
+      "task_id": "uuid",
+      "task": "ping",
+      "team": "system",
+      "run_at": "2026-03-04T12:00:00Z",
+      "created_at": "2026-03-04T03:00:00Z"
+    }
+  ],
+  "total": 1
+}
+```
+
+**Errores específicos:**
+- `503` — Redis no disponible
+
+**Ejemplo curl:**
+```bash
+curl -s "http://WINDOWS_TAILSCALE_IP:8088/scheduled" \
+  -H 'Authorization: Bearer $WORKER_TOKEN'
 ```
 
 ---

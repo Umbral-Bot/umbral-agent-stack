@@ -4,35 +4,81 @@
 
 Cada tarea usa el LLM óptimo según su tipo. Las cuotas protegen suscripciones con límites estrictos. Fallback automático garantiza continuidad.
 
+## Dos sistemas en paralelo
+
+| Sistema | Modelos simultáneos | Selección |
+|---------|--------------------|-----------| 
+| **OpenClaw** (bot Telegram) | **Solo 1** modelo activo | Manual vía bot, o automática por quota-guard |
+| **Rick** (Agent Stack, VPS) | **Todos simultáneamente** | Automática por ModelRouter + task_type |
+
+Rick no requiere selección manual — cada tarea recibe el modelo óptimo en el momento de despacho.
+
+## Modelos reales disponibles (2026-02-27)
+
+### Acceso vía OpenClaw (bot Telegram — OAuth/Token sesión)
+
+| Modelo | Acceso |
+|--------|--------|
+| `gpt-5.3-codex` (predeterminado) | OAuth ChatGPT Plus |
+| `gpt-5.2` | OAuth ChatGPT Plus |
+| `claude-haiku-4-5`, `claude-opus-4-6`, `claude-sonnet-4-6` | Token sesión cuenta Pro |
+| `gemini-3.1-pro-preview` | API Vertex AI |
+| `gemini-flash-lite-latest`, `gemini-flash-latest`, `gemini-3.1-pro-preview-customtools`, `gemini-3.1-pro-preview` | API Google AI Studio |
+
+### Acceso vía Worker (sistema multiagente — API keys directas)
+
+| Provider alias | Modelo real | Autenticación |
+|----------------|-------------|---------------|
+| `azure_foundry` | `gpt-5.3-codex` | AZURE_OPENAI_ENDPOINT + AZURE_OPENAI_API_KEY — **CAPACIDAD DEDICADA** |
+| `claude_pro` | `claude-sonnet-4-6` | ANTHROPIC_API_KEY (token sesión Pro) |
+| `claude_opus` | `claude-opus-4-6` | ANTHROPIC_API_KEY (tareas críticas) |
+| `claude_haiku` | `claude-haiku-4-5` | ANTHROPIC_API_KEY (tareas rápidas) |
+| `gemini_pro` | `gemini-3.1-pro-preview-customtools` | GOOGLE_API_KEY (AI Studio) |
+| `gemini_flash` | `gemini-flash-latest` | GOOGLE_API_KEY (AI Studio) |
+| `gemini_flash_lite` | `gemini-flash-lite-latest` | GOOGLE_API_KEY (AI Studio) |
+| `gemini_vertex` | `gemini-3.1-pro-preview` | GOOGLE_API_KEY_RICK_UMBRAL + GOOGLE_CLOUD_PROJECT_RICK_UMBRAL |
+
+> **GITHUB_TOKEN** es exclusivamente para git (pull/push). NO se usa para acceso a modelos LLM.
+
 ## Routing por task_type
 
-| task_type | Preferido | Fallback chain | Regla |
-|-----------|-----------|----------------|-------|
-| `coding` | chatgpt_plus | copilot_pro → claude_pro → gemini_pro | Copilot para MS stack |
-| `ms_stack` | copilot_pro | chatgpt_plus → claude_pro → gemini_pro | Copilot en tareas MS alto ROI |
-| `writing` | claude_pro | chatgpt_plus → gemini_pro | Claude para síntesis/entrega final |
-| `research` | gemini_pro | chatgpt_plus → claude_pro | Claude para consolidación final |
-| `critical` | claude_pro | chatgpt_plus | Requiere evidencia y trazabilidad |
+| task_type | Preferido | Fallback chain |
+|-----------|-----------|----------------|
+| `coding` | **claude_pro** | gemini_pro → azure_foundry* → gemini_flash |
+| `general` | **claude_pro** | gemini_pro → azure_foundry* → gemini_flash |
+| `ms_stack` | **claude_pro** | gemini_pro → azure_foundry* |
+| `writing` | **claude_pro** | claude_opus → gemini_pro |
+| `research` | **gemini_pro** | gemini_vertex → claude_pro → gemini_flash |
+| `critical` | **claude_opus** | claude_pro → gemini_pro |
+| `light` | **gemini_flash** | gemini_flash_lite → claude_haiku → gemini_pro |
+
+> *azure_foundry solo se usa si `AZURE_OPENAI_ENDPOINT` + `AZURE_OPENAI_API_KEY` están configurados. Si no, se salta automáticamente.
 
 ## Umbrales de Cuota
 
 | Proveedor | Ventana | Warn | Restrict | Acción |
 |-----------|---------|------|----------|--------|
-| claude_pro | 5h | 80% | 90% | >80%: solo critical/final; >90%: aprobación David; cap → rotación |
-| copilot_pro | mensual | 70% | 85% | >70%: solo alto impacto; >85%: aprobación David; fallback chatgpt_plus |
-| chatgpt_plus | 3h | 70% | 90% | >70%: priorizar; >90%: rotar a gemini_pro |
-| gemini_pro | diario | 80% | 95% | >80%: reservar para research; >95%: fallback chatgpt_plus |
+| azure_foundry | 1h | 80% | 95% | fallback a claude_pro |
+| claude_pro | 5h | 80% | 90% | fallback a azure_foundry |
+| claude_opus | 5h | 60% | 80% | fallback a claude_pro |
+| claude_haiku | 5h | 85% | 95% | fallback a gemini_flash_lite |
+| gemini_pro | diario | 80% | 95% | fallback a azure_foundry |
+| gemini_flash | diario | 85% | 97% | fallback a gemini_flash_lite |
+| gemini_flash_lite | diario | 90% | 98% | no hay fallback |
+| gemini_vertex | diario | 80% | 95% | fallback a gemini_pro |
 
 ## Capacidades por Proveedor
 
-| Proveedor | Fortalezas | Limitaciones |
-|-----------|-----------|-------------|
-| Claude Pro | Razonamiento profundo, escritura, análisis largo | Cuota 5h estricta |
-| ChatGPT Plus | General purpose, coding, multimodal | Rate limits variables |
-| Gemini Pro (3.1 customtools) | Research, grounding, contexto largo, tools | Preview / límites de capacidad más variables |
-| Gemini Flash | Rápido y barato para tareas ligeras | Menos potente que Pro |
-| Copilot Pro | MS stack, código, integración VS Code | Solo coding tasks |
-| Notion AI | Resúmenes, Q&A sobre workspace | Solo dentro de Notion |
+| Proveedor | Fortalezas | Mejor para |
+|-----------|-----------|------------|
+| Azure Foundry (gpt-5.3-codex) | Cuota dedicada, código, razonamiento | coding, general, ms_stack |
+| Claude Sonnet 4.6 | Escritura, análisis, síntesis | writing, summaries |
+| Claude Opus 4.6 | Razonamiento profundo, crítico | critical, auditoría |
+| Claude Haiku 4.5 | Velocidad, costo bajo | tareas rápidas, clasificación |
+| Gemini Pro (customtools) | Research, contexto largo, web tools | research, SIM, grounding |
+| Gemini Vertex (3.1 Pro) | Cuota dedicada GCP, estabilidad | backup research, pipelines |
+| Gemini Flash | Velocidad, volumen alto | tareas ligeras, polling |
+| Gemini Flash Lite | Ultra rápido, mínimo costo | clasificación, routing |
 
 ## Implementación Técnica
 
@@ -86,6 +132,30 @@ class QuotaTracker:
 - Si no hay cuota disponible en ningún proveedor: encolar con status `blocked` + alerta
 - Si un proveedor no responde en 30s: fallback automático sin esperar
 - Idioma de logs y trazas: español
+
+## Detección automática de providers
+
+El `ModelRouter` detecta qué providers tienen sus env vars configuradas al arrancar.
+Si un provider no tiene sus credenciales, se salta automáticamente en la selección:
+
+| Provider | Variables requeridas |
+|----------|---------------------|
+| `azure_foundry` | `AZURE_OPENAI_ENDPOINT` + `AZURE_OPENAI_API_KEY` |
+| `claude_pro/opus/haiku` | `ANTHROPIC_API_KEY` |
+| `gemini_pro/flash/flash_lite` | `GOOGLE_API_KEY` |
+| `gemini_vertex` | `GOOGLE_API_KEY_RICK_UMBRAL` + `GOOGLE_CLOUD_PROJECT_RICK_UMBRAL` |
+
+Cuando se configura un nuevo provider (ej. Azure Foundry), solo hay que agregar las env vars y reiniciar el Dispatcher. El router lo detecta solo.
+
+## Escalación automática a Linear
+
+Cuando una tarea falla, el Dispatcher crea automáticamente un issue en Linear con:
+- Titulo, task_id, equipo, tipo de tarea, error
+- Prioridad mapeada del task_type (critical=1, coding=2, etc.)
+- Labels del equipo inferidos por el `LinearTeamRouter`
+
+Controlado por `ESCALATE_FAILURES_TO_LINEAR=true|false` (default: true).
+No crea duplicados si el envelope ya tiene `linear_issue_id`.
 
 ## Referencia de implementación (S4)
 

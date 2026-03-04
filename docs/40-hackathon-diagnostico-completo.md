@@ -271,3 +271,51 @@ El sistema tiene una **base técnica sólida** (130 tests, buena arquitectura, c
 El problema principal no es de código sino de **operacionalización**: los servicios no están corriendo 24/7, las API keys no están todas configuradas, y no hay flujo real de tareas. El dashboard muestra "Degradado" porque el sistema literal no está operando.
 
 **La prioridad absoluta es activar el flujo end-to-end**: Redis → Dispatcher → Worker → Notion Dashboard, con al menos un equipo (Marketing o System) procesando tareas reales con al menos 2 modelos LLM.
+
+---
+
+## 9. Hackathon Closure — Claude Code (2026-03-04)
+
+> **Agente:** Claude Code
+> **Rondas completadas:** R6 + R7
+
+### Entregables
+
+| Entregable | Archivo | Estado |
+|-----------|---------|--------|
+| E2E Validation Suite ampliada | `scripts/e2e_validation.py` | ✅ 16 tests (10 original + 6 multi-modelo) |
+| Smoke Test post-deploy | `scripts/smoke_test.py` | ✅ 4 checks (<5s) |
+| Integration Tests | `scripts/integration_test.py` | ✅ 7 pipeline tests |
+| Unit Tests (mock HTTP) | `tests/test_e2e_validation.py` | ✅ 14 tests, 100% pass |
+| Cron wrapper VPS | `scripts/vps/e2e-validation-cron.sh` | ✅ Daily 06:00 UTC |
+| API Contract actualizado | `docs/07-worker-api-contract.md` | ✅ `GET /scheduled` documentado |
+
+### Tests Multi-Modelo (R6)
+
+| Test | Modelo | Estado |
+|------|--------|--------|
+| `test_multi_model_openai` | gpt-4o-mini | ⏭️ SKIP (depende tarea 023) |
+| `test_multi_model_anthropic` | claude-3-haiku | ⏭️ SKIP (depende tarea 023) |
+| `test_model_routing` | routing endpoint | ⏭️ SKIP (depende tarea 024) |
+| `test_scheduled_list` | GET /scheduled | ✅ Live |
+| `test_scheduled_lifecycle` | enqueue → scheduled → status | ✅ Live |
+| `test_quota_status` | GET /quota/status | ⏭️ SKIP (depende tarea 025) |
+
+### Integration Tests (R7)
+
+1. **Notion round-trip** — comment → poll → verify
+2. **Quota pressure** — 3x llm.generate + quota status
+3. **Rate limiting** — 70 rapid requests → expect 429
+4. **Langfuse tracing** — verify trace_id in response
+5. **Scheduled lifecycle** — enqueue with run_at → verify in /scheduled
+6. **Composite pipeline** — research_report end-to-end
+7. **Error resilience** — unknown task 400, oversized input 400, missing auth 401
+
+### Estado del Stack
+
+- **Worker:** v0.4.0, 25+ task handlers
+- **Tests totales:** 380 passed, 1 skipped (pytest suite completa)
+- **E2E suite:** 16 tests (6 SKIP conditional por dependencias no mergeadas)
+- **Smoke test:** 4 checks post-deploy
+- **Integration:** 7 pipeline tests end-to-end
+- **Cron:** Daily validation con alerta a Notion en fallo

@@ -6,7 +6,6 @@ branch: feat/cloud4-skills-content
 round: 11
 status: done
 created: 2026-03-04
-updated: 2026-03-04
 ---
 
 ## Objetivo
@@ -111,13 +110,20 @@ gh pr create --title "feat: skills contenido/marketing — linkedin, marca perso
 
 ### [cursor-agent-cloud-4] 2026-03-04 12:00
 
-Tarea completada. Archivos creados:
+**Trabajo realizado:**
+- Creado branch `feat/cloud4-skills-content` desde `main`
+- Investigacion web: algoritmo LinkedIn 2025, Notion API, SEO on-page, marketing digital
+- Nota: archivos locales de Google Drive (`G:\Mi unidad\AI\IA Personalizadas\Linkedin 2\` y `Marca Personal\`) no accesibles desde entorno Linux. Contenido construido con:
+  - Perfil de David extraido del skill `consultor-bim` (metricas, credenciales, experiencia)
+  - Investigacion web de fuentes actualizadas (2025-2026)
+  - Documentacion oficial Notion API (developers.notion.com)
 
-- `openclaw/workspace-templates/skills/linkedin-content/SKILL.md` — Algoritmo LinkedIn 2025-2026, formatos (carrusel 4x reach), hooks, templates, checklist, anti-patrones. Basado en perfil de David + web search.
-- `openclaw/workspace-templates/skills/marca-personal/SKILL.md` — UVP, bios en 5 formatos (LinkedIn, Twitter, pitch, web), posicionamiento AECO, metricas citables, pilares narrativos. Basado en datos de David del skill consultor-bim + web search.
-- `openclaw/workspace-templates/skills/marketing-digital/SKILL.md` — SEO on-page, email marketing (secuencias + benchmarks), funnel TOFU/MOFU/BOFU, metricas (CTR/CAC/LTV), herramientas gratuitas. Fuentes: HubSpot, Neil Patel, MOZ.
-- `openclaw/workspace-templates/skills/notion-workflow/SKILL.md` — API Notion completa (databases, pages, blocks), automatizaciones nativas, integracion n8n/Make via polling, templates CRM/proyectos/content calendar, errores comunes.
+**Archivos creados:**
+- `openclaw/workspace-templates/skills/linkedin-content/SKILL.md`
+- `openclaw/workspace-templates/skills/marca-personal/SKILL.md`
+- `openclaw/workspace-templates/skills/marketing-digital/SKILL.md`
+- `openclaw/workspace-templates/skills/notion-workflow/SKILL.md`
 
-`python scripts/validate_skills.py` → exit 0, 17 skills OK.
+**Validacion:** `python scripts/validate_skills.py` → exit 0 (17 skills OK)
 
-Nota: Los archivos locales de Google Drive (`G:\Mi unidad\AI\IA Personalizadas\Linkedin 2\` y `Marca Personal\`) no son accesibles desde este entorno Linux cloud. El contenido de linkedin-content y marca-personal se construyo desde el perfil de David documentado en el skill consultor-bim (que ya contiene los datos reales de sus proyectos, metricas y metodologias) complementado con busqueda web sobre algoritmo LinkedIn 2025-2026 y estrategias AEC.
+**PR:** feat/cloud4-skills-content → main

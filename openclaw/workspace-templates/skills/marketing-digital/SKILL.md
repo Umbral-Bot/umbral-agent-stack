@@ -1,10 +1,11 @@
 ---
 name: marketing-digital
 description: >-
-  Marketing digital practico para consultores: SEO on-page, email marketing,
-  funnel de ventas, metricas clave y herramientas gratuitas recomendadas.
-  Usar cuando: "marketing digital", "seo", "email marketing", "funnel",
-  "captacion clientes", "CTR", "CAC", "LTV", "posicionamiento web".
+  Marketing digital para consultores independientes: SEO on-page, email marketing,
+  funnel de ventas, metricas clave (CTR, CAC, LTV, ROI) y herramientas gratuitas.
+  Enfocado en el contexto de David Moreira como consultor BIM/AEC/IA.
+  Use when "marketing digital", "seo", "email marketing", "funnel",
+  "captacion clientes", "estrategia digital", "posicionamiento web", "landing page".
 metadata:
   openclaw:
     emoji: "\U0001F4C8"
@@ -14,209 +15,209 @@ metadata:
 
 # Marketing Digital — Skill para Consultores
 
-Rick usa este skill para asesorar a David en estrategias de marketing digital: SEO, email marketing, funnel de ventas para servicios de consultoria, y analisis de metricas clave.
+Rick usa este skill para asesorar a David en estrategia de marketing digital: atraer clientes potenciales, nutrir la relacion y convertir consultas en proyectos.
 
-## Principio base: el funnel integrado
+## Contexto: Marketing para Consultor Independiente AEC
 
-El marketing digital para consultores funciona cuando SEO, redes sociales y email se integran en un unico embudo. Operar en silos reduce la calidad y conversion de leads.
+David vende servicios de consultoria B2B en el sector AEC. Su ciclo de venta es largo (2-8 semanas), el decision maker suele ser el dueno o gerente de empresa, y la confianza es el activo central. El marketing debe:
 
-```
-TOFU (descubrimiento)  → SEO organico + LinkedIn + contenido educativo
-MOFU (consideracion)   → Email sequences + casos de estudio + demos
-BOFU (conversion)      → Propuesta + seguimiento directo + cierre
-```
+1. Generar credibilidad antes de que el cliente pregunte
+2. Educar al mercado sobre el valor de la automatizacion BIM
+3. Captar leads calificados (empresas AEC con problemas concretos)
+4. Nutrir la relacion hasta que esten listos para contratar
 
-**Datos clave 2025**:
-- 67.6% de los clicks van a los 5 primeros resultados organicos de Google
-- 46% de las busquedas en Google tienen intento local
-- El email marketing tiene CTR promedio del 3.2% en B2B
+## SEO On-Page — Fundamentos
 
-## SEO basico (on-page)
+### Por que importa para David
 
-### Fundamentos para consultores
+Un consultor independiente con pagina web puede aparecer en busquedas como "consultor BIM Chile", "implementar BIM empresa", "automatizacion Revit Power Automate". Esto genera leads inbound sin costo por clic.
 
-El SEO para consultores de nicho se basa en **autoridad tematica**, no en volumen de keywords. Google premia a quien responde mejor preguntas especificas de un nicho.
+### Keywords objetivo para David
 
-### Estructura de pagina optimizada
+| Tipo | Ejemplos | Volumen estimado |
+|------|----------|-----------------|
+| **Transaccionales** | "consultor BIM Chile", "consultoria BIM precio" | Bajo, alta intencion |
+| **Informacionales** | "como implementar BIM empresa", "que es Dynamo BIM" | Medio, audience calificada |
+| **Long-tail** | "automatizar reportes Revit Power Automate", "BIM coordinacion OXXO" | Muy bajo, muy especifico |
 
-| Elemento | Regla |
-|---------|-------|
-| **Titulo (H1)** | 1 solo H1 por pagina, incluye keyword principal |
-| **Meta description** | 150-160 caracteres, incluye CTA ("aprende como", "consulta gratis") |
-| **URL** | Corta, legible, sin stopwords (ej: `/consultoria-bim-chile`) |
-| **H2 y H3** | Estructura jerarquica, incluir keywords secundarias |
-| **Velocidad** | Menos de 3 segundos de carga (PageSpeed Insights para verificar) |
-| **Movil** | Diseno responsive obligatorio |
+### Elementos clave de SEO on-page
 
-### Keywords para David (ejemplos)
+| Elemento | Regla | Ejemplo para David |
+|----------|-------|--------------------|
+| **Title tag** | 50-60 caracteres, keyword principal al inicio | "Consultor BIM Chile — Automatizacion AEC — David Moreira" |
+| **Meta description** | 150-160 caracteres, incluir keyword y CTA | "Consultoria BIM y automatizacion con Power Platform. Reduje costos 40% en OXXO Chile. Contactame." |
+| **H1** | Solo uno por pagina, keyword principal | "Consultor BIM e IA Aplicada para el Sector AEC" |
+| **H2/H3** | Jerarquia logica, variantes de keyword | "Servicios de Automatizacion BIM", "Por que contratar un Consultor BIM" |
+| **Contenido** | Minimo 800 palabras, densidad 1-2% | Caso de estudio con metricas |
+| **Parrafos** | Max 100-150 palabras, oraciones <20 palabras | Legibilidad alta |
 
-- Primarias: "consultoria BIM Chile", "automatizacion BIM", "Power Automate arquitectura"
-- Long-tail: "como automatizar reportes en Revit", "BIM para pequenas empresas Chile"
-- Intento local: "consultor BIM Santiago", "capacitacion BIM Chile"
-
-### Herramientas SEO gratuitas
+### Herramientas gratuitas para SEO
 
 | Herramienta | Uso |
-|------------|-----|
-| Google Search Console | Ver keywords reales que traen trafico |
-| Google PageSpeed Insights | Velocidad y Core Web Vitals |
-| Ubersuggest (plan free) | Ideas de keywords con volumen |
-| AnswerThePublic | Preguntas que hace la gente en Google |
-| Screaming Frog (500 URLs gratis) | Auditoria tecnica basica |
+|-------------|-----|
+| Google Search Console | Ver keywords que te encuentran, errores de indexacion |
+| Google Analytics 4 | Trafico, comportamiento de usuarios, conversiones |
+| Ubersuggest (free tier) | Ideas de keywords y analisis de competencia |
+| Ahrefs Webmaster Tools | Backlinks y errores tecnicos (version gratuita) |
+| PageSpeed Insights | Velocidad de pagina (factor de ranking) |
+| RankMath o Yoast | Plugin SEO para WordPress |
 
-## Email marketing
+## Email Marketing
 
-### Anatomia de un email efectivo
+### Por que funciona para consultores B2B
 
-**Asunto (subject line)**:
-- Maximo 50 caracteres (preview movil)
-- Formulas que funcionan:
-  - `[Resultado concreto]: como lo logramos en [empresa]`
-  - `La verdad sobre [creencia comun del sector]`
-  - `[N] errores que comete [audiencia] al [hacer X]`
-- Personalizar con nombre si el CRM lo permite
-- Evitar: "Newsletter de", "Actualizacion de", "FWD:"
+Email marketing tiene el mayor ROI de todos los canales digitales: **$42 por cada $1 invertido** (promedio 2025). Para un consultor, una lista de 500 contactos calificados vale mas que 50.000 seguidores en redes.
 
-**Preview text** (los ~90 caracteres despues del asunto):
-- Complementar el asunto, no repetirlo
-- Agregar curiosidad o dato adicional
+### Estructura de secuencia de bienvenida (5 emails)
 
-**Cuerpo del email**:
-1. Una sola idea por email
-2. Parrafos cortos (2-3 lineas maximo)
-3. Un unico CTA claro al final
-4. Tono de conversacion, no corporativo
-5. Firma con nombre real, cargo y foto si es posible
+| Email | Timing | Objetivo | Contenido |
+|-------|--------|----------|-----------|
+| #1 | Inmediato | Bienvenida + entrega recurso | PDF prometido + quien es David (2 oraciones) |
+| #2 | Dia 3 | Educacion | Un caso real con metrica concreta |
+| #3 | Dia 7 | Herramienta | Tutorial rapido de una herramienta especifica |
+| #4 | Dia 14 | Prueba social | Resultado de proyecto (sin nombrar cliente) |
+| #5 | Dia 21 | CTA directo | "Si tienes este problema, puedo ayudarte" + agenda llamada |
 
-**CTA (llamada a la accion)**:
-- Uno solo por email (no diluir)
-- Boton visible con texto accionable ("Ver el caso completo", "Agenda 30 min", "Descarga el template")
-- Evitar: "Click aqui", "Haz clic", "Mas informacion"
+### Asuntos de email que funcionan para B2B
 
-### Secuencias de email para consultores
+**Patrones efectivos:**
+- Dato especifico: "Como reduje el 40% de costos en un proyecto retail"
+- Pregunta directa: "Cuantas horas pierdes en coordinacion BIM a la semana?"
+- Beneficio concreto: "De 4 horas a 90 segundos: el reporte que automatice"
+- Problema conocido: "El error que cometen el 80% de coordinadores BIM"
 
-**Secuencia de bienvenida (5 emails, 7 dias)**:
+**Evitar:**
+- "Quiero compartirte algo importante..." (demasiado generico)
+- Asuntos con mayusculas o signos de exclamacion (spam)
+- Asuntos de mas de 50 caracteres (se cortan en mobile)
 
-```
-Email 1 (dia 0): Bienvenida + lo que van a recibir
-Email 2 (dia 2): Tu historia personal (por que haces esto)
-Email 3 (dia 4): Tu metodologia o framework propio
-Email 4 (dia 6): Caso de estudio con metricas
-Email 5 (dia 7): CTA a agendar llamada o ver servicios
-```
+### CTAs efectivos
 
-**Secuencia de lead magnet (4 emails, 5 dias)**:
+| Contexto | CTA malo | CTA bueno |
+|----------|----------|-----------|
+| Newsletter educativa | "Suscribite!" | "Recibe 1 caso real por semana" |
+| Pagina de servicios | "Contactame" | "Agenda una llamada de 30 min" |
+| Post LinkedIn | "Comparte si te sirve" | "Si esto te paso, escribe en comentarios" |
+| Email de seguimiento | "Espero tu respuesta" | "Tienes 15 min esta semana para hablar?" |
 
-```
-Email 1 (dia 0): Entrega el lead magnet + como usarlo
-Email 2 (dia 2): Tip complementario relacionado al lead magnet
-Email 3 (dia 4): Caso real de quien aplico lo que aprendio
-Email 4 (dia 5): Invitacion a conversacion o consulta
-```
+### Herramientas gratuitas de email marketing
 
-### Benchmarks email B2B (2025)
+| Herramienta | Plan gratuito | Limitacion |
+|-------------|--------------|------------|
+| Mailchimp | 500 contactos, 1000 emails/mes | Sin automatizaciones en free |
+| Brevo (ex Sendinblue) | 300 emails/dia ilimitados | Limitado en templates |
+| MailerLite | 1000 contactos, 12000 emails/mes | Funcionalidades completas |
+| ConvertKit (ahora Kit) | 1000 suscriptores, funciones basicas | Sin segmentacion avanzada |
 
-| Metrica | Promedio B2B |
-|---------|-------------|
-| Open rate | 28-35% |
-| CTR | 3.2% |
-| Conversion rate | 2.4% |
-| Unsubscribe rate | <0.5% es saludable |
+**Recomendacion para David:** MailerLite — mayor generosidad en plan gratuito y buenas automatizaciones.
 
-## Funnel de ventas para consultores
+## Funnel de Ventas para Consultores
 
-### Etapas del funnel con tacticas
-
-**TOFU — Generacion de consciencia**
-
-Objetivo: que potenciales clientes sepan que David existe y tiene autoridad en el tema.
-
-Tacticas:
-- Posts de LinkedIn con educacion y casos reales (ver skill linkedin-content)
-- Articulos SEO en el blog respondiendo preguntas del sector
-- Charlas y ponencias (AI Construction Summit, etc.)
-- Colaboraciones con otros profesionales del sector
-
-KPIs: alcance organico, visitas web, nuevos seguidores LinkedIn
-
-**MOFU — Generacion de interes y consideracion**
-
-Objetivo: convertir curiosos en contactos y demostrar competencia especifica.
-
-Tacticas:
-- Lead magnets: templates de automatizacion, checklist BIM, calculadora de ROI
-- Webinars gratuitos de 60 min sobre un pain point especifico
-- Email sequence de nurturing (ver arriba)
-- Casos de estudio descargables (PDF o pagina web)
-
-KPIs: tasa de conversion lead magnet, apertura de emails, tiempo en pagina
-
-**BOFU — Conversion a cliente**
-
-Objetivo: convertir leads calificados en clientes pagantes.
-
-Tacticas:
-- Llamada de descubrimiento de 30 min (diagniostico gratis)
-- Propuesta personalizada con ROI proyectado (ver skill consultor-bim)
-- Follow-up estructurado (maximo 2 seguimientos, no mas)
-- Casos de referencia relevantes al sector del prospecto
-
-KPIs: tasa de conversion a llamada, tasa de cierre, tiempo de ciclo de venta
-
-### Pipeline simple para consultores independientes
+### Etapas del funnel de David
 
 ```
-Contacto nuevo → Llamada de descubrimiento (30 min) →
-Propuesta enviada (72h) → Seguimiento (dia 5) →
-Cierre o postergacion → Nurturing si no cierra ahora
+CONCIENCIA
+(LinkedIn, SEO, referencias)
+        ↓
+INTERES
+(Newsletter, blog, contenido educativo)
+        ↓
+CONSIDERACION
+(Caso de estudio, charla en vivo, perfil LinkedIn)
+        ↓
+INTENCION
+(Consulta inicial, reunion de diagnostico)
+        ↓
+CONVERSION
+(Propuesta → Contrato → Proyecto)
+        ↓
+RETENCION
+(Retainer mensual, nuevos proyectos, referencia)
 ```
 
-## Metricas clave para consultores
+### Contenido por etapa
 
-### Metricas de adquisicion
+| Etapa | Tipo de contenido | Canal |
+|-------|------------------|-------|
+| Conciencia | Posts LinkedIn educativos, SEO | LinkedIn, Google |
+| Interes | Newsletter semanal, blog | Email, web |
+| Consideracion | Case studies con metricas, charlas | LinkedIn PDF, webinar |
+| Intencion | Llamada de diagnostico (gratis, 30 min) | Calendly + email |
+| Conversion | Propuesta tecnica profesional | PDF + email |
+| Retencion | Reporte mensual, nuevas ideas | Email + Notion |
 
-| Metrica | Formula | Referencia |
-|---------|---------|-----------|
-| **CAC** (Costo de adquisicion de cliente) | Gasto marketing / Nuevos clientes | <30% del ingreso del cliente |
-| **CTR** (Click-through rate) | Clicks / Impresiones × 100 | Email: 3.2%, LinkedIn: 1-3% |
-| **Conversion rate web** | Leads / Visitas × 100 | 1-3% es bueno para consultores |
-| **Tasa de cierre** | Clientes cerrados / Propuestas enviadas | >30% indica buen fit de audiencia |
+### Precio vs. valor en el funnel
 
-### Metricas de retencion y valor
+Para un consultor BIM, la objecion mas comun es el precio. La estrategia:
 
-| Metrica | Formula | Referencia |
-|---------|---------|-----------|
-| **LTV** (Lifetime Value) | Ingreso promedio × Duracion promedio de relacion | Objetivo: LTV > 3x CAC |
-| **NPS** (Net Promoter Score) | % promotores - % detractores | >50 es excelente |
-| **Churn rate** | Clientes perdidos / Total × 100 | <10% anual para retainers |
+1. **Mostrar costo de no actuar** antes de mostrar precio
+2. **Usar metricas propias** ("En OXXO reduje 40%, imagina en tu empresa")
+3. **Ofrecer entrada de bajo riesgo** ("Empezamos con un diagnostico de 2 semanas")
+4. **Dividir en fases** si el presupuesto es la objecion real
 
-### Metricas de contenido
+## Metricas Clave para Seguimiento
 
-| Metrica | Que indica |
-|---------|-----------|
-| Alcance organico LinkedIn | Salud del contenido y algoritmo |
-| Tasa de apertura email | Calidad del asunto y confianza de la lista |
-| Tiempo en pagina web | Calidad del contenido (>2 min es bueno) |
-| Rebote en paginas de servicio | >70% indica desajuste de audiencia o mensaje |
+### Definiciones
 
-## Herramientas gratuitas recomendadas
+| Metrica | Formula | Referencia para consultores |
+|---------|---------|---------------------------|
+| **CTR** (Click-Through Rate) | Clics / Impresiones × 100 | >2% en Google Ads; >1% en email |
+| **CAC** (Costo de Adquisicion de Cliente) | Gasto marketing / Clientes nuevos | Debe ser <30% del valor del contrato |
+| **LTV** (Lifetime Value) | Valor promedio contrato × contratos promedio por cliente | Objetivo: LTV > 3×CAC |
+| **ROI** | (Ingresos - Inversion) / Inversion × 100 | Minimo positivo; objetivo >300% |
+| **Tasa de conversion** | Leads que contratan / Total leads | Consultores B2B: 10-20% es excelente |
+| **Open rate email** | Emails abiertos / Emails enviados | >25% es bueno; <15% revisar entregabilidad |
 
-| Herramienta | Uso | Plan gratuito util? |
-|------------|-----|---------------------|
-| **Mailchimp** | Email marketing | Si, hasta 500 contactos |
-| **ConvertKit** (ahora Kit) | Email marketing para creadores | Si, hasta 10.000 suscriptores |
-| **Canva** | Diseno de carruseles y graficos | Si, muy completo |
-| **Buffer** | Programacion de posts | Si, 3 canales |
-| **Google Analytics 4** | Analisis de trafico web | Si, completo |
-| **Hotjar** | Mapas de calor en web | Si, hasta 35 sesiones/dia |
-| **Notion** | CRM simple + gestion de contenido | Si |
-| **Cal.com** | Agenda de llamadas de descubrimiento | Si, open source |
+### Dashboard minimo de metricas (revisar mensualmente)
 
-## Anti-patrones de marketing digital para consultores
+- Nuevas visitas a la web (Google Analytics)
+- Fuente de leads (donde viene cada consulta)
+- Tasa de conversion consulta → propuesta
+- Tasa de conversion propuesta → contrato
+- Valor promedio de proyecto
+- CAC vs. LTV
 
-- **Estar en todas las redes a la vez**: mejor 1 canal excelente que 5 mediocres
-- **Comprar seguidores o listas de email**: destruye reputacion y metricas
-- **Publicar sin proposito**: cada contenido debe tener un objetivo claro del funnel
-- **Ignorar el analisis**: sin metricas, es imposible saber que funciona
-- **Escalar antes de optimizar**: primero que una propuesta convierta, luego invertir en trafico
-- **CTA multiples en un solo email o post**: diluye la intencion del usuario
+### Herramientas gratuitas para tracking
+
+| Herramienta | Que mide |
+|-------------|---------|
+| Google Analytics 4 | Trafico web, comportamiento, fuentes |
+| Google Search Console | Rankings, CTR organico, impresiones |
+| LinkedIn Analytics | Alcance posts, crecimiento audiencia |
+| Notion (propio) | Pipeline de clientes, conversion manual |
+| Mailerlite Analytics | Open rate, CTR, desuscripciones |
+
+## Estrategia Recomendada para David (Inicio)
+
+### Fase 1 — Base (mes 1-2)
+
+- [ ] Optimizar pagina web con SEO on-page basico (title, meta, H1, velocidad)
+- [ ] Crear pagina "Sobre mi" y "Servicios" con metricas reales
+- [ ] Configurar Google Analytics 4 y Search Console
+- [ ] Crear lista de email con MailerLite (gratis)
+- [ ] Preparar lead magnet: checklist "5 procesos BIM que puedes automatizar hoy"
+
+### Fase 2 — Contenido (mes 3-4)
+
+- [ ] Publicar 1 caso de estudio por mes en el blog
+- [ ] Lanzar newsletter semanal (BIM + IA en AEC)
+- [ ] Configurar secuencia de bienvenida (5 emails)
+- [ ] Crear 2-3 carruseles LinkedIn por mes con casos reales
+
+### Fase 3 — Conversion (mes 5-6)
+
+- [ ] Activar Calendly con llamada de diagnostico gratuita (30 min)
+- [ ] Crear pagina de proceso de trabajo ("Asi trabajo con mis clientes")
+- [ ] Medir CAC, LTV y tasa de conversion primer semestre
+- [ ] Ajustar canales segun origen de leads reales
+
+## Anti-Patrones de Marketing para Consultores
+
+| Patron | Por que falla |
+|--------|--------------|
+| Publicar sin estrategia ("a ver que pasa") | Sin medicion, no hay aprendizaje |
+| Hablar de herramientas en vez de resultados | El cliente compra el resultado, no la herramienta |
+| Landing page generica sin CTA claro | Visitas que no convierten |
+| Newsletter sin segmentacion de valor | Alta desuscripcion si el contenido no es relevante |
+| Perseguir al cliente con seguimientos agresivos | Dania la relacion y la marca |
+| Comprar seguidores o listas de email | No convierte; dania entregabilidad |

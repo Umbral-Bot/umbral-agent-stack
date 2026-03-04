@@ -26,7 +26,7 @@
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|
-| 045 | Skills Contenido/Marketing — LinkedIn, Marca Personal, Marketing Digital, Notion | cursor-agent-cloud-4 | ✅ done |
+| 045 | Skills Contenido, Docencia y Marketing — LinkedIn, Marca Personal, Marketing Digital, Notion | cursor-agent-cloud-4 | ✅ done |
 
 ## Ronda 9 — Completada ✅
 

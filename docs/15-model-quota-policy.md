@@ -4,35 +4,58 @@
 
 Cada tarea usa el LLM óptimo según su tipo. Las cuotas protegen suscripciones con límites estrictos. Fallback automático garantiza continuidad.
 
+## Dos sistemas en paralelo
+
+| Sistema | Modelos simultáneos | Selección |
+|---------|--------------------|-----------| 
+| **OpenClaw** (bot Telegram) | **Solo 1** modelo activo | Manual vía bot, o automática por quota-guard |
+| **Rick** (Agent Stack, VPS) | **Todos simultáneamente** | Automática por ModelRouter + task_type |
+
+Rick no requiere selección manual — cada tarea recibe el modelo óptimo en el momento de despacho.
+
+## Modelos reales disponibles (2026-03-04)
+
+| Provider alias | Modelo real | Acceso |
+|----------------|-------------|--------|
+| `openai_codex` | `gpt-5.3-codex` | GITHUB_TOKEN (ChatGPT Plus / OAuth) — **PRIORIDAD 1** |
+| `claude_pro` | `claude-sonnet-4-6` | ANTHROPIC_API_KEY o GITHUB_TOKEN |
+| `claude_opus` | `claude-opus-4-6` | ANTHROPIC_API_KEY (tareas críticas) |
+| `gemini_pro` | `gemini-3.1-pro-preview-customtools` | GOOGLE_API_KEY |
+| `gemini_flash` | `gemini-flash-latest` | GOOGLE_API_KEY (rápido/económico) |
+| `copilot_pro` | `gpt-4o-mini` | GITHUB_TOKEN (fallback) |
+
 ## Routing por task_type
 
-| task_type | Preferido | Fallback chain | Regla |
-|-----------|-----------|----------------|-------|
-| `coding` | chatgpt_plus | copilot_pro → claude_pro → gemini_pro | Copilot para MS stack |
-| `ms_stack` | copilot_pro | chatgpt_plus → claude_pro → gemini_pro | Copilot en tareas MS alto ROI |
-| `writing` | claude_pro | chatgpt_plus → gemini_pro | Claude para síntesis/entrega final |
-| `research` | gemini_pro | chatgpt_plus → claude_pro | Claude para consolidación final |
-| `critical` | claude_pro | chatgpt_plus | Requiere evidencia y trazabilidad |
+| task_type | Preferido | Fallback chain |
+|-----------|-----------|----------------|
+| `coding` | **openai_codex** | claude_pro → gemini_pro → gemini_flash |
+| `general` | **openai_codex** | claude_pro → gemini_pro → gemini_flash |
+| `ms_stack` | **openai_codex** | copilot_pro → claude_pro → gemini_pro |
+| `writing` | claude_pro | openai_codex → gemini_pro |
+| `research` | gemini_pro | openai_codex → claude_pro → gemini_flash |
+| `critical` | claude_opus | claude_pro → openai_codex |
+| `light` | gemini_flash | openai_codex → gemini_pro |
 
 ## Umbrales de Cuota
 
 | Proveedor | Ventana | Warn | Restrict | Acción |
 |-----------|---------|------|----------|--------|
-| claude_pro | 5h | 80% | 90% | >80%: solo critical/final; >90%: aprobación David; cap → rotación |
-| copilot_pro | mensual | 70% | 85% | >70%: solo alto impacto; >85%: aprobación David; fallback chatgpt_plus |
-| chatgpt_plus | 3h | 70% | 90% | >70%: priorizar; >90%: rotar a gemini_pro |
-| gemini_pro | diario | 80% | 95% | >80%: reservar para research; >95%: fallback chatgpt_plus |
+| openai_codex | 3h | 75% | 90% | fallback a claude_pro |
+| claude_pro | 5h | 80% | 90% | fallback a openai_codex |
+| claude_opus | 5h | 60% | 80% | fallback a claude_pro |
+| gemini_pro | diario | 80% | 95% | fallback a openai_codex |
+| gemini_flash | diario | 85% | 97% | no hay fallback |
+| copilot_pro | mensual | 70% | 85% | fallback a openai_codex |
 
 ## Capacidades por Proveedor
 
-| Proveedor | Fortalezas | Limitaciones |
-|-----------|-----------|-------------|
-| Claude Pro | Razonamiento profundo, escritura, análisis largo | Cuota 5h estricta |
-| ChatGPT Plus | General purpose, coding, multimodal | Rate limits variables |
-| Gemini Pro (3.1 customtools) | Research, grounding, contexto largo, tools | Preview / límites de capacidad más variables |
-| Gemini Flash | Rápido y barato para tareas ligeras | Menos potente que Pro |
-| Copilot Pro | MS stack, código, integración VS Code | Solo coding tasks |
-| Notion AI | Resúmenes, Q&A sobre workspace | Solo dentro de Notion |
+| Proveedor | Fortalezas | Mejor para |
+|-----------|-----------|------------|
+| OpenAI Codex (gpt-5.3-codex) | Razonamiento, código, general | coding, general, ms_stack |
+| Claude Sonnet 4.6 | Escritura, análisis, síntesis | writing, summaries |
+| Claude Opus 4.6 | Razonamiento profundo, crítico | critical, auditoría |
+| Gemini Pro (customtools) | Research, contexto largo, web tools | research, SIM, grounding |
+| Gemini Flash | Velocidad, volumen alto | tareas ligeras, polling |
 
 ## Implementación Técnica
 

@@ -71,7 +71,7 @@ Documentación oficial: https://www.make.com/en/help/ | https://developers.make.
 | **Tools → JSON → Parse JSON** | Convertir string JSON a estructura Make |
 | **Tools → JSON → Create JSON** | Convertir estructura Make a string JSON |
 
----
+## Expresiones y funciones
 
 ## Triggers más usados
 
@@ -126,6 +126,7 @@ Make tiene funciones agrupadas por tipo, accesibles al mapear campos:
 
 ### Texto
 
+### Funciones de texto
 ```
 toString(valor)
 lower(texto)                      → minúsculas
@@ -141,8 +142,7 @@ split(texto; delimitador)         → array
 join(array; separador)            → string
 ```
 
-### Fechas
-
+### Funciones matemáticas
 ```
 now                               → fecha y hora actual
 formatDate(fecha; "DD/MM/YYYY")
@@ -327,7 +327,7 @@ El Worker ejecuta la tarea y notifica al webhook de Make cuando termina (si se c
 | `Array aggregator returns empty` | Iterator procesó 0 bundles | Verificar que el módulo fuente devuelva datos; revisar el campo mapeado como array |
 | Campos vacíos en mapeo | Campo no existe en la estructura | Usar `ifempty({{campo}}; "default")` para manejar nulos |
 
----
+## Documentación oficial
 
 ## Buenas prácticas
 

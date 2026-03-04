@@ -39,7 +39,7 @@ Usuario (Teams / Web / Custom)
     [Dataverse] ← almacenamiento de variables, contexto
 ```
 
----
+## Topics — Flujos de conversación
 
 ## Componentes clave
 
@@ -73,7 +73,46 @@ Los topics son la unidad fundamental de la conversación. Definen cómo el agent
 | **Set variable** | Asignar valor a una variable |
 | **Send adaptive card** | Mostrar tarjeta con formato rico |
 
----
+### Nodos de un topic
+
+| Nodo | Función |
+|------|---------|
+| **Message** | Enviar texto, imagen o Adaptive Card |
+| **Question** | Hacer una pregunta y guardar respuesta en variable |
+| **Condition** | Bifurcar según valor de variable |
+| **Set Variable** | Asignar valor a una variable |
+| **Call action** | Ejecutar Power Automate flow o conector |
+| **Redirect** | Ir a otro topic |
+| **End topic** | Terminar el topic actual |
+| **End conversation** | Terminar la conversación completa |
+| **Send an HTTP request** | Llamar a REST API directamente |
+| **Generative Answer** | Respuesta generativa desde knowledge sources |
+
+### Ejemplo de topic: consultar estado de pedido
+
+```
+Topic: "Estado de pedido"
+Trigger phrases: 
+  - "¿dónde está mi pedido?"
+  - "quiero saber el estado de mi compra"
+  - "seguimiento de pedido"
+
+Nodos:
+1. Message: "¡Hola! Voy a consultar tu pedido."
+2. Question: "¿Cuál es el número de pedido?"
+   → Guardar en: Topic.NumeroPedido (tipo: Number)
+3. Call action: Flow "Consultar Estado Pedido"
+   Input: NumeroPedido → Topic.NumeroPedido
+   Output: Estado → Topic.EstadoPedido
+4. Condition: 
+   Topic.EstadoPedido is equal to "enviado"
+     → Message: "Tu pedido está en camino. Llegará en 2-3 días."
+   Topic.EstadoPedido is equal to "pendiente"
+     → Message: "Tu pedido está siendo procesado."
+   Else:
+     → Message: "No encontré información sobre ese pedido."
+5. End topic
+```
 
 ## Variables
 
@@ -87,6 +126,7 @@ Los topics son la unidad fundamental de la conversación. Definen cómo el agent
 
 ### Variables de sistema más usadas
 
+### Variables de Topic
 ```
 System.User.DisplayName        → Nombre del usuario
 System.User.Id                 → ID del usuario (AAD)
@@ -113,7 +153,7 @@ Global.UserCity contains "Ciudad de México"
 "Hola, {System.User.DisplayName}. Tu ciudad es {Global.UserCity}."
 ```
 
----
+## Actions — Integración externa
 
 ## Entities (Entidades)
 
@@ -215,9 +255,73 @@ El agente puede responder preguntas directamente desde fuentes de conocimiento s
 
 Activar: `Knowledge → + Add knowledge → [tipo de fuente]`
 
----
+```
+// Tipos soportados
+1. SharePoint — sitios y bibliotecas de documentos
+2. Archivos — PDF, DOCX, PPTX, XLSX subidos directamente
+3. Sitios web públicos — indexación de páginas web
+4. Dataverse — tablas y vistas
+5. Azure AI Search — índice de búsqueda vectorial
 
-## Canales de publicación
+// Configuración básica:
+Copilot Studio → Knowledge → Add Knowledge →
+  SharePoint: URL del sitio o biblioteca
+  File upload: arrastrar archivos (máx. 512MB)
+  Public website: URL a indexar (hasta 2 niveles de profundidad)
+```
+
+### Generative Answers
+```
+// Copilot Studio usa GenAI para responder preguntas con las fuentes configuradas
+// Sin necesidad de crear topics específicos para cada pregunta
+
+// Activar en: Settings → Generative AI → Generative answers → On
+// Nivel de moderación del contenido: Low / Medium / High
+
+// El agente puede combinar topics explícitos + generative answers
+// Prioridad: topic match > generative answers > fallback topic
+```
+
+## Adaptive Cards
+
+Las Adaptive Cards permiten respuestas ricas con botones, imágenes y formularios.
+
+```json
+// Ejemplo de card simple con acciones
+{
+  "type": "AdaptiveCard",
+  "version": "1.5",
+  "body": [
+    {
+      "type": "TextBlock",
+      "text": "Tu pedido **#{{Topic.NumeroPedido}}** está {{Topic.EstadoPedido}}",
+      "wrap": true,
+      "size": "Medium"
+    },
+    {
+      "type": "FactSet",
+      "facts": [
+        {"title": "Fecha estimada:", "value": "{{Topic.FechaEntrega}}"},
+        {"title": "Transportista:", "value": "{{Topic.Transportista}}"}
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.Submit",
+      "title": "Ver más detalles",
+      "data": {"action": "verDetalle"}
+    },
+    {
+      "type": "Action.OpenUrl",
+      "title": "Rastrear envío",
+      "url": "{{Topic.URLRastreo}}"
+    }
+  ]
+}
+```
+
+## Canales de despliegue
 
 Copilot Studio permite publicar en múltiples canales sin cambiar la lógica del agente:
 
@@ -231,7 +335,21 @@ Copilot Studio permite publicar en múltiples canales sin cambiar la lógica del
 | **Azure Bot Service** | Registro en Azure Portal |
 | **Telegram, Slack** | Vía Azure Bot Service + Direct Line |
 
----
+### Embed en sitio web
+```html
+<script src="https://cdn.botframework.com/botframework-webchat/latest/webchat.js"></script>
+<div id="webchat"></div>
+<script>
+  window.WebChat.renderWebChat({
+    directLine: window.WebChat.createDirectLine({
+      token: 'TOKEN_DE_DIRECT_LINE'
+    }),
+    userID: 'user-id-unico',
+    username: 'Usuario',
+    locale: 'es-AR'
+  }, document.getElementById('webchat'));
+</script>
+```
 
 ## Adaptive Cards (Tarjetas adaptativas)
 
@@ -348,7 +466,7 @@ Publish → Share → Add users/groups de Azure AD
 | `Loop detected` | Topic redirige a sí mismo | Revisar nodos Redirect; agregar condición de salida |
 | `HTTP action timeout` | API externa tarda demasiado | Aumentar timeout en la acción o usar llamada asincrónica con Power Automate |
 
----
+## Documentación oficial
 
 ## Integración con Umbral Agent Stack
 

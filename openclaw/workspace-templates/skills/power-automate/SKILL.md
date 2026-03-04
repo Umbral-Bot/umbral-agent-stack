@@ -59,7 +59,8 @@ Documentación oficial: https://learn.microsoft.com/power-automate/
 | Approvals | Crear solicitud de aprobación, esperar respuesta |
 | Adobe PDF Tools | Convertir, fusionar PDFs |
 
----
+### Externos (ejemplos)
+- Salesforce, ServiceNow, Jira, GitHub, Slack, SAP, DocuSign
 
 ## Expresiones y funciones comunes
 
@@ -193,9 +194,15 @@ PAD se integra con cloud flows mediante el conector **Desktop flows** (requiere 
 - Automatizar entrada de datos en aplicaciones legacy usando PAD.
 - Procesar formularios de Power Apps y registrar resultados en SharePoint.
 
----
+Acciones PAD frecuentes:
+- `System.RunApplication` — lanzar apps
+- `Web.LaunchEdge` / `Web.Navigate` — automatizar browser
+- `WebAutomation.Click` / `FillTextBox` — interactuar con web
+- `UIAutomation.Click` / `GetTextFrom` — apps desktop
+- `File.ReadText` / `WriteText` — manipular archivos
+- `Excel.*` — automatización completa de Excel
 
-## Referencias
+## Errores frecuentes
 
 - Documentación oficial: https://learn.microsoft.com/power-automate/
 - Referencia de conectores: https://powerautomate.microsoft.com/en-us/connectors/

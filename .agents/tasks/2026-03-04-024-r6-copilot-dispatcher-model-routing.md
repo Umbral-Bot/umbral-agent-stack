@@ -4,7 +4,7 @@ title: "Dispatcher Model Routing — Integrar ModelRouter al flujo real de despa
 assigned_to: github-copilot
 branch: feat/copilot-model-routing
 round: 6
-status: assigned
+status: done
 created: 2026-03-04
 ---
 
@@ -92,3 +92,14 @@ Agregar un cron que ejecute `check_and_enqueue` del `TaskScheduler` cada minuto:
 ## Entregable
 
 PR a `main` desde `feat/copilot-model-routing` con todos los tests pasando.
+
+## Log
+
+### [github-copilot] 2026-03-04
+
+- Added `PROVIDER_MODEL_MAP` and `map_provider_to_model()` to `dispatcher/model_router.py`
+- Updated `dispatcher/service.py` to inject `input_data["model"]` with the mapped model string for LLM tasks (`llm.generate`, `composite.research_report`)
+- Created `scripts/vps/scheduled-tasks-cron.sh` — calls `TaskScheduler.check_and_enqueue()`
+- Added scheduled-tasks cron entry to `scripts/vps/install-cron.sh` (`* * * * *`)
+- Created `tests/test_dispatcher_model_routing.py` — 19 tests covering: PROVIDER_MODEL_MAP, map_provider_to_model, model injection for LLM tasks, no injection for non-LLM tasks, quota post-execution, fallback on restrict, critical override
+- All 420 tests pass (1 skipped)

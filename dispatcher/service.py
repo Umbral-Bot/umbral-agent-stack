@@ -18,7 +18,7 @@ import redis
 
 from dispatcher.health import HealthMonitor
 from dispatcher.alert_manager import AlertManager
-from dispatcher.model_router import ModelRouter, load_quota_policy
+from dispatcher.model_router import ModelRouter, load_quota_policy, map_provider_to_model
 from dispatcher.queue import TaskQueue
 from dispatcher.quota_tracker import QuotaTracker
 from dispatcher.router import TeamRouter
@@ -259,8 +259,13 @@ def _run_worker(
             queue.block_task(task_id, reason)
             continue
         selected_model = decision.model
+        mapped_model = map_provider_to_model(selected_model)
         ops_log.model_selected(task_id, task_type, selected_model, decision.reason if hasattr(decision, "reason") else "")
         input_data["selected_model"] = selected_model
+        # Inject the actual model name so the Worker uses the right LLM
+        if task in ("llm.generate", "composite.research_report"):
+            input_data["model"] = mapped_model
+            logger.info("[worker %d] Model mapped: %s -> %s", worker_id, selected_model, mapped_model)
 
         team_info = capabilities.get(team)
         requires_vm = team_info and team_info.get("requires_vm", False)

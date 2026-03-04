@@ -23,15 +23,32 @@ logger = logging.getLogger("dispatcher.model_router")
 
 # Default si no hay YAML (doc 15)
 DEFAULT_ROUTING = {
-    "coding": {"preferred": "chatgpt_plus", "fallback_chain": ["copilot_pro", "claude_pro", "gemini_pro"]},
-    "ms_stack": {"preferred": "copilot_pro", "fallback_chain": ["chatgpt_plus", "claude_pro", "gemini_pro"]},
+    "coding": {"preferred": "chatgpt_plus", "fallback_chain": ["copilot_pro", "claude_pro", "azure_foundry", "gemini_pro"]},
+    "ms_stack": {"preferred": "copilot_pro", "fallback_chain": ["azure_foundry", "chatgpt_plus", "claude_pro", "gemini_pro"]},
     "writing": {"preferred": "claude_pro", "fallback_chain": ["chatgpt_plus", "gemini_pro"]},
     "research": {"preferred": "gemini_pro", "fallback_chain": ["chatgpt_plus", "claude_pro"]},
-    "critical": {"preferred": "claude_pro", "fallback_chain": ["chatgpt_plus"]},
-    "general": {"preferred": "chatgpt_plus", "fallback_chain": ["claude_pro", "gemini_pro"]},
+    "critical": {"preferred": "claude_pro", "fallback_chain": ["chatgpt_plus", "azure_foundry"]},
+    "general": {"preferred": "chatgpt_plus", "fallback_chain": ["claude_pro", "azure_foundry", "gemini_pro"]},
 }
 
 HIGH_PRIORITY_TASK_TYPES = ("critical",)  # pueden usar preferido hasta restrict
+
+# Mapeo de provider names a model strings que el Worker entiende
+PROVIDER_MODEL_MAP = {
+    "gemini_pro": "gemini-2.5-flash",
+    "chatgpt_plus": "gpt-4o-mini",
+    "claude_pro": "claude-sonnet-4-20250514",
+    "copilot_pro": "gpt-4o",
+    "azure_foundry": "gpt-5.2-chat",
+}
+
+
+def map_provider_to_model(provider: str) -> str:
+    """Map a provider name to the actual model string the Worker expects.
+
+    Falls back to the provider name itself if no mapping exists.
+    """
+    return PROVIDER_MODEL_MAP.get(provider, provider)
 
 
 @dataclass

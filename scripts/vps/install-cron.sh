@@ -12,6 +12,7 @@ DAILY_DIGEST_LINE="0 22 * * * bash $HOME/umbral-agent-stack/scripts/vps/daily-di
 SIM_TO_MAKE_LINE="0 9,15,21 * * * bash $HOME/umbral-agent-stack/scripts/vps/sim-to-make-cron.sh >> /tmp/sim_to_make.log 2>&1"
 E2E_VALIDATION_LINE="0 6 * * * bash $HOME/umbral-agent-stack/scripts/vps/e2e-validation-cron.sh >> /tmp/e2e_validation.log 2>&1"
 OODA_REPORT_LINE="0 7 * * 1 bash $HOME/umbral-agent-stack/scripts/vps/ooda-report-cron.sh >> /tmp/ooda_report.log 2>&1"
+SCHEDULED_TASKS_LINE="* * * * * bash $HOME/umbral-agent-stack/scripts/vps/scheduled-tasks-cron.sh >> /tmp/scheduled_tasks.log 2>&1"
 
 # --- Dashboard cron ---
 if crontab -l 2>/dev/null | grep -qF "dashboard-cron.sh"; then
@@ -83,6 +84,14 @@ if crontab -l 2>/dev/null | grep -qF "ooda-report-cron.sh"; then
 else
     (crontab -l 2>/dev/null; echo "$OODA_REPORT_LINE") | crontab -
     echo "OODA Report cron added."
+fi
+
+# --- Scheduled Tasks cron (every minute) ---
+if crontab -l 2>/dev/null | grep -qF "scheduled-tasks-cron.sh"; then
+    echo "Scheduled Tasks cron already installed."
+else
+    (crontab -l 2>/dev/null; echo "$SCHEDULED_TASKS_LINE") | crontab -
+    echo "Scheduled Tasks cron added."
 fi
 
 echo ""

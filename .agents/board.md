@@ -11,7 +11,7 @@
 | Protocolo inter-agentes | ✅ Activo |
 | VPS (Control Plane) | ✅ Redis + Dispatcher + Worker + 8 crons |
 | Notion Poller daemon | ✅ Corriendo (PID activo, polling cada 60s) |
-| Worker API | ✅ v0.4.0 — 28 handlers, 8 endpoints |
+| Worker API | ✅ v0.4.0 — 29 handlers, 8 endpoints |
 | Crons activos | 8 (dashboard, health, supervisor, poller, SIM research, SIM report, daily digest, E2E validation) |
 | PRs mergeados (hackathon) | 26 |
 | VM (Execution Plane) | ✅ v0.4.0 — 25 handlers — reconectada |
@@ -21,7 +21,7 @@
 | ID | Título | Asignado | Rama | Estado |
 |----|--------|----------|------|--------|
 | 027 | Langfuse Tracing — Instrumentar LLM calls | codex | feat/codex-langfuse | 📋 assigned |
-| 028 | OODA Report con Langfuse — Reporte semanal | github-copilot | feat/copilot-ooda-langfuse | 📋 assigned |
+| 028 | OODA Report con Langfuse — Reporte semanal | github-copilot | feat/copilot-ooda-langfuse | ✅ done |
 | 029 | Hardening Final — Rate limiting + sanitización | antigravity | feat/antigravity-hardening | 📋 assigned |
 | 030 | E2E Integration Final — Validación completa | claude-code | feat/claude-final-e2e | 📋 assigned |
 
@@ -33,7 +33,7 @@ Cerrar brechas de observabilidad (Langfuse) y seguridad (rate limiting, sanitiza
 | ID | Título | Asignado | Rama | Estado |
 |----|--------|----------|------|--------|
 | 023 | Multi-LLM Worker — OpenAI + Anthropic + Gemini | codex | feat/codex-multi-llm | 📋 assigned |
-| 024 | Dispatcher Model Routing — Integrar al flujo real | github-copilot | feat/copilot-model-routing | 📋 assigned |
+| 024 | Dispatcher Model Routing — Integrar al flujo real | github-copilot | feat/copilot-model-routing | ✅ done |
 | 025 | Quota Dashboard — Reporte de uso en Notion | antigravity | feat/antigravity-quota-dashboard | 📋 assigned |
 | 026 | Multi-Model E2E + Scheduled Tasks Validation | claude-code | feat/claude-multi-model-e2e | 📋 assigned |
 

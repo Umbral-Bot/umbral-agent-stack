@@ -22,15 +22,20 @@ providers:
     window_seconds: 2592000 # 30 días
     warn: 0.70
     restrict: 0.85
+  azure_foundry:
+    limit_requests: 1000
+    window_seconds: 86400   # 1 día
+    warn: 0.80
+    restrict: 0.95
 
 # Routing por task_type (preferido + fallback chain)
 routing:
   coding:
     preferred: chatgpt_plus
-    fallback_chain: [copilot_pro, claude_pro, gemini_pro]
+    fallback_chain: [copilot_pro, claude_pro, azure_foundry, gemini_pro]
   ms_stack:
     preferred: copilot_pro
-    fallback_chain: [chatgpt_plus, claude_pro, gemini_pro]
+    fallback_chain: [azure_foundry, chatgpt_plus, claude_pro, gemini_pro]
   writing:
     preferred: claude_pro
     fallback_chain: [chatgpt_plus, gemini_pro]
@@ -39,7 +44,7 @@ routing:
     fallback_chain: [chatgpt_plus, claude_pro]
   critical:
     preferred: claude_pro
-    fallback_chain: [chatgpt_plus]
+    fallback_chain: [chatgpt_plus, azure_foundry]
   general:
     preferred: chatgpt_plus
-    fallback_chain: [claude_pro, gemini_pro]
+    fallback_chain: [claude_pro, azure_foundry, gemini_pro]

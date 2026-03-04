@@ -4,7 +4,7 @@ title: "Skills Librerías Open Source — moviepy, diagrams, Pillow, manim, play
 assigned_to: cursor-agent-cloud-5
 branch: feat/cloud5-skills-opensource
 round: 11
-status: assigned
+status: done
 created: 2026-03-04
 ---
 
@@ -84,3 +84,15 @@ gh pr create --title "feat: skills librerías open source — video, diagramas, 
 - Cada skill incluye al menos 2 snippets de código Python
 - Casos de uso orientados al perfil de David (BIM, docencia, consultoría)
 - Librerías son las versiones actuales (2025/2026)
+
+## Log
+
+- 2026-03-04 cursor-agent-cloud-5: 7 SKILL.md creados en `openclaw/workspace-templates/skills/`:
+  - `moviepy/` — 4 snippets: video resumen renders, texto+musica, time-lapse obra, cortar clips
+  - `diagrams-python/` — 4 snippets: flujo Revit→PowerBI, arquitectura Umbral, fases consultoria, Power Platform+BIM
+  - `pillow-imaging/` — 4 snippets: batch resize+marca de agua, grid de renders, logo en planos, portadas modulos curso
+  - `manim/` — 4 snippets: flujo BIM animado, impacto automatizacion, geometria parametrica, fases proyecto
+  - `playwright-python/` — 4 snippets: scraping precios materiales, capturas Power BI, descarga normativas, monitoreo precios software
+  - `ffmpeg-python/` — 4 snippets: comprimir para web, extraer frames walkthrough, concatenar modulos curso, GIF de detalle
+  - `svgwrite/` — 4 snippets: plano zonificacion, diagrama flujo proceso, leyenda BIM, infografia KPIs
+- `python scripts/validate_skills.py` → exit 0 (20/20 skills OK)

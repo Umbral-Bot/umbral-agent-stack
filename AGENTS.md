@@ -30,7 +30,7 @@ source .venv/bin/activate
 WORKER_TOKEN=test python -m pytest tests/ -v
 ```
 
-Tests use `fakeredis` (no real Redis needed). All 45 tests should pass.
+Tests use `fakeredis` (no real Redis needed). All 130+ tests should pass (1 may be skipped if `cryptography` is not installed).
 
 ### Starting services for development
 

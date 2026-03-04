@@ -22,6 +22,12 @@
 | PRs mergeados (hackathon) | 34 |
 | VM (Execution Plane) | ✅ v0.4.0 — 25 handlers — reconectada |
 
+## Ronda 9 — En curso
+
+| ID | Título | Asignado | Estado |
+|----|--------|----------|--------|
+| 035 | OpenClaw Skills + Figma Tests | cursor-agent-cloud | ✅ done |
+
 ## Ronda 7 — Completada ✅
 
 | ID | Título | Asignado | Estado |

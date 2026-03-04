@@ -9,11 +9,13 @@ Modos:
     python granola_watcher.py          # Modo continuo (watchdog)
     python granola_watcher.py --once   # Procesa pendientes y sale
 
-Variables de entorno:
-    GRANOLA_EXPORT_DIR      Carpeta a monitorear (requerida)
-    GRANOLA_PROCESSED_DIR   Destino post-procesado (default: EXPORT_DIR/processed)
-    WORKER_URL              URL del Worker (default: http://localhost:8088)
-    WORKER_TOKEN            Token de autenticación del Worker (requerida)
+Variables de entorno (acepta prefijo GRANOLA_ o sin prefijo):
+    GRANOLA_EXPORT_DIR        Carpeta a monitorear (requerida)
+    GRANOLA_PROCESSED_DIR     Destino post-procesado (default: EXPORT_DIR/processed)
+    GRANOLA_WORKER_URL        URL del Worker (default: http://localhost:8088)
+    GRANOLA_WORKER_TOKEN      Token de autenticación del Worker (requerida)
+    GRANOLA_POLL_INTERVAL     Segundos entre checks (default: 5)
+    GRANOLA_LOG_FILE          Ruta del log file (default: C:\\Granola\\watcher.log)
 """
 
 import argparse
@@ -29,14 +31,52 @@ from typing import Any
 
 import requests
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-logger = logging.getLogger("granola_watcher")
+from scripts.vm.granola_watcher_env_loader import load_env
 
-POLL_INTERVAL_S = 10
+_ENV_PATH = os.environ.get("GRANOLA_ENV_FILE", r"C:\Granola\.env")
+load_env(_ENV_PATH)
+
+MAX_RETRIES = 3
+RETRY_BACKOFF_BASE = 2
+
+
+def _setup_logging() -> logging.Logger:
+    """Configure logging to stdout and optionally to a file."""
+    _logger = logging.getLogger("granola_watcher")
+    if _logger.handlers:
+        return _logger
+    _logger.setLevel(logging.INFO)
+
+    fmt = logging.Formatter(
+        "%(asctime)s [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+    )
+
+    stdout_handler = logging.StreamHandler(sys.stdout)
+    stdout_handler.setFormatter(fmt)
+    _logger.addHandler(stdout_handler)
+
+    log_file = os.environ.get("GRANOLA_LOG_FILE", r"C:\Granola\watcher.log")
+    try:
+        log_path = Path(log_file)
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        file_handler = logging.FileHandler(str(log_path), encoding="utf-8")
+        file_handler.setFormatter(fmt)
+        _logger.addHandler(file_handler)
+    except OSError:
+        _logger.debug("Could not open log file %s; using stdout only", log_file)
+
+    return _logger
+
+
+logger = _setup_logging()
+
+
+def _get_poll_interval() -> int:
+    raw = os.environ.get("GRANOLA_POLL_INTERVAL", "5")
+    try:
+        return max(1, int(raw))
+    except ValueError:
+        return 5
 
 
 # ---------------------------------------------------------------------------
@@ -153,14 +193,32 @@ def parse_granola_markdown(text: str, filename: str = "") -> dict[str, Any]:
 def send_to_worker(
     worker_url: str, worker_token: str, task: str, input_data: dict[str, Any]
 ) -> dict[str, Any]:
-    """POST a task to the Worker API."""
+    """POST a task to the Worker API with retry + exponential backoff."""
     url = f"{worker_url.rstrip('/')}/run"
     headers = {"Authorization": f"Bearer {worker_token}", "Content-Type": "application/json"}
     payload = {"task": task, "input": input_data}
 
-    resp = requests.post(url, json=payload, headers=headers, timeout=120)
-    resp.raise_for_status()
-    return resp.json()
+    last_exc: Exception | None = None
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            resp = requests.post(url, json=payload, headers=headers, timeout=120)
+            resp.raise_for_status()
+            return resp.json()
+        except requests.exceptions.ConnectionError as exc:
+            last_exc = exc
+            wait = RETRY_BACKOFF_BASE ** attempt
+            logger.warning(
+                "Connection error (attempt %d/%d), retrying in %ds: %s",
+                attempt, MAX_RETRIES, wait, exc,
+            )
+            if attempt < MAX_RETRIES:
+                time.sleep(wait)
+        except requests.exceptions.RequestException:
+            raise
+
+    raise requests.exceptions.ConnectionError(
+        f"Failed after {MAX_RETRIES} retries"
+    ) from last_exc
 
 
 # ---------------------------------------------------------------------------
@@ -236,11 +294,12 @@ def run_once(export_dir: Path, worker_url: str, worker_token: str, processed_dir
 
 def run_polling(export_dir: Path, worker_url: str, worker_token: str, processed_dir: Path) -> None:
     """Poll the export directory continuously."""
-    logger.info("Polling mode: watching %s every %ds", export_dir, POLL_INTERVAL_S)
+    interval = _get_poll_interval()
+    logger.info("Polling mode: watching %s every %ds", export_dir, interval)
     try:
         while True:
             scan_and_process(export_dir, worker_url, worker_token, processed_dir)
-            time.sleep(POLL_INTERVAL_S)
+            time.sleep(interval)
     except KeyboardInterrupt:
         logger.info("Watcher stopped by user")
 
@@ -281,13 +340,25 @@ def run_watchdog(export_dir: Path, worker_url: str, worker_token: str, processed
 # Main
 # ---------------------------------------------------------------------------
 
+def _env(key: str, *fallback_keys: str, default: str = "") -> str:
+    """Read env var with fallback keys for backward compat (GRANOLA_* → legacy)."""
+    val = os.environ.get(key, "")
+    if val:
+        return val
+    for fb in fallback_keys:
+        val = os.environ.get(fb, "")
+        if val:
+            return val
+    return default
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Granola Export Watcher")
     parser.add_argument("--once", action="store_true", help="Process pending files and exit")
     parser.add_argument("--poll", action="store_true", help="Use polling instead of watchdog")
     args = parser.parse_args()
 
-    export_dir_str = os.environ.get("GRANOLA_EXPORT_DIR", "")
+    export_dir_str = _env("GRANOLA_EXPORT_DIR")
     if not export_dir_str:
         logger.error("GRANOLA_EXPORT_DIR not set")
         sys.exit(1)
@@ -298,15 +369,14 @@ def main() -> None:
         sys.exit(1)
 
     processed_dir = Path(
-        os.environ.get("GRANOLA_PROCESSED_DIR", str(export_dir / "processed"))
+        _env("GRANOLA_PROCESSED_DIR", default=str(export_dir / "processed"))
     )
-    worker_url = os.environ.get("WORKER_URL", "http://localhost:8088")
-    worker_token = os.environ.get("WORKER_TOKEN", "")
+    worker_url = _env("GRANOLA_WORKER_URL", "WORKER_URL", default="http://localhost:8088")
+    worker_token = _env("GRANOLA_WORKER_TOKEN", "WORKER_TOKEN")
     if not worker_token:
-        logger.error("WORKER_TOKEN not set")
+        logger.error("GRANOLA_WORKER_TOKEN / WORKER_TOKEN not set")
         sys.exit(1)
 
-    # Process any existing files first
     count = scan_and_process(export_dir, worker_url, worker_token, processed_dir)
     if count:
         logger.info("Initial scan: processed %d files", count)

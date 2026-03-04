@@ -9,8 +9,25 @@
 | `ping`      | Health check; responde echo. |
 | `notion.poll_comments` | Lee comentarios de la página Control Room en Notion. |
 | `notion.upsert_task`   | Crea o actualiza tareas en base de datos Notion. |
+| `notion.write_transcript` | Escribe transcripción en Notion. |
+| `notion.add_comment` | Agrega comentario a una página Notion. |
+| `notion.update_dashboard` | Actualiza dashboard de Rick en Notion. |
+| `notion.create_report_page` | Crea página de reporte en Notion. |
 | `linear.create_issue` | Crea issue en Linear (title, team_key, description). |
 | `linear.list_teams`   | Lista equipos en Linear. |
+| `linear.update_issue_status` | Actualiza estado/comentario de un issue en Linear. |
+| `llm.generate` | Genera texto con LLM (multi-provider: Claude, Gemini, Azure). |
+| `research.web` | Búsqueda web con Google CSE o Tavily. |
+| `composite.research_report` | Búsqueda + generación de reporte completo. |
+| `figma.get_file` | Lee estructura y páginas de un archivo Figma. |
+| `figma.get_node` | Lee nodos específicos por ID de un archivo Figma. |
+| `figma.export_image` | Exporta frames/nodos como PNG/SVG/JPG/PDF. |
+| `figma.add_comment` | Agrega comentario en un archivo Figma. |
+| `figma.list_comments` | Lista comentarios de un archivo Figma. |
+| `azure.audio.generate` | Genera audio TTS vía Azure OpenAI Realtime API. |
+| `make.post_webhook` | Envía POST a webhook de Make.com. |
+| `windows.pad.run_flow` | Ejecuta flujo de Power Automate Desktop en VM. |
+| `windows.fs.*` | Operaciones de filesystem en la VM Windows. |
 
 El Dispatcher encola tareas en Redis (`umbral:tasks:pending`) y el Worker las ejecuta vía HTTP. Requiere `WORKER_URL`, `WORKER_TOKEN`, `REDIS_URL`.
 
@@ -32,6 +49,14 @@ El Dispatcher encola tareas en Redis (`umbral:tasks:pending`) y el Worker las ej
 - **API:** Rick crea issues vía `linear.create_issue` (encolar tarea o script `scripts/linear_create_issue.py`).
 - **Equipos:** Usar `team_key` (ej. "UMB"). Ejecutar `linear.list_teams` para ver equipos.
 - **Variable:** `LINEAR_API_KEY` en `~/.config/openclaw/env` (VPS).
+
+## Figma
+
+- **API:** Rick lee archivos, exporta frames e imágenes, y gestiona comentarios vía tasks `figma.*`.
+- **Autenticación:** Personal Access Token en `FIGMA_API_KEY`.
+- **file_key:** Se extrae de la URL de Figma: `figma.com/design/{file_key}/...`
+- **Exportar:** `figma.export_image` soporta PNG, SVG, JPG, PDF con escala 1–4.
+- **Comentarios:** `figma.add_comment` para review de diseño, `figma.list_comments` para auditar.
 
 ## Redis
 

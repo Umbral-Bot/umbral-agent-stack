@@ -40,6 +40,13 @@ from .llm import handle_llm_generate
 from .composite import handle_composite_research_report
 from .make_webhook import handle_make_post_webhook
 from .azure_audio import handle_azure_audio_generate
+from .figma import (
+    handle_figma_get_file,
+    handle_figma_get_node,
+    handle_figma_export_image,
+    handle_figma_add_comment,
+    handle_figma_list_comments,
+)
 
 # Each handler: (input: dict) -> dict
 TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
@@ -71,4 +78,9 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "notion.create_report_page": handle_notion_create_report_page,
     "make.post_webhook": handle_make_post_webhook,
     "azure.audio.generate": handle_azure_audio_generate,
+    "figma.get_file": handle_figma_get_file,
+    "figma.get_node": handle_figma_get_node,
+    "figma.export_image": handle_figma_export_image,
+    "figma.add_comment": handle_figma_add_comment,
+    "figma.list_comments": handle_figma_list_comments,
 }

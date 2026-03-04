@@ -31,6 +31,11 @@ NOTION_API_VERSION: str = os.environ.get("NOTION_API_VERSION", "2022-06-28")
 LINEAR_API_KEY: str | None = os.environ.get("LINEAR_API_KEY")
 
 # ---------------------------------------------------------------------------
+# Figma
+# ---------------------------------------------------------------------------
+FIGMA_API_KEY: str | None = os.environ.get("FIGMA_API_KEY")
+
+# ---------------------------------------------------------------------------
 # VM / Windows (tarea windows.open_notepad)
 # ---------------------------------------------------------------------------
 # Para que el Bloc de notas se abra en la sesión del usuario al iniciar sesión,

@@ -4,7 +4,7 @@ title: "Skills Contenido, Docencia y Marketing — LinkedIn, Marca Personal, Mar
 assigned_to: cursor-agent-cloud-4
 branch: feat/cloud4-skills-content
 round: 11
-status: assigned
+status: done
 created: 2026-03-04
 ---
 
@@ -105,3 +105,25 @@ gh pr create --title "feat: skills contenido/marketing — linkedin, marca perso
 - `python scripts/validate_skills.py` → exit 0
 - Skills linkedin y marca-personal usan el material propio de David como base
 - Triggers en español
+
+## Log
+
+### [cursor-agent-cloud-4] 2026-03-04 12:00
+
+**Trabajo realizado:**
+- Creado branch `feat/cloud4-skills-content` desde `main`
+- Investigacion web: algoritmo LinkedIn 2025, Notion API, SEO on-page, marketing digital
+- Nota: archivos locales de Google Drive (`G:\Mi unidad\AI\IA Personalizadas\Linkedin 2\` y `Marca Personal\`) no accesibles desde entorno Linux. Contenido construido con:
+  - Perfil de David extraido del skill `consultor-bim` (metricas, credenciales, experiencia)
+  - Investigacion web de fuentes actualizadas (2025-2026)
+  - Documentacion oficial Notion API (developers.notion.com)
+
+**Archivos creados:**
+- `openclaw/workspace-templates/skills/linkedin-content/SKILL.md`
+- `openclaw/workspace-templates/skills/marca-personal/SKILL.md`
+- `openclaw/workspace-templates/skills/marketing-digital/SKILL.md`
+- `openclaw/workspace-templates/skills/notion-workflow/SKILL.md`
+
+**Validacion:** `python scripts/validate_skills.py` → exit 0 (17 skills OK)
+
+**PR:** feat/cloud4-skills-content → main

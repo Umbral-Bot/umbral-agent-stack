@@ -1,13 +1,30 @@
 """
 Tasks: multi-provider LLM generation.
 
-- llm.generate: generate text using Gemini, OpenAI, Anthropic, GitHub Models, o Azure AI Foundry.
+- llm.generate: generate text via múltiples proveedores LLM.
 
-Provider selection (en orden de prioridad):
-1. "gemini_pro" / modelos "gemini-*" → Google Gemini API (GOOGLE_API_KEY)
-2. Modelos "gpt-*" / "codex" / "o1" / "o3" con AZURE_OPENAI_ENDPOINT+KEY → Azure AI Foundry (prioridad máxima para OpenAI)
-3. Modelos "gpt-*" / "claude-*" con GITHUB_TOKEN → GitHub Models (suscripción Copilot)
-4. Fallback: OPENAI_API_KEY / ANTHROPIC_API_KEY para APIs nativas
+Inventario de modelos disponibles:
+
+  Anthropic (ANTHROPIC_API_KEY — token de sesión Pro):
+    claude-haiku-4-5, claude-opus-4-6, claude-sonnet-4-6
+
+  OpenAI (AZURE_OPENAI_* o GITHUB_TOKEN como fallback):
+    gpt-5.2, gpt-5.3-codex (default/prioridad máxima)
+
+  Google AI Studio (GOOGLE_API_KEY):
+    gemini-3.1-pro-preview-customtools (mejor), gemini-3.1-pro-preview,
+    gemini-flash-latest, gemini-flash-lite-latest
+
+  Google Vertex AI (GOOGLE_API_KEY_RICK_UMBRAL + GOOGLE_CLOUD_PROJECT_RICK_UMBRAL):
+    gemini-3.1-pro-preview
+
+  Azure AI Foundry (AZURE_OPENAI_ENDPOINT + AZURE_OPENAI_API_KEY):
+    gpt-5.3-codex (deployment dedicado con cuota Azure)
+
+Provider selection:
+  OpenAI/Codex: azure_foundry → github_models → openai nativo
+  Claude:       anthropic nativo → github_models
+  Gemini:       gemini (AI Studio) o vertex (si modelo contiene "vertex")
 """
 
 from __future__ import annotations
@@ -24,38 +41,33 @@ from worker.tracing import trace_llm_call
 
 logger = logging.getLogger("worker.tasks.llm")
 
-DEFAULT_MODEL = "gemini-2.5-flash"
+DEFAULT_MODEL = "gemini-3.1-pro-preview-customtools"
 GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions"
 ANTHROPIC_MESSAGES_URL = "https://api.anthropic.com/v1/messages"
-# GitHub Models: compatible con OpenAI API, autenticado con GITHUB_TOKEN (suscripción Copilot)
 GITHUB_MODELS_URL = "https://models.inference.ai.azure.com/chat/completions"
-# Azure AI Foundry: versión de API por defecto (se puede sobreescribir con AZURE_OPENAI_API_VERSION)
 AZURE_OPENAI_DEFAULT_API_VERSION = "2024-12-01-preview"
+# Vertex AI: {REGION}-aiplatform.googleapis.com
+VERTEX_DEFAULT_REGION = "us-central1"
 
-# Router aliases (quota providers) -> concrete API models / deployment names.
-# Modelos reales disponibles:
-#   openai_codex → gpt-5.3-codex  vía Azure AI Foundry (AZURE_OPENAI_*) — prioridad 1
-#                                  o GitHub Models (GITHUB_TOKEN) — fallback
-#   claude_pro   → claude-sonnet-4-6  vía ANTHROPIC_API_KEY o GitHub Models
-#   claude_opus  → claude-opus-4-6   vía ANTHROPIC_API_KEY o GitHub Models (crítico)
-#   gemini_pro   → gemini-3.1-pro-preview-customtools  vía GOOGLE_API_KEY
-#   gemini_flash → gemini-flash-latest  vía GOOGLE_API_KEY
-# Nota: para Azure Foundry el nombre del deployment puede diferir del nombre del modelo.
-# Usar AZURE_OPENAI_DEPLOYMENT para sobreescribir (default = nombre del alias).
+# Router aliases → modelos reales.
+# Cada alias mapea a un nombre de modelo concreto que el provider entiende.
 MODEL_ALIASES = {
-    # Azure AI Foundry / OpenAI Codex — prioridad máxima
-    "openai_codex": "gpt-5.3-codex",       # deployment en Foundry; override con AZURE_OPENAI_DEPLOYMENT
-    "azure_foundry": "gpt-5.3-codex",      # alias directo al provider Foundry
-    # Aliases legacy
-    "chatgpt_plus": "gpt-4o",
-    "copilot_pro":  "gpt-4o-mini",
-    # Anthropic (suscripción Pro)
-    "claude_pro":   "claude-sonnet-4-6",
-    "claude_opus":  "claude-opus-4-6",
-    # Google (AI Studio)
-    "gemini_pro":   "gemini-3.1-pro-preview-customtools",
-    "gemini_flash": "gemini-flash-latest",
+    # --- OpenAI / Codex (Foundry → GitHub Models → OpenAI nativo) ---
+    "azure_foundry": "gpt-5.3-codex",
+    "openai_codex":  "gpt-5.3-codex",
+    "chatgpt_plus":  "gpt-5.2",
+    "copilot_pro":   "gpt-5.3-codex",
+    # --- Anthropic (ANTHROPIC_API_KEY — token de sesión Pro) ---
+    "claude_pro":    "claude-sonnet-4-6",
+    "claude_opus":   "claude-opus-4-6",
+    "claude_haiku":  "claude-haiku-4-5",
+    # --- Google AI Studio (GOOGLE_API_KEY) ---
+    "gemini_pro":       "gemini-3.1-pro-preview-customtools",   # mejor Gemini
+    "gemini_flash":     "gemini-flash-latest",
+    "gemini_flash_lite": "gemini-flash-lite-latest",
+    # --- Google Vertex AI (GOOGLE_API_KEY_RICK_UMBRAL + PROJECT) ---
+    "gemini_vertex":    "gemini-3.1-pro-preview",
 }
 
 
@@ -84,7 +96,7 @@ def handle_llm_generate(input_data: Dict[str, Any]) -> Dict[str, Any]:
         or DEFAULT_MODEL
     ).strip()
     model = _resolve_model_alias(requested_model)
-    provider = _detect_provider(model)
+    provider = _detect_provider(model, requested_alias=requested_model)
 
     max_tokens = int(input_data.get("max_tokens", 1024))
     temperature = float(input_data.get("temperature", 0.7))
@@ -119,55 +131,48 @@ def handle_llm_generate(input_data: Dict[str, Any]) -> Dict[str, Any]:
     return result
 
 
-def _detect_provider(model: str) -> str:
+def _detect_provider(model: str, *, requested_alias: str = "") -> str:
     """
-    Infer provider from model name.
+    Infer provider from model name + optional alias hint.
 
-    Priority para modelos OpenAI/Codex:
-    1. Azure AI Foundry (AZURE_OPENAI_ENDPOINT + AZURE_OPENAI_API_KEY) — cuota dedicada Azure
-    2. GitHub Models (GITHUB_TOKEN) — suscripción Copilot
-    3. OpenAI directo (OPENAI_API_KEY)
-
-    Priority para modelos Anthropic/Claude:
-    1. Anthropic nativo (ANTHROPIC_API_KEY)
-    2. GitHub Models (GITHUB_TOKEN)
+    Gemini:   alias contiene "vertex" → vertex; sino → gemini (AI Studio)
+    OpenAI:   azure_foundry → github_models → openai nativo
+    Claude:   anthropic nativo → github_models
     """
     model_lc = (model or "").lower()
+    alias_lc = (requested_alias or "").lower()
 
     if "gemini" in model_lc:
+        if "vertex" in alias_lc or "vertex" in model_lc:
+            return "vertex"
         return "gemini"
 
     is_openai_model = (
-        "gpt" in model_lc       # gpt-4o, gpt-5.2, gpt-5.3-codex, etc.
+        "gpt" in model_lc
         or "o1" in model_lc
         or "o3" in model_lc
-        or "codex" in model_lc  # gpt-5.3-codex
+        or "codex" in model_lc
         or "chatgpt" in model_lc
         or "copilot" in model_lc
     )
     is_anthropic_model = "claude" in model_lc
 
     if is_openai_model:
-        # Azure AI Foundry: prioridad máxima para modelos OpenAI/Codex
         if (os.environ.get("AZURE_OPENAI_ENDPOINT", "").strip()
                 and os.environ.get("AZURE_OPENAI_API_KEY", "").strip()):
             return "azure_foundry"
-        # GitHub Models (suscripción Copilot)
         if os.environ.get("GITHUB_TOKEN", "").strip():
             return "github_models"
-        # OpenAI nativo
         if os.environ.get("OPENAI_API_KEY", "").strip():
             return "openai"
         raise RuntimeError(
             "No AZURE_OPENAI_*, GITHUB_TOKEN ni OPENAI_API_KEY configurado para modelos OpenAI. "
-            "Agregá AZURE_OPENAI_ENDPOINT y AZURE_OPENAI_API_KEY en ~/.config/openclaw/env"
+            "Configurá al menos uno en ~/.config/openclaw/env"
         )
 
     if is_anthropic_model:
-        # Anthropic nativo primero (tiene más modelos y rate limits propios)
         if os.environ.get("ANTHROPIC_API_KEY", "").strip():
             return "anthropic"
-        # GitHub Models como fallback
         if os.environ.get("GITHUB_TOKEN", "").strip():
             return "github_models"
         raise RuntimeError(
@@ -569,9 +574,95 @@ def _call_azure_foundry(
     }
 
 
+def _call_vertex(
+    *,
+    prompt: str,
+    model: str,
+    max_tokens: int,
+    temperature: float,
+    system_prompt: str,
+) -> Dict[str, Any]:
+    """
+    Google Vertex AI — usa GOOGLE_API_KEY_RICK_UMBRAL + GOOGLE_CLOUD_PROJECT_RICK_UMBRAL.
+    Endpoint REST: {REGION}-aiplatform.googleapis.com
+    Misma interfaz generateContent que AI Studio pero autenticado con API key de Vertex.
+    """
+    api_key = os.environ.get("GOOGLE_API_KEY_RICK_UMBRAL", "").strip()
+    project = os.environ.get("GOOGLE_CLOUD_PROJECT_RICK_UMBRAL", "").strip()
+    if not api_key or not project:
+        raise RuntimeError(
+            "GOOGLE_API_KEY_RICK_UMBRAL y GOOGLE_CLOUD_PROJECT_RICK_UMBRAL requeridos para Vertex AI. "
+            "Configurálos en ~/.config/openclaw/env"
+        )
+
+    region = os.environ.get("VERTEX_REGION", VERTEX_DEFAULT_REGION)
+    # Limpiar prefijo "vertex:" si lo tiene
+    clean_model = model.replace("vertex:", "").strip()
+    if not clean_model:
+        clean_model = "gemini-3.1-pro-preview"
+
+    url = (
+        f"https://{region}-aiplatform.googleapis.com/v1beta1/"
+        f"projects/{project}/locations/{region}/"
+        f"publishers/google/models/{clean_model}:generateContent"
+    )
+
+    contents = []
+    if system_prompt:
+        contents.append({"role": "user", "parts": [{"text": system_prompt}]})
+        contents.append({"role": "model", "parts": [{"text": "Entendido."}]})
+    contents.append({"role": "user", "parts": [{"text": prompt}]})
+
+    payload = {
+        "contents": contents,
+        "generationConfig": {
+            "maxOutputTokens": max_tokens,
+            "temperature": temperature,
+        },
+    }
+
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        method="POST",
+        headers={
+            "Content-Type": "application/json",
+            "x-goog-api-key": api_key,
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            data = json.loads(resp.read().decode())
+    except urllib.error.HTTPError as exc:
+        body_str = _safe_http_error_body(exc)
+        raise RuntimeError(f"Vertex AI API error {exc.code}: {body_str}")
+    except Exception as exc:
+        raise RuntimeError(f"Vertex AI generation failed: {str(exc)[:300]}")
+
+    candidates = data.get("candidates", [])
+    if not candidates:
+        raise RuntimeError("No candidates in Vertex AI response")
+    text = ""
+    for part in candidates[0].get("content", {}).get("parts", []):
+        text += part.get("text", "")
+
+    usage = data.get("usageMetadata", {})
+    return {
+        "text": text,
+        "model": clean_model,
+        "provider": "vertex",
+        "usage": {
+            "prompt_tokens": usage.get("promptTokenCount", 0),
+            "completion_tokens": usage.get("candidatesTokenCount", 0),
+            "total_tokens": usage.get("totalTokenCount", 0),
+        },
+    }
+
+
 PROVIDERS: Dict[str, Callable[..., Dict[str, Any]]] = {
     "gemini": _call_gemini,
-    "azure_foundry": _call_azure_foundry,   # prioridad máxima para OpenAI/Codex
+    "vertex": _call_vertex,
+    "azure_foundry": _call_azure_foundry,
     "github_models": _call_github_models,
     "openai": _call_openai,
     "anthropic": _call_anthropic,

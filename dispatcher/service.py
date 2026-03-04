@@ -33,10 +33,14 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(na
 PROVIDER_MODEL_MAP: Dict[str, str] = {
     # OpenAI / Codex — Worker solo accede GPT vía Azure Foundry
     "azure_foundry": "gpt-5.3-codex",
-    # Anthropic
+    # Anthropic (directo)
     "claude_pro":    "claude-sonnet-4-6",
     "claude_opus":   "claude-opus-4-6",
     "claude_haiku":  "claude-haiku-4-5",
+    # OpenClaw Proxy (Claude vía gateway local)
+    "openclaw_claude_pro":   "anthropic/claude-sonnet-4-6",
+    "openclaw_claude_opus":  "anthropic/claude-opus-4-6",
+    "openclaw_claude_haiku": "anthropic/claude-haiku-4-5",
     # Google AI Studio
     "gemini_pro":        "gemini-3.1-pro-preview-customtools",
     "gemini_flash":      "gemini-flash-latest",

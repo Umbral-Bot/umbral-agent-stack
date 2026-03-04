@@ -212,7 +212,7 @@ Listar tareas recientes. Filtrable. Requiere auth.
 
 ---
 
-## Task Handlers Registrados (24)
+## Task Handlers Registrados (25)
 
 | Task | Categoría | Descripción |
 |------|-----------|-------------|
@@ -240,6 +240,59 @@ Listar tareas recientes. Filtrable. Requiere auth.
 | `linear.update_issue_status` | Linear | Actualiza estado de issue |
 | `research.web` | Research | Búsqueda web (Tavily) |
 | `llm.generate` | LLM | Genera texto con Gemini |
+| `composite.research_report` | Composite | Informe de mercado completo (research + LLM) |
+
+---
+
+### `composite.research_report`
+
+Orquesta múltiples `research.web` + `llm.generate` para producir un informe de investigación completo.
+
+**Input:**
+
+| Campo | Tipo | Requerido | Default | Descripción |
+|-------|------|-----------|---------|-------------|
+| `topic` | string | ✅ | — | Tema a investigar |
+| `queries` | list[str] | — | auto-generados | Queries de búsqueda específicas |
+| `depth` | string | — | `"standard"` | `"quick"` (3 queries), `"standard"` (5), `"deep"` (10) |
+| `language` | string | — | `"es"` | Idioma del reporte |
+
+**Output:**
+
+```json
+{
+  "report": "# Informe...\n\n## Resumen Ejecutivo\n...",
+  "sources": [{"title": "...", "url": "...", "query": "..."}],
+  "queries_used": ["query1", "query2"],
+  "stats": {
+    "total_sources": 15,
+    "research_time_ms": 4500,
+    "generation_time_ms": 3200
+  }
+}
+```
+
+**Proceso interno:**
+1. Si no hay `queries`, usa `llm.generate` para generar N queries relevantes
+2. Ejecuta `research.web` para cada query (errores individuales no crashean)
+3. Consolida resultados y genera reporte con `llm.generate`
+4. Si LLM falla, retorna datos raw como fallback
+
+**Ejemplo curl:**
+
+```bash
+curl -s -X POST http://WINDOWS_TAILSCALE_IP:8088/run \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer $WORKER_TOKEN' \
+  -d '{
+    "task": "composite.research_report",
+    "input": {
+      "topic": "AI market trends 2026",
+      "depth": "standard",
+      "language": "es"
+    }
+  }'
+```
 
 ---
 

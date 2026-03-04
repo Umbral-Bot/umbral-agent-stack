@@ -21,6 +21,7 @@ Manim Community Edition es la libreria que usa 3Blue1Brown para crear videos mat
 
 ## Instalacion
 
+**Instalacion:**
 ```bash
 pip install manim
 # Requiere: LaTeX (para formulas), ffmpeg, Cairo, Pango
@@ -29,7 +30,7 @@ pip install manim
 # Windows: instalar MiKTeX + ffmpeg + ejecutar desde WSL2 recomendado
 ```
 
-## Renderizar una escena
+**Docs oficiales:** https://docs.manim.community/
 
 ```bash
 # Calidad baja (rapido, para preview)
@@ -58,7 +59,7 @@ class FlujoBIM(Scene):
         # Titulo
         titulo = Text("Flujo BIM — LOD de Modelado", font_size=40, color=BLUE)
         self.play(Write(titulo))
-        self.wait(1)
+        self.wait(0.5)
         self.play(titulo.animate.to_edge(UP))
 
         # Crear etapas del flujo como rectangulos

@@ -21,6 +21,7 @@ Diagrams (mingrammer) convierte codigo Python en diagramas PNG/SVG/PDF. Permite 
 
 ## Instalacion
 
+**Instalacion:**
 ```bash
 pip install diagrams
 # Requiere Graphviz instalado en el sistema
@@ -88,6 +89,8 @@ from diagrams.onprem.client import User
 from diagrams.onprem.compute import Server
 from diagrams.saas.chat import Slack
 from diagrams.programming.framework import FastAPI
+from diagrams.onprem.network import Nginx
+from diagrams.saas.chat import Slack
 
 with Diagram(
     "Sistema Rick — Arquitectura Multi-Agente",
@@ -175,6 +178,97 @@ from diagrams.generic.database import SQL
 # Colas y mensajeria
 from diagrams.onprem.queue import Redis
 ```
+
+### 3. Diagrama de proceso de consultoria BIM para propuestas
+
+Genera un diagrama de fases de proyecto para incluir en propuestas tecnicas a clientes.
+
+```python
+from diagrams import Diagram, Cluster, Edge
+from diagrams.generic.blank import Blank
+from diagrams.onprem.client import User, Users
+
+with Diagram(
+    "Proceso de Consultoria BIM",
+    filename="proceso_consultoria_bim",
+    show=False,
+    direction="LR",
+    graph_attr={"rankdir": "LR", "splines": "ortho"},
+):
+    cliente = User("Cliente")
+
+    with Cluster("Fase 1: Diagnostico (2 sem)"):
+        diag = Blank("Levantamiento\nde procesos")
+        gap = Blank("Analisis\nde brechas")
+        diag >> gap
+
+    with Cluster("Fase 2: Diseno (2 sem)"):
+        plan = Blank("Plan BIM\nBEP")
+        estandar = Blank("Estandares\ny templates")
+        plan >> estandar
+
+    with Cluster("Fase 3: Implementacion (4-8 sem)"):
+        piloto = Blank("Proyecto\npiloto")
+        capacit = Blank("Capacitacion\nequipo")
+        piloto >> capacit
+
+    with Cluster("Fase 4: Mejora Continua"):
+        auditoria = Blank("Auditoria\nBIM")
+        soporte = Users("Soporte\ncontinuo")
+        auditoria >> soporte
+
+    cliente >> diag
+    gap >> plan
+    estandar >> piloto
+    capacit >> auditoria
+    soporte >> cliente
+```
+
+### 4. Diagrama de ecosistema Power Platform + BIM
+
+Documenta la integracion de herramientas Microsoft con el stack BIM de un cliente.
+
+```python
+from diagrams import Diagram, Cluster, Edge
+from diagrams.azure.general import Managementgroups
+from diagrams.azure.integration import LogicApps
+from diagrams.azure.analytics import AnalysisServices
+from diagrams.azure.devops import Devops
+from diagrams.onprem.client import Users
+
+with Diagram(
+    "Ecosistema Power Platform + BIM",
+    filename="power_platform_bim",
+    show=False,
+    direction="TB",
+):
+    equipo = Users("Equipo de Proyecto")
+
+    with Cluster("Microsoft 365"):
+        sharepoint = Managementgroups("SharePoint\nDocumentos")
+        teams = Managementgroups("Teams\nColaboracion")
+
+    with Cluster("Power Platform"):
+        automate = LogicApps("Power Automate\nFlujos")
+        apps = Devops("Power Apps\nInterfaces")
+        bi = AnalysisServices("Power BI\nDashboards")
+
+    with Cluster("BIM Tools"):
+        acc = Managementgroups("ACC / BIM360")
+        revit = Managementgroups("Revit / Navisworks")
+
+    equipo >> teams
+    equipo >> apps
+    teams >> sharepoint
+    apps >> automate
+    automate >> Edge(label="sync datos") >> acc
+    acc >> Edge(label="extrae modelos") >> revit
+    automate >> Edge(label="reportes") >> sharepoint
+    sharepoint >> bi
+    bi >> equipo
+```
+
+---
 
 ## Notas
 

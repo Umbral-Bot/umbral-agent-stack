@@ -4,9 +4,17 @@ title: "Skills BIM/AEC Apps — Revit, Dynamo, Rhino, Grasshopper, Navisworks, A
 assigned_to: cursor-agent-cloud-1
 branch: feat/cloud1-skills-bim-aec
 round: 11
-status: assigned
+status: done
 created: 2026-03-04
+completed: 2026-03-04
+pr: "https://github.com/Umbral-Bot/umbral-agent-stack/pull/52"
 ---
+
+## Log
+
+- 2026-03-04: 6 SKILL.md creados con documentación oficial
+- `python scripts/validate_skills.py` → 19 skills OK (exit 0)
+- PR #52: https://github.com/Umbral-Bot/umbral-agent-stack/pull/52
 
 ## Objetivo
 

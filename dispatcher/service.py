@@ -29,6 +29,17 @@ from infra.ops_logger import ops_log
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 
 
+# S4: Mapeo de provider name → model string que entiende el Worker
+PROVIDER_MODEL_MAP: Dict[str, str] = {
+    "gemini_pro": "gemini-2.5-flash",
+    "chatgpt_plus": "gpt-4o-mini",
+    "claude_pro": "claude-sonnet-4-20250514",
+    "copilot_pro": "gpt-4o",
+}
+
+# Tareas LLM que reciben inyección de modelo
+LLM_TASK_PREFIXES = ("llm.", "composite.")
+
 CALLBACK_TIMEOUT_SECONDS = 10.0
 CALLBACK_RETRY_DELAY_SECONDS = 5
 
@@ -250,8 +261,9 @@ def _run_worker(
         input_data = dict(envelope.get("input", {}))
 
         # S4: selección de modelo por task_type y cuotas
+        is_llm_task = any(task.startswith(p) for p in LLM_TASK_PREFIXES)
         decision = model_router.select_model(task_type)
-        if decision.requires_approval:
+        if decision.requires_approval and is_llm_task:
             reason = "quota_exceeded_approval_required"
             logger.warning("[worker %d] Task %s blocked: %s (model=%s)", worker_id, task_id, reason, decision.model)
             ops_log.task_blocked(task_id, task, team, reason)
@@ -260,6 +272,11 @@ def _run_worker(
             continue
         selected_model = decision.model
         ops_log.model_selected(task_id, task_type, selected_model, decision.reason if hasattr(decision, "reason") else "")
+
+        # Solo inyectar modelo concreto para tareas LLM
+        if is_llm_task:
+            model_string = PROVIDER_MODEL_MAP.get(selected_model, selected_model)
+            input_data["model"] = model_string
         input_data["selected_model"] = selected_model
 
         team_info = capabilities.get(team)

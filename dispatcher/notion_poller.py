@@ -83,6 +83,15 @@ def _do_poll(wc: WorkerClient, queue: TaskQueue, r: redis.Redis) -> None:
 
 
 def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Notion Poller — poll Control Room comments")
+    parser.add_argument(
+        "--once", action="store_true",
+        help="Run a single poll cycle and exit (for cron usage)",
+    )
+    args = parser.parse_args()
+
     redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
     worker_url = os.environ.get("WORKER_URL", "")
     worker_token = os.environ.get("WORKER_TOKEN", "")
@@ -102,6 +111,13 @@ def main():
 
     queue = TaskQueue(r)
     wc = WorkerClient(base_url=worker_url, token=worker_token)
+
+    # --once mode: single poll for cron usage
+    if args.once:
+        logger.info("Notion poller --once (cron mode, worker=%s).", worker_url)
+        _do_poll(wc, queue, r)
+        logger.info("Poll complete, exiting.")
+        return
 
     if interval_sec is not None:
         interval_sec = int(interval_sec)

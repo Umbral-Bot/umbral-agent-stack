@@ -46,6 +46,46 @@ MAX_COMMENT_CHARS = 1900
 
 
 # ======================================================================
+# Worker Task History API
+# ======================================================================
+
+def fetch_task_history(
+    worker_client: WorkerClient,
+    hours: int = 24,
+    team: Optional[str] = None,
+    status: Optional[str] = None,
+    page_size: int = 200,
+    max_pages: int = 50,
+) -> Dict[str, Any]:
+    """Fetch task history from Worker API with pagination."""
+    tasks: List[Dict[str, Any]] = []
+    stats: Dict[str, Any] = {}
+    offset = 0
+    total = 0
+
+    for _ in range(max_pages):
+        page = worker_client.task_history(
+            hours=hours,
+            team=team,
+            status=status,
+            limit=page_size,
+            offset=offset,
+        )
+        page_tasks = page.get("tasks", []) or []
+        tasks.extend(page_tasks)
+        total = int(page.get("total", total))
+        if not stats:
+            stats = page.get("stats", {}) or {}
+
+        page_meta = page.get("page", {}) or {}
+        if not bool(page_meta.get("has_more")):
+            break
+        offset += page_size
+
+    return {"tasks": tasks, "total": total, "stats": stats}
+
+
+# ======================================================================
 # Redis scanning
 # ======================================================================
 
@@ -120,8 +160,9 @@ def scan_recent_tasks(
 def compute_metrics(tasks: List[Dict[str, Any]]) -> Dict[str, Any]:
     """Compute aggregate metrics from task list."""
     total = len(tasks)
-    done = sum(1 for t in tasks if t.get("status") == "done")
-    failed = total - done
+    status_counter: Dict[str, int] = Counter(str(t.get("status", "unknown")) for t in tasks)
+    done = int(status_counter.get("done", 0))
+    failed = int(status_counter.get("failed", 0))
 
     # Group by team
     by_team: Dict[str, int] = Counter(t.get("team", "unknown") for t in tasks)
@@ -166,6 +207,7 @@ def compute_metrics(tasks: List[Dict[str, Any]]) -> Dict[str, Any]:
         "total": total,
         "done": done,
         "failed": failed,
+        "status_counts": dict(status_counter),
         "by_team": dict(by_team),
         "by_task_type": dict(by_task_type),
         "by_task": {k: dict(v) for k, v in by_task.items()},
@@ -347,23 +389,37 @@ def main() -> int:
 
     now = datetime.now(timezone.utc)
 
-    # --- Redis ---
-    r = get_redis_client()
-    if r is None:
-        logger.error("Redis not available. Cannot generate digest.")
-        print("ERROR: Redis no disponible. No se puede generar el digest.", file=sys.stderr)
+    # --- Worker API client ---
+    try:
+        wc = WorkerClient()
+    except ValueError as exc:
+        logger.error("WorkerClient not available: %s", exc)
+        print("ERROR: WORKER_URL/WORKER_TOKEN no configurados.", file=sys.stderr)
         return 1
 
-    # --- Scan tasks ---
-    tasks = scan_recent_tasks(r, hours=args.hours, now=now)
-    pending = count_pending(r)
-    logger.info("Found %d completed/failed tasks in last %dh, %d pending", len(tasks), args.hours, pending)
+    # --- Query /task/history ---
+    try:
+        history = fetch_task_history(wc, hours=args.hours)
+    except Exception as exc:
+        logger.error("Failed to query /task/history: %s", exc)
+        print(f"ERROR: No se pudo consultar /task/history: {exc}", file=sys.stderr)
+        return 1
+
+    all_tasks = history.get("tasks", []) or []
+    tasks = [t for t in all_tasks if t.get("status") in ("done", "failed")]
+    stats = history.get("stats", {}) or {}
+    pending = int(stats.get("queued", 0)) + int(stats.get("running", 0))
+    logger.info(
+        "History API returned %d tasks (done/failed=%d), pending=%d",
+        len(all_tasks),
+        len(tasks),
+        pending,
+    )
 
     if not tasks:
         print(f"Sin tareas completadas/fallidas en las últimas {args.hours}h.")
         if args.notion and not args.dry_run:
             try:
-                wc = WorkerClient()
                 post_to_notion(
                     f"Rick: Sin actividad en las últimas {args.hours}h — {now.strftime('%Y-%m-%d %H:%M UTC')}",
                     wc,
@@ -373,14 +429,6 @@ def main() -> int:
             except Exception as exc:
                 logger.error("Failed to post empty digest: %s", exc)
         return 0
-
-    # --- WorkerClient (for LLM + Notion) ---
-    wc: Optional[WorkerClient] = None
-    if args.notion or not args.no_llm:
-        try:
-            wc = WorkerClient()
-        except ValueError as exc:
-            logger.warning("WorkerClient not available: %s (continuing without LLM/Notion)", exc)
 
     # --- Build digest ---
     use_llm = not args.no_llm
@@ -395,10 +443,6 @@ def main() -> int:
     if not args.notion:
         print("\nDigest generado. Usa --notion para publicar en Notion Control Room.")
         return 0
-
-    if wc is None:
-        logger.error("Cannot post to Notion: WorkerClient not available.")
-        return 2
 
     try:
         result = post_to_notion(digest, wc, page_id=args.page_id)

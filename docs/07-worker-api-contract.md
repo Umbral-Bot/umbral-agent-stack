@@ -27,7 +27,7 @@ Health check. No requiere autenticación.
 {
   "ok": true,
   "ts": 1740600000,
-  "version": "0.3.0",
+  "version": "0.4.0",
   "tasks_registered": ["ping", "notion.add_comment", "..."],
   "tasks_in_memory": 42
 }
@@ -94,9 +94,86 @@ Se convierte internamente a TaskEnvelope con `task_id` generado, `team="system"`
 
 ---
 
+### `POST /enqueue` *(v0.4.0+)*
+
+Encola una tarea en Redis para ejecución asíncrona por el Dispatcher.
+Pensado para servicios externos (Make.com, n8n, webhooks) que no necesitan Python SDK.
+
+**Request:**
+```json
+{
+  "task": "research.web",
+  "team": "marketing",
+  "task_type": "research",
+  "input": { "query": "AI trends 2026" }
+}
+```
+
+| Campo | Tipo | Requerido | Default | Descripción |
+|-------|------|-----------|---------|-------------|
+| `task` | string | ✅ | — | Nombre del handler a ejecutar |
+| `team` | string | — | `"system"` | Equipo destino |
+| `task_type` | string | — | `"general"` | Tipo de tarea |
+| `input` | object | — | `{}` | Datos de entrada para el handler |
+
+**Response (200):**
+```json
+{
+  "ok": true,
+  "task_id": "uuid-generado",
+  "queued": true
+}
+```
+
+**Errores específicos:**
+- `400` — Nombre de tarea inválido (solo alfanuméricos + `.` + `_`)
+- `503` — Redis no disponible
+
+**Ejemplo curl:**
+```bash
+curl -s -X POST http://WINDOWS_TAILSCALE_IP:8088/enqueue \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer $WORKER_TOKEN' \
+  -d '{"task":"ping","team":"system","input":{"msg":"hello"}}'
+```
+
+---
+
+### `GET /task/{task_id}/status` *(v0.4.0+)*
+
+Consulta el estado de una tarea encolada desde Redis.
+
+**Response (200):**
+```json
+{
+  "task_id": "uuid",
+  "status": "queued",
+  "task": "research.web",
+  "team": "marketing",
+  "task_type": "research",
+  "result": null,
+  "error": null,
+  "created_at": "2026-03-04T10:00:00+00:00",
+  "queued_at": 1741082400.0
+}
+```
+
+**Errores específicos:**
+- `404` — `task_id` no encontrado en Redis
+- `503` — Redis no disponible
+
+**Ejemplo curl:**
+```bash
+curl -s http://WINDOWS_TAILSCALE_IP:8088/task/UUID-AQUI/status \
+  -H 'Authorization: Bearer $WORKER_TOKEN'
+```
+
+---
+
 ### `GET /tasks/{task_id}`
 
 Consultar estado de una tarea por `task_id`. Requiere auth.
+Usa el store **in-memory** (tareas ejecutadas por POST /run).
 
 **Response (200):**
 ```json
@@ -175,6 +252,7 @@ Listar tareas recientes. Filtrable. Requiere auth.
 | 404 | Tarea no encontrada (GET /tasks/{id}) |
 | 429 | Rate limit excedido |
 | 500 | Error interno o WORKER_TOKEN no configurado |
+| 503 | Redis no disponible (POST /enqueue, GET /task/{id}/status) |
 
 ---
 

@@ -4,7 +4,7 @@ title: "Skills Librerías Open Source — moviepy, diagrams, Pillow, manim, play
 assigned_to: cursor-agent-cloud-5
 branch: feat/cloud5-skills-opensource
 round: 11
-status: assigned
+status: done
 created: 2026-03-04
 ---
 
@@ -84,3 +84,11 @@ gh pr create --title "feat: skills librerías open source — video, diagramas, 
 - Cada skill incluye al menos 2 snippets de código Python
 - Casos de uso orientados al perfil de David (BIM, docencia, consultoría)
 - Librerías son las versiones actuales (2025/2026)
+
+## Log
+
+- 2026-03-04: cursor-agent-cloud-5 crea rama `feat/cloud5-skills-opensource`
+- 2026-03-04: Buscadas docs oficiales de las 7 librerías (moviepy 2.x, diagrams 0.24.4, Pillow, manim Community, playwright-python, ffmpeg-python, svgwrite 1.4.3)
+- 2026-03-04: Creados 7 SKILL.md en `openclaw/workspace-templates/skills/`
+- 2026-03-04: `python scripts/validate_skills.py` → exit 0 (20/20 OK)
+- 2026-03-04: PR creado en rama `feat/cloud5-skills-opensource`

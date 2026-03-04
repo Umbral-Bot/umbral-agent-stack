@@ -4,7 +4,12 @@
       "mcp__Desktop_Commander__read_file",
       "Bash(python -m pytest tests/ -x -q)",
       "Bash(python -m pytest tests/ -q --ignore=tests/test_worker.py)",
-      "Bash(python -c \"import dispatcher.service; print\\(''OK''\\)\")"
+      "Bash(python -c \"import dispatcher.service; print\\(''OK''\\)\")",
+      "mcp__Desktop_Commander__list_directory",
+      "Bash(python -m pytest tests/test_dispatcher_resilience.py -v)",
+      "Bash(python -m pytest tests/test_dispatcher_resilience.py -v --timeout=30)",
+      "Bash(git add tests/test_dispatcher_resilience.py AGENT_INSTRUCTIONS.md .claude/settings.local.json)",
+      "Bash(git commit:*)"
     ]
   }
 }

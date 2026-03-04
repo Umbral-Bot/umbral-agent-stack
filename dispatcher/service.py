@@ -29,10 +29,13 @@ from infra.ops_logger import ops_log
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 
 
-# S4: Mapeo de provider name → model string que entiende el Worker
-# Actualizado con modelos reales disponibles (2026-03-04).
+# S4: Mapeo de provider name → model string que entiende el Worker.
+# Para azure_foundry, el deployment real se toma de AZURE_OPENAI_DEPLOYMENT env var
+# en el Worker; este valor es el default/referencia.
 PROVIDER_MODEL_MAP: Dict[str, str] = {
-    # OpenAI Codex — prioridad máxima (ChatGPT Plus / GitHub Models OAuth)
+    # Azure AI Foundry — prioridad máxima (deployment dedicado con cuota Azure)
+    "azure_foundry": "gpt-5.3-codex",      # deployment name; override con AZURE_OPENAI_DEPLOYMENT
+    # OpenAI Codex via GitHub Models — fallback
     "openai_codex": "gpt-5.3-codex",
     # Anthropic Pro
     "claude_pro":   "claude-sonnet-4-6",

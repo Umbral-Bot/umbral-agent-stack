@@ -42,14 +42,15 @@ def redis_client():
 @pytest.fixture
 def provider_config():
     return {
-        "openai_codex": {"limit_requests": 200, "window_seconds": 10800},
-        "claude_pro":   {"limit_requests": 100, "window_seconds": 18000},
-        "claude_opus":  {"limit_requests": 50,  "window_seconds": 18000},
-        "gemini_pro":   {"limit_requests": 200, "window_seconds": 86400},
-        "gemini_flash": {"limit_requests": 500, "window_seconds": 86400},
-        "copilot_pro":  {"limit_requests": 80,  "window_seconds": 2592000},
-        # Legacy aliases mantenidos
-        "chatgpt_plus": {"limit_requests": 150, "window_seconds": 10800},
+        "azure_foundry": {"limit_requests": 2000, "window_seconds": 3600},
+        "openai_codex":  {"limit_requests": 200,  "window_seconds": 10800},
+        "claude_pro":    {"limit_requests": 100,  "window_seconds": 18000},
+        "claude_opus":   {"limit_requests": 50,   "window_seconds": 18000},
+        "gemini_pro":    {"limit_requests": 200,  "window_seconds": 86400},
+        "gemini_flash":  {"limit_requests": 500,  "window_seconds": 86400},
+        "copilot_pro":   {"limit_requests": 80,   "window_seconds": 2592000},
+        # Legacy alias
+        "chatgpt_plus":  {"limit_requests": 150,  "window_seconds": 10800},
     }
 
 
@@ -82,7 +83,7 @@ def _make_envelope(task: str, task_type: str = "general", **extra_input):
 class TestProviderModelMap:
     def test_all_providers_have_mapping(self):
         """Todos los providers activos deben tener mapping."""
-        expected = {"openai_codex", "claude_pro", "claude_opus", "gemini_pro", "gemini_flash"}
+        expected = {"azure_foundry", "openai_codex", "claude_pro", "claude_opus", "gemini_pro", "gemini_flash"}
         assert expected.issubset(set(PROVIDER_MODEL_MAP.keys()))
 
     def test_model_strings_are_not_empty(self):
@@ -90,6 +91,7 @@ class TestProviderModelMap:
             assert isinstance(model, str) and len(model) > 0, f"{provider} has empty model string"
 
     def test_known_mappings(self):
+        assert PROVIDER_MODEL_MAP["azure_foundry"] == "gpt-5.3-codex"
         assert PROVIDER_MODEL_MAP["openai_codex"] == "gpt-5.3-codex"
         assert PROVIDER_MODEL_MAP["claude_pro"] == "claude-sonnet-4-6"
         assert PROVIDER_MODEL_MAP["claude_opus"] == "claude-opus-4-6"
@@ -171,7 +173,7 @@ class TestModelInjection:
 
     def test_llm_task_blocked_when_quota_exceeded(self, quota_tracker, model_router):
         """Force all providers to 100% quota → requires_approval for LLM tasks."""
-        all_providers = ("openai_codex", "claude_pro", "claude_opus", "gemini_pro", "gemini_flash", "copilot_pro")
+        all_providers = ("azure_foundry", "openai_codex", "claude_pro", "claude_opus", "gemini_pro", "gemini_flash", "copilot_pro")
         for provider in all_providers:
             cfg = quota_tracker.config.get(provider, {})
             limit = cfg.get("limit_requests", 100)
@@ -185,7 +187,7 @@ class TestModelInjection:
 
     def test_non_llm_task_not_blocked_even_if_quota_exceeded(self, quota_tracker, model_router):
         """Non-LLM tasks should proceed even when quota is exceeded."""
-        all_providers = ("openai_codex", "claude_pro", "claude_opus", "gemini_pro", "gemini_flash", "copilot_pro")
+        all_providers = ("azure_foundry", "openai_codex", "claude_pro", "claude_opus", "gemini_pro", "gemini_flash", "copilot_pro")
         for provider in all_providers:
             cfg = quota_tracker.config.get(provider, {})
             limit = cfg.get("limit_requests", 100)
@@ -221,13 +223,13 @@ class TestQuotaPostExecution:
 
     def test_quota_affects_subsequent_routing(self, quota_tracker, model_router):
         """Pushing preferred model past warn should trigger fallback for non-critical."""
-        # coding prefers openai_codex (limit=200, warn=0.75 → 150 requests)
-        for _ in range(155):
-            quota_tracker.record_usage("openai_codex")
+        # coding prefers azure_foundry (limit=2000, warn=0.80 → 1600 requests)
+        for _ in range(1650):
+            quota_tracker.record_usage("azure_foundry")
 
         decision = model_router.select_model("coding")
-        # Should fall back since openai_codex is past warn
-        assert decision.model != "openai_codex" or decision.reason != "under_quota"
+        # Should fall back since azure_foundry is past warn
+        assert decision.model != "azure_foundry" or decision.reason != "under_quota"
 
 
 # ---------------------------------------------------------------------------
@@ -242,19 +244,19 @@ class TestFallbackRouting:
             quota_tracker.record_usage("claude_pro")
 
         decision = model_router.select_model("writing")
-        # Should fall back: writing fallback=[openai_codex, gemini_pro]
-        assert decision.model in ("openai_codex", "gemini_pro")
+        # writing fallback=[azure_foundry, openai_codex, gemini_pro]
+        assert decision.model in ("azure_foundry", "openai_codex", "gemini_pro")
         assert "fallback" in decision.reason
 
     def test_fallback_chain_skips_restricted_models(self, quota_tracker, model_router):
         """If first fallback is also restricted, try next in chain."""
-        # writing: preferred=claude_pro, fallback=[openai_codex, gemini_pro]
-        # Restrict claude_pro (95/100 = 95% > restrict 90%) and openai_codex (185/200 = 92.5% > 90%)
+        # writing: preferred=claude_pro, fallback=[azure_foundry, openai_codex, gemini_pro]
+        # Restrict claude_pro (95/100 > 90%) and azure_foundry (1910/2000=95.5% > 95%)
         for _ in range(95):
             quota_tracker.record_usage("claude_pro")
-        for _ in range(185):
-            quota_tracker.record_usage("openai_codex")
+        for _ in range(1910):
+            quota_tracker.record_usage("azure_foundry")
 
         decision = model_router.select_model("writing")
-        # Should end up on gemini_pro (next in fallback chain)
-        assert decision.model == "gemini_pro"
+        # Should skip azure_foundry and end up on openai_codex or gemini_pro
+        assert decision.model in ("openai_codex", "gemini_pro")

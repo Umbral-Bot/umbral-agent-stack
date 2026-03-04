@@ -25,22 +25,33 @@ def redis_client():
 
 @pytest.fixture
 def provider_config():
-    """Config mínimo para QuotaTracker (limit + window) — modelos reales 2026-03-04."""
+    """Config para QuotaTracker — alineado con config/quota_policy.yaml."""
     return {
-        "openai_codex": {"limit_requests": 200, "window_seconds": 10800},
-        "claude_pro": {"limit_requests": 100, "window_seconds": 18000},
-        "claude_opus": {"limit_requests": 50, "window_seconds": 18000},
-        "gemini_pro": {"limit_requests": 200, "window_seconds": 86400},
-        "gemini_flash": {"limit_requests": 500, "window_seconds": 86400},
-        "copilot_pro": {"limit_requests": 80, "window_seconds": 2592000},
-        # Legacy alias mantenido para compatibilidad de tests
-        "chatgpt_plus": {"limit_requests": 150, "window_seconds": 10800},
+        "azure_foundry": {"limit_requests": 2000, "window_seconds": 3600, "warn": 0.80, "restrict": 0.95},
+        "claude_pro": {"limit_requests": 200, "window_seconds": 18000, "warn": 0.80, "restrict": 0.90},
+        "claude_opus": {"limit_requests": 50, "window_seconds": 18000, "warn": 0.60, "restrict": 0.80},
+        "claude_haiku": {"limit_requests": 500, "window_seconds": 18000, "warn": 0.85, "restrict": 0.95},
+        "gemini_pro": {"limit_requests": 500, "window_seconds": 86400, "warn": 0.80, "restrict": 0.95},
+        "gemini_flash": {"limit_requests": 1000, "window_seconds": 86400, "warn": 0.85, "restrict": 0.97},
+        "gemini_flash_lite": {"limit_requests": 2000, "window_seconds": 86400, "warn": 0.90, "restrict": 0.98},
+        "gemini_vertex": {"limit_requests": 300, "window_seconds": 86400, "warn": 0.80, "restrict": 0.95},
     }
 
 
 @pytest.fixture
 def quota_tracker(redis_client, provider_config):
     return QuotaTracker(redis_client, provider_config)
+
+
+@pytest.fixture(autouse=True)
+def _set_provider_env_vars(monkeypatch):
+    """Simula que los providers principales están configurados."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
+    monkeypatch.setenv("GOOGLE_API_KEY", "goog-test")
+    monkeypatch.setenv("GOOGLE_API_KEY_RICK_UMBRAL", "goog-vertex-test")
+    monkeypatch.setenv("GOOGLE_CLOUD_PROJECT_RICK_UMBRAL", "proj-test")
+    monkeypatch.delenv("AZURE_OPENAI_ENDPOINT", raising=False)
+    monkeypatch.delenv("AZURE_OPENAI_API_KEY", raising=False)
 
 
 @pytest.fixture
@@ -51,12 +62,12 @@ def model_router(quota_tracker):
 class TestQuotaTracker:
     def test_get_quota_state_zero_initially(self, quota_tracker):
         assert quota_tracker.get_quota_state("claude_pro") == 0.0
-        assert quota_tracker.get_quota_state("chatgpt_plus") == 0.0
+        assert quota_tracker.get_quota_state("gemini_pro") == 0.0
 
     def test_record_usage_increments_state(self, quota_tracker):
-        for _ in range(10):
+        for _ in range(20):
             quota_tracker.record_usage("claude_pro")
-        # 10/100 = 0.1
+        # 20/200 = 0.1
         assert abs(quota_tracker.get_quota_state("claude_pro") - 0.1) < 0.01
 
     def test_unknown_provider_returns_zero(self, quota_tracker):
@@ -67,21 +78,21 @@ class TestQuotaTracker:
         quota_tracker.record_usage("claude_pro")
         states = quota_tracker.get_all_quota_states()
         assert "claude_pro" in states
-        assert states["claude_pro"] == 0.02  # 2/100
+        assert states["claude_pro"] == 0.01  # 2/200
 
 
 class TestModelRouter:
-    def test_select_model_coding_prefers_azure_foundry(self, model_router):
-        """coding ahora usa azure_foundry como preferido (prioridad máxima)."""
+    def test_select_model_coding_prefers_claude_pro(self, model_router):
+        """coding usa claude_pro como preferido (provider ya configurado)."""
         decision = model_router.select_model("coding")
         assert isinstance(decision, ModelSelectionDecision)
-        assert decision.model == "azure_foundry"
+        assert decision.model == "claude_pro"
         assert decision.requires_approval is False
-        assert "under_quota" in decision.reason or "fallback" in decision.reason
 
-    def test_select_model_general_prefers_azure_foundry(self, model_router):
+    def test_select_model_general_prefers_claude_pro(self, model_router):
+        """general usa claude_pro (azure_foundry no configurado, se salta)."""
         decision = model_router.select_model("general")
-        assert decision.model == "azure_foundry"
+        assert decision.model == "claude_pro"
         assert decision.requires_approval is False
 
     def test_select_model_writing_prefers_claude(self, model_router):
@@ -103,39 +114,57 @@ class TestModelRouter:
 
     def test_select_model_unknown_task_type_defaults_to_general(self, model_router):
         decision = model_router.select_model("unknown_type")
-        # general → azure_foundry (o fallback si está restringido)
         assert isinstance(decision, ModelSelectionDecision)
-        assert decision.model in ("azure_foundry", "openai_codex", "claude_pro", "gemini_pro", "gemini_flash")
+        assert decision.model in ("claude_pro", "gemini_pro", "gemini_flash")
 
     def test_select_model_with_explicit_quota_state(self, model_router):
-        # Todos en 0 → preferido para coding = azure_foundry
         quota_state = {
-            "azure_foundry": 0, "openai_codex": 0, "claude_pro": 0, "claude_opus": 0,
-            "gemini_pro": 0, "gemini_flash": 0, "copilot_pro": 0,
+            "claude_pro": 0, "claude_opus": 0,
+            "claude_haiku": 0, "gemini_pro": 0, "gemini_flash": 0,
+            "gemini_flash_lite": 0, "gemini_vertex": 0,
         }
         decision = model_router.select_model("coding", quota_state=quota_state)
-        assert decision.model == "azure_foundry"
+        assert decision.model == "claude_pro"
 
-    def test_coding_falls_back_when_foundry_restricted(self, model_router):
-        """Si azure_foundry está en restrict, cae a openai_codex (GitHub Models)."""
+    def test_coding_falls_back_when_claude_restricted(self, model_router):
+        """Si claude_pro está en restrict, cae a gemini_pro."""
         quota_state = {
-            "azure_foundry": 0.96,  # sobre restrict (0.95)
-            "openai_codex": 0.0,
-            "claude_pro": 0.0,
+            "claude_pro": 0.91,
             "claude_opus": 0.0,
+            "claude_haiku": 0.0,
             "gemini_pro": 0.0,
             "gemini_flash": 0.0,
+            "gemini_flash_lite": 0.0,
+            "gemini_vertex": 0.0,
         }
         decision = model_router.select_model("coding", quota_state=quota_state)
-        assert decision.model in ("openai_codex", "claude_pro", "gemini_pro", "gemini_flash")
+        assert decision.model in ("gemini_pro", "gemini_flash")
+
+    def test_foundry_used_when_configured(self, quota_tracker, monkeypatch):
+        """Si Foundry está configurado, aparece en fallback y puede ser seleccionado."""
+        monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://test.openai.azure.com")
+        monkeypatch.setenv("AZURE_OPENAI_API_KEY", "az-key")
+        router = ModelRouter(quota_tracker)
+        quota_state = {"claude_pro": 0.91, "gemini_pro": 0.96, "azure_foundry": 0.0}
+        decision = router.select_model("coding", quota_state=quota_state)
+        assert decision.model == "azure_foundry"
+
+    def test_unconfigured_provider_skipped(self, quota_tracker, monkeypatch):
+        """azure_foundry sin env vars se salta, no aparece en seleccion."""
+        monkeypatch.delenv("AZURE_OPENAI_ENDPOINT", raising=False)
+        monkeypatch.delenv("AZURE_OPENAI_API_KEY", raising=False)
+        router = ModelRouter(quota_tracker)
+        quota_state = {"claude_pro": 0.91, "gemini_pro": 0.0}
+        decision = router.select_model("coding", quota_state=quota_state)
+        assert decision.model == "gemini_pro"
 
 
 class TestLoadQuotaPolicy:
     def test_load_returns_routing_and_providers(self):
         routing, providers = load_quota_policy()
         assert "coding" in routing
-        assert routing["coding"]["preferred"] == "azure_foundry"
-        assert "azure_foundry" in providers or "openai_codex" in providers
+        assert routing["coding"]["preferred"] == "claude_pro"
+        assert "claude_pro" in providers
 
 
 class TestUmbralDefaultModel:
@@ -145,7 +174,6 @@ class TestUmbralDefaultModel:
         monkeypatch.setenv("UMBRAL_DEFAULT_MODEL", "gemini_pro")
         router = ModelRouter(quota_tracker)
         decision = router.select_model("coding")
-        # coding normally prefers openai_codex, but override forces gemini_pro
         assert decision.model == "gemini_pro"
         assert decision.requires_approval is False
 
@@ -153,8 +181,7 @@ class TestUmbralDefaultModel:
         monkeypatch.setenv("UMBRAL_DEFAULT_MODEL", "nonexistent_model")
         router = ModelRouter(quota_tracker)
         decision = router.select_model("coding")
-        # Should fall back to normal routing since override is invalid → azure_foundry
-        assert decision.model == "azure_foundry"
+        assert decision.model == "claude_pro"
 
     def test_default_model_empty_string_no_effect(self, quota_tracker, monkeypatch):
         monkeypatch.setenv("UMBRAL_DEFAULT_MODEL", "")
@@ -165,6 +192,8 @@ class TestUmbralDefaultModel:
     def test_default_model_keeps_fallback_chain(self, quota_tracker, monkeypatch):
         monkeypatch.setenv("UMBRAL_DEFAULT_MODEL", "gemini_pro")
         router = ModelRouter(quota_tracker)
-        quota_state = {"gemini_pro": 0.96, "openai_codex": 0.0, "claude_pro": 0.0}
+        quota_state = {
+            "gemini_pro": 0.96, "claude_pro": 0.0,
+        }
         decision = router.select_model("coding", quota_state=quota_state)
         assert decision.model != "gemini_pro" or decision.requires_approval is True

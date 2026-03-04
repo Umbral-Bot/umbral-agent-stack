@@ -4,8 +4,9 @@
 # Anthropic (token sesión Pro):
 #   claude-haiku-4-5, claude-opus-4-6, claude-sonnet-4-6
 #
-# OpenAI (OAuth / Foundry / GitHub Models):
-#   gpt-5.2, gpt-5.3-codex (default, prioridad máxima)
+# OpenAI (OAuth ChatGPT Plus — solo funciona en OpenClaw, no en Worker):
+#   gpt-5.2, gpt-5.3-codex
+# Para el Worker: Azure AI Foundry es el único camino a GPT
 #
 # Google AI Studio (api-key):
 #   gemini-3.1-pro-preview-customtools (mejor), gemini-flash-latest, gemini-flash-lite-latest
@@ -23,13 +24,6 @@ providers:
     window_seconds: 3600    # 1h
     warn: 0.80
     restrict: 0.95
-
-  # --- OpenAI Codex vía GitHub Models (fallback) — PRIORIDAD 1 ---
-  openai_codex:
-    limit_requests: 400
-    window_seconds: 10800   # 3h
-    warn: 0.75
-    restrict: 0.90
 
   # --- Anthropic Claude Sonnet (sesión Pro) ---
   claude_pro:
@@ -82,23 +76,23 @@ providers:
 
 routing:
   coding:
-    preferred: azure_foundry
-    fallback_chain: [openai_codex, claude_pro, gemini_pro, gemini_flash]
+    preferred: claude_pro
+    fallback_chain: [gemini_pro, azure_foundry, gemini_flash]
   general:
-    preferred: azure_foundry
-    fallback_chain: [openai_codex, claude_pro, gemini_pro, gemini_flash]
+    preferred: claude_pro
+    fallback_chain: [gemini_pro, azure_foundry, gemini_flash]
   ms_stack:
-    preferred: azure_foundry
-    fallback_chain: [openai_codex, claude_pro, gemini_pro]
+    preferred: claude_pro
+    fallback_chain: [gemini_pro, azure_foundry]
   writing:
     preferred: claude_pro
-    fallback_chain: [claude_opus, azure_foundry, gemini_pro]
+    fallback_chain: [claude_opus, gemini_pro]
   research:
     preferred: gemini_pro
-    fallback_chain: [gemini_vertex, azure_foundry, claude_pro, gemini_flash]
+    fallback_chain: [gemini_vertex, claude_pro, gemini_flash]
   critical:
     preferred: claude_opus
-    fallback_chain: [claude_pro, azure_foundry, openai_codex]
+    fallback_chain: [claude_pro, gemini_pro]
   light:
     preferred: gemini_flash
     fallback_chain: [gemini_flash_lite, claude_haiku, gemini_pro]

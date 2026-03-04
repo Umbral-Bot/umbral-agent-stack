@@ -387,7 +387,7 @@ class TestOODAMarkdownFormat:
                 "failed": 3,
                 "blocked": 2,
                 "pending": 5,
-                "quota_usage": {"claude_pro": 55, "chatgpt_plus": 120},
+                "quota_usage": {"claude_pro": 55, "azure_foundry": 120},
                 "source": "redis",
             },
             "llm": {
@@ -475,7 +475,7 @@ class TestMarkdownWithoutLangfuse:
                 "failed": 1,
                 "blocked": 0,
                 "pending": 2,
-                "quota_usage": {"chatgpt_plus": 30},
+                "quota_usage": {"azure_foundry": 30},
                 "source": "redis",
             },
             "llm": {

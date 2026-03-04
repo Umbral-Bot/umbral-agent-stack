@@ -22,9 +22,11 @@ Inventario de modelos disponibles:
     gpt-5.3-codex (deployment dedicado con cuota Azure)
 
 Provider selection:
-  OpenAI/Codex: azure_foundry → github_models → openai nativo
-  Claude:       anthropic nativo → github_models
-  Gemini:       gemini (AI Studio) o vertex (si modelo contiene "vertex")
+  OpenAI/Codex: azure_foundry → openai nativo (OPENAI_API_KEY)
+              NOTA: gpt-5.3-codex y gpt-5.2 vía OAuth de ChatGPT Plus solo funcionan
+              en OpenClaw (Telegram). El Worker los accede por Azure AI Foundry.
+  Claude:       anthropic nativo (ANTHROPIC_API_KEY — token sesión Pro)
+  Gemini:       gemini (AI Studio) o vertex (si alias contiene "vertex")
 """
 
 from __future__ import annotations
@@ -45,7 +47,6 @@ DEFAULT_MODEL = "gemini-3.1-pro-preview-customtools"
 GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions"
 ANTHROPIC_MESSAGES_URL = "https://api.anthropic.com/v1/messages"
-GITHUB_MODELS_URL = "https://models.inference.ai.azure.com/chat/completions"
 AZURE_OPENAI_DEFAULT_API_VERSION = "2024-12-01-preview"
 # Vertex AI: {REGION}-aiplatform.googleapis.com
 VERTEX_DEFAULT_REGION = "us-central1"
@@ -53,11 +54,8 @@ VERTEX_DEFAULT_REGION = "us-central1"
 # Router aliases → modelos reales.
 # Cada alias mapea a un nombre de modelo concreto que el provider entiende.
 MODEL_ALIASES = {
-    # --- OpenAI / Codex (Foundry → GitHub Models → OpenAI nativo) ---
+    # --- OpenAI / Codex (Worker: Azure Foundry → OPENAI_API_KEY) ---
     "azure_foundry": "gpt-5.3-codex",
-    "openai_codex":  "gpt-5.3-codex",
-    "chatgpt_plus":  "gpt-5.2",
-    "copilot_pro":   "gpt-5.3-codex",
     # --- Anthropic (ANTHROPIC_API_KEY — token de sesión Pro) ---
     "claude_pro":    "claude-sonnet-4-6",
     "claude_opus":   "claude-opus-4-6",
@@ -136,8 +134,11 @@ def _detect_provider(model: str, *, requested_alias: str = "") -> str:
     Infer provider from model name + optional alias hint.
 
     Gemini:   alias contiene "vertex" → vertex; sino → gemini (AI Studio)
-    OpenAI:   azure_foundry → github_models → openai nativo
-    Claude:   anthropic nativo → github_models
+    OpenAI:   azure_foundry → openai nativo (OPENAI_API_KEY)
+              NOTA: GITHUB_TOKEN es solo para git (pull/push), NO para LLM.
+              gpt-5.3-codex y gpt-5.2 son accesibles vía OAuth de ChatGPT Plus
+              (OpenClaw), pero el Worker solo los alcanza vía Azure AI Foundry.
+    Claude:   anthropic nativo (ANTHROPIC_API_KEY — token sesión Pro)
     """
     model_lc = (model or "").lower()
     alias_lc = (requested_alias or "").lower()
@@ -161,23 +162,21 @@ def _detect_provider(model: str, *, requested_alias: str = "") -> str:
         if (os.environ.get("AZURE_OPENAI_ENDPOINT", "").strip()
                 and os.environ.get("AZURE_OPENAI_API_KEY", "").strip()):
             return "azure_foundry"
-        if os.environ.get("GITHUB_TOKEN", "").strip():
-            return "github_models"
         if os.environ.get("OPENAI_API_KEY", "").strip():
             return "openai"
         raise RuntimeError(
-            "No AZURE_OPENAI_*, GITHUB_TOKEN ni OPENAI_API_KEY configurado para modelos OpenAI. "
-            "Configurá al menos uno en ~/.config/openclaw/env"
+            "Modelos OpenAI/Codex requieren Azure AI Foundry (AZURE_OPENAI_ENDPOINT + "
+            "AZURE_OPENAI_API_KEY) o OPENAI_API_KEY. "
+            "gpt-5.3-codex vía OAuth de ChatGPT Plus solo funciona en OpenClaw, "
+            "no directamente desde el Worker."
         )
 
     if is_anthropic_model:
         if os.environ.get("ANTHROPIC_API_KEY", "").strip():
             return "anthropic"
-        if os.environ.get("GITHUB_TOKEN", "").strip():
-            return "github_models"
         raise RuntimeError(
-            "No ANTHROPIC_API_KEY ni GITHUB_TOKEN configurado para modelos Claude. "
-            "Agregá ANTHROPIC_API_KEY en ~/.config/openclaw/env"
+            "Modelos Claude requieren ANTHROPIC_API_KEY (token de sesión Pro). "
+            "Agregála en ~/.config/openclaw/env"
         )
 
     return "gemini"
@@ -401,80 +400,6 @@ def _safe_http_error_body(exc: urllib.error.HTTPError) -> str:
         return ""
 
 
-def _call_github_models(
-    *,
-    prompt: str,
-    model: str,
-    max_tokens: int,
-    temperature: float,
-    system_prompt: str,
-) -> Dict[str, Any]:
-    """
-    GitHub Models API — compatible con OpenAI Chat Completions.
-    Usa GITHUB_TOKEN (suscripción GitHub Copilot) para acceder a GPT-4o y Claude.
-    Soporta los mismos modelos que aparecen en https://github.com/marketplace/models
-    """
-    token = os.environ.get("GITHUB_TOKEN", "").strip()
-    if not token:
-        raise RuntimeError(
-            "GITHUB_TOKEN not configured. "
-            "Add it to ~/.config/openclaw/env for GitHub Models (Copilot subscription)."
-        )
-
-    messages = []
-    if system_prompt:
-        messages.append({"role": "system", "content": system_prompt})
-    messages.append({"role": "user", "content": prompt})
-
-    payload: Dict[str, Any] = {
-        "model": model,
-        "messages": messages,
-        "max_tokens": max_tokens,
-        "temperature": temperature,
-    }
-    # Reasoning models (o1, o3) no soportan temperature ni max_tokens estándar
-    if model.startswith("o1") or model.startswith("o3"):
-        payload.pop("temperature", None)
-        payload.pop("max_tokens", None)
-        payload["max_completion_tokens"] = max_tokens
-
-    req = urllib.request.Request(
-        GITHUB_MODELS_URL,
-        data=json.dumps(payload).encode("utf-8"),
-        method="POST",
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {token}",
-        },
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            data = json.loads(resp.read().decode())
-    except urllib.error.HTTPError as exc:
-        body_str = _safe_http_error_body(exc)
-        raise RuntimeError(f"GitHub Models API error {exc.code}: {body_str}")
-    except Exception as exc:
-        raise RuntimeError(f"GitHub Models generation failed: {str(exc)[:300]}")
-
-    choices = data.get("choices", [])
-    if not choices:
-        raise RuntimeError("No choices in GitHub Models response")
-    message = choices[0].get("message", {})
-    text = _extract_openai_text(message.get("content", ""))
-
-    usage = data.get("usage", {})
-    return {
-        "text": text,
-        "model": model,
-        "provider": "github_models",
-        "usage": {
-            "prompt_tokens": usage.get("prompt_tokens", 0),
-            "completion_tokens": usage.get("completion_tokens", 0),
-            "total_tokens": usage.get("total_tokens", 0),
-        },
-    }
-
-
 def _call_azure_foundry(
     *,
     prompt: str,
@@ -663,7 +588,6 @@ PROVIDERS: Dict[str, Callable[..., Dict[str, Any]]] = {
     "gemini": _call_gemini,
     "vertex": _call_vertex,
     "azure_foundry": _call_azure_foundry,
-    "github_models": _call_github_models,
     "openai": _call_openai,
     "anthropic": _call_anthropic,
 }

@@ -23,8 +23,7 @@
 | 019 | Error Alert System — Notificaciones push de fallos | codex | feat/codex-error-alerts | 📋 assigned |
 | 020 | Team Workflow Engine — Flujos por equipo | github-copilot | feat/copilot-team-workflows | 📋 assigned |
 | 021 | Scheduled Tasks Manager — Tareas programadas via Notion | antigravity | feat/antigravity-scheduled-tasks | 📋 assigned |
-
-> Claude Code en pausa hasta que se restablezcan los créditos.
+| 022 | E2E Validation Suite — Prueba completa en producción | claude-code | feat/claude-e2e-validation | 📋 assigned |
 
 ### Objetivo Ronda 5
 Madurar el sistema: alertas de errores, workflows por equipo, y tareas programadas desde Notion.

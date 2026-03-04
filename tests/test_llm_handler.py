@@ -49,7 +49,7 @@ def test_handle_llm_generate_requires_google_key(monkeypatch):
 @pytest.mark.parametrize(
     "model,expected",
     [
-        ("gemini-2.5-flash", "gemini"),
+        ("gemini-3.1-pro-preview-customtools", "gemini"),
         ("gemini-1.5-pro", "gemini"),
         ("unknown-model", "gemini"),
     ],
@@ -129,14 +129,14 @@ def test_handle_llm_generate_success_with_mocked_gemini(monkeypatch):
             }
         )
 
-    assert result["model"] == "gemini-2.5-flash"
+    assert result["model"] == "gemini-3.1-pro-preview-customtools"
     assert "Oportunidades: digitalizacion BIM." in result["text"]
     assert result["usage"]["prompt_tokens"] == 22
     assert result["usage"]["completion_tokens"] == 14
     assert result["usage"]["total_tokens"] == 36
 
     req = mock_urlopen.call_args.args[0]
-    assert req.full_url == f"{GEMINI_BASE_URL}/gemini-2.5-flash:generateContent?key=google-test-key"
+    assert req.full_url == f"{GEMINI_BASE_URL}/gemini-3.1-pro-preview-customtools:generateContent?key=google-test-key"
     body = json.loads(req.data.decode("utf-8"))
     assert body["generationConfig"]["maxOutputTokens"] == 256
     assert body["generationConfig"]["temperature"] == 0.4

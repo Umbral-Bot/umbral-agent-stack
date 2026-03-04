@@ -34,6 +34,8 @@ from .windows_fs_bin import (
 )
 from .observability import handle_ooda_report, handle_self_eval
 from .linear import handle_linear_create_issue, handle_linear_list_teams, handle_linear_update_issue_status
+from .research import handle_research_web
+from .llm import handle_llm_generate
 
 # Each handler: (input: dict) -> dict
 TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
@@ -59,4 +61,6 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "linear.create_issue": handle_linear_create_issue,
     "linear.list_teams": handle_linear_list_teams,
     "linear.update_issue_status": handle_linear_update_issue_status,
+    "research.web": handle_research_web,
+    "llm.generate": handle_llm_generate,
 }

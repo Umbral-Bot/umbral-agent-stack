@@ -4,7 +4,7 @@ title: "Linear Webhooks → Rick: issues nuevos se convierten en tareas"
 assigned_to: codex
 branch: feat/codex-linear-webhooks
 round: 8
-status: assigned
+status: done
 created: 2026-02-27
 ---
 
@@ -76,3 +76,15 @@ def linear_issue_to_envelope(issue_data: dict) -> dict:
 - Crear un issue en Linear con label "coding" y assignee "Rick" → aparece como tarea en Redis
 - Issue sin assignee Rick → se ignora
 - Tests pasan
+
+## Log
+
+### [codex] 2026-03-04 14:38
+- Implementado `dispatcher/linear_webhook.py` con endpoint `POST /webhooks/linear`, validacion de firma `Linear-Signature` (HMAC SHA256), filtro por eventos `Issue create|update`, filtro por assignee Rick (`LINEAR_RICK_IDENTIFIERS`) y exclusion por label `no-auto`.
+- Implementado mapeo `linear_issue_to_envelope(...)` con inferencia por labels: `task` default `llm.generate` (override `task:xxx`), `task_type`, `team` y prioridad (`1/2 -> high`, `3 -> medium`, `4 -> low`).
+- Agregado `tests/test_linear_webhooks.py` con cobertura de firma, mapping, filtros y enqueue real en Redis (fakeredis).
+- Actualizada `docs/30-linear-notion-architecture.md` con flujo bidireccional Linear -> Dispatcher -> Redis e instrucciones para configurar el webhook en Linear.
+- Actualizado `dispatcher/requirements.txt` para incluir `fastapi` y `uvicorn`.
+- Tests ejecutados:
+  - `python -m pytest tests/test_linear_webhooks.py -v -p no:cacheprovider` -> 6 passed
+  - `python -m pytest tests/test_linear.py tests/test_linear_team_router.py tests/test_linear_webhooks.py -q -p no:cacheprovider` -> 41 passed

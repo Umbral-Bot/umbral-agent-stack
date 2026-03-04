@@ -18,18 +18,16 @@
 ## 2. Flujo
 
 ```
-David ──┬── Telegram ──► Rick
-        └── Notion (Control Room) ──► Rick
-                                         │
-Rick ───────► Linear API (crear/actualizar issues)
-        ────► Redis (encolar tareas)
-        ────► Notion (comentarios, Dashboard)
-                                         │
-Cursor/Codex ◄── MCP Linear (leer/crear/actualizar issues)
-        ────► Worker (ejecutar tareas vía Dispatcher)
-                                         │
-Worker ──────► notion.upsert_task (Tareas Umbral Kanban)
-        ────► Redis (completar/fallar)
+David -- Telegram / Notion Control Room --> Rick
+Rick -- crea/actualiza issues --> Linear API
+Rick -- encola tareas --> Redis
+Rick -- comentarios/estado --> Notion
+
+Linear -- webhook Issue create/update --> Dispatcher (/webhooks/linear)
+Dispatcher -- map Issue -> TaskEnvelope --> Redis
+
+Cursor/Codex -- MCP Linear --> lectura/seguimiento
+Worker -- procesa TaskEnvelope --> notion.upsert_task + estado en Redis
 ```
 
 ---
@@ -171,9 +169,35 @@ Worker ──────► notion.upsert_task (Tareas Umbral Kanban)
 4. Rick: herramienta/skill para crear issues en Linear vía API
 5. Dashboard Rick: añadir embeds de vistas Linear (por equipo/sprint)
 
-### Fase 3 (opcional)
-- Webhooks Linear → Rick: cuando se asigna issue a Rick, encolar tarea
-- Unito/Zapier: sync Linear ↔ Notion (si hace falta)
+### Fase 3 (R8 - implementado)
+1. Webhook Linear -> Dispatcher: cuando se crea/actualiza un issue asignado a Rick, se encola automaticamente en Redis.
+2. Filtro de seguridad:
+   - Validacion de firma `Linear-Signature` (HMAC SHA256 con `LINEAR_WEBHOOK_SECRET`)
+   - Solo eventos `Issue` con `action=create|update`
+   - Solo assignee Rick (`LINEAR_RICK_IDENTIFIERS`, por defecto `rick`)
+   - Label `no-auto` ignora el evento
+3. Mapeo automatico a TaskEnvelope:
+   - `task`: `llm.generate` por default (override con label `task:xxx`)
+   - `task_type`: inferido por labels (`coding`, `writing`, `research`, etc.)
+   - `team`: inferido por labels/equipo de Linear (`marketing`, `advisory`, `lab`, `system`)
+   - `priority`: Linear 1/2 -> `high`, 3 -> `medium`, 4 -> `low`
+4. Unito/Zapier: sync Linear <-> Notion (si hace falta)
+
+### Configurar webhook en Linear (Settings)
+1. Definir variables en el host del Dispatcher:
+   - `REDIS_URL=redis://localhost:6379/0`
+   - `LINEAR_WEBHOOK_SECRET=<secret_compartido_con_linear>`
+   - `LINEAR_RICK_IDENTIFIERS=rick,rick@tu-dominio.com,<user-id-de-rick>`
+2. Levantar endpoint webhook:
+   - `python -m uvicorn dispatcher.linear_webhook:app --host 0.0.0.0 --port 8091`
+3. En Linear:
+   - `Settings -> API -> Webhooks -> Create webhook`
+   - URL: `https://<dispatcher-host>/webhooks/linear`
+   - Secret: mismo valor que `LINEAR_WEBHOOK_SECRET`
+   - Events: `Issue` con `create` y `update`
+4. Prueba rapida:
+   - Crear issue con label `coding` y assignee Rick
+   - Verificar que aparece en Redis (`umbral:tasks:pending`) con `source=linear_webhook`
 
 ---
 

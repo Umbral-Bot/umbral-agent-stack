@@ -266,6 +266,13 @@ def build_plain_report(
         for i, topic in enumerate(metrics["research_topics"], 1):
             lines.append(f"  {i}. {topic}")
 
+    if metrics["failed"] > 0:
+        lines += [
+            "",
+            "Alertas:",
+            f"- {metrics['failed']} tareas fallidas detectadas en la ventana.",
+        ]
+
     if metrics["errors"]:
         lines += ["", "⚠️ Errores:"]
         for err in metrics["errors"]:

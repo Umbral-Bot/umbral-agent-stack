@@ -1,10 +1,11 @@
 ---
 name: dynamo
 description: >-
-  Programación visual con Dynamo BIM: nodos, grafos, Python Script, Zero-Touch,
-  integración con Revit y best practices. Use when "Dynamo", "grafo Dynamo",
-  "nodo Dynamo", "Python Dynamo", "automatizar con Dynamo", "Dynamo Revit",
-  "script visual BIM", "Zero-Touch Dynamo".
+  Programación visual y scripting en Dynamo BIM: nodos, Python, DesignScript,
+  automatización de Revit y best practices de scripting paramétrico.
+  Use when "Dynamo", "nodo Dynamo", "Python Dynamo", "script Dynamo",
+  "programación visual BIM", "automatizar con Dynamo", "Dynamo Revit",
+  "DesignScript", "parámetro Dynamo", "Dynamo player".
 metadata:
   openclaw:
     emoji: "\U0001F300"
@@ -14,209 +15,232 @@ metadata:
 
 # Dynamo Skill — Programación Visual BIM
 
-Rick usa este skill para asistir con grafos de Dynamo, nodos personalizados, scripting Python dentro de Dynamo y la integración con Revit.
+Rick usa este skill para asistir con programación visual en Dynamo, scripting Python dentro de nodos, y automatización de Revit mediante flujos Dynamo.
 
-## Conceptos clave
+## Arquitectura de Dynamo
 
-| Concepto | Descripción |
-|----------|-------------|
-| **Grafo (.dyn)** | Archivo JSON que describe el flujo de nodos |
-| **Nodo** | Unidad de cómputo con entradas y salidas |
-| **Wire (hilo)** | Conexión entre salida de un nodo y entrada de otro |
-| **Lista** | Estructura de datos fundamental; casi todo es lista |
-| **Lacing** | Control de cómo se combinan listas (Shortest, Longest, Cross Product) |
-| **Design Script** | Lenguaje textual alternativo a nodos visuales |
-| **Zero-Touch** | Nodos creados desde C# sin configuración extra |
+| Componente | Función |
+|------------|---------|
+| **Nodos** | Unidades de operación con inputs/outputs |
+| **Wires** | Conexiones de datos entre nodos |
+| **Code Block** | Expresiones DesignScript inline |
+| **Python Node** | Script Python dentro del grafo |
+| **Custom Node** | Agrupación reutilizable de nodos |
+| **Dynamo Player** | Ejecución sin abrir el editor Dynamo |
 
-## Estructura del grafo
+## Lenguajes disponibles
 
-### Organización recomendada (izquierda a derecha)
+| Lenguaje | Uso |
+|----------|-----|
+| **DesignScript** | Nodos nativos y Code Blocks |
+| **Python 3** | Python Node (IronPython en Dynamo <3.x, CPython en 3.x) |
 
-```
-[Inputs] → [Proceso: Recolectar] → [Proceso: Transformar] → [Outputs / Watch]
-```
-
-- Usar **Group** (Ctrl+G) para agrupar nodos por función.
-- Agregar **Note** con descripción al inicio del grafo.
-- Usar **Input nodes** (Integer Slider, Number Slider, String, Boolean) para parámetros configurables.
-
-## Nodos esenciales de Revit
-
-### Colección de elementos
-
-```
-All Elements of Category    → Colecta por categoría (Walls, Doors, etc.)
-All Elements of Type        → Por tipo específico
-Select Model Element        → Selección manual interactiva
-Element.GetParameterValueByName → Leer parámetro por nombre
-```
-
-### Modificación de parámetros
-
-```
-Element.SetParameterValueByName(element, paramName, value)
-```
-
-Requiere que Dynamo esté en modo **Automatic** o ejecutar manualmente.
-
-### Geometría
-
-```
-BoundingBox.ByGeometry    → BBox de elemento
-Element.Faces             → Caras de sólido
-Geometry.Translate        → Trasladar geometría
-Surface.PointAtParameter  → Punto en superficie por UV
-```
-
-## Python Script en Dynamo
-
-### Estructura base del nodo Python
+## Python Node — Estructura base
 
 ```python
-# Python 3 (Dynamo 2.13+) — CPython
-import clr
-clr.AddReference('RevitNodes')
-import Revit
-clr.ImportExtensions(Revit.Elements)
-clr.ImportExtensions(Revit.GeometryConversion)
+# IN[0], IN[1]... son los inputs conectados al nodo
+input_data = IN[0]
+multiplier = IN[1]
 
-clr.AddReference('RevitServices')
-import RevitServices
+# Procesamiento
+result = []
+for item in input_data:
+    result.append(item * multiplier)
+
+# OUT es el output del nodo
+OUT = result
+```
+
+### Imports comunes
+
+```python
+# Acceso a la API de Revit
+import clr
+clr.AddReference("RevitAPI")
+clr.AddReference("RevitServices")
+from RevitServices.Persistence import DocumentManager
+from RevitServices.Transactions import TransactionManager
+from Autodesk.Revit.DB import *
+
+# Documento activo
+doc = DocumentManager.Instance.CurrentDBDocument
+
+# Geometría de ProtoGeometry
+clr.AddReference("ProtoGeometry")
+from Autodesk.DesignScript.Geometry import *
+
+# Operaciones de lista
+import DSCore
+from DSCore import List as DSList
+```
+
+### Modificar el modelo (Transaction en Dynamo)
+
+```python
+import clr
+clr.AddReference("RevitAPI")
+clr.AddReference("RevitServices")
+from RevitServices.Persistence import DocumentManager
+from RevitServices.Transactions import TransactionManager
+from Autodesk.Revit.DB import *
+
+doc = DocumentManager.Instance.CurrentDBDocument
+elements = IN[0]  # Elementos Revit pasados desde nodo Select
+
+TransactionManager.Instance.EnsureInTransaction(doc)
+
+results = []
+for elem in elements:
+    param = elem.LookupParameter("Comments")
+    if param:
+        param.Set("Revisado por Dynamo")
+        results.append(elem.Id.IntegerValue)
+
+TransactionManager.Instance.TransactionTaskDone()
+OUT = results
+```
+
+## DesignScript — Code Block
+
+```
+// Rango numérico
+0..10..2;            // [0, 2, 4, 6, 8, 10]
+
+// Lista de puntos
+pts = Point.ByCoordinates(0..5, 0, 0);
+
+// Replicación (lacing)
+Line.ByStartPointEndPoint(pts<1>, pts<2>);
+
+// Función definida en Code Block
+def scale(val, factor) { return val * factor; };
+scale(IN[0], 2.5);
+```
+
+## Bibliotecas clave
+
+| Biblioteca | Import | Contenido |
+|------------|--------|-----------|
+| ProtoGeometry | `Autodesk.DesignScript.Geometry` | Point, Line, Surface, Solid, Arc, NurbsCurve |
+| DSCoreNodes | `DSCore` | Color, DateTime, List, Math, String |
+| DSOffice | `DSOffice` | Lectura/escritura Excel |
+| Revit API | `Autodesk.Revit.DB` | Toda la API de Revit |
+| RevitServices | `RevitServices` | DocumentManager, TransactionManager |
+
+## Patrones comunes
+
+### Seleccionar elementos por categoría y filtrar
+
+```python
+import clr
+clr.AddReference("RevitAPI")
+from Autodesk.Revit.DB import FilteredElementCollector, BuiltInCategory
+
+doc = IN[0]  # Dynamo puede pasar el doc como input
+
+walls = FilteredElementCollector(doc)\
+          .OfCategory(BuiltInCategory.OST_Walls)\
+          .WhereElementIsNotElementType()\
+          .ToElements()
+
+# Filtrar muros con ancho > 0.3m (convertido a feet)
+threshold = 0.3 / 0.3048
+thick_walls = [w for w in walls
+               if w.Width > threshold]
+
+OUT = thick_walls
+```
+
+### Leer y escribir parámetros en batch
+
+```python
+# IN[0]: lista de elementos, IN[1]: nombre param, IN[2]: valor
+elements = IN[0]
+param_name = IN[1]
+new_value = IN[2]
+
+clr.AddReference("RevitServices")
 from RevitServices.Persistence import DocumentManager
 from RevitServices.Transactions import TransactionManager
 
 doc = DocumentManager.Instance.CurrentDBDocument
-
-# Entradas: siempre IN[0], IN[1], ...
-elementos = IN[0]  # puede ser lista o valor único
-
-# Procesar
-resultados = []
 TransactionManager.Instance.EnsureInTransaction(doc)
 
-for elem in elementos:
-    # Obtener elemento nativo de Revit
-    elem_native = elem.InternalElement
-    param = elem_native.LookupParameter("Comentarios")
-    if param:
-        param.Set("Procesado por Dynamo")
-    resultados.append(elem_native.Id.IntegerValue)
+for elem in elements:
+    p = elem.LookupParameter(param_name)
+    if p and not p.IsReadOnly:
+        p.Set(new_value)
 
 TransactionManager.Instance.TransactionTaskDone()
-
-# Salida: siempre asignar a OUT
-OUT = resultados
+OUT = [e.Id.IntegerValue for e in elements]
 ```
 
-### Importar módulos adicionales
+## Best Practices
+
+### Cuándo usar Python en lugar de nodos visuales
+
+- Iteraciones con lógica condicional compleja
+- Recursión o bucles anidados
+- Acceso a bibliotecas externas (pandas, openpyxl)
+- Operaciones batch sobre cientos de elementos
+- Validaciones con múltiples condiciones
+
+### Naming conventions
 
 ```python
-import sys
-sys.path.append(r"C:\Users\usuario\AppData\Roaming\Python\Python310\site-packages")
-import pandas as pd  # si está instalado
+# Bueno: nombre descriptivo con tipo
+wall_elements = IN[0]
+param_name_str = IN[1]
+
+# Evitar: nombres crípticos
+x = IN[0]
+p = IN[1]
+
+# Aliases para imports largos
+from Autodesk.Revit.DB import BuiltInParameter as BIP
+from Autodesk.Revit.DB import BuiltInCategory as BIC
 ```
 
-### Manejo de listas aplanadas
+### Gestión de memoria (ProtoGeometry)
 
 ```python
-# Aplanar lista de listas
-def flatten(lst):
-    result = []
-    for item in lst:
-        if isinstance(item, list):
-            result.extend(flatten(item))
-        else:
-            result.append(item)
-    return result
+# Los objetos de ProtoGeometry son "unmanaged"
+# Usar Dispose() cuando sea posible
+pt = Point.ByCoordinates(0, 0, 0)
+# ... usar pt ...
+pt.Dispose()
 
-elementos_flat = flatten(IN[0]) if isinstance(IN[0], list) else [IN[0]]
+# O usar with statement si el objeto lo soporta
 ```
 
-## Lacing — Control de listas
+## Dynamo Player
 
-| Lacing | Comportamiento |
-|--------|---------------|
-| **Shortest** | Itera hasta que la lista más corta se agota |
-| **Longest** | Repite el último elemento de listas más cortas |
-| **Cross Product** | Combinación de todos con todos (n × m) |
+Permite ejecutar scripts sin abrir el editor. Rick puede:
+1. Abrir Dynamo Player desde Revit ribbon → Manage → Visual Programming
+2. Seleccionar script `.dyn`
+3. Completar inputs expuestos (IsInput=true)
+4. Hacer clic en Run
 
-Se configura haciendo clic derecho en el nodo → Lacing.
+Para exponer un input: clic derecho en nodo → "Is Input".
 
-## Design Script (lenguaje textual)
+## Ejemplos de uso con Rick
 
-```
-// Crear rango
-nums = 0..10..1;          // [0, 1, 2, ..., 10]
-odds = 1..10..#5;         // 5 valores entre 1 y 10
+- **Rick: "Numerá todas las puertas secuencialmente por nivel"** → Python Node con FilteredElementCollector + sort por nivel + set Mark.
+- **Rick: "Generá una grilla de puntos cada 3m en X e Y"** → Code Block con `0..width..3` y `Point.ByCoordinates`.
+- **Rick: "Leé una planilla Excel y actualizá parámetros en Revit"** → DSOffice.Excel.ReadFromFile + Python Node con LookupParameter.
+- **Rick: "Creá un script Dynamo para exportar datos de habitaciones a CSV"** → FilteredElementCollector OST_Rooms + Python con csv module.
 
-// Operaciones en lista
-doubled = nums * 2;
+## Recursos oficiales
 
-// Definir función
-def sumar(a, b) { return = a + b; }
-resultado = sumar(3, 4);  // 7
+- Dynamo Primer v2: https://primer2.dynamobim.org/
+- Dynamo Primer v1 (Python): https://primer.dynamobim.org/10_Custom-Nodes/10-4_Python.html
+- Scripting Strategies: https://primer.dynamobim.org/13_Best-Practice/13-1_Scripting-Strategies.html
+- Dynamo GitHub: https://github.com/DynamoDS/Dynamo
+- Dynamo Forum: https://forum.dynamobim.com/
 
-// Replication guide (equivalente a lacing)
-resultado = suma(lista1<1>, lista2<2>);  // Cross product
-```
+## Notas
 
-## Zero-Touch — Nodo personalizado en C#
-
-### Estructura mínima
-
-```csharp
-using Autodesk.DesignScript.Runtime;
-
-namespace MiNamespace
-{
-    public static class MiNodo
-    {
-        /// <summary>Descripción del nodo.</summary>
-        /// <param name="valor">Descripción input.</param>
-        /// <returns name="resultado">Descripción output.</returns>
-        public static double Duplicar(double valor)
-        {
-            return valor * 2;
-        }
-    }
-}
-```
-
-Compilar como DLL y colocar en `%AppData%\Dynamo\Dynamo Revit\<version>\packages\MiPaquete\bin\`.
-
-## Paquetes útiles para AEC
-
-| Paquete | Función principal |
-|---------|------------------|
-| **Clockwork** | Nodos Revit extendidos (parámetros, vistas, sheets) |
-| **Rhythm** | Automatización de tareas Revit complejas |
-| **archilab** | Herramientas para Revit y Dynamo |
-| **Data-Shapes** | UI personalizada en grafos (formularios, selección) |
-| **MEPover** | Nodos para sistemas MEP |
-| **Orchid** | Manejo de familias y parámetros compartidos |
-
-## Buenas prácticas
-
-- **Siempre** usar `TransactionManager` en Python al modificar el modelo.
-- Agrupar operaciones en pocas transacciones para mejor rendimiento.
-- Usar **Watch** para inspeccionar listas antes de modificar elementos.
-- Usar **Python Script** solo cuando los nodos visuales no sean suficientes.
-- Guardar el grafo en formato `.dyn` y versionar con Git.
-- Documentar con **Notes** y **Groups** el propósito de cada sección.
-- Evitar grafos con más de 100 nodos; dividir en sub-grafos con `Custom Nodes`.
-
-## Errores comunes
-
-| Error | Causa | Solución |
-|-------|-------|----------|
-| `Warning: Null value` | Elemento no encontrado o parámetro vacío | Validar con `== null` antes de procesar |
-| Grafo no actualiza | Modo Manual activo | Cambiar a Automatic o presionar Run |
-| `TransactionException` | Transaction anidada o no cerrada | Usar `EnsureInTransaction` y `TaskDone` |
-| Lista plana cuando se espera lista de listas | Lacing incorrecto | Ajustar lacing o usar `List.Create` |
-
-## Links oficiales
-
-- [Dynamo Primer 2.0](https://primer2.dynamobim.org/) — Guía completa de aprendizaje
-- [Dynamo Learn](https://dynamobim.org/learn/) — Recursos y tutoriales oficiales
-- [Dynamo GitHub](https://github.com/DynamoDS/Dynamo) — Código fuente y issues
-- [Zero-Touch Guide](https://primer2.dynamobim.org/6_custom_nodes_and_packages/6-3_packages) — Crear paquetes y nodos
+- Dynamo Sandbox es la versión standalone (sin Revit); Dynamo for Revit se abre desde dentro de Revit.
+- Dynamo 3.x usa CPython 3.x (nodo Python 3); versiones anteriores usaban IronPython 2.7.
+- Los grafos Dynamo se guardan como `.dyn` (JSON internamente).
+- ProtoGeometry crea objetos unmanaged: liberarlos con `Dispose()` en scripts pesados.

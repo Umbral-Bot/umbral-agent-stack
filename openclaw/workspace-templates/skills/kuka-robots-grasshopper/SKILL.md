@@ -1,11 +1,12 @@
 ---
 name: kuka-robots-grasshopper
 description: >-
-  Programación de robots industriales KUKA desde Grasshopper con plugins KukaPRC
-  y Robots: generación de toolpaths, simulación, código KRL y fabricación digital.
-  Use when "KukaPRC", "Robots plugin", "robot Grasshopper", "KUKA GH",
-  "fabricación digital", "toolpath robot", "KRL", "robot industrial Rhino",
-  "KUKA programación", "robotic fabrication".
+  Programación de robots industriales KUKA en Grasshopper mediante los plugins
+  KukaPRC y Robots: toolpaths, fabricación digital y generación de código KRL.
+  Use when "KukaPRC", "Robots plugin", "robot KUKA", "fabricación digital",
+  "toolpath robot", "KRL", "Grasshopper robot", "robot Grasshopper",
+  "fabricación robótica", "KUKA Grasshopper", "programar KUKA",
+  "robot ABB", "robot UR Grasshopper".
 metadata:
   openclaw:
     emoji: "\U0001F916"
@@ -13,276 +14,254 @@ metadata:
       env: []
 ---
 
-# KUKA + Robots — Grasshopper Skill
+# KUKA + Robots en Grasshopper — Fabricación Digital
 
-Rick usa este skill para asistir con programación de robots industriales KUKA desde Grasshopper usando los plugins KukaPRC y Robots (de Visose), generación de código KRL y flujos de fabricación digital robotizada.
+Rick usa este skill para asistir con programación de robots industriales desde Grasshopper usando KukaPRC y el plugin Robots: generación de toolpaths, simulación y exportación a KRL/URScript.
 
 ## Plugins disponibles
 
-| Plugin | Autor | Enfoque |
-|--------|-------|---------|
-| **KukaPRC** | KUKA | Integración directa con KUKA robots; simulación y KRL |
-| **Robots** | Visose (GitHub) | Multi-marca (KUKA, ABB, UR, etc.); código abierto |
+| Plugin | Robots soportados | Output | Fuente |
+|--------|------------------|--------|--------|
+| **KukaPRC** | KUKA | KRL (.src) | Food4Rhino |
+| **Robots** | KUKA, ABB, UR, Fanuc, Staubli | KRL, RAPID, URScript | GitHub (github.com/visose/Robots) |
+| **HAL** | Multi-marca | Múltiples | Food4Rhino (comercial) |
 
-Ambos se instalan desde **Yak** (package manager de Rhino) o desde [Food4Rhino](https://www.food4rhino.com/).
+## KukaPRC — Workflow básico
 
----
+### Componentes principales por categoría
 
-## KukaPRC — Flujo de trabajo
+| Categoría | Componentes clave |
+|-----------|------------------|
+| **Robot** | `KUKA Robot` (definición del robot) |
+| **Toolpath** | `Target`, `Joint Target`, `Speed`, `Zone` |
+| **Tool** | `PRC Tool`, `Change Tool` |
+| **Utilities** | `Safe Plane`, `Reduce Toolpath`, `Tangential Offset` |
+| **I/O** | `Digital Output`, `Wait For Digital Input` |
+| **Export** | `SRC Export` (genera código KRL) |
+
+### Flujo típico en KukaPRC
+
+```
+[Curva o superficie] → [Dividir/puntos] → [Target] → [Tool] → [Speed/Zone] → [Robot] → [SRC Export]
+```
+
+### Definición de robot
+
+1. Agregar componente `KUKA Robot`
+2. Seleccionar modelo (KR 6 R900, KR 10 R1420, etc.)
+3. Conectar posición base (plano)
+4. Conectar herramienta (TCP)
+
+### Targets y toolpaths
+
+```
+// Estructura de un Target en KukaPRC:
+Target:
+  - Plane: plano de orientación del TCP (Point3d + Normal)
+  - Speed: velocidad (mm/s) via componente Speed
+  - Zone: precisión de aproximación (mm) via componente Zone
+  - Tool: herramienta activa
+  - External axes (si aplica)
+```
+
+**Tipos de target:**
+- **Cartesian Target**: posición definida por plano en espacio 3D
+- **Joint Target**: posición definida por ángulos de eje (evita singularidades)
+
+### Parámetros de movimiento
+
+| Parámetro | Descripción | Valores típicos |
+|-----------|-------------|-----------------|
+| **Speed** | Velocidad TCP (mm/s) o porcentaje | 10–2000 mm/s |
+| **Zone** | Radio de aproximación | Z0 (exacto), Z1, Z5, Z10, CONT |
+| **Motion type** | LIN (lineal) o PTP (joint-to-joint) | LIN para trayectorias, PTP para reposición |
+
+### Ejemplo de toolpath en superficie
+
+```
+// Workflow GH (pseudocódigo de nodos):
+
+1. Surface (Srf) → Divide Surface (U=20, V=1) → Points
+2. Points → Sort Points (por X o según dirección de trabajo)
+3. Sort Points → Evaluate Surface → Normals
+4. Normals + Points → Construct Plane (PlaneNormal)
+5. Planes → KukaPRC Target (Speed=200, Zone=Z1)
+6. Targets (lista) → KukaPRC Toolpath
+7. Toolpath → KukaPRC Robot (con herramienta y base)
+8. Robot → SRC Export → archivo .src (KRL)
+```
+
+### Exportación KRL
+
+El componente `SRC Export` genera:
+- `program.src` — programa principal
+- `program.dat` — archivo de datos (tools, speeds)
+
+Subir a KUKA KR C4 via WorkVisual, USB o red.
+
+## Plugin Robots — Alternativa multi-marca
+
+El plugin **Robots** (github.com/visose/Robots) soporta KUKA, ABB, UR, Fanuc y más.
 
 ### Instalación
 
 ```
-1. Rhino 7/8 → Tools → Package Manager (Yak)
-2. Buscar "KukaPRC" → Instalar
-3. Reiniciar Rhino
-4. Verificar en GH: panel "KUKA|prc"
+Rhino PackageManager → buscar "Robots" → Instalar
 ```
 
-### Componentes principales de KukaPRC
+### Conceptos del plugin Robots
 
-| Componente | Función |
-|-----------|---------|
-| `KUKA|prc Core` | Componente principal; recibe comandos, genera código KRL |
-| `Linear` | Movimiento lineal (LIN) a una posición |
-| `PTP` | Point-to-Point (PTP); movimiento de eje a eje |
-| `Spline` | Movimiento suave por spline continua |
-| `Circular` | Movimiento circular (CIRC) |
-| `SetDIO` | Activar/desactivar salida digital |
-| `Wait` | Pausa en segundos |
-| `Tool` | Definir TCP (Tool Center Point) |
-| `Frame` | Definir sistema de coordenadas de trabajo (FRAME) |
+| Concepto | Descripción |
+|----------|-------------|
+| **Robot System** | Define robot + tool + base |
+| **Target** | Posición + orientación + velocidad + zona |
+| **Motion** | JointMotion (PTP) o CartesianMotion (LIN/CIRC) |
+| **Program** | Secuencia de targets → simula y exporta |
+| **Tool** | TCP con frame, peso, centro de masa |
 
-### Grafo básico KukaPRC en GH
-
-```
-[Geometría/Curvas]
-      ↓
-[Dividir curva en puntos + frames]
-      ↓ Planos (Plane)
-[KUKA|prc Linear]  ← Tool, Frame, Speed
-      ↓ Comandos
-[KUKA|prc Core]    ← Robot model, Commands
-      ↓
-[Simulación 3D]  +  [Exportar KRL]
-```
-
-### Definir TCP (Tool Center Point)
-
-```
-En GH con KukaPRC:
-1. Componente "Tool" de KUKA|prc
-2. Entradas:
-   - TCP Plane: plano que define origen y orientación del TCP
-   - Name: nombre de la herramienta (ej: "spindle_v1")
-   - Load: masa en kg del end-effector
-   - LoadOffset: desplazamiento del centro de masa
-```
-
-### Generar frames desde curva (toolpath)
+### Crear Tool (herramienta)
 
 ```python
-# En GhPython — dividir curva en frames
-import Rhino.Geometry as rg
-import math
+# En Python Node de GH con Robots plugin
+import Robots
 
-curve = IN_curve  # curva de entrada
-count = int(IN_count)  # número de puntos
+# Definir herramienta por TCP
+tcp_plane = x  # Input: Plane del TCP
+tool_weight = 2.5  # kg
+mesh = y  # Input: Mesh de la herramienta (visualización)
 
-# Dividir por parámetro
-params = curve.DivideByCount(count - 1, True)
-frames = []
-for t in params:
-    pt = curve.PointAt(t)
-    tangent = curve.TangentAt(t)
-    tangent.Unitize()
-    normal = rg.Vector3d.CrossProduct(tangent, rg.Vector3d.ZAxis)
-    normal.Unitize()
-    # Frame con Z = tangente (dirección de avance), X = normal
-    frame = rg.Plane(pt, normal, rg.Vector3d.CrossProduct(normal, tangent))
-    frames.append(frame)
-
-a = frames
+tool = Robots.Tool("Extrusora", tcp_plane, tool_weight, mesh=mesh)
+a = tool
 ```
 
-### Velocidades y zonas de aproximación
+### Crear targets y programa
 
-| Parámetro | Descripción | Valor típico |
-|-----------|-------------|--------------|
-| `Speed` | Velocidad en mm/s | 50–500 mm/s |
-| `Acceleration` | % de aceleración máxima | 10–100% |
-| `ApproxDistance` | Zona de aproximación (blend) | 5–50 mm |
+```python
+import Robots
+from Robots import Target, JointMotion, CartesianMotion, Speed, Zone, Frame
 
----
+# Speed y Zone
+spd = Speed(translation=200, rotation=1.0)  # mm/s, rad/s
+zn = Zone(0.5)  # radio en mm
 
-## Plugin Robots (Visose) — Multi-marca
+# Target cartesiano
+target = Target(
+    plane=planes[i],           # Rhino.Geometry.Plane
+    speed=spd,
+    zone=zn,
+    motion=CartesianMotion(),
+    tool=tool,
+    frame=Frame.Default
+)
 
-### Instalación
-
-```
-1. Rhino 7/8 → Tools → Package Manager (Yak)
-2. Buscar "Robots" → Instalar
-3. O desde GitHub: github.com/visose/Robots
-4. Reiniciar Rhino
-```
-
-### Modelos de robots disponibles
-
-- **KUKA**: KR 6 R900, KR 10 R1100, KR 210 R2700, KR 210-2, y más
-- **ABB**: IRB 120, IRB 1200, IRB 6700
-- **Universal Robots**: UR3, UR5, UR10
-- **Staubli**, **Fanuc**, **Franka** (en desarrollo)
-
-### Componentes principales de Robots
-
-| Componente | Función |
-|-----------|---------|
-| `Load Robot` | Carga modelo de robot por nombre |
-| `Create Program` | Genera programa con targets y robot |
-| `Target` | Define una posición objetivo (frame + velocidad) |
-| `Speed` | Define velocidad (translación + rotación + externa) |
-| `Zone` | Define zona de aproximación (blend) |
-| `Tool` | Define TCP con masa y centro de masa |
-| `Frame` | Define sistema de referencia del trabajo |
-| `Simulate` | Simula movimiento y muestra colisiones |
-| `Save Code` | Guarda código KRL/RAPID/URP en disco |
-| `Custom Code` | Inserta líneas de código nativas |
-
-### Grafo básico Robots en GH
-
-```
-[Load Robot "KUKA KR 210-2"]
-         ↓
-[Frames del toolpath]
-         ↓
-[Target] ← Speed, Zone, Tool, Frame
-         ↓ Lista de Targets
-[Create Program] ← Robot, Targets
-         ↓
-[Simulate]   [Save Code → .src / .dat]
+targets.append(target)
 ```
 
-### Definir Target con Robots
+### Programa y simulación
+
+```python
+# Crear programa
+robot = robot_system  # Input: RobotSystem de GH
+program = Robots.Program("Fabricacion", robot, [targets])
+
+# Verificar errores
+errors = program.Errors
+warnings = program.Warnings
+
+# Simular (obtener posición en tiempo t)
+position, _ = program.Animate(t=0.5, calculateMeshes=True)
+
+# Exportar código
+code = program.Code  # Lista de strings por archivo
+
+a = program
+b = errors
+c = code
+```
+
+## Técnicas de fabricación digital
+
+### Impresión 3D robótica (extrusión)
 
 ```
-Target:
-  - Plane: frame de la posición (orientación del TCP)
-  - Speed: (translación mm/s, rotación °/s, ext mm/s, ext °/s)
-  - Zone: distancia de approximation (mm)
-  - Tool: definición del TCP
-  - Frame: frame de trabajo (WorkObject en KUKA)
-  - Config: configuración de eje (None = automático)
+Curva de extrusión → Dividir cada Xmm → Planos perpendiculares a tangente
+→ Agregar offset Z por capa → Target list → Toolpath con speed baja
 ```
 
----
+### Fresado CNC robótico
 
-## Código KRL generado — Estructura
+```
+Superficie → Generar iso-curvas de mecanizado → Puntos equidistantes
+→ Normales de superficie → Planos TCP (Normal = eje herramienta)
+→ Ajustar orientación herramienta → Target list
+```
 
-### Archivo .src (programa)
+### Winding / enrollado de fibra
+
+```
+Mandrel (geometría) → Geodésicas o curvas personalizadas
+→ Puntos sobre curvas → Planos tangentes
+→ Calcular tensión de fibra → Targets
+```
+
+## KRL — Código generado (referencia)
 
 ```krl
-DEF Mi_Programa()
-  ; Generado por KukaPRC / Robots
-  BAS(#INITMOV, 0)
-  $TOOL = TOOL_DATA[1]   ; Herramienta activa
-  $BASE = BASE_DATA[1]   ; Frame de trabajo activo
-
-  ; Movimiento PTP al home
-  PTP {A1 0, A2 -90, A3 90, A4 0, A5 -90, A6 0}
-
-  ; Movimiento lineal
-  LIN {X 500, Y 0, Z 300, A 0, B 90, C 0} C_DIS
-  LIN {X 600, Y 100, Z 300, A 0, B 90, C 0} C_DIS
-  LIN {X 600, Y 100, Z 200, A 0, B 90, C 0}
-
-  ; Salida digital
+&ACCESS RVO
+&REL 1
+&PARAM EDITMASK = *
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\vorgabe
+DEF program()
+  ; Inicialización
+  BAS(#INITMOV,0)
+  
+  ; Movimiento PTP a posición home
+  PTP HOME Vel=100% DEFAULT
+  
+  ; Movimiento lineal (LIN)
+  LIN {X 500.00, Y 0.00, Z 300.00, A 0.00, B -90.00, C 0.00} Vel=200mm/s CPDAT1 Tool[1] Base[0]
+  
+  ; Digital output
   $OUT[1] = TRUE
   WAIT SEC 0.5
-  $OUT[1] = FALSE
-
-  PTP HOME
+  
+  ; Retorno a home
+  PTP HOME Vel=100% DEFAULT
 END
 ```
 
-### Tipos de movimiento KRL
+## Singularidades y configuraciones
 
-| Instrucción | Tipo | Uso |
-|------------|------|-----|
-| `PTP` | Point-to-Point | Reposicionamiento rápido; trayectoria no predecible |
-| `LIN` | Lineal | Trayectoria recta en espacio cartesiano |
-| `CIRC` | Circular | Arco definido por punto de paso y punto final |
-| `SPTP` | Soft PTP | PTP con perfil suave |
-| `SLIN` | Soft LIN | LIN con perfil suave |
+| Singularidad | Causa | Solución |
+|--------------|-------|----------|
+| **Wrist singularity** | Eje 4 y 6 alineados | Usar `Joint Target` en zona conflictiva |
+| **Shoulder singularity** | Robot estirado | Reposicionar base o cambiar configuración |
+| **Elbow singularity** | Brazo completamente extendido | Acortar alcance |
 
-### Aproximaciones (Blending)
+- Usar **`Safe Plane`** (KukaPRC) para definir planes de aproximación seguros antes de cada target.
+- **Reduce Toolpath** elimina puntos redundantes para optimizar el programa.
 
-```krl
-; C_DIS = continuación por distancia (zona de approximation)
-LIN {X 500, Y 0, Z 300, A 0, B 90, C 0} C_DIS
-; C_VEL = continuación por velocidad constante
-LIN {X 600, Y 0, Z 300, A 0, B 90, C 0} C_VEL
-; Sin C_* = movimiento exacto (FINE)
-LIN {X 700, Y 0, Z 300, A 0, B 90, C 0}
-```
+## Ejemplos de uso con Rick
 
----
+- **Rick: "Generá un toolpath para fresar una superficie curva con robot KUKA"** → Divide Surface → Normals → KukaPRC Targets → SRC Export.
+- **Rick: "Cómo defino el TCP de una extrusora en Robots plugin?"** → `Robots.Tool` con TCP plane + peso.
+- **Rick: "El robot llega a singularidad en ciertos targets, cómo lo evito?"** → Insertar Joint Targets en zonas problemáticas, usar Safe Planes.
+- **Rick: "Exportá el toolpath a KRL para subirlo al KUKA KR C4"** → SRC Export de KukaPRC o `program.Code` de Robots plugin.
+- **Rick: "Cuántos puntos tiene mi toolpath y cuánto tiempo tarda?"** → `program.Duration` en Robots plugin.
 
-## Flujo completo de fabricación digital
+## Recursos oficiales
 
-```
-1. DISEÑO en Rhino/GH
-   → Geometría de pieza y trayectoria de herramienta
+- KukaPRC en Food4Rhino: https://www.food4rhino.com/en/app/kukaprc
+- KukaPRC Docs en GH Docs: https://grasshopperdocs.com/addons/kukaprc.html
+- Robots Plugin GitHub: https://github.com/visose/Robots
+- Rhino Developer (GH guides): https://developer.rhino3d.com/guides/grasshopper/
+- KUKA KRL Manual: https://www.kuka.com/en-de/services/downloads (registración requerida)
+- Discourse Robots plugin: https://discourse.mcneel.com/c/plug-ins/robots/
 
-2. TOOLPATH en GH (KukaPRC o Robots)
-   → Frames sobre la geometría → Targets
-   → Configurar TCP, velocidades, zonas
+## Notas
 
-3. SIMULACIÓN en GH
-   → Verificar alcance del robot
-   → Detectar singularidades y límites de eje
-   → Visualizar colisiones
-
-4. EXPORTAR código
-   → KukaPRC: Export .src / .dat
-   → Robots: Save Code → carpeta en disco
-
-5. TRANSFERIR a robot
-   → Via USB, red Ethernet o WorkVisual (KUKA)
-
-6. EJECUTAR en robot
-   → Modo T1 (velocidad reducida) para verificación
-   → Modo AUTO para producción
-```
-
----
-
-## Consideraciones de seguridad
-
-| Aspecto | Recomendación |
-|---------|--------------|
-| Velocidad de prueba | Siempre verificar en T1 (≤250 mm/s) antes de AUTO |
-| Singularidades | Evitar extensión completa del brazo (eje 2+4+6 alineados) |
-| Zona de trabajo | Definir `WORKSPACE` con límites en WorkVisual |
-| E-stop virtual | Implementar lógica de paro en `$OUT` / SafeOp |
-| TCP calibrado | Calibrar TCP con herramienta física antes de producción |
-
----
-
-## Errores comunes
-
-| Error | Causa | Solución |
-|-------|-------|----------|
-| Robot no alcanza posición | Punto fuera del espacio de trabajo | Acercar base o ajustar orientación del TCP |
-| Singularidad detectada | Eje en posición degenerada | Ajustar orientación del frame para evitar la configuración |
-| Orientación incorrecta | TCP mal definido | Recalibrar TCP o ajustar plano de entrada |
-| Colisión simulada | Robot intersecta con pieza o mesa | Ajustar altura del toolpath o reposicionar base |
-
----
-
-## Links oficiales
-
-- [KukaPRC — Food4Rhino](https://www.food4rhino.com/en/app/kukaprc) — Descarga y documentación
-- [Robots Plugin GitHub](https://github.com/visose/Robots) — Código fuente, wiki y ejemplos
-- [KUKA Developer Docs](https://www.kuka.com/en-de/products/robotics-systems/software/system-software/kuka-system-software) — Software y documentación oficial KUKA
-- [GH Robots Community](https://www.grasshopper3d.com/group/robots) — Foro del plugin Robots
-- [KRL Programming Guide](https://www.kuka.com/-/media/kuka-corporate/documents/manual/kuka-system-software-kss/kuka-system-software_kss_8-3_programming_manual_en.pdf) — Manual de programación KRL
+- KukaPRC es gratuito para uso no comercial; verificar licencia para proyectos comerciales.
+- El plugin Robots es open-source (MIT) y soporta más marcas que KukaPRC.
+- Siempre simular el programa completo antes de enviar al robot físico.
+- El sistema de coordenadas de Rhino (Z arriba) difiere del de KUKA (Z arriba con convenciones distintas); KukaPRC maneja la conversión.
+- Para robots reales, la validación final siempre la hace un operador certificado en KUKA.

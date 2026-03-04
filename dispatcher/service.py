@@ -28,6 +28,113 @@ from infra.ops_logger import ops_log
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 
 
+CALLBACK_TIMEOUT_SECONDS = 10.0
+CALLBACK_RETRY_DELAY_SECONDS = 5
+
+
+def _post_webhook_callback(callback_url: str, payload: Dict[str, Any]) -> None:
+    """
+    POST callback with one retry for timeout/5xx failures.
+
+    Fire-and-forget caller is responsible for running this in a daemon thread.
+    """
+    task_id = payload.get("task_id", "unknown")
+    status = payload.get("status", "unknown")
+
+    for attempt in (1, 2):
+        try:
+            with httpx.Client(timeout=CALLBACK_TIMEOUT_SECONDS) as client:
+                resp = client.post(callback_url, json=payload)
+                if resp.status_code >= 500:
+                    raise httpx.HTTPStatusError(
+                        f"Callback server error {resp.status_code}",
+                        request=resp.request,
+                        response=resp,
+                    )
+                resp.raise_for_status()
+            logger.info(
+                "Callback delivered for task %s (status=%s) -> %s",
+                task_id,
+                status,
+                callback_url,
+            )
+            return
+        except httpx.TimeoutException as exc:
+            if attempt == 1:
+                logger.warning(
+                    "Callback timeout for task %s -> %s (retrying in %ss): %s",
+                    task_id,
+                    callback_url,
+                    CALLBACK_RETRY_DELAY_SECONDS,
+                    exc,
+                )
+                time.sleep(CALLBACK_RETRY_DELAY_SECONDS)
+                continue
+            logger.warning(
+                "Callback timeout for task %s after retry -> %s: %s",
+                task_id,
+                callback_url,
+                exc,
+            )
+            return
+        except httpx.HTTPStatusError as exc:
+            status_code = exc.response.status_code if exc.response is not None else 0
+            if status_code >= 500 and attempt == 1:
+                logger.warning(
+                    "Callback 5xx for task %s -> %s (retrying in %ss): %s",
+                    task_id,
+                    callback_url,
+                    CALLBACK_RETRY_DELAY_SECONDS,
+                    status_code,
+                )
+                time.sleep(CALLBACK_RETRY_DELAY_SECONDS)
+                continue
+            logger.warning(
+                "Callback failed for task %s -> %s: HTTP %s",
+                task_id,
+                callback_url,
+                status_code,
+            )
+            return
+        except Exception as exc:
+            logger.warning(
+                "Callback error for task %s -> %s: %s",
+                task_id,
+                callback_url,
+                exc,
+            )
+            return
+
+
+def _trigger_webhook_callback(
+    envelope: Dict[str, Any],
+    status: str,
+    task: str,
+    result: Any = None,
+    error: str = "",
+) -> None:
+    """Schedule webhook callback delivery if callback_url exists in the envelope."""
+    callback_url = str(envelope.get("callback_url", "")).strip()
+    if not callback_url:
+        return
+
+    payload: Dict[str, Any] = {
+        "task_id": envelope.get("task_id", ""),
+        "status": status,
+        "task": task,
+        "result": result,
+        "completed_at": int(time.time()),
+    }
+    if error:
+        payload["error"] = error
+
+    threading.Thread(
+        target=_post_webhook_callback,
+        args=(callback_url, payload),
+        daemon=True,
+    ).start()
+
+
 def _notion_upsert(
     wc: WorkerClient,
     task_id: str,
@@ -170,6 +277,7 @@ def _run_worker(
             _result_summary = str(result.get("result", result))[:300] if isinstance(result, dict) else str(result)[:300]
             threading.Thread(target=_notion_upsert, args=(wc_local, task_id, "done", team, task), kwargs={"result_summary": _result_summary}, daemon=True).start()
             threading.Thread(target=_notify_linear_completion, args=(wc_local, envelope, True), kwargs={"result": result}, daemon=True).start()
+            _trigger_webhook_callback(envelope, status="done", task=task, result=result)
             logger.info("[worker %d] Task %s completed via %s Worker (model=%s)", worker_id, task_id, target, selected_model)
         except Exception as e:
             duration_ms = (time.time() - t_start) * 1000
@@ -201,6 +309,7 @@ def _run_worker(
             threading.Thread(target=_notify_linear_completion, args=(wc_local, envelope, False), kwargs={"error": str(e)}, daemon=True).start()
             logger.error("[worker %d] Task %s failed: %s", worker_id, task_id, str(e))
             queue.fail_task(task_id, str(e))
+            _trigger_webhook_callback(envelope, status="failed", task=task, error=str(e))
 
             if is_connect_error:
                 time.sleep(5)

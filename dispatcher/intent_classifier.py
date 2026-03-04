@@ -20,6 +20,8 @@ import logging
 from dataclasses import dataclass
 from typing import Optional
 
+from datetime import datetime, timedelta, timezone
+
 logger = logging.getLogger("dispatcher.intent_classifier")
 
 # ── Keyword banks ────────────────────────────────────────────────
@@ -42,7 +44,7 @@ _INSTRUCTION_VERBS: list[str] = [
     "modify", "adjust", "set", "enable", "disable",
 ]
 
-# Team keywords — same vocabulary as linear_team_router._TEAM_KEYWORDS
+# Team keywords
 _TEAM_KEYWORDS: dict[str, list[str]] = {
     "marketing": [
         "marketing", "seo", "social media", "redes sociales", "contenido",
@@ -71,7 +73,6 @@ _TEAM_KEYWORDS: dict[str, list[str]] = {
     ],
 }
 
-# Direct mention patterns: @marketing, @advisory, etc.
 _TEAM_MENTION_RE = re.compile(
     r"@(" + "|".join(_TEAM_KEYWORDS.keys()) + r")\b",
     re.IGNORECASE,
@@ -84,35 +85,100 @@ ECHO_PREFIX = "Rick:"
 
 @dataclass(frozen=True)
 class IntentResult:
-    intent: str          # question | task | instruction | echo
+    intent: str          # question | task | instruction | echo | scheduled_task
     confidence: str      # high | medium | low
+    run_at: Optional[datetime] = None
+    recurrence: Optional[str] = None
 
 
 # ── Public API ───────────────────────────────────────────────────
 
+def parse_temporal_features(text: str) -> tuple[Optional[datetime], Optional[str]]:
+    """
+    Lightweight regex parser for temporal instructions.
+    Returns (run_at_utc, recurrence_string).
+    """
+    lower = text.lower()
+    now = datetime.now(timezone.utc)
+    
+    # 1. "en X horas"
+    m_hours = re.search(r"en\s+(\d+)\s+horas?", lower)
+    if m_hours:
+        hours = int(m_hours.group(1))
+        return now + timedelta(hours=hours), None
+        
+    # 2. "en X minutos" / "en X mins"
+    m_mins = re.search(r"en\s+(\d+)\s+min", lower)
+    if m_mins:
+        mins = int(m_mins.group(1))
+        return now + timedelta(minutes=mins), None
+        
+    # 3. "mañana a las HH" or "mañana a las HH:MM"
+    m_manana = re.search(r"mañana a las\s+(\d{1,2})(?::(\d{2}))?", lower)
+    if m_manana:
+        hour = int(m_manana.group(1))
+        minute = int(m_manana.group(2)) if m_manana.group(2) else 0
+        tomorrow = now + timedelta(days=1)
+        # Attempt to create datetime
+        try:
+            return tomorrow.replace(hour=hour, minute=minute, second=0, microsecond=0), None
+        except ValueError:
+            pass # Invalid hour/minute
+            
+    # 4. "a las HH" (today)
+    m_hoy = re.search(r"(?:hoy )?a las\s+(\d{1,2})(?::(\d{2}))?", lower)
+    if m_hoy:
+        hour = int(m_hoy.group(1))
+        minute = int(m_hoy.group(2)) if m_hoy.group(2) else 0
+        try:
+            target = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+            if target <= now:
+                target += timedelta(days=1) # If it already passed today, assume tomorrow
+            return target, None
+        except ValueError:
+            pass
+            
+    # 5. "todos los lunes"
+    if "todos los lunes" in lower or "every monday" in lower:
+        # Calculate next Monday
+        days_ahead = 0 - now.weekday()
+        if days_ahead <= 0:
+            days_ahead += 7
+        next_monday = now.replace(hour=9, minute=0, second=0, microsecond=0) + timedelta(days=days_ahead)
+        return next_monday, "every_monday"
+        
+    # 6. "todos los días" / "cada día" / "every day"
+    if "todos los d" in lower or "cada d" in lower or "every day" in lower:
+        tomorrow = now + timedelta(days=1)
+        next_day = tomorrow.replace(hour=9, minute=0, second=0, microsecond=0)
+        return next_day, "every_day"
+        
+    return None, None
+
 def classify_intent(text: str) -> IntentResult:
     """
     Classify a comment's intent using simple heuristics.
-
-    Priority:
-        1. Contains '?' → question (high confidence)
-        2. Starts with action verb → task
-        3. Starts with config verb → instruction
-        4. Contains action verb anywhere → task (medium)
-        5. Contains config verb anywhere → instruction (medium)
-        6. Fallback → echo
     """
     if not text or not text.strip():
         return IntentResult(intent="echo", confidence="low")
 
     cleaned = text.strip()
+    
+    # Pre-check for temporal intents
+    run_at, recurrence = parse_temporal_features(text)
+    if run_at or recurrence:
+        return IntentResult(
+            intent="scheduled_task", 
+            confidence="high", 
+            run_at=run_at, 
+            recurrence=recurrence
+        )
 
     # 1. Question — anywhere in text
     if "?" in cleaned:
         return IntentResult(intent="question", confidence="high")
 
     lower = cleaned.lower()
-    # Extract first word for verb-first detection
     first_word = re.split(r"\s+", lower)[0] if lower else ""
 
     # 2–3. First word is an action/config verb (high confidence)
@@ -135,21 +201,14 @@ def classify_intent(text: str) -> IntentResult:
 def route_to_team(text: str) -> str:
     """
     Determine which team should handle the comment.
-
-    Priority:
-        1. Direct @mention  → that team
-        2. Keyword scoring   → highest-scoring team
-        3. Fallback          → "system"
     """
     if not text:
         return "system"
 
-    # 1. Direct @mention
     match = _TEAM_MENTION_RE.search(text)
     if match:
         return match.group(1).lower()
 
-    # 2. Keyword scoring (same algorithm as linear_team_router.infer_team_from_text)
     text_lower = text.lower()
     scores: dict[str, int] = {}
     for team_key, keywords in _TEAM_KEYWORDS.items():
@@ -165,7 +224,6 @@ def route_to_team(text: str) -> str:
         logger.debug("Team scores: %s → routed to: %s", scores, best)
         return best
 
-    # 3. Fallback
     return "system"
 
 
@@ -177,8 +235,6 @@ def build_envelope(
 ) -> dict:
     """
     Build a TaskEnvelope based on classified intent and team.
-
-    Returns a dict ready to be passed to TaskQueue.enqueue().
     """
     task_id = str(uuid.uuid4())
     short_id = comment_id[:8] if comment_id else "unknown"
@@ -190,9 +246,13 @@ def build_envelope(
         "source": "notion_poller",
         "source_comment_id": comment_id,
     }
+    
+    if intent.run_at:
+        base["run_at"] = intent.run_at.isoformat()
+    if intent.recurrence:
+        base["recurrence"] = intent.recurrence
 
     if intent.intent == "question":
-        # Acknowledge the question and mark as pending research
         base["task_type"] = "research"
         base["task"] = "notion.add_comment"
         base["input"] = {
@@ -204,7 +264,6 @@ def build_envelope(
         }
 
     elif intent.intent == "task":
-        # Route the task to the detected team
         base["task_type"] = "general"
         base["task"] = "notion.add_comment"
         base["input"] = {
@@ -224,6 +283,18 @@ def build_envelope(
             "text": (
                 f"{ECHO_PREFIX} Instrucción registrada. "
                 f"Procesando configuración. "
+                f"(comment_id={short_id}...)"
+            ),
+            "original_request": text,
+        }
+
+    elif intent.intent == "scheduled_task":
+        base["task_type"] = "general"
+        base["task"] = "notion.add_comment"
+        base["input"] = {
+            "text": (
+                f"{ECHO_PREFIX} (Ejecutando tarea programada) "
+                f"Equipo [{team}]. Tarea: {text} "
                 f"(comment_id={short_id}...)"
             ),
             "original_request": text,

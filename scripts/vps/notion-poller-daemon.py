@@ -63,6 +63,7 @@ def main():
 
     # Import the poller here so env vars are already loaded
     from dispatcher.notion_poller import _do_poll, WorkerClient, TaskQueue
+    from dispatcher.scheduler import TaskScheduler
     import redis
 
     redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
@@ -82,6 +83,7 @@ def main():
 
     wc = WorkerClient(base_url=worker_url, token=worker_token)
     queue = TaskQueue(r)
+    scheduler = TaskScheduler(r)
 
     logger.info(
         "Notion Poller daemon started (interval=%ds, worker=%s)",
@@ -91,7 +93,11 @@ def main():
 
     while _running:
         try:
-            _do_poll(wc, queue, r)
+            # 1. Process scheduled tasks that are due
+            scheduler.check_and_enqueue(queue)
+            
+            # 2. Check for new comments in Notion
+            _do_poll(wc, queue, r, scheduler)
         except Exception:
             logger.exception("Poll iteration failed")
         # Sleep in small increments to respond to signals quickly

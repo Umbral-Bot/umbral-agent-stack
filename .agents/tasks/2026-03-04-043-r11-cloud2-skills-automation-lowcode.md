@@ -4,7 +4,7 @@ title: "Skills Automatización Low-Code — Power Automate, Power Apps, Power BI
 assigned_to: cursor-agent-cloud-2
 branch: feat/cloud2-skills-automation
 round: 11
-status: assigned
+status: done
 created: 2026-03-04
 ---
 
@@ -66,3 +66,18 @@ gh pr create --title "feat: skills automatización — power platform, n8n, make
 - `python scripts/validate_skills.py` → exit 0
 - Skills incluyen expresiones/fórmulas clave de cada plataforma
 - Triggers claros en español e inglés
+
+## Log
+
+### [cursor-agent-cloud-2] 2026-03-04 10:00
+
+- Archivos creados:
+  - `openclaw/workspace-templates/skills/power-automate/SKILL.md`
+  - `openclaw/workspace-templates/skills/power-apps/SKILL.md`
+  - `openclaw/workspace-templates/skills/power-bi/SKILL.md`
+  - `openclaw/workspace-templates/skills/n8n/SKILL.md`
+  - `openclaw/workspace-templates/skills/make-com/SKILL.md`
+  - `openclaw/workspace-templates/skills/copilot-studio/SKILL.md`
+- `python scripts/validate_skills.py` → exit 0 (19/19 skills OK)
+- Cada SKILL.md incluye: frontmatter YAML válido, triggers en español e inglés, expresiones/fórmulas clave, conectores disponibles, errores frecuentes y casos de uso.
+- Fuentes: documentación oficial de Microsoft Learn, docs.n8n.io, make.com/help, developers.make.com.

@@ -4,7 +4,7 @@ title: "Skills Generación de Documentos — Word, PDF, PowerPoint, Excel con Py
 assigned_to: cursor-agent-cloud-8
 branch: feat/cloud8-skills-document-generation
 round: 11
-status: assigned
+status: done
 created: 2026-03-04
 ---
 
@@ -147,3 +147,20 @@ gh pr create \
 - Templates .docx de propuesta y cotización BIM
 - Tests pasan
 - Dependencias documentadas en requirements.txt
+
+## Log
+
+### [cursor-agent-cloud-8] 2026-03-04
+
+**Archivos creados/modificados:**
+
+- `openclaw/workspace-templates/skills/document-generation/SKILL.md` — Skill con tabla de decisión, snippets, documentación de 8 librerías
+- `worker/tasks/document_generator.py` — 3 handlers: `document.create_word`, `document.create_pdf`, `document.create_presentation`
+- `worker/tasks/__init__.py` — Registrados 3 handlers nuevos (total: 31)
+- `worker/templates/documents/propuesta_bim.docx` — Template Word para propuestas BIM con Jinja2
+- `worker/templates/documents/cotizacion_bim.docx` — Template Word para cotizaciones BIM con Jinja2
+- `worker/requirements.txt` — Agregadas dependencias: python-docx, docxtpl, fpdf2, weasyprint, python-pptx, openpyxl
+- `tests/test_document_generator.py` — 21 tests (20 passed, 1 skipped: weasyprint requiere libs de sistema)
+- `scripts/create_docx_templates.py` — Script generador de templates .docx
+
+**Tests:** 20 passed, 1 skipped (weasyprint HTML→PDF necesita Cairo/Pango instalados). Skill validation test también pasa.

@@ -22,15 +22,15 @@
 |----|--------|----------|--------|
 | 2026-03-04-001 | Hackathon: Diagnóstico completo + script + fixes | cursor | ✅ done |
 | 2026-03-04-002 | Hackathon: Verificar/activar infraestructura VPS | cursor | ✅ done (VPS OK, VM red caída) |
-| 2026-03-04-003 | Hackathon: Mejoras de código — Poller inteligente + docs | antigravity | 📋 assigned |
+| 2026-03-04-003 | Hackathon: Mejoras de código — Poller inteligente + docs | antigravity | ✅ done |
 | 2026-03-04-004 | Hackathon: Integraciones — LiteLLM, cuotas, Notion | github-copilot | ✅ done |
 | 2026-03-04-005 | Hackathon: Activar OpsLogger + persistencia task store | cursor | ✅ done (ya estaba activo, 28 eventos) |
-| 2026-03-04-006 | Hackathon: Notion Poller inteligente (clasificar+encolar) | antigravity | 📋 assigned |
+| 2026-03-04-006 | Hackathon: Notion Poller inteligente (clasificar+encolar) | antigravity | ✅ done |
 | 2026-03-04-007 | Hackathon: Conectar LLM (Gemini) al Worker | cursor | ✅ done (gemini-2.5-flash) |
 | 2026-03-04-008 | Hackathon: Task handler research.web (Tavily) | cursor | ✅ done |
 | 2026-03-04-009 | Hackathon: SIM daily cron (3x/día research+resumen) | cursor | ✅ done |
 | 2026-03-04-010 | Hackathon: Reporte diario SIM + tests nuevos handlers | codex | 📋 assigned |
-| 2026-03-04-011 | Hackathon: Resiliencia Dispatcher + Poller clasificador | claude-code | 📋 assigned |
+| 2026-03-04-011 | Hackathon: Resiliencia Dispatcher + Poller clasificador | claude-code | ✅ done |
 
 ### Logros del hackathon (Cursor lead)
 - Flujo e2e verificado: Enqueue → Dispatcher dequeue → Worker execute → Complete
@@ -47,6 +47,20 @@
 - 7 tareas SIM completadas en producción (6 research + 1 LLM summary)
 - Worker VPS reiniciado con 24 task handlers registrados
 - VM: red caída (APIPA), requiere reconexión manual
+
+### Logros del hackathon (Antigravity)
+- Notion Poller inteligente: `dispatcher/intent_classifier.py` (clasifica question/task/instruction/echo)
+- Ruteo a equipos por @mención directa y keyword scoring
+- 33 tests unitarios puros (0 mocks, 0 Redis)
+- Doc 07 reescrito: TaskEnvelope v0.1, 4 endpoints, 24 handlers
+- Total tests: 163 passed, 1 skipped
+
+### Logros del hackathon (Claude Code)
+- Fire-and-forget real: 7 llamadas a Notion/Linear ahora en daemon threads (no bloquean worker)
+- Retry automático: tareas con timeout se re-encolan hasta 2 veces con `retry_count` en envelope
+- Graceful connection refused: log + sleep 5s en vez de loop spam
+- Nuevo método `ops_log.task_retried()` en OpsLogger
+- Tests: 147 passed, 1 skipped (fallo pre-existente en test_worker auth)
 
 ## Tareas anteriores (pre-hackathon)
 
@@ -93,6 +107,22 @@
 - Agentes configurados: Cursor (lead), Antigravity, Codex, GitHub Copilot, Claude Code (Opus 4.6).
 - Motor de búsqueda web: **Tavily** (Google Custom Search no viable).
 - **Prioridad absoluta:** Activar flujo end-to-end (Redis → Dispatcher → Worker → Dashboard).
+
+## Handoff — Antigravity → Cursor (2026-03-04 03:40)
+
+> Tareas `003` y `006` completadas. Todos los criterios de aceptación cumplidos.
+> 163 tests pasan. Archivos nuevos: `dispatcher/intent_classifier.py`, `tests/test_intent_classifier.py`.
+> Doc `07-worker-api-contract.md` reescrito.
+>
+> **@cursor**: ¿Hay alguna otra tarea para antigravity? Disponible para más trabajo.
+
+## Handoff — Claude Code → Cursor (2026-03-04)
+
+> Tarea `011` completada. Parte A (resiliencia) implementada en 2 archivos.
+> Parte B (Poller inteligente) ya estaba hecha por Antigravity — no se duplicó trabajo.
+> 147 tests pasan. Archivos modificados: `dispatcher/service.py`, `infra/ops_logger.py`.
+>
+> **@cursor**: ¿Hay alguna otra tarea para claude-code? Disponible para más trabajo.
 
 ## Mensajes inter-agentes
 

@@ -2,7 +2,7 @@
 
 **Assigned:** antigravity  
 **Priority:** P0  
-**Status:** assigned  
+**Status:** done  
 **Created:** 2026-03-04
 
 ## Contexto
@@ -33,6 +33,7 @@ La Control Room de Notion ya tiene acceso para la integración (verificado 2026-
 ## Archivos relevantes
 
 - `dispatcher/notion_poller.py` — Poller actual (modificar aquí)
+- `dispatcher/intent_classifier.py` — **NUEVO** — clasificación de intención + ruteo
 - `dispatcher/queue.py` — TaskQueue para encolar
 - `dispatcher/team_config.py` — Configuración de equipos
 - `config/teams.yaml` — Definición de equipos
@@ -40,3 +41,11 @@ La Control Room de Notion ya tiene acceso para la integración (verificado 2026-
 ## Entrega
 
 Responder en `.agents/board.md` con estado de la tarea y commit con los cambios.
+
+## Log
+
+### [antigravity] 2026-03-04 03:30
+1. **Creado `dispatcher/intent_classifier.py`**: Módulo standalone con funciones puras — `classify_intent()` (heurísticas de verbos/pregunta), `route_to_team()` (mención directa @equipo + keyword scoring), `build_envelope()` (construye TaskEnvelope según intención). Backward compat: texto no clasificable → echo como antes.
+2. **Refactorizado `_do_poll()` en `notion_poller.py`**: Reemplazado el envelope hardcoded de eco con llamadas al clasificador. Log mejorado incluye `[intent→team]`.
+3. **33 tests unitarios** en `tests/test_intent_classifier.py`: cubren los 4 intents, ruteo directo + keywords, y estructura de envelopes. Sin Redis ni mocks.
+4. **163 tests totales pasan** (130 existentes + 33 nuevos), 1 skipped.

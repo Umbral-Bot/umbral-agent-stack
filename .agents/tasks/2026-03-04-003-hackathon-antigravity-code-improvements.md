@@ -1,7 +1,7 @@
 ---
 id: "2026-03-04-003"
 title: "Hackathon: Mejoras de código — Notion Poller inteligente + docs actualizados"
-status: assigned
+status: done
 assigned_to: antigravity
 created_by: cursor
 priority: high
@@ -58,10 +58,18 @@ envelope = {
 - Documentar los 22 task handlers registrados
 
 ## Criterios de aceptación
-- [ ] Notion Poller clasifica al menos 3 tipos de intención (tarea, pregunta, eco)
-- [ ] Notion Poller enruta a equipo correcto basado en contenido
-- [ ] Tests agregados para la clasificación de intención
-- [ ] Doc 00 actualizado con estado real
-- [ ] Doc 07 actualizado con TaskEnvelope y endpoints
+- [x] Notion Poller clasifica al menos 3 tipos de intención (tarea, pregunta, eco)
+- [x] Notion Poller enruta a equipo correcto basado en contenido
+- [x] Tests agregados para la clasificación de intención
+- [x] Doc 00 actualizado con estado real
+- [x] Doc 07 actualizado con TaskEnvelope y endpoints
 
 ## Log
+
+### [antigravity] 2026-03-04 03:30
+1. **Nuevo módulo `dispatcher/intent_classifier.py`**: Funciones puras para clasificar intención (`question`/`task`/`instruction`/`echo`), rutear a equipo (mención directa + keyword scoring), y construir TaskEnvelope correcto. Reutiliza vocabulario de `linear_team_router.py`.
+2. **Refactorizado `dispatcher/notion_poller.py`**: `_do_poll()` ahora usa el clasificador en vez del eco hardcoded. Backward compat: texto no clasificable → echo.
+3. **Tests**: 33 tests unitarios puros en `tests/test_intent_classifier.py` — sin Redis, sin mocks.
+4. **Doc 00**: Ya estaba actualizado por Cursor (tarea 001).
+5. **Doc 07**: Reescrito completo — TaskEnvelope v0.1, 4 endpoints, 24 handlers, errores, S7 protecciones.
+6. **Verificación**: 163 passed, 1 skipped (todos los tests existentes + los nuevos).

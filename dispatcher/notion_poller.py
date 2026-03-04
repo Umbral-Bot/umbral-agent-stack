@@ -67,19 +67,16 @@ def _do_poll(wc: WorkerClient, queue: TaskQueue, r: redis.Redis) -> None:
         if text.startswith(ECHO_PREFIX):
             continue
 
-        task_id = str(uuid.uuid4())
-        envelope = {
-            "schema_version": "0.1",
-            "task_id": task_id,
-            "team": "system",
-            "task_type": "general",
-            "task": "notion.add_comment",
-            "input": {
-                "text": f"{ECHO_PREFIX} Recibido. (comment_id={comment_id[:8]}...)",
-            },
-        }
+        # Classify intent and route to team (S5 Hackathon — intelligent poller)
+        from dispatcher.intent_classifier import classify_intent, route_to_team, build_envelope as build_env
+        intent = classify_intent(text)
+        team = route_to_team(text)
+        envelope = build_env(text, comment_id, intent, team)
         queue.enqueue(envelope)
-        logger.info("Enqueued reply for comment %s: %.40s...", comment_id[:8], text[:40])
+        logger.info(
+            "Enqueued [%s→%s] for comment %s: %.40s...",
+            intent.intent, team, comment_id[:8], text[:40],
+        )
 
     if latest_ts != last_ts:
         r.set(REDIS_KEY_LAST_TS, latest_ts)

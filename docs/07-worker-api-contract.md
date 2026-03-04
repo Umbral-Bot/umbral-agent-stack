@@ -295,6 +295,7 @@ Listar tareas recientes. Filtrable. Requiere auth.
 | `notion.poll_comments` | Notion | Lee comentarios recientes |
 | `notion.upsert_task` | Notion | Crea/actualiza tarea en Kanban |
 | `notion.update_dashboard` | Notion | Actualiza dashboard Rick |
+| `notion.create_report_page` | Notion | Crea página hija con reporte estructurado |
 | `windows.pad.run_flow` | Windows/RPA | Ejecuta flujo de Power Automate Desktop |
 | `windows.open_notepad` | Windows | Abre Notepad (interactivo) |
 | `windows.write_worker_token` | Windows | Escribe token del worker |

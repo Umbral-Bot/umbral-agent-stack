@@ -14,6 +14,7 @@ from .notion import (
     handle_notion_poll_comments,
     handle_notion_upsert_task,
     handle_notion_update_dashboard,
+    handle_notion_create_report_page,
 )
 from .windows import (
     handle_windows_pad_run_flow,
@@ -66,5 +67,6 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "research.web": handle_research_web,
     "llm.generate": handle_llm_generate,
     "composite.research_report": handle_composite_research_report,
+    "notion.create_report_page": handle_notion_create_report_page,
     "make.post_webhook": handle_make_post_webhook,
 }

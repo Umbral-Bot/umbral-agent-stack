@@ -1,7 +1,16 @@
 """
 Tasks: multi-provider LLM generation.
 
-- llm.generate: generate text using Gemini, OpenAI, or Anthropic.
+- llm.generate: generate text using Gemini, OpenAI, Anthropic, or GitHub Models.
+
+Provider selection (en orden de prioridad):
+1. "gemini_pro" / modelos "gemini-*" → Google Gemini API (GOOGLE_API_KEY)
+2. "chatgpt_plus" / "claude_pro" / "copilot_pro" → GitHub Models API (GITHUB_TOKEN)
+   GitHub Models da acceso a GPT-4o y Claude usando la suscripción de Copilot/GitHub.
+   Endpoint compatible con OpenAI: https://models.inference.ai.azure.com
+3. Si se pide un modelo "gpt-*" y hay OPENAI_API_KEY → OpenAI directo
+4. Si se pide un modelo "claude-*" y hay ANTHROPIC_API_KEY → Anthropic directo
+5. Fallback: GitHub Models si GITHUB_TOKEN disponible
 """
 
 from __future__ import annotations
@@ -22,13 +31,16 @@ DEFAULT_MODEL = "gemini-2.5-flash"
 GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions"
 ANTHROPIC_MESSAGES_URL = "https://api.anthropic.com/v1/messages"
+# GitHub Models: compatible con OpenAI API, autenticado con GITHUB_TOKEN (suscripción Copilot)
+GITHUB_MODELS_URL = "https://models.inference.ai.azure.com/chat/completions"
 
 # Router aliases (quota providers) -> concrete API models.
+# chatgpt_plus y claude_pro usan GitHub Models (GITHUB_TOKEN existente).
 MODEL_ALIASES = {
     "gemini_pro": "gemini-2.5-flash",
-    "chatgpt_plus": "gpt-4o",
-    "claude_pro": "claude-sonnet-4-20250514",
-    "copilot_pro": "gpt-4o-mini",
+    "chatgpt_plus": "gpt-4o",           # via GitHub Models (Copilot subscription)
+    "claude_pro": "claude-3-5-sonnet-20241022",  # via GitHub Models (Copilot subscription)
+    "copilot_pro": "gpt-4o-mini",       # via GitHub Models
 }
 
 
@@ -93,14 +105,51 @@ def handle_llm_generate(input_data: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _detect_provider(model: str) -> str:
-    """Infer provider from model name."""
+    """
+    Infer provider from model name.
+
+    Priority:
+    - Gemini models → always Google Gemini API
+    - GPT/Claude/o-series: prefer GitHub Models (GITHUB_TOKEN, suscripción Copilot)
+      if GITHUB_TOKEN available; fall back to OPENAI_API_KEY / ANTHROPIC_API_KEY
+      only if the respective native key is set but GITHUB_TOKEN is not.
+    """
     model_lc = (model or "").lower()
+
     if "gemini" in model_lc:
         return "gemini"
-    if "gpt" in model_lc or "o1" in model_lc or "o3" in model_lc or "chatgpt" in model_lc or "copilot" in model_lc:
-        return "openai"
-    if "claude" in model_lc:
-        return "anthropic"
+
+    github_token = os.environ.get("GITHUB_TOKEN", "").strip()
+
+    is_openai_model = (
+        "gpt" in model_lc
+        or "o1" in model_lc
+        or "o3" in model_lc
+        or "chatgpt" in model_lc
+        or "copilot" in model_lc
+    )
+    is_anthropic_model = "claude" in model_lc
+
+    if is_openai_model or is_anthropic_model:
+        # GitHub Models es el provider preferido (usa suscripción existente)
+        if github_token:
+            return "github_models"
+        # Fallback a APIs nativas si hay keys explícitas
+        if is_openai_model and os.environ.get("OPENAI_API_KEY", "").strip():
+            return "openai"
+        if is_anthropic_model and os.environ.get("ANTHROPIC_API_KEY", "").strip():
+            return "anthropic"
+        # Sin ninguna key disponible
+        if is_openai_model:
+            raise RuntimeError(
+                "No GITHUB_TOKEN or OPENAI_API_KEY configured for OpenAI models. "
+                "Set GITHUB_TOKEN (GitHub Copilot subscription) in ~/.config/openclaw/env"
+            )
+        raise RuntimeError(
+            "No GITHUB_TOKEN or ANTHROPIC_API_KEY configured for Anthropic models. "
+            "Set GITHUB_TOKEN (GitHub Copilot subscription) in ~/.config/openclaw/env"
+        )
+
     return "gemini"
 
 
@@ -322,8 +371,83 @@ def _safe_http_error_body(exc: urllib.error.HTTPError) -> str:
         return ""
 
 
+def _call_github_models(
+    *,
+    prompt: str,
+    model: str,
+    max_tokens: int,
+    temperature: float,
+    system_prompt: str,
+) -> Dict[str, Any]:
+    """
+    GitHub Models API — compatible con OpenAI Chat Completions.
+    Usa GITHUB_TOKEN (suscripción GitHub Copilot) para acceder a GPT-4o y Claude.
+    Soporta los mismos modelos que aparecen en https://github.com/marketplace/models
+    """
+    token = os.environ.get("GITHUB_TOKEN", "").strip()
+    if not token:
+        raise RuntimeError(
+            "GITHUB_TOKEN not configured. "
+            "Add it to ~/.config/openclaw/env for GitHub Models (Copilot subscription)."
+        )
+
+    messages = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+    messages.append({"role": "user", "content": prompt})
+
+    payload: Dict[str, Any] = {
+        "model": model,
+        "messages": messages,
+        "max_tokens": max_tokens,
+        "temperature": temperature,
+    }
+    # Reasoning models (o1, o3) no soportan temperature ni max_tokens estándar
+    if model.startswith("o1") or model.startswith("o3"):
+        payload.pop("temperature", None)
+        payload.pop("max_tokens", None)
+        payload["max_completion_tokens"] = max_tokens
+
+    req = urllib.request.Request(
+        GITHUB_MODELS_URL,
+        data=json.dumps(payload).encode("utf-8"),
+        method="POST",
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            data = json.loads(resp.read().decode())
+    except urllib.error.HTTPError as exc:
+        body_str = _safe_http_error_body(exc)
+        raise RuntimeError(f"GitHub Models API error {exc.code}: {body_str}")
+    except Exception as exc:
+        raise RuntimeError(f"GitHub Models generation failed: {str(exc)[:300]}")
+
+    choices = data.get("choices", [])
+    if not choices:
+        raise RuntimeError("No choices in GitHub Models response")
+    message = choices[0].get("message", {})
+    text = _extract_openai_text(message.get("content", ""))
+
+    usage = data.get("usage", {})
+    return {
+        "text": text,
+        "model": model,
+        "provider": "github_models",
+        "usage": {
+            "prompt_tokens": usage.get("prompt_tokens", 0),
+            "completion_tokens": usage.get("completion_tokens", 0),
+            "total_tokens": usage.get("total_tokens", 0),
+        },
+    }
+
+
 PROVIDERS: Dict[str, Callable[..., Dict[str, Any]]] = {
     "gemini": _call_gemini,
     "openai": _call_openai,
     "anthropic": _call_anthropic,
+    "github_models": _call_github_models,
 }

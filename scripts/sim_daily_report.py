@@ -2,12 +2,13 @@
 """
 SIM Daily Report.
 
-Genera un resumen diario de ejecuciones SIM usando eventos de ops_log y publica
-el reporte en Notion mediante el handler `notion.add_comment`.
+Genera un resumen diario de ejecuciones SIM usando eventos de ops_log y,
+opcionalmente, publica el reporte en Notion mediante `notion.add_comment`.
 
 Uso:
   python scripts/sim_daily_report.py
   python scripts/sim_daily_report.py --dry-run
+  python scripts/sim_daily_report.py --notion
 """
 
 from __future__ import annotations
@@ -94,17 +95,42 @@ def _extract_query(task_payload: dict[str, Any]) -> str:
 
 
 def _extract_llm_text(task_payload: dict[str, Any]) -> str:
+    payload = _extract_result_payload(task_payload)
+    text = payload.get("text", "")
+    return str(text).strip()
+
+
+def _extract_result_payload(task_payload: dict[str, Any]) -> dict[str, Any]:
     result = task_payload.get("result", {})
     if not isinstance(result, dict):
-        return ""
+        return {}
 
     # WorkerClient.run devuelve {"ok": ..., "result": {...}}
     inner = result.get("result", result)
     if not isinstance(inner, dict):
-        return ""
+        return {}
+    return inner
 
-    text = inner.get("text", "")
-    return str(text).strip()
+
+def _extract_research_urls(task_payload: dict[str, Any], max_urls_per_task: int = 3) -> list[str]:
+    payload = _extract_result_payload(task_payload)
+    items = payload.get("results", [])
+    if not isinstance(items, list):
+        return []
+
+    urls: list[str] = []
+    seen_urls = set()
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        url = str(item.get("url", "")).strip()
+        if not url or url in seen_urls:
+            continue
+        urls.append(url)
+        seen_urls.add(url)
+        if len(urls) >= max_urls_per_task:
+            break
+    return urls
 
 
 def _trim_for_comment(text: str, max_chars: int = MAX_COMMENT_CHARS) -> str:
@@ -120,6 +146,7 @@ def build_report(
     now: datetime,
     window_hours: int,
     max_topics: int = 12,
+    max_urls: int = 12,
 ) -> str:
     research_events = [e for e in events if e.get("task") == "research.web"]
     llm_events = [e for e in events if e.get("task") == "llm.generate"]
@@ -136,6 +163,8 @@ def build_report(
 
     topics: list[str] = []
     seen = set()
+    urls: list[str] = []
+    seen_urls = set()
     for ev in research_events:
         detail = task_details.get(ev.get("task_id", ""))
         if not detail:
@@ -144,7 +173,14 @@ def build_report(
         if query and query not in seen:
             topics.append(query)
             seen.add(query)
-        if len(topics) >= max_topics:
+        for url in _extract_research_urls(detail):
+            if url in seen_urls:
+                continue
+            urls.append(url)
+            seen_urls.add(url)
+            if len(urls) >= max_urls:
+                break
+        if len(topics) >= max_topics and len(urls) >= max_urls:
             break
 
     llm_summary = ""
@@ -179,6 +215,13 @@ def build_report(
     else:
         lines.append("1. Sin temas recuperables desde task store (Redis no disponible o tareas expiradas).")
 
+    lines += ["", "URLs encontradas (research.web):"]
+    if urls:
+        for idx, url in enumerate(urls, start=1):
+            lines.append(f"{idx}. {url}")
+    else:
+        lines.append("1. Sin URLs recuperables desde task store (Redis no disponible o tareas expiradas).")
+
     lines += ["", "Resumen LLM:"]
     if llm_summary:
         lines.append(llm_summary[:900])
@@ -197,10 +240,12 @@ def post_report_via_worker(report_text: str, page_id: str | None = None) -> dict
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Genera y publica reporte diario SIM")
+    parser = argparse.ArgumentParser(description="Genera reporte diario SIM y opcionalmente lo publica en Notion")
     parser.add_argument("--hours", type=int, default=24, help="Ventana de analisis en horas")
     parser.add_argument("--limit", type=int, default=50000, help="Maximo de eventos a leer del ops_log")
     parser.add_argument("--max-topics", type=int, default=12, help="Cantidad maxima de temas a listar")
+    parser.add_argument("--max-urls", type=int, default=12, help="Cantidad maxima de URLs a listar")
+    parser.add_argument("--notion", action="store_true", help="Publica el reporte en Notion Control Room")
     parser.add_argument("--page-id", default=None, help="Page ID override para Notion comment")
     parser.add_argument("--dry-run", action="store_true", help="No publica en Notion; imprime reporte")
     args = parser.parse_args()
@@ -218,12 +263,17 @@ def main() -> int:
         now=now,
         window_hours=args.hours,
         max_topics=args.max_topics,
+        max_urls=args.max_urls,
     )
 
     print(report)
 
     if args.dry_run:
         print("\nDry-run: reporte no publicado.")
+        return 0
+
+    if not args.notion:
+        print("\nReporte generado sin publicar. Usa --notion para postear en Control Room.")
         return 0
 
     try:

@@ -26,7 +26,7 @@
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|
-| 046 | Skills Librerías Open Source — moviepy, diagrams, Pillow, manim, playwright, ffmpeg-python, svgwrite | cursor-agent-cloud-5 | ✅ done |
+| 046 | Skills Librerías Open Source — moviepy, diagrams, Pillow, manim, playwright, ffmpeg-python, svgwrite | cursor-agent-cloud-5 | ✅ done (PR #54) |
 
 ## Ronda 9 — Completada ✅
 

@@ -190,6 +190,59 @@ curl -s http://WINDOWS_TAILSCALE_IP:8088/task/UUID-AQUI/status \
 
 ---
 
+### `GET /task/history` *(v0.4.0+)*
+
+Consulta historial de tareas desde Redis (`umbral:task:*`) con filtros y paginación.
+No usa el store in-memory.
+
+**Query params:**
+
+| Param | Tipo | Default | Descripción |
+|-------|------|---------|-------------|
+| `hours` | int | 24 | Ventana de tiempo en horas |
+| `team` | string | — | Filtrar por equipo |
+| `status` | string | — | Filtrar por estado (`queued`, `running`, `done`, `failed`, `blocked`, `degraded`) |
+| `limit` | int | 100 | Tamaño de página (máx 500) |
+| `offset` | int | 0 | Offset para paginación |
+
+**Response (200):**
+```json
+{
+  "tasks": [{ "...": "..." }],
+  "total": 42,
+  "page": {
+    "offset": 0,
+    "limit": 100,
+    "has_more": false
+  },
+  "stats": {
+    "done": 35,
+    "failed": 5,
+    "queued": 2,
+    "running": 0,
+    "blocked": 0,
+    "degraded": 0,
+    "unknown": 0,
+    "teams": {
+      "marketing": 10,
+      "system": 32
+    }
+  }
+}
+```
+
+**Errores específicos:**
+- `400` — `status` inválido
+- `503` — Redis no disponible
+
+**Ejemplo curl:**
+```bash
+curl -s "http://WINDOWS_TAILSCALE_IP:8088/task/history?hours=24&limit=100&offset=0" \
+  -H 'Authorization: Bearer $WORKER_TOKEN'
+```
+
+---
+
 ### `GET /tasks/{task_id}`
 
 Consultar estado de una tarea por `task_id`. Requiere auth.
@@ -325,7 +378,7 @@ curl -s -X POST http://WINDOWS_TAILSCALE_IP:8088/run \
 | 404 | Tarea no encontrada (GET /tasks/{id}) |
 | 429 | Rate limit excedido |
 | 500 | Error interno o WORKER_TOKEN no configurado |
-| 503 | Redis no disponible (POST /enqueue, GET /task/{id}/status) |
+| 503 | Redis no disponible (POST /enqueue, GET /task/{id}/status, GET /task/history) |
 
 ---
 

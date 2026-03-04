@@ -15,6 +15,7 @@ Campos core (v0.1):
     created_at:     Timestamp ISO-8601 de creación
     task:           Nombre del handler a ejecutar (e.g. "ping", "notion.add_comment")
     input:          Payload para el handler
+    callback_url:   URL opcional para recibir callback HTTP al terminar la tarea
 """
 
 import uuid
@@ -78,6 +79,7 @@ class TaskEnvelope(BaseModel):
     # --- Payload (compatible con formato legacy) ---
     task: str
     input: Dict[str, Any] = {}
+    callback_url: Optional[str] = None
 
 
 class TaskResult(BaseModel):

@@ -1,0 +1,10 @@
+repos:
+  - repo: local
+    hooks:
+      - id: secrets-audit
+        name: Secrets Audit
+        entry: python scripts/secrets_audit.py --ci
+        language: python
+        pass_filenames: false
+        always_run: true
+        description: "Scan for exposed secrets, API keys, and tokens before commit."

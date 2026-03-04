@@ -159,26 +159,101 @@ class TestSanitize:
         with pytest.raises(ValueError, match="too large"):
             sanitize_input({"data": "x" * 300_000})
 
+    def test_truncates_long_fields(self):
+        from worker.sanitize import sanitize_input, MAX_STRING_VALUE_LEN
+        result = sanitize_input({"data": "x" * 20_000})
+        assert len(result["data"]) == MAX_STRING_VALUE_LEN
+
+    def test_injection_detection_logs_warning(self, caplog):
+        import logging
+        from worker.sanitize import sanitize_input
+        with caplog.at_level(logging.WARNING, logger="worker.sanitize"):
+            sanitize_input({"cmd": "; rm -rf /"})
+        assert "injection" in caplog.text.lower()
+
+    def test_xss_detection(self, caplog):
+        import logging
+        from worker.sanitize import sanitize_input
+        with caplog.at_level(logging.WARNING, logger="worker.sanitize"):
+            sanitize_input({"html": "<script>alert('xss')</script>"})
+        assert "injection" in caplog.text.lower()
+
+    def test_sql_injection_detection(self, caplog):
+        import logging
+        from worker.sanitize import sanitize_input
+        with caplog.at_level(logging.WARNING, logger="worker.sanitize"):
+            sanitize_input({"q": "1 UNION SELECT * FROM users"})
+        assert "injection" in caplog.text.lower()
+
+    def test_deep_sanitization(self):
+        from worker.sanitize import sanitize_input, MAX_STRING_VALUE_LEN
+        data = {"nested": {"deep": {"val": "y" * 20_000}}, "list": ["z" * 20_000]}
+        result = sanitize_input(data)
+        assert len(result["nested"]["deep"]["val"]) == MAX_STRING_VALUE_LEN
+        assert len(result["list"][0]) == MAX_STRING_VALUE_LEN
+
+    def test_primitives_pass_through(self):
+        from worker.sanitize import sanitize_input
+        result = sanitize_input({"num": 42, "flag": True, "empty": None})
+        assert result == {"num": 42, "flag": True, "empty": None}
+
+
+class TestSecretsAudit:
+    def test_scan_file_detects_aws_key(self, tmp_path):
+        from scripts.secrets_audit import scan_file
+        f = tmp_path / "bad.py"
+        f.write_text('AWS_KEY = "AKIAIOSFODNN7EXAMPLE"\n')
+        findings = scan_file(f)
+        assert len(findings) >= 1
+        assert any("AWS" in name for _, name, _ in findings)
+
+    def test_scan_file_detects_github_pat(self, tmp_path):
+        from scripts.secrets_audit import scan_file
+        f = tmp_path / "bad.py"
+        f.write_text('TOKEN = "ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghij"\n')
+        findings = scan_file(f)
+        assert len(findings) >= 1
+
+    def test_scan_file_clean(self, tmp_path):
+        from scripts.secrets_audit import scan_file
+        f = tmp_path / "clean.py"
+        f.write_text('x = 42\nprint("hello")\n')
+        findings = scan_file(f)
+        assert len(findings) == 0
+
+    def test_scan_repo_runs(self):
+        from scripts.secrets_audit import scan_repo, REPO_ROOT
+        result = scan_repo(REPO_ROOT)
+        assert "files_scanned" in result
+        assert result["files_scanned"] > 0
+
 
 class TestRateLimit:
     def test_allows_within_limit(self):
-        from worker.rate_limit import check_rate_limit, _window
-        _window.clear()
-        allowed, remaining = check_rate_limit("test-client")
+        from worker.rate_limiter import RateLimiter
+        limiter = RateLimiter(max_requests=60, window_seconds=60)
+        allowed, remaining = limiter.is_allowed("test-client")
         assert allowed is True
-        assert remaining >= 0
+        assert remaining == 59
 
     def test_blocks_over_limit(self):
-        from worker import rate_limit
-        rate_limit._window.clear()
-        old_limit = rate_limit._configured_limit
-        rate_limit._configured_limit = 3
-        try:
-            for _ in range(3):
-                rate_limit.check_rate_limit("flood-client")
-            allowed, remaining = rate_limit.check_rate_limit("flood-client")
-            assert allowed is False
-            assert remaining == 0
-        finally:
-            rate_limit._configured_limit = old_limit
-            rate_limit._window.clear()
+        from worker.rate_limiter import RateLimiter
+        limiter = RateLimiter(max_requests=3, window_seconds=60)
+        
+        for _ in range(3):
+            allowed, _ = limiter.is_allowed("flood-client")
+            assert allowed is True
+            
+        allowed, remaining = limiter.is_allowed("flood-client")
+        assert allowed is False
+        assert remaining == 0
+
+    def test_separate_clients(self):
+        from worker.rate_limiter import RateLimiter
+        limiter = RateLimiter(max_requests=2, window_seconds=60)
+        limiter.is_allowed("client-a")
+        limiter.is_allowed("client-a")
+        allowed_a, _ = limiter.is_allowed("client-a")
+        allowed_b, _ = limiter.is_allowed("client-b")
+        assert allowed_a is False
+        assert allowed_b is True

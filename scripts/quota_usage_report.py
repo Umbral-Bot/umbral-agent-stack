@@ -385,6 +385,7 @@ def main():
     parser.add_argument("-o", "--output", type=str, help="Write output to file")
     parser.add_argument("--fake", action="store_true", help="Use fakeredis (for testing without Redis)")
     parser.add_argument("--hours", type=int, default=24, help="Ops log lookback hours (default: 24)")
+    parser.add_argument("--all", action="store_true", help="Show all providers (including unconfigured). Default: configured-only")
     parser.add_argument("--notion", action="store_true", help="Post summary to Notion Control Room")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose logging")
     args = parser.parse_args()
@@ -399,6 +400,20 @@ def main():
     if not providers:
         print("ERROR: No providers configured in quota_policy.yaml", file=sys.stderr)
         sys.exit(1)
+
+    # Filter to only configured providers (those with env vars set)
+    if not args.all:
+        try:
+            from dispatcher.model_router import get_configured_providers
+            configured = get_configured_providers()
+            if configured:
+                before = set(providers.keys())
+                providers = {k: v for k, v in providers.items() if k in configured}
+                skipped = before - set(providers.keys())
+                if skipped:
+                    logger.info("Skipped unconfigured providers: %s (use --all to include)", sorted(skipped))
+        except ImportError:
+            logger.debug("model_router not available; showing all providers")
 
     # Read Redis quota state
     try:

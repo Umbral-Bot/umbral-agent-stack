@@ -9,6 +9,7 @@ SUPERVISOR_LINE="*/5 * * * * bash $HOME/umbral-agent-stack/scripts/vps/superviso
 POLLER_LINE="*/5 * * * * bash $HOME/umbral-agent-stack/scripts/vps/notion-poller-cron.sh >> /tmp/notion_poller_cron.log 2>&1"
 SIM_REPORT_LINE="30 8,14,20 * * * bash $HOME/umbral-agent-stack/scripts/vps/sim-report-cron.sh >> /tmp/sim_report.log 2>&1"
 DAILY_DIGEST_LINE="0 22 * * * bash $HOME/umbral-agent-stack/scripts/vps/daily-digest-cron.sh >> /tmp/daily_digest.log 2>&1"
+SIM_TO_MAKE_LINE="0 9,15,21 * * * bash $HOME/umbral-agent-stack/scripts/vps/sim-to-make-cron.sh >> /tmp/sim_to_make.log 2>&1"
 
 # --- Dashboard cron ---
 if crontab -l 2>/dev/null | grep -qF "dashboard-cron.sh"; then
@@ -56,6 +57,14 @@ if crontab -l 2>/dev/null | grep -qF "daily-digest-cron.sh"; then
 else
     (crontab -l 2>/dev/null; echo "$DAILY_DIGEST_LINE") | crontab -
     echo "Daily digest cron added."
+fi
+
+# --- SIM to Make.com cron ---
+if crontab -l 2>/dev/null | grep -qF "sim-to-make-cron.sh"; then
+    echo "SIM-to-Make cron already installed."
+else
+    (crontab -l 2>/dev/null; echo "$SIM_TO_MAKE_LINE") | crontab -
+    echo "SIM-to-Make cron added."
 fi
 
 echo ""

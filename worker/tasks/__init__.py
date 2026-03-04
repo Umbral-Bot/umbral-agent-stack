@@ -37,6 +37,7 @@ from .linear import handle_linear_create_issue, handle_linear_list_teams, handle
 from .research import handle_research_web
 from .llm import handle_llm_generate
 from .composite import handle_composite_research_report
+from .make_webhook import handle_make_post_webhook
 
 # Each handler: (input: dict) -> dict
 TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
@@ -65,4 +66,5 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "research.web": handle_research_web,
     "llm.generate": handle_llm_generate,
     "composite.research_report": handle_composite_research_report,
+    "make.post_webhook": handle_make_post_webhook,
 }

@@ -1,9 +1,10 @@
 # Hackathon: Activar OpsLogger + persistencia task store
 
-**Assigned:** codex  
+**Assigned:** ~~codex~~ cursor (completada por cursor durante hackathon)  
 **Priority:** P0  
-**Status:** assigned  
-**Created:** 2026-03-04
+**Status:** done  
+**Created:** 2026-03-04  
+**Closed:** 2026-03-04
 
 ## Contexto
 
@@ -40,3 +41,6 @@ El Dispatcher procesa tareas (verificado e2e el 2026-03-04) pero NO hay registro
 ## Entrega
 
 Responder en `.agents/board.md` con estado de la tarea y commit con los cambios.
+
+## Log
+- **2026-03-04** — Cursor verificó que OpsLogger ya estaba integrado en `dispatcher/service.py` (líneas 135, 140, 168, 177) y escribiendo a `~/.config/umbral/ops_log.jsonl`. 28 eventos registrados tras pruebas e2e. Dashboard (`dashboard_report_vps.py`) ya lee del OpsLogger. No requirió cambios de código.

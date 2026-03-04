@@ -71,17 +71,17 @@ class TestQuotaTracker:
 
 
 class TestModelRouter:
-    def test_select_model_coding_prefers_openai_codex(self, model_router):
-        """coding ahora usa openai_codex como preferido (prioridad máxima)."""
+    def test_select_model_coding_prefers_azure_foundry(self, model_router):
+        """coding ahora usa azure_foundry como preferido (prioridad máxima)."""
         decision = model_router.select_model("coding")
         assert isinstance(decision, ModelSelectionDecision)
-        assert decision.model == "openai_codex"
+        assert decision.model == "azure_foundry"
         assert decision.requires_approval is False
         assert "under_quota" in decision.reason or "fallback" in decision.reason
 
-    def test_select_model_general_prefers_openai_codex(self, model_router):
+    def test_select_model_general_prefers_azure_foundry(self, model_router):
         decision = model_router.select_model("general")
-        assert decision.model == "openai_codex"
+        assert decision.model == "azure_foundry"
         assert decision.requires_approval is False
 
     def test_select_model_writing_prefers_claude(self, model_router):
@@ -103,38 +103,39 @@ class TestModelRouter:
 
     def test_select_model_unknown_task_type_defaults_to_general(self, model_router):
         decision = model_router.select_model("unknown_type")
-        # general → openai_codex (o fallback si está restringido)
+        # general → azure_foundry (o fallback si está restringido)
         assert isinstance(decision, ModelSelectionDecision)
-        assert decision.model in ("openai_codex", "claude_pro", "gemini_pro", "gemini_flash")
+        assert decision.model in ("azure_foundry", "openai_codex", "claude_pro", "gemini_pro", "gemini_flash")
 
     def test_select_model_with_explicit_quota_state(self, model_router):
-        # Todos en 0 → preferido para coding = openai_codex
+        # Todos en 0 → preferido para coding = azure_foundry
         quota_state = {
-            "openai_codex": 0, "claude_pro": 0, "claude_opus": 0,
+            "azure_foundry": 0, "openai_codex": 0, "claude_pro": 0, "claude_opus": 0,
             "gemini_pro": 0, "gemini_flash": 0, "copilot_pro": 0,
         }
         decision = model_router.select_model("coding", quota_state=quota_state)
-        assert decision.model == "openai_codex"
+        assert decision.model == "azure_foundry"
 
-    def test_coding_falls_back_when_codex_restricted(self, model_router):
-        """Si openai_codex está en restrict, cae a claude_pro."""
+    def test_coding_falls_back_when_foundry_restricted(self, model_router):
+        """Si azure_foundry está en restrict, cae a openai_codex (GitHub Models)."""
         quota_state = {
-            "openai_codex": 0.95,  # sobre restrict (0.90)
+            "azure_foundry": 0.96,  # sobre restrict (0.95)
+            "openai_codex": 0.0,
             "claude_pro": 0.0,
             "claude_opus": 0.0,
             "gemini_pro": 0.0,
             "gemini_flash": 0.0,
         }
         decision = model_router.select_model("coding", quota_state=quota_state)
-        assert decision.model in ("claude_pro", "gemini_pro", "gemini_flash")
+        assert decision.model in ("openai_codex", "claude_pro", "gemini_pro", "gemini_flash")
 
 
 class TestLoadQuotaPolicy:
     def test_load_returns_routing_and_providers(self):
         routing, providers = load_quota_policy()
         assert "coding" in routing
-        assert routing["coding"]["preferred"] == "openai_codex"
-        assert "openai_codex" in providers or "claude_pro" in providers
+        assert routing["coding"]["preferred"] == "azure_foundry"
+        assert "azure_foundry" in providers or "openai_codex" in providers
 
 
 class TestUmbralDefaultModel:
@@ -152,8 +153,8 @@ class TestUmbralDefaultModel:
         monkeypatch.setenv("UMBRAL_DEFAULT_MODEL", "nonexistent_model")
         router = ModelRouter(quota_tracker)
         decision = router.select_model("coding")
-        # Should fall back to normal routing since override is invalid
-        assert decision.model == "openai_codex"
+        # Should fall back to normal routing since override is invalid → azure_foundry
+        assert decision.model == "azure_foundry"
 
     def test_default_model_empty_string_no_effect(self, quota_tracker, monkeypatch):
         monkeypatch.setenv("UMBRAL_DEFAULT_MODEL", "")

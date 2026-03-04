@@ -1,16 +1,13 @@
 """
 Tasks: multi-provider LLM generation.
 
-- llm.generate: generate text using Gemini, OpenAI, Anthropic, or GitHub Models.
+- llm.generate: generate text using Gemini, OpenAI, Anthropic, GitHub Models, o Azure AI Foundry.
 
 Provider selection (en orden de prioridad):
 1. "gemini_pro" / modelos "gemini-*" → Google Gemini API (GOOGLE_API_KEY)
-2. "chatgpt_plus" / "claude_pro" / "copilot_pro" → GitHub Models API (GITHUB_TOKEN)
-   GitHub Models da acceso a GPT-4o y Claude usando la suscripción de Copilot/GitHub.
-   Endpoint compatible con OpenAI: https://models.inference.ai.azure.com
-3. Si se pide un modelo "gpt-*" y hay OPENAI_API_KEY → OpenAI directo
-4. Si se pide un modelo "claude-*" y hay ANTHROPIC_API_KEY → Anthropic directo
-5. Fallback: GitHub Models si GITHUB_TOKEN disponible
+2. Modelos "gpt-*" / "codex" / "o1" / "o3" con AZURE_OPENAI_ENDPOINT+KEY → Azure AI Foundry (prioridad máxima para OpenAI)
+3. Modelos "gpt-*" / "claude-*" con GITHUB_TOKEN → GitHub Models (suscripción Copilot)
+4. Fallback: OPENAI_API_KEY / ANTHROPIC_API_KEY para APIs nativas
 """
 
 from __future__ import annotations
@@ -33,24 +30,30 @@ OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions"
 ANTHROPIC_MESSAGES_URL = "https://api.anthropic.com/v1/messages"
 # GitHub Models: compatible con OpenAI API, autenticado con GITHUB_TOKEN (suscripción Copilot)
 GITHUB_MODELS_URL = "https://models.inference.ai.azure.com/chat/completions"
+# Azure AI Foundry: versión de API por defecto (se puede sobreescribir con AZURE_OPENAI_API_VERSION)
+AZURE_OPENAI_DEFAULT_API_VERSION = "2024-12-01-preview"
 
-# Router aliases (quota providers) -> concrete API models.
-# Modelos reales disponibles (2026-03-04):
-#   openai_codex → gpt-5.3-codex  vía GitHub Models (ChatGPT Plus / OAuth)
-#   claude_pro   → claude-sonnet-4-6  vía GitHub Models o ANTHROPIC_API_KEY
-#   claude_opus  → claude-opus-4-6   vía GitHub Models o ANTHROPIC_API_KEY (tareas críticas)
+# Router aliases (quota providers) -> concrete API models / deployment names.
+# Modelos reales disponibles:
+#   openai_codex → gpt-5.3-codex  vía Azure AI Foundry (AZURE_OPENAI_*) — prioridad 1
+#                                  o GitHub Models (GITHUB_TOKEN) — fallback
+#   claude_pro   → claude-sonnet-4-6  vía ANTHROPIC_API_KEY o GitHub Models
+#   claude_opus  → claude-opus-4-6   vía ANTHROPIC_API_KEY o GitHub Models (crítico)
 #   gemini_pro   → gemini-3.1-pro-preview-customtools  vía GOOGLE_API_KEY
-#   gemini_flash → gemini-flash-latest  vía GOOGLE_API_KEY (rápido y económico)
+#   gemini_flash → gemini-flash-latest  vía GOOGLE_API_KEY
+# Nota: para Azure Foundry el nombre del deployment puede diferir del nombre del modelo.
+# Usar AZURE_OPENAI_DEPLOYMENT para sobreescribir (default = nombre del alias).
 MODEL_ALIASES = {
-    # OpenAI Codex — prioridad máxima (suscripción ChatGPT Plus)
-    "openai_codex": "gpt-5.3-codex",
-    # Aliases legacy mantenidos para compatibilidad
+    # Azure AI Foundry / OpenAI Codex — prioridad máxima
+    "openai_codex": "gpt-5.3-codex",       # deployment en Foundry; override con AZURE_OPENAI_DEPLOYMENT
+    "azure_foundry": "gpt-5.3-codex",      # alias directo al provider Foundry
+    # Aliases legacy
     "chatgpt_plus": "gpt-4o",
     "copilot_pro":  "gpt-4o-mini",
     # Anthropic (suscripción Pro)
     "claude_pro":   "claude-sonnet-4-6",
     "claude_opus":  "claude-opus-4-6",
-    # Google (AI Studio + Vertex)
+    # Google (AI Studio)
     "gemini_pro":   "gemini-3.1-pro-preview-customtools",
     "gemini_flash": "gemini-flash-latest",
 }
@@ -120,48 +123,56 @@ def _detect_provider(model: str) -> str:
     """
     Infer provider from model name.
 
-    Priority:
-    - Gemini models → always Google Gemini API
-    - GPT/Claude/o-series: prefer GitHub Models (GITHUB_TOKEN, suscripción Copilot)
-      if GITHUB_TOKEN available; fall back to OPENAI_API_KEY / ANTHROPIC_API_KEY
-      only if the respective native key is set but GITHUB_TOKEN is not.
+    Priority para modelos OpenAI/Codex:
+    1. Azure AI Foundry (AZURE_OPENAI_ENDPOINT + AZURE_OPENAI_API_KEY) — cuota dedicada Azure
+    2. GitHub Models (GITHUB_TOKEN) — suscripción Copilot
+    3. OpenAI directo (OPENAI_API_KEY)
+
+    Priority para modelos Anthropic/Claude:
+    1. Anthropic nativo (ANTHROPIC_API_KEY)
+    2. GitHub Models (GITHUB_TOKEN)
     """
     model_lc = (model or "").lower()
 
     if "gemini" in model_lc:
         return "gemini"
 
-    github_token = os.environ.get("GITHUB_TOKEN", "").strip()
-
     is_openai_model = (
-        "gpt" in model_lc      # gpt-4o, gpt-5.2, gpt-5.3-codex, etc.
+        "gpt" in model_lc       # gpt-4o, gpt-5.2, gpt-5.3-codex, etc.
         or "o1" in model_lc
         or "o3" in model_lc
         or "codex" in model_lc  # gpt-5.3-codex
         or "chatgpt" in model_lc
         or "copilot" in model_lc
     )
-    # claude-sonnet-4-6, claude-opus-4-6, claude-haiku-4-5, claude-3-5-sonnet, etc.
     is_anthropic_model = "claude" in model_lc
 
-    if is_openai_model or is_anthropic_model:
-        # GitHub Models es el provider preferido (usa suscripción existente)
-        if github_token:
+    if is_openai_model:
+        # Azure AI Foundry: prioridad máxima para modelos OpenAI/Codex
+        if (os.environ.get("AZURE_OPENAI_ENDPOINT", "").strip()
+                and os.environ.get("AZURE_OPENAI_API_KEY", "").strip()):
+            return "azure_foundry"
+        # GitHub Models (suscripción Copilot)
+        if os.environ.get("GITHUB_TOKEN", "").strip():
             return "github_models"
-        # Fallback a APIs nativas si hay keys explícitas
-        if is_openai_model and os.environ.get("OPENAI_API_KEY", "").strip():
+        # OpenAI nativo
+        if os.environ.get("OPENAI_API_KEY", "").strip():
             return "openai"
-        if is_anthropic_model and os.environ.get("ANTHROPIC_API_KEY", "").strip():
-            return "anthropic"
-        # Sin ninguna key disponible
-        if is_openai_model:
-            raise RuntimeError(
-                "No GITHUB_TOKEN or OPENAI_API_KEY configured for OpenAI models. "
-                "Set GITHUB_TOKEN (GitHub Copilot subscription) in ~/.config/openclaw/env"
-            )
         raise RuntimeError(
-            "No GITHUB_TOKEN or ANTHROPIC_API_KEY configured for Anthropic models. "
-            "Set GITHUB_TOKEN (GitHub Copilot subscription) in ~/.config/openclaw/env"
+            "No AZURE_OPENAI_*, GITHUB_TOKEN ni OPENAI_API_KEY configurado para modelos OpenAI. "
+            "Agregá AZURE_OPENAI_ENDPOINT y AZURE_OPENAI_API_KEY en ~/.config/openclaw/env"
+        )
+
+    if is_anthropic_model:
+        # Anthropic nativo primero (tiene más modelos y rate limits propios)
+        if os.environ.get("ANTHROPIC_API_KEY", "").strip():
+            return "anthropic"
+        # GitHub Models como fallback
+        if os.environ.get("GITHUB_TOKEN", "").strip():
+            return "github_models"
+        raise RuntimeError(
+            "No ANTHROPIC_API_KEY ni GITHUB_TOKEN configurado para modelos Claude. "
+            "Agregá ANTHROPIC_API_KEY en ~/.config/openclaw/env"
         )
 
     return "gemini"
@@ -459,9 +470,109 @@ def _call_github_models(
     }
 
 
+def _call_azure_foundry(
+    *,
+    prompt: str,
+    model: str,
+    max_tokens: int,
+    temperature: float,
+    system_prompt: str,
+) -> Dict[str, Any]:
+    """
+    Azure AI Foundry (Azure OpenAI Service).
+
+    Variables de entorno requeridas:
+        AZURE_OPENAI_ENDPOINT  — endpoint del recurso, p.ej.:
+            https://mi-recurso.openai.azure.com/
+            https://mi-hub.services.ai.azure.com/
+        AZURE_OPENAI_API_KEY   — API key del recurso
+    Opcionales:
+        AZURE_OPENAI_DEPLOYMENT — nombre del deployment (default = nombre del modelo)
+        AZURE_OPENAI_API_VERSION — versión de la API (default: 2024-12-01-preview)
+    """
+    endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT", "").strip().rstrip("/")
+    api_key = os.environ.get("AZURE_OPENAI_API_KEY", "").strip()
+    if not endpoint or not api_key:
+        raise RuntimeError(
+            "AZURE_OPENAI_ENDPOINT y AZURE_OPENAI_API_KEY requeridos para Azure AI Foundry. "
+            "Agregálos en ~/.config/openclaw/env"
+        )
+
+    # Deployment: usar env var si está, sino el nombre del modelo
+    deployment = os.environ.get("AZURE_OPENAI_DEPLOYMENT", model).strip() or model
+    api_version = os.environ.get("AZURE_OPENAI_API_VERSION", AZURE_OPENAI_DEFAULT_API_VERSION)
+
+    # Construir URL según tipo de endpoint
+    if "services.ai.azure.com" in endpoint:
+        # Azure AI Foundry Hub endpoint (nuevo)
+        url = f"{endpoint}/models/{deployment}/chat/completions?api-version={api_version}"
+    elif "/openai/deployments/" in endpoint:
+        # Endpoint ya incluye el path del deployment
+        url = f"{endpoint}?api-version={api_version}"
+    else:
+        # Azure OpenAI clásico
+        url = f"{endpoint}/openai/deployments/{deployment}/chat/completions?api-version={api_version}"
+
+    messages: list = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+    messages.append({"role": "user", "content": prompt})
+
+    payload: Dict[str, Any] = {
+        "messages": messages,
+        "max_tokens": max_tokens,
+        "temperature": temperature,
+    }
+    # AI Foundry Hub requiere el campo "model" en el body
+    if "services.ai.azure.com" in endpoint:
+        payload["model"] = deployment
+    # Reasoning models (o1, o3) no soportan temperature ni max_tokens estándar
+    if any(x in model.lower() for x in ["o1", "o3"]):
+        payload.pop("temperature", None)
+        payload.pop("max_tokens", None)
+        payload["max_completion_tokens"] = max_tokens
+
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        method="POST",
+        headers={
+            "Content-Type": "application/json",
+            "api-key": api_key,
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            data = json.loads(resp.read().decode())
+    except urllib.error.HTTPError as exc:
+        body_str = _safe_http_error_body(exc)
+        raise RuntimeError(f"Azure Foundry API error {exc.code}: {body_str}")
+    except Exception as exc:
+        raise RuntimeError(f"Azure Foundry generation failed: {str(exc)[:300]}")
+
+    choices = data.get("choices", [])
+    if not choices:
+        raise RuntimeError("No choices in Azure Foundry response")
+    message = choices[0].get("message", {})
+    text = _extract_openai_text(message.get("content", ""))
+
+    usage = data.get("usage", {})
+    return {
+        "text": text,
+        "model": deployment,
+        "provider": "azure_foundry",
+        "usage": {
+            "prompt_tokens": usage.get("prompt_tokens", 0),
+            "completion_tokens": usage.get("completion_tokens", 0),
+            "total_tokens": usage.get("total_tokens", 0),
+        },
+    }
+
+
 PROVIDERS: Dict[str, Callable[..., Dict[str, Any]]] = {
     "gemini": _call_gemini,
+    "azure_foundry": _call_azure_foundry,   # prioridad máxima para OpenAI/Codex
+    "github_models": _call_github_models,
     "openai": _call_openai,
     "anthropic": _call_anthropic,
-    "github_models": _call_github_models,
 }

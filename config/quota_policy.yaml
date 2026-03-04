@@ -8,7 +8,14 @@
 # Ventanas: 5h=18000, 3h=10800, diario=86400, mensual=2592000
 
 providers:
-  # --- OpenAI Codex (ChatGPT Plus / GitHub Models OAuth) — PRIORIDAD 1 ---
+  # --- Azure AI Foundry (deployment dedicado, cuota Azure) — PRIORIDAD 0 ---
+  azure_foundry:
+    limit_requests: 2000     # TPM basado en deployment; ajustar según cuota asignada
+    window_seconds: 3600    # 1h
+    warn: 0.80
+    restrict: 0.95
+
+  # --- OpenAI Codex via GitHub Models (fallback si Foundry no disponible) — PRIORIDAD 1 ---
   openai_codex:
     limit_requests: 400
     window_seconds: 10800   # 3h (ventana conservadora)
@@ -54,23 +61,23 @@ providers:
 # openai_codex es el modelo de mayor prioridad según instrucción del usuario.
 routing:
   coding:
-    preferred: openai_codex
-    fallback_chain: [claude_pro, gemini_pro, gemini_flash]
+    preferred: azure_foundry
+    fallback_chain: [openai_codex, claude_pro, gemini_pro, gemini_flash]
   general:
-    preferred: openai_codex
-    fallback_chain: [claude_pro, gemini_pro, gemini_flash]
+    preferred: azure_foundry
+    fallback_chain: [openai_codex, claude_pro, gemini_pro, gemini_flash]
   ms_stack:
-    preferred: openai_codex
-    fallback_chain: [copilot_pro, claude_pro, gemini_pro]
+    preferred: azure_foundry
+    fallback_chain: [openai_codex, copilot_pro, claude_pro, gemini_pro]
   writing:
     preferred: claude_pro
-    fallback_chain: [openai_codex, gemini_pro]
+    fallback_chain: [azure_foundry, openai_codex, gemini_pro]
   research:
     preferred: gemini_pro
-    fallback_chain: [openai_codex, claude_pro, gemini_flash]
+    fallback_chain: [azure_foundry, openai_codex, claude_pro, gemini_flash]
   critical:
     preferred: claude_opus
-    fallback_chain: [claude_pro, openai_codex]
+    fallback_chain: [claude_pro, azure_foundry, openai_codex]
   light:
     preferred: gemini_flash
-    fallback_chain: [openai_codex, gemini_pro]
+    fallback_chain: [azure_foundry, openai_codex, gemini_pro]

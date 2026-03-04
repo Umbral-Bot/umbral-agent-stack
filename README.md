@@ -184,6 +184,8 @@ WORKER_TOKEN=test python -m pytest tests/ -v
 | [37-n8n-vps-automation](docs/37-n8n-vps-automation.md) | n8n en la VPS para más automatizaciones (Rick lo instala) |
 | [38-protocol-compliance-check](docs/38-protocol-compliance-check.md) | Verificación: dashboard, Linear, Notion, board, protocolos |
 | [39-make-n8n-rick-market-analysis](docs/39-make-n8n-rick-market-analysis.md) | Make + n8n para Rick: potenciar análisis de mercado (SIM), pasar APIs |
+| [40-hackathon-diagnostico-completo](docs/40-hackathon-diagnostico-completo.md) | Hackathon: diagnóstico desde código (agente Cursor Cloud) |
+| [41-hackathon-resultado-diagnostico-real](docs/41-hackathon-resultado-diagnostico-real.md) | Hackathon: diagnóstico con datos reales (VPS/VM/Notion/Linear vivos) |
 | [ADRs](docs/adr/) | **Decisiones arquitectónicas (001-004)** |
 | [02-implementation-log](docs/02-implementation-log.md) | Cronología de implementación |
 | [03-setup-vps](docs/03-setup-vps-openclaw.md) | Setup VPS + OpenClaw |

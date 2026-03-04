@@ -22,7 +22,13 @@
 | PRs mergeados (hackathon) | 34 |
 | VM (Execution Plane) | ✅ v0.4.0 — 25 handlers — reconectada |
 
-## Ronda 11 — En curso
+## Ronda 12 — En curso
+
+| ID | Título | Asignado | Estado |
+|----|--------|----------|--------|
+| 052 | BIM Skills — IFC, Speckle, BIM Coordination + Templates | cursor-agent-cloud-3 | ✅ done |
+
+## Ronda 11 — Completada ✅
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|

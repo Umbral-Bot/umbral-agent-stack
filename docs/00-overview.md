@@ -56,26 +56,28 @@ David ──► Telegram/Notion ──► VPS (Control Plane) ──Tailscale─
 5. **Auditable**: Toda ejecución deja traza en Notion + Langfuse
 6. **Extensible**: Equipos y agentes se definen como config, no como código
 
-## Estado Actual
+## Estado Actual (actualizado 2026-03-04)
 
 | Componente | Fase | Estado |
 |-----------|------|--------|
 | OpenClaw Gateway | 1.0 | ✅ Operativo |
 | Telegram Bot | 1.0 | ✅ Operativo |
 | Tailscale VPN | 1.5 | ✅ Operativo |
-| Worker FastAPI | 1.5 | ✅ Operativo |
+| Worker FastAPI | 1.5 | ✅ Operativo (22 task handlers, auth, rate limit, sanitización) |
 | NSSM Service | 1.5 | ✅ Operativo |
-| Notion Bridge | 1.7 | ✅ Código listo |
+| Notion Bridge | 1.7 | ✅ Implementado (comments, transcripts, dashboard, kanban) |
 | Plan Maestro v2.8 | S0 | ✅ Documentado |
 | ADRs (4) | S0 | ✅ Documentados |
-| TaskEnvelope v0.1 | S1 | 📋 Diseñado |
-| ModelRouter + Cuotas | S4 | 📋 Planificado |
-| Equipos + Supervisores | S3 | 📋 Planificado |
-| LangGraph | S2 | 📋 Scaffolding |
-| LiteLLM | S2 | 📋 Scaffolding |
-| Redis | S2 | 📋 Scaffolding |
-| Langfuse | S6 | 📋 Planificado |
-| PAD/RPA | S5 | 📋 Planificado |
+| TaskEnvelope v0.1 | S1 | ✅ Implementado (con backward compat legacy) |
+| Dispatcher + Redis | S2 | ✅ Implementado (queue, health monitor, N workers) |
+| Equipos + Supervisores | S3 | ✅ Implementado (5 equipos, team routing, Notion poller) |
+| ModelRouter + Cuotas | S4 | ✅ Implementado (QuotaTracker Redis, fallback chain) |
+| PAD/RPA | S5 | ⚠️ Parcial (conector listo, PAD no instalado en VM) |
+| Observabilidad | S6 | ✅ Código implementado (OpsLogger, OODA, self-eval) |
+| Hardening | S7 | ✅ Implementado (rate limit, sanitización, tool policy) |
+| LiteLLM | S2 | ⚠️ Config lista, no desplegado |
+| Langfuse | S6 | ⚠️ Docker compose listo, no desplegado |
+| n8n | — | ✅ Instalado en VPS (2026-03-03) |
 
 ## Documentos de Referencia
 - [Plan Maestro v2.8](14-codex-plan.md)

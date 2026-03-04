@@ -1,12 +1,12 @@
 ---
 name: docente-aec40
 description: >-
-  Asistente para preparar material docente del Master AEC 4.0. Genera clases,
-  ejercicios, guias tecnicas y contenido pedagogico sobre programacion BIM,
-  Dynamo, Revit API y metodologia Citizen Developer.
-  Usar cuando: "preparar clase", "material docente", "dynamo scripting",
-  "revit python", "citizen developer", "clase BIM", "guia tecnica AEC",
-  "ejercicio programacion", "contenido curso", "diseno instruccional".
+  Asistente docente de David Moreira para el Master AEC 4.0. Prepara material
+  de clase, ejercicios y guias tecnicas de programacion BIM: Dynamo, Python en
+  Revit API, automatizacion y metodologia Citizen Developer.
+  Use when "preparar clase", "material docente", "dynamo scripting",
+  "revit python", "citizen developer", "ejercicio BIM", "guia tecnica",
+  "clase automatizacion", "sesion master aec".
 metadata:
   openclaw:
     emoji: "\U0001F393"
@@ -16,289 +16,274 @@ metadata:
 
 # Docente AEC 4.0 — Skill de David Moreira
 
-Rick usa este skill para preparar material de clase, guias tecnicas y contenido pedagogico del Master AEC 4.0 en Butic New School y TEDIvirtual. El perfil docente combina expertise tecnico en Dynamo/Revit API con metodologia Citizen Developer.
+Rick usa este skill para ayudar a David a preparar clases, ejercicios, guias tecnicas y materiales didacticos para el Master AEC 4.0 (Butic The New School / TEDIvirtual). El enfoque es eminentemente practico: Dynamo, Python, Revit API y metodologia Citizen Developer.
 
 ## Perfil docente
 
 | Campo | Valor |
 |-------|-------|
-| **Programa** | Master AEC 4.0 — Butic The New School + TEDIvirtual |
-| **Rol** | Docente titular modulos Programacion BIM y Automatizacion |
-| **Certificacion** | Autodesk Certified Instructor (ACI) ID: 86900 |
-| **Especializacion** | Dynamo, Revit API, Python, IA aplicada a AEC |
-| **Metodologia** | Citizen Developer — programacion para no programadores |
-| **Audiencia** | Arquitectos y coordinadores BIM sin background en codigo |
+| **Institucion** | Butic The New School + TEDIvirtual |
+| **Programa** | Master AEC 4.0 — Programacion y Automatizacion BIM |
+| **Audiencia** | Arquitectos, ingenieros y coordinadores BIM sin perfil de programador |
+| **Herramientas** | Dynamo, Revit API (Python/C#), Grasshopper, Power Automate, IA aplicada |
+| **Enfoque** | Citizen Developer: resolver problemas reales con automatizacion accesible |
+| **Credencial** | Autodesk Certified Instructor (ACI) #86900 |
 
----
+## Metodologia Citizen Developer
 
-## Enfoque pedagogico: Citizen Developer
+El eje central del Master AEC 4.0 es convertir a profesionales AEC en Citizen Developers: personas capaces de automatizar sus propios flujos sin necesidad de ser programadores de software.
 
-El Citizen Developer en AEC es un profesional que crea automatizaciones sin ser programador de formacion. David lo ensena con este principio:
+### Principios pedagogicos
 
-> "No formo programadores. Formo arquitectos que resuelven problemas reales con codigo."
+1. **Problema primero:** Cada sesion parte de un problema real del sector (no de sintaxis ni teoria)
+2. **Visual antes que textual:** Dynamo visual antes de saltar a Python/C#
+3. **Iteracion rapida:** Ejercicios de 15-20 minutos con resultado tangible
+4. **Replicabilidad:** Todo lo aprendido debe poder aplicarse al dia siguiente en el trabajo
+5. **Gradualidad:** Nodos → Scripts Python → API → Automatizacion completa
 
-### Los 3 niveles de Citizen Developer
+### Niveles de autonomia Citizen Developer
 
-| Nivel | Perfil | Herramientas | Objetivo |
-|-------|--------|--------------|----------|
-| **CD-1 Explorador** | Sin experiencia en codigo | Dynamo visual, nodos OOTB | Automatizar tareas repetitivas con nodos |
-| **CD-2 Constructor** | Conoce nodos, primer contacto con Python | Dynamo + Code Block + Python OOTB | Crear scripts simples con Python basico |
-| **CD-3 Orquestador** | Programa en Python, usa APIs | Dynamo + Python + Revit API | Flujos completos, integraciones externas |
+| Nivel | Capacidad | Herramienta principal |
+|-------|-----------|----------------------|
+| 0 — Usuario | Consume herramientas existentes | Revit, Navisworks |
+| 1 — Configurador | Adapta parametros y plantillas | Dynamo Player, scripts compartidos |
+| 2 — Scriptero | Crea scripts basicos propios | Dynamo visual, Python basico |
+| 3 — Automatizador | Flujos completos inter-aplicacion | Python avanzado, Revit API, Power Automate |
+| 4 — Orquestador | Integra LLMs y APIs externas | IA aplicada, Make.com, Azure AI |
 
-### Progresion de aprendizaje
+El Master AEC 4.0 lleva a los estudiantes del nivel 0 al nivel 3, con introduccion al nivel 4.
 
-1. **Fundamentos** — Logica de nodos, tipos de datos, listas
-2. **Automatizacion visual** — Grafos Dynamo sin codigo
-3. **Python en Dynamo** — Code Block, input/output, depuracion
-4. **Revit API** — Objetos, metodos, transacciones
-5. **Integracion** — Scripts que leen/escriben datos externos
-6. **IA aplicada** — LLMs como copiloto para generar y refinar scripts
+## Modulo 1 — Dynamo: Visual Scripting para BIM
 
----
+### Fundamentos esenciales
 
-## Dynamo — Buenas Practicas
+- **Nodos clave:** Watch, Number Slider, Code Block, List.Map, List.Combine, If
+- **Tipado dinamico:** Vigilar conversiones List → Element → String
+- **Listas:** Anidamiento, @L1/@L2 (lacing), List.Transpose, List.Flatten
+- **Geometria:** Diferencia entre geometria Dynamo y objetos Revit
 
-### Estructura del grafo
+### Acceso a datos de Revit desde Dynamo
 
-- **Entrada** siempre a la izquierda, **salida** a la derecha
-- Agrupar por funcion con colores: naranja = entrada, azul = proceso, verde = salida
-- Un grafo = una funcion. Si hace mas de una cosa, dividir
-- Usar nodos `Watch` en puntos clave para depuracion visible
-- Nombrar nodos personalizados con verbo + objeto: `ObtenerElementosPorCategoria`
+```python
+import clr
+clr.AddReference('RevitServices')
+from RevitServices.Persistence import DocumentManager
+doc = DocumentManager.Instance.CurrentDBDocument
 
-### Listas y niveles
-
+from Autodesk.Revit.DB import FilteredElementCollector, BuiltInCategory
+collector = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Walls).WhereElementIsNotElementType()
+OUT = list(collector)
 ```
-# Regla de oro: si el resultado es inesperado, revisar el nivel de lista (L1, L2...)
-# Usar List.Map y List.Combine para operaciones sobre listas anidadas
-# @L1, @L2 en inputs de nodos Python para controlar aplanado
-```
 
-### Python en Dynamo — Plantilla base
+### Best practices Dynamo
+
+| Practica | Razon |
+|---------|-------|
+| Usar Code Block en vez de nodos matematicos basicos | Mas limpio, mas rapido |
+| Nombrar nodos con anotaciones | Facilita mantenimiento |
+| Modularizar en Custom Nodes | Reutilizacion y legibilidad |
+| Usar List.Map en lugar de For Loops | Idioma nativo de Dynamo |
+| Probar con un elemento antes de masivos | Evita corrupciones de modelo |
+| Transacciones siempre en Python, no en nodos mixtos | Consistencia y rollback seguro |
+
+### Anti-patterns Dynamo
+
+- Anidar demasiados nodos sin agrupar (spaghetti graph)
+- Ignorar errores de lista anidada sin inspeccionar con Watch
+- Usar Element.GetParameterValueByName en bucles masivos sin caching
+- Correr scripts sobre modelos vinculados sin abrir documento correcto
+
+## Modulo 2 — Python en Dynamo y Revit API
+
+### Estructura base de un script Python en Dynamo
 
 ```python
 import clr
 clr.AddReference('RevitAPI')
-clr.AddReference('RevitAPIUI')
+clr.AddReference('RevitServices')
 from Autodesk.Revit.DB import *
+from RevitServices.Persistence import DocumentManager
+from RevitServices.Transactions import TransactionManager
 
-# Inputs (siempre validar tipos)
-doc = IN[0]
-elementos = IN[1] if isinstance(IN[1], list) else [IN[1]]
+doc = DocumentManager.Instance.CurrentDBDocument
+inputs = IN[0]
 
-resultados = []
-errores = []
+results = []
+TransactionManager.Instance.EnsureInTransaction(doc)
+try:
+    for element in inputs:
+        pass  # operaciones sobre el modelo
+    TransactionManager.Instance.TransactionTaskDone()
+except Exception as e:
+    TransactionManager.Instance.ForceCloseTransaction()
+    raise e
 
-for elem in elementos:
-    try:
-        # === LOGICA PRINCIPAL ===
-        resultado = elem.Name  # ejemplo
-        resultados.append(resultado)
-    except Exception as e:
-        errores.append(f"Error en {elem.Id}: {str(e)}")
-
-OUT = resultados, errores
+OUT = results
 ```
 
-### Anti-patterns Dynamo
+### Operaciones frecuentes en Revit API
 
-| Evitar | Por que | Alternativa |
-|--------|---------|-------------|
-| Grafos con 200+ nodos sin grupos | Inmantenible | Dividir en subgrafos con Custom Nodes |
-| Python sin try/except | Falla silenciosa | Siempre capturar errores |
-| `Element.SetParameterByName` en bucle | Rendimiento lento | Transaccion unica por batch |
-| Hardcodear IDs de elementos | Fragilidad | Filtrar por categoria/tipo |
-| `*` import (from X import *) | Colisiones namespace | Importar solo lo necesario |
+| Operacion | Codigo clave |
+|-----------|-------------|
+| Leer parametro | `elem.LookupParameter("Nombre").AsString()` |
+| Escribir parametro | `elem.LookupParameter("Nombre").Set(valor)` |
+| Filtrar por categoria | `FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Walls)` |
+| Obtener tipo de elemento | `doc.GetElement(elem.GetTypeId())` |
+| Mover elemento | `ElementTransformUtils.MoveElement(doc, elem.Id, XYZ(dx, dy, dz))` |
+| Eliminar elemento | `doc.Delete(elem.Id)` |
 
----
+### Best practices Python en Revit API
 
-## Revit API — Buenas Practicas
+1. **Una transaccion por bloque logico** — no abrir/cerrar por cada elemento
+2. **Usar BuiltInParameter cuando sea posible** — mas robusto que nombres de parametro
+3. **Manejar excepciones por elemento** — un fallo no debe detener el procesamiento masivo
+4. **Cachear colecciones** — no re-consultar FilteredElementCollector dentro de un loop
+5. **Validar tipos antes de Set()** — Double vs Integer vs String generan errores silenciosos
 
-### Conceptos fundamentales
-
-| Concepto | Explicacion |
-|----------|-------------|
-| **Document** | Modelo activo. Acceso a todos los elementos |
-| **Element** | Unidad basica: muros, puertas, vistas, familias |
-| **ElementId** | Identificador unico dentro del documento |
-| **Parameter** | Propiedad del elemento. Tipos: texto, numero, si/no, elemento |
-| **Transaction** | Envuelve modificaciones. Commit o Rollback |
-| **FilteredElementCollector** | Herramienta para buscar elementos por categoria, clase o parametro |
-
-### Patron basico de lectura
+### Ejercicio tipo: Renombrar habitaciones por nivel
 
 ```python
-# Obtener todos los muros del modelo
-collector = FilteredElementCollector(doc)
-muros = collector.OfCategory(BuiltInCategory.OST_Walls) \
-                 .WhereElementIsNotElementType() \
-                 .ToElements()
+# Agregar prefijo "P1-" a todas las habitaciones del nivel 1
+rooms = IN[0]
+
+TransactionManager.Instance.EnsureInTransaction(doc)
+renamed = []
+for room in rooms:
+    nombre = room.LookupParameter("Name").AsString()
+    if not nombre.startswith("P1-"):
+        room.LookupParameter("Name").Set("P1-" + nombre)
+        renamed.append(room.Id.IntegerValue)
+TransactionManager.Instance.TransactionTaskDone()
+OUT = renamed
 ```
 
-### Patron basico de escritura (con Transaction)
+## Modulo 3 — IA y Orquestacion BIM
 
-```python
-with Transaction(doc, "Actualizar parametro") as t:
-    t.Start()
-    try:
-        for elem in elementos:
-            param = elem.LookupParameter("Comentarios")
-            if param and not param.IsReadOnly:
-                param.Set("Revisado por David")
-        t.Commit()
-    except Exception as e:
-        t.RollBack()
-        raise e
+### IA aplicada al sector AEC (2025)
+
+| Aplicacion | Herramienta | Caso de uso |
+|-----------|-------------|-------------|
+| Clasificacion automatica de planos | Vision API / GPT-4V | QA automatico en CDE |
+| Generacion de documentacion | LLMs (Gemini, GPT-4) | Especificaciones, memorias |
+| Extraccion de datos de PDF | Document Intelligence | Importar mediciones de proveedores |
+| Asistente de coordinacion BIM | Copilot Studio + Revit API | Chatbot interno que ejecuta comandos |
+| Revision automatica de modelos | Dynamo + reglas LLM | Verificar normas y estandares BIM |
+
+### Prompts efectivos para asistentes BIM
+
+**Estructura de prompt tecnico:**
+```
+Contexto: [software version, tipo de modelo, standard]
+Rol: Eres un especialista en [Revit API / Dynamo / IFC]
+Tarea: [accion especifica y acotada]
+Restricciones: [limitaciones del entorno]
+Formato de salida: [codigo Python / JSON / tabla]
 ```
 
-### Filtros eficientes
-
-```python
-# Filtrar por tipo especifico (mas rapido que filtrar todos)
-elementos = FilteredElementCollector(doc) \
-    .OfClass(Wall) \
-    .ToElements()
-
-# Filtrar por parametro (Rule-based filter)
-rule = ParameterFilterRuleFactory.CreateEqualsRule(
-    param_id, "Prefabricado", True
-)
+**Ejemplo prompt Dynamo:**
+```
+Eres un experto en Dynamo 2.x con Revit 2024.
+Escribe un script Python (nodo PythonScript) que lea todos los muros del modelo
+activo y exporte a una lista: [Id, Tipo, Nivel, Longitud_m].
+Usa FilteredElementCollector. Maneja la transaccion correctamente.
 ```
 
-### Errores comunes en Revit API
+## Modulo 4 — Diseño instruccional AEC 4.0
 
-| Error | Causa | Solucion |
-|-------|-------|---------|
-| `InvalidOperationException: Document is closed` | Acceder al doc fuera del contexto | Pasar doc como IN[0] desde Dynamo |
-| `Autodesk.Revit.Exceptions.ModificationForbiddenException` | Escribir fuera de Transaction | Envolver en `with Transaction(doc, ...) as t` |
-| `NullReferenceException` en parametro | Parametro no existe en esa familia | Validar `if param is not None` antes de Set |
-| Rendimiento lento con 1000+ elementos | Crear Transaction por elemento | Una Transaction para todo el batch |
+### Estructura de una sesion de 2 horas
 
----
+| Bloque | Duracion | Contenido |
+|--------|----------|-----------|
+| Contexto y problema | 10 min | Caso real de obra o oficina |
+| Demo en vivo | 20 min | David muestra el flujo completo (no slides) |
+| Ejercicio guiado | 40 min | Estudiantes replican con variacion |
+| Desafio libre | 25 min | Extension con pista minima |
+| Cierre y conexion | 5 min | "Con esto pueden mañana hacer..." |
 
-## Diseno instruccional para clases AEC 4.0
+### Tipos de material a generar
 
-### Estructura de modulo (90 min)
+| Tipo | Descripcion | Cuando usarlo |
+|------|-------------|---------------|
+| Guia tecnica | Referencia rapida: comandos, parametros, patrones | Pre-clase, consulta rapida |
+| Ejercicio base | Problema resuelto paso a paso | Durante la sesion |
+| Ejercicio desafio | Variacion con menos guia | Final de sesion o tarea |
+| Checklist de errores comunes | Top 5 errores y como solucionarlos | Post-ejercicio |
+| Plantilla reutilizable | Script/grafo comentado | Entregable de la sesion |
 
-| Segmento | Tiempo | Proposito |
-|----------|--------|-----------|
-| **Hook** | 5 min | Problema real o "por que importa esto hoy" |
-| **Concepto clave** | 15 min | Maxima 1 concepto central por clase |
-| **Demo en vivo** | 20 min | David muestra el flujo completo funcional |
-| **Practica guiada** | 30 min | Alumnos replican con soporte |
-| **Variacion libre** | 15 min | Alumnos adaptan a su propio contexto |
-| **Cierre + nexo** | 5 min | Que resolvimos, que viene en la proxima clase |
+### Niveles de dificultad para ejercicios
 
-### Principios pedagogicos
+- **Nivel 1 (Replicar):** Script dado, cambiar solo parametros de entrada
+- **Nivel 2 (Adaptar):** Esqueleto dado, completar logica principal
+- **Nivel 3 (Crear):** Problema definido, solucion libre
+- **Nivel 4 (Optimizar):** Script funcional dado, mejorar o extender
 
-1. **Problema primero** — Empezar con el dolor real, no con la teoria
-2. **Demo antes de explicar** — Mostrar el resultado antes de desglosarlo
-3. **Error visible** — Cometer errores en vivo y mostrar como depurar
-4. **Contexto AEC siempre** — Todo ejemplo sobre muros, puertas, vistas, familias
-5. **Copia-pega valido** — El codigo de la clase es para usar, no para memorizar
+### Errores mas frecuentes en estudiantes AEC
 
-### Tipos de ejercicios
+| Error | Causa raiz | Solucion pedagogica |
+|-------|-----------|---------------------|
+| Script falla sin mensaje claro | No leen el Watch node | Enseniar a depurar antes que a programar |
+| Loop infinito / Revit se congela | Transaccion mal cerrada | Siempre usar EnsureInTransaction + ForceClose |
+| Resultado None inesperado | Parametro con nombre incorrecto | Verificar con LookupParameter is not None |
+| Crash en modelos grandes | Sin filtros previos | Filtrar siempre por nivel/view antes de colectar |
 
-| Tipo | Descripcion | Cuando usar |
-|------|-------------|-------------|
-| **Replicar** | Copiar exactamente lo que David hizo | Primera exposicion a un concepto |
-| **Adaptar** | Modificar el script para otro caso | Segunda clase del mismo concepto |
-| **Disenar** | Resolver un problema con la API | Cierre de modulo |
-| **Depurar** | Encontrar y corregir bugs en un script dado | Refuerzo de logica |
-| **Integrar** | Combinar dos scripts anteriores | Evaluacion de modulo |
+## Conceptos clave del Master AEC 4.0
 
-### Criterios de evaluacion Citizen Developer
+| Concepto | Definicion operacional |
+|----------|----------------------|
+| **BIM** | Metodologia de gestion de informacion del ciclo de vida (ISO 19650) |
+| **Dynamo** | Entorno visual de programacion para Revit; automatizar sin codigo textual |
+| **Revit API** | Interfaz programatica; acceso total a elementos, parametros y documentos |
+| **IronPython / CPython** | Dos motores Python en Dynamo; CPython 3.x para libs externas |
+| **Citizen Developer** | Profesional no-programador que crea automatizaciones propias |
+| **CDE** | Common Data Environment: repositorio central de informacion (ACC, BIM 360) |
+| **LOD** | Level of Development: grado de desarrollo de geometria e informacion |
 
-- El script corre sin errores en el modelo de prueba
-- Maneja al menos un caso de error con mensaje claro
-- El alumno puede explicar que hace cada bloque
-- Resuelve el problema planteado (no necesariamente de forma optima)
+## Reglas de comunicacion docente
 
----
+- Instrucciones en segunda persona: "Abre Dynamo desde el menu Add-ins"
+- Evitar jerga sin definir: "iteracion" → "repetir para cada elemento"
+- Acompañar codigo con descripcion en lenguaje natural
+- Usar tablas para comparar opciones, no parrafos largos
+- Prohibido: "Como es sabido...", "Simplemente...", "Es facil..."
 
-## Tendencias tecnologicas AEC 4.0
-
-### IA en el flujo BIM
-
-| Aplicacion | Herramienta | Caso de uso docente |
-|------------|-------------|---------------------|
-| Generacion de codigo Dynamo/Python | Copilot, Claude, Gemini | Alumno describe lo que quiere, IA genera draft, alumno refina |
-| Revision de codigo | ChatGPT, Copilot | Pegar script y pedir "encuentra los bugs" |
-| Documentacion automatica | LLMs | Generar comentarios y README del script |
-| Clasificacion de elementos | Vision AI | Reconocimiento de tipos en nubes de puntos |
-
-### Stack recomendado para el curso
+### Estructura de guia tecnica
 
 ```
-Nivel 1 (CD-1): Dynamo 2.x + Revit 2024+ + nodos OOTB
-Nivel 2 (CD-2): + Python 3.x en Dynamo + Visual Studio Code
-Nivel 3 (CD-3): + pyRevit + Revit API docs + GitHub
-Transversal: ChatGPT/Copilot como asistente de codigo
+## [Titulo del procedimiento]
+**Cuando usar:** [caso de uso en 1 linea]
+**Prerequisitos:** [lo que debe tener instalado/abierto]
+**Pasos:**
+1. [accion]
+2. [accion]
+**Resultado esperado:** [descripcion del output]
+**Errores comunes:** [tabla de error → solucion]
 ```
 
-### Que NO ensena este curso
+## Prompts para generar material de clase
 
-- Programacion orientada a objetos pura (fuera del contexto AEC)
-- Backend, APIs REST, despliegue en nube (nivel avanzado separado)
-- Addins .NET de Revit en C# (requiere perfil de desarrollador)
-
----
-
-## Templates de material docente
-
-### Enunciado de ejercicio
+### Generar ejercicio Dynamo (nivel 2)
 
 ```
-## Ejercicio [N]: [Nombre descriptivo]
-
-**Objetivo:** Al finalizar este ejercicio, el alumno podra [verbo + resultado concreto].
-
-**Contexto:** [Descripcion del problema real en un proyecto AEC]
-
-**Entregables:**
-1. Script Dynamo (.dyn) que [hace X]
-2. Screenshot del resultado en el modelo
-3. (Opcional) 3 variaciones probadas
-
-**Criterio de exito:** [Descripcion observable y verificable]
-
-**Recursos:** [Links a docs, nodos, ejemplos]
+Crea un ejercicio de nivel 2 (adaptar) de Dynamo para arquitectos sin
+experiencia en programacion. Tema: leer areas de habitaciones y exportarlas
+a lista. Formato: contexto del problema, esqueleto con nodos nombrados,
+codigo Python parcial con 3 huecos para completar, resultado esperado,
+2 errores comunes y sus soluciones.
 ```
 
-### Slide de concepto tecnico
+### Generar guia rapida Revit API
 
 ```
-TITULO: [Concepto en 5 palabras max]
-PROBLEMA: [Que falla sin esto]
-SOLUCION: [Como lo resuelve el concepto]
-CODIGO: [Snippet minimo funcional]
-RESULTADO: [Screenshot o descripcion del output esperado]
-TRAMPA: [Error comun y como evitarlo]
+Genera una guia de referencia rapida (1 pagina) sobre FilteredElementCollector
+en Revit API con Python. Incluir: proposito, 5 patrones de uso con codigo
+funcional, 3 errores tipicos y como evitarlos. Tono directo, sin introduccion.
 ```
 
-### Checklist pre-clase
+### Adaptar material para nivel 1
 
-- [ ] Script demo funciona en la version de Revit del curso
-- [ ] Modelo de prueba distribuido a alumnos
-- [ ] Casos de error identificados para mostrar en vivo
-- [ ] Ejercicio probado: puede completarse en 30 min
-- [ ] Nexo claro con clase anterior y siguiente
-
----
-
-## Conceptos clave por modulo
-
-### Modulo 1 — Fundamentos Dynamo
-Nodos, wires, tipos de datos (number, string, boolean, element), listas y sublistas, Watch y Watch 3D, ejecucion automatica vs manual.
-
-### Modulo 2 — Geometria y Parametros
-Sistemas de coordenadas en Revit, crear/mover/rotar elementos, leer y escribir parametros de instancia y tipo, filtros por categoria.
-
-### Modulo 3 — Python en Dynamo
-Sintaxis Python basica, listas en Python vs listas Dynamo, importar clr y Revit API, transacciones, depuracion con print/errores.
-
-### Modulo 4 — Revit API Avanzada
-FilteredElementCollector, ParameterFilter, familia y tipo, vistas y sheets, exportar datos a Excel/CSV.
-
-### Modulo 5 — IA aplicada
-Prompts para generar scripts, revision asistida de codigo, IA como par programador, limitaciones y verificacion humana.
+```
+Tengo este script Python para Dynamo [pegar script]. Adaptalo para nivel 1:
+agrega comentarios en cada linea explicando que hace, reemplaza variables con
+nombres mas descriptivos, agrega 3 prints de depuracion clave. No cambies la
+logica, solo hazlo mas legible para principiantes.
+```

@@ -1,12 +1,12 @@
 ---
 name: linkedin-david
 description: >-
-  Genera y optimiza contenido LinkedIn personalizado para David Moreira.
-  Aplica el algoritmo LinkedIn 2025 adaptado a consultores BIM/AEC con voz
-  tecnica y directa. Sin frases genericas.
-  Usar cuando: "publicar linkedin", "post linkedin", "contenido semana",
-  "redactar linkedin", "escribir post", "ideas linkedin", "carrusel linkedin",
-  "publicacion BIM", "hook linkedin".
+  Asistente de contenido LinkedIn de David Moreira. Genera posts, hooks y
+  estrategia de contenido alineados con el algoritmo 2025 y el perfil BIM/AEC/IA
+  de David. Formatos probados, templates listos, anti-patterns identificados.
+  Use when "publicar linkedin", "post linkedin", "contenido semana",
+  "redactar linkedin", "escribir post", "estrategia linkedin", "hook linkedin",
+  "contenido bim linkedin".
 metadata:
   openclaw:
     emoji: "\U0001F4F1"
@@ -14,308 +14,300 @@ metadata:
       env: []
 ---
 
-# LinkedIn David — Skill de Contenido
+# LinkedIn — Skill de David Moreira
 
-Rick usa este skill para generar, revisar y optimizar publicaciones de LinkedIn de David Moreira. El objetivo es posicionarlo como referente BIM + IA en LATAM con contenido tecnico-practico que convierte lectores en clientes o colaboradores.
+Rick usa este skill para redactar posts de LinkedIn, proponer calendarios de contenido y ayudar a David a mantener presencia consistente. Todo el contenido esta calibrado para el nicho BIM/AEC/IA en Latinoamerica, con el tono y perfil especifico de David.
 
-## Perfil editorial
+## Perfil de contenido
 
 | Campo | Valor |
 |-------|-------|
-| **Autor** | David Moreira Mercado |
-| **Posicionamiento** | Arquitecto + BIM + IA + Citizen Developer |
-| **Audiencia primaria** | Coordinadores BIM, arquitectos senior, gerentes de proyecto AEC |
-| **Audiencia secundaria** | Estudiantes de posgrado AEC, empresas constructoras LATAM |
-| **Frecuencia objetivo** | 3-4 publicaciones por semana |
-| **Tono** | Tecnico pero accesible, directo, basado en datos propios |
-| **Idioma** | Espanol (con terminos tecnicos en ingles cuando corresponde) |
+| **Nicho** | BIM + Automatizacion + IA aplicada a construccion |
+| **Audiencia primaria** | Arquitectos, coordinadores BIM, ingenieros AEC (Chile, LATAM) |
+| **Audiencia secundaria** | Responsables de transformacion digital en constructoras y estudios |
+| **Diferenciador** | Expertise tecnico real con experiencia de obra y gestion |
+| **Tono** | Directo, pragmatico, sin buzzwords. Como hablar con un colega experto |
+| **Idioma** | Espanol. Terminos tecnicos en ingles cuando no hay equivalente preciso |
 
----
+## Algoritmo LinkedIn 2025 — Claves para BIM/AEC
 
-## Algoritmo LinkedIn 2025 — Lo que funciona para BIM/AEC
+### Como funciona el alcance
 
-### Senales que el algoritmo prioriza
+1. **Primera hora critica:** Las primeras 60 minutos determinan el 70% del alcance
+2. **Dwell time:** LinkedIn mide cuanto tiempo la gente lee tu post (no solo clicks/likes)
+3. **Comentarios > Likes > Reposts:** El algoritmo pondera mas las respuestas texto
+4. **Conexiones 2do grado:** Un comentario de un seguidor expande tu post a sus conexiones
+5. **Consistencia > viralidad:** Publicar 3x/semana supera una publicacion viral esporadica
+6. **PDF carousel:** Sigue siendo el formato con mejor dwell time; genera 3-5x mas alcance
 
-1. **Comentarios en los primeros 60 minutos** — el factor mas critico
-2. **Tiempo de lectura** — posts largos con buen hook retienen mas
-3. **Compartidos con comentario propio** (no bare reposts)
-4. **Respuestas de David a comentarios** — duplica el reach organico
-5. **Consistencia de publicacion** — irregularidad penaliza hasta -40%
+### Horarios optimos para audiencia AEC LATAM
 
-### Formato por performance (orden decreciente para BIM/AEC)
+| Dia | Horario | Por que |
+|-----|---------|---------|
+| Martes | 08:00-09:00 | Inicio semana, revision de LinkedIn |
+| Miercoles | 12:30-13:30 | Almuerzo, movil |
+| Jueves | 07:30-08:30 | Mejor dia de la semana para B2B |
+| Domingo | 20:00-21:00 | Planificacion semana siguiente |
 
-| Formato | Por que funciona | Frecuencia recomendada |
-|---------|-----------------|----------------------|
-| **Texto largo (1200-1800 car.)** | Cuenta historia completa, educa, posiciona | 2x/semana |
-| **Carrusel PDF (6-10 slides)** | Guardado masivo, compartible, autoridad | 1x/semana |
-| **Video corto (30-90 seg)** | Alcance extra del algoritmo | 1x/2 semanas |
-| **Imagen con estadistica propia** | Datos de proyectos reales = credibilidad | 1x/semana |
-| **Encuesta** | Comentarios faciles, genera datos para futuros posts | 1x/mes |
-| **Texto corto (< 300 car.)** | Solo si es muy agudo o provocador | Evitar como regla |
+Evitar: viernes tarde, sabado, festivos.
 
-### Lo que penaliza
+### Frecuencia recomendada para David
 
-- Links externos en el cuerpo del post (moverlos al primer comentario)
-- Hashtags en exceso (max 3-5, relevantes)
-- Publicar y desaparecer (no responder comentarios en la primera hora)
-- Contenido sin historia personal o datos propios
-- Frases motivacionales vacias
+- **Minimo viable:** 2 posts/semana
+- **Optimo:** 3-4 posts/semana + 5-10 comentarios estrategicos en posts de referentes AEC
+- **Regla de oro:** Responder TODOS los comentarios propios en las primeras 2 horas
 
----
+## Formatos de contenido que funcionan para David
 
-## Hooks de alto impacto — Banco de aperturas
+### 1. Caso de resultado (mejor conversion)
 
-### Categoria: Dato sorpresa
+Estructura: Problema → Accion → Resultado medible → Aprendizaje transferible
 
 ```
-En OXXO Chile pasamos de [X tiempo] a [Y tiempo] con Dynamo + Python.
-Esto es exactamente lo que hicimos.
+[Resultado numerico llamativo]
 
----
-
-El 60% del tiempo de un coordinador BIM son tareas que un script
-puede hacer en 30 segundos. La mayoria no lo sabe.
-
----
-
-Hace 3 meses un arquitecto me pregunto si era posible [tarea especifica].
-Le tome 4 horas. Hoy le toma 90 segundos.
-```
-
-### Categoria: Pregunta que incomoda
-
-```
-¿Cuantas horas a la semana tu equipo hace lo mismo en Revit
-que podria hacer automaticamente?
-
----
-
-¿Por que seguimos exportando a Excel manualmente si Dynamo
-lo hace en 2 minutos?
-
----
-
-Tu empresa tiene BIM Manager. ¿Tiene tambien Automation Manager?
-En 2026, deberia.
-```
-
-### Categoria: Contradiccion o mito
-
-```
-"BIM es demasiado caro para PyMEs."
-En OXXO Chile redujimos costos un 40% con BIM + automatizacion.
-El problema no es el costo. Es saber por donde empezar.
-
----
-
-La gente cree que programar en Revit requiere saber C#.
-No. Python + Dynamo es suficiente para el 80% de los casos.
-```
-
-### Categoria: Historia propia
-
-```
-La primera vez que automatice un proceso BIM tarde 3 dias.
-La segunda vez tarde 3 horas.
-La tercera vez tarde 20 minutos.
-Eso es el efecto Citizen Developer.
-
----
-
-Fui a [conferencia/reunion] esperando aprender sobre [tema].
-Lo que nadie esperaba era [descubrimiento inesperado].
-```
-
----
-
-## Templates de posts por tipo
-
-### Template: Proyecto BIM con resultado
-
-```
-[Hook con metrica o dato del proyecto]
-
-En [empresa/contexto], el problema era [descripcion en 1 oracion].
+[Contexto: empresa, sector, problema especifico]
 
 Lo que hicimos:
-→ [Paso 1 con herramienta]
-→ [Paso 2 con herramienta]
-→ [Paso 3 con herramienta]
+- [Accion 1]
+- [Accion 2]
+- [Accion 3]
 
-Resultado: [Metrica concreta. Ej: de 4 horas a 90 segundos.]
+El resultado: [metrica concreta]
 
-Lo que aprendimos: [Insight no obvio]
+Lo que aprendi: [insight transferible a cualquier lector]
 
-¿Tienes un flujo parecido en tu proyecto? Cuéntame en los comentarios.
+¿Han enfrentado algo similar? [pregunta de engagement]
 ```
 
-### Template: Reflexion sobre IA en AEC
-
+**Ejemplo concreto para David:**
 ```
-[Afirmacion directa sobre IA aplicada a AEC]
+De 4 horas a 90 segundos.
 
-No hablo de IA en abstracto. Hablo de [caso especifico que David vivio].
+En OXXO Chile teniamos un proceso manual de generacion de reportes BIM
+que consumia medio dia de trabajo cada vez que el cliente pedia actualizacion.
 
-La diferencia entre [antes] y [despues] es [descripcion concreta].
+Lo que hicimos:
+- Mapeamos el proceso paso a paso (15 pasos manuales)
+- Identificamos los 3 que consumian el 80% del tiempo
+- Automatizamos con Power Automate + Revit API
 
-Lo que me preocupa de como se habla de IA en construccion:
-→ [Critica 1 — especifica]
-→ [Critica 2 — especifica]
+El resultado: de 4 horas a 90 segundos. Sin tocar el modelo.
 
-Lo que realmente importa para un equipo BIM en 2025:
-→ [Recomendacion practica 1]
-→ [Recomendacion practica 2]
+Lo aprendido: el cuello de botella casi nunca esta donde el equipo cree.
 
-[Pregunta al lector que invita comentario tecnico]
-```
-
-### Template: Post docente / clase
-
-```
-Esta semana en el Master AEC 4.0 ensene algo que los alumnos
-nunca esperaban: [concepto sorpresivo].
-
-El ejercicio fue: [descripcion del ejercicio en 1-2 oraciones]
-
-El error mas comun fue: [error especifico con explicacion]
-
-La solucion que encontraron: [descripcion del enfoque que funciono]
-
-Lo que me llevo de la clase: [reflexion genuina sobre pedagogia]
-
-Si estas aprendiendo Dynamo o Python en Revit, este es el
-error que probablemente tambien estas cometiendo.
+¿Cual es el proceso que mas tiempo consume en su empresa?
 ```
 
-### Template: Logro o hito profesional
+### 2. Ensenanza tecnica con ejemplo real (mejor seguimiento)
 
 ```
-[Nombrar el logro sin exagerar. Ej: "Fui ponente en Lima."]
+[Concepto tecnico en lenguaje accesible]
 
-Lo que nadie ve detras de [evento/logro]:
-→ [Detalle 1 — el trabajo previo]
-→ [Detalle 2 — el proceso real]
-→ [Detalle 3 — algo que salio mal y como se resolvio]
+La mayoria de arquitectos nunca lo usa porque cree que necesita saber programar.
+No es cierto.
 
-[Aprendizaje practico que el lector puede aplicar]
+Como funciona en 3 pasos:
+1. [Paso concreto]
+2. [Paso concreto]
+3. [Paso concreto]
 
-Gracias [mencionar a alguien si corresponde].
+[Herramienta especifica] lo hace posible sin escribir una sola linea de codigo.
+
+Si quiero que profundice en [tema], comente abajo.
 ```
 
-### Template: Carrusel PDF — Estructura
+### 3. Reflexion de industria (mejor alcance viral)
 
 ```
-Slide 1 (Cover): Titulo provocador + subtitulo de valor
-Slide 2: El problema (dato o situacion real)
-Slide 3: Por que ocurre (causa raiz)
-Slide 4-7: La solucion paso a paso (1 paso por slide)
-Slide 8: Resultado con metrica
-Slide 9: Trampa o error comun
-Slide 10: CTA — "Guardalo para tu proximo proyecto"
+[Afirmacion contraintuitiva]
+
+[Por que la mayoria piensa lo contrario]
+
+Pero los datos dicen otra cosa:
+- [Dato 1]
+- [Dato 2]
+
+La implicacion para quienes trabajamos en AEC:
+[Conclusion practica de 1-2 oraciones]
 ```
 
----
+### 4. Docencia / educacion (mejor para marca como referente)
 
-## Hashtags — Banco categorizado
+```
+"¿Necesito saber programar para usar Dynamo?"
 
-### BIM y construccion
-`#BIM` `#RevitAPI` `#Dynamo` `#ArquitecturaBIM` `#Construccion4` `#BIMManager` `#CoordinacionBIM`
+Me hacen esta pregunta en cada clase del Master AEC 4.0.
 
-### IA y automatizacion
-`#IAenConstruccion` `#AutomatizacionBIM` `#PowerAutomate` `#CitizenDeveloper` `#PythonRevit`
+La respuesta corta: No.
+La respuesta completa: Depende de lo que quieras hacer.
 
-### Docencia y carrera
-`#MasterAEC` `#FormacionBIM` `#TransformacionDigital` `#AEC40`
+Nivel 1 (sin codigo): [lo que se puede hacer]
+Nivel 2 (Python basico): [lo que se puede hacer]
+Nivel 3 (Revit API): [lo que se puede hacer]
 
-### Regla de uso
-Maximo 5 hashtags por post. Siempre 2-3 especificos del sector + 1-2 amplios. Nunca hashtags genericos como `#tecnologia` `#innovacion` `#exito`.
+El 80% de los casos en oficina se resuelve con nivel 1 o 2.
 
----
+¿En que nivel estan hoy?
+```
+
+### 5. Carousel PDF (mejor dwell time)
+
+| Slide | Contenido |
+|-------|-----------|
+| 1 — Portada | Titulo de alto impacto + branding minimo |
+| 2 — El problema | Situacion comun del lector |
+| 3-6 — Contenido | 4-5 tips/pasos/conceptos, uno por slide |
+| 7 — Resumen | Puntos clave en bullet |
+| 8 — CTA | "Guarda este post" o "Comenta X si queres la plantilla" |
+
+Temas que funcionan en carousel para David:
+- "5 errores que cometen los coordinadores BIM al implementar Dynamo"
+- "El proceso BIM que automatice en OXXO Chile (paso a paso)"
+- "Como pasar de arquitecto a Citizen Developer en 90 dias"
+
+## Hooks de alto impacto (primeras 2 lineas)
+
+Las primeras 2 lineas son lo visible antes del "ver mas". Determinan si alguien sigue leyendo.
+
+### Formulas que funcionan para David
+
+**Formula del numero:**
+- "De 4 horas a 90 segundos."
+- "80 proyectos en un ano con 5 personas."
+- "El 60% del trabajo de un coordinador BIM es automatizable."
+
+**Formula de la pregunta directa:**
+- "¿Cuanto tiempo le dedicais a tareas que podria hacer un script?"
+- "¿Por que el BIM en LATAM sigue siendo teoria en la mayoria de empresas?"
+
+**Formula de la contradiccion:**
+- "La IA va a reemplazar a los arquitectos. Yo pienso lo contrario."
+- "Hay que saber programar para automatizar BIM. No es verdad."
+
+**Formula del resultado personal:**
+- "Hace 2 anos, generabamos reportes a mano. Hoy tarda 90 segundos."
+
+### Hooks prohibidos
+
+- "Me complace compartir..."
+- "Es un honor anunciar..."
+- "Reflexionando sobre..."
+- "En el mundo actual de..."
+- "Como profesional apasionado por..."
+- "Hoy quiero hablar de un tema importante..."
+
+## Templates por situacion
+
+### Nuevo proyecto o cliente
+
+```
+[Resultado o hito concreto del proyecto]
+
+El cliente: [descripcion sin nombre si es confidencial]
+El reto: [problema especifico]
+Mi rol: [lo que hice David]
+
+Lo que funcionó: [1-3 elementos clave]
+Lo que no funcionó (y como lo resolvimos): [honestidad]
+
+[Aprendizaje transferible]
+
+¿Alguien ha trabajado en algo similar?
+```
+
+### Reflexion sobre IA en construccion
+
+```
+La IA no va a reemplazar a los arquitectos.
+
+Va a reemplazar a los arquitectos que no sepan usar IA.
+
+Diferencia importante.
+
+Lo que he visto en estos meses:
+- [Observacion 1 con dato]
+- [Observacion 2 con dato]
+
+El arquitecto del futuro no programa. Orquesta.
+
+[Llamado a accion o pregunta]
+```
+
+### Post de docencia
+
+```
+Ayer en el Master AEC 4.0, [situacion real de la clase].
+
+El ejercicio: [descripcion concisa]
+Lo que me sorprendio: [observacion genuina]
+
+La pregunta que mas se repite: [pregunta real de estudiantes]
+
+Mi respuesta: [respuesta directa]
+
+Si estas empezando con [tema], esto es lo primero que deberias aprender: [consejo]
+```
+
+### Logro o reconocimiento
+
+```
+[Anuncio directo sin "me complace" ni "honrado"]
+
+[Contexto: que es, quien lo organiza, por que importa]
+
+Lo que voy a contar: [tema]
+
+Por que me importa: [razon personal y genuina]
+
+Si vas a estar en [lugar/evento], nos vemos alli.
+```
+
+## Estrategia de comentarios
+
+### En posts de referentes AEC
+
+- Agregar un dato o perspectiva que el autor no menciono
+- Compartir experiencia propia relacionada (2-3 oraciones)
+- Hacer una pregunta que otros lectores tambien tendrian
+
+### En posts de seguidores/clientes
+
+- Responder siempre en las primeras 2 horas
+- Llamar por nombre si es primera interaccion
+- Si abre conversacion, invitar a DM o reunion
 
 ## Anti-patterns — Lista negra
 
-### Frases prohibidas
+### Palabras prohibidas
 
-| Frase | Por que | Alternativa |
-|-------|---------|-------------|
-| "En el mundo actual..." | Relleno sin contenido | Empezar con el dato o la historia |
-| "Es un honor compartir..." | Falsa modestia generica | Nombrar directamente el logro |
-| "Muy emocionado de anunciar..." | Corporativo y vacio | "Esta semana [logro]." |
-| "Reflexiones sobre [tema]..." | Titulo sin promesa | El primer parrafo ya es la reflexion |
-| "No pares de aprender" | Motivacional vacio | Ningun call to action es mejor que uno falso |
-| "Transformacion digital" (sin contexto) | Buzzword sin sustancia | Describir exactamente que cambio |
-| "Soluciones innovadoras" | Adjetivo sin referente | "Reducir de X a Y con esta herramienta" |
-| "Estoy feliz de compartir..." | Relleno | Borrar y empezar directo |
-| Emojis como decoracion (❤️🚀🌟) | Ruido visual | Cero emojis o solo flechas (→) como estructura |
+| Categoria | Prohibido |
+|-----------|-----------|
+| Buzzwords | disruptivo, paradigmatico, sinergico, ecosistema robusto, solucion integral |
+| Cierres genericos | "No dude en contactarme", "Quedamos a disposicion", "En conclusion" |
+| Aperturas flojas | "Me complace", "Es un honor", "Reflexionando", "Como profesional apasionado" |
+| Jerga vacia | "apalancar", "potenciar", "empoderar", "elevar" (sin contexto) |
+| Falsa modestia | "Con mucha humildad comparto", "Solo soy un arquitecto que..." |
 
-### Estructuras prohibidas
+### Errores estructurales
 
-- Post que empieza con pregunta retorica genérica ("¿Sabias que...?")
-- Lista de 10 items sin jerarquia (max 5)
-- Parrafos de mas de 4 lineas en movil
-- Post que termina con "Espero que les haya sido de utilidad"
-- Mencionar herramientas sin mostrar resultado concreto
+- **Post sin CTA:** Siempre terminar con pregunta o instruccion clara
+- **Parrafos largos:** Maximo 3 lineas por bloque (mobile first)
+- **Hashtags en exceso:** Maximo 3-5, especificos
+- **Compartir sin comentar:** Siempre agregar contexto propio al compartir
 
----
+### Hashtags recomendados para David
 
-## Calendario editorial — Estructura semanal
+Usar rotando, no todos juntos:
+`#BIM` `#RevitAPI` `#Dynamo` `#AutomatizacionBIM` `#CiudadanoDesarrollador` `#TransformacionDigitalAEC` `#AEC40` `#PowerAutomate` `#IAenConstruccion`
 
-| Dia | Tipo de contenido | Tema |
-|-----|------------------|------|
-| Lunes | Texto largo | Caso de proyecto real o aprendizaje tecnico |
-| Miercoles | Carrusel o imagen | Tutorial, framework o comparativa |
-| Viernes | Reflexion breve o historia | Docencia, industria, carrera |
+## Checklist pre-publicacion
 
-### Banco de temas por categoria
-
-**Proyectos y resultados propios**
-- Automatizacion en OXXO Chile (-40% costos, -20% tiempos)
-- Reduccion de 4 horas a 90 segundos con Power Automate
-- Pipeline datos ACC → Power BI en tiempo real
-
-**Dynamo y scripting**
-- Top 5 errores al pasar de nodos a Python en Dynamo
-- Cuando usar FilteredElementCollector vs Element.GetElementById
-- Como estruturar un grafo Dynamo para que lo entienda cualquier BIM Coordinator
-
-**IA aplicada a AEC**
-- Como uso ChatGPT para generar el draft de un script y luego lo verifico
-- IA en coordinacion BIM: lo que funciona y lo que falla
-- Diferencia entre usar IA como herramienta vs delegar la cabeza
-
-**Docencia AEC 4.0**
-- El error mas comun del primer dia con Revit API
-- Citizen Developer: que lo hace diferente de un programador
-- Por que enseno Python en Dynamo antes de la API directa
-
-**Industria y tendencias**
-- Estado del BIM en LATAM 2025: lo que los datos muestran
-- Por que el coordinador BIM del futuro tiene que programar (aunque sea un poco)
-- Que aprendi en [conferencia/evento] que no esta en ninguna presentacion
-
----
-
-## Proceso de escritura — Checklist
-
-### Antes de escribir
-
-- [ ] Tengo un dato concreto, historia propia o aprendizaje especifico
-- [ ] El tema importa a mi audiencia (coordinadores BIM, arquitectos, estudiantes AEC)
-- [ ] Puedo expresarlo sin usar frases de la lista negra
-
-### Al escribir
-
-- [ ] El primer parrafo tiene el hook (dato, contradiccion o historia)
-- [ ] No hay parrafos de mas de 4 lineas
-- [ ] Hay al menos 1 dato propio o metrica real
-- [ ] Cada punto de lista agrega valor distinto
-- [ ] No hay palabras de la lista negra
-- [ ] El CTA final invita a comentar con una pregunta especifica, no generica
-
-### Antes de publicar
-
-- [ ] Leerlo en voz alta: ¿suena como David hablando o como un chatbot?
-- [ ] Max 5 hashtags relevantes al sector
-- [ ] Si hay link externo, va en el primer comentario, no en el cuerpo
-- [ ] Programado en martes/miercoles/jueves (mayor alcance organico)
-- [ ] Recordatorio para responder comentarios en los primeros 60 minutos
+1. ¿Las primeras 2 lineas enganchan sin contexto previo?
+2. ¿El post tiene un resultado o aprendizaje concreto y transferible?
+3. ¿Hay al menos un dato especifico (numero, metrica, caso)?
+4. ¿Los parrafos tienen maximo 3 lineas?
+5. ¿Hay un CTA claro al final?
+6. ¿Esta libre de palabras de la lista negra?
+7. ¿Refleja la voz de David (directo, tecnico, sin corporativo)?
+8. ¿Incluye entre 2 y 5 hashtags relevantes?

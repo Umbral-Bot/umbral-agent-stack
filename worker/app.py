@@ -33,8 +33,9 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from .config import WORKER_TOKEN
-from .rate_limit import check_rate_limit
+from .rate_limiter import RateLimiter
 from .sanitize import sanitize_input, sanitize_task_name
+from .tracing import flush as flush_tracing
 from .models import (
     LegacyRunRequest,
     TaskEnvelope,
@@ -126,6 +127,37 @@ app = FastAPI(
 )
 
 
+@app.on_event("shutdown")
+async def _on_shutdown():
+    """Flush pending telemetry before process exit."""
+    flush_tracing()
+
+
+# ---------------------------------------------------------------------------
+# Rate Limiting Middleware
+# ---------------------------------------------------------------------------
+rpm = int(os.environ.get("RATE_LIMIT_RPM", "60"))
+limiter = RateLimiter(max_requests=rpm, window_seconds=60)
+
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    if request.url.path == "/health":
+        return await call_next(request)
+    
+    client_id = request.client.host if request.client else "unknown"
+    allowed, remaining = limiter.is_allowed(client_id)
+    
+    if not allowed:
+        return JSONResponse(
+            status_code=429,
+            content={"detail": "Rate limit exceeded. Retry later."},
+            headers={"Retry-After": "60"}
+        )
+    
+    response = await call_next(request)
+    return response
+
+
 # ---------------------------------------------------------------------------
 # Auth helper
 # ---------------------------------------------------------------------------
@@ -181,12 +213,6 @@ async def run_task(
     S7: rate limiting y sanitización de inputs.
     """
     _authenticate(authorization)
-
-    # S7: rate limit (por IP del cliente)
-    client_key = request.client.host if request.client else "unknown"
-    allowed, _ = check_rate_limit(client_key)
-    if not allowed:
-        raise HTTPException(status_code=429, detail="Rate limit exceeded. Retry later.")
 
     # --- Parse: detect envelope vs legacy ---
     try:
@@ -318,12 +344,6 @@ async def enqueue_task(
         {"ok": true, "task_id": "uuid", "queued": true}
     """
     _authenticate(authorization)
-
-    # Rate limit
-    client_key = request.client.host if request.client else "unknown"
-    allowed, _ = check_rate_limit(client_key)
-    if not allowed:
-        raise HTTPException(status_code=429, detail="Rate limit exceeded. Retry later.")
 
     # Sanitize
     try:
@@ -490,6 +510,63 @@ async def list_scheduled_tasks(
     tasks = scheduler.list_scheduled()
 
     return {"ok": True, "scheduled": tasks, "total": len(tasks)}
+
+
+@app.get("/quota/status")
+async def get_quota_status(
+    authorization: str = Header(None)
+):
+    """
+    Devuelve el estado de cuotas de todos los proveedores configurados.
+    """
+    _authenticate(authorization)
+    r = _get_redis()
+    if r is None:
+        raise HTTPException(status_code=503, detail="Redis not available. Cannot query quota status.")
+
+    import yaml
+    try:
+        with open("config/quota_policy.yaml", "r", encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+            provider_config = config.get("providers", {})
+    except Exception as e:
+        logger.error("Failed to load quota policy: %s", e)
+        provider_config = {}
+
+    from dispatcher.quota_tracker import QuotaTracker
+    tracker = QuotaTracker(r, provider_config)
+    details = tracker.get_all_quota_details()
+
+    providers = {}
+    for p, d in details.items():
+        used = d["used"]
+        limit = d["limit"]
+        fraction = d["fraction"]
+        
+        cfg = provider_config.get(p, {})
+        warn = float(cfg.get("warn", 0.8))
+        restrict = float(cfg.get("restrict", 0.95))
+        
+        if fraction >= 1.0:
+            status = "exceeded"
+        elif fraction >= restrict:
+            status = "restrict"
+        elif fraction >= warn:
+            status = "warn"
+        else:
+            status = "ok"
+            
+        providers[p] = {
+            "used": used,
+            "limit": limit,
+            "fraction": round(fraction, 4),
+            "status": status
+        }
+        
+    return {
+        "providers": providers,
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    }
 
 
 @app.get("/tasks")

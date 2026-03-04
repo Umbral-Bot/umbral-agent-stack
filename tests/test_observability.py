@@ -108,7 +108,7 @@ class TestObservabilityHandlers:
         from worker.tasks.observability import handle_ooda_report
         result = handle_ooda_report({"format": "markdown"})
         assert result["ok"] is True
-        assert "Reporte OODA" in result["report"]
+        assert "OODA Weekly Report" in result["report"]
 
     def test_self_eval_handler_no_redis(self, monkeypatch):
         monkeypatch.setattr("scripts.evals_self_check._connect_redis", lambda: None)

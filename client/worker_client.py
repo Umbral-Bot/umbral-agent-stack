@@ -171,3 +171,13 @@ class WorkerClient:
             )
             resp.raise_for_status()
             return resp.json()
+
+    def quota_status(self) -> Dict[str, Any]:
+        """GET /quota/status — Returns current configured quotas and usage."""
+        with httpx.Client(timeout=self.timeout) as client:
+            resp = client.get(
+                f"{self.base_url}/quota/status",
+                headers=self._headers(),
+            )
+            resp.raise_for_status()
+            return resp.json()

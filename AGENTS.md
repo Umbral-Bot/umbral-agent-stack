@@ -30,7 +30,7 @@ source .venv/bin/activate
 WORKER_TOKEN=test python -m pytest tests/ -v
 ```
 
-Tests use `fakeredis` (no real Redis needed). All 45 tests should pass.
+Tests use `fakeredis` (no real Redis needed). All 130+ tests should pass (1 skipped: encrypt/decrypt requires `cryptography` package).
 
 ### Starting services for development
 
@@ -61,3 +61,4 @@ Tests use `fakeredis` (no real Redis needed). All 45 tests should pass.
 - Redis must be installed via apt (`sudo apt-get install -y redis-server`) and started manually with `redis-server --daemonize yes` — systemd is not available in this environment.
 - Notion tasks (`notion.*`) require `NOTION_API_KEY`, `NOTION_CONTROL_ROOM_PAGE_ID`, and `NOTION_GRANOLA_DB_ID` env vars. Without them, only `ping` task works fully.
 - The `.env` file is not auto-loaded by the app; environment variables must be exported in the shell or set inline.
+- The Dispatcher's health monitor will log `Health check failed: Connection refused` and eventually `VM declared OFFLINE` when running locally without a remote VM — this is expected and the Dispatcher still works in "partial" mode for local tasks.

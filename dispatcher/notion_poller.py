@@ -26,6 +26,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from client.worker_client import WorkerClient
 from dispatcher.queue import TaskQueue
+from dispatcher.scheduler import TaskScheduler
 from dispatcher.smart_reply import handle_smart_reply
 
 logging.basicConfig(
@@ -48,7 +49,7 @@ def _seconds_until_next_run(at_minute: int) -> float:
     return (next_run - now).total_seconds()
 
 
-def _do_poll(wc: WorkerClient, queue: TaskQueue, r: redis.Redis) -> None:
+def _do_poll(wc: WorkerClient, queue: TaskQueue, r: redis.Redis, scheduler: TaskScheduler) -> None:
     last_ts = r.get(REDIS_KEY_LAST_TS)
     if not last_ts:
         last_ts = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
@@ -78,7 +79,7 @@ def _do_poll(wc: WorkerClient, queue: TaskQueue, r: redis.Redis) -> None:
             "Processing [%s→%s] for comment %s: %.40s...",
             intent.intent, team, comment_id[:8], text[:40],
         )
-        handle_smart_reply(text, comment_id, intent.intent, team, wc, queue)
+        handle_smart_reply(text, comment_id, intent, team, wc, queue, scheduler)
 
     if latest_ts != last_ts:
         r.set(REDIS_KEY_LAST_TS, latest_ts)
@@ -112,12 +113,13 @@ def main():
         sys.exit(1)
 
     queue = TaskQueue(r)
+    scheduler = TaskScheduler(r)
     wc = WorkerClient(base_url=worker_url, token=worker_token)
 
     # --once mode: single poll for cron usage
     if args.once:
         logger.info("Notion poller --once (cron mode, worker=%s).", worker_url)
-        _do_poll(wc, queue, r)
+        _do_poll(wc, queue, r, scheduler)
         logger.info("Poll complete, exiting.")
         return
 
@@ -139,13 +141,13 @@ def main():
     while True:
         try:
             if interval_sec is not None:
-                _do_poll(wc, queue, r)
+                _do_poll(wc, queue, r, scheduler)
                 time.sleep(interval_sec)
             else:
                 wait = _seconds_until_next_run(at_minute)
                 logger.debug("Next poll in %.0fs (at XX:%02d)", wait, at_minute)
                 time.sleep(wait)
-                _do_poll(wc, queue, r)
+                _do_poll(wc, queue, r, scheduler)
         except Exception as e:
             logger.exception("Notion poll error: %s", e)
             if interval_sec is not None:

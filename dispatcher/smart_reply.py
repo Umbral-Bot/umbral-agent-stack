@@ -19,6 +19,8 @@ from typing import Any, Dict, Optional
 
 from client.worker_client import WorkerClient
 from dispatcher.queue import TaskQueue
+from dispatcher.scheduler import TaskScheduler
+from dispatcher.intent_classifier import IntentResult, build_envelope
 from dispatcher.workflow_engine import WorkflowEngine
 
 logger = logging.getLogger("dispatcher.smart_reply")
@@ -69,10 +71,11 @@ _TASK_PLAN_SYSTEM_PROMPT = (
 def handle_smart_reply(
     comment_text: str,
     comment_id: str,
-    intent: str,
+    intent_obj: IntentResult,
     team: str,
     wc: WorkerClient,
     queue: TaskQueue,
+    scheduler: TaskScheduler,
 ) -> None:
     """
     Generate a smart reply and post it to Notion.
@@ -83,12 +86,14 @@ def handle_smart_reply(
     Args:
         comment_text: The original comment text from Notion.
         comment_id: Notion comment ID.
-        intent: Classified intent (question | task | instruction | echo).
+        intent_obj: Classified IntentResult.
         team: Target team.
         wc: WorkerClient for calling the Worker API.
         queue: TaskQueue for enqueueing sub-tasks.
+        scheduler: TaskScheduler for enqueueing scheduled tasks.
     """
     short_id = comment_id[:8] if comment_id else "unknown"
+    intent = intent_obj.intent
     logger.info("Smart reply for [%s] comment %s: %.60s", intent, short_id, comment_text)
 
     try:
@@ -96,6 +101,8 @@ def handle_smart_reply(
             _handle_question(comment_text, comment_id, team, wc)
         elif intent == "task":
             _handle_task(comment_text, comment_id, team, wc, queue)
+        elif intent == "scheduled_task":
+            _handle_scheduled_task(comment_text, comment_id, team, wc, scheduler, intent_obj)
         elif intent == "instruction":
             _handle_instruction(comment_text, comment_id, wc)
         else:
@@ -107,6 +114,27 @@ def handle_smart_reply(
 
 
 # ── Intent handlers ─────────────────────────────────────────────
+
+def _handle_scheduled_task(
+    text: str, comment_id: str, team: str, wc: WorkerClient, scheduler: TaskScheduler, intent_obj: IntentResult
+) -> None:
+    short_id = comment_id[:8]
+    
+    # Generate envelope
+    envelope = build_envelope(text, comment_id, intent_obj, team)
+    
+    scheduler.schedule(envelope, intent_obj.run_at)
+    
+    # Format a nice reply
+    recurrence_str = f" (Recurrencia: {intent_obj.recurrence})" if intent_obj.recurrence else ""
+    time_str = intent_obj.run_at.strftime("%Y-%m-%d %H:%M UTC")
+    
+    reply = (
+        f"{ECHO_PREFIX} Tarea programada para el {time_str}{recurrence_str}.\n\n"
+        f"(comment_id={short_id}...)"
+    )
+    _post_comment(wc, reply)
+    logger.info("Scheduled task posted and scheduled for %s, comment %s", time_str, short_id)
 
 def _handle_question(text: str, comment_id: str, team: str, wc: WorkerClient) -> None:
     """Research + LLM → answer."""
@@ -361,6 +389,7 @@ def _post_fallback(wc: WorkerClient, comment_id: str, intent: str) -> None:
     fallbacks = {
         "question": f"{ECHO_PREFIX} Pregunta recibida. Investigando y responderé pronto. (comment_id={short_id}...)",
         "task": f"{ECHO_PREFIX} Entendido. Tarea registrada. (comment_id={short_id}...)",
+        "scheduled_task": f"{ECHO_PREFIX} Tarea programada registrada. (comment_id={short_id}...)",
         "instruction": f"{ECHO_PREFIX} Instrucción registrada. (comment_id={short_id}...)",
     }
     text = fallbacks.get(intent, f"{ECHO_PREFIX} Recibido. (comment_id={short_id}...)")

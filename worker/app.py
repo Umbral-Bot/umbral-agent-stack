@@ -469,6 +469,29 @@ async def get_task_history(
     }
 
 
+@app.get("/scheduled")
+async def list_scheduled_tasks(
+    authorization: str = Header(None),
+):
+    """
+    Lista las tareas programadas a futuro (Redis sorted set).
+    """
+    _authenticate(authorization)
+
+    r = _get_redis()
+    if r is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Redis not available. Cannot query scheduled tasks.",
+        )
+
+    from dispatcher.scheduler import TaskScheduler
+    scheduler = TaskScheduler(r)
+    tasks = scheduler.list_scheduled()
+
+    return {"ok": True, "scheduled": tasks, "total": len(tasks)}
+
+
 @app.get("/tasks")
 async def list_tasks(
     authorization: str = Header(None),

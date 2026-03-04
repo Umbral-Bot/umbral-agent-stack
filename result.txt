@@ -1,0 +1,60 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.7, pytest-9.0.2, pluggy-1.6.0
+rootdir: C:\GitHub\umbral-agent-stack-antigravity
+plugins: anyio-4.12.1
+collected 331 items
+
+tests\test_composite_handler.py .......                                  [  2%]
+tests\test_daily_digest.py ...................................           [ 12%]
+tests\test_dashboard.py ..............                                   [ 16%]
+tests\test_dispatcher.py .......................                         [ 23%]
+tests\test_dispatcher_resilience.py ...................                  [ 29%]
+tests\test_enqueue_api.py ..................                             [ 35%]
+tests\test_hardening.py .....s............                               [ 40%]
+tests\test_intent_classifier.py .................................        [ 50%]
+tests\test_linear.py ....                                                [ 51%]
+tests\test_linear_team_router.py ...............................         [ 61%]
+tests\test_llm_handler.py ...                                            [ 61%]
+tests\test_make_webhook.py ...............................               [ 71%]
+tests\test_model_router.py ..............                                [ 75%]
+tests\test_notion_report_page.py ....                                    [ 76%]
+tests\test_observability.py .........                                    [ 79%]
+tests\test_research_handler.py ...                                       [ 80%]
+tests\test_scheduler.py F......                                          [ 82%]
+tests\test_sim_daily_report.py ...                                       [ 83%]
+tests\test_smart_reply.py ....................                           [ 89%]
+tests\test_task_history.py ........                                      [ 91%]
+tests\test_webhook_callback.py .....                                     [ 93%]
+tests\test_worker.py ......................                              [100%]
+
+================================== FAILURES ===================================
+_____________________________ test_schedule_task ______________________________
+
+scheduler = <dispatcher.scheduler.TaskScheduler object at 0x000001C1E9972660>
+fake_redis = <fakeredis._connection.FakeRedis(<redis.connection.ConnectionPool(<fakeredis._connection.FakeConnection(version=(7,),s...one,socket_timeout=None,health_check_interval=0,encoding_errors=strict,username=None,client_name=None,server=None)>)>)>
+
+    def test_schedule_task(scheduler, fake_redis):
+        envelope = {
+            "task_id": "test-123",
+            "task": "notion.add_comment",
+            "input": {"text": "hello"},
+        }
+        run_at = datetime.now(timezone.utc) + timedelta(hours=1)
+    
+        scheduler.schedule(envelope, run_at)
+    
+        # Check if task is in redis sorted set
+        tasks = fake_redis.zrange(REDIS_KEY_SCHEDULED_TASKS, 0, -1, withscores=True)
+        assert len(tasks) == 1
+    
+        stored_envelope_json, score = tasks[0]
+        stored_envelope = json.loads(stored_envelope_json)
+    
+        assert stored_envelope["task_id"] == "test-123"
+>       assert "queued_at" in stored_envelope
+E       AssertionError: assert 'queued_at' in {'input': {'text': 'hello'}, 'task': 'notion.add_comment', 'task_id': 'test-123'}
+
+tests\test_scheduler.py:47: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_scheduler.py::test_schedule_task - AssertionError: assert '...
+================== 1 failed, 329 passed, 1 skipped in 2.68s ===================

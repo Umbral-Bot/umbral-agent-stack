@@ -1,0 +1,77 @@
+# Team Workflows — Flujos multi-paso por equipo
+# Cada equipo puede definir uno o más workflows con steps secuenciales.
+# Cada step ejecuta un task handler registrado en worker/tasks/__init__.py.
+# Variables de template disponibles:
+#   {topic}       — tema principal (viene del contexto del comment)
+#   {text}        — texto original del comment
+#   {team}        — nombre del equipo
+#   {prev_result} — resultado del paso anterior (texto o JSON serializado)
+
+marketing:
+  default_workflow: research_and_post
+  workflows:
+    research_and_post:
+      description: "Investigación web + generación de post + notificación Notion"
+      steps:
+        - task: research.web
+          input_template:
+            query: "{topic} marketing digital tendencias 2026"
+            count: 5
+        - task: llm.generate
+          input_template:
+            prompt: "Basado en esta investigación, genera un post para LinkedIn sobre {topic}:\n\n{prev_result}"
+            model: gemini-2.5-flash
+            max_tokens: 800
+        - task: notion.add_comment
+          input_template:
+            text: "Rick: [Marketing] Post generado para {topic}:\n{prev_result}"
+
+advisory:
+  default_workflow: financial_analysis
+  workflows:
+    financial_analysis:
+      description: "Investigación financiera + análisis para inversor chileno"
+      steps:
+        - task: research.web
+          input_template:
+            query: "{topic} análisis financiero inversión Chile"
+            count: 5
+        - task: llm.generate
+          input_template:
+            prompt: "Genera un análisis financiero breve sobre {topic} para un inversor chileno:\n\n{prev_result}"
+            max_tokens: 800
+
+improvement:
+  default_workflow: self_improvement_cycle
+  workflows:
+    self_improvement_cycle:
+      description: "Auto-evaluación del sistema + sugerencias de mejora"
+      steps:
+        - task: system.self_eval
+        - task: llm.generate
+          input_template:
+            prompt: "Basado en esta auto-evaluación, sugiere 3 mejoras concretas para el sistema:\n\n{prev_result}"
+            max_tokens: 600
+
+lab:
+  default_workflow: experiment_run
+  workflows:
+    experiment_run:
+      description: "Investigación exploratoria sobre un tema"
+      steps:
+        - task: research.web
+          input_template:
+            query: "{topic} experimento prototipo estado del arte"
+            count: 3
+        - task: llm.generate
+          input_template:
+            prompt: "Resume los hallazgos clave de esta investigación exploratoria sobre {topic}:\n\n{prev_result}"
+            max_tokens: 500
+
+system:
+  default_workflow: health_report
+  workflows:
+    health_report:
+      description: "Health check del sistema"
+      steps:
+        - task: ping

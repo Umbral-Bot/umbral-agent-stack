@@ -169,8 +169,8 @@ def test_composite_research(base_url: str, token: str) -> str:
             json={
                 "task": "composite.research_report",
                 "input": {
-                    "query": "tendencias proptech 2026",
-                    "count": 3,
+                    "topic": "tendencias proptech 2026",
+                    "depth": "quick",
                 },
             },
         )

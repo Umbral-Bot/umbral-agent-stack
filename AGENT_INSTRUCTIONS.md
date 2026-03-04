@@ -1,47 +1,76 @@
-# Instrucciones para GitHub Copilot
+# Instrucciones para GitHub Copilot — Ronda 3
 
 **Repo:** `C:\GitHub\umbral-agent-stack-copilot`  
-**Rama:** `feat/copilot-quota-report`  
-**Tarea:** Quota usage report + deploy en VPS
+**Rama:** `feat/copilot-task-api`  
+**Tarea nueva:** API HTTP para encolar tareas + endpoint de status
 
 ## Contexto
-Este es TU clon del repo. Trabaja solo aquí. No toques otros clones.
-Tu tarea anterior (004) ya está completada. Esta es nueva.
 
-## Tu tarea nueva
+Actualmente la única forma de encolar tareas es con Python (`TaskQueue.enqueue()`). Esto limita quién puede enviar trabajo al sistema. Necesitamos un endpoint HTTP simple en el Worker para que cualquier servicio externo (Make.com webhooks, n8n, cron scripts, o incluso David desde el navegador) pueda encolar tareas.
 
-### A. Finalizar quota_usage_report.py
-Si ya tienes `scripts/quota_usage_report.py` de tu tarea anterior, tráelo aquí y verifica que:
-- Lea Redis para cuotas (`QuotaTracker`)
-- Lea OpsLogger para tareas procesadas
-- Genere un reporte en texto y JSON
-- Pueda postear el resultado en Notion via `notion.add_comment`
+## Tu tarea
 
-### B. Health check completo para VPS
-Crear `scripts/vps/health-check.sh` que:
-1. Verifique que Redis está corriendo (`redis-cli ping`)
-2. Verifique que el Worker responde (`curl http://127.0.0.1:8088/health`)
-3. Verifique que el Dispatcher está corriendo (`pgrep -f dispatcher.service`)
-4. Verifique que hay eventos recientes en ops_log (`wc -l ~/.config/umbral/ops_log.jsonl`)
-5. Si algo falla, postear alerta en Notion Control Room
-6. Salida con exit code 0 si todo OK, 1 si algo falla
+### A. Endpoint POST /enqueue en el Worker
+Agregar al Worker (`worker/app.py`) un nuevo endpoint:
 
-### C. Instalar health check como cron
-- Agregar instrucciones para crontab: `*/30 * * * * bash ~/umbral-agent-stack/scripts/vps/health-check.sh`
+```
+POST /enqueue
+Authorization: Bearer <WORKER_TOKEN>
+Content-Type: application/json
 
-## Conectividad VPS
-- SSH: `ssh rick@100.113.249.25` (via Tailscale)
-- Env vars: `source ~/.config/openclaw/env`
+{
+  "task": "research.web",
+  "team": "marketing",
+  "input": {"query": "tendencias BIM 2026", "count": 5}
+}
+```
+
+Respuesta:
+```json
+{"ok": true, "task_id": "uuid...", "queued": true}
+```
+
+El endpoint debe:
+1. Validar auth (mismo WORKER_TOKEN que /run)
+2. Generar task_id (uuid4)
+3. Crear el TaskEnvelope completo
+4. Encolar via Redis (importar `TaskQueue` y `redis`)
+5. Retornar el task_id
+
+### B. Endpoint GET /task/{task_id}/status
+Agregar endpoint para consultar el estado de una tarea:
+
+```
+GET /task/uuid.../status
+Authorization: Bearer <WORKER_TOKEN>
+```
+
+Respuesta:
+```json
+{"task_id": "...", "status": "done", "task": "research.web", "team": "marketing", "result": {...}}
+```
+
+Lee del Redis key `umbral:task:{task_id}`.
+
+### C. Tests
+Crear `tests/test_enqueue_api.py`:
+- Test que /enqueue requiera auth
+- Test que /enqueue cree tarea y retorne task_id
+- Test que /task/{id}/status retorne el estado correcto
+- Usar mocks de Redis para no requerir Redis real
+
+### D. Documentar
+Agregar los nuevos endpoints a `docs/07-worker-api-contract.md`.
+
+## Archivos relevantes
+- `worker/app.py` — FastAPI app (agregar endpoints aquí)
+- `dispatcher/queue.py` — TaskQueue (importar para encolar)
+- `worker/config.py` — WORKER_TOKEN, etc.
 
 ## Flujo de trabajo
 ```bash
-git checkout feat/copilot-quota-report
 git add .
-git commit -m "feat: quota report + VPS health check cron"
-git push -u origin feat/copilot-quota-report
-gh pr create --base main --title "[Copilot] Quota report + health check" --body "Health monitoring + quota tracking"
+git commit -m "feat: /enqueue and /task/{id}/status API endpoints"
+git push -u origin feat/copilot-task-api
+gh pr create --base main --title "[Copilot] Task enqueue + status API" --body "Endpoints HTTP para encolar tareas y consultar status"
 ```
-
-## Protocolo
-- NO edites `.agents/board.md` (lo hace Cursor)
-- Cuando termines, avísale a David para que Cursor revise y mergee

@@ -4,7 +4,7 @@ title: "Skills Automatización Low-Code — Power Automate, Power Apps, Power BI
 assigned_to: cursor-agent-cloud-2
 branch: feat/cloud2-skills-automation
 round: 11
-status: assigned
+status: done
 created: 2026-03-04
 ---
 
@@ -66,3 +66,23 @@ gh pr create --title "feat: skills automatización — power platform, n8n, make
 - `python scripts/validate_skills.py` → exit 0
 - Skills incluyen expresiones/fórmulas clave de cada plataforma
 - Triggers claros en español e inglés
+
+## Log
+
+### [cursor-agent-cloud-2] 2026-03-04 10:30
+
+Tarea completada exitosamente.
+
+**Archivos creados:**
+- `openclaw/workspace-templates/skills/power-automate/SKILL.md` — flujos cloud, PAD, expresiones WDL, conectores, errores comunes
+- `openclaw/workspace-templates/skills/power-apps/SKILL.md` — Power Fx, canvas apps, model-driven, CRUD, galería, formularios
+- `openclaw/workspace-templates/skills/power-bi/SKILL.md` — DAX (CALCULATE, time intelligence, VAR/RETURN), Power Query M, API REST, RLS
+- `openclaw/workspace-templates/skills/n8n/SKILL.md` — expresiones Luxon, Code node JS/Python, nodos clave, self-hosting Docker
+- `openclaw/workspace-templates/skills/make-com/SKILL.md` — funciones de texto/fecha/array, routers, iterators, data stores, API Make
+- `openclaw/workspace-templates/skills/copilot-studio/SKILL.md` — topics, variables sistema/global, actions Power Automate, HTTP, Adaptive Cards, Direct Line API
+
+**Resultado de tests:**
+- `python scripts/validate_skills.py` → exit 0 (19/19 skills OK, todos con frontmatter válido)
+
+**Método:** Documentación oficial consultada vía web search (learn.microsoft.com, docs.n8n.io, developers.make.com).
+Nota: El archivo `G:\Mi unidad\...\04_dominio_power_bi.md` no está accesible desde el Cloud Agent (reside en VM de Windows), por lo que el skill de Power BI se construyó íntegramente desde la documentación oficial de Microsoft Learn.

@@ -2,7 +2,8 @@
 
 **Assigned:** claude-code  
 **Priority:** P0  
-**Status:** assigned  
+**Status:** done
+**Updated:** 2026-03-04
 **Created:** 2026-03-04
 
 ## Contexto
@@ -71,3 +72,23 @@ El Notion Poller actual (`dispatcher/notion_poller.py`) solo responde "Rick: Rec
 ## Entrega
 
 Responder en `.agents/board.md` con estado de la tarea y commit con los cambios.
+
+## Log
+
+### [claude-code] 2026-03-04
+
+**Parte A — Resiliencia del Dispatcher: COMPLETADA**
+
+Archivos modificados:
+- `dispatcher/service.py` — 3 mejoras implementadas:
+  1. **Fire-and-forget real**: Todas las llamadas a `_notion_upsert()` y `_notify_linear_completion()` ahora corren en `threading.Thread(daemon=True)`. Esto evita que un 404 de Notion o un error de Linear bloquee o retrase el worker thread principal. Aplica a 7 call sites (quota blocked, VM offline, running, done, failed × notion + linear).
+  2. **Retry automático para timeouts**: Si una tarea falla con `httpx.ReadTimeout` o `httpx.WriteTimeout` y `retry_count < 2`, se re-encola automáticamente con `retry_count` incrementado. Máximo 2 retries. Se loguea via `ops_log.task_retried()`.
+  3. **Graceful handling de connection refused**: Si el Worker devuelve `httpx.ConnectError`, se loguea una vez y se espera 5 segundos antes de continuar el loop. Evita miles de líneas de log por segundo cuando el Worker cae.
+- `infra/ops_logger.py` — Nuevo método `task_retried(task_id, task, team, retry_count)` + docstring actualizado.
+
+**Parte B — Notion Poller inteligente: YA COMPLETADA POR ANTIGRAVITY (tarea 006)**
+- `dispatcher/intent_classifier.py` ya existe con clasificación de intención, ruteo por equipo, y generación de envelopes con respuestas contextuales.
+- 33 tests unitarios puros pasan.
+- No se duplicó trabajo.
+
+**Tests:** 147 passed, 1 skipped (el fallo en `test_worker.py::TestRunAuth` es pre-existente y no relacionado).

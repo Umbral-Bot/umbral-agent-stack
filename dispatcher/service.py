@@ -13,6 +13,7 @@ import threading
 import time
 from typing import Any, Dict, Optional
 
+import httpx
 import redis
 
 from dispatcher.health import HealthMonitor
@@ -133,7 +134,7 @@ def _run_worker(
             reason = "quota_exceeded_approval_required"
             logger.warning("[worker %d] Task %s blocked: %s (model=%s)", worker_id, task_id, reason, decision.model)
             ops_log.task_blocked(task_id, task, team, reason)
-            _notion_upsert(wc_local, task_id, "blocked", team, task, error=reason)
+            threading.Thread(target=_notion_upsert, args=(wc_local, task_id, "blocked", team, task), kwargs={"error": reason}, daemon=True).start()
             queue.block_task(task_id, reason)
             continue
         selected_model = decision.model
@@ -147,7 +148,7 @@ def _run_worker(
         if requires_vm and not hm.vm_online and wc_vm is not None:
             reason = f"VM offline; task {task_id} (team={team}) requires VM."
             logger.warning("[worker %d] %s", worker_id, reason)
-            _notion_upsert(wc_local, task_id, "blocked", team, task, error=reason[:500])
+            threading.Thread(target=_notion_upsert, args=(wc_local, task_id, "blocked", team, task), kwargs={"error": reason[:500]}, daemon=True).start()
             queue.block_task(task_id, reason)
             continue
 
@@ -158,7 +159,7 @@ def _run_worker(
         )
 
         wc = wc_vm if use_vm else wc_local
-        _notion_upsert(wc_local, task_id, "running", team, task, input_summary=str(input_data)[:300])
+        threading.Thread(target=_notion_upsert, args=(wc_local, task_id, "running", team, task), kwargs={"input_summary": str(input_data)[:300]}, daemon=True).start()
         t_start = time.time()
         try:
             result = wc.run(task, input_data)
@@ -166,19 +167,43 @@ def _run_worker(
             queue.complete_task(task_id, result)
             model_router.quota.record_usage(selected_model)
             ops_log.task_completed(task_id, task, team, selected_model, duration_ms, worker=target.lower())
-            _notion_upsert(
-                wc_local, task_id, "done", team, task,
-                result_summary=str(result.get("result", result))[:300] if isinstance(result, dict) else str(result)[:300],
-            )
-            _notify_linear_completion(wc_local, envelope, success=True, result=result)
+            _result_summary = str(result.get("result", result))[:300] if isinstance(result, dict) else str(result)[:300]
+            threading.Thread(target=_notion_upsert, args=(wc_local, task_id, "done", team, task), kwargs={"result_summary": _result_summary}, daemon=True).start()
+            threading.Thread(target=_notify_linear_completion, args=(wc_local, envelope, True), kwargs={"result": result}, daemon=True).start()
             logger.info("[worker %d] Task %s completed via %s Worker (model=%s)", worker_id, task_id, target, selected_model)
         except Exception as e:
             duration_ms = (time.time() - t_start) * 1000
+            is_timeout = isinstance(e, (httpx.ReadTimeout, httpx.WriteTimeout))
+            is_connect_error = isinstance(e, httpx.ConnectError)
+            retry_count = envelope.get("retry_count", 0)
+
+            if is_timeout and retry_count < 2:
+                # Re-enqueue with incremented retry_count
+                envelope["retry_count"] = retry_count + 1
+                envelope["status"] = "queued"
+                queue.enqueue(envelope)
+                ops_log.task_retried(task_id, task, team, envelope["retry_count"])
+                logger.warning(
+                    "[worker %d] Task %s timed out, retry %d/2",
+                    worker_id, task_id, envelope["retry_count"],
+                )
+                continue
+
+            if is_connect_error:
+                # Worker is down — log once and back off to avoid log spam
+                logger.error(
+                    "[worker %d] %s Worker connection refused for task %s. Backing off 5s.",
+                    worker_id, target, task_id,
+                )
+
             ops_log.task_failed(task_id, task, team, str(e), model=selected_model)
-            _notion_upsert(wc_local, task_id, "failed", team, task, error=str(e)[:500])
-            _notify_linear_completion(wc_local, envelope, success=False, error=str(e))
+            threading.Thread(target=_notion_upsert, args=(wc_local, task_id, "failed", team, task), kwargs={"error": str(e)[:500]}, daemon=True).start()
+            threading.Thread(target=_notify_linear_completion, args=(wc_local, envelope, False), kwargs={"error": str(e)}, daemon=True).start()
             logger.error("[worker %d] Task %s failed: %s", worker_id, task_id, str(e))
             queue.fail_task(task_id, str(e))
+
+            if is_connect_error:
+                time.sleep(5)
 
 
 def main():

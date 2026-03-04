@@ -6,46 +6,66 @@
 http://WINDOWS_TAILSCALE_IP:8088
 ```
 
-## Endpoints
+## Autenticación
+
+Todos los endpoints excepto `/health` requieren autenticación Bearer:
+
+```
+Authorization: Bearer <WORKER_TOKEN>
+```
 
 ---
+
+## Endpoints
 
 ### `GET /health`
 
 Health check. No requiere autenticación.
 
-**Request:**
-```
-GET /health HTTP/1.1
-```
-
 **Response (200):**
 ```json
 {
   "ok": true,
-  "ts": 1740600000
+  "ts": 1740600000,
+  "version": "0.3.0",
+  "tasks_registered": ["ping", "notion.add_comment", "..."],
+  "tasks_in_memory": 42
 }
 ```
-
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| `ok` | bool | Siempre `true` si el worker está operativo |
-| `ts` | int | Unix timestamp del servidor |
 
 ---
 
 ### `POST /run`
 
-Ejecuta una tarea. Requiere autenticación Bearer.
+Ejecuta una tarea. Acepta dos formatos:
 
-**Request:**
-```
-POST /run HTTP/1.1
-Content-Type: application/json
-Authorization: Bearer <WORKER_TOKEN>
+#### TaskEnvelope v0.1 (formato completo)
+
+```json
+{
+  "schema_version": "0.1",
+  "task_id": "uuid-generado",
+  "team": "marketing",
+  "task_type": "writing",
+  "task": "notion.add_comment",
+  "input": { "text": "Hola mundo" },
+  "trace_id": "uuid-optional"
+}
 ```
 
-**Body:**
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| `schema_version` | string | ✅ | Siempre `"0.1"` |
+| `task_id` | string | ✅ | UUID único para esta tarea |
+| `team` | string | ✅ | Equipo destino (`marketing`, `advisory`, `improvement`, `lab`, `system`) |
+| `task_type` | string | ✅ | Tipo de tarea (`general`, `research`, `writing`, `instruction`) |
+| `task` | string | ✅ | Nombre del handler a ejecutar |
+| `input` | object | ✅ | Datos de entrada para el handler |
+| `trace_id` | string | — | UUID para correlación de trazas |
+| `status` | string | — | Estado (`queued`, `running`, `done`, `failed`) |
+
+#### Legacy (backward compat)
+
 ```json
 {
   "task": "ping",
@@ -53,74 +73,108 @@ Authorization: Bearer <WORKER_TOKEN>
 }
 ```
 
-| Campo | Tipo | Requerido | Descripción |
-|-------|------|-----------|-------------|
-| `task` | string | ✅ | Nombre de la tarea a ejecutar |
-| `input` | object | ✅ | Datos de entrada para la tarea |
+Se convierte internamente a TaskEnvelope con `task_id` generado, `team="system"`, `task_type="general"`.
 
-**Response (200) — Tarea `ping`:**
+**Response (200):**
 ```json
 {
   "ok": true,
+  "task_id": "uuid",
   "task": "ping",
-  "result": {
-    "echo": {
-      "task": "ping",
-      "input": {}
-    }
-  }
+  "team": "system",
+  "trace_id": "uuid",
+  "result": { "echo": { "task": "ping", "input": {} } }
+}
+```
+
+**S7 Protecciones:**
+- Rate limiting por IP (429 si se excede)
+- Sanitización de nombres de tarea y tamaño de inputs
+- Task names solo alfanuméricos + `.` + `_`
+
+---
+
+### `GET /tasks/{task_id}`
+
+Consultar estado de una tarea por `task_id`. Requiere auth.
+
+**Response (200):**
+```json
+{
+  "task_id": "uuid",
+  "task": "ping",
+  "status": "done",
+  "result": { "echo": {} },
+  "error": null,
+  "started_at": "2026-03-04T03:30:00Z",
+  "completed_at": "2026-03-04T03:30:01Z"
+}
+```
+
+**Response (404):** si `task_id` no se encuentra en el store in-memory.
+
+---
+
+### `GET /tasks`
+
+Listar tareas recientes. Filtrable. Requiere auth.
+
+| Param | Tipo | Default | Descripción |
+|-------|------|---------|-------------|
+| `limit` | int | 20 | Máximo de tareas a retornar |
+| `team` | string | — | Filtrar por prefijo de tarea o team |
+| `status` | string | — | Filtrar por estado (`done`, `failed`) |
+
+**Response (200):**
+```json
+{
+  "tasks": [ { "task_id": "...", "task": "...", "status": "done", ... } ],
+  "total": 42
 }
 ```
 
 ---
 
-## Tareas Disponibles
+## Task Handlers Registrados (24)
 
-| Task | Descripción | Input |
-|------|-------------|-------|
-| `ping` | Echo de prueba | `{}` (cualquier input) |
-
-> Más tareas se agregarán en futuras fases. El worker usa un diccionario de handlers extensible.
+| Task | Categoría | Descripción |
+|------|-----------|-------------|
+| `ping` | System | Echo de prueba |
+| `notion.write_transcript` | Notion | Escribe transcripción en página |
+| `notion.add_comment` | Notion | Agrega comentario a una página |
+| `notion.poll_comments` | Notion | Lee comentarios recientes |
+| `notion.upsert_task` | Notion | Crea/actualiza tarea en Kanban |
+| `notion.update_dashboard` | Notion | Actualiza dashboard Rick |
+| `windows.pad.run_flow` | Windows/RPA | Ejecuta flujo de Power Automate Desktop |
+| `windows.open_notepad` | Windows | Abre Notepad (interactivo) |
+| `windows.write_worker_token` | Windows | Escribe token del worker |
+| `windows.firewall_allow_port` | Windows | Abre puerto en firewall |
+| `windows.start_interactive_worker` | Windows | Inicia worker interactivo |
+| `windows.add_interactive_worker_to_startup` | Windows | Agrega worker al inicio |
+| `windows.fs.ensure_dirs` | Filesystem | Crea directorios |
+| `windows.fs.list` | Filesystem | Lista archivos/dirs |
+| `windows.fs.read_text` | Filesystem | Lee archivo de texto |
+| `windows.fs.write_text` | Filesystem | Escribe archivo de texto |
+| `windows.fs.write_bytes_b64` | Filesystem | Escribe binario (base64) |
+| `system.ooda_report` | Observability | Genera reporte OODA |
+| `system.self_eval` | Observability | Auto-evaluación del sistema |
+| `linear.create_issue` | Linear | Crea issue en Linear |
+| `linear.list_teams` | Linear | Lista equipos de Linear |
+| `linear.update_issue_status` | Linear | Actualiza estado de issue |
+| `research.web` | Research | Búsqueda web (Tavily) |
+| `llm.generate` | LLM | Genera texto con Gemini |
 
 ---
 
 ## Errores
 
-### 401 Unauthorized
-
-```json
-{
-  "detail": "Invalid or missing token"
-}
-```
-
-**Causa**: Falta el header `Authorization: Bearer <token>` o el token no coincide.
-
-### 500 Internal Server Error
-
-```json
-{
-  "detail": "WORKER_TOKEN not configured on server"
-}
-```
-
-**Causa**: La variable de entorno `WORKER_TOKEN` no está definida en el proceso del worker.
-
-### 422 Unprocessable Entity
-
-```json
-{
-  "detail": [
-    {
-      "loc": ["body", "task"],
-      "msg": "field required",
-      "type": "value_error.missing"
-    }
-  ]
-}
-```
-
-**Causa**: El body JSON es inválido o le faltan campos requeridos (`task`, `input`).
+| Código | Descripción |
+|--------|-------------|
+| 400 | Request inválido, tarea desconocida, o input inválido |
+| 401 | Token faltante o inválido |
+| 404 | Tarea no encontrada (GET /tasks/{id}) |
+| 429 | Rate limit excedido |
+| 500 | Error interno o WORKER_TOKEN no configurado |
 
 ---
 
@@ -132,11 +186,19 @@ Authorization: Bearer <WORKER_TOKEN>
 # Health check
 curl http://WINDOWS_TAILSCALE_IP:8088/health
 
-# Run — IMPORTANTE: usar comillas simples si el token contiene "!"
+# Run con TaskEnvelope
 curl -s -X POST http://WINDOWS_TAILSCALE_IP:8088/run \
   -H 'Content-Type: application/json' \
-  -H 'Authorization: Bearer CHANGE_ME_WORKER_TOKEN' \
-  -d '{"task":"ping","input":{"msg":"hello"}}'
+  -H 'Authorization: Bearer $WORKER_TOKEN' \
+  -d '{"schema_version":"0.1","task_id":"test-001","team":"system","task_type":"general","task":"ping","input":{"msg":"hello"}}'
+
+# Consultar tarea
+curl -s http://WINDOWS_TAILSCALE_IP:8088/tasks/test-001 \
+  -H 'Authorization: Bearer $WORKER_TOKEN'
+
+# Listar tareas recientes
+curl -s 'http://WINDOWS_TAILSCALE_IP:8088/tasks?limit=10' \
+  -H 'Authorization: Bearer $WORKER_TOKEN'
 ```
 
 ### Desde PowerShell (Windows)
@@ -148,7 +210,7 @@ Invoke-RestMethod -Uri http://localhost:8088/health
 # Run
 $headers = @{
     "Content-Type"  = "application/json"
-    "Authorization" = "Bearer CHANGE_ME_WORKER_TOKEN"
+    "Authorization" = "Bearer $env:WORKER_TOKEN"
 }
 $body = '{"task":"ping","input":{"msg":"hello"}}'
 Invoke-RestMethod -Uri http://localhost:8088/run -Method POST -Headers $headers -Body $body

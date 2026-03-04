@@ -5,7 +5,7 @@ Escribe eventos en formato JSONL para tracking detallado y analisis de efectivid
 Ubicacion default: ~/.config/umbral/ops_log.jsonl
 
 Eventos:
-  task_queued, task_completed, task_failed, task_blocked,
+  task_queued, task_completed, task_failed, task_blocked, task_retried,
   model_selected, quota_warning, quota_restricted, worker_health_change
 """
 from __future__ import annotations
@@ -109,6 +109,15 @@ class OpsLogger:
             "event": "quota_restricted",
             "provider": provider,
             "usage_pct": round(usage_pct * 100, 1),
+        })
+
+    def task_retried(self, task_id: str, task: str, team: str, retry_count: int) -> None:
+        self._write({
+            "event": "task_retried",
+            "task_id": task_id,
+            "task": task,
+            "team": team,
+            "retry_count": retry_count,
         })
 
     def worker_health_change(self, worker: str, online: bool) -> None:

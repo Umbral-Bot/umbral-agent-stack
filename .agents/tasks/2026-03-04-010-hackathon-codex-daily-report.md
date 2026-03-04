@@ -2,7 +2,7 @@
 
 **Assigned:** codex  
 **Priority:** P1  
-**Status:** assigned  
+**Status:** done  
 **Created:** 2026-03-04
 
 ## Contexto
@@ -46,3 +46,19 @@ El sistema ahora tiene 2 nuevos task handlers (`research.web` y `llm.generate`) 
 ## Entrega
 
 Responder en `.agents/board.md` con estado de la tarea y commit con los cambios.
+
+## Log
+
+### [codex] 2026-03-04 03:48 -03:00
+- Implementados tests unitarios:
+  - `tests/test_research_handler.py` (validacion de `query`, falta de `TAVILY_API_KEY`, exito con mock de Tavily)
+  - `tests/test_llm_handler.py` (validacion de `prompt`, falta de `GOOGLE_API_KEY`, exito con mock de Gemini)
+- Creado `scripts/sim_daily_report.py`:
+  - lee eventos con `OpsLogger.read_events()`
+  - filtra tareas `research.web` y `llm.generate` en ventana de 24h
+  - resume volumen, exito/fallo, temas (enriquecidos desde task store Redis) y ultimo resumen LLM
+  - publica en Notion por `notion.add_comment` via `WorkerClient`
+  - soporta `--dry-run`, `--hours`, `--limit`, `--max-topics`, `--page-id`
+- Validaciones ejecutadas:
+  - `python -m pytest tests/test_research_handler.py tests/test_llm_handler.py -v -p no:cacheprovider` -> `6 passed`
+  - `python scripts/sim_daily_report.py --dry-run --hours 24 --limit 50` -> ejecucion OK (sin post a Notion por dry-run)

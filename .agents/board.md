@@ -18,11 +18,20 @@
 | Scheduled Tasks | ✅ Redis sorted set, cron cada minuto |
 | Quota Dashboard | ✅ GET /quota/status + reporte Notion |
 | Crons activos | 11 (dashboard, health, supervisor, poller, SIM x2, digest, SIM-make, E2E, OODA, scheduled-tasks) |
-| Tests | ✅ 463 passed en VPS |
-| PRs mergeados (hackathon) | 34 |
+| Tests | ✅ 746 passed (5 skipped, 0 failed) |
+| PRs mergeados (hackathon) | 35+ |
 | VM (Execution Plane) | ✅ v0.4.0 — 25 handlers — reconectada |
 
-## Ronda 11 — En curso
+## Ronda 12 — En curso
+
+| ID | Título | Asignado | Estado |
+|----|--------|----------|--------|
+| 050 | Google Calendar + Gmail handlers | cursor-agent-cloud-1 | pending |
+| 051 | Granola Windows service installer | cursor-agent-cloud-2 | pending |
+| 052 | IFC skill + Speckle mejorado + templates | cursor-agent-cloud-3 | pending |
+| 053 | Skills Audit + Pytest + Cobertura | cursor-agent-cloud-4 | ✅ done |
+
+## Ronda 11 — Completada ✅
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|

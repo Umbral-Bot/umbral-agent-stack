@@ -35,12 +35,24 @@ ANTHROPIC_MESSAGES_URL = "https://api.anthropic.com/v1/messages"
 GITHUB_MODELS_URL = "https://models.inference.ai.azure.com/chat/completions"
 
 # Router aliases (quota providers) -> concrete API models.
-# chatgpt_plus y claude_pro usan GitHub Models (GITHUB_TOKEN existente).
+# Modelos reales disponibles (2026-03-04):
+#   openai_codex → gpt-5.3-codex  vía GitHub Models (ChatGPT Plus / OAuth)
+#   claude_pro   → claude-sonnet-4-6  vía GitHub Models o ANTHROPIC_API_KEY
+#   claude_opus  → claude-opus-4-6   vía GitHub Models o ANTHROPIC_API_KEY (tareas críticas)
+#   gemini_pro   → gemini-3.1-pro-preview-customtools  vía GOOGLE_API_KEY
+#   gemini_flash → gemini-flash-latest  vía GOOGLE_API_KEY (rápido y económico)
 MODEL_ALIASES = {
-    "gemini_pro": "gemini-2.5-flash",
-    "chatgpt_plus": "gpt-4o",           # via GitHub Models (Copilot subscription)
-    "claude_pro": "claude-3-5-sonnet-20241022",  # via GitHub Models (Copilot subscription)
-    "copilot_pro": "gpt-4o-mini",       # via GitHub Models
+    # OpenAI Codex — prioridad máxima (suscripción ChatGPT Plus)
+    "openai_codex": "gpt-5.3-codex",
+    # Aliases legacy mantenidos para compatibilidad
+    "chatgpt_plus": "gpt-4o",
+    "copilot_pro":  "gpt-4o-mini",
+    # Anthropic (suscripción Pro)
+    "claude_pro":   "claude-sonnet-4-6",
+    "claude_opus":  "claude-opus-4-6",
+    # Google (AI Studio + Vertex)
+    "gemini_pro":   "gemini-3.1-pro-preview-customtools",
+    "gemini_flash": "gemini-flash-latest",
 }
 
 
@@ -122,12 +134,14 @@ def _detect_provider(model: str) -> str:
     github_token = os.environ.get("GITHUB_TOKEN", "").strip()
 
     is_openai_model = (
-        "gpt" in model_lc
+        "gpt" in model_lc      # gpt-4o, gpt-5.2, gpt-5.3-codex, etc.
         or "o1" in model_lc
         or "o3" in model_lc
+        or "codex" in model_lc  # gpt-5.3-codex
         or "chatgpt" in model_lc
         or "copilot" in model_lc
     )
+    # claude-sonnet-4-6, claude-opus-4-6, claude-haiku-4-5, claude-3-5-sonnet, etc.
     is_anthropic_model = "claude" in model_lc
 
     if is_openai_model or is_anthropic_model:

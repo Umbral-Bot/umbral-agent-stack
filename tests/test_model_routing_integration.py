@@ -42,10 +42,14 @@ def redis_client():
 @pytest.fixture
 def provider_config():
     return {
-        "claude_pro": {"limit_requests": 100, "window_seconds": 3600},
-        "chatgpt_plus": {"limit_requests": 150, "window_seconds": 3600},
-        "gemini_pro": {"limit_requests": 200, "window_seconds": 86400},
-        "copilot_pro": {"limit_requests": 80, "window_seconds": 3600},
+        "openai_codex": {"limit_requests": 200, "window_seconds": 10800},
+        "claude_pro":   {"limit_requests": 100, "window_seconds": 18000},
+        "claude_opus":  {"limit_requests": 50,  "window_seconds": 18000},
+        "gemini_pro":   {"limit_requests": 200, "window_seconds": 86400},
+        "gemini_flash": {"limit_requests": 500, "window_seconds": 86400},
+        "copilot_pro":  {"limit_requests": 80,  "window_seconds": 2592000},
+        # Legacy aliases mantenidos
+        "chatgpt_plus": {"limit_requests": 150, "window_seconds": 10800},
     }
 
 
@@ -77,8 +81,8 @@ def _make_envelope(task: str, task_type: str = "general", **extra_input):
 
 class TestProviderModelMap:
     def test_all_providers_have_mapping(self):
-        """Every provider in default routing should have a model mapping."""
-        expected = {"gemini_pro", "chatgpt_plus", "claude_pro", "copilot_pro"}
+        """Todos los providers activos deben tener mapping."""
+        expected = {"openai_codex", "claude_pro", "claude_opus", "gemini_pro", "gemini_flash"}
         assert expected.issubset(set(PROVIDER_MODEL_MAP.keys()))
 
     def test_model_strings_are_not_empty(self):
@@ -86,10 +90,11 @@ class TestProviderModelMap:
             assert isinstance(model, str) and len(model) > 0, f"{provider} has empty model string"
 
     def test_known_mappings(self):
-        assert PROVIDER_MODEL_MAP["gemini_pro"] == "gemini-2.5-flash"
-        assert PROVIDER_MODEL_MAP["chatgpt_plus"] == "gpt-4o-mini"
-        assert PROVIDER_MODEL_MAP["claude_pro"] == "claude-sonnet-4-20250514"
-        assert PROVIDER_MODEL_MAP["copilot_pro"] == "gpt-4o"
+        assert PROVIDER_MODEL_MAP["openai_codex"] == "gpt-5.3-codex"
+        assert PROVIDER_MODEL_MAP["claude_pro"] == "claude-sonnet-4-6"
+        assert PROVIDER_MODEL_MAP["claude_opus"] == "claude-opus-4-6"
+        assert PROVIDER_MODEL_MAP["gemini_pro"] == "gemini-3.1-pro-preview-customtools"
+        assert PROVIDER_MODEL_MAP["gemini_flash"] == "gemini-flash-latest"
 
 
 # ---------------------------------------------------------------------------
@@ -166,8 +171,8 @@ class TestModelInjection:
 
     def test_llm_task_blocked_when_quota_exceeded(self, quota_tracker, model_router):
         """Force all providers to 100% quota → requires_approval for LLM tasks."""
-        # Push all providers over restrict threshold
-        for provider in ("claude_pro", "chatgpt_plus", "gemini_pro", "copilot_pro"):
+        all_providers = ("openai_codex", "claude_pro", "claude_opus", "gemini_pro", "gemini_flash", "copilot_pro")
+        for provider in all_providers:
             cfg = quota_tracker.config.get(provider, {})
             limit = cfg.get("limit_requests", 100)
             for _ in range(limit):
@@ -180,7 +185,8 @@ class TestModelInjection:
 
     def test_non_llm_task_not_blocked_even_if_quota_exceeded(self, quota_tracker, model_router):
         """Non-LLM tasks should proceed even when quota is exceeded."""
-        for provider in ("claude_pro", "chatgpt_plus", "gemini_pro", "copilot_pro"):
+        all_providers = ("openai_codex", "claude_pro", "claude_opus", "gemini_pro", "gemini_flash", "copilot_pro")
+        for provider in all_providers:
             cfg = quota_tracker.config.get(provider, {})
             limit = cfg.get("limit_requests", 100)
             for _ in range(limit):
@@ -201,7 +207,11 @@ class TestQuotaPostExecution:
     def test_record_usage_after_execution(self, quota_tracker, model_router):
         """After successful execution, record_usage should increment quota."""
         decision = model_router.select_model("coding")
-        selected = decision.model
+        selected = decision.model  # openai_codex
+
+        # openai_codex is in config (limit=200); use explicitly to ensure increment
+        if selected not in quota_tracker.config:
+            pytest.skip(f"{selected} not in test provider_config")
 
         initial_state = quota_tracker.get_quota_state(selected)
         quota_tracker.record_usage(selected)
@@ -211,13 +221,13 @@ class TestQuotaPostExecution:
 
     def test_quota_affects_subsequent_routing(self, quota_tracker, model_router):
         """Pushing preferred model past warn should trigger fallback for non-critical."""
-        # coding prefers chatgpt_plus (limit=150, warn=0.8 → 120 requests)
-        for _ in range(125):
-            quota_tracker.record_usage("chatgpt_plus")
+        # coding prefers openai_codex (limit=200, warn=0.75 → 150 requests)
+        for _ in range(155):
+            quota_tracker.record_usage("openai_codex")
 
         decision = model_router.select_model("coding")
-        # Should fall back to copilot_pro or another model since chatgpt_plus is past warn
-        assert decision.model != "chatgpt_plus" or decision.reason != "under_quota"
+        # Should fall back since openai_codex is past warn
+        assert decision.model != "openai_codex" or decision.reason != "under_quota"
 
 
 # ---------------------------------------------------------------------------
@@ -232,19 +242,19 @@ class TestFallbackRouting:
             quota_tracker.record_usage("claude_pro")
 
         decision = model_router.select_model("writing")
-        # Should fall back (chatgpt_plus or gemini_pro)
-        assert decision.model in ("chatgpt_plus", "gemini_pro")
+        # Should fall back: writing fallback=[openai_codex, gemini_pro]
+        assert decision.model in ("openai_codex", "gemini_pro")
         assert "fallback" in decision.reason
 
     def test_fallback_chain_skips_restricted_models(self, quota_tracker, model_router):
         """If first fallback is also restricted, try next in chain."""
-        # writing: preferred=claude_pro, fallback=[chatgpt_plus, gemini_pro]
-        # Restrict claude_pro and chatgpt_plus
+        # writing: preferred=claude_pro, fallback=[openai_codex, gemini_pro]
+        # Restrict claude_pro (95/100 = 95% > restrict 90%) and openai_codex (185/200 = 92.5% > 90%)
         for _ in range(95):
             quota_tracker.record_usage("claude_pro")
-        for _ in range(140):
-            quota_tracker.record_usage("chatgpt_plus")
+        for _ in range(185):
+            quota_tracker.record_usage("openai_codex")
 
         decision = model_router.select_model("writing")
-        # Should end up on gemini_pro
+        # Should end up on gemini_pro (next in fallback chain)
         assert decision.model == "gemini_pro"

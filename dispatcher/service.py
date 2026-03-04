@@ -30,11 +30,19 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(na
 
 
 # S4: Mapeo de provider name → model string que entiende el Worker
+# Actualizado con modelos reales disponibles (2026-03-04).
 PROVIDER_MODEL_MAP: Dict[str, str] = {
-    "gemini_pro": "gemini-2.5-flash",
-    "chatgpt_plus": "gpt-4o-mini",
-    "claude_pro": "claude-sonnet-4-20250514",
-    "copilot_pro": "gpt-4o",
+    # OpenAI Codex — prioridad máxima (ChatGPT Plus / GitHub Models OAuth)
+    "openai_codex": "gpt-5.3-codex",
+    # Anthropic Pro
+    "claude_pro":   "claude-sonnet-4-6",
+    "claude_opus":  "claude-opus-4-6",
+    # Google AI Studio + Flash
+    "gemini_pro":   "gemini-3.1-pro-preview-customtools",
+    "gemini_flash": "gemini-flash-latest",
+    # Aliases legacy (compatibilidad)
+    "chatgpt_plus": "gpt-4o",
+    "copilot_pro":  "gpt-4o-mini",
 }
 
 # Tareas LLM que reciben inyección de modelo

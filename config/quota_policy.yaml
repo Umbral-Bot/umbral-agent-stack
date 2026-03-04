@@ -1,22 +1,49 @@
 # S4 — Política de cuotas por proveedor (doc 15)
+# Actualizado con modelos reales disponibles (2026-03-04):
+#   - openai_codex → gpt-5.3-codex (ChatGPT Plus / OAuth)  PRIORIDAD MÁXIMA
+#   - claude_pro   → claude-sonnet-4-6 (Anthropic Pro)
+#   - gemini_pro   → gemini-3.1-pro-preview-customtools (Google AI Studio)
+#   - gemini_flash → gemini-flash-latest (Google, rápido y económico)
+#   - claude_opus  → claude-opus-4-6 (Anthropic, tareas críticas)
 # Ventanas: 5h=18000, 3h=10800, diario=86400, mensual=2592000
 
 providers:
+  # --- OpenAI Codex (ChatGPT Plus / GitHub Models OAuth) — PRIORIDAD 1 ---
+  openai_codex:
+    limit_requests: 400
+    window_seconds: 10800   # 3h (ventana conservadora)
+    warn: 0.75
+    restrict: 0.90
+
+  # --- Anthropic Claude Sonnet (Pro subscription) — PRIORIDAD 2 ---
   claude_pro:
-    limit_requests: 200      # por ventana (proxy para uso 5h)
+    limit_requests: 200      # por ventana 5h
     window_seconds: 18000   # 5h
     warn: 0.80
     restrict: 0.90
-  chatgpt_plus:
-    limit_requests: 300
-    window_seconds: 10800   # 3h
-    warn: 0.70
-    restrict: 0.90
+
+  # --- Anthropic Claude Opus (tareas críticas) ---
+  claude_opus:
+    limit_requests: 50       # límite más estricto (modelo caro)
+    window_seconds: 18000   # 5h
+    warn: 0.60
+    restrict: 0.80
+
+  # --- Google Gemini Pro (AI Studio, con customtools) ---
   gemini_pro:
     limit_requests: 500
     window_seconds: 86400   # 1 día
     warn: 0.80
     restrict: 0.95
+
+  # --- Google Gemini Flash (rápido, tareas ligeras) ---
+  gemini_flash:
+    limit_requests: 1000
+    window_seconds: 86400   # 1 día
+    warn: 0.85
+    restrict: 0.97
+
+  # --- Copilot Pro (fallback para MS stack) ---
   copilot_pro:
     limit_requests: 400
     window_seconds: 2592000 # 30 días
@@ -24,22 +51,26 @@ providers:
     restrict: 0.85
 
 # Routing por task_type (preferido + fallback chain)
+# openai_codex es el modelo de mayor prioridad según instrucción del usuario.
 routing:
   coding:
-    preferred: chatgpt_plus
-    fallback_chain: [copilot_pro, claude_pro, gemini_pro]
+    preferred: openai_codex
+    fallback_chain: [claude_pro, gemini_pro, gemini_flash]
+  general:
+    preferred: openai_codex
+    fallback_chain: [claude_pro, gemini_pro, gemini_flash]
   ms_stack:
-    preferred: copilot_pro
-    fallback_chain: [chatgpt_plus, claude_pro, gemini_pro]
+    preferred: openai_codex
+    fallback_chain: [copilot_pro, claude_pro, gemini_pro]
   writing:
     preferred: claude_pro
-    fallback_chain: [chatgpt_plus, gemini_pro]
+    fallback_chain: [openai_codex, gemini_pro]
   research:
     preferred: gemini_pro
-    fallback_chain: [chatgpt_plus, claude_pro]
+    fallback_chain: [openai_codex, claude_pro, gemini_flash]
   critical:
-    preferred: claude_pro
-    fallback_chain: [chatgpt_plus]
-  general:
-    preferred: chatgpt_plus
-    fallback_chain: [claude_pro, gemini_pro]
+    preferred: claude_opus
+    fallback_chain: [claude_pro, openai_codex]
+  light:
+    preferred: gemini_flash
+    fallback_chain: [openai_codex, gemini_pro]

@@ -13,6 +13,7 @@ SIM_TO_MAKE_LINE="0 9,15,21 * * * bash $HOME/umbral-agent-stack/scripts/vps/sim-
 E2E_VALIDATION_LINE="0 6 * * * bash $HOME/umbral-agent-stack/scripts/vps/e2e-validation-cron.sh >> /tmp/e2e_validation.log 2>&1"
 OODA_REPORT_LINE="0 7 * * 1 bash $HOME/umbral-agent-stack/scripts/vps/ooda-report-cron.sh >> /tmp/ooda_report.log 2>&1"
 SCHEDULED_TASKS_LINE="* * * * * bash $HOME/umbral-agent-stack/scripts/vps/scheduled-tasks-cron.sh >> /tmp/scheduled_tasks.log 2>&1"
+QUOTA_GUARD_LINE="*/15 * * * * bash $HOME/umbral-agent-stack/scripts/vps/quota-guard-cron.sh >> /tmp/quota_guard.log 2>&1"
 
 # --- Dashboard cron ---
 if crontab -l 2>/dev/null | grep -qF "dashboard-cron.sh"; then
@@ -92,6 +93,14 @@ if crontab -l 2>/dev/null | grep -qF "scheduled-tasks-cron.sh"; then
 else
     (crontab -l 2>/dev/null; echo "$SCHEDULED_TASKS_LINE") | crontab -
     echo "Scheduled Tasks cron added."
+fi
+
+# --- Quota Guard cron (cada 15 min — protege OpenClaw de freeze por cuota Claude) ---
+if crontab -l 2>/dev/null | grep -qF "quota-guard-cron.sh"; then
+    echo "Quota Guard cron already installed."
+else
+    (crontab -l 2>/dev/null; echo "$QUOTA_GUARD_LINE") | crontab -
+    echo "Quota Guard cron added."
 fi
 
 echo ""

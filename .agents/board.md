@@ -16,18 +16,44 @@
 | PRs mergeados (hackathon) | 15 |
 | VM (Execution Plane) | 🔴 Red caída (APIPA) — requiere intervención manual |
 
-## Ronda 3 — Tareas Activas (2026-03-04)
+## Ronda 4 — Tareas Activas (2026-03-04)
 
 | ID | Título | Asignado | Rama | Estado |
 |----|--------|----------|------|--------|
-| 012 | Smart Notion Reply Pipeline | claude-code | feat/claude-smart-reply | 📋 assigned |
-| 013 | Daily Activity Digest + Notion Post | github-copilot | feat/copilot-daily-digest | 📋 assigned |
-| 014 | Webhook Callback System | codex | feat/codex-webhook-callback | 📋 assigned |
-| 015 | Composite Task Handler (Research Report) | antigravity | feat/antigravity-composite-tasks | 📋 assigned |
+| 016 | Task History API + Redis Pagination | codex | feat/codex-task-history-api | 📋 assigned |
+| 017 | Make.com Webhook Integration — SIM Pipeline | github-copilot | feat/copilot-make-webhook | 📋 assigned |
+| 018 | Notion Result Poster (smart reply + composite) | antigravity | feat/antigravity-notion-result-poster | 📋 assigned |
 
-### Objetivo Ronda 3
-Hacer que Rick sea **útil** — que responda inteligentemente, que David vea qué hizo,
-que Make.com/n8n reciban resultados, y que se puedan ejecutar investigaciones complejas.
+> Claude Code en pausa hasta que se restablezcan los créditos.
+
+### Objetivo Ronda 4
+Cerrar el loop completo: historial consultable, resultados a Make.com, reportes SIM en páginas Notion.
+
+## Ronda 3 — Completada ✅
+
+| ID | Título | Asignado | Estado |
+|----|--------|----------|--------|
+| 012 | Smart Notion Reply Pipeline | claude-code | ✅ done (PR #18) |
+| 013 | Daily Activity Digest + Notion Post | github-copilot | ✅ done (PR #17) |
+| 014 | Webhook Callback System | codex | ✅ done (PR #16) |
+| 015 | Composite Task Handler (Research Report) | antigravity | ✅ done (PR #19) |
+
+## Logros acumulados Ronda 3
+
+### Claude Code
+- `dispatcher/smart_reply.py` — research.web + llm.generate + notion.add_comment en pipeline
+- Cuando David pregunta en Notion, Rick ahora busca y responde de verdad
+
+### GitHub Copilot
+- `scripts/daily_digest.py` — escanea Redis, genera resumen LLM, postea en Notion a las 22:00
+
+### Codex
+- `dispatcher/service.py` — callback_url fire-and-forget con retry
+- POST /enqueue acepta callback_url para Make.com/n8n
+
+### Antigravity
+- `worker/tasks/composite.py` — handler #25 que orquesta research+LLM en un solo comando
+- Profundidad configurable: quick/standard/deep
 
 ## Rondas anteriores completadas
 
@@ -97,6 +123,11 @@ que Make.com/n8n reciban resultados, y que se puedan ejecutar investigaciones co
 | */5 min | notion-poller-cron.sh | Watchdog daemon Notion Poller |
 | 8:00, 14:00, 20:00 | sim-daily-cron.sh | SIM research (Tavily) |
 | 8:30, 14:30, 20:30 | sim-report-cron.sh | SIM report (LLM + Notion) |
+| 22:00 | daily-digest-cron.sh | Digest diario (Redis → LLM → Notion) |
+
+## Worker v0.4.0 — 25 handlers
+
+`ping` · `notion.*` (5) · `windows.*` (6) · `windows.fs.*` (5) · `system.*` (2) · `linear.*` (3) · `research.web` · `llm.generate` · **`composite.research_report`**
 
 ## Notas
 - Agentes: Cursor (lead), Antigravity, Codex, GitHub Copilot, Claude Code.

@@ -75,10 +75,14 @@ def load_quota_policy() -> Dict[str, Dict[str, Any]]:
 def _default_providers() -> Dict[str, Dict[str, Any]]:
     """Fallback hardcoded from quota_policy.yaml."""
     return {
+        "azure_foundry": {"limit_requests": 2000, "window_seconds": 3600, "warn": 0.80, "restrict": 0.95},
         "claude_pro": {"limit_requests": 200, "window_seconds": 18000, "warn": 0.80, "restrict": 0.90},
-        "chatgpt_plus": {"limit_requests": 300, "window_seconds": 10800, "warn": 0.70, "restrict": 0.90},
+        "claude_opus": {"limit_requests": 50, "window_seconds": 18000, "warn": 0.60, "restrict": 0.80},
+        "claude_haiku": {"limit_requests": 500, "window_seconds": 18000, "warn": 0.85, "restrict": 0.95},
         "gemini_pro": {"limit_requests": 500, "window_seconds": 86400, "warn": 0.80, "restrict": 0.95},
-        "copilot_pro": {"limit_requests": 400, "window_seconds": 2592000, "warn": 0.70, "restrict": 0.85},
+        "gemini_flash": {"limit_requests": 1000, "window_seconds": 86400, "warn": 0.85, "restrict": 0.97},
+        "gemini_flash_lite": {"limit_requests": 2000, "window_seconds": 86400, "warn": 0.90, "restrict": 0.98},
+        "gemini_vertex": {"limit_requests": 300, "window_seconds": 86400, "warn": 0.80, "restrict": 0.95},
     }
 
 

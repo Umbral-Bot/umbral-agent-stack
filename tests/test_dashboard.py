@@ -16,7 +16,7 @@ class TestOpsLogger:
         ol.task_completed("t1", "ping", "system", "gemini_pro", 150.0, "vps")
         ol.task_failed("t2", "bad", "marketing", "connection error", "claude_pro")
         ol.task_blocked("t3", "pad", "lab", "vm_offline")
-        ol.model_selected("t4", "coding", "chatgpt_plus", "preferred")
+        ol.model_selected("t4", "coding", "azure_foundry", "preferred")
         ol.quota_warning("claude_pro", 0.85)
         ol.worker_health_change("vm", False)
 

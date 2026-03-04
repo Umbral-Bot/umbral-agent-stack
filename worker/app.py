@@ -35,6 +35,7 @@ from pydantic import BaseModel, Field
 from .config import WORKER_TOKEN
 from .rate_limiter import RateLimiter
 from .sanitize import sanitize_input, sanitize_task_name
+from .tracing import flush as flush_tracing
 from .models import (
     LegacyRunRequest,
     TaskEnvelope,
@@ -124,6 +125,37 @@ app = FastAPI(
     "Soporta TaskEnvelope v0.1, formato legacy, y enqueue vía Redis.",
     version="0.4.0",
 )
+
+
+@app.on_event("shutdown")
+async def _on_shutdown():
+    """Flush pending telemetry before process exit."""
+    flush_tracing()
+
+
+# ---------------------------------------------------------------------------
+# Rate Limiting Middleware
+# ---------------------------------------------------------------------------
+rpm = int(os.environ.get("RATE_LIMIT_RPM", "60"))
+limiter = RateLimiter(max_requests=rpm, window_seconds=60)
+
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    if request.url.path == "/health":
+        return await call_next(request)
+    
+    client_id = request.client.host if request.client else "unknown"
+    allowed, remaining = limiter.is_allowed(client_id)
+    
+    if not allowed:
+        return JSONResponse(
+            status_code=429,
+            content={"detail": "Rate limit exceeded. Retry later."},
+            headers={"Retry-After": "60"}
+        )
+    
+    response = await call_next(request)
+    return response
 
 
 # ---------------------------------------------------------------------------

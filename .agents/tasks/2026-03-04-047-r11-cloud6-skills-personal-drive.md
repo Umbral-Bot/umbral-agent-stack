@@ -4,7 +4,7 @@ title: "Skills Personales desde Google Drive — Docente AEC4.0, LinkedIn Conten
 assigned_to: cursor-agent-cloud-6
 branch: feat/cloud6-skills-personal-drive
 round: 11
-status: assigned
+status: done
 created: 2026-03-04
 ---
 

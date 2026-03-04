@@ -22,7 +22,13 @@
 | PRs mergeados (hackathon) | 34 |
 | VM (Execution Plane) | ✅ v0.4.0 — 25 handlers — reconectada |
 
-## Ronda 9 — En curso
+## Ronda 11 — En curso
+
+| ID | Título | Asignado | Estado |
+|----|--------|----------|--------|
+| 043 | Skills Automatización Low-Code — Power Platform, n8n, Make, Copilot Studio | cursor-agent-cloud-2 | ✅ done |
+
+## Ronda 9 — Completada ✅
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|

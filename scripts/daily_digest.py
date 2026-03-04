@@ -440,6 +440,17 @@ def main() -> int:
     # --- Build digest ---
     use_llm = not args.no_llm
     digest = build_digest(tasks, pending, now, args.hours, worker_client=wc, use_llm=use_llm)
+    
+    # --- Append quota ---
+    try:
+        quota_data = wc.quota_status()
+        from scripts.quota_report import build_visual_report
+        quota_visual = build_visual_report(quota_data)
+        if quota_visual:
+            digest += f"\n\n---\n{quota_visual}"
+    except Exception as exc:
+        logger.warning("Failed to fetch/append quota status: %s", exc)
+
     print(digest)
 
     # --- Post to Notion ---

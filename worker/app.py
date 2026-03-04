@@ -672,6 +672,105 @@ async def get_provider_status(
     }
 
 
+# ---------------------------------------------------------------------------
+# Tools inventory
+# ---------------------------------------------------------------------------
+
+_CATEGORY_MAP = {
+    "ping": "system",
+    "notion": "notion",
+    "windows": "windows",
+    "system": "system",
+    "linear": "linear",
+    "research": "ai",
+    "llm": "ai",
+    "composite": "ai",
+    "figma": "figma",
+    "azure": "azure",
+    "make": "integrations",
+}
+
+
+def _detect_skills() -> list[dict]:
+    """Scan openclaw/workspace-templates/skills/*/SKILL.md for available skills."""
+    import pathlib
+    import re
+
+    skills_dir = pathlib.Path(__file__).resolve().parent.parent / "openclaw" / "workspace-templates" / "skills"
+    skills = []
+    if not skills_dir.is_dir():
+        return skills
+
+    for skill_md in skills_dir.glob("*/SKILL.md"):
+        text = skill_md.read_text(encoding="utf-8", errors="replace")
+        # Parse YAML frontmatter (between --- markers)
+        fm_match = re.match(r"^---\s*\n(.*?)\n---", text, re.DOTALL)
+        if not fm_match:
+            skills.append({"name": skill_md.parent.name, "description": ""})
+            continue
+        fm = fm_match.group(1)
+        name = skill_md.parent.name
+        desc = ""
+        for line in fm.splitlines():
+            if line.startswith("name:"):
+                name = line.split(":", 1)[1].strip()
+            elif line.startswith("description:"):
+                # Handle >- multiline or single-line
+                val = line.split(":", 1)[1].strip()
+                if val and val not in (">-", "|"):
+                    desc = val
+        if not desc:
+            # Try to grab the first indented line after description: >-
+            in_desc = False
+            for line in fm.splitlines():
+                if line.strip().startswith("description:"):
+                    in_desc = True
+                    continue
+                if in_desc and line.startswith("  ") and not line.strip().startswith("metadata"):
+                    desc = line.strip()
+                    break
+                elif in_desc and not line.startswith(" "):
+                    break
+        skills.append({"name": name, "description": desc})
+    return skills
+
+
+@app.get("/tools/inventory")
+async def get_tools_inventory(
+    authorization: str = Header(None),
+):
+    """
+    Inventario completo de tasks registradas en el Worker,
+    skills detectados, y categorización.
+    """
+    _authenticate(authorization)
+
+    tasks_list = []
+    categories: dict[str, int] = {}
+    for task_name in sorted(TASK_HANDLERS.keys()):
+        # Module = first segment (e.g. "notion" from "notion.add_comment")
+        parts = task_name.split(".")
+        module = parts[0]
+        # Category from mapping; for "windows.fs.*", also map to windows
+        category = _CATEGORY_MAP.get(module, module)
+        tasks_list.append({
+            "name": task_name,
+            "module": module,
+            "category": category,
+        })
+        categories[category] = categories.get(category, 0) + 1
+
+    skills = _detect_skills()
+
+    return {
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "total_tasks": len(tasks_list),
+        "tasks": tasks_list,
+        "skills": [s["name"] for s in skills],
+        "skills_detail": skills,
+        "categories": dict(sorted(categories.items())),
+    }
+
 @app.get("/tasks")
 async def list_tasks(
     authorization: str = Header(None),

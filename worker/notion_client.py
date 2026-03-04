@@ -569,3 +569,98 @@ def upsert_task(
             result = _check_response(resp, "create task")
             logger.info("Created task %s in Notion (status=%s)", task_id[:8], notion_status)
             return {"page_id": result["id"], "url": result.get("url", ""), "created": True}
+
+
+def create_report_page(
+    parent_page_id: str | None,
+    title: str,
+    content_blocks: list[dict[str, Any]],
+    sources: list[dict[str, Any]] | None = None,
+    queries: list[str] | None = None,
+    metadata: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """
+    Create a child page under a Notion page with a structured report.
+
+    Args:
+        parent_page_id: Parent page ID. Defaults to NOTION_CONTROL_ROOM_PAGE_ID.
+        title: Page title (e.g. "SIM Report: AI trends — 2026-03-04").
+        content_blocks: List of Notion block dicts (from notion_markdown.markdown_to_blocks).
+        sources: Optional list of source dicts (title, url).
+        queries: Optional list of search queries used.
+        metadata: Optional dict with extra metadata (team, topic, etc).
+
+    Returns:
+        {"page_id": "...", "page_url": "...", "ok": True}
+    """
+    config.require_notion_core()
+    if parent_page_id is None:
+        parent_page_id = config.NOTION_CONTROL_ROOM_PAGE_ID
+
+    # Build children blocks: content + sources + queries
+    children: list[dict[str, Any]] = []
+
+    # Main content
+    children.extend(content_blocks[:95])  # Leave room for sources/queries (max 100 children)
+
+    # Sources section
+    if sources:
+        children.append(_block_divider())
+        children.append(_block_heading2("Fuentes"))
+        for src in sources[:20]:
+            src_title = src.get("title", "Sin título")
+            src_url = src.get("url", "")
+            if src_url:
+                children.append(_block_bulleted(f"{src_title} — {src_url}"))
+            else:
+                children.append(_block_bulleted(src_title))
+
+    # Queries section
+    if queries:
+        children.append(_block_divider())
+        children.append(_block_heading3("Queries utilizadas"))
+        for q in queries[:15]:
+            children.append(_block_bulleted(q))
+
+    # Metadata callout
+    if metadata:
+        meta_parts = []
+        for k, v in metadata.items():
+            meta_parts.append(f"{k}: {v}")
+        children.append(_block_divider())
+        children.append(_block_callout(" | ".join(meta_parts), "📋", "gray_background"))
+
+    # Notion API max 100 children per request
+    payload = {
+        "parent": {"page_id": parent_page_id},
+        "properties": {
+            "title": {"title": [{"text": {"content": title[:2000]}}]},
+        },
+        "children": children[:100],
+    }
+
+    logger.info("Creating report page: %s under %s", title[:60], parent_page_id[:8])
+    with httpx.Client(timeout=TIMEOUT) as client:
+        resp = client.post(
+            f"{NOTION_BASE_URL}/pages",
+            headers=_headers(),
+            json=payload,
+        )
+    result = _check_response(resp, "create_report_page")
+    page_id = result["id"]
+    page_url = result.get("url", "")
+
+    # If more than 100 children, append the rest in batches
+    if len(children) > 100:
+        with httpx.Client(timeout=TIMEOUT) as client:
+            for i in range(100, len(children), 100):
+                batch = children[i:i + 100]
+                resp = client.patch(
+                    f"{NOTION_BASE_URL}/blocks/{page_id}/children",
+                    headers=_headers(),
+                    json={"children": batch},
+                )
+                _check_response(resp, "append report blocks")
+
+    logger.info("Created report page: %s (%s)", page_id, page_url)
+    return {"page_id": page_id, "page_url": page_url, "ok": True}

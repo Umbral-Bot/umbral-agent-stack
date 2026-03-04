@@ -4,11 +4,14 @@ Tasks: Notion integration handlers.
 - notion.write_transcript: crear página en Granola Inbox DB
 - notion.add_comment: agregar comentario en Control Room
 - notion.poll_comments: leer comentarios recientes
+- notion.create_report_page: crear página hija con reporte estructurado
 """
 
+from datetime import datetime, timezone
 from typing import Any, Dict
 
 from .. import notion_client
+from .notion_markdown import markdown_to_blocks
 
 
 def handle_notion_write_transcript(input_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -128,4 +131,45 @@ def handle_notion_update_dashboard(input_data: Dict[str, Any]) -> Dict[str, Any]
     return notion_client.update_dashboard_page(
         page_id=input_data.get("page_id"),
         metrics=metrics,
+    )
+
+
+def handle_notion_create_report_page(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Crea una página hija en la Control Room con un reporte completo.
+
+    Input:
+        parent_page_id (str, optional): ID de la página padre. Default: Control Room.
+        title (str, required): Título del reporte.
+        content (str, required): Contenido en markdown.
+        sources (list[dict], optional): Fuentes utilizadas (url, title).
+        metadata (dict, optional): Fecha, topic, team, etc.
+
+    Returns:
+        {"page_id": "...", "page_url": "...", "ok": True}
+    """
+    title = input_data.get("title", "").strip()
+    content = input_data.get("content", "").strip()
+    if not title:
+        raise ValueError("'title' is required in input")
+    if not content:
+        raise ValueError("'content' is required in input")
+
+    # Convert markdown content to Notion blocks
+    content_blocks = markdown_to_blocks(content)
+
+    sources = input_data.get("sources")
+    metadata = input_data.get("metadata", {})
+    queries = input_data.get("queries")
+
+    # Add generation timestamp to metadata
+    metadata.setdefault("generated_at", datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
+
+    return notion_client.create_report_page(
+        parent_page_id=input_data.get("parent_page_id"),
+        title=title,
+        content_blocks=content_blocks,
+        sources=sources,
+        queries=queries,
+        metadata=metadata,
     )

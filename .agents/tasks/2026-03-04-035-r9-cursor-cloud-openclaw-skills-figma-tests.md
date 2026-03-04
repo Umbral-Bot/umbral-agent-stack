@@ -4,7 +4,7 @@ title: "OpenClaw Skills + Figma Tests"
 assigned_to: cursor-agent-cloud
 branch: feat/cursor-cloud-skills-figma
 round: 9
-status: assigned
+status: done
 created: 2026-03-04
 ---
 

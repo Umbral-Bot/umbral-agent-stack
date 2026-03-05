@@ -33,6 +33,7 @@ def _get_all_skill_tasks() -> tuple[dict[str, set[str]], set[str]]:
     """Return (skill_name -> task_names, all_skill_tasks)."""
     skill_tasks: dict[str, set[str]] = {}
     all_tasks: set[str] = set()
+    handler_keys = set(TASK_HANDLERS.keys())
 
     if not SKILLS_DIR.is_dir():
         return {}, set()
@@ -40,8 +41,13 @@ def _get_all_skill_tasks() -> tuple[dict[str, set[str]], set[str]]:
     for skill_md in SKILLS_DIR.glob("*/SKILL.md"):
         skill_name = skill_md.parent.name
         tasks = _extract_task_names_from_skill(skill_md)
-        # Only keep tasks that actually exist in TASK_HANDLERS
-        valid_tasks = tasks & set(TASK_HANDLERS.keys())
+        valid_tasks = tasks & handler_keys
+
+        # Directory name matches: "ping" → task "ping", "llm-generate" → "llm.generate"
+        for candidate in (skill_name, skill_name.replace("-", ".")):
+            if candidate in handler_keys:
+                valid_tasks.add(candidate)
+
         skill_tasks[skill_name] = valid_tasks
         all_tasks |= valid_tasks
 

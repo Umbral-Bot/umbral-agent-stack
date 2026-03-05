@@ -575,6 +575,81 @@ def upsert_task(
             return {"page_id": result["id"], "url": result.get("url", ""), "created": True}
 
 
+def append_bitacora(
+    titulo: str,
+    fecha: str,
+    ronda: str,
+    tipo: str,
+    detalle: str = "",
+    referencia: str = "",
+    agente: str = "Cursor",
+    estado: str = "Completado",
+    database_id: str | None = None,
+) -> dict[str, Any]:
+    """
+    Inserta una fila en la Bitácora — Umbral Agent Stack (Notion DB).
+
+    Args:
+        titulo: Resumen breve del evento (título de la fila).
+        fecha: Fecha ISO del evento (YYYY-MM-DD).
+        ronda: Etiqueta de ronda (Pre-R11, R11, R12, R13, Hackathon, Ad-hoc).
+        tipo: Tipo de evento (Hito, PR mergeado, Decisión de diseño, Tarea creada,
+              Documentación, Skill creado, Bug fix, Otro).
+        detalle: Descripción ampliada (rich text).
+        referencia: URL a PR, archivo o documento relacionado.
+        agente: Agente responsable (Cursor, Codex, Copilot, Claude, Antigravity,
+                Cloud1-5, Manual).
+        estado: Estado del evento (Completado, En curso, Bloqueado, Pendiente).
+        database_id: ID de la DB Bitácora. Default: NOTION_BITACORA_DB_ID.
+
+    Returns:
+        {"page_id": "...", "url": "..."}
+    """
+    if not config.NOTION_API_KEY:
+        raise RuntimeError("NOTION_API_KEY not configured")
+
+    db_id = database_id or config.NOTION_BITACORA_DB_ID
+    if not db_id:
+        raise RuntimeError("NOTION_BITACORA_DB_ID not configured")
+
+    properties: dict[str, Any] = {
+        "Título": {"title": [{"text": {"content": titulo[:2000]}}]},
+        "Fecha": {"date": {"start": fecha}},
+        "Ronda": {"select": {"name": ronda}},
+        "Tipo": {"select": {"name": tipo}},
+    }
+
+    if detalle:
+        properties["Detalle"] = {
+            "rich_text": [{"type": "text", "text": {"content": detalle[:2000]}}]
+        }
+
+    if referencia:
+        properties["Referencia"] = {"url": referencia}
+
+    if agente:
+        properties["Agente"] = {"select": {"name": agente}}
+
+    if estado:
+        properties["Estado"] = {"select": {"name": estado}}
+
+    payload = {
+        "parent": {"database_id": db_id},
+        "properties": properties,
+    }
+
+    logger.info("Appending bitacora entry: %s (ronda=%s, tipo=%s)", titulo[:60], ronda, tipo)
+    with httpx.Client(timeout=TIMEOUT) as client:
+        resp = client.post(
+            f"{NOTION_BASE_URL}/pages",
+            headers=_headers(),
+            json=payload,
+        )
+    result = _check_response(resp, "append_bitacora")
+    logger.info("Bitacora entry created: %s", result.get("id"))
+    return {"page_id": result["id"], "url": result.get("url", "")}
+
+
 def create_report_page(
     parent_page_id: str | None,
     title: str,

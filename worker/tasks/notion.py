@@ -5,6 +5,7 @@ Tasks: Notion integration handlers.
 - notion.add_comment: agregar comentario en Control Room
 - notion.poll_comments: leer comentarios recientes
 - notion.create_report_page: crear página hija con reporte estructurado
+- notion.append_bitacora: insertar fila en Bitácora — Umbral Agent Stack DB
 """
 
 from datetime import datetime, timezone
@@ -131,6 +132,52 @@ def handle_notion_update_dashboard(input_data: Dict[str, Any]) -> Dict[str, Any]
     return notion_client.update_dashboard_page(
         page_id=input_data.get("page_id"),
         metrics=metrics,
+    )
+
+
+def handle_notion_append_bitacora(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Inserta una fila en la Bitácora — Umbral Agent Stack (Notion DB).
+
+    Input:
+        titulo (str, required): Resumen breve del evento.
+        fecha (str, required): Fecha ISO del evento (YYYY-MM-DD).
+        ronda (str, required): Etiqueta de ronda (Pre-R11, R11, R12, R13, Hackathon, Ad-hoc).
+        tipo (str, required): Tipo (Hito, PR mergeado, Decisión de diseño, Tarea creada,
+                              Documentación, Skill creado, Bug fix, Otro).
+        detalle (str, optional): Descripción ampliada.
+        referencia (str, optional): URL a PR, archivo o documento.
+        agente (str, optional): Agente responsable (default: "Cursor").
+        estado (str, optional): Estado (default: "Completado").
+        database_id (str, optional): Override del DB ID (default: NOTION_BITACORA_DB_ID).
+
+    Returns:
+        {"page_id": "...", "url": "..."}
+    """
+    titulo = input_data.get("titulo", "").strip()
+    fecha = input_data.get("fecha", "").strip()
+    ronda = input_data.get("ronda", "").strip()
+    tipo = input_data.get("tipo", "").strip()
+
+    if not titulo:
+        raise ValueError("'titulo' is required in input")
+    if not fecha:
+        raise ValueError("'fecha' is required in input")
+    if not ronda:
+        raise ValueError("'ronda' is required in input")
+    if not tipo:
+        raise ValueError("'tipo' is required in input")
+
+    return notion_client.append_bitacora(
+        titulo=titulo,
+        fecha=fecha,
+        ronda=ronda,
+        tipo=tipo,
+        detalle=input_data.get("detalle", ""),
+        referencia=input_data.get("referencia", ""),
+        agente=input_data.get("agente", "Cursor"),
+        estado=input_data.get("estado", "Completado"),
+        database_id=input_data.get("database_id"),
     )
 
 

@@ -15,6 +15,7 @@ from .notion import (
     handle_notion_upsert_task,
     handle_notion_update_dashboard,
     handle_notion_create_report_page,
+    handle_notion_append_bitacora,
 )
 from .windows import (
     handle_windows_pad_run_flow,
@@ -85,6 +86,7 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "llm.generate": handle_llm_generate,
     "composite.research_report": handle_composite_research_report,
     "notion.create_report_page": handle_notion_create_report_page,
+    "notion.append_bitacora": handle_notion_append_bitacora,
     "make.post_webhook": handle_make_post_webhook,
     "azure.audio.generate": handle_azure_audio_generate,
     "figma.get_file": handle_figma_get_file,

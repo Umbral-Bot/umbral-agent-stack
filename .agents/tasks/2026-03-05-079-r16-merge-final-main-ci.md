@@ -24,6 +24,18 @@ En `main` siguen 7 fallos en `test_document_generator` (dependencias) y 4 warnin
 
 ## Criterios de éxito
 
-- [ ] `main` con `pytest tests/` → 0 failed
-- [ ] Workflow de CI presente y en verde (o documentar por qué no)
-- [ ] PR mergeado o estado documentado en el board
+- [x] `main` con `pytest tests/` → 0 failed
+- [x] Workflow de CI presente y en verde (o documentar por qué no)
+- [x] PR mergeado o estado documentado en el board
+
+## Log
+
+### [codex] 2026-03-05 02:55:10 UTC
+- Mergeado PR de integración `#80` en `main` via GitHub CLI.
+- `gh pr view 80` confirma `state: MERGED` y merge commit `426214c2f35374b39238c99cdd2668672212fbf7`.
+- Ejecutado `python -m pip install -e ".[test]"`.
+- Ejecutado `python -m pytest tests/ -q` con resultado: `847 passed, 5 skipped, 0 failed`.
+- Verificado workflow `.github/workflows/test.yml` con trigger en `push` y `pull_request` a `main`.
+- Verificado CI en verde en `main`:
+  - Run `22699965930` (commit `426214c`) -> `success`
+  - Run `22699988909` (commit `1cbd22e`) -> `success`

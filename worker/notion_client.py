@@ -668,3 +668,82 @@ def create_report_page(
 
     logger.info("Created report page: %s (%s)", page_id, page_url)
     return {"page_id": page_id, "page_url": page_url, "ok": True}
+
+
+def _block_code(text: str, language: str = "plain text") -> dict[str, Any]:
+    """Create a code block (supports mermaid, python, etc.)."""
+    return {
+        "object": "block",
+        "type": "code",
+        "code": {
+            "rich_text": [{"type": "text", "text": {"content": text[:2000]}}],
+            "language": language,
+        },
+    }
+
+
+def append_blocks_to_page(page_id: str, blocks: list[dict[str, Any]]) -> dict[str, Any]:
+    """
+    Append Notion blocks to an existing page.
+
+    Args:
+        page_id: UUID of the page to append to.
+        blocks: List of Notion block dicts.
+
+    Returns:
+        {"blocks_appended": N, "page_id": "..."}
+    """
+    if not config.NOTION_API_KEY:
+        raise RuntimeError("NOTION_API_KEY not configured")
+
+    total = 0
+    with httpx.Client(timeout=TIMEOUT) as client:
+        for i in range(0, len(blocks), 100):
+            chunk = blocks[i : i + 100]
+            resp = client.patch(
+                f"{NOTION_BASE_URL}/blocks/{page_id}/children",
+                headers=_headers(),
+                json={"children": chunk},
+            )
+            _check_response(resp, "append_blocks_to_page")
+            total += len(chunk)
+
+    logger.info("Appended %d blocks to page %s", total, page_id[:8])
+    return {"blocks_appended": total, "page_id": page_id}
+
+
+def query_database(database_id: str, filter_obj: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+    """
+    Query a Notion database, handling pagination.
+
+    Args:
+        database_id: UUID of the database.
+        filter_obj: Optional Notion filter dict.
+
+    Returns:
+        List of page objects from the database.
+    """
+    if not config.NOTION_API_KEY:
+        raise RuntimeError("NOTION_API_KEY not configured")
+
+    results: list[dict[str, Any]] = []
+    payload: dict[str, Any] = {"page_size": 100}
+    if filter_obj:
+        payload["filter"] = filter_obj
+
+    with httpx.Client(timeout=TIMEOUT) as client:
+        while True:
+            resp = client.post(
+                f"{NOTION_BASE_URL}/databases/{database_id}/query",
+                headers=_headers(),
+                json=payload,
+            )
+            data = _check_response(resp, "query_database")
+            results.extend(data.get("results", []))
+            next_cursor = data.get("next_cursor")
+            if not next_cursor:
+                break
+            payload["start_cursor"] = next_cursor
+
+    logger.info("Queried database %s: %d results", database_id[:8], len(results))
+    return results

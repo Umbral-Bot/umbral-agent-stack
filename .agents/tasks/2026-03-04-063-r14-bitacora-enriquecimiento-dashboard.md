@@ -122,8 +122,30 @@ flowchart LR
 
 ## Criterios de éxito
 
-- [ ] Task `notion.enrich_bitacora_page` implementada (o equivalente)
-- [ ] Script `scripts/enrich_bitacora_pages.py` que enriquece páginas existentes
-- [ ] Cada página de la Bitácora tiene: resumen ampliado, al menos 1 diagrama Mermaid, detalle de archivos/tasks
-- [ ] Todo el contenido en español
-- [ ] PR abierto a `main`
+- [x] Task `notion.enrich_bitacora_page` implementada (o equivalente)
+- [x] Script `scripts/enrich_bitacora_pages.py` que enriquece páginas existentes
+- [x] Cada página de la Bitácora tiene: resumen ampliado, al menos 1 diagrama Mermaid, detalle de archivos/tasks
+- [x] Todo el contenido en español
+- [x] PR abierto a `main`
+
+---
+
+## Log
+
+### [cursor-agent-cloud] 2026-03-05 00:49
+- Implementada task `notion.enrich_bitacora_page` en `worker/tasks/notion.py`
+  - Soporta formato A (blocks) y formato B (sections)
+  - Convierte secciones a bloques Notion incluyendo Mermaid, tablas, bullets
+- Añadidos helpers en `worker/notion_client.py`:
+  - `_block_code(text, language)` — bloques de código (Mermaid, Python, etc.)
+  - `append_blocks_to_page(page_id, blocks)` — PATCH /blocks/{id}/children con paginación
+  - `query_database(database_id, filter_obj)` — POST /databases/{id}/query con paginación
+- Añadida config `NOTION_BITACORA_DB_ID` en `worker/config.py`
+- Handler registrado en `worker/tasks/__init__.py`
+- Creado `scripts/enrich_bitacora_pages.py`:
+  - Lista páginas de la Bitácora, extrae contexto de board.md, tasks/, gh pr list
+  - Genera resumen ampliado, diagrama Mermaid, tabla de tareas, tabla de PRs, archivos, timeline
+  - Soporta --dry-run, --limit, --page-id
+- 27 tests nuevos en `tests/test_notion_enrich_bitacora.py` (todos pasan)
+- 874 tests totales pasan (5 skipped)
+- Script ejecutado: 22 páginas enriquecidas, 0 errores

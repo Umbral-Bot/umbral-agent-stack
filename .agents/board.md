@@ -19,17 +19,16 @@
 | Quota Dashboard | ✅ GET /quota/status + reporte Notion |
 | Crons activos | 11 (dashboard, health, supervisor, poller, SIM x2, digest, SIM-make, E2E, OODA, scheduled-tasks) |
 | Tests | ✅ 463 passed en VPS |
-| Runbook operacional | [docs/62-operational-runbook.md](../docs/62-operational-runbook.md) |
 | PRs mergeados (hackathon) | 34 |
 | VM (Execution Plane) | ✅ v0.4.0 — 25 handlers — reconectada |
 
-## Ronda 13 — En curso
+## Ronda 12 — En curso
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|
-| 057 | Runbook operacional y checklist de gobernanza | cursor-agent-cloud | ✅ done |
+| 050 | Google Calendar + Gmail Worker Handlers | cursor-agent-cloud-1 | ✅ done |
 
-## Ronda 11 — En curso
+## Ronda 11 — Completada ✅
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|

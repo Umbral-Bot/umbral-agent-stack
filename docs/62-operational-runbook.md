@@ -328,9 +328,58 @@ curl -sf http://localhost:8088/health && echo "✅ Stack UP" || echo "❌ Stack 
 
 ---
 
+## 9. Scripts y docs recuperados (R16)
+
+> Contenido capitalizado desde ramas no mergeadas durante el cierre de R16.
+> Ver [analisis-contenido-perdido-r16.md](analisis-contenido-perdido-r16.md) para el análisis completo.
+
+### 9.1 Bitácora — Enriquecimiento de páginas Notion
+
+Scripts recuperados desde `cursor/bit-cora-contenido-enriquecido-4099`.
+
+| Script | Descripción | Uso |
+|--------|-------------|-----|
+| `scripts/enrich_bitacora_pages.py` | Enriquece páginas de Bitácora en Notion con métricas (commits, PRs, tests, archivos) | `PYTHONPATH=. python scripts/enrich_bitacora_pages.py` |
+| `scripts/add_resumen_amigable.py` | Agrega resúmenes no técnicos ("En pocas palabras") a cada página de Bitácora | `PYTHONPATH=. python scripts/add_resumen_amigable.py` |
+
+**Tests:** `tests/test_notion_enrich_bitacora.py`
+
+**Variables de entorno adicionales:**
+
+| Variable | Requerida | Descripción |
+|----------|-----------|-------------|
+| `NOTION_BITACORA_DB_ID` | Sí* | Database ID de la Bitácora en Notion |
+
+*Requerida solo para los scripts de enriquecimiento.
+
+**Documentación relacionada:** Si existe `docs/bitacora-scripts.md`, contiene detalles de uso y configuración.
+
+### 9.2 Browser Automation en VM
+
+Investigación y plan recuperados desde `feat/browser-automation-vm-research` (PR #88).
+
+| Documento | Descripción |
+|-----------|-------------|
+| [64-browser-automation-vm-plan.md](64-browser-automation-vm-plan.md) | Plan de arquitectura para browser automation en VM: matriz comparativa (Playwright vs Puppeteer vs Selenium), decisiones de diseño, requisitos de infraestructura |
+| `openclaw/.../browser-automation-vm/SKILL.md` | Skill knowledge-only de browser automation: conceptos, herramientas, patrones de integración |
+
+**Estado:** Investigación completada. Implementación diferida a sprint futuro.
+
+### 9.3 Guía de limpieza de ramas
+
+| Documento | Descripción |
+|-----------|-------------|
+| [guia-borrar-ramas-r16.md](guia-borrar-ramas-r16.md) | Comandos para borrar 25 ramas remotas obsoletas, categorizadas en 4 grupos (vacías, destructivas, recuperadas, evaluar) |
+| [ramas-recomendadas-borrar-r16.md](ramas-recomendadas-borrar-r16.md) | Lista resumida de ramas candidatas a borrar |
+| [r16-cierre-resumen.md](r16-cierre-resumen.md) | Resumen ejecutivo de cierre R16 (PRs #85–#90) |
+
+---
+
 ## Referencias
 
 - [08-operations-runbook.md](08-operations-runbook.md) — Runbook de OpenClaw (systemctl, reinicio, logs)
 - [09-troubleshooting.md](09-troubleshooting.md) — Troubleshooting específico (UI auth, providers, curl, Telegram)
 - [01-architecture-v2.3.md](01-architecture-v2.3.md) — Arquitectura del sistema
 - [07-worker-api-contract.md](07-worker-api-contract.md) — Contrato API del Worker
+- [analisis-contenido-perdido-r16.md](analisis-contenido-perdido-r16.md) — Análisis de ramas no mergeadas
+- [64-browser-automation-vm-plan.md](64-browser-automation-vm-plan.md) — Plan de browser automation en VM

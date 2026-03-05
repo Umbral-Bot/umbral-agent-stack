@@ -3,10 +3,35 @@ Umbral Worker — Centralized Configuration
 
 All environment variables are loaded here. Import from this module
 instead of calling os.environ directly.
+On Linux, if vars are missing from os.environ, we try loading from
+~/.config/openclaw/env (e.g. when Worker is started by cron with minimal env).
 """
 
 import os
+from pathlib import Path
 
+
+def _load_openclaw_env() -> None:
+    """Load ~/.config/openclaw/env into os.environ if not already set (Linux/VPS)."""
+    if os.name == "nt":
+        return
+    env_file = Path(os.environ.get("HOME", "")) / ".config/openclaw/env"
+    if not env_file.exists():
+        return
+    raw = env_file.read_text(encoding="utf-8", errors="ignore").replace("\x00", "")
+    for line in raw.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        k, _, v = line.partition("=")
+        k, v = k.strip(), v.strip().strip('"').strip("'").replace("\r", "")
+        if k.startswith("export "):
+            k = k[7:].strip()
+        if k and k not in os.environ:
+            os.environ.setdefault(k, v)
+
+
+_load_openclaw_env()
 
 # ---------------------------------------------------------------------------
 # Worker

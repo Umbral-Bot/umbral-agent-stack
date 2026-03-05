@@ -62,6 +62,12 @@ R16 cerrado — PRs mergeados: #85–#90. Docs R16/R17 mergeados: #91 (bitacora-
 
 R18 cerrada — dashboard Notion actualizado (PR #97).
 
+## Próxima ronda (pendientes)
+
+| ID | Tarea | Notas |
+|----|--------|-------|
+| — | Supervisor: aviso Notion al reiniciar Worker/Dispatcher | Actualmente "Failed to post Notion alert"; revisar `scripts/vps/supervisor.sh` y task `notion.add_comment`: page_id o destino correcto para que el alert se postee en Notion. |
+
 ## Ronda 12 — En curso
 
 | ID | Título | Asignado | Estado |

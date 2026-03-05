@@ -139,15 +139,21 @@ wc.notion_add_comment("Hello from VPS")
 wc.notion_poll_comments(since="2026-02-26T00:00:00Z")
 ```
 
-### Tests
+### Cómo ejecutar tests
 
 ```bash
+# Instalar dependencias de test
 pip install -r worker/requirements.txt
+pip install -r dispatcher/requirements.txt
 
-# Unit tests (fast, mocked — 380+ tests)
+# Tests unitarios (rápido, mockeado — 847+ tests)
 WORKER_TOKEN=test python -m pytest tests/ -v
 
-# E2E validation against live worker (16 tests)
+# Alternativa con editable install (si se configura pyproject.toml con extras)
+# pip install -e ".[test]"
+# WORKER_TOKEN=test pytest tests/
+
+# E2E validation contra worker real (16 tests)
 PYTHONPATH=. python scripts/e2e_validation.py
 
 # Smoke test post-deploy (<5s, 4 checks)
@@ -156,9 +162,11 @@ PYTHONPATH=. python scripts/smoke_test.py
 # Integration tests (full pipeline, 7 tests)
 PYTHONPATH=. python scripts/integration_test.py
 
-# E2E with Notion reporting
+# E2E con reporte a Notion
 PYTHONPATH=. python scripts/e2e_validation.py --notion
 ```
+
+> **CI:** Los tests corren automáticamente en GitHub Actions en cada push/PR a `main` (ver `.github/workflows/pytest.yml` — PR #79).
 
 ## 📂 Estructura del Repositorio
 
@@ -233,4 +241,6 @@ PYTHONPATH=. python scripts/e2e_validation.py --notion
 | **S6** | 📋 | Observabilidad (Langfuse + evals) |
 | **S7** | 📋 | Hardening transversal |
 | **Hackathon** | ✅ Hecho | Diagnóstico + E2E/Smoke/Integration tests + multi-model (Claude Code R6-R7) |
+| **R8–R13** | ✅ Hecho | Skills BIM/AEC, Granola, Document Gen, Calendar/Gmail, Governance, Runbook |
+| **R14–R16** | ✅ Hecho | pytest 847 passed, CI GitHub Actions, Power BI research, browser automation plan |
 

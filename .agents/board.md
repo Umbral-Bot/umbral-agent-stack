@@ -1,8 +1,8 @@
 # Agent Board — Umbral Agent Stack
 
-> Última actualización: 2026-03-04 por **cursor**
-> Sprint activo: **S6-S7**
-> **HACKATHON — RONDAS 6 y 7 EN CURSO**
+> Última actualización: 2026-03-05 por **cursor**
+> Sprint activo: **R16 — Cierre**
+> **Hackathon completado — R16 en cierre final**
 
 ## Estado del sistema
 
@@ -11,41 +11,82 @@
 | Protocolo inter-agentes | ✅ Activo |
 | VPS (Control Plane) | ✅ Redis + Dispatcher + Worker + 11 crons |
 | Notion Poller daemon | ✅ Corriendo (PID activo, polling cada 60s) |
-| Worker API | ✅ v0.4.0 — 27 handlers, 10+ endpoints |
+| Worker API | ✅ v0.4.0 — **42 handlers**, 10+ endpoints |
 | Multi-LLM | ✅ Gemini + OpenAI + Anthropic (model routing activo) |
 | Langfuse Tracing | ✅ Integrado (graceful degradation sin keys) |
 | Rate Limiting | ✅ 60 RPM (configurable via RATE_LIMIT_RPM) |
 | Scheduled Tasks | ✅ Redis sorted set, cron cada minuto |
 | Quota Dashboard | ✅ GET /quota/status + reporte Notion |
 | Crons activos | 11 (dashboard, health, supervisor, poller, SIM x2, digest, SIM-make, E2E, OODA, scheduled-tasks) |
-| Tests | ✅ 463 passed en VPS |
-| PRs mergeados (hackathon) | 34 |
-| VM (Execution Plane) | ✅ v0.4.0 — 25 handlers — reconectada |
+| Tests | ✅ **847 passed, 5 skipped** (pytest local, 2026-03-05) |
+| PRs mergeados (total) | **66** |
+| VM (Execution Plane) | ✅ v0.4.0 — 42 handlers — reconectada |
 
-## Ronda 16 — En curso
-
-| ID | Título | Asignado | Estado |
-|----|--------|----------|--------|
-| 077 | Cierre integración main — pytest verde, merge PRs 69–73 | — | 📋 pendiente |
-| 078 | Board + Bitácora estado final R16 | — | 📋 pendiente |
-
-## Ronda 12 — En curso
+## Ronda 16 — Cierre ✅
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|
-| 050 | Google Calendar + Gmail Worker Handlers | cursor-agent-cloud-1 | ✅ done |
+| 071 | Merge PRs R14–R15 + pytest verde en main | cursor | 🔄 PR #80 abierto |
+| 072 | Board + Bitácora + CI workflow + CONTRIBUTING | cursor | 🔄 PR #72 abierto |
+| 073 | Research librerías y formatos Power BI | cursor | ✅ done (PR #78) |
+| 074 | Integración main verde (pytest verde post-merge) | cursor | 🔄 PRs #74/#75 draft |
+| 075 | CI README verificación + GitHub Actions workflow | cursor | ✅ done (PR #79) |
+| 076 | Browser Automation VM — Plan + OpenClaw Skill | cursor | ✅ done (PR #81) |
+| 077 | Cierre integración main — pytest verde, merge PRs 69–73 | cursor | 🔄 PR #80 abierto |
+| 078 | Board + Bitácora estado final R16 | cursor | ✅ done |
+
+## Ronda 15 — Completada ✅
+
+| ID | Título | Asignado | Estado |
+|----|--------|----------|--------|
+| 065 | Merge PRs R14 + pytest verde | cursor | ✅ done (PRs #69–#71) |
+| 066 | CI pytest GitHub Actions | cursor | ✅ done (PR #73) |
+| 067 | Bitácora R15 en pocas palabras | cursor | ✅ done (PR #72) |
+| 068 | Diagrama pipeline Notion–OpenClaw | cursor | ✅ done (PR #72) |
+| 069 | Integración main pytest + CI | cursor | ✅ done (PR #74) |
+| 070 | Actualizar board estado real R8–R15 | cursor | ✅ done (PR #76) |
+
+## Ronda 14 — Completada ✅
+
+| ID | Título | Asignado | Estado |
+|----|--------|----------|--------|
+| 060 | Document generator: dependencias test en pyproject | cursor | ✅ done (PR #71) |
+| 061 | Skills coverage: tareas de una sola palabra (ping) | cursor | ✅ done (PR #70) |
+| 062 | Fix pytest/FastAPI deprecation warnings | cursor | ✅ done (PR #69) |
+| 063 | Bitácora enriquecida R14 | cursor | ✅ done (PR #72) |
+| 064 | Bitácora resumen no técnico | cursor | ✅ done (PR #72) |
+
+## Ronda 13 — Completada ✅
+
+| ID | Título | Asignado | Estado |
+|----|--------|----------|--------|
+| 055 | Auditoría trazabilidad y gobernanza | cursor | ✅ done (PR #68) |
+| 056 | Reporte métricas de gobernanza | cursor | ✅ done (PR #65) |
+| 057 | Runbook operacional | cursor | ✅ done (PR #66) |
+| 058 | OpsLogger mejoras auditoría | cursor | ✅ done (PR #67) |
+| 059 | Bitácora populate R13 | cursor | ✅ done |
+
+## Ronda 12 — Completada ✅
+
+| ID | Título | Asignado | Estado |
+|----|--------|----------|--------|
+| 050 | Google Calendar + Gmail Worker Handlers | cursor | ✅ done (PR #61) |
+| 051 | Granola VM Service — Watcher PowerShell | cursor | ✅ done (PR #60) |
+| 052 | BIM Skills IFC/Speckle mejorado | cursor | ✅ done (PR #62) |
+| 053 | Skills Audit + Pytest Fixes + 100% Coverage | cursor | ✅ done (PR #63) |
+| 054 | RRSS Pipeline con n8n — diseño | cursor | ✅ done (PR #64) |
 
 ## Ronda 11 — Completada ✅
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|
-| 042 | Skills BIM/AEC — Revit, Dynamo, Rhino, Navisworks, ACC, KUKA | cursor-agent-cloud-1 | ✅ done (PR #52) |
+| 042 | Skills BIM/AEC — Revit, Dynamo, Rhino, Navisworks, ACC, KUKA | cursor | ✅ done (PR #52) |
 
 ## Ronda 9 — Completada ✅
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|
-| 035 | OpenClaw Skills + Figma Tests | cursor-agent-cloud | ✅ done |
+| 035 | OpenClaw Skills + Figma Tests | cursor | ✅ done (PR #47) |
 
 ## Ronda 7 — Completada ✅
 
@@ -184,9 +225,9 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 | 8:30, 14:30, 20:30 | sim-report-cron.sh | SIM report (LLM + Notion) |
 | 22:00 | daily-digest-cron.sh | Digest diario (Redis → LLM → Notion) |
 
-## Worker v0.4.0 — 28 handlers
+## Worker v0.4.0 — 42 handlers
 
-`ping` · `notion.*` (6) · `windows.*` (6) · `windows.fs.*` (5) · `system.*` (2) · `linear.*` (3) · `research.web` · `llm.generate` · `composite.research_report` · `make.post_webhook` · `observability.*` (2)
+`ping` · `notion.*` (7) · `windows.*` (6) · `windows.fs.*` (5) · `system.*` (2) · `linear.*` (3) · `research.web` · `llm.generate` · `composite.research_report` · `make.post_webhook` · `azure.audio.generate` · `figma.*` (5) · `document.*` (3) · `granola.*` (2) · `google.calendar.*` (2) · `gmail.*` (2)
 
 ## Pendientes explícitamente diferidos
 

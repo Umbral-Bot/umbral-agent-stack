@@ -25,7 +25,19 @@ Tras las entregas de R16 (browser automation #81, Power BI #78, integración #80
 
 ## Criterios de éxito
 
-- [ ] Board actualizado con R16 y números reales
-- [ ] Entrada en Bitácora del cierre R16
-- [ ] README/CONTRIBUTING con instrucciones de tests (si no estaban)
+- [x] Board actualizado con R16 y números reales
+- [x] Entrada en Bitácora del cierre R16
+- [x] README/CONTRIBUTING con instrucciones de tests (si no estaban)
 - [ ] PR abierto a `main`
+
+## Log
+
+**2026-03-05 — cursor (Cloud Agent)**
+
+- Contados 42 handlers en `worker/tasks/__init__.py`.
+- Tests: 847 passed, 5 skipped (pytest local 2026-03-05).
+- PRs mergeados: 66 totales.
+- Board `.agents/board.md` actualizado: sección R16 con tareas 071–078 y estados reales, secciones R13/R14/R15 añadidas, "Estado del sistema" con números reales (42 handlers, 847 tests, 66 PRs).
+- Bitácora Notion: entrada creada en DB `85f89758684744fb9f14076e7ba0930e` (ID `31a5f443-fb5c-8140-84aa-c6b636e2edb3`).
+- README.md: sección "Cómo ejecutar tests" actualizada (847+ tests, instrucciones CI, referencia a PR #79).
+- Status: ✅ done

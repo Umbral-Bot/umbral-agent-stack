@@ -1,6 +1,6 @@
 # Agent Board — Umbral Agent Stack
 
-> Última actualización: 2026-03-05 por **cursor**
+> Última actualización: 2026-03-04 por **cursor**
 > Sprint activo: **S6-S7**
 > **HACKATHON — RONDAS 6 y 7 EN CURSO**
 
@@ -22,13 +22,13 @@
 | PRs mergeados (hackathon) | 34 |
 | VM (Execution Plane) | ✅ v0.4.0 — 25 handlers — reconectada |
 
-## Ronda 13 — En curso
+## Ronda 12 — En curso
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|
-| 055 | Auditoría de trazabilidad y gobernanza | cursor-agent-cloud | ✅ done |
+| 050 | Google Calendar + Gmail Worker Handlers | cursor-agent-cloud-1 | ✅ done |
 
-## Ronda 11 — En curso
+## Ronda 11 — Completada ✅
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|

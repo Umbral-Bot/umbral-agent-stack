@@ -62,11 +62,20 @@ R16 cerrado — PRs mergeados: #85–#90. Docs R16/R17 mergeados: #91 (bitacora-
 
 R18 cerrada — dashboard Notion actualizado (PR #97).
 
+## Ronda 19 — Cerrada
+
+| ID | Tarea | Estado |
+|----|--------|--------|
+| 096 | Supervisor: verificar aviso Notion | ✅ done — POST /run, sleep 4, JSON seguro; aviso operativo en VPS |
+| 097 | Supervisor: post_notion_alert() + NOTION_SUPERVISOR_ALERT_PAGE_ID | ✅ done — integrado en main (67733e4). PR #99 cerrado como Superseded |
+
+**Nota:** Para mantener la Control Room solo para comunicación, definir `NOTION_SUPERVISOR_ALERT_PAGE_ID` (página aparte, ej. "Alertas supervisor") en la VPS; ver runbook §1.4.
+
 ## Próxima ronda (pendientes)
 
 | ID | Tarea | Notas |
 |----|--------|-------|
-| — | Supervisor: aviso Notion al reiniciar Worker/Dispatcher | Actualmente "Failed to post Notion alert"; revisar `scripts/vps/supervisor.sh` y task `notion.add_comment`: page_id o destino correcto para que el alert se postee en Notion. |
+| — | (pendiente) | Ver board para siguiente sprint |
 
 ## Ronda 12 — En curso
 

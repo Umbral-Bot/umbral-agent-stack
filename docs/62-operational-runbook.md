@@ -46,8 +46,8 @@ Archivo de configuración en VPS: `~/.config/openclaw/env`
 | `WORKER_URL_VM` | No | URL del Worker en VM (Execution Plane) |
 | `NOTION_API_KEY` | Sí* | API key de Notion |
 | `NOTION_DASHBOARD_PAGE_ID` | Sí* | Page ID del dashboard en Notion |
-| `NOTION_CONTROL_ROOM_PAGE_ID` | Sí* (aviso supervisor) | Page ID de la Control Room; el supervisor lo usa para postear el alert cuando reinicia Worker/Dispatcher |
-| `NOTION_SUPERVISOR_ALERT_PAGE_ID` | No | Page ID donde el supervisor postea el aviso de reinicio; si no se define, se usa NOTION_CONTROL_ROOM_PAGE_ID |
+| `NOTION_CONTROL_ROOM_PAGE_ID` | Sí* | Page ID de la **Control Room** (solo comunicación Rick/Enlace/David; no usar para alertas automáticas) |
+| `NOTION_SUPERVISOR_ALERT_PAGE_ID` | Recomendado | Page ID donde el supervisor postea el aviso de reinicio. **Definir una página aparte** (ej. "Alertas supervisor") para no llenar la Control Room de comentarios automáticos; si no se define, los avisos van a NOTION_CONTROL_ROOM_PAGE_ID. |
 | `NOTION_GRANOLA_DB_ID` | No | Database ID para Granola |
 | `LANGFUSE_PUBLIC_KEY` | No | Clave pública de Langfuse (graceful degradation sin ella) |
 | `LANGFUSE_SECRET_KEY` | No | Clave secreta de Langfuse |
@@ -58,6 +58,8 @@ Archivo de configuración en VPS: `~/.config/openclaw/env`
 | `ANTHROPIC_API_KEY` | No | API key de Anthropic |
 
 *Requeridas para funcionalidades de Notion; sin ellas solo `ping` funciona completamente. Para que el aviso a Notion del supervisor funcione, el Worker debe tener `NOTION_API_KEY` y `NOTION_CONTROL_ROOM_PAGE_ID` (o `NOTION_SUPERVISOR_ALERT_PAGE_ID` si el script lo soporta) en su entorno al arrancar.
+
+**Control Room solo para comunicación:** Para no llenar la Control Room de avisos automáticos (reinicios del supervisor), crear en Notion una página dedicada (ej. "Alertas supervisor" u "Ops") y definir `NOTION_SUPERVISOR_ALERT_PAGE_ID` con su ID en `~/.config/openclaw/env` en la VPS. Conectar la misma integración a esa página (••• → Add connections). Los avisos de reinicio irán ahí y la Control Room queda solo para Rick/Enlace/David.
 
 ### 1.5 Notion: conectar la integración a la página
 
@@ -322,7 +324,48 @@ curl -sf http://localhost:8088/health && echo "✅ Stack UP" || echo "❌ Stack 
 
 ---
 
-## 7. Archivos de configuración
+## 7. Verificación VPS y VM (¿todo al día con el repo?)
+
+Ejecutar periódicamente para comprobar que no falte `git pull` ni dependencias.
+
+### 7.1 VPS
+
+```bash
+cd ~/umbral-agent-stack
+git fetch origin
+git status          # ¿Hay cambios locales sin commit?
+git log -1 --oneline
+git log origin/main -1 --oneline   # Si son distintos, hay que pull
+git pull origin main
+pip3 install -r worker/requirements.txt   # Por si se añadieron deps (ej. requests)
+curl -s http://127.0.0.1:8088/health | head -1
+bash scripts/vps/supervisor.sh     # Ver Redis, Worker, Dispatcher OK
+```
+
+Si después del pull el Worker falla al arrancar (ej. `ModuleNotFoundError`), instalar deps y reiniciar: `pip3 install -r worker/requirements.txt` y `bash scripts/vps/supervisor.sh` (o el método que uses para el Worker).
+
+### 7.2 VM (Execution Plane, Windows)
+
+En la VM donde corre el Worker (NSSM / servicio `openclaw-worker`):
+
+```powershell
+cd C:\GitHub\umbral-agent-stack
+git fetch origin
+git status
+git log -1 --oneline
+git log origin/main -1 --oneline
+git pull origin main
+python -m pip install -r worker/requirements.txt
+# Reiniciar el servicio para cargar código nuevo:
+nssm restart openclaw-worker
+curl -s http://localhost:8088/health
+```
+
+Si el repo en la VM está en otra ruta, ajustar `cd`. La VPS usa `WORKER_URL_VM` para enviar tareas improvement/lab a esta VM cuando está online.
+
+---
+
+## 8. Archivos de configuración
 
 | Archivo | Propósito | Ubicación VPS |
 |---------|-----------|---------------|
@@ -333,7 +376,7 @@ curl -sf http://localhost:8088/health && echo "✅ Stack UP" || echo "❌ Stack 
 
 ---
 
-## 8. Contactos y escalación
+## 9. Contactos y escalación
 
 | Nivel | Acción |
 |-------|--------|
@@ -343,12 +386,12 @@ curl -sf http://localhost:8088/health && echo "✅ Stack UP" || echo "❌ Stack 
 
 ---
 
-## 9. Scripts y docs recuperados (R16)
+## 10. Scripts y docs recuperados (R16)
 
 > Contenido capitalizado desde ramas no mergeadas durante el cierre de R16.
 > Ver [analisis-contenido-perdido-r16.md](analisis-contenido-perdido-r16.md) para el análisis completo.
 
-### 9.1 Bitácora — Enriquecimiento de páginas Notion
+### 10.1 Bitácora — Enriquecimiento de páginas Notion
 
 Scripts recuperados desde `cursor/bit-cora-contenido-enriquecido-4099`.
 
@@ -369,7 +412,7 @@ Scripts recuperados desde `cursor/bit-cora-contenido-enriquecido-4099`.
 
 **Documentación relacionada:** Si existe `docs/bitacora-scripts.md`, contiene detalles de uso y configuración.
 
-### 9.2 Browser Automation en VM
+### 10.2 Browser Automation en VM
 
 Investigación y plan recuperados desde `feat/browser-automation-vm-research` (PR #88).
 

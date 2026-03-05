@@ -2,6 +2,8 @@
 
 > Cómo se coordinan el agente de Notion **"Enlace Notion ↔ Rick"** y el Control Plane (Rick) vía comentarios y el poller.
 > Actualizado: 2026-03-04 (post-hackathon).
+>
+> **Para estado operativo y capacidades actuales de Rick:** [docs/rick-estado-y-capacidades.md](rick-estado-y-capacidades.md).
 
 ## Estado actual (post-hackathon)
 

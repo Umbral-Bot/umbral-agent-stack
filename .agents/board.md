@@ -22,7 +22,13 @@
 | PRs mergeados (hackathon) | 34 |
 | VM (Execution Plane) | ✅ v0.4.0 — 25 handlers — reconectada |
 
-## Ronda 12 — En curso
+## Ronda 16 — En curso
+
+| ID | Título | Asignado | Estado |
+|----|--------|----------|--------|
+| 075 | Verificación CI y README/CONTRIBUTING | cursor-agent-cloud | 🔄 in progress |
+
+## Ronda 12 — Completada ✅
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|

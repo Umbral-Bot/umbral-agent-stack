@@ -1,5 +1,7 @@
 # Umbral Agent Stack
 
+[![Tests](https://github.com/Umbral-Bot/umbral-agent-stack/actions/workflows/pytest.yml/badge.svg)](https://github.com/Umbral-Bot/umbral-agent-stack/actions/workflows/pytest.yml)
+
 > Sistema multi-agente, multi-modelo: **Rick** (meta-orquestador) gestiona equipos de agentes AI en una arquitectura split — Control Plane (VPS 24/7) + Execution Plane (VM Windows) — conectados por Tailscale, coordinados vía Notion y Redis.
 
 ---
@@ -141,22 +143,27 @@ wc.notion_poll_comments(since="2026-02-26T00:00:00Z")
 
 ### Tests
 
-```bash
-pip install -r worker/requirements.txt
+> CI automático: cada push/PR a `main` ejecuta pytest vía [GitHub Actions](.github/workflows/pytest.yml).
 
-# Unit tests (fast, mocked — 380+ tests)
+```bash
+# 1. Instalar dependencias
+pip install -r worker/requirements.txt
+pip install -r dispatcher/requirements.txt
+pip install fakeredis
+
+# 2. Unit tests (fast, mocked — 840+ tests)
 WORKER_TOKEN=test python -m pytest tests/ -v
 
-# E2E validation against live worker (16 tests)
+# 3. E2E validation against live worker (16 tests)
 PYTHONPATH=. python scripts/e2e_validation.py
 
-# Smoke test post-deploy (<5s, 4 checks)
+# 4. Smoke test post-deploy (<5s, 4 checks)
 PYTHONPATH=. python scripts/smoke_test.py
 
-# Integration tests (full pipeline, 7 tests)
+# 5. Integration tests (full pipeline, 7 tests)
 PYTHONPATH=. python scripts/integration_test.py
 
-# E2E with Notion reporting
+# 6. E2E with Notion reporting
 PYTHONPATH=. python scripts/e2e_validation.py --notion
 ```
 

@@ -24,6 +24,16 @@ Tras la integración (task 074), debe quedar comprobado que: (1) el CI está en 
 
 ## Criterios de éxito
 
-- [ ] CI presente y pasando en main (o en el PR que lo añade)  
-- [ ] README o CONTRIBUTING con instrucciones de tests  
-- [ ] PR abierto a main (o tarea cerrada si todo ya está mergeado)  
+- [x] CI presente y pasando en main (o en el PR que lo añade)  
+- [x] README o CONTRIBUTING con instrucciones de tests  
+- [x] PR abierto a main (o tarea cerrada si todo ya está mergeado)  
+
+---
+
+## Log
+
+### 2026-03-05 — cursor-agent-cloud
+
+1. **CI creado**: `.github/workflows/pytest.yml` — triggers en push/PR a main, Python 3.12, instala deps de worker + dispatcher + fakeredis, ejecuta `pytest tests/ -v` con `WORKER_TOKEN=test`.
+2. **README actualizado**: Badge de CI añadido al inicio. Sección Tests ampliada con instrucciones completas (install deps + fakeredis + pytest) y enlace al workflow.
+3. **Verificación local**: 847 passed, 5 skipped, 4 warnings en 5.52s.

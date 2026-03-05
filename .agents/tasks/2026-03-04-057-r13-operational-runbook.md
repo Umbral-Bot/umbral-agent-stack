@@ -75,9 +75,30 @@ Agregar referencia al runbook en la sección de estado del sistema:
 
 ## Criterios de éxito
 
-- [ ] `docs/62-operational-runbook.md` — documento completo
-- [ ] Procedimientos de mantenimiento documentados
-- [ ] Checklist de gobernanza incluido
-- [ ] Sección de troubleshooting
-- [ ] Board actualizado
-- [ ] PR abierto a `main`
+- [x] `docs/62-operational-runbook.md` — documento completo
+- [x] Procedimientos de mantenimiento documentados
+- [x] Checklist de gobernanza incluido
+- [x] Sección de troubleshooting
+- [x] Board actualizado
+- [x] PR abierto a `main`
+
+## Log
+
+### [cursor-agent-cloud] 2026-03-05 12:00
+
+**Archivos creados/modificados:**
+- `docs/62-operational-runbook.md` — Runbook operacional completo con 8 secciones
+- `.agents/board.md` — Agregada referencia al runbook en estado del sistema + ronda 13
+- `.agents/tasks/2026-03-04-057-r13-operational-runbook.md` — Marcada como done
+
+**Contenido del runbook:**
+1. Procedimientos de mantenimiento (diario/semanal/mensual) con comandos exactos y env vars
+2. Tabla de 12 crons activos en VPS
+3. Checklist de gobernanza (6 categorías: métricas, fallos, observabilidad, cuotas, seguridad, Notion)
+4. Tabla de 12 endpoints API con ejemplos curl
+5. Troubleshooting (9 escenarios con pasos detallados)
+6. Flujos de verificación rápida (health check script + restart completo)
+7. Archivos de configuración
+8. Contactos y escalación
+
+**PR:** Abierto a main desde `feat/operational-runbook`

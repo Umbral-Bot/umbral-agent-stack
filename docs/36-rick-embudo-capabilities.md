@@ -22,7 +22,7 @@ Funciones que Rick puede usar o a las que puedes darle acceso para el embudo de 
 
 | Función | Para qué sirve | Cómo habilitarla |
 |--------|----------------|------------------|
-| **Notion (ya tiene)** | Dashboard, tareas, auditoría, mensajes para David | `NOTION_API_KEY_RICK`, bases y páginas en config |
+| **Notion (ya tiene)** | Dashboard, tareas, auditoría, mensajes para David | `NOTION_API_KEY`, bases y páginas en config (ver [auditoría Notion](auditoria-notion-env-vars.md)) |
 | **Linear (ya tiene)** | Issues por iniciativa, asignación, roadmap | `LINEAR_API_KEY`, `linear.create_issue`, equipos |
 | **Worker VM + windows.fs** | Entregables en Drive (G:\...), informes, bundles | Tareas `windows.fs.*`; servicio NSSM con usuario que ve G: |
 | **GitHub** | PRs de mejoras, documentación, código del stack | `GITHUB_TOKEN` + deploy key SSH (doc 34) |

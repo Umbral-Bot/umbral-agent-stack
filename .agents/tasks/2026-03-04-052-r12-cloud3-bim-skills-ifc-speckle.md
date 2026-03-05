@@ -182,11 +182,11 @@ Crear `tests/test_bim_skills.py` con tests de validación:
 
 ## Criterios de éxito
 
-- [ ] `openclaw/workspace-templates/skills/ifc-python/SKILL.md` — completo con ejemplos
-- [ ] `openclaw/workspace-templates/skills/speckle-dalux-powerbi/SKILL.md` — mejorado
-- [ ] `openclaw/workspace-templates/skills/bim-coordination/SKILL.md` — nuevo
-- [ ] `scripts/create_docx_templates.py` — actualizado para generar templates con contenido real
-- [ ] `worker/templates/documents/propuesta_bim.docx` — regenerado con estructura BIM completa
-- [ ] `worker/templates/documents/cotizacion_bim.docx` — regenerado con tabla de ítems
-- [ ] `tests/test_bim_skills.py` — 9+ tests
-- [ ] PR abierto a `main`
+- [x] `openclaw/workspace-templates/skills/ifc-python/SKILL.md` — completo con ejemplos
+- [x] `openclaw/workspace-templates/skills/speckle-dalux-powerbi/SKILL.md` — mejorado
+- [x] `openclaw/workspace-templates/skills/bim-coordination/SKILL.md` — nuevo
+- [x] `scripts/create_docx_templates.py` — actualizado para generar templates con contenido real
+- [x] `worker/templates/documents/propuesta_bim.docx` — regenerado con estructura BIM completa
+- [x] `worker/templates/documents/cotizacion_bim.docx` — regenerado con tabla de ítems
+- [x] `tests/test_bim_skills.py` — 13 tests (9+ requeridos)
+- [x] PR abierto a `main` — PR #62

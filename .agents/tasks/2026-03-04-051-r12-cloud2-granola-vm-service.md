@@ -193,12 +193,16 @@ Crear `tests/test_granola_watcher.py` con al menos 10 tests:
 
 ## Criterios de éxito
 
-- [ ] `scripts/vm/setup_granola_watcher.ps1` — instalador completo
-- [ ] `scripts/vm/uninstall_granola_watcher.ps1` — desinstalador
-- [ ] `scripts/vm/test_granola_watcher.ps1` — smoke test
-- [ ] `scripts/vm/granola_watcher_env_loader.py` — cargador de .env
-- [ ] `docs/51-granola-vm-setup.md` — guía en español
-- [ ] `granola_watcher.py` actualizado con logging a archivo y retry
-- [ ] `.env.example` actualizado
-- [ ] `tests/test_granola_watcher.py` con 10+ tests
-- [ ] PR abierto a `main`
+- [x] `scripts/vm/setup_granola_watcher.ps1` — instalador completo
+- [x] `scripts/vm/uninstall_granola_watcher.ps1` — desinstalador
+- [x] `scripts/vm/test_granola_watcher.ps1` — smoke test
+- [x] `scripts/vm/granola_watcher_env_loader.py` — cargador de .env
+- [x] `docs/51-granola-vm-setup.md` — guía en español
+- [x] `granola_watcher.py` actualizado con logging a archivo y retry
+- [x] `.env.example` actualizado
+- [x] `tests/test_granola_watcher.py` con 17 tests (10 requeridos + 7 extras)
+- [x] PR abierto a `main`
+
+## Log
+
+- **2026-03-04 cursor-agent-cloud-2**: Implementación completa. 17 tests pasan. PR abierto.

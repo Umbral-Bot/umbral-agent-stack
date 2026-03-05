@@ -3,6 +3,8 @@
 > Documento maestro para mantenimiento, gobernanza y troubleshooting de Umbral Agent Stack.
 > Complementa [08-operations-runbook.md](08-operations-runbook.md) (OpenClaw) y [09-troubleshooting.md](09-troubleshooting.md).
 
+**VPS/Linux:** En Debian/Ubuntu no existe el comando `python`; usar siempre `python3` para scripts y módulos.
+
 ---
 
 ## 1. Procedimientos de mantenimiento
@@ -12,25 +14,25 @@
 | Procedimiento | Comando / Script | Qué verificar | Notas |
 |---------------|------------------|---------------|-------|
 | Verificar salud de servicios | `bash scripts/vps/supervisor.sh` | Redis, Worker y Dispatcher UP; auto-restart si caídos | Cron `*/5 min` ya lo ejecuta |
-| Dashboard Notion | `PYTHONPATH=. python scripts/dashboard_report_vps.py` | Tareas recientes, métricas de salud, estado de Redis | Cron `*/15 min`; usar `--force` para forzar actualización |
-| E2E validation | `PYTHONPATH=. python scripts/e2e_validation.py` | health, ping, research.web, llm.generate, enqueue, task history, Notion, Redis, quota, routing | Cron diario a las 06:00; `--notion` para postear resultados |
-| Smoke test rápido | `PYTHONPATH=. python scripts/smoke_test.py` | Worker /health, ping, Redis, quota status | Para verificación rápida ad-hoc |
+| Dashboard Notion | `PYTHONPATH=. python3 scripts/dashboard_report_vps.py` | Tareas recientes, métricas de salud, estado de Redis | Cron `*/15 min`; usar `--force` para forzar actualización |
+| E2E validation | `PYTHONPATH=. python3 scripts/e2e_validation.py` | health, ping, research.web, llm.generate, enqueue, task history, Notion, Redis, quota, routing | Cron diario a las 06:00; `--notion` para postear resultados |
+| Smoke test rápido | `PYTHONPATH=. python3 scripts/smoke_test.py` | Worker /health, ping, Redis, quota status | Para verificación rápida ad-hoc (VPS: usar `python3`) |
 | Health check infraestructura | `bash scripts/vps/health-check.sh` | Redis, Worker, Dispatcher, ops_log | Cron `*/30 min` |
 
 ### 1.2 Semanal
 
 | Procedimiento | Comando / Script | Qué verificar | Notas |
 |---------------|------------------|---------------|-------|
-| Quota report | `PYTHONPATH=. python scripts/quota_usage_report.py --notion` | Uso vs límites por provider, subutilización | `--hours 168 --all` para semana completa |
-| OODA report | `PYTHONPATH=. python scripts/ooda_report.py --format markdown` | Resumen semanal: tareas, éxito/fallo, tokens, costo Langfuse | `--week-ago 1` para semana anterior |
-| Stack verification | `PYTHONPATH=. python scripts/verify_stack_vps.py` | Env vars, Worker, Redis, Linear, dashboard | Verificación integral del stack |
+| Quota report | `PYTHONPATH=. python3 scripts/quota_usage_report.py --notion` | Uso vs límites por provider, subutilización | `--hours 168 --all` para semana completa |
+| OODA report | `PYTHONPATH=. python3 scripts/ooda_report.py --format markdown` | Resumen semanal: tareas, éxito/fallo, tokens, costo Langfuse | `--week-ago 1` para semana anterior |
+| Stack verification | `PYTHONPATH=. python3 scripts/verify_stack_vps.py` | Env vars, Worker, Redis, Linear, dashboard | Verificación integral del stack (VPS: usar `python3`) |
 
 ### 1.3 Mensual
 
 | Procedimiento | Comando / Script | Qué verificar | Notas |
 |---------------|------------------|---------------|-------|
-| Secrets audit | `python scripts/secrets_audit.py` | Sin secretos expuestos en código fuente | `--ci` para integración continua (exit 1 si hay hallazgos) |
-| Secrets management | `python scripts/manage_secrets.py audit` | Estado de secretos cifrados y gestión de claves | Subcomandos: `genkey`, `encrypt`, `audit`, `list` |
+| Secrets audit | `python3 scripts/secrets_audit.py` | Sin secretos expuestos en código fuente | `--ci` para integración continua (exit 1 si hay hallazgos); VPS: usar `python3` |
+| Secrets management | `python3 scripts/manage_secrets.py audit` | Estado de secretos cifrados y gestión de claves | Subcomandos: `genkey`, `encrypt`, `audit`, `list` |
 | Revisar quota_policy.yaml | Editar `config/quota_policy.yaml` | Límites alineados con uso real, routing óptimo | Ajustar `warn` y `restrict` según tendencias |
 | Revisar teams.yaml | Editar `config/teams.yaml` | Equipos y routing por equipo vigentes | — |
 
@@ -111,7 +113,7 @@ Ejecutar semanalmente (o antes de cada revisión de estrategia) para evaluar la 
 
 ### 3.1 Métricas de operación
 
-- [ ] Ejecutar OODA report: `PYTHONPATH=. python scripts/ooda_report.py --format markdown`
+- [ ] Ejecutar OODA report: `PYTHONPATH=. python3 scripts/ooda_report.py --format markdown`
 - [ ] Revisar tasa de éxito global y por equipo (campo `status` en task history)
 - [ ] Revisar uso de modelos: ¿el routing usa los providers esperados según `config/quota_policy.yaml`?
 - [ ] Revisar distribución de tasks por tipo (research, llm, composite, notion, etc.)
@@ -131,14 +133,14 @@ Ejecutar semanalmente (o antes de cada revisión de estrategia) para evaluar la 
 
 ### 3.4 Cuotas y recursos
 
-- [ ] Ejecutar quota report: `PYTHONPATH=. python scripts/quota_usage_report.py --hours 168 --all`
+- [ ] Ejecutar quota report: `PYTHONPATH=. python3 scripts/quota_usage_report.py --hours 168 --all`
 - [ ] ¿Algún provider supera el umbral `warn`? → evaluar redistribución de routing
 - [ ] ¿Algún provider subutilizado? → evaluar reasignar tráfico
 - [ ] Revisar `GET /quota/status`: `curl -H "Authorization: Bearer $WORKER_TOKEN" "$WORKER_URL/quota/status"`
 
 ### 3.5 Seguridad
 
-- [ ] Ejecutar secrets audit: `python scripts/secrets_audit.py`
+- [ ] Ejecutar secrets audit: `python3 scripts/secrets_audit.py`
 - [ ] Verificar que `.env` no está trackeado en git
 - [ ] Revisar permisos de acceso a Notion, Linear, y APIs externas
 - [ ] Verificar que `WORKER_TOKEN` no aparece en logs expuestos
@@ -194,7 +196,7 @@ Todas las rutas (excepto `/health`) requieren header `Authorization: Bearer <WOR
 | 2 | Verificar proceso: `ps aux \| grep uvicorn` |
 | 3 | Revisar logs: `tail -100 /tmp/supervisor.log` |
 | 4 | Restart vía supervisor: `bash scripts/vps/supervisor.sh` |
-| 5 | Restart manual: `source .venv/bin/activate && WORKER_TOKEN=... python -m uvicorn worker.app:app --host 0.0.0.0 --port 8088` |
+| 5 | Restart manual: `source .venv/bin/activate && WORKER_TOKEN=... python3 -m uvicorn worker.app:app --host 0.0.0.0 --port 8088` |
 
 ### 5.2 Redis down
 
@@ -213,7 +215,7 @@ Todas las rutas (excepto `/health`) requieren header `Authorization: Bearer <WOR
 | 1 | Verificar que Redis está UP: `redis-cli ping` |
 | 2 | Verificar que el Worker está UP: `curl $WORKER_URL/health` |
 | 3 | Verificar proceso Dispatcher: `ps aux \| grep dispatcher` |
-| 4 | Restart Dispatcher: `source .venv/bin/activate && python -m dispatcher.service` |
+| 4 | Restart Dispatcher: `source .venv/bin/activate && python3 -m dispatcher.service` |
 | 5 | Revisar logs del Dispatcher para errores de conexión o routing |
 
 ### 5.4 Cuota excedida
@@ -233,7 +235,7 @@ Todas las rutas (excepto `/health`) requieren header `Authorization: Bearer <WOR
 |------|--------|
 | 1 | Verificar variables: `echo $NOTION_API_KEY` (debe tener valor) |
 | 2 | Verificar page IDs: `NOTION_DASHBOARD_PAGE_ID`, `NOTION_CONTROL_ROOM_PAGE_ID` |
-| 3 | Test de conexión: `PYTHONPATH=. python scripts/e2e_validation.py` (revisar sección Notion) |
+| 3 | Test de conexión: `PYTHONPATH=. python3 scripts/e2e_validation.py` (revisar sección Notion) |
 | 4 | Verificar Notion Poller: `ps aux \| grep notion_poller` |
 | 5 | Reiniciar Poller: el cron `notion-poller-cron.sh` lo hace automáticamente cada 5 min |
 
@@ -244,7 +246,7 @@ Todas las rutas (excepto `/health`) requieren header `Authorization: Bearer <WOR
 | 1 | Verificar env: `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_HOST` |
 | 2 | Si no están configuradas: el sistema opera con graceful degradation (sin traces) |
 | 3 | Si están configuradas pero no hay traces: verificar conectividad al host de Langfuse |
-| 4 | Revisar OODA report: `PYTHONPATH=. python scripts/ooda_report.py` (sección Langfuse) |
+| 4 | Revisar OODA report: `PYTHONPATH=. python3 scripts/ooda_report.py` (sección Langfuse) |
 
 ### 5.7 Model routing inesperado
 
@@ -313,12 +315,12 @@ redis-server --daemonize yes
 # 2. Worker (en background o en screen/tmux)
 source .venv/bin/activate
 export WORKER_TOKEN="<token>"
-nohup python -m uvicorn worker.app:app --host 0.0.0.0 --port 8088 --log-level info &
+nohup python3 -m uvicorn worker.app:app --host 0.0.0.0 --port 8088 --log-level info &
 
 # 3. Dispatcher
 export WORKER_URL="http://localhost:8088"
 export REDIS_URL="redis://localhost:6379/0"
-nohup python -m dispatcher.service &
+nohup python3 -m dispatcher.service &
 
 # 4. Verificar
 sleep 3
@@ -343,6 +345,10 @@ git pull origin main
 pip3 install -r worker/requirements.txt   # Por si se añadieron deps (ej. requests)
 curl -s http://127.0.0.1:8088/health | head -1
 bash scripts/vps/supervisor.sh     # Ver Redis, Worker, Dispatcher OK
+# Verificación completa del stack (env, Worker, Redis, Linear, dashboard):
+source ~/.config/openclaw/env && PYTHONPATH=. python3 scripts/verify_stack_vps.py
+# Smoke test rápido:
+source ~/.config/openclaw/env && PYTHONPATH=. python3 scripts/smoke_test.py
 ```
 
 Si después del pull el Worker falla al arrancar (ej. `ModuleNotFoundError`), instalar deps y reiniciar: `pip3 install -r worker/requirements.txt` y `bash scripts/vps/supervisor.sh` (o el método que uses para el Worker).
@@ -358,7 +364,7 @@ git status
 git log -1 --oneline
 git log origin/main -1 --oneline
 git pull origin main
-python -m pip install -r worker/requirements.txt
+python3 -m pip install -r worker/requirements.txt
 # Reiniciar el servicio para cargar código nuevo:
 nssm restart openclaw-worker
 curl -s http://localhost:8088/health
@@ -400,8 +406,8 @@ Scripts recuperados desde `cursor/bit-cora-contenido-enriquecido-4099`.
 
 | Script | Descripción | Uso |
 |--------|-------------|-----|
-| `scripts/enrich_bitacora_pages.py` | Enriquece páginas de Bitácora en Notion con métricas (commits, PRs, tests, archivos) | `PYTHONPATH=. python scripts/enrich_bitacora_pages.py` |
-| `scripts/add_resumen_amigable.py` | Agrega resúmenes no técnicos ("En pocas palabras") a cada página de Bitácora | `PYTHONPATH=. python scripts/add_resumen_amigable.py` |
+| `scripts/enrich_bitacora_pages.py` | Enriquece páginas de Bitácora en Notion con métricas (commits, PRs, tests, archivos) | `PYTHONPATH=. python3 scripts/enrich_bitacora_pages.py` |
+| `scripts/add_resumen_amigable.py` | Agrega resúmenes no técnicos ("En pocas palabras") a cada página de Bitácora | `PYTHONPATH=. python3 scripts/add_resumen_amigable.py` |
 
 **Tests:** `tests/test_notion_enrich_bitacora.py`
 

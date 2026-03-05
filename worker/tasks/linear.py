@@ -7,11 +7,36 @@ Tasks: Linear integration handlers.
 """
 
 import logging
+import os
+from pathlib import Path
 from typing import Any, Dict
 
 from .. import config
 from .. import linear_client
 from ..linear_team_router import resolve_team_for_issue, load_teams_config
+
+
+def _linear_api_key() -> str | None:
+    """Return LINEAR_API_KEY from config or from ~/.config/openclaw/env (VPS/cron)."""
+    key = (config.LINEAR_API_KEY or "").strip()
+    if key:
+        return key
+    if os.name == "nt":
+        return None
+    env_file = Path(os.environ.get("HOME", "")) / ".config/openclaw/env"
+    if not env_file.exists():
+        return None
+    for line in env_file.read_text(encoding="utf-8", errors="ignore").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        k, _, v = line.partition("=")
+        k = k.strip()
+        if k.startswith("export "):
+            k = k[7:].strip()
+        if k == "LINEAR_API_KEY":
+            return v.strip().strip('"').strip("'").replace("\r", "") or None
+    return None
 
 logger = logging.getLogger("worker.tasks.linear")
 
@@ -43,7 +68,8 @@ def handle_linear_create_issue(input_data: Dict[str, Any]) -> Dict[str, Any]:
             }
         }
     """
-    if not config.LINEAR_API_KEY:
+    api_key = _linear_api_key()
+    if not api_key:
         return {"ok": False, "error": "LINEAR_API_KEY not configured"}
 
     title = (input_data.get("title") or "").strip()
@@ -53,7 +79,6 @@ def handle_linear_create_issue(input_data: Dict[str, Any]) -> Dict[str, Any]:
     description = input_data.get("description", "")
     priority = input_data.get("priority")
     add_team_labels = input_data.get("add_team_labels", True)
-    api_key = config.LINEAR_API_KEY
 
     # --- Resolver team_id de Linear ---
     team_id = input_data.get("team_id")
@@ -134,14 +159,13 @@ def handle_linear_update_issue_status(input_data: Dict[str, Any]) -> Dict[str, A
     Returns:
         {"ok": True, "update": {...}, "comment": {...}}
     """
-    if not config.LINEAR_API_KEY:
+    api_key = _linear_api_key()
+    if not api_key:
         return {"ok": False, "error": "LINEAR_API_KEY not configured"}
 
     issue_id = (input_data.get("issue_id") or "").strip()
     if not issue_id:
         return {"ok": False, "error": "'issue_id' is required"}
-
-    api_key = config.LINEAR_API_KEY
     state_name = input_data.get("state_name")
     comment = input_data.get("comment")
     team_id = input_data.get("team_id")
@@ -175,11 +199,12 @@ def handle_linear_list_teams(input_data: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         {"ok": True, "teams": [{"id": "...", "name": "Umbral"}, ...]}
     """
-    if not config.LINEAR_API_KEY:
+    api_key = _linear_api_key()
+    if not api_key:
         return {"ok": False, "error": "LINEAR_API_KEY not configured", "teams": []}
 
     try:
-        teams = linear_client.list_teams(config.LINEAR_API_KEY)
+        teams = linear_client.list_teams(api_key)
         return {"ok": True, "teams": teams}
     except Exception as e:
         return {"ok": False, "error": str(e), "teams": []}

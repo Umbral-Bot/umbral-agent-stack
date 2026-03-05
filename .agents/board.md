@@ -75,6 +75,7 @@ R18 cerrada — dashboard Notion actualizado (PR #97).
 
 | ID | Tarea | Notas |
 |----|--------|-------|
+| 098 | Auditoría variables Notion (Codex) | Inventariar NOTION_* (keys, page IDs, DB IDs), documentar uso de cada una, recomendar simplificación a solo Rick + Supervisor. Doc: docs/auditoria-notion-env-vars.md. Rama: codex/098-auditoria-notion-keys. |
 | — | (pendiente) | Ver board para siguiente sprint |
 
 ## Ronda 12 — En curso

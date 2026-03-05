@@ -5,6 +5,9 @@ Covers:
 - document.create_pdf (text via fpdf2; HTML via weasyprint mocked if unavailable)
 - document.create_presentation
 - base64 output when output_path is omitted
+
+Requires: python-docx, docxtpl, fpdf2, python-pptx.
+Install via: pip install -e ".[test]"  OR  pip install -r worker/requirements.txt
 """
 
 import base64
@@ -12,6 +15,11 @@ import os
 import tempfile
 
 import pytest
+
+pytest.importorskip("docx", reason="python-docx is required (pip install -e '.[test]')")
+pytest.importorskip("docxtpl", reason="docxtpl is required (pip install -e '.[test]')")
+pytest.importorskip("fpdf", reason="fpdf2 is required (pip install -e '.[test]')")
+pytest.importorskip("pptx", reason="python-pptx is required (pip install -e '.[test]')")
 
 from worker.tasks.document_generator import (
     handle_document_create_word,

@@ -1,8 +1,8 @@
 # Agent Board — Umbral Agent Stack
 
-> Última actualización: 2026-03-04 por **cursor**
-> Sprint activo: **S6-S7**
-> **HACKATHON — RONDAS 6 y 7 EN CURSO**
+> Última actualización: 2026-03-05 por **cursor**
+> Sprint activo: **S6-S7 / R16**
+> **HACKATHON — RONDA 16 EN CURSO**
 
 ## Estado del sistema
 
@@ -22,7 +22,13 @@
 | PRs mergeados (hackathon) | 34 |
 | VM (Execution Plane) | ✅ v0.4.0 — 25 handlers — reconectada |
 
-## Ronda 12 — En curso
+## Ronda 16 — En curso
+
+| ID | Título | Asignado | Estado |
+|----|--------|----------|--------|
+| 076 | Investigación Browser Automation VM (tipo Claude in Chrome) | cursor-agent-cloud | ✅ done (PR pendiente merge) |
+
+## Ronda 12 — Completada ✅
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|

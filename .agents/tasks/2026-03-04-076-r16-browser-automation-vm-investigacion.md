@@ -111,9 +111,23 @@ El skill debe dejar claro que Rick puede orquestar estas acciones en la VM (nave
 
 ## Criterios de éxito
 
-- [ ] Búsqueda exhaustiva documentada (libs Python, repos GitHub, herramientas).
-- [ ] Matriz comparativa con criterios VM y enlaces.
-- [ ] Documento `docs/64-browser-automation-vm-plan.md` con plan, pipeline y recomendación.
-- [ ] Skill actualizado o nuevo que registre la habilidad de Rick “automatización de navegador en la VM”.
-- [ ] Todo en español.
-- [ ] PR abierto a `main`.
+- [x] Búsqueda exhaustiva documentada (libs Python, repos GitHub, herramientas).
+- [x] Matriz comparativa con criterios VM y enlaces.
+- [x] Documento `docs/64-browser-automation-vm-plan.md` con plan, pipeline y recomendación.
+- [x] Skill actualizado o nuevo que registre la habilidad de Rick “automatización de navegador en la VM”.
+- [x] Todo en español.
+- [x] PR abierto a `main`.
+
+---
+
+## Log
+
+### cursor-agent-cloud 2026-03-05
+
+- Investigación exhaustiva: Playwright Python, browser-use (79k⭐), workflow-use (3.9k⭐), Selenium, Pyppeteer, Splinter, MechanicalSoup, Browserless, PAD.
+- Archivos creados:
+  - docs/64-browser-automation-vm-plan.md — resumen ejecutivo, tabla Claude in Chrome, búsqueda, matriz comparativa 9 herramientas, arquitectura Dispatcher→Redis→Worker→Playwright, flujo completo, 3 fases, recomendación de stack, riesgos y mitigaciones.
+  - openclaw/workspace-templates/skills/browser-automation-vm/SKILL.md — skill dedicado con frontmatter, arquitectura, todas las tareas browser.* (navigate, screenshot, click, fill, get_text, new_tab, session_save, session_load, agent_run, run_flow), flujo completo de ejemplo, instalación, configuración tool_policy, seguridad, relación con otros skills.
+- Branch: feat/browser-automation-vm-research
+- PR abierto a main.
+- Status: done

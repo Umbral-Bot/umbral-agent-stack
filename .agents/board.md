@@ -71,11 +71,16 @@ R18 cerrada — dashboard Notion actualizado (PR #97).
 
 **Nota:** Para mantener la Control Room solo para comunicación, definir `NOTION_SUPERVISOR_ALERT_PAGE_ID` (página aparte, ej. "Alertas supervisor") en la VPS; ver runbook §1.4.
 
+## Ronda 20 — En curso
+
+| ID | Tarea | Estado |
+|----|--------|--------|
+| 098 | Auditoría variables Notion (Codex) | ✅ done — PR #100 (codex/098-auditoria-notion-keys). Doc: docs/auditoria-notion-env-vars.md. Pendiente merge a main. |
+
 ## Próxima ronda (pendientes)
 
 | ID | Tarea | Notas |
 |----|--------|-------|
-| 098 | Auditoría variables Notion (Codex) | Inventariar NOTION_* (keys, page IDs, DB IDs), documentar uso de cada una, recomendar simplificación a solo Rick + Supervisor. Doc: docs/auditoria-notion-env-vars.md. Rama: codex/098-auditoria-notion-keys. |
 | — | (pendiente) | Ver board para siguiente sprint |
 
 ## Ronda 12 — En curso

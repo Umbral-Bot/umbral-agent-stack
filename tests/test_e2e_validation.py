@@ -11,7 +11,7 @@ import httpx
 # Import test functions from e2e_validation
 # Alias test_* functions to avoid pytest collecting them as test cases
 from scripts.e2e_validation import (
-    TestResult,
+    ValidationResult,
     SuiteResult,
     _run_test,
     format_results,
@@ -29,18 +29,18 @@ from scripts.smoke_test import (
 )
 
 
-# ── TestResult / SuiteResult ──────────────────────────────────
+# ── ValidationResult / SuiteResult ──────────────────────────────────
 
 
 class TestDataStructures(unittest.TestCase):
-    """Verify TestResult and SuiteResult counting."""
+    """Verify ValidationResult and SuiteResult counting."""
 
     def test_suite_pass_fail_skip_counts(self):
         suite = SuiteResult(results=[
-            TestResult("a", passed=True, elapsed_ms=10),
-            TestResult("b", passed=False, elapsed_ms=20, error="boom"),
-            TestResult("c", passed=True, elapsed_ms=0, skipped=True, detail="SKIP"),
-            TestResult("d", passed=True, elapsed_ms=15),
+            ValidationResult("a", passed=True, elapsed_ms=10),
+            ValidationResult("b", passed=False, elapsed_ms=20, error="boom"),
+            ValidationResult("c", passed=True, elapsed_ms=0, skipped=True, detail="SKIP"),
+            ValidationResult("d", passed=True, elapsed_ms=15),
         ])
         self.assertEqual(suite.total_pass, 2)
         self.assertEqual(suite.total_fail, 1)
@@ -48,8 +48,8 @@ class TestDataStructures(unittest.TestCase):
 
     def test_suite_all_pass(self):
         suite = SuiteResult(results=[
-            TestResult("a", passed=True, elapsed_ms=10),
-            TestResult("b", passed=True, elapsed_ms=20),
+            ValidationResult("a", passed=True, elapsed_ms=10),
+            ValidationResult("b", passed=True, elapsed_ms=20),
         ])
         self.assertEqual(suite.total_pass, 2)
         self.assertEqual(suite.total_fail, 0)
@@ -84,8 +84,8 @@ class TestFormatResults(unittest.TestCase):
 
     def test_skip_shown_in_output(self):
         suite = SuiteResult(results=[
-            TestResult("test1", passed=True, elapsed_ms=10, detail="ok"),
-            TestResult("test2", passed=True, elapsed_ms=0, skipped=True, detail="SKIP — no key"),
+            ValidationResult("test1", passed=True, elapsed_ms=10, detail="ok"),
+            ValidationResult("test2", passed=True, elapsed_ms=0, skipped=True, detail="SKIP — no key"),
         ])
         output = format_results(suite)
         self.assertIn("[SKIP]", output)
@@ -94,7 +94,7 @@ class TestFormatResults(unittest.TestCase):
 
     def test_fail_shown_in_output(self):
         suite = SuiteResult(results=[
-            TestResult("test1", passed=False, elapsed_ms=5, error="connection refused"),
+            ValidationResult("test1", passed=False, elapsed_ms=5, error="connection refused"),
         ])
         output = format_results(suite)
         self.assertIn("[FAIL]", output)

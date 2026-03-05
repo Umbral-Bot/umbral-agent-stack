@@ -25,6 +25,7 @@ import os
 import time
 import uuid
 from collections import OrderedDict
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional, Union
 
@@ -117,6 +118,15 @@ def _store_task(result: TaskResult) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Lifespan (startup / shutdown)
+# ---------------------------------------------------------------------------
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    flush_tracing()
+
+
+# ---------------------------------------------------------------------------
 # App
 # ---------------------------------------------------------------------------
 app = FastAPI(
@@ -124,13 +134,8 @@ app = FastAPI(
     description="Worker HTTP para ejecución de tareas desde OpenClaw (VPS). "
     "Soporta TaskEnvelope v0.1, formato legacy, y enqueue vía Redis.",
     version="0.4.0",
+    lifespan=lifespan,
 )
-
-
-@app.on_event("shutdown")
-async def _on_shutdown():
-    """Flush pending telemetry before process exit."""
-    flush_tracing()
 
 
 # ---------------------------------------------------------------------------

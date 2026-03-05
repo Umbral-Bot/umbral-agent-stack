@@ -1,8 +1,8 @@
 # Agent Board — Umbral Agent Stack
 
-> Última actualización: 2026-03-05 por **github-copilot** (tarea 088)
-> Sprint activo: **R16**
-> **HACKATHON — RONDA 16 EN CIERRE**
+> Última actualización: 2026-03-06 por **cursor**
+> Sprint activo: **R17**
+> **RONDA 17 — Post-R16: Notion, changelog, runbook, script ramas**
 
 ## Estado del sistema
 
@@ -18,13 +18,13 @@
 | Scheduled Tasks | ✅ Redis sorted set, cron cada minuto |
 | Quota Dashboard | ✅ GET /quota/status + reporte Notion |
 | Crons activos | 11 (dashboard, health, supervisor, poller, SIM x2, digest, SIM-make, E2E, OODA, scheduled-tasks) |
-| Tests | ✅ 536 passed (37 flaky — auth-related) |
+| Tests | ✅ 900 passed (tras PR #96; 34 tests Bitácora) |
 | PRs mergeados (hackathon) | 44+ |
 | PRs obsoletos cerrados | 11 (limpieza R16-080, inventario en docs/branches-cerrados-inventario.md) |
 | CI | ✅ GitHub Actions pytest (Python 3.11 + 3.12) |
 | VM (Execution Plane) | ✅ v0.4.0 — 25 handlers — reconectada |
 
-## Ronda 16 — En cierre
+## Ronda 16 — Cerrada
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|
@@ -32,10 +32,26 @@
 | 078 | Board + Bitácora estado final R16 | cursor | ✅ done (board actualizado) |
 | 079 | Merge final a main y verificación CI | codex | ✅ done |
 | 080 | Limpieza de PRs y documentación (README, board) | github-copilot | ✅ done (11 PRs cerrados, CI + README) |
-| 081 | Document generation tests + cherry-pick contenido | cursor | 📋 pendiente |
+| 081 | Capitalizar trabajo en ramas | codex | ✅ done (PR #86) |
 | 082 | Capitalizar PRs cerrados — inventario de ramas | github-copilot | ✅ done (PR #85) |
+| 083 | Análisis de contenido perdido en ramas | antigravity | ✅ done (PR #87) |
+| 084 | Recuperar rate limiter por provider | codex | ✅ done (PR #90) |
 | 085 | Recuperar scripts enriquecimiento Bitácora | github-copilot | ✅ done (PR #89) |
-| 088 | Documentar scripts Bitácora y dependencias faltantes | github-copilot | ✅ done |
+| 086 | Recuperar browser automation VM plan + skill | antigravity | ✅ done (PR #88) |
+| 087 | Merge ordenado + verificación final (main verde) | codex | ✅ done (main: #85–#90 merged, pytest 866) |
+| 088 | Cierre Bitácora: doc scripts + 9 funciones con firma | github-copilot | ✅ done (bitacora-scripts.md) |
+| 089 | Resumen cierre R16 + guía borrado ramas | antigravity | ✅ done (PR #92: r16-cierre-resumen, guia-borrar-ramas) |
+
+R16 cerrado — PRs mergeados: #85, #86, #87, #88, #89, #90. pytest tests/ -q: 866 passed, 6 skipped, 0 failed. Docs adicionales en PR #91 (bitacora-scripts), #92 (resumen+guía ramas) si siguen abiertos.
+
+## Ronda 17 — En curso
+
+| ID | Tarea | Agente | Rama | Estado |
+|----|--------|--------|------|--------|
+| 090 | Implementar 9 funciones Notion para Bitácora | claude-code | `claude/090-implementar-notion-bitacora` | ✅ done (PR #96, 900 tests) |
+| 091 | Script dry-run borrado ramas (generar comandos git) | codex | `codex/091-script-borrado-ramas` | ✅ done (PR #93) |
+| 092 | Changelog / Estado R16 en README | github-copilot | `copilot/092-changelog-r16` | ✅ done |
+| 093 | Runbook: Bitácora + browser automation | antigravity | `antigravity/093-runbook-bitacora-browser` | ✅ done (PR #95) |
 
 ## Ronda 12 — En curso
 

@@ -1,30 +1,43 @@
----
-id: "2026-03-05-088"
-title: "R16 — Documentar scripts Bitácora y dependencias faltantes"
-status: done
-assigned_to: github-copilot
-created_by: david
-priority: medium
-sprint: R16
-created_at: 2026-03-05T06:00:00-06:00
-updated_at: 2026-03-05T06:20:00-06:00
+# Task R16 — Cierre Bitácora: documentación y dependencias (GitHub Copilot)
+
+**Fecha:** 2026-03-05  
+**Ronda:** 16  
+**Agente:** GitHub Copilot  
+**Branch:** `copilot/088-cierre-bitacora` ← trabaja solo en esta rama. **Pull de main antes.**
+
 ---
 
 ## Objetivo
-Crear documentación detallada de los scripts de enriquecimiento de la Bitácora Notion (recuperados en tarea 085) y la lista precisa de funciones faltantes en worker/ que se necesitan implementar en un PR futuro.
 
-## Criterios de aceptación
-- [x] `docs/bitacora-scripts.md` creado con: qué hace cada script, cómo ejecutarlo, env vars, y lista de 9 funciones faltantes con firma y descripción
-- [x] README.md actualizado con enlace a `docs/bitacora-scripts.md` en tabla de documentación
-- [x] Board actualizado con tarea 088
-- [x] PR abierto desde `copilot/088-cierre-bitacora` a main (solo documentación)
-- [x] No se modifica worker, dispatcher ni CI
+Capitalizar el trabajo de los scripts de Bitácora (PR #89): documentar uso, env vars y las funciones faltantes en `notion_client.py` / `notion.py` para que alguien pueda completarlas o usarlas. Sin tocar worker/dispatcher; solo docs.
 
-## Log
-### [github-copilot] 2026-03-05 06:20
-- Creado `docs/bitacora-scripts.md`: documentación de enrich_bitacora_pages.py, add_resumen_amigable.py, 34 tests
-- Documentadas 6 funciones faltantes en notion_client.py con firma exacta (extraída de PR #72)
-- Documentadas 3 funciones faltantes en notion.py con firma exacta
-- Orden de implementación recomendado
-- README: enlace añadido en tabla de documentación
-- Board: tarea 088 añadida, estado R16 actualizado
+---
+
+## Tareas
+
+1. **Pull y rama:** `git checkout main && git pull origin main`. Crear rama: `git checkout -b copilot/088-cierre-bitacora`. (Si PR #89 aún no está mergeado, crear la rama desde main actual; la doc hará referencia a los scripts que entrarán con #89.)
+
+2. **Doc de scripts Bitácora:** Crear `docs/bitacora-scripts.md` (o equivalente) con:
+   - Qué hace cada script: `enrich_bitacora_pages.py`, `add_resumen_amigable.py`.
+   - Cómo ejecutarlos (comando, desde qué directorio).
+   - Variables de entorno necesarias: `NOTION_API_KEY`, `NOTION_BITACORA_DB_ID` (y otras que aparezcan en los scripts).
+   - Dependencias faltantes: listar las 6 funciones que faltan en `notion_client.py` y las 3 en `notion.py` (nombre, firma sugerida o descripción de qué deben hacer), para que un PR futuro pueda implementarlas. Puedes extraer esto de los scripts o de los tests recuperados en #89.
+
+3. **README o CONTRIBUTING:** Añadir en README una línea que enlace a `docs/bitacora-scripts.md` (p. ej. "Scripts de enriquecimiento Bitácora: ver docs/bitacora-scripts.md"). O una línea en CONTRIBUTING si ya existe sección de docs.
+
+4. **PR:** Abrir un único PR desde `copilot/088-cierre-bitacora` a main. Solo archivos de documentación; no código de aplicación.
+
+---
+
+## Criterios de éxito
+
+- [ ] `docs/bitacora-scripts.md` con uso, env vars y lista de funciones faltantes.
+- [ ] Enlace en README o CONTRIBUTING.
+- [ ] PR abierto; sin cambios a worker, dispatcher ni CI.
+
+---
+
+## Restricciones
+
+- No implementar las 6+3 funciones en este PR; solo documentarlas para un PR futuro.
+- No tocar código de los scripts de Bitácora; solo documentar.

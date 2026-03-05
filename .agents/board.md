@@ -1,8 +1,8 @@
 # Agent Board — Umbral Agent Stack
 
-> Última actualización: 2026-03-05 por **codex** (tarea 087)
-> Sprint activo: **R16**
-> **HACKATHON — RONDA 16 EN CIERRE**
+> Última actualización: 2026-03-06 por **cursor**
+> Sprint activo: **R17**
+> **RONDA 17 — Post-R16: Notion, changelog, runbook, script ramas**
 
 ## Estado del sistema
 
@@ -18,7 +18,7 @@
 | Scheduled Tasks | ✅ Redis sorted set, cron cada minuto |
 | Quota Dashboard | ✅ GET /quota/status + reporte Notion |
 | Crons activos | 11 (dashboard, health, supervisor, poller, SIM x2, digest, SIM-make, E2E, OODA, scheduled-tasks) |
-| Tests | ✅ 866 passed, 6 skipped (0 failed, pytest tests/ -q) |
+| Tests | ✅ 900 passed (tras PR #96; 34 tests Bitácora) |
 | PRs mergeados (hackathon) | 44+ |
 | PRs obsoletos cerrados | 11 (limpieza R16-080, inventario en docs/branches-cerrados-inventario.md) |
 | CI | ✅ GitHub Actions pytest (Python 3.11 + 3.12) |
@@ -43,6 +43,15 @@
 | 089 | Resumen cierre R16 + guía borrado ramas | antigravity | ✅ done (PR #92: r16-cierre-resumen, guia-borrar-ramas) |
 
 R16 cerrado — PRs mergeados: #85, #86, #87, #88, #89, #90. pytest tests/ -q: 866 passed, 6 skipped, 0 failed. Docs adicionales en PR #91 (bitacora-scripts), #92 (resumen+guía ramas) si siguen abiertos.
+
+## Ronda 17 — En curso
+
+| ID | Tarea | Agente | Rama | Estado |
+|----|--------|--------|------|--------|
+| 090 | Implementar 9 funciones Notion para Bitácora | claude-code | `claude/090-implementar-notion-bitacora` | ✅ done (PR #96, 900 tests) |
+| 091 | Script dry-run borrado ramas (generar comandos git) | codex | `codex/091-script-borrado-ramas` | ✅ done (PR #93) |
+| 092 | Changelog / Estado R16 en README | github-copilot | `copilot/092-changelog-r16` | ✅ done |
+| 093 | Runbook: Bitácora + browser automation | antigravity | `antigravity/093-runbook-bitacora-browser` | ✅ done (PR #95) |
 
 ## Ronda 12 — En curso
 

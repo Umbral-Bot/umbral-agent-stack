@@ -22,6 +22,12 @@
 | PRs mergeados (hackathon) | 34 |
 | VM (Execution Plane) | ✅ v0.4.0 — 25 handlers — reconectada |
 
+## Ronda 13 — En curso
+
+| ID | Título | Asignado | Estado |
+|----|--------|----------|--------|
+| 058 | OpsLogger Audit Improvements — trace_id, input_summary, log rotation | cursor-agent-cloud | ✅ done (PR pending) |
+
 ## Ronda 11 — En curso
 
 | ID | Título | Asignado | Estado |

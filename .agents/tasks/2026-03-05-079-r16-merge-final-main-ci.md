@@ -1,0 +1,29 @@
+# Task R16 — Merge final a main y verificación CI
+
+**Fecha:** 2026-03-05  
+**Ronda:** 16  
+**Agente:** Cursor Agent Cloud  
+**Branch:** `chore/merge-final-main-ci`
+
+---
+
+## Contexto
+
+En `main` siguen 7 fallos en `test_document_generator` (dependencias) y 4 warnings. Existen PRs de integración (#80, #82) que deberían dejar pytest en verde. Objetivo: tener **main estable** con **0 failed** y **CI pasando**.
+
+---
+
+## Tareas
+
+1. **Merge a main:** Revisar PR #80 o #82 (o el PR que integre #69, #70, #71, #73). Mergear en `main` resolviendo conflictos. Si hace falta, mergear primero #71, luego #70, #69, #73 en ese orden.
+2. **Verificación local:** Tras merge, `pip install -e ".[test]"` y `pytest tests/ -q`. Criterio: **0 failed**.
+3. **CI:** Confirmar que `.github/workflows/` tiene un workflow que corre pytest en push/PR a `main` y que el último run pasa (o arreglar el workflow si falla).
+4. **Commit de este trabajo:** Si hiciste cambios (resolución de conflictos, fix menor), commit y push a la rama del PR o a `main` según corresponda.
+
+---
+
+## Criterios de éxito
+
+- [ ] `main` con `pytest tests/` → 0 failed
+- [ ] Workflow de CI presente y en verde (o documentar por qué no)
+- [ ] PR mergeado o estado documentado en el board

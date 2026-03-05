@@ -132,28 +132,64 @@ check_redis() {
 }
 
 # ---------------------------------------------------------------
-# 4. Post alert to Notion (best-effort). Uses NOTION_SUPERVISOR_ALERT_PAGE_ID
-#    if set, else NOTION_CONTROL_ROOM_PAGE_ID. Worker must have NOTION_* in env.
+# 4. Post alert to Notion (best-effort).
+#    If NOTION_SUPERVISOR_API_KEY and NOTION_SUPERVISOR_ALERT_PAGE_ID are set:
+#      posts directly to Notion API so the comment appears as the "Supervisor"
+#      integration (Dashboard Rick page). Otherwise calls Worker notion.add_comment.
 # ---------------------------------------------------------------
 post_notion_alert() {
     local alert_text="$1"
-    local worker_token="${WORKER_TOKEN:-}"
-    local alert_page_id="${NOTION_SUPERVISOR_ALERT_PAGE_ID:-${NOTION_CONTROL_ROOM_PAGE_ID:-}}"
-    local payload
     local response
     local http_status
     local response_body
 
+    # Prefer direct Notion API with Supervisor identity (Dashboard Rick page)
+    if [ -n "${NOTION_SUPERVISOR_API_KEY:-}" ] && [ -n "${NOTION_SUPERVISOR_ALERT_PAGE_ID:-}" ]; then
+        local payload
+        payload="$(
+            python3 - "$alert_text" "${NOTION_SUPERVISOR_ALERT_PAGE_ID}" <<'PY'
+import json
+import sys
+text = sys.argv[1]
+page_id = sys.argv[2]
+body = {"parent": {"page_id": page_id}, "rich_text": [{"type": "text", "text": {"content": text}}]}
+print(json.dumps(body))
+PY
+        )"
+        response="$(
+            curl -sS -X POST "https://api.notion.com/v1/comments" \
+                -H "Authorization: Bearer ${NOTION_SUPERVISOR_API_KEY}" \
+                -H "Notion-Version: 2022-06-28" \
+                -H "Content-Type: application/json" \
+                -d "${payload}" \
+                -w $'\n%{http_code}'
+        )" || {
+            echo "${LOG_PREFIX} Failed to post Notion alert (request error)"
+            return 1
+        }
+        http_status="$(printf '%s\n' "$response" | tail -n 1)"
+        response_body="$(printf '%s\n' "$response" | sed '$d')"
+        if [ "$http_status" = "200" ]; then
+            echo "${LOG_PREFIX} Alert posted to Notion (Dashboard Rick, as Supervisor)"
+            return 0
+        fi
+        echo "${LOG_PREFIX} Failed to post Notion alert (HTTP ${http_status})"
+        [ -n "$response_body" ] && echo "${LOG_PREFIX} Response: $response_body"
+        return 1
+    fi
+
+    # Fallback: via Worker (uses NOTION_API_KEY; comment appears as Rick integration)
+    local worker_token="${WORKER_TOKEN:-}"
+    local alert_page_id="${NOTION_SUPERVISOR_ALERT_PAGE_ID:-${NOTION_CONTROL_ROOM_PAGE_ID:-}}"
+    local payload
     if [ -z "$worker_token" ]; then
         echo "${LOG_PREFIX} WORKER_TOKEN not set - skipping Notion alert"
         return 1
     fi
-
     payload="$(
         python3 - "$alert_text" "$alert_page_id" <<'PY'
 import json
 import sys
-
 text = sys.argv[1]
 page_id = sys.argv[2]
 input_payload = {"text": text}
@@ -162,7 +198,6 @@ if page_id:
 print(json.dumps({"task": "notion.add_comment", "input": input_payload}))
 PY
     )"
-
     response="$(
         curl -sS -X POST "${WORKER_URL}/run" \
             -H "Authorization: Bearer ${worker_token}" \
@@ -173,10 +208,8 @@ PY
         echo "${LOG_PREFIX} Failed to post Notion alert (request error)"
         return 1
     }
-
     http_status="$(printf '%s\n' "$response" | tail -n 1)"
     response_body="$(printf '%s\n' "$response" | sed '$d')"
-
     if [ "$http_status" = "200" ]; then
         if [ -n "$alert_page_id" ]; then
             echo "${LOG_PREFIX} Alert posted to Notion (page ${alert_page_id})"
@@ -185,11 +218,8 @@ PY
         fi
         return 0
     fi
-
     echo "${LOG_PREFIX} Failed to post Notion alert (HTTP ${http_status})"
-    if [ -n "$response_body" ]; then
-        echo "${LOG_PREFIX} Notion alert response: $response_body"
-    fi
+    [ -n "$response_body" ] && echo "${LOG_PREFIX} Response: $response_body"
     return 1
 }
 

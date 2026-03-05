@@ -22,7 +22,13 @@
 | PRs mergeados (hackathon) | 34 |
 | VM (Execution Plane) | ✅ v0.4.0 — 25 handlers — reconectada |
 
-## Ronda 11 — En curso
+## Ronda 12 — En curso
+
+| ID | Título | Asignado | Estado |
+|----|--------|----------|--------|
+| 050 | Google Calendar + Gmail Worker Handlers | cursor-agent-cloud-1 | ✅ done |
+
+## Ronda 11 — Completada ✅
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|

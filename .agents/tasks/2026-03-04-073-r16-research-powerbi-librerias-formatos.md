@@ -73,7 +73,31 @@ Todo en **español**. El resultado debe servir para decidir si el stack puede au
 
 ## Criterios de éxito
 
-- [ ] Búsqueda realizada (múltiples fuentes)
-- [ ] Documento `docs/63-powerbi-librerias-formatos-pbix-pbip.md` creado con tabla y conclusiones
-- [ ] Referencias y enlaces incluidos
-- [ ] PR abierto a `main`
+- [x] Búsqueda realizada (múltiples fuentes)
+- [x] Documento `docs/63-powerbi-librerias-formatos-pbix-pbip.md` creado con tabla y conclusiones
+- [x] Referencias y enlaces incluidos
+- [x] PR abierto a `main`
+
+---
+
+## Log
+
+### [cursor-agent-cloud] 2026-03-05 ~UTC
+
+**Búsqueda realizada** en PyPI, npm, NuGet, GitHub, documentación Microsoft, y blogs técnicos.
+
+**Hallazgos clave:**
+- **powerbpy** (Python, v0.2.0): crea dashboards completos en formato .pbip/.pbir desde cero.
+- **pbir_tools** (Python): crea y edita archivos PBIR.
+- **pbir-utils** (Python, v2.2.5): valida, optimiza y gestiona informes PBIR existentes.
+- **pypbireport** (Python, v0.2.4): edita informes .pbix existentes (bookmarks, visuales, medidas).
+- **pbi-tools CLI** (.NET): extrae/compila .pbix ↔ carpeta.
+- **Fabric REST API**: permite crear informes enviando definición PBIR vía API.
+- **No existe skill OpenClaw** nativo para generar Power BI; se recomienda crear uno propio.
+
+**Conclusión:** Formato recomendado = **PBIP/PBIR** (formato abierto, dirección estratégica de Microsoft, tooling Python disponible).
+
+**Archivos creados/modificados:**
+- `docs/63-powerbi-librerias-formatos-pbix-pbip.md` (nuevo)
+- `.agents/board.md` (actualizado)
+- `.agents/tasks/2026-03-04-073-r16-research-powerbi-librerias-formatos.md` (actualizado)

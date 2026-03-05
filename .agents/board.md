@@ -22,7 +22,13 @@
 | PRs mergeados (hackathon) | 34 |
 | VM (Execution Plane) | ✅ v0.4.0 — 25 handlers — reconectada |
 
-## Ronda 12 — En curso
+## Ronda 16 — En curso
+
+| ID | Título | Asignado | Estado |
+|----|--------|----------|--------|
+| 073 | Research: Librerías y formatos Power BI (.pbix, .pbip, .pbir) | cursor-agent-cloud | ✅ done |
+
+## Ronda 12 — Completada ✅
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|

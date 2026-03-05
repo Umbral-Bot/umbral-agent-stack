@@ -36,6 +36,18 @@
 
 ## Criterios de éxito
 
-- [ ] `pytest tests/test_document_generator.py` pasa sin errores
-- [ ] `pyproject.toml` o README documenta cómo instalar deps para tests
-- [ ] PR abierto a `main`
+- [x] `pytest tests/test_document_generator.py` pasa sin errores
+- [x] `pyproject.toml` o README documenta cómo instalar deps para tests
+- [x] PR abierto a `main`
+
+---
+
+## Log
+
+**2026-03-05 — cursor-agent-cloud**
+
+1. Añadido `[project]` con dependencias base y `[project.optional-dependencies]` (`docs`, `test`, `all`) en `pyproject.toml`.
+2. Añadido `[tool.setuptools.packages.find]` para resolver flat-layout con múltiples paquetes top-level.
+3. Añadido `pytest.importorskip` para `docx`, `docxtpl`, `fpdf`, `pptx` en `tests/test_document_generator.py` como fallback graceful.
+4. Documentado en `AGENTS.md` cómo instalar dependencias de tests (`pip install -e ".[test]"`).
+5. Verificado: 20 passed, 1 skipped en `test_document_generator.py`; 847 passed, 5 skipped en suite completa.

@@ -167,10 +167,28 @@ El agente debe identificar y documentar preguntas que solo David puede responder
 
 ## Criterios de éxito
 
-- [ ] `docs/60-rrss-pipeline-n8n.md` — documento completo con todas las secciones
-- [ ] Diagrama Mermaid del pipeline de extremo a extremo
-- [ ] Tabla comparativa de métodos de captura LinkedIn
-- [ ] Recomendación de human-in-the-loop con pros/contras
-- [ ] Lista de APIs y requisitos de cuentas
-- [ ] Sección de preguntas para David
-- [ ] PR abierto a `main`
+- [x] `docs/60-rrss-pipeline-n8n.md` — documento completo con todas las secciones
+- [x] Diagrama Mermaid del pipeline de extremo a extremo
+- [x] Tabla comparativa de métodos de captura LinkedIn
+- [x] Recomendación de human-in-the-loop con pros/contras
+- [x] Lista de APIs y requisitos de cuentas
+- [x] Sección de preguntas para David
+- [x] PR abierto a `main`
+
+## Log
+
+### [cursor-agent-cloud-5] 2026-03-04 18:00
+- Investigación completa: APIs de LinkedIn (Marketing API, scraping), X API v2, Instagram Graph API, WhatsApp Business API, Lovable/Supabase, n8n human-in-the-loop patterns
+- Creado `docs/60-rrss-pipeline-n8n.md` con 17 secciones:
+  - Diagrama Mermaid del pipeline completo (6 fases)
+  - Diagrama de arquitectura n8n (6 workflows encadenados)
+  - Tabla comparativa de 8 métodos de captura LinkedIn con coste, legalidad, fiabilidad
+  - Recomendación human-in-the-loop: 3 opciones con pros/contras (Notion + Telegram recomendada)
+  - Tabla de 10 APIs con cuentas, credenciales, permisos y costes
+  - Restricciones legales por plataforma
+  - Riesgos y mitigaciones (8 riesgos identificados)
+  - Checklist de requisitos previos
+  - 20 preguntas para David organizadas por categoría
+  - Comparativa n8n vs Make.com
+  - Estimación de costes ($65-295/mes)
+- PR abierto a main

@@ -21,7 +21,7 @@ repo_root = Path(__file__).resolve().parent.parent
 if str(repo_root) not in sys.path:
     sys.path.insert(0, str(repo_root))
 
-# Cargar env: primero ~/.config/openclaw/env (VPS), luego .env en repo
+# Cargar env: ~/.config/openclaw/env (VPS) o .env. Última aparición de cada variable gana (igual que Worker y bash source).
 def _load_env() -> None:
     env_files = []
     if os.name != "nt":
@@ -35,11 +35,11 @@ def _load_env() -> None:
                 if not line or line.startswith("#") or "=" not in line:
                     continue
                 k, _, v = line.partition("=")
-                k, v = k.strip(), v.strip().strip('"').strip("'").replace("\x00", "")
+                k, v = k.strip(), v.strip().strip('"').strip("'").replace("\x00", "").replace("\r", "")
                 if k.startswith("export "):
                     k = k[7:].strip()
-                if k and k not in os.environ:
-                    os.environ.setdefault(k, v)
+                if k:
+                    os.environ[k] = v
             break
 
 _load_env()

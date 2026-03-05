@@ -55,8 +55,8 @@ def _load_env() -> None:
                 k, v = k.strip(), v.strip().strip('"').strip("'").replace("\x00", "")
                 if k.startswith("export "):
                     k = k[7:].strip()
-                if k and k not in os.environ:
-                    os.environ.setdefault(k, v)
+                if k:
+                    os.environ[k] = v  # última aparición gana (igual que Worker)
             break
 
 

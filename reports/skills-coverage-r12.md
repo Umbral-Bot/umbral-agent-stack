@@ -1,10 +1,10 @@
 # Skills Coverage Report R12
 
 **Fecha:** 2026-03-04  
-**Total Worker tasks:** 38  
-**Tasks con skill:** 38  
+**Total Worker tasks:** 42  
+**Tasks con skill:** 42  
 **Tasks sin skill:** 0  
-**Cobertura:** 38/38 (100%)
+**Cobertura:** 42/42 (100%)
 
 ---
 
@@ -22,6 +22,10 @@
 | `figma.get_file` | `figma` |
 | `figma.get_node` | `figma` |
 | `figma.list_comments` | `figma` |
+| `gmail.create_draft` | `gmail` |
+| `gmail.list_drafts` | `gmail` |
+| `google.calendar.create_event` | `google-calendar` |
+| `google.calendar.list_events` | `google-calendar` |
 | `granola.create_followup` | `granola-pipeline` |
 | `granola.process_transcript` | `granola-pipeline` |
 | `linear.create_issue` | `linear` |
@@ -58,6 +62,7 @@
 | `acc-bim360` |
 | `azure-platform` |
 | `big-data-python` |
+| `bim-coordination` |
 | `bim-expert` |
 | `consultor-bim` |
 | `copilot-studio` |
@@ -66,6 +71,7 @@
 | `dynamo` |
 | `ffmpeg-python` |
 | `google-cloud-vertex` |
+| `ifc-python` |
 | `kuka-robots-grasshopper` |
 | `langchain-langgraph` |
 | `linkedin-content` |

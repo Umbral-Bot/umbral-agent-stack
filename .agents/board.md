@@ -22,6 +22,13 @@
 | PRs mergeados (hackathon) | 34 |
 | VM (Execution Plane) | ✅ v0.4.0 — 25 handlers — reconectada |
 
+## Ronda 16 — En curso
+
+| ID | Título | Asignado | Estado |
+|----|--------|----------|--------|
+| 077 | Cierre integración main — pytest verde, merge PRs 69–73 | — | 📋 pendiente |
+| 078 | Board + Bitácora estado final R16 | — | 📋 pendiente |
+
 ## Ronda 12 — En curso
 
 | ID | Título | Asignado | Estado |

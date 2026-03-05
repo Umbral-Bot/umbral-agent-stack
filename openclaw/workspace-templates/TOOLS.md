@@ -60,7 +60,7 @@ El Dispatcher encola tareas en Redis (`umbral:tasks:pending`) y el Worker las ej
 - **Pipeline:** Rick procesa transcripciones Granola → Notion vía `granola.process_transcript`.
 - **Watcher:** Script `scripts/vm/granola_watcher.py` monitorea carpeta `GRANOLA_EXPORT_DIR` en la VM y envía archivos `.md` automáticamente al Worker.
 - **Follow-up:** `granola.create_followup` genera reminders, borradores de email o propuestas desde action items extraídos.
-- **Variables:** `GRANOLA_EXPORT_DIR`, `GRANOLA_NOTION_DATABASE_ID` en el Worker.
+- **Variables:** `GRANOLA_EXPORT_DIR`, `NOTION_GRANOLA_DB_ID` (DB destino; usa `NOTION_API_KEY` Rick) en el Worker.
 
 ## Document Generation
 

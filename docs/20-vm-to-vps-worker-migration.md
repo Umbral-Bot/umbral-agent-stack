@@ -16,7 +16,7 @@ Para tener **certeza total** en la VM, conviene que Codex (o alguien) en la VM e
 **Recomendación:** levantar el **Worker en la VPS** (mismo código que en la VM) y apuntar el Dispatcher a `WORKER_URL=http://127.0.0.1:8088`. Así podés usar Rick (OpenClaw + Dispatcher + cola + Worker) **mientras la VM está apagada o no disponible**.
 
 - **Ventajas:** Un solo host (VPS), sin depender de Tailscale ni de la VM para el flujo básico (ping, tareas que no requieran Windows/PAD/Notion).
-- **Limitaciones:** En la VPS no tenés PAD/RPA ni herramientas Windows; las tareas que requieran Notion funcionarán solo si configurás en la VPS las mismas variables Notion que en la VM (`NOTION_API_KEY`, `NOTION_CONTROL_ROOM_PAGE_ID`, `NOTION_GRANOLA_DB_ID`).
+- **Limitaciones:** En la VPS no tenés PAD/RPA ni herramientas Windows; las tareas que requieran Notion funcionarán solo si configurás en la VPS las mismas variables Notion que en la VM (`NOTION_API_KEY`, `NOTION_CONTROL_ROOM_PAGE_ID`; para pipeline Granola también `NOTION_GRANOLA_DB_ID`, misma key Rick).
 
 Opciones:
 
@@ -37,7 +37,7 @@ Para “migrar lo que ya tenés en la VM a la VPS para usarlo mientras”, la op
      (o en un venv si preferís).
    - Exportar (o poner en `~/.config/openclaw/env` o en un `.env` que cargue el servicio):
      - `WORKER_TOKEN` (el mismo que usa el Dispatcher para llamar al Worker).
-     - Opcional, para tareas Notion: `NOTION_API_KEY`, `NOTION_CONTROL_ROOM_PAGE_ID`, `NOTION_GRANOLA_DB_ID`.
+     - Opcional, para tareas Notion: `NOTION_API_KEY`, `NOTION_CONTROL_ROOM_PAGE_ID`; para Granola: `NOTION_GRANOLA_DB_ID` (usa misma `NOTION_API_KEY` Rick).
    - Arrancar el Worker:
      - **Opción A (manual):**  
        `cd ~/umbral-agent-stack && PYTHONPATH=. WORKER_TOKEN=... python3 -m uvicorn worker.app:app --host 127.0.0.1 --port 8088`

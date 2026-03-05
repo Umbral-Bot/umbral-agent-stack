@@ -51,7 +51,7 @@ Archivo de configuración en VPS: `~/.config/openclaw/env`
 | `NOTION_CONTROL_ROOM_PAGE_ID` | Sí* | Page ID de la **Control Room** (solo comunicación Rick/Enlace/David; no usar para alertas automáticas) |
 | `NOTION_SUPERVISOR_ALERT_PAGE_ID` | Recomendado | Page ID donde el supervisor postea el aviso (ej. Dashboard Rick: `0fd13978b220498e9465b4fb2efc5f4a`). Si no se define, el fallback usa el Worker y NOTION_CONTROL_ROOM_PAGE_ID. |
 | `NOTION_SUPERVISOR_API_KEY` | No* | Token de la integración Notion **"Supervisor"** (nombre/avatar distintos a Rick). Si está definido junto con NOTION_SUPERVISOR_ALERT_PAGE_ID, el supervisor postea **directo a Notion** y el comentario aparece como Supervisor en esa página. Si no, usa el Worker (identidad Rick). *Requerido solo para identidad Supervisor en Dashboard. |
-| `NOTION_GRANOLA_DB_ID` | No | Database ID para Granola |
+| `NOTION_GRANOLA_DB_ID` | No | ID de la DB de transcripciones Granola (usa `NOTION_API_KEY` de Rick) |
 | `LANGFUSE_PUBLIC_KEY` | No | Clave pública de Langfuse (graceful degradation sin ella) |
 | `LANGFUSE_SECRET_KEY` | No | Clave secreta de Langfuse |
 | `LANGFUSE_HOST` | No | Host de Langfuse |

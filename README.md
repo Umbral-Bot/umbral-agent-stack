@@ -75,7 +75,7 @@ El worker expone un bus HTTP para ejecutar tareas, incluyendo integración con N
 | `NOTION_SUPERVISOR_API_KEY` | VPS (opc.) | Token integración **Supervisor** (alertas con identidad propia) |
 | `NOTION_SUPERVISOR_ALERT_PAGE_ID` | VPS (opc.) | Página destino de alertas del supervisor (ej. Dashboard Rick) |
 | `NOTION_TASKS_DB_ID` | opc. | ID DB Kanban tareas (`notion.upsert_task`) |
-| `NOTION_GRANOLA_DB_ID` | opc. | ID DB Granola Inbox (solo si usas pipeline transcripciones) |
+| `NOTION_GRANOLA_DB_ID` | opc. | ID DB Granola Inbox; usa `NOTION_API_KEY` (Rick). Solo si usas pipeline transcripciones. |
 
 Copiar `.env.example` → `.env` y rellenar con valores reales.
 

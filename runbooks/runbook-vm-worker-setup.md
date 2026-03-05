@@ -116,7 +116,7 @@ nssm start $ServiceName
 
 Notas:
 - Reemplazar `CHANGE_ME_WORKER_TOKEN` por el token real.
-- Si se usan tareas Notion, agregar tambien `NOTION_API_KEY`, `NOTION_CONTROL_ROOM_PAGE_ID`, `NOTION_GRANOLA_DB_ID` en `AppEnvironmentExtra`.
+- Si se usan tareas Notion, agregar `NOTION_API_KEY`, `NOTION_CONTROL_ROOM_PAGE_ID`; para pipeline Granola también `NOTION_GRANOLA_DB_ID` (usa la misma `NOTION_API_KEY` Rick) en `AppEnvironmentExtra`.
 - Para Linear (`linear.list_teams`, `linear.create_issue`): agregar `LINEAR_API_KEY` en `AppEnvironmentExtra`. Script helper: `scripts/vm/add_linear_key_to_worker.ps1 -LinearApiKey "lin_..."` (ejecutar en la VM, luego `nssm restart openclaw-worker` está incluido en el script).
 - Para que la tarea `windows.open_notepad` abra el Bloc en la sesión del usuario (no en sesión 0), agregar en `AppEnvironmentExtra`: `OPENCLAW_NOTEPAD_RUN_AS_USER=pcrick\rick` y `OPENCLAW_NOTEPAD_RUN_AS_PASSWORD=<contraseña>` (misma línea, separadas por `\n`).
 

@@ -48,7 +48,7 @@ Las variables se guardan en `C:\Granola\.env` (el instalador las configura autom
 | `GRANOLA_EXPORT_DIR` | Carpeta monitoreada | `C:\Granola\exports` |
 | `GRANOLA_WORKER_URL` | URL del Worker | `http://localhost:8088` |
 | `GRANOLA_WORKER_TOKEN` | Token de autenticación | (requerido) |
-| `GRANOLA_NOTION_DATABASE_ID` | ID de DB Notion para transcripciones | (opcional) |
+| `GRANOLA_NOTION_DATABASE_ID` | ID de DB Notion para transcripciones (misma integración Rick; en Worker es `NOTION_GRANOLA_DB_ID`) | (opcional) |
 | `GRANOLA_POLL_INTERVAL` | Segundos entre checks | `5` |
 | `GRANOLA_LOG_FILE` | Ruta del archivo de log | `C:\Granola\watcher.log` |
 

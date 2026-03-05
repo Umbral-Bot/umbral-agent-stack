@@ -1,71 +1,344 @@
 ---
 name: speckle-dalux-powerbi
 description: >-
-  Mentor tecnico para integracion Speckle, Dalux Field y Power BI en proyectos
-  BIM. Guia sobre conectores, flujos de datos, dashboards y casos de uso
-  practicos para coordinacion oficina-obra.
-  Use when "speckle", "dalux", "power bi", "dashboard BIM",
-  "integracion datos BIM", "conector speckle", "dalux field", "visual 3D".
+  Gestionar modelos BIM en Speckle (viewer 3D, streams, commits), revisar
+  incidencias en Dalux Field, y conectar datos BIM a Power BI. Usa cuando
+  el usuario diga "Speckle", "Dalux", "incidencias campo", "BIM viewer",
+  "Power BI BIM", "stream BIM", "modelo en la nube".
 metadata:
   openclaw:
-    emoji: "\U0001F4CA"
+    emoji: "🌐"
     requires:
-      env: []
+      env:
+        - SPECKLE_TOKEN
 ---
 
-# Speckle + Dalux + Power BI — Mentor de Integracion BIM
+# Speckle + Dalux + Power BI — Integración BIM en la nube
 
-Rick usa este skill para guiar la integracion de Speckle (modelos BIM), Dalux Field (gestion de obra) y Power BI (dashboards y analisis) en flujos de trabajo BIM.
+Rick usa este skill para gestionar modelos BIM en Speckle, revisar incidencias de campo en Dalux Field, y conectar datos BIM a dashboards de Power BI.
 
-## Dominio Speckle
-
-### Que es Speckle
-
-Plataforma de colaboracion de diseno open source que sustituye flujos basados en archivos por conexiones en vivo entre herramientas CAD/BIM. Mantiene equipos sincronizados sin exportaciones manuales.
+## Speckle — Plataforma de datos BIM
 
 ### Conceptos clave
 
-| Concepto | Descripcion |
+| Concepto | Descripción |
 |----------|-------------|
 | **Workspace** | Espacio de trabajo donde se organizan proyectos y equipos |
 | **Project** | Contenedor de modelos dentro de un workspace |
-| **Model** | Conjunto de datos (geometria y propiedades) de una disciplina |
-| **Version** | Punto en el tiempo de un modelo. Cada envio crea nueva version |
+| **Model** | Conjunto de datos (geometría y propiedades) de una disciplina |
+| **Version** | Punto en el tiempo de un modelo. Cada envío crea nueva versión |
 | **Federation** | Combinar varios modelos en una vista unificada |
+| **Connector** | Plugin para Revit, Rhino, Grasshopper, AutoCAD, Tekla, etc. |
 
-### Conectores
+### API REST — Autenticación y operaciones
 
-Plugins ligeros para Revit, Rhino, Grasshopper, Power BI, AutoCAD, Archicad, Blender, Tekla, Navisworks. Tambien acepta IFC, OBJ, STL por drag and drop.
+```python
+import requests
 
-### Conector Power BI
+SPECKLE_SERVER = "https://app.speckle.systems"
+TOKEN = os.environ["SPECKLE_TOKEN"]
+HEADERS = {"Authorization": f"Bearer {TOKEN}"}
+```
 
-**Componentes:**
-1. **Connector de datos:** Carga datos del modelo en tablas
-2. **Visual 3D:** Muestra modelo 3D dentro del dashboard con interaccion
+#### Listar streams (proyectos)
 
-**Configuracion basica:**
-1. Instalar conector desde https://app.speckle.systems/connectors
+```python
+query = """
+query {
+  streams(limit: 10) {
+    items {
+      id
+      name
+      updatedAt
+      branches {
+        items {
+          id
+          name
+          commits(limit: 1) {
+            items {
+              id
+              message
+              createdAt
+              authorName
+            }
+          }
+        }
+      }
+    }
+  }
+}
+"""
+
+resp = requests.post(
+    f"{SPECKLE_SERVER}/graphql",
+    json={"query": query},
+    headers=HEADERS
+)
+streams = resp.json()["data"]["streams"]["items"]
+for s in streams:
+    print(f"Stream: {s['name']} ({s['id']})")
+```
+
+#### Obtener objetos de un commit
+
+```python
+def get_commit_objects(stream_id: str, commit_id: str):
+    query = """
+    query($streamId: String!, $commitId: String!) {
+      stream(id: $streamId) {
+        commit(id: $commitId) {
+          referencedObject
+          message
+          authorName
+          createdAt
+        }
+      }
+    }
+    """
+    resp = requests.post(
+        f"{SPECKLE_SERVER}/graphql",
+        json={
+            "query": query,
+            "variables": {"streamId": stream_id, "commitId": commit_id}
+        },
+        headers=HEADERS
+    )
+    return resp.json()["data"]["stream"]["commit"]
+```
+
+#### Crear un commit
+
+```python
+def create_commit(stream_id: str, branch_name: str, object_id: str, message: str):
+    mutation = """
+    mutation($commit: CommitCreateInput!) {
+      commitCreate(commit: $commit)
+    }
+    """
+    resp = requests.post(
+        f"{SPECKLE_SERVER}/graphql",
+        json={
+            "query": mutation,
+            "variables": {
+                "commit": {
+                    "streamId": stream_id,
+                    "branchName": branch_name,
+                    "objectId": object_id,
+                    "message": message
+                }
+            }
+        },
+        headers=HEADERS
+    )
+    return resp.json()["data"]["commitCreate"]
+```
+
+### Speckle Python SDK — specklepy
+
+```bash
+pip install specklepy
+```
+
+#### Enviar objetos
+
+```python
+from specklepy.api.client import SpeckleClient
+from specklepy.api.credentials import get_default_account
+from specklepy.objects import Base
+from specklepy.transports.server import ServerTransport
+from specklepy.api import operations
+
+client = SpeckleClient(host="https://app.speckle.systems")
+account = get_default_account()
+client.authenticate_with_token(account.token)
+
+# Crear un objeto Base
+wall = Base()
+wall.name = "Muro Exterior"
+wall.height = 3.0
+wall.width = 0.20
+wall.material = "Hormigón armado"
+wall.level = "Nivel 1"
+
+# Enviar al servidor
+transport = ServerTransport(stream_id="abc123", client=client)
+obj_id = operations.send(base=wall, transports=[transport])
+print(f"Objeto enviado: {obj_id}")
+
+# Crear commit
+commit_id = client.commit.create(
+    stream_id="abc123",
+    object_id=obj_id,
+    branch_name="main",
+    message="Muro exterior nivel 1"
+)
+```
+
+#### Recibir objetos
+
+```python
+transport = ServerTransport(stream_id="abc123", client=client)
+
+# Obtener último commit
+stream = client.stream.get(id="abc123")
+latest_commit = stream.branches.items[0].commits.items[0]
+
+# Recibir objeto
+received = operations.receive(obj_id=latest_commit.referencedObject, remote_transport=transport)
+print(f"Nombre: {received.name}")
+print(f"Elementos: {len(received.elements) if hasattr(received, 'elements') else 0}")
+```
+
+#### Base objects — Estructura personalizada
+
+```python
+from specklepy.objects import Base
+
+class BIMWall(Base, speckle_type="Objects.BIM.Wall"):
+    name: str = ""
+    height: float = 0.0
+    width: float = 0.0
+    material: str = ""
+    level: str = ""
+    is_external: bool = False
+    fire_rating: str = ""
+
+wall = BIMWall(
+    name="M-EXT-01",
+    height=3.0,
+    width=0.25,
+    material="Hormigón H30",
+    level="Nivel 2",
+    is_external=True,
+    fire_rating="F120"
+)
+```
+
+### Speckle Manager y conectores
+
+| Conector | Funcionalidad |
+|----------|---------------|
+| **Revit** | Enviar/recibir categorías, vistas, familias |
+| **Rhino** | Geometría NURBS, meshes, layers |
+| **Grasshopper** | Nodos Send/Receive en definiciones |
+| **AutoCAD** | Bloques, layers, anotaciones |
+| **Tekla** | Elementos estructurales, armaduras |
+| **Navisworks** | Modelos federados, clash data |
+| **Archicad** | Elementos 3D, zonas, propiedades |
+| **Blender** | Meshes, materiales |
+| **Power BI** | Datos tabulares + visual 3D |
+
+Instalación: Speckle Manager detecta las aplicaciones instaladas y gestiona los conectores automáticamente.
+
+### Viewer embebido
+
+```html
+<!-- Embeber viewer Speckle en una página web -->
+<iframe
+  src="https://app.speckle.systems/projects/PROJECT_ID/models/MODEL_ID"
+  width="100%"
+  height="600px"
+  frameborder="0">
+</iframe>
+```
+
+El viewer soporta: órbita, pan, zoom, cortes en X/Y/Z, filtros por categoría, selección de elementos, propiedades al clic.
+
+## Dalux Field — Gestión BIM en campo
+
+### Tipos de incidencias (Punch Items)
+
+| Tipo | Descripción | Flujo |
+|------|-------------|-------|
+| **Defecto** | No conformidad detectada en campo | Crear → Asignar → Corregir → Verificar → Cerrar |
+| **RFI** | Solicitud de información al diseñador | Crear → Asignar → Responder → Verificar → Cerrar |
+| **Observación** | Registro de situación sin acción requerida | Crear → Registrar |
+| **Seguridad** | Incidencia HSE | Crear → Asignar → Corregir → Verificar → Cerrar |
+| **Formulario QC** | Check de calidad vinculado a plan | Programar → Ejecutar → Aprobar/Rechazar |
+
+### Estados de tarea
+
+| Estado | Color | Significado |
+|--------|-------|-------------|
+| Nuevo | Gris | Asignada, no vista/iniciada |
+| En proceso | Amarillo | En trabajo por responsable |
+| Reportado listo | Verde con tick | Esperando aprobación |
+| Aprobado/cerrado | Verde | Trabajo aceptado |
+| Rechazado | Rojo | Trabajo no aceptado, requiere retrabajo |
+| Archivado | Negro | Tarea eliminada o no válida |
+
+### Flujo de QA/QC en campo
+
+```
+1. Oficina técnica carga modelos BIM y planos a Dalux
+2. Inspector de campo abre Dalux en tablet/móvil
+3. Navega al plano o modelo 3D del área a inspeccionar
+4. Crea incidencia (defecto/observación) con:
+   - Foto georeferenciada
+   - Ubicación en plano 2D o modelo 3D
+   - Categoría y prioridad
+   - Responsable asignado
+5. Subcontratista recibe notificación y corrige
+6. Inspector verifica corrección in situ
+7. Aprueba o rechaza con nueva foto de evidencia
+```
+
+### Paquetes y organización
+
+| Configuración | Recomendación |
+|---------------|---------------|
+| Paquetes | Un paquete por disciplina o contrato |
+| Grupos de usuarios | Crear por rol (Dirección, Supervisión, Subcontratos) |
+| Perfiles | Asignar permisos por grupo, no por usuario individual |
+| Plantillas | Estandarizar formularios QC para reutilizar en proyectos |
+| Planos | Organizar por nivel y zona, mantener actualizados |
+
+### BIM Viewer en Dalux
+
+Capacidades del viewer integrado:
+- Navegación: órbita, pan, zoom, primera persona (WASD)
+- Cortes en planos X/Y/Z
+- Filtros por disciplina (Arquitectura, Estructura, MEP)
+- Propiedades BIM al hacer clic en un elemento
+- Split view 2D+3D sincronizado
+- Vincular incidencias a elementos del modelo 3D
+
+### Exportar datos de Dalux
+
+```
+Dalux > Vista Lista > Filtrar por estado/responsable/fecha
+  > Seleccionar registros > Exportar a Excel o PDF
+```
+
+Los exports de Excel son la base para alimentar Power BI con datos de campo.
+
+## Power BI + Speckle — Dashboards BIM
+
+### Conector oficial Speckle
+
+**Instalación:**
+1. Descargar conector desde https://app.speckle.systems/connectors
 2. En Power BI: Get Data > buscar "Speckle" > Connect
 3. Habilitar extensiones: File > Options > Security > Data Extensions > Allow any extension
-4. Pegar URL del modelo
-5. Importar visual 3D: Visualizations > ... > Import from file > `Documents/Power BI Desktop/Custom Visuals/Speckle 3D Visual.pbiviz`
+4. Pegar URL del modelo Speckle
+5. Importar visual 3D: Visualizations > ... > Import from file > `Speckle 3D Visual.pbiviz`
 
-**Configuracion del visual:**
+**Requisito:** Speckle Desktop Service debe estar en ejecución.
+
+### Configuración del visual 3D
 
 | Campo | Requerido | Uso |
 |-------|-----------|-----|
-| Model Info | Si | Visualizacion |
-| Object IDs | Si | Interactividad (drill-down) |
-| Tooltip | No | Info al pasar cursor |
-| Color by | No | Colorear por categoria/propiedad |
-
-**Requisito:** Speckle Desktop Service debe estar en ejecucion.
+| Model Info | Sí | Visualización del modelo 3D |
+| Object IDs | Sí | Interactividad (selección, drill-down) |
+| Tooltip | No | Información al pasar el cursor |
+| Color by | No | Colorear elementos por categoría/propiedad |
 
 ### Helpers Power Query
 
-| Funcion | Uso |
+| Función | Uso |
 |---------|-----|
-| `Speckle.Projects.Issues(url, getReplies)` | Issues del proyecto/modelo/version |
+| `Speckle.Projects.Issues(url, getReplies)` | Issues del proyecto/modelo/versión |
 | `Speckle.Objects.Properties(record, filterKeys)` | Propiedades de un objeto |
 | `Speckle.Objects.CompositeStructure(record, outputAsList)` | Capas de muros/suelos |
 | `Speckle.Objects.MaterialQuantities(record, outputAsList)` | Cantidades materiales por objeto |
@@ -73,159 +346,136 @@ Plugins ligeros para Revit, Rhino, Grasshopper, Power BI, AutoCAD, Archicad, Ble
 | `Speckle.Models.Federate(tables, excludeData)` | Federar modelos para visual 3D |
 | `Speckle.Utils.ExpandRecord(table, columnName, FieldNames, UseCombinedNames)` | Expandir columnas tipo record |
 
-### Intelligence Dashboards
+### Crear reportes de avance con Power BI
 
-Vistas interactivas dentro de Speckle (sin Power BI): Model Viewer, Dual viewer, Element count/table, Pivot table. Widgets por fuente: Revit (levels, categories, families), Tekla (profiles, phases, weight).
+```
+1. Conectar modelo Speckle → tablas de elementos
+2. Crear medidas DAX:
+   - Total_Elementos = COUNTROWS(Elements)
+   - Completados = CALCULATE(COUNTROWS(Elements), Elements[Status]="Complete")
+   - Avance_% = DIVIDE([Completados], [Total_Elementos])
+3. Crear visualizaciones:
+   - KPI card con porcentaje de avance
+   - Gráfico de barras por nivel/disciplina
+   - Visual 3D Speckle coloreado por estado
+   - Tabla detallada con drill-through
+4. Publicar en Power BI Service
+5. Configurar Data Gateway para refresco automático
+```
 
-### Data Gateway (refresco programado)
+### Data Gateway para refresco programado
 
-Para Power BI Service: configurar Data Gateway (Personal o Standard). Anadir conector Speckle (.pqx) a carpeta Custom Connectors del gateway. Configurar OAuth2 en semantic model.
+Para Power BI Service: configurar Data Gateway (Personal o Standard). Añadir conector Speckle (.pqx) a carpeta Custom Connectors del gateway. Configurar OAuth2 en semantic model.
 
-## Dominio Dalux Field
-
-### Que es Dalux Field
-
-Aplicacion de gestion de obra en campo: planos, tareas, formularios, inspecciones, registro diario, seguridad, reuniones. Integrado con flujo BIM.
-
-### Funcionalidades principales
-
-- **Planos y ubicaciones:** Cargar/actualizar planos sincronizados por zonas
-- **Tareas y aprobaciones:** Crear, asignar, responder. Flujos RFI, defectos, incidencias
-- **Formularios y QC:** Formularios estandar, planes de control de calidad, inspecciones
-- **Captura:** Albums de fotos, fotos 360, SiteWalk
-- **Seguridad:** Observaciones, inspecciones, problemas HSE, buenas practicas
-- **Analiticas:** Tableros predefinidos con filtros por paquete, contrato, responsable, estado
-
-### Paquetes y flujos de trabajo
-
-Base de la organizacion en Dalux. Tipos de flujos:
-
-| Tipo | Descripcion |
-|------|-------------|
-| **Aprobacion (unidireccional)** | Multiples pasos de aprobacion hasta cierre |
-| **Tarea (bidireccional)** | Tareas que van y vienen entre creador y destinatarios |
-| **Seguridad** | Para incidencias de seguridad |
-| **Formulario puntos de retencion** | Asignacion por grupo/usuario |
-| **Plan de calidad / inspeccion** | Vinculados a un plan concreto |
-
-Recomendacion: usar grupos de usuarios en perfiles, no usuarios individuales.
-
-### Estados de tarea
-
-| Estado | Significado |
-|--------|-------------|
-| Gris — Nuevo | Asignada, no vista/iniciada |
-| Amarillo — En proceso | En trabajo por responsable |
-| Verde con tick — Reportado listo | Esperando aprobacion |
-| Verde — Aprobado/cerrado | Trabajo aceptado |
-| Rojo — Rechazado | Trabajo no aceptado |
-| Negro — Archivado | Tarea eliminada o no valida |
-
-### Ejemplos de flujo
-
-**Defectos:** Gestion crea tarea > Subcontratista corrige > Gestion verifica > Aprueba o reasigna.
-
-**RFI:** Electricista crea RFI > Gestion recibe > Asigna a Arquitecto/Ingeniero > Responde > Devuelve a Gestion > Cierra.
-
-### BIM Viewer
-
-Navegacion (orbita, pan, zoom, primera persona WASD), cortes en X/Y/Z, filtros por disciplina (Arq, Est, MEP), propiedades BIM al clic, split view 2D+3D sincronizado.
-
-### Exportar datos
-
-Exportar a Excel (analisis, tablas dinamicas) o PDF (informes con fotos/planos). Proceso: vista lista > filtrar > seleccionar > exportar. Portal del Promotor para descarga restringida. Dalux Handover para archivo final.
-
-## Power BI en ecosistema BIM
-
-### Rol
-
-- Analisis de datos BIM: cantidades, propiedades, materiales, niveles
-- Visualizacion 3D interactiva con drill-down
-- Dashboards ejecutivos: KPIs, tendencias, comparaciones versiones
-- Integracion datos obra: combinar Dalux (tareas) con Speckle (modelo)
-
-### Relacion con Dalux
+### Integración Dalux → Power BI
 
 Power BI no tiene conector nativo a Dalux. Opciones:
-1. Exportacion Dalux a CSV/Excel + carga manual o Power Query
-2. API (si disponible) + Power Query / Power Automate
-3. Base de datos intermedia que consolida Dalux + Speckle
 
-### Buenas practicas
+| Método | Complejidad | Automatización |
+|--------|-------------|----------------|
+| Export Excel manual | Baja | No |
+| Power Automate + SharePoint | Media | Sí |
+| API Dalux (si disponible) + Power Query | Alta | Sí |
+| Base de datos intermedia | Alta | Sí |
 
-- Usar "latest" para ultima version; fijar version para analisis historico
-- Limitar propiedades cargadas para rendimiento en modelos grandes
-- Combinar visual 3D con graficos y tablas para drill-down geometria-metricas
+Flujo recomendado:
+```
+Dalux > Exportar Excel > SharePoint/OneDrive
+  > Power BI Data Source > Refresco programado
+```
 
-### Troubleshooting frecuente
+## Integración con `research.web` para documentación
 
-| Problema | Solucion |
-|----------|---------|
-| No carga modelo | Verificar Speckle Desktop Service en ejecucion |
-| Error autenticacion | File > Options > Security > desmarcar "Use my default web browser" |
-| Token caducado | Clear Permissions en Data source settings. Eliminar PowerBITokenCache.db |
-| Sin permisos | Verificar acceso al proyecto en Speckle. Re-autenticar |
+```python
+# Buscar documentación actualizada de Speckle
+result = await client.execute_task("research.web", {
+    "query": "Speckle API GraphQL mutations commits 2026",
+    "depth": "standard"
+})
 
-## Flujos de integracion
+# Buscar cambios en la API de Dalux
+result = await client.execute_task("research.web", {
+    "query": "Dalux Field API integration REST endpoints",
+    "depth": "quick"
+})
+```
 
-### Flujo 1: Modelo BIM > Power BI
+## Flujos de integración
 
-1. Speckle: publicar modelos desde Revit/Rhino/Tekla
-2. Power BI: conectar con URL del modelo via conector Speckle
-3. Resultado: tablas de elementos + visual 3D para drill-down
+### Flujo 1: Modelo BIM → Speckle → Power BI
 
-Casos: quantity takeoff, analisis materiales, comparacion versiones, dashboards ejecutivos.
+```
+Revit/Rhino/Tekla → Conector Speckle → Servidor Speckle
+    → Conector Power BI → Tablas + Visual 3D
+    → Dashboard ejecutivo con drill-down
+```
 
-### Flujo 2: Dalux > Power BI (datos de obra)
+### Flujo 2: Dalux → Excel → Power BI (datos de campo)
 
-1. Dalux: exportar tareas/inspecciones/formularios a Excel
-2. Power BI: cargar Excel con Get Data
-3. Resultado: dashboards seguimiento tareas, incidencias, control calidad
+```
+Inspector en campo → Dalux (crear incidencia con foto)
+    → Export Excel → SharePoint
+    → Power BI (cargar, modelar, visualizar)
+    → Dashboard seguimiento defectos/RFIs
+```
 
-### Flujo 3: Speckle + Dalux + Power BI (vision unificada)
+### Flujo 3: Speckle + Dalux + Power BI (visión unificada)
 
-1. Speckle: modelos BIM centralizados
-2. Dalux: tareas vinculadas a ubicaciones/planos
-3. Power BI: cargar ambos, crear modelo relacional por ubicacion/nivel/disciplina
-4. Resultado: dashboards que combinan estado del modelo BIM con tareas e inspecciones en campo
+```
+Speckle: modelos BIM centralizados (diseño)
+Dalux: tareas vinculadas a ubicaciones (campo)
+Power BI: cargar ambos, crear modelo relacional por nivel/zona
+    → Visual 3D coloreado por estado de tarea
+    → KPIs: avance diseño vs. construcción
+```
 
 ### Speckle Intelligence vs Power BI
 
 | Criterio | Speckle Intelligence | Power BI |
 |----------|---------------------|----------|
 | Fuente datos | Solo modelos Speckle | Speckle + Dalux + otras |
-| Integracion Dalux | No nativa | Manual o API |
+| Integración Dalux | No nativa | Manual o API |
 | Visual 3D | Integrado | Visual Speckle 3D |
-| Colaboracion | Workspace Speckle | Power BI Service |
+| Colaboración | Workspace Speckle | Power BI Service |
+| Complejidad | Baja (widgets listos) | Media-Alta (DAX, modelado) |
+| Personalización | Limitada | Total |
 
-Recomendacion: Speckle Intelligence para analisis solo de modelos. Power BI cuando se necesite combinar con Dalux u otras fuentes.
+Speckle Intelligence para análisis rápido de modelos. Power BI cuando se necesita combinar con Dalux u otras fuentes de datos.
 
-## Casos de uso practicos
+## Troubleshooting frecuente
 
-### 1. Quantity takeoff (Speckle > Power BI)
-Publicar modelo > conectar > Power Query para filtrar propiedades (area, volumen) > graficos por nivel/categoria + visual 3D.
+| Problema | Solución |
+|----------|---------|
+| No carga modelo en Power BI | Verificar Speckle Desktop Service en ejecución |
+| Error autenticación Power BI | File > Options > Security > desmarcar "Use my default web browser" |
+| Token caducado | Clear Permissions en Data source settings. Eliminar PowerBITokenCache.db |
+| Sin permisos Speckle | Verificar acceso al proyecto en Speckle. Re-autenticar |
+| Dalux no exporta | Verificar permisos del perfil de usuario en el paquete |
+| Visual 3D no aparece | Importar .pbiviz manualmente desde Visualizations |
 
-### 2. Seguimiento tareas (Dalux > Power BI)
-Exportar tareas a Excel > cargar > metricas: abiertas, cerradas, por responsable, estado, fecha.
+## Ejemplos de uso con Rick
 
-### 3. Comparacion versiones (Speckle > Power BI)
-Federar dos versiones > cargar > comparar conteo elementos, diferencias por categoria.
+- **Rick: "Conectá el modelo de Revit a Speckle y mostrame los datos en Power BI"** → Conector Speckle Revit + Power BI con visual 3D.
+- **Rick: "Cuántas incidencias abiertas hay en Dalux?"** → Export Excel + análisis rápido o `research.web` para API.
+- **Rick: "Creá un dashboard que combine el modelo BIM con las tareas de campo"** → Speckle + Dalux Excel + Power BI relacional.
+- **Rick: "Enviá este objeto Base a Speckle desde Python"** → specklepy `operations.send()` + `commit.create()`.
+- **Rick: "Listame los streams de Speckle via API"** → GraphQL query `streams(limit: N)`.
 
-### 4. Control de calidad (Dalux + Power BI)
-Exportar inspecciones > cargar > indicadores: % cumplimiento por zona, tendencia, responsables.
-
-### 5. Vision integrada BIM + Obra (Speckle + Dalux + Power BI)
-Cargar modelo Speckle + datos Dalux > relacion por nivel/zona > visual 3D coloreado por estado de tarea.
-
-### 6. Materiales y carbono (Speckle > Power BI)
-Usar `Speckle.Objects.MaterialQuantities` > graficos por material, nivel, area > totales carbono.
-
-### 7. Seguridad HSE (Dalux > Power BI)
-Exportar observaciones/inspecciones seguridad > indicadores: indice seguridad, tendencia, categorias.
-
-## Referencias
+## Recursos oficiales
 
 - Speckle docs: https://docs.speckle.systems/
+- Speckle Python SDK: https://speckle.guide/dev/python.html
+- Speckle GraphQL API: https://docs.speckle.systems/dev/server-graphql-api
 - Speckle Power BI: https://docs.speckle.systems/connectors/power-bi/power-bi
 - Dalux Field: https://support.dalux.com/hc/es/categories/4405292014738-Field
 - Dalux Academy: https://academy.dalux.com/
+- Power BI Desktop: https://powerbi.microsoft.com/desktop/
+
+## Notas
+
+- `SPECKLE_TOKEN` se obtiene en https://app.speckle.systems/ > Profile > Access Tokens. Scopes: `streams:read`, `streams:write`, `profile:read`.
+- Speckle usa GraphQL como API principal. Las mutaciones requieren autenticación con token.
+- Los conectores de Speckle son gratuitos y open source. Speckle Manager gestiona la instalación.
+- Dalux no ofrece API pública documentada; la integración con Power BI se hace via exports Excel.
+- Para refrescos automáticos en Power BI Service, configurar Data Gateway con el conector Speckle .pqx.
+- El visual 3D de Speckle para Power BI es un custom visual (.pbiviz) que se importa manualmente.

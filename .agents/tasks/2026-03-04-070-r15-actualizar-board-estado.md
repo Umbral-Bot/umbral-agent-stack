@@ -31,7 +31,33 @@ El archivo `.agents/board.md` está desactualizado: sigue con "Ronda 12 en curso
 
 ## Criterios de éxito
 
-- [ ] Board refleja rondas R14 y R15 y estado actual de PRs
-- [ ] Números de handlers y tests corregidos
-- [ ] Entrada en Bitácora opcional añadida
-- [ ] PR abierto a `main`
+- [x] Board refleja rondas R14 y R15 y estado actual de PRs
+- [x] Números de handlers y tests corregidos
+- [x] Entrada en Bitácora opcional añadida
+- [x] PR abierto a `main`
+
+## Log
+
+### [cursor-agent-cloud] 2026-03-05 ~06:00 UTC
+
+**Datos recopilados:**
+- `worker/tasks/__init__.py`: 42 handlers registrados en TASK_HANDLERS
+- `pytest tests/ -v`: 847 passed, 5 skipped
+- `gh pr list --state merged`: 66 PRs mergeados (#2–#68)
+- `gh pr list --state open`: 6 PRs abiertos (#69–#74)
+
+**Cambios realizados en `.agents/board.md`:**
+- Header: actualizado a R15 en curso, fecha 2026-03-05
+- Estado del sistema: 42 handlers, 847 tests, 66 PRs mergeados, 6 abiertos
+- Añadida tabla de PRs abiertos (#69–#74) con branch y ronda
+- Añadida Ronda 15 (6 tareas: 065–070)
+- Añadida Ronda 14 (5 tareas: 060–064, 4 con PRs abiertos)
+- Añadida Ronda 13 (5 tareas: 055–059, 4 completadas con PRs #65–#68)
+- Actualizada Ronda 12 (5 tareas: 050–054, todas done con PRs #59–#64)
+- Actualizada Ronda 11 (8 tareas: 042–049, todas done con PRs #51–#59)
+- Añadida Ronda 10 (1 tarea: 040, done con PR #50)
+- Actualizada Ronda 9 (5 tareas: 035–039, todas done)
+- Añadida Ronda 8 (3 tareas: 031–033, todas done)
+- Actualizada lista de handlers: 42 organizados por dominio
+- Añadida sección Bitácora con entrada de estado R14/R15
+- Archivo de tarea 070 actualizado con log y criterios marcados

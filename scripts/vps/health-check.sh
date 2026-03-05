@@ -92,7 +92,7 @@ else
     if [ "$WORKER_STATUS" = "200" ]; then
         WORKER_TOKEN="${WORKER_TOKEN:-}"
         if [ -n "$WORKER_TOKEN" ]; then
-            curl -sf -X POST "${WORKER_URL}/task" \
+            curl -sf -X POST "${WORKER_URL}/run" \
                 -H "Authorization: Bearer ${WORKER_TOKEN}" \
                 -H "Content-Type: application/json" \
                 -d "{\"task\": \"notion.add_comment\", \"input\": {\"text\": \"$(echo -e "$ALERT_TEXT")\"}}" \

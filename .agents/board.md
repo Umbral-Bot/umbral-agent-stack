@@ -38,8 +38,11 @@
 | 084 | Recuperar rate limiter por provider | codex | ✅ done (PR #90) |
 | 085 | Recuperar scripts enriquecimiento Bitácora | github-copilot | ✅ done (PR #89) |
 | 086 | Recuperar browser automation VM plan + skill | antigravity | ✅ done (PR #88) |
+| 087 | Merge ordenado + verificación final (main verde) | codex | ✅ done (main: #85–#90 merged, pytest 866) |
+| 088 | Cierre Bitácora: doc scripts + 9 funciones con firma | github-copilot | ✅ done (bitacora-scripts.md) |
+| 089 | Resumen cierre R16 + guía borrado ramas | antigravity | ✅ done (PR #92: r16-cierre-resumen, guia-borrar-ramas) |
 
-R16 cerrado — PRs mergeados: #85, #86, #87, #88, #89, #90. pytest tests/ -q: 866 passed, 6 skipped, 0 failed.
+R16 cerrado — PRs mergeados: #85, #86, #87, #88, #89, #90. pytest tests/ -q: 866 passed, 6 skipped, 0 failed. Docs adicionales en PR #91 (bitacora-scripts), #92 (resumen+guía ramas) si siguen abiertos.
 
 ## Ronda 12 — En curso
 

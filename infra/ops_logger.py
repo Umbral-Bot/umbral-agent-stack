@@ -7,6 +7,18 @@ Ubicacion default: ~/.config/umbral/ops_log.jsonl
 Eventos:
   task_queued, task_completed, task_failed, task_blocked, task_retried,
   model_selected, quota_warning, quota_restricted, worker_health_change
+
+Parámetros opcionales de auditoría:
+  trace_id      — ID de traza del envelope para correlacionar eventos end-to-end.
+                   Disponible en: task_queued, task_completed, task_failed,
+                   task_blocked, task_retried, model_selected.
+  input_summary — Resumen truncado (max 200 chars) del input de la tarea.
+                   Disponible en: task_completed, task_failed.
+
+Retención:
+  El archivo ops_log.jsonl crece indefinidamente. Usar el script
+  ``scripts/ops_log_rotate.py`` para purgar eventos antiguos.
+  Variable: UMBRAL_OPS_LOG_RETENTION_DAYS (default: 90).
 """
 from __future__ import annotations
 
@@ -41,14 +53,24 @@ class OpsLogger:
             except Exception as e:
                 logger.error("Failed to write ops log: %s", e)
 
-    def task_queued(self, task_id: str, task: str, team: str, task_type: str = "general") -> None:
-        self._write({
+    def task_queued(
+        self,
+        task_id: str,
+        task: str,
+        team: str,
+        task_type: str = "general",
+        trace_id: str | None = None,
+    ) -> None:
+        ev: Dict[str, Any] = {
             "event": "task_queued",
             "task_id": task_id,
             "task": task,
             "team": team,
             "task_type": task_type,
-        })
+        }
+        if trace_id:
+            ev["trace_id"] = trace_id
+        self._write(ev)
 
     def task_completed(
         self,
@@ -58,8 +80,10 @@ class OpsLogger:
         model: str,
         duration_ms: float,
         worker: str = "vps",
+        trace_id: str | None = None,
+        input_summary: str | None = None,
     ) -> None:
-        self._write({
+        ev: Dict[str, Any] = {
             "event": "task_completed",
             "task_id": task_id,
             "task": task,
@@ -67,35 +91,74 @@ class OpsLogger:
             "model": model,
             "duration_ms": round(duration_ms),
             "worker": worker,
-        })
+        }
+        if trace_id:
+            ev["trace_id"] = trace_id
+        if input_summary:
+            ev["input_summary"] = input_summary[:200]
+        self._write(ev)
 
-    def task_failed(self, task_id: str, task: str, team: str, error: str, model: str = "") -> None:
-        self._write({
+    def task_failed(
+        self,
+        task_id: str,
+        task: str,
+        team: str,
+        error: str,
+        model: str = "",
+        trace_id: str | None = None,
+        input_summary: str | None = None,
+    ) -> None:
+        ev: Dict[str, Any] = {
             "event": "task_failed",
             "task_id": task_id,
             "task": task,
             "team": team,
             "model": model,
             "error": error[:500],
-        })
+        }
+        if trace_id:
+            ev["trace_id"] = trace_id
+        if input_summary:
+            ev["input_summary"] = input_summary[:200]
+        self._write(ev)
 
-    def task_blocked(self, task_id: str, task: str, team: str, reason: str) -> None:
-        self._write({
+    def task_blocked(
+        self,
+        task_id: str,
+        task: str,
+        team: str,
+        reason: str,
+        trace_id: str | None = None,
+    ) -> None:
+        ev: Dict[str, Any] = {
             "event": "task_blocked",
             "task_id": task_id,
             "task": task,
             "team": team,
             "reason": reason[:300],
-        })
+        }
+        if trace_id:
+            ev["trace_id"] = trace_id
+        self._write(ev)
 
-    def model_selected(self, task_id: str, task_type: str, model: str, reason: str = "") -> None:
-        self._write({
+    def model_selected(
+        self,
+        task_id: str,
+        task_type: str,
+        model: str,
+        reason: str = "",
+        trace_id: str | None = None,
+    ) -> None:
+        ev: Dict[str, Any] = {
             "event": "model_selected",
             "task_id": task_id,
             "task_type": task_type,
             "model": model,
             "reason": reason,
-        })
+        }
+        if trace_id:
+            ev["trace_id"] = trace_id
+        self._write(ev)
 
     def quota_warning(self, provider: str, usage_pct: float) -> None:
         self._write({
@@ -111,14 +174,24 @@ class OpsLogger:
             "usage_pct": round(usage_pct * 100, 1),
         })
 
-    def task_retried(self, task_id: str, task: str, team: str, retry_count: int) -> None:
-        self._write({
+    def task_retried(
+        self,
+        task_id: str,
+        task: str,
+        team: str,
+        retry_count: int,
+        trace_id: str | None = None,
+    ) -> None:
+        ev: Dict[str, Any] = {
             "event": "task_retried",
             "task_id": task_id,
             "task": task,
             "team": team,
             "retry_count": retry_count,
-        })
+        }
+        if trace_id:
+            ev["trace_id"] = trace_id
+        self._write(ev)
 
     def worker_health_change(self, worker: str, online: bool) -> None:
         self._write({

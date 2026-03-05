@@ -319,6 +319,7 @@ def _run_worker(
         team = envelope.get("team", "system")
         task = envelope.get("task", "unknown")
         task_type = envelope.get("task_type", "general")
+        trace_id = envelope.get("trace_id", "")
         input_data = dict(envelope.get("input", {}))
 
         # S4: selección de modelo por task_type y cuotas
@@ -327,12 +328,12 @@ def _run_worker(
         if decision.requires_approval and is_llm_task:
             reason = "quota_exceeded_approval_required"
             logger.warning("[worker %d] Task %s blocked: %s (model=%s)", worker_id, task_id, reason, decision.model)
-            ops_log.task_blocked(task_id, task, team, reason)
+            ops_log.task_blocked(task_id, task, team, reason, trace_id=trace_id)
             threading.Thread(target=_notion_upsert, args=(wc_local, task_id, "blocked", team, task), kwargs={"error": reason}, daemon=True).start()
             queue.block_task(task_id, reason)
             continue
         selected_model = decision.model
-        ops_log.model_selected(task_id, task_type, selected_model, decision.reason if hasattr(decision, "reason") else "")
+        ops_log.model_selected(task_id, task_type, selected_model, decision.reason if hasattr(decision, "reason") else "", trace_id=trace_id)
 
         # Solo inyectar modelo concreto para tareas LLM
         if is_llm_task:
@@ -365,7 +366,8 @@ def _run_worker(
             duration_ms = (time.time() - t_start) * 1000
             queue.complete_task(task_id, result)
             model_router.quota.record_usage(selected_model)
-            ops_log.task_completed(task_id, task, team, selected_model, duration_ms, worker=target.lower())
+            _input_summary = str(envelope.get("input", {}))[:200]
+            ops_log.task_completed(task_id, task, team, selected_model, duration_ms, worker=target.lower(), trace_id=trace_id, input_summary=_input_summary)
             _result_summary = str(result.get("result", result))[:300] if isinstance(result, dict) else str(result)[:300]
             threading.Thread(target=_notion_upsert, args=(wc_local, task_id, "done", team, task), kwargs={"result_summary": _result_summary}, daemon=True).start()
             threading.Thread(target=_notify_linear_completion, args=(wc_local, envelope, True), kwargs={"result": result}, daemon=True).start()
@@ -382,7 +384,7 @@ def _run_worker(
                 envelope["retry_count"] = retry_count + 1
                 envelope["status"] = "queued"
                 queue.enqueue(envelope)
-                ops_log.task_retried(task_id, task, team, envelope["retry_count"])
+                ops_log.task_retried(task_id, task, team, envelope["retry_count"], trace_id=trace_id)
                 logger.warning(
                     "[worker %d] Task %s timed out, retry %d/2",
                     worker_id, task_id, envelope["retry_count"],
@@ -403,7 +405,8 @@ def _run_worker(
                         daemon=True,
                     ).start()
 
-            ops_log.task_failed(task_id, task, team, str(e), model=selected_model)
+            _input_summary = str(envelope.get("input", {}))[:200]
+            ops_log.task_failed(task_id, task, team, str(e), model=selected_model, trace_id=trace_id, input_summary=_input_summary)
             threading.Thread(target=_notion_upsert, args=(wc_local, task_id, "failed", team, task), kwargs={"error": str(e)[:500]}, daemon=True).start()
             threading.Thread(target=_notify_linear_completion, args=(wc_local, envelope, False), kwargs={"error": str(e)}, daemon=True).start()
             threading.Thread(

@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-03-05  
 **Ronda:** 16  
-**Agente:** Cursor Agent Cloud / Antigravity  
+**Agente:** GitHub Copilot  
 **Branch:** `chore/limpieza-prs-docs`
 
 ---

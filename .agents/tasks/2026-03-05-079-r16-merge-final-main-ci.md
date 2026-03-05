@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-03-05  
 **Ronda:** 16  
-**Agente:** Cursor Agent Cloud  
+**Agente:** Codex  
 **Branch:** `chore/merge-final-main-ci`
 
 ---

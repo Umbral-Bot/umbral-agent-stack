@@ -15,7 +15,7 @@ Para comprobar que todo funciona **como está ahora** (env, Worker, Redis, Linea
 cd ~/umbral-agent-stack && git pull origin main
 source .venv/bin/activate
 export $(grep -v '^#' ~/.config/openclaw/env | xargs)
-PYTHONPATH=. python scripts/verify_stack_vps.py
+PYTHONPATH=. python3 scripts/verify_stack_vps.py
 ```
 
 **Alternativa en la VPS (sin git pull):** Verificación rápida (solo OpenClaw, Tailscale, Worker health; no comprueba Redis/Notion/Linear):
@@ -28,7 +28,7 @@ bash scripts/vps/verify-openclaw.sh
 **En local (Windows, leyendo `.env`):**
 ```powershell
 cd C:\GitHub\umbral-agent-stack
-python scripts/verify_stack_vps.py
+python3 scripts/verify_stack_vps.py
 ```
 
 El script Python comprueba: variables de entorno necesarias, Worker `/health`, Redis, que el Worker tenga `notion.update_dashboard` y `linear.list_teams`, y prueba Linear llamando al Worker. No escribe en Notion. Tras ver que todo da OK, probar el dashboard real con `scripts/dashboard_report_vps.py` (sección 5 del output).

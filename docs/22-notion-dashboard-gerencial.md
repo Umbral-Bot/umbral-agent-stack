@@ -92,7 +92,7 @@ Referencia Notion API: [Append block children](https://developers.notion.com/ref
 
 ```bash
 # Cargar env (ej. desde ~/.config/openclaw/env)
-cd ~/umbral-agent-stack && source .venv/bin/activate && export $(grep -v '^#' ~/.config/openclaw/env | xargs) && export PYTHONPATH=. && python scripts/dashboard_report_vps.py
+cd ~/umbral-agent-stack && source .venv/bin/activate && export $(grep -v '^#' ~/.config/openclaw/env | xargs) && export PYTHONPATH=. && python3 scripts/dashboard_report_vps.py
 ```
 
 Con eso el dashboard en Notion queda actualizado desde la VPS y la Control Room sigue siendo solo el canal de comunicación Rick ↔ Enlace.

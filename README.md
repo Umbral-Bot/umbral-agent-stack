@@ -150,8 +150,8 @@ wc.notion_poll_comments(since="2026-02-26T00:00:00Z")
 | Suite | Count | Command |
 |-------|-------|---------|
 | Unit (mocked, fast) | 536+ passed | `WORKER_TOKEN=test python -m pytest tests/ -v` |
-| E2E (live worker) | 16 tests | `PYTHONPATH=. python scripts/e2e_validation.py` |
-| Smoke (post-deploy) | 4 checks | `PYTHONPATH=. python scripts/smoke_test.py` |
+| E2E (live worker) | 16 tests | `PYTHONPATH=. python3 scripts/e2e_validation.py` (VPS: usar `python3`) |
+| Smoke (post-deploy) | 4 checks | `PYTHONPATH=. python3 scripts/smoke_test.py` (VPS: usar `python3`) |
 | Integration (full pipeline) | 7 tests | `PYTHONPATH=. python scripts/integration_test.py` |
 
 ```bash
@@ -164,8 +164,8 @@ WORKER_TOKEN=test python -m pytest tests/ -v
 # On Windows PowerShell
 $env:WORKER_TOKEN="test"; python -m pytest tests/ -v
 
-# E2E with Notion reporting
-PYTHONPATH=. python scripts/e2e_validation.py --notion
+# E2E with Notion reporting (VPS/Linux: usar python3)
+PYTHONPATH=. python3 scripts/e2e_validation.py --notion
 ```
 
 **CI**: GitHub Actions runs pytest on every push/PR to `main` (Python 3.11 + 3.12). See [.github/workflows/test.yml](.github/workflows/test.yml).

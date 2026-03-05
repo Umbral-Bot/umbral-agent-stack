@@ -6,7 +6,7 @@ Comprueba: env vars necesarias, Worker /health, Redis, tarea Dashboard en Worker
 opcionalmente Linear vía Worker. No imprime secretos.
 
 Ejecutar EN LA VPS (o local con .env):
-  cd ~/umbral-agent-stack && source .venv/bin/activate && export $(grep -v '^#' ~/.config/openclaw/env | xargs) && PYTHONPATH=. python scripts/verify_stack_vps.py
+  cd ~/umbral-agent-stack && source .venv/bin/activate && export $(grep -v '^#' ~/.config/openclaw/env | xargs) && PYTHONPATH=. python3 scripts/verify_stack_vps.py
 
 O desde repo local (lee .env):
   cd C:\\GitHub\\umbral-agent-stack && python scripts/verify_stack_vps.py
@@ -154,7 +154,7 @@ def main() -> int:
         print("   SKIP (faltan variables de entorno)")
     else:
         print("   Env listado arriba. Para probar actualización real del Dashboard Rick:")
-        print("   cd ~/umbral-agent-stack && source .venv/bin/activate && export $(grep -v '^#' ~/.config/openclaw/env | xargs) && PYTHONPATH=. python scripts/dashboard_report_vps.py")
+        print("   cd ~/umbral-agent-stack && source .venv/bin/activate && export $(grep -v '^#' ~/.config/openclaw/env | xargs) && PYTHONPATH=. python3 scripts/dashboard_report_vps.py")
         print("   Cron (cada 15 min): scripts/vps/install-cron.sh o crontab con dashboard-cron.sh")
     print()
 

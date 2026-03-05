@@ -1,6 +1,6 @@
 # Agent Board — Umbral Agent Stack
 
-> Última actualización: 2026-03-05 por **github-copilot** (tarea 082)
+> Última actualización: 2026-03-05 por **github-copilot** (tarea 085)
 > Sprint activo: **R16**
 > **HACKATHON — RONDA 16 EN CIERRE**
 
@@ -33,7 +33,8 @@
 | 079 | Merge final a main y verificación CI | codex | ✅ done |
 | 080 | Limpieza de PRs y documentación (README, board) | github-copilot | ✅ done (11 PRs cerrados, CI + README) |
 | 081 | Document generation tests + cherry-pick contenido | cursor | 📋 pendiente |
-| 082 | Capitalizar PRs cerrados — inventario de ramas | github-copilot | 🔄 en curso (PR abierto) |
+| 082 | Capitalizar PRs cerrados — inventario de ramas | github-copilot | ✅ done (PR #85) |
+| 085 | Recuperar scripts enriquecimiento Bitácora | github-copilot | ✅ done (PR pendiente) |
 
 ## Ronda 12 — En curso
 

@@ -34,8 +34,19 @@ No existe un workflow de CI que ejecute la suite de tests en cada push o PR. Par
 
 ## Criterios de éxito
 
-- [ ] Workflow en `.github/workflows/` que ejecute pytest
-- [ ] Se dispara en push a main y en PRs hacia main
-- [ ] El job falla cuando hay tests fallidos
-- [ ] README o CONTRIBUTING actualizado con instrucciones de tests
-- [ ] PR abierto a `main`
+- [x] Workflow en `.github/workflows/` que ejecute pytest
+- [x] Se dispara en push a main y en PRs hacia main
+- [x] El job falla cuando hay tests fallidos
+- [x] README o CONTRIBUTING actualizado con instrucciones de tests
+- [x] PR abierto a `main`
+
+## Log
+
+### [cursor-agent-cloud] 2026-03-05 12:00
+
+**Archivos creados/modificados:**
+- `.github/workflows/test.yml` — workflow CI con matrix Python 3.11 + 3.12
+- `README.md` — sección Tests actualizada con mención de CI
+- `CONTRIBUTING.md` — nuevo, con instrucciones de tests locales y CI
+
+**Tests:** 847 passed, 5 skipped, 0 failed (local, Python 3.12)

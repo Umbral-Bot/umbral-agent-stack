@@ -28,8 +28,8 @@
 |----|--------|----------|--------|
 | 077 | Cierre integración main — pytest verde, merge PRs 69–73 | — | 📋 pendiente |
 | 078 | Board + Bitácora estado final R16 | — | 📋 pendiente |
-| 079 | Merge final a main y verificación CI | — | 📋 pendiente |
-| 080 | Limpieza de PRs y documentación (README, board) | — | 📋 pendiente |
+| 079 | Merge final a main y verificación CI | codex | 📋 en curso |
+| 080 | Limpieza de PRs y documentación (README, board) | github-copilot | 📋 en curso |
 
 ## Ronda 12 — En curso
 

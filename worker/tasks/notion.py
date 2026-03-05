@@ -5,12 +5,25 @@ Tasks: Notion integration handlers.
 - notion.add_comment: agregar comentario en Control Room
 - notion.poll_comments: leer comentarios recientes
 - notion.create_report_page: crear página hija con reporte estructurado
+- notion.enrich_bitacora_page: enriquecer página de Bitácora con secciones o bloques
 """
 
 from datetime import datetime, timezone
 from typing import Any, Dict
 
 from .. import notion_client
+from ..notion_client import (
+    _block_heading1,
+    _block_heading2,
+    _block_heading3,
+    _block_paragraph,
+    _block_bulleted,
+    _block_callout,
+    _block_code,
+    _block_divider,
+    _block_quote,
+    _block_table,
+)
 from .notion_markdown import markdown_to_blocks
 
 
@@ -173,3 +186,128 @@ def handle_notion_create_report_page(input_data: Dict[str, Any]) -> Dict[str, An
         queries=queries,
         metadata=metadata,
     )
+
+
+# ---------------------------------------------------------------------------
+# Bitácora enrichment
+# ---------------------------------------------------------------------------
+
+
+def _sections_to_blocks(sections: list[Dict[str, Any]]) -> list[Dict[str, Any]]:
+    """
+    Convert high-level section dicts to Notion API block arrays.
+
+    Each section may contain:
+        - title (str): heading_2
+        - content (str): paragraphs split on double newlines
+        - mermaid (str): code block with language="mermaid"
+        - items (list[str]): bulleted list items
+        - table (dict): {"headers": [...], "rows": [[...]]}
+    A divider is appended after each section.
+    """
+    blocks: list[Dict[str, Any]] = []
+
+    for section in sections:
+        title = section.get("title")
+        if title:
+            blocks.append(_block_heading2(title))
+
+        content = section.get("content")
+        if content:
+            for paragraph in content.split("\n\n"):
+                paragraph = paragraph.strip()
+                if paragraph:
+                    blocks.append(_block_paragraph(paragraph))
+
+        mermaid = section.get("mermaid")
+        if mermaid:
+            blocks.append(_block_code(mermaid, "mermaid"))
+
+        items = section.get("items")
+        if items:
+            for item in items:
+                blocks.append(_block_bulleted(item))
+
+        table = section.get("table")
+        if table:
+            headers = table.get("headers", [])
+            rows = table.get("rows", [])
+            blocks.append(_block_table(headers, rows))
+
+        blocks.append(_block_divider())
+
+    return blocks
+
+
+def _raw_blocks_to_notion(raw_blocks: list[Dict[str, Any]]) -> list[Dict[str, Any]]:
+    """
+    Convert simplified raw block dicts to full Notion API block format.
+
+    Supported raw formats:
+        {"type": "heading_1", "text": "..."}
+        {"type": "heading_2", "text": "..."}
+        {"type": "heading_3", "text": "..."}
+        {"type": "paragraph", "text": "..."}
+        {"type": "code", "language": "mermaid", "text": "..."}
+        {"type": "bulleted_list_item", "text": "..."}
+        {"type": "divider"}
+        {"type": "callout", "text": "...", "emoji": "⚠️"}
+        {"type": "quote", "text": "..."}
+        {"type": "table", "rows": [["H1","H2"], ["a","b"]]}
+
+    Unknown types default to paragraph.
+    """
+    _BLOCK_MAP = {
+        "heading_1": lambda b: _block_heading1(b.get("text", "")),
+        "heading_2": lambda b: _block_heading2(b.get("text", "")),
+        "heading_3": lambda b: _block_heading3(b.get("text", "")),
+        "paragraph": lambda b: _block_paragraph(b.get("text", "")),
+        "code": lambda b: _block_code(b.get("text", ""), b.get("language", "plain text")),
+        "bulleted_list_item": lambda b: _block_bulleted(b.get("text", "")),
+        "divider": lambda b: _block_divider(),
+        "callout": lambda b: _block_callout(b.get("text", ""), b.get("emoji", "💡")),
+        "quote": lambda b: _block_quote(b.get("text", "")),
+        "table": lambda b: _block_table(
+            b.get("rows", [[]])[0] if b.get("rows") else [],
+            b.get("rows", [[]])[1:] if b.get("rows") else [],
+        ),
+    }
+
+    blocks: list[Dict[str, Any]] = []
+    for raw in raw_blocks:
+        block_type = raw.get("type", "paragraph")
+        builder = _BLOCK_MAP.get(block_type, _BLOCK_MAP["paragraph"])
+        blocks.append(builder(raw))
+    return blocks
+
+
+def handle_notion_enrich_bitacora_page(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Enrich a Bitácora page by appending structured content blocks.
+
+    Input:
+        page_id (str, required): Notion page ID.
+        sections (list[dict], optional): High-level section dicts.
+        blocks (list[dict], optional): Raw block dicts.
+
+    At least one of 'sections' or 'blocks' must be provided.
+
+    Returns:
+        {"blocks_appended": N, "page_id": "..."}
+    """
+    page_id = input_data.get("page_id")
+    if not page_id:
+        raise ValueError("'page_id' is required in input")
+
+    sections = input_data.get("sections")
+    raw_blocks = input_data.get("blocks")
+
+    if sections is None and raw_blocks is None:
+        raise ValueError("Either 'blocks' or 'sections' must be provided in input")
+
+    if sections is not None:
+        notion_blocks = _sections_to_blocks(sections)
+    else:
+        notion_blocks = _raw_blocks_to_notion(raw_blocks)
+
+    return notion_client.append_blocks_to_page(page_id, notion_blocks)

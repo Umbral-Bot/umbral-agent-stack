@@ -132,6 +132,68 @@ check_redis() {
 }
 
 # ---------------------------------------------------------------
+# 4. Post alert to Notion (best-effort). Uses NOTION_SUPERVISOR_ALERT_PAGE_ID
+#    if set, else NOTION_CONTROL_ROOM_PAGE_ID. Worker must have NOTION_* in env.
+# ---------------------------------------------------------------
+post_notion_alert() {
+    local alert_text="$1"
+    local worker_token="${WORKER_TOKEN:-}"
+    local alert_page_id="${NOTION_SUPERVISOR_ALERT_PAGE_ID:-${NOTION_CONTROL_ROOM_PAGE_ID:-}}"
+    local payload
+    local response
+    local http_status
+    local response_body
+
+    if [ -z "$worker_token" ]; then
+        echo "${LOG_PREFIX} WORKER_TOKEN not set - skipping Notion alert"
+        return 1
+    fi
+
+    payload="$(
+        python3 - "$alert_text" "$alert_page_id" <<'PY'
+import json
+import sys
+
+text = sys.argv[1]
+page_id = sys.argv[2]
+input_payload = {"text": text}
+if page_id:
+    input_payload["page_id"] = page_id
+print(json.dumps({"task": "notion.add_comment", "input": input_payload}))
+PY
+    )"
+
+    response="$(
+        curl -sS -X POST "${WORKER_URL}/run" \
+            -H "Authorization: Bearer ${worker_token}" \
+            -H "Content-Type: application/json" \
+            -d "${payload}" \
+            -w $'\n%{http_code}'
+    )" || {
+        echo "${LOG_PREFIX} Failed to post Notion alert (request error)"
+        return 1
+    }
+
+    http_status="$(printf '%s\n' "$response" | tail -n 1)"
+    response_body="$(printf '%s\n' "$response" | sed '$d')"
+
+    if [ "$http_status" = "200" ]; then
+        if [ -n "$alert_page_id" ]; then
+            echo "${LOG_PREFIX} Alert posted to Notion (page ${alert_page_id})"
+        else
+            echo "${LOG_PREFIX} Alert posted to Notion (default Control Room)"
+        fi
+        return 0
+    fi
+
+    echo "${LOG_PREFIX} Failed to post Notion alert (HTTP ${http_status})"
+    if [ -n "$response_body" ]; then
+        echo "${LOG_PREFIX} Notion alert response: $response_body"
+    fi
+    return 1
+}
+
+# ---------------------------------------------------------------
 # Execute checks
 # ---------------------------------------------------------------
 
@@ -146,28 +208,13 @@ check_dispatcher || restart_dispatcher
 
 # ---------------------------------------------------------------
 # Post alert to Notion if anything was restarted (Worker POST /run).
-# Worker must have NOTION_API_KEY and NOTION_CONTROL_ROOM_PAGE_ID set.
 # ---------------------------------------------------------------
 if [ ${#RESTARTED[@]} -gt 0 ]; then
-    # Single line so JSON is not broken by newlines in -d
     ALERT="🔄 Supervisor auto-restart — $(date -u +"%Y-%m-%d %H:%M UTC") — Restarted: ${RESTARTED[*]}"
 
-    WORKER_TOKEN="${WORKER_TOKEN:-}"
-    if [ -n "$WORKER_TOKEN" ]; then
-        # Wait for Worker to be ready after restart (it may need a few seconds)
-        sleep 4
-        response=$(curl -s -w "\nHTTP_CODE:%{http_code}" -X POST "${WORKER_URL}/run" \
-            -H "Authorization: Bearer ${WORKER_TOKEN}" \
-            -H "Content-Type: application/json" \
-            -d "{\"task\": \"notion.add_comment\", \"input\": {\"text\": $(printf '%s' "$ALERT" | python3 -c 'import sys,json; print(json.dumps(sys.stdin.read()))')}}")
-        http_code=$(echo "$response" | tail -n1)
-        if [ "$http_code" = "HTTP_CODE:200" ]; then
-            echo "${LOG_PREFIX} Alert posted to Notion"
-        else
-            echo "${LOG_PREFIX} Failed to post Notion alert ($http_code)"
-            echo "${LOG_PREFIX} Response: $(echo "$response" | sed '$d')"
-        fi
-    fi
+    # Wait for Worker to be ready after restart (it may need a few seconds)
+    sleep 4
+    post_notion_alert "$ALERT" || true
 fi
 
 echo "${LOG_PREFIX} Done. Restarted: ${RESTARTED[*]:-none}"

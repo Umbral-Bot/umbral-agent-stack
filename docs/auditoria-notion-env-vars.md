@@ -18,7 +18,7 @@ Scope: inventario de variables `NOTION_*` en runtime, scripts operativos, planti
 | `NOTION_API_KEY` | key | Rick | `worker/config.py`, `worker/notion_client.py`, `scripts/vps/dashboard-cron.sh`, `scripts/vps/supervisor.sh`, scripts utilitarios (`setup_notion_tasks_db.py`, `link_kanban_to_page.py`, etc.) | Token principal de integracion Notion para Worker/cron/scripts (comentarios, polling, dashboard, reportes, DB ops). |
 | `NOTION_CONTROL_ROOM_PAGE_ID` | page_id | Rick | `worker/config.py`, `worker/notion_client.py`, `worker/tasks/notion.py`, `dispatcher/service.py`, `scripts/check_notion_comments_raw.py`, `scripts/vps/supervisor.sh` (fallback) | Pagina Control Room por defecto para `notion.add_comment`, `notion.poll_comments`, `create_report_page` y alertas del Dispatcher. |
 | `NOTION_DASHBOARD_PAGE_ID` | page_id | Rick | `worker/config.py`, `worker/notion_client.py`, `scripts/dashboard_report_vps.py`, `scripts/vps/dashboard-cron.sh`, scripts de dashboard/kanban | Destino de `notion.update_dashboard` y herramientas de mantenimiento del dashboard. |
-| `NOTION_GRANOLA_DB_ID` | db_id | Rick (opcional) | `worker/config.py`, `worker/notion_client.py` (`create_transcript_page`), `scripts/verify_stack_vps.py` | DB de transcripciones Granola. Requerida solo para pipeline Granola. |
+| `NOTION_GRANOLA_DB_ID` | db_id | Rick (opcional) | `worker/config.py`, `worker/notion_client.py` (`create_transcript_page`), `scripts/verify_stack_vps.py` | DB de transcripciones Granola. Usa `NOTION_API_KEY` (Rick); no hay integración Notion propia de Granola. Requerida solo si usas pipeline Granola. |
 | `NOTION_TASKS_DB_ID` | db_id | Rick (opcional) | `worker/config.py`, `worker/notion_client.py` (`upsert_task`), scripts de setup/kanban (`setup_notion_tasks_db.py`, `create_dashboard_page.py`, `link_kanban_to_page.py`) | DB Kanban de tareas (`notion.upsert_task`). Si falta, el Worker hace `skipped` en esa funcionalidad. |
 | `NOTION_SUPERVISOR_API_KEY` | key | Supervisor (opcional) | `scripts/vps/supervisor.sh`, `docs/62-operational-runbook.md` | Token de integracion Notion "Supervisor" para post directo a Notion (identidad separada de Rick). |
 | `NOTION_SUPERVISOR_ALERT_PAGE_ID` | page_id | Supervisor (opcional) | `scripts/vps/supervisor.sh`, `docs/62-operational-runbook.md`, `docs/rick-estado-y-capacidades.md` | Pagina destino de alertas del supervisor. Si no esta, fallback a Control Room via Worker. |
@@ -55,7 +55,7 @@ Mantener como contrato principal:
 
 Opcionales por funcionalidad:
 
-- `NOTION_GRANOLA_DB_ID` (solo si se usa pipeline Granola).
+- `NOTION_GRANOLA_DB_ID` (solo si se usa pipeline Granola; es la DB destino, se usa `NOTION_API_KEY` Rick).
 - `NOTION_TASKS_DB_ID` (solo si se usa Kanban/upsert).
 - `NOTION_API_VERSION` (si no se define, usar default actual).
 - `NOTION_POLL_AT_MINUTE` / `NOTION_POLL_INTERVAL_SEC` (solo configuracion de frecuencia).

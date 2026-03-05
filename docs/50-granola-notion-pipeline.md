@@ -1,6 +1,6 @@
 # Granola → Notion Pipeline
 
-> Documento de diseño: pipeline automático para transferir transcripciones de reuniones desde Granola a Notion, con extracción de action items y follow-up proactivo de Rick.
+> Documento de diseño: pipeline automático para transferir transcripciones de reuniones desde Granola a Notion, con extracción de action items y follow-up proactivo de Rick. **Notion:** se usa la integración de Rick (`NOTION_API_KEY`); solo se configura `NOTION_GRANOLA_DB_ID` como ID de la base de datos destino (no hay integración Notion propia de Granola).
 
 ## 1. Investigación de Granola (plan básico)
 
@@ -167,7 +167,7 @@ nssm start granola-watcher
 | `GRANOLA_PROCESSED_DIR` | VM | No | Carpeta destino para archivos procesados (default: `{EXPORT_DIR}/processed`) |
 | `WORKER_URL` | VM | Si (watcher) | URL del Worker (default: `http://localhost:8088`) |
 | `WORKER_TOKEN` | VM + Worker | Si | Token de autenticación del Worker |
-| `NOTION_GRANOLA_DB_ID` | Worker | Si | ID de la DB de transcripciones en Notion |
+| `NOTION_GRANOLA_DB_ID` | Worker | Si | ID de la DB de transcripciones en Notion. Usa la misma integración Rick (`NOTION_API_KEY`). |
 | `NOTION_TASKS_DB_ID` | Worker | No | ID de la DB Kanban para action items |
 | `ENLACE_NOTION_USER_ID` | Worker | No | ID de usuario de Enlace para @mentions en Notion |
 

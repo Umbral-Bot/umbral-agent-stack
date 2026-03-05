@@ -49,7 +49,7 @@ Para que el Worker local pueda ejecutar tareas Notion (p. ej. poller, add_commen
 
 - `NOTION_API_KEY`
 - `NOTION_CONTROL_ROOM_PAGE_ID`
-- `NOTION_GRANOLA_DB_ID`
+- `NOTION_GRANOLA_DB_ID` (opcional; pipeline Granola; usa `NOTION_API_KEY` Rick)
 
 ## Resumen
 

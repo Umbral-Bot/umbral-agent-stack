@@ -13,7 +13,7 @@ pip3 install -r worker/requirements.txt
 
 ## 2. Variables de entorno
 
-El Worker necesita al menos `WORKER_TOKEN`. Para tareas Notion también: `NOTION_API_KEY`, `NOTION_CONTROL_ROOM_PAGE_ID`, `NOTION_GRANOLA_DB_ID`.
+El Worker necesita al menos `WORKER_TOKEN`. Para tareas Notion: `NOTION_API_KEY`, `NOTION_CONTROL_ROOM_PAGE_ID`; para pipeline Granola (transcripciones) también `NOTION_GRANOLA_DB_ID` (usa la misma `NOTION_API_KEY` Rick).
 
 Si ya tenés `~/.config/openclaw/env` con `WORKER_TOKEN` (y opcionalmente Notion), el mismo archivo sirve para el Worker. Si no:
 
@@ -23,7 +23,7 @@ WORKER_TOKEN=el_mismo_que_usa_el_dispatcher
 # Opcional para Notion:
 # NOTION_API_KEY=...
 # NOTION_CONTROL_ROOM_PAGE_ID=...
-# NOTION_GRANOLA_DB_ID=...
+# NOTION_GRANOLA_DB_ID=...   # solo pipeline Granola; usa NOTION_API_KEY (Rick)
 ```
 
 ## 3. Arrancar el Worker

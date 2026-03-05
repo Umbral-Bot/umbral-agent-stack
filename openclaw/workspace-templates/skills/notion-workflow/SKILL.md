@@ -24,7 +24,7 @@ Rick usa este skill para interactuar con la API de Notion, construir automatizac
 |----------|-------------|---------------|
 | `NOTION_API_KEY` | Token de integracion de Notion | Settings → My Connections → Develop your own integrations |
 | `NOTION_CONTROL_ROOM_PAGE_ID` | ID de la pagina de Control Room | Extraer de la URL de la pagina |
-| `NOTION_GRANOLA_DB_ID` | ID de la base de datos de reuniones | Extraer de la URL de la DB |
+| `NOTION_GRANOLA_DB_ID` | ID de la DB de transcripciones Granola (usa `NOTION_API_KEY` Rick) | Extraer de la URL de la DB |
 
 ### Extraer un Page ID o Database ID de la URL
 

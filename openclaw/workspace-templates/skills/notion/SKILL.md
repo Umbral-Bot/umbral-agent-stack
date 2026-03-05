@@ -22,7 +22,7 @@ Rick puede operar Notion usando la familia de tasks `notion.*` del Worker.
 - `NOTION_API_KEY`: token de integracion de Notion.
 - Variables de entorno recomendadas en el Worker:
   - `NOTION_CONTROL_ROOM_PAGE_ID`
-  - `NOTION_GRANOLA_DB_ID`
+  - `NOTION_GRANOLA_DB_ID` (solo pipeline Granola; usa la misma `NOTION_API_KEY` Rick)
   - `NOTION_DASHBOARD_PAGE_ID` (si aplica)
 
 ## Tasks disponibles

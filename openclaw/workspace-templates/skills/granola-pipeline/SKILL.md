@@ -20,8 +20,8 @@ Rick puede procesar transcripciones de Granola y generar follow-ups proactivos u
 
 ## Requisitos
 
-- `NOTION_API_KEY`: token de integración de Notion.
-- `NOTION_GRANOLA_DB_ID`: ID de la DB de transcripciones (Granola Inbox).
+- `NOTION_API_KEY`: token de integración Notion **Rick** (misma key para todo el stack; Granola no tiene integración propia).
+- `NOTION_GRANOLA_DB_ID`: ID de la DB de transcripciones (Granola Inbox) en ese workspace de Rick.
 - `NOTION_TASKS_DB_ID` (opcional): ID de la DB Kanban para action items.
 - Watcher corriendo en la VM (`scripts/vm/granola_watcher.py`) para pipeline automático.
 

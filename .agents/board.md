@@ -53,6 +53,12 @@ R16 cerrado — PRs mergeados: #85–#90. Docs R16/R17 mergeados: #91 (bitacora-
 | 092 | Changelog / Estado R16 en README | github-copilot | `copilot/092-changelog-r16` | ✅ done |
 | 093 | Runbook: Bitácora + browser automation | antigravity | `antigravity/093-runbook-bitacora-browser` | ✅ done (PR #95) |
 
+## Ronda 18 — En curso
+
+| ID | Tarea | Agente | Rama | Estado |
+|----|--------|--------|------|--------|
+| 094 | Dashboard Notion: actualizar con seguimiento R16/R17 | codex | `codex/094-dashboard-notion-seguimiento` | 📋 pendiente |
+
 ## Ronda 12 — En curso
 
 | ID | Título | Asignado | Estado |

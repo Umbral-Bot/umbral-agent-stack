@@ -1,6 +1,6 @@
 # Agent Board — Umbral Agent Stack
 
-> Última actualización: 2026-03-05 por **github-copilot** (tarea 085)
+> Última actualización: 2026-03-05 por **codex** (tarea 087)
 > Sprint activo: **R16**
 > **HACKATHON — RONDA 16 EN CIERRE**
 
@@ -18,13 +18,13 @@
 | Scheduled Tasks | ✅ Redis sorted set, cron cada minuto |
 | Quota Dashboard | ✅ GET /quota/status + reporte Notion |
 | Crons activos | 11 (dashboard, health, supervisor, poller, SIM x2, digest, SIM-make, E2E, OODA, scheduled-tasks) |
-| Tests | ✅ 536 passed (37 flaky — auth-related) |
+| Tests | ✅ 866 passed, 6 skipped (0 failed, pytest tests/ -q) |
 | PRs mergeados (hackathon) | 44+ |
 | PRs obsoletos cerrados | 11 (limpieza R16-080, inventario en docs/branches-cerrados-inventario.md) |
 | CI | ✅ GitHub Actions pytest (Python 3.11 + 3.12) |
 | VM (Execution Plane) | ✅ v0.4.0 — 25 handlers — reconectada |
 
-## Ronda 16 — En cierre
+## Ronda 16 — Cerrada
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|
@@ -32,9 +32,14 @@
 | 078 | Board + Bitácora estado final R16 | cursor | ✅ done (board actualizado) |
 | 079 | Merge final a main y verificación CI | codex | ✅ done |
 | 080 | Limpieza de PRs y documentación (README, board) | github-copilot | ✅ done (11 PRs cerrados, CI + README) |
-| 081 | Document generation tests + cherry-pick contenido | cursor | 📋 pendiente |
+| 081 | Capitalizar trabajo en ramas | codex | ✅ done (PR #86) |
 | 082 | Capitalizar PRs cerrados — inventario de ramas | github-copilot | ✅ done (PR #85) |
-| 085 | Recuperar scripts enriquecimiento Bitácora | github-copilot | ✅ done (PR pendiente) |
+| 083 | Análisis de contenido perdido en ramas | antigravity | ✅ done (PR #87) |
+| 084 | Recuperar rate limiter por provider | codex | ✅ done (PR #90) |
+| 085 | Recuperar scripts enriquecimiento Bitácora | github-copilot | ✅ done (PR #89) |
+| 086 | Recuperar browser automation VM plan + skill | antigravity | ✅ done (PR #88) |
+
+R16 cerrado — PRs mergeados: #85, #86, #87, #88, #89, #90. pytest tests/ -q: 866 passed, 6 skipped, 0 failed.
 
 ## Ronda 12 — En curso
 

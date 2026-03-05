@@ -50,11 +50,11 @@ Investigar y documentar:
 - Selenium (Python): comparar con Playwright; ventajas/desventajas para VM.
 - Pyppeteer / Puppeteer (Python/Node): control de Chromium headless/headed.
 - Otras: Splinter, Mechanize, requests + BeautifulSoup (solo lectura; anotar limitaciones).
-- Librerías para “recording & replay” de flujos (si existen en Python o integrables).
+- Librerías para "recording & replay" de flujos (si existen en Python o integrables).
 
 **Repositorios abiertos en GitHub:**
-- Proyectos que expongan API o CLI para “controlar navegador” (navegar, clic, formularios, capturas).
-- Integraciones “browser automation as a service” o agentes que usen Playwright/Selenium.
+- Proyectos que expongan API o CLI para "controlar navegador" (navegar, clic, formularios, capturas).
+- Integraciones "browser automation as a service" o agentes que usen Playwright/Selenium.
 - Herramientas de grabación de flujos (export a script Python o JSON) que se puedan ejecutar en la VM.
 
 **Herramientas no-Python (referencia):**
@@ -65,7 +65,7 @@ Investigar y documentar:
 - Ejecutable en Windows (VM actual).
 - Preferiblemente Python (alineado con Worker) o invocable desde Python.
 - Soporte headless y/o headed (ventana visible si hace falta para capturas o depuración).
-- Posibilidad de recibir órdenes por API o cola (Worker → tarea “navegar a X, clic en Y, rellenar Z, captura”).
+- Posibilidad de recibir órdenes por API o cola (Worker → tarea "navegar a X, clic en Y, rellenar Z, captura").
 
 ### 2. Matriz comparativa
 
@@ -83,7 +83,7 @@ Redactar un **plan de implementación** (pipeline) que incluya:
 
 - **Arquitectura:** Cómo se integra con el stack actual: Dispatcher → Worker → ¿nuevo módulo en VM? ¿Worker llama a un servicio local en la VM (Playwright/Selenium) vía HTTP o cola? ¿O la VM ejecuta scripts Playwright invocados por `windows.pad.run_flow` o una nueva task tipo `browser.navigate`, `browser.click`, etc.?
 - **Seguridad y permisos:** Ejecución en VM con usuario limitado; qué sitios o dominios permitir; evitar credenciales en código.
-- **Flujo mínimo:** Ejemplo de flujo “Rick recibe petición → encola tarea → Worker (o VM) ejecuta navegación + clics + captura → resultado a Notion/Telegram”.
+- **Flujo mínimo:** Ejemplo de flujo "Rick recibe petición → encola tarea → Worker (o VM) ejecuta navegación + clics + captura → resultado a Notion/Telegram".
 - **Condicionantes:** ¿Solo VM? ¿Solo headless o también headed? ¿Sesiones persistentes (cookies, login) o sesiones efímeras?
 - **Fases sugeridas:** Fase 1 (MVP: navegar, clic, captura, un solo task), Fase 2 (formularios, multi-tab), Fase 3 (flujos grabados/replay, tareas programadas).
 
@@ -102,8 +102,8 @@ Crear **`docs/64-browser-automation-vm-plan.md`** (en español) con:
 
 Crear o ampliar un skill de OpenClaw que documente esta capacidad como **habilidad de Rick usando la VM**:
 
-- **Opción A:** Ampliar `openclaw/workspace-templates/skills/playwright-python/SKILL.md` con una sección “Uso desde Rick en la VM” que describa el pipeline, las tareas Worker previstas (`browser.*`) y ejemplos de uso (navegar, clic, formulario, captura).
-- **Opción B:** Crear `openclaw/workspace-templates/skills/browser-automation-vm/SKILL.md` dedicado a “automatización de navegador en la VM (tipo Claude in Chrome)”, con frontmatter, descripción, cuándo usar, y referencia a `docs/64-browser-automation-vm-plan.md`.
+- **Opción A:** Ampliar `openclaw/workspace-templates/skills/playwright-python/SKILL.md` con una sección "Uso desde Rick en la VM" que describa el pipeline, las tareas Worker previstas (`browser.*`) y ejemplos de uso (navegar, clic, formulario, captura).
+- **Opción B:** Crear `openclaw/workspace-templates/skills/browser-automation-vm/SKILL.md` dedicado a "automatización de navegador en la VM (tipo Claude in Chrome)", con frontmatter, descripción, cuándo usar, y referencia a `docs/64-browser-automation-vm-plan.md`.
 
 El skill debe dejar claro que Rick puede orquestar estas acciones en la VM (navegar ventanas, clics, llenar formularios, capturas, etc.) según el plan diseñado.
 
@@ -111,9 +111,28 @@ El skill debe dejar claro que Rick puede orquestar estas acciones en la VM (nave
 
 ## Criterios de éxito
 
-- [ ] Búsqueda exhaustiva documentada (libs Python, repos GitHub, herramientas).
-- [ ] Matriz comparativa con criterios VM y enlaces.
-- [ ] Documento `docs/64-browser-automation-vm-plan.md` con plan, pipeline y recomendación.
-- [ ] Skill actualizado o nuevo que registre la habilidad de Rick “automatización de navegador en la VM”.
-- [ ] Todo en español.
+- [x] Búsqueda exhaustiva documentada (libs Python, repos GitHub, herramientas).
+- [x] Matriz comparativa con criterios VM y enlaces.
+- [x] Documento `docs/64-browser-automation-vm-plan.md` con plan, pipeline y recomendación.
+- [x] Skill actualizado o nuevo que registre la habilidad de Rick "automatización de navegador en la VM".
+- [x] Todo en español.
 - [ ] PR abierto a `main`.
+
+---
+
+## Log
+
+### [cursor-agent-cloud] 2026-03-05
+
+**Investigación completada.**
+
+1. **Búsqueda exhaustiva:** 9+ herramientas — Playwright Python (recomendado), Selenium, Pyppeteer (descartado), browser-use (79k★, capa AI), workflow-use (RPA), Skyvern, AgentQL, LaVague, Browserless.
+2. **Matriz comparativa:** 9 herramientas × 8 criterios + VM Windows + mantenimiento + licencia.
+3. **Plan:** `docs/64-browser-automation-vm-plan.md` — arquitectura, 4 fases, seguridad, riesgos.
+4. **Skill:** `openclaw/workspace-templates/skills/browser-automation-vm/SKILL.md` (Opción B — skill dedicado) — tareas `browser.*`, ejemplos, comparación con Claude in Chrome.
+
+**Archivos creados/modificados:**
+- `docs/64-browser-automation-vm-plan.md` (nuevo)
+- `openclaw/workspace-templates/skills/browser-automation-vm/SKILL.md` (nuevo)
+- `.agents/tasks/2026-03-04-076-r16-browser-automation-vm-investigacion.md` (actualizado)
+- `.agents/board.md` (actualizado)

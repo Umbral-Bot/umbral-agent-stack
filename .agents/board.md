@@ -22,7 +22,13 @@
 | PRs mergeados (hackathon) | 34 |
 | VM (Execution Plane) | ✅ v0.4.0 — 25 handlers — reconectada |
 
-## Ronda 11 — En curso
+## Ronda 12 — En curso
+
+| ID | Título | Asignado | Estado |
+|----|--------|----------|--------|
+| 054 | Pipeline RRSS — LinkedIn, X, Instagram, WhatsApp (n8n + HITL) — Diseño | cursor-agent-cloud-5 | ✅ done |
+
+## Ronda 11 — Completada ✅
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|

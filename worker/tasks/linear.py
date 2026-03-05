@@ -34,7 +34,9 @@ def _linear_api_key() -> str | None:
             break
     if not env_file:
         return None
-    for line in (env_file.read_text(encoding="utf-8", errors="ignore").splitlines()):
+    # Última aparición de LINEAR_API_KEY gana (por si hay duplicados en el archivo)
+    value = None
+    for line in env_file.read_text(encoding="utf-8", errors="ignore").splitlines():
         line = line.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
@@ -43,8 +45,8 @@ def _linear_api_key() -> str | None:
         if k.startswith("export "):
             k = k[7:].strip()
         if k == "LINEAR_API_KEY":
-            return v.strip().strip('"').strip("'").replace("\r", "") or None
-    return None
+            value = v.strip().strip('"').strip("'").replace("\r", "") or None
+    return value
 
 logger = logging.getLogger("worker.tasks.linear")
 

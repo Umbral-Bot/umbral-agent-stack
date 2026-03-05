@@ -55,10 +55,18 @@ check_worker() {
 restart_worker() {
     echo "${LOG_PREFIX} Worker: DOWN — restarting..."
     cd "$REPO"
+    # Re-source env so Worker gets same WORKER_TOKEN as dashboard/cron
+    if [ -f "$ENV_FILE" ]; then
+        set -a
+        # shellcheck disable=SC1090
+        source "$ENV_FILE"
+        set +a
+    fi
+    export PYTHONPATH="${REPO}"
     nohup python3 -m uvicorn worker.app:app \
         --host "${WORKER_HOST}" \
         --port "${WORKER_PORT}" \
-        > /tmp/worker.log 2>&1 &
+        >> /tmp/worker.log 2>&1 &
     local pid=$!
     sleep 3
 

@@ -19,7 +19,7 @@
 | Quota Dashboard | ✅ GET /quota/status + reporte Notion |
 | Crons activos | 11 (dashboard, health, supervisor, poller, SIM x2, digest, SIM-make, E2E, OODA, scheduled-tasks) |
 | Tests | ✅ 900 passed (tras PR #96; 34 tests Bitácora) |
-| PRs mergeados (hackathon) | 44+ |
+| PRs mergeados (hackathon) | 50+ (#91–#96 en main) |
 | PRs obsoletos cerrados | 11 (limpieza R16-080, inventario en docs/branches-cerrados-inventario.md) |
 | CI | ✅ GitHub Actions pytest (Python 3.11 + 3.12) |
 | VM (Execution Plane) | ✅ v0.4.0 — 25 handlers — reconectada |
@@ -42,9 +42,9 @@
 | 088 | Cierre Bitácora: doc scripts + 9 funciones con firma | github-copilot | ✅ done (bitacora-scripts.md) |
 | 089 | Resumen cierre R16 + guía borrado ramas | antigravity | ✅ done (PR #92: r16-cierre-resumen, guia-borrar-ramas) |
 
-R16 cerrado — PRs mergeados: #85, #86, #87, #88, #89, #90. pytest tests/ -q: 866 passed, 6 skipped, 0 failed. Docs adicionales en PR #91 (bitacora-scripts), #92 (resumen+guía ramas) si siguen abiertos.
+R16 cerrado — PRs mergeados: #85–#90. Docs R16/R17 mergeados: #91 (bitacora-scripts), #92 (resumen+guía ramas), #93–#96 (script ramas, changelog, runbook, Notion). pytest: 900 passed.
 
-## Ronda 17 — En curso
+## Ronda 17 — Cerrada
 
 | ID | Tarea | Agente | Rama | Estado |
 |----|--------|--------|------|--------|

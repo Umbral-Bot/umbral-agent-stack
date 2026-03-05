@@ -60,6 +60,10 @@ TASK_TO_SKILL: Dict[str, str] = {
     "document.create_presentation": "document-generation",
     "granola.process_transcript": "granola-pipeline",
     "granola.create_followup": "granola-pipeline",
+    "google.calendar.create_event": "google-calendar",
+    "google.calendar.list_events": "google-calendar",
+    "gmail.create_draft": "gmail",
+    "gmail.list_drafts": "gmail",
 }
 
 
@@ -76,16 +80,33 @@ def extract_skill_names() -> Set[str]:
     return {d.name for d in skills_dir.iterdir() if (d / "SKILL.md").exists()}
 
 
+def _build_auto_mapping(task_names: List[str], skill_names: Set[str]) -> Dict[str, str]:
+    """Auto-discover task→skill mappings from skill directory names.
+
+    Covers single-word tasks (e.g. skill dir "ping" → task "ping")
+    and dash-to-dot conversions (e.g. "llm-generate" → "llm.generate").
+    """
+    auto: Dict[str, str] = {}
+    for skill in skill_names:
+        for candidate in (skill, skill.replace("-", ".")):
+            if candidate in task_names and candidate not in auto:
+                auto[candidate] = skill
+    return auto
+
+
 def generate_report() -> Tuple[str, int, int]:
     """Build coverage report. Returns (report_text, covered, total)."""
     task_names = extract_task_names()
     skill_names = extract_skill_names()
 
+    auto_map = _build_auto_mapping(task_names, skill_names)
+    effective_map: Dict[str, str] = {**auto_map, **TASK_TO_SKILL}
+
     covered: List[Tuple[str, str]] = []
     uncovered: List[Tuple[str, str]] = []
 
     for task in task_names:
-        expected_skill = TASK_TO_SKILL.get(task, "")
+        expected_skill = effective_map.get(task, "")
         if expected_skill and expected_skill in skill_names:
             covered.append((task, expected_skill))
         else:

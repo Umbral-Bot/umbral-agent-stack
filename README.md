@@ -141,10 +141,15 @@ wc.notion_poll_comments(since="2026-02-26T00:00:00Z")
 
 ### Tests
 
-```bash
-pip install -r worker/requirements.txt
+Los tests se ejecutan automáticamente en **CI** (GitHub Actions) en cada push a `main` y en cada pull request. El workflow corre pytest con Python 3.11 y 3.12.
 
-# Unit tests (fast, mocked — 380+ tests)
+```bash
+# Instalar dependencias
+pip install -r worker/requirements.txt
+pip install -r dispatcher/requirements.txt
+pip install fakeredis
+
+# Unit tests (fast, mocked — 880+ tests)
 WORKER_TOKEN=test python -m pytest tests/ -v
 
 # E2E validation against live worker (16 tests)
@@ -159,6 +164,8 @@ PYTHONPATH=. python scripts/integration_test.py
 # E2E with Notion reporting
 PYTHONPATH=. python scripts/e2e_validation.py --notion
 ```
+
+> Ver [CONTRIBUTING.md](CONTRIBUTING.md) para más detalles sobre cómo ejecutar tests en local y la integración con CI.
 
 ## 📂 Estructura del Repositorio
 
@@ -229,8 +236,12 @@ PYTHONPATH=. python scripts/e2e_validation.py --notion
 | **S2** | ✅ Hecho | Orquestación split (Dispatcher + Redis + E2E VM) |
 | **S3** | ✅ Hecho | Equipos + Notion (poller XX:10, teams.yaml, N workers) |
 | **S4** | ✅ Hecho | ModelRouter + QuotaTracker (Redis + fallback + bloqueo por aprobación) |
-| **S5** | 📋 | Herramientas Windows (PAD/RPA) |
-| **S6** | 📋 | Observabilidad (Langfuse + evals) |
-| **S7** | 📋 | Hardening transversal |
-| **Hackathon** | ✅ Hecho | Diagnóstico + E2E/Smoke/Integration tests + multi-model (Claude Code R6-R7) |
+| **Hackathon R1–R7** | ✅ Hecho | Diagnóstico, multi-LLM, Langfuse, rate limiting, E2E |
+| **R8–R9** | ✅ Hecho | Multi-modelo real, Linear webhooks, OpenClaw skills |
+| **R10–R11** | ✅ Hecho | Skill builder, 50+ skills, Granola→Notion, document generation |
+| **R12** | ✅ Hecho | Google Calendar/Gmail, BIM IFC/Speckle, RRSS pipeline |
+| **R13** | ✅ Hecho | Gobernanza, auditoría, OpsLogger, Bitácora |
+| **R14** | ✅ Hecho | Estabilización: warnings, test deps, Bitácora enriquecida |
+| **R15** | ✅ Hecho | CI GitHub Actions, consolidación PRs, board actualizado |
+| **R16** | ✅ Hecho | Documentación final, Bitácora cierre, CONTRIBUTING.md |
 

@@ -26,7 +26,19 @@ Tras las rondas R14–R16 hay PRs de board (#76), Bitácora (#72) y CI (#73). Au
 
 ## Criterios de éxito
 
-- [ ] Board actualizado con estado R14–R16
-- [ ] Entrada en Bitácora del cierre R15/R16
-- [ ] README o CONTRIBUTING con instrucciones de tests y CI
-- [ ] PR abierto a `main`
+- [x] Board actualizado con estado R14–R16
+- [x] Entrada en Bitácora del cierre R15/R16
+- [x] README o CONTRIBUTING con instrucciones de tests y CI
+- [x] PR abierto a `main`
+
+---
+
+## Log
+
+### [cursor-agent-cloud] 2026-03-05
+
+- Board actualizado: R14–R16 completas, 43 handlers, 881 tests, 66 PRs mergeados, tabla de handlers por dominio
+- Entrada en Bitácora Notion creada: "R15/R16 — Pytest en verde, CI activo, Bitácora completa" con "En pocas palabras", resumen técnico, diagrama Mermaid, tablas de métricas y tareas
+- CONTRIBUTING.md creado con instrucciones de tests locales y CI
+- .github/workflows/test.yml creado (pytest, matrix Python 3.11+3.12)
+- README.md actualizado: sección Tests con CI, sección Estado del Proyecto con R8–R16

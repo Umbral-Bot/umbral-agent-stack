@@ -53,6 +53,8 @@ def _load_env() -> None:
                     continue
                 k, _, v = line.partition("=")
                 k, v = k.strip(), v.strip().strip('"').strip("'").replace("\x00", "")
+                if k.startswith("export "):
+                    k = k[7:].strip()
                 if k and k not in os.environ:
                     os.environ.setdefault(k, v)
             break

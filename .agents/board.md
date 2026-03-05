@@ -33,7 +33,10 @@
 | 079 | Merge final a main y verificación CI | codex | ✅ done |
 | 080 | Limpieza de PRs y documentación (README, board) | github-copilot | ✅ done (11 PRs cerrados, CI + README) |
 | 081 | Document generation tests + cherry-pick contenido | cursor | 📋 pendiente |
-| 082 | Capitalizar PRs cerrados — inventario de ramas | github-copilot | 🔄 en curso (PR abierto) |
+| 082 | Capitalizar PRs cerrados — inventario de ramas | github-copilot | ✅ done (PR #85) |
+| 083 | Análisis contenido perdido en ramas no mergeadas | antigravity | ✅ done (PR #87) |
+| 086 | Recuperar browser automation VM plan + skill | antigravity | ✅ done (PR #88) |
+| 089 | Resumen cierre R16 + guía borrar ramas | antigravity | ✅ done (docs/r16-cierre-resumen.md) |
 
 ## Ronda 12 — En curso
 

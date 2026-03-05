@@ -240,3 +240,14 @@ PYTHONPATH=. python scripts/e2e_validation.py --notion
 | **S7** | 📋 | Hardening transversal |
 | **Hackathon** | ✅ Hecho | Diagnóstico + E2E/Smoke/Integration tests + multi-model (Claude Code R6-R7) |
 
+### Changelog reciente — Ronda 16
+
+Durante la **R16** se recuperó contenido valioso de ramas cerradas y se consolidó en `main`:
+
+- **Rate limiter** por provider (`worker/rate_limit.py`) — 60 RPM configurable vía `RATE_LIMIT_RPM`
+- **Scripts Bitácora Notion** — enriquecimiento y resumen amigable → [docs/bitacora-scripts.md](docs/bitacora-scripts.md)
+- **Browser automation VM** — plan + skill OpenClaw → [docs/64-browser-automation-vm-plan.md](docs/64-browser-automation-vm-plan.md)
+- **Inventarios y limpieza** — 11 PRs obsoletos cerrados, guía de borrado → [docs/ramas-recomendadas-borrar-r16.md](docs/ramas-recomendadas-borrar-r16.md)
+
+Tests: **866 passed**, 6 skipped, 0 failed · Board: [.agents/board.md](.agents/board.md)
+

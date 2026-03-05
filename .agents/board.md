@@ -1,8 +1,8 @@
 # Agent Board — Umbral Agent Stack
 
-> Última actualización: 2026-03-04 por **cursor**
-> Sprint activo: **S6-S7**
-> **HACKATHON — RONDAS 6 y 7 EN CURSO**
+> Última actualización: 2026-03-05 por **github-copilot**
+> Sprint activo: **R16**
+> **HACKATHON — RONDA 16 COMPLETADA**
 
 ## Estado del sistema
 
@@ -11,16 +11,38 @@
 | Protocolo inter-agentes | ✅ Activo |
 | VPS (Control Plane) | ✅ Redis + Dispatcher + Worker + 11 crons |
 | Notion Poller daemon | ✅ Corriendo (PID activo, polling cada 60s) |
-| Worker API | ✅ v0.4.0 — 27 handlers, 10+ endpoints |
+| Worker API | ✅ v0.4.0 — 28 handlers, 10+ endpoints |
 | Multi-LLM | ✅ Gemini + OpenAI + Anthropic (model routing activo) |
 | Langfuse Tracing | ✅ Integrado (graceful degradation sin keys) |
 | Rate Limiting | ✅ 60 RPM (configurable via RATE_LIMIT_RPM) |
 | Scheduled Tasks | ✅ Redis sorted set, cron cada minuto |
 | Quota Dashboard | ✅ GET /quota/status + reporte Notion |
 | Crons activos | 11 (dashboard, health, supervisor, poller, SIM x2, digest, SIM-make, E2E, OODA, scheduled-tasks) |
-| Tests | ✅ 463 passed en VPS |
-| PRs mergeados (hackathon) | 34 |
+| Tests | ✅ 536 passed (37 flaky — auth-related) |
+| PRs mergeados (hackathon) | 44+ |
+| PRs obsoletos cerrados | 11 (limpieza R16-080) |
+| CI | ✅ GitHub Actions pytest (Python 3.11 + 3.12) |
 | VM (Execution Plane) | ✅ v0.4.0 — 25 handlers — reconectada |
+
+## Ronda 16 — Completada ✅
+
+| ID | Título | Asignado | Estado |
+|----|--------|----------|--------|
+| 077 | Integración de PRs y pruebas | cursor | ✅ done (PR #77 → closed, superseded) |
+| 078 | Research Power BI librerías y formatos | cursor | ✅ done (PR #78 → closed, content archived) |
+| 079 | CI pytest workflow + README test instructions | cursor | ✅ done (PR #79 → closed, reimplemented in #080) |
+| 080 | Limpieza PRs obsoletos + README tests/CI + board | github-copilot | ✅ done |
+
+### Objetivo Ronda 16
+Limpieza de PRs obsoletos (11 cerrados con comentario), actualizar README con tests reales (536+ passed) y CI workflow, actualizar board con estado real R8-R16.
+
+## Rondas 8–15 — Completadas ✅
+
+| ID | Highlights |
+|----|-----------|
+| R8 | Linear webhooks, provider health dashboard, multiagent E2E |
+| R9 | OpenClaw skills (Notion, Windows, LLM, Make, Figma), skills validation |
+| R10-R15 | GitHub Models provider, Azure AI Foundry, Vertex AI, OpenClaw proxy, board updates, test fixes |
 
 ## Ronda 7 — Completada ✅
 

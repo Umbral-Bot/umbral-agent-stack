@@ -141,24 +141,30 @@ wc.notion_poll_comments(since="2026-02-26T00:00:00Z")
 
 ### Tests
 
+![Tests](https://github.com/Umbral-Bot/umbral-agent-stack/actions/workflows/tests.yml/badge.svg)
+
+| Suite | Count | Command |
+|-------|-------|---------|
+| Unit (mocked, fast) | 536+ passed | `WORKER_TOKEN=test python -m pytest tests/ -v` |
+| E2E (live worker) | 16 tests | `PYTHONPATH=. python scripts/e2e_validation.py` |
+| Smoke (post-deploy) | 4 checks | `PYTHONPATH=. python scripts/smoke_test.py` |
+| Integration (full pipeline) | 7 tests | `PYTHONPATH=. python scripts/integration_test.py` |
+
 ```bash
+# Install dependencies
 pip install -r worker/requirements.txt
 
-# Unit tests (fast, mocked — 380+ tests)
+# Run unit tests locally (no Redis needed — uses fakeredis)
 WORKER_TOKEN=test python -m pytest tests/ -v
 
-# E2E validation against live worker (16 tests)
-PYTHONPATH=. python scripts/e2e_validation.py
-
-# Smoke test post-deploy (<5s, 4 checks)
-PYTHONPATH=. python scripts/smoke_test.py
-
-# Integration tests (full pipeline, 7 tests)
-PYTHONPATH=. python scripts/integration_test.py
+# On Windows PowerShell
+$env:WORKER_TOKEN="test"; python -m pytest tests/ -v
 
 # E2E with Notion reporting
 PYTHONPATH=. python scripts/e2e_validation.py --notion
 ```
+
+**CI**: GitHub Actions runs pytest on every push/PR to `main` (Python 3.11 + 3.12). See [.github/workflows/tests.yml](.github/workflows/tests.yml).
 
 ## 📂 Estructura del Repositorio
 
@@ -171,7 +177,7 @@ PYTHONPATH=. python scripts/e2e_validation.py --notion
 │   ├── config.py      #   Variables de entorno centralizadas
 │   ├── notion_client.py #  Cliente Notion API
 │   └── tasks/         #   Handlers de tareas (ping, notion.*)
-├── tests/             # Tests mínimos (pytest)
+├── tests/             # 536+ unit tests (pytest + fakeredis)
 ├── openclaw/          # Config templates, scripts, systemd units
 ├── scripts/           # Scripts de utilidad (VPS bash + Windows PS1)
 ├── infra/             # Docker compose scaffolds, diagramas

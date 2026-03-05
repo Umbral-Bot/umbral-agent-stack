@@ -29,9 +29,8 @@ def _load_openclaw_env() -> None:
             k = k[7:].strip()
         if not k:
             continue
-        current = os.environ.get(k)
-        if current is None or (k == "LINEAR_API_KEY" and not current):
-            os.environ[k] = v
+        # Siempre aplicar desde archivo (última aparición gana, como en bash source)
+        os.environ[k] = v
 
 
 _load_openclaw_env()

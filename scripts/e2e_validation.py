@@ -47,7 +47,7 @@ logger = logging.getLogger("e2e_validation")
 # ── Data structures ─────────────────────────────────────────────
 
 @dataclass
-class TestResult:
+class ValidationResult:
     name: str
     passed: bool
     elapsed_ms: float
@@ -58,7 +58,7 @@ class TestResult:
 
 @dataclass
 class SuiteResult:
-    results: List[TestResult] = field(default_factory=list)
+    results: List[ValidationResult] = field(default_factory=list)
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
 
@@ -83,18 +83,18 @@ class SuiteResult:
 
 # ── Test runner infrastructure ──────────────────────────────────
 
-def _run_test(name: str, fn, timeout: float = 30.0) -> TestResult:
+def _run_test(name: str, fn, timeout: float = 30.0) -> ValidationResult:
     """Execute a test function with timing and error capture."""
     start = time.monotonic()
     try:
         detail = fn()
         elapsed = (time.monotonic() - start) * 1000
-        return TestResult(name=name, passed=True, elapsed_ms=elapsed, detail=str(detail or ""))
+        return ValidationResult(name=name, passed=True, elapsed_ms=elapsed, detail=str(detail or ""))
     except Exception as e:
         elapsed = (time.monotonic() - start) * 1000
         error_msg = f"{type(e).__name__}: {e}"
         logger.warning("Test '%s' failed: %s", name, error_msg)
-        return TestResult(name=name, passed=False, elapsed_ms=elapsed, error=error_msg)
+        return ValidationResult(name=name, passed=False, elapsed_ms=elapsed, error=error_msg)
 
 
 # ── Individual tests ────────────────────────────────────────────
@@ -589,30 +589,30 @@ def run_e2e_suite(
 
     # Add SKIP entries for missing API keys
     if not has_openai:
-        suite.results.append(TestResult(
+        suite.results.append(ValidationResult(
             name="Multi-model: OpenAI",
             passed=True, elapsed_ms=0, skipped=True,
             detail="SKIP — OPENAI_API_KEY not set",
         ))
     if not has_anthropic:
-        suite.results.append(TestResult(
+        suite.results.append(ValidationResult(
             name="Multi-model: Anthropic",
             passed=True, elapsed_ms=0, skipped=True,
             detail="SKIP — ANTHROPIC_API_KEY not set",
         ))
-        suite.results.append(TestResult(
+        suite.results.append(ValidationResult(
             name="R8: Claude provider",
             passed=True, elapsed_ms=0, skipped=True,
             detail="SKIP — ANTHROPIC_API_KEY not set",
         ))
     if not has_google:
-        suite.results.append(TestResult(
+        suite.results.append(ValidationResult(
             name="R8: Gemini provider",
             passed=True, elapsed_ms=0, skipped=True,
             detail="SKIP — GOOGLE_API_KEY not set",
         ))
     if not has_vertex:
-        suite.results.append(TestResult(
+        suite.results.append(ValidationResult(
             name="R8: Vertex provider",
             passed=True, elapsed_ms=0, skipped=True,
             detail="SKIP — Vertex env vars not set",

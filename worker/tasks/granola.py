@@ -214,7 +214,7 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
 # granola.create_followup
 # ---------------------------------------------------------------------------
 
-FOLLOWUP_TYPES = {"reminder", "email_draft", "proposal"}
+FOLLOWUP_TYPES = {"reminder", "email_draft", "proposal", "calendar_event"}
 
 PROPOSAL_TEMPLATE = """# Propuesta de Seguimiento
 
@@ -295,9 +295,11 @@ def handle_granola_create_followup(input_data: Dict[str, Any]) -> Dict[str, Any]
     if followup_type == "reminder":
         return _create_reminder(input_data, title, date, attendees_str, action_items_text, transcript_page_id)
     elif followup_type == "email_draft":
-        return _create_email_draft(title, date, action_items_text, notes, transcript_page_id)
+        return _create_email_draft(title, date, action_items_text, notes, transcript_page_id, attendees)
     elif followup_type == "proposal":
         return _create_proposal(title, date, attendees_str, action_items_text, notes, transcript_page_id)
+    elif followup_type == "calendar_event":
+        return _create_calendar_event(input_data, title, date, attendees, transcript_page_id)
 
     raise ValueError(f"Unhandled followup_type: {followup_type}")
 
@@ -350,8 +352,13 @@ def _create_email_draft(
     action_items_text: str,
     notes: str,
     transcript_page_id: str,
+    attendees: List[str] | None = None,
 ) -> Dict[str, Any]:
-    """Generate an email draft from the meeting transcript."""
+    """Generate an email draft from the meeting transcript.
+
+    If GOOGLE_GMAIL_TOKEN is configured and attendees are provided,
+    a real Gmail draft is also created via the gmail.create_draft handler.
+    """
     draft = EMAIL_TEMPLATE.format(
         title=title,
         date=date,
@@ -371,11 +378,72 @@ def _create_email_draft(
         logger.warning("Failed to post email draft to Notion: %s", e)
         posted = False
 
+    email_draft_result = None
+    if attendees:
+        try:
+            from .gmail import handle_gmail_create_draft
+
+            to_addr = attendees[0] if "@" in attendees[0] else ""
+            cc_addrs = [a for a in attendees[1:] if "@" in a]
+            if to_addr:
+                email_draft_result = handle_gmail_create_draft({
+                    "to": to_addr,
+                    "subject": f"Seguimiento — {title} ({date})",
+                    "body": draft,
+                    "body_type": "plain",
+                    "cc": cc_addrs,
+                })
+                logger.info("Gmail draft created: %s", email_draft_result)
+        except Exception as e:
+            logger.warning("Failed to create Gmail draft: %s", e)
+            email_draft_result = {"ok": False, "error": str(e)}
+
     return {
         "followup_type": "email_draft",
         "result": {
             "draft": draft,
             "posted_to_notion": posted,
+            "transcript_page_id": transcript_page_id,
+            "email_draft": email_draft_result,
+        },
+    }
+
+
+def _create_calendar_event(
+    input_data: Dict[str, Any],
+    title: str,
+    date: str,
+    attendees: List[str],
+    transcript_page_id: str,
+) -> Dict[str, Any]:
+    """Create a Google Calendar event from the meeting follow-up."""
+    from .google_calendar import handle_google_calendar_create_event
+
+    start = input_data.get("start", f"{date}T10:00:00")
+    end = input_data.get("end", "")
+    tz = input_data.get("timezone", "America/Santiago")
+    description = input_data.get("notes", f"Follow-up de reunión: {title}")
+
+    attendee_emails = [a for a in attendees if "@" in a]
+
+    try:
+        cal_result = handle_google_calendar_create_event({
+            "title": f"Follow-up: {title}",
+            "description": description,
+            "start": start,
+            "end": end,
+            "timezone": tz,
+            "attendees": attendee_emails,
+        })
+        logger.info("Calendar event created: %s", cal_result)
+    except Exception as e:
+        logger.warning("Failed to create calendar event: %s", e)
+        cal_result = {"ok": False, "error": str(e)}
+
+    return {
+        "followup_type": "calendar_event",
+        "result": {
+            "calendar_event": cal_result,
             "transcript_page_id": transcript_page_id,
         },
     }

@@ -26,7 +26,7 @@
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|
-| 052 | BIM Skills — IFC, Speckle, BIM Coordination + Templates | cursor-agent-cloud-3 | ✅ done |
+| 050 | Google Calendar + Gmail Worker Handlers | cursor-agent-cloud-1 | ✅ done |
 
 ## Ronda 11 — Completada ✅
 

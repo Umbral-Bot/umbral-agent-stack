@@ -116,7 +116,7 @@ El skill debe dejar claro que Rick puede orquestar estas acciones en la VM (nave
 - [x] Documento `docs/64-browser-automation-vm-plan.md` con plan, pipeline y recomendación.
 - [x] Skill actualizado o nuevo que registre la habilidad de Rick "automatización de navegador en la VM".
 - [x] Todo en español.
-- [ ] PR abierto a `main`.
+- [x] PR abierto a `main` — PR #81.
 
 ---
 

@@ -69,8 +69,8 @@ El worker expone un bus HTTP para ejecutar tareas, incluyendo integración con N
 |----------|-------|-------------|
 | `WORKER_TOKEN` | VPS + Windows | Token Bearer compartido |
 | `WORKER_URL` | VPS | URL del worker (e.g. `http://100.109.16.40:8088`) |
-| `NOTION_API_KEY` | Windows | Token de la integración Notion |
-| `NOTION_CONTROL_ROOM_PAGE_ID` | Windows | ID de la página "OpenClaw Control Room" |
+| `NOTION_API_KEY` | VPS + Windows | Token de la integración Notion (Worker, supervisor, poller) |
+| `NOTION_CONTROL_ROOM_PAGE_ID` | VPS + Windows | ID de la página Control Room (comentarios Rick/Enlace; avisos supervisor) |
 | `NOTION_GRANOLA_DB_ID` | Windows | ID de la DB "Granola Inbox" |
 
 Copiar `.env.example` → `.env` y rellenar con valores reales.

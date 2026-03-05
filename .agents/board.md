@@ -75,7 +75,7 @@ R18 cerrada — dashboard Notion actualizado (PR #97).
 
 | ID | Tarea | Estado |
 |----|--------|--------|
-| 098 | Auditoría variables Notion (Codex) | ✅ done — PR #100 (codex/098-auditoria-notion-keys). Doc: docs/auditoria-notion-env-vars.md. Pendiente merge a main. |
+| 098 | Auditoría variables Notion (Codex) | ✅ done — PR #100 mergeado. Doc: docs/auditoria-notion-env-vars.md. Simplificación Rick+Supervisor aplicada (env.example, README, runbook). |
 
 ## Próxima ronda (pendientes)
 

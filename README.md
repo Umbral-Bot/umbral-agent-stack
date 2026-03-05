@@ -141,10 +141,15 @@ wc.notion_poll_comments(since="2026-02-26T00:00:00Z")
 
 ### Tests
 
-```bash
-pip install -r worker/requirements.txt
+Los tests se ejecutan automáticamente en **CI** (GitHub Actions) en cada push a `main` y en cada pull request. El workflow corre pytest con Python 3.11 y 3.12.
 
-# Unit tests (fast, mocked — 380+ tests)
+```bash
+# Instalar dependencias
+pip install -r worker/requirements.txt
+pip install -r dispatcher/requirements.txt
+pip install fakeredis
+
+# Unit tests (fast, mocked — 460+ tests)
 WORKER_TOKEN=test python -m pytest tests/ -v
 
 # E2E validation against live worker (16 tests)
@@ -159,6 +164,8 @@ PYTHONPATH=. python scripts/integration_test.py
 # E2E with Notion reporting
 PYTHONPATH=. python scripts/e2e_validation.py --notion
 ```
+
+> Ver [CONTRIBUTING.md](CONTRIBUTING.md) para más detalles sobre cómo ejecutar tests en local y la integración con CI.
 
 ## 📂 Estructura del Repositorio
 

@@ -38,6 +38,8 @@
 
 Archivo de configuración en VPS: `~/.config/openclaw/env`
 
+**Notion (Rick + Supervisor):** Resumen de variables y roles: [auditoría Notion](auditoria-notion-env-vars.md).
+
 | Variable | Requerida | Descripción |
 |----------|-----------|-------------|
 | `WORKER_TOKEN` | Sí | Token Bearer para autenticación API |

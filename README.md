@@ -69,9 +69,13 @@ El worker expone un bus HTTP para ejecutar tareas, incluyendo integración con N
 |----------|-------|-------------|
 | `WORKER_TOKEN` | VPS + Windows | Token Bearer compartido |
 | `WORKER_URL` | VPS | URL del worker (e.g. `http://100.109.16.40:8088`) |
-| `NOTION_API_KEY` | VPS + Windows | Token de la integración Notion (Worker, supervisor, poller) |
-| `NOTION_CONTROL_ROOM_PAGE_ID` | VPS + Windows | ID de la página Control Room (comentarios Rick/Enlace; avisos supervisor) |
-| `NOTION_GRANOLA_DB_ID` | Windows | ID de la DB "Granola Inbox" |
+| `NOTION_API_KEY` | VPS + Windows | Token integración Notion **Rick** (Worker, poller, dashboard, Control Room) |
+| `NOTION_CONTROL_ROOM_PAGE_ID` | VPS + Windows | ID página Control Room (comentarios Rick/Enlace) |
+| `NOTION_DASHBOARD_PAGE_ID` | VPS + Windows | ID página Dashboard Rick |
+| `NOTION_SUPERVISOR_API_KEY` | VPS (opc.) | Token integración **Supervisor** (alertas con identidad propia) |
+| `NOTION_SUPERVISOR_ALERT_PAGE_ID` | VPS (opc.) | Página destino de alertas del supervisor (ej. Dashboard Rick) |
+| `NOTION_TASKS_DB_ID` | opc. | ID DB Kanban tareas (`notion.upsert_task`) |
+| `NOTION_GRANOLA_DB_ID` | opc. | ID DB Granola Inbox (solo si usas pipeline transcripciones) |
 
 Copiar `.env.example` → `.env` y rellenar con valores reales.
 

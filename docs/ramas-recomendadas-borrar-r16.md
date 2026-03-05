@@ -29,3 +29,17 @@
 | `cursor/workflow-ci-pytest-a6f3` | 0 commits adelante de main. Ya mergeada. |
 | `copilot/082-capitalizar-cerrados` | Reemplazada por Task 083 (PR #87). |
 | `feat/browser-automation-vm-research` | Contenido recuperado en Task 086 (esta PR). |
+
+## Generar comandos de borrado (dry-run)
+
+Este repo incluye un script que solo genera comandos y no ejecuta borrados:
+
+```bash
+python scripts/borrar_ramas_r16_dry_run.py
+```
+
+Para guardar los comandos en un `.txt`:
+
+```bash
+python scripts/borrar_ramas_r16_dry_run.py --output docs/comandos-borrar-ramas-r16.txt
+```

@@ -1,8 +1,8 @@
 # Agent Board — Umbral Agent Stack
 
-> Última actualización: 2026-03-04 por **cursor**
-> Sprint activo: **S6-S7**
-> **HACKATHON — RONDAS 6 y 7 EN CURSO**
+> Última actualización: 2026-03-05 por **github-copilot** (tarea 088)
+> Sprint activo: **R16**
+> **HACKATHON — RONDA 16 EN CIERRE**
 
 ## Estado del sistema
 
@@ -11,25 +11,31 @@
 | Protocolo inter-agentes | ✅ Activo |
 | VPS (Control Plane) | ✅ Redis + Dispatcher + Worker + 11 crons |
 | Notion Poller daemon | ✅ Corriendo (PID activo, polling cada 60s) |
-| Worker API | ✅ v0.4.0 — 27 handlers, 10+ endpoints |
+| Worker API | ✅ v0.4.0 — 28 handlers, 10+ endpoints |
 | Multi-LLM | ✅ Gemini + OpenAI + Anthropic (model routing activo) |
 | Langfuse Tracing | ✅ Integrado (graceful degradation sin keys) |
 | Rate Limiting | ✅ 60 RPM (configurable via RATE_LIMIT_RPM) |
 | Scheduled Tasks | ✅ Redis sorted set, cron cada minuto |
 | Quota Dashboard | ✅ GET /quota/status + reporte Notion |
 | Crons activos | 11 (dashboard, health, supervisor, poller, SIM x2, digest, SIM-make, E2E, OODA, scheduled-tasks) |
-| Tests | ✅ 463 passed en VPS |
-| PRs mergeados (hackathon) | 34 |
+| Tests | ✅ 536 passed (37 flaky — auth-related) |
+| PRs mergeados (hackathon) | 44+ |
+| PRs obsoletos cerrados | 11 (limpieza R16-080, inventario en docs/branches-cerrados-inventario.md) |
+| CI | ✅ GitHub Actions pytest (Python 3.11 + 3.12) |
 | VM (Execution Plane) | ✅ v0.4.0 — 25 handlers — reconectada |
 
-## Ronda 16 — En curso
+## Ronda 16 — En cierre
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|
-| 077 | Cierre integración main — pytest verde, merge PRs 69–73 | — | 📋 pendiente |
-| 078 | Board + Bitácora estado final R16 | — | 📋 pendiente |
-| 079 | Merge final a main y verificación CI | codex | 📋 en curso |
-| 080 | Limpieza de PRs y documentación (README, board) | github-copilot | 📋 en curso |
+| 077 | Cierre integración main — pytest verde, merge PRs 69–73 | cursor | ✅ done (integrado via PR #80) |
+| 078 | Board + Bitácora estado final R16 | cursor | ✅ done (board actualizado) |
+| 079 | Merge final a main y verificación CI | codex | ✅ done |
+| 080 | Limpieza de PRs y documentación (README, board) | github-copilot | ✅ done (11 PRs cerrados, CI + README) |
+| 081 | Document generation tests + cherry-pick contenido | cursor | 📋 pendiente |
+| 082 | Capitalizar PRs cerrados — inventario de ramas | github-copilot | ✅ done (PR #85) |
+| 085 | Recuperar scripts enriquecimiento Bitácora | github-copilot | ✅ done (PR #89) |
+| 088 | Documentar scripts Bitácora y dependencias faltantes | github-copilot | ✅ done |
 
 ## Ronda 12 — En curso
 

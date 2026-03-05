@@ -26,7 +26,7 @@
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|
-| 077 | Cierre integración main — pytest verde, merge PRs 69–73 | — | 📋 pendiente |
+| 077 | Cierre integración main — pytest verde, merge PRs 69–73 | cursor-agent-cloud | ✅ done |
 | 078 | Board + Bitácora estado final R16 | — | 📋 pendiente |
 
 ## Ronda 12 — En curso

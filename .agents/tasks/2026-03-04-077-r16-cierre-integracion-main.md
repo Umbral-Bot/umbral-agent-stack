@@ -26,6 +26,10 @@ En main siguen **7 fallos** en `test_document_generator` y **4 warnings**. Exist
 
 ## Criterios de éxito
 
-- [ ] main con `pytest tests/` → 0 failed
-- [ ] Workflow de pytest presente y pasando
-- [ ] PR abierto/mergeado según corresponda
+- [x] main con `pytest tests/` → 0 failed (847 passed, 5 skipped)
+- [x] Workflow de pytest presente (`.github/workflows/test.yml`) y actualizado con `pip install -e ".[test]"`
+- [x] PR abierto con merge de PRs #69, #70, #71, #73 (vía branch `integracion-prs-69-70-71-73` / PR #80)
+
+## Log
+
+- **2026-03-05 (Cursor Cloud):** Mergeado branch `integracion-prs-69-70-71-73` (PR #80) que integra PRs #69, #70, #71, #73. Merge limpio sin conflictos. pytest: 847 passed, 5 skipped (weasyprint, Figma keys, cryptography — todos esperados). CI workflow actualizado para instalar deps desde `pyproject.toml [test]`.

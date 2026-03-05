@@ -205,6 +205,7 @@ PYTHONPATH=. python scripts/e2e_validation.py --notion
 | [38-protocol-compliance-check](docs/38-protocol-compliance-check.md) | Verificación: dashboard, Linear, Notion, board, protocolos |
 | [39-make-n8n-rick-market-analysis](docs/39-make-n8n-rick-market-analysis.md) | Make + n8n para Rick: potenciar análisis de mercado (SIM), pasar APIs |
 | [40-hackathon-diagnostico-completo](docs/40-hackathon-diagnostico-completo.md) | Hackathon: diagnóstico desde código (agente Cursor Cloud) |
+| [bitacora-scripts](docs/bitacora-scripts.md) | **Scripts enriquecimiento Bitácora Notion** (enrich + resumen amigable) + dependencias faltantes |
 | [41-hackathon-resultado-diagnostico-real](docs/41-hackathon-resultado-diagnostico-real.md) | Hackathon: diagnóstico con datos reales (VPS/VM/Notion/Linear vivos) |
 | [ADRs](docs/adr/) | **Decisiones arquitectónicas (001-004)** |
 | [02-implementation-log](docs/02-implementation-log.md) | Cronología de implementación |
@@ -239,4 +240,15 @@ PYTHONPATH=. python scripts/e2e_validation.py --notion
 | **S6** | 📋 | Observabilidad (Langfuse + evals) |
 | **S7** | 📋 | Hardening transversal |
 | **Hackathon** | ✅ Hecho | Diagnóstico + E2E/Smoke/Integration tests + multi-model (Claude Code R6-R7) |
+
+### Changelog reciente — Ronda 16
+
+Durante la **R16** se recuperó contenido valioso de ramas cerradas y se consolidó en `main`:
+
+- **Rate limiter** por provider (`worker/rate_limit.py`) — 60 RPM configurable vía `RATE_LIMIT_RPM`
+- **Scripts Bitácora Notion** — enriquecimiento y resumen amigable → [docs/bitacora-scripts.md](docs/bitacora-scripts.md)
+- **Browser automation VM** — plan + skill OpenClaw → [docs/64-browser-automation-vm-plan.md](docs/64-browser-automation-vm-plan.md)
+- **Inventarios y limpieza** — 11 PRs obsoletos cerrados, guía de borrado → [docs/ramas-recomendadas-borrar-r16.md](docs/ramas-recomendadas-borrar-r16.md)
+
+Tests: **866 passed**, 6 skipped, 0 failed · Board: [.agents/board.md](.agents/board.md)
 

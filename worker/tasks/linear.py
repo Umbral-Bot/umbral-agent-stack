@@ -23,10 +23,18 @@ def _linear_api_key() -> str | None:
         return key
     if os.name == "nt":
         return None
-    env_file = Path(os.environ.get("HOME", "")) / ".config/openclaw/env"
-    if not env_file.exists():
+    candidates = [
+        Path(os.environ.get("HOME", "")) / ".config/openclaw/env",
+        Path("/home/rick/.config/openclaw/env"),  # VPS cuando HOME no está definido
+    ]
+    env_file = None
+    for p in candidates:
+        if p.exists():
+            env_file = p
+            break
+    if not env_file:
         return None
-    for line in env_file.read_text(encoding="utf-8", errors="ignore").splitlines():
+    for line in (env_file.read_text(encoding="utf-8", errors="ignore").splitlines()):
         line = line.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue

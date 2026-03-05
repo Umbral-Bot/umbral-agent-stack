@@ -280,6 +280,9 @@ def _block_bulleted(text: str, color: str = "default") -> dict[str, Any]:
 def _block_quote(text: str, color: str = "default") -> dict[str, Any]:
     return {"object": "block", "type": "quote", "quote": {"rich_text": [_rich(text)], "color": color}}
 
+def _block_code(text: str, language: str = "plain text") -> dict[str, Any]:
+    return {"object": "block", "type": "code", "code": {"rich_text": [{"type": "text", "text": {"content": text[:2000]}}], "language": language}}
+
 
 def _quota_zone(pct: float) -> str:
     if pct >= 90:
@@ -668,3 +671,192 @@ def create_report_page(
 
     logger.info("Created report page: %s (%s)", page_id, page_url)
     return {"page_id": page_id, "page_url": page_url, "ok": True}
+
+
+# ---------------------------------------------------------------------------
+# Bitácora helpers
+# ---------------------------------------------------------------------------
+
+
+def query_database(
+    database_id: str,
+    filter: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    """
+    Query a Notion database with automatic pagination.
+
+    Args:
+        database_id: The Notion database ID.
+        filter: Optional Notion filter object.
+
+    Returns:
+        List of page objects from the database.
+    """
+    if not config.NOTION_API_KEY:
+        raise RuntimeError("NOTION_API_KEY not configured")
+
+    results: list[dict[str, Any]] = []
+
+    with httpx.Client(timeout=TIMEOUT) as client:
+        next_cursor: str | None = None
+        while True:
+            body: dict[str, Any] = {}
+            if filter:
+                body["filter"] = filter
+            if next_cursor:
+                body["start_cursor"] = next_cursor
+
+            resp = client.post(
+                f"{NOTION_BASE_URL}/databases/{database_id}/query",
+                headers=_headers(),
+                json=body,
+            )
+            data = _check_response(resp, "query_database")
+            results.extend(data.get("results", []))
+            next_cursor = data.get("next_cursor")
+            if not next_cursor:
+                break
+
+    logger.info("Queried database %s: %d results", database_id[:8], len(results))
+    return results
+
+
+def append_blocks_to_page(
+    page_id: str,
+    blocks: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """
+    Append blocks as children of a Notion page.
+
+    Args:
+        page_id: The page to append blocks to.
+        blocks: List of Notion block dicts.
+
+    Returns:
+        {"blocks_appended": N, "page_id": "..."}
+    """
+    if not config.NOTION_API_KEY:
+        raise RuntimeError("NOTION_API_KEY not configured")
+
+    with httpx.Client(timeout=TIMEOUT) as client:
+        for i in range(0, len(blocks), 100):
+            chunk = blocks[i : i + 100]
+            resp = client.patch(
+                f"{NOTION_BASE_URL}/blocks/{page_id}/children",
+                headers=_headers(),
+                json={"children": chunk},
+            )
+            _check_response(resp, "append_blocks_to_page")
+
+    logger.info("Appended %d blocks to page %s", len(blocks), page_id[:8])
+    return {"blocks_appended": len(blocks), "page_id": page_id}
+
+
+_WRITABLE_BLOCK_TYPES = {
+    "paragraph", "heading_1", "heading_2", "heading_3",
+    "bulleted_list_item", "numbered_list_item",
+    "code", "quote", "callout", "divider", "table",
+    "toggle", "to_do", "embed", "bookmark", "image",
+}
+
+
+def _convert_block_for_write(
+    block: dict[str, Any],
+    client: Any,
+) -> dict[str, Any] | None:
+    """
+    Convert a Notion API read-format block to write-format.
+
+    Strips read-only fields (id, has_children, created_time, etc.)
+    and returns only the type + type-specific payload.
+    Returns None for unsupported block types (child_database, child_page, etc.).
+    """
+    block_type = block.get("type", "")
+
+    if block_type not in _WRITABLE_BLOCK_TYPES:
+        return None
+
+    result: dict[str, Any] = {"type": block_type}
+    type_data = block.get(block_type)
+    if type_data is not None:
+        result[block_type] = type_data
+    else:
+        result[block_type] = {}
+
+    return result
+
+
+def prepend_blocks_to_page(
+    page_id: str,
+    blocks: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """
+    Prepend blocks to a Notion page by deleting existing blocks and
+    re-appending with new blocks first, then the old blocks.
+
+    Args:
+        page_id: The page to prepend blocks to.
+        blocks: New blocks to place at the beginning.
+
+    Returns:
+        {"blocks_prepended": N, "blocks_preserved": M, "page_id": "..."}
+    """
+    if not config.NOTION_API_KEY:
+        raise RuntimeError("NOTION_API_KEY not configured")
+
+    with httpx.Client(timeout=TIMEOUT) as client:
+        # 1. Read existing blocks
+        existing_blocks: list[dict[str, Any]] = []
+        next_cursor: str | None = None
+        while True:
+            params: dict[str, Any] = {"page_size": 100}
+            if next_cursor:
+                params["start_cursor"] = next_cursor
+            resp = client.get(
+                f"{NOTION_BASE_URL}/blocks/{page_id}/children",
+                headers=_headers(),
+                params=params,
+            )
+            data = _check_response(resp, "list blocks for prepend")
+            existing_blocks.extend(data.get("results", []))
+            next_cursor = data.get("next_cursor")
+            if not next_cursor:
+                break
+
+        # 2. Delete existing blocks
+        for eb in existing_blocks:
+            bid = eb.get("id")
+            if bid:
+                client.patch(
+                    f"{NOTION_BASE_URL}/blocks/{bid}",
+                    headers=_headers(),
+                    json={"in_trash": True},
+                )
+
+        # 3. Convert old blocks for re-writing
+        old_write_blocks: list[dict[str, Any]] = []
+        for eb in existing_blocks:
+            converted = _convert_block_for_write(eb, client)
+            if converted is not None:
+                old_write_blocks.append(converted)
+
+        # 4. Append new blocks first, then old blocks
+        all_blocks = list(blocks) + old_write_blocks
+        for i in range(0, len(all_blocks), 100):
+            chunk = all_blocks[i : i + 100]
+            resp = client.patch(
+                f"{NOTION_BASE_URL}/blocks/{page_id}/children",
+                headers=_headers(),
+                json={"children": chunk},
+            )
+            _check_response(resp, "prepend blocks")
+
+    logger.info(
+        "Prepended %d blocks, preserved %d in page %s",
+        len(blocks), len(old_write_blocks), page_id[:8],
+    )
+    return {
+        "blocks_prepended": len(blocks),
+        "blocks_preserved": len(old_write_blocks),
+        "page_id": page_id,
+    }

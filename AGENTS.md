@@ -27,10 +27,13 @@ Umbral Agent Stack is a Python-based multi-agent orchestration system with two c
 
 ```bash
 source .venv/bin/activate
+pip install -e ".[test]"            # installs test + document-generation deps
 WORKER_TOKEN=test python -m pytest tests/ -v
 ```
 
 Tests use `fakeredis` (no real Redis needed). All 130+ tests should pass (1 skipped: encrypt/decrypt requires `cryptography` package).
+
+Document-generation tests (`tests/test_document_generator.py`) require `docxtpl`, `fpdf2`, `python-docx`, and `python-pptx`. These are declared in `[project.optional-dependencies] test` inside `pyproject.toml`. If the packages are missing, the tests are skipped automatically via `pytest.importorskip`.
 
 ### Starting services for development
 

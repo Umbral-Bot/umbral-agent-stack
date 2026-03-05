@@ -7,8 +7,9 @@ Ejecutar en la VPS (cron cada 15 min). Requiere:
   - REDIS_URL, WORKER_URL (default http://127.0.0.1:8088), WORKER_TOKEN.
   - Opcional: WORKER_URL_VM para comprobar estado de la VM.
 
-Uso:
-  cd ~/umbral-agent-stack && source .venv/bin/activate && PYTHONPATH=. python scripts/dashboard_report_vps.py
+Uso (VPS):
+  source ~/.config/openclaw/env   # debe incluir WORKER_TOKEN, NOTION_API_KEY, NOTION_DASHBOARD_PAGE_ID, REDIS_URL
+  cd ~/umbral-agent-stack && PYTHONPATH=. python3 scripts/dashboard_report_vps.py [--force]
 """
 
 import json

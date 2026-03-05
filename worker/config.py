@@ -12,7 +12,7 @@ from pathlib import Path
 
 
 def _load_openclaw_env() -> None:
-    """Load ~/.config/openclaw/env into os.environ if not already set (Linux/VPS)."""
+    """Load ~/.config/openclaw/env into os.environ (Linux/VPS). Fills missing vars; for LINEAR_API_KEY also overwrites if empty (cron may pass empty env)."""
     if os.name == "nt":
         return
     env_file = Path(os.environ.get("HOME", "")) / ".config/openclaw/env"
@@ -27,8 +27,11 @@ def _load_openclaw_env() -> None:
         k, v = k.strip(), v.strip().strip('"').strip("'").replace("\r", "")
         if k.startswith("export "):
             k = k[7:].strip()
-        if k and k not in os.environ:
-            os.environ.setdefault(k, v)
+        if not k:
+            continue
+        current = os.environ.get(k)
+        if current is None or (k == "LINEAR_API_KEY" and not current):
+            os.environ[k] = v
 
 
 _load_openclaw_env()

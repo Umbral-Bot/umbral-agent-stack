@@ -46,7 +46,8 @@ Archivo de configuración en VPS: `~/.config/openclaw/env`
 | `WORKER_URL_VM` | No | URL del Worker en VM (Execution Plane) |
 | `NOTION_API_KEY` | Sí* | API key de Notion |
 | `NOTION_DASHBOARD_PAGE_ID` | Sí* | Page ID del dashboard en Notion |
-| `NOTION_CONTROL_ROOM_PAGE_ID` | No | Page ID de la Control Room |
+| `NOTION_CONTROL_ROOM_PAGE_ID` | Sí* (aviso supervisor) | Page ID de la Control Room; el supervisor lo usa para postear el alert cuando reinicia Worker/Dispatcher |
+| `NOTION_SUPERVISOR_ALERT_PAGE_ID` | No | Page ID donde el supervisor postea el aviso de reinicio; si no se define, se usa NOTION_CONTROL_ROOM_PAGE_ID |
 | `NOTION_GRANOLA_DB_ID` | No | Database ID para Granola |
 | `LANGFUSE_PUBLIC_KEY` | No | Clave pública de Langfuse (graceful degradation sin ella) |
 | `LANGFUSE_SECRET_KEY` | No | Clave secreta de Langfuse |
@@ -56,7 +57,21 @@ Archivo de configuración en VPS: `~/.config/openclaw/env`
 | `OPENAI_API_KEY` | No | API key de OpenAI |
 | `ANTHROPIC_API_KEY` | No | API key de Anthropic |
 
-*Requeridas para funcionalidades de Notion; sin ellas solo `ping` funciona completamente.
+*Requeridas para funcionalidades de Notion; sin ellas solo `ping` funciona completamente. Para que el aviso a Notion del supervisor funcione, el Worker debe tener `NOTION_API_KEY` y `NOTION_CONTROL_ROOM_PAGE_ID` (o `NOTION_SUPERVISOR_ALERT_PAGE_ID` si el script lo soporta) en su entorno al arrancar.
+
+### 1.5 Notion: conectar la integración a la página
+
+Para que la API de Notion pueda leer/escribir una página (p. ej. comentarios en Control Room o actualizar el Dashboard), **la integración debe estar conectada a esa página**. Si no, la API puede devolver 403 o el comentario no aparecerá.
+
+Pasos (según [Add & manage integrations – Notion Help](https://www.notion.com/help/add-and-manage-connections-with-the-api)):
+
+1. En Notion, abre la **página** donde debe actuar la integración (Control Room, Dashboard, etc.).
+2. Clic en **•••** (arriba a la derecha).
+3. Abajo del menú, **Add connections**.
+4. Busca y selecciona la **conexión** correspondiente a tu integración (la que usa `NOTION_API_KEY`). Solo aparecen conexiones ya asociadas al workspace.
+5. La conexión quedará activa en esa página; la API podrá crear comentarios, bloques, etc.
+
+Si el aviso del supervisor sigue fallando con 200 desde el Worker pero no ves el comentario en Notion, comprueba que la integración esté conectada a la página cuyo ID es `NOTION_CONTROL_ROOM_PAGE_ID` (o `NOTION_SUPERVISOR_ALERT_PAGE_ID`).
 
 ---
 

@@ -145,20 +145,28 @@ check_worker || restart_worker
 check_dispatcher || restart_dispatcher
 
 # ---------------------------------------------------------------
-# Post alert to Notion if anything was restarted
+# Post alert to Notion if anything was restarted (Worker POST /run).
+# Worker must have NOTION_API_KEY and NOTION_CONTROL_ROOM_PAGE_ID set.
 # ---------------------------------------------------------------
 if [ ${#RESTARTED[@]} -gt 0 ]; then
-    ALERT="🔄 Supervisor auto-restart — $(date -u +"%Y-%m-%d %H:%M UTC")\n\nRestarted: ${RESTARTED[*]}"
+    # Single line so JSON is not broken by newlines in -d
+    ALERT="🔄 Supervisor auto-restart — $(date -u +"%Y-%m-%d %H:%M UTC") — Restarted: ${RESTARTED[*]}"
 
     WORKER_TOKEN="${WORKER_TOKEN:-}"
     if [ -n "$WORKER_TOKEN" ]; then
-        # Wait a moment for Worker to be ready if it was just restarted
-        sleep 2
-        curl -sf -X POST "${WORKER_URL}/task" \
+        # Wait for Worker to be ready after restart (it may need a few seconds)
+        sleep 4
+        response=$(curl -s -w "\nHTTP_CODE:%{http_code}" -X POST "${WORKER_URL}/run" \
             -H "Authorization: Bearer ${WORKER_TOKEN}" \
             -H "Content-Type: application/json" \
-            -d "{\"task\": \"notion.add_comment\", \"input\": {\"text\": \"$(echo -e "$ALERT")\"}}" \
-            > /dev/null 2>&1 && echo "${LOG_PREFIX} Alert posted to Notion" || echo "${LOG_PREFIX} Failed to post Notion alert"
+            -d "{\"task\": \"notion.add_comment\", \"input\": {\"text\": $(printf '%s' "$ALERT" | python3 -c 'import sys,json; print(json.dumps(sys.stdin.read()))')}}")
+        http_code=$(echo "$response" | tail -n1)
+        if [ "$http_code" = "HTTP_CODE:200" ]; then
+            echo "${LOG_PREFIX} Alert posted to Notion"
+        else
+            echo "${LOG_PREFIX} Failed to post Notion alert ($http_code)"
+            echo "${LOG_PREFIX} Response: $(echo "$response" | sed '$d')"
+        fi
     fi
 fi
 

@@ -26,7 +26,7 @@
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|
-| 054 | Pipeline RRSS — LinkedIn, X, Instagram, WhatsApp (n8n + HITL) — Diseño | cursor-agent-cloud-5 | ✅ done |
+| 050 | Google Calendar + Gmail Worker Handlers | cursor-agent-cloud-1 | ✅ done |
 
 ## Ronda 11 — Completada ✅
 

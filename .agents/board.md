@@ -57,7 +57,7 @@ R16 cerrado — PRs mergeados: #85–#90. Docs R16/R17 mergeados: #91 (bitacora-
 
 | ID | Tarea | Agente | Rama | Estado |
 |----|--------|--------|------|--------|
-| 094 | Dashboard Notion: actualizar con seguimiento R16/R17 | codex | `codex/094-dashboard-notion-seguimiento` | 📋 pendiente |
+| 094 | Dashboard Notion: actualizar con seguimiento R16/R17 | codex | `codex/094-dashboard-notion-seguimiento` | ✅ done (PR #97) |
 
 ## Ronda 12 — En curso
 

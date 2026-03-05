@@ -47,7 +47,8 @@ Archivo de configuración en VPS: `~/.config/openclaw/env`
 | `NOTION_API_KEY` | Sí* | API key de Notion |
 | `NOTION_DASHBOARD_PAGE_ID` | Sí* | Page ID del dashboard en Notion |
 | `NOTION_CONTROL_ROOM_PAGE_ID` | Sí* | Page ID de la **Control Room** (solo comunicación Rick/Enlace/David; no usar para alertas automáticas) |
-| `NOTION_SUPERVISOR_ALERT_PAGE_ID` | Recomendado | Page ID donde el supervisor postea el aviso de reinicio. **Definir una página aparte** (ej. "Alertas supervisor") para no llenar la Control Room de comentarios automáticos; si no se define, los avisos van a NOTION_CONTROL_ROOM_PAGE_ID. |
+| `NOTION_SUPERVISOR_ALERT_PAGE_ID` | Recomendado | Page ID donde el supervisor postea el aviso (ej. Dashboard Rick: `0fd13978b220498e9465b4fb2efc5f4a`). Si no se define, el fallback usa el Worker y NOTION_CONTROL_ROOM_PAGE_ID. |
+| `NOTION_SUPERVISOR_API_KEY` | No* | Token de la integración Notion **"Supervisor"** (nombre/avatar distintos a Rick). Si está definido junto con NOTION_SUPERVISOR_ALERT_PAGE_ID, el supervisor postea **directo a Notion** y el comentario aparece como Supervisor en esa página. Si no, usa el Worker (identidad Rick). *Requerido solo para identidad Supervisor en Dashboard. |
 | `NOTION_GRANOLA_DB_ID` | No | Database ID para Granola |
 | `LANGFUSE_PUBLIC_KEY` | No | Clave pública de Langfuse (graceful degradation sin ella) |
 | `LANGFUSE_SECRET_KEY` | No | Clave secreta de Langfuse |
@@ -59,7 +60,7 @@ Archivo de configuración en VPS: `~/.config/openclaw/env`
 
 *Requeridas para funcionalidades de Notion; sin ellas solo `ping` funciona completamente. Para que el aviso a Notion del supervisor funcione, el Worker debe tener `NOTION_API_KEY` y `NOTION_CONTROL_ROOM_PAGE_ID` (o `NOTION_SUPERVISOR_ALERT_PAGE_ID` si el script lo soporta) en su entorno al arrancar.
 
-**Control Room solo para comunicación:** Para no llenar la Control Room de avisos automáticos (reinicios del supervisor), crear en Notion una página dedicada (ej. "Alertas supervisor" u "Ops") y definir `NOTION_SUPERVISOR_ALERT_PAGE_ID` con su ID en `~/.config/openclaw/env` en la VPS. Conectar la misma integración a esa página (••• → Add connections). Los avisos de reinicio irán ahí y la Control Room queda solo para Rick/Enlace/David.
+**Supervisor con identidad propia (recomendado):** Para que los avisos de reinicio aparezcan como **"Supervisor"** (no como Rick) y vayan al **Dashboard Rick**: (1) En Notion, crear una integración (nombre ej. "Supervisor", avatar distinto). (2) En la página Dashboard Rick, **••• → Add connections** y conectar esa integración. (3) En la VPS, en `~/.config/openclaw/env`, definir `NOTION_SUPERVISOR_API_KEY` (token de esa integración) y `NOTION_SUPERVISOR_ALERT_PAGE_ID=0fd13978b220498e9465b4fb2efc5f4a` (ID del Dashboard Rick). El script del supervisor postea entonces directo a la API de Notion y el comentario sale como Supervisor en el Dashboard.
 
 ### 1.5 Notion: conectar la integración a la página
 

@@ -747,3 +747,147 @@ def query_database(database_id: str, filter_obj: dict[str, Any] | None = None) -
 
     logger.info("Queried database %s: %d results", database_id[:8], len(results))
     return results
+
+
+# ---------------------------------------------------------------------------
+# Block conversion (GET → POST format) + prepend support
+# ---------------------------------------------------------------------------
+
+_SIMPLE_BLOCK_TYPES = frozenset({
+    "paragraph", "heading_1", "heading_2", "heading_3",
+    "bulleted_list_item", "numbered_list_item", "to_do",
+    "quote", "callout", "code", "divider", "bookmark",
+    "equation", "breadcrumb",
+})
+
+
+def _convert_block_for_write(
+    block: dict[str, Any],
+    client: httpx.Client,
+) -> dict[str, Any] | None:
+    """Convert a Notion GET response block to POST/PATCH writable format."""
+    btype = block.get("type", "")
+
+    if btype in _SIMPLE_BLOCK_TYPES:
+        result: dict[str, Any] = {"object": "block", "type": btype}
+        content = block.get(btype, {})
+        if btype == "divider":
+            result[btype] = {}
+        else:
+            cleaned = {k: v for k, v in content.items() if k != "children"}
+            result[btype] = cleaned
+        return result
+
+    if btype == "table":
+        table_meta = block.get("table", {})
+        rows = _fetch_children_blocks(block["id"], client)
+        row_blocks = []
+        for row in rows:
+            if row.get("type") == "table_row":
+                row_blocks.append({
+                    "type": "table_row",
+                    "table_row": {"cells": row.get("table_row", {}).get("cells", [])},
+                })
+        return {
+            "object": "block",
+            "type": "table",
+            "table": {
+                "table_width": table_meta.get("table_width", 1),
+                "has_column_header": table_meta.get("has_column_header", False),
+                "has_row_header": table_meta.get("has_row_header", False),
+                "children": row_blocks,
+            },
+        }
+
+    if btype in ("toggle", "column_list", "column"):
+        children_raw = _fetch_children_blocks(block["id"], client)
+        children_converted = []
+        for ch in children_raw:
+            converted = _convert_block_for_write(ch, client)
+            if converted:
+                children_converted.append(converted)
+        content = block.get(btype, {})
+        cleaned = {k: v for k, v in content.items() if k != "children"}
+        cleaned["children"] = children_converted
+        return {"object": "block", "type": btype, btype: cleaned}
+
+    logger.debug("Skipping unsupported block type for conversion: %s", btype)
+    return None
+
+
+def _fetch_children_blocks(block_id: str, client: httpx.Client) -> list[dict[str, Any]]:
+    """Fetch all children of a block, handling pagination."""
+    results: list[dict[str, Any]] = []
+    next_cursor = None
+    while True:
+        params: dict[str, Any] = {"page_size": 100}
+        if next_cursor:
+            params["start_cursor"] = next_cursor
+        resp = client.get(
+            f"{NOTION_BASE_URL}/blocks/{block_id}/children",
+            headers=_headers(),
+            params=params,
+        )
+        data = _check_response(resp, "fetch_children_blocks")
+        results.extend(data.get("results", []))
+        next_cursor = data.get("next_cursor")
+        if not next_cursor:
+            break
+    return results
+
+
+def prepend_blocks_to_page(page_id: str, new_blocks: list[dict[str, Any]]) -> dict[str, Any]:
+    """
+    Insert blocks at the BEGINNING of a page by reading existing blocks,
+    deleting them, then writing new_blocks followed by the old blocks.
+
+    Args:
+        page_id: UUID of the page.
+        new_blocks: Blocks to insert at the top.
+
+    Returns:
+        {"blocks_prepended": N, "blocks_preserved": M, "page_id": "..."}
+    """
+    if not config.NOTION_API_KEY:
+        raise RuntimeError("NOTION_API_KEY not configured")
+
+    with httpx.Client(timeout=TIMEOUT) as client:
+        existing_raw = _fetch_children_blocks(page_id, client)
+        logger.info("Page %s: %d existing blocks to preserve", page_id[:8], len(existing_raw))
+
+        existing_converted = []
+        for b in existing_raw:
+            if b.get("type") == "child_page":
+                continue
+            converted = _convert_block_for_write(b, client)
+            if converted:
+                existing_converted.append(converted)
+
+        for b in existing_raw:
+            if b.get("type") == "child_page":
+                continue
+            client.patch(
+                f"{NOTION_BASE_URL}/blocks/{b['id']}",
+                headers=_headers(),
+                json={"in_trash": True},
+            )
+
+        all_blocks = new_blocks + existing_converted
+        for i in range(0, len(all_blocks), 100):
+            chunk = all_blocks[i : i + 100]
+            resp = client.patch(
+                f"{NOTION_BASE_URL}/blocks/{page_id}/children",
+                headers=_headers(),
+                json={"children": chunk},
+            )
+            _check_response(resp, "prepend_blocks_to_page")
+
+    logger.info(
+        "Prepended %d blocks + preserved %d on page %s",
+        len(new_blocks), len(existing_converted), page_id[:8],
+    )
+    return {
+        "blocks_prepended": len(new_blocks),
+        "blocks_preserved": len(existing_converted),
+        "page_id": page_id,
+    }

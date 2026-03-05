@@ -149,3 +149,14 @@ flowchart LR
 - 27 tests nuevos en `tests/test_notion_enrich_bitacora.py` (todos pasan)
 - 874 tests totales pasan (5 skipped)
 - Script ejecutado: 22 páginas enriquecidas, 0 errores
+
+### [cursor-agent-cloud] 2026-03-05 01:04 (Task 064)
+- Implementada `prepend_blocks_to_page` en `worker/notion_client.py`:
+  - Lee bloques existentes, los convierte a formato POST, borra, y reescribe con nuevos al inicio
+  - Soporta conversión recursiva de tablas, toggles, column_lists
+- Creado `scripts/add_resumen_amigable.py`:
+  - Genera sección "En pocas palabras" con 2 oraciones no técnicas por página
+  - 25+ resúmenes específicos mapeados a temas/rondas
+  - Usa `prepend_blocks_to_page` para insertar al inicio sin borrar contenido técnico
+- Script ejecutado: 22 páginas con "En pocas palabras" al inicio, 0 errores
+- 34 tests (7 nuevos) pasan, 881 tests totales pasan

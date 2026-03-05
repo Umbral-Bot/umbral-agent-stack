@@ -265,3 +265,111 @@ class TestAppendBlocksToPage:
             append_blocks_to_page("page-123", [])
 
         cfg.NOTION_API_KEY = original
+
+
+class TestPrependBlocksToPage:
+    @patch("worker.notion_client.httpx.Client")
+    def test_prepend_deletes_old_and_writes_new_first(self, mock_client_cls):
+        import worker.config as cfg
+        original = cfg.NOTION_API_KEY
+        cfg.NOTION_API_KEY = "test-key"
+
+        mock_client = mock_client_cls.return_value.__enter__.return_value
+
+        existing_blocks = [
+            {"id": "old-1", "type": "paragraph", "has_children": False,
+             "paragraph": {"rich_text": [{"type": "text", "text": {"content": "Old"}, "plain_text": "Old"}], "color": "default"}},
+            {"id": "old-2", "type": "divider", "has_children": False, "divider": {}},
+        ]
+
+        get_resp = type("Resp", (), {
+            "status_code": 200,
+            "json": lambda self: {"results": existing_blocks, "next_cursor": None},
+            "text": "",
+        })()
+        ok_resp = type("Resp", (), {
+            "status_code": 200,
+            "json": lambda self: {"results": []},
+            "text": "",
+        })()
+
+        mock_client.get.return_value = get_resp
+        mock_client.patch.return_value = ok_resp
+
+        from worker.notion_client import prepend_blocks_to_page, _block_heading2
+        new_blocks = [_block_heading2("En pocas palabras")]
+        result = prepend_blocks_to_page("page-abc", new_blocks)
+
+        assert result["blocks_prepended"] == 1
+        assert result["blocks_preserved"] == 2
+        assert result["page_id"] == "page-abc"
+
+        patch_calls = mock_client.patch.call_args_list
+        delete_calls = [c for c in patch_calls if "in_trash" in str(c)]
+        assert len(delete_calls) == 2
+
+        append_call = patch_calls[-1]
+        children = append_call.kwargs.get("json", {}).get("children", [])
+        assert len(children) == 3
+        assert children[0]["type"] == "heading_2"
+        assert children[1]["type"] == "paragraph"
+        assert children[2]["type"] == "divider"
+
+        cfg.NOTION_API_KEY = original
+
+    def test_prepend_no_api_key(self):
+        import worker.config as cfg
+        original = cfg.NOTION_API_KEY
+        cfg.NOTION_API_KEY = None
+
+        from worker.notion_client import prepend_blocks_to_page
+        with pytest.raises(RuntimeError, match="NOTION_API_KEY"):
+            prepend_blocks_to_page("page-123", [])
+
+        cfg.NOTION_API_KEY = original
+
+
+class TestConvertBlockForWrite:
+    def test_simple_paragraph(self):
+        from worker.notion_client import _convert_block_for_write
+        block = {
+            "id": "x", "type": "paragraph", "has_children": False,
+            "paragraph": {"rich_text": [{"type": "text", "text": {"content": "Hello"}}], "color": "default"},
+        }
+        result = _convert_block_for_write(block, None)
+        assert result["type"] == "paragraph"
+        assert "id" not in result
+        assert result["paragraph"]["rich_text"][0]["text"]["content"] == "Hello"
+
+    def test_divider(self):
+        from worker.notion_client import _convert_block_for_write
+        block = {"id": "x", "type": "divider", "has_children": False, "divider": {}}
+        result = _convert_block_for_write(block, None)
+        assert result["type"] == "divider"
+        assert result["divider"] == {}
+
+    def test_code_block(self):
+        from worker.notion_client import _convert_block_for_write
+        block = {
+            "id": "x", "type": "code", "has_children": False,
+            "code": {"rich_text": [{"type": "text", "text": {"content": "graph TD"}}], "language": "mermaid"},
+        }
+        result = _convert_block_for_write(block, None)
+        assert result["type"] == "code"
+        assert result["code"]["language"] == "mermaid"
+
+    def test_callout(self):
+        from worker.notion_client import _convert_block_for_write
+        block = {
+            "id": "x", "type": "callout", "has_children": False,
+            "callout": {"rich_text": [{"type": "text", "text": {"content": "Note"}}], "icon": {"type": "emoji", "emoji": "💡"}, "color": "default"},
+        }
+        result = _convert_block_for_write(block, None)
+        assert result["type"] == "callout"
+        assert result["callout"]["icon"]["emoji"] == "💡"
+
+    def test_unsupported_type_returns_none(self):
+        from worker.notion_client import _convert_block_for_write
+        block = {"id": "x", "type": "child_database", "has_children": False}
+        result = _convert_block_for_write(block, None)
+        assert result is None

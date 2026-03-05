@@ -22,7 +22,13 @@
 | PRs mergeados (hackathon) | 34 |
 | VM (Execution Plane) | ✅ v0.4.0 — 25 handlers — reconectada |
 
-## Ronda 12 — En curso
+## Ronda 15 — En curso
+
+| ID | Título | Asignado | Estado |
+|----|--------|----------|--------|
+| 065 | Integrar PRs R14 (#69, #70, #71) y pytest verde | cursor-agent-cloud | ✅ done (PR) |
+
+## Ronda 12 — Completada ✅
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|

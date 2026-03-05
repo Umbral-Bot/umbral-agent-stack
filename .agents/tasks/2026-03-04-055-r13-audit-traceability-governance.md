@@ -88,8 +88,28 @@ Crear `scripts/audit_traceability_check.py` que:
 
 ## Criterios de éxito
 
-- [ ] `docs/61-audit-traceability-governance.md` — documento completo
-- [ ] Matriz de preguntas vs. capacidad actual
-- [ ] Lista priorizada de gaps y propuestas de mejora
-- [ ] `scripts/audit_traceability_check.py` — script de verificación rápida
-- [ ] PR abierto a `main`
+- [x] `docs/61-audit-traceability-governance.md` — documento completo
+- [x] Matriz de preguntas vs. capacidad actual
+- [x] Lista priorizada de gaps y propuestas de mejora
+- [x] `scripts/audit_traceability_check.py` — script de verificación rápida
+- [x] PR abierto a `main`
+
+## Log
+
+### [cursor-agent-cloud] 2026-03-05 08:00
+
+**Archivos creados:**
+- `docs/61-audit-traceability-governance.md` — Documento completo con inventario de 12 componentes, 12 gaps priorizados, 10 preguntas de gobernanza, 9 propuestas de mejora, KPIs y recomendaciones de implementación.
+- `scripts/audit_traceability_check.py` — Script de verificación que lee ops_log.jsonl, valida estructura de eventos, verifica presencia de trace_id/source/task_type, evalúa retención, y emite veredicto (OK/Parcial/Insuficiente).
+
+**Archivos modificados:**
+- `.agents/board.md` — Agregada Ronda 13 con tarea 055.
+
+**Hallazgos clave:**
+- `trace_id` está definido en TaskEnvelope pero no se propaga end-to-end (WorkerClient.run() envía solo {task, input}).
+- `task_queued` nunca se emite (método existe pero no se invoca).
+- `source` (origen) solo se establece en 4 de N enqueuers y no se registra en OpsLogger.
+- Sin rotación de ops_log.jsonl — archivo crece indefinidamente.
+- Langfuse traces no correlacionados con envelope trace_id.
+
+**Tests:** Script ejecutado correctamente, detecta todos los gaps esperados.

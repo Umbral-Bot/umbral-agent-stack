@@ -20,8 +20,32 @@ from __future__ import annotations
 import os
 import sys
 import time
+from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Cargar env desde ~/.config/openclaw/env (VPS) o .env (local), igual que verify_stack_vps.py
+def _load_env() -> None:
+    repo_root = Path(__file__).resolve().parent.parent
+    env_files = []
+    if os.name != "nt":
+        env_files.append(Path(os.environ.get("HOME", "")) / ".config/openclaw/env")
+    env_files.append(repo_root / ".env")
+    for p in env_files:
+        if p.exists():
+            raw = p.read_text(encoding="utf-8", errors="ignore").replace("\x00", "")
+            for line in raw.splitlines():
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                k, _, v = line.partition("=")
+                k, v = k.strip(), v.strip().strip('"').strip("'").replace("\x00", "")
+                if k and k not in os.environ:
+                    os.environ.setdefault(k, v)
+            break
+
+
+_load_env()
 
 import httpx
 

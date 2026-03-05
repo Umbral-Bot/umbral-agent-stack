@@ -30,10 +30,35 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 # Repo root on PATH
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+def _load_env() -> None:
+    """Load env from ~/.config/openclaw/env (VPS) or .env (local), like verify_stack_vps.py."""
+    repo_root = Path(__file__).resolve().parent.parent
+    env_files = []
+    if os.name != "nt":
+        env_files.append(Path(os.environ.get("HOME", "")) / ".config/openclaw/env")
+    env_files.append(repo_root / ".env")
+    for p in env_files:
+        if p.exists():
+            raw = p.read_text(encoding="utf-8", errors="ignore").replace("\x00", "")
+            for line in raw.splitlines():
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                k, _, v = line.partition("=")
+                k, v = k.strip(), v.strip().strip('"').strip("'").replace("\x00", "")
+                if k and k not in os.environ:
+                    os.environ.setdefault(k, v)
+            break
+
+
+_load_env()
 
 import httpx
 

@@ -1,6 +1,6 @@
 # Agent Board — Umbral Agent Stack
 
-> Última actualización: 2026-03-04 por **cursor**
+> Última actualización: 2026-03-05 por **cursor**
 > Sprint activo: **S6-S7**
 > **HACKATHON — RONDAS 6 y 7 EN CURSO**
 
@@ -18,15 +18,22 @@
 | Scheduled Tasks | ✅ Redis sorted set, cron cada minuto |
 | Quota Dashboard | ✅ GET /quota/status + reporte Notion |
 | Crons activos | 11 (dashboard, health, supervisor, poller, SIM x2, digest, SIM-make, E2E, OODA, scheduled-tasks) |
-| Tests | ✅ 463 passed en VPS |
+| Tests | ✅ 847 passed, 0 failed |
 | PRs mergeados (hackathon) | 34 |
 | VM (Execution Plane) | ✅ v0.4.0 — 25 handlers — reconectada |
 
-## Ronda 15 — En curso
+## Ronda 16 — En curso
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|
-| 065 | Integrar PRs R14 (#69, #70, #71) y pytest verde | cursor-agent-cloud | ✅ done (PR) |
+| 071 | Mergear PRs #69-#73 y pytest verde en main | cursor-agent-cloud | ✅ done (PR) |
+
+## Ronda 15 — Completada ✅
+
+| ID | Título | Asignado | Estado |
+|----|--------|----------|--------|
+| 065 | Integrar PRs R14 (#69, #70, #71) y pytest verde | cursor-agent-cloud | ✅ done (PR #74) |
+| 066 | CI pytest GitHub Actions | cursor-agent-cloud | ✅ done (PR #73) |
 
 ## Ronda 12 — Completada ✅
 

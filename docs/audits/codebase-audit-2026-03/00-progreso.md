@@ -5,7 +5,7 @@
 | 1 | Mapa del codebase (módulos, entry points, deps, ejecución, tests, riesgos, trabajo perdido) | ✅ Completado |
 | 2 | Bugs y edge cases por riesgo (tabla priorizada P0/P1/P2) | ✅ Completado |
 | 3 | Revisión de seguridad (secretos, auth, inputs, deps) | ✅ Completado |
-| 4 | — | Siguiente |
+| 4 | Mejoras estructurales (quick wins, mediano, grande) | ✅ Completado |
 
 ## Paso 1 completado
 
@@ -45,6 +45,25 @@ Archivo: `docs/audits/codebase-audit-2026-03/03-seguridad.md`
 
 Quick wins identificados: SEC-7 (1 linea), SEC-11, SEC-13, SEC-3, SEC-2, SEC-5.
 
-## Siguiente: Paso 4
+## Paso 4 completado
 
-A definir con el usuario.
+Archivo: `docs/audits/codebase-audit-2026-03/04-mejoras-estructurales.md`
+
+16 mejoras propuestas en 3 niveles:
+
+- 6 Quick Wins (1 dia): sanitize fix (P0 #3 + SEC-13), timing-safe auth (SEC-7), validacion windows (SEC-10/11/12), limpiar .env.example (SEC-2/3/5), emitir task_queued (P1 #5), unificar rate limiter (P2 #13)
+- 6 Mediano plazo (1-2 semanas): run_in_executor (P0 #1/#2), desacople worker/dispatcher (P1 #6), proteger TTL (P0 #4), Lua atomics (P2 #8/#14), auth hardening (SEC-8/9/17), pip-audit en CI (SEC-15/16)
+- 4 Grande (1-2 meses): auth multi-nivel (SEC-1/8/10), async worker + Redis Streams (P0 #1/#2/#4), observabilidad Langfuse (R5/S6), containerizacion CI/CD (R8/S7)
+
+Incluye mapa de dependencias y orden de ejecucion recomendado.
+
+---
+
+## Auditoria completada
+
+Los 4 pasos de la auditoria han sido completados:
+
+1. **Mapa del codebase** — estructura, entry points, deps, riesgos, trabajo perdido
+2. **Bugs y edge cases** — 17 bugs priorizados P0/P1/P2
+3. **Seguridad** — 17 hallazgos priorizados Critico/Alto/Medio/Bajo
+4. **Mejoras estructurales** — 16 propuestas en 3 horizontes temporales

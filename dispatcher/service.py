@@ -384,6 +384,7 @@ def _run_worker(
                 envelope["retry_count"] = retry_count + 1
                 envelope["status"] = "queued"
                 queue.enqueue(envelope)
+                ops_log.task_queued(task_id, task, team, task_type, trace_id=trace_id)
                 ops_log.task_retried(task_id, task, team, envelope["retry_count"], trace_id=trace_id)
                 logger.warning(
                     "[worker %d] Task %s timed out, retry %d/2",

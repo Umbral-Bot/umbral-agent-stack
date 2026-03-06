@@ -85,7 +85,14 @@ Auditoría Claude (PR #101): **plan maestro** de todas las implementaciones y me
 - **Mediano (M-1 a M-6):** 1–2 semanas — run_in_executor, desacople, TTL, Lua, auth hardening, pip-audit.
 - **Grande (G-1 a G-4):** 1–2 meses — auth multi-nivel, async+Redis Streams, observabilidad, containerización.
 
-Ejecución en paralelo de Quick Wins: 3 ramas Codex (worker, config, dispatcher). Tareas creadas: 102 (worker), 103 (config), 104 (dispatcher) — `.agents/tasks/2026-03-07-102-r21-codex-audit-qw-worker.md` y análogos 103, 104.
+Ejecución en paralelo de Quick Wins: 3 ramas Codex (worker, config, dispatcher). Tareas 102, 103, 104.
+
+**Ronda 21 — Cerrada (audit quick wins + auditoría docs):**
+- PR #101 (Claude): auditoría codebase 2026-03 — docs en `docs/audits/codebase-audit-2026-03/` — MERGED.
+- PR #102 (Codex): quick wins dispatcher (task_queued on retry) — MERGED.
+- PR #103 (Codex): quick wins config (.env.example, bitacora scripts) — MERGED.
+- PR #104 (Codex): quick wins worker (sanitize, auth, Windows, task_queued, rate limiter) — MERGED.
+- Tests: 911 passed tras merge. Siguiente: ítems mediano plazo del plan (M-1 a M-6).
 
 ## Próxima ronda (pendientes)
 

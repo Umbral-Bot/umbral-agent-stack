@@ -48,6 +48,7 @@ El Dispatcher encola tareas en Redis (`umbral:tasks:pending`) y el Worker las ej
 - **Gateway:** 24/7 en VPS; Telegram bot + Control UI (puertos 18789 ws, 18791 http).
 - **Modelos:** Configurados vía `openclaw config`; Gemini, Claude, etc. según cuotas.
 - **Workspace:** `~/.openclaw/workspace` — IDENTITY.md, SOUL.md, AGENTS.md, TOOLS.md.
+- **Skill `openclaw-gateway`:** Ver `skills/openclaw-gateway/SKILL.md` para arquitectura del Gateway, integración Pi (pi-coding-agent), schema de `openclaw.json` (agents.list, bindings, channels), multi-agente y referencias a docs.openclaw.ai. Usar para dudas de config, varios agentes o GatewayRequestError / invalid config.
 
 ## Linear
 

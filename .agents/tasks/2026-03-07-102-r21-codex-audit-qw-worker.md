@@ -4,6 +4,7 @@
 **Ronda:** 21  
 **Agente:** Codex (GPT-5.4)  
 **Rama:** `codex/audit-qw-worker` — trabajar solo en esta rama.
+**Estado:** done
 
 ---
 
@@ -58,12 +59,12 @@ Implementar los quick wins de la auditoría 2026-03 que afectan al **worker**: Q
 
 ## Criterios de éxito
 
-- [ ] Sanitize aplicado en `/run` y `/enqueue`; _check_injection lanza ValueError.
-- [ ] Auth usa `hmac.compare_digest` para el token.
-- [ ] Windows: `name` y `username` validados; `run_as_password` no aceptado por HTTP.
-- [ ] `ops_log.task_queued` llamado tras `queue.enqueue()` en `/enqueue`.
-- [ ] Una sola env de rate limit (`RATE_LIMIT_RPM`); tests pasan.
-- [ ] `pytest tests/ -q` pasa. PR abierto a main con título `fix(R21-102): audit quick wins — worker (sanitize, auth, Windows, task_queued, rate limiter)`.
+- [x] Sanitize aplicado en `/run` y `/enqueue`; _check_injection lanza ValueError.
+- [x] Auth usa `hmac.compare_digest` para el token.
+- [x] Windows: `name` y `username` validados; `run_as_password` no aceptado por HTTP.
+- [x] `ops_log.task_queued` llamado tras `queue.enqueue()` en `/enqueue`.
+- [x] Una sola env de rate limit (`RATE_LIMIT_RPM`); tests pasan.
+- [x] `pytest tests/ -q` pasa. PR abierto a main con título `fix(R21-102): audit quick wins — worker (sanitize, auth, Windows, task_queued, rate limiter)`.
 
 ---
 
@@ -71,3 +72,11 @@ Implementar los quick wins de la auditoría 2026-03 que afectan al **worker**: Q
 
 - No tocar `.env.example` ni scripts de Bitácora (los hace la rama config). No tocar `dispatcher/service.py` (lo hace la rama dispatcher).
 - No mergear a main. Solo push de tu rama y abrir PR.
+
+## Log
+
+### [codex] 2026-03-06 02:39 -03:00
+Tomé la tarea en `codex/audit-qw-worker`, alineé la rama con `main` y empecé la implementación de los quick wins del worker (sanitize, auth timing-safe, handlers Windows, `task_queued`, rate limiter). Tests aún no ejecutados.
+
+### [codex] 2026-03-06 02:44 -03:00
+Implementé los quick wins en `worker/app.py`, `worker/sanitize.py`, `worker/tasks/windows.py`, `worker/config.py` y `worker/rate_limit.py`; añadí cobertura en `tests/test_worker.py`, `tests/test_enqueue_api.py`, `tests/test_hardening.py` y `tests/test_windows_handlers.py`. Validación ejecutada: `python -m pytest tests/test_worker.py tests/test_enqueue_api.py tests/test_hardening.py tests/test_windows_handlers.py -q` → `76 passed, 1 skipped`; `python -m pytest tests/ -q` → `908 passed, 5 skipped`.

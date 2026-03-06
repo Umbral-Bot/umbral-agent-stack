@@ -7,6 +7,7 @@ S5 — Tareas Windows (PAD/RPA, scripts).
 
 import logging
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -16,6 +17,21 @@ from .. import tool_policy
 from ..sanitize import sanitize_pad_flow_name
 
 logger = logging.getLogger("worker.tasks.windows")
+_SAFE_NAME_PATTERN = re.compile(r"^[A-Za-z0-9_.-]+$")
+
+
+def _validate_safe_name(value: str, max_len: int = 64) -> str:
+    """Validate Windows-facing identifiers before interpolating them into commands or paths."""
+    if not isinstance(value, str):
+        raise ValueError("value must be a string")
+    candidate = value.strip()
+    if not candidate:
+        raise ValueError("value must be a non-empty string")
+    if len(candidate) > max_len:
+        raise ValueError(f"value too long (max {max_len})")
+    if not _SAFE_NAME_PATTERN.fullmatch(candidate):
+        raise ValueError("value contains invalid characters")
+    return candidate
 
 
 def handle_windows_pad_run_flow(input_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -115,6 +131,7 @@ def handle_windows_open_notepad(input_data: Dict[str, Any]) -> Dict[str, Any]:
         text (str, optional): Texto a mostrar. Default: "hola".
         run_now (bool, optional): Si true, abre Notepad inmediatamente (default: false).
         run_as_user (str, optional): Usuario con el que ejecutar al logon (solo si no es interactivo).
+        run_as_password no se acepta por HTTP. Configurar `SCHTASKS_PASSWORD` en la VM si hace falta.
 
     Returns:
         {"ok": bool, "path": str, "scheduled": bool, "error": str|None}
@@ -148,7 +165,7 @@ def handle_windows_open_notepad(input_data: Dict[str, Any]) -> Dict[str, Any]:
             return {"ok": False, "path": path, "scheduled": False, "error": str(e)}
     task_name = "UmbralOpenNotepad"
     run_as_user = (input_data.get("run_as_user") or "").strip()
-    run_as_password = (input_data.get("run_as_password") or "").strip()
+    run_as_password = os.environ.get("SCHTASKS_PASSWORD", "").strip() or os.environ.get("OPENCLAW_NOTEPAD_RUN_AS_PASSWORD", "").strip()
     try:
         dir_path = os.path.dirname(path)
         bat_path = os.path.join(dir_path, "umbral_open_notepad.bat")
@@ -241,7 +258,7 @@ def handle_windows_firewall_allow_port(input_data: Dict[str, Any]) -> Dict[str, 
     if port is None:
         port = 8089
     port = int(port)
-    name = input_data.get("name") or f"OpenClaw Worker {port}"
+    name = _validate_safe_name(input_data.get("name") or f"OpenClaw-Worker-{port}")
     try:
         subprocess.run(
             ["netsh", "advfirewall", "firewall", "delete", "rule", f"name={name}"],
@@ -309,7 +326,7 @@ def handle_windows_add_interactive_worker_to_startup(input_data: Dict[str, Any])
     """
     if sys.platform != "win32":
         return {"ok": False, "error": "Solo Windows."}
-    username = (input_data.get("username") or "Rick").strip()
+    username = _validate_safe_name(input_data.get("username") or "Rick")
     repo = os.environ.get("PYTHONPATH", "").strip() or r"C:\GitHub\umbral-agent-stack"
     bat = os.path.join(repo, "scripts", "vm", "start_interactive_worker.bat")
     if not os.path.isfile(bat):

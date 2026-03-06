@@ -32,14 +32,14 @@ _INJECTION_PATTERNS = [
 
 
 def _check_injection(value: str, field: str) -> None:
-    """Log WARNING if value matches known injection patterns."""
+    """Raise ValueError if value matches known injection patterns."""
     for pat in _INJECTION_PATTERNS:
         if pat.search(value):
             logger.warning(
                 "Possible injection attempt in field %r: matched pattern %s (truncated value: %.100r)",
                 field, pat.pattern, value[:100],
             )
-            return
+            raise ValueError(f"Potentially unsafe input detected in {field}")
 
 
 def sanitize_task_name(task: str) -> str:
@@ -89,7 +89,7 @@ def _sanitize_value(value: Any, path: str = "root") -> Any:
 def sanitize_input(input_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Valida tamaño y estructura del input. Trunca strings demasiado largos.
-    Detecta y loguea posibles intentos de inyección.
+    Detecta y rechaza posibles intentos de inyección.
     Raise ValueError si excede límites globales.
     """
     if not isinstance(input_data, dict):

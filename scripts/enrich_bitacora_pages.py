@@ -10,7 +10,7 @@ Para cada entrada de la base de datos:
 
 Uso:
     export NOTION_API_KEY=...
-    export NOTION_BITACORA_DB_ID=85f89758684744fb9f14076e7ba0930e
+    export NOTION_BITACORA_DB_ID=<NOTION_BITACORA_DB_ID>
     python scripts/enrich_bitacora_pages.py [--dry-run]
 """
 
@@ -42,7 +42,18 @@ from worker.notion_client import (
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
-BITACORA_DB_ID = os.environ.get("NOTION_BITACORA_DB_ID", "85f89758684744fb9f14076e7ba0930e")
+
+def require_bitacora_db_id() -> str:
+    """Return the configured Bitacora database ID or abort with a clear message."""
+    bitacora_db_id = os.environ.get("NOTION_BITACORA_DB_ID")
+    if bitacora_db_id:
+        return bitacora_db_id
+
+    raise SystemExit(
+        "NOTION_BITACORA_DB_ID no está configurada. Definí la variable de entorno antes de ejecutar este script."
+    )
+
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -576,8 +587,9 @@ def main():
     prs = get_all_merged_prs()
     logger.info("  PRs mergeados: %d", len(prs))
 
-    logger.info("Consultando base de datos Bitácora (%s)...", BITACORA_DB_ID[:8])
-    pages = notion_client.query_database(BITACORA_DB_ID)
+    bitacora_db_id = require_bitacora_db_id()
+    logger.info("Consultando base de datos Bitácora (%s)...", bitacora_db_id[:8])
+    pages = notion_client.query_database(bitacora_db_id)
     logger.info("  Páginas encontradas: %d", len(pages))
 
     if args.page_id:

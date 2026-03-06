@@ -42,7 +42,9 @@ from worker.notion_client import (
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
-BITACORA_DB_ID = os.environ.get("NOTION_BITACORA_DB_ID", "85f89758684744fb9f14076e7ba0930e")
+BITACORA_DB_ID = os.environ.get("NOTION_BITACORA_DB_ID", "")
+if not BITACORA_DB_ID:
+    raise RuntimeError("NOTION_BITACORA_DB_ID env var is required. Set it before running this script.")
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 

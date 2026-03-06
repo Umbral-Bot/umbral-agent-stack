@@ -19,6 +19,7 @@ Uso:
     Ver scripts/setup-openclaw-service.ps1
 """
 
+import hmac
 import json
 import logging
 import os
@@ -180,7 +181,7 @@ def _authenticate(authorization: str | None) -> None:
         raise HTTPException(status_code=401, detail="Invalid or missing token")
 
     parts = authorization.split(" ", 1)
-    if len(parts) != 2 or parts[0].lower() != "bearer" or parts[1] != WORKER_TOKEN:
+    if len(parts) != 2 or parts[0].lower() != "bearer" or not hmac.compare_digest(parts[1], WORKER_TOKEN):
         logger.warning("Request to /run with invalid token")
         raise HTTPException(status_code=401, detail="Invalid or missing token")
 
@@ -230,10 +231,10 @@ async def run_task(
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Invalid request body: {exc}")
 
-    # S7: sanitize task name and input size
+    # S7: sanitize task name and input size (apply sanitized result)
     try:
         sanitize_task_name(envelope.task)
-        sanitize_input(envelope.input)
+        envelope.input = sanitize_input(envelope.input)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
@@ -351,10 +352,10 @@ async def enqueue_task(
     """
     _authenticate(authorization)
 
-    # Sanitize
+    # Sanitize (apply sanitized result)
     try:
         sanitize_task_name(body.task)
-        sanitize_input(body.input)
+        body.input = sanitize_input(body.input)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
@@ -390,6 +391,19 @@ async def enqueue_task(
     from dispatcher.queue import TaskQueue
     queue = TaskQueue(r)
     queue.enqueue(envelope)
+
+    # Emit task_queued event for observability (02-bugs #5)
+    try:
+        from infra.ops_logger import ops_log
+        ops_log.task_queued(
+            task_id=task_id,
+            task=body.task,
+            team=body.team,
+            task_type=body.task_type,
+            trace_id=trace_id,
+        )
+    except Exception:
+        pass  # ops_log is best-effort
 
     logger.info(
         "Enqueued task via API: %s (task=%s, team=%s, type=%s)",

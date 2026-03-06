@@ -164,26 +164,20 @@ class TestSanitize:
         result = sanitize_input({"data": "x" * 20_000})
         assert len(result["data"]) == MAX_STRING_VALUE_LEN
 
-    def test_injection_detection_logs_warning(self, caplog):
-        import logging
+    def test_injection_detection_raises(self):
         from worker.sanitize import sanitize_input
-        with caplog.at_level(logging.WARNING, logger="worker.sanitize"):
+        with pytest.raises(ValueError, match="suspicious pattern"):
             sanitize_input({"cmd": "; rm -rf /"})
-        assert "injection" in caplog.text.lower()
 
-    def test_xss_detection(self, caplog):
-        import logging
+    def test_xss_detection_raises(self):
         from worker.sanitize import sanitize_input
-        with caplog.at_level(logging.WARNING, logger="worker.sanitize"):
+        with pytest.raises(ValueError, match="suspicious pattern"):
             sanitize_input({"html": "<script>alert('xss')</script>"})
-        assert "injection" in caplog.text.lower()
 
-    def test_sql_injection_detection(self, caplog):
-        import logging
+    def test_sql_injection_detection_raises(self):
         from worker.sanitize import sanitize_input
-        with caplog.at_level(logging.WARNING, logger="worker.sanitize"):
+        with pytest.raises(ValueError, match="suspicious pattern"):
             sanitize_input({"q": "1 UNION SELECT * FROM users"})
-        assert "injection" in caplog.text.lower()
 
     def test_deep_sanitization(self):
         from worker.sanitize import sanitize_input, MAX_STRING_VALUE_LEN

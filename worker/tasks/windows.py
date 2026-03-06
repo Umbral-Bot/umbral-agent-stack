@@ -7,6 +7,7 @@ S5 — Tareas Windows (PAD/RPA, scripts).
 
 import logging
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -16,6 +17,20 @@ from .. import tool_policy
 from ..sanitize import sanitize_pad_flow_name
 
 logger = logging.getLogger("worker.tasks.windows")
+
+_SAFE_NAME_RE = re.compile(r"^[A-Za-z0-9_. -]+$")
+
+
+def _validate_safe_name(value: str, field: str, max_len: int = 64) -> str:
+    """Validate that a user-provided name contains only safe characters."""
+    value = value.strip()
+    if not value:
+        raise ValueError(f"{field} must be non-empty")
+    if len(value) > max_len:
+        raise ValueError(f"{field} too long (max {max_len} chars)")
+    if not _SAFE_NAME_RE.match(value):
+        raise ValueError(f"{field} contains invalid characters: {value!r}")
+    return value
 
 
 def handle_windows_pad_run_flow(input_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -148,7 +163,8 @@ def handle_windows_open_notepad(input_data: Dict[str, Any]) -> Dict[str, Any]:
             return {"ok": False, "path": path, "scheduled": False, "error": str(e)}
     task_name = "UmbralOpenNotepad"
     run_as_user = (input_data.get("run_as_user") or "").strip()
-    run_as_password = (input_data.get("run_as_password") or "").strip()
+    # SEC-10: password from env var only, never from HTTP input
+    run_as_password = os.environ.get("OPENCLAW_NOTEPAD_RUN_AS_PASSWORD", "").strip()
     try:
         dir_path = os.path.dirname(path)
         bat_path = os.path.join(dir_path, "umbral_open_notepad.bat")
@@ -242,6 +258,7 @@ def handle_windows_firewall_allow_port(input_data: Dict[str, Any]) -> Dict[str, 
         port = 8089
     port = int(port)
     name = input_data.get("name") or f"OpenClaw Worker {port}"
+    name = _validate_safe_name(name, "firewall rule name")
     try:
         subprocess.run(
             ["netsh", "advfirewall", "firewall", "delete", "rule", f"name={name}"],
@@ -310,6 +327,7 @@ def handle_windows_add_interactive_worker_to_startup(input_data: Dict[str, Any])
     if sys.platform != "win32":
         return {"ok": False, "error": "Solo Windows."}
     username = (input_data.get("username") or "Rick").strip()
+    username = _validate_safe_name(username, "username", max_len=20)
     repo = os.environ.get("PYTHONPATH", "").strip() or r"C:\GitHub\umbral-agent-stack"
     bat = os.path.join(repo, "scripts", "vm", "start_interactive_worker.bat")
     if not os.path.isfile(bat):

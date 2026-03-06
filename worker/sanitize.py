@@ -32,14 +32,16 @@ _INJECTION_PATTERNS = [
 
 
 def _check_injection(value: str, field: str) -> None:
-    """Log WARNING if value matches known injection patterns."""
+    """Raise ValueError if value matches known injection patterns."""
     for pat in _INJECTION_PATTERNS:
         if pat.search(value):
             logger.warning(
-                "Possible injection attempt in field %r: matched pattern %s (truncated value: %.100r)",
+                "Injection attempt blocked in field %r: matched pattern %s (truncated value: %.100r)",
                 field, pat.pattern, value[:100],
             )
-            return
+            raise ValueError(
+                f"Input rejected: suspicious pattern detected in field {field!r}"
+            )
 
 
 def sanitize_task_name(task: str) -> str:

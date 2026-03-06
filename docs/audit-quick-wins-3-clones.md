@@ -2,6 +2,8 @@
 
 Para ejecutar en paralelo los quick wins con 3 agentes Codex (GPT-5.4), usar esta asignación en esta máquina.
 
+**Estado:** Los 3 clones están creados en `c:\GitHub\`. Actualizar con `git pull origin main` en cada uno antes de que cada Codex cree su rama desde main.
+
 | Carpeta (clone) | Rama | Tarea | Archivo de tarea |
 |-----------------|------|-------|------------------|
 | `c:\GitHub\umbral-agent-stack` | `codex/audit-qw-worker` | **102** — Worker (QW-1, QW-2, QW-3, QW-5 worker, QW-6) | `.agents/tasks/2026-03-07-102-r21-codex-audit-qw-worker.md` |

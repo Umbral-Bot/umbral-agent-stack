@@ -229,7 +229,19 @@ Todas las rutas (excepto `/health`) requieren header `Authorization: Bearer <WOR
 | 5 | Opción C: Redirigir tráfico a provider alternativo via routing config |
 | 6 | Verificar fallback chain: el ModelRouter debería mover tráfico automáticamente al siguiente provider |
 
-### 5.5 Notion no actualiza
+### 5.5 API rate limit (OpenClaw / Rick)
+
+Cuando aparece **"⚠️ API rate limit reached"** al usar Rick por Telegram/OpenClaw:
+
+| Paso | Acción |
+|------|--------|
+| 1 | Esperar 1–2 minutos; los límites del proveedor suelen ser por minuto |
+| 2 | Reintentar el mensaje (el siguiente intento puede usar un modelo de respaldo) |
+| 3 | No repetir el mismo mensaje muchas veces seguidas |
+
+**Runbook detallado:** [runbooks/runbook-rate-limit-api.md](../runbooks/runbook-rate-limit-api.md). En el workspace de Rick (`~/.openclaw/workspace/USER.md`) hay una nota para que responda al usuario con esa indicación.
+
+### 5.6 Notion no actualiza
 
 | Paso | Acción |
 |------|--------|
@@ -239,7 +251,7 @@ Todas las rutas (excepto `/health`) requieren header `Authorization: Bearer <WOR
 | 4 | Verificar Notion Poller: `ps aux \| grep notion_poller` |
 | 5 | Reiniciar Poller: el cron `notion-poller-cron.sh` lo hace automáticamente cada 5 min |
 
-### 5.6 Langfuse sin traces
+### 5.7 Langfuse sin traces
 
 | Paso | Acción |
 |------|--------|
@@ -248,7 +260,7 @@ Todas las rutas (excepto `/health`) requieren header `Authorization: Bearer <WOR
 | 3 | Si están configuradas pero no hay traces: verificar conectividad al host de Langfuse |
 | 4 | Revisar OODA report: `PYTHONPATH=. python3 scripts/ooda_report.py` (sección Langfuse) |
 
-### 5.7 Model routing inesperado
+### 5.8 Model routing inesperado
 
 | Paso | Acción |
 |------|--------|
@@ -258,7 +270,7 @@ Todas las rutas (excepto `/health`) requieren header `Authorization: Bearer <WOR
 | 4 | Verificar que las API keys de los providers están configuradas |
 | 5 | Revisar ops_log para ver qué modelo se usó en tareas recientes |
 
-### 5.8 Tareas programadas no se ejecutan
+### 5.9 Tareas programadas no se ejecutan
 
 | Paso | Acción |
 |------|--------|
@@ -267,7 +279,7 @@ Todas las rutas (excepto `/health`) requieren header `Authorization: Bearer <WOR
 | 3 | Verificar Redis sorted set: `redis-cli ZRANGEBYSCORE umbral:scheduled 0 +inf` |
 | 4 | Revisar logs: `tail -50 /tmp/scheduled-tasks.log` |
 
-### 5.9 Puerto 8088 ocupado
+### 5.10 Puerto 8088 ocupado
 
 ```bash
 # Encontrar el proceso

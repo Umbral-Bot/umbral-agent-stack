@@ -230,6 +230,17 @@ class TestRetryOnTimeout:
         mocks = _run_one_iteration(redis_client, sample_envelope, httpx.WriteTimeout("timeout"))
         mocks["ops"].task_retried.assert_called_once()
 
+    def test_retry_emits_task_queued_with_envelope_fields(self, redis_client, sample_envelope):
+        sample_envelope["retry_count"] = 0
+        mocks = _run_one_iteration(redis_client, sample_envelope, httpx.ReadTimeout("timeout"))
+        mocks["ops"].task_queued.assert_called_once_with(
+            sample_envelope["task_id"],
+            sample_envelope["task"],
+            sample_envelope["team"],
+            sample_envelope["task_type"],
+            trace_id=sample_envelope["trace_id"],
+        )
+
     def test_retry_count_increments_to_1(self, redis_client, sample_envelope):
         sample_envelope["retry_count"] = 0
         mocks = _run_one_iteration(redis_client, sample_envelope, httpx.ReadTimeout("timeout"))

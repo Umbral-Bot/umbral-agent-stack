@@ -59,3 +59,4 @@ Cuando David pida a Rick que le encargue algo a Enlace (ej. "Rick: pídele a Enl
 - `.agents/` — Protocolo y board para Cursor/Codex/Antigravity.
 - `docs/` — Arquitectura, ADRs, runbooks.
 - `config/teams.yaml` — Equipos y canales Notion por equipo.
+- **Skill OpenClaw Gateway (disponible para Rick):** `skills/openclaw-gateway/SKILL.md` — arquitectura del Gateway (componentes, protocolo WS, pairing), Agent Runtime (workspace, bootstrap, skills, sesiones, steering/streaming), multi-agente (`agents.list`, bindings, routing rules, ejemplos), integración Pi, `openclaw.json` y docs oficiales (https://docs.openclaw.ai/). **Rick debe usar este skill** cuando necesite explicar o configurar el Gateway, varios agentes, bindings, compaction o referencias a la documentación oficial.

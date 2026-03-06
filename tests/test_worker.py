@@ -89,6 +89,15 @@ class TestRunAuth:
         )
         assert resp.status_code == 401
 
+    def test_run_unsafe_input_returns_422(self, client):
+        resp = client.post(
+            "/run",
+            json={"task": "ping", "input": {"cmd": "; rm -rf /"}},
+            headers=AUTH,
+        )
+        assert resp.status_code == 422
+        assert "unsafe input" in resp.json()["detail"].lower()
+
 
 # ---------------------------------------------------------------------------
 # /run — Legacy format (backward compat)
@@ -144,6 +153,17 @@ class TestRunLegacy:
         data = resp.json()
         assert "trace_id" in data
         uuid.UUID(data["trace_id"])
+
+    def test_legacy_uses_sanitized_input(self, client):
+        from worker.sanitize import MAX_STRING_VALUE_LEN
+
+        resp = client.post(
+            "/run",
+            json={"task": "ping", "input": {"msg": "x" * 20_000}},
+            headers=AUTH,
+        )
+        assert resp.status_code == 200
+        assert len(resp.json()["result"]["echo"]["msg"]) == MAX_STRING_VALUE_LEN
 
 
 # ---------------------------------------------------------------------------

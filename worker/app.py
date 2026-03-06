@@ -20,6 +20,7 @@ Uso:
 """
 
 import json
+import hmac
 import logging
 import os
 import time
@@ -33,7 +34,9 @@ from fastapi import FastAPI, Header, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from .config import WORKER_TOKEN
+from infra.ops_logger import ops_log
+
+from .config import RATE_LIMIT_RPM, WORKER_TOKEN
 from .rate_limiter import RateLimiter
 from .sanitize import sanitize_input, sanitize_task_name
 from .tracing import flush as flush_tracing
@@ -141,8 +144,7 @@ app = FastAPI(
 # ---------------------------------------------------------------------------
 # Rate Limiting Middleware
 # ---------------------------------------------------------------------------
-rpm = int(os.environ.get("RATE_LIMIT_RPM", "60"))
-limiter = RateLimiter(max_requests=rpm, window_seconds=60)
+limiter = RateLimiter(max_requests=RATE_LIMIT_RPM, window_seconds=60)
 
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
@@ -180,7 +182,7 @@ def _authenticate(authorization: str | None) -> None:
         raise HTTPException(status_code=401, detail="Invalid or missing token")
 
     parts = authorization.split(" ", 1)
-    if len(parts) != 2 or parts[0].lower() != "bearer" or parts[1] != WORKER_TOKEN:
+    if len(parts) != 2 or parts[0].lower() != "bearer" or not hmac.compare_digest(parts[1], WORKER_TOKEN):
         logger.warning("Request to /run with invalid token")
         raise HTTPException(status_code=401, detail="Invalid or missing token")
 
@@ -233,9 +235,12 @@ async def run_task(
     # S7: sanitize task name and input size
     try:
         sanitize_task_name(envelope.task)
-        sanitize_input(envelope.input)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+    try:
+        envelope.input = sanitize_input(envelope.input)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
 
     # --- Dispatch task ---
     handler = TASK_HANDLERS.get(envelope.task)
@@ -354,9 +359,12 @@ async def enqueue_task(
     # Sanitize
     try:
         sanitize_task_name(body.task)
-        sanitize_input(body.input)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+    try:
+        sanitized_input = sanitize_input(body.input)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
 
     # Redis required
     r = _get_redis()
@@ -376,7 +384,7 @@ async def enqueue_task(
         "team": body.team,
         "task_type": body.task_type,
         "task": body.task,
-        "input": body.input,
+        "input": sanitized_input,
         "status": "queued",
         "trace_id": trace_id,
         "created_at": now,
@@ -390,6 +398,7 @@ async def enqueue_task(
     from dispatcher.queue import TaskQueue
     queue = TaskQueue(r)
     queue.enqueue(envelope)
+    ops_log.task_queued(task_id, body.task, body.team, body.task_type or "general", trace_id=trace_id)
 
     logger.info(
         "Enqueued task via API: %s (task=%s, team=%s, type=%s)",

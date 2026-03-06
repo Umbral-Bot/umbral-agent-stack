@@ -80,6 +80,15 @@ class TestEnqueueValidation:
             )
             assert resp.status_code == 400
 
+    def test_enqueue_unsafe_input_returns_422(self, client):
+        resp = client.post(
+            "/enqueue",
+            json={"task": "ping", "input": {"cmd": "; rm -rf /"}},
+            headers=AUTH,
+        )
+        assert resp.status_code == 422
+        assert "unsafe input" in resp.json()["detail"].lower()
+
 
 class TestEnqueueSuccess:
     """Successful enqueue operations."""
@@ -118,6 +127,20 @@ class TestEnqueueSuccess:
             assert stored["status"] == "queued"
             assert stored["input"]["query"] == "test"
 
+    def test_enqueue_stores_sanitized_input(self, client, fake_redis):
+        from worker.sanitize import MAX_STRING_VALUE_LEN
+
+        with patch("worker.app._get_redis", return_value=fake_redis):
+            resp = client.post(
+                "/enqueue",
+                json={"task": "ping", "input": {"msg": "x" * 20_000}},
+                headers=AUTH,
+            )
+            assert resp.status_code == 200
+            task_id = resp.json()["task_id"]
+            stored = json.loads(fake_redis.get(f"{TASK_KEY_PREFIX}{task_id}"))
+            assert len(stored["input"]["msg"]) == MAX_STRING_VALUE_LEN
+
     def test_enqueue_is_in_pending_queue(self, client, fake_redis):
         with patch("worker.app._get_redis", return_value=fake_redis):
             resp = client.post(
@@ -154,6 +177,19 @@ class TestEnqueueSuccess:
             stored = json.loads(fake_redis.get(f"{TASK_KEY_PREFIX}{task_id}"))
             assert stored["task_type"] == "coding"
             assert stored["team"] == "lab"
+
+    def test_enqueue_emits_task_queued_event(self, client, fake_redis):
+        with patch("worker.app._get_redis", return_value=fake_redis), patch("worker.app.ops_log.task_queued") as task_queued:
+            resp = client.post(
+                "/enqueue",
+                json={"task": "ping", "team": "system", "task_type": "general"},
+                headers=AUTH,
+            )
+            assert resp.status_code == 200
+            task_id = resp.json()["task_id"]
+            trace_id = json.loads(fake_redis.get(f"{TASK_KEY_PREFIX}{task_id}"))["trace_id"]
+
+        task_queued.assert_called_once_with(task_id, "ping", "system", "general", trace_id=trace_id)
 
     def test_enqueue_redis_unavailable_returns_503(self, client):
         with patch("worker.app._get_redis", return_value=None):

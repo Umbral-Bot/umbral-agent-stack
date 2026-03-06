@@ -122,9 +122,9 @@ def main() -> int:
         print(f"   FAIL ({type(e).__name__}: {e})")
     print()
 
-    # 4) Linear (vía Worker VM — LINEAR_API_KEY está en la VM)
+    # 4) Linear (vía Worker local; LINEAR_API_KEY en VPS; no usar WORKER_URL_VM aquí)
     print("4) Linear (vía Worker)")
-    linear_worker = (os.environ.get("WORKER_URL_VM") or "").strip().rstrip("/") or worker_url
+    linear_worker = worker_url  # Usar Worker local (VPS) que tiene LINEAR_API_KEY
     if not linear_worker or not worker_token:
         print("   SKIP (sin Worker)")
     else:

@@ -73,3 +73,4 @@ Después de ejecutarlo:
 - Dashboard y métricas: [docs/22-notion-dashboard-gerencial.md](22-notion-dashboard-gerencial.md).
 - Control Room y Enlace: [docs/18-notion-enlace-rick-convention.md](18-notion-enlace-rick-convention.md).
 - Linear: [docs/30-linear-notion-architecture.md](30-linear-notion-architecture.md).
+- **Kimi como recurso LLM para n8n:** [docs/kimi-recurso-n8n.md](kimi-recurso-n8n.md) — endpoint, headers y uso en flujos cuando Rick use Kimi en automatizaciones.

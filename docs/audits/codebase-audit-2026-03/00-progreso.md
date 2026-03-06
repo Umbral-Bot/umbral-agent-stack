@@ -6,6 +6,7 @@
 | 2 | Bugs y edge cases por riesgo (tabla priorizada P0/P1/P2) | ✅ Completado |
 | 3 | Revisión de seguridad (secretos, auth, inputs, deps) | ✅ Completado |
 | 4 | Mejoras estructurales (quick wins, mediano, grande) | ✅ Completado |
+| 5 | Cierre y repaso de consistencia | ✅ Completado |
 
 ## Paso 1 completado
 
@@ -59,11 +60,23 @@ Incluye mapa de dependencias y orden de ejecucion recomendado.
 
 ---
 
-## Auditoria completada
+## Paso 5 completado
 
-Los 4 pasos de la auditoria han sido completados:
+Archivo: `docs/audits/codebase-audit-2026-03/05-cierre.md`
+
+- Repaso de consistencia: todas las referencias cruzadas verificadas; 1 nota menor sobre conteo P0
+- Resumen ejecutivo con ambito, hallazgos clave, y top 5 acciones
+- Checklist de seguimiento: 10 items inmediatos, 6 corto plazo, 5 mediano plazo
+- Proximos pasos para cada documento de la auditoria
+
+---
+
+## Auditoria cerrada
+
+Los 5 pasos de la auditoria han sido completados:
 
 1. **Mapa del codebase** — estructura, entry points, deps, riesgos, trabajo perdido
 2. **Bugs y edge cases** — 17 bugs priorizados P0/P1/P2
 3. **Seguridad** — 17 hallazgos priorizados Critico/Alto/Medio/Bajo
 4. **Mejoras estructurales** — 16 propuestas en 3 horizontes temporales
+5. **Cierre** — consistencia verificada, resumen ejecutivo, checklist de seguimiento

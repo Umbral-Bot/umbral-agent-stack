@@ -215,6 +215,52 @@ Get-Content C:\openclaw-worker\service-stderr.log -Tail 50
 Nota:
 - `Restart-Service`/`nssm restart` requiere PowerShell elevado (Administrador). Sin elevacion se obtiene `Acceso denegado`.
 
+## 9.1) Si el servicio queda en SERVICE_PAUSED tras restart
+
+**Arreglo rápido (en la VM, PowerShell como Administrador):** ejecutar el script de reparación (instala deps, para el servicio, lo inicia y comprueba health):
+
+```powershell
+cd C:\GitHub\umbral-agent-stack
+.\scripts\vm\fix_worker_service.ps1
+```
+
+Si prefieres hacerlo a mano, pasos:
+
+1. **Ver el error real** (en la VM, PowerShell como Administrador):
+
+   ```powershell
+   Get-Content C:\openclaw-worker\service-stderr.log -Tail 80
+   Get-Content C:\openclaw-worker\service-stdout.log -Tail 30
+   ```
+
+   En `service-stderr.log` suele aparecer el traceback de Python (ModuleNotFoundError, variable de entorno faltante, etc.).
+
+2. **Probar arranque manual** con el mismo entorno que NSSM (sustituir el token por el real):
+
+   ```powershell
+   cd C:\GitHub\umbral-agent-stack
+   $env:PYTHONPATH = "C:\GitHub\umbral-agent-stack"
+   $env:WORKER_TOKEN = "EL_MISMO_QUE_NSSM"
+   & "C:\Users\Rick\AppData\Local\Programs\Python\Python311\python.exe" -m uvicorn worker.app:app --host 0.0.0.0 --port 8088 --log-level info
+   ```
+
+   Si falla, el mensaje en consola es el que hay que corregir (dependencia, env, etc.).
+
+3. **Intentar continuar el servicio** (por si NSSM lo dejó en pausa):
+
+   ```powershell
+   nssm continue openclaw-worker
+   nssm status openclaw-worker
+   ```
+
+4. **Si sigue mal:** parar, corregir la causa (pip install, env en NSSM, etc.) y arrancar de nuevo:
+
+   ```powershell
+   nssm stop openclaw-worker
+   # ... corregir según stderr ...
+   nssm start openclaw-worker
+   ```
+
 ## 10) Checklist rapido de auditoria (sin exponer secretos)
 
 ```powershell

@@ -77,6 +77,16 @@ R18 cerrada — dashboard Notion actualizado (PR #97).
 |----|--------|--------|
 | 098 | Auditoría variables Notion (Codex) | ✅ done — PR #100 mergeado. Doc: docs/auditoria-notion-env-vars.md. Simplificación Rick+Supervisor aplicada (env.example, README, runbook). |
 
+## Plan implementación auditoría 2026-03
+
+Auditoría Claude (PR #101): **plan maestro** de todas las implementaciones y mejoras en [docs/plan-implementacion-auditoria-2026-03.md](../docs/plan-implementacion-auditoria-2026-03.md).
+
+- **Quick Wins (QW-1 a QW-6):** 1 día — sanitize, timing-safe auth, Windows, .env, task_queued, rate limiter.
+- **Mediano (M-1 a M-6):** 1–2 semanas — run_in_executor, desacople, TTL, Lua, auth hardening, pip-audit.
+- **Grande (G-1 a G-4):** 1–2 meses — auth multi-nivel, async+Redis Streams, observabilidad, containerización.
+
+Ejecución en paralelo de Quick Wins: 3 ramas Codex (worker, config, dispatcher). Tareas creadas: 102 (worker), 103 (config), 104 (dispatcher) — `.agents/tasks/2026-03-07-102-r21-codex-audit-qw-worker.md` y análogos 103, 104.
+
 ## Próxima ronda (pendientes)
 
 | ID | Tarea | Notas |

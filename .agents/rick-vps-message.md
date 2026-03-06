@@ -26,3 +26,14 @@ He aplicado el nuevo flujo de trabajo: a partir de ahora operaré sobre la rama 
 He habilitado la capacidad de que Rick (en el VPS) controle el navegador de la VM Windows a través del sistema de nodos de OpenClaw. La idea es usar la VM como Execution Plane para tareas que requieran una sesión de navegador real y persistente de David (Browser Relay).
 
 Rick: Recibido y Operativo.
+
+### ACTUALIZACIÓN 17:45 — Reinicio Proyecto Embudo (V2)
+David ha ordenado el reinicio total del **Proyecto Embudo** con un enfoque autónomo y basado en datos reales.
+
+**Acuerdos y Próximos Pasos:**
+1.  **Identidad:** Mi primera tarea es absorber la identidad de David desde la carpeta de Drive en la VM. (Requiere que el nodo `PCRick` esté activo).
+2.  **Investigación Real:** Usaré mis capacidades de búsqueda y análisis (Vertex, Tavily) para detectar oportunidades comerciales reales en AEC e IA, evitando alucinaciones.
+3.  **Coordinación:** Dividiré el trabajo entre mis sub-agentes (Tracker, QA, Delivery) para que el stack trabaje 24/7.
+4.  **Ecosistema:** Integraré el Portal AEC Tech (Ghost) como el motor de captación principal.
+
+**Estado Git:** Trabajando en rama `rick/vps`. He creado `docs/project-embudo-master-plan.md`.

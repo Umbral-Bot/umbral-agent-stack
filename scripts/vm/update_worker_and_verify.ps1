@@ -45,6 +45,13 @@ if (-not (Test-Path "worker\tasks\windows_fs.py")) {
 }
 Write-Host "OK: worker\tasks\windows_fs.py presente." -ForegroundColor Green
 
+# 4.5) Instalar/actualizar dependencias del worker (evita ModuleNotFoundError tras pull)
+Write-Host "Instalando dependencias: pip install -r worker\requirements.txt" -ForegroundColor Cyan
+& python -m pip install -q -r worker\requirements.txt
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "AVISO: pip install fallo. El Worker puede no arrancar (ej. ModuleNotFoundError: requests)." -ForegroundColor Yellow
+}
+
 # 5) Reiniciar servicio
 Write-Host "Reiniciando servicio: nssm restart $ServiceName" -ForegroundColor Cyan
 & nssm restart $ServiceName

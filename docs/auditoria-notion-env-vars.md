@@ -1,7 +1,9 @@
 # Auditoria de Variables Notion (R20-098)
 
-Fecha: 2026-03-07  
-Scope: inventario de variables `NOTION_*` en runtime, scripts operativos, plantillas de entorno y docs del repo.
+> **Fecha:** 2026-03-07
+> **Ejecutado por:** codex
+> **Ronda:** R20
+> **Scope:** inventario de variables `NOTION_*` en runtime, scripts operativos, plantillas de entorno y docs del repo.
 
 ## Metodologia
 

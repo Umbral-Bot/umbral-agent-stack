@@ -1,7 +1,9 @@
 # Auditoria VM OpenClaw - 2026-02-27
 
-> Ejecutada en la VM Windows (PCRick) el 2026-02-27 23:11 -03:00.
-> Objetivo: inventariar OpenClaw/proyectos/automatizaciones fuera del Worker y proponer regularizacion segun arquitectura (Rick en VPS, VM = Execution Plane).
+> **Fecha:** 2026-02-27 23:11 -03:00
+> **Ejecutado por:** cursor-agent-cloud
+> **Entorno:** VM Windows (PCRick)
+> **Objetivo:** inventariar OpenClaw/proyectos/automatizaciones fuera del Worker y proponer regularizacion segun arquitectura (Rick en VPS, VM = Execution Plane).
 
 ## 1) Inventario OpenClaw en la VM
 

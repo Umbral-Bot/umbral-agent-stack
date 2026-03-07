@@ -1,7 +1,8 @@
 # 16 — Verificación de la auditoría Codex (Cursor)
 
-> Fecha: 2026-02-27  
-> Objetivo: Contrastar los 9 puntos del diagnóstico de Codex contra el repo y evaluar el encargo para Antigravity.
+> **Fecha:** 2026-02-27
+> **Ejecutado por:** cursor-agent-cloud
+> **Objetivo:** Contrastar los 9 puntos del diagnóstico de Codex contra el repo y evaluar el encargo para Antigravity.
 
 ## 1. Qué hizo Antigravity en la VPS (resumen)
 

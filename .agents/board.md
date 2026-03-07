@@ -1,28 +1,26 @@
 # Agent Board — Umbral Agent Stack
 
-> Última actualización: 2026-03-06 por **cursor**
-> Sprint activo: **R17**
-> **RONDA 17 — Post-R16: Notion, changelog, runbook, script ramas**
+> Última actualización: 2026-03-07 por **claude-code**
+> Sprint activo: **R21**
+> **RONDA 21 — Auditoría comprensiva + fix token mismatch E2E**
 
-## Estado del sistema
+## Estado del sistema (actualizado 2026-03-07 — auditoría en vivo)
 
 | Aspecto | Estado |
 |---------|--------|
 | Protocolo inter-agentes | ✅ Activo |
-| VPS (Control Plane) | ✅ Redis + Dispatcher + Worker + 11 crons |
-| Notion Poller daemon | ✅ Corriendo (PID activo, polling cada 60s) |
-| Worker API | ✅ v0.4.0 — 28 handlers, 10+ endpoints |
-| Multi-LLM | ✅ Gemini + OpenAI + Anthropic (model routing activo) |
-| Langfuse Tracing | ✅ Integrado (graceful degradation sin keys) |
-| Rate Limiting | ✅ 60 RPM (configurable via RATE_LIMIT_RPM) |
-| Scheduled Tasks | ✅ Redis sorted set, cron cada minuto |
-| Quota Dashboard | ✅ GET /quota/status + reporte Notion |
-| Crons activos | 11 (dashboard, health, supervisor, poller, SIM x2, digest, SIM-make, E2E, OODA, scheduled-tasks) |
-| Tests | ✅ 900 passed (tras PR #96; 34 tests Bitácora) |
-| PRs mergeados (hackathon) | 50+ (#91–#96 en main) |
-| PRs obsoletos cerrados | 11 (limpieza R16-080, inventario en docs/branches-cerrados-inventario.md) |
+| VPS (Control Plane) | ✅ Redis + Dispatcher + Worker + 12 crons (branch `rick/vps`) |
+| Notion Poller daemon | ✅ Corriendo (PID 269682, desde 2026-03-04) |
+| Worker API VPS | ✅ v0.4.0 — 43 handlers — responde directo |
+| Worker API VM | ✅ v0.4.0 — 43 handlers — health OK (Tailscale + Hyper-V) |
+| Multi-LLM | ✅ Gemini 2.5 Flash operativo (llamada directa OK) |
+| OpsLogger | ✅ 213 eventos en ~/.config/umbral/ops_log.jsonl |
+| Crons activos | 12 (dashboard, health, supervisor, poller, sim-daily, sim-report, digest, sim-make, E2E, OODA, scheduled-tasks, quota-guard) |
+| Tests | ✅ 900 passed (PR #96) |
 | CI | ✅ GitHub Actions pytest (Python 3.11 + 3.12) |
-| VM (Execution Plane) | ✅ v0.4.0 — 25 handlers — reconectada |
+| **E2E Dispatcher→Worker** | ❌ **TOKEN MISMATCH — 401 en todas las tareas** |
+| VM SSH/WinRM | ❌ Puertos 22/5985 cerrados — solo :8088 abierto |
+| Cuotas Redis | ❌ Vacías — Dispatcher no despacha exitosamente |
 
 ## Ronda 16 — Cerrada
 
@@ -71,17 +69,34 @@ R18 cerrada — dashboard Notion actualizado (PR #97).
 
 **Nota:** Para mantener la Control Room solo para comunicación, definir `NOTION_SUPERVISOR_ALERT_PAGE_ID` (página aparte, ej. "Alertas supervisor") en la VPS; ver runbook §1.4.
 
-## Ronda 20 — En curso
+## Ronda 20 — Cerrada
 
 | ID | Tarea | Estado |
 |----|--------|--------|
-| 098 | Auditoría variables Notion (Codex) | ✅ done — PR #100 mergeado. Doc: docs/auditoria-notion-env-vars.md. Simplificación Rick+Supervisor aplicada (env.example, README, runbook). |
+| 098 | Auditoría variables Notion (Codex) | ✅ done — PR #100 mergeado. |
 
-## Próxima ronda (pendientes)
+## Ronda 21 — En curso
 
-| ID | Tarea | Notas |
-|----|--------|-------|
-| — | (pendiente) | Ver board para siguiente sprint |
+> Disparada por auditoría comprensiva 2026-03-07 (Claude Code).
+> Hallazgo crítico: token mismatch bloquea E2E — 0 tareas procesadas/día.
+> Docs: `docs/audits/audit-results-2026-03-07.md`, PR #106.
+
+| ID | Tarea | Agente | Estado |
+|----|--------|--------|--------|
+| 099 | Fix token mismatch Dispatcher→Worker (P0) | **cursor** | 📋 assigned |
+
+**Contexto para Cursor:**
+- La auditoría en vivo (SSH VPS + HTTP VM) reveló que el Dispatcher envía todas las tareas con 401
+- El `WORKER_TOKEN` en `~/.config/openclaw/env` (VPS) tiene prefix `export` que puede no parsearse igual en el Dispatcher vs el Worker
+- OpsLog: 213 eventos, mayoría `task_failed` por 401
+- Gemini 2.5 Flash sí funciona cuando se llama directamente con `source env && curl ...`
+- VPS branch: `rick/vps` (tiene commits de Rick sobre identidad/Embudo V2, NO está en main)
+- Tarea completa: `.agents/tasks/2026-03-07-099-r21-cursor-fix-token-mismatch-e2e.md`
+
+**Acciones secundarias R21 (si hay tiempo):**
+- Habilitar SSH en VM (requiere David en Hyper-V GUI)
+- Mergear PR #106 a main y sincronizar VPS + VM
+- Agregar `VM_TOKEN` correcto en VPS env
 
 ## Ronda 12 — En curso
 

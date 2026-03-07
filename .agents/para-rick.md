@@ -4,21 +4,30 @@
 
 ---
 
-## 2026-03-07 — Podés usar SSH a la VM
+## 2026-03-07 — Conectarte a la VM desde la VPS por SSH
 
-Rick, desde la **VPS** podés conectarte por SSH a la VM (Execution Plane) **sin contraseña**. La clave de la VPS (`vps-umbral`) ya está en la VM.
+Rick, conectate a la VM **desde la VPS** usando SSH. No necesitás contraseña; la clave `vps-umbral` ya está configurada en la VM.
 
-**Comando en la VPS:**
+### Cómo conectarte
+
+**1. Abrí una terminal en la VPS** (SSH a rick@srv1431451 o `rick@100.113.249.25`).
+
+**2. Ejecutá:**
 ```bash
-ssh rick@100.109.16.40 "hostname"
+ssh rick@100.109.16.40
 ```
-Debería responder `PCRick` sin pedir contraseña.
+Debería entrar directo (sin pedir contraseña). El prompt pasará a ser de la VM (ej. `rick@PCRick` o similar).
 
-**Ejemplos de uso:**
-- Ejecutar un comando en la VM: `ssh rick@100.109.16.40 "comando"`
-- Entrar a una sesión en la VM: `ssh rick@100.109.16.40`
-- Correr un script del repo en la VM: `ssh rick@100.109.16.40 "cd C:/GitHub/umbral-agent-stack && powershell -File scripts/algo.ps1"`
+**3. Para salir de la VM:** escribí `exit`.
 
-La IP `100.109.16.40` es la de la VM (PCRick) por Tailscale. Si la VM está apagada o Tailscale desconectado, el SSH hará timeout.
+### Comandos útiles
+
+| Acción | Comando |
+|--------|---------|
+| Entrar a una sesión en la VM | `ssh rick@100.109.16.40` |
+| Ejecutar un solo comando sin entrar | `ssh rick@100.109.16.40 "hostname"` |
+| Ejecutar PowerShell en la VM | `ssh rick@100.109.16.40 "powershell -Command \"Get-ComputerName\""` |
+
+**IP de la VM:** `100.109.16.40` (PCRick por Tailscale). Si la VM está apagada o Tailscale desconectado, el SSH hará timeout.
 
 Documentación: [62-operational-runbook.md](../docs/62-operational-runbook.md) sección 7.2.1.

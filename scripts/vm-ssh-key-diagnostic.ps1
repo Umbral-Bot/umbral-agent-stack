@@ -19,7 +19,7 @@ $sb = [System.Text.StringBuilder]::new()
 function Log { param($msg) [void]$sb.AppendLine($msg) }
 function Sep { Log ""; Log ("=" * 60) }
 
-Log "VM SSH key diagnostic — $timestamp"
+Log "VM SSH key diagnostic - $timestamp"
 Log "Hostname: $env:COMPUTERNAME"
 Log "User: $env:USERNAME"
 Sep
@@ -111,7 +111,7 @@ if (Test-Path $authKeysPath) {
 }
 Sep
 
-# 7. Rick's .ssh (known_hosts, identity) — si ssh se ejecuta desde la VM como Rick
+# 7. Rick .ssh (known_hosts, identity) - si ssh se ejecuta desde la VM como Rick
 $rickSsh = Join-Path $rickHome ".ssh"
 Log "7. C:\Users\Rick\.ssh (when running ssh FROM the VM as Rick)"
 if (Test-Path $rickSsh) {
@@ -122,7 +122,7 @@ if (Test-Path $rickSsh) {
         try { $acl = (Get-Acl $knownHosts -ErrorAction Stop).Access; Log "   known_hosts: icacls below" } catch { Log "   known_hosts: $_" }
         try { $ic = & icacls $knownHosts 2>&1; foreach ($x in $ic) { Log "      $x" } } catch { }
     }
-    Log "   id_rsa exists: $(Test-Path $idRsa)  (expected false — David's key is on PC only)"
+    Log "   id_rsa exists: $(Test-Path $idRsa)  (expected false - David key is on PC only)"
 }
 Log "   Expected when running \`"ssh rick@100.109.16.40\`" FROM VM as Rick:"
 Log "     - Identity file C:\Users\Rick\.ssh\id_rsa not accessible (Rick has no private key on VM)"

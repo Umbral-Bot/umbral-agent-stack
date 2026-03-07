@@ -124,7 +124,7 @@ if (Test-Path $rickSsh) {
     }
     Log "   id_rsa exists: $(Test-Path $idRsa)  (expected false — David's key is on PC only)"
 }
-Log "   Expected when running 'ssh rick@100.109.16.40' FROM VM as Rick:"
+Log '   Expected when running "ssh rick@100.109.16.40" FROM VM as Rick:'
 Log "     - Identity file C:\Users\Rick\.ssh\id_rsa not accessible (Rick has no private key on VM)"
 Log "     - hostkeys_foreach failed for known_hosts: Permission denied (if Rick cannot read/write .ssh)"
 Log "     - Failed to add the host to the list of known_hosts (same)"

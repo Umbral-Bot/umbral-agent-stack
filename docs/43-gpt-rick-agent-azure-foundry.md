@@ -40,8 +40,14 @@ Endpoint: `https://cursor-api-david.cognitiveservices.azure.com` (Cognitive Serv
 Texto de prueba: *"Hola, este es un audio de prueba para el proyecto de Rick"*.  
 Salida: `assets/audio/rick_audio_prueba.wav`.
 
-Requiere: `AZURE_OPENAI_ENDPOINT` (opcional; por defecto cursor-api-david.cognitiveservices.azure.com), `AZURE_OPENAI_API_KEY`.  
+Requiere: `AZURE_OPENAI_ENDPOINT` (opcional; por defecto cursor-api-david.cognitiveservices.azure.com), `AZURE_OPENAI_API_KEY` (o `KIMI_AZURE_API_KEY` — misma key del recurso).  
 Dependencia: `websockets` (ya usada por el Worker para `azure.audio.generate`).
+
+**VPS 2026-03-08:** Usar `KIMI_AZURE_API_KEY` como `AZURE_OPENAI_API_KEY` en `~/.config/openclaw/env`. Audio generado correctamente en `assets/audio/rick_audio_prueba.wav` (8.15s, ~391 KB).
+
+### test_gpt_rick_agent.py — 403 (permisos Azure)
+
+La Identity del recurso `cursor-api-david` no tiene `Microsoft.MachineLearningServices/workspaces/agents/action`. **Acción David:** ajustar permisos en Azure Portal. Referencia: https://aka.ms/azureml-auth-troubleshooting
 
 ## Uso desde Rick
 

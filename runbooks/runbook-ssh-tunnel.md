@@ -71,7 +71,10 @@ En la UI de Tailscale: **Add rule** → Source: `tag:umbral-vm`, Destination: `t
 Con Tailscale activo y la ACL aplicada:
 
 ```powershell
+$env:OPENCLAW_GATEWAY_TOKEN = "TU_TOKEN_GATEWAY"
 openclaw node run --host srv1431451.tail0b266a.ts.net --port 18789 --tls
 ```
 
-Sustituye el hostname por el de tu VPS en Tailscale (`*.ts.net`). Así el nodo de la VM se conecta al gateway de la VPS por Tailscale (Zero Trust, sin abrir puertos a internet).
+Sustituye el hostname por el de tu VPS en Tailscale (`*.ts.net`) y el token por `gateway.auth.token` del VPS.
+
+**Arranque automático:** Para que el node arranque tras reiniciar la VM, ver [runbook-vm-openclaw-node.md](runbook-vm-openclaw-node.md) (servicio NSSM).

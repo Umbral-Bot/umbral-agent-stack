@@ -457,6 +457,25 @@ Si ejecutás `ssh rick@100.109.16.40` **desde la VM** (sesión de Rick), verás 
 
 **Acción:** usar SSH desde tu PC: `ssh -i $env:USERPROFILE\.ssh\id_rsa -o IdentitiesOnly=yes rick@100.109.16.40 "hostname"`. Diagnóstico profundo en la VM: `.\scripts\vm-ssh-key-diagnostic.ps1` (genera `docs/audits/vm-ssh-diagnostic-*.txt`).
 
+#### 7.2.2 OpenClaw Node (VM → Gateway)
+
+Si la VM tiene el nodo OpenClaw configurado (NSSM `openclaw-node`), verificar tras reinicio:
+
+**En la VM:**
+```powershell
+nssm status openclaw-node
+Get-Content C:\openclaw-worker\openclaw-node-stdout.log -Tail 20
+```
+
+**En la VPS:**
+```bash
+openclaw devices list
+```
+
+PCRick debe aparecer en Paired. Si aparece en Pending: `openclaw devices approve <requestId>`.
+
+Runbook completo: [runbooks/runbook-vm-openclaw-node.md](../runbooks/runbook-vm-openclaw-node.md).
+
 ---
 
 ## 8. Archivos de configuración

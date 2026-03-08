@@ -145,3 +145,40 @@ openclaw models status
 # Verificar Telegram
 openclaw status --all | grep -i telegram
 ```
+
+## OpenClaw Node en la VM (PCRick)
+
+El nodo OpenClaw en la VM conecta al Gateway de la VPS vía Tailscale, permitiendo a Rick controlar el navegador y otros recursos en PCRick.
+
+### Token del Gateway
+
+1. **En la VPS:** generar token y configurarlo:
+   ```bash
+   NEW_TOKEN=$(openssl rand -hex 32)
+   openclaw config set gateway.auth.token "$NEW_TOKEN"
+   systemctl --user restart openclaw
+   ```
+
+2. **En la VM:** usar el mismo token al ejecutar el node:
+   ```powershell
+   $env:OPENCLAW_GATEWAY_TOKEN = "EL_TOKEN_GENERADO"
+   openclaw node run --host srv1431451.tail0b266a.ts.net --port 18789 --tls
+   ```
+
+### Arranque automático
+
+Para que el node arranque tras reiniciar la VM, usar el servicio NSSM según [runbooks/runbook-vm-openclaw-node.md](../runbooks/runbook-vm-openclaw-node.md).
+
+### Aprobar dispositivos pendientes
+
+Si el node aparece en `Pending` tras conectarse:
+```bash
+openclaw devices list
+openclaw devices approve <requestId>
+```
+
+---
+
+## Notion como Tool (no Skill)
+
+Rick recomienda configurar Notion como **herramienta (Tool)**, no como skill. Ver [docs/rick-notion-tool-instead-of-skill.md](rick-notion-tool-instead-of-skill.md) para quitar el skill y configurar Notion como tool vía Worker tasks.

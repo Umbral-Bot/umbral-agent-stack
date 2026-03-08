@@ -82,21 +82,17 @@ R18 cerrada — dashboard Notion actualizado (PR #97).
 > Docs: `docs/audits/audit-results-2026-03-07.md`, PR #106.
 
 | ID | Tarea | Agente | Estado |
-|----|--------|--------|--------|
-| 099 | Fix token mismatch Dispatcher→Worker (P0) | **cursor** | 📋 assigned |
+| -- | ----- | ------ | ------ |
+| 099 | Fix token mismatch Dispatcher→Worker (P0) | claude-code | ✅ done — Dispatcher reiniciado, E2E OK (2026-03-08) |
+| 100 | Test VPS + tests gpt-rick / gpt-realtime | claude-code | ⚠️ parcial — E2E funcional, Azure keys faltan en VPS env |
 
-**Contexto para Cursor:**
-- La auditoría en vivo (SSH VPS + HTTP VM) reveló que el Dispatcher envía todas las tareas con 401
-- El `WORKER_TOKEN` en `~/.config/openclaw/env` (VPS) tiene prefix `export` que puede no parsearse igual en el Dispatcher vs el Worker
-- OpsLog: 213 eventos, mayoría `task_failed` por 401
-- Gemini 2.5 Flash sí funciona cuando se llama directamente con `source env && curl ...`
-- VPS branch: `rick/vps` (tiene commits de Rick sobre identidad/Embudo V2, NO está en main)
-- Tarea completa: `.agents/tasks/2026-03-07-099-r21-cursor-fix-token-mismatch-e2e.md`
+**Pendiente para David (R21):**
 
-**Acciones secundarias R21 (si hay tiempo):**
-- Habilitar SSH en VM (requiere David en Hyper-V GUI)
+- Agregar `AZURE_OPENAI_API_KEY` y `GPT_RICK_API_KEY` en `~/.config/openclaw/env` del VPS
+- Habilitar SSH en VM (Hyper-V GUI)
 - Mergear PR #106 a main y sincronizar VPS + VM
-- Agregar `VM_TOKEN` correcto en VPS env
+
+**Resultado tests 2026-03-08:** `docs/audits/vps-test-results-2026-03-08.md`
 
 ## Ronda 12 — En curso
 

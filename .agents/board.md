@@ -98,7 +98,11 @@ Ejecución en paralelo de Quick Wins: 3 ramas Codex (worker, config, dispatcher)
 
 | ID | Tarea | Notas |
 |----|--------|-------|
-| — | (pendiente) | Ver board para siguiente sprint |
+| 099 | Fix token mismatch (Cursor) | WORKER_TOKEN VPS ≠ Worker VPS local → 401 en Notion; sincronizar ~/.config/openclaw/env |
+| 100 | Test VPS + fix (Claude) | Incluye token, n8n; info Rick 2026-03-08 ya incorporada en tarea |
+| — | Rick: corregir token | Sí — Rick puede actualizar WORKER_TOKEN en env del Dispatcher |
+
+**Rick 2026-03-08:** Reportes en `G:\...\Perfil de David Moreira\Reportes_Mercado`; Proyecto-Embudo-Ventas vacía. Herramienta **notion** (API) disponible; **browser** falla sin GUI. Instrucciones en `.agents/para-rick.md`.
 
 ## Ronda 12 — En curso
 

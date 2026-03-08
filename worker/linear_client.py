@@ -67,6 +67,7 @@ def list_teams(api_key: str) -> List[Dict[str, Any]]:
         nodes {
           id
           name
+          key
         }
       }
     }

@@ -23,6 +23,7 @@
 | **Dispatcher** | VPS | Control Plane: encola desde Redis, envía a Worker (y opcionalmente a VM si `WORKER_URL_VM` está definido). |
 | **Notion poller daemon** | VPS | Pollea Control Room cada 60 s, smart reply (research + LLM), encola tareas. |
 | **Worker VM** (opcional) | Windows (NSSM, 8088) | Execution Plane: tareas improvement/lab, windows.fs.*, PAD si está instalado. |
+| **OpenClaw Node** (opcional) | VM Windows (NSSM, openclaw-node) | Conecta al Gateway de la VPS vía Tailscale; permite a Rick controlar navegador y recursos en PCRick. Runbook: [runbook-vm-openclaw-node.md](../runbooks/runbook-vm-openclaw-node.md). |
 | **Redis** | VPS | Cola de tareas, scheduled tasks, estado. |
 | **Crons** | VPS | Supervisor (cada 5 min), dashboard Notion (cada 15 min), health-check (30 min), SIM, digest, E2E, etc. |
 

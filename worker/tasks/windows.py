@@ -165,6 +165,7 @@ def handle_windows_open_notepad(input_data: Dict[str, Any]) -> Dict[str, Any]:
             return {"ok": False, "path": path, "scheduled": False, "error": str(e)}
     task_name = "UmbralOpenNotepad"
     run_as_user = (input_data.get("run_as_user") or "").strip()
+    # SEC-10: password from env var only, never from HTTP input
     run_as_password = os.environ.get("SCHTASKS_PASSWORD", "").strip() or os.environ.get("OPENCLAW_NOTEPAD_RUN_AS_PASSWORD", "").strip()
     try:
         dir_path = os.path.dirname(path)
@@ -326,7 +327,7 @@ def handle_windows_add_interactive_worker_to_startup(input_data: Dict[str, Any])
     """
     if sys.platform != "win32":
         return {"ok": False, "error": "Solo Windows."}
-    username = _validate_safe_name(input_data.get("username") or "Rick")
+    username = _validate_safe_name(input_data.get("username") or "Rick", max_len=20)
     repo = os.environ.get("PYTHONPATH", "").strip() or r"C:\GitHub\umbral-agent-stack"
     bat = os.path.join(repo, "scripts", "vm", "start_interactive_worker.bat")
     if not os.path.isfile(bat):

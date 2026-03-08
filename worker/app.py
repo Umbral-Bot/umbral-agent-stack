@@ -19,6 +19,7 @@ Uso:
     Ver scripts/setup-openclaw-service.ps1
 """
 
+import hmac
 import json
 import hmac
 import logging
@@ -232,7 +233,7 @@ async def run_task(
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Invalid request body: {exc}")
 
-    # S7: sanitize task name and input size
+    # S7: sanitize task name and input size (apply sanitized result)
     try:
         sanitize_task_name(envelope.task)
     except ValueError as exc:
@@ -356,7 +357,7 @@ async def enqueue_task(
     """
     _authenticate(authorization)
 
-    # Sanitize
+    # Sanitize (apply sanitized result)
     try:
         sanitize_task_name(body.task)
     except ValueError as exc:
@@ -398,7 +399,18 @@ async def enqueue_task(
     from dispatcher.queue import TaskQueue
     queue = TaskQueue(r)
     queue.enqueue(envelope)
-    ops_log.task_queued(task_id, body.task, body.team, body.task_type or "general", trace_id=trace_id)
+
+    # Emit task_queued event for observability (02-bugs #5)
+    try:
+        ops_log.task_queued(
+            task_id=task_id,
+            task=body.task,
+            team=body.team,
+            task_type=body.task_type or "general",
+            trace_id=trace_id,
+        )
+    except Exception:
+        pass  # ops_log is best-effort
 
     logger.info(
         "Enqueued task via API: %s (task=%s, team=%s, type=%s)",

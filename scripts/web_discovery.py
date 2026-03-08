@@ -57,7 +57,8 @@ def _search_google(query: str, count: int) -> tuple[list[Result], str | None]:
     Si hay 403, error="403:forbidden".
     """
     key = (
-        os.environ.get("GOOGLE_CSE_API_KEY_RICK_UMBRAL")
+        os.environ.get("GOOGLE_CSE_API_KEY_RICK_UMBRAL_2")
+        or os.environ.get("GOOGLE_CSE_API_KEY_RICK_UMBRAL")
         or os.environ.get("GOOGLE_CSE_API_KEY")
     )
     cx = os.environ.get("GOOGLE_CSE_CX")

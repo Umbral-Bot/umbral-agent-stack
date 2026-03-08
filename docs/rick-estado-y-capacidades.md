@@ -30,11 +30,23 @@
 
 ## Capacidades recientes / cambios de diseño
 
+- **Git en la VPS:** Rick no trabaja en `main`. Cambios desde la VPS: rama **`rick/vps`** → push → PR → David/Cursor hace el merge → en la VPS `git checkout main && git pull origin main`. Detalle: [docs/62-operational-runbook.md](62-operational-runbook.md) §7.0 y [34-rick-github-token-setup.md](34-rick-github-token-setup.md).
 - **Avisos del supervisor a Notion:** Cuando el supervisor reinicia Worker o Dispatcher, postea un comentario en Notion (Control Room por defecto, o en la página de `NOTION_SUPERVISOR_ALERT_PAGE_ID` si se define). Función `post_notion_alert()` en `scripts/vps/supervisor.sh`; JSON seguro vía Python.
 - **Verificación VPS y VM:** Runbook §7 tiene el checklist para comprobar que ambas están al día con el repo (`git pull`, `pip install -r worker/requirements.txt`, reinicio del Worker si aplica).
 - **Control Room:** Puede ser uso mixto (comunicación Rick/Enlace/David + avisos operativos del supervisor). Si se prefiere solo comunicación, definir `NOTION_SUPERVISOR_ALERT_PAGE_ID` en la VPS para que los avisos vayan a otra página.
 
 Para el listado completo de capacidades de Rick (smart reply, SIM, digest, report pages, etc.) ver [docs/18-notion-enlace-rick-convention.md](18-notion-enlace-rick-convention.md) sección "Capacidades actuales de Rick".
+
+---
+
+## Agente Gpt-Rick (Azure AI Foundry Cursor)
+
+Rick puede asignar tareas al agente **Gpt-Rick** publicado en Azure AI Foundry. Endpoints:
+
+- **Responses API:** POST `.../protocols/openai/responses?api-version=2025-11-15-preview` — chat stateless con el agente.
+- **Activity Protocol:** para Microsoft 365 / Teams.
+
+**Variables:** `GPT_RICK_API_KEY` o `AZURE_OPENAI_API_KEY` en env. **Test:** `python3 scripts/test_gpt_rick_agent.py`.
 
 ---
 

@@ -34,6 +34,19 @@
 | `document.create_pdf` | Genera PDF desde HTML (weasyprint) o texto plano. |
 | `document.create_presentation` | Genera presentación PowerPoint (.pptx) con python-pptx. |
 
+## Agente Gpt-Rick (Azure AI Foundry Cursor)
+
+Rick puede delegar tareas al agente **Gpt-Rick** publicado en Azure AI Foundry. Endpoints:
+
+- **Responses API:** `https://cursor-api-david.services.ai.azure.com/api/projects/rick-api-david-project/applications/Gpt-Rick/protocols/openai/responses?api-version=2025-11-15-preview`
+- **Activity Protocol:** `https://cursor-api-david.services.ai.azure.com/api/projects/rick-api-david-project/applications/Gpt-Rick/protocols/activityprotocol?api-version=2025-11-15-preview`
+
+**Variables:** `GPT_RICK_API_KEY` o `AZURE_OPENAI_API_KEY` en `~/.config/openclaw/env`.
+
+**Tests:**  
+- `python3 scripts/test_gpt_rick_agent.py` — acceso al agente Gpt-Rick (Responses API).  
+- `python3 scripts/test_gpt_realtime_audio.py` — audio con gpt-realtime (`cursor-api-david.cognitiveservices.azure.com`); guarda `assets/audio/rick_audio_prueba.wav` ("Hola, este es un audio de prueba para el proyecto de Rick").
+
 El Dispatcher encola tareas en Redis (`umbral:tasks:pending`) y el Worker las ejecuta vía HTTP. Requiere `WORKER_URL`, `WORKER_TOKEN`, `REDIS_URL`.
 
 ## Notion

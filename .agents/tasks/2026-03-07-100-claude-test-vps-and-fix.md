@@ -9,7 +9,21 @@ created_by: cursor
 priority: high
 sprint: R21
 created_at: "2026-03-07"
-updated_at: "2026-03-07"
+updated_at: "2026-03-08"
+---
+
+## Info nueva 2026-03-08 (Rick en VM)
+
+Rick verificó el estado en la VM (PCRick):
+
+**Token (P0 — dirección corregida):** El Dispatcher usa un token **válido para la VM** pero **inválido para el Worker VPS local**. El impacto: todas las actualizaciones automáticas a Notion (Bandeja Puente, Dashboard, OODA) fallan con 401; el reporte diario muestra 100% de fallos aunque las tareas **sí se ejecutan en la VM**. **Acción:** sincronizar `WORKER_TOKEN` en `~/.config/openclaw/env` para que coincida en Worker VPS, Dispatcher y VM. Rick preguntó si puede corregir el token en el env del Dispatcher — **sí**.
+
+**Drive / Reportes:** La carpeta `G:\Mi unidad\Rick-David\Proyecto-Embudo-Ventas` está vacía. Los informes están en `G:\Mi unidad\Rick-David\Perfil de David Moreira\Reportes_Mercado` (bulk_market_report.md, competitor_report.md, plantillas).
+
+**Error de path en VM:** "Proyecto embudo/Drive" — directorio no encontrado. La ruta correcta para reportes es `G:\Mi unidad\Rick-David\Perfil de David Moreira\Reportes_Mercado` (o equivalente accesible desde el Worker en la VM).
+
+**Inestabilidad:** Supervisor reinició el Worker varias veces hoy (último 01:35 UTC).
+
 ---
 
 ## Objetivo

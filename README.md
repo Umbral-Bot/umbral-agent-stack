@@ -211,6 +211,7 @@ PYTHONPATH=. python3 scripts/e2e_validation.py --notion
 | [40-hackathon-diagnostico-completo](docs/40-hackathon-diagnostico-completo.md) | Hackathon: diagnóstico desde código (agente Cursor Cloud) |
 | [bitacora-scripts](docs/bitacora-scripts.md) | **Scripts enriquecimiento Bitácora Notion** (enrich + resumen amigable) + dependencias faltantes |
 | [41-hackathon-resultado-diagnostico-real](docs/41-hackathon-resultado-diagnostico-real.md) | Hackathon: diagnóstico con datos reales (VPS/VM/Notion/Linear vivos) |
+| [43-gpt-rick-agent-azure-foundry](docs/43-gpt-rick-agent-azure-foundry.md) | Agente Gpt-Rick: endpoints Responses API / Activity Protocol, test |
 | [ADRs](docs/adr/) | **Decisiones arquitectónicas (001-004)** |
 | [02-implementation-log](docs/02-implementation-log.md) | Cronología de implementación |
 | [03-setup-vps](docs/03-setup-vps-openclaw.md) | Setup VPS + OpenClaw |

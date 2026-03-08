@@ -109,31 +109,38 @@ task_completed  | ping             | (ok)
 
 ---
 
-## Tests Azure (Tarea 100)
+## Tests Azure (Tarea 100) — Configurados
 
-### test_gpt_rick_agent.py — FALLA
+**Solución:** Usar `KIMI_AZURE_API_KEY` (ya en VPS env, 84 chars) como base para `AZURE_OPENAI_API_KEY` y `GPT_RICK_API_KEY`.
 
-```
-ERROR: GPT_RICK_API_KEY o AZURE_OPENAI_API_KEY no definida.
-```
-
-Variables necesarias (no están en VPS env):
-
-| Variable | Fuente | Nota |
-|----------|--------|------|
-| `AZURE_OPENAI_API_KEY` | Azure Portal → recurso `cursor-api-david` → Keys | Key principal |
-| `GPT_RICK_API_KEY` | Mismo recurso (puede ser igual) | Key del agente Gpt-Rick |
-
-El endpoint ya tiene default correcto: `cursor-api-david.services.ai.azure.com`.
-
-### test_gpt_realtime_audio.py — FALLA
-
-```
-ERROR: AZURE_OPENAI_API_KEY no definida.
+Agregadas a `~/.config/openclaw/env`:
+```bash
+export AZURE_OPENAI_API_KEY="<KIMI_AZURE_API_KEY>"
+export GPT_RICK_API_KEY="<KIMI_AZURE_API_KEY>"
 ```
 
-Misma causa. Post-configuración verificar que el deployment `gpt-realtime` exista en
-`cursor-api-david.cognitiveservices.azure.com`. Salida: `assets/audio/rick_audio_prueba.wav`.
+### test_gpt_rick_agent.py — 403 Forbidden (Permisos)
+
+```
+ERROR: HTTP 403 — Identity does not have permissions for Microsoft.MachineLearningServices/workspaces/agents/action
+```
+
+**Estado:** Keys configuradas, endpoint correcto (`cursor-api-david.services.ai.azure.com`), pero la Identity del recurso no tiene permisos para invocar el agente `Gpt-Rick`.
+
+**Acción requerida:** David debe verificar/actualizar los permisos de la aplicación/identity en Azure Portal:
+- Recurso: `cursor-api-david`
+- Acción requerida: `Microsoft.MachineLearningServices/workspaces/agents/action`
+- Referencia: https://aka.ms/azureml-auth-troubleshooting
+
+### test_gpt_realtime_audio.py — ✅ OK
+
+```
+OK: Audio guardado en /home/rick/umbral-agent-stack/assets/audio/rick_audio_prueba.wav
+  Tamaño: 391244 bytes, duración: 8.15s
+  Transcript: Hola, claro, te escucho bien. Vamos a probar juntos lo que necesites...
+```
+
+**Estado:** Completamente funcional. Audio WAV generado con éxito usando gpt-realtime en `cursor-api-david.cognitiveservices.azure.com`.
 
 ---
 

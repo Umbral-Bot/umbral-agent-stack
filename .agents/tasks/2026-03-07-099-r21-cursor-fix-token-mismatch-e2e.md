@@ -1,13 +1,13 @@
 ---
 id: "2026-03-07-099"
 title: "Fix token mismatch Dispatcher→Worker (P0 auditoría 2026-03-07)"
-status: assigned
+status: done
 assigned_to: cursor
 created_by: claude-code
 priority: high
 sprint: R21
 created_at: 2026-03-07T22:45:00-03:00
-updated_at: 2026-03-07T22:45:00-03:00
+updated_at: 2026-03-08T12:50:00-03:00
 ---
 
 ## Objetivo
@@ -88,3 +88,18 @@ Auditoría ejecutada en vivo: SSH VPS, HTTP VM worker.
 Findings documentados en `docs/audits/audit-results-2026-03-07.md`.
 PR #106 contiene plan de auditoría + resultados.
 El token mismatch es el bloqueante P0 del sistema completo.
+
+### [claude-code] 2026-03-08 12:50 -03:00
+**RESUELTO.**
+
+Causa raíz confirmada vía `/proc/PID/environ`:
+
+- Dispatcher (arrancado 2026-03-04): token `!EN6V4zt...` (25 chars) — VIEJO
+- Worker VPS (arrancado 2026-03-07): token `64e38901...` (48 chars) — ACTUAL del env
+- El env file se actualizó entre el 4 y el 7 de marzo, pero el Dispatcher nunca se reinició
+
+Fix aplicado: Dispatcher reiniciado en VPS con env completo (`set -a; source ~/.config/openclaw/env; set +a`).
+
+Verificación E2E: `ping` encolado via `TaskQueue.enqueue()` → Dispatcher procesó en ~28s → `task_completed | ping | 2026-03-08T15:48:49` en OpsLog. **Pipeline Redis → Dispatcher → Worker funcional.**
+
+Nota futura: el supervisor.sh solo verifica que el proceso existe, no que el token es correcto. Si el env se actualiza, hay que reiniciar el Dispatcher manualmente (o agregar al supervisor un health-check funcional tipo POST /run ping).

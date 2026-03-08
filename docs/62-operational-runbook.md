@@ -345,25 +345,85 @@ curl -sf http://localhost:8088/health && echo "✅ Stack UP" || echo "❌ Stack 
 
 Ejecutar periódicamente para comprobar que no falte `git pull` ni dependencias.
 
-### 7.1 VPS
+### 7.0 Política Git en la VPS: sin clonación de main para trabajar; rama + PR, merge lo hace David/Cursor
+
+**No hay “clon de main” para editar.** En la VPS hay **un solo clone** del repo. La rama **`main`** se usa **solo para ejecutar** el stack (Worker, Dispatcher, crons) y **solo se actualiza con `git pull`** para recibir código ya mergeado. **Nunca** se hace commit ni push a `main` desde la VPS.
+
+| Quién | Dónde | Acción |
+|-------|--------|--------|
+| **VPS (Rick)** | Rama `rick/vps` | Commit, push, abrir PR a `main` |
+| **David / Cursor** | GitHub o local | Revisar PR, **mergear** a `main` |
+| **VPS** | `main` | Tras el merge: `git checkout main && git pull origin main` (solo recibir) |
+
+Cuando Rick o un script en la VPS necesite cambiar código o docs:
+
+1. En la VPS: `bash scripts/vps/rick-branch-for-change.sh` (deja el repo en la rama `rick/vps`, creada desde main si no existe), o a mano:
+   - `git checkout main && git pull origin main`
+   - `git checkout rick/vps` (o `git checkout -b rick/vps` si es la primera vez; nunca trabajar en main)
+2. Hacer los cambios, commit, `git push -u origin rick/vps`
+3. Abrir PR a `main` (con `GITHUB_TOKEN` en env si se usa la API)
+4. **No** mergear desde la VPS; David (o Cursor) hace el merge
+5. Después del merge: en la VPS, `git checkout main && git pull origin main`; luego `git checkout rick/vps && git merge main`; reiniciar servicios si aplica
+
+Antes de hacer push, comprobar que no estás en main: `bash scripts/vps/rick-ensure-not-pushing-main.sh` (falla si la rama actual es main). **Opcional en la VPS:** instalar un hook `pre-push` que ejecute ese script para bloquear push a main:
+
+```bash
+cd ~/umbral-agent-stack
+echo '#!/bin/sh
+bash scripts/vps/rick-ensure-not-pushing-main.sh || exit 1' > .git/hooks/pre-push
+chmod +x .git/hooks/pre-push
+```
+
+Referencia: [docs/34-rick-github-token-setup.md](34-rick-github-token-setup.md) y [docs/28-rick-github-workflow.md](28-rick-github-workflow.md).
+
+### 7.0.1 Configuración inicial VPS: clone en rama `rick/vps` (no trabajar en main)
+
+En la VPS **no se usa main como rama de trabajo**. El clone debe quedar por defecto en la rama **`rick/vps`** para que Rick (o quien edite desde la VPS) trabaje siempre ahí. (Se usa `rick/vps` y no `rick` porque ya existen ramas `rick/*` en el repo y Git no permite rama `rick` y `rick/...` a la vez.) El stack (Worker, Dispatcher, crons) **ejecuta desde main**: cada script que corre código del repo llama a `scripts/vps/ensure-main-for-run.sh` antes de ejecutar, así que aunque el repo esté en `rick` al hacer `cd`, los procesos usan main.
+
+**Primera vez (clone nuevo):**
+
+```bash
+cd ~
+git clone git@github.com:Umbral-Bot/umbral-agent-stack.git umbral-agent-stack
+cd umbral-agent-stack
+bash scripts/vps/rick-branch-for-change.sh   # crea rama rick/vps desde main y la deja activa
+git push -u origin rick/vps
+```
+
+**Si ya tenías el repo y estaba en main:** cambiar a rama rick/vps y subirla (una sola vez):
 
 ```bash
 cd ~/umbral-agent-stack
 git fetch origin
-git status          # ¿Hay cambios locales sin commit?
-git log -1 --oneline
-git log origin/main -1 --oneline   # Si son distintos, hay que pull
-git pull origin main
+git checkout main && git pull origin main
+git checkout -b rick/vps
+git push -u origin rick/vps
+```
+
+A partir de ahí, al entrar en el repo (`cd ~/umbral-agent-stack`) estarás en **rick/vps** para editar. Los crons y el supervisor hacen `ensure-main-for-run.sh` antes de arrancar Worker/Dispatcher o ejecutar scripts, así que el código que corre en producción es siempre **main**. Instrucciones completas para Rick (qué ejecutar en la VPS y qué no): [docs/rick-instrucciones-vps-rama-rick.md](rick-instrucciones-vps-rama-rick.md). Cuando Rick termine de aplicar los cambios en la VPS, deja un mensaje en [.agents/rick-vps-message.md](../.agents/rick-vps-message.md) (en la rama rick/vps) para que David/Cursor lo lea.
+
+### 7.1 VPS (verificación: rama rick para trabajar; main para ejecución)
+
+En la VPS la rama de trabajo es **`rick/vps`** (no main). Para **recibir** cambios ya mergeados: `git checkout main && git pull origin main`, luego volver a rick si vas a editar: `git checkout rick && git merge main`. El stack siempre ejecuta desde main gracias a `ensure-main-for-run.sh` en supervisor y crons.
+
+```bash
+cd ~/umbral-agent-stack
+git fetch origin
+git status          # ¿En rama rick/vps con cambios sin commit? Commit y push a rick/vps, abre PR (§7.0)
+git branch -v      # Por defecto deberías estar en rick/vps para trabajar
+# Actualizar rick/vps con lo último de main (tras merges de David/Cursor):
+git checkout main && git pull origin main
+git checkout rick/vps && git merge main
 pip3 install -r worker/requirements.txt   # Por si se añadieron deps (ej. requests)
 curl -s http://127.0.0.1:8088/health | head -1
-bash scripts/vps/supervisor.sh     # Ver Redis, Worker, Dispatcher OK
+bash scripts/vps/supervisor.sh     # Ver Redis, Worker, Dispatcher OK (ellos usan main al correr)
 # Verificación completa del stack (env, Worker, Redis, Linear, dashboard):
 source ~/.config/openclaw/env && PYTHONPATH=. python3 scripts/verify_stack_vps.py
 # Smoke test rápido:
 source ~/.config/openclaw/env && PYTHONPATH=. python3 scripts/smoke_test.py
 ```
 
-Si después del pull el Worker falla al arrancar (ej. `ModuleNotFoundError`), instalar deps y reiniciar: `pip3 install -r worker/requirements.txt` y `bash scripts/vps/supervisor.sh` (o el método que uses para el Worker).
+Si después de actualizar el Worker falla al arrancar (ej. `ModuleNotFoundError`), instalar deps y reiniciar: `pip3 install -r worker/requirements.txt` y `bash scripts/vps/supervisor.sh` (el supervisor pone el repo en main antes de arrancar).
 
 ### 7.2 VM (Execution Plane, Windows)
 
@@ -383,6 +443,19 @@ curl -s http://localhost:8088/health
 ```
 
 Si el repo en la VM está en otra ruta, ajustar `cd`. La VPS usa `WORKER_URL_VM` para enviar tareas improvement/lab a esta VM cuando está online.
+
+#### 7.2.1 SSH a la VM (desde tu PC, no desde la VM)
+
+Para conectarte por SSH a la VM (`rick@100.109.16.40` o la IP Tailscale de la VM) **hay que ejecutar `ssh` desde tu PC (TARRO)**, no desde la VM. La clave privada (id_rsa de David) está solo en tu PC; la VPS tiene su propia clave (vps-umbral) para Rick.
+
+Si ejecutás `ssh rick@100.109.16.40` **desde la VM** (sesión de Rick), verás mensajes esperados:
+
+- `Identity file C:\Users\Rick\.ssh\id_rsa not accessible: No such file or directory` — Rick en la VM no tiene esa clave.
+- `hostkeys_foreach failed for C:\\Users\\Rick/.ssh/known_hosts: Permission denied` — permisos de la carpeta .ssh de Rick.
+- `Failed to add the host to the list of known hosts` — no puede escribir known_hosts.
+- `Connection reset by ... port 22` — la conexión se cierra.
+
+**Acción:** usar SSH desde tu PC: `ssh -i $env:USERPROFILE\.ssh\id_rsa -o IdentitiesOnly=yes rick@100.109.16.40 "hostname"`. Diagnóstico profundo en la VM: `.\scripts\vm-ssh-key-diagnostic.ps1` (genera `docs/audits/vm-ssh-diagnostic-*.txt`).
 
 ---
 

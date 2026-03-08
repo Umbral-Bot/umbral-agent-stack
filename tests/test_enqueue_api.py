@@ -189,7 +189,13 @@ class TestEnqueueSuccess:
             task_id = resp.json()["task_id"]
             trace_id = json.loads(fake_redis.get(f"{TASK_KEY_PREFIX}{task_id}"))["trace_id"]
 
-        task_queued.assert_called_once_with(task_id, "ping", "system", "general", trace_id=trace_id)
+        task_queued.assert_called_once_with(
+            task_id=task_id,
+            task="ping",
+            team="system",
+            task_type="general",
+            trace_id=trace_id,
+        )
 
     def test_enqueue_redis_unavailable_returns_503(self, client):
         with patch("worker.app._get_redis", return_value=None):

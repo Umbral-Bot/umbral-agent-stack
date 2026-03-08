@@ -36,5 +36,7 @@ El Worker valida que cualquier `path` esté **dentro** de alguno de esos prefijo
 { "task": "windows.fs.list", "input": {"path": "G:\\Mi unidad\\Rick-David", "limit": 200} }
 ```
 
+**Ruta de reportes (2026-03-08):** Los informes están en `G:\Mi unidad\Rick-David\Perfil de David Moreira\Reportes_Mercado` (bulk_market_report.md, competitor_report.md). La carpeta `Proyecto-Embudo-Ventas` está vacía.
+
 ## Transferencia de binarios (opcional)
 - `windows.fs.write_bytes_b64`: escribir un archivo binario desde base64 (limitado por `tools.fs.max_bytes_b64`).

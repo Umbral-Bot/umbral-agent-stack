@@ -172,7 +172,7 @@ class TestSanitize:
                 sanitize_input({"cmd": "; rm -rf /"})
         assert "injection" in caplog.text.lower()
 
-    def test_xss_detection(self, caplog):
+    def test_xss_detection_raises(self, caplog):
         import logging
         from worker.sanitize import sanitize_input
         with caplog.at_level(logging.WARNING, logger="worker.sanitize"):
@@ -180,7 +180,7 @@ class TestSanitize:
                 sanitize_input({"html": "<script>alert('xss')</script>"})
         assert "injection" in caplog.text.lower()
 
-    def test_sql_injection_detection(self, caplog):
+    def test_sql_injection_detection_raises(self, caplog):
         import logging
         from worker.sanitize import sanitize_input
         with caplog.at_level(logging.WARNING, logger="worker.sanitize"):

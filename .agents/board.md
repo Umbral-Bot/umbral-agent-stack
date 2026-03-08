@@ -1,28 +1,26 @@
 # Agent Board — Umbral Agent Stack
 
-> Última actualización: 2026-03-06 por **cursor**
-> Sprint activo: **R17**
-> **RONDA 17 — Post-R16: Notion, changelog, runbook, script ramas**
+> Última actualización: 2026-03-07 por **claude-code**
+> Sprint activo: **R21**
+> **RONDA 21 — Auditoría comprensiva + fix token mismatch E2E**
 
-## Estado del sistema
+## Estado del sistema (actualizado 2026-03-07 — auditoría en vivo)
 
 | Aspecto | Estado |
 |---------|--------|
 | Protocolo inter-agentes | ✅ Activo |
-| VPS (Control Plane) | ✅ Redis + Dispatcher + Worker + 11 crons |
-| Notion Poller daemon | ✅ Corriendo (PID activo, polling cada 60s) |
-| Worker API | ✅ v0.4.0 — 28 handlers, 10+ endpoints |
-| Multi-LLM | ✅ Gemini + OpenAI + Anthropic (model routing activo) |
-| Langfuse Tracing | ✅ Integrado (graceful degradation sin keys) |
-| Rate Limiting | ✅ 60 RPM (configurable via RATE_LIMIT_RPM) |
-| Scheduled Tasks | ✅ Redis sorted set, cron cada minuto |
-| Quota Dashboard | ✅ GET /quota/status + reporte Notion |
-| Crons activos | 11 (dashboard, health, supervisor, poller, SIM x2, digest, SIM-make, E2E, OODA, scheduled-tasks) |
-| Tests | ✅ 900 passed (tras PR #96; 34 tests Bitácora) |
-| PRs mergeados (hackathon) | 50+ (#91–#96 en main) |
-| PRs obsoletos cerrados | 11 (limpieza R16-080, inventario en docs/branches-cerrados-inventario.md) |
+| VPS (Control Plane) | ✅ Redis + Dispatcher + Worker + 12 crons (branch `rick/vps`) |
+| Notion Poller daemon | ✅ Corriendo (PID 269682, desde 2026-03-04) |
+| Worker API VPS | ✅ v0.4.0 — 43 handlers — responde directo |
+| Worker API VM | ✅ v0.4.0 — 43 handlers — health OK (Tailscale + Hyper-V) |
+| Multi-LLM | ✅ Gemini 2.5 Flash operativo (llamada directa OK) |
+| OpsLogger | ✅ 213 eventos en ~/.config/umbral/ops_log.jsonl |
+| Crons activos | 12 (dashboard, health, supervisor, poller, sim-daily, sim-report, digest, sim-make, E2E, OODA, scheduled-tasks, quota-guard) |
+| Tests | ✅ 900 passed (PR #96) |
 | CI | ✅ GitHub Actions pytest (Python 3.11 + 3.12) |
-| VM (Execution Plane) | ✅ v0.4.0 — 25 handlers — reconectada |
+| **E2E Dispatcher→Worker** | ✅ OK — token fix 2026-03-08 (PR #106) |
+| VM SSH/WinRM | ❌ Puertos 22/5985 cerrados — solo :8088 abierto |
+| Cuotas Redis | ❌ Vacías — Dispatcher no despacha exitosamente |
 
 ## Ronda 16 — Cerrada
 
@@ -71,38 +69,28 @@ R18 cerrada — dashboard Notion actualizado (PR #97).
 
 **Nota:** Para mantener la Control Room solo para comunicación, definir `NOTION_SUPERVISOR_ALERT_PAGE_ID` (página aparte, ej. "Alertas supervisor") en la VPS; ver runbook §1.4.
 
-## Ronda 20 — En curso
+## Ronda 20 — Cerrada
 
 | ID | Tarea | Estado |
 |----|--------|--------|
-| 098 | Auditoría variables Notion (Codex) | ✅ done — PR #100 mergeado. Doc: docs/auditoria-notion-env-vars.md. Simplificación Rick+Supervisor aplicada (env.example, README, runbook). |
+| 098 | Auditoría variables Notion (Codex) | ✅ done — PR #100 mergeado. |
 
 ## Plan implementación auditoría 2026-03
 
-Auditoría Claude (PR #101): **plan maestro** de todas las implementaciones y mejoras en [docs/plan-implementacion-auditoria-2026-03.md](../docs/plan-implementacion-auditoria-2026-03.md).
+Auditoría Claude (PR #101): **plan maestro** en [docs/plan-implementacion-auditoria-2026-03.md](../docs/plan-implementacion-auditoria-2026-03.md). Quick Wins (QW-1 a QW-6) ejecutados. Docs: `docs/audits/codebase-audit-2026-03/`. PRs #102, #103, #104 MERGED. Tests: 911 passed.
 
-- **Quick Wins (QW-1 a QW-6):** 1 día — sanitize, timing-safe auth, Windows, .env, task_queued, rate limiter.
-- **Mediano (M-1 a M-6):** 1–2 semanas — run_in_executor, desacople, TTL, Lua, auth hardening, pip-audit.
-- **Grande (G-1 a G-4):** 1–2 meses — auth multi-nivel, async+Redis Streams, observabilidad, containerización.
+## Ronda 21 — Cerrada (PR #106 mergeado)
 
-Ejecución en paralelo de Quick Wins: 3 ramas Codex (worker, config, dispatcher). Tareas 102, 103, 104.
+| ID | Tarea | Agente | Estado |
+| -- | ----- | ------ | ------ |
+| 099 | Fix token mismatch Dispatcher→Worker (P0) | claude-code | ✅ done — Dispatcher reiniciado, E2E OK (2026-03-08) |
+| 100 | Test VPS + tests gpt-rick / gpt-realtime | claude-code | ✅ done — n8n OK, gpt-realtime OK, gpt-rick 403 (permisos Azure) |
 
-**Ronda 21 — Cerrada (audit quick wins + auditoría docs):**
-- PR #101 (Claude): auditoría codebase 2026-03 — docs en `docs/audits/codebase-audit-2026-03/` — MERGED.
-- PR #102 (Codex): quick wins dispatcher (task_queued on retry) — MERGED.
-- PR #103 (Codex): quick wins config (.env.example, bitacora scripts) — MERGED.
-- PR #104 (Codex): quick wins worker (sanitize, auth, Windows, task_queued, rate limiter) — MERGED.
-- Tests: 911 passed tras merge. Siguiente: ítems mediano plazo del plan (M-1 a M-6).
+**Resultado tests 2026-03-08:** `docs/audits/vps-test-results-2026-03-08.md`. VPS: KIMI_AZURE_API_KEY usada como AZURE_OPENAI_API_KEY; test_gpt_realtime_audio OK; test_gpt_rick_agent 403 (Identity sin permisos agents).
 
-## Próxima ronda (pendientes)
+**Pendiente David:** Habilitar SSH en VM; permisos Azure para Gpt-Rick si se requiere. Sincronizar VPS a main tras merge.
 
-| ID | Tarea | Notas |
-|----|--------|-------|
-| 099 | Fix token mismatch (Cursor) | WORKER_TOKEN VPS ≠ Worker VPS local → 401 en Notion; sincronizar ~/.config/openclaw/env |
-| 100 | Test VPS + fix (Claude) | Incluye token, n8n; info Rick 2026-03-08 ya incorporada en tarea |
-| — | Rick: corregir token | Sí — Rick puede actualizar WORKER_TOKEN en env del Dispatcher |
-
-**Rick 2026-03-08:** Reportes en `G:\...\Perfil de David Moreira\Reportes_Mercado`; Proyecto-Embudo-Ventas vacía. Herramienta **notion** (API) disponible; **browser** falla sin GUI. Instrucciones en `.agents/para-rick.md`.
+**Rick 2026-03-08:** Reportes en `G:\...\Perfil de David Moreira\Reportes_Mercado`; Proyecto-Embudo-Ventas vacía. Herramienta **notion** (API); **browser** falla sin GUI. `.agents/para-rick.md`.
 
 ## Ronda 12 — En curso
 

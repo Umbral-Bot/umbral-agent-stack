@@ -36,7 +36,7 @@ def _check_injection(value: str, field: str) -> None:
     for pat in _INJECTION_PATTERNS:
         if pat.search(value):
             logger.warning(
-                "Possible injection attempt in field %r: matched pattern %s (truncated value: %.100r)",
+                "Injection attempt blocked in field %r: matched pattern %s (truncated value: %.100r)",
                 field, pat.pattern, value[:100],
             )
             raise ValueError(f"Potentially unsafe input detected in {field}")

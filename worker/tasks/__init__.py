@@ -55,6 +55,13 @@ from .research import handle_research_web
 from .llm import handle_llm_generate
 from .composite import handle_composite_research_report
 from .make_webhook import handle_make_post_webhook
+from .n8n import (
+    handle_n8n_list_workflows,
+    handle_n8n_get_workflow,
+    handle_n8n_create_workflow,
+    handle_n8n_update_workflow,
+    handle_n8n_post_webhook,
+)
 from .azure_audio import handle_azure_audio_generate
 from .figma import (
     handle_figma_get_file,
@@ -81,6 +88,7 @@ from .gmail import (
     handle_gmail_list_drafts,
 )
 from .google_audio import handle_google_audio_generate
+from .google_image import handle_google_image_generate
 
 # Each handler: (input: dict) -> dict
 TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
@@ -123,6 +131,11 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "notion.enrich_bitacora_page": handle_notion_enrich_bitacora_page,
     "notion.upsert_project": handle_notion_upsert_project,
     "make.post_webhook": handle_make_post_webhook,
+    "n8n.list_workflows": handle_n8n_list_workflows,
+    "n8n.get_workflow": handle_n8n_get_workflow,
+    "n8n.create_workflow": handle_n8n_create_workflow,
+    "n8n.update_workflow": handle_n8n_update_workflow,
+    "n8n.post_webhook": handle_n8n_post_webhook,
     "azure.audio.generate": handle_azure_audio_generate,
     "figma.get_file": handle_figma_get_file,
     "figma.get_node": handle_figma_get_node,
@@ -139,4 +152,5 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "gmail.create_draft": handle_gmail_create_draft,
     "gmail.list_drafts": handle_gmail_list_drafts,
     "google.audio.generate": handle_google_audio_generate,
+    "google.image.generate": handle_google_image_generate,
 }

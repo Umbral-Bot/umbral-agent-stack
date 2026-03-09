@@ -1,4 +1,4 @@
-# 07 — Worker API Contract
+﻿# 07 â€” Worker API Contract
 
 ## Base URL
 
@@ -6,9 +6,9 @@
 http://WINDOWS_TAILSCALE_IP:8088
 ```
 
-## Autenticación
+## AutenticaciÃ³n
 
-Todos los endpoints excepto `/health` requieren autenticación Bearer:
+Todos los endpoints excepto `/health` requieren autenticaciÃ³n Bearer:
 
 ```
 Authorization: Bearer <WORKER_TOKEN>
@@ -20,7 +20,7 @@ Authorization: Bearer <WORKER_TOKEN>
 
 ### `GET /health`
 
-Health check. No requiere autenticación.
+Health check. No requiere autenticaciÃ³n.
 
 **Response (200):**
 ```json
@@ -53,17 +53,17 @@ Ejecuta una tarea. Acepta dos formatos:
 }
 ```
 
-| Campo | Tipo | Requerido | Descripción |
+| Campo | Tipo | Requerido | DescripciÃ³n |
 |-------|------|-----------|-------------|
-| `schema_version` | string | ✅ | Siempre `"0.1"` |
-| `task_id` | string | ✅ | UUID único para esta tarea |
-| `team` | string | ✅ | Equipo destino (`marketing`, `advisory`, `improvement`, `lab`, `system`) |
-| `task_type` | string | ✅ | Tipo de tarea (`general`, `research`, `writing`, `instruction`) |
-| `task` | string | ✅ | Nombre del handler a ejecutar |
-| `input` | object | ✅ | Datos de entrada para el handler |
-| `trace_id` | string | — | UUID para correlación de trazas |
-| `status` | string | — | Estado (`queued`, `running`, `done`, `failed`) |
-| `callback_url` | string | — | Webhook opcional para callback al completar/fallar |
+| `schema_version` | string | âœ… | Siempre `"0.1"` |
+| `task_id` | string | âœ… | UUID Ãºnico para esta tarea |
+| `team` | string | âœ… | Equipo destino (`marketing`, `advisory`, `improvement`, `lab`, `system`) |
+| `task_type` | string | âœ… | Tipo de tarea (`general`, `research`, `writing`, `instruction`) |
+| `task` | string | âœ… | Nombre del handler a ejecutar |
+| `input` | object | âœ… | Datos de entrada para el handler |
+| `trace_id` | string | â€” | UUID para correlaciÃ³n de trazas |
+| `status` | string | â€” | Estado (`queued`, `running`, `done`, `failed`) |
+| `callback_url` | string | â€” | Webhook opcional para callback al completar/fallar |
 
 #### Legacy (backward compat)
 
@@ -90,14 +90,14 @@ Se convierte internamente a TaskEnvelope con `task_id` generado, `team="system"`
 
 **S7 Protecciones:**
 - Rate limiting por IP (429 si se excede)
-- Sanitización de nombres de tarea y tamaño de inputs
-- Task names solo alfanuméricos + `.` + `_`
+- SanitizaciÃ³n de nombres de tarea y tamaÃ±o de inputs
+- Task names solo alfanumÃ©ricos + `.` + `_`
 
 ---
 
 ### `POST /enqueue` *(v0.4.0+)*
 
-Encola una tarea en Redis para ejecución asíncrona por el Dispatcher.
+Encola una tarea en Redis para ejecuciÃ³n asÃ­ncrona por el Dispatcher.
 Pensado para servicios externos (Make.com, n8n, webhooks) que no necesitan Python SDK.
 
 **Request:**
@@ -111,13 +111,13 @@ Pensado para servicios externos (Make.com, n8n, webhooks) que no necesitan Pytho
 }
 ```
 
-| Campo | Tipo | Requerido | Default | Descripción |
+| Campo | Tipo | Requerido | Default | DescripciÃ³n |
 |-------|------|-----------|---------|-------------|
-| `task` | string | ✅ | — | Nombre del handler a ejecutar |
-| `team` | string | — | `"system"` | Equipo destino |
-| `task_type` | string | — | `"general"` | Tipo de tarea |
-| `input` | object | — | `{}` | Datos de entrada para el handler |
-| `callback_url` | string | — | `null` | URL webhook opcional para recibir resultado cuando termine la tarea |
+| `task` | string | âœ… | â€” | Nombre del handler a ejecutar |
+| `team` | string | â€” | `"system"` | Equipo destino |
+| `task_type` | string | â€” | `"general"` | Tipo de tarea |
+| `input` | object | â€” | `{}` | Datos de entrada para el handler |
+| `callback_url` | string | â€” | `null` | URL webhook opcional para recibir resultado cuando termine la tarea |
 
 **Response (200):**
 ```json
@@ -128,14 +128,14 @@ Pensado para servicios externos (Make.com, n8n, webhooks) que no necesitan Pytho
 }
 ```
 
-**Errores específicos:**
-- `400` — Nombre de tarea inválido (solo alfanuméricos + `.` + `_`)
-- `503` — Redis no disponible
+**Errores especÃ­ficos:**
+- `400` â€” Nombre de tarea invÃ¡lido (solo alfanumÃ©ricos + `.` + `_`)
+- `503` â€” Redis no disponible
 
 ### Callback Webhook (opcional)
 
-Si `callback_url` viene en el `POST /enqueue`, el Dispatcher enviará un `POST`
-al webhook al terminar la tarea (éxito o fallo), con timeout de 10s y 1 retry
+Si `callback_url` viene en el `POST /enqueue`, el Dispatcher enviarÃ¡ un `POST`
+al webhook al terminar la tarea (Ã©xito o fallo), con timeout de 10s y 1 retry
 si hay timeout o error 5xx.
 
 **Payload ejemplo:**
@@ -178,9 +178,9 @@ Consulta el estado de una tarea encolada desde Redis.
 }
 ```
 
-**Errores específicos:**
-- `404` — `task_id` no encontrado en Redis
-- `503` — Redis no disponible
+**Errores especÃ­ficos:**
+- `404` â€” `task_id` no encontrado en Redis
+- `503` â€” Redis no disponible
 
 **Ejemplo curl:**
 ```bash
@@ -192,18 +192,18 @@ curl -s http://WINDOWS_TAILSCALE_IP:8088/task/UUID-AQUI/status \
 
 ### `GET /task/history` *(v0.4.0+)*
 
-Consulta historial de tareas desde Redis (`umbral:task:*`) con filtros y paginación.
+Consulta historial de tareas desde Redis (`umbral:task:*`) con filtros y paginaciÃ³n.
 No usa el store in-memory.
 
 **Query params:**
 
-| Param | Tipo | Default | Descripción |
+| Param | Tipo | Default | DescripciÃ³n |
 |-------|------|---------|-------------|
 | `hours` | int | 24 | Ventana de tiempo en horas |
-| `team` | string | — | Filtrar por equipo |
-| `status` | string | — | Filtrar por estado (`queued`, `running`, `done`, `failed`, `blocked`, `degraded`) |
-| `limit` | int | 100 | Tamaño de página (máx 500) |
-| `offset` | int | 0 | Offset para paginación |
+| `team` | string | â€” | Filtrar por equipo |
+| `status` | string | â€” | Filtrar por estado (`queued`, `running`, `done`, `failed`, `blocked`, `degraded`) |
+| `limit` | int | 100 | TamaÃ±o de pÃ¡gina (mÃ¡x 500) |
+| `offset` | int | 0 | Offset para paginaciÃ³n |
 
 **Response (200):**
 ```json
@@ -231,9 +231,9 @@ No usa el store in-memory.
 }
 ```
 
-**Errores específicos:**
-- `400` — `status` inválido
-- `503` — Redis no disponible
+**Errores especÃ­ficos:**
+- `400` â€” `status` invÃ¡lido
+- `503` â€” Redis no disponible
 
 **Ejemplo curl:**
 ```bash
@@ -269,11 +269,11 @@ Usa el store **in-memory** (tareas ejecutadas por POST /run).
 
 Listar tareas recientes. Filtrable. Requiere auth.
 
-| Param | Tipo | Default | Descripción |
+| Param | Tipo | Default | DescripciÃ³n |
 |-------|------|---------|-------------|
-| `limit` | int | 20 | Máximo de tareas a retornar |
-| `team` | string | — | Filtrar por prefijo de tarea o team |
-| `status` | string | — | Filtrar por estado (`done`, `failed`) |
+| `limit` | int | 20 | MÃ¡ximo de tareas a retornar |
+| `team` | string | â€” | Filtrar por prefijo de tarea o team |
+| `status` | string | â€” | Filtrar por estado (`done`, `failed`) |
 
 **Response (200):**
 ```json
@@ -285,23 +285,25 @@ Listar tareas recientes. Filtrable. Requiere auth.
 
 ---
 
-## Task Handlers Registrados (25)
+## Task Handlers Registrados (resumen)
 
-| Task | Categoría | Descripción |
+> El inventario exacto puede variar segun la version desplegada. Para el listado vivo usar `GET /health`.
+
+| Task | CategorÃ­a | DescripciÃ³n |
 |------|-----------|-------------|
 | `ping` | System | Echo de prueba |
-| `notion.write_transcript` | Notion | Escribe transcripción en página |
-| `notion.add_comment` | Notion | Agrega comentario a una página |
+| `notion.write_transcript` | Notion | Escribe transcripciÃ³n en pÃ¡gina |
+| `notion.add_comment` | Notion | Agrega comentario a una pÃ¡gina |
 | `notion.poll_comments` | Notion | Lee comentarios recientes |
-| `notion.read_page` | Notion | Lee metadata y snapshot de una página |
+| `notion.read_page` | Notion | Lee metadata y snapshot de una pÃ¡gina |
 | `notion.read_database` | Notion | Lee schema y filas de una base de datos |
-| `notion.search_databases` | Notion | Busca bases de datos por título |
-| `notion.create_database_page` | Notion | Crea una página en una base usando propiedades raw |
-| `notion.update_page_properties` | Notion | Actualiza propiedades raw de una página |
+| `notion.search_databases` | Notion | Busca bases de datos por tÃ­tulo |
+| `notion.create_database_page` | Notion | Crea una pÃ¡gina en una base usando propiedades raw |
+| `notion.update_page_properties` | Notion | Actualiza propiedades raw de una pÃ¡gina |
 | `notion.upsert_task` | Notion | Crea/actualiza tarea en Kanban |
-| `notion.upsert_project` | Notion | Crea/actualiza proyecto en 📁 Proyectos — Umbral |
+| `notion.upsert_project` | Notion | Crea/actualiza proyecto en ðŸ“ Proyectos â€” Umbral |
 | `notion.update_dashboard` | Notion | Actualiza dashboard Rick |
-| `notion.create_report_page` | Notion | Crea página hija con reporte estructurado |
+| `notion.create_report_page` | Notion | Crea pÃ¡gina hija con reporte estructurado |
 | `windows.pad.run_flow` | Windows/RPA | Ejecuta flujo de Power Automate Desktop |
 | `windows.open_notepad` | Windows | Abre Notepad (interactivo) |
 | `windows.write_worker_token` | Windows | Escribe token del worker |
@@ -314,7 +316,7 @@ Listar tareas recientes. Filtrable. Requiere auth.
 | `windows.fs.write_text` | Filesystem | Escribe archivo de texto |
 | `windows.fs.write_bytes_b64` | Filesystem | Escribe binario (base64) |
 | `system.ooda_report` | Observability | Genera reporte OODA |
-| `system.self_eval` | Observability | Auto-evaluación del sistema |
+| `system.self_eval` | Observability | Auto-evaluaciÃ³n del sistema |
 | `linear.create_issue` | Linear | Crea issue en Linear, con soporte opcional para asociar a proyecto |
 | `linear.list_teams` | Linear | Lista equipos de Linear |
 | `linear.update_issue_status` | Linear | Actualiza estado de issue |
@@ -323,7 +325,20 @@ Listar tareas recientes. Filtrable. Requiere auth.
 | `linear.attach_issue_to_project` | Linear | Asocia un issue existente a un proyecto |
 | `linear.list_project_issues` | Linear | Lista issues asociadas a un proyecto |
 | `linear.create_project_update` | Linear | Publica update de estado en un proyecto (health + body) |
-| `research.web` | Research | Búsqueda web (Tavily) |
+| 
+8n.list_workflows | n8n | Lista workflows disponibles en la instancia configurada |
+| 
+8n.get_workflow | n8n | Lee la definicion de un workflow por ID |
+| 
+8n.create_workflow | n8n | Crea un workflow desde JSON raw |
+| 
+8n.update_workflow | n8n | Actualiza un workflow existente desde JSON raw |
+| 
+8n.post_webhook | n8n | Invoca un webhook sobre la instancia configurada |
+| google.audio.generate | Google | Genera TTS con Gemini preview TTS |
+| google.image.generate | Google | Genera imagenes y las guarda a disco via Images API compatible |
+| make.post_webhook | Make | Invoca un webhook allowlisted de Make.com |
+| `research.web` | Research | BÃºsqueda web (Tavily) |
 | `llm.generate` | LLM | Genera texto con Gemini, OpenAI o Anthropic (segun `model`) |
 | `composite.research_report` | Composite | Informe de mercado completo (research + LLM) |
 
@@ -337,12 +352,12 @@ Genera texto usando proveedor inferido por el campo `model`.
 
 | Campo | Tipo | Requerido | Default | Descripcion |
 |-------|------|-----------|---------|-------------|
-| `prompt` | string | ✅ | — | Prompt principal para el modelo |
-| `model` | string | — | `gemini-2.5-flash` | Modelo a usar. Define proveedor automaticamente |
-| `selected_model` | string | — | — | Alias de compatibilidad desde Dispatcher (`chatgpt_plus`, `claude_pro`, etc.) |
-| `system` | string | — | `""` | Instruccion de sistema |
-| `max_tokens` | int | — | `1024` | Limite de tokens de salida |
-| `temperature` | float | — | `0.7` | Temperatura de muestreo |
+| `prompt` | string | âœ… | â€” | Prompt principal para el modelo |
+| `model` | string | â€” | `gemini-2.5-flash` | Modelo a usar. Define proveedor automaticamente |
+| `selected_model` | string | â€” | â€” | Alias de compatibilidad desde Dispatcher (`chatgpt_plus`, `claude_pro`, etc.) |
+| `system` | string | â€” | `""` | Instruccion de sistema |
+| `max_tokens` | int | â€” | `1024` | Limite de tokens de salida |
+| `temperature` | float | â€” | `0.7` | Temperatura de muestreo |
 
 **Modelos soportados por proveedor:**
 
@@ -354,22 +369,22 @@ Genera texto usando proveedor inferido por el campo `model`.
 
 - Si se solicita OpenAI sin `OPENAI_API_KEY` -> error `OPENAI_API_KEY not configured`
 - Si se solicita Anthropic sin `ANTHROPIC_API_KEY` -> error `ANTHROPIC_API_KEY not configured`
-- Si no se envía `model`, se usa Gemini por defecto (backward compatibility)
+- Si no se envÃ­a `model`, se usa Gemini por defecto (backward compatibility)
 
 ---
 
 ### `composite.research_report`
 
-Orquesta múltiples `research.web` + `llm.generate` para producir un informe de investigación completo.
+Orquesta mÃºltiples `research.web` + `llm.generate` para producir un informe de investigaciÃ³n completo.
 
 **Input:**
 
-| Campo | Tipo | Requerido | Default | Descripción |
+| Campo | Tipo | Requerido | Default | DescripciÃ³n |
 |-------|------|-----------|---------|-------------|
-| `topic` | string | ✅ | — | Tema a investigar |
-| `queries` | list[str] | — | auto-generados | Queries de búsqueda específicas |
-| `depth` | string | — | `"standard"` | `"quick"` (3 queries), `"standard"` (5), `"deep"` (10) |
-| `language` | string | — | `"es"` | Idioma del reporte |
+| `topic` | string | âœ… | â€” | Tema a investigar |
+| `queries` | list[str] | â€” | auto-generados | Queries de bÃºsqueda especÃ­ficas |
+| `depth` | string | â€” | `"standard"` | `"quick"` (3 queries), `"standard"` (5), `"deep"` (10) |
+| `language` | string | â€” | `"es"` | Idioma del reporte |
 
 **Output:**
 
@@ -431,8 +446,8 @@ Lista tareas programadas a futuro (Redis sorted set). Requiere auth.
 }
 ```
 
-**Errores específicos:**
-- `503` — Redis no disponible
+**Errores especÃ­ficos:**
+- `503` â€” Redis no disponible
 
 **Ejemplo curl:**
 ```bash
@@ -444,8 +459,8 @@ curl -s "http://WINDOWS_TAILSCALE_IP:8088/scheduled" \
 
 ### `GET /providers/status` *(v0.5.0+)*
 
-Dashboard de estado de providers. Muestra qué modelos están configurados,
-su cuota actual, nombre de modelo, y a qué `task_types` enrutan como preferido.
+Dashboard de estado de providers. Muestra quÃ© modelos estÃ¡n configurados,
+su cuota actual, nombre de modelo, y a quÃ© `task_types` enrutan como preferido.
 
 **Response (200):**
 ```json
@@ -478,18 +493,18 @@ su cuota actual, nombre de modelo, y a qué `task_types` enrutan como preferido.
 
 **Campos por provider:**
 
-| Campo | Tipo | Descripción |
+| Campo | Tipo | DescripciÃ³n |
 |-------|------|-------------|
-| `configured` | bool | `true` si las env vars requeridas están presentes |
+| `configured` | bool | `true` si las env vars requeridas estÃ¡n presentes |
 | `model` | string | Nombre del modelo LLM asociado |
 | `quota_used` | int | Requests usados en la ventana actual |
-| `quota_limit` | int | Límite de requests por ventana |
-| `quota_fraction` | float | Fracción de uso (0.0–1.0) |
+| `quota_limit` | int | LÃ­mite de requests por ventana |
+| `quota_fraction` | float | FracciÃ³n de uso (0.0â€“1.0) |
 | `quota_status` | string | `ok`, `warn`, `restrict`, `exceeded`, `unknown` |
 | `routing_preferred_for` | list[str] | Task types que prefieren este provider |
 
-**Errores específicos:**
-- `503` — Redis no disponible
+**Errores especÃ­ficos:**
+- `503` â€” Redis no disponible
 
 **Ejemplo curl:**
 ```bash
@@ -502,7 +517,7 @@ curl -s "http://WINDOWS_TAILSCALE_IP:8088/providers/status" \
 ### `GET /tools/inventory` *(v0.5.0+)*
 
 Inventario completo de tasks registradas en el Worker, skills detectados
-del directorio `openclaw/workspace-templates/skills/`, y categorización.
+del directorio `openclaw/workspace-templates/skills/`, y categorizaciÃ³n.
 
 **Response (200):**
 ```json
@@ -531,10 +546,10 @@ curl -s "http://WINDOWS_TAILSCALE_IP:8088/tools/inventory" \
 
 ## Errores
 
-| Código | Descripción |
+| CÃ³digo | DescripciÃ³n |
 |--------|-------------|
-| 400 | Request inválido, tarea desconocida, o input inválido |
-| 401 | Token faltante o inválido |
+| 400 | Request invÃ¡lido, tarea desconocida, o input invÃ¡lido |
+| 401 | Token faltante o invÃ¡lido |
 | 404 | Tarea no encontrada (GET /tasks/{id}) |
 | 429 | Rate limit excedido |
 | 500 | Error interno o WORKER_TOKEN no configurado |
@@ -579,3 +594,4 @@ $headers = @{
 $body = '{"task":"ping","input":{"msg":"hello"}}'
 Invoke-RestMethod -Uri http://localhost:8088/run -Method POST -Headers $headers -Body $body
 ```
+

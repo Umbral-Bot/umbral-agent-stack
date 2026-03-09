@@ -1,6 +1,17 @@
 ---
 name: subagent-result-integration
-description: ensenar a usar sessions_spawn en openclaw sin confundir accepted con resultado final. usar cuando el agente quiera delegar una tarea pesada, lenta o paralelizable a un subagente y deba decidir entre flujo asincrono, orquestador con fan-out o respuesta integrada en el mismo turno. cubre cuando delegar, como redactar el task, como esperar e integrar resultados, como dejar trazabilidad con label, runid y childsessionkey, y como evitar cierres prematuros, no_reply, announce_skip o respuestas desfasadas.
+description: ensenar a usar sessions_spawn en openclaw sin confundir accepted con
+  resultado final. usar cuando el agente quiera delegar una tarea pesada, lenta o
+  paralelizable a un subagente y deba decidir entre flujo asincrono, orquestador con
+  fan-out o respuesta integrada en el mismo turno. cubre cuando delegar, como redactar
+  el task, como esperar e integrar resultados, como dejar trazabilidad con label,
+  runid y childsessionkey, y como evitar cierres prematuros, no_reply, announce_skip
+  o respuestas desfasadas.
+metadata:
+  openclaw:
+    emoji: 🔗
+    requires:
+      env: []
 ---
 
 # Subagent Result Integration
@@ -35,3 +46,4 @@ Usar `sessions_spawn` solo cuando el flujo soporte asincronia o cuando exista un
 - `accepted significa arranco, no que termino`
 - `si necesito respuesta integrada en este turno, no dependo de bare sessions_spawn`
 - `si el resultado importa, verifico el hijo correcto antes de sintetizar`
+

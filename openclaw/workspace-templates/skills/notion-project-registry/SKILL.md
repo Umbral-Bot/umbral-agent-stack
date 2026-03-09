@@ -9,6 +9,7 @@ description: diseÃ±ar y mantener un registro maestro de proyectos en notion co
   source, page properties y blocks.
 metadata:
   openclaw:
+    always: true
     emoji: 🗂️
     requires:
       env: []

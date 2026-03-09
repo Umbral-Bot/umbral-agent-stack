@@ -188,6 +188,26 @@ class TestSanitize:
                 sanitize_input({"q": "1 UNION SELECT * FROM users"})
         assert "injection" in caplog.text.lower()
 
+    def test_markdown_inline_code_is_allowed_for_traceability(self):
+        from worker.sanitize import sanitize_input
+        result = sanitize_input(
+            {
+                "comment": (
+                    "Actualizado `UMB-39` y artefacto "
+                    "`G:\\Mi unidad\\Rick-David\\Proyecto-Embudo-Ventas\\corte-util-hub-v3.md`."
+                )
+            }
+        )
+        assert "`UMB-39`" in result["comment"]
+
+    def test_backticked_command_substitution_is_blocked(self, caplog):
+        import logging
+        from worker.sanitize import sanitize_input
+        with caplog.at_level(logging.WARNING, logger="worker.sanitize"):
+            with pytest.raises(ValueError, match="Potentially unsafe input"):
+                sanitize_input({"comment": "Ejecuta `rm -rf /tmp/test` y luego avisa"})
+        assert "injection" in caplog.text.lower()
+
     def test_deep_sanitization(self):
         from worker.sanitize import sanitize_input, MAX_STRING_VALUE_LEN
         data = {"nested": {"deep": {"val": "y" * 20_000}}, "list": ["z" * 20_000]}

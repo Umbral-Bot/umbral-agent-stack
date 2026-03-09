@@ -9,6 +9,7 @@ description: ensenar a usar sessions_spawn en openclaw sin confundir accepted co
   o respuestas desfasadas.
 metadata:
   openclaw:
+    always: true
     emoji: 🔗
     requires:
       env: []

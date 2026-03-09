@@ -27,7 +27,12 @@ _INJECTION_PATTERNS = [
     re.compile(r"<script\b", re.IGNORECASE),            # XSS
     re.compile(r"(\bUNION\b.*\bSELECT\b)", re.IGNORECASE),  # SQL injection
     re.compile(r"\$\{.*\}"),                             # template injection
-    re.compile(r"`[^`]+`"),                              # command substitution
+    # Backticks are common in markdown for paths, tasks and file names.
+    # Only block command-like content inside backticks, not any inline code span.
+    re.compile(
+        r"`\s*(rm|del|drop|exec|system|eval|curl|wget|bash|sh|powershell|cmd|python|node)\b[^`]*`",
+        re.IGNORECASE,
+    ),
 ]
 
 

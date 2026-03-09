@@ -65,3 +65,12 @@ Si una tool devuelve error, timeout o validación fallida:
 2. Debe intentar un solo retry con un payload más simple cuando el error sea de validación o formato.
 3. Si el retry falla o no aplica, debe declarar `resultado parcial`, nombrar la tool fallida y explicar qué parte sí quedó hecha.
 4. La respuesta final debe distinguir entre trazabilidad realmente persistida y trazabilidad intentada pero rechazada.
+
+## Regla 10 — Delegación mínima y completions obligatorios
+
+Cuando Rick ya tiene contexto suficiente, tools suficientes y el slice es pequeño o reversible:
+1. Debe actuar inline antes de pensar en `sessions_spawn`.
+2. No debe delegar solo para “validar”, “opinar” o “proponer” algo que puede resolver por sí mismo con costo bajo.
+3. Si igual delega, cada completion event esperado cuenta como trabajo pendiente hasta ser integrado o descartado con justificación explícita.
+4. Si llega un completion event antes de la respuesta útil al usuario, emitir `NO_REPLY` es incorrecto.
+5. Solo puede emitir `NO_REPLY` frente a un completion tardío si la respuesta final ya integró ese subagente o si ese resultado quedó realmente fuera de scope del turno.

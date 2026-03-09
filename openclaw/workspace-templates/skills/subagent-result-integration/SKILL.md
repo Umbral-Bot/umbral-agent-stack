@@ -21,6 +21,7 @@ metadata:
 Usar `sessions_spawn` solo cuando el flujo soporte asincronia o cuando exista un orquestador que integrara resultados antes de anunciar. Tratar `status: "accepted"` como confirmacion de arranque, nunca como evidencia de que el trabajo ya termino.
 
 ## Reglas duras
+0. No usar `sessions_spawn` si el mismo agente ya puede resolver el slice con sus tools y contexto actual en pocos pasos.
 1. No dar una respuesta final al usuario justo despues de `sessions_spawn`.
 2. No decir `listo`, `ya revise` o `ya confirme` hasta integrar el resultado real del hijo.
 3. No usar `NO_REPLY` como salida facil despues de spawnear.
@@ -32,6 +33,7 @@ Usar `sessions_spawn` solo cuando el flujo soporte asincronia o cuando exista un
 ## Arbol de decision
 - Delegar con `sessions_spawn` si la tarea es lenta, pesada, paralelizable, aislable o conviene moverla a otro agente o modelo.
 - No delegar con `sessions_spawn` si la respuesta debe quedar integrada en este mismo turno y no hay plan explicito de espera o integracion.
+- No delegar con `sessions_spawn` para una verificacion corta, una opinion secundaria o una checklist que el mismo agente ya puede producir con evidencia suficiente.
 - Si se necesita respuesta integrada en el mismo turno, resolver inline o usar otro patron sincrono.
 - Si se necesita fan-out y sintesis, spawnear un orquestador de nivel 1; ese orquestador spawnea workers, integra y solo entonces anuncia al padre.
 
@@ -42,6 +44,11 @@ Usar `sessions_spawn` solo cuando el flujo soporte asincronia o cuando exista un
 4. esperar sin cerrar en falso
 5. integrar el resultado correcto
 6. responder
+
+## Antipatrones observados
+- Spawnear `rick-qa` o `rick-delivery`, recibir el completion event y luego contestar `NO_REPLY`.
+- Usar al subagente para confirmar algo que el agente padre ya podia decidir con el repo, el artefacto y Linear abiertos.
+- Integrar solo el trabajo inline y dejar invisible la respuesta del subagente aun cuando llego a tiempo.
 
 ## Frases guia
 - `accepted significa arranco, no que termino`

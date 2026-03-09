@@ -55,3 +55,23 @@ Se necesitan recomendaciones desde el angulo de:
 Tarea creada por pedido directo de David tras la auditoria del live test de Rick.
 Se requiere foco en recomendaciones, no implementacion inmediata.
 
+### [antigravity] 2026-03-09 00:18 -03:00
+**Diagnóstico:**
+El problema principal reside en la **Policy (System Prompt) y la Orquestación (Flujo Operativo)**. Rick sufre de "alucinación de ejecución": prioriza mantener fluidez conversacional y asume que relatar su plan equivale a ejecutarlo. Entiende el contexto, pero no hay un mecanismo que lo fuerce a emitir `toolCalls` antes de responder verbalmente.
+
+**Recomendaciones Priorizadas:**
+1. **Regla de Ejecución Estricta (Policy):** Modificar el System Prompt de `main`: "Prohibido afirmar 'evaluando' o 'comenzado' sin ejecutar un `toolCall` exitoso en el mismo turno."
+2. **Aislamiento de Cron (Workspace/Contexto):** Enrutar los eventos como `SIM - recoleccion senales` a un hilo/sesión background en OpenClaw, evitando que interrumpan el contexto conversacional del usuario.
+3. **Acción Trazable Obligatoria (Flujo):** Todo inicio de proyecto oficial debe obligar procedimentalmente a emitir un `umbral_linear_create_issue` o buscar en `umbral_windows_fs` como primer step innegociable.
+4. **Trigger Explícito para Subagentes (Prompt/Skills):** Proveer *few-shot examples* al System Prompt demostrando cómo invocar `sessions_spawn` en la primera interacción de un proyecto complejo en lugar de condensar todo en `main`.
+5. **Verificación de Tool Call (Orquestación):** A nivel middleware (OpenClaw), si se detecta un "Proyecto Activo" y el LLM responde solo con texto (sin tools), inyectar un system prompt interno `ToolCallRequired` para forzar la ejecución real y demorar la respuesta al usuario.
+
+**Cambio Mínimo (Quick Win):**
+Actualizar el prompt de `main` con una directiva estricta: *"NUNCA digas 'ya validé' o 'ya empecé' sin ejecutar una tool en este turno. Si recibes un proyecto, tu PRIMERA acción DEBE ser llamar a `umbral_windows_fs`, `umbral_notion` o `sessions_spawn`. No hables sobre lo que harás, hazlo."*
+
+**Cambio Estructural:**
+Implementar un interceptor en OpenClaw (Guardrail de Ejecución). Si Rick entra en fase de proyecto, interceptar sus intentos de responder al usuario si no hay registros nuevos en `ops_log` (Notion/Linear/FS). Si el LLM intenta conversar sin actuar, el gateway le rebota un prompt sistémico exigiendo el llamado a la tool primero.
+
+**Experimento Rápido para Validar Mejora:**
+Aplicar el "Cambio Mínimo" al prompt actual. Repetir el prompt exacto de `Proyecto-Embudo-Ventas` en Telegram. Si Rick invoca preventivamente `umbral_windows_fs_list` ANTES de enviar su primer globo de texto de respuesta asintiendo, el experimento es exitoso.
+

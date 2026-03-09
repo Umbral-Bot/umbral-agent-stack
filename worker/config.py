@@ -62,6 +62,12 @@ ENLACE_NOTION_USER_ID: str | None = os.environ.get("ENLACE_NOTION_USER_ID")
 LINEAR_API_KEY: str | None = os.environ.get("LINEAR_API_KEY")
 
 # ---------------------------------------------------------------------------
+# n8n
+# ---------------------------------------------------------------------------
+N8N_URL: str | None = os.environ.get("N8N_URL")
+N8N_API_KEY: str | None = os.environ.get("N8N_API_KEY")
+
+# ---------------------------------------------------------------------------
 # Figma
 # ---------------------------------------------------------------------------
 FIGMA_API_KEY: str | None = os.environ.get("FIGMA_API_KEY")

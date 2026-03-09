@@ -1,0 +1,5 @@
+interface:
+  display_name: Nano Banana Image Briefs
+  short_description: Turn approved drafts into three differentiated image briefs and editable prompts.
+  icon: image
+  color: green

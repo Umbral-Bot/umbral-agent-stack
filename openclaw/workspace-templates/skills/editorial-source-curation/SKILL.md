@@ -1,6 +1,19 @@
 ---
 name: editorial-source-curation
-description: curate recent items from authority sources into a ranked editorial shortlist before any derivative content is drafted. use when chatgpt needs to fetch or review the latest accessible items from gartner, mckinsey, every, and ruben substack; normalize them into a shared schema; score alignment against david's narrative, proposal, and audience; present a shortlist for human selection; and only then hand off to derivative-content workflows. also use when planning manual or semi-automated source monitoring with research, n8n, linkedin-content, or linkedin-david if those skills are installed. do not use this skill to promise scraping behind logins or paywalls, or automatic publishing without real tooling and permissions.
+description: curate recent items from authority sources into a ranked editorial shortlist
+  before any derivative content is drafted. use when chatgpt needs to fetch or review
+  the latest accessible items from gartner, mckinsey, every, and ruben substack; normalize
+  them into a shared schema; score alignment against david's narrative, proposal,
+  and audience; present a shortlist for human selection; and only then hand off to
+  derivative-content workflows. also use when planning manual or semi-automated source
+  monitoring with research, n8n, linkedin-content, or linkedin-david if those skills
+  are installed. do not use this skill to promise scraping behind logins or paywalls,
+  or automatic publishing without real tooling and permissions.
+metadata:
+  openclaw:
+    emoji: 📚
+    requires:
+      env: []
 ---
 
 # Editorial Source Curation
@@ -152,3 +165,4 @@ Usa el shortlist #2 y prepara un derivative brief para LinkedIn. Si esta disponi
 ## Referencias
 - Usar `references/scoring-schema.md` para el esquema normalizado y la rubrica.
 - Usar `references/shortlist-format.md` para el formato de shortlist y el handoff posterior.
+

@@ -1,6 +1,17 @@
 ---
 name: linear-project-auditor
-description: auditar un proyecto de linear contra evidencia real en repo, notion, vm y sesiones del agente. usar cuando se necesite verificar si el estado reportado en linear coincide con entregables reales, detectar fake progress, issues sin trazabilidad, pasos sin entregable, drift entre linear y archivos reales, o proyectos oficiales sin comentario de avance. producir una auditoria verificable con orden de herramientas, criterios de evidencia y formato de hallazgos respaldado por ids, rutas, paginas, comandos y fechas exactas.
+description: auditar un proyecto de linear contra evidencia real en repo, notion,
+  vm y sesiones del agente. usar cuando se necesite verificar si el estado reportado
+  en linear coincide con entregables reales, detectar fake progress, issues sin trazabilidad,
+  pasos sin entregable, drift entre linear y archivos reales, o proyectos oficiales
+  sin comentario de avance. producir una auditoria verificable con orden de herramientas,
+  criterios de evidencia y formato de hallazgos respaldado por ids, rutas, paginas,
+  comandos y fechas exactas.
+metadata:
+  openclaw:
+    emoji: 🔎
+    requires:
+      env: []
 ---
 
 # Linear Project Auditor
@@ -69,3 +80,4 @@ Cada hallazgo debe incluir:
 - veredicto
 - confianza
 - accion sugerida
+

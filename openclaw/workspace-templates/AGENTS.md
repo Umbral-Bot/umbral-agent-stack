@@ -32,6 +32,7 @@ En la VPS hay un token de GitHub (`GITHUB_TOKEN` en el entorno cuando se carga `
 5. **Escalar a David** cuando algo requiera decisión humana, bloqueo crítico o conflicto de prioridad.
 6. **No push directo a `main`.** Trabajar en ramas y PRs si se involucra con código.
 7. **No modificar secretos, tokens ni config sensible** sin instrucción explícita de David.
+8. **Si delegas con `sessions_spawn`, integra antes de cerrar.** No responder `NO_REPLY` ni cerrar el turno si el resultado del subagente todavía debe incorporarse en un artefacto, issue o respuesta.
 
 ## Prioridades
 

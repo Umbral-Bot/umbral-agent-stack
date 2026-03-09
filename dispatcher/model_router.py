@@ -35,10 +35,24 @@ _PROVIDER_ENV_REQUIREMENTS: Dict[str, List[str]] = {
 }
 
 
+def _is_truthy_env(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _get_disabled_providers() -> Set[str]:
+    disabled: Set[str] = set()
+    if _is_truthy_env("UMBRAL_DISABLE_CLAUDE"):
+        disabled.update({"claude_pro", "claude_opus", "claude_haiku", "openclaw_proxy"})
+    return disabled
+
+
 def get_configured_providers() -> Set[str]:
     """Return providers whose required env vars are all set (non-empty)."""
     available: Set[str] = set()
+    disabled = _get_disabled_providers()
     for provider, env_vars in _PROVIDER_ENV_REQUIREMENTS.items():
+        if provider in disabled:
+            continue
         if all(os.environ.get(v, "").strip() for v in env_vars):
             available.add(provider)
     return available

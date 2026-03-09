@@ -4,6 +4,7 @@ Tasks: Notion integration handlers.
 - notion.write_transcript: crear página en Granola Inbox DB
 - notion.add_comment: agregar comentario en Control Room
 - notion.poll_comments: leer comentarios recientes
+- notion.read_page: leer metadata y snapshot de una página
 - notion.create_report_page: crear página hija con reporte estructurado
 - notion.enrich_bitacora_page: enriquecer página de Bitácora con secciones o bloques
 """
@@ -90,6 +91,27 @@ def handle_notion_poll_comments(input_data: Dict[str, Any]) -> Dict[str, Any]:
         page_id=input_data.get("page_id"),
         since=input_data.get("since"),
         limit=input_data.get("limit", 20),
+    )
+
+
+def handle_notion_read_page(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Lee metadata y un snapshot de bloques de una página de Notion.
+
+    Input:
+        page_id_or_url (str, required): UUID o URL completa de Notion.
+        max_blocks (int, optional): Máximo de bloques top-level a devolver (default: 50).
+
+    Returns:
+        {"page_id": "...", "title": "...", "blocks": [...], "plain_text": "..."}
+    """
+    page_id_or_url = input_data.get("page_id_or_url") or input_data.get("page_id") or input_data.get("url")
+    if not page_id_or_url:
+        raise ValueError("'page_id_or_url' is required in input")
+
+    return notion_client.read_page(
+        page_id_or_url=str(page_id_or_url),
+        max_blocks=input_data.get("max_blocks", 50),
     )
 
 

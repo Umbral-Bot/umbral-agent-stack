@@ -11,6 +11,7 @@
 | `notion.upsert_task`   | Crea o actualiza tareas en base de datos Notion. |
 | `notion.write_transcript` | Escribe transcripción en Notion. |
 | `notion.add_comment` | Agrega comentario a una página Notion. |
+| `notion.read_page` | Lee una página de Notion por URL o ID y devuelve snapshot de contenido. |
 | `notion.update_dashboard` | Actualiza dashboard de Rick en Notion. |
 | `notion.create_report_page` | Crea página de reporte en Notion. |
 | `linear.create_issue` | Crea issue en Linear (title, team_key, description). |
@@ -25,6 +26,7 @@
 | `figma.add_comment` | Agrega comentario en un archivo Figma. |
 | `figma.list_comments` | Lista comentarios de un archivo Figma. |
 | `azure.audio.generate` | Genera audio TTS vía Azure OpenAI Realtime API. |
+| `google.audio.generate` | Genera audio TTS vía Gemini API preview (`gemini-2.5-flash-preview-tts`). |
 | `make.post_webhook` | Envía POST a webhook de Make.com. |
 | `windows.pad.run_flow` | Ejecuta flujo de Power Automate Desktop en VM. |
 | `windows.fs.*` | Operaciones de filesystem en la VM Windows. |

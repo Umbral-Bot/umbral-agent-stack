@@ -203,7 +203,7 @@ class TestDetectProviderClaude:
     def test_gemini_unchanged(self):
         from worker.tasks.llm import _detect_provider
         with patch.dict(os.environ, {"GOOGLE_API_KEY": "gk"}):
-            assert _detect_provider("gemini-3.1-pro-preview") == "gemini"
+            assert _detect_provider("gemini-2.5-pro") == "gemini"
 
     def test_gpt_with_azure(self):
         from worker.tasks.llm import _detect_provider

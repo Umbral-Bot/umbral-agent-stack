@@ -18,6 +18,8 @@ import json
 import logging
 import os
 import struct
+import threading
+from queue import Queue
 from typing import Any, Dict, Optional
 
 try:
@@ -144,6 +146,30 @@ async def _realtime_tts(
     }
 
 
+def _run_realtime_tts_sync(**kwargs: Any) -> Dict[str, Any]:
+    """Run the async realtime client even when the caller already has an active event loop."""
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(_realtime_tts(**kwargs))
+
+    result_queue: Queue = Queue(maxsize=1)
+
+    def _worker() -> None:
+        try:
+            result_queue.put(("ok", asyncio.run(_realtime_tts(**kwargs))))
+        except Exception as exc:  # pragma: no cover - exercised through caller
+            result_queue.put(("err", exc))
+
+    thread = threading.Thread(target=_worker, daemon=True, name="azure-audio-realtime")
+    thread.start()
+    thread.join()
+    status, payload = result_queue.get()
+    if status == "err":
+        raise payload
+    return payload
+
+
 def handle_azure_audio_generate(input_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Genera audio (TTS) usando Azure AI Foundry gpt-realtime via WebSocket.
@@ -189,8 +215,7 @@ def handle_azure_audio_generate(input_data: Dict[str, Any]) -> Dict[str, Any]:
 
     api_version = os.environ.get("AZURE_OPENAI_API_VERSION_REALTIME", DEFAULT_API_VERSION)
 
-    # Run async function
-    result = asyncio.run(_realtime_tts(
+    result = _run_realtime_tts_sync(
         text=text,
         endpoint=endpoint,
         api_key=api_key,
@@ -198,7 +223,7 @@ def handle_azure_audio_generate(input_data: Dict[str, Any]) -> Dict[str, Any]:
         api_version=api_version,
         voice=voice,
         instructions=instructions,
-    ))
+    )
 
     pcm_data = result["pcm_data"]
     wav_data = _pcm16_to_wav(pcm_data)

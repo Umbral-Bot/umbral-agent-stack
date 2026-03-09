@@ -79,6 +79,145 @@ def list_teams(api_key: str) -> List[Dict[str, Any]]:
     return nodes
 
 
+def list_projects(
+    api_key: str,
+    limit: int = 50,
+    query: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """
+    List projects in the workspace.
+
+    Args:
+        api_key: LINEAR_API_KEY
+        limit: Maximum number of projects to inspect.
+        query: Optional case-insensitive substring filter on project name.
+
+    Returns:
+        [{"id": "...", "name": "...", "url": "...", "state": "..."}]
+    """
+    q = """
+    query Projects($first: Int!) {
+      projects(first: $first) {
+        nodes {
+          id
+          name
+          url
+          state
+        }
+      }
+    }
+    """
+    data = _gql(api_key, q, {"first": max(1, min(limit, 250))})
+    nodes = data.get("projects", {}).get("nodes", [])
+    if query:
+        query_lower = query.strip().lower()
+        nodes = [p for p in nodes if query_lower in (p.get("name") or "").lower()]
+    return nodes
+
+
+def get_project(api_key: str, project_id: str) -> Dict[str, Any]:
+    """Fetch a project by UUID."""
+    q = """
+    query Project($id: String!) {
+      project(id: $id) {
+        id
+        name
+        url
+        state
+      }
+    }
+    """
+    data = _gql(api_key, q, {"id": project_id})
+    project = data.get("project")
+    if not project:
+        raise RuntimeError(f"Linear project {project_id} not found")
+    return project
+
+
+def get_project_by_name(api_key: str, name: str) -> Optional[Dict[str, Any]]:
+    """Find a project by exact case-insensitive name."""
+    wanted = name.strip().lower()
+    if not wanted:
+        return None
+    for project in list_projects(api_key, limit=100):
+        if (project.get("name") or "").strip().lower() == wanted:
+            return project
+    return None
+
+
+def create_project(
+    api_key: str,
+    name: str,
+    team_ids: List[str],
+    description: Optional[str] = None,
+    content: Optional[str] = None,
+    lead_id: Optional[str] = None,
+    start_date: Optional[str] = None,
+    target_date: Optional[str] = None,
+    priority: Optional[int] = None,
+    icon: Optional[str] = None,
+    color: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Create a project in Linear.
+
+    Args:
+        api_key: LINEAR_API_KEY
+        name: Project name.
+        team_ids: Non-empty list of owning Linear team IDs.
+        description: Optional short description.
+        content: Optional long-form project content / spec.
+        lead_id: Optional lead user UUID.
+        start_date: Optional YYYY-MM-DD.
+        target_date: Optional YYYY-MM-DD.
+        priority: Optional priority integer.
+        icon: Optional emoji/icon string.
+        color: Optional color hex.
+
+    Returns:
+        {"id": "...", "name": "...", "url": "...", "state": "..."}
+    """
+    if not team_ids:
+        raise RuntimeError("Linear projectCreate requires at least one team_id")
+
+    mutation = """
+    mutation ProjectCreate($input: ProjectCreateInput!) {
+      projectCreate(input: $input) {
+        success
+        project {
+          id
+          name
+          url
+          state
+        }
+      }
+    }
+    """
+    inp: Dict[str, Any] = {"name": name, "teamIds": team_ids}
+    if description:
+        inp["description"] = description
+    if content:
+        inp["content"] = content
+    if lead_id:
+        inp["leadId"] = lead_id
+    if start_date:
+        inp["startDate"] = start_date
+    if target_date:
+        inp["targetDate"] = target_date
+    if priority is not None:
+        inp["priority"] = priority
+    if icon:
+        inp["icon"] = icon
+    if color:
+        inp["color"] = color
+
+    data = _gql(api_key, mutation, {"input": inp})
+    project = data.get("projectCreate", {}).get("project", {})
+    if not project:
+        raise RuntimeError("Linear projectCreate returned no project")
+    return project
+
+
 def create_issue(
     api_key: str,
     team_id: str,
@@ -126,6 +265,90 @@ def create_issue(
     if not issue:
         raise RuntimeError("Linear issueCreate returned no issue")
     return issue
+
+
+def attach_issue_to_project(
+    api_key: str,
+    issue_id: str,
+    project_id: str,
+) -> Dict[str, Any]:
+    """
+    Attach an existing issue to a Linear project.
+
+    Args:
+        api_key: LINEAR_API_KEY
+        issue_id: Linear issue UUID.
+        project_id: Linear project UUID.
+
+    Returns:
+        {"success": true, "issue": {...}}
+    """
+    mutation = """
+    mutation IssueAttachProject($id: String!, $projectId: String!) {
+      issueUpdate(id: $id, input: { projectId: $projectId }) {
+        success
+        issue {
+          id
+          identifier
+          title
+          url
+          project {
+            id
+            name
+            url
+          }
+        }
+      }
+    }
+    """
+    data = _gql(api_key, mutation, {"id": issue_id, "projectId": project_id})
+    result = data.get("issueUpdate", {})
+    if not result:
+        raise RuntimeError("Linear issueUpdate(projectId) returned no result")
+    return result
+
+
+def list_project_issues(
+    api_key: str,
+    project_id: str,
+    limit: int = 50,
+) -> List[Dict[str, Any]]:
+    """
+    List issues associated with a project.
+
+    Args:
+        api_key: LINEAR_API_KEY
+        project_id: Linear project UUID.
+        limit: Maximum issues to return.
+
+    Returns:
+        [{"id": "...", "identifier": "UMB-1", "title": "...", ...}]
+    """
+    q = """
+    query ProjectIssues($projectId: ID!, $first: Int!) {
+      issues(
+        filter: { project: { id: { eq: $projectId } } }
+        first: $first
+      ) {
+        nodes {
+          id
+          identifier
+          title
+          url
+          project {
+            id
+            name
+            url
+          }
+          state {
+            name
+          }
+        }
+      }
+    }
+    """
+    data = _gql(api_key, q, {"projectId": project_id, "first": max(1, min(limit, 250))})
+    return data.get("issues", {}).get("nodes", [])
 
 
 def get_team_by_key(api_key: str, key: str) -> Optional[Dict[str, Any]]:
@@ -238,6 +461,41 @@ def add_comment(api_key: str, issue_id: str, body: str) -> Dict[str, Any]:
     """
     data = _gql(api_key, mutation, {"input": {"issueId": issue_id, "body": body}})
     return data.get("commentCreate", {})
+
+
+def create_project_update(
+    api_key: str,
+    project_id: str,
+    body: str,
+    health: str = "onTrack",
+) -> Dict[str, Any]:
+    """
+    Create a project update (status post) in Linear.
+
+    Args:
+        api_key: LINEAR_API_KEY
+        project_id: Linear project UUID.
+        body: Update body text (markdown supported).
+        health: onTrack | atRisk | offTrack (default: onTrack).
+
+    Returns:
+        {"success": bool, "projectUpdate": {"id": "...", "url": "...", "createdAt": "..."}}
+        or {"success": False, "error": "..."} if the API does not support this operation.
+    """
+    mutation = """
+    mutation ProjectUpdateCreate($input: ProjectUpdateCreateInput!) {
+      projectUpdateCreate(input: $input) {
+        success
+        projectUpdate {
+          id
+          url
+          createdAt
+        }
+      }
+    }
+    """
+    data = _gql(api_key, mutation, {"input": {"projectId": project_id, "body": body, "health": health}})
+    return data.get("projectUpdateCreate", {})
 
 
 def update_issue(

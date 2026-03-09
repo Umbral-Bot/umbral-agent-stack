@@ -293,7 +293,13 @@ Listar tareas recientes. Filtrable. Requiere auth.
 | `notion.write_transcript` | Notion | Escribe transcripción en página |
 | `notion.add_comment` | Notion | Agrega comentario a una página |
 | `notion.poll_comments` | Notion | Lee comentarios recientes |
+| `notion.read_page` | Notion | Lee metadata y snapshot de una página |
+| `notion.read_database` | Notion | Lee schema y filas de una base de datos |
+| `notion.search_databases` | Notion | Busca bases de datos por título |
+| `notion.create_database_page` | Notion | Crea una página en una base usando propiedades raw |
+| `notion.update_page_properties` | Notion | Actualiza propiedades raw de una página |
 | `notion.upsert_task` | Notion | Crea/actualiza tarea en Kanban |
+| `notion.upsert_project` | Notion | Crea/actualiza proyecto en 📁 Proyectos — Umbral |
 | `notion.update_dashboard` | Notion | Actualiza dashboard Rick |
 | `notion.create_report_page` | Notion | Crea página hija con reporte estructurado |
 | `windows.pad.run_flow` | Windows/RPA | Ejecuta flujo de Power Automate Desktop |
@@ -309,9 +315,14 @@ Listar tareas recientes. Filtrable. Requiere auth.
 | `windows.fs.write_bytes_b64` | Filesystem | Escribe binario (base64) |
 | `system.ooda_report` | Observability | Genera reporte OODA |
 | `system.self_eval` | Observability | Auto-evaluación del sistema |
-| `linear.create_issue` | Linear | Crea issue en Linear |
+| `linear.create_issue` | Linear | Crea issue en Linear, con soporte opcional para asociar a proyecto |
 | `linear.list_teams` | Linear | Lista equipos de Linear |
 | `linear.update_issue_status` | Linear | Actualiza estado de issue |
+| `linear.list_projects` | Linear | Lista proyectos de Linear |
+| `linear.create_project` | Linear | Crea proyecto de Linear o retorna el existente |
+| `linear.attach_issue_to_project` | Linear | Asocia un issue existente a un proyecto |
+| `linear.list_project_issues` | Linear | Lista issues asociadas a un proyecto |
+| `linear.create_project_update` | Linear | Publica update de estado en un proyecto (health + body) |
 | `research.web` | Research | Búsqueda web (Tavily) |
 | `llm.generate` | LLM | Genera texto con Gemini, OpenAI o Anthropic (segun `model`) |
 | `composite.research_report` | Composite | Informe de mercado completo (research + LLM) |

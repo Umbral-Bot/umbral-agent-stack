@@ -20,10 +20,12 @@ the services the repo already exposes through the Worker.
 ## Tool selection
 
 - `umbral_notion_*`: Use for Control Room comments, report pages, dashboard
-  updates, Bitacora enrichment, and transcript ingestion in Notion.
+  updates, Bitacora enrichment, transcript ingestion, and raw database/page
+  writes in Notion.
 - `umbral_research_web` and `umbral_composite_research_report`: Use for Tavily
   search and research-report generation.
-- `umbral_linear_*`: Use for issue creation, team lookup, and status updates in
+- `umbral_linear_*`: Use for issue creation, team lookup, project creation,
+  issue-to-project association, project issue listing, and status updates in
   Linear.
 - `umbral_google_calendar_*` and `umbral_gmail_*`: Use for Google Calendar and
   Gmail operations.

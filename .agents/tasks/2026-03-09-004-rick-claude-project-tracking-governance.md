@@ -1,7 +1,7 @@
 ---
 id: "2026-03-09-004"
 title: "Claude: gobernanza de proyectos Rick con Linear project + registro Notion"
-status: assigned
+status: done
 assigned_to: claude-code
 created_by: codex
 priority: high
@@ -138,3 +138,43 @@ Hallazgo base ya confirmado por Codex:
 - y no hay evidencia de un tablero operativo visible de proyecto en Notion para `Proyecto Embudo Ventas`
 
 Se pide a Claude atacar esta brecha de gobernanza/seguimiento en paralelo, sin bloquear el resto del flujo editorial/embudo.
+
+### [claude-code] 2026-03-09
+
+**Diagnóstico confirmado:**
+- La URL `85f897...` que indicó David es la **Bitácora — Umbral Agent Stack** (log de actividad general), NO un registro de proyectos. Se dejó intacta.
+- Codex (PR #113, branch `codex/rick-editorial-notion-hardening`) ya entregó las tools de bajo nivel: `list_projects`, `create_project`, `attach_issue_to_project`, `list_project_issues` (Linear) y `read_database`, `search_databases`, `create_database_page`, `update_page_properties` (Notion).
+
+**Implementación completada — branch `claude/task-004-project-governance`:**
+
+**1. Nueva DB de proyectos en Notion:**
+- Nombre: `📁 Proyectos — Umbral`
+- URL: `https://www.notion.so/d4098fa43280434a8ae4b11cab81246f`
+- NOTION_PROJECTS_DB_ID: `d4098fa43280434a8ae4b11cab81246f`
+- Schema: Nombre (TITLE), Estado (SELECT), Linear Project (URL), Ruta compartida (RICH_TEXT), Responsable (RICH_TEXT), Agentes (MULTI_SELECT), Sprint, Inicio (DATE), Objetivo (DATE), Issues abiertas (NUMBER), Bloqueos, Siguiente acción, Último update (DATE)
+
+**2. Backfill Proyecto Embudo Ventas:**
+- Entrada creada: `https://www.notion.so/31e5f443fb5c8125a21ce5333fb32a03`
+- Linear: `https://linear.app/umbral/project/proyecto-embudo-ventas-6d4b3ed16eb2`
+- 7 issues abiertas (UMB-27..UMB-33, todas Backlog)
+- Siguiente acción: "Paso 5 en curso — arquitectura web v1 (UMB-32) + curación editorial (UMB-33)"
+
+**3. Archivos tocados:**
+- `worker/config.py` → `NOTION_PROJECTS_DB_ID`
+- `worker/tasks/notion.py` → `handle_notion_upsert_project` + `_build_project_properties`
+- `worker/linear_client.py` → `create_project_update` (GraphQL `projectUpdateCreate`)
+- `worker/tasks/linear.py` → `handle_linear_create_project_update`
+- `worker/tasks/__init__.py` → registra ambos handlers
+- `openclaw/extensions/umbral-worker/index.ts` → `umbral_notion_upsert_project` + `umbral_linear_create_project_update`
+- `openclaw/workspace-templates/SOUL.md` → Regla 4 (gobernanza) + Regla 5 (handoffs)
+- `openclaw/workspace-templates/skills/notion/SKILL.md` → documenta `notion.upsert_project`
+- `docs/07-worker-api-contract.md` → 2 tasks nuevos en tabla
+
+**4. Tests:**
+- `tests/test_notion_project_registry.py` → 4 tests (requires_name, no_db, creates_new, updates_existing)
+- `tests/test_linear_project_update.py` → 5 tests (no_api_key, no_body, no_project, success, gql_call)
+- Todos pasan: 9/9 nuevos + 17/17 regresión
+
+**5. Limitaciones documentadas:**
+- Handoffs: solo convención via título `[HANDOFF → <Agente>]` + descripción estructurada. Sin push — requiere poll con `linear.list_project_issues`. Los agentes no tienen user IDs de Linear (sin assignee explícito).
+- `linear.create_project_update`: si el workspace Linear no tiene acceso a `projectUpdateCreate`, devolverá `{"ok": false, "error": "..."}` con mensaje claro.

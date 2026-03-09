@@ -34,6 +34,14 @@
 
 David quiere automatizar la presencia en redes sociales capturando contenido relevante de LinkedIn (páginas y perfiles que él siga), filtrándolo, adaptándolo a su marca personal y publicándolo en múltiples canales con revisión humana antes de cada publicación.
 
+Adicionalmente, el pipeline debe soportar una **capa editorial de fuentes de autoridad**: detectar lo último de fuentes concretas, rankearlo por alineación con la narrativa y audiencia de David, dejar shortlist para selección humana y solo entonces derivar piezas para blog, newsletter, LinkedIn y X. Ver [docs/67-editorial-source-curation.md](67-editorial-source-curation.md).
+
+Regla operativa validada:
+
+- la lista viva de fuentes y referentes sale de Notion (`Fuentes` -> `Fuentes confiables` y `Referentes`)
+- antes de automatizar hay que operar una **fase editorial manual**
+- n8n entra solo cuando shortlist, cadencia y criterios ya son estables varias semanas seguidas
+
 **Canales de salida:**
 
 | Canal | Tipo de contenido |
@@ -125,6 +133,26 @@ flowchart TD
 | Blogs BIM/AEC relevantes | RSS Feed Trigger de n8n | Continuo (polling configurable) |
 | Hashtags LinkedIn (#BIM, #AEC, #RevitAPI, etc.) | Apify Actor con filtro hashtag | Diaria |
 
+### Fuentes editoriales de autoridad
+
+Estas fuentes no deben tratarse como "contenido a republicar" sino como **insumos editoriales** para shortlist y derivación:
+
+| Fuente | URL base | Uso esperado | Estado inicial |
+|--------|----------|--------------|----------------|
+| Gartner | `https://www.gartner.com/` | informes, tendencias, marcos para reinterpretar | parcial |
+| McKinsey | `https://www.mckinsey.com/` | reportes, análisis ejecutivos, señales de mercado | parcial |
+| Every | `https://every.to/newsletter` | ideas y formatos editoriales | parcial |
+| Ruben Substack | `https://ruben.substack.com/` | narrativa, ángulos y framing para piezas derivadas | parcial |
+
+Flujo esperado por fuente:
+
+1. capturar latest items;
+2. normalizar;
+3. puntuar alineación con narrativa, propuesta y audiencia;
+4. generar shortlist;
+5. esperar selección humana;
+6. recién entonces generar piezas derivadas.
+
 ### Output normalizado por item
 
 ```json
@@ -173,6 +201,17 @@ flowchart TD
 | **Datos / métricas reales** | 20% | Presencia de números, porcentajes, resultados medibles |
 | **Formato replicable** | 15% | ¿Es un caso real, tutorial o framework que David pueda reinterpretar? |
 | **Engagement del original** | 10% | Likes + comentarios del post original como señal de calidad |
+
+### Criterios extra para shortlist editorial
+
+Cuando la fuente sea editorial o de autoridad, agregar:
+
+| Criterio | Peso | Descripción |
+|----------|------|-------------|
+| **Narrative fit** | 25% | Qué tan bien conecta con la narrativa y posicionamiento de David |
+| **Audience fit** | 25% | Qué tan útil es para la audiencia prioritaria definida en Segmentación |
+| **Offer fit** | 25% | Qué tan bien conecta con servicios, formación o producto |
+| **Derivative potential** | 25% | Qué tan fácil es convertirlo en blog/newsletter/LinkedIn/X sin copiar |
 
 ### Prompt para scoring (Worker `llm.generate`)
 
@@ -616,6 +655,16 @@ LinkedIn **no tiene API pública para leer posts de terceros**. La Marketing API
 
 La latencia de 30 min del cron de publicación se puede reducir a 5-10 min si se prefiere, o usar un Notion webhook (vía `notion_poller` existente en Umbral) para disparar publicación inmediata al cambiar estado.
 
+### Extensión para shortlist editorial
+
+Para la curación desde Gartner, McKinsey, Every y Substack:
+
+1. capturar latest items por fuente;
+2. crear una vista separada tipo `Shortlist Editorial`;
+3. mostrar score de alineación, razón, ángulo sugerido y canal recomendado;
+4. permitir que David marque `Seleccionado` o `Descartar`;
+5. solo los items `Seleccionado` pasan a la fase de derivación de contenido.
+
 ---
 
 ## 12. APIs, cuentas y credenciales requeridas
@@ -710,6 +759,7 @@ La latencia de 30 min del cron de publicación se puede reducir a 5-10 min si se
 
 ### Fase A — MVP (semana 1-2)
 
+0. Operar primero una **fase editorial manual** con shortlist semanal y validación humana
 1. Instalar n8n en VPS (Docker) si no está ya
 2. WF1: Captura vía Apify + RSS → normalización
 3. WF2: Scoring con Worker `llm.generate`
@@ -736,6 +786,16 @@ La latencia de 30 min del cron de publicación se puede reducir a 5-10 min si se
 15. WF6: Selección y envío a WhatsApp
 16. Monitoreo, métricas, ajustes de umbral y prompts
 
+### Regla de paso a automatización
+
+No pasar a n8n detallado ni a autopublicación hasta que se cumpla esto:
+
+- shortlist estable durante 3-4 semanas consecutivas
+- scoring editorial claro y repetible
+- al menos 2 fuentes con captura suficientemente consistente
+- capacidad de elegir piezas con baja ambigüedad
+- evidencia de que la operación manual ya consume demasiado tiempo
+
 ---
 
 ## 17. Preguntas para David
@@ -755,6 +815,9 @@ La latencia de 30 min del cron de publicación se puede reducir a 5-10 min si se
 6. **¿Qué perfiles/páginas de LinkedIn monitorear?** Necesito una lista de URLs (perfiles de personas, empresas, o hashtags).
 7. **¿Qué blogs BIM/AEC seguir?** ¿Tenés una lista de blogs/newsletters que ya leas? (para configurar RSS)
 8. **¿Qué hashtags de LinkedIn son relevantes?** Ej: #BIM, #RevitAPI, #AEC, #ConstructionTech, #ISO19650
+9. **¿Qué fuentes editoriales de autoridad son obligatorias?** Inicialmente: Gartner, McKinsey, Every y Ruben Substack. Confirmar si hay otras.
+10. **¿Cómo prefieres revisar la shortlist editorial?** Notion, Telegram, o ambas.
+11. **¿Qué pesa más en la selección?** Tendencia de mercado, alineación con tu narrativa, potencial comercial, o reputación de la fuente.
 
 ### Publicación
 

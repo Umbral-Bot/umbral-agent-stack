@@ -478,6 +478,39 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     ),
   },
   {
+    name: "umbral_notion_read_database",
+    task: "notion.read_database",
+    description: "Read a Notion database by URL or database ID and return flattened rows plus schema metadata.",
+    resultTitle: "Notion database read result",
+    parameters: taskToolSchema(
+      {
+        database_id_or_url: stringSchema("Notion database UUID or full database URL."),
+        max_items: integerSchema("Maximum number of rows to read.", {
+          minimum: 1,
+          maximum: 100,
+        }),
+        filter: objectSchema("Optional Notion database filter object."),
+      },
+      ["database_id_or_url"],
+    ),
+  },
+  {
+    name: "umbral_notion_search_databases",
+    task: "notion.search_databases",
+    description: "Search Notion databases by title and return matching database IDs and URLs.",
+    resultTitle: "Notion database search result",
+    parameters: taskToolSchema(
+      {
+        query: stringSchema("Database title or search query."),
+        max_results: integerSchema("Maximum number of database matches to return.", {
+          minimum: 1,
+          maximum: 20,
+        }),
+      },
+      ["query"],
+    ),
+  },
+  {
     name: "umbral_notion_upsert_task",
     task: "notion.upsert_task",
     description: "Create or update a task in the Notion task database used by the stack.",

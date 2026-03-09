@@ -1,6 +1,14 @@
 ---
 name: linear-issue-triage
-description: triage new or active linear issues into actionable recommendations project, priority, state, duplicates, next owner, missing context, and next steps. use when a user provides linear issue links or asks to review the latest active issues in linear and needs concrete updates they can apply in linear.
+description: triage new or active linear issues into actionable recommendations project,
+  priority, state, duplicates, next owner, missing context, and next steps. use when
+  a user provides linear issue links or asks to review the latest active issues in
+  linear and needs concrete updates they can apply in linear.
+metadata:
+  openclaw:
+    emoji: 🚦
+    requires:
+      env: []
 ---
 
 # Linear Issue Triage
@@ -35,3 +43,4 @@ Si el agente puede consultar Linear, partir por:
 - Cada issue debe terminar con una unica `Next action`.
 - Si falta contexto, convertirlo en preguntas especificas y comentario sugerido.
 - Mantener el razonamiento corto y accionable.
+

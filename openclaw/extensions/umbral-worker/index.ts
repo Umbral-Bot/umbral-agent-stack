@@ -115,13 +115,19 @@ function sanitizeBinaryPayload(value: unknown): unknown {
       result.audio_b64_chars = raw.length;
       continue;
     }
+    if (key === "b64_json" && typeof raw === "string") {
+      result[key] =
+        "[omitted from gateway response; use output_path or direct Worker call for binary image]";
+      result.b64_json_chars = raw.length;
+      continue;
+    }
     result[key] = sanitizeBinaryPayload(raw);
   }
   return result;
 }
 
 function sanitizeWorkerResult(task: string, value: unknown): unknown {
-  if (!task.endsWith(".audio.generate")) {
+  if (!task.endsWith(".audio.generate") && !task.endsWith(".image.generate")) {
     return value;
   }
   return sanitizeBinaryPayload(value);
@@ -1077,6 +1083,24 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     ),
   },
   {
+    name: "umbral_google_image_generate",
+    task: "google.image.generate",
+    description: "Generate one or more images through Google's OpenAI-compatible Images API and save them to disk.",
+    resultTitle: "Google image result",
+    parameters: taskToolSchema(
+      {
+        prompt: stringSchema("Prompt text for image generation."),
+        model: stringSchema("Optional image model, default imagen-3.0-generate-002."),
+        size: stringSchema("Optional output size, for example 1024x1024 or 1536x1024."),
+        n: integerSchema("Number of images to generate.", { minimum: 1, maximum: 4 }),
+        output_dir: stringSchema("Optional directory where generated image files should be saved."),
+        filename_prefix: stringSchema("Optional prefix for saved file names."),
+        return_b64: booleanSchema("Include base64 in the Worker response. Default false."),
+      },
+      ["prompt"],
+    ),
+  },
+  {
     name: "umbral_make_post_webhook",
     task: "make.post_webhook",
     description: "POST a JSON payload to an allowlisted Make.com webhook URL.",
@@ -1088,6 +1112,73 @@ const TASK_TOOLS: TaskToolDefinition[] = [
         timeout: integerSchema("Timeout in seconds.", { minimum: 1, maximum: 120 }),
       },
       ["webhook_url", "payload"],
+    ),
+  },
+  {
+    name: "umbral_n8n_list_workflows",
+    task: "n8n.list_workflows",
+    description: "List workflows from the configured n8n instance.",
+    resultTitle: "n8n workflows result",
+    parameters: taskToolSchema({
+      query: stringSchema("Optional case-insensitive substring filter on workflow name."),
+      active: booleanSchema("Optional active-state filter."),
+      limit: integerSchema("Maximum number of workflows to return.", { minimum: 1, maximum: 250 }),
+      timeout: integerSchema("Request timeout in seconds.", { minimum: 1, maximum: 120 }),
+    }),
+  },
+  {
+    name: "umbral_n8n_get_workflow",
+    task: "n8n.get_workflow",
+    description: "Fetch a workflow definition from the configured n8n instance by workflow ID.",
+    resultTitle: "n8n workflow result",
+    parameters: taskToolSchema(
+      {
+        workflow_id: stringSchema("n8n workflow ID."),
+        timeout: integerSchema("Request timeout in seconds.", { minimum: 1, maximum: 120 }),
+      },
+      ["workflow_id"],
+    ),
+  },
+  {
+    name: "umbral_n8n_create_workflow",
+    task: "n8n.create_workflow",
+    description: "Create a workflow in the configured n8n instance from raw workflow JSON.",
+    resultTitle: "n8n create workflow result",
+    parameters: taskToolSchema(
+      {
+        workflow: objectSchema("Raw n8n workflow payload (name, nodes, connections, settings, etc.)."),
+        timeout: integerSchema("Request timeout in seconds.", { minimum: 1, maximum: 120 }),
+      },
+      ["workflow"],
+    ),
+  },
+  {
+    name: "umbral_n8n_update_workflow",
+    task: "n8n.update_workflow",
+    description: "Update an existing workflow in the configured n8n instance from raw workflow JSON.",
+    resultTitle: "n8n update workflow result",
+    parameters: taskToolSchema(
+      {
+        workflow_id: stringSchema("n8n workflow ID."),
+        workflow: objectSchema("Raw n8n workflow payload."),
+        timeout: integerSchema("Request timeout in seconds.", { minimum: 1, maximum: 120 }),
+      },
+      ["workflow_id", "workflow"],
+    ),
+  },
+  {
+    name: "umbral_n8n_post_webhook",
+    task: "n8n.post_webhook",
+    description: "POST a JSON payload to a webhook on the configured n8n instance.",
+    resultTitle: "n8n webhook result",
+    parameters: taskToolSchema(
+      {
+        webhook_path: stringSchema("Relative webhook path on the configured n8n instance, for example /webhook/my-flow."),
+        webhook_url: stringSchema("Absolute webhook URL on the same n8n origin."),
+        payload: objectSchema("JSON payload to send."),
+        timeout: integerSchema("Request timeout in seconds.", { minimum: 1, maximum: 120 }),
+      },
+      ["payload"],
     ),
   },
   {

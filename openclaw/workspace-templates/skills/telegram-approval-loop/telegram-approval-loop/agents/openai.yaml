@@ -1,0 +1,3 @@
+interface:
+  display_name: Telegram Approval Loop
+  short_description: Gestiona aprobaciones editoriales por Telegram sin confundir seleccion, ajuste y aprobacion final.

@@ -12,6 +12,7 @@ from .notion import (
     handle_notion_write_transcript,
     handle_notion_add_comment,
     handle_notion_poll_comments,
+    handle_notion_read_page,
     handle_notion_upsert_task,
     handle_notion_update_dashboard,
     handle_notion_create_report_page,
@@ -65,6 +66,7 @@ from .gmail import (
     handle_gmail_create_draft,
     handle_gmail_list_drafts,
 )
+from .google_audio import handle_google_audio_generate
 
 # Each handler: (input: dict) -> dict
 TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
@@ -72,6 +74,7 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "notion.write_transcript": handle_notion_write_transcript,
     "notion.add_comment": handle_notion_add_comment,
     "notion.poll_comments": handle_notion_poll_comments,
+    "notion.read_page": handle_notion_read_page,
     "notion.upsert_task": handle_notion_upsert_task,
     "notion.update_dashboard": handle_notion_update_dashboard,
     "windows.pad.run_flow": handle_windows_pad_run_flow,
@@ -111,4 +114,5 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "google.calendar.list_events": handle_google_calendar_list_events,
     "gmail.create_draft": handle_gmail_create_draft,
     "gmail.list_drafts": handle_gmail_list_drafts,
+    "google.audio.generate": handle_google_audio_generate,
 }

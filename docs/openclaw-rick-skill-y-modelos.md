@@ -1,5 +1,11 @@
 # OpenClaw: skill openclaw-gateway para Rick y asignación de modelos por agente
 
+> Actualización operativa 2026-03-08:
+> - `main`, `rick-orchestrator`, `rick-delivery`, `rick-qa`, `rick-tracker` y `rick-ops` quedaron fijados en `google/gemini-2.5-flash` para estabilidad.
+> - Claude quedó deshabilitado temporalmente vía `UMBRAL_DISABLE_CLAUDE=true`.
+> - Rick consume GPT/Kimi/Azure, Vertex 3.1, Notion, Linear, Tavily y audio Azure/Google principalmente a través del plugin `umbral-worker`.
+> - El estado validado y los resultados E2E quedaron documentados en [docs/audits/vps-openclaw-llm-audio-validation-2026-03-08.md](audits/vps-openclaw-llm-audio-validation-2026-03-08.md).
+
 ## 1. Que Rick tenga el skill `openclaw-gateway`
 
 El skill está en el repo en `openclaw/workspace-templates/skills/openclaw-gateway/`. Para que Rick lo use en la VPS, debe existir en `~/.openclaw/workspace/skills/openclaw-gateway/` (workspace de Rick).
@@ -43,7 +49,7 @@ Tras eso, OpenClaw cargará el skill desde `<workspace>/skills` (prioridad sobre
 
 En tu config ya tienes:
 
-- **Vertex:** `google-vertex/gemini-3.1-pro-preview` (en `agents.defaults.models`).
+- **Vertex:** `google-vertex/gemini-2.5-flash` disponible para herramientas del Worker.
 - **OpenAI Codex:** `openai-codex/gpt-5.4` (primary) y `gpt-5.3-codex`.
 - **Anthropic / Google** en fallbacks.
 
@@ -57,10 +63,11 @@ En tu config ya tienes:
 | **rick-orchestrator** | **AI Foundry** (Azure)    | Planificación y delegación; modelo fuerte en mismo ecosistema. |
 | **rick-delivery**   | **Vertex**                 | Ejecución y artefactos; Gemini va bien en tareas estructuradas. |
 | **rick-qa**         | **Vertex**                 | Validación y DoD; consistencia. |
-| **rick-tracker**    | **Vertex**                 | Linear, issues, trazabilidad; respuestas cortas y estructuradas. |
+| **rick-tracker**    | **Google 2.5 Flash**      | Linear, issues, trazabilidad; respuestas cortas y estructuradas con provider ya autenticado en OpenClaw. |
 | **rick-ops**        | **AI Foundry** (Azure)     | Operación VPS/runbooks; mismo tenant que el resto de Azure. |
 
-- **Vertex** → rick-delivery, rick-qa, rick-tracker.
+- **Google 2.5 Flash** → rick-tracker.
+- **Vertex** → usarlo desde `llm.generate` / `umbral_llm_generate` cuando se necesite la cuota GCP del Worker.
 - **AI Foundry (Azure OpenAI / Foundry)** → rick-orchestrator, rick-ops.
 
 Si aún no tienes el provider de Azure/Foundry en OpenClaw, deja rick-orchestrator y rick-ops con el primary (`openai-codex/gpt-5.4`) o con Vertex hasta que lo configures.
@@ -81,11 +88,10 @@ Pega este bloque dentro de `agents` en tu `openclaw.json` (sustituye o fusiona c
         "anthropic/claude-sonnet-4-6",
         "anthropic/claude-opus-4-6",
         "anthropic/claude-haiku-4-5",
-        "google/gemini-3.1-pro-preview",
-        "google/gemini-3.1-pro-preview-customtools",
-        "google/gemini-flash-latest",
-        "google/gemini-flash-lite-latest",
-        "google-vertex/gemini-3.1-pro-preview"
+        "google/gemini-2.5-pro",
+        "google/gemini-2.5-flash",
+        "google/gemini-2.5-flash-lite",
+        "google-vertex/gemini-2.5-flash"
       ]
     },
     "models": { ... },
@@ -111,19 +117,19 @@ Pega este bloque dentro de `agents` en tu `openclaw.json` (sustituye o fusiona c
       "id": "rick-delivery",
       "name": "Rick Delivery",
       "workspace": "/home/rick/.openclaw/workspace",
-      "model": "google-vertex/gemini-3.1-pro-preview"
+      "model": "google/gemini-2.5-flash"
     },
     {
       "id": "rick-qa",
       "name": "Rick QA",
       "workspace": "/home/rick/.openclaw/workspace",
-      "model": "google-vertex/gemini-3.1-pro-preview"
+      "model": "google-vertex/gemini-2.5-flash"
     },
     {
       "id": "rick-tracker",
       "name": "Rick Tracker",
       "workspace": "/home/rick/.openclaw/workspace",
-      "model": "google-vertex/gemini-3.1-pro-preview"
+      "model": "google-vertex/gemini-2.5-flash"
     },
     {
       "id": "rick-ops",
@@ -135,7 +141,8 @@ Pega este bloque dentro de `agents` en tu `openclaw.json` (sustituye o fusiona c
 }
 ```
 
-- **Vertex** (`google-vertex/gemini-3.1-pro-preview`): rick-delivery, rick-qa, rick-tracker.
+- **Google 2.5 Flash** (`google/gemini-2.5-flash`): rick-tracker.
+- **Vertex** (`google-vertex/gemini-2.5-flash`): disponible como provider del Worker para `llm.generate`, no como modelo base obligatorio del agente.
 - **Primary por ahora** (`openai-codex/gpt-5.4`): rick-orchestrator, rick-ops — cuando tengas el provider de **Azure AI Foundry** en OpenClaw, sustituye por el id de ese modelo (ej. `azure-openai/gpt-4o` o el que tengas en auth/defaults).
 - **main** sigue con el default (gpt-5.4 + fallbacks).
 
@@ -144,8 +151,9 @@ Pega este bloque dentro de `agents` en tu `openclaw.json` (sustituye o fusiona c
 ## 4. Resumen
 
 1. **Skill para Rick:** copiar `openclaw/workspace-templates/skills/openclaw-gateway` a `~/.openclaw/workspace/skills/` en la VPS (Opción A con `sync_skills_to_vps.py` o Opción B con `cp` tras `git pull`).
-2. **Vertex:** rick-delivery, rick-qa, rick-tracker.
-3. **AI Foundry (cuando lo tengas):** rick-orchestrator, rick-ops; mientras tanto usan primary (gpt-5.4).
+2. **Google 2.5 Flash:** rick-tracker.
+3. **Vertex en el Worker:** disponible para `llm.generate` / `umbral_llm_generate` cuando quieras usar la cuota GCP.
+4. **AI Foundry (cuando lo tengas):** rick-orchestrator, rick-ops; mientras tanto usan primary (gpt-5.4).
 
 ---
 

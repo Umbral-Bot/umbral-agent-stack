@@ -53,8 +53,18 @@ def quota_tracker(redis_client, provider_config):
 
 class TestGetConfiguredProviders:
 
+    def test_disable_claude_hides_anthropic_providers(self, monkeypatch):
+        monkeypatch.setenv("UMBRAL_DISABLE_CLAUDE", "true")
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test-key")
+
+        providers = get_configured_providers()
+        assert "claude_pro" not in providers
+        assert "claude_opus" not in providers
+        assert "claude_haiku" not in providers
+
     def test_detects_anthropic_when_key_set(self, monkeypatch):
         """Anthropic providers detected when ANTHROPIC_API_KEY is set."""
+        monkeypatch.delenv("UMBRAL_DISABLE_CLAUDE", raising=False)
         monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test-key")
         # Clear others to isolate
         monkeypatch.delenv("GOOGLE_API_KEY", raising=False)

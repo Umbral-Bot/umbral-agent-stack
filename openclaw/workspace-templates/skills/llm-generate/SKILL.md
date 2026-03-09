@@ -2,20 +2,12 @@
 name: llm-generate
 description: >-
   Generate text using multiple LLM providers via the Umbral Worker task llm.generate.
-  Supports Claude, GPT, Gemini with automatic provider detection and quota-based fallback.
+  Supports Azure GPT/Kimi, OpenAI, Gemini, and optional Claude with automatic provider detection.
   Use when "generate text", "ask llm", "use claude", "use gemini", "generate with gpt",
   "llm generate", "ask ai model", "text generation".
 metadata:
   openclaw:
     emoji: "\U0001F9E0"
-    requires:
-      env:
-        - OPENCLAW_GATEWAY_TOKEN
-        - ANTHROPIC_API_KEY
-        - AZURE_OPENAI_ENDPOINT
-        - OPENAI_API_KEY
-        - GOOGLE_API_KEY
-        - GOOGLE_API_KEY_RICK_UMBRAL
 ---
 
 # LLM Generate Skill
@@ -46,7 +38,7 @@ Genera texto con detección automática de provider según el modelo solicitado.
 | Campo | Tipo | Requerido | Default | Descripción |
 |-------|------|-----------|---------|-------------|
 | `prompt` | str | **Sí** | — | Texto del prompt |
-| `model` | str | No | `gemini-3.1-pro-preview-customtools` | Modelo o alias a usar |
+| `model` | str | No | `gemini-2.5-pro` | Modelo o alias a usar |
 | `max_tokens` | int | No | 1024 | Límite de tokens de respuesta |
 | `temperature` | float | No | 0.7 | Temperatura de sampling |
 | `system` | str | No | `""` | System prompt |
@@ -84,14 +76,19 @@ En lugar del nombre completo del modelo, se puede usar un alias:
 
 | Alias | Modelo real | Provider |
 |-------|-------------|----------|
-| `azure_foundry` | `gpt-5.3-codex` | Azure AI Foundry |
+| `azure_foundry` | `gpt-5.2-chat` | Azure AI Foundry |
+| `gpt-5.2` | `gpt-5.2-chat` | Azure AI Foundry |
+| `azure_gpt_41` | `gpt-4.1` | Azure AI Foundry |
+| `azure_gpt_52` | `gpt-5.2-chat` | Azure AI Foundry |
+| `kimi_azure` | `Kimi-K2.5` | Azure AI Foundry |
 | `claude_pro` | `claude-sonnet-4-6` | openclaw_proxy / anthropic |
 | `claude_opus` | `claude-opus-4-6` | openclaw_proxy / anthropic |
 | `claude_haiku` | `claude-haiku-4-5` | openclaw_proxy / anthropic |
-| `gemini_pro` | `gemini-3.1-pro-preview-customtools` | gemini (AI Studio) |
-| `gemini_flash` | `gemini-flash-latest` | gemini (AI Studio) |
-| `gemini_flash_lite` | `gemini-flash-lite-latest` | gemini (AI Studio) |
-| `gemini_vertex` | `gemini-3.1-pro-preview` | vertex (Vertex AI) |
+| `gemini_pro` | `gemini-2.5-pro` | gemini (AI Studio) |
+| `gemini_flash` | `gemini-2.5-flash` | gemini (AI Studio) |
+| `gemini_flash_lite` | `gemini-2.5-flash-lite` | gemini (AI Studio) |
+| `gemini_vertex` | `gemini-2.5-flash` | vertex (Vertex AI) |
+| `gemini_vertex_31` | `gemini-3.1-pro-preview` | vertex (Vertex AI) |
 
 ## Ejemplos de uso
 
@@ -116,9 +113,22 @@ En lugar del nombre completo del modelo, se puede usar un alias:
   "task_type": "llm.generate",
   "input": {
     "prompt": "Generá unit tests para esta función Python",
-    "model": "azure_foundry",
+    "model": "azure_gpt_41",
     "max_tokens": 2048,
     "temperature": 0.3
+  }
+}
+```
+
+### Kimi vía Azure AI Foundry
+
+```json
+{
+  "task_type": "llm.generate",
+  "input": {
+    "prompt": "Resume este issue en una frase ejecutiva",
+    "model": "kimi_azure",
+    "max_tokens": 512
   }
 }
 ```
@@ -150,6 +160,21 @@ En lugar del nombre completo del modelo, se puede usar un alias:
 }
 ```
 
+### Gemini 3.1 Pro vía Vertex AI
+
+```json
+{
+  "task_type": "llm.generate",
+  "input": {
+    "prompt": "Analizá esta estrategia y proponé tres riesgos críticos",
+    "model": "gemini_vertex_31",
+    "max_tokens": 2048
+  }
+}
+```
+
+El alias histórico `gemini_vertex_31` se mantiene por compatibilidad, pero hoy se resuelve al modelo oficial `gemini-3.1-pro-preview` en Vertex AI.
+
 ### Claude Opus (tareas críticas)
 
 ```json
@@ -175,7 +200,7 @@ En lugar del nombre completo del modelo, se puede usar un alias:
 }
 ```
 
-Usa `gemini-3.1-pro-preview-customtools` por defecto.
+Usa `gemini-2.5-pro` por defecto.
 
 ## Routing por task_type (Dispatcher)
 
@@ -196,4 +221,6 @@ El Dispatcher selecciona el modelo óptimo según el tipo de tarea:
 - Las cuotas se gestionan por el `QuotaTracker` en Redis con ventanas configurables.
 - Si un provider no responde en 60s (90s para OpenClaw), timeout automático.
 - Los modelos `o1` y `o3` de OpenAI no soportan `temperature` ni `max_tokens` estándar — se usan `max_completion_tokens`.
+- `gpt-5.2-chat` en Azure también requiere `max_completion_tokens`; el handler lo ajusta automáticamente.
+- Si defines `UMBRAL_DISABLE_CLAUDE=true`, el Worker rechaza modelos `claude-*` y el router deja de considerarlos disponibles.
 - Referencia: `worker/tasks/llm.py`, `docs/15-model-quota-policy.md`.

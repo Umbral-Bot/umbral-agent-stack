@@ -88,11 +88,11 @@ class TestProviderModelMap:
         expected_subset = {"azure_foundry", "claude_pro", "gemini_pro"}
         assert expected_subset.issubset(set(PROVIDER_MODEL_MAP.keys()))
 
-    def test_azure_foundry_maps_to_gpt5(self):
-        assert PROVIDER_MODEL_MAP["azure_foundry"] == "gpt-5.3-codex"
+    def test_azure_foundry_maps_to_gpt52_chat(self):
+        assert PROVIDER_MODEL_MAP["azure_foundry"] == "gpt-5.2-chat"
 
     def test_gemini_maps_to_gemini_pro_model(self):
-        assert PROVIDER_MODEL_MAP["gemini_pro"] == "gemini-3.1-pro-preview-customtools"
+        assert PROVIDER_MODEL_MAP["gemini_pro"] == "gemini-2.5-pro"
 
     def test_claude_maps_to_sonnet(self):
         assert PROVIDER_MODEL_MAP["claude_pro"] == "claude-sonnet-4-6"
@@ -100,7 +100,7 @@ class TestProviderModelMap:
 
 class TestMapProviderToModel:
     def test_known_provider(self):
-        assert map_provider_to_model("gemini_pro") == "gemini-3.1-pro-preview-customtools"
+        assert map_provider_to_model("gemini_pro") == "gemini-2.5-pro"
 
     def test_unknown_provider_returns_itself(self):
         assert map_provider_to_model("unknown_provider") == "unknown_provider"

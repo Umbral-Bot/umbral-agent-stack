@@ -69,7 +69,22 @@ Task: `notion.poll_comments`
 
 Devuelve: `{"comments":[...], "count": N}`
 
-### 4. Crear o actualizar tarea en DB
+### 4. Leer una página
+
+Task: `notion.read_page`
+
+```json
+{
+  "page_id_or_url": "https://www.notion.so/... o UUID",
+  "max_blocks": 30
+}
+```
+
+Devuelve: `{"page_id":"...", "title":"...", "blocks":[...], "plain_text":"..."}`.
+
+Úsalo cuando David te pida estudiar una página concreta de Notion y necesites citar o resumir su contenido antes de actuar.
+
+### 5. Crear o actualizar tarea en DB
 
 Task: `notion.upsert_task`
 
@@ -86,7 +101,7 @@ Task: `notion.upsert_task`
 
 Devuelve: `{"page_id":"...", "updated": true}` o `{"skipped": true, "reason":"..."}`
 
-### 5. Actualizar dashboard
+### 6. Actualizar dashboard
 
 Task: `notion.update_dashboard`
 
@@ -102,7 +117,7 @@ Task: `notion.update_dashboard`
 
 Devuelve: `{"updated": true, "blocks_appended": N}`
 
-### 6. Crear pagina de reporte
+### 7. Crear pagina de reporte
 
 Task: `notion.create_report_page`
 

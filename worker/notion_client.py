@@ -7,6 +7,7 @@ via worker.config — never hardcoded.
 """
 
 import logging
+import re
 from datetime import datetime, timezone
 from typing import Any
 
@@ -45,6 +46,57 @@ def _check_response(resp: httpx.Response, context: str) -> dict[str, Any]:
             f"Notion API error ({resp.status_code}) during {context}: {detail}"
         )
     return resp.json()
+
+
+def _extract_notion_page_id(page_id_or_url: str) -> str:
+    value = (page_id_or_url or "").strip()
+    if not value:
+        raise ValueError("page_id_or_url is required")
+
+    direct = value.replace("-", "")
+    if re.fullmatch(r"[0-9a-fA-F]{32}", direct):
+        return value
+
+    match = re.search(r"([0-9a-fA-F]{32})", value)
+    if not match:
+        raise ValueError(f"Could not extract Notion page id from: {value}")
+
+    raw = match.group(1)
+    return f"{raw[0:8]}-{raw[8:12]}-{raw[12:16]}-{raw[16:20]}-{raw[20:32]}"
+
+
+def _plain_text_from_rich_text(rich_text: list[Any] | None) -> str:
+    if not rich_text:
+        return ""
+    parts: list[str] = []
+    for item in rich_text:
+        if isinstance(item, dict):
+            parts.append(item.get("plain_text", item.get("text", {}).get("content", "")))
+        else:
+            parts.append(str(item))
+    return "".join(parts)
+
+
+def _extract_block_text(block: dict[str, Any]) -> str:
+    block_type = block.get("type", "")
+    container = block.get(block_type, {})
+    if not isinstance(container, dict):
+        return ""
+
+    rich = container.get("rich_text")
+    if isinstance(rich, list):
+        return _plain_text_from_rich_text(rich)
+
+    title = container.get("title")
+    if isinstance(title, list):
+        return _plain_text_from_rich_text(title)
+
+    if block_type == "child_page":
+        return str(container.get("title", ""))
+    if block_type == "child_database":
+        return str(container.get("title", ""))
+
+    return ""
 
 
 # ---------------------------------------------------------------------------
@@ -198,6 +250,81 @@ def poll_comments(
         )
 
     return {"comments": comments, "count": len(comments)}
+
+
+def read_page(
+    page_id_or_url: str,
+    max_blocks: int = 50,
+) -> dict[str, Any]:
+    """
+    Read a Notion page and return metadata plus a plain-text snapshot of its first blocks.
+
+    Args:
+        page_id_or_url: Notion page UUID or full URL.
+        max_blocks: Maximum number of top-level child blocks to read.
+
+    Returns:
+        {
+            "page_id": "...",
+            "url": "...",
+            "last_edited_time": "...",
+            "title": "...",
+            "blocks": [{"type": "paragraph", "text": "..."}],
+            "plain_text": "joined text..."
+        }
+    """
+    config.require_notion_core()
+    page_id = _extract_notion_page_id(page_id_or_url)
+    max_blocks = max(1, min(int(max_blocks), 100))
+
+    with httpx.Client(timeout=TIMEOUT) as client:
+        page_resp = client.get(
+            f"{NOTION_BASE_URL}/pages/{page_id}",
+            headers=_headers(),
+        )
+        page_data = _check_response(page_resp, "read_page metadata")
+
+        blocks_resp = client.get(
+            f"{NOTION_BASE_URL}/blocks/{page_id}/children",
+            headers=_headers(),
+            params={"page_size": max_blocks},
+        )
+        blocks_data = _check_response(blocks_resp, "read_page children")
+
+    title = ""
+    properties = page_data.get("properties", {})
+    if isinstance(properties, dict):
+        for prop in properties.values():
+            if isinstance(prop, dict) and prop.get("type") == "title":
+                title = _plain_text_from_rich_text(prop.get("title"))
+                break
+
+    blocks: list[dict[str, Any]] = []
+    for block in blocks_data.get("results", []):
+        if not isinstance(block, dict):
+            continue
+        blocks.append(
+            {
+                "id": block.get("id", ""),
+                "type": block.get("type", ""),
+                "text": _extract_block_text(block),
+                "has_children": bool(block.get("has_children")),
+                "last_edited_time": block.get("last_edited_time", ""),
+            }
+        )
+
+    plain_text = "\n".join(item["text"] for item in blocks if item.get("text"))
+
+    return {
+        "page_id": page_data.get("id", page_id),
+        "url": page_data.get("url", ""),
+        "last_edited_time": page_data.get("last_edited_time", ""),
+        "title": title,
+        "blocks": blocks,
+        "plain_text": plain_text,
+        "has_more": bool(blocks_data.get("has_more")),
+        "max_blocks": max_blocks,
+    }
 
 
 PROVIDER_LABELS = {

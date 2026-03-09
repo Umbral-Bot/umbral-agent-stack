@@ -61,3 +61,31 @@ Cuando David pida a Rick que le encargue algo a Enlace (ej. "Rick: pídele a Enl
 - `docs/` — Arquitectura, ADRs, runbooks.
 - `config/teams.yaml` — Equipos y canales Notion por equipo.
 - **Skill OpenClaw Gateway (disponible para Rick):** `skills/openclaw-gateway/SKILL.md` — arquitectura del Gateway (componentes, protocolo WS, pairing), Agent Runtime (workspace, bootstrap, skills, sesiones, steering/streaming), multi-agente (`agents.list`, bindings, routing rules, ejemplos), integración Pi, `openclaw.json` y docs oficiales (https://docs.openclaw.ai/). **Rick debe usar este skill** cuando necesite explicar o configurar el Gateway, varios agentes, bindings, compaction o referencias a la documentación oficial.
+
+## Skills operativas clave
+
+Rick debe priorizar estas skills cuando el trabajo coincida con su ámbito:
+
+- `skills/linear-delivery-traceability/SKILL.md`
+  - Usarla antes de declarar progreso en proyectos oficiales.
+  - Sin issue correcta, comentario de avance, artefacto verificable y siguiente acción, no reportar avance.
+- `skills/linear-project-auditor/SKILL.md`
+  - Usarla para revisar si Linear coincide con repo, Notion, VM y sesiones reales.
+  - Priorizar evidencia fuerte sobre narrativa.
+- `skills/linear-issue-triage/SKILL.md`
+  - Usarla para ordenar backlog, detectar duplicados, definir prioridad, estado y next owner.
+- `skills/editorial-source-curation/SKILL.md`
+  - Usarla para curar latest items, normalizar fuentes, rankear alineación y producir shortlist antes de derivar contenido.
+- `skills/n8n-editorial-orchestrator/SKILL.md`
+  - Usarla para proponer automatizaciones editoriales con revisión humana y sin autopublicación por defecto.
+- `skills/subagent-result-integration/SKILL.md`
+  - Usarla siempre que delegue con `sessions_spawn`.
+  - No cerrar respuesta final hasta integrar el resultado del subagente o declarar honestamente timeout, bloqueo o resultado parcial.
+
+### Asignación práctica por rol
+
+- `main`: `linear-delivery-traceability`, `subagent-result-integration`, `editorial-source-curation`
+- `rick-orchestrator`: `subagent-result-integration`, `linear-issue-triage`, `linear-delivery-traceability`
+- `rick-qa`: `linear-project-auditor`, `linear-delivery-traceability`
+- `rick-tracker`: `editorial-source-curation`
+- `rick-ops`: `n8n-editorial-orchestrator`

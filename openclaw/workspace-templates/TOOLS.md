@@ -12,6 +12,8 @@
 | `notion.write_transcript` | Escribe transcripción en Notion. |
 | `notion.add_comment` | Agrega comentario a una página Notion. |
 | `notion.read_page` | Lee una página de Notion por URL o ID y devuelve snapshot de contenido. |
+| `notion.read_database` | Lee una base de datos de Notion por URL o ID y devuelve schema + filas aplanadas. |
+| `notion.search_databases` | Busca bases de datos de Notion por título y devuelve IDs/URLs candidatas. |
 | `notion.update_dashboard` | Actualiza dashboard de Rick en Notion. |
 | `notion.create_report_page` | Crea página de reporte en Notion. |
 | `linear.create_issue` | Crea issue en Linear (title, team_key, description). |

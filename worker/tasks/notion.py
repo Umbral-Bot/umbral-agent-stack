@@ -115,6 +115,54 @@ def handle_notion_read_page(input_data: Dict[str, Any]) -> Dict[str, Any]:
     )
 
 
+def handle_notion_read_database(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Lee metadata y un snapshot plano de una base de datos de Notion.
+
+    Input:
+        database_id_or_url (str, required): UUID o URL completa de Notion.
+        max_items (int, optional): Máximo de filas a devolver (default: 50).
+        filter (dict, optional): Filtro Notion para query.
+
+    Returns:
+        {"database_id": "...", "title": "...", "schema": {...}, "items": [...]}
+    """
+    database_id_or_url = (
+        input_data.get("database_id_or_url")
+        or input_data.get("database_id")
+        or input_data.get("url")
+    )
+    if not database_id_or_url:
+        raise ValueError("'database_id_or_url' is required in input")
+
+    return notion_client.read_database(
+        database_id_or_url=str(database_id_or_url),
+        max_items=input_data.get("max_items", 50),
+        filter=input_data.get("filter"),
+    )
+
+
+def handle_notion_search_databases(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Busca bases de datos de Notion por título.
+
+    Input:
+        query (str, required): Texto a buscar.
+        max_results (int, optional): Máximo de bases a devolver (default: 10).
+
+    Returns:
+        {"query": "...", "results": [...], "count": N}
+    """
+    query = input_data.get("query")
+    if not query:
+        raise ValueError("'query' is required in input")
+
+    return notion_client.search_databases(
+        query=str(query),
+        max_results=input_data.get("max_results", 10),
+    )
+
+
 def handle_notion_upsert_task(input_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Crea o actualiza una tarea en la DB Kanban (Tareas Umbral).

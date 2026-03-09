@@ -8,6 +8,16 @@ description: >-
 metadata:
   openclaw:
     emoji: "\U0001F9E0"
+    requires:
+      env:
+        - OPENCLAW_GATEWAY_TOKEN
+        - ANTHROPIC_API_KEY
+        - AZURE_OPENAI_ENDPOINT
+        - AZURE_OPENAI_API_KEY
+        - OPENAI_API_KEY
+        - GOOGLE_API_KEY
+        - GOOGLE_API_KEY_RICK_UMBRAL
+        - GOOGLE_CLOUD_PROJECT_RICK_UMBRAL
 ---
 
 # LLM Generate Skill

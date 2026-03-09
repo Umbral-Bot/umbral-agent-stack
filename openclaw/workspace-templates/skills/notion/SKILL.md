@@ -84,6 +84,39 @@ Devuelve: `{"page_id":"...", "title":"...", "blocks":[...], "plain_text":"..."}`
 
 Úsalo cuando David te pida estudiar una página concreta de Notion y necesites citar o resumir su contenido antes de actuar.
 
+### 4b. Leer una base de datos
+
+Task: `notion.read_database`
+
+```json
+{
+  "database_id_or_url": "https://www.notion.so/... o UUID",
+  "max_items": 30
+}
+```
+
+Devuelve: `{"database_id":"...", "title":"...", "schema":{"Prop":"type"}, "items":[...]}`.
+
+Úsalo cuando David te pase una base de datos de Notion con filas/entries y necesites:
+- listar fuentes o referentes,
+- inspeccionar columnas,
+- leer el inventario base antes de diseñar automatizaciones o curación.
+
+### 4c. Buscar bases de datos por título
+
+Task: `notion.search_databases`
+
+```json
+{
+  "query": "Fuentes confiables",
+  "max_results": 5
+}
+```
+
+Devuelve: `{"query":"...", "results":[{"database_id":"...", "title":"...", "url":"..."}], "count": N}`.
+
+Úsalo cuando una página de Notion contenga un `child_database` y necesites resolver cuál es la base real antes de leerla con `notion.read_database`.
+
 ### 5. Crear o actualizar tarea en DB
 
 Task: `notion.upsert_task`

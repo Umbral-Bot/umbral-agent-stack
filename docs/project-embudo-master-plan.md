@@ -16,12 +16,13 @@ Desarrollar un sistema autónomo de captación, marketing y ventas basado en IA 
 
 ## 4. Fase 3: Estrategia de Marketing y Embudo de Ventas
 - **Agente Responsable:** Rick-Delivery / Marketing Agent
-- **Acción:** Diseñar el flujo desde el Portal AEC News (Ghost) hacia la conversión. Definir canales (LinkedIn, Twitter, Newsletter).
-- **Resultado esperado:** Roadmap de contenidos y automatización de RRSS.
+- **Acción:** Diseñar el flujo desde el Portal AEC News (Ghost) hacia la conversión. Definir canales, separar fuentes de autoridad vs referentes de divulgación y operar primero una fase editorial manual antes de automatizar.
+- **Resultado esperado:** Roadmap de contenidos, shortlist editorial alineada con la narrativa, propuesta y audiencia de David, y una fase 1 manual validada para blog, newsletter y LinkedIn.
+- **Referencia:** Ver [docs/67-editorial-source-curation.md](67-editorial-source-curation.md).
 
 ## 5. Fase 4: Implementación AEC Tech Portal (UMB-19)
 - **Agente Responsable:** Rick-Ops
-- **Acción:** Puesta en marcha de Ghost CMS, configuración de flujos n8n para curación y publicación automática.
+- **Acción:** Puesta en marcha de Ghost CMS y, solo cuando la fase manual sea estable, configuración de flujos n8n para curación asistida. La automatización queda subordinada a shortlist humana, gating editorial y validación previa del valor real del flujo.
 
 ## 6. Estado de Tareas (Linear)
 - [ ] UMB-19: Arquitectura Ghost + Newsletter

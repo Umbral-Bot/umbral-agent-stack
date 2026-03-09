@@ -1,5 +1,9 @@
 # Auditoria Detallada Live Test Rick 2026-03-09
 
+> **Fecha:** 2026-03-09
+> **Ejecutado por:** codex
+> **Entorno:** Telegram -> OpenClaw gateway -> sesion main + Worker VPS/VM
+
 ## Resumen del test
 
 - Tipo de test: auditoria manual end-to-end de comportamiento

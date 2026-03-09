@@ -327,6 +327,228 @@ def read_page(
     }
 
 
+def _flatten_property_value(prop: dict[str, Any]) -> Any:
+    prop_type = prop.get("type", "")
+
+    if prop_type == "title":
+        return _plain_text_from_rich_text(prop.get("title"))
+    if prop_type == "rich_text":
+        return _plain_text_from_rich_text(prop.get("rich_text"))
+    if prop_type == "url":
+        return prop.get("url")
+    if prop_type == "select":
+        return (prop.get("select") or {}).get("name")
+    if prop_type == "multi_select":
+        return [item.get("name", "") for item in prop.get("multi_select", [])]
+    if prop_type == "status":
+        return (prop.get("status") or {}).get("name")
+    if prop_type == "number":
+        return prop.get("number")
+    if prop_type == "checkbox":
+        return prop.get("checkbox")
+    if prop_type == "email":
+        return prop.get("email")
+    if prop_type == "phone_number":
+        return prop.get("phone_number")
+    if prop_type == "date":
+        return prop.get("date")
+    if prop_type == "created_time":
+        return prop.get("created_time")
+    if prop_type == "last_edited_time":
+        return prop.get("last_edited_time")
+    if prop_type == "created_by":
+        return (prop.get("created_by") or {}).get("id")
+    if prop_type == "last_edited_by":
+        return (prop.get("last_edited_by") or {}).get("id")
+    if prop_type == "people":
+        return [
+            {
+                "id": item.get("id", ""),
+                "name": item.get("name", ""),
+            }
+            for item in prop.get("people", [])
+        ]
+    if prop_type == "relation":
+        return [item.get("id", "") for item in prop.get("relation", [])]
+    if prop_type == "files":
+        files = []
+        for item in prop.get("files", []):
+            if not isinstance(item, dict):
+                continue
+            files.append(
+                {
+                    "name": item.get("name", ""),
+                    "type": item.get("type", ""),
+                    "url": (item.get("file") or {}).get("url")
+                    or (item.get("external") or {}).get("url"),
+                }
+            )
+        return files
+    if prop_type == "formula":
+        formula = prop.get("formula") or {}
+        for key in ("string", "number", "boolean", "date"):
+            if key in formula:
+                return formula.get(key)
+        return formula
+
+    return prop.get(prop_type)
+
+
+def read_database(
+    database_id_or_url: str,
+    max_items: int = 50,
+    filter: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """
+    Read a Notion database and return schema metadata plus a flattened item snapshot.
+
+    Args:
+        database_id_or_url: Notion database UUID or full URL.
+        max_items: Maximum number of rows to read.
+        filter: Optional Notion database filter object.
+
+    Returns:
+        {
+            "database_id": "...",
+            "url": "...",
+            "title": "...",
+            "schema": {"Name": "title", ...},
+            "items": [
+                {
+                    "page_id": "...",
+                    "url": "...",
+                    "title": "...",
+                    "properties": {...}
+                }
+            ],
+            "count": N,
+            "has_more": bool
+        }
+    """
+    config.require_notion_core()
+    database_id = _extract_notion_page_id(database_id_or_url)
+    max_items = max(1, min(int(max_items), 100))
+
+    with httpx.Client(timeout=TIMEOUT) as client:
+        db_resp = client.get(
+            f"{NOTION_BASE_URL}/databases/{database_id}",
+            headers=_headers(),
+        )
+        db_data = _check_response(db_resp, "read_database metadata")
+
+        query_body: dict[str, Any] = {"page_size": max_items}
+        if filter:
+            query_body["filter"] = filter
+        rows_resp = client.post(
+            f"{NOTION_BASE_URL}/databases/{database_id}/query",
+            headers=_headers(),
+            json=query_body,
+        )
+        rows_data = _check_response(rows_resp, "read_database query")
+
+    title = _plain_text_from_rich_text(db_data.get("title"))
+    schema: dict[str, str] = {}
+    for prop_name, prop_meta in (db_data.get("properties") or {}).items():
+        if isinstance(prop_meta, dict):
+            schema[prop_name] = str(prop_meta.get("type", ""))
+
+    items: list[dict[str, Any]] = []
+    for row in rows_data.get("results", []):
+        if not isinstance(row, dict):
+            continue
+
+        flat_props: dict[str, Any] = {}
+        row_title = ""
+        properties = row.get("properties") or {}
+        if isinstance(properties, dict):
+            for prop_name, prop_value in properties.items():
+                if not isinstance(prop_value, dict):
+                    continue
+                flat_value = _flatten_property_value(prop_value)
+                flat_props[prop_name] = flat_value
+                if prop_value.get("type") == "title" and not row_title:
+                    row_title = str(flat_value or "")
+
+        items.append(
+            {
+                "page_id": row.get("id", ""),
+                "url": row.get("url", ""),
+                "title": row_title,
+                "properties": flat_props,
+            }
+        )
+
+    return {
+        "database_id": db_data.get("id", database_id),
+        "url": db_data.get("url", ""),
+        "title": title,
+        "schema": schema,
+        "items": items,
+        "count": len(items),
+        "has_more": bool(rows_data.get("has_more")),
+        "max_items": max_items,
+    }
+
+
+def search_databases(
+    query: str,
+    max_results: int = 10,
+) -> dict[str, Any]:
+    """
+    Search Notion databases by title.
+
+    Args:
+        query: Search query string.
+        max_results: Maximum number of databases to return.
+
+    Returns:
+        {
+            "query": "...",
+            "results": [
+                {"database_id": "...", "title": "...", "url": "...", "last_edited_time": "..."}
+            ],
+            "count": N
+        }
+    """
+    config.require_notion_core()
+    query = (query or "").strip()
+    if not query:
+        raise ValueError("query is required")
+    max_results = max(1, min(int(max_results), 20))
+
+    with httpx.Client(timeout=TIMEOUT) as client:
+        resp = client.post(
+            f"{NOTION_BASE_URL}/search",
+            headers=_headers(),
+            json={
+                "query": query,
+                "page_size": max_results,
+                "filter": {"value": "database", "property": "object"},
+            },
+        )
+        data = _check_response(resp, "search_databases")
+
+    results: list[dict[str, Any]] = []
+    for item in data.get("results", []):
+        if not isinstance(item, dict):
+            continue
+        title = _plain_text_from_rich_text(item.get("title"))
+        results.append(
+            {
+                "database_id": item.get("id", ""),
+                "title": title,
+                "url": item.get("url", ""),
+                "last_edited_time": item.get("last_edited_time", ""),
+            }
+        )
+
+    return {
+        "query": query,
+        "results": results,
+        "count": len(results),
+    }
+
+
 PROVIDER_LABELS = {
     "azure_foundry": "Azure Foundry (GPT-5.2 Chat)",
     "claude_pro": "Claude Sonnet 4.6",

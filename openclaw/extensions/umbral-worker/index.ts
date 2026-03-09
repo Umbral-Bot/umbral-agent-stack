@@ -602,6 +602,30 @@ const TASK_TOOLS: TaskToolDefinition[] = [
       ["page_id"],
     ),
   },
+  {
+    name: "umbral_notion_upsert_project",
+    task: "notion.upsert_project",
+    description: "Create or update a project entry in the 📁 Proyectos — Umbral Notion database. Use to register a project, backfill metadata, or update status, sprint, open issues, blockers, and next action.",
+    resultTitle: "Notion project upsert result",
+    parameters: taskToolSchema(
+      {
+        name: stringSchema("Project name (used as lookup key)."),
+        estado: enumStringSchema(["Activo", "En pausa", "Completado", "Archivado"], "Project status."),
+        linear_project_url: stringSchema("URL of the associated Linear project."),
+        shared_path: stringSchema("Windows shared path such as G:\\\\Mi unidad\\\\Project\\\\."),
+        responsable: stringSchema("Name of the human responsible for the project."),
+        agentes: stringSchema("Comma-separated agent names: Rick, Claude, Codex, Cursor, Antigravity."),
+        sprint: stringSchema("Current sprint label such as R21."),
+        start_date: stringSchema("Project start date (YYYY-MM-DD)."),
+        target_date: stringSchema("Project target date (YYYY-MM-DD)."),
+        open_issues: integerSchema("Number of open Linear issues."),
+        bloqueos: stringSchema("Current blockers for the project."),
+        next_action: stringSchema("Next concrete action to move the project forward."),
+        last_update_date: stringSchema("Date of last project update (YYYY-MM-DD)."),
+      },
+      ["name"],
+    ),
+  },
 
   // Research and LLM
   {
@@ -780,6 +804,21 @@ const TASK_TOOLS: TaskToolDefinition[] = [
         limit: integerSchema("Maximum issues to return.", { minimum: 1, maximum: 250 }),
       },
       [],
+    ),
+  },
+  {
+    name: "umbral_linear_create_project_update",
+    task: "linear.create_project_update",
+    description: "Post a project status update in Linear (health + body text). Use after completing a sprint milestone or when reporting blockers.",
+    resultTitle: "Linear project update result",
+    parameters: taskToolSchema(
+      {
+        body: stringSchema("Update body text (markdown supported)."),
+        project_id: stringSchema("Optional Linear project UUID."),
+        project_name: stringSchema("Optional Linear project name."),
+        health: enumStringSchema(["onTrack", "atRisk", "offTrack"], "Project health indicator."),
+      },
+      ["body"],
     ),
   },
 

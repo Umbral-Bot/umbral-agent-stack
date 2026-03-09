@@ -9,12 +9,13 @@ Tasks: Notion integration handlers.
 - notion.enrich_bitacora_page: enriquecer página de Bitácora con secciones o bloques
 - notion.create_database_page: crear página en una base de datos usando propiedades raw
 - notion.update_page_properties: actualizar propiedades de una página existente
+- notion.upsert_project: crear o actualizar proyecto en DB 📁 Proyectos — Umbral
 """
 
 from datetime import datetime, timezone
 from typing import Any, Dict
 
-from .. import notion_client
+from .. import config, notion_client
 from ..notion_client import (
     _block_heading1,
     _block_heading2,
@@ -318,6 +319,138 @@ def handle_notion_create_report_page(input_data: Dict[str, Any]) -> Dict[str, An
         queries=queries,
         metadata=metadata,
     )
+
+
+# ---------------------------------------------------------------------------
+# Project registry (📁 Proyectos — Umbral)
+# ---------------------------------------------------------------------------
+
+_AGENTES_VALID = {"Rick", "Claude", "Codex", "Cursor", "Antigravity"}
+_ESTADO_VALID = {"Activo", "En pausa", "Completado", "Archivado"}
+
+
+def _build_project_properties(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Build raw Notion properties for 📁 Proyectos — Umbral from handler input."""
+    props: Dict[str, Any] = {}
+
+    name = (input_data.get("name") or "").strip()
+    if name:
+        props["Nombre"] = {"title": [{"text": {"content": name}}]}
+
+    estado = input_data.get("estado")
+    if estado and estado in _ESTADO_VALID:
+        props["Estado"] = {"select": {"name": estado}}
+
+    linear_url = input_data.get("linear_project_url")
+    if linear_url:
+        props["Linear Project"] = {"url": linear_url}
+
+    shared_path = input_data.get("shared_path")
+    if shared_path:
+        props["Ruta compartida"] = {"rich_text": [{"text": {"content": shared_path}}]}
+
+    responsable = input_data.get("responsable")
+    if responsable:
+        props["Responsable"] = {"rich_text": [{"text": {"content": responsable}}]}
+
+    agentes = input_data.get("agentes")
+    if agentes:
+        if isinstance(agentes, str):
+            agentes = [a.strip() for a in agentes.split(",") if a.strip()]
+        valid_agentes = [a for a in agentes if a in _AGENTES_VALID]
+        if valid_agentes:
+            props["Agentes"] = {"multi_select": [{"name": a} for a in valid_agentes]}
+
+    sprint = input_data.get("sprint")
+    if sprint:
+        props["Sprint"] = {"rich_text": [{"text": {"content": str(sprint)}}]}
+
+    start_date = input_data.get("start_date")
+    if start_date:
+        props["Inicio"] = {"date": {"start": start_date}}
+
+    target_date = input_data.get("target_date")
+    if target_date:
+        props["Objetivo"] = {"date": {"start": target_date}}
+
+    open_issues = input_data.get("open_issues")
+    if open_issues is not None:
+        props["Issues abiertas"] = {"number": int(open_issues)}
+
+    bloqueos = input_data.get("bloqueos")
+    if bloqueos:
+        props["Bloqueos"] = {"rich_text": [{"text": {"content": bloqueos}}]}
+
+    next_action = input_data.get("next_action")
+    if next_action:
+        props["Siguiente acción"] = {"rich_text": [{"text": {"content": next_action}}]}
+
+    last_update = input_data.get("last_update_date")
+    if last_update:
+        props["Último update"] = {"date": {"start": last_update}}
+
+    return props
+
+
+def handle_notion_upsert_project(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Crea o actualiza un proyecto en la DB 📁 Proyectos — Umbral.
+
+    Input:
+        name (str, required): nombre del proyecto (clave de búsqueda).
+        estado (str, optional): Activo|En pausa|Completado|Archivado.
+        linear_project_url (str, optional): URL del proyecto en Linear.
+        shared_path (str, optional): ruta compartida (ej. G:\\Mi unidad\\...).
+        responsable (str, optional): nombre del responsable humano.
+        agentes (str|list, optional): Rick, Claude, Codex, Cursor, Antigravity.
+        sprint (str, optional): sprint actual (ej. R21).
+        start_date (str, optional): YYYY-MM-DD.
+        target_date (str, optional): YYYY-MM-DD.
+        open_issues (int, optional): número de issues abiertas en Linear.
+        bloqueos (str, optional): bloqueos actuales.
+        next_action (str, optional): siguiente acción concreta.
+        last_update_date (str, optional): YYYY-MM-DD del último update.
+
+    Returns:
+        {"ok": True, "page_id": "...", "url": "...", "created": bool}
+    """
+    name = (input_data.get("name") or "").strip()
+    if not name:
+        return {"ok": False, "error": "'name' is required"}
+
+    db_id = config.NOTION_PROJECTS_DB_ID
+    if not db_id:
+        return {"ok": False, "error": "NOTION_PROJECTS_DB_ID not configured on server"}
+
+    try:
+        existing = notion_client.query_database(
+            database_id=db_id,
+            filter={
+                "property": "Nombre",
+                "title": {"equals": name},
+            },
+        )
+    except Exception as e:
+        return {"ok": False, "error": f"Failed to query projects DB: {e}"}
+
+    props = _build_project_properties(input_data)
+
+    try:
+        if existing:
+            page_id = existing[0]["id"]
+            result = notion_client.update_page_properties(
+                page_id_or_url=page_id,
+                properties=props,
+            )
+            return {"ok": True, "page_id": result["page_id"], "url": result["url"], "created": False}
+        else:
+            result = notion_client.create_database_page(
+                database_id_or_url=db_id,
+                properties=props,
+            )
+            return {"ok": True, "page_id": result["page_id"], "url": result["url"], "created": True}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
 
 
 # ---------------------------------------------------------------------------

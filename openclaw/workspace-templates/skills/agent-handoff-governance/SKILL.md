@@ -9,6 +9,7 @@ description: gobernar handoffs entre agentes y subagentes para que el trabajo de
   de fake progress.
 metadata:
   openclaw:
+    always: true
     emoji: 🤝
     requires:
       env: []

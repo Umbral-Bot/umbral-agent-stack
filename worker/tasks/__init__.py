@@ -15,6 +15,8 @@ from .notion import (
     handle_notion_read_page,
     handle_notion_read_database,
     handle_notion_search_databases,
+    handle_notion_create_database_page,
+    handle_notion_update_page_properties,
     handle_notion_upsert_task,
     handle_notion_update_dashboard,
     handle_notion_create_report_page,
@@ -38,7 +40,15 @@ from .windows_fs_bin import (
     handle_windows_fs_write_bytes_b64,
 )
 from .observability import handle_ooda_report, handle_self_eval
-from .linear import handle_linear_create_issue, handle_linear_list_teams, handle_linear_update_issue_status
+from .linear import (
+    handle_linear_create_issue,
+    handle_linear_list_teams,
+    handle_linear_update_issue_status,
+    handle_linear_list_projects,
+    handle_linear_create_project,
+    handle_linear_attach_issue_to_project,
+    handle_linear_list_project_issues,
+)
 from .research import handle_research_web
 from .llm import handle_llm_generate
 from .composite import handle_composite_research_report
@@ -79,6 +89,8 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "notion.read_page": handle_notion_read_page,
     "notion.read_database": handle_notion_read_database,
     "notion.search_databases": handle_notion_search_databases,
+    "notion.create_database_page": handle_notion_create_database_page,
+    "notion.update_page_properties": handle_notion_update_page_properties,
     "notion.upsert_task": handle_notion_upsert_task,
     "notion.update_dashboard": handle_notion_update_dashboard,
     "windows.pad.run_flow": handle_windows_pad_run_flow,
@@ -97,6 +109,10 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "linear.create_issue": handle_linear_create_issue,
     "linear.list_teams": handle_linear_list_teams,
     "linear.update_issue_status": handle_linear_update_issue_status,
+    "linear.list_projects": handle_linear_list_projects,
+    "linear.create_project": handle_linear_create_project,
+    "linear.attach_issue_to_project": handle_linear_attach_issue_to_project,
+    "linear.list_project_issues": handle_linear_list_project_issues,
     "research.web": handle_research_web,
     "llm.generate": handle_llm_generate,
     "composite.research_report": handle_composite_research_report,

@@ -511,6 +511,33 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     ),
   },
   {
+    name: "umbral_notion_create_database_page",
+    task: "notion.create_database_page",
+    description: "Create a page inside a Notion database using raw Notion API properties and optional child blocks.",
+    resultTitle: "Notion database page create result",
+    parameters: taskToolSchema(
+      {
+        database_id_or_url: stringSchema("Notion database UUID or full database URL."),
+        properties: objectSchema("Raw Notion page properties payload."),
+        children: arraySchema(objectSchema("Optional raw Notion block object."), "Optional child blocks."),
+      },
+      ["database_id_or_url", "properties"],
+    ),
+  },
+  {
+    name: "umbral_notion_update_page_properties",
+    task: "notion.update_page_properties",
+    description: "Update raw Notion page properties for an existing page.",
+    resultTitle: "Notion page properties update result",
+    parameters: taskToolSchema(
+      {
+        page_id_or_url: stringSchema("Notion page UUID or full page URL."),
+        properties: objectSchema("Raw Notion page properties payload."),
+      },
+      ["page_id_or_url", "properties"],
+    ),
+  },
+  {
     name: "umbral_notion_upsert_task",
     task: "notion.upsert_task",
     description: "Create or update a task in the Notion task database used by the stack.",
@@ -628,7 +655,7 @@ const TASK_TOOLS: TaskToolDefinition[] = [
   {
     name: "umbral_linear_create_issue",
     task: "linear.create_issue",
-    description: "Create a Linear issue with optional team routing and labels.",
+    description: "Create a Linear issue with optional team routing, labels, and project association.",
     resultTitle: "Linear issue result",
     parameters: taskToolSchema(
       {
@@ -642,6 +669,19 @@ const TASK_TOOLS: TaskToolDefinition[] = [
           maximum: 4,
         }),
         add_team_labels: booleanSchema("Whether to auto-apply routed team labels."),
+        project_id: stringSchema("Optional Linear project UUID to associate after creation."),
+        project_name: stringSchema("Optional Linear project name to resolve or create."),
+        create_project_if_missing: booleanSchema("Create the Linear project automatically when project_name does not exist."),
+        project_description: stringSchema("Optional short Linear project description if the project must be created."),
+        project_content: stringSchema("Optional long-form Linear project content if the project must be created."),
+        project_start_date: stringSchema("Optional Linear project start date (YYYY-MM-DD)."),
+        project_target_date: stringSchema("Optional Linear project target date (YYYY-MM-DD)."),
+        project_priority: integerSchema("Optional Linear project priority.", {
+          minimum: 0,
+          maximum: 4,
+        }),
+        project_icon: stringSchema("Optional emoji/icon for a newly created Linear project."),
+        project_color: stringSchema("Optional hex color for a newly created Linear project."),
       },
       ["title"],
     ),
@@ -666,6 +706,80 @@ const TASK_TOOLS: TaskToolDefinition[] = [
         team_id: stringSchema("Linear team UUID required when resolving a state name."),
       },
       ["issue_id"],
+    ),
+  },
+  {
+    name: "umbral_linear_list_projects",
+    task: "linear.list_projects",
+    description: "List Linear projects, optionally filtered by a case-insensitive name query.",
+    resultTitle: "Linear projects result",
+    parameters: taskToolSchema({
+      query: stringSchema("Optional case-insensitive substring filter on project name."),
+      limit: integerSchema("Maximum number of projects to return.", {
+        minimum: 1,
+        maximum: 250,
+      }),
+    }),
+  },
+  {
+    name: "umbral_linear_create_project",
+    task: "linear.create_project",
+    description: "Create a Linear project, or return the existing one when the same name already exists.",
+    resultTitle: "Linear project result",
+    parameters: taskToolSchema(
+      {
+        name: stringSchema("Linear project name."),
+        team_id: stringSchema("Optional Linear team UUID."),
+        team_name: stringSchema("Optional Linear team name, defaulting to Umbral."),
+        if_exists_return: booleanSchema("Return an existing project with the same name instead of creating a duplicate."),
+        description: stringSchema("Optional short project description."),
+        content: stringSchema("Optional long-form project content/spec."),
+        lead_id: stringSchema("Optional Linear user UUID for the project lead."),
+        start_date: stringSchema("Optional project start date (YYYY-MM-DD)."),
+        target_date: stringSchema("Optional project target date (YYYY-MM-DD)."),
+        priority: integerSchema("Optional project priority.", { minimum: 0, maximum: 4 }),
+        icon: stringSchema("Optional project icon / emoji."),
+        color: stringSchema("Optional project color hex."),
+      },
+      ["name"],
+    ),
+  },
+  {
+    name: "umbral_linear_attach_issue_to_project",
+    task: "linear.attach_issue_to_project",
+    description: "Attach an existing Linear issue to a project by UUID or project name.",
+    resultTitle: "Linear issue-to-project result",
+    parameters: taskToolSchema(
+      {
+        issue_id: stringSchema("Linear issue UUID."),
+        project_id: stringSchema("Optional Linear project UUID."),
+        project_name: stringSchema("Optional Linear project name to resolve or create."),
+        create_project_if_missing: booleanSchema("Create the project automatically if project_name does not exist."),
+        team_id: stringSchema("Optional Linear team UUID, used if the project needs to be created."),
+        team_name: stringSchema("Optional Linear team name, defaulting to Umbral."),
+        project_description: stringSchema("Optional short project description if creating the project."),
+        project_content: stringSchema("Optional long-form project content/spec if creating the project."),
+        project_start_date: stringSchema("Optional project start date (YYYY-MM-DD)."),
+        project_target_date: stringSchema("Optional project target date (YYYY-MM-DD)."),
+        project_priority: integerSchema("Optional project priority.", { minimum: 0, maximum: 4 }),
+        project_icon: stringSchema("Optional project icon / emoji."),
+        project_color: stringSchema("Optional project color hex."),
+      },
+      ["issue_id"],
+    ),
+  },
+  {
+    name: "umbral_linear_list_project_issues",
+    task: "linear.list_project_issues",
+    description: "List issues currently associated with a Linear project.",
+    resultTitle: "Linear project issues result",
+    parameters: taskToolSchema(
+      {
+        project_id: stringSchema("Optional Linear project UUID."),
+        project_name: stringSchema("Optional Linear project name."),
+        limit: integerSchema("Maximum issues to return.", { minimum: 1, maximum: 250 }),
+      },
+      [],
     ),
   },
 

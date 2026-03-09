@@ -3,7 +3,8 @@ name: linear
 description: >-
   Manage Linear issues with automatic team routing, labels, and status updates.
   Use when "create issue", "create ticket", "Linear task", "update issue status",
-  "list teams", "track task in Linear", "project management".
+  "list teams", "track task in Linear", "project management", "attach to project",
+  or "create Linear project".
 metadata:
   openclaw:
     emoji: "\U0001F4CB"
@@ -109,9 +110,71 @@ Task: `linear.update_issue_status`
 | `comment` | str | no | Comentario a agregar al issue |
 | `team_id` | str | no | Necesario para resolver `state_name` → `state_id` |
 
+### 4. Listar proyectos
+
+Task: `linear.list_projects`
+
+```json
+{
+  "query": "Proyecto Embudo",
+  "limit": 20
+}
+```
+
+Devuelve proyectos de Linear filtrables por nombre.
+
+### 5. Crear proyecto
+
+Task: `linear.create_project`
+
+```json
+{
+  "name": "Proyecto Embudo Ventas",
+  "team_name": "Umbral",
+  "description": "Proyecto operativo para el embudo de ventas."
+}
+```
+
+Notas:
+
+- Si `if_exists_return=true` (default), retorna el proyecto existente por nombre en vez de duplicarlo.
+- Requiere un `team_id` o un `team_name` resoluble.
+
+### 6. Asociar issue a proyecto
+
+Task: `linear.attach_issue_to_project`
+
+```json
+{
+  "issue_id": "uuid-del-issue",
+  "project_name": "Proyecto Embudo Ventas",
+  "create_project_if_missing": true,
+  "team_name": "Umbral"
+}
+```
+
+Notas:
+
+- Permite corregir issues que existan pero hayan quedado fuera del project view.
+- Si se usa `project_name` y no existe, puede crear el proyecto automáticamente.
+
+### 7. Listar issues de un proyecto
+
+Task: `linear.list_project_issues`
+
+```json
+{
+  "project_name": "Proyecto Embudo Ventas",
+  "limit": 50
+}
+```
+
+Devuelve las issues actualmente asociadas a un proyecto.
+
 ## Notas
 
 - El routing automático infiere el equipo Umbral a partir del título y descripción usando keyword scoring.
 - Los labels del equipo se crean automáticamente en Linear si no existen.
 - La config de equipos está en `config/teams.yaml`.
 - Todas las tasks se encolan vía el Dispatcher a Redis y las ejecuta el Worker.
+- Para proyectos oficiales, no basta con crear la issue: hay que dejarla asociada al project correcto en Linear.

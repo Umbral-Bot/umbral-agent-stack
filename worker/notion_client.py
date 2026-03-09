@@ -549,6 +549,86 @@ def search_databases(
     }
 
 
+def create_database_page(
+    database_id_or_url: str,
+    properties: dict[str, Any],
+    children: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """
+    Create a page inside an existing Notion database using raw Notion API properties.
+
+    Args:
+        database_id_or_url: Notion database UUID or full URL.
+        properties: Raw Notion page properties payload.
+        children: Optional list of child blocks to append.
+
+    Returns:
+        {"page_id": "...", "url": "...", "created": True}
+    """
+    config.require_notion_core()
+    database_id = _extract_notion_page_id(database_id_or_url)
+    if not isinstance(properties, dict) or not properties:
+        raise ValueError("properties must be a non-empty dict")
+
+    payload: dict[str, Any] = {
+        "parent": {"database_id": database_id},
+        "properties": properties,
+    }
+    if children:
+        payload["children"] = children[:100]
+
+    with httpx.Client(timeout=TIMEOUT) as client:
+        resp = client.post(
+            f"{NOTION_BASE_URL}/pages",
+            headers=_headers(),
+            json=payload,
+        )
+        result = _check_response(resp, "create_database_page")
+        page_id = result["id"]
+
+        if children and len(children) > 100:
+            for i in range(100, len(children), 100):
+                batch = children[i : i + 100]
+                resp = client.patch(
+                    f"{NOTION_BASE_URL}/blocks/{page_id}/children",
+                    headers=_headers(),
+                    json={"children": batch},
+                )
+                _check_response(resp, "append create_database_page blocks")
+
+    return {"page_id": page_id, "url": result.get("url", ""), "created": True}
+
+
+def update_page_properties(
+    page_id_or_url: str,
+    properties: dict[str, Any],
+) -> dict[str, Any]:
+    """
+    Update raw Notion page properties for an existing page.
+
+    Args:
+        page_id_or_url: Notion page UUID or full URL.
+        properties: Raw Notion properties payload to PATCH.
+
+    Returns:
+        {"page_id": "...", "url": "...", "updated": True}
+    """
+    config.require_notion_core()
+    page_id = _extract_notion_page_id(page_id_or_url)
+    if not isinstance(properties, dict) or not properties:
+        raise ValueError("properties must be a non-empty dict")
+
+    with httpx.Client(timeout=TIMEOUT) as client:
+        resp = client.patch(
+            f"{NOTION_BASE_URL}/pages/{page_id}",
+            headers=_headers(),
+            json={"properties": properties},
+        )
+        result = _check_response(resp, "update_page_properties")
+
+    return {"page_id": result.get("id", page_id), "url": result.get("url", ""), "updated": True}
+
+
 PROVIDER_LABELS = {
     "azure_foundry": "Azure Foundry (GPT-5.2 Chat)",
     "claude_pro": "Claude Sonnet 4.6",

@@ -4,6 +4,11 @@ Tasks: Linear integration handlers.
 - linear.create_issue: crear issue en Linear (con routing de equipo automático)
 - linear.list_teams: listar equipos
 - linear.update_issue_status: actualizar estado + comentario en un issue
+- linear.list_projects: listar proyectos
+- linear.create_project: crear proyecto
+- linear.attach_issue_to_project: asociar issue a proyecto
+- linear.list_project_issues: listar issues de un proyecto
+- linear.create_project_update: publicar update de estado en un proyecto
 """
 
 import logging
@@ -51,6 +56,79 @@ def _linear_api_key() -> str | None:
 logger = logging.getLogger("worker.tasks.linear")
 
 
+def _resolve_linear_team_id(
+    api_key: str,
+    input_data: Dict[str, Any],
+) -> str | None:
+    """Resolve a Linear team UUID from input or default to the Umbral team."""
+    team_id = input_data.get("team_id")
+    if team_id:
+        return str(team_id)
+
+    team_name = input_data.get("team_name", "Umbral")
+    teams = linear_client.list_teams(api_key)
+    for team in teams:
+        if team.get("name", "").lower() == str(team_name).lower():
+            return team["id"]
+
+    if teams:
+        fallback = teams[0]["id"]
+        logger.warning(
+            "[linear] team '%s' no encontrado, usando primero: %s",
+            team_name,
+            fallback,
+        )
+        return fallback
+    return None
+
+
+def _resolve_project(
+    api_key: str,
+    input_data: Dict[str, Any],
+    *,
+    team_id: str | None = None,
+) -> Dict[str, Any] | None:
+    """
+    Resolve a Linear project from explicit project_id or project_name.
+
+    If create_project_if_missing=true and a team_id is available, creates the project.
+    """
+    project_id = (input_data.get("project_id") or "").strip()
+    if project_id:
+        return linear_client.get_project(api_key, project_id)
+
+    project_name = (input_data.get("project_name") or "").strip()
+    if not project_name:
+        return None
+
+    project = linear_client.get_project_by_name(api_key, project_name)
+    if project:
+        return project
+
+    if not input_data.get("create_project_if_missing"):
+        return None
+
+    if not team_id:
+        raise RuntimeError(
+            "Cannot create Linear project without a resolved team_id. "
+            "Provide team_id/team_name or disable create_project_if_missing."
+        )
+
+    return linear_client.create_project(
+        api_key=api_key,
+        name=project_name,
+        team_ids=[team_id],
+        description=input_data.get("project_description") or input_data.get("project_summary"),
+        content=input_data.get("project_content"),
+        lead_id=input_data.get("project_lead_id"),
+        start_date=input_data.get("project_start_date"),
+        target_date=input_data.get("project_target_date"),
+        priority=input_data.get("project_priority"),
+        icon=input_data.get("project_icon"),
+        color=input_data.get("project_color"),
+    )
+
+
 def handle_linear_create_issue(input_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Crea un issue en Linear con equipo y labels resueltos automáticamente.
@@ -64,6 +142,13 @@ def handle_linear_create_issue(input_data: Dict[str, Any]) -> Dict[str, Any]:
         team_name (str, optional): Nombre del equipo en Linear (default "Umbral").
         priority (int, optional): 0=Sin prioridad, 1=Urgente, 2=Alta, 3=Media, 4=Baja.
         add_team_labels (bool, optional, default True): Si adjuntar labels de equipo.
+        project_id (str, optional): UUID del proyecto de Linear al que debe quedar asociado.
+        project_name (str, optional): Nombre del proyecto de Linear. Puede crearse si no existe.
+        create_project_if_missing (bool, optional): Crear el proyecto si no existe.
+        project_description (str, optional): Descripción corta del proyecto si hay que crearlo.
+        project_content (str, optional): Contenido largo del proyecto si hay que crearlo.
+        project_start_date (str, optional): Fecha inicio YYYY-MM-DD para proyecto nuevo.
+        project_target_date (str, optional): Fecha objetivo YYYY-MM-DD para proyecto nuevo.
 
     Returns:
         {
@@ -91,17 +176,7 @@ def handle_linear_create_issue(input_data: Dict[str, Any]) -> Dict[str, Any]:
     add_team_labels = input_data.get("add_team_labels", True)
 
     # --- Resolver team_id de Linear ---
-    team_id = input_data.get("team_id")
-    if not team_id:
-        team_name = input_data.get("team_name", "Umbral")
-        teams = linear_client.list_teams(api_key)
-        for t in teams:
-            if t.get("name", "").lower() == team_name.lower():
-                team_id = t["id"]
-                break
-        if not team_id and teams:
-            team_id = teams[0]["id"]
-            logger.warning("[linear.create_issue] team '%s' no encontrado, usando primero: %s", team_name, team_id)
+    team_id = _resolve_linear_team_id(api_key, input_data)
 
     if not team_id:
         return {"ok": False, "error": "No se pudo resolver team_id de Linear"}
@@ -134,6 +209,11 @@ def handle_linear_create_issue(input_data: Dict[str, Any]) -> Dict[str, Any]:
         # Si hay label_ids, hacer update inmediato (create_issue no acepta labelIds aún)
         if label_ids:
             linear_client.update_issue(api_key, issue["id"], label_ids=label_ids)
+
+        project = _resolve_project(api_key, input_data, team_id=team_id)
+        attached = None
+        if project:
+            attached = linear_client.attach_issue_to_project(api_key, issue["id"], project["id"])
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
@@ -152,6 +232,15 @@ def handle_linear_create_issue(input_data: Dict[str, Any]) -> Dict[str, Any]:
             "inferred": routing["inferred"],
             "linear_team_id": team_id,
         },
+        "project": (
+            {
+                "id": attached["issue"]["project"]["id"],
+                "name": attached["issue"]["project"]["name"],
+                "url": attached["issue"]["project"]["url"],
+            }
+            if attached and attached.get("issue", {}).get("project")
+            else None
+        ),
     }
 
 
@@ -218,4 +307,205 @@ def handle_linear_list_teams(input_data: Dict[str, Any]) -> Dict[str, Any]:
         return {"ok": True, "teams": teams}
     except Exception as e:
         return {"ok": False, "error": str(e), "teams": []}
+
+
+def handle_linear_list_projects(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Lista proyectos en Linear.
+
+    Input:
+        query (str, optional): filtro case-insensitive por nombre.
+        limit (int, optional): máximo de proyectos a devolver (default 50).
+
+    Returns:
+        {"ok": True, "projects": [...]}
+    """
+    api_key = _linear_api_key()
+    if not api_key:
+        return {"ok": False, "error": "LINEAR_API_KEY not configured", "projects": []}
+
+    try:
+        projects = linear_client.list_projects(
+            api_key,
+            limit=int(input_data.get("limit", 50)),
+            query=input_data.get("query"),
+        )
+        return {"ok": True, "projects": projects}
+    except Exception as e:
+        return {"ok": False, "error": str(e), "projects": []}
+
+
+def handle_linear_create_project(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Crea un proyecto en Linear o retorna el existente por nombre.
+
+    Input:
+        name (str, required): nombre del proyecto.
+        team_id (str, optional): UUID del equipo.
+        team_name (str, optional): nombre del equipo (default Umbral).
+        if_exists_return (bool, optional, default True): si existe por nombre, retornarlo.
+        description/content/lead_id/start_date/target_date/priority/icon/color: campos opcionales.
+
+    Returns:
+        {"ok": True, "project": {...}, "created": bool}
+    """
+    api_key = _linear_api_key()
+    if not api_key:
+        return {"ok": False, "error": "LINEAR_API_KEY not configured"}
+
+    name = (input_data.get("name") or "").strip()
+    if not name:
+        return {"ok": False, "error": "'name' is required"}
+
+    if input_data.get("if_exists_return", True):
+        existing = linear_client.get_project_by_name(api_key, name)
+        if existing:
+            return {"ok": True, "project": existing, "created": False}
+
+    team_id = _resolve_linear_team_id(api_key, input_data)
+    if not team_id:
+        return {"ok": False, "error": "No se pudo resolver team_id de Linear"}
+
+    try:
+        project = linear_client.create_project(
+            api_key=api_key,
+            name=name,
+            team_ids=[team_id],
+            description=input_data.get("description"),
+            content=input_data.get("content"),
+            lead_id=input_data.get("lead_id"),
+            start_date=input_data.get("start_date"),
+            target_date=input_data.get("target_date"),
+            priority=input_data.get("priority"),
+            icon=input_data.get("icon"),
+            color=input_data.get("color"),
+        )
+        return {"ok": True, "project": project, "created": True}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+def handle_linear_attach_issue_to_project(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Asocia un issue existente a un proyecto de Linear.
+
+    Input:
+        issue_id (str, required): UUID del issue.
+        project_id (str, optional): UUID del proyecto.
+        project_name (str, optional): nombre del proyecto.
+        create_project_if_missing (bool, optional): crear proyecto si no existe.
+        team_id/team_name + project_*: usados si hay que crear el proyecto.
+
+    Returns:
+        {"ok": True, "issue": {...}, "project": {...}}
+    """
+    api_key = _linear_api_key()
+    if not api_key:
+        return {"ok": False, "error": "LINEAR_API_KEY not configured"}
+
+    issue_id = (input_data.get("issue_id") or "").strip()
+    if not issue_id:
+        return {"ok": False, "error": "'issue_id' is required"}
+
+    try:
+        project = _resolve_project(api_key, input_data)
+        if not project and input_data.get("create_project_if_missing"):
+            team_id = _resolve_linear_team_id(api_key, input_data)
+            project = _resolve_project(api_key, input_data, team_id=team_id)
+        if not project:
+            return {
+                "ok": False,
+                "error": "Could not resolve Linear project. Provide project_id or project_name, or enable create_project_if_missing.",
+            }
+        result = linear_client.attach_issue_to_project(api_key, issue_id, project["id"])
+        return {"ok": True, **result, "project": project}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+def handle_linear_list_project_issues(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Lista issues asociadas a un proyecto de Linear.
+
+    Input:
+        project_id (str, optional): UUID del proyecto.
+        project_name (str, optional): nombre del proyecto.
+        limit (int, optional): máximo de issues a devolver.
+
+    Returns:
+        {"ok": True, "project": {...}, "issues": [...]}
+    """
+    api_key = _linear_api_key()
+    if not api_key:
+        return {"ok": False, "error": "LINEAR_API_KEY not configured", "issues": []}
+
+    try:
+        project = _resolve_project(api_key, input_data)
+        if not project:
+            return {
+                "ok": False,
+                "error": "Could not resolve Linear project. Provide project_id or project_name.",
+                "issues": [],
+            }
+        issues = linear_client.list_project_issues(
+            api_key,
+            project["id"],
+            limit=int(input_data.get("limit", 50)),
+        )
+        return {"ok": True, "project": project, "issues": issues}
+    except Exception as e:
+        return {"ok": False, "error": str(e), "issues": []}
+
+
+_HEALTH_VALID = {"onTrack", "atRisk", "offTrack"}
+
+
+def handle_linear_create_project_update(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Publica un update de estado en un proyecto de Linear.
+
+    Input:
+        body (str, required): texto del update (markdown soportado).
+        project_id (str, optional): UUID del proyecto.
+        project_name (str, optional): nombre del proyecto.
+        health (str, optional): onTrack | atRisk | offTrack (default: onTrack).
+
+    Returns:
+        {"ok": True, "projectUpdate": {...}} o {"ok": False, "error": "..."}
+
+    Nota: La API pública de Linear soporta `projectUpdateCreate` en todos los planes.
+    Si el workspace no tiene acceso, se devolverá {"ok": False, "error": "..."}.
+    """
+    api_key = _linear_api_key()
+    if not api_key:
+        return {"ok": False, "error": "LINEAR_API_KEY not configured"}
+
+    body = (input_data.get("body") or "").strip()
+    if not body:
+        return {"ok": False, "error": "'body' is required"}
+
+    health = (input_data.get("health") or "onTrack").strip()
+    if health not in _HEALTH_VALID:
+        return {"ok": False, "error": f"'health' must be one of {sorted(_HEALTH_VALID)}"}
+
+    try:
+        project = _resolve_project(api_key, input_data)
+        if not project:
+            return {
+                "ok": False,
+                "error": "Could not resolve Linear project. Provide project_id or project_name.",
+            }
+        result = linear_client.create_project_update(
+            api_key=api_key,
+            project_id=project["id"],
+            body=body,
+            health=health,
+        )
+        logger.info(
+            "[linear.create_project_update] project=%s health=%s",
+            project.get("name"), health,
+        )
+        return {"ok": True, "project": {"id": project["id"], "name": project.get("name")}, **result}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
 

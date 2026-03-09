@@ -23,6 +23,9 @@ type TaskToolDefinition = {
   description: string;
   resultTitle: string;
   parameters: JsonSchema;
+  dispatchMode?: "run" | "enqueue";
+  defaultTeam?: string;
+  defaultTaskType?: string;
 };
 
 const MAX_RESULT_CHARS = 24000;
@@ -212,6 +215,29 @@ function buildRunEnvelope(api: OpenClawPluginApi, params: JsonObject): JsonObjec
   };
 }
 
+function buildEnqueueBody(
+  api: OpenClawPluginApi,
+  task: string,
+  params: JsonObject,
+  overrides: { defaultTeam?: string; defaultTaskType?: string } = {},
+): JsonObject {
+  const cfg = getPluginConfig(api);
+  return {
+    task,
+    input: buildTaskInput(params),
+    team:
+      (typeof params.workerTeam === "string" && params.workerTeam.trim()) ||
+      overrides.defaultTeam ||
+      cfg.defaultTeam ||
+      "system",
+    task_type:
+      (typeof params.workerTaskType === "string" && params.workerTaskType.trim()) ||
+      overrides.defaultTaskType ||
+      cfg.defaultTaskType ||
+      "general",
+  };
+}
+
 function objectSchema(description: string): JsonSchema {
   return {
     type: "object",
@@ -303,6 +329,65 @@ async function runNamedTask(
   return workerRequest(api, "POST", "/run", { body: payload });
 }
 
+async function sleep(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function enqueueNamedTaskAndWait(
+  api: OpenClawPluginApi,
+  task: string,
+  params: JsonObject,
+  overrides: { defaultTeam?: string; defaultTaskType?: string } = {},
+): Promise<unknown> {
+  const body = buildEnqueueBody(api, task, params, overrides);
+  const queued = await workerRequest(api, "POST", "/enqueue", { body });
+  if (!isJsonObject(queued)) {
+    throw new Error("Worker enqueue returned a non-JSON response.");
+  }
+
+  const taskId =
+    typeof queued.task_id === "string" && queued.task_id.trim() ? queued.task_id.trim() : "";
+  if (!taskId) {
+    throw new Error(`Worker enqueue did not return a task_id: ${formatJson(queued)}`);
+  }
+
+  const startedAt = Date.now();
+  const timeoutMs = resolveTimeoutMs(api);
+  while (Date.now() - startedAt < timeoutMs) {
+    const status = await workerRequest(
+      api,
+      "GET",
+      `/task/${encodeURIComponent(taskId)}/status`,
+    );
+    if (!isJsonObject(status)) {
+      throw new Error("Worker task status returned a non-JSON response.");
+    }
+
+    const state = typeof status.status === "string" ? status.status.toLowerCase() : "";
+    if (state === "done") {
+      return {
+        ok: true,
+        task_id: taskId,
+        task: status.task ?? task,
+        team: status.team ?? body.team,
+        task_type: status.task_type ?? body.task_type,
+        result: status.result,
+      };
+    }
+    if (state === "failed" || state === "blocked") {
+      const error =
+        typeof status.error === "string" && status.error.trim()
+          ? status.error.trim()
+          : formatJson(status);
+      throw new Error(`Queued Worker task ${taskId} ${state}: ${error}`);
+    }
+
+    await sleep(1000);
+  }
+
+  throw new Error(`Timed out waiting for queued Worker task ${taskId} (${task}).`);
+}
+
 function registerTaskTool(api: OpenClawPluginApi, definition: TaskToolDefinition) {
   api.registerTool(
     {
@@ -310,7 +395,13 @@ function registerTaskTool(api: OpenClawPluginApi, definition: TaskToolDefinition
       description: definition.description,
       parameters: definition.parameters,
       async execute(_id: string, params: JsonObject) {
-        const result = await runNamedTask(api, definition.task, params);
+        const result =
+          definition.dispatchMode === "enqueue"
+            ? await enqueueNamedTaskAndWait(api, definition.task, params, {
+                defaultTeam: definition.defaultTeam,
+                defaultTaskType: definition.defaultTaskType,
+              })
+            : await runNamedTask(api, definition.task, params);
         return renderResult(definition.resultTitle, sanitizeWorkerResult(definition.task, result));
       },
     },
@@ -840,6 +931,8 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     task: "windows.pad.run_flow",
     description: "Run an allowlisted Power Automate Desktop flow on the Windows execution node.",
     resultTitle: "Windows PAD flow result",
+    dispatchMode: "enqueue",
+    defaultTeam: "lab",
     parameters: taskToolSchema(
       {
         flow_name: stringSchema("Power Automate Desktop flow name."),
@@ -853,6 +946,8 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     task: "windows.open_notepad",
     description: "Open Notepad on the interactive Windows session to verify connectivity and GUI control.",
     resultTitle: "Windows Notepad result",
+    dispatchMode: "enqueue",
+    defaultTeam: "lab",
     parameters: taskToolSchema({
       text: stringSchema("Optional text to open in Notepad."),
       run_now: booleanSchema("Run the scheduled task immediately when not in an interactive session."),
@@ -864,6 +959,8 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     task: "windows.write_worker_token",
     description: "Write the Worker token to C:\\openclaw-worker\\worker_token on the Windows node.",
     resultTitle: "Windows worker token result",
+    dispatchMode: "enqueue",
+    defaultTeam: "lab",
     parameters: taskToolSchema({}),
   },
   {
@@ -871,6 +968,8 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     task: "windows.firewall_allow_port",
     description: "Create or refresh a Windows firewall rule allowing inbound TCP access on a port.",
     resultTitle: "Windows firewall result",
+    dispatchMode: "enqueue",
+    defaultTeam: "lab",
     parameters: taskToolSchema({
       port: integerSchema("TCP port to allow.", { minimum: 1, maximum: 65535 }),
       name: stringSchema("Optional firewall rule name."),
@@ -881,6 +980,8 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     task: "windows.start_interactive_worker",
     description: "Start the interactive Worker process on the Windows node.",
     resultTitle: "Windows interactive Worker result",
+    dispatchMode: "enqueue",
+    defaultTeam: "lab",
     parameters: taskToolSchema({}),
   },
   {
@@ -888,6 +989,8 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     task: "windows.add_interactive_worker_to_startup",
     description: "Install the interactive Worker startup shortcut in the Windows Startup folder.",
     resultTitle: "Windows startup shortcut result",
+    dispatchMode: "enqueue",
+    defaultTeam: "lab",
     parameters: taskToolSchema({
       username: stringSchema("Windows username, default Rick."),
     }),
@@ -897,6 +1000,8 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     task: "windows.fs.ensure_dirs",
     description: "Create a directory tree on the Windows node within the allowlisted base paths.",
     resultTitle: "Windows ensure dirs result",
+    dispatchMode: "enqueue",
+    defaultTeam: "lab",
     parameters: taskToolSchema(
       {
         path: stringSchema("Directory path to create."),
@@ -909,6 +1014,8 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     task: "windows.fs.list",
     description: "List directory contents on the Windows node within the allowlisted base paths.",
     resultTitle: "Windows directory list result",
+    dispatchMode: "enqueue",
+    defaultTeam: "lab",
     parameters: taskToolSchema(
       {
         path: stringSchema("Directory path to inspect."),
@@ -922,6 +1029,8 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     task: "windows.fs.read_text",
     description: "Read a UTF-8 text file on the Windows node.",
     resultTitle: "Windows read text result",
+    dispatchMode: "enqueue",
+    defaultTeam: "lab",
     parameters: taskToolSchema(
       {
         path: stringSchema("File path to read."),
@@ -938,6 +1047,8 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     task: "windows.fs.write_text",
     description: "Write a UTF-8 text file on the Windows node within the allowlisted base paths.",
     resultTitle: "Windows write text result",
+    dispatchMode: "enqueue",
+    defaultTeam: "lab",
     parameters: taskToolSchema(
       {
         path: stringSchema("File path to write."),
@@ -955,6 +1066,8 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     task: "windows.fs.write_bytes_b64",
     description: "Write binary data to the Windows node from a base64 payload.",
     resultTitle: "Windows write bytes result",
+    dispatchMode: "enqueue",
+    defaultTeam: "lab",
     parameters: taskToolSchema(
       {
         path: stringSchema("File path to write."),

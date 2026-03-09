@@ -65,6 +65,7 @@ from .gmail import (
     handle_gmail_create_draft,
     handle_gmail_list_drafts,
 )
+from .google_audio import handle_google_audio_generate
 
 # Each handler: (input: dict) -> dict
 TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
@@ -111,4 +112,5 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "google.calendar.list_events": handle_google_calendar_list_events,
     "gmail.create_draft": handle_gmail_create_draft,
     "gmail.list_drafts": handle_gmail_list_drafts,
+    "google.audio.generate": handle_google_audio_generate,
 }

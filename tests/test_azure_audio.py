@@ -206,6 +206,22 @@ class TestHandleAzureAudioGenerate:
         url = mock_ws_module.connect.call_args[0][0]
         assert "deployment=my-custom-realtime" in url
 
+    @patch("worker.tasks.azure_audio._realtime_tts", new_callable=AsyncMock)
+    def test_running_event_loop_uses_thread_fallback(self, mock_realtime, monkeypatch):
+        mock_realtime.return_value = {
+            "pcm_data": b"\x00\x01" * 100,
+            "transcript": "Hola Rick",
+            "usage": {"total_tokens": 12},
+        }
+        monkeypatch.setattr("worker.tasks.azure_audio.asyncio.get_running_loop", lambda: object())
+
+        result = handle_azure_audio_generate({"text": "Hola Rick"})
+
+        assert result["transcript"] == "Hola Rick"
+        assert result["usage"]["total_tokens"] == 12
+        wav_bytes = base64.b64decode(result["audio_b64"])
+        assert wav_bytes[:4] == b"RIFF"
+
 
 class TestHandleAzureAudioErrors:
     @pytest.fixture(autouse=True)

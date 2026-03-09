@@ -201,14 +201,14 @@ def poll_comments(
 
 
 PROVIDER_LABELS = {
-    "azure_foundry": "Azure Foundry (GPT-5.3 Codex)",
+    "azure_foundry": "Azure Foundry (GPT-5.2 Chat)",
     "claude_pro": "Claude Sonnet 4.6",
     "claude_opus": "Claude Opus 4.6",
     "claude_haiku": "Claude Haiku 4.5",
-    "gemini_pro": "Gemini Pro (customtools)",
-    "gemini_flash": "Gemini Flash",
-    "gemini_flash_lite": "Gemini Flash Lite",
-    "gemini_vertex": "Gemini Vertex 3.1 Pro",
+    "gemini_pro": "Gemini 2.5 Pro",
+    "gemini_flash": "Gemini 2.5 Flash",
+    "gemini_flash_lite": "Gemini 2.5 Flash Lite",
+    "gemini_vertex": "Gemini Vertex 2.5 Flash",
 }
 
 

@@ -25,6 +25,7 @@
 | `figma.add_comment` | Agrega comentario en un archivo Figma. |
 | `figma.list_comments` | Lista comentarios de un archivo Figma. |
 | `azure.audio.generate` | Genera audio TTS vía Azure OpenAI Realtime API. |
+| `google.audio.generate` | Genera audio TTS vía Gemini API preview (`gemini-2.5-flash-preview-tts`). |
 | `make.post_webhook` | Envía POST a webhook de Make.com. |
 | `windows.pad.run_flow` | Ejecuta flujo de Power Automate Desktop en VM. |
 | `windows.fs.*` | Operaciones de filesystem en la VM Windows. |

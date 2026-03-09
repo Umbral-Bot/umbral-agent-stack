@@ -1,5 +1,12 @@
 # 15 — Política Multi-Modelo y Cuotas
 
+> Estado operativo validado el 2026-03-08:
+> - Claude quedó deshabilitado temporalmente en la VPS con `UMBRAL_DISABLE_CLAUDE=true`.
+> - El runtime estable de OpenClaw quedó en Gemini 2.5 Flash para `main` y subagentes.
+> - Los modelos OpenAI disponibles por API key en la VPS son vía Azure AI Foundry (`gpt-4.1`, `gpt-5.2-chat`, `Kimi-K2.5`), no vía `OPENAI_API_KEY` nativa.
+> - Vertex AI quedó validado para `gemini-3.1-pro-preview` usando endpoint `locations/global`.
+> - Ver evidencia y tests en [docs/audits/vps-openclaw-llm-audio-validation-2026-03-08.md](audits/vps-openclaw-llm-audio-validation-2026-03-08.md).
+
 ## Principio
 
 Cada tarea usa el LLM óptimo según su tipo. Las cuotas protegen suscripciones con límites estrictos. Fallback automático garantiza continuidad.
@@ -22,8 +29,8 @@ Rick no requiere selección manual — cada tarea recibe el modelo óptimo en el
 | `gpt-5.3-codex` (predeterminado) | OAuth ChatGPT Plus |
 | `gpt-5.2` | OAuth ChatGPT Plus |
 | `claude-haiku-4-5`, `claude-opus-4-6`, `claude-sonnet-4-6` | Token sesión cuenta Pro |
-| `gemini-3.1-pro-preview` | API Vertex AI |
-| `gemini-flash-lite-latest`, `gemini-flash-latest`, `gemini-3.1-pro-preview-customtools`, `gemini-3.1-pro-preview` | API Google AI Studio |
+| `gemini-2.5-flash` | API Vertex AI |
+| `gemini-2.5-flash-lite`, `gemini-2.5-flash`, `gemini-2.5-pro` | API Google AI Studio |
 
 ### Acceso vía Worker (sistema multiagente — API keys directas)
 
@@ -33,10 +40,10 @@ Rick no requiere selección manual — cada tarea recibe el modelo óptimo en el
 | `claude_pro` | `claude-sonnet-4-6` | ANTHROPIC_API_KEY (token sesión Pro) |
 | `claude_opus` | `claude-opus-4-6` | ANTHROPIC_API_KEY (tareas críticas) |
 | `claude_haiku` | `claude-haiku-4-5` | ANTHROPIC_API_KEY (tareas rápidas) |
-| `gemini_pro` | `gemini-3.1-pro-preview-customtools` | GOOGLE_API_KEY (AI Studio) |
-| `gemini_flash` | `gemini-flash-latest` | GOOGLE_API_KEY (AI Studio) |
-| `gemini_flash_lite` | `gemini-flash-lite-latest` | GOOGLE_API_KEY (AI Studio) |
-| `gemini_vertex` | `gemini-3.1-pro-preview` | GOOGLE_API_KEY_RICK_UMBRAL + GOOGLE_CLOUD_PROJECT_RICK_UMBRAL |
+| `gemini_pro` | `gemini-2.5-pro` | GOOGLE_API_KEY (AI Studio) |
+| `gemini_flash` | `gemini-2.5-flash` | GOOGLE_API_KEY (AI Studio) |
+| `gemini_flash_lite` | `gemini-2.5-flash-lite` | GOOGLE_API_KEY (AI Studio) |
+| `gemini_vertex` | `gemini-2.5-flash` | GOOGLE_API_KEY_RICK_UMBRAL + GOOGLE_CLOUD_PROJECT_RICK_UMBRAL |
 
 > **GITHUB_TOKEN** es exclusivamente para git (pull/push). NO se usa para acceso a modelos LLM.
 
@@ -75,10 +82,10 @@ Rick no requiere selección manual — cada tarea recibe el modelo óptimo en el
 | Claude Sonnet 4.6 | Escritura, análisis, síntesis | writing, summaries |
 | Claude Opus 4.6 | Razonamiento profundo, crítico | critical, auditoría |
 | Claude Haiku 4.5 | Velocidad, costo bajo | tareas rápidas, clasificación |
-| Gemini Pro (customtools) | Research, contexto largo, web tools | research, SIM, grounding |
-| Gemini Vertex (3.1 Pro) | Cuota dedicada GCP, estabilidad | backup research, pipelines |
-| Gemini Flash | Velocidad, volumen alto | tareas ligeras, polling |
-| Gemini Flash Lite | Ultra rápido, mínimo costo | clasificación, routing |
+| Gemini 2.5 Pro | Research, contexto largo, síntesis | research, SIM, grounding |
+| Gemini Vertex 2.5 Flash | Cuota dedicada GCP, estabilidad | backup research, pipelines |
+| Gemini 2.5 Flash | Velocidad, volumen alto | tareas ligeras, polling |
+| Gemini 2.5 Flash Lite | Ultra rápido, mínimo costo | clasificación, routing |
 
 ## Implementación Técnica
 
@@ -167,8 +174,8 @@ No crea duplicados si el envelope ya tiene `linear_issue_id`.
 
 **Mapeo sugerido de nombres (Rick → proveedores reales):**
 
-- `gemini_pro` → `google/gemini-3.1-pro-preview-customtools` (Pro 3.1 con tools, estable en tus pruebas).
-- \"Gemini rápido\" → `google/gemini-flash-latest`.
+- `gemini_pro` → `google/gemini-2.5-pro`.
+- \"Gemini rápido\" → `google/gemini-2.5-flash`.
 
 ## OpenClaw y cuota Claude
 

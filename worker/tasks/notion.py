@@ -1,6 +1,7 @@
 """
 Tasks: Notion integration handlers.
 
+- notion.get_page_content: leer contenido de una página como texto plano
 - notion.write_transcript: crear página en Granola Inbox DB
 - notion.add_comment: agregar comentario en Control Room
 - notion.poll_comments: leer comentarios recientes
@@ -26,6 +27,27 @@ from ..notion_client import (
     _block_table,
 )
 from .notion_markdown import markdown_to_blocks
+
+
+def handle_notion_get_page_content(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Read a Notion page's content as plain text.
+
+    Input:
+        page_id (str, required): Notion page ID.
+        max_blocks (int, optional): Max blocks to read (default: 200).
+
+    Returns:
+        {"page_id": "...", "title": "...", "text": "...", "block_count": N}
+    """
+    page_id = input_data.get("page_id")
+    if not page_id:
+        raise ValueError("'page_id' is required in input")
+
+    return notion_client.get_page_content(
+        page_id=page_id,
+        max_blocks=input_data.get("max_blocks", 200),
+    )
 
 
 def handle_notion_write_transcript(input_data: Dict[str, Any]) -> Dict[str, Any]:

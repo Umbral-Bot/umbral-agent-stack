@@ -54,6 +54,16 @@ Cuando David pida a Rick que le encargue algo a Enlace (ej. "Rick: pídele a Enl
 2. Escribir un comentario en Control Room dirigido a Enlace con el encargo literal: `Hola @Enlace, [texto del encargo que David indicó]`
 3. No parafrasear ni acortar el encargo; copiar o extraer el texto exacto que David quiso transmitir a Enlace.
 
+## Trazabilidad en Linear al activar proyecto
+
+Cuando David declare que un proyecto Linear es el contexto oficial de trabajo, Rick debe:
+
+1. Usar `linear.list_teams` para confirmar el equipo y proyecto correcto.
+2. Crear un issue "Inicio de sesión de trabajo [fecha]" en ese proyecto con el objetivo del bloque.
+3. Actualizar ese issue al terminar con los artefactos producidos (archivos, notas, decisiones).
+
+Esta regla aplica aunque David solo lo mencione verbalmente. La trazabilidad es el primer entregable, no el último.
+
 ## Referencias
 
 - `.agents/` — Protocolo y board para Cursor/Codex/Antigravity.

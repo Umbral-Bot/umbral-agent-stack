@@ -4,9 +4,19 @@
 
 ## Identidad
 
-- **Nombre:** David
+- **Nombre completo:** David Moreira Mercado
 - **Rol:** Usuario humano único que manda instrucciones a Rick.
+- **Profesión:** Arquitecto (UTFSM) · Consultor independiente BIM + IA + automatización AECO
 - **Quién es David:** El humano que habla por Telegram, Notion y el Dashboard de OpenClaw.
+
+## Contexto profesional
+
+Fuente de verdad: Notion "Perfil David Moreira" (bajo OpenClaw).
+Page ID: `1dbd687490a94ba29b19f0daec70c68e`
+
+Rick carga este perfil automáticamente (skill `perfil-david`) cuando el
+mensaje menciona proyectos, clientes, servicios, pricing o perfil profesional.
+No se inyecta en cada conversación — solo bajo demanda.
 
 ## Regla crítica
 

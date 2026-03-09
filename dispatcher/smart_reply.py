@@ -14,7 +14,9 @@ Falls back gracefully:
 from __future__ import annotations
 
 import logging
+import re
 import threading
+import time
 from typing import Any, Dict, Optional
 
 from client.worker_client import WorkerClient
@@ -49,6 +51,71 @@ _RESEARCH_TIMEOUT = 15.0  # seconds for research.web call
 _LLM_TIMEOUT = 20.0       # seconds for llm.generate call
 _MAX_RESEARCH_RESULTS = 3
 
+# ── David profile context (on-demand skill) ───────────────────
+
+_DAVID_PROFILE_PAGE_ID = "1dbd687490a94ba29b19f0daec70c68e"
+_PROFILE_CACHE_TTL = 24 * 3600  # 24 hours in seconds
+_profile_cache: Optional[str] = None
+_profile_cache_ts: float = 0.0
+
+# Keywords that trigger loading David's profile context
+_PROFILE_KEYWORDS = re.compile(
+    r"\b("
+    r"proyecto|proyectos|cliente|clientes|propuesta|pricing|perfil|"
+    r"conviene|prioridad|prioridades|pipeline|servicio|servicios|"
+    r"portafolio|caso de [eé]xito|m[eé]trica|certificaci[oó]n|"
+    r"experiencia|consultor|cotiza|cotizar|cotizaci[oó]n|tarifario|"
+    r"modelo de negocio|marca personal|"
+    # Known client/org names
+    r"butic|comgrap|wsp|dessau|netzun|umbral\s*bim|fondef|"
+    r"borag[oó]|oxxo|delporte|duma|bim\s*forum|utfsm|n8n|"
+    r"igl[uú]\s*modular|lovable"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
+def _needs_profile_context(text: str) -> bool:
+    """Check if the message requires David's profile context."""
+    return bool(_PROFILE_KEYWORDS.search(text))
+
+
+def _get_david_profile(wc: WorkerClient) -> Optional[str]:
+    """
+    Fetch David's profile from Notion with 24h cache.
+
+    Returns the page content as plain text, or None on failure.
+    """
+    global _profile_cache, _profile_cache_ts
+
+    # Return cache if fresh
+    if _profile_cache and (time.time() - _profile_cache_ts) < _PROFILE_CACHE_TTL:
+        logger.debug("Using cached David profile (%d chars)", len(_profile_cache))
+        return _profile_cache
+
+    # Fetch from Notion
+    try:
+        result = wc.run("notion.get_page_content", {
+            "page_id": _DAVID_PROFILE_PAGE_ID,
+            "max_blocks": 200,
+        })
+        text = result.get("result", {}).get("text", "")
+        if text:
+            _profile_cache = text
+            _profile_cache_ts = time.time()
+            logger.info("Fetched David profile from Notion: %d chars", len(text))
+            return text
+        logger.warning("David profile page returned empty text")
+        return None
+    except Exception:
+        logger.warning("Failed to fetch David profile from Notion", exc_info=True)
+        # Return stale cache if available
+        if _profile_cache:
+            logger.info("Using stale cached David profile as fallback")
+            return _profile_cache
+        return None
+
+
 # ── System prompt for answer synthesis ──────────────────────────
 
 _ANSWER_SYSTEM_PROMPT = (
@@ -59,10 +126,28 @@ _ANSWER_SYSTEM_PROMPT = (
     "Máximo 3 párrafos."
 )
 
+_ANSWER_SYSTEM_PROMPT_WITH_PROFILE = (
+    "Eres Rick, asistente operativo de Umbral Group. "
+    "Responde de forma concisa, profesional y útil. "
+    "Si tienes datos de búsqueda web, úsalos como contexto pero sintetiza — "
+    "no copies textualmente. Responde en el mismo idioma que la pregunta. "
+    "Máximo 3 párrafos.\n\n"
+    "## Contexto sobre David (tu usuario)\n"
+    "{profile}"
+)
+
 _TASK_PLAN_SYSTEM_PROMPT = (
     "Eres Rick, asistente operativo de Umbral Group. "
     "Te piden ejecutar una tarea. Descompón la tarea en 2-5 pasos concretos y accionables. "
     "Responde en el mismo idioma que la solicitud. Sé breve y directo."
+)
+
+_TASK_PLAN_SYSTEM_PROMPT_WITH_PROFILE = (
+    "Eres Rick, asistente operativo de Umbral Group. "
+    "Te piden ejecutar una tarea. Descompón la tarea en 2-5 pasos concretos y accionables. "
+    "Responde en el mismo idioma que la solicitud. Sé breve y directo.\n\n"
+    "## Contexto sobre David (tu usuario)\n"
+    "{profile}"
 )
 
 
@@ -137,8 +222,18 @@ def _handle_scheduled_task(
     logger.info("Scheduled task posted and scheduled for %s, comment %s", time_str, short_id)
 
 def _handle_question(text: str, comment_id: str, team: str, wc: WorkerClient) -> None:
-    """Research + LLM → answer."""
+    """Research + LLM → answer. Injects David's profile when relevant."""
     short_id = comment_id[:8]
+
+    # 0. Check if profile context is needed (on-demand skill)
+    system_prompt = _ANSWER_SYSTEM_PROMPT
+    if _needs_profile_context(text):
+        profile = _get_david_profile(wc)
+        if profile:
+            system_prompt = _ANSWER_SYSTEM_PROMPT_WITH_PROFILE.format(
+                profile=profile[:6000]  # Cap at ~6K chars to control token usage
+            )
+            logger.info("Profile context injected for question %s", short_id)
 
     # 1. Try web research
     research_context = _do_research(wc, text)
@@ -158,7 +253,7 @@ def _handle_question(text: str, comment_id: str, team: str, wc: WorkerClient) ->
         )
 
     # 3. Generate answer
-    answer = _do_llm_generate(wc, prompt, _ANSWER_SYSTEM_PROMPT)
+    answer = _do_llm_generate(wc, prompt, system_prompt)
     if not answer:
         _post_fallback(wc, comment_id, "question")
         return
@@ -209,8 +304,18 @@ def _handle_task(
         return
 
     # --- Fallback: LLM plan + enqueue (original behavior) ---
+    # Inject profile context if relevant
+    task_system = _TASK_PLAN_SYSTEM_PROMPT
+    if _needs_profile_context(text):
+        profile = _get_david_profile(wc)
+        if profile:
+            task_system = _TASK_PLAN_SYSTEM_PROMPT_WITH_PROFILE.format(
+                profile=profile[:6000]
+            )
+            logger.info("Profile context injected for task %s", short_id)
+
     prompt = f"Tarea solicitada: {text}\n\nDescompón en pasos concretos."
-    plan = _do_llm_generate(wc, prompt, _TASK_PLAN_SYSTEM_PROMPT)
+    plan = _do_llm_generate(wc, prompt, task_system)
 
     if not plan:
         _post_fallback(wc, comment_id, "task")

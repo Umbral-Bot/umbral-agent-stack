@@ -829,6 +829,106 @@ def create_report_page(
 # ---------------------------------------------------------------------------
 
 
+def get_page_content(page_id: str, max_blocks: int = 200) -> dict[str, Any]:
+    """
+    Read a Notion page's content blocks and return as plain text.
+
+    Recursively extracts text from all supported block types.
+    Useful for injecting page content as LLM context.
+
+    Args:
+        page_id: The Notion page ID.
+        max_blocks: Maximum blocks to read (default 200).
+
+    Returns:
+        {"page_id": "...", "title": "...", "text": "...", "block_count": N}
+    """
+    if not config.NOTION_API_KEY:
+        raise RuntimeError("NOTION_API_KEY not configured")
+
+    # 1. Get page title
+    with httpx.Client(timeout=TIMEOUT) as client:
+        resp = client.get(
+            f"{NOTION_BASE_URL}/pages/{page_id}",
+            headers=_headers(),
+        )
+    page_data = _check_response(resp, "get_page")
+    title = ""
+    title_prop = page_data.get("properties", {}).get("title", {})
+    if title_prop.get("title"):
+        title = "".join(t.get("plain_text", "") for t in title_prop["title"])
+
+    # 2. Read all blocks
+    blocks: list[dict[str, Any]] = []
+    with httpx.Client(timeout=TIMEOUT) as client:
+        next_cursor: str | None = None
+        while len(blocks) < max_blocks:
+            params: dict[str, Any] = {"page_size": 100}
+            if next_cursor:
+                params["start_cursor"] = next_cursor
+            resp = client.get(
+                f"{NOTION_BASE_URL}/blocks/{page_id}/children",
+                headers=_headers(),
+                params=params,
+            )
+            data = _check_response(resp, "get_page_blocks")
+            blocks.extend(data.get("results", []))
+            next_cursor = data.get("next_cursor")
+            if not next_cursor:
+                break
+
+    # 3. Extract plain text from blocks
+    lines: list[str] = []
+    for block in blocks[:max_blocks]:
+        block_type = block.get("type", "")
+        type_data = block.get(block_type, {})
+
+        # Extract rich_text content
+        rich_text = type_data.get("rich_text", [])
+        text_content = "".join(rt.get("plain_text", "") for rt in rich_text)
+
+        if block_type == "heading_1":
+            lines.append(f"# {text_content}")
+        elif block_type == "heading_2":
+            lines.append(f"## {text_content}")
+        elif block_type == "heading_3":
+            lines.append(f"### {text_content}")
+        elif block_type == "paragraph":
+            if text_content:
+                lines.append(text_content)
+        elif block_type == "bulleted_list_item":
+            lines.append(f"- {text_content}")
+        elif block_type == "numbered_list_item":
+            lines.append(f"1. {text_content}")
+        elif block_type == "callout":
+            lines.append(f"> {text_content}")
+        elif block_type == "quote":
+            lines.append(f"> {text_content}")
+        elif block_type == "code":
+            lang = type_data.get("language", "")
+            lines.append(f"```{lang}\n{text_content}\n```")
+        elif block_type == "toggle":
+            lines.append(f"**{text_content}**")
+        elif block_type == "to_do":
+            checked = type_data.get("checked", False)
+            mark = "x" if checked else " "
+            lines.append(f"- [{mark}] {text_content}")
+        elif block_type == "table":
+            # Tables have children (table_row blocks) — extract from has_children
+            pass  # Table rows are child blocks, text extracted separately
+        elif block_type == "divider":
+            lines.append("---")
+
+    full_text = "\n".join(lines)
+    logger.info("Read page %s: %d blocks, %d chars", page_id[:8], len(blocks), len(full_text))
+    return {
+        "page_id": page_id,
+        "title": title,
+        "text": full_text,
+        "block_count": len(blocks),
+    }
+
+
 def query_database(
     database_id: str,
     filter: dict[str, Any] | None = None,

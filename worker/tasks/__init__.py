@@ -9,6 +9,7 @@ from typing import Any, Callable, Dict
 
 from .ping import handle_ping
 from .notion import (
+    handle_notion_get_page_content,
     handle_notion_write_transcript,
     handle_notion_add_comment,
     handle_notion_poll_comments,
@@ -71,6 +72,7 @@ from .google_audio import handle_google_audio_generate
 # Each handler: (input: dict) -> dict
 TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "ping": handle_ping,
+    "notion.get_page_content": handle_notion_get_page_content,
     "notion.write_transcript": handle_notion_write_transcript,
     "notion.add_comment": handle_notion_add_comment,
     "notion.poll_comments": handle_notion_poll_comments,

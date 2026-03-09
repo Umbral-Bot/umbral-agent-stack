@@ -7,6 +7,8 @@ Tasks: Notion integration handlers.
 - notion.read_page: leer metadata y snapshot de una página
 - notion.create_report_page: crear página hija con reporte estructurado
 - notion.enrich_bitacora_page: enriquecer página de Bitácora con secciones o bloques
+- notion.create_database_page: crear página en una base de datos usando propiedades raw
+- notion.update_page_properties: actualizar propiedades de una página existente
 """
 
 from datetime import datetime, timezone
@@ -160,6 +162,66 @@ def handle_notion_search_databases(input_data: Dict[str, Any]) -> Dict[str, Any]
     return notion_client.search_databases(
         query=str(query),
         max_results=input_data.get("max_results", 10),
+    )
+
+
+def handle_notion_create_database_page(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Crea una página dentro de una base de datos de Notion usando propiedades raw.
+
+    Input:
+        database_id_or_url (str, required): UUID o URL de la base.
+        properties (dict, required): payload raw de propiedades Notion.
+        children (list[dict], optional): bloques hijos opcionales.
+
+    Returns:
+        {"page_id": "...", "url": "...", "created": True}
+    """
+    database_id_or_url = (
+        input_data.get("database_id_or_url")
+        or input_data.get("database_id")
+        or input_data.get("url")
+    )
+    if not database_id_or_url:
+        raise ValueError("'database_id_or_url' is required in input")
+
+    properties = input_data.get("properties")
+    if not isinstance(properties, dict) or not properties:
+        raise ValueError("'properties' must be a non-empty object")
+
+    children = input_data.get("children")
+    if children is not None and not isinstance(children, list):
+        raise ValueError("'children' must be a list when provided")
+
+    return notion_client.create_database_page(
+        database_id_or_url=str(database_id_or_url),
+        properties=properties,
+        children=children,
+    )
+
+
+def handle_notion_update_page_properties(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Actualiza propiedades raw de una página existente de Notion.
+
+    Input:
+        page_id_or_url (str, required): UUID o URL de la página.
+        properties (dict, required): payload raw de propiedades Notion.
+
+    Returns:
+        {"page_id": "...", "url": "...", "updated": True}
+    """
+    page_id_or_url = input_data.get("page_id_or_url") or input_data.get("page_id") or input_data.get("url")
+    if not page_id_or_url:
+        raise ValueError("'page_id_or_url' is required in input")
+
+    properties = input_data.get("properties")
+    if not isinstance(properties, dict) or not properties:
+        raise ValueError("'properties' must be a non-empty object")
+
+    return notion_client.update_page_properties(
+        page_id_or_url=str(page_id_or_url),
+        properties=properties,
     )
 
 

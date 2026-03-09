@@ -1,6 +1,17 @@
 ---
 name: linear-delivery-traceability
-description: fuerza trazabilidad minima por paso de proyecto en linear y carpetas de workspace. usar cuando chatgpt vaya a reportar avance, mover estado, redactar o publicar un comentario de issue, o afirmar que existe progreso en una entrega. verificar por tool calls frescas que el proyecto sea oficial segun la fuente vigente declarada por david, que la issue sea la correcta, que exista comentario de avance, que haya artefacto verificable con ruta exacta, que la siguiente accion este definida y que el estado sea coherente. rechazar progreso sin evidencia fresca o sin artefacto.
+description: fuerza trazabilidad minima por paso de proyecto en linear y carpetas
+  de workspace. usar cuando chatgpt vaya a reportar avance, mover estado, redactar
+  o publicar un comentario de issue, o afirmar que existe progreso en una entrega.
+  verificar por tool calls frescas que el proyecto sea oficial segun la fuente vigente
+  declarada por david, que la issue sea la correcta, que exista comentario de avance,
+  que haya artefacto verificable con ruta exacta, que la siguiente accion este definida
+  y que el estado sea coherente. rechazar progreso sin evidencia fresca o sin artefacto.
+metadata:
+  openclaw:
+    emoji: 📌
+    requires:
+      env: []
 ---
 
 # Linear Delivery Traceability
@@ -47,3 +58,4 @@ Entregar siempre:
 - Hardcodear la lista de proyectos oficiales de David.
 - Aceptar una issue ambigua, fuera de proyecto o no oficial.
 - Decir `subido`, `listo` o `avanzado` sin verificar carpeta e issue.
+

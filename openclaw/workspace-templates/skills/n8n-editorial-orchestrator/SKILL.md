@@ -1,6 +1,18 @@
 ---
 name: n8n-editorial-orchestrator
-description: disenar y revisar workflows de n8n para curacion editorial con schedule, captura, normalizacion, scoring, shortlist, revision humana y handoff a publicacion. usar cuando chatgpt deba convertir una operacion editorial o de rrss en una automatizacion con fuentes de autoridad, clasificacion de fuentes como viable, parcial o bloqueada, colas de aprobacion y entrega a un cms, newsletter o canal de publicacion sin asumir autopublicacion. reutilizar la skill n8n para detalles de nodos, expresiones, credenciales y json de workflows. consultar docs/60-rrss-pipeline-n8n.md y docs/67-editorial-source-curation.md cuando existan en el workspace.
+description: disenar y revisar workflows de n8n para curacion editorial con schedule,
+  captura, normalizacion, scoring, shortlist, revision humana y handoff a publicacion.
+  usar cuando chatgpt deba convertir una operacion editorial o de rrss en una automatizacion
+  con fuentes de autoridad, clasificacion de fuentes como viable, parcial o bloqueada,
+  colas de aprobacion y entrega a un cms, newsletter o canal de publicacion sin asumir
+  autopublicacion. reutilizar la skill n8n para detalles de nodos, expresiones, credenciales
+  y json de workflows. consultar docs/60-rrss-pipeline-n8n.md y docs/67-editorial-source-curation.md
+  cuando existan en el workspace.
+metadata:
+  openclaw:
+    emoji: 🧬
+    requires:
+      env: []
 ---
 
 # N8n Editorial Orchestrator
@@ -82,3 +94,4 @@ Mantener esta skill como capa de orquestacion editorial. Mantener la skill `n8n`
 7. gate de revision humana
 8. handoff a publicacion
 9. riesgos, supuestos y siguientes pasos
+

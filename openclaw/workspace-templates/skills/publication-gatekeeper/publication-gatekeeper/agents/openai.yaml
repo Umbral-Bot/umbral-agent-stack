@@ -1,0 +1,3 @@
+interface:
+  display_name: "Publication Gatekeeper"
+  short_description: "Bloquea publicación hasta que texto, asset y canal estén aprobados y exista una orden final trazable."

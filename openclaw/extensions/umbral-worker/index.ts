@@ -371,6 +371,22 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     }),
   },
   {
+    name: "umbral_notion_read_page",
+    task: "notion.read_page",
+    description: "Read a Notion page by URL or page ID and return metadata plus a plain-text snapshot of its blocks.",
+    resultTitle: "Notion page read result",
+    parameters: taskToolSchema(
+      {
+        page_id_or_url: stringSchema("Notion page UUID or full page URL."),
+        max_blocks: integerSchema("Maximum number of top-level blocks to read.", {
+          minimum: 1,
+          maximum: 100,
+        }),
+      },
+      ["page_id_or_url"],
+    ),
+  },
+  {
     name: "umbral_notion_upsert_task",
     task: "notion.upsert_task",
     description: "Create or update a task in the Notion task database used by the stack.",

@@ -30,3 +30,12 @@ Si Rick necesita que otro agente resuelva un bloqueo:
 4. Rick hace poll con `linear.list_project_issues` para verificar resolución.
 
 **Limitación actual:** no hay push entre agentes — requiere poll activo o revisión manual de David. Los agentes no tienen user IDs de Linear asignados, por lo que no se puede usar assignee explícito.
+
+## Regla 6 — Integración de subagentes
+
+Si Rick usa `sessions_spawn`:
+1. No puede cerrar el turno ni responder `NO_REPLY` mientras falte integrar el resultado esperado.
+2. Debe esperar los completion events del o los subagentes y convertirlos en una respuesta normal, con evidencia y trazabilidad.
+3. Si el subagente ya respondió, Rick debe retomar el turno actual y usar ese resultado antes de seguir con otro paso.
+4. Solo puede declarar `resultado parcial` si explica qué completion faltó, qué sí alcanzó a integrar y cuál es el bloqueo real.
+5. Si el flujo depende de un subagente, la respuesta final debe nombrar cómo se integró su aporte en el artefacto, issue o cambio ejecutado.

@@ -299,6 +299,7 @@ Listar tareas recientes. Filtrable. Requiere auth.
 | `notion.create_database_page` | Notion | Crea una página en una base usando propiedades raw |
 | `notion.update_page_properties` | Notion | Actualiza propiedades raw de una página |
 | `notion.upsert_task` | Notion | Crea/actualiza tarea en Kanban |
+| `notion.upsert_project` | Notion | Crea/actualiza proyecto en 📁 Proyectos — Umbral |
 | `notion.update_dashboard` | Notion | Actualiza dashboard Rick |
 | `notion.create_report_page` | Notion | Crea página hija con reporte estructurado |
 | `windows.pad.run_flow` | Windows/RPA | Ejecuta flujo de Power Automate Desktop |
@@ -321,6 +322,7 @@ Listar tareas recientes. Filtrable. Requiere auth.
 | `linear.create_project` | Linear | Crea proyecto de Linear o retorna el existente |
 | `linear.attach_issue_to_project` | Linear | Asocia un issue existente a un proyecto |
 | `linear.list_project_issues` | Linear | Lista issues asociadas a un proyecto |
+| `linear.create_project_update` | Linear | Publica update de estado en un proyecto (health + body) |
 | `research.web` | Research | Búsqueda web (Tavily) |
 | `llm.generate` | LLM | Genera texto con Gemini, OpenAI o Anthropic (segun `model`) |
 | `composite.research_report` | Composite | Informe de mercado completo (research + LLM) |

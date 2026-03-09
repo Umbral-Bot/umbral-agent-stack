@@ -8,6 +8,7 @@ Tasks: Linear integration handlers.
 - linear.create_project: crear proyecto
 - linear.attach_issue_to_project: asociar issue a proyecto
 - linear.list_project_issues: listar issues de un proyecto
+- linear.create_project_update: publicar update de estado en un proyecto
 """
 
 import logging
@@ -454,4 +455,57 @@ def handle_linear_list_project_issues(input_data: Dict[str, Any]) -> Dict[str, A
         return {"ok": True, "project": project, "issues": issues}
     except Exception as e:
         return {"ok": False, "error": str(e), "issues": []}
+
+
+_HEALTH_VALID = {"onTrack", "atRisk", "offTrack"}
+
+
+def handle_linear_create_project_update(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Publica un update de estado en un proyecto de Linear.
+
+    Input:
+        body (str, required): texto del update (markdown soportado).
+        project_id (str, optional): UUID del proyecto.
+        project_name (str, optional): nombre del proyecto.
+        health (str, optional): onTrack | atRisk | offTrack (default: onTrack).
+
+    Returns:
+        {"ok": True, "projectUpdate": {...}} o {"ok": False, "error": "..."}
+
+    Nota: La API pública de Linear soporta `projectUpdateCreate` en todos los planes.
+    Si el workspace no tiene acceso, se devolverá {"ok": False, "error": "..."}.
+    """
+    api_key = _linear_api_key()
+    if not api_key:
+        return {"ok": False, "error": "LINEAR_API_KEY not configured"}
+
+    body = (input_data.get("body") or "").strip()
+    if not body:
+        return {"ok": False, "error": "'body' is required"}
+
+    health = (input_data.get("health") or "onTrack").strip()
+    if health not in _HEALTH_VALID:
+        return {"ok": False, "error": f"'health' must be one of {sorted(_HEALTH_VALID)}"}
+
+    try:
+        project = _resolve_project(api_key, input_data)
+        if not project:
+            return {
+                "ok": False,
+                "error": "Could not resolve Linear project. Provide project_id or project_name.",
+            }
+        result = linear_client.create_project_update(
+            api_key=api_key,
+            project_id=project["id"],
+            body=body,
+            health=health,
+        )
+        logger.info(
+            "[linear.create_project_update] project=%s health=%s",
+            project.get("name"), health,
+        )
+        return {"ok": True, "project": {"id": project["id"], "name": project.get("name")}, **result}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
 

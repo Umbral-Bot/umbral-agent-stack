@@ -21,6 +21,7 @@ from .notion import (
     handle_notion_update_dashboard,
     handle_notion_create_report_page,
     handle_notion_enrich_bitacora_page,
+    handle_notion_upsert_project,
 )
 from .windows import (
     handle_windows_pad_run_flow,
@@ -48,6 +49,7 @@ from .linear import (
     handle_linear_create_project,
     handle_linear_attach_issue_to_project,
     handle_linear_list_project_issues,
+    handle_linear_create_project_update,
 )
 from .research import handle_research_web
 from .llm import handle_llm_generate
@@ -113,11 +115,13 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "linear.create_project": handle_linear_create_project,
     "linear.attach_issue_to_project": handle_linear_attach_issue_to_project,
     "linear.list_project_issues": handle_linear_list_project_issues,
+    "linear.create_project_update": handle_linear_create_project_update,
     "research.web": handle_research_web,
     "llm.generate": handle_llm_generate,
     "composite.research_report": handle_composite_research_report,
     "notion.create_report_page": handle_notion_create_report_page,
     "notion.enrich_bitacora_page": handle_notion_enrich_bitacora_page,
+    "notion.upsert_project": handle_notion_upsert_project,
     "make.post_webhook": handle_make_post_webhook,
     "azure.audio.generate": handle_azure_audio_generate,
     "figma.get_file": handle_figma_get_file,

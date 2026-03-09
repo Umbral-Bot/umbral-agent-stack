@@ -166,6 +166,33 @@ Task: `notion.create_report_page`
 
 Devuelve: `{"page_id":"...", "page_url":"...", "ok": true}`
 
+### 8. Crear o actualizar proyecto en registry
+
+Task: `notion.upsert_project`
+
+Requiere `NOTION_PROJECTS_DB_ID` configurado en el Worker.
+
+```json
+{
+  "name": "Proyecto Embudo Ventas",
+  "estado": "Activo",
+  "linear_project_url": "https://linear.app/umbral/project/...",
+  "shared_path": "G:\\Mi unidad\\Rick-David\\Proyecto-Embudo-Ventas\\",
+  "responsable": "David Moreira",
+  "agentes": "Rick,Claude",
+  "sprint": "R21",
+  "open_issues": 7,
+  "next_action": "Completar arquitectura web v1 (UMB-32)"
+}
+```
+
+Devuelve: `{"ok": true, "page_id": "...", "url": "...", "created": bool}`
+
+- `created: true` → se creó una nueva entrada.
+- `created: false` → se actualizó la entrada existente (busca por nombre exacto).
+
+Variables opcionales: `start_date`, `target_date` (YYYY-MM-DD), `bloqueos`, `last_update_date`.
+
 ## Triggers recomendados
 
 - "write to notion"

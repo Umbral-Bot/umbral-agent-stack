@@ -463,6 +463,41 @@ def add_comment(api_key: str, issue_id: str, body: str) -> Dict[str, Any]:
     return data.get("commentCreate", {})
 
 
+def create_project_update(
+    api_key: str,
+    project_id: str,
+    body: str,
+    health: str = "onTrack",
+) -> Dict[str, Any]:
+    """
+    Create a project update (status post) in Linear.
+
+    Args:
+        api_key: LINEAR_API_KEY
+        project_id: Linear project UUID.
+        body: Update body text (markdown supported).
+        health: onTrack | atRisk | offTrack (default: onTrack).
+
+    Returns:
+        {"success": bool, "projectUpdate": {"id": "...", "url": "...", "createdAt": "..."}}
+        or {"success": False, "error": "..."} if the API does not support this operation.
+    """
+    mutation = """
+    mutation ProjectUpdateCreate($input: ProjectUpdateCreateInput!) {
+      projectUpdateCreate(input: $input) {
+        success
+        projectUpdate {
+          id
+          url
+          createdAt
+        }
+      }
+    }
+    """
+    data = _gql(api_key, mutation, {"input": {"projectId": project_id, "body": body, "health": health}})
+    return data.get("projectUpdateCreate", {})
+
+
 def update_issue(
     api_key: str,
     issue_id: str,

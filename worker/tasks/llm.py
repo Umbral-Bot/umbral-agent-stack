@@ -15,11 +15,10 @@ Inventario de modelos disponibles:
     gpt-5.2, gpt-5.3-codex (default/prioridad máxima)
 
   Google AI Studio (GOOGLE_API_KEY):
-    gemini-3.1-pro-preview-customtools (mejor), gemini-3.1-pro-preview,
-    gemini-flash-latest, gemini-flash-lite-latest
+    gemini-2.5-pro, gemini-2.5-flash, gemini-2.5-flash-lite
 
   Google Vertex AI (GOOGLE_API_KEY_RICK_UMBRAL + GOOGLE_CLOUD_PROJECT_RICK_UMBRAL):
-    gemini-3.1-pro-preview
+    gemini-2.5-flash
 
   Azure AI Foundry (AZURE_OPENAI_ENDPOINT + AZURE_OPENAI_API_KEY):
     gpt-5.3-codex (deployment dedicado con cuota Azure)
@@ -46,7 +45,12 @@ from worker.tracing import trace_llm_call
 
 logger = logging.getLogger("worker.tasks.llm")
 
-DEFAULT_MODEL = "gemini-3.1-pro-preview-customtools"
+GEMINI_PRO_MODEL = "gemini-2.5-pro"
+GEMINI_FLASH_MODEL = "gemini-2.5-flash"
+GEMINI_FLASH_LITE_MODEL = "gemini-2.5-flash-lite"
+GEMINI_VERTEX_MODEL = "gemini-2.5-flash"
+
+DEFAULT_MODEL = GEMINI_PRO_MODEL
 GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions"
 ANTHROPIC_MESSAGES_URL = "https://api.anthropic.com/v1/messages"
@@ -58,18 +62,30 @@ VERTEX_DEFAULT_REGION = "us-central1"
 # Cada alias mapea a un nombre de modelo concreto que el provider entiende.
 MODEL_ALIASES = {
     # --- OpenAI / Codex (Worker: Azure Foundry → OPENAI_API_KEY) ---
-    "azure_foundry": "gpt-5.3-codex",
+    "azure_foundry": "gpt-5.2-chat",
+    "gpt-5.2": "gpt-5.2-chat",
+    "azure_gpt_41": "gpt-4.1",
+    "azure_gpt_52": "gpt-5.2-chat",
+    "kimi_azure": "Kimi-K2.5",
     # --- Anthropic (ANTHROPIC_API_KEY — token de sesión Pro) ---
     "claude_pro":    "claude-sonnet-4-6",
     "claude_opus":   "claude-opus-4-6",
     "claude_haiku":  "claude-haiku-4-5",
     # --- Google AI Studio (GOOGLE_API_KEY) ---
-    "gemini_pro":       "gemini-3.1-pro-preview-customtools",   # mejor Gemini
-    "gemini_flash":     "gemini-flash-latest",
-    "gemini_flash_lite": "gemini-flash-lite-latest",
+    "gemini_pro":       GEMINI_PRO_MODEL,
+    "gemini_flash":     GEMINI_FLASH_MODEL,
+    "gemini_flash_lite": GEMINI_FLASH_LITE_MODEL,
     # --- Google Vertex AI (GOOGLE_API_KEY_RICK_UMBRAL + PROJECT) ---
-    "gemini_vertex":    "gemini-3.1-pro-preview",
+    "gemini_vertex":    GEMINI_VERTEX_MODEL,
+    # Alias de compatibilidad para Gemini 3.1 Pro en Vertex AI.
+    "gemini_vertex_31": "gemini-3.1-pro-preview",
+    "gemini_vertex_pro_31": "gemini-3.1-pro-preview",
 }
+
+
+def _claude_disabled() -> bool:
+    value = os.environ.get("UMBRAL_DISABLE_CLAUDE", "").strip().lower()
+    return value in {"1", "true", "yes", "on"}
 
 
 def handle_llm_generate(input_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -156,6 +172,7 @@ def _detect_provider(model: str, *, requested_alias: str = "") -> str:
         or "o1" in model_lc
         or "o3" in model_lc
         or "codex" in model_lc
+        or "kimi" in model_lc
         or "chatgpt" in model_lc
         or "copilot" in model_lc
     )
@@ -170,11 +187,15 @@ def _detect_provider(model: str, *, requested_alias: str = "") -> str:
         raise RuntimeError(
             "Modelos OpenAI/Codex requieren Azure AI Foundry (AZURE_OPENAI_ENDPOINT + "
             "AZURE_OPENAI_API_KEY) o OPENAI_API_KEY. "
-            "gpt-5.3-codex vía OAuth de ChatGPT Plus solo funciona en OpenClaw, "
-            "no directamente desde el Worker."
+            "Si no hay Azure/OpenAI configurado, el Worker no puede invocarlos."
         )
 
     if is_anthropic_model:
+        if _claude_disabled():
+            raise RuntimeError(
+                "Claude está deshabilitado via UMBRAL_DISABLE_CLAUDE. "
+                "Usá Azure Foundry o Gemini hasta reactivarlo."
+            )
         if os.environ.get("OPENCLAW_GATEWAY_TOKEN", "").strip():
             return "openclaw_proxy"
         if os.environ.get("ANTHROPIC_API_KEY", "").strip():
@@ -192,6 +213,39 @@ def _resolve_model_alias(model: str) -> str:
     if not model:
         return DEFAULT_MODEL
     return MODEL_ALIASES.get(model.lower(), model)
+
+
+def _build_gemini_generation_config(
+    *,
+    model: str,
+    max_tokens: int,
+    temperature: float,
+) -> Dict[str, Any]:
+    config: Dict[str, Any] = {
+        "maxOutputTokens": max_tokens,
+        "temperature": temperature,
+    }
+    model_lc = (model or "").lower()
+
+    # Gemini 2.5 Pro reserves a large hidden thinking budget by default.
+    # Cap it so short prompts still produce visible text.
+    if "gemini-2.5-pro" in model_lc:
+        config["maxOutputTokens"] = max(max_tokens, 256)
+        config["thinkingConfig"] = {"thinkingBudget": 128}
+    elif "gemini-2.5-flash" in model_lc:
+        # Flash/Flash-Lite can skip thinking for lower latency and stable short answers.
+        config["thinkingConfig"] = {"thinkingBudget": 0}
+
+    return config
+
+
+def _resolve_vertex_region(model: str) -> str:
+    configured = os.environ.get("VERTEX_REGION", "").strip()
+    if configured:
+        return configured
+    if (model or "").lower().startswith("gemini-3"):
+        return "global"
+    return VERTEX_DEFAULT_REGION
 
 
 def _call_gemini(
@@ -214,10 +268,11 @@ def _call_gemini(
 
     payload = {
         "contents": contents,
-        "generationConfig": {
-            "maxOutputTokens": max_tokens,
-            "temperature": temperature,
-        },
+        "generationConfig": _build_gemini_generation_config(
+            model=model,
+            max_tokens=max_tokens,
+            temperature=temperature,
+        ),
     }
 
     url = f"{GEMINI_BASE_URL}/{model}:generateContent?key={key}"
@@ -383,6 +438,8 @@ def _call_anthropic(
 
 
 def _extract_openai_text(content: Any) -> str:
+    if content is None:
+        return ""
     if isinstance(content, str):
         return content
     if isinstance(content, list):
@@ -467,6 +524,10 @@ def _call_azure_foundry(
         payload.pop("temperature", None)
         payload.pop("max_tokens", None)
         payload["max_completion_tokens"] = max_tokens
+    elif model.lower().startswith("gpt-5.2"):
+        payload.pop("temperature", None)
+        payload.pop("max_tokens", None)
+        payload["max_completion_tokens"] = max_tokens
 
     req = urllib.request.Request(
         url,
@@ -491,6 +552,8 @@ def _call_azure_foundry(
         raise RuntimeError("No choices in Azure Foundry response")
     message = choices[0].get("message", {})
     text = _extract_openai_text(message.get("content", ""))
+    if not text:
+        text = str(message.get("reasoning_content", "") or "").strip()
 
     usage = data.get("usage", {})
     return {
@@ -526,14 +589,18 @@ def _call_vertex(
             "Configurálos en ~/.config/openclaw/env"
         )
 
-    region = os.environ.get("VERTEX_REGION", VERTEX_DEFAULT_REGION)
+    region = _resolve_vertex_region(model)
     # Limpiar prefijo "vertex:" si lo tiene
     clean_model = model.replace("vertex:", "").strip()
     if not clean_model:
-        clean_model = "gemini-3.1-pro-preview"
+        clean_model = GEMINI_VERTEX_MODEL
 
+    if region == "global":
+        base_url = "https://aiplatform.googleapis.com"
+    else:
+        base_url = f"https://{region}-aiplatform.googleapis.com"
     url = (
-        f"https://{region}-aiplatform.googleapis.com/v1beta1/"
+        f"{base_url}/v1beta1/"
         f"projects/{project}/locations/{region}/"
         f"publishers/google/models/{clean_model}:generateContent"
     )
@@ -546,10 +613,11 @@ def _call_vertex(
 
     payload = {
         "contents": contents,
-        "generationConfig": {
-            "maxOutputTokens": max_tokens,
-            "temperature": temperature,
-        },
+        "generationConfig": _build_gemini_generation_config(
+            model=clean_model,
+            max_tokens=max_tokens,
+            temperature=temperature,
+        ),
     }
 
     req = urllib.request.Request(

@@ -48,7 +48,7 @@ def test_handle_llm_generate_requires_google_key(monkeypatch):
 @pytest.mark.parametrize(
     "model,expected",
     [
-        ("gemini-3.1-pro-preview-customtools", "gemini"),
+        ("gemini-2.5-pro", "gemini"),
         ("gemini-1.5-pro", "gemini"),
         ("unknown-model", "gemini"),
     ],
@@ -102,6 +102,14 @@ def test_detect_provider_claude_raises_without_key(model, monkeypatch):
         _detect_provider(model)
 
 
+def test_detect_provider_claude_respects_disable_flag(monkeypatch):
+    monkeypatch.setenv("UMBRAL_DISABLE_CLAUDE", "true")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
+
+    with pytest.raises(RuntimeError, match="UMBRAL_DISABLE_CLAUDE"):
+        _detect_provider("claude-sonnet-4-6")
+
+
 def test_detect_provider_anthropic_fallback_without_github_token(monkeypatch):
     """Falls back to native Anthropic API when GITHUB_TOKEN absent but ANTHROPIC_API_KEY present."""
     monkeypatch.delenv("GITHUB_TOKEN", raising=False)
@@ -141,18 +149,88 @@ def test_handle_llm_generate_success_with_mocked_gemini(monkeypatch):
             }
         )
 
-    assert result["model"] == "gemini-3.1-pro-preview-customtools"
+    assert result["model"] == "gemini-2.5-pro"
     assert "Oportunidades: digitalizacion BIM." in result["text"]
     assert result["usage"]["prompt_tokens"] == 22
     assert result["usage"]["completion_tokens"] == 14
     assert result["usage"]["total_tokens"] == 36
 
     req = mock_urlopen.call_args.args[0]
-    assert req.full_url == f"{GEMINI_BASE_URL}/gemini-3.1-pro-preview-customtools:generateContent?key=google-test-key"
+    assert req.full_url == f"{GEMINI_BASE_URL}/gemini-2.5-pro:generateContent?key=google-test-key"
     body = json.loads(req.data.decode("utf-8"))
     assert body["generationConfig"]["maxOutputTokens"] == 256
     assert body["generationConfig"]["temperature"] == 0.4
+    assert body["generationConfig"]["thinkingConfig"]["thinkingBudget"] == 128
     assert body["contents"][-1]["parts"][0]["text"] == "Dame un resumen ejecutivo."
+
+
+def test_handle_llm_generate_success_with_mocked_vertex(monkeypatch):
+    monkeypatch.setenv("GOOGLE_API_KEY_RICK_UMBRAL", "vertex-test-key")
+    monkeypatch.setenv("GOOGLE_CLOUD_PROJECT_RICK_UMBRAL", "proj-test")
+    fake_payload = {
+        "candidates": [
+            {
+                "content": {
+                    "parts": [
+                        {"text": "Vertex operativo."},
+                    ]
+                }
+            }
+        ],
+        "usageMetadata": {
+            "promptTokenCount": 18,
+            "candidatesTokenCount": 7,
+            "totalTokenCount": 25,
+        },
+    }
+
+    with patch(
+        "worker.tasks.llm.urllib.request.urlopen",
+        return_value=_DummyResponse(fake_payload),
+    ) as mock_urlopen:
+        result = handle_llm_generate(
+            {
+                "prompt": "Verifica Vertex.",
+                "model": "gemini_vertex",
+                "max_tokens": 128,
+                "temperature": 0.2,
+            }
+        )
+
+    assert result["provider"] == "vertex"
+    assert result["model"] == "gemini-2.5-flash"
+    assert result["text"] == "Vertex operativo."
+    assert result["usage"]["total_tokens"] == 25
+
+    req = mock_urlopen.call_args.args[0]
+    assert "/publishers/google/models/gemini-2.5-flash:generateContent" in req.full_url
+    headers = _headers_lower(req)
+    assert headers["x-goog-api-key"] == "vertex-test-key"
+    body = json.loads(req.data.decode("utf-8"))
+    assert body["generationConfig"]["thinkingConfig"]["thinkingBudget"] == 0
+
+
+def test_handle_llm_generate_vertex31_alias_maps_to_gemini3(monkeypatch):
+    monkeypatch.setenv("GOOGLE_API_KEY_RICK_UMBRAL", "vertex-test-key")
+    monkeypatch.setenv("GOOGLE_CLOUD_PROJECT_RICK_UMBRAL", "proj-test")
+    fake_payload = {
+        "candidates": [{"content": {"parts": [{"text": "Vertex 3 OK."}]}}],
+        "usageMetadata": {"promptTokenCount": 12, "candidatesTokenCount": 5, "totalTokenCount": 17},
+    }
+
+    with patch(
+        "worker.tasks.llm.urllib.request.urlopen",
+        return_value=_DummyResponse(fake_payload),
+    ) as mock_urlopen:
+        result = handle_llm_generate(
+            {"prompt": "Prueba Vertex 3.", "model": "gemini_vertex_31", "max_tokens": 128}
+        )
+
+    assert result["provider"] == "vertex"
+    assert result["model"] == "gemini-3.1-pro-preview"
+    req = mock_urlopen.call_args.args[0]
+    assert "https://aiplatform.googleapis.com/" in req.full_url
+    assert "/locations/global/publishers/google/models/gemini-3.1-pro-preview:generateContent" in req.full_url
 
 
 def test_openai_success_with_mocked_urllib(monkeypatch):
@@ -199,6 +277,12 @@ def test_openai_success_with_mocked_urllib(monkeypatch):
     assert body["model"] == "gpt-4o-mini"
     assert body["messages"][0] == {"role": "system", "content": "Eres Rick."}
     assert body["messages"][1] == {"role": "user", "content": "Haz un resumen."}
+
+
+def test_kimi_alias_routes_to_azure_foundry(monkeypatch):
+    monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://mi-recurso.openai.azure.com")
+    monkeypatch.setenv("AZURE_OPENAI_API_KEY", "az-key")
+    assert _detect_provider("Kimi-K2.5") == "azure_foundry"
 
 
 def test_anthropic_success_with_mocked_urllib(monkeypatch):
@@ -367,6 +451,58 @@ def test_azure_foundry_hub_endpoint(monkeypatch):
     # Body debe incluir "model" para el Hub
     body = json.loads(req.data.decode("utf-8"))
     assert body.get("model") == "gpt-5.3-codex"
+
+
+def test_azure_foundry_gpt52_uses_max_completion_tokens(monkeypatch):
+    monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://mi-recurso.openai.azure.com")
+    monkeypatch.setenv("AZURE_OPENAI_API_KEY", "az-key-123")
+    monkeypatch.delenv("AZURE_OPENAI_DEPLOYMENT", raising=False)
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+
+    fake_payload = {
+        "choices": [{"message": {"content": "GPT52_OK"}}],
+        "usage": {"prompt_tokens": 8, "completion_tokens": 6, "total_tokens": 14},
+    }
+
+    with patch(
+        "worker.tasks.llm.urllib.request.urlopen",
+        return_value=_DummyResponse(fake_payload),
+    ) as mock_urlopen:
+        result = handle_llm_generate(
+            {"prompt": "Test GPT 5.2", "model": "gpt-5.2", "max_tokens": 100}
+        )
+
+    assert result["provider"] == "azure_foundry"
+    assert result["text"] == "GPT52_OK"
+    req = mock_urlopen.call_args.args[0]
+    assert "openai/deployments/gpt-5.2-chat" in req.full_url
+    body = json.loads(req.data.decode("utf-8"))
+    assert "max_tokens" not in body
+    assert "temperature" not in body
+    assert body["max_completion_tokens"] == 100
+
+
+def test_azure_foundry_uses_reasoning_content_when_content_is_empty(monkeypatch):
+    monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://mi-recurso.openai.azure.com")
+    monkeypatch.setenv("AZURE_OPENAI_API_KEY", "az-key-123")
+    monkeypatch.setenv("AZURE_OPENAI_DEPLOYMENT", "Kimi-K2.5")
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+
+    fake_payload = {
+        "choices": [{"message": {"content": None, "reasoning_content": "KIMI_OK"}}],
+        "usage": {"prompt_tokens": 8, "completion_tokens": 6, "total_tokens": 14},
+    }
+
+    with patch(
+        "worker.tasks.llm.urllib.request.urlopen",
+        return_value=_DummyResponse(fake_payload),
+    ):
+        result = handle_llm_generate(
+            {"prompt": "Test Kimi", "model": "kimi_azure", "max_tokens": 100}
+        )
+
+    assert result["provider"] == "azure_foundry"
+    assert result["text"] == "KIMI_OK"
 
 
 def test_azure_foundry_missing_keys_raises(monkeypatch):

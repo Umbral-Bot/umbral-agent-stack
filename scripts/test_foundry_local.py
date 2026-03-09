@@ -6,7 +6,7 @@ Uso:
   # Opción 1: pasar como env vars
   AZURE_OPENAI_ENDPOINT=https://mi-recurso.openai.azure.com \
   AZURE_OPENAI_API_KEY=mi-key \
-  AZURE_OPENAI_DEPLOYMENT=gpt-5.3-codex \
+  AZURE_OPENAI_DEPLOYMENT=gpt-5.2-chat \
   python3 scripts/test_foundry_local.py
 
   # Opción 2: interactivo (te pide los datos)
@@ -24,11 +24,11 @@ def get_config(interactive: bool):
     if interactive:
         endpoint = input("Endpoint (https://...): ").strip().rstrip("/")
         api_key = input("API Key: ").strip()
-        deployment = input("Deployment name [gpt-5.3-codex]: ").strip() or "gpt-5.3-codex"
+        deployment = input("Deployment name [gpt-5.2-chat]: ").strip() or "gpt-5.2-chat"
     else:
         endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT", "").strip().rstrip("/")
         api_key = os.environ.get("AZURE_OPENAI_API_KEY", "").strip()
-        deployment = os.environ.get("AZURE_OPENAI_DEPLOYMENT", "gpt-5.3-codex").strip()
+        deployment = os.environ.get("AZURE_OPENAI_DEPLOYMENT", "gpt-5.2-chat").strip()
     return endpoint, api_key, deployment
 
 
@@ -55,6 +55,10 @@ def test_call(endpoint: str, api_key: str, deployment: str):
         "max_tokens": 150,
         "temperature": 0.3,
     }
+    if deployment.lower().startswith("gpt-5.2"):
+        payload.pop("temperature", None)
+        payload.pop("max_tokens", None)
+        payload["max_completion_tokens"] = 150
     if "services.ai.azure.com" in endpoint:
         payload["model"] = deployment
 

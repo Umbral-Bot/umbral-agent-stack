@@ -32,7 +32,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(na
 # S4: Mapeo de provider name (quota alias) → model string que entiende el Worker.
 PROVIDER_MODEL_MAP: Dict[str, str] = {
     # OpenAI / Codex — Worker solo accede GPT vía Azure Foundry
-    "azure_foundry": "gpt-5.3-codex",
+    "azure_foundry": "gpt-5.2-chat",
     # Anthropic (directo)
     "claude_pro":    "claude-sonnet-4-6",
     "claude_opus":   "claude-opus-4-6",
@@ -42,9 +42,9 @@ PROVIDER_MODEL_MAP: Dict[str, str] = {
     "openclaw_claude_opus":  "anthropic/claude-opus-4-6",
     "openclaw_claude_haiku": "anthropic/claude-haiku-4-5",
     # Google AI Studio
-    "gemini_pro":        "gemini-3.1-pro-preview-customtools",
-    "gemini_flash":      "gemini-flash-latest",
-    "gemini_flash_lite": "gemini-flash-lite-latest",
+    "gemini_pro":        "gemini-2.5-pro",
+    "gemini_flash":      "gemini-2.5-flash",
+    "gemini_flash_lite": "gemini-2.5-flash-lite",
     # Google Vertex
     "gemini_vertex":     "gemini_vertex",  # alias preservado → Worker detecta vertex provider
 }

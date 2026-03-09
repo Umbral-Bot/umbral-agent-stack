@@ -141,7 +141,7 @@ class TestProviderStatusRouting:
             resp = client.get("/providers/status", headers=AUTH)
             data = resp.json()
             assert data["providers"]["claude_pro"]["model"] == "claude-sonnet-4-6"
-            assert data["providers"]["gemini_pro"]["model"] == "gemini-3.1-pro-preview-customtools"
+            assert data["providers"]["gemini_pro"]["model"] == "gemini-2.5-pro"
 
 
 # ── Quota values ──────────────────────────────────────────────────

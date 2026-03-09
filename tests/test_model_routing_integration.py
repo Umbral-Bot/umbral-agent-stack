@@ -105,13 +105,13 @@ class TestProviderModelMap:
             assert isinstance(model, str) and len(model) > 0, f"{provider} has empty model string"
 
     def test_known_mappings(self):
-        assert PROVIDER_MODEL_MAP["azure_foundry"] == "gpt-5.3-codex"
+        assert PROVIDER_MODEL_MAP["azure_foundry"] == "gpt-5.2-chat"
         assert PROVIDER_MODEL_MAP["claude_pro"] == "claude-sonnet-4-6"
         assert PROVIDER_MODEL_MAP["claude_opus"] == "claude-opus-4-6"
         assert PROVIDER_MODEL_MAP["claude_haiku"] == "claude-haiku-4-5"
-        assert PROVIDER_MODEL_MAP["gemini_pro"] == "gemini-3.1-pro-preview-customtools"
-        assert PROVIDER_MODEL_MAP["gemini_flash"] == "gemini-flash-latest"
-        assert PROVIDER_MODEL_MAP["gemini_flash_lite"] == "gemini-flash-lite-latest"
+        assert PROVIDER_MODEL_MAP["gemini_pro"] == "gemini-2.5-pro"
+        assert PROVIDER_MODEL_MAP["gemini_flash"] == "gemini-2.5-flash"
+        assert PROVIDER_MODEL_MAP["gemini_flash_lite"] == "gemini-2.5-flash-lite"
 
 
 # ---------------------------------------------------------------------------

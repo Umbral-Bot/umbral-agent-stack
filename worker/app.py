@@ -600,14 +600,14 @@ async def get_quota_status(
 # Provider model names (human-readable mapping)
 # ---------------------------------------------------------------------------
 _PROVIDER_MODELS = {
-    "azure_foundry":    "gpt-5.3-codex",
+    "azure_foundry":    "gpt-5.2-chat",
     "claude_pro":       "claude-sonnet-4-6",
     "claude_opus":      "claude-opus-4-6",
     "claude_haiku":     "claude-haiku-4-5",
-    "gemini_pro":       "gemini-3.1-pro-preview-customtools",
-    "gemini_flash":     "gemini-flash-latest",
-    "gemini_flash_lite": "gemini-flash-lite-latest",
-    "gemini_vertex":    "gemini-3.1-pro-preview",
+    "gemini_pro":       "gemini-2.5-pro",
+    "gemini_flash":     "gemini-2.5-flash",
+    "gemini_flash_lite": "gemini-2.5-flash-lite",
+    "gemini_vertex":    "gemini-2.5-flash",
 }
 
 
@@ -711,6 +711,7 @@ _CATEGORY_MAP = {
     "research": "ai",
     "llm": "ai",
     "composite": "ai",
+    "google": "google",
     "figma": "figma",
     "azure": "azure",
     "make": "integrations",

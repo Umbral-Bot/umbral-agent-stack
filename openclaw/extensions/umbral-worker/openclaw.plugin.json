@@ -1,0 +1,30 @@
+{
+  "id": "umbral-worker",
+  "name": "Umbral Worker",
+  "description": "Bridge OpenClaw agent tools to the Umbral Worker HTTP API.",
+  "skills": ["./skills"],
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "baseUrl": {
+        "type": "string",
+        "description": "Optional override for the Worker base URL."
+      },
+      "defaultTeam": {
+        "type": "string",
+        "default": "system"
+      },
+      "defaultTaskType": {
+        "type": "string",
+        "default": "general"
+      },
+      "timeoutMs": {
+        "type": "integer",
+        "minimum": 1000,
+        "maximum": 120000,
+        "default": 30000
+      }
+    }
+  }
+}

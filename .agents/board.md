@@ -258,6 +258,14 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 | VM PAD/Power Automate | Requiere instalación manual de PAD en VM |
 | Telegram como canal | Fuera del scope del hackathon |
 
+## Seguimiento Rick 2026-03-09
+
+| ID | Tarea | Agente | Estado |
+|----|-------|--------|--------|
+| 001 | Recomendaciones Antigravity para corregir la ejecucion de Rick en proyectos reales | antigravity | âœ… done â€” recomendaciones entregadas y mergeadas en main (PR #110) |
+| 002 | Recomendaciones Cursor para orquestacion y politica de ejecucion de Rick | cursor | assigned |
+| 003 | Recomendaciones Claude para guardrails runtime y trazabilidad de Rick | claude-code | âœ… done â€” guardrails, tests y auditoria mergeados en main |
+
 ## Notas
 - Agentes: Cursor (lead), Antigravity, Codex, GitHub Copilot, Claude Code.
 - Cada agente tiene su clon: `C:\GitHub\umbral-agent-stack-<nombre>`

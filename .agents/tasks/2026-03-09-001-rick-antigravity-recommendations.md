@@ -1,13 +1,13 @@
 ---
 id: "2026-03-09-001"
 title: "Recomendaciones Antigravity para corregir la ejecucion de Rick en proyectos reales"
-status: assigned
+status: done
 assigned_to: antigravity
 created_by: codex
 priority: high
 sprint: R21
 created_at: 2026-03-09T00:05:34-03:00
-updated_at: 2026-03-09T00:05:34-03:00
+updated_at: 2026-03-09T00:18:00-03:00
 ---
 
 ## Objetivo
@@ -43,11 +43,11 @@ Se necesitan recomendaciones desde el angulo de:
 
 ## Criterios de aceptacion
 
-- [ ] Entregar 5-10 recomendaciones concretas y priorizadas
-- [ ] Indicar si el problema principal esta en prompt, skills, workspace, contexto o policy
-- [ ] Proponer un cambio minimo y uno estructural
-- [ ] Identificar al menos un experimento rapido para validar mejora
-- [ ] Dejar el resultado en el `## Log` de esta tarea
+- [x] Entregar 5-10 recomendaciones concretas y priorizadas
+- [x] Indicar si el problema principal esta en prompt, skills, workspace, contexto o policy
+- [x] Proponer un cambio minimo y uno estructural
+- [x] Identificar al menos un experimento rapido para validar mejora
+- [x] Dejar el resultado en el `## Log` de esta tarea
 
 ## Log
 

@@ -55,11 +55,23 @@ Efecto práctico:
     - comprensión robusta de prompts naturales;
     - autopilot por proyecto;
     - honestidad frente a errores de tools.
+- [AGENTS.md](/c:/GitHub/umbral-agent-stack-codex/openclaw/workspace-templates/AGENTS.md)
+  - se añadieron reglas nuevas para:
+    - delegación mínima;
+    - tratar completions esperados como trabajo pendiente.
+- [SOUL.md](/c:/GitHub/umbral-agent-stack-codex/openclaw/workspace-templates/SOUL.md)
+  - se añadió una regla específica para:
+    - no usar `sessions_spawn` cuando el slice ya es pequeño y resoluble inline;
+    - no emitir `NO_REPLY` si un completion útil llegó antes de cerrar la respuesta.
 - Skills marcadas como `always: true`:
   - [subagent-result-integration](/c:/GitHub/umbral-agent-stack-codex/openclaw/workspace-templates/skills/subagent-result-integration/SKILL.md)
   - [linear-delivery-traceability](/c:/GitHub/umbral-agent-stack-codex/openclaw/workspace-templates/skills/linear-delivery-traceability/SKILL.md)
   - [notion-project-registry](/c:/GitHub/umbral-agent-stack-codex/openclaw/workspace-templates/skills/notion-project-registry/SKILL.md)
   - [agent-handoff-governance](/c:/GitHub/umbral-agent-stack-codex/openclaw/workspace-templates/skills/agent-handoff-governance/SKILL.md)
+- [subagent-result-integration](/c:/GitHub/umbral-agent-stack-codex/openclaw/workspace-templates/skills/subagent-result-integration/SKILL.md)
+  - se reforzó con:
+    - no spawnear para verificaciones cortas o validaciones que `main` ya puede resolver;
+    - antipatrones observados (`sessions_spawn` + `NO_REPLY`).
 
 ### VPS
 
@@ -124,10 +136,18 @@ Después del fix:
 
 - prompt natural -> Rick actuó sin pedir estructura extra y dejó trazabilidad real persistida.
 
+Después del segundo endurecimiento:
+
+- en el tramo más reciente del turno bueno, Rick resolvió inline el slice útil del hub;
+- no hubo `sessions_spawn` ni `NO_REPLY` en ese cierre;
+- reforzó el hub directamente, escribió `decision-cierre-hub-primero-v1.md` y persistió el comentario en `UMB-39`.
+
 ## Residuales
 
 1. `systemPromptReport.skills.entries` todavía no refleja de forma confiable todas las custom skills instaladas en sesiones viejas.
 2. El patrón `sessions_spawn -> NO_REPLY` mejoró, pero sigue siendo un riesgo que debe seguirse auditando.
+   - En sesiones viejas todavía aparece con claridad.
+   - En el último tramo bueno ya no apareció.
 3. La diferencia entre Codex y Rick sigue siendo de runtime total, no solo de skill selection:
    - contexto de workspace;
    - heurísticas de gobernanza;

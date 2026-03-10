@@ -2,8 +2,4 @@
 REM Worker interactivo (sesion 1) - arranca al logon de Rick.
 REM Mismo codigo que openclaw-worker (puerto 8089). Tareas GUI van aqui.
 cd /d C:\GitHub\umbral-agent-stack
-set OPENCLAW_INTERACTIVE_SESSION=1
-if exist "C:\openclaw-worker\worker_token" (
-  for /f "usebackq delims=" %%i in (`powershell -NoProfile -Command "$t = [System.IO.File]::ReadAllText('C:\openclaw-worker\worker_token', [System.Text.Encoding]::UTF8); $t = $t.Trim([char]0xFEFF, [char]0x0D, [char]0x0A, ' '); Write-Output $t"`) do set "WORKER_TOKEN=%%i"
-)
-python -m uvicorn worker.app:app --host 0.0.0.0 --port 8089 --log-level info
+powershell -NoProfile -ExecutionPolicy Bypass -File "C:\GitHub\umbral-agent-stack\scripts\vm\start_interactive_worker.ps1"

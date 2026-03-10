@@ -141,6 +141,24 @@ Resultado de esa pasada:
 - `gui.screenshot`: OK
 - captura visual utilizable: sí
 
+## Higiene del escritorio interactivo
+
+Durante una pasada posterior se detectó que el escritorio interactivo seguía
+contaminado por una consola visible de `granola_watcher.py`, lo que robaba foco
+al probar navegador/GUI.
+
+Fix aplicado:
+
+- se agregó `scripts/vm/start_granola_watcher_hidden.ps1`
+- se actualizó `scripts/vm/setup_granola_watcher.ps1` para registrar `GranolaWatcher`
+  con launcher oculto
+- se reconfiguró la tarea `GranolaWatcher` en la VM para usar ese launcher
+
+Resultado:
+
+- el watcher dejó de aparecer como consola visible en foreground
+- la captura interactiva volvió a mostrar apps reales de usuario (Granola, navegador, etc.)
+
 ## Veredicto
 
 El objetivo de “usar el PC de la VM como una persona” ya quedó demostrado en un nivel básico real, pero no totalmente cerrado.

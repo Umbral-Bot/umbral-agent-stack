@@ -86,6 +86,20 @@ Se endureció `worker/browser/manager.py` para que:
 
 Ese ajuste evitó fallos intermitentes en `Enter` durante submit de formularios o cajas de búsqueda.
 
+### 4. Validación sobre sitio real más complejo
+
+Se ejecutó una pasada real sobre `https://www.freepik.com/` usando `browser.*`.
+
+Resultado:
+
+- landing real cargada: OK
+- lectura de texto visible: OK
+- screenshot headful usable: OK
+- click en `Sign in`: OK
+- navegación a `https://www.freepik.com/log-in?...`: OK
+
+Esto confirma que el slice no sirve solo para demos triviales: ya soporta una web moderna y más exigente.
+
 ## Limitaciones reales
 
 - El Worker interactivo `8089` sigue inestable y no es la base recomendada para este frente.

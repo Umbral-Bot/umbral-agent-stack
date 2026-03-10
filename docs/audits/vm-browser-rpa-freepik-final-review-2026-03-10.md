@@ -41,6 +41,7 @@ Conclusión:
 - el agente puede mover/clickear/tipear
 - el agente ya puede verificar visualmente el escritorio si entra por la ruta interactiva correcta
 - ya quedó validado un flujo GUI simple sobre Notepad
+- el watcher visible de Granola ya no contamina el escritorio interactivo
 - todavía falta validar un flujo GUI completo sobre una app objetivo más compleja
 
 ### 3. Freepik vía VM
@@ -48,7 +49,7 @@ Conclusión:
 Estado: **parcial-alto / viable**
 
 - Freepik ya abre correctamente con browser headful
-- login page accesible
+- login page accesible y validada por click real en `Sign in`
 - screenshot browser OK
 
 Conclusión:

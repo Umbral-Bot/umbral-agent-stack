@@ -15,6 +15,7 @@ type RequestOptions = {
   auth?: boolean;
   body?: JsonObject;
   query?: Record<string, string | number | boolean | undefined>;
+  baseUrlOverride?: string;
 };
 
 type TaskToolDefinition = {
@@ -26,6 +27,7 @@ type TaskToolDefinition = {
   dispatchMode?: "run" | "enqueue";
   defaultTeam?: string;
   defaultTaskType?: string;
+  baseUrlEnv?: string;
 };
 
 const MAX_RESULT_CHARS = 24000;
@@ -44,6 +46,17 @@ function resolveBaseUrl(api: OpenClawPluginApi): string {
     (typeof cfg.baseUrl === "string" && cfg.baseUrl.trim()) ||
     process.env.WORKER_URL ||
     "http://127.0.0.1:8088";
+  return trimTrailingSlash(raw);
+}
+
+function resolveBaseUrlOverride(baseUrlEnv?: string): string | undefined {
+  if (!baseUrlEnv) {
+    return undefined;
+  }
+  const raw = process.env[baseUrlEnv]?.trim();
+  if (!raw) {
+    return undefined;
+  }
   return trimTrailingSlash(raw);
 }
 
@@ -150,7 +163,7 @@ async function workerRequest(
   path: string,
   options: RequestOptions = {},
 ): Promise<unknown> {
-  const baseUrl = resolveBaseUrl(api);
+  const baseUrl = options.baseUrlOverride || resolveBaseUrl(api);
   const timeoutMs = resolveTimeoutMs(api);
   const url = new URL(`${baseUrl}${path}`);
 
@@ -336,6 +349,7 @@ async function runNamedTask(
   api: OpenClawPluginApi,
   task: string,
   params: JsonObject,
+  options: { baseUrlOverride?: string } = {},
 ): Promise<unknown> {
   const payload = buildRunEnvelope(api, {
     task,
@@ -343,7 +357,10 @@ async function runNamedTask(
     team: params.workerTeam,
     taskType: params.workerTaskType,
   });
-  return workerRequest(api, "POST", "/run", { body: payload });
+  return workerRequest(api, "POST", "/run", {
+    body: payload,
+    baseUrlOverride: options.baseUrlOverride,
+  });
 }
 
 async function sleep(ms: number): Promise<void> {
@@ -412,13 +429,16 @@ function registerTaskTool(api: OpenClawPluginApi, definition: TaskToolDefinition
       description: definition.description,
       parameters: definition.parameters,
       async execute(_id: string, params: JsonObject) {
+        const baseUrlOverride = resolveBaseUrlOverride(definition.baseUrlEnv);
         const result =
           definition.dispatchMode === "enqueue"
             ? await enqueueNamedTaskAndWait(api, definition.task, params, {
                 defaultTeam: definition.defaultTeam,
                 defaultTaskType: definition.defaultTaskType,
               })
-            : await runNamedTask(api, definition.task, params);
+            : await runNamedTask(api, definition.task, params, {
+                baseUrlOverride,
+              });
         return renderResult(definition.resultTitle, sanitizeWorkerResult(definition.task, result));
       },
     },
@@ -1490,8 +1510,8 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     task: "gui.desktop_status",
     description: "Inspect the current Windows desktop session on the lab node and report screen size, cursor and root control.",
     resultTitle: "GUI desktop status result",
-    dispatchMode: "enqueue",
-    defaultTeam: "lab",
+    dispatchMode: "run",
+    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
     parameters: taskToolSchema({}),
   },
   {
@@ -1499,8 +1519,8 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     task: "gui.screenshot",
     description: "Capture a raw desktop screenshot from the Windows GUI session on the lab node.",
     resultTitle: "GUI screenshot result",
-    dispatchMode: "enqueue",
-    defaultTeam: "lab",
+    dispatchMode: "run",
+    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
     parameters: taskToolSchema(
       {
         path: stringSchema("Absolute output path on the Windows node."),
@@ -1514,8 +1534,8 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     task: "gui.click",
     description: "Move the mouse and click at absolute screen coordinates on the Windows lab node.",
     resultTitle: "GUI click result",
-    dispatchMode: "enqueue",
-    defaultTeam: "lab",
+    dispatchMode: "run",
+    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
     parameters: taskToolSchema(
       {
         x: integerSchema("Screen X coordinate."),
@@ -1533,8 +1553,8 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     task: "gui.type_text",
     description: "Type text into the currently focused UI element on the Windows lab node.",
     resultTitle: "GUI type text result",
-    dispatchMode: "enqueue",
-    defaultTeam: "lab",
+    dispatchMode: "run",
+    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
     parameters: taskToolSchema(
       {
         text: stringSchema("Text to type into the active control."),
@@ -1548,8 +1568,8 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     task: "gui.hotkey",
     description: "Send a keyboard shortcut to the active Windows UI session on the lab node.",
     resultTitle: "GUI hotkey result",
-    dispatchMode: "enqueue",
-    defaultTeam: "lab",
+    dispatchMode: "run",
+    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
     parameters: taskToolSchema(
       {
         keys: arraySchema(stringSchema("One key of the shortcut."), "Ordered key combination, for example ['ctrl','l'].", {

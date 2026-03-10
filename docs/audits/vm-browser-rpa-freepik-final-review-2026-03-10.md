@@ -40,7 +40,8 @@ Conclusión:
 
 - el agente puede mover/clickear/tipear
 - el agente ya puede verificar visualmente el escritorio si entra por la ruta interactiva correcta
-- todavía falta validar un flujo GUI completo sobre una app objetivo real
+- ya quedó validado un flujo GUI simple sobre Notepad
+- todavía falta validar un flujo GUI completo sobre una app objetivo más compleja
 
 ### 3. Freepik vía VM
 

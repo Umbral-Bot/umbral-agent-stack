@@ -126,9 +126,24 @@ Síntomas observados:
 - reroute de `umbral_gui_*` al worker interactivo
 - validación remota final del estado real
 
+## Validación posterior sobre app real simple
+
+En una pasada adicional posterior al reroute, Rick validó un flujo real sobre Notepad y dejó trazabilidad en:
+
+- `UMB-77`
+- `G:\Mi unidad\Rick-David\Proyecto-Auditoria-Mejora-Continua\informes\reauditoria-gui-rpa-vm-2026-03-10-1918-notepad-real.md`
+
+Resultado de esa pasada:
+
+- `windows.open_notepad`: OK
+- `gui.click`: OK
+- `gui.type_text`: OK
+- `gui.screenshot`: OK
+- captura visual utilizable: sí
+
 ## Veredicto
 
-El objetivo de “usar el PC de la VM como una persona” quedó mejor, pero no totalmente cerrado.
+El objetivo de “usar el PC de la VM como una persona” ya quedó demostrado en un nivel básico real, pero no totalmente cerrado.
 
 Lo que sí quedó:
 
@@ -137,11 +152,11 @@ Lo que sí quedó:
 
 Lo que sigue bloqueando:
 
-- falta una validación e2e de GUI/RPA sobre una app objetivo real
+- falta una validación e2e sobre una app objetivo más compleja
 - todavía no conviene reemplazar browser typed como primer canal
 
 Por eso, la estrategia correcta ahora es:
 
 1. browser typed primero
 2. GUI con captura visual ya es complemento serio
-3. validar un flujo real antes de dar GUI/RPA por cerrado
+3. validar un flujo más complejo antes de dar GUI/RPA por totalmente cerrado

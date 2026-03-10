@@ -89,6 +89,26 @@ Resumen correcto que dejó:
 - siguen funcionando input GUI, screenshot GUI y estado de escritorio
 - todavía no hay validación de un flujo completo GUI/RPA sobre una app objetivo real
 
+## Validación adicional sobre app real
+
+Después del reroute se hizo una pasada adicional con Rick sobre una app simple real en la VM: Notepad.
+
+Rick dejó trazabilidad en:
+
+- `UMB-77`
+- `G:\Mi unidad\Rick-David\Proyecto-Auditoria-Mejora-Continua\informes\reauditoria-gui-rpa-vm-2026-03-10-1918-notepad-real.md`
+
+Contenido verificado del artefacto:
+
+- `windows.open_notepad`: OK
+- `gui.click`: OK
+- `gui.type_text`: OK
+- `gui.screenshot`: OK
+- `usable_visual = true`
+- `black_frame = false`
+
+Esto ya no es solo baseline técnico; es una validación GUI/RPA real sobre una app objetivo simple.
+
 ## Estado final
 
 ### Lo que quedó logrado
@@ -101,12 +121,17 @@ Resumen correcto que dejó:
 
 ### Lo que sigue pendiente
 
-- validar un flujo GUI/RPA completo sobre una app real
+- validar un flujo GUI/RPA completo sobre una app objetivo más compleja que Notepad
 - decidir en qué casos conviene GUI y en cuáles browser typed sigue siendo mejor
 
 ## Conclusión
 
-El bloqueo principal de GUI visual ya no es la captura misma, sino la falta de una validación e2e sobre una tarea real.
+El bloqueo principal de GUI visual ya no es la captura misma.
+
+Después de la pasada sobre Notepad, el siguiente límite real pasa a ser:
+
+- validar GUI/RPA sobre apps más complejas
+- decidir dónde GUI aporta más que browser typed
 
 Estado honesto después de esta iteración:
 

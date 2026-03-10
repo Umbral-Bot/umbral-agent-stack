@@ -8,7 +8,12 @@ Medir el estado real del control GUI de la VM como si el agente usara el PC “c
 
 ## Alcance
 
-Se validó sobre el Worker de la VM en `http://100.109.16.40:8088`:
+Se validó en dos rutas distintas de la VM:
+
+- Worker estándar: `http://100.109.16.40:8088`
+- Worker interactivo: `http://100.109.16.40:8089`
+
+Tasks cubiertos:
 
 - `gui.desktop_status`
 - `gui.screenshot`
@@ -18,17 +23,18 @@ Se validó sobre el Worker de la VM en `http://100.109.16.40:8088`:
 
 ## Resultado ejecutivo
 
-El slice GUI quedó **parcialmente operativo**:
+El slice GUI quedó **operativo para baseline visual**, pero todavía no para flujos completos:
 
 - input GUI: OK
 - metadatos de escritorio: OK
-- screenshot GUI: responde, pero el framebuffer sale negro
+- screenshot GUI en `8088`: negro / no usable
+- screenshot GUI en `8089` interactivo: OK / usable
 
 Conclusión:
 
 - el agente ya puede inyectar input real
-- pero sigue ciego para verificar visualmente lo que hace
-- por tanto, este frente todavía no está listo para reemplazar browser typed ni para sostener Freepik/login visual como flujo confiable
+- la captura visual ya es usable cuando la tool GUI entra por el worker interactivo
+- todavía falta validar un flujo RPA/GUI completo sobre una app objetivo real antes de tratar este frente como cerrado
 
 ## Implementación validada
 
@@ -73,53 +79,69 @@ Esto confirma que la sesión acepta input.
 
 - ya no exige `path`
 - usa por defecto `%TEMP%\\openclaw-gui-shots\\gui-shot.png`
+- prueba varios backends (`ImageGrab`, `pyautogui`, `mss`)
+- reporta `usable_visual` y `black_frame`
 
-Pero la imagen resultante sigue siendo negra.
+Resultado observado:
 
-Verificación analítica previa:
+- en `8088`, `mss` responde pero devuelve negro
+- en `8089`, `ImageGrab` devuelve una captura real, no negra
 
-- tamaño correcto
-- contenido RGB plano en negro
+Verificación analítica del caso bueno:
 
-Eso confirma que no es un error de archivo; es un problema de captura/render.
+- tamaño correcto: `1024x768`
+- `mean_luma` > 0
+- `max_luma = 255`
+- `black_frame = false`
 
 ## Causa raíz más probable
 
-La VM acepta input, pero no expone una superficie visual útil al método de captura actual.
+La VM no estaba fallando "por GUI" en general, sino por el camino de ejecución:
+
+- el worker estándar (`8088`) no tiene una superficie visual útil para captura GUI
+- el worker interactivo (`8089`) sí
 
 Síntomas observados:
 
-- `mss` devuelve negro
-- `pyautogui.screenshot()` no es utilizable de forma confiable
-- `uiautomation` no devuelve un árbol suficientemente útil para control semántico completo
+- `8088`:
+  - `ImageGrab`: falla
+  - `pyautogui.screenshot()`: falla
+  - `mss`: devuelve negro
+- `8089`:
+  - `ImageGrab`: OK
+  - captura visual real y usable
 
 ## Qué hizo Rick vs qué hice yo
 
 ### Hecho por Rick
 
 - trazabilidad previa del proyecto `Autonomía RPA GUI en VM`
-- documentación operativa de que GUI input era usable y framebuffer no
+- reauditoría final cuando el routing ya quedó corregido, reflejando que la captura GUI pasó a ser usable
 
 ### Hecho por codex
 
 - hardening del task `gui.screenshot`
 - tests unitarios
+- despliegue del handler mejorado en la VM
+- reroute de `umbral_gui_*` al worker interactivo
 - validación remota final del estado real
 
 ## Veredicto
 
-El objetivo de “usar el PC de la VM como una persona” todavía no está logrado de punta a punta.
+El objetivo de “usar el PC de la VM como una persona” quedó mejor, pero no totalmente cerrado.
 
 Lo que sí quedó:
 
 - input real usable
+- visión/screenshot útil por la ruta correcta (`8089`)
 
 Lo que sigue bloqueando:
 
-- visión/screenshot útil del escritorio
+- falta una validación e2e de GUI/RPA sobre una app objetivo real
+- todavía no conviene reemplazar browser typed como primer canal
 
-Por eso, la estrategia correcta sigue siendo:
+Por eso, la estrategia correcta ahora es:
 
 1. browser typed primero
-2. GUI solo para casos donde haga falta input real
-3. no depender todavía de GUI visual como canal principal
+2. GUI con captura visual ya es complemento serio
+3. validar un flujo real antes de dar GUI/RPA por cerrado

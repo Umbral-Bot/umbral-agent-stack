@@ -30,15 +30,17 @@ Conclusión:
 
 ### 2. RPA GUI VM
 
-Estado: **parcial**
+Estado: **parcial-alto**
 
 - input GUI: OK
-- screenshot/visión GUI: FAIL útil
+- screenshot/visión GUI: OK por worker interactivo (`8089`)
+- screenshot/visión GUI: FAIL por worker estándar (`8088`)
 
 Conclusión:
 
 - el agente puede mover/clickear/tipear
-- todavía no puede verificar visualmente el escritorio de forma fiable
+- el agente ya puede verificar visualmente el escritorio si entra por la ruta interactiva correcta
+- todavía falta validar un flujo GUI completo sobre una app objetivo real
 
 ### 3. Freepik vía VM
 
@@ -114,12 +116,15 @@ Resultado:
 
 ### RPA GUI
 
-No hay framebuffer útil del escritorio.
+El framebuffer útil sí existe, pero no en todos los caminos:
+
+- `8088` sigue sin captura usable
+- `8089` interactivo sí entrega captura útil
 
 Eso hace que:
 
-- GUI RPA quede ciego
-- no sea todavía una base segura para automatizaciones complejas puramente visuales
+- GUI RPA deje de ser ciego cuando se enruta bien
+- pero todavía no convenga dar por cerrado el frente hasta validar un flujo completo sobre una app real
 
 ### Freepik
 
@@ -144,11 +149,11 @@ El cierre honesto es este:
 - Browser VM: listo
 - Mejora continua: listo
 - Freepik VM: base lista, flujo final pendiente
-- RPA GUI VM: no listo todavía como canal principal
+- RPA GUI VM: listo como baseline técnico, pendiente de validación e2e sobre app real
 
 La estrategia correcta del stack quedó clara:
 
 1. browser typed/headful primero
-2. GUI input como complemento
-3. GUI visual no confiar todavía
+2. GUI visual + input por worker interactivo como segundo canal
+3. no confiar en `8088` para GUI visual
 4. PAD solo como última alternativa

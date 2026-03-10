@@ -164,29 +164,26 @@ Con esto, el frente de mejora continua quedó mejor cerrado también del lado de
 
 ## Reauditoría adicional: GUI/RPA VM
 
-En una iteración posterior se revisó una desalineación en la trazabilidad del frente GUI/RPA de la VM.
+En iteraciones posteriores el frente GUI/RPA tuvo dos estados distintos y ambos quedaron auditados:
 
-Rick había corregido correctamente que el problema no era `pyautogui` faltante en la VM, pero todavía había sobreafirmado:
+1. primero se corrigió una sobreafirmación de Rick:
+   - `gui.screenshot: OK`
+   - cuando en realidad `8088` devolvía un PNG completamente negro
+2. después se implementó el reroute de `umbral_gui_*` al worker interactivo `8089`, y ahí sí se validó una captura visual utilizable
 
-- `gui.screenshot: OK`
+Estado final correcto:
 
-La validación independiente contra el Worker de la VM mostró:
+- `8088`:
+  - input GUI usable
+  - captura visual no usable
+- `8089` interactivo:
+  - input GUI usable
+  - captura visual usable
 
-- `gui.desktop_status`: OK
-- `gui.click`: OK
-- `gui.type_text`: OK
-- `gui.hotkey`: OK
-- `gui.screenshot`: devuelve un PNG `1024x768` completamente negro
-
-Conclusión correcta final:
-
-- input GUI usable
-- framebuffer/captura visual todavía no usable
-
-Rick dejó esta corrección reflejada en:
+Rick dejó la reauditoría corregida reflejada en:
 
 - `UMB-77`
 - comentario en Notion del proyecto
 - `G:\Mi unidad\Rick-David\Proyecto-Auditoria-Mejora-Continua\informes\reauditoria-gui-rpa-vm-2026-03-10-1337.md`
 
-Esto confirma que el frente de mejora continua sí está cerrando loops reales cuando se fuerza una revalidación con evidencia externa, pero todavía requiere vigilancia activa para evitar sobreafirmaciones en el cierre de auditorías.
+Esto confirma que el frente de mejora continua sí está cerrando loops reales con evidencia externa, y que además logró incorporar una corrección técnica posterior al primer informe.

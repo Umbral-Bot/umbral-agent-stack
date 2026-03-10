@@ -89,6 +89,26 @@ class TestEnvLoader:
             os.environ.pop("QUOTED_TEST", None)
             os.environ.pop("DOUBLE_QUOTED_TEST", None)
 
+    def test_env_loader_supports_utf8_bom(self, tmp_path):
+        env_file = tmp_path / ".env"
+        env_file.write_text(
+            "BOM_TEST_KEY=ok\nSECOND_BOM_KEY=still_ok\n",
+            encoding="utf-8-sig",
+        )
+        os.environ.pop("BOM_TEST_KEY", None)
+        os.environ.pop("SECOND_BOM_KEY", None)
+        try:
+            result = load_env(str(env_file))
+            assert result == {
+                "BOM_TEST_KEY": "ok",
+                "SECOND_BOM_KEY": "still_ok",
+            }
+            assert os.environ["BOM_TEST_KEY"] == "ok"
+            assert os.environ["SECOND_BOM_KEY"] == "still_ok"
+        finally:
+            os.environ.pop("BOM_TEST_KEY", None)
+            os.environ.pop("SECOND_BOM_KEY", None)
+
     def test_env_loader_does_not_overwrite_existing(self, tmp_path):
         env_file = tmp_path / ".env"
         env_file.write_text("EXISTING_VAR_TEST=from_file\n", encoding="utf-8")

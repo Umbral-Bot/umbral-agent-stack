@@ -186,19 +186,21 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
         except Exception as e:
             logger.warning("Failed to create action item task: %s", e)
 
-    # Step 3: Notify Enlace
+    # Step 3: Notify Enlace in Control Room (literal @Enlace per convention)
     notification_sent = False
     if notify_enlace:
         try:
             attendees_str = f" ({', '.join(attendees)})" if attendees else ""
+            transcript_ref = page_url or page_id
             comment_text = (
-                f"Transcripción lista para optimizar: "
+                f"Hola @Enlace, transcripción lista para revisar: "
                 f"{title}{attendees_str} — {date}. "
+                f"Página: {transcript_ref}. "
                 f"{len(action_items)} action items identificados."
             )
-            notion_client.add_comment(page_id=page_id, text=comment_text)
+            notion_client.add_comment(page_id=None, text=comment_text)
             notification_sent = True
-            logger.info("Enlace notified on page %s", page_id)
+            logger.info("Enlace notified in Control Room for transcript %s", page_id)
         except Exception as e:
             logger.warning("Failed to notify Enlace: %s", e)
 

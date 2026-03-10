@@ -121,13 +121,24 @@ function sanitizeBinaryPayload(value: unknown): unknown {
       result.b64_json_chars = raw.length;
       continue;
     }
+    if (key === "b64_png" && typeof raw === "string") {
+      result[key] =
+        "[omitted from gateway response; use path or direct Worker call for binary screenshot]";
+      result.b64_png_chars = raw.length;
+      continue;
+    }
     result[key] = sanitizeBinaryPayload(raw);
   }
   return result;
 }
 
 function sanitizeWorkerResult(task: string, value: unknown): unknown {
-  if (!task.endsWith(".audio.generate") && !task.endsWith(".image.generate")) {
+  if (
+    !task.endsWith(".audio.generate") &&
+    !task.endsWith(".image.generate") &&
+    task !== "browser.screenshot" &&
+    task !== "gui.screenshot"
+  ) {
     return value;
   }
   return sanitizeBinaryPayload(value);
@@ -1232,6 +1243,20 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     }),
   },
   {
+    name: "umbral_windows_open_url",
+    task: "windows.open_url",
+    description: "Open a URL in the default browser of the Windows lab session.",
+    resultTitle: "Windows open URL result",
+    dispatchMode: "enqueue",
+    defaultTeam: "lab",
+    parameters: taskToolSchema(
+      {
+        url: stringSchema("HTTP or HTTPS URL to open in the default browser."),
+      },
+      ["url"],
+    ),
+  },
+  {
     name: "umbral_windows_write_worker_token",
     task: "windows.write_worker_token",
     description: "Write the Worker token to C:\\openclaw-worker\\worker_token on the Windows node.",
@@ -1351,6 +1376,131 @@ const TASK_TOOLS: TaskToolDefinition[] = [
         b64: stringSchema("Base64 payload to decode and write."),
       },
       ["path", "b64"],
+    ),
+  },
+  {
+    name: "umbral_browser_navigate",
+    task: "browser.navigate",
+    description: "Navigate a persistent Playwright browser page on the Windows lab node.",
+    resultTitle: "Browser navigate result",
+    dispatchMode: "enqueue",
+    defaultTeam: "lab",
+    parameters: taskToolSchema(
+      {
+        url: stringSchema("Target URL to open."),
+        page_id: stringSchema("Optional existing page ID. Omit to create or reuse the default page."),
+        wait_until: enumStringSchema(
+          ["commit", "domcontentloaded", "load", "networkidle"],
+          "Playwright wait_until mode.",
+        ),
+        timeout_ms: integerSchema("Optional navigation timeout in milliseconds.", {
+          minimum: 1000,
+          maximum: 120000,
+        }),
+      },
+      ["url"],
+    ),
+  },
+  {
+    name: "umbral_browser_read_page",
+    task: "browser.read_page",
+    description: "Read visible text from the current browser page or a selector on the Windows lab node.",
+    resultTitle: "Browser read page result",
+    dispatchMode: "enqueue",
+    defaultTeam: "lab",
+    parameters: taskToolSchema({
+      page_id: stringSchema("Optional existing page ID."),
+      selector: stringSchema("Optional CSS selector to narrow the read target."),
+      include_html: booleanSchema("Include the page HTML snapshot in the response."),
+    }),
+  },
+  {
+    name: "umbral_browser_screenshot",
+    task: "browser.screenshot",
+    description: "Capture a screenshot from the Playwright browser running on the Windows lab node.",
+    resultTitle: "Browser screenshot result",
+    dispatchMode: "enqueue",
+    defaultTeam: "lab",
+    parameters: taskToolSchema({
+      page_id: stringSchema("Optional existing page ID."),
+      path: stringSchema("Optional absolute output path on the Windows node."),
+      full_page: booleanSchema("Capture the full page instead of the viewport."),
+      selector: stringSchema("Optional CSS selector to capture instead of the whole page."),
+      return_b64: booleanSchema("Return a base64 PNG payload in addition to writing the file."),
+    }),
+  },
+  {
+    name: "umbral_gui_desktop_status",
+    task: "gui.desktop_status",
+    description: "Inspect the current Windows desktop session on the lab node and report screen size, cursor and root control.",
+    resultTitle: "GUI desktop status result",
+    dispatchMode: "enqueue",
+    defaultTeam: "lab",
+    parameters: taskToolSchema({}),
+  },
+  {
+    name: "umbral_gui_screenshot",
+    task: "gui.screenshot",
+    description: "Capture a raw desktop screenshot from the Windows GUI session on the lab node.",
+    resultTitle: "GUI screenshot result",
+    dispatchMode: "enqueue",
+    defaultTeam: "lab",
+    parameters: taskToolSchema(
+      {
+        path: stringSchema("Absolute output path on the Windows node."),
+        return_b64: booleanSchema("Return a base64 PNG payload in addition to writing the file."),
+      },
+      ["path"],
+    ),
+  },
+  {
+    name: "umbral_gui_click",
+    task: "gui.click",
+    description: "Move the mouse and click at absolute screen coordinates on the Windows lab node.",
+    resultTitle: "GUI click result",
+    dispatchMode: "enqueue",
+    defaultTeam: "lab",
+    parameters: taskToolSchema(
+      {
+        x: integerSchema("Screen X coordinate."),
+        y: integerSchema("Screen Y coordinate."),
+        clicks: integerSchema("Number of clicks.", { minimum: 1, maximum: 5 }),
+        interval: numberSchema("Delay between clicks in seconds.", { minimum: 0 }),
+        duration: numberSchema("Mouse move duration in seconds.", { minimum: 0 }),
+        button: enumStringSchema(["left", "right", "middle"], "Mouse button."),
+      },
+      ["x", "y"],
+    ),
+  },
+  {
+    name: "umbral_gui_type_text",
+    task: "gui.type_text",
+    description: "Type text into the currently focused UI element on the Windows lab node.",
+    resultTitle: "GUI type text result",
+    dispatchMode: "enqueue",
+    defaultTeam: "lab",
+    parameters: taskToolSchema(
+      {
+        text: stringSchema("Text to type into the active control."),
+        interval: numberSchema("Delay between keystrokes in seconds.", { minimum: 0 }),
+      },
+      ["text"],
+    ),
+  },
+  {
+    name: "umbral_gui_hotkey",
+    task: "gui.hotkey",
+    description: "Send a keyboard shortcut to the active Windows UI session on the lab node.",
+    resultTitle: "GUI hotkey result",
+    dispatchMode: "enqueue",
+    defaultTeam: "lab",
+    parameters: taskToolSchema(
+      {
+        keys: arraySchema(stringSchema("One key of the shortcut."), "Ordered key combination, for example ['ctrl','l'].", {
+          minItems: 1,
+        }),
+      },
+      ["keys"],
     ),
   },
 ];

@@ -77,6 +77,23 @@ def _plain_text_from_rich_text(rich_text: list[Any] | None) -> str:
     return "".join(parts)
 
 
+def _find_property_name(
+    properties: dict[str, Any],
+    candidates: list[str],
+    expected_types: set[str] | None = None,
+) -> str | None:
+    """Return the first matching property name by exact name + optional type."""
+    for candidate in candidates:
+        meta = properties.get(candidate)
+        if not isinstance(meta, dict):
+            continue
+        prop_type = str(meta.get("type", ""))
+        if expected_types and prop_type not in expected_types:
+            continue
+        return candidate
+    return None
+
+
 def _extract_block_text(block: dict[str, Any]) -> str:
     block_type = block.get("type", "")
     container = block.get(block_type, {})
@@ -142,18 +159,85 @@ def create_transcript_page(
             }
         )
 
-    payload = {
-        "parent": {"database_id": db_id},
-        "properties": {
-            "Name": {"title": [{"text": {"content": title}}]},
-            "Source": {"select": {"name": source}},
-            "Date": {"date": {"start": date}},
-        },
-        "children": blocks,
-    }
-
     logger.info("Creating transcript page: %s (db=%s)", title, db_id)
     with httpx.Client(timeout=TIMEOUT) as client:
+        schema_resp = client.get(
+            f"{NOTION_BASE_URL}/databases/{db_id}",
+            headers=_headers(),
+        )
+        schema_data = _check_response(schema_resp, "create_transcript_page schema")
+        db_properties = schema_data.get("properties") or {}
+
+        title_prop = _find_property_name(
+            db_properties,
+            ["Name", "Nombre", "Título", "Title"],
+            {"title"},
+        )
+        if not title_prop:
+            raise RuntimeError("Notion transcript DB does not have a title property")
+
+        date_prop = _find_property_name(
+            db_properties,
+            ["Date", "Fecha", "Fecha de transcripción", "Fecha de reunion", "Meeting Date"],
+            {"date"},
+        )
+        status_prop = _find_property_name(
+            db_properties,
+            ["Estado", "Status"],
+            {"select", "status"},
+        )
+        source_select_prop = _find_property_name(
+            db_properties,
+            ["Source", "Fuente"],
+            {"select"},
+        )
+        tags_prop = _find_property_name(
+            db_properties,
+            ["Tags", "Etiquetas"],
+            {"multi_select"},
+        )
+        passed_prop = _find_property_name(
+            db_properties,
+            ["Fecha que Rick pasó a Notion", "Fecha que Rick paso a Notion", "Imported At"],
+            {"date"},
+        )
+        processed_prop = _find_property_name(
+            db_properties,
+            ["Fecha que el agente procesó", "Fecha que el agente proceso", "Processed At"],
+            {"date"},
+        )
+
+        properties: dict[str, Any] = {
+            title_prop: {"title": [{"text": {"content": title}}]},
+        }
+
+        if date_prop:
+            properties[date_prop] = {"date": {"start": date}}
+
+        if status_prop:
+            status_type = db_properties[status_prop].get("type")
+            if status_type == "status":
+                properties[status_prop] = {"status": {"name": "Pendiente"}}
+            else:
+                properties[status_prop] = {"select": {"name": "Pendiente"}}
+
+        if source_select_prop:
+            properties[source_select_prop] = {"select": {"name": source}}
+        elif tags_prop:
+            properties[tags_prop] = {"multi_select": [{"name": source}]}
+
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        if passed_prop:
+            properties[passed_prop] = {"date": {"start": today}}
+        if processed_prop:
+            properties[processed_prop] = {"date": {"start": today}}
+
+        payload = {
+            "parent": {"database_id": db_id},
+            "properties": properties,
+            "children": blocks,
+        }
+
         resp = client.post(
             f"{NOTION_BASE_URL}/pages",
             headers=_headers(),

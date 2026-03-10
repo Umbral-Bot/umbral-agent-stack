@@ -15,8 +15,13 @@ if [ -f "${VENV_DIR}/bin/activate" ]; then
     source "${VENV_DIR}/bin/activate"
 fi
 
-# Load env vars (WORKER_TOKEN, WORKER_URL, REDIS_URL, GOOGLE_API_KEY)
-if [ -f "${REPO_DIR}/.env" ]; then
+# Load env vars from the live VPS env first, then fallback to repo-local .env.
+if [ -f "${HOME}/.config/openclaw/env" ]; then
+    set -a
+    # shellcheck disable=SC1091
+    source "${HOME}/.config/openclaw/env"
+    set +a
+elif [ -f "${REPO_DIR}/.env" ]; then
     set -a
     # shellcheck disable=SC1091
     source "${REPO_DIR}/.env"

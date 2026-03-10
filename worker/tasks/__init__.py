@@ -26,6 +26,7 @@ from .notion import (
 from .windows import (
     handle_windows_pad_run_flow,
     handle_windows_open_notepad,
+    handle_windows_open_url,
     handle_windows_write_worker_token,
     handle_windows_firewall_allow_port,
     handle_windows_start_interactive_worker,
@@ -89,6 +90,18 @@ from .gmail import (
 )
 from .google_audio import handle_google_audio_generate
 from .google_image import handle_google_image_generate
+from .browser import (
+    handle_browser_navigate,
+    handle_browser_read_page,
+    handle_browser_screenshot,
+)
+from .gui import (
+    handle_gui_desktop_status,
+    handle_gui_screenshot,
+    handle_gui_click,
+    handle_gui_type_text,
+    handle_gui_hotkey,
+)
 
 # Each handler: (input: dict) -> dict
 TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
@@ -105,6 +118,7 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "notion.update_dashboard": handle_notion_update_dashboard,
     "windows.pad.run_flow": handle_windows_pad_run_flow,
     "windows.open_notepad": handle_windows_open_notepad,
+    "windows.open_url": handle_windows_open_url,
     "windows.write_worker_token": handle_windows_write_worker_token,
     "windows.firewall_allow_port": handle_windows_firewall_allow_port,
     "windows.start_interactive_worker": handle_windows_start_interactive_worker,
@@ -153,4 +167,12 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "gmail.list_drafts": handle_gmail_list_drafts,
     "google.audio.generate": handle_google_audio_generate,
     "google.image.generate": handle_google_image_generate,
+    "browser.navigate": handle_browser_navigate,
+    "browser.read_page": handle_browser_read_page,
+    "browser.screenshot": handle_browser_screenshot,
+    "gui.desktop_status": handle_gui_desktop_status,
+    "gui.screenshot": handle_gui_screenshot,
+    "gui.click": handle_gui_click,
+    "gui.type_text": handle_gui_type_text,
+    "gui.hotkey": handle_gui_hotkey,
 }

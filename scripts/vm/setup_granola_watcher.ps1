@@ -134,7 +134,12 @@ if (-not (Test-Path $watcherScript)) {
     $watcherScript = Join-Path $PSScriptRoot "granola_watcher.py"
 }
 
-$taskAction = "$pythonCmd `"$watcherScript`" --poll"
+$launcherScript = Join-Path $repoRoot "scripts\vm\start_granola_watcher_hidden.ps1"
+if (-not (Test-Path $launcherScript)) {
+    $launcherScript = Join-Path $PSScriptRoot "start_granola_watcher_hidden.ps1"
+}
+
+$taskAction = "powershell -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$launcherScript`""
 $taskName = "GranolaWatcher"
 
 try {

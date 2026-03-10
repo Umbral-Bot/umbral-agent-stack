@@ -161,3 +161,32 @@ Resultado:
 - `consecutiveErrors: 0`
 
 Con esto, el frente de mejora continua quedó mejor cerrado también del lado de su cron operacional de seguimiento.
+
+## Reauditoría adicional: GUI/RPA VM
+
+En una iteración posterior se revisó una desalineación en la trazabilidad del frente GUI/RPA de la VM.
+
+Rick había corregido correctamente que el problema no era `pyautogui` faltante en la VM, pero todavía había sobreafirmado:
+
+- `gui.screenshot: OK`
+
+La validación independiente contra el Worker de la VM mostró:
+
+- `gui.desktop_status`: OK
+- `gui.click`: OK
+- `gui.type_text`: OK
+- `gui.hotkey`: OK
+- `gui.screenshot`: devuelve un PNG `1024x768` completamente negro
+
+Conclusión correcta final:
+
+- input GUI usable
+- framebuffer/captura visual todavía no usable
+
+Rick dejó esta corrección reflejada en:
+
+- `UMB-77`
+- comentario en Notion del proyecto
+- `G:\Mi unidad\Rick-David\Proyecto-Auditoria-Mejora-Continua\informes\reauditoria-gui-rpa-vm-2026-03-10-1337.md`
+
+Esto confirma que el frente de mejora continua sí está cerrando loops reales cuando se fuerza una revalidación con evidencia externa, pero todavía requiere vigilancia activa para evitar sobreafirmaciones en el cierre de auditorías.

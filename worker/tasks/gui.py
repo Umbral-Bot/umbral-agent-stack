@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 from contextlib import contextmanager
+import tempfile
 from pathlib import Path
 from typing import Any, Dict
 
@@ -64,10 +65,10 @@ def handle_gui_screenshot(input_data: Dict[str, Any]) -> Dict[str, Any]:
     from mss import mss
 
     path = str(input_data.get("path") or "").strip()
-    if not path:
-        raise ValueError("'path' is required")
-
-    output_path = Path(path)
+    if path:
+        output_path = Path(path)
+    else:
+        output_path = Path(tempfile.gettempdir()) / "openclaw-gui-shots" / "gui-shot.png"
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     with mss() as capture:

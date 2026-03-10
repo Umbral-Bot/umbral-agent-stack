@@ -1430,6 +1430,62 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     }),
   },
   {
+    name: "umbral_browser_click",
+    task: "browser.click",
+    description: "Click a CSS selector in the Playwright browser running on the Windows lab node.",
+    resultTitle: "Browser click result",
+    dispatchMode: "enqueue",
+    defaultTeam: "lab",
+    parameters: taskToolSchema(
+      {
+        page_id: stringSchema("Optional existing page ID."),
+        selector: stringSchema("CSS selector to click."),
+        timeout_ms: integerSchema("Optional click timeout in milliseconds.", {
+          minimum: 1000,
+          maximum: 120000,
+        }),
+      },
+      ["selector"],
+    ),
+  },
+  {
+    name: "umbral_browser_type_text",
+    task: "browser.type_text",
+    description: "Type text into a CSS selector in the Playwright browser running on the Windows lab node.",
+    resultTitle: "Browser type text result",
+    dispatchMode: "enqueue",
+    defaultTeam: "lab",
+    parameters: taskToolSchema(
+      {
+        page_id: stringSchema("Optional existing page ID."),
+        selector: stringSchema("CSS selector to type into."),
+        text: stringSchema("Text to type."),
+        clear: booleanSchema("Clear the field before typing."),
+        press_enter: booleanSchema("Press Enter after typing."),
+        timeout_ms: integerSchema("Optional typing timeout in milliseconds.", {
+          minimum: 1000,
+          maximum: 120000,
+        }),
+      },
+      ["selector", "text"],
+    ),
+  },
+  {
+    name: "umbral_browser_press_key",
+    task: "browser.press_key",
+    description: "Send a keyboard key to the current Playwright browser page on the Windows lab node.",
+    resultTitle: "Browser press key result",
+    dispatchMode: "enqueue",
+    defaultTeam: "lab",
+    parameters: taskToolSchema(
+      {
+        page_id: stringSchema("Optional existing page ID."),
+        key: stringSchema("Key or shortcut understood by Playwright, for example Enter or Control+L."),
+      },
+      ["key"],
+    ),
+  },
+  {
     name: "umbral_gui_desktop_status",
     task: "gui.desktop_status",
     description: "Inspect the current Windows desktop session on the lab node and report screen size, cursor and root control.",

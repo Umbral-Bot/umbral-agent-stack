@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import base64
 from contextlib import contextmanager
+import importlib
 import tempfile
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 
 def _coerce_int(value: Any, field: str) -> int:
@@ -61,9 +62,43 @@ def handle_gui_desktop_status(_input_data: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def handle_gui_screenshot(input_data: Dict[str, Any]) -> Dict[str, Any]:
-    from mss import mss
+def _capture_with_imagegrab(output_path: Path) -> None:
+    image_grab = importlib.import_module("PIL.ImageGrab")
+    image = image_grab.grab(all_screens=True)
+    image.save(output_path, format="PNG")
 
+
+def _capture_with_pyautogui(output_path: Path) -> None:
+    pyautogui = importlib.import_module("pyautogui")
+    image = pyautogui.screenshot()
+    image.save(output_path, format="PNG")
+
+
+def _capture_with_mss(output_path: Path) -> None:
+    mss_module = importlib.import_module("mss")
+    with mss_module.mss() as capture:
+        capture.shot(output=str(output_path))
+
+
+def _analyze_image(output_path: Path) -> Dict[str, Any]:
+    from PIL import Image, ImageFile, ImageStat
+
+    ImageFile.LOAD_TRUNCATED_IMAGES = True
+    image = Image.open(output_path).convert("RGB")
+    grayscale = image.convert("L")
+    stat = ImageStat.Stat(grayscale)
+    extrema = stat.extrema[0]
+    return {
+        "width": int(image.width),
+        "height": int(image.height),
+        "mean_luma": float(stat.mean[0]),
+        "min_luma": int(extrema[0]),
+        "max_luma": int(extrema[1]),
+        "black_frame": int(extrema[1]) == 0,
+    }
+
+
+def handle_gui_screenshot(input_data: Dict[str, Any]) -> Dict[str, Any]:
     path = str(input_data.get("path") or "").strip()
     if path:
         output_path = Path(path)
@@ -71,18 +106,57 @@ def handle_gui_screenshot(input_data: Dict[str, Any]) -> Dict[str, Any]:
         output_path = Path(tempfile.gettempdir()) / "openclaw-gui-shots" / "gui-shot.png"
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    with mss() as capture:
-        capture.shot(output=str(output_path))
+    preferred = str(input_data.get("method") or "").strip().lower()
+    methods = [
+        ("imagegrab", _capture_with_imagegrab),
+        ("pyautogui", _capture_with_pyautogui),
+        ("mss", _capture_with_mss),
+    ]
+    if preferred:
+        methods.sort(key=lambda item: item[0] != preferred)
 
-    result: Dict[str, Any] = {
-        "ok": True,
-        "path": str(output_path),
-    }
+    diagnostics: List[Dict[str, Any]] = []
+    black_result: Dict[str, Any] | None = None
+    black_bytes: bytes | None = None
 
-    if bool(input_data.get("return_b64", False)):
-        result["b64_png"] = base64.b64encode(output_path.read_bytes()).decode("ascii")
+    for method_name, capture_fn in methods:
+        try:
+            capture_fn(output_path)
+            metrics = _analyze_image(output_path)
+            diagnostics.append({"method": method_name, **metrics})
+            if not metrics["black_frame"]:
+                result: Dict[str, Any] = {
+                    "ok": True,
+                    "path": str(output_path),
+                    "capture_method": method_name,
+                    "usable_visual": True,
+                    "diagnostics": diagnostics,
+                    **metrics,
+                }
+                if bool(input_data.get("return_b64", False)):
+                    result["b64_png"] = base64.b64encode(output_path.read_bytes()).decode("ascii")
+                return result
+            if black_result is None:
+                black_result = {
+                    "ok": True,
+                    "path": str(output_path),
+                    "capture_method": method_name,
+                    "usable_visual": False,
+                    "diagnostics": diagnostics.copy(),
+                    **metrics,
+                }
+                if bool(input_data.get("return_b64", False)):
+                    black_bytes = output_path.read_bytes()
+        except Exception as exc:
+            diagnostics.append({"method": method_name, "error": str(exc)})
 
-    return result
+    if black_result is not None:
+        black_result["diagnostics"] = diagnostics
+        if black_bytes is not None:
+            black_result["b64_png"] = base64.b64encode(black_bytes).decode("ascii")
+        return black_result
+
+    raise RuntimeError(f"GUI screenshot failed with all backends: {diagnostics}")
 
 
 def handle_gui_click(input_data: Dict[str, Any]) -> Dict[str, Any]:

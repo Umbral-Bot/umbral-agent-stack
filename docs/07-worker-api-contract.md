@@ -320,7 +320,7 @@ Listar tareas recientes. Filtrable. Requiere auth.
 | `browser.read_page` | Browser | Extrae texto visible y opcionalmente HTML de la página actual o un selector |
 | `browser.screenshot` | Browser | Captura screenshot de página completa, viewport o selector |
 | `gui.desktop_status` | GUI | Reporta tamaño de pantalla, cursor y control raíz de la sesión interactiva |
-| `gui.screenshot` | GUI | Captura screenshot del escritorio Windows interactivo |
+| `gui.screenshot` | GUI | Captura screenshot del escritorio Windows interactivo; prueba varios backends y reporta si la imagen es usable o es un frame negro |
 | `gui.click` | GUI | Mueve el mouse y hace click en coordenadas absolutas |
 | `gui.type_text` | GUI | Escribe texto en el control actualmente enfocado |
 | `gui.hotkey` | GUI | Envía combinaciones de teclado a la sesión GUI |

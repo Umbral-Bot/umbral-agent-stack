@@ -1,5 +1,7 @@
 import sys
+import tempfile
 import types
+from pathlib import Path
 
 from worker.tasks.gui import (
     handle_gui_click,
@@ -70,6 +72,33 @@ def test_gui_screenshot(tmp_path, monkeypatch):
     assert target.exists()
     assert result["path"] == str(target)
     assert result["b64_png"]
+
+
+def test_gui_screenshot_uses_temp_path_when_missing(monkeypatch):
+    target_root = Path(tempfile.gettempdir()) / "openclaw-gui-shots"
+    target = target_root / "gui-shot.png"
+    if target.exists():
+        target.unlink()
+
+    class _FakeMss:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def shot(self, output):
+            with open(output, "wb") as fh:
+                fh.write(b"pngdata")
+            return output
+
+    monkeypatch.setitem(sys.modules, "mss", types.SimpleNamespace(mss=lambda: _FakeMss()))
+
+    result = handle_gui_screenshot({})
+
+    assert result["ok"] is True
+    assert result["path"].endswith("gui-shot.png")
+    assert target.exists()
 
 
 def test_gui_click(monkeypatch):

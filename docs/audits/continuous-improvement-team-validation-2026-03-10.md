@@ -135,3 +135,29 @@ Lo pendiente ahora es de adopción y UX:
 - validar uso consistente de la nueva DB de tareas en el loop operativo real
 - confirmar vistas/kanban útiles en Notion
 - seguir observando si `main` vuelve a degradarse por fallback/session state
+
+## Seguimiento adicional del 2026-03-10
+
+Después de la primera validación se detectó un residual importante:
+
+- el cron `Seguimiento cada 30 min — Proyecto embudo/Drive` seguía fallando
+
+La causa final no era el loop de mejora continua en sí, sino una mezcla de:
+
+1. sesión inestable en `main`
+2. prompt del cron demasiado amplio sobre `G:\Mi unidad`
+
+Acciones aplicadas:
+
+- el cron se movió temporalmente a `rick-ops`
+- se le dio `sessionKey` dedicada:
+  - `agent:rick-ops:cron:drive-check`
+- se reescribió el prompt para verificar solo la ruta exacta:
+  - `G:\Mi unidad\Rick-David\Proyecto-Embudo-Ventas`
+
+Resultado:
+
+- `lastRunStatus: ok`
+- `consecutiveErrors: 0`
+
+Con esto, el frente de mejora continua quedó mejor cerrado también del lado de su cron operacional de seguimiento.

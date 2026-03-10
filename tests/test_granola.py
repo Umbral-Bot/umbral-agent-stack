@@ -193,6 +193,8 @@ class TestHandleGranolaProcessTranscript:
             date="2026-03-04",
         )
         mock_nc.add_comment.assert_called_once()
+        assert mock_nc.add_comment.call_args.kwargs["page_id"] is None
+        assert "Hola @Enlace" in mock_nc.add_comment.call_args.kwargs["text"]
 
     @patch("worker.tasks.granola.notion_client")
     def test_with_pre_parsed_action_items(self, mock_nc):

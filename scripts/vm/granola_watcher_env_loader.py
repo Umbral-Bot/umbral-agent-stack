@@ -21,7 +21,7 @@ def load_env(path: str = r"C:\Granola\.env") -> dict[str, str]:
     if not env_path.is_file():
         return loaded
 
-    for line in env_path.read_text(encoding="utf-8").splitlines():
+    for line in env_path.read_text(encoding="utf-8-sig").splitlines():
         stripped = line.strip()
         if not stripped or stripped.startswith("#"):
             continue

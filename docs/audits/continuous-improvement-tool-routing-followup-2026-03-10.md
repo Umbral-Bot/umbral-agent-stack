@@ -73,24 +73,59 @@ Luego:
 
 Se volvió a pedir a Rick una revalidación usando explícitamente las tools tipadas de VM.
 
-### Resultado
+### Resultado inicial
 
-Rick corrigió el diagnóstico:
+Rick corrigió parcialmente el diagnóstico:
+
+- invalidó la hipótesis de `pyautogui` faltante en la VM
+- pasó a usar las tools tipadas correctas
+
+Pero todavía quedó un residual en la trazabilidad:
+
+- reportó `GUI screenshot: OK`
+
+### Verificación independiente posterior
+
+Se ejecutó una validación directa contra el Worker de la VM:
+
+- `gui.desktop_status`: OK
+- `gui.click`: OK
+- `gui.type_text`: OK
+- `gui.hotkey`: OK
+- `gui.screenshot`: devuelve un PNG válido de `1024x768`, pero completamente negro
+
+La captura fue medida de forma independiente:
+
+- tamaño: `1024x768`
+- colores únicos: `1`
+- color único: `(0, 0, 0)`
+
+Por lo tanto, la conclusión correcta final es:
 
 - `GUI input`: OK
-- `GUI screenshot`: OK
-- la afirmación anterior sobre `pyautogui` quedó invalidada para esta auditoría
+- `GUI screenshot/framebuffer visual`: NO usable todavía
 
-Su respuesta final ya salió alineada con el estado real:
+### Corrección final
+
+Se empujó a Rick a reauditar este punto y corregir la trazabilidad visible.
+
+Rick dejó corregido el estado real en:
+
+- `UMB-77`
+- comentario en Notion
+- `G:\Mi unidad\Rick-David\Proyecto-Auditoria-Mejora-Continua\informes\reauditoria-gui-rpa-vm-2026-03-10-1337.md`
+
+La respuesta final ya quedó alineada con el estado real:
 
 - el problema no era ausencia de `pyautogui` en la VM
-- el problema era que estaba validando contra la tool equivocada
+- el problema no era selección de tool en esta última iteración
+- el bloqueo real restante es el framebuffer negro en `gui.screenshot`
 
 ## Estado final
 
 - Runtime de `main`: corregido
 - Selección de tool para VM/browser/GUI: endurecida
-- Re-auditoría de Rick: corregida
+- Re-auditoría de Rick: corregida, con un segundo ajuste para alinear `gui.screenshot`
 - Trazabilidad: Rick dejó la corrección en Linear, Notion y carpeta compartida
 
 ## Conclusión
@@ -100,3 +135,4 @@ Este follow-up confirma que:
 1. la definición de tools en el plugin era correcta
 2. el problema estaba en la exposición/configuración del agente `main`
 3. una parte del drift de Rick no era de modelo, sino de runtime/tool availability
+4. el bloqueo GUI/RPA remanente no es `pyautogui`, sino captura visual negra

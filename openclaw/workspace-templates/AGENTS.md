@@ -40,6 +40,7 @@ En la VPS hay un token de GitHub (`GITHUB_TOKEN` en el entorno cuando se carga `
 13. **Completion esperado = trabajo pendiente.** Si Rick spawnea un subagente y luego recibe su completion event antes de entregar la respuesta útil al usuario, debe integrarlo o explicar por qué no lo integra. En ese caso, responder `NO_REPLY` es incorrecto.
 14. **Todo lo user-facing va en español.** Salvo que David pida explícitamente otro idioma, toda respuesta visible para David en Telegram, Notion o cualquier canal debe salir en español claro.
 15. **Nunca mostrar notas internas de trabajo.** Rick no puede emitir al chat frases de scratchpad o razonamiento provisional como “Need maybe…”, “maybe…”, “check…”, listas de dudas en bruto o texto de planificación fragmentaria. Debe pensar en silencio y mostrar solo acciones, bloqueos reales o respuestas útiles.
+16. **VM/Windows siempre por tool tipada.** Si el trabajo apunta a VM Windows, escritorio, navegador de la VM, rutas `G:\` o `C:\`, o tareas `browser.*` / `gui.*`, Rick debe usar las tools tipadas `umbral_windows_*`, `umbral_browser_*` o `umbral_gui_*`. No debe usar `umbral_worker_run` para esas capacidades, porque `umbral_worker_run` puede ejecutar contra el Worker local de la VPS y producir falsos bloqueos.
 
 ## Prioridades
 

@@ -4,7 +4,11 @@ Tasks: Gmail integration handlers.
 - gmail.create_draft: Create an email draft in Gmail.
 - gmail.list_drafts: List existing drafts.
 
-Auth: GOOGLE_GMAIL_TOKEN (OAuth Bearer) or GOOGLE_SERVICE_ACCOUNT_JSON (service account file).
+Auth (first match wins):
+  - GOOGLE_GMAIL_TOKEN: OAuth access token (expires ~1h).
+  - GOOGLE_GMAIL_REFRESH_TOKEN + GOOGLE_GMAIL_CLIENT_ID + GOOGLE_GMAIL_CLIENT_SECRET:
+    long-lived; Worker refreshes access token when needed.
+  - GOOGLE_SERVICE_ACCOUNT_JSON: path to service account JSON.
 Docs: https://developers.google.com/gmail/api/reference/rest
 """
 
@@ -21,13 +25,13 @@ from typing import Any, Dict, List, Optional
 logger = logging.getLogger("worker.tasks.gmail")
 
 GMAIL_API_BASE = "https://gmail.googleapis.com/gmail/v1"
+GMAIL_SCOPES = ["https://www.googleapis.com/auth/gmail.compose", "https://www.googleapis.com/auth/gmail.readonly"]
 
 
 def _get_gmail_headers() -> Dict[str, str]:
     """Build authorization headers for Gmail API.
 
-    Tries GOOGLE_GMAIL_TOKEN (Bearer) first. Falls back to
-    GOOGLE_SERVICE_ACCOUNT_JSON with google-auth (lazy import).
+    Order: GOOGLE_GMAIL_TOKEN → refresh token (client id/secret) → GOOGLE_SERVICE_ACCOUNT_JSON.
     """
     token = os.environ.get("GOOGLE_GMAIL_TOKEN")
     if token:
@@ -35,6 +39,36 @@ def _get_gmail_headers() -> Dict[str, str]:
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
         }
+
+    refresh_token = os.environ.get("GOOGLE_GMAIL_REFRESH_TOKEN")
+    client_id = os.environ.get("GOOGLE_GMAIL_CLIENT_ID")
+    client_secret = os.environ.get("GOOGLE_GMAIL_CLIENT_SECRET")
+    if refresh_token and client_id and client_secret:
+        try:
+            from google.oauth2.credentials import Credentials
+            from google.auth.transport.requests import Request
+
+            creds = Credentials(
+                token=None,
+                refresh_token=refresh_token,
+                token_uri="https://oauth2.googleapis.com/token",
+                client_id=client_id,
+                client_secret=client_secret,
+                scopes=GMAIL_SCOPES,
+            )
+            creds.refresh(Request())
+            return {
+                "Authorization": f"Bearer {creds.token}",
+                "Content-Type": "application/json",
+            }
+        except ImportError:
+            raise ValueError(
+                "google-auth is required for GOOGLE_GMAIL_REFRESH_TOKEN. "
+                "Install with: pip install google-auth"
+            )
+        except Exception as exc:
+            logger.warning("Gmail refresh token flow failed: %s", exc)
+            raise ValueError(f"Failed to refresh Gmail token: {exc}") from exc
 
     sa_path = os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON")
     if sa_path:
@@ -44,7 +78,7 @@ def _get_gmail_headers() -> Dict[str, str]:
 
             creds = service_account.Credentials.from_service_account_file(
                 sa_path,
-                scopes=["https://www.googleapis.com/auth/gmail.compose"],
+                scopes=GMAIL_SCOPES,
             )
             creds.refresh(Request())
             return {
@@ -60,9 +94,9 @@ def _get_gmail_headers() -> Dict[str, str]:
             raise ValueError(f"Failed to load service account credentials: {exc}")
 
     raise ValueError(
-        "GOOGLE_GMAIL_TOKEN not set. Provide a Bearer token via "
-        "GOOGLE_GMAIL_TOKEN or a service account key file via "
-        "GOOGLE_SERVICE_ACCOUNT_JSON."
+        "Gmail auth not configured. Set GOOGLE_GMAIL_TOKEN (access token), or "
+        "GOOGLE_GMAIL_REFRESH_TOKEN + GOOGLE_GMAIL_CLIENT_ID + GOOGLE_GMAIL_CLIENT_SECRET, "
+        "or GOOGLE_SERVICE_ACCOUNT_JSON. See docs/35-gmail-token-setup.md."
     )
 
 

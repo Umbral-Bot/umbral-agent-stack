@@ -251,9 +251,12 @@ class TestGmailCreateDraft:
     def test_gmail_create_draft_missing_token(self):
         env = os.environ.copy()
         env.pop("GOOGLE_GMAIL_TOKEN", None)
+        env.pop("GOOGLE_GMAIL_REFRESH_TOKEN", None)
+        env.pop("GOOGLE_GMAIL_CLIENT_ID", None)
+        env.pop("GOOGLE_GMAIL_CLIENT_SECRET", None)
         env.pop("GOOGLE_SERVICE_ACCOUNT_JSON", None)
         with patch.dict(os.environ, env, clear=True):
-            with pytest.raises(ValueError, match="GOOGLE_GMAIL_TOKEN not set"):
+            with pytest.raises(ValueError, match="Gmail auth not configured"):
                 handle_gmail_create_draft({
                     "to": "recipient@example.com",
                     "subject": "Test",

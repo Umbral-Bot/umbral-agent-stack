@@ -9,6 +9,7 @@ description: fuerza trazabilidad minima por paso de proyecto en linear y carpeta
   y que el estado sea coherente. rechazar progreso sin evidencia fresca o sin artefacto.
 metadata:
   openclaw:
+    always: true
     emoji: 📌
     requires:
       env: []

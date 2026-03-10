@@ -19,6 +19,8 @@ tools:
     description: Operaciones simples de filesystem Windows (sin PAD)
     allowed_base_paths:
       - C:\\Windows\\Temp
+      - C:\\Granola
+      - C:\\Users\\rick\\AppData\\Roaming\\Granola
       - G:\\Mi unidad\\Rick-David
     # Límite para windows.fs.write_bytes_b64 (bytes). Default 5MB.
     max_bytes_b64: 5000000

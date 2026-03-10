@@ -3,6 +3,7 @@ S5 — Tareas Windows (PAD/RPA, scripts).
 
 - windows.pad.run_flow: ejecuta un flujo de Power Automate Desktop (si está en allowlist).
 - windows.open_notepad: abre el Bloc de notas con un texto (prueba de conectividad VM).
+- windows.open_url: abre una URL en el navegador predeterminado de Windows.
 """
 
 import logging
@@ -224,6 +225,25 @@ def handle_windows_open_notepad(input_data: Dict[str, Any]) -> Dict[str, Any]:
     except Exception as e:
         logger.exception("open_notepad failed: %s", e)
         return {"ok": False, "path": "", "scheduled": False, "error": str(e)}
+
+
+def handle_windows_open_url(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Open a URL in the default Windows browser."""
+    if sys.platform != "win32":
+        return {"ok": False, "error": "Solo disponible en Windows."}
+
+    url = str(input_data.get("url") or "").strip()
+    if not url:
+        raise ValueError("'url' is required")
+    if not re.match(r"^https?://", url, re.IGNORECASE):
+        raise ValueError("'url' must start with http:// or https://")
+
+    try:
+        os.startfile(url)  # type: ignore[attr-defined]
+        return {"ok": True, "url": url, "error": None}
+    except Exception as e:
+        logger.exception("open_url failed: %s", e)
+        return {"ok": False, "url": url, "error": str(e)}
 
 
 def handle_windows_write_worker_token(input_data: Dict[str, Any]) -> Dict[str, Any]:

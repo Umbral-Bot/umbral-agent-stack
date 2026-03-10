@@ -306,6 +306,7 @@ Listar tareas recientes. Filtrable. Requiere auth.
 | `notion.create_report_page` | Notion | Crea pÃ¡gina hija con reporte estructurado |
 | `windows.pad.run_flow` | Windows/RPA | Ejecuta flujo de Power Automate Desktop |
 | `windows.open_notepad` | Windows | Abre Notepad (interactivo) |
+| `windows.open_url` | Windows | Abre una URL en el navegador predeterminado |
 | `windows.write_worker_token` | Windows | Escribe token del worker |
 | `windows.firewall_allow_port` | Windows | Abre puerto en firewall |
 | `windows.start_interactive_worker` | Windows | Inicia worker interactivo |
@@ -315,6 +316,14 @@ Listar tareas recientes. Filtrable. Requiere auth.
 | `windows.fs.read_text` | Filesystem | Lee archivo de texto |
 | `windows.fs.write_text` | Filesystem | Escribe archivo de texto |
 | `windows.fs.write_bytes_b64` | Filesystem | Escribe binario (base64) |
+| `browser.navigate` | Browser | Abre o reutiliza una página Playwright persistente y navega a una URL |
+| `browser.read_page` | Browser | Extrae texto visible y opcionalmente HTML de la página actual o un selector |
+| `browser.screenshot` | Browser | Captura screenshot de página completa, viewport o selector |
+| `gui.desktop_status` | GUI | Reporta tamaño de pantalla, cursor y control raíz de la sesión interactiva |
+| `gui.screenshot` | GUI | Captura screenshot del escritorio Windows interactivo |
+| `gui.click` | GUI | Mueve el mouse y hace click en coordenadas absolutas |
+| `gui.type_text` | GUI | Escribe texto en el control actualmente enfocado |
+| `gui.hotkey` | GUI | Envía combinaciones de teclado a la sesión GUI |
 | `system.ooda_report` | Observability | Genera reporte OODA |
 | `system.self_eval` | Observability | Auto-evaluaciÃ³n del sistema |
 | `linear.create_issue` | Linear | Crea issue en Linear, con soporte opcional para asociar a proyecto |
@@ -325,16 +334,11 @@ Listar tareas recientes. Filtrable. Requiere auth.
 | `linear.attach_issue_to_project` | Linear | Asocia un issue existente a un proyecto |
 | `linear.list_project_issues` | Linear | Lista issues asociadas a un proyecto |
 | `linear.create_project_update` | Linear | Publica update de estado en un proyecto (health + body) |
-| 
-8n.list_workflows | n8n | Lista workflows disponibles en la instancia configurada |
-| 
-8n.get_workflow | n8n | Lee la definicion de un workflow por ID |
-| 
-8n.create_workflow | n8n | Crea un workflow desde JSON raw |
-| 
-8n.update_workflow | n8n | Actualiza un workflow existente desde JSON raw |
-| 
-8n.post_webhook | n8n | Invoca un webhook sobre la instancia configurada |
+| `n8n.list_workflows` | n8n | Lista workflows disponibles en la instancia configurada |
+| `n8n.get_workflow` | n8n | Lee la definicion de un workflow por ID |
+| `n8n.create_workflow` | n8n | Crea un workflow desde JSON raw |
+| `n8n.update_workflow` | n8n | Actualiza un workflow existente desde JSON raw |
+| `n8n.post_webhook` | n8n | Invoca un webhook sobre la instancia configurada |
 | google.audio.generate | Google | Genera TTS con Gemini preview TTS |
 | google.image.generate | Google | Genera imagenes y las guarda a disco via Images API compatible |
 | make.post_webhook | Make | Invoca un webhook allowlisted de Make.com |

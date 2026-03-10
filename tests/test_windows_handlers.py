@@ -39,3 +39,19 @@ class TestWindowsPasswordHandling:
         assert "/rp" in create_cmd
         assert "env-secret" in create_cmd
         assert "http-secret" not in create_cmd
+
+
+class TestWindowsOpenUrl:
+    def test_open_url_requires_http_scheme(self, monkeypatch):
+        monkeypatch.setattr(windows.sys, "platform", "win32", raising=False)
+        with pytest.raises(ValueError, match="must start with http:// or https://"):
+            windows.handle_windows_open_url({"url": "file:///tmp/test"})
+
+    def test_open_url_uses_startfile(self, monkeypatch):
+        monkeypatch.setattr(windows.sys, "platform", "win32", raising=False)
+        monkeypatch.setattr(windows.os, "startfile", MagicMock(), raising=False)
+
+        result = windows.handle_windows_open_url({"url": "https://example.com"})
+
+        assert result["ok"] is True
+        windows.os.startfile.assert_called_once_with("https://example.com")

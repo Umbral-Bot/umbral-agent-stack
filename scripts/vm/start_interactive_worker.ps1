@@ -2,10 +2,9 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = "C:\GitHub\umbral-agent-stack"
 $tokenPath = "C:\openclaw-worker\worker_token"
-$pythonExe = "python"
-$pythonArgs = @(
-  "-m",
-  "uvicorn",
+$logDir = "C:\openclaw-worker\logs"
+$uvicornExe = (Get-Command uvicorn.exe -ErrorAction Stop).Source
+$uvicornArgs = @(
   "worker.app:app",
   "--host",
   "0.0.0.0",
@@ -33,7 +32,10 @@ function Stop-ExistingInteractiveWorker {
 }
 
 Set-Location $repoRoot
+$env:PYTHONPATH = $repoRoot
+$env:PYTHONIOENCODING = "utf-8"
 $env:OPENCLAW_INTERACTIVE_SESSION = "1"
+New-Item -ItemType Directory -Path $logDir -Force | Out-Null
 
 if (Test-Path $tokenPath) {
   $token = [System.IO.File]::ReadAllText($tokenPath, [System.Text.Encoding]::UTF8)
@@ -45,11 +47,16 @@ if (Test-Path $tokenPath) {
 
 Stop-ExistingInteractiveWorker
 
+$stdoutLog = Join-Path $logDir "interactive-worker-stdout.log"
+$stderrLog = Join-Path $logDir "interactive-worker-stderr.log"
+
 $process = Start-Process `
-  -FilePath $pythonExe `
-  -ArgumentList $pythonArgs `
+  -FilePath $uvicornExe `
+  -ArgumentList $uvicornArgs `
   -WorkingDirectory $repoRoot `
   -WindowStyle Hidden `
+  -RedirectStandardOutput $stdoutLog `
+  -RedirectStandardError $stderrLog `
   -PassThru
 
 Write-Output "interactive_worker_pid=$($process.Id)"

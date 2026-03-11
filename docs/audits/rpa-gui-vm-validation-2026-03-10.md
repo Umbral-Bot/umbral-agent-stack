@@ -159,6 +159,67 @@ Resultado:
 - el watcher dejó de aparecer como consola visible en foreground
 - la captura interactiva volvió a mostrar apps reales de usuario (Granola, navegador, etc.)
 
+## Slice nuevo: ventanas top-level
+
+Se añadió soporte para:
+
+- `gui.list_windows`
+- `gui.activate_window`
+
+Objetivo:
+
+- listar ventanas reales de la sesión interactiva
+- traer una ventana al frente por título o proceso sin depender de clicks ciegos en la barra de tareas
+
+Estado observado en la primera pasada:
+
+- el listado de ventanas funciona y devuelve títulos, clase, PID y proceso
+- la activación por título/proceso devuelve foreground coherente a nivel API
+- pero en la validación visual inicial todavía había drift en algunos casos: el foreground reportado y la captura visible no siempre coincidían
+
+### Causa raíz del drift intermitente
+
+No era un fallo puro de `gui.activate_window`.
+
+El worker interactivo de `8089` estaba siendo lanzado desde sesiones SSH, por lo que:
+
+- levantaba correctamente de forma local durante esa sesión
+- pero moría al cerrarse la sesión SSH
+- y eso mezclaba resultados entre:
+  - sesiones viejas
+  - relanzamientos manuales
+  - rutas no persistentes
+
+### Fix robusto validado
+
+Se endureció el arranque de `8089` así:
+
+- `scripts/vm/start_interactive_worker.ps1`
+  - `PYTHONPATH` explícito
+  - `PYTHONIOENCODING` explícito
+  - resolución determinista de `uvicorn.exe`
+  - logs persistentes en `C:\openclaw-worker\logs\`
+- criterio operativo:
+  - no lanzar `8089` desde SSH como mecanismo principal
+  - lanzarlo vía tarea programada:
+    - `StartInteractiveWorkerHiddenNow`
+
+Resultado del retest robusto:
+
+- `localhost:8089/health`: `200`
+- `100.109.16.40:8089` desde la VPS: `200`
+- `windows.open_notepad`: OK
+- `gui.list_windows`: OK
+- `gui.activate_window`: OK
+- `gui.screenshot`: OK
+- Notepad quedó realmente al frente y visible en captura
+
+Conclusión actualizada:
+
+- este slice ya mejora de verdad el control GUI
+- la activación de ventanas quedó validada sobre una app real simple (Notepad)
+- todavía conviene validar una app más compleja antes de dar el frente GUI como totalmente cerrado
+
 ## Veredicto
 
 El objetivo de “usar el PC de la VM como una persona” ya quedó demostrado en un nivel básico real, pero no totalmente cerrado.

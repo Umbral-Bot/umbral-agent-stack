@@ -30,11 +30,12 @@ Conclusión:
 
 ### 2. RPA GUI VM
 
-Estado: **parcial-alto**
+Estado: **alto / operativo en baseline real**
 
 - input GUI: OK
 - screenshot/visión GUI: OK por worker interactivo (`8089`)
 - screenshot/visión GUI: FAIL por worker estándar (`8088`)
+- listado/activación de ventanas: OK en app real simple
 
 Conclusión:
 
@@ -42,6 +43,7 @@ Conclusión:
 - el agente ya puede verificar visualmente el escritorio si entra por la ruta interactiva correcta
 - ya quedó validado un flujo GUI simple sobre Notepad
 - el watcher visible de Granola ya no contamina el escritorio interactivo
+- el worker interactivo `8089` quedó estabilizado con arranque persistente vía tarea programada, no por sesiones SSH efímeras
 - todavía falta validar un flujo GUI completo sobre una app objetivo más compleja
 
 ### 3. Freepik vía VM
@@ -126,7 +128,8 @@ El framebuffer útil sí existe, pero no en todos los caminos:
 Eso hace que:
 
 - GUI RPA deje de ser ciego cuando se enruta bien
-- pero todavía no convenga dar por cerrado el frente hasta validar un flujo completo sobre una app real
+- la activación de ventanas ya no sea solo metadata: quedó confirmada visualmente en Notepad
+- todavía no convenga dar por totalmente cerrado el frente hasta validar una app objetivo más compleja
 
 ### Freepik
 

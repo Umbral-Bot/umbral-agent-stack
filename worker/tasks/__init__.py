@@ -104,6 +104,8 @@ from .gui import (
     handle_gui_click,
     handle_gui_type_text,
     handle_gui_hotkey,
+    handle_gui_list_windows,
+    handle_gui_activate_window,
 )
 
 # Each handler: (input: dict) -> dict
@@ -181,4 +183,6 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "gui.click": handle_gui_click,
     "gui.type_text": handle_gui_type_text,
     "gui.hotkey": handle_gui_hotkey,
+    "gui.list_windows": handle_gui_list_windows,
+    "gui.activate_window": handle_gui_activate_window,
 }

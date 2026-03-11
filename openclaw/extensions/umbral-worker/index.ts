@@ -1526,7 +1526,7 @@ const TASK_TOOLS: TaskToolDefinition[] = [
         path: stringSchema("Absolute output path on the Windows node."),
         return_b64: booleanSchema("Return a base64 PNG payload in addition to writing the file."),
       },
-      ["path"],
+      [],
     ),
   },
   {
@@ -1577,6 +1577,33 @@ const TASK_TOOLS: TaskToolDefinition[] = [
         }),
       },
       ["keys"],
+    ),
+  },
+  {
+    name: "umbral_gui_list_windows",
+    task: "gui.list_windows",
+    description: "List top-level windows visible in the interactive Windows session on the lab node.",
+    resultTitle: "GUI list windows result",
+    dispatchMode: "run",
+    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
+    parameters: taskToolSchema({
+      visible_only: booleanSchema("Only include visible windows.", { default: true }),
+    }),
+  },
+  {
+    name: "umbral_gui_activate_window",
+    task: "gui.activate_window",
+    description: "Bring a matching window to the foreground in the interactive Windows session on the lab node.",
+    resultTitle: "GUI activate window result",
+    dispatchMode: "run",
+    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
+    parameters: taskToolSchema(
+      {
+        exact_title: stringSchema("Exact window title to activate."),
+        title_contains: stringSchema("Substring to match against window title."),
+        process_name: stringSchema("Optional process executable name, for example chrome.exe."),
+      },
+      [],
     ),
   },
 ];

@@ -6,6 +6,18 @@
 http://WINDOWS_TAILSCALE_IP:8088
 ```
 
+Para el canal GUI interactivo, el Worker corre en la misma VM en:
+
+```
+http://WINDOWS_TAILSCALE_IP:8089
+```
+
+Nota operativa:
+
+- `8088` sigue siendo la ruta principal del Worker estándar.
+- `8089` es la ruta correcta para `gui.*`.
+- En la VM, `8089` debe arrancarse fuera de sesiones SSH efímeras. La forma robusta validada es la tarea programada `StartInteractiveWorkerHiddenNow`, que lanza `scripts/vm/start_interactive_worker.ps1`.
+
 ## AutenticaciÃ³n
 
 Todos los endpoints excepto `/health` requieren autenticaciÃ³n Bearer:
@@ -324,6 +336,8 @@ Listar tareas recientes. Filtrable. Requiere auth.
 | `gui.click` | GUI | Mueve el mouse y hace click en coordenadas absolutas |
 | `gui.type_text` | GUI | Escribe texto en el control actualmente enfocado |
 | `gui.hotkey` | GUI | Envía combinaciones de teclado a la sesión GUI |
+| `gui.list_windows` | GUI | Lista ventanas top-level de la sesión interactiva, con título, clase, PID y proceso |
+| `gui.activate_window` | GUI | Trae al frente una ventana por título exacto, substring o nombre de proceso |
 | `system.ooda_report` | Observability | Genera reporte OODA |
 | `system.self_eval` | Observability | Auto-evaluaciÃ³n del sistema |
 | `linear.create_issue` | Linear | Crea issue en Linear, con soporte opcional para asociar a proyecto |

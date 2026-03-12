@@ -219,6 +219,80 @@ class BrowserManager:
             result["b64_png"] = base64.b64encode(shot_path.read_bytes()).decode("ascii")
         return result
 
+    async def _click(
+        self,
+        *,
+        page_id: str | None = None,
+        selector: str,
+        timeout_ms: int | None = None,
+    ) -> dict[str, Any]:
+        ref = await self._get_page_ref(page_id, create=False)
+        timeout = timeout_ms or _default_timeout_ms()
+        locator = ref.page.locator(selector)
+        await locator.first.click(timeout=timeout)
+        return {
+            "ok": True,
+            "page_id": ref.page_id,
+            "url": ref.page.url,
+            "title": await ref.page.title(),
+            "selector": selector,
+        }
+
+    async def _type_text(
+        self,
+        *,
+        page_id: str | None = None,
+        selector: str,
+        text: str,
+        clear: bool = True,
+        press_enter: bool = False,
+        timeout_ms: int | None = None,
+    ) -> dict[str, Any]:
+        ref = await self._get_page_ref(page_id, create=False)
+        timeout = timeout_ms or _default_timeout_ms()
+        locator = ref.page.locator(selector).first
+        await locator.wait_for(timeout=timeout)
+        if clear:
+            await locator.fill("", timeout=timeout)
+        await locator.type(text, timeout=timeout)
+        if press_enter:
+            await locator.press("Enter", timeout=timeout)
+        return {
+            "ok": True,
+            "page_id": ref.page_id,
+            "url": ref.page.url,
+            "title": await ref.page.title(),
+            "selector": selector,
+            "chars": len(text),
+            "press_enter": press_enter,
+        }
+
+    async def _press_key(
+        self,
+        *,
+        page_id: str | None = None,
+        key: str,
+    ) -> dict[str, Any]:
+        ref = await self._get_page_ref(page_id, create=False)
+        await ref.page.keyboard.press(key)
+        try:
+            await ref.page.wait_for_load_state("load", timeout=2_000)
+        except Exception:
+            pass
+
+        url = ref.page.url
+        try:
+            title = await ref.page.title()
+        except Exception:
+            title = None
+        return {
+            "ok": True,
+            "page_id": ref.page_id,
+            "url": url,
+            "title": title,
+            "key": key,
+        }
+
     def navigate(
         self,
         *,
@@ -267,6 +341,55 @@ class BrowserManager:
                 full_page=full_page,
                 selector=selector,
                 return_b64=return_b64,
+            )
+        )
+
+    def click(
+        self,
+        *,
+        page_id: str | None = None,
+        selector: str,
+        timeout_ms: int | None = None,
+    ) -> dict[str, Any]:
+        return self._run(
+            self._click(
+                page_id=page_id,
+                selector=selector,
+                timeout_ms=timeout_ms,
+            )
+        )
+
+    def type_text(
+        self,
+        *,
+        page_id: str | None = None,
+        selector: str,
+        text: str,
+        clear: bool = True,
+        press_enter: bool = False,
+        timeout_ms: int | None = None,
+    ) -> dict[str, Any]:
+        return self._run(
+            self._type_text(
+                page_id=page_id,
+                selector=selector,
+                text=text,
+                clear=clear,
+                press_enter=press_enter,
+                timeout_ms=timeout_ms,
+            )
+        )
+
+    def press_key(
+        self,
+        *,
+        page_id: str | None = None,
+        key: str,
+    ) -> dict[str, Any]:
+        return self._run(
+            self._press_key(
+                page_id=page_id,
+                key=key,
             )
         )
 

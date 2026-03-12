@@ -92,8 +92,11 @@ from .google_audio import handle_google_audio_generate
 from .google_image import handle_google_image_generate
 from .browser import (
     handle_browser_navigate,
+    handle_browser_click,
+    handle_browser_press_key,
     handle_browser_read_page,
     handle_browser_screenshot,
+    handle_browser_type_text,
 )
 from .gui import (
     handle_gui_desktop_status,
@@ -101,6 +104,8 @@ from .gui import (
     handle_gui_click,
     handle_gui_type_text,
     handle_gui_hotkey,
+    handle_gui_list_windows,
+    handle_gui_activate_window,
 )
 
 # Each handler: (input: dict) -> dict
@@ -170,9 +175,14 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "browser.navigate": handle_browser_navigate,
     "browser.read_page": handle_browser_read_page,
     "browser.screenshot": handle_browser_screenshot,
+    "browser.click": handle_browser_click,
+    "browser.type_text": handle_browser_type_text,
+    "browser.press_key": handle_browser_press_key,
     "gui.desktop_status": handle_gui_desktop_status,
     "gui.screenshot": handle_gui_screenshot,
     "gui.click": handle_gui_click,
     "gui.type_text": handle_gui_type_text,
     "gui.hotkey": handle_gui_hotkey,
+    "gui.list_windows": handle_gui_list_windows,
+    "gui.activate_window": handle_gui_activate_window,
 }

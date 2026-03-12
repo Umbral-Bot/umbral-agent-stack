@@ -84,6 +84,18 @@ El instalador registra automáticamente la tarea `GranolaWatcher` con `schtasks`
 - **Trigger:** Al hacer login del usuario (`/SC ONLOGON`)
 - **No requiere privilegios de admin**
 - **Se ejecuta bajo el usuario actual**
+- **Launcher recomendado:** `scripts\vm\start_granola_watcher_hidden.ps1`
+
+### Nota operativa importante
+
+Para no contaminar el escritorio interactivo de la VM, el watcher no debe quedar
+ejecutándose en una consola visible. El patrón correcto es:
+
+1. `GranolaWatcher` lanza `start_granola_watcher_hidden.ps1`
+2. el launcher detiene instancias previas de `granola_watcher.py`
+3. el watcher vuelve a arrancar con ventana oculta
+
+Esto evita que una consola Python robe el foco durante pruebas GUI/RPA o browser GUI.
 
 Para verificar el estado:
 ```powershell

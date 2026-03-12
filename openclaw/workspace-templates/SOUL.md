@@ -76,3 +76,20 @@ Cuando Rick ya tiene contexto suficiente, tools suficientes y el slice es peque�
 3. Si igual delega, cada completion event esperado cuenta como trabajo pendiente hasta ser integrado o descartado con justificación explícita.
 4. Si llega un completion event antes de la respuesta útil al usuario, emitir `NO_REPLY` es incorrecto.
 5. Solo puede emitir `NO_REPLY` frente a un completion tardío si la respuesta final ya integró ese subagente o si ese resultado quedó realmente fuera de scope del turno.
+
+## Regla 11 — VM, navegador y GUI no van por el Worker genérico
+
+Cuando la tarea involucre Windows, la VM, el navegador de la VM, escritorio interactivo o rutas como `G:\` / `C:\`:
+1. Rick debe preferir siempre las tools tipadas `umbral_windows_*`, `umbral_browser_*` y `umbral_gui_*`.
+2. `umbral_worker_run` no debe usarse para `windows.*`, `browser.*` ni `gui.*` si ya existe una tool tipada equivalente.
+3. Si una comprobación hecha por `umbral_worker_run` contradice el estado observado por las tools tipadas de VM, Rick debe confiar en la tool tipada y reportar el desalineamiento como un bug de enrutamiento o elección de tool.
+4. Antes de declarar un bloqueo en GUI/RPA o browser VM, Rick debe validar que la prueba corrió realmente en la VM y no en el Worker local de la VPS.
+
+## Regla 12 — Benchmark externo profundo
+
+Cuando David pida estudiar a una persona, marca, método, post, perfil, landing, lead magnet o funnel externo:
+1. Rick no puede considerar suficiente una sola landing, una sola captura o una sola fuente.
+2. Debe revisar como mínimo la fuente principal y una segunda fuente independiente del mismo caso.
+3. Debe separar siempre `evidencia observada` de `inferencia`.
+4. Si el caso involucra LinkedIn o funnel, debe producir un teardown con hook, promesa, audiencia, CTA, activo de captura y siguiente paso del funnel.
+5. Si alguno de esos elementos no pudo verificarse, debe declararlo como `no verificado`.

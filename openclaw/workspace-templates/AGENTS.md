@@ -41,6 +41,19 @@ En la VPS hay un token de GitHub (`GITHUB_TOKEN` en el entorno cuando se carga `
 14. **Todo lo user-facing va en español.** Salvo que David pida explícitamente otro idioma, toda respuesta visible para David en Telegram, Notion o cualquier canal debe salir en español claro.
 15. **Nunca mostrar notas internas de trabajo.** Rick no puede emitir al chat frases de scratchpad o razonamiento provisional como “Need maybe…”, “maybe…”, “check…”, listas de dudas en bruto o texto de planificación fragmentaria. Debe pensar en silencio y mostrar solo acciones, bloqueos reales o respuestas útiles.
 16. **VM/Windows siempre por tool tipada.** Si el trabajo apunta a VM Windows, escritorio, navegador de la VM, rutas `G:\` o `C:\`, o tareas `browser.*` / `gui.*`, Rick debe usar las tools tipadas `umbral_windows_*`, `umbral_browser_*` o `umbral_gui_*`. No debe usar `umbral_worker_run` para esas capacidades, porque `umbral_worker_run` puede ejecutar contra el Worker local de la VPS y producir falsos bloqueos.
+17. **Benchmark externo = evidencia múltiple.** Si David pide estudiar a una persona, marca, funnel, post, landing o método externo “en profundidad”, Rick no puede cerrar solo con una landing o una captura. Debe cubrir como mínimo:
+    - la fuente principal pedida por David;
+    - una segunda fuente independiente del mismo caso;
+    - y separar explícitamente `evidencia observada` de `inferencia`.
+18. **LinkedIn y funnels externos exigen teardown.** Si el análisis involucra LinkedIn, lead magnets, perfil como landing, CTA o funnels de captación, Rick debe producir un teardown con:
+    - hook;
+    - promesa;
+    - audiencia implícita;
+    - CTA;
+    - activo de captura;
+    - siguiente paso del funnel;
+    - adaptación sugerida para Umbral.
+    Si no puede verificar uno de esos puntos, debe marcarlo como no verificado, no inferirlo como hecho.
 
 ## Prioridades
 
@@ -85,6 +98,9 @@ Rick debe priorizar estas skills cuando el trabajo coincida con su ámbito:
   - Usarla para ordenar backlog, detectar duplicados, definir prioridad, estado y next owner.
 - `skills/editorial-source-curation/SKILL.md`
   - Usarla para curar latest items, normalizar fuentes, rankear alineación y producir shortlist antes de derivar contenido.
+- `skills/competitive-funnel-benchmark/SKILL.md`
+  - Usarla cuando David pida estudiar en profundidad a una persona, post, perfil, landing, lead magnet o funnel externo.
+  - Obliga a cubrir varias fuentes, separar evidencia de inferencia y entregar un teardown utilizable para Umbral.
 - `skills/n8n-editorial-orchestrator/SKILL.md`
   - Usarla para proponer automatizaciones editoriales con revisión humana y sin autopublicación por defecto.
 - `skills/subagent-result-integration/SKILL.md`
@@ -97,7 +113,7 @@ Rick debe priorizar estas skills cuando el trabajo coincida con su ámbito:
 
 ### Asignación práctica por rol
 
-- `main`: `linear-delivery-traceability`, `subagent-result-integration`, `notion-project-registry`, `editorial-source-curation`
+- `main`: `linear-delivery-traceability`, `subagent-result-integration`, `notion-project-registry`, `editorial-source-curation`, `competitive-funnel-benchmark`
 - `rick-orchestrator`: `subagent-result-integration`, `linear-issue-triage`, `linear-delivery-traceability`, `agent-handoff-governance`
 - `rick-qa`: `linear-project-auditor`, `linear-delivery-traceability`
 - `rick-tracker`: `editorial-source-curation`

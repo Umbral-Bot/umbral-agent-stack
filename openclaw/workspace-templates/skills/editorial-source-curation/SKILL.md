@@ -21,6 +21,8 @@ metadata:
 ## Objetivo
 Ayudar a Rick a convertir un lote de novedades de fuentes de autoridad en una decision editorial clara para David: que leer, que priorizar y que angulo derivar despues.
 
+Esta skill no reemplaza un benchmark profundo de una persona, perfil, post, landing o funnel concreto. Si David pide estudiar un caso externo "en profundidad", usar `competitive-funnel-benchmark` como skill principal y esta solo como apoyo de curacion si hace falta.
+
 Trabajar siempre en dos fases separadas:
 1. curar y puntuar fuentes
 2. solo tras seleccion humana, derivar un brief o handoff de contenido

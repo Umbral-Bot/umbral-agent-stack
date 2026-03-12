@@ -313,6 +313,26 @@ class TestTeamRouter:
         assert result["action"] == "enqueued"
         assert queue.pending_count() == 1
 
+
+    def test_dispatch_allows_improvement_research_locally_when_vm_offline(self, redis_client):
+        queue = TaskQueue(redis_client)
+        health = MagicMock()
+        health.vm_online = False
+        health.level = SystemLevel.PARTIAL
+
+        router = TeamRouter(queue=queue, health=health)
+
+        envelope = {
+            "task_id": str(uuid.uuid4()),
+            "team": "improvement",
+            "task_type": "research",
+            "task": "research.web",
+            "input": {"query": "test"},
+        }
+        result = router.dispatch(envelope)
+
+        assert result["action"] == "enqueued"
+        assert queue.pending_count() == 1
     def test_dispatch_unknown_team(self, redis_client, sample_envelope):
         queue = TaskQueue(redis_client)
         health = MagicMock()
@@ -370,3 +390,5 @@ class TestTeamRouter:
         teams = router.list_teams()
         assert teams["marketing"]["available"] is True
         assert teams["improvement"]["available"] is False
+
+

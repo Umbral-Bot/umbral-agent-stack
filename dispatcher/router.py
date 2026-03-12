@@ -1,8 +1,8 @@
 """
-Dispatcher — TeamRouter.
+Dispatcher - TeamRouter.
 
-Enruta TaskEnvelopes al equipo correcto y gestiona la dispatch logic.
-Opera en el Control Plane (VPS). Equipos y supervisores se cargan desde config/teams.yaml (S3).
+Enruta TaskEnvelopes al equipo correcto y gestiona la logica de dispatch.
+Opera en el Control Plane (VPS). Equipos y supervisores se cargan desde config/teams.yaml.
 """
 
 import logging
@@ -10,11 +10,11 @@ from typing import Any, Callable, Dict, Optional
 
 from .health import HealthMonitor
 from .queue import TaskQueue
+from .task_routing import task_requires_vm
 from .team_config import get_team_capabilities
 
 logger = logging.getLogger("dispatcher.router")
 
-# Compat: tests y otros pueden importar TEAM_CAPABILITIES (carga desde YAML o default)
 TEAM_CAPABILITIES = get_team_capabilities()
 
 
@@ -23,9 +23,9 @@ class TeamRouter:
     Enruta TaskEnvelopes al equipo y cola correspondiente.
 
     Decisiones de routing:
-    1. Si VM offline + equipo requiere VM → bloquear tarea
-    2. Si VM offline + equipo no requiere VM → ejecutar LLM-only
-    3. Si VM online → encolar normalmente
+    1. Si la task requiere VM y la VM esta offline -> bloquear tarea
+    2. Si la task no requiere VM -> encolar normalmente
+    3. Si la VM esta online -> encolar normalmente
     """
 
     def __init__(
@@ -35,33 +35,16 @@ class TeamRouter:
         on_alert: Optional[Callable[[str, Dict[str, Any]], None]] = None,
         team_capabilities: Optional[Dict[str, Dict[str, Any]]] = None,
     ):
-        """
-        Args:
-            queue: TaskQueue para encolar/bloquear
-            health: HealthMonitor para saber estado del sistema
-            on_alert: callback(message, context) para alertar a David
-            team_capabilities: dict de equipos (si None, se carga desde config/teams.yaml o default)
-        """
         self.queue = queue
         self.health = health
         self.on_alert = on_alert
         self._capabilities = team_capabilities if team_capabilities is not None else get_team_capabilities()
 
     def dispatch(self, envelope: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Despacha un TaskEnvelope al equipo correcto.
-
-        Returns:
-            Dict con resultado del dispatch:
-            - action: "enqueued" | "blocked" | "rejected"
-            - task_id: str
-            - reason: str (si blocked/rejected)
-        """
         task_id = envelope.get("task_id", "unknown")
         team = envelope.get("team", "system")
         task = envelope.get("task", "unknown")
 
-        # Validar equipo
         if team not in self._capabilities:
             logger.warning("Unknown team '%s' for task %s", team, task_id)
             return {
@@ -71,23 +54,20 @@ class TeamRouter:
             }
 
         team_info = self._capabilities[team]
+        requires_vm = task_requires_vm(bool(team_info["requires_vm"]), task)
 
-        # ¿VM requerida y no disponible?
-        if team_info["requires_vm"] and not self.health.vm_online:
+        if requires_vm and not self.health.vm_online:
             reason = (
-                f"Team '{team}' requires VM but VM is offline. "
+                f"Task '{task}' for team '{team}' requires VM but VM is offline. "
                 f"Task '{task}' blocked until VM is available."
             )
             logger.warning(reason)
-            # Enqueue first to store task state, then block
             self.queue.enqueue(envelope)
-            # Dequeue from pending since we're blocking it
             self.queue.block_task(task_id, reason)
 
-            # Alertar a David
             if self.on_alert:
                 self.on_alert(
-                    f"⚠️ Tarea bloqueada: {task} (equipo {team}). VM offline.",
+                    f"Tarea bloqueada: {task} (equipo {team}). VM offline.",
                     {"task_id": task_id, "team": team, "task": task},
                 )
 
@@ -98,9 +78,8 @@ class TeamRouter:
                 "system_level": self.health.level.value,
             }
 
-        # Encolar normalmente
         self.queue.enqueue(envelope)
-        logger.info("Dispatched task %s → team %s", task_id, team)
+        logger.info("Dispatched task %s -> team %s", task_id, team)
 
         return {
             "action": "enqueued",
@@ -111,24 +90,18 @@ class TeamRouter:
         }
 
     def on_vm_back(self) -> Dict[str, Any]:
-        """
-        Llamado cuando la VM vuelve a estar online.
-        Re-encola todas las tareas bloqueadas.
-        """
         unblocked = self.queue.unblock_all()
         if unblocked:
-            msg = f"✅ VM online. {len(unblocked)} tareas re-encoladas: {unblocked}"
+            msg = f"VM online. {len(unblocked)} tareas re-encoladas: {unblocked}"
             logger.info(msg)
             if self.on_alert:
                 self.on_alert(msg, {"unblocked": unblocked})
         return {"unblocked": unblocked}
 
     def get_team_info(self, team: str) -> Optional[Dict[str, Any]]:
-        """Retorna info del equipo o None si no existe."""
         return self._capabilities.get(team)
 
     def list_teams(self) -> Dict[str, Any]:
-        """Lista equipos disponibles con su estado."""
         teams = {}
         for name, info in self._capabilities.items():
             available = True

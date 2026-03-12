@@ -58,6 +58,14 @@ the services the repo already exposes through the Worker.
 - Prefer `umbral_worker_run` only as a fallback for tasks without typed tools.
 - Prefer `umbral_worker_enqueue` if the result may take time or should survive
   beyond the current turn.
+- For VM/Windows work, never use `umbral_worker_run` when a typed tool exists.
+  `umbral_worker_run` may hit the VPS-local Worker and produce false negatives
+  for `windows.*`, `browser.*`, or `gui.*`.
+- For `G:\`, `C:\`, browser VM, or desktop GUI checks, use the typed VM-facing
+  tools first:
+  - `umbral_windows_*`
+  - `umbral_browser_*`
+  - `umbral_gui_*`
 - Keep using the domain skills (`notion`, `linear`, `document-generation`,
   `research`, `provider-status`, `google-calendar`, `gmail`, `figma`,
   `observability`, `windows`) for workflow knowledge; use this bridge when you

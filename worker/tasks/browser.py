@@ -46,3 +46,53 @@ def handle_browser_screenshot(input_data: Dict[str, Any]) -> Dict[str, Any]:
         selector=(str(input_data.get("selector")).strip() or None) if input_data.get("selector") else None,
         return_b64=bool(input_data.get("return_b64", False)),
     )
+
+
+def handle_browser_click(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    selector = str(input_data.get("selector") or "").strip()
+    if not selector:
+        raise ValueError("'selector' is required")
+    timeout_ms = input_data.get("timeout_ms")
+    if timeout_ms is not None:
+        try:
+            timeout_ms = int(timeout_ms)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("'timeout_ms' must be an integer") from exc
+    return get_browser_manager().click(
+        page_id=(str(input_data.get("page_id")).strip() or None) if input_data.get("page_id") else None,
+        selector=selector,
+        timeout_ms=timeout_ms,
+    )
+
+
+def handle_browser_type_text(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    selector = str(input_data.get("selector") or "").strip()
+    if not selector:
+        raise ValueError("'selector' is required")
+    text = str(input_data.get("text") or "")
+    if not text:
+        raise ValueError("'text' is required")
+    timeout_ms = input_data.get("timeout_ms")
+    if timeout_ms is not None:
+        try:
+            timeout_ms = int(timeout_ms)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("'timeout_ms' must be an integer") from exc
+    return get_browser_manager().type_text(
+        page_id=(str(input_data.get("page_id")).strip() or None) if input_data.get("page_id") else None,
+        selector=selector,
+        text=text,
+        clear=bool(input_data.get("clear", True)),
+        press_enter=bool(input_data.get("press_enter", False)),
+        timeout_ms=timeout_ms,
+    )
+
+
+def handle_browser_press_key(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    key = str(input_data.get("key") or "").strip()
+    if not key:
+        raise ValueError("'key' is required")
+    return get_browser_manager().press_key(
+        page_id=(str(input_data.get("page_id")).strip() or None) if input_data.get("page_id") else None,
+        key=key,
+    )

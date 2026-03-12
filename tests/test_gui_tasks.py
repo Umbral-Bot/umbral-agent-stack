@@ -1,10 +1,19 @@
 import sys
+import tempfile
 import types
+from pathlib import Path
+
+import pytest
+from PIL import Image
 
 from worker.tasks.gui import (
+    _analyze_image,
+    _activate_window_impl,
     handle_gui_click,
+    handle_gui_activate_window,
     handle_gui_desktop_status,
     handle_gui_hotkey,
+    handle_gui_list_windows,
     handle_gui_screenshot,
     handle_gui_type_text,
 )
@@ -50,6 +59,70 @@ def test_gui_desktop_status(monkeypatch):
 def test_gui_screenshot(tmp_path, monkeypatch):
     target = tmp_path / "screen.png"
 
+    image_grab = types.SimpleNamespace(
+        grab=lambda all_screens=True: Image.new("RGB", (4, 3), (255, 255, 255))
+    )
+    monkeypatch.setitem(sys.modules, "PIL.ImageGrab", image_grab)
+
+    result = handle_gui_screenshot({"path": str(target), "return_b64": True})
+
+    assert result["ok"] is True
+    assert target.exists()
+    assert result["path"] == str(target)
+    assert result["b64_png"]
+    assert result["capture_method"] == "imagegrab"
+    assert result["usable_visual"] is True
+    assert result["black_frame"] is False
+
+
+def test_gui_screenshot_uses_temp_path_when_missing(monkeypatch):
+    target_root = Path(tempfile.gettempdir()) / "openclaw-gui-shots"
+    target = target_root / "gui-shot.png"
+    if target.exists():
+        target.unlink()
+
+    image_grab = types.SimpleNamespace(
+        grab=lambda all_screens=True: Image.new("RGB", (2, 2), (255, 255, 255))
+    )
+    monkeypatch.setitem(sys.modules, "PIL.ImageGrab", image_grab)
+
+    result = handle_gui_screenshot({})
+
+    assert result["ok"] is True
+    assert result["path"].endswith("gui-shot.png")
+    assert target.exists()
+
+
+def test_gui_screenshot_falls_back_from_black_imagegrab_to_pyautogui(tmp_path, monkeypatch):
+    target = tmp_path / "screen.png"
+    image_grab = types.SimpleNamespace(
+        grab=lambda all_screens=True: Image.new("RGB", (2, 2), (0, 0, 0))
+    )
+    pyautogui = types.SimpleNamespace(
+        screenshot=lambda: Image.new("RGB", (2, 2), (12, 34, 56))
+    )
+    monkeypatch.setitem(sys.modules, "PIL.ImageGrab", image_grab)
+    monkeypatch.setitem(sys.modules, "pyautogui", pyautogui)
+
+    result = handle_gui_screenshot({"path": str(target)})
+
+    assert result["ok"] is True
+    assert result["capture_method"] == "pyautogui"
+    assert result["usable_visual"] is True
+    assert result["black_frame"] is False
+    assert result["diagnostics"][0]["method"] == "imagegrab"
+    assert result["diagnostics"][0]["black_frame"] is True
+
+
+def test_gui_screenshot_returns_black_frame_diagnostics_when_all_backends_black(tmp_path, monkeypatch):
+    target = tmp_path / "screen.png"
+    image_grab = types.SimpleNamespace(
+        grab=lambda all_screens=True: Image.new("RGB", (2, 2), (0, 0, 0))
+    )
+    pyautogui = types.SimpleNamespace(
+        screenshot=lambda: Image.new("RGB", (2, 2), (0, 0, 0))
+    )
+
     class _FakeMss:
         def __enter__(self):
             return self
@@ -58,18 +131,33 @@ def test_gui_screenshot(tmp_path, monkeypatch):
             return False
 
         def shot(self, output):
-            with open(output, "wb") as fh:
-                fh.write(b"pngdata")
+            Image.new("RGB", (2, 2), (0, 0, 0)).save(output, format="PNG")
             return output
 
+    monkeypatch.setitem(sys.modules, "PIL.ImageGrab", image_grab)
+    monkeypatch.setitem(sys.modules, "pyautogui", pyautogui)
     monkeypatch.setitem(sys.modules, "mss", types.SimpleNamespace(mss=lambda: _FakeMss()))
 
-    result = handle_gui_screenshot({"path": str(target), "return_b64": True})
+    result = handle_gui_screenshot({"path": str(target)})
 
     assert result["ok"] is True
-    assert target.exists()
-    assert result["path"] == str(target)
-    assert result["b64_png"]
+    assert result["usable_visual"] is False
+    assert result["black_frame"] is True
+    assert result["capture_method"] == "imagegrab"
+    assert len(result["diagnostics"]) == 3
+
+
+def test_analyze_image_detects_black_frame(tmp_path):
+    target = tmp_path / "black.png"
+    Image.new("RGB", (3, 4), (0, 0, 0)).save(target, format="PNG")
+
+    result = _analyze_image(target)
+
+    assert result["width"] == 3
+    assert result["height"] == 4
+    assert result["black_frame"] is True
+    assert result["min_luma"] == 0
+    assert result["max_luma"] == 0
 
 
 def test_gui_click(monkeypatch):
@@ -98,3 +186,80 @@ def test_gui_hotkey(monkeypatch):
 
     assert result == {"ok": True, "keys": ["ctrl", "l"]}
     assert calls["hotkey"] == [("ctrl", "l")]
+
+
+def test_gui_list_windows(monkeypatch):
+    monkeypatch.setattr(
+        "worker.tasks.gui._list_windows_impl",
+        lambda visible_only=True: [
+            {"hwnd": 1, "title": "Google Chrome", "process_name": "chrome.exe", "visible": True}
+        ],
+    )
+
+    result = handle_gui_list_windows({"visible_only": True})
+
+    assert result["ok"] is True
+    assert result["count"] == 1
+    assert result["windows"][0]["title"] == "Google Chrome"
+
+
+def test_gui_activate_window_requires_selector():
+    try:
+        handle_gui_activate_window({})
+    except ValueError as exc:
+        assert "Provide at least one" in str(exc)
+    else:
+        raise AssertionError("Expected ValueError")
+
+
+def test_gui_activate_window(monkeypatch):
+    monkeypatch.setattr(
+        "worker.tasks.gui._activate_window_impl",
+        lambda **kwargs: {
+            "ok": True,
+            "hwnd": 7,
+            "title": "Google Chrome",
+            "process_name": "chrome.exe",
+            "class_name": "Chrome_WidgetWin_1",
+            "pid": 1234,
+        },
+    )
+
+    result = handle_gui_activate_window({"title_contains": "Chrome"})
+
+    assert result["ok"] is True
+    assert result["hwnd"] == 7
+    assert result["title"] == "Google Chrome"
+
+
+def test_activate_window_impl_raises_when_foreground_does_not_change(monkeypatch):
+    monkeypatch.setattr(
+        "worker.tasks.gui._list_windows_impl",
+        lambda visible_only=False: [
+            {
+                "hwnd": 7,
+                "title": "Google Chrome",
+                "class_name": "Chrome_WidgetWin_1",
+                "pid": 1234,
+                "process_name": "chrome.exe",
+            }
+        ],
+    )
+    monkeypatch.setattr("worker.tasks.gui._get_foreground_window_info", lambda: {"hwnd": 8, "title": "Other"})
+    monkeypatch.setattr("worker.tasks.gui._app_activate", lambda title: False)
+    monkeypatch.setattr("worker.tasks.gui._pywinauto_activate", lambda hwnd: False)
+    monkeypatch.setattr("worker.tasks.gui.time.sleep", lambda _: None)
+
+    fake_user32 = types.SimpleNamespace(
+        IsIconic=lambda hwnd: False,
+        ShowWindow=lambda hwnd, mode: True,
+        BringWindowToTop=lambda hwnd: True,
+        SetForegroundWindow=lambda hwnd: True,
+    )
+    monkeypatch.setattr(
+        "worker.tasks.gui.ctypes",
+        types.SimpleNamespace(windll=types.SimpleNamespace(user32=fake_user32)),
+    )
+
+    with pytest.raises(RuntimeError, match="did not bring"):
+        _activate_window_impl(title_contains="Chrome")

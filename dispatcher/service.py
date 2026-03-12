@@ -23,6 +23,7 @@ from dispatcher.queue import TaskQueue
 from dispatcher.quota_tracker import QuotaTracker
 from dispatcher.router import TeamRouter
 from dispatcher.team_config import get_team_capabilities
+from dispatcher.task_routing import task_requires_vm
 from client.worker_client import WorkerClient
 from infra.ops_logger import ops_log
 
@@ -342,7 +343,7 @@ def _run_worker(
         input_data["selected_model"] = selected_model
 
         team_info = capabilities.get(team)
-        requires_vm = team_info and team_info.get("requires_vm", False)
+        requires_vm = task_requires_vm(bool(team_info and team_info.get("requires_vm", False)), task)
         use_vm = requires_vm and hm.vm_online and wc_vm is not None
 
         if requires_vm and not hm.vm_online and wc_vm is not None:

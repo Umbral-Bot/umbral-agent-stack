@@ -275,6 +275,7 @@ def handle_linear_update_issue_status(input_data: Dict[str, Any]) -> Dict[str, A
         state_id = linear_client.get_state_id_by_name(api_key, team_id, state_name)
     elif state_name and not team_id:
         logger.warning("[linear.update_issue_status] Se pasó state_name sin team_id; no se podrá resolver state_id")
+        return {"ok": False, "error": "state_name provided but team_id missing; state not updated"}
 
     try:
         result = linear_client.update_issue(

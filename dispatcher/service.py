@@ -38,10 +38,8 @@ PROVIDER_MODEL_MAP: Dict[str, str] = {
     "claude_pro":    "claude-sonnet-4-6",
     "claude_opus":   "claude-opus-4-6",
     "claude_haiku":  "claude-haiku-4-5",
-    # OpenClaw Proxy (Claude vía gateway local)
-    "openclaw_claude_pro":   "anthropic/claude-sonnet-4-6",
-    "openclaw_claude_opus":  "anthropic/claude-opus-4-6",
-    "openclaw_claude_haiku": "anthropic/claude-haiku-4-5",
+    # OpenClaw Proxy (Claude vía gateway local — alias único para el proxy)
+    "openclaw_proxy": "anthropic/claude-sonnet-4-6",
     # Google AI Studio
     "gemini_pro":        "gemini-2.5-pro",
     "gemini_flash":      "gemini-2.5-flash",
@@ -55,6 +53,8 @@ LLM_TASK_PREFIXES = ("llm.", "composite.")
 
 CALLBACK_TIMEOUT_SECONDS = 10.0
 CALLBACK_RETRY_DELAY_SECONDS = 5
+
+MAX_CONNECT_RETRIES = 3
 
 
 def _post_webhook_callback(callback_url: str, payload: Dict[str, Any]) -> None:
@@ -221,6 +221,7 @@ def _notify_linear_completion(
             {
                 "issue_id": issue_id,
                 "state_name": state_name,
+                "team_id": envelope.get("team", ""),
                 "comment": "\n".join(body_lines),
             },
         )
@@ -244,6 +245,7 @@ def _escalate_failure_to_linear(
     """
     Create a Linear issue when a task fails, unless the envelope already
     has a linear_issue_id (avoid duplicate issues for the same task).
+    Stores the created issue_id back in envelope for follow-up notifications.
     Controlled by ESCALATE_FAILURES_TO_LINEAR env var (default: true).
     """
     if not ESCALATE_TO_LINEAR:
@@ -252,6 +254,10 @@ def _escalate_failure_to_linear(
         return
     if task.startswith("linear."):
         return
+
+    capabilities = get_team_capabilities()
+    team_info = capabilities.get(team, {})
+    linear_team_key = team_info.get("linear_team_key", "UMBRAL")
 
     priority_map = {"critical": 1, "coding": 2, "ms_stack": 2, "general": 3, "writing": 3, "research": 3, "light": 4}
     task_type = envelope.get("task_type", "general")
@@ -268,13 +274,19 @@ def _escalate_failure_to_linear(
     )
 
     try:
-        wc.run("linear.create_issue", {
+        resp = wc.run("linear.create_issue", {
             "title": title,
             "description": description,
-            "team_key": team,
+            "team_key": linear_team_key,
             "priority": priority,
         })
-        logger.info("[escalation] Linear issue created for failed task %s", task_id)
+        # Store issue_id for follow-up status updates on retry success
+        issue_id = (resp or {}).get("result", {})
+        if isinstance(issue_id, dict):
+            issue_id = issue_id.get("id") or issue_id.get("issue_id")
+        if issue_id:
+            envelope["linear_issue_id"] = issue_id
+        logger.info("[escalation] Linear issue created for failed task %s (issue=%s)", task_id, issue_id)
     except Exception as exc:
         logger.debug("[escalation] Could not create Linear issue: %s", exc)
 
@@ -291,12 +303,15 @@ def _run_worker(
     model_router: ModelRouter,
     alert_manager: Optional[AlertManager],
     worker_id: int,
+    worker_url_vm_gui: Optional[str] = None,
 ) -> None:
     """Worker thread: local WorkerClient siempre; VM WorkerClient solo si WORKER_URL_VM está definido."""
     r = redis.Redis(connection_pool=pool, decode_responses=True)
     queue = TaskQueue(r)
     wc_local = WorkerClient(base_url=worker_url, token=worker_token)
     wc_vm = WorkerClient(base_url=worker_url_vm, token=worker_token) if worker_url_vm else None
+    # GUI tasks (interactive automation) use a separate port on the VM (default 8089)
+    wc_vm_gui = WorkerClient(base_url=worker_url_vm_gui, token=worker_token) if worker_url_vm_gui else wc_vm
     capabilities = get_team_capabilities()
 
     while True:
@@ -359,11 +374,16 @@ def _run_worker(
             worker_id, task_id, task, team, selected_model, target,
         )
 
-        wc = wc_vm if use_vm else wc_local
+        if use_vm and task.startswith("gui."):
+            wc = wc_vm_gui if wc_vm_gui else wc_vm
+        elif use_vm:
+            wc = wc_vm
+        else:
+            wc = wc_local
         threading.Thread(target=_notion_upsert, args=(wc_local, task_id, "running", team, task), kwargs={"input_summary": str(input_data)[:300]}, daemon=True).start()
         t_start = time.time()
         try:
-            result = wc.run(task, input_data)
+            result = wc.run(task, input_data, envelope=envelope)
             duration_ms = (time.time() - t_start) * 1000
             queue.complete_task(task_id, result)
             model_router.quota.record_usage(selected_model)
@@ -394,18 +414,30 @@ def _run_worker(
                 continue
 
             if is_connect_error:
-                # Worker is down — log once and back off to avoid log spam
-                logger.error(
-                    "[worker %d] %s Worker connection refused for task %s. Backing off 5s.",
-                    worker_id, target, task_id,
-                )
-                if alert_manager:
-                    worker_ref = worker_url_vm if (use_vm and worker_url_vm) else worker_url
-                    threading.Thread(
-                        target=alert_manager.alert_worker_down,
-                        args=(worker_ref, str(e)),
-                        daemon=True,
-                    ).start()
+                if retry_count < MAX_CONNECT_RETRIES:
+                    envelope["retry_count"] = retry_count + 1
+                    envelope["status"] = "queued"
+                    queue.enqueue(envelope)
+                    ops_log.task_queued(task_id, task, team, task_type, trace_id=trace_id)
+                    ops_log.task_retried(task_id, task, team, envelope["retry_count"], trace_id=trace_id)
+                    logger.warning(
+                        "[worker %d] %s Worker unreachable for task %s, retry %d/%d. Backing off 30s.",
+                        worker_id, target, task_id, envelope["retry_count"], MAX_CONNECT_RETRIES,
+                    )
+                    if alert_manager:
+                        worker_ref = worker_url_vm if (use_vm and worker_url_vm) else worker_url
+                        threading.Thread(
+                            target=alert_manager.alert_worker_down,
+                            args=(worker_ref, str(e)),
+                            daemon=True,
+                        ).start()
+                    time.sleep(30)
+                    continue
+                else:
+                    logger.error(
+                        "[worker %d] %s Worker unreachable after %d retries for task %s. Failing.",
+                        worker_id, target, MAX_CONNECT_RETRIES, task_id,
+                    )
 
             _input_summary = str(envelope.get("input", {}))[:200]
             ops_log.task_failed(task_id, task, team, str(e), model=selected_model, trace_id=trace_id, input_summary=_input_summary)
@@ -426,14 +458,14 @@ def _run_worker(
                     daemon=True,
                 ).start()
 
-            if is_connect_error:
-                time.sleep(5)
-
 
 def main():
     redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
     worker_url = os.environ.get("WORKER_URL", "http://127.0.0.1:8088")
     worker_url_vm = os.environ.get("WORKER_URL_VM", "").strip() or None
+    # GUI tasks on the VM use an interactive worker on port 8089 by default
+    _default_vm_gui = worker_url_vm.replace(":8088", ":8089") if worker_url_vm else None
+    worker_url_vm_gui = os.environ.get("WORKER_URL_VM_GUI", "").strip() or _default_vm_gui
     worker_token = os.environ.get("WORKER_TOKEN", "")
     num_workers = int(os.environ.get("DISPATCHER_WORKERS", str(DEFAULT_WORKERS)))
 
@@ -469,11 +501,12 @@ def main():
     )
 
     logger.info(
-        "Dispatcher started. %d worker(s), queue '%s'. Local=%s VM=%s",
+        "Dispatcher started. %d worker(s), queue '%s'. Local=%s VM=%s VM_GUI=%s",
         num_workers,
         queue.QUEUE_PENDING,
         worker_url,
         worker_url_vm or "—",
+        worker_url_vm_gui or "—",
     )
 
     threads = []
@@ -481,6 +514,7 @@ def main():
         t = threading.Thread(
             target=_run_worker,
             args=(pool, worker_url, worker_token, worker_url_vm, hm, model_router, alert_manager, i + 1),
+            kwargs={"worker_url_vm_gui": worker_url_vm_gui},
             daemon=True,
         )
         t.start()

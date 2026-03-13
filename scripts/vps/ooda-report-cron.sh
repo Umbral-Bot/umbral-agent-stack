@@ -7,7 +7,7 @@ set -euo pipefail
 REPO_DIR="${REPO_DIR:-$HOME/umbral-agent-stack}"
 cd "$REPO_DIR"
 
-source .venv/bin/activate 2>/dev/null || true
+source .venv/bin/activate
 
 # Load env vars from the live VPS env first, then fallback to repo-local .env.
 if [ -f "${HOME}/.config/openclaw/env" ]; then
@@ -31,7 +31,8 @@ echo "OODA report saved to $REPORT_FILE"
 
 # Optionally post to Notion via Worker API
 if [ -n "${WORKER_URL:-}" ] && [ -n "${WORKER_TOKEN:-}" ]; then
-    REPORT_FILE="$REPORT_FILE" REPORT_TITLE="$REPORT_TITLE" python - <<'PY' 2>&1 || true
+    REPORT_FILE="$REPORT_FILE" REPORT_TITLE="$REPORT_TITLE" python - <<'PY' 2>&1 \
+        || { echo "[ERROR] $(date): OODA Notion post failed" >> /tmp/ooda_report.log; }
 import os
 from client.worker_client import WorkerClient
 
@@ -67,6 +68,10 @@ try:
     )
     print("OODA report posted to Notion report page")
 except Exception as e:
-    print(f"Notion post skipped: {e}")
+    import sys, datetime
+    msg = f"[ERROR] {datetime.datetime.utcnow().isoformat()}Z OODA Notion post failed: {e}\n"
+    print(msg, end="", file=sys.stderr)
+    with open("/tmp/ooda_report.log", "a") as _log:
+        _log.write(msg)
 PY
 fi

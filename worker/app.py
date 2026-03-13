@@ -19,9 +19,9 @@ Uso:
     Ver scripts/setup-openclaw-service.ps1
 """
 
+import asyncio
 import hmac
 import json
-import hmac
 import logging
 import os
 import time
@@ -273,7 +273,8 @@ async def run_task(
     started_at = datetime.now(timezone.utc).isoformat()
 
     try:
-        result_data = handler(envelope.input)
+        loop = asyncio.get_event_loop()
+        result_data = await loop.run_in_executor(None, handler, envelope.input)
     except ValueError as exc:
         logger.warning("Task %s input error: %s", envelope.task, exc)
         _store_task(

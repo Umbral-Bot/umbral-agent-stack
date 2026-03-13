@@ -1054,7 +1054,7 @@ def upsert_task(
     Estados: En cola, En curso, Hecho, Bloqueado, Fallido
     """
     if not config.NOTION_API_KEY or not config.NOTION_TASKS_DB_ID:
-        logger.debug("Notion tasks DB not configured (NOTION_TASKS_DB_ID); skipping upsert_task")
+        logger.warning("Notion tasks DB not configured (NOTION_TASKS_DB_ID); skipping upsert_task")
         return {"skipped": True, "reason": "NOTION_TASKS_DB_ID not set"}
 
     db_id = config.NOTION_TASKS_DB_ID
@@ -1093,11 +1093,12 @@ def upsert_task(
 
         if results:
             page_id = results[0]["id"]
-            client.patch(
+            resp = client.patch(
                 f"{NOTION_BASE_URL}/pages/{page_id}",
                 headers=_headers(),
                 json={"properties": properties},
             )
+            _check_response(resp, "update task")
             logger.info("Updated task %s in Notion (status=%s)", task_id[:8], notion_status)
             return {"page_id": page_id, "updated": True}
         else:

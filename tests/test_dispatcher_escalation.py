@@ -66,7 +66,7 @@ class TestEscalateCreatesIssue:
         assert "abc12345" in payload["title"]
         assert "llm.generate" in payload["description"]
         assert "TimeoutError" in payload["description"]
-        assert payload["team_key"] == "system"
+        assert payload["team_key"] == "UMBRAL"
         assert payload["priority"] == 2  # coding → 2
 
     @patch("dispatcher.service.ESCALATE_TO_LINEAR", True)

@@ -4,7 +4,7 @@ Tests for Dispatcher resilience features (UMB-18).
 Verifies:
   1. Fire-and-forget: _notion_upsert / _notify_linear_completion don't block
   2. Retry: httpx timeouts re-enqueue with retry_count
-  3. Graceful errors: ConnectError doesn't crash, backs off 5s
+  3. Graceful errors: ConnectError doesn't crash, retries with 30s backoff
   4. OpsLogger.task_retried event
 
 Run with:
@@ -265,20 +265,21 @@ class TestRetryOnTimeout:
 
 
 class TestGracefulConnectionErrors:
-    """ConnectError logs + backs off 5s, doesn't crash."""
+    """ConnectError retries with 30s backoff before failing."""
 
-    def test_connect_error_sleeps_5s(self, redis_client, sample_envelope):
+    def test_connect_error_sleeps_30s(self, redis_client, sample_envelope):
         mocks = _run_one_iteration(redis_client, sample_envelope, httpx.ConnectError("refused"))
-        mocks["time"].sleep.assert_called_with(5)
+        mocks["time"].sleep.assert_called_with(30)
 
-    def test_connect_error_logs_failure(self, redis_client, sample_envelope):
+    def test_connect_error_logs_retry(self, redis_client, sample_envelope):
         mocks = _run_one_iteration(redis_client, sample_envelope, httpx.ConnectError("refused"))
-        mocks["ops"].task_failed.assert_called_once()
+        mocks["ops"].task_failed.assert_not_called()
+        mocks["ops"].task_retried.assert_called_once()
 
     def test_connect_error_handling_in_source(self):
         source = inspect.getsource(_run_worker)
         assert "httpx.ConnectError" in source
-        assert "time.sleep(5)" in source
+        assert "time.sleep(30)" in source
 
 
 # ---------------------------------------------------------------------------

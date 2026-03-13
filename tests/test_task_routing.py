@@ -14,7 +14,7 @@ from dispatcher.task_routing import task_requires_vm
         (True, 'browser.navigate', True),
         (True, 'gui.screenshot', True),
         (True, 'windows.fs.list', True),
-        (True, 'granola.process_transcript', True),
+        (True, 'granola.process_transcript', False),
         (True, 'custom.task', True),
     ],
 )

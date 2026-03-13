@@ -8,6 +8,7 @@ teams:
     requires_vm: false
     roles: [supervisor, seo, social_media, copywriting]
     notion_page_id: null  # Opcional: ID página Notion para canal del equipo
+    linear_team_key: "UMBRAL"  # Linear team identifier for issue escalation
 
   advisory:
     supervisor: "Asesoría Personal Supervisor"
@@ -15,6 +16,7 @@ teams:
     requires_vm: false
     roles: [supervisor, financial, lifestyle]
     notion_page_id: null
+    linear_team_key: "UMBRAL"
 
   improvement:
     supervisor: "Mejora Continua Supervisor"
@@ -22,6 +24,7 @@ teams:
     requires_vm: true
     roles: [supervisor, sota_research, self_evaluation, implementation]
     notion_page_id: null
+    linear_team_key: "UMBRAL"
 
   lab:
     supervisor: null
@@ -29,6 +32,7 @@ teams:
     requires_vm: true
     roles: [researcher]
     notion_page_id: null
+    linear_team_key: "UMBRAL"
 
   system:
     supervisor: null
@@ -36,3 +40,4 @@ teams:
     requires_vm: false
     roles: [ping, health, admin]
     notion_page_id: null
+    linear_team_key: "UMBRAL"

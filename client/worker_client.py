@@ -69,13 +69,20 @@ class WorkerClient:
             resp.raise_for_status()
             return resp.json()
 
-    def run(self, task: str, input_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def run(
+        self,
+        task: str,
+        input_data: Optional[Dict[str, Any]] = None,
+        envelope: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         """
         POST /run — execute a task on the worker.
 
         Args:
             task: Task name (e.g., "ping", "notion.add_comment").
             input_data: Task input payload.
+            envelope: Full task envelope. When provided, merges task_id, team,
+                      task_type, and trace_id into the payload for end-to-end tracing.
 
         Returns:
             Response dict with "ok", "task", "result" keys.
@@ -83,7 +90,11 @@ class WorkerClient:
         Raises:
             httpx.HTTPStatusError: On 4xx/5xx after all retries.
         """
-        payload = {"task": task, "input": input_data or {}}
+        payload: Dict[str, Any] = {"task": task, "input": input_data or {}}
+        if envelope:
+            for field in ("task_id", "team", "task_type", "trace_id"):
+                if field in envelope:
+                    payload[field] = envelope[field]
         last_exc: Optional[Exception] = None
 
         for attempt in range(1, self.retries + 2):  # retries + 1 initial attempt

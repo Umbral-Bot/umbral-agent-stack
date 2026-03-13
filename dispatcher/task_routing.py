@@ -11,7 +11,6 @@ _VM_REQUIRED_PREFIXES = (
     "windows.",
     "browser.",
     "gui.",
-    "granola.",
 )
 
 _LOCAL_ONLY_PREFIXES = (
@@ -25,6 +24,12 @@ _LOCAL_ONLY_PREFIXES = (
     "azure.",
     "openai.",
     "make.",
+    "document.",
+    "figma.",
+    "gmail.",
+    "google_audio.",
+    "google_image.",
+    "granola.",  # runs on VPS worker, not VM
 )
 
 

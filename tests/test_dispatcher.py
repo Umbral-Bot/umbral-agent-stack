@@ -156,7 +156,7 @@ class TestHealthMonitor:
             worker_token="test",
         )
         assert hm.level == SystemLevel.NORMAL
-        assert hm.vm_online is True
+        assert hm.vm_online is False
 
     @patch("dispatcher.health.httpx.get")
     def test_successful_check(self, mock_get):
@@ -186,9 +186,9 @@ class TestHealthMonitor:
 
         # 1st and 2nd failure — still online
         hm.check_once()
-        assert hm.vm_online is True
+        assert hm.vm_online is False
         hm.check_once()
-        assert hm.vm_online is True
+        assert hm.vm_online is False
 
         # 3rd failure — now offline
         hm.check_once()

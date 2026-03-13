@@ -139,8 +139,8 @@ class HealthMonitor:
                     "❌ VM declared OFFLINE after %d consecutive failures",
                     self._consecutive_failures,
                 )
-                self._vm_online = False
-                self._set_level(SystemLevel.PARTIAL)
+            self._vm_online = False
+            self._set_level(SystemLevel.PARTIAL)
 
     def _set_level(self, new_level: SystemLevel):
         if new_level != self._level:

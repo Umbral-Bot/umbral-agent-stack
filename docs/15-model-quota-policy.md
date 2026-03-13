@@ -198,9 +198,11 @@ en `http://localhost:18789`. Usa la API `/v1/chat/completions` (compatible con O
 
 | Router Key | Model ID | Uso |
 |------------|----------|-----|
-| `openclaw_claude_pro` | `anthropic/claude-sonnet-4-6` | Balance velocidad/calidad |
-| `openclaw_claude_opus` | `anthropic/claude-opus-4-6` | Máxima calidad |
-| `openclaw_claude_haiku` | `anthropic/claude-haiku-4-5` | Más rápido, más económico |
+| `openclaw_proxy` | `anthropic/claude-sonnet-4-6` | Alias único del gateway local para Claude |
+
+> El dispatcher ya no mantiene aliases separados `openclaw_claude_*`. Si se necesita otro modelo Claude,
+> se selecciona por `model` en el payload del Worker o vía routing del gateway, no creando nuevas keys en
+> `PROVIDER_MODEL_MAP`.
 
 ### Auto-detección
 
@@ -208,6 +210,12 @@ Modelos que contienen `claude` en el nombre se rutean automáticamente:
 1. Si `OPENCLAW_GATEWAY_TOKEN` está → `openclaw_proxy`
 2. Si no pero `ANTHROPIC_API_KEY` está → `anthropic` (directo)
 3. Si ninguno → error explicativo
+
+## Nota de routing de tareas
+
+- `granola.*` se procesa en el Worker local de la VPS.
+- La VM sigue siendo el origen de captura/export o automatización interactiva, pero el procesamiento y la
+  escritura asociada del pipeline de Granola ya no se enrutan como `VM-only`.
 
 ### Manejo de errores
 

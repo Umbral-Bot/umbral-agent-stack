@@ -31,6 +31,50 @@ def find_skill_files(repo_root: Path) -> List[Path]:
     return sorted(skills_dir.glob("*/SKILL.md"))
 
 
+def check_no_nested_skills(repo_root: Path) -> List[str]:
+    """Assert no nested SKILL.md exist (skills/*/*/SKILL.md should be empty)."""
+    skills_dir = repo_root / "openclaw" / "workspace-templates" / "skills"
+    if not skills_dir.is_dir():
+        return []
+    nested = sorted(skills_dir.glob("*/*/SKILL.md"))
+    return [f"Nested SKILL.md found (duplicate): {p.relative_to(repo_root)}" for p in nested]
+
+
+def check_agents_md_skills(repo_root: Path) -> List[str]:
+    """Assert all skills referenced in AGENTS.md exist on disk."""
+    import re
+    agents_md = repo_root / "openclaw" / "workspace-templates" / "AGENTS.md"
+    if not agents_md.exists():
+        return []
+    skills_dir = repo_root / "openclaw" / "workspace-templates" / "skills"
+    text = agents_md.read_text(encoding="utf-8")
+    # Match backtick-quoted skill paths like `skills/foo/SKILL.md`
+    refs = re.findall(r'`(skills/[^`]+/SKILL\.md)`', text)
+    errors = []
+    for ref in refs:
+        skill_path = repo_root / "openclaw" / "workspace-templates" / ref
+        if not skill_path.exists():
+            errors.append(f"AGENTS.md references missing skill: {ref}")
+    return errors
+
+
+def check_always_true_skills(repo_root: Path) -> List[str]:
+    """Assert the 4 required always:true skills are present on disk."""
+    required = [
+        "linear-delivery-traceability",
+        "notion-project-registry",
+        "agent-handoff-governance",
+        "subagent-result-integration",
+    ]
+    skills_dir = repo_root / "openclaw" / "workspace-templates" / "skills"
+    errors = []
+    for name in required:
+        skill_path = skills_dir / name / "SKILL.md"
+        if not skill_path.exists():
+            errors.append(f"Required always:true skill missing: {name}/SKILL.md")
+    return errors
+
+
 def parse_frontmatter(text: str) -> Tuple[Dict, str]:
     """Extract YAML frontmatter from markdown text.
 
@@ -120,14 +164,43 @@ def validate_skill(skill_path: Path) -> List[str]:
 def main() -> int:
     repo_root = Path(__file__).resolve().parent.parent
     skill_files = find_skill_files(repo_root)
+    all_ok = True
 
+    # --- Structural checks ---
+    print("=== Structural checks ===")
+
+    nested_errors = check_no_nested_skills(repo_root)
+    if nested_errors:
+        all_ok = False
+        for err in nested_errors:
+            print(f"  FAIL  {err}")
+    else:
+        print("  OK    No nested SKILL.md files found")
+
+    agents_errors = check_agents_md_skills(repo_root)
+    if agents_errors:
+        all_ok = False
+        for err in agents_errors:
+            print(f"  FAIL  {err}")
+    else:
+        print("  OK    All AGENTS.md skill references exist on disk")
+
+    always_errors = check_always_true_skills(repo_root)
+    if always_errors:
+        all_ok = False
+        for err in always_errors:
+            print(f"  FAIL  {err}")
+    else:
+        print("  OK    All required always:true skills present")
+
+    # --- Per-skill frontmatter validation ---
+    print()
     if not skill_files:
         print("WARNING: No SKILL.md files found.")
         return 0
 
-    print(f"Found {len(skill_files)} skill(s) to validate.\n")
+    print(f"=== Per-skill frontmatter ({len(skill_files)} skills) ===")
 
-    all_ok = True
     for path in skill_files:
         rel = path.relative_to(repo_root)
         errors = validate_skill(path)

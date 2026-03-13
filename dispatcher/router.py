@@ -62,8 +62,7 @@ class TeamRouter:
                 f"Task '{task}' blocked until VM is available."
             )
             logger.warning(reason)
-            self.queue.enqueue(envelope)
-            self.queue.block_task(task_id, reason)
+            self.queue.enqueue_blocked(envelope, reason)
 
             if self.on_alert:
                 self.on_alert(

@@ -162,7 +162,7 @@ class ModelRouter:
 
         # UMBRAL_DEFAULT_MODEL override: swap preferred, keep original as first fallback
         if self._default_model and self._default_model != preferred:
-            if self._default_model in self.provider_config:
+            if self._default_model in self._configured:
                 if preferred not in fallback_chain:
                     fallback_chain = [preferred] + fallback_chain
                 preferred = self._default_model

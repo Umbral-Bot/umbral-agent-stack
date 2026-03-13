@@ -106,7 +106,12 @@ class TaskQueue:
         task_key = f"{self.TASK_KEY_PREFIX}{task_id}"
         full_raw = self.redis.get(task_key)
         if full_raw is None:
-            logger.warning("Task %s expired before dequeue", task_id)
+            logger.warning("Task %s expired before dequeue (TTL loss)", task_id)
+            try:
+                from infra.ops_logger import ops_log
+                ops_log.task_lost(task_id, "ttl_expired")
+            except Exception:
+                pass
             return None
 
         envelope = json.loads(full_raw)
@@ -118,6 +123,30 @@ class TaskQueue:
         return envelope
 
     # --- Block (VM offline / cuota) ---
+
+    def enqueue_blocked(self, envelope: Dict[str, Any], reason: str) -> str:
+        """
+        Escribe la tarea directamente en estado bloqueado, sin pasar por QUEUE_PENDING.
+        Evita la ventana de race condition entre enqueue() y block_task().
+        """
+        task_id = envelope["task_id"]
+        envelope["status"] = "blocked"
+        envelope["block_reason"] = reason
+        envelope["blocked_at"] = time.time()
+        envelope.setdefault("queued_at", envelope["blocked_at"])
+
+        task_key = f"{self.TASK_KEY_PREFIX}{task_id}"
+        pipe = self.redis.pipeline()
+        pipe.set(task_key, json.dumps(envelope))
+        pipe.expire(task_key, self.TASK_TTL_SECONDS)
+        pipe.lpush(self.QUEUE_BLOCKED, json.dumps({
+            "task_id": task_id,
+            "reason": reason,
+            "blocked_at": envelope["blocked_at"],
+        }))
+        pipe.execute()
+        logger.warning("Enqueued-blocked task %s: %s", task_id, reason)
+        return task_id
 
     def block_task(self, task_id: str, reason: str) -> None:
         """Mueve una tarea de pendiente a bloqueada."""

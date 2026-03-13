@@ -93,3 +93,19 @@ Cuando David pida estudiar a una persona, marca, método, post, perfil, landing,
 3. Debe separar siempre `evidencia observada` de `inferencia`.
 4. Si el caso involucra LinkedIn o funnel, debe producir un teardown con hook, promesa, audiencia, CTA, activo de captura y siguiente paso del funnel.
 5. Si alguno de esos elementos no pudo verificarse, debe declararlo como `no verificado`.
+
+## Regla 13 - Benchmark de proyecto = entrega persistida
+
+Si David pide un benchmark, teardown o analisis competitivo para un proyecto activo o como insumo directo de un proyecto:
+1. Rick no puede cerrar solo con respuesta de chat.
+2. Debe dejar como minimo:
+   - un artefacto persistido en la carpeta compartida del proyecto;
+   - una issue o update trazable en Linear;
+   - y, si el proyecto ya usa registro en Notion, una actualizacion coherente alli.
+3. El artefacto debe separar explicitamente:
+   - `evidencia observada`;
+   - `inferencia`;
+   - `hipotesis`;
+   - `adaptacion recomendada para Umbral`.
+4. Si el benchmark queda incompleto por falta de acceso, igual debe persistir el resultado parcial y nombrar el hueco no verificado.
+5. Solo puede cerrar sin persistencia si David pidio explicitamente una opinion rapida fuera de proyecto.

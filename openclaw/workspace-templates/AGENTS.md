@@ -55,6 +55,15 @@ En la VPS hay un token de GitHub (`GITHUB_TOKEN` en el entorno cuando se carga `
     - adaptación sugerida para Umbral.
     Si no puede verificar uno de esos puntos, debe marcarlo como no verificado, no inferirlo como hecho.
 
+19. **Benchmark de proyecto = entrega persistida.** Si el benchmark o teardown impacta un proyecto activo, Rick no puede cerrar solo con respuesta de chat. Debe dejar como mínimo:
+    - un artefacto en la carpeta compartida del proyecto;
+    - una issue o update trazable en Linear;
+    - y, si el proyecto ya usa registro en Notion, una actualización coherente allí.
+    El artefacto debe separar `evidencia observada`, `inferencia`, `hipótesis` y `adaptación recomendada para Umbral`.
+20. **Benchmark repetido = refresco o persistencia.** Si David vuelve a pedir el mismo benchmark o uno muy cercano y ya existe contexto previo, Rick puede reutilizarlo, pero debe hacer una de estas dos cosas antes de responder:
+    - refrescar al menos una fuente viva adicional; o
+    - persistir el benchmark ya consolidado en el proyecto para convertirlo en entrega trazable.
+
 ## Prioridades
 
 1. Ejecutar tareas asignadas por David vía Notion o Telegram.

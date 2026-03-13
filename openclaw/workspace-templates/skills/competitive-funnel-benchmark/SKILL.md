@@ -87,6 +87,34 @@ Seguir este orden:
 
 No saltar del punto 3 al 8.
 
+## Persistencia obligatoria cuando impacta un proyecto
+Si el benchmark se pide como parte de un proyecto activo, como insumo para un proyecto o como decision para Umbral:
+
+1. No cerrar solo con respuesta de chat.
+2. Persistir un artefacto en la carpeta compartida del proyecto.
+3. Dejar issue o update trazable en Linear.
+4. Si el proyecto usa registro en Notion, reflejar el avance alli.
+
+### Contenido minimo del artefacto
+El artefacto debe incluir estas secciones, en este orden:
+- `objeto del benchmark`
+- `evidencia observada`
+- `inferencia`
+- `hipotesis`
+- `teardown`
+- `adaptacion recomendada para Umbral`
+- `huecos no verificados`
+- `siguiente decision recomendada`
+
+### Regla para benchmarks repetidos
+Si David repite el mismo benchmark o uno muy cercano:
+- se puede reutilizar contexto previo;
+- pero antes de responder hay que hacer una de estas dos cosas:
+  - refrescar al menos una fuente viva adicional; o
+  - convertir el benchmark previo en artefacto persistido y trazable.
+
+No reutilizar memoria sola como si fuera una nueva investigacion completa.
+
 ## Resolucion del objeto
 Definir primero que se esta estudiando exactamente:
 

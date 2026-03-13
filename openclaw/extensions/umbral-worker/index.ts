@@ -1403,8 +1403,8 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     task: "browser.navigate",
     description: "Navigate a persistent Playwright browser page on the Windows lab node.",
     resultTitle: "Browser navigate result",
-    dispatchMode: "enqueue",
-    defaultTeam: "lab",
+    dispatchMode: "run",
+    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
     parameters: taskToolSchema(
       {
         url: stringSchema("Target URL to open."),
@@ -1426,8 +1426,8 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     task: "browser.read_page",
     description: "Read visible text from the current browser page or a selector on the Windows lab node.",
     resultTitle: "Browser read page result",
-    dispatchMode: "enqueue",
-    defaultTeam: "lab",
+    dispatchMode: "run",
+    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
     parameters: taskToolSchema({
       page_id: stringSchema("Optional existing page ID."),
       selector: stringSchema("Optional CSS selector to narrow the read target."),
@@ -1439,8 +1439,8 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     task: "browser.screenshot",
     description: "Capture a screenshot from the Playwright browser running on the Windows lab node.",
     resultTitle: "Browser screenshot result",
-    dispatchMode: "enqueue",
-    defaultTeam: "lab",
+    dispatchMode: "run",
+    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
     parameters: taskToolSchema({
       page_id: stringSchema("Optional existing page ID."),
       path: stringSchema("Optional absolute output path on the Windows node."),
@@ -1454,8 +1454,8 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     task: "browser.click",
     description: "Click a CSS selector in the Playwright browser running on the Windows lab node.",
     resultTitle: "Browser click result",
-    dispatchMode: "enqueue",
-    defaultTeam: "lab",
+    dispatchMode: "run",
+    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
     parameters: taskToolSchema(
       {
         page_id: stringSchema("Optional existing page ID."),
@@ -1473,8 +1473,8 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     task: "browser.type_text",
     description: "Type text into a CSS selector in the Playwright browser running on the Windows lab node.",
     resultTitle: "Browser type text result",
-    dispatchMode: "enqueue",
-    defaultTeam: "lab",
+    dispatchMode: "run",
+    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
     parameters: taskToolSchema(
       {
         page_id: stringSchema("Optional existing page ID."),
@@ -1495,8 +1495,8 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     task: "browser.press_key",
     description: "Send a keyboard key to the current Playwright browser page on the Windows lab node.",
     resultTitle: "Browser press key result",
-    dispatchMode: "enqueue",
-    defaultTeam: "lab",
+    dispatchMode: "run",
+    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
     parameters: taskToolSchema(
       {
         page_id: stringSchema("Optional existing page ID."),

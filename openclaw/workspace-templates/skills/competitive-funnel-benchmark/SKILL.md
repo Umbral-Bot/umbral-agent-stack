@@ -19,6 +19,8 @@ Convertir un caso externo en un benchmark profundo y util para Umbral, con cober
 
 No tratar una sola landing, una sola captura o una sola pieza de copy como si fueran el sistema completo.
 
+Si el caso cruza hacia producto oficial, permisos, analytics, organization posting, lead sync o capacidades reales de LinkedIn API, combinar esta skill con `linkedin-marketing-api-embudo`. No usar la skill de API para reemplazar un teardown publico de contenido o funnel; usarla solo para separar benchmark visible vs integracion oficial posible.
+
 ## Regla de oro
 No cerrar un benchmark profundo con una sola fuente.
 

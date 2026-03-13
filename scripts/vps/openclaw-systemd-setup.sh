@@ -37,6 +37,11 @@ else
     echo "Creado: $SYSTEMD_USER_DIR/openclaw.service"
 fi
 
+# --- Enable linger so user services survive headless reboots ---
+echo ""
+echo "=== Habilitando loginctl linger (necesario para reboot sin sesión interactiva) ==="
+loginctl enable-linger "$(whoami)"
+
 # --- Reload y restart ---
 echo ""
 echo "=== Recargando systemd ==="

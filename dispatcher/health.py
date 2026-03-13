@@ -61,7 +61,7 @@ class HealthMonitor:
 
         self._consecutive_failures = 0
         self._level = SystemLevel.NORMAL
-        self._vm_online = True
+        self._vm_online = False  # pessimistic init; check_once() in start() sets real state
         self._running = False
         self._thread: Optional[threading.Thread] = None
         self._last_check: Optional[float] = None
@@ -159,6 +159,8 @@ class HealthMonitor:
         """Inicia el monitor en un thread de background."""
         if self._running:
             return
+        # Synchronous initial check so VM state is accurate before first dequeue
+        self.check_once()
         self._running = True
         self._thread = threading.Thread(target=self._loop, daemon=True)
         self._thread.start()

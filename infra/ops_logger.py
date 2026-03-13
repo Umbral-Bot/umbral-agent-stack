@@ -141,6 +141,13 @@ class OpsLogger:
             ev["trace_id"] = trace_id
         self._write(ev)
 
+    def task_lost(self, task_id: str, reason: str) -> None:
+        self._write({
+            "event": "task_lost",
+            "task_id": task_id,
+            "reason": reason,
+        })
+
     def model_selected(
         self,
         task_id: str,

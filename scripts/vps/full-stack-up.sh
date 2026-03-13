@@ -96,7 +96,32 @@ else
 fi
 
 echo ""
-echo "=== 8. Test E2E (Dispatcher + Worker) ==="
+echo "=== 8. Dispatcher ==="
+if systemctl --user is-active openclaw-dispatcher > /dev/null 2>&1; then
+  echo "   ✅ Dispatcher: RUNNING (systemd)"
+else
+  # Try to enable + start via systemd first
+  if systemctl --user cat openclaw-dispatcher > /dev/null 2>&1; then
+    echo "   ⚠️  Dispatcher no está corriendo. Iniciando via systemd..."
+    systemctl --user enable --now openclaw-dispatcher 2>/dev/null || true
+    sleep 2
+    systemctl --user is-active openclaw-dispatcher > /dev/null 2>&1 \
+      && echo "   ✅ Dispatcher iniciado (systemd)" \
+      || echo "   ❌ Dispatcher no arrancó via systemd"
+  elif pgrep -f "dispatcher.service" > /dev/null 2>&1; then
+    echo "   ✅ Dispatcher: OK (proceso nohup)"
+  else
+    echo "   ⚠️  Dispatcher no está corriendo. Iniciando en background..."
+    (cd "$REPO" && export $(grep -v '^#' "$HOME/.config/openclaw/env" 2>/dev/null | xargs) PYTHONPATH="$REPO" nohup python3 -m dispatcher.service > /tmp/dispatcher.log 2>&1 &)
+    sleep 2
+    pgrep -f "dispatcher.service" > /dev/null 2>&1 \
+      && echo "   ✅ Dispatcher iniciado (nohup)" \
+      || echo "   ❌ Dispatcher no arrancó"
+  fi
+fi
+
+echo ""
+echo "=== 9. Test E2E (Dispatcher + Worker) ==="
 if [ -n "${WORKER_TOKEN:-}" ] && [ -n "${REDIS_URL:-}" ]; then
   export WORKER_URL REDIS_URL WORKER_TOKEN PYTHONPATH="$REPO"
   if python3 scripts/test_s2_dispatcher.py 2>/dev/null; then
@@ -111,11 +136,11 @@ fi
 
 echo ""
 echo "=== Resumen ==="
-echo "OpenClaw:  $(systemctl --user is-active openclaw 2>/dev/null || echo '?')"
-echo "Worker:    $(curl -sf ${WORKER_URL}/health 2>/dev/null && echo 'OK' || echo 'NO')"
-echo "Redis:     $(redis-cli -u ${REDIS_URL:-redis://localhost:6379/0} ping 2>/dev/null || echo 'NO')"
+echo "OpenClaw:   $(systemctl --user is-active openclaw 2>/dev/null || echo '?')"
+echo "Dispatcher: $(systemctl --user is-active openclaw-dispatcher 2>/dev/null || (pgrep -f 'dispatcher.service' > /dev/null 2>&1 && echo 'running(nohup)' || echo 'NO'))"
+echo "Worker:     $(curl -sf ${WORKER_URL}/health 2>/dev/null && echo 'OK' || echo 'NO')"
+echo "Redis:      $(redis-cli -u ${REDIS_URL:-redis://localhost:6379/0} ping 2>/dev/null || echo 'NO')"
 echo ""
-echo "Dispatcher y Notion poller: ejecutar manualmente si los necesitás:"
-echo "  python3 -m dispatcher.service"
+echo "Notion poller: ejecutar manualmente si lo necesitás:"
 echo "  python3 -m dispatcher.notion_poller"
 echo ""

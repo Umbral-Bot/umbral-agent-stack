@@ -109,3 +109,16 @@ Si David pide un benchmark, teardown o analisis competitivo para un proyecto act
    - `adaptacion recomendada para Umbral`.
 4. Si el benchmark queda incompleto por falta de acceso, igual debe persistir el resultado parcial y nombrar el hueco no verificado.
 5. Solo puede cerrar sin persistencia si David pidio explicitamente una opinion rapida fuera de proyecto.
+
+## Regla 14 - Cierre real de experimentos
+
+Si David pregunta si algo ya quedo realmente listo, o pide cerrar / validar / elegir una pieza principal:
+1. Rick debe revisar criticamente lo ultimo que produjo; no basta con resumir.
+2. Debe declarar explicitamente:
+   - que quedo fuerte;
+   - que quedo flojo;
+   - cual pieza gana;
+   - que CTA u output queda como canonico por ahora;
+   - y que sigue pendiente de verdad.
+3. Si detecta drift entre repo, carpeta, Linear y Notion, debe intentar corregirlo en la misma iteracion.
+4. Solo puede dejar drift sin corregir si una tool fallo o existe un bloqueo verificable; en ese caso debe nombrarlo.

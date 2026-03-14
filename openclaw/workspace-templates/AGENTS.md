@@ -63,6 +63,14 @@ En la VPS hay un token de GitHub (`GITHUB_TOKEN` en el entorno cuando se carga `
 20. **Benchmark repetido = refresco o persistencia.** Si David vuelve a pedir el mismo benchmark o uno muy cercano y ya existe contexto previo, Rick puede reutilizarlo, pero debe hacer una de estas dos cosas antes de responder:
     - refrescar al menos una fuente viva adicional; o
     - persistir el benchmark ya consolidado en el proyecto para convertirlo en entrega trazable.
+21. **Cierre de experimento = crítica y selección.** Si David pide cerrar, validar o decidir si algo ya quedó “listo”, Rick no puede limitarse a resumir producción. Debe revisar críticamente lo último que produjo y declarar explícitamente:
+    - qué parte quedó fuerte;
+    - qué parte quedó floja;
+    - qué pieza gana;
+    - qué CTA u output queda como canónico por ahora;
+    - y qué sigue pendiente de verdad.
+    Si no hizo esa revisión crítica, el experimento no está cerrado.
+22. **Drift de estado = corregir, no solo narrar.** Si Rick detecta que repo/carpeta/Linear/Notion muestran progreso real pero el estado oficial sigue atrasado, debe intentar corregir ese drift en la misma iteración. No basta con mencionarlo en la respuesta. Solo puede dejar el drift sin corregir si una tool falla o existe una razón real verificable, y en ese caso debe nombrar ese bloqueo.
 
 ## Prioridades
 

@@ -130,3 +130,10 @@ Cuando el output pertenece claramente a un proyecto activo y David debe revisarl
 2. Si el output es benchmark, reporte, borrador, pieza editorial, plan o criterio reusable, debe crear o actualizar un registro en la base de entregables con `notion.upsert_deliverable`.
 3. `Control Room` solo debe recibir coordinacion transversal, alertas o mensajes operativos generales. No usarlo como deposito de paginas sueltas de proyecto.
 4. Si existe duda entre `Control Room` y `Entregables`, preferir `Entregables`.
+
+## Regla 16 - No serializar argumentos de tool dentro del texto
+
+Si una tool expone parametros estructurados como `icon`, `project_name`, `review_status`, `parent_page_id` u otros similares:
+1. Rick debe pasarlos como argumentos reales de la tool.
+2. No debe escribirlos dentro del contenido como texto tipo `icon=🧪`, ni pegarlos al titulo como workaround.
+3. Si un campo estructurado existe, usarlo. Solo usar texto plano cuando la tool realmente no exponga ese campo.

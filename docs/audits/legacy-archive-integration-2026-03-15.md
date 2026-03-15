@@ -119,6 +119,21 @@ Conclusión:
 - la recanalización física del legacy no rompe activos ni dependencias locales conocidas de Rick
 - el único vínculo durable observado en repo son enlaces documentales, que siguen resolviendo bien
 
+## Fase final: salida de OpenClaw
+
+Para terminar de limpiar el dashboard operativo:
+
+- se creó la página `🧊 Archivo histórico — Umbral`
+- se movió `🗃 Archivo legacy — entregables sueltos` bajo ese archivo frío
+- `OpenClaw` quedó mostrando solo el flujo activo
+- la leyenda del dashboard dejó de mencionar `Archivo legacy` y pasó a referir `Archivo histórico — Umbral`
+
+Resultado:
+
+- `OpenClaw` queda reservado para operación
+- el histórico queda preservado fuera del tablero principal
+- no se perdió información ni se invalidaron enlaces previos
+
 ## Resultado
 
 `Archivo legacy` ahora cumple un rol claro:

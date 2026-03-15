@@ -90,6 +90,7 @@ class TestDashboardReportPayload:
         assert payload["uptime"] == "2d 5h"
         assert payload["running_tasks"] == []
         assert payload["active_alerts"] == []
+        assert "release_tracking" not in payload
 
     def test_fingerprint_changes_with_data(self, monkeypatch):
         monkeypatch.setenv("WORKER_URL", "http://127.0.0.1:8088")
@@ -155,6 +156,7 @@ class TestNotionBlocks:
         callouts = [b for b in blocks if b["type"] == "callout"]
         assert any("green_background" in str(c) for c in callouts), "Operativo should use green_background"
         assert any("red_background" in str(c) for c in callouts), "Alert or error should use red_background"
+        assert all("Seguimiento R16/R17" not in str(b) for b in blocks)
 
     def test_build_dashboard_v2_minimal(self):
         from worker.notion_client import _build_dashboard_v2_blocks

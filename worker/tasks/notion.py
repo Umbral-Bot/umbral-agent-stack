@@ -244,6 +244,10 @@ def handle_notion_upsert_task(input_data: Dict[str, Any]) -> Dict[str, Any]:
         input_summary (str, optional): resumen del input.
         error (str, optional): mensaje de error si status=failed.
         result_summary (str, optional): resumen del resultado.
+        project_name (str, optional): nombre exacto del proyecto en el registry.
+        project_page_id (str, optional): page id del proyecto si ya se conoce.
+        deliverable_name (str, optional): nombre exacto del entregable asociado.
+        deliverable_page_id (str, optional): page id del entregable si ya se conoce.
 
     Returns:
         {"page_id": "...", "updated": True} o {"skipped": True, "reason": "..."}
@@ -255,6 +259,24 @@ def handle_notion_upsert_task(input_data: Dict[str, Any]) -> Dict[str, Any]:
     if not all([task_id, status, team, task]):
         raise ValueError("'task_id', 'status', 'team' and 'task' are required in input")
 
+    project_page_id = (input_data.get("project_page_id") or "").strip()
+    project_name = (input_data.get("project_name") or "").strip()
+    if not project_page_id and project_name:
+        project_page_id = _lookup_project_page_id(project_name) or ""
+
+    deliverable_page_id = (input_data.get("deliverable_page_id") or "").strip()
+    deliverable_name = (input_data.get("deliverable_name") or "").strip()
+    if not deliverable_page_id and deliverable_name and config.NOTION_DELIVERABLES_DB_ID:
+        matches = notion_client.query_database(
+            database_id=config.NOTION_DELIVERABLES_DB_ID,
+            filter={
+                "property": "Nombre",
+                "title": {"equals": deliverable_name},
+            },
+        )
+        if matches:
+            deliverable_page_id = matches[0]["id"]
+
     return notion_client.upsert_task(
         task_id=task_id,
         status=status,
@@ -263,6 +285,8 @@ def handle_notion_upsert_task(input_data: Dict[str, Any]) -> Dict[str, Any]:
         input_summary=input_data.get("input_summary"),
         error=input_data.get("error"),
         result_summary=input_data.get("result_summary"),
+        project_page_id=project_page_id or None,
+        deliverable_page_id=deliverable_page_id or None,
     )
 
 

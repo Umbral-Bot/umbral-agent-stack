@@ -312,7 +312,7 @@ Listar tareas recientes. Filtrable. Requiere auth.
 | `notion.search_databases` | Notion | Busca bases de datos por tÃ­tulo |
 | `notion.create_database_page` | Notion | Crea una pÃ¡gina en una base usando propiedades raw |
 | `notion.update_page_properties` | Notion | Actualiza propiedades raw de una pÃ¡gina |
-| `notion.upsert_task` | Notion | Crea/actualiza tarea en Kanban |
+| `notion.upsert_task` | Notion | Crea/actualiza tarea en Kanban y puede enlazarla a Proyecto/Entregable |
 | `notion.upsert_project` | Notion | Crea/actualiza proyecto en ðŸ“ Proyectos â€” Umbral |
 | `notion.upsert_deliverable` | Notion | Crea/actualiza entregable revisable en ðŸ“¬ Entregables Rick â€” Revision |
 | `notion.update_dashboard` | Notion | Actualiza dashboard Rick |

@@ -1087,12 +1087,14 @@ def upsert_task(
     status: str,
     team: str,
     task: str,
+    task_name: str | None = None,
     input_summary: str | None = None,
     error: str | None = None,
     result_summary: str | None = None,
     project_page_id: str | None = None,
     deliverable_page_id: str | None = None,
     icon: str | None = None,
+    children: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """
     Crea o actualiza una página en la DB "Tareas Umbral" (Kanban tracking).
@@ -1108,7 +1110,7 @@ def upsert_task(
     notion_status = status if status in ("queued", "running", "done", "failed", "blocked") else "queued"
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    title_text = task[:2000] if task else f"Task {task_id[:8]}"
+    title_text = (task_name or task)[:2000] if (task_name or task) else f"Task {task_id[:8]}"
     input_preview = (input_summary or "")[:200] if input_summary else "—"
     error_preview = (error or "")[:200] if error else ""
     result_preview = (result_summary or "")[:200] if result_summary else ""
@@ -1154,6 +1156,10 @@ def upsert_task(
                 json=payload,
             )
             _check_response(resp, "update task")
+            if children:
+                snapshot = read_page(page_id_or_url=page_id, max_blocks=10)
+                if not str(snapshot.get("plain_text") or "").strip():
+                    append_blocks_to_page(page_id=page_id, blocks=children)
             logger.info("Updated task %s in Notion (status=%s)", task_id[:8], notion_status)
             return {"page_id": page_id, "updated": True}
         else:
@@ -1165,12 +1171,16 @@ def upsert_task(
             icon_payload = _normalize_icon(icon)
             if icon_payload:
                 payload["icon"] = icon_payload
+            if children:
+                payload["children"] = children[:100]
             resp = client.post(
                 f"{NOTION_BASE_URL}/pages",
                 headers=_headers(),
                 json=payload,
             )
             result = _check_response(resp, "create task")
+            if children and len(children) > 100:
+                append_blocks_to_page(page_id=result["id"], blocks=children[100:])
             logger.info("Created task %s in Notion (status=%s)", task_id[:8], notion_status)
             return {"page_id": result["id"], "url": result.get("url", ""), "created": True}
 

@@ -1069,6 +1069,8 @@ def upsert_task(
     input_summary: str | None = None,
     error: str | None = None,
     result_summary: str | None = None,
+    project_page_id: str | None = None,
+    deliverable_page_id: str | None = None,
 ) -> dict[str, Any]:
     """
     Crea o actualiza una página en la DB "Tareas Umbral" (Kanban tracking).
@@ -1097,6 +1099,10 @@ def upsert_task(
         "Task ID": {"rich_text": [{"text": {"content": task_id[:2000]}}]},
         "Result Summary": {"rich_text": [{"text": {"content": summary[:2000] or "—"}}]},
     }
+    if project_page_id:
+        properties["Proyecto"] = {"relation": [{"id": project_page_id}]}
+    if deliverable_page_id:
+        properties["Entregable"] = {"relation": [{"id": deliverable_page_id}]}
     if error_preview:
         properties["Error"] = {"rich_text": [{"text": {"content": error_preview[:2000]}}]}
     if input_preview and input_preview != "—":

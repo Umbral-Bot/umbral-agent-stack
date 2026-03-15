@@ -127,12 +127,16 @@ Task: `notion.upsert_task`
   "status": "running",
   "team": "marketing",
   "task": "research.web",
+  "project_name": "Proyecto Embudo Ventas",
+  "deliverable_name": "Benchmark Ruben Hassid - sistema contenido y funnel",
   "input_summary": "query=...",
   "result_summary": "..."
 }
 ```
 
 Devuelve: `{"page_id":"...", "updated": true}` o `{"skipped": true, "reason":"..."}`
+
+Si la tarea pertenece claramente a un proyecto o produce/actualiza un entregable revisable, usa `project_name` / `project_page_id` y `deliverable_name` / `deliverable_page_id` para enlazar la fila. No dejes `Tareas` flotando sin contexto si ya conoces el proyecto o el entregable.
 
 ### 6. Actualizar dashboard
 

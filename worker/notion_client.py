@@ -421,6 +421,27 @@ def read_page(
     }
 
 
+def get_page(page_id_or_url: str) -> dict[str, Any]:
+    """
+    Read raw Notion page metadata.
+
+    Args:
+        page_id_or_url: Notion page UUID or full URL.
+
+    Returns:
+        Raw Notion page object as returned by the REST API.
+    """
+    config.require_notion_core()
+    page_id = _extract_notion_page_id(page_id_or_url)
+
+    with httpx.Client(timeout=TIMEOUT) as client:
+        page_resp = client.get(
+            f"{NOTION_BASE_URL}/pages/{page_id}",
+            headers=_headers(),
+        )
+    return _check_response(page_resp, "get_page")
+
+
 def _flatten_property_value(prop: dict[str, Any]) -> Any:
     prop_type = prop.get("type", "")
 
@@ -1071,6 +1092,7 @@ def upsert_task(
     result_summary: str | None = None,
     project_page_id: str | None = None,
     deliverable_page_id: str | None = None,
+    icon: str | None = None,
 ) -> dict[str, Any]:
     """
     Crea o actualiza una página en la DB "Tareas Umbral" (Kanban tracking).
@@ -1122,23 +1144,31 @@ def upsert_task(
 
         if results:
             page_id = results[0]["id"]
+            payload: dict[str, Any] = {"properties": properties}
+            icon_payload = _normalize_icon(icon)
+            if icon_payload:
+                payload["icon"] = icon_payload
             resp = client.patch(
                 f"{NOTION_BASE_URL}/pages/{page_id}",
                 headers=_headers(),
-                json={"properties": properties},
+                json=payload,
             )
             _check_response(resp, "update task")
             logger.info("Updated task %s in Notion (status=%s)", task_id[:8], notion_status)
             return {"page_id": page_id, "updated": True}
         else:
             properties["Created"] = {"date": {"start": now}}
+            payload = {
+                "parent": {"database_id": db_id},
+                "properties": properties,
+            }
+            icon_payload = _normalize_icon(icon)
+            if icon_payload:
+                payload["icon"] = icon_payload
             resp = client.post(
                 f"{NOTION_BASE_URL}/pages",
                 headers=_headers(),
-                json={
-                    "parent": {"database_id": db_id},
-                    "properties": properties,
-                },
+                json=payload,
             )
             result = _check_response(resp, "create task")
             logger.info("Created task %s in Notion (status=%s)", task_id[:8], notion_status)

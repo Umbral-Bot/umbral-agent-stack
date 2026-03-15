@@ -261,8 +261,12 @@ def handle_notion_upsert_task(input_data: Dict[str, Any]) -> Dict[str, Any]:
 
     project_page_id = (input_data.get("project_page_id") or "").strip()
     project_name = (input_data.get("project_name") or "").strip()
-    if not project_page_id and project_name:
-        project_page_id = _lookup_project_page_id(project_name) or ""
+    project_context = _resolve_project_context(
+        project_name=project_name or None,
+        project_page_id=project_page_id or None,
+    )
+    if project_context.get("page_id"):
+        project_page_id = project_context["page_id"]
 
     deliverable_page_id = (input_data.get("deliverable_page_id") or "").strip()
     deliverable_name = (input_data.get("deliverable_name") or "").strip()
@@ -277,6 +281,17 @@ def handle_notion_upsert_task(input_data: Dict[str, Any]) -> Dict[str, Any]:
         if matches:
             deliverable_page_id = matches[0]["id"]
 
+    resolved_icon = input_data.get("icon") or project_context.get("icon")
+    if not resolved_icon:
+        resolved_icon = _infer_icon_from_text(
+            task,
+            project_name,
+            deliverable_name,
+            input_data.get("input_summary"),
+            input_data.get("result_summary"),
+            fallback="🗂️",
+        )
+
     return notion_client.upsert_task(
         task_id=task_id,
         status=status,
@@ -287,6 +302,7 @@ def handle_notion_upsert_task(input_data: Dict[str, Any]) -> Dict[str, Any]:
         result_summary=input_data.get("result_summary"),
         project_page_id=project_page_id or None,
         deliverable_page_id=deliverable_page_id or None,
+        icon=resolved_icon,
     )
 
 
@@ -349,7 +365,7 @@ def handle_notion_create_report_page(input_data: Dict[str, Any]) -> Dict[str, An
         sources=sources,
         queries=queries,
         metadata=metadata,
-        icon=input_data.get("icon"),
+        icon=input_data.get("icon") or _infer_report_icon(input_data),
     )
 
 
@@ -375,6 +391,134 @@ _ESTADO_REVISION_VALID = {
     "Rechazado",
     "Archivado",
 }
+
+_PROJECT_ICON_RULES: list[tuple[str, str]] = [
+    ("embudo", "🎯"),
+    ("linkedin", "🎯"),
+    ("youtube", "🎯"),
+    ("marketing", "🎯"),
+    ("laboral", "💼"),
+    ("postul", "💼"),
+    ("trabajo", "💼"),
+    ("mejora continua", "🔄"),
+    ("improvement", "🔄"),
+    ("auditor", "🔄"),
+    ("editorial", "✍️"),
+    ("contenido", "✍️"),
+    ("newsletter", "✍️"),
+    ("blog", "✍️"),
+    ("advisory", "🧠"),
+    ("granola", "🎙️"),
+    ("transcrip", "🎙️"),
+    ("browser", "🌐"),
+    ("navegador", "🌐"),
+    ("gui", "🖱️"),
+    ("rpa", "🖱️"),
+    ("ops", "🛠️"),
+    ("vm", "🖥️"),
+    ("system", "⚙️"),
+    ("lab", "🧪"),
+    ("freepik", "🎨"),
+    ("figma", "🎨"),
+    ("docencia", "🎓"),
+    ("docente", "🎓"),
+    ("clase", "🎓"),
+]
+
+_DELIVERABLE_TYPE_ICONS = {
+    "Benchmark": "🔎",
+    "Reporte": "📝",
+    "Borrador": "📝",
+    "Pieza editorial": "✍️",
+    "Criterio / base de conocimiento": "🧠",
+    "Plan": "🗺️",
+    "Auditoria": "🔄",
+}
+
+
+def _normalize_icon_value(icon_payload: Any) -> str | None:
+    """Extract a plain icon string from a Notion icon payload."""
+    if isinstance(icon_payload, dict):
+        if icon_payload.get("type") == "emoji":
+            value = icon_payload.get("emoji")
+            return str(value).strip() if value else None
+        if icon_payload.get("type") == "external":
+            url = (icon_payload.get("external") or {}).get("url")
+            return str(url).strip() if url else None
+    if isinstance(icon_payload, str):
+        return icon_payload.strip() or None
+    return None
+
+
+def _infer_icon_from_text(*values: str | None, fallback: str | None = None) -> str | None:
+    haystack = " ".join((value or "").lower() for value in values if value).strip()
+    for needle, icon in _PROJECT_ICON_RULES:
+        if needle in haystack:
+            return icon
+    return fallback
+
+
+def _extract_page_title_from_properties(page: Dict[str, Any]) -> str:
+    properties = page.get("properties") or {}
+    if not isinstance(properties, dict):
+        return ""
+    for meta in properties.values():
+        if isinstance(meta, dict) and meta.get("type") == "title":
+            return notion_client._plain_text_from_rich_text(meta.get("title"))  # type: ignore[attr-defined]
+    return ""
+
+
+def _resolve_project_context(project_name: str | None = None, project_page_id: str | None = None) -> Dict[str, str]:
+    """
+    Resolve project page id, title and best icon candidate from Projects registry.
+    Returns an empty dict when the project cannot be resolved.
+    """
+    context: Dict[str, str] = {}
+    page: Dict[str, Any] | None = None
+
+    if project_page_id:
+        try:
+            page = notion_client.get_page(project_page_id)
+        except Exception:
+            page = None
+    elif project_name:
+        db_id = config.NOTION_PROJECTS_DB_ID
+        if db_id:
+            matches = notion_client.query_database(
+                database_id=db_id,
+                filter={
+                    "property": "Nombre",
+                    "title": {"equals": project_name},
+                },
+            )
+            if matches:
+                page = matches[0]
+
+    if page:
+        context["page_id"] = str(page.get("id", "")).strip()
+        title = _extract_page_title_from_properties(page) or (project_name or "").strip()
+        if title:
+            context["name"] = title
+        icon = _normalize_icon_value(page.get("icon"))
+        if icon:
+            context["icon"] = icon
+
+    if "icon" not in context and (context.get("name") or project_name):
+        inferred = _infer_icon_from_text(context.get("name"), project_name, fallback="📁")
+        if inferred:
+            context["icon"] = inferred
+
+    return context
+
+
+def _infer_report_icon(input_data: Dict[str, Any]) -> str:
+    metadata = input_data.get("metadata") or {}
+    title = str(input_data.get("title") or "")
+    project_name = str(metadata.get("project_name") or metadata.get("project") or "")
+    project_context = _resolve_project_context(project_name=project_name) if project_name else {}
+    if project_context.get("icon"):
+        return project_context["icon"]
+    return _infer_icon_from_text(title, str(metadata), fallback="📝") or "📝"
 
 
 def _build_project_properties(input_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -568,20 +712,24 @@ def handle_notion_upsert_project(input_data: Dict[str, Any]) -> Dict[str, Any]:
 
     props = _build_project_properties(input_data)
 
+    resolved_icon = input_data.get("icon")
+    if not resolved_icon:
+        resolved_icon = _infer_icon_from_text(name, fallback="📁")
+
     try:
         if existing:
             page_id = existing[0]["id"]
             result = notion_client.update_page_properties(
                 page_id_or_url=page_id,
                 properties=props,
-                icon=input_data.get("icon"),
+                icon=resolved_icon,
             )
             return {"ok": True, "page_id": result["page_id"], "url": result["url"], "created": False}
         else:
             result = notion_client.create_database_page(
                 database_id_or_url=db_id,
                 properties=props,
-                icon=input_data.get("icon"),
+                icon=resolved_icon,
             )
             return {"ok": True, "page_id": result["page_id"], "url": result["url"], "created": True}
     except Exception as e:
@@ -632,10 +780,27 @@ def handle_notion_upsert_deliverable(input_data: Dict[str, Any]) -> Dict[str, An
     except Exception as e:
         return {"ok": False, "error": f"Failed to query deliverables DB: {e}"}
 
+    project_context = _resolve_project_context(
+        project_name=(input_data.get("project_name") or "").strip() or None,
+        project_page_id=(input_data.get("project_page_id") or "").strip() or None,
+    )
+    if project_context.get("page_id") and not input_data.get("project_page_id"):
+        input_data = {**input_data, "project_page_id": project_context["page_id"]}
+
     try:
         props = _build_deliverable_properties(input_data)
     except Exception as e:
         return {"ok": False, "error": f"Failed to build deliverable properties: {e}"}
+
+    resolved_icon = input_data.get("icon") or project_context.get("icon")
+    if not resolved_icon:
+        resolved_icon = _DELIVERABLE_TYPE_ICONS.get(str(input_data.get("deliverable_type") or "").strip())
+    if not resolved_icon:
+        resolved_icon = _infer_icon_from_text(
+            str(input_data.get("name") or ""),
+            str(input_data.get("summary") or ""),
+            fallback="📝",
+        )
 
     try:
         if existing:
@@ -643,14 +808,14 @@ def handle_notion_upsert_deliverable(input_data: Dict[str, Any]) -> Dict[str, An
             result = notion_client.update_page_properties(
                 page_id_or_url=page_id,
                 properties=props,
-                icon=input_data.get("icon"),
+                icon=resolved_icon,
             )
             return {"ok": True, "page_id": result["page_id"], "url": result["url"], "created": False}
 
         result = notion_client.create_database_page(
             database_id_or_url=db_id,
             properties=props,
-            icon=input_data.get("icon"),
+            icon=resolved_icon,
         )
         return {"ok": True, "page_id": result["page_id"], "url": result["url"], "created": True}
     except Exception as e:

@@ -11,7 +11,19 @@ def test_handle_notion_upsert_task_resolves_project_and_deliverable_names():
     with patch("worker.tasks.notion.config") as mock_cfg, patch("worker.tasks.notion.notion_client") as mock_nc:
         mock_cfg.NOTION_DELIVERABLES_DB_ID = "deliverables-db"
         mock_nc.query_database.side_effect = [
-            [{"id": "project-page-1", "url": "https://www.notion.so/project-page-1"}],
+            [
+                {
+                    "id": "project-page-1",
+                    "url": "https://www.notion.so/project-page-1",
+                    "icon": {"type": "emoji", "emoji": "🎯"},
+                    "properties": {
+                        "Nombre": {
+                            "type": "title",
+                            "title": [{"plain_text": "Proyecto Embudo Ventas"}],
+                        }
+                    },
+                }
+            ],
             [{"id": "deliverable-page-1", "url": "https://www.notion.so/deliverable-page-1"}],
         ]
         mock_nc.upsert_task.return_value = {"page_id": "task-page-1", "updated": True}
@@ -30,6 +42,7 @@ def test_handle_notion_upsert_task_resolves_project_and_deliverable_names():
     assert result["page_id"] == "task-page-1"
     assert mock_nc.upsert_task.call_args.kwargs["project_page_id"] == "project-page-1"
     assert mock_nc.upsert_task.call_args.kwargs["deliverable_page_id"] == "deliverable-page-1"
+    assert mock_nc.upsert_task.call_args.kwargs["icon"] == "🎯"
 
 
 def test_handle_notion_upsert_task_prefers_explicit_relation_ids():
@@ -37,6 +50,17 @@ def test_handle_notion_upsert_task_prefers_explicit_relation_ids():
 
     with patch("worker.tasks.notion.config") as mock_cfg, patch("worker.tasks.notion.notion_client") as mock_nc:
         mock_cfg.NOTION_DELIVERABLES_DB_ID = "deliverables-db"
+        mock_nc.get_page.return_value = {
+            "id": "project-explicit",
+            "url": "https://www.notion.so/project-explicit",
+            "icon": {"type": "emoji", "emoji": "🔄"},
+            "properties": {
+                "Nombre": {
+                    "type": "title",
+                    "title": [{"plain_text": "Auditoria Mejora Continua"}],
+                }
+            },
+        }
         mock_nc.upsert_task.return_value = {"page_id": "task-page-2", "updated": True}
 
         result = handle_notion_upsert_task(
@@ -54,6 +78,27 @@ def test_handle_notion_upsert_task_prefers_explicit_relation_ids():
     mock_nc.query_database.assert_not_called()
     assert mock_nc.upsert_task.call_args.kwargs["project_page_id"] == "project-explicit"
     assert mock_nc.upsert_task.call_args.kwargs["deliverable_page_id"] == "deliverable-explicit"
+    assert mock_nc.upsert_task.call_args.kwargs["icon"] == "🔄"
+
+
+def test_handle_notion_upsert_task_infers_icon_from_text_without_project():
+    from worker.tasks.notion import handle_notion_upsert_task
+
+    with patch("worker.tasks.notion.config") as mock_cfg, patch("worker.tasks.notion.notion_client") as mock_nc:
+        mock_cfg.NOTION_DELIVERABLES_DB_ID = "deliverables-db"
+        mock_nc.upsert_task.return_value = {"page_id": "task-page-3", "updated": True}
+
+        result = handle_notion_upsert_task(
+            {
+                "task_id": "task-789",
+                "status": "queued",
+                "team": "ops",
+                "task": "Preparar blog editorial",
+            }
+        )
+
+    assert result["page_id"] == "task-page-3"
+    assert mock_nc.upsert_task.call_args.kwargs["icon"] == "✍️"
 
 
 def test_notion_client_upsert_task_includes_relation_properties_on_create():
@@ -85,9 +130,11 @@ def test_notion_client_upsert_task_includes_relation_properties_on_create():
             task="Relacionar entregable",
             project_page_id="project-page-9",
             deliverable_page_id="deliverable-page-9",
+            icon="🎯",
         )
 
     assert result["created"] is True
     create_payload = mock_client.post.call_args_list[1].kwargs["json"]
     assert create_payload["properties"]["Proyecto"]["relation"] == [{"id": "project-page-9"}]
     assert create_payload["properties"]["Entregable"]["relation"] == [{"id": "deliverable-page-9"}]
+    assert create_payload["icon"] == {"type": "emoji", "emoji": "🎯"}

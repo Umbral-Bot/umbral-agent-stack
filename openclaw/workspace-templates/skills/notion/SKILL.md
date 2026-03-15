@@ -203,6 +203,9 @@ Variables opcionales: `start_date`, `target_date` (YYYY-MM-DD), `bloqueos`, `las
 
 - Si la task acepta `icon`, usar ese campo y no meter el emoji dentro del `title` o `name`.
 - Reservar emoji en el texto solo cuando el icono no pueda configurarse por API.
+- Para filas/paginas ligadas a un proyecto, preferir el icono del proyecto como icono real.
+- Si no hay proyecto, inferir un icono por contenido/tipo antes de dejar la pagina sin icono.
+- En bases de datos top-level de Notion, mantener emoji en el titulo como fallback visual porque el icono de database no siempre queda gobernable por esta API.
 
 ## Triggers recomendados
 

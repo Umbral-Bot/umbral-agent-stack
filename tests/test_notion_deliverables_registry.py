@@ -90,3 +90,43 @@ def test_upsert_deliverable_updates_existing():
     assert result["page_id"] == "deliverable-id"
     mock_nc.update_page_properties.assert_called_once()
     assert mock_nc.update_page_properties.call_args.kwargs["icon"] == "📝"
+
+
+def test_upsert_deliverable_inherits_project_icon_when_missing():
+    from worker.tasks.notion import handle_notion_upsert_deliverable
+
+    with patch("worker.tasks.notion.config") as mock_cfg, patch("worker.tasks.notion.notion_client") as mock_nc:
+        mock_cfg.NOTION_DELIVERABLES_DB_ID = "db-uuid-456"
+        mock_cfg.NOTION_PROJECTS_DB_ID = "projects-db"
+        mock_nc.query_database.side_effect = [
+            [],
+            [
+                {
+                    "id": "project-page-1",
+                    "url": "https://www.notion.so/project-page-1",
+                    "icon": {"type": "emoji", "emoji": "🎯"},
+                    "properties": {
+                        "Nombre": {
+                            "type": "title",
+                            "title": [{"plain_text": "Proyecto Embudo Ventas"}],
+                        }
+                    },
+                }
+            ],
+        ]
+        mock_nc.create_database_page.return_value = {
+            "page_id": "new-deliverable-id",
+            "url": "https://www.notion.so/new-deliverable-id",
+            "created": True,
+        }
+
+        result = handle_notion_upsert_deliverable(
+            {
+                "name": "Benchmark embudo",
+                "project_name": "Proyecto Embudo Ventas",
+                "deliverable_type": "Benchmark",
+            }
+        )
+
+    assert result["ok"] is True
+    assert mock_nc.create_database_page.call_args.kwargs["icon"] == "🎯"

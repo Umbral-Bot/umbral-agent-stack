@@ -4,6 +4,14 @@
 
 ---
 
+## Actualizacion 2026-03-15
+
+- `OpenClaw` funciona como hub/dashboard, no como deposito de paginas sueltas.
+- El flujo vigente en Notion es `Proyectos -> Tareas -> Entregables -> Revision`.
+- `Archivo historico - Umbral` queda fuera del flujo activo.
+- `notion.upsert_task` solo debe poblar Notion si la tarea esta ligada a proyecto/entregable o marca `notion_track=true`.
+- `Dashboard Rick` debe mostrar estado operativo actual y no seguimiento historico de releases cerradas.
+
 ## 1. Responsabilidades
 
 | Herramienta | Rol | Fuente de verdad |

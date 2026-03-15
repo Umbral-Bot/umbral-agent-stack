@@ -31,22 +31,6 @@ REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 WORKER_URL_VM = os.environ.get("WORKER_URL_VM", "").strip() or None
 WORKER_URL_VM_INTERACTIVE = os.environ.get("WORKER_URL_VM_INTERACTIVE", "").strip() or None
 
-RELEASE_TRACKING = {
-    "r16": {
-        "status": "Cerrada",
-        "prs": "PRs #85-#90 mergeados",
-    },
-    "r17": {
-        "status": "Cerrada",
-        "prs": (
-            "PRs #91 (bitacora-scripts), #92 (resumen+guia ramas), "
-            "#93 (script borrado ramas), #94 (changelog README), "
-            "#95 (runbook), #96 (9 funciones Notion) mergeados"
-        ),
-    },
-    "tests_passed": 900,
-}
-
 
 def _worker_health(url: str) -> dict:
     try:
@@ -387,7 +371,6 @@ def build_dashboard_payload() -> dict:
         "uptime": uptime,
         "last_error": last_err,
         "active_alerts": alerts,
-        "release_tracking": RELEASE_TRACKING,
     }
 
 

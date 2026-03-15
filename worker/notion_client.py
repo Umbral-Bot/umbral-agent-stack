@@ -880,30 +880,6 @@ def _build_dashboard_v2_blocks(data: dict[str, Any]) -> list[dict[str, Any]]:
     blocks.append(_block_paragraph_rich(kpi_parts))
     blocks.append(_block_divider())
 
-    # Release tracking snapshot (R16/R17)
-    tracking = data.get("release_tracking") or {}
-    if tracking:
-        r16 = tracking.get("r16", {})
-        r17 = tracking.get("r17", {})
-        tests_passed = tracking.get("tests_passed", "—")
-        tracking_rows = [
-            [
-                "R16",
-                str(r16.get("status", "Cerrada")),
-                str(r16.get("prs", "PRs #85-#90 mergeados")),
-            ],
-            [
-                "R17",
-                str(r17.get("status", "Cerrada")),
-                str(r17.get("prs", "PRs #91-#96 mergeados")),
-            ],
-            ["Tests", f"{tests_passed} passed", "pytest tests/ -q"],
-            ["Ultima actualizacion", str(ts), "Timestamp del run"],
-        ]
-        blocks.append(_block_heading2("Seguimiento R16/R17"))
-        blocks.append(_block_table(["Bloque", "Estado", "Detalle"], tracking_rows))
-        blocks.append(_block_divider())
-
     # Active alerts
     if alerts:
         blocks.append(_block_callout("  ".join(alerts), "🚨", "red_background"))
@@ -964,12 +940,12 @@ def _build_dashboard_v2_blocks(data: dict[str, Any]) -> list[dict[str, Any]]:
         blocks.append(_block_heading2("Equipos"))
         team_rows = []
         for t in teams:
-            vm_flag = "VM" if t.get("requires_vm") else "VPS"
+            vm_flag = "Por tarea"
             completed = t.get("completed", 0)
             active = t.get("active", 0)
             status_str = f"{active} activas, {completed} completadas" if (active or completed) else "Sin actividad"
             team_rows.append([t["team"].capitalize(), t.get("supervisor", "—"), vm_flag, status_str])
-        blocks.append(_block_table(["Equipo", "Supervisor", "Plano", "Actividad"], team_rows))
+        blocks.append(_block_table(["Equipo", "Supervisor", "Enrutamiento", "Actividad"], team_rows))
         blocks.append(_block_divider())
 
     # Recent tasks with timestamps

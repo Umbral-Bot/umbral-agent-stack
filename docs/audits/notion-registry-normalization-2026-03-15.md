@@ -73,12 +73,24 @@ Reglas activas:
 
 ### Vistas útiles
 
-- `Tareas / En seguimiento`
+- `Tareas / Recientes ligadas`
 - `Tareas / Historial ligado`
 - `Tareas / Sistema / automatizaciones`
 - `Entregables / Activos y recientes`
 - `Entregables / Pendientes de revisión`
 - `Entregables / Archivo / histórico`
+
+### Ajuste posterior de UX
+
+Después de la primera pasada quedó una fricción real: la base `Tareas` parecía vacía porque la vista por defecto solo mostraba tareas activas o bloqueadas.
+
+Se corrigió así:
+
+- la vista por defecto pasó a `Recientes ligadas`
+  - muestra tareas recientes relacionadas a proyecto o entregable, aunque ya estén `done`
+- la vista operativa estricta quedó separada como `Activas / seguimiento`
+
+Con eso la base ya no se percibe vacía al abrirla, pero sigue existiendo una vista específica para trabajo pendiente.
 
 ### Backfill real
 

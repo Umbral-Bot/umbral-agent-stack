@@ -1,7 +1,11 @@
+from datetime import datetime, timezone
+from unittest.mock import patch
+
 import pytest
+
 from worker.tasks.notion import handle_notion_create_report_page
 from worker.tasks.notion_markdown import markdown_to_blocks
-from datetime import datetime, timezone
+
 
 def test_markdown_to_blocks_basic():
     md = """# Main Title
@@ -19,13 +23,13 @@ This is a paragraph with **bold** text and a [link](https://example.com).
     assert len(blocks) == 8
     assert blocks[0]["type"] == "heading_1"
     assert blocks[0]["heading_1"]["rich_text"][0]["text"]["content"] == "Main Title"
-    
+
     assert blocks[1]["type"] == "paragraph"
     assert len(blocks[1]["paragraph"]["rich_text"]) == 5
     assert blocks[1]["paragraph"]["rich_text"][0]["text"]["content"] == "This is a paragraph with "
     assert blocks[1]["paragraph"]["rich_text"][1]["annotations"]["bold"] is True
     assert blocks[1]["paragraph"]["rich_text"][3]["text"]["link"]["url"] == "https://example.com"
-    
+
     assert blocks[2]["type"] == "heading_2"
     assert blocks[3]["type"] == "bulleted_list_item"
     assert blocks[5]["type"] == "divider"
@@ -40,8 +44,6 @@ def test_markdown_to_blocks_long_paragraph():
     assert len(blocks[1]["paragraph"]["rich_text"][0]["text"]["content"]) == 500
 
 
-from unittest.mock import patch
-
 @patch("worker.tasks.notion.notion_client.create_report_page")
 def test_handle_notion_create_report_page_success(mock_create):
     mock_create.return_value = {"page_id": "test_page_123", "page_url": "https://notion.so/test", "ok": True}
@@ -52,16 +54,15 @@ def test_handle_notion_create_report_page_success(mock_create):
         "icon": "📝",
         "sources": [{"title": "Google", "url": "https://google.com"}],
         "queries": ["what is ai"],
-        "metadata": {"team": "alpha"}
+        "metadata": {"team": "alpha"},
     }
 
     result = handle_notion_create_report_page(input_data)
-    
+
     assert result["page_id"] == "test_page_123"
     assert result["page_url"] == "https://notion.so/test"
     assert result["ok"] is True
-    
-    # Check that create_report_page was called correctly
+
     mock_create.assert_called_once()
     kwargs = mock_create.call_args.kwargs
     assert kwargs["title"] == "Test Report"
@@ -72,9 +73,28 @@ def test_handle_notion_create_report_page_success(mock_create):
     assert kwargs["icon"] == "📝"
     assert "generated_at" in kwargs["metadata"]
 
+
+@patch("worker.tasks.notion.notion_client.create_report_page")
+@patch("worker.tasks.notion._resolve_project_context")
+def test_handle_notion_create_report_page_infers_project_icon(mock_resolve_project_context, mock_create):
+    mock_resolve_project_context.return_value = {"page_id": "project-page-1", "icon": "🎯"}
+    mock_create.return_value = {"page_id": "test_page_123", "page_url": "https://notion.so/test", "ok": True}
+
+    handle_notion_create_report_page(
+        {
+            "title": "Embudo analysis",
+            "content": "# Hello\nWorld",
+            "metadata": {"project_name": "Proyecto Embudo Ventas"},
+        }
+    )
+
+    kwargs = mock_create.call_args.kwargs
+    assert kwargs["icon"] == "🎯"
+
+
 def test_handle_notion_create_report_page_missing_inputs():
     with pytest.raises(ValueError, match="'title' is required"):
         handle_notion_create_report_page({"content": "hi"})
-        
+
     with pytest.raises(ValueError, match="'content' is required"):
         handle_notion_create_report_page({"title": "hi"})

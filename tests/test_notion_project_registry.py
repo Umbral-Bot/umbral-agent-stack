@@ -99,3 +99,21 @@ def test_upsert_project_updates_existing():
         icon="🧭",
     )
     mock_nc.create_database_page.assert_not_called()
+
+
+def test_upsert_project_infers_icon_when_missing():
+    from worker.tasks.notion import handle_notion_upsert_project
+
+    with patch("worker.tasks.notion.config") as mock_cfg, patch("worker.tasks.notion.notion_client") as mock_nc:
+        mock_cfg.NOTION_PROJECTS_DB_ID = "db-uuid-123"
+        mock_nc.query_database.return_value = []
+        mock_nc.create_database_page.return_value = {
+            "page_id": "new-page-id",
+            "url": "https://www.notion.so/new-page-id",
+            "created": True,
+        }
+
+        result = handle_notion_upsert_project({"name": "Proyecto Embudo Ventas"})
+
+    assert result["ok"] is True
+    assert mock_nc.create_database_page.call_args.kwargs["icon"] == "🎯"

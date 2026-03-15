@@ -66,6 +66,7 @@ metadata:
    - y si tambien se registra una tarea operativa, enlazarla al `Proyecto` y al `Entregable` cuando la tool lo permita;
    - usar Control Room solo para coordinacion transversal o alertas.
    - si la tool acepta `icon`, usar el campo `icon` en vez de prefijar el `Nombre` con emojis.
+   - para proyectos, tareas y entregables ligados al mismo proyecto, mantener un icono consistente para lectura rapida, salvo que haya una razon clara para diferenciarlo.
 
 5. Mantener una página por proyecto con propiedades + cuerpo estructurado:
 

@@ -173,12 +173,23 @@ def _notion_upsert(
 ) -> None:
     """Actualiza el Kanban de Notion. Fire-and-forget; no bloquea el flujo."""
     envelope = envelope or {}
-    input_payload = envelope.get("input", {}) if isinstance(envelope.get("input"), dict) else {}
+    input_payload = dict(envelope.get("input", {}) if isinstance(envelope.get("input"), dict) else {})
+    for key in (
+        "project_name",
+        "project_page_id",
+        "deliverable_name",
+        "deliverable_page_id",
+        "notion_track",
+        "source",
+        "source_kind",
+    ):
+        if envelope.get(key) and key not in input_payload:
+            input_payload[key] = envelope.get(key)
     is_project_scoped = any(
         str(input_payload.get(key, "")).strip()
         for key in ("project_name", "project_page_id", "deliverable_name", "deliverable_page_id")
     )
-    explicit_track = bool(input_payload.get("notion_track"))
+    explicit_track = bool(input_payload.get("notion_track") or envelope.get("notion_track"))
     if not (is_project_scoped or explicit_track):
         return
     try:
@@ -196,6 +207,9 @@ def _notion_upsert(
                 "project_page_id": input_payload.get("project_page_id"),
                 "deliverable_name": input_payload.get("deliverable_name"),
                 "deliverable_page_id": input_payload.get("deliverable_page_id"),
+                "source": input_payload.get("source"),
+                "source_kind": input_payload.get("source_kind"),
+                "trace_id": envelope.get("trace_id"),
             },
         )
     except Exception as e:

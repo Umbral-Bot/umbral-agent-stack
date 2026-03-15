@@ -75,6 +75,15 @@ class TaskEnvelope(BaseModel):
     created_at: str = Field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
+    source: Optional[str] = None
+    source_kind: Optional[str] = None
+    source_comment_id: Optional[str] = None
+    linear_issue_id: Optional[str] = None
+    project_name: Optional[str] = None
+    project_page_id: Optional[str] = None
+    deliverable_name: Optional[str] = None
+    deliverable_page_id: Optional[str] = None
+    notion_track: bool = False
 
     # --- Payload (compatible con formato legacy) ---
     task: str

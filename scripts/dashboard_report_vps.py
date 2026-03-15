@@ -31,6 +31,15 @@ REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 WORKER_URL_VM = os.environ.get("WORKER_URL_VM", "").strip() or None
 WORKER_URL_VM_INTERACTIVE = os.environ.get("WORKER_URL_VM_INTERACTIVE", "").strip() or None
 
+TECHNICAL_TASK_PREFIXES = (
+    "windows.fs.",
+    "ping",
+    "notion.poll_comments",
+    "notion.read_page",
+    "notion.read_database",
+    "notion.search_databases",
+)
+
 
 def _worker_health(url: str) -> dict:
     try:
@@ -188,10 +197,37 @@ def _recent_tasks(limit: int = 10) -> list[dict]:
                 "duration_s": duration,
                 "task_id": t.get("task_id", "?")[:8],
                 "when": when,
+                "source": t.get("source", ""),
+                "project_name": t.get("project_name", "") or (t.get("input", {}) or {}).get("project_name", ""),
+                "deliverable_name": t.get("deliverable_name", "") or (t.get("input", {}) or {}).get("deliverable_name", ""),
+                "notion_track": bool(t.get("notion_track") or (t.get("input", {}) or {}).get("notion_track")),
             })
         return result
     except Exception:
         return []
+
+
+def _is_recent_task_relevant(task: dict) -> bool:
+    if task.get("project_name") or task.get("deliverable_name") or task.get("notion_track"):
+        return True
+    source = str(task.get("source", "")).strip().lower()
+    if source in {"openclaw_gateway", "linear_webhook", "notion_poller", "smart_reply"}:
+        return True
+    task_name = str(task.get("task", "")).strip().lower()
+    if any(task_name.startswith(prefix) for prefix in TECHNICAL_TASK_PREFIXES):
+        return False
+    return False
+
+
+def _split_recent_tasks(tasks: list[dict], relevant_limit: int = 6, system_limit: int = 6) -> tuple[list[dict], list[dict]]:
+    relevant: list[dict] = []
+    system: list[dict] = []
+    for task in tasks:
+        if _is_recent_task_relevant(task):
+            relevant.append(task)
+        else:
+            system.append(task)
+    return relevant[:relevant_limit], system[:system_limit]
 
 
 def _running_tasks() -> list[dict]:
@@ -341,19 +377,28 @@ def build_dashboard_payload() -> dict:
     redis = _redis_stats()
     quotas = _quota_stats()
     teams = _team_stats()
-    recent = _recent_tasks(8)
+    recent_all = _recent_tasks(12)
+    recent, recent_system = _split_recent_tasks(recent_all)
     running = _running_tasks()
     ops = _ops_log_summary()
     uptime = _system_uptime()
     last_err = _last_error()
     alerts = _active_alerts(quotas, vps_health, vm_health or vm_interactive_health)
 
-    if vps_health["status"] == "OK" and redis["connected"]:
-        overall = "Operativo"
-    elif vps_health["status"] == "OK":
-        overall = "Parcial (Redis offline)"
-    else:
+    vm_degraded = False
+    if vm_health and vm_health.get("status") != "OK":
+        vm_degraded = True
+    if vm_interactive_health and vm_interactive_health.get("status") != "OK":
+        vm_degraded = True
+
+    if vps_health["status"] != "OK":
         overall = "Degradado"
+    elif not redis["connected"]:
+        overall = "Parcial (Redis offline)"
+    elif vm_degraded:
+        overall = "Degradado"
+    else:
+        overall = "Operativo"
 
     return {
         "dashboard_v2": True,
@@ -366,6 +411,7 @@ def build_dashboard_payload() -> dict:
         "quotas": quotas,
         "teams": teams,
         "recent_tasks": recent,
+        "recent_system_tasks": recent_system,
         "running_tasks": running,
         "ops_summary": ops,
         "uptime": uptime,

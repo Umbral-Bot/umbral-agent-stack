@@ -948,10 +948,10 @@ def _build_dashboard_v2_blocks(data: dict[str, Any]) -> list[dict[str, Any]]:
         blocks.append(_block_table(["Equipo", "Supervisor", "Enrutamiento", "Actividad"], team_rows))
         blocks.append(_block_divider())
 
-    # Recent tasks with timestamps
+    # Recent project-scoped / relevant tasks
     recent = data.get("recent_tasks", [])
     if recent:
-        blocks.append(_block_heading2("Tareas Recientes"))
+        blocks.append(_block_heading2("Tareas recientes relevantes"))
         task_rows = []
         for t in recent:
             status_icon = "✅" if t["status"] == "done" else "❌"
@@ -963,6 +963,18 @@ def _build_dashboard_v2_blocks(data: dict[str, Any]) -> list[dict[str, Any]]:
         last_error = data.get("last_error")
         if last_error:
             blocks.append(_block_callout(f"Ultimo error: {last_error}", "⚠️", "red_background"))
+        blocks.append(_block_divider())
+
+    recent_system = data.get("recent_system_tasks", [])
+    if recent_system:
+        blocks.append(_block_heading3("Ruido tecnico / sistema"))
+        task_rows = []
+        for t in recent_system:
+            status_icon = "✅" if t["status"] == "done" else "❌"
+            when = t.get("when", "")
+            task_rows.append([f"{status_icon} {t['task']}", t["team"], f"{t['duration_s']}s", when, t["task_id"]])
+        blocks.append(_block_table(["Tarea", "Equipo", "Duracion", "Cuando", "ID"], task_rows))
+        blocks.append(_block_paragraph("Estas tareas se muestran aparte porque hoy no traen contexto suficiente de proyecto o entregable."))
         blocks.append(_block_divider())
 
     # Running tasks
@@ -1067,6 +1079,9 @@ def upsert_task(
     input_summary: str | None = None,
     error: str | None = None,
     result_summary: str | None = None,
+    source: str | None = None,
+    source_kind: str | None = None,
+    trace_id: str | None = None,
     project_page_id: str | None = None,
     deliverable_page_id: str | None = None,
     icon: str | None = None,

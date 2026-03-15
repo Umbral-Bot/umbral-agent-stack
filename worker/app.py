@@ -106,6 +106,13 @@ class EnqueueRequest(BaseModel):
     task_type: str = "general"
     input: Dict[str, Any] = {}
     callback_url: Optional[str] = Field(default=None, description="Webhook URL opcional para callback al completar/fallar")
+    source: Optional[str] = None
+    source_kind: Optional[str] = None
+    notion_track: bool = False
+    project_name: Optional[str] = None
+    project_page_id: Optional[str] = None
+    deliverable_name: Optional[str] = None
+    deliverable_page_id: Optional[str] = None
 
 # ---------------------------------------------------------------------------
 # In-memory task store (bounded, most recent 1000)
@@ -392,6 +399,18 @@ async def enqueue_task(
         "created_at": now,
         "queued_at": time.time(),
     }
+    if body.source:
+        envelope["source"] = body.source.strip()
+    if body.source_kind:
+        envelope["source_kind"] = body.source_kind.strip()
+    if body.notion_track:
+        envelope["notion_track"] = True
+        sanitized_input.setdefault("notion_track", True)
+    for field in ("project_name", "project_page_id", "deliverable_name", "deliverable_page_id"):
+        value = getattr(body, field)
+        if value:
+            envelope[field] = value
+            sanitized_input.setdefault(field, value)
     callback_url = body.callback_url.strip() if body.callback_url else ""
     if callback_url:
         envelope["callback_url"] = callback_url

@@ -204,6 +204,26 @@ class TestFireAndForget:
         _notion_upsert(mock_wc, "t1", "running", "marketing", "task")
         mock_wc.run.assert_not_called()
 
+    def test_notion_upsert_accepts_top_level_context(self, mock_wc):
+        _notion_upsert(
+            mock_wc,
+            "t1",
+            "running",
+            "marketing",
+            "task",
+            envelope={
+                "project_name": "Proyecto Embudo Ventas",
+                "source": "openclaw_gateway",
+                "source_kind": "tool_enqueue",
+                "trace_id": "trace-123",
+            },
+        )
+        _, payload = mock_wc.run.call_args[0]
+        assert payload["project_name"] == "Proyecto Embudo Ventas"
+        assert payload["source"] == "openclaw_gateway"
+        assert payload["source_kind"] == "tool_enqueue"
+        assert payload["trace_id"] == "trace-123"
+
     def test_linear_skip_without_issue_id(self, mock_wc):
         _notify_linear_completion(mock_wc, {"task": "t"}, True)
         mock_wc.run.assert_not_called()

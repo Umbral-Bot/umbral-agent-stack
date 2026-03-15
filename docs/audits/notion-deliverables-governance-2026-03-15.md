@@ -132,6 +132,23 @@ Se cargaron 3 entregables recientes y utiles para `Proyecto Embudo Ventas`:
 
 Con esto la base no nace vacia y ya refleja outputs reales que David puede revisar.
 
+## Limpieza de paginas sueltas en OpenClaw
+
+Ademas de crear la base nueva, se hizo la limpieza real del desorden historico en `OpenClaw`:
+
+- se creo la pagina contenedora `🗃 Archivo legacy — entregables sueltos`
+- se movieron ahi las paginas historicas que estaban sueltas y no debian seguir viviendo en el dashboard principal
+- tambien se movio la ultima pagina residual de `Proyecto Embudo Ventas — adaptacion editorial desde Veritasium (2026-03-14)`, porque su contenido ya estaba representado en entregables y auditorias recientes
+
+Resultado operativo:
+
+- `OpenClaw` queda como hub/dashboard
+- `📁 Proyectos — Umbral` queda como registro canonico
+- `📬 Entregables Rick — Revision` queda como entrada normal para outputs revisables nuevos
+- `🗃 Archivo legacy — entregables sueltos` conserva el material historico sin contaminar el dashboard principal
+
+Esto evita pedirle a Rick una reorganizacion ciega de contenido viejo y deja el sistema listo para que, desde ahora, escriba en la estructura correcta.
+
 ## Estado final
 
 Queda operativo este flujo:

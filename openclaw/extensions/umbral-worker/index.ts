@@ -664,6 +664,53 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     ),
   },
 
+  {
+    name: "umbral_notion_upsert_deliverable",
+    task: "notion.upsert_deliverable",
+    description: "Create or update a reviewable deliverable in the Notion deliverables registry. Use this for benchmarks, reports, drafts, editorial pieces, and knowledge assets that David must review.",
+    resultTitle: "Notion deliverable upsert result",
+    parameters: taskToolSchema(
+      {
+        name: stringSchema("Deliverable title (used as lookup key)."),
+        project_name: stringSchema("Exact project name in the projects registry."),
+        project_page_id: stringSchema("Optional project page ID if already resolved."),
+        deliverable_type: enumStringSchema(
+          [
+            "Benchmark",
+            "Reporte",
+            "Borrador",
+            "Pieza editorial",
+            "Criterio / base de conocimiento",
+            "Plan",
+            "Auditoria",
+          ],
+          "Deliverable type.",
+        ),
+        review_status: enumStringSchema(
+          [
+            "Pendiente revision",
+            "Aprobado",
+            "Aprobado con ajustes",
+            "Rechazado",
+            "Archivado",
+          ],
+          "Human review state.",
+        ),
+        date: stringSchema("Deliverable date (YYYY-MM-DD)."),
+        agent: enumStringSchema(["Rick", "Claude", "Codex", "Cursor", "Antigravity"], "Agent that produced the deliverable."),
+        summary: stringSchema("Short summary of the deliverable."),
+        artifact_url: stringSchema("Canonical URL to the artifact."),
+        artifact_path: stringSchema("Canonical shared path such as G:\\\\Mi unidad\\\\..."),
+        notes: stringSchema("Review notes or context."),
+        next_action: stringSchema("Next concrete action after review."),
+        linear_issue_url: stringSchema("Related Linear issue URL."),
+        source_task_id: stringSchema("Origin task id if applicable."),
+        last_update_date: stringSchema("Date of last update (YYYY-MM-DD)."),
+      },
+      ["name"],
+    ),
+  },
+
   // Research and LLM
   {
     name: "umbral_research_web",

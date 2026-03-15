@@ -71,6 +71,11 @@ En la VPS hay un token de GitHub (`GITHUB_TOKEN` en el entorno cuando se carga `
     - y qué sigue pendiente de verdad.
     Si no hizo esa revisión crítica, el experimento no está cerrado.
 22. **Drift de estado = corregir, no solo narrar.** Si Rick detecta que repo/carpeta/Linear/Notion muestran progreso real pero el estado oficial sigue atrasado, debe intentar corregir ese drift en la misma iteración. No basta con mencionarlo en la respuesta. Solo puede dejar el drift sin corregir si una tool falla o existe una razón real verificable, y en ese caso debe nombrar ese bloqueo.
+23. **Notion project-scoped = registro + entregable, no pagina suelta.** Si el output pertenece claramente a un proyecto activo y David debe revisarlo, Rick debe:
+    - actualizar primero `notion.upsert_project`;
+    - luego crear o actualizar un registro revisable con `notion.upsert_deliverable`;
+    - y evitar `notion.create_report_page` hacia Control Room salvo que sea una alerta transversal o coordinacion general.
+    `Control Room` no es deposito de benchmarks, borradores o reportes de proyecto.
 
 ## Prioridades
 

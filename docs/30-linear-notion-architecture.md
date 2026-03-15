@@ -44,6 +44,8 @@ Worker -- procesa TaskEnvelope --> notion.upsert_task + estado en Redis
 - **Dashboard Rick**: métricas (Workers, Redis, cuotas, tareas recientes) + **embeds de Linear** (vistas/roadmaps)
 - **Control Room**: comentarios David ↔ Rick ↔ Enlace
 - **Tareas Umbral**: estado de ejecución (En cola, En curso, Hecho, Bloqueado) — reflejo de Redis/Worker
+- **📁 Proyectos — Umbral**: estado canónico por proyecto (portfolio)
+- **📬 Entregables Rick — Revisión**: outputs revisables por David, ligados a proyectos
 - **Bandeja Puente** (Enlace): Pendiente, En curso, Bloqueado, Resuelto
 
 ### Redis (execution)

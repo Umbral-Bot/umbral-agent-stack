@@ -159,6 +159,7 @@ Task: `notion.create_report_page`
   "title": "Reporte semanal",
   "content": "# Resumen\nHallazgos...",
   "parent_page_id": "optional-parent-id",
+  "icon": "📝",
   "sources": [{"title": "Fuente", "url": "https://..."}],
   "metadata": {"team": "advisory"}
 }
@@ -176,6 +177,7 @@ Requiere `NOTION_PROJECTS_DB_ID` configurado en el Worker.
 {
   "name": "Proyecto Embudo Ventas",
   "estado": "Activo",
+  "icon": "📁",
   "linear_project_url": "https://linear.app/umbral/project/...",
   "shared_path": "G:\\Mi unidad\\Rick-David\\Proyecto-Embudo-Ventas\\",
   "responsable": "David Moreira",
@@ -192,6 +194,11 @@ Devuelve: `{"ok": true, "page_id": "...", "url": "...", "created": bool}`
 - `created: false` → se actualizó la entrada existente (busca por nombre exacto).
 
 Variables opcionales: `start_date`, `target_date` (YYYY-MM-DD), `bloqueos`, `last_update_date`.
+
+## Regla de iconos
+
+- Si la task acepta `icon`, usar ese campo y no meter el emoji dentro del `title` o `name`.
+- Reservar emoji en el texto solo cuando el icono no pueda configurarse por API.
 
 ## Triggers recomendados
 

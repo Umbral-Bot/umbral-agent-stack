@@ -48,6 +48,7 @@ def test_upsert_deliverable_creates_new():
                 "review_status": "Pendiente revision",
                 "agent": "Rick",
                 "summary": "Resumen",
+                "icon": "📬",
             }
         )
 
@@ -55,6 +56,7 @@ def test_upsert_deliverable_creates_new():
     assert result["created"] is True
     assert result["page_id"] == "new-deliverable-id"
     mock_nc.create_database_page.assert_called_once()
+    assert mock_nc.create_database_page.call_args.kwargs["icon"] == "📬"
     created_props = mock_nc.create_database_page.call_args.kwargs["properties"]
     assert created_props["Proyecto"]["relation"][0]["id"] == "project-page-1"
 
@@ -79,6 +81,7 @@ def test_upsert_deliverable_updates_existing():
                 "name": "Benchmark Talana",
                 "review_status": "Aprobado",
                 "next_action": "Aplicar al embudo",
+                "icon": "📝",
             }
         )
 
@@ -86,3 +89,4 @@ def test_upsert_deliverable_updates_existing():
     assert result["created"] is False
     assert result["page_id"] == "deliverable-id"
     mock_nc.update_page_properties.assert_called_once()
+    assert mock_nc.update_page_properties.call_args.kwargs["icon"] == "📝"

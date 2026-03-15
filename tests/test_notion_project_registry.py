@@ -56,12 +56,14 @@ def test_upsert_project_creates_new():
             "name": "Test Project",
             "estado": "Activo",
             "responsable": "David Moreira",
+            "icon": "📁",
         })
 
     assert result["ok"] is True
     assert result["created"] is True
     assert result["page_id"] == "new-page-id"
     mock_nc.create_database_page.assert_called_once()
+    assert mock_nc.create_database_page.call_args.kwargs["icon"] == "📁"
     mock_nc.update_page_properties.assert_not_called()
 
 
@@ -85,6 +87,7 @@ def test_upsert_project_updates_existing():
             "name": "Test Project",
             "estado": "En pausa",
             "open_issues": 3,
+            "icon": "🧭",
         })
 
     assert result["ok"] is True
@@ -93,5 +96,6 @@ def test_upsert_project_updates_existing():
     mock_nc.update_page_properties.assert_called_once_with(
         page_id_or_url="existing-id",
         properties=mock_nc.update_page_properties.call_args.kwargs["properties"],
+        icon="🧭",
     )
     mock_nc.create_database_page.assert_not_called()

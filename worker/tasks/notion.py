@@ -174,6 +174,7 @@ def handle_notion_create_database_page(input_data: Dict[str, Any]) -> Dict[str, 
         database_id_or_url (str, required): UUID o URL de la base.
         properties (dict, required): payload raw de propiedades Notion.
         children (list[dict], optional): bloques hijos opcionales.
+        icon (str, optional): emoji o URL externa para el icono de la pagina.
 
     Returns:
         {"page_id": "...", "url": "...", "created": True}
@@ -198,6 +199,7 @@ def handle_notion_create_database_page(input_data: Dict[str, Any]) -> Dict[str, 
         database_id_or_url=str(database_id_or_url),
         properties=properties,
         children=children,
+        icon=input_data.get("icon"),
     )
 
 
@@ -207,7 +209,8 @@ def handle_notion_update_page_properties(input_data: Dict[str, Any]) -> Dict[str
 
     Input:
         page_id_or_url (str, required): UUID o URL de la página.
-        properties (dict, required): payload raw de propiedades Notion.
+        properties (dict, optional): payload raw de propiedades Notion.
+        icon (str, optional): emoji o URL externa para el icono de la pagina.
 
     Returns:
         {"page_id": "...", "url": "...", "updated": True}
@@ -216,13 +219,16 @@ def handle_notion_update_page_properties(input_data: Dict[str, Any]) -> Dict[str
     if not page_id_or_url:
         raise ValueError("'page_id_or_url' is required in input")
 
-    properties = input_data.get("properties")
-    if not isinstance(properties, dict) or not properties:
-        raise ValueError("'properties' must be a non-empty object")
+    properties = input_data.get("properties", {})
+    if not isinstance(properties, dict):
+        raise ValueError("'properties' must be an object when provided")
+    if not properties and not input_data.get("icon"):
+        raise ValueError("'properties' or 'icon' must be provided")
 
     return notion_client.update_page_properties(
         page_id_or_url=str(page_id_or_url),
         properties=properties,
+        icon=input_data.get("icon"),
     )
 
 
@@ -290,6 +296,7 @@ def handle_notion_create_report_page(input_data: Dict[str, Any]) -> Dict[str, An
         content (str, required): Contenido en markdown.
         sources (list[dict], optional): Fuentes utilizadas (url, title).
         metadata (dict, optional): Fecha, topic, team, etc.
+        icon (str, optional): emoji o URL externa para el icono de la pagina.
 
     Returns:
         {"page_id": "...", "page_url": "...", "ok": True}
@@ -318,6 +325,7 @@ def handle_notion_create_report_page(input_data: Dict[str, Any]) -> Dict[str, An
         sources=sources,
         queries=queries,
         metadata=metadata,
+        icon=input_data.get("icon"),
     )
 
 
@@ -510,6 +518,7 @@ def handle_notion_upsert_project(input_data: Dict[str, Any]) -> Dict[str, Any]:
         bloqueos (str, optional): bloqueos actuales.
         next_action (str, optional): siguiente acción concreta.
         last_update_date (str, optional): YYYY-MM-DD del último update.
+        icon (str, optional): emoji o URL externa para el icono de la fila/pagina.
 
     Returns:
         {"ok": True, "page_id": "...", "url": "...", "created": bool}
@@ -541,12 +550,14 @@ def handle_notion_upsert_project(input_data: Dict[str, Any]) -> Dict[str, Any]:
             result = notion_client.update_page_properties(
                 page_id_or_url=page_id,
                 properties=props,
+                icon=input_data.get("icon"),
             )
             return {"ok": True, "page_id": result["page_id"], "url": result["url"], "created": False}
         else:
             result = notion_client.create_database_page(
                 database_id_or_url=db_id,
                 properties=props,
+                icon=input_data.get("icon"),
             )
             return {"ok": True, "page_id": result["page_id"], "url": result["url"], "created": True}
     except Exception as e:
@@ -573,6 +584,7 @@ def handle_notion_upsert_deliverable(input_data: Dict[str, Any]) -> Dict[str, An
         linear_issue_url (str, optional): related Linear issue.
         source_task_id (str, optional): runtime task id if any.
         last_update_date (str, optional): YYYY-MM-DD.
+        icon (str, optional): emoji o URL externa para el icono de la fila/pagina.
 
     Returns:
         {"ok": True, "page_id": "...", "url": "...", "created": bool}
@@ -607,12 +619,14 @@ def handle_notion_upsert_deliverable(input_data: Dict[str, Any]) -> Dict[str, An
             result = notion_client.update_page_properties(
                 page_id_or_url=page_id,
                 properties=props,
+                icon=input_data.get("icon"),
             )
             return {"ok": True, "page_id": result["page_id"], "url": result["url"], "created": False}
 
         result = notion_client.create_database_page(
             database_id_or_url=db_id,
             properties=props,
+            icon=input_data.get("icon"),
         )
         return {"ok": True, "page_id": result["page_id"], "url": result["url"], "created": True}
     except Exception as e:

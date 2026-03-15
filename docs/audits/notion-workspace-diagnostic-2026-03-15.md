@@ -7,7 +7,7 @@ Barrido operativo y estructural de los elementos de Notion actualmente accesible
 - `OpenClaw`
 - `Dashboard Rick`
 - `📁 Proyectos — Umbral`
-- `🗂 Tareas — Umbral Agent Stack`
+- `📒 Tareas — Umbral Agent Stack`
 - `📬 Entregables Rick — Revision`
 - `📬 Bandeja Puente`
 - `🔄 Bitacora — Umbral Agent Stack`
@@ -17,8 +17,9 @@ Tambien se reviso el repositorio y la VPS para detectar drift entre:
 
 - configuracion de Notion
 - runtime real
-- skills/guardrails
+- skills y guardrails
 - scripts de dashboard y trazabilidad
+- salud real de la VM
 
 ## Cambios aplicados en esta iteracion
 
@@ -33,103 +34,184 @@ Archivos:
 - `tests/test_dashboard.py`
 - `docs/30-linear-notion-architecture.md`
 
-Validacion:
-
-- `python -m pytest tests/test_dashboard.py tests/test_notion_project_registry.py tests/test_notion_deliverables_registry.py tests/test_notion_tasks_registry.py -q`
-- resultado: `30 passed`
-- `python scripts/validate_skills.py`
-- resultado: `OK`
-
-Despliegue:
-
-- `worker/notion_client.py` y `scripts/dashboard_report_vps.py` sincronizados a la VPS
-- `umbral-worker.service` reiniciado
-- dashboard regenerado en Notion
-
 Resultado visible:
 
 - `Dashboard Rick` ya no muestra `Seguimiento R16/R17`
 - la tabla de equipos ahora dice `Enrutamiento` en vez de `Plano`
 - el valor mostrado es `Por tarea`, que si refleja el routing actual
 
-### 2. Vistas operativas nuevas o corregidas
+### 2. Procedencia de tareas propagada hasta Notion
+
+Se corrigio el camino de trazabilidad para que las tareas que pasan por enqueue, dispatcher y worker puedan conservar mejor su origen.
+
+Archivos:
+
+- `worker/models/__init__.py`
+- `worker/app.py`
+- `client/worker_client.py`
+- `dispatcher/queue.py`
+- `dispatcher/service.py`
+- `worker/tasks/notion.py`
+- `openclaw/extensions/umbral-worker/index.ts`
+- `tests/test_enqueue_api.py`
+- `tests/test_dispatcher.py`
+- `tests/test_dispatcher_resilience.py`
+- `tests/test_notion_tasks_registry.py`
+
+Campos propagados:
+
+- `source`
+- `source_kind`
+- `source_comment_id`
+- `linear_issue_id`
+- `project_name`
+- `project_page_id`
+- `deliverable_name`
+- `deliverable_page_id`
+- `notion_track`
+- `trace_id`
+
+Resultado:
+
+- las tareas nuevas muestran mejor por que existen
+- OpenClaw deja su procedencia explicita
+- la separacion entre tareas project-scoped y ruido tecnico ya no depende tanto de inferencias fragiles
+
+### 3. Dashboard separado entre senal y ruido tecnico
+
+Se cambio el dashboard para separar:
+
+- `Tareas recientes relevantes`
+- `Ruido tecnico / sistema`
+
+Regla aplicada:
+
+- una tarea es relevante si trae `project_name`, `deliverable_name` o `notion_track`
+- tambien si viene de `openclaw_gateway`, `linear_webhook`, `notion_poller` o `smart_reply`
+- tareas tecnicas repetitivas como `windows.fs.*`, `ping` y varias `notion.*` de infraestructura se muestran aparte
+
+Ademas se corrigio la logica del semaforo general:
+
+- si la VPS esta bien pero la VM esta caida, el dashboard ya no puede quedar `Operativo`
+- ahora queda `Degradado`, que es el estado correcto del stack
+
+### 4. Vistas operativas nuevas o corregidas
 
 En Notion quedaron disponibles estas vistas:
 
-- `🗂 Tareas — Umbral Agent Stack`
+- `📒 Tareas — Umbral Agent Stack`
   - `Recientes ligadas`
   - `Sistema / automatizaciones abiertas`
+  - `Activas / seguimiento`
   - `Sistema / historial`
 - `📁 Proyectos — Umbral`
   - `Activos con bloqueos`
+- `📬 Bandeja Puente`
+  - `Pendientes`
+  - `En curso`
+  - `Resueltos / historial`
+  - `Rick / abiertos`
 
-Estas vistas mejoran lectura, aunque no corrigen por si solas el origen del ruido.
+Resultado real:
+
+- `En curso` en `Bandeja Puente` muestra solo los dos items abiertos vigentes
+- `Resueltos / historial` concentra el ruido periodico
+- `Recientes ligadas` en `Tareas` ya deja ver trabajo ligado a proyecto/entregable sin enterrarlo bajo ruido del sistema
+
+### 5. Estado real de la VM confirmado
+
+Se verifico desde host y desde VPS:
+
+- `tailscale status` reporta `pcrick` offline
+- `http://100.109.16.40:8088/health` -> timeout
+- `http://100.109.16.40:8089/health` -> timeout
+- `http://127.0.0.1:8088/health` en la VPS -> `200`
+
+Conclusiones:
+
+- el dashboard no estaba exagerando
+- la VM esta realmente fuera
+- el problema ya no es de visualizacion sino de infraestructura
+
+## Validacion
+
+- `python -m pytest tests/test_dashboard.py tests/test_enqueue_api.py tests/test_dispatcher.py tests/test_dispatcher_resilience.py tests/test_notion_tasks_registry.py -q`
+- resultado: `90 passed`
+- `python -m pytest -q`
+- resultado: `1077 passed, 4 skipped, 1 warning`
+- `python scripts/validate_skills.py`
+- resultado: `OK`
+- despliegue en VPS:
+  - `umbral-worker.service` reiniciado
+  - `openclaw-gateway.service` reiniciado
+  - dashboard regenerado en Notion
 
 ## Hallazgos principales
 
-### Hallazgo 1. Dashboard Rick estaba mezclando estado actual con tracking historico
+### Hallazgo 1. El dashboard mezclaba estado actual con tracking historico
 
 Severidad: alta
 
-El dashboard mostraba una seccion cerrada hace tiempo (`R16/R17`, `900 passed`) que hacia parecer vigente un release tracking ya obsoleto. Esto degradaba la lectura gerencial y desviaba atencion de problemas actuales.
+Antes mostraba una seccion vieja (`R16/R17`, `900 passed`) que ya no servia para operar.
 
 Estado:
 
 - corregido en codigo
 - corregido en produccion
 
-### Hallazgo 2. El dashboard sigue mostrando ruido operativo real
+### Hallazgo 2. El dashboard ya separa bien senal y ruido, pero el runtime sigue degradado
 
 Severidad: alta
 
-Tras regenerar el dashboard, lo que aparece hoy como problemas reales es:
+Estado visible final del dashboard:
 
-- `Worker VM (8088)` offline por timeout
-- `Worker VM interactivo (8089)` offline por timeout
-- `Redis` con `25` tareas bloqueadas
-- `Tareas recientes` dominadas por `windows.fs.list`
-- `Ultimo error`: `llm.generate` devolviendo `500` contra `127.0.0.1:8088`
+- `Worker VPS`: OK
+- `Worker VM (8088)`: Offline (ConnectTimeout)
+- `Worker VM interactivo (8089)`: Offline (ConnectTimeout)
+- `Redis`: conectado, con bloqueadas acumuladas
+- `Ruido tecnico / sistema`: visible y separado
+- semaforo global: `Degradado`
 
 Interpretacion:
 
-- el dashboard ya esta diciendo la verdad
-- el problema ahora es el runtime, no la visualizacion
+- la visualizacion ya no es el problema principal
+- el problema ahora es la VM y algunos productores que siguen poblando tareas tecnicas
 
-### Hallazgo 3. `📬 Bandeja Puente` sigue siendo dificil de leer
+### Hallazgo 3. `📬 Bandeja Puente` era dificil de leer, pero ya quedo razonablemente util
 
 Severidad: media
 
-La base esta contaminada por muchas entradas periodicas tipo `Revision periodica ...`, casi todas resueltas. Se intentaron crear vistas separadas (`Abiertos / accionables`, `Resueltos / historial`), pero la configuracion DSL disponible no termino de persistir correctamente los filtros sobre la propiedad `Estado`.
+El problema original era mezcla de:
 
-Implicacion:
+- muchas entradas periodicas tipo `Revision periodica ...`
+- vistas con filtros poco fiables desde tooling
 
-- el problema no es solo de contenido
-- hay una limitacion practica del tooling actual para configurar esa base con la precision deseada desde automatizacion
+Estado actual:
 
-Recomendacion:
+- mejorado
+- no perfecto
+- suficientemente legible para operacion con vistas simples por estado
 
-- ajustar esas vistas manualmente en Notion UI o ampliar el tooling para escribir filtros de views con mas control
+Limite detectado:
 
-### Hallazgo 4. `🗂 Tareas` sigue recibiendo ruido de automatizaciones/sistema
+- el tooling de views de Notion sigue siendo inconsistente para representar y volver a leer filtros compuestos complejos
+
+### Hallazgo 4. `📒 Tareas` sigue mostrando ruido historico y ruido tecnico abierto
 
 Severidad: alta
 
-Aunque ya existe el guardrail para poblar Notion solo con tareas project-scoped o `notion_track=true`, siguen apareciendo tareas recientes del sistema y del lab:
+Aunque ya existe mejor procedencia, siguen apareciendo tareas del sistema y del laboratorio:
 
 - `windows.fs.list`
 - `research.web`
 - `llm.generate`
 - fallos browser viejos
 
-Diagnostico cruzado:
-
-- en la VPS, varios registros Redis recientes no tienen `source`, `callback_url`, `linear_issue_id` ni `envelope`
-- por lo tanto hoy falta trazabilidad de origen en el propio runtime
-
 Conclusion:
 
-- `Tareas` no esta recibiendo ruido por una sola causa obvia en el repo
-- parte del ruido viene de productores o envelopes que no dejan suficiente procedencia
+- una parte del problema ya quedo corregida con propagacion de `source` y contexto
+- el ruido historico sigue ahi
+- varios productores viejos siguen dejando tareas tecnicas que conviene tratar como sistema, no como trabajo humano revisable
 
 ### Hallazgo 5. La busqueda global de Notion no sirve como herramienta principal de operacion
 
@@ -141,14 +223,12 @@ La busqueda interna devuelve mucho ruido de:
 - correo
 - inbox
 
-antes que estructuras operativas del stack.
-
 Conclusion:
 
-- para operacion cotidiana conviene navegar por dashboard + bases filtradas
-- no por busqueda semantica global del workspace
+- para operar conviene dashboard + bases filtradas
+- no busqueda semantica global del workspace
 
-### Hallazgo 6. La estructura principal de Notion esta mejor que hace una semana
+### Hallazgo 6. La estructura principal de Notion ya esta bastante sana
 
 Severidad: positiva
 
@@ -156,6 +236,7 @@ Lo mas sano hoy es:
 
 - `📁 Proyectos — Umbral`
 - `📬 Entregables Rick — Revision`
+- `📒 Tareas — Umbral Agent Stack`
 - `OpenClaw` como hub
 - `Archivo historico — Umbral` fuera del flujo activo
 
@@ -166,92 +247,90 @@ En otras palabras:
 
 ## Oportunidades de mejora concretas
 
-### A. Persistir procedencia de tareas en Redis y en Notion
+### A. Terminar de propagar procedencia desde productores viejos
 
 Prioridad: alta
 
-Hoy faltan campos fiables de procedencia para muchas tareas. Conviene persistir siempre, cuando exista:
+Estado: parcialmente resuelto
+
+Ya persiste mejor:
 
 - `source`
 - `source_kind`
-- `envelope_id`
 - `project_name`
 - `deliverable_name`
 - `notion_track`
+- `trace_id`
 
-Beneficio:
+Pendiente:
 
-- explicar por que aparecen tareas en `Tareas`
-- filtrar mejor el dashboard
-- depurar automatizaciones ruidosas
+- que mas productores viejos realmente llenen ese contexto
 
-### B. Reducir ruido del dashboard de tareas recientes
-
-Prioridad: alta
-
-Opciones razonables:
-
-- excluir tareas tecnicas repetitivas de `recent_tasks` si no son project-scoped
-- o separar `Recentes operativas` de `Recentes sistema`
-
-No se aplico automaticamente en esta iteracion para no ocultar incidentes reales sin una politica clara.
-
-### C. Corregir la salud real de la VM
+### B. Reducir el ruido historico de `📒 Tareas`
 
 Prioridad: alta
 
-El dashboard muestra timeout tanto en `8088` como en `8089`. Mientras eso no se corrija:
+Estado: pendiente
 
-- el dashboard seguira en rojo parcial
-- el routing con necesidad de VM seguira degradado
+Conviene decidir si:
 
-### D. Limpiar `📬 Bandeja Puente`
+- las tareas tecnicas historicas se archivan
+- o se dejan solo en vistas de sistema
+
+Hoy el dashboard ya no las mezcla con trabajo relevante, pero la base aun conserva bastante ruido viejo.
+
+### C. Recuperar la VM
+
+Prioridad: alta
+
+Mientras `pcrick` siga offline:
+
+- el dashboard seguira degradado
+- el routing que necesita VM seguira bloqueando tareas
+- `Tareas` seguira llenandose con bloqueos legitimos de laboratorio
+
+### D. Afinar `📬 Bandeja Puente` solo si se quiere una UX mas fina
 
 Prioridad: media
 
-Conviene:
+Ya es usable con vistas simples.
 
-- separar de verdad lo accionable de lo historico
-- reducir la periodicidad si esos check-ins no agregan senal
-- o mover el historial repetitivo a otra vista/base
+Lo pendiente seria solo:
 
-### E. Convertir `Dashboard Rick` en dashboard de decisiones, no de exhaustividad
+- filtros mas ricos
+- o mover historial periodico si se quiere una bandeja todavia mas limpia
+
+### E. Agregar columnas visibles de procedencia en `📒 Tareas`
 
 Prioridad: media
 
-Deberia quedarse con:
+Hoy la procedencia ya existe en el cuerpo de las subpaginas.
 
-- estado general
-- workers y Redis
-- cuotas
-- equipos
-- tareas recientes relevantes
-- alertas activas
+Si se quiere mayor legibilidad directa en tabla, convendria agregar columnas tipo:
 
-Y mover el resto a vistas enlazadas o bases filtradas.
+- `Source`
+- `Trace ID`
+
+No es obligatorio para operar, pero mejoraria debugging.
 
 ## Recomendacion de siguiente slice
 
-Si se quiere una mejora estructural de verdad, el siguiente slice deberia ser:
+Si se quiere un avance real y no cosmetico, el siguiente slice deberia ser:
 
-1. persistencia de `source` y `envelope` en tareas
-2. politica explicita de que entra o no entra a `🗂 Tareas`
-3. separar `Dashboard Rick` en:
-   - `tareas recientes relevantes`
-   - `ruido tecnico / sistema`
-4. arreglo real del estado de la VM
-5. ajuste manual o tooling mejorado para vistas de `📬 Bandeja Puente`
+1. recuperar la VM `pcrick`
+2. decidir que productores tecnicos deben seguir poblando `📒 Tareas`
+3. archivar o aislar mejor el ruido historico viejo de `📒 Tareas`
+4. agregar columnas de procedencia si se quiere debugging mas directo
 
 ## Veredicto final
 
-Notion hoy ya no esta desordenado por falta de estructura.
+Notion ya no esta desordenado por falta de estructura.
 
-Los problemas reales pasan por:
+Los problemas reales hoy pasan por:
 
-- ruido de runtime
-- falta de procedencia de tareas
-- dashboard con demasiada mezcla entre senal y ruido
-- algunas vistas que el tooling actual no logra dejar finas del todo
+- VM fuera
+- ruido historico de tareas
+- algunos productores tecnicos sin suficiente disciplina de origen
 
 La parte positiva es que el flujo central ya esta bastante sano:
 
@@ -260,6 +339,6 @@ La parte positiva es que el flujo central ya esta bastante sano:
 El mayor valor a partir de aqui no es crear mas bases, sino mejorar:
 
 - procedencia
-- filtros
+- limpieza historica
 - lectura operativa
-- y salud real de los workers
+- y salud real de la VM

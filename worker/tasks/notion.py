@@ -250,6 +250,9 @@ def handle_notion_upsert_task(input_data: Dict[str, Any]) -> Dict[str, Any]:
         project_page_id (str, optional): page id del proyecto si ya se conoce.
         deliverable_name (str, optional): nombre exacto del entregable asociado.
         deliverable_page_id (str, optional): page id del entregable si ya se conoce.
+        source (str, optional): origen declarado de la tarea.
+        source_kind (str, optional): subtipo/canal del origen.
+        trace_id (str, optional): id de traza end-to-end.
 
     Returns:
         {"page_id": "...", "updated": True} o {"skipped": True, "reason": "..."}
@@ -320,6 +323,9 @@ def handle_notion_upsert_task(input_data: Dict[str, Any]) -> Dict[str, Any]:
         input_summary=input_data.get("input_summary"),
         error=input_data.get("error"),
         result_summary=input_data.get("result_summary"),
+        source=input_data.get("source"),
+        source_kind=input_data.get("source_kind"),
+        trace_id=input_data.get("trace_id"),
         project_page_id=project_page_id or None,
         deliverable_page_id=deliverable_page_id or None,
         icon=resolved_icon,
@@ -755,6 +761,9 @@ def _build_task_page_blocks(input_data: Dict[str, Any], project_context: Dict[st
     input_summary = _normalize_spaces(str(input_data.get("input_summary") or "")) or "Sin input resumido."
     result_summary = _normalize_spaces(str(input_data.get("result_summary") or "")) or "Sin resultado resumido todavia."
     error = _normalize_spaces(str(input_data.get("error") or ""))
+    source = _normalize_spaces(str(input_data.get("source") or "")) or "Sin origen declarado"
+    source_kind = _normalize_spaces(str(input_data.get("source_kind") or "")) or "Sin tipo de origen"
+    trace_id = _normalize_spaces(str(input_data.get("trace_id") or "")) or "Sin trace id"
 
     blocks: list[Dict[str, Any]] = [
         _block_callout(f"Tarea {status} del equipo {team}.", emoji="🗂️"),
@@ -766,6 +775,9 @@ def _build_task_page_blocks(input_data: Dict[str, Any], project_context: Dict[st
         _block_bulleted(f"Proyecto: {project_name}"),
         _block_bulleted(f"Entregable: {linked_deliverable or 'Sin entregable asociado'}"),
         _block_bulleted(f"Team: {team}"),
+        _block_bulleted(f"Origen: {source}"),
+        _block_bulleted(f"Tipo de origen: {source_kind}"),
+        _block_bulleted(f"Trace ID: {trace_id}"),
         _block_heading2("Input resumido"),
         _block_paragraph(input_summary),
         _block_heading2("Resultado resumido"),

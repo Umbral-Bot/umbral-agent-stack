@@ -157,6 +157,9 @@ def test_build_task_page_blocks_show_human_name_and_technical_task():
             "team": "ops",
             "task": "notion.upsert_task",
             "task_name": "Registrar tarea de smoke ligada al embudo",
+            "source": "openclaw_gateway",
+            "source_kind": "tool_enqueue",
+            "trace_id": "trace-abc",
         },
         project_context={"name": "Proyecto Embudo Ventas"},
         deliverable_name="Benchmark del sistema de contenido y funnel de Ruben Hassid",
@@ -169,3 +172,6 @@ def test_build_task_page_blocks_show_human_name_and_technical_task():
 
     assert "Registrar tarea de smoke ligada al embudo" in plain_texts
     assert "Task técnico: notion.upsert_task" in plain_texts
+    assert "Origen: openclaw_gateway" in plain_texts
+    assert "Tipo de origen: tool_enqueue" in plain_texts
+    assert "Trace ID: trace-abc" in plain_texts

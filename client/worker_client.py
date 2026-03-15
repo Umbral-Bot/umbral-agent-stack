@@ -92,7 +92,21 @@ class WorkerClient:
         """
         payload: Dict[str, Any] = {"task": task, "input": input_data or {}}
         if envelope:
-            for field in ("task_id", "team", "task_type", "trace_id"):
+            for field in (
+                "task_id",
+                "team",
+                "task_type",
+                "trace_id",
+                "source",
+                "source_kind",
+                "source_comment_id",
+                "linear_issue_id",
+                "project_name",
+                "project_page_id",
+                "deliverable_name",
+                "deliverable_page_id",
+                "notion_track",
+            ):
                 if field in envelope:
                     payload[field] = envelope[field]
         last_exc: Optional[Exception] = None

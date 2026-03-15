@@ -232,6 +232,8 @@ function buildRunEnvelope(api: OpenClawPluginApi, params: JsonObject): JsonObjec
     schema_version: "0.1",
     task_id: randomUUID(),
     trace_id: randomUUID(),
+    source: "openclaw_gateway",
+    source_kind: "tool_run",
     team:
       (typeof params.team === "string" && params.team.trim()) ||
       cfg.defaultTeam ||
@@ -265,6 +267,9 @@ function buildEnqueueBody(
       overrides.defaultTaskType ||
       cfg.defaultTaskType ||
       "general",
+    source: "openclaw_gateway",
+    source_kind: "tool_enqueue",
+    notion_track: Boolean(params.notionTrack),
   };
 }
 

@@ -679,7 +679,7 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     resultTitle: "Notion deliverable upsert result",
     parameters: taskToolSchema(
       {
-        name: stringSchema("Deliverable title (used as lookup key)."),
+        name: stringSchema("Deliverable title in natural Spanish. Make it descriptive and do not include dates in the title."),
         project_name: stringSchema("Exact project name in the projects registry."),
         project_page_id: stringSchema("Optional project page ID if already resolved."),
         deliverable_type: enumStringSchema(
@@ -705,6 +705,7 @@ const TASK_TOOLS: TaskToolDefinition[] = [
           "Human review state.",
         ),
         date: stringSchema("Deliverable date (YYYY-MM-DD)."),
+        suggested_due_date: stringSchema("Optional suggested review deadline (YYYY-MM-DD). Omit to let the Worker infer it."),
         agent: enumStringSchema(["Rick", "Claude", "Codex", "Cursor", "Antigravity"], "Agent that produced the deliverable."),
         summary: stringSchema("Short summary of the deliverable."),
         artifact_url: stringSchema("Canonical URL to the artifact."),

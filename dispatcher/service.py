@@ -169,8 +169,18 @@ def _notion_upsert(
     input_summary: str | None = None,
     error: str | None = None,
     result_summary: str | None = None,
+    envelope: dict | None = None,
 ) -> None:
     """Actualiza el Kanban de Notion. Fire-and-forget; no bloquea el flujo."""
+    envelope = envelope or {}
+    input_payload = envelope.get("input", {}) if isinstance(envelope.get("input"), dict) else {}
+    is_project_scoped = any(
+        str(input_payload.get(key, "")).strip()
+        for key in ("project_name", "project_page_id", "deliverable_name", "deliverable_page_id")
+    )
+    explicit_track = bool(input_payload.get("notion_track"))
+    if not (is_project_scoped or explicit_track):
+        return
     try:
         wc.run(
             "notion.upsert_task",
@@ -182,6 +192,10 @@ def _notion_upsert(
                 "input_summary": input_summary,
                 "error": error,
                 "result_summary": result_summary,
+                "project_name": input_payload.get("project_name"),
+                "project_page_id": input_payload.get("project_page_id"),
+                "deliverable_name": input_payload.get("deliverable_name"),
+                "deliverable_page_id": input_payload.get("deliverable_page_id"),
             },
         )
     except Exception as e:
@@ -345,7 +359,7 @@ def _run_worker(
             reason = "quota_exceeded_approval_required"
             logger.warning("[worker %d] Task %s blocked: %s (model=%s)", worker_id, task_id, reason, decision.model)
             ops_log.task_blocked(task_id, task, team, reason, trace_id=trace_id)
-            threading.Thread(target=_notion_upsert, args=(wc_local, task_id, "blocked", team, task), kwargs={"error": reason}, daemon=True).start()
+            threading.Thread(target=_notion_upsert, args=(wc_local, task_id, "blocked", team, task), kwargs={"error": reason, "envelope": envelope}, daemon=True).start()
             queue.block_task(task_id, reason)
             continue
         selected_model = decision.model
@@ -364,7 +378,7 @@ def _run_worker(
         if requires_vm and not hm.vm_online and wc_vm is not None:
             reason = f"VM offline; task {task_id} (team={team}) requires VM."
             logger.warning("[worker %d] %s", worker_id, reason)
-            threading.Thread(target=_notion_upsert, args=(wc_local, task_id, "blocked", team, task), kwargs={"error": reason[:500]}, daemon=True).start()
+            threading.Thread(target=_notion_upsert, args=(wc_local, task_id, "blocked", team, task), kwargs={"error": reason[:500], "envelope": envelope}, daemon=True).start()
             queue.block_task(task_id, reason)
             continue
 
@@ -380,7 +394,7 @@ def _run_worker(
             wc = wc_vm
         else:
             wc = wc_local
-        threading.Thread(target=_notion_upsert, args=(wc_local, task_id, "running", team, task), kwargs={"input_summary": str(input_data)[:300]}, daemon=True).start()
+        threading.Thread(target=_notion_upsert, args=(wc_local, task_id, "running", team, task), kwargs={"input_summary": str(input_data)[:300], "envelope": envelope}, daemon=True).start()
         t_start = time.time()
         try:
             result = wc.run(task, input_data, envelope=envelope)
@@ -390,7 +404,7 @@ def _run_worker(
             _input_summary = str(envelope.get("input", {}))[:200]
             ops_log.task_completed(task_id, task, team, selected_model, duration_ms, worker=target.lower(), trace_id=trace_id, input_summary=_input_summary)
             _result_summary = str(result.get("result", result))[:300] if isinstance(result, dict) else str(result)[:300]
-            threading.Thread(target=_notion_upsert, args=(wc_local, task_id, "done", team, task), kwargs={"result_summary": _result_summary}, daemon=True).start()
+            threading.Thread(target=_notion_upsert, args=(wc_local, task_id, "done", team, task), kwargs={"result_summary": _result_summary, "envelope": envelope}, daemon=True).start()
             threading.Thread(target=_notify_linear_completion, args=(wc_local, envelope, True), kwargs={"result": result}, daemon=True).start()
             _trigger_webhook_callback(envelope, status="done", task=task, result=result)
             logger.info("[worker %d] Task %s completed via %s Worker (model=%s)", worker_id, task_id, target, selected_model)
@@ -441,7 +455,7 @@ def _run_worker(
 
             _input_summary = str(envelope.get("input", {}))[:200]
             ops_log.task_failed(task_id, task, team, str(e), model=selected_model, trace_id=trace_id, input_summary=_input_summary)
-            threading.Thread(target=_notion_upsert, args=(wc_local, task_id, "failed", team, task), kwargs={"error": str(e)[:500]}, daemon=True).start()
+            threading.Thread(target=_notion_upsert, args=(wc_local, task_id, "failed", team, task), kwargs={"error": str(e)[:500], "envelope": envelope}, daemon=True).start()
             threading.Thread(target=_notify_linear_completion, args=(wc_local, envelope, False), kwargs={"error": str(e)}, daemon=True).start()
             threading.Thread(
                 target=_escalate_failure_to_linear,

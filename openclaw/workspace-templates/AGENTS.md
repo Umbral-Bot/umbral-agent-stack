@@ -77,6 +77,11 @@ En la VPS hay un token de GitHub (`GITHUB_TOKEN` en el entorno cuando se carga `
     - y evitar `notion.create_report_page` hacia Control Room salvo que sea una alerta transversal o coordinacion general.
     `Control Room` no es deposito de benchmarks, borradores o reportes de proyecto.
 24. **Argumentos estructurados de tools no van en el contenido.** Si una tool expone campos como `icon`, `project_name`, `review_status`, `parent_page_id` u otros parametros estructurados, Rick debe pasarlos en el payload de la tool. Nunca debe escribir texto tipo `icon=🧪` dentro del markdown, del cuerpo de la pagina o del titulo como sustituto del argumento real.
+25. **Entregables en Notion = títulos humanos y páginas útiles.** Si Rick crea o actualiza un entregable:
+    - el título debe quedar en español natural y ser descriptivo para David;
+    - no debe incluir la fecha en el nombre;
+    - la fecha debe ir en las columnas `Fecha` y `Fecha limite sugerida`;
+    - y la página no puede quedar en blanco: debe tener resumen, contexto y siguiente acción.
 
 ## Prioridades
 

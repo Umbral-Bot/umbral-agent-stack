@@ -62,7 +62,7 @@ def sample_envelope():
         "team": "marketing",
         "task_type": "writing",
         "task": "generate_post",
-        "input": {"topic": "test"},
+        "input": {"topic": "test", "project_name": "Proyecto Embudo Ventas"},
         "trace_id": str(uuid.uuid4()),
         "status": "queued",
     }
@@ -165,19 +165,44 @@ class TestFireAndForget:
     """_notion_upsert and _notify_linear_completion must not block the caller."""
 
     def test_notion_upsert_success(self, mock_wc):
-        _notion_upsert(mock_wc, "t1", "running", "marketing", "task")
+        _notion_upsert(
+            mock_wc,
+            "t1",
+            "running",
+            "marketing",
+            "task",
+            envelope={"input": {"project_name": "Proyecto Embudo Ventas"}},
+        )
         mock_wc.run.assert_called_once()
 
     def test_notion_upsert_swallows_404(self, mock_wc):
         mock_wc.run.side_effect = httpx.HTTPStatusError(
             "Not Found", request=MagicMock(), response=MagicMock(status_code=404)
         )
-        _notion_upsert(mock_wc, "t1", "running", "marketing", "task")
+        _notion_upsert(
+            mock_wc,
+            "t1",
+            "running",
+            "marketing",
+            "task",
+            envelope={"input": {"project_name": "Proyecto Embudo Ventas"}},
+        )
         # No exception raised
 
     def test_notion_upsert_swallows_connect_error(self, mock_wc):
         mock_wc.run.side_effect = httpx.ConnectError("refused")
+        _notion_upsert(
+            mock_wc,
+            "t1",
+            "running",
+            "marketing",
+            "task",
+            envelope={"input": {"project_name": "Proyecto Embudo Ventas"}},
+        )
+
+    def test_notion_upsert_skips_noise_without_context(self, mock_wc):
         _notion_upsert(mock_wc, "t1", "running", "marketing", "task")
+        mock_wc.run.assert_not_called()
 
     def test_linear_skip_without_issue_id(self, mock_wc):
         _notify_linear_completion(mock_wc, {"task": "t"}, True)

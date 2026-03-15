@@ -137,6 +137,7 @@ Task: `notion.upsert_task`
 Devuelve: `{"page_id":"...", "updated": true}` o `{"skipped": true, "reason":"..."}`
 
 Si la tarea pertenece claramente a un proyecto o produce/actualiza un entregable revisable, usa `project_name` / `project_page_id` y `deliverable_name` / `deliverable_page_id` para enlazar la fila. No dejes `Tareas` flotando sin contexto si ya conoces el proyecto o el entregable.
+Si la tarea nace sin proyecto ni entregable, asume que es ruido operativo o sistema y evita mandarla a Notion salvo que David haya pedido explícitamente trazabilidad o marques `notion_track=true`.
 
 ### 6. Actualizar dashboard
 
@@ -199,6 +200,32 @@ Devuelve: `{"ok": true, "page_id": "...", "url": "...", "created": bool}`
 
 Variables opcionales: `start_date`, `target_date` (YYYY-MM-DD), `bloqueos`, `last_update_date`.
 
+### 9. Crear o actualizar entregable revisable
+
+Task: `notion.upsert_deliverable`
+
+```json
+{
+  "name": "Benchmark de Ruben Hassid para el sistema editorial",
+  "project_name": "Proyecto Embudo Ventas",
+  "deliverable_type": "Benchmark",
+  "review_status": "Pendiente revision",
+  "date": "2026-03-15",
+  "suggested_due_date": "2026-03-18",
+  "agent": "Rick",
+  "summary": "Resumen corto y legible para David.",
+  "artifact_path": "G:\\Mi unidad\\Rick-David\\Proyecto-Embudo-Ventas\\benchmark-ruben-hassid.md",
+  "next_action": "Revisar si se traduce a sistema editorial reusable.",
+  "icon": "🎯"
+}
+```
+
+Reglas:
+- El `name` debe quedar en español natural y legible para David.
+- No poner fechas dentro del título; usar `date` y `suggested_due_date`.
+- Si el entregable pertenece a un proyecto, usar el icono del proyecto salvo que haya una razón clara para diferenciarlo.
+- El cuerpo de la página debe quedar con resumen, contexto y siguiente acción. No dejar páginas vacías.
+
 ## Regla de iconos
 
 - Si la task acepta `icon`, usar ese campo y no meter el emoji dentro del `title` o `name`.
@@ -206,6 +233,12 @@ Variables opcionales: `start_date`, `target_date` (YYYY-MM-DD), `bloqueos`, `las
 - Para filas/paginas ligadas a un proyecto, preferir el icono del proyecto como icono real.
 - Si no hay proyecto, inferir un icono por contenido/tipo antes de dejar la pagina sin icono.
 - En bases de datos top-level de Notion, mantener emoji en el titulo como fallback visual porque el icono de database no siempre queda gobernable por esta API.
+
+## Regla de títulos y contenido
+
+- Los títulos de entregables deben ser descriptivos, en español natural y sin fecha incrustada.
+- Las fechas van en columnas (`Fecha`, `Fecha limite sugerida`) y no en el nombre.
+- `Proyectos`, `Tareas` y `Entregables` deben dejar cuerpo útil dentro de la página; no crear filas que al abrirse queden en blanco.
 
 ## Triggers recomendados
 

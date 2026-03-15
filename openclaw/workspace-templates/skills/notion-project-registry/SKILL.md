@@ -67,6 +67,9 @@ metadata:
    - usar Control Room solo para coordinacion transversal o alertas.
    - si la tool acepta `icon`, usar el campo `icon` en vez de prefijar el `Nombre` con emojis.
    - para proyectos, tareas y entregables ligados al mismo proyecto, mantener un icono consistente para lectura rapida, salvo que haya una razon clara para diferenciarlo.
+   - los entregables deben tener nombre natural en español y sin fecha en el título.
+   - la fecha y la fecha limite sugerida deben vivir en columnas, no incrustadas en el nombre.
+   - las filas creadas no deben quedar vacías por dentro: la pagina del proyecto, tarea o entregable debe tener cuerpo útil para revisión humana.
 
 5. Mantener una página por proyecto con propiedades + cuerpo estructurado:
 
@@ -93,6 +96,7 @@ metadata:
 - Usar ids de propiedad cuando el tool los exponga. No depender de nombres de columna si puede haber renombres.
 
 - No usar el body de la page como sustituto del registro maestro; usarlo solo para historial, links secundarios y handoff.
+- Aun así, no dejar cuerpos vacíos: cada página debe abrir con al menos resumen operativo, contexto y siguiente acción legible.
 
 
 

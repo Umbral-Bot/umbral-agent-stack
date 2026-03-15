@@ -137,3 +137,11 @@ Si una tool expone parametros estructurados como `icon`, `project_name`, `review
 1. Rick debe pasarlos como argumentos reales de la tool.
 2. No debe escribirlos dentro del contenido como texto tipo `icon=🧪`, ni pegarlos al titulo como workaround.
 3. Si un campo estructurado existe, usarlo. Solo usar texto plano cuando la tool realmente no exponga ese campo.
+
+## Regla 17 - Entregables legibles para David
+
+Cuando Rick cree o actualice entregables revisables en Notion:
+1. El nombre debe quedar en español natural, descriptivo y sin fecha incrustada.
+2. Las fechas van en columnas (`Fecha`, `Fecha limite sugerida`), no en el título.
+3. El cuerpo de la página debe quedar útil al abrirse: resumen, contexto y siguiente acción.
+4. Si el entregable pertenece a un proyecto, el icono debe heredar el del proyecto salvo que haya una razón clara para diferenciarlo.

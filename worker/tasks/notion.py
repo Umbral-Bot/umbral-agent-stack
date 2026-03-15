@@ -12,7 +12,8 @@ Tasks: Notion integration handlers.
 - notion.upsert_project: crear o actualizar proyecto en DB 📁 Proyectos — Umbral
 """
 
-from datetime import datetime, timezone
+import re
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict
 
 from .. import config, notion_client
@@ -240,7 +241,8 @@ def handle_notion_upsert_task(input_data: Dict[str, Any]) -> Dict[str, Any]:
         task_id (str, required): ID de la tarea.
         status (str, required): queued|running|done|failed|blocked.
         team (str, required): equipo/agente.
-        task (str, required): nombre de la tarea.
+        task (str, required): nombre técnico de la tarea/handler.
+        task_name (str, optional): nombre humano de la tarea para mostrar en Notion.
         input_summary (str, optional): resumen del input.
         error (str, optional): mensaje de error si status=failed.
         result_summary (str, optional): resumen del resultado.
@@ -258,6 +260,7 @@ def handle_notion_upsert_task(input_data: Dict[str, Any]) -> Dict[str, Any]:
     task = input_data.get("task")
     if not all([task_id, status, team, task]):
         raise ValueError("'task_id', 'status', 'team' and 'task' are required in input")
+    human_task_name = _normalize_spaces(str(input_data.get("task_name") or "")) or task
 
     project_page_id = (input_data.get("project_page_id") or "").strip()
     project_name = (input_data.get("project_name") or "").strip()
@@ -270,16 +273,26 @@ def handle_notion_upsert_task(input_data: Dict[str, Any]) -> Dict[str, Any]:
 
     deliverable_page_id = (input_data.get("deliverable_page_id") or "").strip()
     deliverable_name = (input_data.get("deliverable_name") or "").strip()
-    if not deliverable_page_id and deliverable_name and config.NOTION_DELIVERABLES_DB_ID:
+    normalized_deliverable_name = _normalize_deliverable_name({"name": deliverable_name}) if deliverable_name else ""
+    if not deliverable_page_id and normalized_deliverable_name and config.NOTION_DELIVERABLES_DB_ID:
         matches = notion_client.query_database(
             database_id=config.NOTION_DELIVERABLES_DB_ID,
             filter={
                 "property": "Nombre",
-                "title": {"equals": deliverable_name},
+                "title": {"equals": normalized_deliverable_name},
             },
         )
+        if not matches and deliverable_name != normalized_deliverable_name:
+            matches = notion_client.query_database(
+                database_id=config.NOTION_DELIVERABLES_DB_ID,
+                filter={
+                    "property": "Nombre",
+                    "title": {"equals": deliverable_name},
+                },
+            )
         if matches:
             deliverable_page_id = matches[0]["id"]
+            deliverable_name = normalized_deliverable_name or deliverable_name
 
     resolved_icon = input_data.get("icon") or project_context.get("icon")
     if not resolved_icon:
@@ -292,17 +305,25 @@ def handle_notion_upsert_task(input_data: Dict[str, Any]) -> Dict[str, Any]:
             fallback="🗂️",
         )
 
+    page_blocks = _build_task_page_blocks(
+        input_data,
+        project_context=project_context,
+        deliverable_name=deliverable_name or None,
+    )
+
     return notion_client.upsert_task(
         task_id=task_id,
         status=status,
         team=team,
         task=task,
+        task_name=human_task_name,
         input_summary=input_data.get("input_summary"),
         error=input_data.get("error"),
         result_summary=input_data.get("result_summary"),
         project_page_id=project_page_id or None,
         deliverable_page_id=deliverable_page_id or None,
         icon=resolved_icon,
+        children=page_blocks,
     )
 
 
@@ -390,6 +411,27 @@ _ESTADO_REVISION_VALID = {
     "Aprobado con ajustes",
     "Rechazado",
     "Archivado",
+}
+
+_DATE_IN_NAME_RE = re.compile(
+    r"(?:\s*[-_/]?\s*)(20\d{2}[-_/](?:0[1-9]|1[0-2])[-_/](?:0[1-9]|[12]\d|3[01]))(?:\b|$)"
+)
+
+_SLUG_TOKEN_MAP = {
+    "ia": "IA",
+    "ai": "IA",
+    "bim": "BIM",
+    "gui": "GUI",
+    "rpa": "RPA",
+    "vm": "VM",
+    "linkedin": "LinkedIn",
+    "youtube": "YouTube",
+    "notion": "Notion",
+    "rick": "Rick",
+    "david": "David",
+    "umbral": "Umbral",
+    "freepik": "Freepik",
+    "figma": "Figma",
 }
 
 _PROJECT_ICON_RULES: list[tuple[str, str]] = [
@@ -521,6 +563,236 @@ def _infer_report_icon(input_data: Dict[str, Any]) -> str:
     return _infer_icon_from_text(title, str(metadata), fallback="📝") or "📝"
 
 
+def _today_date() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+
+def _normalize_spaces(text: str) -> str:
+    return re.sub(r"\s+", " ", text or "").strip()
+
+
+def _strip_date_from_name(text: str) -> str:
+    if not text:
+        return ""
+    value = _DATE_IN_NAME_RE.sub("", text)
+    value = value.replace("—", "-")
+    value = re.sub(r"\s*-\s*$", "", value)
+    value = re.sub(r"\s{2,}", " ", value)
+    return value.strip(" -_/")
+
+
+def _humanize_slug(text: str) -> str:
+    raw = (text or "").strip()
+    if not raw:
+        return ""
+    normalized = raw.replace("_", " ").replace("-", " ")
+    parts = [part for part in normalized.split() if part]
+    if not parts:
+        return raw
+
+    human_parts: list[str] = []
+    for token in parts:
+        lower = token.lower()
+        if lower in _SLUG_TOKEN_MAP:
+            human_parts.append(_SLUG_TOKEN_MAP[lower])
+        elif token.isupper() and len(token) <= 5:
+            human_parts.append(token)
+        else:
+            human_parts.append(token.capitalize())
+    return " ".join(human_parts).strip()
+
+
+def _normalize_deliverable_name(input_data: Dict[str, Any]) -> str:
+    raw_name = _normalize_spaces(str(input_data.get("name") or ""))
+    if not raw_name:
+        return ""
+
+    without_date = _strip_date_from_name(raw_name)
+    if without_date and " " not in without_date and ("-" in raw_name or "_" in raw_name):
+        without_date = _humanize_slug(without_date)
+    elif without_date and ("-" in without_date or "_" in without_date) and without_date.lower() == without_date:
+        without_date = _humanize_slug(without_date)
+
+    normalized = _normalize_spaces(without_date or raw_name)
+    if normalized:
+        return normalized
+    return raw_name
+
+
+def _parse_date(value: str | None) -> datetime:
+    raw = (value or "").strip()
+    if not raw:
+        return datetime.now(timezone.utc)
+    try:
+        return datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except ValueError:
+        return datetime.now(timezone.utc)
+
+
+def _suggest_due_date(input_data: Dict[str, Any]) -> str | None:
+    explicit = (input_data.get("suggested_due_date") or "").strip()
+    if explicit:
+        return explicit
+
+    review_status = str(input_data.get("review_status") or "").strip()
+    if review_status in {"Aprobado", "Archivado"}:
+        return None
+
+    deliverable_type = str(input_data.get("deliverable_type") or "").strip()
+    base_date = _parse_date(str(input_data.get("date") or "")).date()
+    days_by_type = {
+        "Benchmark": 3,
+        "Reporte": 3,
+        "Auditoria": 4,
+        "Borrador": 2,
+        "Pieza editorial": 2,
+        "Criterio / base de conocimiento": 5,
+        "Plan": 5,
+    }
+    delta_days = days_by_type.get(deliverable_type, 3)
+    return (base_date + timedelta(days=delta_days)).strftime("%Y-%m-%d")
+
+
+def _build_project_page_blocks(input_data: Dict[str, Any]) -> list[Dict[str, Any]]:
+    name = str(input_data.get("name") or "Proyecto sin nombre").strip()
+    estado = str(input_data.get("estado") or "Activo").strip() or "Activo"
+    responsable = str(input_data.get("responsable") or "David Moreira").strip() or "David Moreira"
+    agentes = input_data.get("agentes") or []
+    if isinstance(agentes, str):
+        agentes = [item.strip() for item in agentes.split(",") if item.strip()]
+    agentes_text = ", ".join(agentes) if agentes else "Sin agentes definidos"
+    sprint = str(input_data.get("sprint") or "Sin sprint").strip() or "Sin sprint"
+    linear_url = str(input_data.get("linear_project_url") or "").strip()
+    shared_path = str(input_data.get("shared_path") or "").strip()
+    open_issues = input_data.get("open_issues")
+    open_issues_text = str(open_issues) if open_issues is not None else "Sin dato"
+    bloqueos = _normalize_spaces(str(input_data.get("bloqueos") or "")) or "Sin bloqueos registrados."
+    next_action = _normalize_spaces(str(input_data.get("next_action") or "")) or "Definir siguiente accion."
+    last_update = str(input_data.get("last_update_date") or "").strip() or _today_date()
+
+    blocks: list[Dict[str, Any]] = [
+        _block_callout(f"{name} — estado {estado}. Esta pagina resume el estado operativo oficial del proyecto.", emoji="📁"),
+        _block_heading2("Resumen operativo"),
+        _block_bulleted(f"Responsable: {responsable}"),
+        _block_bulleted(f"Agentes: {agentes_text}"),
+        _block_bulleted(f"Sprint: {sprint}"),
+        _block_bulleted(f"Issues abiertas: {open_issues_text}"),
+        _block_bulleted(f"Ultimo update: {last_update}"),
+    ]
+    if linear_url:
+        blocks.append(_block_bulleted(f"Linear: {linear_url}"))
+    if shared_path:
+        blocks.append(_block_bulleted(f"Ruta compartida: {shared_path}"))
+
+    blocks.extend(
+        [
+            _block_heading2("Bloqueos actuales"),
+            _block_paragraph(bloqueos),
+            _block_heading2("Siguiente accion"),
+            _block_paragraph(next_action),
+            _block_heading2("Uso de esta pagina"),
+            _block_bulleted("Mantener aqui un resumen legible del estado real del proyecto."),
+            _block_bulleted("Usar la base de tareas para ejecucion y la base de entregables para revision."),
+        ]
+    )
+    return blocks
+
+
+def _build_deliverable_page_blocks(input_data: Dict[str, Any], project_context: Dict[str, str] | None = None) -> list[Dict[str, Any]]:
+    project_context = project_context or {}
+    name = _normalize_deliverable_name(input_data)
+    project_name = project_context.get("name") or str(input_data.get("project_name") or "").strip() or "Sin proyecto"
+    deliverable_type = str(input_data.get("deliverable_type") or "Entregable").strip() or "Entregable"
+    review_status = str(input_data.get("review_status") or "Pendiente revision").strip() or "Pendiente revision"
+    summary = _normalize_spaces(str(input_data.get("summary") or "")) or "Sin resumen registrado."
+    notes = _normalize_spaces(str(input_data.get("notes") or "")) or "Sin observaciones registradas."
+    next_action = _normalize_spaces(str(input_data.get("next_action") or "")) or "Definir siguiente accion."
+    artifact_url = str(input_data.get("artifact_url") or "").strip()
+    artifact_path = str(input_data.get("artifact_path") or "").strip()
+    linear_issue = str(input_data.get("linear_issue_url") or "").strip()
+    date_value = str(input_data.get("date") or "").strip() or _today_date()
+    suggested_due_date = _suggest_due_date(input_data) or "Sin sugerencia"
+    agent = str(input_data.get("agent") or "Rick").strip() or "Rick"
+
+    blocks: list[Dict[str, Any]] = [
+        _block_callout(f"{deliverable_type} para {project_name} — estado de revision: {review_status}.", emoji="📬"),
+        _block_heading2("Resumen"),
+        _block_paragraph(summary),
+        _block_heading2("Ficha rapida"),
+        _block_bulleted(f"Proyecto: {project_name}"),
+        _block_bulleted(f"Tipo: {deliverable_type}"),
+        _block_bulleted(f"Agente: {agent}"),
+        _block_bulleted(f"Fecha del entregable: {date_value}"),
+        _block_bulleted(f"Fecha limite sugerida: {suggested_due_date}"),
+    ]
+    if artifact_path:
+        blocks.append(_block_bulleted(f"Ruta artefacto: {artifact_path}"))
+    if artifact_url:
+        blocks.append(_block_bulleted(f"URL artefacto: {artifact_url}"))
+    if linear_issue:
+        blocks.append(_block_bulleted(f"Linear Issue: {linear_issue}"))
+
+    blocks.extend(
+        [
+            _block_heading2("Observaciones"),
+            _block_paragraph(notes),
+            _block_heading2("Siguiente accion"),
+            _block_paragraph(next_action),
+        ]
+    )
+    return blocks
+
+
+def _build_task_page_blocks(input_data: Dict[str, Any], project_context: Dict[str, str] | None = None, deliverable_name: str | None = None) -> list[Dict[str, Any]]:
+    project_context = project_context or {}
+    task = str(input_data.get("task") or "Tarea").strip() or "Tarea"
+    human_task_name = _normalize_spaces(str(input_data.get("task_name") or "")) or task
+    status = str(input_data.get("status") or "queued").strip() or "queued"
+    team = str(input_data.get("team") or "system").strip() or "system"
+    task_id = str(input_data.get("task_id") or "").strip()
+    project_name = project_context.get("name") or str(input_data.get("project_name") or "").strip() or "Sin proyecto"
+    linked_deliverable = deliverable_name or str(input_data.get("deliverable_name") or "").strip()
+    input_summary = _normalize_spaces(str(input_data.get("input_summary") or "")) or "Sin input resumido."
+    result_summary = _normalize_spaces(str(input_data.get("result_summary") or "")) or "Sin resultado resumido todavia."
+    error = _normalize_spaces(str(input_data.get("error") or ""))
+
+    blocks: list[Dict[str, Any]] = [
+        _block_callout(f"Tarea {status} del equipo {team}.", emoji="🗂️"),
+        _block_heading2("Que hace esta tarea"),
+        _block_paragraph(human_task_name),
+        _block_heading2("Contexto"),
+        _block_bulleted(f"Task ID: {task_id or 'Sin task id'}"),
+        _block_bulleted(f"Task técnico: {task}"),
+        _block_bulleted(f"Proyecto: {project_name}"),
+        _block_bulleted(f"Entregable: {linked_deliverable or 'Sin entregable asociado'}"),
+        _block_bulleted(f"Team: {team}"),
+        _block_heading2("Input resumido"),
+        _block_paragraph(input_summary),
+        _block_heading2("Resultado resumido"),
+        _block_paragraph(result_summary),
+    ]
+    if error:
+        blocks.extend(
+            [
+                _block_heading2("Error o bloqueo"),
+                _block_paragraph(error),
+            ]
+        )
+    return blocks
+
+
+def _ensure_page_blocks(page_id: str, blocks: list[Dict[str, Any]]) -> None:
+    if not page_id or not blocks:
+        return
+    try:
+        snapshot = notion_client.read_page(page_id_or_url=page_id, max_blocks=10)
+    except Exception:
+        snapshot = None
+    if snapshot and str(snapshot.get("plain_text") or "").strip():
+        return
+    notion_client.append_blocks_to_page(page_id=page_id, blocks=blocks)
+
+
 def _build_project_properties(input_data: Dict[str, Any]) -> Dict[str, Any]:
     """Build raw Notion properties for 📁 Proyectos — Umbral from handler input."""
     props: Dict[str, Any] = {}
@@ -606,7 +878,7 @@ def _build_deliverable_properties(input_data: Dict[str, Any]) -> Dict[str, Any]:
     """Build raw Notion properties for the deliverables review registry."""
     props: Dict[str, Any] = {}
 
-    name = (input_data.get("name") or "").strip()
+    name = _normalize_deliverable_name(input_data)
     if name:
         props["Nombre"] = {"title": [{"text": {"content": name}}]}
 
@@ -628,6 +900,10 @@ def _build_deliverable_properties(input_data: Dict[str, Any]) -> Dict[str, Any]:
     date_value = input_data.get("date")
     if date_value:
         props["Fecha"] = {"date": {"start": date_value}}
+
+    suggested_due_date = _suggest_due_date(input_data)
+    if suggested_due_date:
+        props["Fecha limite sugerida"] = {"date": {"start": suggested_due_date}}
 
     agent = input_data.get("agent")
     if agent and agent in _AGENTES_VALID:
@@ -711,6 +987,7 @@ def handle_notion_upsert_project(input_data: Dict[str, Any]) -> Dict[str, Any]:
         return {"ok": False, "error": f"Failed to query projects DB: {e}"}
 
     props = _build_project_properties(input_data)
+    page_blocks = _build_project_page_blocks(input_data)
 
     resolved_icon = input_data.get("icon")
     if not resolved_icon:
@@ -724,11 +1001,13 @@ def handle_notion_upsert_project(input_data: Dict[str, Any]) -> Dict[str, Any]:
                 properties=props,
                 icon=resolved_icon,
             )
+            _ensure_page_blocks(page_id=result["page_id"], blocks=page_blocks)
             return {"ok": True, "page_id": result["page_id"], "url": result["url"], "created": False}
         else:
             result = notion_client.create_database_page(
                 database_id_or_url=db_id,
                 properties=props,
+                children=page_blocks,
                 icon=resolved_icon,
             )
             return {"ok": True, "page_id": result["page_id"], "url": result["url"], "created": True}
@@ -761,13 +1040,17 @@ def handle_notion_upsert_deliverable(input_data: Dict[str, Any]) -> Dict[str, An
     Returns:
         {"ok": True, "page_id": "...", "url": "...", "created": bool}
     """
-    name = (input_data.get("name") or "").strip()
+    original_name = (input_data.get("name") or "").strip()
+    name = _normalize_deliverable_name(input_data)
     if not name:
         return {"ok": False, "error": "'name' is required"}
+    input_data = {**input_data, "name": name}
 
     db_id = config.NOTION_DELIVERABLES_DB_ID
     if not db_id:
         return {"ok": False, "error": "NOTION_DELIVERABLES_DB_ID not configured on server"}
+
+    raw_name = original_name
 
     try:
         existing = notion_client.query_database(
@@ -777,6 +1060,14 @@ def handle_notion_upsert_deliverable(input_data: Dict[str, Any]) -> Dict[str, An
                 "title": {"equals": name},
             },
         )
+        if not existing and raw_name and raw_name != name:
+            existing = notion_client.query_database(
+                database_id=db_id,
+                filter={
+                    "property": "Nombre",
+                    "title": {"equals": raw_name},
+                },
+            )
     except Exception as e:
         return {"ok": False, "error": f"Failed to query deliverables DB: {e}"}
 
@@ -791,6 +1082,7 @@ def handle_notion_upsert_deliverable(input_data: Dict[str, Any]) -> Dict[str, An
         props = _build_deliverable_properties(input_data)
     except Exception as e:
         return {"ok": False, "error": f"Failed to build deliverable properties: {e}"}
+    page_blocks = _build_deliverable_page_blocks(input_data, project_context=project_context)
 
     resolved_icon = input_data.get("icon") or project_context.get("icon")
     if not resolved_icon:
@@ -810,11 +1102,13 @@ def handle_notion_upsert_deliverable(input_data: Dict[str, Any]) -> Dict[str, An
                 properties=props,
                 icon=resolved_icon,
             )
+            _ensure_page_blocks(page_id=result["page_id"], blocks=page_blocks)
             return {"ok": True, "page_id": result["page_id"], "url": result["url"], "created": False}
 
         result = notion_client.create_database_page(
             database_id_or_url=db_id,
             properties=props,
+            children=page_blocks,
             icon=resolved_icon,
         )
         return {"ok": True, "page_id": result["page_id"], "url": result["url"], "created": True}

@@ -64,6 +64,7 @@ metadata:
    - primero actualizar la fila del proyecto;
    - luego crear o actualizar un registro en la base de entregables/revision;
    - usar Control Room solo para coordinacion transversal o alertas.
+   - si la tool acepta `icon`, usar el campo `icon` en vez de prefijar el `Nombre` con emojis.
 
 5. Mantener una página por proyecto con propiedades + cuerpo estructurado:
 

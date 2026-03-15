@@ -49,6 +49,7 @@ def test_handle_notion_create_report_page_success(mock_create):
     input_data = {
         "title": "Test Report",
         "content": "# Hello\nWorld",
+        "icon": "📝",
         "sources": [{"title": "Google", "url": "https://google.com"}],
         "queries": ["what is ai"],
         "metadata": {"team": "alpha"}
@@ -68,6 +69,7 @@ def test_handle_notion_create_report_page_success(mock_create):
     assert kwargs["sources"] == input_data["sources"]
     assert kwargs["queries"] == input_data["queries"]
     assert kwargs["metadata"]["team"] == "alpha"
+    assert kwargs["icon"] == "📝"
     assert "generated_at" in kwargs["metadata"]
 
 def test_handle_notion_create_report_page_missing_inputs():

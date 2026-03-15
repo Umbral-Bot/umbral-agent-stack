@@ -20,6 +20,7 @@ def test_handle_notion_create_database_page_success(mock_create_database_page):
         {
             "database_id_or_url": "https://www.notion.so/3c1112c327cd445f848f041c4f8449c2",
             "properties": {"Nombre": {"title": [{"text": {"content": "Proyecto Embudo Ventas"}}]}},
+            "icon": "📁",
         }
     )
 
@@ -28,6 +29,7 @@ def test_handle_notion_create_database_page_success(mock_create_database_page):
         database_id_or_url="https://www.notion.so/3c1112c327cd445f848f041c4f8449c2",
         properties={"Nombre": {"title": [{"text": {"content": "Proyecto Embudo Ventas"}}]}},
         children=None,
+        icon="📁",
     )
 
 
@@ -51,6 +53,7 @@ def test_handle_notion_update_page_properties_success(mock_update_page_propertie
         {
             "page_id_or_url": "https://www.notion.so/page-1",
             "properties": {"Estado": {"status": {"name": "En curso"}}},
+            "icon": "📝",
         }
     )
 
@@ -58,6 +61,7 @@ def test_handle_notion_update_page_properties_success(mock_update_page_propertie
     mock_update_page_properties.assert_called_once_with(
         page_id_or_url="https://www.notion.so/page-1",
         properties={"Estado": {"status": {"name": "En curso"}}},
+        icon="📝",
     )
 
 
@@ -65,7 +69,7 @@ def test_handle_notion_update_page_properties_requires_inputs():
     with pytest.raises(ValueError, match="'page_id_or_url' is required"):
         handle_notion_update_page_properties({"properties": {"foo": "bar"}})
 
-    with pytest.raises(ValueError, match="'properties' must be a non-empty object"):
+    with pytest.raises(ValueError, match="'properties' or 'icon' must be provided"):
         handle_notion_update_page_properties({"page_id_or_url": "page-1"})
 
 
@@ -89,11 +93,13 @@ def test_create_database_page_posts_to_notion(mock_require_notion_core, mock_cli
     result = create_database_page(
         "https://www.notion.so/3c1112c327cd445f848f041c4f8449c2",
         {"Nombre": {"title": [{"text": {"content": "Proyecto Embudo Ventas"}}]}},
+        icon="📁",
     )
 
     assert result["created"] is True
     assert result["page_id"] == "page-1"
     mock_client.post.assert_called_once()
+    assert mock_client.post.call_args.kwargs["json"]["icon"] == {"type": "emoji", "emoji": "📁"}
 
 
 @patch("worker.notion_client.httpx.Client")
@@ -116,8 +122,39 @@ def test_update_page_properties_patches_notion(mock_require_notion_core, mock_cl
     result = update_page_properties(
         "https://www.notion.so/31e5f443fb5c81eb8949e8c59f497d42",
         {"Estado": {"status": {"name": "En curso"}}},
+        icon="📝",
     )
 
     assert result["updated"] is True
     assert result["page_id"] == "page-1"
     mock_client.patch.assert_called_once()
+    assert mock_client.patch.call_args.kwargs["json"]["icon"] == {"type": "emoji", "emoji": "📝"}
+
+
+@patch("worker.notion_client.httpx.Client")
+@patch("worker.notion_client.config.require_notion_core")
+@patch("worker.notion_client.config.NOTION_API_KEY", "ntn_test_key")
+def test_update_page_properties_allows_icon_only(mock_require_notion_core, mock_client_cls):
+    from worker.notion_client import update_page_properties
+
+    update_response = MagicMock()
+    update_response.status_code = 200
+    update_response.json.return_value = {
+        "id": "page-1",
+        "url": "https://www.notion.so/page-1",
+    }
+
+    mock_client = MagicMock()
+    mock_client.patch.return_value = update_response
+    mock_client_cls.return_value.__enter__.return_value = mock_client
+
+    result = update_page_properties(
+        "https://www.notion.so/31e5f443fb5c81eb8949e8c59f497d42",
+        {},
+        icon="🧭",
+    )
+
+    assert result["updated"] is True
+    assert mock_client.patch.call_args.kwargs["json"] == {
+        "icon": {"type": "emoji", "emoji": "🧭"}
+    }

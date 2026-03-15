@@ -77,6 +77,16 @@ def _plain_text_from_rich_text(rich_text: list[Any] | None) -> str:
     return "".join(parts)
 
 
+def _normalize_icon(icon: str | None) -> dict[str, Any] | None:
+    """Build a Notion icon payload from an emoji or external URL."""
+    value = (icon or "").strip()
+    if not value:
+        return None
+    if value.startswith("http://") or value.startswith("https://"):
+        return {"type": "external", "external": {"url": value}}
+    return {"type": "emoji", "emoji": value}
+
+
 def _find_property_name(
     properties: dict[str, Any],
     candidates: list[str],
@@ -637,6 +647,7 @@ def create_database_page(
     database_id_or_url: str,
     properties: dict[str, Any],
     children: list[dict[str, Any]] | None = None,
+    icon: str | None = None,
 ) -> dict[str, Any]:
     """
     Create a page inside an existing Notion database using raw Notion API properties.
@@ -658,6 +669,9 @@ def create_database_page(
         "parent": {"database_id": database_id},
         "properties": properties,
     }
+    icon_payload = _normalize_icon(icon)
+    if icon_payload:
+        payload["icon"] = icon_payload
     if children:
         payload["children"] = children[:100]
 
@@ -686,6 +700,7 @@ def create_database_page(
 def update_page_properties(
     page_id_or_url: str,
     properties: dict[str, Any],
+    icon: str | None = None,
 ) -> dict[str, Any]:
     """
     Update raw Notion page properties for an existing page.
@@ -699,14 +714,22 @@ def update_page_properties(
     """
     config.require_notion_core()
     page_id = _extract_notion_page_id(page_id_or_url)
-    if not isinstance(properties, dict) or not properties:
-        raise ValueError("properties must be a non-empty dict")
+    if not isinstance(properties, dict):
+        raise ValueError("properties must be a dict")
+    icon_payload = _normalize_icon(icon)
+    if not properties and not icon_payload:
+        raise ValueError("properties or icon must be provided")
 
     with httpx.Client(timeout=TIMEOUT) as client:
+        payload: dict[str, Any] = {}
+        if properties:
+            payload["properties"] = properties
+        if icon_payload:
+            payload["icon"] = icon_payload
         resp = client.patch(
             f"{NOTION_BASE_URL}/pages/{page_id}",
             headers=_headers(),
-            json={"properties": properties},
+            json=payload,
         )
         result = _check_response(resp, "update_page_properties")
 
@@ -1123,6 +1146,7 @@ def create_report_page(
     sources: list[dict[str, Any]] | None = None,
     queries: list[str] | None = None,
     metadata: dict[str, Any] | None = None,
+    icon: str | None = None,
 ) -> dict[str, Any]:
     """
     Create a child page under a Notion page with a structured report.
@@ -1183,6 +1207,9 @@ def create_report_page(
         },
         "children": children[:100],
     }
+    icon_payload = _normalize_icon(icon)
+    if icon_payload:
+        payload["icon"] = icon_payload
 
     logger.info("Creating report page: %s under %s", title[:60], parent_page_id[:8])
     with httpx.Client(timeout=TIMEOUT) as client:

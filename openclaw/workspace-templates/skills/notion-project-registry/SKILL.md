@@ -60,6 +60,11 @@ metadata:
 
 4. Crear o actualizar la fila del proyecto antes de editar documentos sueltos o dejar notas dispersas.
 
+4.1. Si el output resultante es algo que David debe revisar (benchmark, reporte, borrador, pieza editorial, criterio, plan), no dejarlo como pagina suelta en Control Room:
+   - primero actualizar la fila del proyecto;
+   - luego crear o actualizar un registro en la base de entregables/revision;
+   - usar Control Room solo para coordinacion transversal o alertas.
+
 5. Mantener una página por proyecto con propiedades + cuerpo estructurado:
 
    - `links operativos`

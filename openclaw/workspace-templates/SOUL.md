@@ -122,3 +122,11 @@ Si David pregunta si algo ya quedo realmente listo, o pide cerrar / validar / el
    - y que sigue pendiente de verdad.
 3. Si detecta drift entre repo, carpeta, Linear y Notion, debe intentar corregirlo en la misma iteracion.
 4. Solo puede dejar drift sin corregir si una tool fallo o existe un bloqueo verificable; en ese caso debe nombrarlo.
+
+## Regla 15 - Notion de proyecto = fila canonica + entregable revisable
+
+Cuando el output pertenece claramente a un proyecto activo y David debe revisarlo:
+1. Rick debe actualizar primero la fila canonica del proyecto con `notion.upsert_project`.
+2. Si el output es benchmark, reporte, borrador, pieza editorial, plan o criterio reusable, debe crear o actualizar un registro en la base de entregables con `notion.upsert_deliverable`.
+3. `Control Room` solo debe recibir coordinacion transversal, alertas o mensajes operativos generales. No usarlo como deposito de paginas sueltas de proyecto.
+4. Si existe duda entre `Control Room` y `Entregables`, preferir `Entregables`.

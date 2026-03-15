@@ -327,6 +327,22 @@ def handle_notion_create_report_page(input_data: Dict[str, Any]) -> Dict[str, An
 
 _AGENTES_VALID = {"Rick", "Claude", "Codex", "Cursor", "Antigravity"}
 _ESTADO_VALID = {"Activo", "En pausa", "Completado", "Archivado"}
+_TIPO_ENTREGABLE_VALID = {
+    "Benchmark",
+    "Reporte",
+    "Borrador",
+    "Pieza editorial",
+    "Criterio / base de conocimiento",
+    "Plan",
+    "Auditoria",
+}
+_ESTADO_REVISION_VALID = {
+    "Pendiente revision",
+    "Aprobado",
+    "Aprobado con ajustes",
+    "Rechazado",
+    "Archivado",
+}
 
 
 def _build_project_properties(input_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -392,6 +408,90 @@ def _build_project_properties(input_data: Dict[str, Any]) -> Dict[str, Any]:
     return props
 
 
+def _lookup_project_page_id(project_name: str) -> str | None:
+    """Resolve a project page id in the projects registry by exact Nombre."""
+    db_id = config.NOTION_PROJECTS_DB_ID
+    if not db_id or not project_name:
+        return None
+
+    matches = notion_client.query_database(
+        database_id=db_id,
+        filter={
+            "property": "Nombre",
+            "title": {"equals": project_name},
+        },
+    )
+    if not matches:
+        return None
+    return matches[0]["id"]
+
+
+def _build_deliverable_properties(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Build raw Notion properties for the deliverables review registry."""
+    props: Dict[str, Any] = {}
+
+    name = (input_data.get("name") or "").strip()
+    if name:
+        props["Nombre"] = {"title": [{"text": {"content": name}}]}
+
+    project_page_id = (input_data.get("project_page_id") or "").strip()
+    project_name = (input_data.get("project_name") or "").strip()
+    if not project_page_id and project_name:
+        project_page_id = _lookup_project_page_id(project_name) or ""
+    if project_page_id:
+        props["Proyecto"] = {"relation": [{"id": project_page_id}]}
+
+    deliverable_type = input_data.get("deliverable_type")
+    if deliverable_type and deliverable_type in _TIPO_ENTREGABLE_VALID:
+        props["Tipo"] = {"select": {"name": deliverable_type}}
+
+    review_status = input_data.get("review_status")
+    if review_status and review_status in _ESTADO_REVISION_VALID:
+        props["Estado revision"] = {"select": {"name": review_status}}
+
+    date_value = input_data.get("date")
+    if date_value:
+        props["Fecha"] = {"date": {"start": date_value}}
+
+    agent = input_data.get("agent")
+    if agent and agent in _AGENTES_VALID:
+        props["Agente"] = {"select": {"name": agent}}
+
+    summary = input_data.get("summary")
+    if summary:
+        props["Resumen"] = {"rich_text": [{"text": {"content": str(summary)}}]}
+
+    artifact_url = input_data.get("artifact_url")
+    if artifact_url:
+        props["URL artefacto"] = {"url": str(artifact_url)}
+
+    artifact_path = input_data.get("artifact_path")
+    if artifact_path:
+        props["Ruta artefacto"] = {"rich_text": [{"text": {"content": str(artifact_path)}}]}
+
+    notes = input_data.get("notes")
+    if notes:
+        props["Observaciones"] = {"rich_text": [{"text": {"content": str(notes)}}]}
+
+    next_action = input_data.get("next_action")
+    if next_action:
+        props["Siguiente accion"] = {"rich_text": [{"text": {"content": str(next_action)}}]}
+
+    linear_issue_url = input_data.get("linear_issue_url")
+    if linear_issue_url:
+        props["Linear Issue"] = {"url": str(linear_issue_url)}
+
+    source_task_id = input_data.get("source_task_id")
+    if source_task_id:
+        props["Task ID origen"] = {"rich_text": [{"text": {"content": str(source_task_id)}}]}
+
+    last_update = input_data.get("last_update_date")
+    if last_update:
+        props["Ultima actualizacion"] = {"date": {"start": last_update}}
+
+    return props
+
+
 def handle_notion_upsert_project(input_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Crea o actualiza un proyecto en la DB 📁 Proyectos — Umbral.
@@ -449,6 +549,72 @@ def handle_notion_upsert_project(input_data: Dict[str, Any]) -> Dict[str, Any]:
                 properties=props,
             )
             return {"ok": True, "page_id": result["page_id"], "url": result["url"], "created": True}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+def handle_notion_upsert_deliverable(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Create or update a reviewable deliverable in the deliverables registry.
+
+    Input:
+        name (str, required): deliverable title and lookup key.
+        project_name (str, optional): exact project name in Projects registry.
+        project_page_id (str, optional): project page id if already known.
+        deliverable_type (str, optional): Benchmark|Reporte|Borrador|Pieza editorial|Criterio / base de conocimiento|Plan|Auditoria.
+        review_status (str, optional): Pendiente revision|Aprobado|Aprobado con ajustes|Rechazado|Archivado.
+        date (str, optional): YYYY-MM-DD.
+        agent (str, optional): Rick|Claude|Codex|Cursor|Antigravity.
+        summary (str, optional): short summary.
+        artifact_url (str, optional): canonical URL to the artifact.
+        artifact_path (str, optional): canonical shared path.
+        notes (str, optional): review notes or context.
+        next_action (str, optional): next concrete action.
+        linear_issue_url (str, optional): related Linear issue.
+        source_task_id (str, optional): runtime task id if any.
+        last_update_date (str, optional): YYYY-MM-DD.
+
+    Returns:
+        {"ok": True, "page_id": "...", "url": "...", "created": bool}
+    """
+    name = (input_data.get("name") or "").strip()
+    if not name:
+        return {"ok": False, "error": "'name' is required"}
+
+    db_id = config.NOTION_DELIVERABLES_DB_ID
+    if not db_id:
+        return {"ok": False, "error": "NOTION_DELIVERABLES_DB_ID not configured on server"}
+
+    try:
+        existing = notion_client.query_database(
+            database_id=db_id,
+            filter={
+                "property": "Nombre",
+                "title": {"equals": name},
+            },
+        )
+    except Exception as e:
+        return {"ok": False, "error": f"Failed to query deliverables DB: {e}"}
+
+    try:
+        props = _build_deliverable_properties(input_data)
+    except Exception as e:
+        return {"ok": False, "error": f"Failed to build deliverable properties: {e}"}
+
+    try:
+        if existing:
+            page_id = existing[0]["id"]
+            result = notion_client.update_page_properties(
+                page_id_or_url=page_id,
+                properties=props,
+            )
+            return {"ok": True, "page_id": result["page_id"], "url": result["url"], "created": False}
+
+        result = notion_client.create_database_page(
+            database_id_or_url=db_id,
+            properties=props,
+        )
+        return {"ok": True, "page_id": result["page_id"], "url": result["url"], "created": True}
     except Exception as e:
         return {"ok": False, "error": str(e)}
 

@@ -83,6 +83,42 @@ Por eso se aplicó una solución segura:
 - el índice enlaza a los entregables canónicos y explica el criterio
 - la página pasó de ser un dump plano a un archivo legible y conectado con el sistema nuevo
 
+## Recanalización física del legacy
+
+Después de la clasificación inicial, se hizo un segundo paso: mover físicamente las 30 páginas históricas a tres subpáginas frías, sin cambiar sus URLs.
+
+Contenedores creados:
+
+- `🧭 Integrados o consolidados`
+- `🪜 Iteraciones intermedias o superadas`
+- `🗑 Duplicados o ruido histórico`
+
+Resultado:
+
+- la página principal `🗃 Archivo legacy — entregables sueltos` dejó de mostrar 30 child pages planas
+- el archivo principal quedó reducido a un resumen, criterio de uso y solo tres subpáginas
+- la información no se perdió: solo se recanalizó en subpáginas temáticas
+- como las URLs de Notion no cambian al mover una página, cualquier referencia existente sigue siendo válida
+
+## Rastreo de dependencias y referencias
+
+Se revisaron referencias locales en el repo buscando:
+
+- IDs legacy concretos
+- menciones a `Archivo legacy`
+- entregables canónicos asociados
+
+Hallazgo:
+
+- no apareció dependencia estructural del sistema que requiera que esas páginas permanezcan colgadas directamente del contenedor principal
+- sí aparecieron referencias documentales en auditorías del repo a URLs de páginas del embudo ya consolidadas
+- eso no es un problema, porque las URLs de Notion se mantienen al mover la página a otra ubicación
+
+Conclusión:
+
+- la recanalización física del legacy no rompe activos ni dependencias locales conocidas de Rick
+- el único vínculo durable observado en repo son enlaces documentales, que siguen resolviendo bien
+
 ## Resultado
 
 `Archivo legacy` ahora cumple un rol claro:

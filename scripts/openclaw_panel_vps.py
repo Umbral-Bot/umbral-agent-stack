@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 """
-Renderiza la pagina OpenClaw como panel operativo humano.
+Mantiene la shell operativa de la pagina OpenClaw.
 
-Mantiene:
 - Dashboard Rick = dashboard tecnico
-- OpenClaw = panel humano de lectura/decision
+- OpenClaw = panel humano resumido
 
-Uso:
-  source ~/.config/openclaw/env
-  .venv/bin/python scripts/openclaw_panel_vps.py
+Este script no intenta construir linked views de Notion. Su responsabilidad es:
+- refrescar el callout superior,
+- refrescar un resumen visual corto,
+- dejar tablas compactas de prioridad,
+- y preservar la zona inferior de bases operativas.
 """
 
 from __future__ import annotations
 
 import json
-import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -28,16 +28,16 @@ if str(REPO_ROOT) not in sys.path:
 
 from worker import config, notion_client
 from worker.notion_client import (
-    _block_bulleted,
     _block_callout,
+    _block_column_list,
     _block_divider,
     _block_heading2,
     _block_heading3,
     _block_paragraph,
+    _block_table,
 )
 
 OPENCLAW_PAGE_ID = config.NOTION_CONTROL_ROOM_PAGE_ID
-DASHBOARD_PAGE_ID = config.NOTION_DASHBOARD_PAGE_ID
 
 
 def _api_client() -> httpx.Client:
@@ -106,7 +106,7 @@ def _update_block_text(block: dict[str, Any], text: str, emoji: str | None = Non
     container = dict(block.get(block_type, {}) or {})
     payload: dict[str, Any] = {block_type: container}
 
-    if block_type in {"heading_1", "heading_2", "heading_3", "paragraph", "bulleted_list_item"}:
+    if block_type in {"heading_1", "heading_2", "heading_3", "paragraph"}:
         payload[block_type]["rich_text"] = [{"type": "text", "text": {"content": text[:2000]}}]
     elif block_type == "callout":
         payload[block_type]["rich_text"] = [{"type": "text", "text": {"content": text[:2000]}}]
@@ -187,19 +187,53 @@ def _query_db(database_id: str, filter_payload: dict[str, Any] | None = None, pa
     return results
 
 
-def _page_url(page_id: str) -> str:
-    compact = page_id.replace("-", "")
-    return f"https://www.notion.so/{compact}"
+def _query_db_optional(
+    database_id: str | None,
+    *,
+    label: str,
+    filter_payload: dict[str, Any] | None = None,
+    page_size: int = 50,
+) -> tuple[list[dict[str, Any]], bool]:
+    if not database_id:
+        return [], False
+    try:
+        return _query_db(database_id, filter_payload=filter_payload, page_size=page_size), True
+    except RuntimeError as exc:
+        print(f"[openclaw-panel] skipping optional database '{label}': {exc}", file=sys.stderr)
+        return [], False
 
 
-def _summarize_text(text: str, limit: int = 140) -> str:
+def _summarize_text(text: str, limit: int = 90) -> str:
     text = " ".join((text or "").split())
     if len(text) <= limit:
         return text
     return text[: limit - 3].rstrip() + "..."
 
 
-def _build_operational_snapshot() -> dict[str, Any]:
+def _metric_card(label: str, count: int, hint: str, emoji: str) -> list[dict[str, Any]]:
+    return [
+        _block_callout(f"{label}\n{count}", emoji=emoji, color="gray_background"),
+        _block_paragraph(hint),
+    ]
+
+
+def _find_child_database_id(children: list[dict[str, Any]], title: str) -> str | None:
+    wanted = title.strip().lower()
+    for block in children:
+        if block.get("type") != "child_database":
+            continue
+        if _extract_text(block).strip().lower() == wanted:
+            return block.get("id")
+    return None
+
+
+def _build_operational_snapshot(bridge_db_id: str | None = None) -> dict[str, Any]:
+    projects_raw = _query_db(config.NOTION_PROJECTS_DB_ID)
+    project_name_by_id: dict[str, str] = {}
+    for row in projects_raw:
+        props = row.get("properties", {})
+        project_name_by_id[row["id"]] = _plain(props.get("Nombre", {})) or "Sin nombre"
+
     deliverables_raw = _query_db(config.NOTION_DELIVERABLES_DB_ID)
     deliverables: list[dict[str, Any]] = []
     for row in deliverables_raw:
@@ -207,19 +241,19 @@ def _build_operational_snapshot() -> dict[str, Any]:
         review = _plain(props.get("Estado revision", {})) or ""
         if review not in {"Pendiente revision", "Aprobado con ajustes"}:
             continue
+        project_ids = _plain(props.get("Proyecto", {})) or []
+        project_name = project_name_by_id.get(project_ids[0], "Sin proyecto") if project_ids else "Sin proyecto"
         deliverables.append(
             {
                 "id": row["id"],
                 "name": _plain(props.get("Nombre", {})) or "Sin nombre",
+                "project_name": project_name,
                 "review": review,
-                "project_ids": _plain(props.get("Proyecto", {})) or [],
                 "due_date": _plain(props.get("Fecha limite sugerida", {})),
                 "next_action": _plain(props.get("Siguiente accion", {})) or "",
-                "date": _plain(props.get("Fecha", {})),
             }
         )
 
-    projects_raw = _query_db(config.NOTION_PROJECTS_DB_ID)
     projects: list[dict[str, Any]] = []
     for row in projects_raw:
         props = row.get("properties", {})
@@ -240,7 +274,10 @@ def _build_operational_snapshot() -> dict[str, Any]:
                 }
             )
 
-    bridge_raw = _query_db("8496ee73-6c7d-43a3-89cf-b9c8825b5dfc")
+    bridge_raw, bridge_available = _query_db_optional(
+        bridge_db_id,
+        label="Bandeja Puente",
+    )
     bridge_live: list[dict[str, Any]] = []
     for row in bridge_raw:
         props = row.get("properties", {})
@@ -265,6 +302,14 @@ def _build_operational_snapshot() -> dict[str, Any]:
 
     return {
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+        "summary": {
+            "pending_deliverables": len(deliverables),
+            "deliverables_adjustments": len([d for d in deliverables if d["review"] == "Aprobado con ajustes"]),
+            "projects_attention": len(projects),
+            "bridge_live": len(bridge_live),
+            "bridge_available": bridge_available,
+            "due_items": len(due_items),
+        },
         "pending_deliverables": deliverables[:6],
         "projects_attention": projects[:6],
         "bridge_live": bridge_live[:6],
@@ -272,66 +317,178 @@ def _build_operational_snapshot() -> dict[str, Any]:
     }
 
 
+def _deliverables_rows(items: list[dict[str, Any]]) -> list[list[str]]:
+    return [
+        [
+            item["name"],
+            item.get("project_name", "Sin proyecto"),
+            item["review"],
+            item.get("due_date") or "—",
+        ]
+        for item in items
+    ]
+
+
+def _projects_rows(items: list[dict[str, Any]]) -> list[list[str]]:
+    rows: list[list[str]] = []
+    for item in items:
+        signal = item["blockers"] or item["next_action"] or "Sin detalle registrado."
+        rows.append(
+            [
+                item["name"],
+                str(item["open_issues"]),
+                str(item["task_count"]),
+                _summarize_text(signal, 90),
+            ]
+        )
+    return rows
+
+
+def _bridge_rows(items: list[dict[str, Any]]) -> list[list[str]]:
+    rows: list[list[str]] = []
+    for item in items:
+        rows.append(
+            [
+                item["title"],
+                item["status"],
+                item.get("last_move") or "—",
+                _summarize_text(item.get("notes") or "Sin notas.", 90),
+            ]
+        )
+    return rows
+
+
+def _due_rows(items: list[dict[str, Any]]) -> list[list[str]]:
+    return [
+        [
+            item.get("due_date") or "—",
+            item["name"],
+            item.get("project_name", "Sin proyecto"),
+            item["review"],
+        ]
+        for item in items
+    ]
+
+
 def _build_panel_blocks(snapshot: dict[str, Any]) -> list[dict[str, Any]]:
-    blocks: list[dict[str, Any]] = []
-    blocks.append(_block_heading2("Panel operativo"))
-    blocks.append(
+    summary = snapshot["summary"]
+    bridge_hint = "Items vivos de coordinacion." if summary["bridge_available"] else "Sin acceso actual a Bandeja Puente."
+    blocks: list[dict[str, Any]] = [
+        _block_heading2("Resumen operativo"),
         _block_callout(
             f"Actualizado: {snapshot['generated_at']}. "
-            "Usa esta seccion para decidir que revisar ahora. "
-            "El estado tecnico del stack vive en Dashboard Rick.",
+            "Este panel resume prioridades humanas. "
+            "La salud tecnica del stack vive en Dashboard Rick.",
             emoji="🧭",
             color="blue_background",
-        )
-    )
+        ),
+        _block_column_list(
+            [
+                _metric_card("Entregables", summary["pending_deliverables"], "Pendientes o con ajustes.", "📬"),
+                _metric_card("Proyectos", summary["projects_attention"], "Con bloqueo, drift o baja traccion.", "📁"),
+                _metric_card("Bandeja", summary["bridge_live"], bridge_hint, "📮"),
+                _metric_card("Vencimientos", summary["due_items"], "Fechas limite proximas.", "⏰"),
+            ]
+        ),
+        _block_heading3("Entregables por revisar"),
+    ]
 
-    blocks.append(_block_heading3("Entregables pendientes de revision"))
     pending = snapshot["pending_deliverables"]
     if pending:
-        for item in pending:
-            line = f"{item['name']} — {item['review']}"
-            if item.get("due_date"):
-                line += f" — vence: {item['due_date']}"
-            blocks.append(_block_bulleted(line))
-            if item.get("next_action"):
-                blocks.append(_block_paragraph(f"Siguiente accion: {_summarize_text(item['next_action'])}"))
+        blocks.append(_block_table(["Entregable", "Proyecto", "Estado", "Vence"], _deliverables_rows(pending)))
     else:
-        blocks.append(_block_bulleted("No hay entregables pendientes de revision."))
+        blocks.append(_block_table(["Entregable", "Proyecto", "Estado", "Vence"], [["No hay entregables pendientes.", "—", "—", "—"]]))
 
-    blocks.append(_block_heading3("Proyectos con bloqueo o drift"))
+    blocks.extend(
+        [
+            _block_heading3("Proyectos que requieren atencion"),
+        ]
+    )
     projects = snapshot["projects_attention"]
     if projects:
-        for project in projects:
-            summary = project["blockers"] or project["next_action"] or "Sin detalle registrado."
-            blocks.append(
-                _block_bulleted(
-                    f"{project['name']} — issues abiertas: {project['open_issues']} — tareas ligadas: {project['task_count']}"
-                )
-            )
-            blocks.append(_block_paragraph(_summarize_text(summary)))
+        blocks.append(_block_table(["Proyecto", "Issues", "Tareas", "Señal"], _projects_rows(projects)))
     else:
-        blocks.append(_block_bulleted("No hay proyectos con bloqueo o drift visibles."))
+        blocks.append(_block_table(["Proyecto", "Issues", "Tareas", "Señal"], [["Sin proyectos con drift visible.", "0", "0", "—"]]))
 
     blocks.append(_block_heading3("Bandeja viva"))
     bridge = snapshot["bridge_live"]
     if bridge:
-        for item in bridge:
-            blocks.append(_block_bulleted(f"{item['title']} — {item['status']}"))
-            if item.get("notes"):
-                blocks.append(_block_paragraph(_summarize_text(item['notes'])))
+        blocks.append(_block_table(["Item", "Estado", "Ultimo movimiento", "Notas"], _bridge_rows(bridge)))
     else:
-        blocks.append(_block_bulleted("No hay items vivos en Bandeja Puente."))
+        empty_note = "Sin acceso actual a Bandeja Puente." if not summary["bridge_available"] else "Sin items vivos."
+        blocks.append(_block_table(["Item", "Estado", "Ultimo movimiento", "Notas"], [[empty_note, "-", "-", "-"]]))
 
     blocks.append(_block_heading3("Proximos vencimientos"))
     due_items = snapshot["due_items"]
     if due_items:
-        for item in due_items:
-            blocks.append(_block_bulleted(f"{item['due_date']} — {item['name']}"))
+        blocks.append(_block_table(["Vence", "Entregable", "Proyecto", "Estado"], _due_rows(due_items)))
     else:
-        blocks.append(_block_bulleted("No hay fechas limite sugeridas proximas."))
+        blocks.append(_block_table(["Vence", "Entregable", "Proyecto", "Estado"], [["Sin fechas proximas.", "—", "—", "—"]]))
 
     blocks.append(_block_divider())
     return blocks
+
+
+def _find_bases_anchor(children: list[dict[str, Any]]) -> int | None:
+    for idx, block in enumerate(children):
+        if block.get("type") == "heading_3" and _extract_text(block).strip().lower() in {"recursos", "bases operativas"}:
+            return idx
+    return None
+
+
+def _tidy_navigation_sections(page_id: str, children: list[dict[str, Any]]) -> None:
+    divider_idx = next((idx for idx, block in enumerate(children) if block.get("type") == "divider"), None)
+    if divider_idx is not None:
+        tail = children[divider_idx + 1 :]
+        if tail and tail[0].get("type") in {"child_page", "child_database"}:
+            _insert_after(page_id, children[divider_idx]["id"], [_block_heading3("Accesos rapidos")])
+            children = _list_children(page_id)
+            divider_idx = next((idx for idx, block in enumerate(children) if block.get("type") == "divider"), None)
+
+        nav_heading_indexes = [
+            idx
+            for idx, block in enumerate(children[divider_idx + 1 :], start=divider_idx + 1)
+            if block.get("type") == "heading_3"
+        ]
+        if len(nav_heading_indexes) >= 2:
+            _update_block_text(children[nav_heading_indexes[0]], "Accesos rapidos")
+            _update_block_text(children[nav_heading_indexes[1]], "Bases operativas")
+            return
+
+    base_heading_indexes = [
+        idx
+        for idx, block in enumerate(children)
+        if block.get("type") == "heading_3" and _extract_text(block).strip().lower() == "bases operativas"
+    ]
+    if len(base_heading_indexes) >= 2:
+        _update_block_text(children[base_heading_indexes[0]], "Accesos rapidos")
+        _update_block_text(children[base_heading_indexes[1]], "Bases operativas")
+
+    for idx, block in enumerate(children[:-1]):
+        if block.get("type") != "paragraph":
+            continue
+        if _extract_text(block).strip():
+            continue
+        next_block = children[idx + 1]
+        if next_block.get("type") == "child_page" and _extract_text(next_block).strip().lower().startswith("ooda weekly report"):
+            _update_block_text(block, "Historico reciente")
+            break
+
+
+def validate_openclaw_shell(children: list[dict[str, Any]]) -> dict[str, Any]:
+    first_ok = bool(children) and children[0].get("type") == "callout"
+    anchor_idx = _find_bases_anchor(children)
+    child_db_count = 0
+    if anchor_idx is not None:
+        for block in children[anchor_idx + 1 :]:
+            if block.get("type") == "child_database":
+                child_db_count += 1
+    return {
+        "ok": first_ok and anchor_idx is not None and child_db_count >= 3,
+        "first_callout": first_ok,
+        "bases_anchor": anchor_idx is not None,
+        "child_databases_after_anchor": child_db_count,
+    }
 
 
 def refresh_openclaw_panel() -> dict[str, Any]:
@@ -346,34 +503,27 @@ def refresh_openclaw_panel() -> dict[str, Any]:
     if first_block.get("type") != "callout":
         raise RuntimeError("Expected first OpenClaw block to be a callout")
 
-    resources_heading_index = next(
-        (
-            idx
-            for idx, block in enumerate(children)
-            if block.get("type") == "heading_3" and _extract_text(block).strip().lower() == "recursos"
-        ),
-        None,
-    )
-    if resources_heading_index is None:
-        raise RuntimeError("Could not find 'Recursos' heading in OpenClaw page")
+    anchor_idx = _find_bases_anchor(children)
+    if anchor_idx is None:
+        raise RuntimeError("Could not find 'Bases operativas' or 'Recursos' heading in OpenClaw page")
 
-    # Remove everything between the top callout and Recursos.
-    stale_ids = [block["id"] for block in children[1:resources_heading_index]]
+    bridge_db_id = getattr(config, "NOTION_BRIDGE_DB_ID", None) or _find_child_database_id(children, "Bandeja Puente")
+
+    stale_ids = [block["id"] for block in children[1:anchor_idx]]
     _delete_blocks(stale_ids)
 
-    panel_blocks = _build_panel_blocks(_build_operational_snapshot())
+    panel_blocks = _build_panel_blocks(_build_operational_snapshot(bridge_db_id=bridge_db_id))
     _update_block_text(
         first_block,
-        "OpenClaw es el panel operativo humano. Revisa aqui entregables, proyectos y bandeja viva. "
+        "OpenClaw es el panel operativo humano. Aqui revisas que atender, aprobar o destrabar. "
         "Para salud tecnica del stack, abre Dashboard Rick.",
         emoji="🧭",
     )
     _insert_after(OPENCLAW_PAGE_ID, first_block["id"], panel_blocks)
 
-    # Clean old explanatory bullets under "Como leer este dashboard", but preserve databases.
     children = _list_children(OPENCLAW_PAGE_ID)
     for idx, block in enumerate(children):
-        if block.get("type") == "heading_3" and _extract_text(block).strip().lower() == "cómo leer este dashboard":
+        if block.get("type") == "heading_3" and _extract_text(block).strip().lower() in {"cómo leer este dashboard", "recursos"}:
             _update_block_text(block, "Bases operativas")
             delete_ids: list[str] = []
             for follow in children[idx + 1 :]:
@@ -383,7 +533,10 @@ def refresh_openclaw_panel() -> dict[str, Any]:
             _delete_blocks(delete_ids)
             break
 
-    return {"updated": True, "panel_blocks": len(panel_blocks)}
+    children = _list_children(OPENCLAW_PAGE_ID)
+    _tidy_navigation_sections(OPENCLAW_PAGE_ID, children)
+    validation = validate_openclaw_shell(_list_children(OPENCLAW_PAGE_ID))
+    return {"updated": True, "panel_blocks": len(panel_blocks), "validation": validation}
 
 
 def main() -> int:

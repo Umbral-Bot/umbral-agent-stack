@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 from scripts.notion_curate_ops_vps import (
     _property_name,
+    infer_deliverable_provenance,
     infer_project_name_from_deliverable,
     is_periodic_bridge_review,
     should_archive_task_row,
@@ -31,14 +32,33 @@ def _task_row(
 
 def test_infer_project_name_from_deliverable():
     assert infer_project_name_from_deliverable("Estado real de Freepik en VM") == "Uso de Freepik vía VM"
-    assert infer_project_name_from_deliverable("Benchmark Ruben Hassid", next_action="Aplicar al proyecto embudo") == "Proyecto Embudo Ventas"
-    assert infer_project_name_from_deliverable("Perfil maestro del sistema laboral") == "Sistema Automatizado de Búsqueda y Postulación Laboral"
+    assert infer_project_name_from_deliverable(
+        "Benchmark Ruben Hassid", next_action="Aplicar al proyecto embudo"
+    ) == "Proyecto Embudo Ventas"
+    assert (
+        infer_project_name_from_deliverable("Perfil maestro del sistema laboral")
+        == "Sistema Automatizado de Búsqueda y Postulación Laboral"
+    )
+
+
+def test_infer_deliverable_provenance():
+    assert infer_deliverable_provenance("Prueba final de iconos en entregables", "Archivado", "") == "Smoke"
+    assert infer_deliverable_provenance("Estado real de Freepik en VM", "Aprobado", "") == "Historico"
+    assert (
+        infer_deliverable_provenance(
+            "Cierre critico del estado real del proyecto embudo",
+            "Pendiente revision",
+            "",
+        )
+        == "Manual"
+    )
+    assert infer_deliverable_provenance("Benchmark Ruben Hassid", "Pendiente revision", "task-123") == "Tarea"
 
 
 def test_is_periodic_bridge_review():
     assert is_periodic_bridge_review("Revisión periódica 2026-03-10 01:00")
     assert is_periodic_bridge_review("Revision periodica 2026-03-10 01:00")
-    assert not is_periodic_bridge_review("Sincronización Mi Perfil → Perfil operativo Rick completada")
+    assert not is_periodic_bridge_review("Sincronización Mi Perfil -> Perfil operativo Rick completada")
 
 
 def test_should_archive_task_row_archives_old_unscoped_noise():

@@ -30,6 +30,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from worker import config, notion_client
+from worker.tasks.notion import handle_notion_upsert_task
 
 BRIDGE_DB_ID = "8496ee73-6c7d-43a3-89cf-b9c8825b5dfc"
 SNAPSHOT_PATH = Path("docs/audits/notion-curation-snapshot-2026-03-16.json")
@@ -53,6 +54,18 @@ DELIVERABLE_PROJECT_HINTS: list[tuple[tuple[str, ...], str]] = [
     (("embudo", "veritasium", "ruben", "linkedin", "landing"), "Proyecto Embudo Ventas"),
     (("mejora continua", "ooda", "drift"), "Auditoría Mejora Continua — Umbral Agent Stack"),
 ]
+
+
+SMOKE_DELIVERABLE_HINTS = (
+    "prueba",
+    "smoke",
+    "guardrail",
+    "icono",
+    "iconos",
+    "reintento",
+    "enrutamiento",
+)
+LIVE_DELIVERABLE_REVIEW_STATES = {"Pendiente revision", "Aprobado con ajustes"}
 
 
 def _headers() -> dict[str, str]:
@@ -153,6 +166,17 @@ def infer_project_name_from_deliverable(name: str, summary: str = "", next_actio
     return None
 
 
+def infer_deliverable_provenance(name: str, review_status: str = "", source_task_id: str = "") -> str:
+    if (source_task_id or "").strip():
+        return "Tarea"
+    haystack = (name or "").lower()
+    if any(hint in haystack for hint in SMOKE_DELIVERABLE_HINTS):
+        return "Smoke"
+    if review_status in {"Archivado", "Aprobado"}:
+        return "Historico"
+    return "Manual"
+
+
 def is_periodic_bridge_review(title: str) -> bool:
     lowered = title.lower()
     return lowered.startswith("revisión periódica") or lowered.startswith("revision periodica")
@@ -231,6 +255,28 @@ def ensure_task_schema() -> list[str]:
     return list(additions.keys())
 
 
+def ensure_deliverable_schema() -> list[str]:
+    db_id = config.NOTION_DELIVERABLES_DB_ID
+    if not db_id:
+        return []
+    schema = _db_schema(db_id)
+    additions: dict[str, Any] = {}
+    if "Procedencia" not in schema:
+        additions["Procedencia"] = {
+            "select": {
+                "options": [
+                    {"name": "Tarea", "color": "green"},
+                    {"name": "Historico", "color": "gray"},
+                    {"name": "Smoke", "color": "orange"},
+                    {"name": "Manual", "color": "blue"},
+                ]
+            }
+        }
+    if additions:
+        _api("PATCH", f"/databases/{db_id}", payload={"properties": additions})
+    return list(additions.keys())
+
+
 def normalize_orphan_deliverables() -> list[dict[str, Any]]:
     project_ids = _project_lookup()
     rows = _query_db(config.NOTION_DELIVERABLES_DB_ID)
@@ -253,6 +299,35 @@ def normalize_orphan_deliverables() -> list[dict[str, Any]]:
             properties={"Proyecto": {"relation": [{"id": project_page_id}]}}
         )
         updates.append({"deliverable_id": row["id"], "name": name, "project_name": inferred})
+    return updates
+
+
+def normalize_deliverable_provenance(batch_size: int = 200) -> list[dict[str, Any]]:
+    rows = _query_db(config.NOTION_DELIVERABLES_DB_ID)
+    updates: list[dict[str, Any]] = []
+    for row in rows:
+        if len(updates) >= batch_size:
+            break
+        props = row.get("properties", {})
+        name = _plain(props.get("Nombre")) or ""
+        review_status = _plain(props.get("Estado revision")) or ""
+        source_task_id = (_plain(props.get("Task ID origen")) or "").strip()
+        current = (_plain(props.get("Procedencia")) or "").strip()
+        inferred = infer_deliverable_provenance(name, review_status, source_task_id)
+        if current == inferred:
+            continue
+        notion_client.update_page_properties(
+            page_id_or_url=row["id"],
+            properties={"Procedencia": {"select": {"name": inferred}}},
+        )
+        updates.append(
+            {
+                "deliverable_id": row["id"],
+                "deliverable_name": name,
+                "from": current,
+                "to": inferred,
+            }
+        )
     return updates
 
 
@@ -288,6 +363,69 @@ def backfill_deliverable_task_origins(batch_size: int = 100) -> list[dict[str, A
                 "deliverable_name": _plain(props.get("Nombre")) or "",
                 "task_id": task_id,
                 "task_page_id": task_page_id,
+            }
+        )
+    return updates
+
+
+def backfill_live_deliverable_task_origins(batch_size: int = 20) -> list[dict[str, Any]]:
+    rows = _query_db(config.NOTION_DELIVERABLES_DB_ID)
+    updates: list[dict[str, Any]] = []
+    for row in rows:
+        if len(updates) >= batch_size:
+            break
+        props = row.get("properties", {})
+        if _plain(props.get("Tareas origen")):
+            continue
+        review_status = (_plain(props.get("Estado revision")) or "").strip()
+        if review_status not in LIVE_DELIVERABLE_REVIEW_STATES:
+            continue
+        name = (_plain(props.get("Nombre")) or "").strip()
+        procedencia = (_plain(props.get("Procedencia")) or "").strip()
+        if not procedencia:
+            procedencia = infer_deliverable_provenance(
+                name,
+                review_status,
+                (_plain(props.get("Task ID origen")) or "").strip(),
+            )
+        if procedencia not in {"Manual", "Tarea"}:
+            continue
+
+        project_rel = _plain(props.get("Proyecto")) or []
+        project_page_id = project_rel[0] if project_rel else None
+        task_id = f"backfill-deliverable-{row['id']}"
+        result = handle_notion_upsert_task(
+            {
+                "task_id": task_id,
+                "status": "done",
+                "team": "ops",
+                "task": "notion.upsert_deliverable",
+                "task_name": f"Backfill de trazabilidad del entregable: {name}"[:120],
+                "project_page_id": project_page_id,
+                "deliverable_page_id": row["id"],
+                "deliverable_name": name,
+                "source": "notion_curate_ops_vps",
+                "source_kind": "historical_backfill",
+                "input_summary": "Backfill controlado de trazabilidad para entregable vivo heredado.",
+                "result_summary": "Se creó tarea canónica mínima para cerrar la relación Tarea -> Entregable.",
+            }
+        )
+        if not result.get("page_id"):
+            continue
+        notion_client.update_page_properties(
+            page_id_or_url=row["id"],
+            properties={
+                "Tareas origen": {"relation": [{"id": result["page_id"]}]},
+                "Task ID origen": {"rich_text": [{"text": {"content": task_id}}]},
+                "Procedencia": {"select": {"name": "Tarea"}},
+            },
+        )
+        updates.append(
+            {
+                "deliverable_id": row["id"],
+                "deliverable_name": name,
+                "task_id": task_id,
+                "task_page_id": result["page_id"],
             }
         )
     return updates
@@ -404,12 +542,20 @@ def _db_counts() -> dict[str, Any]:
 
     pending_deliverables = 0
     deliverables_without_task_origin = 0
+    deliverables_live_without_task_origin = 0
+    deliverables_historical_without_task_origin = 0
     for row in deliverables:
         props = row.get("properties", {})
-        if (_plain(props.get("Estado revision")) or "") in {"Pendiente revision", "Aprobado con ajustes"}:
+        review = (_plain(props.get("Estado revision")) or "")
+        procedencia = (_plain(props.get("Procedencia")) or "").strip()
+        if review in LIVE_DELIVERABLE_REVIEW_STATES:
             pending_deliverables += 1
         if not (_plain(props.get("Tareas origen")) or []):
             deliverables_without_task_origin += 1
+            if review in LIVE_DELIVERABLE_REVIEW_STATES and procedencia not in {"Historico", "Smoke"}:
+                deliverables_live_without_task_origin += 1
+            else:
+                deliverables_historical_without_task_origin += 1
 
     return {
         "projects_total": len(projects),
@@ -418,6 +564,8 @@ def _db_counts() -> dict[str, Any]:
         "deliverables_total": len(deliverables),
         "deliverables_pending_review": pending_deliverables,
         "deliverables_without_task_origin": deliverables_without_task_origin,
+        "deliverables_live_without_task_origin": deliverables_live_without_task_origin,
+        "deliverables_historical_without_task_origin": deliverables_historical_without_task_origin,
         "bridge_total": len(bridge),
         "bridge_live": bridge_live,
         "bridge_resolved": bridge_resolved,
@@ -434,8 +582,11 @@ def _snapshot_base() -> dict[str, Any]:
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "counts_before": _db_counts(),
         "schema_updates": [],
+        "deliverable_schema_updates": [],
         "deliverables_normalized": [],
+        "deliverable_provenance_normalized": [],
         "deliverable_task_origins_backfilled": [],
+        "deliverable_live_task_origins_backfilled": [],
         "tasks_archived": [],
         "bridge_archived": [],
     }
@@ -454,10 +605,19 @@ def main(argv: list[str] | None = None) -> int:
     snapshot["schema_updates"] = ensure_task_schema()
     write_snapshot(snapshot)
 
+    snapshot["deliverable_schema_updates"] = ensure_deliverable_schema()
+    write_snapshot(snapshot)
+
     snapshot["deliverables_normalized"] = normalize_orphan_deliverables()
     write_snapshot(snapshot)
 
+    snapshot["deliverable_provenance_normalized"] = normalize_deliverable_provenance()
+    write_snapshot(snapshot)
+
     snapshot["deliverable_task_origins_backfilled"] = backfill_deliverable_task_origins(batch_size=args.deliverable_batch)
+    write_snapshot(snapshot)
+
+    snapshot["deliverable_live_task_origins_backfilled"] = backfill_live_deliverable_task_origins(batch_size=args.deliverable_batch)
     write_snapshot(snapshot)
 
     snapshot["tasks_archived"] = curate_tasks(batch_size=args.task_batch)

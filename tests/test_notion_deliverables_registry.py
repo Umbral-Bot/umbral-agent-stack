@@ -64,6 +64,7 @@ def test_upsert_deliverable_creates_new_with_normalized_name_due_date_and_blocks
     assert created_props["Nombre"]["title"][0]["text"]["content"] == "Benchmark Talana"
     assert created_props["Proyecto"]["relation"][0]["id"] == "project-page-1"
     assert created_props["Fecha limite sugerida"]["date"]["start"] == "2026-03-18"
+    assert created_props["Procedencia"]["select"]["name"] == "Manual"
 
 
 def test_upsert_deliverable_updates_existing_and_backfills_page_blocks_when_blank():
@@ -168,3 +169,56 @@ def test_upsert_deliverable_falls_back_to_original_title_lookup():
     assert result["ok"] is True
     assert result["created"] is False
     assert mock_nc.query_database.call_count == 2
+
+
+def test_upsert_deliverable_marks_task_provenance_and_surfaces_it_in_page_blocks():
+    from worker.tasks.notion import handle_notion_upsert_deliverable
+
+    with patch("worker.tasks.notion.config") as mock_cfg, patch("worker.tasks.notion.notion_client") as mock_nc:
+        mock_cfg.NOTION_DELIVERABLES_DB_ID = "db-uuid-456"
+        mock_cfg.NOTION_PROJECTS_DB_ID = "projects-db"
+        mock_nc.query_database.side_effect = [
+            [],
+            [
+                {
+                    "id": "project-page-1",
+                    "url": "https://www.notion.so/project-page-1",
+                    "icon": {"type": "emoji", "emoji": "\U0001F3AF"},
+                    "properties": {
+                        "Nombre": {
+                            "type": "title",
+                            "title": [{"plain_text": "Proyecto Embudo Ventas"}],
+                        }
+                    },
+                }
+            ],
+        ]
+        mock_nc.create_database_page.return_value = {
+            "page_id": "new-deliverable-id",
+            "url": "https://www.notion.so/new-deliverable-id",
+            "created": True,
+        }
+
+        result = handle_notion_upsert_deliverable(
+            {
+                "name": "Cierre critico del embudo",
+                "project_name": "Proyecto Embudo Ventas",
+                "deliverable_type": "Reporte",
+                "review_status": "Pendiente revision",
+                "source_task_id": "task-123",
+            }
+        )
+
+    assert result["ok"] is True
+    created_props = mock_nc.create_database_page.call_args.kwargs["properties"]
+    assert created_props["Procedencia"]["select"]["name"] == "Tarea"
+    assert created_props["Task ID origen"]["rich_text"][0]["text"]["content"] == "task-123"
+    children = mock_nc.create_database_page.call_args.kwargs["children"]
+    flat_text = []
+    for block in children:
+        for value in block.values():
+            if isinstance(value, dict):
+                for item in value.get("rich_text", []):
+                    flat_text.append(item.get("text", {}).get("content", ""))
+    assert "Procedencia: Tarea" in flat_text
+    assert "Task ID origen: task-123" in flat_text

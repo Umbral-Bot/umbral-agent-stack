@@ -420,6 +420,12 @@ _ESTADO_REVISION_VALID = {
     "Rechazado",
     "Archivado",
 }
+_PROCEDENCIA_ENTREGABLE_VALID = {
+    "Tarea",
+    "Historico",
+    "Smoke",
+    "Manual",
+}
 
 _DATE_IN_NAME_RE = re.compile(
     r"(?:\s*[-_/]?\s*)(20\d{2}[-_/](?:0[1-9]|1[0-2])[-_/](?:0[1-9]|[12]\d|3[01]))(?:\b|$)"
@@ -484,6 +490,17 @@ _DELIVERABLE_TYPE_ICONS = {
     "Plan": "🗺️",
     "Auditoria": "🔄",
 }
+
+
+_SMOKE_DELIVERABLE_HINTS = (
+    "prueba",
+    "smoke",
+    "guardrail",
+    "icono",
+    "iconos",
+    "reintento",
+    "enrutamiento",
+)
 
 
 def _normalize_icon_value(icon_payload: Any) -> str | None:
@@ -627,6 +644,37 @@ def _normalize_deliverable_name(input_data: Dict[str, Any]) -> str:
     return raw_name
 
 
+def _infer_deliverable_procedencia(input_data: Dict[str, Any]) -> str:
+    explicit = _normalize_spaces(
+        str(
+            input_data.get("procedencia")
+            or input_data.get("provenance")
+            or input_data.get("traceability_origin")
+            or ""
+        )
+    )
+    if explicit:
+        canonical = explicit.replace("ó", "o").replace("í", "i").strip().title()
+        if canonical in _PROCEDENCIA_ENTREGABLE_VALID:
+            return canonical
+
+    if input_data.get("source_task_id"):
+        return "Tarea"
+
+    haystack = " ".join(
+        str(input_data.get(key) or "")
+        for key in ("name", "summary", "notes", "next_action")
+    ).lower()
+    if any(hint in haystack for hint in _SMOKE_DELIVERABLE_HINTS):
+        return "Smoke"
+
+    review_status = str(input_data.get("review_status") or "").strip()
+    if review_status in {"Archivado", "Aprobado"}:
+        return "Historico"
+
+    return "Manual"
+
+
 def _parse_date(value: str | None) -> datetime:
     raw = (value or "").strip()
     if not raw:
@@ -721,6 +769,8 @@ def _build_deliverable_page_blocks(input_data: Dict[str, Any], project_context: 
     date_value = str(input_data.get("date") or "").strip() or _today_date()
     suggested_due_date = _suggest_due_date(input_data) or "Sin sugerencia"
     agent = str(input_data.get("agent") or "Rick").strip() or "Rick"
+    procedencia = _infer_deliverable_procedencia(input_data)
+    source_task_id = str(input_data.get("source_task_id") or "").strip()
 
     blocks: list[Dict[str, Any]] = [
         _block_callout(f"{deliverable_type} para {project_name} — estado de revision: {review_status}.", emoji="📬"),
@@ -730,9 +780,12 @@ def _build_deliverable_page_blocks(input_data: Dict[str, Any], project_context: 
         _block_bulleted(f"Proyecto: {project_name}"),
         _block_bulleted(f"Tipo: {deliverable_type}"),
         _block_bulleted(f"Agente: {agent}"),
+        _block_bulleted(f"Procedencia: {procedencia}"),
         _block_bulleted(f"Fecha del entregable: {date_value}"),
         _block_bulleted(f"Fecha limite sugerida: {suggested_due_date}"),
     ]
+    if source_task_id:
+        blocks.append(_block_bulleted(f"Task ID origen: {source_task_id}"))
     if artifact_path:
         blocks.append(_block_bulleted(f"Ruta artefacto: {artifact_path}"))
     if artifact_url:
@@ -912,6 +965,10 @@ def _build_deliverable_properties(input_data: Dict[str, Any]) -> Dict[str, Any]:
     review_status = input_data.get("review_status")
     if review_status and review_status in _ESTADO_REVISION_VALID:
         props["Estado revision"] = {"select": {"name": review_status}}
+
+    procedencia = _infer_deliverable_procedencia(input_data)
+    if procedencia in _PROCEDENCIA_ENTREGABLE_VALID:
+        props["Procedencia"] = {"select": {"name": procedencia}}
 
     date_value = input_data.get("date")
     if date_value:

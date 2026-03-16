@@ -94,11 +94,13 @@ Cron validado en VPS:
 Snapshot de curacion:
 
 - `projects_total`: `8`
-- `tasks_total`: `13 -> 7`
+- `tasks_total`: `13 -> 9`
 - `tasks_unlinked`: `10 -> 4`
 - `deliverables_total`: `21`
 - `deliverables_pending_review`: `3`
-- `deliverables_without_task_origin`: `18`
+- `deliverables_without_task_origin`: `16`
+- `deliverables_live_without_task_origin`: `0`
+- `deliverables_historical_without_task_origin`: `16`
 - `bridge_total`: `12`
 - `bridge_live`: `2`
 
@@ -115,10 +117,11 @@ Fuente:
 - `Entregables` como gate humano
 - `Projects -> Task -> Deliverable -> Review` como flujo principal
 - ruido tecnico viejo reducido
+- entregables vivos sin `Tareas origen`: `0`
 
 ### Deuda residual
 
-- muchos entregables historicos siguen sin `Tareas origen`
+- muchos entregables historicos siguen sin `Tareas origen`, pero ya quedaron reclasificados como deuda historica y no como deuda operativa viva
 - quedan `4` tareas no vinculadas, mantenidas como colchon reciente de diagnostico
 - `Bandeja Puente` sigue siendo util, pero necesita disciplina de uso para no volver a degradarse
 

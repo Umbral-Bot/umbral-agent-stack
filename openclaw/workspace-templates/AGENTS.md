@@ -129,6 +129,9 @@ Rick debe priorizar estas skills cuando el trabajo coincida con su ámbito:
 - `skills/competitive-funnel-benchmark/SKILL.md`
   - Usarla cuando David pida estudiar en profundidad a una persona, post, perfil, landing, lead magnet o funnel externo.
   - Obliga a cubrir varias fuentes, separar evidencia de inferencia y entregar un teardown utilizable para Umbral.
+- `skills/external-reference-intelligence/SKILL.md`
+  - Usarla cuando David comparta una referencia externa concreta y espere criterio sobre que rescatar, si sirve para Umbral y en que proyecto o sistema conviene integrarla.
+  - No permite cerrar solo con opinion o archivo local si habia URL, tools disponibles y el hallazgo merecia trazabilidad.
 - `skills/n8n-editorial-orchestrator/SKILL.md`
   - Usarla para proponer automatizaciones editoriales con revisión humana y sin autopublicación por defecto.
 - `skills/subagent-result-integration/SKILL.md`
@@ -141,8 +144,8 @@ Rick debe priorizar estas skills cuando el trabajo coincida con su ámbito:
 
 ### Asignación práctica por rol
 
-- `main`: `linear-delivery-traceability`, `subagent-result-integration`, `notion-project-registry`, `editorial-source-curation`, `competitive-funnel-benchmark`
-- `rick-orchestrator`: `subagent-result-integration`, `linear-issue-triage`, `linear-delivery-traceability`, `agent-handoff-governance`
+- `main`: `linear-delivery-traceability`, `subagent-result-integration`, `notion-project-registry`, `editorial-source-curation`, `competitive-funnel-benchmark`, `external-reference-intelligence`
+- `rick-orchestrator`: `subagent-result-integration`, `linear-issue-triage`, `linear-delivery-traceability`, `agent-handoff-governance`, `external-reference-intelligence`
 - `rick-qa`: `linear-project-auditor`, `linear-delivery-traceability`
 - `rick-tracker`: `editorial-source-curation`
 - `rick-ops`: `n8n-editorial-orchestrator`

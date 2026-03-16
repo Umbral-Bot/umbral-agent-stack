@@ -862,6 +862,15 @@ def _build_dashboard_v2_blocks(data: dict[str, Any]) -> list[dict[str, Any]]:
 
     blocks.append(_block_heading1("Dashboard Rick"))
     blocks.append(_block_callout(f"Estado: {overall}  —  {ts}", status_emoji, status_color))
+    vm_recovery = data.get("vm_recovery_mode") or {}
+    if vm_recovery.get("enabled"):
+        blocks.append(
+            _block_callout(
+                "VM en recovery mode via tunel reverso host->VPS. El stack opera, pero la red/Tailscale propia del guest sigue pendiente.",
+                "🛟",
+                "yellow_background",
+            )
+        )
 
     # KPI summary row
     ops = data.get("ops_summary", {})

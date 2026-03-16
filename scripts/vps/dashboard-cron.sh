@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Cron wrapper for dashboard_report_vps.py
+# Cron wrapper for dashboard_report_vps.py + openclaw_panel_vps.py
 # Requiere: WORKER_TOKEN, NOTION_API_KEY, NOTION_DASHBOARD_PAGE_ID, REDIS_URL en ~/.config/openclaw/env
 # Install: crontab -e → */15 * * * * ~/umbral-agent-stack/scripts/vps/dashboard-cron.sh >> /tmp/dashboard_cron.log 2>&1
 
@@ -17,3 +17,4 @@ fi
 export PYTHONPATH=.
 
 python3 scripts/dashboard_report_vps.py
+python3 scripts/openclaw_panel_vps.py

@@ -170,6 +170,7 @@ def _notion_upsert(
     error: str | None = None,
     result_summary: str | None = None,
     envelope: dict | None = None,
+    selected_model: str | None = None,
 ) -> None:
     """Actualiza el Kanban de Notion. Fire-and-forget; no bloquea el flujo."""
     envelope = envelope or {}
@@ -210,6 +211,7 @@ def _notion_upsert(
                 "source": input_payload.get("source"),
                 "source_kind": input_payload.get("source_kind"),
                 "trace_id": envelope.get("trace_id"),
+                "selected_model": selected_model,
             },
         )
     except Exception as e:
@@ -408,7 +410,12 @@ def _run_worker(
             wc = wc_vm
         else:
             wc = wc_local
-        threading.Thread(target=_notion_upsert, args=(wc_local, task_id, "running", team, task), kwargs={"input_summary": str(input_data)[:300], "envelope": envelope}, daemon=True).start()
+        threading.Thread(
+            target=_notion_upsert,
+            args=(wc_local, task_id, "running", team, task),
+            kwargs={"input_summary": str(input_data)[:300], "envelope": envelope, "selected_model": selected_model},
+            daemon=True,
+        ).start()
         t_start = time.time()
         try:
             result = wc.run(task, input_data, envelope=envelope)
@@ -418,7 +425,12 @@ def _run_worker(
             _input_summary = str(envelope.get("input", {}))[:200]
             ops_log.task_completed(task_id, task, team, selected_model, duration_ms, worker=target.lower(), trace_id=trace_id, input_summary=_input_summary)
             _result_summary = str(result.get("result", result))[:300] if isinstance(result, dict) else str(result)[:300]
-            threading.Thread(target=_notion_upsert, args=(wc_local, task_id, "done", team, task), kwargs={"result_summary": _result_summary, "envelope": envelope}, daemon=True).start()
+            threading.Thread(
+                target=_notion_upsert,
+                args=(wc_local, task_id, "done", team, task),
+                kwargs={"result_summary": _result_summary, "envelope": envelope, "selected_model": selected_model},
+                daemon=True,
+            ).start()
             threading.Thread(target=_notify_linear_completion, args=(wc_local, envelope, True), kwargs={"result": result}, daemon=True).start()
             _trigger_webhook_callback(envelope, status="done", task=task, result=result)
             logger.info("[worker %d] Task %s completed via %s Worker (model=%s)", worker_id, task_id, target, selected_model)
@@ -469,7 +481,12 @@ def _run_worker(
 
             _input_summary = str(envelope.get("input", {}))[:200]
             ops_log.task_failed(task_id, task, team, str(e), model=selected_model, trace_id=trace_id, input_summary=_input_summary)
-            threading.Thread(target=_notion_upsert, args=(wc_local, task_id, "failed", team, task), kwargs={"error": str(e)[:500], "envelope": envelope}, daemon=True).start()
+            threading.Thread(
+                target=_notion_upsert,
+                args=(wc_local, task_id, "failed", team, task),
+                kwargs={"error": str(e)[:500], "envelope": envelope, "selected_model": selected_model},
+                daemon=True,
+            ).start()
             threading.Thread(target=_notify_linear_completion, args=(wc_local, envelope, False), kwargs={"error": str(e)}, daemon=True).start()
             threading.Thread(
                 target=_escalate_failure_to_linear,

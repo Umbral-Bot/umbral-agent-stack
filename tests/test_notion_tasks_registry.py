@@ -160,6 +160,7 @@ def test_build_task_page_blocks_show_human_name_and_technical_task():
             "source": "openclaw_gateway",
             "source_kind": "tool_enqueue",
             "trace_id": "trace-abc",
+            "selected_model": "azure_foundry",
         },
         project_context={"name": "Proyecto Embudo Ventas"},
         deliverable_name="Benchmark del sistema de contenido y funnel de Ruben Hassid",
@@ -175,3 +176,44 @@ def test_build_task_page_blocks_show_human_name_and_technical_task():
     assert "Origen: openclaw_gateway" in plain_texts
     assert "Tipo de origen: tool_enqueue" in plain_texts
     assert "Trace ID: trace-abc" in plain_texts
+    assert "Modelo seleccionado: azure_foundry" in plain_texts
+
+
+def test_notion_client_upsert_task_persists_source_trace_and_model():
+    from worker import notion_client
+
+    query_response = MagicMock(status_code=200, text="")
+    query_response.json.return_value = {"results": []}
+
+    create_response = MagicMock(status_code=200, text="")
+    create_response.json.return_value = {"id": "new-task-page", "url": "https://www.notion.so/new-task-page"}
+
+    mock_client = MagicMock()
+    mock_client.post.side_effect = [query_response, create_response]
+
+    mock_cm = MagicMock()
+    mock_cm.__enter__.return_value = mock_client
+    mock_cm.__exit__.return_value = None
+
+    with patch("worker.notion_client.config") as mock_cfg, patch(
+        "worker.notion_client.httpx.Client", return_value=mock_cm
+    ), patch("worker.notion_client._headers", return_value={"Authorization": "Bearer test"}):
+        mock_cfg.NOTION_API_KEY = "secret"
+        mock_cfg.NOTION_TASKS_DB_ID = "tasks-db-id"
+
+        notion_client.upsert_task(
+            task_id="task-900",
+            status="done",
+            team="ops",
+            task="research.web",
+            source="openclaw_gateway",
+            source_kind="tool_enqueue",
+            trace_id="trace-123",
+            selected_model="azure_foundry",
+        )
+
+    create_payload = mock_client.post.call_args_list[1].kwargs["json"]
+    assert create_payload["properties"]["Source"]["rich_text"][0]["text"]["content"] == "openclaw_gateway"
+    assert create_payload["properties"]["Source Kind"]["rich_text"][0]["text"]["content"] == "tool_enqueue"
+    assert create_payload["properties"]["Trace ID"]["rich_text"][0]["text"]["content"] == "trace-123"
+    assert create_payload["properties"]["Model"]["rich_text"][0]["text"]["content"] == "azure_foundry"

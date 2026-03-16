@@ -862,6 +862,11 @@ def _build_dashboard_v2_blocks(data: dict[str, Any]) -> list[dict[str, Any]]:
 
     blocks.append(_block_heading1("Dashboard Rick"))
     blocks.append(_block_callout(f"Estado: {overall}  —  {ts}", status_emoji, status_color))
+    blocks.append(
+        _block_paragraph(
+            "Este dashboard es tecnico. Para decidir que revisar o aprobar ahora, usa OpenClaw."
+        )
+    )
     vm_recovery = data.get("vm_recovery_mode") or {}
     if vm_recovery.get("enabled"):
         blocks.append(
@@ -955,6 +960,17 @@ def _build_dashboard_v2_blocks(data: dict[str, Any]) -> list[dict[str, Any]]:
             status_str = f"{active} activas, {completed} completadas" if (active or completed) else "Sin actividad"
             team_rows.append([t["team"].capitalize(), t.get("supervisor", "—"), vm_flag, status_str])
         blocks.append(_block_table(["Equipo", "Supervisor", "Enrutamiento", "Actividad"], team_rows))
+        blocks.append(_block_divider())
+
+    notion_ops = data.get("notion_ops") or {}
+    if notion_ops:
+        blocks.append(_block_heading2("Operacion Notion"))
+        notion_rows = [
+            ["Tareas registradas", str(notion_ops.get("tasks_total", 0)), f"Sin contexto: {notion_ops.get('tasks_unlinked', 0)}"],
+            ["Entregables pendientes", str(notion_ops.get("deliverables_pending", 0)), f"Con ajustes: {notion_ops.get('deliverables_adjustments', 0)}"],
+            ["Bandeja viva", str(notion_ops.get("bridge_live", 0)), "Items no resueltos"],
+        ]
+        blocks.append(_block_table(["Area", "Conteo", "Detalle"], notion_rows))
         blocks.append(_block_divider())
 
     # Recent project-scoped / relevant tasks
@@ -1091,6 +1107,7 @@ def upsert_task(
     source: str | None = None,
     source_kind: str | None = None,
     trace_id: str | None = None,
+    selected_model: str | None = None,
     project_page_id: str | None = None,
     deliverable_page_id: str | None = None,
     icon: str | None = None,
@@ -1131,8 +1148,14 @@ def upsert_task(
         properties["Error"] = {"rich_text": [{"text": {"content": error_preview[:2000]}}]}
     if input_preview and input_preview != "—":
         properties["Input Summary"] = {"rich_text": [{"text": {"content": input_preview[:2000]}}]}
-    if team:
-        properties["Model"] = {"rich_text": [{"text": {"content": team}}]}
+    if selected_model:
+        properties["Model"] = {"rich_text": [{"text": {"content": str(selected_model)[:2000]}}]}
+    if source:
+        properties["Source"] = {"rich_text": [{"text": {"content": str(source)[:2000]}}]}
+    if source_kind:
+        properties["Source Kind"] = {"rich_text": [{"text": {"content": str(source_kind)[:2000]}}]}
+    if trace_id:
+        properties["Trace ID"] = {"rich_text": [{"text": {"content": str(trace_id)[:2000]}}]}
 
     with httpx.Client(timeout=TIMEOUT) as client:
         # Query by Task ID

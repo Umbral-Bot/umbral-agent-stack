@@ -30,6 +30,10 @@ WORKER_TOKEN = os.environ.get("WORKER_TOKEN", "")
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 WORKER_URL_VM = os.environ.get("WORKER_URL_VM", "").strip() or None
 WORKER_URL_VM_INTERACTIVE = os.environ.get("WORKER_URL_VM_INTERACTIVE", "").strip() or None
+NOTION_API_KEY = os.environ.get("NOTION_API_KEY", "").strip()
+NOTION_TASKS_DB_ID = os.environ.get("NOTION_TASKS_DB_ID", "").strip()
+NOTION_DELIVERABLES_DB_ID = os.environ.get("NOTION_DELIVERABLES_DB_ID", "").strip()
+NOTION_BRIDGE_DB_ID = "8496ee73-6c7d-43a3-89cf-b9c8825b5dfc"
 
 TECHNICAL_TASK_PREFIXES = (
     "windows.fs.",
@@ -76,6 +80,92 @@ def _redis_stats() -> dict:
         return {"pending": pending, "blocked": blocked, "connected": True}
     except Exception:
         return {"pending": 0, "blocked": 0, "connected": False}
+
+
+def _notion_query_rows(database_id: str) -> list[dict]:
+    if not NOTION_API_KEY or not database_id:
+        return []
+    headers = {
+        "Authorization": f"Bearer {NOTION_API_KEY}",
+        "Notion-Version": "2022-06-28",
+        "Content-Type": "application/json",
+    }
+    rows: list[dict] = []
+    next_cursor: str | None = None
+    while True:
+        body: dict[str, object] = {"page_size": 100}
+        if next_cursor:
+            body["start_cursor"] = next_cursor
+        resp = httpx.post(
+            f"https://api.notion.com/v1/databases/{database_id}/query",
+            headers=headers,
+            json=body,
+            timeout=20,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        rows.extend(data.get("results", []))
+        next_cursor = data.get("next_cursor")
+        if not next_cursor:
+            break
+    return rows
+
+
+def _plain(prop: dict | None):
+    if not isinstance(prop, dict):
+        return None
+    typ = prop.get("type")
+    if typ == "title":
+        return "".join(x.get("plain_text", "") for x in prop.get("title", []))
+    if typ == "rich_text":
+        return "".join(x.get("plain_text", "") for x in prop.get("rich_text", []))
+    if typ == "select":
+        return (prop.get("select") or {}).get("name")
+    if typ == "status":
+        return (prop.get("status") or {}).get("name")
+    if typ == "relation":
+        return [x.get("id") for x in prop.get("relation", [])]
+    return None
+
+
+def _notion_ops_summary() -> dict | None:
+    if not (NOTION_API_KEY and NOTION_TASKS_DB_ID and NOTION_DELIVERABLES_DB_ID):
+        return None
+    try:
+        tasks = _notion_query_rows(NOTION_TASKS_DB_ID)
+        deliverables = _notion_query_rows(NOTION_DELIVERABLES_DB_ID)
+        bridge = _notion_query_rows(NOTION_BRIDGE_DB_ID)
+    except Exception:
+        return None
+
+    tasks_unlinked = 0
+    for row in tasks:
+        props = row.get("properties", {})
+        if not (_plain(props.get("Proyecto")) or []) and not (_plain(props.get("Entregable")) or []):
+            tasks_unlinked += 1
+
+    deliverables_pending = 0
+    deliverables_adjustments = 0
+    for row in deliverables:
+        review = (_plain(row.get("properties", {}).get("Estado revision")) or "").strip()
+        if review == "Pendiente revision":
+            deliverables_pending += 1
+        elif review == "Aprobado con ajustes":
+            deliverables_adjustments += 1
+
+    bridge_live = 0
+    for row in bridge:
+        status = (_plain(row.get("properties", {}).get("Estado")) or "").strip()
+        if status != "Resuelto":
+            bridge_live += 1
+
+    return {
+        "tasks_total": len(tasks),
+        "tasks_unlinked": tasks_unlinked,
+        "deliverables_pending": deliverables_pending,
+        "deliverables_adjustments": deliverables_adjustments,
+        "bridge_live": bridge_live,
+    }
 
 
 def _quota_stats() -> list[dict]:
@@ -399,6 +489,7 @@ def build_dashboard_payload() -> dict:
     uptime = _system_uptime()
     last_err = _last_error()
     alerts = _active_alerts(quotas, vps_health, vm_health or vm_interactive_health)
+    notion_ops = _notion_ops_summary()
 
     vm_degraded = False
     if vm_health and vm_health.get("status") != "OK":
@@ -433,6 +524,7 @@ def build_dashboard_payload() -> dict:
         "uptime": uptime,
         "last_error": last_err,
         "active_alerts": alerts,
+        "notion_ops": notion_ops,
     }
 
 

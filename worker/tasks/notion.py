@@ -253,6 +253,7 @@ def handle_notion_upsert_task(input_data: Dict[str, Any]) -> Dict[str, Any]:
         source (str, optional): origen declarado de la tarea.
         source_kind (str, optional): subtipo/canal del origen.
         trace_id (str, optional): id de traza end-to-end.
+        selected_model (str, optional): modelo finalmente elegido por el dispatcher.
 
     Returns:
         {"page_id": "...", "updated": True} o {"skipped": True, "reason": "..."}
@@ -326,6 +327,7 @@ def handle_notion_upsert_task(input_data: Dict[str, Any]) -> Dict[str, Any]:
         source=input_data.get("source"),
         source_kind=input_data.get("source_kind"),
         trace_id=input_data.get("trace_id"),
+        selected_model=input_data.get("selected_model"),
         project_page_id=project_page_id or None,
         deliverable_page_id=deliverable_page_id or None,
         icon=resolved_icon,
@@ -764,6 +766,7 @@ def _build_task_page_blocks(input_data: Dict[str, Any], project_context: Dict[st
     source = _normalize_spaces(str(input_data.get("source") or "")) or "Sin origen declarado"
     source_kind = _normalize_spaces(str(input_data.get("source_kind") or "")) or "Sin tipo de origen"
     trace_id = _normalize_spaces(str(input_data.get("trace_id") or "")) or "Sin trace id"
+    selected_model = _normalize_spaces(str(input_data.get("selected_model") or "")) or "Sin modelo registrado"
 
     blocks: list[Dict[str, Any]] = [
         _block_callout(f"Tarea {status} del equipo {team}.", emoji="🗂️"),
@@ -778,6 +781,7 @@ def _build_task_page_blocks(input_data: Dict[str, Any], project_context: Dict[st
         _block_bulleted(f"Origen: {source}"),
         _block_bulleted(f"Tipo de origen: {source_kind}"),
         _block_bulleted(f"Trace ID: {trace_id}"),
+        _block_bulleted(f"Modelo seleccionado: {selected_model}"),
         _block_heading2("Input resumido"),
         _block_paragraph(input_summary),
         _block_heading2("Resultado resumido"),

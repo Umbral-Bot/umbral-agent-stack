@@ -79,7 +79,8 @@ class TestDashboardReportPayload:
              patch("scripts.dashboard_report_vps._ops_log_summary", return_value={"total_events": 5, "completed": 4, "failed": 1, "completed_today": 4, "success_rate": 80.0, "models_used": {"gemini": 4}, "trend": "+20% vs ayer"}), \
              patch("scripts.dashboard_report_vps._system_uptime", return_value="2d 5h"), \
              patch("scripts.dashboard_report_vps._last_error", return_value=None), \
-             patch("scripts.dashboard_report_vps._active_alerts", return_value=[]):
+             patch("scripts.dashboard_report_vps._active_alerts", return_value=[]), \
+             patch("scripts.dashboard_report_vps._notion_ops_summary", return_value={"tasks_total": 8, "tasks_unlinked": 1, "deliverables_pending": 2, "deliverables_adjustments": 1, "bridge_live": 1}):
             payload = build_dashboard_payload()
 
         assert payload["dashboard_v2"] is True
@@ -92,6 +93,7 @@ class TestDashboardReportPayload:
         assert payload["running_tasks"] == []
         assert payload["active_alerts"] == []
         assert payload["vm_recovery_mode"] == {"enabled": False}
+        assert payload["notion_ops"]["deliverables_pending"] == 2
         assert "release_tracking" not in payload
 
     def test_build_dashboard_payload_degrades_when_vm_is_offline(self, monkeypatch):
@@ -114,7 +116,8 @@ class TestDashboardReportPayload:
              patch("scripts.dashboard_report_vps._ops_log_summary", return_value={"total_events": 0}), \
              patch("scripts.dashboard_report_vps._system_uptime", return_value=None), \
              patch("scripts.dashboard_report_vps._last_error", return_value=None), \
-             patch("scripts.dashboard_report_vps._active_alerts", return_value=["Worker VM: Offline (ConnectTimeout)"]):
+             patch("scripts.dashboard_report_vps._active_alerts", return_value=["Worker VM: Offline (ConnectTimeout)"]), \
+             patch("scripts.dashboard_report_vps._notion_ops_summary", return_value=None):
             payload = build_dashboard_payload()
 
         assert payload["overall_status"] == "Degradado"
@@ -140,7 +143,8 @@ class TestDashboardReportPayload:
              patch("scripts.dashboard_report_vps._ops_log_summary", return_value={"total_events": 0}), \
              patch("scripts.dashboard_report_vps._system_uptime", return_value=None), \
              patch("scripts.dashboard_report_vps._last_error", return_value=None), \
-             patch("scripts.dashboard_report_vps._active_alerts", return_value=[]):
+             patch("scripts.dashboard_report_vps._active_alerts", return_value=[]), \
+             patch("scripts.dashboard_report_vps._notion_ops_summary", return_value={"tasks_total": 8, "tasks_unlinked": 1, "deliverables_pending": 2, "deliverables_adjustments": 1, "bridge_live": 1}):
             payload = build_dashboard_payload()
 
         assert payload["overall_status"] == "Operativo"
@@ -190,6 +194,13 @@ class TestNotionBlocks:
                 {"team": "system", "supervisor": "—", "description": "Internal", "requires_vm": False, "completed": 10, "active": 1},
                 {"team": "marketing", "supervisor": "Marketing Supervisor", "description": "SEO", "requires_vm": False, "completed": 5, "active": 0},
             ],
+            "notion_ops": {
+                "tasks_total": 12,
+                "tasks_unlinked": 2,
+                "deliverables_pending": 3,
+                "deliverables_adjustments": 1,
+                "bridge_live": 2,
+            },
             "recent_tasks": [
                 {"task": "ping", "team": "system", "status": "done", "duration_s": 0.1, "task_id": "abc12345", "when": "14:00 28/02"},
             ],
@@ -228,6 +239,7 @@ class TestNotionBlocks:
         assert any("red_background" in str(c) for c in callouts), "Alert or error should use red_background"
         assert all("Seguimiento R16/R17" not in str(b) for b in blocks)
         assert any("Ruido tecnico / sistema" in str(b) for b in blocks)
+        assert any("Este dashboard es tecnico" in str(b) for b in blocks)
 
     def test_build_dashboard_v2_blocks_show_vm_recovery_mode(self):
         from worker.notion_client import _build_dashboard_v2_blocks

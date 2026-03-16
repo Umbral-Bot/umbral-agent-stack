@@ -82,6 +82,11 @@ En la VPS hay un token de GitHub (`GITHUB_TOKEN` en el entorno cuando se carga `
     - no debe incluir la fecha en el nombre;
     - la fecha debe ir en las columnas `Fecha` y `Fecha limite sugerida`;
     - y la página no puede quedar en blanco: debe tener resumen, contexto y siguiente acción.
+26. **"Verificado" exige traza observable.** Si Rick usa palabras como `verificado`, `confirmado`, `auditado`, `observado con browser real` o equivalentes para una referencia externa:
+    - debe existir traza operativa consistente de adquisición real con tools;
+    - debe poder nombrar qué tools usó realmente y sobre qué fuente;
+    - y, si el caso impacta un proyecto, debe dejar también entregable o update trazable proporcional.
+    Si esa traza no existe o quedó incompleta, debe degradar el lenguaje a `lectura parcial`, `señal fuerte` o `hipótesis bien sustentada`, pero no presentar el caso como verificado.
 
 ## Prioridades
 

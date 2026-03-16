@@ -60,6 +60,43 @@ Usar cuando:
 Permite:
 - tratar la referencia como trabajo operativo concluido
 
+## Lenguaje permitido por nivel
+
+### Senal parcial
+
+Permitido:
+- `senal parcial`
+- `lectura inicial`
+- `hallazgo preliminar`
+
+No permitido:
+- `verificado`
+- `confirmado`
+- `auditado`
+
+### Lectura aplicada
+
+Permitido:
+- `lectura aplicada`
+- `senal fuerte`
+- `hipotesis bien sustentada`
+
+No permitido:
+- `verificado` si no hay traza observable de adquisicion real suficiente
+
+### Decision de integracion
+
+Permitido:
+- `recomendacion de integracion`
+- `decision de encaje`
+
+### Referencia integrada
+
+Permitido:
+- `integrado`
+- `cerrado con trazabilidad`
+- `verificado`, solo si la adquisicion real y la persistencia quedaron sostenidas por tools o artefactos verificables
+
 ## Minimo por tipo de pedido
 
 ### A. "Mira esta publicacion y saca lo valioso"

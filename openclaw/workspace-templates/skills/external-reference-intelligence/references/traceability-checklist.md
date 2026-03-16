@@ -9,6 +9,7 @@
 - [ ] se decidio donde encaja o por que no encaja
 - [ ] se reviso si ya existia un artefacto o entregable similar
 - [ ] se evito crear una pagina suelta fuera del flujo estructurado
+- [ ] si se uso lenguaje como `verificado`, `confirmado` o `auditado`, existe traza observable que lo sostenga
 
 ## Si el caso merece persistencia
 

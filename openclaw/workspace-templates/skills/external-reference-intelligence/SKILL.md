@@ -233,6 +233,21 @@ Bloquear o degradar el resultado cuando ocurra alguno de estos casos:
 - se crea una pagina suelta en Notion fuera del flujo estructurado
 - se cierra el caso solo con un archivo local sin evidencia suficiente ni trazabilidad
 - se usa una sola pieza para justificar una estrategia completa
+- se usan palabras como `verificado`, `confirmado` o `auditado` sin traza observable de adquisicion real
+
+## Regla especial sobre lenguaje de certeza
+
+No usar `verificado`, `confirmado`, `auditado`, `observado con browser real` o formulas equivalentes si no puedes sostenerlas con:
+- tools realmente ejecutadas sobre la referencia; o
+- artefactos verificables que muestren esa adquisicion real.
+
+Si la evidencia es fuerte pero no completamente trazable, degradar el lenguaje a:
+- `lectura aplicada`
+- `senal fuerte`
+- `lectura parcial`
+- `hipotesis bien sustentada`
+
+La calidad del analisis puede seguir siendo alta, pero el lenguaje de cierre debe ser proporcional a la traza real.
 
 ## Composicion con otras skills
 

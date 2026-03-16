@@ -90,12 +90,14 @@ Still pending:
 Added repo scripts:
 
 - `scripts/vm/start_vm_reverse_tunnel.ps1`
+- `scripts/vm/ensure_vm_reverse_tunnel.ps1`
 - `scripts/vm/start_vm_reverse_tunnel.bat`
 - `scripts/vm/install_vm_reverse_tunnel_startup.ps1`
 
 Purpose:
 
 - recreate the reverse tunnel automatically on host startup/login
+- validate tunnel health and recreate it if the SSH process survives but the forward dies
 - avoid manual recovery next time the host reboots before the guest NAT/Tailscale path is fully repaired
 
 ## Host-side deployment

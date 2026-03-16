@@ -41,6 +41,21 @@ TECHNICAL_TASK_PREFIXES = (
 )
 
 
+def _vm_recovery_mode() -> dict[str, object] | None:
+    """Detecta cuando la VM se expone via workaround local (tunel reverso)."""
+    urls = [u for u in (WORKER_URL_VM, WORKER_URL_VM_INTERACTIVE) if u]
+    if not urls:
+        return {"enabled": False}
+    if all("127.0.0.1:28" in u for u in urls):
+        return {
+            "enabled": True,
+            "transport": "reverse_ssh_tunnel",
+            "headless_url": WORKER_URL_VM,
+            "interactive_url": WORKER_URL_VM_INTERACTIVE,
+        }
+    return {"enabled": False}
+
+
 def _worker_health(url: str) -> dict:
     try:
         r = httpx.get(f"{url}/health", timeout=5)
@@ -407,6 +422,7 @@ def build_dashboard_payload() -> dict:
         "vps_worker": vps_health,
         "vm_worker": vm_health,
         "vm_worker_interactive": vm_interactive_health,
+        "vm_recovery_mode": _vm_recovery_mode(),
         "redis": redis,
         "quotas": quotas,
         "teams": teams,

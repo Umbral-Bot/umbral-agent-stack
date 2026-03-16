@@ -58,6 +58,12 @@ def test_build_panel_blocks_use_tables_and_summary_cards():
 def test_validate_openclaw_shell_requires_anchor_and_databases():
     children = [
         {"id": "a", "type": "callout", "callout": {"rich_text": []}},
+        {"id": "h1", "type": "heading_2", "heading_2": {"rich_text": [{"plain_text": "Resumen operativo", "text": {"content": "Resumen operativo"}}]}},
+        {"id": "h2", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Entregables por revisar", "text": {"content": "Entregables por revisar"}}]}},
+        {"id": "h3", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Proyectos que requieren atencion", "text": {"content": "Proyectos que requieren atencion"}}]}},
+        {"id": "h4", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Bandeja viva", "text": {"content": "Bandeja viva"}}]}},
+        {"id": "h5", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Proximos vencimientos", "text": {"content": "Proximos vencimientos"}}]}},
+        {"id": "h6", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Accesos rapidos", "text": {"content": "Accesos rapidos"}}]}},
         {"id": "b", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Bases operativas"}]}},
         {"id": "c", "type": "child_database", "child_database": {"title": "Proyectos"}},
         {"id": "d", "type": "child_database", "child_database": {"title": "Tareas"}},
@@ -66,6 +72,7 @@ def test_validate_openclaw_shell_requires_anchor_and_databases():
     result = validate_openclaw_shell(children)
     assert result["ok"] is True
     assert result["child_databases_after_anchor"] == 3
+    assert result["required_headings_present"] is True
 
 
 def test_validate_openclaw_shell_fails_without_anchor():
@@ -126,6 +133,68 @@ def test_build_operational_snapshot_tolerates_missing_bridge(monkeypatch):
     assert snapshot["summary"]["pending_deliverables"] == 1
     assert snapshot["summary"]["bridge_live"] == 0
     assert snapshot["summary"]["bridge_available"] is False
+
+
+def test_build_operational_snapshot_sorts_by_urgency(monkeypatch):
+    projects_result = [
+        {
+            "id": "proj-1",
+            "properties": {
+                "Nombre": {"type": "title", "title": [{"plain_text": "Proyecto Bajo"}]},
+                "Bloqueos": {"type": "rich_text", "rich_text": []},
+                "Siguiente acción": {"type": "rich_text", "rich_text": []},
+                "Tareas": {"type": "relation", "relation": []},
+                "Issues abiertas": {"type": "number", "number": 1},
+            },
+        },
+        {
+            "id": "proj-2",
+            "properties": {
+                "Nombre": {"type": "title", "title": [{"plain_text": "Proyecto Critico"}]},
+                "Bloqueos": {"type": "rich_text", "rich_text": [{"plain_text": "Bloqueado"}]},
+                "Siguiente acción": {"type": "rich_text", "rich_text": []},
+                "Tareas": {"type": "relation", "relation": [{"id": "task-1"}]},
+                "Issues abiertas": {"type": "number", "number": 9},
+            },
+        },
+    ]
+    deliverables_result = [
+        {
+            "id": "del-1",
+            "properties": {
+                "Nombre": {"type": "title", "title": [{"plain_text": "Entrega tardia"}]},
+                "Estado revision": {"type": "status", "status": {"name": "Aprobado con ajustes"}},
+                "Proyecto": {"type": "relation", "relation": [{"id": "proj-1"}]},
+                "Fecha limite sugerida": {"type": "date", "date": {"start": "2026-03-20"}},
+                "Siguiente accion": {"type": "rich_text", "rich_text": []},
+            },
+        },
+        {
+            "id": "del-2",
+            "properties": {
+                "Nombre": {"type": "title", "title": [{"plain_text": "Entrega urgente"}]},
+                "Estado revision": {"type": "status", "status": {"name": "Pendiente revision"}},
+                "Proyecto": {"type": "relation", "relation": [{"id": "proj-2"}]},
+                "Fecha limite sugerida": {"type": "date", "date": {"start": "2026-03-17"}},
+                "Siguiente accion": {"type": "rich_text", "rich_text": []},
+            },
+        },
+    ]
+
+    def fake_query(database_id, filter_payload=None, page_size=50):
+        if database_id == "projects-db":
+            return projects_result
+        if database_id == "deliverables-db":
+            return deliverables_result
+        raise AssertionError(f"unexpected database id: {database_id}")
+
+    monkeypatch.setattr(openclaw_panel_vps.config, "NOTION_PROJECTS_DB_ID", "projects-db")
+    monkeypatch.setattr(openclaw_panel_vps.config, "NOTION_DELIVERABLES_DB_ID", "deliverables-db")
+    monkeypatch.setattr(openclaw_panel_vps, "_query_db", fake_query)
+
+    snapshot = openclaw_panel_vps._build_operational_snapshot(bridge_db_id=None)
+    assert snapshot["pending_deliverables"][0]["name"] == "Entrega urgente"
+    assert snapshot["projects_attention"][0]["name"] == "Proyecto Critico"
 
 
 def test_tidy_navigation_sections_inserts_quick_access_heading(monkeypatch):

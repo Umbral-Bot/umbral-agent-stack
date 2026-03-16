@@ -93,11 +93,12 @@ def _delete_blocks(block_ids: list[str]) -> None:
         return
     with _api_client() as client:
         for block_id in block_ids:
-            client.patch(
+            resp = client.patch(
                 f"{notion_client.NOTION_BASE_URL}/blocks/{block_id}",
                 headers=_headers(),
                 json={"in_trash": True},
             )
+            notion_client._check_response(resp, "delete block")  # type: ignore[attr-defined]
 
 
 def _update_block_text(block: dict[str, Any], text: str, emoji: str | None = None) -> None:
@@ -253,6 +254,14 @@ def _build_operational_snapshot(bridge_db_id: str | None = None) -> dict[str, An
                 "next_action": _plain(props.get("Siguiente accion", {})) or "",
             }
         )
+    deliverables.sort(
+        key=lambda item: (
+            item.get("due_date") or "9999-99-99",
+            0 if item["review"] == "Pendiente revision" else 1,
+            item["project_name"],
+            item["name"],
+        )
+    )
 
     projects: list[dict[str, Any]] = []
     for row in projects_raw:
@@ -273,6 +282,14 @@ def _build_operational_snapshot(bridge_db_id: str | None = None) -> dict[str, An
                     "task_count": len(tasks_rel),
                 }
             )
+    projects.sort(
+        key=lambda item: (
+            0 if item["blockers"] else 1,
+            -item["open_issues"],
+            item["task_count"],
+            item["name"],
+        )
+    )
 
     bridge_raw, bridge_available = _query_db_optional(
         bridge_db_id,
@@ -294,6 +311,7 @@ def _build_operational_snapshot(bridge_db_id: str | None = None) -> dict[str, An
                     "last_move": _plain(props.get("Último movimiento", {})),
                 }
             )
+    bridge_live.sort(key=lambda item: item.get("last_move") or "", reverse=True)
 
     due_items = sorted(
         [d for d in deliverables if d.get("due_date")],
@@ -479,15 +497,30 @@ def validate_openclaw_shell(children: list[dict[str, Any]]) -> dict[str, Any]:
     first_ok = bool(children) and children[0].get("type") == "callout"
     anchor_idx = _find_bases_anchor(children)
     child_db_count = 0
+    found_headings = {
+        _extract_text(block).strip()
+        for block in children
+        if block.get("type") in {"heading_2", "heading_3"}
+    }
+    required_headings = {
+        "Resumen operativo",
+        "Entregables por revisar",
+        "Proyectos que requieren atencion",
+        "Bandeja viva",
+        "Proximos vencimientos",
+        "Accesos rapidos",
+        "Bases operativas",
+    }
     if anchor_idx is not None:
         for block in children[anchor_idx + 1 :]:
             if block.get("type") == "child_database":
                 child_db_count += 1
     return {
-        "ok": first_ok and anchor_idx is not None and child_db_count >= 3,
+        "ok": first_ok and anchor_idx is not None and child_db_count >= 3 and required_headings.issubset(found_headings),
         "first_callout": first_ok,
         "bases_anchor": anchor_idx is not None,
         "child_databases_after_anchor": child_db_count,
+        "required_headings_present": required_headings.issubset(found_headings),
     }
 
 
@@ -509,10 +542,10 @@ def refresh_openclaw_panel() -> dict[str, Any]:
 
     bridge_db_id = getattr(config, "NOTION_BRIDGE_DB_ID", None) or _find_child_database_id(children, "Bandeja Puente")
 
+    snapshot = _build_operational_snapshot(bridge_db_id=bridge_db_id)
+    panel_blocks = _build_panel_blocks(snapshot)
     stale_ids = [block["id"] for block in children[1:anchor_idx]]
     _delete_blocks(stale_ids)
-
-    panel_blocks = _build_panel_blocks(_build_operational_snapshot(bridge_db_id=bridge_db_id))
     _update_block_text(
         first_block,
         "OpenClaw es el panel operativo humano. Aqui revisas que atender, aprobar o destrabar. "

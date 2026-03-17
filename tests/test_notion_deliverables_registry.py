@@ -67,7 +67,7 @@ def test_upsert_deliverable_creates_new_with_normalized_name_due_date_and_blocks
     assert created_props["Procedencia"]["select"]["name"] == "Manual"
 
 
-def test_upsert_deliverable_updates_existing_and_backfills_page_blocks_when_blank():
+def test_upsert_deliverable_updates_existing_and_replaces_page_blocks():
     from worker.tasks.notion import handle_notion_upsert_deliverable
 
     existing_page = {"id": "deliverable-id", "url": "https://www.notion.so/deliverable-id", "properties": {}}
@@ -81,7 +81,6 @@ def test_upsert_deliverable_updates_existing_and_backfills_page_blocks_when_blan
             "url": "https://www.notion.so/deliverable-id",
             "updated": True,
         }
-        mock_nc.read_page.return_value = {"plain_text": ""}
 
         result = handle_notion_upsert_deliverable(
             {
@@ -97,7 +96,7 @@ def test_upsert_deliverable_updates_existing_and_backfills_page_blocks_when_blan
     assert result["page_id"] == "deliverable-id"
     mock_nc.update_page_properties.assert_called_once()
     assert mock_nc.update_page_properties.call_args.kwargs["icon"] == "\U0001F4DD"
-    mock_nc.append_blocks_to_page.assert_called_once()
+    mock_nc.replace_blocks_in_page.assert_called_once()
 
 
 def test_upsert_deliverable_inherits_project_icon_when_missing():

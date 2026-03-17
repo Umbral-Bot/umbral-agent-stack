@@ -38,6 +38,10 @@ from worker.notion_client import (
 )
 
 OPENCLAW_PAGE_ID = config.NOTION_CONTROL_ROOM_PAGE_ID
+_RESIDUAL_CHILD_PAGE_PREFIXES = (
+    "OODA Weekly Report - ",
+    "[improvement] Workflow: self_improvement_cycle",
+)
 
 
 def _api_client() -> httpx.Client:
@@ -88,6 +92,26 @@ def _extract_text(block: dict[str, Any]) -> str:
     return ""
 
 
+def _is_residual_child_page(block: dict[str, Any]) -> bool:
+    if block.get("type") != "child_page":
+        return False
+    title = _extract_text(block).strip()
+    return any(title.startswith(prefix) for prefix in _RESIDUAL_CHILD_PAGE_PREFIXES)
+
+
+def _archive_pages(page_ids: list[str]) -> None:
+    if not page_ids:
+        return
+    with _api_client() as client:
+        for page_id in page_ids:
+            resp = client.patch(
+                f"{notion_client.NOTION_BASE_URL}/pages/{page_id}",
+                headers=_headers(),
+                json={"archived": True},
+            )
+            notion_client._check_response(resp, "archive page")  # type: ignore[attr-defined]
+
+
 def _delete_blocks(block_ids: list[str]) -> None:
     if not block_ids:
         return
@@ -99,6 +123,20 @@ def _delete_blocks(block_ids: list[str]) -> None:
                 json={"in_trash": True},
             )
             notion_client._check_response(resp, "delete block")  # type: ignore[attr-defined]
+
+
+def _remove_stale_blocks(blocks: list[dict[str, Any]]) -> int:
+    child_pages = [block["id"] for block in blocks if block.get("type") == "child_page"]
+    deletable_blocks = [
+        block["id"]
+        for block in blocks
+        if block.get("type") not in {"child_page", "child_database"}
+    ]
+    if child_pages:
+        _archive_pages(child_pages)
+    if deletable_blocks:
+        _delete_blocks(deletable_blocks)
+    return len(child_pages) + len(deletable_blocks)
 
 
 def _update_block_text(block: dict[str, Any], text: str, emoji: str | None = None) -> None:
@@ -493,6 +531,24 @@ def _tidy_navigation_sections(page_id: str, children: list[dict[str, Any]]) -> N
             break
 
 
+def _cleanup_openclaw_residuals(children: list[dict[str, Any]]) -> int:
+    residual_pages = [block["id"] for block in children if _is_residual_child_page(block)]
+    if residual_pages:
+        _archive_pages(residual_pages)
+
+    trailing_empty_blocks: list[str] = []
+    for block in reversed(children):
+        if block.get("type") != "paragraph":
+            break
+        if _extract_text(block).strip():
+            break
+        trailing_empty_blocks.append(block["id"])
+    if trailing_empty_blocks:
+        _delete_blocks(list(reversed(trailing_empty_blocks)))
+
+    return len(residual_pages) + len(trailing_empty_blocks)
+
+
 def validate_openclaw_shell(children: list[dict[str, Any]]) -> dict[str, Any]:
     first_ok = bool(children) and children[0].get("type") == "callout"
     anchor_idx = _find_bases_anchor(children)
@@ -508,19 +564,28 @@ def validate_openclaw_shell(children: list[dict[str, Any]]) -> dict[str, Any]:
         "Proyectos que requieren atencion",
         "Bandeja viva",
         "Proximos vencimientos",
-        "Accesos rapidos",
         "Bases operativas",
     }
+    quick_access_present = "Accesos rapidos" in found_headings
+    residual_child_pages = [block["id"] for block in children if block.get("type") == "child_page"]
     if anchor_idx is not None:
         for block in children[anchor_idx + 1 :]:
             if block.get("type") == "child_database":
                 child_db_count += 1
     return {
-        "ok": first_ok and anchor_idx is not None and child_db_count >= 3 and required_headings.issubset(found_headings),
+        "ok": (
+            first_ok
+            and anchor_idx is not None
+            and child_db_count >= 3
+            and required_headings.issubset(found_headings)
+            and not residual_child_pages
+        ),
         "first_callout": first_ok,
         "bases_anchor": anchor_idx is not None,
         "child_databases_after_anchor": child_db_count,
         "required_headings_present": required_headings.issubset(found_headings),
+        "quick_access_present": quick_access_present,
+        "residual_child_pages": len(residual_child_pages),
     }
 
 
@@ -544,8 +609,8 @@ def refresh_openclaw_panel() -> dict[str, Any]:
 
     snapshot = _build_operational_snapshot(bridge_db_id=bridge_db_id)
     panel_blocks = _build_panel_blocks(snapshot)
-    stale_ids = [block["id"] for block in children[1:anchor_idx]]
-    _delete_blocks(stale_ids)
+    stale_blocks = children[1:anchor_idx]
+    _remove_stale_blocks(stale_blocks)
     _update_block_text(
         first_block,
         "OpenClaw es el panel operativo humano. Aqui revisas que atender, aprobar o destrabar. "
@@ -568,8 +633,10 @@ def refresh_openclaw_panel() -> dict[str, Any]:
 
     children = _list_children(OPENCLAW_PAGE_ID)
     _tidy_navigation_sections(OPENCLAW_PAGE_ID, children)
+    children = _list_children(OPENCLAW_PAGE_ID)
+    cleaned = _cleanup_openclaw_residuals(children)
     validation = validate_openclaw_shell(_list_children(OPENCLAW_PAGE_ID))
-    return {"updated": True, "panel_blocks": len(panel_blocks), "validation": validation}
+    return {"updated": True, "panel_blocks": len(panel_blocks), "cleaned_blocks": cleaned, "validation": validation}
 
 
 def main() -> int:

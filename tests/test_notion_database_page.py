@@ -62,6 +62,7 @@ def test_handle_notion_update_page_properties_success(mock_update_page_propertie
         page_id_or_url="https://www.notion.so/page-1",
         properties={"Estado": {"status": {"name": "En curso"}}},
         icon="📝",
+        archived=None,
     )
 
 
@@ -69,8 +70,32 @@ def test_handle_notion_update_page_properties_requires_inputs():
     with pytest.raises(ValueError, match="'page_id_or_url' is required"):
         handle_notion_update_page_properties({"properties": {"foo": "bar"}})
 
-    with pytest.raises(ValueError, match="'properties' or 'icon' must be provided"):
+    with pytest.raises(ValueError, match="'properties', 'icon' or 'archived' must be provided"):
         handle_notion_update_page_properties({"page_id_or_url": "page-1"})
+
+
+@patch("worker.tasks.notion.notion_client.update_page_properties")
+def test_handle_notion_update_page_properties_allows_archived_only(mock_update_page_properties):
+    mock_update_page_properties.return_value = {
+        "page_id": "page-1",
+        "url": "https://www.notion.so/page-1",
+        "updated": True,
+    }
+
+    result = handle_notion_update_page_properties(
+        {
+            "page_id_or_url": "https://www.notion.so/page-1",
+            "archived": True,
+        }
+    )
+
+    assert result["updated"] is True
+    mock_update_page_properties.assert_called_once_with(
+        page_id_or_url="https://www.notion.so/page-1",
+        properties={},
+        icon=None,
+        archived=True,
+    )
 
 
 @patch("worker.notion_client.httpx.Client")
@@ -158,3 +183,30 @@ def test_update_page_properties_allows_icon_only(mock_require_notion_core, mock_
     assert mock_client.patch.call_args.kwargs["json"] == {
         "icon": {"type": "emoji", "emoji": "🧭"}
     }
+
+
+@patch("worker.notion_client.httpx.Client")
+@patch("worker.notion_client.config.require_notion_core")
+@patch("worker.notion_client.config.NOTION_API_KEY", "ntn_test_key")
+def test_update_page_properties_allows_archive_only(mock_require_notion_core, mock_client_cls):
+    from worker.notion_client import update_page_properties
+
+    update_response = MagicMock()
+    update_response.status_code = 200
+    update_response.json.return_value = {
+        "id": "page-1",
+        "url": "https://www.notion.so/page-1",
+    }
+
+    mock_client = MagicMock()
+    mock_client.patch.return_value = update_response
+    mock_client_cls.return_value.__enter__.return_value = mock_client
+
+    result = update_page_properties(
+        "https://www.notion.so/31e5f443fb5c81eb8949e8c59f497d42",
+        {},
+        archived=True,
+    )
+
+    assert result["updated"] is True
+    assert mock_client.patch.call_args.kwargs["json"] == {"archived": True}

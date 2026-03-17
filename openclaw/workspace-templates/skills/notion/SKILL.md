@@ -117,6 +117,23 @@ Devuelve: `{"query":"...", "results":[{"database_id":"...", "title":"...", "url"
 
 Úsalo cuando una página de Notion contenga un `child_database` y necesites resolver cuál es la base real antes de leerla con `notion.read_database`.
 
+### 4d. Actualizar propiedades o archivar una pagina
+
+Task: `notion.update_page_properties`
+
+```json
+{
+  "page_id_or_url": "https://www.notion.so/... o UUID",
+  "properties": {"Estado": {"status": {"name": "En curso"}}},
+  "icon": "📝",
+  "archived": false
+}
+```
+
+Devuelve: `{"page_id":"...", "url":"...", "updated": true}`.
+
+Usa `archived=true` para retirar una pagina suelta que ya fue regularizada en otro contenedor canónico. No archives una pagina project-scoped sin antes dejar el proyecto y el entregable correctos.
+
 ### 5. Crear o actualizar tarea en DB
 
 Task: `notion.upsert_task`
@@ -137,6 +154,7 @@ Task: `notion.upsert_task`
 Devuelve: `{"page_id":"...", "updated": true}` o `{"skipped": true, "reason":"..."}`
 
 Si la tarea pertenece claramente a un proyecto o produce/actualiza un entregable revisable, usa `project_name` / `project_page_id` y `deliverable_name` / `deliverable_page_id` para enlazar la fila. No dejes `Tareas` flotando sin contexto si ya conoces el proyecto o el entregable.
+Si el caso queda realmente cerrado, no marques la tarea como `done` hasta que la fila tenga `Proyecto` y `Entregable` correctos.
 Si la tarea nace sin proyecto ni entregable, asume que es ruido operativo o sistema y evita mandarla a Notion salvo que David haya pedido explícitamente trazabilidad o marques `notion_track=true`.
 
 ### 6. Actualizar dashboard
@@ -171,6 +189,13 @@ Task: `notion.create_report_page`
 ```
 
 Devuelve: `{"page_id":"...", "page_url":"...", "ok": true}`
+
+Usala para:
+- coordinación transversal
+- alertas
+- borradores temporales fuera del flujo de proyecto
+
+No usarla como artefacto final de un benchmark, reporte o referencia externa que ya pertenece a un proyecto activo. En ese caso el cierre correcto es `notion.upsert_deliverable`.
 
 ### 8. Crear o actualizar proyecto en registry
 
@@ -225,6 +250,7 @@ Reglas:
 - No poner fechas dentro del título; usar `date` y `suggested_due_date`.
 - Si el entregable pertenece a un proyecto, usar el icono del proyecto salvo que haya una razón clara para diferenciarlo.
 - El cuerpo de la página debe quedar con resumen, contexto y siguiente acción. No dejar páginas vacías.
+- Si el entregable nace desde una tarea o follow-up, pasar `source_task_id` y no considerar el caso cerrado hasta que el entregable tenga `Proyecto` y `Tareas origen` o `Task ID origen` coherente.
 
 ## Regla de iconos
 

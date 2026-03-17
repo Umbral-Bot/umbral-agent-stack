@@ -192,6 +192,12 @@ Cuando el resultado merezca persistencia, usar el flujo estructurado del stack:
    - dejar seguimiento cuando el hallazgo activa trabajo real
 
 No crear paginas sueltas en Notion fuera de este flujo si el caso ya pertenece a un proyecto existente.
+Un `notion.create_report_page` por si solo no cuenta como cierre canonico de un caso project-scoped.
+Si ya se creo esa pagina suelta por error:
+- regularizar con `notion.upsert_deliverable`;
+- enlazar proyecto y tarea cuando ambos existan;
+- no dar por cerrado el caso hasta que la fila de `Tareas` tenga `Proyecto` y `Entregable`, y la fila de `Entregables` tenga `Proyecto` y `Tareas origen` o `Task ID origen` coherente;
+- y archivar la pagina suelta con `notion.update_page_properties(archived=true)`.
 
 Usar `references/traceability-checklist.md`.
 

@@ -750,6 +750,7 @@ def update_page_properties(
     page_id_or_url: str,
     properties: dict[str, Any],
     icon: str | None = None,
+    archived: bool | None = None,
 ) -> dict[str, Any]:
     """
     Update raw Notion page properties for an existing page.
@@ -766,8 +767,8 @@ def update_page_properties(
     if not isinstance(properties, dict):
         raise ValueError("properties must be a dict")
     icon_payload = _normalize_icon(icon)
-    if not properties and not icon_payload:
-        raise ValueError("properties or icon must be provided")
+    if not properties and not icon_payload and archived is None:
+        raise ValueError("properties, icon or archived must be provided")
 
     with httpx.Client(timeout=TIMEOUT) as client:
         payload: dict[str, Any] = {}
@@ -775,6 +776,8 @@ def update_page_properties(
             payload["properties"] = properties
         if icon_payload:
             payload["icon"] = icon_payload
+        if archived is not None:
+            payload["archived"] = bool(archived)
         resp = client.patch(
             f"{NOTION_BASE_URL}/pages/{page_id}",
             headers=_headers(),
@@ -1208,9 +1211,7 @@ def upsert_task(
             )
             _check_response(resp, "update task")
             if children:
-                snapshot = read_page(page_id_or_url=page_id, max_blocks=10)
-                if not str(snapshot.get("plain_text") or "").strip():
-                    append_blocks_to_page(page_id=page_id, blocks=children)
+                replace_blocks_in_page(page_id=page_id, blocks=children)
             logger.info("Updated task %s in Notion (status=%s)", task_id[:8], notion_status)
             return {"page_id": page_id, "updated": True}
         else:
@@ -1261,7 +1262,7 @@ def create_report_page(
     """
     config.require_notion_core()
     if parent_page_id is None:
-        parent_page_id = config.NOTION_CONTROL_ROOM_PAGE_ID
+        parent_page_id = _resolve_report_parent_page_id(metadata)
 
     # Build children blocks: content + sources + queries
     children: list[dict[str, Any]] = []
@@ -1333,6 +1334,23 @@ def create_report_page(
 
     logger.info("Created report page: %s (%s)", page_id, page_url)
     return {"page_id": page_id, "page_url": page_url, "ok": True}
+
+
+def _resolve_report_parent_page_id(metadata: dict[str, Any] | None = None) -> str:
+    metadata = metadata or {}
+    source = str(metadata.get("source") or "").strip().lower()
+    automation_sources = {
+        "workflow_engine",
+        "smart_reply",
+        "ooda_report",
+        "daily_digest",
+        "sim_report",
+        "supervisor",
+        "self_improvement_cycle",
+    }
+    if config.NOTION_REPORTS_ARCHIVE_PAGE_ID and source in automation_sources:
+        return config.NOTION_REPORTS_ARCHIVE_PAGE_ID
+    return config.NOTION_CONTROL_ROOM_PAGE_ID  # type: ignore[return-value]
 
 
 # ---------------------------------------------------------------------------
@@ -1412,6 +1430,77 @@ def append_blocks_to_page(
 
     logger.info("Appended %d blocks to page %s", len(blocks), page_id[:8])
     return {"blocks_appended": len(blocks), "page_id": page_id}
+
+
+def replace_blocks_in_page(
+    page_id: str,
+    blocks: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """
+    Replace all top-level blocks in a Notion page with a new set.
+
+    Args:
+        page_id: The page to rewrite.
+        blocks: New blocks to leave as the full page body.
+
+    Returns:
+        {"blocks_replaced": N, "blocks_removed": M, "page_id": "..."}
+    """
+    if not config.NOTION_API_KEY:
+        raise RuntimeError("NOTION_API_KEY not configured")
+    if not page_id:
+        raise ValueError("page_id is required")
+    if not isinstance(blocks, list) or not blocks:
+        raise ValueError("blocks must be a non-empty list")
+
+    with httpx.Client(timeout=TIMEOUT) as client:
+        existing_blocks: list[dict[str, Any]] = []
+        next_cursor = None
+        while True:
+            params = {"page_size": 100}
+            if next_cursor:
+                params["start_cursor"] = next_cursor
+            resp = client.get(
+                f"{NOTION_BASE_URL}/blocks/{page_id}/children",
+                headers=_headers(),
+                params=params,
+            )
+            data = _check_response(resp, "list blocks for replace")
+            existing_blocks.extend(data.get("results", []))
+            if not data.get("has_more"):
+                break
+            next_cursor = data.get("next_cursor")
+
+        for eb in existing_blocks:
+            bid = eb.get("id")
+            if not bid:
+                continue
+            resp = client.delete(
+                f"{NOTION_BASE_URL}/blocks/{bid}",
+                headers=_headers(),
+            )
+            _check_response(resp, "delete blocks for replace")
+
+        for i in range(0, len(blocks), 100):
+            chunk = blocks[i : i + 100]
+            resp = client.patch(
+                f"{NOTION_BASE_URL}/blocks/{page_id}/children",
+                headers=_headers(),
+                json={"children": chunk},
+            )
+            _check_response(resp, "replace blocks")
+
+    logger.info(
+        "Replaced %d blocks in page %s (removed %d)",
+        len(blocks),
+        page_id[:8],
+        len(existing_blocks),
+    )
+    return {
+        "blocks_replaced": len(blocks),
+        "blocks_removed": len(existing_blocks),
+        "page_id": page_id,
+    }
 
 
 _WRITABLE_BLOCK_TYPES = {

@@ -135,6 +135,19 @@ def _query_db(
     return results
 
 
+def _bridge_available() -> bool:
+    try:
+        with httpx.Client(timeout=15.0) as client:
+            resp = client.post(
+                f"{notion_client.NOTION_BASE_URL}/databases/{BRIDGE_DB_ID}/query",
+                headers=_headers(),
+                json={"page_size": 1},
+            )
+    except Exception:
+        return False
+    return bool(resp.is_success)
+
+
 def _plain(prop: dict[str, Any] | None) -> Any:
     if not isinstance(prop, dict):
         return None
@@ -479,16 +492,21 @@ def curate_tasks(batch_size: int = 180, keep_recent_unscoped_count: int = 4) -> 
 
 
 def curate_bridge(batch_size: int = 150, keep_recent_resolved: int = 10) -> list[dict[str, Any]]:
-    schema = _db_schema(BRIDGE_DB_ID)
-    title_prop = _property_name(schema, preferred=["Ítem"], prop_type="title")
-    status_prop = _property_name(schema, preferred=["Estado"], prop_type="status")
-    last_move_prop = _property_name(schema, preferred=["Último movimiento"], prop_type="date")
-    notes_prop = _property_name(schema, preferred=["Notas"], prop_type="rich_text")
+    if not _bridge_available():
+        return []
+    try:
+        schema = _db_schema(BRIDGE_DB_ID)
+        title_prop = _property_name(schema, preferred=["Ítem"], prop_type="title")
+        status_prop = _property_name(schema, preferred=["Estado"], prop_type="status")
+        last_move_prop = _property_name(schema, preferred=["Último movimiento"], prop_type="date")
+        notes_prop = _property_name(schema, preferred=["Notas"], prop_type="rich_text")
 
-    rows = _query_db(
-        BRIDGE_DB_ID,
-        sorts=[{"property": last_move_prop or "Último movimiento", "direction": "descending"}] if last_move_prop else None,
-    )
+        rows = _query_db(
+            BRIDGE_DB_ID,
+            sorts=[{"property": last_move_prop or "Último movimiento", "direction": "descending"}] if last_move_prop else None,
+        )
+    except Exception:
+        return []
     resolved_rows = []
     for row in rows:
         props = row.get("properties", {})
@@ -523,8 +541,16 @@ def curate_bridge(batch_size: int = 150, keep_recent_resolved: int = 10) -> list
 def _db_counts() -> dict[str, Any]:
     tasks = _query_db(config.NOTION_TASKS_DB_ID)
     deliverables = _query_db(config.NOTION_DELIVERABLES_DB_ID)
-    bridge = _query_db(BRIDGE_DB_ID)
     projects = _query_db(config.NOTION_PROJECTS_DB_ID)
+    bridge_available = _bridge_available()
+    if bridge_available:
+        try:
+            bridge = _query_db(BRIDGE_DB_ID)
+        except Exception:
+            bridge_available = False
+            bridge = []
+    else:
+        bridge = []
 
     unlinked_tasks = 0
     for row in tasks:
@@ -566,6 +592,7 @@ def _db_counts() -> dict[str, Any]:
         "deliverables_without_task_origin": deliverables_without_task_origin,
         "deliverables_live_without_task_origin": deliverables_live_without_task_origin,
         "deliverables_historical_without_task_origin": deliverables_historical_without_task_origin,
+        "bridge_available": bridge_available,
         "bridge_total": len(bridge),
         "bridge_live": bridge_live,
         "bridge_resolved": bridge_resolved,

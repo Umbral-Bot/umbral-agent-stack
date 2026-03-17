@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from scripts.notion_curate_ops_vps import (
     _db_counts,
     _property_name,
+    _resolve_bridge_db_id,
     curate_bridge,
     infer_deliverable_provenance,
     infer_project_name_from_deliverable,
@@ -126,3 +127,16 @@ def test_db_counts_handles_missing_bridge_db(monkeypatch):
     assert counts["bridge_total"] == 0
     assert counts["bridge_live"] == 0
     assert counts["bridge_resolved"] == 0
+
+
+def test_resolve_bridge_db_id_prefers_env(monkeypatch):
+    monkeypatch.setattr("scripts.notion_curate_ops_vps.config.NOTION_BRIDGE_DB_ID", "bridge-env")
+    monkeypatch.setattr("scripts.notion_curate_ops_vps._find_child_database_id", lambda page_id, title: "bridge-child")
+    assert _resolve_bridge_db_id() == "bridge-env"
+
+
+def test_resolve_bridge_db_id_discovers_child_when_env_missing(monkeypatch):
+    monkeypatch.setattr("scripts.notion_curate_ops_vps.config.NOTION_BRIDGE_DB_ID", None)
+    monkeypatch.setattr("scripts.notion_curate_ops_vps.config.NOTION_CONTROL_ROOM_PAGE_ID", "control-room")
+    monkeypatch.setattr("scripts.notion_curate_ops_vps._find_child_database_id", lambda page_id, title: "bridge-child")
+    assert _resolve_bridge_db_id() == "bridge-child"

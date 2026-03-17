@@ -40,8 +40,10 @@ _TASK_VERBS: list[str] = [
 _INSTRUCTION_VERBS: list[str] = [
     "configura", "cambia", "actualiza", "activa", "desactiva",
     "modifica", "ajusta", "establece", "define", "setea",
+    "corrige", "rehaz", "reabre", "baja", "sube", "marca",
     "configure", "change", "update", "activate", "deactivate",
     "modify", "adjust", "set", "enable", "disable",
+    "correct", "reopen", "lower", "raise", "mark",
 ]
 
 # Team keywords

@@ -104,7 +104,7 @@ def handle_smart_reply(
         elif intent == "scheduled_task":
             _handle_scheduled_task(comment_text, comment_id, team, wc, scheduler, intent_obj)
         elif intent == "instruction":
-            _handle_instruction(comment_text, comment_id, wc)
+            _handle_instruction(comment_text, comment_id, team, wc)
         else:
             # echo — just acknowledge
             _post_comment(wc, f"{ECHO_PREFIX} Recibido. (comment_id={short_id}...)")
@@ -317,14 +317,32 @@ def _handle_task_with_workflow(
     )
 
 
-def _handle_instruction(text: str, comment_id: str, wc: WorkerClient) -> None:
-    """Confirm instruction received."""
+def _handle_instruction(text: str, comment_id: str, team: str, wc: WorkerClient) -> None:
+    """Confirm instruction received and register a follow-up task in Notion."""
     short_id = comment_id[:8]
     reply = (
         f"{ECHO_PREFIX} Instrucción registrada. "
         f"Procesando configuración. (comment_id={short_id}...)"
     )
     _post_comment(wc, reply)
+    try:
+        wc.run(
+            "notion.upsert_task",
+            {
+                "task_id": f"notion-instruction-{short_id}",
+                "status": "queued",
+                "team": team or "system",
+                "task": "notion_instruction_followup",
+                "task_name": f"Instrucción desde Notion: {text[:90]}",
+                "input_summary": text,
+                "result_summary": "Pendiente de seguimiento desde Control Room",
+                "source": "notion_poll",
+                "source_kind": "instruction_comment",
+                "trace_id": comment_id,
+            },
+        )
+    except Exception:
+        logger.warning("Failed to register Notion instruction task for %s", short_id, exc_info=True)
     logger.info("Instruction acknowledged for comment %s", short_id)
 
 

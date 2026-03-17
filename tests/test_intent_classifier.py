@@ -85,6 +85,12 @@ class TestClassifyIntent:
         r = classify_intent("Enable the LiteLLM proxy")
         assert r.intent == "instruction"
 
+    def test_instruction_correction_language(self):
+        r = classify_intent(
+            "Rick, el caso Kris sigue abierto: baja el lenguaje a lectura aplicada"
+        )
+        assert r.intent == "instruction"
+
     # -- Echo (fallback) --
 
     def test_echo_unrecognized_text(self):

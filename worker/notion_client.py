@@ -77,6 +77,19 @@ def _plain_text_from_rich_text(rich_text: list[Any] | None) -> str:
     return "".join(parts)
 
 
+def _parse_notion_datetime(value: str | None) -> datetime | None:
+    raw = (value or "").strip()
+    if not raw:
+        return None
+    if raw.endswith("Z"):
+        raw = raw[:-1] + "+00:00"
+    try:
+        return datetime.fromisoformat(raw)
+    except ValueError:
+        logger.warning("Could not parse Notion datetime: %s", value)
+        return None
+
+
 def _normalize_icon(icon: str | None) -> dict[str, Any] | None:
     """Build a Notion icon payload from an emoji or external URL."""
     value = (icon or "").strip()
@@ -310,40 +323,55 @@ def poll_comments(
     if page_id is None:
         page_id = config.NOTION_CONTROL_ROOM_PAGE_ID
 
-    params: dict[str, Any] = {"block_id": page_id, "page_size": min(limit, 100)}
+    since_dt = _parse_notion_datetime(since)
+    page_size = max(1, min(limit, 100))
+    start_cursor: str | None = None
+    comments: list[dict[str, Any]] = []
 
     logger.info("Polling comments from page %s (since=%s)", page_id, since)
     with httpx.Client(timeout=TIMEOUT) as client:
-        resp = client.get(
-            f"{NOTION_BASE_URL}/comments",
-            headers=_headers(),
-            params=params,
-        )
-    data = _check_response(resp, "poll_comments")
+        while True:
+            params: dict[str, Any] = {"block_id": page_id, "page_size": page_size}
+            if start_cursor:
+                params["start_cursor"] = start_cursor
 
-    comments = []
-    for c in data.get("results", []):
-        created = c.get("created_time", "")
+            resp = client.get(
+                f"{NOTION_BASE_URL}/comments",
+                headers=_headers(),
+                params=params,
+            )
+            data = _check_response(resp, "poll_comments")
 
-        # Filter by since if provided
-        if since and created < since:
-            continue
+            for c in data.get("results", []):
+                created = c.get("created_time", "")
+                created_dt = _parse_notion_datetime(created)
 
-        # Extract plain text from rich_text
-        text_parts = []
-        for rt in c.get("rich_text", []):
-            text_parts.append(rt.get("plain_text", rt.get("text", {}).get("content", "")))
+                if since_dt and created_dt and created_dt <= since_dt:
+                    continue
 
-        comments.append(
-            {
-                "id": c["id"],
-                "created_time": created,
-                "created_by": c.get("created_by", {}).get("id", "unknown"),
-                "text": "".join(text_parts),
-            }
-        )
+                text_parts = []
+                for rt in c.get("rich_text", []):
+                    text_parts.append(rt.get("plain_text", rt.get("text", {}).get("content", "")))
 
-    return {"comments": comments, "count": len(comments)}
+                comments.append(
+                    {
+                        "id": c["id"],
+                        "created_time": created,
+                        "created_by": c.get("created_by", {}).get("id", "unknown"),
+                        "text": "".join(text_parts),
+                    }
+                )
+
+            if len(comments) >= limit:
+                break
+            if not data.get("has_more"):
+                break
+            start_cursor = data.get("next_cursor")
+            if not start_cursor:
+                break
+
+    comments.sort(key=lambda c: _parse_notion_datetime(c.get("created_time")) or datetime.min.replace(tzinfo=timezone.utc))
+    return {"comments": comments[:limit], "count": len(comments[:limit])}
 
 
 def read_page(

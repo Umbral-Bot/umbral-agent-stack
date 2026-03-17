@@ -238,9 +238,16 @@ class TestInstructionFlow:
         wc.run.return_value = _empty_result()
         handle_smart_reply(COMMENT_TEXT_INSTRUCTION, COMMENT_ID, IntentResult("instruction", "high"), "system", wc, queue, MagicMock())
 
-        wc.run.assert_called_once_with("notion.add_comment", {
+        assert wc.run.call_count == 2
+        assert wc.run.call_args_list[0][0][0] == "notion.add_comment"
+        assert wc.run.call_args_list[0][0][1] == {
             "text": f"{ECHO_PREFIX} Instrucción registrada. Procesando configuración. (comment_id={COMMENT_ID[:8]}...)",
-        })
+        }
+        assert wc.run.call_args_list[1][0][0] == "notion.upsert_task"
+        task_payload = wc.run.call_args_list[1][0][1]
+        assert task_payload["task_id"] == f"notion-instruction-{COMMENT_ID[:8]}"
+        assert task_payload["team"] == "system"
+        assert task_payload["source_kind"] == "instruction_comment"
         queue.enqueue.assert_not_called()
 
 

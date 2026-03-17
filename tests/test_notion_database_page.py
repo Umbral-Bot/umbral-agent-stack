@@ -210,3 +210,79 @@ def test_update_page_properties_allows_archive_only(mock_require_notion_core, mo
 
     assert result["updated"] is True
     assert mock_client.patch.call_args.kwargs["json"] == {"archived": True}
+
+
+@patch("worker.notion_client.httpx.Client")
+@patch("worker.notion_client.config.require_notion_core")
+@patch("worker.notion_client.config.NOTION_API_KEY", "ntn_test_key")
+def test_create_database_page_retries_without_invalid_icon(mock_require_notion_core, mock_client_cls):
+    from worker.notion_client import create_database_page
+
+    invalid_response = MagicMock()
+    invalid_response.status_code = 400
+    invalid_response.text = "{\"object\":\"error\",\"status\":400,\"code\":\"validation_error\",\"message\":\"body.icon.emoji should be valid\"}"
+    invalid_response.json.return_value = {
+        "object": "error",
+        "status": 400,
+        "code": "validation_error",
+        "message": "body.icon.emoji should be valid",
+    }
+
+    create_response = MagicMock()
+    create_response.status_code = 200
+    create_response.json.return_value = {
+        "id": "page-1",
+        "url": "https://www.notion.so/page-1",
+    }
+
+    mock_client = MagicMock()
+    mock_client.post.side_effect = [invalid_response, create_response]
+    mock_client_cls.return_value.__enter__.return_value = mock_client
+
+    result = create_database_page(
+        "https://www.notion.so/3c1112c327cd445f848f041c4f8449c2",
+        {"Nombre": {"title": [{"text": {"content": "Proyecto Embudo Ventas"}}]}},
+        icon="📮",
+    )
+
+    assert result["created"] is True
+    assert mock_client.post.call_count == 2
+    assert "icon" not in mock_client.post.call_args_list[1].kwargs["json"]
+
+
+@patch("worker.notion_client.httpx.Client")
+@patch("worker.notion_client.config.require_notion_core")
+@patch("worker.notion_client.config.NOTION_API_KEY", "ntn_test_key")
+def test_update_page_properties_retries_without_invalid_icon(mock_require_notion_core, mock_client_cls):
+    from worker.notion_client import update_page_properties
+
+    invalid_response = MagicMock()
+    invalid_response.status_code = 400
+    invalid_response.text = "{\"object\":\"error\",\"status\":400,\"code\":\"validation_error\",\"message\":\"body.icon.emoji should be valid\"}"
+    invalid_response.json.return_value = {
+        "object": "error",
+        "status": 400,
+        "code": "validation_error",
+        "message": "body.icon.emoji should be valid",
+    }
+
+    update_response = MagicMock()
+    update_response.status_code = 200
+    update_response.json.return_value = {
+        "id": "page-1",
+        "url": "https://www.notion.so/page-1",
+    }
+
+    mock_client = MagicMock()
+    mock_client.patch.side_effect = [invalid_response, update_response]
+    mock_client_cls.return_value.__enter__.return_value = mock_client
+
+    result = update_page_properties(
+        "https://www.notion.so/31e5f443fb5c81eb8949e8c59f497d42",
+        {"Estado": {"status": {"name": "En curso"}}},
+        icon="📮",
+    )
+
+    assert result["updated"] is True
+    assert mock_client.patch.call_count == 2
+    assert "icon" not in mock_client.patch.call_args_list[1].kwargs["json"]

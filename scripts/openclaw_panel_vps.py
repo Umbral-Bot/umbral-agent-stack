@@ -254,6 +254,9 @@ def _query_db_optional(
         return [], False
 
 
+_BRIDGE_PRIORITY_ORDER = {"Alta": 0, "Media": 1, "Baja": 2, "": 3}
+
+
 def _summarize_text(text: str, limit: int = 90) -> str:
     text = " ".join((text or "").split())
     if len(text) <= limit:
@@ -321,12 +324,14 @@ def _primary_focus(snapshot: dict[str, Any]) -> dict[str, str]:
     bridge = snapshot["bridge_live"]
     if bridge:
         item = bridge[0]
+        action = item.get("next_action") or item.get("notes") or "Sin siguiente acción registrada."
         return {
             "title": "Coordinacion viva",
             "body": (
                 f"{item['title']} sigue abierto en Bandeja Puente. "
                 f"Estado: {item.get('status') or 'Sin estado'}. "
-                f"Ultimo movimiento: {item.get('last_move') or 'sin fecha'}."
+                f"Proyecto: {item.get('project') or 'Sin proyecto'}. "
+                f"Siguiente accion: {_summarize_text(action, 100)}"
             ),
             "emoji": "📮",
             "color": "blue_background",
@@ -458,11 +463,22 @@ def _build_operational_snapshot(bridge_db_id: str | None = None) -> dict[str, An
                     "id": row["id"],
                     "title": title,
                     "status": status,
+                    "project": _plain(props.get("Proyecto", {})) or "",
+                    "priority": _plain(props.get("Prioridad", {})) or "",
+                    "source": _plain(props.get("Origen", {})) or "",
+                    "next_action": _plain(props.get("Siguiente acción", {})) or "",
+                    "link": _plain(props.get("Link", {})) or "",
                     "notes": notes,
                     "last_move": _plain(props.get("Último movimiento", {})),
                 }
             )
-    bridge_live.sort(key=lambda item: item.get("last_move") or "", reverse=True)
+    bridge_live.sort(
+        key=lambda item: (
+            _BRIDGE_PRIORITY_ORDER.get(str(item.get("priority") or ""), 3),
+            -(1 if item.get("status") == "Esperando" else 0),
+            item.get("last_move") or "",
+        )
+    )
 
     due_items = sorted(
         [d for d in deliverables if d.get("due_date")],
@@ -520,8 +536,9 @@ def _bridge_rows(items: list[dict[str, Any]]) -> list[list[str]]:
             [
                 item["title"],
                 item["status"],
-                item.get("last_move") or "—",
-                _summarize_text(item.get("notes") or "Sin notas.", 90),
+                item.get("project") or "—",
+                item.get("priority") or "—",
+                _summarize_text(item.get("next_action") or item.get("notes") or "Sin siguiente acción.", 90),
             ]
         )
     return rows
@@ -611,10 +628,10 @@ def _build_panel_blocks(snapshot: dict[str, Any]) -> list[dict[str, Any]]:
     blocks.append(_block_heading3("Bandeja viva"))
     bridge = snapshot["bridge_live"]
     if bridge:
-        blocks.append(_block_table(["Item", "Estado", "Ultimo movimiento", "Notas"], _bridge_rows(bridge)))
+        blocks.append(_block_table(["Item", "Estado", "Proyecto", "Prioridad", "Siguiente acción"], _bridge_rows(bridge)))
     else:
         empty_note = "Sin acceso actual a Bandeja Puente." if not summary["bridge_available"] else "Sin items vivos."
-        blocks.append(_block_table(["Item", "Estado", "Ultimo movimiento", "Notas"], [[empty_note, "-", "-", "-"]]))
+        blocks.append(_block_table(["Item", "Estado", "Proyecto", "Prioridad", "Siguiente acción"], [[empty_note, "-", "-", "-", empty_note]]))
 
     blocks.append(_block_heading3("Proximos vencimientos"))
     due_items = snapshot["due_items"]

@@ -347,12 +347,14 @@ def _handle_instruction(
     instruction_task_id = _instruction_task_id(comment_id)
     project_page_id = page_id if page_id and page_kind == "project" else None
     deliverable_page_id = page_id if page_id and page_kind == "deliverable" else None
+    project_name = _resolve_instruction_project_name(wc, page_id=page_id, page_kind=page_kind)
     reply = (
         f"{ECHO_PREFIX} Instrucción registrada. "
         f"Procesando configuración. (comment_id={short_id}...)"
     )
     _post_comment(wc, reply)
     telegram_sent = False
+    bridge_page_id: str | None = None
     try:
         wc.run(
             "notion.upsert_task",
@@ -371,8 +373,20 @@ def _handle_instruction(
                 "deliverable_page_id": deliverable_page_id,
             },
         )
+        bridge_result = wc.run(
+            "notion.upsert_bridge_item",
+            _build_bridge_item_payload(
+                text=text,
+                comment_id=comment_id,
+                page_kind=page_kind,
+                project_name=project_name,
+                status="Nuevo",
+                notes="Instrucción registrada desde Notion; pendiente de seguimiento por Rick.",
+            ),
+        )
+        bridge_page_id = (((bridge_result or {}).get("result") or {}).get("page_id") or None)
     except Exception:
-        logger.warning("Failed to register Notion instruction task for %s", short_id, exc_info=True)
+        logger.warning("Failed to register Notion instruction metadata for %s", short_id, exc_info=True)
     try:
         telegram_sent = _handoff_instruction_to_rick(text=text, comment_id=comment_id)
     except Exception:
@@ -396,8 +410,36 @@ def _handle_instruction(
                     "deliverable_page_id": deliverable_page_id,
                 },
             )
+            wc.run(
+                "notion.upsert_bridge_item",
+                _build_bridge_item_payload(
+                    text=text,
+                    comment_id=comment_id,
+                    page_kind=page_kind,
+                    project_name=project_name,
+                    status="En curso",
+                    notes="Seguimiento enviado al runtime principal de Rick.",
+                    page_id=bridge_page_id,
+                ),
+            )
         except Exception:
             logger.warning("Failed to annotate mirrored instruction task for %s", short_id, exc_info=True)
+    else:
+        try:
+            wc.run(
+                "notion.upsert_bridge_item",
+                _build_bridge_item_payload(
+                    text=text,
+                    comment_id=comment_id,
+                    page_kind=page_kind,
+                    project_name=project_name,
+                    status="Esperando",
+                    notes="No se pudo reflejar al runtime principal; requiere seguimiento manual.",
+                    page_id=bridge_page_id,
+                ),
+            )
+        except Exception:
+            logger.warning("Failed to keep bridge item waiting for %s", short_id, exc_info=True)
     logger.info("Instruction acknowledged for comment %s", short_id)
 
 
@@ -426,6 +468,58 @@ def _instruction_task_id(comment_id: str) -> str:
     raw = re.sub(r"[^0-9a-zA-Z]", "", comment_id or "")
     suffix = raw[:32] if raw else "unknown"
     return f"notion-instruction-{suffix}"
+
+
+def _single_line(text: str) -> str:
+    return re.sub(r"\s+", " ", (text or "")).strip()
+
+
+def _instruction_bridge_name(text: str, comment_id: str) -> str:
+    raw = _single_line(text)
+    if len(raw) > 90:
+        raw = raw[:87].rstrip() + "..."
+    return f"Instrucción Notion: {raw} [{comment_id[:8]}]"
+
+
+def _resolve_instruction_project_name(wc: WorkerClient, *, page_id: str | None, page_kind: str | None) -> str | None:
+    if not page_id or page_kind != "project":
+        return None
+    try:
+        result = wc.run("notion.read_page", {"page_id_or_url": page_id, "max_blocks": 5})
+        title = (((result or {}).get("result") or {}).get("title") or "").strip()
+        return title or None
+    except Exception:
+        logger.warning("Failed to resolve project title for instruction page %s", page_id, exc_info=True)
+        return None
+
+
+def _build_bridge_item_payload(
+    *,
+    text: str,
+    comment_id: str,
+    page_kind: str | None,
+    project_name: str | None,
+    status: str,
+    notes: str,
+    page_id: str | None = None,
+) -> dict[str, Any]:
+    source = "Control Room"
+    if page_kind == "project":
+        source = "Proyecto"
+    elif page_kind == "deliverable":
+        source = "Entregable"
+    payload = {
+        "name": _instruction_bridge_name(text, comment_id),
+        "status": status,
+        "project_name": project_name,
+        "priority": "Media",
+        "source": source,
+        "notes": notes,
+        "next_action": "Rick debe regularizar este frente dentro del flujo correcto y actualizar tarea/entregable.",
+    }
+    if page_id:
+        payload["page_id"] = page_id
+    return payload
 
 
 def _build_instruction_message(text: str, comment_id: str) -> str:

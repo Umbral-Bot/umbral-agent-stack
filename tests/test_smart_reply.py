@@ -245,7 +245,7 @@ class TestInstructionFlow:
         wc.run.return_value = _empty_result()
         handle_smart_reply(COMMENT_TEXT_INSTRUCTION, COMMENT_ID, IntentResult("instruction", "high"), "system", wc, queue, MagicMock())
 
-        assert wc.run.call_count == 3
+        assert wc.run.call_count == 5
         assert wc.run.call_args_list[0][0][0] == "notion.add_comment"
         assert wc.run.call_args_list[0][0][1] == {
             "text": f"{ECHO_PREFIX} Instrucción registrada. Procesando configuración. (comment_id={COMMENT_ID[:8]}...)",
@@ -255,16 +255,26 @@ class TestInstructionFlow:
         assert task_payload["task_id"] == _instruction_task_id(COMMENT_ID)
         assert task_payload["team"] == "system"
         assert task_payload["source_kind"] == "instruction_comment"
-        assert wc.run.call_args_list[2][0][0] == "notion.upsert_task"
-        assert wc.run.call_args_list[2][0][1]["status"] == "running"
-        assert "Seguimiento inyectado" in wc.run.call_args_list[2][0][1]["result_summary"]
+        assert wc.run.call_args_list[2][0][0] == "notion.upsert_bridge_item"
+        assert wc.run.call_args_list[2][0][1]["status"] == "Nuevo"
+        assert wc.run.call_args_list[3][0][0] == "notion.upsert_task"
+        assert wc.run.call_args_list[3][0][1]["status"] == "running"
+        assert "Seguimiento inyectado" in wc.run.call_args_list[3][0][1]["result_summary"]
+        assert wc.run.call_args_list[4][0][0] == "notion.upsert_bridge_item"
+        assert wc.run.call_args_list[4][0][1]["status"] == "En curso"
         mock_handoff.assert_called_once()
         queue.enqueue.assert_not_called()
 
     @patch("dispatcher.smart_reply._handoff_instruction_to_rick")
     def test_instruction_inherits_project_context_from_comment_page(self, mock_handoff, wc, queue):
         mock_handoff.return_value = False
-        wc.run.return_value = _empty_result()
+        wc.run.side_effect = [
+            {"ok": True, "result": {"title": "Proyecto Embudo Ventas"}},
+            _empty_result(),
+            _empty_result(),
+            _empty_result(),
+            _empty_result(),
+        ]
 
         handle_smart_reply(
             COMMENT_TEXT_INSTRUCTION,
@@ -278,14 +288,18 @@ class TestInstructionFlow:
             page_kind="project",
         )
 
-        task_payload = wc.run.call_args_list[1][0][1]
+        assert wc.run.call_args_list[0][0][0] == "notion.read_page"
+        task_payload = wc.run.call_args_list[2][0][1]
         assert task_payload["project_page_id"] == "project-page-1"
         assert task_payload["deliverable_page_id"] is None
+        bridge_payload = wc.run.call_args_list[3][0][1]
+        assert bridge_payload["project_name"] == "Proyecto Embudo Ventas"
+        assert bridge_payload["source"] == "Proyecto"
 
     @patch("dispatcher.smart_reply._handoff_instruction_to_rick")
     def test_instruction_inherits_deliverable_context_from_comment_page(self, mock_handoff, wc, queue):
         mock_handoff.return_value = False
-        wc.run.return_value = _empty_result()
+        wc.run.side_effect = [_empty_result(), _empty_result(), _empty_result(), _empty_result()]
 
         handle_smart_reply(
             COMMENT_TEXT_INSTRUCTION,
@@ -302,6 +316,9 @@ class TestInstructionFlow:
         task_payload = wc.run.call_args_list[1][0][1]
         assert task_payload["project_page_id"] is None
         assert task_payload["deliverable_page_id"] == "deliverable-page-1"
+        bridge_payload = wc.run.call_args_list[2][0][1]
+        assert bridge_payload["project_name"] is None
+        assert bridge_payload["source"] == "Entregable"
 
     @patch("dispatcher.smart_reply._handoff_instruction_to_rick")
     def test_instruction_without_handoff_keeps_single_task_update(self, mock_handoff, wc, queue):
@@ -309,9 +326,64 @@ class TestInstructionFlow:
         wc.run.return_value = _empty_result()
         handle_smart_reply(COMMENT_TEXT_INSTRUCTION, COMMENT_ID, IntentResult("instruction", "high"), "system", wc, queue, MagicMock())
 
-        assert wc.run.call_count == 2
+        assert wc.run.call_count == 4
+        assert wc.run.call_args_list[2][0][0] == "notion.upsert_bridge_item"
+        assert wc.run.call_args_list[2][0][1]["status"] == "Nuevo"
+        assert wc.run.call_args_list[3][0][0] == "notion.upsert_bridge_item"
+        assert wc.run.call_args_list[3][0][1]["status"] == "Esperando"
         mock_handoff.assert_called_once()
         queue.enqueue.assert_not_called()
+
+    @patch("dispatcher.smart_reply._handoff_instruction_to_rick")
+    def test_instruction_project_context_reads_title_for_bridge(self, mock_handoff, wc, queue):
+        mock_handoff.return_value = False
+        wc.run.side_effect = [
+            {"ok": True, "result": {"title": "Proyecto Embudo Ventas"}},
+            _empty_result(),
+            _empty_result(),
+            _empty_result(),
+            _empty_result(),
+        ]
+
+        handle_smart_reply(
+            COMMENT_TEXT_INSTRUCTION,
+            COMMENT_ID,
+            IntentResult("instruction", "high"),
+            "system",
+            wc,
+            queue,
+            MagicMock(),
+            page_id="project-page-1",
+            page_kind="project",
+        )
+
+        assert wc.run.call_args_list[0][0][0] == "notion.read_page"
+        bridge_payload = wc.run.call_args_list[3][0][1]
+        assert bridge_payload["project_name"] == "Proyecto Embudo Ventas"
+
+    @patch("dispatcher.smart_reply._handoff_instruction_to_rick")
+    def test_instruction_reuses_bridge_page_id_after_creation(self, mock_handoff, wc, queue):
+        mock_handoff.return_value = True
+        wc.run.side_effect = [
+            _empty_result(),
+            _empty_result(),
+            {"ok": True, "result": {"page_id": "bridge-page-1"}},
+            _empty_result(),
+            _empty_result(),
+        ]
+
+        handle_smart_reply(
+            COMMENT_TEXT_INSTRUCTION,
+            COMMENT_ID,
+            IntentResult("instruction", "high"),
+            "system",
+            wc,
+            queue,
+            MagicMock(),
+        )
+
+        second_bridge_payload = wc.run.call_args_list[4][0][1]
+        assert second_bridge_payload["page_id"] == "bridge-page-1"
 
 
 class TestInstructionMirroring:

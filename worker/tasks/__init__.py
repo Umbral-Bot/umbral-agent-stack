@@ -23,6 +23,7 @@ from .notion import (
     handle_notion_enrich_bitacora_page,
     handle_notion_upsert_project,
     handle_notion_upsert_deliverable,
+    handle_notion_upsert_bridge_item,
 )
 from .windows import (
     handle_windows_pad_run_flow,
@@ -151,6 +152,7 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "notion.enrich_bitacora_page": handle_notion_enrich_bitacora_page,
     "notion.upsert_project": handle_notion_upsert_project,
     "notion.upsert_deliverable": handle_notion_upsert_deliverable,
+    "notion.upsert_bridge_item": handle_notion_upsert_bridge_item,
     "make.post_webhook": handle_make_post_webhook,
     "n8n.list_workflows": handle_n8n_list_workflows,
     "n8n.get_workflow": handle_n8n_get_workflow,

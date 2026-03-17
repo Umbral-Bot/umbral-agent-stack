@@ -476,6 +476,9 @@ _PROCEDENCIA_ENTREGABLE_VALID = {
     "Smoke",
     "Manual",
 }
+_BRIDGE_STATUS_VALID = {"Nuevo", "En curso", "Esperando", "Resuelto"}
+_BRIDGE_PRIORITY_VALID = {"Alta", "Media", "Baja"}
+_BRIDGE_SOURCE_VALID = {"Rick", "David", "Sistema", "Control Room", "Proyecto", "Entregable", "Manual"}
 
 _DATE_IN_NAME_RE = re.compile(
     r"(?:\s*[-_/]?\s*)(20\d{2}[-_/](?:0[1-9]|1[0-2])[-_/](?:0[1-9]|[12]\d|3[01]))(?:\b|$)"
@@ -871,6 +874,79 @@ def _build_deliverable_page_blocks(input_data: Dict[str, Any], project_context: 
     return blocks
 
 
+def _build_bridge_properties(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    props: Dict[str, Any] = {}
+
+    name = _normalize_spaces(str(input_data.get("name") or "")) or _normalize_spaces(str(input_data.get("item") or ""))
+    if name:
+        props["Ítem"] = {"title": [{"text": {"content": name[:2000]}}]}
+
+    status = _normalize_spaces(str(input_data.get("status") or "")) or "Nuevo"
+    if status not in _BRIDGE_STATUS_VALID:
+        status = "Nuevo"
+    props["Estado"] = {"status": {"name": status}}
+
+    last_move = _normalize_spaces(str(input_data.get("last_move_date") or "")) or _today_date()
+    props["Último movimiento"] = {"date": {"start": last_move}}
+
+    notes = _normalize_spaces(str(input_data.get("notes") or ""))
+    if notes:
+        props["Notas"] = {"rich_text": [{"text": {"content": notes[:2000]}}]}
+
+    project_name = _normalize_spaces(str(input_data.get("project_name") or ""))
+    if project_name:
+        props["Proyecto"] = {"rich_text": [{"text": {"content": project_name[:2000]}}]}
+
+    priority = _normalize_spaces(str(input_data.get("priority") or "")) or "Media"
+    if priority not in _BRIDGE_PRIORITY_VALID:
+        priority = "Media"
+    props["Prioridad"] = {"select": {"name": priority}}
+
+    source = _normalize_spaces(str(input_data.get("source") or "")) or "Manual"
+    if source not in _BRIDGE_SOURCE_VALID:
+        source = "Manual"
+    props["Origen"] = {"select": {"name": source}}
+
+    next_action = _normalize_spaces(str(input_data.get("next_action") or ""))
+    if next_action:
+        props["Siguiente acción"] = {"rich_text": [{"text": {"content": next_action[:2000]}}]}
+
+    link = str(input_data.get("link") or "").strip()
+    if link:
+        props["Link"] = {"url": link}
+
+    return props
+
+
+def _build_bridge_page_blocks(input_data: Dict[str, Any]) -> list[Dict[str, Any]]:
+    name = _normalize_spaces(str(input_data.get("name") or "")) or _normalize_spaces(str(input_data.get("item") or "")) or "Ítem puente"
+    status = _normalize_spaces(str(input_data.get("status") or "")) or "Nuevo"
+    project_name = _normalize_spaces(str(input_data.get("project_name") or "")) or "Sin proyecto"
+    priority = _normalize_spaces(str(input_data.get("priority") or "")) or "Media"
+    source = _normalize_spaces(str(input_data.get("source") or "")) or "Manual"
+    next_action = _normalize_spaces(str(input_data.get("next_action") or "")) or "Definir siguiente acción."
+    notes = _normalize_spaces(str(input_data.get("notes") or "")) or "Sin notas registradas."
+    link = str(input_data.get("link") or "").strip()
+
+    blocks: list[Dict[str, Any]] = [
+        _block_callout(f"Ítem puente {status.lower()} para coordinación operativa.", emoji="📮"),
+        _block_heading2("Resumen"),
+        _block_paragraph(name),
+        _block_heading2("Ficha rápida"),
+        _block_bulleted(f"Proyecto: {project_name}"),
+        _block_bulleted(f"Prioridad: {priority}"),
+        _block_bulleted(f"Origen: {source}"),
+        _block_bulleted(f"Último movimiento: {_normalize_spaces(str(input_data.get('last_move_date') or '')) or _today_date()}"),
+        _block_heading2("Siguiente acción"),
+        _block_paragraph(next_action),
+        _block_heading2("Notas"),
+        _block_paragraph(notes),
+    ]
+    if link:
+        blocks.insert(8, _block_bulleted(f"Link: {link}"))
+    return blocks
+
+
 def _build_task_page_blocks(input_data: Dict[str, Any], project_context: Dict[str, str] | None = None, deliverable_name: str | None = None) -> list[Dict[str, Any]]:
     project_context = project_context or {}
     task = str(input_data.get("task") or "Tarea").strip() or "Tarea"
@@ -1235,6 +1311,91 @@ def handle_notion_upsert_deliverable(input_data: Dict[str, Any]) -> Dict[str, An
             str(input_data.get("name") or ""),
             str(input_data.get("summary") or ""),
             fallback="📝",
+        )
+
+    try:
+        if existing:
+            page_id = existing[0]["id"]
+            result = notion_client.update_page_properties(
+                page_id_or_url=page_id,
+                properties=props,
+                icon=resolved_icon,
+            )
+            _ensure_page_blocks(page_id=result["page_id"], blocks=page_blocks, force_replace=True)
+            return {"ok": True, "page_id": result["page_id"], "url": result["url"], "created": False}
+
+        result = notion_client.create_database_page(
+            database_id_or_url=db_id,
+            properties=props,
+            children=page_blocks,
+            icon=resolved_icon,
+        )
+        return {"ok": True, "page_id": result["page_id"], "url": result["url"], "created": True}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+def handle_notion_upsert_bridge_item(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Create or update an operational inbox item in `Bandeja Puente`.
+
+    Input:
+        name (str, required): title of the bridge item.
+        status (str, optional): Nuevo|En curso|Esperando|Resuelto.
+        project_name (str, optional): human-readable project name.
+        priority (str, optional): Alta|Media|Baja.
+        source (str, optional): Rick|David|Sistema|Control Room|Proyecto|Entregable|Manual.
+        notes (str, optional): context or coordination notes.
+        next_action (str, optional): next concrete action.
+        last_move_date (str, optional): YYYY-MM-DD.
+        link (str, optional): canonical URL if any.
+        page_id (str, optional): explicit Notion page id to update in-place.
+        icon (str, optional): emoji or external icon URL.
+
+    Returns:
+        {"ok": True, "page_id": "...", "url": "...", "created": bool}
+    """
+    name = _normalize_spaces(str(input_data.get("name") or "")) or _normalize_spaces(str(input_data.get("item") or ""))
+    if not name:
+        return {"ok": False, "error": "'name' is required"}
+
+    db_id = config.NOTION_BRIDGE_DB_ID
+    if not db_id:
+        return {"ok": False, "error": "NOTION_BRIDGE_DB_ID not configured on server"}
+
+    page_id = _normalize_spaces(str(input_data.get("page_id") or input_data.get("page_id_or_url") or ""))
+
+    try:
+        existing = []
+        if page_id:
+            existing = [{"id": page_id}]
+        else:
+            existing = notion_client.query_database(
+                database_id=db_id,
+                filter={
+                    "property": "Ítem",
+                    "title": {"equals": name},
+                },
+            )
+            if not existing:
+                for row in notion_client.query_database(database_id=db_id):
+                    if _extract_page_title_from_properties(row) == name:
+                        existing = [row]
+                        break
+    except Exception as e:
+        return {"ok": False, "error": f"Failed to query bridge DB: {e}"}
+
+    props = _build_bridge_properties({**input_data, "name": name})
+    page_blocks = _build_bridge_page_blocks({**input_data, "name": name})
+
+    resolved_icon = input_data.get("icon")
+    if not resolved_icon:
+        resolved_icon = _infer_icon_from_text(
+            name,
+            input_data.get("project_name"),
+            input_data.get("priority"),
+            input_data.get("status"),
+            fallback="📮",
         )
 
     try:

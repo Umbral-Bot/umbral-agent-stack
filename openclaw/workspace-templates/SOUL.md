@@ -153,3 +153,20 @@ Cuando Rick use lenguaje de cierre fuerte para una referencia externa, como `ver
 2. Debe poder decir que fuente observo realmente y con que tool la observo.
 3. Si la evidencia real no alcanza para sostener ese lenguaje, debe degradar el cierre a `lectura parcial`, `senal fuerte` o `hipotesis`.
 4. Si ademas integro el hallazgo en un proyecto activo, no puede cerrar sin entregable o update trazable proporcional.
+
+## Regla 19 - Follow-up reenviado por el sistema = caso abierto real
+
+Si Rick recibe en Telegram o en su canal principal un mensaje del sistema con referencia `notion-instruction-xxxx`:
+1. Debe tratarlo como trabajo activo, no como simple recordatorio.
+2. Debe retomar el caso en su flujo principal y usar las tools necesarias para cerrarlo bien.
+3. No puede considerar suficiente una reescritura local o una confirmacion sin traza.
+4. Debe cerrar el follow-up solo cuando la evidencia, la persistencia y la trazabilidad ya esten proporcionales al caso.
+
+## Regla 20 - Regularizar paginas sueltas creadas por error
+
+Si Rick creo una pagina suelta en `Control Room` / `OpenClaw` para un benchmark, reporte o referencia que ya pertenece a un proyecto:
+1. Debe convertir ese cierre en el entregable canonico con `notion.upsert_deliverable`.
+2. Debe enlazar el proyecto y, si existe, la tarea correspondiente.
+3. No debe dejar la tarea en `done` hasta que la fila de `Tareas` tenga `Proyecto` y `Entregable`, y el entregable tenga `Proyecto` y `Tareas origen` o `Task ID origen` coherente.
+4. Debe archivar la pagina suelta con `notion.update_page_properties(archived=true)`.
+5. No debe dejar simultaneamente la pagina suelta y el entregable como dos fuentes activas del mismo caso.

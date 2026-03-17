@@ -1,7 +1,9 @@
 from datetime import datetime, timedelta, timezone
 
 from scripts.notion_curate_ops_vps import (
+    _db_counts,
     _property_name,
+    curate_bridge,
     infer_deliverable_provenance,
     infer_project_name_from_deliverable,
     is_periodic_bridge_review,
@@ -96,3 +98,31 @@ def test_property_name_prefers_explicit_then_type():
     }
     assert _property_name(schema, preferred=["Task"], prop_type="title") == "Task"
     assert _property_name(schema, preferred=["Missing"], prop_type="status") == "Estado"
+
+
+def test_curate_bridge_returns_empty_when_bridge_db_unavailable(monkeypatch):
+    monkeypatch.setattr("scripts.notion_curate_ops_vps._bridge_available", lambda: False)
+    assert curate_bridge() == []
+
+
+def test_db_counts_handles_missing_bridge_db(monkeypatch):
+    tasks = [_task_row()]
+    deliverables = []
+    projects = [{"id": "project-1", "properties": {"Nombre": {"type": "title", "title": [{"plain_text": "Proyecto"}]}}}]
+
+    def fake_query(database_id, **kwargs):
+        if database_id == "afda99a3666e49f0a2f670cb228ac3ab":
+            return tasks
+        if database_id == "dd8c27d75c6a462db0920ef16f9720c6":
+            return deliverables
+        if database_id == "8496ee73-6c7d-43a3-89cf-b9c8825b5dfc":
+            raise AssertionError("Bridge DB should not be queried when unavailable")
+        return projects
+
+    monkeypatch.setattr("scripts.notion_curate_ops_vps._bridge_available", lambda: False)
+    monkeypatch.setattr("scripts.notion_curate_ops_vps._query_db", fake_query)
+    counts = _db_counts()
+    assert counts["bridge_available"] is False
+    assert counts["bridge_total"] == 0
+    assert counts["bridge_live"] == 0
+    assert counts["bridge_resolved"] == 0

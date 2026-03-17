@@ -577,6 +577,7 @@ const TASK_TOOLS: TaskToolDefinition[] = [
         page_id_or_url: stringSchema("Notion page UUID or full page URL."),
         properties: objectSchema("Raw Notion page properties payload."),
         icon: stringSchema("Optional page icon as emoji or external image URL."),
+        archived: booleanSchema("Optional page archive toggle. Use true to archive a loose page after it was regularized elsewhere."),
       },
       ["page_id_or_url"],
     ),

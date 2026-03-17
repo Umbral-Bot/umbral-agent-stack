@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
+from worker import notion_client
 from worker.tasks.notion import handle_notion_create_report_page
 from worker.tasks.notion_markdown import markdown_to_blocks
 
@@ -98,3 +99,19 @@ def test_handle_notion_create_report_page_missing_inputs():
 
     with pytest.raises(ValueError, match="'content' is required"):
         handle_notion_create_report_page({"title": "hi"})
+
+
+def test_resolve_report_parent_page_id_uses_archive_for_automation(monkeypatch):
+    monkeypatch.setattr(notion_client.config, "NOTION_REPORTS_ARCHIVE_PAGE_ID", "archive-page")
+    monkeypatch.setattr(notion_client.config, "NOTION_CONTROL_ROOM_PAGE_ID", "control-room")
+
+    assert notion_client._resolve_report_parent_page_id({"source": "smart_reply"}) == "archive-page"
+    assert notion_client._resolve_report_parent_page_id({"source": "workflow_engine"}) == "archive-page"
+    assert notion_client._resolve_report_parent_page_id({"source": "manual"}) == "control-room"
+
+
+def test_resolve_report_parent_page_id_falls_back_to_control_room(monkeypatch):
+    monkeypatch.setattr(notion_client.config, "NOTION_REPORTS_ARCHIVE_PAGE_ID", None)
+    monkeypatch.setattr(notion_client.config, "NOTION_CONTROL_ROOM_PAGE_ID", "control-room")
+
+    assert notion_client._resolve_report_parent_page_id({"source": "smart_reply"}) == "control-room"

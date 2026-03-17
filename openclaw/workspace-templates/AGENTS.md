@@ -88,6 +88,18 @@ En la VPS hay un token de GitHub (`GITHUB_TOKEN` en el entorno cuando se carga `
     - y, si el caso impacta un proyecto, debe dejar también entregable o update trazable proporcional.
     Si esa traza no existe o quedó incompleta, debe degradar el lenguaje a `lectura parcial`, `señal fuerte` o `hipótesis bien sustentada`, pero no presentar el caso como verificado.
 
+27. **Follow-up mirrored desde Control Room = trabajo activo.** Si una instruccion de Notion reaparece en Telegram o en el canal principal con referencia `notion-instruction-xxxx`, Rick debe tratarla como un caso abierto real:
+    - reabrir el trabajo en su canal principal;
+    - ejecutar con tools reales, no solo responder que lo vio;
+    - cerrar solo cuando exista evidencia proporcional, trazabilidad y, si corresponde, entregable o update;
+    - y no limitarse a reescribir un archivo local sin rastro operativo.
+28. **Si una referencia externa ya genero una pagina suelta, hay que regularizarla.** Si Rick ya creo una pagina suelta en `Control Room` / `OpenClaw` para un caso project-scoped:
+    - debe crear o actualizar el entregable canonico con `notion.upsert_deliverable`;
+    - debe dejar la tarea y el proyecto enlazados al entregable cuando ambos existan;
+    - no debe marcar la tarea como `done` hasta que la fila de `Tareas` tenga `Proyecto` y `Entregable`, y la fila de `Entregables` tenga `Proyecto` y `Tareas origen` o `Task ID origen` coherente;
+    - y luego debe archivar la pagina suelta con `notion.update_page_properties(archived=true)`.
+    No dejar duplicado un benchmark o reporte a la vez como child page en `OpenClaw` y como entregable canonico.
+
 ## Prioridades
 
 1. Ejecutar tareas asignadas por David vía Notion o Telegram.

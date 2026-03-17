@@ -54,7 +54,7 @@ def test_upsert_project_creates_new_with_page_blocks():
     mock_nc.update_page_properties.assert_not_called()
 
 
-def test_upsert_project_updates_existing_and_backfills_page_blocks_when_blank():
+def test_upsert_project_updates_existing_and_replaces_page_blocks():
     from worker.tasks.notion import handle_notion_upsert_project
 
     existing_page = {"id": "existing-id", "url": "https://www.notion.so/existing-id", "properties": {}}
@@ -67,7 +67,6 @@ def test_upsert_project_updates_existing_and_backfills_page_blocks_when_blank():
             "url": "https://www.notion.so/existing-id",
             "updated": True,
         }
-        mock_nc.read_page.return_value = {"plain_text": ""}
 
         result = handle_notion_upsert_project(
             {
@@ -86,7 +85,7 @@ def test_upsert_project_updates_existing_and_backfills_page_blocks_when_blank():
         properties=mock_nc.update_page_properties.call_args.kwargs["properties"],
         icon="\U0001F9ED",
     )
-    mock_nc.append_blocks_to_page.assert_called_once()
+    mock_nc.replace_blocks_in_page.assert_called_once()
     mock_nc.create_database_page.assert_not_called()
 
 

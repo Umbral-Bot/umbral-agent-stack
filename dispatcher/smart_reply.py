@@ -13,8 +13,14 @@ Falls back gracefully:
 
 from __future__ import annotations
 
+import json
 import logging
+import os
+import pathlib
+import subprocess
 import threading
+import urllib.error
+import urllib.request
 from typing import Any, Dict, Optional
 
 from client.worker_client import WorkerClient
@@ -325,6 +331,7 @@ def _handle_instruction(text: str, comment_id: str, team: str, wc: WorkerClient)
         f"Procesando configuración. (comment_id={short_id}...)"
     )
     _post_comment(wc, reply)
+    telegram_sent = False
     try:
         wc.run(
             "notion.upsert_task",
@@ -335,7 +342,7 @@ def _handle_instruction(text: str, comment_id: str, team: str, wc: WorkerClient)
                 "task": "notion_instruction_followup",
                 "task_name": f"Instrucción desde Notion: {text[:90]}",
                 "input_summary": text,
-                "result_summary": "Pendiente de seguimiento desde Control Room",
+                "result_summary": "Pendiente de seguimiento desde Control Room y runtime principal",
                 "source": "notion_poll",
                 "source_kind": "instruction_comment",
                 "trace_id": comment_id,
@@ -343,10 +350,218 @@ def _handle_instruction(text: str, comment_id: str, team: str, wc: WorkerClient)
         )
     except Exception:
         logger.warning("Failed to register Notion instruction task for %s", short_id, exc_info=True)
+    try:
+        telegram_sent = _handoff_instruction_to_rick(text=text, comment_id=comment_id)
+    except Exception:
+        logger.warning("Failed to hand off instruction %s to Rick", short_id, exc_info=True)
+    if telegram_sent:
+        try:
+            wc.run(
+                "notion.upsert_task",
+                {
+                    "task_id": f"notion-instruction-{short_id}",
+                    "status": "in_progress",
+                    "team": team or "system",
+                    "task": "notion_instruction_followup",
+                    "task_name": f"Instrucción desde Notion: {text[:90]}",
+                    "input_summary": text,
+                    "result_summary": "Seguimiento inyectado al runtime principal de Rick",
+                    "source": "notion_poll",
+                    "source_kind": "instruction_comment",
+                    "trace_id": comment_id,
+                },
+            )
+        except Exception:
+            logger.warning("Failed to annotate mirrored instruction task for %s", short_id, exc_info=True)
     logger.info("Instruction acknowledged for comment %s", short_id)
 
 
 # ── Internal helpers ────────────────────────────────────────────
+
+def _is_external_reference_instruction(text: str) -> bool:
+    lowered = text.lower()
+    markers = (
+        "http://",
+        "https://",
+        "linkedin.com",
+        "post",
+        "publicaci",
+        "newsletter",
+        "referencia",
+        "benchmark",
+        "perfil",
+        "funnel",
+        "landing",
+        "youtube",
+    )
+    return any(marker in lowered for marker in markers)
+
+
+def _build_instruction_message(text: str, comment_id: str) -> str:
+    short_id = comment_id[:8]
+    lines = [
+        "Rick: seguimiento activo desde Control Room.",
+        f"Referencia interna: notion-instruction-{short_id}",
+        f"Instruccion: {text.strip()}",
+        "",
+        "Esto no queda cerrado solo con registro en Notion.",
+    ]
+    if _is_external_reference_instruction(text):
+        lines.extend(
+            [
+                "Si es una referencia externa o URL concreta, debes reabrir el caso en tu canal principal y cerrarlo solo cuando exista:",
+                "- evidencia real con tools sobre la fuente principal;",
+                "- separacion entre evidencia, inferencia e hipotesis;",
+                "- artefacto y trazabilidad proporcional en proyecto/entregable si aplica;",
+                "- lenguaje de certeza coherente con la traza real.",
+                "- si persistes en Notion para un proyecto activo, usa notion.upsert_deliverable; no cierres solo con notion.create_report_page;",
+                "- si ya dejaste una pagina suelta en Control Room/OpenClaw, regularizala con entregable y luego archivala con notion.update_page_properties(archived=true).",
+                "- no marques el caso como cerrado hasta que la tarea quede enlazada a Proyecto y Entregable, y el entregable quede enlazado a Proyecto y Tareas origen/Task ID origen coherente.",
+            ]
+        )
+    else:
+        lines.extend(
+            [
+                "Ejecuta el follow-up en tu canal principal y vuelve con trazabilidad real, no solo con confirmacion.",
+                "- usa tools antes de responder;",
+                "- deja artefacto o update proporcional si afecta proyecto activo;",
+                "- cierra la tarea solo cuando el trabajo este realmente hecho.",
+            ]
+        )
+    return "\n".join(lines)
+
+
+def _load_openclaw_session_store() -> dict[str, Any]:
+    override = os.environ.get("OPENCLAW_MAIN_SESSION_STORE", "").strip()
+    if override:
+        store_path = pathlib.Path(override)
+    else:
+        store_path = pathlib.Path.home() / ".openclaw" / "agents" / "main" / "sessions" / "sessions.json"
+    if not store_path.exists():
+        logger.info("OpenClaw session store not found at %s", store_path)
+        return {}
+    try:
+        data = json.loads(store_path.read_text(encoding="utf-8", errors="ignore"))
+    except Exception:
+        logger.warning("Failed to read OpenClaw session store at %s", store_path, exc_info=True)
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _resolve_rick_main_session_id() -> str | None:
+    forced = os.environ.get("OPENCLAW_MAIN_TELEGRAM_SESSION_ID", "").strip()
+    if forced:
+        return forced
+
+    sessions = _load_openclaw_session_store()
+    if not sessions:
+        return None
+
+    agent_id = os.environ.get("OPENCLAW_MAIN_AGENT_ID", "main").strip() or "main"
+    chat_id = (
+        os.environ.get("TELEGRAM_CHAT_ID", "").strip()
+        or os.environ.get("TELEGRAM_ALLOWLIST_ID", "").strip()
+        or "1813248373"
+    )
+    preferred_key = f"agent:{agent_id}:telegram:slash:{chat_id}"
+
+    preferred = sessions.get(preferred_key)
+    if isinstance(preferred, dict):
+        preferred_session_id = preferred.get("sessionId")
+        if isinstance(preferred_session_id, str) and preferred_session_id.strip():
+            return preferred_session_id.strip()
+
+    candidates: list[tuple[int, str]] = []
+    for session_key, payload in sessions.items():
+        if not isinstance(payload, dict):
+            continue
+        origin = payload.get("origin") or {}
+        if not isinstance(origin, dict):
+            origin = {}
+        provider = str(origin.get("provider") or "").strip().lower()
+        from_id = str(origin.get("from") or "")
+        to_id = str(origin.get("to") or "")
+        if provider != "telegram":
+            continue
+        if chat_id not in session_key and chat_id not in from_id and chat_id not in to_id:
+            continue
+        session_id = str(payload.get("sessionId") or "").strip()
+        if not session_id:
+            continue
+        updated_at = payload.get("updatedAt")
+        try:
+            sort_key = int(updated_at)
+        except (TypeError, ValueError):
+            sort_key = 0
+        candidates.append((sort_key, session_id))
+
+    if not candidates:
+        return None
+    candidates.sort(reverse=True)
+    return candidates[0][1]
+
+
+def _run_openclaw_agent(message: str, session_id: str) -> bool:
+    openclaw_bin = os.environ.get("OPENCLAW_BIN", "").strip() or str(pathlib.Path.home() / ".npm-global" / "bin" / "openclaw")
+    cmd = [
+        openclaw_bin,
+        "agent",
+        "--session-id",
+        session_id,
+        "--message",
+        message,
+        "--json",
+    ]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=180, check=False)
+    except Exception:
+        logger.warning("OpenClaw agent handoff failed", exc_info=True)
+        return False
+    if result.returncode != 0:
+        logger.warning(
+            "OpenClaw agent handoff returned rc=%s stdout=%r stderr=%r",
+            result.returncode,
+            result.stdout[:1000],
+            result.stderr[:1000],
+        )
+        return False
+    logger.info("OpenClaw agent handoff succeeded for session %s", session_id)
+    return True
+
+
+def _send_telegram_message(text: str) -> bool:
+    token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+    chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip() or os.environ.get("TELEGRAM_ALLOWLIST_ID", "1813248373").strip()
+    if not token or not chat_id:
+        logger.info("Telegram mirror skipped: missing TELEGRAM_BOT_TOKEN or chat id")
+        return False
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    body = json.dumps({"chat_id": chat_id, "text": text}).encode("utf-8")
+    req = urllib.request.Request(
+        url,
+        data=body,
+        method="POST",
+        headers={"Content-Type": "application/json"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+    except urllib.error.URLError:
+        logger.warning("Telegram mirror request failed", exc_info=True)
+        return False
+    if not data.get("ok"):
+        logger.warning("Telegram mirror API error: %s", data)
+        return False
+    return True
+
+
+def _handoff_instruction_to_rick(text: str, comment_id: str) -> bool:
+    message = _build_instruction_message(text=text, comment_id=comment_id)
+    session_id = _resolve_rick_main_session_id()
+    if session_id and _run_openclaw_agent(message=message, session_id=session_id):
+        return True
+    return _send_telegram_message(message)
+
 
 def _do_research(wc: WorkerClient, query: str) -> Optional[str]:
     """Call research.web and return formatted context, or None on failure."""

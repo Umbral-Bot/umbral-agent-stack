@@ -63,7 +63,6 @@ def test_validate_openclaw_shell_requires_anchor_and_databases():
         {"id": "h3", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Proyectos que requieren atencion", "text": {"content": "Proyectos que requieren atencion"}}]}},
         {"id": "h4", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Bandeja viva", "text": {"content": "Bandeja viva"}}]}},
         {"id": "h5", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Proximos vencimientos", "text": {"content": "Proximos vencimientos"}}]}},
-        {"id": "h6", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Accesos rapidos", "text": {"content": "Accesos rapidos"}}]}},
         {"id": "b", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Bases operativas"}]}},
         {"id": "c", "type": "child_database", "child_database": {"title": "Proyectos"}},
         {"id": "d", "type": "child_database", "child_database": {"title": "Tareas"}},
@@ -73,6 +72,26 @@ def test_validate_openclaw_shell_requires_anchor_and_databases():
     assert result["ok"] is True
     assert result["child_databases_after_anchor"] == 3
     assert result["required_headings_present"] is True
+    assert result["quick_access_present"] is False
+
+
+def test_validate_openclaw_shell_fails_with_residual_child_page():
+    children = [
+        {"id": "a", "type": "callout", "callout": {"rich_text": []}},
+        {"id": "h1", "type": "heading_2", "heading_2": {"rich_text": [{"plain_text": "Resumen operativo", "text": {"content": "Resumen operativo"}}]}},
+        {"id": "h2", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Entregables por revisar", "text": {"content": "Entregables por revisar"}}]}},
+        {"id": "h3", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Proyectos que requieren atencion", "text": {"content": "Proyectos que requieren atencion"}}]}},
+        {"id": "h4", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Bandeja viva", "text": {"content": "Bandeja viva"}}]}},
+        {"id": "h5", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Proximos vencimientos", "text": {"content": "Proximos vencimientos"}}]}},
+        {"id": "b", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Bases operativas"}]}},
+        {"id": "c", "type": "child_database", "child_database": {"title": "Proyectos"}},
+        {"id": "d", "type": "child_database", "child_database": {"title": "Tareas"}},
+        {"id": "e", "type": "child_database", "child_database": {"title": "Entregables"}},
+        {"id": "page-1", "type": "child_page", "child_page": {"title": "Benchmark parcial — Kris Wojslaw"}},
+    ]
+    result = validate_openclaw_shell(children)
+    assert result["ok"] is False
+    assert result["residual_child_pages"] == 1
 
 
 def test_validate_openclaw_shell_fails_without_anchor():
@@ -235,3 +254,59 @@ def test_tidy_navigation_sections_inserts_quick_access_heading(monkeypatch):
     openclaw_panel_vps._tidy_navigation_sections("page-root", initial_children)
     assert inserted
     assert inserted[0]["type"] == "heading_3"
+
+
+def test_is_residual_child_page_matches_known_generated_titles():
+    assert openclaw_panel_vps._is_residual_child_page(
+        {"id": "a", "type": "child_page", "child_page": {"title": "OODA Weekly Report - 2026-03-16"}}
+    )
+    assert openclaw_panel_vps._is_residual_child_page(
+        {
+            "id": "b",
+            "type": "child_page",
+            "child_page": {"title": "[improvement] Workflow: self_improvement_cycle — SIM Daily Report"},
+        }
+    )
+    assert not openclaw_panel_vps._is_residual_child_page(
+        {"id": "c", "type": "child_page", "child_page": {"title": "Dashboard Rick"}}
+    )
+
+
+def test_cleanup_openclaw_residuals_archives_generated_pages_and_trailing_blanks(monkeypatch):
+    archived = []
+    deleted = []
+    monkeypatch.setattr(openclaw_panel_vps, "_archive_pages", lambda page_ids: archived.extend(page_ids))
+    monkeypatch.setattr(openclaw_panel_vps, "_delete_blocks", lambda block_ids: deleted.extend(block_ids))
+
+    cleaned = openclaw_panel_vps._cleanup_openclaw_residuals(
+        [
+            {"id": "keep-1", "type": "child_page", "child_page": {"title": "Dashboard Rick"}},
+            {"id": "res-1", "type": "child_page", "child_page": {"title": "OODA Weekly Report - 2026-03-16"}},
+            {"id": "res-2", "type": "child_page", "child_page": {"title": "[improvement] Workflow: self_improvement_cycle — SIM Daily Report"}},
+            {"id": "blank-1", "type": "paragraph", "paragraph": {"rich_text": []}},
+            {"id": "blank-2", "type": "paragraph", "paragraph": {"rich_text": []}},
+        ]
+    )
+
+    assert archived == ["res-1", "res-2"]
+    assert deleted == ["blank-1", "blank-2"]
+    assert cleaned == 4
+
+
+def test_remove_stale_blocks_archives_child_pages_and_deletes_normal_blocks(monkeypatch):
+    archived = []
+    deleted = []
+    monkeypatch.setattr(openclaw_panel_vps, "_archive_pages", lambda page_ids: archived.extend(page_ids))
+    monkeypatch.setattr(openclaw_panel_vps, "_delete_blocks", lambda block_ids: deleted.extend(block_ids))
+
+    removed = openclaw_panel_vps._remove_stale_blocks(
+        [
+            {"id": "page-1", "type": "child_page", "child_page": {"title": "Residual page"}},
+            {"id": "table-1", "type": "table", "table": {}},
+            {"id": "db-1", "type": "child_database", "child_database": {"title": "Keep db"}},
+        ]
+    )
+
+    assert archived == ["page-1"]
+    assert deleted == ["table-1"]
+    assert removed == 2

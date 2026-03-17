@@ -212,6 +212,7 @@ def handle_notion_update_page_properties(input_data: Dict[str, Any]) -> Dict[str
         page_id_or_url (str, required): UUID o URL de la página.
         properties (dict, optional): payload raw de propiedades Notion.
         icon (str, optional): emoji o URL externa para el icono de la pagina.
+        archived (bool, optional): archiva o desarchiva la pagina.
 
     Returns:
         {"page_id": "...", "url": "...", "updated": True}
@@ -223,13 +224,14 @@ def handle_notion_update_page_properties(input_data: Dict[str, Any]) -> Dict[str
     properties = input_data.get("properties", {})
     if not isinstance(properties, dict):
         raise ValueError("'properties' must be an object when provided")
-    if not properties and not input_data.get("icon"):
-        raise ValueError("'properties' or 'icon' must be provided")
+    if not properties and not input_data.get("icon") and input_data.get("archived") is None:
+        raise ValueError("'properties', 'icon' or 'archived' must be provided")
 
     return notion_client.update_page_properties(
         page_id_or_url=str(page_id_or_url),
         properties=properties,
         icon=input_data.get("icon"),
+        archived=input_data.get("archived"),
     )
 
 
@@ -266,8 +268,27 @@ def handle_notion_upsert_task(input_data: Dict[str, Any]) -> Dict[str, Any]:
         raise ValueError("'task_id', 'status', 'team' and 'task' are required in input")
     human_task_name = _normalize_spaces(str(input_data.get("task_name") or "")) or task
 
+    existing_task_page: Dict[str, Any] | None = None
+    if config.NOTION_TASKS_DB_ID:
+        try:
+            existing_matches = notion_client.query_database(
+                database_id=config.NOTION_TASKS_DB_ID,
+                filter={
+                    "property": "Task ID",
+                    "rich_text": {"equals": str(task_id)},
+                },
+            )
+            if existing_matches:
+                existing_task_page = existing_matches[0]
+        except Exception:
+            existing_task_page = None
+
     project_page_id = (input_data.get("project_page_id") or "").strip()
     project_name = (input_data.get("project_name") or "").strip()
+    if not project_page_id and existing_task_page:
+        existing_project = _plain_property_value((existing_task_page.get("properties") or {}).get("Proyecto")) or []
+        if existing_project:
+            project_page_id = str(existing_project[0])
     project_context = _resolve_project_context(
         project_name=project_name or None,
         project_page_id=project_page_id or None,
@@ -277,6 +298,10 @@ def handle_notion_upsert_task(input_data: Dict[str, Any]) -> Dict[str, Any]:
 
     deliverable_page_id = (input_data.get("deliverable_page_id") or "").strip()
     deliverable_name = (input_data.get("deliverable_name") or "").strip()
+    if not deliverable_page_id and existing_task_page:
+        existing_deliverable = _plain_property_value((existing_task_page.get("properties") or {}).get("Entregable")) or []
+        if existing_deliverable:
+            deliverable_page_id = str(existing_deliverable[0])
     normalized_deliverable_name = _normalize_deliverable_name({"name": deliverable_name}) if deliverable_name else ""
     if not deliverable_page_id and normalized_deliverable_name and config.NOTION_DELIVERABLES_DB_ID:
         matches = notion_client.query_database(
@@ -297,6 +322,25 @@ def handle_notion_upsert_task(input_data: Dict[str, Any]) -> Dict[str, Any]:
         if matches:
             deliverable_page_id = matches[0]["id"]
             deliverable_name = normalized_deliverable_name or deliverable_name
+    if not deliverable_name and deliverable_page_id:
+        try:
+            deliverable_page = notion_client.get_page(deliverable_page_id)
+        except Exception:
+            deliverable_page = None
+        if deliverable_page:
+            deliverable_name = _extract_page_title_from_properties(deliverable_page)
+
+    existing_props = (existing_task_page or {}).get("properties") or {}
+    merged_input = dict(input_data)
+    if existing_props:
+        if not merged_input.get("source"):
+            merged_input["source"] = _plain_property_value(existing_props.get("Source")) or merged_input.get("source")
+        if not merged_input.get("source_kind"):
+            merged_input["source_kind"] = _plain_property_value(existing_props.get("Source Kind")) or merged_input.get("source_kind")
+        if not merged_input.get("trace_id"):
+            merged_input["trace_id"] = _plain_property_value(existing_props.get("Trace ID")) or merged_input.get("trace_id")
+        if not merged_input.get("selected_model"):
+            merged_input["selected_model"] = _plain_property_value(existing_props.get("Model")) or merged_input.get("selected_model")
 
     resolved_icon = input_data.get("icon") or project_context.get("icon")
     if not resolved_icon:
@@ -310,7 +354,7 @@ def handle_notion_upsert_task(input_data: Dict[str, Any]) -> Dict[str, Any]:
         )
 
     page_blocks = _build_task_page_blocks(
-        input_data,
+        merged_input,
         project_context=project_context,
         deliverable_name=deliverable_name or None,
     )
@@ -324,10 +368,10 @@ def handle_notion_upsert_task(input_data: Dict[str, Any]) -> Dict[str, Any]:
         input_summary=input_data.get("input_summary"),
         error=input_data.get("error"),
         result_summary=input_data.get("result_summary"),
-        source=input_data.get("source"),
-        source_kind=input_data.get("source_kind"),
-        trace_id=input_data.get("trace_id"),
-        selected_model=input_data.get("selected_model"),
+        source=merged_input.get("source"),
+        source_kind=merged_input.get("source_kind"),
+        trace_id=merged_input.get("trace_id"),
+        selected_model=merged_input.get("selected_model"),
         project_page_id=project_page_id or None,
         deliverable_page_id=deliverable_page_id or None,
         icon=resolved_icon,
@@ -533,6 +577,23 @@ def _extract_page_title_from_properties(page: Dict[str, Any]) -> str:
         if isinstance(meta, dict) and meta.get("type") == "title":
             return notion_client._plain_text_from_rich_text(meta.get("title"))  # type: ignore[attr-defined]
     return ""
+
+
+def _plain_property_value(prop: Dict[str, Any] | None) -> Any:
+    if not isinstance(prop, dict):
+        return None
+    prop_type = prop.get("type")
+    if prop_type == "title":
+        return "".join(item.get("plain_text", "") for item in prop.get("title", []))
+    if prop_type == "rich_text":
+        return "".join(item.get("plain_text", "") for item in prop.get("rich_text", []))
+    if prop_type == "status":
+        return (prop.get("status") or {}).get("name")
+    if prop_type == "select":
+        return (prop.get("select") or {}).get("name")
+    if prop_type == "relation":
+        return [x.get("id") for x in prop.get("relation", []) if x.get("id")]
+    return None
 
 
 def _resolve_project_context(project_name: str | None = None, project_page_id: str | None = None) -> Dict[str, str]:
@@ -850,8 +911,11 @@ def _build_task_page_blocks(input_data: Dict[str, Any], project_context: Dict[st
     return blocks
 
 
-def _ensure_page_blocks(page_id: str, blocks: list[Dict[str, Any]]) -> None:
+def _ensure_page_blocks(page_id: str, blocks: list[Dict[str, Any]], *, force_replace: bool = False) -> None:
     if not page_id or not blocks:
+        return
+    if force_replace:
+        notion_client.replace_blocks_in_page(page_id=page_id, blocks=blocks)
         return
     try:
         snapshot = notion_client.read_page(page_id_or_url=page_id, max_blocks=10)
@@ -1074,7 +1138,7 @@ def handle_notion_upsert_project(input_data: Dict[str, Any]) -> Dict[str, Any]:
                 properties=props,
                 icon=resolved_icon,
             )
-            _ensure_page_blocks(page_id=result["page_id"], blocks=page_blocks)
+            _ensure_page_blocks(page_id=result["page_id"], blocks=page_blocks, force_replace=True)
             return {"ok": True, "page_id": result["page_id"], "url": result["url"], "created": False}
         else:
             result = notion_client.create_database_page(
@@ -1175,7 +1239,7 @@ def handle_notion_upsert_deliverable(input_data: Dict[str, Any]) -> Dict[str, An
                 properties=props,
                 icon=resolved_icon,
             )
-            _ensure_page_blocks(page_id=result["page_id"], blocks=page_blocks)
+            _ensure_page_blocks(page_id=result["page_id"], blocks=page_blocks, force_replace=True)
             return {"ok": True, "page_id": result["page_id"], "url": result["url"], "created": False}
 
         result = notion_client.create_database_page(

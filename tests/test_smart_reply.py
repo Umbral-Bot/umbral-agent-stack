@@ -20,10 +20,14 @@ import pytest
 from dispatcher.intent_classifier import IntentResult
 from dispatcher.smart_reply import (
     handle_smart_reply,
+    _build_instruction_message,
     _do_research,
     _do_llm_generate,
+    _handoff_instruction_to_rick,
+    _is_external_reference_instruction,
     _post_comment,
     _post_fallback,
+    _resolve_rick_main_session_id,
     ECHO_PREFIX,
 )
 
@@ -234,11 +238,13 @@ class TestTaskFlow:
 # ── Test handle_smart_reply: instruction intent ────────────────
 
 class TestInstructionFlow:
-    def test_instruction_posts_confirmation(self, wc, queue):
+    @patch("dispatcher.smart_reply._handoff_instruction_to_rick")
+    def test_instruction_posts_confirmation(self, mock_handoff, wc, queue):
+        mock_handoff.return_value = True
         wc.run.return_value = _empty_result()
         handle_smart_reply(COMMENT_TEXT_INSTRUCTION, COMMENT_ID, IntentResult("instruction", "high"), "system", wc, queue, MagicMock())
 
-        assert wc.run.call_count == 2
+        assert wc.run.call_count == 3
         assert wc.run.call_args_list[0][0][0] == "notion.add_comment"
         assert wc.run.call_args_list[0][0][1] == {
             "text": f"{ECHO_PREFIX} Instrucción registrada. Procesando configuración. (comment_id={COMMENT_ID[:8]}...)",
@@ -248,7 +254,89 @@ class TestInstructionFlow:
         assert task_payload["task_id"] == f"notion-instruction-{COMMENT_ID[:8]}"
         assert task_payload["team"] == "system"
         assert task_payload["source_kind"] == "instruction_comment"
+        assert "runtime principal" in task_payload["result_summary"]
+        assert wc.run.call_args_list[2][0][0] == "notion.upsert_task"
+        assert wc.run.call_args_list[2][0][1]["status"] == "in_progress"
+        assert "Seguimiento inyectado" in wc.run.call_args_list[2][0][1]["result_summary"]
+        mock_handoff.assert_called_once()
         queue.enqueue.assert_not_called()
+
+    @patch("dispatcher.smart_reply._handoff_instruction_to_rick")
+    def test_instruction_without_handoff_keeps_single_task_update(self, mock_handoff, wc, queue):
+        mock_handoff.return_value = False
+        wc.run.return_value = _empty_result()
+        handle_smart_reply(COMMENT_TEXT_INSTRUCTION, COMMENT_ID, IntentResult("instruction", "high"), "system", wc, queue, MagicMock())
+
+        assert wc.run.call_count == 2
+        mock_handoff.assert_called_once()
+        queue.enqueue.assert_not_called()
+
+
+class TestInstructionMirroring:
+    def test_detects_external_reference_instruction(self):
+        assert _is_external_reference_instruction("Rick, mira esta publicación de LinkedIn https://www.linkedin.com/posts/x")
+        assert not _is_external_reference_instruction("Rick, baja el tono del mensaje de bienvenida")
+
+    def test_build_instruction_message_mentions_evidence_for_external_reference(self):
+        msg = _build_instruction_message(
+            "Rick, revisa esta publicación https://www.linkedin.com/posts/x y rehace el benchmark",
+            COMMENT_ID,
+        )
+        assert f"notion-instruction-{COMMENT_ID[:8]}" in msg
+        assert "evidencia real con tools" in msg
+        assert "notion.upsert_deliverable" in msg
+        assert "notion.create_report_page" in msg
+        assert "archivala con notion.update_page_properties(archived=true)" in msg
+
+
+class TestInstructionHandoff:
+    @patch("dispatcher.smart_reply._run_openclaw_agent")
+    @patch("dispatcher.smart_reply._send_telegram_message")
+    @patch("dispatcher.smart_reply._resolve_rick_main_session_id")
+    def test_handoff_prefers_openclaw_agent(self, mock_session_id, mock_send_telegram, mock_run_agent):
+        mock_session_id.return_value = "035bee42-a55e-4192-8a2e-1d11cdb85908"
+        mock_run_agent.return_value = True
+
+        assert _handoff_instruction_to_rick("reabre el caso", COMMENT_ID) is True
+        mock_run_agent.assert_called_once()
+        mock_send_telegram.assert_not_called()
+
+    @patch("dispatcher.smart_reply._run_openclaw_agent")
+    @patch("dispatcher.smart_reply._send_telegram_message")
+    @patch("dispatcher.smart_reply._resolve_rick_main_session_id")
+    def test_handoff_falls_back_to_telegram(self, mock_session_id, mock_send_telegram, mock_run_agent):
+        mock_session_id.return_value = "035bee42-a55e-4192-8a2e-1d11cdb85908"
+        mock_run_agent.return_value = False
+        mock_send_telegram.return_value = True
+
+        assert _handoff_instruction_to_rick("reabre el caso", COMMENT_ID) is True
+        mock_run_agent.assert_called_once()
+        mock_send_telegram.assert_called_once()
+
+    def test_resolve_rick_main_session_id_prefers_exact_telegram_session(self, monkeypatch, tmp_path):
+        store = tmp_path / "sessions.json"
+        store.write_text(
+            """
+            {
+              "agent:main:telegram:slash:1813248373": {
+                "sessionId": "035bee42-a55e-4192-8a2e-1d11cdb85908",
+                "updatedAt": 1773497886432,
+                "origin": {
+                  "provider": "telegram",
+                  "from": "telegram:1813248373",
+                  "to": "telegram:1813248373"
+                }
+              }
+            }
+            """.strip(),
+            encoding="utf-8",
+        )
+        monkeypatch.setenv("OPENCLAW_MAIN_SESSION_STORE", str(store))
+        monkeypatch.delenv("OPENCLAW_MAIN_TELEGRAM_SESSION_ID", raising=False)
+        monkeypatch.delenv("TELEGRAM_CHAT_ID", raising=False)
+        monkeypatch.delenv("TELEGRAM_ALLOWLIST_ID", raising=False)
+
+        assert _resolve_rick_main_session_id() == "035bee42-a55e-4192-8a2e-1d11cdb85908"
 
 
 # ── Test handle_smart_reply: echo intent ───────────────────────

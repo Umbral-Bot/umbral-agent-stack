@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Install cron jobs (run once on VPS).
-# Preserves existing crontab entries — only adds lines if not present.
+# Preserves existing crontab entries â€” only adds lines if not present.
 set -euo pipefail
 
 DASHBOARD_LINE="*/15 * * * * $HOME/umbral-agent-stack/scripts/vps/dashboard-cron.sh >> /tmp/dashboard_cron.log 2>&1"
@@ -95,7 +95,7 @@ else
     echo "Scheduled Tasks cron added."
 fi
 
-# --- Quota Guard cron (cada 15 min — protege OpenClaw de freeze por cuota Claude) ---
+# --- Quota Guard cron (cada 15 min â€” protege OpenClaw de freeze por cuota Claude) ---
 if crontab -l 2>/dev/null | grep -qF "quota-guard-cron.sh"; then
     echo "Quota Guard cron already installed."
 else

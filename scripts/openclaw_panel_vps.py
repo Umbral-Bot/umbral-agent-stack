@@ -29,12 +29,13 @@ if str(REPO_ROOT) not in sys.path:
 from worker import config, notion_client
 from worker.notion_client import (
     _block_callout,
+    _block_bulleted,
     _block_column_list,
     _block_divider,
     _block_heading2,
     _block_heading3,
-    _block_paragraph,
     _block_table,
+    _block_toggle,
 )
 
 OPENCLAW_PAGE_ID = config.NOTION_CONTROL_ROOM_PAGE_ID
@@ -42,6 +43,9 @@ _RESIDUAL_CHILD_PAGE_PREFIXES = (
     "OODA Weekly Report - ",
     "[improvement] Workflow: self_improvement_cycle",
 )
+_ALLOWED_NAV_CHILD_PAGES = {
+    "Dashboard Rick",
+}
 
 
 def _api_client() -> httpx.Client:
@@ -99,6 +103,10 @@ def _is_residual_child_page(block: dict[str, Any]) -> bool:
     return any(title.startswith(prefix) for prefix in _RESIDUAL_CHILD_PAGE_PREFIXES)
 
 
+def _is_allowed_nav_child_page(block: dict[str, Any]) -> bool:
+    return block.get("type") == "child_page" and _extract_text(block).strip() in _ALLOWED_NAV_CHILD_PAGES
+
+
 def _archive_pages(page_ids: list[str]) -> None:
     if not page_ids:
         return
@@ -122,6 +130,10 @@ def _delete_blocks(block_ids: list[str]) -> None:
                 headers=_headers(),
                 json={"in_trash": True},
             )
+            if resp.status_code in {400, 404}:
+                raw = (resp.text or "").lower()
+                if "archived" in raw or "object_not_found" in raw:
+                    continue
             notion_client._check_response(resp, "delete block")  # type: ignore[attr-defined]
 
 
@@ -249,11 +261,112 @@ def _summarize_text(text: str, limit: int = 90) -> str:
     return text[: limit - 3].rstrip() + "..."
 
 
-def _metric_card(label: str, count: int, hint: str, emoji: str) -> list[dict[str, Any]]:
+def _metric_color(label: str, count: int, *, bridge_available: bool) -> str:
+    if label == "Bandeja":
+        if not bridge_available:
+            return "yellow_background"
+        return "blue_background" if count == 0 else "yellow_background"
+    if label == "Vencimientos":
+        return "red_background" if count else "green_background"
+    if count == 0:
+        return "green_background"
+    if count >= 3:
+        return "red_background"
+    return "yellow_background"
+
+
+def _metric_card(label: str, count: int, hint: str, emoji: str, *, color: str) -> list[dict[str, Any]]:
     return [
-        _block_callout(f"{label}\n{count}", emoji=emoji, color="gray_background"),
-        _block_paragraph(hint),
+        _block_callout(
+            f"{label}\n{count}\n{hint}",
+            emoji=emoji,
+            color=color,
+        ),
     ]
+
+
+def _primary_focus(snapshot: dict[str, Any]) -> dict[str, str]:
+    pending = snapshot["pending_deliverables"]
+    if pending:
+        item = pending[0]
+        due = item.get("due_date") or "sin fecha"
+        review = item.get("review") or "Pendiente"
+        next_action = item.get("next_action") or "Toma una decision de revision y deja la siguiente accion amarrada."
+        return {
+            "title": "Prioridad inmediata",
+            "body": (
+                f"{item['name']} en {item.get('project_name', 'Sin proyecto')}. "
+                f"Estado: {review}. Vence: {due}. "
+                f"Siguiente paso sugerido: {next_action}"
+            ),
+            "emoji": "🎯",
+            "color": "red_background" if review == "Pendiente revision" else "yellow_background",
+        }
+
+    projects = snapshot["projects_attention"]
+    if projects:
+        item = projects[0]
+        signal = item.get("blockers") or item.get("next_action") or "Sin detalle registrado."
+        return {
+            "title": "Proyecto que requiere decision",
+            "body": (
+                f"{item['name']} sigue pidiendo atencion. "
+                f"Issues: {item.get('open_issues', 0)}. "
+                f"Señal dominante: {_summarize_text(signal, 140)}"
+            ),
+            "emoji": "🧱",
+            "color": "yellow_background",
+        }
+
+    bridge = snapshot["bridge_live"]
+    if bridge:
+        item = bridge[0]
+        return {
+            "title": "Coordinacion viva",
+            "body": (
+                f"{item['title']} sigue abierto en Bandeja Puente. "
+                f"Estado: {item.get('status') or 'Sin estado'}. "
+                f"Ultimo movimiento: {item.get('last_move') or 'sin fecha'}."
+            ),
+            "emoji": "📮",
+            "color": "blue_background",
+        }
+
+    return {
+        "title": "Panel despejado",
+        "body": "No hay urgencias operativas fuertes ahora mismo. Usa este panel para revisar vencimientos y mantener el flujo limpio.",
+        "emoji": "✅",
+        "color": "green_background",
+    }
+
+
+def _panel_status_blocks(snapshot: dict[str, Any]) -> list[dict[str, Any]]:
+    summary = snapshot["summary"]
+    bridge_state = "disponible" if summary["bridge_available"] else "sin acceso"
+    return [
+        _block_callout(
+            (
+                "Estado del panel\n"
+                f"Actualizado: {snapshot['generated_at']}\n"
+                f"Entregables por revisar: {summary['pending_deliverables']}\n"
+                f"Proyectos calientes: {summary['projects_attention']}\n"
+                f"Bandeja Puente: {bridge_state}"
+            ),
+            emoji="🧭",
+            color="blue_background",
+        )
+    ]
+
+
+def _usage_guide_block() -> dict[str, Any]:
+    return _block_toggle(
+        "Como usar este panel",
+        [
+            _block_bulleted("Empieza por la tarjeta principal: resume la decision con mas impacto ahora."),
+            _block_bulleted("Luego revisa Entregables y Proyectos; ahi es donde se decide si algo se aprueba, ajusta o destraba."),
+            _block_bulleted("Usa OpenClaw para dirigir. Usa Proyectos, Tareas y Entregables para ejecutar y dejar trazabilidad."),
+        ],
+    )
 
 
 def _find_child_database_id(children: list[dict[str, Any]], title: str) -> str | None:
@@ -294,8 +407,8 @@ def _build_operational_snapshot(bridge_db_id: str | None = None) -> dict[str, An
         )
     deliverables.sort(
         key=lambda item: (
-            item.get("due_date") or "9999-99-99",
             0 if item["review"] == "Pendiente revision" else 1,
+            item.get("due_date") or "9999-99-99",
             item["project_name"],
             item["name"],
         )
@@ -428,22 +541,51 @@ def _due_rows(items: list[dict[str, Any]]) -> list[list[str]]:
 
 def _build_panel_blocks(snapshot: dict[str, Any]) -> list[dict[str, Any]]:
     summary = snapshot["summary"]
+    focus = _primary_focus(snapshot)
     bridge_hint = "Items vivos de coordinacion." if summary["bridge_available"] else "Sin acceso actual a Bandeja Puente."
     blocks: list[dict[str, Any]] = [
         _block_heading2("Resumen operativo"),
         _block_callout(
-            f"Actualizado: {snapshot['generated_at']}. "
-            "Este panel resume prioridades humanas. "
-            "La salud tecnica del stack vive en Dashboard Rick.",
-            emoji="🧭",
-            color="blue_background",
+            f"{focus['title']}\n{focus['body']}",
+            emoji=focus["emoji"],
+            color=focus["color"],
         ),
         _block_column_list(
             [
-                _metric_card("Entregables", summary["pending_deliverables"], "Pendientes o con ajustes.", "📬"),
-                _metric_card("Proyectos", summary["projects_attention"], "Con bloqueo, drift o baja traccion.", "📁"),
-                _metric_card("Bandeja", summary["bridge_live"], bridge_hint, "📮"),
-                _metric_card("Vencimientos", summary["due_items"], "Fechas limite proximas.", "⏰"),
+                _metric_card(
+                    "Entregables",
+                    summary["pending_deliverables"],
+                    "Pendientes o con ajustes",
+                    "📬",
+                    color=_metric_color("Entregables", summary["pending_deliverables"], bridge_available=summary["bridge_available"]),
+                ),
+                _metric_card(
+                    "Proyectos",
+                    summary["projects_attention"],
+                    "Con bloqueo, drift o baja traccion",
+                    "📁",
+                    color=_metric_color("Proyectos", summary["projects_attention"], bridge_available=summary["bridge_available"]),
+                ),
+                _metric_card(
+                    "Bandeja",
+                    summary["bridge_live"],
+                    bridge_hint,
+                    "📮",
+                    color=_metric_color("Bandeja", summary["bridge_live"], bridge_available=summary["bridge_available"]),
+                ),
+                _metric_card(
+                    "Vencimientos",
+                    summary["due_items"],
+                    "Fechas limite proximas",
+                    "⏰",
+                    color=_metric_color("Vencimientos", summary["due_items"], bridge_available=summary["bridge_available"]),
+                ),
+            ]
+        ),
+        _block_column_list(
+            [
+                _panel_status_blocks(snapshot),
+                [_usage_guide_block()],
             ]
         ),
         _block_heading3("Entregables por revisar"),
@@ -549,6 +691,32 @@ def _cleanup_openclaw_residuals(children: list[dict[str, Any]]) -> int:
     return len(residual_pages) + len(trailing_empty_blocks)
 
 
+def _synchronize_summary_callout(children: list[dict[str, Any]], snapshot: dict[str, Any]) -> None:
+    focus = _primary_focus(snapshot)
+    summary_idx = next(
+        (
+            idx
+            for idx, block in enumerate(children)
+            if block.get("type") == "heading_2" and _extract_text(block).strip() == "Resumen operativo"
+        ),
+        None,
+    )
+    if summary_idx is None:
+        return
+
+    for block in children[summary_idx + 1 :]:
+        block_type = block.get("type")
+        if block_type == "callout":
+            _update_block_text(
+                block,
+                f"{focus['title']}\n{focus['body']}",
+                emoji=focus["emoji"],
+            )
+            return
+        if block_type in {"heading_2", "heading_3", "divider", "child_database", "child_page"}:
+            return
+
+
 def validate_openclaw_shell(children: list[dict[str, Any]]) -> dict[str, Any]:
     first_ok = bool(children) and children[0].get("type") == "callout"
     anchor_idx = _find_bases_anchor(children)
@@ -566,8 +734,12 @@ def validate_openclaw_shell(children: list[dict[str, Any]]) -> dict[str, Any]:
         "Proximos vencimientos",
         "Bases operativas",
     }
-    quick_access_present = "Accesos rapidos" in found_headings
-    residual_child_pages = [block["id"] for block in children if block.get("type") == "child_page"]
+    quick_access_present = "Accesos rapidos" in found_headings or any(_is_allowed_nav_child_page(block) for block in children)
+    residual_child_pages = [
+        block["id"]
+        for block in children
+        if block.get("type") == "child_page" and not _is_allowed_nav_child_page(block)
+    ]
     if anchor_idx is not None:
         for block in children[anchor_idx + 1 :]:
             if block.get("type") == "child_database":
@@ -631,6 +803,9 @@ def refresh_openclaw_panel() -> dict[str, Any]:
             _delete_blocks(delete_ids)
             break
 
+    children = _list_children(OPENCLAW_PAGE_ID)
+    latest_snapshot = _build_operational_snapshot(bridge_db_id=bridge_db_id)
+    _synchronize_summary_callout(children, latest_snapshot)
     children = _list_children(OPENCLAW_PAGE_ID)
     _tidy_navigation_sections(OPENCLAW_PAGE_ID, children)
     children = _list_children(OPENCLAW_PAGE_ID)

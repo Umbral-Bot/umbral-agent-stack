@@ -15,7 +15,7 @@ REPO_DIR="${REPO_DIR:-$HOME/umbral-agent-stack}"
 FAILURES=()
 NOW=$(date -u +"%Y-%m-%d %H:%M UTC")
 
-echo "=== Health Check — $NOW ==="
+echo "=== Health Check â€” $NOW ==="
 
 # ---------------------------------------------------------------
 # 1. Redis
@@ -72,10 +72,10 @@ fi
 # ---------------------------------------------------------------
 echo ""
 if [ ${#FAILURES[@]} -eq 0 ]; then
-    echo "✓ All checks passed"
+    echo "âœ“ All checks passed"
     exit 0
 else
-    echo "✗ ${#FAILURES[@]} check(s) failed:"
+    echo "âœ— ${#FAILURES[@]} check(s) failed:"
     for f in "${FAILURES[@]}"; do
         echo "  - $f"
     done
@@ -83,9 +83,9 @@ else
     # ---------------------------------------------------------------
     # 6. Post alert to Notion Control Room (best-effort)
     # ---------------------------------------------------------------
-    ALERT_TEXT="🚨 VPS Health Check FAILED — $NOW\n"
+    ALERT_TEXT="ðŸš¨ VPS Health Check FAILED â€” $NOW\n"
     for f in "${FAILURES[@]}"; do
-        ALERT_TEXT="${ALERT_TEXT}\n• $f"
+        ALERT_TEXT="${ALERT_TEXT}\nâ€¢ $f"
     done
 
     # Try posting via the worker API (if it's reachable)
@@ -98,7 +98,7 @@ else
                 -d "{\"task\": \"notion.add_comment\", \"input\": {\"text\": \"$(echo -e "$ALERT_TEXT")\"}}" \
                 > /dev/null 2>&1 && echo "(Alert posted to Notion)" || echo "(Failed to post Notion alert)"
         else
-            echo "(WORKER_TOKEN not set — skipping Notion alert)"
+            echo "(WORKER_TOKEN not set â€” skipping Notion alert)"
         fi
     else
         # Fallback: try Python directly if worker is down
@@ -108,7 +108,7 @@ else
 from worker import notion_client
 notion_client.add_comment(page_id=None, text='''$(echo -e "$ALERT_TEXT")''')
 print('(Alert posted to Notion via Python)')
-" 2>/dev/null || echo "(Could not post Notion alert — worker down and Python fallback failed)"
+" 2>/dev/null || echo "(Could not post Notion alert â€” worker down and Python fallback failed)"
     fi
 
     exit 1

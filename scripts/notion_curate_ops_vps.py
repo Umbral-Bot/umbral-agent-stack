@@ -32,7 +32,7 @@ if str(REPO_ROOT) not in sys.path:
 from worker import config, notion_client
 from worker.tasks.notion import handle_notion_upsert_task
 
-BRIDGE_DB_ID = "8496ee73-6c7d-43a3-89cf-b9c8825b5dfc"
+LEGACY_BRIDGE_DB_ID = "8496ee73-6c7d-43a3-89cf-b9c8825b5dfc"
 SNAPSHOT_PATH = Path("docs/audits/notion-curation-snapshot-2026-03-16.json")
 
 TASK_NOISE_PREFIXES = (
@@ -136,16 +136,67 @@ def _query_db(
 
 
 def _bridge_available() -> bool:
+    bridge_db_id = _resolve_bridge_db_id()
+    if not bridge_db_id:
+        return False
     try:
         with httpx.Client(timeout=15.0) as client:
             resp = client.post(
-                f"{notion_client.NOTION_BASE_URL}/databases/{BRIDGE_DB_ID}/query",
+                f"{notion_client.NOTION_BASE_URL}/databases/{bridge_db_id}/query",
                 headers=_headers(),
                 json={"page_size": 1},
             )
     except Exception:
         return False
     return bool(resp.is_success)
+
+
+def _list_children(page_id: str) -> list[dict[str, Any]]:
+    results: list[dict[str, Any]] = []
+    next_cursor: str | None = None
+    with httpx.Client(timeout=30.0) as client:
+        while True:
+            params: dict[str, Any] = {"page_size": 100}
+            if next_cursor:
+                params["start_cursor"] = next_cursor
+            resp = client.get(
+                f"{notion_client.NOTION_BASE_URL}/blocks/{page_id}/children",
+                headers=_headers(),
+                params=params,
+            )
+            data = notion_client._check_response(resp, "list children")  # type: ignore[attr-defined]
+            results.extend(data.get("results", []))
+            next_cursor = data.get("next_cursor")
+            if not next_cursor:
+                break
+    return results
+
+
+def _find_child_database_id(page_id: str, title: str) -> str | None:
+    wanted = title.strip().lower()
+    try:
+        children = _list_children(page_id)
+    except Exception:
+        return None
+    for block in children:
+        if block.get("type") != "child_database":
+            continue
+        current = ((block.get("child_database") or {}).get("title") or "").strip().lower()
+        if current == wanted:
+            return block.get("id")
+    return None
+
+
+def _resolve_bridge_db_id() -> str | None:
+    explicit = getattr(config, "NOTION_BRIDGE_DB_ID", None)
+    if explicit:
+        return explicit
+    control_room = getattr(config, "NOTION_CONTROL_ROOM_PAGE_ID", None)
+    if control_room:
+        discovered = _find_child_database_id(control_room, "Bandeja Puente")
+        if discovered:
+            return discovered
+    return LEGACY_BRIDGE_DB_ID
 
 
 def _plain(prop: dict[str, Any] | None) -> Any:
@@ -494,15 +545,18 @@ def curate_tasks(batch_size: int = 180, keep_recent_unscoped_count: int = 4) -> 
 def curate_bridge(batch_size: int = 150, keep_recent_resolved: int = 10) -> list[dict[str, Any]]:
     if not _bridge_available():
         return []
+    bridge_db_id = _resolve_bridge_db_id()
+    if not bridge_db_id:
+        return []
     try:
-        schema = _db_schema(BRIDGE_DB_ID)
+        schema = _db_schema(bridge_db_id)
         title_prop = _property_name(schema, preferred=["Ítem"], prop_type="title")
         status_prop = _property_name(schema, preferred=["Estado"], prop_type="status")
         last_move_prop = _property_name(schema, preferred=["Último movimiento"], prop_type="date")
         notes_prop = _property_name(schema, preferred=["Notas"], prop_type="rich_text")
 
         rows = _query_db(
-            BRIDGE_DB_ID,
+            bridge_db_id,
             sorts=[{"property": last_move_prop or "Último movimiento", "direction": "descending"}] if last_move_prop else None,
         )
     except Exception:
@@ -543,9 +597,10 @@ def _db_counts() -> dict[str, Any]:
     deliverables = _query_db(config.NOTION_DELIVERABLES_DB_ID)
     projects = _query_db(config.NOTION_PROJECTS_DB_ID)
     bridge_available = _bridge_available()
+    bridge_db_id = _resolve_bridge_db_id()
     if bridge_available:
         try:
-            bridge = _query_db(BRIDGE_DB_ID)
+            bridge = _query_db(bridge_db_id) if bridge_db_id else []
         except Exception:
             bridge_available = False
             bridge = []

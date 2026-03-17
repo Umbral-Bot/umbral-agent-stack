@@ -46,6 +46,27 @@ _INSTRUCTION_VERBS: list[str] = [
     "correct", "reopen", "lower", "raise", "mark",
 ]
 
+# Short human review feedback that should trigger a real follow-up instead of
+# falling back to "echo". These phrases commonly appear on deliverables/pages.
+_REVIEW_FEEDBACK_PATTERNS: list[str] = [
+    "no se entiende",
+    "trabajo incompleto",
+    "incompleto",
+    "incompleta",
+    "falta",
+    "flojo",
+    "floja",
+    "confuso",
+    "confusa",
+    "rehacer",
+    "rehaz",
+    "ajustes",
+    "aprobado con ajustes",
+    "revisar de nuevo",
+    "regulariza",
+    "corrige esto",
+]
+
 # Team keywords
 _TEAM_KEYWORDS: dict[str, list[str]] = {
     "marketing": [
@@ -157,6 +178,17 @@ def parse_temporal_features(text: str) -> tuple[Optional[datetime], Optional[str
         
     return None, None
 
+
+def _looks_like_question(text: str) -> bool:
+    """
+    Return True only for real question punctuation, not for mojibake where
+    accented characters became '?' inside words (e.g. 'regularizaci?n').
+    """
+    if not text:
+        return False
+    sanitized = re.sub(r"(?<=\w)\?(?=\w)", "", text)
+    return "?" in sanitized
+
 def classify_intent(text: str) -> IntentResult:
     """
     Classify a comment's intent using simple heuristics.
@@ -176,8 +208,8 @@ def classify_intent(text: str) -> IntentResult:
             recurrence=recurrence
         )
 
-    # 1. Question — anywhere in text
-    if "?" in cleaned:
+    # 1. Question — anywhere in text, but ignore mojibake '?' inside words.
+    if _looks_like_question(cleaned):
         return IntentResult(intent="question", confidence="high")
 
     lower = cleaned.lower()
@@ -194,6 +226,11 @@ def classify_intent(text: str) -> IntentResult:
     if words & set(_TASK_VERBS):
         return IntentResult(intent="task", confidence="medium")
     if words & set(_INSTRUCTION_VERBS):
+        return IntentResult(intent="instruction", confidence="medium")
+
+    # 5b. Short review feedback on deliverables/pages should be treated as
+    # actionable operational feedback, not as meaningless echo.
+    if any(pattern in lower for pattern in _REVIEW_FEEDBACK_PATTERNS):
         return IntentResult(intent="instruction", confidence="medium")
 
     # 6. Fallback

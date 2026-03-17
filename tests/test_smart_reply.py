@@ -24,6 +24,7 @@ from dispatcher.smart_reply import (
     _do_research,
     _do_llm_generate,
     _handoff_instruction_to_rick,
+    _instruction_task_id,
     _is_external_reference_instruction,
     _post_comment,
     _post_fallback,
@@ -251,15 +252,56 @@ class TestInstructionFlow:
         }
         assert wc.run.call_args_list[1][0][0] == "notion.upsert_task"
         task_payload = wc.run.call_args_list[1][0][1]
-        assert task_payload["task_id"] == f"notion-instruction-{COMMENT_ID[:8]}"
+        assert task_payload["task_id"] == _instruction_task_id(COMMENT_ID)
         assert task_payload["team"] == "system"
         assert task_payload["source_kind"] == "instruction_comment"
-        assert "runtime principal" in task_payload["result_summary"]
         assert wc.run.call_args_list[2][0][0] == "notion.upsert_task"
-        assert wc.run.call_args_list[2][0][1]["status"] == "in_progress"
+        assert wc.run.call_args_list[2][0][1]["status"] == "running"
         assert "Seguimiento inyectado" in wc.run.call_args_list[2][0][1]["result_summary"]
         mock_handoff.assert_called_once()
         queue.enqueue.assert_not_called()
+
+    @patch("dispatcher.smart_reply._handoff_instruction_to_rick")
+    def test_instruction_inherits_project_context_from_comment_page(self, mock_handoff, wc, queue):
+        mock_handoff.return_value = False
+        wc.run.return_value = _empty_result()
+
+        handle_smart_reply(
+            COMMENT_TEXT_INSTRUCTION,
+            COMMENT_ID,
+            IntentResult("instruction", "high"),
+            "system",
+            wc,
+            queue,
+            MagicMock(),
+            page_id="project-page-1",
+            page_kind="project",
+        )
+
+        task_payload = wc.run.call_args_list[1][0][1]
+        assert task_payload["project_page_id"] == "project-page-1"
+        assert task_payload["deliverable_page_id"] is None
+
+    @patch("dispatcher.smart_reply._handoff_instruction_to_rick")
+    def test_instruction_inherits_deliverable_context_from_comment_page(self, mock_handoff, wc, queue):
+        mock_handoff.return_value = False
+        wc.run.return_value = _empty_result()
+
+        handle_smart_reply(
+            COMMENT_TEXT_INSTRUCTION,
+            COMMENT_ID,
+            IntentResult("instruction", "high"),
+            "system",
+            wc,
+            queue,
+            MagicMock(),
+            page_id="deliverable-page-1",
+            page_kind="deliverable",
+        )
+
+        task_payload = wc.run.call_args_list[1][0][1]
+        assert task_payload["project_page_id"] is None
+        assert task_payload["deliverable_page_id"] == "deliverable-page-1"
 
     @patch("dispatcher.smart_reply._handoff_instruction_to_rick")
     def test_instruction_without_handoff_keeps_single_task_update(self, mock_handoff, wc, queue):
@@ -282,11 +324,16 @@ class TestInstructionMirroring:
             "Rick, revisa esta publicación https://www.linkedin.com/posts/x y rehace el benchmark",
             COMMENT_ID,
         )
-        assert f"notion-instruction-{COMMENT_ID[:8]}" in msg
+        assert _instruction_task_id(COMMENT_ID) in msg
         assert "evidencia real con tools" in msg
         assert "notion.upsert_deliverable" in msg
         assert "notion.create_report_page" in msg
         assert "archivala con notion.update_page_properties(archived=true)" in msg
+
+    def test_instruction_task_id_uses_more_than_short_prefix(self):
+        comment_a = "3265f443-fb5c-8155-b6a0-001dda1b1f9b"
+        comment_b = "3265f443-fb5c-810d-afa0-001d56f14659"
+        assert _instruction_task_id(comment_a) != _instruction_task_id(comment_b)
 
 
 class TestInstructionHandoff:

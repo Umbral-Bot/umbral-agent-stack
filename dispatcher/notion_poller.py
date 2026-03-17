@@ -39,6 +39,13 @@ REDIS_KEY_PROCESSED_COMMENT_PREFIX = "umbral:notion_poller:processed_comment:"
 PROCESSED_COMMENT_TTL_SEC = 24 * 60 * 60
 DEFAULT_POLL_AT_MINUTE = 10  # XX:10 de cada hora (despues de Enlace a las XX:00)
 ECHO_PREFIX = "Rick:"  # Comentarios que empiezan por esto los ignoramos (son nuestros)
+DEFAULT_POLL_OVERLAP_SEC = 5 * 60
+DEFAULT_REVIEW_TARGET_LIMIT = 30
+REVIEW_DELIVERABLE_STATUSES = (
+    "Pendiente revision",
+    "Aprobado con ajustes",
+    "Rechazado",
+)
 
 
 def _parse_notion_datetime(value: str | None) -> datetime | None:
@@ -78,6 +85,142 @@ def _extract_poll_comments_result(response: dict | None) -> list[dict]:
     return []
 
 
+def _compute_effective_since(last_ts: str | None) -> str | None:
+    last_dt = _parse_notion_datetime(last_ts)
+    if not last_dt:
+        return None
+    overlap_sec = int(os.environ.get("NOTION_POLL_OVERLAP_SEC", str(DEFAULT_POLL_OVERLAP_SEC)))
+    return (last_dt - timedelta(seconds=max(0, overlap_sec))).isoformat()
+
+
+def _extract_read_database_items(response: dict | None) -> list[dict]:
+    if not isinstance(response, dict):
+        return []
+    nested = response.get("result")
+    if isinstance(nested, dict) and isinstance(nested.get("items"), list):
+        return nested["items"]
+    if isinstance(response.get("items"), list):
+        return response["items"]
+    return []
+
+
+def _unique_page_ids(items: list[dict]) -> list[str]:
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for item in items:
+        page_id = str(item.get("page_id") or item.get("id") or "").strip()
+        if not page_id or page_id in seen:
+            continue
+        seen.add(page_id)
+        ordered.append(page_id)
+    return ordered
+
+
+def _resolve_review_targets(wc: WorkerClient) -> list[dict[str, str]]:
+    """Return relevant Notion pages that may carry human review comments."""
+    targets: list[dict[str, str]] = []
+    max_items = int(os.environ.get("NOTION_REVIEW_TARGET_LIMIT", str(DEFAULT_REVIEW_TARGET_LIMIT)))
+
+    deliverables_db_id = os.environ.get("NOTION_DELIVERABLES_DB_ID", "").strip()
+    if deliverables_db_id:
+        deliverable_filter = {
+            "or": [
+                {
+                    "property": "Estado revision",
+                    "status": {"equals": status},
+                }
+                for status in REVIEW_DELIVERABLE_STATUSES
+            ]
+        }
+        try:
+            deliverable_resp = wc.run(
+                "notion.read_database",
+                {
+                    "database_id_or_url": deliverables_db_id,
+                    "max_items": max_items,
+                    "filter": deliverable_filter,
+                },
+            )
+            for page_id in _unique_page_ids(_extract_read_database_items(deliverable_resp)):
+                targets.append({"page_id": page_id, "page_kind": "deliverable"})
+        except Exception:
+            logger.warning(
+                "Failed to resolve deliverable review targets with review filter; retrying without filter",
+                exc_info=True,
+            )
+            try:
+                deliverable_resp = wc.run(
+                    "notion.read_database",
+                    {
+                        "database_id_or_url": deliverables_db_id,
+                        "max_items": max_items,
+                    },
+                )
+                for page_id in _unique_page_ids(_extract_read_database_items(deliverable_resp)):
+                    targets.append({"page_id": page_id, "page_kind": "deliverable"})
+            except Exception:
+                logger.warning("Failed to resolve deliverable review targets without filter", exc_info=True)
+
+    projects_db_id = os.environ.get("NOTION_PROJECTS_DB_ID", "").strip()
+    if projects_db_id:
+        try:
+            project_resp = wc.run(
+                "notion.read_database",
+                {
+                    "database_id_or_url": projects_db_id,
+                    "max_items": min(15, max_items),
+                },
+            )
+            for page_id in _unique_page_ids(_extract_read_database_items(project_resp)):
+                targets.append({"page_id": page_id, "page_kind": "project"})
+        except Exception:
+            logger.warning("Failed to resolve project review targets", exc_info=True)
+
+    control_room_page = os.environ.get("NOTION_CONTROL_ROOM_PAGE_ID", "").strip()
+    deduped: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for target in targets:
+        page_id = target.get("page_id", "").strip()
+        if not page_id or page_id == control_room_page or page_id in seen:
+            continue
+        seen.add(page_id)
+        deduped.append(target)
+    return deduped
+
+
+def _collect_candidate_comments(wc: WorkerClient, last_ts: str | None, limit: int) -> list[dict]:
+    """Poll comments from Control Room plus active review targets."""
+    effective_since = _compute_effective_since(last_ts)
+    comments_by_id: dict[str, dict] = {}
+
+    poll_targets: list[dict[str, str | None]] = [{"page_id": None, "page_kind": "control_room"}]
+    poll_targets.extend(_resolve_review_targets(wc))
+
+    for target in poll_targets:
+        page_id = target.get("page_id")
+        page_kind = target.get("page_kind")
+        response = wc.notion_poll_comments(
+            since=effective_since,
+            limit=limit,
+            page_id=page_id,
+        )
+        for comment in _extract_poll_comments_result(response):
+            comment_id = str(comment.get("id") or "").strip()
+            if not comment_id:
+                continue
+            merged = dict(comment)
+            if page_id:
+                merged.setdefault("page_id", page_id)
+                if page_kind:
+                    merged.setdefault("page_kind", page_kind)
+            comments_by_id.setdefault(comment_id, merged)
+
+    return sorted(
+        comments_by_id.values(),
+        key=lambda c: _parse_notion_datetime(c.get("created_time")) or datetime.min.replace(tzinfo=timezone.utc),
+    )
+
+
 def _claim_comment_processing(r: redis.Redis, comment_id: str) -> bool:
     if not comment_id:
         return False
@@ -96,8 +239,7 @@ def _do_poll(
         last_ts = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
         r.set(REDIS_KEY_LAST_TS, last_ts)
 
-    response = wc.notion_poll_comments(since=last_ts, limit=20)
-    comments = _extract_poll_comments_result(response)
+    comments = _collect_candidate_comments(wc, last_ts, limit=20)
     latest_dt = _parse_notion_datetime(last_ts) or datetime.min.replace(tzinfo=timezone.utc)
 
     logger.info("Notion poll retrieved %d comments since %s", len(comments), last_ts)
@@ -130,7 +272,17 @@ def _do_poll(
             comment_id[:8],
             text[:40],
         )
-        handle_smart_reply(text, comment_id, intent, team, wc, queue, scheduler)
+        handle_smart_reply(
+            text,
+            comment_id,
+            intent,
+            team,
+            wc,
+            queue,
+            scheduler,
+            page_id=c.get("page_id"),
+            page_kind=c.get("page_kind"),
+        )
 
     latest_ts = latest_dt.isoformat()
     if latest_ts != last_ts:

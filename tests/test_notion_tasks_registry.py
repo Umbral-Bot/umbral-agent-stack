@@ -177,6 +177,55 @@ def test_handle_notion_upsert_task_reuses_existing_source_context_when_refreshin
     assert "Entregable: Benchmark parcial de Kris Wojslaw para el embudo" in plain_texts
 
 
+def test_handle_notion_upsert_task_infers_project_from_deliverable_relation():
+    from worker.tasks.notion import handle_notion_upsert_task
+
+    with patch("worker.tasks.notion.config") as mock_cfg, patch("worker.tasks.notion.notion_client") as mock_nc:
+        mock_cfg.NOTION_TASKS_DB_ID = None
+        mock_cfg.NOTION_DELIVERABLES_DB_ID = "deliverables-db"
+        mock_nc.get_page.side_effect = [
+            {
+                "id": "deliverable-page-1",
+                "url": "https://www.notion.so/deliverable-page-1",
+                "properties": {
+                    "Nombre": {
+                        "type": "title",
+                        "title": [{"plain_text": "Ingeniería inversa del sistema de Ruben Hassid para el embudo"}],
+                    },
+                    "Proyecto": {
+                        "type": "relation",
+                        "relation": [{"id": "project-page-1"}],
+                    },
+                },
+            },
+            {
+                "id": "project-page-1",
+                "url": "https://www.notion.so/project-page-1",
+                "icon": {"type": "emoji", "emoji": "\U0001F3AF"},
+                "properties": {
+                    "Nombre": {"type": "title", "title": [{"plain_text": "Proyecto Embudo Ventas"}]}
+                },
+            },
+        ]
+        mock_nc.upsert_task.return_value = {"page_id": "task-page-ctx", "updated": True}
+
+        result = handle_notion_upsert_task(
+            {
+                "task_id": "task-ctx",
+                "status": "queued",
+                "team": "system",
+                "task": "notion_instruction_followup",
+                "deliverable_page_id": "deliverable-page-1",
+            }
+        )
+
+    assert result["page_id"] == "task-page-ctx"
+    kwargs = mock_nc.upsert_task.call_args.kwargs
+    assert kwargs["deliverable_page_id"] == "deliverable-page-1"
+    assert kwargs["project_page_id"] == "project-page-1"
+    assert kwargs["icon"] == "\U0001F3AF"
+
+
 def test_notion_client_upsert_task_includes_relation_properties_icon_and_children_on_create():
     from worker import notion_client
 

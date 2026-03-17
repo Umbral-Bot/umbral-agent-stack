@@ -91,6 +91,16 @@ class TestClassifyIntent:
         )
         assert r.intent == "instruction"
 
+    def test_instruction_short_review_feedback_no_se_entiende(self):
+        r = classify_intent("no se entiende")
+        assert r.intent == "instruction"
+        assert r.confidence == "medium"
+
+    def test_instruction_short_review_feedback_trabajo_incompleto(self):
+        r = classify_intent("trabajo incompleto")
+        assert r.intent == "instruction"
+        assert r.confidence == "medium"
+
     # -- Echo (fallback) --
 
     def test_echo_unrecognized_text(self):
@@ -112,6 +122,12 @@ class TestClassifyIntent:
         """If text has both '?' and task verb, question wins."""
         r = classify_intent("¿Puedes buscar información?")
         assert r.intent == "question"
+
+    def test_mojibake_question_marks_inside_words_do_not_force_question(self):
+        r = classify_intent(
+            "regularizaci?n del embudo: corrige esto y d?jalo trazable"
+        )
+        assert r.intent == "instruction"
 
 
 # ---------------------------------------------------------------------------

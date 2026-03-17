@@ -1,4 +1,5 @@
 """Post a message to Notion Control Room via Worker API."""
+import base64
 import json
 import os
 import sys
@@ -6,8 +7,14 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from client.worker_client import WorkerClient
 
-msg = " ".join(sys.argv[1:]).strip() if len(sys.argv) > 1 else "Rick: ping"
-if len(sys.argv) <= 1:
+argv = sys.argv[1:]
+msg = "Rick: ping"
+
+if len(argv) >= 2 and argv[0] == "--base64":
+    msg = base64.b64decode(argv[1]).decode("utf-8")
+elif argv:
+    msg = " ".join(argv).strip() or msg
+else:
     stdin_text = sys.stdin.read().strip()
     if stdin_text:
         msg = stdin_text

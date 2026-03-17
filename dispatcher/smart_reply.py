@@ -17,6 +17,7 @@ import json
 import logging
 import os
 import pathlib
+import re
 import subprocess
 import threading
 import urllib.error
@@ -82,6 +83,8 @@ def handle_smart_reply(
     wc: WorkerClient,
     queue: TaskQueue,
     scheduler: TaskScheduler,
+    page_id: str | None = None,
+    page_kind: str | None = None,
 ) -> None:
     """
     Generate a smart reply and post it to Notion.
@@ -110,7 +113,14 @@ def handle_smart_reply(
         elif intent == "scheduled_task":
             _handle_scheduled_task(comment_text, comment_id, team, wc, scheduler, intent_obj)
         elif intent == "instruction":
-            _handle_instruction(comment_text, comment_id, team, wc)
+            _handle_instruction(
+                comment_text,
+                comment_id,
+                team,
+                wc,
+                page_id=page_id,
+                page_kind=page_kind,
+            )
         else:
             # echo — just acknowledge
             _post_comment(wc, f"{ECHO_PREFIX} Recibido. (comment_id={short_id}...)")
@@ -323,9 +333,20 @@ def _handle_task_with_workflow(
     )
 
 
-def _handle_instruction(text: str, comment_id: str, team: str, wc: WorkerClient) -> None:
+def _handle_instruction(
+    text: str,
+    comment_id: str,
+    team: str,
+    wc: WorkerClient,
+    *,
+    page_id: str | None = None,
+    page_kind: str | None = None,
+) -> None:
     """Confirm instruction received and register a follow-up task in Notion."""
     short_id = comment_id[:8]
+    instruction_task_id = _instruction_task_id(comment_id)
+    project_page_id = page_id if page_id and page_kind == "project" else None
+    deliverable_page_id = page_id if page_id and page_kind == "deliverable" else None
     reply = (
         f"{ECHO_PREFIX} Instrucción registrada. "
         f"Procesando configuración. (comment_id={short_id}...)"
@@ -336,7 +357,7 @@ def _handle_instruction(text: str, comment_id: str, team: str, wc: WorkerClient)
         wc.run(
             "notion.upsert_task",
             {
-                "task_id": f"notion-instruction-{short_id}",
+                "task_id": instruction_task_id,
                 "status": "queued",
                 "team": team or "system",
                 "task": "notion_instruction_followup",
@@ -346,6 +367,8 @@ def _handle_instruction(text: str, comment_id: str, team: str, wc: WorkerClient)
                 "source": "notion_poll",
                 "source_kind": "instruction_comment",
                 "trace_id": comment_id,
+                "project_page_id": project_page_id,
+                "deliverable_page_id": deliverable_page_id,
             },
         )
     except Exception:
@@ -359,8 +382,8 @@ def _handle_instruction(text: str, comment_id: str, team: str, wc: WorkerClient)
             wc.run(
                 "notion.upsert_task",
                 {
-                    "task_id": f"notion-instruction-{short_id}",
-                    "status": "in_progress",
+                    "task_id": instruction_task_id,
+                    "status": "running",
                     "team": team or "system",
                     "task": "notion_instruction_followup",
                     "task_name": f"Instrucción desde Notion: {text[:90]}",
@@ -369,6 +392,8 @@ def _handle_instruction(text: str, comment_id: str, team: str, wc: WorkerClient)
                     "source": "notion_poll",
                     "source_kind": "instruction_comment",
                     "trace_id": comment_id,
+                    "project_page_id": project_page_id,
+                    "deliverable_page_id": deliverable_page_id,
                 },
             )
         except Exception:
@@ -397,11 +422,18 @@ def _is_external_reference_instruction(text: str) -> bool:
     return any(marker in lowered for marker in markers)
 
 
+def _instruction_task_id(comment_id: str) -> str:
+    raw = re.sub(r"[^0-9a-zA-Z]", "", comment_id or "")
+    suffix = raw[:32] if raw else "unknown"
+    return f"notion-instruction-{suffix}"
+
+
 def _build_instruction_message(text: str, comment_id: str) -> str:
     short_id = comment_id[:8]
+    instruction_task_id = _instruction_task_id(comment_id)
     lines = [
         "Rick: seguimiento activo desde Control Room.",
-        f"Referencia interna: notion-instruction-{short_id}",
+        f"Referencia interna: {instruction_task_id}",
         f"Instruccion: {text.strip()}",
         "",
         "Esto no queda cerrado solo con registro en Notion.",

@@ -298,6 +298,7 @@ def handle_notion_upsert_task(input_data: Dict[str, Any]) -> Dict[str, Any]:
 
     deliverable_page_id = (input_data.get("deliverable_page_id") or "").strip()
     deliverable_name = (input_data.get("deliverable_name") or "").strip()
+    deliverable_page = None
     if not deliverable_page_id and existing_task_page:
         existing_deliverable = _plain_property_value((existing_task_page.get("properties") or {}).get("Entregable")) or []
         if existing_deliverable:
@@ -322,12 +323,17 @@ def handle_notion_upsert_task(input_data: Dict[str, Any]) -> Dict[str, Any]:
         if matches:
             deliverable_page_id = matches[0]["id"]
             deliverable_name = normalized_deliverable_name or deliverable_name
-    if not deliverable_name and deliverable_page_id:
+    if deliverable_page_id:
         try:
             deliverable_page = notion_client.get_page(deliverable_page_id)
         except Exception:
             deliverable_page = None
-        if deliverable_page:
+        if not project_page_id and deliverable_page:
+            deliverable_project = _plain_property_value((deliverable_page.get("properties") or {}).get("Proyecto")) or []
+            if deliverable_project:
+                project_page_id = str(deliverable_project[0])
+                project_context = _resolve_project_context(project_page_id=project_page_id or None)
+        if not deliverable_name and deliverable_page:
             deliverable_name = _extract_page_title_from_properties(deliverable_page)
 
     existing_props = (existing_task_page or {}).get("properties") or {}

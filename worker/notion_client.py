@@ -100,6 +100,11 @@ def _normalize_icon(icon: str | None) -> dict[str, Any] | None:
     return {"type": "emoji", "emoji": value}
 
 
+def _is_icon_validation_error(exc: Exception) -> bool:
+    message = str(exc)
+    return "validation_error" in message and "body.icon" in message
+
+
 def _find_property_name(
     properties: dict[str, Any],
     candidates: list[str],
@@ -730,7 +735,20 @@ def create_database_page(
             headers=_headers(),
             json=payload,
         )
-        result = _check_response(resp, "create_database_page")
+        try:
+            result = _check_response(resp, "create_database_page")
+        except Exception as exc:
+            if icon_payload and _is_icon_validation_error(exc):
+                logger.warning("Retrying create_database_page without icon after Notion icon validation error")
+                payload.pop("icon", None)
+                resp = client.post(
+                    f"{NOTION_BASE_URL}/pages",
+                    headers=_headers(),
+                    json=payload,
+                )
+                result = _check_response(resp, "create_database_page")
+            else:
+                raise
         page_id = result["id"]
 
         if children and len(children) > 100:
@@ -783,7 +801,20 @@ def update_page_properties(
             headers=_headers(),
             json=payload,
         )
-        result = _check_response(resp, "update_page_properties")
+        try:
+            result = _check_response(resp, "update_page_properties")
+        except Exception as exc:
+            if icon_payload and _is_icon_validation_error(exc):
+                logger.warning("Retrying update_page_properties without icon after Notion icon validation error")
+                payload.pop("icon", None)
+                resp = client.patch(
+                    f"{NOTION_BASE_URL}/pages/{page_id}",
+                    headers=_headers(),
+                    json=payload,
+                )
+                result = _check_response(resp, "update_page_properties")
+            else:
+                raise
 
     return {"page_id": result.get("id", page_id), "url": result.get("url", ""), "updated": True}
 

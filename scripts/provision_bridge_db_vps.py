@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Provisiona una base "Bandeja Puente" bajo la pagina OpenClaw si falta.
+Provisiona y mantiene la base `Bandeja Puente` bajo OpenClaw.
 
-- Reutiliza una DB existente si ya cuelga de OpenClaw con ese titulo.
-- Si no existe, crea una nueva base minima operativa compatible con
-  scripts/openclaw_panel_vps.py y scripts/notion_curate_ops_vps.py.
+- Reutiliza una DB existente si ya cuelga de OpenClaw con ese título.
+- Si existe, actualiza su schema mínimo operativo.
+- Si no existe, crea una nueva con el schema esperado por OpenClaw.
 """
 
 from __future__ import annotations
@@ -70,6 +70,59 @@ def _find_child_database_id(page_id: str, title: str) -> str | None:
     return None
 
 
+def _bridge_properties() -> dict[str, Any]:
+    return {
+        "Ítem": {"title": {}},
+        "Estado": {
+            "status": {
+                "options": [
+                    {"name": "Nuevo", "color": "blue"},
+                    {"name": "En curso", "color": "yellow"},
+                    {"name": "Esperando", "color": "orange"},
+                    {"name": "Resuelto", "color": "green"},
+                ]
+            }
+        },
+        "Último movimiento": {"date": {}},
+        "Notas": {"rich_text": {}},
+        "Proyecto": {"rich_text": {}},
+        "Prioridad": {
+            "select": {
+                "options": [
+                    {"name": "Alta", "color": "red"},
+                    {"name": "Media", "color": "yellow"},
+                    {"name": "Baja", "color": "gray"},
+                ]
+            }
+        },
+        "Origen": {
+            "select": {
+                "options": [
+                    {"name": "Rick", "color": "blue"},
+                    {"name": "David", "color": "purple"},
+                    {"name": "Sistema", "color": "pink"},
+                    {"name": "Control Room", "color": "brown"},
+                    {"name": "Proyecto", "color": "green"},
+                    {"name": "Entregable", "color": "orange"},
+                    {"name": "Manual", "color": "gray"},
+                ]
+            }
+        },
+        "Siguiente acción": {"rich_text": {}},
+        "Link": {"url": {}},
+    }
+
+
+def _ensure_bridge_schema(database_id: str) -> None:
+    _api(
+        "PATCH",
+        f"/databases/{database_id}",
+        {
+            "properties": _bridge_properties(),
+        },
+    )
+
+
 def provision_bridge_db() -> dict[str, Any]:
     parent_page_id = config.NOTION_CONTROL_ROOM_PAGE_ID
     if not parent_page_id:
@@ -77,29 +130,22 @@ def provision_bridge_db() -> dict[str, Any]:
 
     existing_id = _find_child_database_id(parent_page_id, "Bandeja Puente")
     if existing_id:
-        return {"created": False, "database_id": existing_id, "title": "Bandeja Puente"}
+        _ensure_bridge_schema(existing_id)
+        return {"created": False, "database_id": existing_id, "title": "Bandeja Puente", "schema_updated": True}
 
     payload = {
         "parent": {"type": "page_id", "page_id": parent_page_id},
         "title": [{"type": "text", "text": {"content": "Bandeja Puente"}}],
-        "properties": {
-            "Ítem": {"title": {}},
-            "Estado": {
-                "status": {
-                    "options": [
-                        {"name": "Nuevo", "color": "blue"},
-                        {"name": "En curso", "color": "yellow"},
-                        {"name": "Esperando", "color": "orange"},
-                        {"name": "Resuelto", "color": "green"},
-                    ]
-                }
-            },
-            "Último movimiento": {"date": {}},
-            "Notas": {"rich_text": {}},
-        },
+        "properties": _bridge_properties(),
     }
     db = _api("POST", "/databases", payload)
-    return {"created": True, "database_id": db.get("id"), "url": db.get("url", ""), "title": "Bandeja Puente"}
+    return {
+        "created": True,
+        "database_id": db.get("id"),
+        "url": db.get("url", ""),
+        "title": "Bandeja Puente",
+        "schema_updated": True,
+    }
 
 
 def main() -> int:

@@ -36,6 +36,9 @@ def test_build_panel_blocks_use_tables_and_summary_cards():
                 "status": "En curso",
                 "last_move": "2026-03-16",
                 "notes": "Pendiente revisión humana.",
+                "project": "Proyecto Embudo Ventas",
+                "priority": "Alta",
+                "next_action": "Resolver revisión humana del benchmark y dejar siguiente tarea.",
             }
         ],
         "due_items": [
@@ -84,6 +87,38 @@ def test_primary_focus_prioritizes_first_pending_deliverable():
     assert focus["title"] == "Prioridad inmediata"
     assert "Kris Wojslaw" in focus["body"]
     assert focus["emoji"] == "🎯"
+
+
+def test_primary_focus_bridge_uses_project_and_next_action():
+    snapshot = {
+        "summary": {
+            "pending_deliverables": 0,
+            "deliverables_adjustments": 0,
+            "projects_attention": 0,
+            "bridge_live": 1,
+            "bridge_available": True,
+            "due_items": 0,
+        },
+        "pending_deliverables": [],
+        "projects_attention": [],
+        "bridge_live": [
+            {
+                "title": "Responder comentario de validación",
+                "status": "Esperando",
+                "project": "Proyecto Embudo Ventas",
+                "priority": "Alta",
+                "next_action": "Confirmar si se deriva a entregable o se cierra como parcial.",
+                "notes": "Caso Kris en revisión.",
+            }
+        ],
+        "due_items": [],
+    }
+
+    focus = openclaw_panel_vps._primary_focus(snapshot)
+    assert focus["title"] == "Coordinacion viva"
+    assert "Proyecto Embudo Ventas" in focus["body"]
+    assert "Confirmar si se deriva" in focus["body"]
+    assert focus["emoji"] == "📮"
 
 
 def test_synchronize_summary_callout_updates_first_callout_after_summary(monkeypatch):

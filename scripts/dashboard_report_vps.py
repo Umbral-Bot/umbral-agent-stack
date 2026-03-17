@@ -18,6 +18,7 @@ import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 repo_root = Path(__file__).resolve().parent.parent
 if str(repo_root) not in sys.path:
@@ -31,9 +32,11 @@ REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 WORKER_URL_VM = os.environ.get("WORKER_URL_VM", "").strip() or None
 WORKER_URL_VM_INTERACTIVE = os.environ.get("WORKER_URL_VM_INTERACTIVE", "").strip() or None
 NOTION_API_KEY = os.environ.get("NOTION_API_KEY", "").strip()
+NOTION_CONTROL_ROOM_PAGE_ID = os.environ.get("NOTION_CONTROL_ROOM_PAGE_ID", "").strip()
 NOTION_TASKS_DB_ID = os.environ.get("NOTION_TASKS_DB_ID", "").strip()
 NOTION_DELIVERABLES_DB_ID = os.environ.get("NOTION_DELIVERABLES_DB_ID", "").strip()
-NOTION_BRIDGE_DB_ID = "8496ee73-6c7d-43a3-89cf-b9c8825b5dfc"
+NOTION_BRIDGE_DB_ID = os.environ.get("NOTION_BRIDGE_DB_ID", "").strip()
+LEGACY_BRIDGE_DB_ID = "8496ee73-6c7d-43a3-89cf-b9c8825b5dfc"
 
 TECHNICAL_TASK_PREFIXES = (
     "windows.fs.",
@@ -111,6 +114,60 @@ def _notion_query_rows(database_id: str) -> list[dict]:
     return rows
 
 
+def _notion_list_children(page_id: str) -> list[dict[str, Any]]:
+    if not NOTION_API_KEY or not page_id:
+        return []
+    headers = {
+        "Authorization": f"Bearer {NOTION_API_KEY}",
+        "Notion-Version": "2022-06-28",
+        "Content-Type": "application/json",
+    }
+    rows: list[dict[str, Any]] = []
+    next_cursor: str | None = None
+    while True:
+        params: dict[str, object] = {"page_size": 100}
+        if next_cursor:
+            params["start_cursor"] = next_cursor
+        resp = httpx.get(
+            f"https://api.notion.com/v1/blocks/{page_id}/children",
+            headers=headers,
+            params=params,
+            timeout=20,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        rows.extend(data.get("results", []))
+        next_cursor = data.get("next_cursor")
+        if not next_cursor:
+            break
+    return rows
+
+
+def _find_child_database_id(page_id: str, title: str) -> str | None:
+    wanted = title.strip().lower()
+    try:
+        children = _notion_list_children(page_id)
+    except Exception:
+        return None
+    for block in children:
+        if block.get("type") != "child_database":
+            continue
+        current = ((block.get("child_database") or {}).get("title") or "").strip().lower()
+        if current == wanted:
+            return block.get("id")
+    return None
+
+
+def _resolve_bridge_db_id() -> str:
+    if NOTION_BRIDGE_DB_ID:
+        return NOTION_BRIDGE_DB_ID
+    if NOTION_CONTROL_ROOM_PAGE_ID:
+        discovered = _find_child_database_id(NOTION_CONTROL_ROOM_PAGE_ID, "Bandeja Puente")
+        if discovered:
+            return discovered
+    return LEGACY_BRIDGE_DB_ID
+
+
 def _plain(prop: dict | None):
     if not isinstance(prop, dict):
         return None
@@ -134,7 +191,7 @@ def _notion_ops_summary() -> dict | None:
     try:
         tasks = _notion_query_rows(NOTION_TASKS_DB_ID)
         deliverables = _notion_query_rows(NOTION_DELIVERABLES_DB_ID)
-        bridge = _notion_query_rows(NOTION_BRIDGE_DB_ID)
+        bridge = _notion_query_rows(_resolve_bridge_db_id())
     except Exception:
         return None
 

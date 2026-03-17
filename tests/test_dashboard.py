@@ -163,6 +163,23 @@ class TestDashboardReportPayload:
         assert [t["task_id"] for t in relevant] == ["bbb222"]
         assert [t["task_id"] for t in system] == ["aaa111"]
 
+    def test_resolve_bridge_db_id_prefers_env(self, monkeypatch):
+        from scripts import dashboard_report_vps as dashboard_module
+
+        monkeypatch.setattr(dashboard_module, "NOTION_BRIDGE_DB_ID", "bridge-from-env")
+        monkeypatch.setattr(dashboard_module, "NOTION_CONTROL_ROOM_PAGE_ID", "")
+
+        assert dashboard_module._resolve_bridge_db_id() == "bridge-from-env"
+
+    def test_resolve_bridge_db_id_discovers_child_database(self, monkeypatch):
+        from scripts import dashboard_report_vps as dashboard_module
+
+        monkeypatch.setattr(dashboard_module, "NOTION_BRIDGE_DB_ID", "")
+        monkeypatch.setattr(dashboard_module, "NOTION_CONTROL_ROOM_PAGE_ID", "control-room-1")
+        monkeypatch.setattr(dashboard_module, "_find_child_database_id", lambda page_id, title: "bridge-from-child")
+
+        assert dashboard_module._resolve_bridge_db_id() == "bridge-from-child"
+
     def test_fingerprint_changes_with_data(self, monkeypatch):
         monkeypatch.setenv("WORKER_URL", "http://127.0.0.1:8088")
         monkeypatch.setenv("WORKER_TOKEN", "test")

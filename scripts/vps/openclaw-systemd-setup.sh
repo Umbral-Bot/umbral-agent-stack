@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ============================================================
-# openclaw-systemd-setup.sh — Configura OpenClaw como servicio systemd
+# openclaw-systemd-setup.sh â€” Configura OpenClaw como servicio systemd
 # ============================================================
 # Crea el archivo env desde template y configura el unit systemd.
-# IMPORTANTE: Editar los valores CHANGE_ME_* después de ejecutar.
+# IMPORTANTE: Editar los valores CHANGE_ME_* despuÃ©s de ejecutar.
 # ============================================================
 set -euo pipefail
 
@@ -39,7 +39,7 @@ fi
 
 # --- Enable linger so user services survive headless reboots ---
 echo ""
-echo "=== Habilitando loginctl linger (necesario para reboot sin sesión interactiva) ==="
+echo "=== Habilitando loginctl linger (necesario para reboot sin sesiÃ³n interactiva) ==="
 loginctl enable-linger "$(whoami)"
 
 # --- Reload y restart ---
@@ -61,4 +61,4 @@ systemctl --user status openclaw --no-pager
 
 echo ""
 echo "IMPORTANTE: Editar $OPENCLAW_CONFIG_DIR/env con valores reales."
-echo "Después: systemctl --user restart openclaw"
+echo "DespuÃ©s: systemctl --user restart openclaw"

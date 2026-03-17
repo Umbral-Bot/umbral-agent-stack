@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Curacion diaria de Notion operativo.
-# Mantiene limpias Tareas y Bandeja Puente sin tocar proyectos/entregables canónicos.
+# Mantiene limpias Tareas y Bandeja Puente sin tocar proyectos/entregables canÃ³nicos.
 
 set -euo pipefail
 

@@ -3,7 +3,7 @@
 # Configura PATH para n8n (instalado en ~/.npm-global/bin) y opcionalmente
 # servicio systemd user para que n8n quede en segundo plano y sobreviva reinicios.
 #
-# Ejecutar EN LA VPS como el usuario que instaló n8n (ej. rick):
+# Ejecutar EN LA VPS como el usuario que instalÃ³ n8n (ej. rick):
 #   cd ~/umbral-agent-stack && bash scripts/vps/n8n-path-and-service.sh
 #
 # Requisitos: n8n ya instalado (ej. npm install n8n -g con prefix ~/.npm-global).
@@ -12,7 +12,7 @@ set -e
 NPM_GLOBAL_BIN="$HOME/.npm-global/bin"
 PATH_LINE="export PATH=\"\$HOME/.npm-global/bin:\$PATH\""
 
-# 1) Añadir PATH a .bashrc si no está
+# 1) AÃ±adir PATH a .bashrc si no estÃ¡
 if [ -f "$HOME/.bashrc" ]; then
   if grep -q '.npm-global/bin' "$HOME/.bashrc" 2>/dev/null; then
     echo "[OK] PATH para n8n ya esta en .bashrc"
@@ -27,7 +27,7 @@ else
   echo "$PATH_LINE" > "$HOME/.bashrc"
 fi
 
-# Aplicar en esta sesión
+# Aplicar en esta sesiÃ³n
 export PATH="$HOME/.npm-global/bin:$PATH"
 
 # 2) Comprobar que n8n existe

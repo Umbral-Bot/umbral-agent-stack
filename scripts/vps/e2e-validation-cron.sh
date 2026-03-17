@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =================================================================
-# Umbral E2E Validation — Cron wrapper
+# Umbral E2E Validation â€” Cron wrapper
 # Runs the full E2E validation suite and posts results to Notion.
 # On failure, posts an alert to Notion Control Room.
 #
@@ -20,7 +20,7 @@ if [ -f ".venv/bin/activate" ]; then
 fi
 
 echo ""
-echo "=== E2E Validation — $(date -u +"%Y-%m-%d %H:%M UTC") ==="
+echo "=== E2E Validation â€” $(date -u +"%Y-%m-%d %H:%M UTC") ==="
 
 # Run E2E validation suite with Notion posting
 PYTHONPATH="$REPO_DIR" python3 scripts/e2e_validation.py --notion 2>&1
@@ -36,7 +36,7 @@ else
     WORKER_URL="${WORKER_URL:-http://127.0.0.1:8088}"
     WORKER_TOKEN="${WORKER_TOKEN:-}"
     if [ -n "$WORKER_TOKEN" ]; then
-        ALERT="Rick: [E2E ALERT] Validation suite has failures — $(date -u +'%Y-%m-%d %H:%M UTC'). Check /tmp/e2e_validation.log for details."
+        ALERT="Rick: [E2E ALERT] Validation suite has failures â€” $(date -u +'%Y-%m-%d %H:%M UTC'). Check /tmp/e2e_validation.log for details."
         curl -sf -X POST "${WORKER_URL}/run" \
             -H "Authorization: Bearer ${WORKER_TOKEN}" \
             -H "Content-Type: application/json" \

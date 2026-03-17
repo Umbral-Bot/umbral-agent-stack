@@ -50,9 +50,84 @@ def test_build_panel_blocks_use_tables_and_summary_cards():
 
     blocks = _build_panel_blocks(snapshot)
     types = [b["type"] for b in blocks]
-    assert "column_list" in types
+    assert types.count("column_list") == 2
     assert types.count("table") == 4
     assert "bulleted_list_item" not in types
+    assert blocks[1]["type"] == "callout"
+
+
+def test_primary_focus_prioritizes_first_pending_deliverable():
+    snapshot = {
+        "summary": {
+            "pending_deliverables": 1,
+            "deliverables_adjustments": 0,
+            "projects_attention": 0,
+            "bridge_live": 0,
+            "bridge_available": True,
+            "due_items": 1,
+        },
+        "pending_deliverables": [
+            {
+                "name": "Benchmark parcial de Kris Wojslaw para el embudo",
+                "project_name": "Proyecto Embudo Ventas",
+                "review": "Pendiente revision",
+                "due_date": "2026-03-18",
+                "next_action": "Verificar evidencia real antes de aprobar.",
+            }
+        ],
+        "projects_attention": [],
+        "bridge_live": [],
+        "due_items": [],
+    }
+
+    focus = openclaw_panel_vps._primary_focus(snapshot)
+    assert focus["title"] == "Prioridad inmediata"
+    assert "Kris Wojslaw" in focus["body"]
+    assert focus["emoji"] == "🎯"
+
+
+def test_synchronize_summary_callout_updates_first_callout_after_summary(monkeypatch):
+    snapshot = {
+        "summary": {
+            "pending_deliverables": 1,
+            "deliverables_adjustments": 0,
+            "projects_attention": 0,
+            "bridge_live": 0,
+            "bridge_available": True,
+            "due_items": 1,
+        },
+        "pending_deliverables": [
+            {
+                "name": "Benchmark del sistema de contenido y funnel de Ruben Hassid",
+                "project_name": "Proyecto Embudo Ventas",
+                "review": "Pendiente revision",
+                "due_date": "2026-03-16",
+                "next_action": "Revisar y decidir si se integra o se archiva.",
+            }
+        ],
+        "projects_attention": [],
+        "bridge_live": [],
+        "due_items": [],
+    }
+    children = [
+        {"id": "root", "type": "callout", "callout": {"rich_text": []}},
+        {"id": "summary", "type": "heading_2", "heading_2": {"rich_text": [{"plain_text": "Resumen operativo", "text": {"content": "Resumen operativo"}}]}},
+        {"id": "focus", "type": "callout", "callout": {"rich_text": [{"plain_text": "Viejo", "text": {"content": "Viejo"}}]}},
+        {"id": "next", "type": "column_list", "column_list": {"children": []}},
+    ]
+    updates = []
+
+    monkeypatch.setattr(
+        openclaw_panel_vps,
+        "_update_block_text",
+        lambda block, text, emoji=None: updates.append((block["id"], text, emoji)),
+    )
+
+    openclaw_panel_vps._synchronize_summary_callout(children, snapshot)
+    assert updates
+    assert updates[0][0] == "focus"
+    assert "Ruben Hassid" in updates[0][1]
+    assert updates[0][2] == "🎯"
 
 
 def test_validate_openclaw_shell_requires_anchor_and_databases():
@@ -92,6 +167,26 @@ def test_validate_openclaw_shell_fails_with_residual_child_page():
     result = validate_openclaw_shell(children)
     assert result["ok"] is False
     assert result["residual_child_pages"] == 1
+
+
+def test_validate_openclaw_shell_allows_dashboard_rick_child_page():
+    children = [
+        {"id": "a", "type": "callout", "callout": {"rich_text": []}},
+        {"id": "h1", "type": "heading_2", "heading_2": {"rich_text": [{"plain_text": "Resumen operativo", "text": {"content": "Resumen operativo"}}]}},
+        {"id": "h2", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Entregables por revisar", "text": {"content": "Entregables por revisar"}}]}},
+        {"id": "h3", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Proyectos que requieren atencion", "text": {"content": "Proyectos que requieren atencion"}}]}},
+        {"id": "h4", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Bandeja viva", "text": {"content": "Bandeja viva"}}]}},
+        {"id": "h5", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Proximos vencimientos", "text": {"content": "Proximos vencimientos"}}]}},
+        {"id": "b", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Bases operativas"}]}},
+        {"id": "c", "type": "child_database", "child_database": {"title": "Proyectos"}},
+        {"id": "d", "type": "child_database", "child_database": {"title": "Tareas"}},
+        {"id": "e", "type": "child_database", "child_database": {"title": "Entregables"}},
+        {"id": "page-1", "type": "child_page", "child_page": {"title": "Dashboard Rick"}},
+    ]
+    result = validate_openclaw_shell(children)
+    assert result["ok"] is True
+    assert result["residual_child_pages"] == 0
+    assert result["quick_access_present"] is True
 
 
 def test_validate_openclaw_shell_fails_without_anchor():
@@ -216,6 +311,57 @@ def test_build_operational_snapshot_sorts_by_urgency(monkeypatch):
     assert snapshot["projects_attention"][0]["name"] == "Proyecto Critico"
 
 
+def test_build_operational_snapshot_prefers_pending_review_over_adjustments(monkeypatch):
+    projects_result = [
+        {
+            "id": "proj-1",
+            "properties": {
+                "Nombre": {"type": "title", "title": [{"plain_text": "Proyecto A"}]},
+                "Bloqueos": {"type": "rich_text", "rich_text": []},
+                "Siguiente acción": {"type": "rich_text", "rich_text": []},
+                "Tareas": {"type": "relation", "relation": [{"id": "task-1"}]},
+                "Issues abiertas": {"type": "number", "number": 0},
+            },
+        }
+    ]
+    deliverables_result = [
+        {
+            "id": "del-older-adjustment",
+            "properties": {
+                "Nombre": {"type": "title", "title": [{"plain_text": "Ajuste atrasado"}]},
+                "Estado revision": {"type": "status", "status": {"name": "Aprobado con ajustes"}},
+                "Proyecto": {"type": "relation", "relation": [{"id": "proj-1"}]},
+                "Fecha limite sugerida": {"type": "date", "date": {"start": "2026-03-11"}},
+                "Siguiente accion": {"type": "rich_text", "rich_text": []},
+            },
+        },
+        {
+            "id": "del-pending",
+            "properties": {
+                "Nombre": {"type": "title", "title": [{"plain_text": "Decision pendiente"}]},
+                "Estado revision": {"type": "status", "status": {"name": "Pendiente revision"}},
+                "Proyecto": {"type": "relation", "relation": [{"id": "proj-1"}]},
+                "Fecha limite sugerida": {"type": "date", "date": {"start": "2026-03-18"}},
+                "Siguiente accion": {"type": "rich_text", "rich_text": []},
+            },
+        },
+    ]
+
+    def fake_query(database_id, filter_payload=None, page_size=50):
+        if database_id == "projects-db":
+            return projects_result
+        if database_id == "deliverables-db":
+            return deliverables_result
+        raise AssertionError(f"unexpected database id: {database_id}")
+
+    monkeypatch.setattr(openclaw_panel_vps.config, "NOTION_PROJECTS_DB_ID", "projects-db")
+    monkeypatch.setattr(openclaw_panel_vps.config, "NOTION_DELIVERABLES_DB_ID", "deliverables-db")
+    monkeypatch.setattr(openclaw_panel_vps, "_query_db", fake_query)
+
+    snapshot = openclaw_panel_vps._build_operational_snapshot(bridge_db_id=None)
+    assert snapshot["pending_deliverables"][0]["name"] == "Decision pendiente"
+
+
 def test_tidy_navigation_sections_inserts_quick_access_heading(monkeypatch):
     initial_children = [
         {"id": "callout-1", "type": "callout", "callout": {"rich_text": []}},
@@ -310,3 +456,30 @@ def test_remove_stale_blocks_archives_child_pages_and_deletes_normal_blocks(monk
     assert archived == ["page-1"]
     assert deleted == ["table-1"]
     assert removed == 2
+
+
+def test_delete_blocks_ignores_already_archived_or_missing(monkeypatch):
+    class FakeResponse:
+        def __init__(self, status_code, text=""):
+            self.status_code = status_code
+            self.text = text
+
+    class FakeClient:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def patch(self, url, headers=None, json=None):
+            if url.endswith("/block-a"):
+                return FakeResponse(400, "{\"message\":\"Can't edit block that is archived.\"}")
+            if url.endswith("/block-b"):
+                return FakeResponse(404, '{"code":"object_not_found"}')
+            return FakeResponse(200, "{}")
+
+    monkeypatch.setattr(openclaw_panel_vps, "_api_client", lambda: FakeClient())
+    monkeypatch.setattr(openclaw_panel_vps, "_headers", lambda: {})
+    monkeypatch.setattr(openclaw_panel_vps.notion_client, "_check_response", lambda resp, op: {"ok": True})
+
+    openclaw_panel_vps._delete_blocks(["block-a", "block-b", "block-c"])

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# install-tailscale.sh — Instala Tailscale en Ubuntu/Debian VPS
+# install-tailscale.sh â€” Instala Tailscale en Ubuntu/Debian VPS
 # ============================================================
 set -euo pipefail
 

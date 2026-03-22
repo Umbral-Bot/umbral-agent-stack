@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
 # ============================================================
-# full-stack-up.sh â€” Levanta todo el sistema en la VPS
+# full-stack-up.sh - Bring up the stack on the VPS
 # ============================================================
-# Ejecutar en la VPS: bash scripts/vps/full-stack-up.sh
-# O desde local: ssh vps-umbral 'cd ~/umbral-agent-stack && bash scripts/vps/full-stack-up.sh'
+# Run on the VPS: bash scripts/vps/full-stack-up.sh
+# Or remotely: ssh vps-umbral 'cd ~/umbral-agent-stack && bash scripts/vps/full-stack-up.sh'
 #
-# Requiere: ~/.config/openclaw/env con WORKER_URL, WORKER_TOKEN, REDIS_URL
+# Requires: ~/.config/openclaw/env with WORKER_URL, WORKER_TOKEN, REDIS_URL
 # ============================================================
 set -euo pipefail
 
 REPO="${REPO:-$HOME/umbral-agent-stack}"
 OPENCLAW_WS="${OPENCLAW_WS:-$HOME/.openclaw/workspace}"
 TEMPLATES="$REPO/openclaw/workspace-templates"
+DISPATCHER_CTL="$REPO/scripts/vps/dispatcher-service.sh"
 
 cd "$REPO"
 
@@ -21,9 +22,11 @@ git pull origin main 2>/dev/null || true
 echo ""
 echo "=== 2. Venv y dependencias ==="
 if [ -d ".venv" ]; then
+  # shellcheck disable=SC1091
   source .venv/bin/activate
 else
   python3 -m venv .venv
+  # shellcheck disable=SC1091
   source .venv/bin/activate
 fi
 pip install -q --upgrade pip
@@ -33,20 +36,20 @@ echo ""
 echo "=== 3. Cargar env ==="
 if [ -f "$HOME/.config/openclaw/env" ]; then
   set -a
+  # shellcheck disable=SC1090
   source "$HOME/.config/openclaw/env"
   set +a
   echo "   Env cargado desde ~/.config/openclaw/env"
 else
-  echo "   âš ï¸  ~/.config/openclaw/env no existe. Exportar WORKER_URL, WORKER_TOKEN, REDIS_URL."
+  echo "   ~/.config/openclaw/env no existe. Exportar WORKER_URL, WORKER_TOKEN, REDIS_URL."
 fi
 
 echo ""
 echo "=== 4. Redis ==="
 if redis-cli -u "${REDIS_URL:-redis://localhost:6379/0}" ping 2>/dev/null | grep -q PONG; then
-  echo "   âœ… Redis OK"
+  echo "   Redis OK"
 else
-  echo "   âŒ Redis no responde. Levantar con: docker run -d -p 6379:6379 redis:7-alpine"
-  echo "   O: redis-server --daemonize yes"
+  echo "   Redis no responde. Levantar con: redis-server --daemonize yes"
   exit 1
 fi
 
@@ -57,7 +60,7 @@ if [ -d "$TEMPLATES" ]; then
   for f in IDENTITY.md SOUL.md USER.md AGENTS.md TOOLS.md; do
     if [ -f "$TEMPLATES/$f" ]; then
       cp "$TEMPLATES/$f" "$OPENCLAW_WS/$f"
-      echo "   Sync: $f -> ~/.openclaw/workspace (traspaso identidad Rick)"
+      echo "   Sync: $f -> ~/.openclaw/workspace"
     else
       echo "   Template $f no encontrado"
     fi
@@ -69,78 +72,69 @@ fi
 echo ""
 echo "=== 6. OpenClaw service ==="
 if systemctl --user is-active openclaw > /dev/null 2>&1; then
-  echo "   âœ… OpenClaw: RUNNING"
+  echo "   OpenClaw: RUNNING"
 else
-  echo "   âš ï¸  OpenClaw no estÃ¡ corriendo. Iniciar: systemctl --user start openclaw"
+  echo "   OpenClaw no esta corriendo. Iniciando..."
   systemctl --user start openclaw 2>/dev/null || true
   sleep 2
-  systemctl --user is-active openclaw > /dev/null 2>&1 && echo "   âœ… OpenClaw iniciado"
+  if systemctl --user is-active openclaw > /dev/null 2>&1; then
+    echo "   OpenClaw iniciado"
+  else
+    echo "   OpenClaw sigue inactivo"
+  fi
 fi
 
 echo ""
 echo "=== 7. Worker (VPS) ==="
 WORKER_URL="${WORKER_URL:-http://127.0.0.1:8088}"
 if curl -sf "${WORKER_URL}/health" > /dev/null 2>&1; then
-  echo "   âœ… Worker: OK en $WORKER_URL"
+  echo "   Worker: OK en $WORKER_URL"
 else
-  echo "   âš ï¸  Worker no responde. Iniciar:"
-  echo "   cd $REPO && export \$(grep -v '^#' ~/.config/openclaw/env | xargs) PYTHONPATH=$REPO"
-  echo "   python3 -m uvicorn worker.app:app --host 127.0.0.1 --port 8088 &"
-  echo "   O: systemctl --user start openclaw-worker-vps"
+  echo "   Worker no responde. Intentando iniciar en background..."
   if ! pgrep -f "uvicorn worker.app:app" > /dev/null 2>&1; then
-    echo "   Intentando iniciar Worker en background..."
-    (cd "$REPO" && export $(grep -v '^#' "$HOME/.config/openclaw/env" 2>/dev/null | xargs) PYTHONPATH="$REPO" nohup python3 -m uvicorn worker.app:app --host 127.0.0.1 --port 8088 > /tmp/worker.log 2>&1 &)
+    (
+      cd "$REPO"
+      PYTHONPATH="$REPO" nohup python3 -m uvicorn worker.app:app --host 127.0.0.1 --port 8088 > /tmp/worker.log 2>&1 &
+    )
     sleep 3
-    curl -sf "${WORKER_URL}/health" > /dev/null 2>&1 && echo "   âœ… Worker iniciado" || echo "   âŒ Worker no arrancÃ³"
+  fi
+  if curl -sf "${WORKER_URL}/health" > /dev/null 2>&1; then
+    echo "   Worker iniciado"
+  else
+    echo "   Worker no arranco"
   fi
 fi
 
 echo ""
 echo "=== 8. Dispatcher ==="
-if systemctl --user is-active openclaw-dispatcher > /dev/null 2>&1; then
-  echo "   âœ… Dispatcher: RUNNING (systemd)"
+if bash "$DISPATCHER_CTL" start; then
+  echo "   Dispatcher canonicalized via systemd"
 else
-  # Try to enable + start via systemd first
-  if systemctl --user cat openclaw-dispatcher > /dev/null 2>&1; then
-    echo "   âš ï¸  Dispatcher no estÃ¡ corriendo. Iniciando via systemd..."
-    systemctl --user enable --now openclaw-dispatcher 2>/dev/null || true
-    sleep 2
-    systemctl --user is-active openclaw-dispatcher > /dev/null 2>&1 \
-      && echo "   âœ… Dispatcher iniciado (systemd)" \
-      || echo "   âŒ Dispatcher no arrancÃ³ via systemd"
-  elif pgrep -f "dispatcher.service" > /dev/null 2>&1; then
-    echo "   âœ… Dispatcher: OK (proceso nohup)"
-  else
-    echo "   âš ï¸  Dispatcher no estÃ¡ corriendo. Iniciando en background..."
-    (cd "$REPO" && export $(grep -v '^#' "$HOME/.config/openclaw/env" 2>/dev/null | xargs) PYTHONPATH="$REPO" nohup python3 -m dispatcher.service > /tmp/dispatcher.log 2>&1 &)
-    sleep 2
-    pgrep -f "dispatcher.service" > /dev/null 2>&1 \
-      && echo "   âœ… Dispatcher iniciado (nohup)" \
-      || echo "   âŒ Dispatcher no arrancÃ³"
-  fi
+  echo "   Dispatcher could not be reconciled via systemd"
 fi
 
 echo ""
-echo "=== 9. Test E2E (Dispatcher + Worker) ==="
+echo "=== 9. Test E2E (Redis -> Dispatcher -> Worker) ==="
 if [ -n "${WORKER_TOKEN:-}" ] && [ -n "${REDIS_URL:-}" ]; then
   export WORKER_URL REDIS_URL WORKER_TOKEN PYTHONPATH="$REPO"
-  if python3 scripts/test_s2_dispatcher.py 2>/dev/null; then
-    echo "   âœ… E2E OK"
+  if bash "$DISPATCHER_CTL" smoke 2>/dev/null; then
+    echo "   E2E OK"
   else
-    echo "   âš ï¸  E2E fallÃ³. Â¿EstÃ¡ corriendo dispatcher/service.py?"
-    echo "   Iniciar Dispatcher: cd $REPO && PYTHONPATH=$REPO python3 -m dispatcher.service &"
+    echo "   E2E fallo. Reconciliar Dispatcher:"
+    echo "   cd $REPO && bash scripts/vps/dispatcher-service.sh reconcile"
   fi
 else
-  echo "   âš ï¸  WORKER_TOKEN o REDIS_URL no definidos â€” skipping E2E"
+  echo "   WORKER_TOKEN o REDIS_URL no definidos - skipping E2E"
 fi
 
 echo ""
 echo "=== Resumen ==="
 echo "OpenClaw:   $(systemctl --user is-active openclaw 2>/dev/null || echo '?')"
-echo "Dispatcher: $(systemctl --user is-active openclaw-dispatcher 2>/dev/null || (pgrep -f 'dispatcher.service' > /dev/null 2>&1 && echo 'running(nohup)' || echo 'NO'))"
-echo "Worker:     $(curl -sf ${WORKER_URL}/health 2>/dev/null && echo 'OK' || echo 'NO')"
-echo "Redis:      $(redis-cli -u ${REDIS_URL:-redis://localhost:6379/0} ping 2>/dev/null || echo 'NO')"
+echo "Dispatcher:"
+bash "$DISPATCHER_CTL" status || true
+echo "Worker:     $(curl -sf "${WORKER_URL}/health" 2>/dev/null && echo 'OK' || echo 'NO')"
+echo "Redis:      $(redis-cli -u "${REDIS_URL:-redis://localhost:6379/0}" ping 2>/dev/null || echo 'NO')"
 echo ""
-echo "Notion poller: ejecutar manualmente si lo necesitÃ¡s:"
+echo "Notion poller: ejecutar manualmente si lo necesitas:"
 echo "  python3 -m dispatcher.notion_poller"
 echo ""

@@ -63,6 +63,7 @@ class TestProviderStatusFormat:
             assert "timestamp" in data
             assert "configured" in data
             assert "unconfigured" in data
+            assert "routing" in data
             assert "providers" in data
 
     def test_provider_entry_has_required_fields(self, client, fake_redis):
@@ -78,6 +79,7 @@ class TestProviderStatusFormat:
                 assert "quota_limit" in info
                 assert "quota_status" in info
                 assert "routing_preferred_for" in info
+                assert "routing_effective_for" in info
 
 
 # ── Configured vs unconfigured detection ──────────────────────────
@@ -142,6 +144,48 @@ class TestProviderStatusRouting:
             data = resp.json()
             assert data["providers"]["claude_pro"]["model"] == "claude-sonnet-4-6"
             assert data["providers"]["gemini_pro"]["model"] == "gemini-2.5-pro"
+
+    def test_routing_snapshot_exposes_effective_route(self, client, fake_redis):
+        env_override = {
+            "ANTHROPIC_API_KEY": "anthropic-test-key",
+            "GOOGLE_API_KEY": "goog-test-key",
+            "AZURE_OPENAI_ENDPOINT": "",
+            "AZURE_OPENAI_API_KEY": "",
+            "UMBRAL_DEFAULT_MODEL": "",
+            "UMBRAL_DISABLE_CLAUDE": "",
+        }
+        with (
+            patch("worker.app._get_redis", return_value=fake_redis),
+            patch.dict(os.environ, env_override, clear=False),
+        ):
+            resp = client.get("/providers/status", headers=AUTH)
+            data = resp.json()
+            coding = data["routing"]["coding"]
+            assert coding["declared_preferred"] == "claude_pro"
+            assert coding["effective_preferred"] == "claude_pro"
+            assert "effective_fallback_chain" in coding
+            assert "unconfigured" in coding
+
+    def test_effective_routing_promotes_configured_fallback(self, client, fake_redis):
+        env_override = {
+            "ANTHROPIC_API_KEY": "",
+            "GOOGLE_API_KEY": "goog-test-key",
+            "AZURE_OPENAI_ENDPOINT": "",
+            "AZURE_OPENAI_API_KEY": "",
+            "UMBRAL_DEFAULT_MODEL": "",
+            "UMBRAL_DISABLE_CLAUDE": "",
+        }
+        with (
+            patch("worker.app._get_redis", return_value=fake_redis),
+            patch.dict(os.environ, env_override, clear=False),
+        ):
+            resp = client.get("/providers/status", headers=AUTH)
+            data = resp.json()
+            coding = data["routing"]["coding"]
+            assert coding["declared_preferred"] == "claude_pro"
+            assert coding["effective_preferred"] == "gemini_pro"
+            assert "coding" in data["providers"]["gemini_pro"]["routing_effective_for"]
+            assert "coding" in data["providers"]["claude_pro"]["routing_preferred_for"]
 
 
 # ── Quota values ──────────────────────────────────────────────────

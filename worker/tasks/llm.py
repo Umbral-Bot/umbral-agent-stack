@@ -302,6 +302,7 @@ def _call_gemini(
     return {
         "text": text,
         "model": model,
+        "provider": "gemini",
         "usage": {
             "prompt_tokens": usage.get("promptTokenCount", 0),
             "completion_tokens": usage.get("candidatesTokenCount", 0),
@@ -367,6 +368,7 @@ def _call_openai(
     return {
         "text": text,
         "model": model,
+        "provider": "openai",
         "usage": {
             "prompt_tokens": usage.get("prompt_tokens", 0),
             "completion_tokens": usage.get("completion_tokens", 0),
@@ -429,6 +431,7 @@ def _call_anthropic(
     return {
         "text": text,
         "model": model,
+        "provider": "anthropic",
         "usage": {
             "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,

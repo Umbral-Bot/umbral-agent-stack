@@ -51,6 +51,9 @@ NOTION_GRANOLA_DB_ID: str | None = os.environ.get("NOTION_GRANOLA_DB_ID")
 NOTION_DASHBOARD_PAGE_ID: str | None = os.environ.get("NOTION_DASHBOARD_PAGE_ID")
 NOTION_TASKS_DB_ID: str | None = os.environ.get("NOTION_TASKS_DB_ID")
 NOTION_PROJECTS_DB_ID: str | None = os.environ.get("NOTION_PROJECTS_DB_ID")
+NOTION_DELIVERABLES_DB_ID: str | None = os.environ.get("NOTION_DELIVERABLES_DB_ID")
+NOTION_BRIDGE_DB_ID: str | None = os.environ.get("NOTION_BRIDGE_DB_ID")
+NOTION_REPORTS_ARCHIVE_PAGE_ID: str | None = os.environ.get("NOTION_REPORTS_ARCHIVE_PAGE_ID")
 NOTION_API_VERSION: str = os.environ.get("NOTION_API_VERSION", "2022-06-28")
 
 # Granola pipeline
@@ -60,6 +63,17 @@ ENLACE_NOTION_USER_ID: str | None = os.environ.get("ENLACE_NOTION_USER_ID")
 # Linear
 # ---------------------------------------------------------------------------
 LINEAR_API_KEY: str | None = os.environ.get("LINEAR_API_KEY")
+LINEAR_AGENT_STACK_PROJECT_ID: str | None = os.environ.get("LINEAR_AGENT_STACK_PROJECT_ID")
+LINEAR_AGENT_STACK_PROJECT_NAME: str = os.environ.get(
+    "LINEAR_AGENT_STACK_PROJECT_NAME",
+    "Mejora Continua Agent Stack",
+)
+LINEAR_AGENT_STACK_TEAM_ID: str | None = os.environ.get("LINEAR_AGENT_STACK_TEAM_ID")
+LINEAR_AGENT_STACK_TEAM_NAME: str = os.environ.get("LINEAR_AGENT_STACK_TEAM_NAME", "Umbral")
+LINEAR_AGENT_STACK_ALLOWED_AGENTS: str = os.environ.get(
+    "LINEAR_AGENT_STACK_ALLOWED_AGENTS",
+    "codex,cursor,antigravity,github copilot,github-copilot,rick,openclaw",
+)
 
 # ---------------------------------------------------------------------------
 # n8n

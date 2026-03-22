@@ -4,7 +4,7 @@ Tests for Dispatcher resilience features (UMB-18).
 Verifies:
   1. Fire-and-forget: _notion_upsert / _notify_linear_completion don't block
   2. Retry: httpx timeouts re-enqueue with retry_count
-  3. Graceful errors: ConnectError doesn't crash, backs off 5s
+  3. Graceful errors: ConnectError doesn't crash, retries with 30s backoff
   4. OpsLogger.task_retried event
 
 Run with:
@@ -62,7 +62,7 @@ def sample_envelope():
         "team": "marketing",
         "task_type": "writing",
         "task": "generate_post",
-        "input": {"topic": "test"},
+        "input": {"topic": "test", "project_name": "Proyecto Embudo Ventas"},
         "trace_id": str(uuid.uuid4()),
         "status": "queued",
     }
@@ -165,19 +165,64 @@ class TestFireAndForget:
     """_notion_upsert and _notify_linear_completion must not block the caller."""
 
     def test_notion_upsert_success(self, mock_wc):
-        _notion_upsert(mock_wc, "t1", "running", "marketing", "task")
+        _notion_upsert(
+            mock_wc,
+            "t1",
+            "running",
+            "marketing",
+            "task",
+            envelope={"input": {"project_name": "Proyecto Embudo Ventas"}},
+        )
         mock_wc.run.assert_called_once()
 
     def test_notion_upsert_swallows_404(self, mock_wc):
         mock_wc.run.side_effect = httpx.HTTPStatusError(
             "Not Found", request=MagicMock(), response=MagicMock(status_code=404)
         )
-        _notion_upsert(mock_wc, "t1", "running", "marketing", "task")
+        _notion_upsert(
+            mock_wc,
+            "t1",
+            "running",
+            "marketing",
+            "task",
+            envelope={"input": {"project_name": "Proyecto Embudo Ventas"}},
+        )
         # No exception raised
 
     def test_notion_upsert_swallows_connect_error(self, mock_wc):
         mock_wc.run.side_effect = httpx.ConnectError("refused")
+        _notion_upsert(
+            mock_wc,
+            "t1",
+            "running",
+            "marketing",
+            "task",
+            envelope={"input": {"project_name": "Proyecto Embudo Ventas"}},
+        )
+
+    def test_notion_upsert_skips_noise_without_context(self, mock_wc):
         _notion_upsert(mock_wc, "t1", "running", "marketing", "task")
+        mock_wc.run.assert_not_called()
+
+    def test_notion_upsert_accepts_top_level_context(self, mock_wc):
+        _notion_upsert(
+            mock_wc,
+            "t1",
+            "running",
+            "marketing",
+            "task",
+            envelope={
+                "project_name": "Proyecto Embudo Ventas",
+                "source": "openclaw_gateway",
+                "source_kind": "tool_enqueue",
+                "trace_id": "trace-123",
+            },
+        )
+        _, payload = mock_wc.run.call_args[0]
+        assert payload["project_name"] == "Proyecto Embudo Ventas"
+        assert payload["source"] == "openclaw_gateway"
+        assert payload["source_kind"] == "tool_enqueue"
+        assert payload["trace_id"] == "trace-123"
 
     def test_linear_skip_without_issue_id(self, mock_wc):
         _notify_linear_completion(mock_wc, {"task": "t"}, True)
@@ -265,20 +310,21 @@ class TestRetryOnTimeout:
 
 
 class TestGracefulConnectionErrors:
-    """ConnectError logs + backs off 5s, doesn't crash."""
+    """ConnectError retries with 30s backoff before failing."""
 
-    def test_connect_error_sleeps_5s(self, redis_client, sample_envelope):
+    def test_connect_error_sleeps_30s(self, redis_client, sample_envelope):
         mocks = _run_one_iteration(redis_client, sample_envelope, httpx.ConnectError("refused"))
-        mocks["time"].sleep.assert_called_with(5)
+        mocks["time"].sleep.assert_called_with(30)
 
-    def test_connect_error_logs_failure(self, redis_client, sample_envelope):
+    def test_connect_error_logs_retry(self, redis_client, sample_envelope):
         mocks = _run_one_iteration(redis_client, sample_envelope, httpx.ConnectError("refused"))
-        mocks["ops"].task_failed.assert_called_once()
+        mocks["ops"].task_failed.assert_not_called()
+        mocks["ops"].task_retried.assert_called_once()
 
     def test_connect_error_handling_in_source(self):
         source = inspect.getsource(_run_worker)
         assert "httpx.ConnectError" in source
-        assert "time.sleep(5)" in source
+        assert "time.sleep(30)" in source
 
 
 # ---------------------------------------------------------------------------

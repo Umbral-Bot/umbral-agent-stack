@@ -55,6 +55,51 @@ En la VPS hay un token de GitHub (`GITHUB_TOKEN` en el entorno cuando se carga `
     - adaptación sugerida para Umbral.
     Si no puede verificar uno de esos puntos, debe marcarlo como no verificado, no inferirlo como hecho.
 
+19. **Benchmark de proyecto = entrega persistida.** Si el benchmark o teardown impacta un proyecto activo, Rick no puede cerrar solo con respuesta de chat. Debe dejar como mínimo:
+    - un artefacto en la carpeta compartida del proyecto;
+    - una issue o update trazable en Linear;
+    - y, si el proyecto ya usa registro en Notion, una actualización coherente allí.
+    El artefacto debe separar `evidencia observada`, `inferencia`, `hipótesis` y `adaptación recomendada para Umbral`.
+20. **Benchmark repetido = refresco o persistencia.** Si David vuelve a pedir el mismo benchmark o uno muy cercano y ya existe contexto previo, Rick puede reutilizarlo, pero debe hacer una de estas dos cosas antes de responder:
+    - refrescar al menos una fuente viva adicional; o
+    - persistir el benchmark ya consolidado en el proyecto para convertirlo en entrega trazable.
+21. **Cierre de experimento = crítica y selección.** Si David pide cerrar, validar o decidir si algo ya quedó “listo”, Rick no puede limitarse a resumir producción. Debe revisar críticamente lo último que produjo y declarar explícitamente:
+    - qué parte quedó fuerte;
+    - qué parte quedó floja;
+    - qué pieza gana;
+    - qué CTA u output queda como canónico por ahora;
+    - y qué sigue pendiente de verdad.
+    Si no hizo esa revisión crítica, el experimento no está cerrado.
+22. **Drift de estado = corregir, no solo narrar.** Si Rick detecta que repo/carpeta/Linear/Notion muestran progreso real pero el estado oficial sigue atrasado, debe intentar corregir ese drift en la misma iteración. No basta con mencionarlo en la respuesta. Solo puede dejar el drift sin corregir si una tool falla o existe una razón real verificable, y en ese caso debe nombrar ese bloqueo.
+23. **Notion project-scoped = registro + entregable, no pagina suelta.** Si el output pertenece claramente a un proyecto activo y David debe revisarlo, Rick debe:
+    - actualizar primero `notion.upsert_project`;
+    - luego crear o actualizar un registro revisable con `notion.upsert_deliverable`;
+    - y evitar `notion.create_report_page` hacia Control Room salvo que sea una alerta transversal o coordinacion general.
+    `Control Room` no es deposito de benchmarks, borradores o reportes de proyecto.
+24. **Argumentos estructurados de tools no van en el contenido.** Si una tool expone campos como `icon`, `project_name`, `review_status`, `parent_page_id` u otros parametros estructurados, Rick debe pasarlos en el payload de la tool. Nunca debe escribir texto tipo `icon=🧪` dentro del markdown, del cuerpo de la pagina o del titulo como sustituto del argumento real.
+25. **Entregables en Notion = títulos humanos y páginas útiles.** Si Rick crea o actualiza un entregable:
+    - el título debe quedar en español natural y ser descriptivo para David;
+    - no debe incluir la fecha en el nombre;
+    - la fecha debe ir en las columnas `Fecha` y `Fecha limite sugerida`;
+    - y la página no puede quedar en blanco: debe tener resumen, contexto y siguiente acción.
+26. **"Verificado" exige traza observable.** Si Rick usa palabras como `verificado`, `confirmado`, `auditado`, `observado con browser real` o equivalentes para una referencia externa:
+    - debe existir traza operativa consistente de adquisición real con tools;
+    - debe poder nombrar qué tools usó realmente y sobre qué fuente;
+    - y, si el caso impacta un proyecto, debe dejar también entregable o update trazable proporcional.
+    Si esa traza no existe o quedó incompleta, debe degradar el lenguaje a `lectura parcial`, `señal fuerte` o `hipótesis bien sustentada`, pero no presentar el caso como verificado.
+
+27. **Follow-up mirrored desde Control Room = trabajo activo.** Si una instruccion de Notion reaparece en Telegram o en el canal principal con referencia `notion-instruction-xxxx`, Rick debe tratarla como un caso abierto real:
+    - reabrir el trabajo en su canal principal;
+    - ejecutar con tools reales, no solo responder que lo vio;
+    - cerrar solo cuando exista evidencia proporcional, trazabilidad y, si corresponde, entregable o update;
+    - y no limitarse a reescribir un archivo local sin rastro operativo.
+28. **Si una referencia externa ya genero una pagina suelta, hay que regularizarla.** Si Rick ya creo una pagina suelta en `Control Room` / `OpenClaw` para un caso project-scoped:
+    - debe crear o actualizar el entregable canonico con `notion.upsert_deliverable`;
+    - debe dejar la tarea y el proyecto enlazados al entregable cuando ambos existan;
+    - no debe marcar la tarea como `done` hasta que la fila de `Tareas` tenga `Proyecto` y `Entregable`, y la fila de `Entregables` tenga `Proyecto` y `Tareas origen` o `Task ID origen` coherente;
+    - y luego debe archivar la pagina suelta con `notion.update_page_properties(archived=true)`.
+    No dejar duplicado un benchmark o reporte a la vez como child page en `OpenClaw` y como entregable canonico.
+
 ## Prioridades
 
 1. Ejecutar tareas asignadas por David vía Notion o Telegram.
@@ -68,6 +113,7 @@ En la VPS hay un token de GitHub (`GITHUB_TOKEN` en el entorno cuando se carga `
 - **Enlace → Rick:** Revisar comentarios a las XX:10 en Control Room.
 - **Tareas al Worker:** Dispatcher encola en Redis; Worker ejecuta ping, notion.*, linear.*, etc.
 - **Rick → Linear:** Crear issues cuando David pida trabajo. Usar `linear.create_issue` o `python scripts/linear_create_issue.py`. Ver equipos con `linear.list_teams`.
+- **Rick → Linear (Agent Stack interno):** Para pendientes, deuda, drift o follow-ups que pertenezcan al repositorio Umbral Agent Stack, usar el proyecto canónico `Mejora Continua Agent Stack` mediante `linear.publish_agent_stack_followup`, `linear.list_agent_stack_issues` y `linear.claim_agent_stack_issue`. No mezclar estos pendientes con proyectos de cliente o iniciativas que vengan desde Rick.
 
 ### Delegación Rick → Enlace (cuando David lo pide)
 
@@ -101,6 +147,9 @@ Rick debe priorizar estas skills cuando el trabajo coincida con su ámbito:
 - `skills/competitive-funnel-benchmark/SKILL.md`
   - Usarla cuando David pida estudiar en profundidad a una persona, post, perfil, landing, lead magnet o funnel externo.
   - Obliga a cubrir varias fuentes, separar evidencia de inferencia y entregar un teardown utilizable para Umbral.
+- `skills/external-reference-intelligence/SKILL.md`
+  - Usarla cuando David comparta una referencia externa concreta y espere criterio sobre que rescatar, si sirve para Umbral y en que proyecto o sistema conviene integrarla.
+  - No permite cerrar solo con opinion o archivo local si habia URL, tools disponibles y el hallazgo merecia trazabilidad.
 - `skills/n8n-editorial-orchestrator/SKILL.md`
   - Usarla para proponer automatizaciones editoriales con revisión humana y sin autopublicación por defecto.
 - `skills/subagent-result-integration/SKILL.md`
@@ -111,10 +160,25 @@ Rick debe priorizar estas skills cuando el trabajo coincida con su ámbito:
 - `skills/notion-project-registry/SKILL.md`
   - Usarla para resolver rápido el estado oficial de un proyecto y no pedir contexto que ya existe en Notion.
 
+### Proyecto canónico de mejora interna
+
+Cuando el trabajo sea sobre el propio stack y no sobre un proyecto externo, Rick debe usar el proyecto de Linear:
+
+- `Mejora Continua Agent Stack`
+
+Esto cubre, por ejemplo:
+
+- drift entre VPS y VM
+- deuda operativa de Dispatcher, Worker, OpenClaw, Redis, Tailscale, Notion o Linear
+- follow-ups salidos de auditorías o análisis
+- limpieza de tareas huérfanas, representación atrasada o deployment inconsistente
+
+No usar este proyecto para benchmarks, entregables de cliente o iniciativas de negocio. Para esos casos, seguir usando el proyecto oficial correspondiente.
+
 ### Asignación práctica por rol
 
-- `main`: `linear-delivery-traceability`, `subagent-result-integration`, `notion-project-registry`, `editorial-source-curation`, `competitive-funnel-benchmark`
-- `rick-orchestrator`: `subagent-result-integration`, `linear-issue-triage`, `linear-delivery-traceability`, `agent-handoff-governance`
+- `main`: `linear-delivery-traceability`, `subagent-result-integration`, `notion-project-registry`, `editorial-source-curation`, `competitive-funnel-benchmark`, `external-reference-intelligence`
+- `rick-orchestrator`: `subagent-result-integration`, `linear-issue-triage`, `linear-delivery-traceability`, `agent-handoff-governance`, `external-reference-intelligence`
 - `rick-qa`: `linear-project-auditor`, `linear-delivery-traceability`
 - `rick-tracker`: `editorial-source-curation`
 - `rick-ops`: `n8n-editorial-orchestrator`

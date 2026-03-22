@@ -8,6 +8,8 @@ Un **dashboard siempre actualizado** en Notion para que vos (o alguien no técni
 
 **Control Room** es la **página de Notion** que usamos como centro de comunicación entre Rick (el stack en la VPS), el agente de Notion "Enlace Notion ↔ Rick" y vos. Ahí se hacen comentarios: Rick escribe y Enlace lee cuando corre; Enlace deja mensajes y el poller de Rick los lee a las XX:10. El ID de esa página es `NOTION_CONTROL_ROOM_PAGE_ID`. Puede ser la misma página "OpenClaw" o otra que elijas como sala de control. El **Dashboard Rick** es una página **distinta**, solo para mostrar el estado (métricas); no se usa para comentarios.
 
+Importante: **Control Room no debería ser depósito de páginas sueltas de proyecto**. Los outputs revisables de Rick deberían vivir en una base de entregables ligada a proyectos, y el dashboard solo debería mostrar vistas enlazadas o resúmenes.
+
 ## Página e integración configuradas
 
 - **URL:** [Dashboard Rick](https://www.notion.so/umbralbim/Dashboard-Rick-0fd13978b220498e9465b4fb2efc5f4a)

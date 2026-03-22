@@ -197,6 +197,36 @@ class TestEnqueueSuccess:
             trace_id=trace_id,
         )
 
+    def test_enqueue_persists_source_and_relation_context(self, client, fake_redis):
+        with patch("worker.app._get_redis", return_value=fake_redis):
+            resp = client.post(
+                "/enqueue",
+                json={
+                    "task": "research.web",
+                    "team": "marketing",
+                    "task_type": "research",
+                    "source": "openclaw_gateway",
+                    "source_kind": "tool_enqueue",
+                    "notion_track": True,
+                    "project_name": "Proyecto Embudo Ventas",
+                    "deliverable_name": "Benchmark Ruben Hassid - sistema contenido y funnel",
+                    "input": {"query": "test query"},
+                },
+                headers=AUTH,
+            )
+            assert resp.status_code == 200
+            task_id = resp.json()["task_id"]
+            stored = json.loads(fake_redis.get(f"{TASK_KEY_PREFIX}{task_id}"))
+
+        assert stored["source"] == "openclaw_gateway"
+        assert stored["source_kind"] == "tool_enqueue"
+        assert stored["notion_track"] is True
+        assert stored["project_name"] == "Proyecto Embudo Ventas"
+        assert stored["deliverable_name"] == "Benchmark Ruben Hassid - sistema contenido y funnel"
+        assert stored["input"]["project_name"] == "Proyecto Embudo Ventas"
+        assert stored["input"]["deliverable_name"] == "Benchmark Ruben Hassid - sistema contenido y funnel"
+        assert stored["input"]["notion_track"] is True
+
     def test_enqueue_redis_unavailable_returns_503(self, client):
         with patch("worker.app._get_redis", return_value=None):
             resp = client.post(

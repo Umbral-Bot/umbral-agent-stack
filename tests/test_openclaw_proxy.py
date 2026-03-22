@@ -283,11 +283,9 @@ class TestModelRouterOpenClaw:
 # ---------------------------------------------------------------------------
 class TestServiceProviderModelMap:
 
-    def test_openclaw_claude_models_in_map(self):
+    def test_openclaw_proxy_model_in_map(self):
         from dispatcher.service import PROVIDER_MODEL_MAP
-        assert PROVIDER_MODEL_MAP.get("openclaw_claude_pro") == "anthropic/claude-sonnet-4-6"
-        assert PROVIDER_MODEL_MAP.get("openclaw_claude_opus") == "anthropic/claude-opus-4-6"
-        assert PROVIDER_MODEL_MAP.get("openclaw_claude_haiku") == "anthropic/claude-haiku-4-5"
+        assert PROVIDER_MODEL_MAP.get("openclaw_proxy") == "anthropic/claude-sonnet-4-6"
 
     def test_original_claude_models_still_present(self):
         from dispatcher.service import PROVIDER_MODEL_MAP

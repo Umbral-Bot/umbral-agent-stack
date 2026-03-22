@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# quota-guard-cron.sh — protege OpenClaw del freeze por cuota Anthropic.
+# quota-guard-cron.sh â€” protege OpenClaw del freeze por cuota Anthropic.
 # Corre cada 15 min. Si claude_pro >= 75%, cambia OpenClaw a gpt-5.3-codex.
 set -euo pipefail
 

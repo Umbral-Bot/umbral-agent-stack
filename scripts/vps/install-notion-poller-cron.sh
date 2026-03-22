@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Install Notion Poller cron job (run once on VPS).
-# Preserves existing crontab entries — only adds poller line if not present.
+# Preserves existing crontab entries â€” only adds poller line if not present.
 set -euo pipefail
 
 CRON_LINE="* * * * * $HOME/umbral-agent-stack/scripts/vps/notion-poller-cron.sh >> /tmp/notion_poller.log 2>&1"

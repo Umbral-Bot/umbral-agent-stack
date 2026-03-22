@@ -139,6 +139,7 @@ Notas:
 
 - Si `if_exists_return=true` (default), retorna el proyecto existente por nombre en vez de duplicarlo.
 - Requiere un `team_id` o un `team_name` resoluble.
+- Antes de crear un proyecto canonico de Agent Stack, reutilizar el alias historico si ya existe y preferir `LINEAR_AGENT_STACK_PROJECT_ID` en produccion.
 
 ### 6. Asociar issue a proyecto
 
@@ -171,6 +172,71 @@ Task: `linear.list_project_issues`
 
 Devuelve las issues actualmente asociadas a un proyecto.
 
+### 8. Publicar follow-up interno de Agent Stack
+
+Task: `linear.publish_agent_stack_followup`
+
+Usar esta task cuando el pendiente venga de:
+
+- auditorias del repo
+- drift operativo
+- deuda tecnica u operativa del propio stack
+- follow-ups de monitoreo o analisis sobre Worker, Dispatcher, OpenClaw, Redis, Notion, Linear, VPS o VM
+
+Ejemplo:
+
+```json
+{
+  "title": "Unificar dispatcher vivo en VPS",
+  "summary": "Se detectaron dos procesos dispatcher.service activos.",
+  "evidence": "ps aux mostro dos procesos Python del dispatcher; systemctl no reflejaba ese estado.",
+  "impact": "Riesgo de doble consumo y drift operativo silencioso.",
+  "next_action": "Dejar un solo metodo de arranque y matar el duplicado.",
+  "kind": "operational_debt",
+  "designated_agent": "codex"
+}
+```
+
+Notas:
+
+- publica siempre en el proyecto canónico `Mejora Continua Agent Stack`
+- no debe usarse para proyectos externos ni entregables de cliente
+
+### 9. Tomar una issue de Agent Stack
+
+Task: `linear.claim_agent_stack_issue`
+
+Ejemplo:
+
+```json
+{
+  "identifier": "UMB-123",
+  "agent_name": "rick",
+  "comment": "Voy a tomar el slice de deploy y dejar trazabilidad."
+}
+```
+
+Notas:
+
+- agrega una label `Agente: <Nombre>`
+- puede mover la issue a `In Progress`
+- solo acepta issues del proyecto canónico de Agent Stack
+
+### 10. Listar cola interna de Agent Stack
+
+Task: `linear.list_agent_stack_issues`
+
+Ejemplo:
+
+```json
+{
+  "only_unclaimed": true,
+  "limit": 20
+}
+```
+
+Sirve para que Rick u otros agentes derivados de OpenClaw vean qué pendientes internos del stack todavía no tienen owner operativo.
+
 ## Notas
 
 - El routing automático infiere el equipo Umbral a partir del título y descripción usando keyword scoring.
@@ -178,3 +244,4 @@ Devuelve las issues actualmente asociadas a un proyecto.
 - La config de equipos está en `config/teams.yaml`.
 - Todas las tasks se encolan vía el Dispatcher a Redis y las ejecuta el Worker.
 - Para proyectos oficiales, no basta con crear la issue: hay que dejarla asociada al project correcto en Linear.
+- Para deuda y mejora interna del repo, usar el proyecto canónico `Mejora Continua Agent Stack`.

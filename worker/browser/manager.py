@@ -127,18 +127,20 @@ class BrowserManager:
         future = asyncio.run_coroutine_threadsafe(coro, self._loop)
         return future.result(timeout=120)
 
-    async def _create_page(self) -> _PageRef:
+    async def _create_page(self, page_id: str | None = None) -> _PageRef:
         assert self._context is not None
         page = await self._context.new_page()
-        page_id = str(uuid.uuid4())
-        ref = _PageRef(page_id=page_id, page=page)
-        self._pages[page_id] = ref
+        resolved_page_id = page_id or str(uuid.uuid4())
+        ref = _PageRef(page_id=resolved_page_id, page=page)
+        self._pages[resolved_page_id] = ref
         return ref
 
     async def _get_page_ref(self, page_id: str | None = None, *, create: bool = True) -> _PageRef:
         if page_id:
             ref = self._pages.get(page_id)
             if not ref:
+                if create:
+                    return await self._create_page(page_id)
                 raise ValueError(f"Unknown page_id: {page_id}")
             return ref
         if not self._pages:

@@ -74,12 +74,13 @@ class TestDashboardReportPayload:
              patch("scripts.dashboard_report_vps._redis_stats", return_value={"pending": 0, "blocked": 0, "connected": True}), \
              patch("scripts.dashboard_report_vps._quota_stats", return_value=[{"provider": "gemini_pro", "used": 10, "limit": 500, "pct": 2.0, "window_h": 24.0, "resets_in_min": None}]), \
              patch("scripts.dashboard_report_vps._team_stats", return_value=[{"team": "system", "supervisor": "—", "description": "Internal", "requires_vm": False, "completed": 3, "active": 1}]), \
-             patch("scripts.dashboard_report_vps._recent_tasks", return_value=[{"task": "ping", "team": "system", "status": "done", "duration_s": 0.1, "task_id": "abc12345", "when": "14:00 28/02"}]), \
+             patch("scripts.dashboard_report_vps._recent_tasks", return_value=[{"task": "research.web", "team": "system", "status": "done", "duration_s": 0.1, "task_id": "abc12345", "when": "14:00 28/02", "project_name": "Proyecto Embudo Ventas"}]), \
              patch("scripts.dashboard_report_vps._running_tasks", return_value=[]), \
              patch("scripts.dashboard_report_vps._ops_log_summary", return_value={"total_events": 5, "completed": 4, "failed": 1, "completed_today": 4, "success_rate": 80.0, "models_used": {"gemini": 4}, "trend": "+20% vs ayer"}), \
              patch("scripts.dashboard_report_vps._system_uptime", return_value="2d 5h"), \
              patch("scripts.dashboard_report_vps._last_error", return_value=None), \
-             patch("scripts.dashboard_report_vps._active_alerts", return_value=[]):
+             patch("scripts.dashboard_report_vps._active_alerts", return_value=[]), \
+             patch("scripts.dashboard_report_vps._notion_ops_summary", return_value={"tasks_total": 8, "tasks_unlinked": 1, "deliverables_pending": 2, "deliverables_adjustments": 1, "bridge_live": 1}):
             payload = build_dashboard_payload()
 
         assert payload["dashboard_v2"] is True
@@ -87,9 +88,97 @@ class TestDashboardReportPayload:
         assert len(payload["quotas"]) == 1
         assert len(payload["teams"]) == 1
         assert len(payload["recent_tasks"]) == 1
+        assert payload["recent_system_tasks"] == []
         assert payload["uptime"] == "2d 5h"
         assert payload["running_tasks"] == []
         assert payload["active_alerts"] == []
+        assert payload["vm_recovery_mode"] == {"enabled": False}
+        assert payload["notion_ops"]["deliverables_pending"] == 2
+        assert "release_tracking" not in payload
+
+    def test_build_dashboard_payload_degrades_when_vm_is_offline(self, monkeypatch):
+        monkeypatch.setenv("WORKER_URL", "http://127.0.0.1:8088")
+        monkeypatch.setenv("WORKER_TOKEN", "test")
+        monkeypatch.setenv("REDIS_URL", "redis://localhost:6379/0")
+        from scripts import dashboard_report_vps as dashboard_module
+        monkeypatch.setattr(dashboard_module, "WORKER_URL_VM", "http://100.109.16.40:8088")
+        monkeypatch.setattr(dashboard_module, "WORKER_URL_VM_INTERACTIVE", None)
+        build_dashboard_payload = dashboard_module.build_dashboard_payload
+        with patch("scripts.dashboard_report_vps._worker_health", side_effect=[
+            {"status": "OK", "tasks": ["ping"]},
+            {"status": "Offline (ConnectTimeout)", "tasks": []},
+        ]), \
+             patch("scripts.dashboard_report_vps._redis_stats", return_value={"pending": 0, "blocked": 0, "connected": True}), \
+             patch("scripts.dashboard_report_vps._quota_stats", return_value=[]), \
+             patch("scripts.dashboard_report_vps._team_stats", return_value=[]), \
+             patch("scripts.dashboard_report_vps._recent_tasks", return_value=[]), \
+             patch("scripts.dashboard_report_vps._running_tasks", return_value=[]), \
+             patch("scripts.dashboard_report_vps._ops_log_summary", return_value={"total_events": 0}), \
+             patch("scripts.dashboard_report_vps._system_uptime", return_value=None), \
+             patch("scripts.dashboard_report_vps._last_error", return_value=None), \
+             patch("scripts.dashboard_report_vps._active_alerts", return_value=["Worker VM: Offline (ConnectTimeout)"]), \
+             patch("scripts.dashboard_report_vps._notion_ops_summary", return_value=None):
+            payload = build_dashboard_payload()
+
+        assert payload["overall_status"] == "Degradado"
+
+    def test_build_dashboard_payload_marks_vm_recovery_mode(self, monkeypatch):
+        monkeypatch.setenv("WORKER_URL", "http://127.0.0.1:8088")
+        monkeypatch.setenv("WORKER_TOKEN", "test")
+        monkeypatch.setenv("REDIS_URL", "redis://localhost:6379/0")
+        from scripts import dashboard_report_vps as dashboard_module
+        monkeypatch.setattr(dashboard_module, "WORKER_URL_VM", "http://127.0.0.1:28088")
+        monkeypatch.setattr(dashboard_module, "WORKER_URL_VM_INTERACTIVE", "http://127.0.0.1:28089")
+        build_dashboard_payload = dashboard_module.build_dashboard_payload
+        with patch("scripts.dashboard_report_vps._worker_health", side_effect=[
+            {"status": "OK", "tasks": ["ping"]},
+            {"status": "OK", "tasks": ["ping"]},
+            {"status": "OK", "tasks": ["gui.desktop_status"]},
+        ]), \
+             patch("scripts.dashboard_report_vps._redis_stats", return_value={"pending": 0, "blocked": 0, "connected": True}), \
+             patch("scripts.dashboard_report_vps._quota_stats", return_value=[]), \
+             patch("scripts.dashboard_report_vps._team_stats", return_value=[]), \
+             patch("scripts.dashboard_report_vps._recent_tasks", return_value=[]), \
+             patch("scripts.dashboard_report_vps._running_tasks", return_value=[]), \
+             patch("scripts.dashboard_report_vps._ops_log_summary", return_value={"total_events": 0}), \
+             patch("scripts.dashboard_report_vps._system_uptime", return_value=None), \
+             patch("scripts.dashboard_report_vps._last_error", return_value=None), \
+             patch("scripts.dashboard_report_vps._active_alerts", return_value=[]), \
+             patch("scripts.dashboard_report_vps._notion_ops_summary", return_value={"tasks_total": 8, "tasks_unlinked": 1, "deliverables_pending": 2, "deliverables_adjustments": 1, "bridge_live": 1}):
+            payload = build_dashboard_payload()
+
+        assert payload["overall_status"] == "Operativo"
+        assert payload["vm_recovery_mode"]["enabled"] is True
+        assert payload["vm_recovery_mode"]["transport"] == "reverse_ssh_tunnel"
+
+    def test_split_recent_tasks_separates_signal_from_noise(self, monkeypatch):
+        from scripts.dashboard_report_vps import _split_recent_tasks
+
+        recent = [
+            {"task": "windows.fs.list", "team": "lab", "status": "done", "duration_s": 0.2, "task_id": "aaa111", "when": "14:00 28/02"},
+            {"task": "research.web", "team": "marketing", "status": "done", "duration_s": 1.0, "task_id": "bbb222", "when": "14:01 28/02", "project_name": "Proyecto Embudo Ventas"},
+        ]
+
+        relevant, system = _split_recent_tasks(recent)
+        assert [t["task_id"] for t in relevant] == ["bbb222"]
+        assert [t["task_id"] for t in system] == ["aaa111"]
+
+    def test_resolve_bridge_db_id_prefers_env(self, monkeypatch):
+        from scripts import dashboard_report_vps as dashboard_module
+
+        monkeypatch.setattr(dashboard_module, "NOTION_BRIDGE_DB_ID", "bridge-from-env")
+        monkeypatch.setattr(dashboard_module, "NOTION_CONTROL_ROOM_PAGE_ID", "")
+
+        assert dashboard_module._resolve_bridge_db_id() == "bridge-from-env"
+
+    def test_resolve_bridge_db_id_discovers_child_database(self, monkeypatch):
+        from scripts import dashboard_report_vps as dashboard_module
+
+        monkeypatch.setattr(dashboard_module, "NOTION_BRIDGE_DB_ID", "")
+        monkeypatch.setattr(dashboard_module, "NOTION_CONTROL_ROOM_PAGE_ID", "control-room-1")
+        monkeypatch.setattr(dashboard_module, "_find_child_database_id", lambda page_id, title: "bridge-from-child")
+
+        assert dashboard_module._resolve_bridge_db_id() == "bridge-from-child"
 
     def test_fingerprint_changes_with_data(self, monkeypatch):
         monkeypatch.setenv("WORKER_URL", "http://127.0.0.1:8088")
@@ -122,8 +211,18 @@ class TestNotionBlocks:
                 {"team": "system", "supervisor": "—", "description": "Internal", "requires_vm": False, "completed": 10, "active": 1},
                 {"team": "marketing", "supervisor": "Marketing Supervisor", "description": "SEO", "requires_vm": False, "completed": 5, "active": 0},
             ],
+            "notion_ops": {
+                "tasks_total": 12,
+                "tasks_unlinked": 2,
+                "deliverables_pending": 3,
+                "deliverables_adjustments": 1,
+                "bridge_live": 2,
+            },
             "recent_tasks": [
                 {"task": "ping", "team": "system", "status": "done", "duration_s": 0.1, "task_id": "abc12345", "when": "14:00 28/02"},
+            ],
+            "recent_system_tasks": [
+                {"task": "windows.fs.list", "team": "lab", "status": "done", "duration_s": 0.2, "task_id": "def67890", "when": "14:05 28/02"},
             ],
             "running_tasks": [
                 {"task": "notion.poll_comments", "team": "system", "elapsed": "5s"},
@@ -155,6 +254,24 @@ class TestNotionBlocks:
         callouts = [b for b in blocks if b["type"] == "callout"]
         assert any("green_background" in str(c) for c in callouts), "Operativo should use green_background"
         assert any("red_background" in str(c) for c in callouts), "Alert or error should use red_background"
+        assert all("Seguimiento R16/R17" not in str(b) for b in blocks)
+        assert any("Ruido tecnico / sistema" in str(b) for b in blocks)
+        assert any("Este dashboard es tecnico" in str(b) for b in blocks)
+
+    def test_build_dashboard_v2_blocks_show_vm_recovery_mode(self):
+        from worker.notion_client import _build_dashboard_v2_blocks
+        data = {
+            "dashboard_v2": True,
+            "timestamp": "2026-03-15 21:54 UTC",
+            "overall_status": "Operativo",
+            "vps_worker": {"status": "OK", "tasks": ["ping"]},
+            "vm_worker": {"status": "OK", "tasks": ["ping"]},
+            "vm_worker_interactive": {"status": "OK", "tasks": ["gui.desktop_status"]},
+            "vm_recovery_mode": {"enabled": True, "transport": "reverse_ssh_tunnel"},
+            "redis": {"pending": 0, "blocked": 0, "connected": True},
+        }
+        blocks = _build_dashboard_v2_blocks(data)
+        assert any("recovery mode" in str(block).lower() for block in blocks)
 
     def test_build_dashboard_v2_minimal(self):
         from worker.notion_client import _build_dashboard_v2_blocks

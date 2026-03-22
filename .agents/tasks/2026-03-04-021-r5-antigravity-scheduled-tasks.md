@@ -2,7 +2,8 @@
 id: "021"
 title: "Scheduled Tasks Manager — Tareas programadas via Notion"
 assigned_to: antigravity
-status: assigned
+status: done
+updated_at: "2026-03-22T19:04:21-03:00"
 branch: feat/antigravity-scheduled-tasks
 priority: high
 round: 5
@@ -81,3 +82,8 @@ Crear `tests/test_scheduler.py`:
 - `dispatcher/notion_poller.py` — integrar scheduler
 - `scripts/vps/notion-poller-daemon.py` — agregar check loop
 - `worker/app.py` — endpoint /scheduled
+
+## Log
+
+### [codex] 2026-03-22 19:04 -03:00
+Regularizacion administrativa por UMB-132. Esta tarea quedo como arrastre historico y ya no representa trabajo vivo; se cierra el archivo para alinearlo con el board y el estado real del repo.

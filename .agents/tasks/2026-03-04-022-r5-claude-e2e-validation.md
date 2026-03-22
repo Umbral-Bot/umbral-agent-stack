@@ -2,7 +2,8 @@
 id: "022"
 title: "E2E Validation Suite — Prueba completa del sistema en producción"
 assigned_to: claude-code
-status: assigned
+status: done
+updated_at: "2026-03-22T19:04:21-03:00"
 branch: feat/claude-e2e-validation
 priority: critical
 round: 5
@@ -92,3 +93,8 @@ Reportar los resultados reales.
 - `worker/app.py` — endpoints a testear
 - `dispatcher/queue.py` — TaskQueue, queue_stats
 - `scripts/post_notion_message.py` — referencia para postear en Notion
+
+## Log
+
+### [codex] 2026-03-22 19:04 -03:00
+Regularizacion administrativa por UMB-132. Esta tarea quedo como arrastre historico y ya no representa trabajo vivo; se cierra el archivo para alinearlo con el board y el estado real del repo.

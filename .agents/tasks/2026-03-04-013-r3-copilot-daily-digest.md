@@ -2,7 +2,8 @@
 id: "013"
 title: "Daily Activity Digest + Notion Post"
 assigned_to: github-copilot
-status: assigned
+status: done
+updated_at: "2026-03-22T19:04:21-03:00"
 branch: feat/copilot-daily-digest
 priority: high
 round: 3
@@ -61,3 +62,8 @@ Crear `tests/test_daily_digest.py`:
 - `scripts/sim_daily_report.py` — referencia de script similar
 - `scripts/vps/install-cron.sh` — agregar entrada del cron
 - `worker/config.py` — variables de entorno
+
+## Log
+
+### [codex] 2026-03-22 19:04 -03:00
+Regularizacion administrativa por UMB-132. Esta tarea quedo como arrastre historico y ya no representa trabajo vivo; se cierra el archivo para alinearlo con el board y el estado real del repo.

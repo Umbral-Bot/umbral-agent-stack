@@ -2,7 +2,8 @@
 id: "018"
 title: "Notion Result Poster — Smart Reply con composite.research_report"
 assigned_to: antigravity
-status: assigned
+status: done
+updated_at: "2026-03-22T19:04:21-03:00"
 branch: feat/antigravity-notion-result-poster
 priority: critical
 round: 4
@@ -77,3 +78,8 @@ Crear `tests/test_notion_report_page.py`:
 - `worker/notion_client.py` — cliente Notion, funciones de API (EXTENDER aquí)
 - `dispatcher/smart_reply.py` — integrar lógica de página
 - `worker/config.py` — NOTION_CONTROL_ROOM_PAGE_ID
+
+## Log
+
+### [codex] 2026-03-22 19:04 -03:00
+Regularizacion administrativa por UMB-132. Esta tarea quedo como arrastre historico y ya no representa trabajo vivo; se cierra el archivo para alinearlo con el board y el estado real del repo.

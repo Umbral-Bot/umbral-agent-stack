@@ -6,11 +6,13 @@ VPS autosuficiente: Worker local (WORKER_URL) siempre; VM opcional (WORKER_URL_V
 - Con VM online: tareas con requires_vm=True van a la VM; el resto al Worker local.
 """
 
+import atexit
 import logging
 import os
 import sys
 import threading
 import time
+from pathlib import Path
 from typing import Any, Dict, Optional
 
 import httpx
@@ -26,6 +28,11 @@ from dispatcher.team_config import get_team_capabilities
 from dispatcher.task_routing import task_requires_vm
 from client.worker_client import WorkerClient
 from infra.ops_logger import ops_log
+
+try:
+    import fcntl
+except ImportError:  # pragma: no cover - Windows dev environments
+    fcntl = None
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 
@@ -55,6 +62,77 @@ CALLBACK_TIMEOUT_SECONDS = 10.0
 CALLBACK_RETRY_DELAY_SECONDS = 5
 
 MAX_CONNECT_RETRIES = 3
+DEFAULT_DISPATCHER_LOCK_PATH = "/tmp/umbral-dispatcher.lock"
+
+
+class DispatcherInstanceError(RuntimeError):
+    """Raised when another dispatcher process already owns the instance lock."""
+
+
+def _read_lock_owner_pid(handle: Any) -> Optional[int]:
+    handle.seek(0)
+    raw_value = handle.read().strip()
+    if not raw_value:
+        return None
+    try:
+        return int(raw_value.splitlines()[0])
+    except ValueError:
+        return None
+
+
+class DispatcherInstanceLock:
+    """Best-effort cross-process lock so the VPS keeps only one dispatcher alive."""
+
+    def __init__(self, path: str | Path):
+        self.path = Path(path)
+        self.handle: Any = None
+
+    def acquire(self) -> tuple[bool, Optional[int]]:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        handle = self.path.open("a+", encoding="utf-8")
+        if fcntl is not None:
+            try:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                owner_pid = _read_lock_owner_pid(handle)
+                handle.close()
+                return False, owner_pid
+
+        handle.seek(0)
+        handle.truncate()
+        handle.write(f"{os.getpid()}\n")
+        handle.flush()
+        self.handle = handle
+        return True, None
+
+    def release(self) -> None:
+        if self.handle is None:
+            return
+
+        try:
+            self.handle.seek(0)
+            self.handle.truncate()
+            self.handle.flush()
+            if fcntl is not None:
+                fcntl.flock(self.handle.fileno(), fcntl.LOCK_UN)
+        finally:
+            self.handle.close()
+            self.handle = None
+
+
+def _acquire_dispatcher_instance_lock() -> DispatcherInstanceLock:
+    lock_path = os.environ.get("DISPATCHER_LOCK_PATH", DEFAULT_DISPATCHER_LOCK_PATH)
+    instance_lock = DispatcherInstanceLock(lock_path)
+    acquired, owner_pid = instance_lock.acquire()
+    if not acquired:
+        owner_text = f" (pid {owner_pid})" if owner_pid else ""
+        raise DispatcherInstanceError(
+            f"Another dispatcher instance is already running{owner_text}. "
+            f"Lock file: {lock_path}"
+        )
+
+    atexit.register(instance_lock.release)
+    return instance_lock
 
 
 def _post_webhook_callback(callback_url: str, payload: Dict[str, Any]) -> None:
@@ -505,6 +583,12 @@ def _run_worker(
 
 
 def main():
+    try:
+        instance_lock = _acquire_dispatcher_instance_lock()
+    except DispatcherInstanceError as exc:
+        logger.error("%s", exc)
+        sys.exit(1)
+
     redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
     worker_url = os.environ.get("WORKER_URL", "http://127.0.0.1:8088")
     worker_url_vm = os.environ.get("WORKER_URL_VM", "").strip() or None
@@ -521,6 +605,7 @@ def main():
     pool = redis.ConnectionPool.from_url(redis_url, decode_responses=True)
     r = redis.Redis(connection_pool=pool)
     queue = TaskQueue(r)
+    hm: Optional[HealthMonitor] = None
 
     # HealthMonitor vigila la VM (si hay WORKER_URL_VM); si no hay VM, vm_online queda False
     hm_url = worker_url_vm if worker_url_vm else "http://127.0.0.1:1"
@@ -571,7 +656,9 @@ def main():
     except KeyboardInterrupt:
         logger.info("Shutting down Dispatcher Service gracefully...")
     finally:
-        hm.stop()
+        if hm is not None:
+            hm.stop()
+        instance_lock.release()
 
 
 if __name__ == "__main__":

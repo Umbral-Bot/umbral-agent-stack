@@ -449,6 +449,21 @@ def _run_worker(
         # S4: selección de modelo por task_type y cuotas
         is_llm_task = any(task.startswith(p) for p in LLM_TASK_PREFIXES)
         decision = model_router.select_model(task_type)
+        if is_llm_task and decision.reason == "no_configured_provider":
+            reason = "no_configured_provider"
+            logger.warning(
+                "[worker %d] Task %s blocked: %s (task_type=%s)",
+                worker_id, task_id, reason, task_type,
+            )
+            ops_log.task_blocked(task_id, task, team, reason, trace_id=trace_id)
+            threading.Thread(
+                target=_notion_upsert,
+                args=(wc_local, task_id, "blocked", team, task),
+                kwargs={"error": reason, "envelope": envelope},
+                daemon=True,
+            ).start()
+            queue.block_task(task_id, reason)
+            continue
         if decision.requires_approval and is_llm_task:
             reason = "quota_exceeded_approval_required"
             logger.warning("[worker %d] Task %s blocked: %s (model=%s)", worker_id, task_id, reason, decision.model)

@@ -1,13 +1,13 @@
 ---
 id: "2026-02-28-003"
 title: "VM: ejecutar runbook diagnóstico schtasks /ru y reportar resultados"
-status: blocked
+status: done
 assigned_to: codex
 created_by: cursor
 priority: high
 sprint: S5
 created_at: "2026-02-28"
-updated_at: "2026-03-02T01:24:29-03:00"
+updated_at: "2026-03-22T19:04:21-03:00"
 ---
 
 ## Objetivo
@@ -74,3 +74,5 @@ Tests:
 
 - No aplican tests de Python; se ejecutaron comandos de diagnóstico en terminal.
 
+### [codex] 2026-03-22 19:04 -03:00
+Regularizacion administrativa por UMB-132. Esta tarea quedo como arrastre historico y ya no representa trabajo vivo; se cierra el archivo para alinearlo con el board y el estado real del repo.

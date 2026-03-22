@@ -3,13 +3,13 @@
 ---
 id: "2026-03-07-100"
 title: "Test en VPS + fix según resultados (incorpora PR 108 Rick)"
-status: assigned
+status: done
 assigned_to: claude-code
 created_by: cursor
 priority: high
 sprint: R21
 created_at: "2026-03-07"
-updated_at: "2026-03-08"
+updated_at: "2026-03-22T19:04:21-03:00"
 ---
 
 ## Info nueva 2026-03-08 (Rick en VM)
@@ -151,3 +151,8 @@ Con el scorecard de Fase 2:
 - `docs/62-operational-runbook.md`
 - `docs/34-linear-first-operating-model.md`
 - `scripts/vps/n8n-path-and-service.sh`
+
+## Log
+
+### [codex] 2026-03-22 19:04 -03:00
+Regularizacion administrativa por UMB-132. Esta tarea quedo como arrastre historico y ya no representa trabajo vivo; se cierra el archivo para alinearlo con el board y el estado real del repo.

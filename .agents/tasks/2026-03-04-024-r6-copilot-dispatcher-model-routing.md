@@ -4,7 +4,8 @@ title: "Dispatcher Model Routing — Integrar ModelRouter al flujo real de despa
 assigned_to: github-copilot
 branch: feat/copilot-model-routing
 round: 6
-status: assigned
+status: done
+updated_at: "2026-03-22T19:04:21-03:00"
 created: 2026-03-04
 ---
 
@@ -92,3 +93,8 @@ Agregar un cron que ejecute `check_and_enqueue` del `TaskScheduler` cada minuto:
 ## Entregable
 
 PR a `main` desde `feat/copilot-model-routing` con todos los tests pasando.
+
+## Log
+
+### [codex] 2026-03-22 19:04 -03:00
+Regularizacion administrativa por UMB-132. Esta tarea quedo como arrastre historico y ya no representa trabajo vivo; se cierra el archivo para alinearlo con el board y el estado real del repo.

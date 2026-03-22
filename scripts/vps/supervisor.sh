@@ -12,6 +12,7 @@ ENV_FILE="${ENV_FILE:-$HOME/.config/openclaw/env}"
 WORKER_HOST="${WORKER_HOST:-127.0.0.1}"
 WORKER_PORT="${WORKER_PORT:-8088}"
 WORKER_URL="${WORKER_URL:-http://${WORKER_HOST}:${WORKER_PORT}}"
+DISPATCHER_CTL="${DISPATCHER_CTL:-$REPO/scripts/vps/dispatcher-service.sh}"
 LOG_PREFIX="[supervisor $(date -u +"%Y-%m-%d %H:%M UTC")]"
 RESTARTED=()
 
@@ -37,13 +38,11 @@ export PYTHONPATH="${REPO}"
 # 1. Check & restart Worker (uvicorn worker.app:app)
 # ---------------------------------------------------------------
 check_worker() {
-    # First try HTTP health check (most reliable)
     if curl -sf -o /dev/null -w "" "${WORKER_URL}/health" 2>/dev/null; then
         echo "${LOG_PREFIX} Worker: OK"
         return 0
     fi
 
-    # Process might be starting up â€” check if process exists
     if pgrep -f "uvicorn worker.app" > /dev/null 2>&1; then
         echo "${LOG_PREFIX} Worker: process found but not responding (may be starting)"
         return 0
@@ -53,9 +52,8 @@ check_worker() {
 }
 
 restart_worker() {
-    echo "${LOG_PREFIX} Worker: DOWN â€” restarting..."
+    echo "${LOG_PREFIX} Worker: DOWN - restarting..."
     cd "$REPO"
-    # Re-source env so Worker gets same WORKER_TOKEN as dashboard/cron
     if [ -f "$ENV_FILE" ]; then
         set -a
         # shellcheck disable=SC1090
@@ -80,29 +78,30 @@ restart_worker() {
 }
 
 # ---------------------------------------------------------------
-# 2. Check & restart Dispatcher (python3 -m dispatcher.service)
+# 2. Check & restart Dispatcher (canonical path: systemd)
 # ---------------------------------------------------------------
 check_dispatcher() {
-    if pgrep -f "dispatcher.service" > /dev/null 2>&1; then
+    local status_output
+    if status_output="$(bash "$DISPATCHER_CTL" status 2>&1)"; then
         echo "${LOG_PREFIX} Dispatcher: OK"
         return 0
     fi
+
+    echo "${LOG_PREFIX} Dispatcher: drift detected"
+    while IFS= read -r line; do
+        [ -n "$line" ] && echo "${LOG_PREFIX}   ${line}"
+    done <<< "$status_output"
     return 1
 }
 
 restart_dispatcher() {
-    echo "${LOG_PREFIX} Dispatcher: DOWN â€” restarting..."
-    cd "$REPO"
-    nohup python3 -m dispatcher.service \
-        > /tmp/dispatcher.log 2>&1 &
-    local pid=$!
-    sleep 2
-
-    if pgrep -f "dispatcher.service" > /dev/null 2>&1; then
-        echo "${LOG_PREFIX} Dispatcher: restarted (PID $pid)"
+    echo "${LOG_PREFIX} Dispatcher: DOWN or drifted - reconciling via systemd..."
+    if bash "$DISPATCHER_CTL" reconcile > /tmp/dispatcher_reconcile.log 2>&1; then
+        echo "${LOG_PREFIX} Dispatcher: reconciled"
         RESTARTED+=("Dispatcher")
     else
-        echo "${LOG_PREFIX} Dispatcher: FAILED to restart (PID $pid)"
+        echo "${LOG_PREFIX} Dispatcher: FAILED to reconcile"
+        cat /tmp/dispatcher_reconcile.log 2>/dev/null || true
         RESTARTED+=("Dispatcher(FAILED)")
     fi
 }
@@ -116,7 +115,7 @@ check_redis() {
         return 0
     fi
 
-    echo "${LOG_PREFIX} Redis: DOWN â€” attempting restart..."
+    echo "${LOG_PREFIX} Redis: DOWN - attempting restart..."
     redis-server --daemonize yes 2>/dev/null || true
     sleep 1
 
@@ -124,18 +123,18 @@ check_redis() {
         echo "${LOG_PREFIX} Redis: restarted"
         RESTARTED+=("Redis")
         return 0
-    else
-        echo "${LOG_PREFIX} Redis: FAILED to restart"
-        RESTARTED+=("Redis(FAILED)")
-        return 1
     fi
+
+    echo "${LOG_PREFIX} Redis: FAILED to restart"
+    RESTARTED+=("Redis(FAILED)")
+    return 1
 }
 
 # ---------------------------------------------------------------
 # 4. Post alert to Notion (best-effort).
 #    If NOTION_SUPERVISOR_API_KEY and NOTION_SUPERVISOR_ALERT_PAGE_ID are set:
 #      posts directly to Notion API so the comment appears as the "Supervisor"
-#      integration (Dashboard Rick page). Otherwise calls Worker notion.add_comment.
+#      integration. Otherwise calls Worker notion.add_comment.
 # ---------------------------------------------------------------
 post_notion_alert() {
     local alert_text="$1"
@@ -143,7 +142,6 @@ post_notion_alert() {
     local http_status
     local response_body
 
-    # Prefer direct Notion API with Supervisor identity (Dashboard Rick page)
     if [ -n "${NOTION_SUPERVISOR_API_KEY:-}" ] && [ -n "${NOTION_SUPERVISOR_ALERT_PAGE_ID:-}" ]; then
         local payload
         payload="$(
@@ -170,7 +168,7 @@ PY
         http_status="$(printf '%s\n' "$response" | tail -n 1)"
         response_body="$(printf '%s\n' "$response" | sed '$d')"
         if [ "$http_status" = "200" ]; then
-            echo "${LOG_PREFIX} Alert posted to Notion (Dashboard Rick, as Supervisor)"
+            echo "${LOG_PREFIX} Alert posted to Notion (Supervisor identity)"
             return 0
         fi
         echo "${LOG_PREFIX} Failed to post Notion alert (HTTP ${http_status})"
@@ -178,7 +176,6 @@ PY
         return 1
     fi
 
-    # Fallback: via Worker (uses NOTION_API_KEY; comment appears as Rick integration)
     local worker_token="${WORKER_TOKEN:-}"
     local alert_page_id="${NOTION_SUPERVISOR_ALERT_PAGE_ID:-${NOTION_CONTROL_ROOM_PAGE_ID:-}}"
     local payload
@@ -226,23 +223,15 @@ PY
 # ---------------------------------------------------------------
 # Execute checks
 # ---------------------------------------------------------------
-
-# Redis first (prerequisite)
 check_redis || true
-
-# Worker
 check_worker || restart_worker
-
-# Dispatcher
 check_dispatcher || restart_dispatcher
 
 # ---------------------------------------------------------------
-# Post alert to Notion if anything was restarted (Worker POST /run).
+# Post alert to Notion if anything was restarted.
 # ---------------------------------------------------------------
 if [ ${#RESTARTED[@]} -gt 0 ]; then
-    ALERT="ðŸ”„ Supervisor auto-restart â€” $(date -u +"%Y-%m-%d %H:%M UTC") â€” Restarted: ${RESTARTED[*]}"
-
-    # Wait for Worker to be ready after restart (it may need a few seconds)
+    ALERT="Supervisor auto-restart - $(date -u +"%Y-%m-%d %H:%M UTC") - Restarted: ${RESTARTED[*]}"
     sleep 4
     post_notion_alert "$ALERT" || true
 fi

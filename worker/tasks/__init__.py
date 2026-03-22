@@ -53,6 +53,9 @@ from .linear import (
     handle_linear_attach_issue_to_project,
     handle_linear_list_project_issues,
     handle_linear_create_project_update,
+    handle_linear_publish_agent_stack_followup,
+    handle_linear_claim_agent_stack_issue,
+    handle_linear_list_agent_stack_issues,
 )
 from .research import handle_research_web
 from .llm import handle_llm_generate
@@ -145,6 +148,9 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "linear.attach_issue_to_project": handle_linear_attach_issue_to_project,
     "linear.list_project_issues": handle_linear_list_project_issues,
     "linear.create_project_update": handle_linear_create_project_update,
+    "linear.publish_agent_stack_followup": handle_linear_publish_agent_stack_followup,
+    "linear.claim_agent_stack_issue": handle_linear_claim_agent_stack_issue,
+    "linear.list_agent_stack_issues": handle_linear_list_agent_stack_issues,
     "research.web": handle_research_web,
     "llm.generate": handle_llm_generate,
     "composite.research_report": handle_composite_research_report,

@@ -29,6 +29,7 @@ Regularización `UMB-132` (2026-03-22): se cerraron task files históricos que h
 | ID | Tarea | Agente | Estado |
 |----|-------|--------|--------|
 | 2026-03-09-002 | Recomendaciones Cursor para orquestacion y politica de ejecucion de Rick | cursor | assigned |
+| 2026-03-22-001 | Diagnóstico env Rick vs local — coordinación con Cursor | codex | assigned |
 
 ## Ronda 16 — Cerrada
 

@@ -1,6 +1,6 @@
 ---
 id: "2026-03-22-001"
-title: "Diagnóstico env Rick vs local — coordinación con Cursor"
+title: "Diagnóstico env Rick vs local — Codex define canónicos"
 status: assigned
 assigned_to: codex
 created_by: cursor
@@ -12,13 +12,15 @@ updated_at: 2026-03-22T00:00:00-06:00
 
 ## Objetivo
 
-Hacer un diagnóstico y análisis de las diferencias entre el env de Rick (`~/.config/openclaw/env` en VPS) y el `.env` local de Cursor, y **determinar si Codex introdujo algún cambio** en variables de Notion u otras durante sus tareas previas (R20-098, R18-094, etc.), para que Cursor y Codex coordinen antes de aplicar correcciones.
+**Codex tiene más noción del estado actual** — ha hecho harto trabajo reciente (Notion, dashboard, auditorías, etc.). Esta tarea pide que Codex **defina los valores canónicos** para las variables de entorno y que Cursor sincronice su `.env` local hacia esos valores.
+
+**Fuente de verdad:** El env de Rick (`~/.config/openclaw/env` en VPS) es producción. Si Codex trabajó con Rick y sabe qué IDs/keys son los correctos, esa es la referencia. Cursor actualizará su `.env` local para alinearse.
 
 ## Contexto
 
-Cursor comparó `env.rick` (copia de Rick) con `.env` local y encontró diferencias en varias variables. **No debe cambiarse nada** hasta que Codex confirme si él hizo modificaciones intencionales.
+Cursor comparó `env.rick` (copia de Rick) con `.env` local y encontró diferencias. Cursor **no cambiará nada** hasta que Codex declare los canónicos.
 
-### Diferencias detectadas (punto 4 — NO tocar hasta coordinación)
+### Diferencias detectadas
 
 | Variable | Rick (VPS) | Local (Cursor) |
 |----------|------------|----------------|
@@ -27,32 +29,31 @@ Cursor comparó `env.rick` (copia de Rick) con `.env` local y encontró diferenc
 | GOOGLE_CSE_API_KEY_RICK_UMBRAL | `AIzaSyDJzcEoepEL9CEkXI5zYgd9T6mj_Vz0Fsw` | `AIzaSyBWDev_CloKq0L6zKcqySJBHKEjMp4aUNY` |
 | GOOGLE_API_KEY_RICK_UMBRAL | `...Mmbg` (sin s) | `...Mmbgs` (con s) |
 
-Según docs, el Dashboard Rick canónico es `0fd13978-b220-498e-9465-b4fb2efc5f4a`.
+Docs históricos dicen Dashboard Rick = `0fd13978-b220-498e-9465-b4fb2efc5f4a`, pero si Codex/Rick usan otro en producción, ese es el canónico.
 
-### Otras correcciones pendientes (Cursor las hará después de este diagnóstico)
+### Otras correcciones (Cursor las hará después)
 
 - `.env` local: eliminar líneas 51-54 (comandos de shell que se colaron)
-- `env.rick`: `GOOGLE_CSE_CX` duplicado con valores distintos (quitar el incorrecto)
+- `env.rick`: `GOOGLE_CSE_CX` duplicado (quitar el incorrecto)
 - `env.rick`: redundancia `GOOGLE_API_KEY_RICK_UMBRAL_ALT`
-- Agregar variables faltantes en cada lado según diagnóstico
+- Agregar variables faltantes según lo que Codex indique
 
 ## Tareas para Codex
 
-1. **Revisar tus tareas previas** (R20-098 auditoría Notion, R18-094 dashboard Notion, otras que hayan tocado .env o plantillas de entorno).
-2. **Confirmar si Codex modificó** valores de NOTION_DASHBOARD_PAGE_ID, NOTION_TASKS_DB_ID, o cualquier otra variable de Notion/Google en el repo, en .env.example, en docs o en scripts de setup.
-3. **Investigar en el historial de Git** si hay commits que cambiaron esos IDs (ej. en `setup_notion_tasks_db.py`, `create_dashboard_page.py`, docs de Notion, etc.).
-4. **Escribir un informe breve** en el `## Log` de esta tarea con:
-   - Qué cambió Codex (si algo) y por qué.
-   - Cuál de los dos valores (Rick vs local) debería ser el canónico para NOTION_DASHBOARD_PAGE_ID y NOTION_TASKS_DB_ID.
-   - Recomendación: ¿unificar ambos env hacia los valores correctos, o hay razón para mantener diferencias?
+1. **Validar qué está operando hoy** — Con tu contexto reciente (R20-098, R18-094, dashboard, scripts), confirmá qué valores de NOTION_* y GOOGLE_* son los que Rick/producción usan de verdad.
+2. **Definir canónicos** — Para cada variable en disputa, indicá cuál es el valor correcto (Rick suele ser la referencia).
+3. **Escribir informe breve** en el `## Log` con:
+   - Valores canónicos por variable (los que Cursor debe usar en `.env` local).
+   - Si hay algo en `env.rick` que deba corregirse (duplicados, typos).
+   - Variables que Cursor deba agregar a su `.env` para paridad con Rick.
 
 ## Criterios de aceptación
 
-- [ ] Codex revisó sus tareas previas y el historial del repo.
-- [ ] Informe en el Log indicando si Codex hizo cambios y cuáles son los valores canónicos.
-- [ ] Recomendación clara para que Cursor aplique las correcciones del resto de puntos de forma coordinada.
+- [ ] Codex validó el estado operativo actual y definió valores canónicos.
+- [ ] Informe en el Log con lista de variables canónicas y correcciones sugeridas.
+- [ ] Cursor podrá aplicar las correcciones en `.env` local y `env.rick` sin preguntar más.
 
 ## Log
 
 ### [cursor] 2026-03-22
-Tarea creada. Contexto: comparación env.rick vs .env local; diferencias en Notion/Google. Punto 4 (valores distintos) se deja en espera hasta diagnóstico de Codex.
+Tarea creada. Codex tiene más contexto del estado reciente; define canónicos y Cursor sincroniza local hacia Rick.

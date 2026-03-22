@@ -9,6 +9,9 @@ Tasks: Linear integration handlers.
 - linear.attach_issue_to_project: asociar issue a proyecto
 - linear.list_project_issues: listar issues de un proyecto
 - linear.create_project_update: publicar update de estado en un proyecto
+- linear.publish_agent_stack_followup: publicar pendiente interno al proyecto canonico de Agent Stack
+- linear.claim_agent_stack_issue: tomar una issue del proyecto canonico por agente
+- linear.list_agent_stack_issues: listar issues del proyecto canonico de Agent Stack
 """
 
 import logging
@@ -55,6 +58,68 @@ def _linear_api_key() -> str | None:
 
 logger = logging.getLogger("worker.tasks.linear")
 
+_AGENT_STACK_BASE_LABELS = [
+    ("Agent Stack", "#2563EB"),
+    ("Mejora Continua", "#7C3AED"),
+]
+_AGENT_STACK_PROJECT_NAME = "Mejora Continua Agent Stack"
+_AGENT_STACK_PROJECT_ALIASES = (
+    _AGENT_STACK_PROJECT_NAME,
+    "Auditor\u00eda Mejora Continua \u2014 Umbral Agent Stack",
+    "Auditoria Mejora Continua - Umbral Agent Stack",
+)
+_AGENT_STACK_PROJECT_DESCRIPTION = (
+    "Proyecto can\u00f3nico para la mejora continua de Umbral Agent Stack, con foco en drift "
+    "operativo, follow-ups de auditor\u00eda, deuda t\u00e9cnica y consistencia entre repo y "
+    "operaci\u00f3n real."
+)
+_AGENT_STACK_PROJECT_CONTENT = (
+    "Objetivo: revisar qu\u00e9 est\u00e1 definido en repo, qu\u00e9 workflows y agentes deben "
+    "evaluar continuamente el sistema, qu\u00e9 ocurre hoy en Linear, Notion, dashboard, cron "
+    "y artefactos, y dejar el estado real con gaps accionables y seguimiento trazable.\n\n"
+    "Usar este proyecto para: worker, dispatcher, OpenClaw, Redis, Tailscale, VPS o VM, "
+    "Notion y Linear del propio stack, drift operativo y follow-ups internos.\n\n"
+    "No usar este proyecto para: proyectos de cliente, entregables de negocio o iniciativas "
+    "tem\u00e1ticas de Rick fuera del stack."
+)
+_AGENT_STACK_KIND_LABELS = {
+    "analysis_followup": ("Analysis Follow-up", "#F59E0B"),
+    "operational_debt": ("Operational Debt", "#DC2626"),
+    "human_review": ("Human Review", "#059669"),
+    "drift": ("Drift", "#EA580C"),
+}
+_AGENT_STACK_ALLOWED_AGENT_CANONICAL = {
+    "codex": "Codex",
+    "cursor": "Cursor",
+    "antigravity": "Antigravity",
+    "github copilot": "GitHub Copilot",
+    "github-copilot": "GitHub Copilot",
+    "rick": "Rick",
+    "openclaw": "OpenClaw",
+}
+
+
+def _allowed_agent_names() -> dict[str, str]:
+    configured = {}
+    raw = getattr(config, "LINEAR_AGENT_STACK_ALLOWED_AGENTS", "") or ""
+    for item in raw.split(","):
+        key = item.strip().lower()
+        if not key:
+            continue
+        configured[key] = _AGENT_STACK_ALLOWED_AGENT_CANONICAL.get(key, item.strip())
+    return configured or dict(_AGENT_STACK_ALLOWED_AGENT_CANONICAL)
+
+
+def _canonical_agent_name(agent_name: str) -> str | None:
+    key = (agent_name or "").strip().lower()
+    if not key:
+        return None
+    return _allowed_agent_names().get(key)
+
+
+def _agent_label(agent_name: str) -> tuple[str, str]:
+    return (f"Agente: {agent_name}", "#0F766E")
+
 
 def _resolve_linear_team_id(
     api_key: str,
@@ -80,6 +145,124 @@ def _resolve_linear_team_id(
         )
         return fallback
     return None
+
+
+def _resolve_agent_stack_team_id(api_key: str) -> str | None:
+    explicit_team_id = (getattr(config, "LINEAR_AGENT_STACK_TEAM_ID", None) or "").strip()
+    if explicit_team_id:
+        return explicit_team_id
+    return _resolve_linear_team_id(
+        api_key,
+        {"team_name": getattr(config, "LINEAR_AGENT_STACK_TEAM_NAME", "Umbral")},
+    )
+
+
+def _find_project_by_names(api_key: str, names: list[str]) -> Dict[str, Any] | None:
+    seen: set[str] = set()
+    for raw_name in names:
+        name = (raw_name or "").strip()
+        if not name:
+            continue
+        lowered = name.lower()
+        if lowered in seen:
+            continue
+        seen.add(lowered)
+        project = linear_client.get_project_by_name(api_key, name)
+        if project:
+            return project
+    return None
+
+
+def _resolve_agent_stack_project(api_key: str) -> Dict[str, Any]:
+    explicit_project_id = (getattr(config, "LINEAR_AGENT_STACK_PROJECT_ID", None) or "").strip()
+    if explicit_project_id:
+        return linear_client.get_project(api_key, explicit_project_id)
+
+    project_name = (getattr(config, "LINEAR_AGENT_STACK_PROJECT_NAME", _AGENT_STACK_PROJECT_NAME) or "").strip()
+    project = _find_project_by_names(
+        api_key,
+        [project_name, _AGENT_STACK_PROJECT_NAME, *_AGENT_STACK_PROJECT_ALIASES],
+    )
+    if project:
+        return project
+
+    team_id = _resolve_agent_stack_team_id(api_key)
+    if not team_id:
+        raise RuntimeError("No se pudo resolver el team de Linear para Agent Stack")
+
+    return linear_client.create_project(
+        api_key=api_key,
+        name=project_name or _AGENT_STACK_PROJECT_NAME,
+        team_ids=[team_id],
+        description=_AGENT_STACK_PROJECT_DESCRIPTION,
+        content=_AGENT_STACK_PROJECT_CONTENT,
+        icon="🛠️",
+        color="#2563EB",
+    )
+
+
+def _issue_description_for_agent_stack(input_data: Dict[str, Any]) -> str:
+    lines = [
+        "Ambito: Umbral Agent Stack",
+        f"Tipo: {(input_data.get('kind') or 'analysis_followup').strip() if input_data.get('kind') else 'analysis_followup'}",
+    ]
+    summary = (input_data.get("summary") or "").strip()
+    evidence = (input_data.get("evidence") or "").strip()
+    impact = (input_data.get("impact") or "").strip()
+    next_action = (input_data.get("next_action") or "").strip()
+    source_ref = (input_data.get("source_ref") or "").strip()
+    requested_by = (input_data.get("requested_by") or "David").strip()
+
+    if summary:
+        lines.extend(["", "Resumen", summary])
+    if evidence:
+        lines.extend(["", "Evidencia", evidence])
+    if impact:
+        lines.extend(["", "Impacto", impact])
+    if next_action:
+        lines.extend(["", "Siguiente accion", next_action])
+    if source_ref:
+        lines.extend(["", "Origen", source_ref])
+
+    lines.extend(["", f"Solicitado por: {requested_by}"])
+    return "\n".join(lines).strip()
+
+
+def _ensure_label_ids(
+    api_key: str,
+    team_id: str,
+    labels: list[tuple[str, str]],
+) -> list[str]:
+    label_ids: list[str] = []
+    for label_name, label_color in labels:
+        label_id = linear_client.get_or_create_label(api_key, team_id, label_name, label_color)
+        if label_id and label_id not in label_ids:
+            label_ids.append(label_id)
+    return label_ids
+
+
+def _resolve_issue_for_agent_stack(
+    api_key: str,
+    input_data: Dict[str, Any],
+    *,
+    project: Dict[str, Any],
+) -> Dict[str, Any]:
+    issue_id = (input_data.get("issue_id") or "").strip()
+    identifier = (input_data.get("identifier") or "").strip()
+
+    if issue_id:
+        issue = linear_client.get_issue(api_key, issue_id)
+    elif identifier:
+        issue = linear_client.get_issue_by_identifier(api_key, identifier)
+        if not issue:
+            raise RuntimeError(f"No existe issue con identifier '{identifier}'")
+    else:
+        raise RuntimeError("Provide issue_id or identifier")
+
+    issue_project_id = ((issue.get("project") or {}).get("id") or "").strip()
+    if issue_project_id != project["id"]:
+        raise RuntimeError("La issue no pertenece al proyecto canonico de Agent Stack")
+    return issue
 
 
 def _resolve_project(
@@ -509,4 +692,202 @@ def handle_linear_create_project_update(input_data: Dict[str, Any]) -> Dict[str,
         return {"ok": True, "project": {"id": project["id"], "name": project.get("name")}, **result}
     except Exception as e:
         return {"ok": False, "error": str(e)}
+
+
+def handle_linear_publish_agent_stack_followup(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Publica un pendiente interno de Umbral Agent Stack en el proyecto canónico
+    'Mejora Continua Agent Stack'. No sirve para proyectos de cliente ni frentes externos.
+
+    Input:
+        title (str, required)
+        summary/evidence/impact/next_action/source_ref/requested_by (str, optional)
+        kind (str, optional): analysis_followup | operational_debt | human_review | drift
+        priority (int, optional)
+        designated_agent (str, optional): codex | cursor | antigravity | github copilot | rick | openclaw
+        state_name (str, optional): si se quiere mover de inmediato al workflow state indicado
+
+    Returns:
+        {"ok": True, "issue": {...}, "project": {...}, "designated_agent": "..."}
+    """
+    api_key = _linear_api_key()
+    if not api_key:
+        return {"ok": False, "error": "LINEAR_API_KEY not configured"}
+
+    title = (input_data.get("title") or "").strip()
+    if not title:
+        return {"ok": False, "error": "'title' is required"}
+
+    try:
+        project = _resolve_agent_stack_project(api_key)
+        team_id = _resolve_agent_stack_team_id(api_key)
+        if not team_id:
+            return {"ok": False, "error": "No se pudo resolver team_id de Linear para Agent Stack"}
+
+        kind = (input_data.get("kind") or "analysis_followup").strip()
+        labels = list(_AGENT_STACK_BASE_LABELS)
+        if kind in _AGENT_STACK_KIND_LABELS:
+            labels.append(_AGENT_STACK_KIND_LABELS[kind])
+
+        designated_agent = None
+        if input_data.get("designated_agent"):
+            designated_agent = _canonical_agent_name(str(input_data.get("designated_agent")))
+            if not designated_agent:
+                allowed = ", ".join(sorted(_allowed_agent_names().values()))
+                return {"ok": False, "error": f"designated_agent invalido. Allowed: {allowed}"}
+            labels.append(_agent_label(designated_agent))
+
+        description = _issue_description_for_agent_stack(input_data)
+        issue = linear_client.create_issue(
+            api_key=api_key,
+            team_id=team_id,
+            title=f"[Agent Stack] {title}",
+            description=description,
+            priority=input_data.get("priority"),
+        )
+        attach = linear_client.attach_issue_to_project(api_key, issue["id"], project["id"])
+        label_ids = _ensure_label_ids(api_key, team_id, labels)
+
+        state_name = (input_data.get("state_name") or "").strip()
+        state_id = linear_client.get_state_id_by_name(api_key, team_id, state_name) if state_name else None
+        update_result = linear_client.update_issue(
+            api_key=api_key,
+            issue_id=issue["id"],
+            state_id=state_id,
+            label_ids=label_ids,
+        )
+        return {
+            "ok": True,
+            "issue": {
+                **issue,
+                "project": attach.get("issue", {}).get("project"),
+            },
+            "project": {"id": project["id"], "name": project.get("name"), "url": project.get("url")},
+            "labels_applied": [name for name, _ in labels],
+            "designated_agent": designated_agent,
+            "update": update_result.get("update"),
+        }
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+def handle_linear_claim_agent_stack_issue(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Marca una issue del proyecto canónico de Agent Stack como tomada por un agente.
+
+    Input:
+        issue_id (str, optional) or identifier (str, optional)
+        agent_name (str, required): codex | cursor | antigravity | github copilot | rick | openclaw
+        state_name (str, optional): workflow target (default: In Progress)
+        comment (str, optional)
+
+    Returns:
+        {"ok": True, "issue": {...}, "claimed_by": "..."}
+    """
+    api_key = _linear_api_key()
+    if not api_key:
+        return {"ok": False, "error": "LINEAR_API_KEY not configured"}
+
+    agent_name = _canonical_agent_name(str(input_data.get("agent_name") or ""))
+    if not agent_name:
+        allowed = ", ".join(sorted(_allowed_agent_names().values()))
+        return {"ok": False, "error": f"'agent_name' is required and must be one of: {allowed}"}
+
+    try:
+        project = _resolve_agent_stack_project(api_key)
+        issue = _resolve_issue_for_agent_stack(api_key, input_data, project=project)
+        team_id = ((issue.get("team") or {}).get("id") or "").strip() or _resolve_agent_stack_team_id(api_key)
+        if not team_id:
+            return {"ok": False, "error": "No se pudo resolver team_id de Linear para la issue"}
+
+        existing_labels = []
+        for item in ((issue.get("labels") or {}).get("nodes") or []):
+            label_id = item.get("id")
+            if label_id:
+                existing_labels.append(label_id)
+        agent_label_ids = _ensure_label_ids(api_key, team_id, [_agent_label(agent_name)])
+        merged_label_ids = list(dict.fromkeys(existing_labels + agent_label_ids))
+
+        state_name = (input_data.get("state_name") or "In Progress").strip()
+        state_id = linear_client.get_state_id_by_name(api_key, team_id, state_name) if state_name else None
+        comment = (input_data.get("comment") or "").strip()
+        comment_block = (
+            f"Tomada por: {agent_name}\n"
+            f"Proyecto: {project.get('name')}\n"
+            f"Siguiente paso: {comment or 'Tomar ownership del siguiente slice y dejar trazabilidad.'}"
+        )
+        result = linear_client.update_issue(
+            api_key=api_key,
+            issue_id=issue["id"],
+            state_id=state_id,
+            label_ids=merged_label_ids,
+            comment=comment_block,
+        )
+        refreshed = linear_client.get_issue(api_key, issue["id"])
+        return {
+            "ok": True,
+            "issue": refreshed,
+            "project": {"id": project["id"], "name": project.get("name"), "url": project.get("url")},
+            "claimed_by": agent_name,
+            "update": result.get("update"),
+            "comment": result.get("comment"),
+        }
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+def handle_linear_list_agent_stack_issues(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Lista issues del proyecto canónico de Agent Stack, opcionalmente filtradas por agente.
+
+    Input:
+        limit (int, optional)
+        agent_name (str, optional)
+        only_unclaimed (bool, optional)
+
+    Returns:
+        {"ok": True, "project": {...}, "issues": [...]}
+    """
+    api_key = _linear_api_key()
+    if not api_key:
+        return {"ok": False, "error": "LINEAR_API_KEY not configured", "issues": []}
+
+    try:
+        project = _resolve_agent_stack_project(api_key)
+        issues = linear_client.list_project_issues(api_key, project["id"], limit=int(input_data.get("limit", 50)))
+        wanted_agent = None
+        if input_data.get("agent_name"):
+            wanted_agent = _canonical_agent_name(str(input_data.get("agent_name")))
+            if not wanted_agent:
+                allowed = ", ".join(sorted(_allowed_agent_names().values()))
+                return {"ok": False, "error": f"agent_name invalido. Allowed: {allowed}", "issues": []}
+
+        filtered = []
+        for issue in issues:
+            label_names = [str(item.get("name", "")).strip() for item in ((issue.get("labels") or {}).get("nodes") or [])]
+            has_agent = next((label for label in label_names if label.startswith("Agente: ")), None)
+            if wanted_agent and has_agent != f"Agente: {wanted_agent}":
+                continue
+            if input_data.get("only_unclaimed") and has_agent:
+                continue
+            filtered.append(
+                {
+                    "id": issue.get("id"),
+                    "identifier": issue.get("identifier"),
+                    "title": issue.get("title"),
+                    "url": issue.get("url"),
+                    "state": (issue.get("state") or {}).get("name"),
+                    "assignee": ((issue.get("assignee") or {}).get("name") or ""),
+                    "agent_label": has_agent or "",
+                    "labels": label_names,
+                }
+            )
+
+        return {
+            "ok": True,
+            "project": {"id": project["id"], "name": project.get("name"), "url": project.get("url")},
+            "issues": filtered,
+        }
+    except Exception as e:
+        return {"ok": False, "error": str(e), "issues": []}
 

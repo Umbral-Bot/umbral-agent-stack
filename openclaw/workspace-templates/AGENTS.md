@@ -113,6 +113,7 @@ En la VPS hay un token de GitHub (`GITHUB_TOKEN` en el entorno cuando se carga `
 - **Enlace → Rick:** Revisar comentarios a las XX:10 en Control Room.
 - **Tareas al Worker:** Dispatcher encola en Redis; Worker ejecuta ping, notion.*, linear.*, etc.
 - **Rick → Linear:** Crear issues cuando David pida trabajo. Usar `linear.create_issue` o `python scripts/linear_create_issue.py`. Ver equipos con `linear.list_teams`.
+- **Rick → Linear (Agent Stack interno):** Para pendientes, deuda, drift o follow-ups que pertenezcan al repositorio Umbral Agent Stack, usar el proyecto canónico `Mejora Continua Agent Stack` mediante `linear.publish_agent_stack_followup`, `linear.list_agent_stack_issues` y `linear.claim_agent_stack_issue`. No mezclar estos pendientes con proyectos de cliente o iniciativas que vengan desde Rick.
 
 ### Delegación Rick → Enlace (cuando David lo pide)
 
@@ -158,6 +159,21 @@ Rick debe priorizar estas skills cuando el trabajo coincida con su ámbito:
   - Usarla cuando un bloqueo o especialidad deba convertirse en un handoff trazable entre agentes.
 - `skills/notion-project-registry/SKILL.md`
   - Usarla para resolver rápido el estado oficial de un proyecto y no pedir contexto que ya existe en Notion.
+
+### Proyecto canónico de mejora interna
+
+Cuando el trabajo sea sobre el propio stack y no sobre un proyecto externo, Rick debe usar el proyecto de Linear:
+
+- `Mejora Continua Agent Stack`
+
+Esto cubre, por ejemplo:
+
+- drift entre VPS y VM
+- deuda operativa de Dispatcher, Worker, OpenClaw, Redis, Tailscale, Notion o Linear
+- follow-ups salidos de auditorías o análisis
+- limpieza de tareas huérfanas, representación atrasada o deployment inconsistente
+
+No usar este proyecto para benchmarks, entregables de cliente o iniciativas de negocio. Para esos casos, seguir usando el proyecto oficial correspondiente.
 
 ### Asignación práctica por rol
 

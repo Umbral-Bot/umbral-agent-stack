@@ -175,6 +175,21 @@ class TestModelRouterProviderSkipping:
         assert decision.model == "claude_pro"
         assert decision.requires_approval is False
 
+    def test_no_configured_provider_returns_blocking_decision(self, quota_tracker, monkeypatch):
+        """If no provider in a route is configured, the router must not return a fake model."""
+        monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+        monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+        monkeypatch.delenv("AZURE_OPENAI_ENDPOINT", raising=False)
+        monkeypatch.delenv("AZURE_OPENAI_API_KEY", raising=False)
+        monkeypatch.delenv("GOOGLE_API_KEY_RICK_UMBRAL", raising=False)
+        monkeypatch.delenv("GOOGLE_CLOUD_PROJECT_RICK_UMBRAL", raising=False)
+
+        router = ModelRouter(quota_tracker)
+        decision = router.select_model("coding")
+        assert decision.model == ""
+        assert decision.reason == "no_configured_provider"
+        assert decision.requires_approval is True
+
 
 # ── Full flow: task_type→model→quota ───────────────────────────
 

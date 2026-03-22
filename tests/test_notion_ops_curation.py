@@ -4,10 +4,14 @@ from scripts.notion_curate_ops_vps import (
     _db_counts,
     _property_name,
     _resolve_bridge_db_id,
+    archive_duplicate_orphan_tasks,
     curate_bridge,
     infer_deliverable_provenance,
     infer_project_name_from_deliverable,
+    infer_project_name_from_task,
     is_periodic_bridge_review,
+    normalize_task_title_for_dedup,
+    relink_orphan_tasks,
     should_archive_task_row,
 )
 
@@ -42,6 +46,22 @@ def test_infer_project_name_from_deliverable():
         infer_project_name_from_deliverable("Perfil maestro del sistema laboral")
         == "Sistema Automatizado de Búsqueda y Postulación Laboral"
     )
+
+
+def test_infer_project_name_from_task():
+    assert (
+        infer_project_name_from_task(
+            "[Granola] Verify watcher works",
+            input_summary="De reunión: Smoke Test Meeting (2026-03-22). Ref: notion-page",
+            source="granola_process_transcript",
+            source_kind="action_item",
+        )
+        == "Proyecto Granola"
+    )
+
+
+def test_normalize_task_title_for_dedup_collapses_whitespace():
+    assert normalize_task_title_for_dedup(" [Granola]   Verify   watcher works ") == "[granola] verify watcher works"
 
 
 def test_infer_deliverable_provenance():
@@ -140,3 +160,127 @@ def test_resolve_bridge_db_id_discovers_child_when_env_missing(monkeypatch):
     monkeypatch.setattr("scripts.notion_curate_ops_vps.config.NOTION_CONTROL_ROOM_PAGE_ID", "control-room")
     monkeypatch.setattr("scripts.notion_curate_ops_vps._find_child_database_id", lambda page_id, title: "bridge-child")
     assert _resolve_bridge_db_id() == "bridge-child"
+
+
+def test_archive_duplicate_orphan_tasks_archives_older_granola_duplicates(monkeypatch):
+    rows = [
+        _task_row(
+            page_id="task-new",
+            title="[Granola] Verify watcher works",
+            status="queued",
+            created="2026-03-22T12:00:00+00:00",
+        ),
+        _task_row(
+            page_id="task-old",
+            title="[Granola] Verify watcher works",
+            status="queued",
+            created="2026-03-22T10:00:00+00:00",
+        ),
+        _task_row(
+            page_id="task-other",
+            title="[Granola] Confirmar E2E del watcher",
+            status="queued",
+            created="2026-03-22T09:00:00+00:00",
+        ),
+    ]
+    rows[0]["properties"]["Input Summary"] = {"type": "rich_text", "rich_text": [{"plain_text": "De reunión: Smoke Test Meeting"}]}
+    rows[1]["properties"]["Input Summary"] = {"type": "rich_text", "rich_text": [{"plain_text": "De reunión: Smoke Test Meeting"}]}
+    rows[2]["properties"]["Input Summary"] = {"type": "rich_text", "rich_text": [{"plain_text": "De reunión: E2E watcher"}]}
+    rows[0]["properties"]["Source"] = {"type": "rich_text", "rich_text": [{"plain_text": "granola_process_transcript"}]}
+    rows[1]["properties"]["Source"] = {"type": "rich_text", "rich_text": [{"plain_text": "granola_process_transcript"}]}
+    rows[2]["properties"]["Source"] = {"type": "rich_text", "rich_text": [{"plain_text": "granola_process_transcript"}]}
+    rows[0]["properties"]["Source Kind"] = {"type": "rich_text", "rich_text": [{"plain_text": "action_item"}]}
+    rows[1]["properties"]["Source Kind"] = {"type": "rich_text", "rich_text": [{"plain_text": "action_item"}]}
+    rows[2]["properties"]["Source Kind"] = {"type": "rich_text", "rich_text": [{"plain_text": "action_item"}]}
+
+    archived_calls = []
+
+    monkeypatch.setattr(
+        "scripts.notion_curate_ops_vps._query_db",
+        lambda database_id, **kwargs: rows,
+    )
+    monkeypatch.setattr("scripts.notion_curate_ops_vps.config.NOTION_TASKS_DB_ID", "tasks-db")
+    monkeypatch.setattr(
+        "scripts.notion_curate_ops_vps._db_schema",
+        lambda database_id: {
+            "Task": {"type": "title"},
+            "Status": {"type": "select"},
+            "Created": {"type": "date"},
+            "Proyecto": {"type": "relation"},
+            "Entregable": {"type": "relation"},
+            "Input Summary": {"type": "rich_text"},
+            "Source": {"type": "rich_text"},
+            "Source Kind": {"type": "rich_text"},
+        },
+    )
+    monkeypatch.setattr(
+        "scripts.notion_curate_ops_vps._api",
+        lambda method, path, payload=None, params=None: archived_calls.append((method, path, payload)) or {},
+    )
+
+    archived = archive_duplicate_orphan_tasks()
+
+    assert [item["task_id"] for item in archived] == ["task-old"]
+    assert archived_calls == [("PATCH", "/pages/task-old", {"archived": True})]
+
+
+def test_relink_orphan_tasks_assigns_project_relation(monkeypatch):
+    rows = [
+        _task_row(
+            page_id="task-1",
+            title="[Granola] Confirmar E2E del watcher",
+            status="queued",
+            created="2026-03-22T12:00:00+00:00",
+        )
+    ]
+    rows[0]["properties"]["Input Summary"] = {"type": "rich_text", "rich_text": [{"plain_text": "De reunión: E2E watcher"}]}
+    rows[0]["properties"]["Source"] = {"type": "rich_text", "rich_text": [{"plain_text": "granola_process_transcript"}]}
+    rows[0]["properties"]["Source Kind"] = {"type": "rich_text", "rich_text": [{"plain_text": "action_item"}]}
+
+    updates = []
+
+    monkeypatch.setattr(
+        "scripts.notion_curate_ops_vps._query_db",
+        lambda database_id, **kwargs: rows,
+    )
+    monkeypatch.setattr("scripts.notion_curate_ops_vps.config.NOTION_TASKS_DB_ID", "tasks-db")
+    monkeypatch.setattr("scripts.notion_curate_ops_vps.config.NOTION_PROJECTS_DB_ID", "projects-db")
+    monkeypatch.setattr(
+        "scripts.notion_curate_ops_vps._project_lookup",
+        lambda: {"Proyecto Granola": "project-granola"},
+    )
+    monkeypatch.setattr(
+        "scripts.notion_curate_ops_vps._db_schema",
+        lambda database_id: {
+            "Task": {"type": "title"},
+            "Status": {"type": "select"},
+            "Created": {"type": "date"},
+            "Proyecto": {"type": "relation"},
+            "Entregable": {"type": "relation"},
+            "Input Summary": {"type": "rich_text"},
+            "Result Summary": {"type": "rich_text"},
+            "Source": {"type": "rich_text"},
+            "Source Kind": {"type": "rich_text"},
+        },
+    )
+    monkeypatch.setattr(
+        "scripts.notion_curate_ops_vps.notion_client.update_page_properties",
+        lambda page_id_or_url, properties: updates.append((page_id_or_url, properties)),
+    )
+
+    relinked = relink_orphan_tasks()
+
+    assert relinked == [
+        {
+            "task_id": "task-1",
+            "title": "[Granola] Confirmar E2E del watcher",
+            "project_name": "Proyecto Granola",
+            "project_page_id": "project-granola",
+        }
+    ]
+    assert updates == [
+        (
+            "task-1",
+            {"Proyecto": {"relation": [{"id": "project-granola"}]}},
+        )
+    ]

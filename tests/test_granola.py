@@ -116,6 +116,7 @@ Se discutieron temas varios.
 os.environ.setdefault("WORKER_TOKEN", "test-token-12345")
 
 from worker.tasks.granola import (
+    _build_action_item_task_id,
     handle_granola_process_transcript,
     handle_granola_create_followup,
     _extract_action_items_from_content,
@@ -164,13 +165,14 @@ Unrelated text.
 
 class TestHandleGranolaProcessTranscript:
 
+    @patch("worker.tasks.granola.handle_notion_upsert_task")
     @patch("worker.tasks.granola.notion_client")
-    def test_success(self, mock_nc):
+    def test_success(self, mock_nc, mock_upsert_task):
         mock_nc.create_transcript_page.return_value = {
             "page_id": "page-123",
             "url": "https://notion.so/page-123",
         }
-        mock_nc.upsert_task.return_value = {"page_id": "task-1", "created": True}
+        mock_upsert_task.return_value = {"page_id": "task-1", "created": True}
         mock_nc.add_comment.return_value = {"comment_id": "c-1"}
 
         result = handle_granola_process_transcript({
@@ -195,11 +197,24 @@ class TestHandleGranolaProcessTranscript:
         mock_nc.add_comment.assert_called_once()
         assert mock_nc.add_comment.call_args.kwargs["page_id"] is None
         assert "Hola @Enlace" in mock_nc.add_comment.call_args.kwargs["text"]
+        mock_upsert_task.assert_called_once()
+        task_payload = mock_upsert_task.call_args.args[0]
+        assert task_payload["task"] == "granola.action_item"
+        assert task_payload["task_name"] == "[Granola] Enviar propuesta"
+        assert task_payload["project_name"] == "Proyecto Granola"
+        assert task_payload["source"] == "granola_process_transcript"
+        assert task_payload["source_kind"] == "action_item"
+        assert task_payload["task_id"] == _build_action_item_task_id(
+            "Reunión con Cliente",
+            "2026-03-04",
+            {"text": "Enviar propuesta", "assignee": "David", "due": "2026-03-07"},
+        )
 
+    @patch("worker.tasks.granola.handle_notion_upsert_task")
     @patch("worker.tasks.granola.notion_client")
-    def test_with_pre_parsed_action_items(self, mock_nc):
+    def test_with_pre_parsed_action_items(self, mock_nc, mock_upsert_task):
         mock_nc.create_transcript_page.return_value = {"page_id": "p1", "url": ""}
-        mock_nc.upsert_task.return_value = {"page_id": "t1", "created": True}
+        mock_upsert_task.return_value = {"page_id": "t1", "created": True}
         mock_nc.add_comment.return_value = {"comment_id": "c1"}
 
         result = handle_granola_process_transcript({
@@ -212,7 +227,7 @@ class TestHandleGranolaProcessTranscript:
         })
 
         assert result["action_items_created"] == 2
-        assert mock_nc.upsert_task.call_count == 2
+        assert mock_upsert_task.call_count == 2
 
     @patch("worker.tasks.granola.notion_client")
     def test_no_enlace_notification(self, mock_nc):
@@ -317,6 +332,16 @@ class TestHandleGranolaCreateFollowup:
 
         assert result["result"]["due_date"]  # Should have a default
         assert len(result["result"]["due_date"]) == 10  # YYYY-MM-DD format
+
+
+def test_build_action_item_task_id_is_stable():
+    item = {"text": "Verify watcher works", "assignee": "Test User", "due": "2026-03-22"}
+
+    task_id_1 = _build_action_item_task_id("Smoke Test Meeting", "2026-03-22", item)
+    task_id_2 = _build_action_item_task_id("Smoke Test Meeting", "2026-03-22", dict(item))
+
+    assert task_id_1 == task_id_2
+    assert task_id_1.startswith("granola-action-item-")
 
 
 # ---------------------------------------------------------------------------

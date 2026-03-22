@@ -149,6 +149,7 @@ def test_handle_llm_generate_success_with_mocked_gemini(monkeypatch):
             }
         )
 
+    assert result["provider"] == "gemini"
     assert result["model"] == "gemini-2.5-pro"
     assert "Oportunidades: digitalizacion BIM." in result["text"]
     assert result["usage"]["prompt_tokens"] == 22
@@ -265,6 +266,7 @@ def test_openai_success_with_mocked_urllib(monkeypatch):
             }
         )
 
+    assert result["provider"] == "openai"
     assert result["model"] == "gpt-4o-mini"
     assert result["text"] == "Resumen OpenAI listo."
     assert result["usage"]["total_tokens"] == 27
@@ -313,6 +315,7 @@ def test_anthropic_success_with_mocked_urllib(monkeypatch):
             }
         )
 
+    assert result["provider"] == "anthropic"
     assert result["model"] == "claude-3-5-sonnet"
     assert result["text"] == "Resumen Anthropic. Segundo bloque."
     assert result["usage"]["prompt_tokens"] == 12

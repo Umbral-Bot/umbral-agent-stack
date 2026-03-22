@@ -650,6 +650,7 @@ async def get_provider_status(
 
     # --- Load config ---
     from dispatcher.model_router import (
+        ModelRouter,
         get_configured_providers,
         _load_quota_policy,
         _PROVIDER_ENV_REQUIREMENTS,
@@ -664,13 +665,37 @@ async def get_provider_status(
     # --- Quota data ---
     tracker = QuotaTracker(r, provider_config)
     details = tracker.get_all_quota_details()
+    router = ModelRouter(tracker)
+    routing_snapshot = router.get_routing_snapshot()
 
-    # --- Build routing_preferred_for per provider ---
-    routing_map: dict[str, list[str]] = {}
+    # --- Build routing maps per provider ---
+    declared_routing_map: dict[str, list[str]] = {}
     for task_type, route in routing.items():
-        pref = route.get("preferred", "")
-        if pref:
-            routing_map.setdefault(pref, []).append(task_type)
+        declared_pref = route.get("preferred", "")
+        if declared_pref:
+            declared_routing_map.setdefault(declared_pref, []).append(task_type)
+
+    effective_routing_map: dict[str, list[str]] = {}
+    routing_out: dict[str, dict[str, Any]] = {}
+    for task_type, route_info in routing_snapshot.items():
+        effective_pref = route_info.get("preferred")
+        if effective_pref:
+            effective_routing_map.setdefault(effective_pref, []).append(task_type)
+
+        routing_out[task_type] = {
+            "declared_preferred": route_info["declared_preferred"],
+            "declared_model": _PROVIDER_MODELS.get(route_info["declared_preferred"], "unknown"),
+            "declared_fallback_chain": route_info["declared_fallback_chain"],
+            "effective_preferred": effective_pref,
+            "effective_model": _PROVIDER_MODELS.get(effective_pref, "unknown") if effective_pref else None,
+            "effective_fallback_chain": route_info["fallback_chain"],
+            "effective_fallback_models": [
+                _PROVIDER_MODELS.get(provider, "unknown")
+                for provider in route_info["fallback_chain"]
+            ],
+            "unconfigured": route_info["unconfigured"],
+            "has_configured_route": route_info["has_configured_route"],
+        }
 
     # --- Assemble response ---
     providers_out = {}
@@ -707,13 +732,15 @@ async def get_provider_status(
             "quota_limit": limit,
             "quota_fraction": round(fraction, 4),
             "quota_status": q_status,
-            "routing_preferred_for": sorted(routing_map.get(provider, [])),
+            "routing_preferred_for": sorted(declared_routing_map.get(provider, [])),
+            "routing_effective_for": sorted(effective_routing_map.get(provider, [])),
         }
 
     return {
         "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "configured": sorted(configured),
         "unconfigured": unconfigured,
+        "routing": routing_out,
         "providers": providers_out,
     }
 

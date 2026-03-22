@@ -18,6 +18,7 @@ import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 repo_root = Path(__file__).resolve().parent.parent
 if str(repo_root) not in sys.path:
@@ -30,22 +31,36 @@ WORKER_TOKEN = os.environ.get("WORKER_TOKEN", "")
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 WORKER_URL_VM = os.environ.get("WORKER_URL_VM", "").strip() or None
 WORKER_URL_VM_INTERACTIVE = os.environ.get("WORKER_URL_VM_INTERACTIVE", "").strip() or None
+NOTION_API_KEY = os.environ.get("NOTION_API_KEY", "").strip()
+NOTION_CONTROL_ROOM_PAGE_ID = os.environ.get("NOTION_CONTROL_ROOM_PAGE_ID", "").strip()
+NOTION_TASKS_DB_ID = os.environ.get("NOTION_TASKS_DB_ID", "").strip()
+NOTION_DELIVERABLES_DB_ID = os.environ.get("NOTION_DELIVERABLES_DB_ID", "").strip()
+NOTION_BRIDGE_DB_ID = os.environ.get("NOTION_BRIDGE_DB_ID", "").strip()
+LEGACY_BRIDGE_DB_ID = "8496ee73-6c7d-43a3-89cf-b9c8825b5dfc"
 
-RELEASE_TRACKING = {
-    "r16": {
-        "status": "Cerrada",
-        "prs": "PRs #85-#90 mergeados",
-    },
-    "r17": {
-        "status": "Cerrada",
-        "prs": (
-            "PRs #91 (bitacora-scripts), #92 (resumen+guia ramas), "
-            "#93 (script borrado ramas), #94 (changelog README), "
-            "#95 (runbook), #96 (9 funciones Notion) mergeados"
-        ),
-    },
-    "tests_passed": 900,
-}
+TECHNICAL_TASK_PREFIXES = (
+    "windows.fs.",
+    "ping",
+    "notion.poll_comments",
+    "notion.read_page",
+    "notion.read_database",
+    "notion.search_databases",
+)
+
+
+def _vm_recovery_mode() -> dict[str, object] | None:
+    """Detecta cuando la VM se expone via workaround local (tunel reverso)."""
+    urls = [u for u in (WORKER_URL_VM, WORKER_URL_VM_INTERACTIVE) if u]
+    if not urls:
+        return {"enabled": False}
+    if all("127.0.0.1:28" in u for u in urls):
+        return {
+            "enabled": True,
+            "transport": "reverse_ssh_tunnel",
+            "headless_url": WORKER_URL_VM,
+            "interactive_url": WORKER_URL_VM_INTERACTIVE,
+        }
+    return {"enabled": False}
 
 
 def _worker_health(url: str) -> dict:
@@ -68,6 +83,146 @@ def _redis_stats() -> dict:
         return {"pending": pending, "blocked": blocked, "connected": True}
     except Exception:
         return {"pending": 0, "blocked": 0, "connected": False}
+
+
+def _notion_query_rows(database_id: str) -> list[dict]:
+    if not NOTION_API_KEY or not database_id:
+        return []
+    headers = {
+        "Authorization": f"Bearer {NOTION_API_KEY}",
+        "Notion-Version": "2022-06-28",
+        "Content-Type": "application/json",
+    }
+    rows: list[dict] = []
+    next_cursor: str | None = None
+    while True:
+        body: dict[str, object] = {"page_size": 100}
+        if next_cursor:
+            body["start_cursor"] = next_cursor
+        resp = httpx.post(
+            f"https://api.notion.com/v1/databases/{database_id}/query",
+            headers=headers,
+            json=body,
+            timeout=20,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        rows.extend(data.get("results", []))
+        next_cursor = data.get("next_cursor")
+        if not next_cursor:
+            break
+    return rows
+
+
+def _notion_list_children(page_id: str) -> list[dict[str, Any]]:
+    if not NOTION_API_KEY or not page_id:
+        return []
+    headers = {
+        "Authorization": f"Bearer {NOTION_API_KEY}",
+        "Notion-Version": "2022-06-28",
+        "Content-Type": "application/json",
+    }
+    rows: list[dict[str, Any]] = []
+    next_cursor: str | None = None
+    while True:
+        params: dict[str, object] = {"page_size": 100}
+        if next_cursor:
+            params["start_cursor"] = next_cursor
+        resp = httpx.get(
+            f"https://api.notion.com/v1/blocks/{page_id}/children",
+            headers=headers,
+            params=params,
+            timeout=20,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        rows.extend(data.get("results", []))
+        next_cursor = data.get("next_cursor")
+        if not next_cursor:
+            break
+    return rows
+
+
+def _find_child_database_id(page_id: str, title: str) -> str | None:
+    wanted = title.strip().lower()
+    try:
+        children = _notion_list_children(page_id)
+    except Exception:
+        return None
+    for block in children:
+        if block.get("type") != "child_database":
+            continue
+        current = ((block.get("child_database") or {}).get("title") or "").strip().lower()
+        if current == wanted:
+            return block.get("id")
+    return None
+
+
+def _resolve_bridge_db_id() -> str:
+    if NOTION_BRIDGE_DB_ID:
+        return NOTION_BRIDGE_DB_ID
+    if NOTION_CONTROL_ROOM_PAGE_ID:
+        discovered = _find_child_database_id(NOTION_CONTROL_ROOM_PAGE_ID, "Bandeja Puente")
+        if discovered:
+            return discovered
+    return LEGACY_BRIDGE_DB_ID
+
+
+def _plain(prop: dict | None):
+    if not isinstance(prop, dict):
+        return None
+    typ = prop.get("type")
+    if typ == "title":
+        return "".join(x.get("plain_text", "") for x in prop.get("title", []))
+    if typ == "rich_text":
+        return "".join(x.get("plain_text", "") for x in prop.get("rich_text", []))
+    if typ == "select":
+        return (prop.get("select") or {}).get("name")
+    if typ == "status":
+        return (prop.get("status") or {}).get("name")
+    if typ == "relation":
+        return [x.get("id") for x in prop.get("relation", [])]
+    return None
+
+
+def _notion_ops_summary() -> dict | None:
+    if not (NOTION_API_KEY and NOTION_TASKS_DB_ID and NOTION_DELIVERABLES_DB_ID):
+        return None
+    try:
+        tasks = _notion_query_rows(NOTION_TASKS_DB_ID)
+        deliverables = _notion_query_rows(NOTION_DELIVERABLES_DB_ID)
+        bridge = _notion_query_rows(_resolve_bridge_db_id())
+    except Exception:
+        return None
+
+    tasks_unlinked = 0
+    for row in tasks:
+        props = row.get("properties", {})
+        if not (_plain(props.get("Proyecto")) or []) and not (_plain(props.get("Entregable")) or []):
+            tasks_unlinked += 1
+
+    deliverables_pending = 0
+    deliverables_adjustments = 0
+    for row in deliverables:
+        review = (_plain(row.get("properties", {}).get("Estado revision")) or "").strip()
+        if review == "Pendiente revision":
+            deliverables_pending += 1
+        elif review == "Aprobado con ajustes":
+            deliverables_adjustments += 1
+
+    bridge_live = 0
+    for row in bridge:
+        status = (_plain(row.get("properties", {}).get("Estado")) or "").strip()
+        if status != "Resuelto":
+            bridge_live += 1
+
+    return {
+        "tasks_total": len(tasks),
+        "tasks_unlinked": tasks_unlinked,
+        "deliverables_pending": deliverables_pending,
+        "deliverables_adjustments": deliverables_adjustments,
+        "bridge_live": bridge_live,
+    }
 
 
 def _quota_stats() -> list[dict]:
@@ -204,10 +359,37 @@ def _recent_tasks(limit: int = 10) -> list[dict]:
                 "duration_s": duration,
                 "task_id": t.get("task_id", "?")[:8],
                 "when": when,
+                "source": t.get("source", ""),
+                "project_name": t.get("project_name", "") or (t.get("input", {}) or {}).get("project_name", ""),
+                "deliverable_name": t.get("deliverable_name", "") or (t.get("input", {}) or {}).get("deliverable_name", ""),
+                "notion_track": bool(t.get("notion_track") or (t.get("input", {}) or {}).get("notion_track")),
             })
         return result
     except Exception:
         return []
+
+
+def _is_recent_task_relevant(task: dict) -> bool:
+    if task.get("project_name") or task.get("deliverable_name") or task.get("notion_track"):
+        return True
+    source = str(task.get("source", "")).strip().lower()
+    if source in {"openclaw_gateway", "linear_webhook", "notion_poller", "smart_reply"}:
+        return True
+    task_name = str(task.get("task", "")).strip().lower()
+    if any(task_name.startswith(prefix) for prefix in TECHNICAL_TASK_PREFIXES):
+        return False
+    return False
+
+
+def _split_recent_tasks(tasks: list[dict], relevant_limit: int = 6, system_limit: int = 6) -> tuple[list[dict], list[dict]]:
+    relevant: list[dict] = []
+    system: list[dict] = []
+    for task in tasks:
+        if _is_recent_task_relevant(task):
+            relevant.append(task)
+        else:
+            system.append(task)
+    return relevant[:relevant_limit], system[:system_limit]
 
 
 def _running_tasks() -> list[dict]:
@@ -357,19 +539,29 @@ def build_dashboard_payload() -> dict:
     redis = _redis_stats()
     quotas = _quota_stats()
     teams = _team_stats()
-    recent = _recent_tasks(8)
+    recent_all = _recent_tasks(12)
+    recent, recent_system = _split_recent_tasks(recent_all)
     running = _running_tasks()
     ops = _ops_log_summary()
     uptime = _system_uptime()
     last_err = _last_error()
     alerts = _active_alerts(quotas, vps_health, vm_health or vm_interactive_health)
+    notion_ops = _notion_ops_summary()
 
-    if vps_health["status"] == "OK" and redis["connected"]:
-        overall = "Operativo"
-    elif vps_health["status"] == "OK":
-        overall = "Parcial (Redis offline)"
-    else:
+    vm_degraded = False
+    if vm_health and vm_health.get("status") != "OK":
+        vm_degraded = True
+    if vm_interactive_health and vm_interactive_health.get("status") != "OK":
+        vm_degraded = True
+
+    if vps_health["status"] != "OK":
         overall = "Degradado"
+    elif not redis["connected"]:
+        overall = "Parcial (Redis offline)"
+    elif vm_degraded:
+        overall = "Degradado"
+    else:
+        overall = "Operativo"
 
     return {
         "dashboard_v2": True,
@@ -378,16 +570,18 @@ def build_dashboard_payload() -> dict:
         "vps_worker": vps_health,
         "vm_worker": vm_health,
         "vm_worker_interactive": vm_interactive_health,
+        "vm_recovery_mode": _vm_recovery_mode(),
         "redis": redis,
         "quotas": quotas,
         "teams": teams,
         "recent_tasks": recent,
+        "recent_system_tasks": recent_system,
         "running_tasks": running,
         "ops_summary": ops,
         "uptime": uptime,
         "last_error": last_err,
         "active_alerts": alerts,
-        "release_tracking": RELEASE_TRACKING,
+        "notion_ops": notion_ops,
     }
 
 

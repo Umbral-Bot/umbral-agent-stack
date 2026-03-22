@@ -74,6 +74,13 @@ class TaskQueue:
             "task": envelope.get("task", "unknown"),
             "team": envelope.get("team", "system"),
             "task_type": envelope.get("task_type", "general"),
+            "trace_id": envelope.get("trace_id", ""),
+            "source": envelope.get("source", ""),
+            "source_kind": envelope.get("source_kind", ""),
+            "callback_url": envelope.get("callback_url", ""),
+            "project_name": envelope.get("project_name", "") or envelope.get("input", {}).get("project_name", ""),
+            "deliverable_name": envelope.get("deliverable_name", "") or envelope.get("input", {}).get("deliverable_name", ""),
+            "notion_track": bool(envelope.get("notion_track") or envelope.get("input", {}).get("notion_track")),
             "queued_at": envelope["queued_at"],
         }))
 
@@ -207,6 +214,13 @@ class TaskQueue:
                 "task": envelope.get("task", "unknown"),
                 "team": envelope.get("team", "system"),
                 "task_type": envelope.get("task_type", "general"),
+                "trace_id": envelope.get("trace_id", ""),
+                "source": envelope.get("source", ""),
+                "source_kind": envelope.get("source_kind", ""),
+                "callback_url": envelope.get("callback_url", ""),
+                "project_name": envelope.get("project_name", "") or envelope.get("input", {}).get("project_name", ""),
+                "deliverable_name": envelope.get("deliverable_name", "") or envelope.get("input", {}).get("deliverable_name", ""),
+                "notion_track": bool(envelope.get("notion_track") or envelope.get("input", {}).get("notion_track")),
                 "queued_at": time.time(),
             }))
             unblocked.append(task_id)

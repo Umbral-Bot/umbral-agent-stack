@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SIM Daily Research Cron — Encola tareas de research diario
+# SIM Daily Research Cron â€” Encola tareas de research diario
 # Cron recomendado: 0 8,14,20 * * * bash ~/umbral-agent-stack/scripts/vps/sim-daily-cron.sh
 set -euo pipefail
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Notion Poller Cron Wrapper — ensures the daemon is always running.
+# Notion Poller Cron Wrapper â€” ensures the daemon is always running.
 # Cron: */5 * * * * bash ~/umbral-agent-stack/scripts/vps/notion-poller-cron.sh >> /tmp/notion_poller_cron.log 2>&1
 set -euo pipefail
 

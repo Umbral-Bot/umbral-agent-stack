@@ -22,6 +22,8 @@ from .notion import (
     handle_notion_create_report_page,
     handle_notion_enrich_bitacora_page,
     handle_notion_upsert_project,
+    handle_notion_upsert_deliverable,
+    handle_notion_upsert_bridge_item,
 )
 from .windows import (
     handle_windows_pad_run_flow,
@@ -51,6 +53,9 @@ from .linear import (
     handle_linear_attach_issue_to_project,
     handle_linear_list_project_issues,
     handle_linear_create_project_update,
+    handle_linear_publish_agent_stack_followup,
+    handle_linear_claim_agent_stack_issue,
+    handle_linear_list_agent_stack_issues,
 )
 from .research import handle_research_web
 from .llm import handle_llm_generate
@@ -143,12 +148,17 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "linear.attach_issue_to_project": handle_linear_attach_issue_to_project,
     "linear.list_project_issues": handle_linear_list_project_issues,
     "linear.create_project_update": handle_linear_create_project_update,
+    "linear.publish_agent_stack_followup": handle_linear_publish_agent_stack_followup,
+    "linear.claim_agent_stack_issue": handle_linear_claim_agent_stack_issue,
+    "linear.list_agent_stack_issues": handle_linear_list_agent_stack_issues,
     "research.web": handle_research_web,
     "llm.generate": handle_llm_generate,
     "composite.research_report": handle_composite_research_report,
     "notion.create_report_page": handle_notion_create_report_page,
     "notion.enrich_bitacora_page": handle_notion_enrich_bitacora_page,
     "notion.upsert_project": handle_notion_upsert_project,
+    "notion.upsert_deliverable": handle_notion_upsert_deliverable,
+    "notion.upsert_bridge_item": handle_notion_upsert_bridge_item,
     "make.post_webhook": handle_make_post_webhook,
     "n8n.list_workflows": handle_n8n_list_workflows,
     "n8n.get_workflow": handle_n8n_get_workflow,

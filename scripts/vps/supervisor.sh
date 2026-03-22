@@ -43,7 +43,7 @@ check_worker() {
         return 0
     fi
 
-    # Process might be starting up — check if process exists
+    # Process might be starting up â€” check if process exists
     if pgrep -f "uvicorn worker.app" > /dev/null 2>&1; then
         echo "${LOG_PREFIX} Worker: process found but not responding (may be starting)"
         return 0
@@ -53,7 +53,7 @@ check_worker() {
 }
 
 restart_worker() {
-    echo "${LOG_PREFIX} Worker: DOWN — restarting..."
+    echo "${LOG_PREFIX} Worker: DOWN â€” restarting..."
     cd "$REPO"
     # Re-source env so Worker gets same WORKER_TOKEN as dashboard/cron
     if [ -f "$ENV_FILE" ]; then
@@ -91,7 +91,7 @@ check_dispatcher() {
 }
 
 restart_dispatcher() {
-    echo "${LOG_PREFIX} Dispatcher: DOWN — restarting..."
+    echo "${LOG_PREFIX} Dispatcher: DOWN â€” restarting..."
     cd "$REPO"
     nohup python3 -m dispatcher.service \
         > /tmp/dispatcher.log 2>&1 &
@@ -116,7 +116,7 @@ check_redis() {
         return 0
     fi
 
-    echo "${LOG_PREFIX} Redis: DOWN — attempting restart..."
+    echo "${LOG_PREFIX} Redis: DOWN â€” attempting restart..."
     redis-server --daemonize yes 2>/dev/null || true
     sleep 1
 
@@ -240,7 +240,7 @@ check_dispatcher || restart_dispatcher
 # Post alert to Notion if anything was restarted (Worker POST /run).
 # ---------------------------------------------------------------
 if [ ${#RESTARTED[@]} -gt 0 ]; then
-    ALERT="🔄 Supervisor auto-restart — $(date -u +"%Y-%m-%d %H:%M UTC") — Restarted: ${RESTARTED[*]}"
+    ALERT="ðŸ”„ Supervisor auto-restart â€” $(date -u +"%Y-%m-%d %H:%M UTC") â€” Restarted: ${RESTARTED[*]}"
 
     # Wait for Worker to be ready after restart (it may need a few seconds)
     sleep 4

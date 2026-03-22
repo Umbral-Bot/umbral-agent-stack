@@ -52,7 +52,10 @@ def get_existing_issue_titles(api_key: str, team_id: str) -> set[str]:
     }
     """
     try:
-        data = linear_client._graphql(api_key, query, {"teamId": team_id})
+        gql = getattr(linear_client, "_gql", None) or getattr(linear_client, "_graphql", None)
+        if gql is None:
+            raise RuntimeError("worker.linear_client has no GraphQL helper")
+        data = gql(api_key, query, {"teamId": team_id})
         nodes = data.get("team", {}).get("issues", {}).get("nodes", [])
         return {n["title"] for n in nodes}
     except Exception as exc:

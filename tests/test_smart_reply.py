@@ -20,10 +20,15 @@ import pytest
 from dispatcher.intent_classifier import IntentResult
 from dispatcher.smart_reply import (
     handle_smart_reply,
+    _build_instruction_message,
     _do_research,
     _do_llm_generate,
+    _handoff_instruction_to_rick,
+    _instruction_task_id,
+    _is_external_reference_instruction,
     _post_comment,
     _post_fallback,
+    _resolve_rick_main_session_id,
     ECHO_PREFIX,
 )
 
@@ -234,14 +239,223 @@ class TestTaskFlow:
 # ── Test handle_smart_reply: instruction intent ────────────────
 
 class TestInstructionFlow:
-    def test_instruction_posts_confirmation(self, wc, queue):
+    @patch("dispatcher.smart_reply._handoff_instruction_to_rick")
+    def test_instruction_posts_confirmation(self, mock_handoff, wc, queue):
+        mock_handoff.return_value = True
         wc.run.return_value = _empty_result()
         handle_smart_reply(COMMENT_TEXT_INSTRUCTION, COMMENT_ID, IntentResult("instruction", "high"), "system", wc, queue, MagicMock())
 
-        wc.run.assert_called_once_with("notion.add_comment", {
+        assert wc.run.call_count == 5
+        assert wc.run.call_args_list[0][0][0] == "notion.add_comment"
+        assert wc.run.call_args_list[0][0][1] == {
             "text": f"{ECHO_PREFIX} Instrucción registrada. Procesando configuración. (comment_id={COMMENT_ID[:8]}...)",
-        })
+        }
+        assert wc.run.call_args_list[1][0][0] == "notion.upsert_task"
+        task_payload = wc.run.call_args_list[1][0][1]
+        assert task_payload["task_id"] == _instruction_task_id(COMMENT_ID)
+        assert task_payload["team"] == "system"
+        assert task_payload["source_kind"] == "instruction_comment"
+        assert wc.run.call_args_list[2][0][0] == "notion.upsert_bridge_item"
+        assert wc.run.call_args_list[2][0][1]["status"] == "Nuevo"
+        assert wc.run.call_args_list[3][0][0] == "notion.upsert_task"
+        assert wc.run.call_args_list[3][0][1]["status"] == "running"
+        assert "Seguimiento inyectado" in wc.run.call_args_list[3][0][1]["result_summary"]
+        assert wc.run.call_args_list[4][0][0] == "notion.upsert_bridge_item"
+        assert wc.run.call_args_list[4][0][1]["status"] == "En curso"
+        mock_handoff.assert_called_once()
         queue.enqueue.assert_not_called()
+
+    @patch("dispatcher.smart_reply._handoff_instruction_to_rick")
+    def test_instruction_inherits_project_context_from_comment_page(self, mock_handoff, wc, queue):
+        mock_handoff.return_value = False
+        wc.run.side_effect = [
+            {"ok": True, "result": {"title": "Proyecto Embudo Ventas"}},
+            _empty_result(),
+            _empty_result(),
+            _empty_result(),
+            _empty_result(),
+        ]
+
+        handle_smart_reply(
+            COMMENT_TEXT_INSTRUCTION,
+            COMMENT_ID,
+            IntentResult("instruction", "high"),
+            "system",
+            wc,
+            queue,
+            MagicMock(),
+            page_id="project-page-1",
+            page_kind="project",
+        )
+
+        assert wc.run.call_args_list[0][0][0] == "notion.read_page"
+        task_payload = wc.run.call_args_list[2][0][1]
+        assert task_payload["project_page_id"] == "project-page-1"
+        assert task_payload["deliverable_page_id"] is None
+        bridge_payload = wc.run.call_args_list[3][0][1]
+        assert bridge_payload["project_name"] == "Proyecto Embudo Ventas"
+        assert bridge_payload["source"] == "Proyecto"
+
+    @patch("dispatcher.smart_reply._handoff_instruction_to_rick")
+    def test_instruction_inherits_deliverable_context_from_comment_page(self, mock_handoff, wc, queue):
+        mock_handoff.return_value = False
+        wc.run.side_effect = [_empty_result(), _empty_result(), _empty_result(), _empty_result()]
+
+        handle_smart_reply(
+            COMMENT_TEXT_INSTRUCTION,
+            COMMENT_ID,
+            IntentResult("instruction", "high"),
+            "system",
+            wc,
+            queue,
+            MagicMock(),
+            page_id="deliverable-page-1",
+            page_kind="deliverable",
+        )
+
+        task_payload = wc.run.call_args_list[1][0][1]
+        assert task_payload["project_page_id"] is None
+        assert task_payload["deliverable_page_id"] == "deliverable-page-1"
+        bridge_payload = wc.run.call_args_list[2][0][1]
+        assert bridge_payload["project_name"] is None
+        assert bridge_payload["source"] == "Entregable"
+
+    @patch("dispatcher.smart_reply._handoff_instruction_to_rick")
+    def test_instruction_without_handoff_keeps_single_task_update(self, mock_handoff, wc, queue):
+        mock_handoff.return_value = False
+        wc.run.return_value = _empty_result()
+        handle_smart_reply(COMMENT_TEXT_INSTRUCTION, COMMENT_ID, IntentResult("instruction", "high"), "system", wc, queue, MagicMock())
+
+        assert wc.run.call_count == 4
+        assert wc.run.call_args_list[2][0][0] == "notion.upsert_bridge_item"
+        assert wc.run.call_args_list[2][0][1]["status"] == "Nuevo"
+        assert wc.run.call_args_list[3][0][0] == "notion.upsert_bridge_item"
+        assert wc.run.call_args_list[3][0][1]["status"] == "Esperando"
+        mock_handoff.assert_called_once()
+        queue.enqueue.assert_not_called()
+
+    @patch("dispatcher.smart_reply._handoff_instruction_to_rick")
+    def test_instruction_project_context_reads_title_for_bridge(self, mock_handoff, wc, queue):
+        mock_handoff.return_value = False
+        wc.run.side_effect = [
+            {"ok": True, "result": {"title": "Proyecto Embudo Ventas"}},
+            _empty_result(),
+            _empty_result(),
+            _empty_result(),
+            _empty_result(),
+        ]
+
+        handle_smart_reply(
+            COMMENT_TEXT_INSTRUCTION,
+            COMMENT_ID,
+            IntentResult("instruction", "high"),
+            "system",
+            wc,
+            queue,
+            MagicMock(),
+            page_id="project-page-1",
+            page_kind="project",
+        )
+
+        assert wc.run.call_args_list[0][0][0] == "notion.read_page"
+        bridge_payload = wc.run.call_args_list[3][0][1]
+        assert bridge_payload["project_name"] == "Proyecto Embudo Ventas"
+
+    @patch("dispatcher.smart_reply._handoff_instruction_to_rick")
+    def test_instruction_reuses_bridge_page_id_after_creation(self, mock_handoff, wc, queue):
+        mock_handoff.return_value = True
+        wc.run.side_effect = [
+            _empty_result(),
+            _empty_result(),
+            {"ok": True, "result": {"page_id": "bridge-page-1"}},
+            _empty_result(),
+            _empty_result(),
+        ]
+
+        handle_smart_reply(
+            COMMENT_TEXT_INSTRUCTION,
+            COMMENT_ID,
+            IntentResult("instruction", "high"),
+            "system",
+            wc,
+            queue,
+            MagicMock(),
+        )
+
+        second_bridge_payload = wc.run.call_args_list[4][0][1]
+        assert second_bridge_payload["page_id"] == "bridge-page-1"
+
+
+class TestInstructionMirroring:
+    def test_detects_external_reference_instruction(self):
+        assert _is_external_reference_instruction("Rick, mira esta publicación de LinkedIn https://www.linkedin.com/posts/x")
+        assert not _is_external_reference_instruction("Rick, baja el tono del mensaje de bienvenida")
+
+    def test_build_instruction_message_mentions_evidence_for_external_reference(self):
+        msg = _build_instruction_message(
+            "Rick, revisa esta publicación https://www.linkedin.com/posts/x y rehace el benchmark",
+            COMMENT_ID,
+        )
+        assert _instruction_task_id(COMMENT_ID) in msg
+        assert "evidencia real con tools" in msg
+        assert "notion.upsert_deliverable" in msg
+        assert "notion.create_report_page" in msg
+        assert "archivala con notion.update_page_properties(archived=true)" in msg
+
+    def test_instruction_task_id_uses_more_than_short_prefix(self):
+        comment_a = "3265f443-fb5c-8155-b6a0-001dda1b1f9b"
+        comment_b = "3265f443-fb5c-810d-afa0-001d56f14659"
+        assert _instruction_task_id(comment_a) != _instruction_task_id(comment_b)
+
+
+class TestInstructionHandoff:
+    @patch("dispatcher.smart_reply._run_openclaw_agent")
+    @patch("dispatcher.smart_reply._send_telegram_message")
+    @patch("dispatcher.smart_reply._resolve_rick_main_session_id")
+    def test_handoff_prefers_openclaw_agent(self, mock_session_id, mock_send_telegram, mock_run_agent):
+        mock_session_id.return_value = "035bee42-a55e-4192-8a2e-1d11cdb85908"
+        mock_run_agent.return_value = True
+
+        assert _handoff_instruction_to_rick("reabre el caso", COMMENT_ID) is True
+        mock_run_agent.assert_called_once()
+        mock_send_telegram.assert_not_called()
+
+    @patch("dispatcher.smart_reply._run_openclaw_agent")
+    @patch("dispatcher.smart_reply._send_telegram_message")
+    @patch("dispatcher.smart_reply._resolve_rick_main_session_id")
+    def test_handoff_falls_back_to_telegram(self, mock_session_id, mock_send_telegram, mock_run_agent):
+        mock_session_id.return_value = "035bee42-a55e-4192-8a2e-1d11cdb85908"
+        mock_run_agent.return_value = False
+        mock_send_telegram.return_value = True
+
+        assert _handoff_instruction_to_rick("reabre el caso", COMMENT_ID) is True
+        mock_run_agent.assert_called_once()
+        mock_send_telegram.assert_called_once()
+
+    def test_resolve_rick_main_session_id_prefers_exact_telegram_session(self, monkeypatch, tmp_path):
+        store = tmp_path / "sessions.json"
+        store.write_text(
+            """
+            {
+              "agent:main:telegram:slash:1813248373": {
+                "sessionId": "035bee42-a55e-4192-8a2e-1d11cdb85908",
+                "updatedAt": 1773497886432,
+                "origin": {
+                  "provider": "telegram",
+                  "from": "telegram:1813248373",
+                  "to": "telegram:1813248373"
+                }
+              }
+            }
+            """.strip(),
+            encoding="utf-8",
+        )
+        monkeypatch.setenv("OPENCLAW_MAIN_SESSION_STORE", str(store))
+        monkeypatch.delenv("OPENCLAW_MAIN_TELEGRAM_SESSION_ID", raising=False)
+        monkeypatch.delenv("TELEGRAM_CHAT_ID", raising=False)
+        monkeypatch.delenv("TELEGRAM_ALLOWLIST_ID", raising=False)
+
+        assert _resolve_rick_main_session_id() == "035bee42-a55e-4192-8a2e-1d11cdb85908"
 
 
 # ── Test handle_smart_reply: echo intent ───────────────────────

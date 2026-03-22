@@ -232,6 +232,8 @@ function buildRunEnvelope(api: OpenClawPluginApi, params: JsonObject): JsonObjec
     schema_version: "0.1",
     task_id: randomUUID(),
     trace_id: randomUUID(),
+    source: "openclaw_gateway",
+    source_kind: "tool_run",
     team:
       (typeof params.team === "string" && params.team.trim()) ||
       cfg.defaultTeam ||
@@ -265,6 +267,9 @@ function buildEnqueueBody(
       overrides.defaultTaskType ||
       cfg.defaultTaskType ||
       "general",
+    source: "openclaw_gateway",
+    source_kind: "tool_enqueue",
+    notion_track: Boolean(params.notionTrack),
   };
 }
 
@@ -557,6 +562,7 @@ const TASK_TOOLS: TaskToolDefinition[] = [
         database_id_or_url: stringSchema("Notion database UUID or full database URL."),
         properties: objectSchema("Raw Notion page properties payload."),
         children: arraySchema(objectSchema("Optional raw Notion block object."), "Optional child blocks."),
+        icon: stringSchema("Optional page icon as emoji or external image URL."),
       },
       ["database_id_or_url", "properties"],
     ),
@@ -570,8 +576,10 @@ const TASK_TOOLS: TaskToolDefinition[] = [
       {
         page_id_or_url: stringSchema("Notion page UUID or full page URL."),
         properties: objectSchema("Raw Notion page properties payload."),
+        icon: stringSchema("Optional page icon as emoji or external image URL."),
+        archived: booleanSchema("Optional page archive toggle. Use true to archive a loose page after it was regularized elsewhere."),
       },
-      ["page_id_or_url", "properties"],
+      ["page_id_or_url"],
     ),
   },
   {
@@ -591,6 +599,10 @@ const TASK_TOOLS: TaskToolDefinition[] = [
         input_summary: stringSchema("Optional summary of the task input."),
         error: stringSchema("Optional error summary if the task failed."),
         result_summary: stringSchema("Optional result summary if the task completed."),
+        project_name: stringSchema("Optional exact project name from the Projects registry."),
+        project_page_id: stringSchema("Optional Notion page ID of the related project."),
+        deliverable_name: stringSchema("Optional exact deliverable name from the deliverables registry."),
+        deliverable_page_id: stringSchema("Optional Notion page ID of the related deliverable."),
       },
       ["task_id", "status", "team", "task"],
     ),
@@ -621,6 +633,7 @@ const TASK_TOOLS: TaskToolDefinition[] = [
         sources: arraySchema(objectSchema("Source object with url/title fields."), "Optional source entries."),
         metadata: objectSchema("Optional metadata map for the report."),
         queries: arraySchema(stringSchema("Query"), "Optional research queries used to build the report."),
+        icon: stringSchema("Optional page icon as emoji or external image URL."),
       },
       ["title", "content"],
     ),
@@ -659,6 +672,56 @@ const TASK_TOOLS: TaskToolDefinition[] = [
         bloqueos: stringSchema("Current blockers for the project."),
         next_action: stringSchema("Next concrete action to move the project forward."),
         last_update_date: stringSchema("Date of last project update (YYYY-MM-DD)."),
+        icon: stringSchema("Optional page icon as emoji or external image URL."),
+      },
+      ["name"],
+    ),
+  },
+
+  {
+    name: "umbral_notion_upsert_deliverable",
+    task: "notion.upsert_deliverable",
+    description: "Create or update a reviewable deliverable in the Notion deliverables registry. Use this for benchmarks, reports, drafts, editorial pieces, and knowledge assets that David must review.",
+    resultTitle: "Notion deliverable upsert result",
+    parameters: taskToolSchema(
+      {
+        name: stringSchema("Deliverable title in natural Spanish. Make it descriptive and do not include dates in the title."),
+        project_name: stringSchema("Exact project name in the projects registry."),
+        project_page_id: stringSchema("Optional project page ID if already resolved."),
+        deliverable_type: enumStringSchema(
+          [
+            "Benchmark",
+            "Reporte",
+            "Borrador",
+            "Pieza editorial",
+            "Criterio / base de conocimiento",
+            "Plan",
+            "Auditoria",
+          ],
+          "Deliverable type.",
+        ),
+        review_status: enumStringSchema(
+          [
+            "Pendiente revision",
+            "Aprobado",
+            "Aprobado con ajustes",
+            "Rechazado",
+            "Archivado",
+          ],
+          "Human review state.",
+        ),
+        date: stringSchema("Deliverable date (YYYY-MM-DD)."),
+        suggested_due_date: stringSchema("Optional suggested review deadline (YYYY-MM-DD). Omit to let the Worker infer it."),
+        agent: enumStringSchema(["Rick", "Claude", "Codex", "Cursor", "Antigravity"], "Agent that produced the deliverable."),
+        summary: stringSchema("Short summary of the deliverable."),
+        artifact_url: stringSchema("Canonical URL to the artifact."),
+        artifact_path: stringSchema("Canonical shared path such as G:\\\\Mi unidad\\\\..."),
+        notes: stringSchema("Review notes or context."),
+        next_action: stringSchema("Next concrete action after review."),
+        linear_issue_url: stringSchema("Related Linear issue URL."),
+        source_task_id: stringSchema("Origin task id if applicable."),
+        last_update_date: stringSchema("Date of last update (YYYY-MM-DD)."),
+        icon: stringSchema("Optional page icon as emoji or external image URL."),
       },
       ["name"],
     ),
@@ -1403,8 +1466,8 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     task: "browser.navigate",
     description: "Navigate a persistent Playwright browser page on the Windows lab node.",
     resultTitle: "Browser navigate result",
-    dispatchMode: "enqueue",
-    defaultTeam: "lab",
+    dispatchMode: "run",
+    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
     parameters: taskToolSchema(
       {
         url: stringSchema("Target URL to open."),
@@ -1426,8 +1489,8 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     task: "browser.read_page",
     description: "Read visible text from the current browser page or a selector on the Windows lab node.",
     resultTitle: "Browser read page result",
-    dispatchMode: "enqueue",
-    defaultTeam: "lab",
+    dispatchMode: "run",
+    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
     parameters: taskToolSchema({
       page_id: stringSchema("Optional existing page ID."),
       selector: stringSchema("Optional CSS selector to narrow the read target."),
@@ -1439,8 +1502,8 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     task: "browser.screenshot",
     description: "Capture a screenshot from the Playwright browser running on the Windows lab node.",
     resultTitle: "Browser screenshot result",
-    dispatchMode: "enqueue",
-    defaultTeam: "lab",
+    dispatchMode: "run",
+    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
     parameters: taskToolSchema({
       page_id: stringSchema("Optional existing page ID."),
       path: stringSchema("Optional absolute output path on the Windows node."),
@@ -1454,8 +1517,8 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     task: "browser.click",
     description: "Click a CSS selector in the Playwright browser running on the Windows lab node.",
     resultTitle: "Browser click result",
-    dispatchMode: "enqueue",
-    defaultTeam: "lab",
+    dispatchMode: "run",
+    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
     parameters: taskToolSchema(
       {
         page_id: stringSchema("Optional existing page ID."),
@@ -1473,8 +1536,8 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     task: "browser.type_text",
     description: "Type text into a CSS selector in the Playwright browser running on the Windows lab node.",
     resultTitle: "Browser type text result",
-    dispatchMode: "enqueue",
-    defaultTeam: "lab",
+    dispatchMode: "run",
+    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
     parameters: taskToolSchema(
       {
         page_id: stringSchema("Optional existing page ID."),
@@ -1495,8 +1558,8 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     task: "browser.press_key",
     description: "Send a keyboard key to the current Playwright browser page on the Windows lab node.",
     resultTitle: "Browser press key result",
-    dispatchMode: "enqueue",
-    defaultTeam: "lab",
+    dispatchMode: "run",
+    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
     parameters: taskToolSchema(
       {
         page_id: stringSchema("Optional existing page ID."),

@@ -4,6 +4,14 @@
 
 ---
 
+## Actualizacion 2026-03-15
+
+- `OpenClaw` funciona como hub/dashboard, no como deposito de paginas sueltas.
+- El flujo vigente en Notion es `Proyectos -> Tareas -> Entregables -> Revision`.
+- `Archivo historico - Umbral` queda fuera del flujo activo.
+- `notion.upsert_task` solo debe poblar Notion si la tarea esta ligada a proyecto/entregable o marca `notion_track=true`.
+- `Dashboard Rick` debe mostrar estado operativo actual y no seguimiento historico de releases cerradas.
+
 ## 1. Responsabilidades
 
 | Herramienta | Rol | Fuente de verdad |
@@ -44,6 +52,8 @@ Worker -- procesa TaskEnvelope --> notion.upsert_task + estado en Redis
 - **Dashboard Rick**: métricas (Workers, Redis, cuotas, tareas recientes) + **embeds de Linear** (vistas/roadmaps)
 - **Control Room**: comentarios David ↔ Rick ↔ Enlace
 - **Tareas Umbral**: estado de ejecución (En cola, En curso, Hecho, Bloqueado) — reflejo de Redis/Worker
+- **📁 Proyectos — Umbral**: estado canónico por proyecto (portfolio)
+- **📬 Entregables Rick — Revisión**: outputs revisables por David, ligados a proyectos
 - **Bandeja Puente** (Enlace): Pendiente, En curso, Bloqueado, Resuelto
 
 ### Redis (execution)

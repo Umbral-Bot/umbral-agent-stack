@@ -19,6 +19,8 @@ Convertir un caso externo en un benchmark profundo y util para Umbral, con cober
 
 No tratar una sola landing, una sola captura o una sola pieza de copy como si fueran el sistema completo.
 
+Si el caso cruza hacia producto oficial, permisos, analytics, organization posting, lead sync o capacidades reales de LinkedIn API, combinar esta skill con `linkedin-marketing-api-embudo`. No usar la skill de API para reemplazar un teardown publico de contenido o funnel; usarla solo para separar benchmark visible vs integracion oficial posible.
+
 ## Regla de oro
 No cerrar un benchmark profundo con una sola fuente.
 
@@ -86,6 +88,34 @@ Seguir este orden:
 9. dejar trazabilidad real si esto impacta un proyecto oficial
 
 No saltar del punto 3 al 8.
+
+## Persistencia obligatoria cuando impacta un proyecto
+Si el benchmark se pide como parte de un proyecto activo, como insumo para un proyecto o como decision para Umbral:
+
+1. No cerrar solo con respuesta de chat.
+2. Persistir un artefacto en la carpeta compartida del proyecto.
+3. Dejar issue o update trazable en Linear.
+4. Si el proyecto usa registro en Notion, reflejar el avance alli.
+
+### Contenido minimo del artefacto
+El artefacto debe incluir estas secciones, en este orden:
+- `objeto del benchmark`
+- `evidencia observada`
+- `inferencia`
+- `hipotesis`
+- `teardown`
+- `adaptacion recomendada para Umbral`
+- `huecos no verificados`
+- `siguiente decision recomendada`
+
+### Regla para benchmarks repetidos
+Si David repite el mismo benchmark o uno muy cercano:
+- se puede reutilizar contexto previo;
+- pero antes de responder hay que hacer una de estas dos cosas:
+  - refrescar al menos una fuente viva adicional; o
+  - convertir el benchmark previo en artefacto persistido y trazable.
+
+No reutilizar memoria sola como si fuera una nueva investigacion completa.
 
 ## Resolucion del objeto
 Definir primero que se esta estudiando exactamente:

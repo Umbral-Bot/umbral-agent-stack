@@ -117,6 +117,23 @@ Devuelve: `{"query":"...", "results":[{"database_id":"...", "title":"...", "url"
 
 Úsalo cuando una página de Notion contenga un `child_database` y necesites resolver cuál es la base real antes de leerla con `notion.read_database`.
 
+### 4d. Actualizar propiedades o archivar una pagina
+
+Task: `notion.update_page_properties`
+
+```json
+{
+  "page_id_or_url": "https://www.notion.so/... o UUID",
+  "properties": {"Estado": {"status": {"name": "En curso"}}},
+  "icon": "📝",
+  "archived": false
+}
+```
+
+Devuelve: `{"page_id":"...", "url":"...", "updated": true}`.
+
+Usa `archived=true` para retirar una pagina suelta que ya fue regularizada en otro contenedor canónico. No archives una pagina project-scoped sin antes dejar el proyecto y el entregable correctos.
+
 ### 5. Crear o actualizar tarea en DB
 
 Task: `notion.upsert_task`
@@ -127,12 +144,18 @@ Task: `notion.upsert_task`
   "status": "running",
   "team": "marketing",
   "task": "research.web",
+  "project_name": "Proyecto Embudo Ventas",
+  "deliverable_name": "Benchmark Ruben Hassid - sistema contenido y funnel",
   "input_summary": "query=...",
   "result_summary": "..."
 }
 ```
 
 Devuelve: `{"page_id":"...", "updated": true}` o `{"skipped": true, "reason":"..."}`
+
+Si la tarea pertenece claramente a un proyecto o produce/actualiza un entregable revisable, usa `project_name` / `project_page_id` y `deliverable_name` / `deliverable_page_id` para enlazar la fila. No dejes `Tareas` flotando sin contexto si ya conoces el proyecto o el entregable.
+Si el caso queda realmente cerrado, no marques la tarea como `done` hasta que la fila tenga `Proyecto` y `Entregable` correctos.
+Si la tarea nace sin proyecto ni entregable, asume que es ruido operativo o sistema y evita mandarla a Notion salvo que David haya pedido explícitamente trazabilidad o marques `notion_track=true`.
 
 ### 6. Actualizar dashboard
 
@@ -159,12 +182,20 @@ Task: `notion.create_report_page`
   "title": "Reporte semanal",
   "content": "# Resumen\nHallazgos...",
   "parent_page_id": "optional-parent-id",
+  "icon": "📝",
   "sources": [{"title": "Fuente", "url": "https://..."}],
   "metadata": {"team": "advisory"}
 }
 ```
 
 Devuelve: `{"page_id":"...", "page_url":"...", "ok": true}`
+
+Usala para:
+- coordinación transversal
+- alertas
+- borradores temporales fuera del flujo de proyecto
+
+No usarla como artefacto final de un benchmark, reporte o referencia externa que ya pertenece a un proyecto activo. En ese caso el cierre correcto es `notion.upsert_deliverable`.
 
 ### 8. Crear o actualizar proyecto en registry
 
@@ -176,6 +207,7 @@ Requiere `NOTION_PROJECTS_DB_ID` configurado en el Worker.
 {
   "name": "Proyecto Embudo Ventas",
   "estado": "Activo",
+  "icon": "📁",
   "linear_project_url": "https://linear.app/umbral/project/...",
   "shared_path": "G:\\Mi unidad\\Rick-David\\Proyecto-Embudo-Ventas\\",
   "responsable": "David Moreira",
@@ -192,6 +224,47 @@ Devuelve: `{"ok": true, "page_id": "...", "url": "...", "created": bool}`
 - `created: false` → se actualizó la entrada existente (busca por nombre exacto).
 
 Variables opcionales: `start_date`, `target_date` (YYYY-MM-DD), `bloqueos`, `last_update_date`.
+
+### 9. Crear o actualizar entregable revisable
+
+Task: `notion.upsert_deliverable`
+
+```json
+{
+  "name": "Benchmark de Ruben Hassid para el sistema editorial",
+  "project_name": "Proyecto Embudo Ventas",
+  "deliverable_type": "Benchmark",
+  "review_status": "Pendiente revision",
+  "date": "2026-03-15",
+  "suggested_due_date": "2026-03-18",
+  "agent": "Rick",
+  "summary": "Resumen corto y legible para David.",
+  "artifact_path": "G:\\Mi unidad\\Rick-David\\Proyecto-Embudo-Ventas\\benchmark-ruben-hassid.md",
+  "next_action": "Revisar si se traduce a sistema editorial reusable.",
+  "icon": "🎯"
+}
+```
+
+Reglas:
+- El `name` debe quedar en español natural y legible para David.
+- No poner fechas dentro del título; usar `date` y `suggested_due_date`.
+- Si el entregable pertenece a un proyecto, usar el icono del proyecto salvo que haya una razón clara para diferenciarlo.
+- El cuerpo de la página debe quedar con resumen, contexto y siguiente acción. No dejar páginas vacías.
+- Si el entregable nace desde una tarea o follow-up, pasar `source_task_id` y no considerar el caso cerrado hasta que el entregable tenga `Proyecto` y `Tareas origen` o `Task ID origen` coherente.
+
+## Regla de iconos
+
+- Si la task acepta `icon`, usar ese campo y no meter el emoji dentro del `title` o `name`.
+- Reservar emoji en el texto solo cuando el icono no pueda configurarse por API.
+- Para filas/paginas ligadas a un proyecto, preferir el icono del proyecto como icono real.
+- Si no hay proyecto, inferir un icono por contenido/tipo antes de dejar la pagina sin icono.
+- En bases de datos top-level de Notion, mantener emoji en el titulo como fallback visual porque el icono de database no siempre queda gobernable por esta API.
+
+## Regla de títulos y contenido
+
+- Los títulos de entregables deben ser descriptivos, en español natural y sin fecha incrustada.
+- Las fechas van en columnas (`Fecha`, `Fecha limite sugerida`) y no en el nombre.
+- `Proyectos`, `Tareas` y `Entregables` deben dejar cuerpo útil dentro de la página; no crear filas que al abrirse queden en blanco.
 
 ## Triggers recomendados
 

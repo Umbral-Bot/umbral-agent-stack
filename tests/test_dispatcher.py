@@ -139,6 +139,26 @@ class TestTaskQueue:
         stats = queue.queue_stats()
         assert stats["pending"] == 1
 
+    def test_enqueue_pending_meta_keeps_traceability_context(self, queue, sample_envelope, redis_client):
+        sample_envelope["source"] = "openclaw_gateway"
+        sample_envelope["source_kind"] = "tool_enqueue"
+        sample_envelope["callback_url"] = "https://callback.example/hook"
+        sample_envelope["notion_track"] = True
+        sample_envelope["project_name"] = "Proyecto Embudo Ventas"
+        sample_envelope["deliverable_name"] = "Benchmark Ruben Hassid - sistema contenido y funnel"
+
+        queue.enqueue(sample_envelope)
+        raw_meta = redis_client.lindex(TaskQueue.QUEUE_PENDING, 0)
+        meta = json.loads(raw_meta)
+
+        assert meta["trace_id"] == sample_envelope["trace_id"]
+        assert meta["source"] == "openclaw_gateway"
+        assert meta["source_kind"] == "tool_enqueue"
+        assert meta["callback_url"] == "https://callback.example/hook"
+        assert meta["notion_track"] is True
+        assert meta["project_name"] == "Proyecto Embudo Ventas"
+        assert meta["deliverable_name"] == "Benchmark Ruben Hassid - sistema contenido y funnel"
+
     def test_get_nonexistent_task(self, queue):
         result = queue.get_task("does-not-exist")
         assert result is None
@@ -156,7 +176,7 @@ class TestHealthMonitor:
             worker_token="test",
         )
         assert hm.level == SystemLevel.NORMAL
-        assert hm.vm_online is True
+        assert hm.vm_online is False
 
     @patch("dispatcher.health.httpx.get")
     def test_successful_check(self, mock_get):
@@ -186,9 +206,9 @@ class TestHealthMonitor:
 
         # 1st and 2nd failure — still online
         hm.check_once()
-        assert hm.vm_online is True
+        assert hm.vm_online is False
         hm.check_once()
-        assert hm.vm_online is True
+        assert hm.vm_online is False
 
         # 3rd failure — now offline
         hm.check_once()

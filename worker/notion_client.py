@@ -77,6 +77,34 @@ def _plain_text_from_rich_text(rich_text: list[Any] | None) -> str:
     return "".join(parts)
 
 
+def _parse_notion_datetime(value: str | None) -> datetime | None:
+    raw = (value or "").strip()
+    if not raw:
+        return None
+    if raw.endswith("Z"):
+        raw = raw[:-1] + "+00:00"
+    try:
+        return datetime.fromisoformat(raw)
+    except ValueError:
+        logger.warning("Could not parse Notion datetime: %s", value)
+        return None
+
+
+def _normalize_icon(icon: str | None) -> dict[str, Any] | None:
+    """Build a Notion icon payload from an emoji or external URL."""
+    value = (icon or "").strip()
+    if not value:
+        return None
+    if value.startswith("http://") or value.startswith("https://"):
+        return {"type": "external", "external": {"url": value}}
+    return {"type": "emoji", "emoji": value}
+
+
+def _is_icon_validation_error(exc: Exception) -> bool:
+    message = str(exc)
+    return "validation_error" in message and "body.icon" in message
+
+
 def _find_property_name(
     properties: dict[str, Any],
     candidates: list[str],
@@ -300,40 +328,55 @@ def poll_comments(
     if page_id is None:
         page_id = config.NOTION_CONTROL_ROOM_PAGE_ID
 
-    params: dict[str, Any] = {"block_id": page_id, "page_size": min(limit, 100)}
+    since_dt = _parse_notion_datetime(since)
+    page_size = max(1, min(limit, 100))
+    start_cursor: str | None = None
+    comments: list[dict[str, Any]] = []
 
     logger.info("Polling comments from page %s (since=%s)", page_id, since)
     with httpx.Client(timeout=TIMEOUT) as client:
-        resp = client.get(
-            f"{NOTION_BASE_URL}/comments",
-            headers=_headers(),
-            params=params,
-        )
-    data = _check_response(resp, "poll_comments")
+        while True:
+            params: dict[str, Any] = {"block_id": page_id, "page_size": page_size}
+            if start_cursor:
+                params["start_cursor"] = start_cursor
 
-    comments = []
-    for c in data.get("results", []):
-        created = c.get("created_time", "")
+            resp = client.get(
+                f"{NOTION_BASE_URL}/comments",
+                headers=_headers(),
+                params=params,
+            )
+            data = _check_response(resp, "poll_comments")
 
-        # Filter by since if provided
-        if since and created < since:
-            continue
+            for c in data.get("results", []):
+                created = c.get("created_time", "")
+                created_dt = _parse_notion_datetime(created)
 
-        # Extract plain text from rich_text
-        text_parts = []
-        for rt in c.get("rich_text", []):
-            text_parts.append(rt.get("plain_text", rt.get("text", {}).get("content", "")))
+                if since_dt and created_dt and created_dt <= since_dt:
+                    continue
 
-        comments.append(
-            {
-                "id": c["id"],
-                "created_time": created,
-                "created_by": c.get("created_by", {}).get("id", "unknown"),
-                "text": "".join(text_parts),
-            }
-        )
+                text_parts = []
+                for rt in c.get("rich_text", []):
+                    text_parts.append(rt.get("plain_text", rt.get("text", {}).get("content", "")))
 
-    return {"comments": comments, "count": len(comments)}
+                comments.append(
+                    {
+                        "id": c["id"],
+                        "created_time": created,
+                        "created_by": c.get("created_by", {}).get("id", "unknown"),
+                        "text": "".join(text_parts),
+                    }
+                )
+
+            if len(comments) >= limit:
+                break
+            if not data.get("has_more"):
+                break
+            start_cursor = data.get("next_cursor")
+            if not start_cursor:
+                break
+
+    comments.sort(key=lambda c: _parse_notion_datetime(c.get("created_time")) or datetime.min.replace(tzinfo=timezone.utc))
+    return {"comments": comments[:limit], "count": len(comments[:limit])}
 
 
 def read_page(
@@ -409,6 +452,27 @@ def read_page(
         "has_more": bool(blocks_data.get("has_more")),
         "max_blocks": max_blocks,
     }
+
+
+def get_page(page_id_or_url: str) -> dict[str, Any]:
+    """
+    Read raw Notion page metadata.
+
+    Args:
+        page_id_or_url: Notion page UUID or full URL.
+
+    Returns:
+        Raw Notion page object as returned by the REST API.
+    """
+    config.require_notion_core()
+    page_id = _extract_notion_page_id(page_id_or_url)
+
+    with httpx.Client(timeout=TIMEOUT) as client:
+        page_resp = client.get(
+            f"{NOTION_BASE_URL}/pages/{page_id}",
+            headers=_headers(),
+        )
+    return _check_response(page_resp, "get_page")
 
 
 def _flatten_property_value(prop: dict[str, Any]) -> Any:
@@ -637,6 +701,7 @@ def create_database_page(
     database_id_or_url: str,
     properties: dict[str, Any],
     children: list[dict[str, Any]] | None = None,
+    icon: str | None = None,
 ) -> dict[str, Any]:
     """
     Create a page inside an existing Notion database using raw Notion API properties.
@@ -658,6 +723,9 @@ def create_database_page(
         "parent": {"database_id": database_id},
         "properties": properties,
     }
+    icon_payload = _normalize_icon(icon)
+    if icon_payload:
+        payload["icon"] = icon_payload
     if children:
         payload["children"] = children[:100]
 
@@ -667,7 +735,20 @@ def create_database_page(
             headers=_headers(),
             json=payload,
         )
-        result = _check_response(resp, "create_database_page")
+        try:
+            result = _check_response(resp, "create_database_page")
+        except Exception as exc:
+            if icon_payload and _is_icon_validation_error(exc):
+                logger.warning("Retrying create_database_page without icon after Notion icon validation error")
+                payload.pop("icon", None)
+                resp = client.post(
+                    f"{NOTION_BASE_URL}/pages",
+                    headers=_headers(),
+                    json=payload,
+                )
+                result = _check_response(resp, "create_database_page")
+            else:
+                raise
         page_id = result["id"]
 
         if children and len(children) > 100:
@@ -686,6 +767,8 @@ def create_database_page(
 def update_page_properties(
     page_id_or_url: str,
     properties: dict[str, Any],
+    icon: str | None = None,
+    archived: bool | None = None,
 ) -> dict[str, Any]:
     """
     Update raw Notion page properties for an existing page.
@@ -699,16 +782,39 @@ def update_page_properties(
     """
     config.require_notion_core()
     page_id = _extract_notion_page_id(page_id_or_url)
-    if not isinstance(properties, dict) or not properties:
-        raise ValueError("properties must be a non-empty dict")
+    if not isinstance(properties, dict):
+        raise ValueError("properties must be a dict")
+    icon_payload = _normalize_icon(icon)
+    if not properties and not icon_payload and archived is None:
+        raise ValueError("properties, icon or archived must be provided")
 
     with httpx.Client(timeout=TIMEOUT) as client:
+        payload: dict[str, Any] = {}
+        if properties:
+            payload["properties"] = properties
+        if icon_payload:
+            payload["icon"] = icon_payload
+        if archived is not None:
+            payload["archived"] = bool(archived)
         resp = client.patch(
             f"{NOTION_BASE_URL}/pages/{page_id}",
             headers=_headers(),
-            json={"properties": properties},
+            json=payload,
         )
-        result = _check_response(resp, "update_page_properties")
+        try:
+            result = _check_response(resp, "update_page_properties")
+        except Exception as exc:
+            if icon_payload and _is_icon_validation_error(exc):
+                logger.warning("Retrying update_page_properties without icon after Notion icon validation error")
+                payload.pop("icon", None)
+                resp = client.patch(
+                    f"{NOTION_BASE_URL}/pages/{page_id}",
+                    headers=_headers(),
+                    json=payload,
+                )
+                result = _check_response(resp, "update_page_properties")
+            else:
+                raise
 
     return {"page_id": result.get("id", page_id), "url": result.get("url", ""), "updated": True}
 
@@ -818,6 +924,20 @@ def _build_dashboard_v2_blocks(data: dict[str, Any]) -> list[dict[str, Any]]:
 
     blocks.append(_block_heading1("Dashboard Rick"))
     blocks.append(_block_callout(f"Estado: {overall}  —  {ts}", status_emoji, status_color))
+    blocks.append(
+        _block_paragraph(
+            "Este dashboard es tecnico. Para decidir que revisar o aprobar ahora, usa OpenClaw."
+        )
+    )
+    vm_recovery = data.get("vm_recovery_mode") or {}
+    if vm_recovery.get("enabled"):
+        blocks.append(
+            _block_callout(
+                "VM en recovery mode via tunel reverso host->VPS. El stack opera, pero la red/Tailscale propia del guest sigue pendiente.",
+                "🛟",
+                "yellow_background",
+            )
+        )
 
     # KPI summary row
     ops = data.get("ops_summary", {})
@@ -835,30 +955,6 @@ def _build_dashboard_v2_blocks(data: dict[str, Any]) -> list[dict[str, Any]]:
     ]
     blocks.append(_block_paragraph_rich(kpi_parts))
     blocks.append(_block_divider())
-
-    # Release tracking snapshot (R16/R17)
-    tracking = data.get("release_tracking") or {}
-    if tracking:
-        r16 = tracking.get("r16", {})
-        r17 = tracking.get("r17", {})
-        tests_passed = tracking.get("tests_passed", "—")
-        tracking_rows = [
-            [
-                "R16",
-                str(r16.get("status", "Cerrada")),
-                str(r16.get("prs", "PRs #85-#90 mergeados")),
-            ],
-            [
-                "R17",
-                str(r17.get("status", "Cerrada")),
-                str(r17.get("prs", "PRs #91-#96 mergeados")),
-            ],
-            ["Tests", f"{tests_passed} passed", "pytest tests/ -q"],
-            ["Ultima actualizacion", str(ts), "Timestamp del run"],
-        ]
-        blocks.append(_block_heading2("Seguimiento R16/R17"))
-        blocks.append(_block_table(["Bloque", "Estado", "Detalle"], tracking_rows))
-        blocks.append(_block_divider())
 
     # Active alerts
     if alerts:
@@ -920,18 +1016,29 @@ def _build_dashboard_v2_blocks(data: dict[str, Any]) -> list[dict[str, Any]]:
         blocks.append(_block_heading2("Equipos"))
         team_rows = []
         for t in teams:
-            vm_flag = "VM" if t.get("requires_vm") else "VPS"
+            vm_flag = "Por tarea"
             completed = t.get("completed", 0)
             active = t.get("active", 0)
             status_str = f"{active} activas, {completed} completadas" if (active or completed) else "Sin actividad"
             team_rows.append([t["team"].capitalize(), t.get("supervisor", "—"), vm_flag, status_str])
-        blocks.append(_block_table(["Equipo", "Supervisor", "Plano", "Actividad"], team_rows))
+        blocks.append(_block_table(["Equipo", "Supervisor", "Enrutamiento", "Actividad"], team_rows))
         blocks.append(_block_divider())
 
-    # Recent tasks with timestamps
+    notion_ops = data.get("notion_ops") or {}
+    if notion_ops:
+        blocks.append(_block_heading2("Operacion Notion"))
+        notion_rows = [
+            ["Tareas registradas", str(notion_ops.get("tasks_total", 0)), f"Sin contexto: {notion_ops.get('tasks_unlinked', 0)}"],
+            ["Entregables pendientes", str(notion_ops.get("deliverables_pending", 0)), f"Con ajustes: {notion_ops.get('deliverables_adjustments', 0)}"],
+            ["Bandeja viva", str(notion_ops.get("bridge_live", 0)), "Items no resueltos"],
+        ]
+        blocks.append(_block_table(["Area", "Conteo", "Detalle"], notion_rows))
+        blocks.append(_block_divider())
+
+    # Recent project-scoped / relevant tasks
     recent = data.get("recent_tasks", [])
     if recent:
-        blocks.append(_block_heading2("Tareas Recientes"))
+        blocks.append(_block_heading2("Tareas recientes relevantes"))
         task_rows = []
         for t in recent:
             status_icon = "✅" if t["status"] == "done" else "❌"
@@ -943,6 +1050,18 @@ def _build_dashboard_v2_blocks(data: dict[str, Any]) -> list[dict[str, Any]]:
         last_error = data.get("last_error")
         if last_error:
             blocks.append(_block_callout(f"Ultimo error: {last_error}", "⚠️", "red_background"))
+        blocks.append(_block_divider())
+
+    recent_system = data.get("recent_system_tasks", [])
+    if recent_system:
+        blocks.append(_block_heading3("Ruido tecnico / sistema"))
+        task_rows = []
+        for t in recent_system:
+            status_icon = "✅" if t["status"] == "done" else "❌"
+            when = t.get("when", "")
+            task_rows.append([f"{status_icon} {t['task']}", t["team"], f"{t['duration_s']}s", when, t["task_id"]])
+        blocks.append(_block_table(["Tarea", "Equipo", "Duracion", "Cuando", "ID"], task_rows))
+        blocks.append(_block_paragraph("Estas tareas se muestran aparte porque hoy no traen contexto suficiente de proyecto o entregable."))
         blocks.append(_block_divider())
 
     # Running tasks
@@ -1043,9 +1162,18 @@ def upsert_task(
     status: str,
     team: str,
     task: str,
+    task_name: str | None = None,
     input_summary: str | None = None,
     error: str | None = None,
     result_summary: str | None = None,
+    source: str | None = None,
+    source_kind: str | None = None,
+    trace_id: str | None = None,
+    selected_model: str | None = None,
+    project_page_id: str | None = None,
+    deliverable_page_id: str | None = None,
+    icon: str | None = None,
+    children: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """
     Crea o actualiza una página en la DB "Tareas Umbral" (Kanban tracking).
@@ -1061,7 +1189,7 @@ def upsert_task(
     notion_status = status if status in ("queued", "running", "done", "failed", "blocked") else "queued"
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    title_text = task[:2000] if task else f"Task {task_id[:8]}"
+    title_text = (task_name or task)[:2000] if (task_name or task) else f"Task {task_id[:8]}"
     input_preview = (input_summary or "")[:200] if input_summary else "—"
     error_preview = (error or "")[:200] if error else ""
     result_preview = (result_summary or "")[:200] if result_summary else ""
@@ -1074,12 +1202,22 @@ def upsert_task(
         "Task ID": {"rich_text": [{"text": {"content": task_id[:2000]}}]},
         "Result Summary": {"rich_text": [{"text": {"content": summary[:2000] or "—"}}]},
     }
+    if project_page_id:
+        properties["Proyecto"] = {"relation": [{"id": project_page_id}]}
+    if deliverable_page_id:
+        properties["Entregable"] = {"relation": [{"id": deliverable_page_id}]}
     if error_preview:
         properties["Error"] = {"rich_text": [{"text": {"content": error_preview[:2000]}}]}
     if input_preview and input_preview != "—":
         properties["Input Summary"] = {"rich_text": [{"text": {"content": input_preview[:2000]}}]}
-    if team:
-        properties["Model"] = {"rich_text": [{"text": {"content": team}}]}
+    if selected_model:
+        properties["Model"] = {"rich_text": [{"text": {"content": str(selected_model)[:2000]}}]}
+    if source:
+        properties["Source"] = {"rich_text": [{"text": {"content": str(source)[:2000]}}]}
+    if source_kind:
+        properties["Source Kind"] = {"rich_text": [{"text": {"content": str(source_kind)[:2000]}}]}
+    if trace_id:
+        properties["Trace ID"] = {"rich_text": [{"text": {"content": str(trace_id)[:2000]}}]}
 
     with httpx.Client(timeout=TIMEOUT) as client:
         # Query by Task ID
@@ -1093,25 +1231,39 @@ def upsert_task(
 
         if results:
             page_id = results[0]["id"]
+            payload: dict[str, Any] = {"properties": properties}
+            icon_payload = _normalize_icon(icon)
+            if icon_payload:
+                payload["icon"] = icon_payload
             resp = client.patch(
                 f"{NOTION_BASE_URL}/pages/{page_id}",
                 headers=_headers(),
-                json={"properties": properties},
+                json=payload,
             )
             _check_response(resp, "update task")
+            if children:
+                replace_blocks_in_page(page_id=page_id, blocks=children)
             logger.info("Updated task %s in Notion (status=%s)", task_id[:8], notion_status)
             return {"page_id": page_id, "updated": True}
         else:
             properties["Created"] = {"date": {"start": now}}
+            payload = {
+                "parent": {"database_id": db_id},
+                "properties": properties,
+            }
+            icon_payload = _normalize_icon(icon)
+            if icon_payload:
+                payload["icon"] = icon_payload
+            if children:
+                payload["children"] = children[:100]
             resp = client.post(
                 f"{NOTION_BASE_URL}/pages",
                 headers=_headers(),
-                json={
-                    "parent": {"database_id": db_id},
-                    "properties": properties,
-                },
+                json=payload,
             )
             result = _check_response(resp, "create task")
+            if children and len(children) > 100:
+                append_blocks_to_page(page_id=result["id"], blocks=children[100:])
             logger.info("Created task %s in Notion (status=%s)", task_id[:8], notion_status)
             return {"page_id": result["id"], "url": result.get("url", ""), "created": True}
 
@@ -1123,6 +1275,7 @@ def create_report_page(
     sources: list[dict[str, Any]] | None = None,
     queries: list[str] | None = None,
     metadata: dict[str, Any] | None = None,
+    icon: str | None = None,
 ) -> dict[str, Any]:
     """
     Create a child page under a Notion page with a structured report.
@@ -1140,7 +1293,7 @@ def create_report_page(
     """
     config.require_notion_core()
     if parent_page_id is None:
-        parent_page_id = config.NOTION_CONTROL_ROOM_PAGE_ID
+        parent_page_id = _resolve_report_parent_page_id(metadata)
 
     # Build children blocks: content + sources + queries
     children: list[dict[str, Any]] = []
@@ -1183,6 +1336,9 @@ def create_report_page(
         },
         "children": children[:100],
     }
+    icon_payload = _normalize_icon(icon)
+    if icon_payload:
+        payload["icon"] = icon_payload
 
     logger.info("Creating report page: %s under %s", title[:60], parent_page_id[:8])
     with httpx.Client(timeout=TIMEOUT) as client:
@@ -1209,6 +1365,23 @@ def create_report_page(
 
     logger.info("Created report page: %s (%s)", page_id, page_url)
     return {"page_id": page_id, "page_url": page_url, "ok": True}
+
+
+def _resolve_report_parent_page_id(metadata: dict[str, Any] | None = None) -> str:
+    metadata = metadata or {}
+    source = str(metadata.get("source") or "").strip().lower()
+    automation_sources = {
+        "workflow_engine",
+        "smart_reply",
+        "ooda_report",
+        "daily_digest",
+        "sim_report",
+        "supervisor",
+        "self_improvement_cycle",
+    }
+    if config.NOTION_REPORTS_ARCHIVE_PAGE_ID and source in automation_sources:
+        return config.NOTION_REPORTS_ARCHIVE_PAGE_ID
+    return config.NOTION_CONTROL_ROOM_PAGE_ID  # type: ignore[return-value]
 
 
 # ---------------------------------------------------------------------------
@@ -1288,6 +1461,77 @@ def append_blocks_to_page(
 
     logger.info("Appended %d blocks to page %s", len(blocks), page_id[:8])
     return {"blocks_appended": len(blocks), "page_id": page_id}
+
+
+def replace_blocks_in_page(
+    page_id: str,
+    blocks: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """
+    Replace all top-level blocks in a Notion page with a new set.
+
+    Args:
+        page_id: The page to rewrite.
+        blocks: New blocks to leave as the full page body.
+
+    Returns:
+        {"blocks_replaced": N, "blocks_removed": M, "page_id": "..."}
+    """
+    if not config.NOTION_API_KEY:
+        raise RuntimeError("NOTION_API_KEY not configured")
+    if not page_id:
+        raise ValueError("page_id is required")
+    if not isinstance(blocks, list) or not blocks:
+        raise ValueError("blocks must be a non-empty list")
+
+    with httpx.Client(timeout=TIMEOUT) as client:
+        existing_blocks: list[dict[str, Any]] = []
+        next_cursor = None
+        while True:
+            params = {"page_size": 100}
+            if next_cursor:
+                params["start_cursor"] = next_cursor
+            resp = client.get(
+                f"{NOTION_BASE_URL}/blocks/{page_id}/children",
+                headers=_headers(),
+                params=params,
+            )
+            data = _check_response(resp, "list blocks for replace")
+            existing_blocks.extend(data.get("results", []))
+            if not data.get("has_more"):
+                break
+            next_cursor = data.get("next_cursor")
+
+        for eb in existing_blocks:
+            bid = eb.get("id")
+            if not bid:
+                continue
+            resp = client.delete(
+                f"{NOTION_BASE_URL}/blocks/{bid}",
+                headers=_headers(),
+            )
+            _check_response(resp, "delete blocks for replace")
+
+        for i in range(0, len(blocks), 100):
+            chunk = blocks[i : i + 100]
+            resp = client.patch(
+                f"{NOTION_BASE_URL}/blocks/{page_id}/children",
+                headers=_headers(),
+                json={"children": chunk},
+            )
+            _check_response(resp, "replace blocks")
+
+    logger.info(
+        "Replaced %d blocks in page %s (removed %d)",
+        len(blocks),
+        page_id[:8],
+        len(existing_blocks),
+    )
+    return {
+        "blocks_replaced": len(blocks),
+        "blocks_removed": len(existing_blocks),
+        "page_id": page_id,
+    }
 
 
 _WRITABLE_BLOCK_TYPES = {

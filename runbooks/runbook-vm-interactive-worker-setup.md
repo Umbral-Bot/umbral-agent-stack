@@ -81,6 +81,14 @@ Invoke-RestMethod http://localhost:8089/health
 
 Debe devolver `{"ok": true, ...}`.
 
+Y para verificar que `8088` y `8089` publican los mismos handlers criticos:
+
+```powershell
+cd C:\GitHub\umbral-agent-stack
+$env:WORKER_TOKEN="EL_MISMO_TOKEN"
+python scripts\worker_inventory_smoke.py --target vm-headless=http://localhost:8088 --target vm-interactive=http://localhost:8089 --smoke
+```
+
 Desde la VPS:
 
 ```bash
@@ -108,6 +116,12 @@ python3 scripts/run_worker_task.py windows.open_notepad 'todo ok 999' --session 
 ```
 
 Debe abrirse un Notepad con "todo ok 999" en el escritorio de la VM. Test documentado en `docs/33-test-post-reinicio-vm.md`.
+
+Para validar inventario entre VPS y VM en un solo paso:
+
+```bash
+bash scripts/test_workers_vm.sh
+```
 
 ## 6) Env en VPS
 

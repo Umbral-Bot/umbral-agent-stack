@@ -18,7 +18,6 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -44,7 +43,7 @@ TASK_NOISE_PREFIXES = (
     "notion.search_databases",
 )
 
-DELIVERABLE_PROJECT_HINTS: list[tuple[tuple[str, ...], str]] = [
+PROJECT_HINTS: list[tuple[tuple[str, ...], str]] = [
     (("freepik",), "Uso de Freepik vía VM"),
     (("rpa gui", "gui"), "Autonomía RPA GUI en VM"),
     (("navegador", "browser vm"), "Control de Navegador VM"),
@@ -54,6 +53,7 @@ DELIVERABLE_PROJECT_HINTS: list[tuple[tuple[str, ...], str]] = [
     (("embudo", "veritasium", "ruben", "linkedin", "landing"), "Proyecto Embudo Ventas"),
     (("mejora continua", "ooda", "drift"), "Auditoría Mejora Continua — Umbral Agent Stack"),
 ]
+TASK_DEDUPE_PROJECTS = {"Proyecto Granola"}
 
 
 SMOKE_DELIVERABLE_HINTS = (
@@ -222,12 +222,61 @@ def _plain(prop: dict[str, Any] | None) -> Any:
     return None
 
 
+def _normalize_spaces(text: str) -> str:
+    return " ".join((text or "").split())
+
+
 def infer_project_name_from_deliverable(name: str, summary: str = "", next_action: str = "") -> str | None:
     haystack = f"{name} {summary} {next_action}".lower()
-    for hints, project_name in DELIVERABLE_PROJECT_HINTS:
+    for hints, project_name in PROJECT_HINTS:
         if any(hint in haystack for hint in hints):
             return project_name
     return None
+
+
+def infer_project_name_from_task(
+    name: str,
+    input_summary: str = "",
+    result_summary: str = "",
+    source: str = "",
+    source_kind: str = "",
+) -> str | None:
+    haystack = f"{name} {input_summary} {result_summary} {source} {source_kind}".lower()
+    for hints, project_name in PROJECT_HINTS:
+        if any(hint in haystack for hint in hints):
+            return project_name
+    return None
+
+
+def normalize_task_title_for_dedup(name: str) -> str:
+    return _normalize_spaces(name).casefold()
+
+
+def _task_property_names() -> dict[str, str]:
+    if not config.NOTION_TASKS_DB_ID:
+        return {
+            "task": "Task",
+            "status": "Status",
+            "created": "Created",
+            "project": "Proyecto",
+            "deliverable": "Entregable",
+            "input_summary": "Input Summary",
+            "result_summary": "Result Summary",
+            "source": "Source",
+            "source_kind": "Source Kind",
+        }
+    task_schema = _db_schema(config.NOTION_TASKS_DB_ID)
+    return {
+        "task": _property_name(task_schema, preferred=["Task"], prop_type="title") or "Task",
+        "status": _property_name(task_schema, preferred=["Status"], prop_type="select") or "Status",
+        "created": _property_name(task_schema, preferred=["Created"], prop_type="date") or "Created",
+        "project": _property_name(task_schema, preferred=["Proyecto"], prop_type="relation") or "Proyecto",
+        "deliverable": _property_name(task_schema, preferred=["Entregable"], prop_type="relation") or "Entregable",
+        "input_summary": _property_name(task_schema, preferred=["Input Summary"], prop_type="rich_text") or "Input Summary",
+        "result_summary": _property_name(task_schema, preferred=["Result Summary"], prop_type="rich_text") or "Result Summary",
+        "source": _property_name(task_schema, preferred=["Source"], prop_type="rich_text") or "Source",
+        "source_kind": _property_name(task_schema, preferred=["Source Kind"], prop_type="rich_text") or "Source Kind",
+    }
 
 
 def infer_deliverable_provenance(name: str, review_status: str = "", source_task_id: str = "") -> str:
@@ -495,18 +544,120 @@ def backfill_live_deliverable_task_origins(batch_size: int = 20) -> list[dict[st
     return updates
 
 
+def archive_duplicate_orphan_tasks(batch_size: int = 40) -> list[dict[str, Any]]:
+    if not config.NOTION_TASKS_DB_ID:
+        return []
+    prop_names = _task_property_names()
+    rows = _query_db(
+        config.NOTION_TASKS_DB_ID,
+        sorts=[{"timestamp": "created_time", "direction": "descending"}],
+    )
+    seen_fingerprints: set[tuple[str, str, str, str, str]] = set()
+    archived: list[dict[str, Any]] = []
+    for row in rows:
+        if len(archived) >= batch_size:
+            break
+        props = row.get("properties", {})
+        if (_plain(props.get(prop_names["project"])) or []) or (_plain(props.get(prop_names["deliverable"])) or []):
+            continue
+        status = (_plain(props.get(prop_names["status"])) or "").strip().lower()
+        if status != "queued":
+            continue
+        title = (_plain(props.get(prop_names["task"])) or "").strip()
+        input_summary = (_plain(props.get(prop_names["input_summary"])) or "").strip()
+        source = (_plain(props.get(prop_names["source"])) or "").strip()
+        source_kind = (_plain(props.get(prop_names["source_kind"])) or "").strip()
+        inferred_project = infer_project_name_from_task(
+            title,
+            input_summary=input_summary,
+            source=source,
+            source_kind=source_kind,
+        )
+        if inferred_project not in TASK_DEDUPE_PROJECTS:
+            continue
+        fingerprint = (
+            inferred_project,
+            normalize_task_title_for_dedup(title),
+            _normalize_spaces(input_summary).casefold(),
+            _normalize_spaces(source).casefold(),
+            _normalize_spaces(source_kind).casefold(),
+        )
+        if fingerprint in seen_fingerprints:
+            _api("PATCH", f"/pages/{row['id']}", payload={"archived": True})
+            archived.append(
+                {
+                    "task_id": row["id"],
+                    "title": title,
+                    "status": status,
+                    "project_name": inferred_project,
+                    "input_summary": input_summary,
+                }
+            )
+            continue
+        seen_fingerprints.add(fingerprint)
+    return archived
+
+
+def relink_orphan_tasks(batch_size: int = 60) -> list[dict[str, Any]]:
+    if not config.NOTION_TASKS_DB_ID or not config.NOTION_PROJECTS_DB_ID:
+        return []
+    project_ids = _project_lookup()
+    prop_names = _task_property_names()
+    rows = _query_db(
+        config.NOTION_TASKS_DB_ID,
+        sorts=[{"timestamp": "created_time", "direction": "descending"}],
+    )
+    updates: list[dict[str, Any]] = []
+    for row in rows:
+        if len(updates) >= batch_size:
+            break
+        props = row.get("properties", {})
+        if (_plain(props.get(prop_names["project"])) or []) or (_plain(props.get(prop_names["deliverable"])) or []):
+            continue
+        title = (_plain(props.get(prop_names["task"])) or "").strip()
+        input_summary = (_plain(props.get(prop_names["input_summary"])) or "").strip()
+        result_summary = (_plain(props.get(prop_names["result_summary"])) or "").strip()
+        source = (_plain(props.get(prop_names["source"])) or "").strip()
+        source_kind = (_plain(props.get(prop_names["source_kind"])) or "").strip()
+        inferred_project = infer_project_name_from_task(
+            title,
+            input_summary=input_summary,
+            result_summary=result_summary,
+            source=source,
+            source_kind=source_kind,
+        )
+        if not inferred_project:
+            continue
+        project_page_id = project_ids.get(inferred_project)
+        if not project_page_id:
+            continue
+        notion_client.update_page_properties(
+            page_id_or_url=row["id"],
+            properties={prop_names["project"]: {"relation": [{"id": project_page_id}]}}
+        )
+        updates.append(
+            {
+                "task_id": row["id"],
+                "title": title,
+                "project_name": inferred_project,
+                "project_page_id": project_page_id,
+            }
+        )
+    return updates
+
+
 def curate_tasks(batch_size: int = 180, keep_recent_unscoped_count: int = 4) -> list[dict[str, Any]]:
     rows = _query_db(
         config.NOTION_TASKS_DB_ID,
         sorts=[{"timestamp": "created_time", "direction": "descending"}],
     )
     now = datetime.now(timezone.utc)
-    task_schema = _db_schema(config.NOTION_TASKS_DB_ID)
-    task_prop = _property_name(task_schema, preferred=["Task"], prop_type="title") or "Task"
-    status_prop = _property_name(task_schema, preferred=["Status"], prop_type="select") or "Status"
-    created_prop = _property_name(task_schema, preferred=["Created"], prop_type="date") or "Created"
-    project_prop = _property_name(task_schema, preferred=["Proyecto"], prop_type="relation") or "Proyecto"
-    deliverable_prop = _property_name(task_schema, preferred=["Entregable"], prop_type="relation") or "Entregable"
+    prop_names = _task_property_names()
+    task_prop = prop_names["task"]
+    status_prop = prop_names["status"]
+    created_prop = prop_names["created"]
+    project_prop = prop_names["project"]
+    deliverable_prop = prop_names["deliverable"]
 
     unscoped_sorted = [
         row for row in rows
@@ -669,6 +820,8 @@ def _snapshot_base() -> dict[str, Any]:
         "deliverable_provenance_normalized": [],
         "deliverable_task_origins_backfilled": [],
         "deliverable_live_task_origins_backfilled": [],
+        "task_duplicates_archived": [],
+        "tasks_relinked": [],
         "tasks_archived": [],
         "bridge_archived": [],
     }
@@ -702,6 +855,12 @@ def main(argv: list[str] | None = None) -> int:
     snapshot["deliverable_live_task_origins_backfilled"] = backfill_live_deliverable_task_origins(batch_size=args.deliverable_batch)
     write_snapshot(snapshot)
 
+    snapshot["task_duplicates_archived"] = archive_duplicate_orphan_tasks(batch_size=args.task_batch)
+    write_snapshot(snapshot)
+
+    snapshot["tasks_relinked"] = relink_orphan_tasks(batch_size=args.task_batch)
+    write_snapshot(snapshot)
+
     snapshot["tasks_archived"] = curate_tasks(batch_size=args.task_batch)
     write_snapshot(snapshot)
 
@@ -716,6 +875,8 @@ def main(argv: list[str] | None = None) -> int:
                 "schema_updates": snapshot["schema_updates"],
                 "deliverables_normalized": len(snapshot["deliverables_normalized"]),
                 "deliverable_task_origins_backfilled": len(snapshot["deliverable_task_origins_backfilled"]),
+                "task_duplicates_archived": len(snapshot["task_duplicates_archived"]),
+                "tasks_relinked": len(snapshot["tasks_relinked"]),
                 "tasks_archived": len(snapshot["tasks_archived"]),
                 "bridge_archived": len(snapshot["bridge_archived"]),
                 "counts_after": snapshot["counts_after"],

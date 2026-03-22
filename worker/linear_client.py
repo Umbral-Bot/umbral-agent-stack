@@ -134,6 +134,105 @@ def get_project(api_key: str, project_id: str) -> Dict[str, Any]:
     return project
 
 
+def get_issue(api_key: str, issue_id: str) -> Dict[str, Any]:
+    """Fetch an issue by UUID with project/team/labels context."""
+    q = """
+    query Issue($id: String!) {
+      issue(id: $id) {
+        id
+        identifier
+        title
+        description
+        url
+        team {
+          id
+          name
+          key
+        }
+        project {
+          id
+          name
+          url
+        }
+        state {
+          id
+          name
+          type
+        }
+        assignee {
+          id
+          name
+          email
+        }
+        labels {
+          nodes {
+            id
+            name
+            color
+          }
+        }
+      }
+    }
+    """
+    data = _gql(api_key, q, {"id": issue_id})
+    issue = data.get("issue")
+    if not issue:
+        raise RuntimeError(f"Linear issue {issue_id} not found")
+    return issue
+
+
+def get_issue_by_identifier(api_key: str, identifier: str) -> Optional[Dict[str, Any]]:
+    """Find an issue by exact identifier (e.g. UMB-42)."""
+    wanted = identifier.strip().upper()
+    if not wanted:
+        return None
+    q = """
+    query Issues($query: String!) {
+      issues(filter: { identifier: { eq: $query } }, first: 10) {
+        nodes {
+          id
+          identifier
+          title
+          description
+          url
+          team {
+            id
+            name
+            key
+          }
+          project {
+            id
+            name
+            url
+          }
+          state {
+            id
+            name
+            type
+          }
+          assignee {
+            id
+            name
+            email
+          }
+          labels {
+            nodes {
+              id
+              name
+              color
+            }
+          }
+        }
+      }
+    }
+    """
+    data = _gql(api_key, q, {"query": wanted})
+    for issue in data.get("issues", {}).get("nodes", []):
+        if (issue.get("identifier") or "").strip().upper() == wanted:
+            return issue
+    return None
+
+
 def get_project_by_name(api_key: str, name: str) -> Optional[Dict[str, Any]]:
     """Find a project by exact case-insensitive name."""
     wanted = name.strip().lower()
@@ -340,9 +439,10 @@ def list_project_issues(
             name
             url
           }
-          state {
-            name
-          }
+          state { id name type }
+          team { id name key }
+          assignee { id name email }
+          labels { nodes { id name color } }
         }
       }
     }

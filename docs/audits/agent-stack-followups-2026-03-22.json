@@ -1,0 +1,42 @@
+[
+  {
+    "title": "Unificar dispatcher vivo en VPS",
+    "summary": "Se detectaron dos procesos dispatcher.service activos en la VPS.",
+    "evidence": "La automatización de monitoreo dejó registrados dos procesos dispatcher en la VPS aunque systemctl no reflejaba ese estado de forma consistente.",
+    "impact": "Riesgo de doble consumo, drift operativo y observabilidad engañosa.",
+    "next_action": "Dejar un solo método de arranque, matar el duplicado y validar el flujo Redis -> Dispatcher -> Worker.",
+    "kind": "operational_debt",
+    "designated_agent": "codex",
+    "source_ref": "docs/audits/automation-capitalization-2026-03-22.md"
+  },
+  {
+    "title": "Resincronizar worker VM con VPS",
+    "summary": "La VM publica menos handlers que el worker de la VPS.",
+    "evidence": "Las corridas de monitoreo mostraron 77 handlers en VPS y 75 en la VM; faltan notion.upsert_deliverable y notion.upsert_bridge_item.",
+    "impact": "Riesgo de comportamiento inconsistente entre VPS y VM y pérdida de trazabilidad en Notion.",
+    "next_action": "Redeploy del worker VM y smoke de handlers críticos en 8088 y 8089.",
+    "kind": "operational_debt",
+    "designated_agent": "codex",
+    "source_ref": "docs/audits/automation-capitalization-2026-03-22.md"
+  },
+  {
+    "title": "Curar tareas huérfanas duplicadas de Granola",
+    "summary": "Persisten cuatro tareas queued de Granola duplicadas y sin contexto suficiente.",
+    "evidence": "El monitoreo consolidado dejó dos duplicados de Verify watcher works y dos de Confirmar E2E del watcher.",
+    "impact": "Ruido en paneles, métricas y backlog; degrada la lectura real del estado de Granola.",
+    "next_action": "Deduplicar, relinkear o cerrar las cuatro filas y bajar tasks_unlinked.",
+    "kind": "drift",
+    "designated_agent": "rick",
+    "source_ref": "docs/audits/automation-capitalization-2026-03-22.md"
+  },
+  {
+    "title": "Alinear board y task files con el estado real",
+    "summary": "El board y varios archivos de tareas siguen atrasados respecto de la operación real.",
+    "evidence": "El board declara rondas cerradas mientras múltiples task files continúan assigned o blocked por arrastre.",
+    "impact": "Drift de coordinación interagente y pérdida de confianza en el estado oficial del repo.",
+    "next_action": "Regularizar board y task files históricos para que representen solo trabajo vivo.",
+    "kind": "drift",
+    "designated_agent": "cursor",
+    "source_ref": "docs/audits/automation-capitalization-2026-03-22.md"
+  }
+]

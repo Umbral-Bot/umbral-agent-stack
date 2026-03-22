@@ -1,5 +1,5 @@
 #!/bin/bash
-# Prueba conectividad VPS -> Workers en VM (headless 8088 e interactive 8089).
+# Prueba inventario y conectividad VPS -> Workers en VPS/VM.
 # Ejecutar desde la VPS: cd ~/umbral-agent-stack && bash scripts/test_workers_vm.sh
 
 set -e
@@ -21,6 +21,15 @@ fi
 echo "=== Worker headless (sesion 0) $HEADLESS_URL ==="
 curl -sf -H "Authorization: Bearer $TOKEN" "$HEADLESS_URL/health" >/dev/null && echo "health OK" || echo "health fallo"
 python3 scripts/run_worker_task.py ping 2>/dev/null | grep -q '"ok"' && echo "ping OK" || echo "ping fallo"
+
+echo ""
+echo "=== Inventario VPS + VM ==="
+python3 scripts/worker_inventory_smoke.py \
+  --target "vps=http://127.0.0.1:8088" \
+  --target "vm-headless=$HEADLESS_URL" \
+  --target "vm-interactive=$INTERACTIVE_URL" \
+  --token "$TOKEN" \
+  --smoke
 
 echo ""
 echo "=== Worker interactivo (sesion 1) $INTERACTIVE_URL ==="

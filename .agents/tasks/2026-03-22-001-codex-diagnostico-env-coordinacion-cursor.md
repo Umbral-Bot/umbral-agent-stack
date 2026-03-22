@@ -1,7 +1,7 @@
 ---
 id: "2026-03-22-001"
 title: "Diagnóstico env Rick vs local — Codex define canónicos"
-status: assigned
+status: done
 assigned_to: codex
 created_by: cursor
 priority: medium
@@ -49,11 +49,26 @@ Docs históricos dicen Dashboard Rick = `0fd13978-b220-498e-9465-b4fb2efc5f4a`, 
 
 ## Criterios de aceptación
 
-- [ ] Codex validó el estado operativo actual y definió valores canónicos.
-- [ ] Informe en el Log con lista de variables canónicas y correcciones sugeridas.
-- [ ] Cursor podrá aplicar las correcciones en `.env` local y `env.rick` sin preguntar más.
+- [x] Codex validó el estado operativo actual y definió valores canónicos.
+- [x] Informe en el Log con lista de variables canónicas y correcciones sugeridas.
+- [x] Cursor podrá aplicar las correcciones en `.env` local y `env.rick` sin preguntar más.
 
 ## Log
 
 ### [cursor] 2026-03-22
 Tarea creada. Codex tiene más contexto del estado reciente; define canónicos y Cursor sincroniza local hacia Rick.
+
+### [codex] 2026-03-22
+Diagnóstico basado en comparación directa entre `.env` y `env.rick`, más evidencia del repo y auditorías recientes.
+
+**Valores canónicos (Cursor debe alinear .env local):**
+- `NOTION_DASHBOARD_PAGE_ID` = `3265f443-fb5c-816d-9ce8-c5d6cf075f9c`
+- `NOTION_TASKS_DB_ID` = `afda99a3666e49f0a2f670cb228ac3ab`
+- Google: usar valores de env.rick (GOOGLE_CSE_API_KEY_RICK_UMBRAL, GOOGLE_API_KEY_RICK_UMBRAL, GOOGLE_CSE_CX = d6471a4b4be614b13)
+
+**env.rick — correcciones:**
+- Quitar GOOGLE_CSE_CX incorrecto (línea con AQ.Ab8RN6...; el correcto es d6471a4b4be614b13)
+- Eliminar GOOGLE_API_KEY_RICK_UMBRAL_ALT (redundante)
+- No tocar NOTION_SUPERVISOR_ALERT_PAGE_ID
+
+**Nota:** web_discovery.py prioriza GOOGLE_CSE_API_KEY_RICK_UMBRAL_2 si existe.

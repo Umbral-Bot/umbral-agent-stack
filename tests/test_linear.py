@@ -190,6 +190,7 @@ class TestLinearTasks:
                  "url": "https://linear.app/umbral/project/mejora-continua-agent-stack",
              }), \
              patch("worker.tasks.linear._resolve_agent_stack_team_id", return_value="team-1"), \
+             patch("worker.tasks.linear.linear_client.list_project_issues", return_value=[]), \
              patch("worker.tasks.linear.linear_client.create_issue", return_value={
                  "id": "issue-1",
                  "identifier": "UMB-120",
@@ -211,10 +212,72 @@ class TestLinearTasks:
         assert result["ok"] is True
         assert result["project"]["name"] == "Mejora Continua Agent Stack"
         assert result["designated_agent"] == "Codex"
+        assert result["created"] is True
+        assert result["deduped"] is False
         labels = mock_labels.call_args.args[2]
         assert ("Agent Stack", "#2563EB") in labels
         assert ("Operational Debt", "#DC2626") in labels
         assert ("Agente: Codex", "#0F766E") in labels
+
+    def test_publish_agent_stack_followup_reuses_recent_open_issue_by_fingerprint(self):
+        from worker.tasks.linear import handle_linear_publish_agent_stack_followup
+
+        existing_issue = {
+            "id": "issue-9",
+            "identifier": "UMB-140",
+            "title": "[Agent Stack] Task fallida: llm.generate [system/coding]",
+            "description": "Resumen\n...\n\nFingerprint: `fp-123`\n",
+            "url": "https://linear.app/umbral/issue/UMB-140",
+            "createdAt": "2026-03-23T10:00:00Z",
+            "updatedAt": "2026-03-23T10:05:00Z",
+            "project": {"id": "project-1", "name": "Mejora Continua Agent Stack"},
+            "state": {"id": "state-1", "name": "Todo", "type": "backlog"},
+            "team": {"id": "team-1", "name": "Umbral", "key": "UMB"},
+            "labels": {"nodes": [{"id": "l-existing", "name": "Agent Stack"}]},
+        }
+        refreshed_issue = {
+            **existing_issue,
+            "labels": {
+                "nodes": [
+                    {"id": "l-existing", "name": "Agent Stack"},
+                    {"id": "l-auto", "name": "Auto Escalation"},
+                    {"id": "l-kind", "name": "Operational Debt"},
+                ]
+            },
+        }
+
+        with patch("worker.tasks.linear._linear_api_key", return_value="lin_api_fake"), \
+             patch("worker.tasks.linear._resolve_agent_stack_project", return_value={
+                 "id": "project-1",
+                 "name": "Mejora Continua Agent Stack",
+                 "url": "https://linear.app/umbral/project/mejora-continua-agent-stack",
+             }), \
+             patch("worker.tasks.linear._resolve_agent_stack_team_id", return_value="team-1"), \
+             patch("worker.tasks.linear._ensure_label_ids", return_value=["l-auto", "l-kind"]), \
+             patch("worker.tasks.linear.linear_client.list_project_issues", return_value=[existing_issue]), \
+             patch("worker.tasks.linear.linear_client.update_issue", return_value={
+                 "update": {"success": True},
+                 "comment": {"success": True},
+             }) as mock_update, \
+             patch("worker.tasks.linear.linear_client.get_issue", return_value=refreshed_issue), \
+             patch("worker.tasks.linear.linear_client.create_issue") as mock_create:
+            result = handle_linear_publish_agent_stack_followup({
+                "title": "Task fallida: llm.generate [system/coding]",
+                "summary": "La tarea `llm.generate` fallo durante ejecucion automatica del Agent Stack.",
+                "kind": "operational_debt",
+                "auto_generated": True,
+                "dedupe_key": "fp-123",
+                "dedupe_comment": "Nueva ocurrencia automatica detectada.",
+            })
+
+        assert result["ok"] is True
+        assert result["created"] is False
+        assert result["deduped"] is True
+        assert result["fingerprint"] == "fp-123"
+        mock_create.assert_not_called()
+        assert mock_update.call_args.kwargs["issue_id"] == "issue-9"
+        assert mock_update.call_args.kwargs["label_ids"] == ["l-existing", "l-auto", "l-kind"]
+        assert "Nueva ocurrencia automatica" in mock_update.call_args.kwargs["comment"]
 
     def test_resolve_agent_stack_project_reuses_historical_alias(self):
         from worker.tasks.linear import _resolve_agent_stack_project

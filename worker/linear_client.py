@@ -433,7 +433,10 @@ def list_project_issues(
           id
           identifier
           title
+          description
           url
+          createdAt
+          updatedAt
           project {
             id
             name

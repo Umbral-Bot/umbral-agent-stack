@@ -22,6 +22,7 @@ from dispatcher.service import _escalate_failure_to_linear
 def mock_wc():
     """WorkerClient mock."""
     wc = MagicMock()
+    wc.base_url = "http://worker.test:8088"
     wc.run = MagicMock(
         return_value={
             "ok": True,
@@ -74,12 +75,17 @@ class TestEscalateCreatesIssue:
 
         payload = args[0][1]
         assert "Task fallida" in payload["title"]
-        assert "abc12345" in payload["title"]
+        assert "abc12345" not in payload["title"]
         assert "llm.generate" in payload["summary"]
         assert "TimeoutError" in payload["evidence"]
         assert payload["kind"] == "operational_debt"
         assert payload["priority"] == 2  # coding → 2
         assert payload["source_ref"] == "openclaw_gateway / tool_enqueue"
+        assert payload["auto_generated"] is True
+        assert payload["dedupe_key"]
+        assert payload["dedupe_window_hours"] == 24
+        assert "worker_endpoint=http://worker.test:8088" in payload["evidence"]
+        assert "error_class=timeout" in payload["evidence"]
 
     @patch("dispatcher.service.ESCALATE_TO_LINEAR", True)
     def test_error_truncated_to_500_chars(self, mock_wc):
@@ -97,6 +103,28 @@ class TestEscalateCreatesIssue:
         payload = mock_wc.run.call_args[0][1]
         assert long_error[:500] in payload["evidence"]
         assert long_error[:501] not in payload["evidence"]
+
+    @patch("dispatcher.service.ESCALATE_TO_LINEAR", True)
+    def test_includes_selected_model_and_retry_context(self, mock_wc):
+        envelope = _make_envelope(
+            selected_model="gpt-4o-mini",
+            retry_count=2,
+        )
+        _escalate_failure_to_linear(
+            wc=mock_wc,
+            envelope=envelope,
+            task_id="ctx-test",
+            task="llm.generate",
+            team="system",
+            error="ConnectError: connection refused",
+        )
+
+        payload = mock_wc.run.call_args[0][1]
+        assert "selected_model=gpt-4o-mini" in payload["evidence"]
+        assert "retry_count=2" in payload["evidence"]
+        assert payload["selected_model"] == "gpt-4o-mini"
+        assert payload["retry_count"] == 2
+        assert payload["error_class"] == "connect_error"
 
 
 # ── Guard: no duplicate if linear_issue_id exists ──────────────

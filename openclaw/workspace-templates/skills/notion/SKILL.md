@@ -134,6 +134,12 @@ Devuelve: `{"page_id":"...", "url":"...", "updated": true}`.
 
 Usa `archived=true` para retirar una pagina suelta que ya fue regularizada en otro contenedor canónico. No archives una pagina project-scoped sin antes dejar el proyecto y el entregable correctos.
 
+### 4e. Crear pagina en una base de datos
+
+Task: `notion.create_database_page`
+
+Usala cuando necesites insertar una fila nueva en una base ya conocida con propiedades raw y sin pasar por una tool de mas alto nivel.
+
 ### 5. Crear o actualizar tarea en DB
 
 Task: `notion.upsert_task`
@@ -156,6 +162,12 @@ Devuelve: `{"page_id":"...", "updated": true}` o `{"skipped": true, "reason":"..
 Si la tarea pertenece claramente a un proyecto o produce/actualiza un entregable revisable, usa `project_name` / `project_page_id` y `deliverable_name` / `deliverable_page_id` para enlazar la fila. No dejes `Tareas` flotando sin contexto si ya conoces el proyecto o el entregable.
 Si el caso queda realmente cerrado, no marques la tarea como `done` hasta que la fila tenga `Proyecto` y `Entregable` correctos.
 Si la tarea nace sin proyecto ni entregable, asume que es ruido operativo o sistema y evita mandarla a Notion salvo que David haya pedido explícitamente trazabilidad o marques `notion_track=true`.
+
+### 5b. Enriquecer pagina Bitacora
+
+Task: `notion.enrich_bitacora_page`
+
+Usala para complementar una pagina ya existente de Bitacora con secciones, resumen o metadata adicional sin recrearla desde cero.
 
 ### 6. Actualizar dashboard
 
@@ -273,6 +285,10 @@ Reglas:
 - "poll notion comments"
 - "update dashboard"
 - "create report"
+
+## Task adicional cubierta
+
+- `notion.upsert_bridge_item`: registrar o actualizar items de coordinacion puente entre Rick, Enlace y David sin mezclarlos con entregables finales.
 
 ## Referencias
 

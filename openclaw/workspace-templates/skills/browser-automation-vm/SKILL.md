@@ -1,281 +1,228 @@
 ---
 name: browser-automation-vm
 description: >-
-  Automatización de navegador web en la VM Windows tipo Claude in Chrome.
-  Rick puede navegar a URLs, hacer clics, rellenar formularios, tomar capturas
-  de pantalla, gestionar múltiples pestañas, mantener sesiones con cookies y
-  ejecutar flujos grabados. Motor: Playwright Python con browser-use como capa AI.
-  Use when "navegar web en VM", "captura pantalla sitio", "clic en página",
-  "llenar formulario web", "automatizar navegador", "browser automation",
-  "abrir pestaña", "scraping en VM", "flujo web automatizado", "screenshot web".
+  Operar navegador y escritorio en la VM Windows del stack. Usar cuando el
+  trabajo requiera `browser.*`, `gui.*` o `windows.open_url`, por ejemplo para
+  abrir una URL en la sesion interactiva, navegar con Playwright, leer DOM,
+  hacer clics, tomar capturas o automatizar ventanas y dialogs nativos.
 metadata:
   openclaw:
-    emoji: "🌐"
+    emoji: "\U0001F310"
     requires:
       env:
         - WORKER_TOKEN
         - BROWSER_HEADLESS
 ---
 
-# Browser Automation VM — Automatización de Navegador en la VM (tipo Claude in Chrome)
+# Browser Automation VM
 
-Rick puede controlar un navegador Chromium en la VM de Windows para navegar, hacer clics, rellenar formularios, tomar capturas y gestionar pestañas — de forma similar a lo que hace Claude in Chrome pero ejecutado en el Execution Plane (VM).
+Esta skill gobierna la operacion completa de navegador y escritorio en la VM
+Windows. No cubre solo `browser.*`: tambien decide cuando usar `gui.*` y
+`windows.open_url`.
 
-**Motor:** Playwright Python  
-**Capa AI (opcional):** browser-use  
-**Plan completo:** [`docs/64-browser-automation-vm-plan.md`](../../docs/64-browser-automation-vm-plan.md)
+## Decision rapida
 
----
+### Usa `windows.open_url`
 
-## Capacidades
-
-| Capacidad | Tarea Worker | Estado |
-|-----------|-------------|--------|
-| Navegar a URL | `browser.navigate` | 📋 Planificada (Fase 1) |
-| Clic en elemento | `browser.click` | 📋 Planificada (Fase 1) |
-| Rellenar campo | `browser.fill` | 📋 Planificada (Fase 1) |
-| Captura de pantalla | `browser.screenshot` | 📋 Planificada (Fase 1) |
-| Leer contenido de página | `browser.read_page` | 📋 Planificada (Fase 1) |
-| Listar pestañas | `browser.tabs.list` | 📋 Planificada (Fase 2) |
-| Abrir pestaña | `browser.tabs.open` | 📋 Planificada (Fase 2) |
-| Cerrar pestaña | `browser.tabs.close` | 📋 Planificada (Fase 2) |
-| Ejecutar JavaScript | `browser.execute` | 📋 Planificada (Fase 2) |
-| Guardar sesión | `browser.session.save` | 📋 Planificada (Fase 2) |
-| Restaurar sesión | `browser.session.restore` | 📋 Planificada (Fase 2) |
-| Ejecución con AI (lenguaje natural) | `browser.ai.execute` | 📋 Planificada (Fase 3) |
-
----
-
-## Arquitectura
-
-```
-David (Notion/Telegram)
-    │
-    ▼
-Dispatcher (VPS) ──── Redis Queue
-    │
-    │  Encola tareas browser.*
-    ▼
-Worker VM (FastAPI :8088)
-    │
-    ├── browser.navigate / click / fill / screenshot / ...
-    │       │
-    │       ▼
-    │   BrowserManager (Singleton)
-    │       ├── Playwright Instance
-    │       ├── Chromium (headed o headless)
-    │       ├── Persistent Context (cookies/sesión)
-    │       └── Page Pool (multi-tab)
-    │
-    └── browser.ai.execute (Fase 3)
-            └── browser-use Agent + LLM
-```
-
-El Worker de la VM recibe tareas `browser.*` como cualquier otra tarea (ping, windows.*, etc.) y las ejecuta usando un BrowserManager singleton que mantiene el navegador vivo entre llamadas.
-
----
-
-## Uso desde Rick en la VM
-
-### Navegación básica
-
-Rick puede navegar a una URL y tomar una captura:
+Cuando solo necesitas abrir una URL en el navegador predeterminado y dejar la
+sesion lista para el usuario o para otra tool.
 
 ```json
 {
-  "task": "browser.navigate",
-  "params": {
+  "task_type": "windows.open_url",
+  "input": {
+    "url": "https://linear.app/umbral"
+  }
+}
+```
+
+### Usa `browser.*`
+
+Cuando el flujo es DOM-driven y necesitas selectors, titulo, texto estructurado
+o capturas de una pagina manejada por Playwright.
+
+Tasks reales:
+
+- `browser.navigate`
+- `browser.read_page`
+- `browser.screenshot`
+- `browser.click`
+- `browser.type_text`
+- `browser.press_key`
+
+### Usa `gui.*`
+
+Cuando dependes del escritorio interactivo, una ventana ya abierta, un dialog
+nativo, una app sin DOM o un control que Playwright no ve.
+
+Tasks reales:
+
+- `gui.desktop_status`
+- `gui.screenshot`
+- `gui.click`
+- `gui.type_text`
+- `gui.hotkey`
+- `gui.list_windows`
+- `gui.activate_window`
+
+## Checklist de readiness
+
+1. Decide si el caso es `headless` o `interactive`.
+2. Si vas a usar `gui.*`, corre primero `gui.desktop_status`.
+3. Si necesitas una ventana concreta, usa `gui.list_windows` antes de `gui.activate_window`.
+4. Si el objetivo es un sitio con selectors claros, prefiere `browser.*`.
+5. No uses `umbral_worker_run` para VM si ya tienes tools tipadas.
+
+## Ejemplos reales
+
+### Abrir una URL
+
+```json
+{
+  "task_type": "windows.open_url",
+  "input": {
+    "url": "https://www.notion.so/"
+  }
+}
+```
+
+### Navegar con Playwright
+
+```json
+{
+  "task_type": "browser.navigate",
+  "input": {
     "url": "https://acc.autodesk.com/dashboard",
-    "wait_until": "networkidle"
+    "wait_until": "networkidle",
+    "timeout_ms": 30000
   }
 }
 ```
 
-Respuesta:
-```json
-{
-  "page_id": "page_1",
-  "title": "ACC Dashboard",
-  "url": "https://acc.autodesk.com/dashboard"
-}
-```
-
-### Captura de pantalla
+### Leer una pagina
 
 ```json
 {
-  "task": "browser.screenshot",
-  "params": {
-    "full_page": true,
-    "path": "G:\\Mi unidad\\Rick-David\\capturas\\dashboard.png"
+  "task_type": "browser.read_page",
+  "input": {
+    "selector": "main",
+    "include_html": false
   }
 }
 ```
 
-### Clic en un elemento
+### Escribir en un campo
 
 ```json
 {
-  "task": "browser.click",
-  "params": {
-    "selector": "button:has-text('Exportar')"
+  "task_type": "browser.type_text",
+  "input": {
+    "selector": "input[name='q']",
+    "text": "licitaciones BIM 2026",
+    "clear": true,
+    "press_enter": true
   }
 }
 ```
 
-### Rellenar un formulario
+### Estado del escritorio
 
 ```json
 {
-  "task": "browser.fill",
-  "params": {
-    "selector": "input[name='search']",
-    "value": "licitaciones BIM 2026"
+  "task_type": "gui.desktop_status",
+  "input": {}
+}
+```
+
+### Listar ventanas
+
+```json
+{
+  "task_type": "gui.list_windows",
+  "input": {
+    "visible_only": true
   }
 }
 ```
 
-### Leer contenido de la página
+### Activar ventana por titulo
 
 ```json
 {
-  "task": "browser.read_page",
-  "params": {
-    "selector": "table.resultados"
+  "task_type": "gui.activate_window",
+  "input": {
+    "title_contains": "Chrome"
   }
 }
 ```
 
-Respuesta:
+### Capturar escritorio
+
 ```json
 {
-  "text": "Título | Organismo | Fecha...",
-  "title": "Resultados de búsqueda",
-  "url": "https://www.mercadopublico.cl/..."
+  "task_type": "gui.screenshot",
+  "input": {
+    "path": "G:\\Mi unidad\\Rick-David\\capturas\\vm.png",
+    "return_b64": false
+  }
 }
 ```
 
-### Multi-tab (Fase 2)
+### Click y escritura
 
 ```json
 {
-  "task": "browser.tabs.open",
-  "params": {
-    "url": "https://gmail.com"
+  "task_type": "gui.click",
+  "input": {
+    "x": 640,
+    "y": 380,
+    "button": "left",
+    "clicks": 1
   }
 }
 ```
 
 ```json
 {
-  "task": "browser.tabs.list",
-  "params": {}
-}
-```
-
-Respuesta:
-```json
-{
-  "tabs": [
-    {"page_id": "page_1", "title": "ACC Dashboard", "url": "https://acc.autodesk.com/dashboard"},
-    {"page_id": "page_2", "title": "Gmail", "url": "https://gmail.com"}
-  ]
-}
-```
-
-### Ejecución con AI (Fase 3)
-
-Instrucciones en lenguaje natural que browser-use traduce a acciones:
-
-```json
-{
-  "task": "browser.ai.execute",
-  "params": {
-    "instruction": "Ir a Mercado Público, buscar licitaciones de BIM, extraer las primeras 5 con título, organismo y fecha de cierre"
+  "task_type": "gui.type_text",
+  "input": {
+    "text": "Hola desde Rick",
+    "interval": 0.02
   }
 }
 ```
 
----
-
-## Sesiones persistentes
-
-El BrowserManager usa **Playwright Persistent Context** para mantener cookies, localStorage y sesiones entre ejecuciones. Rick puede "loguearse una vez" en un sitio y las siguientes llamadas ya estarán autenticadas.
+### Hotkey
 
 ```json
 {
-  "task": "browser.session.save",
-  "params": {"name": "acc-david"}
+  "task_type": "gui.hotkey",
+  "input": {
+    "keys": ["ctrl", "l"]
+  }
 }
 ```
 
-```json
-{
-  "task": "browser.session.restore",
-  "params": {"name": "acc-david"}
-}
-```
+## Regla practica
 
-Las sesiones se guardan en `C:\Users\rick\.browser-sessions\` en la VM.
+- `windows.open_url` abre
+- `browser.*` navega y entiende DOM
+- `gui.*` opera la sesion interactiva visible
 
----
+No mezcles los tres enfoques sin motivo.
 
-## Flujos grabados (Fase 3)
+## Anti-patrones
 
-Usando Playwright Codegen o workflow-use, Rick puede grabar acciones del usuario y reproducirlas:
+- No usar `gui.*` para un sitio que Playwright puede resolver con selector.
+- No declarar exito visual sin screenshot o estado de ventana.
+- No asumir que `browser.*` controla dialogs nativos del sistema operativo.
+- No documentar tareas inexistentes como `browser.fill`, `browser.tabs.*` o
+  `browser.ai.execute` mientras no existan en el Worker.
 
-1. **Grabar:** `playwright codegen https://portal.ejemplo.com` genera script Python
-2. **Guardar:** El script se guarda como flujo reutilizable
-3. **Reproducir:** `browser.flow.replay` ejecuta el flujo guardado
+## Cierre esperado
 
----
+Cuando cierres un trabajo con esta skill, deja claro:
 
-## Comparación con Claude in Chrome
-
-| Capacidad | Claude in Chrome | Rick en VM |
-|-----------|:----------------:|:----------:|
-| Leer páginas | ✅ | ✅ `browser.read_page` |
-| Clics y navegación | ✅ | ✅ `browser.navigate`, `browser.click` |
-| Múltiples pestañas | ✅ | ✅ `browser.tabs.*` |
-| Capturas | ✅ | ✅ `browser.screenshot` |
-| Formularios | ✅ | ✅ `browser.fill` |
-| Flujos grabados | ✅ | ✅ `browser.flow.*` (Fase 3) |
-| Tareas programadas | ✅ | ✅ Scheduled tasks Redis |
-| Consola/depuración | ✅ | ✅ `browser.execute` (JS) |
-| Integración Desktop | ✅ | ✅ Dispatcher → Worker VM |
-
----
-
-## Configuración
-
-Variables de entorno en la VM:
-
-| Variable | Default | Descripción |
-|----------|---------|-------------|
-| `BROWSER_HEADLESS` | `true` | Modo sin ventana (`true`) o con ventana visible (`false`) |
-| `BROWSER_USER_DATA_DIR` | `C:\Users\rick\.browser-sessions\default` | Directorio de sesión persistente |
-| `BROWSER_ALLOW_JS_EXEC` | `false` | Habilitar ejecución de JavaScript arbitrario |
-| `BROWSER_TIMEOUT` | `30000` | Timeout por operación (ms) |
-| `BROWSER_MAX_TABS` | `5` | Número máximo de pestañas simultáneas |
-
----
-
-## Prerequisitos en la VM
-
-```bash
-pip install playwright
-playwright install chromium --with-deps
-
-# Fase 3 (opcional)
-pip install browser-use workflow-use
-```
-
----
-
-## Notas
-
-- El BrowserManager es un singleton: se inicializa al primer uso y se mantiene vivo entre tareas.
-- Si el navegador se cuelga o no responde, el health monitor del Worker lo reinicia.
-- Las capturas se guardan en la ruta especificada o se devuelven como base64 en la respuesta.
-- Para sitios con CAPTCHA, Rick pausa y notifica a David para resolución manual.
-- El modo headed (`BROWSER_HEADLESS=false`) es útil para debug y para flujos que necesitan ventana visible.
+- si operaste `headless` o `interactive`;
+- que tasks exactas corriste;
+- y que evidencia visual o textual confirma el resultado.

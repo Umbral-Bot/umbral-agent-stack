@@ -8,7 +8,7 @@ from unittest.mock import patch
 def test_handle_notion_upsert_bridge_item_creates_page_with_rich_schema():
     from worker.tasks.notion import handle_notion_upsert_bridge_item
 
-    with patch("worker.tasks.notion.config") as mock_cfg, patch("worker.tasks.notion.notion_client") as mock_nc:
+    with patch("worker.tasks.notion.config") as mock_cfg, patch("worker.tasks.notion.notion_client") as mock_nc, patch("worker.tasks.notion._maybe_trigger_openclaw_panel_refresh") as mock_refresh:
         mock_cfg.NOTION_BRIDGE_DB_ID = "bridge-db"
         mock_nc.query_database.return_value = []
         mock_nc.create_database_page.return_value = {
@@ -44,6 +44,7 @@ def test_handle_notion_upsert_bridge_item_creates_page_with_rich_schema():
     assert payload["properties"]["Origen"]["select"]["name"] == "Entregable"
     assert payload["properties"]["Siguiente acción"]["rich_text"][0]["text"]["content"].startswith("Definir si se cierra")
     assert payload["children"]
+    mock_refresh.assert_called_once_with("bridge_item_upsert", source="notion.upsert_bridge_item")
 
 
 def test_handle_notion_upsert_bridge_item_updates_existing_page_and_replaces_blocks():
@@ -51,7 +52,7 @@ def test_handle_notion_upsert_bridge_item_updates_existing_page_and_replaces_blo
 
     with patch("worker.tasks.notion.config") as mock_cfg, patch("worker.tasks.notion.notion_client") as mock_nc, patch(
         "worker.tasks.notion._ensure_page_blocks"
-    ) as mock_ensure:
+    ) as mock_ensure, patch("worker.tasks.notion._maybe_trigger_openclaw_panel_refresh") as mock_refresh:
         mock_cfg.NOTION_BRIDGE_DB_ID = "bridge-db"
         mock_nc.query_database.return_value = [{"id": "bridge-page-existing"}]
         mock_nc.update_page_properties.return_value = {
@@ -82,6 +83,7 @@ def test_handle_notion_upsert_bridge_item_updates_existing_page_and_replaces_blo
     ensure_kwargs = mock_ensure.call_args.kwargs
     assert ensure_kwargs["page_id"] == "bridge-page-existing"
     assert ensure_kwargs["force_replace"] is True
+    mock_refresh.assert_called_once_with("bridge_item_upsert", source="notion.upsert_bridge_item")
 
 
 def test_handle_notion_upsert_bridge_item_falls_back_to_local_title_match_when_filter_misses():

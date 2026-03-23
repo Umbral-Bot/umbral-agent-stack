@@ -14,9 +14,14 @@ Este script no intenta construir linked views de Notion. Su responsabilidad es:
 
 from __future__ import annotations
 
+import argparse
+import contextvars
+import hashlib
 import json
 import os
 import sys
+import time
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -27,6 +32,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from infra.ops_logger import ops_log
 from worker import config, notion_client
 from worker.notion_client import (
     _block_callout,
@@ -58,6 +64,112 @@ _DISPLAY_REVIEW = {
     "Pendiente revisión": "Pendiente revisión",
     "Aprobado con ajustes": "Aprobado con ajustes",
 }
+CALLER_ID = "script.openclaw_panel_vps"
+_FINGERPRINT_PATH = Path.home() / ".config" / "umbral" / "openclaw_panel_fingerprint"
+_DIRTY_FLAG_PATH = Path.home() / ".config" / "umbral" / "openclaw_panel_dirty.json"
+
+
+@dataclass
+class PanelRunStats:
+    trigger: str
+    notion_reads: int = 0
+    notion_writes: int = 0
+    db_queries: int = 0
+    db_rows_read: int = 0
+    child_list_calls: int = 0
+    blocks_deleted: int = 0
+    pages_archived: int = 0
+    pages_renamed: int = 0
+
+
+_RUN_STATS: contextvars.ContextVar[PanelRunStats | None] = contextvars.ContextVar(
+    "openclaw_panel_run_stats",
+    default=None,
+)
+
+
+def _record_stats(
+    *,
+    notion_reads: int = 0,
+    notion_writes: int = 0,
+    db_queries: int = 0,
+    db_rows_read: int = 0,
+    child_list_calls: int = 0,
+    blocks_deleted: int = 0,
+    pages_archived: int = 0,
+    pages_renamed: int = 0,
+) -> None:
+    stats = _RUN_STATS.get()
+    if stats is None:
+        return
+    stats.notion_reads += notion_reads
+    stats.notion_writes += notion_writes
+    stats.db_queries += db_queries
+    stats.db_rows_read += db_rows_read
+    stats.child_list_calls += child_list_calls
+    stats.blocks_deleted += blocks_deleted
+    stats.pages_archived += pages_archived
+    stats.pages_renamed += pages_renamed
+
+
+def _write_fingerprint(fingerprint: str) -> None:
+    _FINGERPRINT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    _FINGERPRINT_PATH.write_text(fingerprint, encoding="utf-8")
+
+
+def _read_fingerprint() -> str | None:
+    try:
+        return _FINGERPRINT_PATH.read_text(encoding="utf-8").strip() or None
+    except FileNotFoundError:
+        return None
+
+
+def _snapshot_fingerprint(snapshot: dict[str, Any]) -> str:
+    stable = {k: v for k, v in snapshot.items() if k != "generated_at"}
+    raw = json.dumps(stable, sort_keys=True, ensure_ascii=False, default=str).encode("utf-8")
+    return hashlib.sha256(raw).hexdigest()[:16]
+
+
+def mark_openclaw_dirty(reason: str, *, source: str | None = None) -> dict[str, Any]:
+    payload = {
+        "reason": reason[:200],
+        "source": (source or "")[:200],
+        "ts": datetime.now(timezone.utc).isoformat(),
+    }
+    _DIRTY_FLAG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    _DIRTY_FLAG_PATH.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    return payload
+
+
+def _read_dirty_flag() -> dict[str, Any] | None:
+    try:
+        raw = _DIRTY_FLAG_PATH.read_text(encoding="utf-8").strip()
+    except FileNotFoundError:
+        return None
+    if not raw:
+        return None
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        return {"reason": "dirty_flag_corrupt"}
+    return data if isinstance(data, dict) else {"reason": "dirty_flag_invalid"}
+
+
+def _clear_dirty_flag() -> None:
+    try:
+        _DIRTY_FLAG_PATH.unlink()
+    except FileNotFoundError:
+        return
+
+
+def _openclaw_panel_ready() -> bool:
+    required = [
+        config.NOTION_CONTROL_ROOM_PAGE_ID,
+        config.NOTION_API_KEY,
+        config.NOTION_PROJECTS_DB_ID,
+        config.NOTION_DELIVERABLES_DB_ID,
+    ]
+    return all(isinstance(value, str) and value.strip() for value in required)
 
 
 def _api_client() -> httpx.Client:
@@ -81,6 +193,7 @@ def _list_children(page_id: str) -> list[dict[str, Any]]:
                 headers=_headers(),
                 params=params,
             )
+            _record_stats(notion_reads=1, child_list_calls=1)
             data = notion_client._check_response(resp, "list children")  # type: ignore[attr-defined]
             results.extend(data.get("results", []))
             next_cursor = data.get("next_cursor")
@@ -147,6 +260,7 @@ def _archive_pages(page_ids: list[str]) -> None:
                 headers=_headers(),
                 json={"archived": True},
             )
+            _record_stats(notion_writes=1, pages_archived=1)
             notion_client._check_response(resp, "archive page")  # type: ignore[attr-defined]
 
 
@@ -160,6 +274,7 @@ def _delete_blocks(block_ids: list[str]) -> None:
                 headers=_headers(),
                 json={"in_trash": True},
             )
+            _record_stats(notion_writes=1, blocks_deleted=1)
             if resp.status_code in {400, 404}:
                 raw = (resp.text or "").lower()
                 if "archived" in raw or "object_not_found" in raw:
@@ -202,6 +317,7 @@ def _update_block_text(block: dict[str, Any], text: str, emoji: str | None = Non
             headers=_headers(),
             json=payload,
         )
+        _record_stats(notion_writes=1)
         notion_client._check_response(resp, "update block text")  # type: ignore[attr-defined]
 
 
@@ -211,6 +327,7 @@ def _update_page_title(page_id: str, title: str) -> None:
             f"{notion_client.NOTION_BASE_URL}/pages/{page_id}",
             headers=_headers(),
         )
+        _record_stats(notion_reads=1)
         page = notion_client._check_response(resp, "get page")  # type: ignore[attr-defined]
 
         properties = page.get("properties", {}) or {}
@@ -232,6 +349,7 @@ def _update_page_title(page_id: str, title: str) -> None:
                 }
             },
         )
+        _record_stats(notion_writes=1)
         notion_client._check_response(resp, "update page title")  # type: ignore[attr-defined]
 
 
@@ -249,6 +367,7 @@ def _insert_after(parent_page_id: str, after_block_id: str, blocks: list[dict[st
                 headers=_headers(),
                 json=body,
             )
+            _record_stats(notion_writes=1)
             notion_client._check_response(resp, "insert blocks after")  # type: ignore[attr-defined]
 
 
@@ -278,6 +397,7 @@ def _plain(prop: dict[str, Any]) -> Any:
 def _query_db(database_id: str, filter_payload: dict[str, Any] | None = None, page_size: int = 50) -> list[dict[str, Any]]:
     results: list[dict[str, Any]] = []
     next_cursor: str | None = None
+    _record_stats(db_queries=1)
     with _api_client() as client:
         while True:
             body: dict[str, Any] = {"page_size": page_size}
@@ -290,11 +410,13 @@ def _query_db(database_id: str, filter_payload: dict[str, Any] | None = None, pa
                 headers=_headers(),
                 json=body,
             )
+            _record_stats(notion_reads=1)
             data = notion_client._check_response(resp, "query db")  # type: ignore[attr-defined]
             results.extend(data.get("results", []))
             next_cursor = data.get("next_cursor")
             if not next_cursor:
                 break
+    _record_stats(db_rows_read=len(results))
     return results
 
 
@@ -459,6 +581,7 @@ def _rename_navigation_pages(children: list[dict[str, Any]]) -> int:
         target_title = _canonical_nav_page_title(page_id, current_title)
         if target_title and current_title != target_title:
             _update_page_title(page_id, target_title)
+            _record_stats(pages_renamed=1)
             renamed += 1
     return renamed
 
@@ -813,7 +936,7 @@ def validate_openclaw_shell(children: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def refresh_openclaw_panel() -> dict[str, Any]:
+def _refresh_openclaw_panel_impl() -> dict[str, Any]:
     if not OPENCLAW_PAGE_ID:
         raise RuntimeError("NOTION_CONTROL_ROOM_PAGE_ID not configured")
 
@@ -875,8 +998,129 @@ def refresh_openclaw_panel() -> dict[str, Any]:
     }
 
 
+def _log_openclaw_activity(
+    *,
+    status: str,
+    duration_ms: float,
+    trigger: str,
+    fingerprint: str | None,
+    stats: PanelRunStats,
+    details: str | None = None,
+) -> None:
+    ops_log.system_activity(
+        "openclaw_panel",
+        "refresh",
+        status,
+        duration_ms,
+        trigger=trigger,
+        fingerprint=fingerprint,
+        notion_reads=stats.notion_reads,
+        notion_writes=stats.notion_writes,
+        db_rows_read=stats.db_rows_read,
+        details=details,
+    )
+
+
+def refresh_openclaw_panel(*, force: bool = False, trigger: str = "manual") -> dict[str, Any]:
+    if not OPENCLAW_PAGE_ID:
+        raise RuntimeError("NOTION_CONTROL_ROOM_PAGE_ID not configured")
+
+    started_at = time.perf_counter()
+    stats = PanelRunStats(trigger=trigger)
+    token = _RUN_STATS.set(stats)
+    fingerprint: str | None = None
+    try:
+        children = _list_children(OPENCLAW_PAGE_ID)
+        if not children:
+            raise RuntimeError("OpenClaw page has no blocks")
+
+        bridge_db_id = getattr(config, "NOTION_BRIDGE_DB_ID", None) or _find_child_database_id(children, "Bandeja Puente")
+        snapshot = _build_operational_snapshot(bridge_db_id=bridge_db_id)
+        fingerprint = _snapshot_fingerprint(snapshot)
+        dirty_flag = _read_dirty_flag()
+        validation_before = validate_openclaw_shell(children)
+
+        if not force and validation_before["ok"] and fingerprint == _read_fingerprint() and not dirty_flag:
+            duration_ms = (time.perf_counter() - started_at) * 1000
+            _log_openclaw_activity(
+                status="skipped",
+                duration_ms=duration_ms,
+                trigger=trigger,
+                fingerprint=fingerprint,
+                stats=stats,
+                details="fingerprint_unchanged",
+            )
+            return {
+                "updated": False,
+                "skipped": True,
+                "reason": "fingerprint_unchanged",
+                "fingerprint": fingerprint,
+                "dirty_flag": dirty_flag,
+                "validation": validation_before,
+            }
+
+        result = _refresh_openclaw_panel_impl()
+        _write_fingerprint(fingerprint)
+        _clear_dirty_flag()
+        duration_ms = (time.perf_counter() - started_at) * 1000
+        _log_openclaw_activity(
+            status="updated",
+            duration_ms=duration_ms,
+            trigger=trigger,
+            fingerprint=fingerprint,
+            stats=stats,
+            details=(
+                f"panel_blocks={result.get('panel_blocks', 0)}; "
+                f"cleaned={result.get('cleaned_blocks', 0)}; "
+                f"renamed={result.get('renamed_pages', 0)}"
+            ),
+        )
+        return {
+            **result,
+            "fingerprint": fingerprint,
+            "dirty_flag": dirty_flag,
+        }
+    except Exception as exc:
+        duration_ms = (time.perf_counter() - started_at) * 1000
+        _log_openclaw_activity(
+            status="failed",
+            duration_ms=duration_ms,
+            trigger=trigger,
+            fingerprint=fingerprint,
+            stats=stats,
+            details=str(exc),
+        )
+        raise
+    finally:
+        _RUN_STATS.reset(token)
+
+
+def trigger_openclaw_panel_refresh(reason: str, *, source: str | None = None, force: bool = False) -> dict[str, Any]:
+    if not _openclaw_panel_ready():
+        return {
+            "triggered": False,
+            "reason": "openclaw_panel_not_ready",
+        }
+
+    dirty_flag = mark_openclaw_dirty(reason, source=source)
+    result = refresh_openclaw_panel(
+        force=force,
+        trigger=source or reason or "event",
+    )
+    return {
+        "triggered": True,
+        "dirty_flag": dirty_flag,
+        "result": result,
+    }
+
+
 def main() -> int:
-    result = refresh_openclaw_panel()
+    parser = argparse.ArgumentParser(description="Refresh OpenClaw human panel")
+    parser.add_argument("--force", action="store_true", help="Refresh even if fingerprint did not change")
+    parser.add_argument("--trigger", default="manual", help="Trigger label for ops_log tracking")
+    args = parser.parse_args()
+
+    result = refresh_openclaw_panel(force=args.force, trigger=args.trigger)
     print(json.dumps(result, ensure_ascii=False))
     return 0
 

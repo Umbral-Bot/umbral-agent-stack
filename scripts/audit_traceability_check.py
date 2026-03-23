@@ -37,7 +37,7 @@ _REQUIRED_FIELDS_BY_EVENT = {
     "worker_health_change": ["worker", "online"],
 }
 
-_AUDIT_FIELDS = ["trace_id", "source", "task_type"]
+_AUDIT_FIELDS = ["trace_id", "source", "source_kind", "task_type"]
 
 _MAX_HEALTHY_LOG_SIZE_MB = 100
 
@@ -238,6 +238,13 @@ def _identify_gaps(
         gaps.append({
             "id": "G3",
             "description": f"source (origen) ausente en ops_log (cobertura: {fields.get('source', {}).get('coverage_pct', 0)}%)",
+            "severity": "ALTO",
+        })
+
+    if fields.get("source_kind", {}).get("coverage_pct", 0) < 50:
+        gaps.append({
+            "id": "G3b",
+            "description": f"source_kind (canal de origen) ausente en ops_log (cobertura: {fields.get('source_kind', {}).get('coverage_pct', 0)}%)",
             "severity": "ALTO",
         })
 

@@ -568,7 +568,15 @@ def _run_worker(
         task = envelope.get("task", "unknown")
         task_type = envelope.get("task_type", "general")
         trace_id = envelope.get("trace_id", "")
+        source = envelope.get("source", "")
+        source_kind = envelope.get("source_kind", "")
         input_data = dict(envelope.get("input", {}))
+        ops_context: Dict[str, str] = {"trace_id": trace_id, "task_type": task_type}
+        if source:
+            ops_context["source"] = source
+        if source_kind:
+            ops_context["source_kind"] = source_kind
+        queued_ops_context = {k: v for k, v in ops_context.items() if k != "task_type"}
 
         # S4: selección de modelo por task_type y cuotas
         is_llm_task = any(task.startswith(p) for p in LLM_TASK_PREFIXES)
@@ -579,7 +587,7 @@ def _run_worker(
                 "[worker %d] Task %s blocked: %s (task_type=%s)",
                 worker_id, task_id, reason, task_type,
             )
-            ops_log.task_blocked(task_id, task, team, reason, trace_id=trace_id)
+            ops_log.task_blocked(task_id, task, team, reason, **ops_context)
             threading.Thread(
                 target=_notion_upsert,
                 args=(wc_local, task_id, "blocked", team, task),
@@ -591,7 +599,7 @@ def _run_worker(
         if decision.requires_approval and is_llm_task:
             reason = "quota_exceeded_approval_required"
             logger.warning("[worker %d] Task %s blocked: %s (model=%s)", worker_id, task_id, reason, decision.model)
-            ops_log.task_blocked(task_id, task, team, reason, trace_id=trace_id)
+            ops_log.task_blocked(task_id, task, team, reason, **ops_context)
             threading.Thread(target=_notion_upsert, args=(wc_local, task_id, "blocked", team, task), kwargs={"error": reason, "envelope": envelope}, daemon=True).start()
             queue.block_task(task_id, reason)
             continue
@@ -611,6 +619,7 @@ def _run_worker(
         if requires_vm and not hm.vm_online and wc_vm is not None:
             reason = f"VM offline; task {task_id} (team={team}) requires VM."
             logger.warning("[worker %d] %s", worker_id, reason)
+            ops_log.task_blocked(task_id, task, team, reason, **ops_context)
             threading.Thread(target=_notion_upsert, args=(wc_local, task_id, "blocked", team, task), kwargs={"error": reason[:500], "envelope": envelope}, daemon=True).start()
             queue.block_task(task_id, reason)
             continue
@@ -640,7 +649,16 @@ def _run_worker(
             queue.complete_task(task_id, result)
             model_router.quota.record_usage(selected_model)
             _input_summary = str(envelope.get("input", {}))[:200]
-            ops_log.task_completed(task_id, task, team, selected_model, duration_ms, worker=target.lower(), trace_id=trace_id, input_summary=_input_summary)
+            ops_log.task_completed(
+                task_id,
+                task,
+                team,
+                selected_model,
+                duration_ms,
+                worker=target.lower(),
+                input_summary=_input_summary,
+                **ops_context,
+            )
             _result_summary = str(result.get("result", result))[:300] if isinstance(result, dict) else str(result)[:300]
             threading.Thread(
                 target=_notion_upsert,
@@ -662,8 +680,8 @@ def _run_worker(
                 envelope["retry_count"] = retry_count + 1
                 envelope["status"] = "queued"
                 queue.enqueue(envelope)
-                ops_log.task_queued(task_id, task, team, task_type, trace_id=trace_id)
-                ops_log.task_retried(task_id, task, team, envelope["retry_count"], trace_id=trace_id)
+                ops_log.task_queued(task_id, task, team, task_type, **queued_ops_context)
+                ops_log.task_retried(task_id, task, team, envelope["retry_count"], **ops_context)
                 logger.warning(
                     "[worker %d] Task %s timed out, retry %d/2",
                     worker_id, task_id, envelope["retry_count"],
@@ -675,8 +693,8 @@ def _run_worker(
                     envelope["retry_count"] = retry_count + 1
                     envelope["status"] = "queued"
                     queue.enqueue(envelope)
-                    ops_log.task_queued(task_id, task, team, task_type, trace_id=trace_id)
-                    ops_log.task_retried(task_id, task, team, envelope["retry_count"], trace_id=trace_id)
+                    ops_log.task_queued(task_id, task, team, task_type, **queued_ops_context)
+                    ops_log.task_retried(task_id, task, team, envelope["retry_count"], **ops_context)
                     logger.warning(
                         "[worker %d] %s Worker unreachable for task %s, retry %d/%d. Backing off 30s.",
                         worker_id, target, task_id, envelope["retry_count"], MAX_CONNECT_RETRIES,
@@ -697,7 +715,15 @@ def _run_worker(
                     )
 
             _input_summary = str(envelope.get("input", {}))[:200]
-            ops_log.task_failed(task_id, task, team, str(e), model=selected_model, trace_id=trace_id, input_summary=_input_summary)
+            ops_log.task_failed(
+                task_id,
+                task,
+                team,
+                str(e),
+                model=selected_model,
+                input_summary=_input_summary,
+                **ops_context,
+            )
             threading.Thread(
                 target=_notion_upsert,
                 args=(wc_local, task_id, "failed", team, task),

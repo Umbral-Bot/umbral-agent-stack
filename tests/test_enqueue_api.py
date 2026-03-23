@@ -197,6 +197,33 @@ class TestEnqueueSuccess:
             trace_id=trace_id,
         )
 
+    def test_enqueue_emits_source_context_when_provided(self, client, fake_redis):
+        with patch("worker.app._get_redis", return_value=fake_redis), patch("worker.app.ops_log.task_queued") as task_queued:
+            resp = client.post(
+                "/enqueue",
+                json={
+                    "task": "ping",
+                    "team": "system",
+                    "task_type": "general",
+                    "source": "openclaw_gateway",
+                    "source_kind": "tool_enqueue",
+                },
+                headers=AUTH,
+            )
+            assert resp.status_code == 200
+            task_id = resp.json()["task_id"]
+            trace_id = json.loads(fake_redis.get(f"{TASK_KEY_PREFIX}{task_id}"))["trace_id"]
+
+        task_queued.assert_called_once_with(
+            task_id=task_id,
+            task="ping",
+            team="system",
+            task_type="general",
+            trace_id=trace_id,
+            source="openclaw_gateway",
+            source_kind="tool_enqueue",
+        )
+
     def test_enqueue_persists_source_and_relation_context(self, client, fake_redis):
         with patch("worker.app._get_redis", return_value=fake_redis):
             resp = client.post(

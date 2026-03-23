@@ -57,7 +57,8 @@ Archivo de configuración en VPS: `~/.config/openclaw/env`
 | `LANGFUSE_PUBLIC_KEY` | No | Clave pública de Langfuse (graceful degradation sin ella) |
 | `LANGFUSE_SECRET_KEY` | No | Clave secreta de Langfuse |
 | `LANGFUSE_HOST` | No | Host de Langfuse |
-| `RATE_LIMIT_RPM` | No | Límite de requests por minuto (default: 60) |
+| `RATE_LIMIT_RPM` | No | Límite externo por cliente/IP (default: 60) |
+| `RATE_LIMIT_INTERNAL_RPM` | No | Límite para trafico interno autenticado, particionado por ruta/tarea (default: 600) |
 | `GOOGLE_API_KEY` | No | API key de Google AI Studio |
 | `OPENAI_API_KEY` | No | API key de OpenAI |
 | `ANTHROPIC_API_KEY` | No | API key de Anthropic |

@@ -26,6 +26,9 @@ Todos los endpoints excepto `/health` requieren autenticaciÃ³n Bearer:
 Authorization: Bearer <WORKER_TOKEN>
 ```
 
+**Header interno opcional:**
+- `X-Umbral-Caller`: permite separar mejor tráfico interno autenticado (`cron`, `smoke`, `verify_stack`, etc.) sin afectar el bucket externo.
+
 ---
 
 ## Endpoints
@@ -101,7 +104,7 @@ Se convierte internamente a TaskEnvelope con `task_id` generado, `team="system"`
 ```
 
 **S7 Protecciones:**
-- Rate limiting por IP (429 si se excede)
+- Rate limiting externo por cliente/IP e interno autenticado por ruta/tarea (429 si se excede)
 - SanitizaciÃ³n de nombres de tarea y tamaÃ±o de inputs
 - Task names solo alfanumÃ©ricos + `.` + `_`
 

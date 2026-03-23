@@ -52,6 +52,7 @@ class WorkerClient:
         timeout: float = 30.0,
         retries: int = 2,
         retry_delay: float = 1.0,
+        caller_id: Optional[str] = None,
     ):
         """
         Args:
@@ -60,12 +61,14 @@ class WorkerClient:
             timeout: HTTP timeout in seconds.
             retries: Number of retries on transient errors.
             retry_delay: Seconds between retries.
+            caller_id: Optional internal caller identity for rate-limit partitioning.
         """
         self.base_url = (base_url or os.environ.get("WORKER_URL", "")).rstrip("/")
         self.token = token or os.environ.get("WORKER_TOKEN", "")
         self.timeout = timeout
         self.retries = retries
         self.retry_delay = retry_delay
+        self.caller_id = (caller_id or "").strip()
 
         if not self.base_url:
             raise ValueError(
@@ -77,10 +80,13 @@ class WorkerClient:
             )
 
     def _headers(self) -> dict[str, str]:
-        return {
+        headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self.token}",
         }
+        if self.caller_id:
+            headers["X-Umbral-Caller"] = self.caller_id
+        return headers
 
     def _build_run_payload(
         self,

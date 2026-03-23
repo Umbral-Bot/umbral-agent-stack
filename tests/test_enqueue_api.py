@@ -23,6 +23,8 @@ except ImportError:
 os.environ["WORKER_TOKEN"] = "test-token-12345"
 
 from worker.app import app  # noqa: E402
+import worker.app as worker_app  # noqa: E402
+from worker.rate_limiter import RateLimiter  # noqa: E402
 
 AUTH = {"Authorization": "Bearer test-token-12345"}
 BAD_AUTH = {"Authorization": "Bearer wrong-token"}
@@ -88,6 +90,49 @@ class TestEnqueueValidation:
         )
         assert resp.status_code == 422
         assert "unsafe input" in resp.json()["detail"].lower()
+
+
+class TestEnqueueRateLimitPartitioning:
+    def test_internal_enqueue_is_partitioned_by_task(self, client, fake_redis, monkeypatch):
+        monkeypatch.setattr(worker_app, "external_limiter", RateLimiter(max_requests=20, window_seconds=60))
+        monkeypatch.setattr(worker_app, "internal_limiter", RateLimiter(max_requests=1, window_seconds=60))
+        monkeypatch.setattr(worker_app, "limiter", worker_app.external_limiter)
+        monkeypatch.setattr(worker_app, "_is_internal_host", lambda host: True)
+
+        with patch("worker.app._get_redis", return_value=fake_redis):
+            ping_ok = client.post("/enqueue", json={"task": "ping"}, headers=AUTH)
+            assert ping_ok.status_code == 200
+            assert ping_ok.headers["X-RateLimit-Scope"] == "internal"
+
+            other_task_ok = client.post(
+                "/enqueue",
+                json={"task": "research.web", "input": {"query": "bim"}},
+                headers=AUTH,
+            )
+            assert other_task_ok.status_code == 200
+            assert other_task_ok.headers["X-RateLimit-Scope"] == "internal"
+
+            ping_blocked = client.post("/enqueue", json={"task": "ping"}, headers=AUTH)
+            assert ping_blocked.status_code == 429
+
+    def test_internal_enqueue_accepts_distinct_callers(self, client, fake_redis, monkeypatch):
+        monkeypatch.setattr(worker_app, "external_limiter", RateLimiter(max_requests=20, window_seconds=60))
+        monkeypatch.setattr(worker_app, "internal_limiter", RateLimiter(max_requests=1, window_seconds=60))
+        monkeypatch.setattr(worker_app, "limiter", worker_app.external_limiter)
+        monkeypatch.setattr(worker_app, "_is_internal_host", lambda host: True)
+
+        cron_headers = {**AUTH, "X-Umbral-Caller": "cron.e2e"}
+        verify_headers = {**AUTH, "X-Umbral-Caller": "script.verify_stack_vps"}
+
+        with patch("worker.app._get_redis", return_value=fake_redis):
+            cron_ok = client.post("/enqueue", json={"task": "ping"}, headers=cron_headers)
+            assert cron_ok.status_code == 200
+
+            verify_ok = client.post("/enqueue", json={"task": "ping"}, headers=verify_headers)
+            assert verify_ok.status_code == 200
+
+            cron_blocked = client.post("/enqueue", json={"task": "ping"}, headers=cron_headers)
+            assert cron_blocked.status_code == 429
 
 
 class TestEnqueueSuccess:

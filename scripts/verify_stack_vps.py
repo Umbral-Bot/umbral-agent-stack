@@ -68,6 +68,7 @@ OPTIONAL = [
     "NOTION_GRANOLA_DB_ID",
     "NOTION_SUPERVISOR_ALERT_PAGE_ID",
 ]
+CALLER_ID = "script.verify_stack_vps"
 
 
 def _mask(s: str | None) -> str:
@@ -76,6 +77,14 @@ def _mask(s: str | None) -> str:
     if len(s) <= 8:
         return "***"
     return s[:4] + "..." + s[-2:]
+
+
+def _worker_headers(token: str) -> dict[str, str]:
+    return {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+        "X-Umbral-Caller": CALLER_ID,
+    }
 
 
 def main() -> int:
@@ -147,7 +156,7 @@ def main() -> int:
             r = httpx.post(
                 f"{linear_worker}/run",
                 json={"task": "linear.list_teams", "input": {}},
-                headers={"Authorization": f"Bearer {worker_token}", "Content-Type": "application/json"},
+                headers=_worker_headers(worker_token),
                 timeout=15,
             )
             if r.status_code == 200:

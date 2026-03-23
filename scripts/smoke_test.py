@@ -51,9 +51,15 @@ _load_env()
 
 import httpx
 
+CALLER_ID = "script.smoke_test"
+
 
 def _headers(token: str) -> dict:
-    return {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    return {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+        "X-Umbral-Caller": CALLER_ID,
+    }
 
 
 def smoke_worker_health(base_url: str) -> tuple[bool, str]:

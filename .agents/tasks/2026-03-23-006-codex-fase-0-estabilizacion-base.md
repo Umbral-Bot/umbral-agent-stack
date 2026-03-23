@@ -1,13 +1,13 @@
 ---
 id: "2026-03-23-006"
 title: "Fase 0: estabilizacion base, merge, deploy y smoke post-diagnostico"
-status: blocked
+status: done
 assigned_to: codex
 created_by: codex
 priority: high
 sprint: R24
 created_at: 2026-03-23T07:55:00-03:00
-updated_at: 2026-03-23T10:35:50-03:00
+updated_at: 2026-03-23T12:18:00-03:00
 ---
 
 ## Objetivo
@@ -27,7 +27,7 @@ Tomar la base tecnica del PR #137, integrarla a `main`, desplegar lo necesario e
 - [x] PR #137 mergeado a `main`.
 - [x] Este clon queda sincronizado a `origin/main`.
 - [x] VPS sincronizada con `main` y servicios reiniciados donde aplique.
-- [ ] VM actualizada si aplica para los cambios de `worker/app.py`.
+- [x] VM actualizada si aplica para los cambios de `worker/app.py`.
 - [x] Smokes post-deploy ejecutados en VPS: `health`, `linear.list_teams`, `google.calendar.list_events`, `gmail.list_drafts`, `/providers/status`, `/quota/status`.
 - [x] Log y board actualizados con resultado real, sin afirmar deploys o checks no ejecutados.
 
@@ -79,3 +79,15 @@ Tomar la base tecnica del PR #137, integrarla a `main`, desplegar lo necesario e
     - `Win32_Process.Terminate()` sobre PID `14512` -> `ReturnValue 2`.
     - intento de crear/ejecutar una tarea temporal elevada (`schtasks ... /RU SYSTEM`) para reiniciar `openclaw-worker` -> `Acceso denegado`.
 - Resultado real al cierre de esta iteracion: **VM accesible y runtime sincronizado a main; worker interactivo 8089 ya quedo alineado y verificado; worker headless 8088 sigue bloqueado hasta un restart privilegiado del servicio `openclaw-worker`.**
+
+### [codex] 2026-03-23 12:18
+- David ejecuto el restart privilegiado pendiente en la VM: `nssm restart openclaw-worker` -> STOP/START OK.
+- Revalidacion posterior desde host y VPS:
+  - `http://100.109.16.40:8088/health` -> `200`
+  - `http://100.109.16.40:8088/providers/status` -> `200`
+  - `http://100.109.16.40:8088/quota/status` -> `200`
+  - `http://100.109.16.40:8089/providers/status` -> `200`
+  - `http://100.109.16.40:8089/quota/status` -> `200`
+  - `python3 scripts/run_worker_task.py ping` desde la VPS -> `ok=true`
+- Observacion operativa: en la VM headless `8088` el endpoint nuevo responde con `redis_available=false` y `configured=[]`, lo que confirma que ya corre el codepath actualizado de `main`; no se considero bloqueo de Fase 0 porque el objetivo de esta ronda era alinear deploy y smoke del baseline, no poblar el Execution Plane con providers/Redis locales.
+- Resultado final: **Fase 0 cerrada**. Quedan VPS y VM alineadas al baseline tecnico de `main`, con supervisor VPS estable y ambos workers de la VM (`8088` y `8089`) exponiendo los endpoints esperados.

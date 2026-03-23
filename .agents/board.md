@@ -49,7 +49,7 @@ Regularización `UMB-132` (2026-03-22): se cerraron task files históricos que h
 | 2026-03-23-014 | Revertir soporte GitLab sandbox y reconfirmar cierre de Fase 2 | codex | ✅ done |
 | 2026-03-23-015 | Fase 3: hardening runtime real de research.web | codex | ✅ done |
 | 2026-03-23-016 | OpenClaw: separar cadencia de refresh y dejar tracking de gasto/actividad | codex | ✅ done (PR #150) |
-| 2026-03-23-017 | Fase 5: skills reales faltantes y monitoreo continuo del stack | codex | ✅ done |
+| 2026-03-23-017 | Fase 5: skills reales faltantes y monitoreo continuo del stack | codex | ✅ done (PR #152) |
 | 2026-03-24-001 | Lead temporal Codex — capitalizar hallazgos + cerrar ramas codex/* + Claude si aplica | codex | ✅ done |
 
 ## Pendientes diferidos post-fases

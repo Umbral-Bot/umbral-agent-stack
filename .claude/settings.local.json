@@ -81,7 +81,16 @@
       "Bash(python3.exe --version)",
       "Bash(py --version)",
       "Bash(python -:*)",
-      "Bash(grep -v \"^#\\\\|//\")"
+      "Bash(grep -v \"^#\\\\|//\")",
+      "Bash(git pull:*)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\([k for k in d.get\\(''''mcpServers'''',{}\\).keys\\(\\)]\\)\")",
+      "Read(//c/Users/david/AppData/Roaming/Code/User/**)",
+      "Bash(/dev/null echo:*)",
+      "Read(//c/Users/david/AppData/Roaming/Antigravity//**)",
+      "Bash(mkdir -p \"/c/GitHub/umbral-agent-stack-claude/.claude/commands\")",
+      "Bash(mkdir -p \"/c/Users/david/.claude/commands\")",
+      "Bash(python scripts/sync_all.py --dry-run)",
+      "Bash(python scripts/sync_all.py)"
     ]
   }
 }

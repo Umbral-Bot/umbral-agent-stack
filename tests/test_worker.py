@@ -13,6 +13,7 @@ from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
 
+from worker.task_errors import TaskExecutionError
 
 # Force-set a test token before importing the app.
 # Uses os.environ[...] (not setdefault) so it overrides any existing value.
@@ -364,6 +365,45 @@ class TestRunEnvelope:
         assert kwargs["task_type"] == "coding"
         assert kwargs["source"] == "openclaw_gateway"
         assert kwargs["source_kind"] == "tool_enqueue"
+
+    def test_structured_task_error_returns_specific_status_and_body(self, client):
+        trace_id = str(uuid.uuid4())
+
+        def _raise_structured_error(_input):
+            raise TaskExecutionError(
+                "research.web unavailable: Tavily plan/quota exceeded",
+                status_code=503,
+                error_code="research_provider_quota_exceeded",
+                error_kind="quota",
+                retryable=False,
+                provider="tavily",
+                upstream_status=432,
+            )
+
+        with patch.dict(worker_app.TASK_HANDLERS, {"research.web": _raise_structured_error}, clear=False):
+            resp = client.post(
+                "/run",
+                json={
+                    "task_id": str(uuid.uuid4()),
+                    "team": "improvement",
+                    "task_type": "research",
+                    "trace_id": trace_id,
+                    "source": "openclaw_gateway",
+                    "source_kind": "tool_enqueue",
+                    "task": "research.web",
+                    "input": {"query": "BIM trends 2026"},
+                },
+                headers=AUTH,
+            )
+
+        assert resp.status_code == 503
+        data = resp.json()
+        assert data["detail"] == "research.web unavailable: Tavily plan/quota exceeded"
+        assert data["error_code"] == "research_provider_quota_exceeded"
+        assert data["error_kind"] == "quota"
+        assert data["provider"] == "tavily"
+        assert data["retryable"] is False
+        assert data["upstream_status"] == 432
 
 
 # ---------------------------------------------------------------------------

@@ -14,8 +14,10 @@ Tasks: Linear integration handlers.
 - linear.list_agent_stack_issues: listar issues del proyecto canonico de Agent Stack
 """
 
+import hashlib
 import logging
 import os
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict
 
@@ -88,6 +90,7 @@ _AGENT_STACK_KIND_LABELS = {
     "human_review": ("Human Review", "#059669"),
     "drift": ("Drift", "#EA580C"),
 }
+_AGENT_STACK_AUTO_ESCALATION_LABEL = ("Auto Escalation", "#1D4ED8")
 _AGENT_STACK_ALLOWED_AGENT_CANONICAL = {
     "codex": "Codex",
     "cursor": "Cursor",
@@ -119,6 +122,111 @@ def _canonical_agent_name(agent_name: str) -> str | None:
 
 def _agent_label(agent_name: str) -> tuple[str, str]:
     return (f"Agente: {agent_name}", "#0F766E")
+
+
+def _normalize_text(value: Any) -> str:
+    return " ".join(str(value or "").strip().lower().split())
+
+
+def _fingerprint_marker(fingerprint: str) -> str:
+    return f"Fingerprint: `{fingerprint}`"
+
+
+def _followup_fingerprint(input_data: Dict[str, Any]) -> str:
+    explicit = _normalize_text(input_data.get("dedupe_key"))
+    if explicit:
+        return explicit
+
+    parts = [
+        input_data.get("kind") or "analysis_followup",
+        input_data.get("title") or "",
+        input_data.get("summary") or "",
+        input_data.get("source_ref") or "",
+    ]
+    digest = hashlib.sha1("|".join(_normalize_text(part) for part in parts).encode("utf-8")).hexdigest()
+    return digest[:16]
+
+
+def _parse_linear_dt(raw_value: str | None) -> datetime | None:
+    raw = (raw_value or "").strip()
+    if not raw:
+        return None
+    try:
+        return datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def _issue_is_within_dedupe_window(issue: Dict[str, Any], window_hours: int) -> bool:
+    if window_hours <= 0:
+        return True
+    ts = _parse_linear_dt(issue.get("updatedAt") or issue.get("createdAt"))
+    if ts is None:
+        return False
+    return ts >= datetime.now(timezone.utc) - timedelta(hours=window_hours)
+
+
+def _issue_has_fingerprint(issue: Dict[str, Any], fingerprint: str) -> bool:
+    description = str(issue.get("description") or "")
+    marker = _fingerprint_marker(fingerprint)
+    return (
+        marker in description
+        or f"Fingerprint: {fingerprint}" in description
+        or f"Fingerprint\n`{fingerprint}`" in description
+    )
+
+
+def _find_recent_agent_stack_duplicate(
+    api_key: str,
+    project_id: str,
+    fingerprint: str,
+    *,
+    window_hours: int,
+    limit: int,
+) -> Dict[str, Any] | None:
+    issues = linear_client.list_project_issues(api_key, project_id, limit=limit)
+    for issue in issues:
+        state_type = str(((issue.get("state") or {}).get("type") or "")).strip().lower()
+        if state_type in {"completed", "canceled"}:
+            continue
+        if not _issue_is_within_dedupe_window(issue, window_hours):
+            continue
+        if _issue_has_fingerprint(issue, fingerprint):
+            return issue
+    return None
+
+
+def _dedupe_comment_for_agent_stack(input_data: Dict[str, Any], fingerprint: str) -> str:
+    explicit = str(input_data.get("dedupe_comment") or "").strip()
+    if explicit:
+        return explicit
+
+    lines = [
+        "Nueva ocurrencia automática del mismo follow-up.",
+        "",
+        _fingerprint_marker(fingerprint),
+    ]
+    for key, label in (
+        ("task_id", "task_id"),
+        ("trace_id", "trace_id"),
+        ("team_name", "team"),
+        ("task_type_name", "task_type"),
+        ("worker_endpoint", "worker_endpoint"),
+        ("selected_model", "selected_model"),
+        ("retry_count", "retry_count"),
+        ("source", "source"),
+        ("source_kind", "source_kind"),
+        ("error_class", "error_class"),
+    ):
+        value = input_data.get(key)
+        if value not in (None, ""):
+            lines.append(f"- {label}={value}")
+
+    representative_error = str(input_data.get("representative_error") or "").strip()
+    if representative_error:
+        lines.extend(["", f"Error representativo:\n```text\n{representative_error[:500]}\n```"])
+
+    return "\n".join(lines).strip()
 
 
 def _resolve_linear_team_id(
@@ -223,6 +331,9 @@ def _issue_description_for_agent_stack(input_data: Dict[str, Any]) -> str:
         lines.extend(["", "Siguiente accion", next_action])
     if source_ref:
         lines.extend(["", "Origen", source_ref])
+    fingerprint = (input_data.get("fingerprint") or "").strip()
+    if fingerprint:
+        lines.extend(["", _fingerprint_marker(fingerprint)])
 
     lines.extend(["", f"Solicitado por: {requested_by}"])
     return "\n".join(lines).strip()
@@ -728,6 +839,8 @@ def handle_linear_publish_agent_stack_followup(input_data: Dict[str, Any]) -> Di
         labels = list(_AGENT_STACK_BASE_LABELS)
         if kind in _AGENT_STACK_KIND_LABELS:
             labels.append(_AGENT_STACK_KIND_LABELS[kind])
+        if bool(input_data.get("auto_generated")):
+            labels.append(_AGENT_STACK_AUTO_ESCALATION_LABEL)
 
         designated_agent = None
         if input_data.get("designated_agent"):
@@ -737,7 +850,50 @@ def handle_linear_publish_agent_stack_followup(input_data: Dict[str, Any]) -> Di
                 return {"ok": False, "error": f"designated_agent invalido. Allowed: {allowed}"}
             labels.append(_agent_label(designated_agent))
 
-        description = _issue_description_for_agent_stack(input_data)
+        fingerprint = _followup_fingerprint(input_data)
+        label_ids = _ensure_label_ids(api_key, team_id, labels)
+        dedupe_window_hours = max(0, int(input_data.get("dedupe_window_hours", 24)))
+        dedupe_search_limit = max(1, min(int(input_data.get("dedupe_search_limit", 100)), 250))
+        state_name = (input_data.get("state_name") or "").strip()
+        state_id = linear_client.get_state_id_by_name(api_key, team_id, state_name) if state_name else None
+        existing_issue = _find_recent_agent_stack_duplicate(
+            api_key,
+            project["id"],
+            fingerprint,
+            window_hours=dedupe_window_hours,
+            limit=dedupe_search_limit,
+        )
+        if existing_issue:
+            existing_label_ids = [
+                label.get("id")
+                for label in ((existing_issue.get("labels") or {}).get("nodes") or [])
+                if label.get("id")
+            ]
+            merged_label_ids = list(dict.fromkeys(existing_label_ids + label_ids))
+            update_result = linear_client.update_issue(
+                api_key=api_key,
+                issue_id=existing_issue["id"],
+                state_id=state_id,
+                label_ids=merged_label_ids,
+                comment=_dedupe_comment_for_agent_stack(input_data, fingerprint),
+            )
+            refreshed = linear_client.get_issue(api_key, existing_issue["id"])
+            return {
+                "ok": True,
+                "issue": refreshed,
+                "project": {"id": project["id"], "name": project.get("name"), "url": project.get("url")},
+                "labels_applied": [name for name, _ in labels],
+                "designated_agent": designated_agent,
+                "update": update_result.get("update"),
+                "comment": update_result.get("comment"),
+                "fingerprint": fingerprint,
+                "created": False,
+                "deduped": True,
+            }
+
+        enriched_input = dict(input_data)
+        enriched_input["fingerprint"] = fingerprint
+        description = _issue_description_for_agent_stack(enriched_input)
         issue = linear_client.create_issue(
             api_key=api_key,
             team_id=team_id,
@@ -746,10 +902,6 @@ def handle_linear_publish_agent_stack_followup(input_data: Dict[str, Any]) -> Di
             priority=input_data.get("priority"),
         )
         attach = linear_client.attach_issue_to_project(api_key, issue["id"], project["id"])
-        label_ids = _ensure_label_ids(api_key, team_id, labels)
-
-        state_name = (input_data.get("state_name") or "").strip()
-        state_id = linear_client.get_state_id_by_name(api_key, team_id, state_name) if state_name else None
         update_result = linear_client.update_issue(
             api_key=api_key,
             issue_id=issue["id"],
@@ -766,6 +918,9 @@ def handle_linear_publish_agent_stack_followup(input_data: Dict[str, Any]) -> Di
             "labels_applied": [name for name, _ in labels],
             "designated_agent": designated_agent,
             "update": update_result.get("update"),
+            "fingerprint": fingerprint,
+            "created": True,
+            "deduped": False,
         }
     except Exception as e:
         return {"ok": False, "error": str(e)}

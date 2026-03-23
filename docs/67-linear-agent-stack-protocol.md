@@ -106,6 +106,9 @@ Reglas:
 - escalar solo si el envelope trae `source` o `source_kind` de flujo canonico
 - por defecto el filtro estricto queda activo con `ESCALATE_ONLY_CANONICAL=true`
 - no escalar tareas ruidosas o de soporte operativo como cron, reportes o backfills
+- calcular un fingerprint estable por `task + team + task_type + source/source_kind + endpoint + error_class`
+- si ya existe una issue abierta reciente con ese fingerprint, comentar y refrescar labels/estado en vez de abrir otra
+- crear una issue nueva solo cuando no haya match activo dentro de la ventana de deduplicacion
 - si una tarea falla fuera de ese criterio, dejar trazabilidad en logs y revisar manualmente si amerita follow-up
 
 ## Campos recomendados al publicar

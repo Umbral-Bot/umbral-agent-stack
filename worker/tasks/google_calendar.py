@@ -4,11 +4,16 @@ Tasks: Google Calendar integration handlers.
 - google.calendar.create_event: Create an event in Google Calendar.
 - google.calendar.list_events: List upcoming events from Google Calendar.
 
-Auth: GOOGLE_CALENDAR_TOKEN (OAuth Bearer) or GOOGLE_SERVICE_ACCOUNT_JSON (service account file).
+Auth (first supported stable match wins):
+  - GOOGLE_CALENDAR_REFRESH_TOKEN + GOOGLE_CALENDAR_CLIENT_ID +
+    GOOGLE_CALENDAR_CLIENT_SECRET: long-lived; Worker refreshes access token.
+  - GOOGLE_CALENDAR_TOKEN: OAuth Bearer access token (expires ~1h).
+  - GOOGLE_SERVICE_ACCOUNT_JSON: service account file.
 Docs: https://developers.google.com/calendar/api/v3/reference
 """
 
 import json
+import importlib
 import logging
 import os
 import urllib.request
@@ -19,15 +24,52 @@ logger = logging.getLogger("worker.tasks.google_calendar")
 
 CALENDAR_API_BASE = "https://www.googleapis.com/calendar/v3"
 DEFAULT_TIMEZONE = "America/Santiago"
+CALENDAR_SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
 
 def _get_calendar_headers() -> Dict[str, str]:
     """Build authorization headers for Google Calendar API.
 
-    Tries GOOGLE_CALENDAR_TOKEN (Bearer) first. Falls back to
-    GOOGLE_SERVICE_ACCOUNT_JSON (service account key file) with
-    google-auth (lazy import).
+    Order:
+      1. GOOGLE_CALENDAR_REFRESH_TOKEN + GOOGLE_CALENDAR_CLIENT_ID +
+         GOOGLE_CALENDAR_CLIENT_SECRET
+      2. GOOGLE_CALENDAR_TOKEN
+      3. GOOGLE_SERVICE_ACCOUNT_JSON
     """
+    refresh_token = os.environ.get("GOOGLE_CALENDAR_REFRESH_TOKEN")
+    client_id = os.environ.get("GOOGLE_CALENDAR_CLIENT_ID")
+    client_secret = os.environ.get("GOOGLE_CALENDAR_CLIENT_SECRET")
+    if refresh_token and client_id and client_secret:
+        try:
+            credentials_mod = importlib.import_module("google.oauth2.credentials")
+            requests_mod = importlib.import_module("google.auth.transport.requests")
+            credentials_cls = getattr(credentials_mod, "Credentials", None)
+            request_cls = getattr(requests_mod, "Request", None)
+            if credentials_cls is None or request_cls is None:
+                raise ImportError
+
+            creds = credentials_cls(
+                token=None,
+                refresh_token=refresh_token,
+                token_uri="https://oauth2.googleapis.com/token",
+                client_id=client_id,
+                client_secret=client_secret,
+                scopes=CALENDAR_SCOPES,
+            )
+            creds.refresh(request_cls())
+            return {
+                "Authorization": f"Bearer {creds.token}",
+                "Content-Type": "application/json",
+            }
+        except ImportError:
+            raise ValueError(
+                "google-auth is required for GOOGLE_CALENDAR_REFRESH_TOKEN. "
+                "Install with: pip install google-auth"
+            )
+        except Exception as exc:
+            logger.warning("Google Calendar refresh token flow failed: %s", exc)
+            raise ValueError(f"Failed to refresh Google Calendar token: {exc}") from exc
+
     token = os.environ.get("GOOGLE_CALENDAR_TOKEN")
     if token:
         return {
@@ -38,14 +80,18 @@ def _get_calendar_headers() -> Dict[str, str]:
     sa_path = os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON")
     if sa_path:
         try:
-            from google.oauth2 import service_account
-            from google.auth.transport.requests import Request
+            service_account_mod = importlib.import_module("google.oauth2.service_account")
+            requests_mod = importlib.import_module("google.auth.transport.requests")
+            service_account_cls = getattr(service_account_mod, "Credentials", None)
+            request_cls = getattr(requests_mod, "Request", None)
+            if service_account_cls is None or request_cls is None:
+                raise ImportError
 
-            creds = service_account.Credentials.from_service_account_file(
+            creds = service_account_cls.from_service_account_file(
                 sa_path,
-                scopes=["https://www.googleapis.com/auth/calendar"],
+                scopes=CALENDAR_SCOPES,
             )
-            creds.refresh(Request())
+            creds.refresh(request_cls())
             return {
                 "Authorization": f"Bearer {creds.token}",
                 "Content-Type": "application/json",
@@ -59,9 +105,10 @@ def _get_calendar_headers() -> Dict[str, str]:
             raise ValueError(f"Failed to load service account credentials: {exc}")
 
     raise ValueError(
-        "GOOGLE_CALENDAR_TOKEN not set. Provide a Bearer token via "
-        "GOOGLE_CALENDAR_TOKEN or a service account key file via "
-        "GOOGLE_SERVICE_ACCOUNT_JSON."
+        "Google Calendar auth not configured. Set GOOGLE_CALENDAR_TOKEN "
+        "(access token), or GOOGLE_CALENDAR_REFRESH_TOKEN + "
+        "GOOGLE_CALENDAR_CLIENT_ID + GOOGLE_CALENDAR_CLIENT_SECRET, or "
+        "GOOGLE_SERVICE_ACCOUNT_JSON. See docs/35-google-calendar-token-setup.md."
     )
 
 

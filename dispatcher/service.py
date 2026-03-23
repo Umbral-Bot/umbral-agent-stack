@@ -340,9 +340,54 @@ def _notify_linear_completion(
 logger = logging.getLogger("dispatcher.service")
 
 ESCALATE_TO_LINEAR = os.environ.get("ESCALATE_FAILURES_TO_LINEAR", "true").lower() in ("true", "1", "yes")
+ESCALATE_ONLY_CANONICAL = os.environ.get("ESCALATE_ONLY_CANONICAL", "true").lower() in ("true", "1", "yes")
+
+_CANONICAL_ESCALATION_SOURCES = {
+    "linear_webhook",
+    "notion_poll",
+    "notion_poller",
+    "openclaw_gateway",
+    "smart_reply",
+    "workflow_engine",
+}
+_CANONICAL_ESCALATION_SOURCE_KINDS = {
+    "instruction_comment",
+    "linear_webhook",
+    "tool_enqueue",
+    "workflow_engine",
+}
+_NOISY_ESCALATION_SOURCES = {
+    "daily_digest",
+    "dashboard_report",
+    "notion_curate_ops_vps",
+    "ooda_report",
+    "quota_guard",
+    "sim_daily",
+    "sim_report",
+}
+_NOISY_ESCALATION_SOURCE_KINDS = {
+    "cron",
+    "historical_backfill",
+    "scheduled_report",
+}
 
 
-def _escalate_failure_to_linear(
+def _should_escalate_failure(envelope: dict) -> bool:
+    source = str(envelope.get("source") or "").strip().lower()
+    source_kind = str(envelope.get("source_kind") or "").strip().lower()
+
+    if not ESCALATE_ONLY_CANONICAL:
+        return True
+    if source in _NOISY_ESCALATION_SOURCES or source_kind in _NOISY_ESCALATION_SOURCE_KINDS:
+        return False
+    if source in _CANONICAL_ESCALATION_SOURCES:
+        return True
+    if source_kind in _CANONICAL_ESCALATION_SOURCE_KINDS:
+        return True
+    return False
+
+
+def _escalate_failure_to_linear_legacy_old(
     wc: "WorkerClient",
     envelope: dict,
     task_id: str,
@@ -356,22 +401,28 @@ def _escalate_failure_to_linear(
     Stores the created issue_id back in envelope for follow-up notifications.
     Controlled by ESCALATE_FAILURES_TO_LINEAR env var (default: true).
     """
+    return _escalate_failure_to_linear(wc, envelope, task_id, task, team, error)
+
     if not ESCALATE_TO_LINEAR:
         return
     if envelope.get("linear_issue_id"):
         return
     if task.startswith("linear."):
         return
-
-    capabilities = get_team_capabilities()
-    team_info = capabilities.get(team, {})
-    linear_team_key = team_info.get("linear_team_key", "UMBRAL")
+    if not _should_escalate_failure(envelope):
+        logger.info(
+            "[escalation] Skipping non-canonical failure for task %s (source=%s, source_kind=%s)",
+            task_id,
+            envelope.get("source", ""),
+            envelope.get("source_kind", ""),
+        )
+        return
 
     priority_map = {"critical": 1, "coding": 2, "ms_stack": 2, "general": 3, "writing": 3, "research": 3, "light": 4}
     task_type = envelope.get("task_type", "general")
     priority = priority_map.get(task_type, 3)
 
-    title = f"[Auto] Tarea fallida: {task} ({task_id[:8]})"
+    title = f"Task fallida: {task} ({task_id[:8]})"
     description = (
         f"**Task:** `{task}`\n"
         f"**Task ID:** `{task_id}`\n"
@@ -392,6 +443,79 @@ def _escalate_failure_to_linear(
         issue_id = (resp or {}).get("result", {})
         if isinstance(issue_id, dict):
             issue_id = issue_id.get("id") or issue_id.get("issue_id")
+        if issue_id:
+            envelope["linear_issue_id"] = issue_id
+        logger.info("[escalation] Linear issue created for failed task %s (issue=%s)", task_id, issue_id)
+    except Exception as exc:
+        logger.debug("[escalation] Could not create Linear issue: %s", exc)
+
+def _escalate_failure_to_linear(
+    wc: "WorkerClient",
+    envelope: dict,
+    task_id: str,
+    task: str,
+    team: str,
+    error: str,
+) -> None:
+    """
+    Publish a canonical Agent Stack follow-up when a task fails.
+
+    Skips duplicate, recursive, and non-canonical failures so Linear only
+    receives follow-ups from the main Dispatcher -> Redis -> Worker flow.
+    """
+    if not ESCALATE_TO_LINEAR:
+        return
+    if envelope.get("linear_issue_id"):
+        return
+    if task.startswith("linear."):
+        return
+    if not _should_escalate_failure(envelope):
+        logger.info(
+            "[escalation] Skipping non-canonical failure for task %s (source=%s, source_kind=%s)",
+            task_id,
+            envelope.get("source", ""),
+            envelope.get("source_kind", ""),
+        )
+        return
+
+    priority_map = {"critical": 1, "coding": 2, "ms_stack": 2, "general": 3, "writing": 3, "research": 3, "light": 4}
+    task_type = envelope.get("task_type", "general")
+    priority = priority_map.get(task_type, 3)
+    trace_id = str(envelope.get("trace_id") or "").strip()
+    source = str(envelope.get("source") or "").strip() or "unspecified"
+    source_kind = str(envelope.get("source_kind") or "").strip() or "unspecified"
+
+    try:
+        resp = wc.run(
+            "linear.publish_agent_stack_followup",
+            {
+                "title": f"Task fallida: {task} ({task_id[:8]})",
+                "summary": f"La tarea `{task}` fallo durante ejecucion automatica del Agent Stack.",
+                "evidence": (
+                    f"task_id={task_id}\n"
+                    f"trace_id={trace_id or 'n/a'}\n"
+                    f"team={team}\n"
+                    f"task_type={task_type}\n"
+                    f"source={source}\n"
+                    f"source_kind={source_kind}\n"
+                    f"error={error[:500]}"
+                ),
+                "impact": "El flujo canonico Dispatcher -> Redis -> Worker no pudo completar la tarea y requiere follow-up tecnico.",
+                "next_action": "Revisar logs, reproducir el fallo y corregir el handler o la dependencia que rompio la ejecucion.",
+                "source_ref": f"{source} / {source_kind}",
+                "requested_by": "Dispatcher",
+                "kind": "operational_debt",
+                "priority": priority,
+            },
+        )
+        issue_id = None
+        result = (resp or {}).get("result", {})
+        if isinstance(result, dict):
+            issue = result.get("issue", {})
+            if isinstance(issue, dict):
+                issue_id = issue.get("id")
+            if not issue_id:
+                issue_id = result.get("id") or result.get("issue_id")
         if issue_id:
             envelope["linear_issue_id"] = issue_id
         logger.info("[escalation] Linear issue created for failed task %s (issue=%s)", task_id, issue_id)

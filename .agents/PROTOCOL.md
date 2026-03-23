@@ -9,15 +9,24 @@
 |--------|-------------|-----|------------|
 | **Cursor** | Cursor IDE (Agent mode) | **Lead / Orquestador** | Edición precisa, contexto largo, planning, revisión |
 | **Antigravity** | Antigravity | Ejecutor | Iteración rápida, multi-archivo, refactoring |
-| **Codex** | Codex CLI / VS Code | Ejecutor | Terminal, tests, CI, tareas que necesitan ejecución |
+| **Codex** | Codex CLI / VS Code | Ejecutor (puede ser **lead temporal**) | Terminal, tests, CI, merge, coordinación |
+| **Claude** | Claude Code | Ejecutor | Multi-archivo, comandos `.claude/commands/`, ajustes locales acordados |
 
 ## Reglas fundamentales
 
-1. **Cursor es el lead.** Crea tareas, asigna, revisa resultados, y mantiene el `board.md`.
+1. **Cursor es el lead por defecto.** Crea tareas, asigna, revisa resultados, y mantiene el `board.md`.
 2. **Un solo agente trabaja a la vez.** David (el humano) cambia entre agentes manualmente.
 3. **Toda coordinación pasa por archivos** en `.agents/`. No hay canal externo.
 4. **Al iniciar sesión**, el agente lee `.agents/board.md` para entender el estado actual.
 5. **Al terminar trabajo**, el agente actualiza el estado de la tarea y agrega una entrada al log.
+
+### Delegación temporal del lead (2026-03-24 — sprint R23)
+
+Por decisión de David, **Codex** asume el **rol de coordinación** hasta nuevo aviso: cerrar capitalización de hallazgos (ramas `codex/*`, follow-ups del diagnóstico, deuda operativa documentada). Cursor pasa a **apoyo** (revisión puntual si David lo pide).
+
+- **Codex** puede: crear/actualizar tareas en `.agents/tasks/`, editar `.agents/board.md`, y **delegar en Claude** creando una tarea con `assigned_to: claude` (David pega el contenido en Claude Code).
+- **Claude** (Claude Code): ejecuta tareas explícitas en `.agents/tasks/` cuando `assigned_to: claude` y el mismo formato de Log/criterios.
+- **Fin de la delegación:** David o Cursor lo anuncian en `board.md` y se restaura la regla “board lo mantiene Cursor” salvo excepciones futuras.
 
 ## Estructura de archivos
 
@@ -101,6 +110,14 @@ Qué hizo, qué archivos tocó, resultado de tests.
 1. Al iniciar, David te dirá: "Lee `.agents/PROTOCOL.md` y trabaja en tus tareas".
 2. Mismo flujo que Antigravity (ver arriba).
 3. Codex tiene ventaja en tareas que requieren ejecución en terminal (tests, builds, deploys).
+4. **Lead temporal (R23):** si `board.md` indica que Codex coordina, leé también `.agents/tasks/` buscando la tarea activa de capitalización; podés actualizar `board.md`, crear tareas y asignar a `claude` con instrucciones completas en el cuerpo de la tarea (David las reenvía a Claude Code).
+
+### Para Claude (Claude Code)
+
+1. Leé `PROTOCOL.md` y `board.md`.
+2. Trabajá solo en tareas con `assigned_to: claude` (o las que David te indique explícitamente copiando el archivo de tarea).
+3. Mismo ciclo: `in_progress` → trabajo → `done` + Log con archivos y tests.
+4. **No crees tareas nuevas** salvo que Codex (lead temporal) lo pida en una tarea padre; si ves trabajo extra, documentalo en el Log.
 
 ### Para GitHub Copilot (implementaciones con acceso a Azure)
 
@@ -116,7 +133,7 @@ Cuando la tarea en `tasks/` indique **"para GitHub Copilot"** o que el agente ti
 - **Nombres de archivo**: `YYYY-MM-DD-NNN-slug.md` donde NNN es secuencial por día.
 - **Timestamps**: ISO-8601 en zona horaria local (America/Mexico_City).
 - **Log entries**: Siempre incluir archivos modificados y resultado de tests si aplica.
-- **board.md**: Lo mantiene el lead (Cursor). Los demás agentes no lo editan.
+- **board.md**: Lo mantiene el lead (Cursor por defecto). **Excepción:** durante delegación a Codex (R23), Codex puede editarlo. El resto de agentes no, salvo instrucción explícita.
 
 ## Prompt de inicio para David
 

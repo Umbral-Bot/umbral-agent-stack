@@ -16,6 +16,8 @@ metadata:
 Rick puede crear y listar eventos en Google Calendar a traves de las Worker
 tasks del Umbral Agent Stack.
 
+Documentación de credenciales y verificación: [docs/35-google-calendar-token-setup.md](../../../../docs/35-google-calendar-token-setup.md).
+
 ## Requisitos
 
 - `GOOGLE_CALENDAR_REFRESH_TOKEN` + `GOOGLE_CALENDAR_CLIENT_ID` +

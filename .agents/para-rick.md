@@ -57,6 +57,10 @@ Actualizá `WORKER_TOKEN` en `~/.config/openclaw/env` al valor que acepta el Wor
 | **message** | Enviar mensajes (Telegram, etc.) |
 | **cron** | Programar tareas |
 | **browser** | Fallará si no hay frontend gráfico en el entorno |
+| **Umbral Worker (bridge)** | Tools tipadas `umbral_*` que ejecutan tasks del Worker (misma API que el stack). Incluyen **Google Calendar** (`umbral_google_calendar_*`) y **Gmail** (`umbral_gmail_*`) cuando el Worker tiene credenciales. Preferí estas para agendar, listar eventos o borradores de mail en lugar de inventar flujos sin API. |
+| **google-calendar** / **gmail** (skills) | Contexto de cuándo y cómo usar las tasks `google.calendar.*` y `gmail.*`; la ejecución real va al Worker (VPS/VM) vía bridge o `umbral_worker_run`. |
+
+**Cuándo usar Calendar / Gmail:** si el usuario pide agendar, ver agenda, borrador de correo o seguimiento por mail, y el Worker tiene variables OAuth/refresh configuradas en el entorno del proceso Worker, usá las tools del bridge o las tasks documentadas en los skills. Si fallan por credenciales, es un tema de **env del Worker** (no del solo gateway); ver `docs/35-google-calendar-token-setup.md` y `docs/35-gmail-token-setup.md`.
 
 Para leer contenido de Notion: usá la herramienta **notion** (API), no browser. Si David necesita que leas una página, puede pedirte explícitamente "usa notion para leer la página X" o pegar el contenido.
 
@@ -73,3 +77,13 @@ Podés delegar tareas al agente **Gpt-Rick** vía Responses API. Endpoints:
 - **Activity Protocol:** para Teams/M365.
 
 **Variables:** `GPT_RICK_API_KEY` o `AZURE_OPENAI_API_KEY` en env. **Test:** `python3 scripts/test_gpt_rick_agent.py`
+
+---
+
+## 2026-03-23 — Google Calendar y Gmail (descubrimiento + env)
+
+Las APIs ya están implementadas en el Worker y expuestas al gateway como tools `umbral_google_calendar_*` y `umbral_gmail_*` (skill **umbral-worker**). Para que funcionen de verdad hace falta **OAuth en el proceso que ejecuta el Worker** (VPS y/o VM), no solo “saber” el skill.
+
+- **Documentación:** `docs/35-google-calendar-token-setup.md`, `docs/35-gmail-token-setup.md`, `.env.example` (sección Google).
+- **Verificación:** POST `/run` con task `google.calendar.list_events` o `gmail.list_drafts` y Bearer `WORKER_TOKEN` (ver doc de Calendar).
+- Si David activó credenciales en una rama/entorno pero el VPS no tiene las mismas vars, Rick verá fallos hasta alinear `~/.config/openclaw/env` o el servicio del Worker.

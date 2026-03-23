@@ -7,18 +7,24 @@ metadata:
   openclaw:
     emoji: "\U0001F4E7"
     requires:
-      env:
-        - GOOGLE_GMAIL_TOKEN
+      env: []
 ---
 
 # Gmail Skill
 
 Rick puede crear y listar borradores de email en Gmail a través de las Worker tasks del Umbral Agent Stack.
 
-## Requisitos
+## Requisitos (al menos una vía de auth en el **Worker**)
 
-- `GOOGLE_GMAIL_TOKEN`: OAuth2 Bearer token con scope `gmail.compose`.
-- Alternativa: `GOOGLE_SERVICE_ACCOUNT_JSON` (ruta al archivo JSON de service account con scope gmail).
+El Worker resuelve credenciales en este orden (ver `worker/tasks/gmail.py`):
+
+1. **`GOOGLE_GMAIL_TOKEN`** — OAuth2 Bearer (caduca en ~1 h).
+2. **`GOOGLE_GMAIL_REFRESH_TOKEN` + `GOOGLE_GMAIL_CLIENT_ID` + `GOOGLE_GMAIL_CLIENT_SECRET`** — recomendado; el Worker renueva el access token (requiere `google-auth`).
+3. **`GOOGLE_SERVICE_ACCOUNT_JSON`** — ruta al JSON de service account con scopes Gmail.
+
+En el gateway, preferí las tools tipadas `umbral_gmail_*` del skill **umbral-worker** cuando ejecutes contra el Worker; este skill documenta payloads y comportamiento.
+
+Documentación de obtención de tokens: [docs/35-gmail-token-setup.md](../../../../docs/35-gmail-token-setup.md).
 
 ## Tasks disponibles
 

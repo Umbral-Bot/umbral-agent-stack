@@ -199,6 +199,58 @@ async def rate_limit_middleware(request: Request, call_next):
     return response
 
 
+def _load_quota_provider_config() -> dict[str, dict[str, Any]]:
+    import yaml
+
+    try:
+        with open("config/quota_policy.yaml", "r", encoding="utf-8") as f:
+            config = yaml.safe_load(f) or {}
+    except Exception as e:
+        logger.error("Failed to load quota policy: %s", e)
+        return {}
+    return config.get("providers", {}) or {}
+
+
+def _build_quota_snapshot(
+    provider_config: dict[str, dict[str, Any]],
+    details: dict[str, dict[str, Any]] | None = None,
+    *,
+    redis_available: bool,
+) -> dict[str, dict[str, Any]]:
+    providers: dict[str, dict[str, Any]] = {}
+    details = details or {}
+
+    for provider in sorted(provider_config.keys()):
+        d = details.get(provider, {})
+        used = d.get("used", 0)
+        limit = d.get("limit", provider_config.get(provider, {}).get("limit_requests", 0))
+        fraction = d.get("fraction", 0.0)
+
+        cfg = provider_config.get(provider, {})
+        warn = float(cfg.get("warn", 0.8))
+        restrict = float(cfg.get("restrict", 0.95))
+
+        if not redis_available:
+            status = "unknown"
+        elif fraction >= 1.0:
+            status = "exceeded"
+        elif fraction >= restrict:
+            status = "restrict"
+        elif fraction >= warn:
+            status = "warn"
+        else:
+            status = "ok"
+
+        providers[provider] = {
+            "used": used,
+            "limit": limit,
+            "fraction": round(fraction, 4),
+            "status": status,
+        }
+
+    return providers
+
+
 
 # ---------------------------------------------------------------------------
 # Auth helper
@@ -636,51 +688,18 @@ async def get_quota_status(
     """
     _authenticate(authorization)
     r = _get_redis()
-    if r is None:
-        raise HTTPException(status_code=503, detail="Redis not available. Cannot query quota status.")
+    provider_config = _load_quota_provider_config()
+    details: dict[str, dict[str, Any]] = {}
+    if r is not None:
+        from dispatcher.quota_tracker import QuotaTracker
 
-    import yaml
-    try:
-        with open("config/quota_policy.yaml", "r", encoding="utf-8") as f:
-            config = yaml.safe_load(f)
-            provider_config = config.get("providers", {})
-    except Exception as e:
-        logger.error("Failed to load quota policy: %s", e)
-        provider_config = {}
+        tracker = QuotaTracker(r, provider_config)
+        details = tracker.get_all_quota_details()
 
-    from dispatcher.quota_tracker import QuotaTracker
-    tracker = QuotaTracker(r, provider_config)
-    details = tracker.get_all_quota_details()
-
-    providers = {}
-    for p, d in details.items():
-        used = d["used"]
-        limit = d["limit"]
-        fraction = d["fraction"]
-        
-        cfg = provider_config.get(p, {})
-        warn = float(cfg.get("warn", 0.8))
-        restrict = float(cfg.get("restrict", 0.95))
-        
-        if fraction >= 1.0:
-            status = "exceeded"
-        elif fraction >= restrict:
-            status = "restrict"
-        elif fraction >= warn:
-            status = "warn"
-        else:
-            status = "ok"
-            
-        providers[p] = {
-            "used": used,
-            "limit": limit,
-            "fraction": round(fraction, 4),
-            "status": status
-        }
-        
     return {
-        "providers": providers,
-        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        "providers": _build_quota_snapshot(provider_config, details, redis_available=r is not None),
+        "redis_available": r is not None,
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
 
 
@@ -710,29 +729,34 @@ async def get_provider_status(
     _authenticate(authorization)
 
     r = _get_redis()
-    if r is None:
-        raise HTTPException(
-            status_code=503,
-            detail="Redis not available. Cannot query provider status.",
-        )
 
     # --- Load config ---
     from dispatcher.model_router import (
         ModelRouter,
         get_configured_providers,
-        _load_quota_policy,
+        load_quota_policy,
         _PROVIDER_ENV_REQUIREMENTS,
     )
-    from dispatcher.quota_tracker import QuotaTracker
 
-    routing, provider_config = _load_quota_policy()
+    routing, provider_config = load_quota_policy()
     configured = get_configured_providers()
     all_known = set(provider_config.keys()) | set(_PROVIDER_ENV_REQUIREMENTS.keys())
     unconfigured = sorted(all_known - configured)
 
     # --- Quota data ---
-    tracker = QuotaTracker(r, provider_config)
-    details = tracker.get_all_quota_details()
+    details: dict[str, dict[str, Any]] = {}
+    if r is not None:
+        from dispatcher.quota_tracker import QuotaTracker
+
+        tracker = QuotaTracker(r, provider_config)
+        details = tracker.get_all_quota_details()
+    else:
+        class _NullQuotaTracker:
+            def get_all_quota_states(self) -> dict[str, float]:
+                return {}
+
+        tracker = _NullQuotaTracker()
+
     router = ModelRouter(tracker)
     routing_snapshot = router.get_routing_snapshot()
 
@@ -779,7 +803,9 @@ async def get_provider_status(
             cfg = provider_config.get(provider, {})
             warn = float(cfg.get("warn", 0.8))
             restrict = float(cfg.get("restrict", 0.95))
-            if fraction >= 1.0:
+            if r is None:
+                q_status = "unknown"
+            elif fraction >= 1.0:
                 q_status = "exceeded"
             elif fraction >= restrict:
                 q_status = "restrict"
@@ -791,7 +817,7 @@ async def get_provider_status(
             used = 0
             limit = int(provider_config.get(provider, {}).get("limit_requests", 0))
             fraction = 0.0
-            q_status = "unknown" if not is_configured else "ok"
+            q_status = "unknown" if r is None or not is_configured else "ok"
 
         providers_out[provider] = {
             "configured": is_configured,
@@ -806,6 +832,7 @@ async def get_provider_status(
 
     return {
         "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "redis_available": r is not None,
         "configured": sorted(configured),
         "unconfigured": unconfigured,
         "routing": routing_out,

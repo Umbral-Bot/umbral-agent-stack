@@ -64,6 +64,8 @@ def sample_envelope():
         "task": "generate_post",
         "input": {"topic": "test", "project_name": "Proyecto Embudo Ventas"},
         "trace_id": str(uuid.uuid4()),
+        "source": "openclaw_gateway",
+        "source_kind": "tool_enqueue",
         "status": "queued",
     }
 
@@ -284,7 +286,28 @@ class TestRetryOnTimeout:
             sample_envelope["team"],
             sample_envelope["task_type"],
             trace_id=sample_envelope["trace_id"],
+            source=sample_envelope["source"],
+            source_kind=sample_envelope["source_kind"],
         )
+
+    def test_success_emits_task_completed_with_traceability_context(self, redis_client, sample_envelope):
+        mocks = _run_one_iteration(redis_client, sample_envelope)
+        mocks["ops"].task_completed.assert_called_once()
+        kwargs = mocks["ops"].task_completed.call_args.kwargs
+        assert kwargs["trace_id"] == sample_envelope["trace_id"]
+        assert kwargs["task_type"] == sample_envelope["task_type"]
+        assert kwargs["source"] == sample_envelope["source"]
+        assert kwargs["source_kind"] == sample_envelope["source_kind"]
+
+    def test_terminal_failure_emits_task_failed_with_traceability_context(self, redis_client, sample_envelope):
+        sample_envelope["retry_count"] = 2
+        mocks = _run_one_iteration(redis_client, sample_envelope, httpx.ReadTimeout("timeout"))
+        mocks["ops"].task_failed.assert_called_once()
+        kwargs = mocks["ops"].task_failed.call_args.kwargs
+        assert kwargs["trace_id"] == sample_envelope["trace_id"]
+        assert kwargs["task_type"] == sample_envelope["task_type"]
+        assert kwargs["source"] == sample_envelope["source"]
+        assert kwargs["source_kind"] == sample_envelope["source_kind"]
 
     def test_retry_count_increments_to_1(self, redis_client, sample_envelope):
         sample_envelope["retry_count"] = 0

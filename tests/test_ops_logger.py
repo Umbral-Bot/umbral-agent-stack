@@ -88,6 +88,40 @@ class TestTraceId:
         assert events[0]["trace_id"] == tid
 
 
+class TestTraceabilityContext:
+    def test_task_completed_includes_source_source_kind_and_task_type(self, ops_logger):
+        ops_logger.task_completed(
+            "t1",
+            "llm.generate",
+            "eng",
+            "gpt-4o",
+            120.0,
+            trace_id="trace-123",
+            task_type="coding",
+            source="openclaw_gateway",
+            source_kind="tool_enqueue",
+        )
+        events = ops_logger.read_events(event_filter="task_completed")
+        assert events[0]["task_type"] == "coding"
+        assert events[0]["source"] == "openclaw_gateway"
+        assert events[0]["source_kind"] == "tool_enqueue"
+
+    def test_task_blocked_includes_source_context(self, ops_logger):
+        ops_logger.task_blocked(
+            "t1",
+            "llm.generate",
+            "eng",
+            "quota",
+            task_type="research",
+            source="scheduler",
+            source_kind="cron",
+        )
+        events = ops_logger.read_events(event_filter="task_blocked")
+        assert events[0]["task_type"] == "research"
+        assert events[0]["source"] == "scheduler"
+        assert events[0]["source_kind"] == "cron"
+
+
 # ---------------------------------------------------------------------------
 # input_summary tests
 # ---------------------------------------------------------------------------

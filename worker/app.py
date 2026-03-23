@@ -127,6 +127,33 @@ def _store_task(result: TaskResult) -> None:
         _task_store.popitem(last=False)
 
 
+def _ops_value(value: Any) -> Any:
+    return getattr(value, "value", value)
+
+
+def _ops_context_from_envelope(envelope: Union[TaskEnvelope, Dict[str, Any]]) -> Dict[str, str]:
+    def _read(name: str) -> Any:
+        if isinstance(envelope, dict):
+            return envelope.get(name)
+        return getattr(envelope, name, None)
+
+    ctx: Dict[str, str] = {}
+    trace_id = _read("trace_id")
+    task_type = _ops_value(_read("task_type"))
+    source = _read("source")
+    source_kind = _read("source_kind")
+
+    if trace_id:
+        ctx["trace_id"] = str(trace_id)
+    if task_type:
+        ctx["task_type"] = str(task_type)
+    if source:
+        ctx["source"] = str(source).strip()
+    if source_kind:
+        ctx["source_kind"] = str(source_kind).strip()
+    return ctx
+
+
 # ---------------------------------------------------------------------------
 # Lifespan (startup / shutdown)
 # ---------------------------------------------------------------------------
@@ -245,10 +272,24 @@ async def run_task(
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
 
+    ops_context = _ops_context_from_envelope(envelope)
+    team_value = _ops_value(envelope.team)
+    selected_model = envelope.selected_model or envelope.input.get("selected_model") or ""
+    input_summary = str(envelope.input)[:200]
+
     # --- Dispatch task ---
     handler = TASK_HANDLERS.get(envelope.task)
     if handler is None:
         logger.warning("Unknown task: %s (task_id=%s)", envelope.task, envelope.task_id)
+        ops_log.task_failed(
+            envelope.task_id,
+            envelope.task,
+            team_value,
+            f"Unknown task: {envelope.task}. Available: {list(TASK_HANDLERS.keys())}",
+            model=selected_model,
+            input_summary=input_summary,
+            **ops_context,
+        )
         # Store as failed
         _store_task(
             TaskResult(
@@ -273,12 +314,22 @@ async def run_task(
         envelope.trace_id,
     )
     started_at = datetime.now(timezone.utc).isoformat()
+    started_at_monotonic = time.time()
 
     try:
         loop = asyncio.get_event_loop()
         result_data = await loop.run_in_executor(None, handler, envelope.input)
     except ValueError as exc:
         logger.warning("Task %s input error: %s", envelope.task, exc)
+        ops_log.task_failed(
+            envelope.task_id,
+            envelope.task,
+            team_value,
+            str(exc),
+            model=selected_model,
+            input_summary=input_summary,
+            **ops_context,
+        )
         _store_task(
             TaskResult(
                 task_id=envelope.task_id,
@@ -292,6 +343,15 @@ async def run_task(
         raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:
         logger.exception("Task %s failed: %s", envelope.task, exc)
+        ops_log.task_failed(
+            envelope.task_id,
+            envelope.task,
+            team_value,
+            str(exc),
+            model=selected_model,
+            input_summary=input_summary,
+            **ops_context,
+        )
         _store_task(
             TaskResult(
                 task_id=envelope.task_id,
@@ -306,6 +366,17 @@ async def run_task(
 
     # --- Success ---
     completed_at = datetime.now(timezone.utc).isoformat()
+    duration_ms = (time.time() - started_at_monotonic) * 1000
+    ops_log.task_completed(
+        envelope.task_id,
+        envelope.task,
+        team_value,
+        selected_model,
+        duration_ms,
+        worker="direct",
+        input_summary=input_summary,
+        **ops_context,
+    )
     task_result = TaskResult(
         task_id=envelope.task_id,
         task=envelope.task,
@@ -417,12 +488,14 @@ async def enqueue_task(
 
     # Emit task_queued event for observability (02-bugs #5)
     try:
+        queue_ops_context = _ops_context_from_envelope(envelope)
+        queue_ops_context.pop("task_type", None)
         ops_log.task_queued(
             task_id=task_id,
             task=body.task,
             team=body.team,
             task_type=body.task_type or "general",
-            trace_id=trace_id,
+            **queue_ops_context,
         )
     except Exception:
         pass  # ops_log is best-effort

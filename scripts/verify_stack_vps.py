@@ -50,6 +50,8 @@ def _load_env() -> None:
 
 _load_env()
 
+from scripts.notion_alert_target import resolve_alert_target
+
 # Requeridos para dashboard + Worker
 REQUIRED = [
     "WORKER_URL",
@@ -162,8 +164,46 @@ def main() -> int:
             print(f"   FAIL ({type(e).__name__}: {e})")
     print()
 
-    # 5) Dashboard / Control Room (solo indicar cómo probar)
-    print("5) Dashboard / Control Room")
+    # 5) Notion alerting
+    print("5) Notion alerting")
+    alert_result = resolve_alert_target(dict(os.environ))
+    checks = alert_result.get("checks", {})
+    if alert_result.get("ok"):
+        mode = alert_result.get("mode")
+        target = _mask(alert_result.get("target_page_id"))
+        if mode == "direct_supervisor":
+            print(f"   OK (Supervisor -> dedicated alert page {target})")
+        elif mode == "worker_alert_page":
+            print(f"   WARN (Supervisor integration unavailable; Worker -> dedicated alert page {target})")
+        else:
+            print(f"   WARN (Dedicated alert page invalid; Worker -> Control Room {target})")
+    else:
+        print("   FAIL (no active Notion target available for supervisor alerts)")
+
+    alert_supervisor = checks.get("alert_supervisor", {})
+    control_worker = checks.get("control_worker", {})
+    print(
+        "   dedicated page via Supervisor: "
+        f"{alert_supervisor.get('reason', 'unknown')}"
+        + (
+            f" (archived={alert_supervisor.get('archived')}, in_trash={alert_supervisor.get('in_trash')})"
+            if "archived" in alert_supervisor
+            else ""
+        )
+    )
+    print(
+        "   Control Room via Worker: "
+        f"{control_worker.get('reason', 'unknown')}"
+        + (
+            f" (archived={control_worker.get('archived')}, in_trash={control_worker.get('in_trash')})"
+            if "archived" in control_worker
+            else ""
+        )
+    )
+    print()
+
+    # 6) Dashboard / Control Room (solo indicar cómo probar)
+    print("6) Dashboard / Control Room")
     if missing:
         print("   SKIP (faltan variables de entorno)")
     else:
@@ -172,18 +212,25 @@ def main() -> int:
         print("   Cron (cada 15 min): scripts/vps/install-cron.sh o crontab con dashboard-cron.sh")
     print()
 
-    # 6) Alcance del chequeo
-    print("6) Alcance del chequeo")
+    # 7) Alcance del chequeo
+    print("7) Alcance del chequeo")
     print("   Verifica Worker, Redis y Linear mínimos.")
-    print("   No reemplaza revisar supervisor, dispatcher-service.sh, logs /tmp/*.log,")
-    print("   ni validar que NOTION_SUPERVISOR_ALERT_PAGE_ID apunte a una página activa.")
+    print("   Incluye una validación operativa del target de alertas Notion.")
+    print("   No reemplaza revisar supervisor, dispatcher-service.sh, logs /tmp/*.log")
+    print("   ni probar manualmente un auto-restart real si quieres certidumbre completa.")
     print()
 
     # Resumen
     if missing:
         print(">>> Resumen: completar variables en ~/.config/openclaw/env (VPS) o .env (local) y volver a ejecutar.")
         return 1
-    print(">>> Resumen: plano base verificado. Si Worker, Redis y Linear OK, la conectividad mínima está sana; aún falta validar supervisor, Dispatcher y Dashboard/Control Room en vivo.")
+    if not alert_result.get("ok"):
+        print(">>> Resumen: plano base parcial. Worker/Redis/Linear OK, pero el canal de alertas Notion no tiene un destino activo.")
+        return 1
+    if alert_result.get("mode") != "direct_supervisor":
+        print(">>> Resumen: plano base verificado con alerting degradado. Hay fallback efectivo vía Worker, pero la ruta dedicada del Supervisor requiere corrección.")
+        return 0
+    print(">>> Resumen: plano base verificado. Worker, Redis, Linear y alerting Notion dedicados están sanos; aún falta validar supervisor/Dispatcher/Dashboard en vivo si buscas certidumbre completa.")
     return 0
 
 

@@ -16,6 +16,29 @@ DISPATCHER_CTL="${DISPATCHER_CTL:-$REPO/scripts/vps/dispatcher-service.sh}"
 LOG_PREFIX="[supervisor $(date -u +"%Y-%m-%d %H:%M UTC")]"
 RESTARTED=()
 
+format_service_list_es() {
+    if [ ${#RESTARTED[@]} -eq 0 ]; then
+        echo "ninguno"
+        return 0
+    fi
+
+    python3 - "${RESTARTED[@]}" <<'PY'
+import sys
+
+mapping = {
+    "Worker": "Worker",
+    "Dispatcher": "Dispatcher",
+    "Redis": "Redis",
+    "Worker(FAILED)": "Worker (falló)",
+    "Dispatcher(FAILED)": "Dispatcher (falló)",
+    "Redis(FAILED)": "Redis (falló)",
+}
+
+items = [mapping.get(arg, arg) for arg in sys.argv[1:]]
+print(", ".join(items) if items else "ninguno")
+PY
+}
+
 # ---------------------------------------------------------------
 # Load env vars (WORKER_TOKEN, REDIS_URL, etc.)
 # ---------------------------------------------------------------
@@ -246,7 +269,7 @@ PY
 ACTION="${1:-run}"
 if [ "$ACTION" = "test-alert" ]; then
     shift || true
-    ALERT="${*:-Supervisor alert smoke - $(date -u +"%Y-%m-%d %H:%M UTC")}"
+    ALERT="${*:-Prueba de alerta del Supervisor - $(date -u +"%Y-%m-%d %H:%M UTC")}"
     if post_notion_alert "$ALERT"; then
         echo "${LOG_PREFIX} Test alert completed"
         exit 0
@@ -266,7 +289,7 @@ check_dispatcher || restart_dispatcher
 # Post alert to Notion if anything was restarted.
 # ---------------------------------------------------------------
 if [ ${#RESTARTED[@]} -gt 0 ]; then
-    ALERT="Supervisor auto-restart - $(date -u +"%Y-%m-%d %H:%M UTC") - Restarted: ${RESTARTED[*]}"
+    ALERT="Supervisor: reinicio automatico - $(date -u +"%Y-%m-%d %H:%M UTC") - Servicios reiniciados: $(format_service_list_es)"
     sleep 4
     post_notion_alert "$ALERT" || true
 fi

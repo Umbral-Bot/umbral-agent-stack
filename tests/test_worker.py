@@ -20,7 +20,9 @@ os.environ["WORKER_TOKEN"] = "test-token-12345"
 
 
 from worker.app import app  # noqa: E402
+import worker.app as worker_app  # noqa: E402
 from worker.models import LegacyRunRequest, TaskEnvelope, TaskStatus, Team, TaskType  # noqa: E402
+from worker.rate_limiter import RateLimiter  # noqa: E402
 
 
 AUTH = {"Authorization": "Bearer test-token-12345"}
@@ -98,6 +100,65 @@ class TestRunAuth:
         )
         assert resp.status_code == 422
         assert "unsafe input" in resp.json()["detail"].lower()
+
+
+class TestRateLimitPartitioning:
+    def test_external_requests_still_share_client_bucket(self, client, monkeypatch):
+        monkeypatch.setattr(worker_app, "external_limiter", RateLimiter(max_requests=2, window_seconds=60))
+        monkeypatch.setattr(worker_app, "internal_limiter", RateLimiter(max_requests=20, window_seconds=60))
+        monkeypatch.setattr(worker_app, "limiter", worker_app.external_limiter)
+        monkeypatch.setattr(worker_app, "_is_internal_host", lambda host: False)
+
+        for _ in range(2):
+            resp = client.post("/run", json={"task": "ping", "input": {}}, headers=AUTH)
+            assert resp.status_code == 200
+            assert resp.headers["X-RateLimit-Scope"] == "external"
+
+        blocked = client.post("/run", json={"task": "ping", "input": {}}, headers=AUTH)
+        assert blocked.status_code == 429
+        assert blocked.headers["X-RateLimit-Scope"] == "external"
+        assert blocked.headers["X-RateLimit-Limit"] == "2"
+
+    def test_internal_requests_are_partitioned_by_task(self, client, monkeypatch):
+        monkeypatch.setattr(worker_app, "external_limiter", RateLimiter(max_requests=20, window_seconds=60))
+        monkeypatch.setattr(worker_app, "internal_limiter", RateLimiter(max_requests=1, window_seconds=60))
+        monkeypatch.setattr(worker_app, "limiter", worker_app.external_limiter)
+        monkeypatch.setattr(worker_app, "_is_internal_host", lambda host: True)
+
+        ping_ok = client.post("/run", json={"task": "ping", "input": {}}, headers=AUTH)
+        assert ping_ok.status_code == 200
+        assert ping_ok.headers["X-RateLimit-Scope"] == "internal"
+
+        other_task = client.post(
+            "/run",
+            json={"task": "nonexistent_task", "input": {}},
+            headers=AUTH,
+        )
+        assert other_task.status_code == 400
+        assert other_task.headers["X-RateLimit-Scope"] == "internal"
+
+        ping_blocked = client.post("/run", json={"task": "ping", "input": {}}, headers=AUTH)
+        assert ping_blocked.status_code == 429
+        assert ping_blocked.headers["X-RateLimit-Scope"] == "internal"
+
+    def test_internal_requests_can_opt_into_caller_partitioning(self, client, monkeypatch):
+        monkeypatch.setattr(worker_app, "external_limiter", RateLimiter(max_requests=20, window_seconds=60))
+        monkeypatch.setattr(worker_app, "internal_limiter", RateLimiter(max_requests=1, window_seconds=60))
+        monkeypatch.setattr(worker_app, "limiter", worker_app.external_limiter)
+        monkeypatch.setattr(worker_app, "_is_internal_host", lambda host: True)
+
+        cron_headers = {**AUTH, "X-Umbral-Caller": "cron.supervisor"}
+        verify_headers = {**AUTH, "X-Umbral-Caller": "script.verify_stack_vps"}
+
+        cron_ok = client.post("/run", json={"task": "ping", "input": {}}, headers=cron_headers)
+        assert cron_ok.status_code == 200
+        assert cron_ok.headers["X-RateLimit-Scope"] == "internal"
+
+        verify_ok = client.post("/run", json={"task": "ping", "input": {}}, headers=verify_headers)
+        assert verify_ok.status_code == 200
+
+        cron_blocked = client.post("/run", json={"task": "ping", "input": {}}, headers=cron_headers)
+        assert cron_blocked.status_code == 429
 
 
 # ---------------------------------------------------------------------------

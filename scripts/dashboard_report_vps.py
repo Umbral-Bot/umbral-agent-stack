@@ -37,6 +37,7 @@ NOTION_TASKS_DB_ID = os.environ.get("NOTION_TASKS_DB_ID", "").strip()
 NOTION_DELIVERABLES_DB_ID = os.environ.get("NOTION_DELIVERABLES_DB_ID", "").strip()
 NOTION_BRIDGE_DB_ID = os.environ.get("NOTION_BRIDGE_DB_ID", "").strip()
 LEGACY_BRIDGE_DB_ID = "8496ee73-6c7d-43a3-89cf-b9c8825b5dfc"
+CALLER_ID = "script.dashboard_report_vps"
 
 TECHNICAL_TASK_PREFIXES = (
     "windows.fs.",
@@ -626,7 +627,11 @@ def main() -> int:
         r = httpx.post(
             f"{WORKER_URL}/run",
             json=request_body,
-            headers={"Authorization": f"Bearer {WORKER_TOKEN}", "Content-Type": "application/json"},
+            headers={
+                "Authorization": f"Bearer {WORKER_TOKEN}",
+                "Content-Type": "application/json",
+                "X-Umbral-Caller": CALLER_ID,
+            },
             timeout=90,
         )
         r.raise_for_status()

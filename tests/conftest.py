@@ -9,6 +9,7 @@ import os
 
 os.environ["WORKER_TOKEN"] = "test-token-12345"
 os.environ["RATE_LIMIT_RPM"] = "999999"
+os.environ["RATE_LIMIT_INTERNAL_RPM"] = "999999"
 
 import pytest  # noqa: E402
 
@@ -17,8 +18,12 @@ import pytest  # noqa: E402
 def _reset_rate_limiter():
     """Clear rate limiter state between tests."""
     try:
-        from worker.app import limiter
-        limiter._requests.clear()
+        from worker.app import external_limiter, internal_limiter, limiter
+        for candidate in (external_limiter, internal_limiter, limiter):
+            try:
+                candidate.clear()
+            except Exception:
+                candidate._requests.clear()
     except Exception:
         pass
 

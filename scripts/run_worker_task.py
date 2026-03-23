@@ -110,7 +110,12 @@ def main():
     timeout = 60.0 if session == "interactive" else 30.0
     timeout = float(os.environ.get("WORKER_TIMEOUT", timeout))
     try:
-        wc = WorkerClient(base_url=url, token=token, timeout=timeout)
+        wc = WorkerClient(
+            base_url=url,
+            token=token,
+            timeout=timeout,
+            caller_id="script.run_worker_task",
+        )
         out = wc.run(task, input_data)
         print(json.dumps(out, indent=2))
     except Exception as e:

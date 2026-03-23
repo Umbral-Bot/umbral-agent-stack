@@ -10,12 +10,14 @@ Un **dashboard siempre actualizado** en Notion para que vos (o alguien no técni
 
 Importante: **Control Room no debería ser depósito de páginas sueltas de proyecto**. Los outputs revisables de Rick deberían vivir en una base de entregables ligada a proyectos, y el dashboard solo debería mostrar vistas enlazadas o resúmenes.
 
-## Página e integración configuradas
+## Páginas e integraciones configuradas
 
-- **URL:** [Dashboard Rick](https://www.notion.so/umbralbim/Dashboard-Rick-0fd13978b220498e9465b4fb2efc5f4a)
-- **ID de página (para NOTION_DASHBOARD_PAGE_ID):** `0fd13978-b220-498e-9465-b4fb2efc5f4a`
-- **Integración en Notion:** "Dashboard Rick" (integraciones internas). Tiene acceso a la página Dashboard Rick bajo OpenClaw; permisos: leer/actualizar/insertar contenido y comentarios.
-- **Llave de integración:** Configurarla **solo en el entorno** (VPS/VM) como `NOTION_API_KEY`. No commitearla nunca. Si esta integración es solo para el dashboard, usala en el Worker que actualiza el dashboard; si ya tenés otra integración para Control Room, podés usar la misma y darle acceso a ambas páginas.
+- **Dashboard técnico canónico:** [Dashboard Rick](https://www.notion.so/umbralbim/Dashboard-Rick-3265f443fb5c816d9ce8c5d6cf075f9c)
+- **ID de página (para `NOTION_DASHBOARD_PAGE_ID`):** `3265f443-fb5c-816d-9ce8-c5d6cf075f9c`
+- **Página dedicada de alertas del Supervisor:** [Alertas del Supervisor](https://www.notion.so/umbralbim/Alertas-del-Supervisor-0fd13978b220498e9465b4fb2efc5f4a)
+- **ID de página (para `NOTION_SUPERVISOR_ALERT_PAGE_ID`):** `0fd13978-b220-498e-9465-b4fb2efc5f4a`
+- **Integración en Notion:** la integración que usa `NOTION_API_KEY` debe tener acceso a `Dashboard Rick`. La integración `Supervisor`, si se usa identidad separada, debe tener acceso a `Alertas del Supervisor`.
+- **Llaves de integración:** configurarlas **solo en el entorno** (VPS/VM) como `NOTION_API_KEY` y, si aplica, `NOTION_SUPERVISOR_API_KEY`. No commitearlas nunca.
 
 ## Revisión de la página actual
 
@@ -28,7 +30,7 @@ Importante: **Control Room no debería ser depósito de páginas sueltas de proy
 
 1. **Que la página siga siendo la Control Room** para comentarios (misma página que tiene `NOTION_CONTROL_ROOM_PAGE_ID` en el Worker). Si movés cosas, actualizá ese ID en el entorno del Worker (VPS/VM).
 2. **Separar “comunicación” de “dashboard”** (recomendado):
-- Crear una página dedicada **“Dashboard Rick”** (subpágina de OpenClaw o donde prefieras). Esa página será **privada** como el resto del workspace; el sistema la actualiza vía API usando la integración de Notion (`NOTION_API_KEY`). Solo hace falta que esa integración tenga acceso a la página.
+- Mantener una página dedicada **“Dashboard Rick”** para observabilidad técnica y otra página **“Alertas del Supervisor”** para avisos automáticos. Ambas pueden seguir **privadas**; solo hace falta que las integraciones correctas tengan acceso a cada una.
 
 ---
 
@@ -107,22 +109,23 @@ Los [webhooks de Notion](https://developers.notion.com/reference/webhooks) sirve
 
 ---
 
-## Crear la página “Dashboard Rick” (privada)
+## Crear o regularizar las páginas privadas
 
-La página **Dashboard Rick** debe crearla alguien con acceso al workspace (vos o la IA de Notion). El sistema no puede crear páginas en tu cuenta; solo puede **actualizar** una página que ya exista y a la que la integración de Notion tenga acceso.
+El sistema no puede crear páginas en tu cuenta; solo puede **actualizar** páginas que ya existan y a las que las integraciones de Notion tengan acceso.
 
 ### Pasos
 
-1. **Crear la página:** En Notion, creá una **página nueva** llamada **Dashboard Rick** (por ejemplo como subpágina de OpenClaw o donde prefieras). Dejarla vacía o con un texto tipo “Actualizado por Rick cada X min”. La página puede seguir **privada** (mismo nivel de acceso que el resto de tu workspace).
-2. **Dar acceso a la integración:** En Configuración de la página → Conectar con la **integración** que usa tu `NOTION_API_KEY` (la misma que usa el Worker para comentarios en Control Room). Así el Worker podrá escribir en Dashboard Rick sin que la página sea pública.
-3. **Copiar el ID de la página:** Del enlace de la página, el ID es la parte después del nombre, antes de `?`:  
-   `https://www.notion.so/umbralbim/Dashboard-Rick-XXXXXXXXXX` → el ID es `XXXXXXXXXX` (con guiones, 32 caracteres).
-4. **Configurar en el Worker:** En el entorno del Worker (VPS/VM), añadí  
-   `NOTION_DASHBOARD_PAGE_ID=el_id_que_copiaste`  
-   (por ejemplo en `~/.config/openclaw/env`).
+1. **Crear o confirmar `Dashboard Rick`:** Debe existir una página técnica llamada **Dashboard Rick**. En el estado actual, la canónica es `3265f443-fb5c-816d-9ce8-c5d6cf075f9c`.
+2. **Crear o confirmar `Alertas del Supervisor`:** Debe existir una página separada para avisos automáticos del supervisor. En el estado actual, es `0fd13978-b220-498e-9465-b4fb2efc5f4a`.
+3. **Dar acceso a las integraciones:**
+   - `NOTION_API_KEY` -> acceso a `Dashboard Rick`
+   - `NOTION_SUPERVISOR_API_KEY` -> acceso a `Alertas del Supervisor` si usás identidad propia del Supervisor
+4. **Configurar en el Worker/VPS:**
+   - `NOTION_DASHBOARD_PAGE_ID=3265f443-fb5c-816d-9ce8-c5d6cf075f9c`
+   - `NOTION_SUPERVISOR_ALERT_PAGE_ID=0fd13978-b220-498e-9465-b4fb2efc5f4a`
 
 ### Prompt para la IA de Notion
 
 Si querés que la IA de Notion cree la página, podés pegarle esto:
 
-> Creá una página nueva llamada **Dashboard Rick** como subpágina de OpenClaw (o de la página que usamos como Control Room). La página debe seguir siendo privada; solo tiene que estar conectada a la integración de Notion que usa el equipo para que el sistema pueda actualizar su contenido por API. No hace falta poner contenido inicial; el sistema lo reemplazará. Cuando esté creada, indicame el **ID de la página** (el que aparece en la URL, 32 caracteres con guiones) para configurarlo en el Worker.
+> Regularizá las páginas privadas de Notion para que exista una sola página técnica llamada **Dashboard Rick** y una página separada llamada **Alertas del Supervisor**. Ambas deben seguir privadas. Conectá `Dashboard Rick` a la integración que usa `NOTION_API_KEY` y `Alertas del Supervisor` a la integración `Supervisor` si se usa identidad propia. Cuando estén listas, confirmame sus IDs para dejarlos en el entorno del Worker/VPS.

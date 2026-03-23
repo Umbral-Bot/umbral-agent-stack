@@ -255,8 +255,8 @@ class TestNotionBlocks:
         assert any("green_background" in str(c) for c in callouts), "Operativo should use green_background"
         assert any("red_background" in str(c) for c in callouts), "Alert or error should use red_background"
         assert all("Seguimiento R16/R17" not in str(b) for b in blocks)
-        assert any("Ruido tecnico / sistema" in str(b) for b in blocks)
-        assert any("Este dashboard es tecnico" in str(b) for b in blocks)
+        assert any("Ruido técnico / sistema" in str(b) for b in blocks)
+        assert any("Este dashboard es técnico" in str(b) for b in blocks)
 
     def test_build_dashboard_v2_blocks_show_vm_recovery_mode(self):
         from worker.notion_client import _build_dashboard_v2_blocks
@@ -271,7 +271,7 @@ class TestNotionBlocks:
             "redis": {"pending": 0, "blocked": 0, "connected": True},
         }
         blocks = _build_dashboard_v2_blocks(data)
-        assert any("recovery mode" in str(block).lower() for block in blocks)
+        assert any("modo recovery" in str(block).lower() for block in blocks)
 
     def test_build_dashboard_v2_minimal(self):
         from worker.notion_client import _build_dashboard_v2_blocks

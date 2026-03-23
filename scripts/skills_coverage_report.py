@@ -14,6 +14,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Set, Tuple
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
 try:
     import yaml
 except ImportError:
@@ -87,6 +90,7 @@ TASK_TO_SKILL: Dict[str, str] = {
     "google.calendar.list_events": "google-calendar",
     "gmail.create_draft": "gmail",
     "gmail.list_drafts": "gmail",
+    "google.audio.generate": "google-audio-generation",
     "google.image.generate": "google-cloud-vertex",
     "browser.navigate": "browser-automation-vm",
     "browser.read_page": "browser-automation-vm",
@@ -94,6 +98,14 @@ TASK_TO_SKILL: Dict[str, str] = {
     "browser.click": "browser-automation-vm",
     "browser.type_text": "browser-automation-vm",
     "browser.press_key": "browser-automation-vm",
+    "gui.desktop_status": "browser-automation-vm",
+    "gui.screenshot": "browser-automation-vm",
+    "gui.click": "browser-automation-vm",
+    "gui.type_text": "browser-automation-vm",
+    "gui.hotkey": "browser-automation-vm",
+    "gui.list_windows": "browser-automation-vm",
+    "gui.activate_window": "browser-automation-vm",
+    "windows.open_url": "browser-automation-vm",
 }
 
 

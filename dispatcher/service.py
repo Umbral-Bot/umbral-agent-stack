@@ -382,6 +382,8 @@ def _failure_error_class(error: str) -> str:
     normalized = _normalize_for_fingerprint(error)
     if not normalized:
         return "unknown_error"
+    if "400" in normalized or "bad request" in normalized:
+        return "http_400"
     if "429" in normalized or "rate limit" in normalized or "quota" in normalized:
         return "quota_or_rate_limit"
     if "401" in normalized or "unauthorized" in normalized:
@@ -580,8 +582,8 @@ def _escalate_failure_to_linear(
             {
                 "title": f"Task fallida: {task} [{team}/{task_type}]",
                 "summary": (
-                    f"La tarea `{task}` fallo durante ejecucion automatica del Agent Stack "
-                    f"para `{team}` con clase de error `{error_class}`."
+                    f"La tarea {task} fallo durante ejecucion automatica del Agent Stack "
+                    f"para el team {team} con clase de error {error_class}."
                 ),
                 "evidence": (
                     f"task_id={task_id}\n"

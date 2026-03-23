@@ -1,374 +1,149 @@
 ---
-
 name: notion-project-registry
-
-description: diseñar y mantener un registro maestro de proyectos en notion con vistas
-
-  de tabla, kanban y timeline, enlazado a drive/gdrive, linear y entregables. usar
-
-  cuando chatgpt necesite crear, migrar, auditar o actualizar una base de datos de
-
-  proyectos; normalizar propiedades, estados y reglas de seguimiento; crear o actualizar
-
-  registros de proyecto; dejar updates cronológicos; reflejar bloqueos o issues sin
-
-  respuesta; o trabajar con tools de notion de bajo nivel y payloads raw sobre database/data
-
-  source, page properties y blocks.
-
+description: >-
+  Operar el registro canonico de proyectos en Notion de forma registry-first.
+  Usar cuando haya que crear, auditar, actualizar o regularizar proyectos,
+  entregables, tareas o paginas sueltas para que el estado quede coherente entre
+  Notion, Linear, Drive y el trabajo real del stack.
 metadata:
-
   openclaw:
-
     always: true
-
-    emoji: ??
-
+    emoji: "\U0001F4C1"
     requires:
-
       env: []
-
 ---
-
-
 
 # Notion Project Registry
 
-
-
-## Seguir este flujo
-
-1. Identificar el modo de trabajo:
-
-   - crear un registro nuevo;
-
-   - adaptar una base existente;
-
-   - mantener registros y updates semanales;
-
-   - operar con tools low-level o payloads raw.
-
-2. Consultar `references/schema.md` y alinear el esquema antes de tocar páginas sueltas.
-
-3. Usar el registro maestro como fuente única del estado cross-tool:
-
-   - notion = vista de portfolio y dashboard;
-
-   - linear = ejecución detallada e issues;
-
-   - drive = archivos y entregables.
-
-4. Crear o actualizar la fila del proyecto antes de editar documentos sueltos o dejar notas dispersas.
-
-4.1. Si el output resultante es algo que David debe revisar (benchmark, reporte, borrador, pieza editorial, criterio, plan), no dejarlo como pagina suelta en Control Room:
-   - primero actualizar la fila del proyecto;
-   - luego crear o actualizar un registro en la base de entregables/revision;
-   - y si tambien se registra una tarea operativa, enlazarla al `Proyecto` y al `Entregable` cuando la tool lo permita;
-   - usar Control Room solo para coordinacion transversal o alertas.
-   - si la tool acepta `icon`, usar el campo `icon` en vez de prefijar el `Nombre` con emojis.
-   - para proyectos, tareas y entregables ligados al mismo proyecto, mantener un icono consistente para lectura rapida, salvo que haya una razon clara para diferenciarlo.
-   - los entregables deben tener nombre natural en español y sin fecha en el título.
-   - la fecha y la fecha limite sugerida deben vivir en columnas, no incrustadas en el nombre.
-   - las filas creadas no deben quedar vacías por dentro: la pagina del proyecto, tarea o entregable debe tener cuerpo útil para revisión humana.
-
-5. Mantener una página por proyecto con propiedades + cuerpo estructurado:
-
-   - `links operativos`
-
-   - `updates`
-
-   - `handoff`
-
-6. Revisar vistas y controles de calidad al final.
-
-
-
-## Elegir el esquema correcto
-
-- Preferir el esquema `api-stable` de `references/schema.md` cuando haya que trabajar con tools de bajo nivel o payloads raw.
-
-- Preferir `select` para `Estado` por compatibilidad API. Solo reutilizar una propiedad `status` existente si ya está creada y no hay que mutar su esquema.
-
-- Preferir `title`, `select`, `rich_text`, `multi_select`, `url` y `date` para campos operativos.
-
-- Usar `people` o `relation` solo cuando el tool pueda resolver ids de usuarios o páginas de forma confiable.
-
-- Usar ids de propiedad cuando el tool los exponga. No depender de nombres de columna si puede haber renombres.
-
-- No usar el body de la page como sustituto del registro maestro; usarlo solo para historial, links secundarios y handoff.
-- Aun así, no dejar cuerpos vacíos: cada página debe abrir con al menos resumen operativo, contexto y siguiente acción legible.
-
-
-
-## Crear un registro nuevo o adaptar uno existente
-
-### Crear desde cero
-
-1. Crear el database container o data source.
-
-2. Crear las propiedades canónicas del esquema.
-
-3. Crear una plantilla de página con las secciones:
-
-   - `links operativos`
-
-   - `updates`
-
-   - `handoff`
-
-4. Crear las vistas recomendadas en la ui de notion. No asumir que la api puede gestionar vistas.
-
-5. Cargar los primeros proyectos solo después de confirmar estados canónicos.
-
-
-
-### Adaptar una base existente
-
-1. Mapear propiedades existentes a las canónicas antes de crear columnas nuevas.
-
-2. Renombrar o reutilizar columnas equivalentes; evitar duplicados como `owner`, `pm`, `responsable`.
-
-3. Mantener una sola columna de estado canónica.
-
-4. Rellenar huecos mínimos:
-
-   - `Drive`
-
-   - `Linear`
-
-   - `Fecha objetivo`
-
-   - `Ultimo update`
-
-5. Marcar filas incompletas como deuda operativa en `Bloqueos` o `Issues abiertas o sin respuesta`, no como estado ambiguo.
-
-
-
-## Crear o actualizar un proyecto
-
-Al aparecer un proyecto nuevo:
-
-1. Crear la fila el mismo día con el mínimo obligatorio:
-
-   - `Proyecto`
-
-   - `Estado`
-
-   - `Responsable`
-
-   - `Fecha inicio` o `Fecha objetivo` si existe
-
-   - `Drive` y `Linear` si ya existen
-
-2. Si algún link canónico aún no existe, dejar el campo vacío temporalmente y dejar constancia en el primer update.
-
-3. Completar el resto de propiedades antes del siguiente corte semanal.
-
-4. Crear o actualizar la página del proyecto con el template base.
-
-5. Evitar crear una página suelta sin fila en el registro.
-
-
-
-Al actualizar un proyecto existente:
-
-1. Cambiar primero propiedades canónicas.
-
-2. Luego añadir un update cronológico en el cuerpo de la página.
-
-3. Si cambian links, reemplazar el link canónico en la propiedad correspondiente y registrar el cambio en el update.
-
-4. Si cambia el milestone o aparece un bloqueo, actualizar también `Siguiente hito`, `Bloqueos`, `Issues abiertas o sin respuesta` y `Ultimo update`.
-
-
-
-## Enlazar drive, linear y entregables
-
-- Guardar un único link canónico de carpeta compartida en `Drive`.
-
-- Guardar un único link canónico del proyecto en `Linear`.
-
-- Guardar links secundarios, specs, entregables y docs en `Links relevantes` y/o en la sección `links operativos` del cuerpo.
-
-- Tratar notion como índice maestro, no como espejo completo de linear o drive.
-
-- No copiar todos los issues de linear. Resumir solo los abiertos o sin respuesta que afectan seguimiento.
-
-- Mantener nombres consistentes entre notion, drive y linear cuando sea posible.
-
-- Si no existe proyecto de linear todavía, dejar `Linear` vacío y explicitar `sin proyecto linear` en el último update. No inventar placeholders.
-
-
-
-## Crear vistas útiles
-
-Crear estas vistas mínimas en la ui de notion:
-
-1. `master`
-
-   - layout: table
-
-   - mostrar propiedades clave
-
-   - ordenar por `Estado`, luego `Fecha objetivo`, luego `Ultimo update` descendente
-
-2. `seguimiento`
-
-   - layout: board
-
-   - agrupar por `Estado`
-
-   - ordenar grupos: `activo`, `bloqueado`, `en espera`, `cerrado`
-
-   - mostrar `Responsable`, `Siguiente hito`, `Fecha objetivo`, `Ultimo update`
-
-3. `roadmap`
-
-   - layout: timeline
-
-   - usar `Fecha inicio` + `Fecha objetivo` como rango si la base lo soporta; si no, usar `Fecha objetivo`
-
-   - filtrar a proyectos no `cerrado`
-
-4. `atencion`
-
-   - layout: table o list
-
-   - filtrar proyectos con `Bloqueos` no vacío o `Issues abiertas o sin respuesta` no vacío
-
-   - opcional: incluir proyectos cuyo `Ultimo update` esté desactualizado
-
-
-
-Crear una vista mínima de backlog solo si el equipo separa intake de proyectos activos. No usar backlog como sustituto del kanban principal.
-
-
-
-## Dejar updates cronológicos
-
-Mantener `Ultimo update` como fecha del update más reciente.
-
-Añadir cada update nuevo al final de la sección `updates` de la página del proyecto, con fecha visible y formato mínimo.
-
-
-
-Usar este formato mínimo:
-
-```text
-
-[yyyy-mm-dd] estado: <activo|bloqueado|en espera|cerrado>
-
-hecho desde el ultimo update:
-
-siguiente hito:
-
-bloqueos:
-
-issues sin respuesta:
-
-links o entregables actualizados:
-
-siguiente accion / owner:
-
+Esta skill evita page sprawl, comentarios ambiguos y estados oficiales
+atrasados. La regla base es: primero el registro canonico, despues las paginas
+sueltas.
+
+## Flujo registry-first
+
+1. Resolver el proyecto canonico.
+2. Actualizar la fila del proyecto.
+3. Si el output es revisable por David, crear o actualizar un entregable canonico.
+4. Si tambien existe tarea operativa, enlazarla a proyecto y entregable.
+5. Solo despues dejar comentarios, reportes o paginas auxiliares.
+
+## Cuando usarla
+
+- crear o actualizar un proyecto en Notion
+- regularizar una pagina suelta
+- alinear proyecto, entregable y tarea
+- enlazar Notion con Linear y Drive
+- auditar si el estado oficial esta en drift
+- operar payloads low-level sin perder el esquema canonico
+
+## Secuencia correcta por objeto
+
+### Proyecto
+
+Usa `notion.upsert_project` para el estado maestro.
+
+```json
+{
+  "name": "Proyecto Embudo Ventas",
+  "estado": "Activo",
+  "icon": "\U0001F4C1",
+  "linear_project_url": "https://linear.app/umbral/project/...",
+  "shared_path": "G:\\Mi unidad\\Rick-David\\Proyecto-Embudo-Ventas\\",
+  "responsable": "David Moreira",
+  "agentes": "Rick, Codex",
+  "sprint": "R23",
+  "open_issues": 3,
+  "next_action": "Cerrar decision sobre CTA y captura"
+}
 ```
 
+### Entregable
 
+Si David debe revisar algo, no lo dejes solo como child page en Control Room.
+Usa `notion.upsert_deliverable`.
 
-Aplicar estas reglas:
+Reglas:
 
-- `activo`: dejar update semanal obligatorio.
+- titulo natural en espanol;
+- sin fecha en el titulo;
+- fecha y fecha limite en columnas;
+- pagina con cuerpo util, no vacia.
 
-- `bloqueado`: dejar update semanal obligatorio y cada vez que cambie el bloqueo.
+### Tarea
 
-- `en espera`: dejar al menos un update breve en cada revisión semanal indicando si sigue igual y qué dispara la reactivación.
+Si el trabajo tambien tiene task operativa, usa `notion.upsert_task` y enlazala
+al proyecto y al entregable cuando ya existan.
 
-- `cerrado`: dejar un update final de cierre y completar `Notas de handoff`.
+## Comentarios y naming no ambiguos
 
+No hables de un benchmark, entregable o caso usando solo un nombre propio si
+eso puede sonar como una persona del equipo.
 
+Preferir:
 
-## Reflejar bloqueos e issues sin respuesta
+- `caso Kris`
+- `benchmark de Kris Wojslaw`
+- `entregable CTA Embudo`
 
-- Escribir bloqueos en términos accionables: qué bloquea, quién lo destraba y cuál es la siguiente acción.
+Evitar:
 
-- Escribir issues sin respuesta como lista corta y priorizada, con id o link si existe.
+- `agrega comentario a Kris`
+- `cierra lo de Ruben`
 
-- No dejar `bloqueado` con `Bloqueos` vacío.
+Los comentarios deben dejar claro:
 
-- No dejar `Issues abiertas o sin respuesta` lleno si el proyecto ya no requiere atención; limpiarlo cuando quede resuelto.
+- que objeto se actualizo;
+- que estado cambio;
+- y que falta realmente.
 
-- Si el proyecto está `en espera` por decisión estratégica y no por dependencia, explicar el gatillo de reanudación en el update y no marcarlo como `bloqueado`.
+## Cuando si usar `notion.create_report_page`
 
+Solo para:
 
+- coordinacion transversal;
+- alertas;
+- borradores temporales fuera de un proyecto activo;
+- reportes que no tienen todavia contenedor canonico.
 
-## Distinguir estados sin ambigüedad
+No usarla como cierre final de un proyecto activo si ya existe registro de
+proyecto y base de entregables.
 
-Usar estas definiciones:
+## Regularizacion de paginas sueltas
 
-- `activo`: el proyecto se está moviendo y existe una siguiente acción concreta.
+Si encuentras una pagina suelta project-scoped:
 
-- `bloqueado`: el proyecto no puede avanzar por una dependencia externa o decisión pendiente.
+1. identifica el proyecto canonico;
+2. crea o actualiza el entregable canonico;
+3. enlaza la tarea si existe;
+4. mueve el contenido util al contenedor correcto;
+5. archiva la pagina suelta con `notion.update_page_properties(archived=true)`.
 
-- `en espera`: el proyecto está pausado de forma intencional; no se espera movimiento hasta que ocurra un gatillo de reanudación.
+## Esquema minimo recomendado
 
-- `cerrado`: el proyecto terminó o se canceló y ya no necesita seguimiento operativo semanal.
+Prioriza tipos compatibles con API:
 
+- `title`
+- `select`
+- `rich_text`
+- `multi_select`
+- `url`
+- `date`
 
+Usa `relation` o `people` solo si el tool resuelve ids de forma confiable.
 
-No inventar estados ambiguos como `moving`, `ok`, `pending`, `paused?`, `almost done`.
+## Anti-patrones
 
+- Crear una pagina y olvidar la fila del proyecto.
+- Marcar una tarea `done` sin `Proyecto` ni `Entregable`.
+- Poner emojis o fechas en el titulo cuando existe `icon` y columnas.
+- Duplicar estados entre varias columnas ambiguas.
+- Usar Control Room como deposito final de entregables.
 
+## Cierre esperado
 
-## Aplicar higiene semanal
+Un trabajo bien cerrado con esta skill deja:
 
-En cada corte semanal:
-
-1. Revisar todos los proyectos no `cerrado`.
-
-2. Actualizar `Ultimo update`.
-
-3. Confirmar que `Siguiente hito` tenga dueño o fecha.
-
-4. Confirmar que `Drive` y `Linear` apunten a la ubicación canónica actual.
-
-5. Limpiar `Bloqueos` e `Issues abiertas o sin respuesta` resueltos.
-
-6. Mover a `cerrado` proyectos terminados y dejar handoff.
-
-7. Detectar anti-patrones antes de cerrar la revisión.
-
-
-
-## Corregir anti-patrones
-
-Corregir de inmediato:
-
-- páginas sueltas sin registro maestro
-
-- filas duplicadas para el mismo proyecto
-
-- links faltantes o rotos en drive o linear
-
-- estado ambiguo o desactualizado
-
-- updates en slack o comentarios que nunca llegan a notion
-
-- `Ultimo update` viejo con un body muy reciente o viceversa
-
-- handoff disperso en docs separados sin enlace desde la fila principal
-
-
-
-## Consultar el esquema y las plantillas
-
-Consultar `references/schema.md` para:
-
-- propiedades recomendadas
-
-- configuración sugerida de vistas
-
-- template de página
-
-- payloads raw de ejemplo
-
-
-
+- proyecto canonico actualizado;
+- entregable canonico si David debe revisar algo;
+- tarea enlazada cuando corresponde;
+- y ningun comentario ambiguo sobre que objeto cambio.

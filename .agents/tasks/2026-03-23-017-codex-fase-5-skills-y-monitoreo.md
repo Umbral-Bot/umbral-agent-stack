@@ -37,3 +37,6 @@ Inicio de Fase 5 desde `main` en rama `codex/fase-5-skills-y-monitoreo`. Se form
 
 ### [codex] 2026-03-23 23:31
 Fase 5 cerrada. Se crearon las skills `system-interconnectivity-diagnostics` y `google-audio-generation`; se endurecieron `browser-automation-vm` y `notion-project-registry`; se alinearon `openclaw/workspace-templates/AGENTS.md`, `linear`, `n8n`, `notion` y `google-cloud-vertex` para que la cobertura estricta de task names tambien quede limpia. Se corrigio `scripts/skills_coverage_report.py` para imprimir bien en Windows y mapear `google.audio.generate`, `gui.*` y `windows.open_url`. Validacion: `python scripts/validate_skills.py` OK, `python scripts/skills_coverage_report.py` -> 80/80 (100%), `python -m pytest tests/test_skills_validation.py tests/test_skills_coverage.py -q` -> 93 passed, `WORKER_TOKEN=test python -m pytest tests -q` -> 1219 passed, 4 skipped.
+
+### [codex] 2026-03-23 23:36
+Rama publicada y PR abierto contra `main`: `#152` (`codex/fase-5-skills-y-monitoreo`).

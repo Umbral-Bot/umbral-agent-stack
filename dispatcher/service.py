@@ -7,6 +7,7 @@ VPS autosuficiente: Worker local (WORKER_URL) siempre; VM opcional (WORKER_URL_V
 """
 
 import atexit
+import hashlib
 import logging
 import os
 import sys
@@ -341,6 +342,7 @@ logger = logging.getLogger("dispatcher.service")
 
 ESCALATE_TO_LINEAR = os.environ.get("ESCALATE_FAILURES_TO_LINEAR", "true").lower() in ("true", "1", "yes")
 ESCALATE_ONLY_CANONICAL = os.environ.get("ESCALATE_ONLY_CANONICAL", "true").lower() in ("true", "1", "yes")
+ESCALATION_DEDUPE_WINDOW_HOURS = max(0, int(os.environ.get("ESCALATION_DEDUPE_WINDOW_HOURS", "24")))
 
 _CANONICAL_ESCALATION_SOURCES = {
     "linear_webhook",
@@ -370,6 +372,59 @@ _NOISY_ESCALATION_SOURCE_KINDS = {
     "historical_backfill",
     "scheduled_report",
 }
+
+
+def _normalize_for_fingerprint(value: Any) -> str:
+    return " ".join(str(value or "").strip().lower().split())
+
+
+def _failure_error_class(error: str) -> str:
+    normalized = _normalize_for_fingerprint(error)
+    if not normalized:
+        return "unknown_error"
+    if "429" in normalized or "rate limit" in normalized or "quota" in normalized:
+        return "quota_or_rate_limit"
+    if "401" in normalized or "unauthorized" in normalized:
+        return "http_401"
+    if "403" in normalized or "forbidden" in normalized:
+        return "http_403"
+    if "404" in normalized or "not found" in normalized:
+        return "http_404"
+    if "500" in normalized or "internal server error" in normalized:
+        return "http_500"
+    if "timeout" in normalized or "timed out" in normalized:
+        return "timeout"
+    if (
+        "connecterror" in normalized
+        or "connection refused" in normalized
+        or "connection error" in normalized
+    ):
+        return "connect_error"
+    return normalized.split(":", 1)[0].replace(" ", "_")[:80] or "unknown_error"
+
+
+def _failure_followup_fingerprint(
+    task: str,
+    team: str,
+    task_type: str,
+    source: str,
+    source_kind: str,
+    worker_endpoint: str,
+    error_class: str,
+) -> str:
+    parts = [
+        task,
+        team,
+        task_type,
+        source,
+        source_kind,
+        worker_endpoint,
+        error_class,
+    ]
+    digest = hashlib.sha1(
+        "|".join(_normalize_for_fingerprint(part) for part in parts).encode("utf-8")
+    ).hexdigest()
+    return digest[:16]
 
 
 def _should_escalate_failure(envelope: dict) -> bool:
@@ -484,13 +539,50 @@ def _escalate_failure_to_linear(
     trace_id = str(envelope.get("trace_id") or "").strip()
     source = str(envelope.get("source") or "").strip() or "unspecified"
     source_kind = str(envelope.get("source_kind") or "").strip() or "unspecified"
+    input_payload = envelope.get("input", {}) if isinstance(envelope.get("input"), dict) else {}
+    selected_model = str(
+        envelope.get("selected_model")
+        or input_payload.get("selected_model")
+        or "unspecified"
+    ).strip() or "unspecified"
+    retry_count = int(envelope.get("retry_count") or 0)
+    worker_endpoint = str(getattr(wc, "base_url", "") or "unknown").strip() or "unknown"
+    error_class = _failure_error_class(error)
+    representative_error = str(error or "")[:500]
+    fingerprint = _failure_followup_fingerprint(
+        task,
+        team,
+        str(task_type),
+        source,
+        source_kind,
+        worker_endpoint,
+        error_class,
+    )
+    dedupe_comment = (
+        "Nueva ocurrencia automatica del mismo fallo.\n\n"
+        f"Fingerprint: `{fingerprint}`\n"
+        f"- task_id={task_id}\n"
+        f"- trace_id={trace_id or 'n/a'}\n"
+        f"- team={team}\n"
+        f"- task_type={task_type}\n"
+        f"- source={source}\n"
+        f"- source_kind={source_kind}\n"
+        f"- worker_endpoint={worker_endpoint}\n"
+        f"- selected_model={selected_model}\n"
+        f"- retry_count={retry_count}\n"
+        f"- error_class={error_class}\n\n"
+        f"Error representativo:\n```text\n{representative_error}\n```"
+    )
 
     try:
         resp = wc.run(
             "linear.publish_agent_stack_followup",
             {
-                "title": f"Task fallida: {task} ({task_id[:8]})",
-                "summary": f"La tarea `{task}` fallo durante ejecucion automatica del Agent Stack.",
+                "title": f"Task fallida: {task} [{team}/{task_type}]",
+                "summary": (
+                    f"La tarea `{task}` fallo durante ejecucion automatica del Agent Stack "
+                    f"para `{team}` con clase de error `{error_class}`."
+                ),
                 "evidence": (
                     f"task_id={task_id}\n"
                     f"trace_id={trace_id or 'n/a'}\n"
@@ -498,7 +590,11 @@ def _escalate_failure_to_linear(
                     f"task_type={task_type}\n"
                     f"source={source}\n"
                     f"source_kind={source_kind}\n"
-                    f"error={error[:500]}"
+                    f"worker_endpoint={worker_endpoint}\n"
+                    f"selected_model={selected_model}\n"
+                    f"retry_count={retry_count}\n"
+                    f"error_class={error_class}\n"
+                    f"error={representative_error}"
                 ),
                 "impact": "El flujo canonico Dispatcher -> Redis -> Worker no pudo completar la tarea y requiere follow-up tecnico.",
                 "next_action": "Revisar logs, reproducir el fallo y corregir el handler o la dependencia que rompio la ejecucion.",
@@ -506,6 +602,21 @@ def _escalate_failure_to_linear(
                 "requested_by": "Dispatcher",
                 "kind": "operational_debt",
                 "priority": priority,
+                "auto_generated": True,
+                "dedupe_key": fingerprint,
+                "dedupe_window_hours": ESCALATION_DEDUPE_WINDOW_HOURS,
+                "dedupe_comment": dedupe_comment,
+                "task_id": task_id,
+                "trace_id": trace_id,
+                "team_name": team,
+                "task_type_name": task_type,
+                "source": source,
+                "source_kind": source_kind,
+                "worker_endpoint": worker_endpoint,
+                "selected_model": selected_model,
+                "retry_count": retry_count,
+                "error_class": error_class,
+                "representative_error": representative_error,
             },
         )
         issue_id = None

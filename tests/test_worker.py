@@ -226,6 +226,30 @@ class TestRunEnvelope:
         )
         assert resp.status_code == 400  # Pydantic validation error
 
+    def test_envelope_fields_without_schema_version_are_preserved(self, client):
+        task_id = str(uuid.uuid4())
+        trace_id = str(uuid.uuid4())
+        resp = client.post(
+            "/run",
+            json={
+                "task_id": task_id,
+                "team": "improvement",
+                "task_type": "coding",
+                "trace_id": trace_id,
+                "source": "openclaw_gateway",
+                "source_kind": "tool_enqueue",
+                "task": "ping",
+                "input": {"x": 7},
+            },
+            headers=AUTH,
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["task_id"] == task_id
+        assert data["trace_id"] == trace_id
+        assert data["team"] == "improvement"
+        assert data["result"]["echo"]["x"] == 7
+
 
 # ---------------------------------------------------------------------------
 # GET /tasks/{task_id}
@@ -314,6 +338,23 @@ class TestModels:
         assert env.input == {"a": 1}
         assert env.schema_version == "0.1"
         assert env.team == Team.SYSTEM
+
+    def test_from_run_payload_upgrades_envelope_without_schema_version(self):
+        env = TaskEnvelope.from_run_payload(
+            {
+                "task_id": "task-123",
+                "team": "marketing",
+                "task_type": "writing",
+                "trace_id": "trace-123",
+                "task": "ping",
+                "input": {"a": 1},
+            }
+        )
+        assert env.schema_version == "0.1"
+        assert env.task_id == "task-123"
+        assert env.team == Team.MARKETING
+        assert env.task_type == TaskType.WRITING
+        assert env.trace_id == "trace-123"
 
     def test_task_status_enum(self):
         assert TaskStatus.QUEUED == "queued"

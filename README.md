@@ -59,6 +59,8 @@ Para actualizar con los últimos cambios de `main`, instalar dependencias y rein
 .\scripts\deploy-vm.ps1
 ```
 
+Ejecuta este deploy cada vez que cambie el contrato de `/run` o el inventario del Worker. El script valida explícitamente que la VM acepte tanto el formato legacy `{task, input}` como el TaskEnvelope canónico antes de dar el deploy por bueno.
+
 ## 🔗 Worker + Notion Bridge
 
 El worker expone un bus HTTP para ejecutar tareas, incluyendo integración con Notion como **bus de coordinación** entre David, Rick (OpenClaw/Worker) y agentes.

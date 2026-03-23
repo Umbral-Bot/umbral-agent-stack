@@ -42,7 +42,6 @@ from .rate_limiter import RateLimiter
 from .sanitize import sanitize_input, sanitize_task_name
 from .tracing import flush as flush_tracing
 from .models import (
-    LegacyRunRequest,
     TaskEnvelope,
     TaskResult,
     TaskStatus,
@@ -232,11 +231,7 @@ async def run_task(
 
     # --- Parse: detect envelope vs legacy ---
     try:
-        if "schema_version" in body:
-            envelope = TaskEnvelope(**body)
-        else:
-            legacy = LegacyRunRequest(**body)
-            envelope = legacy.to_envelope()
+        envelope = TaskEnvelope.from_run_payload(body)
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Invalid request body: {exc}")
 

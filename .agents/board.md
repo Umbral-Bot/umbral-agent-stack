@@ -47,7 +47,7 @@ Regularización `UMB-132` (2026-03-22): se cerraron task files históricos que h
 | 2026-03-23-012 | Cleanup de directorios pytest temporales con permisos rotos | codex | ✅ done |
 | 2026-03-23-013 | GitLab sandbox mirror desde GitHub sin cambiar el tracker canonico | codex | ✅ done (descartado y revertido) |
 | 2026-03-23-014 | Revertir soporte GitLab sandbox y reconfirmar cierre de Fase 2 | codex | ✅ done |
-| 2026-03-23-015 | Fase 3: hardening runtime real de research.web | codex | in_progress |
+| 2026-03-23-015 | Fase 3: hardening runtime real de research.web | codex | ✅ done |
 | 2026-03-24-001 | Lead temporal Codex — capitalizar hallazgos + cerrar ramas codex/* + Claude si aplica | codex | ✅ done |
 
 ## Ronda 16 — Cerrada

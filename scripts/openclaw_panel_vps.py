@@ -278,10 +278,21 @@ def _metric_color(label: str, count: int, *, bridge_available: bool) -> str:
     return "yellow_background"
 
 
-def _metric_card(label: str, count: int, hint: str, emoji: str, *, color: str) -> list[dict[str, Any]]:
+def _metric_card(
+    label: str,
+    count: int,
+    hint: str,
+    emoji: str,
+    *,
+    color: str,
+    secondary: str | None = None,
+) -> list[dict[str, Any]]:
+    lines = [label, str(count), hint]
+    if secondary:
+        lines.append(secondary)
     return [
         _block_callout(
-            f"{label}\n{count}\n{hint}",
+            "\n".join(lines),
             emoji=emoji,
             color=color,
         ),
@@ -298,9 +309,10 @@ def _primary_focus(snapshot: dict[str, Any]) -> dict[str, str]:
         return {
             "title": "Prioridad inmediata",
             "body": (
-                f"{item['name']} en {item.get('project_name', 'Sin proyecto')}. "
-                f"Estado: {review}. Vence: {due}. "
-                f"Siguiente paso sugerido: {next_action}"
+                f"Entregable: {item['name']}\n"
+                f"Proyecto: {item.get('project_name', 'Sin proyecto')}\n"
+                f"Estado: {review} · Vence: {due}\n"
+                f"Siguiente paso: {_summarize_text(next_action, 150)}"
             ),
             "emoji": "🎯",
             "color": "red_background" if review == "Pendiente revision" else "yellow_background",
@@ -313,9 +325,9 @@ def _primary_focus(snapshot: dict[str, Any]) -> dict[str, str]:
         return {
             "title": "Proyecto que requiere decision",
             "body": (
-                f"{item['name']} sigue pidiendo atencion. "
-                f"Issues: {item.get('open_issues', 0)}. "
-                f"Señal dominante: {_summarize_text(signal, 140)}"
+                f"Proyecto: {item['name']}\n"
+                f"Issues abiertas: {item.get('open_issues', 0)} · Tareas: {item.get('task_count', 0)}\n"
+                f"Señal dominante: {_summarize_text(signal, 150)}"
             ),
             "emoji": "🧱",
             "color": "yellow_background",
@@ -328,10 +340,9 @@ def _primary_focus(snapshot: dict[str, Any]) -> dict[str, str]:
         return {
             "title": "Coordinacion viva",
             "body": (
-                f"{item['title']} sigue abierto en Bandeja Puente. "
-                f"Estado: {item.get('status') or 'Sin estado'}. "
-                f"Proyecto: {item.get('project') or 'Sin proyecto'}. "
-                f"Siguiente accion: {_summarize_text(action, 100)}"
+                f"Item: {item['title']}\n"
+                f"Estado: {item.get('status') or 'Sin estado'} · Proyecto: {item.get('project') or 'Sin proyecto'}\n"
+                f"Siguiente accion: {_summarize_text(action, 120)}"
             ),
             "emoji": "📮",
             "color": "blue_background",
@@ -339,7 +350,7 @@ def _primary_focus(snapshot: dict[str, Any]) -> dict[str, str]:
 
     return {
         "title": "Panel despejado",
-        "body": "No hay urgencias operativas fuertes ahora mismo. Usa este panel para revisar vencimientos y mantener el flujo limpio.",
+        "body": "No hay urgencias operativas fuertes.\nUsa este panel para revisar vencimientos y mantener el flujo limpio.",
         "emoji": "✅",
         "color": "green_background",
     }
@@ -353,8 +364,7 @@ def _panel_status_blocks(snapshot: dict[str, Any]) -> list[dict[str, Any]]:
             (
                 "Estado del panel\n"
                 f"Actualizado: {snapshot['generated_at']}\n"
-                f"Entregables por revisar: {summary['pending_deliverables']}\n"
-                f"Proyectos calientes: {summary['projects_attention']}\n"
+                f"Revision: {summary['pending_deliverables']} · Proyectos: {summary['projects_attention']}\n"
                 f"Bandeja Puente: {bridge_state}"
             ),
             emoji="🧭",
@@ -559,7 +569,8 @@ def _due_rows(items: list[dict[str, Any]]) -> list[list[str]]:
 def _build_panel_blocks(snapshot: dict[str, Any]) -> list[dict[str, Any]]:
     summary = snapshot["summary"]
     focus = _primary_focus(snapshot)
-    bridge_hint = "Items vivos de coordinacion." if summary["bridge_available"] else "Sin acceso actual a Bandeja Puente."
+    bridge_hint = "Disponible" if summary["bridge_available"] else "Sin acceso"
+    next_due = snapshot["due_items"][0]["due_date"] if snapshot["due_items"] else "Sin fechas"
     blocks: list[dict[str, Any]] = [
         _block_heading2("Resumen operativo"),
         _block_callout(
@@ -569,42 +580,46 @@ def _build_panel_blocks(snapshot: dict[str, Any]) -> list[dict[str, Any]]:
         ),
         _block_column_list(
             [
-                _metric_card(
-                    "Entregables",
-                    summary["pending_deliverables"],
-                    "Pendientes o con ajustes",
-                    "📬",
-                    color=_metric_color("Entregables", summary["pending_deliverables"], bridge_available=summary["bridge_available"]),
-                ),
-                _metric_card(
-                    "Proyectos",
-                    summary["projects_attention"],
-                    "Con bloqueo, drift o baja traccion",
-                    "📁",
-                    color=_metric_color("Proyectos", summary["projects_attention"], bridge_available=summary["bridge_available"]),
-                ),
-                _metric_card(
-                    "Bandeja",
-                    summary["bridge_live"],
-                    bridge_hint,
-                    "📮",
-                    color=_metric_color("Bandeja", summary["bridge_live"], bridge_available=summary["bridge_available"]),
-                ),
-                _metric_card(
-                    "Vencimientos",
-                    summary["due_items"],
-                    "Fechas limite proximas",
-                    "⏰",
-                    color=_metric_color("Vencimientos", summary["due_items"], bridge_available=summary["bridge_available"]),
-                ),
+                [
+                    *_metric_card(
+                        "Revision",
+                        summary["pending_deliverables"],
+                        "por revisar",
+                        "📬",
+                        color=_metric_color("Entregables", summary["pending_deliverables"], bridge_available=summary["bridge_available"]),
+                        secondary=f"Ajustes: {summary['deliverables_adjustments']}",
+                    ),
+                    *_metric_card(
+                        "Proyectos",
+                        summary["projects_attention"],
+                        "con atencion",
+                        "📁",
+                        color=_metric_color("Proyectos", summary["projects_attention"], bridge_available=summary["bridge_available"]),
+                        secondary="bloqueo o drift",
+                    ),
+                ],
+                [
+                    *_metric_card(
+                        "Bandeja",
+                        summary["bridge_live"],
+                        "items vivos",
+                        "📮",
+                        color=_metric_color("Bandeja", summary["bridge_live"], bridge_available=summary["bridge_available"]),
+                        secondary=bridge_hint,
+                    ),
+                    *_metric_card(
+                        "Vencimientos",
+                        summary["due_items"],
+                        "proximos",
+                        "⏰",
+                        color=_metric_color("Vencimientos", summary["due_items"], bridge_available=summary["bridge_available"]),
+                        secondary=f"Primero: {next_due}",
+                    ),
+                ],
             ]
         ),
-        _block_column_list(
-            [
-                _panel_status_blocks(snapshot),
-                [_usage_guide_block()],
-            ]
-        ),
+        *_panel_status_blocks(snapshot),
+        _usage_guide_block(),
         _block_heading3("Entregables por revisar"),
     ]
 

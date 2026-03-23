@@ -53,10 +53,17 @@ def test_build_panel_blocks_use_tables_and_summary_cards():
 
     blocks = _build_panel_blocks(snapshot)
     types = [b["type"] for b in blocks]
-    assert types.count("column_list") == 2
+    assert types.count("column_list") == 1
     assert types.count("table") == 4
-    assert "bulleted_list_item" not in types
+    assert types.count("toggle") == 1
     assert blocks[1]["type"] == "callout"
+    metric_columns = blocks[2]["column_list"]["children"]
+    assert len(metric_columns) == 2
+    assert len(metric_columns[0]["column"]["children"]) == 2
+    assert len(metric_columns[1]["column"]["children"]) == 2
+    first_card_text = openclaw_panel_vps._extract_text(metric_columns[0]["column"]["children"][0])
+    assert "Revision" in first_card_text
+    assert "Ajustes: 1" in first_card_text
 
 
 def test_primary_focus_prioritizes_first_pending_deliverable():
@@ -85,6 +92,8 @@ def test_primary_focus_prioritizes_first_pending_deliverable():
 
     focus = openclaw_panel_vps._primary_focus(snapshot)
     assert focus["title"] == "Prioridad inmediata"
+    assert "Entregable:" in focus["body"]
+    assert "Proyecto:" in focus["body"]
     assert "Kris Wojslaw" in focus["body"]
     assert focus["emoji"] == "🎯"
 
@@ -116,6 +125,7 @@ def test_primary_focus_bridge_uses_project_and_next_action():
 
     focus = openclaw_panel_vps._primary_focus(snapshot)
     assert focus["title"] == "Coordinacion viva"
+    assert "Item:" in focus["body"]
     assert "Proyecto Embudo Ventas" in focus["body"]
     assert "Confirmar si se deriva" in focus["body"]
     assert focus["emoji"] == "📮"

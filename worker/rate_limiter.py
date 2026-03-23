@@ -16,7 +16,10 @@ class RateLimiter:
         reqs[:] = [t for t in reqs if now - t < self.window]
         
         if len(reqs) >= self.max_requests:
-            return False, self.max_requests - len(reqs)
+            return False, 0
             
         reqs.append(now)
-        return True, self.max_requests - len(reqs)
+        return True, max(self.max_requests - len(reqs), 0)
+
+    def clear(self) -> None:
+        self._requests.clear()

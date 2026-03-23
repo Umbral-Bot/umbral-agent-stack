@@ -101,6 +101,7 @@ if [ "$WORKER_STATUS" = "200" ]; then
         curl -sf -X POST "${WORKER_URL}/run" \
             -H "Authorization: Bearer ${WORKER_TOKEN}" \
             -H "Content-Type: application/json" \
+            -H "X-Umbral-Caller: cron.health_check" \
             -d "{\"task\": \"notion.add_comment\", \"input\": {\"text\": \"$(echo -e "$ALERT_TEXT")\"}}" \
             > /dev/null 2>&1 && echo "(Alert posted to Notion)" || echo "(Failed to post Notion alert)"
     else

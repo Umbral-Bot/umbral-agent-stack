@@ -245,6 +245,7 @@ PY
         curl -sS -X POST "${WORKER_URL}/run" \
             -H "Authorization: Bearer ${worker_token}" \
             -H "Content-Type: application/json" \
+            -H "X-Umbral-Caller: cron.supervisor" \
             -d "${payload}" \
             -w $'\n%{http_code}'
     )" || {

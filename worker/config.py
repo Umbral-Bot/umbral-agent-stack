@@ -41,6 +41,9 @@ _load_openclaw_env()
 WORKER_TOKEN: str | None = os.environ.get("WORKER_TOKEN")
 WORKER_PORT: int = int(os.environ.get("WORKER_PORT", "8088"))
 RATE_LIMIT_RPM: int = int(os.environ.get("RATE_LIMIT_RPM", "60"))
+RATE_LIMIT_INTERNAL_RPM: int = int(
+    os.environ.get("RATE_LIMIT_INTERNAL_RPM", str(max(RATE_LIMIT_RPM, 600)))
+)
 
 # ---------------------------------------------------------------------------
 # Notion

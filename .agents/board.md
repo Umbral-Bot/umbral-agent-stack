@@ -1,6 +1,6 @@
 # Agent Board — Umbral Agent Stack
 
-> Última actualización: 2026-03-23 por **cursor**
+> Última actualización: 2026-03-23 por **codex**
 > Sprint activo: **R21**
 > **RONDA 21 — Auditoría comprensiva + fix token mismatch E2E**
 
@@ -32,6 +32,7 @@ Regularización `UMB-132` (2026-03-22): se cerraron task files históricos que h
 | 2026-03-22-001 | Diagnóstico env Rick vs local — Codex define canónicos | codex | ✅ done |
 | 2026-03-22-002 | Super diagnóstico exhaustivo del sistema | codex | ✅ done (PR #126) |
 | 2026-03-22-003 | Fix hallazgos super diagnóstico — VM /run y auto-issues | codex | ✅ done (PR #127) |
+| 2026-03-23-001 | Calendar/Gmail en VPS y seguimiento post-diagnostico | codex | blocked — Calendar OK; Gmail credenciales faltantes en VPS |
 
 ## Ronda 16 — Cerrada
 

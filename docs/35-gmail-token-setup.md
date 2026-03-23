@@ -82,6 +82,21 @@ No hace falta `GOOGLE_GMAIL_TOKEN`: el Worker usa el refresh token para obtener 
 - **Local / desarrollo:** `.env` en la raíz del repo (gitignored).
 - **VPS (Rick):** `~/.config/openclaw/env` y `source` antes de scripts que usen Gmail.
 
+## Verificación recomendada
+
+1. Probar el handler directo del Worker desde la raiz del repo:
+
+   ```bash
+   source ~/.config/openclaw/env
+   python3 - <<'PY'
+   from worker.tasks.gmail import handle_gmail_list_drafts
+   print(handle_gmail_list_drafts({"max_results": 3}))
+   PY
+   ```
+
+2. Luego probar `gmail.list_drafts` via `POST /run` con un `max_results`
+   pequeño para confirmar que el Worker vivo tambien tomo las credenciales.
+
 ## Referencias
 
 - Gmail API sending: https://developers.google.com/workspace/gmail/api/guides/sending

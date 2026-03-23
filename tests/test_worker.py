@@ -8,6 +8,7 @@ Run with:
 
 import os
 import uuid
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -249,6 +250,59 @@ class TestRunEnvelope:
         assert data["trace_id"] == trace_id
         assert data["team"] == "improvement"
         assert data["result"]["echo"]["x"] == 7
+
+    def test_direct_run_emits_task_completed_with_traceability_context(self, client):
+        trace_id = str(uuid.uuid4())
+        with patch("worker.app.ops_log.task_completed") as task_completed:
+            resp = client.post(
+                "/run",
+                json={
+                    "task_id": str(uuid.uuid4()),
+                    "team": "improvement",
+                    "task_type": "coding",
+                    "trace_id": trace_id,
+                    "source": "openclaw_gateway",
+                    "source_kind": "tool_enqueue",
+                    "task": "ping",
+                    "input": {"x": 7},
+                },
+                headers=AUTH,
+            )
+            assert resp.status_code == 200
+
+        task_completed.assert_called_once()
+        kwargs = task_completed.call_args.kwargs
+        assert kwargs["trace_id"] == trace_id
+        assert kwargs["task_type"] == "coding"
+        assert kwargs["source"] == "openclaw_gateway"
+        assert kwargs["source_kind"] == "tool_enqueue"
+        assert kwargs["worker"] == "direct"
+
+    def test_unknown_task_emits_task_failed_with_traceability_context(self, client):
+        trace_id = str(uuid.uuid4())
+        with patch("worker.app.ops_log.task_failed") as task_failed:
+            resp = client.post(
+                "/run",
+                json={
+                    "task_id": str(uuid.uuid4()),
+                    "team": "improvement",
+                    "task_type": "coding",
+                    "trace_id": trace_id,
+                    "source": "openclaw_gateway",
+                    "source_kind": "tool_enqueue",
+                    "task": "nonexistent_task",
+                    "input": {"x": 7},
+                },
+                headers=AUTH,
+            )
+            assert resp.status_code == 400
+
+        task_failed.assert_called_once()
+        kwargs = task_failed.call_args.kwargs
+        assert kwargs["trace_id"] == trace_id
+        assert kwargs["task_type"] == "coding"
+        assert kwargs["source"] == "openclaw_gateway"
+        assert kwargs["source_kind"] == "tool_enqueue"
 
 
 # ---------------------------------------------------------------------------

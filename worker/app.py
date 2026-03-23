@@ -43,6 +43,7 @@ from infra.ops_logger import ops_log
 from .config import RATE_LIMIT_INTERNAL_RPM, RATE_LIMIT_RPM, WORKER_TOKEN
 from .rate_limiter import RateLimiter
 from .sanitize import sanitize_input, sanitize_task_name
+from .task_errors import TaskExecutionError
 from .tracing import flush as flush_tracing
 from .models import (
     TaskEnvelope,
@@ -521,6 +522,28 @@ async def run_task(
     try:
         loop = asyncio.get_event_loop()
         result_data = await loop.run_in_executor(None, handler, envelope.input)
+    except TaskExecutionError as exc:
+        logger.warning("Task %s failed with structured error: %s", envelope.task, exc.log_message())
+        ops_log.task_failed(
+            envelope.task_id,
+            envelope.task,
+            team_value,
+            exc.log_message(),
+            model=selected_model,
+            input_summary=input_summary,
+            **ops_context,
+        )
+        _store_task(
+            TaskResult(
+                task_id=envelope.task_id,
+                task=envelope.task,
+                status=TaskStatus.FAILED,
+                error=exc.log_message(),
+                started_at=started_at,
+                completed_at=datetime.now(timezone.utc).isoformat(),
+            )
+        )
+        return JSONResponse(status_code=exc.status_code, content=exc.response_payload())
     except ValueError as exc:
         logger.warning("Task %s input error: %s", envelope.task, exc)
         ops_log.task_failed(

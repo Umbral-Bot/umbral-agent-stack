@@ -10,12 +10,12 @@ Run: python -m pytest tests/test_dispatcher_escalation.py -v
 
 from __future__ import annotations
 
-import os
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from dispatcher.service import _escalate_failure_to_linear
+from worker.sanitize import sanitize_input
 
 
 @pytest.fixture
@@ -125,6 +125,27 @@ class TestEscalateCreatesIssue:
         assert payload["selected_model"] == "gpt-4o-mini"
         assert payload["retry_count"] == 2
         assert payload["error_class"] == "connect_error"
+
+    @patch("dispatcher.service.ESCALATE_TO_LINEAR", True)
+    def test_http_400_followup_payload_is_sanitize_safe(self, mock_wc):
+        envelope = _make_envelope(task="diagnostic.synthetic_fail_v3", task_type="general")
+        _escalate_failure_to_linear(
+            wc=mock_wc,
+            envelope=envelope,
+            task_id="smoke-test",
+            task="diagnostic.synthetic_fail_v3",
+            team="system",
+            error=(
+                "Client error '400 Bad Request' for url 'http://127.0.0.1:8088/run'\n"
+                "For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+            ),
+        )
+
+        payload = mock_wc.run.call_args[0][1]
+        assert payload["error_class"] == "http_400"
+        assert "`system`" not in payload["summary"]
+        assert "`http_400`" not in payload["summary"]
+        sanitize_input(payload)
 
 
 # ── Guard: no duplicate if linear_issue_id exists ──────────────

@@ -32,6 +32,19 @@ from ..notion_client import (
 from .notion_markdown import markdown_to_blocks
 
 
+def _maybe_trigger_openclaw_panel_refresh(reason: str, *, source: str) -> Dict[str, Any]:
+    try:
+        from scripts.openclaw_panel_vps import trigger_openclaw_panel_refresh
+
+        return trigger_openclaw_panel_refresh(reason, source=source)
+    except Exception as exc:
+        return {
+            "triggered": False,
+            "reason": "openclaw_refresh_failed",
+            "error": str(exc)[:200],
+        }
+
+
 def handle_notion_write_transcript(input_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Crea una página en la DB de transcripciones (Granola Inbox).
@@ -1221,6 +1234,10 @@ def handle_notion_upsert_project(input_data: Dict[str, Any]) -> Dict[str, Any]:
                 icon=resolved_icon,
             )
             _ensure_page_blocks(page_id=result["page_id"], blocks=page_blocks, force_replace=True)
+            _maybe_trigger_openclaw_panel_refresh(
+                "project_upsert",
+                source="notion.upsert_project",
+            )
             return {"ok": True, "page_id": result["page_id"], "url": result["url"], "created": False}
         else:
             result = notion_client.create_database_page(
@@ -1228,6 +1245,10 @@ def handle_notion_upsert_project(input_data: Dict[str, Any]) -> Dict[str, Any]:
                 properties=props,
                 children=page_blocks,
                 icon=resolved_icon,
+            )
+            _maybe_trigger_openclaw_panel_refresh(
+                "project_upsert",
+                source="notion.upsert_project",
             )
             return {"ok": True, "page_id": result["page_id"], "url": result["url"], "created": True}
     except Exception as e:
@@ -1322,6 +1343,10 @@ def handle_notion_upsert_deliverable(input_data: Dict[str, Any]) -> Dict[str, An
                 icon=resolved_icon,
             )
             _ensure_page_blocks(page_id=result["page_id"], blocks=page_blocks, force_replace=True)
+            _maybe_trigger_openclaw_panel_refresh(
+                "deliverable_upsert",
+                source="notion.upsert_deliverable",
+            )
             return {"ok": True, "page_id": result["page_id"], "url": result["url"], "created": False}
 
         result = notion_client.create_database_page(
@@ -1329,6 +1354,10 @@ def handle_notion_upsert_deliverable(input_data: Dict[str, Any]) -> Dict[str, An
             properties=props,
             children=page_blocks,
             icon=resolved_icon,
+        )
+        _maybe_trigger_openclaw_panel_refresh(
+            "deliverable_upsert",
+            source="notion.upsert_deliverable",
         )
         return {"ok": True, "page_id": result["page_id"], "url": result["url"], "created": True}
     except Exception as e:
@@ -1407,6 +1436,10 @@ def handle_notion_upsert_bridge_item(input_data: Dict[str, Any]) -> Dict[str, An
                 icon=resolved_icon,
             )
             _ensure_page_blocks(page_id=result["page_id"], blocks=page_blocks, force_replace=True)
+            _maybe_trigger_openclaw_panel_refresh(
+                "bridge_item_upsert",
+                source="notion.upsert_bridge_item",
+            )
             return {"ok": True, "page_id": result["page_id"], "url": result["url"], "created": False}
 
         result = notion_client.create_database_page(
@@ -1414,6 +1447,10 @@ def handle_notion_upsert_bridge_item(input_data: Dict[str, Any]) -> Dict[str, An
             properties=props,
             children=page_blocks,
             icon=resolved_icon,
+        )
+        _maybe_trigger_openclaw_panel_refresh(
+            "bridge_item_upsert",
+            source="notion.upsert_bridge_item",
         )
         return {"ok": True, "page_id": result["page_id"], "url": result["url"], "created": True}
     except Exception as e:

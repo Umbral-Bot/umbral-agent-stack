@@ -27,7 +27,7 @@ def test_upsert_deliverable_no_db_configured():
 def test_upsert_deliverable_creates_new_with_normalized_name_due_date_and_blocks():
     from worker.tasks.notion import handle_notion_upsert_deliverable
 
-    with patch("worker.tasks.notion.config") as mock_cfg, patch("worker.tasks.notion.notion_client") as mock_nc:
+    with patch("worker.tasks.notion.config") as mock_cfg, patch("worker.tasks.notion.notion_client") as mock_nc, patch("worker.tasks.notion._maybe_trigger_openclaw_panel_refresh") as mock_refresh:
         mock_cfg.NOTION_DELIVERABLES_DB_ID = "db-uuid-456"
         mock_cfg.NOTION_PROJECTS_DB_ID = "projects-db"
         mock_nc.query_database.side_effect = [
@@ -65,6 +65,7 @@ def test_upsert_deliverable_creates_new_with_normalized_name_due_date_and_blocks
     assert created_props["Proyecto"]["relation"][0]["id"] == "project-page-1"
     assert created_props["Fecha limite sugerida"]["date"]["start"] == "2026-03-18"
     assert created_props["Procedencia"]["select"]["name"] == "Manual"
+    mock_refresh.assert_called_once_with("deliverable_upsert", source="notion.upsert_deliverable")
 
 
 def test_upsert_deliverable_updates_existing_and_replaces_page_blocks():
@@ -72,7 +73,7 @@ def test_upsert_deliverable_updates_existing_and_replaces_page_blocks():
 
     existing_page = {"id": "deliverable-id", "url": "https://www.notion.so/deliverable-id", "properties": {}}
 
-    with patch("worker.tasks.notion.config") as mock_cfg, patch("worker.tasks.notion.notion_client") as mock_nc:
+    with patch("worker.tasks.notion.config") as mock_cfg, patch("worker.tasks.notion.notion_client") as mock_nc, patch("worker.tasks.notion._maybe_trigger_openclaw_panel_refresh") as mock_refresh:
         mock_cfg.NOTION_DELIVERABLES_DB_ID = "db-uuid-456"
         mock_cfg.NOTION_PROJECTS_DB_ID = "projects-db"
         mock_nc.query_database.return_value = [existing_page]
@@ -97,6 +98,7 @@ def test_upsert_deliverable_updates_existing_and_replaces_page_blocks():
     mock_nc.update_page_properties.assert_called_once()
     assert mock_nc.update_page_properties.call_args.kwargs["icon"] == "\U0001F4DD"
     mock_nc.replace_blocks_in_page.assert_called_once()
+    mock_refresh.assert_called_once_with("deliverable_upsert", source="notion.upsert_deliverable")
 
 
 def test_upsert_deliverable_inherits_project_icon_when_missing():

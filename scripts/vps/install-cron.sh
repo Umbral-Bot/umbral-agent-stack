@@ -3,7 +3,8 @@
 # Preserves existing crontab entries â€” only adds lines if not present.
 set -euo pipefail
 
-DASHBOARD_LINE="*/15 * * * * $HOME/umbral-agent-stack/scripts/vps/dashboard-cron.sh >> /tmp/dashboard_cron.log 2>&1"
+DASHBOARD_RICK_LINE="0 * * * * $HOME/umbral-agent-stack/scripts/vps/dashboard-rick-cron.sh >> /tmp/dashboard_rick_cron.log 2>&1"
+OPENCLAW_PANEL_LINE="0 */6 * * * $HOME/umbral-agent-stack/scripts/vps/openclaw-panel-cron.sh >> /tmp/openclaw_panel_cron.log 2>&1"
 HEALTH_LINE="*/30 * * * * bash $HOME/umbral-agent-stack/scripts/vps/health-check.sh >> /tmp/health_check.log 2>&1"
 SUPERVISOR_LINE="*/5 * * * * bash $HOME/umbral-agent-stack/scripts/vps/supervisor.sh >> /tmp/supervisor.log 2>&1"
 POLLER_LINE="*/5 * * * * bash $HOME/umbral-agent-stack/scripts/vps/notion-poller-cron.sh >> /tmp/notion_poller_cron.log 2>&1"
@@ -15,13 +16,15 @@ OODA_REPORT_LINE="0 7 * * 1 bash $HOME/umbral-agent-stack/scripts/vps/ooda-repor
 SCHEDULED_TASKS_LINE="* * * * * bash $HOME/umbral-agent-stack/scripts/vps/scheduled-tasks-cron.sh >> /tmp/scheduled_tasks.log 2>&1"
 QUOTA_GUARD_LINE="*/15 * * * * bash $HOME/umbral-agent-stack/scripts/vps/quota-guard-cron.sh >> /tmp/quota_guard.log 2>&1"
 
-# --- Dashboard cron ---
-if crontab -l 2>/dev/null | grep -qF "dashboard-cron.sh"; then
-    echo "Dashboard cron already installed."
-else
-    (crontab -l 2>/dev/null; echo "$DASHBOARD_LINE") | crontab -
-    echo "Dashboard cron added."
-fi
+# --- Dashboard cron split ---
+current_crontab="$(crontab -l 2>/dev/null || true)"
+filtered_crontab="$(printf '%s\n' "$current_crontab" | grep -vF "dashboard-cron.sh" | grep -vF "dashboard-rick-cron.sh" | grep -vF "openclaw-panel-cron.sh" || true)"
+{
+    printf '%s\n' "$filtered_crontab"
+    printf '%s\n' "$DASHBOARD_RICK_LINE"
+    printf '%s\n' "$OPENCLAW_PANEL_LINE"
+} | awk 'NF && !seen[$0]++' | crontab -
+echo "Dashboard cron split updated (Dashboard Rick hourly + OpenClaw fallback cada 6h)."
 
 # --- Health check cron ---
 if crontab -l 2>/dev/null | grep -qF "health-check.sh"; then

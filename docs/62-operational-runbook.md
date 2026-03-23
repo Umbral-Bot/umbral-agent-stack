@@ -14,7 +14,8 @@
 | Procedimiento | Comando / Script | Qué verificar | Notas |
 |---------------|------------------|---------------|-------|
 | Verificar salud de servicios | `bash scripts/vps/supervisor.sh` | Redis, Worker y Dispatcher UP; auto-restart si caídos | Cron `*/5 min` ya lo ejecuta |
-| Dashboard Notion | `PYTHONPATH=. python3 scripts/dashboard_report_vps.py` | Tareas recientes, métricas de salud, estado de Redis | Cron `*/15 min`; usar `--force` para forzar actualización |
+| Dashboard Rick técnico | `PYTHONPATH=. python3 scripts/dashboard_report_vps.py --trigger manual` | Salud del stack, Redis, cuotas y tracking de paneles | Cron horario; usar `--force` para forzar actualización |
+| OpenClaw humano | `PYTHONPATH=. python3 scripts/openclaw_panel_vps.py --trigger manual` | Resumen ejecutivo humano, entregables, proyectos y bandeja viva | Event-driven por cambios reales + fallback cada 6 h |
 | E2E validation | `PYTHONPATH=. python3 scripts/e2e_validation.py` | health, ping, research.web, llm.generate, enqueue, task history, Notion, Redis, quota, routing | Cron diario a las 06:00; `--notion` para postear resultados |
 | Smoke test rápido | `PYTHONPATH=. python3 scripts/smoke_test.py` | Worker /health, ping, Redis, quota status | Para verificación rápida ad-hoc (VPS: usar `python3`) |
 | Smoke research.web | `PYTHONPATH=. python3 scripts/research_web_smoke.py --query "BIM trends 2026"` | Tavily en runtime real; distingue cuota, auth/config, timeout y fallo upstream | Útil cuando `research.web` falle y quieras ver la causa exacta sin correr la suite E2E completa |
@@ -90,7 +91,8 @@ Si el aviso del supervisor sigue fallando con 200 desde el Worker pero no ves el
 |------------|--------|---------|
 | `*/5 min` | `supervisor.sh` | Auto-restart Worker/Dispatcher/Redis si caídos |
 | `*/5 min` | `notion-poller-cron.sh` | Watchdog del daemon Notion Poller |
-| `*/15 min` | `dashboard-cron.sh` | Dashboard Notion (métricas) |
+| `0 * * * *` | `dashboard-rick-cron.sh` | Dashboard Rick técnico (métricas + tracking) |
+| `0 */6 * * *` | `openclaw-panel-cron.sh` | Fallback lento para OpenClaw humano |
 | `*/15 min` | `quota-guard-cron.sh` | Guard de cuota Claude (fallback si excedida) |
 | `*/30 min` | `health-check.sh` | Health check Redis/Worker/Dispatcher |
 | `* * * * *` | `scheduled-tasks-cron.sh` | Procesar tareas programadas (Redis sorted set) |

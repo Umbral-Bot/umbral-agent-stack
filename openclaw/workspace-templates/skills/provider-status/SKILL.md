@@ -92,4 +92,7 @@ curl -s -H "Authorization: Bearer $WORKER_TOKEN" \
 - Este endpoint es de solo lectura; no modifica configuración.
 - La cuota se trackea por periodo (configurable en `config/quota_policy.yaml`).
 - El routing de modelos se configura en `config/quota_policy.yaml` bajo la clave `routing`.
-- Requiere Redis activo; si Redis no está disponible, devuelve HTTP 503.
+- Si Redis no está disponible, el endpoint sigue siendo útil:
+  - devuelve `redis_available: false`;
+  - deja `quota_status: "unknown"` en vez de 503;
+  - permite inspeccionar providers configurados y routing efectivo aunque la VM o el worker no tengan Redis local.

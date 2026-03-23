@@ -44,11 +44,14 @@ class TestProviderStatusAuth:
 
 
 class TestProviderStatusRedisDown:
-    def test_redis_down_returns_503(self, client):
+    def test_redis_down_returns_config_only_snapshot(self, client):
         with patch("worker.app._get_redis", return_value=None):
             resp = client.get("/providers/status", headers=AUTH)
-            assert resp.status_code == 503
-            assert "Redis" in resp.json()["detail"]
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["redis_available"] is False
+            assert "providers" in data
+            assert "routing" in data
 
 
 # ── Response format ───────────────────────────────────────────────

@@ -32,8 +32,11 @@ class TestQuotaStatus:
     def test_quota_status_redis_down(self, client):
         with patch("worker.app._get_redis", return_value=None):
             resp = client.get("/quota/status", headers=AUTH)
-            assert resp.status_code == 503
-            assert "Redis" in resp.json()["detail"]
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["redis_available"] is False
+            assert "gemini_pro" in data["providers"]
+            assert data["providers"]["gemini_pro"]["status"] == "unknown"
             
     def test_quota_status_success(self, client, fake_redis):
         with patch("worker.app._get_redis", return_value=fake_redis):
@@ -42,6 +45,7 @@ class TestQuotaStatus:
             data = resp.json()
             assert "timestamp" in data
             assert "providers" in data
+            assert data["redis_available"] is True
             
             # Providers from quota_policy.yaml should be listed with 0 usage
             assert "gemini_pro" in data["providers"]

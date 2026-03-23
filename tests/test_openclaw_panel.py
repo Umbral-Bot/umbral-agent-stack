@@ -2,7 +2,7 @@ from scripts import openclaw_panel_vps
 from scripts.openclaw_panel_vps import _build_panel_blocks, validate_openclaw_shell
 
 
-def test_build_panel_blocks_use_tables_and_summary_cards():
+def test_build_panel_blocks_use_summary_table_and_operational_tables():
     snapshot = {
         "generated_at": "2026-03-16 09:00 UTC",
         "summary": {
@@ -17,7 +17,7 @@ def test_build_panel_blocks_use_tables_and_summary_cards():
             {
                 "name": "Cierre crítico del estado real del proyecto embudo",
                 "project_name": "Proyecto Embudo Ventas",
-                "review": "Pendiente revision",
+                "review": "Pendiente revisión",
                 "due_date": "2026-03-18",
             }
         ],
@@ -46,24 +46,23 @@ def test_build_panel_blocks_use_tables_and_summary_cards():
                 "due_date": "2026-03-18",
                 "name": "Cierre crítico del estado real del proyecto embudo",
                 "project_name": "Proyecto Embudo Ventas",
-                "review": "Pendiente revision",
+                "review": "Pendiente revisión",
             }
         ],
     }
 
     blocks = _build_panel_blocks(snapshot)
     types = [b["type"] for b in blocks]
-    assert types.count("column_list") == 1
-    assert types.count("table") == 4
+    assert types.count("column_list") == 0
+    assert types.count("table") == 5
     assert types.count("toggle") == 1
     assert blocks[1]["type"] == "callout"
-    metric_columns = blocks[2]["column_list"]["children"]
-    assert len(metric_columns) == 2
-    assert len(metric_columns[0]["column"]["children"]) == 2
-    assert len(metric_columns[1]["column"]["children"]) == 2
-    first_card_text = openclaw_panel_vps._extract_text(metric_columns[0]["column"]["children"][0])
-    assert "Revision" in first_card_text
-    assert "Ajustes: 1" in first_card_text
+    assert blocks[2]["type"] == "heading_3"
+    assert openclaw_panel_vps._extract_text(blocks[2]) == "Lectura rápida"
+    summary_table_text = str(blocks[3])
+    assert "Entregables" in summary_table_text
+    assert "3 por revisar" in summary_table_text
+    assert "1 con ajustes" in summary_table_text
 
 
 def test_primary_focus_prioritizes_first_pending_deliverable():
@@ -80,7 +79,7 @@ def test_primary_focus_prioritizes_first_pending_deliverable():
             {
                 "name": "Benchmark parcial de Kris Wojslaw para el embudo",
                 "project_name": "Proyecto Embudo Ventas",
-                "review": "Pendiente revision",
+                "review": "Pendiente revisión",
                 "due_date": "2026-03-18",
                 "next_action": "Verificar evidencia real antes de aprobar.",
             }
@@ -124,7 +123,7 @@ def test_primary_focus_bridge_uses_project_and_next_action():
     }
 
     focus = openclaw_panel_vps._primary_focus(snapshot)
-    assert focus["title"] == "Coordinacion viva"
+    assert focus["title"] == "Coordinación viva"
     assert "Item:" in focus["body"]
     assert "Proyecto Embudo Ventas" in focus["body"]
     assert "Confirmar si se deriva" in focus["body"]
@@ -145,7 +144,7 @@ def test_synchronize_summary_callout_updates_first_callout_after_summary(monkeyp
             {
                 "name": "Benchmark del sistema de contenido y funnel de Ruben Hassid",
                 "project_name": "Proyecto Embudo Ventas",
-                "review": "Pendiente revision",
+                "review": "Pendiente revisión",
                 "due_date": "2026-03-16",
                 "next_action": "Revisar y decidir si se integra o se archiva.",
             }
@@ -156,9 +155,17 @@ def test_synchronize_summary_callout_updates_first_callout_after_summary(monkeyp
     }
     children = [
         {"id": "root", "type": "callout", "callout": {"rich_text": []}},
-        {"id": "summary", "type": "heading_2", "heading_2": {"rich_text": [{"plain_text": "Resumen operativo", "text": {"content": "Resumen operativo"}}]}},
+        {
+            "id": "summary",
+            "type": "heading_2",
+            "heading_2": {"rich_text": [{"plain_text": "Resumen ejecutivo", "text": {"content": "Resumen ejecutivo"}}]},
+        },
         {"id": "focus", "type": "callout", "callout": {"rich_text": [{"plain_text": "Viejo", "text": {"content": "Viejo"}}]}},
-        {"id": "next", "type": "column_list", "column_list": {"children": []}},
+        {
+            "id": "next",
+            "type": "heading_3",
+            "heading_3": {"rich_text": [{"plain_text": "Lectura rápida", "text": {"content": "Lectura rápida"}}]},
+        },
     ]
     updates = []
 
@@ -178,12 +185,45 @@ def test_synchronize_summary_callout_updates_first_callout_after_summary(monkeyp
 def test_validate_openclaw_shell_requires_anchor_and_databases():
     children = [
         {"id": "a", "type": "callout", "callout": {"rich_text": []}},
-        {"id": "h1", "type": "heading_2", "heading_2": {"rich_text": [{"plain_text": "Resumen operativo", "text": {"content": "Resumen operativo"}}]}},
-        {"id": "h2", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Entregables por revisar", "text": {"content": "Entregables por revisar"}}]}},
-        {"id": "h3", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Proyectos que requieren atencion", "text": {"content": "Proyectos que requieren atencion"}}]}},
-        {"id": "h4", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Bandeja viva", "text": {"content": "Bandeja viva"}}]}},
-        {"id": "h5", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Proximos vencimientos", "text": {"content": "Proximos vencimientos"}}]}},
-        {"id": "b", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Bases operativas"}]}},
+        {
+            "id": "h1",
+            "type": "heading_2",
+            "heading_2": {"rich_text": [{"plain_text": "Resumen ejecutivo", "text": {"content": "Resumen ejecutivo"}}]},
+        },
+        {
+            "id": "h2",
+            "type": "heading_3",
+            "heading_3": {"rich_text": [{"plain_text": "Lectura rápida", "text": {"content": "Lectura rápida"}}]},
+        },
+        {
+            "id": "h3",
+            "type": "heading_3",
+            "heading_3": {"rich_text": [{"plain_text": "Entregables por revisar", "text": {"content": "Entregables por revisar"}}]},
+        },
+        {
+            "id": "h4",
+            "type": "heading_3",
+            "heading_3": {
+                "rich_text": [{"plain_text": "Proyectos que requieren atención", "text": {"content": "Proyectos que requieren atención"}}]
+            },
+        },
+        {
+            "id": "h5",
+            "type": "heading_3",
+            "heading_3": {"rich_text": [{"plain_text": "Bandeja viva", "text": {"content": "Bandeja viva"}}]},
+        },
+        {
+            "id": "h6",
+            "type": "heading_3",
+            "heading_3": {"rich_text": [{"plain_text": "Próximos vencimientos", "text": {"content": "Próximos vencimientos"}}]},
+        },
+        {
+            "id": "b",
+            "type": "heading_3",
+            "heading_3": {
+                "rich_text": [{"plain_text": "Bases operativas y paneles", "text": {"content": "Bases operativas y paneles"}}]
+            },
+        },
         {"id": "c", "type": "child_database", "child_database": {"title": "Proyectos"}},
         {"id": "d", "type": "child_database", "child_database": {"title": "Tareas"}},
         {"id": "e", "type": "child_database", "child_database": {"title": "Entregables"}},
@@ -198,16 +238,49 @@ def test_validate_openclaw_shell_requires_anchor_and_databases():
 def test_validate_openclaw_shell_fails_with_residual_child_page():
     children = [
         {"id": "a", "type": "callout", "callout": {"rich_text": []}},
-        {"id": "h1", "type": "heading_2", "heading_2": {"rich_text": [{"plain_text": "Resumen operativo", "text": {"content": "Resumen operativo"}}]}},
-        {"id": "h2", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Entregables por revisar", "text": {"content": "Entregables por revisar"}}]}},
-        {"id": "h3", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Proyectos que requieren atencion", "text": {"content": "Proyectos que requieren atencion"}}]}},
-        {"id": "h4", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Bandeja viva", "text": {"content": "Bandeja viva"}}]}},
-        {"id": "h5", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Proximos vencimientos", "text": {"content": "Proximos vencimientos"}}]}},
-        {"id": "b", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Bases operativas"}]}},
+        {
+            "id": "h1",
+            "type": "heading_2",
+            "heading_2": {"rich_text": [{"plain_text": "Resumen ejecutivo", "text": {"content": "Resumen ejecutivo"}}]},
+        },
+        {
+            "id": "h2",
+            "type": "heading_3",
+            "heading_3": {"rich_text": [{"plain_text": "Lectura rápida", "text": {"content": "Lectura rápida"}}]},
+        },
+        {
+            "id": "h3",
+            "type": "heading_3",
+            "heading_3": {"rich_text": [{"plain_text": "Entregables por revisar", "text": {"content": "Entregables por revisar"}}]},
+        },
+        {
+            "id": "h4",
+            "type": "heading_3",
+            "heading_3": {
+                "rich_text": [{"plain_text": "Proyectos que requieren atención", "text": {"content": "Proyectos que requieren atención"}}]
+            },
+        },
+        {
+            "id": "h5",
+            "type": "heading_3",
+            "heading_3": {"rich_text": [{"plain_text": "Bandeja viva", "text": {"content": "Bandeja viva"}}]},
+        },
+        {
+            "id": "h6",
+            "type": "heading_3",
+            "heading_3": {"rich_text": [{"plain_text": "Próximos vencimientos", "text": {"content": "Próximos vencimientos"}}]},
+        },
+        {
+            "id": "b",
+            "type": "heading_3",
+            "heading_3": {
+                "rich_text": [{"plain_text": "Bases operativas y paneles", "text": {"content": "Bases operativas y paneles"}}]
+            },
+        },
         {"id": "c", "type": "child_database", "child_database": {"title": "Proyectos"}},
         {"id": "d", "type": "child_database", "child_database": {"title": "Tareas"}},
         {"id": "e", "type": "child_database", "child_database": {"title": "Entregables"}},
-        {"id": "page-1", "type": "child_page", "child_page": {"title": "Benchmark parcial — Kris Wojslaw"}},
+        {"id": "page-1", "type": "child_page", "child_page": {"title": "Benchmark parcial - Kris Wojslaw"}},
     ]
     result = validate_openclaw_shell(children)
     assert result["ok"] is False
@@ -217,16 +290,102 @@ def test_validate_openclaw_shell_fails_with_residual_child_page():
 def test_validate_openclaw_shell_allows_dashboard_rick_child_page():
     children = [
         {"id": "a", "type": "callout", "callout": {"rich_text": []}},
-        {"id": "h1", "type": "heading_2", "heading_2": {"rich_text": [{"plain_text": "Resumen operativo", "text": {"content": "Resumen operativo"}}]}},
-        {"id": "h2", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Entregables por revisar", "text": {"content": "Entregables por revisar"}}]}},
-        {"id": "h3", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Proyectos que requieren atencion", "text": {"content": "Proyectos que requieren atencion"}}]}},
-        {"id": "h4", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Bandeja viva", "text": {"content": "Bandeja viva"}}]}},
-        {"id": "h5", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Proximos vencimientos", "text": {"content": "Proximos vencimientos"}}]}},
-        {"id": "b", "type": "heading_3", "heading_3": {"rich_text": [{"plain_text": "Bases operativas"}]}},
+        {
+            "id": "h1",
+            "type": "heading_2",
+            "heading_2": {"rich_text": [{"plain_text": "Resumen ejecutivo", "text": {"content": "Resumen ejecutivo"}}]},
+        },
+        {
+            "id": "h2",
+            "type": "heading_3",
+            "heading_3": {"rich_text": [{"plain_text": "Lectura rápida", "text": {"content": "Lectura rápida"}}]},
+        },
+        {
+            "id": "h3",
+            "type": "heading_3",
+            "heading_3": {"rich_text": [{"plain_text": "Entregables por revisar", "text": {"content": "Entregables por revisar"}}]},
+        },
+        {
+            "id": "h4",
+            "type": "heading_3",
+            "heading_3": {
+                "rich_text": [{"plain_text": "Proyectos que requieren atención", "text": {"content": "Proyectos que requieren atención"}}]
+            },
+        },
+        {
+            "id": "h5",
+            "type": "heading_3",
+            "heading_3": {"rich_text": [{"plain_text": "Bandeja viva", "text": {"content": "Bandeja viva"}}]},
+        },
+        {
+            "id": "h6",
+            "type": "heading_3",
+            "heading_3": {"rich_text": [{"plain_text": "Próximos vencimientos", "text": {"content": "Próximos vencimientos"}}]},
+        },
+        {
+            "id": "b",
+            "type": "heading_3",
+            "heading_3": {
+                "rich_text": [{"plain_text": "Bases operativas y paneles", "text": {"content": "Bases operativas y paneles"}}]
+            },
+        },
         {"id": "c", "type": "child_database", "child_database": {"title": "Proyectos"}},
         {"id": "d", "type": "child_database", "child_database": {"title": "Tareas"}},
         {"id": "e", "type": "child_database", "child_database": {"title": "Entregables"}},
         {"id": "page-1", "type": "child_page", "child_page": {"title": "Dashboard Rick"}},
+    ]
+    result = validate_openclaw_shell(children)
+    assert result["ok"] is True
+    assert result["residual_child_pages"] == 0
+    assert result["quick_access_present"] is True
+
+
+def test_validate_openclaw_shell_allows_supervisor_alert_page_child():
+    children = [
+        {"id": "a", "type": "callout", "callout": {"rich_text": []}},
+        {
+            "id": "h1",
+            "type": "heading_2",
+            "heading_2": {"rich_text": [{"plain_text": "Resumen ejecutivo", "text": {"content": "Resumen ejecutivo"}}]},
+        },
+        {
+            "id": "h2",
+            "type": "heading_3",
+            "heading_3": {"rich_text": [{"plain_text": "Lectura rápida", "text": {"content": "Lectura rápida"}}]},
+        },
+        {
+            "id": "h3",
+            "type": "heading_3",
+            "heading_3": {"rich_text": [{"plain_text": "Entregables por revisar", "text": {"content": "Entregables por revisar"}}]},
+        },
+        {
+            "id": "h4",
+            "type": "heading_3",
+            "heading_3": {
+                "rich_text": [{"plain_text": "Proyectos que requieren atención", "text": {"content": "Proyectos que requieren atención"}}]
+            },
+        },
+        {
+            "id": "h5",
+            "type": "heading_3",
+            "heading_3": {"rich_text": [{"plain_text": "Bandeja viva", "text": {"content": "Bandeja viva"}}]},
+        },
+        {
+            "id": "h6",
+            "type": "heading_3",
+            "heading_3": {"rich_text": [{"plain_text": "Próximos vencimientos", "text": {"content": "Próximos vencimientos"}}]},
+        },
+        {
+            "id": "b",
+            "type": "heading_3",
+            "heading_3": {
+                "rich_text": [{"plain_text": "Bases operativas y paneles", "text": {"content": "Bases operativas y paneles"}}]
+            },
+        },
+        {"id": "c", "type": "child_database", "child_database": {"title": "Proyectos"}},
+        {"id": "d", "type": "child_database", "child_database": {"title": "Tareas"}},
+        {"id": "e", "type": "child_database", "child_database": {"title": "Entregables"}},
+        {"id": "page-2", "type": "child_page", "child_page": {"title": "Alertas del Supervisor"}},
     ]
     result = validate_openclaw_shell(children)
     assert result["ok"] is True
@@ -309,7 +468,7 @@ def test_build_operational_snapshot_sorts_by_urgency(monkeypatch):
         {
             "id": "proj-2",
             "properties": {
-                "Nombre": {"type": "title", "title": [{"plain_text": "Proyecto Critico"}]},
+                "Nombre": {"type": "title", "title": [{"plain_text": "Proyecto Crítico"}]},
                 "Bloqueos": {"type": "rich_text", "rich_text": [{"plain_text": "Bloqueado"}]},
                 "Siguiente acción": {"type": "rich_text", "rich_text": []},
                 "Tareas": {"type": "relation", "relation": [{"id": "task-1"}]},
@@ -321,7 +480,7 @@ def test_build_operational_snapshot_sorts_by_urgency(monkeypatch):
         {
             "id": "del-1",
             "properties": {
-                "Nombre": {"type": "title", "title": [{"plain_text": "Entrega tardia"}]},
+                "Nombre": {"type": "title", "title": [{"plain_text": "Entrega tardía"}]},
                 "Estado revision": {"type": "status", "status": {"name": "Aprobado con ajustes"}},
                 "Proyecto": {"type": "relation", "relation": [{"id": "proj-1"}]},
                 "Fecha limite sugerida": {"type": "date", "date": {"start": "2026-03-20"}},
@@ -353,7 +512,7 @@ def test_build_operational_snapshot_sorts_by_urgency(monkeypatch):
 
     snapshot = openclaw_panel_vps._build_operational_snapshot(bridge_db_id=None)
     assert snapshot["pending_deliverables"][0]["name"] == "Entrega urgente"
-    assert snapshot["projects_attention"][0]["name"] == "Proyecto Critico"
+    assert snapshot["projects_attention"][0]["name"] == "Proyecto Crítico"
 
 
 def test_build_operational_snapshot_prefers_pending_review_over_adjustments(monkeypatch):
@@ -383,7 +542,7 @@ def test_build_operational_snapshot_prefers_pending_review_over_adjustments(monk
         {
             "id": "del-pending",
             "properties": {
-                "Nombre": {"type": "title", "title": [{"plain_text": "Decision pendiente"}]},
+                "Nombre": {"type": "title", "title": [{"plain_text": "Decisión pendiente"}]},
                 "Estado revision": {"type": "status", "status": {"name": "Pendiente revision"}},
                 "Proyecto": {"type": "relation", "relation": [{"id": "proj-1"}]},
                 "Fecha limite sugerida": {"type": "date", "date": {"start": "2026-03-18"}},
@@ -404,10 +563,10 @@ def test_build_operational_snapshot_prefers_pending_review_over_adjustments(monk
     monkeypatch.setattr(openclaw_panel_vps, "_query_db", fake_query)
 
     snapshot = openclaw_panel_vps._build_operational_snapshot(bridge_db_id=None)
-    assert snapshot["pending_deliverables"][0]["name"] == "Decision pendiente"
+    assert snapshot["pending_deliverables"][0]["name"] == "Decisión pendiente"
 
 
-def test_tidy_navigation_sections_inserts_quick_access_heading(monkeypatch):
+def test_tidy_navigation_sections_inserts_navigation_heading(monkeypatch):
     initial_children = [
         {"id": "callout-1", "type": "callout", "callout": {"rich_text": []}},
         {"id": "divider-1", "type": "divider", "divider": {}},
@@ -422,16 +581,13 @@ def test_tidy_navigation_sections_inserts_quick_access_heading(monkeypatch):
         {"id": "callout-1", "type": "callout", "callout": {"rich_text": []}},
         {"id": "divider-1", "type": "divider", "divider": {}},
         {
-            "id": "heading-quick",
+            "id": "heading-nav",
             "type": "heading_3",
-            "heading_3": {"rich_text": [{"plain_text": "Accesos rapidos", "text": {"content": "Accesos rapidos"}}]},
+            "heading_3": {
+                "rich_text": [{"plain_text": "Bases operativas y paneles", "text": {"content": "Bases operativas y paneles"}}]
+            },
         },
         {"id": "page-1", "type": "child_page", "child_page": {"title": "Dashboard Rick"}},
-        {
-            "id": "heading-1",
-            "type": "heading_3",
-            "heading_3": {"rich_text": [{"plain_text": "Bases operativas", "text": {"content": "Bases operativas"}}]},
-        },
     ]
     inserted = []
 
@@ -445,6 +601,7 @@ def test_tidy_navigation_sections_inserts_quick_access_heading(monkeypatch):
     openclaw_panel_vps._tidy_navigation_sections("page-root", initial_children)
     assert inserted
     assert inserted[0]["type"] == "heading_3"
+    assert openclaw_panel_vps._extract_text(inserted[0]) == "Bases operativas y paneles"
 
 
 def test_is_residual_child_page_matches_known_generated_titles():
@@ -455,15 +612,18 @@ def test_is_residual_child_page_matches_known_generated_titles():
         {
             "id": "b",
             "type": "child_page",
-            "child_page": {"title": "[improvement] Workflow: self_improvement_cycle — SIM Daily Report"},
+            "child_page": {"title": "[improvement] Workflow: self_improvement_cycle - SIM Daily Report"},
         }
     )
     assert not openclaw_panel_vps._is_residual_child_page(
         {"id": "c", "type": "child_page", "child_page": {"title": "Dashboard Rick"}}
     )
+    assert not openclaw_panel_vps._is_residual_child_page(
+        {"id": "d", "type": "child_page", "child_page": {"title": "Alertas del Supervisor"}}
+    )
 
 
-def test_cleanup_openclaw_residuals_archives_generated_pages_and_trailing_blanks(monkeypatch):
+def test_cleanup_openclaw_residuals_archives_generated_pages_and_empty_paragraphs(monkeypatch):
     archived = []
     deleted = []
     monkeypatch.setattr(openclaw_panel_vps, "_archive_pages", lambda page_ids: archived.extend(page_ids))
@@ -472,8 +632,9 @@ def test_cleanup_openclaw_residuals_archives_generated_pages_and_trailing_blanks
     cleaned = openclaw_panel_vps._cleanup_openclaw_residuals(
         [
             {"id": "keep-1", "type": "child_page", "child_page": {"title": "Dashboard Rick"}},
+            {"id": "keep-2", "type": "child_page", "child_page": {"title": "Alertas del Supervisor"}},
             {"id": "res-1", "type": "child_page", "child_page": {"title": "OODA Weekly Report - 2026-03-16"}},
-            {"id": "res-2", "type": "child_page", "child_page": {"title": "[improvement] Workflow: self_improvement_cycle — SIM Daily Report"}},
+            {"id": "res-2", "type": "child_page", "child_page": {"title": "[improvement] Workflow: self_improvement_cycle - SIM Daily Report"}},
             {"id": "blank-1", "type": "paragraph", "paragraph": {"rich_text": []}},
             {"id": "blank-2", "type": "paragraph", "paragraph": {"rich_text": []}},
         ]
@@ -482,6 +643,47 @@ def test_cleanup_openclaw_residuals_archives_generated_pages_and_trailing_blanks
     assert archived == ["res-1", "res-2"]
     assert deleted == ["blank-1", "blank-2"]
     assert cleaned == 4
+
+
+def test_rename_navigation_pages_uses_canonical_titles(monkeypatch):
+    children = [
+        {"id": "dash-id", "type": "child_page", "child_page": {"title": "Dashboard viejo"}},
+        {"id": "alert-id", "type": "child_page", "child_page": {"title": "Dashboard Rick"}},
+        {"id": "other-id", "type": "child_page", "child_page": {"title": "Otra página"}},
+    ]
+    renamed = []
+
+    monkeypatch.setattr(openclaw_panel_vps.config, "NOTION_DASHBOARD_PAGE_ID", "dash-id")
+    monkeypatch.setattr(openclaw_panel_vps, "SUPERVISOR_ALERT_PAGE_ID", "alert-id")
+    monkeypatch.setattr(openclaw_panel_vps, "_update_page_title", lambda page_id, title: renamed.append((page_id, title)))
+
+    count = openclaw_panel_vps._rename_navigation_pages(children)
+
+    assert count == 2
+    assert renamed == [
+        ("dash-id", "Dashboard Rick"),
+        ("alert-id", "Alertas del Supervisor"),
+    ]
+
+
+def test_canonical_nav_page_title_tolerates_hyphenless_env_ids(monkeypatch):
+    monkeypatch.setattr(openclaw_panel_vps.config, "NOTION_DASHBOARD_PAGE_ID", "3265f443fb5c816d9ce8c5d6cf075f9c")
+    monkeypatch.setattr(openclaw_panel_vps, "SUPERVISOR_ALERT_PAGE_ID", "0fd13978b220498e9465b4fb2efc5f4a")
+
+    assert (
+        openclaw_panel_vps._canonical_nav_page_title(
+            "3265f443-fb5c-816d-9ce8-c5d6cf075f9c",
+            "Dashboard viejo",
+        )
+        == "Dashboard Rick"
+    )
+    assert (
+        openclaw_panel_vps._canonical_nav_page_title(
+            "0fd13978-b220-498e-9465-b4fb2efc5f4a",
+            "Dashboard Rick",
+        )
+        == "Alertas del Supervisor"
+    )
 
 
 def test_remove_stale_blocks_archives_child_pages_and_deletes_normal_blocks(monkeypatch):

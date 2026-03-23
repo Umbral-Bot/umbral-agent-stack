@@ -926,14 +926,14 @@ def _build_dashboard_v2_blocks(data: dict[str, Any]) -> list[dict[str, Any]]:
     blocks.append(_block_callout(f"Estado: {overall}  —  {ts}", status_emoji, status_color))
     blocks.append(
         _block_paragraph(
-            "Este dashboard es tecnico. Para decidir que revisar o aprobar ahora, usa OpenClaw."
+            "Este dashboard es técnico. Para decidir qué revisar o aprobar ahora, usa OpenClaw."
         )
     )
     vm_recovery = data.get("vm_recovery_mode") or {}
     if vm_recovery.get("enabled"):
         blocks.append(
             _block_callout(
-                "VM en recovery mode via tunel reverso host->VPS. El stack opera, pero la red/Tailscale propia del guest sigue pendiente.",
+                "VM en modo recovery vía túnel reverso host->VPS. El stack opera, pero la red/Tailscale propia del guest sigue pendiente.",
                 "🛟",
                 "yellow_background",
             )
@@ -946,7 +946,7 @@ def _build_dashboard_v2_blocks(data: dict[str, Any]) -> list[dict[str, Any]]:
     kpi_parts = [
         _rich("Tareas hoy: ", bold=True),
         _rich(str(ops.get("completed_today", ops.get("completed", 0)))),
-        _rich("  |  Exito: ", bold=True),
+        _rich("  |  Éxito: ", bold=True),
         _rich(f"{ops.get('success_rate', 0)}%"),
         _rich("  |  Cola: ", bold=True),
         _rich(str(rd.get("pending", 0))),
@@ -1026,7 +1026,7 @@ def _build_dashboard_v2_blocks(data: dict[str, Any]) -> list[dict[str, Any]]:
 
     notion_ops = data.get("notion_ops") or {}
     if notion_ops:
-        blocks.append(_block_heading2("Operacion Notion"))
+        blocks.append(_block_heading2("Operación Notion"))
         notion_rows = [
             ["Tareas registradas", str(notion_ops.get("tasks_total", 0)), f"Sin contexto: {notion_ops.get('tasks_unlinked', 0)}"],
             ["Entregables pendientes", str(notion_ops.get("deliverables_pending", 0)), f"Con ajustes: {notion_ops.get('deliverables_adjustments', 0)}"],
@@ -1054,7 +1054,7 @@ def _build_dashboard_v2_blocks(data: dict[str, Any]) -> list[dict[str, Any]]:
 
     recent_system = data.get("recent_system_tasks", [])
     if recent_system:
-        blocks.append(_block_heading3("Ruido tecnico / sistema"))
+        blocks.append(_block_heading3("Ruido técnico / sistema"))
         task_rows = []
         for t in recent_system:
             status_icon = "✅" if t["status"] == "done" else "❌"
@@ -1081,7 +1081,7 @@ def _build_dashboard_v2_blocks(data: dict[str, Any]) -> list[dict[str, Any]]:
         ops_parts = [
             _rich("Completadas: ", bold=True), _rich(str(ops.get("completed", 0))),
             _rich("  |  Fallidas: ", bold=True), _rich(str(ops.get("failed", 0)), color="red" if ops.get("failed", 0) > 0 else "default"),
-            _rich("  |  Tasa exito: ", bold=True), _rich(f"{ops.get('success_rate', 0)}%{trend_text}"),
+            _rich("  |  Tasa de éxito: ", bold=True), _rich(f"{ops.get('success_rate', 0)}%{trend_text}"),
         ]
         blocks.append(_block_paragraph_rich(ops_parts))
 

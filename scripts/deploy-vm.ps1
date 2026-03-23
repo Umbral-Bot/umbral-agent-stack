@@ -10,6 +10,12 @@ if (-not $env:WORKER_TOKEN) {
 }
 $TOKEN = $env:WORKER_TOKEN
 
+function Show-TokenMask([string]$t) {
+    if ([string]::IsNullOrEmpty($t)) { return "(vacío)" }
+    if ($t.Length -le 8) { return "****" }
+    return "$($t.Substring(0, 4))...$($t.Substring($t.Length - 4))"
+}
+
 $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  Umbral Worker Deploy" -ForegroundColor Cyan
@@ -26,9 +32,9 @@ Get-Process -Name *python* -ErrorAction SilentlyContinue | Format-Table Id, Proc
 Write-Host "  Puerto 8088:" -ForegroundColor Gray
 $port8088 = Get-NetTCPConnection -LocalPort 8088 -ErrorAction SilentlyContinue
 if ($port8088) {
-    $port8088 | ForEach-Object {
-        $proc = Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue
-        Write-Host "    PID=$($_.OwningProcess) Proceso=$($proc.ProcessName)" -ForegroundColor Green
+    $port8088 | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object {
+        $proc = Get-Process -Id $_ -ErrorAction SilentlyContinue
+        Write-Host "    PID=$_ Proceso=$($proc.ProcessName)" -ForegroundColor Green
     }
 }
 else {
@@ -160,24 +166,65 @@ Write-Host ""
 # --- FASE 5: Reiniciar worker ---
 Write-Host "[FASE 5] Servicio worker..." -ForegroundColor Yellow
 
-# Matar proceso actual en 8088
+# Matar proceso actual en 8088 (un PID por proceso; Get-NetTCPConnection devuelve una fila por socket)
 $existing = Get-NetTCPConnection -LocalPort 8088 -ErrorAction SilentlyContinue
 if ($existing) {
-    $existing | ForEach-Object {
-        Write-Host "  Deteniendo PID $($_.OwningProcess)..." -ForegroundColor Gray
-        Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue
+    $existing | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object {
+        Write-Host "  Deteniendo PID $_..." -ForegroundColor Gray
+        Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue
     }
-    Start-Sleep -Seconds 2
+    Start-Sleep -Seconds 3
 }
 
-# Configurar entorno e iniciar
+$pythonExe = (Get-Command python -ErrorAction SilentlyContinue).Source
+if (-not $pythonExe) {
+    Write-Host "ERROR: 'python' no está en PATH. Instala Python 3.11+ o agrega al PATH." -ForegroundColor Red
+    exit 1
+}
+
+$logDir = "C:\openclaw-worker\logs"
+if (-not (Test-Path $logDir)) {
+    New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+}
+$uvicornOut = Join-Path $logDir "uvicorn-deploy-stdout.log"
+$uvicornErr = Join-Path $logDir "uvicorn-deploy-stderr.log"
+
+# Mismo proceso PowerShell ya tiene TOKEN/PYTHONPATH; el hijo hereda + logs a archivo (si falla el bind, mirar stderr)
 $env:WORKER_TOKEN = $TOKEN
 $env:PYTHONPATH = $repoRoot
+Write-Host "  Iniciando worker (token $(Show-TokenMask $TOKEN), logs: $uvicornOut / $uvicornErr)..." -ForegroundColor Gray
+try {
+    Start-Process -FilePath $pythonExe `
+        -ArgumentList "-m", "uvicorn", "worker.app:app", "--host", "0.0.0.0", "--port", "8088" `
+        -WorkingDirectory $repoRoot `
+        -WindowStyle Hidden `
+        -RedirectStandardOutput $uvicornOut `
+        -RedirectStandardError $uvicornErr
+}
+catch {
+    Write-Host "  ERROR al iniciar uvicorn: $($_.Exception.Message)" -ForegroundColor Red
+    exit 1
+}
 
-Write-Host "  Iniciando worker (WORKER_TOKEN=$TOKEN)..." -ForegroundColor Gray
-Start-Process -FilePath python -ArgumentList "-m", "uvicorn", "worker.app:app", "--host", "0.0.0.0", "--port", "8088" -WorkingDirectory $repoRoot -WindowStyle Hidden
-Start-Sleep -Seconds 4
-Write-Host "  Worker iniciado en background" -ForegroundColor Green
+# Dar tiempo a imports + bind del puerto
+$healthOk = $false
+for ($i = 1; $i -le 8; $i++) {
+    Start-Sleep -Seconds 2
+    try {
+        $null = Invoke-WebRequest -Uri "http://127.0.0.1:8088/health" -UseBasicParsing -TimeoutSec 3
+        $healthOk = $true
+        break
+    }
+    catch {
+        Write-Host "  Esperando worker en 8088... intento $i/8" -ForegroundColor DarkGray
+    }
+}
+if ($healthOk) {
+    Write-Host "  Worker respondiendo en 8088" -ForegroundColor Green
+}
+else {
+    Write-Host "  ADVERTENCIA: aún no responde /health. Revisa: $uvicornErr" -ForegroundColor Yellow
+}
 
 Write-Host "  Refrescando worker interactivo 8089..." -ForegroundColor Gray
 $interactiveTask = "StartInteractiveWorkerHiddenNow"

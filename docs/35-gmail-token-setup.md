@@ -84,6 +84,7 @@ No hace falta `GOOGLE_GMAIL_TOKEN`: el Worker usa el refresh token para obtener 
 
 ## Referencias
 
+- **Google Calendar** (mismo patrón OAuth/refresh en el Worker): [35-google-calendar-token-setup.md](./35-google-calendar-token-setup.md)
 - Gmail API sending: https://developers.google.com/workspace/gmail/api/guides/sending
 - Quickstart Python: https://developers.google.com/gmail/api/quickstart/python
 - Skill Gmail en el repo: `openclaw/workspace-templates/skills/gmail/SKILL.md`

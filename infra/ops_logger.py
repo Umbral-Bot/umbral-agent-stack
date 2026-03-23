@@ -12,6 +12,9 @@ Parámetros opcionales de auditoría:
   trace_id      — ID de traza del envelope para correlacionar eventos end-to-end.
                    Disponible en: task_queued, task_completed, task_failed,
                    task_blocked, task_retried, model_selected.
+  source        — Origen del envelope (ej. openclaw_gateway, notion_poller).
+  source_kind   — Subtipo/canal del origen (ej. tool_enqueue, cron, action_item).
+  task_type     — Tipo de tarea lógico para auditoría y métricas.
   input_summary — Resumen truncado (max 200 chars) del input de la tarea.
                    Disponible en: task_completed, task_failed.
 
@@ -53,6 +56,31 @@ class OpsLogger:
             except Exception as e:
                 logger.error("Failed to write ops log: %s", e)
 
+    @staticmethod
+    def _coerce(value: Any) -> Any:
+        return getattr(value, "value", value)
+
+    def _apply_audit_context(
+        self,
+        event: Dict[str, Any],
+        *,
+        trace_id: str | None = None,
+        task_type: str | None = None,
+        source: str | None = None,
+        source_kind: str | None = None,
+        input_summary: str | None = None,
+    ) -> None:
+        if trace_id:
+            event["trace_id"] = trace_id
+        if task_type:
+            event["task_type"] = str(self._coerce(task_type))
+        if source:
+            event["source"] = str(self._coerce(source))[:200]
+        if source_kind:
+            event["source_kind"] = str(self._coerce(source_kind))[:200]
+        if input_summary:
+            event["input_summary"] = input_summary[:200]
+
     def task_queued(
         self,
         task_id: str,
@@ -60,16 +88,22 @@ class OpsLogger:
         team: str,
         task_type: str = "general",
         trace_id: str | None = None,
+        source: str | None = None,
+        source_kind: str | None = None,
     ) -> None:
         ev: Dict[str, Any] = {
             "event": "task_queued",
             "task_id": task_id,
             "task": task,
-            "team": team,
-            "task_type": task_type,
+            "team": self._coerce(team),
+            "task_type": str(self._coerce(task_type)),
         }
-        if trace_id:
-            ev["trace_id"] = trace_id
+        self._apply_audit_context(
+            ev,
+            trace_id=trace_id,
+            source=source,
+            source_kind=source_kind,
+        )
         self._write(ev)
 
     def task_completed(
@@ -82,20 +116,27 @@ class OpsLogger:
         worker: str = "vps",
         trace_id: str | None = None,
         input_summary: str | None = None,
+        task_type: str | None = None,
+        source: str | None = None,
+        source_kind: str | None = None,
     ) -> None:
         ev: Dict[str, Any] = {
             "event": "task_completed",
             "task_id": task_id,
             "task": task,
-            "team": team,
-            "model": model,
+            "team": self._coerce(team),
+            "model": self._coerce(model),
             "duration_ms": round(duration_ms),
             "worker": worker,
         }
-        if trace_id:
-            ev["trace_id"] = trace_id
-        if input_summary:
-            ev["input_summary"] = input_summary[:200]
+        self._apply_audit_context(
+            ev,
+            trace_id=trace_id,
+            task_type=task_type,
+            source=source,
+            source_kind=source_kind,
+            input_summary=input_summary,
+        )
         self._write(ev)
 
     def task_failed(
@@ -107,19 +148,26 @@ class OpsLogger:
         model: str = "",
         trace_id: str | None = None,
         input_summary: str | None = None,
+        task_type: str | None = None,
+        source: str | None = None,
+        source_kind: str | None = None,
     ) -> None:
         ev: Dict[str, Any] = {
             "event": "task_failed",
             "task_id": task_id,
             "task": task,
-            "team": team,
-            "model": model,
+            "team": self._coerce(team),
+            "model": self._coerce(model),
             "error": error[:500],
         }
-        if trace_id:
-            ev["trace_id"] = trace_id
-        if input_summary:
-            ev["input_summary"] = input_summary[:200]
+        self._apply_audit_context(
+            ev,
+            trace_id=trace_id,
+            task_type=task_type,
+            source=source,
+            source_kind=source_kind,
+            input_summary=input_summary,
+        )
         self._write(ev)
 
     def task_blocked(
@@ -129,16 +177,24 @@ class OpsLogger:
         team: str,
         reason: str,
         trace_id: str | None = None,
+        task_type: str | None = None,
+        source: str | None = None,
+        source_kind: str | None = None,
     ) -> None:
         ev: Dict[str, Any] = {
             "event": "task_blocked",
             "task_id": task_id,
             "task": task,
-            "team": team,
+            "team": self._coerce(team),
             "reason": reason[:300],
         }
-        if trace_id:
-            ev["trace_id"] = trace_id
+        self._apply_audit_context(
+            ev,
+            trace_id=trace_id,
+            task_type=task_type,
+            source=source,
+            source_kind=source_kind,
+        )
         self._write(ev)
 
     def task_lost(self, task_id: str, reason: str) -> None:
@@ -188,16 +244,24 @@ class OpsLogger:
         team: str,
         retry_count: int,
         trace_id: str | None = None,
+        task_type: str | None = None,
+        source: str | None = None,
+        source_kind: str | None = None,
     ) -> None:
         ev: Dict[str, Any] = {
             "event": "task_retried",
             "task_id": task_id,
             "task": task,
-            "team": team,
+            "team": self._coerce(team),
             "retry_count": retry_count,
         }
-        if trace_id:
-            ev["trace_id"] = trace_id
+        self._apply_audit_context(
+            ev,
+            trace_id=trace_id,
+            task_type=task_type,
+            source=source,
+            source_kind=source_kind,
+        )
         self._write(ev)
 
     def worker_health_change(self, worker: str, online: bool) -> None:

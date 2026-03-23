@@ -34,6 +34,7 @@ Regularización `UMB-132` (2026-03-22): se cerraron task files históricos que h
 | 2026-03-22-002 | Super diagnóstico exhaustivo del sistema | codex | ✅ done (PR #126) |
 | 2026-03-22-003 | Fix hallazgos super diagnóstico — VM /run y auto-issues | codex | ✅ done (PR #127) |
 | 2026-03-23-001 | Calendar/Gmail: env VPS + verificación + seguimiento post diagnóstico | codex | ✅ done |
+| 2026-03-23-002 | UMB-141: completar trazabilidad de runtime para enriquecer auto-issues | codex | ✅ done |
 | 2026-03-24-001 | Lead temporal Codex — capitalizar hallazgos + cerrar ramas codex/* + Claude si aplica | codex | ✅ done |
 
 ## Ronda 16 — Cerrada

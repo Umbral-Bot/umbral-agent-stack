@@ -730,3 +730,94 @@ def test_delete_blocks_ignores_already_archived_or_missing(monkeypatch):
     monkeypatch.setattr(openclaw_panel_vps.notion_client, "_check_response", lambda resp, op: {"ok": True})
 
     openclaw_panel_vps._delete_blocks(["block-a", "block-b", "block-c"])
+
+
+def test_refresh_openclaw_panel_skips_when_fingerprint_unchanged(monkeypatch, tmp_path):
+    children = [
+        {"id": "a", "type": "callout", "callout": {"rich_text": []}},
+        {
+            "id": "h1",
+            "type": "heading_2",
+            "heading_2": {"rich_text": [{"plain_text": "Resumen ejecutivo", "text": {"content": "Resumen ejecutivo"}}]},
+        },
+        {
+            "id": "h2",
+            "type": "heading_3",
+            "heading_3": {"rich_text": [{"plain_text": "Lectura rápida", "text": {"content": "Lectura rápida"}}]},
+        },
+        {
+            "id": "h3",
+            "type": "heading_3",
+            "heading_3": {"rich_text": [{"plain_text": "Entregables por revisar", "text": {"content": "Entregables por revisar"}}]},
+        },
+        {
+            "id": "h4",
+            "type": "heading_3",
+            "heading_3": {"rich_text": [{"plain_text": "Proyectos que requieren atención", "text": {"content": "Proyectos que requieren atención"}}]},
+        },
+        {
+            "id": "h5",
+            "type": "heading_3",
+            "heading_3": {"rich_text": [{"plain_text": "Bandeja viva", "text": {"content": "Bandeja viva"}}]},
+        },
+        {
+            "id": "h6",
+            "type": "heading_3",
+            "heading_3": {"rich_text": [{"plain_text": "Próximos vencimientos", "text": {"content": "Próximos vencimientos"}}]},
+        },
+        {
+            "id": "b",
+            "type": "heading_3",
+            "heading_3": {"rich_text": [{"plain_text": "Bases operativas y paneles", "text": {"content": "Bases operativas y paneles"}}]},
+        },
+        {"id": "c", "type": "child_database", "child_database": {"title": "Proyectos"}},
+        {"id": "d", "type": "child_database", "child_database": {"title": "Tareas"}},
+        {"id": "e", "type": "child_database", "child_database": {"title": "Entregables"}},
+    ]
+    snapshot = {
+        "generated_at": "2026-03-23 12:00 UTC",
+        "summary": {
+            "pending_deliverables": 0,
+            "deliverables_adjustments": 0,
+            "projects_attention": 0,
+            "bridge_live": 0,
+            "bridge_available": True,
+            "due_items": 0,
+        },
+        "pending_deliverables": [],
+        "projects_attention": [],
+        "bridge_live": [],
+        "due_items": [],
+    }
+    fingerprint = openclaw_panel_vps._snapshot_fingerprint(snapshot)
+    events = []
+
+    monkeypatch.setattr(openclaw_panel_vps, "OPENCLAW_PAGE_ID", "openclaw-page")
+    monkeypatch.setattr(openclaw_panel_vps, "_FINGERPRINT_PATH", tmp_path / "fp.txt")
+    monkeypatch.setattr(openclaw_panel_vps, "_DIRTY_FLAG_PATH", tmp_path / "dirty.json")
+    monkeypatch.setattr(openclaw_panel_vps, "_list_children", lambda page_id: children)
+    monkeypatch.setattr(openclaw_panel_vps, "_build_operational_snapshot", lambda bridge_db_id=None: snapshot)
+    monkeypatch.setattr(openclaw_panel_vps.ops_log, "system_activity", lambda *args, **kwargs: events.append((args, kwargs)))
+    (tmp_path / "fp.txt").write_text(fingerprint, encoding="utf-8")
+
+    result = openclaw_panel_vps.refresh_openclaw_panel(trigger="test.skip")
+
+    assert result["updated"] is False
+    assert result["skipped"] is True
+    assert result["reason"] == "fingerprint_unchanged"
+    assert events
+    assert events[0][0][2] == "skipped"
+
+
+def test_trigger_openclaw_panel_refresh_marks_dirty_when_panel_not_ready(monkeypatch, tmp_path):
+    monkeypatch.setattr(openclaw_panel_vps, "_DIRTY_FLAG_PATH", tmp_path / "dirty.json")
+    monkeypatch.setattr(openclaw_panel_vps, "_openclaw_panel_ready", lambda: False)
+
+    result = openclaw_panel_vps.trigger_openclaw_panel_refresh(
+        "project_upsert",
+        source="notion.upsert_project",
+    )
+
+    assert result["triggered"] is False
+    assert result["reason"] == "openclaw_panel_not_ready"
+    assert not (tmp_path / "dirty.json").exists()

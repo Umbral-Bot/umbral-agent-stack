@@ -27,7 +27,7 @@ def test_upsert_project_no_db_configured():
 def test_upsert_project_creates_new_with_page_blocks():
     from worker.tasks.notion import handle_notion_upsert_project
 
-    with patch("worker.tasks.notion.config") as mock_cfg, patch("worker.tasks.notion.notion_client") as mock_nc:
+    with patch("worker.tasks.notion.config") as mock_cfg, patch("worker.tasks.notion.notion_client") as mock_nc, patch("worker.tasks.notion._maybe_trigger_openclaw_panel_refresh") as mock_refresh:
         mock_cfg.NOTION_PROJECTS_DB_ID = "db-uuid-123"
         mock_nc.query_database.return_value = []
         mock_nc.create_database_page.return_value = {
@@ -52,6 +52,7 @@ def test_upsert_project_creates_new_with_page_blocks():
     assert mock_nc.create_database_page.call_args.kwargs["icon"] == "\U0001F4C1"
     assert mock_nc.create_database_page.call_args.kwargs["children"]
     mock_nc.update_page_properties.assert_not_called()
+    mock_refresh.assert_called_once_with("project_upsert", source="notion.upsert_project")
 
 
 def test_upsert_project_updates_existing_and_replaces_page_blocks():
@@ -59,7 +60,7 @@ def test_upsert_project_updates_existing_and_replaces_page_blocks():
 
     existing_page = {"id": "existing-id", "url": "https://www.notion.so/existing-id", "properties": {}}
 
-    with patch("worker.tasks.notion.config") as mock_cfg, patch("worker.tasks.notion.notion_client") as mock_nc:
+    with patch("worker.tasks.notion.config") as mock_cfg, patch("worker.tasks.notion.notion_client") as mock_nc, patch("worker.tasks.notion._maybe_trigger_openclaw_panel_refresh") as mock_refresh:
         mock_cfg.NOTION_PROJECTS_DB_ID = "db-uuid-123"
         mock_nc.query_database.return_value = [existing_page]
         mock_nc.update_page_properties.return_value = {
@@ -87,6 +88,7 @@ def test_upsert_project_updates_existing_and_replaces_page_blocks():
     )
     mock_nc.replace_blocks_in_page.assert_called_once()
     mock_nc.create_database_page.assert_not_called()
+    mock_refresh.assert_called_once_with("project_upsert", source="notion.upsert_project")
 
 
 def test_upsert_project_infers_icon_when_missing():

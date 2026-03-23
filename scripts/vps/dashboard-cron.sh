@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Cron wrapper for dashboard_report_vps.py + openclaw_panel_vps.py
-# Requiere: WORKER_TOKEN, NOTION_API_KEY, NOTION_DASHBOARD_PAGE_ID, REDIS_URL en ~/.config/openclaw/env
-# Install: crontab -e â†’ */15 * * * * ~/umbral-agent-stack/scripts/vps/dashboard-cron.sh >> /tmp/dashboard_cron.log 2>&1
+# Compatibility shim for older crontabs.
+# Prefer the dedicated cron scripts installed by install-cron.sh:
+#   - dashboard-rick-cron.sh   (hourly)
+#   - openclaw-panel-cron.sh   (every 6h fallback)
 
 set -uo pipefail
 
 cd ~/umbral-agent-stack
 source .venv/bin/activate 2>/dev/null || true
 
-# Load env (WORKER_TOKEN, NOTION_*, REDIS_URL, etc.)
 if [ -f ~/.config/openclaw/env ]; then
   set -a
   source ~/.config/openclaw/env
@@ -17,15 +17,22 @@ fi
 export PYTHONPATH=.
 
 status=0
+utc_hour="$(date -u +%H)"
+utc_minute="$(date -u +%M)"
+dirty_flag="$HOME/.config/umbral/openclaw_panel_dirty.json"
 
-if ! python3 scripts/dashboard_report_vps.py; then
-  echo "$(date '+%Y-%m-%d %H:%M:%S') dashboard_report_vps.py failed" >&2
-  status=1
-fi
+if [ "$utc_minute" = "00" ]; then
+  if ! python3 scripts/dashboard_report_vps.py --trigger cron.hourly; then
+    echo "$(date '+%Y-%m-%d %H:%M:%S') dashboard_report_vps.py failed" >&2
+    status=1
+  fi
 
-if ! python3 scripts/openclaw_panel_vps.py; then
-  echo "$(date '+%Y-%m-%d %H:%M:%S') openclaw_panel_vps.py failed" >&2
-  status=1
+  if [ -f "$dirty_flag" ] || [ $((10#$utc_hour % 6)) -eq 0 ]; then
+    if ! python3 scripts/openclaw_panel_vps.py --trigger cron.fallback; then
+      echo "$(date '+%Y-%m-%d %H:%M:%S') openclaw_panel_vps.py failed" >&2
+      status=1
+    fi
+  fi
 fi
 
 exit "$status"

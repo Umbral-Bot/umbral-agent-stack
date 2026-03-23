@@ -26,6 +26,8 @@ if str(repo_root) not in sys.path:
 
 import httpx
 
+from infra.ops_logger import OpsLogger, ops_log
+
 WORKER_URL = os.environ.get("WORKER_URL", "http://127.0.0.1:8088").rstrip("/")
 WORKER_TOKEN = os.environ.get("WORKER_TOKEN", "")
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
@@ -38,6 +40,23 @@ NOTION_DELIVERABLES_DB_ID = os.environ.get("NOTION_DELIVERABLES_DB_ID", "").stri
 NOTION_BRIDGE_DB_ID = os.environ.get("NOTION_BRIDGE_DB_ID", "").strip()
 LEGACY_BRIDGE_DB_ID = "8496ee73-6c7d-43a3-89cf-b9c8825b5dfc"
 CALLER_ID = "script.dashboard_report_vps"
+_DASHBOARD_STATS: dict[str, int] = {
+    "notion_reads": 0,
+    "notion_writes": 0,
+    "worker_calls": 0,
+}
+
+
+def _reset_dashboard_stats() -> None:
+    _DASHBOARD_STATS["notion_reads"] = 0
+    _DASHBOARD_STATS["notion_writes"] = 0
+    _DASHBOARD_STATS["worker_calls"] = 0
+
+
+def _record_dashboard_stats(*, notion_reads: int = 0, notion_writes: int = 0, worker_calls: int = 0) -> None:
+    _DASHBOARD_STATS["notion_reads"] += notion_reads
+    _DASHBOARD_STATS["notion_writes"] += notion_writes
+    _DASHBOARD_STATS["worker_calls"] += worker_calls
 
 TECHNICAL_TASK_PREFIXES = (
     "windows.fs.",
@@ -66,6 +85,7 @@ def _vm_recovery_mode() -> dict[str, object] | None:
 
 def _worker_health(url: str) -> dict:
     try:
+        _record_dashboard_stats(worker_calls=1)
         r = httpx.get(f"{url}/health", timeout=5)
         if r.status_code == 200:
             data = r.json() if r.headers.get("content-type", "").startswith("application/json") else {}
@@ -106,6 +126,7 @@ def _notion_query_rows(database_id: str) -> list[dict]:
             json=body,
             timeout=20,
         )
+        _record_dashboard_stats(notion_reads=1)
         resp.raise_for_status()
         data = resp.json()
         rows.extend(data.get("results", []))
@@ -135,6 +156,7 @@ def _notion_list_children(page_id: str) -> list[dict[str, Any]]:
             params=params,
             timeout=20,
         )
+        _record_dashboard_stats(notion_reads=1)
         resp.raise_for_status()
         data = resp.json()
         rows.extend(data.get("results", []))
@@ -530,6 +552,67 @@ def _ops_log_summary() -> dict:
         return {"total_events": 0}
 
 
+def _panel_activity_summary(hours: int = 24) -> list[dict[str, Any]]:
+    try:
+        logger = OpsLogger()
+        events = logger.read_events(limit=5000, event_filter="system_activity")
+    except Exception:
+        return []
+
+    cutoff = datetime.now(timezone.utc).timestamp() - (hours * 3600)
+    buckets: dict[str, dict[str, Any]] = {}
+    for event in events:
+        component = str(event.get("component") or "").strip()
+        if component not in {"dashboard_rick", "openclaw_panel"}:
+            continue
+        bucket = buckets.setdefault(
+            component,
+            {
+                "component": component,
+                "updated_24h": 0,
+                "skipped_24h": 0,
+                "failed_24h": 0,
+                "notion_reads_24h": 0,
+                "notion_writes_24h": 0,
+                "worker_calls_24h": 0,
+                "last_status": "",
+                "last_trigger": "",
+                "last_ts": "",
+                "last_duration_ms": 0,
+            },
+        )
+        ts_raw = str(event.get("ts") or "")
+        ts_epoch = None
+        if ts_raw:
+            try:
+                ts_epoch = datetime.fromisoformat(ts_raw.replace("Z", "+00:00")).timestamp()
+            except ValueError:
+                ts_epoch = None
+        if not bucket["last_ts"] or ts_raw > bucket["last_ts"]:
+            bucket["last_status"] = str(event.get("status") or "")
+            bucket["last_trigger"] = str(event.get("trigger") or "")
+            bucket["last_ts"] = ts_raw
+            bucket["last_duration_ms"] = int(event.get("duration_ms") or 0)
+        if ts_epoch is None or ts_epoch < cutoff:
+            continue
+        status = str(event.get("status") or "")
+        if status == "updated":
+            bucket["updated_24h"] += 1
+        elif status == "skipped":
+            bucket["skipped_24h"] += 1
+        elif status == "failed":
+            bucket["failed_24h"] += 1
+        bucket["notion_reads_24h"] += int(event.get("notion_reads") or 0)
+        bucket["notion_writes_24h"] += int(event.get("notion_writes") or 0)
+        bucket["worker_calls_24h"] += int(event.get("worker_calls") or 0)
+
+    ordered = []
+    for component in ("dashboard_rick", "openclaw_panel"):
+        if component in buckets:
+            ordered.append(buckets[component])
+    return ordered
+
+
 def build_dashboard_payload() -> dict:
     """Construye el payload completo para el dashboard."""
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -548,6 +631,7 @@ def build_dashboard_payload() -> dict:
     last_err = _last_error()
     alerts = _active_alerts(quotas, vps_health, vm_health or vm_interactive_health)
     notion_ops = _notion_ops_summary()
+    panel_tracking = _panel_activity_summary()
 
     vm_degraded = False
     if vm_health and vm_health.get("status") != "OK":
@@ -583,6 +667,7 @@ def build_dashboard_payload() -> dict:
         "last_error": last_err,
         "active_alerts": alerts,
         "notion_ops": notion_ops,
+        "panel_tracking": panel_tracking,
     }
 
 
@@ -601,12 +686,15 @@ def main() -> int:
     import argparse
     p = argparse.ArgumentParser(description="Dashboard report -> Notion")
     p.add_argument("--force", action="store_true", help="Forzar update aunque no haya cambios")
+    p.add_argument("--trigger", default="manual", help="Trigger label for ops_log tracking")
     args = p.parse_args()
 
     if not WORKER_TOKEN:
         print("WORKER_TOKEN no definido.", file=sys.stderr)
         return 1
 
+    _reset_dashboard_stats()
+    started_at = time.perf_counter()
     payload = build_dashboard_payload()
     fp = _payload_fingerprint(payload)
 
@@ -614,6 +702,18 @@ def main() -> int:
         try:
             prev = _FINGERPRINT_PATH.read_text().strip()
             if prev == fp:
+                ops_log.system_activity(
+                    "dashboard_rick",
+                    "refresh",
+                    "skipped",
+                    (time.perf_counter() - started_at) * 1000,
+                    trigger=args.trigger,
+                    fingerprint=fp,
+                    notion_reads=_DASHBOARD_STATS["notion_reads"],
+                    notion_writes=_DASHBOARD_STATS["notion_writes"],
+                    worker_calls=_DASHBOARD_STATS["worker_calls"],
+                    details="fingerprint_unchanged",
+                )
                 print(f"Sin cambios (fingerprint={fp}). Skipping Notion update.")
                 return 0
         except FileNotFoundError:
@@ -624,6 +724,7 @@ def main() -> int:
         "input": {"metrics": payload},
     }
     try:
+        _record_dashboard_stats(worker_calls=1, notion_writes=1)
         r = httpx.post(
             f"{WORKER_URL}/run",
             json=request_body,
@@ -638,9 +739,33 @@ def main() -> int:
         data = r.json()
         _FINGERPRINT_PATH.parent.mkdir(parents=True, exist_ok=True)
         _FINGERPRINT_PATH.write_text(fp)
+        ops_log.system_activity(
+            "dashboard_rick",
+            "refresh",
+            "updated",
+            (time.perf_counter() - started_at) * 1000,
+            trigger=args.trigger,
+            fingerprint=fp,
+            notion_reads=_DASHBOARD_STATS["notion_reads"],
+            notion_writes=_DASHBOARD_STATS["notion_writes"],
+            worker_calls=_DASHBOARD_STATS["worker_calls"],
+            details=f"overall={payload.get('overall_status', '?')}",
+        )
         print(f"Dashboard actualizado (fp={fp}): {data.get('result', data)}")
         return 0
     except Exception as e:
+        ops_log.system_activity(
+            "dashboard_rick",
+            "refresh",
+            "failed",
+            (time.perf_counter() - started_at) * 1000,
+            trigger=args.trigger,
+            fingerprint=fp,
+            notion_reads=_DASHBOARD_STATS["notion_reads"],
+            notion_writes=_DASHBOARD_STATS["notion_writes"],
+            worker_calls=_DASHBOARD_STATS["worker_calls"],
+            details=str(e),
+        )
         print(f"Error al actualizar dashboard: {e}", file=sys.stderr)
         return 2
 

@@ -77,6 +77,7 @@ class TestDashboardReportPayload:
              patch("scripts.dashboard_report_vps._recent_tasks", return_value=[{"task": "research.web", "team": "system", "status": "done", "duration_s": 0.1, "task_id": "abc12345", "when": "14:00 28/02", "project_name": "Proyecto Embudo Ventas"}]), \
              patch("scripts.dashboard_report_vps._running_tasks", return_value=[]), \
              patch("scripts.dashboard_report_vps._ops_log_summary", return_value={"total_events": 5, "completed": 4, "failed": 1, "completed_today": 4, "success_rate": 80.0, "models_used": {"gemini": 4}, "trend": "+20% vs ayer"}), \
+             patch("scripts.dashboard_report_vps._panel_activity_summary", return_value=[{"component": "dashboard_rick", "last_status": "updated", "last_trigger": "cron.hourly", "last_ts": "2026-03-23T10:00:00+00:00", "last_duration_ms": 400, "updated_24h": 3, "skipped_24h": 20, "failed_24h": 0, "notion_reads_24h": 9, "notion_writes_24h": 3, "worker_calls_24h": 4}]), \
              patch("scripts.dashboard_report_vps._system_uptime", return_value="2d 5h"), \
              patch("scripts.dashboard_report_vps._last_error", return_value=None), \
              patch("scripts.dashboard_report_vps._active_alerts", return_value=[]), \
@@ -94,6 +95,7 @@ class TestDashboardReportPayload:
         assert payload["active_alerts"] == []
         assert payload["vm_recovery_mode"] == {"enabled": False}
         assert payload["notion_ops"]["deliverables_pending"] == 2
+        assert payload["panel_tracking"][0]["component"] == "dashboard_rick"
         assert "release_tracking" not in payload
 
     def test_build_dashboard_payload_degrades_when_vm_is_offline(self, monkeypatch):
@@ -218,6 +220,21 @@ class TestNotionBlocks:
                 "deliverables_adjustments": 1,
                 "bridge_live": 2,
             },
+            "panel_tracking": [
+                {
+                    "component": "dashboard_rick",
+                    "last_status": "updated",
+                    "last_trigger": "cron.hourly",
+                    "last_ts": "2026-03-23T10:00:00+00:00",
+                    "last_duration_ms": 450,
+                    "updated_24h": 4,
+                    "skipped_24h": 19,
+                    "failed_24h": 0,
+                    "notion_reads_24h": 8,
+                    "notion_writes_24h": 4,
+                    "worker_calls_24h": 5,
+                }
+            ],
             "recent_tasks": [
                 {"task": "ping", "team": "system", "status": "done", "duration_s": 0.1, "task_id": "abc12345", "when": "14:00 28/02"},
             ],
@@ -257,6 +274,7 @@ class TestNotionBlocks:
         assert all("Seguimiento R16/R17" not in str(b) for b in blocks)
         assert any("Ruido técnico / sistema" in str(b) for b in blocks)
         assert any("Este dashboard es técnico" in str(b) for b in blocks)
+        assert any("Actividad de paneles" in str(b) for b in blocks)
 
     def test_build_dashboard_v2_blocks_show_vm_recovery_mode(self):
         from worker.notion_client import _build_dashboard_v2_blocks

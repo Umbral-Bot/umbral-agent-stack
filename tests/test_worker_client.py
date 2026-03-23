@@ -41,3 +41,24 @@ def test_run_sends_canonical_envelope_fields():
     assert payload["project_name"] == "Mejora Continua Agent Stack"
     assert payload["notion_track"] is True
     assert payload["callback_url"] == "https://callback.example/hook"
+
+
+def test_run_sends_optional_internal_caller_header():
+    response = MagicMock()
+    response.raise_for_status.return_value = None
+    response.json.return_value = {"ok": True}
+
+    http_client = MagicMock()
+    http_client.__enter__.return_value = http_client
+    http_client.post.return_value = response
+
+    with patch("client.worker_client.httpx.Client", return_value=http_client):
+        wc = WorkerClient(
+            base_url="http://worker.local",
+            token="test-token",
+            caller_id="script.verify_stack_vps",
+        )
+        wc.run("ping", {"hello": "world"})
+
+    headers = http_client.post.call_args.kwargs["headers"]
+    assert headers["X-Umbral-Caller"] == "script.verify_stack_vps"

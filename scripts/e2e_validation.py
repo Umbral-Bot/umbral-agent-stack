@@ -69,6 +69,7 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 logger = logging.getLogger("e2e_validation")
+CALLER_ID = "script.e2e_validation"
 
 
 # ── Data structures ─────────────────────────────────────────────
@@ -127,7 +128,11 @@ def _run_test(name: str, fn, timeout: float = 30.0) -> ValidationResult:
 # ── Individual tests ────────────────────────────────────────────
 
 def _make_headers(token: str) -> dict:
-    return {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    return {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+        "X-Umbral-Caller": CALLER_ID,
+    }
 
 
 _TRANSIENT_HTTP_STATUSES = {500, 502, 503, 504}

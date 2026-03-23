@@ -21,13 +21,16 @@ Uso:
 
 import asyncio
 import hmac
+import ipaddress
 import json
 import logging
 import os
+import re
 import time
 import uuid
 from collections import OrderedDict
 from contextlib import asynccontextmanager
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional, Union
 
@@ -37,7 +40,7 @@ from pydantic import BaseModel, Field
 
 from infra.ops_logger import ops_log
 
-from .config import RATE_LIMIT_RPM, WORKER_TOKEN
+from .config import RATE_LIMIT_INTERNAL_RPM, RATE_LIMIT_RPM, WORKER_TOKEN
 from .rate_limiter import RateLimiter
 from .sanitize import sanitize_input, sanitize_task_name
 from .tracing import flush as flush_tracing
@@ -178,24 +181,172 @@ app = FastAPI(
 # ---------------------------------------------------------------------------
 # Rate Limiting Middleware
 # ---------------------------------------------------------------------------
-limiter = RateLimiter(max_requests=RATE_LIMIT_RPM, window_seconds=60)
+_UUIDISH_SEGMENT = re.compile(r"^(?:\d+|[0-9a-f-]{8,})$", re.IGNORECASE)
+_RATE_LIMIT_FRAGMENT = re.compile(r"[^a-z0-9._-]+")
+_TAILSCALE_V4 = ipaddress.ip_network("100.64.0.0/10")
+_TAILSCALE_V6 = ipaddress.ip_network("fd7a:115c:a1e0::/48")
+_RATE_LIMIT_BODY_PATHS = {"/run", "/enqueue"}
+
+
+@dataclass(frozen=True)
+class _RateLimitDecision:
+    scope: str
+    bucket: str
+    limit: int
+
+
+external_limiter = RateLimiter(max_requests=RATE_LIMIT_RPM, window_seconds=60)
+internal_limiter = RateLimiter(max_requests=RATE_LIMIT_INTERNAL_RPM, window_seconds=60)
+# Backward-compat for tests and older imports.
+limiter = external_limiter
+
+
+def _has_valid_bearer_token(authorization: str | None) -> bool:
+    if not WORKER_TOKEN or not authorization:
+        return False
+    parts = authorization.split(" ", 1)
+    return (
+        len(parts) == 2
+        and parts[0].lower() == "bearer"
+        and hmac.compare_digest(parts[1], WORKER_TOKEN)
+    )
+
+
+def _is_internal_host(host: str | None) -> bool:
+    if not host:
+        return False
+
+    candidate = host.strip().lower()
+    if candidate in {"localhost", "testclient"}:
+        return True
+
+    try:
+        address = ipaddress.ip_address(candidate)
+    except ValueError:
+        return False
+
+    if address.is_loopback or address.is_private or address.is_link_local:
+        return True
+    if address.version == 4 and address in _TAILSCALE_V4:
+        return True
+    if address.version == 6 and address in _TAILSCALE_V6:
+        return True
+    return False
+
+
+def _rate_limit_fragment(value: Any) -> str:
+    text = str(value or "").strip().lower().replace("/", ".")
+    text = _RATE_LIMIT_FRAGMENT.sub("_", text).strip("._-")
+    return text[:80] or "unknown"
+
+
+def _normalized_rate_limit_path(path: str) -> str:
+    parts = [part for part in path.strip("/").split("/") if part]
+    if not parts:
+        return "root"
+
+    normalized: list[str] = []
+    for part in parts:
+        normalized.append("{id}" if _UUIDISH_SEGMENT.fullmatch(part) else part)
+    return _rate_limit_fragment(".".join(normalized))
+
+
+async def _load_rate_limit_payload(request: Request) -> Dict[str, Any] | None:
+    if request.url.path not in _RATE_LIMIT_BODY_PATHS:
+        return None
+    content_type = request.headers.get("content-type", "")
+    if "application/json" not in content_type:
+        return None
+
+    try:
+        raw_body = await request.body()
+        if not raw_body:
+            return None
+        payload = json.loads(raw_body)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return None
+
+    return payload if isinstance(payload, dict) else None
+
+
+def _internal_bucket_from_request(request: Request, payload: Dict[str, Any] | None) -> str:
+    host = request.client.host if request.client else "unknown"
+    bucket_parts = [
+        "internal",
+        _rate_limit_fragment(host),
+        _rate_limit_fragment(request.method),
+        _normalized_rate_limit_path(request.url.path),
+    ]
+
+    caller = request.headers.get("X-Umbral-Caller", "")
+    if caller:
+        bucket_parts.append(f"caller={_rate_limit_fragment(caller)}")
+
+    if payload:
+        task = payload.get("task")
+        task_type = payload.get("task_type")
+        source = payload.get("source")
+        source_kind = payload.get("source_kind")
+
+        if task:
+            bucket_parts.append(f"task={_rate_limit_fragment(task)}")
+        if task_type:
+            bucket_parts.append(f"type={_rate_limit_fragment(task_type)}")
+        if source_kind:
+            bucket_parts.append(f"source_kind={_rate_limit_fragment(source_kind)}")
+        elif source:
+            bucket_parts.append(f"source={_rate_limit_fragment(source)}")
+
+    return ":".join(bucket_parts)
+
+
+async def _rate_limit_decision(request: Request) -> _RateLimitDecision:
+    host = request.client.host if request.client else "unknown"
+    authorization = request.headers.get("authorization")
+    if _has_valid_bearer_token(authorization) and _is_internal_host(host):
+        payload = await _load_rate_limit_payload(request)
+        return _RateLimitDecision(
+            scope="internal",
+            bucket=_internal_bucket_from_request(request, payload),
+            limit=internal_limiter.max_requests,
+        )
+
+    return _RateLimitDecision(
+        scope="external",
+        bucket=f"external:{_rate_limit_fragment(host)}",
+        limit=external_limiter.max_requests,
+    )
+
+
+def _rate_limit_headers(decision: _RateLimitDecision, remaining: int, *, retry_after: bool = False) -> Dict[str, str]:
+    headers = {
+        "X-RateLimit-Scope": decision.scope,
+        "X-RateLimit-Limit": str(decision.limit),
+        "X-RateLimit-Remaining": str(max(remaining, 0)),
+    }
+    if retry_after:
+        headers["Retry-After"] = "60"
+    return headers
 
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
     if request.url.path == "/health":
         return await call_next(request)
-    
-    client_id = request.client.host if request.client else "unknown"
-    allowed, remaining = limiter.is_allowed(client_id)
-    
+
+    decision = await _rate_limit_decision(request)
+    active_limiter = internal_limiter if decision.scope == "internal" else external_limiter
+    allowed, remaining = active_limiter.is_allowed(decision.bucket)
+
     if not allowed:
         return JSONResponse(
             status_code=429,
             content={"detail": "Rate limit exceeded. Retry later."},
-            headers={"Retry-After": "60"}
+            headers=_rate_limit_headers(decision, remaining, retry_after=True),
         )
-    
+
     response = await call_next(request)
+    for name, value in _rate_limit_headers(decision, remaining).items():
+        response.headers.setdefault(name, value)
     return response
 
 
@@ -267,8 +418,7 @@ def _authenticate(authorization: str | None) -> None:
         logger.warning("Request to /run without Authorization header")
         raise HTTPException(status_code=401, detail="Invalid or missing token")
 
-    parts = authorization.split(" ", 1)
-    if len(parts) != 2 or parts[0].lower() != "bearer" or not hmac.compare_digest(parts[1], WORKER_TOKEN):
+    if not _has_valid_bearer_token(authorization):
         logger.warning("Request to /run with invalid token")
         raise HTTPException(status_code=401, detail="Invalid or missing token")
 

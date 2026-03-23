@@ -42,6 +42,7 @@ Regularización `UMB-132` (2026-03-22): se cerraron task files históricos que h
 | 2026-03-23-007 | Fase 1: supervisor VPS y alerting Notion robusto | codex | ✅ done |
 | 2026-03-23-008 | Fase 1 follow-up: restaurar ruta dedicada de alertas Notion del Supervisor | codex | ✅ done |
 | 2026-03-23-009 | Supervisor: publicar alertas en espanol | codex | ✅ done |
+| 2026-03-23-010 | Fase 4: rediseño UX/copy de OpenClaw y unificación de Dashboard Rick | codex | pending |
 | 2026-03-24-001 | Lead temporal Codex — capitalizar hallazgos + cerrar ramas codex/* + Claude si aplica | codex | ✅ done |
 
 ## Ronda 16 — Cerrada

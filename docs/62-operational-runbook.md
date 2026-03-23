@@ -17,6 +17,7 @@
 | Dashboard Notion | `PYTHONPATH=. python3 scripts/dashboard_report_vps.py` | Tareas recientes, métricas de salud, estado de Redis | Cron `*/15 min`; usar `--force` para forzar actualización |
 | E2E validation | `PYTHONPATH=. python3 scripts/e2e_validation.py` | health, ping, research.web, llm.generate, enqueue, task history, Notion, Redis, quota, routing | Cron diario a las 06:00; `--notion` para postear resultados |
 | Smoke test rápido | `PYTHONPATH=. python3 scripts/smoke_test.py` | Worker /health, ping, Redis, quota status | Para verificación rápida ad-hoc (VPS: usar `python3`) |
+| Smoke research.web | `PYTHONPATH=. python3 scripts/research_web_smoke.py --query "BIM trends 2026"` | Tavily en runtime real; distingue cuota, auth/config, timeout y fallo upstream | Útil cuando `research.web` falle y quieras ver la causa exacta sin correr la suite E2E completa |
 | Health check infraestructura | `bash scripts/vps/health-check.sh` | Redis, Worker, Dispatcher, ops_log | Cron `*/30 min` |
 
 ### 1.2 Semanal

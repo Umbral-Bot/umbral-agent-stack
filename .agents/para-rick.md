@@ -73,3 +73,32 @@ Podés delegar tareas al agente **Gpt-Rick** vía Responses API. Endpoints:
 - **Activity Protocol:** para Teams/M365.
 
 **Variables:** `GPT_RICK_API_KEY` o `AZURE_OPENAI_API_KEY` en env. **Test:** `python3 scripts/test_gpt_rick_agent.py`
+
+---
+
+## 2026-03-22 - Google Calendar y Gmail disponibles
+
+Tenes disponibles las herramientas del bridge Umbral Worker para agenda y
+correo:
+
+- `umbral_google_calendar_create_event`
+- `umbral_google_calendar_list_events`
+- `umbral_gmail_create_draft`
+- `umbral_gmail_list_drafts`
+
+### Credenciales recomendadas
+
+- **Calendar:** `GOOGLE_CALENDAR_REFRESH_TOKEN` +
+  `GOOGLE_CALENDAR_CLIENT_ID` + `GOOGLE_CALENDAR_CLIENT_SECRET`
+- **Gmail:** `GOOGLE_GMAIL_REFRESH_TOKEN` +
+  `GOOGLE_GMAIL_CLIENT_ID` + `GOOGLE_GMAIL_CLIENT_SECRET`
+
+Tambien sirven `GOOGLE_CALENDAR_TOKEN` / `GOOGLE_GMAIL_TOKEN` temporales, pero
+caducan. Para un calendario compartido de David, no uses `primary`: pasa el
+`calendar_id` explicito del calendario compartido.
+
+### Donde mirar
+
+- `docs/35-google-calendar-token-setup.md`
+- `docs/35-gmail-token-setup.md`
+- `openclaw/extensions/umbral-worker/skills/umbral-worker/SKILL.md`

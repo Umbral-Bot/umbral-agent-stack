@@ -112,22 +112,21 @@ Ejemplo:
 
 ## Verificacion recomendada
 
-1. Listar calendarios visibles por Rick:
+1. Probar el handler directo del Worker desde la raiz del repo:
 
    ```bash
    source ~/.config/openclaw/env
    python - <<'PY'
-   import os, json, urllib.request
-   req = urllib.request.Request(
-       "https://www.googleapis.com/calendar/v3/users/me/calendarList",
-       headers={"Authorization": f"Bearer {os.environ['GOOGLE_CALENDAR_TOKEN']}"}
-   )
-   with urllib.request.urlopen(req, timeout=30) as resp:
-       print(resp.read().decode("utf-8"))
+   from worker.tasks.google_calendar import handle_google_calendar_list_events
+   print(handle_google_calendar_list_events({
+       "calendar_id": "primary",
+       "max_results": 3,
+   }))
    PY
    ```
 
-2. Luego probar `google.calendar.list_events` con `calendar_id` explicito.
+2. Si usas un calendario compartido, volver a probar con `calendar_id`
+   explicito en vez de `primary`.
 
 ---
 

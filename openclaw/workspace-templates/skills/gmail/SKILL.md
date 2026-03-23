@@ -7,8 +7,7 @@ metadata:
   openclaw:
     emoji: "\U0001F4E7"
     requires:
-      env:
-        - GOOGLE_GMAIL_TOKEN
+      env: []
 ---
 
 # Gmail Skill
@@ -17,8 +16,13 @@ Rick puede crear y listar borradores de email en Gmail a través de las Worker t
 
 ## Requisitos
 
-- `GOOGLE_GMAIL_TOKEN`: OAuth2 Bearer token con scope `gmail.compose`.
-- Alternativa: `GOOGLE_SERVICE_ACCOUNT_JSON` (ruta al archivo JSON de service account con scope gmail).
+- `GOOGLE_GMAIL_REFRESH_TOKEN` + `GOOGLE_GMAIL_CLIENT_ID` +
+  `GOOGLE_GMAIL_CLIENT_SECRET`: opcion persistente recomendada; el Worker
+  renueva el access token solo.
+- `GOOGLE_GMAIL_TOKEN`: OAuth2 Bearer token con scope `gmail.compose`
+  (temporal, caduca en ~1 h).
+- Alternativa: `GOOGLE_SERVICE_ACCOUNT_JSON` (ruta al archivo JSON de service
+  account con scope gmail).
 
 ## Tasks disponibles
 
@@ -72,5 +76,6 @@ además de registrarlo en Notion.
 ## Notas
 
 - El email se codifica en base64 formato RFC 2822.
-- Soporta tanto OAuth Bearer como Service Account (con lazy import de `google-auth`).
+- Soporta refresh token OAuth, OAuth Bearer temporal y Service Account
+  (con lazy import de `google-auth`).
 - El parámetro `q` usa la misma sintaxis de búsqueda de Gmail.

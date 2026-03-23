@@ -16,6 +16,41 @@ sys.path.insert(0, repo)
 
 from client.worker_client import WorkerClient
 
+
+def _load_env_vars(env_path: str | None = None) -> dict[str, str]:
+    env_vars: dict[str, str] = {}
+    path = env_path or os.path.expanduser("~/.config/openclaw/env")
+    if not os.path.isfile(path):
+        return env_vars
+
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            k, v = line.split("=", 1)
+            env_vars[k.strip()] = v.strip().strip('"').strip("'")
+    return env_vars
+
+
+def _resolve_worker_url(task: str, input_data: dict, env_vars: dict[str, str], explicit_url: str) -> str:
+    if explicit_url:
+        return explicit_url.rstrip("/")
+
+    session = input_data.get("session", "")
+    if session == "interactive" and env_vars.get("WORKER_URL_VM_INTERACTIVE"):
+        return env_vars["WORKER_URL_VM_INTERACTIVE"].rstrip("/")
+
+    if task.startswith("windows.") and env_vars.get("WORKER_URL_VM"):
+        return env_vars["WORKER_URL_VM"].rstrip("/")
+
+    for key in ("WORKER_URL", "WORKER_URL_VM", "WORKER_URL_VM_INTERACTIVE"):
+        value = (env_vars.get(key) or "").strip()
+        if value:
+            return value.rstrip("/")
+
+    return ""
+
 def main():
     if len(sys.argv) < 2:
         print("Uso: run_worker_task.py <task> [input_json]", file=sys.stderr)
@@ -54,28 +89,11 @@ def main():
     token = os.environ.get("WORKER_TOKEN", "")
     session = input_data.get("session", "")
     if not url or not token:
-        env_vars = {}
-        env_path = os.path.expanduser("~/.config/openclaw/env")
-        if os.path.isfile(env_path):
-            with open(env_path, encoding="utf-8") as f:
-                for line in f:
-                    line = line.strip()
-                    if not line or line.startswith("#"):
-                        continue
-                    if "=" in line:
-                        k, v = line.split("=", 1)
-                        env_vars[k] = v.strip().strip('"').strip("'")
-            if not url:
-                session = input_data.get("session", "")
-                if session == "interactive" and env_vars.get("WORKER_URL_VM_INTERACTIVE"):
-                    url = env_vars["WORKER_URL_VM_INTERACTIVE"]
-                elif task.startswith("windows.") and env_vars.get("WORKER_URL_VM"):
-                    url = env_vars["WORKER_URL_VM"]
-                else:
-                    url = env_vars.get("WORKER_URL_VM_INTERACTIVE") or env_vars.get("WORKER_URL_VM") or env_vars.get("WORKER_URL") or ""
-            if not token:
-                token = env_vars.get("WORKER_TOKEN", "")
-            url = (url or "").rstrip("/")
+        env_vars = _load_env_vars()
+        if not url:
+            url = _resolve_worker_url(task, input_data, env_vars, url)
+        if not token:
+            token = env_vars.get("WORKER_TOKEN", "")
         if not url or not token:
             print("Defina WORKER_URL y WORKER_TOKEN (o ~/.config/openclaw/env).", file=sys.stderr)
             sys.exit(3)

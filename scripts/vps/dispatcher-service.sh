@@ -8,9 +8,18 @@ SERVICE_NAME="${SERVICE_NAME:-openclaw-dispatcher}"
 SERVICE_TEMPLATE="${SERVICE_TEMPLATE:-$REPO/openclaw/systemd/${SERVICE_NAME}.service.template}"
 SERVICE_FILE="${SERVICE_FILE:-$SYSTEMD_USER_DIR/${SERVICE_NAME}.service}"
 DISPATCHER_PATTERN="${DISPATCHER_PATTERN:--m dispatcher\\.service}"
+CURRENT_USER="${USER:-$(id -un 2>/dev/null || true)}"
+
+systemd_user_available() {
+    command -v systemctl > /dev/null 2>&1 && systemctl --user show-environment > /dev/null 2>&1
+}
 
 dispatcher_pids() {
-    pgrep -u "$USER" -f -- "$DISPATCHER_PATTERN" || true
+    if [ -n "$CURRENT_USER" ]; then
+        pgrep -u "$CURRENT_USER" -f -- "$DISPATCHER_PATTERN" || true
+        return
+    fi
+    pgrep -f -- "$DISPATCHER_PATTERN" || true
 }
 
 dispatcher_count() {
@@ -23,11 +32,11 @@ dispatcher_count() {
 }
 
 service_exists() {
-    systemctl --user cat "$SERVICE_NAME" > /dev/null 2>&1
+    systemd_user_available && systemctl --user cat "$SERVICE_NAME" > /dev/null 2>&1
 }
 
 service_active() {
-    systemctl --user is-active "$SERVICE_NAME" > /dev/null 2>&1
+    systemd_user_available && systemctl --user is-active "$SERVICE_NAME" > /dev/null 2>&1
 }
 
 ensure_env_loaded() {
@@ -47,6 +56,10 @@ ensure_env_loaded() {
 }
 
 ensure_unit() {
+    if ! systemd_user_available; then
+        echo "systemd --user unavailable" >&2
+        return 1
+    fi
     mkdir -p "$SYSTEMD_USER_DIR"
     if [ ! -f "$SERVICE_TEMPLATE" ]; then
         echo "Dispatcher template not found: $SERVICE_TEMPLATE" >&2
@@ -61,7 +74,9 @@ status_dispatcher() {
     local count
     local pids
 
-    if service_active; then
+    if ! systemd_user_available; then
+        state="process_only"
+    elif service_active; then
         state="active"
     fi
     count="$(dispatcher_count)"
@@ -71,10 +86,11 @@ status_dispatcher() {
     fi
 
     echo "service_state=$state"
+    echo "systemd_available=$(systemd_user_available && echo true || echo false)"
     echo "process_count=$count"
     echo "pids=$pids"
 
-    if [ "$state" = "active" ] && [ "$count" -eq 1 ]; then
+    if [ "$count" -eq 1 ] && { [ "$state" = "active" ] || [ "$state" = "process_only" ]; }; then
         return 0
     fi
     return 1
@@ -108,10 +124,15 @@ kill_strays() {
 
 reconcile_dispatcher() {
     ensure_env_loaded
-    ensure_unit
-    stop_dispatcher
     kill_strays
-    systemctl --user enable --now "$SERVICE_NAME"
+    if systemd_user_available; then
+        ensure_unit
+        stop_dispatcher
+        systemctl --user enable --now "$SERVICE_NAME"
+    else
+        cd "$REPO"
+        nohup python3 -m dispatcher.service >> /tmp/dispatcher.log 2>&1 &
+    fi
     sleep 2
     status_dispatcher
 }
@@ -129,8 +150,13 @@ start_dispatcher() {
     fi
 
     ensure_env_loaded
-    ensure_unit
-    systemctl --user enable --now "$SERVICE_NAME"
+    if systemd_user_available; then
+        ensure_unit
+        systemctl --user enable --now "$SERVICE_NAME"
+    else
+        cd "$REPO"
+        nohup python3 -m dispatcher.service >> /tmp/dispatcher.log 2>&1 &
+    fi
     sleep 2
     status_dispatcher
 }

@@ -10,6 +10,7 @@ Usage: python scripts/skills_coverage_report.py
 
 import re
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Set, Tuple
 
@@ -26,9 +27,18 @@ TASK_TO_SKILL: Dict[str, str] = {
     "notion.write_transcript": "notion",
     "notion.add_comment": "notion",
     "notion.poll_comments": "notion",
+    "notion.read_page": "notion",
+    "notion.read_database": "notion",
+    "notion.search_databases": "notion",
+    "notion.create_database_page": "notion",
+    "notion.update_page_properties": "notion",
     "notion.upsert_task": "notion",
     "notion.update_dashboard": "notion",
     "notion.create_report_page": "notion",
+    "notion.enrich_bitacora_page": "notion",
+    "notion.upsert_project": "notion",
+    "notion.upsert_deliverable": "notion",
+    "notion.upsert_bridge_item": "notion",
     "windows.pad.run_flow": "windows",
     "windows.open_notepad": "windows",
     "windows.write_worker_token": "windows",
@@ -45,10 +55,23 @@ TASK_TO_SKILL: Dict[str, str] = {
     "linear.create_issue": "linear",
     "linear.list_teams": "linear",
     "linear.update_issue_status": "linear",
+    "linear.list_projects": "linear",
+    "linear.create_project": "linear",
+    "linear.attach_issue_to_project": "linear",
+    "linear.list_project_issues": "linear",
+    "linear.create_project_update": "linear",
+    "linear.publish_agent_stack_followup": "linear",
+    "linear.claim_agent_stack_issue": "linear",
+    "linear.list_agent_stack_issues": "linear",
     "research.web": "research",
     "llm.generate": "llm-generate",
     "composite.research_report": "composite",
     "make.post_webhook": "make-webhook",
+    "n8n.list_workflows": "n8n",
+    "n8n.get_workflow": "n8n",
+    "n8n.create_workflow": "n8n",
+    "n8n.update_workflow": "n8n",
+    "n8n.post_webhook": "n8n",
     "azure.audio.generate": "azure-audio",
     "figma.get_file": "figma",
     "figma.get_node": "figma",
@@ -64,6 +87,13 @@ TASK_TO_SKILL: Dict[str, str] = {
     "google.calendar.list_events": "google-calendar",
     "gmail.create_draft": "gmail",
     "gmail.list_drafts": "gmail",
+    "google.image.generate": "google-cloud-vertex",
+    "browser.navigate": "browser-automation-vm",
+    "browser.read_page": "browser-automation-vm",
+    "browser.screenshot": "browser-automation-vm",
+    "browser.click": "browser-automation-vm",
+    "browser.type_text": "browser-automation-vm",
+    "browser.press_key": "browser-automation-vm",
 }
 
 
@@ -98,6 +128,7 @@ def generate_report() -> Tuple[str, int, int]:
     """Build coverage report. Returns (report_text, covered, total)."""
     task_names = extract_task_names()
     skill_names = extract_skill_names()
+    generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     auto_map = _build_auto_mapping(task_names, skill_names)
     effective_map: Dict[str, str] = {**auto_map, **TASK_TO_SKILL}
@@ -120,11 +151,11 @@ def generate_report() -> Tuple[str, int, int]:
     pct = (n_covered / total * 100) if total else 0
 
     lines = [
-        "# Skills Coverage Report R12\n",
-        f"**Fecha:** 2026-03-04  ",
-        f"**Total Worker tasks:** {total}  ",
-        f"**Tasks con skill:** {n_covered}  ",
-        f"**Tasks sin skill:** {len(uncovered)}  ",
+        "# Skills Coverage Report\n",
+        f"**Fecha:** {generated_at}",
+        f"**Total Worker tasks:** {total}",
+        f"**Tasks con skill:** {n_covered}",
+        f"**Tasks sin skill:** {len(uncovered)}",
         f"**Cobertura:** {n_covered}/{total} ({pct:.0f}%)\n",
         "---\n",
         "## ✅ Tasks CON skill\n",

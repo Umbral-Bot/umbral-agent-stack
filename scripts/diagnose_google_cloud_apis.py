@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """
-Diagnóstico de APIs de Google Cloud (Custom Search, Gemini, Vertex).
+Diagnóstico operativo de búsqueda/Google APIs para Rick.
+
+Tavily es el backend de búsqueda primario del stack. Google Custom Search se
+mantiene solo como chequeo legado/experimental porque suele devolver 403 en
+proyectos nuevos o sin acceso histórico.
+
 Carga variables desde .env en la raíz del repo. No imprime claves.
 Ejecutar: cd repo_root && python scripts/diagnose_google_cloud_apis.py
 """
@@ -38,10 +43,10 @@ def test_custom_search() -> None:
     key = os.environ.get("GOOGLE_CSE_API_KEY_RICK_UMBRAL") or os.environ.get("GOOGLE_CSE_API_KEY")
     cx = os.environ.get("GOOGLE_CSE_CX")
     if not key:
-        print("Custom Search: SKIP (falta GOOGLE_CSE_API_KEY_RICK_UMBRAL o GOOGLE_CSE_API_KEY)")
+        print("Custom Search (legado): SKIP (falta GOOGLE_CSE_API_KEY_RICK_UMBRAL o GOOGLE_CSE_API_KEY)")
         return
     if not cx:
-        print("Custom Search: SKIP (falta GOOGLE_CSE_CX)")
+        print("Custom Search (legado): SKIP (falta GOOGLE_CSE_CX)")
         return
     try:
         import urllib.request
@@ -55,9 +60,9 @@ def test_custom_search() -> None:
         with urllib.request.urlopen(req, timeout=10) as r:
             data = r.read().decode()
             if "items" in data or "searchInformation" in data:
-                print("Custom Search: OK (200)")
+                print("Custom Search (legado): OK (200)")
             else:
-                print("Custom Search: 200 pero respuesta inesperada")
+                print("Custom Search (legado): 200 pero respuesta inesperada")
     except urllib.error.HTTPError as e:
         body = ""
         try:
@@ -66,7 +71,7 @@ def test_custom_search() -> None:
             pass
         err = str(e)
         if e.code == 403:
-            print("Custom Search: 403 - Proyecto sin acceso a Custom Search JSON API.")
+            print("Custom Search (legado): 403 - Proyecto sin acceso a Custom Search JSON API.")
             if body:
                 try:
                     j = json.loads(body)
@@ -74,20 +79,21 @@ def test_custom_search() -> None:
                     print("  Mensaje API:", msg)
                 except Exception:
                     print("  Mensaje API:", body[:300])
-            print("  En GCP Console: APIs y servicios -> Habilitar 'Custom Search API' para este proyecto.")
+            print("  Este resultado no bloquea el path operativo: web_discovery usa Tavily por defecto.")
+            print("  Solo vale la pena insistir si quieres mantener un path legado en un proyecto grandfathered.")
         elif e.code == 401:
-            print("Custom Search: 401 - Key invalida o restricciones (IP/API).")
+            print("Custom Search (legado): 401 - Key invalida o restricciones (IP/API).")
         else:
-            print(f"Custom Search: ERROR {e.code} - {body[:200] if body else err[:200]}")
+            print(f"Custom Search (legado): ERROR {e.code} - {body[:200] if body else err[:200]}")
     except Exception as e:
         err = str(e)
         if "403" in err:
-            print("Custom Search: 403 - El proyecto no tiene acceso a Custom Search JSON API.")
-            print("  En GCP Console: APIs y servicios -> Habilitar 'Custom Search API' para este proyecto.")
+            print("Custom Search (legado): 403 - El proyecto no tiene acceso a Custom Search JSON API.")
+            print("  Este resultado no bloquea el path operativo: web_discovery usa Tavily por defecto.")
         elif "401" in err:
-            print("Custom Search: 401 - Key invalida o restricciones (IP/API).")
+            print("Custom Search (legado): 401 - Key invalida o restricciones (IP/API).")
         else:
-            print("Custom Search: ERROR -", err[:200])
+            print("Custom Search (legado): ERROR -", err[:200])
 
 def test_gemini_ai_studio() -> None:
     key = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GOOGLE_API_KEY_RICK_UMBRAL")
@@ -116,7 +122,7 @@ def test_gemini_ai_studio() -> None:
             print(f"Gemini: ERROR — {err[:200]}")
 
 def test_tavily_search() -> None:
-    """Tavily es el fallback de web_discovery (Azure Bing no disponible cuentas nuevas)."""
+    """Tavily es el backend operativo primario de web_discovery."""
     key = os.environ.get("TAVILY_API_KEY")
     if not key:
         print("Tavily Search: SKIP (falta TAVILY_API_KEY)")
@@ -146,10 +152,10 @@ def test_tavily_search() -> None:
 
 
 def main() -> None:
-    print("=== Diagnóstico Google Cloud / Gemini (leyendo desde .env) ===\n")
-    test_custom_search()
-    print()
+    print("=== Diagnóstico búsqueda / Google APIs para Rick (leyendo desde .env) ===\n")
     test_tavily_search()
+    print()
+    test_custom_search()
     print()
     test_gemini_ai_studio()
     print("\n--- Sobre Vertex AI ---")

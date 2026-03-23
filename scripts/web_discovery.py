@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 """
-Discovery web para SIM: Google Custom Search -> fallback Tavily si 403.
+Discovery web para SIM: Tavily como backend primario.
 
-Azure Bing no esta disponible para cuentas nuevas (Microsoft depreco). Fallback: Tavily.
+Google Custom Search quedo como camino legado/experimental porque este stack no
+ha mostrado evidencia de uso exitoso y los proyectos nuevos suelen recibir 403.
+Azure Bing no esta disponible para cuentas nuevas (Microsoft depreco).
 
 Variables desde .env:
-  GOOGLE_CSE_API_KEY_RICK_UMBRAL / GOOGLE_CSE_API_KEY  - Google Custom Search
+  TAVILY_API_KEY                                       - Tavily Search (primario)
+  GOOGLE_CSE_API_KEY_RICK_UMBRAL / GOOGLE_CSE_API_KEY - Google Custom Search (legado)
   GOOGLE_CSE_CX                                        - Custom Search engine ID
-  TAVILY_API_KEY                                       - Tavily Search (fallback)
+  WEB_DISCOVERY_ENABLE_GOOGLE_CSE=1                    - habilita fallback legado a Google
 
 Formato de salida unificado: [{"title", "url", "snippet", "source": "google"|"tavily"}]
 
 Uso:
-  python scripts/web_discovery.py "keyword" [--count 5] [--force-tavily] [--output json|md]
+  python scripts/web_discovery.py "keyword" [--count 5] [--force-tavily] [--allow-google-legacy] [--output json|md]
 """
 from __future__ import annotations
 
@@ -48,11 +51,12 @@ TAVILY_API_URL = "https://api.tavily.com/search"
 Result = dict[str, str]  # {"title", "url", "snippet", "source"}
 
 
-# ── Custom Search (Google) ──────────────────────────────────────────────────
+# ── Custom Search (Google legacy) ──────────────────────────────────────────
 
 def _search_google(query: str, count: int) -> tuple[list[Result], str | None]:
     """
     Busca con Google Custom Search JSON API.
+    Ruta legado/experimental, no operativa por defecto.
     Retorna (resultados, error).
     Si hay 403, error="403:forbidden".
     """
@@ -100,7 +104,7 @@ def _search_google(query: str, count: int) -> tuple[list[Result], str | None]:
         return [], f"error:{err[:200]}"
 
 
-# ── Tavily Search (fallback; Azure Bing no disponible para cuentas nuevas) ───
+# ── Tavily Search (backend operativo primario) ─────────────────────────────
 
 def _search_tavily(query: str, count: int) -> tuple[list[Result], str | None]:
     """
@@ -150,50 +154,62 @@ def _search_tavily(query: str, count: int) -> tuple[list[Result], str | None]:
         return [], f"error:{str(e)[:200]}"
 
 
-# ── Función principal (fallback automático) ──────────────────────────────────
+# ── Función principal (Tavily primero; Google solo opt-in legado) ──────────
+
+def _google_legacy_enabled(explicit_opt_in: bool) -> bool:
+    if explicit_opt_in:
+        return True
+
+    raw = os.environ.get("WEB_DISCOVERY_ENABLE_GOOGLE_CSE", "").strip().lower()
+    return raw in {"1", "true", "yes", "on"}
 
 def search(
     query: str,
     count: int = 10,
     force_tavily: bool = False,
+    allow_google_legacy: bool = False,
 ) -> dict[str, Any]:
     """
-    Busca intentando primero Google Custom Search.
-    Si Custom Search devuelve 403 (o falta key), fallback a Tavily.
+    Busca intentando primero Tavily.
+    Google Custom Search solo se usa si el caller lo habilita explicitamente
+    mediante allow_google_legacy=True o WEB_DISCOVERY_ENABLE_GOOGLE_CSE=1.
     Azure Bing no esta disponible para cuentas nuevas (deprecado por Microsoft).
 
     Retorna: query, engine_used ("google"|"tavily"|"none"), fallback_reason, results, error.
     """
-    fallback_reason: str | None = None
-
-    if not force_tavily:
-        results, err = _search_google(query, count)
-        if err is None:
-            return {
-                "query": query,
-                "engine_used": "google",
-                "fallback_reason": None,
-                "results": results,
-                "error": None,
-            }
-        fallback_reason = err
+    google_legacy_enabled = _google_legacy_enabled(allow_google_legacy)
 
     results, err = _search_tavily(query, count)
     if err is None:
         return {
             "query": query,
             "engine_used": "tavily",
-            "fallback_reason": fallback_reason,
+            "fallback_reason": None,
             "results": results,
             "error": None,
         }
+    tavily_error = err
+
+    if google_legacy_enabled and not force_tavily:
+        results, err = _search_google(query, count)
+        if err is None:
+            return {
+                "query": query,
+                "engine_used": "google",
+                "fallback_reason": tavily_error,
+                "results": results,
+                "error": None,
+            }
+        error = err
+    else:
+        error = tavily_error
 
     return {
         "query": query,
         "engine_used": "none",
-        "fallback_reason": fallback_reason,
+        "fallback_reason": tavily_error if google_legacy_enabled and not force_tavily else None,
         "results": [],
-        "error": err,
+        "error": error,
     }
 
 
@@ -219,11 +235,20 @@ def _format_markdown(payload: dict[str, Any]) -> str:
 
 def main() -> None:
     ap = argparse.ArgumentParser(
-        description="Discovery web: Custom Search (Google) -> fallback Tavily si 403"
+        description="Discovery web: Tavily como motor primario; Google Custom Search solo legado/opt-in"
     )
     ap.add_argument("query", nargs="?", default="", help="Texto a buscar")
     ap.add_argument("--count", type=int, default=5, help="Numero de resultados (default: 5)")
-    ap.add_argument("--force-tavily", action="store_true", help="Saltar Google, ir directo a Tavily")
+    ap.add_argument(
+        "--force-tavily",
+        action="store_true",
+        help="Usar solo Tavily y saltar cualquier fallback legado",
+    )
+    ap.add_argument(
+        "--allow-google-legacy",
+        action="store_true",
+        help="Si Tavily falla, intentar Google Custom Search como fallback legado",
+    )
     ap.add_argument(
         "--output",
         choices=["json", "md"],
@@ -234,12 +259,17 @@ def main() -> None:
 
     if not args.query.strip():
         print(
-            'Uso: python scripts/web_discovery.py "keyword" [--count 5] [--force-tavily] [--output md]',
+            'Uso: python scripts/web_discovery.py "keyword" [--count 5] [--force-tavily] [--allow-google-legacy] [--output md]',
             file=sys.stderr,
         )
         sys.exit(1)
 
-    payload = search(args.query.strip(), count=args.count, force_tavily=args.force_tavily)
+    payload = search(
+        args.query.strip(),
+        count=args.count,
+        force_tavily=args.force_tavily,
+        allow_google_legacy=args.allow_google_legacy,
+    )
 
     if args.output == "md":
         print(_format_markdown(payload))

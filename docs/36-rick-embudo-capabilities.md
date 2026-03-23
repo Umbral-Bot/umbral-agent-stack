@@ -2,15 +2,18 @@
 
 ## Búsqueda web para SIM / discovery
 
-### Si Custom Search (Google) da 403
+### Backend operativo actual
 
-Google Custom Search puede devolver 403 en proyectos nuevos. **Azure Bing no está disponible** para cuentas nuevas (Microsoft deprecó la creación de recursos Bing Search). **Fallback:** Tavily Search API.
+**Tavily Search API** es el backend operativo real de discovery web en este stack.
+
+Google Custom Search se mantiene solo como ruta legada/experimental porque los diagnósticos repetidos han dado 403 en proyectos nuevos o sin acceso histórico. **Azure Bing no está disponible** para cuentas nuevas (Microsoft deprecó la creación de recursos Bing Search).
 
 | Origen | Variable (VPS: `~/.config/openclaw/env`) | Free tier | Cómo obtener key |
 |--------|------------------------------------------|-----------|------------------|
 | **Tavily** | `TAVILY_API_KEY` | 1000 créditos/mes | [app.tavily.com](https://app.tavily.com) o [docs.tavily.com](https://docs.tavily.com) — API orientada a agentes AI |
+| **Google Custom Search (legado)** | `GOOGLE_CSE_API_KEY_RICK_UMBRAL` + `GOOGLE_CSE_CX` | n/a | Solo para pruebas explícitas; requiere `--allow-google-legacy` o `WEB_DISCOVERY_ENABLE_GOOGLE_CSE=1` |
 
-**Uso:** `python scripts/web_discovery.py "keyword" [--count 5]` — intenta Google; si 403, usa Tavily. Con `--force-tavily` va directo a Tavily.
+**Uso:** `python scripts/web_discovery.py "keyword" [--count 5]` — usa Tavily por defecto. Con `--force-tavily` obliga Tavily aunque exista fallback legado. Solo con `--allow-google-legacy` (o `WEB_DISCOVERY_ENABLE_GOOGLE_CSE=1`) intentará Google si Tavily falla.
 
 Rick usa el mismo flujo (keywords → resultados → hallazgos); el script elige motor según disponibilidad.
 
@@ -27,7 +30,7 @@ Funciones que Rick puede usar o a las que puedes darle acceso para el embudo de 
 | **Worker VM + windows.fs** | Entregables en Drive (G:\...), informes, bundles | Tareas `windows.fs.*`; servicio NSSM con usuario que ve G: |
 | **GitHub** | PRs de mejoras, documentación, código del stack | `GITHUB_TOKEN` + deploy key SSH (doc 34) |
 | **Hostinger API** | Estado de VPS, dominios, proyectos web | `HOSTINGER_API_TOKEN` (doc 35 / env) |
-| **Tavily Search** | Discovery web cuando Custom Search falle (Bing no disponible cuentas nuevas) | `TAVILY_API_KEY` + `scripts/web_discovery.py` |
+| **Tavily Search** | Discovery web primario del stack | `TAVILY_API_KEY` + `scripts/web_discovery.py` |
 | **Google (Gemini/NL/Vertex)** | Resúmenes, análisis de texto, clustering (SIM) | Keys y proyecto en doc 35; Vertex con Service Account si se necesita |
 | **Telegram** | Avisos a David, resúmenes ejecutivos | `TELEGRAM_BOT_TOKEN` + chat_id en env |
 | **Calendario (Google/Outlook)** | Próximas reuniones, recordatorios de seguimiento | OAuth o API de calendario; opcional para Rick |
@@ -38,7 +41,7 @@ Funciones que Rick puede usar o a las que puedes darle acceso para el embudo de 
 ### Prioridad sugerida para el embudo
 
 1. **Ya en uso:** Notion, Linear, VM/Drive, GitHub, SIM (Reddit + búsqueda cuando esté).
-2. **Siguiente:** Tavily como fallback de búsqueda (Custom Search 403; Bing deprecado); Telegram para resúmenes breves a David.
+2. **Siguiente:** mantener Tavily como backend primario de búsqueda y usar Telegram para resúmenes breves a David.
 3. **Después:** Hostinger para estado de infra; opcional calendario + CRM en Notion/Linear; formularios/webhooks si hay landing.
 
 ---

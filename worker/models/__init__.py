@@ -57,6 +57,28 @@ class TaskType(str, Enum):
     GENERAL = "general"
 
 
+_ENVELOPE_HINT_FIELDS = {
+    "schema_version",
+    "task_id",
+    "team",
+    "task_type",
+    "selected_model",
+    "status",
+    "trace_id",
+    "created_at",
+    "source",
+    "source_kind",
+    "source_comment_id",
+    "linear_issue_id",
+    "project_name",
+    "project_page_id",
+    "deliverable_name",
+    "deliverable_page_id",
+    "notion_track",
+    "callback_url",
+}
+
+
 # ---------------------------------------------------------------------------
 # TaskEnvelope
 # ---------------------------------------------------------------------------
@@ -89,6 +111,18 @@ class TaskEnvelope(BaseModel):
     task: str
     input: Dict[str, Any] = {}
     callback_url: Optional[str] = None
+
+    @classmethod
+    def from_run_payload(cls, body: Dict[str, Any]) -> "TaskEnvelope":
+        """Parse both canonical and legacy /run payloads."""
+        if "schema_version" in body:
+            return cls(**body)
+        if any(field in body for field in _ENVELOPE_HINT_FIELDS):
+            merged = dict(body)
+            merged.setdefault("schema_version", "0.1")
+            return cls(**merged)
+        legacy = LegacyRunRequest(**body)
+        return legacy.to_envelope()
 
 
 class TaskResult(BaseModel):

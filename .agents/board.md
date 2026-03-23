@@ -13,7 +13,7 @@
 | VPS (Control Plane) | ✅ Redis + Dispatcher + Worker + 12 crons (branch `rick/vps`) |
 | Notion Poller daemon | ✅ Corriendo (PID 269682, desde 2026-03-04) |
 | Worker API VPS | ✅ v0.4.0 — 43 handlers — responde directo |
-| Worker API VM | ⚠️ `8088`: health+ping OK pero `/providers` y `/quota` siguen en 503 hasta restart privilegiado; `8089` ya actualizado y smoke OK |
+| Worker API VM | ✅ `8088` y `8089` alineados a `main`; health/ping/providers/quota OK |
 | Multi-LLM | ✅ Gemini 2.5 Flash operativo (llamada directa OK) |
 | OpsLogger | ✅ 213 eventos en ~/.config/umbral/ops_log.jsonl |
 | Crons activos | 12 (dashboard, health, supervisor, poller, sim-daily, sim-report, digest, sim-make, E2E, OODA, scheduled-tasks, quota-guard) |
@@ -39,6 +39,7 @@ Regularización `UMB-132` (2026-03-22): se cerraron task files históricos que h
 | 2026-03-23-004 | UMB-148: retirar Google Custom Search como path primario de discovery web | codex | ✅ done |
 | 2026-03-23-005 | Super diagnostico exhaustivo de interconectividad y gobernanza operativa | codex | ✅ done |
 | 2026-03-23-006 | Fase 0: estabilizacion base, merge, deploy y smoke post-diagnostico | codex | ✅ done |
+| 2026-03-23-007 | Fase 1: supervisor VPS y alerting Notion robusto | codex | ✅ done |
 | 2026-03-24-001 | Lead temporal Codex — capitalizar hallazgos + cerrar ramas codex/* + Claude si aplica | codex | ✅ done |
 
 ## Ronda 16 — Cerrada

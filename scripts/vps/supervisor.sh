@@ -136,16 +136,35 @@ check_redis() {
 #      posts directly to Notion API so the comment appears as the "Supervisor"
 #      integration. Otherwise calls Worker notion.add_comment.
 # ---------------------------------------------------------------
+resolve_alert_route() {
+    python3 "$REPO/scripts/notion_alert_target.py" --format shell 2>/dev/null || true
+}
+
 post_notion_alert() {
     local alert_text="$1"
     local response
     local http_status
     local response_body
+    local route_shell=""
+    local ALERT_ROUTE_OK="false"
+    local ALERT_MODE=""
+    local TARGET_PAGE_ID=""
+    local ALERT_REASON=""
 
-    if [ -n "${NOTION_SUPERVISOR_API_KEY:-}" ] && [ -n "${NOTION_SUPERVISOR_ALERT_PAGE_ID:-}" ]; then
+    route_shell="$(resolve_alert_route)"
+    if [ -n "$route_shell" ]; then
+        eval "$route_shell"
+    fi
+
+    if [ "$ALERT_ROUTE_OK" != "true" ]; then
+        echo "${LOG_PREFIX} No active Notion target for supervisor alerts (reason=${ALERT_REASON:-unknown})"
+        return 1
+    fi
+
+    if [ "$ALERT_MODE" = "direct_supervisor" ] && [ -n "${NOTION_SUPERVISOR_API_KEY:-}" ] && [ -n "$TARGET_PAGE_ID" ]; then
         local payload
         payload="$(
-            python3 - "$alert_text" "${NOTION_SUPERVISOR_ALERT_PAGE_ID}" <<'PY'
+            python3 - "$alert_text" "$TARGET_PAGE_ID" <<'PY'
 import json
 import sys
 text = sys.argv[1]
@@ -176,8 +195,12 @@ PY
         return 1
     fi
 
+    if [ "$ALERT_MODE" != "worker_alert_page" ]; then
+        echo "${LOG_PREFIX} Falling back to Worker Notion alert route (${ALERT_MODE:-unknown}, reason=${ALERT_REASON:-unknown})"
+    fi
+
     local worker_token="${WORKER_TOKEN:-}"
-    local alert_page_id="${NOTION_SUPERVISOR_ALERT_PAGE_ID:-${NOTION_CONTROL_ROOM_PAGE_ID:-}}"
+    local alert_page_id="${TARGET_PAGE_ID:-${NOTION_CONTROL_ROOM_PAGE_ID:-}}"
     local payload
     if [ -z "$worker_token" ]; then
         echo "${LOG_PREFIX} WORKER_TOKEN not set - skipping Notion alert"
@@ -219,6 +242,18 @@ PY
     [ -n "$response_body" ] && echo "${LOG_PREFIX} Response: $response_body"
     return 1
 }
+
+ACTION="${1:-run}"
+if [ "$ACTION" = "test-alert" ]; then
+    shift || true
+    ALERT="${*:-Supervisor alert smoke - $(date -u +"%Y-%m-%d %H:%M UTC")}"
+    if post_notion_alert "$ALERT"; then
+        echo "${LOG_PREFIX} Test alert completed"
+        exit 0
+    fi
+    echo "${LOG_PREFIX} Test alert failed"
+    exit 1
+fi
 
 # ---------------------------------------------------------------
 # Execute checks

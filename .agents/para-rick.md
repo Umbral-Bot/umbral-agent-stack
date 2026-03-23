@@ -57,6 +57,10 @@ Actualizá `WORKER_TOKEN` en `~/.config/openclaw/env` al valor que acepta el Wor
 | **message** | Enviar mensajes (Telegram, etc.) |
 | **cron** | Programar tareas |
 | **browser** | Fallará si no hay frontend gráfico en el entorno |
+| **Umbral Worker (bridge)** | Tools tipadas `umbral_*` que ejecutan tasks del Worker (misma API que el stack). Incluyen **Google Calendar** (`umbral_google_calendar_*`) y **Gmail** (`umbral_gmail_*`) cuando el Worker tiene credenciales. Preferí estas para agendar, listar eventos o borradores de mail en lugar de inventar flujos sin API. |
+| **google-calendar** / **gmail** (skills) | Contexto de cuándo y cómo usar las tasks `google.calendar.*` y `gmail.*`; la ejecución real va al Worker (VPS/VM) vía bridge o `umbral_worker_run`. |
+
+**Cuándo usar Calendar / Gmail:** si el usuario pide agendar, ver agenda, borrador de correo o seguimiento por mail, y el Worker tiene variables OAuth/refresh configuradas en el entorno del proceso Worker, usá las tools del bridge o las tasks documentadas en los skills. Si fallan por credenciales, es un tema de **env del Worker** (no del solo gateway); ver `docs/35-google-calendar-token-setup.md` y `docs/35-gmail-token-setup.md`.
 
 Para leer contenido de Notion: usá la herramienta **notion** (API), no browser. Si David necesita que leas una página, puede pedirte explícitamente "usa notion para leer la página X" o pegar el contenido.
 
@@ -76,29 +80,10 @@ Podés delegar tareas al agente **Gpt-Rick** vía Responses API. Endpoints:
 
 ---
 
-## 2026-03-22 - Google Calendar y Gmail disponibles
+## 2026-03-23 — Google Calendar y Gmail (descubrimiento + env)
 
-Tenes disponibles las herramientas del bridge Umbral Worker para agenda y
-correo:
+Las APIs ya están implementadas en el Worker y expuestas al gateway como tools `umbral_google_calendar_*` y `umbral_gmail_*` (skill **umbral-worker**). Para que funcionen de verdad hace falta **OAuth en el proceso que ejecuta el Worker** (VPS y/o VM), no solo “saber” el skill.
 
-- `umbral_google_calendar_create_event`
-- `umbral_google_calendar_list_events`
-- `umbral_gmail_create_draft`
-- `umbral_gmail_list_drafts`
-
-### Credenciales recomendadas
-
-- **Calendar:** `GOOGLE_CALENDAR_REFRESH_TOKEN` +
-  `GOOGLE_CALENDAR_CLIENT_ID` + `GOOGLE_CALENDAR_CLIENT_SECRET`
-- **Gmail:** `GOOGLE_GMAIL_REFRESH_TOKEN` +
-  `GOOGLE_GMAIL_CLIENT_ID` + `GOOGLE_GMAIL_CLIENT_SECRET`
-
-Tambien sirven `GOOGLE_CALENDAR_TOKEN` / `GOOGLE_GMAIL_TOKEN` temporales, pero
-caducan. Para un calendario compartido de David, no uses `primary`: pasa el
-`calendar_id` explicito del calendario compartido.
-
-### Donde mirar
-
-- `docs/35-google-calendar-token-setup.md`
-- `docs/35-gmail-token-setup.md`
-- `openclaw/extensions/umbral-worker/skills/umbral-worker/SKILL.md`
+- **Documentación:** `docs/35-google-calendar-token-setup.md`, `docs/35-gmail-token-setup.md`, `.env.example` (sección Google).
+- **Verificación:** POST `/run` con task `google.calendar.list_events` o `gmail.list_drafts` y Bearer `WORKER_TOKEN` (ver doc de Calendar).
+- Si David activó credenciales en una rama/entorno pero el VPS no tiene las mismas vars, Rick verá fallos hasta alinear `~/.config/openclaw/env` o el servicio del Worker.

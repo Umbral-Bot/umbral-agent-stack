@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 """
-Verificación del stack en la VPS (antes de configurar n8n u otros cambios).
+Verificación rápida del stack en la VPS.
 
 Comprueba: env vars necesarias, Worker /health, Redis, tarea Dashboard en Worker,
 opcionalmente Linear vía Worker. No imprime secretos.
+
+Importante:
+- Este script valida conectividad base y handlers disponibles.
+- No valida en profundidad supervisor, reconciliación del Dispatcher, crons,
+  rate limiting interno ni si la página de alertas de Notion sigue activa.
+- Un "OK" aquí significa "plano base operativo", no "stack completamente sano".
 
 Ejecutar EN LA VPS (o local con .env):
   cd ~/umbral-agent-stack && source .venv/bin/activate && export $(grep -v '^#' ~/.config/openclaw/env | xargs) && PYTHONPATH=. python3 scripts/verify_stack_vps.py
@@ -53,7 +59,13 @@ REQUIRED = [
     "NOTION_API_KEY",
     "NOTION_CONTROL_ROOM_PAGE_ID",
 ]
-OPTIONAL = ["WORKER_URL_VM", "LINEAR_API_KEY", "NOTION_TASKS_DB_ID", "NOTION_GRANOLA_DB_ID"]
+OPTIONAL = [
+    "WORKER_URL_VM",
+    "LINEAR_API_KEY",
+    "NOTION_TASKS_DB_ID",
+    "NOTION_GRANOLA_DB_ID",
+    "NOTION_SUPERVISOR_ALERT_PAGE_ID",
+]
 
 
 def _mask(s: str | None) -> str:
@@ -150,8 +162,8 @@ def main() -> int:
             print(f"   FAIL ({type(e).__name__}: {e})")
     print()
 
-    # 5) Dashboard (solo indicar cómo probar)
-    print("5) Dashboard Notion")
+    # 5) Dashboard / Control Room (solo indicar cómo probar)
+    print("5) Dashboard / Control Room")
     if missing:
         print("   SKIP (faltan variables de entorno)")
     else:
@@ -160,11 +172,18 @@ def main() -> int:
         print("   Cron (cada 15 min): scripts/vps/install-cron.sh o crontab con dashboard-cron.sh")
     print()
 
+    # 6) Alcance del chequeo
+    print("6) Alcance del chequeo")
+    print("   Verifica Worker, Redis y Linear mínimos.")
+    print("   No reemplaza revisar supervisor, dispatcher-service.sh, logs /tmp/*.log,")
+    print("   ni validar que NOTION_SUPERVISOR_ALERT_PAGE_ID apunte a una página activa.")
+    print()
+
     # Resumen
     if missing:
         print(">>> Resumen: completar variables en ~/.config/openclaw/env (VPS) o .env (local) y volver a ejecutar.")
         return 1
-    print(">>> Resumen: env listado. Si Worker, Redis y Linear OK, el stack está listo. Probar dashboard con el comando de la sección 5.")
+    print(">>> Resumen: plano base verificado. Si Worker, Redis y Linear OK, la conectividad mínima está sana; aún falta validar supervisor, Dispatcher y Dashboard/Control Room en vivo.")
     return 0
 
 

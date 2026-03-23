@@ -37,6 +37,7 @@ Regularización `UMB-132` (2026-03-22): se cerraron task files históricos que h
 | 2026-03-23-002 | UMB-141: completar trazabilidad de runtime para enriquecer auto-issues | codex | ✅ done |
 | 2026-03-23-003 | UMB-140: endurecer auto-issues con deduplicacion y proyecto canonico | codex | ✅ done |
 | 2026-03-23-004 | UMB-148: retirar Google Custom Search como path primario de discovery web | codex | ✅ done |
+| 2026-03-23-005 | Super diagnostico exhaustivo de interconectividad y gobernanza operativa | codex | ✅ done |
 | 2026-03-24-001 | Lead temporal Codex — capitalizar hallazgos + cerrar ramas codex/* + Claude si aplica | codex | ✅ done |
 
 ## Ronda 16 — Cerrada

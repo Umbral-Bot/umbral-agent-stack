@@ -42,7 +42,7 @@ Regularización `UMB-132` (2026-03-22): se cerraron task files históricos que h
 | 2026-03-23-007 | Fase 1: supervisor VPS y alerting Notion robusto | codex | ✅ done |
 | 2026-03-23-008 | Fase 1 follow-up: restaurar ruta dedicada de alertas Notion del Supervisor | codex | ✅ done |
 | 2026-03-23-009 | Supervisor: publicar alertas en espanol | codex | ✅ done |
-| 2026-03-23-010 | Fase 4: rediseño UX/copy de OpenClaw y unificación de Dashboard Rick | codex | in_progress |
+| 2026-03-23-010 | Fase 4: rediseño UX/copy de OpenClaw y unificación de Dashboard Rick | codex | ✅ done |
 | 2026-03-23-011 | Fase 2: separar rate limiting interno del trafico externo | codex | ✅ done |
 | 2026-03-23-012 | Cleanup de directorios pytest temporales con permisos rotos | codex | ✅ done |
 | 2026-03-23-013 | GitLab sandbox mirror desde GitHub sin cambiar el tracker canonico | codex | ✅ done (descartado y revertido) |

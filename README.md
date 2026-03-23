@@ -61,19 +61,6 @@ Para actualizar con los últimos cambios de `main`, instalar dependencias y rein
 
 Ejecuta este deploy cada vez que cambie el contrato de `/run` o el inventario del Worker. El script valida explícitamente que la VM acepte tanto el formato legacy `{task, input}` como el TaskEnvelope canónico antes de dar el deploy por bueno.
 
-## GitLab Sandbox Mirror (opcional)
-
-Si quieres usar **GitLab Free solo como mirror/sandbox** del repo, sin mover el tracking fuera de GitHub + Linear + Notion, ya quedó preparado el soporte repo-side:
-
-- workflow: [`.github/workflows/gitlab-mirror.yml`](.github/workflows/gitlab-mirror.yml)
-- runbook: [`docs/69-gitlab-sandbox-mirror.md`](docs/69-gitlab-sandbox-mirror.md)
-
-El diseño intencional es:
-
-- **GitHub** sigue siendo la fuente canónica
-- **GitLab** queda como espejo opcional de `main` + tags
-- **Linear** y **Notion/OpenClaw** siguen siendo el sistema de seguimiento/operación
-
 ## 🔗 Worker + Notion Bridge
 
 El worker expone un bus HTTP para ejecutar tareas, incluyendo integración con Notion como **bus de coordinación** entre David, Rick (OpenClaw/Worker) y agentes.

@@ -7,10 +7,10 @@ SYSTEMD_USER_DIR="${SYSTEMD_USER_DIR:-$HOME/.config/systemd/user}"
 SERVICE_NAME="${SERVICE_NAME:-openclaw-dispatcher}"
 SERVICE_TEMPLATE="${SERVICE_TEMPLATE:-$REPO/openclaw/systemd/${SERVICE_NAME}.service.template}"
 SERVICE_FILE="${SERVICE_FILE:-$SYSTEMD_USER_DIR/${SERVICE_NAME}.service}"
-DISPATCHER_PATTERN="${DISPATCHER_PATTERN:-python3 -m dispatcher.service}"
+DISPATCHER_PATTERN="${DISPATCHER_PATTERN:--m dispatcher\\.service}"
 
 dispatcher_pids() {
-    pgrep -u "$USER" -f "$DISPATCHER_PATTERN" || true
+    pgrep -u "$USER" -f -- "$DISPATCHER_PATTERN" || true
 }
 
 dispatcher_count() {

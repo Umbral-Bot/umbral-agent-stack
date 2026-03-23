@@ -138,6 +138,8 @@ print(response.text)
 
 ## 5. Imagen — Generación de imágenes
 
+Task del Worker relacionada: `google.image.generate`
+
 ```python
 from vertexai.preview.vision_models import ImageGenerationModel
 

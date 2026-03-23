@@ -159,6 +159,10 @@ Rick debe priorizar estas skills cuando el trabajo coincida con su ámbito:
   - Usarla cuando un bloqueo o especialidad deba convertirse en un handoff trazable entre agentes.
 - `skills/notion-project-registry/SKILL.md`
   - Usarla para resolver rápido el estado oficial de un proyecto y no pedir contexto que ya existe en Notion.
+- `skills/system-interconnectivity-diagnostics/SKILL.md`
+  - Usarla para diagnosticos cross-system, smokes post-deploy y validacion de interconectividad sin confundir baseline con operacion real.
+- `skills/browser-automation-vm/SKILL.md`
+  - Usarla cuando el trabajo toque `browser.*`, `gui.*`, `windows.open_url`, sesion interactiva de la VM o control visible del escritorio.
 
 ### Proyecto canónico de mejora interna
 
@@ -177,8 +181,8 @@ No usar este proyecto para benchmarks, entregables de cliente o iniciativas de n
 
 ### Asignación práctica por rol
 
-- `main`: `linear-delivery-traceability`, `subagent-result-integration`, `notion-project-registry`, `editorial-source-curation`, `competitive-funnel-benchmark`, `external-reference-intelligence`
+- `main`: `linear-delivery-traceability`, `subagent-result-integration`, `notion-project-registry`, `system-interconnectivity-diagnostics`, `editorial-source-curation`, `competitive-funnel-benchmark`, `external-reference-intelligence`
 - `rick-orchestrator`: `subagent-result-integration`, `linear-issue-triage`, `linear-delivery-traceability`, `agent-handoff-governance`, `external-reference-intelligence`
-- `rick-qa`: `linear-project-auditor`, `linear-delivery-traceability`
+- `rick-qa`: `linear-project-auditor`, `linear-delivery-traceability`, `system-interconnectivity-diagnostics`
 - `rick-tracker`: `editorial-source-curation`
-- `rick-ops`: `n8n-editorial-orchestrator`
+- `rick-ops`: `n8n-editorial-orchestrator`, `browser-automation-vm`

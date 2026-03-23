@@ -1,10 +1,10 @@
 # Skills Coverage Report
 
-**Fecha:** 2026-03-23 07:37 UTC
+**Fecha:** 2026-03-23 23:29 UTC
 **Total Worker tasks:** 80
-**Tasks con skill:** 71
-**Tasks sin skill:** 9
-**Cobertura:** 71/80 (89%)
+**Tasks con skill:** 80
+**Tasks sin skill:** 0
+**Cobertura:** 80/80 (100%)
 
 ---
 
@@ -30,11 +30,19 @@
 | `figma.list_comments` | `figma` |
 | `gmail.create_draft` | `gmail` |
 | `gmail.list_drafts` | `gmail` |
+| `google.audio.generate` | `google-audio-generation` |
 | `google.calendar.create_event` | `google-calendar` |
 | `google.calendar.list_events` | `google-calendar` |
 | `google.image.generate` | `google-cloud-vertex` |
 | `granola.create_followup` | `granola-pipeline` |
 | `granola.process_transcript` | `granola-pipeline` |
+| `gui.activate_window` | `browser-automation-vm` |
+| `gui.click` | `browser-automation-vm` |
+| `gui.desktop_status` | `browser-automation-vm` |
+| `gui.hotkey` | `browser-automation-vm` |
+| `gui.list_windows` | `browser-automation-vm` |
+| `gui.screenshot` | `browser-automation-vm` |
+| `gui.type_text` | `browser-automation-vm` |
 | `linear.attach_issue_to_project` | `linear` |
 | `linear.claim_agent_stack_issue` | `linear` |
 | `linear.create_issue` | `linear` |
@@ -80,23 +88,10 @@
 | `windows.fs.write_bytes_b64` | `windows` |
 | `windows.fs.write_text` | `windows` |
 | `windows.open_notepad` | `windows` |
+| `windows.open_url` | `browser-automation-vm` |
 | `windows.pad.run_flow` | `windows` |
 | `windows.start_interactive_worker` | `windows` |
 | `windows.write_worker_token` | `windows` |
-
-## ❌ Tasks SIN skill
-
-| Task | Skill esperado |
-|------|----------------|
-| `google.audio.generate` | `—` |
-| `gui.activate_window` | `—` |
-| `gui.click` | `—` |
-| `gui.desktop_status` | `—` |
-| `gui.hotkey` | `—` |
-| `gui.list_windows` | `—` |
-| `gui.screenshot` | `—` |
-| `gui.type_text` | `—` |
-| `windows.open_url` | `—` |
 
 ## 📚 Skills sin Worker task (knowledge-only)
 
@@ -155,4 +150,5 @@
 | `speckle-dalux-powerbi` |
 | `subagent-result-integration` |
 | `svgwrite` |
+| `system-interconnectivity-diagnostics` |
 | `telegram-approval-loop` |

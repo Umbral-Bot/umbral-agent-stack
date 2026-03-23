@@ -172,6 +172,21 @@ Task: `linear.list_project_issues`
 
 Devuelve las issues actualmente asociadas a un proyecto.
 
+### 7b. Publicar update de proyecto
+
+Task: `linear.create_project_update`
+
+```json
+{
+  "project_name": "Proyecto Embudo Ventas",
+  "title": "Cierre de slice CTA",
+  "body": "Se cerro la definicion provisional de CTA y queda pendiente validar captura.",
+  "health": "onTrack"
+}
+```
+
+Usala para dejar trazabilidad ejecutiva en el proyecto de Linear sin abrir una issue nueva.
+
 ### 8. Publicar follow-up interno de Agent Stack
 
 Task: `linear.publish_agent_stack_followup`

@@ -1,8 +1,9 @@
 # Agent Board — Umbral Agent Stack
 
 > Última actualización: 2026-03-24 por **cursor**
-> Sprint activo: **R22**
-> **RONDA 22 — VM estable + Google Calendar/Gmail contexto Rick + Codex seguimiento**
+> Sprint activo: **R23**
+> **Coordinación:** **Codex** tiene el **mando temporal** (capitalizar hallazgos, cerrar ramas/PRs codex, delegar en Claude vía tareas). Ver `.agents/PROTOCOL.md` (Delegación temporal R23) y tarea `2026-03-24-001`.
+> **RONDA 22 — cerrada** (Calendar/Gmail VPS + PR #129 mergeado).
 
 ## Estado del sistema (actualizado 2026-03-07 — auditoría en vivo)
 
@@ -33,6 +34,7 @@ Regularización `UMB-132` (2026-03-22): se cerraron task files históricos que h
 | 2026-03-22-002 | Super diagnóstico exhaustivo del sistema | codex | ✅ done (PR #126) |
 | 2026-03-22-003 | Fix hallazgos super diagnóstico — VM /run y auto-issues | codex | ✅ done (PR #127) |
 | 2026-03-23-001 | Calendar/Gmail: env VPS + verificación + seguimiento post diagnóstico | codex | ✅ done |
+| 2026-03-24-001 | Lead temporal Codex — capitalizar hallazgos + cerrar ramas codex/* + Claude si aplica | codex | in_progress |
 
 ## Ronda 16 — Cerrada
 

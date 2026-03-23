@@ -61,7 +61,7 @@ Dos enfoques posibles; el recomendado es el **1**.
 
 ### 1. Actualización desde la VPS (recomendado)
 
-- **Qué hace:** Un job en la VPS (cron o systemd timer) cada X minutos (ej. 15–30) que:
+- **Qué hace:** Un job en la VPS que actualiza el panel técnico por hora y el panel humano solo por cambio real + fallback lento, de modo que:
   1. Recoge estado (Worker local, Redis, opcionalmente VM, y si tenés un fichero de estado en el repo o lo generáis).
   2. Llama al Worker (localhost) con una tarea tipo `dashboard.report` (o `notion.update_dashboard`) que escribe en Notion (base de datos o página del dashboard) vía Notion API.
 - **Ventajas:** La VPS tiene la verdad (Redis, health, servicios). No dependés de que un agente de Notion “decida” cuándo correr; el cron es predecible.
@@ -85,18 +85,21 @@ Referencia Notion API: [Append block children](https://developers.notion.com/ref
 
 1. **Config:** Variable de entorno `NOTION_DASHBOARD_PAGE_ID` (ID de la subpágina o página que actúa como dashboard). El Worker la usa solo para la tarea `notion.update_dashboard`.
 2. **Worker:** Tarea `notion.update_dashboard`: recibe `input.metrics` (dict nombre → valor), archiva el contenido actual de esa página y escribe un nuevo bloque con “Última actualización” + todas las métricas (doc 22). Handlers en `worker/notion_client.py` y `worker/tasks/notion.py`.
-3. **VPS:** Script `scripts/dashboard_report_vps.py` que recoge estado (Worker local, Redis cola pendiente, opcional Worker VM, resumen de sprints desde README) y llama al Worker con `notion.update_dashboard`. Ejecutarlo por cron o systemd timer cada 15–30 min.
+3. **VPS:** `scripts/dashboard_report_vps.py` actualiza `Dashboard Rick` técnico por hora y deja tracking operativo en `ops_log`. `scripts/openclaw_panel_vps.py` mantiene `OpenClaw` humano con refresh por cambio real (proyectos, entregables, bandeja) y fallback cada 6 h.
 
 **Variables necesarias en la VPS** (donde corre el Worker y/o el script):
 
 - Para el Worker: `NOTION_API_KEY`, `NOTION_DASHBOARD_PAGE_ID` (y las que ya usa: `NOTION_CONTROL_ROOM_PAGE_ID`, etc.).
 - Para el script: `WORKER_URL`, `WORKER_TOKEN`, `REDIS_URL`; opcional `WORKER_URL_VM`.
 
-**Ejemplo de cron (cada 30 min):**
+**Ejemplo operativo actual:**
 
 ```bash
-# Cargar env (ej. desde ~/.config/openclaw/env)
-cd ~/umbral-agent-stack && source .venv/bin/activate && export $(grep -v '^#' ~/.config/openclaw/env | xargs) && export PYTHONPATH=. && python3 scripts/dashboard_report_vps.py
+# Dashboard Rick técnico
+cd ~/umbral-agent-stack && source .venv/bin/activate && export $(grep -v '^#' ~/.config/openclaw/env | xargs) && export PYTHONPATH=. && python3 scripts/dashboard_report_vps.py --trigger manual
+
+# OpenClaw humano
+cd ~/umbral-agent-stack && source .venv/bin/activate && export $(grep -v '^#' ~/.config/openclaw/env | xargs) && export PYTHONPATH=. && python3 scripts/openclaw_panel_vps.py --trigger manual
 ```
 
 Con eso el dashboard en Notion queda actualizado desde la VPS y la Control Room sigue siendo solo el canal de comunicación Rick ↔ Enlace.

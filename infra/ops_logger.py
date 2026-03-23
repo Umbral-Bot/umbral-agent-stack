@@ -6,7 +6,8 @@ Ubicacion default: ~/.config/umbral/ops_log.jsonl
 
 Eventos:
   task_queued, task_completed, task_failed, task_blocked, task_retried,
-  model_selected, quota_warning, quota_restricted, worker_health_change
+  model_selected, quota_warning, quota_restricted, worker_health_change,
+  system_activity
 
 Parámetros opcionales de auditoría:
   trace_id      — ID de traza del envelope para correlacionar eventos end-to-end.
@@ -270,6 +271,44 @@ class OpsLogger:
             "worker": worker,
             "online": online,
         })
+
+    def system_activity(
+        self,
+        component: str,
+        action: str,
+        status: str,
+        duration_ms: float,
+        *,
+        trigger: str | None = None,
+        fingerprint: str | None = None,
+        notion_reads: int | None = None,
+        notion_writes: int | None = None,
+        worker_calls: int | None = None,
+        db_rows_read: int | None = None,
+        details: str | None = None,
+    ) -> None:
+        ev: Dict[str, Any] = {
+            "event": "system_activity",
+            "component": component[:120],
+            "action": action[:120],
+            "status": status[:120],
+            "duration_ms": round(duration_ms),
+        }
+        if trigger:
+            ev["trigger"] = trigger[:200]
+        if fingerprint:
+            ev["fingerprint"] = fingerprint[:64]
+        if notion_reads is not None:
+            ev["notion_reads"] = int(notion_reads)
+        if notion_writes is not None:
+            ev["notion_writes"] = int(notion_writes)
+        if worker_calls is not None:
+            ev["worker_calls"] = int(worker_calls)
+        if db_rows_read is not None:
+            ev["db_rows_read"] = int(db_rows_read)
+        if details:
+            ev["details"] = details[:300]
+        self._write(ev)
 
     def read_events(self, limit: int = 1000, event_filter: Optional[str] = None) -> list[Dict[str, Any]]:
         """Lee los ultimos N eventos del log (para reportes)."""

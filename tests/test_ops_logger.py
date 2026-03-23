@@ -121,6 +121,33 @@ class TestTraceabilityContext:
         assert events[0]["source"] == "scheduler"
         assert events[0]["source_kind"] == "cron"
 
+    def test_system_activity_includes_tracking_fields(self, ops_logger):
+        ops_logger.system_activity(
+            "openclaw_panel",
+            "refresh",
+            "updated",
+            182.3,
+            trigger="notion.upsert_project",
+            fingerprint="abc123",
+            notion_reads=5,
+            notion_writes=2,
+            worker_calls=1,
+            db_rows_read=9,
+            details="panel_blocks=8",
+        )
+        events = ops_logger.read_events(event_filter="system_activity")
+        assert len(events) == 1
+        assert events[0]["component"] == "openclaw_panel"
+        assert events[0]["action"] == "refresh"
+        assert events[0]["status"] == "updated"
+        assert events[0]["duration_ms"] == 182
+        assert events[0]["trigger"] == "notion.upsert_project"
+        assert events[0]["fingerprint"] == "abc123"
+        assert events[0]["notion_reads"] == 5
+        assert events[0]["notion_writes"] == 2
+        assert events[0]["worker_calls"] == 1
+        assert events[0]["db_rows_read"] == 9
+
 
 # ---------------------------------------------------------------------------
 # input_summary tests

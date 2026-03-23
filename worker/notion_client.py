@@ -1035,6 +1035,35 @@ def _build_dashboard_v2_blocks(data: dict[str, Any]) -> list[dict[str, Any]]:
         blocks.append(_block_table(["Area", "Conteo", "Detalle"], notion_rows))
         blocks.append(_block_divider())
 
+    panel_tracking = data.get("panel_tracking") or []
+    if panel_tracking:
+        blocks.append(_block_heading2("Actividad de paneles"))
+        tracking_rows = []
+        labels = {
+            "dashboard_rick": "Dashboard Rick",
+            "openclaw_panel": "OpenClaw",
+        }
+        for item in panel_tracking:
+            tracking_rows.append(
+                [
+                    labels.get(item.get("component"), item.get("component", "?")),
+                    f"{item.get('last_status') or '?'} · {item.get('last_duration_ms', 0)} ms",
+                    (
+                        f"upd {item.get('updated_24h', 0)} · "
+                        f"skip {item.get('skipped_24h', 0)} · "
+                        f"fail {item.get('failed_24h', 0)}"
+                    ),
+                    (
+                        f"reads {item.get('notion_reads_24h', 0)} · "
+                        f"writes {item.get('notion_writes_24h', 0)} · "
+                        f"worker {item.get('worker_calls_24h', 0)}"
+                    ),
+                    item.get("last_trigger") or "—",
+                ]
+            )
+        blocks.append(_block_table(["Componente", "Último estado", "24h", "Actividad", "Trigger"], tracking_rows))
+        blocks.append(_block_divider())
+
     # Recent project-scoped / relevant tasks
     recent = data.get("recent_tasks", [])
     if recent:

@@ -1,15 +1,34 @@
 {
   "permissions": {
     "allow": [
-      "mcp__Desktop_Commander__read_file",
-      "Bash(python -m pytest tests/ -x -q)",
-      "Bash(python -m pytest tests/ -q --ignore=tests/test_worker.py)",
-      "Bash(python -c \"import dispatcher.service; print\\(''OK''\\)\")",
-      "mcp__Desktop_Commander__list_directory",
-      "Bash(python -m pytest tests/test_dispatcher_resilience.py -v)",
-      "Bash(python -m pytest tests/test_dispatcher_resilience.py -v --timeout=30)",
-      "Bash(git add tests/test_dispatcher_resilience.py AGENT_INSTRUCTIONS.md .claude/settings.local.json)",
-      "Bash(git commit:*)"
+      "Bash(python -m pytest tests/ -q --tb=short)",
+      "Bash(python -m pytest tests/ -q)",
+      "Bash(python -m pytest tests/ -v)",
+      "Bash(python -m pytest tests/ --tb=line -q)",
+      "Bash(python -m pytest tests/ -p no:cacheprovider --tb=short)",
+      "Bash(python -m pytest tests/*)",
+      "Bash(python -m pytest tests/**)",
+      "Bash(git status)",
+      "Bash(git status -u)",
+      "Bash(git diff)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(git checkout:*)",
+      "Bash(git branch:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr close:*)",
+      "Bash(gh issue:*)",
+      "Bash(python scripts/validate_skills.py)",
+      "Bash(python scripts/e2e_validation.py)",
+      "Bash(python scripts/smoke_test.py)",
+      "Skill(commit-commands:commit-push-pr)",
+      "Skill(commit-commands:commit-push-pr:*)"
     ]
   }
 }

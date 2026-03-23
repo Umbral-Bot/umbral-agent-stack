@@ -7,7 +7,7 @@ created_by: codex
 priority: medium
 sprint: R23
 created_at: 2026-03-23T15:03:52-03:00
-updated_at: 2026-03-23T15:17:00-03:00
+updated_at: 2026-03-23T15:27:00-03:00
 ---
 
 ## Objetivo
@@ -45,3 +45,6 @@ Nota honesta: la activación real del espejo sigue requiriendo pasos humanos fue
 1. crear proyecto vacío en GitLab
 2. generar token con `write_repository`
 3. cargar `GITLAB_MIRROR_PUSH_URL` en GitHub Secrets
+
+### [codex] 2026-03-23 15:27
+Descartado por decisión explícita de David antes de activarlo. El soporte GitLab agregado en PR #146 se revierte en la tarea `2026-03-23-014`. Esta tarea queda como registro histórico del desvío, no como frente vigente.

@@ -4,7 +4,8 @@ title: "Notion Dashboard: Tools Inventory + Skills Sync"
 assigned_to: antigravity
 branch: feat/antigravity-dashboard-tools-sync
 round: 9
-status: assigned
+status: done
+updated_at: "2026-03-22T19:04:21-03:00"
 created: 2026-03-04
 ---
 
@@ -86,3 +87,8 @@ gh pr create --title "feat: tools inventory + notion dashboard sync" --body "GET
 - `scripts/sync_skills_to_vps.py --dry-run` lista skills correctamente
 - Tests pasan
 - No se rompen tests existentes
+
+## Log
+
+### [codex] 2026-03-22 19:04 -03:00
+Regularizacion administrativa por UMB-132. Esta tarea quedo como arrastre historico y ya no representa trabajo vivo; se cierra el archivo para alinearlo con el board y el estado real del repo.

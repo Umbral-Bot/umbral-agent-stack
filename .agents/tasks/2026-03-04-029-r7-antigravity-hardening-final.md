@@ -4,7 +4,8 @@ title: "Hardening Final — Rate limiting + sanitización + secrets audit"
 assigned_to: antigravity
 branch: feat/antigravity-hardening
 round: 7
-status: assigned
+status: done
+updated_at: "2026-03-22T19:04:21-03:00"
 created: 2026-03-04
 ---
 
@@ -84,3 +85,8 @@ Crear `.pre-commit-config.yaml` con hook para `secrets_audit.py` (prevenir commi
 ## Entregable
 
 PR a `main` desde `feat/antigravity-hardening` con todos los tests pasando.
+
+## Log
+
+### [codex] 2026-03-22 19:04 -03:00
+Regularizacion administrativa por UMB-132. Esta tarea quedo como arrastre historico y ya no representa trabajo vivo; se cierra el archivo para alinearlo con el board y el estado real del repo.

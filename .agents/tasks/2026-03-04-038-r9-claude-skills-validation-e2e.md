@@ -4,7 +4,8 @@ title: "Skills Validation + E2E Tests for New Tools"
 assigned_to: code-claude
 branch: feat/claude-skills-validation
 round: 9
-status: assigned
+status: done
+updated_at: "2026-03-22T19:04:21-03:00"
 created: 2026-03-04
 ---
 
@@ -88,3 +89,8 @@ gh pr create --title "feat: skills validation, figma E2E, coverage report" --bod
 - Skills con frontmatter inválido son detectados
 - Coverage report lista tasks sin skill
 - No se rompen tests existentes
+
+## Log
+
+### [codex] 2026-03-22 19:04 -03:00
+Regularizacion administrativa por UMB-132. Esta tarea quedo como arrastre historico y ya no representa trabajo vivo; se cierra el archivo para alinearlo con el board y el estado real del repo.

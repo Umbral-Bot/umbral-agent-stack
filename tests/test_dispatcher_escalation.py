@@ -22,7 +22,15 @@ from dispatcher.service import _escalate_failure_to_linear
 def mock_wc():
     """WorkerClient mock."""
     wc = MagicMock()
-    wc.run = MagicMock(return_value={"ok": True, "result": {"issue_id": "LIN-42"}})
+    wc.run = MagicMock(
+        return_value={
+            "ok": True,
+            "result": {
+                "ok": True,
+                "issue": {"id": "issue-42", "identifier": "UMB-42"},
+            },
+        }
+    )
     return wc
 
 
@@ -33,6 +41,9 @@ def _make_envelope(**overrides) -> dict:
         "task": "llm.generate",
         "team": "system",
         "task_type": "coding",
+        "trace_id": "trace-123",
+        "source": "openclaw_gateway",
+        "source_kind": "tool_enqueue",
         "input": {},
     }
     base.update(overrides)
@@ -59,15 +70,16 @@ class TestEscalateCreatesIssue:
 
         mock_wc.run.assert_called_once()
         args = mock_wc.run.call_args
-        assert args[0][0] == "linear.create_issue"
+        assert args[0][0] == "linear.publish_agent_stack_followup"
 
         payload = args[0][1]
-        assert "[Auto]" in payload["title"]
+        assert "Task fallida" in payload["title"]
         assert "abc12345" in payload["title"]
-        assert "llm.generate" in payload["description"]
-        assert "TimeoutError" in payload["description"]
-        assert payload["team_key"] == "UMBRAL"
+        assert "llm.generate" in payload["summary"]
+        assert "TimeoutError" in payload["evidence"]
+        assert payload["kind"] == "operational_debt"
         assert payload["priority"] == 2  # coding → 2
+        assert payload["source_ref"] == "openclaw_gateway / tool_enqueue"
 
     @patch("dispatcher.service.ESCALATE_TO_LINEAR", True)
     def test_error_truncated_to_500_chars(self, mock_wc):
@@ -83,9 +95,8 @@ class TestEscalateCreatesIssue:
             error=long_error,
         )
         payload = mock_wc.run.call_args[0][1]
-        # Error block in description should have at most 500 chars of the error
-        assert long_error[:500] in payload["description"]
-        assert long_error[:501] not in payload["description"]
+        assert long_error[:500] in payload["evidence"]
+        assert long_error[:501] not in payload["evidence"]
 
 
 # ── Guard: no duplicate if linear_issue_id exists ──────────────
@@ -146,6 +157,20 @@ class TestEscalateGuardConditions:
             task="llm.generate",
             team="system",
             error="some error",
+        )
+        mock_wc.run.assert_not_called()
+
+    @patch("dispatcher.service.ESCALATE_ONLY_CANONICAL", True)
+    @patch("dispatcher.service.ESCALATE_TO_LINEAR", True)
+    def test_no_issue_for_non_canonical_source(self, mock_wc):
+        envelope = _make_envelope(source="sim_daily", source_kind="cron")
+        _escalate_failure_to_linear(
+            wc=mock_wc,
+            envelope=envelope,
+            task_id="noise-test",
+            task="research.web",
+            team="system",
+            error="quota",
         )
         mock_wc.run.assert_not_called()
 

@@ -1,4 +1,4 @@
-# Deploy Worker v0.3.0 (TaskEnvelope) en la VM Hyper-V
+# Deploy del Worker en la VM Hyper-V
 # Ejecutar como: $env:WORKER_TOKEN='tu-token'; .\deploy-vm.ps1
 
 $ErrorActionPreference = "Continue"
@@ -12,7 +12,7 @@ $TOKEN = $env:WORKER_TOKEN
 
 $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  Umbral Worker Deploy v0.3.0" -ForegroundColor Cyan
+Write-Host "  Umbral Worker Deploy" -ForegroundColor Cyan
 Write-Host "  $timestamp" -ForegroundColor Gray
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
@@ -58,9 +58,14 @@ foreach ($candidate in $searchPaths) {
 }
 
 if ($repoRoot) {
-    Write-Host "  git pull origin main..." -ForegroundColor Gray
+    Write-Host "  git fetch/switch/pull --ff-only origin main..." -ForegroundColor Gray
     Push-Location $repoRoot
-    git pull origin main 2>&1
+    $currentBranch = git rev-parse --abbrev-ref HEAD 2>$null
+    if ($currentBranch -ne "main") {
+        git switch main 2>&1
+    }
+    git fetch origin main 2>&1
+    git pull --ff-only origin main 2>&1
     $lastCommit = git log --oneline -1
     Write-Host "  Ultimo commit: $lastCommit" -ForegroundColor Green
     Pop-Location
@@ -106,10 +111,15 @@ foreach ($m in $mods) {
 }
 Write-Host ""
 
-# --- FASE 3: Archivos v0.3.0 ---
-Write-Host "[FASE 3] Archivos v0.3.0..." -ForegroundColor Yellow
+# --- FASE 3: Archivos esperados ---
+Write-Host "[FASE 3] Archivos esperados..." -ForegroundColor Yellow
 
-$files = @("$repoRoot\worker\app.py", "$repoRoot\worker\models\__init__.py", "$repoRoot\tests\test_worker.py")
+$files = @(
+    "$repoRoot\worker\app.py",
+    "$repoRoot\worker\models\__init__.py",
+    "$repoRoot\tests\test_worker.py",
+    "$repoRoot\scripts\worker_inventory_smoke.py"
+)
 foreach ($f in $files) {
     if (Test-Path $f) {
         Write-Host "  OK $f" -ForegroundColor Green
@@ -120,11 +130,12 @@ foreach ($f in $files) {
 }
 
 $appContent = Get-Content "$repoRoot\worker\app.py" -Raw
-if ($appContent -match "v0\.3\.0") {
-    Write-Host "  Version v0.3.0 confirmada" -ForegroundColor Green
+$versionMatch = [regex]::Match($appContent, 'version\s*=\s*"([^"]+)"')
+if ($versionMatch.Success) {
+    Write-Host "  Version detectada: $($versionMatch.Groups[1].Value)" -ForegroundColor Green
 }
 else {
-    Write-Host "  ADVERTENCIA: no dice v0.3.0" -ForegroundColor DarkYellow
+    Write-Host "  ADVERTENCIA: no se pudo detectar la version declarada en worker/app.py" -ForegroundColor DarkYellow
 }
 Write-Host ""
 
@@ -167,11 +178,29 @@ Write-Host "  Iniciando worker (WORKER_TOKEN=$TOKEN)..." -ForegroundColor Gray
 Start-Process -FilePath python -ArgumentList "-m", "uvicorn", "worker.app:app", "--host", "0.0.0.0", "--port", "8088" -WorkingDirectory $repoRoot -WindowStyle Hidden
 Start-Sleep -Seconds 4
 Write-Host "  Worker iniciado en background" -ForegroundColor Green
+
+Write-Host "  Refrescando worker interactivo 8089..." -ForegroundColor Gray
+$interactiveTask = "StartInteractiveWorkerHiddenNow"
+schtasks /Query /TN $interactiveTask *> $null
+if ($LASTEXITCODE -eq 0) {
+    schtasks /Run /TN $interactiveTask 2>&1
+}
+else {
+    $interactiveScript = Join-Path $repoRoot "scripts\vm\start_interactive_worker.ps1"
+    if (Test-Path $interactiveScript) {
+        powershell -NoProfile -ExecutionPolicy Bypass -File $interactiveScript 2>&1
+    }
+    else {
+        Write-Host "  ADVERTENCIA: no se encontro launcher para 8089." -ForegroundColor DarkYellow
+    }
+}
+Start-Sleep -Seconds 4
 Write-Host ""
 
 # --- FASE 6: Verificacion final ---
 Write-Host "[FASE 6] Verificacion final..." -ForegroundColor Yellow
 Start-Sleep -Seconds 2
+$overallOk = $true
 
 # Health
 Write-Host "  Health check..." -ForegroundColor Gray
@@ -184,6 +213,7 @@ try {
 catch {
     $err = $_.Exception.Message
     Write-Host "  Health: FAILED - $err" -ForegroundColor Red
+    $overallOk = $false
 }
 
 # Legacy format
@@ -194,12 +224,13 @@ try {
     $bodyJson = $bodyObj | ConvertTo-Json -Compress
     $legacy = Invoke-RestMethod -Uri "http://localhost:8088/run" -Method POST -Headers $headers -Body $bodyJson -TimeoutSec 5
     $lId = $legacy.task_id
-    $lSt = $legacy.status
-    Write-Host "  Legacy: task_id=$lId status=$lSt" -ForegroundColor Green
+    $lOk = $legacy.ok
+    Write-Host "  Legacy: task_id=$lId ok=$lOk" -ForegroundColor Green
 }
 catch {
     $err = $_.Exception.Message
     Write-Host "  Legacy: FAILED - $err" -ForegroundColor Red
+    $overallOk = $false
 }
 
 # Envelope format
@@ -210,12 +241,13 @@ try {
     $envelope = Invoke-RestMethod -Uri "http://localhost:8088/run" -Method POST -Headers $headers -Body $envJson -TimeoutSec 5
     $eId = $envelope.task_id
     $eTm = $envelope.team
-    $eSt = $envelope.status
-    Write-Host "  Envelope: task_id=$eId team=$eTm status=$eSt" -ForegroundColor Green
+    $eOk = $envelope.ok
+    Write-Host "  Envelope: task_id=$eId team=$eTm ok=$eOk" -ForegroundColor Green
 }
 catch {
     $err = $_.Exception.Message
     Write-Host "  Envelope: FAILED - $err" -ForegroundColor Red
+    $overallOk = $false
 }
 
 # GET /tasks
@@ -223,12 +255,31 @@ Write-Host "  Test GET /tasks..." -ForegroundColor Gray
 try {
     $authH = @{ "Authorization" = "Bearer $TOKEN" }
     $tasks = Invoke-RestMethod -Uri "http://localhost:8088/tasks" -Method GET -Headers $authH -TimeoutSec 5
-    $tCount = @($tasks).Count
+    $tCount = @($tasks.tasks).Count
     Write-Host "  Tasks: $tCount tareas en store" -ForegroundColor Green
 }
 catch {
     $err = $_.Exception.Message
     Write-Host "  Tasks: FAILED - $err" -ForegroundColor Red
+    $overallOk = $false
+}
+
+# Inventory parity
+Write-Host "  Inventory smoke 8088 vs 8089..." -ForegroundColor Gray
+Push-Location $repoRoot
+python "$repoRoot\scripts\worker_inventory_smoke.py" `
+    --target "vm-headless=http://localhost:8088" `
+    --target "vm-interactive=http://localhost:8089" `
+    --token "$TOKEN" `
+    --smoke 2>&1
+$inventoryResult = $LASTEXITCODE
+Pop-Location
+if ($inventoryResult -eq 0) {
+    Write-Host "  Inventory smoke: PASSED" -ForegroundColor Green
+}
+else {
+    Write-Host "  Inventory smoke: FAILED (exit $inventoryResult)" -ForegroundColor Red
+    $overallOk = $false
 }
 
 Write-Host ""
@@ -239,3 +290,9 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Copia el output completo y pegalo en la conversacion." -ForegroundColor Yellow
 Write-Host ""
+
+if ($overallOk) {
+    exit 0
+}
+
+exit 1

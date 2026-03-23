@@ -1,13 +1,13 @@
 ﻿---
 id: "2026-02-28-002"
 title: "VM: actualizar Worker al cÃ³digo modular del repo y probar PAD"
-status: blocked
+status: done
 assigned_to: codex
 created_by: cursor
 priority: high
 sprint: S5
 created_at: "2026-02-28"
-updated_at: "2026-02-28T01:18:05-03:00"
+updated_at: "2026-03-22T19:04:21-03:00"
 ---
 
 ## Objetivo
@@ -96,3 +96,6 @@ Siguiente paso requerido (Admin):
 - Abrir PowerShell como Administrador y ejecutar:
   - `Restart-Service openclaw-worker`
   - `Invoke-RestMethod http://localhost:8088/health`
+
+### [codex] 2026-03-22 19:04 -03:00
+Regularizacion administrativa por UMB-132. Esta tarea quedo como arrastre historico y ya no representa trabajo vivo; se cierra el archivo para alinearlo con el board y el estado real del repo.

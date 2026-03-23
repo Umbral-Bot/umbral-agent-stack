@@ -7,11 +7,13 @@ Tasks: Granola pipeline handlers.
 
 import logging
 import re
+import hashlib
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
 from .. import notion_client
+from .notion import handle_notion_upsert_task
 from .notion_markdown import markdown_to_blocks
 
 logger = logging.getLogger("worker.tasks.granola")
@@ -23,6 +25,19 @@ logger = logging.getLogger("worker.tasks.granola")
 _ACTION_ITEM_RE = re.compile(
     r"[-*]\s*\[[ x]?\]\s*(.+)", re.IGNORECASE
 )
+
+
+def _build_action_item_task_id(title: str, date: str, item: Dict[str, str]) -> str:
+    """Build a stable task id so repeated transcript ingests upsert instead of duplicating."""
+    parts = [
+        (title or "").strip().lower(),
+        (date or "").strip(),
+        (item.get("text") or "").strip().lower(),
+        (item.get("assignee") or "").strip().lower(),
+        (item.get("due") or "").strip(),
+    ]
+    digest = hashlib.sha1("|".join(parts).encode("utf-8")).hexdigest()[:16]
+    return f"granola-action-item-{digest}"
 
 
 def _extract_action_items_from_content(content: str) -> List[Dict[str, str]]:
@@ -172,15 +187,28 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
     ai_created = 0
     for item in action_items:
         try:
-            task_id = str(uuid.uuid4())
-            task_name = item.get("text", "Action item")[:200]
-            assignee = item.get("assignee", "sin asignar")
-            notion_client.upsert_task(
-                task_id=task_id,
-                status="queued",
-                team=assignee or "sin asignar",
-                task=f"[Granola] {task_name}",
-                input_summary=f"De reunión: {title} ({date})",
+            task_name = (item.get("text", "Action item") or "Action item").strip()[:200] or "Action item"
+            assignee = (item.get("assignee", "sin asignar") or "sin asignar").strip() or "sin asignar"
+            due = (item.get("due") or "").strip()
+            summary = (
+                f"De reunión: {title} ({date}). "
+                f"Responsable sugerido: {assignee}. "
+                f"Ref: {page_url or page_id}"
+            )
+            if due:
+                summary += f". Vence: {due}"
+            handle_notion_upsert_task(
+                {
+                    "task_id": _build_action_item_task_id(title, date, item),
+                    "status": "queued",
+                    "team": assignee,
+                    "task": "granola.action_item",
+                    "task_name": f"[Granola] {task_name}",
+                    "project_name": "Proyecto Granola",
+                    "input_summary": summary,
+                    "source": "granola_process_transcript",
+                    "source_kind": "action_item",
+                }
             )
             ai_created += 1
         except Exception as e:

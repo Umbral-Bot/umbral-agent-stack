@@ -1,6 +1,6 @@
 # Agent Board — Umbral Agent Stack
 
-> Última actualización: 2026-03-07 por **claude-code**
+> Última actualización: 2026-03-23 por **cursor**
 > Sprint activo: **R21**
 > **RONDA 21 — Auditoría comprensiva + fix token mismatch E2E**
 
@@ -21,6 +21,17 @@
 | **E2E Dispatcher→Worker** | ✅ OK — token fix 2026-03-08 (PR #106) |
 | VM SSH/WinRM | ❌ Puertos 22/5985 cerrados — solo :8088 abierto |
 | Cuotas Redis | ❌ Vacías — Dispatcher no despacha exitosamente |
+
+## Trabajo vivo
+
+Regularización `UMB-132` (2026-03-22): se cerraron task files históricos que habían quedado `assigned` o `blocked` pese a corresponder a rondas cerradas o diagnósticos archivados. La coordinación activa queda reducida a las tareas realmente vivas.
+
+| ID | Tarea | Agente | Estado |
+|----|-------|--------|--------|
+| 2026-03-09-002 | Recomendaciones Cursor para orquestacion y politica de ejecucion de Rick | cursor | assigned |
+| 2026-03-22-001 | Diagnóstico env Rick vs local — Codex define canónicos | codex | ✅ done |
+| 2026-03-22-002 | Super diagnóstico exhaustivo del sistema | codex | ✅ done (PR #126) |
+| 2026-03-22-003 | Fix hallazgos super diagnóstico — VM /run y auto-issues | codex | ✅ done (PR #127) |
 
 ## Ronda 16 — Cerrada
 
@@ -92,7 +103,7 @@ Auditoría Claude (PR #101): **plan maestro** en [docs/plan-implementacion-audit
 
 **Rick 2026-03-08:** Reportes en `G:\...\Perfil de David Moreira\Reportes_Mercado`; Proyecto-Embudo-Ventas vacía. Herramienta **notion** (API); **browser** falla sin GUI. `.agents/para-rick.md`.
 
-## Ronda 12 — En curso
+## Ronda 12 — Cerrada
 
 | ID | Título | Asignado | Estado |
 |----|--------|----------|--------|

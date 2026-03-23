@@ -21,6 +21,26 @@ import httpx
 
 logger = logging.getLogger("worker_client")
 
+_RUN_ENVELOPE_FIELDS = (
+    "task_id",
+    "team",
+    "task_type",
+    "selected_model",
+    "status",
+    "trace_id",
+    "created_at",
+    "source",
+    "source_kind",
+    "source_comment_id",
+    "linear_issue_id",
+    "project_name",
+    "project_page_id",
+    "deliverable_name",
+    "deliverable_page_id",
+    "notion_track",
+    "callback_url",
+)
+
 
 class WorkerClient:
     """Client for the Umbral Worker HTTP API."""
@@ -62,6 +82,23 @@ class WorkerClient:
             "Authorization": f"Bearer {self.token}",
         }
 
+    def _build_run_payload(
+        self,
+        task: str,
+        input_data: Optional[Dict[str, Any]] = None,
+        envelope: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        payload: Dict[str, Any] = {"task": task, "input": input_data or {}}
+        if not envelope:
+            return payload
+
+        payload["schema_version"] = str(envelope.get("schema_version") or "0.1")
+        for field in _RUN_ENVELOPE_FIELDS:
+            value = envelope.get(field)
+            if value is not None:
+                payload[field] = value
+        return payload
+
     def health(self) -> Dict[str, Any]:
         """GET /health — no auth required."""
         with httpx.Client(timeout=self.timeout) as client:
@@ -90,25 +127,7 @@ class WorkerClient:
         Raises:
             httpx.HTTPStatusError: On 4xx/5xx after all retries.
         """
-        payload: Dict[str, Any] = {"task": task, "input": input_data or {}}
-        if envelope:
-            for field in (
-                "task_id",
-                "team",
-                "task_type",
-                "trace_id",
-                "source",
-                "source_kind",
-                "source_comment_id",
-                "linear_issue_id",
-                "project_name",
-                "project_page_id",
-                "deliverable_name",
-                "deliverable_page_id",
-                "notion_track",
-            ):
-                if field in envelope:
-                    payload[field] = envelope[field]
+        payload = self._build_run_payload(task, input_data, envelope)
         last_exc: Optional[Exception] = None
 
         for attempt in range(1, self.retries + 2):  # retries + 1 initial attempt

@@ -7,6 +7,8 @@ import base64
 import io
 import json
 import os
+import sys
+import types
 import pytest
 from http.client import HTTPResponse
 from unittest.mock import patch, MagicMock
@@ -76,9 +78,12 @@ class TestGoogleCalendarCreateEvent:
     def test_create_event_missing_token(self):
         env = os.environ.copy()
         env.pop("GOOGLE_CALENDAR_TOKEN", None)
+        env.pop("GOOGLE_CALENDAR_REFRESH_TOKEN", None)
+        env.pop("GOOGLE_CALENDAR_CLIENT_ID", None)
+        env.pop("GOOGLE_CALENDAR_CLIENT_SECRET", None)
         env.pop("GOOGLE_SERVICE_ACCOUNT_JSON", None)
         with patch.dict(os.environ, env, clear=True):
-            with pytest.raises(ValueError, match="GOOGLE_CALENDAR_TOKEN not set"):
+            with pytest.raises(ValueError, match="Google Calendar auth not configured"):
                 handle_google_calendar_create_event({
                     "title": "Test",
                     "start": "2026-03-10T10:00:00",
@@ -388,6 +393,59 @@ class TestAuthHelpers:
     def test_calendar_headers_bearer(self):
         headers = _get_calendar_headers()
         assert headers["Authorization"] == "Bearer bearer-cal-123"
+        assert headers["Content-Type"] == "application/json"
+
+    @patch.dict(
+        os.environ,
+        {
+            "GOOGLE_CALENDAR_REFRESH_TOKEN": "refresh-cal-123",
+            "GOOGLE_CALENDAR_CLIENT_ID": "calendar-client-id",
+            "GOOGLE_CALENDAR_CLIENT_SECRET": "calendar-client-secret",
+        },
+        clear=False,
+    )
+    def test_calendar_headers_refresh_token(self):
+        mock_creds = MagicMock()
+        mock_creds.token = "refreshed-calendar-token"
+        mock_credentials = MagicMock(return_value=mock_creds)
+        mock_request = MagicMock(return_value="request-sentinel")
+
+        google_mod = types.ModuleType("google")
+        google_mod.__path__ = []
+        oauth2_mod = types.ModuleType("google.oauth2")
+        oauth2_mod.__path__ = []
+        credentials_mod = types.ModuleType("google.oauth2.credentials")
+        credentials_mod.Credentials = mock_credentials
+        auth_mod = types.ModuleType("google.auth")
+        auth_mod.__path__ = []
+        transport_mod = types.ModuleType("google.auth.transport")
+        transport_mod.__path__ = []
+        requests_mod = types.ModuleType("google.auth.transport.requests")
+        requests_mod.Request = mock_request
+
+        with patch.dict(
+            sys.modules,
+            {
+                "google": google_mod,
+                "google.oauth2": oauth2_mod,
+                "google.oauth2.credentials": credentials_mod,
+                "google.auth": auth_mod,
+                "google.auth.transport": transport_mod,
+                "google.auth.transport.requests": requests_mod,
+            },
+        ):
+            headers = _get_calendar_headers()
+
+        mock_credentials.assert_called_once_with(
+            token=None,
+            refresh_token="refresh-cal-123",
+            token_uri="https://oauth2.googleapis.com/token",
+            client_id="calendar-client-id",
+            client_secret="calendar-client-secret",
+            scopes=["https://www.googleapis.com/auth/calendar"],
+        )
+        mock_creds.refresh.assert_called_once_with("request-sentinel")
+        assert headers["Authorization"] == "Bearer refreshed-calendar-token"
         assert headers["Content-Type"] == "application/json"
 
     @patch.dict(os.environ, {"GOOGLE_GMAIL_TOKEN": "bearer-gmail-456"})

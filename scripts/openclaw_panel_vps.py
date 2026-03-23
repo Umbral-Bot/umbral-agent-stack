@@ -119,10 +119,14 @@ def _is_allowed_nav_child_page(block: dict[str, Any]) -> bool:
     return block.get("type") == "child_page" and _extract_text(block).strip() in _ALLOWED_NAV_CHILD_PAGES
 
 
+def _normalize_page_id(page_id: str | None) -> str:
+    return (page_id or "").replace("-", "").strip().lower()
+
+
 def _canonical_nav_page_title(page_id: str, current_title: str) -> str | None:
-    if config.NOTION_DASHBOARD_PAGE_ID and page_id == config.NOTION_DASHBOARD_PAGE_ID:
+    if _normalize_page_id(config.NOTION_DASHBOARD_PAGE_ID) and _normalize_page_id(page_id) == _normalize_page_id(config.NOTION_DASHBOARD_PAGE_ID):
         return TECHNICAL_DASHBOARD_TITLE
-    if SUPERVISOR_ALERT_PAGE_ID and page_id == SUPERVISOR_ALERT_PAGE_ID:
+    if _normalize_page_id(SUPERVISOR_ALERT_PAGE_ID) and _normalize_page_id(page_id) == _normalize_page_id(SUPERVISOR_ALERT_PAGE_ID):
         return SUPERVISOR_ALERTS_TITLE
     if current_title in _ALLOWED_NAV_CHILD_PAGES:
         return current_title

@@ -666,6 +666,26 @@ def test_rename_navigation_pages_uses_canonical_titles(monkeypatch):
     ]
 
 
+def test_canonical_nav_page_title_tolerates_hyphenless_env_ids(monkeypatch):
+    monkeypatch.setattr(openclaw_panel_vps.config, "NOTION_DASHBOARD_PAGE_ID", "3265f443fb5c816d9ce8c5d6cf075f9c")
+    monkeypatch.setattr(openclaw_panel_vps, "SUPERVISOR_ALERT_PAGE_ID", "0fd13978b220498e9465b4fb2efc5f4a")
+
+    assert (
+        openclaw_panel_vps._canonical_nav_page_title(
+            "3265f443-fb5c-816d-9ce8-c5d6cf075f9c",
+            "Dashboard viejo",
+        )
+        == "Dashboard Rick"
+    )
+    assert (
+        openclaw_panel_vps._canonical_nav_page_title(
+            "0fd13978-b220-498e-9465-b4fb2efc5f4a",
+            "Dashboard Rick",
+        )
+        == "Alertas del Supervisor"
+    )
+
+
 def test_remove_stale_blocks_archives_child_pages_and_deletes_normal_blocks(monkeypatch):
     archived = []
     deleted = []

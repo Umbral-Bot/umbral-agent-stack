@@ -72,12 +72,12 @@ Arreglar los hallazgos críticos del super diagnóstico (2026-03-22-002) que Cod
 
 ## Criterios de aceptación
 
-- [ ] Worker acepta legacy y envelope; tests añadidos/actualizados.
-- [ ] Documentación: cómo actualizar el Worker en la VM para contrato canónico.
-- [ ] Auto-issues: filtros implementados para reducir ruido (solo flujo canónico o criterio definido).
-- [ ] Tests pasan.
-- [ ] PR abierto a main.
-- [ ] Log actualizado con resumen.
+- [x] Worker acepta legacy y envelope; tests añadidos/actualizados.
+- [x] Documentación: cómo actualizar el Worker en la VM para contrato canónico.
+- [x] Auto-issues: filtros implementados para reducir ruido (solo flujo canónico o criterio definido).
+- [x] Tests pasan.
+- [x] PR #127 mergeado a main.
+- [x] Log actualizado con resumen.
 
 ---
 
@@ -93,7 +93,7 @@ Arreglar los hallazgos críticos del super diagnóstico (2026-03-22-002) que Cod
 
 ## Referencias
 
-- Super diagnóstico: `docs/audits/super-diagnostico-2026-03-22.md` (en PR #126)
+- Super diagnóstico: `docs/audits/super-diagnostico-2026-03-22.md` (mergeado vía PR #126)
 - Task 2026-03-22-002
 - `dispatcher/service.py` — `_escalate_failure_to_linear`
 - `worker/app.py` — `/run`, parse envelope vs legacy
@@ -108,6 +108,9 @@ Tarea creada. Fix VM /run contract y reducción de ruido en auto-issues según h
 
 ### [codex] 2026-03-22 21:25
 Rama `codex/fix-hallazgos-super-diagnostico` creada. En curso el fix del contrato `/run` para preservar TaskEnvelope sin depender solo de `schema_version`, más el cambio de auto-escalación a `linear.publish_agent_stack_followup` con filtro de fuentes canónicas.
+
+### [cursor] 2026-03-23
+PR #127 mergeado a `main`. Board y criterios de aceptación marcados.
 
 ### [codex] 2026-03-22 22:12
 Completado. `worker/app.py`, `worker/models/__init__.py` y `client/worker_client.py` quedaron alineados para aceptar y enviar TaskEnvelope canónico aunque falte `schema_version`, manteniendo compatibilidad con `{task, input}` legacy. `dispatcher/service.py` ahora escala fallos solo de fuentes canónicas y publica follow-ups vía `linear.publish_agent_stack_followup` en vez de `linear.create_issue` crudo. Se documentó el deploy obligatorio de VM en `README.md` y el criterio de auto-escalación en `docs/67-linear-agent-stack-protocol.md`. Validación: `python -m pytest tests -q` → `1176 passed, 4 skipped, 1 warning`; `python scripts/e2e_validation.py` falló localmente por `127.0.0.1:8088` y Redis ausentes; `git diff --check` sin errores de contenido. También se absorbió un ajuste concurrente de Google Calendar/skill para dejar la suite completa en verde.

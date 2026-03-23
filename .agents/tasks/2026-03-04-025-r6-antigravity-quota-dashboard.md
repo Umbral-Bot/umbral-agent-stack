@@ -4,7 +4,8 @@ title: "Quota Dashboard — Reporte de uso multi-modelo en Notion"
 assigned_to: antigravity
 branch: feat/antigravity-quota-dashboard
 round: 6
-status: assigned
+status: done
+updated_at: "2026-03-22T19:04:21-03:00"
 created: 2026-03-04
 ---
 
@@ -63,3 +64,8 @@ Agregar un endpoint GET al Worker que devuelva el estado de cuotas en JSON:
 ## Entregable
 
 PR a `main` desde `feat/antigravity-quota-dashboard` con todos los tests pasando.
+
+## Log
+
+### [codex] 2026-03-22 19:04 -03:00
+Regularizacion administrativa por UMB-132. Esta tarea quedo como arrastre historico y ya no representa trabajo vivo; se cierra el archivo para alinearlo con el board y el estado real del repo.

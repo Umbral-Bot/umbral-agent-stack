@@ -130,6 +130,113 @@ def _make_headers(token: str) -> dict:
     return {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
 
+_TRANSIENT_HTTP_STATUSES = {500, 502, 503, 504}
+_TERMINAL_TASK_STATUSES = {"done", "failed", "blocked"}
+
+
+def _request_json(
+    method: str,
+    url: str,
+    *,
+    token: Optional[str] = None,
+    payload: Optional[Dict[str, Any]] = None,
+    params: Optional[Dict[str, Any]] = None,
+    timeout: float = 30.0,
+    retries: int = 2,
+    retry_delay_s: float = 1.0,
+) -> Dict[str, Any]:
+    headers = _make_headers(token) if token else None
+
+    for attempt in range(retries + 1):
+        try:
+            with httpx.Client(timeout=timeout) as c:
+                resp = c.request(
+                    method,
+                    url,
+                    headers=headers,
+                    json=payload,
+                    params=params,
+                )
+            if resp.status_code in _TRANSIENT_HTTP_STATUSES and attempt < retries:
+                time.sleep(retry_delay_s * (attempt + 1))
+                continue
+            resp.raise_for_status()
+            return resp.json()
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code in _TRANSIENT_HTTP_STATUSES and attempt < retries:
+                time.sleep(retry_delay_s * (attempt + 1))
+                continue
+            raise
+        except httpx.RequestError:
+            if attempt < retries:
+                time.sleep(retry_delay_s * (attempt + 1))
+                continue
+            raise
+
+    raise RuntimeError(f"Exhausted retries for {method} {url}")
+
+
+def _enqueue_and_wait(
+    base_url: str,
+    token: str,
+    *,
+    task: str,
+    team: str,
+    task_type: str,
+    input_data: Dict[str, Any],
+    poll_attempts: int = 15,
+    poll_interval_s: float = 1.0,
+) -> Dict[str, Any]:
+    queued = _request_json(
+        "POST",
+        f"{base_url}/enqueue",
+        token=token,
+        payload={
+            "task": task,
+            "team": team,
+            "task_type": task_type,
+            "input": input_data,
+        },
+        timeout=15.0,
+        retries=1,
+    )
+    task_id = queued.get("task_id", "")
+    if not task_id:
+        raise ValueError(f"enqueue did not return task_id: {queued}")
+
+    last_status: Dict[str, Any] = {}
+    for _ in range(poll_attempts):
+        last_status = _request_json(
+            "GET",
+            f"{base_url}/task/{task_id}/status",
+            token=token,
+            timeout=15.0,
+            retries=1,
+        )
+        status = str(last_status.get("status", "")).lower()
+        if status in _TERMINAL_TASK_STATUSES:
+            return last_status
+        time.sleep(poll_interval_s)
+
+    raise TimeoutError(f"Task {task_id} did not reach a terminal state")
+
+
+def _get_provider_status(base_url: str, token: str) -> Dict[str, Any]:
+    return _request_json(
+        "GET",
+        f"{base_url}/providers/status",
+        token=token,
+        timeout=15.0,
+        retries=1,
+    )
+
+
+def _get_effective_route(provider_status: Dict[str, Any], task_type: str) -> Dict[str, Any]:
+    routing = provider_status.get("routing", {})
+    route = routing.get(task_type) or routing.get("general") or {}
+    return route if isinstance(route, dict) else {}
+
+
 def test_worker_vps_health(base_url: str) -> str:
     """1. GET /health on Worker VPS."""
     with httpx.Client(timeout=10.0) as c:
@@ -156,60 +263,60 @@ def test_ping(base_url: str, token: str) -> str:
 
 def test_research_web(base_url: str, token: str) -> str:
     """3. POST /run research.web with a real query."""
-    with httpx.Client(timeout=20.0) as c:
-        resp = c.post(
-            f"{base_url}/run",
-            headers=_make_headers(token),
-            json={
-                "task": "research.web",
-                "input": {"query": "BIM trends 2026", "count": 3},
-            },
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        results = data.get("result", {}).get("results", [])
-        return f"{len(results)} resultados"
+    data = _request_json(
+        "POST",
+        f"{base_url}/run",
+        token=token,
+        payload={
+            "task": "research.web",
+            "input": {"query": "BIM trends 2026", "count": 3},
+        },
+        timeout=20.0,
+    )
+    results = data.get("result", {}).get("results", [])
+    return f"{len(results)} resultados"
 
 
 def test_llm_generate(base_url: str, token: str) -> str:
     """4. POST /run llm.generate with a simple prompt."""
-    with httpx.Client(timeout=25.0) as c:
-        resp = c.post(
-            f"{base_url}/run",
-            headers=_make_headers(token),
-            json={
-                "task": "llm.generate",
-                "input": {
-                    "prompt": "Responde en una oración: ¿qué es BIM?",
-                    "max_tokens": 100,
-                    "temperature": 0.3,
-                },
+    data = _request_json(
+        "POST",
+        f"{base_url}/run",
+        token=token,
+        payload={
+            "task": "llm.generate",
+            "input": {
+                "prompt": "Responde en una oración: ¿qué es BIM?",
+                "max_tokens": 100,
+                "temperature": 0.3,
             },
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        text = data.get("result", {}).get("text", "")
-        return f"{len(text)} chars generados"
+        },
+        timeout=25.0,
+    )
+    text = data.get("result", {}).get("text", "")
+    return f"{len(text)} chars generados"
 
 
 def test_composite_research(base_url: str, token: str) -> str:
-    """5. POST /run composite.research_report — full pipeline."""
-    with httpx.Client(timeout=45.0) as c:
-        resp = c.post(
-            f"{base_url}/run",
-            headers=_make_headers(token),
-            json={
-                "task": "composite.research_report",
-                "input": {
-                    "topic": "tendencias proptech 2026",
-                    "depth": "quick",
-                },
-            },
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        report = data.get("result", {}).get("report", "")
-        return f"reporte {len(report)} chars"
+    """5. /enqueue composite.research_report — full pipeline through Dispatcher."""
+    status_data = _enqueue_and_wait(
+        base_url,
+        token,
+        task="composite.research_report",
+        team="lab",
+        task_type="research",
+        input_data={
+            "topic": "tendencias proptech 2026",
+            "depth": "quick",
+        },
+        poll_attempts=20,
+        poll_interval_s=1.5,
+    )
+    status = status_data.get("status", "")
+    if status != "done":
+        raise ValueError(f"composite.research_report terminó en status={status}: {status_data.get('error')}")
+    report = status_data.get("result", {}).get("report", "")
+    return f"status=done, reporte {len(report)} chars"
 
 
 def test_enqueue(base_url: str, token: str) -> str:
@@ -410,142 +517,147 @@ def test_quota_status(base_url: str, token: str) -> str:
 
 
 def test_model_routing(base_url: str, token: str) -> str:
-    """16. POST /run llm.generate with task_type — verify model selection."""
-    with httpx.Client(timeout=25.0) as c:
-        resp = c.post(
-            f"{base_url}/run",
-            headers=_make_headers(token),
-            json={
-                "task": "llm.generate",
-                "input": {
-                    "prompt": "Responde OK.",
-                    "max_tokens": 20,
-                    "task_type": "research",
-                },
-            },
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        model = data.get("result", {}).get("model", "?")
-        return f"routed_model={model}"
+    """16. GET /providers/status — inspect effective routing snapshot."""
+    provider_status = _get_provider_status(base_url, token)
+    coding = _get_effective_route(provider_status, "coding")
+    research = _get_effective_route(provider_status, "research")
+    return (
+        f"coding={coding.get('effective_preferred') or 'none'}"
+        f", research={research.get('effective_preferred') or 'none'}"
+    )
 
 
 # ── Multi-model R8: provider-specific & routing tests ──────────
 
 def test_claude_provider(base_url: str, token: str) -> str:
     """R8-1. POST /run llm.generate with Claude model — verify provider=anthropic."""
-    with httpx.Client(timeout=30.0) as c:
-        resp = c.post(
-            f"{base_url}/run",
-            headers=_make_headers(token),
-            json={
-                "task": "llm.generate",
-                "input": {
-                    "prompt": "Say 'Claude OK' in one word.",
-                    "model": "claude-sonnet-4-6",
-                    "max_tokens": 20,
-                },
+    data = _request_json(
+        "POST",
+        f"{base_url}/run",
+        token=token,
+        payload={
+            "task": "llm.generate",
+            "input": {
+                "prompt": "Say 'Claude OK' in one word.",
+                "model": "claude-sonnet-4-6",
+                "max_tokens": 20,
             },
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        text = data.get("result", {}).get("text", "")
-        provider = data.get("result", {}).get("provider", "?")
-        if not text:
-            raise ValueError(f"Empty response from Claude: {data}")
-        return f"provider={provider}, {len(text)} chars"
+        },
+        timeout=30.0,
+    )
+    text = data.get("result", {}).get("text", "")
+    provider = data.get("result", {}).get("provider", "?")
+    if not text:
+        raise ValueError(f"Empty response from Claude: {data}")
+    if provider not in {"anthropic", "openclaw_proxy"}:
+        raise ValueError(f"Unexpected Claude provider: {provider}")
+    return f"provider={provider}, {len(text)} chars"
 
 
 def test_gemini_provider(base_url: str, token: str) -> str:
     """R8-2. POST /run llm.generate with Gemini model — verify provider=gemini."""
-    with httpx.Client(timeout=30.0) as c:
-        resp = c.post(
-            f"{base_url}/run",
-            headers=_make_headers(token),
-            json={
-                "task": "llm.generate",
-                "input": {
-                    "prompt": "Say 'Gemini OK' in one word.",
-                    "model": "gemini-3.1-pro-preview-customtools",
-                    "max_tokens": 20,
-                },
+    data = _request_json(
+        "POST",
+        f"{base_url}/run",
+        token=token,
+        payload={
+            "task": "llm.generate",
+            "input": {
+                "prompt": "Say 'Gemini OK' in one word.",
+                "model": "gemini-3.1-pro-preview-customtools",
+                "max_tokens": 20,
             },
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        text = data.get("result", {}).get("text", "")
-        provider = data.get("result", {}).get("provider", "?")
-        if not text:
-            raise ValueError(f"Empty response from Gemini: {data}")
-        return f"provider={provider}, {len(text)} chars"
+        },
+        timeout=30.0,
+    )
+    text = data.get("result", {}).get("text", "")
+    provider = data.get("result", {}).get("provider", "?")
+    if not text:
+        raise ValueError(f"Empty response from Gemini: {data}")
+    if provider != "gemini":
+        raise ValueError(f"Unexpected Gemini provider: {provider}")
+    return f"provider={provider}, {len(text)} chars"
 
 
 def test_vertex_provider(base_url: str, token: str) -> str:
     """R8-3. POST /run llm.generate with Vertex alias — verify provider=vertex."""
-    with httpx.Client(timeout=30.0) as c:
-        resp = c.post(
-            f"{base_url}/run",
-            headers=_make_headers(token),
-            json={
-                "task": "llm.generate",
-                "input": {
-                    "prompt": "Say 'Vertex OK' in one word.",
-                    "model": "gemini_vertex",
-                    "max_tokens": 20,
-                },
+    data = _request_json(
+        "POST",
+        f"{base_url}/run",
+        token=token,
+        payload={
+            "task": "llm.generate",
+            "input": {
+                "prompt": "Say 'Vertex OK' in one word.",
+                "model": "gemini_vertex",
+                "max_tokens": 20,
             },
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        text = data.get("result", {}).get("text", "")
-        provider = data.get("result", {}).get("provider", "?")
-        if not text:
-            raise ValueError(f"Empty response from Vertex: {data}")
-        return f"provider={provider}, {len(text)} chars"
+        },
+        timeout=30.0,
+    )
+    text = data.get("result", {}).get("text", "")
+    provider = data.get("result", {}).get("provider", "?")
+    if not text:
+        raise ValueError(f"Empty response from Vertex: {data}")
+    if provider != "vertex":
+        raise ValueError(f"Unexpected Vertex provider: {provider}")
+    return f"provider={provider}, {len(text)} chars"
 
 
 def test_routing_coding_selects_claude(base_url: str, token: str) -> str:
-    """R8-4. POST /run llm.generate task_type=coding — expect Claude model."""
-    with httpx.Client(timeout=25.0) as c:
-        resp = c.post(
-            f"{base_url}/run",
-            headers=_make_headers(token),
-            json={
-                "task": "llm.generate",
-                "input": {
-                    "prompt": "Responde OK.",
-                    "max_tokens": 20,
-                    "task_type": "coding",
-                },
-            },
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        model = data.get("result", {}).get("model", "?")
-        provider = data.get("result", {}).get("provider", "?")
-        return f"model={model}, provider={provider}"
+    """R8-4. Enqueue llm.generate task_type=coding — expect effective routed model."""
+    provider_status = _get_provider_status(base_url, token)
+    route = _get_effective_route(provider_status, "coding")
+    expected_model = route.get("effective_model")
+    if not expected_model:
+        raise ValueError("No effective configured route for coding")
+
+    status_data = _enqueue_and_wait(
+        base_url,
+        token,
+        task="llm.generate",
+        team="lab",
+        task_type="coding",
+        input_data={
+            "prompt": "Responde OK.",
+            "max_tokens": 20,
+        },
+    )
+    status = status_data.get("status", "")
+    if status != "done":
+        raise ValueError(f"routing coding terminó en status={status}: {status_data.get('error')}")
+    model = status_data.get("result", {}).get("model", "?")
+    if model != expected_model:
+        raise ValueError(f"Expected coding model={expected_model}, got={model}")
+    return f"expected={expected_model}, actual={model}"
 
 
 def test_routing_research_selects_gemini(base_url: str, token: str) -> str:
-    """R8-5. POST /run llm.generate task_type=research — expect Gemini model."""
-    with httpx.Client(timeout=25.0) as c:
-        resp = c.post(
-            f"{base_url}/run",
-            headers=_make_headers(token),
-            json={
-                "task": "llm.generate",
-                "input": {
-                    "prompt": "Responde OK.",
-                    "max_tokens": 20,
-                    "task_type": "research",
-                },
-            },
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        model = data.get("result", {}).get("model", "?")
-        provider = data.get("result", {}).get("provider", "?")
-        return f"model={model}, provider={provider}"
+    """R8-5. Enqueue llm.generate task_type=research — expect effective routed model."""
+    provider_status = _get_provider_status(base_url, token)
+    route = _get_effective_route(provider_status, "research")
+    expected_model = route.get("effective_model")
+    if not expected_model:
+        raise ValueError("No effective configured route for research")
+
+    status_data = _enqueue_and_wait(
+        base_url,
+        token,
+        task="llm.generate",
+        team="lab",
+        task_type="research",
+        input_data={
+            "prompt": "Responde OK.",
+            "max_tokens": 20,
+        },
+    )
+    status = status_data.get("status", "")
+    if status != "done":
+        raise ValueError(f"routing research terminó en status={status}: {status_data.get('error')}")
+    model = status_data.get("result", {}).get("model", "?")
+    if model != expected_model:
+        raise ValueError(f"Expected research model={expected_model}, got={model}")
+    return f"expected={expected_model}, actual={model}"
 
 
 # ── Suite runner ────────────────────────────────────────────────
@@ -577,7 +689,10 @@ def run_e2e_suite(
 
     # ── Multi-model tests (conditional on API keys) ───────────
     has_openai = bool(os.environ.get("OPENAI_API_KEY"))
-    has_anthropic = bool(os.environ.get("ANTHROPIC_API_KEY"))
+    has_anthropic = bool(
+        os.environ.get("ANTHROPIC_API_KEY")
+        or os.environ.get("OPENCLAW_GATEWAY_TOKEN")
+    )
 
     if has_openai:
         tests.append(("Multi-model: OpenAI", lambda: test_multi_model_openai(base_url, token)))
@@ -606,8 +721,8 @@ def run_e2e_suite(
     if has_vertex:
         tests.append(("R8: Vertex provider", lambda: test_vertex_provider(base_url, token)))
 
-    tests.append(("R8: Routing coding→Claude", lambda: test_routing_coding_selects_claude(base_url, token)))
-    tests.append(("R8: Routing research→Gemini", lambda: test_routing_research_selects_gemini(base_url, token)))
+    tests.append(("R8: Routing coding", lambda: test_routing_coding_selects_claude(base_url, token)))
+    tests.append(("R8: Routing research", lambda: test_routing_research_selects_gemini(base_url, token)))
 
     for i, (name, fn) in enumerate(tests, 1):
         label = f"{i}. {name}"
@@ -625,12 +740,12 @@ def run_e2e_suite(
         suite.results.append(ValidationResult(
             name="Multi-model: Anthropic",
             passed=True, elapsed_ms=0, skipped=True,
-            detail="SKIP — ANTHROPIC_API_KEY not set",
+            detail="SKIP — ANTHROPIC_API_KEY / OPENCLAW_GATEWAY_TOKEN not set",
         ))
         suite.results.append(ValidationResult(
             name="R8: Claude provider",
             passed=True, elapsed_ms=0, skipped=True,
-            detail="SKIP — ANTHROPIC_API_KEY not set",
+            detail="SKIP — ANTHROPIC_API_KEY / OPENCLAW_GATEWAY_TOKEN not set",
         ))
     if not has_google:
         suite.results.append(ValidationResult(

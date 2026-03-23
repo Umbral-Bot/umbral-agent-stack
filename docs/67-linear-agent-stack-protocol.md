@@ -97,6 +97,17 @@ Cuando una auditoria o analisis deje trabajo pendiente:
 3. si no, dejarla sin claim y verla con `linear.list_agent_stack_issues`
 4. cuando un agente la tome, usar `linear.claim_agent_stack_issue`
 
+## Auto-escalacion del Dispatcher
+
+La auto-escalacion por fallos del Dispatcher debe publicar follow-ups usando `linear.publish_agent_stack_followup`, no `linear.create_issue` crudo.
+
+Reglas:
+
+- escalar solo si el envelope trae `source` o `source_kind` de flujo canonico
+- por defecto el filtro estricto queda activo con `ESCALATE_ONLY_CANONICAL=true`
+- no escalar tareas ruidosas o de soporte operativo como cron, reportes o backfills
+- si una tarea falla fuera de ese criterio, dejar trazabilidad en logs y revisar manualmente si amerita follow-up
+
 ## Campos recomendados al publicar
 
 - `title`

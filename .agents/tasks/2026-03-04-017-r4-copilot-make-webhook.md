@@ -2,7 +2,8 @@
 id: "017"
 title: "Make.com Webhook Integration — SIM Pipeline"
 assigned_to: github-copilot
-status: assigned
+status: done
+updated_at: "2026-03-22T19:04:21-03:00"
 branch: feat/copilot-make-webhook
 priority: high
 round: 4
@@ -66,3 +67,8 @@ Crear `tests/test_make_webhook.py`:
 - `worker/app.py` — POST /enqueue + GET /task/{id}/status (para polling)
 - `scripts/sim_daily_research.py` — referencia de script similar
 - `openclaw/env.template` — agregar MAKE_WEBHOOK_SIM_URL
+
+## Log
+
+### [codex] 2026-03-22 19:04 -03:00
+Regularizacion administrativa por UMB-132. Esta tarea quedo como arrastre historico y ya no representa trabajo vivo; se cierra el archivo para alinearlo con el board y el estado real del repo.

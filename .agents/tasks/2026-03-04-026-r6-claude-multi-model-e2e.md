@@ -4,7 +4,8 @@ title: "Multi-Model E2E Tests + Scheduled Tasks Validation"
 assigned_to: claude-code
 branch: feat/claude-multi-model-e2e
 round: 6
-status: assigned
+status: done
+updated_at: "2026-03-22T19:04:21-03:00"
 created: 2026-03-04
 ---
 
@@ -79,3 +80,8 @@ Para uso rápido post-deploy (< 5 segundos).
 ## Entregable
 
 PR a `main` desde `feat/claude-multi-model-e2e` con todos los tests pasando.
+
+## Log
+
+### [codex] 2026-03-22 19:04 -03:00
+Regularizacion administrativa por UMB-132. Esta tarea quedo como arrastre historico y ya no representa trabajo vivo; se cierra el archivo para alinearlo con el board y el estado real del repo.

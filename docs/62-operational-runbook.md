@@ -215,7 +215,7 @@ Todas las rutas (excepto `/health`) requieren header `Authorization: Bearer <WOR
 | 1 | Verificar que Redis está UP: `redis-cli ping` |
 | 2 | Verificar que el Worker está UP: `curl $WORKER_URL/health` |
 | 3 | Verificar proceso Dispatcher: `ps aux \| grep dispatcher` |
-| 4 | Restart Dispatcher: `source .venv/bin/activate && python3 -m dispatcher.service` |
+| 4 | Reconciliar Dispatcher: `bash scripts/vps/dispatcher-service.sh reconcile` |
 | 5 | Revisar logs del Dispatcher para errores de conexión o routing |
 
 ### 5.4 Cuota excedida
@@ -332,7 +332,7 @@ nohup python3 -m uvicorn worker.app:app --host 0.0.0.0 --port 8088 --log-level i
 # 3. Dispatcher
 export WORKER_URL="http://localhost:8088"
 export REDIS_URL="redis://localhost:6379/0"
-nohup python3 -m dispatcher.service &
+bash scripts/vps/dispatcher-service.sh start
 
 # 4. Verificar
 sleep 3

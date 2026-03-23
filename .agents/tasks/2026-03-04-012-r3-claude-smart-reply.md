@@ -2,7 +2,8 @@
 id: "012"
 title: "Smart Notion Reply Pipeline"
 assigned_to: claude-code
-status: assigned
+status: done
+updated_at: "2026-03-22T19:04:21-03:00"
 branch: feat/claude-smart-reply
 priority: critical
 round: 3
@@ -66,3 +67,8 @@ Crear `tests/test_smart_reply.py`:
 
 ## Variables de entorno necesarias
 Ya configuradas en VPS: WORKER_URL, WORKER_TOKEN, TAVILY_API_KEY, GOOGLE_API_KEY
+
+## Log
+
+### [codex] 2026-03-22 19:04 -03:00
+Regularizacion administrativa por UMB-132. Esta tarea quedo como arrastre historico y ya no representa trabajo vivo; se cierra el archivo para alinearlo con el board y el estado real del repo.

@@ -6,11 +6,13 @@ VPS autosuficiente: Worker local (WORKER_URL) siempre; VM opcional (WORKER_URL_V
 - Con VM online: tareas con requires_vm=True van a la VM; el resto al Worker local.
 """
 
+import atexit
 import logging
 import os
 import sys
 import threading
 import time
+from pathlib import Path
 from typing import Any, Dict, Optional
 
 import httpx
@@ -26,6 +28,11 @@ from dispatcher.team_config import get_team_capabilities
 from dispatcher.task_routing import task_requires_vm
 from client.worker_client import WorkerClient
 from infra.ops_logger import ops_log
+
+try:
+    import fcntl
+except ImportError:  # pragma: no cover - Windows dev environments
+    fcntl = None
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 
@@ -55,6 +62,77 @@ CALLBACK_TIMEOUT_SECONDS = 10.0
 CALLBACK_RETRY_DELAY_SECONDS = 5
 
 MAX_CONNECT_RETRIES = 3
+DEFAULT_DISPATCHER_LOCK_PATH = "/tmp/umbral-dispatcher.lock"
+
+
+class DispatcherInstanceError(RuntimeError):
+    """Raised when another dispatcher process already owns the instance lock."""
+
+
+def _read_lock_owner_pid(handle: Any) -> Optional[int]:
+    handle.seek(0)
+    raw_value = handle.read().strip()
+    if not raw_value:
+        return None
+    try:
+        return int(raw_value.splitlines()[0])
+    except ValueError:
+        return None
+
+
+class DispatcherInstanceLock:
+    """Best-effort cross-process lock so the VPS keeps only one dispatcher alive."""
+
+    def __init__(self, path: str | Path):
+        self.path = Path(path)
+        self.handle: Any = None
+
+    def acquire(self) -> tuple[bool, Optional[int]]:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        handle = self.path.open("a+", encoding="utf-8")
+        if fcntl is not None:
+            try:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                owner_pid = _read_lock_owner_pid(handle)
+                handle.close()
+                return False, owner_pid
+
+        handle.seek(0)
+        handle.truncate()
+        handle.write(f"{os.getpid()}\n")
+        handle.flush()
+        self.handle = handle
+        return True, None
+
+    def release(self) -> None:
+        if self.handle is None:
+            return
+
+        try:
+            self.handle.seek(0)
+            self.handle.truncate()
+            self.handle.flush()
+            if fcntl is not None:
+                fcntl.flock(self.handle.fileno(), fcntl.LOCK_UN)
+        finally:
+            self.handle.close()
+            self.handle = None
+
+
+def _acquire_dispatcher_instance_lock() -> DispatcherInstanceLock:
+    lock_path = os.environ.get("DISPATCHER_LOCK_PATH", DEFAULT_DISPATCHER_LOCK_PATH)
+    instance_lock = DispatcherInstanceLock(lock_path)
+    acquired, owner_pid = instance_lock.acquire()
+    if not acquired:
+        owner_text = f" (pid {owner_pid})" if owner_pid else ""
+        raise DispatcherInstanceError(
+            f"Another dispatcher instance is already running{owner_text}. "
+            f"Lock file: {lock_path}"
+        )
+
+    atexit.register(instance_lock.release)
+    return instance_lock
 
 
 def _post_webhook_callback(callback_url: str, payload: Dict[str, Any]) -> None:
@@ -262,9 +340,54 @@ def _notify_linear_completion(
 logger = logging.getLogger("dispatcher.service")
 
 ESCALATE_TO_LINEAR = os.environ.get("ESCALATE_FAILURES_TO_LINEAR", "true").lower() in ("true", "1", "yes")
+ESCALATE_ONLY_CANONICAL = os.environ.get("ESCALATE_ONLY_CANONICAL", "true").lower() in ("true", "1", "yes")
+
+_CANONICAL_ESCALATION_SOURCES = {
+    "linear_webhook",
+    "notion_poll",
+    "notion_poller",
+    "openclaw_gateway",
+    "smart_reply",
+    "workflow_engine",
+}
+_CANONICAL_ESCALATION_SOURCE_KINDS = {
+    "instruction_comment",
+    "linear_webhook",
+    "tool_enqueue",
+    "workflow_engine",
+}
+_NOISY_ESCALATION_SOURCES = {
+    "daily_digest",
+    "dashboard_report",
+    "notion_curate_ops_vps",
+    "ooda_report",
+    "quota_guard",
+    "sim_daily",
+    "sim_report",
+}
+_NOISY_ESCALATION_SOURCE_KINDS = {
+    "cron",
+    "historical_backfill",
+    "scheduled_report",
+}
 
 
-def _escalate_failure_to_linear(
+def _should_escalate_failure(envelope: dict) -> bool:
+    source = str(envelope.get("source") or "").strip().lower()
+    source_kind = str(envelope.get("source_kind") or "").strip().lower()
+
+    if not ESCALATE_ONLY_CANONICAL:
+        return True
+    if source in _NOISY_ESCALATION_SOURCES or source_kind in _NOISY_ESCALATION_SOURCE_KINDS:
+        return False
+    if source in _CANONICAL_ESCALATION_SOURCES:
+        return True
+    if source_kind in _CANONICAL_ESCALATION_SOURCE_KINDS:
+        return True
+    return False
+
+
+def _escalate_failure_to_linear_legacy_old(
     wc: "WorkerClient",
     envelope: dict,
     task_id: str,
@@ -278,22 +401,28 @@ def _escalate_failure_to_linear(
     Stores the created issue_id back in envelope for follow-up notifications.
     Controlled by ESCALATE_FAILURES_TO_LINEAR env var (default: true).
     """
+    return _escalate_failure_to_linear(wc, envelope, task_id, task, team, error)
+
     if not ESCALATE_TO_LINEAR:
         return
     if envelope.get("linear_issue_id"):
         return
     if task.startswith("linear."):
         return
-
-    capabilities = get_team_capabilities()
-    team_info = capabilities.get(team, {})
-    linear_team_key = team_info.get("linear_team_key", "UMBRAL")
+    if not _should_escalate_failure(envelope):
+        logger.info(
+            "[escalation] Skipping non-canonical failure for task %s (source=%s, source_kind=%s)",
+            task_id,
+            envelope.get("source", ""),
+            envelope.get("source_kind", ""),
+        )
+        return
 
     priority_map = {"critical": 1, "coding": 2, "ms_stack": 2, "general": 3, "writing": 3, "research": 3, "light": 4}
     task_type = envelope.get("task_type", "general")
     priority = priority_map.get(task_type, 3)
 
-    title = f"[Auto] Tarea fallida: {task} ({task_id[:8]})"
+    title = f"Task fallida: {task} ({task_id[:8]})"
     description = (
         f"**Task:** `{task}`\n"
         f"**Task ID:** `{task_id}`\n"
@@ -314,6 +443,79 @@ def _escalate_failure_to_linear(
         issue_id = (resp or {}).get("result", {})
         if isinstance(issue_id, dict):
             issue_id = issue_id.get("id") or issue_id.get("issue_id")
+        if issue_id:
+            envelope["linear_issue_id"] = issue_id
+        logger.info("[escalation] Linear issue created for failed task %s (issue=%s)", task_id, issue_id)
+    except Exception as exc:
+        logger.debug("[escalation] Could not create Linear issue: %s", exc)
+
+def _escalate_failure_to_linear(
+    wc: "WorkerClient",
+    envelope: dict,
+    task_id: str,
+    task: str,
+    team: str,
+    error: str,
+) -> None:
+    """
+    Publish a canonical Agent Stack follow-up when a task fails.
+
+    Skips duplicate, recursive, and non-canonical failures so Linear only
+    receives follow-ups from the main Dispatcher -> Redis -> Worker flow.
+    """
+    if not ESCALATE_TO_LINEAR:
+        return
+    if envelope.get("linear_issue_id"):
+        return
+    if task.startswith("linear."):
+        return
+    if not _should_escalate_failure(envelope):
+        logger.info(
+            "[escalation] Skipping non-canonical failure for task %s (source=%s, source_kind=%s)",
+            task_id,
+            envelope.get("source", ""),
+            envelope.get("source_kind", ""),
+        )
+        return
+
+    priority_map = {"critical": 1, "coding": 2, "ms_stack": 2, "general": 3, "writing": 3, "research": 3, "light": 4}
+    task_type = envelope.get("task_type", "general")
+    priority = priority_map.get(task_type, 3)
+    trace_id = str(envelope.get("trace_id") or "").strip()
+    source = str(envelope.get("source") or "").strip() or "unspecified"
+    source_kind = str(envelope.get("source_kind") or "").strip() or "unspecified"
+
+    try:
+        resp = wc.run(
+            "linear.publish_agent_stack_followup",
+            {
+                "title": f"Task fallida: {task} ({task_id[:8]})",
+                "summary": f"La tarea `{task}` fallo durante ejecucion automatica del Agent Stack.",
+                "evidence": (
+                    f"task_id={task_id}\n"
+                    f"trace_id={trace_id or 'n/a'}\n"
+                    f"team={team}\n"
+                    f"task_type={task_type}\n"
+                    f"source={source}\n"
+                    f"source_kind={source_kind}\n"
+                    f"error={error[:500]}"
+                ),
+                "impact": "El flujo canonico Dispatcher -> Redis -> Worker no pudo completar la tarea y requiere follow-up tecnico.",
+                "next_action": "Revisar logs, reproducir el fallo y corregir el handler o la dependencia que rompio la ejecucion.",
+                "source_ref": f"{source} / {source_kind}",
+                "requested_by": "Dispatcher",
+                "kind": "operational_debt",
+                "priority": priority,
+            },
+        )
+        issue_id = None
+        result = (resp or {}).get("result", {})
+        if isinstance(result, dict):
+            issue = result.get("issue", {})
+            if isinstance(issue, dict):
+                issue_id = issue.get("id")
+            if not issue_id:
+                issue_id = result.get("id") or result.get("issue_id")
         if issue_id:
             envelope["linear_issue_id"] = issue_id
         logger.info("[escalation] Linear issue created for failed task %s (issue=%s)", task_id, issue_id)
@@ -371,6 +573,21 @@ def _run_worker(
         # S4: selección de modelo por task_type y cuotas
         is_llm_task = any(task.startswith(p) for p in LLM_TASK_PREFIXES)
         decision = model_router.select_model(task_type)
+        if is_llm_task and decision.reason == "no_configured_provider":
+            reason = "no_configured_provider"
+            logger.warning(
+                "[worker %d] Task %s blocked: %s (task_type=%s)",
+                worker_id, task_id, reason, task_type,
+            )
+            ops_log.task_blocked(task_id, task, team, reason, trace_id=trace_id)
+            threading.Thread(
+                target=_notion_upsert,
+                args=(wc_local, task_id, "blocked", team, task),
+                kwargs={"error": reason, "envelope": envelope},
+                daemon=True,
+            ).start()
+            queue.block_task(task_id, reason)
+            continue
         if decision.requires_approval and is_llm_task:
             reason = "quota_exceeded_approval_required"
             logger.warning("[worker %d] Task %s blocked: %s (model=%s)", worker_id, task_id, reason, decision.model)
@@ -505,6 +722,12 @@ def _run_worker(
 
 
 def main():
+    try:
+        instance_lock = _acquire_dispatcher_instance_lock()
+    except DispatcherInstanceError as exc:
+        logger.error("%s", exc)
+        sys.exit(1)
+
     redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
     worker_url = os.environ.get("WORKER_URL", "http://127.0.0.1:8088")
     worker_url_vm = os.environ.get("WORKER_URL_VM", "").strip() or None
@@ -521,6 +744,7 @@ def main():
     pool = redis.ConnectionPool.from_url(redis_url, decode_responses=True)
     r = redis.Redis(connection_pool=pool)
     queue = TaskQueue(r)
+    hm: Optional[HealthMonitor] = None
 
     # HealthMonitor vigila la VM (si hay WORKER_URL_VM); si no hay VM, vm_online queda False
     hm_url = worker_url_vm if worker_url_vm else "http://127.0.0.1:1"
@@ -571,7 +795,9 @@ def main():
     except KeyboardInterrupt:
         logger.info("Shutting down Dispatcher Service gracefully...")
     finally:
-        hm.stop()
+        if hm is not None:
+            hm.stop()
+        instance_lock.release()
 
 
 if __name__ == "__main__":

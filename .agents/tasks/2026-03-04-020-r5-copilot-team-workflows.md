@@ -2,7 +2,8 @@
 id: "020"
 title: "Team Workflow Engine — Flujos por equipo"
 assigned_to: github-copilot
-status: assigned
+status: done
+updated_at: "2026-03-22T19:04:21-03:00"
 branch: feat/copilot-team-workflows
 priority: high
 round: 5
@@ -103,3 +104,8 @@ Crear `tests/test_workflow_engine.py`:
 - `config/teams.yaml` — equipos existentes
 - `dispatcher/smart_reply.py` — integrar workflow execution
 - `dispatcher/intent_classifier.py` — route_to_team (referencia)
+
+## Log
+
+### [codex] 2026-03-22 19:04 -03:00
+Regularizacion administrativa por UMB-132. Esta tarea quedo como arrastre historico y ya no representa trabajo vivo; se cierra el archivo para alinearlo con el board y el estado real del repo.

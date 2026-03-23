@@ -2,7 +2,8 @@
 id: "015"
 title: "Composite Task Handler (Research Report)"
 assigned_to: antigravity
-status: assigned
+status: done
+updated_at: "2026-03-22T19:04:21-03:00"
 branch: feat/antigravity-composite-tasks
 priority: high
 round: 3
@@ -69,3 +70,8 @@ Crear entrada en `docs/07-worker-api-contract.md` para el nuevo task type.
 - `worker/tasks/llm.py` — handle_llm_generate (importar y reusar)
 - `worker/tasks/__init__.py` — registrar handler
 - `worker/app.py` — ya soporta cualquier task registrado via POST /run
+
+## Log
+
+### [codex] 2026-03-22 19:04 -03:00
+Regularizacion administrativa por UMB-132. Esta tarea quedo como arrastre historico y ya no representa trabajo vivo; se cierra el archivo para alinearlo con el board y el estado real del repo.

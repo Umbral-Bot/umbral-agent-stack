@@ -25,26 +25,27 @@ Debe existir `IDENTITY.md` y `SOUL.md`.
 
 ### 3. Dispatcher (obligatorio para E2E)
 
-**Opción A — systemd:**
-```bash
-mkdir -p ~/.config/systemd/user
-sed "s|%h|$HOME|g" ~/umbral-agent-stack/openclaw/systemd/openclaw-dispatcher.service.template > ~/.config/systemd/user/openclaw-dispatcher.service
-systemctl --user daemon-reload
-systemctl --user enable --now openclaw-dispatcher
-systemctl --user status openclaw-dispatcher
-```
+Metodo canonico:
 
-**Opción B — manual (background):**
 ```bash
 cd ~/umbral-agent-stack
-source .venv/bin/activate && set -a && source ~/.config/openclaw/env && set +a
-export PYTHONPATH=$HOME/umbral-agent-stack
-nohup python3 -m dispatcher.service >> /tmp/dispatcher.log 2>&1 &
+bash scripts/vps/dispatcher-service.sh start
+bash scripts/vps/dispatcher-service.sh status
 ```
+
+Si detectas drift entre `systemctl` y procesos reales:
+
+```bash
+cd ~/umbral-agent-stack
+bash scripts/vps/dispatcher-service.sh reconcile
+```
+
+La operacion canonica del dispatcher en VPS queda solo por `systemd`. No usar `nohup python3 -m dispatcher.service` como camino normal.
 
 ### 4. Notion poller (opcional)
 
-En sesión separada o como servicio:
+En sesion separada o como servicio:
+
 ```bash
 cd ~/umbral-agent-stack && source .venv/bin/activate && set -a && source ~/.config/openclaw/env && set +a
 export PYTHONPATH=$HOME/umbral-agent-stack
@@ -55,7 +56,5 @@ python3 -m dispatcher.notion_poller
 
 ```bash
 cd ~/umbral-agent-stack
-export $(grep -v '^#' ~/.config/openclaw/env | xargs)
-export PYTHONPATH=$HOME/umbral-agent-stack
-python3 scripts/test_s2_dispatcher.py
+bash scripts/vps/dispatcher-service.sh smoke
 ```

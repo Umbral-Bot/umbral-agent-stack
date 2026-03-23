@@ -145,6 +145,67 @@ class ModelRouter:
             restrict = cfg.get("restrict", restrict)
         return warn, restrict
 
+    def _normalize_task_type(self, task_type: str) -> str:
+        task_type = task_type or "general"
+        if task_type not in self.routing:
+            return "general"
+        return task_type
+
+    def get_effective_route(self, task_type: str) -> Dict[str, Any]:
+        """
+        Return the route actually usable with the providers configured in env vars.
+
+        The returned route keeps declared providers for observability, but promotes
+        the first configured fallback when the declared preferred provider is absent.
+        """
+        normalized_task_type = self._normalize_task_type(task_type)
+        route = self.routing[normalized_task_type]
+        declared_preferred = route.get("preferred", "claude_pro")
+        declared_fallback_chain: List[str] = list(route.get("fallback_chain") or [])
+
+        preferred = declared_preferred
+        fallback_chain = list(declared_fallback_chain)
+
+        if self._default_model and self._default_model != preferred:
+            if self._default_model in self._configured:
+                if preferred not in fallback_chain:
+                    fallback_chain = [preferred] + fallback_chain
+                preferred = self._default_model
+            else:
+                logger.warning(
+                    "UMBRAL_DEFAULT_MODEL='%s' is not configured; keeping declared route for task_type '%s'",
+                    self._default_model,
+                    normalized_task_type,
+                )
+
+        declared_candidates = [preferred] + fallback_chain
+        unavailable = [provider for provider in declared_candidates if provider not in self._configured]
+
+        if preferred not in self._configured:
+            preferred = next((provider for provider in fallback_chain if provider in self._configured), "")
+
+        effective_fallback_chain = [
+            provider for provider in fallback_chain
+            if provider in self._configured and provider != preferred
+        ]
+
+        return {
+            "task_type": normalized_task_type,
+            "declared_preferred": declared_preferred,
+            "declared_fallback_chain": declared_fallback_chain,
+            "preferred": preferred or None,
+            "fallback_chain": effective_fallback_chain,
+            "unconfigured": unavailable,
+            "has_configured_route": bool(preferred),
+        }
+
+    def get_routing_snapshot(self) -> Dict[str, Dict[str, Any]]:
+        """Return the effective route for every known task_type."""
+        return {
+            task_type: self.get_effective_route(task_type)
+            for task_type in sorted(self.routing.keys())
+        }
+
     def select_model(
         self,
         task_type: str,
@@ -153,37 +214,23 @@ class ModelRouter:
         """
         Elige modelo para task_type. Si quota_state es None, usa QuotaTracker.get_all_quota_states().
         """
-        task_type = task_type or "general"
-        if task_type not in self.routing:
-            task_type = "general"
-        route = self.routing[task_type]
-        preferred = route.get("preferred", "claude_pro")
-        fallback_chain: List[str] = route.get("fallback_chain") or []
+        route = self.get_effective_route(task_type)
+        task_type = route["task_type"]
+        preferred = route["preferred"] or ""
+        fallback_chain: List[str] = route["fallback_chain"]
 
-        # UMBRAL_DEFAULT_MODEL override: swap preferred, keep original as first fallback
-        if self._default_model and self._default_model != preferred:
-            if self._default_model in self._configured:
-                if preferred not in fallback_chain:
-                    fallback_chain = [preferred] + fallback_chain
-                preferred = self._default_model
-            else:
-                logger.warning(
-                    "UMBRAL_DEFAULT_MODEL='%s' not in provider config; ignoring override",
-                    self._default_model,
-                )
-
-        # Filter out unconfigured providers (missing env vars)
-        configured = self._configured
-        if preferred not in configured:
-            for fb in fallback_chain:
-                if fb in configured:
-                    logger.info(
-                        "Preferred '%s' not configured, promoting '%s' for task_type '%s'",
-                        preferred, fb, task_type,
-                    )
-                    preferred = fb
-                    break
-        fallback_chain = [m for m in fallback_chain if m in configured and m != preferred]
+        if not preferred:
+            logger.warning(
+                "No configured providers available for task_type '%s' (declared preferred=%s, declared fallback=%s)",
+                task_type,
+                route["declared_preferred"],
+                route["declared_fallback_chain"],
+            )
+            return ModelSelectionDecision(
+                model="",
+                reason="no_configured_provider",
+                requires_approval=True,
+            )
 
         if quota_state is None:
             quota_state = self.quota.get_all_quota_states()

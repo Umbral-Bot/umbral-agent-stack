@@ -60,15 +60,16 @@ Regularización `UMB-132` (2026-03-22): se cerraron task files históricos que h
 | 2026-03-24-006 | Accion 5: hardening de seguridad OpenClaw | codex | ✅ done |
 | 2026-03-24-007 | Accion 6: bootstrap y gobernanza fina por agente en OpenClaw | codex | ✅ done |
 | 2026-03-24-008 | Test general post-acciones OpenClaw | codex | ✅ done |
+| 2026-03-24-009 | Diferidos OpenClaw: tailscale, tracking repo-side, costo y propuesta Tavily | codex | ✅ done |
 | 2026-03-24-002 | Accion 8: revisar skills faltantes en OpenClaw VPS y decidir sync vs skill nueva | codex | ✅ done |
 
 ## Pendientes diferidos post-fases
 
-- Snapshot repo-side del tracking de paneles/OpenClaw (`reports/...`) a partir de `ops_log`.
-- Atribucion mas fina de costo/tokens por componente dentro de OpenClaw, separada del tracking operativo ya implementado.
-- Decidir si Tavily se recarga, se deja como backend secundario o se retira del discovery ahora que `research.web` y `web_discovery.py` ya quedan cubiertos por Gemini grounded fallback.
+- Exact billing-grade attribution de costo/tokens para `research.web` y session caching de OpenClaw; hoy ya existe snapshot repo-side y costo proxy, pero no facturacion oficial por request.
+- Decidir humanamente si Tavily se recarga, se deja como backend secundario o se retira del discovery ahora que `research.web` y `web_discovery.py` ya quedan cubiertos por Gemini grounded fallback.
 - Hardening OpenClaw residual aceptado: `gateway.trustedProxies` vacio mientras la Control UI siga local-only y warning `potential-exfiltration` del plugin `umbral-worker` por lectura deliberada de `tokenFile` con permisos `600`.
-- Revalidar reachability Tailscale VPS -> VM despues del reinicio del host; la recuperacion de internet de la VM quedo documentada, pero el tailnet end-to-end no se da por estable tras el reboot.
+- Reparar o revalidar reachability Tailscale VPS -> VM despues del reinicio del host; la recuperacion de internet de la VM quedo documentada, pero el tailnet end-to-end sigue degradado tras el reboot.
+- Automatizar, si se desea, un exporter cron para `reports/runtime/openclaw-runtime-snapshot-latest.json` y un resumen compacto de uso en `Dashboard Rick`.
 
 ## Ronda 16 — Cerrada
 

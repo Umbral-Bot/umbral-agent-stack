@@ -108,6 +108,41 @@ Current caution after later host restart:
 - do not assume VPS -> VM tailnet reachability is fully stable without revalidation
 - internet recovery inside the VM was confirmed during the intervention, but tailnet service reachability should be rechecked after each disruptive reboot until the network path is considered durable
 
+## Revalidation 2026-03-24 (after later reboot)
+
+Revalidation was run again from both control-plane sides after the host reboot.
+
+Observed state:
+
+- inside the VM, guest internet had already been restored previously via the added `Default Switch` NIC
+- guest Tailscale identity still exists as `pcrick` / `100.109.16.40`
+- however, the service path is **not** reachable end-to-end after the reboot
+
+Concrete evidence:
+
+- from VPS `srv1431451`:
+  - `tailscale status --json` shows peer `PCRick` with:
+    - `Active=true`
+    - `Online=false`
+    - `LastSeen=2026-03-24T00:52:30.1Z`
+  - `ping -c 2 100.109.16.40` -> `100% packet loss`
+  - `curl --max-time 10 http://100.109.16.40:8088/health` -> timeout
+  - `curl --max-time 10 http://100.109.16.40:8089/health` -> timeout
+- from host/local workstation:
+  - `Invoke-RestMethod http://100.109.16.40:8088/health` -> connection failure
+  - `Invoke-RestMethod http://100.109.16.40:8089/health` -> connection failure
+
+Current interpretation:
+
+- the VM internet recovery remains valid
+- the Tailscale guest identity also remains known to the tailnet
+- but **VPS -> VM tailnet reachability is still degraded after reboot**
+
+Operational conclusion:
+
+- do not treat direct `100.109.16.40:8088/8089` as durable yet
+- if the execution plane is required from VPS without manual intervention, prefer the already documented fallback path or revalidate the guest tailnet session again before switching routing back to direct tailnet
+
 ## Durable hardening added
 
 Added repo scripts:

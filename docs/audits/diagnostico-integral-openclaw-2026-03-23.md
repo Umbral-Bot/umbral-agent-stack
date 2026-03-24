@@ -27,6 +27,7 @@ La Accion 1 de este diagnostico ya fue ejecutada despues del barrido inicial:
 - La Accion 4 tambien quedo ejecutada: se saneo el store de sesiones de `main` (`55 -> 47` entradas), se reinicio el gateway para recargarlo y se archivaron 6 transcripts huérfanos con sufijo `*.deleted.<timestamp>`. `openclaw doctor` ya no reporta sesiones recientes sin transcript ni orphans en `main`.
 - La Accion 8 tambien quedo ejecutada: `main` ya tiene `external-reference-intelligence` y `windows`, `rick-qa` ya tiene `system-interconnectivity-diagnostics`, y `BROWSER_HEADLESS=false` quedo declarado en la env de OpenClaw para que `browser-automation-vm` no siga apareciendo como no elegible por falta de variable. Ver `docs/audits/openclaw-skills-role-selection-2026-03-24.md`.
 - La Accion 5 tambien quedo ejecutada: el plugin `umbral-worker` ya no depende de `WORKER_URL`, `WORKER_URL_VM_INTERACTIVE` ni `WORKER_TOKEN` via `process.env`; ahora usa `baseUrl`, `interactiveBaseUrl` y `tokenFile` explicitos en `plugins.entries.umbral-worker.config`. Tambien se removio `gpt-4.1` de fallbacks, se fijo `tools.profile = coding` a nivel global y se reemplazaron symlinks escapados por copias reales en los workspaces afectados. La auditoria de seguridad paso de `1 critical · 4 warn` a `0 critical · 2 warn`.
+- La Accion 6 tambien quedo ejecutada: `BOOTSTRAP.md` queda versionado como asset de onboarding pero no persiste en workspaces maduros; en la VPS se fijo `agents.defaults.skipBootstrap = true` y se sincronizo `HEARTBEAT.md` como capa persistente de gobernanza por rol. `openclaw status --all` volvio a `0 bootstrapping`. Ver `docs/audits/openclaw-bootstrap-governance-2026-03-24.md`.
 - El estado bueno de red tras la intervencion en la VM tambien quedo asentado: se agrego una segunda NIC en Hyper-V (`Default Switch`) para restaurar internet de la VM sin quitar la NIC interna. La VM recupero salida web durante la intervencion; la reachability tailnet VPS -> VM debe revalidarse tras reinicios del host.
 
 El resto del documento preserva el barrido original del 2026-03-23, pero las secciones de resumen, estado por componente y plan ya reflejan el cierre de las Acciones 1-5 y 8.
@@ -273,16 +274,19 @@ Evidencia:
 - `openclaw agent --agent rick-tracker ...` -> OK
 - `rick-delivery` y `rick-orchestrator` ya no tienen symlinks en `skills/`
 
-### P2. `BOOTSTRAP.md` ausente en workspaces activos
+### Resuelto. Bootstrap y gobernanza por agente regularizados
 
 Estado:
 
-- `main`, `rick-ops` y `rick-tracker` reportan `BOOTSTRAP.md` ausente.
+- Resuelto por la Accion 6 el `2026-03-24`.
 
-Impacto:
+Resultado:
 
-- se pierde una capa clara de arranque/control por agente
-- hoy no rompe ejecucion, pero empobrece gobernanza del runtime
+- `BOOTSTRAP.md` queda versionado en el repo solo como asset de onboarding / rebuild.
+- En la VPS, los workspaces maduros quedan con `agents.defaults.skipBootstrap = true`.
+- `HEARTBEAT.md` queda sincronizado como archivo persistente de gobernanza por rol.
+- `openclaw status --all` vuelve a `6 total · 0 bootstrapping`.
+- `main`, `rick-ops` y `rick-tracker` siguieron respondiendo OK tras el cambio.
 
 ## Lo que no resulto ser un problema
 
@@ -439,14 +443,25 @@ Prioridad: media
 
 ### Accion 6. Bootstrap y gobernanza por agente
 
+Estado: **cerrada el 2026-03-24**
+
 Objetivo:
 
 - endurecer el arranque de `main`, `rick-ops` y `rick-tracker`
 
 Trabajo:
 
-- definir `BOOTSTRAP.md` por agente o justificar su ausencia
-- comprobar si aporta claridad real al runtime
+- definir el rol real de `BOOTSTRAP.md` en workspaces maduros
+- versionar y sincronizar `HEARTBEAT.md` como archivo persistente por rol
+- fijar `skipBootstrap = true` en la VPS y comprobar el efecto en `status --all`
+
+Resultado:
+
+- `BOOTSTRAP.md` queda como asset de onboarding / rebuild y no se persiste en workspaces activos
+- `HEARTBEAT.md` queda versionado y sincronizado por rol
+- `openclaw status --all` queda en `0 bootstrapping`
+- `main`, `rick-ops` y `rick-tracker` siguen respondiendo OK
+- detalle completo en `docs/audits/openclaw-bootstrap-governance-2026-03-24.md`
 
 Prioridad: media
 
@@ -461,10 +476,9 @@ Mantener anotados para despues del refresh/test general:
 
 OpenClaw esta **operativo**, el dashboard ya abre y el wiring principal con Umbral esta **vivo**. No esta caido ni roto como sistema. Con las Acciones 1-5 y 8 cerradas, ya no queda drift basico de topologia/workspace, degradacion runtime en discovery web, deuda de higiene en el store principal de sesiones, brecha fina de skills por rol ni findings criticos de hardening. Lo que sigue abierto es bootstrap/gobernanza por agente, la decision sobre el rol futuro de Tavily como proveedor y los residuales aceptados de seguridad que solo tendria sentido tocar si cambia la topologia de exposicion del gateway.
 
-La siguiente ronda no deberia ser otra auditoria completa. Deberia ser una regularizacion quirurgica de OpenClaw en 2 frentes y una decision operativa:
+La siguiente ronda no deberia ser otra auditoria completa. Deberia ser una regularizacion quirurgica de OpenClaw en un frente y una decision operativa:
 
-1. bootstrap y gobernanza por agente
-2. decision Tavily/proveedor
-3. revalidacion puntual de residuales si cambia la forma de exponer la Control UI
+1. decision Tavily/proveedor
+2. revalidacion puntual de residuales si cambia la forma de exponer la Control UI
 
 Con eso, el siguiente test de OpenClaw ya puede enfocarse en confirmar mejora real y no en seguir encontrando drift basico.

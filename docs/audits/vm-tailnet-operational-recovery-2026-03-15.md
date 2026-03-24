@@ -174,3 +174,21 @@ Recommended non-invasive path going forward:
 - Installed startup shortcut on host `tarro`:
   - `C:\Users\david\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\StartVmReverseTunnel.lnk`
 - Validated that the new script detects an existing tunnel and does not spawn duplicates.
+
+## Exact blocker still open
+
+What is still missing is **not** another router, NAT, or Hyper-V topology change.
+
+The remaining blocker is simpler:
+
+- from host `tarro`, at least one guest address must answer `8088` and `8089`
+- once that address is known and stable, it can be fixed in:
+  - `OPENCLAW_VM_FALLBACK_ADDRESS`, or
+  - `OPENCLAW_VM_TAILSCALE_IP`, or
+  - `OPENCLAW_VM_INTERNAL_IP`
+- after that, the existing tunnel scripts can recover the VPS fallback path without further network redesign
+
+Practical implication:
+
+- the next human intervention should be limited to identifying or restoring a host-reachable guest address
+- do **not** add new virtual routers, replace the dual-NIC layout, or reopen a full Hyper-V network redesign unless the current addressing itself disappears

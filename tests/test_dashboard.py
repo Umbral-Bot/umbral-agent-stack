@@ -194,6 +194,31 @@ class TestDashboardReportPayload:
         assert fp1 == fp2, "timestamp changes should not affect fingerprint"
         assert fp1 != fp3, "data changes should affect fingerprint"
 
+    def test_build_dashboard_payload_includes_usage_summary(self, monkeypatch):
+        monkeypatch.setenv("WORKER_URL", "http://127.0.0.1:8088")
+        monkeypatch.setenv("WORKER_TOKEN", "test")
+        monkeypatch.setenv("REDIS_URL", "redis://localhost:6379/0")
+
+        from scripts.dashboard_report_vps import build_dashboard_payload
+        with patch("scripts.dashboard_report_vps._worker_health", return_value={"status": "OK", "tasks": ["ping"]}), \
+             patch("scripts.dashboard_report_vps._redis_stats", return_value={"pending": 0, "blocked": 0, "connected": True}), \
+             patch("scripts.dashboard_report_vps._quota_stats", return_value=[]), \
+             patch("scripts.dashboard_report_vps._team_stats", return_value=[]), \
+             patch("scripts.dashboard_report_vps._recent_tasks", return_value=[]), \
+             patch("scripts.dashboard_report_vps._running_tasks", return_value=[]), \
+             patch("scripts.dashboard_report_vps._ops_log_summary", return_value={"total_events": 0}), \
+             patch("scripts.dashboard_report_vps._panel_activity_summary", return_value=[]), \
+             patch("scripts.dashboard_report_vps._usage_summary", return_value={"tracked": True, "llm_events": 3, "llm_tokens": 600, "llm_cost_proxy_usd": 0.0012, "research_events": 2, "research_primary_provider": "gemini_google_search", "research_gemini_calls": 2, "research_tavily_fallback_calls": 1, "top_session_agent": "main", "top_session_agent_tokens": 1200}), \
+             patch("scripts.dashboard_report_vps._system_uptime", return_value=None), \
+             patch("scripts.dashboard_report_vps._last_error", return_value=None), \
+             patch("scripts.dashboard_report_vps._active_alerts", return_value=[]), \
+             patch("scripts.dashboard_report_vps._notion_ops_summary", return_value=None):
+            payload = build_dashboard_payload()
+
+        assert payload["usage_summary"]["tracked"] is True
+        assert payload["usage_summary"]["research_primary_provider"] == "gemini_google_search"
+        assert payload["usage_summary"]["top_session_agent"] == "main"
+
 
 class TestNotionBlocks:
     def test_build_dashboard_v2_blocks(self):
@@ -305,6 +330,31 @@ class TestNotionBlocks:
         callout = [b for b in blocks if b["type"] == "callout"]
         assert any("Degradado" in str(c) for c in callout)
         assert any("red_background" in str(c) for c in callout)
+
+    def test_build_dashboard_v2_blocks_show_usage_summary(self):
+        from worker.notion_client import _build_dashboard_v2_blocks
+        data = {
+            "dashboard_v2": True,
+            "timestamp": "2026-03-24 12:00 UTC",
+            "overall_status": "Operativo",
+            "vps_worker": {"status": "OK", "tasks": ["ping"]},
+            "redis": {"pending": 0, "blocked": 0, "connected": True},
+            "usage_summary": {
+                "tracked": True,
+                "llm_events": 3,
+                "llm_tokens": 600,
+                "llm_cost_proxy_usd": 0.0012,
+                "research_events": 2,
+                "research_primary_provider": "gemini_google_search",
+                "research_gemini_calls": 2,
+                "research_tavily_fallback_calls": 1,
+                "top_session_agent": "main",
+                "top_session_agent_tokens": 1200,
+            },
+        }
+        blocks = _build_dashboard_v2_blocks(data)
+        assert any("Uso OpenClaw" in str(block) for block in blocks)
+        assert any("gemini_google_search" in str(block) for block in blocks)
 
     def test_rich_text_annotations(self):
         from worker.notion_client import _rich

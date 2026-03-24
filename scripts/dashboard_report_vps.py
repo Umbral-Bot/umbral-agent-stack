@@ -27,6 +27,7 @@ if str(repo_root) not in sys.path:
 import httpx
 
 from infra.ops_logger import OpsLogger, ops_log
+from scripts.openclaw_runtime_snapshot import build_snapshot, load_events
 
 WORKER_URL = os.environ.get("WORKER_URL", "http://127.0.0.1:8088").rstrip("/")
 WORKER_TOKEN = os.environ.get("WORKER_TOKEN", "")
@@ -613,6 +614,48 @@ def _panel_activity_summary(hours: int = 24) -> list[dict[str, Any]]:
     return ordered
 
 
+def _usage_summary(hours: int = 24) -> dict[str, Any]:
+    days = max(1, round(hours / 24))
+    try:
+        events = load_events(days=days)
+        report = build_snapshot(events, days=days, sessions_root=str(Path.home() / ".openclaw" / "agents"))
+    except Exception:
+        return {"tracked": False}
+
+    llm_usage = report.get("llm_usage") or {}
+    research_usage = report.get("research_usage") or {}
+    sessions_usage = report.get("sessions_usage") or {}
+    by_provider = research_usage.get("by_provider") or []
+
+    primary_provider = by_provider[0]["name"] if by_provider else ""
+    tavily_fallback_calls = 0
+    gemini_calls = 0
+    for item in by_provider:
+        name = str(item.get("name") or "")
+        if name == "tavily":
+            tavily_fallback_calls += int(item.get("fallback_calls") or 0)
+        if name == "gemini_google_search":
+            gemini_calls += int(item.get("calls") or 0)
+
+    top_agent = None
+    agents = sessions_usage.get("agents") or []
+    if agents:
+        top_agent = agents[0]
+
+    return {
+        "tracked": bool(llm_usage.get("tracked") or research_usage.get("tracked") or sessions_usage.get("tracked")),
+        "llm_events": int(llm_usage.get("tracked_events") or 0),
+        "llm_tokens": int(llm_usage.get("tokens_total") or 0),
+        "llm_cost_proxy_usd": float(llm_usage.get("estimated_cost_proxy_usd") or 0.0),
+        "research_events": int(research_usage.get("tracked_events") or 0),
+        "research_primary_provider": primary_provider,
+        "research_gemini_calls": gemini_calls,
+        "research_tavily_fallback_calls": tavily_fallback_calls,
+        "top_session_agent": top_agent["name"] if top_agent else "",
+        "top_session_agent_tokens": int(top_agent.get("total_tokens") or 0) if top_agent else 0,
+    }
+
+
 def build_dashboard_payload() -> dict:
     """Construye el payload completo para el dashboard."""
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -632,6 +675,7 @@ def build_dashboard_payload() -> dict:
     alerts = _active_alerts(quotas, vps_health, vm_health or vm_interactive_health)
     notion_ops = _notion_ops_summary()
     panel_tracking = _panel_activity_summary()
+    usage_summary = _usage_summary()
 
     vm_degraded = False
     if vm_health and vm_health.get("status") != "OK":
@@ -668,6 +712,7 @@ def build_dashboard_payload() -> dict:
         "active_alerts": alerts,
         "notion_ops": notion_ops,
         "panel_tracking": panel_tracking,
+        "usage_summary": usage_summary,
     }
 
 

@@ -222,6 +222,32 @@ openclaw models status
 openclaw status --all | grep -i telegram
 ```
 
+## Snapshot runtime y resumen de uso
+
+OpenClaw ya puede dejar un snapshot repo-side dentro del checkout de la VPS para auditar:
+
+- actividad de paneles
+- uso LLM trazado
+- research providers y fallbacks
+- sesiones OpenClaw por agente/modelo
+
+Wrapper canonico:
+
+```bash
+bash ~/umbral-agent-stack/scripts/vps/openclaw-runtime-snapshot-cron.sh
+```
+
+Archivos actualizados:
+
+- `reports/runtime/openclaw-runtime-snapshot-latest.json`
+- `reports/runtime/openclaw-runtime-snapshot-latest.md`
+
+Cron recomendado:
+
+```bash
+20 */6 * * * bash $HOME/umbral-agent-stack/scripts/vps/openclaw-runtime-snapshot-cron.sh >> /tmp/openclaw_runtime_snapshot.log 2>&1
+```
+
 ## OpenClaw Node en la VM (PCRick)
 
 El nodo OpenClaw en la VM conecta al gateway de la VPS via Tailscale, permitiendo a Rick controlar el navegador y otros recursos en PCRick.

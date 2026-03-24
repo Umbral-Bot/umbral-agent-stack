@@ -135,6 +135,29 @@ Bloqueo residual actualizado:
 - reescribir `C:\openclaw-worker\openclaw-gateway-token` con el token real;
 - rerun del instalador y verificar si el servicio deja de quedar `SERVICE_PAUSED`.
 
+### [codex] 2026-03-24 21:05
+Sexto ajuste repo-side tras inspeccionar logs reales del servicio:
+
+- `openclaw-node-tunnel-stderr.log` ya mostro el bloqueo exacto:
+  - `WARNING: UNPROTECTED PRIVATE KEY FILE!`
+  - `Permissions for 'C:\\Users\\Rick\\.ssh\\id_ed25519' are too open`
+  - `Load key ... bad permissions`
+- conclusion: el problema no era ya ni token ni red; `ssh.exe` rechaza la clave personal de `Rick` cuando el tunel corre como `LocalSystem`.
+
+Accion repo-side aplicada:
+
+- el instalador ahora deja de usar por defecto la clave personal de `Rick` como clave del servicio;
+- genera una clave dedicada en `C:\openclaw-worker\.ssh\id_ed25519`;
+- fija ACLs estrictas sobre esa carpeta y esa clave para `SYSTEM` y `Administrators`;
+- usa la clave personal de `Rick` solo como bootstrap para autorizar automaticamente la clave dedicada en la VPS;
+- prueba tambien la nueva clave del servicio antes de reinstalar NSSM.
+
+Bloqueo residual actualizado:
+
+- hacer `git pull` una vez mas en la VM para traer este ajuste;
+- rerun del instalador;
+- verificar si el tunel deja finalmente `127.0.0.1:18790` en estado abierto y si `PCRick` pasa a `connected`.
+
 ### [codex] 2026-03-24 20:05
 Tercer ajuste repo-side tras prueba viva:
 

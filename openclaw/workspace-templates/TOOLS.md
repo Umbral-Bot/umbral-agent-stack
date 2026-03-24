@@ -20,7 +20,7 @@
 | `linear.list_teams`   | Lista equipos en Linear. |
 | `linear.update_issue_status` | Actualiza estado/comentario de un issue en Linear. |
 | `llm.generate` | Genera texto con LLM (multi-provider: Claude, Gemini, Azure). |
-| `research.web` | Búsqueda web con Google CSE o Tavily. |
+| `research.web` | Búsqueda web con Tavily como primario y Gemini grounded search como fallback real; Google CSE queda legado/opt-in. |
 | `composite.research_report` | Búsqueda + generación de reporte completo. |
 | `figma.get_file` | Lee estructura y páginas de un archivo Figma. |
 | `figma.get_node` | Lee nodos específicos por ID de un archivo Figma. |

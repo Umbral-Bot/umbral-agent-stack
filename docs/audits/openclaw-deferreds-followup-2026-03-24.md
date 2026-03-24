@@ -20,6 +20,7 @@ The deferred package is materially advanced and mostly closed:
   - `ops_log` `llm_usage` events for Worker-side LLM tasks
   - session-store snapshotting from `~/.openclaw/agents/*/sessions/sessions.json`
 - Tavily is no longer required for healthy runtime behavior; Gemini grounded search is the operational path that currently works
+- the host-side VM fallback can now be configured without touching Hyper-V topology, but it still needs at least one host-reachable guest address to be healthy
 
 What remains open is not lack of implementation, but explicit operational choice:
 

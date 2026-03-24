@@ -3,7 +3,7 @@
 Smoke directo para research.web contra el Worker configurado.
 
 Objetivo:
-- verificar rápidamente si Tavily responde bien en runtime real
+- verificar rápidamente si Gemini grounded search responde bien en runtime real
 - distinguir de inmediato entre éxito, cuota, auth/config, timeout o fallo upstream
 """
 

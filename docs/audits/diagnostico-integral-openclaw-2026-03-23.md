@@ -22,6 +22,8 @@ La Accion 1 de este diagnostico ya fue ejecutada despues del barrido inicial:
 - `openclaw.service` dejo de existir como unidad cargada en la VPS.
 - `openclaw-gateway.service` quedo como unico gateway systemd canonico.
 - `openclaw status --all`, `openclaw dashboard` y una ejecucion minima de `main` siguieron funcionando tras la regularizacion.
+- La Accion 2 tambien quedo ejecutada: se sincronizaron `~/.openclaw/workspace` y las copias relevantes de `rick-ops` / `rick-tracker` contra las skills endurecidas en el repo, con backup previo y validacion por hash.
+- El estado bueno de red tras la intervencion en la VM tambien quedo asentado: se agrego una segunda NIC en Hyper-V (`Default Switch`) para restaurar internet de la VM sin quitar la NIC interna. La VM recupero salida web durante la intervencion; la reachability tailnet VPS -> VM debe revalidarse tras reinicios del host.
 
 El resto del documento preserva el snapshot original del 2026-03-23 y el plan de acciones resultante.
 
@@ -284,6 +286,8 @@ Prioridad: inmediata
 
 ### Accion 2. Sincronizar el workspace compartido de la VPS con el repo
 
+Estado: **cerrada el 2026-03-24**
+
 Objetivo:
 
 - capitalizar de verdad lo mergeado en fase 5
@@ -293,6 +297,12 @@ Trabajo:
 - actualizar `~/.openclaw/workspace/AGENTS.md`
 - incorporar skills faltantes desde `openclaw/workspace-templates/skills/`
 - validar que `main`, `rick-ops` y `rick-tracker` cargan lo esperado
+
+Resultado:
+
+- `~/.openclaw/workspace` quedo alineado por hash en las rutas sincronizadas.
+- Tambien se sincronizaron skills relevantes en `~/.openclaw/workspaces/rick-ops` y `~/.openclaw/workspaces/rick-tracker` para evitar drift entre workspaces por agente y el repo.
+- La capa que sigue pendiente no es el inventario fisico, sino la seleccion efectiva de skills por rol/prompt en runtime; eso se deriva a la Accion 8.
 
 Prioridad: inmediata
 

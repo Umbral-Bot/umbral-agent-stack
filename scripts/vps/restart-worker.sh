@@ -13,14 +13,14 @@ fi
 
 export PYTHONPATH=.
 
+pkill -f "uvicorn worker.app:app --host 127.0.0.1 --port 8088" 2>/dev/null || true
+sleep 2
+
 if systemctl --user list-unit-files | grep -q '^umbral-worker\.service'; then
     systemctl --user daemon-reload
     systemctl --user restart umbral-worker
     echo "Worker VPS restarted via systemd."
 else
-    pkill -f "uvicorn worker.app" 2>/dev/null || true
-    sleep 2
-
     nohup python -m uvicorn worker.app:app --host 127.0.0.1 --port 8088 --log-level info > /tmp/worker_vps.log 2>&1 &
     echo "Worker VPS restarted via fallback. PID: $!"
 fi

@@ -82,6 +82,8 @@ restart_worker() {
         load_openclaw_env "$ENV_FILE"
     fi
     export PYTHONPATH="${REPO}"
+    pkill -f "uvicorn worker.app:app --host ${WORKER_HOST} --port ${WORKER_PORT}" 2>/dev/null || true
+    sleep 2
 
     if systemctl --user list-unit-files | grep -q '^umbral-worker\.service'; then
         systemctl --user daemon-reload

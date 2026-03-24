@@ -21,7 +21,9 @@ fi
 # Start the daemon
 cd "$REPO_DIR"
 source .venv/bin/activate
-set -a && source ~/.config/openclaw/env 2>/dev/null && set +a
+# shellcheck disable=SC1091
+source "$REPO_DIR/scripts/vps/load-openclaw-env.sh"
+load_openclaw_env "$HOME/.config/openclaw/env"
 export PYTHONPATH="$PWD"
 
 echo "$(date '+%Y-%m-%d %H:%M:%S') Starting Notion Poller daemon..."

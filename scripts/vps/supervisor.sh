@@ -43,10 +43,9 @@ PY
 # Load env vars (WORKER_TOKEN, REDIS_URL, etc.)
 # ---------------------------------------------------------------
 if [ -f "$ENV_FILE" ]; then
-    set -a
-    # shellcheck disable=SC1090
-    source "$ENV_FILE"
-    set +a
+    # shellcheck disable=SC1091
+    source "$REPO/scripts/vps/load-openclaw-env.sh"
+    load_openclaw_env "$ENV_FILE"
 fi
 
 # Ensure venv
@@ -78,17 +77,26 @@ restart_worker() {
     echo "${LOG_PREFIX} Worker: DOWN - restarting..."
     cd "$REPO"
     if [ -f "$ENV_FILE" ]; then
-        set -a
-        # shellcheck disable=SC1090
-        source "$ENV_FILE"
-        set +a
+        # shellcheck disable=SC1091
+        source "$REPO/scripts/vps/load-openclaw-env.sh"
+        load_openclaw_env "$ENV_FILE"
     fi
     export PYTHONPATH="${REPO}"
-    nohup python3 -m uvicorn worker.app:app \
-        --host "${WORKER_HOST}" \
-        --port "${WORKER_PORT}" \
-        >> /tmp/worker.log 2>&1 &
-    local pid=$!
+    pkill -f "uvicorn worker.app:app --host ${WORKER_HOST} --port ${WORKER_PORT}" 2>/dev/null || true
+    sleep 2
+
+    if systemctl --user list-unit-files 'umbral-worker.service' --no-legend 2>/dev/null | grep -q '^umbral-worker\.service'; then
+        systemctl --user daemon-reload
+        systemctl --user restart umbral-worker
+        local pid
+        pid="$(systemctl --user show -p MainPID --value umbral-worker 2>/dev/null || echo 0)"
+    else
+        nohup python3 -m uvicorn worker.app:app \
+            --host "${WORKER_HOST}" \
+            --port "${WORKER_PORT}" \
+            >> /tmp/worker.log 2>&1 &
+        local pid=$!
+    fi
     sleep 3
 
     if curl -sf -o /dev/null "${WORKER_URL}/health" 2>/dev/null; then

@@ -217,7 +217,7 @@ def main() -> int:
         print("   SKIP (faltan variables de entorno)")
     else:
         print("   Env listado arriba. Para probar actualización real del Dashboard Rick:")
-        print("   cd ~/umbral-agent-stack && source .venv/bin/activate && export $(grep -v '^#' ~/.config/openclaw/env | xargs) && PYTHONPATH=. python3 scripts/dashboard_report_vps.py")
+        print("   cd ~/umbral-agent-stack && source .venv/bin/activate && source scripts/vps/load-openclaw-env.sh && load_openclaw_env ~/.config/openclaw/env && PYTHONPATH=. python3 scripts/dashboard_report_vps.py")
         print("   Cadencia actual: dashboard-rick-cron.sh cada 1h + openclaw-panel-cron.sh cada 6h (fallback)")
     print()
 

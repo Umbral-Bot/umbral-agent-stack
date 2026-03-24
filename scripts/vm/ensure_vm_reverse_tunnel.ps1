@@ -1,7 +1,7 @@
 param(
   [string]$VpsHost = "100.113.249.25",
   [string]$RemoteUser = "root",
-  [string]$VmAddress = "192.168.101.72",
+  [string]$VmAddress = "",
   [int]$RemotePortSsh = 28022,
   [int]$RemotePortHeadless = 28088,
   [int]$RemotePortInteractive = 28089
@@ -10,8 +10,47 @@ param(
 $ErrorActionPreference = "Stop"
 $startScript = Join-Path $PSScriptRoot "start_vm_reverse_tunnel.ps1"
 
+function Get-CandidateAddresses {
+  $addresses = @()
+  if ($VmAddress) { $addresses += $VmAddress }
+  foreach ($name in @(
+    "OPENCLAW_VM_FALLBACK_ADDRESS",
+    "OPENCLAW_VM_TAILSCALE_IP",
+    "VM_TAILSCALE_IP",
+    "OPENCLAW_VM_INTERNAL_IP"
+  )) {
+    $value = [Environment]::GetEnvironmentVariable($name, "Process")
+    if (-not $value) { $value = [Environment]::GetEnvironmentVariable($name, "User") }
+    if (-not $value) { $value = [Environment]::GetEnvironmentVariable($name, "Machine") }
+    if ($value) { $addresses += $value.Trim() }
+  }
+  $addresses += "192.168.101.72"
+  return $addresses | Where-Object { $_ } | Select-Object -Unique
+}
+
+function Test-VmHealth {
+  param([string]$Address)
+  foreach ($port in @(8088, 8089)) {
+    $null = & curl.exe -sSf --max-time 4 "http://$Address`:$port/health"
+    if ($LASTEXITCODE -ne 0) {
+      return $false
+    }
+  }
+  return $true
+}
+
+function Resolve-VmAddress {
+  $candidates = @(Get-CandidateAddresses)
+  foreach ($candidate in $candidates) {
+    if (Test-VmHealth -Address $candidate) {
+      return $candidate
+    }
+  }
+  throw "No VM candidate address responded on 8088/8089. Candidates tried: $($candidates -join ', ')"
+}
+
 function Get-TunnelProcesses {
-  $needle = "-R $RemotePortHeadless`:$VmAddress`:8088"
+  $needle = "-R $RemotePortHeadless`:"
   Get-CimInstance Win32_Process -Filter "Name = 'ssh.exe'" |
     Where-Object { $_.CommandLine -like "*$needle*" }
 }
@@ -28,9 +67,11 @@ function Test-RemoteHealth {
   return $proc.ExitCode -eq 0
 }
 
+$resolvedVmAddress = Resolve-VmAddress
 $existing = @(Get-TunnelProcesses)
 if ($existing.Count -gt 0 -and (Test-RemoteHealth)) {
   Write-Output "tunnel_healthy_pids=$($existing.ProcessId -join ',')"
+  Write-Output "vm_address=$resolvedVmAddress"
   exit 0
 }
 
@@ -45,7 +86,7 @@ foreach ($proc in $existing) {
 & $startScript `
   -VpsHost $VpsHost `
   -RemoteUser $RemoteUser `
-  -VmAddress $VmAddress `
+  -VmAddress $resolvedVmAddress `
   -RemotePortSsh $RemotePortSsh `
   -RemotePortHeadless $RemotePortHeadless `
   -RemotePortInteractive $RemotePortInteractive
@@ -58,3 +99,4 @@ if (-not (Test-RemoteHealth)) {
 
 $current = @(Get-TunnelProcesses)
 Write-Output "tunnel_recovered_pids=$($current.ProcessId -join ',')"
+Write-Output "vm_address=$resolvedVmAddress"

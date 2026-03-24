@@ -269,6 +269,8 @@ def search_gemini_google_search(query: str, count: int) -> list[ResearchResult]:
 
     prompt = (
         f'Usa Google Search para encontrar informacion web actual sobre "{query}". '
+        "No respondas desde conocimiento interno ni memoria del modelo. "
+        "Debes basarte solo en resultados obtenidos por Google Search durante esta llamada. "
         f'Devuelve SOLO JSON valido con esta forma exacta: '
         f'{{"results":[{{"title":"","url":"","snippet":""}}]}}. '
         f"Reglas: incluye hasta {count} resultados reales, URLs completas http/https, "

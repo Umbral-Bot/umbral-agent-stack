@@ -20,6 +20,7 @@ The deferred package is materially advanced and mostly closed:
   - `ops_log` `llm_usage` events for Worker-side LLM tasks
   - session-store snapshotting from `~/.openclaw/agents/*/sessions/sessions.json`
 - Tavily is no longer required for healthy runtime behavior; Gemini grounded search is the operational path that currently works
+- the host-side VM fallback can now be configured without touching Hyper-V topology, but it still needs at least one host-reachable guest address to be healthy
 
 What remains open is not lack of implementation, but explicit operational choice:
 
@@ -156,6 +157,41 @@ Practical reading:
 
 - runtime problem: already solved
 - provider strategy problem: still a business or budget choice
+
+## Perplexity API note and monthly sizing
+
+Current official Perplexity docs indicate that API usage is billed separately from the consumer plans:
+
+- the Help Center states that API access is a standalone service and does **not** require Pro
+- the current plan comparison says the API has pay-as-you-go pricing and **no complimentary API credits**
+
+Operational implication for this stack:
+
+- do not assume a Perplexity Pro subscription includes usable API balance
+- if Perplexity is added, create a dedicated API Group and API key for Rick/OpenClaw so usage can be tracked separately
+
+Observed usage basis from VPS `ops_log`:
+
+- unique terminal `research.web` attempts in the last 21 days: `412`
+- effective daily average: about `19.6`
+- projected monthly volume at similar cadence: about `590` searches/month
+
+Controlled planning envelope:
+
+- conservative: `400` searches/month
+- expected current cadence: `550-600` searches/month
+- if Gemini stays canonical and Perplexity is used as a controlled secondary at roughly half the traffic: `200-300` Perplexity searches/month
+
+Cost reading from the current official pricing page:
+
+- Search API: `$5 / 1K requests`
+- Sonar low-context request fee starts at `$5 / 1K`, with token costs on top
+
+Practical translation:
+
+- `200-300` raw Search API requests/month is operationally small
+- even `~600` raw Search API requests/month is still inexpensive relative to the rest of this stack
+- the main decision is not affordability alone, but whether Perplexity adds enough search quality to justify another provider in the routing policy
 
 ## Additional opportunities found
 

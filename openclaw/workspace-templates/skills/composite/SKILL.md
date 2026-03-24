@@ -91,3 +91,15 @@ topic → LLM genera N queries → research.web × N → LLM sintetiza → repor
 
 - `research.web` (Tavily API)
 - `llm.generate` (Gemini / OpenAI / Anthropic según routing)
+
+## Regla cuando el reporte alimenta una verificacion en browser
+
+Si el trabajo no termina en el reporte y despues alguien abrira una fuente en
+browser o GUI para comprobarla:
+
+- no dependas de una sola URL por hallazgo importante;
+- conserva al menos 2 fuentes plausibles cuando el tema lo permita;
+- si la primera fuente abierta devuelve `404`, `Page not found`, homepage
+  generica o contenido no relacionado, la verificacion debe saltar a la
+  siguiente fuente antes de cerrar;
+- separar siempre `hallazgo de research` de `verificacion browser`.

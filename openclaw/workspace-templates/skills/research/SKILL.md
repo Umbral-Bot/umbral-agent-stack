@@ -99,3 +99,30 @@ Orquesta múltiples `research.web` + `llm.generate` para producir un reporte com
 - Las fuentes se citan inline como `[Título](URL)` en el reporte markdown.
 - Profundidad `deep` produce reportes más detallados pero consume más cuota de API.
 - Todas las tasks se encolan vía el Dispatcher a Redis y las ejecuta el Worker.
+
+## Regla de verificacion cuando despues usaras browser o GUI
+
+Si el pedido no es solo "buscar", sino tambien "abrir", "verificar", "comprobar"
+o "mirar en browser" una fuente encontrada:
+
+1. no cierres con una sola URL candidata;
+2. guarda al menos 2 resultados plausibles de `research.web`;
+3. intenta verificar primero la mejor fuente;
+4. si la primera devuelve `404`, `Page not found`, homepage generica, paywall
+   no superable, login wall o contenido no relacionado con el hallazgo buscado,
+   prueba una segunda fuente antes de concluir;
+5. separa siempre:
+   - **hallazgo de research**
+   - **verificacion browser**
+
+No uses "verificado", "confirmado" u otra formula equivalente si la URL abierta
+no muestra el contenido esperado en browser o GUI.
+
+## Cierre esperado para research + browser
+
+Cuando combines research con browser/gui, la salida debe dejar claro:
+
+- que fuente salio de `research.web`;
+- si la primera URL candidata abrio bien o fallo;
+- si fue necesario fallback a una segunda fuente;
+- si el hallazgo quedo **verificado en browser** o solo **sugerido por research**.

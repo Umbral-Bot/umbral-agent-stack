@@ -23,9 +23,10 @@ La Accion 1 de este diagnostico ya fue ejecutada despues del barrido inicial:
 - `openclaw-gateway.service` quedo como unico gateway systemd canonico.
 - `openclaw status --all`, `openclaw dashboard` y una ejecucion minima de `main` siguieron funcionando tras la regularizacion.
 - La Accion 2 tambien quedo ejecutada: se sincronizaron `~/.openclaw/workspace` y las copias relevantes de `rick-ops` / `rick-tracker` contra las skills endurecidas en el repo, con backup previo y validacion por hash.
+- La Accion 3 tambien quedo ejecutada: `research.web` y `scripts/web_discovery.py` comparten ahora un fallback real via Gemini grounded search. En la VPS, Tavily sigue respondiendo `432`, pero el runtime ya no queda degradado por eso.
 - El estado bueno de red tras la intervencion en la VM tambien quedo asentado: se agrego una segunda NIC en Hyper-V (`Default Switch`) para restaurar internet de la VM sin quitar la NIC interna. La VM recupero salida web durante la intervencion; la reachability tailnet VPS -> VM debe revalidarse tras reinicios del host.
 
-El resto del documento preserva el snapshot original del 2026-03-23 y el plan de acciones resultante.
+El resto del documento preserva el barrido original del 2026-03-23, pero las secciones de resumen, estado por componente y plan ya reflejan el cierre de las Acciones 1-3.
 
 ## Resumen ejecutivo
 
@@ -43,27 +44,25 @@ Lo que funciona bien:
 
 Lo que sigue pendiente:
 
-- Hay **dos gateways systemd** vivos a la vez: `openclaw-gateway.service` y `openclaw.service`.
-- El workspace compartido en VPS esta **desalineado** respecto del repo y no incluye las skills nuevas de fase 5.
-- `research.web` sigue degradado por cuota Tavily agotada.
 - La higiene de sesiones/transcripts esta degradada: sesiones recientes sin transcript y transcripts huerfanos.
 - El endurecimiento de seguridad de OpenClaw sigue incompleto: plugin `umbral-worker`, `trustedProxies`, perfil permisivo y drift de tool profile.
+- Tavily sigue sin cuota como proveedor primario; queda pendiente decidir si se recarga, se deja como backend secundario o se retira del discovery ahora que Gemini grounded cubre el fallback real.
 
 ## Estado por componente
 
 | Componente | Estado | Evidencia |
 |---|---|---|
-| Gateway OpenClaw | OK con drift | `openclaw status --all`, `systemctl --user list-units` |
+| Gateway OpenClaw | OK | `openclaw status --all`; `openclaw-gateway.service` canonico, `openclaw.service` retirado |
 | Dashboard | OK | `openclaw dashboard` volvio a abrir tras corregir `acpx` |
 | Canales | OK parcial | Telegram `enabled, configured, running` |
 | Modelos | OK parcial | 10 configurados; auth viva en OpenAI Codex y Google Vertex; OpenAI Codex y Vertex ejecutados en vivo |
 | Agentes | OK parcial | 6 agentes configurados; 3 activos recientemente |
 | Sessions | OK con deuda | 109 sesiones; `doctor` detecta sesiones sin transcript y transcripts huerfanos |
-| Skills runtime | OK con drift | core skills accesibles en runtime; workspace compartido no esta sincronizado al repo |
-| Cron | OK con degradacion funcional | jobs corren; discovery Tavily falla por quota |
+| Skills runtime | OK con seleccion pendiente | workspace compartido y copias activas sincronizadas; queda pendiente curar la seleccion fina por rol |
+| Cron | OK con fallback operativo | jobs corren; discovery cae a Gemini grounded cuando Tavily responde `432` |
 | Bindings | Sin bindings | `openclaw agents bindings` -> `No routing bindings.` |
 | Nodos | Sin nodos | `Pending: 0 · Paired: 0` |
-| Integraciones Umbral | OK parcial | Linear y Calendar OK; `research.web` falla tipado con `quota_exceeded` |
+| Integraciones Umbral | OK con deuda de proveedor | Linear y Calendar OK; `research.web` y `web_discovery.py` operan via `gemini_google_search` cuando Tavily quota-exceeded |
 
 ## Pruebas corridas
 
@@ -147,13 +146,15 @@ Pruebas vivas corridas desde `main`:
 - Provider status -> `{"redis_available":true,"providers":["azure_foundry","gemini_flash","gemini_flash_lite","gemini_pro","gemini_vertex"]}`
 - Linear -> `{"ok":true,"team_count":1}`
 - Google Calendar -> `{"ok":true,"event_count":0}`
-- `research.web` -> `{"ok":false,"provider":"tavily","error_kind":"quota_exceeded"}`
+- `research.web` -> `{"ok":true,"provider":"gemini_google_search","fallback_reason":"research_provider_quota_exceeded:quota"}`
+- `python3 scripts/web_discovery.py "BIM trends 2026" --count 3` -> `engine_used=gemini_google_search`, `error=null`
 
 Conclusiones:
 
 - OpenClaw si tiene acceso real a tools del stack Umbral.
 - Las warnings de `openclaw skills check` fuera del entorno del servicio son engañosas a nivel shell; el proceso systemd si tiene cargadas las vars criticas.
-- `research.web` no esta roto de forma muda: ahora falla de forma tipada y observable.
+- La capa de research ya no queda degradada por cuota Tavily: el path efectivo cae a Gemini grounded search y sigue devolviendo resultados.
+- Tavily sigue sin cuota y Google CSE legado sigue sin acceso; la deuda que queda es de proveedor/costo, no de runtime.
 
 ### 5. Cron
 
@@ -169,54 +170,47 @@ Resultado:
 
 - Scheduler sano.
 - Los jobs siguen ejecutando.
-- Los jobs basados en Tavily degradan salida por quota o resultados vacios, no por fallo del scheduler.
+- Los jobs de discovery ya no quedan degradados por quota Tavily: cuando Tavily responde `432`, el path efectivo cae a Gemini grounded y el scheduler sigue produciendo contenido.
 
 ## Hallazgos priorizados
 
-### P1. Duplicidad de gateway systemd en la VPS
+### Resuelto. Duplicidad de gateway systemd en la VPS
 
 Estado:
 
-- `openclaw-gateway.service` y `openclaw.service` estan ambos `active/running`.
+- Resuelto por la Accion 1 el `2026-03-24`.
 
 Impacto:
 
-- ruido en logs
-- topologia ambigua
-- riesgo de drift en proximos updates o reinicios
+- Se elimino ruido y drift de topologia para updates/reinicios posteriores.
 
 Evidencia:
 
-- `openclaw.service` intenta arrancar aunque el gateway real ya esta arriba.
-- `doctor` recomienda un solo gateway por host.
+- `openclaw-gateway.service` queda como gateway canonico.
+- `openclaw.service` ya no existe como unidad cargada en la VPS.
 
-### P1. Workspace compartido de OpenClaw desalineado con el repo
-
-Estado:
-
-- El repo declara skills nuevas que el workspace compartido de la VPS no tiene.
-
-Faltantes detectados en VPS:
-
-- `browser-automation-vm`
-- `google-audio-generation`
-- `system-interconnectivity-diagnostics`
-
-Impacto:
-
-- OpenClaw sigue operando con capacidades reales parciales respecto del repo.
-- La fase 5 quedo mergeada en `main`, pero no capitalizada del todo en la VPS.
-
-### P1. `research.web` sigue degradado por cuota Tavily
+### Resuelto. Workspace compartido de OpenClaw desalineado con el repo
 
 Estado:
 
-- La integracion responde con `error_kind=quota_exceeded`.
+- Resuelto por la Accion 2 el `2026-03-24`.
 
 Impacto:
 
-- Jobs de discovery e investigacion profunda quedan "ok" a nivel scheduler pero con salida degradada.
-- OpenClaw no pierde conectividad con el Worker, pero si pierde valor de esa capa de investigacion.
+- El inventario fisico de skills quedo alineado con el repo en las rutas sincronizadas.
+- Lo que sigue pendiente no es sync fisico sino curar la seleccion efectiva por rol, derivado a la Accion 8.
+
+### P2. Tavily sigue sin cuota, pero el runtime ya no queda degradado
+
+Estado:
+
+- Tavily sigue respondiendo `432 usage limit`.
+- `research.web` y `web_discovery.py` ya operan via `gemini_google_search` cuando eso pasa.
+
+Impacto:
+
+- El scheduler y el discovery real ya no quedan degradados.
+- La deuda restante es decidir si Tavily se recarga o queda como backend secundario por costo/control.
 
 ### P2. Higiene de sesiones/transcripts degradada
 
@@ -308,14 +302,25 @@ Prioridad: inmediata
 
 ### Accion 3. Resolver el frente Tavily / discovery web
 
+Estado: **cerrada el 2026-03-24**
+
 Objetivo:
 
 - sacar a OpenClaw del estado "scheduler sano / contenido degradado"
 
 Trabajo:
 
-- definir si Tavily se recarga, se cambia de plan o se reemplaza
-- verificar los 2 cron jobs afectados despues del cambio
+- agregar backend compartido Tavily -> Gemini grounded -> Google CSE legado opt-in
+- verificar `research_web_smoke.py` y `web_discovery.py` en VPS
+- verificar una corrida manual de `sim_daily_research.py` y `sim_daily_report.py`
+
+Resultado:
+
+- `research_web_smoke.py --query "BIM trends 2026"` devolvio `HTTP 200` con `engine=gemini_google_search`.
+- `web_discovery.py "BIM trends 2026" --count 3` devolvio `engine_used=gemini_google_search`.
+- `sim_daily_research.py` volvio a completar 6 tareas `research.web` y un resumen `llm.generate` en la VPS.
+- `sim_daily_report.py --hours 1` volvio a producir reporte con URLs recientes del path grounded.
+- Tavily sigue respondiendo `432`, pero el runtime ya no queda degradado por eso.
 
 Prioridad: inmediata
 
@@ -387,12 +392,12 @@ Prioridad: media
 
 ## Conclusion
 
-OpenClaw esta **operativo**, el dashboard ya abre y el wiring principal con Umbral esta **vivo**. No esta caido ni roto como sistema. Pero tampoco esta totalmente saneado: sigue habiendo drift de topologia, drift de workspace, deuda de hardening y degradacion funcional en la capa de research.
+OpenClaw esta **operativo**, el dashboard ya abre y el wiring principal con Umbral esta **vivo**. No esta caido ni roto como sistema. Con las Acciones 1-3 cerradas, ya no queda drift basico de topologia/workspace ni degradacion runtime en discovery web. Lo que sigue abierto es higiene de sesiones, hardening y la decision sobre el rol futuro de Tavily como proveedor.
 
 La siguiente ronda no deberia ser otra auditoria completa. Deberia ser una regularizacion quirurgica de OpenClaw en 3 frentes:
 
-1. topologia/runtime
-2. workspace/skills
-3. discovery web / quota
+1. higiene de sesiones/transcripts
+2. hardening de seguridad
+3. seleccion de skills por rol + decision Tavily/proveedor
 
 Con eso, el siguiente test de OpenClaw ya puede enfocarse en confirmar mejora real y no en seguir encontrando drift basico.

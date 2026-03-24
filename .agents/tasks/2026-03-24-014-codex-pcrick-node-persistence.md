@@ -114,6 +114,13 @@ Bloqueo residual actualizado:
 - rerun del instalador ya con el parche de ACLs y el token real;
 - si el tunel abre `127.0.0.1:18790`, continuar con `openclaw node install` y validar en la VPS.
 
+### [codex] 2026-03-24 20:35
+Cuarto ajuste repo-side:
+
+- el rerun desde la VM revelo otro bug del instalador: al omitir `-GatewayToken`, el script intentaba llamar `.Trim()` sobre `null`;
+- el instalador ahora usa `GatewayToken` opcional, carga desde `C:\openclaw-worker\openclaw-gateway-token` si existe, y valida con `IsNullOrWhiteSpace()`;
+- tambien queda documentado que, una vez guardado el token local, los siguientes reruns ya no necesitan pegarlo otra vez.
+
 ### [codex] 2026-03-24 20:05
 Tercer ajuste repo-side tras prueba viva:
 

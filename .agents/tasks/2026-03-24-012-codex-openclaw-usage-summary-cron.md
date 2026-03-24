@@ -1,13 +1,13 @@
 ---
 id: "2026-03-24-012"
 title: "OpenClaw: automatizar runtime snapshot y resumir uso en Dashboard Rick"
-status: in_progress
+status: done
 assigned_to: codex
 created_by: codex
 priority: medium
 sprint: R23
 created_at: 2026-03-24T09:02:01-03:00
-updated_at: 2026-03-24T09:02:01-03:00
+updated_at: 2026-03-24T09:21:00-03:00
 ---
 
 ## Objetivo
@@ -46,7 +46,22 @@ Validacion local:
 - `_usage_summary()` local devuelve payload valido aunque sin datos en este clon.
 - ajuste adicional: el cron escribe en `reports/runtime/generated/` para no dejar el checkout de la VPS sucio sobre archivos versionados.
 
-Pendiente antes de cerrar:
+### [codex] 2026-03-24 09:21
+Validacion real en VPS sobre la rama `codex/openclaw-usage-summary-cron`:
 
-- validar en la VPS que el cron nuevo se instala, el snapshot se regenera y `Dashboard Rick` muestra el bloque `Uso OpenClaw`;
-- dejar documentado el bloqueo real VPS -> VM: no falta script, falta una direccion host->VM alcanzable a `8088/8089`.
+- `bash scripts/vps/install-cron.sh` agrego `openclaw-runtime-snapshot-cron.sh` cada 6h;
+- `bash scripts/vps/openclaw-runtime-snapshot-cron.sh` genero:
+  - `reports/runtime/generated/openclaw-runtime-snapshot-latest.json`
+  - `reports/runtime/generated/openclaw-runtime-snapshot-latest.md`
+- `bash scripts/vps/restart-worker.sh` + `python3 scripts/dashboard_report_vps.py --trigger manual --force` actualizaron `Dashboard Rick` con `31` bloques;
+- lectura viva via `worker.notion_client.read_page(...)` confirmo `USO_OPENCLAW_PRESENT=True`.
+
+Hallazgo operativo corregido durante la validacion:
+
+- el primer wrapper escribia sobre `reports/runtime/openclaw-runtime-snapshot-latest.json`, dejando el checkout VPS sucio;
+- se corrigio para escribir en `reports/runtime/generated/`, que queda dentro del repo pero fuera de archivos versionados.
+
+Bloqueo VPS -> VM dejado documentado con precision en `docs/audits/vm-tailnet-operational-recovery-2026-03-15.md`:
+
+- no falta mas script ni mas router virtual;
+- falta una direccion host->VM realmente alcanzable a `8088/8089` para fijarla en el fallback no invasivo.

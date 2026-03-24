@@ -1,13 +1,13 @@
 ---
 id: "2026-03-24-014"
 title: "PCRick: persistencia real del node OpenClaw en la VM"
-status: blocked
+status: done
 assigned_to: codex
 created_by: codex
 priority: high
 sprint: R23
 created_at: 2026-03-24T10:33:00-03:00
-updated_at: 2026-03-24T10:33:00-03:00
+updated_at: 2026-03-24T22:05:00-03:00
 ---
 
 ## Objetivo
@@ -214,6 +214,26 @@ Estado operativo:
 
 - desde la VPS ya se observo `PCRick` como `paired · connected` cuando el node corre en foreground;
 - queda por confirmar si, con el `node.cmd` parcheado automaticamente, la Scheduled Task mantiene esa conexion sin proceso manual abierto.
+
+### [codex] 2026-03-24 22:05
+Cierre operativo real:
+
+- en la VM, `openclaw-node-tunnel` quedo `SERVICE_RUNNING`;
+- `127.0.0.1:18790` responde `TcpTestSucceeded=True`;
+- `node.cmd` quedo finalmente alineado para el escenario tunneleado:
+  - inyecta `OPENCLAW_GATEWAY_TOKEN` desde `C:\openclaw-worker\openclaw-gateway-token`
+  - no usa `--tls`
+- la Scheduled Task `OpenClaw Node` quedo `En ejecucion`;
+- desde la VPS, `openclaw nodes status` ya muestra `Known: 1 · Paired: 1 · Connected: 1`;
+- tambien se limpio el `PCRick` historico desconectado con:
+  - `openclaw devices remove 83654770fcc53c1cdcd52fe2fc665bd8bbf824e8587386bb079608d1f40cf885`
+- y se rechazo la solicitud pendiente residual asociada al device viejo:
+  - `openclaw devices reject 78604900-358e-4865-8f2c-f3aeeaba30af`
+
+Resultado:
+
+- `PCRick` queda operacional y persistente como node OpenClaw de la VM;
+- la tarea se cierra en `done`.
 
 ### [codex] 2026-03-24 20:05
 Tercer ajuste repo-side tras prueba viva:

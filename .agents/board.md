@@ -61,7 +61,7 @@ Regularización `UMB-132` (2026-03-22): se cerraron task files históricos que h
 | 2026-03-24-007 | Accion 6: bootstrap y gobernanza fina por agente en OpenClaw | codex | ✅ done |
 | 2026-03-24-008 | Test general post-acciones OpenClaw | codex | ✅ done |
 | 2026-03-24-009 | Diferidos OpenClaw: tailscale, tracking repo-side, costo y propuesta Tavily | codex | ✅ done |
-| 2026-03-24-010 | Fallback VM no invasivo + Gemini grounded como primario de discovery | codex | in_progress |
+| 2026-03-24-010 | Fallback VM no invasivo + Gemini grounded como primario de discovery | codex | ✅ done |
 | 2026-03-24-002 | Accion 8: revisar skills faltantes en OpenClaw VPS y decidir sync vs skill nueva | codex | ✅ done |
 
 ## Pendientes diferidos post-fases

@@ -5,9 +5,9 @@ cd ~/umbral-agent-stack
 source .venv/bin/activate 2>/dev/null || true
 
 if [ -f ~/.config/openclaw/env ]; then
-  set -a
-  source ~/.config/openclaw/env
-  set +a
+  # shellcheck disable=SC1091
+  source "$HOME/umbral-agent-stack/scripts/vps/load-openclaw-env.sh"
+  load_openclaw_env "$HOME/.config/openclaw/env"
 fi
 
 export PYTHONPATH=.

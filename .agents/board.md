@@ -59,6 +59,7 @@ Regularización `UMB-132` (2026-03-22): se cerraron task files históricos que h
 | 2026-03-24-005 | Accion 4: sanear sesiones y transcripts de OpenClaw en VPS | codex | ✅ done |
 | 2026-03-24-006 | Accion 5: hardening de seguridad OpenClaw | codex | ✅ done |
 | 2026-03-24-007 | Accion 6: bootstrap y gobernanza fina por agente en OpenClaw | codex | ✅ done |
+| 2026-03-24-008 | Test general post-acciones OpenClaw | codex | in_progress |
 | 2026-03-24-002 | Accion 8: revisar skills faltantes en OpenClaw VPS y decidir sync vs skill nueva | codex | ✅ done |
 
 ## Pendientes diferidos post-fases

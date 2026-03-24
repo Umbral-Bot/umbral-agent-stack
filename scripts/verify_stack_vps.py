@@ -218,7 +218,7 @@ def main() -> int:
     else:
         print("   Env listado arriba. Para probar actualización real del Dashboard Rick:")
         print("   cd ~/umbral-agent-stack && source .venv/bin/activate && export $(grep -v '^#' ~/.config/openclaw/env | xargs) && PYTHONPATH=. python3 scripts/dashboard_report_vps.py")
-        print("   Cron (cada 15 min): scripts/vps/install-cron.sh o crontab con dashboard-cron.sh")
+        print("   Cadencia actual: dashboard-rick-cron.sh cada 1h + openclaw-panel-cron.sh cada 6h (fallback)")
     print()
 
     # 7) Alcance del chequeo

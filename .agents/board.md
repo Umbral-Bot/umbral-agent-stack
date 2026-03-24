@@ -52,10 +52,18 @@ Regularización `UMB-132` (2026-03-22): se cerraron task files históricos que h
 | 2026-03-23-017 | Fase 5: skills reales faltantes y monitoreo continuo del stack | codex | ✅ done (PR #152) |
 | 2026-03-24-001 | Lead temporal Codex — capitalizar hallazgos + cerrar ramas codex/* + Claude si aplica | codex | ✅ done |
 
+| 2026-03-23-018 | Diagnostico integral OpenClaw: servicio, configuracion, agentes, modelos, cron y mejoras | codex | ✅ done |
+| 2026-03-23-019 | Accion 1: regularizar topologia OpenClaw en VPS y dejar un solo gateway canonico | codex | ✅ done |
+| 2026-03-24-002 | Accion 8: revisar skills faltantes en OpenClaw VPS y decidir sync vs skill nueva | codex | pending |
+
 ## Pendientes diferidos post-fases
 
 - Snapshot repo-side del tracking de paneles/OpenClaw (`reports/...`) a partir de `ops_log`.
 - Atribucion mas fina de costo/tokens por componente dentro de OpenClaw, separada del tracking operativo ya implementado.
+- Sincronizar `~/.openclaw/workspace` en VPS con `openclaw/workspace-templates/` del repo, incluyendo skills nuevas y `AGENTS.md`.
+- Resolver degradacion real de `research.web` / Tavily para crons de discovery e investigacion profunda.
+- Sanear sesiones recientes sin transcript y transcripts huerfanos detectados por `openclaw doctor`.
+- Hardening OpenClaw pendiente: clasificar warning del plugin `umbral-worker`, `trustedProxies`, perfil `coding` y symlink escape.
 
 ## Ronda 16 — Cerrada
 

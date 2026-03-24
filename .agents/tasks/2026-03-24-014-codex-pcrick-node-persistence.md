@@ -120,3 +120,17 @@ Cuarto ajuste repo-side:
 - el rerun desde la VM revelo otro bug del instalador: al omitir `-GatewayToken`, el script intentaba llamar `.Trim()` sobre `null`;
 - el instalador ahora usa `GatewayToken` opcional, carga desde `C:\openclaw-worker\openclaw-gateway-token` si existe, y valida con `IsNullOrWhiteSpace()`;
 - tambien queda documentado que, una vez guardado el token local, los siguientes reruns ya no necesitan pegarlo otra vez.
+
+### [codex] 2026-03-24 20:05
+Tercer ajuste repo-side tras prueba viva:
+
+- el rerun como Administrador ya paso la prueba SSH, creo el servicio NSSM y solo fallo en `start openclaw-node-tunnel` con `SERVICE_PAUSED`;
+- para reducir diferencias entre el tunel manual exitoso y el servicio, el instalador ahora:
+  - persiste el token en `C:\openclaw-worker\openclaw-gateway-token`;
+  - permite omitir `-GatewayToken` en reruns futuros si ese archivo ya existe;
+  - fija `HOME`, `USERPROFILE`, `HOMEDRIVE` y `HOMEPATH` via `AppEnvironmentExtra` para el servicio NSSM.
+
+Objetivo del ajuste:
+
+- evitar que el servicio arranque con contexto de perfil ambiguo;
+- evitar tener que pegar el token del gateway en cada intento.

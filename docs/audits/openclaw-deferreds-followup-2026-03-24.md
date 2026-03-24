@@ -159,6 +159,14 @@ Practical reading:
 - runtime problem: already solved
 - provider strategy problem: still a business or budget choice
 
+Tracking now in place:
+
+- `ops_log` emits `research_usage` with:
+  - `provider`
+  - `result_count`
+  - `fallback_reason` when Tavily was needed
+- `scripts/openclaw_runtime_snapshot.py` now summarizes those events so the future Perplexity decision can be based on real fallback frequency instead of assumptions
+
 ## Perplexity API note and monthly sizing
 
 Current official Perplexity docs indicate that API usage is billed separately from the consumer plans:

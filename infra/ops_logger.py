@@ -6,7 +6,7 @@ Ubicacion default: ~/.config/umbral/ops_log.jsonl
 
 Eventos:
   task_queued, task_completed, task_failed, task_blocked, task_retried,
-  model_selected, llm_usage, quota_warning, quota_restricted, worker_health_change,
+  model_selected, llm_usage, research_usage, quota_warning, quota_restricted, worker_health_change,
   system_activity
 
 Parámetros opcionales de auditoría:
@@ -252,6 +252,34 @@ class OpsLogger:
             ev["task_id"] = task_id
         if usage_component:
             ev["usage_component"] = str(self._coerce(usage_component))[:120]
+        self._apply_audit_context(
+            ev,
+            task_type=task_type,
+            source=source,
+            source_kind=source_kind,
+        )
+        self._write(ev)
+
+    def research_usage(
+        self,
+        *,
+        provider: str,
+        result_count: int,
+        fallback_reason: str | None = None,
+        task_id: str | None = None,
+        task_type: str | None = None,
+        source: str | None = None,
+        source_kind: str | None = None,
+    ) -> None:
+        ev: Dict[str, Any] = {
+            "event": "research_usage",
+            "provider": str(self._coerce(provider)),
+            "result_count": int(result_count),
+        }
+        if fallback_reason:
+            ev["fallback_reason"] = str(fallback_reason)[:120]
+        if task_id:
+            ev["task_id"] = task_id
         self._apply_audit_context(
             ev,
             task_type=task_type,

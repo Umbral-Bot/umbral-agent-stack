@@ -18,7 +18,7 @@
 | OpenClaw humano | `PYTHONPATH=. python3 scripts/openclaw_panel_vps.py --trigger manual` | Resumen ejecutivo humano, entregables, proyectos y bandeja viva | Event-driven por cambios reales + fallback cada 6 h |
 | E2E validation | `PYTHONPATH=. python3 scripts/e2e_validation.py` | health, ping, research.web, llm.generate, enqueue, task history, Notion, Redis, quota, routing | Cron diario a las 06:00; `--notion` para postear resultados |
 | Smoke test rápido | `PYTHONPATH=. python3 scripts/smoke_test.py` | Worker /health, ping, Redis, quota status | Para verificación rápida ad-hoc (VPS: usar `python3`) |
-| Smoke research.web | `PYTHONPATH=. python3 scripts/research_web_smoke.py --query "BIM trends 2026"` | Tavily en runtime real; distingue cuota, auth/config, timeout y fallo upstream | Útil cuando `research.web` falle y quieras ver la causa exacta sin correr la suite E2E completa |
+| Smoke research.web | `PYTHONPATH=. python3 scripts/research_web_smoke.py --query "BIM trends 2026"` | Tavily en runtime real y fallback Gemini grounded search; distingue cuota, auth/config, timeout y fallo upstream | Útil cuando `research.web` falle y quieras ver la causa exacta sin correr la suite E2E completa |
 | Health check infraestructura | `bash scripts/vps/health-check.sh` | Redis, Worker, Dispatcher, ops_log | Cron `*/30 min` |
 
 ### 1.2 Semanal
@@ -96,7 +96,7 @@ Si el aviso del supervisor sigue fallando con 200 desde el Worker pero no ves el
 | `*/15 min` | `quota-guard-cron.sh` | Guard de cuota Claude (fallback si excedida) |
 | `*/30 min` | `health-check.sh` | Health check Redis/Worker/Dispatcher |
 | `* * * * *` | `scheduled-tasks-cron.sh` | Procesar tareas programadas (Redis sorted set) |
-| `0 8,14,20` | `sim-daily-cron.sh` | SIM research (Tavily) |
+| `0 8,14,20` | `sim-daily-cron.sh` | SIM research (Tavily primario + Gemini grounded fallback) |
 | `30 8,14,20` | `sim-report-cron.sh` | SIM report (LLM + Notion) |
 | `0 9,15,21` | `sim-to-make-cron.sh` | SIM → Make.com pipeline |
 | `0 22` | `daily-digest-cron.sh` | Digest diario (Redis → LLM → Notion) |

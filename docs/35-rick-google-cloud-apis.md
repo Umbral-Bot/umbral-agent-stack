@@ -18,6 +18,11 @@ Rick (VPS) puede usar APIs de Google Cloud para Gemini y servicios GCP del SIM. 
 - **GOOGLE_CLOUD_API_KEY** — key de Google Cloud para Language / BigQuery / Storage / Vertex cuando aplique.
 - Opcional: **GOOGLE_CLOUD_PROJECT_RICK_UMBRAL** — ID del proyecto GCP (ej. `mi-proyecto-123`) si las llamadas lo requieren.
 
+Path operativo confirmado:
+
+- `research.web` y `scripts/web_discovery.py` usan **Gemini grounded search** como fallback real cuando Tavily queda sin cuota.
+- Este path usa `gemini-2.5-flash` con `tools=[google_search]`.
+
 ## Custom Search (legado / experimental)
 
 Google Custom Search **no es el backend operativo del stack**. En este repo no hay evidencia de uso exitoso sostenido y los diagnósticos repetidos muestran `403 This project does not have the access to Custom Search JSON API`.
@@ -30,7 +35,8 @@ Variables todavía soportadas para pruebas explícitas:
 
 Ruta recomendada:
 
-- `scripts/web_discovery.py` usa **Tavily** por defecto.
+- `research.web` y `scripts/web_discovery.py` usan **Tavily** por defecto.
+- Si Tavily falla por cuota o no esta configurado, caen a **Gemini grounded search** si `GOOGLE_API_KEY` / `GOOGLE_API_KEY_NANO` estan presentes.
 - Custom Search solo debe intentarse con `--allow-google-legacy` o `WEB_DISCOVERY_ENABLE_GOOGLE_CSE=1`.
 
 ## Límite de costo
@@ -50,7 +56,7 @@ Si quieres seguir intentando con Custom Search JSON API, se puede probar un proy
 - **Proyecto:** `rick-cse-umbral` (creado con gcloud: `gcloud projects create rick-cse-umbral`, API habilitada, facturación vinculada).
 - **API key:** Crear en ese proyecto (`gcloud services api-keys create --display-name="Rick Custom Search Umbral" --project=rick-cse-umbral`) y poner el valor en `GOOGLE_CSE_API_KEY_RICK_UMBRAL` en `.env` (local) y en `~/.config/openclaw/env` (VPS).
 
-**Nota:** El 403 "This project does not have the access to Custom Search JSON API" puede seguir apareciendo incluso con proyecto nuevo, API habilitada y facturación activa; es un problema conocido (API restringida/deprecada para proyectos nuevos). **Alternativa operativa:** Tavily Search (`TAVILY_API_KEY` + `scripts/web_discovery.py`). Azure Bing no disponible para cuentas nuevas. Ver [docs/36-rick-embudo-capabilities.md](36-rick-embudo-capabilities.md).
+**Nota:** El 403 "This project does not have the access to Custom Search JSON API" puede seguir apareciendo incluso con proyecto nuevo, API habilitada y facturación activa; es un problema conocido (API restringida/deprecada para proyectos nuevos). **Alternativa operativa:** Tavily como primario + Gemini grounded search como fallback real. Azure Bing no disponible para cuentas nuevas. Ver [docs/36-rick-embudo-capabilities.md](36-rick-embudo-capabilities.md).
 
 ## Referencias
 

@@ -68,7 +68,7 @@ Regularización `UMB-132` (2026-03-22): se cerraron task files históricos que h
 
 | 2026-03-24-013 | Follow-up post-Rick: aterrar diagnostico real y endurecer composite.research_report | codex | ✅ done |
 
-| 2026-03-24-014 | PCRick: persistencia real del node OpenClaw en la VM | codex | ⛔ blocked |
+| 2026-03-24-014 | PCRick: persistencia real del node OpenClaw en la VM | codex | ✅ done |
 
 ## Pendientes diferidos post-fases
 
@@ -327,3 +327,4 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 - Cada agente tiene su clon: `C:\GitHub\umbral-agent-stack-<nombre>`
 - Motor de búsqueda: Tavily. LLM: Gemini 2.5 Flash.
 - Workflow: feature branch → PR → Cursor merge → deploy VPS
+

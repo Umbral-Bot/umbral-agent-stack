@@ -62,13 +62,13 @@ $SshExe = Get-RequiredCommand "ssh.exe"
 $OpenClawExe = Get-RequiredCommand "openclaw"
 $IcaclsExe = Get-RequiredCommand "icacls.exe"
 
-if (-not $GatewayToken.Trim()) {
+if ([string]::IsNullOrWhiteSpace($GatewayToken)) {
     if (Test-Path $GatewayTokenFile) {
         $GatewayToken = (Get-Content -Path $GatewayTokenFile -Raw -ErrorAction Stop).Trim()
     }
 }
 
-if (-not $GatewayToken.Trim()) {
+if ([string]::IsNullOrWhiteSpace($GatewayToken)) {
     throw "GatewayToken no puede quedar vacio y tampoco existe '$GatewayTokenFile'."
 }
 
@@ -120,7 +120,6 @@ if ($LASTEXITCODE -ne 0) {
 if ($LASTEXITCODE -ne 0) {
     throw "No se pudo otorgar lectura a SYSTEM sobre '$KnownHostsPath'."
 }
-
 Set-Content -Path $GatewayTokenFile -Value $GatewayToken -NoNewline
 & $IcaclsExe $GatewayTokenFile "/grant" "SYSTEM:R" | Out-Null
 if ($LASTEXITCODE -ne 0) {

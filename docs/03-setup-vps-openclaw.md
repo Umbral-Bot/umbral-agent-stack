@@ -1,9 +1,9 @@
-# 03 — Setup VPS + OpenClaw
+# 03 - Setup VPS + OpenClaw
 
 ## Pre-requisitos
 
 - VPS con Ubuntu 24 LTS (Hostinger o similar)
-- SSH acceso configurado
+- Acceso SSH configurado
 - OpenClaw instalado
 
 ## Servicio systemd
@@ -11,7 +11,7 @@
 ### Verificar estado
 
 ```bash
-systemctl --user status openclaw
+systemctl --user status openclaw-gateway
 ```
 
 ### Ver puertos
@@ -23,49 +23,55 @@ ss -lntp | grep :18789
 ### Logs
 
 ```bash
-journalctl --user -u openclaw -n 100 --no-pager
+journalctl --user -u openclaw-gateway -n 100 --no-pager
 ```
 
-### Logs en vivo (follow)
+### Logs en vivo
 
 ```bash
-journalctl --user -u openclaw -f
+journalctl --user -u openclaw-gateway -f
 ```
 
-## Configuración de Variables de Entorno
+## Configuracion de variables de entorno
 
 ### Crear archivo env
 
 ```bash
 mkdir -p ~/.config/openclaw
 cat > ~/.config/openclaw/env << 'EOF'
-# Worker HTTP (FastAPI en Windows vía Tailscale)
+# Worker HTTP (FastAPI en Windows via Tailscale)
 WORKER_URL=http://CHANGE_ME_WINDOWS_TAILSCALE_IP:8088
 WORKER_TOKEN=CHANGE_ME_WORKER_TOKEN
 
-# Otros (agregar según necesidad)
+# Otros (agregar segun necesidad)
 # OPENAI_API_KEY=CHANGE_ME_OPENAI_KEY
 EOF
 
-# Proteger el archivo
 chmod 600 ~/.config/openclaw/env
 ```
 
-### Systemd Unit con EnvironmentFile
+### Unit systemd con EnvironmentFile
 
 ```ini
-# ~/.config/systemd/user/openclaw.service
+# ~/.config/systemd/user/openclaw-gateway.service
 [Unit]
 Description=OpenClaw Gateway
 After=network-online.target
 Wants=network-online.target
 
 [Service]
-Type=simple
-EnvironmentFile=%h/.config/openclaw/env
-ExecStart=/usr/local/bin/openclaw serve
-Restart=on-failure
+ExecStart=/usr/bin/node %h/.npm-global/lib/node_modules/openclaw/dist/index.js gateway --port 18789
+Restart=always
 RestartSec=5
+KillMode=process
+Environment=HOME=%h
+Environment=TMPDIR=/tmp
+Environment=PATH=%h/.local/bin:%h/.npm-global/bin:/usr/local/bin:/usr/bin:/bin
+Environment=OPENCLAW_GATEWAY_PORT=18789
+Environment=OPENCLAW_SYSTEMD_UNIT=openclaw-gateway.service
+Environment=OPENCLAW_SERVICE_MARKER=openclaw
+Environment=OPENCLAW_SERVICE_KIND=gateway
+EnvironmentFile=%h/.config/openclaw/env
 
 [Install]
 WantedBy=default.target
@@ -75,110 +81,94 @@ WantedBy=default.target
 
 ```bash
 systemctl --user daemon-reload
-systemctl --user restart openclaw
-systemctl --user enable openclaw
+systemctl --user restart openclaw-gateway
+systemctl --user enable openclaw-gateway
 ```
 
 ### Validar que las variables se cargaron
 
 ```bash
-# Obtener PID
-PID=$(systemctl --user show -p MainPID openclaw | cut -d= -f2)
-
-# Verificar variables
+PID=$(systemctl --user show -p MainPID openclaw-gateway | cut -d= -f2)
 cat /proc/$PID/environ | tr '\0' '\n' | grep WORKER
 ```
 
-Debe mostrar:
-```
+Debe mostrar algo como:
+
+```text
 WORKER_URL=http://...
 WORKER_TOKEN=...
 ```
 
 ## Acceso a Control UI
 
-### ⚠️ IMPORTANTE: No exponer los puertos 18789/18791 a internet
+### Importante: no exponer los puertos 18789/18791 a internet
 
-La UI de OpenClaw contiene controles administrativos y NUNCA debe ser expuesta directamente.
+La UI de OpenClaw contiene controles administrativos y no debe exponerse directamente.
 
-### Opción 1: SSH Port-Forwarding (recomendado)
+### Opcion 1: SSH port forwarding
 
 ```bash
 ssh -N -L 18789:127.0.0.1:18789 -L 18791:127.0.0.1:18791 rick@VPS_PUBLIC_IP
 ```
 
-Después, abrir en el navegador local:
-- **Control UI**: `http://localhost:18789`
-- **API**: `http://localhost:18791`
+Luego abrir:
 
-> **Nota**: `localhost` y `127.0.0.1` funcionan igual porque el túnel SSH re-mapea el puerto del VPS al loopback local de tu PC. OpenClaw escucha en `127.0.0.1` en el VPS, así que la conexión SSH accede directamente.
+- `http://localhost:18789`
+- `http://localhost:18791`
 
-### Opción 2: Tailscale (alternativa)
-
-Si Tailscale está configurado y confías en la red mesh:
+### Opcion 2: Tailscale
 
 ```bash
-# Desde PC con Tailscale, acceder directamente
 http://VPS_TAILSCALE_IP:18789
 ```
-
-> Esto es seguro porque Tailscale es una red privada, pero se prefiere SSH tunnel para mayor control y auditabilidad.
 
 ## Reinicio controlado
 
 ```bash
-systemctl --user restart openclaw
+systemctl --user restart openclaw-gateway
 ```
 
-## Verificación completa
+## Verificacion completa
 
 ```bash
-# Estado del servicio
-systemctl --user status openclaw
-
-# Estado de OpenClaw
+systemctl --user status openclaw-gateway
 openclaw status --all
-
-# Estado de modelos
 openclaw models status
-
-# Verificar Telegram
 openclaw status --all | grep -i telegram
 ```
 
 ## OpenClaw Node en la VM (PCRick)
 
-El nodo OpenClaw en la VM conecta al Gateway de la VPS vía Tailscale, permitiendo a Rick controlar el navegador y otros recursos en PCRick.
+El nodo OpenClaw en la VM conecta al gateway de la VPS via Tailscale, permitiendo a Rick controlar el navegador y otros recursos en PCRick.
 
-### Token del Gateway
+### Token del gateway
 
-1. **En la VPS:** generar token y configurarlo:
-   ```bash
-   NEW_TOKEN=$(openssl rand -hex 32)
-   openclaw config set gateway.auth.token "$NEW_TOKEN"
-   systemctl --user restart openclaw
-   ```
+1. En la VPS:
 
-2. **En la VM:** usar el mismo token al ejecutar el node:
-   ```powershell
-   $env:OPENCLAW_GATEWAY_TOKEN = "EL_TOKEN_GENERADO"
-   openclaw node run --host srv1431451.tail0b266a.ts.net --port 18789 --tls
-   ```
+```bash
+NEW_TOKEN=$(openssl rand -hex 32)
+openclaw config set gateway.auth.token "$NEW_TOKEN"
+systemctl --user restart openclaw-gateway
+```
 
-### Arranque automático
+2. En la VM:
 
-Para que el node arranque tras reiniciar la VM, usar el servicio NSSM según [runbooks/runbook-vm-openclaw-node.md](../runbooks/runbook-vm-openclaw-node.md).
+```powershell
+$env:OPENCLAW_GATEWAY_TOKEN = "EL_TOKEN_GENERADO"
+openclaw node run --host srv1431451.tail0b266a.ts.net --port 18789 --tls
+```
+
+### Arranque automatico
+
+Para que el node arranque tras reiniciar la VM, usar el servicio NSSM segun [runbooks/runbook-vm-openclaw-node.md](../runbooks/runbook-vm-openclaw-node.md).
 
 ### Aprobar dispositivos pendientes
 
-Si el node aparece en `Pending` tras conectarse:
 ```bash
 openclaw devices list
 openclaw devices approve <requestId>
 ```
 
----
+## Notion como tool
 
-## Notion como Tool (no Skill)
-
-Rick recomienda configurar Notion como **herramienta (Tool)**, no como skill. Ver [docs/rick-notion-tool-instead-of-skill.md](rick-notion-tool-instead-of-skill.md) para quitar el skill y configurar Notion como tool vía Worker tasks.
+Rick recomienda configurar Notion como herramienta y no como skill. Ver `docs/rick-notion-tool-instead-of-skill.md`.

@@ -145,14 +145,27 @@ chmod 600 ~/.config/openclaw/worker-token
 
 OpenClaw distingue dos archivos distintos en el workspace:
 
-- `BOOTSTRAP.md`: marcador de primer arranque / reconstruccion del workspace. Debe existir, pero no debe usarse como prompt operativo permanente.
+- `BOOTSTRAP.md`: asset de primer arranque / reconstruccion del workspace. Conviene versionarlo en el repo, pero no mantenerlo persistente en workspaces maduros.
 - `HEARTBEAT.md`: checklist persistente y breve que si conviene mantener por rol.
 
 Convencion canonica para este repo:
 
-- `BOOTSTRAP.md` vive versionado en `openclaw/workspace-templates/BOOTSTRAP.md` y se copia a todos los workspaces activos.
+- `BOOTSTRAP.md` vive versionado en `openclaw/workspace-templates/BOOTSTRAP.md` como ritual one-shot para onboarding o rebuild del workspace.
 - `HEARTBEAT.md` vive versionado en `openclaw/workspace-templates/HEARTBEAT.md` y puede tener overrides por agente en `openclaw/workspace-agent-overrides/<agentId>/HEARTBEAT.md`.
-- En workspaces maduros, `BOOTSTRAP.md` actua como ritual one-shot y no reemplaza a `AGENTS.md` ni a `HEARTBEAT.md`.
+- En workspaces maduros, `BOOTSTRAP.md` no debe persistirse. La configuracion recomendada es `agents.defaults.skipBootstrap: true` en `~/.openclaw/openclaw.json`.
+- El archivo persistente de gobernanza por agente es `HEARTBEAT.md`; no reemplaza a `AGENTS.md`, sino que lo complementa.
+
+Ejemplo minimo en `~/.openclaw/openclaw.json`:
+
+```json
+{
+  "agents": {
+    "defaults": {
+      "skipBootstrap": true
+    }
+  }
+}
+```
 
 Para sincronizar estos archivos en la VPS despues de `git pull`:
 
@@ -169,7 +182,7 @@ Verificacion minima:
 /home/rick/.npm-global/bin/openclaw status --all
 ```
 
-Los agentes activos ya no deberian aparecer con `Bootstrap file ABSENT`.
+Es aceptable que los agentes activos sigan apareciendo con `Bootstrap file ABSENT` si el workspace ya esta maduro y `skipBootstrap=true` quedo fijado.
 
 ## Acceso a Control UI
 

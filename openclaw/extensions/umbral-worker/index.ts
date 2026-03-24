@@ -1,4 +1,7 @@
 import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { isAbsolute, join } from "node:path";
 import type { OpenClawPluginApi } from "openclaw/plugin-sdk/core";
 
 type JsonObject = Record<string, unknown>;
@@ -6,6 +9,8 @@ type JsonSchema = Record<string, unknown>;
 
 type PluginConfig = {
   baseUrl?: string;
+  interactiveBaseUrl?: string;
+  tokenFile?: string;
   defaultTeam?: string;
   defaultTaskType?: string;
   timeoutMs?: number;
@@ -27,7 +32,7 @@ type TaskToolDefinition = {
   dispatchMode?: "run" | "enqueue";
   defaultTeam?: string;
   defaultTaskType?: string;
-  baseUrlEnv?: string;
+  baseUrlConfigKey?: keyof PluginConfig;
 };
 
 const MAX_RESULT_CHARS = 24000;
@@ -42,18 +47,25 @@ function trimTrailingSlash(value: string): string {
 
 function resolveBaseUrl(api: OpenClawPluginApi): string {
   const cfg = getPluginConfig(api);
+  // Keep the network target pinned to plugin config or the loopback default.
+  // Reading a generic env var here enlarges the plugin attack surface and is
+  // redundant for the VPS runtime, which already injects `baseUrl` explicitly.
   const raw =
     (typeof cfg.baseUrl === "string" && cfg.baseUrl.trim()) ||
-    process.env.WORKER_URL ||
     "http://127.0.0.1:8088";
   return trimTrailingSlash(raw);
 }
 
-function resolveBaseUrlOverride(baseUrlEnv?: string): string | undefined {
-  if (!baseUrlEnv) {
+function resolveBaseUrlOverride(
+  api: OpenClawPluginApi,
+  baseUrlConfigKey?: keyof PluginConfig,
+): string | undefined {
+  if (!baseUrlConfigKey) {
     return undefined;
   }
-  const raw = process.env[baseUrlEnv]?.trim();
+  const cfg = getPluginConfig(api);
+  const candidate = cfg[baseUrlConfigKey];
+  const raw = typeof candidate === "string" ? candidate.trim() : "";
   if (!raw) {
     return undefined;
   }
@@ -68,10 +80,22 @@ function resolveTimeoutMs(api: OpenClawPluginApi): number {
   return 30000;
 }
 
-function resolveToken(): string {
-  const token = process.env.WORKER_TOKEN?.trim() ?? "";
+function resolvePath(value: string): string {
+  if (value.startsWith("~/")) {
+    return join(homedir(), value.slice(2));
+  }
+  if (value === "~") {
+    return homedir();
+  }
+  return isAbsolute(value) ? value : join(homedir(), value);
+}
+
+function resolveToken(api: OpenClawPluginApi): string {
+  const cfg = getPluginConfig(api);
+  const tokenPath = resolvePath(cfg.tokenFile || "~/.config/openclaw/worker-token");
+  const token = readFileSync(tokenPath, "utf8").trim();
   if (!token) {
-    throw new Error("WORKER_TOKEN is not set in the gateway environment.");
+    throw new Error(`Worker token file is empty: ${tokenPath}`);
   }
   return token;
 }
@@ -177,7 +201,7 @@ async function workerRequest(
     Accept: "application/json",
   };
   if (options.auth !== false) {
-    headers.Authorization = `Bearer ${resolveToken()}`;
+    headers.Authorization = `Bearer ${resolveToken(api)}`;
   }
   if (options.body) {
     headers["Content-Type"] = "application/json";
@@ -434,7 +458,7 @@ function registerTaskTool(api: OpenClawPluginApi, definition: TaskToolDefinition
       description: definition.description,
       parameters: definition.parameters,
       async execute(_id: string, params: JsonObject) {
-        const baseUrlOverride = resolveBaseUrlOverride(definition.baseUrlEnv);
+        const baseUrlOverride = resolveBaseUrlOverride(api, definition.baseUrlConfigKey);
         const result =
           definition.dispatchMode === "enqueue"
             ? await enqueueNamedTaskAndWait(api, definition.task, params, {
@@ -1467,7 +1491,7 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     description: "Navigate a persistent Playwright browser page on the Windows lab node.",
     resultTitle: "Browser navigate result",
     dispatchMode: "run",
-    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
+    baseUrlConfigKey: "interactiveBaseUrl",
     parameters: taskToolSchema(
       {
         url: stringSchema("Target URL to open."),
@@ -1490,7 +1514,7 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     description: "Read visible text from the current browser page or a selector on the Windows lab node.",
     resultTitle: "Browser read page result",
     dispatchMode: "run",
-    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
+    baseUrlConfigKey: "interactiveBaseUrl",
     parameters: taskToolSchema({
       page_id: stringSchema("Optional existing page ID."),
       selector: stringSchema("Optional CSS selector to narrow the read target."),
@@ -1503,7 +1527,7 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     description: "Capture a screenshot from the Playwright browser running on the Windows lab node.",
     resultTitle: "Browser screenshot result",
     dispatchMode: "run",
-    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
+    baseUrlConfigKey: "interactiveBaseUrl",
     parameters: taskToolSchema({
       page_id: stringSchema("Optional existing page ID."),
       path: stringSchema("Optional absolute output path on the Windows node."),
@@ -1518,7 +1542,7 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     description: "Click a CSS selector in the Playwright browser running on the Windows lab node.",
     resultTitle: "Browser click result",
     dispatchMode: "run",
-    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
+    baseUrlConfigKey: "interactiveBaseUrl",
     parameters: taskToolSchema(
       {
         page_id: stringSchema("Optional existing page ID."),
@@ -1537,7 +1561,7 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     description: "Type text into a CSS selector in the Playwright browser running on the Windows lab node.",
     resultTitle: "Browser type text result",
     dispatchMode: "run",
-    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
+    baseUrlConfigKey: "interactiveBaseUrl",
     parameters: taskToolSchema(
       {
         page_id: stringSchema("Optional existing page ID."),
@@ -1559,7 +1583,7 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     description: "Send a keyboard key to the current Playwright browser page on the Windows lab node.",
     resultTitle: "Browser press key result",
     dispatchMode: "run",
-    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
+    baseUrlConfigKey: "interactiveBaseUrl",
     parameters: taskToolSchema(
       {
         page_id: stringSchema("Optional existing page ID."),
@@ -1574,7 +1598,7 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     description: "Inspect the current Windows desktop session on the lab node and report screen size, cursor and root control.",
     resultTitle: "GUI desktop status result",
     dispatchMode: "run",
-    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
+    baseUrlConfigKey: "interactiveBaseUrl",
     parameters: taskToolSchema({}),
   },
   {
@@ -1583,7 +1607,7 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     description: "Capture a raw desktop screenshot from the Windows GUI session on the lab node.",
     resultTitle: "GUI screenshot result",
     dispatchMode: "run",
-    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
+    baseUrlConfigKey: "interactiveBaseUrl",
     parameters: taskToolSchema(
       {
         path: stringSchema("Absolute output path on the Windows node."),
@@ -1598,7 +1622,7 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     description: "Move the mouse and click at absolute screen coordinates on the Windows lab node.",
     resultTitle: "GUI click result",
     dispatchMode: "run",
-    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
+    baseUrlConfigKey: "interactiveBaseUrl",
     parameters: taskToolSchema(
       {
         x: integerSchema("Screen X coordinate."),
@@ -1617,7 +1641,7 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     description: "Type text into the currently focused UI element on the Windows lab node.",
     resultTitle: "GUI type text result",
     dispatchMode: "run",
-    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
+    baseUrlConfigKey: "interactiveBaseUrl",
     parameters: taskToolSchema(
       {
         text: stringSchema("Text to type into the active control."),
@@ -1632,7 +1656,7 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     description: "Send a keyboard shortcut to the active Windows UI session on the lab node.",
     resultTitle: "GUI hotkey result",
     dispatchMode: "run",
-    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
+    baseUrlConfigKey: "interactiveBaseUrl",
     parameters: taskToolSchema(
       {
         keys: arraySchema(stringSchema("One key of the shortcut."), "Ordered key combination, for example ['ctrl','l'].", {
@@ -1648,7 +1672,7 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     description: "List top-level windows visible in the interactive Windows session on the lab node.",
     resultTitle: "GUI list windows result",
     dispatchMode: "run",
-    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
+    baseUrlConfigKey: "interactiveBaseUrl",
     parameters: taskToolSchema({
       visible_only: booleanSchema("Only include visible windows.", { default: true }),
     }),
@@ -1659,7 +1683,7 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     description: "Bring a matching window to the foreground in the interactive Windows session on the lab node.",
     resultTitle: "GUI activate window result",
     dispatchMode: "run",
-    baseUrlEnv: "WORKER_URL_VM_INTERACTIVE",
+    baseUrlConfigKey: "interactiveBaseUrl",
     parameters: taskToolSchema(
       {
         exact_title: stringSchema("Exact window title to activate."),

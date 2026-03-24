@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 """
-Discovery web para SIM: Tavily como backend primario.
+Discovery web para SIM: Tavily como backend primario y Gemini grounded search como fallback real.
 
-Google Custom Search quedo como camino legado/experimental porque este stack no
-ha mostrado evidencia de uso exitoso y los proyectos nuevos suelen recibir 403.
-Azure Bing no esta disponible para cuentas nuevas (Microsoft depreco).
+Google Custom Search queda solo como camino legado/experimental porque este
+stack no ha mostrado evidencia de uso estable y los proyectos nuevos suelen
+recibir 403.
 
 Variables desde .env:
   TAVILY_API_KEY                                       - Tavily Search (primario)
+  GOOGLE_API_KEY / GOOGLE_API_KEY_NANO                 - Gemini grounded search (fallback real)
   GOOGLE_CSE_API_KEY_RICK_UMBRAL / GOOGLE_CSE_API_KEY - Google Custom Search (legado)
   GOOGLE_CSE_CX                                        - Custom Search engine ID
   WEB_DISCOVERY_ENABLE_GOOGLE_CSE=1                    - habilita fallback legado a Google
 
-Formato de salida unificado: [{"title", "url", "snippet", "source": "google"|"tavily"}]
+Formato de salida unificado: [{"title", "url", "snippet", "source"}]
 
 Uso:
   python scripts/web_discovery.py "keyword" [--count 5] [--force-tavily] [--allow-google-legacy] [--output json|md]
@@ -23,9 +24,6 @@ import argparse
 import json
 import os
 import sys
-import urllib.error
-import urllib.parse
-import urllib.request
 from pathlib import Path
 from typing import Any
 
@@ -33,128 +31,48 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-# Cargar variables desde .env si existe env_loader
 try:
     from scripts.env_loader import load as _load_env
+
     _load_env()
 except ImportError:
     pass
 
-# ── Constantes de APIs ──────────────────────────────────────────────────────
+from worker.research_backends import (
+    GEMINI_SEARCH_PROVIDER,
+    GOOGLE_LEGACY_PROVIDER,
+    TAVILY_PROVIDER,
+    search_gemini_google_search,
+    search_google_legacy,
+    search_tavily,
+)
+from worker.task_errors import TaskExecutionError
 
-GOOGLE_CSE_URL = "https://www.googleapis.com/customsearch/v1"
-TAVILY_API_URL = "https://api.tavily.com/search"
-
-
-# ── Tipos ───────────────────────────────────────────────────────────────────
-
-Result = dict[str, str]  # {"title", "url", "snippet", "source"}
-
-
-# ── Custom Search (Google legacy) ──────────────────────────────────────────
-
-def _search_google(query: str, count: int) -> tuple[list[Result], str | None]:
-    """
-    Busca con Google Custom Search JSON API.
-    Ruta legado/experimental, no operativa por defecto.
-    Retorna (resultados, error).
-    Si hay 403, error="403:forbidden".
-    """
-    key = (
-        os.environ.get("GOOGLE_CSE_API_KEY_RICK_UMBRAL_2")
-        or os.environ.get("GOOGLE_CSE_API_KEY_RICK_UMBRAL")
-        or os.environ.get("GOOGLE_CSE_API_KEY")
-    )
-    cx = os.environ.get("GOOGLE_CSE_CX")
-
-    if not key:
-        return [], "skip:no_key_GOOGLE_CSE_API_KEY"
-    if not cx:
-        return [], "skip:no_key_GOOGLE_CSE_CX"
-
-    qs = urllib.parse.urlencode({"key": key, "cx": cx, "q": query, "num": min(count, 10)})
-    req = urllib.request.Request(f"{GOOGLE_CSE_URL}?{qs}")
-    try:
-        with urllib.request.urlopen(req, timeout=15) as r:
-            data: dict[str, Any] = json.loads(r.read().decode())
-            items = data.get("items") or []
-            results = [
-                {
-                    "title": item.get("title", ""),
-                    "url": item.get("link", ""),
-                    "snippet": item.get("snippet", "").replace("\n", " ").strip(),
-                    "source": "google",
-                }
-                for item in items
-            ]
-            return results, None
-    except urllib.error.HTTPError as e:
-        body = ""
-        try:
-            body = e.read().decode()
-        except Exception:
-            pass
-        if e.code == 403:
-            return [], "403:forbidden"
-        return [], f"http:{e.code}:{body[:200]}"
-    except Exception as e:
-        err = str(e)
-        if "403" in err:
-            return [], "403:forbidden"
-        return [], f"error:{err[:200]}"
+Result = dict[str, str]
 
 
-# ── Tavily Search (backend operativo primario) ─────────────────────────────
+def _with_source(results: list[dict[str, str]], source: str) -> list[Result]:
+    return [{**item, "source": source} for item in results]
+
 
 def _search_tavily(query: str, count: int) -> tuple[list[Result], str | None]:
-    """
-    Busca con Tavily Search API (orientada a agentes AI). Free: 1000 creditos/mes.
-    Retorna (resultados, error).
-    """
-    key = os.environ.get("TAVILY_API_KEY")
-    if not key:
-        return [], "skip:no_key_TAVILY_API_KEY"
-
-    body = json.dumps({
-        "query": query,
-        "max_results": min(count, 20),
-        "search_depth": "basic",
-    }).encode("utf-8")
-    req = urllib.request.Request(
-        TAVILY_API_URL,
-        data=body,
-        method="POST",
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {key.strip()}",
-        },
-    )
     try:
-        with urllib.request.urlopen(req, timeout=20) as r:
-            data = json.loads(r.read().decode())
-            items = data.get("results") or []
-            results = [
-                {
-                    "title": item.get("title", ""),
-                    "url": item.get("url", ""),
-                    "snippet": (item.get("content") or "").replace("\n", " ").strip()[:500],
-                    "source": "tavily",
-                }
-                for item in items
-            ]
-            return results, None
-    except urllib.error.HTTPError as e:
-        body_str = ""
-        try:
-            body_str = e.read().decode()
-        except Exception:
-            pass
-        return [], f"http:{e.code}:{body_str[:200]}"
-    except Exception as e:
-        return [], f"error:{str(e)[:200]}"
+        return _with_source(search_tavily(query, count), TAVILY_PROVIDER), None
+    except TaskExecutionError as exc:
+        return [], f"{exc.error_code}:{exc.error_kind}"
 
 
-# ── Función principal (Tavily primero; Google solo opt-in legado) ──────────
+def _search_gemini_grounded(query: str, count: int) -> tuple[list[Result], str | None]:
+    try:
+        return _with_source(search_gemini_google_search(query, count), GEMINI_SEARCH_PROVIDER), None
+    except TaskExecutionError as exc:
+        return [], f"{exc.error_code}:{exc.error_kind}"
+
+
+def _search_google(query: str, count: int) -> tuple[list[Result], str | None]:
+    results, error = search_google_legacy(query, count)
+    return _with_source(results, GOOGLE_LEGACY_PROVIDER), error
+
 
 def _google_legacy_enabled(explicit_opt_in: bool) -> bool:
     if explicit_opt_in:
@@ -163,6 +81,7 @@ def _google_legacy_enabled(explicit_opt_in: bool) -> bool:
     raw = os.environ.get("WEB_DISCOVERY_ENABLE_GOOGLE_CSE", "").strip().lower()
     return raw in {"1", "true", "yes", "on"}
 
+
 def search(
     query: str,
     count: int = 10,
@@ -170,12 +89,10 @@ def search(
     allow_google_legacy: bool = False,
 ) -> dict[str, Any]:
     """
-    Busca intentando primero Tavily.
-    Google Custom Search solo se usa si el caller lo habilita explicitamente
-    mediante allow_google_legacy=True o WEB_DISCOVERY_ENABLE_GOOGLE_CSE=1.
-    Azure Bing no esta disponible para cuentas nuevas (deprecado por Microsoft).
+    Busca intentando primero Tavily y luego Gemini grounded search.
+    Google Custom Search solo se usa como tercer intento si el caller lo habilita.
 
-    Retorna: query, engine_used ("google"|"tavily"|"none"), fallback_reason, results, error.
+    Retorna: query, engine_used, fallback_reason, results, error.
     """
     google_legacy_enabled = _google_legacy_enabled(allow_google_legacy)
 
@@ -183,37 +100,57 @@ def search(
     if err is None:
         return {
             "query": query,
-            "engine_used": "tavily",
+            "engine_used": TAVILY_PROVIDER,
             "fallback_reason": None,
             "results": results,
             "error": None,
         }
     tavily_error = err
 
+    if force_tavily:
+        return {
+            "query": query,
+            "engine_used": "none",
+            "fallback_reason": None,
+            "results": [],
+            "error": tavily_error,
+        }
+
+    results, err = _search_gemini_grounded(query, count)
+    if err is None:
+        return {
+            "query": query,
+            "engine_used": GEMINI_SEARCH_PROVIDER,
+            "fallback_reason": tavily_error,
+            "results": results,
+            "error": None,
+        }
+    gemini_error = err
+
     if google_legacy_enabled and not force_tavily:
         results, err = _search_google(query, count)
         if err is None:
             return {
                 "query": query,
-                "engine_used": "google",
-                "fallback_reason": tavily_error,
+                "engine_used": GOOGLE_LEGACY_PROVIDER,
+                "fallback_reason": f"{tavily_error} -> {gemini_error}",
                 "results": results,
                 "error": None,
             }
         error = err
     else:
-        error = tavily_error
+        error = gemini_error
 
     return {
         "query": query,
         "engine_used": "none",
-        "fallback_reason": tavily_error if google_legacy_enabled and not force_tavily else None,
+        "fallback_reason": (
+            f"{tavily_error} -> {gemini_error}" if google_legacy_enabled and not force_tavily else tavily_error
+        ),
         "results": [],
         "error": error,
     }
 
-
-# ── Formatos de salida ────────────────────────────────────────────────────────
 
 def _format_markdown(payload: dict[str, Any]) -> str:
     lines = [f"# Web Discovery - `{payload['query']}`\n"]
@@ -231,23 +168,21 @@ def _format_markdown(payload: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-# ── CLI ───────────────────────────────────────────────────────────────────────
-
 def main() -> None:
     ap = argparse.ArgumentParser(
-        description="Discovery web: Tavily como motor primario; Google Custom Search solo legado/opt-in"
+        description="Discovery web: Tavily como motor primario, Gemini grounded search como fallback real y Google CSE solo legado/opt-in"
     )
     ap.add_argument("query", nargs="?", default="", help="Texto a buscar")
     ap.add_argument("--count", type=int, default=5, help="Numero de resultados (default: 5)")
     ap.add_argument(
         "--force-tavily",
         action="store_true",
-        help="Usar solo Tavily y saltar cualquier fallback legado",
+        help="Usar solo Tavily y saltar cualquier fallback",
     )
     ap.add_argument(
         "--allow-google-legacy",
         action="store_true",
-        help="Si Tavily falla, intentar Google Custom Search como fallback legado",
+        help="Si Tavily y Gemini grounded fallan, intentar Google Custom Search como fallback legado",
     )
     ap.add_argument(
         "--output",

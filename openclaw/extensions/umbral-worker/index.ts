@@ -731,7 +731,7 @@ const TASK_TOOLS: TaskToolDefinition[] = [
   {
     name: "umbral_research_web",
     task: "research.web",
-    description: "Run a Tavily-backed web search through the Worker.",
+    description: "Run a web search through the Worker (Tavily primario con fallback Gemini grounded search).",
     resultTitle: "Research web result",
     parameters: taskToolSchema(
       {

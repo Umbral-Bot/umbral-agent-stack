@@ -121,6 +121,43 @@ def test_gemini_ai_studio() -> None:
         else:
             print(f"Gemini: ERROR — {err[:200]}")
 
+
+def test_gemini_grounded_search() -> None:
+    key = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GOOGLE_API_KEY_NANO")
+    if not key:
+        print("Gemini grounded search: SKIP (falta GOOGLE_API_KEY / GOOGLE_API_KEY_NANO)")
+        return
+    try:
+        import urllib.request
+        import json
+
+        payload = {
+            "contents": [{"role": "user", "parts": [{"text": "Busca una noticia reciente sobre BIM en Latinoamérica y responde en una frase."}]}],
+            "tools": [{"google_search": {}}],
+            "generationConfig": {"temperature": 0.1, "maxOutputTokens": 128},
+        }
+        req = urllib.request.Request(
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + key,
+            data=json.dumps(payload).encode("utf-8"),
+            method="POST",
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=20) as r:
+            data = json.loads(r.read().decode())
+            meta = (data.get("candidates") or [{}])[0].get("groundingMetadata", {}) or {}
+            if meta.get("webSearchQueries"):
+                print("Gemini grounded search: OK (200) — google_search activo")
+            else:
+                print("Gemini grounded search: 200 pero sin webSearchQueries")
+    except Exception as e:
+        err = str(e)
+        if "401" in err:
+            print("Gemini grounded search: 401 - Key invalida o sin permisos.")
+        elif "403" in err:
+            print("Gemini grounded search: 403 - Proyecto sin acceso o API no habilitada.")
+        else:
+            print(f"Gemini grounded search: ERROR - {err[:200]}")
+
 def test_tavily_search() -> None:
     """Tavily es el backend operativo primario de web_discovery."""
     key = os.environ.get("TAVILY_API_KEY")
@@ -158,6 +195,8 @@ def main() -> None:
     test_custom_search()
     print()
     test_gemini_ai_studio()
+    print()
+    test_gemini_grounded_search()
     print("\n--- Sobre Vertex AI ---")
     print("Vertex requiere OAuth/Service Account (no API key). 400 = formato de request; credencial puede ser valida.")
     print("Para gestión de suscripciones/facturación: Cloud Billing API + Service Account con roles/billing.admin")

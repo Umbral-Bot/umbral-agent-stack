@@ -121,6 +121,20 @@ Cuarto ajuste repo-side:
 - el instalador ahora usa `GatewayToken` opcional, carga desde `C:\openclaw-worker\openclaw-gateway-token` si existe, y valida con `IsNullOrWhiteSpace()`;
 - tambien queda documentado que, una vez guardado el token local, los siguientes reruns ya no necesitan pegarlo otra vez.
 
+### [codex] 2026-03-24 20:48
+Quinto ajuste repo-side tras otra prueba viva:
+
+- la VM seguia fallando con `No se puede llamar a un metodo en una expresion con valor NULL` incluso sin pasar `-GatewayToken`;
+- causa exacta: `C:\openclaw-worker\openclaw-gateway-token` existia pero estaba vacio, por lo que `Get-Content -Raw` devolvia `null` y el `.Trim()` seguia rompiendo;
+- el instalador ahora trata ese archivo vacio como token ausente y vuelve a fallar limpio con el mensaje canonico:
+  - `GatewayToken no puede quedar vacio y tampoco existe 'C:\openclaw-worker\openclaw-gateway-token'.`
+
+Bloqueo residual actualizado:
+
+- volver a hacer `git pull` en la VM para traer este ultimo fix;
+- reescribir `C:\openclaw-worker\openclaw-gateway-token` con el token real;
+- rerun del instalador y verificar si el servicio deja de quedar `SERVICE_PAUSED`.
+
 ### [codex] 2026-03-24 20:05
 Tercer ajuste repo-side tras prueba viva:
 

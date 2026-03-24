@@ -68,6 +68,8 @@ Regularización `UMB-132` (2026-03-22): se cerraron task files históricos que h
 
 | 2026-03-24-013 | Follow-up post-Rick: aterrar diagnostico real y endurecer composite.research_report | codex | ✅ done |
 
+| 2026-03-24-014 | PCRick: persistencia real del node OpenClaw en la VM | codex | ⛔ blocked |
+
 ## Pendientes diferidos post-fases
 
 - Exact billing-grade attribution de costo/tokens para `research.web` y session caching de OpenClaw; hoy ya existe snapshot repo-side y costo proxy, pero no facturacion oficial por request.

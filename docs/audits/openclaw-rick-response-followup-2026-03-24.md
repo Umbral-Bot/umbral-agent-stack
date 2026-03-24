@@ -66,6 +66,11 @@ Lectura correcta:
 ### Pendiente manual real
 
 - persistencia del nodo / servicio en `PCRick`
+- estado exacto en la VPS:
+  - `openclaw devices list` -> `PCRick` ya `paired`
+  - `openclaw nodes status` -> `paired · disconnected`
+- correccion conceptual:
+  - mientras el gateway VPS siga en `loopback`, el node remoto debe entrar por tunel SSH local + `openclaw node install`, no apuntando directo a `srv1431451:18789`
 
 ### Degradacion real mas cercana
 

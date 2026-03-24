@@ -1,112 +1,139 @@
-# Runbook: OpenClaw Node — arranque automático en la VM (PCRick)
+# Runbook: OpenClaw node persistente en la VM (PCRick)
 
 ## Objetivo
 
-Configurar el OpenClaw node en la VM para que se conecte al Gateway de la VPS automáticamente al reiniciar Windows, usando NSSM (igual que el Worker).
+Dejar `PCRick` conectado de forma persistente como node de OpenClaw en la VM Windows, usando la topologia correcta para el gateway actual de la VPS.
 
-## Prerequisitos
+## Estado real hoy
 
-- NSSM instalado (`nssm version`)
-- OpenClaw CLI instalado y en PATH (`openclaw --version`)
-- Token de Gateway sincronizado con el VPS (`gateway.auth.token`)
+En la VPS:
 
-## Opción A: Servicio NSSM (recomendado)
+- `openclaw devices list` muestra `PCRick` ya **paired** con rol `node`.
+- `openclaw nodes status` lo muestra **paired · disconnected**.
 
-Ejecutar en **PowerShell como Administrador** en la VM:
+Eso significa que el pairing base ya existe. Lo que falta no es aprobar otro device por defecto, sino volver a levantar el node host de la VM de manera persistente.
+
+## Hallazgo clave
+
+El gateway de la VPS corre en `loopback` (`ws://127.0.0.1:18789`).
+
+Segun la documentacion oficial actual de OpenClaw, cuando el gateway remoto esta en loopback, un node remoto **no** debe apuntarle directo por `--host srv1431451... --port 18789`. En ese caso la ruta correcta es:
+
+1. crear un tunel SSH desde la VM hacia la VPS;
+2. exponer un puerto local en la VM, por ejemplo `127.0.0.1:18790`;
+3. correr `openclaw node install` apuntando a ese extremo local.
+
+Referencia oficial:
+
+- [Nodes - OpenClaw](https://docs.openclaw.ai/nodes)
+  - `openclaw node run --host 127.0.0.1 --port 18790 ...` detras de SSH tunnel para gateways en loopback
+  - `openclaw node install ...` para servicio persistente
+
+## Prerequisitos en la VM
+
+- `openclaw` en PATH (`openclaw --version`)
+- `ssh.exe` en PATH (`ssh -V`)
+- `nssm` en PATH (`nssm version`)
+- acceso SSH desde la VM hacia la VPS (`rick@187.77.60.169` o el target que corresponda)
+- token del gateway de OpenClaw en la VPS
+
+## Script recomendado
+
+Usar el script del repo:
+
+- [install_openclaw_node_stack.ps1](../scripts/vm/install_openclaw_node_stack.ps1)
+
+Este script hace dos cosas:
+
+1. instala un servicio NSSM `openclaw-node-tunnel` que mantiene:
+   - `127.0.0.1:18790` en la VM -> `127.0.0.1:18789` en la VPS
+2. ejecuta el CLI oficial:
+   - `openclaw node install --host 127.0.0.1 --port 18790 --display-name PCRick --force`
+   - luego `openclaw node restart`
+
+## Ejecucion
+
+En la VM, con PowerShell:
 
 ```powershell
-$ServiceName = "openclaw-node"
-$NodeToken = "TU_TOKEN_GATEWAY_AQUI"  # El mismo que gateway.auth.token en la VPS
-
-# Si openclaw es .ps1 (npm), usar powershell; si es .exe, usar ruta directa
-$OpenClawPath = (Get-Command openclaw -ErrorAction Stop).Source
-$UsePowershell = $OpenClawPath -like "*.ps1"
-if ($UsePowershell) {
-  $AppExe = "powershell.exe"
-  $AppArgs = "-NoProfile -ExecutionPolicy Bypass -File `"$OpenClawPath`" node run --host srv1431451.tail0b266a.ts.net --port 18789 --tls"
-} else {
-  $AppExe = $OpenClawPath
-  $AppArgs = "node run --host srv1431451.tail0b266a.ts.net --port 18789 --tls"
-}
-
-# Crear carpeta de logs si no existe
-if (-not (Test-Path C:\openclaw-worker)) { New-Item -ItemType Directory C:\openclaw-worker | Out-Null }
-
-# Remover servicio si ya existe
-if ((Get-Service -Name $ServiceName -ErrorAction SilentlyContinue)) {
-  nssm stop $ServiceName
-  nssm remove $ServiceName confirm
-}
-
-# Instalar
-nssm install $ServiceName $AppExe $AppArgs
-nssm set $ServiceName AppDirectory "C:\Users\Rick"
-nssm set $ServiceName AppEnvironmentExtra "OPENCLAW_GATEWAY_TOKEN=$NodeToken"
-nssm set $ServiceName Start SERVICE_AUTO_START
-nssm set $ServiceName AppStdout "C:\openclaw-worker\openclaw-node-stdout.log"
-nssm set $ServiceName AppStderr "C:\openclaw-worker\openclaw-node-stderr.log"
-nssm set $ServiceName AppStdoutCreationDisposition 4
-nssm set $ServiceName AppStderrCreationDisposition 4
-nssm set $ServiceName AppRotateFiles 1
-nssm set $ServiceName AppRotateBytes 5242880
-nssm start $ServiceName
+cd C:\GitHub\umbral-agent-stack
+powershell -ExecutionPolicy Bypass -File .\scripts\vm\install_openclaw_node_stack.ps1 `
+  -GatewayToken "TU_TOKEN_REAL_DEL_GATEWAY" `
+  -GatewaySshTarget "rick@187.77.60.169" `
+  -DisplayName "PCRick"
 ```
 
-**Importante:** Sustituye `TU_TOKEN_GATEWAY_AQUI` por el token real (el mismo que usaste en la VM al probar manualmente, p. ej. `c65704824463d26d45a8042c9eacb936d6aa49c6e3a030b9c2a849a4518d34c0`).
+Si tu acceso SSH a la VPS usa otro hostname o usuario, cambia `-GatewaySshTarget`.
 
-## Verificación
+## Verificacion en la VM
 
 ```powershell
-nssm status openclaw-node
-Get-Content C:\openclaw-worker\openclaw-node-stdout.log -Tail 20
+nssm status openclaw-node-tunnel
+openclaw node status
+Get-Content C:\openclaw-worker\openclaw-node-tunnel-stderr.log -Tail 20
 ```
 
-En el VPS:
+Lo esperable:
+
+- el tunel queda escuchando en `127.0.0.1:18790`
+- `openclaw node status` deja el servicio instalado
+
+## Verificacion en la VPS
 
 ```bash
 openclaw devices list
+openclaw nodes status
 ```
 
-PCRick debe aparecer como `Paired` y, cuando el node esté conectado, Rick mostrará el nodo como activo.
+Escenarios:
 
-## Comandos útiles
+1. Si `PCRick` ya estaba paired, deberia pasar de:
+   - `paired · disconnected`
+   a
+   - `connected`
+2. Si el node reinstala con una nueva solicitud de pairing, aprobar:
+
+```bash
+openclaw devices approve <requestId>
+openclaw nodes status
+```
+
+## Que no hacer
+
+- no volver a apuntar el node remoto directo a `srv1431451:18789` mientras el gateway siga en loopback;
+- no abrir mas routers virtuales ni redisenar Hyper-V para este problema;
+- no asumir que `Tailscale off` en la VPS invalida OpenClaw, porque la ruta canonica actual sigue siendo loopback + tuneles.
+
+## Si falla
+
+1. Revisar que la VM tenga salida SSH hacia la VPS:
 
 ```powershell
-nssm status openclaw-node
-nssm restart openclaw-node
-nssm stop openclaw-node
-nssm start openclaw-node
+ssh rick@187.77.60.169 exit
 ```
 
-## Actualizar el token
-
-Si cambias el token en el VPS y necesitas actualizarlo en la VM:
+2. Revisar el tunel:
 
 ```powershell
-nssm set openclaw-node AppEnvironmentExtra "OPENCLAW_GATEWAY_TOKEN=NUEVO_TOKEN"
-nssm restart openclaw-node
+Test-NetConnection 127.0.0.1 -Port 18790
+Get-Content C:\openclaw-worker\openclaw-node-tunnel-stdout.log -Tail 20
+Get-Content C:\openclaw-worker\openclaw-node-tunnel-stderr.log -Tail 20
 ```
 
-## Opción B: Tarea programada (alternativa)
-
-Si prefieres no usar NSSM, puedes usar una Scheduled Task que se ejecute al inicio de sesión:
-
-1. Crear script `C:\openclaw-worker\start-openclaw-node.ps1`:
+3. Revisar el servicio del node:
 
 ```powershell
-$env:OPENCLAW_GATEWAY_TOKEN = "TU_TOKEN_GATEWAY_AQUI"
-openclaw node run --host srv1431451.tail0b266a.ts.net --port 18789 --tls
+openclaw node status
+openclaw node restart
 ```
 
-2. Crear la tarea:
+4. En la VPS, volver a mirar:
 
-```powershell
-$Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File C:\openclaw-worker\start-openclaw-node.ps1"
-$Trigger = New-ScheduledTaskTrigger -AtLogOn -User "Rick"
-$Settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-Register-ScheduledTask -TaskName "OpenClaw Node" -Action $Action -Trigger $Trigger -Settings $Settings
+```bash
+openclaw devices list
+openclaw nodes status
 ```
 
-3. Probar: `Start-ScheduledTask -TaskName "OpenClaw Node"`
+## Bloqueo actual
 
-**Nota:** La tarea solo corre cuando Rick inicia sesión. El servicio NSSM corre aunque nadie haya iniciado sesión.
+Desde esta sesion de Codex no hay acceso administrativo efectivo a la VM, asi que la instalacion final sigue pendiente de ejecucion manual dentro de Windows. El trabajo repo-side ya queda preparado; la unica intervencion humana pendiente es correr el script en `PCRick` y validar la reconexion del node.

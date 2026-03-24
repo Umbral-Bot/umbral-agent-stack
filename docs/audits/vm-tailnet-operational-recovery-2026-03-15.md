@@ -85,6 +85,29 @@ Still pending:
 - guest outbound web is still degraded/broken
 - guest Tailscale session is logged out and needs a dedicated network repair/auth recovery
 
+## Update 2026-03-24
+
+After the later network intervention on host `tarro`, the VM was moved to a dual-NIC setup instead of replacing the internal network path:
+
+- existing internal NIC kept in place
+- second Hyper-V NIC added to `Default Switch`
+
+Observed during the intervention:
+
+- guest outbound web recovered
+- `Invoke-WebRequest https://www.google.com` inside the VM returned `200`
+- guest Tailscale showed a logged-in state again and exposed `100.109.16.40`
+
+Important clarification:
+
+- the host-side change was **not** removal of the internal adapter/router
+- the effective fix was **adding** a second NIC for internet egress while preserving the internal path used by the stack
+
+Current caution after later host restart:
+
+- do not assume VPS -> VM tailnet reachability is fully stable without revalidation
+- internet recovery inside the VM was confirmed during the intervention, but tailnet service reachability should be rechecked after each disruptive reboot until the network path is considered durable
+
 ## Durable hardening added
 
 Added repo scripts:

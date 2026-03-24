@@ -15,6 +15,16 @@ Barrido exhaustivo de OpenClaw en la VPS despues del update a `2026.3.23`, enfoc
 
 No se reaudito todo el stack Umbral desde cero. Se reutilizo el diagnostico de interconectividad y las fases 0-5 ya cerradas, pero se repitieron pruebas vivas de OpenClaw para verificar el runtime actual.
 
+## Actualizacion 2026-03-24
+
+La Accion 1 de este diagnostico ya fue ejecutada despues del barrido inicial:
+
+- `openclaw.service` dejo de existir como unidad cargada en la VPS.
+- `openclaw-gateway.service` quedo como unico gateway systemd canonico.
+- `openclaw status --all`, `openclaw dashboard` y una ejecucion minima de `main` siguieron funcionando tras la regularizacion.
+
+El resto del documento preserva el snapshot original del 2026-03-23 y el plan de acciones resultante.
+
 ## Resumen ejecutivo
 
 Estado general: **OpenClaw esta operativo, pero no completamente saneado**.
@@ -258,6 +268,8 @@ Impacto:
 
 ### Accion 1. Regularizar topologia OpenClaw en VPS
 
+Estado: **cerrada el 2026-03-24**
+
 Objetivo:
 
 - dejar un unico gateway systemd vivo
@@ -345,6 +357,23 @@ Mantener anotados para despues del refresh/test general:
 
 - snapshot repo-side del tracking de paneles/OpenClaw a partir de `ops_log`
 - atribucion mas fina de costo/tokens por componente dentro de OpenClaw
+
+### Accion 8. Revisar skills faltantes en OpenClaw VPS
+
+Objetivo:
+
+- separar skills faltantes por drift de workspace de los huecos reales que si ameritan skill nueva
+
+Trabajo:
+
+- inventariar skills presentes en `~/.openclaw/workspace` vs `openclaw/workspace-templates/`
+- clasificar cada gap en:
+  - `sync desde skill existente`
+  - `skill existente mal cargada o no consumida`
+  - `skill nueva realmente necesaria`
+- proponer una priorizacion operativa por agente/canal
+
+Prioridad: media
 
 ## Conclusion
 

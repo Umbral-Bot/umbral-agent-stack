@@ -86,6 +86,12 @@ Referencia Notion API: [Append block children](https://developers.notion.com/ref
 1. **Config:** Variable de entorno `NOTION_DASHBOARD_PAGE_ID` (ID de la subpágina o página que actúa como dashboard). El Worker la usa solo para la tarea `notion.update_dashboard`.
 2. **Worker:** Tarea `notion.update_dashboard`: recibe `input.metrics` (dict nombre → valor), archiva el contenido actual de esa página y escribe un nuevo bloque con “Última actualización” + todas las métricas (doc 22). Handlers en `worker/notion_client.py` y `worker/tasks/notion.py`.
 3. **VPS:** `scripts/dashboard_report_vps.py` actualiza `Dashboard Rick` técnico por hora y deja tracking operativo en `ops_log`. `scripts/openclaw_panel_vps.py` mantiene `OpenClaw` humano con refresh por cambio real (proyectos, entregables, bandeja) y fallback cada 6 h.
+4. **Resumen de uso:** `Dashboard Rick` incluye un bloque compacto `Uso OpenClaw` con:
+   - eventos LLM trazados
+   - tokens y costo proxy
+   - provider primario de discovery
+   - cuántas veces Tavily entró como fallback
+   - agente con más tokens en snapshots de sesión
 
 **Variables necesarias en la VPS** (donde corre el Worker y/o el script):
 

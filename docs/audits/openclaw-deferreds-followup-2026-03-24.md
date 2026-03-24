@@ -204,11 +204,9 @@ Practical translation:
 
 ## Additional opportunities found
 
-1. Add a small exporter cron for the runtime snapshot so `reports/runtime/openclaw-runtime-snapshot-latest.json` can be refreshed automatically from VPS.
-2. Extend tracing for Gemini grounded search if the provider starts returning token usage or cost hints.
-3. Add a compact "usage summary" block to `Dashboard Rick` rather than exposing the full detail in Notion.
-4. Revalidate and, if needed, re-harden the fallback path between VPS and VM so the execution plane does not depend on a manually rechecked tailnet.
-5. Add retry/backoff specifically for `Gemini 503 UNAVAILABLE` on report-generation paths like `composite.research_report`.
+1. Extend tracing for Gemini grounded search if the provider starts returning token usage or cost hints.
+2. Revalidate and, if needed, re-harden the fallback path between VPS and VM so the execution plane does not depend on a manually rechecked tailnet.
+3. Add retry/backoff specifically for `Gemini 503 UNAVAILABLE` on report-generation paths like `composite.research_report`.
 
 ## Bottom line
 

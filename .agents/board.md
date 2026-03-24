@@ -63,6 +63,7 @@ Regularización `UMB-132` (2026-03-22): se cerraron task files históricos que h
 | 2026-03-24-009 | Diferidos OpenClaw: tailscale, tracking repo-side, costo y propuesta Tavily | codex | ✅ done |
 | 2026-03-24-010 | Fallback VM no invasivo + Gemini grounded como primario de discovery | codex | ✅ done |
 | 2026-03-24-011 | Gemini canonico, Tavily backup y tracking de necesidad futura | codex | ✅ done |
+| 2026-03-24-012 | OpenClaw: automatizar runtime snapshot y resumir uso en Dashboard Rick | codex | 🚧 in_progress |
 | 2026-03-24-002 | Accion 8: revisar skills faltantes en OpenClaw VPS y decidir sync vs skill nueva | codex | ✅ done |
 
 ## Pendientes diferidos post-fases
@@ -71,7 +72,7 @@ Regularización `UMB-132` (2026-03-22): se cerraron task files históricos que h
 - Decidir humanamente si Tavily se recarga, se deja como backend secundario o se retira del discovery ahora que `research.web` y `web_discovery.py` ya quedan cubiertos por Gemini grounded fallback.
 - Hardening OpenClaw residual aceptado: `gateway.trustedProxies` vacio mientras la Control UI siga local-only y warning `potential-exfiltration` del plugin `umbral-worker` por lectura deliberada de `tokenFile` con permisos `600`.
 - Reparar o revalidar reachability Tailscale VPS -> VM despues del reinicio del host; la recuperacion de internet de la VM quedo documentada, pero el tailnet end-to-end sigue degradado tras el reboot.
-- Automatizar, si se desea, un exporter cron para `reports/runtime/openclaw-runtime-snapshot-latest.json` y un resumen compacto de uso en `Dashboard Rick`.
+- Fallback VM no invasivo listo en scripts; sigue faltando una direccion host->VM realmente alcanzable para cerrar el tunel sin tocar la topologia Hyper-V.
 
 ## Ronda 16 — Cerrada
 

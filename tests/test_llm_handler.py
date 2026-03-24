@@ -140,12 +140,17 @@ def test_handle_llm_generate_success_with_mocked_gemini(monkeypatch):
     with patch(
         "worker.tasks.llm.urllib.request.urlopen",
         return_value=_DummyResponse(fake_payload),
-    ) as mock_urlopen:
+    ) as mock_urlopen, patch("worker.tasks.llm.ops_log.llm_usage") as mock_usage:
         result = handle_llm_generate(
             {
                 "prompt": "Dame un resumen ejecutivo.",
                 "max_tokens": 256,
                 "temperature": 0.4,
+                "_task_id": "task-123",
+                "_task_type": "analysis",
+                "_source": "openclaw_gateway",
+                "_source_kind": "tool_enqueue",
+                "_usage_component": "llm.generate",
             }
         )
 
@@ -163,6 +168,11 @@ def test_handle_llm_generate_success_with_mocked_gemini(monkeypatch):
     assert body["generationConfig"]["temperature"] == 0.4
     assert body["generationConfig"]["thinkingConfig"]["thinkingBudget"] == 128
     assert body["contents"][-1]["parts"][0]["text"] == "Dame un resumen ejecutivo."
+    mock_usage.assert_called_once()
+    usage_kwargs = mock_usage.call_args.kwargs
+    assert usage_kwargs["task_id"] == "task-123"
+    assert usage_kwargs["source"] == "openclaw_gateway"
+    assert usage_kwargs["usage_component"] == "llm.generate"
 
 
 def test_handle_llm_generate_success_with_mocked_vertex(monkeypatch):

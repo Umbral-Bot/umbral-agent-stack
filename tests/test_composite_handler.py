@@ -188,3 +188,32 @@ class TestCompositeResearchReport:
         # Access via the dict passed to handle_llm_generate
         call_input = mock_llm.call_args_list[1][0][0]
         assert "en" in call_input["system"]
+
+    @patch(LLM_PATCH)
+    @patch(RESEARCH_PATCH)
+    def test_composite_passes_usage_metadata_to_nested_llm_calls(self, mock_research, mock_llm):
+        from worker.tasks.composite import handle_composite_research_report
+
+        mock_research.return_value = _make_research_result("test", 1)
+        mock_llm.side_effect = [
+            _make_query_gen_result(["q1", "q2", "q3"]),
+            _make_llm_result("# Report"),
+        ]
+
+        handle_composite_research_report(
+            {
+                "topic": "Test",
+                "depth": "quick",
+                "_task_id": "task-xyz",
+                "_task_type": "analysis",
+                "_source": "openclaw_gateway",
+                "_source_kind": "tool_enqueue",
+            }
+        )
+
+        first_call = mock_llm.call_args_list[0][0][0]
+        second_call = mock_llm.call_args_list[1][0][0]
+        assert first_call["_task_id"] == "task-xyz"
+        assert first_call["_usage_component"] == "composite.research_report.query_generation"
+        assert second_call["_source"] == "openclaw_gateway"
+        assert second_call["_usage_component"] == "composite.research_report.report_generation"

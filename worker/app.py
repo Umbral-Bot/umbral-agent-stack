@@ -158,6 +158,20 @@ def _ops_context_from_envelope(envelope: Union[TaskEnvelope, Dict[str, Any]]) ->
     return ctx
 
 
+def _build_handler_input(envelope: TaskEnvelope) -> Dict[str, Any]:
+    payload = dict(envelope.input)
+    if envelope.task in {"llm.generate", "composite.research_report"}:
+        payload["_task_id"] = envelope.task_id
+        payload["_task_type"] = str(_ops_value(envelope.task_type))
+        if envelope.source:
+            payload["_source"] = str(envelope.source).strip()
+        if envelope.source_kind:
+            payload["_source_kind"] = str(envelope.source_kind).strip()
+        if envelope.task == "llm.generate":
+            payload["_usage_component"] = "llm.generate"
+    return payload
+
+
 # ---------------------------------------------------------------------------
 # Lifespan (startup / shutdown)
 # ---------------------------------------------------------------------------
@@ -521,7 +535,8 @@ async def run_task(
 
     try:
         loop = asyncio.get_event_loop()
-        result_data = await loop.run_in_executor(None, handler, envelope.input)
+        handler_input = _build_handler_input(envelope)
+        result_data = await loop.run_in_executor(None, handler, handler_input)
     except TaskExecutionError as exc:
         logger.warning("Task %s failed with structured error: %s", envelope.task, exc.log_message())
         ops_log.task_failed(

@@ -17,13 +17,13 @@ from worker.research_backends import (
 from worker.task_errors import TaskExecutionError
 
 
-def _should_try_gemini_fallback(error: TaskExecutionError) -> bool:
-    return error.provider == TAVILY_PROVIDER
+def _should_try_tavily_fallback(error: TaskExecutionError) -> bool:
+    return error.provider == GEMINI_SEARCH_PROVIDER
 
 
 def handle_research_web(input_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Busca en la web con Tavily como primario y Gemini grounded search como fallback real.
+    Busca en la web con Gemini grounded search como primario y Tavily como fallback secundario.
 
     Input:
         query (str, required): termino o pregunta de busqueda.
@@ -41,19 +41,19 @@ def handle_research_web(input_data: Dict[str, Any]) -> Dict[str, Any]:
     search_depth = str(input_data.get("search_depth", "basic") or "basic")
 
     try:
-        results = search_tavily(query, count, search_depth=search_depth)
-        return {"results": results, "count": len(results), "engine": TAVILY_PROVIDER}
-    except TaskExecutionError as tavily_error:
-        if not _should_try_gemini_fallback(tavily_error):
+        results = search_gemini_google_search(query, count)
+        return {"results": results, "count": len(results), "engine": GEMINI_SEARCH_PROVIDER}
+    except TaskExecutionError as gemini_error:
+        if not _should_try_tavily_fallback(gemini_error):
             raise
 
         try:
-            results = search_gemini_google_search(query, count)
+            results = search_tavily(query, count, search_depth=search_depth)
             return {
                 "results": results,
                 "count": len(results),
-                "engine": GEMINI_SEARCH_PROVIDER,
-                "fallback_reason": tavily_error.error_code,
+                "engine": TAVILY_PROVIDER,
+                "fallback_reason": gemini_error.error_code,
             }
         except TaskExecutionError:
-            raise tavily_error
+            raise gemini_error

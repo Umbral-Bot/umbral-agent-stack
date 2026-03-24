@@ -4,21 +4,21 @@
 
 ### Backend operativo actual
 
-**Tavily Search API** es el backend primario de discovery web en este stack.
+**Gemini grounded search** es el backend primario de discovery web en este stack.
 
-Si Tavily queda sin cuota, el path operativo real ahora cae a **Gemini grounded search**
-usando `GOOGLE_API_KEY` / `GOOGLE_API_KEY_NANO`. Google Custom Search se mantiene
+Si Gemini grounded search falla por auth, cuota o upstream, el path operativo real ahora cae a **Tavily Search API**
+si `TAVILY_API_KEY` esta disponible. Google Custom Search se mantiene
 solo como ruta legada/experimental porque los diagnosticos repetidos han dado `403`
 en proyectos nuevos o sin acceso historico. **Azure Bing no esta disponible**
 para cuentas nuevas (Microsoft depreco la creacion de recursos Bing Search).
 
 | Origen | Variable (VPS: `~/.config/openclaw/env`) | Free tier | Cómo obtener key |
 |--------|------------------------------------------|-----------|------------------|
-| **Tavily** | `TAVILY_API_KEY` | 1000 créditos/mes | [app.tavily.com](https://app.tavily.com) o [docs.tavily.com](https://docs.tavily.com) — API orientada a agentes AI |
 | **Gemini grounded search** | `GOOGLE_API_KEY` / `GOOGLE_API_KEY_NANO` | según proyecto/plan Gemini | Google AI Studio / Gemini API |
+| **Tavily** | `TAVILY_API_KEY` | 1000 créditos/mes | [app.tavily.com](https://app.tavily.com) o [docs.tavily.com](https://docs.tavily.com) — fallback secundario |
 | **Google Custom Search (legado)** | `GOOGLE_CSE_API_KEY_RICK_UMBRAL` + `GOOGLE_CSE_CX` | n/a | Solo para pruebas explícitas; requiere `--allow-google-legacy` o `WEB_DISCOVERY_ENABLE_GOOGLE_CSE=1` |
 
-**Uso:** `python scripts/web_discovery.py "keyword" [--count 5]` — usa Tavily por defecto y cae a Gemini grounded search si Tavily falla. Con `--force-tavily` obliga Tavily y salta cualquier fallback. Solo con `--allow-google-legacy` (o `WEB_DISCOVERY_ENABLE_GOOGLE_CSE=1`) intentará Google CSE como tercer intento.
+**Uso:** `python scripts/web_discovery.py "keyword" [--count 5]` — usa Gemini grounded search por defecto y cae a Tavily si Gemini falla. Con `--force-tavily` obliga Tavily y salta cualquier fallback. Solo con `--allow-google-legacy` (o `WEB_DISCOVERY_ENABLE_GOOGLE_CSE=1`) intentará Google CSE como tercer intento.
 
 Rick usa el mismo flujo (keywords → resultados → hallazgos); el script elige motor según disponibilidad.
 
@@ -46,7 +46,7 @@ Funciones que Rick puede usar o a las que puedes darle acceso para el embudo de 
 ### Prioridad sugerida para el embudo
 
 1. **Ya en uso:** Notion, Linear, VM/Drive, GitHub, SIM (Reddit + búsqueda cuando esté).
-2. **Siguiente:** mantener Tavily como backend primario de búsqueda, Gemini grounded search como fallback real y usar Telegram para resúmenes breves a David.
+2. **Siguiente:** mantener Gemini grounded search como backend primario de búsqueda, Tavily como fallback secundario y usar Telegram para resúmenes breves a David.
 3. **Después:** Hostinger para estado de infra; opcional calendario + CRM en Notion/Linear; formularios/webhooks si hay landing.
 
 ---

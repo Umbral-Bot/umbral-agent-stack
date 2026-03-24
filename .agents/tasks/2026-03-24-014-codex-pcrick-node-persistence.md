@@ -88,3 +88,28 @@ Bloqueo residual exacto:
 - rerun del script en la VM con el parche nuevo;
 - obtencion del `GatewayToken` real desde la VPS;
 - verificacion final en la VPS de que `PCRick` pase de `paired · disconnected` a `connected`.
+
+### [codex] 2026-03-24 19:20
+Segundo intento vivo en la VM:
+
+- el tunel manual con `ssh -i id_ed25519 -L 18790:127.0.0.1:18789 ...` ya responde `TcpTestSucceeded=True`;
+- al ejecutar el instalador corregido como Administrador, NSSM ya puede crear el servicio, pero `start openclaw-node-tunnel` devolvio `SERVICE_PAUSED`;
+- esto acota el problema a contexto de servicio Windows, no a red ni auth del gateway.
+
+Hallazgo nuevo:
+
+- el servicio NSSM corre como `SYSTEM`, mientras que el tunel manual corre como `Rick`;
+- la diferencia material es acceso de lectura a `C:\Users\Rick\.ssh\id_ed25519` y `known_hosts`.
+
+Accion repo-side adicional:
+
+- `scripts/vm/install_openclaw_node_stack.ps1` ahora otorga `SYSTEM:R` sobre:
+  - `id_ed25519`
+  - `known_hosts`
+- el runbook fue actualizado para reflejar que el tunel manual puede pasar aunque el servicio falle por ACLs.
+
+Bloqueo residual actualizado:
+
+- hacer `git pull` en la VM otra vez;
+- rerun del instalador ya con el parche de ACLs y el token real;
+- si el tunel abre `127.0.0.1:18790`, continuar con `openclaw node install` y validar en la VPS.

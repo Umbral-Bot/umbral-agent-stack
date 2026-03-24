@@ -141,6 +141,36 @@ grep '^WORKER_TOKEN=' ~/.config/openclaw/env | cut -d= -f2- > ~/.config/openclaw
 chmod 600 ~/.config/openclaw/worker-token
 ```
 
+## Gobernanza del workspace
+
+OpenClaw distingue dos archivos distintos en el workspace:
+
+- `BOOTSTRAP.md`: marcador de primer arranque / reconstruccion del workspace. Debe existir, pero no debe usarse como prompt operativo permanente.
+- `HEARTBEAT.md`: checklist persistente y breve que si conviene mantener por rol.
+
+Convencion canonica para este repo:
+
+- `BOOTSTRAP.md` vive versionado en `openclaw/workspace-templates/BOOTSTRAP.md` y se copia a todos los workspaces activos.
+- `HEARTBEAT.md` vive versionado en `openclaw/workspace-templates/HEARTBEAT.md` y puede tener overrides por agente en `openclaw/workspace-agent-overrides/<agentId>/HEARTBEAT.md`.
+- En workspaces maduros, `BOOTSTRAP.md` actua como ritual one-shot y no reemplaza a `AGENTS.md` ni a `HEARTBEAT.md`.
+
+Para sincronizar estos archivos en la VPS despues de `git pull`:
+
+```bash
+cd ~/umbral-agent-stack
+python3 scripts/sync_openclaw_workspace_governance.py --dry-run
+python3 scripts/sync_openclaw_workspace_governance.py --execute
+systemctl --user restart openclaw-gateway
+```
+
+Verificacion minima:
+
+```bash
+/home/rick/.npm-global/bin/openclaw status --all
+```
+
+Los agentes activos ya no deberian aparecer con `Bootstrap file ABSENT`.
+
 ## Acceso a Control UI
 
 ### Importante: no exponer los puertos 18789/18791 a internet

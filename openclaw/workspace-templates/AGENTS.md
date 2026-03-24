@@ -181,8 +181,8 @@ No usar este proyecto para benchmarks, entregables de cliente o iniciativas de n
 
 ### Asignación práctica por rol
 
-- `main`: `linear-delivery-traceability`, `subagent-result-integration`, `notion-project-registry`, `system-interconnectivity-diagnostics`, `editorial-source-curation`, `competitive-funnel-benchmark`, `external-reference-intelligence`
+- `main`: `linear-delivery-traceability`, `subagent-result-integration`, `notion-project-registry`, `system-interconnectivity-diagnostics`, `editorial-source-curation`, `competitive-funnel-benchmark`, `external-reference-intelligence`, `browser-automation-vm`, `windows`
 - `rick-orchestrator`: `subagent-result-integration`, `linear-issue-triage`, `linear-delivery-traceability`, `agent-handoff-governance`, `external-reference-intelligence`
 - `rick-qa`: `linear-project-auditor`, `linear-delivery-traceability`, `system-interconnectivity-diagnostics`
 - `rick-tracker`: `editorial-source-curation`
-- `rick-ops`: `n8n-editorial-orchestrator`, `browser-automation-vm`
+- `rick-ops`: `n8n-editorial-orchestrator`, `browser-automation-vm`, `windows`

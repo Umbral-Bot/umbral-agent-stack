@@ -26,9 +26,10 @@ La Accion 1 de este diagnostico ya fue ejecutada despues del barrido inicial:
 - La Accion 3 tambien quedo ejecutada: `research.web` y `scripts/web_discovery.py` comparten ahora un fallback real via Gemini grounded search. En la VPS, Tavily sigue respondiendo `432`, pero el runtime ya no queda degradado por eso.
 - La Accion 4 tambien quedo ejecutada: se saneo el store de sesiones de `main` (`55 -> 47` entradas), se reinicio el gateway para recargarlo y se archivaron 6 transcripts huérfanos con sufijo `*.deleted.<timestamp>`. `openclaw doctor` ya no reporta sesiones recientes sin transcript ni orphans en `main`.
 - La Accion 8 tambien quedo ejecutada: `main` ya tiene `external-reference-intelligence` y `windows`, `rick-qa` ya tiene `system-interconnectivity-diagnostics`, y `BROWSER_HEADLESS=false` quedo declarado en la env de OpenClaw para que `browser-automation-vm` no siga apareciendo como no elegible por falta de variable. Ver `docs/audits/openclaw-skills-role-selection-2026-03-24.md`.
+- La Accion 5 tambien quedo ejecutada: el plugin `umbral-worker` ya no depende de `WORKER_URL`, `WORKER_URL_VM_INTERACTIVE` ni `WORKER_TOKEN` via `process.env`; ahora usa `baseUrl`, `interactiveBaseUrl` y `tokenFile` explicitos en `plugins.entries.umbral-worker.config`. Tambien se removio `gpt-4.1` de fallbacks, se fijo `tools.profile = coding` a nivel global y se reemplazaron symlinks escapados por copias reales en los workspaces afectados. La auditoria de seguridad paso de `1 critical · 4 warn` a `0 critical · 2 warn`.
 - El estado bueno de red tras la intervencion en la VM tambien quedo asentado: se agrego una segunda NIC en Hyper-V (`Default Switch`) para restaurar internet de la VM sin quitar la NIC interna. La VM recupero salida web durante la intervencion; la reachability tailnet VPS -> VM debe revalidarse tras reinicios del host.
 
-El resto del documento preserva el barrido original del 2026-03-23, pero las secciones de resumen, estado por componente y plan ya reflejan el cierre de las Acciones 1-4 y 8.
+El resto del documento preserva el barrido original del 2026-03-23, pero las secciones de resumen, estado por componente y plan ya reflejan el cierre de las Acciones 1-5 y 8.
 
 ## Resumen ejecutivo
 
@@ -46,7 +47,9 @@ Lo que funciona bien:
 
 Lo que sigue pendiente:
 
-- El endurecimiento de seguridad de OpenClaw sigue incompleto: plugin `umbral-worker`, `trustedProxies`, perfil permisivo y drift de tool profile.
+- El hardening ya no tiene findings criticos, pero quedan dos residuales aceptados:
+  - `gateway.trustedProxies` vacio mientras la Control UI siga local-only por loopback/SSH tunnel/Tailscale directo
+  - warning `potential-exfiltration` del plugin `umbral-worker` por lectura deliberada de `tokenFile` con permisos `600`
 - Tavily sigue sin cuota como proveedor primario; queda pendiente decidir si se recarga, se deja como backend secundario o se retira del discovery ahora que Gemini grounded cubre el fallback real.
 
 ## Estado por componente
@@ -60,6 +63,7 @@ Lo que sigue pendiente:
 | Agentes | OK parcial | 6 agentes configurados; 3 activos recientemente |
 | Sessions | OK | store `main` saneado (`55 -> 47`), gateway reiniciado y `doctor` sin faltantes ni huérfanos |
 | Skills runtime | OK | workspace compartido y workspaces activos alineados por rol; `main` y `rick-qa` validados tras la Accion 8 |
+| Hardening OpenClaw | OK parcial | Accion 5 cerrada; `security audit` sin criticos y solo 2 warnings residuales aceptados |
 | Cron | OK con fallback operativo | jobs corren; discovery cae a Gemini grounded cuando Tavily responde `432` |
 | Bindings | Sin bindings | `openclaw agents bindings` -> `No routing bindings.` |
 | Nodos | Sin nodos | `Pending: 0 · Paired: 0` |
@@ -245,20 +249,29 @@ Impacto:
 - Se removieron 8 entradas rotas del store `main` y se archivaron 6 `.jsonl` huérfanos.
 - `openclaw doctor` ya no reporta faltantes ni orphans para el store `main`.
 
-### P2. Hardening de seguridad OpenClaw incompleto
+### Resuelto. Hardening de seguridad OpenClaw sin findings criticos
 
-Hallazgos:
+Estado:
 
-- `plugins.code_safety` critica el plugin `umbral-worker`
-- `gateway.trusted_proxies_missing`
-- `models.weak_tier` por `azure-openai-responses/gpt-4.1`
-- `plugins.tools_reachable_permissive_policy`
-- `skills.workspace.symlink_escape`
+- Resuelto por la Accion 5 el `2026-03-24`.
 
-Lectura correcta:
+Resultado:
 
-- no todo esto es "vulnerabilidad explotada"
-- pero si es deuda de hardening que debe clasificarse y resolverse
+- `plugins.code_safety` critico por env harvesting -> resuelto
+- `models.weak_tier` por `gpt-4.1` -> resuelto
+- `plugins.tools_reachable_permissive_policy` -> resuelto
+- `skills.workspace.symlink_escape` -> resuelto
+- warnings residuales aceptados:
+  - `gateway.trusted_proxies_missing` mientras la Control UI siga local-only
+  - `plugins.code_safety` warning `potential-exfiltration` porque el plugin lee un `tokenFile` dedicado con permisos `600` para autenticar el Worker
+
+Evidencia:
+
+- `openclaw security audit --deep` -> `0 critical · 2 warn · 2 info`
+- `openclaw agent --agent main ... umbral_provider_status` -> `OK-ACCION-5 redis_available=true`
+- `openclaw agent --agent rick-ops ...` -> OK
+- `openclaw agent --agent rick-tracker ...` -> OK
+- `rick-delivery` y `rick-orchestrator` ya no tienen symlinks en `skills/`
 
 ### P2. `BOOTSTRAP.md` ausente en workspaces activos
 
@@ -396,6 +409,8 @@ Resultado:
 
 ### Accion 5. Hardening de seguridad OpenClaw
 
+Estado: **cerrada el 2026-03-24**
+
 Objetivo:
 
 - reducir drift entre setup actual y setup defendible
@@ -406,6 +421,19 @@ Trabajo:
 - revisar `trustedProxies`
 - revisar perfil `coding` y entradas desconocidas en allowlist
 - decidir si el fallback `gpt-4.1` sigue siendo aceptable o no
+
+Resultado:
+
+- `tools.profile = coding` fijado a nivel global en la VPS
+- `azure-openai-responses/gpt-4.1` removido de `agents.defaults.model.fallbacks`
+- `umbral-worker` endurecido:
+  - `baseUrl` e `interactiveBaseUrl` desde `pluginConfig`
+  - `tokenFile` dedicado con permisos `600`
+- symlinks escapados reemplazados por copias reales en `rick-delivery` y `rick-orchestrator`
+- `openclaw security audit --deep` quedo en `0 critical · 2 warn`
+- warnings residuales aceptados:
+  - `gateway.trusted_proxies_missing` mientras la UI siga local-only
+  - `potential-exfiltration` del plugin por lectura deliberada de `tokenFile`
 
 Prioridad: media
 
@@ -429,31 +457,14 @@ Mantener anotados para despues del refresh/test general:
 - snapshot repo-side del tracking de paneles/OpenClaw a partir de `ops_log`
 - atribucion mas fina de costo/tokens por componente dentro de OpenClaw
 
-### Accion 8. Revisar skills faltantes en OpenClaw VPS
-
-Objetivo:
-
-- separar skills faltantes por drift de workspace de los huecos reales que si ameritan skill nueva
-
-Trabajo:
-
-- inventariar skills presentes en `~/.openclaw/workspace` vs `openclaw/workspace-templates/`
-- clasificar cada gap en:
-  - `sync desde skill existente`
-  - `skill existente mal cargada o no consumida`
-  - `skill nueva realmente necesaria`
-- proponer una priorizacion operativa por agente/canal
-
-Prioridad: media
-
 ## Conclusion
 
-OpenClaw esta **operativo**, el dashboard ya abre y el wiring principal con Umbral esta **vivo**. No esta caido ni roto como sistema. Con las Acciones 1-4 y 8 cerradas, ya no queda drift basico de topologia/workspace, degradacion runtime en discovery web, deuda de higiene en el store principal de sesiones ni brecha fina de skills por rol. Lo que sigue abierto es hardening, bootstrap/gobernanza por agente y la decision sobre el rol futuro de Tavily como proveedor.
+OpenClaw esta **operativo**, el dashboard ya abre y el wiring principal con Umbral esta **vivo**. No esta caido ni roto como sistema. Con las Acciones 1-5 y 8 cerradas, ya no queda drift basico de topologia/workspace, degradacion runtime en discovery web, deuda de higiene en el store principal de sesiones, brecha fina de skills por rol ni findings criticos de hardening. Lo que sigue abierto es bootstrap/gobernanza por agente, la decision sobre el rol futuro de Tavily como proveedor y los residuales aceptados de seguridad que solo tendria sentido tocar si cambia la topologia de exposicion del gateway.
 
-La siguiente ronda no deberia ser otra auditoria completa. Deberia ser una regularizacion quirurgica de OpenClaw en 3 frentes:
+La siguiente ronda no deberia ser otra auditoria completa. Deberia ser una regularizacion quirurgica de OpenClaw en 2 frentes y una decision operativa:
 
-1. hardening de seguridad
-2. bootstrap y gobernanza por agente
-3. decision Tavily/proveedor
+1. bootstrap y gobernanza por agente
+2. decision Tavily/proveedor
+3. revalidacion puntual de residuales si cambia la forma de exponer la Control UI
 
 Con eso, el siguiente test de OpenClaw ya puede enfocarse en confirmar mejora real y no en seguir encontrando drift basico.

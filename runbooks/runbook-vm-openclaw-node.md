@@ -46,6 +46,11 @@ ssh rick@187.77.60.169 exit
 
 Si pide password, primero hay que autorizar la clave publica de la VM en `~/.ssh/authorized_keys` de la VPS.
 
+Nota operativa:
+
+- el tunel manual puede funcionar aunque el servicio NSSM falle si `SYSTEM` no puede leer `id_ed25519` o `known_hosts`;
+- el instalador actual ya corrige eso con `icacls ... /grant SYSTEM:R` antes de iniciar el servicio.
+
 ## Script recomendado
 
 Usar el script del repo:

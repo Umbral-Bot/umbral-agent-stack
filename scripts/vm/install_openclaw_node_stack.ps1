@@ -60,6 +60,7 @@ function Test-LocalTunnel {
 $NssmExe = Get-RequiredCommand "nssm"
 $SshExe = Get-RequiredCommand "ssh.exe"
 $OpenClawExe = Get-RequiredCommand "openclaw"
+$IcaclsExe = Get-RequiredCommand "icacls.exe"
 
 if (-not $GatewayToken.Trim()) {
     throw "GatewayToken no puede quedar vacio."
@@ -101,6 +102,16 @@ Write-Host "Probando SSH sin interaccion..." -ForegroundColor Green
 & $SshExe "-i" $SshKeyPath "-o" "BatchMode=yes" "-o" "IdentitiesOnly=yes" "-o" "StrictHostKeyChecking=accept-new" "-o" "UserKnownHostsFile=$KnownHostsPath" $GatewaySshTarget "exit"
 if ($LASTEXITCODE -ne 0) {
     throw "La prueba SSH sin interaccion fallo. Autoriza la clave publica en la VPS antes de continuar."
+}
+
+Write-Host "Ajustando ACLs para que el servicio pueda leer la clave SSH..." -ForegroundColor Green
+& $IcaclsExe $SshKeyPath "/grant" "SYSTEM:R" | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    throw "No se pudo otorgar lectura a SYSTEM sobre '$SshKeyPath'."
+}
+& $IcaclsExe $KnownHostsPath "/grant" "SYSTEM:R" | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    throw "No se pudo otorgar lectura a SYSTEM sobre '$KnownHostsPath'."
 }
 
 # Reinstalar el servicio de tunel para asegurar args y logs correctos.

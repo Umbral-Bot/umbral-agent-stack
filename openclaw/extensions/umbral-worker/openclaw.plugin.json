@@ -11,6 +11,14 @@
         "type": "string",
         "description": "Optional override for the Worker base URL."
       },
+      "interactiveBaseUrl": {
+        "type": "string",
+        "description": "Optional override for browser/gui tools that must target the interactive Worker."
+      },
+      "tokenFile": {
+        "type": "string",
+        "description": "Path to a file that contains the Worker bearer token. Defaults to ~/.config/openclaw/worker-token."
+      },
       "defaultTeam": {
         "type": "string",
         "default": "system"

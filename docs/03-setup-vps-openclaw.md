@@ -99,6 +99,48 @@ WORKER_URL=http://...
 WORKER_TOKEN=...
 ```
 
+## Hardening minimo recomendado
+
+Para no dejar el gateway en el contexto implicito `full`, la config de OpenClaw en la VPS debe fijar un perfil base de tools y el plugin `umbral-worker` debe apuntar a un `baseUrl` explicito en `plugins.entries`.
+
+Ejemplo de fragmento recomendado en `~/.openclaw/openclaw.json`:
+
+```json
+{
+  "tools": {
+    "profile": "coding"
+  },
+  "plugins": {
+    "entries": {
+      "umbral-worker": {
+        "config": {
+          "baseUrl": "http://127.0.0.1:8088",
+          "interactiveBaseUrl": "http://100.109.16.40:8089",
+          "tokenFile": "~/.config/openclaw/worker-token",
+          "defaultTeam": "system",
+          "defaultTaskType": "general",
+          "timeoutMs": 120000
+        }
+      }
+    }
+  }
+}
+```
+
+Notas:
+
+- El plugin `umbral-worker` ya no debe depender de `WORKER_URL` como fallback generico dentro del gateway; el destino canonico se fija en `plugins.entries.umbral-worker.config.baseUrl`.
+- Si necesitas browser/gui contra la VM, define `interactiveBaseUrl` en `plugins.entries.umbral-worker.config` en vez de depender de `WORKER_URL_VM_INTERACTIVE` dentro del plugin.
+- El bearer token del plugin debe ir en `tokenFile` con permisos `600`; el plugin no debe leer `WORKER_TOKEN` directamente desde `process.env`.
+- `gateway.trustedProxies` solo debe configurarse si realmente expones la Control UI detras de un reverse proxy. Si accedes por loopback, Tailscale directo o tunel SSH, mantenerlo vacio es aceptable.
+
+Ejemplo para materializar `tokenFile` desde la env existente:
+
+```bash
+grep '^WORKER_TOKEN=' ~/.config/openclaw/env | cut -d= -f2- > ~/.config/openclaw/worker-token
+chmod 600 ~/.config/openclaw/worker-token
+```
+
 ## Acceso a Control UI
 
 ### Importante: no exponer los puertos 18789/18791 a internet

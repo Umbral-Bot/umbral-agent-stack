@@ -19,6 +19,8 @@ param(
     [string]$DisplayName = "PCRick",
     [string]$TunnelServiceName = "openclaw-node-tunnel",
     [string]$LogDir = "C:\openclaw-worker",
+    [string]$SshKeyPath = "$env:USERPROFILE\.ssh\id_ed25519",
+    [string]$KnownHostsPath = "$env:USERPROFILE\.ssh\known_hosts",
     [int]$LocalTunnelPort = 18790,
     [int]$GatewayPort = 18789
 )
@@ -63,16 +65,26 @@ if (-not $GatewayToken.Trim()) {
     throw "GatewayToken no puede quedar vacio."
 }
 
+if (-not (Test-Path $SshKeyPath)) {
+    throw "No se encontro la clave SSH en '$SshKeyPath'."
+}
+
+New-Item -ItemType Directory -Path (Split-Path -Parent $KnownHostsPath) -Force | Out-Null
+
 New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
 
 $stdoutLog = Join-Path $LogDir "openclaw-node-tunnel-stdout.log"
 $stderrLog = Join-Path $LogDir "openclaw-node-tunnel-stderr.log"
 
 $tunnelArgs = @(
+    "-i", $SshKeyPath,
     "-o", "ExitOnForwardFailure=yes",
+    "-o", "BatchMode=yes",
+    "-o", "IdentitiesOnly=yes",
     "-o", "ServerAliveInterval=30",
     "-o", "ServerAliveCountMax=3",
     "-o", "StrictHostKeyChecking=accept-new",
+    "-o", "UserKnownHostsFile=$KnownHostsPath",
     "-N",
     "-L", "$LocalTunnelPort`:127.0.0.1`:$GatewayPort",
     $GatewaySshTarget
@@ -81,7 +93,15 @@ $tunnelArgs = @(
 Write-Host "=== OpenClaw node persistence (PCRick) ===" -ForegroundColor Cyan
 Write-Host "Tunnel target: $GatewaySshTarget"
 Write-Host "Local tunnel: 127.0.0.1:$LocalTunnelPort -> VPS 127.0.0.1:$GatewayPort"
+Write-Host "SSH key: $SshKeyPath"
+Write-Host "known_hosts: $KnownHostsPath"
 Write-Host ""
+
+Write-Host "Probando SSH sin interaccion..." -ForegroundColor Green
+& $SshExe "-i" $SshKeyPath "-o" "BatchMode=yes" "-o" "IdentitiesOnly=yes" "-o" "StrictHostKeyChecking=accept-new" "-o" "UserKnownHostsFile=$KnownHostsPath" $GatewaySshTarget "exit"
+if ($LASTEXITCODE -ne 0) {
+    throw "La prueba SSH sin interaccion fallo. Autoriza la clave publica en la VPS antes de continuar."
+}
 
 # Reinstalar el servicio de tunel para asegurar args y logs correctos.
 Invoke-Nssm -Arguments @("stop", $TunnelServiceName) -AllowFailure

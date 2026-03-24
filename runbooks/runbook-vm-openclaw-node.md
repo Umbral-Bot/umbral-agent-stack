@@ -35,7 +35,16 @@ Referencia oficial:
 - `ssh.exe` en PATH (`ssh -V`)
 - `nssm` en PATH (`nssm version`)
 - acceso SSH desde la VM hacia la VPS (`rick@187.77.60.169` o el target que corresponda)
+- clave SSH local en `C:\Users\Rick\.ssh\id_ed25519` (o pasar otra ruta via parametro)
 - token del gateway de OpenClaw en la VPS
+
+Antes del instalador, conviene dejar validado esto:
+
+```powershell
+ssh rick@187.77.60.169 exit
+```
+
+Si pide password, primero hay que autorizar la clave publica de la VM en `~/.ssh/authorized_keys` de la VPS.
 
 ## Script recomendado
 
@@ -64,6 +73,12 @@ powershell -ExecutionPolicy Bypass -File .\scripts\vm\install_openclaw_node_stac
 ```
 
 Si tu acceso SSH a la VPS usa otro hostname o usuario, cambia `-GatewaySshTarget`.
+Si la clave no esta en `C:\Users\Rick\.ssh\id_ed25519`, agrega:
+
+```powershell
+  -SshKeyPath "C:\ruta\clave_ed25519" `
+  -KnownHostsPath "C:\ruta\known_hosts"
+```
 
 ## Verificacion en la VM
 

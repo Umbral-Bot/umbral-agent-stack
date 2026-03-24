@@ -106,6 +106,7 @@ if (-not (Test-Path "$SshKeyPath.pub")) {
 
 $stdoutLog = Join-Path $LogDir "openclaw-node-tunnel-stdout.log"
 $stderrLog = Join-Path $LogDir "openclaw-node-tunnel-stderr.log"
+$nodeTaskScript = Join-Path $env:USERPROFILE ".openclaw\node.cmd"
 
 $tunnelArgs = @(
     "-i", $SshKeyPath,
@@ -211,6 +212,20 @@ Write-Host "Instalando servicio oficial del node OpenClaw..." -ForegroundColor G
 & $OpenClawExe node install --host 127.0.0.1 --port $LocalTunnelPort --display-name $DisplayName --force
 if ($LASTEXITCODE -ne 0) {
     throw "openclaw node install fallo."
+}
+
+if (Test-Path $nodeTaskScript) {
+    $nodeTaskContent = Get-Content -Path $nodeTaskScript -Raw -ErrorAction Stop
+    if ($nodeTaskContent -notmatch "OPENCLAW_GATEWAY_TOKEN") {
+        Write-Host "Parcheando node.cmd para inyectar OPENCLAW_GATEWAY_TOKEN..." -ForegroundColor Yellow
+        $tokenInject = 'for /f "usebackq delims=" %%i in ("C:\openclaw-worker\openclaw-gateway-token") do set "OPENCLAW_GATEWAY_TOKEN=%%i"'
+        $nodeTaskContent = $nodeTaskContent -replace 'set "OPENCLAW_SERVICE_VERSION=([^\r\n]+)"', "set `"OPENCLAW_SERVICE_VERSION=`$1`"`r`n$tokenInject"
+    }
+    if ($nodeTaskContent -match " --tls(\s|$)") {
+        Write-Host "Parcheando node.cmd para quitar --tls contra gateway loopback tunneleado..." -ForegroundColor Yellow
+        $nodeTaskContent = $nodeTaskContent -replace " --tls(?=(\s|$))", ""
+    }
+    Set-Content -Path $nodeTaskScript -Value $nodeTaskContent -NoNewline
 }
 
 Write-Host "Reiniciando node OpenClaw..." -ForegroundColor Green

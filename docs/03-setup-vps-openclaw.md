@@ -239,8 +239,8 @@ bash ~/umbral-agent-stack/scripts/vps/openclaw-runtime-snapshot-cron.sh
 
 Archivos actualizados:
 
-- `reports/runtime/openclaw-runtime-snapshot-latest.json`
-- `reports/runtime/openclaw-runtime-snapshot-latest.md`
+- `reports/runtime/generated/openclaw-runtime-snapshot-latest.json`
+- `reports/runtime/generated/openclaw-runtime-snapshot-latest.md`
 
 Cron recomendado:
 

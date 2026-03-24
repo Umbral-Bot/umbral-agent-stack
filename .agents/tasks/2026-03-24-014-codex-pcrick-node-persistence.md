@@ -113,3 +113,17 @@ Bloqueo residual actualizado:
 - hacer `git pull` en la VM otra vez;
 - rerun del instalador ya con el parche de ACLs y el token real;
 - si el tunel abre `127.0.0.1:18790`, continuar con `openclaw node install` y validar en la VPS.
+
+### [codex] 2026-03-24 20:05
+Tercer ajuste repo-side tras prueba viva:
+
+- el rerun como Administrador ya paso la prueba SSH, creo el servicio NSSM y solo fallo en `start openclaw-node-tunnel` con `SERVICE_PAUSED`;
+- para reducir diferencias entre el tunel manual exitoso y el servicio, el instalador ahora:
+  - persiste el token en `C:\openclaw-worker\openclaw-gateway-token`;
+  - permite omitir `-GatewayToken` en reruns futuros si ese archivo ya existe;
+  - fija `HOME`, `USERPROFILE`, `HOMEDRIVE` y `HOMEPATH` via `AppEnvironmentExtra` para el servicio NSSM.
+
+Objetivo del ajuste:
+
+- evitar que el servicio arranque con contexto de perfil ambiguo;
+- evitar tener que pegar el token del gateway en cada intento.

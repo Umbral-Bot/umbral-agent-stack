@@ -12,13 +12,13 @@
 
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true)]
-    [string]$GatewayToken,
+    [string]$GatewayToken = "",
 
     [string]$GatewaySshTarget = "rick@187.77.60.169",
     [string]$DisplayName = "PCRick",
     [string]$TunnelServiceName = "openclaw-node-tunnel",
     [string]$LogDir = "C:\openclaw-worker",
+    [string]$GatewayTokenFile = "C:\openclaw-worker\openclaw-gateway-token",
     [string]$SshKeyPath = "$env:USERPROFILE\.ssh\id_ed25519",
     [string]$KnownHostsPath = "$env:USERPROFILE\.ssh\known_hosts",
     [int]$LocalTunnelPort = 18790,
@@ -63,7 +63,13 @@ $OpenClawExe = Get-RequiredCommand "openclaw"
 $IcaclsExe = Get-RequiredCommand "icacls.exe"
 
 if (-not $GatewayToken.Trim()) {
-    throw "GatewayToken no puede quedar vacio."
+    if (Test-Path $GatewayTokenFile) {
+        $GatewayToken = (Get-Content -Path $GatewayTokenFile -Raw -ErrorAction Stop).Trim()
+    }
+}
+
+if (-not $GatewayToken.Trim()) {
+    throw "GatewayToken no puede quedar vacio y tampoco existe '$GatewayTokenFile'."
 }
 
 if (-not (Test-Path $SshKeyPath)) {
@@ -94,6 +100,7 @@ $tunnelArgs = @(
 Write-Host "=== OpenClaw node persistence (PCRick) ===" -ForegroundColor Cyan
 Write-Host "Tunnel target: $GatewaySshTarget"
 Write-Host "Local tunnel: 127.0.0.1:$LocalTunnelPort -> VPS 127.0.0.1:$GatewayPort"
+Write-Host "Gateway token file: $GatewayTokenFile"
 Write-Host "SSH key: $SshKeyPath"
 Write-Host "known_hosts: $KnownHostsPath"
 Write-Host ""
@@ -114,11 +121,26 @@ if ($LASTEXITCODE -ne 0) {
     throw "No se pudo otorgar lectura a SYSTEM sobre '$KnownHostsPath'."
 }
 
+Set-Content -Path $GatewayTokenFile -Value $GatewayToken -NoNewline
+& $IcaclsExe $GatewayTokenFile "/grant" "SYSTEM:R" | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    throw "No se pudo otorgar lectura a SYSTEM sobre '$GatewayTokenFile'."
+}
+
 # Reinstalar el servicio de tunel para asegurar args y logs correctos.
 Invoke-Nssm -Arguments @("stop", $TunnelServiceName) -AllowFailure
 Invoke-Nssm -Arguments @("remove", $TunnelServiceName, "confirm") -AllowFailure
 Invoke-Nssm -Arguments @("install", $TunnelServiceName, $SshExe, ($tunnelArgs -join " "))
 Invoke-Nssm -Arguments @("set", $TunnelServiceName, "AppDirectory", $env:USERPROFILE)
+Invoke-Nssm -Arguments @(
+    "set",
+    $TunnelServiceName,
+    "AppEnvironmentExtra",
+    "HOME=$env:USERPROFILE",
+    "USERPROFILE=$env:USERPROFILE",
+    "HOMEDRIVE=$env:HOMEDRIVE",
+    "HOMEPATH=$env:HOMEPATH"
+)
 Invoke-Nssm -Arguments @("set", $TunnelServiceName, "Start", "SERVICE_AUTO_START")
 Invoke-Nssm -Arguments @("set", $TunnelServiceName, "AppStdout", $stdoutLog)
 Invoke-Nssm -Arguments @("set", $TunnelServiceName, "AppStderr", $stderrLog)

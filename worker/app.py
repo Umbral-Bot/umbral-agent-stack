@@ -160,7 +160,7 @@ def _ops_context_from_envelope(envelope: Union[TaskEnvelope, Dict[str, Any]]) ->
 
 def _build_handler_input(envelope: TaskEnvelope) -> Dict[str, Any]:
     payload = dict(envelope.input)
-    if envelope.task in {"llm.generate", "composite.research_report"}:
+    if envelope.task in {"llm.generate", "composite.research_report", "research.web"}:
         payload["_task_id"] = envelope.task_id
         payload["_task_type"] = str(_ops_value(envelope.task_type))
         if envelope.source:

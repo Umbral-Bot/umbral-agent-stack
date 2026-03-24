@@ -65,6 +65,21 @@ def test_build_snapshot_aggregates_panel_and_llm_usage():
             "duration_ms": 1500,
             "ts": "2026-03-24T20:13:00+00:00",
         },
+        {
+            "event": "research_usage",
+            "provider": "gemini_google_search",
+            "result_count": 3,
+            "source": "openclaw_gateway",
+            "ts": "2026-03-24T20:14:00+00:00",
+        },
+        {
+            "event": "research_usage",
+            "provider": "tavily",
+            "result_count": 1,
+            "fallback_reason": "research_provider_quota_exceeded",
+            "source": "openclaw_gateway",
+            "ts": "2026-03-24T20:15:00+00:00",
+        },
     ]
 
     report = snapshot.build_snapshot(events, days=7)
@@ -76,6 +91,9 @@ def test_build_snapshot_aggregates_panel_and_llm_usage():
     assert report["llm_usage"]["tracked"] is True
     assert report["llm_usage"]["tokens_total"] == 570
     assert report["llm_usage"]["by_provider"][0]["name"] == "vertex"
+    assert report["research_usage"]["tracked"] is True
+    assert report["research_usage"]["by_provider"][0]["name"] == "gemini_google_search"
+    assert report["research_usage"]["by_provider"][1]["fallback_calls"] == 1
     assert report["sessions_usage"]["tracked"] is False
 
 
@@ -200,6 +218,18 @@ def test_to_markdown_mentions_limitations_and_panels():
                 }
             ],
         },
+        "research_usage": {
+            "tracked": True,
+            "tracked_events": 2,
+            "by_provider": [
+                {
+                    "name": "gemini_google_search",
+                    "calls": 1,
+                    "fallback_calls": 0,
+                    "result_count": 3,
+                }
+            ],
+        },
         "sessions_usage": {
             "tracked": True,
             "root": "/tmp/openclaw-agents",
@@ -233,6 +263,7 @@ def test_to_markdown_mentions_limitations_and_panels():
     assert "## Paneles" in rendered
     assert "dashboard_rick" in rendered
     assert "## LLM usage" in rendered
+    assert "## Research usage" in rendered
     assert "## Session usage" in rendered
     assert "/tmp/openclaw-agents" in rendered
     assert "Limitation A" in rendered

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
+from infra.ops_logger import ops_log
 from worker.research_backends import (
     GEMINI_SEARCH_PROVIDER,
     TAVILY_PROVIDER,
@@ -39,9 +40,24 @@ def handle_research_web(input_data: Dict[str, Any]) -> Dict[str, Any]:
 
     count = min(int(input_data.get("count", 5)), 20)
     search_depth = str(input_data.get("search_depth", "basic") or "basic")
+    task_id = str(input_data.get("_task_id") or "").strip() or None
+    task_type = str(input_data.get("_task_type") or "").strip() or None
+    source = str(input_data.get("_source") or "").strip() or None
+    source_kind = str(input_data.get("_source_kind") or "").strip() or None
 
     try:
         results = search_gemini_google_search(query, count)
+        try:
+            ops_log.research_usage(
+                provider=GEMINI_SEARCH_PROVIDER,
+                result_count=len(results),
+                task_id=task_id,
+                task_type=task_type,
+                source=source,
+                source_kind=source_kind,
+            )
+        except Exception:
+            pass
         return {"results": results, "count": len(results), "engine": GEMINI_SEARCH_PROVIDER}
     except TaskExecutionError as gemini_error:
         if not _should_try_tavily_fallback(gemini_error):
@@ -49,6 +65,18 @@ def handle_research_web(input_data: Dict[str, Any]) -> Dict[str, Any]:
 
         try:
             results = search_tavily(query, count, search_depth=search_depth)
+            try:
+                ops_log.research_usage(
+                    provider=TAVILY_PROVIDER,
+                    result_count=len(results),
+                    fallback_reason=gemini_error.error_code,
+                    task_id=task_id,
+                    task_type=task_type,
+                    source=source,
+                    source_kind=source_kind,
+                )
+            except Exception:
+                pass
             return {
                 "results": results,
                 "count": len(results),

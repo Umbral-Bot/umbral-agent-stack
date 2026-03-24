@@ -48,6 +48,7 @@ def test_handle_research_web_re_raises_gemini_not_configured_when_no_fallback(mo
 
 
 def test_handle_research_web_success_with_gemini(monkeypatch):
+    captured = {}
     monkeypatch.setattr(
         research_task,
         "search_gemini_google_search",
@@ -64,15 +65,23 @@ def test_handle_research_web_success_with_gemini(monkeypatch):
         raise AssertionError("Tavily fallback should not run when Gemini succeeds")
 
     monkeypatch.setattr(research_task, "search_tavily", _unexpected_tavily)
+    monkeypatch.setattr(
+        research_task.ops_log,
+        "research_usage",
+        lambda **kwargs: captured.update(kwargs),
+    )
 
     result = research_task.handle_research_web({"query": "BIM LATAM", "count": 3, "search_depth": "advanced"})
 
     assert result["engine"] == research_task.GEMINI_SEARCH_PROVIDER
     assert result["count"] == 1
     assert result["results"][0]["title"] == "Gemini result"
+    assert captured["provider"] == research_task.GEMINI_SEARCH_PROVIDER
+    assert captured["result_count"] == 1
 
 
 def test_handle_research_web_falls_back_to_tavily_on_gemini_quota(monkeypatch):
+    captured = {}
     monkeypatch.setattr(
         research_task,
         "search_gemini_google_search",
@@ -98,6 +107,11 @@ def test_handle_research_web_falls_back_to_tavily_on_gemini_quota(monkeypatch):
             }
         ],
     )
+    monkeypatch.setattr(
+        research_task.ops_log,
+        "research_usage",
+        lambda **kwargs: captured.update(kwargs),
+    )
 
     result = research_task.handle_research_web({"query": "BIM LATAM"})
 
@@ -105,3 +119,5 @@ def test_handle_research_web_falls_back_to_tavily_on_gemini_quota(monkeypatch):
     assert result["fallback_reason"] == "research_provider_quota_exceeded"
     assert result["count"] == 1
     assert result["results"][0]["url"].startswith("https://")
+    assert captured["provider"] == research_task.TAVILY_PROVIDER
+    assert captured["fallback_reason"] == "research_provider_quota_exceeded"

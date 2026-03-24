@@ -176,6 +176,26 @@ class TestTraceabilityContext:
         assert events[0]["source_kind"] == "tool_enqueue"
         assert events[0]["usage_component"] == "llm.generate"
 
+    def test_research_usage_includes_provider_and_fallback(self, ops_logger):
+        ops_logger.research_usage(
+            provider="tavily",
+            result_count=3,
+            fallback_reason="research_provider_quota_exceeded",
+            task_id="task-456",
+            task_type="research",
+            source="openclaw_gateway",
+            source_kind="tool_run",
+        )
+        events = ops_logger.read_events(event_filter="research_usage")
+        assert len(events) == 1
+        assert events[0]["provider"] == "tavily"
+        assert events[0]["result_count"] == 3
+        assert events[0]["fallback_reason"] == "research_provider_quota_exceeded"
+        assert events[0]["task_id"] == "task-456"
+        assert events[0]["task_type"] == "research"
+        assert events[0]["source"] == "openclaw_gateway"
+        assert events[0]["source_kind"] == "tool_run"
+
 
 # ---------------------------------------------------------------------------
 # input_summary tests

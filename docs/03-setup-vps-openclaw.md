@@ -250,7 +250,13 @@ Cron recomendado:
 
 ## OpenClaw Node en la VM (PCRick)
 
-El nodo OpenClaw en la VM conecta al gateway de la VPS via Tailscale, permitiendo a Rick controlar el navegador y otros recursos en PCRick.
+El nodo OpenClaw en la VM no debe apuntar directo al host remoto mientras el gateway de la VPS siga en `loopback`. La ruta correcta es:
+
+1. tunel SSH desde la VM hacia la VPS;
+2. puerto local en la VM, por ejemplo `127.0.0.1:18790`;
+3. `openclaw node install --host 127.0.0.1 --port 18790`.
+
+Esto mantiene la Control UI privada y evita abrir mas superficie de red solo para el node remoto.
 
 ### Token del gateway
 
@@ -262,16 +268,24 @@ openclaw config set gateway.auth.token "$NEW_TOKEN"
 systemctl --user restart openclaw-gateway
 ```
 
-2. En la VM:
+2. En la VM, ejecutar el script del repo:
 
 ```powershell
-$env:OPENCLAW_GATEWAY_TOKEN = "EL_TOKEN_GENERADO"
-openclaw node run --host srv1431451.tail0b266a.ts.net --port 18789 --tls
+cd C:\GitHub\umbral-agent-stack
+powershell -ExecutionPolicy Bypass -File .\scripts\vm\install_openclaw_node_stack.ps1 `
+  -GatewayToken "EL_TOKEN_GENERADO" `
+  -GatewaySshTarget "rick@187.77.60.169" `
+  -DisplayName "PCRick"
 ```
 
 ### Arranque automatico
 
-Para que el node arranque tras reiniciar la VM, usar el servicio NSSM segun [runbooks/runbook-vm-openclaw-node.md](../runbooks/runbook-vm-openclaw-node.md).
+El script instala:
+
+- un servicio NSSM `openclaw-node-tunnel` para el tunel SSH persistente;
+- el servicio oficial de OpenClaw via `openclaw node install`.
+
+Runbook detallado: [runbooks/runbook-vm-openclaw-node.md](../runbooks/runbook-vm-openclaw-node.md).
 
 ### Aprobar dispositivos pendientes
 
@@ -279,6 +293,8 @@ Para que el node arranque tras reiniciar la VM, usar el servicio NSSM segun [run
 openclaw devices list
 openclaw devices approve <requestId>
 ```
+
+Si `PCRick` ya aparece como `paired`, no necesariamente habra una nueva aprobacion; puede bastar con que pase de `paired · disconnected` a `connected`.
 
 ## Notion como tool
 

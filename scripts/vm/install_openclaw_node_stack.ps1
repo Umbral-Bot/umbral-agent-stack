@@ -64,7 +64,10 @@ $IcaclsExe = Get-RequiredCommand "icacls.exe"
 
 if ([string]::IsNullOrWhiteSpace($GatewayToken)) {
     if (Test-Path $GatewayTokenFile) {
-        $GatewayToken = (Get-Content -Path $GatewayTokenFile -Raw -ErrorAction Stop).Trim()
+        $cachedToken = Get-Content -Path $GatewayTokenFile -Raw -ErrorAction Stop
+        if (-not [string]::IsNullOrWhiteSpace($cachedToken)) {
+            $GatewayToken = $cachedToken.Trim()
+        }
     }
 }
 

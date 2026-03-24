@@ -1,4 +1,5 @@
 """Tests for Linear integration."""
+from datetime import datetime, timedelta, timezone
 import pytest
 from unittest.mock import patch
 
@@ -222,14 +223,15 @@ class TestLinearTasks:
     def test_publish_agent_stack_followup_reuses_recent_open_issue_by_fingerprint(self):
         from worker.tasks.linear import handle_linear_publish_agent_stack_followup
 
+        recent_ts = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat().replace("+00:00", "Z")
         existing_issue = {
             "id": "issue-9",
             "identifier": "UMB-140",
             "title": "[Agent Stack] Task fallida: llm.generate [system/coding]",
             "description": "Resumen\n...\n\nFingerprint: `fp-123`\n",
             "url": "https://linear.app/umbral/issue/UMB-140",
-            "createdAt": "2026-03-23T10:00:00Z",
-            "updatedAt": "2026-03-23T10:05:00Z",
+            "createdAt": recent_ts,
+            "updatedAt": recent_ts,
             "project": {"id": "project-1", "name": "Mejora Continua Agent Stack"},
             "state": {"id": "state-1", "name": "Todo", "type": "backlog"},
             "team": {"id": "team-1", "name": "Umbral", "key": "UMB"},

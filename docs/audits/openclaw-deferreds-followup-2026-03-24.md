@@ -206,7 +206,7 @@ Practical translation:
 
 1. Extend tracing for Gemini grounded search if the provider starts returning token usage or cost hints.
 2. Revalidate and, if needed, re-harden the fallback path between VPS and VM so the execution plane does not depend on a manually rechecked tailnet.
-3. Add retry/backoff specifically for `Gemini 503 UNAVAILABLE` on report-generation paths like `composite.research_report`.
+3. Keep validating whether `composite.research_report` still needs stronger retry policy beyond the acotado `Gemini 503 UNAVAILABLE` handling already added in the post-Rick follow-up.
 
 ## Bottom line
 

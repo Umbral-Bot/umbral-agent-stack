@@ -158,6 +158,20 @@ Bloqueo residual actualizado:
 - rerun del instalador;
 - verificar si el tunel deja finalmente `127.0.0.1:18790` en estado abierto y si `PCRick` pasa a `connected`.
 
+### [codex] 2026-03-24 21:18
+Septimo ajuste repo-side tras prueba viva en Windows:
+
+- el nuevo enfoque con `ssh-keygen` dedicado tambien fallo por incompatibilidad de `ssh-keygen -N ""` bajo PowerShell/OpenSSH para Windows (`Too many arguments`);
+- para no seguir peleando con quoting de `ssh-keygen`, el instalador ahora usa una ruta mas simple y robusta:
+  - copia la clave bootstrap ya autorizada de `C:\Users\Rick\.ssh\id_ed25519` hacia `C:\openclaw-worker\.ssh\id_ed25519`;
+  - fija ACLs estrictas en la copia dedicada del servicio;
+  - el servicio NSSM ya no usa la clave personal en su ubicacion original, sino la copia endurecida.
+
+Motivo:
+
+- la clave bootstrap ya prueba que autentica contra la VPS;
+- el problema real era el path y las ACLs del archivo bajo el perfil de usuario, no la validez criptografica de la clave.
+
 ### [codex] 2026-03-24 20:05
 Tercer ajuste repo-side tras prueba viva:
 

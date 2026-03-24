@@ -61,7 +61,6 @@ function Test-LocalTunnel {
 
 $NssmExe = Get-RequiredCommand "nssm"
 $SshExe = Get-RequiredCommand "ssh.exe"
-$SshKeygenExe = Get-RequiredCommand "ssh-keygen.exe"
 $OpenClawExe = Get-RequiredCommand "openclaw"
 $IcaclsExe = Get-RequiredCommand "icacls.exe"
 
@@ -90,15 +89,19 @@ if ((-not (Test-Path $KnownHostsPath)) -and (Test-Path $BootstrapKnownHostsPath)
 }
 
 if (-not (Test-Path $SshKeyPath)) {
-    Write-Host "Generando clave SSH dedicada para el servicio..." -ForegroundColor Green
-    & $SshKeygenExe "-t" "ed25519" "-f" $SshKeyPath "-N" "" "-C" "pcrick-openclaw-service"
-    if ($LASTEXITCODE -ne 0) {
-        throw "ssh-keygen fallo al crear '$SshKeyPath'."
+    Write-Host "Copiando clave SSH bootstrap a la ruta dedicada del servicio..." -ForegroundColor Green
+    Copy-Item -Path $BootstrapSshKeyPath -Destination $SshKeyPath -Force
+    if (Test-Path "$BootstrapSshKeyPath.pub") {
+        Copy-Item -Path "$BootstrapSshKeyPath.pub" -Destination "$SshKeyPath.pub" -Force
     }
 }
 
 if (-not (Test-Path "$SshKeyPath.pub")) {
-    throw "No se encontro la clave publica del servicio en '$SshKeyPath.pub'."
+    if (Test-Path "$BootstrapSshKeyPath.pub") {
+        Copy-Item -Path "$BootstrapSshKeyPath.pub" -Destination "$SshKeyPath.pub" -Force
+    } else {
+        throw "No se encontro la clave publica del servicio en '$SshKeyPath.pub'."
+    }
 }
 
 $stdoutLog = Join-Path $LogDir "openclaw-node-tunnel-stdout.log"

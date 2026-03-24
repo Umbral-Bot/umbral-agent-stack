@@ -66,6 +66,8 @@ Regularización `UMB-132` (2026-03-22): se cerraron task files históricos que h
 | 2026-03-24-012 | OpenClaw: automatizar runtime snapshot y resumir uso en Dashboard Rick | codex | ✅ done |
 | 2026-03-24-002 | Accion 8: revisar skills faltantes en OpenClaw VPS y decidir sync vs skill nueva | codex | ✅ done |
 
+| 2026-03-24-013 | Follow-up post-Rick: aterrar diagnostico real y endurecer composite.research_report | codex | ✅ done |
+
 ## Pendientes diferidos post-fases
 
 - Exact billing-grade attribution de costo/tokens para `research.web` y session caching de OpenClaw; hoy ya existe snapshot repo-side y costo proxy, pero no facturacion oficial por request.

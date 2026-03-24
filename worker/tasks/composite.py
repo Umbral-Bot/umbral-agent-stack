@@ -7,7 +7,7 @@ Tasks: Composite Research Report.
 
 import logging
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from .research import handle_research_web
 from .llm import handle_llm_generate
@@ -42,6 +42,86 @@ REPORT_USER_PROMPT = (
     "4. **Recomendaciones** — actionable recommendations\n\n"
     "---\n\nResearch Data:\n\n{research_data}"
 )
+
+REPORT_GENERATION_MAX_ATTEMPTS = 3
+REPORT_GENERATION_BACKOFF_SECONDS = 1.0
+
+
+class ReportGenerationError(RuntimeError):
+    def __init__(self, message: str, *, attempts: int):
+        super().__init__(message)
+        self.attempts = attempts
+
+
+def _is_retryable_report_generation_error(exc: Exception) -> bool:
+    text = str(exc or "").lower()
+    retry_markers = (
+        "503",
+        "unavailable",
+        "timeout",
+        "timed out",
+        "deadline exceeded",
+        "temporarily unavailable",
+        "connection reset",
+        "connection aborted",
+    )
+    return any(marker in text for marker in retry_markers)
+
+
+def _build_report_generation_payload(
+    *,
+    topic: str,
+    research_data: str,
+    language: str,
+) -> Dict[str, Any]:
+    return {
+        "prompt": REPORT_USER_PROMPT.format(topic=topic, research_data=research_data),
+        "system": REPORT_SYSTEM_PROMPT.format(language=language),
+        "max_tokens": 4096,
+        "temperature": 0.5,
+        "_task_id": _ACTIVE_CONTEXT.get("task_id"),
+        "_task_type": _ACTIVE_CONTEXT.get("task_type"),
+        "_source": _ACTIVE_CONTEXT.get("source"),
+        "_source_kind": _ACTIVE_CONTEXT.get("source_kind"),
+        "_usage_component": "composite.research_report.report_generation",
+    }
+
+
+def _generate_report_with_retry(
+    *,
+    topic: str,
+    research_data: str,
+    language: str,
+) -> Tuple[str, int]:
+    payload = _build_report_generation_payload(
+        topic=topic,
+        research_data=research_data,
+        language=language,
+    )
+    last_error: Optional[Exception] = None
+
+    for attempt in range(1, REPORT_GENERATION_MAX_ATTEMPTS + 1):
+        try:
+            llm_result = handle_llm_generate(payload)
+            return llm_result.get("text", ""), attempt
+        except Exception as exc:
+            last_error = exc
+            if attempt >= REPORT_GENERATION_MAX_ATTEMPTS or not _is_retryable_report_generation_error(exc):
+                raise ReportGenerationError(str(exc), attempts=attempt) from exc
+            sleep_seconds = REPORT_GENERATION_BACKOFF_SECONDS * attempt
+            logger.warning(
+                "LLM report generation transient failure on attempt %d/%d for topic %r: %s. Retrying in %.1fs",
+                attempt,
+                REPORT_GENERATION_MAX_ATTEMPTS,
+                topic,
+                exc,
+                sleep_seconds,
+            )
+            time.sleep(sleep_seconds)
+
+    if last_error is not None:
+        raise ReportGenerationError(str(last_error), attempts=REPORT_GENERATION_MAX_ATTEMPTS) from last_error
+    raise RuntimeError("LLM report generation failed without explicit error")
 
 
 def _generate_queries(topic: str, n: int) -> List[str]:
@@ -176,20 +256,18 @@ def handle_composite_research_report(input_data: Dict[str, Any]) -> Dict[str, An
     research_data = _format_research_data(research_results)
 
     t1 = time.monotonic()
+    report_generation_attempts = 0
     try:
-        llm_result = handle_llm_generate({
-            "prompt": REPORT_USER_PROMPT.format(topic=topic, research_data=research_data),
-            "system": REPORT_SYSTEM_PROMPT.format(language=language),
-            "max_tokens": 4096,
-            "temperature": 0.5,
-            "_task_id": _ACTIVE_CONTEXT.get("task_id"),
-            "_task_type": _ACTIVE_CONTEXT.get("task_type"),
-            "_source": _ACTIVE_CONTEXT.get("source"),
-            "_source_kind": _ACTIVE_CONTEXT.get("source_kind"),
-            "_usage_component": "composite.research_report.report_generation",
-        })
-        report = llm_result.get("text", "")
+        report, report_generation_attempts = _generate_report_with_retry(
+            topic=topic,
+            research_data=research_data,
+            language=language,
+        )
     except Exception as e:
+        if isinstance(e, ReportGenerationError):
+            report_generation_attempts = e.attempts
+        else:
+            report_generation_attempts = max(report_generation_attempts, 1)
         logger.error("LLM report generation failed: %s", e)
         # Fallback: return raw research data as report
         report = (
@@ -207,5 +285,6 @@ def handle_composite_research_report(input_data: Dict[str, Any]) -> Dict[str, An
             "total_sources": len(sources),
             "research_time_ms": research_time_ms,
             "generation_time_ms": generation_time_ms,
+            "report_generation_attempts": max(report_generation_attempts, 1),
         },
     }

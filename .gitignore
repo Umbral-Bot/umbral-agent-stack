@@ -68,3 +68,4 @@ docker-compose.override.yml
 *.orig
 err.txt
 test.txt
+reports/runtime/generated/

@@ -16,7 +16,7 @@ export PYTHONPATH=.
 pkill -f "uvicorn worker.app:app --host 127.0.0.1 --port 8088" 2>/dev/null || true
 sleep 2
 
-if systemctl --user list-unit-files | grep -q '^umbral-worker\.service'; then
+if systemctl --user list-unit-files 'umbral-worker.service' --no-legend 2>/dev/null | grep -q '^umbral-worker\.service'; then
     systemctl --user daemon-reload
     systemctl --user restart umbral-worker
     echo "Worker VPS restarted via systemd."

@@ -85,7 +85,7 @@ restart_worker() {
     pkill -f "uvicorn worker.app:app --host ${WORKER_HOST} --port ${WORKER_PORT}" 2>/dev/null || true
     sleep 2
 
-    if systemctl --user list-unit-files | grep -q '^umbral-worker\.service'; then
+    if systemctl --user list-unit-files 'umbral-worker.service' --no-legend 2>/dev/null | grep -q '^umbral-worker\.service'; then
         systemctl --user daemon-reload
         systemctl --user restart umbral-worker
         local pid

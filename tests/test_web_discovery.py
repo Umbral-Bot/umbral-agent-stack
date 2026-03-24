@@ -1,4 +1,4 @@
-"""Tests for Tavily-first web discovery behavior."""
+"""Tests for Tavily-first web discovery behavior with Gemini fallback."""
 
 import scripts.web_discovery as web_discovery
 
@@ -32,6 +32,11 @@ def test_search_returns_tavily_error_when_google_legacy_is_disabled(monkeypatch)
         "_search_tavily",
         lambda query, count: ([], "skip:no_key_TAVILY_API_KEY"),
     )
+    monkeypatch.setattr(
+        web_discovery,
+        "_search_gemini_grounded",
+        lambda query, count: ([], "research_provider_not_configured:configuration"),
+    )
 
     def _unexpected_google(*args, **kwargs):  # noqa: ARG001
         raise AssertionError("Google legacy fallback should stay disabled by default")
@@ -41,8 +46,38 @@ def test_search_returns_tavily_error_when_google_legacy_is_disabled(monkeypatch)
     result = web_discovery.search("bim latam", count=3)
 
     assert result["engine_used"] == "none"
-    assert result["fallback_reason"] is None
-    assert result["error"] == "skip:no_key_TAVILY_API_KEY"
+    assert result["fallback_reason"] == "skip:no_key_TAVILY_API_KEY"
+    assert result["error"] == "research_provider_not_configured:configuration"
+
+
+def test_search_can_fallback_to_gemini_by_default(monkeypatch):
+    monkeypatch.setattr(
+        web_discovery,
+        "_search_tavily",
+        lambda query, count: ([], "research_provider_quota_exceeded:quota"),
+    )
+    monkeypatch.setattr(
+        web_discovery,
+        "_search_gemini_grounded",
+        lambda query, count: (
+            [
+                {
+                    "title": "Gemini grounded result",
+                    "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/example",
+                    "snippet": "ok",
+                    "source": "gemini_google_search",
+                }
+            ],
+            None,
+        ),
+    )
+
+    result = web_discovery.search("bim latam", count=3)
+
+    assert result["engine_used"] == "gemini_google_search"
+    assert result["fallback_reason"] == "research_provider_quota_exceeded:quota"
+    assert result["error"] is None
+    assert result["results"][0]["source"] == "gemini_google_search"
 
 
 def test_search_can_fallback_to_google_when_explicitly_enabled(monkeypatch):
@@ -50,6 +85,11 @@ def test_search_can_fallback_to_google_when_explicitly_enabled(monkeypatch):
         web_discovery,
         "_search_tavily",
         lambda query, count: ([], "http:432:quota"),
+    )
+    monkeypatch.setattr(
+        web_discovery,
+        "_search_gemini_grounded",
+        lambda query, count: ([], "research_provider_not_configured:configuration"),
     )
     monkeypatch.setattr(
         web_discovery,
@@ -62,8 +102,8 @@ def test_search_can_fallback_to_google_when_explicitly_enabled(monkeypatch):
 
     result = web_discovery.search("bim latam", count=3, allow_google_legacy=True)
 
-    assert result["engine_used"] == "google"
-    assert result["fallback_reason"] == "http:432:quota"
+    assert result["engine_used"] == "google_legacy"
+    assert result["fallback_reason"] == "http:432:quota -> research_provider_not_configured:configuration"
     assert result["error"] is None
     assert result["results"][0]["source"] == "google"
 
@@ -77,6 +117,11 @@ def test_search_env_flag_can_enable_google_legacy(monkeypatch):
     )
     monkeypatch.setattr(
         web_discovery,
+        "_search_gemini_grounded",
+        lambda query, count: ([], "research_provider_not_configured:configuration"),
+    )
+    monkeypatch.setattr(
+        web_discovery,
         "_search_google",
         lambda query, count: (
             [{"title": "Legacy google result", "url": "https://google.example", "snippet": "ok", "source": "google"}],
@@ -86,8 +131,8 @@ def test_search_env_flag_can_enable_google_legacy(monkeypatch):
 
     result = web_discovery.search("bim latam", count=3)
 
-    assert result["engine_used"] == "google"
-    assert result["fallback_reason"] == "skip:no_key_TAVILY_API_KEY"
+    assert result["engine_used"] == "google_legacy"
+    assert result["fallback_reason"] == "skip:no_key_TAVILY_API_KEY -> research_provider_not_configured:configuration"
     assert result["error"] is None
 
 
@@ -99,9 +144,13 @@ def test_force_tavily_skips_google_even_when_legacy_is_enabled(monkeypatch):
         lambda query, count: ([], "http:503:tavily-down"),
     )
 
+    def _unexpected_gemini(*args, **kwargs):  # noqa: ARG001
+        raise AssertionError("Gemini fallback must be skipped when force_tavily is set")
+
     def _unexpected_google(*args, **kwargs):  # noqa: ARG001
         raise AssertionError("Google legacy fallback must be skipped when force_tavily is set")
 
+    monkeypatch.setattr(web_discovery, "_search_gemini_grounded", _unexpected_gemini)
     monkeypatch.setattr(web_discovery, "_search_google", _unexpected_google)
 
     result = web_discovery.search("bim latam", count=3, force_tavily=True)

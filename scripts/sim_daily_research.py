@@ -7,7 +7,9 @@ Se ejecuta desde cron (3x/día). Cada ejecución:
 2. Encola tareas research.web para cada keyword.
 3. Encola una tarea llm.generate para resumir/analizar resultados.
 
-Requiere: REDIS_URL, TAVILY_API_KEY, GOOGLE_API_KEY en el entorno.
+Requiere: REDIS_URL y al menos un backend operativo de discovery:
+- TAVILY_API_KEY (primario)
+- o GOOGLE_API_KEY / GOOGLE_API_KEY_NANO para fallback Gemini grounded search
 """
 
 import os

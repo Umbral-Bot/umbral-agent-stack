@@ -55,6 +55,7 @@ Regularización `UMB-132` (2026-03-22): se cerraron task files históricos que h
 | 2026-03-23-018 | Diagnostico integral OpenClaw: servicio, configuracion, agentes, modelos, cron y mejoras | codex | ✅ done |
 | 2026-03-23-019 | Accion 1: regularizar topologia OpenClaw en VPS y dejar un solo gateway canonico | codex | ✅ done |
 | 2026-03-24-003 | Accion 2: sincronizar workspace compartido OpenClaw VPS con el repo | codex | ✅ done |
+| 2026-03-24-004 | Accion 3: resolver discovery web y degradacion Tavily en runtime | codex | in_progress |
 | 2026-03-24-002 | Accion 8: revisar skills faltantes en OpenClaw VPS y decidir sync vs skill nueva | codex | pending |
 
 ## Pendientes diferidos post-fases

@@ -11,14 +11,14 @@ if [ -f ~/.config/openclaw/env ]; then
 fi
 
 export PYTHONPATH=.
-mkdir -p reports/runtime
+mkdir -p reports/runtime/generated
 
 python3 scripts/openclaw_runtime_snapshot.py \
   --days 7 \
   --sessions-root "$HOME/.openclaw/agents" \
-  --format json > reports/runtime/openclaw-runtime-snapshot-latest.json
+  --format json > reports/runtime/generated/openclaw-runtime-snapshot-latest.json
 
 python3 scripts/openclaw_runtime_snapshot.py \
   --days 7 \
   --sessions-root "$HOME/.openclaw/agents" \
-  --format markdown > reports/runtime/openclaw-runtime-snapshot-latest.md
+  --format markdown > reports/runtime/generated/openclaw-runtime-snapshot-latest.md

@@ -44,6 +44,7 @@ Validacion local:
 - `python -m pytest tests/test_dashboard.py tests/test_openclaw_runtime_snapshot.py tests/test_ops_logger.py -q` -> `51 passed`
 - `python scripts/openclaw_runtime_snapshot.py --days 1 --format json > $null` -> OK
 - `_usage_summary()` local devuelve payload valido aunque sin datos en este clon.
+- ajuste adicional: el cron escribe en `reports/runtime/generated/` para no dejar el checkout de la VPS sucio sobre archivos versionados.
 
 Pendiente antes de cerrar:
 

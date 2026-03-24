@@ -49,6 +49,11 @@ def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Snapshot OpenClaw desde ops_log")
     parser.add_argument("--days", type=int, default=7, help="Ventana en dias (0=todo)")
     parser.add_argument("--ops-log-path", default="", help="Ruta alternativa a ops_log.jsonl")
+    parser.add_argument(
+        "--sessions-root",
+        default="",
+        help="Raiz alternativa de sesiones OpenClaw (ej. ~/.openclaw/agents)",
+    )
     parser.add_argument("--format", choices=["json", "markdown"], default="markdown")
     return parser.parse_args()
 
@@ -107,11 +112,178 @@ def _estimate_cost_proxy_usd(provider: str, prompt_tokens: int, completion_token
     return round((prompt_tokens / 1000) * rates["input"] + (completion_tokens / 1000) * rates["output"], 6)
 
 
+def _normalize_provider(provider: str) -> str:
+    value = (provider or "").strip().lower()
+    if not value:
+        return "unknown"
+    if value in _COST_PROXY_RATES:
+        return value
+    if value.startswith("openai") or "codex" in value:
+        return "openai"
+    if value.startswith("azure-openai") or value.startswith("azure_openai") or value.startswith("azure"):
+        return "azure_foundry"
+    if value.startswith("google-vertex") or "vertex" in value:
+        return "google-vertex"
+    if value.startswith("google") or value.startswith("gemini"):
+        return "google"
+    if value.startswith("anthropic") or "claude" in value:
+        return "anthropic"
+    return value
+
+
 def _sort_rows(rows: Iterable[dict[str, Any]], key: str) -> list[dict[str, Any]]:
     return sorted(rows, key=lambda item: (-_safe_int(item.get(key)), str(item.get("name", item.get("component", "")))))
 
 
-def build_snapshot(events: list[dict[str, Any]], *, days: int = 7) -> dict[str, Any]:
+def _format_session_ts(value: Any) -> str | None:
+    raw = _safe_int(value)
+    if raw <= 0:
+        return None
+    if raw > 10_000_000_000:
+        raw = raw / 1000
+    return datetime.fromtimestamp(raw, timezone.utc).isoformat()
+
+
+def _load_sessions_usage(sessions_root: str = "") -> dict[str, Any]:
+    if not sessions_root:
+        return {"tracked": False, "root": "", "agents": [], "by_model": [], "recent_sessions": []}
+
+    root = Path(sessions_root)
+    if not root.exists():
+        return {"tracked": False, "root": str(root), "agents": [], "by_model": [], "recent_sessions": []}
+
+    by_agent: dict[str, dict[str, Any]] = defaultdict(
+        lambda: {
+            "agent": "",
+            "sessions": 0,
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "cache_read": 0,
+            "cache_write": 0,
+            "estimated_cost_proxy_usd": 0.0,
+        }
+    )
+    by_model: dict[str, dict[str, Any]] = defaultdict(
+        lambda: {
+            "model": "",
+            "provider": "",
+            "sessions": 0,
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "cache_read": 0,
+            "estimated_cost_proxy_usd": 0.0,
+        }
+    )
+    recent_sessions: list[dict[str, Any]] = []
+
+    for agent_dir in sorted(root.iterdir()):
+        sessions_path = agent_dir / "sessions" / "sessions.json"
+        if not sessions_path.exists():
+            continue
+        try:
+            payload = json.loads(sessions_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if not isinstance(payload, dict):
+            continue
+
+        for session_key, item in payload.items():
+            if not isinstance(item, dict):
+                continue
+            agent = agent_dir.name
+            model = str(item.get("model") or "unknown")
+            provider_raw = str(item.get("modelProvider") or "unknown")
+            provider = _normalize_provider(provider_raw)
+            input_tokens = _safe_int(item.get("inputTokens"))
+            output_tokens = _safe_int(item.get("outputTokens"))
+            total_tokens = _safe_int(item.get("totalTokens"))
+            cache_read = _safe_int(item.get("cacheRead"))
+            cache_write = _safe_int(item.get("cacheWrite"))
+            cost_proxy = _estimate_cost_proxy_usd(provider, input_tokens, output_tokens)
+            updated_at = _format_session_ts(item.get("updatedAt"))
+            origin = item.get("origin") or {}
+
+            agent_bucket = by_agent[agent]
+            agent_bucket["agent"] = agent
+            agent_bucket["sessions"] += 1
+            agent_bucket["input_tokens"] += input_tokens
+            agent_bucket["output_tokens"] += output_tokens
+            agent_bucket["total_tokens"] += total_tokens
+            agent_bucket["cache_read"] += cache_read
+            agent_bucket["cache_write"] += cache_write
+            agent_bucket["estimated_cost_proxy_usd"] = round(agent_bucket["estimated_cost_proxy_usd"] + cost_proxy, 6)
+
+            model_bucket = by_model[f"{provider_raw}:{model}"]
+            model_bucket["model"] = model
+            model_bucket["provider"] = provider_raw
+            model_bucket["sessions"] += 1
+            model_bucket["input_tokens"] += input_tokens
+            model_bucket["output_tokens"] += output_tokens
+            model_bucket["total_tokens"] += total_tokens
+            model_bucket["cache_read"] += cache_read
+            model_bucket["estimated_cost_proxy_usd"] = round(model_bucket["estimated_cost_proxy_usd"] + cost_proxy, 6)
+
+            recent_sessions.append(
+                {
+                    "agent": agent,
+                    "session_key": str(session_key),
+                    "model": model,
+                    "provider": provider_raw,
+                    "updated_at": updated_at,
+                    "total_tokens": total_tokens,
+                    "origin_provider": str(origin.get("provider") or ""),
+                    "origin_surface": str(origin.get("surface") or ""),
+                }
+            )
+
+    recent_sessions = sorted(
+        recent_sessions,
+        key=lambda item: str(item.get("updated_at") or ""),
+        reverse=True,
+    )[:10]
+
+    return {
+        "tracked": bool(by_agent),
+        "root": str(root),
+        "agents": _sort_rows(
+            [
+                {
+                    "name": stats["agent"],
+                    "sessions": stats["sessions"],
+                    "input_tokens": stats["input_tokens"],
+                    "output_tokens": stats["output_tokens"],
+                    "total_tokens": stats["total_tokens"],
+                    "cache_read": stats["cache_read"],
+                    "cache_write": stats["cache_write"],
+                    "estimated_cost_proxy_usd": round(stats["estimated_cost_proxy_usd"], 6),
+                }
+                for stats in by_agent.values()
+            ],
+            "total_tokens",
+        ),
+        "by_model": _sort_rows(
+            [
+                {
+                    "name": stats["model"],
+                    "provider": stats["provider"],
+                    "sessions": stats["sessions"],
+                    "input_tokens": stats["input_tokens"],
+                    "output_tokens": stats["output_tokens"],
+                    "total_tokens": stats["total_tokens"],
+                    "cache_read": stats["cache_read"],
+                    "estimated_cost_proxy_usd": round(stats["estimated_cost_proxy_usd"], 6),
+                }
+                for stats in by_model.values()
+            ],
+            "total_tokens",
+        )[:10],
+        "recent_sessions": recent_sessions,
+    }
+
+
+def build_snapshot(events: list[dict[str, Any]], *, days: int = 7, sessions_root: str = "") -> dict[str, Any]:
     panel_events = [
         event for event in events
         if event.get("event") == "system_activity" and event.get("component") in PANEL_COMPONENTS
@@ -278,6 +450,20 @@ def build_snapshot(events: list[dict[str, Any]], *, days: int = 7) -> dict[str, 
             if str(event.get("source") or "").strip()
         }
     )
+    sessions_usage = _load_sessions_usage(sessions_root)
+
+    limitations = list(DEFAULT_LIMITATIONS)
+    if sessions_usage["tracked"]:
+        limitations.append(
+            "La vista de sesiones usa snapshots `sessions.json` de OpenClaw; refleja tokens acumulados por sesion y no reemplaza billing oficial por request."
+        )
+        limitations.append(
+            "El costo proxy de sesiones usa solo input/output tokens; `cacheRead` y `cacheWrite` quedan fuera porque su billing depende del provider."
+        )
+    else:
+        limitations.append(
+            "No se cargo `sessions_root`, asi que el snapshot no incluye uso por sesion/agente del runtime nativo de OpenClaw."
+        )
 
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -333,7 +519,8 @@ def build_snapshot(events: list[dict[str, Any]], *, days: int = 7) -> dict[str, 
             "tokens_total": sum(item["total_tokens"] for item in provider_rows),
             "estimated_cost_proxy_usd": round(sum(item["estimated_cost_proxy_usd"] for item in provider_rows), 6),
         },
-        "limitations": list(DEFAULT_LIMITATIONS),
+        "sessions_usage": sessions_usage,
+        "limitations": limitations,
     }
 
 
@@ -341,6 +528,7 @@ def to_markdown(report: dict[str, Any]) -> str:
     panel_components = report["panels"]["components"]
     llm_usage = report["llm_usage"]
     runtime = report["openclaw_runtime"]
+    sessions_usage = report.get("sessions_usage") or {"tracked": False}
 
     lines = [
         "# OpenClaw Runtime Snapshot",
@@ -357,6 +545,7 @@ def to_markdown(report: dict[str, Any]) -> str:
         f"- Costo proxy total: {llm_usage['estimated_cost_proxy_usd']:.6f} USD",
         f"- Lecturas Notion de paneles: {report['panels']['totals']['notion_reads']}",
         f"- Escrituras Notion de paneles: {report['panels']['totals']['notion_writes']}",
+        f"- Snapshot de sesiones OpenClaw: {'si' if sessions_usage.get('tracked') else 'no'}",
         "",
         "## Paneles",
     ]
@@ -408,6 +597,27 @@ def to_markdown(report: dict[str, Any]) -> str:
         lines.append("- No hay eventos `llm_usage` suficientes en la ventana.")
     lines.append("")
 
+    lines.append("## Session usage")
+    if sessions_usage.get("tracked"):
+        lines.append(f"- Sessions root: `{sessions_usage.get('root')}`")
+        lines.append("| Agent | Sessions | Input | Output | Total | Cache read | Cost proxy USD |")
+        lines.append("|-------|----------|-------|--------|-------|------------|----------------|")
+        for item in sessions_usage.get("agents", []):
+            lines.append(
+                f"| {item['name']} | {item['sessions']} | {item['input_tokens']} | {item['output_tokens']} | {item['total_tokens']} | {item['cache_read']} | {item['estimated_cost_proxy_usd']:.6f} |"
+            )
+        lines.append("")
+        lines.append("### By model")
+        lines.append("| Model | Provider | Sessions | Total | Cost proxy USD |")
+        lines.append("|-------|----------|----------|-------|----------------|")
+        for item in sessions_usage.get("by_model", []):
+            lines.append(
+                f"| {item['name']} | {item['provider']} | {item['sessions']} | {item['total_tokens']} | {item['estimated_cost_proxy_usd']:.6f} |"
+            )
+    else:
+        lines.append("- No se cargaron snapshots `sessions.json` en esta ejecucion.")
+    lines.append("")
+
     if runtime["recent_failures"]:
         lines.append("## Recent failures")
         for item in runtime["recent_failures"]:
@@ -426,7 +636,7 @@ def to_markdown(report: dict[str, Any]) -> str:
 def main() -> int:
     args = _parse_args()
     events = load_events(days=args.days, ops_log_path=args.ops_log_path)
-    report = build_snapshot(events, days=args.days)
+    report = build_snapshot(events, days=args.days, sessions_root=args.sessions_root)
     if args.format == "json":
         print(json.dumps(report, indent=2, ensure_ascii=False))
     else:

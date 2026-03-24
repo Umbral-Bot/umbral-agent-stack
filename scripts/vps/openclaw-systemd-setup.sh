@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
-# openclaw-systemd-setup.sh â€” Configura OpenClaw como servicio systemd
-# ============================================================
-# Crea el archivo env desde template y configura el unit systemd.
-# IMPORTANTE: Editar los valores CHANGE_ME_* despuÃ©s de ejecutar.
+# openclaw-systemd-setup.sh - Configura OpenClaw Gateway como
+# servicio systemd de usuario en la VPS.
 # ============================================================
 set -euo pipefail
 
@@ -12,13 +10,17 @@ SYSTEMD_USER_DIR="$HOME/.config/systemd/user"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-echo "=== Configurando OpenClaw como servicio systemd ==="
+CANONICAL_UNIT="openclaw-gateway.service"
+CANONICAL_UNIT_PATH="$SYSTEMD_USER_DIR/$CANONICAL_UNIT"
+LEGACY_UNIT="openclaw.service"
+LEGACY_UNIT_PATH="$SYSTEMD_USER_DIR/$LEGACY_UNIT"
+LEGACY_DISABLED_PATH="$SYSTEMD_USER_DIR/$LEGACY_UNIT.legacy-disabled"
 
-# --- Crear directorio de config ---
+echo "=== Configurando OpenClaw Gateway como servicio systemd ==="
+
 mkdir -p "$OPENCLAW_CONFIG_DIR"
 mkdir -p "$SYSTEMD_USER_DIR"
 
-# --- Copiar env template ---
 if [ -f "$OPENCLAW_CONFIG_DIR/env" ]; then
     echo "WARN: $OPENCLAW_CONFIG_DIR/env ya existe. No se sobreescribe."
     echo "      Para regenerar, eliminar manualmente y volver a ejecutar."
@@ -26,39 +28,47 @@ else
     cp "$REPO_ROOT/openclaw/env.template" "$OPENCLAW_CONFIG_DIR/env"
     chmod 600 "$OPENCLAW_CONFIG_DIR/env"
     echo "Creado: $OPENCLAW_CONFIG_DIR/env (permisos: 600)"
-    echo "IMPORTANTE: Editar y reemplazar los valores CHANGE_ME_*"
+    echo "IMPORTANTE: editar y reemplazar los valores CHANGE_ME_*"
 fi
 
-# --- Copiar unit systemd ---
-if [ -f "$SYSTEMD_USER_DIR/openclaw.service" ]; then
-    echo "WARN: $SYSTEMD_USER_DIR/openclaw.service ya existe. No se sobreescribe."
+if [ -f "$CANONICAL_UNIT_PATH" ]; then
+    echo "WARN: $CANONICAL_UNIT_PATH ya existe. No se sobreescribe."
 else
-    cp "$REPO_ROOT/openclaw/systemd/openclaw.service.template" "$SYSTEMD_USER_DIR/openclaw.service"
-    echo "Creado: $SYSTEMD_USER_DIR/openclaw.service"
+    cp "$REPO_ROOT/openclaw/systemd/openclaw-gateway.service.template" "$CANONICAL_UNIT_PATH"
+    echo "Creado: $CANONICAL_UNIT_PATH"
 fi
 
-# --- Enable linger so user services survive headless reboots ---
-echo ""
-echo "=== Habilitando loginctl linger (necesario para reboot sin sesiÃ³n interactiva) ==="
+if [ -f "$LEGACY_UNIT_PATH" ]; then
+    echo "Legacy detectado: $LEGACY_UNIT_PATH"
+    systemctl --user disable --now "$LEGACY_UNIT" || true
+    if [ ! -f "$LEGACY_DISABLED_PATH" ]; then
+        mv "$LEGACY_UNIT_PATH" "$LEGACY_DISABLED_PATH"
+        echo "Legacy archivado en: $LEGACY_DISABLED_PATH"
+    else
+        echo "WARN: $LEGACY_DISABLED_PATH ya existe. Se deja el legacy sin mover."
+    fi
+fi
+
+echo
+echo "=== Habilitando linger ==="
 loginctl enable-linger "$(whoami)"
 
-# --- Reload y restart ---
-echo ""
+echo
 echo "=== Recargando systemd ==="
 systemctl --user daemon-reload
 
-echo ""
-echo "=== Habilitando servicio ==="
-systemctl --user enable openclaw
+echo
+echo "=== Habilitando servicio canonico ==="
+systemctl --user enable "$CANONICAL_UNIT"
 
-echo ""
-echo "=== Reiniciando servicio ==="
-systemctl --user restart openclaw
+echo
+echo "=== Reiniciando servicio canonico ==="
+systemctl --user restart "$CANONICAL_UNIT"
 
-echo ""
+echo
 echo "=== Estado ==="
-systemctl --user status openclaw --no-pager
+systemctl --user status "$CANONICAL_UNIT" --no-pager
 
-echo ""
-echo "IMPORTANTE: Editar $OPENCLAW_CONFIG_DIR/env con valores reales."
-echo "DespuÃ©s: systemctl --user restart openclaw"
+echo
+echo "IMPORTANTE: editar $OPENCLAW_CONFIG_DIR/env con valores reales."
+echo "Despues: systemctl --user restart $CANONICAL_UNIT"

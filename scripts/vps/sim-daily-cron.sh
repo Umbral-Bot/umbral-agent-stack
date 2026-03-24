@@ -5,7 +5,9 @@ set -euo pipefail
 
 cd ~/umbral-agent-stack
 source .venv/bin/activate
-set -a && source ~/.config/openclaw/env 2>/dev/null && set +a
+# shellcheck disable=SC1091
+source "$HOME/umbral-agent-stack/scripts/vps/load-openclaw-env.sh"
+load_openclaw_env "$HOME/.config/openclaw/env"
 export PYTHONPATH="$PWD"
 
 python3 scripts/sim_daily_research.py >> /tmp/sim_daily.log 2>&1

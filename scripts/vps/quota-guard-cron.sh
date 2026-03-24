@@ -7,9 +7,9 @@ REPO="$HOME/umbral-agent-stack"
 
 # Cargar env (REDIS_URL, OPENCLAW_CONFIG_PATH, etc.)
 if [[ -f "$HOME/.config/openclaw/env" ]]; then
-    set -a
-    source "$HOME/.config/openclaw/env"
-    set +a
+    # shellcheck disable=SC1091
+    source "$HOME/umbral-agent-stack/scripts/vps/load-openclaw-env.sh"
+    load_openclaw_env "$HOME/.config/openclaw/env"
 fi
 
 cd "$REPO"

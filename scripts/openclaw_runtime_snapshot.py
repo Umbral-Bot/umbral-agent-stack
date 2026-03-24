@@ -6,6 +6,7 @@ Lee `ops_log.jsonl` y consolida:
 - actividad de paneles (Dashboard Rick + OpenClaw)
 - uso OpenClaw atribuido a `source=openclaw_gateway`
 - uso LLM trazado por provider/model/componente
+- uso de discovery trazado por provider y fallback
 - costo proxy aproximado basado en rates rough del repo
 
 No es facturacion oficial. Si el backend no expone tokens, el reporte lo deja
@@ -296,6 +297,10 @@ def build_snapshot(events: list[dict[str, Any]], *, days: int = 7, sessions_root
         event for event in events
         if event.get("event") == "llm_usage" and event.get("source") == OPENCLAW_SOURCE
     ]
+    research_usage_events = [
+        event for event in events
+        if event.get("event") == "research_usage"
+    ]
 
     panel_summary: dict[str, dict[str, Any]] = {}
     for component in PANEL_COMPONENTS:
@@ -419,6 +424,18 @@ def build_snapshot(events: list[dict[str, Any]], *, days: int = 7, sessions_root
         component_bucket["total_tokens"] += total_tokens
         component_bucket["estimated_cost_proxy_usd"] = round(component_bucket["estimated_cost_proxy_usd"] + cost_proxy, 6)
 
+    research_by_provider: dict[str, dict[str, Any]] = defaultdict(
+        lambda: {"provider": "", "calls": 0, "fallback_calls": 0, "result_count": 0}
+    )
+    for event in research_usage_events:
+        provider = str(event.get("provider") or "unknown")
+        bucket = research_by_provider[provider]
+        bucket["provider"] = provider
+        bucket["calls"] += 1
+        bucket["result_count"] += _safe_int(event.get("result_count"))
+        if event.get("fallback_reason"):
+            bucket["fallback_calls"] += 1
+
     provider_rows: list[dict[str, Any]] = []
     for provider, stats in by_provider.items():
         calls = stats["calls"]
@@ -519,6 +536,22 @@ def build_snapshot(events: list[dict[str, Any]], *, days: int = 7, sessions_root
             "tokens_total": sum(item["total_tokens"] for item in provider_rows),
             "estimated_cost_proxy_usd": round(sum(item["estimated_cost_proxy_usd"] for item in provider_rows), 6),
         },
+        "research_usage": {
+            "tracked_events": len(research_usage_events),
+            "tracked": len(research_usage_events) > 0,
+            "by_provider": _sort_rows(
+                [
+                    {
+                        "name": stats["provider"],
+                        "calls": stats["calls"],
+                        "fallback_calls": stats["fallback_calls"],
+                        "result_count": stats["result_count"],
+                    }
+                    for stats in research_by_provider.values()
+                ],
+                "calls",
+            ),
+        },
         "sessions_usage": sessions_usage,
         "limitations": limitations,
     }
@@ -527,6 +560,7 @@ def build_snapshot(events: list[dict[str, Any]], *, days: int = 7, sessions_root
 def to_markdown(report: dict[str, Any]) -> str:
     panel_components = report["panels"]["components"]
     llm_usage = report["llm_usage"]
+    research_usage = report.get("research_usage") or {"tracked": False, "tracked_events": 0, "by_provider": []}
     runtime = report["openclaw_runtime"]
     sessions_usage = report.get("sessions_usage") or {"tracked": False}
 
@@ -541,6 +575,7 @@ def to_markdown(report: dict[str, Any]) -> str:
         "## Resumen",
         f"- Eventos operativos OpenClaw: {runtime['task_events_total']} ({runtime['completed']} completados, {runtime['failed']} fallidos, {runtime['blocked']} bloqueados)",
         f"- Eventos LLM trazados: {llm_usage['tracked_events']}",
+        f"- Eventos research provider trazados: {research_usage['tracked_events']}",
         f"- Tokens LLM trazados: {llm_usage['tokens_total']}",
         f"- Costo proxy total: {llm_usage['estimated_cost_proxy_usd']:.6f} USD",
         f"- Lecturas Notion de paneles: {report['panels']['totals']['notion_reads']}",
@@ -595,6 +630,18 @@ def to_markdown(report: dict[str, Any]) -> str:
             )
     else:
         lines.append("- No hay eventos `llm_usage` suficientes en la ventana.")
+    lines.append("")
+
+    lines.append("## Research usage")
+    if research_usage.get("tracked"):
+        lines.append("| Provider | Calls | Fallback calls | Results |")
+        lines.append("|----------|-------|----------------|---------|")
+        for item in research_usage.get("by_provider", []):
+            lines.append(
+                f"| {item['name']} | {item['calls']} | {item['fallback_calls']} | {item['result_count']} |"
+            )
+    else:
+        lines.append("- No hay eventos `research_usage` suficientes en la ventana.")
     lines.append("")
 
     lines.append("## Session usage")

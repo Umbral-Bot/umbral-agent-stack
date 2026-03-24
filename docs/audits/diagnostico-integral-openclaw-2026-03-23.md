@@ -25,9 +25,10 @@ La Accion 1 de este diagnostico ya fue ejecutada despues del barrido inicial:
 - La Accion 2 tambien quedo ejecutada: se sincronizaron `~/.openclaw/workspace` y las copias relevantes de `rick-ops` / `rick-tracker` contra las skills endurecidas en el repo, con backup previo y validacion por hash.
 - La Accion 3 tambien quedo ejecutada: `research.web` y `scripts/web_discovery.py` comparten ahora un fallback real via Gemini grounded search. En la VPS, Tavily sigue respondiendo `432`, pero el runtime ya no queda degradado por eso.
 - La Accion 4 tambien quedo ejecutada: se saneo el store de sesiones de `main` (`55 -> 47` entradas), se reinicio el gateway para recargarlo y se archivaron 6 transcripts huérfanos con sufijo `*.deleted.<timestamp>`. `openclaw doctor` ya no reporta sesiones recientes sin transcript ni orphans en `main`.
+- La Accion 8 tambien quedo ejecutada: `main` ya tiene `external-reference-intelligence` y `windows`, `rick-qa` ya tiene `system-interconnectivity-diagnostics`, y `BROWSER_HEADLESS=false` quedo declarado en la env de OpenClaw para que `browser-automation-vm` no siga apareciendo como no elegible por falta de variable. Ver `docs/audits/openclaw-skills-role-selection-2026-03-24.md`.
 - El estado bueno de red tras la intervencion en la VM tambien quedo asentado: se agrego una segunda NIC en Hyper-V (`Default Switch`) para restaurar internet de la VM sin quitar la NIC interna. La VM recupero salida web durante la intervencion; la reachability tailnet VPS -> VM debe revalidarse tras reinicios del host.
 
-El resto del documento preserva el barrido original del 2026-03-23, pero las secciones de resumen, estado por componente y plan ya reflejan el cierre de las Acciones 1-3.
+El resto del documento preserva el barrido original del 2026-03-23, pero las secciones de resumen, estado por componente y plan ya reflejan el cierre de las Acciones 1-4 y 8.
 
 ## Resumen ejecutivo
 
@@ -58,7 +59,7 @@ Lo que sigue pendiente:
 | Modelos | OK parcial | 10 configurados; auth viva en OpenAI Codex y Google Vertex; OpenAI Codex y Vertex ejecutados en vivo |
 | Agentes | OK parcial | 6 agentes configurados; 3 activos recientemente |
 | Sessions | OK | store `main` saneado (`55 -> 47`), gateway reiniciado y `doctor` sin faltantes ni huérfanos |
-| Skills runtime | OK con seleccion pendiente | workspace compartido y copias activas sincronizadas; queda pendiente curar la seleccion fina por rol |
+| Skills runtime | OK | workspace compartido y workspaces activos alineados por rol; `main` y `rick-qa` validados tras la Accion 8 |
 | Cron | OK con fallback operativo | jobs corren; discovery cae a Gemini grounded cuando Tavily responde `432` |
 | Bindings | Sin bindings | `openclaw agents bindings` -> `No routing bindings.` |
 | Nodos | Sin nodos | `Pending: 0 · Paired: 0` |
@@ -198,7 +199,28 @@ Estado:
 Impacto:
 
 - El inventario fisico de skills quedo alineado con el repo en las rutas sincronizadas.
-- Lo que sigue pendiente no es sync fisico sino curar la seleccion efectiva por rol, derivado a la Accion 8.
+- La seleccion fina por rol tambien quedo regularizada por la Accion 8.
+
+### Resuelto. Seleccion de skills por rol y env de browser-automation-vm
+
+Estado:
+
+- Resuelto por la Accion 8 el `2026-03-24`.
+
+Impacto:
+
+- `main` ya tiene las skills que `AGENTS.md` declaraba pero no estaban montadas (`external-reference-intelligence`, `windows`).
+- `rick-qa` ya tiene `system-interconnectivity-diagnostics`.
+- `browser-automation-vm` en `main` ya no aparece como no elegible por falta de `BROWSER_HEADLESS`.
+- No hizo falta crear skill nueva para este frente.
+
+Evidencia:
+
+- `openclaw skills check` en `~/.openclaw/workspace` -> `Missing requirements: 0`
+- `openclaw skills check` en `~/.openclaw/workspaces/rick-qa` -> `Missing requirements: 0`
+- `openclaw agent --agent main -m 'Responde solo OK-ACCION-8-MAIN'` -> OK
+- `openclaw agent --agent rick-qa -m 'Responde solo OK-ACCION-8-RICK-QA'` -> OK
+- matriz detallada en `docs/audits/openclaw-skills-role-selection-2026-03-24.md`
 
 ### P2. Tavily sigue sin cuota, pero el runtime ya no queda degradado
 
@@ -348,6 +370,30 @@ Resultado:
 
 Prioridad: media
 
+### Accion 8. Revisar skills faltantes en OpenClaw VPS
+
+Estado: **cerrada el 2026-03-24**
+
+Objetivo:
+
+- separar drift real de workspace/env de cualquier supuesto hueco que pareciera requerir skill nueva
+
+Trabajo:
+
+- comparar asignacion esperada por rol en `openclaw/workspace-templates/AGENTS.md` contra el inventario runtime de la VPS
+- sincronizar skills existentes donde habia drift real
+- cerrar el gap de `BROWSER_HEADLESS` para `browser-automation-vm`
+- validar `main` y `rick-qa` despues del cambio
+
+Resultado:
+
+- `external-reference-intelligence` y `windows` quedaron montadas en `main`
+- `system-interconnectivity-diagnostics` quedo montada en `rick-qa`
+- `BROWSER_HEADLESS=false` quedo declarado en `~/.config/openclaw/env`
+- `openclaw skills check` quedo sin missing requirements en `main` y `rick-qa`
+- no hizo falta crear una skill nueva
+- no quedo deuda de skills derivada de la Accion 4; sesiones/transcripts siguen siendo frente de runbook, no de skill
+
 ### Accion 5. Hardening de seguridad OpenClaw
 
 Objetivo:
@@ -402,12 +448,12 @@ Prioridad: media
 
 ## Conclusion
 
-OpenClaw esta **operativo**, el dashboard ya abre y el wiring principal con Umbral esta **vivo**. No esta caido ni roto como sistema. Con las Acciones 1-4 cerradas, ya no queda drift basico de topologia/workspace, degradacion runtime en discovery web ni deuda de higiene en el store principal de sesiones. Lo que sigue abierto es hardening, seleccion de skills por rol y la decision sobre el rol futuro de Tavily como proveedor.
+OpenClaw esta **operativo**, el dashboard ya abre y el wiring principal con Umbral esta **vivo**. No esta caido ni roto como sistema. Con las Acciones 1-4 y 8 cerradas, ya no queda drift basico de topologia/workspace, degradacion runtime en discovery web, deuda de higiene en el store principal de sesiones ni brecha fina de skills por rol. Lo que sigue abierto es hardening, bootstrap/gobernanza por agente y la decision sobre el rol futuro de Tavily como proveedor.
 
 La siguiente ronda no deberia ser otra auditoria completa. Deberia ser una regularizacion quirurgica de OpenClaw en 3 frentes:
 
 1. hardening de seguridad
-2. seleccion de skills por rol
+2. bootstrap y gobernanza por agente
 3. decision Tavily/proveedor
 
 Con eso, el siguiente test de OpenClaw ya puede enfocarse en confirmar mejora real y no en seguir encontrando drift basico.

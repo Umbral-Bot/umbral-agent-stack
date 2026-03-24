@@ -6,7 +6,7 @@ Ubicacion default: ~/.config/umbral/ops_log.jsonl
 
 Eventos:
   task_queued, task_completed, task_failed, task_blocked, task_retried,
-  model_selected, quota_warning, quota_restricted, worker_health_change,
+  model_selected, llm_usage, quota_warning, quota_restricted, worker_health_change,
   system_activity
 
 Parámetros opcionales de auditoría:
@@ -222,6 +222,42 @@ class OpsLogger:
         }
         if trace_id:
             ev["trace_id"] = trace_id
+        self._write(ev)
+
+    def llm_usage(
+        self,
+        *,
+        model: str,
+        provider: str,
+        prompt_tokens: int,
+        completion_tokens: int,
+        total_tokens: int,
+        duration_ms: float,
+        task_id: str | None = None,
+        task_type: str | None = None,
+        source: str | None = None,
+        source_kind: str | None = None,
+        usage_component: str | None = None,
+    ) -> None:
+        ev: Dict[str, Any] = {
+            "event": "llm_usage",
+            "model": self._coerce(model),
+            "provider": self._coerce(provider),
+            "prompt_tokens": int(prompt_tokens),
+            "completion_tokens": int(completion_tokens),
+            "total_tokens": int(total_tokens),
+            "duration_ms": round(duration_ms),
+        }
+        if task_id:
+            ev["task_id"] = task_id
+        if usage_component:
+            ev["usage_component"] = str(self._coerce(usage_component))[:120]
+        self._apply_audit_context(
+            ev,
+            task_type=task_type,
+            source=source,
+            source_kind=source_kind,
+        )
         self._write(ev)
 
     def quota_warning(self, provider: str, usage_pct: float) -> None:

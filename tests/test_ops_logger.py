@@ -148,6 +148,34 @@ class TestTraceabilityContext:
         assert events[0]["worker_calls"] == 1
         assert events[0]["db_rows_read"] == 9
 
+    def test_llm_usage_includes_token_and_context_fields(self, ops_logger):
+        ops_logger.llm_usage(
+            model="gpt-5.4",
+            provider="openai",
+            prompt_tokens=120,
+            completion_tokens=45,
+            total_tokens=165,
+            duration_ms=833.2,
+            task_id="task-123",
+            task_type="analysis",
+            source="openclaw_gateway",
+            source_kind="tool_enqueue",
+            usage_component="llm.generate",
+        )
+        events = ops_logger.read_events(event_filter="llm_usage")
+        assert len(events) == 1
+        assert events[0]["model"] == "gpt-5.4"
+        assert events[0]["provider"] == "openai"
+        assert events[0]["prompt_tokens"] == 120
+        assert events[0]["completion_tokens"] == 45
+        assert events[0]["total_tokens"] == 165
+        assert events[0]["duration_ms"] == 833
+        assert events[0]["task_id"] == "task-123"
+        assert events[0]["task_type"] == "analysis"
+        assert events[0]["source"] == "openclaw_gateway"
+        assert events[0]["source_kind"] == "tool_enqueue"
+        assert events[0]["usage_component"] == "llm.generate"
+
 
 # ---------------------------------------------------------------------------
 # input_summary tests

@@ -228,6 +228,36 @@ class TestRunLegacy:
         assert resp.status_code == 200
         assert len(resp.json()["result"]["echo"]["msg"]) == MAX_STRING_VALUE_LEN
 
+    def test_llm_generate_receives_hidden_context_without_leaking_to_simple_tasks(self, client, monkeypatch):
+        captured = {}
+
+        def _fake_llm(input_data):
+            captured.update(input_data)
+            return {
+                "text": "ok",
+                "model": "gpt-5.4",
+                "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+            }
+
+        monkeypatch.setitem(worker_app.TASK_HANDLERS, "llm.generate", _fake_llm)
+        resp = client.post(
+            "/run",
+            json={
+                "task": "llm.generate",
+                "task_type": "research",
+                "source": "openclaw_gateway",
+                "source_kind": "tool_enqueue",
+                "input": {"prompt": "hola"},
+            },
+            headers=AUTH,
+        )
+        assert resp.status_code == 200
+        assert captured["_task_id"]
+        assert captured["_task_type"] == "research"
+        assert captured["_source"] == "openclaw_gateway"
+        assert captured["_source_kind"] == "tool_enqueue"
+        assert captured["_usage_component"] == "llm.generate"
+
 
 # ---------------------------------------------------------------------------
 # /run — TaskEnvelope format

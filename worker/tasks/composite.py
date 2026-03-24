@@ -13,6 +13,7 @@ from .research import handle_research_web
 from .llm import handle_llm_generate
 
 logger = logging.getLogger("worker.tasks.composite")
+_ACTIVE_CONTEXT: Dict[str, str] = {}
 
 DEPTH_MAP = {
     "quick": 3,
@@ -49,6 +50,11 @@ def _generate_queries(topic: str, n: int) -> List[str]:
         "prompt": QUERY_GEN_PROMPT.format(n=n, topic=topic),
         "max_tokens": 512,
         "temperature": 0.4,
+        "_task_id": _ACTIVE_CONTEXT.get("task_id"),
+        "_task_type": _ACTIVE_CONTEXT.get("task_type"),
+        "_source": _ACTIVE_CONTEXT.get("source"),
+        "_source_kind": _ACTIVE_CONTEXT.get("source_kind"),
+        "_usage_component": "composite.research_report.query_generation",
     })
     text = result.get("text", "")
     # Parse numbered list: "1. query\n2. query\n..."
@@ -128,6 +134,17 @@ def handle_composite_research_report(input_data: Dict[str, Any]) -> Dict[str, An
     if not topic:
         raise ValueError("'topic' is required and cannot be empty")
 
+    _ACTIVE_CONTEXT.clear()
+    for key, target in (
+        ("_task_id", "task_id"),
+        ("_task_type", "task_type"),
+        ("_source", "source"),
+        ("_source_kind", "source_kind"),
+    ):
+        value = str(input_data.get(key, "") or "").strip()
+        if value:
+            _ACTIVE_CONTEXT[target] = value
+
     depth = input_data.get("depth", "standard")
     language = input_data.get("language", "es")
     explicit_queries: Optional[List[str]] = input_data.get("queries")
@@ -165,6 +182,11 @@ def handle_composite_research_report(input_data: Dict[str, Any]) -> Dict[str, An
             "system": REPORT_SYSTEM_PROMPT.format(language=language),
             "max_tokens": 4096,
             "temperature": 0.5,
+            "_task_id": _ACTIVE_CONTEXT.get("task_id"),
+            "_task_type": _ACTIVE_CONTEXT.get("task_type"),
+            "_source": _ACTIVE_CONTEXT.get("source"),
+            "_source_kind": _ACTIVE_CONTEXT.get("source_kind"),
+            "_usage_component": "composite.research_report.report_generation",
         })
         report = llm_result.get("text", "")
     except Exception as e:

@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Discovery web para SIM: Tavily como backend primario y Gemini grounded search como fallback real.
+Discovery web para SIM: Gemini grounded search como backend primario y Tavily como fallback real.
 
 Google Custom Search queda solo como camino legado/experimental porque este
 stack no ha mostrado evidencia de uso estable y los proyectos nuevos suelen
 recibir 403.
 
 Variables desde .env:
-  TAVILY_API_KEY                                       - Tavily Search (primario)
-  GOOGLE_API_KEY / GOOGLE_API_KEY_NANO                 - Gemini grounded search (fallback real)
+  GOOGLE_API_KEY / GOOGLE_API_KEY_NANO                 - Gemini grounded search (primario real)
+  TAVILY_API_KEY                                       - Tavily Search (fallback secundario)
   GOOGLE_CSE_API_KEY_RICK_UMBRAL / GOOGLE_CSE_API_KEY - Google Custom Search (legado)
   GOOGLE_CSE_CX                                        - Custom Search engine ID
   WEB_DISCOVERY_ENABLE_GOOGLE_CSE=1                    - habilita fallback legado a Google
@@ -89,31 +89,29 @@ def search(
     allow_google_legacy: bool = False,
 ) -> dict[str, Any]:
     """
-    Busca intentando primero Tavily y luego Gemini grounded search.
+    Busca intentando primero Gemini grounded search y luego Tavily.
     Google Custom Search solo se usa como tercer intento si el caller lo habilita.
 
     Retorna: query, engine_used, fallback_reason, results, error.
     """
     google_legacy_enabled = _google_legacy_enabled(allow_google_legacy)
 
-    results, err = _search_tavily(query, count)
-    if err is None:
-        return {
-            "query": query,
-            "engine_used": TAVILY_PROVIDER,
-            "fallback_reason": None,
-            "results": results,
-            "error": None,
-        }
-    tavily_error = err
-
     if force_tavily:
+        results, err = _search_tavily(query, count)
+        if err is None:
+            return {
+                "query": query,
+                "engine_used": TAVILY_PROVIDER,
+                "fallback_reason": None,
+                "results": results,
+                "error": None,
+            }
         return {
             "query": query,
             "engine_used": "none",
             "fallback_reason": None,
             "results": [],
-            "error": tavily_error,
+            "error": err,
         }
 
     results, err = _search_gemini_grounded(query, count)
@@ -121,11 +119,22 @@ def search(
         return {
             "query": query,
             "engine_used": GEMINI_SEARCH_PROVIDER,
-            "fallback_reason": tavily_error,
+            "fallback_reason": None,
             "results": results,
             "error": None,
         }
     gemini_error = err
+
+    results, err = _search_tavily(query, count)
+    if err is None:
+        return {
+            "query": query,
+            "engine_used": TAVILY_PROVIDER,
+            "fallback_reason": gemini_error,
+            "results": results,
+            "error": None,
+        }
+    tavily_error = err
 
     if google_legacy_enabled and not force_tavily:
         results, err = _search_google(query, count)
@@ -133,20 +142,18 @@ def search(
             return {
                 "query": query,
                 "engine_used": GOOGLE_LEGACY_PROVIDER,
-                "fallback_reason": f"{tavily_error} -> {gemini_error}",
+                "fallback_reason": f"{gemini_error} -> {tavily_error}",
                 "results": results,
                 "error": None,
             }
         error = err
     else:
-        error = gemini_error
+        error = tavily_error
 
     return {
         "query": query,
         "engine_used": "none",
-        "fallback_reason": (
-            f"{tavily_error} -> {gemini_error}" if google_legacy_enabled and not force_tavily else tavily_error
-        ),
+        "fallback_reason": f"{gemini_error} -> {tavily_error}" if google_legacy_enabled and not force_tavily else gemini_error,
         "results": [],
         "error": error,
     }
@@ -170,7 +177,7 @@ def _format_markdown(payload: dict[str, Any]) -> str:
 
 def main() -> None:
     ap = argparse.ArgumentParser(
-        description="Discovery web: Tavily como motor primario, Gemini grounded search como fallback real y Google CSE solo legado/opt-in"
+        description="Discovery web: Gemini grounded search como motor primario, Tavily como fallback real y Google CSE solo legado/opt-in"
     )
     ap.add_argument("query", nargs="?", default="", help="Texto a buscar")
     ap.add_argument("--count", type=int, default=5, help="Numero de resultados (default: 5)")

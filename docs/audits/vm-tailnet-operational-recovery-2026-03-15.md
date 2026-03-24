@@ -157,6 +157,17 @@ Purpose:
 - recreate the reverse tunnel automatically on host startup/login
 - validate tunnel health and recreate it if the SSH process survives but the forward dies
 - avoid manual recovery next time the host reboots before the guest NAT/Tailscale path is fully repaired
+- choose the first host-reachable VM address from explicit env/config instead of hardcoding the old internal IP
+
+Recommended non-invasive path going forward:
+
+- do **not** add new virtual routers or replace the current dual-NIC setup
+- keep using a host-side reverse tunnel as the VPS fallback
+- set one of these host env vars on `tarro` if the guest address changes:
+  - `OPENCLAW_VM_FALLBACK_ADDRESS`
+  - `OPENCLAW_VM_TAILSCALE_IP`
+  - `OPENCLAW_VM_INTERNAL_IP`
+- let the tunnel scripts probe `8088/8089` and choose the first healthy address
 
 ## Host-side deployment
 

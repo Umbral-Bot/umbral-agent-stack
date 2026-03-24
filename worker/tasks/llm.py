@@ -41,6 +41,7 @@ import urllib.error
 import urllib.request
 from typing import Any, Callable, Dict
 
+from infra.ops_logger import ops_log
 from worker.tracing import trace_llm_call
 
 logger = logging.getLogger("worker.tasks.llm")
@@ -144,6 +145,24 @@ def handle_llm_generate(input_data: Dict[str, Any]) -> Dict[str, Any]:
         )
     except Exception:
         logger.warning("Tracing call failed unexpectedly", exc_info=True)
+
+    usage = result.get("usage", {}) or {}
+    try:
+        ops_log.llm_usage(
+            model=model,
+            provider=provider,
+            prompt_tokens=int(usage.get("prompt_tokens", 0) or 0),
+            completion_tokens=int(usage.get("completion_tokens", 0) or 0),
+            total_tokens=int(usage.get("total_tokens", 0) or 0),
+            duration_ms=duration_ms,
+            task_id=str(input_data.get("_task_id") or "").strip() or None,
+            task_type=str(input_data.get("_task_type") or "").strip() or None,
+            source=str(input_data.get("_source") or "").strip() or None,
+            source_kind=str(input_data.get("_source_kind") or "").strip() or None,
+            usage_component=str(input_data.get("_usage_component") or "llm.generate"),
+        )
+    except Exception:
+        logger.warning("Ops usage logging failed unexpectedly", exc_info=True)
 
     return result
 

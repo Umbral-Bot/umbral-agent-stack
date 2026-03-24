@@ -172,6 +172,49 @@ Motivo:
 - la clave bootstrap ya prueba que autentica contra la VPS;
 - el problema real era el path y las ACLs del archivo bajo el perfil de usuario, no la validez criptografica de la clave.
 
+### [codex] 2026-03-24 21:32
+Octavo ajuste repo-side tras ejecutar `node.cmd` manualmente:
+
+- el tunel NSSM ya quedo sano (`127.0.0.1:18790` abierto), pero `node.cmd` seguia cayendo con:
+  - `tls_get_more_records:packet length too long`
+  - `node host gateway connect failed: write EPROTO ...`
+- causa exacta: el CLI `openclaw node install` en Windows 2026.2.25 estaba generando `node.cmd` con `--tls`, pero el gateway VPS real detras del tunel es `ws://127.0.0.1:18789` sin TLS.
+
+Accion repo-side aplicada:
+
+- despues de `openclaw node install`, el instalador ahora inspecciona `C:\Users\Rick\.openclaw\node.cmd`;
+- si detecta `--tls` en ese script y estamos usando el tunel loopback, lo elimina antes de hacer `openclaw node restart`.
+
+Bloqueo residual actualizado:
+
+- aplicar este ultimo fix en la VM;
+- rerun del instalador o parche manual de `node.cmd`;
+- revalidar en la VPS que `PCRick` pase a `connected`.
+
+### [codex] 2026-03-24 21:45
+Noveno ajuste repo-side tras comprobar `node run` en foreground:
+
+- el node ya conecta de verdad cuando se ejecuta en foreground con:
+  - `OPENCLAW_GATEWAY_TOKEN` cargado
+  - `node run --host 127.0.0.1 --port 18790 --display-name PCRick`
+- eso confirma que el tunel y el token ya son correctos;
+- el hueco que quedaba era solo la persistencia del wrapper `node.cmd` generado por `openclaw node install`.
+
+Hallazgo exacto:
+
+- `node.cmd` necesitaba dos parches para este escenario de gateway tunneleado:
+  - quitar `--tls`
+  - inyectar `OPENCLAW_GATEWAY_TOKEN` leyendo `C:\openclaw-worker\openclaw-gateway-token`
+
+Accion repo-side aplicada:
+
+- el instalador ya hace ambos parches automaticamente sobre `C:\Users\Rick\.openclaw\node.cmd` despues de `openclaw node install`.
+
+Estado operativo:
+
+- desde la VPS ya se observo `PCRick` como `paired · connected` cuando el node corre en foreground;
+- queda por confirmar si, con el `node.cmd` parcheado automaticamente, la Scheduled Task mantiene esa conexion sin proceso manual abierto.
+
 ### [codex] 2026-03-24 20:05
 Tercer ajuste repo-side tras prueba viva:
 

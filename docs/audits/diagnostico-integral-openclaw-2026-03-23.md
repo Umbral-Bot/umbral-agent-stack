@@ -24,6 +24,7 @@ La Accion 1 de este diagnostico ya fue ejecutada despues del barrido inicial:
 - `openclaw status --all`, `openclaw dashboard` y una ejecucion minima de `main` siguieron funcionando tras la regularizacion.
 - La Accion 2 tambien quedo ejecutada: se sincronizaron `~/.openclaw/workspace` y las copias relevantes de `rick-ops` / `rick-tracker` contra las skills endurecidas en el repo, con backup previo y validacion por hash.
 - La Accion 3 tambien quedo ejecutada: `research.web` y `scripts/web_discovery.py` comparten ahora un fallback real via Gemini grounded search. En la VPS, Tavily sigue respondiendo `432`, pero el runtime ya no queda degradado por eso.
+- La Accion 4 tambien quedo ejecutada: se saneo el store de sesiones de `main` (`55 -> 47` entradas), se reinicio el gateway para recargarlo y se archivaron 6 transcripts huérfanos con sufijo `*.deleted.<timestamp>`. `openclaw doctor` ya no reporta sesiones recientes sin transcript ni orphans en `main`.
 - El estado bueno de red tras la intervencion en la VM tambien quedo asentado: se agrego una segunda NIC en Hyper-V (`Default Switch`) para restaurar internet de la VM sin quitar la NIC interna. La VM recupero salida web durante la intervencion; la reachability tailnet VPS -> VM debe revalidarse tras reinicios del host.
 
 El resto del documento preserva el barrido original del 2026-03-23, pero las secciones de resumen, estado por componente y plan ya reflejan el cierre de las Acciones 1-3.
@@ -44,7 +45,6 @@ Lo que funciona bien:
 
 Lo que sigue pendiente:
 
-- La higiene de sesiones/transcripts esta degradada: sesiones recientes sin transcript y transcripts huerfanos.
 - El endurecimiento de seguridad de OpenClaw sigue incompleto: plugin `umbral-worker`, `trustedProxies`, perfil permisivo y drift de tool profile.
 - Tavily sigue sin cuota como proveedor primario; queda pendiente decidir si se recarga, se deja como backend secundario o se retira del discovery ahora que Gemini grounded cubre el fallback real.
 
@@ -57,7 +57,7 @@ Lo que sigue pendiente:
 | Canales | OK parcial | Telegram `enabled, configured, running` |
 | Modelos | OK parcial | 10 configurados; auth viva en OpenAI Codex y Google Vertex; OpenAI Codex y Vertex ejecutados en vivo |
 | Agentes | OK parcial | 6 agentes configurados; 3 activos recientemente |
-| Sessions | OK con deuda | 109 sesiones; `doctor` detecta sesiones sin transcript y transcripts huerfanos |
+| Sessions | OK | store `main` saneado (`55 -> 47`), gateway reiniciado y `doctor` sin faltantes ni huérfanos |
 | Skills runtime | OK con seleccion pendiente | workspace compartido y copias activas sincronizadas; queda pendiente curar la seleccion fina por rol |
 | Cron | OK con fallback operativo | jobs corren; discovery cae a Gemini grounded cuando Tavily responde `432` |
 | Bindings | Sin bindings | `openclaw agents bindings` -> `No routing bindings.` |
@@ -212,18 +212,16 @@ Impacto:
 - El scheduler y el discovery real ya no quedan degradados.
 - La deuda restante es decidir si Tavily se recarga o queda como backend secundario por costo/control.
 
-### P2. Higiene de sesiones/transcripts degradada
+### Resuelto. Higiene de sesiones/transcripts degradada
 
 Estado:
 
-- `doctor` reporta `2/5 recent sessions are missing transcripts`
-- y `6 orphan transcript files`
+- Resuelto por la Accion 4 el `2026-03-24`.
 
 Impacto:
 
-- memoria operativa inconsistente
-- limpieza y troubleshooting mas dificiles
-- riesgo de historial parcial para auditoria
+- Se removieron 8 entradas rotas del store `main` y se archivaron 6 `.jsonl` huérfanos.
+- `openclaw doctor` ya no reporta faltantes ni orphans para el store `main`.
 
 ### P2. Hardening de seguridad OpenClaw incompleto
 
@@ -326,15 +324,27 @@ Prioridad: inmediata
 
 ### Accion 4. Sanear sesiones y transcripts
 
+Estado: **cerrada el 2026-03-24**
+
 Objetivo:
 
 - dejar el store consistente
 
 Trabajo:
 
-- correr `openclaw sessions cleanup ... --dry-run`
-- decidir si se aplica `--fix-missing`
-- archivar transcripts huerfanos
+- correr `openclaw sessions cleanup --agent main --dry-run --fix-missing --json`
+- respaldar `sessions.json` antes de mutar
+- aplicar `openclaw sessions cleanup --agent main --enforce --fix-missing --json`
+- reiniciar `openclaw-gateway.service`
+- archivar 6 transcripts huérfanos como `*.deleted.<timestamp>`
+
+Resultado:
+
+- el store `main` quedo en `47` entradas (desde `55`)
+- se removieron 8 claves de runs `cron` con transcript faltante
+- se archivaron 6 `.jsonl` huérfanos
+- `openclaw doctor` ya no reporta `recent sessions are missing transcripts`
+- `openclaw doctor` ya no reporta `orphan transcript files`
 
 Prioridad: media
 
@@ -392,12 +402,12 @@ Prioridad: media
 
 ## Conclusion
 
-OpenClaw esta **operativo**, el dashboard ya abre y el wiring principal con Umbral esta **vivo**. No esta caido ni roto como sistema. Con las Acciones 1-3 cerradas, ya no queda drift basico de topologia/workspace ni degradacion runtime en discovery web. Lo que sigue abierto es higiene de sesiones, hardening y la decision sobre el rol futuro de Tavily como proveedor.
+OpenClaw esta **operativo**, el dashboard ya abre y el wiring principal con Umbral esta **vivo**. No esta caido ni roto como sistema. Con las Acciones 1-4 cerradas, ya no queda drift basico de topologia/workspace, degradacion runtime en discovery web ni deuda de higiene en el store principal de sesiones. Lo que sigue abierto es hardening, seleccion de skills por rol y la decision sobre el rol futuro de Tavily como proveedor.
 
 La siguiente ronda no deberia ser otra auditoria completa. Deberia ser una regularizacion quirurgica de OpenClaw en 3 frentes:
 
-1. higiene de sesiones/transcripts
-2. hardening de seguridad
-3. seleccion de skills por rol + decision Tavily/proveedor
+1. hardening de seguridad
+2. seleccion de skills por rol
+3. decision Tavily/proveedor
 
 Con eso, el siguiente test de OpenClaw ya puede enfocarse en confirmar mejora real y no en seguir encontrando drift basico.

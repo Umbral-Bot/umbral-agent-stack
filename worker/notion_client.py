@@ -1064,6 +1064,39 @@ def _build_dashboard_v2_blocks(data: dict[str, Any]) -> list[dict[str, Any]]:
         blocks.append(_block_table(["Componente", "Último estado", "24h", "Actividad", "Trigger"], tracking_rows))
         blocks.append(_block_divider())
 
+    usage_summary = data.get("usage_summary") or {}
+    if usage_summary.get("tracked"):
+        blocks.append(_block_heading2("Uso OpenClaw"))
+        usage_rows = [
+            [
+                "LLM trazado",
+                str(usage_summary.get("llm_events", 0)),
+                (
+                    f"{usage_summary.get('llm_tokens', 0)} tokens · "
+                    f"{float(usage_summary.get('llm_cost_proxy_usd', 0.0)):.6f} USD proxy"
+                ),
+            ],
+            [
+                "Research",
+                str(usage_summary.get("research_events", 0)),
+                (
+                    f"primario {usage_summary.get('research_primary_provider') or 'n/a'} · "
+                    f"Gemini {usage_summary.get('research_gemini_calls', 0)} · "
+                    f"Tavily fallback {usage_summary.get('research_tavily_fallback_calls', 0)}"
+                ),
+            ],
+        ]
+        if usage_summary.get("top_session_agent"):
+            usage_rows.append(
+                [
+                    "Sesiones",
+                    str(usage_summary.get("top_session_agent_tokens", 0)),
+                    f"agente mas cargado: {usage_summary.get('top_session_agent')}",
+                ]
+            )
+        blocks.append(_block_table(["Area", "Conteo", "Detalle"], usage_rows))
+        blocks.append(_block_divider())
+
     # Recent project-scoped / relevant tasks
     recent = data.get("recent_tasks", [])
     if recent:

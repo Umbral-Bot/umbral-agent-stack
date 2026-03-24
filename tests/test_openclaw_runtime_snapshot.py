@@ -1,3 +1,5 @@
+import json
+
 from scripts import openclaw_runtime_snapshot as snapshot
 
 
@@ -74,6 +76,60 @@ def test_build_snapshot_aggregates_panel_and_llm_usage():
     assert report["llm_usage"]["tracked"] is True
     assert report["llm_usage"]["tokens_total"] == 570
     assert report["llm_usage"]["by_provider"][0]["name"] == "vertex"
+    assert report["sessions_usage"]["tracked"] is False
+
+
+def test_build_snapshot_reads_sessions_root(tmp_path):
+    root = tmp_path / "agents"
+    main_sessions = root / "main" / "sessions"
+    qa_sessions = root / "rick-qa" / "sessions"
+    main_sessions.mkdir(parents=True)
+    qa_sessions.mkdir(parents=True)
+
+    (main_sessions / "sessions.json").write_text(
+        json.dumps(
+            {
+                "agent:main:telegram:1": {
+                    "updatedAt": 1774303638131,
+                    "model": "gpt-5.4",
+                    "modelProvider": "openai-codex",
+                    "inputTokens": 1000,
+                    "outputTokens": 200,
+                    "totalTokens": 1200,
+                    "cacheRead": 500,
+                    "cacheWrite": 0,
+                    "origin": {"provider": "telegram", "surface": "telegram"},
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    (qa_sessions / "sessions.json").write_text(
+        json.dumps(
+            {
+                "agent:rick-qa:direct:1": {
+                    "updatedAt": 1774304638131,
+                    "model": "gemini-2.5-flash",
+                    "modelProvider": "google",
+                    "inputTokens": 500,
+                    "outputTokens": 100,
+                    "totalTokens": 600,
+                    "cacheRead": 0,
+                    "cacheWrite": 0,
+                    "origin": {"provider": "openai-user", "surface": "direct"},
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = snapshot.build_snapshot([], days=7, sessions_root=str(root))
+
+    assert report["sessions_usage"]["tracked"] is True
+    assert report["sessions_usage"]["agents"][0]["name"] == "main"
+    assert report["sessions_usage"]["agents"][0]["total_tokens"] == 1200
+    assert report["sessions_usage"]["by_model"][0]["name"] == "gpt-5.4"
+    assert report["sessions_usage"]["recent_sessions"][0]["agent"] == "rick-qa"
 
 
 def test_to_markdown_mentions_limitations_and_panels():
@@ -144,6 +200,31 @@ def test_to_markdown_mentions_limitations_and_panels():
                 }
             ],
         },
+        "sessions_usage": {
+            "tracked": True,
+            "root": "/tmp/openclaw-agents",
+            "agents": [
+                {
+                    "name": "main",
+                    "sessions": 3,
+                    "input_tokens": 1000,
+                    "output_tokens": 200,
+                    "total_tokens": 1200,
+                    "cache_read": 500,
+                    "estimated_cost_proxy_usd": 0.000270,
+                }
+            ],
+            "by_model": [
+                {
+                    "name": "gpt-5.4",
+                    "provider": "openai-codex",
+                    "sessions": 3,
+                    "total_tokens": 1200,
+                    "estimated_cost_proxy_usd": 0.000270,
+                }
+            ],
+            "recent_sessions": [],
+        },
         "limitations": ["Limitation A", "Limitation B"],
     }
 
@@ -152,4 +233,6 @@ def test_to_markdown_mentions_limitations_and_panels():
     assert "## Paneles" in rendered
     assert "dashboard_rick" in rendered
     assert "## LLM usage" in rendered
+    assert "## Session usage" in rendered
+    assert "/tmp/openclaw-agents" in rendered
     assert "Limitation A" in rendered

@@ -1,0 +1,387 @@
+{
+  "generated_at": "2026-03-24T07:55:45.079442+00:00",
+  "window_days": 7,
+  "total_events": 29169,
+  "tracked_sources": [
+    "openclaw_gateway",
+    "postdiag_smoke"
+  ],
+  "panels": {
+    "components": {
+      "dashboard_rick": {
+        "component": "dashboard_rick",
+        "updated": 6,
+        "skipped": 0,
+        "failed": 0,
+        "notion_reads": 18,
+        "notion_writes": 6,
+        "worker_calls": 24,
+        "db_rows_read": 0,
+        "last_status": "updated",
+        "last_trigger": "deferreds",
+        "last_ts": "2026-03-24T07:48:51.844081+00:00",
+        "last_duration_ms": 57521,
+        "last_details": "overall=Degradado"
+      },
+      "openclaw_panel": {
+        "component": "openclaw_panel",
+        "updated": 6,
+        "skipped": 2,
+        "failed": 0,
+        "notion_reads": 110,
+        "notion_writes": 114,
+        "worker_calls": 0,
+        "db_rows_read": 660,
+        "last_status": "updated",
+        "last_trigger": "deferreds",
+        "last_ts": "2026-03-24T07:49:33.450003+00:00",
+        "last_duration_ms": 41436,
+        "last_details": "panel_blocks=15; cleaned=0; renamed=0"
+      }
+    },
+    "totals": {
+      "notion_reads": 128,
+      "notion_writes": 120,
+      "worker_calls": 24
+    }
+  },
+  "openclaw_runtime": {
+    "source": "openclaw_gateway",
+    "task_events_total": 12,
+    "completed": 8,
+    "failed": 0,
+    "blocked": 4,
+    "top_tasks": [
+      {
+        "name": "google.calendar.list_events",
+        "completed": 2,
+        "failed": 0,
+        "blocked": 0,
+        "avg_duration_ms": 586
+      },
+      {
+        "name": "linear.list_teams",
+        "completed": 2,
+        "failed": 0,
+        "blocked": 0,
+        "avg_duration_ms": 264
+      },
+      {
+        "name": "research.web",
+        "completed": 2,
+        "failed": 0,
+        "blocked": 0,
+        "avg_duration_ms": 5816
+      },
+      {
+        "name": "composite.research_report",
+        "completed": 1,
+        "failed": 0,
+        "blocked": 0,
+        "avg_duration_ms": 21809
+      },
+      {
+        "name": "llm.generate",
+        "completed": 1,
+        "failed": 0,
+        "blocked": 0,
+        "avg_duration_ms": 3380
+      },
+      {
+        "name": "windows.fs.list",
+        "completed": 0,
+        "failed": 0,
+        "blocked": 4,
+        "avg_duration_ms": 0
+      }
+    ],
+    "recent_failures": []
+  },
+  "llm_usage": {
+    "tracked_events": 2,
+    "tracked": true,
+    "by_provider": [
+      {
+        "name": "gemini",
+        "calls": 2,
+        "prompt_tokens": 64,
+        "completion_tokens": 44,
+        "total_tokens": 319,
+        "avg_duration_ms": 3197,
+        "estimated_cost_proxy_usd": 6.9e-05
+      }
+    ],
+    "by_model": [
+      {
+        "name": "gemini-2.5-pro",
+        "provider": "gemini",
+        "calls": 2,
+        "total_tokens": 319,
+        "estimated_cost_proxy_usd": 6.9e-05
+      }
+    ],
+    "by_usage_component": [
+      {
+        "name": "composite.research_report.query_generation",
+        "calls": 1,
+        "total_tokens": 179,
+        "estimated_cost_proxy_usd": 5.5e-05
+      },
+      {
+        "name": "llm.generate",
+        "calls": 1,
+        "total_tokens": 140,
+        "estimated_cost_proxy_usd": 1.4e-05
+      }
+    ],
+    "tokens_total": 319,
+    "estimated_cost_proxy_usd": 6.9e-05
+  },
+  "sessions_usage": {
+    "tracked": true,
+    "root": "/home/rick/.openclaw/agents",
+    "agents": [
+      {
+        "name": "main",
+        "sessions": 47,
+        "input_tokens": 2466401,
+        "output_tokens": 16848,
+        "total_tokens": 1505398,
+        "cache_read": 1255340,
+        "cache_write": 12852,
+        "estimated_cost_proxy_usd": 0.791938
+      },
+      {
+        "name": "rick-ops",
+        "sessions": 50,
+        "input_tokens": 840202,
+        "output_tokens": 14894,
+        "total_tokens": 1276478,
+        "cache_read": 2504448,
+        "cache_write": 0,
+        "estimated_cost_proxy_usd": 0.134967
+      },
+      {
+        "name": "rick-orchestrator",
+        "sessions": 1,
+        "input_tokens": 21010,
+        "output_tokens": 581,
+        "total_tokens": 21010,
+        "cache_read": 0,
+        "cache_write": 0,
+        "estimated_cost_proxy_usd": 0.0035
+      },
+      {
+        "name": "rick-tracker",
+        "sessions": 1,
+        "input_tokens": 16079,
+        "output_tokens": 12,
+        "total_tokens": 16079,
+        "cache_read": 0,
+        "cache_write": 0,
+        "estimated_cost_proxy_usd": 0.00564
+      },
+      {
+        "name": "rick-qa",
+        "sessions": 1,
+        "input_tokens": 13629,
+        "output_tokens": 134,
+        "total_tokens": 13629,
+        "cache_read": 0,
+        "cache_write": 0,
+        "estimated_cost_proxy_usd": 0.002125
+      },
+      {
+        "name": "rick-delivery",
+        "sessions": 1,
+        "input_tokens": 13307,
+        "output_tokens": 12,
+        "total_tokens": 13307,
+        "cache_read": 0,
+        "cache_write": 0,
+        "estimated_cost_proxy_usd": 0.002003
+      }
+    ],
+    "by_model": [
+      {
+        "name": "gpt-5.3-codex",
+        "provider": "openai-codex",
+        "sessions": 52,
+        "input_tokens": 867138,
+        "output_tokens": 15040,
+        "total_tokens": 1303414,
+        "cache_read": 2504448,
+        "estimated_cost_proxy_usd": 0.139095
+      },
+      {
+        "name": "gemini-2.5-flash",
+        "provider": "google",
+        "sessions": 37,
+        "input_tokens": 2024883,
+        "output_tokens": 11646,
+        "total_tokens": 1078078,
+        "cache_read": 55852,
+        "estimated_cost_proxy_usd": 0.720939
+      },
+      {
+        "name": "gpt-5.4",
+        "provider": "openai-codex",
+        "sessions": 8,
+        "input_tokens": 420364,
+        "output_tokens": 4983,
+        "total_tokens": 393314,
+        "cache_read": 1199488,
+        "estimated_cost_proxy_usd": 0.066044
+      },
+      {
+        "name": "gpt-5.2-chat",
+        "provider": "azure-openai-responses",
+        "sessions": 1,
+        "input_tokens": 21151,
+        "output_tokens": 105,
+        "total_tokens": 21151,
+        "cache_read": 0,
+        "estimated_cost_proxy_usd": 0.003236
+      },
+      {
+        "name": "gpt-5.4-pro",
+        "provider": "azure-openai-responses",
+        "sessions": 1,
+        "input_tokens": 21010,
+        "output_tokens": 581,
+        "total_tokens": 21010,
+        "cache_read": 0,
+        "estimated_cost_proxy_usd": 0.0035
+      },
+      {
+        "name": "gemini-3.1-pro-preview",
+        "provider": "google-vertex",
+        "sessions": 1,
+        "input_tokens": 16079,
+        "output_tokens": 12,
+        "total_tokens": 16079,
+        "cache_read": 0,
+        "estimated_cost_proxy_usd": 0.00564
+      },
+      {
+        "name": "claude-opus-4-6",
+        "provider": "anthropic",
+        "sessions": 1,
+        "input_tokens": 3,
+        "output_tokens": 114,
+        "total_tokens": 12855,
+        "cache_read": 0,
+        "estimated_cost_proxy_usd": 0.001719
+      }
+    ],
+    "recent_sessions": [
+      {
+        "agent": "rick-ops",
+        "session_key": "agent:rick-ops:cron:6b5dd638-4998-457f-91bf-be4fc8e58a53",
+        "model": "gpt-5.3-codex",
+        "provider": "openai-codex",
+        "updated_at": "2026-03-24T07:28:53.607000+00:00",
+        "total_tokens": 23194,
+        "origin_provider": "",
+        "origin_surface": ""
+      },
+      {
+        "agent": "rick-ops",
+        "session_key": "agent:rick-ops:cron:6b5dd638-4998-457f-91bf-be4fc8e58a53:run:008b2699-2c9a-47bb-a5d0-3d7ef0ee740f",
+        "model": "gpt-5.3-codex",
+        "provider": "openai-codex",
+        "updated_at": "2026-03-24T07:28:53.607000+00:00",
+        "total_tokens": 23194,
+        "origin_provider": "",
+        "origin_surface": ""
+      },
+      {
+        "agent": "main",
+        "session_key": "agent:main:main",
+        "model": "gpt-5.4",
+        "provider": "openai-codex",
+        "updated_at": "2026-03-24T07:28:33.983000+00:00",
+        "total_tokens": 68227,
+        "origin_provider": "heartbeat",
+        "origin_surface": ""
+      },
+      {
+        "agent": "rick-qa",
+        "session_key": "agent:rick-qa:main",
+        "model": "gpt-5.3-codex",
+        "provider": "openai-codex",
+        "updated_at": "2026-03-24T07:05:21.215000+00:00",
+        "total_tokens": 13629,
+        "origin_provider": "",
+        "origin_surface": ""
+      },
+      {
+        "agent": "rick-tracker",
+        "session_key": "agent:rick-tracker:main",
+        "model": "gemini-3.1-pro-preview",
+        "provider": "google-vertex",
+        "updated_at": "2026-03-24T07:05:14.203000+00:00",
+        "total_tokens": 16079,
+        "origin_provider": "",
+        "origin_surface": ""
+      },
+      {
+        "agent": "rick-ops",
+        "session_key": "agent:rick-ops:main",
+        "model": "gpt-5.3-codex",
+        "provider": "openai-codex",
+        "updated_at": "2026-03-24T07:05:05.979000+00:00",
+        "total_tokens": 37268,
+        "origin_provider": "",
+        "origin_surface": ""
+      },
+      {
+        "agent": "rick-ops",
+        "session_key": "agent:rick-ops:cron:6b5dd638-4998-457f-91bf-be4fc8e58a53:run:30b747f7-5d5a-451f-9ef5-5c98119c277e",
+        "model": "gpt-5.3-codex",
+        "provider": "openai-codex",
+        "updated_at": "2026-03-24T06:58:53.604000+00:00",
+        "total_tokens": 22948,
+        "origin_provider": "",
+        "origin_surface": ""
+      },
+      {
+        "agent": "rick-ops",
+        "session_key": "agent:rick-ops:cron:6b5dd638-4998-457f-91bf-be4fc8e58a53:run:0c14495d-27e7-4667-a8ee-f134602e2de0",
+        "model": "gpt-5.3-codex",
+        "provider": "openai-codex",
+        "updated_at": "2026-03-24T06:28:53.603000+00:00",
+        "total_tokens": 22902,
+        "origin_provider": "",
+        "origin_surface": ""
+      },
+      {
+        "agent": "rick-ops",
+        "session_key": "agent:rick-ops:cron:6b5dd638-4998-457f-91bf-be4fc8e58a53:run:7e975f1e-bb0d-467c-87a7-8905ce8e323f",
+        "model": "gpt-5.3-codex",
+        "provider": "openai-codex",
+        "updated_at": "2026-03-24T05:58:53.600000+00:00",
+        "total_tokens": 22904,
+        "origin_provider": "",
+        "origin_surface": ""
+      },
+      {
+        "agent": "rick-ops",
+        "session_key": "agent:rick-ops:cron:6b5dd638-4998-457f-91bf-be4fc8e58a53:run:2a54492d-c155-4b99-aeb9-4a0deee45d12",
+        "model": "gpt-5.3-codex",
+        "provider": "openai-codex",
+        "updated_at": "2026-03-24T05:28:53.596000+00:00",
+        "total_tokens": 22737,
+        "origin_provider": "",
+        "origin_surface": ""
+      }
+    ]
+  },
+  "limitations": [
+    "El snapshot cubre actividad de paneles y eventos LLM trazados en ops_log; no es facturacion exacta.",
+    "research.web via Gemini grounded search no expone tokens en ops_log hoy, asi que su costo fino queda fuera del corte.",
+    "La estimacion monetaria usa rates rough versionados en el repo y debe leerse como costo proxy, no como facturacion oficial.",
+    "La vista de sesiones usa snapshots `sessions.json` de OpenClaw; refleja tokens acumulados por sesion y no reemplaza billing oficial por request.",
+    "El costo proxy de sesiones usa solo input/output tokens; `cacheRead` y `cacheWrite` quedan fuera porque su billing depende del provider."
+  ]
+}

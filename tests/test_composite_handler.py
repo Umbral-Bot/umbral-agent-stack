@@ -159,6 +159,56 @@ class TestCompositeResearchReport:
         assert "Raw research data" in result["report"]
         assert result["stats"]["total_sources"] > 0
 
+    @patch("worker.tasks.composite.time.sleep")
+    @patch(LLM_PATCH)
+    @patch(RESEARCH_PATCH)
+    def test_report_generation_retries_transient_error_then_succeeds(self, mock_research, mock_llm, mock_sleep):
+        """A transient Gemini-style 503 on final generation is retried before succeeding."""
+        from worker.tasks.composite import handle_composite_research_report
+
+        mock_research.return_value = _make_research_result("test", 2)
+        mock_llm.side_effect = [
+            _make_query_gen_result(["q1", "q2", "q3"]),
+            RuntimeError("Gemini API error 503: UNAVAILABLE"),
+            _make_llm_result("# Report after retry"),
+        ]
+
+        result = handle_composite_research_report({"topic": "Retry test", "depth": "quick"})
+
+        assert result["report"] == "# Report after retry"
+        assert result["stats"]["report_generation_attempts"] == 2
+        assert mock_llm.call_count == 3
+        mock_sleep.assert_called_once_with(1.0)
+
+    @patch("worker.tasks.composite.time.sleep")
+    @patch(LLM_PATCH)
+    @patch(RESEARCH_PATCH)
+    def test_report_generation_exhausts_transient_retries_then_falls_back(
+        self,
+        mock_research,
+        mock_llm,
+        mock_sleep,
+    ):
+        """Transient errors retry up to the cap, then fall back to raw research data."""
+        from worker.tasks.composite import handle_composite_research_report
+
+        mock_research.return_value = _make_research_result("test", 2)
+        mock_llm.side_effect = [
+            _make_query_gen_result(["q1", "q2", "q3"]),
+            RuntimeError("Gemini generation failed: 503 UNAVAILABLE"),
+            RuntimeError("Gemini generation failed: 503 UNAVAILABLE"),
+            RuntimeError("Gemini generation failed: 503 UNAVAILABLE"),
+        ]
+
+        result = handle_composite_research_report({"topic": "Retry exhaust", "depth": "quick"})
+
+        assert "LLM generation failed" in result["report"]
+        assert result["stats"]["report_generation_attempts"] == 3
+        assert mock_llm.call_count == 4
+        assert mock_sleep.call_count == 2
+        assert mock_sleep.call_args_list[0][0][0] == 1.0
+        assert mock_sleep.call_args_list[1][0][0] == 2.0
+
     @patch(LLM_PATCH)
     @patch(RESEARCH_PATCH)
     def test_empty_topic_raises(self, mock_research, mock_llm):

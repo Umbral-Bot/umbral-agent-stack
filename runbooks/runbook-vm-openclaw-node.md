@@ -49,7 +49,8 @@ Si pide password, primero hay que autorizar la clave publica de la VM en `~/.ssh
 Nota operativa:
 
 - el tunel manual puede funcionar aunque el servicio NSSM falle si `SYSTEM` no puede leer `id_ed25519` o `known_hosts`;
-- el instalador actual ya corrige eso con `icacls ... /grant SYSTEM:R` antes de iniciar el servicio.
+- el instalador actual ya corrige eso con `icacls ... /grant SYSTEM:R` antes de iniciar el servicio;
+- el token del gateway puede persistirse en `C:\openclaw-worker\openclaw-gateway-token` para no volver a pegarlo en cada rerun.
 
 ## Script recomendado
 
@@ -78,6 +79,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\vm\install_openclaw_node_stac
 ```
 
 Si tu acceso SSH a la VPS usa otro hostname o usuario, cambia `-GatewaySshTarget`.
+Despues del primer run exitoso, puedes omitir `-GatewayToken` si el token ya quedo guardado en `C:\openclaw-worker\openclaw-gateway-token`.
 Si la clave no esta en `C:\Users\Rick\.ssh\id_ed25519`, agrega:
 
 ```powershell

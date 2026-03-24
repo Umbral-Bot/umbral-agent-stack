@@ -149,9 +149,10 @@ Current state:
 Recommendation:
 
 1. Keep Gemini grounded search as the canonical discovery path now.
-2. Treat Tavily as optional or secondary, not required.
-3. Only recharge Tavily if there is a concrete use case where its search quality or policy is materially better than Gemini grounded search.
-4. If Tavily is not re-funded soon, document it as intentionally secondary and stop treating its quota state as an incident.
+2. Keep Tavily as an optional, cheap secondary backup, not as a required primary backend.
+3. Only recharge or lean on Tavily more if concrete cases show Gemini grounded search is insufficient.
+4. Defer Perplexity for now; reconsider it only if repeated real cases show Gemini plus Tavily backup are not enough.
+5. Track how often `research.web` actually falls back to Tavily before opening a new provider integration.
 
 Practical reading:
 

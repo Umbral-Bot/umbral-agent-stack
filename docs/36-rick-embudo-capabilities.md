@@ -46,7 +46,8 @@ Funciones que Rick puede usar o a las que puedes darle acceso para el embudo de 
 ### Prioridad sugerida para el embudo
 
 1. **Ya en uso:** Notion, Linear, VM/Drive, GitHub, SIM (Reddit + búsqueda cuando esté).
-2. **Siguiente:** mantener Gemini grounded search como backend primario de búsqueda, Tavily como fallback secundario y usar Telegram para resúmenes breves a David.
+2. **Siguiente:** mantener Gemini grounded search como backend primario de búsqueda, Tavily como fallback secundario barato y usar Telegram para resúmenes breves a David.
+3. **Más adelante, solo si hace falta:** evaluar Perplexity cuando el tracking muestre que Gemini + Tavily backup no alcanzan para ciertos casos reales.
 3. **Después:** Hostinger para estado de infra; opcional calendario + CRM en Notion/Linear; formularios/webhooks si hay landing.
 
 ---

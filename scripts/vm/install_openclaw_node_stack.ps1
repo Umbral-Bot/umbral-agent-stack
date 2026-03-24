@@ -19,8 +19,10 @@ param(
     [string]$TunnelServiceName = "openclaw-node-tunnel",
     [string]$LogDir = "C:\openclaw-worker",
     [string]$GatewayTokenFile = "C:\openclaw-worker\openclaw-gateway-token",
-    [string]$SshKeyPath = "$env:USERPROFILE\.ssh\id_ed25519",
-    [string]$KnownHostsPath = "$env:USERPROFILE\.ssh\known_hosts",
+    [string]$BootstrapSshKeyPath = "$env:USERPROFILE\.ssh\id_ed25519",
+    [string]$BootstrapKnownHostsPath = "$env:USERPROFILE\.ssh\known_hosts",
+    [string]$SshKeyPath = "C:\openclaw-worker\.ssh\id_ed25519",
+    [string]$KnownHostsPath = "C:\openclaw-worker\.ssh\known_hosts",
     [int]$LocalTunnelPort = 18790,
     [int]$GatewayPort = 18789
 )
@@ -59,6 +61,7 @@ function Test-LocalTunnel {
 
 $NssmExe = Get-RequiredCommand "nssm"
 $SshExe = Get-RequiredCommand "ssh.exe"
+$SshKeygenExe = Get-RequiredCommand "ssh-keygen.exe"
 $OpenClawExe = Get-RequiredCommand "openclaw"
 $IcaclsExe = Get-RequiredCommand "icacls.exe"
 
@@ -75,13 +78,28 @@ if ([string]::IsNullOrWhiteSpace($GatewayToken)) {
     throw "GatewayToken no puede quedar vacio y tampoco existe '$GatewayTokenFile'."
 }
 
-if (-not (Test-Path $SshKeyPath)) {
-    throw "No se encontro la clave SSH en '$SshKeyPath'."
+if (-not (Test-Path $BootstrapSshKeyPath)) {
+    throw "No se encontro la clave SSH bootstrap en '$BootstrapSshKeyPath'."
 }
 
 New-Item -ItemType Directory -Path (Split-Path -Parent $KnownHostsPath) -Force | Out-Null
-
 New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
+
+if ((-not (Test-Path $KnownHostsPath)) -and (Test-Path $BootstrapKnownHostsPath)) {
+    Copy-Item -Path $BootstrapKnownHostsPath -Destination $KnownHostsPath -Force
+}
+
+if (-not (Test-Path $SshKeyPath)) {
+    Write-Host "Generando clave SSH dedicada para el servicio..." -ForegroundColor Green
+    & $SshKeygenExe "-t" "ed25519" "-f" $SshKeyPath "-N" "" "-C" "pcrick-openclaw-service"
+    if ($LASTEXITCODE -ne 0) {
+        throw "ssh-keygen fallo al crear '$SshKeyPath'."
+    }
+}
+
+if (-not (Test-Path "$SshKeyPath.pub")) {
+    throw "No se encontro la clave publica del servicio en '$SshKeyPath.pub'."
+}
 
 $stdoutLog = Join-Path $LogDir "openclaw-node-tunnel-stdout.log"
 $stderrLog = Join-Path $LogDir "openclaw-node-tunnel-stderr.log"
@@ -104,29 +122,50 @@ Write-Host "=== OpenClaw node persistence (PCRick) ===" -ForegroundColor Cyan
 Write-Host "Tunnel target: $GatewaySshTarget"
 Write-Host "Local tunnel: 127.0.0.1:$LocalTunnelPort -> VPS 127.0.0.1:$GatewayPort"
 Write-Host "Gateway token file: $GatewayTokenFile"
+Write-Host "Bootstrap SSH key: $BootstrapSshKeyPath"
 Write-Host "SSH key: $SshKeyPath"
 Write-Host "known_hosts: $KnownHostsPath"
 Write-Host ""
 
-Write-Host "Probando SSH sin interaccion..." -ForegroundColor Green
-& $SshExe "-i" $SshKeyPath "-o" "BatchMode=yes" "-o" "IdentitiesOnly=yes" "-o" "StrictHostKeyChecking=accept-new" "-o" "UserKnownHostsFile=$KnownHostsPath" $GatewaySshTarget "exit"
+Write-Host "Probando SSH bootstrap sin interaccion..." -ForegroundColor Green
+& $SshExe "-i" $BootstrapSshKeyPath "-o" "BatchMode=yes" "-o" "IdentitiesOnly=yes" "-o" "StrictHostKeyChecking=accept-new" "-o" "UserKnownHostsFile=$BootstrapKnownHostsPath" $GatewaySshTarget "exit"
 if ($LASTEXITCODE -ne 0) {
-    throw "La prueba SSH sin interaccion fallo. Autoriza la clave publica en la VPS antes de continuar."
+    throw "La prueba SSH bootstrap sin interaccion fallo. Autoriza la clave publica en la VPS antes de continuar."
 }
 
-Write-Host "Ajustando ACLs para que el servicio pueda leer la clave SSH..." -ForegroundColor Green
-& $IcaclsExe $SshKeyPath "/grant" "SYSTEM:R" | Out-Null
+Write-Host "Ajustando ACLs estrictas para la clave del servicio..." -ForegroundColor Green
+& $IcaclsExe (Split-Path -Parent $SshKeyPath) "/inheritance:r" "/grant:r" "*S-1-5-18:(OI)(CI)F" "*S-1-5-32-544:(OI)(CI)F" | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    throw "No se pudieron fijar ACLs sobre '$(Split-Path -Parent $SshKeyPath)'."
+}
+& $IcaclsExe $SshKeyPath "/inheritance:r" "/grant:r" "*S-1-5-18:F" "*S-1-5-32-544:F" | Out-Null
 if ($LASTEXITCODE -ne 0) {
     throw "No se pudo otorgar lectura a SYSTEM sobre '$SshKeyPath'."
 }
-& $IcaclsExe $KnownHostsPath "/grant" "SYSTEM:R" | Out-Null
+& $IcaclsExe "$SshKeyPath.pub" "/inheritance:r" "/grant:r" "*S-1-5-18:F" "*S-1-5-32-544:F" | Out-Null
 if ($LASTEXITCODE -ne 0) {
-    throw "No se pudo otorgar lectura a SYSTEM sobre '$KnownHostsPath'."
+    throw "No se pudieron fijar ACLs sobre '$SshKeyPath.pub'."
+}
+& $IcaclsExe $KnownHostsPath "/inheritance:r" "/grant:r" "*S-1-5-18:F" "*S-1-5-32-544:F" | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    throw "No se pudieron fijar ACLs sobre '$KnownHostsPath'."
 }
 Set-Content -Path $GatewayTokenFile -Value $GatewayToken -NoNewline
 & $IcaclsExe $GatewayTokenFile "/grant" "SYSTEM:R" | Out-Null
 if ($LASTEXITCODE -ne 0) {
     throw "No se pudo otorgar lectura a SYSTEM sobre '$GatewayTokenFile'."
+}
+
+Write-Host "Autorizando clave del servicio en la VPS..." -ForegroundColor Green
+Get-Content "$SshKeyPath.pub" | & $SshExe "-i" $BootstrapSshKeyPath "-o" "BatchMode=yes" "-o" "IdentitiesOnly=yes" "-o" "StrictHostKeyChecking=accept-new" "-o" "UserKnownHostsFile=$BootstrapKnownHostsPath" $GatewaySshTarget "mkdir -p ~/.ssh && chmod 700 ~/.ssh && touch ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && cat >> ~/.ssh/authorized_keys && sort -u ~/.ssh/authorized_keys -o ~/.ssh/authorized_keys"
+if ($LASTEXITCODE -ne 0) {
+    throw "No se pudo autorizar la clave del servicio en la VPS."
+}
+
+Write-Host "Probando SSH del servicio sin interaccion..." -ForegroundColor Green
+& $SshExe "-i" $SshKeyPath "-o" "BatchMode=yes" "-o" "IdentitiesOnly=yes" "-o" "StrictHostKeyChecking=accept-new" "-o" "UserKnownHostsFile=$KnownHostsPath" $GatewaySshTarget "exit"
+if ($LASTEXITCODE -ne 0) {
+    throw "La prueba SSH del servicio fallo. Revisa ACLs o authorized_keys."
 }
 
 # Reinstalar el servicio de tunel para asegurar args y logs correctos.

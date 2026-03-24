@@ -56,6 +56,7 @@ Regularización `UMB-132` (2026-03-22): se cerraron task files históricos que h
 | 2026-03-23-019 | Accion 1: regularizar topologia OpenClaw en VPS y dejar un solo gateway canonico | codex | ✅ done |
 | 2026-03-24-003 | Accion 2: sincronizar workspace compartido OpenClaw VPS con el repo | codex | ✅ done |
 | 2026-03-24-004 | Accion 3: resolver discovery web y degradacion Tavily en runtime | codex | ✅ done |
+| 2026-03-24-005 | Accion 4: sanear sesiones y transcripts de OpenClaw en VPS | codex | ✅ done |
 | 2026-03-24-002 | Accion 8: revisar skills faltantes en OpenClaw VPS y decidir sync vs skill nueva | codex | pending |
 
 ## Pendientes diferidos post-fases
@@ -63,7 +64,6 @@ Regularización `UMB-132` (2026-03-22): se cerraron task files históricos que h
 - Snapshot repo-side del tracking de paneles/OpenClaw (`reports/...`) a partir de `ops_log`.
 - Atribucion mas fina de costo/tokens por componente dentro de OpenClaw, separada del tracking operativo ya implementado.
 - Decidir si Tavily se recarga, se deja como backend secundario o se retira del discovery ahora que `research.web` y `web_discovery.py` ya quedan cubiertos por Gemini grounded fallback.
-- Sanear sesiones recientes sin transcript y transcripts huerfanos detectados por `openclaw doctor`.
 - Hardening OpenClaw pendiente: clasificar warning del plugin `umbral-worker`, `trustedProxies`, perfil `coding` y symlink escape.
 - Revalidar reachability Tailscale VPS -> VM despues del reinicio del host; la recuperacion de internet de la VM quedo documentada, pero el tailnet end-to-end no se da por estable tras el reboot.
 

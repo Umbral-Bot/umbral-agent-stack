@@ -59,3 +59,32 @@ Validacion repo-side:
 - parser PowerShell OK para `scripts/vm/install_openclaw_node_stack.ps1`
 - `openclaw status --all` en VPS confirma que el gateway sigue en `loopback`
 - `openclaw devices list` / `openclaw nodes status` confirman que `PCRick` ya esta paired y solo falta reconexion persistente
+
+### [codex] 2026-03-24 18:25
+Primer intento vivo en la VM:
+
+- la VM volvio a arrancar y pudo hacer `git pull origin main`;
+- `openclaw node --help` confirma que el CLI instalado en Windows soporta `node install`;
+- se genero una clave SSH local `id_ed25519` y se autorizo en `~/.ssh/authorized_keys` de la VPS;
+- el servicio `openclaw-node-tunnel` quedo `SERVICE_RUNNING`, pero `127.0.0.1:18790` seguia sin responder.
+
+Hallazgo nuevo:
+
+- el script original no fijaba `-i <key>` ni `UserKnownHostsFile`, por lo que el servicio NSSM quedaba con identidad SSH ambigua;
+- ademas, el primer intento se lanzo con el placeholder `TU_TOKEN_REAL_DEL_GATEWAY`, asi que el `node install` no podia cerrarse correctamente aunque el tunel subiera.
+
+Accion repo-side adicional:
+
+- `scripts/vm/install_openclaw_node_stack.ps1` ahora fuerza:
+  - `-i $env:USERPROFILE\.ssh\id_ed25519`
+  - `-o BatchMode=yes`
+  - `-o IdentitiesOnly=yes`
+  - `-o UserKnownHostsFile=...`
+- el script ahora hace una prueba SSH no interactiva antes de reinstalar el servicio de tunel;
+- el runbook `runbooks/runbook-vm-openclaw-node.md` fue actualizado para incluir esa precondicion.
+
+Bloqueo residual exacto:
+
+- rerun del script en la VM con el parche nuevo;
+- obtencion del `GatewayToken` real desde la VPS;
+- verificacion final en la VPS de que `PCRick` pase de `paired · disconnected` a `connected`.

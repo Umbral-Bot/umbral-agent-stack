@@ -8,12 +8,18 @@ Tasks: Granola pipeline handlers.
 import logging
 import re
 import hashlib
+import unicodedata
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
-from .. import notion_client
-from .notion import handle_notion_upsert_task
+from .. import config, notion_client
+from .notion import (
+    handle_notion_upsert_bridge_item,
+    handle_notion_upsert_deliverable,
+    handle_notion_upsert_project,
+    handle_notion_upsert_task,
+)
 from .notion_markdown import markdown_to_blocks
 
 logger = logging.getLogger("worker.tasks.granola")
@@ -70,6 +76,359 @@ def _extract_action_items_from_content(content: str) -> List[Dict[str, str]]:
                     item_text = item_text[: paren.start()].strip()
                 items.append({"text": item_text, "assignee": assignee, "due": due})
     return items
+
+
+def _extract_title_from_page(page_data: Dict[str, Any]) -> str:
+    properties = page_data.get("properties") or {}
+    for prop in properties.values():
+        if isinstance(prop, dict) and prop.get("type") == "title":
+            parts: list[str] = []
+            for item in prop.get("title") or []:
+                if isinstance(item, dict):
+                    parts.append(item.get("plain_text", item.get("text", {}).get("content", "")))
+            return "".join(parts).strip()
+    return ""
+
+
+def _extract_date_from_page(page_data: Dict[str, Any]) -> str:
+    properties = page_data.get("properties") or {}
+    for candidate in ("Fecha", "Date", "Fecha de transcripcion", "Meeting Date"):
+        prop = properties.get(candidate)
+        if isinstance(prop, dict) and prop.get("type") == "date":
+            return ((prop.get("date") or {}).get("start") or "").strip()
+    return ""
+
+
+def _extract_select_value(page_data: Dict[str, Any], *names: str) -> str:
+    properties = page_data.get("properties") or {}
+    for candidate in names:
+        prop = properties.get(candidate)
+        if not isinstance(prop, dict):
+            continue
+        prop_type = prop.get("type")
+        if prop_type == "select":
+            return ((prop.get("select") or {}).get("name") or "").strip()
+        if prop_type == "status":
+            return ((prop.get("status") or {}).get("name") or "").strip()
+        if prop_type == "rich_text":
+            parts: list[str] = []
+            for item in prop.get("rich_text") or []:
+                if isinstance(item, dict):
+                    parts.append(item.get("plain_text", item.get("text", {}).get("content", "")))
+            return "".join(parts).strip()
+    return ""
+
+
+def _extract_relation_values(page_data: Dict[str, Any], *names: str) -> list[str]:
+    properties = page_data.get("properties") or {}
+    for candidate in names:
+        prop = properties.get(candidate)
+        if not isinstance(prop, dict) or prop.get("type") != "relation":
+            continue
+        resolved: list[str] = []
+        for item in prop.get("relation") or []:
+            if isinstance(item, dict):
+                item_id = str(item.get("id") or "").strip()
+                if item_id:
+                    resolved.append(item_id)
+        if resolved:
+            return resolved
+    return []
+
+
+def _compact_excerpt(text: str, limit: int = 280) -> str:
+    value = " ".join((text or "").split())
+    if len(value) <= limit:
+        return value
+    return value[: limit - 3].rstrip() + "..."
+
+
+def _normalize_lookup_text(value: str) -> str:
+    text = unicodedata.normalize("NFKD", value or "")
+    ascii_text = text.encode("ascii", "ignore").decode("ascii")
+    cleaned = "".join(ch if ch.isalnum() else " " for ch in ascii_text.lower())
+    return " ".join(cleaned.split())
+
+
+def _extract_date_start(value: Any) -> str:
+    if isinstance(value, dict):
+        return str(value.get("start") or "").strip()
+    return str(value or "").strip()
+
+
+def _extract_page_text_property(page_data: Dict[str, Any], *names: str) -> str:
+    properties = page_data.get("properties") or {}
+    for candidate in names:
+        prop = properties.get(candidate)
+        if not isinstance(prop, dict):
+            continue
+        prop_type = prop.get("type")
+        if prop_type == "url":
+            return str(prop.get("url") or "").strip()
+        if prop_type in {"title", "rich_text"}:
+            key = "title" if prop_type == "title" else "rich_text"
+            parts: list[str] = []
+            for item in prop.get(key) or []:
+                if isinstance(item, dict):
+                    parts.append(item.get("plain_text", item.get("text", {}).get("content", "")))
+            return "".join(parts).strip()
+    return ""
+
+
+def _append_context(existing: str, extra: str) -> str:
+    base = (existing or "").strip()
+    addon = (extra or "").strip()
+    if not addon:
+        return base
+    if not base:
+        return addon
+    return f"{base}\n\n{addon}"
+
+
+def _comment_safe(page_id: str | None, text: str) -> bool:
+    if not page_id or not text.strip():
+        return False
+    try:
+        notion_client.add_comment(page_id=page_id, text=text)
+        return True
+    except Exception as exc:
+        logger.warning("Failed to add traceability comment to %s: %s", page_id, exc)
+        return False
+
+
+def _result_page_id(result: Dict[str, Any] | None) -> str:
+    if not isinstance(result, dict):
+        return ""
+    direct = str(result.get("page_id") or "").strip()
+    if direct:
+        return direct
+    nested = result.get("result")
+    if isinstance(nested, dict):
+        inner_page_id = str(nested.get("page_id") or "").strip()
+        if inner_page_id:
+            return inner_page_id
+        notion_result = nested.get("notion_result")
+        if isinstance(notion_result, dict):
+            return str(notion_result.get("page_id") or "").strip()
+    return ""
+
+
+def _today_date() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+
+def _page_schema_from_page(page_data: Dict[str, Any]) -> Dict[str, str]:
+    properties = page_data.get("properties") or {}
+    schema: Dict[str, str] = {}
+    for name, meta in properties.items():
+        if not isinstance(meta, dict):
+            continue
+        prop_type = str(meta.get("type") or "").strip()
+        if prop_type:
+            schema[name] = prop_type
+    return schema
+
+
+def _schema_property_name(
+    schema: Dict[str, str],
+    candidates: list[str],
+    expected_types: set[str] | None = None,
+) -> str | None:
+    for candidate in candidates:
+        prop_type = str(schema.get(candidate) or "").strip()
+        if not prop_type:
+            continue
+        if expected_types and prop_type not in expected_types:
+            continue
+        return candidate
+    return None
+
+
+def _pick_best_existing_curated_session(
+    candidates: list[Dict[str, Any]],
+    *,
+    session_name: str,
+    transcript_date: str,
+    transcript_url: str,
+    source_prop: str | None,
+) -> tuple[Dict[str, Any] | None, str]:
+    normalized_target = _normalize_lookup_text(session_name)
+    ranked: list[tuple[tuple[int, int, int], Dict[str, Any], str]] = []
+
+    for candidate in candidates:
+        candidate_title = _extract_title_from_page(candidate)
+        candidate_date = _extract_date_from_page(candidate)
+        candidate_source = (
+            _extract_page_text_property(candidate, source_prop) if source_prop else ""
+        )
+
+        same_source = bool(transcript_url and candidate_source == transcript_url)
+        exact_title = bool(session_name and candidate_title == session_name)
+        normalized_title = bool(
+            normalized_target
+            and candidate_title
+            and _normalize_lookup_text(candidate_title) == normalized_target
+        )
+        same_date = bool(transcript_date and candidate_date == transcript_date)
+
+        match_strategy = ""
+        if same_source:
+            match_strategy = "source_url"
+            primary_rank = 0
+        elif exact_title:
+            match_strategy = "exact_title"
+            primary_rank = 1
+        elif normalized_title and same_date:
+            match_strategy = "normalized_title_date"
+            primary_rank = 2
+        else:
+            continue
+
+        mangled_penalty = 1 if "?" in candidate_title else 0
+        date_penalty = 0 if same_date or not transcript_date else 1
+        ranked.append(
+            ((primary_rank, mangled_penalty, date_penalty), candidate, match_strategy)
+        )
+
+    if not ranked:
+        return None, ""
+
+    ranked.sort(key=lambda item: item[0])
+    return ranked[0][1], ranked[0][2]
+
+
+def _relation_ids(value: Any) -> list[str]:
+    if value in (None, "", []):
+        return []
+    if isinstance(value, str):
+        clean = value.strip()
+        return [clean] if clean else []
+    if isinstance(value, dict):
+        return _relation_ids(value.get("id") or value.get("page_id"))
+    if isinstance(value, list):
+        resolved: list[str] = []
+        for item in value:
+            resolved.extend(_relation_ids(item))
+        seen: set[str] = set()
+        unique: list[str] = []
+        for item in resolved:
+            if item not in seen:
+                seen.add(item)
+                unique.append(item)
+        return unique
+    return []
+
+
+def _set_schema_property(
+    payload: Dict[str, Any],
+    schema: Dict[str, str],
+    candidates: list[str],
+    value: Any,
+    *,
+    expected_types: set[str] | None = None,
+    used_fields: list[str] | None = None,
+) -> str | None:
+    if value in (None, "", []):
+        return None
+
+    prop_name = _schema_property_name(schema, candidates, expected_types)
+    if not prop_name:
+        return None
+
+    prop_type = schema[prop_name]
+    if prop_type == "title":
+        payload[prop_name] = {"title": [{"text": {"content": str(value)[:2000]}}]}
+    elif prop_type == "rich_text":
+        payload[prop_name] = {"rich_text": [{"text": {"content": str(value)[:2000]}}]}
+    elif prop_type == "date":
+        payload[prop_name] = {"date": {"start": str(value)}}
+    elif prop_type == "select":
+        payload[prop_name] = {"select": {"name": str(value)}}
+    elif prop_type == "status":
+        payload[prop_name] = {"status": {"name": str(value)}}
+    elif prop_type == "url":
+        payload[prop_name] = {"url": str(value)}
+    elif prop_type == "relation":
+        ids = _relation_ids(value)
+        if not ids:
+            return None
+        payload[prop_name] = {"relation": [{"id": item} for item in ids]}
+    elif prop_type == "checkbox":
+        payload[prop_name] = {"checkbox": bool(value)}
+    elif prop_type == "number":
+        try:
+            payload[prop_name] = {"number": float(value)}
+        except (TypeError, ValueError):
+            return None
+    else:
+        return None
+
+    if used_fields is not None:
+        used_fields.append(prop_name)
+    return prop_name
+
+
+def _sync_raw_promotion_state(
+    raw_page_id: str,
+    raw_page_data: Dict[str, Any],
+    *,
+    curated_url: str = "",
+    dry_run: bool = False,
+) -> Dict[str, Any]:
+    raw_schema = _page_schema_from_page(raw_page_data)
+    properties: Dict[str, Any] = {}
+    used_fields: list[str] = []
+
+    _set_schema_property(
+        properties,
+        raw_schema,
+        ["Estado", "Status"],
+        "Procesada",
+        expected_types={"select", "status", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        raw_schema,
+        ["Fecha que el agente procesó", "Fecha que el agente proceso", "Processed At"],
+        _today_date(),
+        expected_types={"date"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        raw_schema,
+        ["URL artefacto", "Artifact URL", "Artifact Link"],
+        curated_url,
+        expected_types={"url", "rich_text"},
+        used_fields=used_fields,
+    )
+
+    if dry_run:
+        return {
+            "ok": True,
+            "page_id": raw_page_id,
+            "updated": bool(properties),
+            "dry_run": True,
+            "properties": properties,
+            "schema_fields_used": used_fields,
+        }
+
+    if not properties:
+        return {
+            "ok": True,
+            "page_id": raw_page_id,
+            "updated": False,
+            "dry_run": False,
+            "properties": {},
+            "schema_fields_used": used_fields,
+        }
+
+    result = notion_client.update_page_properties(raw_page_id, properties=properties)
+    result["ok"] = True
+    result["dry_run"] = False
+    result["schema_fields_used"] = used_fields
+    return result
 
 
 def _build_transcript_blocks(parsed: Dict[str, Any]) -> list[dict[str, Any]]:
@@ -237,6 +596,1058 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
         "url": page_url,
         "action_items_created": ai_created,
         "notification_sent": notification_sent,
+    }
+
+
+def handle_granola_capitalize_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Capitalize an existing raw Granola page into stack-governed canonical objects.
+
+    This handler is intentionally explicit:
+    - reads the raw page for evidence and traceability
+    - only writes to destinations requested in the payload
+    - does not auto-promote into the human curated sessions DB yet
+    """
+    transcript_page_id = (
+        input_data.get("transcript_page_id")
+        or input_data.get("page_id")
+        or input_data.get("page_id_or_url")
+        or ""
+    ).strip()
+    if not transcript_page_id:
+        raise ValueError("'transcript_page_id' is required in input")
+
+    wants_project = bool((input_data.get("project_name") or "").strip())
+    wants_deliverable = bool((input_data.get("deliverable_name") or "").strip())
+    wants_bridge = bool((input_data.get("bridge_item_name") or "").strip())
+    wants_followup = bool((input_data.get("followup_type") or "").strip())
+
+    if not any((wants_project, wants_deliverable, wants_bridge, wants_followup)):
+        raise ValueError(
+            "At least one explicit destination is required: project_name, "
+            "deliverable_name, bridge_item_name or followup_type"
+        )
+
+    page_snapshot = notion_client.read_page(transcript_page_id, max_blocks=80)
+    page_data = notion_client.get_page(transcript_page_id)
+
+    transcript_title = (
+        (page_snapshot.get("title") or "").strip()
+        or _extract_title_from_page(page_data)
+        or "Reunion"
+    )
+    transcript_url = (page_snapshot.get("url") or page_data.get("url") or "").strip()
+    transcript_date = (
+        (input_data.get("date") or "").strip()
+        or _extract_date_from_page(page_data)
+        or _today_date()
+    )
+    transcript_source = (
+        (input_data.get("source") or "").strip()
+        or _extract_select_value(page_data, "Fuente", "Source")
+        or "granola"
+    )
+    context_excerpt = _compact_excerpt(page_snapshot.get("plain_text") or "")
+
+    results: Dict[str, Any] = {}
+    add_trace_comments = input_data.get("add_trace_comments", True)
+    trace_comments_added = 0
+
+    project_name = (input_data.get("project_name") or "").strip()
+    if project_name:
+        project_payload = {
+            "name": project_name,
+            "estado": input_data.get("project_estado"),
+            "responsable": input_data.get("project_responsable"),
+            "bloqueos": input_data.get("project_bloqueos"),
+            "next_action": input_data.get("project_next_action"),
+            "last_update_date": input_data.get("project_last_update_date") or transcript_date,
+        }
+        results["project"] = handle_notion_upsert_project(
+            {k: v for k, v in project_payload.items() if v not in (None, "", [])}
+        )
+
+    deliverable_name = (input_data.get("deliverable_name") or "").strip()
+    if deliverable_name:
+        deliverable_notes = _append_context(
+            str(input_data.get("deliverable_notes") or ""),
+            f"Origen raw: {transcript_title} ({transcript_date}) - {transcript_url or transcript_page_id}",
+        )
+        if context_excerpt:
+            deliverable_notes = _append_context(
+                deliverable_notes,
+                f"Contexto observado: {context_excerpt}",
+            )
+        deliverable_payload = {
+            "name": deliverable_name,
+            "project_name": (input_data.get("deliverable_project_name") or "").strip() or project_name or None,
+            "deliverable_type": input_data.get("deliverable_type"),
+            "review_status": input_data.get("deliverable_review_status"),
+            "summary": input_data.get("deliverable_summary") or f"Derivado de reunion raw: {transcript_title}",
+            "notes": deliverable_notes,
+            "next_action": input_data.get("deliverable_next_action"),
+            "date": input_data.get("deliverable_date") or transcript_date,
+            "source_task_id": input_data.get("source_task_id"),
+            "last_update_date": input_data.get("deliverable_last_update_date") or transcript_date,
+        }
+        results["deliverable"] = handle_notion_upsert_deliverable(
+            {k: v for k, v in deliverable_payload.items() if v not in (None, "", [])}
+        )
+
+    bridge_name = (input_data.get("bridge_item_name") or "").strip()
+    if bridge_name:
+        bridge_notes = _append_context(
+            str(input_data.get("bridge_notes") or ""),
+            f"Origen raw: {transcript_title} ({transcript_date}) - {transcript_url or transcript_page_id}",
+        )
+        if context_excerpt:
+            bridge_notes = _append_context(bridge_notes, f"Contexto observado: {context_excerpt}")
+        bridge_payload = {
+            "name": bridge_name,
+            "status": input_data.get("bridge_status") or "Nuevo",
+            "project_name": (input_data.get("bridge_project_name") or "").strip() or project_name or None,
+            "priority": input_data.get("bridge_priority") or "Media",
+            "source": input_data.get("bridge_source") or "Rick",
+            "notes": bridge_notes,
+            "next_action": input_data.get("bridge_next_action")
+            or "Revisar esta reunion raw y ubicarla en un contenedor canonico.",
+            "last_move_date": input_data.get("bridge_last_move_date") or transcript_date,
+            "link": input_data.get("bridge_link") or transcript_url or transcript_page_id,
+        }
+        results["bridge_item"] = handle_notion_upsert_bridge_item(
+            {k: v for k, v in bridge_payload.items() if v not in (None, "", [])}
+        )
+
+    followup_type = (input_data.get("followup_type") or "").strip()
+    if followup_type:
+        followup_payload = {
+            "transcript_page_id": transcript_page_id,
+            "followup_type": followup_type,
+            "title": input_data.get("followup_title") or transcript_title,
+            "date": input_data.get("followup_date") or transcript_date,
+            "notes": input_data.get("followup_notes"),
+            "due_date": input_data.get("followup_due_date"),
+            "attendees": input_data.get("followup_attendees") or [],
+            "action_items": input_data.get("followup_action_items") or [],
+            "start": input_data.get("followup_start"),
+            "end": input_data.get("followup_end"),
+            "timezone": input_data.get("followup_timezone"),
+        }
+        results["followup"] = handle_granola_create_followup(
+            {k: v for k, v in followup_payload.items() if v not in (None, "", [])}
+        )
+
+    if add_trace_comments:
+        destinations = []
+        if project_name:
+            destinations.append(f"Proyecto: {project_name}")
+        if deliverable_name:
+            destinations.append(f"Entregable: {deliverable_name}")
+        if bridge_name:
+            destinations.append(f"Puente: {bridge_name}")
+        if followup_type:
+            destinations.append(f"Follow-up: {followup_type}")
+
+        raw_comment = (
+            f"Capitalizacion Rick registrada para '{transcript_title}' ({transcript_date}). "
+            f"Destino(s): {', '.join(destinations)}."
+        )
+        if _comment_safe(page_snapshot.get("page_id"), raw_comment):
+            trace_comments_added += 1
+
+        target_comment = (
+            f"Origen raw Granola: '{transcript_title}' ({transcript_date}). "
+            f"Ref: {transcript_url or transcript_page_id}"
+        )
+        for key in ("project", "deliverable", "bridge_item"):
+            target_page_id = _result_page_id(results.get(key))
+            if _comment_safe(target_page_id, target_comment):
+                trace_comments_added += 1
+
+    return {
+        "transcript_page_id": page_snapshot.get("page_id") or transcript_page_id,
+        "transcript_url": transcript_url,
+        "title": transcript_title,
+        "date": transcript_date,
+        "source": transcript_source,
+        "results": results,
+        "trace_comments_added": trace_comments_added,
+    }
+
+
+def handle_granola_promote_curated_session(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Promote an existing raw Granola page into the human curated sessions DB.
+
+    This handler stays conservative by:
+    - requiring NOTION_CURATED_SESSIONS_DB_ID
+    - reading the raw page as evidence first
+    - only populating fields supported by the live curated DB schema
+    - only setting relations passed explicitly in the payload
+    """
+    transcript_page_id = (
+        input_data.get("transcript_page_id")
+        or input_data.get("page_id")
+        or input_data.get("page_id_or_url")
+        or ""
+    ).strip()
+    if not transcript_page_id:
+        raise ValueError("'transcript_page_id' is required in input")
+    if not config.NOTION_CURATED_SESSIONS_DB_ID:
+        raise RuntimeError("NOTION_CURATED_SESSIONS_DB_ID not configured")
+
+    page_snapshot = notion_client.read_page(transcript_page_id, max_blocks=80)
+    page_data = notion_client.get_page(transcript_page_id)
+
+    transcript_title = (
+        (page_snapshot.get("title") or "").strip()
+        or _extract_title_from_page(page_data)
+        or "Sesion"
+    )
+    transcript_url = (page_snapshot.get("url") or page_data.get("url") or "").strip()
+    transcript_date = (
+        (input_data.get("date") or "").strip()
+        or _extract_date_from_page(page_data)
+        or _today_date()
+    )
+    transcript_source = (
+        (input_data.get("source") or "").strip()
+        or _extract_select_value(page_data, "Fuente", "Source")
+        or "granola"
+    )
+    context_excerpt = _compact_excerpt(page_snapshot.get("plain_text") or "")
+
+    session_name = (
+        (input_data.get("session_name") or "").strip()
+        or (input_data.get("title") or "").strip()
+        or transcript_title
+    )
+    session_summary = (
+        (input_data.get("summary") or "").strip()
+        or (input_data.get("session_summary") or "").strip()
+    )
+    session_notes = (
+        (input_data.get("notes") or "").strip()
+        or (input_data.get("session_notes") or "").strip()
+    )
+    if not session_notes:
+        session_notes = f"Origen raw: {transcript_title} ({transcript_date}) - {transcript_url or transcript_page_id}"
+        if context_excerpt:
+            session_notes = _append_context(
+                session_notes,
+                f"Contexto observado: {context_excerpt}",
+            )
+
+    db_snapshot = notion_client.read_database(
+        config.NOTION_CURATED_SESSIONS_DB_ID,
+        max_items=100,
+    )
+    schema = db_snapshot.get("schema") or {}
+    if not isinstance(schema, dict):
+        raise RuntimeError("Could not read curated sessions DB schema")
+
+    title_prop = _schema_property_name(schema, ["Nombre", "Name", "Title"], {"title"})
+    if not title_prop:
+        raise RuntimeError("Curated sessions DB does not expose a title property")
+
+    properties: Dict[str, Any] = {}
+    used_fields: list[str] = []
+    _set_schema_property(
+        properties,
+        schema,
+        [title_prop],
+        session_name,
+        expected_types={"title"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Fecha", "Date", "Meeting Date"],
+        transcript_date,
+        expected_types={"date"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Dominio", "Domain"],
+        input_data.get("domain") or input_data.get("session_domain"),
+        expected_types={"select", "status", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Tipo", "Type"],
+        input_data.get("session_type") or input_data.get("type"),
+        expected_types={"select", "status", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Estado", "Status"],
+        input_data.get("estado") or input_data.get("status"),
+        expected_types={"select", "status", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Origen", "Fuente", "Source"],
+        input_data.get("origin") or input_data.get("session_origin") or transcript_source,
+        expected_types={"select", "status", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["URL fuente", "Source URL", "URL", "Link"],
+        input_data.get("source_url") or transcript_url or transcript_page_id,
+        expected_types={"url", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Resumen", "Summary"],
+        session_summary,
+        expected_types={"rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Notas", "Notes"],
+        session_notes,
+        expected_types={"rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Transcripción disponible", "Transcripcion disponible", "Transcript available"],
+        input_data.get("transcript_available", True),
+        expected_types={"checkbox"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Proyecto", "Project"],
+        input_data.get("project_page_id"),
+        expected_types={"relation"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Programa", "Program"],
+        input_data.get("program_page_id"),
+        expected_types={"relation"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Recurso relacionado", "Recurso", "Resource related", "Resource"],
+        input_data.get("resource_page_id") or input_data.get("resource_page_ids"),
+        expected_types={"relation"},
+        used_fields=used_fields,
+    )
+
+    source_prop = _schema_property_name(
+        schema,
+        ["URL fuente", "Source URL", "URL", "Link"],
+        {"url", "rich_text"},
+    )
+    existing_candidates: list[Dict[str, Any]] = []
+    match_strategy = ""
+
+    if source_prop and transcript_url:
+        source_prop_type = schema.get(source_prop)
+        source_filter: Dict[str, Any] | None = None
+        if source_prop_type == "url":
+            source_filter = {"property": source_prop, "url": {"equals": transcript_url}}
+        elif source_prop_type == "rich_text":
+            source_filter = {"property": source_prop, "rich_text": {"equals": transcript_url}}
+        if source_filter:
+            existing_candidates = notion_client.query_database(
+                database_id=config.NOTION_CURATED_SESSIONS_DB_ID,
+                filter=source_filter,
+            )
+
+    existing_match, match_strategy = _pick_best_existing_curated_session(
+        existing_candidates,
+        session_name=session_name,
+        transcript_date=transcript_date,
+        transcript_url=transcript_url,
+        source_prop=source_prop,
+    )
+
+    if not existing_match:
+        exact_title_candidates = notion_client.query_database(
+            database_id=config.NOTION_CURATED_SESSIONS_DB_ID,
+            filter={"property": title_prop, "title": {"equals": session_name}},
+        )
+        existing_match, match_strategy = _pick_best_existing_curated_session(
+            exact_title_candidates,
+            session_name=session_name,
+            transcript_date=transcript_date,
+            transcript_url=transcript_url,
+            source_prop=source_prop,
+        )
+
+    if not existing_match:
+        snapshot_candidates: list[Dict[str, Any]] = []
+        for item in db_snapshot.get("items") or []:
+            title_value = str(item.get("title") or "").strip()
+            date_value = _extract_date_start((item.get("properties") or {}).get("Fecha"))
+            source_value = (
+                str((item.get("properties") or {}).get(source_prop) or "").strip()
+                if source_prop
+                else ""
+            )
+
+            snapshot_properties: Dict[str, Any] = {
+                title_prop: {"type": "title", "title": [{"plain_text": title_value}]},
+            }
+            if date_value:
+                snapshot_properties["Fecha"] = {"type": "date", "date": {"start": date_value}}
+            if source_prop and source_value:
+                source_prop_type = schema.get(source_prop)
+                if source_prop_type == "url":
+                    snapshot_properties[source_prop] = {"type": "url", "url": source_value}
+                elif source_prop_type == "rich_text":
+                    snapshot_properties[source_prop] = {
+                        "type": "rich_text",
+                        "rich_text": [{"plain_text": source_value}],
+                    }
+
+            snapshot_candidates.append(
+                {
+                    "id": item.get("page_id"),
+                    "url": item.get("url"),
+                    "properties": snapshot_properties,
+                }
+            )
+
+        existing_match, match_strategy = _pick_best_existing_curated_session(
+            snapshot_candidates,
+            session_name=session_name,
+            transcript_date=transcript_date,
+            transcript_url=transcript_url,
+            source_prop=source_prop,
+        )
+
+    matched_existing = bool(existing_match)
+    resolved_session_name = session_name
+    if matched_existing:
+        existing_title = _extract_title_from_page(existing_match)
+        same_normalized_title = bool(
+            existing_title
+            and _normalize_lookup_text(existing_title) == _normalize_lookup_text(session_name)
+        )
+        if (
+            existing_title
+            and existing_title != session_name
+            and (
+                ("?" in session_name and match_strategy == "source_url")
+                or (
+                    same_normalized_title
+                    and ("?" in session_name or match_strategy in {"source_url", "normalized_title_date"})
+                )
+            )
+        ):
+            resolved_session_name = existing_title
+            properties[title_prop] = {
+                "title": [{"text": {"content": resolved_session_name[:2000]}}]
+            }
+
+    dry_run = bool(input_data.get("dry_run"))
+    if dry_run:
+        notion_result = {
+            "page_id": existing_match["id"] if matched_existing else "",
+            "url": existing_match.get("url", "") if matched_existing else "",
+            "created": not matched_existing,
+            "updated": matched_existing,
+            "dry_run": True,
+            "properties": properties,
+        }
+    elif matched_existing:
+        notion_result = notion_client.update_page_properties(
+            existing_match["id"],
+            properties=properties,
+        )
+        notion_result["created"] = False
+    else:
+        notion_result = notion_client.create_database_page(
+            config.NOTION_CURATED_SESSIONS_DB_ID,
+            properties=properties,
+        )
+
+    raw_status_update: Dict[str, Any]
+    try:
+        raw_status_update = _sync_raw_promotion_state(
+            page_snapshot.get("page_id") or transcript_page_id,
+            page_data,
+            curated_url=str(notion_result.get("url") or "").strip(),
+            dry_run=dry_run,
+        )
+    except Exception as exc:
+        logger.warning(
+            "Failed to sync raw Granola state for %s after curated promotion: %s",
+            transcript_page_id,
+            exc,
+        )
+        raw_status_update = {
+            "ok": False,
+            "page_id": page_snapshot.get("page_id") or transcript_page_id,
+            "dry_run": dry_run,
+            "error": str(exc),
+        }
+
+    trace_comments_added = 0
+    add_trace_comments = input_data.get("add_trace_comments", True)
+    curated_page_id = _result_page_id(notion_result) or notion_result.get("page_id", "")
+    if add_trace_comments and not dry_run:
+        raw_comment = (
+            f"Promocion a capa curada registrada para '{resolved_session_name}' ({transcript_date}). "
+            f"Sesion curada: {curated_page_id or 'creada/actualizada'}."
+        )
+        if _comment_safe(page_snapshot.get("page_id"), raw_comment):
+            trace_comments_added += 1
+
+        curated_comment = (
+            f"Origen raw Granola: '{transcript_title}' ({transcript_date}). "
+            f"Ref: {transcript_url or transcript_page_id}"
+        )
+        if _comment_safe(curated_page_id, curated_comment):
+            trace_comments_added += 1
+
+    return {
+        "transcript_page_id": page_snapshot.get("page_id") or transcript_page_id,
+        "transcript_url": transcript_url,
+        "title": transcript_title,
+        "session_name": resolved_session_name,
+        "date": transcript_date,
+        "source": transcript_source,
+        "curated_session": notion_result,
+        "raw_status_update": raw_status_update,
+        "matched_existing": matched_existing,
+        "match_strategy": match_strategy if matched_existing else "",
+        "dry_run": dry_run,
+        "trace_comments_added": trace_comments_added,
+        "schema_fields_used": used_fields,
+    }
+
+
+# ---------------------------------------------------------------------------
+# granola.create_human_task_from_curated_session
+# ---------------------------------------------------------------------------
+
+def handle_granola_create_human_task_from_curated_session(
+    input_data: Dict[str, Any]
+) -> Dict[str, Any]:
+    """
+    Create or update a human task in the personal tasks DB from a curated session page.
+
+    This slice remains conservative:
+    - requires NOTION_HUMAN_TASKS_DB_ID
+    - reads the curated session page as evidence first
+    - requires an explicit task_name/title
+    - only populates fields supported by the live human tasks schema
+    - only sets explicit or directly inherited relations
+    """
+    curated_session_page_id = (
+        input_data.get("curated_session_page_id")
+        or input_data.get("session_page_id")
+        or input_data.get("page_id")
+        or input_data.get("page_id_or_url")
+        or ""
+    ).strip()
+    if not curated_session_page_id:
+        raise ValueError("'curated_session_page_id' is required in input")
+    if not config.NOTION_HUMAN_TASKS_DB_ID:
+        raise RuntimeError("NOTION_HUMAN_TASKS_DB_ID not configured")
+
+    task_name = (
+        (input_data.get("task_name") or "").strip()
+        or (input_data.get("title") or "").strip()
+    )
+    if not task_name:
+        raise ValueError("'task_name' is required in input")
+
+    session_snapshot = notion_client.read_page(curated_session_page_id, max_blocks=80)
+    session_page = notion_client.get_page(curated_session_page_id)
+
+    session_title = (
+        (session_snapshot.get("title") or "").strip()
+        or _extract_title_from_page(session_page)
+        or "Sesion curada"
+    )
+    session_url = (session_snapshot.get("url") or session_page.get("url") or "").strip()
+    session_date = (
+        (input_data.get("session_date") or "").strip()
+        or _extract_date_from_page(session_page)
+        or _today_date()
+    )
+    session_domain = (
+        (input_data.get("domain") or "").strip()
+        or (input_data.get("task_domain") or "").strip()
+        or _extract_select_value(session_page, "Dominio", "Domain")
+    )
+    session_excerpt = _compact_excerpt(session_snapshot.get("plain_text") or "")
+
+    project_relation_ids = _relation_ids(input_data.get("project_page_id"))
+    if not project_relation_ids:
+        project_relation_ids = _extract_relation_values(session_page, "Proyecto", "Project")
+
+    task_notes = (
+        (input_data.get("notes") or "").strip()
+        or (input_data.get("task_notes") or "").strip()
+    )
+    if not task_notes:
+        task_notes = (
+            f"Derivada de sesion curada: {session_title} ({session_date}) - "
+            f"{session_url or curated_session_page_id}"
+        )
+        if session_excerpt:
+            task_notes = _append_context(
+                task_notes,
+                f"Contexto observado: {session_excerpt}",
+            )
+
+    db_snapshot = notion_client.read_database(
+        config.NOTION_HUMAN_TASKS_DB_ID,
+        max_items=1,
+    )
+    schema = db_snapshot.get("schema") or {}
+    if not isinstance(schema, dict):
+        raise RuntimeError("Could not read human tasks DB schema")
+
+    title_prop = _schema_property_name(schema, ["Nombre", "Name", "Title"], {"title"})
+    if not title_prop:
+        raise RuntimeError("Human tasks DB does not expose a title property")
+
+    properties: Dict[str, Any] = {}
+    used_fields: list[str] = []
+    _set_schema_property(
+        properties,
+        schema,
+        [title_prop],
+        task_name,
+        expected_types={"title"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Dominio", "Domain"],
+        session_domain,
+        expected_types={"select", "status", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Proyecto", "Project"],
+        project_relation_ids,
+        expected_types={"relation"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Sesion relacionada", "Sesión relacionada", "Session related", "Related session"],
+        curated_session_page_id,
+        expected_types={"relation"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Tipo", "Type"],
+        input_data.get("task_type") or input_data.get("type") or "Follow-up",
+        expected_types={"select", "status", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Estado", "Status"],
+        input_data.get("estado") or input_data.get("status") or "Pendiente",
+        expected_types={"select", "status", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Prioridad", "Priority"],
+        input_data.get("priority") or input_data.get("prioridad"),
+        expected_types={"select", "status", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Fecha objetivo", "Due date", "Target date"],
+        input_data.get("due_date") or input_data.get("target_date"),
+        expected_types={"date"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Origen", "Source"],
+        input_data.get("origin") or input_data.get("task_origin") or "Sesion",
+        expected_types={"select", "status", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["URL fuente", "Source URL", "URL", "Link"],
+        input_data.get("source_url") or session_url or curated_session_page_id,
+        expected_types={"url", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Notas", "Notes"],
+        task_notes,
+        expected_types={"rich_text"},
+        used_fields=used_fields,
+    )
+
+    existing = notion_client.query_database(
+        database_id=config.NOTION_HUMAN_TASKS_DB_ID,
+        filter={"property": title_prop, "title": {"equals": task_name}},
+    )
+    matched_existing = bool(existing)
+    dry_run = bool(input_data.get("dry_run"))
+    if dry_run:
+        notion_result = {
+            "page_id": existing[0]["id"] if matched_existing else "",
+            "url": existing[0].get("url", "") if matched_existing else "",
+            "created": not matched_existing,
+            "updated": matched_existing,
+            "dry_run": True,
+            "properties": properties,
+        }
+    elif matched_existing:
+        notion_result = notion_client.update_page_properties(
+            existing[0]["id"],
+            properties=properties,
+        )
+        notion_result["created"] = False
+    else:
+        notion_result = notion_client.create_database_page(
+            config.NOTION_HUMAN_TASKS_DB_ID,
+            properties=properties,
+        )
+
+    trace_comments_added = 0
+    add_trace_comments = input_data.get("add_trace_comments", True)
+    human_task_page_id = _result_page_id(notion_result) or notion_result.get("page_id", "")
+    if add_trace_comments and not dry_run:
+        session_comment = (
+            f"Tarea humana registrada desde sesion curada: '{task_name}'. "
+            f"Tarea: {human_task_page_id or 'creada/actualizada'}."
+        )
+        if _comment_safe(session_snapshot.get("page_id"), session_comment):
+            trace_comments_added += 1
+
+        task_comment = (
+            f"Origen sesion curada: '{session_title}' ({session_date}). "
+            f"Ref: {session_url or curated_session_page_id}"
+        )
+        if _comment_safe(human_task_page_id, task_comment):
+            trace_comments_added += 1
+
+    return {
+        "curated_session_page_id": session_snapshot.get("page_id") or curated_session_page_id,
+        "curated_session_url": session_url,
+        "session_title": session_title,
+        "task_name": task_name,
+        "date": session_date,
+        "human_task": notion_result,
+        "matched_existing": matched_existing,
+        "dry_run": dry_run,
+        "trace_comments_added": trace_comments_added,
+        "schema_fields_used": used_fields,
+    }
+
+
+# ---------------------------------------------------------------------------
+# granola.update_commercial_project_from_curated_session
+# ---------------------------------------------------------------------------
+
+def handle_granola_update_commercial_project_from_curated_session(
+    input_data: Dict[str, Any]
+) -> Dict[str, Any]:
+    """
+    Update the human commercial projects DB from a curated session.
+
+    This slice stays narrow:
+    - requires NOTION_COMMERCIAL_PROJECTS_DB_ID
+    - reads the curated session as evidence first
+    - requires an explicit project target or a project relation on the session
+    - only updates supported commercial fields present in the live schema
+    - leaves traceability through comments rather than freeform page content
+    """
+    curated_session_page_id = (
+        input_data.get("curated_session_page_id")
+        or input_data.get("session_page_id")
+        or input_data.get("page_id")
+        or input_data.get("page_id_or_url")
+        or ""
+    ).strip()
+    if not curated_session_page_id:
+        raise ValueError("'curated_session_page_id' is required in input")
+    if not config.NOTION_COMMERCIAL_PROJECTS_DB_ID:
+        raise RuntimeError("NOTION_COMMERCIAL_PROJECTS_DB_ID not configured")
+
+    session_snapshot = notion_client.read_page(curated_session_page_id, max_blocks=80)
+    session_page = notion_client.get_page(curated_session_page_id)
+
+    session_title = (
+        (session_snapshot.get("title") or "").strip()
+        or _extract_title_from_page(session_page)
+        or "Sesion curada"
+    )
+    session_url = (session_snapshot.get("url") or session_page.get("url") or "").strip()
+    session_date = (
+        (input_data.get("session_date") or "").strip()
+        or _extract_date_from_page(session_page)
+        or _today_date()
+    )
+    session_excerpt = _compact_excerpt(session_snapshot.get("plain_text") or "")
+
+    project_page_id = (
+        (input_data.get("project_page_id") or "").strip()
+        or (_extract_relation_values(session_page, "Proyecto", "Project") or [""])[0]
+    )
+    if not project_page_id:
+        raise ValueError(
+            "A commercial project target is required: pass 'project_page_id' or relate the curated session to Proyecto"
+        )
+
+    update_fields = {
+        "Estado": input_data.get("estado") or input_data.get("project_estado"),
+        "Acción Requerida": input_data.get("accion_requerida") or input_data.get("project_next_action"),
+        "Fecha": input_data.get("fecha") or input_data.get("project_date"),
+        "Plazo": input_data.get("plazo") or input_data.get("project_deadline"),
+        "Monto": input_data.get("monto") or input_data.get("project_amount"),
+        "Tipo": input_data.get("tipo") or input_data.get("project_type"),
+        "Cliente": input_data.get("cliente") or input_data.get("project_client"),
+    }
+    if all(value in (None, "", []) for value in update_fields.values()):
+        raise ValueError(
+            "At least one explicit commercial field is required: estado, accion_requerida, fecha, plazo, monto, tipo or cliente"
+        )
+
+    db_snapshot = notion_client.read_database(
+        config.NOTION_COMMERCIAL_PROJECTS_DB_ID,
+        max_items=1,
+    )
+    schema = db_snapshot.get("schema") or {}
+    if not isinstance(schema, dict):
+        raise RuntimeError("Could not read commercial projects DB schema")
+
+    project_page = notion_client.get_page(project_page_id)
+    project_title = _extract_title_from_page(project_page) or "Proyecto comercial"
+
+    properties: Dict[str, Any] = {}
+    used_fields: list[str] = []
+    _set_schema_property(
+        properties,
+        schema,
+        ["Estado", "Status"],
+        update_fields["Estado"],
+        expected_types={"select", "status", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Acción Requerida", "Accion Requerida", "Next Action"],
+        update_fields["Acción Requerida"],
+        expected_types={"select", "status", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Fecha", "Date"],
+        update_fields["Fecha"],
+        expected_types={"date"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Plazo", "Deadline"],
+        update_fields["Plazo"],
+        expected_types={"date"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Monto", "Amount"],
+        update_fields["Monto"],
+        expected_types={"number"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Tipo", "Type"],
+        update_fields["Tipo"],
+        expected_types={"select", "status", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Cliente", "Client"],
+        update_fields["Cliente"],
+        expected_types={"select", "status", "rich_text"},
+        used_fields=used_fields,
+    )
+
+    if not properties:
+        raise RuntimeError("No supported commercial project fields were available to update")
+
+    dry_run = bool(input_data.get("dry_run"))
+    if dry_run:
+        notion_result = {
+            "page_id": project_page_id,
+            "url": project_page.get("url", ""),
+            "updated": True,
+            "dry_run": True,
+            "properties": properties,
+        }
+    else:
+        notion_result = notion_client.update_page_properties(
+            project_page_id,
+            properties=properties,
+        )
+
+    trace_comments_added = 0
+    add_trace_comments = input_data.get("add_trace_comments", True)
+    if add_trace_comments and not dry_run:
+        project_comment_parts = [
+            f"Actualizacion comercial desde sesion curada: '{session_title}' ({session_date}).",
+        ]
+        if update_fields["Estado"]:
+            project_comment_parts.append(f"Estado -> {update_fields['Estado']}.")
+        if update_fields["Acción Requerida"]:
+            project_comment_parts.append(f"Accion requerida -> {update_fields['Acción Requerida']}.")
+        if session_excerpt:
+            project_comment_parts.append(f"Contexto: {session_excerpt}")
+        if _comment_safe(project_page_id, " ".join(project_comment_parts)):
+            trace_comments_added += 1
+
+        session_comment = (
+            f"Proyecto comercial actualizado: '{project_title}'. "
+            f"Ref: {project_page.get('url') or project_page_id}"
+        )
+        if _comment_safe(session_snapshot.get("page_id"), session_comment):
+            trace_comments_added += 1
+
+    return {
+        "curated_session_page_id": session_snapshot.get("page_id") or curated_session_page_id,
+        "curated_session_url": session_url,
+        "session_title": session_title,
+        "project_page_id": project_page_id,
+        "project_title": project_title,
+        "commercial_project": notion_result,
+        "dry_run": dry_run,
+        "trace_comments_added": trace_comments_added,
+        "schema_fields_used": used_fields,
+    }
+
+
+# ---------------------------------------------------------------------------
+# granola.promote_operational_slice
+# ---------------------------------------------------------------------------
+
+def handle_granola_promote_operational_slice(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Compose explicit human-facing slices from a raw Granola page.
+
+    This orchestrator does not invent classification. It only chains the already
+    conservative handlers when the caller supplies explicit sub-payloads.
+    """
+    transcript_page_id = (
+        input_data.get("transcript_page_id")
+        or input_data.get("page_id")
+        or input_data.get("page_id_or_url")
+        or ""
+    ).strip()
+    if not transcript_page_id:
+        raise ValueError("'transcript_page_id' is required in input")
+
+    curated_payload = dict(input_data.get("curated_payload") or {})
+    human_task_payload = dict(input_data.get("human_task_payload") or {})
+    commercial_project_payload = dict(input_data.get("commercial_project_payload") or {})
+    dry_run = bool(input_data.get("dry_run"))
+
+    if not curated_payload:
+        raise ValueError("'curated_payload' is required")
+    if not human_task_payload and not commercial_project_payload:
+        raise ValueError("At least one destination payload is required: human_task_payload or commercial_project_payload")
+
+    curated_payload["transcript_page_id"] = transcript_page_id
+    if dry_run and "dry_run" not in curated_payload:
+        curated_payload["dry_run"] = True
+    curated_result = handle_granola_promote_curated_session(curated_payload)
+    curated_page_id = _result_page_id(curated_result.get("curated_session")) or ""
+    if not curated_page_id and dry_run:
+        curated_page_id = (curated_payload.get("curated_session_page_id") or "").strip()
+    results: Dict[str, Any] = {"curated": curated_result}
+    if not curated_page_id and dry_run:
+        skip_reason = "curated_session_page_id_unavailable_in_dry_run_for_new_session"
+        if human_task_payload:
+            results["human_task"] = {
+                "dry_run": True,
+                "skipped": True,
+                "reason": skip_reason,
+            }
+        if commercial_project_payload:
+            results["commercial_project"] = {
+                "dry_run": True,
+                "skipped": True,
+                "reason": skip_reason,
+            }
+        return {
+            "transcript_page_id": transcript_page_id,
+            "curated_session_page_id": "",
+            "dry_run": True,
+            "results": results,
+        }
+    if not curated_page_id:
+        raise RuntimeError("Could not resolve curated session page id from promote_curated_session result")
+    if human_task_payload:
+        human_task_payload["curated_session_page_id"] = curated_page_id
+        if dry_run and "dry_run" not in human_task_payload:
+            human_task_payload["dry_run"] = True
+        results["human_task"] = handle_granola_create_human_task_from_curated_session(human_task_payload)
+    if commercial_project_payload:
+        commercial_project_payload["curated_session_page_id"] = curated_page_id
+        if dry_run and "dry_run" not in commercial_project_payload:
+            commercial_project_payload["dry_run"] = True
+        results["commercial_project"] = handle_granola_update_commercial_project_from_curated_session(commercial_project_payload)
+
+    return {
+        "transcript_page_id": transcript_page_id,
+        "curated_session_page_id": curated_page_id,
+        "dry_run": dry_run,
+        "results": results,
     }
 
 

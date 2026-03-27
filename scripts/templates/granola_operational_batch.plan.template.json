@@ -1,0 +1,28 @@
+{
+  "plans": [
+    {
+      "label": "konstruedu-contract-followup",
+      "transcript_page_id": "3305f443-fb5c-81db-9162-fd70c8574938",
+      "dry_run": true,
+      "curated_payload": {
+        "session_name": "Konstruedu - propuesta 6 cursos",
+        "domain": "Operacion",
+        "session_type": "Sesion",
+        "estado": "Capturada",
+        "session_origin": "Granola",
+        "project_page_id": "dcd955f0-28e5-432a-a7ed-9be1ea091a74"
+      },
+      "human_task_payload": {
+        "task_name": "Revisar contrato Konstruedu",
+        "task_type": "Follow-up",
+        "estado": "Pendiente",
+        "priority": "Alta",
+        "task_origin": "Sesion"
+      },
+      "commercial_project_payload": {
+        "estado": "Propuesta enviada",
+        "accion_requerida": "Revisar contrato"
+      }
+    }
+  ]
+}

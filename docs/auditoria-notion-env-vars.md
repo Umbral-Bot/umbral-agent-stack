@@ -22,6 +22,9 @@
 | `NOTION_DASHBOARD_PAGE_ID` | page_id | Rick | `worker/config.py`, `worker/notion_client.py`, `scripts/dashboard_report_vps.py`, `scripts/vps/dashboard-cron.sh`, scripts de dashboard/kanban | Destino de `notion.update_dashboard` y herramientas de mantenimiento del dashboard. |
 | `NOTION_GRANOLA_DB_ID` | db_id | Rick (opcional) | `worker/config.py`, `worker/notion_client.py` (`create_transcript_page`), `scripts/verify_stack_vps.py` | DB de transcripciones Granola. Usa `NOTION_API_KEY` (Rick); no hay integración Notion propia de Granola. Requerida solo si usas pipeline Granola. |
 | `NOTION_TASKS_DB_ID` | db_id | Rick (opcional) | `worker/config.py`, `worker/notion_client.py` (`upsert_task`), scripts de setup/kanban (`setup_notion_tasks_db.py`, `create_dashboard_page.py`, `link_kanban_to_page.py`) | DB Kanban de tareas (`notion.upsert_task`). Si falta, el Worker hace `skipped` en esa funcionalidad. |
+| `NOTION_CURATED_SESSIONS_DB_ID` | db_id | Rick (futuro/opcional) | `worker/config.py`, docs 50/53/55 | DB humana curada de sesiones/transcripciones. No debe reutilizar `NOTION_GRANOLA_DB_ID`. Requiere sharing explícito con la integración Rick. |
+| `NOTION_HUMAN_TASKS_DB_ID` | db_id | Rick (futuro/opcional) | `worker/config.py`, docs 50/53/55 | DB humana de tareas/próximas acciones. No debe confundirse con `NOTION_TASKS_DB_ID`, que sigue siendo Kanban técnica del stack. |
+| `NOTION_COMMERCIAL_PROJECTS_DB_ID` | db_id | Rick (futuro/opcional) | `worker/config.py`, docs 50/53/55 | DB humana comercial (`Asesorías & Proyectos` u otra equivalente). No debe confundirse con `NOTION_PROJECTS_DB_ID`, que es el registry técnico. |
 | `NOTION_SUPERVISOR_API_KEY` | key | Supervisor (opcional) | `scripts/vps/supervisor.sh`, `docs/62-operational-runbook.md` | Token de integracion Notion "Supervisor" para post directo a Notion (identidad separada de Rick). |
 | `NOTION_SUPERVISOR_ALERT_PAGE_ID` | page_id | Supervisor (opcional) | `scripts/vps/supervisor.sh`, `docs/62-operational-runbook.md`, `docs/rick-estado-y-capacidades.md` | Pagina destino de alertas del supervisor. Si no esta, fallback a Control Room via Worker. |
 | `NOTION_BITACORA_DB_ID` | db_id | Otro (scripts offline) | `scripts/add_resumen_amigable.py`, `scripts/enrich_bitacora_pages.py`, `docs/bitacora-scripts.md` | DB de Bitacora para scripts manuales de enriquecimiento/resumen. |
@@ -59,6 +62,9 @@ Opcionales por funcionalidad:
 
 - `NOTION_GRANOLA_DB_ID` (solo si se usa pipeline Granola; es la DB destino, se usa `NOTION_API_KEY` Rick).
 - `NOTION_TASKS_DB_ID` (solo si se usa Kanban/upsert).
+- `NOTION_CURATED_SESSIONS_DB_ID` (solo cuando la DB humana curada haya sido compartida con Rick).
+- `NOTION_HUMAN_TASKS_DB_ID` (solo cuando la DB humana de tareas haya sido compartida con Rick).
+- `NOTION_COMMERCIAL_PROJECTS_DB_ID` (solo cuando quieras escribir a una DB humana comercial distinta del registry técnico).
 - `NOTION_API_VERSION` (si no se define, usar default actual).
 - `NOTION_POLL_AT_MINUTE` / `NOTION_POLL_INTERVAL_SEC` (solo configuracion de frecuencia).
 
@@ -81,6 +87,6 @@ Si faltan, el comportamiento actual hace fallback via Worker (identidad Rick).
 | Identidad | Variables |
 |---|---|
 | Rick (core) | `NOTION_API_KEY`, `NOTION_CONTROL_ROOM_PAGE_ID`, `NOTION_DASHBOARD_PAGE_ID` |
-| Rick (opcionales por modulo) | `NOTION_GRANOLA_DB_ID`, `NOTION_TASKS_DB_ID`, `NOTION_API_VERSION`, `NOTION_POLL_AT_MINUTE`, `NOTION_POLL_INTERVAL_SEC` |
+| Rick (opcionales por modulo) | `NOTION_GRANOLA_DB_ID`, `NOTION_TASKS_DB_ID`, `NOTION_CURATED_SESSIONS_DB_ID`, `NOTION_HUMAN_TASKS_DB_ID`, `NOTION_COMMERCIAL_PROJECTS_DB_ID`, `NOTION_API_VERSION`, `NOTION_POLL_AT_MINUTE`, `NOTION_POLL_INTERVAL_SEC` |
 | Supervisor | `NOTION_SUPERVISOR_API_KEY`, `NOTION_SUPERVISOR_ALERT_PAGE_ID` |
 | Legacy/script-only | `NOTION_API_KEY_RICK`, `NOTION_BITACORA_DB_ID`, `NOTION_TASKS_PARENT_PAGE_ID`, `NOTION_MAIN_DB_ID` |

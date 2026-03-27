@@ -40,6 +40,8 @@ La arquitectura correcta es:
 - `NOTION_API_KEY`: token de integración Notion Rick.
 - `NOTION_GRANOLA_DB_ID`: ID de la DB raw de Granola (Granola Inbox).
 - `NOTION_TASKS_DB_ID` (opcional): DB Kanban para action items.
+- `NOTION_CURATED_SESSIONS_DB_ID` (opcional): DB humana curada compartida con Rick.
+- `NOTION_HUMAN_TASKS_DB_ID` (opcional): DB humana de tareas para el slice `curado -> destino`.
 - Watcher corriendo en la VM (`scripts/vm/granola_watcher.py`) o flujo manual hacia `.md`.
 
 ## Tasks disponibles
@@ -73,6 +75,100 @@ Pipeline raw completo:
 
 Task: `granola.create_followup`
 
+### 3. Capitalizar raw ya ingresado
+
+Task: `granola.capitalize_raw`
+
+Usar esta task cuando la pagina raw ya existe y quieres dejar trazabilidad hacia objetos que el stack si gobierna hoy:
+
+- proyecto
+- entregable
+- item puente
+- follow-up
+
+No usa la DB humana curada como destino automatico.
+
+### 4. Promover a capa curada humana
+
+Task: `granola.promote_curated_session`
+
+Usar esta task solo cuando:
+
+- la pagina raw ya existe
+- la DB humana curada fue compartida con Rick
+- `NOTION_CURATED_SESSIONS_DB_ID` ya esta configurado
+- quieres crear o actualizar una sesion curada con trazabilidad
+
+Esta task:
+
+- inspecciona el schema vivo de la DB curada
+- crea o actualiza por titulo exacto
+- solo crea relaciones si recibe `page_id` explicitos
+- no reemplaza la posterior derivacion hacia tareas o proyectos humanos
+
+### 5. Crear tarea humana desde una sesion curada
+
+Task: `granola.create_human_task_from_curated_session`
+
+Usar esta task solo cuando:
+
+- la sesion curada ya existe
+- `NOTION_HUMAN_TASKS_DB_ID` ya esta configurado
+- quieres registrar una tarea humana explicita y trazable
+
+Esta task:
+
+- exige `task_name` explicito
+- inspecciona el schema vivo de la DB humana de tareas
+- crea o actualiza por titulo exacto
+- hereda `Proyecto` desde la sesion curada cuando existe
+- enlaza `Sesion relacionada`
+- no actualiza todavia la DB comercial humana
+
+### 6. Actualizar proyecto comercial desde una sesion curada
+
+Task: `granola.update_commercial_project_from_curated_session`
+
+Usar esta task solo cuando:
+
+- la sesion curada ya existe
+- el proyecto comercial humano ya está identificado
+- `NOTION_COMMERCIAL_PROJECTS_DB_ID` ya está configurado
+- el cambio comercial cabe en campos explícitos del proyecto
+
+Esta task:
+
+- usa `project_page_id` explícito o la relacion `Proyecto` heredada desde la sesion curada
+- actualiza solo campos comerciales soportados por el schema vivo
+- hoy el contrato cubre `Estado`, `Acción Requerida`, `Fecha`, `Plazo`, `Monto`, `Tipo` y `Cliente`
+- deja trazabilidad por comentario entre la sesion curada y el proyecto comercial
+- no crea proyectos comerciales nuevos
+
+### 7. Orquestar un slice operativo explícito
+
+Task: `granola.promote_operational_slice`
+
+Usar esta task cuando:
+
+- ya tienes una pagina raw concreta
+- ya sabes exactamente qué sesión curada registrar
+- y quieres encadenar en la misma corrida una tarea humana y/o una actualización comercial
+
+Esta task:
+
+- siempre ejecuta `granola.promote_curated_session`
+- puede ejecutar además `granola.create_human_task_from_curated_session`
+- puede ejecutar además `granola.update_commercial_project_from_curated_session`
+- exige payloads explícitos por tramo
+- no agrega inferencias nuevas
+- soporta `dry_run=true` para devolver los payloads exactos sin escribir en Notion
+
+Para lotes explícitos repo-side, usar:
+
+- `scripts/run_granola_operational_batch.py`
+- template:
+  - `scripts/templates/granola_operational_batch.plan.template.json`
+
 Tipos:
 
 - `reminder`
@@ -97,12 +193,18 @@ Tipos:
 ## Notas
 
 - Granola puede entregar notas en ProseMirror JSON; en ese caso hace falta una capa exportadora previa a `.md`.
-- La promoción a una DB curada humana es una fase aparte y no forma parte automática de esta skill.
+- La promoción a una DB curada humana ya tiene un slice repo-side (`granola.promote_curated_session`), pero sigue dependiendo de sharing y configuración reales.
+- No asumir que la DB humana curada es visible para Rick solo porque exista en Notion; si falta sharing, el bloqueo correcto es de acceso, no de arquitectura.
 - Si el watcher no está corriendo, Rick puede procesar archivos manualmente.
 
 ## Referencias
 
 - `docs/50-granola-notion-pipeline.md`
+- `docs/54-granola-capitalize-raw-slice.md`
+- `docs/56-granola-promote-curated-session.md`
+- `docs/57-granola-human-task-from-curated-session.md`
+- `docs/58-granola-commercial-project-from-curated-session.md`
+- `docs/59-granola-promote-operational-slice.md`
 - `worker/notion_client.py`
 - `worker/tasks/granola.py`
 - `scripts/vm/granola_watcher.py`

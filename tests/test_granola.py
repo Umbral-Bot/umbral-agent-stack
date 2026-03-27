@@ -118,6 +118,11 @@ os.environ.setdefault("WORKER_TOKEN", "test-token-12345")
 from worker.tasks.granola import (
     _build_action_item_task_id,
     handle_granola_process_transcript,
+    handle_granola_capitalize_raw,
+    handle_granola_create_human_task_from_curated_session,
+    handle_granola_promote_operational_slice,
+    handle_granola_update_commercial_project_from_curated_session,
+    handle_granola_promote_curated_session,
     handle_granola_create_followup,
     _extract_action_items_from_content,
 )
@@ -249,6 +254,998 @@ class TestHandleGranolaProcessTranscript:
     def test_missing_content(self):
         with pytest.raises(ValueError, match="'content' is required"):
             handle_granola_process_transcript({"title": "Test"})
+
+
+class TestHandleGranolaCapitalizeRaw:
+
+    def test_requires_transcript_page_id(self):
+        with pytest.raises(ValueError, match="'transcript_page_id' is required"):
+            handle_granola_capitalize_raw({"project_name": "Proyecto X"})
+
+    def test_requires_explicit_destination(self):
+        with patch("worker.tasks.granola.notion_client") as mock_nc:
+            mock_nc.read_page.return_value = {
+                "page_id": "raw-1",
+                "url": "https://www.notion.so/raw-1",
+                "title": "Reunion",
+                "plain_text": "Resumen",
+            }
+            mock_nc.get_page.return_value = {
+                "url": "https://www.notion.so/raw-1",
+                "properties": {},
+            }
+            with pytest.raises(ValueError, match="At least one explicit destination is required"):
+                handle_granola_capitalize_raw({"transcript_page_id": "raw-1"})
+
+    @patch("worker.tasks.granola.handle_granola_create_followup")
+    @patch("worker.tasks.granola.handle_notion_upsert_bridge_item")
+    @patch("worker.tasks.granola.handle_notion_upsert_deliverable")
+    @patch("worker.tasks.granola.handle_notion_upsert_project")
+    @patch("worker.tasks.granola.notion_client")
+    def test_capitalize_raw_writes_targets_and_trace_comments(
+        self,
+        mock_nc,
+        mock_project,
+        mock_deliverable,
+        mock_bridge,
+        mock_followup,
+    ):
+        mock_nc.read_page.return_value = {
+            "page_id": "raw-1",
+            "url": "https://www.notion.so/raw-1",
+            "title": "Konstruedu",
+            "plain_text": "Decision: avanzar piloto. Siguiente paso: enviar propuesta.",
+        }
+        mock_nc.get_page.return_value = {
+            "url": "https://www.notion.so/raw-1",
+            "properties": {
+                "Fecha": {"type": "date", "date": {"start": "2026-03-23"}},
+                "Fuente": {"type": "select", "select": {"name": "granola"}},
+                "Estado": {"type": "select", "select": {"name": "Pendiente"}},
+                "Fecha que el agente procesó": {"type": "date", "date": None},
+            },
+        }
+        mock_project.return_value = {"ok": True, "page_id": "proj-1", "created": False}
+        mock_deliverable.return_value = {"ok": True, "page_id": "deliv-1", "created": True}
+        mock_bridge.return_value = {"ok": True, "page_id": "bridge-1", "created": True}
+        mock_followup.return_value = {"followup_type": "proposal", "result": {"page_id": "report-1"}}
+        mock_nc.add_comment.return_value = {"comment_id": "comment-1"}
+
+        result = handle_granola_capitalize_raw(
+            {
+                "transcript_page_id": "raw-1",
+                "project_name": "Konstruedu",
+                "project_next_action": "Enviar propuesta actualizada",
+                "deliverable_name": "Propuesta Konstruedu",
+                "deliverable_type": "Plan",
+                "bridge_item_name": "Validar alcance reunion Konstruedu",
+                "bridge_next_action": "Confirmar si pasa a proyecto o queda como seguimiento.",
+                "followup_type": "proposal",
+            }
+        )
+
+        assert result["title"] == "Konstruedu"
+        assert result["date"] == "2026-03-23"
+        assert result["source"] == "granola"
+        assert result["trace_comments_added"] == 4
+
+        project_payload = mock_project.call_args.args[0]
+        assert project_payload["name"] == "Konstruedu"
+        assert project_payload["next_action"] == "Enviar propuesta actualizada"
+        assert project_payload["last_update_date"] == "2026-03-23"
+
+        deliverable_payload = mock_deliverable.call_args.args[0]
+        assert deliverable_payload["project_name"] == "Konstruedu"
+        assert deliverable_payload["summary"] == "Derivado de reunion raw: Konstruedu"
+        assert "Origen raw: Konstruedu (2026-03-23)" in deliverable_payload["notes"]
+
+        bridge_payload = mock_bridge.call_args.args[0]
+        assert bridge_payload["project_name"] == "Konstruedu"
+        assert bridge_payload["link"] == "https://www.notion.so/raw-1"
+        assert bridge_payload["source"] == "Rick"
+
+        followup_payload = mock_followup.call_args.args[0]
+        assert followup_payload["transcript_page_id"] == "raw-1"
+        assert followup_payload["title"] == "Konstruedu"
+        assert followup_payload["date"] == "2026-03-23"
+
+        assert mock_nc.add_comment.call_count == 4
+        raw_comment = mock_nc.add_comment.call_args_list[0].kwargs
+        assert raw_comment["page_id"] == "raw-1"
+        assert "Destino(s): Proyecto: Konstruedu, Entregable: Propuesta Konstruedu" in raw_comment["text"]
+
+    @patch("worker.tasks.granola.handle_notion_upsert_project")
+    @patch("worker.tasks.granola.notion_client")
+    def test_capitalize_raw_can_skip_trace_comments(self, mock_nc, mock_project):
+        mock_nc.read_page.return_value = {
+            "page_id": "raw-1",
+            "url": "https://www.notion.so/raw-1",
+            "title": "Konstruedu",
+            "plain_text": "Resumen breve.",
+        }
+        mock_nc.get_page.return_value = {"url": "https://www.notion.so/raw-1", "properties": {}}
+        mock_project.return_value = {"ok": True, "page_id": "proj-1", "created": False}
+
+        result = handle_granola_capitalize_raw(
+            {
+                "transcript_page_id": "raw-1",
+                "project_name": "Konstruedu",
+                "add_trace_comments": False,
+            }
+        )
+
+        assert result["trace_comments_added"] == 0
+        mock_nc.add_comment.assert_not_called()
+
+
+class TestHandleGranolaPromoteCuratedSession:
+
+    def test_requires_transcript_page_id(self):
+        with pytest.raises(ValueError, match="'transcript_page_id' is required"):
+            handle_granola_promote_curated_session({})
+
+    @patch("worker.tasks.granola.config.NOTION_CURATED_SESSIONS_DB_ID", None)
+    def test_requires_curated_sessions_env(self):
+        with pytest.raises(RuntimeError, match="NOTION_CURATED_SESSIONS_DB_ID not configured"):
+            handle_granola_promote_curated_session({"transcript_page_id": "raw-1"})
+
+    @patch("worker.tasks.granola.config.NOTION_CURATED_SESSIONS_DB_ID", "curated-db-1")
+    @patch("worker.tasks.granola.notion_client")
+    def test_creates_curated_session_with_supported_schema(self, mock_nc):
+        mock_nc.read_page.return_value = {
+            "page_id": "raw-1",
+            "url": "https://www.notion.so/raw-1",
+            "title": "Sesion Borago",
+            "plain_text": "Revision comercial y proximos pasos.",
+        }
+        mock_nc.get_page.return_value = {
+            "url": "https://www.notion.so/raw-1",
+            "properties": {
+                "Fecha": {"type": "date", "date": {"start": "2026-03-24"}},
+                "Fuente": {"type": "select", "select": {"name": "granola"}},
+                "Estado": {"type": "select", "select": {"name": "Pendiente"}},
+                "Fecha que el agente procesó": {"type": "date", "date": None},
+                "URL artefacto": {"type": "url", "url": None},
+            },
+        }
+        mock_nc.read_database.return_value = {
+            "schema": {
+                "Nombre": "title",
+                "Fecha": "date",
+                "Dominio": "select",
+                "Tipo": "select",
+                "Proyecto": "relation",
+                "Programa": "relation",
+                "Recurso relacionado": "relation",
+                "Estado": "status",
+                "Fuente": "select",
+                "URL fuente": "url",
+                "Resumen": "rich_text",
+                "Notas": "rich_text",
+                "Transcripción disponible": "checkbox",
+            }
+        }
+        mock_nc.query_database.side_effect = [[], []]
+        mock_nc.create_database_page.return_value = {
+            "page_id": "curated-1",
+            "url": "https://www.notion.so/curated-1",
+            "created": True,
+        }
+        mock_nc.update_page_properties.return_value = {
+            "page_id": "raw-1",
+            "url": "https://www.notion.so/raw-1",
+            "updated": True,
+        }
+        mock_nc.add_comment.return_value = {"comment_id": "comment-1"}
+
+        result = handle_granola_promote_curated_session(
+            {
+                "transcript_page_id": "raw-1",
+                "session_name": "Sesion Borago - Curada",
+                "domain": "Operacion",
+                "session_type": "Asesoria",
+                "estado": "Pendiente",
+                "summary": "Sesion comercial curada para seguimiento.",
+                "project_page_id": "proj-123",
+                "program_page_id": "prog-123",
+                "resource_page_id": "res-123",
+            }
+        )
+
+        assert result["matched_existing"] is False
+        assert result["trace_comments_added"] == 2
+        assert result["session_name"] == "Sesion Borago - Curada"
+        assert "Nombre" in result["schema_fields_used"]
+        assert "Proyecto" in result["schema_fields_used"]
+
+        assert mock_nc.query_database.call_args_list[0].kwargs == {
+            "database_id": "curated-db-1",
+            "filter": {"property": "URL fuente", "url": {"equals": "https://www.notion.so/raw-1"}},
+        }
+        assert mock_nc.query_database.call_args_list[1].kwargs == {
+            "database_id": "curated-db-1",
+            "filter": {"property": "Nombre", "title": {"equals": "Sesion Borago - Curada"}},
+        }
+        create_args = mock_nc.create_database_page.call_args.args
+        assert create_args[0] == "curated-db-1"
+        props = mock_nc.create_database_page.call_args.kwargs["properties"]
+        assert props["Nombre"]["title"][0]["text"]["content"] == "Sesion Borago - Curada"
+        assert props["Fecha"]["date"]["start"] == "2026-03-24"
+        assert props["Dominio"]["select"]["name"] == "Operacion"
+        assert props["Tipo"]["select"]["name"] == "Asesoria"
+        assert props["Estado"]["status"]["name"] == "Pendiente"
+        assert props["Fuente"]["select"]["name"] == "granola"
+        assert props["URL fuente"]["url"] == "https://www.notion.so/raw-1"
+        assert props["Transcripción disponible"]["checkbox"] is True
+        assert props["Proyecto"]["relation"] == [{"id": "proj-123"}]
+        assert props["Programa"]["relation"] == [{"id": "prog-123"}]
+        assert props["Recurso relacionado"]["relation"] == [{"id": "res-123"}]
+        assert "Origen raw: Sesion Borago (2026-03-24)" in props["Notas"]["rich_text"][0]["text"]["content"]
+        assert result["raw_status_update"]["ok"] is True
+        raw_update_args = mock_nc.update_page_properties.call_args.args
+        assert raw_update_args[0] == "raw-1"
+        raw_props = mock_nc.update_page_properties.call_args.kwargs["properties"]
+        assert raw_props["Estado"]["select"]["name"] == "Procesada"
+        assert raw_props["Fecha que el agente procesó"]["date"]["start"]
+        assert raw_props["URL artefacto"]["url"] == "https://www.notion.so/curated-1"
+
+    @patch("worker.tasks.granola.config.NOTION_CURATED_SESSIONS_DB_ID", "curated-db-1")
+    @patch("worker.tasks.granola.notion_client")
+    def test_updates_existing_curated_session_without_comments(self, mock_nc):
+        mock_nc.read_page.return_value = {
+            "page_id": "raw-1",
+            "url": "https://www.notion.so/raw-1",
+            "title": "Konstruedu",
+            "plain_text": "Resumen breve.",
+        }
+        mock_nc.get_page.return_value = {
+            "url": "https://www.notion.so/raw-1",
+            "properties": {
+                "Fecha": {"type": "date", "date": {"start": "2026-03-23"}},
+                "Fuente": {"type": "select", "select": {"name": "granola"}},
+                "Estado": {"type": "select", "select": {"name": "Pendiente"}},
+                "Fecha que el agente procesó": {"type": "date", "date": None},
+                "URL artefacto": {"type": "url", "url": None},
+            },
+        }
+        mock_nc.read_database.return_value = {
+            "schema": {
+                "Nombre": "title",
+                "Fecha": "date",
+                "Fuente": "select",
+                "URL fuente": "url",
+                "Resumen": "rich_text",
+                "Notas": "rich_text",
+                "Transcripción disponible": "checkbox",
+            }
+        }
+        mock_nc.query_database.side_effect = [[
+            {
+                "id": "curated-existing-1",
+                "url": "https://www.notion.so/curated-existing-1",
+                "properties": {
+                    "Nombre": {"type": "title", "title": [{"plain_text": "Konstruedu - propuesta 6 cursos"}]},
+                    "Fecha": {"type": "date", "date": {"start": "2026-03-23"}},
+                    "URL fuente": {"type": "url", "url": "https://www.notion.so/raw-1"},
+                },
+            }
+        ]]
+        mock_nc.update_page_properties.return_value = {
+            "page_id": "curated-existing-1",
+            "url": "https://www.notion.so/curated-existing-1",
+            "updated": True,
+        }
+
+        result = handle_granola_promote_curated_session(
+            {
+                "transcript_page_id": "raw-1",
+                "summary": "Resumen curado corto.",
+                "add_trace_comments": False,
+            }
+        )
+
+        assert result["matched_existing"] is True
+        assert result["match_strategy"] == "source_url"
+        assert result["trace_comments_added"] == 0
+        update_args = mock_nc.update_page_properties.call_args_list[0].args
+        assert update_args[0] == "curated-existing-1"
+        props = mock_nc.update_page_properties.call_args_list[0].kwargs["properties"]
+        assert props["Nombre"]["title"][0]["text"]["content"] == "Konstruedu"
+        assert props["Resumen"]["rich_text"][0]["text"]["content"] == "Resumen curado corto."
+        raw_update_args = mock_nc.update_page_properties.call_args_list[1].args
+        assert raw_update_args[0] == "raw-1"
+        raw_props = mock_nc.update_page_properties.call_args_list[1].kwargs["properties"]
+        assert raw_props["Estado"]["select"]["name"] == "Procesada"
+        assert result["raw_status_update"]["ok"] is True
+        mock_nc.add_comment.assert_not_called()
+
+    @patch("worker.tasks.granola.config.NOTION_CURATED_SESSIONS_DB_ID", "curated-db-1")
+    @patch("worker.tasks.granola.notion_client")
+    def test_curated_session_dry_run_skips_writes_and_comments(self, mock_nc):
+        mock_nc.read_page.return_value = {
+            "page_id": "raw-1",
+            "url": "https://www.notion.so/raw-1",
+            "title": "Konstruedu",
+            "plain_text": "Resumen breve.",
+        }
+        mock_nc.get_page.return_value = {
+            "url": "https://www.notion.so/raw-1",
+            "properties": {
+                "Fecha": {"type": "date", "date": {"start": "2026-03-23"}},
+                "Fuente": {"type": "select", "select": {"name": "granola"}},
+                "Estado": {"type": "select", "select": {"name": "Pendiente"}},
+                "Fecha que el agente procesó": {"type": "date", "date": None},
+            },
+        }
+        mock_nc.read_database.return_value = {
+            "schema": {
+                "Nombre": "title",
+                "Fecha": "date",
+                "Fuente": "select",
+                "Notas": "rich_text",
+            }
+        }
+        mock_nc.query_database.side_effect = [[
+            {
+                "id": "curated-existing-1",
+                "url": "https://www.notion.so/curated-existing-1",
+                "properties": {
+                    "Nombre": {"type": "title", "title": [{"plain_text": "Konstruedu"}]},
+                    "Fecha": {"type": "date", "date": {"start": "2026-03-23"}},
+                },
+            }
+        ]]
+
+        result = handle_granola_promote_curated_session(
+            {
+                "transcript_page_id": "raw-1",
+                "dry_run": True,
+            }
+        )
+
+        assert result["dry_run"] is True
+        assert result["matched_existing"] is True
+        assert result["match_strategy"] == "exact_title"
+        assert result["trace_comments_added"] == 0
+        assert result["curated_session"]["dry_run"] is True
+        assert result["raw_status_update"]["dry_run"] is True
+        assert result["raw_status_update"]["properties"]["Estado"]["select"]["name"] == "Procesada"
+        mock_nc.create_database_page.assert_not_called()
+        mock_nc.update_page_properties.assert_not_called()
+        mock_nc.add_comment.assert_not_called()
+
+    @patch("worker.tasks.granola.config.NOTION_CURATED_SESSIONS_DB_ID", "curated-db-1")
+    @patch("worker.tasks.granola.notion_client")
+    def test_prefers_existing_session_by_source_url_even_if_title_is_mangled(self, mock_nc):
+        mock_nc.read_page.return_value = {
+            "page_id": "raw-1",
+            "url": "https://www.notion.so/raw-1",
+            "title": "Reunión Con Jorge de Boragó",
+            "plain_text": "Resumen breve.",
+        }
+        mock_nc.get_page.return_value = {
+            "url": "https://www.notion.so/raw-1",
+            "properties": {
+                "Fecha": {"type": "date", "date": {"start": "2026-03-24"}},
+                "Fuente": {"type": "select", "select": {"name": "granola"}},
+                "Estado": {"type": "select", "select": {"name": "Pendiente"}},
+                "Fecha que el agente procesó": {"type": "date", "date": None},
+            },
+        }
+        mock_nc.read_database.return_value = {
+            "schema": {
+                "Nombre": "title",
+                "Fecha": "date",
+                "URL fuente": "url",
+                "Notas": "rich_text",
+            },
+            "items": [],
+        }
+        mock_nc.query_database.side_effect = [[
+            {
+                "id": "curated-good-1",
+                "url": "https://www.notion.so/curated-good-1",
+                "properties": {
+                    "Nombre": {"type": "title", "title": [{"plain_text": "Boragó - propuesta Odoo y M365"}]},
+                    "Fecha": {"type": "date", "date": {"start": "2026-03-24"}},
+                    "URL fuente": {"type": "url", "url": "https://www.notion.so/raw-1"},
+                },
+            },
+            {
+                "id": "curated-bad-1",
+                "url": "https://www.notion.so/curated-bad-1",
+                "properties": {
+                    "Nombre": {"type": "title", "title": [{"plain_text": "Borag? - propuesta Odoo y M365"}]},
+                    "Fecha": {"type": "date", "date": {"start": "2026-03-24"}},
+                    "URL fuente": {"type": "url", "url": "https://www.notion.so/raw-1"},
+                },
+            },
+        ]]
+        mock_nc.update_page_properties.return_value = {
+            "page_id": "curated-good-1",
+            "url": "https://www.notion.so/curated-good-1",
+            "updated": True,
+        }
+
+        result = handle_granola_promote_curated_session(
+            {
+                "transcript_page_id": "raw-1",
+                "session_name": "Boragó - propuesta Odoo y M365",
+                "add_trace_comments": False,
+            }
+        )
+
+        assert result["matched_existing"] is True
+        assert result["match_strategy"] == "source_url"
+        assert result["curated_session"]["page_id"] == "curated-good-1"
+        update_args = mock_nc.update_page_properties.call_args_list[0].args
+        assert update_args[0] == "curated-good-1"
+
+    @patch("worker.tasks.granola.config.NOTION_CURATED_SESSIONS_DB_ID", "curated-db-1")
+    @patch("worker.tasks.granola.notion_client")
+    def test_preserves_existing_title_when_payload_title_is_mangled(self, mock_nc):
+        mock_nc.read_page.return_value = {
+            "page_id": "raw-1",
+            "url": "https://www.notion.so/raw-1",
+            "title": "Reunión Con Jorge de Boragó",
+            "plain_text": "Resumen breve.",
+        }
+        mock_nc.get_page.return_value = {
+            "url": "https://www.notion.so/raw-1",
+            "properties": {
+                "Fecha": {"type": "date", "date": {"start": "2026-03-24"}},
+                "Fuente": {"type": "select", "select": {"name": "granola"}},
+            },
+        }
+        mock_nc.read_database.return_value = {
+            "schema": {
+                "Nombre": "title",
+                "Fecha": "date",
+                "URL fuente": "url",
+                "Notas": "rich_text",
+            },
+            "items": [],
+        }
+        mock_nc.query_database.side_effect = [[
+            {
+                "id": "curated-good-1",
+                "url": "https://www.notion.so/curated-good-1",
+                "properties": {
+                    "Nombre": {"type": "title", "title": [{"plain_text": "Boragó - propuesta Odoo y M365"}]},
+                    "Fecha": {"type": "date", "date": {"start": "2026-03-24"}},
+                    "URL fuente": {"type": "url", "url": "https://www.notion.so/raw-1"},
+                },
+            },
+            {
+                "id": "curated-bad-1",
+                "url": "https://www.notion.so/curated-bad-1",
+                "properties": {
+                    "Nombre": {"type": "title", "title": [{"plain_text": "Borag? - propuesta Odoo y M365"}]},
+                    "Fecha": {"type": "date", "date": {"start": "2026-03-24"}},
+                    "URL fuente": {"type": "url", "url": "https://www.notion.so/raw-1"},
+                },
+            },
+        ]]
+        mock_nc.update_page_properties.return_value = {
+            "page_id": "curated-good-1",
+            "url": "https://www.notion.so/curated-good-1",
+            "updated": True,
+        }
+
+        result = handle_granola_promote_curated_session(
+            {
+                "transcript_page_id": "raw-1",
+                "session_name": "Borag? - propuesta Odoo y M365",
+                "add_trace_comments": False,
+            }
+        )
+
+        assert result["matched_existing"] is True
+        assert result["match_strategy"] == "source_url"
+        assert result["session_name"] == "Boragó - propuesta Odoo y M365"
+        props = mock_nc.update_page_properties.call_args_list[0].kwargs["properties"]
+        assert props["Nombre"]["title"][0]["text"]["content"] == "Boragó - propuesta Odoo y M365"
+
+
+class TestHandleGranolaCreateHumanTaskFromCuratedSession:
+
+    def test_requires_curated_session_page_id(self):
+        with pytest.raises(ValueError, match="'curated_session_page_id' is required"):
+            handle_granola_create_human_task_from_curated_session({})
+
+    @patch("worker.tasks.granola.config.NOTION_HUMAN_TASKS_DB_ID", None)
+    def test_requires_human_tasks_env(self):
+        with pytest.raises(RuntimeError, match="NOTION_HUMAN_TASKS_DB_ID not configured"):
+            handle_granola_create_human_task_from_curated_session(
+                {
+                    "curated_session_page_id": "curated-1",
+                    "task_name": "Revisar contrato Konstruedu",
+                }
+            )
+
+    @patch("worker.tasks.granola.config.NOTION_HUMAN_TASKS_DB_ID", "human-tasks-db-1")
+    @patch("worker.tasks.granola.notion_client")
+    def test_creates_human_task_with_supported_schema(self, mock_nc):
+        mock_nc.read_page.return_value = {
+            "page_id": "curated-1",
+            "url": "https://www.notion.so/curated-1",
+            "title": "Konstruedu - propuesta 6 cursos",
+            "plain_text": "Presupuesto aprobado. Siguiente paso: revisar contrato.",
+        }
+        mock_nc.get_page.return_value = {
+            "url": "https://www.notion.so/curated-1",
+            "properties": {
+                "Fecha": {"type": "date", "date": {"start": "2026-03-23"}},
+                "Dominio": {"type": "select", "select": {"name": "Operacion"}},
+                "Proyecto": {"type": "relation", "relation": [{"id": "proj-123"}]},
+            },
+        }
+        mock_nc.read_database.return_value = {
+            "schema": {
+                "Nombre": "title",
+                "Dominio": "select",
+                "Proyecto": "relation",
+                "Sesion relacionada": "relation",
+                "Tipo": "select",
+                "Estado": "status",
+                "Prioridad": "select",
+                "Fecha objetivo": "date",
+                "Origen": "select",
+                "URL fuente": "url",
+                "Notas": "rich_text",
+            }
+        }
+        mock_nc.query_database.return_value = []
+        mock_nc.create_database_page.return_value = {
+            "page_id": "task-1",
+            "url": "https://www.notion.so/task-1",
+            "created": True,
+        }
+        mock_nc.add_comment.return_value = {"comment_id": "comment-1"}
+
+        result = handle_granola_create_human_task_from_curated_session(
+            {
+                "curated_session_page_id": "curated-1",
+                "task_name": "Revisar contrato Konstruedu",
+                "task_type": "Follow-up",
+                "estado": "Pendiente",
+                "priority": "Alta",
+                "due_date": "2026-03-31",
+            }
+        )
+
+        assert result["matched_existing"] is False
+        assert result["trace_comments_added"] == 2
+        assert result["task_name"] == "Revisar contrato Konstruedu"
+        assert "Sesion relacionada" in result["schema_fields_used"]
+        assert "Proyecto" in result["schema_fields_used"]
+
+        mock_nc.query_database.assert_called_once_with(
+            database_id="human-tasks-db-1",
+            filter={"property": "Nombre", "title": {"equals": "Revisar contrato Konstruedu"}},
+        )
+        create_args = mock_nc.create_database_page.call_args.args
+        assert create_args[0] == "human-tasks-db-1"
+        props = mock_nc.create_database_page.call_args.kwargs["properties"]
+        assert props["Nombre"]["title"][0]["text"]["content"] == "Revisar contrato Konstruedu"
+        assert props["Dominio"]["select"]["name"] == "Operacion"
+        assert props["Proyecto"]["relation"] == [{"id": "proj-123"}]
+        assert props["Sesion relacionada"]["relation"] == [{"id": "curated-1"}]
+        assert props["Tipo"]["select"]["name"] == "Follow-up"
+        assert props["Estado"]["status"]["name"] == "Pendiente"
+        assert props["Prioridad"]["select"]["name"] == "Alta"
+        assert props["Fecha objetivo"]["date"]["start"] == "2026-03-31"
+        assert props["Origen"]["select"]["name"] == "Sesion"
+        assert props["URL fuente"]["url"] == "https://www.notion.so/curated-1"
+        assert "Derivada de sesion curada" in props["Notas"]["rich_text"][0]["text"]["content"]
+
+    @patch("worker.tasks.granola.config.NOTION_HUMAN_TASKS_DB_ID", "human-tasks-db-1")
+    @patch("worker.tasks.granola.notion_client")
+    def test_updates_existing_human_task_without_comments(self, mock_nc):
+        mock_nc.read_page.return_value = {
+            "page_id": "curated-1",
+            "url": "https://www.notion.so/curated-1",
+            "title": "Konstruedu - propuesta 6 cursos",
+            "plain_text": "Resumen breve.",
+        }
+        mock_nc.get_page.return_value = {
+            "url": "https://www.notion.so/curated-1",
+            "properties": {
+                "Fecha": {"type": "date", "date": {"start": "2026-03-23"}},
+                "Dominio": {"type": "select", "select": {"name": "Operacion"}},
+            },
+        }
+        mock_nc.read_database.return_value = {
+            "schema": {
+                "Nombre": "title",
+                "Dominio": "select",
+                "Sesion relacionada": "relation",
+                "Tipo": "select",
+                "Estado": "status",
+                "Origen": "select",
+                "URL fuente": "url",
+                "Notas": "rich_text",
+            }
+        }
+        mock_nc.query_database.return_value = [{"id": "task-existing-1"}]
+        mock_nc.update_page_properties.return_value = {
+            "page_id": "task-existing-1",
+            "url": "https://www.notion.so/task-existing-1",
+            "updated": True,
+        }
+
+        result = handle_granola_create_human_task_from_curated_session(
+            {
+                "curated_session_page_id": "curated-1",
+                "task_name": "Revisar contrato Konstruedu",
+                "notes": "Follow-up manual confirmado.",
+                "add_trace_comments": False,
+            }
+        )
+
+        assert result["matched_existing"] is True
+        assert result["trace_comments_added"] == 0
+        update_args = mock_nc.update_page_properties.call_args.args
+        assert update_args[0] == "task-existing-1"
+        props = mock_nc.update_page_properties.call_args.kwargs["properties"]
+        assert props["Nombre"]["title"][0]["text"]["content"] == "Revisar contrato Konstruedu"
+        assert props["Notas"]["rich_text"][0]["text"]["content"] == "Follow-up manual confirmado."
+        mock_nc.add_comment.assert_not_called()
+
+    @patch("worker.tasks.granola.config.NOTION_HUMAN_TASKS_DB_ID", "human-tasks-db-1")
+    @patch("worker.tasks.granola.notion_client")
+    def test_human_task_dry_run_skips_writes_and_comments(self, mock_nc):
+        mock_nc.read_page.return_value = {
+            "page_id": "curated-1",
+            "url": "https://www.notion.so/curated-1",
+            "title": "Konstruedu - propuesta 6 cursos",
+            "plain_text": "Resumen breve.",
+        }
+        mock_nc.get_page.return_value = {
+            "url": "https://www.notion.so/curated-1",
+            "properties": {
+                "Fecha": {"type": "date", "date": {"start": "2026-03-23"}},
+                "Dominio": {"type": "select", "select": {"name": "Operacion"}},
+            },
+        }
+        mock_nc.read_database.return_value = {
+            "schema": {
+                "Nombre": "title",
+                "Dominio": "select",
+                "Sesion relacionada": "relation",
+                "Tipo": "select",
+                "Estado": "status",
+                "Origen": "select",
+                "URL fuente": "url",
+                "Notas": "rich_text",
+            }
+        }
+        mock_nc.query_database.return_value = [{"id": "task-existing-1", "url": "https://www.notion.so/task-existing-1"}]
+
+        result = handle_granola_create_human_task_from_curated_session(
+            {
+                "curated_session_page_id": "curated-1",
+                "task_name": "Revisar contrato Konstruedu",
+                "dry_run": True,
+            }
+        )
+
+        assert result["dry_run"] is True
+        assert result["matched_existing"] is True
+        assert result["trace_comments_added"] == 0
+        assert result["human_task"]["dry_run"] is True
+        mock_nc.create_database_page.assert_not_called()
+        mock_nc.update_page_properties.assert_not_called()
+        mock_nc.add_comment.assert_not_called()
+
+
+class TestHandleGranolaUpdateCommercialProjectFromCuratedSession:
+
+    def test_requires_curated_session_page_id(self):
+        with pytest.raises(ValueError, match="'curated_session_page_id' is required"):
+            handle_granola_update_commercial_project_from_curated_session({})
+
+    @patch("worker.tasks.granola.config.NOTION_COMMERCIAL_PROJECTS_DB_ID", None)
+    def test_requires_commercial_projects_env(self):
+        with pytest.raises(RuntimeError, match="NOTION_COMMERCIAL_PROJECTS_DB_ID not configured"):
+            handle_granola_update_commercial_project_from_curated_session(
+                {
+                    "curated_session_page_id": "curated-1",
+                    "estado": "Propuesta enviada",
+                }
+            )
+
+    @patch("worker.tasks.granola.config.NOTION_COMMERCIAL_PROJECTS_DB_ID", "commercial-db-1")
+    @patch("worker.tasks.granola.notion_client")
+    def test_requires_project_target(self, mock_nc):
+        mock_nc.read_page.return_value = {
+            "page_id": "curated-1",
+            "url": "https://www.notion.so/curated-1",
+            "title": "Konstruedu - propuesta 6 cursos",
+            "plain_text": "Resumen breve.",
+        }
+        mock_nc.get_page.return_value = {
+            "url": "https://www.notion.so/curated-1",
+            "properties": {"Fecha": {"type": "date", "date": {"start": "2026-03-23"}}},
+        }
+
+        with pytest.raises(ValueError, match="A commercial project target is required"):
+            handle_granola_update_commercial_project_from_curated_session(
+                {
+                    "curated_session_page_id": "curated-1",
+                    "estado": "Propuesta enviada",
+                }
+            )
+
+    @patch("worker.tasks.granola.config.NOTION_COMMERCIAL_PROJECTS_DB_ID", "commercial-db-1")
+    @patch("worker.tasks.granola.notion_client")
+    def test_updates_commercial_project_with_supported_schema(self, mock_nc):
+        mock_nc.read_page.return_value = {
+            "page_id": "curated-1",
+            "url": "https://www.notion.so/curated-1",
+            "title": "Konstruedu - propuesta 6 cursos",
+            "plain_text": "Presupuesto aprobado. Siguiente paso: revisar contrato.",
+        }
+        mock_nc.get_page.side_effect = [
+            {
+                "url": "https://www.notion.so/curated-1",
+                "properties": {
+                    "Fecha": {"type": "date", "date": {"start": "2026-03-23"}},
+                    "Proyecto": {"type": "relation", "relation": [{"id": "proj-123"}]},
+                },
+            },
+            {
+                "url": "https://www.notion.so/proj-123",
+                "properties": {
+                    "Nombre": {
+                        "type": "title",
+                        "title": [{"plain_text": "Especializacion IA + Automatizacion AECO - 6 Cursos Konstruedu"}],
+                    }
+                },
+            },
+        ]
+        mock_nc.read_database.return_value = {
+            "schema": {
+                "Nombre": "title",
+                "Estado": "status",
+                "Acción Requerida": "select",
+                "Fecha": "date",
+                "Plazo": "date",
+                "Monto": "number",
+                "Tipo": "select",
+                "Cliente": "select",
+            }
+        }
+        mock_nc.update_page_properties.return_value = {
+            "page_id": "proj-123",
+            "url": "https://www.notion.so/proj-123",
+            "updated": True,
+        }
+        mock_nc.add_comment.return_value = {"comment_id": "comment-1"}
+
+        result = handle_granola_update_commercial_project_from_curated_session(
+            {
+                "curated_session_page_id": "curated-1",
+                "estado": "Propuesta enviada",
+                "accion_requerida": "Revisar contrato",
+            }
+        )
+
+        assert result["project_page_id"] == "proj-123"
+        assert result["project_title"] == "Especializacion IA + Automatizacion AECO - 6 Cursos Konstruedu"
+        assert result["trace_comments_added"] == 2
+        assert "Estado" in result["schema_fields_used"]
+        assert "Acción Requerida" in result["schema_fields_used"]
+
+        update_args = mock_nc.update_page_properties.call_args.args
+        assert update_args[0] == "proj-123"
+        props = mock_nc.update_page_properties.call_args.kwargs["properties"]
+        assert props["Estado"]["status"]["name"] == "Propuesta enviada"
+        assert props["Acción Requerida"]["select"]["name"] == "Revisar contrato"
+
+    @patch("worker.tasks.granola.config.NOTION_COMMERCIAL_PROJECTS_DB_ID", "commercial-db-1")
+    @patch("worker.tasks.granola.notion_client")
+    def test_requires_explicit_commercial_fields(self, mock_nc):
+        mock_nc.read_page.return_value = {
+            "page_id": "curated-1",
+            "url": "https://www.notion.so/curated-1",
+            "title": "Konstruedu - propuesta 6 cursos",
+            "plain_text": "Resumen breve.",
+        }
+        mock_nc.get_page.return_value = {
+            "url": "https://www.notion.so/curated-1",
+            "properties": {
+                "Fecha": {"type": "date", "date": {"start": "2026-03-23"}},
+                "Proyecto": {"type": "relation", "relation": [{"id": "proj-123"}]},
+            },
+        }
+
+        with pytest.raises(ValueError, match="At least one explicit commercial field is required"):
+            handle_granola_update_commercial_project_from_curated_session(
+                {"curated_session_page_id": "curated-1"}
+            )
+
+    @patch("worker.tasks.granola.config.NOTION_COMMERCIAL_PROJECTS_DB_ID", "commercial-db-1")
+    @patch("worker.tasks.granola.notion_client")
+    def test_commercial_project_dry_run_skips_write_and_comments(self, mock_nc):
+        mock_nc.read_page.return_value = {
+            "page_id": "curated-1",
+            "url": "https://www.notion.so/curated-1",
+            "title": "Konstruedu - propuesta 6 cursos",
+            "plain_text": "Resumen breve.",
+        }
+        mock_nc.get_page.side_effect = [
+            {
+                "url": "https://www.notion.so/curated-1",
+                "properties": {
+                    "Fecha": {"type": "date", "date": {"start": "2026-03-23"}},
+                    "Proyecto": {"type": "relation", "relation": [{"id": "proj-123"}]},
+                },
+            },
+            {
+                "url": "https://www.notion.so/proj-123",
+                "properties": {
+                    "Nombre": {"type": "title", "title": [{"plain_text": "Proyecto X"}]},
+                },
+            },
+        ]
+        mock_nc.read_database.return_value = {
+            "schema": {
+                "Estado": "status",
+                "Acción Requerida": "select",
+            }
+        }
+
+        result = handle_granola_update_commercial_project_from_curated_session(
+            {
+                "curated_session_page_id": "curated-1",
+                "estado": "Propuesta enviada",
+                "dry_run": True,
+            }
+        )
+
+        assert result["dry_run"] is True
+        assert result["trace_comments_added"] == 0
+        assert result["commercial_project"]["dry_run"] is True
+        mock_nc.update_page_properties.assert_not_called()
+        mock_nc.add_comment.assert_not_called()
+
+
+class TestHandleGranolaPromoteOperationalSlice:
+
+    def test_requires_transcript_page_id(self):
+        with pytest.raises(ValueError, match="'transcript_page_id' is required"):
+            handle_granola_promote_operational_slice({})
+
+    def test_requires_curated_payload(self):
+        with pytest.raises(ValueError, match="'curated_payload' is required"):
+            handle_granola_promote_operational_slice({"transcript_page_id": "raw-1"})
+
+    def test_requires_at_least_one_destination_payload(self):
+        with pytest.raises(ValueError, match="At least one destination payload is required"):
+            handle_granola_promote_operational_slice(
+                {
+                    "transcript_page_id": "raw-1",
+                    "curated_payload": {"session_name": "Sesion X"},
+                }
+            )
+
+    @patch("worker.tasks.granola.handle_granola_update_commercial_project_from_curated_session")
+    @patch("worker.tasks.granola.handle_granola_create_human_task_from_curated_session")
+    @patch("worker.tasks.granola.handle_granola_promote_curated_session")
+    def test_composes_explicit_slices(
+        self,
+        mock_promote_curated,
+        mock_create_human_task,
+        mock_update_commercial_project,
+    ):
+        mock_promote_curated.return_value = {
+            "curated_session": {"page_id": "curated-1", "created": True},
+            "session_name": "Sesion X",
+        }
+        mock_create_human_task.return_value = {"human_task": {"page_id": "task-1", "created": True}}
+        mock_update_commercial_project.return_value = {
+            "commercial_project": {"page_id": "proj-1", "updated": True}
+        }
+
+        result = handle_granola_promote_operational_slice(
+            {
+                "transcript_page_id": "raw-1",
+                "curated_payload": {"session_name": "Sesion X"},
+                "human_task_payload": {"task_name": "Follow-up X"},
+                "commercial_project_payload": {"estado": "Propuesta enviada"},
+            }
+        )
+
+        assert result["transcript_page_id"] == "raw-1"
+        assert result["curated_session_page_id"] == "curated-1"
+        assert "curated" in result["results"]
+        assert "human_task" in result["results"]
+        assert "commercial_project" in result["results"]
+
+        mock_promote_curated.assert_called_once_with(
+            {"session_name": "Sesion X", "transcript_page_id": "raw-1"}
+        )
+        mock_create_human_task.assert_called_once_with(
+            {"task_name": "Follow-up X", "curated_session_page_id": "curated-1"}
+        )
+        mock_update_commercial_project.assert_called_once_with(
+            {"estado": "Propuesta enviada", "curated_session_page_id": "curated-1"}
+        )
+
+    @patch("worker.tasks.granola.handle_granola_update_commercial_project_from_curated_session")
+    @patch("worker.tasks.granola.handle_granola_create_human_task_from_curated_session")
+    @patch("worker.tasks.granola.handle_granola_promote_curated_session")
+    def test_dry_run_propagates_to_subpayloads(
+        self,
+        mock_promote_curated,
+        mock_create_human_task,
+        mock_update_commercial_project,
+    ):
+        mock_promote_curated.return_value = {
+            "curated_session": {"page_id": "curated-1", "dry_run": True},
+        }
+        mock_create_human_task.return_value = {"human_task": {"dry_run": True}}
+        mock_update_commercial_project.return_value = {"commercial_project": {"dry_run": True}}
+
+        result = handle_granola_promote_operational_slice(
+            {
+                "transcript_page_id": "raw-1",
+                "dry_run": True,
+                "curated_payload": {"session_name": "Sesion X"},
+                "human_task_payload": {"task_name": "Follow-up X"},
+                "commercial_project_payload": {"estado": "Propuesta enviada"},
+            }
+        )
+
+        assert result["dry_run"] is True
+        mock_promote_curated.assert_called_once_with(
+            {"session_name": "Sesion X", "transcript_page_id": "raw-1", "dry_run": True}
+        )
+        mock_create_human_task.assert_called_once_with(
+            {"task_name": "Follow-up X", "curated_session_page_id": "curated-1", "dry_run": True}
+        )
+        mock_update_commercial_project.assert_called_once_with(
+            {"estado": "Propuesta enviada", "curated_session_page_id": "curated-1", "dry_run": True}
+        )
+
+    @patch("worker.tasks.granola.handle_granola_update_commercial_project_from_curated_session")
+    @patch("worker.tasks.granola.handle_granola_create_human_task_from_curated_session")
+    @patch("worker.tasks.granola.handle_granola_promote_curated_session")
+    def test_dry_run_skips_downstream_when_new_curated_has_no_page_id(
+        self,
+        mock_promote_curated,
+        mock_create_human_task,
+        mock_update_commercial_project,
+    ):
+        mock_promote_curated.return_value = {
+            "curated_session": {
+                "created": True,
+                "dry_run": True,
+                "properties": {"Nombre": {"title": [{"text": {"content": "Sesion nueva"}}]}},
+            },
+        }
+
+        result = handle_granola_promote_operational_slice(
+            {
+                "transcript_page_id": "raw-1",
+                "dry_run": True,
+                "curated_payload": {"session_name": "Sesion nueva"},
+                "human_task_payload": {"task_name": "Follow-up X"},
+                "commercial_project_payload": {"estado": "En conversación"},
+            }
+        )
+
+        assert result["dry_run"] is True
+        assert result["curated_session_page_id"] == ""
+        assert result["results"]["human_task"]["skipped"] is True
+        assert result["results"]["commercial_project"]["skipped"] is True
+        assert (
+            result["results"]["human_task"]["reason"]
+            == "curated_session_page_id_unavailable_in_dry_run_for_new_session"
+        )
+        mock_create_human_task.assert_not_called()
+        mock_update_commercial_project.assert_not_called()
 
 
 class TestHandleGranolaCreateFollowup:

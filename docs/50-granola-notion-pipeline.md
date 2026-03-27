@@ -1,218 +1,207 @@
-# Granola → Notion Pipeline
+# Granola -> Notion Pipeline
 
-> Documento de diseño: pipeline automático para transferir transcripciones de reuniones desde Granola a Notion, con extracción de action items y follow-up proactivo de Rick. **Notion:** se usa la integración de Rick (`NOTION_API_KEY`); solo se configura `NOTION_GRANOLA_DB_ID` como ID de la base de datos destino (no hay integración Notion propia de Granola).
+> Documento de diseño del pipeline de reuniones de Granola para Rick. Este flujo debe convivir con el modo manual actual de David y evolucionar hacia una arquitectura estable `raw -> curado -> destino`.
 
-## 1. Investigación de Granola (plan básico)
+## 0. Resumen ejecutivo
 
-### 1a. Capacidades del plan básico
+Hoy coexisten dos modos:
 
-| Característica | Disponible | Detalle |
-|----------------|-----------|---------|
-| Transcripción en tiempo real | Si | Unlimited meetings |
-| Export automático a carpeta | No | No existe export automático nativo |
-| Export CSV (bulk) | Parcial | Solo notas > 30 días; sin transcripts completos |
-| Export individual (copy) | Si | Copiar nota individual en formato Markdown |
-| Webhook nativo | No | Solo disponible via Zapier (plan Pro+) |
-| API pública | No | Solo plan Enterprise ($35+/user/mes) |
-| Export a Google Drive | No | No soportado directamente |
-| Almacenamiento local | Si | Cache en `%APPDATA%\Granola\cache-v3.json` (Windows) |
-| Zapier integration | Pro+ | No disponible en plan básico |
+1. **Modo actual manual**
+   - David copia manualmente la nota desde Granola.
+   - La pega a Notion AI.
+   - Si la reunión impacta operación, capitaliza en `Asesorías & Proyectos`.
 
-### 1b. Metadata incluida en exports
+2. **Modo objetivo con Rick**
+   - Rick lee el raw de Granola.
+   - Lo guarda en una DB raw exclusiva (`NOTION_GRANOLA_DB_ID`).
+   - Solo después promueve lo relevante a la capa curada humana y a los destinos operativos.
 
-Cuando se copia una nota individual, Granola incluye:
+La decisión de arquitectura es:
 
-- **Título de la reunión** (derivado del evento de calendario)
-- **Fecha y hora** de la reunión
-- **Participantes/attendees** (si vinculado a calendario)
-- **Notas del usuario** (las notas tomadas durante la reunión)
-- **Transcripción completa** (audio transcrito)
-- **Action items** (extraídos por AI, con asignación sugerida)
-- **Resumen AI** (summary generado automáticamente)
+- **Raw**: DB exclusiva de Rick en Notion (`NOTION_GRANOLA_DB_ID`)
+- **Curado**: DB humana separada de sesiones/transcripciones clasificadas
+- **Destino**: proyectos, tareas, recursos y follow-ups
 
-### 1c. Acceso local al cache
+Rick no debe escribir directamente a la DB curada humana como intake bruto.
 
-Herramientas de la comunidad (`granola-to-markdown`, `granola-cli`) demuestran que Granola almacena datos localmente en:
+## 1. Hallazgos actuales de Granola
 
-- **macOS**: `~/Library/Application Support/Granola/cache-v3.json`
-- **Windows**: `%APPDATA%\Granola\cache-v3.json` (probable)
+### 1.1 Realidad observada en marzo 2026
 
-El cache contiene documentos JSON con toda la metadata de las reuniones. Sin embargo, este formato no está documentado oficialmente y puede cambiar sin aviso.
+- El cache observado en Windows fue `%APPDATA%\Granola\cache-v6.json`
+- La estructura observada fue `cache.state.documents`
+- Había 41 reuniones en el cache local
+- El contenido principal estaba en **ProseMirror JSON**
+- `notes_markdown` estaba vacío
+- Varias reuniones no tenían transcripción de audio; eran notas de reunión estructuradas
 
-## 2. Arquitecturas evaluadas
+Implicancia:
 
-| Opción | Descripción | Pros | Contras |
-|--------|-------------|------|---------|
-| A — Rick lee VM | VM detecta archivo → Rick lo lee con `windows.fs.read_text` → sube a Notion | Sin dependencias externas | Requiere polling desde VPS; latencia alta |
-| B — Google Drive buffer | VM exporta a Google Drive → Rick detecta vía API → sube a Notion | Google Drive como buffer | Necesita Google Drive API; complejidad extra |
-| C — Webhook Granola | Granola webhook → Dispatcher → Worker → Notion | Más elegante | No disponible en plan básico |
-| **D — Watcher en VM** | **Script en VM monitorea carpeta → POST al Worker local → Notion** | **Automático; latencia baja; sin dependencias** | **Requiere script corriendo en VM** |
+- Granola no debe modelarse solo como "pipeline de transcript"
+- el intake real es **notas o transcripciones**, según disponibilidad
+- hace falta un exportador previo a Markdown para reutilizar el watcher actual
 
-### Arquitectura elegida: Opción D — Watcher en VM
+### 1.2 Capacidades relevantes
 
-**Justificación:**
+| Característica | Estado |
+|---|---|
+| Notas de reunión | Sí |
+| Transcripción de audio | Parcial / depende del caso |
+| Export automático nativo a carpeta | No |
+| API pública estable | No |
+| Cache local utilizable | Sí |
+| Formato raw listo para el watcher actual | No |
 
-1. **Simplicidad**: el script corre en la misma VM donde está Granola y el Worker.
-2. **Sin dependencias externas**: no requiere Google Drive API, Zapier, ni webhook.
-3. **Latencia mínima**: el watcher detecta archivos nuevos y los envía directamente al Worker local.
-4. **Robusto**: tolerante a reinicios (marca archivos procesados), sin estado externo.
-5. **Compatible con el flujo actual**: David exporta manualmente la nota (Copy → Paste en archivo `.md`) o usa `granola-to-markdown` para batch.
+## 2. Arquitectura recomendada
 
-### Flujo operativo
+### 2.1 Tres capas
 
-```
-David termina reunión en Granola
-       │
-       ▼
-Exporta nota a carpeta monitoreada
-(manual copy/paste o granola-to-markdown)
-       │
-       ▼
-┌─────────────────────────────┐
-│  granola_watcher.py (VM)    │
-│  Monitorea GRANOLA_EXPORT_DIR│
-│  Detecta *.md nuevos        │
-└──────────┬──────────────────┘
-           │ POST /run
-           ▼
-┌─────────────────────────────┐
-│  Worker (VM :8088)          │
-│  task: granola.process_     │
-│        transcript           │
-│  1. Parsea markdown         │
-│  2. Extrae metadata         │
-│  3. Sube a Notion           │
-│  4. Extrae action items     │
-│  5. Crea tareas en Notion   │
-│  6. Notifica a Enlace       │
-└──────────┬──────────────────┘
-           │
-           ▼
-┌─────────────────────────────┐
-│  Notion (Granola Inbox DB)  │
-│  - Página con transcript    │
-│  - Action items como tareas │
-│  - Comentario para Enlace   │
-└─────────────────────────────┘
-```
+#### Capa raw
 
-```mermaid
-flowchart TD
-    A[David termina reunión en Granola] --> B[Exporta nota a carpeta monitoreada]
-    B --> C[granola_watcher.py detecta .md nuevo]
-    C --> D[POST /run al Worker local]
-    D --> E[granola.process_transcript]
-    E --> F[Parsea markdown y extrae metadata]
-    F --> G[Crea página en Notion Granola Inbox]
-    F --> H[Extrae action items]
-    H --> I[Crea tareas en Notion via upsert_task]
-    G --> J[Notifica a Enlace via comentario]
+Owner: Rick  
+Superficie: `NOTION_GRANOLA_DB_ID`
 
-    K[Rick detecta transcripción sin follow-up] --> L[granola.create_followup]
-    L --> M{followup_type}
-    M -->|reminder| N[Crea tarea en Notion con fecha límite]
-    M -->|email_draft| O[Genera borrador de email]
-    M -->|proposal| P[Genera documento Word con propuesta]
-```
+Debe almacenar:
 
-## 3. Setup del watcher en VM
+- título
+- cuerpo bruto de la nota/transcripción
+- fecha
+- fuente
+- attendees si están disponibles
+- action items detectados
+- timestamps de importación/procesamiento
 
-### Instalación
+No necesita relaciones ricas.
 
-```powershell
-# En la VM Windows, desde el repo clonado:
-cd C:\GitHub\umbral-agent-stack
+#### Capa curada
 
-# Instalar dependencias (requests ya incluido en el entorno)
-pip install watchdog requests
+Owner: David / gobernanza humana  
+Superficie: DB humana de sesiones y transcripciones
 
-# Crear carpetas
-mkdir C:\Users\rick\Documents\Granola
-mkdir C:\Users\rick\Documents\Granola\processed
+Debe almacenar solo lo relevante:
+
+- dominio
+- tipo de sesión
+- programa o proyecto relacionado
+- fecha
+- URL fuente
+- recurso relacionado
+- si hay transcripción disponible
+- notas de capitalización
+
+Aquí sí convienen relaciones y clasificación.
+
+#### Capa destino
+
+Superficies:
+
+- proyectos
+- tareas
+- recursos
+- follow-ups
+
+Un ítem raw o curado solo debe llegar a destino cuando haya señal suficiente.
+
+## 3. Flujo objetivo
+
+```text
+Granola cache-v6.json
+    -> granola_cache_exporter.py
+    -> archivos .md estructurados
+    -> granola_watcher.py
+    -> Worker
+    -> DB raw de Rick en Notion
+    -> promoción selectiva a capa curada
+    -> proyectos / tareas / recursos / follow-up
 ```
 
-### Variables de entorno en VM
+## 4. Componentes
 
-```
-GRANOLA_EXPORT_DIR=C:\Users\rick\Documents\Granola
-GRANOLA_PROCESSED_DIR=C:\Users\rick\Documents\Granola\processed
-WORKER_URL=http://localhost:8088
-WORKER_TOKEN=<token del worker>
-```
+### 4.1 Exporter nuevo
 
-### Ejecución
+Componente faltante:
 
-```powershell
-# Modo continuo (watcher con watchdog)
-python scripts/vm/granola_watcher.py
+- lee `cache-v6.json`
+- detecta reuniones nuevas o modificadas
+- convierte ProseMirror JSON a Markdown
+- exporta `.md` a `GRANOLA_EXPORT_DIR`
 
-# Modo one-shot (procesa archivos pendientes y sale)
-python scripts/vm/granola_watcher.py --once
-```
+Este componente es el puente entre la realidad actual de Granola y el watcher ya previsto en el repo.
 
-### Registro como servicio (NSSM)
+### 4.2 Watcher existente
 
-```powershell
-nssm install granola-watcher "C:\Python312\python.exe" "C:\GitHub\umbral-agent-stack\scripts\vm\granola_watcher.py"
-nssm set granola-watcher AppDirectory "C:\GitHub\umbral-agent-stack"
-nssm set granola-watcher AppEnvironmentExtra "GRANOLA_EXPORT_DIR=C:\Users\rick\Documents\Granola" "WORKER_URL=http://localhost:8088" "WORKER_TOKEN=<token>"
-nssm start granola-watcher
-```
+`granola_watcher.py` sigue siendo válido si recibe `.md` bien formado.
 
-## 4. Variables de entorno
+### 4.3 Worker existente
 
-| Variable | Dónde | Requerida | Descripción |
-|----------|-------|-----------|-------------|
-| `GRANOLA_EXPORT_DIR` | VM | Si (watcher) | Carpeta donde se depositan los exports de Granola |
-| `GRANOLA_PROCESSED_DIR` | VM | No | Carpeta destino para archivos procesados (default: `{EXPORT_DIR}/processed`) |
-| `WORKER_URL` | VM | Si (watcher) | URL del Worker (default: `http://localhost:8088`) |
-| `WORKER_TOKEN` | VM + Worker | Si | Token de autenticación del Worker |
-| `NOTION_GRANOLA_DB_ID` | Worker | Si | ID de la DB de transcripciones en Notion. Usa la misma integración Rick (`NOTION_API_KEY`). |
-| `NOTION_TASKS_DB_ID` | Worker | No | ID de la DB Kanban para action items |
-| `ENLACE_NOTION_USER_ID` | Worker | No | ID de usuario de Enlace para @mentions en Notion |
+Las tasks `granola.*` siguen siendo válidas para:
 
-## 5. Handlers del Worker
+- crear página raw
+- extraer action items
+- crear follow-ups
+- notificar a Enlace
 
-### `granola.process_transcript`
+## 5. Variables de entorno relevantes
 
-Recibe una transcripción parseada y ejecuta el pipeline completo:
+| Variable | Dónde | Uso |
+|---|---|---|
+| `GRANOLA_EXPORT_DIR` | VM | carpeta monitoreada por el watcher |
+| `GRANOLA_PROCESSED_DIR` | VM | archivos ya procesados |
+| `WORKER_URL` | VM | endpoint local del Worker |
+| `WORKER_TOKEN` | VM + Worker | autenticación |
+| `NOTION_GRANOLA_DB_ID` | Worker | DB raw de Granola Inbox |
+| `NOTION_TASKS_DB_ID` | Worker | opcional; tareas derivadas |
+| `ENLACE_NOTION_USER_ID` | Worker | opcional; comentarios para Enlace |
 
-1. Crea página en Notion (Granola Inbox DB)
-2. Extrae action items del contenido
-3. Crea tareas individuales en Notion (si `NOTION_TASKS_DB_ID` configurado)
-4. Notifica a Enlace con comentario en la página creada
+## 6. Contrato del raw
 
-### `granola.create_followup`
+### 6.1 Qué va al raw
 
-Handler proactivo que Rick usa para dar seguimiento:
+- contenido bruto de la reunión
+- metadata básica
+- action items detectados
+- señales para follow-up
 
-- `followup_type: "reminder"` → crea tarea en Notion con fecha límite
-- `followup_type: "email_draft"` → genera borrador de email (texto estructurado)
-- `followup_type: "proposal"` → genera resumen/propuesta formateado
+### 6.2 Qué no va directo al curado
 
-## 6. Formato esperado de archivos Markdown
+- notas sin clasificar
+- reuniones ambiguas
+- contenido aún no validado
+- action items sin contexto suficiente
 
-El watcher espera archivos `.md` con el siguiente formato (compatible con Granola export):
+## 7. Promoción a curado
 
-```markdown
-# Título de la reunión
+Promover a la capa curada cuando:
 
-**Date:** 2026-03-04
-**Attendees:** David, Cliente X, Partner Y
+- la sesión tiene valor de trazabilidad
+- el dominio es claro
+- el programa o proyecto es identificable
+- hay una razón humana para consultarla después
 
-## Notes
+No promover automáticamente todo el raw.
 
-Contenido de las notas tomadas durante la reunión...
+## 8. Compatibilidad con el modo manual actual
 
-## Transcript
+Mientras el pipeline automático no exista, el modo manual sigue siendo válido:
 
-Transcripción completa del audio...
+1. David copia desde Granola
+2. pega a Notion AI
+3. capitaliza en proyectos o sesiones según corresponda
 
-## Action Items
+El pipeline de Rick no reemplaza ese flujo de un día para otro. Debe coexistir con él.
 
-- [ ] Enviar propuesta a Cliente X (David, 2026-03-07)
-- [ ] Revisar presupuesto (Partner Y, 2026-03-10)
-- [ ] Agendar siguiente reunión (David)
-```
+## 9. Recomendaciones de implementación
 
-El parser es flexible: si no encuentra las secciones esperadas, trata todo el contenido como transcripción.
+1. Mantener `NOTION_GRANOLA_DB_ID` como DB raw canónica de Rick.
+2. No reutilizar la DB curada humana como intake bruto.
+3. Implementar primero el exporter de `cache-v6.json`.
+4. Mantener el watcher actual.
+5. Diseñar después una promoción explícita `raw -> curado -> destino`.
+
+## 10. Referencias
+
+- `worker/notion_client.py`
+- `worker/tasks/granola.py`
+- `scripts/vm/granola_watcher.py`
+- `docs/18-notion-enlace-rick-convention.md`
+- `openclaw/workspace-templates/skills/granola-pipeline/SKILL.md`

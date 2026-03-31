@@ -198,6 +198,7 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "granola.create_human_task_from_curated_session": handle_granola_create_human_task_from_curated_session,
     "granola.promote_operational_slice": handle_granola_promote_operational_slice,
     "granola.update_commercial_project_from_curated_session": handle_granola_update_commercial_project_from_curated_session,
+    "granola.promote_session_capitalizable": handle_granola_promote_curated_session,
     "granola.promote_curated_session": handle_granola_promote_curated_session,
     "granola.process_transcript": handle_granola_process_transcript,
     "granola.create_followup": handle_granola_create_followup,

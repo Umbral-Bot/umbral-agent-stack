@@ -1,0 +1,242 @@
+contract_name: notion-runtime-bridge-v1
+version: 1
+status: ready_for_live_implementation
+date: 2026-03-31
+
+owners:
+  workspace_owner: David Moreira
+  runtime_coordinator: Rick
+  workspace_ai: Notion AI
+  live_implementer: Cursor
+
+principles:
+  one_canonical_base_per_object_type: true
+  repo_replaces_live_notion: false
+  ambiguity_requires_comment: true
+  unverified_ids_must_remain_placeholders: true
+  official_flow:
+    - raw
+    - capitalizable_session
+    - capitalization
+
+references:
+  operating_model: docs/architecture/02-operating-model-v1.md
+  permissions_policy: docs/policies/02-permissions-by-surface.md
+  capitalization_policy: docs/policies/03-capitalization-rules.md
+  taxonomy_registry: registry/taxonomies-v1.yaml
+  adr: docs/adr/ADR-005-raw-capitalizable-capitalization.md
+
+surfaces:
+  raw_intake:
+    object_type: raw_session
+    notion_name: "<RAW_SESSIONS_DB_NAME>"
+    database_id: "<RAW_SESSIONS_DB_ID>"
+    data_source_id: "<RAW_SESSIONS_DATA_SOURCE_ID>"
+    runtime_status: bound
+    runtime_binding:
+      env_var: NOTION_GRANOLA_DB_ID
+      handlers:
+        - notion.write_transcript
+    allowed_runtime_mode: edit
+    notes:
+      - append_only
+      - never_use_as_canonical_business_object
+
+  capitalizable_sessions:
+    object_type: capitalizable_session
+    notion_name: "<CAPITALIZABLE_SESSIONS_DB_NAME>"
+    database_id: "<CAPITALIZABLE_SESSIONS_DB_ID>"
+    data_source_id: "<CAPITALIZABLE_SESSIONS_DATA_SOURCE_ID>"
+    runtime_status: bound
+    runtime_binding:
+      env_var: NOTION_CURATED_SESSIONS_DB_ID
+      handlers:
+        - granola.promote_curated_session
+    allowed_runtime_mode: edit
+    notes:
+      - official_interpretation_stage
+      - one_row_per_source_case
+
+  human_tasks:
+    object_type: task
+    notion_name: "<HUMAN_TASKS_DB_NAME>"
+    database_id: "<HUMAN_TASKS_DB_ID>"
+    data_source_id: "<HUMAN_TASKS_DATA_SOURCE_ID>"
+    runtime_status: bound
+    runtime_binding:
+      env_var: NOTION_HUMAN_TASKS_DB_ID
+      handlers:
+        - granola.create_human_task_from_curated_session
+    allowed_runtime_mode: edit
+
+  deliverables:
+    object_type: deliverable
+    notion_name: "<DELIVERABLES_DB_NAME>"
+    database_id: "<DELIVERABLES_DB_ID>"
+    data_source_id: "<DELIVERABLES_DATA_SOURCE_ID>"
+    runtime_status: bound
+    runtime_binding:
+      env_var: NOTION_DELIVERABLES_DB_ID
+      handlers:
+        - notion.upsert_deliverable
+    allowed_runtime_mode: edit
+    notes:
+      - free_edit_only_for_rick_owned_artifacts
+
+  bridge:
+    object_type: bridge_item
+    notion_name: "<BRIDGE_DB_NAME>"
+    database_id: "<BRIDGE_DB_ID>"
+    data_source_id: "<BRIDGE_DATA_SOURCE_ID>"
+    runtime_status: bound
+    runtime_binding:
+      env_var: NOTION_BRIDGE_DB_ID
+      handlers:
+        - notion.upsert_bridge_item
+    allowed_runtime_mode: edit
+
+  crm_clients_opportunities:
+    object_type: client_opportunity
+    notion_name: "<CRM_CLIENTS_OPPORTUNITIES_DB_NAME>"
+    database_id: "<CRM_CLIENTS_OPPORTUNITIES_DB_ID>"
+    data_source_id: "<CRM_CLIENTS_OPPORTUNITIES_DATA_SOURCE_ID>"
+    runtime_status: transitional_binding
+    runtime_binding:
+      env_var: NOTION_COMMERCIAL_PROJECTS_DB_ID
+      handlers:
+        - granola.update_commercial_project_from_curated_session
+    allowed_runtime_mode: edit
+    notes:
+      - protected_surface
+      - current_handler_name_is_commercial_project_but_v1_contract_targets_crm_surface
+
+  projects:
+    object_type: project
+    notion_name: "<PROJECTS_DB_NAME>"
+    database_id: "<PROJECTS_DB_ID>"
+    data_source_id: "<PROJECTS_DATA_SOURCE_ID>"
+    runtime_status: not_bound
+    runtime_binding:
+      env_var: "<VERIFY_LIVE_OR_DEFER>"
+      handlers: []
+    allowed_runtime_mode: propose
+    notes:
+      - canonical_human_project_base
+      - keep_separate_from_crm_in_v1
+
+  programs_courses:
+    object_type: program_course
+    notion_name: "<PROGRAMS_COURSES_DB_NAME>"
+    database_id: "<PROGRAMS_COURSES_DB_ID>"
+    data_source_id: "<PROGRAMS_COURSES_DATA_SOURCE_ID>"
+    runtime_status: not_bound
+    runtime_binding:
+      env_var: "<VERIFY_LIVE_OR_DEFER>"
+      handlers: []
+    allowed_runtime_mode: propose
+
+  resources:
+    object_type: resource
+    notion_name: "<RESOURCES_DB_NAME>"
+    database_id: "<RESOURCES_DB_ID>"
+    data_source_id: "<RESOURCES_DATA_SOURCE_ID>"
+    runtime_status: not_bound
+    runtime_binding:
+      env_var: "<VERIFY_LIVE_OR_DEFER>"
+      handlers: []
+    allowed_runtime_mode: propose
+    notes:
+      - keep_lightweight_in_v1
+
+  research:
+    object_type: research
+    notion_name: "<RESEARCH_DB_NAME>"
+    database_id: "<RESEARCH_DB_ID>"
+    data_source_id: "<RESEARCH_DATA_SOURCE_ID>"
+    runtime_status: not_bound
+    runtime_binding:
+      env_var: "<VERIFY_LIVE_OR_DEFER>"
+      handlers: []
+    allowed_runtime_mode: propose
+    notes:
+      - keep_lightweight_in_v1
+
+protected_surfaces:
+  mi_perfil:
+    notion_name: "<MI_PERFIL_PAGE_OR_DB_NAME>"
+    database_id: "<MI_PERFIL_DATABASE_ID_OR_NA>"
+    data_source_id: "<MI_PERFIL_DATA_SOURCE_ID_OR_NA>"
+    runtime_mode: comment
+  openclaw:
+    notion_name: "<OPENCLAW_PAGE_NAME>"
+    database_id: "<OPENCLAW_DATABASE_ID_OR_NA>"
+    data_source_id: "<OPENCLAW_DATA_SOURCE_ID_OR_NA>"
+    runtime_mode: comment
+    notes:
+      - only_reserved_runtime_blocks_may_be_edited_during_setup
+  referencias:
+    notion_name: "<REFERENCIAS_PAGE_OR_DB_NAME>"
+    database_id: "<REFERENCIAS_DATABASE_ID_OR_NA>"
+    data_source_id: "<REFERENCIAS_DATA_SOURCE_ID_OR_NA>"
+    runtime_mode: propose
+  docencia_y_contenido:
+    notion_name: "<DOCENCIA_Y_CONTENIDO_PAGE_OR_DB_NAME>"
+    database_id: "<DOCENCIA_Y_CONTENIDO_DATABASE_ID_OR_NA>"
+    data_source_id: "<DOCENCIA_Y_CONTENIDO_DATA_SOURCE_ID_OR_NA>"
+    runtime_mode: propose
+  dashboards:
+    notion_name: "<DASHBOARDS_PAGE_OR_DB_NAME>"
+    database_id: "<DASHBOARDS_DATABASE_ID_OR_NA>"
+    data_source_id: "<DASHBOARDS_DATA_SOURCE_ID_OR_NA>"
+    runtime_mode: edit
+    notes:
+      - limited_to_reserved_runtime_metrics_blocks
+  sensitive_projects:
+    notion_name: "<SENSITIVE_PROJECTS_VIEW_OR_DB_NAME>"
+    database_id: "<SENSITIVE_PROJECTS_DATABASE_ID_OR_NA>"
+    data_source_id: "<SENSITIVE_PROJECTS_DATA_SOURCE_ID_OR_NA>"
+    runtime_mode: comment
+
+existing_repo_bindings:
+  env_vars:
+    - NOTION_GRANOLA_DB_ID
+    - NOTION_CURATED_SESSIONS_DB_ID
+    - NOTION_HUMAN_TASKS_DB_ID
+    - NOTION_COMMERCIAL_PROJECTS_DB_ID
+    - NOTION_TASKS_DB_ID
+    - NOTION_PROJECTS_DB_ID
+    - NOTION_DELIVERABLES_DB_ID
+    - NOTION_BRIDGE_DB_ID
+  handlers:
+    - notion.write_transcript
+    - notion.add_comment
+    - notion.read_page
+    - notion.read_database
+    - notion.search_databases
+    - notion.upsert_task
+    - notion.upsert_project
+    - notion.upsert_deliverable
+    - notion.upsert_bridge_item
+    - granola.promote_curated_session
+    - granola.create_human_task_from_curated_session
+    - granola.update_commercial_project_from_curated_session
+    - granola.promote_operational_slice
+    - granola.capitalize_raw
+
+fallbacks:
+  missing_binding: notion.add_comment
+  ambiguous_target: notion.add_comment
+  protected_surface_without_explicit_target: notion.add_comment
+
+cursor_live_checklist:
+  - verify_existing_surfaces_before_creating_new_ones
+  - confirm_database_id_and_data_source_id_live
+  - share_only_required_surfaces_with_rick_integration
+  - keep_placeholders_in_repo_until_verified
+  - create_relations_and_views_before_enabling_runtime_writes
+
+stack_runtime_checklist:
+  - do_not_add_new_runtime_for_v1
+  - use_existing_handlers_only
+  - route_unbound_surfaces_to_comment_or_proposal_flow
+  - treat_granola_capitalize_raw_as_legacy_exception_not_default_v1

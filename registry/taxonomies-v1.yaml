@@ -1,0 +1,292 @@
+version: 1
+status: draft_ready_for_cursor_fill
+
+objects:
+  sessions:
+    note: canonical staging object for the official V1 flow
+    required_fields:
+      - name
+      - raw_source_id
+      - source_url
+      - status
+      - domain
+      - session_type
+      - session_date
+    match_keys:
+      - raw_source_id
+      - source_url
+      - normalized_name_plus_session_date
+    selects:
+      status:
+        - Nueva
+        - En revision
+        - Lista para capitalizar
+        - Capitalizada parcial
+        - Capitalizada
+        - Bloqueada por ambiguedad
+        - Descartada
+      domain:
+        - Operacion
+        - Cliente
+        - Docencia
+        - Contenido
+        - Investigacion
+        - Personal
+      session_type:
+        - Reunion cliente
+        - Asesoria
+        - Clase
+        - Taller
+        - Reunion interna
+        - Seguimiento
+        - Descubrimiento
+        - Investigacion
+      source:
+        - Granola
+        - Manual
+        - Notion
+        - OpenClaw
+        - Email
+        - Otro
+    relations:
+      optional:
+        - raw_source
+        - task
+        - deliverable
+        - client_opportunity
+        - project
+        - program_course
+        - resource
+        - research
+
+  tasks:
+    required_fields:
+      - name
+      - task_type
+      - status
+      - priority
+      - origin
+    match_keys:
+      - canonical_task_id
+      - normalized_name_plus_related_project
+    selects:
+      task_type:
+        - Follow-up
+        - Decision
+        - Bloqueo
+        - Research
+        - Preparacion
+        - Revision
+        - Implementacion
+      status:
+        - Pendiente
+        - En curso
+        - Bloqueada
+        - Hecha
+        - Cancelada
+      priority:
+        - Alta
+        - Media
+        - Baja
+      origin:
+        - Sesion
+        - Proyecto
+        - Entregable
+        - CRM
+        - Manual
+    relations:
+      recommended:
+        - session
+        - project
+        - deliverable
+        - client_opportunity
+
+  projects:
+    required_fields:
+      - name
+      - project_type
+      - status
+    match_keys:
+      - canonical_project_key
+      - normalized_name_plus_client
+    selects:
+      project_type:
+        - Cliente
+        - Interno
+        - Contenido
+        - Docencia
+        - Producto
+        - Investigacion
+      status:
+        - Idea
+        - Activo
+        - En pausa
+        - Bloqueado
+        - Cerrado
+        - Archivado
+      sensitivity:
+        - Normal
+        - Restringido
+        - Sensible
+    relations:
+      recommended:
+        - client_opportunity
+        - program_course
+
+  deliverables:
+    required_fields:
+      - name
+      - deliverable_type
+      - review_status
+      - origin
+    match_keys:
+      - source_session_id
+      - artifact_url
+      - normalized_name_plus_project
+    selects:
+      deliverable_type:
+        - Reporte
+        - Propuesta
+        - Benchmark
+        - Clase
+        - Documento operativo
+        - Pieza de contenido
+        - Borrador
+      review_status:
+        - Borrador
+        - En revision
+        - Aprobado
+        - Aprobado con ajustes
+        - Archivado
+      origin:
+        - Sesion
+        - Proyecto
+        - Tarea
+        - Manual
+    relations:
+      recommended:
+        - project
+        - task
+        - session
+
+  clients_opportunities:
+    required_fields:
+      - name
+      - record_type
+      - stage
+      - status
+    match_keys:
+      - canonical_client_key
+      - source_url
+      - normalized_name
+    selects:
+      record_type:
+        - Cliente
+        - Oportunidad
+        - Partner
+      stage:
+        - Lead
+        - Descubrimiento
+        - Propuesta
+        - Negociacion
+        - Ganada
+        - Perdida
+        - Dormida
+      status:
+        - Activo
+        - En espera
+        - Cerrado
+      sensitivity:
+        - Normal
+        - Restringido
+        - Sensible
+    relations:
+      recommended:
+        - project
+        - deliverable
+        - session
+
+  programs_courses:
+    required_fields:
+      - name
+      - program_type
+      - status
+    match_keys:
+      - canonical_program_key
+      - normalized_name
+    selects:
+      program_type:
+        - Curso
+        - Programa
+        - Masterclass
+        - Taller
+        - Cohorte
+      status:
+        - Idea
+        - Diseno
+        - Venta
+        - Ejecucion
+        - Pausa
+        - Cerrado
+    relations:
+      recommended:
+        - project
+        - deliverable
+
+  resources:
+    note: keep lightweight in V1
+    required_fields:
+      - name
+      - resource_type
+      - status
+    match_keys:
+      - source_url
+      - normalized_name
+    selects:
+      resource_type:
+        - Referencia
+        - Plantilla
+        - Caso
+        - Activo reutilizable
+        - Fuente
+      status:
+        - Activo
+        - En revision
+        - Archivado
+    relations:
+      optional:
+        - session
+        - project
+        - research
+
+  research:
+    note: keep lightweight in V1
+    required_fields:
+      - name
+      - research_type
+      - status
+    match_keys:
+      - source_url
+      - normalized_name
+    selects:
+      research_type:
+        - Hipotesis
+        - Insight
+        - Benchmark
+        - Evidencia
+        - Experimento
+      status:
+        - Capturada
+        - En analisis
+        - Validada
+        - Descartada
+        - Archivada
+      evidence_level:
+        - Baja
+        - Media
+        - Alta
+    relations:
+      optional:
+        - resource
+        - session
+        - project

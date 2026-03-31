@@ -196,6 +196,24 @@ def _comment_safe(page_id: str | None, text: str) -> bool:
         return False
 
 
+def _leave_review_comment(
+    page_id: str | None,
+    *,
+    source_evidence: str,
+    intended_target: str,
+    blocking_ambiguity: str,
+    next_review: str,
+) -> bool:
+    comment = (
+        "Revision requerida por gobernanza V1.\n"
+        f"1. Evidencia fuente: {source_evidence}\n"
+        f"2. Destino intencionado: {intended_target}\n"
+        f"3. Bloqueo: {blocking_ambiguity}\n"
+        f"4. Siguiente revision necesaria: {next_review}"
+    )
+    return _comment_safe(page_id, comment)
+
+
 def _result_page_id(result: Dict[str, Any] | None) -> str:
     if not isinstance(result, dict):
         return ""
@@ -523,6 +541,7 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
     attendees = input_data.get("attendees", [])
     source = input_data.get("source", "granola")
     notify_enlace = input_data.get("notify_enlace", True)
+    allow_legacy_raw_task_writes = bool(input_data.get("allow_legacy_raw_task_writes"))
 
     # Action items: use provided or extract from content
     action_items = input_data.get("action_items")
@@ -542,9 +561,17 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
     page_url = page_result.get("url", "")
     logger.info("Created page: %s (%s)", page_id, page_url)
 
+    action_items_for_tasks = action_items if allow_legacy_raw_task_writes else []
+    if action_items and not allow_legacy_raw_task_writes:
+        logger.info(
+            "Skipping %d raw action items for transcript %s due to V1 guardrail",
+            len(action_items),
+            page_id,
+        )
+
     # Step 2: Create action items as Notion tasks
     ai_created = 0
-    for item in action_items:
+    for item in action_items_for_tasks:
         try:
             task_name = (item.get("text", "Action item") or "Action item").strip()[:200] or "Action item"
             assignee = (item.get("assignee", "sin asignar") or "sin asignar").strip() or "sin asignar"
@@ -594,7 +621,9 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
     return {
         "page_id": page_id,
         "url": page_url,
+        "action_items_detected": len(action_items),
         "action_items_created": ai_created,
+        "legacy_raw_task_writes_enabled": allow_legacy_raw_task_writes,
         "notification_sent": notification_sent,
     }
 
@@ -617,12 +646,13 @@ def handle_granola_capitalize_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
     if not transcript_page_id:
         raise ValueError("'transcript_page_id' is required in input")
 
+    allow_legacy_raw_to_canonical = bool(input_data.get("allow_legacy_raw_to_canonical"))
     wants_project = bool((input_data.get("project_name") or "").strip())
     wants_deliverable = bool((input_data.get("deliverable_name") or "").strip())
     wants_bridge = bool((input_data.get("bridge_item_name") or "").strip())
     wants_followup = bool((input_data.get("followup_type") or "").strip())
 
-    if not any((wants_project, wants_deliverable, wants_bridge, wants_followup)):
+    if allow_legacy_raw_to_canonical and not any((wants_project, wants_deliverable, wants_bridge, wants_followup)):
         raise ValueError(
             "At least one explicit destination is required: project_name, "
             "deliverable_name, bridge_item_name or followup_type"
@@ -648,6 +678,38 @@ def handle_granola_capitalize_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
         or "granola"
     )
     context_excerpt = _compact_excerpt(page_snapshot.get("plain_text") or "")
+
+    if not allow_legacy_raw_to_canonical:
+        destinations = []
+        if wants_project:
+            destinations.append(f"Proyecto: {(input_data.get('project_name') or '').strip()}")
+        if wants_deliverable:
+            destinations.append(f"Entregable: {(input_data.get('deliverable_name') or '').strip()}")
+        if wants_bridge:
+            destinations.append(f"Puente: {(input_data.get('bridge_item_name') or '').strip()}")
+        if wants_followup:
+            destinations.append(f"Follow-up: {(input_data.get('followup_type') or '').strip()}")
+        intended_target = ", ".join(destinations) if destinations else "Por definir desde session_capitalizable"
+        review_comment_added = _leave_review_comment(
+            page_snapshot.get("page_id") or transcript_page_id,
+            source_evidence=f"{transcript_title} ({transcript_date}) - {transcript_url or transcript_page_id}",
+            intended_target=intended_target,
+            blocking_ambiguity="V1 no permite raw -> canonical target.",
+            next_review="Promover primero a session_capitalizable y decidir la capitalizacion desde esa capa.",
+        )
+        return {
+            "ok": False,
+            "blocked_by_policy": True,
+            "policy": "raw_to_canonical_disabled_in_v1",
+            "review_comment_added": review_comment_added,
+            "transcript_page_id": page_snapshot.get("page_id") or transcript_page_id,
+            "transcript_url": transcript_url,
+            "title": transcript_title,
+            "date": transcript_date,
+            "source": transcript_source,
+            "results": {},
+            "trace_comments_added": 1 if review_comment_added else 0,
+        }
 
     results: Dict[str, Any] = {}
     add_trace_comments = input_data.get("add_trace_comments", True)
@@ -793,8 +855,7 @@ def handle_granola_promote_curated_session(input_data: Dict[str, Any]) -> Dict[s
     ).strip()
     if not transcript_page_id:
         raise ValueError("'transcript_page_id' is required in input")
-    if not config.NOTION_CURATED_SESSIONS_DB_ID:
-        raise RuntimeError("NOTION_CURATED_SESSIONS_DB_ID not configured")
+    session_capitalizable_db_id = config.require_notion_session_capitalizable_db_id()
 
     page_snapshot = notion_client.read_page(transcript_page_id, max_blocks=80)
     page_data = notion_client.get_page(transcript_page_id)
@@ -839,7 +900,7 @@ def handle_granola_promote_curated_session(input_data: Dict[str, Any]) -> Dict[s
             )
 
     db_snapshot = notion_client.read_database(
-        config.NOTION_CURATED_SESSIONS_DB_ID,
+        session_capitalizable_db_id,
         max_items=100,
     )
     schema = db_snapshot.get("schema") or {}
@@ -974,7 +1035,7 @@ def handle_granola_promote_curated_session(input_data: Dict[str, Any]) -> Dict[s
             source_filter = {"property": source_prop, "rich_text": {"equals": transcript_url}}
         if source_filter:
             existing_candidates = notion_client.query_database(
-                database_id=config.NOTION_CURATED_SESSIONS_DB_ID,
+                database_id=session_capitalizable_db_id,
                 filter=source_filter,
             )
 
@@ -988,7 +1049,7 @@ def handle_granola_promote_curated_session(input_data: Dict[str, Any]) -> Dict[s
 
     if not existing_match:
         exact_title_candidates = notion_client.query_database(
-            database_id=config.NOTION_CURATED_SESSIONS_DB_ID,
+            database_id=session_capitalizable_db_id,
             filter={"property": title_prop, "title": {"equals": session_name}},
         )
         existing_match, match_strategy = _pick_best_existing_curated_session(
@@ -1083,7 +1144,7 @@ def handle_granola_promote_curated_session(input_data: Dict[str, Any]) -> Dict[s
         notion_result["created"] = False
     else:
         notion_result = notion_client.create_database_page(
-            config.NOTION_CURATED_SESSIONS_DB_ID,
+            session_capitalizable_db_id,
             properties=properties,
         )
 
@@ -1431,9 +1492,23 @@ def handle_granola_update_commercial_project_from_curated_session(
         or (_extract_relation_values(session_page, "Proyecto", "Project") or [""])[0]
     )
     if not project_page_id:
-        raise ValueError(
-            "A commercial project target is required: pass 'project_page_id' or relate the curated session to Proyecto"
+        review_comment_added = _leave_review_comment(
+            session_snapshot.get("page_id") or curated_session_page_id,
+            source_evidence=f"{session_title} ({session_date}) - {session_url or curated_session_page_id}",
+            intended_target="Proyecto comercial canonico",
+            blocking_ambiguity="No project target verified on the capitalizable session.",
+            next_review="Relacionar la sesion con el proyecto correcto o pasar project_page_id verificado.",
         )
+        return {
+            "ok": False,
+            "blocked_by_ambiguity": True,
+            "review_comment_added": review_comment_added,
+            "curated_session_page_id": session_snapshot.get("page_id") or curated_session_page_id,
+            "curated_session_url": session_url,
+            "session_title": session_title,
+            "date": session_date,
+            "trace_comments_added": 1 if review_comment_added else 0,
+        }
 
     update_fields = {
         "Estado": input_data.get("estado") or input_data.get("project_estado"),

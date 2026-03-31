@@ -57,6 +57,17 @@ class ExportItem:
     normalized_title: str
 
 
+def _extract_traceability_document_id(raw_properties: dict[str, Any]) -> str:
+    traceability = str(raw_properties.get("Trazabilidad") or "").strip()
+    if not traceability:
+        return ""
+    for line in traceability.splitlines():
+        key, _, value = line.partition("=")
+        if key.strip() == "granola_document_id":
+            return value.strip()
+    return ""
+
+
 def _normalize_title(value: str) -> str:
     text = unicodedata.normalize("NFKD", value or "")
     ascii_text = text.encode("ascii", "ignore").decode("ascii")
@@ -143,6 +154,9 @@ def _load_raw_items(max_items: int) -> dict[str, Any]:
             "title": title,
             "normalized_title": _normalize_title(title),
             "properties": item.get("properties") or {},
+            "granola_document_id": _extract_traceability_document_id(
+                item.get("properties") or {}
+            ),
         }
         if _is_smoke_like_title(title):
             smoke_items.append(entry)
@@ -185,8 +199,12 @@ def _classify_gap(
 ) -> dict[str, Any]:
     raw_real_items = raw_snapshot["real_items"]
     raw_by_title: dict[str, list[dict[str, Any]]] = {}
+    raw_by_document_id: dict[str, dict[str, Any]] = {}
     for item in raw_real_items:
         raw_by_title.setdefault(str(item["normalized_title"]), []).append(item)
+        raw_document_id = str(item.get("granola_document_id") or "").strip()
+        if raw_document_id:
+            raw_by_document_id[raw_document_id] = item
 
     export_title_counts = Counter(item.normalized_title for item in exports)
     cutoff = date.today() - timedelta(days=recent_days)
@@ -212,6 +230,7 @@ def _classify_gap(
         }
 
         has_exact_raw_title = item.normalized_title in raw_by_title
+        raw_document_match = raw_by_document_id.get(item.document_id)
         repeated_export_family = export_title_counts[item.normalized_title] > 1
         has_near_duplicate = (
             bool(near_raw_matches)
@@ -221,6 +240,21 @@ def _classify_gap(
                 and has_exact_raw_title
             )
         )
+
+        if raw_document_match:
+            likely_present.append(
+                {
+                    **payload,
+                    "classification": "likely_present_document_id",
+                    "reason": (
+                        "raw page traceability already contains the same "
+                        "granola_document_id"
+                    ),
+                    "matched_raw_page_id": raw_document_match.get("page_id"),
+                    "matched_raw_url": raw_document_match.get("url"),
+                }
+            )
+            continue
 
         if has_exact_raw_title and not repeated_export_family:
             likely_present.append(

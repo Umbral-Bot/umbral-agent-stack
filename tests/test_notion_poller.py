@@ -169,8 +169,14 @@ def test_collect_candidate_comments_includes_review_targets_and_deduplicates():
             "ok": True,
             "result": {
                 "items": [
-                    {"page_id": "deliverable-1"},
-                    {"page_id": "deliverable-2"},
+                    {
+                        "page_id": "deliverable-1",
+                        "properties": {"Estado revision": "Pendiente revision"},
+                    },
+                    {
+                        "page_id": "deliverable-2",
+                        "properties": {"Estado revision": "Aprobado"},
+                    },
                 ]
             },
         },
@@ -192,18 +198,6 @@ def test_collect_candidate_comments_includes_review_targets_and_deduplicates():
                         "id": "c-1",
                         "created_time": "2026-03-16T21:00:00.000Z",
                         "text": "mensaje control room",
-                    }
-                ]
-            },
-        },
-        {
-            "ok": True,
-            "result": {
-                "comments": [
-                    {
-                        "id": "c-2",
-                        "created_time": "2026-03-16T21:02:00.000Z",
-                        "text": "trabajo incompleto",
                     }
                 ]
             },
@@ -254,7 +248,6 @@ def test_collect_candidate_comments_includes_review_targets_and_deduplicates():
     expected_calls = [
         {"since": "2026-03-16T20:55:00+00:00", "limit": 20, "page_id": None},
         {"since": "2026-03-16T20:55:00+00:00", "limit": 20, "page_id": "deliverable-1"},
-        {"since": "2026-03-16T20:55:00+00:00", "limit": 20, "page_id": "deliverable-2"},
         {"since": "2026-03-16T20:55:00+00:00", "limit": 20, "page_id": "project-1"},
     ]
     assert [call.kwargs for call in wc.notion_poll_comments.call_args_list] == expected_calls
@@ -321,13 +314,9 @@ def test_collect_candidate_comments_falls_back_when_deliverable_filter_fails():
     wc = MagicMock()
     wc.run.side_effect = [
         RuntimeError("500 from deliverables filter"),
-        {"ok": True, "result": {"items": [{"page_id": "deliverable-1"}]}},
         {"ok": True, "result": {"items": []}},
     ]
-    wc.notion_poll_comments.side_effect = [
-        {"ok": True, "result": {"comments": []}},
-        {"ok": True, "result": {"comments": []}},
-    ]
+    wc.notion_poll_comments.return_value = {"ok": True, "result": {"comments": []}}
 
     with patch.dict(
         "os.environ",
@@ -340,6 +329,6 @@ def test_collect_candidate_comments_falls_back_when_deliverable_filter_fails():
         comments = _collect_candidate_comments(wc, "2026-03-16T21:00:00+00:00", 20)
 
     assert comments == []
-    deliverable_calls = [call.args[1] for call in wc.run.call_args_list[:2]]
-    assert deliverable_calls[0]["filter"]["or"][0]["property"] == "Estado revision"
-    assert "filter" not in deliverable_calls[1]
+    deliverable_call = wc.run.call_args_list[0].args[1]
+    assert deliverable_call["database_id_or_url"] == "deliverables-db"
+    assert "filter" not in deliverable_call

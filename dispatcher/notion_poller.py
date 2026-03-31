@@ -116,6 +116,24 @@ def _unique_page_ids(items: list[dict]) -> list[str]:
     return ordered
 
 
+def _filter_items_by_property_equals(
+    items: list[dict],
+    property_name: str,
+    allowed_values: tuple[str, ...],
+) -> list[dict]:
+    allowed = {value.strip() for value in allowed_values if value.strip()}
+    if not allowed:
+        return items
+
+    filtered: list[dict] = []
+    for item in items:
+        properties = item.get("properties") or {}
+        value = str(properties.get(property_name) or "").strip()
+        if value in allowed:
+            filtered.append(item)
+    return filtered
+
+
 def _session_capitalizable_db_id() -> str:
     """
     Resolve the V1 session_capitalizable binding from the legacy curated env var.
@@ -130,43 +148,23 @@ def _resolve_review_targets(wc: WorkerClient) -> list[dict[str, str]]:
 
     deliverables_db_id = os.environ.get("NOTION_DELIVERABLES_DB_ID", "").strip()
     if deliverables_db_id:
-        deliverable_filter = {
-            "or": [
-                {
-                    "property": "Estado revision",
-                    "status": {"equals": status},
-                }
-                for status in REVIEW_DELIVERABLE_STATUSES
-            ]
-        }
         try:
             deliverable_resp = wc.run(
                 "notion.read_database",
                 {
                     "database_id_or_url": deliverables_db_id,
                     "max_items": max_items,
-                    "filter": deliverable_filter,
                 },
             )
-            for page_id in _unique_page_ids(_extract_read_database_items(deliverable_resp)):
+            deliverable_items = _filter_items_by_property_equals(
+                _extract_read_database_items(deliverable_resp),
+                "Estado revision",
+                REVIEW_DELIVERABLE_STATUSES,
+            )
+            for page_id in _unique_page_ids(deliverable_items):
                 targets.append({"page_id": page_id, "page_kind": "deliverable"})
         except Exception:
-            logger.warning(
-                "Failed to resolve deliverable review targets with review filter; retrying without filter",
-                exc_info=True,
-            )
-            try:
-                deliverable_resp = wc.run(
-                    "notion.read_database",
-                    {
-                        "database_id_or_url": deliverables_db_id,
-                        "max_items": max_items,
-                    },
-                )
-                for page_id in _unique_page_ids(_extract_read_database_items(deliverable_resp)):
-                    targets.append({"page_id": page_id, "page_kind": "deliverable"})
-            except Exception:
-                logger.warning("Failed to resolve deliverable review targets without filter", exc_info=True)
+            logger.warning("Failed to resolve deliverable review targets", exc_info=True)
 
     projects_db_id = os.environ.get("NOTION_PROJECTS_DB_ID", "").strip()
     if projects_db_id:

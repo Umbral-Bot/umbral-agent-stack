@@ -688,6 +688,55 @@ class TestHandleGranolaPromoteCuratedSession:
 
     @patch("worker.tasks.granola.config.NOTION_CURATED_SESSIONS_DB_ID", "curated-db-1")
     @patch("worker.tasks.granola.notion_client")
+    def test_raw_status_sync_supports_garbled_processed_at_field_name(self, mock_nc):
+        mock_nc.read_page.return_value = {
+            "page_id": "raw-1",
+            "url": "https://www.notion.so/raw-1",
+            "title": "Konstruedu",
+            "plain_text": "Resumen breve.",
+        }
+        mock_nc.get_page.return_value = {
+            "url": "https://www.notion.so/raw-1",
+            "properties": {
+                "Fecha": {"type": "date", "date": {"start": "2026-03-23"}},
+                "Fuente": {"type": "select", "select": {"name": "granola"}},
+                "Estado": {"type": "select", "select": {"name": "Pendiente"}},
+                "Fecha que el agente proces?": {"type": "date", "date": None},
+                "URL artefacto": {"type": "url", "url": None},
+            },
+        }
+        mock_nc.read_database.return_value = {
+            "schema": {
+                "Nombre": "title",
+                "Fecha": "date",
+                "Fuente": "select",
+                "Notas": "rich_text",
+            }
+        }
+        mock_nc.query_database.side_effect = [[
+            {
+                "id": "curated-existing-1",
+                "url": "https://www.notion.so/curated-existing-1",
+                "properties": {
+                    "Nombre": {"type": "title", "title": [{"plain_text": "Konstruedu"}]},
+                    "Fecha": {"type": "date", "date": {"start": "2026-03-23"}},
+                },
+            }
+        ]]
+
+        result = handle_granola_promote_curated_session(
+            {
+                "transcript_page_id": "raw-1",
+                "dry_run": True,
+            }
+        )
+
+        raw_props = result["raw_status_update"]["properties"]
+        assert raw_props["Fecha que el agente proces?"]["date"]["start"]
+        assert raw_props["URL artefacto"]["url"] == "https://www.notion.so/curated-existing-1"
+
+    @patch("worker.tasks.granola.config.NOTION_CURATED_SESSIONS_DB_ID", "curated-db-1")
+    @patch("worker.tasks.granola.notion_client")
     def test_prefers_existing_session_by_source_url_even_if_title_is_mangled(self, mock_nc):
         mock_nc.read_page.return_value = {
             "page_id": "raw-1",

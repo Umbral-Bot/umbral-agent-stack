@@ -481,7 +481,12 @@ def _sync_raw_promotion_state(
     _set_schema_property(
         properties,
         raw_schema,
-        ["Fecha que el agente procesó", "Fecha que el agente proceso", "Processed At"],
+        [
+            "Fecha que el agente procesó",
+            "Fecha que el agente proceso",
+            "Fecha que el agente proces?",
+            "Processed At",
+        ],
         _today_date(),
         expected_types={"date"},
         used_fields=used_fields,

@@ -121,11 +121,13 @@ from worker.tasks.granola import (
     handle_granola_capitalize_raw,
     handle_granola_create_human_task_from_curated_session,
     handle_granola_promote_operational_slice,
+    handle_granola_read_session_capitalizable,
     handle_granola_update_commercial_project_from_curated_session,
     handle_granola_promote_curated_session,
     handle_granola_create_followup,
     _extract_action_items_from_content,
 )
+from worker.tasks import TASK_HANDLERS
 
 
 class TestExtractActionItems:
@@ -521,6 +523,8 @@ class TestHandleGranolaPromoteCuratedSession:
         assert result["matched_existing"] is False
         assert result["trace_comments_added"] == 2
         assert result["session_name"] == "Sesion Borago - Curada"
+        assert result["session_capitalizable_page_id"] == "curated-1"
+        assert result["session_capitalizable"]["page_id"] == "curated-1"
         assert "Nombre" in result["schema_fields_used"]
         assert "Proyecto" in result["schema_fields_used"]
 
@@ -613,6 +617,8 @@ class TestHandleGranolaPromoteCuratedSession:
         assert result["matched_existing"] is True
         assert result["match_strategy"] == "source_url"
         assert result["trace_comments_added"] == 0
+        assert result["session_capitalizable_page_id"] == "curated-existing-1"
+        assert result["session_capitalizable"]["page_id"] == "curated-existing-1"
         update_args = mock_nc.update_page_properties.call_args_list[0].args
         assert update_args[0] == "curated-existing-1"
         props = mock_nc.update_page_properties.call_args_list[0].kwargs["properties"]
@@ -682,6 +688,55 @@ class TestHandleGranolaPromoteCuratedSession:
 
     @patch("worker.tasks.granola.config.NOTION_CURATED_SESSIONS_DB_ID", "curated-db-1")
     @patch("worker.tasks.granola.notion_client")
+    def test_raw_status_sync_supports_garbled_processed_at_field_name(self, mock_nc):
+        mock_nc.read_page.return_value = {
+            "page_id": "raw-1",
+            "url": "https://www.notion.so/raw-1",
+            "title": "Konstruedu",
+            "plain_text": "Resumen breve.",
+        }
+        mock_nc.get_page.return_value = {
+            "url": "https://www.notion.so/raw-1",
+            "properties": {
+                "Fecha": {"type": "date", "date": {"start": "2026-03-23"}},
+                "Fuente": {"type": "select", "select": {"name": "granola"}},
+                "Estado": {"type": "select", "select": {"name": "Pendiente"}},
+                "Fecha que el agente proces?": {"type": "date", "date": None},
+                "URL artefacto": {"type": "url", "url": None},
+            },
+        }
+        mock_nc.read_database.return_value = {
+            "schema": {
+                "Nombre": "title",
+                "Fecha": "date",
+                "Fuente": "select",
+                "Notas": "rich_text",
+            }
+        }
+        mock_nc.query_database.side_effect = [[
+            {
+                "id": "curated-existing-1",
+                "url": "https://www.notion.so/curated-existing-1",
+                "properties": {
+                    "Nombre": {"type": "title", "title": [{"plain_text": "Konstruedu"}]},
+                    "Fecha": {"type": "date", "date": {"start": "2026-03-23"}},
+                },
+            }
+        ]]
+
+        result = handle_granola_promote_curated_session(
+            {
+                "transcript_page_id": "raw-1",
+                "dry_run": True,
+            }
+        )
+
+        raw_props = result["raw_status_update"]["properties"]
+        assert raw_props["Fecha que el agente proces?"]["date"]["start"]
+        assert raw_props["URL artefacto"]["url"] == "https://www.notion.so/curated-existing-1"
+
+    @patch("worker.tasks.granola.config.NOTION_CURATED_SESSIONS_DB_ID", "curated-db-1")
+    @patch("worker.tasks.granola.notion_client")
     def test_prefers_existing_session_by_source_url_even_if_title_is_mangled(self, mock_nc):
         mock_nc.read_page.return_value = {
             "page_id": "raw-1",
@@ -743,6 +798,8 @@ class TestHandleGranolaPromoteCuratedSession:
 
         assert result["matched_existing"] is True
         assert result["match_strategy"] == "source_url"
+        assert result["session_capitalizable_page_id"] == "curated-good-1"
+        assert result["session_capitalizable"]["page_id"] == "curated-good-1"
         assert result["curated_session"]["page_id"] == "curated-good-1"
         update_args = mock_nc.update_page_properties.call_args_list[0].args
         assert update_args[0] == "curated-good-1"
@@ -811,6 +868,249 @@ class TestHandleGranolaPromoteCuratedSession:
         assert result["session_name"] == "Boragó - propuesta Odoo y M365"
         props = mock_nc.update_page_properties.call_args_list[0].kwargs["properties"]
         assert props["Nombre"]["title"][0]["text"]["content"] == "Boragó - propuesta Odoo y M365"
+
+
+    @patch("worker.tasks.granola.config.NOTION_CURATED_SESSIONS_DB_ID", "curated-db-1")
+    @patch("worker.tasks.granola.notion_client")
+    def test_blocks_promotion_when_session_capitalizable_match_is_ambiguous(self, mock_nc):
+        mock_nc.read_page.return_value = {
+            "page_id": "raw-1",
+            "url": "https://www.notion.so/raw-1",
+            "title": "Sesion Borago",
+            "plain_text": "Resumen breve.",
+        }
+        mock_nc.get_page.return_value = {
+            "url": "https://www.notion.so/raw-1",
+            "properties": {
+                "Fecha": {"type": "date", "date": {"start": "2026-03-24"}},
+                "Fuente": {"type": "select", "select": {"name": "granola"}},
+            },
+        }
+        mock_nc.read_database.return_value = {
+            "schema": {
+                "Nombre": "title",
+                "Fecha": "date",
+                "URL fuente": "url",
+                "Notas": "rich_text",
+            },
+            "items": [],
+        }
+        mock_nc.query_database.side_effect = [[
+            {
+                "id": "curated-a",
+                "url": "https://www.notion.so/curated-a",
+                "properties": {
+                    "Nombre": {"type": "title", "title": [{"plain_text": "Sesion Borago - Curada"}]},
+                    "Fecha": {"type": "date", "date": {"start": "2026-03-24"}},
+                    "URL fuente": {"type": "url", "url": "https://www.notion.so/raw-1"},
+                },
+            },
+            {
+                "id": "curated-b",
+                "url": "https://www.notion.so/curated-b",
+                "properties": {
+                    "Nombre": {"type": "title", "title": [{"plain_text": "Sesion Borago - Curada"}]},
+                    "Fecha": {"type": "date", "date": {"start": "2026-03-24"}},
+                    "URL fuente": {"type": "url", "url": "https://www.notion.so/raw-1"},
+                },
+            },
+        ]]
+        mock_nc.add_comment.return_value = {"comment_id": "comment-1"}
+
+        result = handle_granola_promote_curated_session({"transcript_page_id": "raw-1"})
+
+        assert result["ok"] is False
+        assert result["blocked_by_ambiguity"] is True
+        assert result["review_comment_added"] is True
+        assert result["trace_comments_added"] == 1
+        assert result["session_capitalizable_db_id"] == "curated-db-1"
+        assert len(result["ambiguous_matches"]) == 2
+        assert {item["page_id"] for item in result["ambiguous_matches"]} == {"curated-a", "curated-b"}
+        mock_nc.create_database_page.assert_not_called()
+        mock_nc.update_page_properties.assert_not_called()
+        mock_nc.add_comment.assert_called_once()
+
+
+class TestHandleGranolaReadSessionCapitalizable:
+
+    @patch("worker.tasks.granola.config.NOTION_CURATED_SESSIONS_DB_ID", "curated-db-1")
+    def test_requires_session_or_transcript_page_id(self):
+        with pytest.raises(
+            ValueError,
+            match="'session_capitalizable_page_id' or 'transcript_page_id' is required",
+        ):
+            handle_granola_read_session_capitalizable({})
+
+    @patch("worker.tasks.granola.config.NOTION_CURATED_SESSIONS_DB_ID", None)
+    def test_requires_session_capitalizable_env(self):
+        with pytest.raises(RuntimeError, match="NOTION_CURATED_SESSIONS_DB_ID not configured"):
+            handle_granola_read_session_capitalizable({"session_capitalizable_page_id": "curated-1"})
+
+    @patch("worker.tasks.granola.config.NOTION_CURATED_SESSIONS_DB_ID", "curated-db-1")
+    @patch("worker.tasks.granola.notion_client")
+    def test_reads_session_capitalizable_by_direct_page_id(self, mock_nc):
+        mock_nc.read_page.return_value = {
+            "page_id": "curated-1",
+            "url": "https://www.notion.so/curated-1",
+            "title": "Sesion capitalizable real",
+            "plain_text": "Notas curadas.",
+        }
+        mock_nc.get_page.return_value = {
+            "id": "curated-1",
+            "url": "https://www.notion.so/curated-1",
+            "properties": {},
+        }
+
+        result = handle_granola_read_session_capitalizable(
+            {"session_capitalizable_page_id": "curated-1"}
+        )
+
+        assert result["ok"] is True
+        assert result["matched_existing"] is True
+        assert result["match_strategy"] == "direct_page_id"
+        assert result["session_capitalizable_db_id"] == "curated-db-1"
+        assert result["session_capitalizable_page_id"] == "curated-1"
+        assert result["session_capitalizable"]["title"] == "Sesion capitalizable real"
+        mock_nc.read_database.assert_not_called()
+        mock_nc.query_database.assert_not_called()
+
+    @patch("worker.tasks.granola.config.NOTION_CURATED_SESSIONS_DB_ID", "curated-db-1")
+    @patch("worker.tasks.granola.notion_client")
+    def test_reads_session_capitalizable_from_transcript_match(self, mock_nc):
+        mock_nc.read_page.side_effect = [
+            {
+                "page_id": "raw-1",
+                "url": "https://www.notion.so/raw-1",
+                "title": "Sesion Borago",
+                "plain_text": "Resumen raw.",
+            },
+            {
+                "page_id": "curated-1",
+                "url": "https://www.notion.so/curated-1",
+                "title": "Sesion Borago - Curada",
+                "plain_text": "Resumen curado.",
+            },
+        ]
+        mock_nc.get_page.side_effect = [
+            {
+                "id": "raw-1",
+                "url": "https://www.notion.so/raw-1",
+                "properties": {
+                    "Fecha": {"type": "date", "date": {"start": "2026-03-24"}},
+                },
+            },
+            {
+                "id": "curated-1",
+                "url": "https://www.notion.so/curated-1",
+                "properties": {
+                    "Nombre": {
+                        "type": "title",
+                        "title": [{"plain_text": "Sesion Borago - Curada"}],
+                    },
+                },
+            },
+        ]
+        mock_nc.read_database.return_value = {
+            "schema": {
+                "Nombre": "title",
+                "Fecha": "date",
+                "URL fuente": "url",
+            },
+            "items": [],
+        }
+        mock_nc.query_database.side_effect = [[
+            {
+                "id": "curated-1",
+                "url": "https://www.notion.so/curated-1",
+                "properties": {
+                    "Nombre": {
+                        "type": "title",
+                        "title": [{"plain_text": "Sesion Borago - Curada"}],
+                    },
+                    "Fecha": {"type": "date", "date": {"start": "2026-03-24"}},
+                    "URL fuente": {"type": "url", "url": "https://www.notion.so/raw-1"},
+                },
+            }
+        ]]
+
+        result = handle_granola_read_session_capitalizable({"transcript_page_id": "raw-1"})
+
+        assert result["ok"] is True
+        assert result["matched_existing"] is True
+        assert result["match_strategy"] == "source_url"
+        assert result["transcript_page_id"] == "raw-1"
+        assert result["session_capitalizable_page_id"] == "curated-1"
+        assert result["session_capitalizable"]["title"] == "Sesion Borago - Curada"
+
+    @patch("worker.tasks.granola.config.NOTION_CURATED_SESSIONS_DB_ID", "curated-db-1")
+    @patch("worker.tasks.granola.notion_client")
+    def test_comments_for_review_when_read_match_is_ambiguous(self, mock_nc):
+        mock_nc.read_page.return_value = {
+            "page_id": "raw-1",
+            "url": "https://www.notion.so/raw-1",
+            "title": "Sesion Borago",
+            "plain_text": "Resumen raw.",
+        }
+        mock_nc.get_page.return_value = {
+            "id": "raw-1",
+            "url": "https://www.notion.so/raw-1",
+            "properties": {
+                "Fecha": {"type": "date", "date": {"start": "2026-03-24"}},
+            },
+        }
+        mock_nc.read_database.return_value = {
+            "schema": {
+                "Nombre": "title",
+                "Fecha": "date",
+                "URL fuente": "url",
+            },
+            "items": [],
+        }
+        mock_nc.query_database.side_effect = [[
+            {
+                "id": "curated-a",
+                "url": "https://www.notion.so/curated-a",
+                "properties": {
+                    "Nombre": {
+                        "type": "title",
+                        "title": [{"plain_text": "Sesion Borago - Curada"}],
+                    },
+                    "Fecha": {"type": "date", "date": {"start": "2026-03-24"}},
+                    "URL fuente": {"type": "url", "url": "https://www.notion.so/raw-1"},
+                },
+            },
+            {
+                "id": "curated-b",
+                "url": "https://www.notion.so/curated-b",
+                "properties": {
+                    "Nombre": {
+                        "type": "title",
+                        "title": [{"plain_text": "Sesion Borago - Curada"}],
+                    },
+                    "Fecha": {"type": "date", "date": {"start": "2026-03-24"}},
+                    "URL fuente": {"type": "url", "url": "https://www.notion.so/raw-1"},
+                },
+            },
+        ]]
+        mock_nc.add_comment.return_value = {"comment_id": "comment-1"}
+
+        result = handle_granola_read_session_capitalizable({"transcript_page_id": "raw-1"})
+
+        assert result["ok"] is False
+        assert result["blocked_by_ambiguity"] is True
+        assert result["review_comment_added"] is True
+        assert result["trace_comments_added"] == 1
+        assert {item["page_id"] for item in result["ambiguous_matches"]} == {"curated-a", "curated-b"}
+        mock_nc.add_comment.assert_called_once()
+
+
+class TestGranolaSessionCapitalizableRegistry:
+
+    def test_registers_v1_alias_and_reader(self):
+        assert TASK_HANDLERS["granola.promote_session_capitalizable"] is TASK_HANDLERS[
+            "granola.promote_curated_session"
+        ]
+        assert TASK_HANDLERS["granola.read_session_capitalizable"] is handle_granola_read_session_capitalizable
 
 
 class TestHandleGranolaCreateHumanTaskFromCuratedSession:

@@ -42,7 +42,10 @@ def _write_pid():
 
 def _remove_pid():
     try:
-        os.remove(PID_FILE)
+        with open(PID_FILE, "r", encoding="utf-8") as f:
+            current_pid = f.read().strip()
+        if current_pid == str(os.getpid()):
+            os.remove(PID_FILE)
     except FileNotFoundError:
         pass
 

@@ -88,9 +88,9 @@ Usar esta task cuando la pagina raw ya existe y quieres dejar trazabilidad hacia
 
 No usa la DB humana curada como destino automatico.
 
-### 4. Promover a capa curada humana
+### 4. Promover a capa `session_capitalizable`
 
-Task: `granola.promote_curated_session`
+Tasks: `granola.promote_curated_session`, `granola.promote_session_capitalizable`
 
 Usar esta task solo cuando:
 
@@ -103,10 +103,28 @@ Esta task:
 
 - inspecciona el schema vivo de la DB curada
 - crea o actualiza por titulo exacto
+- si hay ambiguedad, comenta para revision en la fuente raw
 - solo crea relaciones si recibe `page_id` explicitos
 - no reemplaza la posterior derivacion hacia tareas o proyectos humanos
 
-### 5. Crear tarea humana desde una sesion curada
+### 5. Leer una `session_capitalizable` real
+
+Task: `granola.read_session_capitalizable`
+
+Usar esta task cuando:
+
+- la sesion ya deberia existir en la capa `session_capitalizable`
+- quieres resolverla por `session_capitalizable_page_id` o desde `transcript_page_id`
+- necesitas verificar operacion real sin escribir en destinos canonicos
+
+Esta task:
+
+- resuelve la sesion por binding live y evidencia source-aware
+- permite testing real con reuniones de Granola
+- si hay ambiguedad, comenta para revision en la fuente raw
+- no capitaliza hacia proyectos, tareas ni entregables
+
+### 6. Crear tarea humana desde una sesion curada
 
 Task: `granola.create_human_task_from_curated_session`
 
@@ -125,7 +143,7 @@ Esta task:
 - enlaza `Sesion relacionada`
 - no actualiza todavia la DB comercial humana
 
-### 6. Actualizar proyecto comercial desde una sesion curada
+### 7. Actualizar proyecto comercial desde una sesion curada
 
 Task: `granola.update_commercial_project_from_curated_session`
 

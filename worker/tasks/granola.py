@@ -231,6 +231,25 @@ def _result_page_id(result: Dict[str, Any] | None) -> str:
     return ""
 
 
+def _session_candidate_summary(
+    candidate: Dict[str, Any],
+    *,
+    source_prop: str | None,
+) -> Dict[str, str]:
+    candidate_id = str(candidate.get("id") or candidate.get("page_id") or "").strip()
+    candidate_url = str(candidate.get("url") or "").strip()
+    candidate_title = _extract_title_from_page(candidate)
+    candidate_date = _extract_date_from_page(candidate)
+    candidate_source = _extract_page_text_property(candidate, source_prop) if source_prop else ""
+    return {
+        "page_id": candidate_id,
+        "url": candidate_url,
+        "title": candidate_title,
+        "date": candidate_date,
+        "source_url": candidate_source,
+    }
+
+
 def _today_date() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
@@ -262,14 +281,14 @@ def _schema_property_name(
     return None
 
 
-def _pick_best_existing_curated_session(
+def _rank_existing_curated_session_candidates(
     candidates: list[Dict[str, Any]],
     *,
     session_name: str,
     transcript_date: str,
     transcript_url: str,
     source_prop: str | None,
-) -> tuple[Dict[str, Any] | None, str]:
+) -> list[tuple[tuple[int, int, int], Dict[str, Any], str]]:
     normalized_target = _normalize_lookup_text(session_name)
     ranked: list[tuple[tuple[int, int, int], Dict[str, Any], str]] = []
 
@@ -308,11 +327,65 @@ def _pick_best_existing_curated_session(
             ((primary_rank, mangled_penalty, date_penalty), candidate, match_strategy)
         )
 
+    ranked.sort(key=lambda item: item[0])
+    return ranked
+
+
+def _pick_best_existing_curated_session(
+    candidates: list[Dict[str, Any]],
+    *,
+    session_name: str,
+    transcript_date: str,
+    transcript_url: str,
+    source_prop: str | None,
+) -> tuple[Dict[str, Any] | None, str]:
+    ranked = _rank_existing_curated_session_candidates(
+        candidates,
+        session_name=session_name,
+        transcript_date=transcript_date,
+        transcript_url=transcript_url,
+        source_prop=source_prop,
+    )
     if not ranked:
         return None, ""
-
-    ranked.sort(key=lambda item: item[0])
     return ranked[0][1], ranked[0][2]
+
+
+def _resolve_curated_session_match(
+    candidates: list[Dict[str, Any]],
+    *,
+    session_name: str,
+    transcript_date: str,
+    transcript_url: str,
+    source_prop: str | None,
+) -> tuple[Dict[str, Any] | None, str, list[Dict[str, Any]]]:
+    ranked = _rank_existing_curated_session_candidates(
+        candidates,
+        session_name=session_name,
+        transcript_date=transcript_date,
+        transcript_url=transcript_url,
+        source_prop=source_prop,
+    )
+    if not ranked:
+        return None, "", []
+
+    top_rank = ranked[0][0]
+    top_ranked = [item for item in ranked if item[0] == top_rank]
+    unique_top_ranked: list[Dict[str, Any]] = []
+    seen_ids: set[str] = set()
+    for _, candidate, _ in top_ranked:
+        candidate_id = str(candidate.get("id") or candidate.get("page_id") or "").strip()
+        dedupe_key = candidate_id or str(candidate.get("url") or "").strip()
+        if dedupe_key and dedupe_key in seen_ids:
+            continue
+        if dedupe_key:
+            seen_ids.add(dedupe_key)
+        unique_top_ranked.append(candidate)
+
+    if len(unique_top_ranked) > 1:
+        return None, "", unique_top_ranked
+
+    return ranked[0][1], ranked[0][2], []
 
 
 def _relation_ids(value: Any) -> list[str]:
@@ -408,7 +481,12 @@ def _sync_raw_promotion_state(
     _set_schema_property(
         properties,
         raw_schema,
-        ["Fecha que el agente procesó", "Fecha que el agente proceso", "Processed At"],
+        [
+            "Fecha que el agente procesó",
+            "Fecha que el agente proceso",
+            "Fecha que el agente proces?",
+            "Processed At",
+        ],
         _today_date(),
         expected_types={"date"},
         used_fields=used_fields,
@@ -1025,6 +1103,7 @@ def handle_granola_promote_curated_session(input_data: Dict[str, Any]) -> Dict[s
     )
     existing_candidates: list[Dict[str, Any]] = []
     match_strategy = ""
+    ambiguous_matches: list[Dict[str, Any]] = []
 
     if source_prop and transcript_url:
         source_prop_type = schema.get(source_prop)
@@ -1039,7 +1118,7 @@ def handle_granola_promote_curated_session(input_data: Dict[str, Any]) -> Dict[s
                 filter=source_filter,
             )
 
-    existing_match, match_strategy = _pick_best_existing_curated_session(
+    existing_match, match_strategy, ambiguous_matches = _resolve_curated_session_match(
         existing_candidates,
         session_name=session_name,
         transcript_date=transcript_date,
@@ -1047,12 +1126,12 @@ def handle_granola_promote_curated_session(input_data: Dict[str, Any]) -> Dict[s
         source_prop=source_prop,
     )
 
-    if not existing_match:
+    if not existing_match and not ambiguous_matches:
         exact_title_candidates = notion_client.query_database(
             database_id=session_capitalizable_db_id,
             filter={"property": title_prop, "title": {"equals": session_name}},
         )
-        existing_match, match_strategy = _pick_best_existing_curated_session(
+        existing_match, match_strategy, ambiguous_matches = _resolve_curated_session_match(
             exact_title_candidates,
             session_name=session_name,
             transcript_date=transcript_date,
@@ -1060,7 +1139,7 @@ def handle_granola_promote_curated_session(input_data: Dict[str, Any]) -> Dict[s
             source_prop=source_prop,
         )
 
-    if not existing_match:
+    if not existing_match and not ambiguous_matches:
         snapshot_candidates: list[Dict[str, Any]] = []
         for item in db_snapshot.get("items") or []:
             title_value = str(item.get("title") or "").strip()
@@ -1094,13 +1173,47 @@ def handle_granola_promote_curated_session(input_data: Dict[str, Any]) -> Dict[s
                 }
             )
 
-        existing_match, match_strategy = _pick_best_existing_curated_session(
+        existing_match, match_strategy, ambiguous_matches = _resolve_curated_session_match(
             snapshot_candidates,
             session_name=session_name,
             transcript_date=transcript_date,
             transcript_url=transcript_url,
             source_prop=source_prop,
         )
+
+    if ambiguous_matches:
+        candidate_summaries = [
+            _session_candidate_summary(candidate, source_prop=source_prop)
+            for candidate in ambiguous_matches
+        ]
+        review_comment_added = False
+        if not bool(input_data.get("dry_run")):
+            review_comment_added = _leave_review_comment(
+                page_snapshot.get("page_id") or transcript_page_id,
+                source_evidence=f"{transcript_title} ({transcript_date}) - {transcript_url or transcript_page_id}",
+                intended_target="session_capitalizable",
+                blocking_ambiguity=(
+                    "Multiple session_capitalizable candidates match the same raw source."
+                ),
+                next_review=(
+                    "Revisar duplicados y confirmar cual es la fila correcta antes de promover."
+                ),
+            )
+        return {
+            "ok": False,
+            "blocked_by_ambiguity": True,
+            "review_comment_added": review_comment_added,
+            "transcript_page_id": page_snapshot.get("page_id") or transcript_page_id,
+            "transcript_url": transcript_url,
+            "title": transcript_title,
+            "session_name": session_name,
+            "date": transcript_date,
+            "source": transcript_source,
+            "dry_run": bool(input_data.get("dry_run")),
+            "session_capitalizable_db_id": session_capitalizable_db_id,
+            "ambiguous_matches": candidate_summaries,
+            "trace_comments_added": 1 if review_comment_added else 0,
+        }
 
     matched_existing = bool(existing_match)
     resolved_session_name = session_name
@@ -1194,6 +1307,10 @@ def handle_granola_promote_curated_session(input_data: Dict[str, Any]) -> Dict[s
         "session_name": resolved_session_name,
         "date": transcript_date,
         "source": transcript_source,
+        "session_capitalizable_db_id": session_capitalizable_db_id,
+        "session_capitalizable_page_id": curated_page_id,
+        "session_capitalizable_url": str(notion_result.get("url") or "").strip(),
+        "session_capitalizable": notion_result,
         "curated_session": notion_result,
         "raw_status_update": raw_status_update,
         "matched_existing": matched_existing,
@@ -1201,6 +1318,223 @@ def handle_granola_promote_curated_session(input_data: Dict[str, Any]) -> Dict[s
         "dry_run": dry_run,
         "trace_comments_added": trace_comments_added,
         "schema_fields_used": used_fields,
+    }
+
+
+# ---------------------------------------------------------------------------
+# granola.read_session_capitalizable
+# ---------------------------------------------------------------------------
+
+def handle_granola_read_session_capitalizable(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Resolve and read a V1 session_capitalizable record for operational checks.
+
+    Accepts either an explicit capitalizable session page id/url or a raw
+    transcript page id/url that should already map to exactly one session.
+    """
+    session_capitalizable_db_id = config.require_notion_session_capitalizable_db_id()
+    max_blocks = int(input_data.get("max_blocks", 80))
+
+    session_page_id = (
+        input_data.get("session_capitalizable_page_id")
+        or input_data.get("curated_session_page_id")
+        or input_data.get("session_page_id")
+        or input_data.get("page_id")
+        or input_data.get("page_id_or_url")
+        or ""
+    ).strip()
+    if session_page_id:
+        page_snapshot = notion_client.read_page(session_page_id, max_blocks=max_blocks)
+        page_data = notion_client.get_page(session_page_id)
+        resolved_page_id = page_snapshot.get("page_id") or session_page_id
+        return {
+            "ok": True,
+            "matched_existing": True,
+            "match_strategy": "direct_page_id",
+            "session_capitalizable_db_id": session_capitalizable_db_id,
+            "session_capitalizable_page_id": resolved_page_id,
+            "session_capitalizable_url": (page_snapshot.get("url") or page_data.get("url") or "").strip(),
+            "session_capitalizable": page_snapshot,
+            "session_capitalizable_page": page_data,
+        }
+
+    transcript_page_id = (
+        input_data.get("transcript_page_id")
+        or input_data.get("raw_page_id")
+        or input_data.get("raw_page_id_or_url")
+        or ""
+    ).strip()
+    if not transcript_page_id:
+        raise ValueError(
+            "'session_capitalizable_page_id' or 'transcript_page_id' is required in input"
+        )
+
+    raw_snapshot = notion_client.read_page(transcript_page_id, max_blocks=max_blocks)
+    raw_page = notion_client.get_page(transcript_page_id)
+    transcript_title = (
+        (raw_snapshot.get("title") or "").strip()
+        or _extract_title_from_page(raw_page)
+        or "Sesion"
+    )
+    transcript_url = (raw_snapshot.get("url") or raw_page.get("url") or "").strip()
+    transcript_date = (
+        (input_data.get("date") or "").strip()
+        or _extract_date_from_page(raw_page)
+        or _today_date()
+    )
+    session_name = (
+        (input_data.get("session_name") or "").strip()
+        or (input_data.get("title") or "").strip()
+        or transcript_title
+    )
+
+    db_snapshot = notion_client.read_database(session_capitalizable_db_id, max_items=100)
+    schema = db_snapshot.get("schema") or {}
+    if not isinstance(schema, dict):
+        raise RuntimeError("Could not read session_capitalizable DB schema")
+
+    title_prop = _schema_property_name(schema, ["Nombre", "Name", "Title"], {"title"})
+    if not title_prop:
+        raise RuntimeError("Session capitalizable DB does not expose a title property")
+
+    source_prop = _schema_property_name(
+        schema,
+        ["URL fuente", "Source URL", "URL", "Link"],
+        {"url", "rich_text"},
+    )
+
+    match_candidates: list[Dict[str, Any]] = []
+    if source_prop and transcript_url:
+        source_prop_type = schema.get(source_prop)
+        source_filter: Dict[str, Any] | None = None
+        if source_prop_type == "url":
+            source_filter = {"property": source_prop, "url": {"equals": transcript_url}}
+        elif source_prop_type == "rich_text":
+            source_filter = {"property": source_prop, "rich_text": {"equals": transcript_url}}
+        if source_filter:
+            match_candidates = notion_client.query_database(
+                database_id=session_capitalizable_db_id,
+                filter=source_filter,
+            )
+
+    existing_match, match_strategy, ambiguous_matches = _resolve_curated_session_match(
+        match_candidates,
+        session_name=session_name,
+        transcript_date=transcript_date,
+        transcript_url=transcript_url,
+        source_prop=source_prop,
+    )
+
+    if not existing_match and not ambiguous_matches:
+        exact_title_candidates = notion_client.query_database(
+            database_id=session_capitalizable_db_id,
+            filter={"property": title_prop, "title": {"equals": session_name}},
+        )
+        existing_match, match_strategy, ambiguous_matches = _resolve_curated_session_match(
+            exact_title_candidates,
+            session_name=session_name,
+            transcript_date=transcript_date,
+            transcript_url=transcript_url,
+            source_prop=source_prop,
+        )
+
+    if not existing_match and not ambiguous_matches:
+        snapshot_candidates: list[Dict[str, Any]] = []
+        for item in db_snapshot.get("items") or []:
+            title_value = str(item.get("title") or "").strip()
+            date_value = _extract_date_start((item.get("properties") or {}).get("Fecha"))
+            source_value = (
+                str((item.get("properties") or {}).get(source_prop) or "").strip()
+                if source_prop
+                else ""
+            )
+
+            snapshot_properties: Dict[str, Any] = {
+                title_prop: {"type": "title", "title": [{"plain_text": title_value}]},
+            }
+            if date_value:
+                snapshot_properties["Fecha"] = {"type": "date", "date": {"start": date_value}}
+            if source_prop and source_value:
+                source_prop_type = schema.get(source_prop)
+                if source_prop_type == "url":
+                    snapshot_properties[source_prop] = {"type": "url", "url": source_value}
+                elif source_prop_type == "rich_text":
+                    snapshot_properties[source_prop] = {
+                        "type": "rich_text",
+                        "rich_text": [{"plain_text": source_value}],
+                    }
+
+            snapshot_candidates.append(
+                {
+                    "id": item.get("page_id"),
+                    "url": item.get("url"),
+                    "properties": snapshot_properties,
+                }
+            )
+
+        existing_match, match_strategy, ambiguous_matches = _resolve_curated_session_match(
+            snapshot_candidates,
+            session_name=session_name,
+            transcript_date=transcript_date,
+            transcript_url=transcript_url,
+            source_prop=source_prop,
+        )
+
+    if ambiguous_matches:
+        review_comment_added = False
+        if bool(input_data.get("add_review_comment", True)):
+            review_comment_added = _leave_review_comment(
+                raw_snapshot.get("page_id") or transcript_page_id,
+                source_evidence=f"{transcript_title} ({transcript_date}) - {transcript_url or transcript_page_id}",
+                intended_target="session_capitalizable",
+                blocking_ambiguity=(
+                    "Multiple session_capitalizable candidates match the same raw source."
+                ),
+                next_review=(
+                    "Revisar duplicados y confirmar cual es la fila correcta antes de operar la sesion."
+                ),
+            )
+        return {
+            "ok": False,
+            "blocked_by_ambiguity": True,
+            "session_capitalizable_db_id": session_capitalizable_db_id,
+            "transcript_page_id": raw_snapshot.get("page_id") or transcript_page_id,
+            "transcript_url": transcript_url,
+            "title": transcript_title,
+            "session_name": session_name,
+            "review_comment_added": review_comment_added,
+            "ambiguous_matches": [
+                _session_candidate_summary(candidate, source_prop=source_prop)
+                for candidate in ambiguous_matches
+            ],
+            "trace_comments_added": 1 if review_comment_added else 0,
+        }
+
+    if not existing_match:
+        return {
+            "ok": False,
+            "not_found": True,
+            "session_capitalizable_db_id": session_capitalizable_db_id,
+            "transcript_page_id": raw_snapshot.get("page_id") or transcript_page_id,
+            "transcript_url": transcript_url,
+            "title": transcript_title,
+            "session_name": session_name,
+        }
+
+    matched_page_id = str(existing_match.get("id") or existing_match.get("page_id") or "").strip()
+    page_snapshot = notion_client.read_page(matched_page_id, max_blocks=max_blocks)
+    page_data = notion_client.get_page(matched_page_id)
+    return {
+        "ok": True,
+        "matched_existing": True,
+        "match_strategy": match_strategy,
+        "session_capitalizable_db_id": session_capitalizable_db_id,
+        "transcript_page_id": raw_snapshot.get("page_id") or transcript_page_id,
+        "transcript_url": transcript_url,
+        "session_capitalizable_page_id": page_snapshot.get("page_id") or matched_page_id,
+        "session_capitalizable_url": (page_snapshot.get("url") or page_data.get("url") or "").strip(),
+        "session_capitalizable": page_snapshot,
+        "session_capitalizable_page": page_data,
     }
 
 

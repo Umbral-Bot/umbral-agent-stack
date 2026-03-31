@@ -10,20 +10,20 @@ Mover reuniones desde la VM donde vive Granola hacia la DB raw de Notion usando 
 
 Este flujo:
 
-- sí usa el cache/API real de Granola en Windows;
-- sí pasa por `granola.process_transcript` vía `/run`;
-- sí deja trazabilidad fuerte en raw;
+- si usa el cache/API real de Granola en Windows;
+- si pasa por `granola.process_transcript` via `/run`;
+- si deja trazabilidad fuerte en raw;
 - no hace `raw -> canonical`;
-- no toca CRM, programas, recursos ni sesión capitalizable.
+- no toca CRM, programas, recursos ni sesion capitalizable.
 
-## Cuándo usarlo
+## Cuando usarlo
 
 Usar este flujo como camino principal para Rick en la VM cuando:
 
-- Granola está instalado en Windows;
+- Granola esta instalado en Windows;
 - el cache vive en `%APPDATA%\Granola\cache-v6.json`;
-- el Worker local en la VM está disponible en `http://127.0.0.1:8088`;
-- se quiere medir capacidad real de Rick por handler, no por ejecución directa desde otro operador.
+- el Worker local en la VM esta disponible en `http://127.0.0.1:8088`;
+- se quiere medir capacidad real de Rick por handler, no por ejecucion directa desde otro operador.
 
 ## Componentes
 
@@ -47,7 +47,7 @@ Responsabilidades:
 - seleccionar solo el bucket seguro configurado;
 - exportar markdown temporal;
 - exigir preflight exitoso del Worker;
-- ejecutar el batch únicamente en `mode=worker`;
+- ejecutar el batch unicamente en `mode=worker`;
 - guardar un reporte JSON por corrida en `C:\Granola\reports`.
 
 ### 3. Launcher oculto
@@ -56,7 +56,18 @@ Responsabilidades:
 
 Se usa como target de Task Scheduler y evita procesos duplicados.
 
-### 4. Instalador
+### 4. Launcher de arranque
+
+- [start_granola_vm_raw_intake_startup_hidden.ps1](C:/GitHub/umbral-agent-stack-codex/scripts/vm/start_granola_vm_raw_intake_startup_hidden.ps1)
+
+Responsabilidades:
+
+- esperar a que el Worker local responda en `8088`;
+- correr el smoke test de arranque;
+- lanzar una corrida segura de intake al iniciar sesion;
+- dejar log de arranque en `C:\Granola\vm-raw-intake-startup.log`.
+
+### 5. Instalador
 
 - [setup_granola_vm_raw_intake.ps1](C:/GitHub/umbral-agent-stack-codex/scripts/vm/setup_granola_vm_raw_intake.ps1)
 
@@ -64,11 +75,12 @@ Configura:
 
 - `C:\Granola\.env`
 - bucket seguro
-- tamaño máximo por corrida
+- tamano maximo por corrida
 - report dir
+- tarea programada `GranolaVmRawIntakeStartup`
 - tarea programada `GranolaVmRawIntake`
 
-### 5. Smoke test
+### 6. Smoke test
 
 - [test_granola_vm_raw_intake.ps1](C:/GitHub/umbral-agent-stack-codex/scripts/vm/test_granola_vm_raw_intake.ps1)
 
@@ -78,7 +90,7 @@ Verifica:
 - Worker sano;
 - preview del runner sin escribir en Notion.
 
-## Instalación
+## Instalacion
 
 En la VM:
 
@@ -87,13 +99,13 @@ cd C:\GitHub\umbral-agent-stack-codex
 .\scripts\vm\setup_granola_vm_raw_intake.ps1
 ```
 
-Después validar:
+Despues validar:
 
 ```powershell
 .\scripts\vm\test_granola_vm_raw_intake.ps1
 ```
 
-## Ejecución manual
+## Ejecucion manual
 
 Preview:
 
@@ -101,7 +113,7 @@ Preview:
 python scripts\vm\granola_vm_raw_intake.py --json
 ```
 
-Ejecución real:
+Ejecucion real:
 
 ```powershell
 python scripts\vm\granola_vm_raw_intake.py --execute --json
@@ -109,42 +121,58 @@ python scripts\vm\granola_vm_raw_intake.py --execute --json
 
 ## Cadencia recomendada
 
-No usar una automatización ciega “una vez al día”.
+No usar una automatizacion ciega una vez al dia.
 
-Recomendación:
+Recomendacion:
 
+- una corrida segura al iniciar sesion en la VM;
 - task segura cada `4 horas`;
 - bucket por defecto `batch1_recent_unique`;
-- máximo `5` ítems por corrida;
-- ambiguos siempre fuera del task automático.
+- maximo `5` items por corrida;
+- ambiguos siempre fuera del task automatico.
 
-## Regla para títulos repetidos
+## Encendido y apagado de la VM
 
-No usar el título como llave canónica.
+La VM puede estar apagada parte del dia. Por eso conviene:
+
+- automatizar una corrida de arranque, no depender de que Rick la dispare manualmente;
+- mantener una tarea periodica solo mientras la VM este encendida;
+- usar a Rick como revisor de logs, reportes y ambiguos.
+
+No agregamos una tarea de apagado en V1. Tiene menos valor operativo que:
+
+- el check de arranque;
+- la cadencia horaria mientras la VM esta encendida;
+- la reconciliacion del siguiente arranque.
+
+## Regla para titulos repetidos
+
+No usar el titulo como llave canonica.
 
 Regla operativa:
 
 - mismo `granola_document_id`:
   - actualizar/completar el mismo raw si cambia `source_updated_at`
 - distinto `granola_document_id` y distinta fecha:
-  - crear nueva página raw automáticamente
-- distinto `granola_document_id`, mismo título y mismo día:
-  - no crear ni actualizar automáticamente
-  - dejar comentario para revisión
+  - crear nueva pagina raw automaticamente
+- distinto `granola_document_id`, mismo titulo y mismo dia:
+  - no crear ni actualizar automaticamente
+  - dejar comentario para revision
 
 ## Evidencia y capacidad de Rick
 
 Este flujo es mejor para evaluar a Rick porque:
 
 - mide reachability real del Worker;
-- mide éxito del handler `/run`;
+- mide exito del handler `/run`;
 - deja reporte JSON por corrida;
-- separa claramente ejecución segura de revisión humana obligatoria.
+- separa claramente ejecucion segura de revision humana obligatoria;
+- permite medir a Rick como supervisor del sistema, no como operador manual de copia y pega.
 
 ## Fuera de scope
 
 - `raw -> session_capitalizable`
-- capitalización a tareas/proyectos/entregables
+- capitalizacion a tareas/proyectos/entregables
 - CRM / programas / recursos
 - drafts de correo
 - briefing matinal

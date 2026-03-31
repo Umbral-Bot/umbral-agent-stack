@@ -3,8 +3,9 @@
     Configura el intake seguro de Granola -> raw desde la VM Windows.
 
 .DESCRIPTION
-    Registra tareas programadas para ejecutar el runner VM raw intake.
-    Este flujo usa el cache/API local de Granola y llama al Worker por /run.
+    Registra el worker principal y las automatizaciones de Granola.
+    Prefiere Task Scheduler para tareas periodicas y, si Windows bloquea los
+    triggers ONLOGON, cae automaticamente a la carpeta Startup del usuario.
 
     No hace:
       - raw -> canonical
@@ -43,6 +44,48 @@ function Upsert-EnvValue {
     Set-Content -Path $Path -Value $result -Encoding UTF8
 }
 
+function Write-StartupCmd {
+    param(
+        [string]$Name,
+        [string]$ScriptPath
+    )
+
+    $startupDir = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs\Startup"
+    New-Item -ItemType Directory -Force -Path $startupDir | Out-Null
+    $cmdPath = Join-Path $startupDir "$Name.cmd"
+    Set-Content -Path $cmdPath -Encoding Ascii -Value @(
+        "@echo off",
+        "powershell -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$ScriptPath`""
+    )
+    return $cmdPath
+}
+
+function Register-OnLogonTaskOrStartupFolder {
+    param(
+        [string]$TaskName,
+        [string]$TaskAction,
+        [string]$ScriptPath
+    )
+
+    try {
+        schtasks /Delete /TN $TaskName /F 2>$null | Out-Null
+    } catch {}
+
+    schtasks /Create /TN $TaskName /TR $TaskAction /SC ONLOGON /RU $env:USERNAME /F 2>$null | Out-Null
+    if ($LASTEXITCODE -eq 0) {
+        return @{
+            mode = "task_scheduler"
+            location = $TaskName
+        }
+    }
+
+    $startupPath = Write-StartupCmd -Name $TaskName -ScriptPath $ScriptPath
+    return @{
+        mode = "startup_folder"
+        location = $startupPath
+    }
+}
+
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  Granola VM Raw Intake - Instalador" -ForegroundColor Cyan
@@ -65,8 +108,12 @@ if (-not $pythonCmd) {
 }
 
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+$workerLauncherScript = Join-Path $repoRoot "scripts\vm\start_primary_worker_hidden.ps1"
 $launcherScript = Join-Path $repoRoot "scripts\vm\start_granola_vm_raw_intake_hidden.ps1"
 $startupLauncherScript = Join-Path $repoRoot "scripts\vm\start_granola_vm_raw_intake_startup_hidden.ps1"
+if (-not (Test-Path $workerLauncherScript)) {
+    throw "No se encontro el launcher del worker principal: $workerLauncherScript"
+}
 if (-not (Test-Path $launcherScript)) {
     throw "No se encontro el launcher: $launcherScript"
 }
@@ -121,25 +168,32 @@ Upsert-EnvValue -Path $envPath -Key "GRANOLA_VM_MAX_ITEMS_PER_RUN" -Value $maxIt
 Upsert-EnvValue -Path $envPath -Key "GRANOLA_VM_RECENT_DAYS" -Value "7"
 Upsert-EnvValue -Path $envPath -Key "GRANOLA_VM_MAX_RAW_ITEMS" -Value "200"
 
+$workerTaskAction = "powershell -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$workerLauncherScript`""
 $taskAction = "powershell -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$launcherScript`""
 $startupTaskAction = "powershell -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$startupLauncherScript`""
+$workerTaskName = "UmbralWorkerPrimary"
 $taskName = "GranolaVmRawIntake"
 $startupTaskName = "GranolaVmRawIntakeStartup"
 
-try {
-    schtasks /Delete /TN $taskName /F 2>&1 | Out-Null
-} catch {}
-try {
-    schtasks /Delete /TN $startupTaskName /F 2>&1 | Out-Null
-} catch {}
+$workerStartup = Register-OnLogonTaskOrStartupFolder `
+    -TaskName $workerTaskName `
+    -TaskAction $workerTaskAction `
+    -ScriptPath $workerLauncherScript
 
+$granolaStartup = Register-OnLogonTaskOrStartupFolder `
+    -TaskName $startupTaskName `
+    -TaskAction $startupTaskAction `
+    -ScriptPath $startupLauncherScript
+
+try {
+    schtasks /Delete /TN $taskName /F 2>$null | Out-Null
+} catch {}
 schtasks /Create /TN $taskName `
     /TR $taskAction `
-    /SC HOURLY /MO $hours /RU $env:USERNAME /F 2>&1 | Out-Null
-
-schtasks /Create /TN $startupTaskName `
-    /TR $startupTaskAction `
-    /SC ONLOGON /RU $env:USERNAME /F 2>&1 | Out-Null
+    /SC HOURLY /MO $hours /RU $env:USERNAME /F 2>$null | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    throw "No se pudo registrar la tarea periodica $taskName."
+}
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
@@ -152,7 +206,8 @@ Write-Host "  Worker URL           : $workerUrl" -ForegroundColor White
 Write-Host "  Bucket seguro        : $bucket" -ForegroundColor White
 Write-Host "  Max items por corrida: $maxItems" -ForegroundColor White
 Write-Host "  Report dir           : $reportDir" -ForegroundColor White
-Write-Host "  Startup task         : $startupTaskName (al iniciar sesion)" -ForegroundColor White
+Write-Host "  Worker startup       : $($workerStartup.mode) -> $($workerStartup.location)" -ForegroundColor White
+Write-Host "  Granola startup      : $($granolaStartup.mode) -> $($granolaStartup.location)" -ForegroundColor White
 Write-Host "  Task Scheduler       : $taskName (cada ${hours}h)" -ForegroundColor White
 Write-Host ""
 Write-Host "  Requisito previo: el Worker local en 8088 debe estar sano." -ForegroundColor Yellow

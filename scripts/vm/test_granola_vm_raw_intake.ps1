@@ -47,7 +47,7 @@ try {
     }
     Write-Host "  [OK] Worker health" -ForegroundColor Green
 } catch {
-    throw "Worker no accesible en $workerUrl: $_"
+    throw "Worker no accesible en ${workerUrl}: $_"
 }
 
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)

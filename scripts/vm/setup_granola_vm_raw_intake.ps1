@@ -3,13 +3,13 @@
     Configura el intake seguro de Granola -> raw desde la VM Windows.
 
 .DESCRIPTION
-    Registra una tarea programada que ejecuta el runner VM raw intake.
+    Registra tareas programadas para ejecutar el runner VM raw intake.
     Este flujo usa el cache/API local de Granola y llama al Worker por /run.
 
     No hace:
       - raw -> canonical
-      - promoción a session_capitalizable
-      - buckets ambiguos sin revisión explícita
+      - promocion a session_capitalizable
+      - buckets ambiguos sin revision explicita
 #>
 
 $ErrorActionPreference = "Stop"
@@ -66,8 +66,12 @@ if (-not $pythonCmd) {
 
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $launcherScript = Join-Path $repoRoot "scripts\vm\start_granola_vm_raw_intake_hidden.ps1"
+$startupLauncherScript = Join-Path $repoRoot "scripts\vm\start_granola_vm_raw_intake_startup_hidden.ps1"
 if (-not (Test-Path $launcherScript)) {
-    throw "No se encontró el launcher: $launcherScript"
+    throw "No se encontro el launcher: $launcherScript"
+}
+if (-not (Test-Path $startupLauncherScript)) {
+    throw "No se encontro el launcher de arranque: $startupLauncherScript"
 }
 
 $granolaRoot = "C:\Granola"
@@ -95,7 +99,7 @@ $bucket = Read-Host "  Bucket seguro por defecto [$defaultBucket]"
 if ([string]::IsNullOrWhiteSpace($bucket)) { $bucket = $defaultBucket }
 
 $defaultMaxItems = "5"
-$maxItems = Read-Host "  Máximo de reuniones por corrida [$defaultMaxItems]"
+$maxItems = Read-Host "  Maximo de reuniones por corrida [$defaultMaxItems]"
 if ([string]::IsNullOrWhiteSpace($maxItems)) { $maxItems = $defaultMaxItems }
 
 $defaultHours = "4"
@@ -118,19 +122,28 @@ Upsert-EnvValue -Path $envPath -Key "GRANOLA_VM_RECENT_DAYS" -Value "7"
 Upsert-EnvValue -Path $envPath -Key "GRANOLA_VM_MAX_RAW_ITEMS" -Value "200"
 
 $taskAction = "powershell -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$launcherScript`""
+$startupTaskAction = "powershell -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$startupLauncherScript`""
 $taskName = "GranolaVmRawIntake"
+$startupTaskName = "GranolaVmRawIntakeStartup"
 
 try {
     schtasks /Delete /TN $taskName /F 2>&1 | Out-Null
+} catch {}
+try {
+    schtasks /Delete /TN $startupTaskName /F 2>&1 | Out-Null
 } catch {}
 
 schtasks /Create /TN $taskName `
     /TR $taskAction `
     /SC HOURLY /MO $hours /RU $env:USERNAME /F 2>&1 | Out-Null
 
+schtasks /Create /TN $startupTaskName `
+    /TR $startupTaskAction `
+    /SC ONLOGON /RU $env:USERNAME /F 2>&1 | Out-Null
+
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  Instalación completada" -ForegroundColor Cyan
+Write-Host "  Instalacion completada" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "  Repo root            : $repoRoot" -ForegroundColor White
@@ -139,6 +152,7 @@ Write-Host "  Worker URL           : $workerUrl" -ForegroundColor White
 Write-Host "  Bucket seguro        : $bucket" -ForegroundColor White
 Write-Host "  Max items por corrida: $maxItems" -ForegroundColor White
 Write-Host "  Report dir           : $reportDir" -ForegroundColor White
+Write-Host "  Startup task         : $startupTaskName (al iniciar sesion)" -ForegroundColor White
 Write-Host "  Task Scheduler       : $taskName (cada ${hours}h)" -ForegroundColor White
 Write-Host ""
 Write-Host "  Requisito previo: el Worker local en 8088 debe estar sano." -ForegroundColor Yellow

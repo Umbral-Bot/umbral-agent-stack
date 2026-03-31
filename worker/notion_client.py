@@ -154,6 +154,7 @@ def create_transcript_page(
     content: str,
     source: str = "granola",
     date: str | None = None,
+    traceability_text: str | None = None,
 ) -> dict[str, Any]:
     """
     Create a page in the Granola Inbox database.
@@ -163,6 +164,7 @@ def create_transcript_page(
         content: Transcript text (plain text, will be split into blocks).
         source: Source identifier (default: "granola").
         date: ISO date string. Defaults to now (UTC).
+        traceability_text: Optional raw traceability metadata for a text/url field.
 
     Returns:
         Notion page object (dict).
@@ -234,6 +236,11 @@ def create_transcript_page(
             ["Fecha que el agente procesó", "Fecha que el agente proceso", "Processed At"],
             {"date"},
         )
+        traceability_prop = _find_property_name(
+            db_properties,
+            ["Trazabilidad", "Traceability"],
+            {"rich_text", "url", "title"},
+        )
 
         properties: dict[str, Any] = {
             title_prop: {"title": [{"text": {"content": title}}]},
@@ -259,6 +266,19 @@ def create_transcript_page(
             properties[passed_prop] = {"date": {"start": today}}
         if processed_prop:
             properties[processed_prop] = {"date": {"start": today}}
+        if traceability_prop and (traceability_text or "").strip():
+            traceability_value = (traceability_text or "").strip()
+            traceability_type = str(db_properties[traceability_prop].get("type") or "")
+            if traceability_type == "rich_text":
+                properties[traceability_prop] = {
+                    "rich_text": [{"text": {"content": traceability_value}}]
+                }
+            elif traceability_type == "url":
+                properties[traceability_prop] = {"url": traceability_value}
+            elif traceability_type == "title":
+                properties[traceability_prop] = {
+                    "title": [{"text": {"content": traceability_value}}]
+                }
 
         payload = {
             "parent": {"database_id": db_id},

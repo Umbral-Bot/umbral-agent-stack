@@ -146,6 +146,7 @@ from worker.tasks.granola import (
     handle_granola_create_followup,
     _extract_action_items_from_content,
 )
+from worker.tasks import TASK_HANDLERS
 
 
 class TestExtractActionItems:
@@ -315,6 +316,15 @@ class TestHandleGranolaProcessTranscript:
     def test_missing_content(self):
         with pytest.raises(ValueError, match="'content' is required"):
             handle_granola_process_transcript({"title": "Test"})
+
+
+class TestGranolaTaskRegistry:
+
+    def test_session_capitalizable_alias_points_to_curated_handler(self):
+        assert (
+            TASK_HANDLERS["granola.promote_session_capitalizable"]
+            is TASK_HANDLERS["granola.promote_curated_session"]
+        )
 
 
 class TestHandleGranolaCapitalizeRaw:

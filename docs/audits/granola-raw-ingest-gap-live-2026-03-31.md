@@ -22,6 +22,8 @@ python scripts/list_granola_raw_ingest_gap.py --json
 
 ## Resumen ejecutivo
 
+Estado inicial detectado en este frente:
+
 - `cache_scanned = 45`
 - `exportable = 43`
 - `skipped_unusable = 2`
@@ -34,13 +36,25 @@ python scripts/list_granola_raw_ingest_gap.py --json
 - `historic_unique = 32`
 - `historic_ambiguous = 4`
 
-Conclusión:
+Estado live después del intake batch controlado y de corregir el monitor para leer `granola_document_id` desde `Trazabilidad`:
 
-- Rick sí demostró capacidad para procesar reuniones reales una vez que ya están en raw.
-- Rick no está cubriendo todavía el lote real de ingestión desde Granola.
-- El cuello actual está antes de raw.
+- `raw_total = 49`
+- `raw_real = 43`
+- `raw_smoke = 6`
+- `likely_present = 41`
+- `batch1_recent_unique = 0`
+- `batch1_recent_ambiguous = 0`
+- `historic_unique = 0`
+- `historic_ambiguous = 2`
 
-## Raw real ya presente
+Conclusión final:
+
+- Rick ya tiene capacidad real para cubrir el intake `Granola -> raw` usando el runner controlado.
+- El backlog seguro quedó absorbido en raw.
+- Solo quedan 2 casos ambiguos same-day que no deben subirse a ciegas.
+- Esos 2 casos ya quedaron marcados con comentario de revisión V1 en sus raws históricos.
+
+## Raw real ya presente al inicio del diagnóstico
 
 - `Reunión Con Jorge de Boragó` — raw `3305f443-fb5c-8184-953d-ebf2190afc57`
 - `Konstruedu` — raw `3305f443-fb5c-81db-9162-fd70c8574938`
@@ -112,11 +126,51 @@ Estos son recientes, pero no conviene ingresarlos a ciegas mientras raw no persi
 - `2026-02-10` — `Clase final de máster: Herramientas de IA para escalado, generación de video y audio` — `c8fceaa8-d819-418e-955b-3c3de19aca6d`
 - `2026-02-04` — `Get started with Granola` — `fc81fb00-894b-4640-bc89-c29a88f0b4c8`
 
+## Estado final live
+
+### Backlog seguro absorbido
+
+Se ejecutó intake raw-only controlado para:
+
+- los 4 `batch1_recent_unique`;
+- los 31 `historic_unique`;
+- y 5 casos inicialmente ambiguos que sí podían resolverse por fecha distinta del raw histórico.
+
+Con eso, el monitor live quedó en:
+
+- `41` casos `likely_present`;
+- `0` `batch1_recent_unique`;
+- `0` `batch1_recent_ambiguous`;
+- `0` `historic_unique`;
+- `2` `historic_ambiguous`.
+
+### Ambiguos residuales
+
+Los únicos casos que siguen fuera de raw por política V1 son:
+
+- `2026-03-23` — `Konstruedu` — `1d177374-2ff0-42a0-a032-189075f8b4c0`
+- `2026-03-23` — `Asesoría discurso` — `5bff2a5a-0c7a-41c6-ae34-d6662325d67f`
+
+Ambos comparten mismo título y misma fecha con raws históricos ya existentes, por lo que no corresponde crear una nueva página raw sin revisión humana.
+
+### Comentarios de revisión dejados live
+
+Se dejó comentario V1 de revisión en:
+
+- `Konstruedu` — raw `3305f443-fb5c-81db-9162-fd70c8574938`
+- `Asesoría discurso` — raw `3305f443-fb5c-81e6-a1a5-cc0b2ebd1786`
+
+Esos comentarios incluyen:
+
+- evidencia fuente con `granola_document_id`;
+- bloqueo por ambigüedad same-day;
+- y la siguiente revisión necesaria para Rick.
+
 ## Lectura operativa
 
-- Desde Notion raw, la cola visible está limpia.
-- Desde Granola cache, la cola real no está limpia.
-- Por tanto, el problema actual no es `raw -> curado`; es `cache -> raw`.
+- Desde Notion raw, la cola segura ya está absorbida.
+- Desde Granola cache, ya no queda backlog seguro pendiente.
+- El problema residual ya no es de cobertura masiva, sino de resolución manual de 2 duplicados same-day.
 
 ## Falencia estructural
 

@@ -4,8 +4,13 @@ from unittest.mock import MagicMock, patch
 @patch("worker.notion_client.httpx.Client")
 @patch("worker.notion_client.config.require_notion")
 @patch("worker.notion_client.config.NOTION_API_KEY", "ntn_test_key")
-@patch("worker.notion_client.config.NOTION_GRANOLA_DB_ID", "dd181874-b894-4120-a41f-e1e0a98577b8")
-def test_create_transcript_page_supports_real_granola_schema(mock_require_notion, mock_client_cls):
+@patch(
+    "worker.notion_client.config.NOTION_GRANOLA_DB_ID",
+    "dd181874-b894-4120-a41f-e1e0a98577b8",
+)
+def test_create_transcript_page_supports_real_granola_schema(
+    mock_require_notion, mock_client_cls
+):
     from worker.notion_client import create_transcript_page
 
     schema_response = MagicMock()
@@ -18,6 +23,7 @@ def test_create_transcript_page_supports_real_granola_schema(mock_require_notion
             "Fecha de transcripción": {"type": "date"},
             "Fecha que Rick pasó a Notion": {"type": "date"},
             "Fecha que el agente procesó": {"type": "date"},
+            "Trazabilidad": {"type": "rich_text"},
             "Tags": {"type": "multi_select"},
         },
     }
@@ -38,6 +44,7 @@ def test_create_transcript_page_supports_real_granola_schema(mock_require_notion
         content="Hola\n" * 10,
         source="granola",
         date="2026-03-09",
+        traceability_text="granola_document_id=doc-123\ningest_path=granola.process_transcript",
     )
 
     assert result == {"page_id": "page-1", "url": "https://www.notion.so/page-1"}
@@ -48,13 +55,19 @@ def test_create_transcript_page_supports_real_granola_schema(mock_require_notion
     assert payload["properties"]["Tags"]["multi_select"][0]["name"] == "granola"
     assert "Fecha que Rick pasó a Notion" in payload["properties"]
     assert "Fecha que el agente procesó" in payload["properties"]
+    assert (
+        payload["properties"]["Trazabilidad"]["rich_text"][0]["text"]["content"]
+        == "granola_document_id=doc-123\ningest_path=granola.process_transcript"
+    )
 
 
 @patch("worker.notion_client.httpx.Client")
 @patch("worker.notion_client.config.require_notion")
 @patch("worker.notion_client.config.NOTION_API_KEY", "ntn_test_key")
 @patch("worker.notion_client.config.NOTION_GRANOLA_DB_ID", "db-123")
-def test_create_transcript_page_supports_legacy_schema(mock_require_notion, mock_client_cls):
+def test_create_transcript_page_supports_legacy_schema(
+    mock_require_notion, mock_client_cls
+):
     from worker.notion_client import create_transcript_page
 
     schema_response = MagicMock()

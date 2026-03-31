@@ -108,6 +108,26 @@ Se discutieron temas varios.
 
         assert result["title"] == "2026-03-04-client-meeting"
 
+    def test_preserves_exporter_metadata(self):
+        md = """# Reunion Controlada
+
+**Date:** 2026-03-31
+**Granola Document ID:** doc-123
+
+## Metadata
+
+- **Updated At:** 2026-03-31T11:55:00Z
+- **Source URL:** https://app.granola.ai/doc-123
+"""
+        result = parse_granola_markdown(md, "reunion-controlada.md")
+
+        assert result["granola_document_id"] == "doc-123"
+        assert result["source_updated_at"] == "2026-03-31T11:55:00Z"
+        assert result["source_url"] == "https://app.granola.ai/doc-123"
+        assert result["metadata"]["granola_document_id"] == "doc-123"
+        assert result["metadata"]["updated_at"] == "2026-03-31T11:55:00Z"
+        assert result["metadata"]["source_url"] == "https://app.granola.ai/doc-123"
+
 
 # ---------------------------------------------------------------------------
 # Handler tests
@@ -186,6 +206,9 @@ class TestHandleGranolaProcessTranscript:
             "date": "2026-03-04",
             "attendees": ["David", "Cliente X"],
             "source": "granola",
+            "granola_document_id": "doc-123",
+            "source_updated_at": "2026-03-31T12:00:00Z",
+            "source_url": "https://app.granola.ai/doc-123",
         })
 
         assert result["page_id"] == "page-123"
@@ -193,6 +216,10 @@ class TestHandleGranolaProcessTranscript:
         assert result["action_items_detected"] == 1
         assert result["action_items_created"] == 0
         assert result["legacy_raw_task_writes_enabled"] is False
+        assert result["granola_document_id"] == "doc-123"
+        assert result["source_updated_at"] == "2026-03-31T12:00:00Z"
+        assert result["source_url"] == "https://app.granola.ai/doc-123"
+        assert result["traceability_written"] is True
         assert result["notification_sent"] is True
 
         mock_nc.create_transcript_page.assert_called_once_with(
@@ -200,6 +227,12 @@ class TestHandleGranolaProcessTranscript:
             content="## Notes\n\nDiscusión de proyecto.\n\n## Action Items\n\n- [ ] Enviar propuesta (David, 2026-03-07)",
             source="granola",
             date="2026-03-04",
+            traceability_text=(
+                "granola_document_id=doc-123\n"
+                "source_updated_at=2026-03-31T12:00:00Z\n"
+                "source_url=https://app.granola.ai/doc-123\n"
+                "ingest_path=granola.process_transcript"
+            ),
         )
         mock_nc.add_comment.assert_called_once()
         assert mock_nc.add_comment.call_args.kwargs["page_id"] is None

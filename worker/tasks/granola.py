@@ -262,6 +262,72 @@ def _schema_property_name(
     return None
 
 
+def _extract_content_metadata_value(content: str, label: str) -> str:
+    escaped = re.escape(label)
+    patterns = (
+        rf"\*\*{escaped}\s*:\*\*\s*(.+)",
+        rf"-\s*\*\*{escaped}\s*:\*\*\s*(.+)",
+    )
+    for pattern in patterns:
+        match = re.search(pattern, content, flags=re.IGNORECASE)
+        if match:
+            return match.group(1).strip()
+    return ""
+
+
+def _resolve_granola_document_id(input_data: Dict[str, Any], content: str) -> str:
+    value = str(input_data.get("granola_document_id") or "").strip()
+    if value:
+        return value
+    metadata = input_data.get("metadata")
+    if isinstance(metadata, dict):
+        value = str(metadata.get("granola_document_id") or "").strip()
+        if value:
+            return value
+    return _extract_content_metadata_value(content, "Granola Document ID")
+
+
+def _resolve_source_updated_at(input_data: Dict[str, Any], content: str) -> str:
+    value = str(input_data.get("source_updated_at") or "").strip()
+    if value:
+        return value
+    metadata = input_data.get("metadata")
+    if isinstance(metadata, dict):
+        value = str(metadata.get("updated_at") or "").strip()
+        if value:
+            return value
+    return _extract_content_metadata_value(content, "Updated At")
+
+
+def _resolve_source_url(input_data: Dict[str, Any]) -> str:
+    value = str(input_data.get("source_url") or "").strip()
+    if value:
+        return value
+    metadata = input_data.get("metadata")
+    if isinstance(metadata, dict):
+        return str(metadata.get("source_url") or "").strip()
+    return ""
+
+
+def _build_raw_traceability_text(
+    *,
+    granola_document_id: str,
+    source_updated_at: str,
+    source_url: str,
+) -> str:
+    parts: list[str] = []
+    if granola_document_id:
+        parts.append(f"granola_document_id={granola_document_id}")
+    if source_updated_at:
+        parts.append(f"source_updated_at={source_updated_at}")
+    if source_url:
+        parts.append(f"source_url={source_url}")
+    if not parts:
+        return ""
+    parts.append("ingest_path=granola.process_transcript")
+    return "\n".join(parts)
+
+
 def _pick_best_existing_curated_session(
     candidates: list[Dict[str, Any]],
     *,
@@ -542,6 +608,14 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
     source = input_data.get("source", "granola")
     notify_enlace = input_data.get("notify_enlace", True)
     allow_legacy_raw_task_writes = bool(input_data.get("allow_legacy_raw_task_writes"))
+    granola_document_id = _resolve_granola_document_id(input_data, content)
+    source_updated_at = _resolve_source_updated_at(input_data, content)
+    source_url = _resolve_source_url(input_data)
+    traceability_text = _build_raw_traceability_text(
+        granola_document_id=granola_document_id,
+        source_updated_at=source_updated_at,
+        source_url=source_url,
+    )
 
     # Action items: use provided or extract from content
     action_items = input_data.get("action_items")
@@ -556,6 +630,7 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
         content=content,
         source=source,
         date=date,
+        traceability_text=traceability_text,
     )
     page_id = page_result["page_id"]
     page_url = page_result.get("url", "")
@@ -624,6 +699,10 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
         "action_items_detected": len(action_items),
         "action_items_created": ai_created,
         "legacy_raw_task_writes_enabled": allow_legacy_raw_task_writes,
+        "granola_document_id": granola_document_id,
+        "source_updated_at": source_updated_at,
+        "source_url": source_url,
+        "traceability_written": bool(traceability_text),
         "notification_sent": notification_sent,
     }
 

@@ -34,6 +34,8 @@ Debe existir un Worker sano en la VM en `8088`.
 Referencia:
 
 - [06-setup-worker-windows.md](C:/GitHub/umbral-agent-stack-codex/docs/06-setup-worker-windows.md)
+- [start_primary_worker.py](C:/GitHub/umbral-agent-stack-codex/scripts/vm/start_primary_worker.py)
+- [start_primary_worker_hidden.ps1](C:/GitHub/umbral-agent-stack-codex/scripts/vm/start_primary_worker_hidden.ps1)
 
 ### 2. Runner VM
 
@@ -77,7 +79,8 @@ Configura:
 - bucket seguro
 - tamano maximo por corrida
 - report dir
-- tarea programada `GranolaVmRawIntakeStartup`
+- `UmbralWorkerPrimary` en Task Scheduler o fallback a Startup folder
+- `GranolaVmRawIntakeStartup` en Task Scheduler o fallback a Startup folder
 - tarea programada `GranolaVmRawIntake`
 
 ### 6. Smoke test
@@ -125,6 +128,7 @@ No usar una automatizacion ciega una vez al dia.
 
 Recomendacion:
 
+- worker principal `8088` al iniciar sesion;
 - una corrida segura al iniciar sesion en la VM;
 - task segura cada `4 horas`;
 - bucket por defecto `batch1_recent_unique`;
@@ -138,6 +142,9 @@ La VM puede estar apagada parte del dia. Por eso conviene:
 - automatizar una corrida de arranque, no depender de que Rick la dispare manualmente;
 - mantener una tarea periodica solo mientras la VM este encendida;
 - usar a Rick como revisor de logs, reportes y ambiguos.
+
+Si Windows bloquea los triggers `ONLOGON`, el instalador cae a la carpeta Startup
+del usuario actual para el worker principal y el check de arranque de Granola.
 
 No agregamos una tarea de apagado en V1. Tiene menos valor operativo que:
 

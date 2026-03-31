@@ -4,8 +4,8 @@
 
 .DESCRIPTION
     Registra el worker principal y las automatizaciones de Granola.
-    Prefiere Task Scheduler para tareas periodicas y, si Windows bloquea los
-    triggers ONLOGON, cae automaticamente a la carpeta Startup del usuario.
+    Prefiere Scheduled Tasks nativo para triggers ONLOGON y, si Windows lo
+    bloquea, cae automaticamente a la carpeta Startup del usuario.
 
     No hace:
       - raw -> canonical
@@ -60,24 +60,39 @@ function Write-StartupCmd {
     return $cmdPath
 }
 
+function Remove-StartupCmd {
+    param(
+        [string]$Name
+    )
+
+    $startupDir = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs\Startup"
+    $cmdPath = Join-Path $startupDir "$Name.cmd"
+    if (Test-Path $cmdPath) {
+        Remove-Item $cmdPath -Force -ErrorAction SilentlyContinue
+    }
+}
+
 function Register-OnLogonTaskOrStartupFolder {
     param(
         [string]$TaskName,
-        [string]$TaskAction,
         [string]$ScriptPath
     )
 
     try {
-        schtasks /Delete /TN $TaskName /F 2>$null | Out-Null
+        Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
     } catch {}
 
-    schtasks /Create /TN $TaskName /TR $TaskAction /SC ONLOGON /RU $env:USERNAME /F 2>$null | Out-Null
-    if ($LASTEXITCODE -eq 0) {
+    try {
+        $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$ScriptPath`""
+        $trigger = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
+        $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+        Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Settings $settings -Description $TaskName -Force | Out-Null
+        Remove-StartupCmd -Name $TaskName
         return @{
             mode = "task_scheduler"
             location = $TaskName
         }
-    }
+    } catch {}
 
     $startupPath = Write-StartupCmd -Name $TaskName -ScriptPath $ScriptPath
     return @{
@@ -170,19 +185,16 @@ Upsert-EnvValue -Path $envPath -Key "GRANOLA_VM_MAX_RAW_ITEMS" -Value "200"
 
 $workerTaskAction = "powershell -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$workerLauncherScript`""
 $taskAction = "powershell -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$launcherScript`""
-$startupTaskAction = "powershell -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$startupLauncherScript`""
 $workerTaskName = "UmbralWorkerPrimary"
 $taskName = "GranolaVmRawIntake"
 $startupTaskName = "GranolaVmRawIntakeStartup"
 
 $workerStartup = Register-OnLogonTaskOrStartupFolder `
     -TaskName $workerTaskName `
-    -TaskAction $workerTaskAction `
     -ScriptPath $workerLauncherScript
 
 $granolaStartup = Register-OnLogonTaskOrStartupFolder `
     -TaskName $startupTaskName `
-    -TaskAction $startupTaskAction `
     -ScriptPath $startupLauncherScript
 
 try {

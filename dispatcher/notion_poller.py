@@ -116,6 +116,13 @@ def _unique_page_ids(items: list[dict]) -> list[str]:
     return ordered
 
 
+def _session_capitalizable_db_id() -> str:
+    """
+    Resolve the V1 session_capitalizable binding from the legacy curated env var.
+    """
+    return os.environ.get("NOTION_CURATED_SESSIONS_DB_ID", "").strip()
+
+
 def _resolve_review_targets(wc: WorkerClient) -> list[dict[str, str]]:
     """Return relevant Notion pages that may carry human review comments."""
     targets: list[dict[str, str]] = []
@@ -175,6 +182,21 @@ def _resolve_review_targets(wc: WorkerClient) -> list[dict[str, str]]:
                 targets.append({"page_id": page_id, "page_kind": "project"})
         except Exception:
             logger.warning("Failed to resolve project review targets", exc_info=True)
+
+    session_capitalizable_db_id = _session_capitalizable_db_id()
+    if session_capitalizable_db_id:
+        try:
+            session_resp = wc.run(
+                "notion.read_database",
+                {
+                    "database_id_or_url": session_capitalizable_db_id,
+                    "max_items": min(20, max_items),
+                },
+            )
+            for page_id in _unique_page_ids(_extract_read_database_items(session_resp)):
+                targets.append({"page_id": page_id, "page_kind": "session_capitalizable"})
+        except Exception:
+            logger.warning("Failed to resolve session_capitalizable review targets", exc_info=True)
 
     control_room_page = os.environ.get("NOTION_CONTROL_ROOM_PAGE_ID", "").strip()
     deduped: list[dict[str, str]] = []

@@ -190,7 +190,9 @@ class TestHandleGranolaProcessTranscript:
 
         assert result["page_id"] == "page-123"
         assert result["url"] == "https://notion.so/page-123"
-        assert result["action_items_created"] == 1
+        assert result["action_items_detected"] == 1
+        assert result["action_items_created"] == 0
+        assert result["legacy_raw_task_writes_enabled"] is False
         assert result["notification_sent"] is True
 
         mock_nc.create_transcript_page.assert_called_once_with(
@@ -202,6 +204,8 @@ class TestHandleGranolaProcessTranscript:
         mock_nc.add_comment.assert_called_once()
         assert mock_nc.add_comment.call_args.kwargs["page_id"] is None
         assert "Hola @Enlace" in mock_nc.add_comment.call_args.kwargs["text"]
+        mock_upsert_task.assert_not_called()
+        return
         mock_upsert_task.assert_called_once()
         task_payload = mock_upsert_task.call_args.args[0]
         assert task_payload["task"] == "granola.action_item"
@@ -231,7 +235,31 @@ class TestHandleGranolaProcessTranscript:
             ],
         })
 
+        assert result["action_items_detected"] == 2
+        assert result["action_items_created"] == 0
+        assert result["legacy_raw_task_writes_enabled"] is False
+        mock_upsert_task.assert_not_called()
+
+    @patch("worker.tasks.granola.handle_notion_upsert_task")
+    @patch("worker.tasks.granola.notion_client")
+    def test_legacy_raw_task_writes_can_be_enabled_explicitly(self, mock_nc, mock_upsert_task):
+        mock_nc.create_transcript_page.return_value = {"page_id": "p1", "url": ""}
+        mock_upsert_task.return_value = {"page_id": "t1", "created": True}
+        mock_nc.add_comment.return_value = {"comment_id": "c1"}
+
+        result = handle_granola_process_transcript({
+            "title": "Meeting",
+            "content": "Content",
+            "action_items": [
+                {"text": "Task 1", "assignee": "David", "due": "2026-03-10"},
+                {"text": "Task 2", "assignee": "Ana", "due": ""},
+            ],
+            "allow_legacy_raw_task_writes": True,
+        })
+
+        assert result["action_items_detected"] == 2
         assert result["action_items_created"] == 2
+        assert result["legacy_raw_task_writes_enabled"] is True
         assert mock_upsert_task.call_count == 2
 
     @patch("worker.tasks.granola.notion_client")
@@ -275,7 +303,43 @@ class TestHandleGranolaCapitalizeRaw:
                 "properties": {},
             }
             with pytest.raises(ValueError, match="At least one explicit destination is required"):
-                handle_granola_capitalize_raw({"transcript_page_id": "raw-1"})
+                handle_granola_capitalize_raw(
+                    {
+                        "transcript_page_id": "raw-1",
+                        "allow_legacy_raw_to_canonical": True,
+                    }
+                )
+
+    @patch("worker.tasks.granola.notion_client")
+    def test_capitalize_raw_is_blocked_by_v1_policy_by_default(self, mock_nc):
+        mock_nc.read_page.return_value = {
+            "page_id": "raw-1",
+            "url": "https://www.notion.so/raw-1",
+            "title": "Reunion",
+            "plain_text": "Resumen",
+        }
+        mock_nc.get_page.return_value = {
+            "url": "https://www.notion.so/raw-1",
+            "properties": {
+                "Fecha": {"type": "date", "date": {"start": "2026-03-23"}},
+                "Fuente": {"type": "select", "select": {"name": "granola"}},
+            },
+        }
+        mock_nc.add_comment.return_value = {"comment_id": "comment-1"}
+
+        result = handle_granola_capitalize_raw(
+            {
+                "transcript_page_id": "raw-1",
+                "project_name": "Konstruedu",
+            }
+        )
+
+        assert result["ok"] is False
+        assert result["blocked_by_policy"] is True
+        assert result["policy"] == "raw_to_canonical_disabled_in_v1"
+        assert result["review_comment_added"] is True
+        assert result["trace_comments_added"] == 1
+        mock_nc.add_comment.assert_called_once()
 
     @patch("worker.tasks.granola.handle_granola_create_followup")
     @patch("worker.tasks.granola.handle_notion_upsert_bridge_item")
@@ -321,6 +385,7 @@ class TestHandleGranolaCapitalizeRaw:
                 "bridge_item_name": "Validar alcance reunion Konstruedu",
                 "bridge_next_action": "Confirmar si pasa a proyecto o queda como seguimiento.",
                 "followup_type": "proposal",
+                "allow_legacy_raw_to_canonical": True,
             }
         )
 
@@ -371,6 +436,7 @@ class TestHandleGranolaCapitalizeRaw:
                 "transcript_page_id": "raw-1",
                 "project_name": "Konstruedu",
                 "add_trace_comments": False,
+                "allow_legacy_raw_to_canonical": True,
             }
         )
 
@@ -968,14 +1034,20 @@ class TestHandleGranolaUpdateCommercialProjectFromCuratedSession:
             "url": "https://www.notion.so/curated-1",
             "properties": {"Fecha": {"type": "date", "date": {"start": "2026-03-23"}}},
         }
+        mock_nc.add_comment.return_value = {"comment_id": "comment-1"}
 
-        with pytest.raises(ValueError, match="A commercial project target is required"):
-            handle_granola_update_commercial_project_from_curated_session(
-                {
-                    "curated_session_page_id": "curated-1",
-                    "estado": "Propuesta enviada",
-                }
-            )
+        result = handle_granola_update_commercial_project_from_curated_session(
+            {
+                "curated_session_page_id": "curated-1",
+                "estado": "Propuesta enviada",
+            }
+        )
+
+        assert result["ok"] is False
+        assert result["blocked_by_ambiguity"] is True
+        assert result["review_comment_added"] is True
+        assert result["trace_comments_added"] == 1
+        mock_nc.add_comment.assert_called_once()
 
     @patch("worker.tasks.granola.config.NOTION_COMMERCIAL_PROJECTS_DB_ID", "commercial-db-1")
     @patch("worker.tasks.granola.notion_client")

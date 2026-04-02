@@ -71,3 +71,42 @@ def test_classify_gap_prefers_document_id_match():
     assert result["gap_summary"]["likely_present_count"] == 1
     assert result["gap_summary"]["batch1_recent_ambiguous_count"] == 0
     assert result["likely_present"][0]["classification"] == "likely_present_document_id"
+
+
+def test_classify_gap_matches_document_id_even_when_raw_row_is_smoke():
+    module = _load_script_module(
+        "list_granola_raw_ingest_gap_smoke_document_match",
+        "scripts/list_granola_raw_ingest_gap.py",
+    )
+
+    exports = [
+        module.ExportItem(
+            document_id="doc-smoke-1",
+            title="Reunión de prueba",
+            meeting_date="2026-04-02",
+            notes_source="private_api_panels",
+            transcript_source="private_api_transcript",
+            normalized_title=module._normalize_title("Reunión de prueba"),
+        )
+    ]
+    raw_snapshot = {
+        "real_items": [],
+        "smoke_items": [
+            {
+                "page_id": "raw-smoke-1",
+                "url": "https://notion.so/raw-smoke-1",
+                "title": "Reunión de prueba",
+                "normalized_title": module._normalize_title("Reunión de prueba"),
+                "granola_document_id": "doc-smoke-1",
+                "properties": {"Fecha": {"start": "2026-04-02"}},
+            }
+        ],
+        "all_items": [],
+    }
+
+    result = module._classify_gap(exports, raw_snapshot, recent_days=7)
+
+    assert result["gap_summary"]["likely_present_count"] == 1
+    assert result["gap_summary"]["batch1_recent_unique_count"] == 0
+    assert result["likely_present"][0]["classification"] == "likely_present_document_id"
+    assert result["likely_present"][0]["matched_raw_page_id"] == "raw-smoke-1"

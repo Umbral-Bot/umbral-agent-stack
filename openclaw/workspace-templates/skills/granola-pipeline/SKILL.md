@@ -82,6 +82,7 @@ Usar esta task sabiendo que:
 ### 4. Promover a `session_capitalizable` (nombre de task legacy)
 
 Task: `granola.promote_curated_session`
+Alias compatible: `granola.promote_session_capitalizable`
 
 Usar esta task solo cuando:
 

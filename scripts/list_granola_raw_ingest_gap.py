@@ -198,10 +198,12 @@ def _classify_gap(
     recent_days: int,
 ) -> dict[str, Any]:
     raw_real_items = raw_snapshot["real_items"]
+    raw_all_items = [*raw_real_items, *(raw_snapshot.get("smoke_items") or [])]
     raw_by_title: dict[str, list[dict[str, Any]]] = {}
     raw_by_document_id: dict[str, dict[str, Any]] = {}
     for item in raw_real_items:
         raw_by_title.setdefault(str(item["normalized_title"]), []).append(item)
+    for item in raw_all_items:
         raw_document_id = str(item.get("granola_document_id") or "").strip()
         if raw_document_id:
             raw_by_document_id[raw_document_id] = item

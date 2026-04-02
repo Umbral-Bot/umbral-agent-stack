@@ -91,6 +91,7 @@ No usa la DB humana curada como destino automatico.
 ### 4. Promover a capa curada humana
 
 Task: `granola.promote_curated_session`
+Alias compatible: `granola.promote_session_capitalizable`
 
 Usar esta task solo cuando:
 

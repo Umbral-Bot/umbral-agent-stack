@@ -6,6 +6,7 @@ Uses httpx for HTTP requests. All IDs come from environment variables
 via worker.config — never hardcoded.
 """
 
+import json
 import logging
 import re
 from datetime import datetime, timezone
@@ -19,6 +20,8 @@ logger = logging.getLogger("worker.notion")
 
 NOTION_BASE_URL = "https://api.notion.com/v1"
 TIMEOUT = 60.0
+NOTION_BLOCK_APPEND_LIMIT = 100
+NOTION_APPEND_TEXT_BUDGET = 8000
 
 
 # ---------------------------------------------------------------------------
@@ -144,6 +147,42 @@ def _extract_block_text(block: dict[str, Any]) -> str:
     return ""
 
 
+def _estimate_block_text_length(block: dict[str, Any]) -> int:
+    text = _extract_block_text(block)
+    if text:
+        return len(text)
+    return len(json.dumps(block, ensure_ascii=False))
+
+
+def _chunk_blocks_for_append(
+    blocks: list[dict[str, Any]],
+    *,
+    max_blocks: int = NOTION_BLOCK_APPEND_LIMIT,
+    max_text_budget: int = NOTION_APPEND_TEXT_BUDGET,
+) -> list[list[dict[str, Any]]]:
+    chunks: list[list[dict[str, Any]]] = []
+    current_chunk: list[dict[str, Any]] = []
+    current_budget = 0
+
+    for block in blocks:
+        block_budget = max(1, _estimate_block_text_length(block))
+        if current_chunk and (
+            len(current_chunk) >= max_blocks
+            or current_budget + block_budget > max_text_budget
+        ):
+            chunks.append(current_chunk)
+            current_chunk = []
+            current_budget = 0
+
+        current_chunk.append(block)
+        current_budget += block_budget
+
+    if current_chunk:
+        chunks.append(current_chunk)
+
+    return chunks
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -228,12 +267,22 @@ def create_transcript_page(
         )
         passed_prop = _find_property_name(
             db_properties,
-            ["Fecha que Rick pasó a Notion", "Fecha que Rick paso a Notion", "Imported At"],
+            [
+                "Fecha que Rick pasó a Notion",
+                "Fecha que Rick paso a Notion",
+                "Fecha que Rick pas? a Notion",
+                "Imported At",
+            ],
             {"date"},
         )
         processed_prop = _find_property_name(
             db_properties,
-            ["Fecha que el agente procesó", "Fecha que el agente proceso", "Processed At"],
+            [
+                "Fecha que el agente procesó",
+                "Fecha que el agente proceso",
+                "Fecha que el agente proces?",
+                "Processed At",
+            ],
             {"date"},
         )
         traceability_prop = _find_property_name(
@@ -283,7 +332,6 @@ def create_transcript_page(
         payload = {
             "parent": {"database_id": db_id},
             "properties": properties,
-            "children": blocks,
         }
 
         resp = client.post(
@@ -292,6 +340,8 @@ def create_transcript_page(
             json=payload,
         )
     result = _check_response(resp, "create_transcript_page")
+    if blocks:
+        append_blocks_to_page(result["id"], blocks)
     logger.info("Created page: %s", result.get("id"))
     return {"page_id": result["id"], "url": result.get("url", "")}
 
@@ -714,6 +764,53 @@ def search_databases(
         "query": query,
         "results": results,
         "count": len(results),
+    }
+
+
+def update_database_properties(
+    database_id_or_url: str,
+    properties: dict[str, Any],
+) -> dict[str, Any]:
+    """
+    Update a Notion database schema by adding or modifying properties.
+
+    Args:
+        database_id_or_url: Notion database UUID or full URL.
+        properties: Raw Notion database properties payload to PATCH.
+
+    Returns:
+        {
+            "database_id": "...",
+            "url": "...",
+            "title": "...",
+            "schema": {"Name": "title", ...},
+            "updated": True,
+        }
+    """
+    config.require_notion_core()
+    database_id = _extract_notion_page_id(database_id_or_url)
+    if not isinstance(properties, dict) or not properties:
+        raise ValueError("properties must be a non-empty dict")
+
+    with httpx.Client(timeout=TIMEOUT) as client:
+        resp = client.patch(
+            f"{NOTION_BASE_URL}/databases/{database_id}",
+            headers=_headers(),
+            json={"properties": properties},
+        )
+        data = _check_response(resp, "update_database_properties")
+
+    schema: dict[str, str] = {}
+    for prop_name, prop_meta in (data.get("properties") or {}).items():
+        if isinstance(prop_meta, dict):
+            schema[prop_name] = str(prop_meta.get("type", ""))
+
+    return {
+        "database_id": data.get("id", database_id),
+        "url": data.get("url", ""),
+        "title": _plain_text_from_rich_text(data.get("title")),
+        "schema": schema,
+        "updated": True,
     }
 
 
@@ -1532,8 +1629,7 @@ def append_blocks_to_page(
         raise RuntimeError("NOTION_API_KEY not configured")
 
     with httpx.Client(timeout=TIMEOUT) as client:
-        for i in range(0, len(blocks), 100):
-            chunk = blocks[i : i + 100]
+        for chunk in _chunk_blocks_for_append(blocks):
             resp = client.patch(
                 f"{NOTION_BASE_URL}/blocks/{page_id}/children",
                 headers=_headers(),

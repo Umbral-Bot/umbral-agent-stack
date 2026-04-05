@@ -455,6 +455,54 @@ class TestHandleGranolaPromoteCuratedSession:
         with pytest.raises(RuntimeError, match="NOTION_CURATED_SESSIONS_DB_ID not configured"):
             handle_granola_promote_curated_session({"transcript_page_id": "raw-1"})
 
+    @patch("worker.tasks.granola.config.NOTION_CURATED_SESSIONS_DB_ID", "legacy-db-ignored")
+    @patch(
+        "worker.tasks.granola.config.require_notion_session_capitalizable_db_id",
+        return_value="session-db-v1",
+    )
+    @patch("worker.tasks.granola.notion_client")
+    def test_uses_session_capitalizable_binding_for_database_writes(self, mock_nc, mock_require_db):
+        mock_nc.read_page.return_value = {
+            "page_id": "raw-1",
+            "url": "https://www.notion.so/raw-1",
+            "title": "Sesion Borago",
+            "plain_text": "Resumen breve.",
+        }
+        mock_nc.get_page.return_value = {
+            "url": "https://www.notion.so/raw-1",
+            "properties": {
+                "Fecha": {"type": "date", "date": {"start": "2026-03-24"}},
+                "Fuente": {"type": "select", "select": {"name": "granola"}},
+            },
+        }
+        mock_nc.read_database.return_value = {
+            "schema": {
+                "Nombre": "title",
+                "Fecha": "date",
+                "Fuente": "select",
+                "Notas": "rich_text",
+                "Transcripción disponible": "checkbox",
+            }
+        }
+        mock_nc.query_database.return_value = []
+        mock_nc.create_database_page.return_value = {
+            "page_id": "curated-1",
+            "url": "https://www.notion.so/curated-1",
+            "created": True,
+        }
+        mock_nc.add_comment.return_value = {"comment_id": "comment-1"}
+
+        result = handle_granola_promote_curated_session({"transcript_page_id": "raw-1"})
+
+        assert result["matched_existing"] is False
+        mock_require_db.assert_called_once_with()
+        read_db_args = mock_nc.read_database.call_args.args
+        assert read_db_args[0] == "session-db-v1"
+        query_kwargs = mock_nc.query_database.call_args.kwargs
+        assert query_kwargs["database_id"] == "session-db-v1"
+        create_db_args = mock_nc.create_database_page.call_args.args
+        assert create_db_args[0] == "session-db-v1"
+
     @patch("worker.tasks.granola.config.NOTION_CURATED_SESSIONS_DB_ID", "curated-db-1")
     @patch("worker.tasks.granola.notion_client")
     def test_creates_curated_session_with_supported_schema(self, mock_nc):

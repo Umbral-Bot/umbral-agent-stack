@@ -317,6 +317,47 @@ def test_collect_candidate_comments_includes_session_capitalizable_targets():
     assert [call.kwargs for call in wc.notion_poll_comments.call_args_list] == expected_calls
 
 
+def test_collect_candidate_comments_continues_when_session_capitalizable_lookup_fails():
+    wc = MagicMock()
+    wc.run.side_effect = [
+        {"ok": True, "result": {"items": []}},
+        {"ok": True, "result": {"items": []}},
+        RuntimeError("session_capitalizable unavailable"),
+    ]
+    wc.notion_poll_comments.return_value = {
+        "ok": True,
+        "result": {
+            "comments": [
+                {
+                    "id": "c-1",
+                    "created_time": "2026-03-16T21:00:00.000Z",
+                    "text": "mensaje control room",
+                }
+            ]
+        },
+    }
+
+    with patch.dict(
+        "os.environ",
+        {
+            "NOTION_DELIVERABLES_DB_ID": "deliverables-db",
+            "NOTION_PROJECTS_DB_ID": "projects-db",
+            "NOTION_CURATED_SESSIONS_DB_ID": "curated-db",
+            "NOTION_POLL_OVERLAP_SEC": "300",
+        },
+        clear=False,
+    ):
+        comments = _collect_candidate_comments(wc, "2026-03-16T21:00:00+00:00", 20)
+
+    assert [comment["id"] for comment in comments] == ["c-1"]
+    assert wc.run.call_count == 3
+    wc.notion_poll_comments.assert_called_once_with(
+        since="2026-03-16T20:55:00+00:00",
+        limit=20,
+        page_id=None,
+    )
+
+
 def test_collect_candidate_comments_falls_back_when_deliverable_filter_fails():
     wc = MagicMock()
     wc.run.side_effect = [

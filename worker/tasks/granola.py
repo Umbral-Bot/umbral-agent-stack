@@ -205,7 +205,7 @@ def _leave_review_comment(
     next_review: str,
 ) -> bool:
     comment = (
-        "Revision requerida por gobernanza V1.\n"
+        "Revision requerida en raw por el contrato V2 vigente.\n"
         f"1. Evidencia fuente: {source_evidence}\n"
         f"2. Destino intencionado: {intended_target}\n"
         f"3. Bloqueo: {blocking_ambiguity}\n"
@@ -346,7 +346,7 @@ def _set_schema_property(
     expected_types: set[str] | None = None,
     used_fields: list[str] | None = None,
 ) -> str | None:
-    if value in (None, "", []):
+    if value is None or value == "" or value == []:
         return None
 
     prop_name = _schema_property_name(schema, candidates, expected_types)
@@ -386,23 +386,164 @@ def _set_schema_property(
     return prop_name
 
 
-def _sync_raw_promotion_state(
+def _clear_schema_property(
+    payload: Dict[str, Any],
+    schema: Dict[str, str],
+    candidates: list[str],
+    *,
+    expected_types: set[str] | None = None,
+    used_fields: list[str] | None = None,
+) -> str | None:
+    prop_name = _schema_property_name(schema, candidates, expected_types)
+    if not prop_name:
+        return None
+
+    prop_type = schema[prop_name]
+    if prop_type == "title":
+        payload[prop_name] = {"title": []}
+    elif prop_type == "rich_text":
+        payload[prop_name] = {"rich_text": []}
+    elif prop_type == "date":
+        payload[prop_name] = {"date": None}
+    elif prop_type == "select":
+        payload[prop_name] = {"select": None}
+    elif prop_type == "status":
+        payload[prop_name] = {"status": None}
+    elif prop_type == "url":
+        payload[prop_name] = {"url": None}
+    elif prop_type == "relation":
+        payload[prop_name] = {"relation": []}
+    elif prop_type == "checkbox":
+        payload[prop_name] = {"checkbox": False}
+    elif prop_type == "number":
+        payload[prop_name] = {"number": None}
+    else:
+        return None
+
+    if used_fields is not None:
+        used_fields.append(prop_name)
+    return prop_name
+
+
+def _traceability_block(
+    *,
+    canonical_target_type: str,
+    canonical_target_name: str,
+    processed_at: str,
+) -> str:
+    return "\n".join(
+        [
+            "source=granola",
+            "capitalization_mode=notion_ai_raw_direct_v2",
+            f"canonical_target_type={canonical_target_type or 'ignorar'}",
+            f"canonical_target_name={canonical_target_name or 'pending_review'}",
+            f"processed_at={processed_at}",
+        ]
+    )
+
+
+def _sync_raw_v2_state(
     raw_page_id: str,
     raw_page_data: Dict[str, Any],
     *,
-    curated_url: str = "",
+    status: str,
+    agent_status: str,
+    agent_action: str,
+    proposed_domain: str,
+    proposed_type: str,
+    canonical_target_type: str,
+    canonical_target_name: str,
+    summary: str,
+    agent_log: str,
+    artifact_url: str = "",
+    review_status: str = "No aplica",
+    review_reason: str = "",
+    review_question: str = "",
+    agent_recommendation: str = "",
+    review_response: str = "",
+    review_decision: str = "",
+    reprocess_after_review: bool = False,
     dry_run: bool = False,
 ) -> Dict[str, Any]:
     raw_schema = _page_schema_from_page(raw_page_data)
     properties: Dict[str, Any] = {}
     used_fields: list[str] = []
+    processed_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     _set_schema_property(
         properties,
         raw_schema,
         ["Estado", "Status"],
-        "Procesada",
+        status,
         expected_types={"select", "status", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        raw_schema,
+        ["Estado agente", "Estado Agente", "Agent Status"],
+        agent_status,
+        expected_types={"select", "status", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        raw_schema,
+        ["Accion agente", "Acción agente", "Agent Action"],
+        agent_action,
+        expected_types={"select", "status", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        raw_schema,
+        ["Dominio propuesto", "Proposed Domain"],
+        proposed_domain,
+        expected_types={"select", "status", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        raw_schema,
+        ["Tipo propuesto", "Proposed Type"],
+        proposed_type,
+        expected_types={"select", "status", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        raw_schema,
+        ["Destino canonico", "Destino canónico", "Canonical Target"],
+        canonical_target_type,
+        expected_types={"select", "status", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        raw_schema,
+        ["Resumen agente", "Agent Summary"],
+        summary,
+        expected_types={"rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        raw_schema,
+        ["Log del agente", "Agent Log"],
+        agent_log,
+        expected_types={"rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        raw_schema,
+        ["Trazabilidad", "Traceability"],
+        _traceability_block(
+            canonical_target_type=canonical_target_type,
+            canonical_target_name=canonical_target_name,
+            processed_at=processed_at,
+        ),
+        expected_types={"rich_text"},
         used_fields=used_fields,
     )
     _set_schema_property(
@@ -416,11 +557,113 @@ def _sync_raw_promotion_state(
     _set_schema_property(
         properties,
         raw_schema,
-        ["URL artefacto", "Artifact URL", "Artifact Link"],
-        curated_url,
-        expected_types={"url", "rich_text"},
+        ["Estado revisión", "Estado revisiÃ³n", "Estado revision", "Review Status"],
+        review_status,
+        expected_types={"select", "status", "rich_text"},
         used_fields=used_fields,
     )
+    _set_schema_property(
+        properties,
+        raw_schema,
+        ["Motivo revisión", "Motivo revisiÃ³n", "Motivo revision", "Review Reason"],
+        review_reason,
+        expected_types={"rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        raw_schema,
+        ["Pregunta de revisión", "Pregunta de revisiÃ³n", "Pregunta de revision", "Review Question"],
+        review_question,
+        expected_types={"rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        raw_schema,
+        ["Recomendación agente", "RecomendaciÃ³n agente", "Recomendacion agente", "Agent Recommendation"],
+        agent_recommendation,
+        expected_types={"rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        raw_schema,
+        ["Respuesta revisión", "Respuesta revisiÃ³n", "Respuesta revision", "Review Response"],
+        review_response,
+        expected_types={"rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        raw_schema,
+        ["Decisión revisión", "DecisiÃ³n revisiÃ³n", "Decision revision", "Review Decision"],
+        review_decision,
+        expected_types={"rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        raw_schema,
+        ["Reprocesar tras revisión", "Reprocesar tras revisiÃ³n", "Reprocesar tras revision", "Reprocess After Review"],
+        reprocess_after_review,
+        expected_types={"checkbox"},
+        used_fields=used_fields,
+    )
+    if artifact_url:
+        _set_schema_property(
+            properties,
+            raw_schema,
+            ["URL artefacto", "Artifact URL", "Artifact Link"],
+            artifact_url,
+            expected_types={"url", "rich_text"},
+            used_fields=used_fields,
+        )
+    else:
+        _clear_schema_property(
+            properties,
+            raw_schema,
+            ["URL artefacto", "Artifact URL", "Artifact Link"],
+            expected_types={"url", "rich_text"},
+            used_fields=used_fields,
+        )
+
+    if review_status == "No aplica":
+        _clear_schema_property(
+            properties,
+            raw_schema,
+            ["Motivo revisión", "Motivo revisiÃ³n", "Motivo revision", "Review Reason"],
+            expected_types={"rich_text"},
+            used_fields=used_fields,
+        )
+        _clear_schema_property(
+            properties,
+            raw_schema,
+            ["Pregunta de revisión", "Pregunta de revisiÃ³n", "Pregunta de revision", "Review Question"],
+            expected_types={"rich_text"},
+            used_fields=used_fields,
+        )
+        _clear_schema_property(
+            properties,
+            raw_schema,
+            ["Recomendación agente", "RecomendaciÃ³n agente", "Recomendacion agente", "Agent Recommendation"],
+            expected_types={"rich_text"},
+            used_fields=used_fields,
+        )
+        _clear_schema_property(
+            properties,
+            raw_schema,
+            ["Respuesta revisión", "Respuesta revisiÃ³n", "Respuesta revision", "Review Response"],
+            expected_types={"rich_text"},
+            used_fields=used_fields,
+        )
+        _clear_schema_property(
+            properties,
+            raw_schema,
+            ["Decisión revisión", "DecisiÃ³n revisiÃ³n", "Decision revision", "Review Decision"],
+            expected_types={"rich_text"},
+            used_fields=used_fields,
+        )
 
     if dry_run:
         return {
@@ -430,6 +673,7 @@ def _sync_raw_promotion_state(
             "dry_run": True,
             "properties": properties,
             "schema_fields_used": used_fields,
+            "processed_at": processed_at,
         }
 
     if not properties:
@@ -440,13 +684,362 @@ def _sync_raw_promotion_state(
             "dry_run": False,
             "properties": {},
             "schema_fields_used": used_fields,
+            "processed_at": processed_at,
         }
 
     result = notion_client.update_page_properties(raw_page_id, properties=properties)
     result["ok"] = True
     result["dry_run"] = False
     result["schema_fields_used"] = used_fields
+    result["processed_at"] = processed_at
     return result
+
+
+def _build_default_raw_summary(*, target_type: str, target_name: str, transcript_title: str) -> str:
+    if not target_name:
+        return f"Revision requerida desde raw para '{transcript_title}'."
+    return f"Capitalizacion directa desde raw hacia {target_type.lower()}: {target_name}."
+
+
+def _upsert_human_task_from_raw(
+    *,
+    raw_page_id: str,
+    transcript_title: str,
+    transcript_url: str,
+    transcript_date: str,
+    context_excerpt: str,
+    input_data: Dict[str, Any],
+    project_relation_ids: list[str] | None = None,
+) -> Dict[str, Any]:
+    task_name = (
+        (input_data.get("task_name") or "").strip()
+        or (input_data.get("human_task_name") or "").strip()
+        or (input_data.get("title") or "").strip()
+    )
+    if not task_name:
+        raise ValueError("'task_name' is required for direct raw task capitalization")
+
+    human_tasks_db_id = config.NOTION_HUMAN_TASKS_DB_ID or config.NOTION_TASKS_DB_ID
+    if not human_tasks_db_id:
+        raise RuntimeError("NOTION_HUMAN_TASKS_DB_ID not configured")
+
+    db_snapshot = notion_client.read_database(
+        human_tasks_db_id,
+        max_items=1,
+    )
+    schema = db_snapshot.get("schema") or {}
+    if not isinstance(schema, dict):
+        raise RuntimeError("Could not read human tasks DB schema")
+
+    title_prop = _schema_property_name(schema, ["Nombre", "Name", "Title"], {"title"})
+    if not title_prop:
+        raise RuntimeError("Human tasks DB does not expose a title property")
+
+    task_notes = (
+        (input_data.get("notes") or "").strip()
+        or (input_data.get("task_notes") or "").strip()
+    )
+    if not task_notes:
+        task_notes = (
+            f"Derivada de raw Granola: {transcript_title} ({transcript_date}) - "
+            f"{transcript_url or raw_page_id}"
+        )
+        if context_excerpt:
+            task_notes = _append_context(task_notes, f"Contexto observado: {context_excerpt}")
+
+    resolved_project_relation_ids = list(project_relation_ids or _relation_ids(input_data.get("project_page_id")))
+    if not resolved_project_relation_ids:
+        project_lookup_name = (
+            (input_data.get("task_project_name") or "").strip()
+            or (input_data.get("project_name") or "").strip()
+        )
+        project_lookup_db_id = config.NOTION_COMMERCIAL_PROJECTS_DB_ID or config.NOTION_PROJECTS_DB_ID
+        if project_lookup_name and project_lookup_db_id:
+            project_matches = notion_client.query_database(
+                database_id=project_lookup_db_id,
+                filter={"property": "Nombre", "title": {"equals": project_lookup_name}},
+            )
+            if project_matches:
+                resolved_project_relation_ids = [project_matches[0]["id"]]
+
+    properties: Dict[str, Any] = {}
+    used_fields: list[str] = []
+    _set_schema_property(
+        properties,
+        schema,
+        [title_prop],
+        task_name,
+        expected_types={"title"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Dominio", "Domain"],
+        input_data.get("domain") or input_data.get("task_domain") or "Mixto",
+        expected_types={"select", "status", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Proyecto", "Project"],
+        resolved_project_relation_ids,
+        expected_types={"relation"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Tipo", "Type"],
+        input_data.get("task_type") or input_data.get("type") or "Follow-up",
+        expected_types={"select", "status", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Estado", "Status"],
+        input_data.get("estado") or input_data.get("status") or "Pendiente",
+        expected_types={"select", "status", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Prioridad", "Priority"],
+        input_data.get("priority") or input_data.get("prioridad"),
+        expected_types={"select", "status", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Fecha objetivo", "Due date", "Target date"],
+        input_data.get("due_date") or input_data.get("target_date"),
+        expected_types={"date"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Origen", "Source"],
+        input_data.get("origin") or input_data.get("task_origin") or "Sesion",
+        expected_types={"select", "status", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["URL fuente", "Source URL", "URL", "Link"],
+        input_data.get("source_url") or transcript_url or raw_page_id,
+        expected_types={"url", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Notas", "Notes"],
+        task_notes,
+        expected_types={"rich_text"},
+        used_fields=used_fields,
+    )
+
+    existing = notion_client.query_database(
+        database_id=human_tasks_db_id,
+        filter={"property": title_prop, "title": {"equals": task_name}},
+    )
+    matched_existing = bool(existing)
+    dry_run = bool(input_data.get("dry_run"))
+    if dry_run:
+        notion_result = {
+            "page_id": existing[0]["id"] if matched_existing else "",
+            "url": existing[0].get("url", "") if matched_existing else "",
+            "created": not matched_existing,
+            "updated": matched_existing,
+            "dry_run": True,
+            "properties": properties,
+        }
+    elif matched_existing:
+        notion_result = notion_client.update_page_properties(
+            existing[0]["id"],
+            properties=properties,
+        )
+        notion_result["created"] = False
+    else:
+        notion_result = notion_client.create_database_page(
+            human_tasks_db_id,
+            properties=properties,
+        )
+        notion_result["created"] = True
+
+    notion_result["ok"] = True
+    notion_result["schema_fields_used"] = used_fields
+    notion_result["matched_existing"] = matched_existing
+    notion_result["target_name"] = task_name
+    return notion_result
+
+
+def _upsert_commercial_project_from_raw(
+    *,
+    raw_page_id: str,
+    transcript_title: str,
+    transcript_url: str,
+    transcript_date: str,
+    context_excerpt: str,
+    input_data: Dict[str, Any],
+) -> Dict[str, Any]:
+    project_name = (
+        (input_data.get("project_name") or "").strip()
+        or (input_data.get("title") or "").strip()
+    )
+    if not project_name:
+        raise ValueError("'project_name' is required for direct raw project capitalization")
+
+    commercial_db_id = config.NOTION_COMMERCIAL_PROJECTS_DB_ID or config.NOTION_PROJECTS_DB_ID
+    if not commercial_db_id:
+        raise RuntimeError("NOTION_COMMERCIAL_PROJECTS_DB_ID not configured")
+
+    db_snapshot = notion_client.read_database(
+        commercial_db_id,
+        max_items=1,
+    )
+    schema = db_snapshot.get("schema") or {}
+    if not isinstance(schema, dict):
+        raise RuntimeError("Could not read commercial projects DB schema")
+
+    title_prop = _schema_property_name(schema, ["Nombre", "Name", "Title"], {"title"})
+    if not title_prop:
+        raise RuntimeError("Commercial projects DB does not expose a title property")
+
+    project_notes = (
+        (input_data.get("notes") or "").strip()
+        or (input_data.get("project_notes") or "").strip()
+    )
+    if not project_notes:
+        project_notes = (
+            f"Actualizacion desde raw Granola: {transcript_title} ({transcript_date}) - "
+            f"{transcript_url or raw_page_id}"
+        )
+        if context_excerpt:
+            project_notes = _append_context(project_notes, f"Contexto observado: {context_excerpt}")
+
+    properties: Dict[str, Any] = {}
+    used_fields: list[str] = []
+    _set_schema_property(
+        properties,
+        schema,
+        [title_prop],
+        project_name,
+        expected_types={"title"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Estado", "Status"],
+        input_data.get("project_estado") or input_data.get("estado"),
+        expected_types={"select", "status", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Acción Requerida", "AcciÃ³n Requerida", "Accion Requerida", "Next Action"],
+        input_data.get("project_next_action") or input_data.get("accion_requerida"),
+        expected_types={"select", "status", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Fecha", "Date"],
+        input_data.get("project_date") or input_data.get("fecha") or transcript_date,
+        expected_types={"date"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Plazo", "Deadline"],
+        input_data.get("project_deadline") or input_data.get("plazo"),
+        expected_types={"date"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Monto", "Amount"],
+        input_data.get("project_amount") or input_data.get("monto"),
+        expected_types={"number"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Tipo", "Type"],
+        input_data.get("project_type") or input_data.get("tipo"),
+        expected_types={"select", "status", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Cliente", "Client"],
+        input_data.get("project_client") or input_data.get("cliente"),
+        expected_types={"select", "status", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["URL fuente", "Source URL", "URL", "Link"],
+        input_data.get("source_url") or transcript_url or raw_page_id,
+        expected_types={"url", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Notas", "Notes"],
+        project_notes,
+        expected_types={"rich_text"},
+        used_fields=used_fields,
+    )
+
+    existing = notion_client.query_database(
+        database_id=commercial_db_id,
+        filter={"property": title_prop, "title": {"equals": project_name}},
+    )
+    matched_existing = bool(existing)
+    dry_run = bool(input_data.get("dry_run"))
+    if dry_run:
+        notion_result = {
+            "page_id": existing[0]["id"] if matched_existing else "",
+            "url": existing[0].get("url", "") if matched_existing else "",
+            "created": not matched_existing,
+            "updated": matched_existing,
+            "dry_run": True,
+            "properties": properties,
+        }
+    elif matched_existing:
+        notion_result = notion_client.update_page_properties(
+            existing[0]["id"],
+            properties=properties,
+        )
+        notion_result["created"] = False
+    else:
+        notion_result = notion_client.create_database_page(
+            commercial_db_id,
+            properties=properties,
+        )
+        notion_result["created"] = True
+
+    notion_result["ok"] = True
+    notion_result["schema_fields_used"] = used_fields
+    notion_result["matched_existing"] = matched_existing
+    notion_result["target_name"] = project_name
+    return notion_result
 
 
 def _build_transcript_blocks(parsed: Dict[str, Any]) -> list[dict[str, Any]]:
@@ -630,12 +1223,7 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
 
 def handle_granola_capitalize_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Capitalize an existing raw Granola page into stack-governed canonical objects.
-
-    This handler is intentionally explicit:
-    - reads the raw page for evidence and traceability
-    - only writes to destinations requested in the payload
-    - does not auto-promote into the human curated sessions DB yet
+    Capitalize an existing raw Granola page directly into the supported V2 canonical targets.
     """
     transcript_page_id = (
         input_data.get("transcript_page_id")
@@ -645,18 +1233,6 @@ def handle_granola_capitalize_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
     ).strip()
     if not transcript_page_id:
         raise ValueError("'transcript_page_id' is required in input")
-
-    allow_legacy_raw_to_canonical = bool(input_data.get("allow_legacy_raw_to_canonical"))
-    wants_project = bool((input_data.get("project_name") or "").strip())
-    wants_deliverable = bool((input_data.get("deliverable_name") or "").strip())
-    wants_bridge = bool((input_data.get("bridge_item_name") or "").strip())
-    wants_followup = bool((input_data.get("followup_type") or "").strip())
-
-    if allow_legacy_raw_to_canonical and not any((wants_project, wants_deliverable, wants_bridge, wants_followup)):
-        raise ValueError(
-            "At least one explicit destination is required: project_name, "
-            "deliverable_name, bridge_item_name or followup_type"
-        )
 
     page_snapshot = notion_client.read_page(transcript_page_id, max_blocks=80)
     page_data = notion_client.get_page(transcript_page_id)
@@ -678,59 +1254,206 @@ def handle_granola_capitalize_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
         or "granola"
     )
     context_excerpt = _compact_excerpt(page_snapshot.get("plain_text") or "")
+    add_trace_comments = input_data.get("add_trace_comments", True)
+    trace_comments_added = 0
+    results: Dict[str, Any] = {}
 
-    if not allow_legacy_raw_to_canonical:
-        destinations = []
-        if wants_project:
-            destinations.append(f"Proyecto: {(input_data.get('project_name') or '').strip()}")
-        if wants_deliverable:
-            destinations.append(f"Entregable: {(input_data.get('deliverable_name') or '').strip()}")
-        if wants_bridge:
-            destinations.append(f"Puente: {(input_data.get('bridge_item_name') or '').strip()}")
-        if wants_followup:
-            destinations.append(f"Follow-up: {(input_data.get('followup_type') or '').strip()}")
-        intended_target = ", ".join(destinations) if destinations else "Por definir desde session_capitalizable"
-        review_comment_added = _leave_review_comment(
-            page_snapshot.get("page_id") or transcript_page_id,
-            source_evidence=f"{transcript_title} ({transcript_date}) - {transcript_url or transcript_page_id}",
-            intended_target=intended_target,
-            blocking_ambiguity="V1 no permite raw -> canonical target.",
-            next_review="Promover primero a session_capitalizable y decidir la capitalizacion desde esa capa.",
+    proposed_domain = (
+        (input_data.get("domain") or "").strip()
+        or _extract_select_value(page_data, "Dominio propuesto", "Dominio", "Domain")
+        or "Mixto"
+    )
+    proposed_type = (
+        (input_data.get("session_type") or "").strip()
+        or (input_data.get("type") or "").strip()
+        or _extract_select_value(page_data, "Tipo propuesto", "Tipo", "Type")
+        or "Reunión"
+    )
+
+    canonical_target_raw = (input_data.get("canonical_target_type") or "").strip()
+    canonical_target_key = (
+        unicodedata.normalize("NFKD", canonical_target_raw).encode("ascii", "ignore").decode("ascii").lower()
+    )
+    target_requests = {
+        "task": (input_data.get("task_name") or input_data.get("human_task_name") or "").strip(),
+        "project": (input_data.get("project_name") or "").strip(),
+        "deliverable": (input_data.get("deliverable_name") or "").strip(),
+    }
+    requested_targets = {key: value for key, value in target_requests.items() if value}
+    read_only_target = ""
+    read_only_target_name = ""
+    if canonical_target_key in {"programa", "program", "programas"}:
+        read_only_target = "Programa"
+        read_only_target_name = (input_data.get("program_name") or input_data.get("canonical_target_name") or "").strip()
+    elif canonical_target_key in {"recurso", "resource", "resources"}:
+        read_only_target = "Recurso"
+        read_only_target_name = (input_data.get("resource_name") or input_data.get("canonical_target_name") or "").strip()
+
+    if not read_only_target:
+        program_name = (input_data.get("program_name") or "").strip()
+        resource_name = (input_data.get("resource_name") or "").strip()
+        if program_name:
+            read_only_target = "Programa"
+            read_only_target_name = program_name
+        elif resource_name:
+            read_only_target = "Recurso"
+            read_only_target_name = resource_name
+
+    wants_bridge = bool((input_data.get("bridge_item_name") or "").strip())
+    wants_followup = bool((input_data.get("followup_type") or "").strip())
+
+    selected_target_key = ""
+    contextual_project_name = ""
+    if canonical_target_key in requested_targets:
+        selected_target_key = canonical_target_key
+        remaining_targets = {key: value for key, value in requested_targets.items() if key != selected_target_key}
+        if remaining_targets == {"project": requested_targets["project"]} and selected_target_key in {"task", "deliverable"}:
+            contextual_project_name = requested_targets["project"]
+        elif remaining_targets:
+            selected_target_key = ""
+    elif len(requested_targets) == 1:
+        selected_target_key = next(iter(requested_targets))
+
+    review_required = False
+    review_reason = ""
+    review_question = ""
+    agent_recommendation = ""
+    intended_target = "Por definir en raw"
+    canonical_target_type = "Ignorar"
+    canonical_target_name = ""
+
+    if read_only_target:
+        review_required = True
+        canonical_target_type = read_only_target
+        canonical_target_name = read_only_target_name or (input_data.get("canonical_target_name") or "").strip()
+        intended_target = f"{read_only_target}: {canonical_target_name or 'sin nombre'}"
+        review_reason = (
+            f"{read_only_target} es un target de clasificacion/lectura en el flujo V2 directo y no admite capitalizacion exitosa desde raw."
         )
+        review_question = f"Confirmar si la reunion debe quedar clasificada como {read_only_target.lower()} y qué hacer manualmente con ella."
+        agent_recommendation = "Mantener la fila en raw, completar la revision humana y no escribir un artefacto final."
+    elif wants_bridge or wants_followup:
+        review_required = True
+        canonical_target_type = canonical_target_raw or "Ignorar"
+        intended_target = ", ".join(
+            [part for part in [
+                f"Puente: {(input_data.get('bridge_item_name') or '').strip()}" if wants_bridge else "",
+                f"Follow-up: {(input_data.get('followup_type') or '').strip()}" if wants_followup else "",
+            ] if part]
+        ) or "Residuo V1"
+        review_reason = "Bridge items y follow-ups siguen siendo residuos de V1 y no son targets canonicos del flujo raw directo V2."
+        review_question = "Definir si esto realmente corresponde a tarea, proyecto o entregable, o si solo requiere comentario/revision."
+        agent_recommendation = "No crear artefactos V1 desde raw; reclasificar el destino canonico en la misma fila raw."
+    elif not selected_target_key:
+        review_required = True
+        intended_target = ", ".join(
+            f"{key}: {value}"
+            for key, value in (
+                ("Tarea", requested_targets.get("task", "")),
+                ("Proyecto", requested_targets.get("project", "")),
+                ("Entregable", requested_targets.get("deliverable", "")),
+            )
+            if value
+        ) or "Sin destino explicito"
+        review_reason = (
+            "El flujo V2 directo requiere exactamente un target canonico soportado por corrida."
+            if requested_targets
+            else "No se proporciono un target canonico soportado para capitalizar desde raw."
+        )
+        review_question = "Elegir un unico target canonico soportado: Tarea, Proyecto o Entregable."
+        agent_recommendation = "Completar la clasificacion en raw y reintentar con un solo destino canonico."
+
+    if review_required:
+        summary = (
+            (input_data.get("summary") or "").strip()
+            or _build_default_raw_summary(
+                target_type=canonical_target_type or "Ignorar",
+                target_name=canonical_target_name,
+                transcript_title=transcript_title,
+            )
+        )
+        agent_log = (
+            (input_data.get("agent_log") or "").strip()
+            or f"Capitalizacion detenida en raw. Motivo: {review_reason}"
+        )
+        raw_status_update = _sync_raw_v2_state(
+            page_snapshot.get("page_id") or transcript_page_id,
+            page_data,
+            status="Pendiente",
+            agent_status="Revision requerida",
+            agent_action="Bloqueado por ambiguedad",
+            proposed_domain=proposed_domain,
+            proposed_type=proposed_type,
+            canonical_target_type=canonical_target_type or "Ignorar",
+            canonical_target_name=canonical_target_name,
+            summary=summary,
+            agent_log=agent_log,
+            review_status="Pendiente",
+            review_reason=review_reason,
+            review_question=review_question,
+            agent_recommendation=agent_recommendation,
+            reprocess_after_review=True,
+            dry_run=bool(input_data.get("dry_run")),
+        )
+
+        review_comment_added = False
+        if add_trace_comments and not bool(input_data.get("dry_run")):
+            review_comment_added = _leave_review_comment(
+                page_snapshot.get("page_id") or transcript_page_id,
+                source_evidence=f"{transcript_title} ({transcript_date}) - {transcript_url or transcript_page_id}",
+                intended_target=intended_target,
+                blocking_ambiguity=review_reason,
+                next_review=review_question,
+            )
+            trace_comments_added += 1 if review_comment_added else 0
+
         return {
             "ok": False,
-            "blocked_by_policy": True,
-            "policy": "raw_to_canonical_disabled_in_v1",
+            "review_required": True,
             "review_comment_added": review_comment_added,
+            "raw_status_update": raw_status_update,
             "transcript_page_id": page_snapshot.get("page_id") or transcript_page_id,
             "transcript_url": transcript_url,
             "title": transcript_title,
             "date": transcript_date,
             "source": transcript_source,
             "results": {},
-            "trace_comments_added": 1 if review_comment_added else 0,
+            "trace_comments_added": trace_comments_added,
+            "canonical_target_type": canonical_target_type or "Ignorar",
+            "canonical_target_name": canonical_target_name,
         }
 
-    results: Dict[str, Any] = {}
-    add_trace_comments = input_data.get("add_trace_comments", True)
-    trace_comments_added = 0
+    canonical_map = {
+        "task": "Tarea",
+        "project": "Proyecto",
+        "deliverable": "Entregable",
+    }
+    canonical_target_type = canonical_map[selected_target_key]
+    canonical_target_name = requested_targets[selected_target_key]
+    dry_run = bool(input_data.get("dry_run"))
 
-    project_name = (input_data.get("project_name") or "").strip()
-    if project_name:
-        project_payload = {
-            "name": project_name,
-            "estado": input_data.get("project_estado"),
-            "responsable": input_data.get("project_responsable"),
-            "bloqueos": input_data.get("project_bloqueos"),
-            "next_action": input_data.get("project_next_action"),
-            "last_update_date": input_data.get("project_last_update_date") or transcript_date,
-        }
-        results["project"] = handle_notion_upsert_project(
-            {k: v for k, v in project_payload.items() if v not in (None, "", [])}
+    if selected_target_key == "task":
+        results["task"] = _upsert_human_task_from_raw(
+            raw_page_id=page_snapshot.get("page_id") or transcript_page_id,
+            transcript_title=transcript_title,
+            transcript_url=transcript_url,
+            transcript_date=transcript_date,
+            context_excerpt=context_excerpt,
+            input_data=input_data,
+            project_relation_ids=_relation_ids(input_data.get("project_page_id")),
         )
-
-    deliverable_name = (input_data.get("deliverable_name") or "").strip()
-    if deliverable_name:
+        final_result = results["task"]
+    elif selected_target_key == "project":
+        results["project"] = _upsert_commercial_project_from_raw(
+            raw_page_id=page_snapshot.get("page_id") or transcript_page_id,
+            transcript_title=transcript_title,
+            transcript_url=transcript_url,
+            transcript_date=transcript_date,
+            context_excerpt=context_excerpt,
+            input_data=input_data,
+        )
+        final_result = results["project"]
+    else:
         deliverable_notes = _append_context(
             str(input_data.get("deliverable_notes") or ""),
             f"Origen raw: {transcript_title} ({transcript_date}) - {transcript_url or transcript_page_id}",
@@ -741,8 +1464,8 @@ def handle_granola_capitalize_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
                 f"Contexto observado: {context_excerpt}",
             )
         deliverable_payload = {
-            "name": deliverable_name,
-            "project_name": (input_data.get("deliverable_project_name") or "").strip() or project_name or None,
+            "name": canonical_target_name,
+            "project_name": (input_data.get("deliverable_project_name") or "").strip() or contextual_project_name or None,
             "deliverable_type": input_data.get("deliverable_type"),
             "review_status": input_data.get("deliverable_review_status"),
             "summary": input_data.get("deliverable_summary") or f"Derivado de reunion raw: {transcript_title}",
@@ -755,64 +1478,40 @@ def handle_granola_capitalize_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
         results["deliverable"] = handle_notion_upsert_deliverable(
             {k: v for k, v in deliverable_payload.items() if v not in (None, "", [])}
         )
+        final_result = results["deliverable"]
 
-    bridge_name = (input_data.get("bridge_item_name") or "").strip()
-    if bridge_name:
-        bridge_notes = _append_context(
-            str(input_data.get("bridge_notes") or ""),
-            f"Origen raw: {transcript_title} ({transcript_date}) - {transcript_url or transcript_page_id}",
+    summary = (
+        (input_data.get("summary") or "").strip()
+        or _build_default_raw_summary(
+            target_type=canonical_target_type,
+            target_name=canonical_target_name,
+            transcript_title=transcript_title,
         )
-        if context_excerpt:
-            bridge_notes = _append_context(bridge_notes, f"Contexto observado: {context_excerpt}")
-        bridge_payload = {
-            "name": bridge_name,
-            "status": input_data.get("bridge_status") or "Nuevo",
-            "project_name": (input_data.get("bridge_project_name") or "").strip() or project_name or None,
-            "priority": input_data.get("bridge_priority") or "Media",
-            "source": input_data.get("bridge_source") or "Rick",
-            "notes": bridge_notes,
-            "next_action": input_data.get("bridge_next_action")
-            or "Revisar esta reunion raw y ubicarla en un contenedor canonico.",
-            "last_move_date": input_data.get("bridge_last_move_date") or transcript_date,
-            "link": input_data.get("bridge_link") or transcript_url or transcript_page_id,
-        }
-        results["bridge_item"] = handle_notion_upsert_bridge_item(
-            {k: v for k, v in bridge_payload.items() if v not in (None, "", [])}
-        )
+    )
+    agent_log = (
+        (input_data.get("agent_log") or "").strip()
+        or f"Capitalizacion directa completada en raw hacia {canonical_target_type.lower()}: {canonical_target_name}."
+    )
+    raw_status_update = _sync_raw_v2_state(
+        page_snapshot.get("page_id") or transcript_page_id,
+        page_data,
+        status="Procesada",
+        agent_status="Procesada",
+        agent_action="Capitalizado",
+        proposed_domain=proposed_domain,
+        proposed_type=proposed_type,
+        canonical_target_type=canonical_target_type,
+        canonical_target_name=canonical_target_name,
+        summary=summary,
+        agent_log=agent_log,
+        artifact_url=str(final_result.get("url") or "").strip(),
+        dry_run=dry_run,
+    )
 
-    followup_type = (input_data.get("followup_type") or "").strip()
-    if followup_type:
-        followup_payload = {
-            "transcript_page_id": transcript_page_id,
-            "followup_type": followup_type,
-            "title": input_data.get("followup_title") or transcript_title,
-            "date": input_data.get("followup_date") or transcript_date,
-            "notes": input_data.get("followup_notes"),
-            "due_date": input_data.get("followup_due_date"),
-            "attendees": input_data.get("followup_attendees") or [],
-            "action_items": input_data.get("followup_action_items") or [],
-            "start": input_data.get("followup_start"),
-            "end": input_data.get("followup_end"),
-            "timezone": input_data.get("followup_timezone"),
-        }
-        results["followup"] = handle_granola_create_followup(
-            {k: v for k, v in followup_payload.items() if v not in (None, "", [])}
-        )
-
-    if add_trace_comments:
-        destinations = []
-        if project_name:
-            destinations.append(f"Proyecto: {project_name}")
-        if deliverable_name:
-            destinations.append(f"Entregable: {deliverable_name}")
-        if bridge_name:
-            destinations.append(f"Puente: {bridge_name}")
-        if followup_type:
-            destinations.append(f"Follow-up: {followup_type}")
-
+    if add_trace_comments and not dry_run:
         raw_comment = (
-            f"Capitalizacion Rick registrada para '{transcript_title}' ({transcript_date}). "
-            f"Destino(s): {', '.join(destinations)}."
+            f"Capitalizacion directa registrada para '{transcript_title}' ({transcript_date}). "
+            f"Destino: {canonical_target_type}: {canonical_target_name}."
         )
         if _comment_safe(page_snapshot.get("page_id"), raw_comment):
             trace_comments_added += 1
@@ -821,25 +1520,28 @@ def handle_granola_capitalize_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
             f"Origen raw Granola: '{transcript_title}' ({transcript_date}). "
             f"Ref: {transcript_url or transcript_page_id}"
         )
-        for key in ("project", "deliverable", "bridge_item"):
-            target_page_id = _result_page_id(results.get(key))
-            if _comment_safe(target_page_id, target_comment):
-                trace_comments_added += 1
+        target_page_id = _result_page_id(final_result)
+        if _comment_safe(target_page_id, target_comment):
+            trace_comments_added += 1
 
     return {
+        "ok": True,
         "transcript_page_id": page_snapshot.get("page_id") or transcript_page_id,
         "transcript_url": transcript_url,
         "title": transcript_title,
         "date": transcript_date,
         "source": transcript_source,
         "results": results,
+        "raw_status_update": raw_status_update,
         "trace_comments_added": trace_comments_added,
+        "canonical_target_type": canonical_target_type,
+        "canonical_target_name": canonical_target_name,
     }
 
 
 def handle_granola_promote_curated_session(input_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Promote an existing raw Granola page into the human curated sessions DB.
+    Legacy V1 helper: promote an existing raw Granola page into the retired curated sessions DB.
 
     This handler stays conservative by:
     - requiring NOTION_CURATED_SESSIONS_DB_ID
@@ -1150,10 +1852,37 @@ def handle_granola_promote_curated_session(input_data: Dict[str, Any]) -> Dict[s
 
     raw_status_update: Dict[str, Any]
     try:
-        raw_status_update = _sync_raw_promotion_state(
+        raw_status_update = _sync_raw_v2_state(
             page_snapshot.get("page_id") or transcript_page_id,
             page_data,
-            curated_url=str(notion_result.get("url") or "").strip(),
+            status="Pendiente",
+            agent_status="Revision requerida",
+            agent_action="Bloqueado por ambiguedad",
+            proposed_domain=(input_data.get("domain") or "").strip()
+            or _extract_select_value(page_data, "Dominio propuesto", "Dominio", "Domain")
+            or "Mixto",
+            proposed_type=(input_data.get("session_type") or "").strip()
+            or (input_data.get("type") or "").strip()
+            or _extract_select_value(page_data, "Tipo propuesto", "Tipo", "Type")
+            or "Reunión",
+            canonical_target_type="Ignorar",
+            canonical_target_name=resolved_session_name,
+            summary=(
+                (input_data.get("summary") or "").strip()
+                or f"Residuo legacy V1 detectado para '{resolved_session_name}'."
+            ),
+            agent_log=(
+                (input_data.get("agent_log") or "").strip()
+                or "Se actualizo la superficie legacy `Registro de Sesiones y Transcripciones`; el target canonico final sigue pendiente en raw."
+            ),
+            review_status="Pendiente",
+            review_reason=(
+                "`Registro de Sesiones y Transcripciones` es una superficie legacy V1 y ya no es un artefacto final valido del flujo actual."
+            ),
+            review_question="Confirmar el target canonico final en raw y reemplazar la referencia legacy si corresponde.",
+            agent_recommendation="Usar capitalizacion directa desde raw hacia Tarea, Proyecto o Entregable.",
+            artifact_url="",
+            reprocess_after_review=True,
             dry_run=dry_run,
         )
     except Exception as exc:
@@ -1174,14 +1903,14 @@ def handle_granola_promote_curated_session(input_data: Dict[str, Any]) -> Dict[s
     curated_page_id = _result_page_id(notion_result) or notion_result.get("page_id", "")
     if add_trace_comments and not dry_run:
         raw_comment = (
-            f"Promocion a capa curada registrada para '{resolved_session_name}' ({transcript_date}). "
-            f"Sesion curada: {curated_page_id or 'creada/actualizada'}."
+            f"Referencia legacy V1 registrada para '{resolved_session_name}' ({transcript_date}). "
+            f"Sesion legacy: {curated_page_id or 'creada/actualizada'}. Revisar target canonico final en raw."
         )
         if _comment_safe(page_snapshot.get("page_id"), raw_comment):
             trace_comments_added += 1
 
         curated_comment = (
-            f"Origen raw Granola: '{transcript_title}' ({transcript_date}). "
+            f"Origen raw Granola legado: '{transcript_title}' ({transcript_date}). "
             f"Ref: {transcript_url or transcript_page_id}"
         )
         if _comment_safe(curated_page_id, curated_comment):
@@ -1212,7 +1941,7 @@ def handle_granola_create_human_task_from_curated_session(
     input_data: Dict[str, Any]
 ) -> Dict[str, Any]:
     """
-    Create or update a human task in the personal tasks DB from a curated session page.
+    Legacy V1 helper: create or update a human task from a curated session page.
 
     This slice remains conservative:
     - requires NOTION_HUMAN_TASKS_DB_ID
@@ -1450,7 +2179,7 @@ def handle_granola_update_commercial_project_from_curated_session(
     input_data: Dict[str, Any]
 ) -> Dict[str, Any]:
     """
-    Update the human commercial projects DB from a curated session.
+    Legacy V1 helper: update the human commercial projects DB from a curated session.
 
     This slice stays narrow:
     - requires NOTION_COMMERCIAL_PROJECTS_DB_ID
@@ -1653,7 +2382,7 @@ def handle_granola_update_commercial_project_from_curated_session(
 
 def handle_granola_promote_operational_slice(input_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Compose explicit human-facing slices from a raw Granola page.
+    Legacy V1 orchestrator for explicit `raw -> curated -> destination` slices.
 
     This orchestrator does not invent classification. It only chains the already
     conservative handlers when the caller supplies explicit sub-payloads.

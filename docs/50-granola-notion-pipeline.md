@@ -1,5 +1,7 @@
 # Granola -> Notion Pipeline
 
+> LEGACY V1 / SUPERSEDED: este documento conserva contexto historico. El contrato operativo vigente es el flujo V2 directo desde `Transcripciones Granola`; no usar `Registro de Sesiones y Transcripciones` como paso normal.
+
 > Documento de diseño del pipeline de reuniones de Granola para Rick. Este flujo debe convivir con el modo manual actual de David y evolucionar hacia una arquitectura estable `raw -> curado -> destino`.
 
 ## 0. Resumen ejecutivo

@@ -1,5 +1,7 @@
 # 54 - Granola capitalize_raw
 
+> LEGACY / PARTIALLY SUPERSEDED: el handler sigue existiendo, pero el contrato vigente ya no bloquea `raw -> canonical` por V1 ni usa `session_capitalizable` como paso normal.
+
 > Slice operativo para capitalizar una pagina raw de Granola hacia objetos canonicos que el stack ya gobierna hoy.
 
 ## 1. Objetivo

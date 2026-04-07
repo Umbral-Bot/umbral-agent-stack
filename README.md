@@ -76,13 +76,13 @@ El worker expone un bus HTTP para ejecutar tareas, incluyendo integración con N
 | `NOTION_DASHBOARD_PAGE_ID` | VPS + Windows | ID página Dashboard Rick |
 | `NOTION_SUPERVISOR_API_KEY` | VPS (opc.) | Token integración **Supervisor** (alertas con identidad propia) |
 | `NOTION_SUPERVISOR_ALERT_PAGE_ID` | VPS (opc.) | Página destino de alertas del supervisor (ej. Dashboard Rick) |
-| `NOTION_TASKS_DB_ID` | opc. | ID DB operativa de tareas del stack (`notion.upsert_task`); si usas una superficie humana separada, configurarla aparte con `NOTION_HUMAN_TASKS_DB_ID` |
-| `NOTION_PROJECTS_DB_ID` | opc. | ID DB registry tecnico/operativo de proyectos (`notion.upsert_project`); no reemplaza una superficie comercial separada |
+| `NOTION_TASKS_DB_ID` | opc. | Fallback legacy/compat para tareas del stack; el flujo V2 de sesiones debe preferir `NOTION_HUMAN_TASKS_DB_ID` para `Registro de Tareas y Proximas Acciones` |
+| `NOTION_PROJECTS_DB_ID` | opc. | Fallback legacy/compat para el registry tecnico; el flujo V2 de sesiones debe preferir `NOTION_COMMERCIAL_PROJECTS_DB_ID` para `Asesorias y Proyectos` |
 | `NOTION_BRIDGE_DB_ID` | opc. | ID DB de bandeja puente / handoffs operativos |
-| `NOTION_GRANOLA_DB_ID` | opc. | ID DB raw de Granola Inbox; usa `NOTION_API_KEY` (Rick). Solo si usas pipeline de notas/transcripciones. |
-| `NOTION_CURATED_SESSIONS_DB_ID` | opc. | binding actual de `Registro de Sesiones y Transcripciones` para la capa V1 `session_capitalizable`; el nombre `curated` se mantiene por compatibilidad legacy y requiere sharing explicito con Rick |
-| `NOTION_HUMAN_TASKS_DB_ID` | opc. | ID DB humana `Registro de Tareas y Proximas Acciones` cuando se use como superficie separada de `NOTION_TASKS_DB_ID` |
-| `NOTION_COMMERCIAL_PROJECTS_DB_ID` | opc. | ID DB comercial `Asesorias y Proyectos` cuando se use como superficie separada de `NOTION_PROJECTS_DB_ID` |
+| `NOTION_GRANOLA_DB_ID` | opc. | ID DB raw activa `Transcripciones Granola`; usa `NOTION_API_KEY` (Rick). |
+| `NOTION_CURATED_SESSIONS_DB_ID` | opc. | solo legacy V1 para `Registro de Sesiones y Transcripciones`; no usar como paso operativo normal ni como artefacto final del flujo actual |
+| `NOTION_HUMAN_TASKS_DB_ID` | opc. | superficie V2 activa `Registro de Tareas y Proximas Acciones` |
+| `NOTION_COMMERCIAL_PROJECTS_DB_ID` | opc. | superficie V2 activa `Asesorias y Proyectos` |
 
 Copiar `.env.example` → `.env` y rellenar con valores reales.
 

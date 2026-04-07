@@ -1,5 +1,7 @@
 # 60 - Granola operational batch runner
 
+> LEGACY V1 / SUPERSEDED: este runner opera planes que todavia pasan por `curated_payload`. No tratarlo como camino normal del flujo V2 directo.
+
 > Runner repo-side para ejecutar lotes explicitos del pipeline `raw -> curado -> destino(s)` usando planes JSON versionables.
 
 ## 1. Objetivo

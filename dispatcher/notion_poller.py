@@ -116,11 +116,20 @@ def _unique_page_ids(items: list[dict]) -> list[str]:
     return ordered
 
 
-def _session_capitalizable_db_id() -> str:
-    """
-    Resolve the V1 session_capitalizable binding from the legacy curated env var.
-    """
-    return os.environ.get("NOTION_CURATED_SESSIONS_DB_ID", "").strip()
+def _human_tasks_db_id() -> str:
+    """Resolve the active human tasks review surface for the V2 session flow."""
+    return (
+        os.environ.get("NOTION_HUMAN_TASKS_DB_ID", "").strip()
+        or os.environ.get("NOTION_TASKS_DB_ID", "").strip()
+    )
+
+
+def _commercial_projects_db_id() -> str:
+    """Resolve the active commercial projects review surface for the V2 session flow."""
+    return (
+        os.environ.get("NOTION_COMMERCIAL_PROJECTS_DB_ID", "").strip()
+        or os.environ.get("NOTION_PROJECTS_DB_ID", "").strip()
+    )
 
 
 def _resolve_review_targets(wc: WorkerClient) -> list[dict[str, str]]:
@@ -168,7 +177,22 @@ def _resolve_review_targets(wc: WorkerClient) -> list[dict[str, str]]:
             except Exception:
                 logger.warning("Failed to resolve deliverable review targets without filter", exc_info=True)
 
-    projects_db_id = os.environ.get("NOTION_PROJECTS_DB_ID", "").strip()
+    human_tasks_db_id = _human_tasks_db_id()
+    if human_tasks_db_id:
+        try:
+            human_task_resp = wc.run(
+                "notion.read_database",
+                {
+                    "database_id_or_url": human_tasks_db_id,
+                    "max_items": min(20, max_items),
+                },
+            )
+            for page_id in _unique_page_ids(_extract_read_database_items(human_task_resp)):
+                targets.append({"page_id": page_id, "page_kind": "human_task"})
+        except Exception:
+            logger.warning("Failed to resolve human task review targets", exc_info=True)
+
+    projects_db_id = _commercial_projects_db_id()
     if projects_db_id:
         try:
             project_resp = wc.run(
@@ -182,21 +206,6 @@ def _resolve_review_targets(wc: WorkerClient) -> list[dict[str, str]]:
                 targets.append({"page_id": page_id, "page_kind": "project"})
         except Exception:
             logger.warning("Failed to resolve project review targets", exc_info=True)
-
-    session_capitalizable_db_id = _session_capitalizable_db_id()
-    if session_capitalizable_db_id:
-        try:
-            session_resp = wc.run(
-                "notion.read_database",
-                {
-                    "database_id_or_url": session_capitalizable_db_id,
-                    "max_items": min(20, max_items),
-                },
-            )
-            for page_id in _unique_page_ids(_extract_read_database_items(session_resp)):
-                targets.append({"page_id": page_id, "page_kind": "session_capitalizable"})
-        except Exception:
-            logger.warning("Failed to resolve session_capitalizable review targets", exc_info=True)
 
     control_room_page = os.environ.get("NOTION_CONTROL_ROOM_PAGE_ID", "").strip()
     deduped: list[dict[str, str]] = []

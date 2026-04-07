@@ -1,5 +1,7 @@
 # Auditoria de Variables Notion (R20-098)
 
+> NOTA DE VIGENCIA: esta auditoria conserva contexto util, pero `NOTION_CURATED_SESSIONS_DB_ID` debe leerse hoy como legacy-only; el flujo activo de sesiones usa `NOTION_GRANOLA_DB_ID`, `NOTION_HUMAN_TASKS_DB_ID`, `NOTION_COMMERCIAL_PROJECTS_DB_ID` y `NOTION_DELIVERABLES_DB_ID`.
+
 > **Fecha:** 2026-03-07
 > **Ejecutado por:** codex
 > **Ronda:** R20

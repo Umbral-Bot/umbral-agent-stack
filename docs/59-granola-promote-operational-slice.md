@@ -1,5 +1,7 @@
 # 59 - Granola promote_operational_slice
 
+> LEGACY V1 / SUPERSEDED: este orquestador compone `raw -> curado -> destino(s)`, un camino que ya no representa el contrato vigente de sesiones.
+
 > Orquestador explicito para componer `raw -> curado -> destino(s)` reutilizando los handlers conservadores ya validados.
 
 ## 1. Objetivo

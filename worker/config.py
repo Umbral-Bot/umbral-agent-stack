@@ -135,16 +135,16 @@ def require_notion() -> tuple[str, str, str]:
 
 def get_notion_session_capitalizable_db_id() -> str | None:
     """
-    Return the active binding for the V1 `session_capitalizable` layer.
+    Return the legacy-only binding for the retired V1 `session_capitalizable` layer.
 
-    The live contract still maps this role onto the legacy curated sessions env var
-    until Cursor verifies and fills the runtime bridge placeholders.
+    The current V2 flow should not use this surface as an active bridge or final
+    artifact target. Keep it only for defensive reads and historical residue.
     """
     return NOTION_CURATED_SESSIONS_DB_ID
 
 
 def require_notion_session_capitalizable_db_id() -> str:
-    """Raise if the V1 session_capitalizable binding is missing."""
+    """Raise if the legacy V1 session surface binding is missing."""
     db_id = get_notion_session_capitalizable_db_id()
     if not db_id:
         raise RuntimeError("NOTION_CURATED_SESSIONS_DB_ID not configured")

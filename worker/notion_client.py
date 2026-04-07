@@ -235,6 +235,62 @@ def create_transcript_page(
             {"date"},
         )
 
+        agent_status_prop = _find_property_name(
+            db_properties,
+            ["Estado agente", "Estado Agente", "Agent Status"],
+            {"select", "status", "rich_text"},
+        )
+        agent_action_prop = _find_property_name(
+            db_properties,
+            ["Accion agente", "Acción agente", "Agent Action"],
+            {"select", "status", "rich_text"},
+        )
+        proposed_domain_prop = _find_property_name(
+            db_properties,
+            ["Dominio propuesto", "Proposed Domain"],
+            {"select", "status", "rich_text"},
+        )
+        proposed_type_prop = _find_property_name(
+            db_properties,
+            ["Tipo propuesto", "Proposed Type"],
+            {"select", "status", "rich_text"},
+        )
+        canonical_target_prop = _find_property_name(
+            db_properties,
+            ["Destino canonico", "Destino canónico", "Canonical Target"],
+            {"select", "status", "rich_text"},
+        )
+        agent_summary_prop = _find_property_name(
+            db_properties,
+            ["Resumen agente", "Agent Summary"],
+            {"rich_text"},
+        )
+        agent_log_prop = _find_property_name(
+            db_properties,
+            ["Log del agente", "Agent Log"],
+            {"rich_text"},
+        )
+        artifact_url_prop = _find_property_name(
+            db_properties,
+            ["URL artefacto", "Artifact URL", "Artifact Link"],
+            {"url", "rich_text"},
+        )
+        traceability_prop = _find_property_name(
+            db_properties,
+            ["Trazabilidad", "Traceability"],
+            {"rich_text"},
+        )
+        review_status_prop = _find_property_name(
+            db_properties,
+            ["Estado revisión", "Estado revision", "Review Status"],
+            {"select", "status", "rich_text"},
+        )
+        reprocess_after_review_prop = _find_property_name(
+            db_properties,
+            ["Reprocesar tras revisión", "Reprocesar tras revision", "Reprocess After Review"],
+            {"checkbox"},
+        )
+
         properties: dict[str, Any] = {
             title_prop: {"title": [{"text": {"content": title}}]},
         }
@@ -255,10 +311,93 @@ def create_transcript_page(
             properties[tags_prop] = {"multi_select": [{"name": source}]}
 
         today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        processed_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         if passed_prop:
             properties[passed_prop] = {"date": {"start": today}}
         if processed_prop:
             properties[processed_prop] = {"date": {"start": today}}
+
+        if agent_status_prop:
+            prop_type = db_properties[agent_status_prop].get("type")
+            if prop_type == "status":
+                properties[agent_status_prop] = {"status": {"name": "Pendiente"}}
+            elif prop_type == "select":
+                properties[agent_status_prop] = {"select": {"name": "Pendiente"}}
+            else:
+                properties[agent_status_prop] = {"rich_text": [{"text": {"content": "Pendiente"}}]}
+        if agent_action_prop:
+            prop_type = db_properties[agent_action_prop].get("type")
+            if prop_type == "status":
+                properties[agent_action_prop] = {"status": {"name": "Sin accion"}}
+            elif prop_type == "select":
+                properties[agent_action_prop] = {"select": {"name": "Sin accion"}}
+            else:
+                properties[agent_action_prop] = {"rich_text": [{"text": {"content": "Sin accion"}}]}
+        if proposed_domain_prop:
+            prop_type = db_properties[proposed_domain_prop].get("type")
+            if prop_type == "status":
+                properties[proposed_domain_prop] = {"status": {"name": "Mixto"}}
+            elif prop_type == "select":
+                properties[proposed_domain_prop] = {"select": {"name": "Mixto"}}
+            else:
+                properties[proposed_domain_prop] = {"rich_text": [{"text": {"content": "Mixto"}}]}
+        if proposed_type_prop:
+            prop_type = db_properties[proposed_type_prop].get("type")
+            if prop_type == "status":
+                properties[proposed_type_prop] = {"status": {"name": "Reunión"}}
+            elif prop_type == "select":
+                properties[proposed_type_prop] = {"select": {"name": "Reunión"}}
+            else:
+                properties[proposed_type_prop] = {"rich_text": [{"text": {"content": "Reunión"}}]}
+        if canonical_target_prop:
+            prop_type = db_properties[canonical_target_prop].get("type")
+            if prop_type == "status":
+                properties[canonical_target_prop] = {"status": {"name": "Ignorar"}}
+            elif prop_type == "select":
+                properties[canonical_target_prop] = {"select": {"name": "Ignorar"}}
+            else:
+                properties[canonical_target_prop] = {"rich_text": [{"text": {"content": "Ignorar"}}]}
+        if agent_summary_prop:
+            properties[agent_summary_prop] = {
+                "rich_text": [
+                    {"text": {"content": "Ingesta raw desde Granola; pendiente de clasificación o capitalización directa."}}
+                ]
+            }
+        if agent_log_prop:
+            properties[agent_log_prop] = {
+                "rich_text": [
+                    {"text": {"content": "Pagina raw creada por notion.write_transcript; flujo V2 directo pendiente."}}
+                ]
+            }
+        if artifact_url_prop:
+            prop_type = db_properties[artifact_url_prop].get("type")
+            if prop_type == "url":
+                properties[artifact_url_prop] = {"url": None}
+            else:
+                properties[artifact_url_prop] = {"rich_text": []}
+        if traceability_prop:
+            traceability_block = "\n".join(
+                [
+                    "source=granola",
+                    "capitalization_mode=notion_ai_raw_direct_v2",
+                    "canonical_target_type=ignorar",
+                    "canonical_target_name=ingest_pending_review",
+                    f"processed_at={processed_at}",
+                ]
+            )
+            properties[traceability_prop] = {
+                "rich_text": [{"text": {"content": traceability_block}}]
+            }
+        if review_status_prop:
+            prop_type = db_properties[review_status_prop].get("type")
+            if prop_type == "status":
+                properties[review_status_prop] = {"status": {"name": "No aplica"}}
+            elif prop_type == "select":
+                properties[review_status_prop] = {"select": {"name": "No aplica"}}
+            else:
+                properties[review_status_prop] = {"rich_text": [{"text": {"content": "No aplica"}}]}
+        if reprocess_after_review_prop:
+            properties[reprocess_after_review_prop] = {"checkbox": False}
 
         payload = {
             "parent": {"database_id": db_id},

@@ -1,5 +1,7 @@
 # 56 - Granola promote_curated_session
 
+> LEGACY V1 / SUPERSEDED: `Registro de Sesiones y Transcripciones` ya no es el puente operativo vigente. Esta task debe leerse solo como residuo historico/defensivo.
+
 > Slice conservador para promover una pagina raw de Granola hacia la DB humana curada de sesiones sin mezclar intake bruto con capitalizacion operativa.
 
 ## 1. Objetivo

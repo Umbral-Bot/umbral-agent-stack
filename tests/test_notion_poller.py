@@ -27,6 +27,7 @@ def test_do_poll_advances_last_ts_from_worker_envelope(mock_handle_smart_reply):
     wc.run.side_effect = [
         {"ok": True, "result": {"items": []}},
         {"ok": True, "result": {"items": []}},
+        {"ok": True, "result": {"items": []}},
     ]
     wc.notion_poll_comments.return_value = {
         "ok": True,
@@ -55,7 +56,8 @@ def test_do_poll_advances_last_ts_from_worker_envelope(mock_handle_smart_reply):
         "os.environ",
         {
             "NOTION_DELIVERABLES_DB_ID": "deliverables-db",
-            "NOTION_PROJECTS_DB_ID": "projects-db",
+            "NOTION_HUMAN_TASKS_DB_ID": "human-tasks-db",
+            "NOTION_COMMERCIAL_PROJECTS_DB_ID": "projects-db",
         },
         clear=False,
     ):
@@ -86,6 +88,7 @@ def test_do_poll_accepts_direct_comments_shape(mock_handle_smart_reply):
     wc.run.side_effect = [
         {"ok": True, "result": {"items": []}},
         {"ok": True, "result": {"items": []}},
+        {"ok": True, "result": {"items": []}},
     ]
     wc.notion_poll_comments.return_value = {
         "comments": [
@@ -107,7 +110,8 @@ def test_do_poll_accepts_direct_comments_shape(mock_handle_smart_reply):
         "os.environ",
         {
             "NOTION_DELIVERABLES_DB_ID": "deliverables-db",
-            "NOTION_PROJECTS_DB_ID": "projects-db",
+            "NOTION_HUMAN_TASKS_DB_ID": "human-tasks-db",
+            "NOTION_COMMERCIAL_PROJECTS_DB_ID": "projects-db",
         },
         clear=False,
     ):
@@ -124,6 +128,7 @@ def test_do_poll_accepts_direct_comments_shape(mock_handle_smart_reply):
 def test_do_poll_skips_already_processed_comment(mock_handle_smart_reply):
     wc = MagicMock()
     wc.run.side_effect = [
+        {"ok": True, "result": {"items": []}},
         {"ok": True, "result": {"items": []}},
         {"ok": True, "result": {"items": []}},
     ]
@@ -149,7 +154,8 @@ def test_do_poll_skips_already_processed_comment(mock_handle_smart_reply):
         "os.environ",
         {
             "NOTION_DELIVERABLES_DB_ID": "deliverables-db",
-            "NOTION_PROJECTS_DB_ID": "projects-db",
+            "NOTION_HUMAN_TASKS_DB_ID": "human-tasks-db",
+            "NOTION_COMMERCIAL_PROJECTS_DB_ID": "projects-db",
         },
         clear=False,
     ):
@@ -171,6 +177,14 @@ def test_collect_candidate_comments_includes_review_targets_and_deduplicates():
                 "items": [
                     {"page_id": "deliverable-1"},
                     {"page_id": "deliverable-2"},
+                ]
+            },
+        },
+        {
+            "ok": True,
+            "result": {
+                "items": [
+                    {"page_id": "human-task-1"},
                 ]
             },
         },
@@ -227,6 +241,18 @@ def test_collect_candidate_comments_includes_review_targets_and_deduplicates():
                     {
                         "id": "c-3",
                         "created_time": "2026-03-16T21:03:00.000Z",
+                        "text": "tarea humana pendiente",
+                    }
+                ]
+            },
+        },
+        {
+            "ok": True,
+            "result": {
+                "comments": [
+                    {
+                        "id": "c-4",
+                        "created_time": "2026-03-16T21:04:00.000Z",
                         "text": "no se entiende",
                     }
                 ]
@@ -238,7 +264,8 @@ def test_collect_candidate_comments_includes_review_targets_and_deduplicates():
         "os.environ",
         {
             "NOTION_DELIVERABLES_DB_ID": "deliverables-db",
-            "NOTION_PROJECTS_DB_ID": "projects-db",
+            "NOTION_HUMAN_TASKS_DB_ID": "human-tasks-db",
+            "NOTION_COMMERCIAL_PROJECTS_DB_ID": "projects-db",
             "NOTION_CONTROL_ROOM_PAGE_ID": "control-room-page",
             "NOTION_POLL_OVERLAP_SEC": "300",
         },
@@ -246,26 +273,29 @@ def test_collect_candidate_comments_includes_review_targets_and_deduplicates():
     ):
         comments = _collect_candidate_comments(wc, "2026-03-16T21:00:00+00:00", 20)
 
-    assert [comment["id"] for comment in comments] == ["c-1", "c-2", "c-3"]
+    assert [comment["id"] for comment in comments] == ["c-1", "c-2", "c-3", "c-4"]
     assert comments[1]["page_id"] == "deliverable-1"
     assert comments[1]["page_kind"] == "deliverable"
-    assert comments[2]["page_id"] == "project-1"
-    assert comments[2]["page_kind"] == "project"
+    assert comments[2]["page_id"] == "human-task-1"
+    assert comments[2]["page_kind"] == "human_task"
+    assert comments[3]["page_id"] == "project-1"
+    assert comments[3]["page_kind"] == "project"
     expected_calls = [
         {"since": "2026-03-16T20:55:00+00:00", "limit": 20, "page_id": None},
         {"since": "2026-03-16T20:55:00+00:00", "limit": 20, "page_id": "deliverable-1"},
         {"since": "2026-03-16T20:55:00+00:00", "limit": 20, "page_id": "deliverable-2"},
+        {"since": "2026-03-16T20:55:00+00:00", "limit": 20, "page_id": "human-task-1"},
         {"since": "2026-03-16T20:55:00+00:00", "limit": 20, "page_id": "project-1"},
     ]
     assert [call.kwargs for call in wc.notion_poll_comments.call_args_list] == expected_calls
 
 
-def test_collect_candidate_comments_includes_session_capitalizable_targets():
+def test_collect_candidate_comments_includes_human_task_targets():
     wc = MagicMock()
     wc.run.side_effect = [
         {"ok": True, "result": {"items": []}},
+        {"ok": True, "result": {"items": [{"page_id": "task-1"}]}},
         {"ok": True, "result": {"items": []}},
-        {"ok": True, "result": {"items": [{"page_id": "session-1"}]}},
     ]
     wc.notion_poll_comments.side_effect = [
         {
@@ -287,7 +317,7 @@ def test_collect_candidate_comments_includes_session_capitalizable_targets():
                     {
                         "id": "c-2",
                         "created_time": "2026-03-16T21:01:00.000Z",
-                        "text": "revisar sesion",
+                        "text": "revisar tarea",
                     }
                 ]
             },
@@ -298,8 +328,8 @@ def test_collect_candidate_comments_includes_session_capitalizable_targets():
         "os.environ",
         {
             "NOTION_DELIVERABLES_DB_ID": "deliverables-db",
-            "NOTION_PROJECTS_DB_ID": "projects-db",
-            "NOTION_CURATED_SESSIONS_DB_ID": "curated-db",
+            "NOTION_HUMAN_TASKS_DB_ID": "human-tasks-db",
+            "NOTION_COMMERCIAL_PROJECTS_DB_ID": "projects-db",
             "NOTION_CONTROL_ROOM_PAGE_ID": "control-room-page",
             "NOTION_POLL_OVERLAP_SEC": "300",
         },
@@ -308,11 +338,11 @@ def test_collect_candidate_comments_includes_session_capitalizable_targets():
         comments = _collect_candidate_comments(wc, "2026-03-16T21:00:00+00:00", 20)
 
     assert [comment["id"] for comment in comments] == ["c-1", "c-2"]
-    assert comments[1]["page_id"] == "session-1"
-    assert comments[1]["page_kind"] == "session_capitalizable"
+    assert comments[1]["page_id"] == "task-1"
+    assert comments[1]["page_kind"] == "human_task"
     expected_calls = [
         {"since": "2026-03-16T20:55:00+00:00", "limit": 20, "page_id": None},
-        {"since": "2026-03-16T20:55:00+00:00", "limit": 20, "page_id": "session-1"},
+        {"since": "2026-03-16T20:55:00+00:00", "limit": 20, "page_id": "task-1"},
     ]
     assert [call.kwargs for call in wc.notion_poll_comments.call_args_list] == expected_calls
 
@@ -333,7 +363,7 @@ def test_collect_candidate_comments_falls_back_when_deliverable_filter_fails():
         "os.environ",
         {
             "NOTION_DELIVERABLES_DB_ID": "deliverables-db",
-            "NOTION_PROJECTS_DB_ID": "projects-db",
+            "NOTION_COMMERCIAL_PROJECTS_DB_ID": "projects-db",
         },
         clear=False,
     ):

@@ -1,5 +1,7 @@
 # 58 - Granola update_commercial_project_from_curated_session
 
+> LEGACY V1 / SUPERSEDED: este slice depende de la capa curada retirada del flujo operativo normal. Mantener solo como referencia para residuos V1.
+
 > Slice conservador para actualizar `Asesorías & Proyectos` desde una sesion curada sin inferir campos comerciales desde texto libre.
 
 ## 1. Objetivo

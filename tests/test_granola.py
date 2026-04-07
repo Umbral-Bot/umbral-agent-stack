@@ -284,7 +284,8 @@ class TestHandleGranolaProcessTranscript:
             handle_granola_process_transcript({"title": "Test"})
 
 
-class TestHandleGranolaCapitalizeRaw:
+# Legacy V1 regression bucket kept only as historical residue; pytest should not collect it.
+class LegacyTestHandleGranolaCapitalizeRaw:
 
     def test_requires_transcript_page_id(self):
         with pytest.raises(ValueError, match="'transcript_page_id' is required"):
@@ -444,6 +445,169 @@ class TestHandleGranolaCapitalizeRaw:
         mock_nc.add_comment.assert_not_called()
 
 
+class TestHandleGranolaCapitalizeRaw:
+
+    def test_requires_transcript_page_id(self):
+        with pytest.raises(ValueError, match="'transcript_page_id' is required"):
+            handle_granola_capitalize_raw({"project_name": "Proyecto X"})
+
+    @patch("worker.tasks.granola._sync_raw_v2_state")
+    @patch("worker.tasks.granola.notion_client")
+    def test_requires_review_when_destination_is_missing(self, mock_nc, mock_sync):
+        mock_nc.read_page.return_value = {
+            "page_id": "raw-1",
+            "url": "https://www.notion.so/raw-1",
+            "title": "Reunion",
+            "plain_text": "Resumen",
+        }
+        mock_nc.get_page.return_value = {
+            "url": "https://www.notion.so/raw-1",
+            "properties": {
+                "Fecha": {"type": "date", "date": {"start": "2026-03-23"}},
+                "Fuente": {"type": "select", "select": {"name": "granola"}},
+            },
+        }
+        mock_sync.return_value = {"ok": True, "page_id": "raw-1"}
+        mock_nc.add_comment.return_value = {"comment_id": "comment-1"}
+
+        result = handle_granola_capitalize_raw({"transcript_page_id": "raw-1"})
+
+        assert result["ok"] is False
+        assert result["review_required"] is True
+        assert result["review_comment_added"] is True
+        assert result["trace_comments_added"] == 1
+        sync_kwargs = mock_sync.call_args.kwargs
+        assert sync_kwargs["agent_status"] == "Revision requerida"
+        assert sync_kwargs["canonical_target_type"] == "Ignorar"
+        mock_nc.add_comment.assert_called_once()
+
+    @patch("worker.tasks.granola._sync_raw_v2_state")
+    @patch("worker.tasks.granola._upsert_commercial_project_from_raw")
+    @patch("worker.tasks.granola.notion_client")
+    def test_capitalize_raw_writes_direct_project_and_updates_raw_contract(
+        self,
+        mock_nc,
+        mock_project,
+        mock_sync,
+    ):
+        mock_nc.read_page.return_value = {
+            "page_id": "raw-1",
+            "url": "https://www.notion.so/raw-1",
+            "title": "Konstruedu",
+            "plain_text": "Decision: avanzar piloto. Siguiente paso: enviar propuesta.",
+        }
+        mock_nc.get_page.return_value = {
+            "url": "https://www.notion.so/raw-1",
+            "properties": {
+                "Fecha": {"type": "date", "date": {"start": "2026-03-23"}},
+                "Fuente": {"type": "select", "select": {"name": "granola"}},
+                "Estado": {"type": "select", "select": {"name": "Pendiente"}},
+                "Fecha que el agente procesó": {"type": "date", "date": None},
+            },
+        }
+        mock_project.return_value = {
+            "ok": True,
+            "page_id": "proj-1",
+            "url": "https://www.notion.so/proj-1",
+            "created": False,
+        }
+        mock_sync.return_value = {"ok": True, "page_id": "raw-1"}
+        mock_nc.add_comment.return_value = {"comment_id": "comment-1"}
+
+        result = handle_granola_capitalize_raw(
+            {
+                "transcript_page_id": "raw-1",
+                "project_name": "Konstruedu",
+                "project_next_action": "Enviar propuesta actualizada",
+                "allow_legacy_raw_to_canonical": False,
+            }
+        )
+
+        assert result["ok"] is True
+        assert result["title"] == "Konstruedu"
+        assert result["date"] == "2026-03-23"
+        assert result["source"] == "granola"
+        assert result["trace_comments_added"] == 2
+        assert result["canonical_target_type"] == "Proyecto"
+        assert result["canonical_target_name"] == "Konstruedu"
+
+        project_kwargs = mock_project.call_args.kwargs
+        assert project_kwargs["raw_page_id"] == "raw-1"
+        assert project_kwargs["transcript_title"] == "Konstruedu"
+        assert project_kwargs["input_data"]["project_next_action"] == "Enviar propuesta actualizada"
+
+        sync_kwargs = mock_sync.call_args.kwargs
+        assert sync_kwargs["agent_action"] == "Capitalizado"
+        assert sync_kwargs["artifact_url"] == "https://www.notion.so/proj-1"
+        assert sync_kwargs["canonical_target_type"] == "Proyecto"
+        assert sync_kwargs["canonical_target_name"] == "Konstruedu"
+
+        assert mock_nc.add_comment.call_count == 2
+        raw_comment = mock_nc.add_comment.call_args_list[0].kwargs
+        assert raw_comment["page_id"] == "raw-1"
+        assert "Destino: Proyecto: Konstruedu" in raw_comment["text"]
+
+    @patch("worker.tasks.granola.handle_notion_upsert_deliverable")
+    @patch("worker.tasks.granola._sync_raw_v2_state")
+    @patch("worker.tasks.granola.notion_client")
+    def test_capitalize_raw_routes_program_to_review_in_raw(self, mock_nc, mock_sync, mock_deliverable):
+        mock_nc.read_page.return_value = {
+            "page_id": "raw-1",
+            "url": "https://www.notion.so/raw-1",
+            "title": "Konstruedu",
+            "plain_text": "Resumen breve.",
+        }
+        mock_nc.get_page.return_value = {"url": "https://www.notion.so/raw-1", "properties": {}}
+        mock_sync.return_value = {"ok": True, "page_id": "raw-1"}
+        mock_nc.add_comment.return_value = {"comment_id": "comment-1"}
+
+        result = handle_granola_capitalize_raw(
+            {
+                "transcript_page_id": "raw-1",
+                "canonical_target_type": "Programa",
+                "program_name": "Programa BIM",
+            }
+        )
+
+        assert result["ok"] is False
+        assert result["review_required"] is True
+        assert result["canonical_target_type"] == "Programa"
+        assert result["canonical_target_name"] == "Programa BIM"
+        assert mock_sync.call_args.kwargs["review_status"] == "Pendiente"
+        mock_deliverable.assert_not_called()
+
+    @patch("worker.tasks.granola._upsert_human_task_from_raw")
+    @patch("worker.tasks.granola._sync_raw_v2_state")
+    @patch("worker.tasks.granola.notion_client")
+    def test_capitalize_raw_can_skip_trace_comments(self, mock_nc, mock_sync, mock_task):
+        mock_nc.read_page.return_value = {
+            "page_id": "raw-1",
+            "url": "https://www.notion.so/raw-1",
+            "title": "Konstruedu",
+            "plain_text": "Resumen breve.",
+        }
+        mock_nc.get_page.return_value = {"url": "https://www.notion.so/raw-1", "properties": {}}
+        mock_task.return_value = {
+            "ok": True,
+            "page_id": "task-1",
+            "url": "https://www.notion.so/task-1",
+            "created": False,
+        }
+        mock_sync.return_value = {"ok": True, "page_id": "raw-1"}
+
+        result = handle_granola_capitalize_raw(
+            {
+                "transcript_page_id": "raw-1",
+                "task_name": "Llamar a cliente",
+                "add_trace_comments": False,
+            }
+        )
+
+        assert result["ok"] is True
+        assert result["trace_comments_added"] == 0
+        mock_nc.add_comment.assert_not_called()
+
+
 class TestHandleGranolaPromoteCuratedSession:
 
     def test_requires_transcript_page_id(self):
@@ -551,9 +715,9 @@ class TestHandleGranolaPromoteCuratedSession:
         raw_update_args = mock_nc.update_page_properties.call_args.args
         assert raw_update_args[0] == "raw-1"
         raw_props = mock_nc.update_page_properties.call_args.kwargs["properties"]
-        assert raw_props["Estado"]["select"]["name"] == "Procesada"
+        assert raw_props["Estado"]["select"]["name"] == "Pendiente"
         assert raw_props["Fecha que el agente procesó"]["date"]["start"]
-        assert raw_props["URL artefacto"]["url"] == "https://www.notion.so/curated-1"
+        assert raw_props["URL artefacto"]["url"] is None
 
     @patch("worker.tasks.granola.config.NOTION_CURATED_SESSIONS_DB_ID", "curated-db-1")
     @patch("worker.tasks.granola.notion_client")
@@ -621,7 +785,7 @@ class TestHandleGranolaPromoteCuratedSession:
         raw_update_args = mock_nc.update_page_properties.call_args_list[1].args
         assert raw_update_args[0] == "raw-1"
         raw_props = mock_nc.update_page_properties.call_args_list[1].kwargs["properties"]
-        assert raw_props["Estado"]["select"]["name"] == "Procesada"
+        assert raw_props["Estado"]["select"]["name"] == "Pendiente"
         assert result["raw_status_update"]["ok"] is True
         mock_nc.add_comment.assert_not_called()
 
@@ -675,7 +839,7 @@ class TestHandleGranolaPromoteCuratedSession:
         assert result["trace_comments_added"] == 0
         assert result["curated_session"]["dry_run"] is True
         assert result["raw_status_update"]["dry_run"] is True
-        assert result["raw_status_update"]["properties"]["Estado"]["select"]["name"] == "Procesada"
+        assert result["raw_status_update"]["properties"]["Estado"]["select"]["name"] == "Pendiente"
         mock_nc.create_database_page.assert_not_called()
         mock_nc.update_page_properties.assert_not_called()
         mock_nc.add_comment.assert_not_called()

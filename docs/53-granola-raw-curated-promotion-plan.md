@@ -1,5 +1,7 @@
 # 53 - Granola raw -> curado -> destino
 
+> LEGACY V1 / SUPERSEDED: este plan describe el puente `raw -> curado -> destino`, hoy retirado del flujo operativo vigente. Mantener solo como referencia historica.
+
 > Plan de implementación para llevar el intake real de Granola al stack de Rick sin mezclar la capa raw con la capa humana curada.
 
 ## 1. Objetivo

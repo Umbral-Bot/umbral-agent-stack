@@ -1,5 +1,7 @@
 # 57 - Granola create_human_task_from_curated_session
 
+> LEGACY V1 / SUPERSEDED: este slice parte desde una sesion curada legacy. El flujo vigente crea review o capitalizacion directa desde raw.
+
 > Slice conservador para derivar una tarea humana desde una sesion curada sin escribir todavia en la DB comercial humana.
 
 ## 1. Objetivo

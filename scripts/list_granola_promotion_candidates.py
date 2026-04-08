@@ -10,6 +10,8 @@ raw pages into:
 - smoke_or_test
 
 It is read-only and intended to support explicit batch planning.
+Legacy note: it exists only for the historical V1 raw->curated bridge and should
+not be treated as part of the normal V2 direct capitalization flow.
 """
 from __future__ import annotations
 

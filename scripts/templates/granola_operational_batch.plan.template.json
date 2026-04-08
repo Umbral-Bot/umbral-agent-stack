@@ -1,4 +1,5 @@
 {
+  "note": "LEGACY V1 template preserved only for explicit curated-session bridge runs. Do not use for the normal raw-direct V2 flow.",
   "plans": [
     {
       "label": "konstruedu-contract-followup",

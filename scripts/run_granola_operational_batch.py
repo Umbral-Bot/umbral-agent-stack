@@ -3,6 +3,8 @@
 
 By default this script runs in dry-run mode. Use --execute to allow writes.
 Plans must remain explicit: this runner does not infer classification.
+Legacy note: this helper still models the V1 curated-session bridge.
+It is preserved only for explicit historical or repair runs, not for the normal V2 direct flow.
 """
 from __future__ import annotations
 

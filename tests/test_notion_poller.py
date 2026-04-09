@@ -343,3 +343,43 @@ def test_collect_candidate_comments_falls_back_when_deliverable_filter_fails():
     deliverable_calls = [call.args[1] for call in wc.run.call_args_list[:2]]
     assert deliverable_calls[0]["filter"]["or"][0]["property"] == "Estado revision"
     assert "filter" not in deliverable_calls[1]
+
+
+def test_collect_candidate_comments_continues_when_session_target_resolution_fails():
+    wc = MagicMock()
+    wc.run.side_effect = [
+        {"ok": True, "result": {"items": []}},
+        {"ok": True, "result": {"items": []}},
+        RuntimeError("session db unavailable"),
+    ]
+    wc.notion_poll_comments.return_value = {
+        "ok": True,
+        "result": {
+            "comments": [
+                {
+                    "id": "c-1",
+                    "created_time": "2026-03-16T21:00:00.000Z",
+                    "text": "mensaje control room",
+                }
+            ]
+        },
+    }
+
+    with patch.dict(
+        "os.environ",
+        {
+            "NOTION_DELIVERABLES_DB_ID": "deliverables-db",
+            "NOTION_PROJECTS_DB_ID": "projects-db",
+            "NOTION_CURATED_SESSIONS_DB_ID": "curated-db",
+            "NOTION_POLL_OVERLAP_SEC": "300",
+        },
+        clear=False,
+    ):
+        comments = _collect_candidate_comments(wc, "2026-03-16T21:00:00+00:00", 20)
+
+    assert [comment["id"] for comment in comments] == ["c-1"]
+    wc.notion_poll_comments.assert_called_once_with(
+        since="2026-03-16T20:55:00+00:00",
+        limit=20,
+        page_id=None,
+    )

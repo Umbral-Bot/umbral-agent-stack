@@ -341,6 +341,31 @@ class TestHandleGranolaCapitalizeRaw:
         assert result["trace_comments_added"] == 1
         mock_nc.add_comment.assert_called_once()
 
+    @patch("worker.tasks.granola.notion_client")
+    def test_capitalize_raw_without_destinations_still_blocks_by_policy(self, mock_nc):
+        mock_nc.read_page.return_value = {
+            "page_id": "raw-1",
+            "url": "https://www.notion.so/raw-1",
+            "title": "Reunion",
+            "plain_text": "Resumen",
+        }
+        mock_nc.get_page.return_value = {
+            "url": "https://www.notion.so/raw-1",
+            "properties": {},
+        }
+        mock_nc.add_comment.return_value = {"comment_id": "comment-1"}
+
+        result = handle_granola_capitalize_raw({"transcript_page_id": "raw-1"})
+
+        assert result["ok"] is False
+        assert result["blocked_by_policy"] is True
+        assert result["policy"] == "raw_to_canonical_disabled_in_v1"
+        assert result["review_comment_added"] is True
+        assert result["trace_comments_added"] == 1
+        assert result["results"] == {}
+        review_comment = mock_nc.add_comment.call_args.kwargs["text"]
+        assert "Por definir desde session_capitalizable" in review_comment
+
     @patch("worker.tasks.granola.handle_granola_create_followup")
     @patch("worker.tasks.granola.handle_notion_upsert_bridge_item")
     @patch("worker.tasks.granola.handle_notion_upsert_deliverable")

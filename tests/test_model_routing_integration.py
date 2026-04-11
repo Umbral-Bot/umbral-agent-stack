@@ -188,6 +188,7 @@ class TestModelInjection:
 
     def test_llm_task_blocked_when_quota_exceeded(self, quota_tracker, model_router):
         """Force all providers to 100% quota → requires_approval for LLM tasks."""
+        model_router.auto_approve_quota = False
         all_providers = (
             "azure_foundry", "claude_pro", "claude_opus", "claude_haiku",
             "gemini_pro", "gemini_flash", "gemini_flash_lite", "gemini_vertex",

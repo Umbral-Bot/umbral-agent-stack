@@ -207,6 +207,7 @@ class TestFallbackOnRestrict:
         assert decision.requires_approval is False
 
     def test_all_restricted_requires_approval(self, model_router):
+        model_router.auto_approve_quota = False
         quota_state = {
             "claude_pro": 1.0,
             "gemini_pro": 1.0,

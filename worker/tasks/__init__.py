@@ -118,6 +118,12 @@ from .gui import (
     handle_gui_activate_window,
 )
 from .tournament import handle_tournament_run
+from .rag import (
+    handle_rag_ensure_index,
+    handle_rag_index,
+    handle_rag_search,
+    handle_rag_query,
+)
 
 # Each handler: (input: dict) -> dict
 TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
@@ -207,4 +213,8 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "gui.list_windows": handle_gui_list_windows,
     "gui.activate_window": handle_gui_activate_window,
     "tournament.run": handle_tournament_run,
+    "rag.ensure_index": handle_rag_ensure_index,
+    "rag.index": handle_rag_index,
+    "rag.search": handle_rag_search,
+    "rag.query": handle_rag_query,
 }

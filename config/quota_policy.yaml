@@ -20,8 +20,8 @@ auto_approve_quota: true
 # Google Vertex AI (api-key + project):
 #   gemini-3.1-pro-preview
 #
-# Azure AI Foundry (endpoint + key, en progreso):
-#   gpt-5.3-codex (deployment dedicado)
+# Azure AI Foundry (endpoint + key, $20K credits hasta 2026-07-20):
+#   gpt-5.4 (deployment dedicado, primary provider)
 
 providers:
   # --- Azure AI Foundry (deployment dedicado) — PRIORIDAD 0 ---
@@ -82,23 +82,23 @@ providers:
 
 routing:
   coding:
-    preferred: claude_pro
-    fallback_chain: [gemini_pro, azure_foundry, gemini_flash]
+    preferred: azure_foundry
+    fallback_chain: [claude_pro, gemini_pro, gemini_flash]
   general:
-    preferred: claude_pro
-    fallback_chain: [gemini_pro, azure_foundry, gemini_flash]
+    preferred: azure_foundry
+    fallback_chain: [claude_pro, gemini_pro, gemini_flash]
   ms_stack:
-    preferred: claude_pro
-    fallback_chain: [gemini_pro, azure_foundry]
+    preferred: azure_foundry
+    fallback_chain: [claude_pro, gemini_pro]
   writing:
     preferred: claude_pro
-    fallback_chain: [claude_opus, gemini_pro]
+    fallback_chain: [azure_foundry, gemini_pro]
   research:
     preferred: gemini_pro
-    fallback_chain: [gemini_vertex, claude_pro, gemini_flash]
+    fallback_chain: [azure_foundry, gemini_vertex, claude_pro, gemini_flash]
   critical:
     preferred: claude_opus
-    fallback_chain: [claude_pro, gemini_pro]
+    fallback_chain: [azure_foundry, claude_pro, gemini_pro]
   light:
     preferred: gemini_flash
-    fallback_chain: [gemini_flash_lite, claude_haiku, gemini_pro]
+    fallback_chain: [gemini_flash_lite, azure_foundry, claude_haiku]

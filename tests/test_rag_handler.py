@@ -316,4 +316,4 @@ class TestTaskRegistration:
 
     def test_total_handler_count(self):
         from worker.tasks import TASK_HANDLERS
-        assert len(TASK_HANDLERS) == 90
+        assert len(TASK_HANDLERS) == 96

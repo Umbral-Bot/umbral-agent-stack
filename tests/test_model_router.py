@@ -163,7 +163,7 @@ class TestLoadQuotaPolicy:
     def test_load_returns_routing_and_providers(self):
         routing, providers = load_quota_policy()
         assert "coding" in routing
-        assert routing["coding"]["preferred"] == "claude_pro"
+        assert routing["coding"]["preferred"] == "azure_foundry"
         assert "claude_pro" in providers
 
 

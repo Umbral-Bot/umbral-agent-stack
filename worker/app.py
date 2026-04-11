@@ -895,7 +895,7 @@ async def get_quota_status(
 # Provider model names (human-readable mapping)
 # ---------------------------------------------------------------------------
 _PROVIDER_MODELS = {
-    "azure_foundry":    "gpt-5.2-chat",
+    "azure_foundry":    "gpt-5.4",
     "claude_pro":       "claude-sonnet-4-6",
     "claude_opus":      "claude-opus-4-6",
     "claude_haiku":     "claude-haiku-4-5",

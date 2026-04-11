@@ -40,8 +40,8 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(na
 
 # S4: Mapeo de provider name (quota alias) → model string que entiende el Worker.
 PROVIDER_MODEL_MAP: Dict[str, str] = {
-    # OpenAI / Codex — Worker solo accede GPT vía Azure Foundry
-    "azure_foundry": "gpt-5.2-chat",
+    # OpenAI / Codex — Worker accede GPT vía Azure Foundry ($20K credits)
+    "azure_foundry": "gpt-5.4",
     # Anthropic (directo)
     "claude_pro":    "claude-sonnet-4-6",
     "claude_opus":   "claude-opus-4-6",

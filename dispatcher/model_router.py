@@ -59,13 +59,13 @@ def get_configured_providers() -> Set[str]:
 
 # Default si no hay YAML (doc 15)
 DEFAULT_ROUTING = {
-    "coding": {"preferred": "claude_pro", "fallback_chain": ["gemini_pro", "azure_foundry", "gemini_flash"]},
-    "ms_stack": {"preferred": "claude_pro", "fallback_chain": ["gemini_pro", "azure_foundry"]},
-    "writing": {"preferred": "claude_pro", "fallback_chain": ["claude_opus", "gemini_pro"]},
-    "research": {"preferred": "gemini_pro", "fallback_chain": ["gemini_vertex", "claude_pro", "gemini_flash"]},
-    "critical": {"preferred": "claude_opus", "fallback_chain": ["claude_pro", "gemini_pro"]},
-    "general": {"preferred": "claude_pro", "fallback_chain": ["gemini_pro", "azure_foundry", "gemini_flash"]},
-    "light": {"preferred": "gemini_flash", "fallback_chain": ["gemini_flash_lite", "claude_haiku", "gemini_pro"]},
+    "coding": {"preferred": "azure_foundry", "fallback_chain": ["claude_pro", "gemini_pro", "gemini_flash"]},
+    "ms_stack": {"preferred": "azure_foundry", "fallback_chain": ["claude_pro", "gemini_pro"]},
+    "writing": {"preferred": "claude_pro", "fallback_chain": ["azure_foundry", "gemini_pro"]},
+    "research": {"preferred": "gemini_pro", "fallback_chain": ["azure_foundry", "gemini_vertex", "claude_pro", "gemini_flash"]},
+    "critical": {"preferred": "claude_opus", "fallback_chain": ["azure_foundry", "claude_pro", "gemini_pro"]},
+    "general": {"preferred": "azure_foundry", "fallback_chain": ["claude_pro", "gemini_pro", "gemini_flash"]},
+    "light": {"preferred": "gemini_flash", "fallback_chain": ["gemini_flash_lite", "azure_foundry", "claude_haiku"]},
 }
 
 HIGH_PRIORITY_TASK_TYPES = ("critical",)  # pueden usar preferido hasta restrict

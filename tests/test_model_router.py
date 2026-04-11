@@ -197,3 +197,74 @@ class TestUmbralDefaultModel:
         }
         decision = router.select_model("coding", quota_state=quota_state)
         assert decision.model != "gemini_pro" or decision.requires_approval is True
+
+
+class TestAutoApproveQuota:
+    """Tests for auto_approve_quota behaviour."""
+
+    def _make_router(self, quota_tracker, auto_approve: bool):
+        router = ModelRouter(quota_tracker)
+        router.auto_approve_quota = auto_approve
+        return router
+
+    def test_auto_approve_skips_block_when_all_over_restrict(self, quota_tracker):
+        """When auto_approve_quota=True and all providers are over restrict, task proceeds."""
+        router = self._make_router(quota_tracker, auto_approve=True)
+        quota_state = {
+            "claude_pro": 0.95,
+            "gemini_pro": 0.97,
+            "gemini_flash": 0.98,
+            "gemini_flash_lite": 0.99,
+            "gemini_vertex": 0.96,
+            "claude_opus": 0.85,
+            "claude_haiku": 0.96,
+        }
+        decision = router.select_model("coding", quota_state=quota_state)
+        assert decision.requires_approval is False
+        assert decision.reason == "auto_approved_over_quota"
+        assert decision.model != ""
+
+    def test_auto_approve_disabled_blocks_when_all_over_restrict(self, quota_tracker):
+        """When auto_approve_quota=False, all-over-restrict still blocks."""
+        router = self._make_router(quota_tracker, auto_approve=False)
+        quota_state = {
+            "claude_pro": 0.95,
+            "gemini_pro": 0.97,
+            "gemini_flash": 0.98,
+            "gemini_flash_lite": 0.99,
+            "gemini_vertex": 0.96,
+            "claude_opus": 0.85,
+            "claude_haiku": 0.96,
+        }
+        decision = router.select_model("coding", quota_state=quota_state)
+        assert decision.requires_approval is True
+        assert decision.reason == "quota_exceeded"
+
+    def test_auto_approve_critical_at_100_percent(self, quota_tracker):
+        """Critical task at 100% quota is auto-approved when enabled."""
+        router = self._make_router(quota_tracker, auto_approve=True)
+        quota_state = {
+            "claude_opus": 1.0,
+            "claude_pro": 0.95,
+            "gemini_pro": 0.97,
+        }
+        decision = router.select_model("critical", quota_state=quota_state)
+        assert decision.requires_approval is False
+        assert decision.reason == "auto_approved_over_quota"
+
+    def test_auto_approve_does_not_affect_under_quota(self, quota_tracker):
+        """When under quota, auto_approve has no effect — normal path used."""
+        router = self._make_router(quota_tracker, auto_approve=True)
+        quota_state = {"claude_pro": 0.1, "gemini_pro": 0.1}
+        decision = router.select_model("coding", quota_state=quota_state)
+        assert decision.model == "claude_pro"
+        assert decision.reason == "under_quota"
+        assert decision.requires_approval is False
+
+    def test_auto_approve_does_not_affect_fallback(self, quota_tracker):
+        """When preferred is over restrict but fallback is available, normal fallback used."""
+        router = self._make_router(quota_tracker, auto_approve=True)
+        quota_state = {"claude_pro": 0.95, "gemini_pro": 0.1}
+        decision = router.select_model("coding", quota_state=quota_state)
+        assert decision.model == "gemini_pro"
+        assert decision.reason == "fallback_under_restrict"

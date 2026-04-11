@@ -1,4 +1,10 @@
 # S4 — Política de cuotas por proveedor (doc 15)
+#
+# auto_approve_quota: cuando todos los providers superan restrict,
+# aprobar automáticamente en lugar de bloquear la tarea.
+# Si es false (default), se requiere aprobación humana.
+auto_approve_quota: true
+
 # Inventario real de modelos disponibles:
 #
 # Anthropic (token sesión Pro):

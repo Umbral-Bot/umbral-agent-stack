@@ -12,6 +12,7 @@ dependencies = [
     "langfuse>=2.0.0,<3.0.0",
     "redis>=5.0.0,<6.0.0",
     "mcp[cli]>=1.0.0,<2.0.0",
+    "github-copilot-sdk>=0.2.0,<1.0.0",
 ]
 
 [project.optional-dependencies]
@@ -40,7 +41,7 @@ all = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["worker*", "dispatcher*", "client*", "mcp_server*"]
+include = ["worker*", "dispatcher*", "client*", "mcp_server*", "copilot_agent*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

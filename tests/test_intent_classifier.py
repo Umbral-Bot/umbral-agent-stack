@@ -203,7 +203,7 @@ class TestBuildEnvelope:
 
         assert env["task_type"] == "research"
         assert env["task"] == "notion.add_comment"
-        assert "Pregunta recibida" in env["input"]["text"]
+        assert "Investigando tu pregunta" in env["input"]["text"]
 
     def test_task_envelope(self):
         intent = IntentResult(intent="task", confidence="high")
@@ -226,7 +226,8 @@ class TestBuildEnvelope:
         intent = IntentResult(intent="echo", confidence="low")
         env = build_envelope("xyz", "cmt-000", intent, "system")
 
-        assert "Recibido" in env["input"]["text"]
+        # Echo envelopes now carry empty text — no acknowledgment needed
+        assert env["input"]["text"] == ""
         assert env["task"] == "notion.add_comment"
 
     def test_source_metadata(self):

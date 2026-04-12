@@ -215,11 +215,11 @@ def _leave_review_comment(
     next_review: str,
 ) -> bool:
     comment = (
-        "Revision requerida por gobernanza V1.\n"
+        "Revisión requerida.\n"
         f"1. Evidencia fuente: {source_evidence}\n"
         f"2. Destino intencionado: {intended_target}\n"
         f"3. Bloqueo: {blocking_ambiguity}\n"
-        f"4. Siguiente revision necesaria: {next_review}"
+        f"4. Siguiente revisión necesaria: {next_review}"
     )
     return _comment_safe(page_id, comment)
 

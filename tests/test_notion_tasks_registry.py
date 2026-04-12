@@ -294,11 +294,15 @@ def test_build_task_page_blocks_show_human_name_and_technical_task():
         plain_texts.extend(piece.get("text", {}).get("content", "") for piece in rich_text)
 
     assert "Registrar tarea de smoke ligada al embudo" in plain_texts
-    assert "Task técnico: notion.upsert_task" in plain_texts
-    assert "Origen: openclaw_gateway" in plain_texts
-    assert "Tipo de origen: tool_enqueue" in plain_texts
-    assert "Trace ID: trace-abc" in plain_texts
-    assert "Modelo seleccionado: azure_foundry" in plain_texts
+    # Telemetry bullets were removed (noise reduction) — verify they're gone
+    assert "Task técnico: notion.upsert_task" not in plain_texts
+    assert "Origen: openclaw_gateway" not in plain_texts
+    assert "Tipo de origen: tool_enqueue" not in plain_texts
+    assert "Trace ID: trace-abc" not in plain_texts
+    assert "Modelo seleccionado: azure_foundry" not in plain_texts
+    # Project and deliverable context should still be present
+    assert "Proyecto: Proyecto Embudo Ventas" in plain_texts
+    assert "Entregable: Benchmark del sistema de contenido y funnel de Ruben Hassid" in plain_texts
 
 
 def test_notion_client_upsert_task_persists_source_trace_and_model():

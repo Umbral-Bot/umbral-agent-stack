@@ -317,6 +317,65 @@ def test_collect_candidate_comments_includes_session_capitalizable_targets():
     assert [call.kwargs for call in wc.notion_poll_comments.call_args_list] == expected_calls
 
 
+def test_collect_candidate_comments_excludes_control_room_from_review_targets():
+    wc = MagicMock()
+    wc.run.side_effect = [
+        {"ok": True, "result": {"items": []}},
+        {"ok": True, "result": {"items": []}},
+        {
+            "ok": True,
+            "result": {"items": [{"page_id": "control-room-page"}, {"page_id": "session-2"}]},
+        },
+    ]
+    wc.notion_poll_comments.side_effect = [
+        {
+            "ok": True,
+            "result": {
+                "comments": [
+                    {
+                        "id": "c-1",
+                        "created_time": "2026-03-16T21:00:00.000Z",
+                        "text": "mensaje control room",
+                    }
+                ]
+            },
+        },
+        {
+            "ok": True,
+            "result": {
+                "comments": [
+                    {
+                        "id": "c-2",
+                        "created_time": "2026-03-16T21:01:00.000Z",
+                        "text": "revisar sesion capitalizable",
+                    }
+                ]
+            },
+        },
+    ]
+
+    with patch.dict(
+        "os.environ",
+        {
+            "NOTION_DELIVERABLES_DB_ID": "deliverables-db",
+            "NOTION_PROJECTS_DB_ID": "projects-db",
+            "NOTION_CURATED_SESSIONS_DB_ID": "curated-db",
+            "NOTION_CONTROL_ROOM_PAGE_ID": "control-room-page",
+        },
+        clear=False,
+    ):
+        comments = _collect_candidate_comments(wc, "2026-03-16T21:00:00+00:00", 20)
+
+    assert [comment["id"] for comment in comments] == ["c-1", "c-2"]
+    assert comments[1]["page_id"] == "session-2"
+    assert comments[1]["page_kind"] == "session_capitalizable"
+    expected_calls = [
+        {"since": "2026-03-16T20:55:00+00:00", "limit": 20, "page_id": None},
+        {"since": "2026-03-16T20:55:00+00:00", "limit": 20, "page_id": "session-2"},
+    ]
+    assert [call.kwargs for call in wc.notion_poll_comments.call_args_list] == expected_calls
+
+
 def test_collect_candidate_comments_falls_back_when_deliverable_filter_fails():
     wc = MagicMock()
     wc.run.side_effect = [

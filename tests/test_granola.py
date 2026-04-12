@@ -341,6 +341,36 @@ class TestHandleGranolaCapitalizeRaw:
         assert result["trace_comments_added"] == 1
         mock_nc.add_comment.assert_called_once()
 
+    @patch("worker.tasks.granola.notion_client")
+    def test_capitalize_raw_blocked_policy_handles_review_comment_failures(self, mock_nc):
+        mock_nc.read_page.return_value = {
+            "page_id": "raw-1",
+            "url": "https://www.notion.so/raw-1",
+            "title": "Reunion",
+            "plain_text": "Resumen",
+        }
+        mock_nc.get_page.return_value = {
+            "url": "https://www.notion.so/raw-1",
+            "properties": {
+                "Fecha": {"type": "date", "date": {"start": "2026-03-23"}},
+                "Fuente": {"type": "select", "select": {"name": "granola"}},
+            },
+        }
+        mock_nc.add_comment.side_effect = RuntimeError("notion unavailable")
+
+        result = handle_granola_capitalize_raw(
+            {
+                "transcript_page_id": "raw-1",
+                "project_name": "Konstruedu",
+            }
+        )
+
+        assert result["ok"] is False
+        assert result["blocked_by_policy"] is True
+        assert result["review_comment_added"] is False
+        assert result["trace_comments_added"] == 0
+        mock_nc.add_comment.assert_called_once()
+
     @patch("worker.tasks.granola.handle_granola_create_followup")
     @patch("worker.tasks.granola.handle_notion_upsert_bridge_item")
     @patch("worker.tasks.granola.handle_notion_upsert_deliverable")

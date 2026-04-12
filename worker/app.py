@@ -42,6 +42,12 @@ from infra.ops_logger import ops_log
 
 from .config import RATE_LIMIT_INTERNAL_RPM, RATE_LIMIT_RPM, WORKER_TOKEN
 from .rate_limiter import RateLimiter
+from .client_auth import (
+    is_client_api_key,
+    get_client_store,
+    is_task_allowed,
+    get_tier_config,
+)
 from .sanitize import sanitize_input, sanitize_task_name
 from .task_errors import TaskExecutionError
 from .tracing import flush as flush_tracing
@@ -212,6 +218,9 @@ class _RateLimitDecision:
 
 external_limiter = RateLimiter(max_requests=RATE_LIMIT_RPM, window_seconds=60)
 internal_limiter = RateLimiter(max_requests=RATE_LIMIT_INTERNAL_RPM, window_seconds=60)
+# Per-client API key limiter — bounded LRU cache (max 10k clients).
+_MAX_CLIENT_LIMITERS = 10_000
+_client_limiters: OrderedDict[str, RateLimiter] = OrderedDict()
 # Backward-compat for tests and older imports.
 limiter = external_limiter
 
@@ -423,19 +432,51 @@ def _build_quota_snapshot(
 # ---------------------------------------------------------------------------
 
 
-def _authenticate(authorization: str | None) -> None:
-    """Validate Bearer token. Raises HTTPException on failure."""
-    if not WORKER_TOKEN:
-        logger.error("WORKER_TOKEN not configured on server")
-        raise HTTPException(status_code=500, detail="WORKER_TOKEN not configured on server")
+@dataclass
+class AuthContext:
+    """Result of authentication — identifies caller type and client."""
+    kind: str  # "admin" (WORKER_TOKEN) or "client" (API key)
+    client_id: str | None = None
+    tier: str | None = None
 
+
+def _authenticate(authorization: str | None) -> AuthContext:
+    """
+    Validate Bearer token. Returns AuthContext.
+
+    Supports two auth modes:
+    - WORKER_TOKEN: admin/internal access (original behavior)
+    - Client API key (ubim_*): per-client access with tier limits
+    """
     if not authorization:
         logger.warning("Request to /run without Authorization header")
         raise HTTPException(status_code=401, detail="Invalid or missing token")
 
-    if not _has_valid_bearer_token(authorization):
+    parts = authorization.split(" ", 1)
+    if len(parts) != 2 or parts[0].lower() != "bearer":
+        raise HTTPException(status_code=401, detail="Invalid or missing token")
+
+    token = parts[1]
+
+    # Client API key path
+    if is_client_api_key(token):
+        store = get_client_store()
+        record = store.get_by_api_key(token)
+        if not record:
+            logger.warning("Request with invalid client API key")
+            raise HTTPException(status_code=401, detail="Invalid or missing token")
+        return AuthContext(kind="client", client_id=record.client_id, tier=record.tier)
+
+    # WORKER_TOKEN path (admin)
+    if not WORKER_TOKEN:
+        logger.error("WORKER_TOKEN not configured on server")
+        raise HTTPException(status_code=500, detail="WORKER_TOKEN not configured on server")
+
+    if not hmac.compare_digest(token, WORKER_TOKEN):
         logger.warning("Request to /run with invalid token")
         raise HTTPException(status_code=401, detail="Invalid or missing token")
+
+    return AuthContext(kind="admin")
 
 
 # ---------------------------------------------------------------------------
@@ -470,8 +511,9 @@ async def run_task(
 
     Ambos se normalizan a TaskEnvelope internamente.
     S7: rate limiting y sanitización de inputs.
+    Client API keys: per-client rate limits, daily limits, and task access control.
     """
-    _authenticate(authorization)
+    auth = _authenticate(authorization)
 
     # --- Parse: detect envelope vs legacy ---
     try:
@@ -488,6 +530,41 @@ async def run_task(
         envelope.input = sanitize_input(envelope.input)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
+
+    # --- Client tier enforcement ---
+    if auth.kind == "client":
+        # Task access check
+        if not is_task_allowed(auth.tier, envelope.task):
+            raise HTTPException(
+                status_code=403,
+                detail=f"Task '{envelope.task}' not allowed for tier '{auth.tier}'",
+            )
+        # Daily limit check
+        store = get_client_store()
+        if not store.check_daily_limit(auth.client_id):
+            tier_cfg = get_tier_config(auth.tier)
+            raise HTTPException(
+                status_code=429,
+                detail=f"Daily limit ({tier_cfg.get('daily_limit', 0)}) exceeded for tier '{auth.tier}'",
+            )
+        # Per-client rate limit (RPM)
+        tier_cfg = get_tier_config(auth.tier)
+        client_rpm = tier_cfg.get("rate_limit_rpm", 10)
+        if auth.client_id not in _client_limiters:
+            _client_limiters[auth.client_id] = RateLimiter(
+                max_requests=client_rpm, window_seconds=60
+            )
+            # LRU eviction
+            while len(_client_limiters) > _MAX_CLIENT_LIMITERS:
+                _client_limiters.popitem(last=False)
+        _client_limiters.move_to_end(auth.client_id)
+        allowed, remaining = _client_limiters[auth.client_id].is_allowed(auth.client_id)
+        if not allowed:
+            raise HTTPException(
+                status_code=429,
+                detail=f"Rate limit ({client_rpm} rpm) exceeded for your API key",
+                headers={"Retry-After": "60"},
+            )
 
     ops_context = _ops_context_from_envelope(envelope)
     team_value = _ops_value(envelope.team)
@@ -617,6 +694,12 @@ async def run_task(
         input_summary=input_summary,
         **ops_context,
     )
+
+    # Record usage for client API key callers
+    if auth.kind == "client":
+        store = get_client_store()
+        store.record_usage(auth.client_id, envelope.task)
+
     task_result = TaskResult(
         task_id=envelope.task_id,
         task=envelope.task,
@@ -669,13 +752,28 @@ async def enqueue_task(
     Returns:
         {"ok": true, "task_id": "uuid", "queued": true}
     """
-    _authenticate(authorization)
+    auth = _authenticate(authorization)
 
     # Sanitize (apply sanitized result)
     try:
         sanitize_task_name(body.task)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+
+    # --- Client tier enforcement on enqueue ---
+    if auth.kind == "client":
+        if not is_task_allowed(auth.tier, body.task):
+            raise HTTPException(
+                status_code=403,
+                detail=f"Task '{body.task}' not allowed for tier '{auth.tier}'",
+            )
+        store = get_client_store()
+        if not store.check_daily_limit(auth.client_id):
+            raise HTTPException(
+                status_code=429,
+                detail=f"Daily limit exceeded for tier '{auth.tier}'",
+            )
+
     try:
         sanitized_input = sanitize_input(body.input)
     except ValueError as exc:
@@ -895,7 +993,7 @@ async def get_quota_status(
 # Provider model names (human-readable mapping)
 # ---------------------------------------------------------------------------
 _PROVIDER_MODELS = {
-    "azure_foundry":    "gpt-5.2-chat",
+    "azure_foundry":    "gpt-5.4",
     "claude_pro":       "claude-sonnet-4-6",
     "claude_opus":      "claude-opus-4-6",
     "claude_haiku":     "claude-haiku-4-5",
@@ -1045,6 +1143,7 @@ _CATEGORY_MAP = {
     "figma": "figma",
     "azure": "azure",
     "make": "integrations",
+    "client": "admin",
 }
 
 

@@ -63,10 +63,11 @@ VERTEX_DEFAULT_REGION = "us-central1"
 # Cada alias mapea a un nombre de modelo concreto que el provider entiende.
 MODEL_ALIASES = {
     # --- OpenAI / Codex (Worker: Azure Foundry → OPENAI_API_KEY) ---
-    "azure_foundry": "gpt-5.2-chat",
+    "azure_foundry": "gpt-5.4",
     "gpt-5.2": "gpt-5.2-chat",
     "azure_gpt_41": "gpt-4.1",
     "azure_gpt_52": "gpt-5.2-chat",
+    "azure_gpt_54": "gpt-5.4",
     "kimi_azure": "Kimi-K2.5",
     # --- Anthropic (ANTHROPIC_API_KEY — token de sesión Pro) ---
     "claude_pro":    "claude-sonnet-4-6",

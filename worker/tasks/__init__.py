@@ -117,6 +117,21 @@ from .gui import (
     handle_gui_list_windows,
     handle_gui_activate_window,
 )
+from .tournament import handle_tournament_run
+from .rag import (
+    handle_rag_ensure_index,
+    handle_rag_index,
+    handle_rag_search,
+    handle_rag_query,
+)
+from .client_admin import (
+    handle_client_register,
+    handle_client_revoke,
+    handle_client_rotate_key,
+    handle_client_list,
+    handle_client_usage,
+    handle_client_get,
+)
 
 # Each handler: (input: dict) -> dict
 TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
@@ -205,4 +220,15 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "gui.hotkey": handle_gui_hotkey,
     "gui.list_windows": handle_gui_list_windows,
     "gui.activate_window": handle_gui_activate_window,
+    "tournament.run": handle_tournament_run,
+    "rag.ensure_index": handle_rag_ensure_index,
+    "rag.index": handle_rag_index,
+    "rag.search": handle_rag_search,
+    "rag.query": handle_rag_query,
+    "client.register": handle_client_register,
+    "client.revoke": handle_client_revoke,
+    "client.rotate_key": handle_client_rotate_key,
+    "client.list": handle_client_list,
+    "client.usage": handle_client_usage,
+    "client.get": handle_client_get,
 }

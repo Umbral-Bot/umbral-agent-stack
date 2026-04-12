@@ -124,15 +124,15 @@ class TestProviderStatusConfigured:
 
 class TestProviderStatusRouting:
     def test_routing_preferred_for_populated(self, client, fake_redis):
-        """claude_pro should be preferred for coding, general, ms_stack, writing."""
+        """azure_foundry should be preferred for coding, general, ms_stack; claude_pro for writing."""
         with patch("worker.app._get_redis", return_value=fake_redis):
             resp = client.get("/providers/status", headers=AUTH)
             data = resp.json()
-            claude_routes = data["providers"]["claude_pro"]["routing_preferred_for"]
-            assert isinstance(claude_routes, list)
-            # Per quota_policy.yaml, claude_pro is preferred for coding, general, ms_stack, writing
+            azure_routes = data["providers"]["azure_foundry"]["routing_preferred_for"]
+            assert isinstance(azure_routes, list)
+            # Per quota_policy.yaml, azure_foundry is preferred for coding, general, ms_stack
             for expected_type in ["coding", "general"]:
-                assert expected_type in claude_routes
+                assert expected_type in azure_routes
 
     def test_gemini_pro_preferred_for_research(self, client, fake_redis):
         with patch("worker.app._get_redis", return_value=fake_redis):
@@ -164,8 +164,8 @@ class TestProviderStatusRouting:
             resp = client.get("/providers/status", headers=AUTH)
             data = resp.json()
             coding = data["routing"]["coding"]
-            assert coding["declared_preferred"] == "claude_pro"
-            assert coding["effective_preferred"] == "claude_pro"
+            assert coding["declared_preferred"] == "azure_foundry"
+            assert coding["effective_preferred"] == "claude_pro"  # azure unconfigured → first configured fallback
             assert "effective_fallback_chain" in coding
             assert "unconfigured" in coding
 
@@ -185,10 +185,10 @@ class TestProviderStatusRouting:
             resp = client.get("/providers/status", headers=AUTH)
             data = resp.json()
             coding = data["routing"]["coding"]
-            assert coding["declared_preferred"] == "claude_pro"
-            assert coding["effective_preferred"] == "gemini_pro"
+            assert coding["declared_preferred"] == "azure_foundry"
+            assert coding["effective_preferred"] == "gemini_pro"  # azure + claude unconfigured
             assert "coding" in data["providers"]["gemini_pro"]["routing_effective_for"]
-            assert "coding" in data["providers"]["claude_pro"]["routing_preferred_for"]
+            assert "coding" in data["providers"]["azure_foundry"]["routing_preferred_for"]
 
 
 # ── Quota values ──────────────────────────────────────────────────

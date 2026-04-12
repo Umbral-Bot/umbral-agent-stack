@@ -59,13 +59,13 @@ def get_configured_providers() -> Set[str]:
 
 # Default si no hay YAML (doc 15)
 DEFAULT_ROUTING = {
-    "coding": {"preferred": "claude_pro", "fallback_chain": ["gemini_pro", "azure_foundry", "gemini_flash"]},
-    "ms_stack": {"preferred": "claude_pro", "fallback_chain": ["gemini_pro", "azure_foundry"]},
-    "writing": {"preferred": "claude_pro", "fallback_chain": ["claude_opus", "gemini_pro"]},
-    "research": {"preferred": "gemini_pro", "fallback_chain": ["gemini_vertex", "claude_pro", "gemini_flash"]},
-    "critical": {"preferred": "claude_opus", "fallback_chain": ["claude_pro", "gemini_pro"]},
-    "general": {"preferred": "claude_pro", "fallback_chain": ["gemini_pro", "azure_foundry", "gemini_flash"]},
-    "light": {"preferred": "gemini_flash", "fallback_chain": ["gemini_flash_lite", "claude_haiku", "gemini_pro"]},
+    "coding": {"preferred": "azure_foundry", "fallback_chain": ["claude_pro", "gemini_pro", "gemini_flash"]},
+    "ms_stack": {"preferred": "azure_foundry", "fallback_chain": ["claude_pro", "gemini_pro"]},
+    "writing": {"preferred": "claude_pro", "fallback_chain": ["azure_foundry", "gemini_pro"]},
+    "research": {"preferred": "gemini_pro", "fallback_chain": ["azure_foundry", "gemini_vertex", "claude_pro", "gemini_flash"]},
+    "critical": {"preferred": "claude_opus", "fallback_chain": ["azure_foundry", "claude_pro", "gemini_pro"]},
+    "general": {"preferred": "azure_foundry", "fallback_chain": ["claude_pro", "gemini_pro", "gemini_flash"]},
+    "light": {"preferred": "gemini_flash", "fallback_chain": ["gemini_flash_lite", "azure_foundry", "claude_haiku"]},
 }
 
 HIGH_PRIORITY_TASK_TYPES = ("critical",)  # pueden usar preferido hasta restrict
@@ -78,28 +78,29 @@ class ModelSelectionDecision:
     requires_approval: bool = False
 
 
-def _load_quota_policy() -> tuple[Dict[str, Dict], Dict[str, Dict]]:
-    """Carga config/quota_policy.yaml; devuelve (routing, providers)."""
+def _load_quota_policy() -> tuple[Dict[str, Dict], Dict[str, Dict], bool]:
+    """Carga config/quota_policy.yaml; devuelve (routing, providers, auto_approve_quota)."""
     try:
         import yaml
     except ImportError:
-        return DEFAULT_ROUTING, {}
+        return DEFAULT_ROUTING, {}, False
 
     repo_root = Path(__file__).resolve().parent.parent
     path = repo_root / "config" / "quota_policy.yaml"
     if not path.is_file():
-        return DEFAULT_ROUTING, {}
+        return DEFAULT_ROUTING, {}, False
 
     try:
         with open(path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
     except Exception as e:
         logger.warning("Failed to load quota_policy.yaml: %s", e)
-        return DEFAULT_ROUTING, {}
+        return DEFAULT_ROUTING, {}, False
 
     if not isinstance(data, dict):
-        return DEFAULT_ROUTING, {}
+        return DEFAULT_ROUTING, {}, False
     routing = data.get("routing") or DEFAULT_ROUTING
+    auto_approve = bool(data.get("auto_approve_quota", False))
     providers_raw = data.get("providers") or {}
     providers = {}
     for pid, cfg in providers_raw.items():
@@ -110,12 +111,13 @@ def _load_quota_policy() -> tuple[Dict[str, Dict], Dict[str, Dict]]:
                 "warn": float(cfg.get("warn", 0.8)),
                 "restrict": float(cfg.get("restrict", 0.9)),
             }
-    return routing, providers
+    return routing, providers, auto_approve
 
 
 def load_quota_policy() -> tuple[Dict[str, Dict], Dict[str, Dict]]:
     """Carga routing y providers desde config; para uso en servicio (QuotaTracker)."""
-    return _load_quota_policy()
+    routing, providers, _auto = _load_quota_policy()
+    return routing, providers
 
 
 class ModelRouter:
@@ -126,11 +128,13 @@ class ModelRouter:
 
     def __init__(self, quota_tracker: QuotaTracker):
         self.quota = quota_tracker
-        self.routing, self.provider_config = _load_quota_policy()
+        self.routing, self.provider_config, self.auto_approve_quota = _load_quota_policy()
         self._configured = get_configured_providers()
         self._default_model = os.environ.get("UMBRAL_DEFAULT_MODEL", "").strip() or None
         if self._default_model:
             logger.info("UMBRAL_DEFAULT_MODEL override active: %s", self._default_model)
+        if self.auto_approve_quota:
+            logger.info("auto_approve_quota enabled — quota blocks will be auto-approved")
         logger.info("Configured providers: %s", sorted(self._configured) or "(none detected)")
         unconfigured = set(self.provider_config.keys()) - self._configured
         if unconfigured:
@@ -254,6 +258,9 @@ class ModelRouter:
         if task_type in HIGH_PRIORITY_TASK_TYPES:
             if state_preferred < 1.0:
                 return ModelSelectionDecision(model=preferred, reason="high_priority_override")
+            if self.auto_approve_quota:
+                logger.warning("Auto-approved quota-exceeded task (critical, model=%s)", preferred)
+                return ModelSelectionDecision(model=preferred, reason="auto_approved_over_quota")
             return ModelSelectionDecision(
                 model=preferred,
                 reason="quota_exceeded",
@@ -264,6 +271,9 @@ class ModelRouter:
             _, r = self._thresholds(model)
             if s < r:
                 return ModelSelectionDecision(model=model, reason="fallback_under_restrict")
+        if self.auto_approve_quota:
+            logger.warning("Auto-approved quota-exceeded task (model=%s)", preferred)
+            return ModelSelectionDecision(model=preferred, reason="auto_approved_over_quota")
         return ModelSelectionDecision(
             model=preferred,
             reason="quota_exceeded",

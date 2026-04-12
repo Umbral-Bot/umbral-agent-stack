@@ -163,29 +163,26 @@ class TestQuestionFlow:
         assert "sin contexto web" in posted_text
 
     def test_question_llm_fails_posts_fallback(self, wc, queue):
-        """Both research + LLM fail → fallback acknowledgment."""
+        """research OK + LLM fail → fallback suppressed (no false promise)."""
         wc.run.side_effect = [
             _research_result(1),     # research OK
             Exception("Gemini down"),  # llm.generate fails
-            _empty_result(),         # fallback notion.add_comment
         ]
         handle_smart_reply(COMMENT_TEXT_QUESTION, COMMENT_ID, IntentResult("question", "high"), "system", wc, queue, MagicMock())
 
-        # The last call should be the fallback comment
-        posted_text = wc.run.call_args_list[-1][0][1]["text"]
-        assert "Investigando" in posted_text
+        # Fallback is now suppressed — only research was called successfully
+        assert wc.run.call_count == 2  # research + failed LLM attempt
 
     def test_question_both_fail_posts_fallback(self, wc, queue):
-        """Research fails + LLM fails → fallback."""
+        """Research fails + LLM fails → fallback suppressed."""
         wc.run.side_effect = [
             Exception("research down"),
             Exception("llm down"),
-            _empty_result(),  # fallback post
         ]
         handle_smart_reply(COMMENT_TEXT_QUESTION, COMMENT_ID, IntentResult("question", "high"), "system", wc, queue, MagicMock())
 
-        posted_text = wc.run.call_args_list[-1][0][1]["text"]
-        assert "Investigando" in posted_text
+        # Both failed, fallback suppressed — only 2 failed attempts
+        assert wc.run.call_count == 2
 
 
 # ── Test handle_smart_reply: task intent ───────────────────────
@@ -220,19 +217,18 @@ class TestTaskFlow:
 
     @patch("dispatcher.smart_reply._get_workflow_engine")
     def test_task_llm_fails_posts_fallback(self, mock_get_engine, wc, queue):
-        """task without workflow, LLM fails → fallback."""
+        """task without workflow, LLM fails → fallback suppressed."""
         _mock_engine = MagicMock()
         _mock_engine.has_workflow.return_value = False
         mock_get_engine.return_value = _mock_engine
 
         wc.run.side_effect = [
             Exception("llm down"),
-            _empty_result(),  # fallback post
         ]
         handle_smart_reply(COMMENT_TEXT_TASK, COMMENT_ID, IntentResult("task", "high"), "marketing", wc, queue, MagicMock())
 
-        posted_text = wc.run.call_args_list[-1][0][1]["text"]
-        assert "Tarea registrada" in posted_text
+        # Fallback suppressed — only the failed LLM attempt
+        assert wc.run.call_count == 1
         queue.enqueue.assert_not_called()
 
 
@@ -475,14 +471,14 @@ class TestEchoFlow:
 
 class TestPostFallback:
     def test_fallback_question(self, wc):
+        """Question fallback is suppressed — no false promise when pipeline fails."""
         _post_fallback(wc, COMMENT_ID, "question")
-        text = wc.run.call_args[0][1]["text"]
-        assert "Investigando" in text
+        wc.run.assert_not_called()
 
     def test_fallback_task(self, wc):
+        """Task fallback is suppressed — no false promise when pipeline fails."""
         _post_fallback(wc, COMMENT_ID, "task")
-        text = wc.run.call_args[0][1]["text"]
-        assert "Tarea registrada" in text
+        wc.run.assert_not_called()
 
     def test_fallback_unknown(self, wc):
         """Unknown intents are suppressed — no fallback comment posted."""

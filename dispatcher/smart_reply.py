@@ -737,10 +737,10 @@ def _post_fallback(wc: WorkerClient, comment_id: str, intent: str) -> None:
     """Post the old-style acknowledgment when the smart pipeline fails."""
     short_id = comment_id[:8] if comment_id else "unknown"
     fallbacks = {
-        "question": f"{ECHO_PREFIX} Investigando tu pregunta, vuelvo con una respuesta.",
-        "task": f"{ECHO_PREFIX} Tarea registrada, trabajando en ello.",
+        "question": None,        # Pipeline failed — silence beats a false promise
+        "task": None,            # Pipeline failed — silence beats a false promise
         "scheduled_task": f"{ECHO_PREFIX} Tarea programada registrada.",
-        "instruction": None,  # No fallback for instructions — silence is better
+        "instruction": None,
     }
     text = fallbacks.get(intent)
     if text is None:

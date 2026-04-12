@@ -175,6 +175,10 @@ class ClientStore:
         """Get usage stats for a client."""
         raise NotImplementedError
 
+    def check_daily_limit(self, client_id: str) -> bool:
+        """Returns True if the client is within daily limits."""
+        raise NotImplementedError
+
 
 class InMemoryClientStore(ClientStore):
     """In-memory implementation for dev/testing."""

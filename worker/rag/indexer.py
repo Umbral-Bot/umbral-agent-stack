@@ -175,6 +175,8 @@ def chunk_text(text: str, chunk_size: int = 1000, overlap: int = 200) -> List[st
     """Split text into overlapping chunks by character count."""
     if not text:
         return []
+    if overlap >= chunk_size:
+        raise ValueError(f"overlap ({overlap}) must be less than chunk_size ({chunk_size})")
     chunks = []
     start = 0
     while start < len(text):

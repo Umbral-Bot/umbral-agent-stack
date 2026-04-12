@@ -56,12 +56,14 @@ def search(
     endpoint, api_key = _get_search_credentials()
     client = SearchClient(endpoint, index_name, AzureKeyCredential(api_key))
 
-    # Build filter expression
+    # Build filter expression (escape single quotes per OData spec)
     filters = []
     if source_filter:
-        filters.append(f"source eq '{source_filter}'")
+        safe_source = str(source_filter).replace("'", "''")
+        filters.append(f"source eq '{safe_source}'")
     if source_type_filter:
-        filters.append(f"source_type eq '{source_type_filter}'")
+        safe_type = str(source_type_filter).replace("'", "''")
+        filters.append(f"source_type eq '{safe_type}'")
     filter_expr = " and ".join(filters) if filters else None
 
     # Build search kwargs

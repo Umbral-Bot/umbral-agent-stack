@@ -88,8 +88,8 @@ class TestProviderModelMap:
         expected_subset = {"azure_foundry", "claude_pro", "gemini_pro"}
         assert expected_subset.issubset(set(PROVIDER_MODEL_MAP.keys()))
 
-    def test_azure_foundry_maps_to_gpt52_chat(self):
-        assert PROVIDER_MODEL_MAP["azure_foundry"] == "gpt-5.2-chat"
+    def test_azure_foundry_maps_to_gpt54(self):
+        assert PROVIDER_MODEL_MAP["azure_foundry"] == "gpt-5.4"
 
     def test_gemini_maps_to_gemini_pro_model(self):
         assert PROVIDER_MODEL_MAP["gemini_pro"] == "gemini-2.5-pro"
@@ -194,23 +194,24 @@ class TestQuotaPostExecution:
 
 class TestFallbackOnRestrict:
     def test_fallback_when_preferred_restricted(self, model_router):
-        # coding preferred = claude_pro; mark it as restricted
+        # coding preferred = azure_foundry; mark it as restricted
         quota_state = {
-            "claude_pro": 0.95,  # over restrict (0.9)
+            "azure_foundry": 0.95,  # over restrict (0.9)
+            "claude_pro": 0.0,
             "gemini_pro": 0.0,
-            "azure_foundry": 0.0,
             "gemini_flash": 0.0,
         }
         decision = model_router.select_model("coding", quota_state=quota_state)
         # Should fall back to something else from coding fallback chain.
-        assert decision.model != "claude_pro"
+        assert decision.model != "azure_foundry"
         assert decision.requires_approval is False
 
     def test_all_restricted_requires_approval(self, model_router):
+        model_router.auto_approve_quota = False
         quota_state = {
+            "azure_foundry": 1.0,
             "claude_pro": 1.0,
             "gemini_pro": 1.0,
-            "azure_foundry": 1.0,
             "gemini_flash": 1.0,
         }
         decision = model_router.select_model("coding", quota_state=quota_state)
@@ -232,9 +233,9 @@ class TestFallbackOnRestrict:
     def test_mapped_model_for_fallback(self, model_router):
         # Verify the fallback model also maps correctly
         quota_state = {
-            "claude_pro": 0.95,
+            "azure_foundry": 0.95,
+            "claude_pro": 0.0,
             "gemini_pro": 0.0,
-            "azure_foundry": 0.0,
             "gemini_flash": 0.0,
         }
         decision = model_router.select_model("coding", quota_state=quota_state)

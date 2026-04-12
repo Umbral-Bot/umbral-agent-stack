@@ -488,7 +488,7 @@ def test_azure_foundry_gpt52_uses_max_completion_tokens(monkeypatch):
     assert result["provider"] == "azure_foundry"
     assert result["text"] == "GPT52_OK"
     req = mock_urlopen.call_args.args[0]
-    assert "openai/deployments/gpt-5.2-chat" in req.full_url
+    assert "openai/deployments/gpt-5.2-chat" in req.full_url  # gpt-5.2 alias still maps to gpt-5.2-chat
     body = json.loads(req.data.decode("utf-8"))
     assert "max_tokens" not in body
     assert "temperature" not in body

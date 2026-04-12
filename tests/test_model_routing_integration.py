@@ -105,7 +105,7 @@ class TestProviderModelMap:
             assert isinstance(model, str) and len(model) > 0, f"{provider} has empty model string"
 
     def test_known_mappings(self):
-        assert PROVIDER_MODEL_MAP["azure_foundry"] == "gpt-5.2-chat"
+        assert PROVIDER_MODEL_MAP["azure_foundry"] == "gpt-5.4"
         assert PROVIDER_MODEL_MAP["claude_pro"] == "claude-sonnet-4-6"
         assert PROVIDER_MODEL_MAP["claude_opus"] == "claude-opus-4-6"
         assert PROVIDER_MODEL_MAP["claude_haiku"] == "claude-haiku-4-5"
@@ -188,6 +188,7 @@ class TestModelInjection:
 
     def test_llm_task_blocked_when_quota_exceeded(self, quota_tracker, model_router):
         """Force all providers to 100% quota → requires_approval for LLM tasks."""
+        model_router.auto_approve_quota = False
         all_providers = (
             "azure_foundry", "claude_pro", "claude_opus", "claude_haiku",
             "gemini_pro", "gemini_flash", "gemini_flash_lite", "gemini_vertex",
@@ -230,7 +231,7 @@ class TestQuotaPostExecution:
     def test_record_usage_after_execution(self, quota_tracker, model_router):
         """After successful execution, record_usage should increment quota."""
         decision = model_router.select_model("coding")
-        selected = decision.model  # claude_pro (coding preferred)
+        selected = decision.model  # azure_foundry declared but unconfigured → effective preferred is claude_pro
 
         if selected not in quota_tracker.config:
             pytest.skip(f"{selected} not in test provider_config")
@@ -243,7 +244,8 @@ class TestQuotaPostExecution:
 
     def test_quota_affects_subsequent_routing(self, quota_tracker, model_router):
         """Pushing preferred model past warn should trigger fallback for non-critical."""
-        # coding prefers claude_pro (limit=200, warn=0.80 → 160 requests)
+        # coding declared preferred=azure_foundry (unconfigured) → effective preferred=claude_pro
+        # claude_pro: limit=200, warn=0.80 → 160 requests
         for _ in range(165):
             quota_tracker.record_usage("claude_pro")
 
@@ -263,19 +265,18 @@ class TestFallbackRouting:
             quota_tracker.record_usage("claude_pro")
 
         decision = model_router.select_model("writing")
-        # writing fallback=[claude_opus, gemini_pro] (azure_foundry not configured)
-        assert decision.model in ("claude_opus", "gemini_pro")
+        # writing fallback=[azure_foundry, gemini_pro]; azure unconfigured → effective [gemini_pro]
+        assert decision.model == "gemini_pro"
         assert "fallback" in decision.reason
 
     def test_fallback_chain_skips_restricted_models(self, quota_tracker, model_router):
         """If preferred and first fallback are restricted, try next in chain."""
-        # writing: preferred=claude_pro, fallback=[claude_opus, azure_foundry, gemini_pro]
-        # Restrict claude_pro (restrict=0.90 → 180/200) AND claude_opus (restrict=0.80 → 40/50)
+        # writing: preferred=claude_pro, fallback=[azure_foundry, gemini_pro]
+        # azure_foundry unconfigured → effective fallback=[gemini_pro]
+        # Restrict claude_pro (restrict=0.90 → 180/200)
         for _ in range(181):
             quota_tracker.record_usage("claude_pro")
-        for _ in range(41):
-            quota_tracker.record_usage("claude_opus")
 
         decision = model_router.select_model("writing")
-        # Should skip claude_pro and claude_opus → falls to gemini_pro
+        # Should skip claude_pro → falls to gemini_pro
         assert decision.model == "gemini_pro"

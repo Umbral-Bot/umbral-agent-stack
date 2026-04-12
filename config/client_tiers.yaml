@@ -1,0 +1,88 @@
+# --- Client Tiers for UmbralBIM.io ---
+# Defines rate limits, allowed tasks, and quotas per client tier.
+# Used by worker/client_auth.py for multi-tenant API key validation.
+
+tiers:
+  free:
+    display_name: "Free"
+    rate_limit_rpm: 10          # requests per minute
+    daily_limit: 100            # max requests per day
+    max_tokens_per_request: 1024
+    allowed_tasks:
+      - "ping"
+      - "llm.generate"
+      - "research.web"
+      - "rag.search"
+      - "rag.query"
+      - "tournament.run"
+    blocked_tasks: []           # empty = whitelist mode (only allowed_tasks)
+    features:
+      rag: true
+      tournament: true
+      notion: false
+      linear: false
+      windows: false
+      browser: false
+      gui: false
+
+  pro:
+    display_name: "Pro"
+    rate_limit_rpm: 60
+    daily_limit: 2000
+    max_tokens_per_request: 4096
+    allowed_tasks: "*"          # all tasks
+    blocked_tasks:
+      - "windows.pad.run_flow"
+      - "windows.start_interactive_worker"
+      - "windows.add_interactive_worker_to_startup"
+      - "windows.firewall_allow_port"
+      - "gui.click"
+      - "gui.type_text"
+      - "gui.hotkey"
+      - "client.register"        # admin only
+      - "client.revoke"          # admin only
+      - "client.rotate_key"      # admin only
+      - "client.list"            # admin only
+      - "client.usage"           # admin only
+      - "client.get"             # admin only
+    features:
+      rag: true
+      tournament: true
+      notion: true
+      linear: true
+      windows: false
+      browser: true
+      gui: false
+
+  enterprise:
+    display_name: "Enterprise"
+    rate_limit_rpm: 300
+    daily_limit: 20000
+    max_tokens_per_request: 8192
+    allowed_tasks: "*"
+    blocked_tasks:
+      - "client.register"        # admin only
+      - "client.revoke"          # admin only
+      - "client.rotate_key"      # admin only
+      - "client.list"            # admin only
+      - "client.usage"           # admin only
+      - "client.get"             # admin only
+    features:
+      rag: true
+      tournament: true
+      notion: true
+      linear: true
+      windows: true
+      browser: true
+      gui: true
+
+# Default tier for new registrations
+default_tier: free
+
+# Internal admin tier — used by WORKER_TOKEN (no limits)
+admin:
+  rate_limit_rpm: 0             # 0 = unlimited
+  daily_limit: 0
+  max_tokens_per_request: 0
+  allowed_tasks: "*"
+  blocked_tasks: []

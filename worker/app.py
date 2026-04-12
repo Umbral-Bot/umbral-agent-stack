@@ -218,9 +218,9 @@ class _RateLimitDecision:
 
 external_limiter = RateLimiter(max_requests=RATE_LIMIT_RPM, window_seconds=60)
 internal_limiter = RateLimiter(max_requests=RATE_LIMIT_INTERNAL_RPM, window_seconds=60)
-# Per-client API key limiter: uses enterprise max as ceiling (300 rpm).
-# Actual per-tier RPM is enforced by creating per-tier limiters on demand.
-_client_limiters: Dict[str, RateLimiter] = {}
+# Per-client API key limiter — bounded LRU cache (max 10k clients).
+_MAX_CLIENT_LIMITERS = 10_000
+_client_limiters: OrderedDict[str, RateLimiter] = OrderedDict()
 # Backward-compat for tests and older imports.
 limiter = external_limiter
 
@@ -554,6 +554,10 @@ async def run_task(
             _client_limiters[auth.client_id] = RateLimiter(
                 max_requests=client_rpm, window_seconds=60
             )
+            # LRU eviction
+            while len(_client_limiters) > _MAX_CLIENT_LIMITERS:
+                _client_limiters.popitem(last=False)
+        _client_limiters.move_to_end(auth.client_id)
         allowed, remaining = _client_limiters[auth.client_id].is_allowed(auth.client_id)
         if not allowed:
             raise HTTPException(
@@ -561,22 +565,6 @@ async def run_task(
                 detail=f"Rate limit ({client_rpm} rpm) exceeded for your API key",
                 headers={"Retry-After": "60"},
             )
-
-    # --- Parse: detect envelope vs legacy ---
-    try:
-        envelope = TaskEnvelope.from_run_payload(body)
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=f"Invalid request body: {exc}")
-
-    # S7: sanitize task name and input size (apply sanitized result)
-    try:
-        sanitize_task_name(envelope.task)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
-    try:
-        envelope.input = sanitize_input(envelope.input)
-    except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc))
 
     ops_context = _ops_context_from_envelope(envelope)
     team_value = _ops_value(envelope.team)
@@ -764,13 +752,28 @@ async def enqueue_task(
     Returns:
         {"ok": true, "task_id": "uuid", "queued": true}
     """
-    _authenticate(authorization)
+    auth = _authenticate(authorization)
 
     # Sanitize (apply sanitized result)
     try:
         sanitize_task_name(body.task)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+
+    # --- Client tier enforcement on enqueue ---
+    if auth.kind == "client":
+        if not is_task_allowed(auth.tier, body.task):
+            raise HTTPException(
+                status_code=403,
+                detail=f"Task '{body.task}' not allowed for tier '{auth.tier}'",
+            )
+        store = get_client_store()
+        if not store.check_daily_limit(auth.client_id):
+            raise HTTPException(
+                status_code=429,
+                detail=f"Daily limit exceeded for tier '{auth.tier}'",
+            )
+
     try:
         sanitized_input = sanitize_input(body.input)
     except ValueError as exc:

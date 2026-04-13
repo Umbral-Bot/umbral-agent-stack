@@ -1934,6 +1934,7 @@ def handle_granola_capitalize_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
 
     # V2: auto-classify the raw page before capitalization
     classification_result: Dict[str, Any] = {}
+    _classify_failed = False
     if auto_classify and allow_legacy_raw_to_canonical:
         try:
             classification_result = handle_granola_classify_raw({
@@ -1950,6 +1951,23 @@ def handle_granola_capitalize_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
         except Exception as exc:
             logger.warning("Auto-classify failed for %s: %s", transcript_page_id[:8], exc)
             classification_result = {"error": str(exc)}
+
+    # V2.1: detect classification unavailable (for return dict observability)
+    _classify_failed = bool(
+        auto_classify
+        and allow_legacy_raw_to_canonical
+        and classification_result.get("error")
+        and not classification_result.get("classification")
+    )
+    if _classify_failed:
+        logger.warning(
+            "capitalize %s proceeding without classification "
+            "(attempts=%s, model=%s, error=%s)",
+            transcript_page_id[:8],
+            classification_result.get("classify_attempts", "?"),
+            classification_result.get("model_used", "?"),
+            classification_result.get("error", "?"),
+        )
 
     # V2.1: classification gates — block or skip based on destino
     if classification_result.get("classification"):
@@ -2167,7 +2185,7 @@ def handle_granola_capitalize_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
                     key, target_page_id, transcript_title,
                 )
 
-    return {
+    result: Dict[str, Any] = {
         "transcript_page_id": page_snapshot.get("page_id") or transcript_page_id,
         "transcript_url": transcript_url,
         "title": transcript_title,
@@ -2177,6 +2195,12 @@ def handle_granola_capitalize_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
         "trace_comments_added": trace_comments_added,
         "classification": classification_result,
     }
+    if _classify_failed:
+        result["classification_unavailable"] = True
+        result["classification_error"] = str(classification_result.get("error", ""))
+        result["classification_attempts"] = classification_result.get("classify_attempts", 0)
+        result["classification_model_used"] = classification_result.get("model_used", "")
+    return result
 
 
 def handle_granola_promote_curated_session(input_data: Dict[str, Any]) -> Dict[str, Any]:

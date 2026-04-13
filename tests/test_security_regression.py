@@ -9,7 +9,9 @@ Run with:
 """
 
 import os
+import sys
 import time
+import types
 
 import pytest
 
@@ -21,6 +23,7 @@ from worker.app import app
 from worker.client_auth import (
     InMemoryClientStore,
     get_client_store,
+    get_tier_config,
     is_task_allowed,
     set_client_store,
 )
@@ -132,6 +135,21 @@ class TestEnqueueTierEnforcement:
         if resp.status_code == 403:
             assert "not allowed" in resp.json()["detail"]
 
+    def test_free_client_over_daily_limit_gets_429(self, http_client):
+        store = get_client_store()
+        record, api_key = store.register(name="DailyLimit", email="daily@example.com")
+        today = time.strftime("%Y-%m-%d", time.gmtime())
+        daily_limit = get_tier_config("free").get("daily_limit", 0) or 1
+        store._daily_counts[record.client_id][today] = daily_limit
+
+        resp = http_client.post(
+            "/enqueue",
+            json={"task": "ping", "input": {"msg": "blocked"}},
+            headers={"Authorization": f"Bearer {api_key}"},
+        )
+        assert resp.status_code == 429
+        assert "Daily limit exceeded" in resp.json()["detail"]
+
 
 # ---------------------------------------------------------------------------
 # FIX #3 — OData filter injection
@@ -141,14 +159,115 @@ class TestEnqueueTierEnforcement:
 class TestODataInjection:
     """Ensure OData filter values are properly escaped."""
 
-    def test_source_filter_with_single_quote(self):
-        """Verify the retriever escapes single quotes in filter values."""
-        # Test the escaping logic directly (no Azure deps needed)
-        source = "test' or 1 eq 1 or source eq '"
-        safe = source.replace("'", "''")
-        expected = f"source eq '{safe}'"
-        assert "''" in expected  # quotes are doubled
-        assert "or 1 eq 1" in expected  # the payload is still there but safely quoted
+    @staticmethod
+    def _install_fake_azure_modules(monkeypatch, capture):
+        class FakeAzureKeyCredential:
+            def __init__(self, key):
+                self.key = key
+
+        class FakeVectorizedQuery:
+            def __init__(self, **kwargs):
+                self.kwargs = kwargs
+                capture["vector_query_kwargs"] = kwargs
+
+        class FakeSearchClient:
+            def __init__(self, endpoint, index_name, credential):
+                capture["client_init"] = {
+                    "endpoint": endpoint,
+                    "index_name": index_name,
+                    "key": getattr(credential, "key", None),
+                }
+
+            def search(self, search_text=None, **kwargs):
+                capture["search_text"] = search_text
+                capture["search_kwargs"] = kwargs
+                return [
+                    {
+                        "id": "doc-1",
+                        "content": "safe result",
+                        "title": "T",
+                        "source": "S",
+                        "source_type": "file",
+                        "chunk_index": 0,
+                        "@search.score": 0.99,
+                    }
+                ]
+
+        azure_module = types.ModuleType("azure")
+        core_module = types.ModuleType("azure.core")
+        credentials_module = types.ModuleType("azure.core.credentials")
+        search_module = types.ModuleType("azure.search")
+        documents_module = types.ModuleType("azure.search.documents")
+        models_module = types.ModuleType("azure.search.documents.models")
+
+        credentials_module.AzureKeyCredential = FakeAzureKeyCredential
+        documents_module.SearchClient = FakeSearchClient
+        models_module.VectorizedQuery = FakeVectorizedQuery
+
+        azure_module.core = core_module
+        azure_module.search = search_module
+        core_module.credentials = credentials_module
+        search_module.documents = documents_module
+        documents_module.models = models_module
+
+        monkeypatch.setitem(sys.modules, "azure", azure_module)
+        monkeypatch.setitem(sys.modules, "azure.core", core_module)
+        monkeypatch.setitem(sys.modules, "azure.core.credentials", credentials_module)
+        monkeypatch.setitem(sys.modules, "azure.search", search_module)
+        monkeypatch.setitem(sys.modules, "azure.search.documents", documents_module)
+        monkeypatch.setitem(sys.modules, "azure.search.documents.models", models_module)
+
+    def test_source_filter_with_single_quote(self, monkeypatch):
+        from worker.rag import retriever
+
+        capture = {}
+        self._install_fake_azure_modules(monkeypatch, capture)
+        monkeypatch.setattr(
+            retriever,
+            "_get_search_credentials",
+            lambda: ("https://search.example", "search-key"),
+        )
+
+        query_payload = "test' or 1 eq 1 or source eq '"
+        source_type_payload = "notion'type"
+        results = retriever.search(
+            query="safe query",
+            mode="keyword",
+            source_filter=query_payload,
+            source_type_filter=source_type_payload,
+        )
+
+        assert capture["search_text"] == "safe query"
+        assert capture["search_kwargs"]["filter"] == (
+            "source eq 'test'' or 1 eq 1 or source eq ''' and "
+            "source_type eq 'notion''type'"
+        )
+        assert capture["search_kwargs"]["top"] == 5
+        assert "vector_queries" not in capture["search_kwargs"]
+        assert results[0]["id"] == "doc-1"
+
+    def test_vector_mode_uses_vector_query(self, monkeypatch):
+        from worker.rag import retriever
+
+        capture = {}
+        self._install_fake_azure_modules(monkeypatch, capture)
+        monkeypatch.setattr(
+            retriever,
+            "_get_search_credentials",
+            lambda: ("https://search.example", "search-key"),
+        )
+        monkeypatch.setattr(
+            retriever,
+            "generate_embeddings",
+            lambda texts: [[0.1, 0.2, 0.3] for _ in texts],
+        )
+
+        retriever.search(query="vector query", mode="vector", top=2)
+
+        assert capture["search_text"] is None
+        assert len(capture["search_kwargs"]["vector_queries"]) == 1
+        assert capture["vector_query_kwargs"]["k_nearest_neighbors"] == 2
+        assert capture["vector_query_kwargs"]["fields"] == "content_vector"
 
 
 # ---------------------------------------------------------------------------
@@ -165,6 +284,36 @@ class TestLimiterBounds:
         # Verify it's an OrderedDict (supports LRU eviction)
         from collections import OrderedDict
         assert isinstance(_client_limiters, OrderedDict)
+
+    def test_client_limiters_lru_eviction(self, http_client, monkeypatch):
+        from worker import app as worker_app
+
+        worker_app._client_limiters.clear()
+        monkeypatch.setattr(worker_app, "_MAX_CLIENT_LIMITERS", 3)
+
+        try:
+            store = get_client_store()
+            client_ids = []
+
+            for idx in range(4):
+                record, api_key = store.register(
+                    name=f"Client {idx}",
+                    email=f"client{idx}@example.com",
+                    tier="free",
+                )
+                client_ids.append(record.client_id)
+                resp = http_client.post(
+                    "/run",
+                    json={"task": "ping", "input": {"msg": f"client-{idx}"}},
+                    headers={"Authorization": f"Bearer {api_key}"},
+                )
+                assert resp.status_code == 200
+
+            assert len(worker_app._client_limiters) == 3
+            assert client_ids[0] not in worker_app._client_limiters
+            assert client_ids[-1] in worker_app._client_limiters
+        finally:
+            worker_app._client_limiters.clear()
 
 
 # ---------------------------------------------------------------------------

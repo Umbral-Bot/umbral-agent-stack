@@ -266,6 +266,10 @@ def _extract_estado_agente(item: dict) -> str:
         prop = props.get(key)
         if not prop:
             continue
+        if isinstance(prop, str):
+            return prop.strip()
+        if not isinstance(prop, dict):
+            continue
         ptype = prop.get("type", "")
         if ptype == "select":
             sel = prop.get("select") or {}
@@ -285,6 +289,10 @@ def _has_v2_classification_fields(item: dict) -> bool:
     for field_name in _V2_CLASSIFIED_FIELD_NAMES:
         prop = props.get(field_name)
         if not prop:
+            continue
+        if isinstance(prop, str):
+            return True
+        if not isinstance(prop, dict):
             continue
         ptype = prop.get("type", "")
         value = ""

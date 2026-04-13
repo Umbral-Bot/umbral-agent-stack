@@ -469,7 +469,7 @@ def _instruction_bridge_name(text: str, comment_id: str) -> str:
     raw = _single_line(text)
     if len(raw) > 90:
         raw = raw[:87].rstrip() + "..."
-    return f"Instrucción Notion: {raw} [{comment_id[:8]}]"
+    return f"Instrucción Notion: {raw}"
 
 
 def _resolve_instruction_project_name(wc: WorkerClient, *, page_id: str | None, page_kind: str | None) -> str | None:

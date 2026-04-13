@@ -285,6 +285,16 @@ def create_transcript_page(
             ],
             {"date"},
         )
+        agent_status_prop = _find_property_name(
+            db_properties,
+            ["Estado agente"],
+            {"select", "status"},
+        )
+        agent_action_prop = _find_property_name(
+            db_properties,
+            ["Accion agente", "Acción agente"],
+            {"select", "status"},
+        )
         traceability_prop = _find_property_name(
             db_properties,
             ["Trazabilidad", "Traceability"],
@@ -328,6 +338,20 @@ def create_transcript_page(
                 properties[traceability_prop] = {
                     "title": [{"text": {"content": traceability_value}}]
                 }
+
+        if agent_status_prop:
+            agent_status_type = db_properties[agent_status_prop].get("type")
+            if agent_status_type == "status":
+                properties[agent_status_prop] = {"status": {"name": "Pendiente"}}
+            else:
+                properties[agent_status_prop] = {"select": {"name": "Pendiente"}}
+
+        if agent_action_prop:
+            agent_action_type = db_properties[agent_action_prop].get("type")
+            if agent_action_type == "status":
+                properties[agent_action_prop] = {"status": {"name": "Sin accion"}}
+            else:
+                properties[agent_action_prop] = {"select": {"name": "Sin accion"}}
 
         payload = {
             "parent": {"database_id": db_id},
@@ -1389,14 +1413,10 @@ def upsert_task(
         properties["Error"] = {"rich_text": [{"text": {"content": error_preview[:2000]}}]}
     if input_preview and input_preview != "—":
         properties["Input Summary"] = {"rich_text": [{"text": {"content": input_preview[:2000]}}]}
-    if selected_model:
-        properties["Model"] = {"rich_text": [{"text": {"content": str(selected_model)[:2000]}}]}
-    if source:
-        properties["Source"] = {"rich_text": [{"text": {"content": str(source)[:2000]}}]}
-    if source_kind:
-        properties["Source Kind"] = {"rich_text": [{"text": {"content": str(source_kind)[:2000]}}]}
-    if trace_id:
-        properties["Trace ID"] = {"rich_text": [{"text": {"content": str(trace_id)[:2000]}}]}
+    # V2: telemetry fields (Model, Source, Source Kind, Trace ID) are no longer
+    # written to Notion properties — they are internal, not David-facing.
+    # Values are still accepted by the function signature for log/traceability
+    # but intentionally omitted from the Notion page.
 
     with httpx.Client(timeout=TIMEOUT) as client:
         # Query by Task ID

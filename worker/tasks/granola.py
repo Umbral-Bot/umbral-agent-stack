@@ -10,10 +10,11 @@ import json
 import logging
 import re
 import hashlib
+import time
 import unicodedata
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from .. import config, notion_client
 from .notion import (
@@ -1472,6 +1473,9 @@ _V2_TIPO_VALUES = {"Clase", "Sesion", "Reunion", "Tutoria", "Workshop", "Llamada
 _V2_DESTINO_VALUES = {"Tarea", "Proyecto", "Entregable", "Programa", "Recurso", "Ignorar"}
 _V2_DESTINO_REVIEW_ONLY = {"Programa", "Recurso"}  # read-only targets → always review
 
+_CLASSIFY_RETRY_DELAY = 2.0  # seconds between retry attempts
+_CLASSIFY_FALLBACK_MODEL = "gemini_pro"  # fallback when primary model fails
+
 # Map V2 destino to the explicit target flags that would satisfy it
 _V2_DESTINO_TARGET_MAP: Dict[str, list[str]] = {
     "Tarea": ["bridge_item", "followup"],
@@ -1684,29 +1688,89 @@ def handle_granola_classify_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
                 attendees = [a.strip() for a in att_text.split(",") if a.strip()]
                 break
 
-    # Step 2: Call LLM for classification
+    # Step 2: Call LLM for classification (retry + fallback)
     classify_prompt = _build_classify_prompt(title, content, attendees)
     logger.info("Classifying raw page %s: '%s'", page_id[:8], title[:60])
 
+    llm_params = {
+        "prompt": classify_prompt,
+        "system": _CLASSIFY_SYSTEM_PROMPT,
+        "max_tokens": 300,
+        "temperature": 0.0,
+    }
+
+    raw_response = ""
+    model_used = model
+    classify_attempts = 0
+    last_error: Optional[Exception] = None
+
+    # Attempt 1: primary model
+    classify_attempts += 1
     try:
-        llm_result = handle_llm_generate({
-            "prompt": classify_prompt,
-            "system": _CLASSIFY_SYSTEM_PROMPT,
-            "model": model,
-            "max_tokens": 300,
-            "temperature": 0.0,
-        })
+        llm_result = handle_llm_generate({**llm_params, "model": model})
         raw_response = llm_result.get("text") or ""
+        last_error = None
     except Exception as exc:
-        logger.warning("LLM classification failed for %s: %s", page_id[:8], exc)
+        last_error = exc
+        logger.warning(
+            "classify %s attempt %d failed (model=%s): %s",
+            page_id[:8], classify_attempts, model, exc,
+        )
+
+    # Attempt 2: retry primary model after backoff
+    if last_error is not None:
+        time.sleep(_CLASSIFY_RETRY_DELAY)
+        classify_attempts += 1
+        try:
+            llm_result = handle_llm_generate({**llm_params, "model": model})
+            raw_response = llm_result.get("text") or ""
+            last_error = None
+            logger.info(
+                "classify %s retry succeeded (model=%s, attempt=%d)",
+                page_id[:8], model, classify_attempts,
+            )
+        except Exception as exc:
+            last_error = exc
+            logger.warning(
+                "classify %s attempt %d failed (model=%s): %s",
+                page_id[:8], classify_attempts, model, exc,
+            )
+
+    # Attempt 3: fallback model
+    fallback_model = str(input_data.get("fallback_model") or _CLASSIFY_FALLBACK_MODEL).strip()
+    if last_error is not None and fallback_model != model:
+        classify_attempts += 1
+        model_used = fallback_model
+        try:
+            llm_result = handle_llm_generate({**llm_params, "model": fallback_model})
+            raw_response = llm_result.get("text") or ""
+            last_error = None
+            logger.info(
+                "classify %s fallback succeeded (model=%s, attempt=%d)",
+                page_id[:8], fallback_model, classify_attempts,
+            )
+        except Exception as exc:
+            last_error = exc
+            logger.warning(
+                "classify %s fallback failed (model=%s, attempt=%d): %s",
+                page_id[:8], fallback_model, classify_attempts, exc,
+            )
+
+    if last_error is not None:
+        logger.error(
+            "classify %s FAILED after %d attempts (primary=%s, fallback=%s): %s",
+            page_id[:8], classify_attempts, model, fallback_model, last_error,
+        )
         return {
             "page_id": page_id,
             "classification": {},
             "fields_updated": [],
             "needs_review": True,
-            "review_reason": f"LLM call failed: {exc}",
+            "review_reason": f"LLM call failed: {last_error}",
             "dry_run": dry_run,
-            "error": str(exc),
+            "error": str(last_error),
+            "classify_attempts": classify_attempts,
+            "model_used": model_used,
         }
 
     # Step 3: Parse and validate
@@ -1822,6 +1886,8 @@ def handle_granola_classify_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
         "agent_status": agent_status,
         "agent_action": agent_action,
         "dry_run": dry_run,
+        "classify_attempts": classify_attempts,
+        "model_used": model_used,
     }
 
 

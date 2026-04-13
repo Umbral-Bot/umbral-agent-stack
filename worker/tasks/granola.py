@@ -2,9 +2,11 @@
 Tasks: Granola pipeline handlers.
 
 - granola.process_transcript: pipeline completo de transcripción → Notion
+- granola.classify_raw: clasificación V2 de una página raw de Granola
 - granola.create_followup: follow-up proactivo (reminder, email_draft, proposal)
 """
 
+import json
 import logging
 import re
 import hashlib
@@ -1428,16 +1430,13 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
         except Exception as e:
             logger.warning("Failed to create action item task: %s", e)
 
-    # Step 3: Notify Enlace in Control Room (literal @Enlace per convention)
+    # Step 3: Notify Enlace in Control Room — useful for David, no internal IDs
     notification_sent = False
     if notify_enlace:
         try:
             attendees_str = f" ({', '.join(attendees)})" if attendees else ""
-            transcript_ref = page_url or page_id
             comment_text = (
-                f"Hola @Enlace, transcripción lista para revisar: "
-                f"{title}{attendees_str} — {date}. "
-                f"Página: {transcript_ref}. "
+                f"Transcripción lista: {title}{attendees_str} — {date}. "
                 f"{len(action_items)} action items identificados."
             )
             notion_client.add_comment(page_id=None, text=comment_text)
@@ -1464,6 +1463,372 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
     }
 
 
+# ---------------------------------------------------------------------------
+# V2 classification — taxonomy and LLM classifier
+# ---------------------------------------------------------------------------
+
+_V2_DOMINIO_VALUES = {"Docencia", "Operacion", "Sistemas", "Marca", "Mixto"}
+_V2_TIPO_VALUES = {"Clase", "Sesion", "Reunion", "Tutoria", "Workshop", "Llamada", "Revision", "Otro"}
+_V2_DESTINO_VALUES = {"Tarea", "Proyecto", "Entregable", "Programa", "Recurso", "Ignorar"}
+_V2_DESTINO_REVIEW_ONLY = {"Programa", "Recurso"}  # read-only targets → always review
+
+# Map V2 destino to the explicit target flags that would satisfy it
+_V2_DESTINO_TARGET_MAP: Dict[str, list[str]] = {
+    "Tarea": ["bridge_item", "followup"],
+    "Proyecto": ["project"],
+    "Entregable": ["deliverable"],
+}
+
+
+def _classify_gate(
+    classification_result: Dict[str, Any],
+    *,
+    wants_project: bool,
+    wants_deliverable: bool,
+    wants_bridge: bool,
+    wants_followup: bool,
+) -> Dict[str, str]:
+    """Evaluate classification against explicit targets. Returns action + reason + advisory."""
+    classification = classification_result.get("classification") or {}
+    destino = str(classification.get("destino") or "").strip()
+
+    if not destino:
+        return {"action": "proceed", "reason": "", "advisory": ""}
+
+    # Hard block: Ignorar
+    if destino == "Ignorar":
+        return {
+            "action": "skip",
+            "reason": "Clasificación V2: destino=Ignorar — sin contenido accionable",
+            "advisory": "",
+        }
+
+    # Hard block: Programa / Recurso
+    if destino in _V2_DESTINO_REVIEW_ONLY:
+        return {
+            "action": "block",
+            "reason": f"Clasificación V2: destino={destino} — requiere revisión humana",
+            "advisory": "",
+        }
+
+    # Soft advisory: check if explicit targets align with destino
+    have = {
+        "project": wants_project,
+        "deliverable": wants_deliverable,
+        "bridge_item": wants_bridge,
+        "followup": wants_followup,
+    }
+    expected_targets = _V2_DESTINO_TARGET_MAP.get(destino, [])
+
+    # Block: destino mapped but no compatible target provided
+    if expected_targets and not any(have.get(t) for t in expected_targets):
+        expected_names = ", ".join(expected_targets)
+        return {
+            "action": "block",
+            "reason": (
+                f"Clasificación V2: destino={destino} pero falta target compatible "
+                f"({expected_names}) — requiere revisión"
+            ),
+            "advisory": "",
+        }
+
+    # Block: incompatible targets provided (targets that don't match destino)
+    if expected_targets:
+        incompatible = [
+            t for t, present in have.items()
+            if present and t not in expected_targets
+        ]
+        if incompatible:
+            incompatible_names = ", ".join(incompatible)
+            return {
+                "action": "block",
+                "reason": (
+                    f"Clasificación V2: destino={destino} incompatible con targets "
+                    f"explícitos ({incompatible_names}) — requiere revisión"
+                ),
+                "advisory": "",
+            }
+
+    return {"action": "proceed", "reason": "", "advisory": ""}
+
+_CLASSIFY_SYSTEM_PROMPT = """\
+Eres un clasificador de transcripciones de reuniones.
+Dada una transcripcion, devuelve SOLO un JSON valido con estos 4 campos:
+
+{
+  "dominio": "Docencia" | "Operacion" | "Sistemas" | "Marca" | "Mixto",
+  "tipo": "Clase" | "Sesion" | "Reunion" | "Tutoria" | "Workshop" | "Llamada" | "Revision" | "Otro",
+  "destino": "Tarea" | "Proyecto" | "Entregable" | "Programa" | "Recurso" | "Ignorar",
+  "resumen": "<resumen en español, 1-3 oraciones, máximo 280 caracteres>"
+}
+
+Reglas:
+- dominio: area principal de la reunion (Docencia=cursos/clases, Operacion=proyectos/asesoria, Sistemas=automatizacion/tech, Marca=branding/comercial, Mixto=multiples areas)
+- tipo: formato de la sesion
+- destino: objeto canonico mas probable que se derivaria de esta reunion
+  - Si hay action items claros → Tarea
+  - Si se discute un proyecto con decisiones o scope → Proyecto
+  - Si hay un entregable concreto mencionado → Entregable
+  - Si es contenido docente o de programa → Programa
+  - Si es material reutilizable o caso de estudio → Recurso
+  - Si no hay contenido accionable → Ignorar
+- resumen: resumen ejecutivo util para David (el dueño del workspace). En español.
+- Si tienes duda entre dos opciones, elige la mas conservadora.
+- Devuelve SOLO el JSON, sin markdown ni explicaciones.\
+"""
+
+
+def _build_classify_prompt(title: str, content: str, attendees: List[str]) -> str:
+    parts = [f"Titulo: {title}"]
+    if attendees:
+        parts.append(f"Asistentes: {', '.join(attendees)}")
+    # Truncate content to ~3000 chars to keep LLM cost low
+    excerpt = content[:3000]
+    if len(content) > 3000:
+        excerpt += "\n[... contenido truncado]"
+    parts.append(f"Contenido:\n{excerpt}")
+    return "\n\n".join(parts)
+
+
+def _parse_classification(raw_text: str) -> Dict[str, str] | None:
+    """Parse LLM JSON response, tolerating markdown fences."""
+    text = raw_text.strip()
+    # Strip markdown code fences if present
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:json)?\s*", "", text)
+        text = re.sub(r"\s*```$", "", text)
+    try:
+        data = json.loads(text)
+    except (json.JSONDecodeError, ValueError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    return data
+
+
+def _validate_classification(data: Dict[str, str]) -> Dict[str, str]:
+    """Validate and sanitize classification against V2 taxonomy. Returns cleaned dict."""
+    result: Dict[str, str] = {}
+    raw_dominio = str(data.get("dominio") or "").strip()
+    result["dominio"] = raw_dominio if raw_dominio in _V2_DOMINIO_VALUES else ""
+    raw_tipo = str(data.get("tipo") or "").strip()
+    result["tipo"] = raw_tipo if raw_tipo in _V2_TIPO_VALUES else ""
+    raw_destino = str(data.get("destino") or "").strip()
+    result["destino"] = raw_destino if raw_destino in _V2_DESTINO_VALUES else ""
+    result["resumen"] = str(data.get("resumen") or "").strip()[:280]
+    return result
+
+
+def handle_granola_classify_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    V2 classifier: classify a raw Granola page and populate V2 fields.
+
+    Reads the raw page, calls LLM for classification, validates against
+    taxonomy, and updates the raw page properties.
+
+    Input:
+        page_id (str, required): Raw transcript page ID.
+        dry_run (bool, optional): If true, classify but don't update Notion.
+        model (str, optional): LLM model alias (default: gemini_flash).
+
+    Returns:
+        classification (dict): dominio, tipo, destino, resumen
+        fields_updated (list): V2 fields actually written to Notion
+        needs_review (bool): True if classification requires human review
+        review_reason (str): Why review is needed, if applicable
+    """
+    from .llm import handle_llm_generate
+
+    page_id = (
+        input_data.get("page_id")
+        or input_data.get("transcript_page_id")
+        or input_data.get("page_id_or_url")
+        or ""
+    ).strip()
+    if not page_id:
+        raise ValueError("'page_id' is required")
+
+    dry_run = bool(input_data.get("dry_run"))
+    model = str(input_data.get("model") or "gemini_flash").strip()
+
+    # Step 1: Read the raw page
+    page_snapshot = notion_client.read_page(page_id, max_blocks=80)
+    page_data = notion_client.get_page(page_id)
+
+    title = (
+        (page_snapshot.get("title") or "").strip()
+        or _extract_title_from_page(page_data)
+        or "Reunion"
+    )
+    content = (page_snapshot.get("plain_text") or "").strip()
+    if not content:
+        return {
+            "page_id": page_id,
+            "classification": {},
+            "fields_updated": [],
+            "needs_review": True,
+            "review_reason": "No content available for classification",
+            "dry_run": dry_run,
+        }
+
+    # Extract attendees from page properties if available
+    attendees: List[str] = []
+    props = page_data.get("properties") or {}
+    for key in ("Asistentes", "Attendees", "Participantes"):
+        att_prop = props.get(key)
+        if att_prop and att_prop.get("type") == "rich_text":
+            att_text = "".join(
+                rt.get("plain_text", "") for rt in (att_prop.get("rich_text") or [])
+            ).strip()
+            if att_text:
+                attendees = [a.strip() for a in att_text.split(",") if a.strip()]
+                break
+
+    # Step 2: Call LLM for classification
+    classify_prompt = _build_classify_prompt(title, content, attendees)
+    logger.info("Classifying raw page %s: '%s'", page_id[:8], title[:60])
+
+    try:
+        llm_result = handle_llm_generate({
+            "prompt": classify_prompt,
+            "system": _CLASSIFY_SYSTEM_PROMPT,
+            "model": model,
+            "max_tokens": 300,
+            "temperature": 0.0,
+        })
+        raw_response = llm_result.get("text") or ""
+    except Exception as exc:
+        logger.warning("LLM classification failed for %s: %s", page_id[:8], exc)
+        return {
+            "page_id": page_id,
+            "classification": {},
+            "fields_updated": [],
+            "needs_review": True,
+            "review_reason": f"LLM call failed: {exc}",
+            "dry_run": dry_run,
+            "error": str(exc),
+        }
+
+    # Step 3: Parse and validate
+    parsed = _parse_classification(raw_response)
+    if not parsed:
+        logger.warning("Failed to parse LLM classification for %s: %s", page_id[:8], raw_response[:200])
+        return {
+            "page_id": page_id,
+            "classification": {},
+            "raw_response": raw_response[:500],
+            "fields_updated": [],
+            "needs_review": True,
+            "review_reason": "LLM response not valid JSON",
+            "dry_run": dry_run,
+        }
+
+    classification = _validate_classification(parsed)
+    logger.info(
+        "Classification for %s: dominio=%s, tipo=%s, destino=%s",
+        page_id[:8], classification["dominio"], classification["tipo"], classification["destino"],
+    )
+
+    # Step 4: Determine review status
+    needs_review = False
+    review_reason = ""
+
+    missing_fields = []
+    if not classification["dominio"]:
+        missing_fields.append("dominio")
+    if not classification["tipo"]:
+        missing_fields.append("tipo")
+    if not classification["destino"]:
+        missing_fields.append("destino")
+    if not classification["resumen"]:
+        missing_fields.append("resumen")
+
+    if missing_fields:
+        needs_review = True
+        review_reason = f"Classification incomplete: missing {', '.join(missing_fields)}"
+    elif classification["destino"] in _V2_DESTINO_REVIEW_ONLY:
+        needs_review = True
+        review_reason = f"Destino '{classification['destino']}' is read-only — requires human review"
+
+    # Step 5: Update raw page properties
+    agent_status = "Revision requerida" if needs_review else "Procesada"
+    agent_action = "Bloqueado por ambiguedad" if needs_review else "Resumen generado"
+
+    if not dry_run:
+        raw_schema = _page_schema_from_page(page_data)
+        update_props: Dict[str, Any] = {}
+        fields_updated: List[str] = []
+
+        if classification["dominio"]:
+            _set_schema_property(
+                update_props, raw_schema,
+                ["Dominio propuesto"],
+                classification["dominio"],
+                expected_types={"select", "status", "rich_text"},
+                used_fields=fields_updated,
+            )
+        if classification["tipo"]:
+            _set_schema_property(
+                update_props, raw_schema,
+                ["Tipo propuesto"],
+                classification["tipo"],
+                expected_types={"select", "status", "rich_text"},
+                used_fields=fields_updated,
+            )
+        if classification["destino"]:
+            _set_schema_property(
+                update_props, raw_schema,
+                ["Destino canonico", "Destino canónico"],
+                classification["destino"],
+                expected_types={"select", "status", "rich_text"},
+                used_fields=fields_updated,
+            )
+        if classification["resumen"]:
+            _set_schema_property(
+                update_props, raw_schema,
+                ["Resumen agente"],
+                classification["resumen"],
+                expected_types={"rich_text"},
+                used_fields=fields_updated,
+            )
+        _set_schema_property(
+            update_props, raw_schema,
+            ["Estado agente"],
+            agent_status,
+            expected_types={"select", "status"},
+            used_fields=fields_updated,
+        )
+        _set_schema_property(
+            update_props, raw_schema,
+            ["Accion agente", "Acción agente"],
+            agent_action,
+            expected_types={"select", "status"},
+            used_fields=fields_updated,
+        )
+
+        if update_props:
+            notion_client.update_page_properties(page_id, properties=update_props)
+            logger.info("Updated %d V2 fields on raw page %s", len(fields_updated), page_id[:8])
+    else:
+        fields_updated = []
+
+    return {
+        "page_id": page_id,
+        "title": title,
+        "classification": classification,
+        "fields_updated": fields_updated,
+        "needs_review": needs_review,
+        "review_reason": review_reason,
+        "agent_status": agent_status,
+        "agent_action": agent_action,
+        "dry_run": dry_run,
+    }
+
+
+# ---------------------------------------------------------------------------
+# granola.capitalize_raw
+# ---------------------------------------------------------------------------
+
 def handle_granola_capitalize_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Capitalize an existing raw Granola page into stack-governed canonical objects.
@@ -1472,6 +1837,9 @@ def handle_granola_capitalize_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
     - reads the raw page for evidence and traceability
     - only writes to destinations requested in the payload
     - does not auto-promote into the human curated sessions DB yet
+
+    V2 integration: if 'auto_classify' is true (default), runs classify_raw
+    first to populate V2 fields before attempting capitalization.
     """
     transcript_page_id = (
         input_data.get("transcript_page_id")
@@ -1482,7 +1850,8 @@ def handle_granola_capitalize_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
     if not transcript_page_id:
         raise ValueError("'transcript_page_id' is required in input")
 
-    allow_legacy_raw_to_canonical = bool(input_data.get("allow_legacy_raw_to_canonical"))
+    allow_legacy_raw_to_canonical = input_data.get("allow_legacy_raw_to_canonical", True)
+    auto_classify = input_data.get("auto_classify", True)
     wants_project = bool((input_data.get("project_name") or "").strip())
     wants_deliverable = bool((input_data.get("deliverable_name") or "").strip())
     wants_bridge = bool((input_data.get("bridge_item_name") or "").strip())
@@ -1496,6 +1865,78 @@ def handle_granola_capitalize_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
 
     page_snapshot = notion_client.read_page(transcript_page_id, max_blocks=80)
     page_data = notion_client.get_page(transcript_page_id)
+
+    # V2: auto-classify the raw page before capitalization
+    classification_result: Dict[str, Any] = {}
+    if auto_classify and allow_legacy_raw_to_canonical:
+        try:
+            classification_result = handle_granola_classify_raw({
+                "page_id": transcript_page_id,
+                "dry_run": False,
+                "model": input_data.get("classify_model") or "gemini_flash",
+            })
+            if classification_result.get("needs_review"):
+                logger.info(
+                    "Classification requires review for %s: %s",
+                    transcript_page_id[:8],
+                    classification_result.get("review_reason", ""),
+                )
+        except Exception as exc:
+            logger.warning("Auto-classify failed for %s: %s", transcript_page_id[:8], exc)
+            classification_result = {"error": str(exc)}
+
+    # V2.1: classification gates — block or skip based on destino
+    if classification_result.get("classification"):
+        gate = _classify_gate(
+            classification_result,
+            wants_project=wants_project,
+            wants_deliverable=wants_deliverable,
+            wants_bridge=wants_bridge,
+            wants_followup=wants_followup,
+        )
+        if gate["action"] == "skip":
+            logger.info(
+                "Skipping capitalization for %s: %s",
+                transcript_page_id[:8], gate["reason"],
+            )
+            return {
+                "ok": False,
+                "skipped_by_classification": True,
+                "reason": gate["reason"],
+                "transcript_page_id": transcript_page_id,
+                "classification": classification_result,
+                "results": {},
+                "trace_comments_added": 0,
+            }
+        if gate["action"] == "block":
+            page_title = (
+                (page_snapshot.get("title") or "").strip()
+                or _extract_title_from_page(page_data)
+                or "Reunion"
+            )
+            page_url = (page_snapshot.get("url") or page_data.get("url") or "").strip()
+            page_date = _extract_date_from_page(page_data) or _today_date()
+            review_comment_added = _leave_review_comment(
+                page_snapshot.get("page_id") or transcript_page_id,
+                source_evidence=f"{page_title} ({page_date}) - {page_url or transcript_page_id}",
+                intended_target=gate["reason"],
+                blocking_ambiguity=gate["reason"],
+                next_review="Revisar clasificación V2 y capitalizar manualmente si corresponde.",
+            )
+            logger.info(
+                "Blocking capitalization for %s: %s",
+                transcript_page_id[:8], gate["reason"],
+            )
+            return {
+                "ok": False,
+                "blocked_by_classification": True,
+                "reason": gate["reason"],
+                "transcript_page_id": transcript_page_id,
+                "classification": classification_result,
+                "review_comment_added": review_comment_added,
+                "results": {},
+                "trace_comments_added": 1 if review_comment_added else 0,
+            }
 
     transcript_title = (
         (page_snapshot.get("title") or "").strip()
@@ -1525,18 +1966,18 @@ def handle_granola_capitalize_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
             destinations.append(f"Puente: {(input_data.get('bridge_item_name') or '').strip()}")
         if wants_followup:
             destinations.append(f"Follow-up: {(input_data.get('followup_type') or '').strip()}")
-        intended_target = ", ".join(destinations) if destinations else "Por definir desde session_capitalizable"
+        intended_target = ", ".join(destinations) if destinations else "Por definir"
         review_comment_added = _leave_review_comment(
             page_snapshot.get("page_id") or transcript_page_id,
             source_evidence=f"{transcript_title} ({transcript_date}) - {transcript_url or transcript_page_id}",
             intended_target=intended_target,
-            blocking_ambiguity="V1 no permite raw -> canonical target.",
-            next_review="Promover primero a session_capitalizable y decidir la capitalizacion desde esa capa.",
+            blocking_ambiguity="Capitalización directa deshabilitada explícitamente en este request.",
+            next_review="Reenviar con allow_legacy_raw_to_canonical=true o capitalizar manualmente.",
         )
         return {
             "ok": False,
             "blocked_by_policy": True,
-            "policy": "raw_to_canonical_disabled_in_v1",
+            "policy": "raw_to_canonical_explicitly_disabled",
             "review_comment_added": review_comment_added,
             "transcript_page_id": page_snapshot.get("page_id") or transcript_page_id,
             "transcript_url": transcript_url,
@@ -1646,21 +2087,19 @@ def handle_granola_capitalize_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
         if followup_type:
             destinations.append(f"Follow-up: {followup_type}")
 
-        raw_comment = (
-            f"Capitalizacion Rick registrada para '{transcript_title}' ({transcript_date}). "
-            f"Destino(s): {', '.join(destinations)}."
-        )
-        if _comment_safe(page_snapshot.get("page_id"), raw_comment):
-            trace_comments_added += 1
-
-        target_comment = (
-            f"Origen raw Granola: '{transcript_title}' ({transcript_date}). "
-            f"Ref: {transcript_url or transcript_page_id}"
+        # V2: trace comments are logged but NOT posted to Notion pages.
+        # They were internal telemetry, not useful to David.
+        logger.info(
+            "Capitalization trace for '%s' (%s) -> %s",
+            transcript_title, transcript_date, ", ".join(destinations),
         )
         for key in ("project", "deliverable", "bridge_item"):
             target_page_id = _result_page_id(results.get(key))
-            if _comment_safe(target_page_id, target_comment):
-                trace_comments_added += 1
+            if target_page_id:
+                logger.info(
+                    "Target %s page %s from raw '%s'",
+                    key, target_page_id, transcript_title,
+                )
 
     return {
         "transcript_page_id": page_snapshot.get("page_id") or transcript_page_id,
@@ -1670,6 +2109,7 @@ def handle_granola_capitalize_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
         "source": transcript_source,
         "results": results,
         "trace_comments_added": trace_comments_added,
+        "classification": classification_result,
     }
 
 
@@ -2019,19 +2459,12 @@ def handle_granola_promote_curated_session(input_data: Dict[str, Any]) -> Dict[s
     add_trace_comments = input_data.get("add_trace_comments", True)
     curated_page_id = _result_page_id(notion_result) or notion_result.get("page_id", "")
     if add_trace_comments and not dry_run:
-        raw_comment = (
-            f"Promocion a capa curada registrada para '{resolved_session_name}' ({transcript_date}). "
-            f"Sesion curada: {curated_page_id or 'creada/actualizada'}."
+        # V2: trace comments logged but not posted to Notion pages.
+        logger.info(
+            "Promotion trace: '%s' (%s) -> curated session %s",
+            resolved_session_name, transcript_date,
+            curated_page_id or "created/updated",
         )
-        if _comment_safe(page_snapshot.get("page_id"), raw_comment):
-            trace_comments_added += 1
-
-        curated_comment = (
-            f"Origen raw Granola: '{transcript_title}' ({transcript_date}). "
-            f"Ref: {transcript_url or transcript_page_id}"
-        )
-        if _comment_safe(curated_page_id, curated_comment):
-            trace_comments_added += 1
 
     return {
         "transcript_page_id": page_snapshot.get("page_id") or transcript_page_id,
@@ -2270,19 +2703,12 @@ def handle_granola_create_human_task_from_curated_session(
     add_trace_comments = input_data.get("add_trace_comments", True)
     human_task_page_id = _result_page_id(notion_result) or notion_result.get("page_id", "")
     if add_trace_comments and not dry_run:
-        session_comment = (
-            f"Tarea humana registrada desde sesion curada: '{task_name}'. "
-            f"Tarea: {human_task_page_id or 'creada/actualizada'}."
+        # V2: trace comments logged but not posted to Notion pages.
+        logger.info(
+            "Human task trace: '%s' from curated session '%s' (%s) -> %s",
+            task_name, session_title, session_date,
+            human_task_page_id or "created/updated",
         )
-        if _comment_safe(session_snapshot.get("page_id"), session_comment):
-            trace_comments_added += 1
-
-        task_comment = (
-            f"Origen sesion curada: '{session_title}' ({session_date}). "
-            f"Ref: {session_url or curated_session_page_id}"
-        )
-        if _comment_safe(human_task_page_id, task_comment):
-            trace_comments_added += 1
 
     return {
         "curated_session_page_id": session_snapshot.get("page_id") or curated_session_page_id,
@@ -2471,24 +2897,17 @@ def handle_granola_update_commercial_project_from_curated_session(
     trace_comments_added = 0
     add_trace_comments = input_data.get("add_trace_comments", True)
     if add_trace_comments and not dry_run:
-        project_comment_parts = [
-            f"Actualizacion comercial desde sesion curada: '{session_title}' ({session_date}).",
-        ]
+        # V2: trace comments logged but not posted to Notion pages.
+        update_summary_parts = []
         if update_fields["Estado"]:
-            project_comment_parts.append(f"Estado -> {update_fields['Estado']}.")
+            update_summary_parts.append(f"Estado -> {update_fields['Estado']}")
         if update_fields["Acción Requerida"]:
-            project_comment_parts.append(f"Accion requerida -> {update_fields['Acción Requerida']}.")
-        if session_excerpt:
-            project_comment_parts.append(f"Contexto: {session_excerpt}")
-        if _comment_safe(project_page_id, " ".join(project_comment_parts)):
-            trace_comments_added += 1
-
-        session_comment = (
-            f"Proyecto comercial actualizado: '{project_title}'. "
-            f"Ref: {project_page.get('url') or project_page_id}"
+            update_summary_parts.append(f"Accion requerida -> {update_fields['Acción Requerida']}")
+        logger.info(
+            "Commercial project trace: '%s' updated from session '%s' (%s). %s",
+            project_title, session_title, session_date,
+            "; ".join(update_summary_parts) if update_summary_parts else "no field changes",
         )
-        if _comment_safe(session_snapshot.get("page_id"), session_comment):
-            trace_comments_added += 1
 
     return {
         "curated_session_page_id": session_snapshot.get("page_id") or curated_session_page_id,

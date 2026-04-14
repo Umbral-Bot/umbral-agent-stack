@@ -522,7 +522,7 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
         action_items (list[dict], optional): Action items pre-parseados
             [{text, assignee, due}]. Si no se proporcionan, se extraen del content.
         source (str, optional): Fuente (default: "granola").
-        notify_enlace (bool, optional): Notificar a Enlace (default: true).
+        notify_enlace (bool, optional): Notificar a Enlace (default: false, UX-1).
 
     Returns:
         page_id (str): ID de la página creada en Notion.
@@ -540,7 +540,7 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
     date = input_data.get("date") or datetime.now(timezone.utc).strftime("%Y-%m-%d")
     attendees = input_data.get("attendees", [])
     source = input_data.get("source", "granola")
-    notify_enlace = input_data.get("notify_enlace", True)
+    notify_enlace = input_data.get("notify_enlace", False)
     allow_legacy_raw_task_writes = bool(input_data.get("allow_legacy_raw_task_writes"))
 
     # Action items: use provided or extract from content
@@ -632,10 +632,8 @@ def handle_granola_capitalize_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Capitalize an existing raw Granola page into stack-governed canonical objects.
 
-    This handler is intentionally explicit:
-    - reads the raw page for evidence and traceability
-    - only writes to destinations requested in the payload
-    - does not auto-promote into the human curated sessions DB yet
+    V2 canonical route: raw → capitalize_raw → Projects / Deliverables / Bridge.
+    Requires at least one explicit destination in the payload.
     """
     transcript_page_id = (
         input_data.get("transcript_page_id")
@@ -646,13 +644,13 @@ def handle_granola_capitalize_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
     if not transcript_page_id:
         raise ValueError("'transcript_page_id' is required in input")
 
-    allow_legacy_raw_to_canonical = bool(input_data.get("allow_legacy_raw_to_canonical"))
+    allow_legacy_raw_to_canonical = True  # UX-2a: V2 is the canonical route; gate retired.
     wants_project = bool((input_data.get("project_name") or "").strip())
     wants_deliverable = bool((input_data.get("deliverable_name") or "").strip())
     wants_bridge = bool((input_data.get("bridge_item_name") or "").strip())
     wants_followup = bool((input_data.get("followup_type") or "").strip())
 
-    if allow_legacy_raw_to_canonical and not any((wants_project, wants_deliverable, wants_bridge, wants_followup)):
+    if not any((wants_project, wants_deliverable, wants_bridge, wants_followup)):
         raise ValueError(
             "At least one explicit destination is required: project_name, "
             "deliverable_name, bridge_item_name or followup_type"
@@ -679,40 +677,8 @@ def handle_granola_capitalize_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
     )
     context_excerpt = _compact_excerpt(page_snapshot.get("plain_text") or "")
 
-    if not allow_legacy_raw_to_canonical:
-        destinations = []
-        if wants_project:
-            destinations.append(f"Proyecto: {(input_data.get('project_name') or '').strip()}")
-        if wants_deliverable:
-            destinations.append(f"Entregable: {(input_data.get('deliverable_name') or '').strip()}")
-        if wants_bridge:
-            destinations.append(f"Puente: {(input_data.get('bridge_item_name') or '').strip()}")
-        if wants_followup:
-            destinations.append(f"Follow-up: {(input_data.get('followup_type') or '').strip()}")
-        intended_target = ", ".join(destinations) if destinations else "Por definir desde session_capitalizable"
-        review_comment_added = _leave_review_comment(
-            page_snapshot.get("page_id") or transcript_page_id,
-            source_evidence=f"{transcript_title} ({transcript_date}) - {transcript_url or transcript_page_id}",
-            intended_target=intended_target,
-            blocking_ambiguity="V1 no permite raw -> canonical target.",
-            next_review="Promover primero a session_capitalizable y decidir la capitalizacion desde esa capa.",
-        )
-        return {
-            "ok": False,
-            "blocked_by_policy": True,
-            "policy": "raw_to_canonical_disabled_in_v1",
-            "review_comment_added": review_comment_added,
-            "transcript_page_id": page_snapshot.get("page_id") or transcript_page_id,
-            "transcript_url": transcript_url,
-            "title": transcript_title,
-            "date": transcript_date,
-            "source": transcript_source,
-            "results": {},
-            "trace_comments_added": 1 if review_comment_added else 0,
-        }
-
     results: Dict[str, Any] = {}
-    add_trace_comments = input_data.get("add_trace_comments", True)
+    add_trace_comments = input_data.get("add_trace_comments", False)
     trace_comments_added = 0
 
     project_name = (input_data.get("project_name") or "").strip()
@@ -841,11 +807,11 @@ def handle_granola_promote_curated_session(input_data: Dict[str, Any]) -> Dict[s
     """
     Promote an existing raw Granola page into the human curated sessions DB.
 
-    This handler stays conservative by:
-    - requiring NOTION_CURATED_SESSIONS_DB_ID
-    - reading the raw page as evidence first
-    - only populating fields supported by the live curated DB schema
-    - only setting relations passed explicitly in the payload
+    .. deprecated:: UX-2a
+        V1 legacy handler. The canonical V2 route is ``capitalize_raw`` which
+        writes directly to Projects / Deliverables / Bridge without an
+        intermediate curated session layer. This handler remains registered
+        and callable but is no longer part of the recommended flow.
     """
     transcript_page_id = (
         input_data.get("transcript_page_id")
@@ -1170,7 +1136,7 @@ def handle_granola_promote_curated_session(input_data: Dict[str, Any]) -> Dict[s
         }
 
     trace_comments_added = 0
-    add_trace_comments = input_data.get("add_trace_comments", True)
+    add_trace_comments = input_data.get("add_trace_comments", False)
     curated_page_id = _result_page_id(notion_result) or notion_result.get("page_id", "")
     if add_trace_comments and not dry_run:
         raw_comment = (
@@ -1214,12 +1180,10 @@ def handle_granola_create_human_task_from_curated_session(
     """
     Create or update a human task in the personal tasks DB from a curated session page.
 
-    This slice remains conservative:
-    - requires NOTION_HUMAN_TASKS_DB_ID
-    - reads the curated session page as evidence first
-    - requires an explicit task_name/title
-    - only populates fields supported by the live human tasks schema
-    - only sets explicit or directly inherited relations
+    .. deprecated:: UX-2a
+        V1 legacy handler that depends on the curated session intermediate.
+        Remains registered and callable. A future rewire may accept
+        ``raw_page_id`` directly (UX-3).
     """
     curated_session_page_id = (
         input_data.get("curated_session_page_id")
@@ -1411,7 +1375,7 @@ def handle_granola_create_human_task_from_curated_session(
         )
 
     trace_comments_added = 0
-    add_trace_comments = input_data.get("add_trace_comments", True)
+    add_trace_comments = input_data.get("add_trace_comments", False)
     human_task_page_id = _result_page_id(notion_result) or notion_result.get("page_id", "")
     if add_trace_comments and not dry_run:
         session_comment = (
@@ -1452,12 +1416,10 @@ def handle_granola_update_commercial_project_from_curated_session(
     """
     Update the human commercial projects DB from a curated session.
 
-    This slice stays narrow:
-    - requires NOTION_COMMERCIAL_PROJECTS_DB_ID
-    - reads the curated session as evidence first
-    - requires an explicit project target or a project relation on the session
-    - only updates supported commercial fields present in the live schema
-    - leaves traceability through comments rather than freeform page content
+    .. deprecated:: UX-2a
+        V1 legacy handler that depends on the curated session intermediate.
+        Remains registered and callable. For V2 project updates prefer
+        ``capitalize_raw`` targeting the Projects DB directly.
     """
     curated_session_page_id = (
         input_data.get("curated_session_page_id")
@@ -1613,7 +1575,7 @@ def handle_granola_update_commercial_project_from_curated_session(
         )
 
     trace_comments_added = 0
-    add_trace_comments = input_data.get("add_trace_comments", True)
+    add_trace_comments = input_data.get("add_trace_comments", False)
     if add_trace_comments and not dry_run:
         project_comment_parts = [
             f"Actualizacion comercial desde sesion curada: '{session_title}' ({session_date}).",
@@ -1655,8 +1617,11 @@ def handle_granola_promote_operational_slice(input_data: Dict[str, Any]) -> Dict
     """
     Compose explicit human-facing slices from a raw Granola page.
 
-    This orchestrator does not invent classification. It only chains the already
-    conservative handlers when the caller supplies explicit sub-payloads.
+    .. deprecated:: UX-2a
+        V1 orchestrator that chains promote_curated_session →
+        create_human_task / update_commercial_project. Depends on the
+        retired curated session intermediate. Remains registered and callable.
+        The canonical V2 route is ``capitalize_raw``.
     """
     transcript_page_id = (
         input_data.get("transcript_page_id")
@@ -1883,16 +1848,10 @@ def _create_email_draft(
     if notes:
         draft += f"\nNotas adicionales:\n{notes}\n"
 
-    # Save draft as comment on the transcript page
-    try:
-        notion_client.add_comment(
-            page_id=transcript_page_id,
-            text=f"📧 Borrador de email generado:\n\n{draft[:1800]}",
-        )
-        posted = True
-    except Exception as e:
-        logger.warning("Failed to post email draft to Notion: %s", e)
-        posted = False
+    # UX-1: email drafts no longer posted as Notion comments (noise reduction).
+    # The draft text is returned in the result payload and optionally sent via Gmail.
+    logger.info("Email draft generated for %s (not posted to Notion)", transcript_page_id)
+    posted = False
 
     email_draft_result = None
     if attendees:

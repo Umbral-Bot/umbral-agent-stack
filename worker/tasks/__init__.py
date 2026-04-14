@@ -133,6 +133,12 @@ from .client_admin import (
     handle_client_usage,
     handle_client_get,
 )
+from .github import (
+    handle_github_preflight,
+    handle_github_create_branch,
+    handle_github_commit_and_push,
+    handle_github_open_pr,
+)
 
 # Each handler: (input: dict) -> dict
 TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
@@ -234,4 +240,8 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "client.list": handle_client_list,
     "client.usage": handle_client_usage,
     "client.get": handle_client_get,
+    "github.preflight": handle_github_preflight,
+    "github.create_branch": handle_github_create_branch,
+    "github.commit_and_push": handle_github_commit_and_push,
+    "github.open_pr": handle_github_open_pr,
 }

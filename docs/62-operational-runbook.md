@@ -382,13 +382,13 @@ Ejecutar periódicamente para comprobar que no falte `git pull` ni dependencias.
 
 Cuando Rick o un script en la VPS necesite cambiar código o docs:
 
-1. Crear rama: vía handler `github.create_branch` (que trabaja en `~/umbral-agent-stack-main-clean`), o a mano:
-   - `cd ~/umbral-agent-stack-main-clean && git fetch origin && git checkout -b rick/<nombre> origin/main`
+1. Crear rama: vía handler `github.create_branch` (que trabaja en `~/umbral-agent-stack`), o a mano:
+   - `cd ~/umbral-agent-stack && git fetch origin && git checkout -b rick/<nombre> origin/main`
 2. Hacer los cambios, staging explícito, commit, push: vía handler `github.commit_and_push` (requiere lista explícita de archivos), o a mano:
    - `git add -- <archivos> && git commit -m "..." && git push -u origin rick/<nombre>`
 3. Abrir PR a `main`: vía handler `github.open_pr` (usa `GITHUB_TOKEN`), o: `GH_TOKEN=$GITHUB_TOKEN gh pr create --head rick/<nombre> --base main --title "..."`
 4. **No** mergear desde la VPS; David (o Cursor) hace el merge
-5. Después del merge: `cd ~/umbral-agent-stack-main-clean && git checkout main && git pull origin main`
+5. Después del merge: `cd ~/umbral-agent-stack && git checkout main && git pull origin main`
 
 Los handlers `github.*` implementan guardrails: rechazan push a main, exigen prefijo `rick/`, validan worktree limpio, y requieren lista explícita de archivos (nunca `git add -A`).
 
@@ -396,31 +396,22 @@ Los handlers `github.*` implementan guardrails: rechazan push a main, exigen pre
 
 Referencia: [docs/34-rick-github-token-setup.md](34-rick-github-token-setup.md) y [docs/28-rick-github-workflow.md](28-rick-github-workflow.md).
 
-### 7.0.1 Configuración inicial VPS: working copy limpio para cambios de Rick
+### 7.0.1 Configuración VPS: repo único para runtime y cambios de Rick
 
-En la VPS el repo desplegado (`~/umbral-agent-stack`) es el runtime y **no debe editarse directamente**. Los cambios de Rick van en el **working copy limpio** (`~/umbral-agent-stack-main-clean`), donde los handlers `github.*` operan por defecto.
+En la VPS hay un solo repo: `~/umbral-agent-stack`. Es tanto el runtime como el working copy donde Rick crea ramas y trabaja. Los handlers `github.*` operan aquí por defecto (`config.GITHUB_REPO_PATH`).
 
-**Si el working copy limpio no existe (primera vez):**
-
-```bash
-cd ~
-git clone git@github.com:Umbral-Bot/umbral-agent-stack.git umbral-agent-stack-main-clean
-cd umbral-agent-stack-main-clean
-git checkout main
-```
-
-**Si ya existe:** sincronizar con origin antes de trabajar:
+**Sincronizar con origin antes de trabajar:**
 
 ```bash
-cd ~/umbral-agent-stack-main-clean
+cd ~/umbral-agent-stack
 git checkout main && git pull origin main
 ```
 
-El repo desplegado (`~/umbral-agent-stack`) siempre se mantiene en `main` y se actualiza vía `git pull` tras merges aprobados por David.
+Desde `main`, Rick crea ramas con prefijo `rick/` (vía handler o manual) y nunca pushea a `main` directamente.
 
-### 7.1 VPS (verificación: working copy limpio para editar; repo desplegado en main)
+### 7.1 VPS (verificación: repo en rama correcta, worktree limpio)
 
-En la VPS el working copy limpio (`~/umbral-agent-stack-main-clean`) es donde Rick trabaja. El repo desplegado (`~/umbral-agent-stack`) se mantiene en `main`. Para **recibir** cambios ya mergeados: `git checkout main && git pull origin main` en ambos repos.
+En la VPS `~/umbral-agent-stack` es el único repo. Para **recibir** cambios mergeados: `git checkout main && git pull origin main`.
 
 ```bash
 cd ~/umbral-agent-stack

@@ -86,7 +86,7 @@ LINEAR_AGENT_STACK_ALLOWED_AGENTS: str = os.environ.get(
 # ---------------------------------------------------------------------------
 GITHUB_REPO_PATH: str = os.environ.get(
     "GITHUB_REPO_PATH",
-    "/home/rick/umbral-agent-stack-main-clean",
+    "/home/rick/umbral-agent-stack",
 )
 GITHUB_TOKEN: str | None = os.environ.get("GITHUB_TOKEN")
 

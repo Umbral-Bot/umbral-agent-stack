@@ -291,12 +291,13 @@ class TestHandleGranolaCapitalizeRaw:
                 handle_granola_capitalize_raw(
                     {
                         "transcript_page_id": "raw-1",
-                        "allow_legacy_raw_to_canonical": True,
                     }
                 )
 
+    @patch("worker.tasks.granola.handle_notion_upsert_project")
     @patch("worker.tasks.granola.notion_client")
-    def test_capitalize_raw_is_blocked_by_v1_policy_by_default(self, mock_nc):
+    def test_capitalize_raw_proceeds_without_legacy_gate(self, mock_nc, mock_project):
+        """UX-2a: V2 direct route works without allow_legacy_raw_to_canonical."""
         mock_nc.read_page.return_value = {
             "page_id": "raw-1",
             "url": "https://www.notion.so/raw-1",
@@ -310,7 +311,7 @@ class TestHandleGranolaCapitalizeRaw:
                 "Fuente": {"type": "select", "select": {"name": "granola"}},
             },
         }
-        mock_nc.add_comment.return_value = {"comment_id": "comment-1"}
+        mock_project.return_value = {"page_id": "proj-1", "created": True}
 
         result = handle_granola_capitalize_raw(
             {
@@ -319,12 +320,9 @@ class TestHandleGranolaCapitalizeRaw:
             }
         )
 
-        assert result["ok"] is False
-        assert result["blocked_by_policy"] is True
-        assert result["policy"] == "raw_to_canonical_disabled_in_v1"
-        assert result["review_comment_added"] is True
-        assert result["trace_comments_added"] == 1
-        mock_nc.add_comment.assert_called_once()
+        assert "blocked_by_policy" not in result
+        assert result["results"]["project"]["page_id"] == "proj-1"
+        mock_project.assert_called_once()
 
     @patch("worker.tasks.granola.handle_granola_create_followup")
     @patch("worker.tasks.granola.handle_notion_upsert_bridge_item")
@@ -370,7 +368,6 @@ class TestHandleGranolaCapitalizeRaw:
                 "bridge_item_name": "Validar alcance reunion Konstruedu",
                 "bridge_next_action": "Confirmar si pasa a proyecto o queda como seguimiento.",
                 "followup_type": "proposal",
-                "allow_legacy_raw_to_canonical": True,
                 "add_trace_comments": True,
             }
         )
@@ -422,7 +419,6 @@ class TestHandleGranolaCapitalizeRaw:
                 "transcript_page_id": "raw-1",
                 "project_name": "Konstruedu",
                 "add_trace_comments": False,
-                "allow_legacy_raw_to_canonical": True,
             }
         )
 

@@ -17,8 +17,18 @@ logger = logging.getLogger("worker.sanitize")
 MAX_TASK_NAME_LEN = 128
 MAX_INPUT_JSON_BYTES = 256 * 1024  # 256 KB
 MAX_STRING_VALUE_LEN = 10_000      # per-field max chars
+MAX_STRING_VALUE_LEN_LARGE = 200_000  # for content-heavy tasks (transcripts)
 ALLOWED_TASK_PATTERN = re.compile(r"^[a-zA-Z0-9_.\-]+$")
 ALLOWED_FLOW_PATTERN = re.compile(r"^[a-zA-Z0-9_\-]+$")
+
+# Tasks whose input legitimately contains long text (transcripts, documents).
+# These get MAX_STRING_VALUE_LEN_LARGE instead of MAX_STRING_VALUE_LEN.
+# The global JSON byte limit and injection checks still apply.
+LARGE_CONTENT_TASKS: frozenset[str] = frozenset({
+    "granola.process_transcript",
+    "granola.create_followup",
+    "notion.write_transcript",
+})
 
 # Injection patterns
 _INJECTION_PATTERNS = [
@@ -69,37 +79,43 @@ def sanitize_pad_flow_name(flow_name: str) -> str:
     return flow_name.strip()
 
 
-def _sanitize_value(value: Any, path: str = "root") -> Any:
+def _sanitize_value(value: Any, path: str = "root", *, max_str_len: int = MAX_STRING_VALUE_LEN) -> Any:
     """
     Recursively sanitize a value:
-      - Truncate strings > MAX_STRING_VALUE_LEN
+      - Truncate strings > max_str_len
       - Check strings for injection patterns
       - Recurse into dicts and lists
     Returns the sanitized value.
     """
     if isinstance(value, str):
         _check_injection(value, path)
-        if len(value) > MAX_STRING_VALUE_LEN:
-            logger.warning("Truncating field %r from %d to %d chars", path, len(value), MAX_STRING_VALUE_LEN)
-            return value[:MAX_STRING_VALUE_LEN]
+        if len(value) > max_str_len:
+            logger.warning("Truncating field %r from %d to %d chars", path, len(value), max_str_len)
+            return value[:max_str_len]
         return value
     if isinstance(value, dict):
-        return {k: _sanitize_value(v, f"{path}.{k}") for k, v in value.items()}
+        return {k: _sanitize_value(v, f"{path}.{k}", max_str_len=max_str_len) for k, v in value.items()}
     if isinstance(value, list):
-        return [_sanitize_value(v, f"{path}[{i}]") for i, v in enumerate(value)]
+        return [_sanitize_value(v, f"{path}[{i}]", max_str_len=max_str_len) for i, v in enumerate(value)]
     # primitives (int, float, bool, None) pass through
     return value
 
 
-def sanitize_input(input_data: Dict[str, Any]) -> Dict[str, Any]:
+def sanitize_input(input_data: Dict[str, Any], *, task: str = "") -> Dict[str, Any]:
     """
     Valida tamaño y estructura del input. Trunca strings demasiado largos.
     Detecta y rechaza posibles intentos de inyección.
     Raise ValueError si excede límites globales.
+
+    Args:
+        input_data: The task input dict.
+        task: Task name — used to select per-field string limits.
+              Content-heavy tasks in LARGE_CONTENT_TASKS get a higher limit.
     """
     if not isinstance(input_data, dict):
         raise ValueError("input must be a JSON object")
     raw = json.dumps(input_data, default=str)
     if len(raw.encode("utf-8")) > MAX_INPUT_JSON_BYTES:
         raise ValueError(f"input too large (max {MAX_INPUT_JSON_BYTES // 1024} KB)")
-    return _sanitize_value(input_data, "input")
+    effective_limit = MAX_STRING_VALUE_LEN_LARGE if task in LARGE_CONTENT_TASKS else MAX_STRING_VALUE_LEN
+    return _sanitize_value(input_data, "input", max_str_len=effective_limit)

@@ -1535,13 +1535,16 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
         except Exception as e:
             logger.warning("Failed to create action item task: %s", e)
 
-    # Step 3: Notify Enlace in Control Room — useful for David, no internal IDs
+    # Step 3: Notify Enlace in Control Room (literal @Enlace per convention)
     notification_sent = False
     if notify_enlace:
         try:
             attendees_str = f" ({', '.join(attendees)})" if attendees else ""
+            transcript_ref = page_url or page_id
             comment_text = (
-                f"Transcripción lista: {title}{attendees_str} — {date}. "
+                f"Hola @Enlace, transcripción lista para revisar: "
+                f"{title}{attendees_str} — {date}. "
+                f"Página: {transcript_ref}. "
                 f"{len(action_items)} action items identificados."
             )
             notion_client.add_comment(page_id=None, text=comment_text)
@@ -2021,8 +2024,8 @@ def handle_granola_capitalize_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
     if not transcript_page_id:
         raise ValueError("'transcript_page_id' is required in input")
 
-    allow_legacy_raw_to_canonical = input_data.get("allow_legacy_raw_to_canonical", True)
-    auto_classify = input_data.get("auto_classify", True)
+    allow_legacy_raw_to_canonical = bool(input_data.get("allow_legacy_raw_to_canonical"))
+    auto_classify = input_data.get("auto_classify", False)
     wants_project = bool((input_data.get("project_name") or "").strip())
     wants_deliverable = bool((input_data.get("deliverable_name") or "").strip())
     wants_bridge = bool((input_data.get("bridge_item_name") or "").strip())
@@ -2155,18 +2158,18 @@ def handle_granola_capitalize_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
             destinations.append(f"Puente: {(input_data.get('bridge_item_name') or '').strip()}")
         if wants_followup:
             destinations.append(f"Follow-up: {(input_data.get('followup_type') or '').strip()}")
-        intended_target = ", ".join(destinations) if destinations else "Por definir"
+        intended_target = ", ".join(destinations) if destinations else "Por definir desde session_capitalizable"
         review_comment_added = _leave_review_comment(
             page_snapshot.get("page_id") or transcript_page_id,
             source_evidence=f"{transcript_title} ({transcript_date}) - {transcript_url or transcript_page_id}",
             intended_target=intended_target,
-            blocking_ambiguity="Capitalización directa deshabilitada explícitamente en este request.",
-            next_review="Reenviar con allow_legacy_raw_to_canonical=true o capitalizar manualmente.",
+            blocking_ambiguity="V1 no permite raw -> canonical target.",
+            next_review="Promover primero a session_capitalizable y decidir la capitalizacion desde esa capa.",
         )
         return {
             "ok": False,
             "blocked_by_policy": True,
-            "policy": "raw_to_canonical_explicitly_disabled",
+            "policy": "raw_to_canonical_disabled_in_v1",
             "review_comment_added": review_comment_added,
             "transcript_page_id": page_snapshot.get("page_id") or transcript_page_id,
             "transcript_url": transcript_url,
@@ -2276,19 +2279,21 @@ def handle_granola_capitalize_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
         if followup_type:
             destinations.append(f"Follow-up: {followup_type}")
 
-        # V2: trace comments are logged but NOT posted to Notion pages.
-        # They were internal telemetry, not useful to David.
-        logger.info(
-            "Capitalization trace for '%s' (%s) -> %s",
-            transcript_title, transcript_date, ", ".join(destinations),
+        raw_comment = (
+            f"Capitalizacion Rick registrada para '{transcript_title}' ({transcript_date}). "
+            f"Destino(s): {', '.join(destinations)}."
+        )
+        if _comment_safe(page_snapshot.get("page_id"), raw_comment):
+            trace_comments_added += 1
+
+        target_comment = (
+            f"Origen raw Granola: '{transcript_title}' ({transcript_date}). "
+            f"Ref: {transcript_url or transcript_page_id}"
         )
         for key in ("project", "deliverable", "bridge_item"):
             target_page_id = _result_page_id(results.get(key))
-            if target_page_id:
-                logger.info(
-                    "Target %s page %s from raw '%s'",
-                    key, target_page_id, transcript_title,
-                )
+            if _comment_safe(target_page_id, target_comment):
+                trace_comments_added += 1
 
     result: Dict[str, Any] = {
         "transcript_page_id": page_snapshot.get("page_id") or transcript_page_id,
@@ -2654,12 +2659,19 @@ def handle_granola_promote_curated_session(input_data: Dict[str, Any]) -> Dict[s
     add_trace_comments = input_data.get("add_trace_comments", True)
     curated_page_id = _result_page_id(notion_result) or notion_result.get("page_id", "")
     if add_trace_comments and not dry_run:
-        # V2: trace comments logged but not posted to Notion pages.
-        logger.info(
-            "Promotion trace: '%s' (%s) -> curated session %s",
-            resolved_session_name, transcript_date,
-            curated_page_id or "created/updated",
+        raw_comment = (
+            f"Promocion a capa curada registrada para '{resolved_session_name}' ({transcript_date}). "
+            f"Sesion curada: {curated_page_id or 'creada/actualizada'}."
         )
+        if _comment_safe(page_snapshot.get("page_id"), raw_comment):
+            trace_comments_added += 1
+
+        curated_comment = (
+            f"Origen raw Granola: '{transcript_title}' ({transcript_date}). "
+            f"Ref: {transcript_url or transcript_page_id}"
+        )
+        if _comment_safe(curated_page_id, curated_comment):
+            trace_comments_added += 1
 
     return {
         "transcript_page_id": page_snapshot.get("page_id") or transcript_page_id,
@@ -2898,12 +2910,19 @@ def handle_granola_create_human_task_from_curated_session(
     add_trace_comments = input_data.get("add_trace_comments", True)
     human_task_page_id = _result_page_id(notion_result) or notion_result.get("page_id", "")
     if add_trace_comments and not dry_run:
-        # V2: trace comments logged but not posted to Notion pages.
-        logger.info(
-            "Human task trace: '%s' from curated session '%s' (%s) -> %s",
-            task_name, session_title, session_date,
-            human_task_page_id or "created/updated",
+        session_comment = (
+            f"Tarea humana registrada desde sesion curada: '{task_name}'. "
+            f"Tarea: {human_task_page_id or 'creada/actualizada'}."
         )
+        if _comment_safe(session_snapshot.get("page_id"), session_comment):
+            trace_comments_added += 1
+
+        task_comment = (
+            f"Origen sesion curada: '{session_title}' ({session_date}). "
+            f"Ref: {session_url or curated_session_page_id}"
+        )
+        if _comment_safe(human_task_page_id, task_comment):
+            trace_comments_added += 1
 
     return {
         "curated_session_page_id": session_snapshot.get("page_id") or curated_session_page_id,
@@ -3092,17 +3111,24 @@ def handle_granola_update_commercial_project_from_curated_session(
     trace_comments_added = 0
     add_trace_comments = input_data.get("add_trace_comments", True)
     if add_trace_comments and not dry_run:
-        # V2: trace comments logged but not posted to Notion pages.
-        update_summary_parts = []
+        project_comment_parts = [
+            f"Actualizacion comercial desde sesion curada: '{session_title}' ({session_date}).",
+        ]
         if update_fields["Estado"]:
-            update_summary_parts.append(f"Estado -> {update_fields['Estado']}")
+            project_comment_parts.append(f"Estado -> {update_fields['Estado']}.")
         if update_fields["Acción Requerida"]:
-            update_summary_parts.append(f"Accion requerida -> {update_fields['Acción Requerida']}")
-        logger.info(
-            "Commercial project trace: '%s' updated from session '%s' (%s). %s",
-            project_title, session_title, session_date,
-            "; ".join(update_summary_parts) if update_summary_parts else "no field changes",
+            project_comment_parts.append(f"Accion requerida -> {update_fields['Acción Requerida']}.")
+        if session_excerpt:
+            project_comment_parts.append(f"Contexto: {session_excerpt}")
+        if _comment_safe(project_page_id, " ".join(project_comment_parts)):
+            trace_comments_added += 1
+
+        session_comment = (
+            f"Proyecto comercial actualizado: '{project_title}'. "
+            f"Ref: {project_page.get('url') or project_page_id}"
         )
+        if _comment_safe(session_snapshot.get("page_id"), session_comment):
+            trace_comments_added += 1
 
     return {
         "curated_session_page_id": session_snapshot.get("page_id") or curated_session_page_id,

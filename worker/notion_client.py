@@ -147,6 +147,66 @@ def _extract_block_text(block: dict[str, Any]) -> str:
     return ""
 
 
+def _read_page_blocks(
+    client: httpx.Client,
+    page_id: str,
+    *,
+    max_blocks: int | None = None,
+) -> tuple[list[dict[str, Any]], bool]:
+    """Read top-level child blocks for a page, with optional pagination."""
+    page_size = 100
+    remaining = None if max_blocks is None else max(1, min(int(max_blocks), 100))
+    start_cursor: str | None = None
+    raw_blocks: list[dict[str, Any]] = []
+    has_more = False
+
+    while True:
+        params: dict[str, Any] = {"page_size": page_size if remaining is None else min(page_size, remaining)}
+        if start_cursor:
+            params["start_cursor"] = start_cursor
+
+        blocks_resp = client.get(
+            f"{NOTION_BASE_URL}/blocks/{page_id}/children",
+            headers=_headers(),
+            params=params,
+        )
+        blocks_data = _check_response(blocks_resp, "read_page children")
+        results = blocks_data.get("results", [])
+        if isinstance(results, list):
+            raw_blocks.extend(block for block in results if isinstance(block, dict))
+
+        has_more = bool(blocks_data.get("has_more"))
+        if max_blocks is not None:
+            remaining = max(0, remaining - len(results))
+            if remaining <= 0:
+                break
+        if not has_more:
+            break
+
+        start_cursor = blocks_data.get("next_cursor")
+        if not start_cursor:
+            break
+
+    return raw_blocks, has_more
+
+
+def _serialize_page_blocks(raw_blocks: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], str]:
+    blocks: list[dict[str, Any]] = []
+    for block in raw_blocks:
+        blocks.append(
+            {
+                "id": block.get("id", ""),
+                "type": block.get("type", ""),
+                "text": _extract_block_text(block),
+                "has_children": bool(block.get("has_children")),
+                "last_edited_time": block.get("last_edited_time", ""),
+            }
+        )
+
+    plain_text = "\n".join(item["text"] for item in blocks if item.get("text"))
+    return blocks, plain_text
+
+
 def _estimate_block_text_length(block: dict[str, Any]) -> int:
     text = _extract_block_text(block)
     if text:
@@ -504,13 +564,7 @@ def read_page(
             headers=_headers(),
         )
         page_data = _check_response(page_resp, "read_page metadata")
-
-        blocks_resp = client.get(
-            f"{NOTION_BASE_URL}/blocks/{page_id}/children",
-            headers=_headers(),
-            params={"page_size": max_blocks},
-        )
-        blocks_data = _check_response(blocks_resp, "read_page children")
+        raw_blocks, has_more = _read_page_blocks(client, page_id, max_blocks=max_blocks)
 
     title = ""
     properties = page_data.get("properties", {})
@@ -520,21 +574,7 @@ def read_page(
                 title = _plain_text_from_rich_text(prop.get("title"))
                 break
 
-    blocks: list[dict[str, Any]] = []
-    for block in blocks_data.get("results", []):
-        if not isinstance(block, dict):
-            continue
-        blocks.append(
-            {
-                "id": block.get("id", ""),
-                "type": block.get("type", ""),
-                "text": _extract_block_text(block),
-                "has_children": bool(block.get("has_children")),
-                "last_edited_time": block.get("last_edited_time", ""),
-            }
-        )
-
-    plain_text = "\n".join(item["text"] for item in blocks if item.get("text"))
+    blocks, plain_text = _serialize_page_blocks(raw_blocks)
 
     return {
         "page_id": page_data.get("id", page_id),
@@ -543,8 +583,48 @@ def read_page(
         "title": title,
         "blocks": blocks,
         "plain_text": plain_text,
-        "has_more": bool(blocks_data.get("has_more")),
+        "has_more": has_more,
         "max_blocks": max_blocks,
+    }
+
+
+def read_page_full(page_id_or_url: str) -> dict[str, Any]:
+    """
+    Read a Notion page and paginate through all top-level child blocks.
+
+    Returns the same shape as `read_page`, but without an artificial block cap.
+    """
+    config.require_notion_core()
+    page_id = _extract_notion_page_id(page_id_or_url)
+
+    with httpx.Client(timeout=TIMEOUT) as client:
+        page_resp = client.get(
+            f"{NOTION_BASE_URL}/pages/{page_id}",
+            headers=_headers(),
+        )
+        page_data = _check_response(page_resp, "read_page_full metadata")
+        raw_blocks, has_more = _read_page_blocks(client, page_id, max_blocks=None)
+
+    title = ""
+    properties = page_data.get("properties", {})
+    if isinstance(properties, dict):
+        for prop in properties.values():
+            if isinstance(prop, dict) and prop.get("type") == "title":
+                title = _plain_text_from_rich_text(prop.get("title"))
+                break
+
+    blocks, plain_text = _serialize_page_blocks(raw_blocks)
+
+    return {
+        "page_id": page_data.get("id", page_id),
+        "url": page_data.get("url", ""),
+        "last_edited_time": page_data.get("last_edited_time", ""),
+        "title": title,
+        "blocks": blocks,
+        "plain_text": plain_text,
+        "has_more": has_more,
+        "max_blocks": None,
+        "block_count": len(blocks),
     }
 
 

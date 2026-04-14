@@ -946,6 +946,76 @@ const TASK_TOOLS: TaskToolDefinition[] = [
     ),
   },
 
+  // GitHub
+  {
+    name: "umbral_github_preflight",
+    task: "github.preflight",
+    description:
+      "Validate GitHub readiness: SSH connectivity, GITHUB_TOKEN, repo path, worktree cleanliness, and remote reachability. Call before any GitHub workflow.",
+    resultTitle: "GitHub preflight result",
+    parameters: taskToolSchema({}, []),
+  },
+  {
+    name: "umbral_github_create_branch",
+    task: "github.create_branch",
+    description:
+      "Create a new git branch in the clean working copy. Branch must start with 'rick/'. Never operates on main.",
+    resultTitle: "GitHub create branch result",
+    parameters: taskToolSchema(
+      {
+        branch_name: stringSchema(
+          "Branch name, must start with 'rick/', e.g. rick/add-feature-x."
+        ),
+        base: stringSchema("Base branch to fork from, default main."),
+      },
+      ["branch_name"],
+    ),
+  },
+  {
+    name: "umbral_github_commit_and_push",
+    task: "github.commit_and_push",
+    description:
+      "Stage explicit files, commit, and push the current branch. Requires an explicit file list — never uses git add -A. Never operates on main.",
+    resultTitle: "GitHub commit and push result",
+    parameters: taskToolSchema(
+      {
+        message: stringSchema("Commit message."),
+        files: arraySchema(
+          stringSchema("Relative file path"),
+          "List of files to stage (required, explicit only).",
+        ),
+        branch_name: stringSchema(
+          "Optional expected branch name for safety validation."
+        ),
+      },
+      ["message", "files"],
+    ),
+  },
+  {
+    name: "umbral_github_open_pr",
+    task: "github.open_pr",
+    description:
+      "Open a Pull Request from the current branch to main (or specified base). Returns the PR URL. PRs appear as UmbralBIM. Rick must NOT merge PRs.",
+    resultTitle: "GitHub open PR result",
+    parameters: taskToolSchema(
+      {
+        title: stringSchema("Pull Request title."),
+        body: stringSchema("Optional PR description in markdown."),
+        branch_name: stringSchema(
+          "Optional head branch name. Defaults to current branch."
+        ),
+        base: stringSchema("Target branch, default main."),
+        bridge_item_name: stringSchema(
+          "Optional: Notion bridge item name to link the PR URL."
+        ),
+        linear_issue_id: stringSchema(
+          "Optional: Linear issue UUID to post PR URL as comment."
+        ),
+      },
+      ["title"],
+    ),
+  },
+
   // Google and Gmail
   {
     name: "umbral_google_calendar_create_event",

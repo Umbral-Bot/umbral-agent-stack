@@ -219,6 +219,27 @@ def _mock_raw_transcript_db(
     }
 
 
+def _mock_read_page_full_snapshot(
+    mock_nc,
+    content: str,
+    *,
+    page_id: str = "page-123",
+    page_url: str = "https://notion.so/page-123",
+):
+    blocks = []
+    for i in range(0, len(content), 2000):
+        blocks.append({"type": "paragraph", "text": content[i : i + 2000]})
+    mock_nc.read_page_full.return_value = {
+        "page_id": page_id,
+        "url": page_url,
+        "title": "",
+        "blocks": blocks,
+        "plain_text": "\n".join(block["text"] for block in blocks),
+        "block_count": len(blocks),
+        "has_more": False,
+    }
+
+
 class TestExtractActionItems:
 
     def test_extracts_from_section(self):
@@ -265,12 +286,14 @@ class TestHandleGranolaProcessTranscript:
     @patch("worker.tasks.granola.notion_client")
     def test_success(self, mock_nc, mock_upsert_task):
         _mock_raw_transcript_db(mock_nc)
+        content = "## Notes\n\nDiscusiÃ³n de proyecto.\n\n## Action Items\n\n- [ ] Enviar propuesta (David, 2026-03-07)"
+        _mock_read_page_full_snapshot(mock_nc, content)
         mock_upsert_task.return_value = {"page_id": "task-1", "created": True}
         mock_nc.add_comment.return_value = {"comment_id": "c-1"}
 
         result = handle_granola_process_transcript({
             "title": "Reunión con Cliente",
-            "content": "## Notes\n\nDiscusión de proyecto.\n\n## Action Items\n\n- [ ] Enviar propuesta (David, 2026-03-07)",
+            "content": content,
             "date": "2026-03-04",
             "attendees": ["David", "Cliente X"],
             "source": "granola",
@@ -290,6 +313,7 @@ class TestHandleGranolaProcessTranscript:
         assert result["traceability_written"] is True
         assert result["matched_existing"] is False
         assert result["match_strategy"] == ""
+        assert result["content_verification"]["ok"] is True
         assert result["resolved_title"] == "Reunión con Cliente"
         assert result["notification_sent"] is True
 
@@ -318,7 +342,7 @@ class TestHandleGranolaProcessTranscript:
         assert len(create_args.kwargs["children"]) == 1
         assert (
             create_args.kwargs["children"][0]["paragraph"]["rich_text"][0]["text"]["content"]
-            == "## Notes\n\nDiscusión de proyecto.\n\n## Action Items\n\n- [ ] Enviar propuesta (David, 2026-03-07)"
+            == content
         )
         mock_nc.add_comment.assert_called_once()
         assert mock_nc.add_comment.call_args.kwargs["page_id"] is None
@@ -345,6 +369,12 @@ class TestHandleGranolaProcessTranscript:
             "url": "https://notion.so/page-live",
             "created": True,
         }
+        _mock_read_page_full_snapshot(
+            mock_nc,
+            "Contenido live",
+            page_id="page-live",
+            page_url="https://notion.so/page-live",
+        )
         mock_upsert_task.return_value = {"page_id": "task-1", "created": True}
         mock_nc.add_comment.return_value = {"comment_id": "c-1"}
 
@@ -404,6 +434,12 @@ class TestHandleGranolaProcessTranscript:
             "url": "https://notion.so/page-live",
             "updated": True,
         }
+        _mock_read_page_full_snapshot(
+            mock_nc,
+            "Contenido live",
+            page_id="page-live",
+            page_url="https://notion.so/page-live",
+        )
         mock_upsert_task.return_value = {"page_id": "task-1", "created": True}
 
         result = handle_granola_process_transcript(
@@ -448,6 +484,12 @@ class TestHandleGranolaProcessTranscript:
             "url": "https://notion.so/page-visible-id",
             "updated": True,
         }
+        _mock_read_page_full_snapshot(
+            mock_nc,
+            "Contenido live",
+            page_id="page-visible-id",
+            page_url="https://notion.so/page-visible-id",
+        )
         mock_upsert_task.return_value = {"page_id": "task-1", "created": True}
         mock_nc.add_comment.return_value = {"comment_id": "c-1"}
 
@@ -473,6 +515,7 @@ class TestHandleGranolaProcessTranscript:
     @patch("worker.tasks.granola.notion_client")
     def test_with_pre_parsed_action_items(self, mock_nc, mock_upsert_task):
         _mock_raw_transcript_db(mock_nc, page_id="p1", page_url="")
+        _mock_read_page_full_snapshot(mock_nc, "Content", page_id="p1", page_url="")
         mock_upsert_task.return_value = {"page_id": "t1", "created": True}
         mock_nc.add_comment.return_value = {"comment_id": "c1"}
 
@@ -494,6 +537,7 @@ class TestHandleGranolaProcessTranscript:
     @patch("worker.tasks.granola.notion_client")
     def test_legacy_raw_task_writes_can_be_enabled_explicitly(self, mock_nc, mock_upsert_task):
         _mock_raw_transcript_db(mock_nc, page_id="p1", page_url="")
+        _mock_read_page_full_snapshot(mock_nc, "Content", page_id="p1", page_url="")
         mock_upsert_task.return_value = {"page_id": "t1", "created": True}
         mock_nc.add_comment.return_value = {"comment_id": "c1"}
 
@@ -515,6 +559,7 @@ class TestHandleGranolaProcessTranscript:
     @patch("worker.tasks.granola.notion_client")
     def test_no_enlace_notification(self, mock_nc):
         _mock_raw_transcript_db(mock_nc, page_id="p1", page_url="")
+        _mock_read_page_full_snapshot(mock_nc, "Just notes", page_id="p1", page_url="")
 
         result = handle_granola_process_transcript({
             "title": "Quick note",
@@ -532,6 +577,37 @@ class TestHandleGranolaProcessTranscript:
     def test_missing_content(self):
         with pytest.raises(ValueError, match="'content' is required"):
             handle_granola_process_transcript({"title": "Test"})
+
+    @patch("worker.tasks.granola.handle_notion_upsert_task")
+    @patch("worker.tasks.granola.notion_client")
+    def test_raises_and_alerts_when_raw_page_persistence_mismatches(self, mock_nc, mock_upsert_task):
+        _mock_raw_transcript_db(mock_nc)
+        mock_nc.read_page_full.return_value = {
+            "page_id": "page-123",
+            "url": "https://notion.so/page-123",
+            "title": "",
+            "blocks": [{"type": "paragraph", "text": "contenido incompleto"}],
+            "plain_text": "contenido incompleto",
+            "block_count": 1,
+            "has_more": False,
+        }
+        mock_nc.add_comment.return_value = {"comment_id": "c-1"}
+        mock_upsert_task.return_value = {"page_id": "task-1", "created": True}
+
+        with pytest.raises(RuntimeError, match="Notion transcript integrity check failed"):
+            handle_granola_process_transcript(
+                {
+                    "title": "Reunión con Cliente",
+                    "content": "Contenido esperado bastante más largo que el persistido",
+                    "date": "2026-03-04",
+                    "granola_document_id": "doc-123",
+                    "notify_enlace": False,
+                }
+            )
+
+        mock_nc.create_database_page.assert_called_once()
+        mock_nc.add_comment.assert_called_once()
+        assert "ALERTA integridad Granola raw." in mock_nc.add_comment.call_args.kwargs["text"]
 
 
 class TestGranolaTaskRegistry:

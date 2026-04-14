@@ -294,11 +294,15 @@ def test_build_task_page_blocks_show_human_name_and_technical_task():
         plain_texts.extend(piece.get("text", {}).get("content", "") for piece in rich_text)
 
     assert "Registrar tarea de smoke ligada al embudo" in plain_texts
-    assert "Task técnico: notion.upsert_task" in plain_texts
-    assert "Origen: openclaw_gateway" in plain_texts
-    assert "Tipo de origen: tool_enqueue" in plain_texts
-    assert "Trace ID: trace-abc" in plain_texts
-    assert "Modelo seleccionado: azure_foundry" in plain_texts
+    # Telemetry bullets were removed (noise reduction) — verify they're gone
+    assert "Task técnico: notion.upsert_task" not in plain_texts
+    assert "Origen: openclaw_gateway" not in plain_texts
+    assert "Tipo de origen: tool_enqueue" not in plain_texts
+    assert "Trace ID: trace-abc" not in plain_texts
+    assert "Modelo seleccionado: azure_foundry" not in plain_texts
+    # Project and deliverable context should still be present
+    assert "Proyecto: Proyecto Embudo Ventas" in plain_texts
+    assert "Entregable: Benchmark del sistema de contenido y funnel de Ruben Hassid" in plain_texts
 
 
 def test_notion_client_upsert_task_persists_source_trace_and_model():
@@ -335,10 +339,10 @@ def test_notion_client_upsert_task_persists_source_trace_and_model():
         )
 
     create_payload = mock_client.post.call_args_list[1].kwargs["json"]
-    assert create_payload["properties"]["Source"]["rich_text"][0]["text"]["content"] == "openclaw_gateway"
-    assert create_payload["properties"]["Source Kind"]["rich_text"][0]["text"]["content"] == "tool_enqueue"
-    assert create_payload["properties"]["Trace ID"]["rich_text"][0]["text"]["content"] == "trace-123"
-    assert create_payload["properties"]["Model"]["rich_text"][0]["text"]["content"] == "azure_foundry"
+    # Source/Trace ID/Model properties removed from Notion output per V2 noise reduction (commit 0dfcab1).
+    # Verify these internal-telemetry fields are NOT in the payload:
+    for key in ("Source", "Source Kind", "Trace ID", "Model"):
+        assert key not in create_payload["properties"], f"{key} should not be in Notion properties after V2 noise reduction"
 
 
 def test_notion_client_upsert_task_replaces_page_blocks_on_update():

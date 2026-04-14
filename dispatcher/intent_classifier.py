@@ -295,22 +295,14 @@ def build_envelope(
         base["task_type"] = "research"
         base["task"] = "notion.add_comment"
         base["input"] = {
-            "text": (
-                f"{ECHO_PREFIX} Pregunta recibida. "
-                f"Investigando y responderé pronto. "
-                f"(comment_id={short_id}...)"
-            ),
+            "text": f"{ECHO_PREFIX} Investigando tu pregunta, vuelvo con una respuesta.",
         }
 
     elif intent.intent == "task":
         base["task_type"] = "general"
         base["task"] = "notion.add_comment"
         base["input"] = {
-            "text": (
-                f"{ECHO_PREFIX} Entendido. "
-                f"Creé tarea para equipo [{team}]. "
-                f"(comment_id={short_id}...)"
-            ),
+            "text": f"{ECHO_PREFIX} Tarea registrada para equipo [{team}].",
             "original_request": text,
         }
 
@@ -319,11 +311,7 @@ def build_envelope(
         base["task_type"] = "instruction"
         base["task"] = "notion.add_comment"
         base["input"] = {
-            "text": (
-                f"{ECHO_PREFIX} Instrucción registrada. "
-                f"Procesando configuración. "
-                f"(comment_id={short_id}...)"
-            ),
+            "text": f"{ECHO_PREFIX} Instrucción recibida, procesando.",
             "original_request": text,
         }
 
@@ -332,18 +320,17 @@ def build_envelope(
         base["task"] = "notion.add_comment"
         base["input"] = {
             "text": (
-                f"{ECHO_PREFIX} (Ejecutando tarea programada) "
-                f"Equipo [{team}]. Tarea: {text} "
-                f"(comment_id={short_id}...)"
+                f"{ECHO_PREFIX} Ejecutando tarea programada "
+                f"para equipo [{team}]."
             ),
             "original_request": text,
         }
 
-    else:  # echo — backward compat
+    else:  # echo — no acknowledgment needed
         base["task_type"] = "general"
         base["task"] = "notion.add_comment"
         base["input"] = {
-            "text": f"{ECHO_PREFIX} Recibido. (comment_id={short_id}...)",
+            "text": "",
         }
 
     return base

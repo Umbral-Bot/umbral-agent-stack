@@ -47,6 +47,17 @@ REVIEW_DELIVERABLE_STATUSES = (
     "Rechazado",
 )
 
+# V2 classify scan constants
+REDIS_KEY_CLASSIFIED_PREFIX = "umbral:notion_poller:classified:"
+REDIS_KEY_CLASSIFY_FAIL_PREFIX = "umbral:notion_poller:classify_fail:"
+CLASSIFIED_TTL_SEC = 24 * 60 * 60
+CLASSIFY_FAIL_TTL_SEC = 30 * 60  # 30 min backoff on failure
+V2_CLASSIFY_BATCH_LIMIT = 3
+V2_SCAN_LIMIT = 10
+_V2_ESTADO_AGENTE_DONE = {"Procesada", "Revision requerida"}
+# V2 property names that indicate classification already happened
+_V2_CLASSIFIED_FIELD_NAMES = {"Dominio propuesto", "Tipo propuesto", "Destino canonico", "Resumen agente"}
+
 
 def _parse_notion_datetime(value: str | None) -> datetime | None:
     raw = (value or "").strip()
@@ -116,6 +127,24 @@ def _unique_page_ids(items: list[dict]) -> list[str]:
     return ordered
 
 
+def _filter_items_by_property_equals(
+    items: list[dict],
+    property_name: str,
+    allowed_values: tuple[str, ...],
+) -> list[dict]:
+    allowed = {value.strip() for value in allowed_values if value.strip()}
+    if not allowed:
+        return items
+
+    filtered: list[dict] = []
+    for item in items:
+        properties = item.get("properties") or {}
+        value = str(properties.get(property_name) or "").strip()
+        if value in allowed:
+            filtered.append(item)
+    return filtered
+
+
 def _session_capitalizable_db_id() -> str:
     """
     Resolve the V1 session_capitalizable binding from the legacy curated env var.
@@ -130,43 +159,23 @@ def _resolve_review_targets(wc: WorkerClient) -> list[dict[str, str]]:
 
     deliverables_db_id = os.environ.get("NOTION_DELIVERABLES_DB_ID", "").strip()
     if deliverables_db_id:
-        deliverable_filter = {
-            "or": [
-                {
-                    "property": "Estado revision",
-                    "status": {"equals": status},
-                }
-                for status in REVIEW_DELIVERABLE_STATUSES
-            ]
-        }
         try:
             deliverable_resp = wc.run(
                 "notion.read_database",
                 {
                     "database_id_or_url": deliverables_db_id,
                     "max_items": max_items,
-                    "filter": deliverable_filter,
                 },
             )
-            for page_id in _unique_page_ids(_extract_read_database_items(deliverable_resp)):
+            deliverable_items = _filter_items_by_property_equals(
+                _extract_read_database_items(deliverable_resp),
+                "Estado revision",
+                REVIEW_DELIVERABLE_STATUSES,
+            )
+            for page_id in _unique_page_ids(deliverable_items):
                 targets.append({"page_id": page_id, "page_kind": "deliverable"})
         except Exception:
-            logger.warning(
-                "Failed to resolve deliverable review targets with review filter; retrying without filter",
-                exc_info=True,
-            )
-            try:
-                deliverable_resp = wc.run(
-                    "notion.read_database",
-                    {
-                        "database_id_or_url": deliverables_db_id,
-                        "max_items": max_items,
-                    },
-                )
-                for page_id in _unique_page_ids(_extract_read_database_items(deliverable_resp)):
-                    targets.append({"page_id": page_id, "page_kind": "deliverable"})
-            except Exception:
-                logger.warning("Failed to resolve deliverable review targets without filter", exc_info=True)
+            logger.warning("Failed to resolve deliverable review targets", exc_info=True)
 
     projects_db_id = os.environ.get("NOTION_PROJECTS_DB_ID", "").strip()
     if projects_db_id:
@@ -250,6 +259,148 @@ def _claim_comment_processing(r: redis.Redis, comment_id: str) -> bool:
     return bool(r.set(key, "1", nx=True, ex=PROCESSED_COMMENT_TTL_SEC))
 
 
+def _extract_estado_agente(item: dict) -> str:
+    """Extract Estado agente value from a read_database item, defensively."""
+    props = item.get("properties") or {}
+    for key in ("Estado agente",):
+        prop = props.get(key)
+        if not prop:
+            continue
+        if isinstance(prop, str):
+            return prop.strip()
+        if not isinstance(prop, dict):
+            continue
+        ptype = prop.get("type", "")
+        if ptype == "select":
+            sel = prop.get("select") or {}
+            return (sel.get("name") or "").strip()
+        if ptype == "status":
+            st = prop.get("status") or {}
+            return (st.get("name") or "").strip()
+        if ptype == "rich_text":
+            parts = prop.get("rich_text") or []
+            return "".join(rt.get("plain_text", "") for rt in parts).strip()
+    return ""
+
+
+def _has_v2_classification_fields(item: dict) -> bool:
+    """Check if a page already has V2 classification fields populated."""
+    props = item.get("properties") or {}
+    for field_name in _V2_CLASSIFIED_FIELD_NAMES:
+        prop = props.get(field_name)
+        if not prop:
+            continue
+        if isinstance(prop, str):
+            return True
+        if not isinstance(prop, dict):
+            continue
+        ptype = prop.get("type", "")
+        value = ""
+        if ptype == "select":
+            value = ((prop.get("select") or {}).get("name") or "").strip()
+        elif ptype == "status":
+            value = ((prop.get("status") or {}).get("name") or "").strip()
+        elif ptype == "rich_text":
+            parts = prop.get("rich_text") or []
+            value = "".join(rt.get("plain_text", "") for rt in parts).strip()
+        if value:
+            return True
+    return False
+
+
+def _classify_pending_granola_pages(wc: WorkerClient, r: redis.Redis) -> None:
+    """Scan Granola DB for unclassified pages and invoke classify_raw on them."""
+    granola_db_id = os.environ.get("NOTION_GRANOLA_DB_ID", "").strip()
+    if not granola_db_id:
+        return
+
+    try:
+        resp = wc.run(
+            "notion.read_database",
+            {"database_id_or_url": granola_db_id, "max_items": V2_SCAN_LIMIT},
+        )
+    except Exception:
+        logger.warning("V2 classify: failed to read Granola DB", exc_info=True)
+        return
+
+    items = _extract_read_database_items(resp)
+    if not items:
+        return
+
+    classified_count = 0
+    skipped_count = 0
+    error_count = 0
+
+    for item in items:
+        if classified_count >= V2_CLASSIFY_BATCH_LIMIT:
+            break
+
+        page_id = str(item.get("page_id") or item.get("id") or "").strip()
+        if not page_id:
+            continue
+
+        # Redis dedup: already classified this cycle?
+        redis_key = f"{REDIS_KEY_CLASSIFIED_PREFIX}{page_id}"
+        if r.exists(redis_key):
+            skipped_count += 1
+            continue
+
+        # Redis backoff: recently failed classification?
+        fail_key = f"{REDIS_KEY_CLASSIFY_FAIL_PREFIX}{page_id}"
+        if r.exists(fail_key):
+            skipped_count += 1
+            continue
+
+        # Property check: already classified by a prior run?
+        estado = _extract_estado_agente(item)
+        if estado in _V2_ESTADO_AGENTE_DONE:
+            r.set(redis_key, "1", ex=CLASSIFIED_TTL_SEC)
+            skipped_count += 1
+            continue
+
+        # V2 field check: already has classification data?
+        if _has_v2_classification_fields(item):
+            r.set(redis_key, "1", ex=CLASSIFIED_TTL_SEC)
+            skipped_count += 1
+            continue
+
+        # Classify this page
+        try:
+            result = wc.run("granola.classify_raw", {"page_id": page_id})
+            ok = isinstance(result, dict) and not result.get("error")
+            if ok:
+                r.set(redis_key, "1", ex=CLASSIFIED_TTL_SEC)
+                classified_count += 1
+                classification = (result.get("result") or result).get("classification") or {}
+                logger.info(
+                    "V2 classify: page %s → %s/%s/%s",
+                    page_id[:8],
+                    classification.get("dominio", "?"),
+                    classification.get("tipo", "?"),
+                    classification.get("destino", "?"),
+                )
+            else:
+                error_count += 1
+                r.set(fail_key, "1", ex=CLASSIFY_FAIL_TTL_SEC)
+                logger.warning(
+                    "V2 classify: page %s returned error (backoff %ds): %s",
+                    page_id[:8],
+                    CLASSIFY_FAIL_TTL_SEC,
+                    (result or {}).get("error", "unknown"),
+                )
+        except Exception:
+            error_count += 1
+            r.set(fail_key, "1", ex=CLASSIFY_FAIL_TTL_SEC)
+            logger.warning("V2 classify: page %s call failed (backoff %ds)", page_id[:8], CLASSIFY_FAIL_TTL_SEC, exc_info=True)
+
+    total_scanned = classified_count + skipped_count + error_count
+    if total_scanned > 0:
+        logger.info(
+            "V2 classify scan: %d scanned, %d classified, %d skipped, %d errors",
+            total_scanned, classified_count, skipped_count, error_count,
+        )
+
+
 def _do_poll(
     wc: WorkerClient,
     queue: TaskQueue,
@@ -310,6 +461,12 @@ def _do_poll(
     if latest_ts != last_ts:
         r.set(REDIS_KEY_LAST_TS, latest_ts)
         logger.info("Notion poll advanced last_ts from %s to %s", last_ts, latest_ts)
+
+    # V2: classify pending Granola raw pages
+    try:
+        _classify_pending_granola_pages(wc, r)
+    except Exception:
+        logger.warning("V2 classify scan failed", exc_info=True)
 
 
 def main():

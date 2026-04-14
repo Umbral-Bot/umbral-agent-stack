@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-$repoRoot = "C:\GitHub\umbral-agent-stack"
+$repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $watcherScript = Join-Path $repoRoot "scripts\vm\granola_watcher.py"
 $pythonExe = "python"
 $pythonArgs = @(

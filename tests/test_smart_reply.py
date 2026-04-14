@@ -163,29 +163,26 @@ class TestQuestionFlow:
         assert "sin contexto web" in posted_text
 
     def test_question_llm_fails_posts_fallback(self, wc, queue):
-        """Both research + LLM fail → fallback acknowledgment."""
+        """research OK + LLM fail → fallback suppressed (no false promise)."""
         wc.run.side_effect = [
             _research_result(1),     # research OK
             Exception("Gemini down"),  # llm.generate fails
-            _empty_result(),         # fallback notion.add_comment
         ]
         handle_smart_reply(COMMENT_TEXT_QUESTION, COMMENT_ID, IntentResult("question", "high"), "system", wc, queue, MagicMock())
 
-        # The last call should be the fallback comment
-        posted_text = wc.run.call_args_list[-1][0][1]["text"]
-        assert "Investigando" in posted_text
+        # Fallback is now suppressed — only research was called successfully
+        assert wc.run.call_count == 2  # research + failed LLM attempt
 
     def test_question_both_fail_posts_fallback(self, wc, queue):
-        """Research fails + LLM fails → fallback."""
+        """Research fails + LLM fails → fallback suppressed."""
         wc.run.side_effect = [
             Exception("research down"),
             Exception("llm down"),
-            _empty_result(),  # fallback post
         ]
         handle_smart_reply(COMMENT_TEXT_QUESTION, COMMENT_ID, IntentResult("question", "high"), "system", wc, queue, MagicMock())
 
-        posted_text = wc.run.call_args_list[-1][0][1]["text"]
-        assert "Investigando" in posted_text
+        # Both failed, fallback suppressed — only 2 failed attempts
+        assert wc.run.call_count == 2
 
 
 # ── Test handle_smart_reply: task intent ───────────────────────
@@ -220,19 +217,18 @@ class TestTaskFlow:
 
     @patch("dispatcher.smart_reply._get_workflow_engine")
     def test_task_llm_fails_posts_fallback(self, mock_get_engine, wc, queue):
-        """task without workflow, LLM fails → fallback."""
+        """task without workflow, LLM fails → fallback suppressed."""
         _mock_engine = MagicMock()
         _mock_engine.has_workflow.return_value = False
         mock_get_engine.return_value = _mock_engine
 
         wc.run.side_effect = [
             Exception("llm down"),
-            _empty_result(),  # fallback post
         ]
         handle_smart_reply(COMMENT_TEXT_TASK, COMMENT_ID, IntentResult("task", "high"), "marketing", wc, queue, MagicMock())
 
-        posted_text = wc.run.call_args_list[-1][0][1]["text"]
-        assert "Tarea registrada" in posted_text
+        # Fallback suppressed — only the failed LLM attempt
+        assert wc.run.call_count == 1
         queue.enqueue.assert_not_called()
 
 
@@ -245,23 +241,21 @@ class TestInstructionFlow:
         wc.run.return_value = _empty_result()
         handle_smart_reply(COMMENT_TEXT_INSTRUCTION, COMMENT_ID, IntentResult("instruction", "high"), "system", wc, queue, MagicMock())
 
-        assert wc.run.call_count == 5
-        assert wc.run.call_args_list[0][0][0] == "notion.add_comment"
-        assert wc.run.call_args_list[0][0][1] == {
-            "text": f"{ECHO_PREFIX} Instrucción registrada. Procesando configuración. (comment_id={COMMENT_ID[:8]}...)",
-        }
-        assert wc.run.call_args_list[1][0][0] == "notion.upsert_task"
-        task_payload = wc.run.call_args_list[1][0][1]
+        # With the noise-reduction changes, instructions no longer post an acknowledgment comment.
+        # The first call is now notion.upsert_task, not notion.add_comment.
+        assert wc.run.call_count == 4
+        assert wc.run.call_args_list[0][0][0] == "notion.upsert_task"
+        task_payload = wc.run.call_args_list[0][0][1]
         assert task_payload["task_id"] == _instruction_task_id(COMMENT_ID)
         assert task_payload["team"] == "system"
         assert task_payload["source_kind"] == "instruction_comment"
-        assert wc.run.call_args_list[2][0][0] == "notion.upsert_bridge_item"
-        assert wc.run.call_args_list[2][0][1]["status"] == "Nuevo"
-        assert wc.run.call_args_list[3][0][0] == "notion.upsert_task"
-        assert wc.run.call_args_list[3][0][1]["status"] == "running"
-        assert "Seguimiento inyectado" in wc.run.call_args_list[3][0][1]["result_summary"]
-        assert wc.run.call_args_list[4][0][0] == "notion.upsert_bridge_item"
-        assert wc.run.call_args_list[4][0][1]["status"] == "En curso"
+        assert wc.run.call_args_list[1][0][0] == "notion.upsert_bridge_item"
+        assert wc.run.call_args_list[1][0][1]["status"] == "Nuevo"
+        assert wc.run.call_args_list[2][0][0] == "notion.upsert_task"
+        assert wc.run.call_args_list[2][0][1]["status"] == "running"
+        assert "Seguimiento inyectado" in wc.run.call_args_list[2][0][1]["result_summary"]
+        assert wc.run.call_args_list[3][0][0] == "notion.upsert_bridge_item"
+        assert wc.run.call_args_list[3][0][1]["status"] == "En curso"
         mock_handoff.assert_called_once()
         queue.enqueue.assert_not_called()
 
@@ -270,7 +264,6 @@ class TestInstructionFlow:
         mock_handoff.return_value = False
         wc.run.side_effect = [
             {"ok": True, "result": {"title": "Proyecto Embudo Ventas"}},
-            _empty_result(),
             _empty_result(),
             _empty_result(),
             _empty_result(),
@@ -288,18 +281,19 @@ class TestInstructionFlow:
             page_kind="project",
         )
 
+        # [0] notion.read_page, [1] upsert_task, [2] upsert_bridge_item (Nuevo), [3] upsert_bridge_item (Esperando)
         assert wc.run.call_args_list[0][0][0] == "notion.read_page"
-        task_payload = wc.run.call_args_list[2][0][1]
+        task_payload = wc.run.call_args_list[1][0][1]
         assert task_payload["project_page_id"] == "project-page-1"
         assert task_payload["deliverable_page_id"] is None
-        bridge_payload = wc.run.call_args_list[3][0][1]
+        bridge_payload = wc.run.call_args_list[2][0][1]
         assert bridge_payload["project_name"] == "Proyecto Embudo Ventas"
         assert bridge_payload["source"] == "Proyecto"
 
     @patch("dispatcher.smart_reply._handoff_instruction_to_rick")
     def test_instruction_inherits_deliverable_context_from_comment_page(self, mock_handoff, wc, queue):
         mock_handoff.return_value = False
-        wc.run.side_effect = [_empty_result(), _empty_result(), _empty_result(), _empty_result()]
+        wc.run.side_effect = [_empty_result(), _empty_result(), _empty_result()]
 
         handle_smart_reply(
             COMMENT_TEXT_INSTRUCTION,
@@ -313,10 +307,11 @@ class TestInstructionFlow:
             page_kind="deliverable",
         )
 
-        task_payload = wc.run.call_args_list[1][0][1]
+        # No read_page for deliverables → [0] upsert_task, [1] upsert_bridge_item (Nuevo), [2] upsert_bridge_item (Esperando)
+        task_payload = wc.run.call_args_list[0][0][1]
         assert task_payload["project_page_id"] is None
         assert task_payload["deliverable_page_id"] == "deliverable-page-1"
-        bridge_payload = wc.run.call_args_list[2][0][1]
+        bridge_payload = wc.run.call_args_list[1][0][1]
         assert bridge_payload["project_name"] is None
         assert bridge_payload["source"] == "Entregable"
 
@@ -326,11 +321,12 @@ class TestInstructionFlow:
         wc.run.return_value = _empty_result()
         handle_smart_reply(COMMENT_TEXT_INSTRUCTION, COMMENT_ID, IntentResult("instruction", "high"), "system", wc, queue, MagicMock())
 
-        assert wc.run.call_count == 4
+        # No acknowledgment, handoff=False → upsert_task + bridge(Nuevo) + bridge(Esperando) = 3
+        assert wc.run.call_count == 3
+        assert wc.run.call_args_list[1][0][0] == "notion.upsert_bridge_item"
+        assert wc.run.call_args_list[1][0][1]["status"] == "Nuevo"
         assert wc.run.call_args_list[2][0][0] == "notion.upsert_bridge_item"
-        assert wc.run.call_args_list[2][0][1]["status"] == "Nuevo"
-        assert wc.run.call_args_list[3][0][0] == "notion.upsert_bridge_item"
-        assert wc.run.call_args_list[3][0][1]["status"] == "Esperando"
+        assert wc.run.call_args_list[2][0][1]["status"] == "Esperando"
         mock_handoff.assert_called_once()
         queue.enqueue.assert_not_called()
 
@@ -339,7 +335,6 @@ class TestInstructionFlow:
         mock_handoff.return_value = False
         wc.run.side_effect = [
             {"ok": True, "result": {"title": "Proyecto Embudo Ventas"}},
-            _empty_result(),
             _empty_result(),
             _empty_result(),
             _empty_result(),
@@ -358,14 +353,14 @@ class TestInstructionFlow:
         )
 
         assert wc.run.call_args_list[0][0][0] == "notion.read_page"
-        bridge_payload = wc.run.call_args_list[3][0][1]
+        # [0] read_page, [1] upsert_task, [2] bridge(Nuevo), [3] bridge(Esperando)
+        bridge_payload = wc.run.call_args_list[2][0][1]
         assert bridge_payload["project_name"] == "Proyecto Embudo Ventas"
 
     @patch("dispatcher.smart_reply._handoff_instruction_to_rick")
     def test_instruction_reuses_bridge_page_id_after_creation(self, mock_handoff, wc, queue):
         mock_handoff.return_value = True
         wc.run.side_effect = [
-            _empty_result(),
             _empty_result(),
             {"ok": True, "result": {"page_id": "bridge-page-1"}},
             _empty_result(),
@@ -382,7 +377,9 @@ class TestInstructionFlow:
             MagicMock(),
         )
 
-        second_bridge_payload = wc.run.call_args_list[4][0][1]
+        # [0] upsert_task(queued), [1] upsert_bridge_item(Nuevo) → returns page_id,
+        # [2] upsert_task(running), [3] upsert_bridge_item(En curso) with page_id
+        second_bridge_payload = wc.run.call_args_list[3][0][1]
         assert second_bridge_payload["page_id"] == "bridge-page-1"
 
 
@@ -462,32 +459,31 @@ class TestInstructionHandoff:
 
 class TestEchoFlow:
     def test_echo_posts_acknowledgment(self, wc, queue):
+        """Echo comments no longer post — silence is better than noise."""
         wc.run.return_value = _empty_result()
         handle_smart_reply(COMMENT_TEXT_ECHO, COMMENT_ID, IntentResult("echo", "high"), "system", wc, queue, MagicMock())
 
-        wc.run.assert_called_once()
-        posted_text = wc.run.call_args[0][1]["text"]
-        assert posted_text.startswith(ECHO_PREFIX)
-        assert "Recibido" in posted_text
+        # Echo should NOT call wc.run at all
+        wc.run.assert_not_called()
 
 
 # ── Test _post_fallback ────────────────────────────────────────
 
 class TestPostFallback:
     def test_fallback_question(self, wc):
+        """Question fallback is suppressed — no false promise when pipeline fails."""
         _post_fallback(wc, COMMENT_ID, "question")
-        text = wc.run.call_args[0][1]["text"]
-        assert "Investigando" in text
+        wc.run.assert_not_called()
 
     def test_fallback_task(self, wc):
+        """Task fallback is suppressed — no false promise when pipeline fails."""
         _post_fallback(wc, COMMENT_ID, "task")
-        text = wc.run.call_args[0][1]["text"]
-        assert "Tarea registrada" in text
+        wc.run.assert_not_called()
 
     def test_fallback_unknown(self, wc):
+        """Unknown intents are suppressed — no fallback comment posted."""
         _post_fallback(wc, COMMENT_ID, "unknown_intent")
-        text = wc.run.call_args[0][1]["text"]
-        assert "Recibido" in text
+        wc.run.assert_not_called()
 
 
 # ── Test pipeline error resilience ─────────────────────────────

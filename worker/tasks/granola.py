@@ -156,6 +156,96 @@ def _compact_excerpt(text: str, limit: int = 280) -> str:
     return value[: limit - 3].rstrip() + "..."
 
 
+def _expected_block_signature(blocks: list[Dict[str, Any]]) -> list[tuple[str, str]]:
+    signature: list[tuple[str, str]] = []
+    for block in blocks:
+        if not isinstance(block, dict):
+            continue
+        block_type = str(block.get("type") or "").strip()
+        payload = block.get(block_type) or {}
+        rich_text = payload.get("rich_text") if isinstance(payload, dict) else None
+        text = ""
+        if isinstance(rich_text, list):
+            text = "".join(
+                item.get("plain_text", item.get("text", {}).get("content", ""))
+                for item in rich_text
+                if isinstance(item, dict)
+            )
+        signature.append((block_type, text))
+    return signature
+
+
+def _verify_raw_page_persistence(
+    *,
+    page_id: str,
+    expected_blocks: list[Dict[str, Any]],
+) -> Dict[str, Any]:
+    snapshot = notion_client.read_page_full(page_id)
+    actual_signature = [
+        (str(item.get("type") or "").strip(), str(item.get("text") or ""))
+        for item in (snapshot.get("blocks") or [])
+        if isinstance(item, dict)
+    ]
+    expected_signature = _expected_block_signature(expected_blocks)
+    verification: Dict[str, Any] = {
+        "ok": actual_signature == expected_signature,
+        "expected_block_count": len(expected_signature),
+        "actual_block_count": len(actual_signature),
+        "page_id": page_id,
+        "page_url": str(snapshot.get("url") or ""),
+        "plain_text_length": len(str(snapshot.get("plain_text") or "")),
+    }
+
+    if verification["ok"]:
+        return verification
+
+    mismatch_index = 0
+    max_index = min(len(expected_signature), len(actual_signature))
+    while mismatch_index < max_index and expected_signature[mismatch_index] == actual_signature[mismatch_index]:
+        mismatch_index += 1
+
+    expected_block = expected_signature[mismatch_index] if mismatch_index < len(expected_signature) else ("", "")
+    actual_block = actual_signature[mismatch_index] if mismatch_index < len(actual_signature) else ("", "")
+    verification.update(
+        {
+            "mismatch_index": mismatch_index,
+            "expected_excerpt": _compact_excerpt(expected_block[1], limit=180),
+            "actual_excerpt": _compact_excerpt(actual_block[1], limit=180),
+        }
+    )
+    return verification
+
+
+def _alert_raw_integrity_failure(
+    *,
+    title: str,
+    granola_document_id: str,
+    verification: Dict[str, Any],
+) -> None:
+    parts = [
+        "ALERTA integridad Granola raw.",
+        f"Título: {title}",
+        f"granola_document_id: {granola_document_id or '(missing)'}",
+        f"page_id: {verification.get('page_id') or '(missing)'}",
+        f"expected_blocks={verification.get('expected_block_count')} actual_blocks={verification.get('actual_block_count')}",
+    ]
+    if verification.get("mismatch_index") is not None:
+        parts.append(f"mismatch_index={verification.get('mismatch_index')}")
+    if verification.get("page_url"):
+        parts.append(f"page_url: {verification['page_url']}")
+    expected_excerpt = str(verification.get("expected_excerpt") or "").strip()
+    actual_excerpt = str(verification.get("actual_excerpt") or "").strip()
+    if expected_excerpt:
+        parts.append(f"expected_excerpt: {expected_excerpt}")
+    if actual_excerpt:
+        parts.append(f"actual_excerpt: {actual_excerpt}")
+
+    try:
+        notion_client.add_comment(page_id=None, text="\n".join(parts))
+    except Exception as exc:
+        logger.error("Failed to notify raw integrity failure for %s: %s", title, exc)
+
+
 def _normalize_lookup_text(value: str) -> str:
     text = unicodedata.normalize("NFKD", value or "")
     ascii_text = text.encode("ascii", "ignore").decode("ascii")
@@ -996,6 +1086,20 @@ def _upsert_raw_transcript_page(
     notion_result["match_strategy"] = match_strategy
     notion_result["resolved_title"] = resolved_title
     notion_result["schema_fields_used"] = used_fields
+    verification = _verify_raw_page_persistence(
+        page_id=str(notion_result.get("page_id") or "").strip(),
+        expected_blocks=blocks,
+    )
+    notion_result["content_verification"] = verification
+    if not verification.get("ok"):
+        _alert_raw_integrity_failure(
+            title=resolved_title,
+            granola_document_id=granola_document_id,
+            verification=verification,
+        )
+        raise RuntimeError(
+            "Notion transcript integrity check failed after raw page upsert"
+        )
     return notion_result
 
 
@@ -1460,6 +1564,7 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
         "match_strategy": str(page_result.get("match_strategy") or ""),
         "resolved_title": str(page_result.get("resolved_title") or title),
         "notion_page_id_sync": page_result.get("notion_page_id_sync") or {},
+        "content_verification": page_result.get("content_verification") or {},
         "notification_sent": notification_sent,
     }
 

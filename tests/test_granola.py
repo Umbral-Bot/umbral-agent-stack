@@ -108,6 +108,70 @@ Se discutieron temas varios.
 
         assert result["title"] == "2026-03-04-client-meeting"
 
+    def test_preserves_exporter_metadata(self):
+        md = """# Reunion Controlada
+
+**Date:** 2026-03-31
+**Granola Document ID:** doc-123
+
+## Metadata
+
+- **Updated At:** 2026-03-31T11:55:00Z
+- **Source URL:** https://app.granola.ai/doc-123
+"""
+        result = parse_granola_markdown(md, "reunion-controlada.md")
+
+        assert result["granola_document_id"] == "doc-123"
+        assert result["source_updated_at"] == "2026-03-31T11:55:00Z"
+        assert result["source_url"] == "https://app.granola.ai/doc-123"
+        assert result["metadata"]["granola_document_id"] == "doc-123"
+        assert result["metadata"]["updated_at"] == "2026-03-31T11:55:00Z"
+        assert result["metadata"]["source_url"] == "https://app.granola.ai/doc-123"
+
+    def test_transcript_speaker_bullets_are_not_parsed_as_metadata(self):
+        md = """# Reunion con transcript
+
+**Date:** 2026-03-31
+**Granola Document ID:** doc-456
+
+## Notes
+
+Resumen ejecutivo.
+
+## Transcript
+
+- **David:** [10:00:00] Revisemos el pipeline.
+- **Cliente:** [10:00:05] Necesitamos la transcripcion completa.
+
+## Metadata
+
+- **Updated At:** 2026-03-31T12:00:00Z
+"""
+        result = parse_granola_markdown(md, "reunion-transcript.md")
+
+        assert "Resumen ejecutivo." in result["content"]
+        assert "Revisemos el pipeline." in result["content"]
+        assert "Necesitamos la transcripcion completa." in result["content"]
+        assert "David" not in result["metadata"]
+        assert "Cliente" not in result["metadata"]
+        assert result["metadata"]["updated_at"] == "2026-03-31T12:00:00Z"
+
+    def test_transcript_only_export_does_not_fall_back_to_sin_contenido(self):
+        md = """# Transcript Only
+
+**Date:** 2026-03-31
+
+## Transcript
+
+- **David:** [10:00:00] Primera intervencion.
+- **Ana:** [10:00:05] Segunda intervencion.
+"""
+        result = parse_granola_markdown(md, "transcript-only.md")
+
+        assert result["content"] != "(sin contenido)"
+        assert "Primera intervencion." in result["content"]
+        assert "Segunda intervencion." in result["content"]
+
 
 # ---------------------------------------------------------------------------
 # Handler tests
@@ -126,6 +190,54 @@ from worker.tasks.granola import (
     handle_granola_create_followup,
     _extract_action_items_from_content,
 )
+from worker.tasks import TASK_HANDLERS
+
+
+def _mock_raw_transcript_db(
+    mock_nc,
+    *,
+    page_id: str = "page-123",
+    page_url: str = "https://notion.so/page-123",
+    existing_pages: list[dict] | None = None,
+):
+    mock_nc.read_database.return_value = {
+        "schema": {
+            "Título": "title",
+            "Estado": "select",
+            "Fecha de transcripción": "date",
+            "Fecha que Rick pasó a Notion": "date",
+            "Fecha que el agente procesó": "date",
+            "Trazabilidad": "rich_text",
+            "Tags": "multi_select",
+        }
+    }
+    mock_nc.query_database.return_value = existing_pages or []
+    mock_nc.create_database_page.return_value = {
+        "page_id": page_id,
+        "url": page_url,
+        "created": True,
+    }
+
+
+def _mock_read_page_full_snapshot(
+    mock_nc,
+    content: str,
+    *,
+    page_id: str = "page-123",
+    page_url: str = "https://notion.so/page-123",
+):
+    blocks = []
+    for i in range(0, len(content), 2000):
+        blocks.append({"type": "paragraph", "text": content[i : i + 2000]})
+    mock_nc.read_page_full.return_value = {
+        "page_id": page_id,
+        "url": page_url,
+        "title": "",
+        "blocks": blocks,
+        "plain_text": "\n".join(block["text"] for block in blocks),
+        "block_count": len(blocks),
+        "has_more": False,
+    }
 
 
 class TestExtractActionItems:
@@ -173,19 +285,21 @@ class TestHandleGranolaProcessTranscript:
     @patch("worker.tasks.granola.handle_notion_upsert_task")
     @patch("worker.tasks.granola.notion_client")
     def test_success(self, mock_nc, mock_upsert_task):
-        mock_nc.create_transcript_page.return_value = {
-            "page_id": "page-123",
-            "url": "https://notion.so/page-123",
-        }
+        _mock_raw_transcript_db(mock_nc)
+        content = "## Notes\n\nDiscusiÃ³n de proyecto.\n\n## Action Items\n\n- [ ] Enviar propuesta (David, 2026-03-07)"
+        _mock_read_page_full_snapshot(mock_nc, content)
         mock_upsert_task.return_value = {"page_id": "task-1", "created": True}
         mock_nc.add_comment.return_value = {"comment_id": "c-1"}
 
         result = handle_granola_process_transcript({
             "title": "Reunión con Cliente",
-            "content": "## Notes\n\nDiscusión de proyecto.\n\n## Action Items\n\n- [ ] Enviar propuesta (David, 2026-03-07)",
+            "content": content,
             "date": "2026-03-04",
             "attendees": ["David", "Cliente X"],
             "source": "granola",
+            "granola_document_id": "doc-123",
+            "source_updated_at": "2026-03-31T12:00:00Z",
+            "source_url": "https://app.granola.ai/doc-123",
         })
 
         assert result["page_id"] == "page-123"
@@ -193,36 +307,215 @@ class TestHandleGranolaProcessTranscript:
         assert result["action_items_detected"] == 1
         assert result["action_items_created"] == 0
         assert result["legacy_raw_task_writes_enabled"] is False
+        assert result["granola_document_id"] == "doc-123"
+        assert result["source_updated_at"] == "2026-03-31T12:00:00Z"
+        assert result["source_url"] == "https://app.granola.ai/doc-123"
+        assert result["traceability_written"] is True
+        assert result["matched_existing"] is False
+        assert result["match_strategy"] == ""
+        assert result["content_verification"]["ok"] is True
+        assert result["resolved_title"] == "Reunión con Cliente"
         assert result["notification_sent"] is True
 
-        mock_nc.create_transcript_page.assert_called_once_with(
-            title="Reunión con Cliente",
-            content="## Notes\n\nDiscusión de proyecto.\n\n## Action Items\n\n- [ ] Enviar propuesta (David, 2026-03-07)",
-            source="granola",
-            date="2026-03-04",
+        mock_nc.create_transcript_page.assert_not_called()
+        mock_nc.create_database_page.assert_called_once()
+        create_args = mock_nc.create_database_page.call_args
+        assert (
+            create_args.kwargs["properties"]["Título"]["title"][0]["text"]["content"]
+            == "Reunión con Cliente"
+        )
+        assert (
+            create_args.kwargs["properties"]["Fecha de transcripción"]["date"]["start"]
+            == "2026-03-04"
+        )
+        assert create_args.kwargs["properties"]["Estado"]["select"]["name"] == "Pendiente"
+        assert create_args.kwargs["properties"]["Tags"]["multi_select"] == [{"name": "granola"}]
+        assert (
+            create_args.kwargs["properties"]["Trazabilidad"]["rich_text"][0]["text"]["content"]
+            == (
+                "granola_document_id=doc-123\n"
+                "source_updated_at=2026-03-31T12:00:00Z\n"
+                "source_url=https://app.granola.ai/doc-123\n"
+                "ingest_path=granola.process_transcript"
+            )
+        )
+        assert len(create_args.kwargs["children"]) == 1
+        assert (
+            create_args.kwargs["children"][0]["paragraph"]["rich_text"][0]["text"]["content"]
+            == content
         )
         mock_nc.add_comment.assert_called_once()
         assert mock_nc.add_comment.call_args.kwargs["page_id"] is None
         assert "Hola @Enlace" in mock_nc.add_comment.call_args.kwargs["text"]
         mock_upsert_task.assert_not_called()
-        return
-        mock_upsert_task.assert_called_once()
-        task_payload = mock_upsert_task.call_args.args[0]
-        assert task_payload["task"] == "granola.action_item"
-        assert task_payload["task_name"] == "[Granola] Enviar propuesta"
-        assert task_payload["project_name"] == "Proyecto Granola"
-        assert task_payload["source"] == "granola_process_transcript"
-        assert task_payload["source_kind"] == "action_item"
-        assert task_payload["task_id"] == _build_action_item_task_id(
-            "Reunión con Cliente",
-            "2026-03-04",
-            {"text": "Enviar propuesta", "assignee": "David", "due": "2026-03-07"},
+
+    @patch("worker.tasks.granola.handle_notion_upsert_task")
+    @patch("worker.tasks.granola.notion_client")
+    def test_success_supports_live_schema_fields_with_question_marks(self, mock_nc, mock_upsert_task):
+        mock_nc.read_database.return_value = {
+            "schema": {
+                "Título": "title",
+                "Estado": "select",
+                "Fecha de transcripción": "date",
+                "Fecha que Rick pas? a Notion": "date",
+                "Fecha que el agente proces?": "date",
+                "Trazabilidad": "rich_text",
+                "Tags": "multi_select",
+            }
+        }
+        mock_nc.query_database.return_value = []
+        mock_nc.create_database_page.return_value = {
+            "page_id": "page-live",
+            "url": "https://notion.so/page-live",
+            "created": True,
+        }
+        _mock_read_page_full_snapshot(
+            mock_nc,
+            "Contenido live",
+            page_id="page-live",
+            page_url="https://notion.so/page-live",
+        )
+        mock_upsert_task.return_value = {"page_id": "task-1", "created": True}
+        mock_nc.add_comment.return_value = {"comment_id": "c-1"}
+
+        result = handle_granola_process_transcript(
+            {
+                "title": "Reunión live",
+                "content": "Contenido live",
+                "date": "2026-04-02",
+            }
+        )
+
+        assert result["page_id"] == "page-live"
+        props = mock_nc.create_database_page.call_args.kwargs["properties"]
+        assert props["Fecha que Rick pas? a Notion"]["date"]["start"]
+        assert props["Fecha que el agente proces?"]["date"]["start"]
+
+    @patch("worker.tasks.granola.handle_notion_upsert_task")
+    @patch("worker.tasks.granola.notion_client")
+    def test_existing_match_backfills_missing_live_schema_dates(self, mock_nc, mock_upsert_task):
+        mock_nc.read_database.return_value = {
+            "schema": {
+                "TÃ­tulo": "title",
+                "Estado": "select",
+                "Fecha de transcripciÃ³n": "date",
+                "Fecha que Rick pas? a Notion": "date",
+                "Fecha que el agente proces?": "date",
+                "Granola Document ID": "rich_text",
+                "Trazabilidad": "rich_text",
+                "Tags": "multi_select",
+            }
+        }
+        mock_nc.query_database.return_value = [
+            {
+                "id": "page-live",
+                "url": "https://notion.so/page-live",
+                "last_edited_time": "2026-04-02T13:20:00Z",
+                "properties": {
+                    "TÃ­tulo": {
+                        "type": "title",
+                        "title": [{"plain_text": "ReuniÃ³n live", "text": {"content": "ReuniÃ³n live"}}],
+                    },
+                    "Fecha de transcripciÃ³n": {
+                        "type": "date",
+                        "date": {"start": "2026-04-02"},
+                    },
+                    "Granola Document ID": {
+                        "type": "rich_text",
+                        "rich_text": [{"plain_text": "doc-live", "text": {"content": "doc-live"}}],
+                    },
+                    "Fecha que Rick pas? a Notion": {"type": "date", "date": None},
+                    "Fecha que el agente proces?": {"type": "date", "date": None},
+                },
+            }
+        ]
+        mock_nc.update_page_properties.return_value = {
+            "page_id": "page-live",
+            "url": "https://notion.so/page-live",
+            "updated": True,
+        }
+        _mock_read_page_full_snapshot(
+            mock_nc,
+            "Contenido live",
+            page_id="page-live",
+            page_url="https://notion.so/page-live",
+        )
+        mock_upsert_task.return_value = {"page_id": "task-1", "created": True}
+
+        result = handle_granola_process_transcript(
+            {
+                "title": "ReuniÃ³n live",
+                "content": "Contenido live",
+                "date": "2026-04-02",
+                "granola_document_id": "doc-live",
+                "notify_enlace": False,
+            }
+        )
+
+        assert result["page_id"] == "page-live"
+        assert result["matched_existing"] is True
+        assert result["match_strategy"] == "granola_document_id"
+        mock_nc.create_database_page.assert_not_called()
+        props = mock_nc.update_page_properties.call_args.kwargs["properties"]
+        assert props["Fecha que Rick pas? a Notion"]["date"]["start"]
+        assert props["Fecha que el agente proces?"]["date"]["start"]
+
+    @patch("worker.tasks.granola.handle_notion_upsert_task")
+    @patch("worker.tasks.granola.notion_client")
+    def test_create_syncs_visible_notion_page_id_when_schema_exposes_column(self, mock_nc, mock_upsert_task):
+        mock_nc.read_database.return_value = {
+            "schema": {
+                "TÃ­tulo": "title",
+                "Estado": "select",
+                "Fecha de transcripciÃ³n": "date",
+                "ID interno Notion": "rich_text",
+                "Trazabilidad": "rich_text",
+                "Tags": "multi_select",
+            }
+        }
+        mock_nc.query_database.return_value = []
+        mock_nc.create_database_page.return_value = {
+            "page_id": "page-visible-id",
+            "url": "https://notion.so/page-visible-id",
+            "created": True,
+        }
+        mock_nc.update_page_properties.return_value = {
+            "page_id": "page-visible-id",
+            "url": "https://notion.so/page-visible-id",
+            "updated": True,
+        }
+        _mock_read_page_full_snapshot(
+            mock_nc,
+            "Contenido live",
+            page_id="page-visible-id",
+            page_url="https://notion.so/page-visible-id",
+        )
+        mock_upsert_task.return_value = {"page_id": "task-1", "created": True}
+        mock_nc.add_comment.return_value = {"comment_id": "c-1"}
+
+        result = handle_granola_process_transcript(
+            {
+                "title": "ReuniÃ³n con ID visible",
+                "content": "Contenido live",
+                "date": "2026-04-02",
+                "notify_enlace": False,
+            }
+        )
+
+        assert result["page_id"] == "page-visible-id"
+        assert result["notion_page_id_sync"]["ok"] is True
+        update_call = mock_nc.update_page_properties.call_args
+        assert update_call.args[0] == "page-visible-id"
+        assert (
+            update_call.kwargs["properties"]["ID interno Notion"]["rich_text"][0]["text"]["content"]
+            == "page-visible-id"
         )
 
     @patch("worker.tasks.granola.handle_notion_upsert_task")
     @patch("worker.tasks.granola.notion_client")
     def test_with_pre_parsed_action_items(self, mock_nc, mock_upsert_task):
-        mock_nc.create_transcript_page.return_value = {"page_id": "p1", "url": ""}
+        _mock_raw_transcript_db(mock_nc, page_id="p1", page_url="")
+        _mock_read_page_full_snapshot(mock_nc, "Content", page_id="p1", page_url="")
         mock_upsert_task.return_value = {"page_id": "t1", "created": True}
         mock_nc.add_comment.return_value = {"comment_id": "c1"}
 
@@ -243,7 +536,8 @@ class TestHandleGranolaProcessTranscript:
     @patch("worker.tasks.granola.handle_notion_upsert_task")
     @patch("worker.tasks.granola.notion_client")
     def test_legacy_raw_task_writes_can_be_enabled_explicitly(self, mock_nc, mock_upsert_task):
-        mock_nc.create_transcript_page.return_value = {"page_id": "p1", "url": ""}
+        _mock_raw_transcript_db(mock_nc, page_id="p1", page_url="")
+        _mock_read_page_full_snapshot(mock_nc, "Content", page_id="p1", page_url="")
         mock_upsert_task.return_value = {"page_id": "t1", "created": True}
         mock_nc.add_comment.return_value = {"comment_id": "c1"}
 
@@ -264,7 +558,8 @@ class TestHandleGranolaProcessTranscript:
 
     @patch("worker.tasks.granola.notion_client")
     def test_no_enlace_notification(self, mock_nc):
-        mock_nc.create_transcript_page.return_value = {"page_id": "p1", "url": ""}
+        _mock_raw_transcript_db(mock_nc, page_id="p1", page_url="")
+        _mock_read_page_full_snapshot(mock_nc, "Just notes", page_id="p1", page_url="")
 
         result = handle_granola_process_transcript({
             "title": "Quick note",
@@ -282,6 +577,46 @@ class TestHandleGranolaProcessTranscript:
     def test_missing_content(self):
         with pytest.raises(ValueError, match="'content' is required"):
             handle_granola_process_transcript({"title": "Test"})
+
+    @patch("worker.tasks.granola.handle_notion_upsert_task")
+    @patch("worker.tasks.granola.notion_client")
+    def test_raises_and_alerts_when_raw_page_persistence_mismatches(self, mock_nc, mock_upsert_task):
+        _mock_raw_transcript_db(mock_nc)
+        mock_nc.read_page_full.return_value = {
+            "page_id": "page-123",
+            "url": "https://notion.so/page-123",
+            "title": "",
+            "blocks": [{"type": "paragraph", "text": "contenido incompleto"}],
+            "plain_text": "contenido incompleto",
+            "block_count": 1,
+            "has_more": False,
+        }
+        mock_nc.add_comment.return_value = {"comment_id": "c-1"}
+        mock_upsert_task.return_value = {"page_id": "task-1", "created": True}
+
+        with pytest.raises(RuntimeError, match="Notion transcript integrity check failed"):
+            handle_granola_process_transcript(
+                {
+                    "title": "Reunión con Cliente",
+                    "content": "Contenido esperado bastante más largo que el persistido",
+                    "date": "2026-03-04",
+                    "granola_document_id": "doc-123",
+                    "notify_enlace": False,
+                }
+            )
+
+        mock_nc.create_database_page.assert_called_once()
+        mock_nc.add_comment.assert_called_once()
+        assert "ALERTA integridad Granola raw." in mock_nc.add_comment.call_args.kwargs["text"]
+
+
+class TestGranolaTaskRegistry:
+
+    def test_session_capitalizable_alias_points_to_curated_handler(self):
+        assert (
+            TASK_HANDLERS["granola.promote_session_capitalizable"]
+            is TASK_HANDLERS["granola.promote_curated_session"]
+        )
 
 
 class TestHandleGranolaCapitalizeRaw:

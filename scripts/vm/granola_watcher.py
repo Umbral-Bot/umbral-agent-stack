@@ -95,9 +95,13 @@ def parse_granola_markdown(text: str, filename: str = "") -> dict[str, Any]:
     date_str = ""
     attendees: list[str] = []
     action_items: list[dict[str, str]] = []
+    metadata: dict[str, str] = {}
     sections: dict[str, list[str]] = {}
     current_section = "_preamble"
     sections[current_section] = []
+
+    def _normalize_metadata_key(label: str) -> str:
+        return re.sub(r"[^a-z0-9]+", "_", label.lower()).strip("_")
 
     for line in lines:
         stripped = line.strip()
@@ -126,6 +130,20 @@ def parse_granola_markdown(text: str, filename: str = "") -> dict[str, Any]:
         )
         if att_match:
             attendees = [a.strip() for a in att_match.group(1).split(",") if a.strip()]
+            continue
+
+        metadata_match = re.match(r"\*\*(.+?)\s*:\*\*\s*(.+)", stripped)
+        if metadata_match:
+            label = metadata_match.group(1).strip()
+            value = metadata_match.group(2).strip()
+            metadata[_normalize_metadata_key(label)] = value
+            continue
+
+        bullet_metadata_match = re.match(r"-\s*\*\*(.+?)\s*:\*\*\s*(.+)", stripped)
+        if bullet_metadata_match:
+            label = bullet_metadata_match.group(1).strip()
+            value = bullet_metadata_match.group(2).strip()
+            metadata[_normalize_metadata_key(label)] = value
             continue
 
         # Section headers
@@ -187,6 +205,10 @@ def parse_granola_markdown(text: str, filename: str = "") -> dict[str, Any]:
         "attendees": attendees,
         "action_items": action_items,
         "source": "granola",
+        "metadata": metadata,
+        "granola_document_id": metadata.get("granola_document_id", ""),
+        "source_updated_at": metadata.get("updated_at", ""),
+        "source_url": metadata.get("source_url", ""),
     }
 
 

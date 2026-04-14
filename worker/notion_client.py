@@ -6,6 +6,7 @@ Uses httpx for HTTP requests. All IDs come from environment variables
 via worker.config — never hardcoded.
 """
 
+import json
 import logging
 import re
 from datetime import datetime, timezone
@@ -19,6 +20,8 @@ logger = logging.getLogger("worker.notion")
 
 NOTION_BASE_URL = "https://api.notion.com/v1"
 TIMEOUT = 60.0
+NOTION_BLOCK_APPEND_LIMIT = 100
+NOTION_APPEND_TEXT_BUDGET = 8000
 
 
 # ---------------------------------------------------------------------------
@@ -144,6 +147,102 @@ def _extract_block_text(block: dict[str, Any]) -> str:
     return ""
 
 
+def _read_page_blocks(
+    client: httpx.Client,
+    page_id: str,
+    *,
+    max_blocks: int | None = None,
+) -> tuple[list[dict[str, Any]], bool]:
+    """Read top-level child blocks for a page, with optional pagination."""
+    page_size = 100
+    remaining = None if max_blocks is None else max(1, min(int(max_blocks), 100))
+    start_cursor: str | None = None
+    raw_blocks: list[dict[str, Any]] = []
+    has_more = False
+
+    while True:
+        params: dict[str, Any] = {"page_size": page_size if remaining is None else min(page_size, remaining)}
+        if start_cursor:
+            params["start_cursor"] = start_cursor
+
+        blocks_resp = client.get(
+            f"{NOTION_BASE_URL}/blocks/{page_id}/children",
+            headers=_headers(),
+            params=params,
+        )
+        blocks_data = _check_response(blocks_resp, "read_page children")
+        results = blocks_data.get("results", [])
+        if isinstance(results, list):
+            raw_blocks.extend(block for block in results if isinstance(block, dict))
+
+        has_more = bool(blocks_data.get("has_more"))
+        if max_blocks is not None:
+            remaining = max(0, remaining - len(results))
+            if remaining <= 0:
+                break
+        if not has_more:
+            break
+
+        start_cursor = blocks_data.get("next_cursor")
+        if not start_cursor:
+            break
+
+    return raw_blocks, has_more
+
+
+def _serialize_page_blocks(raw_blocks: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], str]:
+    blocks: list[dict[str, Any]] = []
+    for block in raw_blocks:
+        blocks.append(
+            {
+                "id": block.get("id", ""),
+                "type": block.get("type", ""),
+                "text": _extract_block_text(block),
+                "has_children": bool(block.get("has_children")),
+                "last_edited_time": block.get("last_edited_time", ""),
+            }
+        )
+
+    plain_text = "\n".join(item["text"] for item in blocks if item.get("text"))
+    return blocks, plain_text
+
+
+def _estimate_block_text_length(block: dict[str, Any]) -> int:
+    text = _extract_block_text(block)
+    if text:
+        return len(text)
+    return len(json.dumps(block, ensure_ascii=False))
+
+
+def _chunk_blocks_for_append(
+    blocks: list[dict[str, Any]],
+    *,
+    max_blocks: int = NOTION_BLOCK_APPEND_LIMIT,
+    max_text_budget: int = NOTION_APPEND_TEXT_BUDGET,
+) -> list[list[dict[str, Any]]]:
+    chunks: list[list[dict[str, Any]]] = []
+    current_chunk: list[dict[str, Any]] = []
+    current_budget = 0
+
+    for block in blocks:
+        block_budget = max(1, _estimate_block_text_length(block))
+        if current_chunk and (
+            len(current_chunk) >= max_blocks
+            or current_budget + block_budget > max_text_budget
+        ):
+            chunks.append(current_chunk)
+            current_chunk = []
+            current_budget = 0
+
+        current_chunk.append(block)
+        current_budget += block_budget
+
+    if current_chunk:
+        chunks.append(current_chunk)
+
+    return chunks
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -154,6 +253,7 @@ def create_transcript_page(
     content: str,
     source: str = "granola",
     date: str | None = None,
+    traceability_text: str | None = None,
 ) -> dict[str, Any]:
     """
     Create a page in the Granola Inbox database.
@@ -163,6 +263,7 @@ def create_transcript_page(
         content: Transcript text (plain text, will be split into blocks).
         source: Source identifier (default: "granola").
         date: ISO date string. Defaults to now (UTC).
+        traceability_text: Optional raw traceability metadata for a text/url field.
 
     Returns:
         Notion page object (dict).
@@ -226,13 +327,28 @@ def create_transcript_page(
         )
         passed_prop = _find_property_name(
             db_properties,
-            ["Fecha que Rick pasó a Notion", "Fecha que Rick paso a Notion", "Imported At"],
+            [
+                "Fecha que Rick pasó a Notion",
+                "Fecha que Rick paso a Notion",
+                "Fecha que Rick pas? a Notion",
+                "Imported At",
+            ],
             {"date"},
         )
         processed_prop = _find_property_name(
             db_properties,
-            ["Fecha que el agente procesó", "Fecha que el agente proceso", "Processed At"],
+            [
+                "Fecha que el agente procesó",
+                "Fecha que el agente proceso",
+                "Fecha que el agente proces?",
+                "Processed At",
+            ],
             {"date"},
+        )
+        traceability_prop = _find_property_name(
+            db_properties,
+            ["Trazabilidad", "Traceability"],
+            {"rich_text", "url", "title"},
         )
 
         properties: dict[str, Any] = {
@@ -259,11 +375,23 @@ def create_transcript_page(
             properties[passed_prop] = {"date": {"start": today}}
         if processed_prop:
             properties[processed_prop] = {"date": {"start": today}}
+        if traceability_prop and (traceability_text or "").strip():
+            traceability_value = (traceability_text or "").strip()
+            traceability_type = str(db_properties[traceability_prop].get("type") or "")
+            if traceability_type == "rich_text":
+                properties[traceability_prop] = {
+                    "rich_text": [{"text": {"content": traceability_value}}]
+                }
+            elif traceability_type == "url":
+                properties[traceability_prop] = {"url": traceability_value}
+            elif traceability_type == "title":
+                properties[traceability_prop] = {
+                    "title": [{"text": {"content": traceability_value}}]
+                }
 
         payload = {
             "parent": {"database_id": db_id},
             "properties": properties,
-            "children": blocks,
         }
 
         resp = client.post(
@@ -272,6 +400,8 @@ def create_transcript_page(
             json=payload,
         )
     result = _check_response(resp, "create_transcript_page")
+    if blocks:
+        append_blocks_to_page(result["id"], blocks)
     logger.info("Created page: %s", result.get("id"))
     return {"page_id": result["id"], "url": result.get("url", "")}
 
@@ -410,13 +540,7 @@ def read_page(
             headers=_headers(),
         )
         page_data = _check_response(page_resp, "read_page metadata")
-
-        blocks_resp = client.get(
-            f"{NOTION_BASE_URL}/blocks/{page_id}/children",
-            headers=_headers(),
-            params={"page_size": max_blocks},
-        )
-        blocks_data = _check_response(blocks_resp, "read_page children")
+        raw_blocks, has_more = _read_page_blocks(client, page_id, max_blocks=max_blocks)
 
     title = ""
     properties = page_data.get("properties", {})
@@ -426,21 +550,7 @@ def read_page(
                 title = _plain_text_from_rich_text(prop.get("title"))
                 break
 
-    blocks: list[dict[str, Any]] = []
-    for block in blocks_data.get("results", []):
-        if not isinstance(block, dict):
-            continue
-        blocks.append(
-            {
-                "id": block.get("id", ""),
-                "type": block.get("type", ""),
-                "text": _extract_block_text(block),
-                "has_children": bool(block.get("has_children")),
-                "last_edited_time": block.get("last_edited_time", ""),
-            }
-        )
-
-    plain_text = "\n".join(item["text"] for item in blocks if item.get("text"))
+    blocks, plain_text = _serialize_page_blocks(raw_blocks)
 
     return {
         "page_id": page_data.get("id", page_id),
@@ -449,8 +559,48 @@ def read_page(
         "title": title,
         "blocks": blocks,
         "plain_text": plain_text,
-        "has_more": bool(blocks_data.get("has_more")),
+        "has_more": has_more,
         "max_blocks": max_blocks,
+    }
+
+
+def read_page_full(page_id_or_url: str) -> dict[str, Any]:
+    """
+    Read a Notion page and paginate through all top-level child blocks.
+
+    Returns the same shape as `read_page`, but without an artificial block cap.
+    """
+    config.require_notion_core()
+    page_id = _extract_notion_page_id(page_id_or_url)
+
+    with httpx.Client(timeout=TIMEOUT) as client:
+        page_resp = client.get(
+            f"{NOTION_BASE_URL}/pages/{page_id}",
+            headers=_headers(),
+        )
+        page_data = _check_response(page_resp, "read_page_full metadata")
+        raw_blocks, has_more = _read_page_blocks(client, page_id, max_blocks=None)
+
+    title = ""
+    properties = page_data.get("properties", {})
+    if isinstance(properties, dict):
+        for prop in properties.values():
+            if isinstance(prop, dict) and prop.get("type") == "title":
+                title = _plain_text_from_rich_text(prop.get("title"))
+                break
+
+    blocks, plain_text = _serialize_page_blocks(raw_blocks)
+
+    return {
+        "page_id": page_data.get("id", page_id),
+        "url": page_data.get("url", ""),
+        "last_edited_time": page_data.get("last_edited_time", ""),
+        "title": title,
+        "blocks": blocks,
+        "plain_text": plain_text,
+        "has_more": has_more,
+        "max_blocks": None,
+        "block_count": len(blocks),
     }
 
 
@@ -694,6 +844,53 @@ def search_databases(
         "query": query,
         "results": results,
         "count": len(results),
+    }
+
+
+def update_database_properties(
+    database_id_or_url: str,
+    properties: dict[str, Any],
+) -> dict[str, Any]:
+    """
+    Update a Notion database schema by adding or modifying properties.
+
+    Args:
+        database_id_or_url: Notion database UUID or full URL.
+        properties: Raw Notion database properties payload to PATCH.
+
+    Returns:
+        {
+            "database_id": "...",
+            "url": "...",
+            "title": "...",
+            "schema": {"Name": "title", ...},
+            "updated": True,
+        }
+    """
+    config.require_notion_core()
+    database_id = _extract_notion_page_id(database_id_or_url)
+    if not isinstance(properties, dict) or not properties:
+        raise ValueError("properties must be a non-empty dict")
+
+    with httpx.Client(timeout=TIMEOUT) as client:
+        resp = client.patch(
+            f"{NOTION_BASE_URL}/databases/{database_id}",
+            headers=_headers(),
+            json={"properties": properties},
+        )
+        data = _check_response(resp, "update_database_properties")
+
+    schema: dict[str, str] = {}
+    for prop_name, prop_meta in (data.get("properties") or {}).items():
+        if isinstance(prop_meta, dict):
+            schema[prop_name] = str(prop_meta.get("type", ""))
+
+    return {
+        "database_id": data.get("id", database_id),
+        "url": data.get("url", ""),
+        "title": _plain_text_from_rich_text(data.get("title")),
+        "schema": schema,
+        "updated": True,
     }
 
 
@@ -1512,8 +1709,7 @@ def append_blocks_to_page(
         raise RuntimeError("NOTION_API_KEY not configured")
 
     with httpx.Client(timeout=TIMEOUT) as client:
-        for i in range(0, len(blocks), 100):
-            chunk = blocks[i : i + 100]
+        for chunk in _chunk_blocks_for_append(blocks):
             resp = client.patch(
                 f"{NOTION_BASE_URL}/blocks/{page_id}/children",
                 headers=_headers(),

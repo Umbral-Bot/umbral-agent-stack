@@ -91,8 +91,18 @@ def _extract_title_from_page(page_data: Dict[str, Any]) -> str:
 
 
 def _extract_date_from_page(page_data: Dict[str, Any]) -> str:
+    return _extract_named_date_property(
+        page_data,
+        "Fecha",
+        "Date",
+        "Fecha de transcripcion",
+        "Meeting Date",
+    )
+
+
+def _extract_named_date_property(page_data: Dict[str, Any], *names: str) -> str:
     properties = page_data.get("properties") or {}
-    for candidate in ("Fecha", "Date", "Fecha de transcripcion", "Meeting Date"):
+    for candidate in names:
         prop = properties.get(candidate)
         if isinstance(prop, dict) and prop.get("type") == "date":
             return ((prop.get("date") or {}).get("start") or "").strip()
@@ -141,6 +151,96 @@ def _compact_excerpt(text: str, limit: int = 280) -> str:
     if len(value) <= limit:
         return value
     return value[: limit - 3].rstrip() + "..."
+
+
+def _expected_block_signature(blocks: list[Dict[str, Any]]) -> list[tuple[str, str]]:
+    signature: list[tuple[str, str]] = []
+    for block in blocks:
+        if not isinstance(block, dict):
+            continue
+        block_type = str(block.get("type") or "").strip()
+        payload = block.get(block_type) or {}
+        rich_text = payload.get("rich_text") if isinstance(payload, dict) else None
+        text = ""
+        if isinstance(rich_text, list):
+            text = "".join(
+                item.get("plain_text", item.get("text", {}).get("content", ""))
+                for item in rich_text
+                if isinstance(item, dict)
+            )
+        signature.append((block_type, text))
+    return signature
+
+
+def _verify_raw_page_persistence(
+    *,
+    page_id: str,
+    expected_blocks: list[Dict[str, Any]],
+) -> Dict[str, Any]:
+    snapshot = notion_client.read_page_full(page_id)
+    actual_signature = [
+        (str(item.get("type") or "").strip(), str(item.get("text") or ""))
+        for item in (snapshot.get("blocks") or [])
+        if isinstance(item, dict)
+    ]
+    expected_signature = _expected_block_signature(expected_blocks)
+    verification: Dict[str, Any] = {
+        "ok": actual_signature == expected_signature,
+        "expected_block_count": len(expected_signature),
+        "actual_block_count": len(actual_signature),
+        "page_id": page_id,
+        "page_url": str(snapshot.get("url") or ""),
+        "plain_text_length": len(str(snapshot.get("plain_text") or "")),
+    }
+
+    if verification["ok"]:
+        return verification
+
+    mismatch_index = 0
+    max_index = min(len(expected_signature), len(actual_signature))
+    while mismatch_index < max_index and expected_signature[mismatch_index] == actual_signature[mismatch_index]:
+        mismatch_index += 1
+
+    expected_block = expected_signature[mismatch_index] if mismatch_index < len(expected_signature) else ("", "")
+    actual_block = actual_signature[mismatch_index] if mismatch_index < len(actual_signature) else ("", "")
+    verification.update(
+        {
+            "mismatch_index": mismatch_index,
+            "expected_excerpt": _compact_excerpt(expected_block[1], limit=180),
+            "actual_excerpt": _compact_excerpt(actual_block[1], limit=180),
+        }
+    )
+    return verification
+
+
+def _alert_raw_integrity_failure(
+    *,
+    title: str,
+    granola_document_id: str,
+    verification: Dict[str, Any],
+) -> None:
+    parts = [
+        "ALERTA integridad Granola raw.",
+        f"Título: {title}",
+        f"granola_document_id: {granola_document_id or '(missing)'}",
+        f"page_id: {verification.get('page_id') or '(missing)'}",
+        f"expected_blocks={verification.get('expected_block_count')} actual_blocks={verification.get('actual_block_count')}",
+    ]
+    if verification.get("mismatch_index") is not None:
+        parts.append(f"mismatch_index={verification.get('mismatch_index')}")
+    if verification.get("page_url"):
+        parts.append(f"page_url: {verification['page_url']}")
+    expected_excerpt = str(verification.get("expected_excerpt") or "").strip()
+    actual_excerpt = str(verification.get("actual_excerpt") or "").strip()
+    if expected_excerpt:
+        parts.append(f"expected_excerpt: {expected_excerpt}")
+    if actual_excerpt:
+        parts.append(f"actual_excerpt: {actual_excerpt}")
+
+    try:
+        notion_client.add_comment(page_id=None, text="\n".join(parts))
+    except Exception as exc:
+        logger.error("Failed to notify raw integrity failure for %s: %s", title, exc)
 
 
 def _normalize_lookup_text(value: str) -> str:
@@ -262,6 +362,744 @@ def _schema_property_name(
     return None
 
 
+def _extract_content_metadata_value(content: str, label: str) -> str:
+    escaped = re.escape(label)
+    patterns = (
+        rf"\*\*{escaped}\s*:\*\*\s*(.+)",
+        rf"-\s*\*\*{escaped}\s*:\*\*\s*(.+)",
+    )
+    for pattern in patterns:
+        match = re.search(pattern, content, flags=re.IGNORECASE)
+        if match:
+            return match.group(1).strip()
+    return ""
+
+
+def _resolve_granola_document_id(input_data: Dict[str, Any], content: str) -> str:
+    value = str(input_data.get("granola_document_id") or "").strip()
+    if value:
+        return value
+    metadata = input_data.get("metadata")
+    if isinstance(metadata, dict):
+        value = str(metadata.get("granola_document_id") or "").strip()
+        if value:
+            return value
+    return _extract_content_metadata_value(content, "Granola Document ID")
+
+
+def _resolve_source_updated_at(input_data: Dict[str, Any], content: str) -> str:
+    value = str(input_data.get("source_updated_at") or "").strip()
+    if value:
+        return value
+    metadata = input_data.get("metadata")
+    if isinstance(metadata, dict):
+        value = str(metadata.get("updated_at") or "").strip()
+        if value:
+            return value
+    return _extract_content_metadata_value(content, "Updated At")
+
+
+def _resolve_source_url(input_data: Dict[str, Any]) -> str:
+    value = str(input_data.get("source_url") or "").strip()
+    if value:
+        return value
+    metadata = input_data.get("metadata")
+    if isinstance(metadata, dict):
+        return str(metadata.get("source_url") or "").strip()
+    return ""
+
+
+def _resolve_metadata_value(input_data: Dict[str, Any], *keys: str) -> str:
+    for key in keys:
+        value = str(input_data.get(key) or "").strip()
+        if value:
+            return value
+
+    metadata = input_data.get("metadata")
+    if isinstance(metadata, dict):
+        for key in keys:
+            value = str(metadata.get(key) or "").strip()
+            if value:
+                return value
+    return ""
+
+
+def _build_raw_traceability_text(
+    *,
+    granola_document_id: str,
+    source_updated_at: str,
+    source_url: str,
+    extra_fields: Dict[str, str] | None = None,
+) -> str:
+    parts: list[str] = []
+    if granola_document_id:
+        parts.append(f"granola_document_id={granola_document_id}")
+    if source_updated_at:
+        parts.append(f"source_updated_at={source_updated_at}")
+    if source_url:
+        parts.append(f"source_url={source_url}")
+    for key in (
+        "export_signature",
+        "content_hash",
+        "shared_folder_path",
+        "sha1",
+    ):
+        value = str((extra_fields or {}).get(key) or "").strip()
+        if value:
+            parts.append(f"{key}={value}")
+    if not parts:
+        return ""
+    parts.append("ingest_path=granola.process_transcript")
+    return "\n".join(parts)
+
+
+def _parse_traceability_text(value: str) -> Dict[str, str]:
+    parsed: Dict[str, str] = {}
+    for line in (value or "").splitlines():
+        key, _, raw_value = line.partition("=")
+        clean_key = key.strip()
+        clean_value = raw_value.strip()
+        if clean_key and clean_value:
+            parsed[clean_key] = clean_value
+    return parsed
+
+
+def _build_transcript_paragraph_blocks(content: str) -> list[dict[str, Any]]:
+    blocks: list[dict[str, Any]] = []
+    for i in range(0, len(content), 2000):
+        chunk = content[i : i + 2000]
+        blocks.append(
+            {
+                "object": "block",
+                "type": "paragraph",
+                "paragraph": {
+                    "rich_text": [{"type": "text", "text": {"content": chunk}}]
+                },
+            }
+        )
+    return blocks
+
+
+def _extract_raw_traceability(page_data: Dict[str, Any]) -> Dict[str, str]:
+    raw = _extract_page_text_property(page_data, "Trazabilidad", "Traceability")
+    return _parse_traceability_text(raw)
+
+
+def _extract_raw_candidate_value(
+    page_data: Dict[str, Any],
+    traceability: Dict[str, str],
+    *,
+    traceability_key: str,
+    candidates: list[str],
+) -> str:
+    direct = _extract_page_text_property(page_data, *candidates)
+    if direct:
+        return direct
+    return str(traceability.get(traceability_key) or "").strip()
+
+
+def _build_existing_raw_candidate(page_data: Dict[str, Any]) -> Dict[str, Any]:
+    traceability = _extract_raw_traceability(page_data)
+    title = _extract_title_from_page(page_data)
+    return {
+        "page_id": str(page_data.get("id") or "").strip(),
+        "url": str(page_data.get("url") or "").strip(),
+        "title": title,
+        "normalized_title": _normalize_lookup_text(title),
+        "date": _extract_date_from_page(page_data),
+        "last_edited_time": str(page_data.get("last_edited_time") or "").strip(),
+        "traceability": traceability,
+        "granola_document_id": _extract_raw_candidate_value(
+            page_data,
+            traceability,
+            traceability_key="granola_document_id",
+            candidates=[
+                "Granola Document ID",
+                "Document ID",
+                "ID documento Granola",
+                "ID documento",
+            ],
+        ),
+        "source_updated_at": _extract_raw_candidate_value(
+            page_data,
+            traceability,
+            traceability_key="source_updated_at",
+            candidates=[
+                "Source Updated At",
+                "Updated At",
+                "Ultima actualizacion fuente",
+                "Última actualización fuente",
+            ],
+        ),
+        "source_url": _extract_raw_candidate_value(
+            page_data,
+            traceability,
+            traceability_key="source_url",
+            candidates=[
+                "Source URL",
+                "URL fuente",
+                "URL Fuente",
+                "Meeting URL",
+            ],
+        ),
+        "export_signature": _extract_raw_candidate_value(
+            page_data,
+            traceability,
+            traceability_key="export_signature",
+            candidates=["Export Signature", "Signature"],
+        ),
+        "content_hash": _extract_raw_candidate_value(
+            page_data,
+            traceability,
+            traceability_key="content_hash",
+            candidates=["Content Hash", "SHA1", "Sha1"],
+        ),
+        "shared_folder_path": _extract_raw_candidate_value(
+            page_data,
+            traceability,
+            traceability_key="shared_folder_path",
+            candidates=["Shared Folder Path", "Ruta carpeta compartida"],
+        ),
+        "sha1": _extract_raw_candidate_value(
+            page_data,
+            traceability,
+            traceability_key="sha1",
+            candidates=["SHA1", "Sha1"],
+        ),
+        "imported_at": _extract_named_date_property(
+            page_data,
+            "Fecha que Rick pasó a Notion",
+            "Fecha que Rick paso a Notion",
+            "Fecha que Rick pas? a Notion",
+            "Imported At",
+        ),
+        "processed_at": _extract_named_date_property(
+            page_data,
+            "Fecha que el agente procesó",
+            "Fecha que el agente proceso",
+            "Fecha que el agente proces?",
+            "Processed At",
+        ),
+    }
+
+
+def _select_preferred_raw_candidate(
+    candidates: list[Dict[str, Any]],
+    *,
+    title: str,
+    source_url: str,
+    source_updated_at: str,
+) -> Dict[str, Any] | None:
+    if not candidates:
+        return None
+
+    ranked = sorted(candidates, key=lambda item: item.get("page_id") or "")
+    ranked = sorted(ranked, key=lambda item: item.get("last_edited_time") or "", reverse=True)
+    if title:
+        normalized_title = _normalize_lookup_text(title)
+        ranked = sorted(
+            ranked,
+            key=lambda item: item.get("normalized_title") != normalized_title,
+        )
+    if source_updated_at:
+        ranked = sorted(
+            ranked,
+            key=lambda item: item.get("source_updated_at") != source_updated_at,
+        )
+    if source_url:
+        ranked = sorted(
+            ranked,
+            key=lambda item: item.get("source_url") != source_url,
+        )
+    return ranked[0]
+
+
+def _find_existing_raw_candidate(
+    candidates: list[Dict[str, Any]],
+    *,
+    title: str,
+    transcript_date: str,
+    granola_document_id: str,
+    source_url: str,
+    source_updated_at: str,
+    export_signature: str,
+    content_hash: str,
+    shared_folder_path: str,
+    sha1: str,
+) -> tuple[Dict[str, Any] | None, str]:
+    if granola_document_id:
+        exact_matches = [
+            item
+            for item in candidates
+            if item.get("granola_document_id") == granola_document_id
+        ]
+        selected = _select_preferred_raw_candidate(
+            exact_matches,
+            title=title,
+            source_url=source_url,
+            source_updated_at=source_updated_at,
+        )
+        if selected:
+            return selected, "granola_document_id"
+
+    if source_url:
+        exact_matches = [
+            item for item in candidates if item.get("source_url") == source_url
+        ]
+        selected = _select_preferred_raw_candidate(
+            exact_matches,
+            title=title,
+            source_url=source_url,
+            source_updated_at=source_updated_at,
+        )
+        if selected:
+            return selected, "source_url"
+
+    if export_signature:
+        exact_matches = [
+            item
+            for item in candidates
+            if item.get("export_signature") == export_signature
+        ]
+        selected = _select_preferred_raw_candidate(
+            exact_matches,
+            title=title,
+            source_url=source_url,
+            source_updated_at=source_updated_at,
+        )
+        if selected:
+            return selected, "export_signature"
+
+    if content_hash and source_updated_at:
+        exact_matches = [
+            item
+            for item in candidates
+            if item.get("content_hash") == content_hash
+            and item.get("source_updated_at") == source_updated_at
+        ]
+        selected = _select_preferred_raw_candidate(
+            exact_matches,
+            title=title,
+            source_url=source_url,
+            source_updated_at=source_updated_at,
+        )
+        if selected:
+            return selected, "content_hash_source_updated_at"
+
+    if shared_folder_path and sha1:
+        exact_matches = [
+            item
+            for item in candidates
+            if item.get("shared_folder_path") == shared_folder_path
+            and item.get("sha1") == sha1
+        ]
+        selected = _select_preferred_raw_candidate(
+            exact_matches,
+            title=title,
+            source_url=source_url,
+            source_updated_at=source_updated_at,
+        )
+        if selected:
+            return selected, "shared_folder_path_sha1"
+
+    if shared_folder_path and source_updated_at:
+        exact_matches = [
+            item
+            for item in candidates
+            if item.get("shared_folder_path") == shared_folder_path
+            and item.get("source_updated_at") == source_updated_at
+        ]
+        selected = _select_preferred_raw_candidate(
+            exact_matches,
+            title=title,
+            source_url=source_url,
+            source_updated_at=source_updated_at,
+        )
+        if selected:
+            return selected, "shared_folder_path_source_updated_at"
+
+    if transcript_date:
+        exact_title_matches = [
+            item
+            for item in candidates
+            if item.get("date") == transcript_date and item.get("title") == title
+        ]
+        if len(exact_title_matches) == 1:
+            return exact_title_matches[0], "exact_title_date"
+
+        normalized_title = _normalize_lookup_text(title)
+        normalized_matches = [
+            item
+            for item in candidates
+            if item.get("date") == transcript_date
+            and item.get("normalized_title") == normalized_title
+        ]
+        if len(normalized_matches) == 1:
+            return normalized_matches[0], "normalized_title_date"
+
+    return None, ""
+
+
+def _title_family_index(title: str, base_title: str) -> int | None:
+    normalized_base = _normalize_lookup_text(base_title)
+    if not normalized_base:
+        return None
+    if _normalize_lookup_text(title) == normalized_base:
+        return 1
+
+    canonical_match = re.match(r"^(?P<base>.+?)\s\[(?P<index>\d+)\]$", title.strip())
+    if canonical_match and _normalize_lookup_text(canonical_match.group("base")) == normalized_base:
+        try:
+            parsed = int(canonical_match.group("index"))
+        except ValueError:
+            parsed = 0
+        return parsed if parsed >= 2 else None
+
+    legacy_match = re.match(r"^(?P<base>.+?)\s(?P<index>\d+)$", title.strip())
+    if legacy_match and _normalize_lookup_text(legacy_match.group("base")) == normalized_base:
+        try:
+            parsed = int(legacy_match.group("index"))
+        except ValueError:
+            parsed = 0
+        return parsed if parsed >= 2 else None
+
+    return None
+
+
+def _resolve_new_raw_title(
+    title: str,
+    candidates: list[Dict[str, Any]],
+) -> str:
+    family_candidates: list[Dict[str, Any]] = []
+    for item in candidates:
+        family_index = _title_family_index(str(item.get("title") or ""), title)
+        if family_index is not None:
+            family_candidates.append({**item, "family_index": family_index})
+
+    if not family_candidates:
+        return title
+
+    base_candidate = next(
+        (
+            item
+            for item in family_candidates
+            if int(item.get("family_index") or 0) == 1
+        ),
+        None,
+    )
+    canonical_base = str((base_candidate or {}).get("title") or "").strip() or title
+    next_index = max(int(item.get("family_index") or 1) for item in family_candidates) + 1
+    return f"{canonical_base} [{next_index}]"
+
+
+def _build_raw_transcript_properties(
+    *,
+    schema: Dict[str, str],
+    title: str,
+    source: str,
+    date: str,
+    traceability_text: str,
+    granola_document_id: str,
+    source_updated_at: str,
+    source_url: str,
+    extra_traceability: Dict[str, str],
+    is_create: bool,
+    existing_imported_at: str = "",
+    existing_processed_at: str = "",
+) -> tuple[Dict[str, Any], list[str]]:
+    properties: Dict[str, Any] = {}
+    used_fields: list[str] = []
+
+    _set_schema_property(
+        properties,
+        schema,
+        ["Name", "Nombre", "Título", "Title"],
+        title,
+        expected_types={"title"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Date", "Fecha", "Fecha de transcripción", "Fecha de reunion", "Meeting Date"],
+        date,
+        expected_types={"date"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Source", "Fuente"],
+        source,
+        expected_types={"select", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Tags", "Etiquetas"],
+        [source],
+        expected_types={"multi_select"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Trazabilidad", "Traceability"],
+        traceability_text,
+        expected_types={"rich_text", "url", "title"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Granola Document ID", "Document ID", "ID documento Granola", "ID documento"],
+        granola_document_id,
+        expected_types={"rich_text", "title", "url"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        [
+            "Source Updated At",
+            "Updated At",
+            "Ultima actualizacion fuente",
+            "Última actualización fuente",
+        ],
+        source_updated_at,
+        expected_types={"rich_text", "date", "title"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Source URL", "URL fuente", "URL Fuente", "Meeting URL"],
+        source_url,
+        expected_types={"url", "rich_text", "title"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Ingest Path", "Ruta de ingesta"],
+        "granola.process_transcript",
+        expected_types={"rich_text", "title"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Shared Folder Path", "Ruta carpeta compartida"],
+        extra_traceability.get("shared_folder_path"),
+        expected_types={"rich_text", "url", "title"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["SHA1", "Sha1"],
+        extra_traceability.get("sha1"),
+        expected_types={"rich_text", "title"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Content Hash"],
+        extra_traceability.get("content_hash"),
+        expected_types={"rich_text", "title"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Export Signature", "Signature"],
+        extra_traceability.get("export_signature"),
+        expected_types={"rich_text", "title"},
+        used_fields=used_fields,
+    )
+
+    if is_create:
+        today = _today_date()
+        _set_schema_property(
+            properties,
+            schema,
+            ["Estado", "Status"],
+            "Pendiente",
+            expected_types={"select", "status", "rich_text"},
+            used_fields=used_fields,
+        )
+        _set_schema_property(
+            properties,
+            schema,
+            [
+                "Fecha que Rick pasó a Notion",
+                "Fecha que Rick paso a Notion",
+                "Fecha que Rick pas? a Notion",
+                "Imported At",
+            ],
+            today,
+            expected_types={"date"},
+            used_fields=used_fields,
+        )
+        _set_schema_property(
+            properties,
+            schema,
+            [
+                "Fecha que el agente procesó",
+                "Fecha que el agente proceso",
+                "Fecha que el agente proces?",
+                "Processed At",
+            ],
+            today,
+            expected_types={"date"},
+            used_fields=used_fields,
+        )
+
+    if not is_create and not existing_imported_at:
+        _set_schema_property(
+            properties,
+            schema,
+            [
+                "Fecha que Rick pasÃ³ a Notion",
+                "Fecha que Rick paso a Notion",
+                "Fecha que Rick pas? a Notion",
+                "Imported At",
+            ],
+            _today_date(),
+            expected_types={"date"},
+            used_fields=used_fields,
+        )
+
+    if not is_create and not existing_processed_at:
+        _set_schema_property(
+            properties,
+            schema,
+            [
+                "Fecha que el agente procesÃ³",
+                "Fecha que el agente proceso",
+                "Fecha que el agente proces?",
+                "Processed At",
+            ],
+            _today_date(),
+            expected_types={"date"},
+            used_fields=used_fields,
+        )
+
+    return properties, used_fields
+
+
+def _upsert_raw_transcript_page(
+    *,
+    title: str,
+    content: str,
+    source: str,
+    date: str,
+    traceability_text: str,
+    granola_document_id: str,
+    source_updated_at: str,
+    source_url: str,
+    extra_traceability: Dict[str, str],
+) -> Dict[str, Any]:
+    db_snapshot = notion_client.read_database(config.NOTION_GRANOLA_DB_ID, max_items=1)
+    schema = db_snapshot.get("schema") or {}
+    if not isinstance(schema, dict):
+        raise RuntimeError("Could not read Granola raw DB schema")
+
+    existing_pages = notion_client.query_database(config.NOTION_GRANOLA_DB_ID)
+    candidates = [
+        _build_existing_raw_candidate(page)
+        for page in existing_pages
+        if isinstance(page, dict)
+    ]
+
+    existing_match, match_strategy = _find_existing_raw_candidate(
+        candidates,
+        title=title,
+        transcript_date=date,
+        granola_document_id=granola_document_id,
+        source_url=source_url,
+        source_updated_at=source_updated_at,
+        export_signature=str(extra_traceability.get("export_signature") or "").strip(),
+        content_hash=str(extra_traceability.get("content_hash") or "").strip(),
+        shared_folder_path=str(extra_traceability.get("shared_folder_path") or "").strip(),
+        sha1=str(extra_traceability.get("sha1") or "").strip(),
+    )
+
+    resolved_title = (
+        str(existing_match.get("title") or "").strip()
+        if existing_match
+        else _resolve_new_raw_title(title, candidates)
+    ) or title
+    blocks = _build_transcript_paragraph_blocks(content)
+    properties, used_fields = _build_raw_transcript_properties(
+        schema=schema,
+        title=resolved_title,
+        source=source,
+        date=date,
+        traceability_text=traceability_text,
+        granola_document_id=granola_document_id,
+        source_updated_at=source_updated_at,
+        source_url=source_url,
+        extra_traceability=extra_traceability,
+        is_create=existing_match is None,
+        existing_imported_at=str(existing_match.get("imported_at") or "").strip()
+        if existing_match
+        else "",
+        existing_processed_at=str(existing_match.get("processed_at") or "").strip()
+        if existing_match
+        else "",
+    )
+
+    if existing_match:
+        page_id = str(existing_match.get("page_id") or "").strip()
+        if not page_id:
+            raise RuntimeError("Matched raw page is missing page_id")
+        notion_result = notion_client.update_page_properties(page_id, properties=properties)
+        notion_client.replace_blocks_in_page(page_id=page_id, blocks=blocks)
+        notion_result["created"] = False
+        notion_result["updated"] = True
+        notion_result["page_id"] = page_id
+        notion_result["url"] = notion_result.get("url") or existing_match.get("url", "")
+    else:
+        notion_result = notion_client.create_database_page(
+            config.NOTION_GRANOLA_DB_ID,
+            properties=properties,
+            children=blocks,
+        )
+        notion_result["updated"] = False
+
+    identity_sync = _sync_visible_notion_page_id(
+        str(notion_result.get("page_id") or "").strip(),
+        schema,
+    )
+    notion_result["notion_page_id_sync"] = identity_sync
+    for field_name in identity_sync.get("schema_fields_used") or []:
+        if field_name not in used_fields:
+            used_fields.append(field_name)
+
+    notion_result["matched_existing"] = existing_match is not None
+    notion_result["match_strategy"] = match_strategy
+    notion_result["resolved_title"] = resolved_title
+    notion_result["schema_fields_used"] = used_fields
+    verification = _verify_raw_page_persistence(
+        page_id=str(notion_result.get("page_id") or "").strip(),
+        expected_blocks=blocks,
+    )
+    notion_result["content_verification"] = verification
+    if not verification.get("ok"):
+        _alert_raw_integrity_failure(
+            title=resolved_title,
+            granola_document_id=granola_document_id,
+            verification=verification,
+        )
+        raise RuntimeError(
+            "Notion transcript integrity check failed after raw page upsert"
+        )
+    return notion_result
+
+
 def _pick_best_existing_curated_session(
     candidates: list[Dict[str, Any]],
     *,
@@ -364,6 +1202,14 @@ def _set_schema_property(
         payload[prop_name] = {"select": {"name": str(value)}}
     elif prop_type == "status":
         payload[prop_name] = {"status": {"name": str(value)}}
+    elif prop_type == "multi_select":
+        if isinstance(value, list):
+            options = [str(item).strip() for item in value if str(item).strip()]
+        else:
+            options = [str(value).strip()] if str(value).strip() else []
+        if not options:
+            return None
+        payload[prop_name] = {"multi_select": [{"name": item} for item in options]}
     elif prop_type == "url":
         payload[prop_name] = {"url": str(value)}
     elif prop_type == "relation":
@@ -384,6 +1230,62 @@ def _set_schema_property(
     if used_fields is not None:
         used_fields.append(prop_name)
     return prop_name
+
+
+def _build_visible_notion_page_id_properties(
+    schema: Dict[str, str],
+    page_id: str,
+) -> tuple[Dict[str, Any], list[str]]:
+    properties: Dict[str, Any] = {}
+    used_fields: list[str] = []
+    _set_schema_property(
+        properties,
+        schema,
+        [
+            "ID interno Notion",
+            "ID interno de Notion",
+            "Notion Page ID",
+            "Notion ID",
+            "Page ID",
+        ],
+        page_id,
+        expected_types={"rich_text", "title"},
+        used_fields=used_fields,
+    )
+    return properties, used_fields
+
+
+def _sync_visible_notion_page_id(
+    page_id: str,
+    schema: Dict[str, str],
+    *,
+    dry_run: bool = False,
+) -> Dict[str, Any]:
+    if not page_id:
+        return {
+            "ok": False,
+            "page_id": "",
+            "updated": False,
+            "dry_run": dry_run,
+            "schema_fields_used": [],
+        }
+
+    properties, used_fields = _build_visible_notion_page_id_properties(schema, page_id)
+    if dry_run or not properties:
+        return {
+            "ok": True,
+            "page_id": page_id,
+            "updated": bool(properties),
+            "dry_run": dry_run,
+            "schema_fields_used": used_fields,
+            "properties": properties,
+        }
+
+    result = notion_client.update_page_properties(page_id, properties=properties)
+    result["ok"] = True
+    result["dry_run"] = False
+    result["schema_fields_used"] = used_fields
+    return result
 
 
 def _sync_raw_promotion_state(
@@ -408,7 +1310,12 @@ def _sync_raw_promotion_state(
     _set_schema_property(
         properties,
         raw_schema,
-        ["Fecha que el agente procesó", "Fecha que el agente proceso", "Processed At"],
+        [
+            "Fecha que el agente procesó",
+            "Fecha que el agente proceso",
+            "Fecha que el agente proces?",
+            "Processed At",
+        ],
         _today_date(),
         expected_types={"date"},
         used_fields=used_fields,
@@ -542,6 +1449,21 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
     source = input_data.get("source", "granola")
     notify_enlace = input_data.get("notify_enlace", True)
     allow_legacy_raw_task_writes = bool(input_data.get("allow_legacy_raw_task_writes"))
+    granola_document_id = _resolve_granola_document_id(input_data, content)
+    source_updated_at = _resolve_source_updated_at(input_data, content)
+    source_url = _resolve_source_url(input_data)
+    extra_traceability = {
+        "export_signature": _resolve_metadata_value(input_data, "export_signature"),
+        "content_hash": _resolve_metadata_value(input_data, "content_hash"),
+        "shared_folder_path": _resolve_metadata_value(input_data, "shared_folder_path"),
+        "sha1": _resolve_metadata_value(input_data, "sha1", "shared_folder_sha1"),
+    }
+    traceability_text = _build_raw_traceability_text(
+        granola_document_id=granola_document_id,
+        source_updated_at=source_updated_at,
+        source_url=source_url,
+        extra_fields=extra_traceability,
+    )
 
     # Action items: use provided or extract from content
     action_items = input_data.get("action_items")
@@ -549,17 +1471,27 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
         action_items = _extract_action_items_from_content(content)
         logger.info("Extracted %d action items from content", len(action_items))
 
-    # Step 1: Create transcript page in Notion
-    logger.info("Creating Granola transcript page: %s", title)
-    page_result = notion_client.create_transcript_page(
+    # Step 1: Upsert transcript page in Notion raw DB
+    logger.info("Upserting Granola transcript raw page: %s", title)
+    page_result = _upsert_raw_transcript_page(
         title=title,
         content=content,
         source=source,
         date=date,
+        traceability_text=traceability_text,
+        granola_document_id=granola_document_id,
+        source_updated_at=source_updated_at,
+        source_url=source_url,
+        extra_traceability=extra_traceability,
     )
     page_id = page_result["page_id"]
     page_url = page_result.get("url", "")
-    logger.info("Created page: %s (%s)", page_id, page_url)
+    logger.info(
+        "Raw page %s: %s (%s)",
+        "updated" if page_result.get("matched_existing") else "created",
+        page_id,
+        page_url,
+    )
 
     action_items_for_tasks = action_items if allow_legacy_raw_task_writes else []
     if action_items and not allow_legacy_raw_task_writes:
@@ -624,6 +1556,15 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
         "action_items_detected": len(action_items),
         "action_items_created": ai_created,
         "legacy_raw_task_writes_enabled": allow_legacy_raw_task_writes,
+        "granola_document_id": granola_document_id,
+        "source_updated_at": source_updated_at,
+        "source_url": source_url,
+        "traceability_written": bool(traceability_text),
+        "matched_existing": bool(page_result.get("matched_existing")),
+        "match_strategy": str(page_result.get("match_strategy") or ""),
+        "resolved_title": str(page_result.get("resolved_title") or title),
+        "notion_page_id_sync": page_result.get("notion_page_id_sync") or {},
+        "content_verification": page_result.get("content_verification") or {},
         "notification_sent": notification_sent,
     }
 
@@ -1148,6 +2089,16 @@ def handle_granola_promote_curated_session(input_data: Dict[str, Any]) -> Dict[s
             properties=properties,
         )
 
+    curated_identity_sync = _sync_visible_notion_page_id(
+        _result_page_id(notion_result) or notion_result.get("page_id", ""),
+        schema,
+        dry_run=dry_run,
+    )
+    notion_result["notion_page_id_sync"] = curated_identity_sync
+    for field_name in curated_identity_sync.get("schema_fields_used") or []:
+        if field_name not in used_fields:
+            used_fields.append(field_name)
+
     raw_status_update: Dict[str, Any]
     try:
         raw_status_update = _sync_raw_promotion_state(
@@ -1409,6 +2360,16 @@ def handle_granola_create_human_task_from_curated_session(
             config.NOTION_HUMAN_TASKS_DB_ID,
             properties=properties,
         )
+
+    task_identity_sync = _sync_visible_notion_page_id(
+        _result_page_id(notion_result) or notion_result.get("page_id", ""),
+        schema,
+        dry_run=dry_run,
+    )
+    notion_result["notion_page_id_sync"] = task_identity_sync
+    for field_name in task_identity_sync.get("schema_fields_used") or []:
+        if field_name not in used_fields:
+            used_fields.append(field_name)
 
     trace_comments_added = 0
     add_trace_comments = input_data.get("add_trace_comments", True)

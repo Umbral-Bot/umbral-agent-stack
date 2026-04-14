@@ -6,6 +6,9 @@ Rick (en la VPS) necesita acceso al repo para: `git clone`, `git pull`, leer arc
 
 - **Git (clone, pull, push):** SSH con **deploy key** del repo (`vps-rickm`). La deploy key solo permite operaciones git; no puede mergear PRs ni usar la API.
 - **API (crear PR, comentar en PRs):** **PAT** (Fine-grained) en `GITHUB_TOKEN`. Los PRs y comentarios aparecen con la identidad de la cuenta del token (ej. UmbralBIM); Rick puede dejar comentarios indicando que es el agente.
+- **Worker tasks `github.*`:** Los handlers `github.preflight`, `github.create_branch`, `github.commit_and_push` y `github.open_pr` consumen el PAT automáticamente (via `config.GITHUB_TOKEN`) para operaciones API (`gh` CLI), y la deploy key SSH para operaciones git (`git push/fetch`).
+
+> **Nota de identidad:** Los commits llevan la identidad de git configurada en la VPS (`Rick (AI Orchestrator) <rick.asistente@gmail.com>`). Los PRs y comentarios en GitHub aparecen como **UmbralBIM** (dueño del PAT). Solo los commits son atribuibles a Rick por identidad propia.
 
 ---
 

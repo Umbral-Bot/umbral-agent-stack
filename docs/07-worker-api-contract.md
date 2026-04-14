@@ -363,6 +363,10 @@ Listar tareas recientes. Filtrable. Requiere auth.
 | `research.web` | Research | BÃºsqueda web (Tavily) |
 | `llm.generate` | LLM | Genera texto con Gemini, OpenAI o Anthropic (segun `model`) |
 | `composite.research_report` | Composite | Informe de mercado completo (research + LLM) |
+| `github.preflight` | GitHub | Valida SSH, token, repo, worktree y conectividad remota antes de operar |
+| `github.create_branch` | GitHub | Crea rama `rick/` desde base (default `main`) en working copy limpio |
+| `github.commit_and_push` | GitHub | Staging explícito, commit y push. Requiere lista de archivos, nunca `git add -A` |
+| `github.open_pr` | GitHub | Abre PR vía `gh` CLI. Opcionalmente enruta PR URL a Notion (bridge) y Linear (comment). PRs aparecen como UmbralBIM |
 
 ---
 

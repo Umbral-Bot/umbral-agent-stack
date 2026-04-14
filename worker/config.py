@@ -82,6 +82,15 @@ LINEAR_AGENT_STACK_ALLOWED_AGENTS: str = os.environ.get(
 )
 
 # ---------------------------------------------------------------------------
+# GitHub
+# ---------------------------------------------------------------------------
+GITHUB_REPO_PATH: str = os.environ.get(
+    "GITHUB_REPO_PATH",
+    "/home/rick/umbral-agent-stack",
+)
+GITHUB_TOKEN: str | None = os.environ.get("GITHUB_TOKEN")
+
+# ---------------------------------------------------------------------------
 # n8n
 # ---------------------------------------------------------------------------
 N8N_URL: str | None = os.environ.get("N8N_URL")

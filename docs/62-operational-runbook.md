@@ -64,6 +64,7 @@ Archivo de configuración en VPS: `~/.config/openclaw/env`
 | `GOOGLE_API_KEY` | No | API key de Google AI Studio |
 | `OPENAI_API_KEY` | No | API key de OpenAI |
 | `ANTHROPIC_API_KEY` | No | API key de Anthropic |
+| `GITHUB_TOKEN` | No | Fine-grained PAT de GitHub (para `gh` CLI y handlers `github.*`). Las operaciones git usan SSH deploy key, no este token |
 
 *Requeridas para funcionalidades de Notion; sin ellas solo `ping` funciona completamente. Para que el aviso a Notion del supervisor funcione, el Worker debe tener `NOTION_API_KEY` y `NOTION_CONTROL_ROOM_PAGE_ID` (o `NOTION_SUPERVISOR_ALERT_PAGE_ID` si el script lo soporta) en su entorno al arrancar.
 
@@ -295,6 +296,26 @@ netstat -ano | findstr :8088
 kill <PID>
 ```
 
+### 5.11 GitHub: token expirado, SSH o push protection
+
+```bash
+# Verificar token (debe devolver Logged in account UmbralBIM):
+source ~/.config/openclaw/env && GH_TOKEN=$GITHUB_TOKEN gh auth status
+
+# Verificar SSH deploy key:
+ssh -T git@github.com   # Debe decir "successfully authenticated" (rc=1 es OK)
+
+# Si el push falla por push protection (GH013):
+# — El handler `github.commit_and_push` mostrará el error textual.
+# — Revisar si algún archivo tocado está en GitHub push protection ruleset.
+# — Archivos conocidos como protegidos: .claude/CLAUDE.md, .claude/settings.json, .agents/board.md
+
+# Token expirado (PAT actual expira 2027-03-03):
+# — Regenerar en GitHub → Settings → Developer settings → Fine-grained tokens
+# — Actualizar GITHUB_TOKEN en ~/.config/openclaw/env
+# — Reiniciar Worker para que recargue env
+```
+
 ---
 
 ## 6. Flujos de verificación rápida
@@ -361,54 +382,36 @@ Ejecutar periódicamente para comprobar que no falte `git pull` ni dependencias.
 
 Cuando Rick o un script en la VPS necesite cambiar código o docs:
 
-1. En la VPS: `bash scripts/vps/rick-branch-for-change.sh` (deja el repo en la rama `rick/vps`, creada desde main si no existe), o a mano:
-   - `git checkout main && git pull origin main`
-   - `git checkout rick/vps` (o `git checkout -b rick/vps` si es la primera vez; nunca trabajar en main)
-2. Hacer los cambios, commit, `git push -u origin rick/vps`
-3. Abrir PR a `main` (con `GITHUB_TOKEN` en env si se usa la API)
+1. Crear rama: vía handler `github.create_branch` (que trabaja en `~/umbral-agent-stack`), o a mano:
+   - `cd ~/umbral-agent-stack && git fetch origin && git checkout -b rick/<nombre> origin/main`
+2. Hacer los cambios, staging explícito, commit, push: vía handler `github.commit_and_push` (requiere lista explícita de archivos), o a mano:
+   - `git add -- <archivos> && git commit -m "..." && git push -u origin rick/<nombre>`
+3. Abrir PR a `main`: vía handler `github.open_pr` (usa `GITHUB_TOKEN`), o: `GH_TOKEN=$GITHUB_TOKEN gh pr create --head rick/<nombre> --base main --title "..."`
 4. **No** mergear desde la VPS; David (o Cursor) hace el merge
-5. Después del merge: en la VPS, `git checkout main && git pull origin main`; luego `git checkout rick/vps && git merge main`; reiniciar servicios si aplica
+5. Después del merge: `cd ~/umbral-agent-stack && git checkout main && git pull origin main`
 
-Antes de hacer push, comprobar que no estás en main: `bash scripts/vps/rick-ensure-not-pushing-main.sh` (falla si la rama actual es main). **Opcional en la VPS:** instalar un hook `pre-push` que ejecute ese script para bloquear push a main:
+Los handlers `github.*` implementan guardrails: rechazan push a main, exigen prefijo `rick/`, validan worktree limpio, y requieren lista explícita de archivos (nunca `git add -A`).
 
-```bash
-cd ~/umbral-agent-stack
-echo '#!/bin/sh
-bash scripts/vps/rick-ensure-not-pushing-main.sh || exit 1' > .git/hooks/pre-push
-chmod +x .git/hooks/pre-push
-```
+> **Nota:** Los scripts `scripts/vps/rick-branch-for-change.sh`, `scripts/vps/rick-ensure-not-pushing-main.sh` y `scripts/vps/ensure-main-for-run.sh` referenciados en versiones anteriores de este doc **no existen**. Los guardrails están ahora en los handlers `github.*` del Worker.
 
 Referencia: [docs/34-rick-github-token-setup.md](34-rick-github-token-setup.md) y [docs/28-rick-github-workflow.md](28-rick-github-workflow.md).
 
-### 7.0.1 Configuración inicial VPS: clone en rama `rick/vps` (no trabajar en main)
+### 7.0.1 Configuración VPS: repo único para runtime y cambios de Rick
 
-En la VPS **no se usa main como rama de trabajo**. El clone debe quedar por defecto en la rama **`rick/vps`** para que Rick (o quien edite desde la VPS) trabaje siempre ahí. (Se usa `rick/vps` y no `rick` porque ya existen ramas `rick/*` en el repo y Git no permite rama `rick` y `rick/...` a la vez.) El stack (Worker, Dispatcher, crons) **ejecuta desde main**: cada script que corre código del repo llama a `scripts/vps/ensure-main-for-run.sh` antes de ejecutar, así que aunque el repo esté en `rick` al hacer `cd`, los procesos usan main.
+En la VPS hay un solo repo: `~/umbral-agent-stack`. Es tanto el runtime como el working copy donde Rick crea ramas y trabaja. Los handlers `github.*` operan aquí por defecto (`config.GITHUB_REPO_PATH`).
 
-**Primera vez (clone nuevo):**
-
-```bash
-cd ~
-git clone git@github.com:Umbral-Bot/umbral-agent-stack.git umbral-agent-stack
-cd umbral-agent-stack
-bash scripts/vps/rick-branch-for-change.sh   # crea rama rick/vps desde main y la deja activa
-git push -u origin rick/vps
-```
-
-**Si ya tenías el repo y estaba en main:** cambiar a rama rick/vps y subirla (una sola vez):
+**Sincronizar con origin antes de trabajar:**
 
 ```bash
 cd ~/umbral-agent-stack
-git fetch origin
 git checkout main && git pull origin main
-git checkout -b rick/vps
-git push -u origin rick/vps
 ```
 
-A partir de ahí, al entrar en el repo (`cd ~/umbral-agent-stack`) estarás en **rick/vps** para editar. Los crons y el supervisor hacen `ensure-main-for-run.sh` antes de arrancar Worker/Dispatcher o ejecutar scripts, así que el código que corre en producción es siempre **main**. Instrucciones completas para Rick (qué ejecutar en la VPS y qué no): [docs/rick-instrucciones-vps-rama-rick.md](rick-instrucciones-vps-rama-rick.md). Cuando Rick termine de aplicar los cambios en la VPS, deja un mensaje en [.agents/rick-vps-message.md](../.agents/rick-vps-message.md) (en la rama rick/vps) para que David/Cursor lo lea.
+Desde `main`, Rick crea ramas con prefijo `rick/` (vía handler o manual) y nunca pushea a `main` directamente.
 
-### 7.1 VPS (verificación: rama rick para trabajar; main para ejecución)
+### 7.1 VPS (verificación: repo en rama correcta, worktree limpio)
 
-En la VPS la rama de trabajo es **`rick/vps`** (no main). Para **recibir** cambios ya mergeados: `git checkout main && git pull origin main`, luego volver a rick si vas a editar: `git checkout rick && git merge main`. El stack siempre ejecuta desde main gracias a `ensure-main-for-run.sh` en supervisor y crons.
+En la VPS `~/umbral-agent-stack` es el único repo. Para **recibir** cambios mergeados: `git checkout main && git pull origin main`.
 
 ```bash
 cd ~/umbral-agent-stack

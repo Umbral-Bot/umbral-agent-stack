@@ -133,14 +133,14 @@ def parse_granola_markdown(text: str, filename: str = "") -> dict[str, Any]:
             continue
 
         metadata_match = re.match(r"\*\*(.+?)\s*:\*\*\s*(.+)", stripped)
-        if metadata_match:
+        if metadata_match and current_section not in ("transcript", "transcripción"):
             label = metadata_match.group(1).strip()
             value = metadata_match.group(2).strip()
             metadata[_normalize_metadata_key(label)] = value
             continue
 
         bullet_metadata_match = re.match(r"-\s*\*\*(.+?)\s*:\*\*\s*(.+)", stripped)
-        if bullet_metadata_match:
+        if bullet_metadata_match and current_section not in ("transcript", "transcripción"):
             label = bullet_metadata_match.group(1).strip()
             value = bullet_metadata_match.group(2).strip()
             metadata[_normalize_metadata_key(label)] = value

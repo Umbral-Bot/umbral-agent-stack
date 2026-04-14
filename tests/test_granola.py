@@ -193,7 +193,7 @@ class TestHandleGranolaProcessTranscript:
         assert result["action_items_detected"] == 1
         assert result["action_items_created"] == 0
         assert result["legacy_raw_task_writes_enabled"] is False
-        assert result["notification_sent"] is True
+        assert result["notification_sent"] is False
 
         mock_nc.create_transcript_page.assert_called_once_with(
             title="Reunión con Cliente",
@@ -201,23 +201,8 @@ class TestHandleGranolaProcessTranscript:
             source="granola",
             date="2026-03-04",
         )
-        mock_nc.add_comment.assert_called_once()
-        assert mock_nc.add_comment.call_args.kwargs["page_id"] is None
-        assert "Hola @Enlace" in mock_nc.add_comment.call_args.kwargs["text"]
+        mock_nc.add_comment.assert_not_called()
         mock_upsert_task.assert_not_called()
-        return
-        mock_upsert_task.assert_called_once()
-        task_payload = mock_upsert_task.call_args.args[0]
-        assert task_payload["task"] == "granola.action_item"
-        assert task_payload["task_name"] == "[Granola] Enviar propuesta"
-        assert task_payload["project_name"] == "Proyecto Granola"
-        assert task_payload["source"] == "granola_process_transcript"
-        assert task_payload["source_kind"] == "action_item"
-        assert task_payload["task_id"] == _build_action_item_task_id(
-            "Reunión con Cliente",
-            "2026-03-04",
-            {"text": "Enviar propuesta", "assignee": "David", "due": "2026-03-07"},
-        )
 
     @patch("worker.tasks.granola.handle_notion_upsert_task")
     @patch("worker.tasks.granola.notion_client")
@@ -386,6 +371,7 @@ class TestHandleGranolaCapitalizeRaw:
                 "bridge_next_action": "Confirmar si pasa a proyecto o queda como seguimiento.",
                 "followup_type": "proposal",
                 "allow_legacy_raw_to_canonical": True,
+                "add_trace_comments": True,
             }
         )
 
@@ -515,6 +501,7 @@ class TestHandleGranolaPromoteCuratedSession:
                 "project_page_id": "proj-123",
                 "program_page_id": "prog-123",
                 "resource_page_id": "res-123",
+                "add_trace_comments": True,
             }
         )
 
@@ -877,6 +864,7 @@ class TestHandleGranolaCreateHumanTaskFromCuratedSession:
                 "estado": "Pendiente",
                 "priority": "Alta",
                 "due_date": "2026-03-31",
+                "add_trace_comments": True,
             }
         )
 
@@ -1100,6 +1088,7 @@ class TestHandleGranolaUpdateCommercialProjectFromCuratedSession:
                 "curated_session_page_id": "curated-1",
                 "estado": "Propuesta enviada",
                 "accion_requerida": "Revisar contrato",
+                "add_trace_comments": True,
             }
         )
 
@@ -1342,8 +1331,6 @@ class TestHandleGranolaCreateFollowup:
 
     @patch("worker.tasks.granola.notion_client")
     def test_email_draft(self, mock_nc):
-        mock_nc.add_comment.return_value = {"comment_id": "c-1"}
-
         result = handle_granola_create_followup({
             "transcript_page_id": "page-123",
             "followup_type": "email_draft",
@@ -1355,7 +1342,8 @@ class TestHandleGranolaCreateFollowup:
         assert result["followup_type"] == "email_draft"
         assert "Sprint Review" in result["result"]["draft"]
         assert "Deploy v2" in result["result"]["draft"]
-        assert result["result"]["posted_to_notion"] is True
+        assert result["result"]["posted_to_notion"] is False
+        mock_nc.add_comment.assert_not_called()
 
     @patch("worker.tasks.granola.notion_client")
     def test_proposal(self, mock_nc):

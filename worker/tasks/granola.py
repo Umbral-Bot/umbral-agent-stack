@@ -522,7 +522,7 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
         action_items (list[dict], optional): Action items pre-parseados
             [{text, assignee, due}]. Si no se proporcionan, se extraen del content.
         source (str, optional): Fuente (default: "granola").
-        notify_enlace (bool, optional): Notificar a Enlace (default: true).
+        notify_enlace (bool, optional): Notificar a Enlace (default: false, UX-1).
 
     Returns:
         page_id (str): ID de la página creada en Notion.
@@ -540,7 +540,7 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
     date = input_data.get("date") or datetime.now(timezone.utc).strftime("%Y-%m-%d")
     attendees = input_data.get("attendees", [])
     source = input_data.get("source", "granola")
-    notify_enlace = input_data.get("notify_enlace", True)
+    notify_enlace = input_data.get("notify_enlace", False)
     allow_legacy_raw_task_writes = bool(input_data.get("allow_legacy_raw_task_writes"))
 
     # Action items: use provided or extract from content
@@ -712,7 +712,7 @@ def handle_granola_capitalize_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
         }
 
     results: Dict[str, Any] = {}
-    add_trace_comments = input_data.get("add_trace_comments", True)
+    add_trace_comments = input_data.get("add_trace_comments", False)
     trace_comments_added = 0
 
     project_name = (input_data.get("project_name") or "").strip()
@@ -1170,7 +1170,7 @@ def handle_granola_promote_curated_session(input_data: Dict[str, Any]) -> Dict[s
         }
 
     trace_comments_added = 0
-    add_trace_comments = input_data.get("add_trace_comments", True)
+    add_trace_comments = input_data.get("add_trace_comments", False)
     curated_page_id = _result_page_id(notion_result) or notion_result.get("page_id", "")
     if add_trace_comments and not dry_run:
         raw_comment = (
@@ -1411,7 +1411,7 @@ def handle_granola_create_human_task_from_curated_session(
         )
 
     trace_comments_added = 0
-    add_trace_comments = input_data.get("add_trace_comments", True)
+    add_trace_comments = input_data.get("add_trace_comments", False)
     human_task_page_id = _result_page_id(notion_result) or notion_result.get("page_id", "")
     if add_trace_comments and not dry_run:
         session_comment = (
@@ -1613,7 +1613,7 @@ def handle_granola_update_commercial_project_from_curated_session(
         )
 
     trace_comments_added = 0
-    add_trace_comments = input_data.get("add_trace_comments", True)
+    add_trace_comments = input_data.get("add_trace_comments", False)
     if add_trace_comments and not dry_run:
         project_comment_parts = [
             f"Actualizacion comercial desde sesion curada: '{session_title}' ({session_date}).",
@@ -1883,16 +1883,10 @@ def _create_email_draft(
     if notes:
         draft += f"\nNotas adicionales:\n{notes}\n"
 
-    # Save draft as comment on the transcript page
-    try:
-        notion_client.add_comment(
-            page_id=transcript_page_id,
-            text=f"📧 Borrador de email generado:\n\n{draft[:1800]}",
-        )
-        posted = True
-    except Exception as e:
-        logger.warning("Failed to post email draft to Notion: %s", e)
-        posted = False
+    # UX-1: email drafts no longer posted as Notion comments (noise reduction).
+    # The draft text is returned in the result payload and optionally sent via Gmail.
+    logger.info("Email draft generated for %s (not posted to Notion)", transcript_page_id)
+    posted = False
 
     email_draft_result = None
     if attendees:

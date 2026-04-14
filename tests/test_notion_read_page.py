@@ -99,3 +99,72 @@ def test_read_page_returns_metadata_and_plain_text(mock_require_notion_core, moc
     assert "Resumen Ejecutivo" in result["plain_text"]
     assert "David es arquitecto UTFSM" in result["plain_text"]
     assert len(result["blocks"]) == 2
+
+
+@patch("worker.notion_client.httpx.Client")
+@patch("worker.notion_client.config.require_notion_core")
+@patch("worker.notion_client.config.NOTION_API_KEY", "ntn_test_key")
+def test_read_page_full_paginates_all_blocks(mock_require_notion_core, mock_client_cls):
+    from worker.notion_client import read_page_full
+
+    page_response = MagicMock()
+    page_response.status_code = 200
+    page_response.json.return_value = {
+        "id": "1dbd6874-90a9-4ba2-9b19-f0daec70c68e",
+        "url": "https://www.notion.so/Perfil-David-Moreira-1dbd687490a94ba29b19f0daec70c68e",
+        "last_edited_time": "2026-03-08T16:23:00.000Z",
+        "properties": {
+            "title": {
+                "type": "title",
+                "title": [{"plain_text": "Perfil David Moreira"}],
+            }
+        },
+    }
+    blocks_response_page1 = MagicMock()
+    blocks_response_page1.status_code = 200
+    blocks_response_page1.json.return_value = {
+        "results": [
+            {
+                "id": "block-1",
+                "type": "paragraph",
+                "has_children": False,
+                "last_edited_time": "2026-03-08T16:23:00.000Z",
+                "paragraph": {"rich_text": [{"plain_text": "Parte 1"}]},
+            }
+        ],
+        "has_more": True,
+        "next_cursor": "cursor-2",
+    }
+    blocks_response_page2 = MagicMock()
+    blocks_response_page2.status_code = 200
+    blocks_response_page2.json.return_value = {
+        "results": [
+            {
+                "id": "block-2",
+                "type": "paragraph",
+                "has_children": False,
+                "last_edited_time": "2026-03-08T16:24:00.000Z",
+                "paragraph": {"rich_text": [{"plain_text": "Parte 2"}]},
+            }
+        ],
+        "has_more": False,
+        "next_cursor": None,
+    }
+
+    mock_client = MagicMock()
+    mock_client.get.side_effect = [
+        page_response,
+        blocks_response_page1,
+        blocks_response_page2,
+    ]
+    mock_client_cls.return_value.__enter__.return_value = mock_client
+
+    result = read_page_full(
+        "https://www.notion.so/Perfil-David-Moreira-1dbd687490a94ba29b19f0daec70c68e"
+    )
+
+    assert result["title"] == "Perfil David Moreira"
+    assert result["page_id"] == "1dbd6874-90a9-4ba2-9b19-f0daec70c68e"
+    assert result["block_count"] == 2
+    assert result["plain_text"] == "Parte 1\nParte 2"
+    assert result["has_more"] is False

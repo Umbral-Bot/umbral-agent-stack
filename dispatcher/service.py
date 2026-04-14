@@ -340,7 +340,7 @@ def _notify_linear_completion(
 
 logger = logging.getLogger("dispatcher.service")
 
-ESCALATE_TO_LINEAR = os.environ.get("ESCALATE_FAILURES_TO_LINEAR", "true").lower() in ("true", "1", "yes")
+ESCALATE_TO_LINEAR = os.environ.get("ESCALATE_FAILURES_TO_LINEAR", "false").lower() in ("true", "1", "yes")
 ESCALATE_ONLY_CANONICAL = os.environ.get("ESCALATE_ONLY_CANONICAL", "true").lower() in ("true", "1", "yes")
 ESCALATION_DEDUPE_WINDOW_HOURS = max(0, int(os.environ.get("ESCALATION_DEDUPE_WINDOW_HOURS", "24")))
 
@@ -444,67 +444,6 @@ def _should_escalate_failure(envelope: dict) -> bool:
     return False
 
 
-def _escalate_failure_to_linear_legacy_old(
-    wc: "WorkerClient",
-    envelope: dict,
-    task_id: str,
-    task: str,
-    team: str,
-    error: str,
-) -> None:
-    """
-    Create a Linear issue when a task fails, unless the envelope already
-    has a linear_issue_id (avoid duplicate issues for the same task).
-    Stores the created issue_id back in envelope for follow-up notifications.
-    Controlled by ESCALATE_FAILURES_TO_LINEAR env var (default: true).
-    """
-    return _escalate_failure_to_linear(wc, envelope, task_id, task, team, error)
-
-    if not ESCALATE_TO_LINEAR:
-        return
-    if envelope.get("linear_issue_id"):
-        return
-    if task.startswith("linear."):
-        return
-    if not _should_escalate_failure(envelope):
-        logger.info(
-            "[escalation] Skipping non-canonical failure for task %s (source=%s, source_kind=%s)",
-            task_id,
-            envelope.get("source", ""),
-            envelope.get("source_kind", ""),
-        )
-        return
-
-    priority_map = {"critical": 1, "coding": 2, "ms_stack": 2, "general": 3, "writing": 3, "research": 3, "light": 4}
-    task_type = envelope.get("task_type", "general")
-    priority = priority_map.get(task_type, 3)
-
-    title = f"Task fallida: {task} ({task_id[:8]})"
-    description = (
-        f"**Task:** `{task}`\n"
-        f"**Task ID:** `{task_id}`\n"
-        f"**Team:** {team}\n"
-        f"**Task Type:** {task_type}\n\n"
-        f"**Error:**\n```\n{error[:500]}\n```\n\n"
-        f"_Issue creado automáticamente por el Dispatcher al detectar fallo._"
-    )
-
-    try:
-        resp = wc.run("linear.create_issue", {
-            "title": title,
-            "description": description,
-            "team_key": linear_team_key,
-            "priority": priority,
-        })
-        # Store issue_id for follow-up status updates on retry success
-        issue_id = (resp or {}).get("result", {})
-        if isinstance(issue_id, dict):
-            issue_id = issue_id.get("id") or issue_id.get("issue_id")
-        if issue_id:
-            envelope["linear_issue_id"] = issue_id
-        logger.info("[escalation] Linear issue created for failed task %s (issue=%s)", task_id, issue_id)
-    except Exception as exc:
-        logger.debug("[escalation] Could not create Linear issue: %s", exc)
 
 def _escalate_failure_to_linear(
     wc: "WorkerClient",

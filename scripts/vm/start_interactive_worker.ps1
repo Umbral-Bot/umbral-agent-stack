@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-$repoRoot = "C:\GitHub\umbral-agent-stack"
+$repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $tokenPath = "C:\openclaw-worker\worker_token"
 $logDir = "C:\openclaw-worker\logs"
 $uvicornExe = (Get-Command uvicorn.exe -ErrorAction Stop).Source

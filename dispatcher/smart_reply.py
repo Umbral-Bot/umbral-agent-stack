@@ -122,8 +122,8 @@ def handle_smart_reply(
                 page_kind=page_kind,
             )
         else:
-            # echo — just acknowledge
-            _post_comment(wc, f"{ECHO_PREFIX} Recibido. (comment_id={short_id}...)")
+            # echo — silence is better than noise; log only
+            logger.info("Echo comment %s — no actionable reply needed.", short_id)
     except Exception:
         logger.exception("Smart reply pipeline failed for comment %s, posting fallback", short_id)
         _post_fallback(wc, comment_id, intent)
@@ -144,11 +144,8 @@ def _handle_scheduled_task(
     # Format a nice reply
     recurrence_str = f" (Recurrencia: {intent_obj.recurrence})" if intent_obj.recurrence else ""
     time_str = intent_obj.run_at.strftime("%Y-%m-%d %H:%M UTC")
-    
-    reply = (
-        f"{ECHO_PREFIX} Tarea programada para el {time_str}{recurrence_str}.\n\n"
-        f"(comment_id={short_id}...)"
-    )
+
+    reply = f"{ECHO_PREFIX} Tarea programada para el {time_str}{recurrence_str}."
     _post_comment(wc, reply)
     logger.info("Scheduled task posted and scheduled for %s, comment %s", time_str, short_id)
 
@@ -198,15 +195,15 @@ def _handle_question(text: str, comment_id: str, team: str, wc: WorkerClient) ->
             })
             page_url = page_res.get("result", {}).get("page_url", "")
             if page_url:
-                reply = f"{ECHO_PREFIX} He generado un informe detallado para tu consulta. Puedes leerlo aquí: {page_url}\n\n(comment_id={short_id}...)"
+                reply = f"{ECHO_PREFIX} He generado un informe detallado para tu consulta: {page_url}"
             else:
-                reply = f"{ECHO_PREFIX} {answer[:1900]}...\n\n(comment_id={short_id}...)"
+                reply = f"{ECHO_PREFIX} {answer[:1900]}"
         except Exception:
             logger.exception("Failed to create report page for long answer, falling back to comment")
-            reply = f"{ECHO_PREFIX} {answer[:1900]}...\n\n(comment_id={short_id}...)"
+            reply = f"{ECHO_PREFIX} {answer[:1900]}"
     else:
         # Short answer fits in a comment
-        reply = f"{ECHO_PREFIX} {answer}\n\n(comment_id={short_id}...)"
+        reply = f"{ECHO_PREFIX} {answer}"
         
     _post_comment(wc, reply)
     logger.info("Smart reply posted for question %s (research=%s, length=%d)", short_id, bool(research_context), len(answer))
@@ -234,8 +231,7 @@ def _handle_task(
 
     reply = (
         f"{ECHO_PREFIX} Plan para equipo [{team}]:\n\n"
-        f"{plan}\n\n"
-        f"Procesando... (comment_id={short_id}...)"
+        f"{plan}"
     )
     _post_comment(wc, reply)
 
@@ -269,10 +265,8 @@ def _handle_task_with_workflow(
     # Extract a topic from the comment text (first 120 chars as topic)
     topic = text.strip()[:120]
 
-    _post_comment(
-        wc,
-        f"{ECHO_PREFIX} Ejecutando workflow [{workflow_name}] para equipo [{team}]... (comment_id={short_id}...)",
-    )
+    # No pre-execution comment — David will see the result when it's ready.
+    logger.info("Executing workflow [%s] for team [%s], comment %s", workflow_name, team, short_id)
 
     context = {
         "topic": topic,
@@ -302,27 +296,27 @@ def _handle_task_with_workflow(
                 if page_url:
                     reply = (
                         f"{ECHO_PREFIX} Workflow [{workflow_name}] completado ({steps_info}).\n"
-                        f"Resultado detallado: {page_url}\n\n(comment_id={short_id}...)"
+                        f"Resultado detallado: {page_url}"
                     )
                 else:
-                    reply = f"{ECHO_PREFIX} Workflow [{workflow_name}] completado ({steps_info}).\n\n{final[:1900]}\n\n(comment_id={short_id}...)"
+                    reply = f"{ECHO_PREFIX} Workflow [{workflow_name}] completado ({steps_info}).\n\n{final[:1900]}"
             except Exception:
                 logger.exception("Failed to create report page for workflow result")
-                reply = f"{ECHO_PREFIX} Workflow [{workflow_name}] completado ({steps_info}).\n\n{final[:1900]}\n\n(comment_id={short_id}...)"
+                reply = f"{ECHO_PREFIX} Workflow [{workflow_name}] completado ({steps_info}).\n\n{final[:1900]}"
         elif final:
             reply = (
                 f"{ECHO_PREFIX} Workflow [{workflow_name}] completado ({steps_info}).\n\n"
-                f"{final}\n\n(comment_id={short_id}...)"
+                f"{final}"
             )
         else:
-            reply = f"{ECHO_PREFIX} Workflow [{workflow_name}] completado ({steps_info}). (comment_id={short_id}...)"
+            reply = f"{ECHO_PREFIX} Workflow [{workflow_name}] completado ({steps_info})."
 
         _post_comment(wc, reply)
     else:
         error = result.get("error", "unknown error")
         reply = (
             f"{ECHO_PREFIX} Workflow [{workflow_name}] para [{team}] terminó con errores: "
-            f"{error}\n\n(comment_id={short_id}...)"
+            f"{error}"
         )
         _post_comment(wc, reply)
 
@@ -348,11 +342,8 @@ def _handle_instruction(
     project_page_id = page_id if page_id and page_kind == "project" else None
     deliverable_page_id = page_id if page_id and page_kind == "deliverable" else None
     project_name = _resolve_instruction_project_name(wc, page_id=page_id, page_kind=page_kind)
-    reply = (
-        f"{ECHO_PREFIX} Instrucción registrada. "
-        f"Procesando configuración. (comment_id={short_id}...)"
-    )
-    _post_comment(wc, reply)
+    # No empty acknowledgment — David will see the result via the bridge item or task update.
+    logger.info("Instruction received from comment %s, processing.", short_id)
     telegram_sent = False
     bridge_page_id: str | None = None
     try:
@@ -478,7 +469,7 @@ def _instruction_bridge_name(text: str, comment_id: str) -> str:
     raw = _single_line(text)
     if len(raw) > 90:
         raw = raw[:87].rstrip() + "..."
-    return f"Instrucción Notion: {raw} [{comment_id[:8]}]"
+    return f"Instrucción Notion: {raw}"
 
 
 def _resolve_instruction_project_name(wc: WorkerClient, *, page_id: str | None, page_kind: str | None) -> str | None:
@@ -746,11 +737,14 @@ def _post_fallback(wc: WorkerClient, comment_id: str, intent: str) -> None:
     """Post the old-style acknowledgment when the smart pipeline fails."""
     short_id = comment_id[:8] if comment_id else "unknown"
     fallbacks = {
-        "question": f"{ECHO_PREFIX} Pregunta recibida. Investigando y responderé pronto. (comment_id={short_id}...)",
-        "task": f"{ECHO_PREFIX} Entendido. Tarea registrada. (comment_id={short_id}...)",
-        "scheduled_task": f"{ECHO_PREFIX} Tarea programada registrada. (comment_id={short_id}...)",
-        "instruction": f"{ECHO_PREFIX} Instrucción registrada. (comment_id={short_id}...)",
+        "question": None,        # Pipeline failed — silence beats a false promise
+        "task": None,            # Pipeline failed — silence beats a false promise
+        "scheduled_task": f"{ECHO_PREFIX} Tarea programada registrada.",
+        "instruction": None,
     }
-    text = fallbacks.get(intent, f"{ECHO_PREFIX} Recibido. (comment_id={short_id}...)")
+    text = fallbacks.get(intent)
+    if text is None:
+        logger.info("Fallback suppressed for [%s] comment %s — no value in acknowledging.", intent, short_id)
+        return
     _post_comment(wc, text)
     logger.info("Fallback reply posted for %s [%s]", short_id, intent)

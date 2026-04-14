@@ -27,7 +27,7 @@ Cursor comparó `env.rick` (copia de Rick) con `.env` local y encontró diferenc
 | NOTION_DASHBOARD_PAGE_ID | `3265f443-fb5c-816d-9ce8-c5d6cf075f9c` | `0fd13978-b220-498e-9465-b4fb2efc5f4a` |
 | NOTION_TASKS_DB_ID | `afda99a3666e49f0a2f670cb228ac3ab` | `3145f443-fb5c-814a-8764-efbd7203048d` |
 | GOOGLE_CSE_API_KEY_RICK_UMBRAL | `[REDACTED - rotate in Google]` | `[REDACTED - rotate in Google]` |
-| GOOGLE_API_KEY_RICK_UMBRAL | `...Mmbg` (sin s) | `...Mmbgs` (con s) |
+| GOOGLE_API_KEY_RICK_UMBRAL | `[REDACTED]` | `[REDACTED]` |
 
 Docs históricos dicen Dashboard Rick = `0fd13978-b220-498e-9465-b4fb2efc5f4a`, pero si Codex/Rick usan otro en producción, ese es el canónico.
 

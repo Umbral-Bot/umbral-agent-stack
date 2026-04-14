@@ -316,6 +316,12 @@ def _classify_gap(
             "batch1_recent_ambiguous_count": len(batch1_recent_ambiguous),
             "historic_unique_count": len(historic_unique),
             "historic_ambiguous_count": len(historic_ambiguous),
+            "recent_action_required_count": len(batch1_recent_unique)
+            + len(batch1_recent_ambiguous),
+            "action_required_count": len(batch1_recent_unique)
+            + len(batch1_recent_ambiguous)
+            + len(historic_unique)
+            + len(historic_ambiguous),
         },
         "raw_real_items": [
             {
@@ -410,6 +416,16 @@ def _print_human(report: dict[str, Any]) -> None:
         print("")
 
 
+def _recent_gap_count(report: dict[str, Any]) -> int:
+    gap = report.get("gap_summary") or {}
+    return int(gap.get("recent_action_required_count") or 0)
+
+
+def _action_required_gap_count(report: dict[str, Any]) -> int:
+    gap = report.get("gap_summary") or {}
+    return int(gap.get("action_required_count") or 0)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Compare Granola cache exportables against Notion raw DB")
     parser.add_argument(
@@ -439,6 +455,16 @@ def main() -> int:
         action="store_true",
         help="Print machine-readable JSON",
     )
+    parser.add_argument(
+        "--fail-on-recent-gaps",
+        action="store_true",
+        help="Exit 2 when recent missing/ambiguous meetings require review",
+    )
+    parser.add_argument(
+        "--fail-on-any-gaps",
+        action="store_true",
+        help="Exit 2 when any missing/ambiguous meetings require review",
+    )
     args = parser.parse_args()
 
     report = build_report(
@@ -449,9 +475,27 @@ def main() -> int:
     )
     if args.json:
         print(json.dumps(report, ensure_ascii=False, indent=2))
-        return 0
+    else:
+        _print_human(report)
 
-    _print_human(report)
+    if args.fail_on_any_gaps:
+        gap_count = _action_required_gap_count(report)
+        if gap_count:
+            print(
+                f"Gap audit detected {gap_count} actionable missing/ambiguous meetings",
+                file=sys.stderr,
+            )
+            return 2
+
+    if args.fail_on_recent_gaps:
+        gap_count = _recent_gap_count(report)
+        if gap_count:
+            print(
+                f"Gap audit detected {gap_count} recent missing/ambiguous meetings",
+                file=sys.stderr,
+            )
+            return 2
+
     return 0
 
 

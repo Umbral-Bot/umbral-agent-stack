@@ -110,3 +110,112 @@ def test_classify_gap_matches_document_id_even_when_raw_row_is_smoke():
     assert result["gap_summary"]["batch1_recent_unique_count"] == 0
     assert result["likely_present"][0]["classification"] == "likely_present_document_id"
     assert result["likely_present"][0]["matched_raw_page_id"] == "raw-smoke-1"
+
+
+def test_recent_gap_count_sums_recent_unique_and_ambiguous():
+    module = _load_script_module(
+        "list_granola_raw_ingest_gap_recent_count",
+        "scripts/list_granola_raw_ingest_gap.py",
+    )
+
+    report = {
+        "gap_summary": {
+            "batch1_recent_unique_count": 1,
+            "batch1_recent_ambiguous_count": 2,
+            "historic_unique_count": 3,
+            "historic_ambiguous_count": 4,
+            "recent_action_required_count": 3,
+            "action_required_count": 10,
+        }
+    }
+
+    assert module._recent_gap_count(report) == 3
+    assert module._action_required_gap_count(report) == 10
+
+
+def test_main_returns_nonzero_when_fail_on_recent_gaps(monkeypatch):
+    module = _load_script_module(
+        "list_granola_raw_ingest_gap_fail_recent",
+        "scripts/list_granola_raw_ingest_gap.py",
+    )
+
+    monkeypatch.setattr(
+        module,
+        "build_report",
+        lambda **kwargs: {
+            "gap_summary": {
+                "likely_present_count": 0,
+                "batch1_recent_unique_count": 0,
+                "batch1_recent_ambiguous_count": 1,
+                "historic_unique_count": 0,
+                "historic_ambiguous_count": 0,
+                "recent_action_required_count": 1,
+                "action_required_count": 1,
+            },
+            "cache_summary": {
+                "scanned": 1,
+                "exportable_count": 1,
+                "skipped_unusable": 0,
+            },
+            "raw_summary": {
+                "raw_total_count": 0,
+                "raw_real_count": 0,
+                "raw_smoke_count": 0,
+            },
+            "batch1_recent_unique": [],
+            "batch1_recent_ambiguous": [],
+            "historic_unique": [],
+            "historic_ambiguous": [],
+        },
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["list_granola_raw_ingest_gap.py", "--fail-on-recent-gaps"],
+    )
+
+    assert module.main() == 2
+
+
+def test_main_allows_historic_only_gaps_when_recent_flag_is_used(monkeypatch):
+    module = _load_script_module(
+        "list_granola_raw_ingest_gap_fail_recent_historic_only",
+        "scripts/list_granola_raw_ingest_gap.py",
+    )
+
+    monkeypatch.setattr(
+        module,
+        "build_report",
+        lambda **kwargs: {
+            "gap_summary": {
+                "likely_present_count": 0,
+                "batch1_recent_unique_count": 0,
+                "batch1_recent_ambiguous_count": 0,
+                "historic_unique_count": 1,
+                "historic_ambiguous_count": 0,
+                "recent_action_required_count": 0,
+                "action_required_count": 1,
+            },
+            "cache_summary": {
+                "scanned": 1,
+                "exportable_count": 1,
+                "skipped_unusable": 0,
+            },
+            "raw_summary": {
+                "raw_total_count": 0,
+                "raw_real_count": 0,
+                "raw_smoke_count": 0,
+            },
+            "batch1_recent_unique": [],
+            "batch1_recent_ambiguous": [],
+            "historic_unique": [],
+            "historic_ambiguous": [],
+        },
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["list_granola_raw_ingest_gap.py", "--fail-on-recent-gaps"],
+    )
+
+    assert module.main() == 0

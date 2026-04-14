@@ -1,6 +1,25 @@
 #!/usr/bin/env python3
 """Granola Full Gap Audit — Windows VM standalone script.
 
+**DEPRECATED FOR CONTENT CLASSIFICATION.**
+This script classifies "has_content" using cache-v6.json inline fields only.
+Granola stores real content (summaries, transcripts) in its private API,
+NOT in cache inline fields. Result: 100% false negative rate on content
+detection — all meetings appear as "non-recordings" even when they have
+full transcripts.
+
+Use scripts/list_granola_raw_ingest_gap.py (repo-side, with private API
+hydration) for accurate gap auditing.
+
+This script remains usable ONLY for:
+- Listing which documents exist in cache vs Notion (presence, not content)
+- Manual folder (.md) audit
+- Notion-side traceability health check
+
+DO NOT use the "non_recordings" category from this script as truth.
+
+---
+
 Compares the Granola desktop cache (cache-v6.json) against the Notion raw DB
 to detect meetings that exist locally but were never ingested.
 

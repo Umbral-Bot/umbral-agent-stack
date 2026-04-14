@@ -5,6 +5,8 @@ All Azure AI Search and embedding calls are mocked.
 """
 
 import pytest
+import sys
+import types
 from unittest.mock import patch, MagicMock, ANY
 
 
@@ -101,6 +103,114 @@ class TestGenerateEmbeddings:
 
         with pytest.raises(EnvironmentError, match="AZURE_OPENAI"):
             generate_embeddings(["test"])
+
+
+# ---------------------------------------------------------------------------
+# Retriever search
+# ---------------------------------------------------------------------------
+
+
+class _FakeVectorizedQuery:
+    def __init__(self, **kwargs):
+        self.kwargs = kwargs
+
+
+class _FakeAzureKeyCredential:
+    def __init__(self, key):
+        self.key = key
+
+
+class TestRetrieverSearch:
+    @pytest.fixture
+    def retriever_setup(self, monkeypatch):
+        from worker.rag import retriever
+
+        azure_module = types.ModuleType("azure")
+        azure_search_module = types.ModuleType("azure.search")
+        azure_documents_module = types.ModuleType("azure.search.documents")
+        azure_models_module = types.ModuleType("azure.search.documents.models")
+        azure_core_module = types.ModuleType("azure.core")
+        azure_credentials_module = types.ModuleType("azure.core.credentials")
+
+        search_client_instance = MagicMock()
+        search_client_class = MagicMock(return_value=search_client_instance)
+
+        azure_documents_module.SearchClient = search_client_class
+        azure_models_module.VectorizedQuery = _FakeVectorizedQuery
+        azure_credentials_module.AzureKeyCredential = _FakeAzureKeyCredential
+
+        azure_module.search = azure_search_module
+        azure_search_module.documents = azure_documents_module
+        azure_documents_module.models = azure_models_module
+        azure_module.core = azure_core_module
+        azure_core_module.credentials = azure_credentials_module
+
+        monkeypatch.setitem(sys.modules, "azure", azure_module)
+        monkeypatch.setitem(sys.modules, "azure.search", azure_search_module)
+        monkeypatch.setitem(sys.modules, "azure.search.documents", azure_documents_module)
+        monkeypatch.setitem(sys.modules, "azure.search.documents.models", azure_models_module)
+        monkeypatch.setitem(sys.modules, "azure.core", azure_core_module)
+        monkeypatch.setitem(sys.modules, "azure.core.credentials", azure_credentials_module)
+
+        mock_creds = MagicMock(return_value=("https://search.example", "secret-key"))
+        mock_embeddings = MagicMock(return_value=[[0.1, 0.2, 0.3]])
+        monkeypatch.setattr(retriever, "_get_search_credentials", mock_creds)
+        monkeypatch.setattr(retriever, "generate_embeddings", mock_embeddings)
+
+        return retriever, search_client_class, search_client_instance, mock_embeddings
+
+    def test_keyword_mode_skips_embeddings_and_maps_defaults(self, retriever_setup):
+        retriever, _, search_client_instance, mock_embeddings = retriever_setup
+        search_client_instance.search.return_value = [
+            {"id": "doc-1", "content": "Result content"},
+        ]
+
+        result = retriever.search(query="cement ratio", mode="keyword", top=2)
+
+        assert result == [{
+            "id": "doc-1",
+            "content": "Result content",
+            "title": "",
+            "source": "",
+            "source_type": "",
+            "chunk_index": 0,
+            "score": 0.0,
+            "reranker_score": None,
+        }]
+        mock_embeddings.assert_not_called()
+        assert search_client_instance.search.call_args.kwargs["search_text"] == "cement ratio"
+        assert "vector_queries" not in search_client_instance.search.call_args.kwargs
+
+    def test_vector_mode_uses_vector_query_and_no_search_text(self, retriever_setup):
+        retriever, _, search_client_instance, mock_embeddings = retriever_setup
+        search_client_instance.search.return_value = []
+
+        retriever.search(query="thermal bridge", mode="vector", top=3)
+
+        mock_embeddings.assert_called_once_with(["thermal bridge"])
+        kwargs = search_client_instance.search.call_args.kwargs
+        assert kwargs["search_text"] is None
+        assert len(kwargs["vector_queries"]) == 1
+        vector_query = kwargs["vector_queries"][0]
+        assert isinstance(vector_query, _FakeVectorizedQuery)
+        assert vector_query.kwargs["k_nearest_neighbors"] == 3
+        assert vector_query.kwargs["fields"] == "content_vector"
+
+    def test_hybrid_mode_escapes_odata_filters(self, retriever_setup):
+        retriever, _, search_client_instance, mock_embeddings = retriever_setup
+        search_client_instance.search.return_value = []
+
+        retriever.search(
+            query="spec",
+            mode="hybrid",
+            source_filter="manual'o",
+            source_type_filter="doc's",
+        )
+
+        mock_embeddings.assert_called_once_with(["spec"])
+        kwargs = search_client_instance.search.call_args.kwargs
+        assert kwargs["search_text"] == "spec"
+        assert kwargs["filter"] == "source eq 'manual''o' and source_type eq 'doc''s'"
 
 
 # ---------------------------------------------------------------------------

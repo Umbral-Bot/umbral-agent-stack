@@ -62,6 +62,16 @@ desktop.ini
 # === Docker ===
 docker-compose.override.yml
 
+# === VPS local-only surfaces ===
+# These files exist on the VPS but are not part of the canonical shared repo.
+# .claude/ and .agents/ contain Claude Code session config and hooks that
+# differ per environment. The audit snapshot is runtime-generated data.
+.claude/CLAUDE.md
+.claude/settings.json
+.claude/hooks/block-deployed-repo-writes.sh
+.agents/board.md
+docs/audits/notion-curation-snapshot-2026-03-16.json
+
 # === Misc ===
 *.tmp
 *.bak

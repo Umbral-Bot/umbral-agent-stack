@@ -146,14 +146,20 @@ def get_notion_session_capitalizable_db_id() -> str | None:
     """
     Return the active binding for the V1 `session_capitalizable` layer.
 
-    The live contract still maps this role onto the legacy curated sessions env var
-    until Cursor verifies and fills the runtime bridge placeholders.
+    .. deprecated::
+        This accessor and the underlying NOTION_CURATED_SESSIONS_DB_ID env var
+        are part of the legacy V1 curated-session flow.  They remain wired because
+        the operational batch script and poller comment scanner still depend on them.
+        Do not add new callers — new work should use the V2 `capitalize_raw` path.
     """
     return NOTION_CURATED_SESSIONS_DB_ID
 
 
 def require_notion_session_capitalizable_db_id() -> str:
-    """Raise if the V1 session_capitalizable binding is missing."""
+    """Raise if the V1 session_capitalizable binding is missing.
+
+    .. deprecated:: See :func:`get_notion_session_capitalizable_db_id`.
+    """
     db_id = get_notion_session_capitalizable_db_id()
     if not db_id:
         raise RuntimeError("NOTION_CURATED_SESSIONS_DB_ID not configured")

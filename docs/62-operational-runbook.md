@@ -390,7 +390,7 @@ Cuando Rick o un script en la VPS necesite cambiar código o docs:
 4. **No** mergear desde la VPS; David (o Cursor) hace el merge
 5. Después del merge: `cd ~/umbral-agent-stack && git checkout main && git pull origin main`
 
-Los handlers `github.*` implementan guardrails: rechazan push a main, exigen prefijo `rick/`, validan worktree limpio, y requieren lista explícita de archivos (nunca `git add -A`).
+Los handlers `github.*` implementan guardrails: rechazan push a main, exigen prefijo `rick/` en todas las operaciones (crear rama, commit, PR), validan worktree limpio (archivos sin trackear se toleran, solo cambios staged/modified bloquean), validan nombres de rama base, y requieren lista explícita de archivos (nunca `git add -A`).
 
 > **Nota:** Los scripts `scripts/vps/rick-branch-for-change.sh`, `scripts/vps/rick-ensure-not-pushing-main.sh` y `scripts/vps/ensure-main-for-run.sh` referenciados en versiones anteriores de este doc **no existen**. Los guardrails están ahora en los handlers `github.*` del Worker.
 

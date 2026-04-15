@@ -409,6 +409,22 @@ git checkout main && git pull origin main
 
 Desde `main`, Rick crea ramas con prefijo `rick/` (vía handler o manual) y nunca pushea a `main` directamente.
 
+### 7.0.2 Superficies locales de la VPS (no-canónicas)
+
+Algunos archivos existen solo en la VPS y están excluidos del repo compartido vía `.gitignore`:
+
+| Archivo | Propósito |
+|---------|-----------|
+| `.claude/CLAUDE.md` | Instrucciones de Claude Code específicas de la VPS (modelo single-repo) |
+| `.claude/settings.json` | Configuración de sesión de Claude Code |
+| `.claude/hooks/block-deployed-repo-writes.sh` | Hook PreToolUse que protege el repo contra escrituras accidentales |
+| `.agents/board.md` | Tablero operativo del agente (estado interno de Rick) |
+| `docs/audits/notion-curation-snapshot-2026-03-16.json` | Snapshot generado por la curación automática; se sobreescribe en cada ejecución |
+
+Estos archivos **no se pushean** y **no deben bloquear** operaciones de Git de Rick. Al estar en `.gitignore`, `git status --porcelain --untracked-files=no` los ignora, lo que permite que `_ensure_clean_worktree()` los tolere automáticamente.
+
+Si se pierden (por error, reinstalación, etc.), pueden regenerarse localmente sin afectar el repo compartido.
+
 ### 7.1 VPS (verificación: repo en rama correcta, worktree limpio)
 
 En la VPS `~/umbral-agent-stack` es el único repo. Para **recibir** cambios mergeados: `git checkout main && git pull origin main`.

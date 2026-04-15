@@ -30,6 +30,31 @@ _BRANCH_PREFIX = "rick/"
 # ---------------------------------------------------------------------------
 
 
+_SENSITIVE_PATTERNS = re.compile(
+    r"(ghp_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{50,}|gho_[A-Za-z0-9]{30,})",
+)
+
+_BASE_NAME_RE = re.compile(r"^[a-zA-Z0-9_./-]+$")
+
+
+def _sanitize_stderr(text: str, max_len: int = 500) -> str:
+    """Truncate and redact token-like patterns from subprocess stderr."""
+    sanitized = _SENSITIVE_PATTERNS.sub("[REDACTED]", text)
+    if len(sanitized) > max_len:
+        sanitized = sanitized[:max_len] + "…(truncated)"
+    return sanitized.strip()
+
+
+def _validate_base_name(base: str) -> str:
+    """Validate a base branch name. Raises ValueError on invalid input."""
+    base = base.strip()
+    if not base:
+        raise ValueError("base branch name is required")
+    if not _BASE_NAME_RE.match(base):
+        raise ValueError(f"base branch name contains invalid characters: '{base}'")
+    return base
+
+
 def _git(
     args: List[str],
     *,
@@ -53,7 +78,8 @@ def _git(
     )
     if check and result.returncode != 0:
         raise RuntimeError(
-            f"Command {args} failed (rc={result.returncode}): {result.stderr.strip()}"
+            f"Command {args} failed (rc={result.returncode}): "
+            f"{_sanitize_stderr(result.stderr)}"
         )
     return result
 
@@ -84,8 +110,15 @@ def _validate_branch_name(branch: str) -> str:
 
 
 def _ensure_clean_worktree(repo_path: str) -> None:
-    """Ensure there are no uncommitted changes in the working copy."""
-    result = _git(["git", "status", "--porcelain"], repo_path=repo_path)
+    """Ensure there are no uncommitted changes (modified/staged) in the working copy.
+
+    Untracked files are ignored — they are common on the VPS (local-only
+    metadata, audit docs) and do not interfere with branch/commit operations.
+    """
+    result = _git(
+        ["git", "status", "--porcelain", "--untracked-files=no"],
+        repo_path=repo_path,
+    )
     if result.stdout.strip():
         raise RuntimeError(
             "Working copy has uncommitted changes. "
@@ -102,9 +135,9 @@ def _current_branch(repo_path: str) -> str:
     return result.stdout.strip()
 
 
-def _resolve_repo_path(input_data: Dict[str, Any]) -> str:
-    """Resolve and validate the repo path from input or config."""
-    repo_path = (input_data.get("repo_path") or config.GITHUB_REPO_PATH).strip()
+def _resolve_repo_path() -> str:
+    """Return the canonical repo path from config. Input overrides are not accepted."""
+    repo_path = config.GITHUB_REPO_PATH
     if not Path(repo_path).is_dir():
         raise ValueError(f"repo_path does not exist: {repo_path}")
     git_dir = Path(repo_path) / ".git"
@@ -122,9 +155,6 @@ def handle_github_preflight(input_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Validate GitHub readiness: SSH, token, repo, worktree.
 
-    Input:
-        repo_path (str, optional): override for the working copy path.
-
     Returns:
         {"ok": True, "ssh": bool, "token": True, "token_user": "...",
          "repo_path": "...", "branch": "...", "clean": bool,
@@ -135,7 +165,7 @@ def handle_github_preflight(input_data: Dict[str, Any]) -> Dict[str, Any]:
 
     # --- Repo path ---
     try:
-        repo_path = _resolve_repo_path(input_data)
+        repo_path = _resolve_repo_path()
         info["repo_path"] = repo_path
     except ValueError as e:
         return {"ok": False, "error": str(e)}
@@ -225,13 +255,12 @@ def handle_github_create_branch(input_data: Dict[str, Any]) -> Dict[str, Any]:
     Input:
         branch_name (str, required): e.g. "rick/add-github-handlers"
         base (str, optional): base branch, default "main"
-        repo_path (str, optional): override working copy path
 
     Returns:
         {"ok": True, "branch": "rick/...", "base": "main"}
     """
     try:
-        repo_path = _resolve_repo_path(input_data)
+        repo_path = _resolve_repo_path()
     except ValueError as e:
         return {"ok": False, "error": str(e)}
 
@@ -242,6 +271,10 @@ def handle_github_create_branch(input_data: Dict[str, Any]) -> Dict[str, Any]:
         return {"ok": False, "error": str(e)}
 
     base = (input_data.get("base") or "main").strip()
+    try:
+        base = _validate_base_name(base)
+    except ValueError as e:
+        return {"ok": False, "error": str(e)}
 
     try:
         _ensure_clean_worktree(repo_path)
@@ -273,7 +306,6 @@ def handle_github_commit_and_push(input_data: Dict[str, Any]) -> Dict[str, Any]:
         message (str, required): commit message
         files (list[str], required): relative paths to stage (explicit only, no git add -A)
         branch_name (str, optional): expected branch for safety validation
-        repo_path (str, optional): override working copy path
 
     Returns:
         {"ok": True, "branch": "...", "commit_sha": "...",
@@ -291,11 +323,11 @@ def handle_github_commit_and_push(input_data: Dict[str, Any]) -> Dict[str, Any]:
         }
 
     try:
-        repo_path = _resolve_repo_path(input_data)
+        repo_path = _resolve_repo_path()
     except ValueError as e:
         return {"ok": False, "error": str(e)}
 
-    # --- Validate current branch is not protected ---
+    # --- Validate current branch is not protected and has rick/ prefix ---
     try:
         current = _current_branch(repo_path)
     except Exception as e:
@@ -305,6 +337,15 @@ def handle_github_commit_and_push(input_data: Dict[str, Any]) -> Dict[str, Any]:
         return {
             "ok": False,
             "error": f"Refusing to commit on protected branch '{current}'",
+        }
+
+    if not current.startswith(_BRANCH_PREFIX):
+        return {
+            "ok": False,
+            "error": (
+                f"Current branch '{current}' does not start with '{_BRANCH_PREFIX}'. "
+                f"Rick can only commit on rick/ branches."
+            ),
         }
 
     expected = (input_data.get("branch_name") or "").strip()
@@ -407,7 +448,6 @@ def handle_github_open_pr(input_data: Dict[str, Any]) -> Dict[str, Any]:
         base (str, optional): target branch, default "main"
         bridge_item_name (str, optional): if set, upserts Notion bridge item with PR URL
         linear_issue_id (str, optional): if set, posts PR URL as comment on Linear issue
-        repo_path (str, optional): override working copy path
 
     Returns:
         {"ok": True, "pr_url": "...", "pr_number": N,
@@ -423,7 +463,7 @@ def handle_github_open_pr(input_data: Dict[str, Any]) -> Dict[str, Any]:
         return {"ok": False, "error": "GITHUB_TOKEN not configured"}
 
     try:
-        repo_path = _resolve_repo_path(input_data)
+        repo_path = _resolve_repo_path()
     except ValueError as e:
         return {"ok": False, "error": str(e)}
 
@@ -441,7 +481,20 @@ def handle_github_open_pr(input_data: Dict[str, Any]) -> Dict[str, Any]:
             "error": f"Refusing to open PR from protected branch '{branch}'",
         }
 
+    if not branch.startswith(_BRANCH_PREFIX):
+        return {
+            "ok": False,
+            "error": (
+                f"Branch '{branch}' does not start with '{_BRANCH_PREFIX}'. "
+                f"Rick can only open PRs from rick/ branches."
+            ),
+        }
+
     base = (input_data.get("base") or "main").strip()
+    try:
+        base = _validate_base_name(base)
+    except ValueError as e:
+        return {"ok": False, "error": str(e)}
     body = (input_data.get("body") or "").strip()
 
     # --- Create PR via gh CLI ---

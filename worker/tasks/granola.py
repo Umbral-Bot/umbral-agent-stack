@@ -1577,7 +1577,7 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
 # ---------------------------------------------------------------------------
 
 _V2_DOMINIO_VALUES = {"Docencia", "Operacion", "Sistemas", "Marca", "Mixto"}
-_V2_TIPO_VALUES = {"Clase", "Sesion", "Reunion", "Tutoria", "Workshop", "Llamada", "Revision", "Otro"}
+_V2_TIPO_VALUES = {"Clase", "Sesión", "Reunión", "Tutoría", "Workshop", "Llamada", "Revisión", "Otro"}
 _V2_DESTINO_VALUES = {"Tarea", "Proyecto", "Entregable", "Programa", "Recurso", "Ignorar"}
 _V2_DESTINO_REVIEW_ONLY = {"Programa", "Recurso"}  # read-only targets → always review
 
@@ -1669,7 +1669,7 @@ Dada una transcripcion, devuelve SOLO un JSON valido con estos 4 campos:
 
 {
   "dominio": "Docencia" | "Operacion" | "Sistemas" | "Marca" | "Mixto",
-  "tipo": "Clase" | "Sesion" | "Reunion" | "Tutoria" | "Workshop" | "Llamada" | "Revision" | "Otro",
+  "tipo": "Clase" | "Sesión" | "Reunión" | "Tutoría" | "Workshop" | "Llamada" | "Revisión" | "Otro",
   "destino": "Tarea" | "Proyecto" | "Entregable" | "Programa" | "Recurso" | "Ignorar",
   "resumen": "<resumen en español, 1-3 oraciones, máximo 280 caracteres>"
 }
@@ -1770,7 +1770,7 @@ def handle_granola_classify_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
     title = (
         (page_snapshot.get("title") or "").strip()
         or _extract_title_from_page(page_data)
-        or "Reunion"
+        or "Reunión"
     )
     content = (page_snapshot.get("plain_text") or "").strip()
     if not content:
@@ -2104,7 +2104,7 @@ def handle_granola_capitalize_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
             page_title = (
                 (page_snapshot.get("title") or "").strip()
                 or _extract_title_from_page(page_data)
-                or "Reunion"
+                or "Reunión"
             )
             page_url = (page_snapshot.get("url") or page_data.get("url") or "").strip()
             page_date = _extract_date_from_page(page_data) or _today_date()
@@ -2133,7 +2133,7 @@ def handle_granola_capitalize_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
     transcript_title = (
         (page_snapshot.get("title") or "").strip()
         or _extract_title_from_page(page_data)
-        or "Reunion"
+        or "Reunión"
     )
     transcript_url = (page_snapshot.get("url") or page_data.get("url") or "").strip()
     transcript_date = (
@@ -2339,7 +2339,7 @@ def handle_granola_promote_curated_session(input_data: Dict[str, Any]) -> Dict[s
     transcript_title = (
         (page_snapshot.get("title") or "").strip()
         or _extract_title_from_page(page_data)
-        or "Sesion"
+        or "Sesión"
     )
     transcript_url = (page_snapshot.get("url") or page_data.get("url") or "").strip()
     transcript_date = (
@@ -2848,7 +2848,7 @@ def handle_granola_create_human_task_from_curated_session(
         properties,
         schema,
         ["Origen", "Source"],
-        input_data.get("origin") or input_data.get("task_origin") or "Sesion",
+        input_data.get("origin") or input_data.get("task_origin") or "Sesión",
         expected_types={"select", "status", "rich_text"},
         used_fields=used_fields,
     )

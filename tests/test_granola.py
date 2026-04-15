@@ -630,7 +630,7 @@ class TestHandleGranolaCapitalizeRaw:
             mock_nc.read_page.return_value = {
                 "page_id": "raw-1",
                 "url": "https://www.notion.so/raw-1",
-                "title": "Reunion",
+                "title": "Reunión",
                 "plain_text": "Resumen",
             }
             mock_nc.get_page.return_value = {
@@ -650,7 +650,7 @@ class TestHandleGranolaCapitalizeRaw:
         mock_nc.read_page.return_value = {
             "page_id": "raw-1",
             "url": "https://www.notion.so/raw-1",
-            "title": "Reunion",
+            "title": "Reunión",
             "plain_text": "Resumen",
         }
         mock_nc.get_page.return_value = {
@@ -1236,7 +1236,7 @@ class TestHandleGranolaCreateHumanTaskFromCuratedSession:
         assert props["Estado"]["status"]["name"] == "Pendiente"
         assert props["Prioridad"]["select"]["name"] == "Alta"
         assert props["Fecha objetivo"]["date"]["start"] == "2026-03-31"
-        assert props["Origen"]["select"]["name"] == "Sesion"
+        assert props["Origen"]["select"]["name"] == "Sesión"
         assert props["URL fuente"]["url"] == "https://www.notion.so/curated-1"
         assert "Derivada de sesion curada" in props["Notas"]["rich_text"][0]["text"]["content"]
 

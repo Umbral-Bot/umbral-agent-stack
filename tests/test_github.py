@@ -16,6 +16,70 @@ def _make_completed(stdout="", stderr="", returncode=0):
 
 
 # ---------------------------------------------------------------------------
+# Unit tests for helper functions
+# ---------------------------------------------------------------------------
+
+
+class TestSanitizeStderr:
+    def test_redacts_ghp_token(self):
+        from worker.tasks.github import _sanitize_stderr
+
+        raw = "error: ghp_abcdef1234567890abcdef1234567890ab caused a failure"
+        result = _sanitize_stderr(raw)
+        assert "ghp_" not in result
+        assert "[REDACTED]" in result
+
+    def test_redacts_github_pat(self):
+        from worker.tasks.github import _sanitize_stderr
+
+        raw = "token github_pat_" + "A" * 50 + " is invalid"
+        result = _sanitize_stderr(raw)
+        assert "github_pat_" not in result
+        assert "[REDACTED]" in result
+
+    def test_truncates_long_output(self):
+        from worker.tasks.github import _sanitize_stderr
+
+        raw = "x" * 1000
+        result = _sanitize_stderr(raw, max_len=100)
+        assert len(result) < 150  # 100 + truncation marker
+        assert "truncated" in result
+
+    def test_passes_clean_text(self):
+        from worker.tasks.github import _sanitize_stderr
+
+        raw = "fatal: remote origin already exists"
+        assert _sanitize_stderr(raw) == raw.strip()
+
+
+class TestValidateBaseName:
+    def test_valid_names(self):
+        from worker.tasks.github import _validate_base_name
+
+        assert _validate_base_name("main") == "main"
+        assert _validate_base_name("release/1.0") == "release/1.0"
+        assert _validate_base_name("  develop  ") == "develop"
+
+    def test_rejects_empty(self):
+        from worker.tasks.github import _validate_base_name
+
+        with pytest.raises(ValueError, match="required"):
+            _validate_base_name("")
+
+    def test_rejects_invalid_chars(self):
+        from worker.tasks.github import _validate_base_name
+
+        with pytest.raises(ValueError, match="invalid characters"):
+            _validate_base_name("main --template=/etc/passwd")
+
+    def test_rejects_spaces(self):
+        from worker.tasks.github import _validate_base_name
+
+        with pytest.raises(ValueError, match="invalid characters"):
+            _validate_base_name("main branch")
+
+
+# ---------------------------------------------------------------------------
 # github.preflight
 # ---------------------------------------------------------------------------
 
@@ -24,7 +88,9 @@ class TestGitHubPreflight:
     def test_invalid_repo_path(self):
         from worker.tasks.github import handle_github_preflight
 
-        r = handle_github_preflight({"repo_path": "/nonexistent/path"})
+        with patch("worker.tasks.github.config") as mock_cfg:
+            mock_cfg.GITHUB_REPO_PATH = "/nonexistent/path"
+            r = handle_github_preflight({})
         assert r["ok"] is False
         assert "repo_path" in r["error"]
 
@@ -165,6 +231,17 @@ class TestGitHubCreateBranch:
         assert any("fetch" in c for c in calls)
         assert any("checkout" in c for c in calls)
 
+    def test_rejects_invalid_base(self):
+        from worker.tasks.github import handle_github_create_branch
+
+        with patch("worker.tasks.github._resolve_repo_path", return_value="/tmp/repo"):
+            r = handle_github_create_branch({
+                "branch_name": "rick/test",
+                "base": "main --template=/etc/passwd",
+            })
+        assert r["ok"] is False
+        assert "invalid characters" in r["error"]
+
 
 # ---------------------------------------------------------------------------
 # github.commit_and_push
@@ -201,6 +278,15 @@ class TestGitHubCommitAndPush:
             r = handle_github_commit_and_push({"message": "test", "files": ["a.py"]})
         assert r["ok"] is False
         assert "protected" in r["error"].lower()
+
+    def test_rejects_non_rick_branch(self):
+        from worker.tasks.github import handle_github_commit_and_push
+
+        with patch("worker.tasks.github._resolve_repo_path", return_value="/tmp/repo"), \
+             patch("worker.tasks.github._current_branch", return_value="feature/something"):
+            r = handle_github_commit_and_push({"message": "test", "files": ["a.py"]})
+        assert r["ok"] is False
+        assert "rick/" in r["error"]
 
     def test_branch_mismatch(self):
         from worker.tasks.github import handle_github_commit_and_push
@@ -306,6 +392,35 @@ class TestGitHubOpenPr:
             r = handle_github_open_pr({"title": "test"})
         assert r["ok"] is False
         assert "protected" in r["error"].lower()
+
+    def test_rejects_non_rick_branch(self):
+        from worker.tasks.github import handle_github_open_pr
+
+        with patch("worker.tasks.github._github_token", return_value="ghp_fake"), \
+             patch("worker.tasks.github._resolve_repo_path", return_value="/tmp/repo"), \
+             patch("worker.tasks.github._current_branch", return_value="feature/foo"):
+            r = handle_github_open_pr({"title": "test"})
+        assert r["ok"] is False
+        assert "rick/" in r["error"]
+
+    def test_rejects_non_rick_branch_explicit(self):
+        from worker.tasks.github import handle_github_open_pr
+
+        with patch("worker.tasks.github._github_token", return_value="ghp_fake"), \
+             patch("worker.tasks.github._resolve_repo_path", return_value="/tmp/repo"):
+            r = handle_github_open_pr({"title": "test", "branch_name": "develop"})
+        assert r["ok"] is False
+        assert "rick/" in r["error"]
+
+    def test_rejects_invalid_base(self):
+        from worker.tasks.github import handle_github_open_pr
+
+        with patch("worker.tasks.github._github_token", return_value="ghp_fake"), \
+             patch("worker.tasks.github._resolve_repo_path", return_value="/tmp/repo"), \
+             patch("worker.tasks.github._current_branch", return_value="rick/test"):
+            r = handle_github_open_pr({"title": "test", "base": "main --inject"})
+        assert r["ok"] is False
+        assert "invalid characters" in r["error"]
 
     def test_success_with_pr_url(self):
         from worker.tasks.github import handle_github_open_pr

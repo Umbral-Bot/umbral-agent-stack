@@ -139,6 +139,7 @@ from .github import (
     handle_github_commit_and_push,
     handle_github_open_pr,
 )
+from .github_tournament import handle_github_orchestrate_tournament
 
 # Each handler: (input: dict) -> dict
 TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
@@ -244,4 +245,5 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "github.create_branch": handle_github_create_branch,
     "github.commit_and_push": handle_github_commit_and_push,
     "github.open_pr": handle_github_open_pr,
+    "github.orchestrate_tournament": handle_github_orchestrate_tournament,
 }

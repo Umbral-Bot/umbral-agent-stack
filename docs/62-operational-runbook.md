@@ -396,7 +396,23 @@ Los handlers `github.*` implementan guardrails: rechazan push a main, exigen pre
 
 Referencia: [docs/34-rick-github-token-setup.md](34-rick-github-token-setup.md) y [docs/28-rick-github-workflow.md](28-rick-github-workflow.md).
 
-### 7.0.1 Configuración VPS: repo único para runtime y cambios de Rick
+### 7.0.1 Orquestación multi-rama (tournament over branches)
+
+El handler `github.orchestrate_tournament` compone `tournament.run` con `github.create_branch` para comparar múltiples enfoques en ramas independientes:
+
+1. Preflight → worktree limpio requerido.
+2. Tournament LLM (discovery → develop → debate → judge).
+3. Crea ramas `rick/t/{id}/{a,b,c,...}` por cada enfoque.
+4. Si hay ganador, crea `rick/t/{id}/final`.
+5. Retorna a la rama base.
+
+Convención de ramas: `rick/t/{8-hex}/{label}` donde label es `a`-`e` o `final`.
+
+El handler NO genera código en las ramas (Phase 1). Las ramas son contenedores nombrados para fases futuras. El resultado incluye `contestants`, `verdict`, `final_branch`, y `meta` con métricas del torneo.
+
+Si el juez retorna `ESCALATE`, no se crea rama final — Rick debe escalar la decisión a David con la tabla comparativa.
+
+### 7.0.2 Configuración VPS: repo único para runtime y cambios de Rick
 
 En la VPS hay un solo repo: `~/umbral-agent-stack`. Es tanto el runtime como el working copy donde Rick crea ramas y trabaja. Los handlers `github.*` operan aquí por defecto (`config.GITHUB_REPO_PATH`).
 
@@ -409,7 +425,7 @@ git checkout main && git pull origin main
 
 Desde `main`, Rick crea ramas con prefijo `rick/` (vía handler o manual) y nunca pushea a `main` directamente.
 
-### 7.0.2 Superficies locales de la VPS (no-canónicas)
+### 7.0.3 Superficies locales de la VPS (no-canónicas)
 
 Algunos archivos existen solo en la VPS y están excluidos del repo compartido vía `.gitignore`:
 

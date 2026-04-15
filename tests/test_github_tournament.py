@@ -298,3 +298,69 @@ class TestOrchestrateTournament:
         tid = result["tournament_id"]
         for branch in result["branches_created"]:
             assert f"rick/t/{tid}/" in branch
+
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_create_branch")
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    def test_final_branch_failure_is_non_blocking(
+        self, _pre, mock_branch, mock_tourn, mock_chk,
+    ):
+        mock_tourn.return_value = _tournament_result(num=2, winner_id=1, escalate=False)
+        mock_branch.side_effect = [
+            {"ok": True, "branch": "rick/t/x/a", "base": "main"},
+            {"ok": True, "branch": "rick/t/x/b", "base": "main"},
+            {"ok": False, "error": "remote rejected"},
+        ]
+
+        result = handle_github_orchestrate_tournament({"challenge": "test"})
+
+        assert result["ok"] is True
+        assert result["verdict"]["winner_id"] == 1
+        assert result["final_branch"] is None
+        assert len(result["branches_created"]) == 2
+        assert mock_branch.call_count == 3
+        mock_chk.assert_called_once_with("main")
+
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_create_branch", side_effect=_create_branch_ok)
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    def test_missing_approach_fields_use_fallbacks(
+        self, _pre, _br, mock_tourn, _chk,
+    ):
+        tr = _tournament_result(num=2, winner_id=1)
+        tr["approaches"] = [
+            {},
+            {"approach_name": "Named approach only"},
+        ]
+        mock_tourn.return_value = tr
+
+        result = handle_github_orchestrate_tournament({"challenge": "test"})
+
+        first = result["contestants"][0]
+        second = result["contestants"][1]
+        assert first["id"] == 1
+        assert first["approach"] == "Approach A"
+        assert first["proposal_excerpt"] == ""
+        assert first["branch"].endswith("/a")
+        assert second["id"] == 2
+        assert second["approach"] == "Named approach only"
+        assert second["proposal_excerpt"] == ""
+        assert second["branch"].endswith("/b")
+
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_create_branch", side_effect=_create_branch_ok)
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    def test_more_than_five_approaches_use_numeric_labels(
+        self, _pre, _br, mock_tourn, _chk,
+    ):
+        mock_tourn.return_value = _tournament_result(num=6, escalate=True)
+
+        result = handle_github_orchestrate_tournament({"challenge": "test"})
+
+        labels = [c["branch"].split("/")[-1] for c in result["contestants"]]
+        assert labels[:5] == ["a", "b", "c", "d", "e"]
+        assert labels[5] == "5"
+        assert len(set(result["branches_created"])) == len(result["branches_created"])

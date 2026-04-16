@@ -10,8 +10,9 @@ consolidates into a comparison table with a recommendation.
 """
 
 import logging
+import re
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 from .llm import handle_llm_generate
 
@@ -298,29 +299,151 @@ def _format_debate(debate_log: List[Dict[str, Any]]) -> str:
     return "\n\n".join(parts)
 
 
+# ---------------------------------------------------------------------------
+# Verdict parsing helpers
+# ---------------------------------------------------------------------------
+#
+# `_extract_winner_id` separa "ganador explícito" de "veredicto ambiguo":
+#   - Si el juez declara un ganador en inglés/español/portugués (o variantes
+#     mixtas) con un id válido cerca, devolvemos ese id.
+#   - Si el texto está negado ("no clear winner", "no hay ganador", "empate",
+#     "tied", "não há vencedor", ...) o el id que aparece no pertenece al
+#     conjunto real de propuestas, devolvemos None — nunca inventamos un
+#     ganador. La rama ESCALATE se maneja antes en handle_tournament_run.
+
+# Palabras que señalan un ganador o recomendación firme, en en/es/pt.
+# Se mantienen como un OR plano para que sea trivial agregar variantes.
+_WINNER_KEYWORD_RE = re.compile(
+    r"\b("
+    # English
+    r"winner|winning|wins|won|"
+    r"recommend|recommended|recommendation|"
+    r"best (?:approach|option|choice|fit)|"
+    # Spanish
+    r"ganador(?:a)?|vencedor(?:a)?|campe[oó]n|"
+    r"recomiendo|recomienda|recomendad[oa]|"
+    r"elijo|elegid[oa]|escojo|"
+    r"mejor (?:opci[oó]n|enfoque|propuesta)|"
+    # Portuguese
+    r"vencedor(?:a)?|campe[aã]o|"
+    r"recomendo|recomendad[oa]|"
+    r"escolho|escolhid[oa]|"
+    r"melhor (?:abordagem|op[cç][aã]o|escolha)"
+    r")\b",
+    re.IGNORECASE,
+)
+
+# Frases de negación que invalidan un veredicto cercano.
+_NEGATION_RE = re.compile(
+    r"\b("
+    r"no clear|no winner|no hay (?:ganador|vencedor|claro)|"
+    r"ning[uú]n[oa]?|"
+    r"n[ãa]o (?:h[aá]|consigo|temos|posso)|"
+    r"sem (?:ganhador|vencedor|claro)|"
+    r"cannot determine|unable to (?:determine|pick|decide)|"
+    r"no se puede (?:determinar|elegir)|"
+    r"empate|tie|tied|"
+    r"too close to call|demasiado parejo"
+    r")\b",
+    re.IGNORECASE,
+)
+
+# Captura un id de contestant. Acepta sustantivos en en/es/pt como prefijo
+# opcional ("contestant", "approach", "propuesta", "enfoque", "proposta",
+# "opción", "opção"...) y `#` opcional.
+# El lookbehind `(?<![A-Za-z])` evita capturar dígitos pegados a una palabra
+# (p.ej. "OAuth2" no debe parsearse como id=2).
+_CONTESTANT_NUM_RE = re.compile(
+    r"(?:contestant|approach|proposal|option|"
+    r"propuesta|enfoque|opci[oó]n|n[uú]mero|"
+    r"proposta|op[cç][aã]o)?\s*"
+    r"#?\s*(?<![A-Za-z])(\d+)",
+    re.IGNORECASE,
+)
+
+
 def _extract_winner_id(
     verdict_text: str, proposals: List[Dict[str, Any]]
 ) -> Optional[int]:
-    """Best-effort extraction of winner ID from verdict text."""
-    text_lower = verdict_text.lower()
-    # Look for "winner: contestant #N" or "winner: Approach Name"
-    for p in proposals:
-        marker = f"contestant #{p['id']}"
-        if marker in text_lower:
-            # Check if it's in a "winner" context
-            idx = text_lower.find(marker)
-            context = text_lower[max(0, idx - 40) : idx]
-            if "winner" in context or "ganador" in context:
-                return p["id"]
-    # Fallback: first contestant mentioned after "winner"
-    winner_pos = text_lower.find("winner")
-    if winner_pos == -1:
-        winner_pos = text_lower.find("ganador")
-    if winner_pos >= 0:
-        after = text_lower[winner_pos:]
-        for p in proposals:
-            if f"#{p['id']}" in after[:80]:
-                return p["id"]
-            if p["approach_name"].lower() in after[:120]:
-                return p["id"]
+    """
+    Best-effort, multilingual extraction of the winner id from the judge's verdict.
+
+    Maneja variantes en inglés, español y portugués, además de wording mixto
+    (p.ej. "Contestant #2 is the winner", "El ganador es la propuesta 2",
+    "Recomiendo el enfoque 3", "Vencedor: Contestant #1"). Devuelve None
+    cuando el texto está negado/empatado o cuando ningún id válido aparece
+    en una ventana razonable alrededor del keyword — nunca elige por defecto.
+    """
+    if not verdict_text or not proposals:
+        return None
+
+    valid_ids: Set[int] = {p["id"] for p in proposals}
+    name_to_id = {
+        p["approach_name"].strip().lower(): p["id"]
+        for p in proposals
+        if p.get("approach_name")
+    }
+
+    text_lc = verdict_text.lower()
+
+    # Recorremos cada hit de keyword en orden. El primero que pase la guarda
+    # de negación y aporte un id válido define el ganador.
+    for m in _WINNER_KEYWORD_RE.finditer(text_lc):
+        kw_start, kw_end = m.start(), m.end()
+
+        # Negation guard: ~50 chars antes del keyword + el keyword mismo,
+        # para que negaciones como "no hay ganador" o "sem vencedor" — que
+        # incluyen el sustantivo — queden capturadas en la misma ventana.
+        preface = text_lc[max(0, kw_start - 50): kw_end]
+        if _NEGATION_RE.search(preface):
+            continue
+
+        # 1) Id explícito DESPUÉS del keyword (caso típico "Winner: #2").
+        window_after = text_lc[kw_end: kw_end + 120]
+        winner_id = _first_valid_contestant_id(window_after, valid_ids)
+        if winner_id is not None:
+            return winner_id
+
+        # 2) Id explícito ANTES del keyword (caso "Contestant #2 wins").
+        window_before = text_lc[max(0, kw_start - 80): kw_start]
+        winner_id = _last_valid_contestant_id(window_before, valid_ids)
+        if winner_id is not None:
+            return winner_id
+
+        # 3) Fallback por approach_name (con word-boundary y longitud ≥ 2,
+        #    para no confundir nombres de una letra con caracteres sueltos
+        #    del texto). Buscamos primero la ventana posterior y luego la
+        #    anterior.
+        for window in (window_after, window_before):
+            for name_lc, pid in name_to_id.items():
+                if len(name_lc) < 2:
+                    continue
+                if re.search(rf"\b{re.escape(name_lc)}\b", window):
+                    return pid
+
     return None
+
+
+def _first_valid_contestant_id(window: str, valid_ids: Set[int]) -> Optional[int]:
+    """Devuelve el primer id que aparece en `window` y pertenece a valid_ids."""
+    for m in _CONTESTANT_NUM_RE.finditer(window):
+        try:
+            n = int(m.group(1))
+        except (TypeError, ValueError):
+            continue
+        if n in valid_ids:
+            return n
+    return None
+
+
+def _last_valid_contestant_id(window: str, valid_ids: Set[int]) -> Optional[int]:
+    """Devuelve el último id válido en `window` (útil cuando el keyword va al final)."""
+    last: Optional[int] = None
+    for m in _CONTESTANT_NUM_RE.finditer(window):
+        try:
+            n = int(m.group(1))
+        except (TypeError, ValueError):
+            continue
+        if n in valid_ids:
+            last = n
+    return last

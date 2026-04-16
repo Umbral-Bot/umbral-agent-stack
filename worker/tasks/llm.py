@@ -542,12 +542,16 @@ def _call_azure_foundry(
     # AI Foundry Hub requiere el campo "model" en el body
     if "services.ai.azure.com" in endpoint:
         payload["model"] = deployment
-    # Reasoning models (o1, o3) no soportan temperature ni max_tokens estándar
-    if any(x in model.lower() for x in ["o1", "o3"]):
-        payload.pop("temperature", None)
-        payload.pop("max_tokens", None)
-        payload["max_completion_tokens"] = max_tokens
-    elif model.lower().startswith("gpt-5.2"):
+    # Reasoning/gpt-5.x models no soportan temperature ni max_tokens estándar.
+    # Cubrimos o1, o3 y toda la familia gpt-5.x (gpt-5.2, gpt-5.2-chat,
+    # gpt-5.3-codex, gpt-5.4, ...) que en Azure Foundry requieren
+    # max_completion_tokens y rechazan temperature custom.
+    model_lc = model.lower()
+    needs_max_completion_tokens = (
+        any(x in model_lc for x in ["o1", "o3"])
+        or model_lc.startswith("gpt-5.")
+    )
+    if needs_max_completion_tokens:
         payload.pop("temperature", None)
         payload.pop("max_tokens", None)
         payload["max_completion_tokens"] = max_tokens

@@ -495,6 +495,90 @@ def test_azure_foundry_gpt52_uses_max_completion_tokens(monkeypatch):
     assert body["max_completion_tokens"] == 100
 
 
+def test_azure_foundry_gpt54_uses_max_completion_tokens(monkeypatch):
+    """gpt-5.4 en Azure Foundry debe usar max_completion_tokens (no max_tokens)."""
+    monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://mi-recurso.openai.azure.com")
+    monkeypatch.setenv("AZURE_OPENAI_API_KEY", "az-key-123")
+    monkeypatch.delenv("AZURE_OPENAI_DEPLOYMENT", raising=False)
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+
+    fake_payload = {
+        "choices": [{"message": {"content": "GPT54_OK"}}],
+        "usage": {"prompt_tokens": 8, "completion_tokens": 6, "total_tokens": 14},
+    }
+
+    with patch(
+        "worker.tasks.llm.urllib.request.urlopen",
+        return_value=_DummyResponse(fake_payload),
+    ) as mock_urlopen:
+        result = handle_llm_generate(
+            {"prompt": "Test GPT 5.4", "model": "gpt-5.4", "max_tokens": 200}
+        )
+
+    assert result["provider"] == "azure_foundry"
+    assert result["text"] == "GPT54_OK"
+    req = mock_urlopen.call_args.args[0]
+    assert "openai/deployments/gpt-5.4" in req.full_url
+    body = json.loads(req.data.decode("utf-8"))
+    assert "max_tokens" not in body
+    assert "temperature" not in body
+    assert body["max_completion_tokens"] == 200
+
+
+def test_azure_foundry_azure_gpt_54_alias_uses_max_completion_tokens(monkeypatch):
+    """El alias azure_gpt_54 también debe caer en la rama de max_completion_tokens."""
+    monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://mi-recurso.openai.azure.com")
+    monkeypatch.setenv("AZURE_OPENAI_API_KEY", "az-key-123")
+    monkeypatch.delenv("AZURE_OPENAI_DEPLOYMENT", raising=False)
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+
+    fake_payload = {
+        "choices": [{"message": {"content": "ALIAS_OK"}}],
+        "usage": {"prompt_tokens": 4, "completion_tokens": 4, "total_tokens": 8},
+    }
+
+    with patch(
+        "worker.tasks.llm.urllib.request.urlopen",
+        return_value=_DummyResponse(fake_payload),
+    ) as mock_urlopen:
+        handle_llm_generate(
+            {"prompt": "alias GPT 5.4", "model": "azure_gpt_54", "max_tokens": 150}
+        )
+
+    req = mock_urlopen.call_args.args[0]
+    body = json.loads(req.data.decode("utf-8"))
+    assert "max_tokens" not in body
+    assert "temperature" not in body
+    assert body["max_completion_tokens"] == 150
+
+
+def test_azure_foundry_gpt53_codex_uses_max_completion_tokens(monkeypatch):
+    """gpt-5.3-codex pertenece a la familia gpt-5.x y también debe usar max_completion_tokens."""
+    monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://mi-recurso.openai.azure.com")
+    monkeypatch.setenv("AZURE_OPENAI_API_KEY", "az-key-123")
+    monkeypatch.setenv("AZURE_OPENAI_DEPLOYMENT", "gpt-5.3-codex")
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+
+    fake_payload = {
+        "choices": [{"message": {"content": "CODEX_OK"}}],
+        "usage": {"prompt_tokens": 3, "completion_tokens": 3, "total_tokens": 6},
+    }
+
+    with patch(
+        "worker.tasks.llm.urllib.request.urlopen",
+        return_value=_DummyResponse(fake_payload),
+    ) as mock_urlopen:
+        handle_llm_generate(
+            {"prompt": "Test codex", "model": "gpt-5.3-codex", "max_tokens": 120}
+        )
+
+    req = mock_urlopen.call_args.args[0]
+    body = json.loads(req.data.decode("utf-8"))
+    assert "max_tokens" not in body
+    assert "temperature" not in body
+    assert body["max_completion_tokens"] == 120
+
+
 def test_azure_foundry_uses_reasoning_content_when_content_is_empty(monkeypatch):
     monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://mi-recurso.openai.azure.com")
     monkeypatch.setenv("AZURE_OPENAI_API_KEY", "az-key-123")

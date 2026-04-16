@@ -313,3 +313,178 @@ class TestExtractWinnerId:
         props = [{"id": 1, "approach_name": "A"}]
         text = "No clear winner found."
         assert _extract_winner_id(text, props) is None
+
+    # ------------------------------------------------------------------
+    # Multilingual / loose-wording cases (regression for null winner_id
+    # when the judge clearly chose a contestant).
+    # ------------------------------------------------------------------
+
+    def test_extracts_winner_before_keyword_english(self):
+        """'Contestant #2 is the winner' — id appears BEFORE the keyword."""
+        from worker.tasks.tournament import _extract_winner_id
+
+        props = [{"id": 1, "approach_name": "A"}, {"id": 2, "approach_name": "B"}]
+        text = "After review, Contestant #2 is the winner with high confidence."
+        assert _extract_winner_id(text, props) == 2
+
+    def test_extracts_with_winning_variant(self):
+        """'The winning approach is #3' — variant 'winning' instead of 'winner'."""
+        from worker.tasks.tournament import _extract_winner_id
+
+        props = [
+            {"id": 1, "approach_name": "X"},
+            {"id": 2, "approach_name": "Y"},
+            {"id": 3, "approach_name": "Z"},
+        ]
+        text = "The winning approach is #3 because of latency."
+        assert _extract_winner_id(text, props) == 3
+
+    def test_extracts_with_recommend(self):
+        """'I recommend Contestant 2' — verb of recommendation, no '#'."""
+        from worker.tasks.tournament import _extract_winner_id
+
+        props = [{"id": 1, "approach_name": "A"}, {"id": 2, "approach_name": "B"}]
+        text = "Both are solid, but I recommend Contestant 2 for production."
+        assert _extract_winner_id(text, props) == 2
+
+    def test_extracts_with_best_approach(self):
+        """'The best approach is #1' — recommendation phrase."""
+        from worker.tasks.tournament import _extract_winner_id
+
+        props = [{"id": 1, "approach_name": "A"}, {"id": 2, "approach_name": "B"}]
+        text = "The best approach is #1 by a clear margin."
+        assert _extract_winner_id(text, props) == 1
+
+    def test_extracts_with_recomiendo_es(self):
+        """Spanish: 'Recomiendo la propuesta 2' (sin '#', sustantivo en español)."""
+        from worker.tasks.tournament import _extract_winner_id
+
+        props = [{"id": 1, "approach_name": "A"}, {"id": 2, "approach_name": "B"}]
+        text = "Tras analizar todo, recomiendo la propuesta 2 por su robustez."
+        assert _extract_winner_id(text, props) == 2
+
+    def test_extracts_with_mejor_opcion_es(self):
+        """Spanish: 'la mejor opción es el enfoque #3'."""
+        from worker.tasks.tournament import _extract_winner_id
+
+        props = [
+            {"id": 1, "approach_name": "A"},
+            {"id": 2, "approach_name": "B"},
+            {"id": 3, "approach_name": "C"},
+        ]
+        text = "Considerando trade-offs, la mejor opción es el enfoque #3."
+        assert _extract_winner_id(text, props) == 3
+
+    def test_extracts_with_elijo_es(self):
+        """Spanish verb: 'Elijo Contestant #1'."""
+        from worker.tasks.tournament import _extract_winner_id
+
+        props = [{"id": 1, "approach_name": "A"}, {"id": 2, "approach_name": "B"}]
+        text = "Elijo Contestant #1 como ganadora."
+        assert _extract_winner_id(text, props) == 1
+
+    def test_extracts_with_vencedor_pt(self):
+        """Portuguese: 'O vencedor é a proposta 2'."""
+        from worker.tasks.tournament import _extract_winner_id
+
+        props = [{"id": 1, "approach_name": "A"}, {"id": 2, "approach_name": "B"}]
+        text = "Após o debate, o vencedor é a proposta 2."
+        assert _extract_winner_id(text, props) == 2
+
+    def test_extracts_with_recomendo_pt(self):
+        """Portuguese: 'Recomendo a abordagem #3'."""
+        from worker.tasks.tournament import _extract_winner_id
+
+        props = [
+            {"id": 1, "approach_name": "A"},
+            {"id": 2, "approach_name": "B"},
+            {"id": 3, "approach_name": "C"},
+        ]
+        text = "Recomendo a abordagem #3 para o caso de uso atual."
+        assert _extract_winner_id(text, props) == 3
+
+    def test_extracts_with_melhor_abordagem_pt(self):
+        """Portuguese phrase: 'a melhor abordagem é a #2'."""
+        from worker.tasks.tournament import _extract_winner_id
+
+        props = [{"id": 1, "approach_name": "A"}, {"id": 2, "approach_name": "B"}]
+        text = "Concluo que a melhor abordagem é a #2 pela escalabilidade."
+        assert _extract_winner_id(text, props) == 2
+
+    def test_extracts_with_escolho_pt(self):
+        """Portuguese verb: 'Escolho Contestant #1'."""
+        from worker.tasks.tournament import _extract_winner_id
+
+        props = [{"id": 1, "approach_name": "A"}, {"id": 2, "approach_name": "B"}]
+        text = "Escolho Contestant #1 como vencedor."
+        assert _extract_winner_id(text, props) == 1
+
+    def test_extracts_with_mixed_language(self):
+        """Mixed wording (markdown + bilingual): 'Verdict: ganadora is Contestant #2'."""
+        from worker.tasks.tournament import _extract_winner_id
+
+        props = [{"id": 1, "approach_name": "A"}, {"id": 2, "approach_name": "B"}]
+        text = "**Final Verdict:** la ganadora is Contestant #2 (confidence: high)."
+        assert _extract_winner_id(text, props) == 2
+
+    def test_extracts_by_approach_name_when_no_id(self):
+        """Falls back to approach_name when no numeric id is present."""
+        from worker.tasks.tournament import _extract_winner_id
+
+        props = [
+            {"id": 1, "approach_name": "OAuth2"},
+            {"id": 2, "approach_name": "SAML"},
+        ]
+        text = "The winner is OAuth2 — better DX and ecosystem."
+        assert _extract_winner_id(text, props) == 1
+
+    # ------------------------------------------------------------------
+    # Negation / ambiguous cases — must return None, never invent.
+    # ------------------------------------------------------------------
+
+    def test_returns_none_with_negation_then_id(self):
+        """'No clear winner. Contestant #2 had merit.' → None (negation wins)."""
+        from worker.tasks.tournament import _extract_winner_id
+
+        props = [{"id": 1, "approach_name": "A"}, {"id": 2, "approach_name": "B"}]
+        text = "No clear winner emerged. Contestant #2 had merit but so did #1."
+        assert _extract_winner_id(text, props) is None
+
+    def test_returns_none_with_no_hay_ganador_es(self):
+        """Spanish negation: 'No hay ganador claro'."""
+        from worker.tasks.tournament import _extract_winner_id
+
+        props = [{"id": 1, "approach_name": "A"}, {"id": 2, "approach_name": "B"}]
+        text = "No hay ganador claro; ambas propuestas son válidas. Contestant #1 destaca."
+        assert _extract_winner_id(text, props) is None
+
+    def test_returns_none_with_nao_ha_vencedor_pt(self):
+        """Portuguese negation: 'Não há vencedor'."""
+        from worker.tasks.tournament import _extract_winner_id
+
+        props = [{"id": 1, "approach_name": "A"}, {"id": 2, "approach_name": "B"}]
+        text = "Não há vencedor definido neste round. Contestant #1 ficou bom."
+        assert _extract_winner_id(text, props) is None
+
+    def test_returns_none_with_tied_verdict(self):
+        """English: 'tied' / 'too close to call' → None."""
+        from worker.tasks.tournament import _extract_winner_id
+
+        props = [{"id": 1, "approach_name": "A"}, {"id": 2, "approach_name": "B"}]
+        text = "The two approaches are tied — too close to call. Contestant #2 has slight edge."
+        assert _extract_winner_id(text, props) is None
+
+    def test_ignores_invalid_ids(self):
+        """If only an out-of-range id appears near the keyword, return None."""
+        from worker.tasks.tournament import _extract_winner_id
+
+        props = [{"id": 1, "approach_name": "A"}, {"id": 2, "approach_name": "B"}]
+        text = "Winner: Contestant #7 (typo) — please escalate."
+        assert _extract_winner_id(text, props) is None
+
+    def test_handles_empty_text(self):
+        from worker.tasks.tournament import _extract_winner_id
+
+        props = [{"id": 1, "approach_name": "A"}]
+        assert _extract_winner_id("", props) is None
+        assert _extract_winner_id("   ", props) is None

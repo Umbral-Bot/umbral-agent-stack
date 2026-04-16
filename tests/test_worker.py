@@ -228,6 +228,34 @@ class TestRunLegacy:
         assert resp.status_code == 200
         assert len(resp.json()["result"]["echo"]["msg"]) == MAX_STRING_VALUE_LEN
 
+    def test_legacy_large_content_task_uses_task_specific_limit(self, client, monkeypatch):
+        from worker.sanitize import MAX_STRING_VALUE_LEN
+
+        captured = {}
+
+        def _fake_transcript_handler(input_data):
+            captured["transcript"] = input_data["transcript"]
+            return {"received_len": len(input_data["transcript"])}
+
+        monkeypatch.setitem(
+            worker_app.TASK_HANDLERS,
+            "granola.process_transcript",
+            _fake_transcript_handler,
+        )
+        transcript = "x" * 50_000
+        resp = client.post(
+            "/run",
+            json={
+                "task": "granola.process_transcript",
+                "input": {"transcript": transcript},
+            },
+            headers=AUTH,
+        )
+        assert resp.status_code == 200
+        assert resp.json()["result"]["received_len"] == len(transcript)
+        assert captured["transcript"] == transcript
+        assert len(captured["transcript"]) > MAX_STRING_VALUE_LEN
+
     def test_llm_generate_receives_hidden_context_without_leaking_to_simple_tasks(self, client, monkeypatch):
         captured = {}
 

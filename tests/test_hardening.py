@@ -164,6 +164,27 @@ class TestSanitize:
         result = sanitize_input({"data": "x" * 20_000})
         assert len(result["data"]) == MAX_STRING_VALUE_LEN
 
+    def test_large_content_task_uses_relaxed_string_limit(self):
+        from worker.sanitize import (
+            MAX_STRING_VALUE_LEN,
+            MAX_STRING_VALUE_LEN_LARGE,
+            sanitize_input,
+        )
+
+        result = sanitize_input(
+            {"transcript": "x" * 50_000},
+            task="granola.process_transcript",
+        )
+        assert len(result["transcript"]) == 50_000
+        assert len(result["transcript"]) > MAX_STRING_VALUE_LEN
+        assert len(result["transcript"]) <= MAX_STRING_VALUE_LEN_LARGE
+
+    def test_unknown_task_still_uses_default_limit(self):
+        from worker.sanitize import MAX_STRING_VALUE_LEN, sanitize_input
+
+        result = sanitize_input({"transcript": "x" * 50_000}, task="ping")
+        assert len(result["transcript"]) == MAX_STRING_VALUE_LEN
+
     def test_injection_detection_raises_value_error(self, caplog):
         import logging
         from worker.sanitize import sanitize_input

@@ -1,26 +1,46 @@
-"""Branch-based tournament orchestration — Phase 1.
+"""Branch-based tournament orchestration — Phase 1 + Phase 2 slice 1.
 
-Composes existing primitives (github.create_branch, tournament.run)
-into a multi-branch comparison workflow.  Each approach from the
-tournament gets its own ``rick/t/{id}/{label}`` branch; the winning
-approach gets a ``rick/t/{id}/final`` branch.
+Composes existing primitives (github.create_branch, tournament.run,
+github.commit_and_push) into a multi-branch comparison workflow. Each
+approach from the tournament gets its own ``rick/t/{id}/{label}`` branch;
+the winning approach gets a ``rick/t/{id}/final`` branch.
 
-Phase 1 creates branches as named containers and runs the LLM
-tournament for comparison.  Actual code generation on branches is
-planned for Phase 2+.
+Phase 1 created the branches as named containers and ran the LLM
+tournament for textual comparison.
+
+Phase 2 slice 1 adds a structured proposal artifact per contestant:
+after the branch is created, a markdown file at
+``.rick/tournaments/{tid}/{label}.md`` is written and committed to the
+contestant branch. This gives reviewers a persistent, diffable record
+per branch. Real code generation + validation (pytest/lint) per
+contestant remains a future slice.
 """
 
+import datetime
+import logging
 import subprocess
 import time
 import uuid
-from typing import Any, Dict
+from pathlib import Path
+from typing import Any, Dict, Optional
 
 from .. import config
-from .github import handle_github_create_branch, handle_github_preflight
+from .github import (
+    handle_github_commit_and_push,
+    handle_github_create_branch,
+    handle_github_preflight,
+)
 from .tournament import handle_tournament_run
+
+logger = logging.getLogger("worker.tasks.github_tournament")
 
 # Letters used for contestant branch labels (supports up to 5).
 _LABEL_LETTERS = "abcde"
+
+# Subdirectory where contestant proposal artifacts are written inside the
+# repo working tree. Intentionally scoped to `.rick/tournaments/` so the
+# paths never collide with project source code.
+_ARTIFACT_SUBDIR = ".rick/tournaments"
 
 
 def _generate_tournament_id() -> str:
@@ -49,6 +69,137 @@ def _checkout_base(branch: str) -> None:
         )
     except Exception:
         pass
+
+
+# ---------------------------------------------------------------------------
+# Phase 2 slice 1 — contestant artifact helpers
+# ---------------------------------------------------------------------------
+
+
+def _artifact_rel_path(tournament_id: str, label: str) -> str:
+    """Relative path of the proposal artifact inside the repo working tree."""
+    return f"{_ARTIFACT_SUBDIR}/{tournament_id}/{label}.md"
+
+
+def _yaml_quote(value: Any) -> str:
+    """Quote a value for safe inclusion in YAML frontmatter.
+
+    Only used for short header fields (names, ids). Not a general-purpose
+    YAML serializer — we control the call sites.
+    """
+    s = str(value if value is not None else "")
+    escaped = s.replace("\\", "\\\\").replace('"', '\\"').replace("\n", " ")
+    return f'"{escaped}"'
+
+
+def _build_artifact_body(
+    *,
+    tournament_id: str,
+    label: str,
+    challenge: str,
+    approach: Dict[str, Any],
+    created_at: Optional[str] = None,
+) -> str:
+    """Build the markdown body for a contestant's proposal artifact.
+
+    Includes a YAML frontmatter block with traceability metadata plus a
+    human-readable body (challenge + full proposal text, no truncation).
+    """
+    now = created_at or (
+        datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
+    )
+    approach_id = approach.get("id", 0)
+    approach_name = approach.get("approach_name", f"Approach {label.upper()}")
+    model_used = approach.get("model_used", "")
+    proposal = approach.get("proposal", "") or ""
+
+    frontmatter = (
+        "---\n"
+        f"tournament_id: {_yaml_quote(tournament_id)}\n"
+        f"contestant_label: {_yaml_quote(label)}\n"
+        f"approach_id: {int(approach_id) if str(approach_id).isdigit() else 0}\n"
+        f"approach_name: {_yaml_quote(approach_name)}\n"
+        f"model_used: {_yaml_quote(model_used)}\n"
+        f"created_at: {_yaml_quote(now)}\n"
+        "---\n\n"
+    )
+    body = (
+        f"# Contestant {label.upper()} — {approach_name}\n\n"
+        f"## Challenge\n\n{challenge}\n\n"
+        f"## Proposal\n\n{proposal}\n"
+    )
+    return frontmatter + body
+
+
+def _write_artifact_file(repo_path: str, rel_path: str, body: str) -> None:
+    """Write the artifact file in the working tree, creating parent dirs."""
+    full = Path(repo_path) / rel_path
+    full.parent.mkdir(parents=True, exist_ok=True)
+    full.write_text(body, encoding="utf-8")
+
+
+def _write_artifact_and_commit(
+    *,
+    tournament_id: str,
+    label: str,
+    challenge: str,
+    approach: Dict[str, Any],
+    branch: str,
+) -> Dict[str, Any]:
+    """Write the contestant's proposal artifact and commit it on the branch.
+
+    Never raises: any write/commit failure is captured in the returned
+    dict so the tournament flow can continue with other contestants.
+
+    Returns:
+        {
+          "path": "rel/path.md",
+          "written": bool,
+          "commit": {...}  # result of handle_github_commit_and_push, or
+                           # {"ok": False, "error": "..."} on local failure
+        }
+    """
+    rel_path = _artifact_rel_path(tournament_id, label)
+    result: Dict[str, Any] = {
+        "path": rel_path,
+        "written": False,
+        "commit": None,
+    }
+
+    try:
+        body = _build_artifact_body(
+            tournament_id=tournament_id,
+            label=label,
+            challenge=challenge,
+            approach=approach,
+        )
+        _write_artifact_file(config.GITHUB_REPO_PATH, rel_path, body)
+        result["written"] = True
+    except Exception as exc:
+        logger.warning(
+            "Artifact write failed for tournament=%s label=%s: %s",
+            tournament_id, label, exc,
+        )
+        result["commit"] = {"ok": False, "error": f"write failed: {str(exc)[:200]}"}
+        return result
+
+    try:
+        commit_result = handle_github_commit_and_push({
+            "message": (
+                f"tournament({tournament_id}): contestant {label.upper()} proposal"
+            ),
+            "files": [rel_path],
+            "branch_name": branch,
+        })
+        result["commit"] = commit_result
+    except Exception as exc:
+        logger.warning(
+            "Artifact commit failed for tournament=%s label=%s: %s",
+            tournament_id, label, exc,
+        )
+        result["commit"] = {"ok": False, "error": f"commit failed: {str(exc)[:200]}"}
+
+    return result
 
 
 def handle_github_orchestrate_tournament(
@@ -146,11 +297,25 @@ def handle_github_orchestrate_tournament(
                 }
 
             branches_created.append(branch)
+
+            # Phase 2 slice 1: persist a structured proposal artifact per
+            # contestant on its branch. Failures here do NOT abort the
+            # tournament — the contestant is reported with artifact.commit.ok
+            # = False so downstream consumers can see what happened.
+            artifact = _write_artifact_and_commit(
+                tournament_id=tournament_id,
+                label=label,
+                challenge=challenge,
+                approach=approach,
+                branch=branch,
+            )
+
             contestants.append({
                 "id": approach.get("id", i + 1),
                 "approach": approach.get("approach_name", f"Approach {label.upper()}"),
                 "branch": branch,
                 "proposal_excerpt": (approach.get("proposal") or "")[:500],
+                "artifact": artifact,
             })
 
         # ---- 4. Create final branch if winner ----

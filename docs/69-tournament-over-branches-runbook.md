@@ -95,15 +95,25 @@ Estructura del return cuando `ok: true`:
       branch: "rick/t/a03ed652/a",
       proposal_excerpt: "...",         # primeros 500 chars
       artifact: {                      # propuesta escrita en .rick/tournaments/
-        file: "...",
-        commit: { ok, commit_sha }
+        path: ".rick/tournaments/...",
+        written: true,
+        commit: { ok, commit_sha, ... }
       },
       code_change: {                   # null si generate_code=false
-        file_path, content_length,
-        commit: { ok, commit_sha }
+        attempted: true,
+        mode: "target_file"|"sandbox",
+        target_file: "worker/tasks/auth.py",
+        path: "worker/tasks/auth.py",  # ruta final escrita
+        written: true,
+        parse_error: null,             # error de parsing del FILE block LLM
+        commit: { ok, commit_sha, ... }
       },
       validation: {                    # resultado de validación
-        mode, ran, passed, rc, log_tail, duration_ms, error
+        ran: true, mode: "python_ast_lint",
+        passed: true,                  # bool, no rc numérico
+        duration_ms: 150,
+        log_tail: "...",               # últimas 20 líneas / 2000 chars
+        error: null
       }
     }
   ],

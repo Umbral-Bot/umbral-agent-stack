@@ -1972,6 +1972,183 @@ def _run_rejudge(
     return result
 
 
+# Phase 2 slice 7c: eligibility policy — promote validation from
+# purely observational (slices 5-7b) to an explicit post-verdict
+# filter that refuses to cherry-pick a winner we already know to be
+# broken. The filter runs AFTER the optional rejudge pass, so both
+# the slice 3 judge contract and the slice 6 rejudge evidence are
+# respected; the filter's only powers are "keep the winner" or
+# "force ESCALATE". It never picks a new winner, never mutates its
+# inputs, and never raises.
+#
+# Policy (simplest, safest form):
+#   - ``validation_mode == "none"`` → no-op (observational). The
+#     helper returns the caller verdict untouched with
+#     ``enforced=False`` for traceability.
+#   - Otherwise:
+#       - An initial ESCALATE is preserved unchanged (the filter
+#         never "rescues" an ESCALATE into a winner).
+#       - If at least one contestant has ``validation.passed == True``
+#         (eligible pool exists) and the winner is not in that pool
+#         → force ESCALATE. Covers: winner with ``passed=False`` and
+#         winner with ``ran=False``.
+#       - Else if every contestant with ``validation.ran == True``
+#         failed → force ESCALATE (no trustworthy candidate exists).
+#       - Else (no validation actually ran for anyone, e.g. missing
+#         targets for every contestant under ``pytest_target``) →
+#         no-op. We have zero signal, so we cannot discriminate; the
+#         caller verdict stands. This is the explicit rule for the
+#         ``ran=False`` ambiguity.
+def _apply_eligibility_policy(
+    *,
+    validation_mode: str,
+    contestants: List[Dict[str, Any]],
+    verdict: Dict[str, Any],
+) -> Dict[str, Any]:
+    """Post-verdict eligibility filter. Never raises, never mutates.
+
+    Returns:
+        {
+            "enforced": bool,
+            "mode": str,
+            "passed_ids": List[int],
+            "failed_ids": List[int],
+            "not_ran_ids": List[int],
+            "winner_id_before": Optional[int],
+            "winner_id_after": Optional[int],
+            "forced_escalate": bool,
+            "reason": str,
+            "verdict": Dict[str, Any],  # the verdict the caller should use
+        }
+    """
+    result_verdict = {
+        "text": verdict.get("text", "") if isinstance(verdict, dict) else "",
+        "winner_id": (
+            verdict.get("winner_id") if isinstance(verdict, dict) else None
+        ),
+        "escalate": bool(verdict.get("escalate", False))
+        if isinstance(verdict, dict) else False,
+    }
+
+    if validation_mode == "none":
+        return {
+            "enforced": False,
+            "mode": "none",
+            "passed_ids": [],
+            "failed_ids": [],
+            "not_ran_ids": [],
+            "winner_id_before": result_verdict["winner_id"],
+            "winner_id_after": result_verdict["winner_id"],
+            "forced_escalate": False,
+            "reason": "validation_mode is 'none' — eligibility policy inactive",
+            "verdict": result_verdict,
+        }
+
+    passed_ids: List[int] = []
+    failed_ids: List[int] = []
+    not_ran_ids: List[int] = []
+    for c in contestants or []:
+        raw_cid = c.get("id") if isinstance(c, dict) else None
+        try:
+            cid = int(raw_cid) if raw_cid is not None else None
+        except (TypeError, ValueError):
+            cid = None
+        if cid is None:
+            continue
+        v = c.get("validation") if isinstance(c, dict) else None
+        v = v if isinstance(v, dict) else {}
+        ran = bool(v.get("ran"))
+        passed = bool(v.get("passed"))
+        if not ran:
+            not_ran_ids.append(cid)
+        elif passed:
+            passed_ids.append(cid)
+        else:
+            failed_ids.append(cid)
+
+    winner_raw = result_verdict["winner_id"]
+    try:
+        winner_id_int = int(winner_raw) if winner_raw is not None else None
+    except (TypeError, ValueError):
+        winner_id_int = None
+
+    base: Dict[str, Any] = {
+        "enforced": True,
+        "mode": validation_mode,
+        "passed_ids": passed_ids,
+        "failed_ids": failed_ids,
+        "not_ran_ids": not_ran_ids,
+        "winner_id_before": winner_id_int,
+    }
+
+    if result_verdict["escalate"]:
+        return {
+            **base,
+            "winner_id_after": winner_id_int,
+            "forced_escalate": False,
+            "reason": "caller verdict already ESCALATE — policy noop",
+            "verdict": result_verdict,
+        }
+
+    if passed_ids:
+        if winner_id_int is not None and winner_id_int in passed_ids:
+            return {
+                **base,
+                "winner_id_after": winner_id_int,
+                "forced_escalate": False,
+                "reason": f"winner #{winner_id_int} in eligible pool",
+                "verdict": result_verdict,
+            }
+        reason = (
+            f"winner #{winner_id_int} not in eligible pool "
+            f"(passed_ids={passed_ids}) — forcing ESCALATE"
+        )
+        forced_text = (
+            f"{result_verdict['text'].rstrip()}\n\n[eligibility] {reason}\nESCALATE"
+        ).lstrip()
+        return {
+            **base,
+            "winner_id_after": None,
+            "forced_escalate": True,
+            "reason": reason,
+            "verdict": {
+                "text": forced_text,
+                "winner_id": None,
+                "escalate": True,
+            },
+        }
+
+    if failed_ids:
+        reason = (
+            f"all validated contestants failed "
+            f"(failed_ids={failed_ids}) — forcing ESCALATE"
+        )
+        forced_text = (
+            f"{result_verdict['text'].rstrip()}\n\n[eligibility] {reason}\nESCALATE"
+        ).lstrip()
+        return {
+            **base,
+            "winner_id_after": None,
+            "forced_escalate": True,
+            "reason": reason,
+            "verdict": {
+                "text": forced_text,
+                "winner_id": None,
+                "escalate": True,
+            },
+        }
+
+    return {
+        **base,
+        "winner_id_after": winner_id_int,
+        "forced_escalate": False,
+        "reason": (
+            "no validation signal (nothing ran) — eligibility policy noop"
+        ),
+        "verdict": result_verdict,
+    }
+
+
 def handle_github_orchestrate_tournament(
     input_data: Dict[str, Any],
 ) -> Dict[str, Any]:
@@ -2025,9 +2202,23 @@ def handle_github_orchestrate_tournament(
             traceability. Re-judge never raises: on any failure the
             flow falls back to the initial verdict.
 
+    Eligibility policy (Phase 2 slice 7c):
+        When ``validation_mode != "none"`` an eligibility filter runs
+        AFTER the optional rejudge and BEFORE the cherry-pick:
+          * if at least one contestant has ``validation.passed == True``
+            and the effective winner is not in that pool, the verdict
+            is forced to ``ESCALATE`` (no cherry-pick);
+          * if every validated contestant failed, the verdict is also
+            forced to ``ESCALATE``;
+          * if no validation actually ran (no signal), the policy is a
+            no-op.
+        The filter never picks a new winner and never "rescues" an
+        ESCALATE. Full trace is exposed in ``output["eligibility"]``.
+
     Returns:
         ok, tournament_id, challenge, base, contestants,
-        verdict, final_branch, final_result, branches_created, meta.
+        verdict, verdict_initial, rejudge, eligibility,
+        final_branch, final_result, branches_created, meta.
     """
     t0 = time.time()
 
@@ -2260,6 +2451,23 @@ def handle_github_orchestrate_tournament(
                     "escalate": rejudge_result["escalate"],
                 }
 
+        # ---- 4b. Apply eligibility policy (Phase 2 slice 7c) ----
+        #
+        # Promote validation from observational to enforcement with the
+        # simplest safe rule: when ``validation_mode != "none"`` and a
+        # pool of passing contestants exists, the winner must be in
+        # that pool, else ESCALATE. When all validated contestants
+        # failed, also ESCALATE. When nothing ran (no validation
+        # signal at all), keep the caller verdict. Runs AFTER the
+        # optional rejudge so slices 3 + 6 stay authoritative up to
+        # the moment we have concrete evidence.
+        eligibility = _apply_eligibility_policy(
+            validation_mode=validation_mode,
+            contestants=contestants,
+            verdict=effective_verdict,
+        )
+        effective_verdict = eligibility["verdict"]
+
         # ---- 5. Create final branch + cherry-pick the winner ----
         # (Phase 2 slice 2)
         #
@@ -2344,6 +2552,18 @@ def handle_github_orchestrate_tournament(
     # re-judge call so meta.total_llm_calls stays honest.
     rejudge_llm_calls = 1 if rejudge_result.get("ran") else 0
 
+    eligibility_out = {
+        "enforced": eligibility.get("enforced", False),
+        "mode": eligibility.get("mode", validation_mode),
+        "passed_ids": eligibility.get("passed_ids", []),
+        "failed_ids": eligibility.get("failed_ids", []),
+        "not_ran_ids": eligibility.get("not_ran_ids", []),
+        "winner_id_before": eligibility.get("winner_id_before"),
+        "winner_id_after": eligibility.get("winner_id_after"),
+        "forced_escalate": eligibility.get("forced_escalate", False),
+        "reason": eligibility.get("reason", ""),
+    }
+
     return {
         "ok": True,
         "tournament_id": tournament_id,
@@ -2353,6 +2573,7 @@ def handle_github_orchestrate_tournament(
         "verdict": verdict_out,
         "verdict_initial": verdict_initial_out,
         "rejudge": rejudge_result,
+        "eligibility": eligibility_out,
         "final_branch": final_branch,
         "final_result": final_result,
         "branches_created": branches_created,

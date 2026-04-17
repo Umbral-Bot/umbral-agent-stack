@@ -12,6 +12,8 @@ Covers:
   ``validation_mode="python_compile"`` (observational).
 - Phase 2 slice 6: opt-in re-judge pass with enriched
   per-contestant evidence (``rejudge=True``).
+- Phase 2 slice 7c: post-verdict eligibility policy that promotes
+  validation from observational to enforced (``_apply_eligibility_policy``).
 """
 
 import re
@@ -22,6 +24,7 @@ import pytest
 
 from worker.tasks.github_tournament import (
     REJUDGE_SYSTEM,
+    _apply_eligibility_policy,
     _artifact_rel_path,
     _branch_name,
     _build_artifact_body,
@@ -2505,9 +2508,13 @@ class TestOrchestrateValidationIntegration:
     @patch(f"{MOD}.handle_tournament_run")
     @patch(f"{MOD}.handle_github_create_branch", side_effect=_create_branch_ok)
     @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
-    def test_ast_lint_failing_contestant_is_marked_not_disqualified(
-        self, _pre, _br, mock_tourn, _chk, _art, _cp, _code, mock_pyc, mock_lint,
+    def test_ast_lint_failing_winner_is_filtered_by_eligibility(
+        self, _pre, _br, mock_tourn, _chk, _art, mock_cp, _code, mock_pyc, mock_lint,
     ):
+        # Slice 7c: if the judge picked a contestant that failed
+        # validation and there exists a passing alternative, the
+        # eligibility filter forces ESCALATE and the cherry-pick is
+        # skipped. Per-contestant validation payload is preserved.
         mock_tourn.return_value = _tournament_result(num=2, winner_id=1)
         mock_lint.side_effect = [
             {"ran": True, "mode": "python_ast_lint", "passed": False,
@@ -2533,8 +2540,20 @@ class TestOrchestrateValidationIntegration:
             in result["contestants"][0]["validation"]["log_tail"]
         )
         assert result["contestants"][1]["validation"]["passed"] is True
-        assert result["verdict"]["winner_id"] == 1
-        assert result["final_result"] is not None
+        # Judge picked #1 but #1 failed validation and #2 passed →
+        # eligibility filter forces ESCALATE.
+        assert result["verdict"]["escalate"] is True
+        assert result["verdict"]["winner_id"] is None
+        assert result["eligibility"]["enforced"] is True
+        assert result["eligibility"]["passed_ids"] == [2]
+        assert result["eligibility"]["failed_ids"] == [1]
+        assert result["eligibility"]["forced_escalate"] is True
+        assert result["eligibility"]["winner_id_before"] == 1
+        assert result["eligibility"]["winner_id_after"] is None
+        # Cherry-pick must NOT run when the verdict is ESCALATE.
+        mock_cp.assert_not_called()
+        assert result["final_branch"] is None
+        assert result["final_result"] is None
 
     @patch(f"{MOD}._run_python_compile_validation")
     @patch(f"{MOD}._generate_and_commit_code_change",
@@ -2600,9 +2619,14 @@ class TestOrchestrateValidationIntegration:
     @patch(f"{MOD}.handle_tournament_run")
     @patch(f"{MOD}.handle_github_create_branch", side_effect=_create_branch_ok)
     @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
-    def test_failing_contestant_is_marked_not_disqualified(
-        self, _pre, _br, mock_tourn, _chk, _art, _cp, _code, mock_pyc,
+    def test_failing_winner_is_filtered_by_eligibility(
+        self, _pre, _br, mock_tourn, _chk, _art, mock_cp, _code, mock_pyc,
     ):
+        # Slice 7c: validation is no longer purely observational. If
+        # the judge's winner failed validation and another contestant
+        # passed, the eligibility filter forces ESCALATE and the
+        # cherry-pick is skipped. Per-contestant validation payload
+        # remains visible for traceability.
         mock_tourn.return_value = _tournament_result(num=2, winner_id=1)
         mock_pyc.side_effect = [
             {"ran": True, "mode": "python_compile", "passed": False,
@@ -2622,10 +2646,15 @@ class TestOrchestrateValidationIntegration:
         assert result["contestants"][0]["validation"]["passed"] is False
         assert "SyntaxError" in result["contestants"][0]["validation"]["log_tail"]
         assert result["contestants"][1]["validation"]["passed"] is True
-        # Winner selection is untouched — the judge already ran before
-        # validation. The failing contestant is NOT disqualified.
-        assert result["verdict"]["winner_id"] == 1
-        assert result["final_result"] is not None
+        assert result["verdict"]["escalate"] is True
+        assert result["verdict"]["winner_id"] is None
+        assert result["eligibility"]["enforced"] is True
+        assert result["eligibility"]["forced_escalate"] is True
+        assert result["eligibility"]["winner_id_before"] == 1
+        assert result["eligibility"]["winner_id_after"] is None
+        mock_cp.assert_not_called()
+        assert result["final_branch"] is None
+        assert result["final_result"] is None
 
     @patch(f"{MOD}._generate_and_commit_code_change")
     @patch(f"{MOD}.handle_github_create_branch")
@@ -3329,7 +3358,7 @@ class TestOrchestrateRejudgeIntegration:
     @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
     @patch(f"{MOD}.handle_llm_generate")
     def test_override_attempt_is_surfaced(
-        self, mock_llm, _pre, _br, mock_tourn, _chk, _art, _cp, _mcp, mock_pyc,
+        self, mock_llm, _pre, _br, mock_tourn, _chk, _art, mock_cp, _mcp, mock_pyc,
     ):
         mock_tourn.return_value = _tournament_result(num=2, winner_id=1)
         # Contestant 1 FAILS validation, contestant 2 PASSES.
@@ -3352,10 +3381,19 @@ class TestOrchestrateRejudgeIntegration:
             "rejudge": True,
         })
 
-        # The judge's decision is honoured, but the override_attempt
-        # flag surfaces the suspicious pick.
-        assert result["verdict"]["winner_id"] == 1
+        # Slice 6: rejudge still reports the override_attempt so the
+        # suspicious pick is visible for human review.
+        assert result["rejudge"]["winner_id"] == 1
         assert result["rejudge"]["override_attempt"] is True
+        # Slice 7c: but the eligibility filter refuses to let a
+        # winner that failed validation reach the cherry-pick — the
+        # final verdict is ESCALATE and cherry-pick is blocked.
+        assert result["verdict"]["escalate"] is True
+        assert result["verdict"]["winner_id"] is None
+        assert result["eligibility"]["forced_escalate"] is True
+        assert result["eligibility"]["winner_id_before"] == 1
+        assert result["eligibility"]["winner_id_after"] is None
+        mock_cp.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
@@ -4190,13 +4228,14 @@ class TestOrchestratePytestTargetIntegration:
            return_value={"ok": True, "content": "X=1\n", "error": None})
     @patch(f"{MOD}.overwrite_file_in_workspace",
            return_value={"ok": True, "error": None, "path": "/tmp/x"})
-    def test_failing_pytest_does_not_disqualify(
+    def test_all_failing_pytest_forces_escalate(
         self, mock_ow, mock_read, mock_run, mock_cleanup, mock_prep,
-        _pre, mock_tourn, _br, _art, mock_code, _cp, _co, tmp_path,
+        _pre, mock_tourn, _br, _art, mock_code, mock_cp, _co, tmp_path,
     ):
-        # Observational policy: even if every contestant's pytest
-        # fails, the tournament continues and the judge's winner is
-        # respected.
+        # Slice 7c: if every validated contestant fails pytest_target,
+        # the eligibility policy forces ESCALATE even if the judge
+        # picked a winner. Cherry-pick must NOT run. Per-contestant
+        # validation state and cleanup still happen.
         ws = tmp_path / "umbral-sbx-y-bbbbbbbb"
         ws.mkdir()
         mock_prep.return_value = {
@@ -4226,8 +4265,469 @@ class TestOrchestratePytestTargetIntegration:
             "validation_mode": "pytest_target",
         })
         assert result["ok"] is True
-        assert result["verdict"]["winner_id"] == 2
         for c in result["contestants"]:
             assert c["validation"]["ran"] is True
             assert c["validation"]["passed"] is False
+        assert result["verdict"]["escalate"] is True
+        assert result["verdict"]["winner_id"] is None
+        assert result["eligibility"]["enforced"] is True
+        assert result["eligibility"]["passed_ids"] == []
+        assert sorted(result["eligibility"]["failed_ids"]) == [1, 2]
+        assert result["eligibility"]["forced_escalate"] is True
+        assert "all validated" in result["eligibility"]["reason"]
+        mock_cp.assert_not_called()
         assert mock_cleanup.call_count == 1
+
+
+# ---------------------------------------------------------------------------
+# Phase 2 slice 7c — eligibility policy (post-verdict filter)
+# ---------------------------------------------------------------------------
+
+
+def _c_with_val(cid, *, ran, passed):
+    """Minimal contestant stub for eligibility unit tests."""
+    return {
+        "id": cid,
+        "validation": {
+            "ran": ran,
+            "passed": passed,
+        },
+    }
+
+
+class TestApplyEligibilityPolicy:
+    """Unit tests for _apply_eligibility_policy (pure, never-raises)."""
+
+    def test_noop_when_mode_none(self):
+        verdict = {"text": "Winner: Contestant #1",
+                   "winner_id": 1, "escalate": False}
+        contestants = [
+            _c_with_val(1, ran=False, passed=False),
+            _c_with_val(2, ran=False, passed=False),
+        ]
+        r = _apply_eligibility_policy(
+            validation_mode="none",
+            contestants=contestants,
+            verdict=verdict,
+        )
+        assert r["enforced"] is False
+        assert r["mode"] == "none"
+        assert r["forced_escalate"] is False
+        assert r["verdict"]["winner_id"] == 1
+        assert r["verdict"]["escalate"] is False
+        assert r["passed_ids"] == []
+        assert r["failed_ids"] == []
+        assert r["not_ran_ids"] == []
+        assert r["winner_id_after"] == 1
+
+    def test_keeps_winner_when_winner_in_eligible_pool(self):
+        verdict = {"text": "Winner: Contestant #2",
+                   "winner_id": 2, "escalate": False}
+        contestants = [
+            _c_with_val(1, ran=True, passed=False),
+            _c_with_val(2, ran=True, passed=True),
+        ]
+        r = _apply_eligibility_policy(
+            validation_mode="python_compile",
+            contestants=contestants, verdict=verdict,
+        )
+        assert r["enforced"] is True
+        assert r["mode"] == "python_compile"
+        assert r["passed_ids"] == [2]
+        assert r["failed_ids"] == [1]
+        assert r["forced_escalate"] is False
+        assert r["winner_id_before"] == 2
+        assert r["winner_id_after"] == 2
+        assert r["verdict"]["winner_id"] == 2
+        assert r["verdict"]["escalate"] is False
+
+    def test_forces_escalate_when_winner_failed_and_pool_exists(self):
+        verdict = {"text": "Winner: Contestant #1",
+                   "winner_id": 1, "escalate": False}
+        contestants = [
+            _c_with_val(1, ran=True, passed=False),
+            _c_with_val(2, ran=True, passed=True),
+        ]
+        r = _apply_eligibility_policy(
+            validation_mode="python_ast_lint",
+            contestants=contestants, verdict=verdict,
+        )
+        assert r["forced_escalate"] is True
+        assert r["winner_id_before"] == 1
+        assert r["winner_id_after"] is None
+        assert r["verdict"]["winner_id"] is None
+        assert r["verdict"]["escalate"] is True
+        assert r["verdict"]["text"].rstrip().endswith("ESCALATE")
+        assert "not in eligible pool" in r["reason"]
+        assert "[eligibility]" in r["verdict"]["text"]
+
+    def test_forces_escalate_when_winner_has_ran_false_and_pool_exists(self):
+        # Winner contestant wasn't actually validated (e.g. no
+        # candidate test for its target_file) while another
+        # contestant passed. Eligibility filter refuses to let the
+        # unvalidated one win over a validated one.
+        verdict = {"text": "Winner: Contestant #3",
+                   "winner_id": 3, "escalate": False}
+        contestants = [
+            _c_with_val(1, ran=True, passed=True),
+            _c_with_val(2, ran=True, passed=False),
+            _c_with_val(3, ran=False, passed=False),
+        ]
+        r = _apply_eligibility_policy(
+            validation_mode="pytest_target",
+            contestants=contestants, verdict=verdict,
+        )
+        assert r["forced_escalate"] is True
+        assert r["passed_ids"] == [1]
+        assert r["failed_ids"] == [2]
+        assert r["not_ran_ids"] == [3]
+        assert r["winner_id_after"] is None
+        assert r["verdict"]["escalate"] is True
+
+    def test_forces_escalate_when_all_validated_failed(self):
+        verdict = {"text": "Winner: Contestant #1",
+                   "winner_id": 1, "escalate": False}
+        contestants = [
+            _c_with_val(1, ran=True, passed=False),
+            _c_with_val(2, ran=True, passed=False),
+        ]
+        r = _apply_eligibility_policy(
+            validation_mode="python_compile",
+            contestants=contestants, verdict=verdict,
+        )
+        assert r["forced_escalate"] is True
+        assert r["passed_ids"] == []
+        assert sorted(r["failed_ids"]) == [1, 2]
+        assert r["winner_id_before"] == 1
+        assert r["winner_id_after"] is None
+        assert r["verdict"]["escalate"] is True
+        assert "all validated contestants failed" in r["reason"]
+
+    def test_noop_when_nothing_ran_at_all(self):
+        # validation_mode was set, but not a single contestant ran
+        # validation (e.g. no target_file resolved for any of them
+        # under pytest_target). We have zero signal, so the filter
+        # cannot discriminate — keep the caller verdict.
+        verdict = {"text": "Winner: Contestant #2",
+                   "winner_id": 2, "escalate": False}
+        contestants = [
+            _c_with_val(1, ran=False, passed=False),
+            _c_with_val(2, ran=False, passed=False),
+        ]
+        r = _apply_eligibility_policy(
+            validation_mode="pytest_target",
+            contestants=contestants, verdict=verdict,
+        )
+        assert r["enforced"] is True
+        assert r["forced_escalate"] is False
+        assert r["passed_ids"] == []
+        assert r["failed_ids"] == []
+        assert sorted(r["not_ran_ids"]) == [1, 2]
+        assert r["winner_id_after"] == 2
+        assert r["verdict"]["winner_id"] == 2
+        assert r["verdict"]["escalate"] is False
+        assert "no validation signal" in r["reason"]
+
+    def test_preserves_initial_escalate(self):
+        verdict = {"text": "ESCALATE", "winner_id": None, "escalate": True}
+        contestants = [
+            _c_with_val(1, ran=True, passed=True),
+            _c_with_val(2, ran=True, passed=False),
+        ]
+        r = _apply_eligibility_policy(
+            validation_mode="python_compile",
+            contestants=contestants, verdict=verdict,
+        )
+        # Even though a passed pool exists, the filter never rescues
+        # an already-escalated verdict into a winner.
+        assert r["enforced"] is True
+        assert r["forced_escalate"] is False
+        assert r["winner_id_after"] is None
+        assert r["verdict"]["winner_id"] is None
+        assert r["verdict"]["escalate"] is True
+        assert r["verdict"]["text"] == "ESCALATE"
+
+    def test_never_mutates_inputs(self):
+        verdict = {"text": "Winner: Contestant #1",
+                   "winner_id": 1, "escalate": False}
+        contestants = [
+            _c_with_val(1, ran=True, passed=False),
+            _c_with_val(2, ran=True, passed=True),
+        ]
+        orig_verdict = dict(verdict)
+        orig_contestant_ids = [c["id"] for c in contestants]
+        orig_contestant_vals = [dict(c["validation"]) for c in contestants]
+
+        _apply_eligibility_policy(
+            validation_mode="python_compile",
+            contestants=contestants, verdict=verdict,
+        )
+
+        assert verdict == orig_verdict
+        assert [c["id"] for c in contestants] == orig_contestant_ids
+        for c, orig in zip(contestants, orig_contestant_vals):
+            assert c["validation"] == orig
+
+    def test_tolerates_malformed_verdict_and_contestants(self):
+        # Defensive: missing/odd shapes must not raise and must
+        # produce a sane noop-ish verdict with enforced=True.
+        r = _apply_eligibility_policy(
+            validation_mode="python_compile",
+            contestants=[
+                {"id": "not-a-number"},           # cid not int-coercible
+                {"id": 1, "validation": None},    # validation not a dict
+                _c_with_val(2, ran=True, passed=True),
+                {"id": 3},                        # no validation key
+            ],
+            verdict={"winner_id": "2"},           # winner id as string
+        )
+        assert r["enforced"] is True
+        assert r["passed_ids"] == [2]
+        assert r["winner_id_before"] == 2
+        assert r["winner_id_after"] == 2
+        assert r["forced_escalate"] is False
+
+    def test_noop_when_all_passed(self):
+        verdict = {"text": "Winner: Contestant #1",
+                   "winner_id": 1, "escalate": False}
+        contestants = [
+            _c_with_val(1, ran=True, passed=True),
+            _c_with_val(2, ran=True, passed=True),
+        ]
+        r = _apply_eligibility_policy(
+            validation_mode="python_compile",
+            contestants=contestants, verdict=verdict,
+        )
+        assert r["forced_escalate"] is False
+        assert sorted(r["passed_ids"]) == [1, 2]
+        assert r["failed_ids"] == []
+        assert r["winner_id_after"] == 1
+
+
+class TestOrchestrateEligibilityIntegration:
+    """End-to-end wiring: eligibility filter runs AFTER rejudge and
+    BEFORE cherry-pick, always surfaces an ``eligibility`` block in
+    the output, and never mutates the observational parts of the
+    flow (contestants, validation, rejudge reporting)."""
+
+    @patch(f"{MOD}._run_python_compile_validation")
+    @patch(f"{MOD}._generate_and_commit_code_change",
+           side_effect=_code_change_noop)
+    @patch(f"{MOD}._cherry_pick_and_push", side_effect=_cherry_pick_noop)
+    @patch(f"{MOD}._write_artifact_and_commit", side_effect=_artifact_noop)
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_create_branch", side_effect=_create_branch_ok)
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    def test_validation_mode_none_leaves_eligibility_inactive(
+        self, _pre, _br, mock_tourn, _chk, _art, mock_cp, _code, _pyc,
+    ):
+        mock_tourn.return_value = _tournament_result(num=2, winner_id=1)
+
+        result = handle_github_orchestrate_tournament({
+            "challenge": "c",
+        })
+
+        assert result["ok"] is True
+        assert result["eligibility"]["enforced"] is False
+        assert result["eligibility"]["mode"] == "none"
+        assert result["eligibility"]["forced_escalate"] is False
+        assert result["verdict"]["winner_id"] == 1
+        # Cherry-pick still runs normally.
+        assert mock_cp.call_count == 1
+
+    @patch(f"{MOD}._run_python_compile_validation")
+    @patch(f"{MOD}._generate_and_commit_code_change",
+           side_effect=_code_change_noop)
+    @patch(f"{MOD}._cherry_pick_and_push", side_effect=_cherry_pick_noop)
+    @patch(f"{MOD}._write_artifact_and_commit", side_effect=_artifact_noop)
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_create_branch", side_effect=_create_branch_ok)
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    def test_winner_in_pool_lets_cherry_pick_proceed(
+        self, _pre, _br, mock_tourn, _chk, _art, mock_cp, _code, mock_pyc,
+    ):
+        mock_tourn.return_value = _tournament_result(num=2, winner_id=2)
+        mock_pyc.side_effect = [
+            {"ran": True, "mode": "python_compile", "passed": False,
+             "duration_ms": 10, "log_tail": "SyntaxError", "error": None},
+            {"ran": True, "mode": "python_compile", "passed": True,
+             "duration_ms": 12, "log_tail": "", "error": None},
+        ]
+
+        result = handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "generate_code": True,
+            "target_file": "worker/tasks/example.py",
+            "validation_mode": "python_compile",
+        })
+
+        assert result["ok"] is True
+        assert result["eligibility"]["enforced"] is True
+        assert result["eligibility"]["forced_escalate"] is False
+        assert result["eligibility"]["passed_ids"] == [2]
+        assert result["eligibility"]["failed_ids"] == [1]
+        assert result["eligibility"]["winner_id_after"] == 2
+        assert result["verdict"]["winner_id"] == 2
+        # Cherry-pick runs because the winner is in the pool.
+        assert mock_cp.call_count == 1
+
+    @patch(f"{MOD}._run_python_compile_validation")
+    @patch(f"{MOD}._generate_and_commit_code_change",
+           side_effect=_code_change_noop)
+    @patch(f"{MOD}._cherry_pick_and_push", side_effect=_cherry_pick_noop)
+    @patch(f"{MOD}._write_artifact_and_commit", side_effect=_artifact_noop)
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_create_branch", side_effect=_create_branch_ok)
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    @patch(f"{MOD}.handle_llm_generate")
+    def test_eligibility_runs_after_rejudge_and_overrides_it(
+        self, mock_llm, _pre, _br, mock_tourn, _chk, _art, mock_cp, _cc, mock_pyc,
+    ):
+        # Initial judge picks #2 (the passing one); rejudge overrides
+        # to #1 (which FAILED validation). Without slice 7c, that
+        # would drive a cherry-pick of a broken contestant. With
+        # slice 7c, the eligibility filter refuses and forces
+        # ESCALATE — AFTER the rejudge pass has been observed.
+        mock_tourn.return_value = _tournament_result(num=2, winner_id=2)
+        mock_pyc.side_effect = [
+            {"ran": True, "mode": "python_compile", "passed": False,
+             "duration_ms": 10, "log_tail": "SyntaxError", "error": None},
+            {"ran": True, "mode": "python_compile", "passed": True,
+             "duration_ms": 12, "log_tail": "", "error": None},
+        ]
+        mock_llm.return_value = {
+            "text": "Winner: Contestant #1", "model": "azure_foundry",
+        }
+
+        result = handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "generate_code": True,
+            "target_file": "worker/tasks/example.py",
+            "validation_mode": "python_compile",
+            "rejudge": True,
+        })
+
+        # Rejudge ran and chose #1, override_attempt recorded.
+        assert result["rejudge"]["ran"] is True
+        assert result["rejudge"]["winner_id"] == 1
+        assert result["rejudge"]["override_attempt"] is True
+        # Eligibility forced ESCALATE on top of rejudge's pick.
+        assert result["verdict"]["escalate"] is True
+        assert result["verdict"]["winner_id"] is None
+        assert result["eligibility"]["enforced"] is True
+        assert result["eligibility"]["forced_escalate"] is True
+        assert result["eligibility"]["winner_id_before"] == 1
+        assert result["eligibility"]["winner_id_after"] is None
+        mock_cp.assert_not_called()
+
+    @patch(f"{MOD}._run_python_compile_validation")
+    @patch(f"{MOD}._generate_and_commit_code_change",
+           side_effect=_code_change_noop)
+    @patch(f"{MOD}._cherry_pick_and_push", side_effect=_cherry_pick_noop)
+    @patch(f"{MOD}._write_artifact_and_commit", side_effect=_artifact_noop)
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_create_branch", side_effect=_create_branch_ok)
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    def test_all_failed_forces_escalate(
+        self, _pre, _br, mock_tourn, _chk, _art, mock_cp, _code, mock_pyc,
+    ):
+        mock_tourn.return_value = _tournament_result(num=2, winner_id=1)
+        mock_pyc.side_effect = [
+            {"ran": True, "mode": "python_compile", "passed": False,
+             "duration_ms": 8, "log_tail": "SyntaxError", "error": None},
+            {"ran": True, "mode": "python_compile", "passed": False,
+             "duration_ms": 9, "log_tail": "IndentationError", "error": None},
+        ]
+
+        result = handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "generate_code": True,
+            "target_file": "worker/tasks/example.py",
+            "validation_mode": "python_compile",
+        })
+
+        assert result["ok"] is True
+        assert result["verdict"]["escalate"] is True
+        assert result["verdict"]["winner_id"] is None
+        assert result["eligibility"]["passed_ids"] == []
+        assert sorted(result["eligibility"]["failed_ids"]) == [1, 2]
+        assert result["eligibility"]["forced_escalate"] is True
+        mock_cp.assert_not_called()
+
+    @patch(f"{MOD}._run_python_compile_validation")
+    @patch(f"{MOD}._generate_and_commit_code_change",
+           side_effect=_code_change_noop)
+    @patch(f"{MOD}._cherry_pick_and_push", side_effect=_cherry_pick_noop)
+    @patch(f"{MOD}._write_artifact_and_commit", side_effect=_artifact_noop)
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_create_branch", side_effect=_create_branch_ok)
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    def test_nothing_ran_keeps_verdict(
+        self, _pre, _br, mock_tourn, _chk, _art, mock_cp, _code, mock_pyc,
+    ):
+        # validation_mode is set but validation.ran=False for every
+        # contestant (e.g. missing target_file under python_compile).
+        # Eligibility is a noop — we have zero signal.
+        mock_tourn.return_value = _tournament_result(num=2, winner_id=1)
+
+        result = handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "generate_code": True,
+            # no target_file
+            "validation_mode": "python_compile",
+        })
+
+        assert result["ok"] is True
+        for c in result["contestants"]:
+            assert c["validation"]["ran"] is False
+        assert result["eligibility"]["enforced"] is True
+        assert result["eligibility"]["forced_escalate"] is False
+        assert result["eligibility"]["passed_ids"] == []
+        assert result["eligibility"]["failed_ids"] == []
+        assert sorted(result["eligibility"]["not_ran_ids"]) == [1, 2]
+        assert result["verdict"]["winner_id"] == 1
+        assert mock_cp.call_count == 1
+
+    @patch(f"{MOD}._run_python_compile_validation")
+    @patch(f"{MOD}._generate_and_commit_code_change",
+           side_effect=_code_change_noop)
+    @patch(f"{MOD}._cherry_pick_and_push", side_effect=_cherry_pick_noop)
+    @patch(f"{MOD}._write_artifact_and_commit", side_effect=_artifact_noop)
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_create_branch", side_effect=_create_branch_ok)
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    def test_initial_escalate_preserved(
+        self, _pre, _br, mock_tourn, _chk, _art, mock_cp, _code, mock_pyc,
+    ):
+        # Tournament itself escalated. Even with a passing contestant
+        # and validation enabled, the filter must not promote anyone.
+        mock_tourn.return_value = _tournament_result(
+            num=2, winner_id=None, escalate=True,
+        )
+        mock_pyc.side_effect = [
+            {"ran": True, "mode": "python_compile", "passed": True,
+             "duration_ms": 8, "log_tail": "", "error": None},
+            {"ran": True, "mode": "python_compile", "passed": False,
+             "duration_ms": 9, "log_tail": "SyntaxError", "error": None},
+        ]
+
+        result = handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "generate_code": True,
+            "target_file": "worker/tasks/example.py",
+            "validation_mode": "python_compile",
+        })
+
+        assert result["ok"] is True
+        assert result["verdict"]["escalate"] is True
+        assert result["verdict"]["winner_id"] is None
+        assert result["eligibility"]["enforced"] is True
+        assert result["eligibility"]["forced_escalate"] is False
+        assert "already ESCALATE" in result["eligibility"]["reason"]
+        mock_cp.assert_not_called()

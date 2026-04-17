@@ -18,6 +18,10 @@ from unittest.mock import patch
 
 import pytest
 
+# github-copilot-sdk is an optional dependency not installed in CI.
+# Skip this entire module when the SDK is unavailable.
+pytest.importorskip("copilot", reason="github-copilot-sdk not installed")
+
 from copilot_agent.agent import (
     UmbralCopilotAgent,
     _get_azure_provider_config,

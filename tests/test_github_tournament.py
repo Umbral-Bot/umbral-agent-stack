@@ -36,6 +36,7 @@ from worker.tasks.github_tournament import (
     _parse_file_block,
     _resolve_inside_sandbox,
     _run_contestant_validation,
+    _run_python_ast_lint_validation,
     _run_python_compile_validation,
     _run_rejudge,
     _summarize_code_change,
@@ -1879,6 +1880,18 @@ class TestValidateValidationMode:
     def test_accepts_python_compile(self):
         assert _validate_validation_mode("python_compile")["normalized"] == "python_compile"
 
+    def test_accepts_python_ast_lint(self):
+        assert (
+            _validate_validation_mode("python_ast_lint")["normalized"]
+            == "python_ast_lint"
+        )
+
+    def test_ast_lint_is_case_insensitive(self):
+        assert (
+            _validate_validation_mode("Python_AST_Lint")["normalized"]
+            == "python_ast_lint"
+        )
+
     def test_is_case_insensitive(self):
         assert _validate_validation_mode("Python_Compile")["normalized"] == "python_compile"
 
@@ -1890,6 +1903,7 @@ class TestValidateValidationMode:
         assert r["ok"] is False
         assert "invalid validation_mode" in r["error"]
         assert "python_compile" in r["error"]
+        assert "python_ast_lint" in r["error"]
 
     def test_rejects_non_string(self):
         r = _validate_validation_mode(42)
@@ -2027,6 +2041,241 @@ class TestRunPythonCompileValidation:
         assert kwargs["cwd"] == str(tmp_path)
 
 
+class TestRunPythonAstLintValidation:
+    """Real subprocess exercise — ast_lint is safe (no import, only ast.parse)."""
+
+    def test_passes_on_clean_module(self, tmp_path):
+        f = tmp_path / "good.py"
+        f.write_text(
+            "import os\n"
+            "\n"
+            "def add(a, b):\n"
+            "    return a + b\n"
+            "\n"
+            "class Foo:\n"
+            "    pass\n"
+        )
+        r = _run_python_ast_lint_validation(
+            repo_path=str(tmp_path), rel_path="good.py", timeout_s=10,
+        )
+        assert r["ran"] is True
+        assert r["mode"] == "python_ast_lint"
+        assert r["passed"] is True
+        assert r["error"] is None
+        assert isinstance(r["duration_ms"], int)
+
+    def test_fails_on_syntax_error(self, tmp_path):
+        f = tmp_path / "bad.py"
+        f.write_text("def oops(:\n")
+        r = _run_python_ast_lint_validation(
+            repo_path=str(tmp_path), rel_path="bad.py", timeout_s=10,
+        )
+        assert r["ran"] is True
+        assert r["passed"] is False
+        assert r["error"] is None
+        assert "SyntaxError" in r["log_tail"]
+
+    def test_fails_on_duplicate_top_level_functions(self, tmp_path):
+        f = tmp_path / "dup_func.py"
+        f.write_text(
+            "def foo():\n"
+            "    return 1\n"
+            "\n"
+            "def foo():\n"
+            "    return 2\n"
+        )
+        r = _run_python_ast_lint_validation(
+            repo_path=str(tmp_path), rel_path="dup_func.py", timeout_s=10,
+        )
+        assert r["passed"] is False
+        assert "duplicate top-level function 'foo'" in r["log_tail"]
+
+    def test_fails_on_duplicate_top_level_classes(self, tmp_path):
+        f = tmp_path / "dup_cls.py"
+        f.write_text(
+            "class Foo:\n"
+            "    pass\n"
+            "\n"
+            "class Foo:\n"
+            "    pass\n"
+        )
+        r = _run_python_ast_lint_validation(
+            repo_path=str(tmp_path), rel_path="dup_cls.py", timeout_s=10,
+        )
+        assert r["passed"] is False
+        assert "duplicate top-level class 'Foo'" in r["log_tail"]
+
+    def test_allows_typing_overload_duplicates(self, tmp_path):
+        f = tmp_path / "overload_ok.py"
+        f.write_text(
+            "from typing import overload\n"
+            "\n"
+            "@overload\n"
+            "def foo(x: int) -> int: ...\n"
+            "@overload\n"
+            "def foo(x: str) -> str: ...\n"
+            "def foo(x):\n"
+            "    return x\n"
+        )
+        r = _run_python_ast_lint_validation(
+            repo_path=str(tmp_path), rel_path="overload_ok.py", timeout_s=10,
+        )
+        # The concrete impl still shadows the two overloads — one real
+        # def remains after overload filtering, so no duplicate flag.
+        assert r["passed"] is True, r["log_tail"]
+
+    def test_duplicate_functions_outside_overload_still_flagged(self, tmp_path):
+        f = tmp_path / "mixed.py"
+        f.write_text(
+            "from typing import overload\n"
+            "\n"
+            "@overload\n"
+            "def foo(x: int) -> int: ...\n"
+            "def foo(x):\n"
+            "    return x\n"
+            "def foo(x):\n"
+            "    return x + 1\n"
+        )
+        r = _run_python_ast_lint_validation(
+            repo_path=str(tmp_path), rel_path="mixed.py", timeout_s=10,
+        )
+        assert r["passed"] is False
+        assert "duplicate top-level function 'foo'" in r["log_tail"]
+
+    def test_nested_same_name_functions_are_not_flagged(self, tmp_path):
+        # Same name inside different function scopes — not a top-level dup.
+        f = tmp_path / "nested.py"
+        f.write_text(
+            "def outer_a():\n"
+            "    def inner():\n"
+            "        return 1\n"
+            "    return inner\n"
+            "\n"
+            "def outer_b():\n"
+            "    def inner():\n"
+            "        return 2\n"
+            "    return inner\n"
+        )
+        r = _run_python_ast_lint_validation(
+            repo_path=str(tmp_path), rel_path="nested.py", timeout_s=10,
+        )
+        assert r["passed"] is True, r["log_tail"]
+
+    def test_methods_with_same_name_are_not_flagged(self, tmp_path):
+        # Methods named `foo` in different classes are fine.
+        f = tmp_path / "methods.py"
+        f.write_text(
+            "class A:\n"
+            "    def foo(self):\n"
+            "        return 1\n"
+            "\n"
+            "class B:\n"
+            "    def foo(self):\n"
+            "        return 2\n"
+        )
+        r = _run_python_ast_lint_validation(
+            repo_path=str(tmp_path), rel_path="methods.py", timeout_s=10,
+        )
+        assert r["passed"] is True, r["log_tail"]
+
+    def test_empty_file_is_clean(self, tmp_path):
+        f = tmp_path / "empty.py"
+        f.write_text("")
+        r = _run_python_ast_lint_validation(
+            repo_path=str(tmp_path), rel_path="empty.py", timeout_s=10,
+        )
+        assert r["passed"] is True
+
+    def test_missing_file_is_internal_error(self, tmp_path):
+        r = _run_python_ast_lint_validation(
+            repo_path=str(tmp_path), rel_path="ghost.py", timeout_s=10,
+        )
+        assert r["ran"] is True
+        assert r["passed"] is False
+        assert r["error"] == "ast_lint internal error"
+
+    def test_non_utf8_file_fails(self, tmp_path):
+        f = tmp_path / "latin.py"
+        f.write_bytes(b"x = '\xff\xfe'\n")
+        r = _run_python_ast_lint_validation(
+            repo_path=str(tmp_path), rel_path="latin.py", timeout_s=10,
+        )
+        assert r["ran"] is True
+        assert r["passed"] is False
+
+    def test_does_not_execute_target_top_level(self, tmp_path):
+        # Side-effect sentinel. If the analyzer imported/executed the
+        # file this marker would be written; ast_lint must only read
+        # the source.
+        sentinel = tmp_path / "SIDE_EFFECT"
+        assert not sentinel.exists()
+        f = tmp_path / "evil.py"
+        f.write_text(
+            "import pathlib\n"
+            f"pathlib.Path(r'{sentinel}').write_text('pwned')\n"
+            "def foo():\n"
+            "    return 1\n"
+        )
+        r = _run_python_ast_lint_validation(
+            repo_path=str(tmp_path), rel_path="evil.py", timeout_s=10,
+        )
+        assert r["ran"] is True
+        # Static analyzer accepts this as syntactically clean.
+        assert r["passed"] is True, r["log_tail"]
+        # The critical assertion: no side effect executed.
+        assert not sentinel.exists(), (
+            "ast_lint must never execute the target file's top-level code"
+        )
+
+    @patch(f"{MOD}.subprocess.run",
+           side_effect=subprocess.TimeoutExpired(cmd="x", timeout=1))
+    def test_handles_timeout(self, _mock_run, tmp_path):
+        r = _run_python_ast_lint_validation(
+            repo_path=str(tmp_path), rel_path="x.py", timeout_s=1,
+        )
+        assert r["ran"] is True
+        assert r["passed"] is False
+        assert "timeout" in r["error"]
+
+    @patch(f"{MOD}.subprocess.run", side_effect=OSError("boom"))
+    def test_handles_process_error(self, _mock_run, tmp_path):
+        r = _run_python_ast_lint_validation(
+            repo_path=str(tmp_path), rel_path="x.py", timeout_s=1,
+        )
+        assert r["ran"] is True
+        assert r["passed"] is False
+        assert "process error" in r["error"]
+
+    @patch(f"{MOD}.subprocess.run")
+    def test_uses_fixed_argv_no_shell_isolated(self, mock_run, tmp_path):
+        mock_run.return_value = type(
+            "P", (), {"returncode": 0, "stderr": "", "stdout": "clean"},
+        )()
+        _run_python_ast_lint_validation(
+            repo_path=str(tmp_path),
+            rel_path="worker/tasks/foo.py",
+            timeout_s=5,
+        )
+        assert mock_run.called
+        args, kwargs = mock_run.call_args
+        argv = args[0]
+        assert isinstance(argv, list)
+        # -I activates Python isolated mode; last token is the target path.
+        assert "-I" in argv
+        assert "-c" in argv
+        assert argv[-1] == "worker/tasks/foo.py"
+        assert kwargs.get("shell") in (None, False)
+        assert kwargs["capture_output"] is True
+        assert kwargs["cwd"] == str(tmp_path)
+        # Minimal env — must NOT propagate the full process environment.
+        env = kwargs.get("env")
+        assert isinstance(env, dict)
+        assert env.get("PYTHONDONTWRITEBYTECODE") == "1"
+        assert "WORKER_TOKEN" not in env
+        assert "HOME" in env
+        assert "PATH" in env
+
+
 class TestRunContestantValidationDispatcher:
     """_run_contestant_validation should enforce applicability rules."""
 
@@ -2088,6 +2337,73 @@ class TestRunContestantValidationDispatcher:
         assert mock_runner.call_args.kwargs["rel_path"] == "worker/tasks/x.py"
         assert mock_runner.call_args.kwargs["timeout_s"] == 10
 
+    def test_python_ast_lint_without_target_file(self):
+        r = _run_contestant_validation(
+            mode="python_ast_lint",
+            code_change={"written": True, "path": ".rick/contestants/t/a/x.py"},
+            target_file=None, timeout_s=10,
+        )
+        assert r["ran"] is False
+        assert "target_file" in r["error"]
+
+    def test_python_ast_lint_wrong_extension(self):
+        r = _run_contestant_validation(
+            mode="python_ast_lint",
+            code_change={"written": True, "path": "docs/notes.md"},
+            target_file="docs/notes.md", timeout_s=10,
+        )
+        assert r["ran"] is False
+        assert ".py" in r["error"]
+
+    def test_python_ast_lint_no_code_change(self):
+        r = _run_contestant_validation(
+            mode="python_ast_lint",
+            code_change=None,
+            target_file="worker/tasks/x.py", timeout_s=10,
+        )
+        assert r["ran"] is False
+        assert "no code change" in r["error"]
+
+    def test_python_ast_lint_code_change_not_written(self):
+        r = _run_contestant_validation(
+            mode="python_ast_lint",
+            code_change={"written": False, "parse_error": "bad"},
+            target_file="worker/tasks/x.py", timeout_s=10,
+        )
+        assert r["ran"] is False
+
+    @patch(f"{MOD}._run_python_ast_lint_validation")
+    def test_python_ast_lint_invokes_runner(self, mock_runner):
+        mock_runner.return_value = {
+            "ran": True, "mode": "python_ast_lint", "passed": True,
+            "duration_ms": 33, "log_tail": "", "error": None,
+        }
+        r = _run_contestant_validation(
+            mode="python_ast_lint",
+            code_change={"written": True},
+            target_file="worker/tasks/x.py", timeout_s=10,
+        )
+        assert r["passed"] is True
+        assert mock_runner.call_args.kwargs["rel_path"] == "worker/tasks/x.py"
+        assert mock_runner.call_args.kwargs["timeout_s"] == 10
+
+    @patch(f"{MOD}._run_python_ast_lint_validation")
+    @patch(f"{MOD}._run_python_compile_validation")
+    def test_ast_lint_does_not_call_compile_runner(
+        self, mock_compile, mock_lint,
+    ):
+        mock_lint.return_value = {
+            "ran": True, "mode": "python_ast_lint", "passed": True,
+            "duration_ms": 1, "log_tail": "", "error": None,
+        }
+        _run_contestant_validation(
+            mode="python_ast_lint",
+            code_change={"written": True},
+            target_file="worker/tasks/x.py", timeout_s=10,
+        )
+        assert mock_lint.called
+        assert not mock_compile.called
+
     def test_unknown_mode_returns_error_stub(self):
         r = _run_contestant_validation(
             mode="pytest_target", code_change=None,
@@ -2133,6 +2449,83 @@ class TestOrchestrateValidationIntegration:
             assert c["validation"]["mode"] == "python_compile"
         assert result["meta"]["validation_mode"] == "python_compile"
         assert result["meta"]["validation_timeout_s"] == 20
+
+    @patch(f"{MOD}._run_python_ast_lint_validation")
+    @patch(f"{MOD}._run_python_compile_validation")
+    @patch(f"{MOD}._generate_and_commit_code_change",
+           side_effect=_code_change_noop)
+    @patch(f"{MOD}._cherry_pick_and_push", side_effect=_cherry_pick_noop)
+    @patch(f"{MOD}._write_artifact_and_commit", side_effect=_artifact_noop)
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_create_branch", side_effect=_create_branch_ok)
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    def test_python_ast_lint_runs_per_contestant(
+        self, _pre, _br, mock_tourn, _chk, _art, _cp, _code, mock_pyc, mock_lint,
+    ):
+        mock_tourn.return_value = _tournament_result(num=3, winner_id=1)
+        mock_lint.return_value = {
+            "ran": True, "mode": "python_ast_lint", "passed": True,
+            "duration_ms": 18, "log_tail": "ast_lint: clean", "error": None,
+        }
+
+        result = handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "generate_code": True,
+            "target_file": "worker/tasks/example.py",
+            "validation_mode": "python_ast_lint",
+        })
+
+        assert result["ok"] is True
+        assert mock_lint.call_count == 3
+        assert mock_pyc.call_count == 0
+        for c in result["contestants"]:
+            assert c["validation"]["ran"] is True
+            assert c["validation"]["passed"] is True
+            assert c["validation"]["mode"] == "python_ast_lint"
+        assert result["meta"]["validation_mode"] == "python_ast_lint"
+        assert result["meta"]["validation_timeout_s"] == 20
+
+    @patch(f"{MOD}._run_python_ast_lint_validation")
+    @patch(f"{MOD}._run_python_compile_validation")
+    @patch(f"{MOD}._generate_and_commit_code_change",
+           side_effect=_code_change_noop)
+    @patch(f"{MOD}._cherry_pick_and_push", side_effect=_cherry_pick_noop)
+    @patch(f"{MOD}._write_artifact_and_commit", side_effect=_artifact_noop)
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_create_branch", side_effect=_create_branch_ok)
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    def test_ast_lint_failing_contestant_is_marked_not_disqualified(
+        self, _pre, _br, mock_tourn, _chk, _art, _cp, _code, mock_pyc, mock_lint,
+    ):
+        mock_tourn.return_value = _tournament_result(num=2, winner_id=1)
+        mock_lint.side_effect = [
+            {"ran": True, "mode": "python_ast_lint", "passed": False,
+             "duration_ms": 14, "log_tail":
+             "ast_lint: duplicate top-level function 'foo' at line 8",
+             "error": None},
+            {"ran": True, "mode": "python_ast_lint", "passed": True,
+             "duration_ms": 9, "log_tail": "", "error": None},
+        ]
+
+        result = handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "generate_code": True,
+            "target_file": "worker/tasks/example.py",
+            "validation_mode": "python_ast_lint",
+        })
+
+        assert result["ok"] is True
+        assert mock_pyc.call_count == 0
+        assert result["contestants"][0]["validation"]["passed"] is False
+        assert (
+            "duplicate top-level function"
+            in result["contestants"][0]["validation"]["log_tail"]
+        )
+        assert result["contestants"][1]["validation"]["passed"] is True
+        assert result["verdict"]["winner_id"] == 1
+        assert result["final_result"] is not None
 
     @patch(f"{MOD}._run_python_compile_validation")
     @patch(f"{MOD}._generate_and_commit_code_change",

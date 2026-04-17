@@ -90,22 +90,63 @@ outside function scope. It keeps the same input contract
 (``validation_mode`` + ``validation_timeout_s``), the same
 ``validation`` output shape, the same never-raises discipline and the
 same observational policy (failing contestants are reported but not
-disqualified). Real ``pytest_target`` and execution sandboxing remain
-out of scope.
+disqualified).
+
+Phase 2 slice 7b adds the fourth OPT-IN validation mode,
+``pytest_target``, which actually runs pytest against a conventional
+test file for the contestant's target_file. It reuses the sandbox
+infrastructure landed in slice 7b-infra (``worker/sandbox/``):
+
+  * a deterministic Docker image tag derived from
+    ``sha256(pyproject.toml)[:12]``,
+  * a versioned allowlist of tests that may be used as a
+    ``validation_target``,
+  * an ephemeral per-tournament workspace under ``tempfile.gettempdir()``
+    built via selective copy (no ``.git``, no ``.rick``, no
+    ``.venv``, no ``.env*``, no ``__pycache__``, no symlinks),
+  * a single fixed ``docker run`` argv (``--network=none``,
+    ``--read-only``, ``--cap-drop=ALL``,
+    ``--security-opt=no-new-privileges``, ``--user 10001:10001``,
+    ``--memory=512m``, ``--cpus=1.0``, ``--pids-limit=256``,
+    ``--ipc=none``, three tmpfs mounts, stripped env).
+
+Per contestant the handler derives ``tests/test_<stem>.py`` (or its
+``_handler`` variant) from ``target_file``, looks it up in the
+allowlist, reads the contestant's modified file via
+``git show <contestant_sha>:<target_file>``, overwrites it in the
+workspace, and invokes pytest inside the container. Everything
+stays observational for this slice: failing contestants are marked
+in ``validation.passed`` but NOT disqualified; the rejudge pass
+from slice 6 consumes the same ``validation.*`` schema, so it
+automatically picks up pytest evidence without any prompt changes.
+Prerequisite failures (docker missing, image missing, allowlist
+empty, no resolvable target, workspace build failure) degrade
+gracefully to ``validation.ran=False`` with a descriptive error
+per contestant — the tournament itself never aborts. Automatic
+disqualification is deliberately deferred to a later slice.
 """
 
 import datetime
+import hashlib
 import logging
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
 import uuid
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from .. import config
+from ..sandbox import (
+    build_workspace,
+    cleanup_workspace,
+    load_test_allowlist,
+    overwrite_file_in_workspace,
+    resolve_validation_target,
+)
 from .github import (
     handle_github_commit_and_push,
     handle_github_create_branch,
@@ -888,7 +929,24 @@ def _cherry_pick_and_push(
 # runs a fixed `python3 -m py_compile <target_file>` per contestant;
 # `python_ast_lint` runs a fixed static analyzer (no imports, no
 # execution of contestant code) on top of `ast.parse`.
-_VALIDATION_MODES = ("none", "python_compile", "python_ast_lint")
+_VALIDATION_MODES = (
+    "none", "python_compile", "python_ast_lint", "pytest_target",
+)
+
+# Phase 2 slice 7b — pytest_target specifics.
+# The image ref is computed on the fly from sha256(pyproject.toml),
+# matching ``worker/sandbox/refresh.sh``.
+_SANDBOX_IMAGE_NAME = "umbral-sandbox-pytest"
+# Per-contestant budget specifically for pytest_target. Applied only
+# when the caller did NOT pass ``validation_timeout_s`` explicitly.
+# Capped by the global ``_VALIDATION_MAX_TIMEOUT_S`` just like every
+# other mode.
+_PYTEST_TARGET_DEFAULT_TIMEOUT_S = 45
+# Timeout for the one-shot ``git show <ref>:<path>`` step used to
+# read the contestant's version of ``target_file``. Always small.
+_GIT_SHOW_TIMEOUT_S = 15
+# Timeout for ``docker image inspect`` called during preparation.
+_DOCKER_INSPECT_TIMEOUT_S = 10
 
 # Default timeout for a single contestant's validation run.
 _VALIDATION_DEFAULT_TIMEOUT_S = 20
@@ -1241,16 +1299,350 @@ def _run_python_ast_lint_validation(
     }
 
 
+# ---------------------------------------------------------------------------
+# Phase 2 slice 7b — pytest_target (Docker-isolated) helpers
+# ---------------------------------------------------------------------------
+
+def _compute_sandbox_image_ref(repo_path: str) -> Dict[str, Any]:
+    """Compute the expected sandbox image ref for ``repo_path``.
+
+    The tag is ``sha256(pyproject.toml)[:12]``, matching the algorithm
+    in ``worker/sandbox/refresh.sh``. Never raises.
+    """
+    try:
+        pyproject = Path(repo_path) / "pyproject.toml"
+        raw = pyproject.read_bytes()
+    except OSError as exc:
+        return {"ok": False, "ref": None, "tag": None,
+                "error": f"cannot read pyproject.toml: {exc}"}
+    tag = hashlib.sha256(raw).hexdigest()[:12]
+    return {"ok": True, "ref": f"{_SANDBOX_IMAGE_NAME}:{tag}",
+            "tag": tag, "error": None}
+
+
+def _read_file_at_ref(
+    *,
+    repo_path: str,
+    ref: str,
+    rel_path: str,
+    timeout_s: float = _GIT_SHOW_TIMEOUT_S,
+) -> Dict[str, Any]:
+    """Read ``rel_path`` at ``ref`` via ``git show <ref>:<path>``.
+
+    Pure argv (no shell, no string interpolation into the command).
+    ``ref`` and ``rel_path`` are passed as ONE argument joined with
+    ``:`` — any colon already inside them is fine because git handles
+    that shape. Never raises.
+    """
+    if not ref or not isinstance(ref, str):
+        return {"ok": False, "content": None, "error": "ref must be a non-empty string"}
+    if not rel_path or not isinstance(rel_path, str):
+        return {"ok": False, "content": None, "error": "rel_path must be a non-empty string"}
+    argv = ["git", "show", f"{ref}:{rel_path}"]
+    try:
+        proc = subprocess.run(
+            argv,
+            cwd=repo_path,
+            capture_output=True,
+            text=True,
+            timeout=timeout_s,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        return {"ok": False, "content": None,
+                "error": f"git show timeout after {timeout_s}s"}
+    except Exception as exc:
+        return {"ok": False, "content": None,
+                "error": f"git show error: {str(exc)[:200]}"}
+    if proc.returncode != 0:
+        err = (proc.stderr or "").strip().splitlines()[-1:] or [""]
+        return {"ok": False, "content": None,
+                "error": f"git show rc={proc.returncode}: {err[0][:200]}"}
+    return {"ok": True, "content": proc.stdout, "error": None}
+
+
+def _docker_available() -> Dict[str, Any]:
+    """Return ``{"ok": True}`` if ``docker`` is on PATH.
+
+    Never raises. Distinguishes "docker not installed" from "docker
+    present" without actually executing it.
+    """
+    path = shutil.which("docker")
+    if not path:
+        return {"ok": False, "error": "docker is not installed or not in PATH"}
+    return {"ok": True, "path": path, "error": None}
+
+
+def _docker_image_available(
+    *, image_ref: str, timeout_s: float = _DOCKER_INSPECT_TIMEOUT_S,
+) -> Dict[str, Any]:
+    """Return ``{"ok": True}`` if the local daemon has ``image_ref``.
+
+    Uses ``docker image inspect`` (exit 0 iff present). Never raises.
+    """
+    if not image_ref or not isinstance(image_ref, str):
+        return {"ok": False, "error": "image_ref must be a non-empty string"}
+    argv = ["docker", "image", "inspect", image_ref]
+    try:
+        proc = subprocess.run(
+            argv,
+            capture_output=True,
+            text=True,
+            timeout=timeout_s,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        return {"ok": False,
+                "error": f"docker image inspect timeout after {timeout_s}s"}
+    except Exception as exc:
+        return {"ok": False,
+                "error": f"docker image inspect error: {str(exc)[:200]}"}
+    if proc.returncode != 0:
+        err = (proc.stderr or "").strip().splitlines()[-1:] or [""]
+        return {"ok": False,
+                "error": (f"sandbox image {image_ref} is not available "
+                          f"locally (rc={proc.returncode}: {err[0][:200]}). "
+                          "Run worker/sandbox/refresh.sh to build it.")}
+    return {"ok": True, "error": None}
+
+
+def _prepare_pytest_target_context(
+    *,
+    repo_path: str,
+    target_file: Optional[str],
+    tournament_id: str,
+) -> Dict[str, Any]:
+    """Prepare everything the per-contestant runner will need.
+
+    Called once per tournament when ``validation_mode=="pytest_target"``.
+    Returns a dict with ``ok``, ``ws_path``, ``resolved_target``,
+    ``image_ref``, ``error``. Never raises.
+
+    On failure, ``ok`` is ``False``, ``ws_path`` is ``None`` and
+    ``error`` is set; the caller MUST still invoke ``cleanup_workspace``
+    on ``ws_path`` if it is not ``None`` (defensive).
+    """
+    ctx: Dict[str, Any] = {
+        "ok": False, "ws_path": None, "resolved_target": None,
+        "image_ref": None, "allowlist_size": 0, "error": None,
+    }
+    if not target_file:
+        ctx["error"] = "pytest_target requires target_file"
+        return ctx
+    if not target_file.lower().endswith(".py"):
+        ctx["error"] = "pytest_target only supports .py target files"
+        return ctx
+
+    img = _compute_sandbox_image_ref(repo_path)
+    if not img["ok"]:
+        ctx["error"] = img["error"]
+        return ctx
+    ctx["image_ref"] = img["ref"]
+
+    dk = _docker_available()
+    if not dk["ok"]:
+        ctx["error"] = dk["error"]
+        return ctx
+
+    dim = _docker_image_available(image_ref=img["ref"])
+    if not dim["ok"]:
+        ctx["error"] = dim["error"]
+        return ctx
+
+    al = load_test_allowlist()
+    if not al["ok"]:
+        ctx["error"] = f"test allowlist load failed: {al['error']}"
+        return ctx
+    ctx["allowlist_size"] = len(al["tests"])
+
+    rv = resolve_validation_target(
+        target_file=target_file,
+        repo_root=Path(repo_path),
+        allowlist=al["tests"],
+    )
+    if not rv["ok"]:
+        ctx["error"] = (
+            f"no allowlisted pytest target for {target_file!r}: "
+            f"{rv['error']} (tried: {', '.join(rv.get('candidates_tried') or []) or '-'})"
+        )
+        return ctx
+    ctx["resolved_target"] = rv["resolved"]
+
+    bw = build_workspace(Path(repo_path), tournament_id)
+    if not bw["ok"]:
+        ctx["error"] = f"workspace build failed: {bw['error']}"
+        return ctx
+    ctx["ws_path"] = bw["path"]
+
+    ctx["ok"] = True
+    return ctx
+
+
+def _pytest_target_docker_argv(
+    *,
+    ws_path: Path,
+    validation_target: str,
+    image_ref: str,
+) -> List[str]:
+    """Build the fixed ``docker run`` argv for a pytest_target run.
+
+    Pure helper for testing. All flags are literals; only ``ws_path``,
+    ``image_ref`` and ``validation_target`` come from the runtime and
+    they are each passed as their own argv item (no shell, no string
+    interpolation into a command line).
+    """
+    return [
+        "docker", "run", "--rm",
+        "--network=none",
+        "--read-only",
+        "--tmpfs", "/tmp:size=64m,mode=1777,exec,nosuid,nodev",
+        "--tmpfs", "/work/.pytest_cache:size=16m,exec,nosuid,nodev",
+        "--tmpfs", "/work/__pycache__:size=16m,exec,nosuid,nodev",
+        "--memory=512m", "--memory-swap=512m",
+        "--cpus=1.0",
+        "--pids-limit=256",
+        "--cap-drop=ALL",
+        "--security-opt=no-new-privileges",
+        "--user", "10001:10001",
+        "--ipc=none",
+        "--mount", f"type=bind,source={ws_path},target=/work,readonly",
+        "--workdir", "/work",
+        "--env", "PYTHONDONTWRITEBYTECODE=1",
+        "--env", "PYTHONUNBUFFERED=1",
+        "--env", "WORKER_TOKEN=sandbox-stub",
+        "--env", "UMBRAL_DISABLE_CLAUDE=1",
+        image_ref,
+        "python", "-m", "pytest",
+        validation_target,
+        "-x", "-q", "--no-header",
+        "--disable-warnings",
+        "-p", "no:cacheprovider",
+        "--rootdir=/work",
+    ]
+
+
+def _run_pytest_target_validation(
+    *,
+    ws_path: Path,
+    validation_target: str,
+    image_ref: str,
+    timeout_s: float,
+) -> Dict[str, Any]:
+    """Execute pytest inside the sandbox container for a single target.
+
+    Returns the canonical ``validation`` dict shape:
+
+        {
+          "ran": True,
+          "mode": "pytest_target",
+          "passed": bool,
+          "duration_ms": int,
+          "log_tail": str,
+          "error": str | None,
+        }
+
+    Never raises. Timeout, ``OSError`` and non-zero exit codes are all
+    captured in the returned dict.
+    """
+    argv = _pytest_target_docker_argv(
+        ws_path=ws_path,
+        validation_target=validation_target,
+        image_ref=image_ref,
+    )
+    t0 = time.time()
+    try:
+        proc = subprocess.run(
+            argv,
+            capture_output=True,
+            text=True,
+            timeout=timeout_s,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        dur = int((time.time() - t0) * 1000)
+        partial = ""
+        if exc.stderr:
+            partial = exc.stderr.decode("utf-8", "replace") if isinstance(
+                exc.stderr, bytes) else exc.stderr
+        if exc.stdout and not partial:
+            partial = exc.stdout.decode("utf-8", "replace") if isinstance(
+                exc.stdout, bytes) else exc.stdout
+        return {
+            "ran": True,
+            "mode": "pytest_target",
+            "passed": False,
+            "duration_ms": dur,
+            "log_tail": _tail_log(partial or ""),
+            "error": f"timeout after {timeout_s}s",
+        }
+    except Exception as exc:
+        dur = int((time.time() - t0) * 1000)
+        return {
+            "ran": True,
+            "mode": "pytest_target",
+            "passed": False,
+            "duration_ms": dur,
+            "log_tail": "",
+            "error": f"docker run error: {str(exc)[:200]}",
+        }
+
+    dur = int((time.time() - t0) * 1000)
+    combined = (proc.stdout or "") + (
+        ("\n" + proc.stderr) if proc.stderr else ""
+    )
+    # Exit codes: 0 = pytest success, 1-4 = pytest failures / internal,
+    # 125-127 = docker problems (daemon, image, exec). Keep "passed"
+    # strictly rc==0 but surface docker-level errors separately so the
+    # re-judge can tell "tests actually failed" from "container refused
+    # to start".
+    docker_err: Optional[str] = None
+    if proc.returncode in (125, 126, 127):
+        docker_err = (
+            f"docker/container launch failure (rc={proc.returncode}); "
+            "image/deps may be stale or docker daemon unreachable"
+        )
+    return {
+        "ran": True,
+        "mode": "pytest_target",
+        "passed": proc.returncode == 0,
+        "duration_ms": dur,
+        "log_tail": _tail_log(combined),
+        "error": docker_err,
+    }
+
+
+def _contestant_ref_for_validation(
+    code_change: Optional[Dict[str, Any]],
+) -> Optional[str]:
+    """Best-effort commit ref for reading the contestant's target_file.
+
+    Prefers the code_change commit SHA (slice 4b) when present and
+    successful. Falls back to ``None`` (caller will mark
+    ``validation.ran=False`` with a clear error).
+    """
+    if not code_change:
+        return None
+    commit = code_change.get("commit") or {}
+    sha = commit.get("commit_sha")
+    if commit.get("ok") and isinstance(sha, str) and sha:
+        return sha
+    return None
+
+
 def _run_contestant_validation(
     *,
     mode: str,
     code_change: Optional[Dict[str, Any]],
     target_file: Optional[str],
     timeout_s: float,
+    pytest_ctx: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Decide whether to run validation for one contestant and run it.
 
     Returns the canonical ``validation`` dict shape. Does NOT raise.
+
+    The ``pytest_ctx`` kwarg is only consulted when ``mode`` is
+    ``"pytest_target"``; other modes ignore it entirely.
     """
     empty_stub = lambda err=None, ran=False: {  # noqa: E731
         "ran": ran,
@@ -1287,6 +1679,47 @@ def _run_contestant_validation(
         return _run_python_ast_lint_validation(
             repo_path=config.GITHUB_REPO_PATH,
             rel_path=target_file,
+            timeout_s=timeout_s,
+        )
+
+    if mode == "pytest_target":
+        if not target_file:
+            return empty_stub("pytest_target requires target_file")
+        if not target_file.lower().endswith(".py"):
+            return empty_stub("pytest_target only supports .py target files")
+        if not code_change or not code_change.get("written"):
+            return empty_stub("no code change to validate")
+        if pytest_ctx is None:
+            return empty_stub("pytest_target context not initialized")
+        if not pytest_ctx.get("ok"):
+            return empty_stub(
+                pytest_ctx.get("error") or "pytest_target context unavailable",
+            )
+        ref = _contestant_ref_for_validation(code_change)
+        if not ref:
+            return empty_stub("no contestant commit to validate")
+        # Read the contestant's version of target_file from their
+        # commit and overwrite it in the shared workspace. Both steps
+        # are never-raises.
+        rf = _read_file_at_ref(
+            repo_path=config.GITHUB_REPO_PATH,
+            ref=ref, rel_path=target_file,
+        )
+        if not rf["ok"]:
+            return empty_stub(
+                f"cannot read {target_file}@{ref[:8]}: {rf['error']}",
+            )
+        ow = overwrite_file_in_workspace(
+            ws_path=pytest_ctx["ws_path"],
+            rel_path=target_file,
+            content=rf["content"],
+        )
+        if not ow["ok"]:
+            return empty_stub(f"workspace overwrite failed: {ow['error']}")
+        return _run_pytest_target_validation(
+            ws_path=pytest_ctx["ws_path"],
+            validation_target=pytest_ctx["resolved_target"],
+            image_ref=pytest_ctx["image_ref"],
             timeout_s=timeout_s,
         )
 
@@ -1629,9 +2062,15 @@ def handle_github_orchestrate_tournament(
         }
     validation_mode: str = vm_check["normalized"]
 
-    vt_check = _validate_validation_timeout(
-        input_data.get("validation_timeout_s"),
-    )
+    # For pytest_target specifically, the defaults for python_compile
+    # (20s) are too tight to even bootstrap pytest in the container.
+    # If the caller did NOT pass an explicit value, apply the mode's
+    # own default (45s); an explicit value still wins and is capped
+    # by _VALIDATION_MAX_TIMEOUT_S.
+    _timeout_input = input_data.get("validation_timeout_s")
+    if _timeout_input is None and validation_mode == "pytest_target":
+        _timeout_input = _PYTEST_TARGET_DEFAULT_TIMEOUT_S
+    vt_check = _validate_validation_timeout(_timeout_input)
     if not vt_check["ok"]:
         return {
             "ok": False,
@@ -1682,6 +2121,25 @@ def handle_github_orchestrate_tournament(
     # ---- 3. Create contestant branches ----
     contestants = []
     branches_created: list[str] = []
+
+    # Phase 2 slice 7b: prepare a single Docker sandbox context shared
+    # by all contestants. On failure, the context carries ``ok=False``
+    # with a human-readable error; each contestant's validation will
+    # then surface that error via its own ``validation.error`` field
+    # instead of aborting the tournament. Cleanup runs in the
+    # ``finally`` block regardless.
+    pytest_ctx: Optional[Dict[str, Any]] = None
+    if validation_mode == "pytest_target":
+        pytest_ctx = _prepare_pytest_target_context(
+            repo_path=config.GITHUB_REPO_PATH,
+            target_file=target_file,
+            tournament_id=tournament_id,
+        )
+        if not pytest_ctx.get("ok"):
+            logger.warning(
+                "pytest_target context preparation failed: %s",
+                pytest_ctx.get("error"),
+            )
 
     try:
         for i, approach in enumerate(approaches):
@@ -1746,6 +2204,7 @@ def handle_github_orchestrate_tournament(
                 code_change=code_change,
                 target_file=target_file,
                 timeout_s=validation_timeout_s,
+                pytest_ctx=pytest_ctx,
             )
 
             contestants.append({
@@ -1845,6 +2304,18 @@ def handle_github_orchestrate_tournament(
                     final_result["error"] = cp.get("error")
 
     finally:
+        # Phase 2 slice 7b: always tear down the per-tournament sandbox
+        # workspace, even on early exit. ``cleanup_workspace`` refuses
+        # to touch anything without the ``umbral-sbx-`` prefix or
+        # outside ``tempfile.gettempdir()``, so this is safe even if
+        # ``pytest_ctx`` carries a surprising value. Never raises.
+        if pytest_ctx and pytest_ctx.get("ws_path"):
+            cu = cleanup_workspace(pytest_ctx["ws_path"])
+            if not cu.get("ok"):
+                logger.warning(
+                    "sandbox workspace cleanup failed for %s: %s",
+                    pytest_ctx.get("ws_path"), cu.get("error"),
+                )
         _checkout_base(base)
 
     # Slice 6: if re-judge ran and produced a parseable verdict, the
@@ -1892,5 +2363,17 @@ def handle_github_orchestrate_tournament(
             "validation_mode": validation_mode,
             "validation_timeout_s": validation_timeout_s,
             "rejudge": rejudge_enabled,
+            "pytest_target": (
+                {
+                    "ok": bool(pytest_ctx.get("ok")),
+                    "image_ref": pytest_ctx.get("image_ref"),
+                    "resolved_target": pytest_ctx.get("resolved_target"),
+                    "allowlist_size": pytest_ctx.get("allowlist_size", 0),
+                    "workspace_prepared": pytest_ctx.get("ws_path") is not None,
+                    "error": pytest_ctx.get("error"),
+                }
+                if pytest_ctx is not None
+                else None
+            ),
         },
     }

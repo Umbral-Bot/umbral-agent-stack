@@ -108,7 +108,7 @@ infrastructure landed in slice 7b-infra (``worker/sandbox/``):
     ``--read-only``, ``--cap-drop=ALL``,
     ``--security-opt=no-new-privileges``, ``--user 10001:10001``,
     ``--memory=512m``, ``--cpus=1.0``, ``--pids-limit=256``,
-    ``--ipc=none``, three tmpfs mounts, stripped env).
+    ``--ipc=none``, a single writable ``/tmp`` tmpfs, stripped env).
 
 Per contestant the handler derives ``tests/test_<stem>.py`` (or its
 ``_handler`` variant) from ``target_file``, looks it up in the
@@ -1491,13 +1491,17 @@ def _pytest_target_docker_argv(
     they are each passed as their own argv item (no shell, no string
     interpolation into a command line).
     """
+    # NOTE: only ``/tmp`` is a writable tmpfs. ``/work`` is a read-only
+    # bind mount, so we cannot (and must not) layer tmpfs under it —
+    # Docker rejects that at container launch with rc=125. pytest cache
+    # is already disabled via ``-p no:cacheprovider`` and ``.pyc``
+    # writes via ``PYTHONDONTWRITEBYTECODE=1`` below, so no writable
+    # spot under ``/work`` is needed.
     return [
         "docker", "run", "--rm",
         "--network=none",
         "--read-only",
         "--tmpfs", "/tmp:size=64m,mode=1777,exec,nosuid,nodev",
-        "--tmpfs", "/work/.pytest_cache:size=16m,exec,nosuid,nodev",
-        "--tmpfs", "/work/__pycache__:size=16m,exec,nosuid,nodev",
         "--memory=512m", "--memory-swap=512m",
         "--cpus=1.0",
         "--pids-limit=256",

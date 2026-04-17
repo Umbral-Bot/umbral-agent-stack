@@ -18,6 +18,9 @@ import json
 
 import pytest
 
+# mcp is an optional dependency — skip if not installed.
+pytest.importorskip("mcp", reason="mcp SDK not installed")
+
 from mcp_server.tool_registry import (
     TOOL_DEFINITIONS,
     TOOL_NAME_TO_TASK,

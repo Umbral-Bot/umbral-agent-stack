@@ -3520,14 +3520,14 @@ class TestDockerImageAvailable:
 
 class TestContestantRefForValidation:
     def test_returns_sha_from_code_change(self):
-        cc = {"commit": {"ok": True, "sha": "deadbeef"}}
+        cc = {"commit": {"ok": True, "commit_sha": "deadbeef"}}
         assert _contestant_ref_for_validation(cc) == "deadbeef"
 
     def test_none_when_no_code_change(self):
         assert _contestant_ref_for_validation(None) is None
 
     def test_none_when_commit_failed(self):
-        cc = {"commit": {"ok": False, "sha": "deadbeef"}}
+        cc = {"commit": {"ok": False, "commit_sha": "deadbeef"}}
         assert _contestant_ref_for_validation(cc) is None
 
     def test_none_when_sha_missing(self):
@@ -3535,7 +3535,11 @@ class TestContestantRefForValidation:
         assert _contestant_ref_for_validation(cc) is None
 
     def test_none_when_sha_empty(self):
-        cc = {"commit": {"ok": True, "sha": ""}}
+        cc = {"commit": {"ok": True, "commit_sha": ""}}
+        assert _contestant_ref_for_validation(cc) is None
+
+    def test_ignores_legacy_sha_key(self):
+        cc = {"commit": {"ok": True, "sha": "deadbeef"}}
         assert _contestant_ref_for_validation(cc) is None
 
 
@@ -3798,7 +3802,7 @@ class TestRunContestantValidationPytestTarget:
     def _cc_ok(self, sha="abc12345"):
         return {
             "written": True,
-            "commit": {"ok": True, "sha": sha},
+            "commit": {"ok": True, "commit_sha": sha},
         }
 
     def test_requires_target_file(self, tmp_path):
@@ -3963,7 +3967,7 @@ class TestOrchestratePytestTargetIntegration:
         mock_code.return_value = {
             "attempted": True, "written": True,
             "path": "worker/tasks/foo.py", "mode": "target",
-            "commit": {"ok": True, "sha": "abc12345"},
+            "commit": {"ok": True, "commit_sha": "abc12345"},
             "parse_error": None,
         }
 
@@ -4030,7 +4034,7 @@ class TestOrchestratePytestTargetIntegration:
         mock_code.return_value = {
             "attempted": True, "written": True,
             "path": "worker/tasks/foo.py", "mode": "target",
-            "commit": {"ok": True, "sha": "abc12345"},
+            "commit": {"ok": True, "commit_sha": "abc12345"},
             "parse_error": None,
         }
         result = handle_github_orchestrate_tournament({
@@ -4182,7 +4186,7 @@ class TestOrchestratePytestTargetIntegration:
         mock_code.return_value = {
             "attempted": True, "written": True,
             "path": "worker/tasks/foo.py", "mode": "target",
-            "commit": {"ok": True, "sha": "abc12345"},
+            "commit": {"ok": True, "commit_sha": "abc12345"},
             "parse_error": None,
         }
         result = handle_github_orchestrate_tournament({

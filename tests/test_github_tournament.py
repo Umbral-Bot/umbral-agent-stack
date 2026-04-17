@@ -10,6 +10,8 @@ Covers:
   contestant, driven by a validated ``target_file`` input.
 - Phase 2 slice 5: opt-in per-contestant validation via
   ``validation_mode="python_compile"`` (observational).
+- Phase 2 slice 6: opt-in re-judge pass with enriched
+  per-contestant evidence (``rejudge=True``).
 """
 
 import re
@@ -19,12 +21,15 @@ from unittest.mock import patch
 import pytest
 
 from worker.tasks.github_tournament import (
+    REJUDGE_SYSTEM,
     _artifact_rel_path,
     _branch_name,
     _build_artifact_body,
     _build_code_prompt,
+    _build_rejudge_prompt,
     _cherry_pick_and_push,
     _code_prefix,
+    _detect_override_attempt,
     _final_branch_name,
     _generate_and_commit_code_change,
     _generate_tournament_id,
@@ -32,6 +37,9 @@ from worker.tasks.github_tournament import (
     _resolve_inside_sandbox,
     _run_contestant_validation,
     _run_python_compile_validation,
+    _run_rejudge,
+    _summarize_code_change,
+    _summarize_validation,
     _tail_log,
     _validate_target_file,
     _validate_validation_mode,
@@ -2304,3 +2312,645 @@ class TestOrchestrateValidationIntegration:
             "validation_timeout_s": 9999,
         })
         assert mock_pyc.call_args.kwargs["timeout_s"] == 60.0
+
+
+# ---------------------------------------------------------------------------
+# Phase 2 slice 6 — re-judge with validation evidence
+# ---------------------------------------------------------------------------
+
+def _rj_contestant(
+    cid=1, name="Alpha", branch=None, proposal="Solid approach",
+    code_written=True, code_path="worker/tasks/x.py",
+    code_mode="target_file", code_commit_ok=True, code_parse_error=None,
+    val_ran=True, val_passed=True, val_mode="python_compile",
+    val_log="", val_err=None, val_duration=42,
+):
+    """Build a contestants[i]-shaped dict for rejudge tests."""
+    return {
+        "id": cid,
+        "approach": name,
+        "branch": branch or f"rick/t/tid/{chr(96 + cid)}",
+        "proposal_excerpt": proposal,
+        "artifact": {
+            "path": f".rick/tournaments/tid/{chr(96 + cid)}.md",
+            "written": True,
+            "commit": {"ok": True, "commit_sha": "deadbeef", "branch": "x"},
+        },
+        "code_change": {
+            "attempted": True,
+            "mode": code_mode,
+            "target_file": code_path if code_mode == "target_file" else None,
+            "path": code_path,
+            "written": code_written,
+            "parse_error": code_parse_error,
+            "commit": (
+                {"ok": code_commit_ok, "commit_sha": "c0dec0de", "branch": "x"}
+                if code_written else None
+            ),
+        },
+        "validation": {
+            "ran": val_ran,
+            "mode": val_mode if val_ran else None,
+            "passed": val_passed if val_ran else None,
+            "duration_ms": val_duration if val_ran else None,
+            "log_tail": val_log if val_ran else None,
+            "error": val_err,
+        },
+    }
+
+
+class TestSummarizeCodeChange:
+    def test_none_is_handled(self):
+        assert "no code change" in _summarize_code_change(None)
+
+    def test_not_attempted(self):
+        assert "no code change" in _summarize_code_change({"attempted": False})
+
+    def test_happy_path_target_file(self):
+        s = _summarize_code_change({
+            "attempted": True, "written": True, "path": "worker/x.py",
+            "mode": "target_file",
+            "commit": {"ok": True, "commit_sha": "abc"},
+        })
+        assert "wrote" in s
+        assert "worker/x.py" in s
+        assert "target_file" in s
+
+    def test_parse_error(self):
+        s = _summarize_code_change({
+            "attempted": True, "written": False,
+            "parse_error": "no FILE block found", "mode": "target_file",
+        })
+        assert "FAILED" in s
+        assert "no FILE block found" in s
+
+    def test_write_failed(self):
+        s = _summarize_code_change({
+            "attempted": True, "written": False, "parse_error": None,
+            "mode": "target_file",
+        })
+        assert "FAILED" in s
+        assert "not written" in s
+
+    def test_commit_failed(self):
+        s = _summarize_code_change({
+            "attempted": True, "written": True, "path": "worker/x.py",
+            "mode": "target_file",
+            "commit": {"ok": False, "error": "remote rejected"},
+        })
+        assert "commit FAILED" in s
+        assert "remote rejected" in s
+
+
+class TestSummarizeValidation:
+    def test_none_is_not_run(self):
+        assert _summarize_validation(None) == "not run"
+
+    def test_not_run_with_reason(self):
+        s = _summarize_validation({
+            "ran": False, "error": "python_compile requires target_file",
+        })
+        assert "not run" in s
+        assert "target_file" in s
+
+    def test_passed(self):
+        s = _summarize_validation({
+            "ran": True, "mode": "python_compile", "passed": True,
+            "duration_ms": 42, "log_tail": "", "error": None,
+        })
+        assert "PASSED" in s
+        assert "42" in s
+
+    def test_failed_with_log_tail(self):
+        s = _summarize_validation({
+            "ran": True, "mode": "python_compile", "passed": False,
+            "duration_ms": 10, "log_tail": "SyntaxError: invalid syntax\n",
+            "error": None,
+        })
+        assert "FAILED" in s
+        assert "SyntaxError" in s
+
+    def test_failed_with_timeout_error(self):
+        s = _summarize_validation({
+            "ran": True, "mode": "python_compile", "passed": False,
+            "duration_ms": 20000, "log_tail": "", "error": "timeout after 20s",
+        })
+        assert "FAILED" in s
+        assert "timeout" in s
+
+    def test_failed_truncates_long_log(self):
+        huge = "x" * 5000
+        s = _summarize_validation({
+            "ran": True, "mode": "python_compile", "passed": False,
+            "duration_ms": 1, "log_tail": huge, "error": None,
+        })
+        # _REJUDGE_LOG_TAIL_EXCERPT = 200
+        assert len(s) < 350
+
+
+class TestBuildRejudgePrompt:
+    def test_system_contains_final_line_contract(self):
+        p = _build_rejudge_prompt(
+            challenge="Do X",
+            contestants=[_rj_contestant(cid=1), _rj_contestant(cid=2)],
+        )
+        assert "FINAL LINE CONTRACT" in p["system"]
+        assert "Winner: Contestant #N" in p["system"]
+        assert "ESCALATE" in p["system"]
+
+    def test_system_includes_per_contestant_block(self):
+        p = _build_rejudge_prompt(
+            challenge="Do X",
+            contestants=[
+                _rj_contestant(cid=1, name="Alpha"),
+                _rj_contestant(cid=2, name="Beta", val_passed=False,
+                            val_log="SyntaxError: bad"),
+            ],
+        )
+        sys = p["system"]
+        assert "Contestant #1" in sys and "Alpha" in sys
+        assert "Contestant #2" in sys and "Beta" in sys
+        assert "PASSED" in sys
+        assert "FAILED" in sys
+        assert "SyntaxError" in sys
+
+    def test_user_is_challenge(self):
+        p = _build_rejudge_prompt(
+            challenge="Fix the parser bug",
+            contestants=[_rj_contestant()],
+        )
+        assert p["user"] == "Fix the parser bug"
+
+    def test_prompt_truncates_long_proposals(self):
+        long_prop = "x" * 5000
+        p = _build_rejudge_prompt(
+            challenge="c",
+            contestants=[_rj_contestant(cid=1, proposal=long_prop)],
+        )
+        # _REJUDGE_PROPOSAL_EXCERPT = 800; truncation adds " [...]"
+        assert "[...]" in p["system"]
+        assert p["system"].count("x") < 900
+
+    def test_bias_against_failures(self):
+        p = _build_rejudge_prompt(
+            challenge="c", contestants=[_rj_contestant()],
+        )
+        low = p["system"].lower()
+        assert "passed" in low
+        assert "avoid" in low or "fail" in low
+
+
+class TestDetectOverrideAttempt:
+    def test_returns_false_when_winner_passed(self):
+        c = [
+            _rj_contestant(cid=1, val_passed=True),
+            _rj_contestant(cid=2, val_passed=False),
+        ]
+        assert _detect_override_attempt(c, 1) is False
+
+    def test_returns_true_when_winner_failed_and_other_passed(self):
+        c = [
+            _rj_contestant(cid=1, val_passed=False, val_log="bad"),
+            _rj_contestant(cid=2, val_passed=True),
+        ]
+        assert _detect_override_attempt(c, 1) is True
+
+    def test_returns_false_when_all_failed(self):
+        c = [
+            _rj_contestant(cid=1, val_passed=False),
+            _rj_contestant(cid=2, val_passed=False),
+        ]
+        assert _detect_override_attempt(c, 1) is False
+
+    def test_returns_false_when_none_ran(self):
+        c = [
+            _rj_contestant(cid=1, val_ran=False, val_passed=None),
+            _rj_contestant(cid=2, val_ran=False, val_passed=None),
+        ]
+        assert _detect_override_attempt(c, 1) is False
+
+    def test_returns_false_when_winner_id_none(self):
+        c = [_rj_contestant(cid=1, val_passed=False), _rj_contestant(cid=2)]
+        assert _detect_override_attempt(c, None) is False
+
+    def test_returns_false_when_winner_not_in_list(self):
+        c = [_rj_contestant(cid=1, val_passed=True)]
+        assert _detect_override_attempt(c, 99) is False
+
+    def test_winner_passed_is_not_override_even_if_others_failed(self):
+        c = [
+            _rj_contestant(cid=1, val_passed=True),
+            _rj_contestant(cid=2, val_passed=False),
+            _rj_contestant(cid=3, val_passed=False),
+        ]
+        assert _detect_override_attempt(c, 1) is False
+
+
+class TestRunRejudge:
+    """Unit tests for _run_rejudge — all mock handle_llm_generate."""
+
+    @patch(f"{MOD}.handle_llm_generate")
+    def test_parses_clean_winner(self, mock_llm):
+        mock_llm.return_value = {
+            "text": (
+                "Contestant #2 has strongest evidence: validation passed.\n"
+                "Winner: Contestant #2"
+            ),
+            "model": "azure_foundry",
+        }
+        c = [_rj_contestant(cid=1), _rj_contestant(cid=2)]
+        r = _run_rejudge(
+            challenge="c", contestants=c,
+            judge_model="azure_foundry", max_tokens=2048,
+        )
+        assert r["ran"] is True
+        assert r["winner_id"] == 2
+        assert r["escalate"] is False
+        assert r["override_attempt"] is False
+        assert r["error"] is None
+
+    @patch(f"{MOD}.handle_llm_generate")
+    def test_parses_escalate(self, mock_llm):
+        mock_llm.return_value = {
+            "text": "Too close. ESCALATE",
+            "model": "azure_foundry",
+        }
+        r = _run_rejudge(
+            challenge="c", contestants=[_rj_contestant()],
+            judge_model="azure_foundry", max_tokens=2048,
+        )
+        assert r["escalate"] is True
+        assert r["winner_id"] is None
+        assert r["error"] is None
+
+    @patch(f"{MOD}.handle_llm_generate")
+    def test_marks_override_attempt(self, mock_llm):
+        mock_llm.return_value = {
+            "text": "Winner: Contestant #1",
+            "model": "azure_foundry",
+        }
+        c = [
+            _rj_contestant(cid=1, val_passed=False, val_log="SyntaxError"),
+            _rj_contestant(cid=2, val_passed=True),
+        ]
+        r = _run_rejudge(
+            challenge="c", contestants=c,
+            judge_model="azure_foundry", max_tokens=2048,
+        )
+        assert r["winner_id"] == 1
+        assert r["override_attempt"] is True
+
+    @patch(f"{MOD}.handle_llm_generate")
+    def test_captures_llm_exception(self, mock_llm):
+        mock_llm.side_effect = RuntimeError("boom")
+        r = _run_rejudge(
+            challenge="c", contestants=[_rj_contestant()],
+            judge_model="azure_foundry", max_tokens=2048,
+        )
+        assert r["ran"] is True
+        assert r["winner_id"] is None
+        assert r["escalate"] is False
+        assert r["error"] is not None
+        assert "llm error" in r["error"]
+
+    @patch(f"{MOD}.handle_llm_generate")
+    def test_handles_empty_response(self, mock_llm):
+        mock_llm.return_value = {"text": "", "model": "azure_foundry"}
+        r = _run_rejudge(
+            challenge="c", contestants=[_rj_contestant()],
+            judge_model="azure_foundry", max_tokens=2048,
+        )
+        assert r["ran"] is True
+        assert r["winner_id"] is None
+        assert "empty" in r["error"]
+
+    def test_empty_contestants(self):
+        r = _run_rejudge(
+            challenge="c", contestants=[],
+            judge_model="azure_foundry", max_tokens=2048,
+        )
+        assert r["ran"] is True
+        assert r["winner_id"] is None
+        assert "no contestants" in r["error"]
+
+    @patch(f"{MOD}.handle_llm_generate")
+    def test_records_duration(self, mock_llm):
+        mock_llm.return_value = {
+            "text": "Winner: Contestant #1", "model": "azure_foundry",
+        }
+        r = _run_rejudge(
+            challenge="c", contestants=[_rj_contestant()],
+            judge_model="azure_foundry", max_tokens=2048,
+        )
+        assert isinstance(r["duration_ms"], int)
+        assert r["duration_ms"] >= 0
+
+    @patch(f"{MOD}.handle_llm_generate")
+    def test_forwards_model_from_llm(self, mock_llm):
+        mock_llm.return_value = {
+            "text": "Winner: Contestant #1", "model": "gpt-5.4",
+        }
+        r = _run_rejudge(
+            challenge="c", contestants=[_rj_contestant()],
+            judge_model="azure_foundry", max_tokens=2048,
+        )
+        assert r["model_used"] == "gpt-5.4"
+
+    @patch(f"{MOD}.handle_llm_generate")
+    def test_invalid_winner_id_is_rejected(self, mock_llm):
+        mock_llm.return_value = {
+            "text": "Winner: Contestant #99",
+            "model": "azure_foundry",
+        }
+        c = [_rj_contestant(cid=1), _rj_contestant(cid=2)]
+        r = _run_rejudge(
+            challenge="c", contestants=c,
+            judge_model="azure_foundry", max_tokens=2048,
+        )
+        # _extract_winner_id rejects ids not in the proposal set.
+        assert r["winner_id"] is None
+        assert r["escalate"] is False
+
+
+class TestOrchestrateRejudgeIntegration:
+    """End-to-end wiring through handle_github_orchestrate_tournament."""
+
+    @patch(f"{MOD}._run_python_compile_validation")
+    @patch(f"{MOD}._generate_and_commit_code_change",
+           side_effect=_code_change_noop)
+    @patch(f"{MOD}._cherry_pick_and_push", side_effect=_cherry_pick_noop)
+    @patch(f"{MOD}._write_artifact_and_commit", side_effect=_artifact_noop)
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_create_branch", side_effect=_create_branch_ok)
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    @patch(f"{MOD}.handle_llm_generate")
+    def test_rejudge_off_keeps_initial_verdict(
+        self, mock_llm, _pre, _br, mock_tourn, _chk, _art, _cp, _code, _pyc,
+    ):
+        mock_tourn.return_value = _tournament_result(num=2, winner_id=1)
+
+        result = handle_github_orchestrate_tournament({
+            "challenge": "c",
+        })
+
+        assert result["ok"] is True
+        mock_llm.assert_not_called()
+        assert result["verdict"]["winner_id"] == 1
+        assert result["verdict_initial"] is None
+        assert result["rejudge"]["ran"] is False
+        assert result["meta"]["rejudge"] is False
+
+    @patch(f"{MOD}._run_python_compile_validation")
+    @patch(f"{MOD}._generate_and_commit_code_change",
+           side_effect=_code_change_noop)
+    @patch(f"{MOD}._cherry_pick_and_push", side_effect=_cherry_pick_noop)
+    @patch(f"{MOD}._write_artifact_and_commit", side_effect=_artifact_noop)
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_create_branch", side_effect=_create_branch_ok)
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    @patch(f"{MOD}.handle_llm_generate")
+    def test_rejudge_can_override_initial_winner(
+        self, mock_llm, _pre, _br, mock_tourn, _chk, _art, mock_cp, _cc, _pyc,
+    ):
+        mock_tourn.return_value = _tournament_result(num=2, winner_id=1)
+        mock_llm.return_value = {
+            "text": (
+                "Based on real evidence Contestant #2 delivered validation PASS.\n"
+                "Winner: Contestant #2"
+            ),
+            "model": "azure_foundry",
+        }
+
+        result = handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "rejudge": True,
+        })
+
+        assert result["ok"] is True
+        assert result["rejudge"]["ran"] is True
+        assert result["rejudge"]["winner_id"] == 2
+        assert result["verdict"]["winner_id"] == 2
+        assert result["verdict_initial"] is not None
+        assert result["verdict_initial"]["winner_id"] == 1
+        # The cherry-pick must use contestant #2 (rejudge winner), not #1.
+        assert mock_cp.call_count == 1
+
+    @patch(f"{MOD}._run_python_compile_validation")
+    @patch(f"{MOD}._generate_and_commit_code_change",
+           side_effect=_code_change_noop)
+    @patch(f"{MOD}._cherry_pick_and_push", side_effect=_cherry_pick_noop)
+    @patch(f"{MOD}._write_artifact_and_commit", side_effect=_artifact_noop)
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_create_branch", side_effect=_create_branch_ok)
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    @patch(f"{MOD}.handle_llm_generate")
+    def test_rejudge_failure_falls_back_to_initial(
+        self, mock_llm, _pre, _br, mock_tourn, _chk, _art, _cp, _mcp, _pyc,
+    ):
+        mock_tourn.return_value = _tournament_result(num=2, winner_id=1)
+        mock_llm.side_effect = RuntimeError("llm offline")
+
+        result = handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "rejudge": True,
+        })
+
+        assert result["ok"] is True
+        assert result["rejudge"]["ran"] is True
+        assert result["rejudge"]["error"] is not None
+        assert result["rejudge"]["winner_id"] is None
+        # Fallback to initial verdict for cherry-pick.
+        assert result["verdict"]["winner_id"] == 1
+        # And initial verdict is not duplicated in verdict_initial when the
+        # rejudge errored — verdict_initial only surfaces when rejudge ran
+        # cleanly and changed the answer.
+        assert result["verdict_initial"] is None
+
+    @patch(f"{MOD}._run_python_compile_validation")
+    @patch(f"{MOD}._generate_and_commit_code_change",
+           side_effect=_code_change_noop)
+    @patch(f"{MOD}._cherry_pick_and_push", side_effect=_cherry_pick_noop)
+    @patch(f"{MOD}._write_artifact_and_commit", side_effect=_artifact_noop)
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_create_branch", side_effect=_create_branch_ok)
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    @patch(f"{MOD}.handle_llm_generate")
+    def test_rejudge_escalate_blocks_cherry_pick(
+        self, mock_llm, _pre, _br, mock_tourn, _chk, _art, mock_cp, _cc, _pyc,
+    ):
+        mock_tourn.return_value = _tournament_result(num=2, winner_id=1)
+        mock_llm.return_value = {
+            "text": "All failed validation. ESCALATE",
+            "model": "azure_foundry",
+        }
+
+        result = handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "rejudge": True,
+        })
+
+        assert result["ok"] is True
+        assert result["rejudge"]["escalate"] is True
+        assert result["verdict"]["escalate"] is True
+        assert result["verdict"]["winner_id"] is None
+        # Cherry-pick MUST NOT run on escalate, even though the initial
+        # verdict did pick a winner.
+        mock_cp.assert_not_called()
+        assert result["final_branch"] is None
+
+    @patch(f"{MOD}._run_python_compile_validation")
+    @patch(f"{MOD}._generate_and_commit_code_change",
+           side_effect=_code_change_noop)
+    @patch(f"{MOD}._cherry_pick_and_push", side_effect=_cherry_pick_noop)
+    @patch(f"{MOD}._write_artifact_and_commit", side_effect=_artifact_noop)
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_create_branch", side_effect=_create_branch_ok)
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    @patch(f"{MOD}.handle_llm_generate")
+    def test_rejudge_prompt_includes_validation_evidence(
+        self, mock_llm, _pre, _br, mock_tourn, _chk, _art, _cp, _mcp, mock_pyc,
+    ):
+        mock_tourn.return_value = _tournament_result(num=2, winner_id=1)
+        mock_pyc.side_effect = [
+            {"ran": True, "mode": "python_compile", "passed": True,
+             "duration_ms": 12, "log_tail": "", "error": None},
+            {"ran": True, "mode": "python_compile", "passed": False,
+             "duration_ms": 7, "log_tail": "SyntaxError: bad token",
+             "error": None},
+        ]
+        mock_llm.return_value = {
+            "text": "Winner: Contestant #1", "model": "azure_foundry",
+        }
+
+        handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "generate_code": True,
+            "target_file": "worker/tasks/example.py",
+            "validation_mode": "python_compile",
+            "rejudge": True,
+        })
+
+        # The re-judge LLM call must have received a system prompt
+        # containing both PASSED and FAILED evidence plus the syntax
+        # error text, so the judge is actually seeing validation.
+        assert mock_llm.called
+        sent_system = mock_llm.call_args.args[0]["system"]
+        assert "PASSED" in sent_system
+        assert "FAILED" in sent_system
+        assert "SyntaxError" in sent_system
+        assert "Contestant #1" in sent_system
+        assert "Contestant #2" in sent_system
+
+    @patch(f"{MOD}._run_python_compile_validation")
+    @patch(f"{MOD}._generate_and_commit_code_change",
+           side_effect=_code_change_noop)
+    @patch(f"{MOD}._cherry_pick_and_push", side_effect=_cherry_pick_noop)
+    @patch(f"{MOD}._write_artifact_and_commit", side_effect=_artifact_noop)
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_create_branch", side_effect=_create_branch_ok)
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    @patch(f"{MOD}.handle_llm_generate")
+    def test_meta_counts_rejudge_call(
+        self, mock_llm, _pre, _br, mock_tourn, _chk, _art, _cp, _mcp, _pyc,
+    ):
+        base = _tournament_result(num=2, winner_id=1)
+        base["meta"] = {"total_llm_calls": 5,
+                        "total_duration_ms": 100,
+                        "models_used": ["azure_foundry"]}
+        mock_tourn.return_value = base
+        mock_llm.return_value = {
+            "text": "Winner: Contestant #1", "model": "azure_foundry",
+        }
+
+        result = handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "rejudge": True,
+        })
+
+        # base tourney did 5 calls, rejudge adds exactly 1.
+        assert result["meta"]["total_llm_calls"] == 6
+        assert result["meta"]["rejudge"] is True
+
+    @patch(f"{MOD}._run_python_compile_validation")
+    @patch(f"{MOD}._generate_and_commit_code_change",
+           side_effect=_code_change_noop)
+    @patch(f"{MOD}._cherry_pick_and_push", side_effect=_cherry_pick_noop)
+    @patch(f"{MOD}._write_artifact_and_commit", side_effect=_artifact_noop)
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_create_branch", side_effect=_create_branch_ok)
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    @patch(f"{MOD}.handle_llm_generate")
+    def test_rejudge_overrides_initial_escalate(
+        self, mock_llm, _pre, _br, mock_tourn, _chk, _art, mock_cp, _cc, _pyc,
+    ):
+        mock_tourn.return_value = _tournament_result(
+            num=2, winner_id=None, escalate=True,
+        )
+        mock_llm.return_value = {
+            "text": (
+                "Real evidence is decisive: Contestant #2 delivered a "
+                "passing validation while #1 failed.\n"
+                "Winner: Contestant #2"
+            ),
+            "model": "azure_foundry",
+        }
+
+        result = handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "rejudge": True,
+        })
+
+        assert result["ok"] is True
+        # Initial was ESCALATE, rejudge picked a winner.
+        assert result["verdict_initial"]["escalate"] is True
+        assert result["verdict"]["escalate"] is False
+        assert result["verdict"]["winner_id"] == 2
+        # Cherry-pick must actually run, because rejudge rescued the
+        # escalated decision.
+        assert mock_cp.call_count == 1
+
+    @patch(f"{MOD}._run_python_compile_validation")
+    @patch(f"{MOD}._generate_and_commit_code_change",
+           side_effect=_code_change_noop)
+    @patch(f"{MOD}._cherry_pick_and_push", side_effect=_cherry_pick_noop)
+    @patch(f"{MOD}._write_artifact_and_commit", side_effect=_artifact_noop)
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_create_branch", side_effect=_create_branch_ok)
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    @patch(f"{MOD}.handle_llm_generate")
+    def test_override_attempt_is_surfaced(
+        self, mock_llm, _pre, _br, mock_tourn, _chk, _art, _cp, _mcp, mock_pyc,
+    ):
+        mock_tourn.return_value = _tournament_result(num=2, winner_id=1)
+        # Contestant 1 FAILS validation, contestant 2 PASSES.
+        mock_pyc.side_effect = [
+            {"ran": True, "mode": "python_compile", "passed": False,
+             "duration_ms": 7, "log_tail": "SyntaxError", "error": None},
+            {"ran": True, "mode": "python_compile", "passed": True,
+             "duration_ms": 12, "log_tail": "", "error": None},
+        ]
+        # The re-judge ignores the bias and picks contestant #1 anyway.
+        mock_llm.return_value = {
+            "text": "Winner: Contestant #1", "model": "azure_foundry",
+        }
+
+        result = handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "generate_code": True,
+            "target_file": "worker/tasks/example.py",
+            "validation_mode": "python_compile",
+            "rejudge": True,
+        })
+
+        # The judge's decision is honoured, but the override_attempt
+        # flag surfaces the suspicious pick.
+        assert result["verdict"]["winner_id"] == 1
+        assert result["rejudge"]["override_attempt"] is True

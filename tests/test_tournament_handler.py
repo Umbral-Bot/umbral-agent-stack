@@ -488,3 +488,170 @@ class TestExtractWinnerId:
         props = [{"id": 1, "approach_name": "A"}]
         assert _extract_winner_id("", props) is None
         assert _extract_winner_id("   ", props) is None
+
+
+# ---------------------------------------------------------------------------
+# Phase 2 slice 3 — judge FINAL LINE CONTRACT
+# ---------------------------------------------------------------------------
+
+
+class TestJudgeSystemContract:
+    """The judge system prompt must force a machine-parseable final line.
+
+    See `JUDGE_SYSTEM` in worker/tasks/tournament.py. Downstream the
+    parser `_extract_winner_id` depends on this contract being honoured
+    by the LLM.
+    """
+
+    def _judge_template(self) -> str:
+        from worker.tasks.tournament import JUDGE_SYSTEM
+        return JUDGE_SYSTEM
+
+    def test_contains_final_line_contract_marker(self):
+        assert "FINAL LINE CONTRACT" in self._judge_template()
+
+    def test_contains_literal_winner_format(self):
+        # Exact literal the LLM must produce (minus the ``N`` placeholder).
+        assert "Winner: Contestant #N" in self._judge_template()
+
+    def test_contains_literal_escalate_line(self):
+        # ESCALATE must appear as the alternative final line.
+        tpl = self._judge_template()
+        assert "ESCALATE" in tpl
+
+    def test_final_line_contract_forces_english(self):
+        # The final line must be parsed in English regardless of
+        # challenge language.
+        tpl = self._judge_template().lower()
+        assert "must be in english" in tpl
+
+    def test_final_line_contract_forbids_decoration(self):
+        tpl = self._judge_template().lower()
+        # The prompt explicitly forbids common decorations that would
+        # break a strict parser.
+        for forbidden in ("quotes", "bullets", "punctuation", "markdown"):
+            assert forbidden in tpl, f"contract should forbid '{forbidden}'"
+
+    def test_format_preserves_contract(self):
+        # Formatting the template with runtime values must not strip
+        # the contract block.
+        tpl = self._judge_template().format(
+            n=3,
+            debate_note=" followed by a debate",
+            proposals="(proposals go here)",
+            debate_section="\nDebate rebuttals:\nrebuttal 1",
+        )
+        assert "FINAL LINE CONTRACT" in tpl
+        assert "Winner: Contestant #N" in tpl
+        assert "ESCALATE" in tpl
+        # The rest of the rubric survives too
+        assert "comparison table" in tpl
+        assert "confidence level" in tpl
+
+    def test_discourages_translating_final_line(self):
+        # Items 1-4 explicitly scoped to the challenge language; item 5
+        # was reworded to avoid translating the final contract line.
+        tpl = self._judge_template()
+        # Make sure the older ambiguous phrasing is gone
+        assert "Write in the same language as the challenge." not in tpl
+        # And the scoped form is present
+        assert (
+            "Write items 1-4 in the same language as the challenge."
+            in tpl
+        )
+
+
+class TestJudgeStableVerdictIntegration:
+    """End-to-end: a judge output that honours the contract parses cleanly."""
+
+    def _make_stable_verdict(self, winner_id: int = 2):
+        return _make_llm_result(
+            "| Approach | Strengths | Weaknesses | Risk | Fit |\n"
+            "|----------|-----------|------------|------|-----|\n"
+            "| A | Fast | Limited | Low | Good |\n"
+            "| B | Complete | Slow | Med | Best |\n\n"
+            "Recommendation: approach B balances completeness and risk.\n\n"
+            f"Winner: Contestant #{winner_id}"
+        )
+
+    @patch(LLM_PATCH)
+    def test_stable_final_line_parses_to_winner_id(self, mock_llm):
+        from worker.tasks.tournament import handle_tournament_run
+
+        mock_llm.side_effect = [
+            _make_discovery_result(n=2),
+            _make_proposal(1, "A"),
+            _make_proposal(2, "B"),
+            _make_debate(1, "A"),
+            _make_debate(2, "B"),
+            self._make_stable_verdict(winner_id=2),
+        ]
+
+        result = handle_tournament_run({
+            "challenge": "Pick a stack",
+            "num_approaches": 2,
+        })
+
+        assert result["verdict"]["escalate"] is False
+        assert result["verdict"]["winner_id"] == 2
+        # The stable final line is preserved in verdict.text
+        assert result["verdict"]["text"].rstrip().endswith(
+            "Winner: Contestant #2"
+        )
+
+    @patch(LLM_PATCH)
+    def test_stable_escalate_final_line_parses_as_escalate(self, mock_llm):
+        from worker.tasks.tournament import handle_tournament_run
+
+        escalate_text = _make_llm_result(
+            "| Approach | Strengths | Weaknesses | Risk | Fit |\n"
+            "|----------|-----------|------------|------|-----|\n"
+            "| A | Fast | Limited | Low | Good |\n"
+            "| B | Complete | Slow | Med | Good |\n\n"
+            "Trade-offs are genuine and close.\n\n"
+            "ESCALATE"
+        )
+        mock_llm.side_effect = [
+            _make_discovery_result(n=2),
+            _make_proposal(1, "A"),
+            _make_proposal(2, "B"),
+            _make_debate(1, "A"),
+            _make_debate(2, "B"),
+            escalate_text,
+        ]
+
+        result = handle_tournament_run({
+            "challenge": "Pick a stack",
+            "num_approaches": 2,
+        })
+
+        assert result["verdict"]["escalate"] is True
+        assert result["verdict"]["winner_id"] is None
+        assert result["verdict"]["text"].rstrip().endswith("ESCALATE")
+
+    @patch(LLM_PATCH)
+    def test_judge_receives_contract_in_system_prompt(self, mock_llm):
+        """The judge LLM call must be invoked with a system prompt that
+        carries the final-line contract."""
+        from worker.tasks.tournament import handle_tournament_run
+
+        mock_llm.side_effect = [
+            _make_discovery_result(n=2),
+            _make_proposal(1, "A"),
+            _make_proposal(2, "B"),
+            _make_debate(1, "A"),
+            _make_debate(2, "B"),
+            self._make_stable_verdict(winner_id=1),
+        ]
+
+        handle_tournament_run({
+            "challenge": "c",
+            "num_approaches": 2,
+        })
+
+        # Judge is the last LLM call.
+        judge_call_kwargs = mock_llm.call_args_list[-1][0][0]
+        system = judge_call_kwargs["system"]
+        assert "FINAL LINE CONTRACT" in system
+        assert "Winner: Contestant #N" in system
+        assert "ESCALATE" in system

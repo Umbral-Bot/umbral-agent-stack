@@ -6,7 +6,7 @@ Rick (en la VPS) necesita acceso al repo para: `git clone`, `git pull`, leer arc
 
 - **Git (clone, pull, push):** SSH con **deploy key** del repo (`vps-rickm`). La deploy key solo permite operaciones git; no puede mergear PRs ni usar la API.
 - **API (crear PR, comentar en PRs):** **PAT** (Fine-grained) en `GITHUB_TOKEN`. Los PRs y comentarios aparecen con la identidad de la cuenta del token (ej. UmbralBIM); Rick puede dejar comentarios indicando que es el agente.
-- **Worker tasks `github.*`:** Los handlers `github.preflight`, `github.create_branch`, `github.commit_and_push` y `github.open_pr` consumen el PAT automáticamente (via `config.GITHUB_TOKEN`) para operaciones API (`gh` CLI), y la deploy key SSH para operaciones git (`git push/fetch`).
+- **Worker tasks `github.*`:** Los handlers `github.preflight`, `github.create_branch`, `github.commit_and_push`, `github.open_pr` y `github.orchestrate_tournament` consumen el PAT automáticamente (via `config.GITHUB_TOKEN`) para operaciones API (`gh` CLI), y la deploy key SSH para operaciones git (`git push/fetch`). Ver skill `github-ops` para documentación completa de cada handler.
 
 > **Nota de identidad:** Los commits llevan la identidad de git configurada en la VPS (`Rick (AI Orchestrator) <rick.asistente@gmail.com>`). Los PRs y comentarios en GitHub aparecen como **UmbralBIM** (dueño del PAT). Solo los commits son atribuibles a Rick por identidad propia.
 
@@ -142,6 +142,39 @@ En el repo: **Settings** → **Branches** → regla para `main`:
 
 - **Require a pull request before merging** (mín. 1 aprobación si quieres).
 - Así Rick puede abrir PRs pero no mergear a `main`.
+
+---
+
+## 8. GitHub Copilot — Política operativa
+
+### Estado actual
+
+`gh copilot` **no está instalado** en la VPS. La extensión no está presente y la cuenta no tiene billing de Copilot activo (API retorna 404).
+
+### Política de uso futuro
+
+Si se instala `gh copilot` en la VPS:
+
+| Aspecto | Regla |
+|---------|-------|
+| **Quién lo usa** | Solo Rick, de forma centralizada. Contestants de torneos **nunca** tienen acceso (sandbox `--network=none`, sin token, sin CLI) |
+| **Comandos permitidos** | `gh copilot suggest` y `gh copilot explain` — asistencia local de bajo consumo |
+| **Generación masiva** | Preferir Cursor con David para code review, generación masiva, o refactors de alto impacto |
+| **Copilot MAX** | Solo si David lo autoriza explícitamente. No activar por iniciativa propia |
+| **Créditos** | Monitorear consumo. Si David indica límite, desactivar inmediatamente |
+| **Alcance** | Asistencia puntual. No reemplaza el flujo de tournaments ni los handlers existentes |
+
+### Separación GitHub operativo vs. Copilot experimental
+
+- **GitHub operativo** (rama, commit, push, PR): producción, cubierto por los handlers `github.*` y la deploy key + PAT. Siempre disponible.
+- **Copilot** (suggest, explain): experimental, dependiente de billing y autorización de David. No es prerequisito para ningún flujo operativo.
+
+### Requisitos para instalación
+
+1. `gh extension install github/gh-copilot`
+2. Billing de Copilot activo en la cuenta `UmbralBIM` (o la org)
+3. Autorización explícita de David
+4. Verificar con `gh copilot --version` y `gh copilot suggest "hello world"`
 
 ---
 

@@ -1,4 +1,4 @@
-"""Branch-based tournament orchestration — Phase 1 + Phase 2 slices 1–5.
+"""Branch-based tournament orchestration — Phase 1 + Phase 2 slices 1–6.
 
 Composes existing primitives (github.create_branch, tournament.run,
 github.commit_and_push) into a multi-branch comparison workflow. Each
@@ -58,6 +58,24 @@ observational in this slice: the judge itself is NOT re-run; failing
 contestants are marked in the output but not disqualified. Real
 pytest per contestant and general execution sandboxing remain out of
 scope.
+
+Phase 2 slice 6 adds OPT-IN re-judging AFTER validation. When
+``rejudge=True`` is set, the handler runs a second judge pass that
+sees the enriched per-contestant evidence (proposal + branch +
+code_change status + validation status) instead of deciding only on
+textual proposals. The same machine-parsed final-line contract from
+slice 3 is enforced, so ``_extract_winner_id`` is reused without
+modification. The initial verdict from ``tournament.run`` is kept as
+shadow info in ``verdict_initial`` for traceability; the re-judge
+verdict drives the cherry-pick. Failing contestants are biased
+against in the prompt but not filtered out — if the re-judge picks a
+contestant that failed validation while others passed, the output
+marks ``rejudge.override_attempt=True`` for human review without
+silently overriding the judge. ``tournament.py`` is intentionally
+NOT modified; the re-judge lives entirely inside
+``github_tournament.py`` so slice 6 is additive and its blast radius
+is scoped to a single module. Automatic disqualification, pytest
+per contestant and execution sandboxing remain out of scope.
 """
 
 import datetime
@@ -77,7 +95,7 @@ from .github import (
     handle_github_preflight,
 )
 from .llm import handle_llm_generate
-from .tournament import handle_tournament_run
+from .tournament import _extract_winner_id, handle_tournament_run
 
 logger = logging.getLogger("worker.tasks.github_tournament")
 
@@ -1036,6 +1054,248 @@ def _run_contestant_validation(
     return empty_stub(f"unsupported validation_mode: {mode}")
 
 
+# ---------------------------------------------------------------------------
+# Phase 2 slice 6 — re-judge with validation evidence
+# ---------------------------------------------------------------------------
+
+# Token-budget knobs for the enriched judge prompt. Kept small so that
+# even 5 contestants with long proposals fit comfortably; the re-judge
+# doesn't need the full proposal — it needs enough to recognise each
+# approach plus the hard evidence (code_change, validation).
+_REJUDGE_PROPOSAL_EXCERPT = 800
+_REJUDGE_LOG_TAIL_EXCERPT = 200
+
+# System prompt used for the re-judge pass. The final-line contract
+# is identical to slice 3's JUDGE_SYSTEM (verbatim) so the same
+# _extract_winner_id parser works without drift. The body instructs
+# the judge to consider the actual per-contestant evidence and bias
+# against validation failures, without hiding failing contestants.
+REJUDGE_SYSTEM = (
+    "You are the Tournament Re-Judge.\n"
+    "An earlier judge already compared textual proposals. You now re-decide\n"
+    "the winner using the ACTUAL evidence each contestant produced on its\n"
+    "own branch: whether a code change was written, which file was touched,\n"
+    "and whether a minimal validation passed.\n\n"
+    "Your job:\n"
+    "1. For each contestant, briefly weigh: proposal quality, whether a\n"
+    "   real code change was committed, and the validation result.\n"
+    "2. Prefer contestants whose validation PASSED. Avoid choosing\n"
+    "   contestants whose validation FAILED unless they are clearly and\n"
+    "   decisively better than every other option, and state why.\n"
+    "3. If no contestant produced usable evidence, or if the trade-offs\n"
+    "   among the remaining candidates are genuinely close, emit ESCALATE.\n"
+    "4. State your final recommendation in 2-3 sentences.\n"
+    "5. Write items 1-4 in the same language as the challenge.\n\n"
+    "FINAL LINE CONTRACT (strict, machine-parsed):\n"
+    "After your recommendation, finish the ENTIRE output with EXACTLY ONE\n"
+    "of these two lines, on its own line, with no other text after it:\n"
+    "  Winner: Contestant #N     (where N is the id of the contestant you chose)\n"
+    "  ESCALATE                  (only if trade-offs are genuine and close)\n"
+    "This final line MUST be in English and match the format above exactly.\n"
+    "Do not add quotes, bullets, punctuation, markdown, translations, emojis,\n"
+    "or explanatory text after it. Do not wrap it in a code block.\n\n"
+    "Contestants:\n{contestants_block}"
+)
+
+
+def _summarize_code_change(code_change: Optional[Dict[str, Any]]) -> str:
+    """Return a one-line summary of a contestant's code_change for the
+    re-judge prompt. Never raises.
+    """
+    if not code_change:
+        return "no code change (generate_code was disabled)"
+    if not code_change.get("attempted"):
+        return "no code change"
+    written = code_change.get("written", False)
+    path = code_change.get("path") or "<unknown>"
+    mode = code_change.get("mode", "sandbox")
+    parse_error = code_change.get("parse_error")
+    commit = code_change.get("commit") or {}
+    commit_ok = bool(commit.get("ok"))
+    if parse_error:
+        return f"code change FAILED ({mode}): parse_error: {parse_error}"
+    if not written:
+        return f"code change FAILED ({mode}): file was not written"
+    if not commit_ok:
+        err = commit.get("error") or "commit did not succeed"
+        return f"code change written at {path} but commit FAILED: {err}"
+    return f"wrote {mode} file {path} and committed successfully"
+
+
+def _summarize_validation(validation: Optional[Dict[str, Any]]) -> str:
+    """Return a short summary of a contestant's validation result for
+    the re-judge prompt. Includes a trimmed tail on failure so the
+    judge has actionable evidence. Never raises.
+    """
+    if not validation:
+        return "not run"
+    if not validation.get("ran"):
+        err = validation.get("error")
+        return f"not run ({err})" if err else "not run"
+    mode = validation.get("mode", "?")
+    duration = validation.get("duration_ms")
+    passed = validation.get("passed")
+    err = validation.get("error")
+    if passed is True:
+        tail = f" in {duration}ms" if duration is not None else ""
+        return f"{mode} PASSED{tail}"
+    log = validation.get("log_tail") or ""
+    if len(log) > _REJUDGE_LOG_TAIL_EXCERPT:
+        log = log[-_REJUDGE_LOG_TAIL_EXCERPT:]
+    log = log.strip().replace("\n", " | ")
+    reason = err or log or "no output"
+    tail = f" in {duration}ms" if duration is not None else ""
+    return f"{mode} FAILED{tail}: {reason}"
+
+
+def _build_rejudge_prompt(
+    *,
+    challenge: str,
+    contestants: list,
+) -> Dict[str, str]:
+    """Build (system, user) prompts for the re-judge LLM call.
+
+    Truncates per-contestant proposal excerpts and validation log tails
+    so the prompt stays manageable even with five contestants.
+    """
+    parts = []
+    for c in contestants:
+        cid = c.get("id", "?")
+        name = c.get("approach", f"Approach {cid}")
+        branch = c.get("branch", "?")
+        proposal = c.get("proposal_excerpt") or ""
+        if len(proposal) > _REJUDGE_PROPOSAL_EXCERPT:
+            proposal = proposal[:_REJUDGE_PROPOSAL_EXCERPT] + " [...]"
+        code_summary = _summarize_code_change(c.get("code_change"))
+        val_summary = _summarize_validation(c.get("validation"))
+        parts.append(
+            f"### Contestant #{cid} — {name}\n"
+            f"Branch: {branch}\n"
+            f"Code change: {code_summary}\n"
+            f"Validation: {val_summary}\n"
+            f"Proposal excerpt:\n{proposal}"
+        )
+    contestants_block = "\n\n".join(parts)
+
+    system = REJUDGE_SYSTEM.format(contestants_block=contestants_block)
+    user = challenge
+    return {"system": system, "user": user}
+
+
+def _proposals_for_parser(contestants: list) -> list:
+    """Adapt the orchestrator's contestants list into the shape that
+    ``_extract_winner_id`` expects (list of {"id", "approach_name"}).
+    """
+    result = []
+    for c in contestants:
+        result.append({
+            "id": c.get("id"),
+            "approach_name": c.get("approach", ""),
+        })
+    return result
+
+
+def _detect_override_attempt(contestants: list, winner_id: Any) -> bool:
+    """Return True when the re-judge picked a contestant whose
+    validation failed while at least one other contestant's validation
+    passed. Used for output traceability only — we do NOT silently
+    override the judge.
+    """
+    if winner_id is None:
+        return False
+    winner = next(
+        (c for c in contestants if c.get("id") == winner_id), None,
+    )
+    if not winner:
+        return False
+    wv = winner.get("validation") or {}
+    if not wv.get("ran") or wv.get("passed") is not False:
+        return False
+    for c in contestants:
+        if c.get("id") == winner_id:
+            continue
+        v = c.get("validation") or {}
+        if v.get("ran") and v.get("passed") is True:
+            return True
+    return False
+
+
+def _run_rejudge(
+    *,
+    challenge: str,
+    contestants: list,
+    judge_model: str,
+    max_tokens: int,
+) -> Dict[str, Any]:
+    """Run the enriched re-judge LLM call, parse the verdict with
+    ``_extract_winner_id`` and return a structured result.
+
+    Never raises. On any failure (empty contestants, LLM exception,
+    empty LLM output) returns ``ran=True`` with ``error`` filled,
+    ``winner_id=None`` and ``escalate=False`` so the caller can fall
+    back to the initial verdict.
+    """
+    result: Dict[str, Any] = {
+        "ran": True,
+        "text": "",
+        "winner_id": None,
+        "escalate": False,
+        "override_attempt": False,
+        "duration_ms": 0,
+        "model_used": judge_model,
+        "error": None,
+    }
+    if not contestants:
+        result["error"] = "no contestants to re-judge"
+        return result
+
+    prompts = _build_rejudge_prompt(
+        challenge=challenge, contestants=contestants,
+    )
+
+    t0 = time.time()
+    try:
+        llm_out = handle_llm_generate({
+            "prompt": prompts["user"],
+            "system": prompts["system"],
+            "model": judge_model,
+            "temperature": 0.3,
+            "max_tokens": max_tokens,
+        })
+    except Exception as exc:
+        result["duration_ms"] = int((time.time() - t0) * 1000)
+        result["error"] = f"llm error: {str(exc)[:200]}"
+        logger.warning("Re-judge LLM call failed: %s", exc)
+        return result
+
+    result["duration_ms"] = int((time.time() - t0) * 1000)
+    text = llm_out.get("text", "") if isinstance(llm_out, dict) else ""
+    model_used = llm_out.get("model", judge_model) if isinstance(llm_out, dict) else judge_model
+    result["text"] = text
+    result["model_used"] = model_used
+    if not text or not text.strip():
+        result["error"] = "empty re-judge response"
+        return result
+
+    escalate = "ESCALATE" in text.upper()
+    result["escalate"] = escalate
+    if not escalate:
+        try:
+            winner_id = _extract_winner_id(
+                text, _proposals_for_parser(contestants),
+            )
+        except Exception as exc:
+            winner_id = None
+            result["error"] = f"parser error: {str(exc)[:200]}"
+        result["winner_id"] = winner_id
+        if winner_id is not None:
+            result["override_attempt"] = _detect_override_attempt(
+                contestants, winner_id,
+            )
+
+    return result
+
+
 def handle_github_orchestrate_tournament(
     input_data: Dict[str, Any],
 ) -> Dict[str, Any]:
@@ -1081,6 +1341,13 @@ def handle_github_orchestrate_tournament(
         validation_timeout_s (int|float): slice 5. Per-contestant
             validation timeout in seconds. Default 20, hard-capped at
             60.
+        rejudge (bool): slice 6. When True, run a second judge pass
+            with enriched per-contestant evidence (code_change +
+            validation) after the loop. The re-judge verdict
+            supersedes the initial verdict for the cherry-pick. The
+            initial verdict is preserved in ``verdict_initial`` for
+            traceability. Re-judge never raises: on any failure the
+            flow falls back to the initial verdict.
 
     Returns:
         ok, tournament_id, challenge, base, contestants,
@@ -1133,6 +1400,10 @@ def handle_github_orchestrate_tournament(
             "tournament_id": _generate_tournament_id(),
         }
     validation_timeout_s: float = vt_check["normalized"]
+
+    # Slice 6: opt-in re-judge pass after validation. When off
+    # (default) behaviour is byte-identical to slices 1-5.
+    rejudge_enabled = bool(input_data.get("rejudge", False))
 
     tournament_id = _generate_tournament_id()
 
@@ -1248,12 +1519,51 @@ def handle_github_orchestrate_tournament(
                 "validation": validation,
             })
 
-        # ---- 4. Create final branch + cherry-pick the winner ----
+        # ---- 4. Optional re-judge pass (Phase 2 slice 6) ----
+        #
+        # When ``rejudge=True``, run a second LLM pass that sees the
+        # actual per-contestant evidence (code_change + validation)
+        # produced by slices 4-5. The resulting verdict supersedes
+        # the initial one for the cherry-pick decision; the initial
+        # verdict is preserved as shadow info in the output. Never
+        # raises — on LLM failure, we fall back to the initial
+        # verdict so the flow always lands on a decision.
+        rejudge_result: Dict[str, Any] = {
+            "ran": False,
+            "text": "",
+            "winner_id": None,
+            "escalate": False,
+            "override_attempt": False,
+            "duration_ms": 0,
+            "model_used": None,
+            "error": None,
+        }
+        effective_verdict = verdict
+        if rejudge_enabled:
+            rj_model = str(
+                input_data.get("judge_model")
+                or tournament.get("meta", {}).get("models_used", ["azure_foundry"])[0]
+                or "azure_foundry"
+            )
+            rejudge_result = _run_rejudge(
+                challenge=challenge,
+                contestants=contestants,
+                judge_model=rj_model,
+                max_tokens=int(input_data.get("max_tokens", 2048)),
+            )
+            if rejudge_result.get("error") is None:
+                effective_verdict = {
+                    "text": rejudge_result["text"],
+                    "winner_id": rejudge_result["winner_id"],
+                    "escalate": rejudge_result["escalate"],
+                }
+
+        # ---- 5. Create final branch + cherry-pick the winner ----
         # (Phase 2 slice 2)
         #
         # Safe preconditions for cherry-pick:
-        #   - verdict has a winner_id
-        #   - verdict is not ESCALATE
+        #   - effective verdict has a winner_id
+        #   - effective verdict is not ESCALATE
         #   - the winning contestant has a successful commit from slice 1
         #   - the final branch was created cleanly
         #
@@ -1262,10 +1572,10 @@ def handle_github_orchestrate_tournament(
         # explicit reason surfaced via `final_result.error`.
         final_branch = None
         final_result: Optional[Dict[str, Any]] = None
-        if not verdict.get("escalate") and verdict.get("winner_id") is not None:
+        if not effective_verdict.get("escalate") and effective_verdict.get("winner_id") is not None:
             winner_sha, winner_cid = _winner_commit_info(
                 contestants=contestants,
-                winner_id=verdict.get("winner_id"),
+                winner_id=effective_verdict.get("winner_id"),
             )
             fb = _final_branch_name(tournament_id)
             fb_result = handle_github_create_branch(
@@ -1298,29 +1608,50 @@ def handle_github_orchestrate_tournament(
     finally:
         _checkout_base(base)
 
+    # Slice 6: if re-judge ran and produced a parseable verdict, the
+    # top-level ``verdict`` reflects it and the initial one is preserved
+    # as ``verdict_initial`` for traceability. If re-judge was off or
+    # failed, ``verdict`` is the initial verdict and ``verdict_initial``
+    # is ``None`` (keeps output shape predictable for consumers).
+    verdict_out = {
+        "text": effective_verdict.get("text", ""),
+        "winner_id": effective_verdict.get("winner_id"),
+        "escalate": effective_verdict.get("escalate", False),
+    }
+    verdict_initial_out: Optional[Dict[str, Any]] = None
+    if rejudge_result.get("ran") and rejudge_result.get("error") is None:
+        verdict_initial_out = {
+            "text": verdict.get("text", ""),
+            "winner_id": verdict.get("winner_id"),
+            "escalate": verdict.get("escalate", False),
+        }
+
+    # Tournament-run already counts its own LLM calls. Add +1 for the
+    # re-judge call so meta.total_llm_calls stays honest.
+    rejudge_llm_calls = 1 if rejudge_result.get("ran") else 0
+
     return {
         "ok": True,
         "tournament_id": tournament_id,
         "challenge": challenge,
         "base": base,
         "contestants": contestants,
-        "verdict": {
-            "text": verdict.get("text", ""),
-            "winner_id": verdict.get("winner_id"),
-            "escalate": verdict.get("escalate", False),
-        },
+        "verdict": verdict_out,
+        "verdict_initial": verdict_initial_out,
+        "rejudge": rejudge_result,
         "final_branch": final_branch,
         "final_result": final_result,
         "branches_created": branches_created,
         "meta": {
             "total_llm_calls": tournament.get("meta", {}).get(
                 "total_llm_calls", 0,
-            ),
+            ) + rejudge_llm_calls,
             "total_duration_ms": int((time.time() - t0) * 1000),
             "models_used": tournament.get("meta", {}).get("models_used", []),
             "generate_code": generate_code,
             "target_file": target_file,
             "validation_mode": validation_mode,
             "validation_timeout_s": validation_timeout_s,
+            "rejudge": rejudge_enabled,
         },
     }

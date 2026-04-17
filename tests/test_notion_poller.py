@@ -169,8 +169,8 @@ def test_collect_candidate_comments_includes_review_targets_and_deduplicates():
             "ok": True,
             "result": {
                 "items": [
-                    {"page_id": "deliverable-1"},
-                    {"page_id": "deliverable-2"},
+                    {"page_id": "deliverable-1", "properties": {"Estado revision": "Pendiente revision"}},
+                    {"page_id": "deliverable-2", "properties": {"Estado revision": "Pendiente revision"}},
                 ]
             },
         },
@@ -318,28 +318,29 @@ def test_collect_candidate_comments_includes_session_capitalizable_targets():
 
 
 def test_collect_candidate_comments_falls_back_when_deliverable_filter_fails():
+    """When the deliverables DB query fails, it is caught and projects still resolve."""
     wc = MagicMock()
     wc.run.side_effect = [
-        RuntimeError("500 from deliverables filter"),
-        {"ok": True, "result": {"items": [{"page_id": "deliverable-1"}]}},
-        {"ok": True, "result": {"items": []}},
+        RuntimeError("500 from deliverables query"),
+        {"ok": True, "result": {"items": [{"page_id": "project-1"}]}},
     ]
-    wc.notion_poll_comments.side_effect = [
-        {"ok": True, "result": {"comments": []}},
-        {"ok": True, "result": {"comments": []}},
-    ]
+    wc.notion_poll_comments.return_value = {
+        "ok": True, "result": {"comments": []},
+    }
 
     with patch.dict(
         "os.environ",
         {
             "NOTION_DELIVERABLES_DB_ID": "deliverables-db",
             "NOTION_PROJECTS_DB_ID": "projects-db",
+            "NOTION_CURATED_SESSIONS_DB_ID": "",
         },
         clear=False,
     ):
         comments = _collect_candidate_comments(wc, "2026-03-16T21:00:00+00:00", 20)
 
     assert comments == []
-    deliverable_calls = [call.args[1] for call in wc.run.call_args_list[:2]]
-    assert deliverable_calls[0]["filter"]["or"][0]["property"] == "Estado revision"
-    assert "filter" not in deliverable_calls[1]
+    # Deliverables call raised, projects call succeeded
+    assert wc.run.call_count == 2
+    # poll_comments called for control room + project-1 (deliverables skipped)
+    assert wc.notion_poll_comments.call_count == 2

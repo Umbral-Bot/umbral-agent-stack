@@ -1,0 +1,24 @@
+# Umbral pytest sandbox — explicit test allowlist (slice 7b-infra).
+#
+# Only tests listed below are eligible to be used as the
+# `validation_target` for the future `pytest_target` validation mode.
+#
+# Rationale for each inclusion:
+#   - fast on a cold container (well under the 60s default timeout),
+#   - no network required (sandbox runs with --network=none),
+#   - no host filesystem side effects beyond the bind-mounted ws,
+#   - deps already satisfied by worker/sandbox/Dockerfile,
+#   - green on current `main` (i.e. NOT gated by UMBRAL_DISABLE_CLAUDE).
+#
+# Format: one path per line, relative to the repo root. Lines
+# starting with `#` and blank lines are ignored. Paths MUST start
+# with `tests/` and end in `.py`.
+#
+# Maintenance rule: adding a test here requires verifying it passes
+# end-to-end on `main` first. Removing a test is always safe.
+
+tests/test_tournament_handler.py
+tests/test_github_tournament.py
+tests/test_github.py
+tests/test_alert_manager.py
+tests/test_env_loader.py

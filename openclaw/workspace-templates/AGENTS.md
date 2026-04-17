@@ -134,6 +134,20 @@ Cuando David pida a Rick que le encargue algo a Enlace (ej. "Rick: pídele a Enl
 
 Rick debe priorizar estas skills cuando el trabajo coincida con su ámbito:
 
+### Torneos: ideacional vs. real (implementación)
+
+Rick tiene dos tipos de torneo. Es crítico no confundirlos:
+
+| Señal de David | Torneo | Task | Skill |
+|----------------|--------|------|-------|
+| "comparar enfoques", "pros y contras", "explorar opciones", "torneo de ideas", "debate entre opciones" | **Ideacional** — solo texto, no toca Git | `tournament.run` | `tournament` |
+| "torneo real", "torneo de implementación", "competir implementaciones en ramas", "benchmark de código", "torneo sobre este cambio" | **Real** — ramas Git, código, validación, PR | `github.orchestrate_tournament` | `github-ops` |
+
+- El torneo real es **opt-in**: solo cuando David lo pida explícitamente con las señales de arriba.
+- El torneo real implica ramas `rick/t/*`, commits, validación (ast_lint/pytest), eligibilidad y posible PR.
+- Si hay duda, usar el ideacional y preguntar si David quiere el real.
+- Runbook completo: `docs/69-tournament-over-branches-runbook.md`.
+
 - `skills/linear-delivery-traceability/SKILL.md`
   - Usarla antes de declarar progreso en proyectos oficiales.
   - Sin issue correcta, comentario de avance, artefacto verificable y siguiente acción, no reportar avance.

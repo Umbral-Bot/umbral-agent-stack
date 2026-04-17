@@ -6,8 +6,10 @@ description: >-
   2-5 enfoques distintos, los desarrolla completamente en paralelo, ejecuta un
   debate donde cada enfoque argumenta contra los rivales, y consolida con tabla
   comparativa + recomendación. Usa cuando "comparar enfoques", "explorar opciones",
-  "analizar alternativas", "tournament", "torneo de ideas", "qué camino tomar",
+  "analizar alternativas", "torneo de ideas", "qué camino tomar",
   "pros y contras de N opciones", "debate entre opciones".
+  NO usar para torneo real, torneo de implementación, competir implementaciones
+  en ramas o benchmark de código real — eso va por github-ops.
 metadata:
   openclaw:
     emoji: "\U0001F3C6"
@@ -17,9 +19,13 @@ metadata:
         - AZURE_OPENAI_API_KEY
 ---
 
-# Tournament Skill
+# Tournament Skill (Ideacional)
 
 Rick ejecuta un torneo de ideas: exploración divergente → debate → consolidación.
+
+**Este torneo es puramente textual.** No toca Git, no crea ramas, no genera código, no ejecuta validación. Produce texto comparativo y un veredicto.
+
+> **¿David pidió torneo real, torneo de implementación, competir implementaciones en ramas o benchmark de código?** → Usar `github.orchestrate_tournament` desde la skill `github-ops`. Ver `docs/69-tournament-over-branches-runbook.md`.
 
 ## Cuándo usar
 

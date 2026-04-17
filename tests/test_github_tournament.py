@@ -3677,12 +3677,27 @@ class TestPytestTargetDockerArgv:
         assert "--memory-swap=512m" in argv
         assert "--cpus=1.0" in argv
         assert "--pids-limit=256" in argv
-        # Three tmpfs mounts for /tmp, .pytest_cache, __pycache__.
-        tmpfs_count = argv.count("--tmpfs")
-        assert tmpfs_count == 3
+        # Exactly one tmpfs mount — /tmp. /work is a read-only bind
+        # mount, and Docker rejects tmpfs layered under a read-only
+        # bind with rc=125 (regression: docker/container launch
+        # failure observed on VPS smoke).
+        tmpfs_indices = [i for i, a in enumerate(argv) if a == "--tmpfs"]
+        assert len(tmpfs_indices) == 1
+        tmpfs_val = argv[tmpfs_indices[0] + 1]
+        assert tmpfs_val.startswith("/tmp:")
+        # Explicitly: no tmpfs can point anywhere under /work.
+        for i in tmpfs_indices:
+            assert not argv[i + 1].startswith("/work"), (
+                "tmpfs under /work is forbidden: /work is a read-only "
+                "bind mount and docker rejects it with rc=125"
+            )
         # Stripped env.
         assert "WORKER_TOKEN=sandbox-stub" in argv
         assert "UMBRAL_DISABLE_CLAUDE=1" in argv
+        # Defense-in-depth against pyc/cache writes under the
+        # read-only /work mount: pyc writes disabled at the Python
+        # level and pytest cache disabled via CLI.
+        assert "PYTHONDONTWRITEBYTECODE=1" in argv
         # No surprise env leak.
         forbidden = [a for a in argv if a.startswith("AZURE_")
                      or a.startswith("OPENAI_") or a.startswith("GITHUB_TOKEN")]
@@ -3702,6 +3717,21 @@ class TestPytestTargetDockerArgv:
         assert "--disable-warnings" in argv
         assert "-p" in argv and "no:cacheprovider" in argv
         assert "--rootdir=/work" in argv
+
+    def test_no_tmpfs_under_work_mount(self, tmp_path):
+        """Explicit regression: Docker rc=125 on VPS smoke happened
+        because we tried to layer tmpfs under /work while /work is a
+        read-only bind mount. This invariant MUST hold forever."""
+        argv = _pytest_target_docker_argv(
+            ws_path=tmp_path, validation_target="tests/test_x.py",
+            image_ref="img:abc",
+        )
+        for i, a in enumerate(argv):
+            if a == "--tmpfs":
+                spec = argv[i + 1]
+                assert "/work" not in spec.split(":")[0], (
+                    f"forbidden tmpfs spec: {spec!r}"
+                )
 
 
 class TestRunPytestTargetValidation:

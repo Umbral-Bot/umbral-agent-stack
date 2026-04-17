@@ -8,9 +8,12 @@ Covers:
   (sandboxed under .rick/contestants/).
 - Phase 2 slice 4b: opt-in real-repo single-file code change per
   contestant, driven by a validated ``target_file`` input.
+- Phase 2 slice 5: opt-in per-contestant validation via
+  ``validation_mode="python_compile"`` (observational).
 """
 
 import re
+import subprocess
 from unittest.mock import patch
 
 import pytest
@@ -27,7 +30,12 @@ from worker.tasks.github_tournament import (
     _generate_tournament_id,
     _parse_file_block,
     _resolve_inside_sandbox,
+    _run_contestant_validation,
+    _run_python_compile_validation,
+    _tail_log,
     _validate_target_file,
+    _validate_validation_mode,
+    _validate_validation_timeout,
     _winner_commit_info,
     _write_artifact_and_commit,
     handle_github_orchestrate_tournament,
@@ -1841,3 +1849,458 @@ class TestOrchestrateTargetFileIntegration:
         assert result["meta"]["target_file"] is None
         for c in result["contestants"]:
             assert c["code_change"]["mode"] == "sandbox"
+
+
+# ---------------------------------------------------------------------------
+# Phase 2 slice 5 — per-contestant validation
+# ---------------------------------------------------------------------------
+
+
+class TestValidateValidationMode:
+    def test_accepts_none_as_default(self):
+        r = _validate_validation_mode(None)
+        assert r["ok"] is True
+        assert r["normalized"] == "none"
+
+    def test_accepts_empty_string_as_default(self):
+        assert _validate_validation_mode("")["normalized"] == "none"
+
+    def test_accepts_none_literal(self):
+        assert _validate_validation_mode("none")["normalized"] == "none"
+
+    def test_accepts_python_compile(self):
+        assert _validate_validation_mode("python_compile")["normalized"] == "python_compile"
+
+    def test_is_case_insensitive(self):
+        assert _validate_validation_mode("Python_Compile")["normalized"] == "python_compile"
+
+    def test_trims_whitespace(self):
+        assert _validate_validation_mode("  python_compile  ")["normalized"] == "python_compile"
+
+    def test_rejects_unknown_mode(self):
+        r = _validate_validation_mode("pytest_target")
+        assert r["ok"] is False
+        assert "invalid validation_mode" in r["error"]
+        assert "python_compile" in r["error"]
+
+    def test_rejects_non_string(self):
+        r = _validate_validation_mode(42)
+        assert r["ok"] is False
+        assert "string" in r["error"]
+
+    def test_rejects_arbitrary_command(self):
+        r = _validate_validation_mode("; rm -rf /")
+        assert r["ok"] is False
+
+
+class TestValidateValidationTimeout:
+    def test_accepts_none_as_default(self):
+        r = _validate_validation_timeout(None)
+        assert r["ok"] is True and r["normalized"] == 20
+
+    def test_accepts_int(self):
+        assert _validate_validation_timeout(5)["normalized"] == 5
+
+    def test_accepts_float(self):
+        assert _validate_validation_timeout(2.5)["normalized"] == 2.5
+
+    def test_caps_at_max(self):
+        r = _validate_validation_timeout(9999)
+        assert r["ok"] is True
+        assert r["normalized"] == 60.0
+
+    def test_rejects_zero(self):
+        r = _validate_validation_timeout(0)
+        assert r["ok"] is False
+
+    def test_rejects_negative(self):
+        r = _validate_validation_timeout(-1)
+        assert r["ok"] is False
+
+    def test_rejects_string(self):
+        r = _validate_validation_timeout("20")
+        assert r["ok"] is False
+        assert "number" in r["error"]
+
+    def test_rejects_bool(self):
+        r = _validate_validation_timeout(True)
+        assert r["ok"] is False
+
+
+class TestTailLog:
+    def test_empty_returns_empty(self):
+        assert _tail_log("") == ""
+        assert _tail_log(None) == ""
+
+    def test_keeps_last_lines(self):
+        text = "\n".join(f"line {i}" for i in range(100))
+        tail = _tail_log(text)
+        assert "line 99" in tail
+        assert "line 0" not in tail
+        assert "line 80" in tail or "line 81" in tail  # last 20
+
+    def test_caps_char_count(self):
+        text = "x" * 5000
+        tail = _tail_log(text)
+        assert len(tail) <= 2000
+
+
+class TestRunPythonCompileValidation:
+    """Real subprocess exercise — py_compile is safe (no import, just parse)."""
+
+    def test_passes_on_valid_python(self, tmp_path):
+        f = tmp_path / "good.py"
+        f.write_text("def add(a, b):\n    return a + b\n")
+        r = _run_python_compile_validation(
+            repo_path=str(tmp_path), rel_path="good.py", timeout_s=10,
+        )
+        assert r["ran"] is True
+        assert r["mode"] == "python_compile"
+        assert r["passed"] is True
+        assert r["error"] is None
+        assert isinstance(r["duration_ms"], int)
+
+    def test_fails_on_syntax_error(self, tmp_path):
+        f = tmp_path / "bad.py"
+        f.write_text("def oops(:\n")
+        r = _run_python_compile_validation(
+            repo_path=str(tmp_path), rel_path="bad.py", timeout_s=10,
+        )
+        assert r["ran"] is True
+        assert r["passed"] is False
+        assert r["error"] is None
+        assert "SyntaxError" in r["log_tail"] or "syntax" in r["log_tail"].lower()
+
+    def test_fails_when_file_missing(self, tmp_path):
+        r = _run_python_compile_validation(
+            repo_path=str(tmp_path),
+            rel_path="ghost.py",
+            timeout_s=10,
+        )
+        assert r["ran"] is True
+        assert r["passed"] is False
+
+    @patch(f"{MOD}.subprocess.run",
+           side_effect=subprocess.TimeoutExpired(cmd="x", timeout=1))
+    def test_handles_timeout(self, _mock_run, tmp_path):
+        r = _run_python_compile_validation(
+            repo_path=str(tmp_path), rel_path="x.py", timeout_s=1,
+        )
+        assert r["ran"] is True
+        assert r["passed"] is False
+        assert "timeout" in r["error"]
+
+    @patch(f"{MOD}.subprocess.run", side_effect=OSError("boom"))
+    def test_handles_process_error(self, _mock_run, tmp_path):
+        r = _run_python_compile_validation(
+            repo_path=str(tmp_path), rel_path="x.py", timeout_s=1,
+        )
+        assert r["ran"] is True
+        assert r["passed"] is False
+        assert "process error" in r["error"]
+
+    @patch(f"{MOD}.subprocess.run")
+    def test_uses_fixed_argv_no_shell(self, mock_run, tmp_path):
+        mock_run.return_value = type(
+            "P", (), {"returncode": 0, "stderr": "", "stdout": ""},
+        )()
+        _run_python_compile_validation(
+            repo_path=str(tmp_path),
+            rel_path="worker/tasks/foo.py",
+            timeout_s=5,
+        )
+        assert mock_run.called
+        args, kwargs = mock_run.call_args
+        argv = args[0]
+        assert isinstance(argv, list)
+        assert argv[1:] == ["-m", "py_compile", "worker/tasks/foo.py"]
+        assert kwargs.get("shell") in (None, False)
+        assert kwargs["capture_output"] is True
+        assert kwargs["cwd"] == str(tmp_path)
+
+
+class TestRunContestantValidationDispatcher:
+    """_run_contestant_validation should enforce applicability rules."""
+
+    def test_none_mode_skips_everything(self):
+        r = _run_contestant_validation(
+            mode="none", code_change=None, target_file=None, timeout_s=10,
+        )
+        assert r["ran"] is False
+        assert r["passed"] is None
+        assert r["mode"] is None
+
+    def test_python_compile_without_target_file(self):
+        r = _run_contestant_validation(
+            mode="python_compile",
+            code_change={"written": True, "path": ".rick/contestants/t/a/x.py"},
+            target_file=None, timeout_s=10,
+        )
+        assert r["ran"] is False
+        assert "target_file" in r["error"]
+
+    def test_python_compile_wrong_extension(self):
+        r = _run_contestant_validation(
+            mode="python_compile",
+            code_change={"written": True, "path": "docs/notes.md"},
+            target_file="docs/notes.md", timeout_s=10,
+        )
+        assert r["ran"] is False
+        assert ".py" in r["error"]
+
+    def test_python_compile_no_code_change(self):
+        r = _run_contestant_validation(
+            mode="python_compile",
+            code_change=None,
+            target_file="worker/tasks/x.py", timeout_s=10,
+        )
+        assert r["ran"] is False
+        assert "no code change" in r["error"]
+
+    def test_python_compile_code_change_not_written(self):
+        r = _run_contestant_validation(
+            mode="python_compile",
+            code_change={"written": False, "parse_error": "bad"},
+            target_file="worker/tasks/x.py", timeout_s=10,
+        )
+        assert r["ran"] is False
+
+    @patch(f"{MOD}._run_python_compile_validation")
+    def test_python_compile_invokes_runner(self, mock_runner):
+        mock_runner.return_value = {
+            "ran": True, "mode": "python_compile", "passed": True,
+            "duration_ms": 50, "log_tail": "", "error": None,
+        }
+        r = _run_contestant_validation(
+            mode="python_compile",
+            code_change={"written": True},
+            target_file="worker/tasks/x.py", timeout_s=10,
+        )
+        assert r["passed"] is True
+        assert mock_runner.call_args.kwargs["rel_path"] == "worker/tasks/x.py"
+        assert mock_runner.call_args.kwargs["timeout_s"] == 10
+
+    def test_unknown_mode_returns_error_stub(self):
+        r = _run_contestant_validation(
+            mode="pytest_target", code_change=None,
+            target_file=None, timeout_s=10,
+        )
+        assert r["ran"] is False
+        assert "unsupported" in r["error"]
+
+
+class TestOrchestrateValidationIntegration:
+    """End-to-end wiring through handle_github_orchestrate_tournament."""
+
+    @patch(f"{MOD}._run_python_compile_validation")
+    @patch(f"{MOD}._generate_and_commit_code_change",
+           side_effect=_code_change_noop)
+    @patch(f"{MOD}._cherry_pick_and_push", side_effect=_cherry_pick_noop)
+    @patch(f"{MOD}._write_artifact_and_commit", side_effect=_artifact_noop)
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_create_branch", side_effect=_create_branch_ok)
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    def test_python_compile_runs_per_contestant(
+        self, _pre, _br, mock_tourn, _chk, _art, _cp, _code, mock_pyc,
+    ):
+        mock_tourn.return_value = _tournament_result(num=3, winner_id=1)
+        mock_pyc.return_value = {
+            "ran": True, "mode": "python_compile", "passed": True,
+            "duration_ms": 42, "log_tail": "", "error": None,
+        }
+
+        result = handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "generate_code": True,
+            "target_file": "worker/tasks/example.py",
+            "validation_mode": "python_compile",
+        })
+
+        assert result["ok"] is True
+        assert mock_pyc.call_count == 3
+        for c in result["contestants"]:
+            assert c["validation"]["ran"] is True
+            assert c["validation"]["passed"] is True
+            assert c["validation"]["mode"] == "python_compile"
+        assert result["meta"]["validation_mode"] == "python_compile"
+        assert result["meta"]["validation_timeout_s"] == 20
+
+    @patch(f"{MOD}._run_python_compile_validation")
+    @patch(f"{MOD}._generate_and_commit_code_change",
+           side_effect=_code_change_noop)
+    @patch(f"{MOD}._cherry_pick_and_push", side_effect=_cherry_pick_noop)
+    @patch(f"{MOD}._write_artifact_and_commit", side_effect=_artifact_noop)
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_create_branch", side_effect=_create_branch_ok)
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    def test_default_mode_does_not_run_validation(
+        self, _pre, _br, mock_tourn, _chk, _art, _cp, _code, mock_pyc,
+    ):
+        mock_tourn.return_value = _tournament_result(num=2, winner_id=1)
+
+        result = handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "generate_code": True,
+            "target_file": "worker/tasks/example.py",
+            # no validation_mode
+        })
+
+        assert result["ok"] is True
+        mock_pyc.assert_not_called()
+        for c in result["contestants"]:
+            assert c["validation"]["ran"] is False
+            assert c["validation"]["mode"] is None
+        assert result["meta"]["validation_mode"] == "none"
+
+    @patch(f"{MOD}._run_python_compile_validation")
+    @patch(f"{MOD}._generate_and_commit_code_change",
+           side_effect=_code_change_noop)
+    @patch(f"{MOD}._cherry_pick_and_push", side_effect=_cherry_pick_noop)
+    @patch(f"{MOD}._write_artifact_and_commit", side_effect=_artifact_noop)
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_create_branch", side_effect=_create_branch_ok)
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    def test_python_compile_without_target_file_marks_not_applicable(
+        self, _pre, _br, mock_tourn, _chk, _art, _cp, _code, mock_pyc,
+    ):
+        mock_tourn.return_value = _tournament_result(num=2, winner_id=1)
+
+        result = handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "generate_code": True,
+            # no target_file -> sandbox mode
+            "validation_mode": "python_compile",
+        })
+
+        assert result["ok"] is True
+        mock_pyc.assert_not_called()
+        for c in result["contestants"]:
+            assert c["validation"]["ran"] is False
+            assert "target_file" in c["validation"]["error"]
+
+    @patch(f"{MOD}._run_python_compile_validation")
+    @patch(f"{MOD}._generate_and_commit_code_change",
+           side_effect=_code_change_noop)
+    @patch(f"{MOD}._cherry_pick_and_push", side_effect=_cherry_pick_noop)
+    @patch(f"{MOD}._write_artifact_and_commit", side_effect=_artifact_noop)
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_create_branch", side_effect=_create_branch_ok)
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    def test_failing_contestant_is_marked_not_disqualified(
+        self, _pre, _br, mock_tourn, _chk, _art, _cp, _code, mock_pyc,
+    ):
+        mock_tourn.return_value = _tournament_result(num=2, winner_id=1)
+        mock_pyc.side_effect = [
+            {"ran": True, "mode": "python_compile", "passed": False,
+             "duration_ms": 12, "log_tail": "SyntaxError: bad", "error": None},
+            {"ran": True, "mode": "python_compile", "passed": True,
+             "duration_ms": 8, "log_tail": "", "error": None},
+        ]
+
+        result = handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "generate_code": True,
+            "target_file": "worker/tasks/example.py",
+            "validation_mode": "python_compile",
+        })
+
+        assert result["ok"] is True
+        assert result["contestants"][0]["validation"]["passed"] is False
+        assert "SyntaxError" in result["contestants"][0]["validation"]["log_tail"]
+        assert result["contestants"][1]["validation"]["passed"] is True
+        # Winner selection is untouched — the judge already ran before
+        # validation. The failing contestant is NOT disqualified.
+        assert result["verdict"]["winner_id"] == 1
+        assert result["final_result"] is not None
+
+    @patch(f"{MOD}._generate_and_commit_code_change")
+    @patch(f"{MOD}.handle_github_create_branch")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    def test_invalid_validation_mode_aborts_early(
+        self, _pre, mock_tourn, mock_br, mock_code,
+    ):
+        result = handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "validation_mode": "pytest_target",
+        })
+        assert result["ok"] is False
+        assert "invalid validation_mode" in result["error"]
+        mock_br.assert_not_called()
+        mock_tourn.assert_not_called()
+        mock_code.assert_not_called()
+
+    @patch(f"{MOD}._generate_and_commit_code_change")
+    @patch(f"{MOD}.handle_github_create_branch")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    def test_invalid_timeout_aborts_early(
+        self, _pre, mock_tourn, mock_br, mock_code,
+    ):
+        result = handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "validation_mode": "python_compile",
+            "validation_timeout_s": -5,
+        })
+        assert result["ok"] is False
+        assert "validation_timeout_s" in result["error"]
+        mock_br.assert_not_called()
+        mock_tourn.assert_not_called()
+
+    @patch(f"{MOD}._run_python_compile_validation")
+    @patch(f"{MOD}._generate_and_commit_code_change",
+           side_effect=_code_change_noop)
+    @patch(f"{MOD}._cherry_pick_and_push", side_effect=_cherry_pick_noop)
+    @patch(f"{MOD}._write_artifact_and_commit", side_effect=_artifact_noop)
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_create_branch", side_effect=_create_branch_ok)
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    def test_timeout_is_forwarded_to_runner(
+        self, _pre, _br, mock_tourn, _chk, _art, _cp, _code, mock_pyc,
+    ):
+        mock_tourn.return_value = _tournament_result(num=1, winner_id=1)
+        mock_pyc.return_value = {
+            "ran": True, "mode": "python_compile", "passed": True,
+            "duration_ms": 1, "log_tail": "", "error": None,
+        }
+
+        handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "generate_code": True,
+            "target_file": "worker/tasks/example.py",
+            "validation_mode": "python_compile",
+            "validation_timeout_s": 7,
+        })
+
+        assert mock_pyc.call_args.kwargs["timeout_s"] == 7.0
+
+    @patch(f"{MOD}._run_python_compile_validation")
+    @patch(f"{MOD}._generate_and_commit_code_change",
+           side_effect=_code_change_noop)
+    @patch(f"{MOD}._cherry_pick_and_push", side_effect=_cherry_pick_noop)
+    @patch(f"{MOD}._write_artifact_and_commit", side_effect=_artifact_noop)
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_create_branch", side_effect=_create_branch_ok)
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    def test_timeout_is_capped(
+        self, _pre, _br, mock_tourn, _chk, _art, _cp, _code, mock_pyc,
+    ):
+        mock_tourn.return_value = _tournament_result(num=1, winner_id=1)
+        mock_pyc.return_value = {
+            "ran": True, "mode": "python_compile", "passed": True,
+            "duration_ms": 1, "log_tail": "", "error": None,
+        }
+        handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "generate_code": True,
+            "target_file": "worker/tasks/example.py",
+            "validation_mode": "python_compile",
+            "validation_timeout_s": 9999,
+        })
+        assert mock_pyc.call_args.kwargs["timeout_s"] == 60.0

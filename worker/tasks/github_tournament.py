@@ -1,4 +1,4 @@
-"""Branch-based tournament orchestration — Phase 1 + Phase 2 slices 1–4b.
+"""Branch-based tournament orchestration — Phase 1 + Phase 2 slices 1–5.
 
 Composes existing primitives (github.create_branch, tournament.run,
 github.commit_and_push) into a multi-branch comparison workflow. Each
@@ -46,12 +46,25 @@ protected prefixes (``.git/``, ``.github/``, ``.rick/``, ...) and an
 allowlist of extensions so a single invalid input can't produce bad
 branches. Multi-file changes, pytest-per-contestant and execution
 sandboxes remain out of scope.
+
+Phase 2 slice 5 adds OPT-IN per-contestant validation. When
+``validation_mode="python_compile"`` is set AND the contestant actually
+emitted a real ``.py`` file (slice 4b), the tournament runs
+``python3 -m py_compile <target_file>`` with a bounded timeout and
+records pass/fail, duration and a short stderr tail per contestant.
+The command is hardcoded (no free command, no shell, argv list) and
+the rel_path has already passed slice-4b validation. Validation is
+observational in this slice: the judge itself is NOT re-run; failing
+contestants are marked in the output but not disqualified. Real
+pytest per contestant and general execution sandboxing remain out of
+scope.
 """
 
 import datetime
 import logging
 import re
 import subprocess
+import sys
 import time
 import uuid
 from pathlib import Path
@@ -832,6 +845,197 @@ def _cherry_pick_and_push(
     return {"cherry_picked": True, "pushed": True, "error": None}
 
 
+# ---------------------------------------------------------------------------
+# Phase 2 slice 5 — per-contestant validation (opt-in, observational)
+# ---------------------------------------------------------------------------
+
+# Narrow allowlist. `none` is the retrocompat default; `python_compile`
+# runs a fixed `python3 -m py_compile <target_file>` per contestant.
+_VALIDATION_MODES = ("none", "python_compile")
+
+# Default timeout for a single contestant's validation run.
+_VALIDATION_DEFAULT_TIMEOUT_S = 20
+
+# Hard cap so a misconfigured input can never stall the worker.
+_VALIDATION_MAX_TIMEOUT_S = 60
+
+# Log tail budget — enough to see one SyntaxError + context, not more.
+_VALIDATION_LOG_TAIL_LINES = 20
+_VALIDATION_LOG_TAIL_MAX_CHARS = 2000
+
+
+def _validate_validation_mode(value: Any) -> Dict[str, Any]:
+    """Validate the ``validation_mode`` input.
+
+    Returns ``{"ok": True, "normalized": "none"|"python_compile"}`` or
+    ``{"ok": False, "error": str}``. Treats absent/empty/None as
+    ``"none"``. Never raises.
+    """
+    if value is None or value == "":
+        return {"ok": True, "normalized": "none", "error": None}
+    if not isinstance(value, str):
+        return {"ok": False, "normalized": None,
+                "error": "validation_mode must be a string"}
+    v = value.strip().lower()
+    if v not in _VALIDATION_MODES:
+        return {
+            "ok": False,
+            "normalized": None,
+            "error": (
+                f"invalid validation_mode '{value}' "
+                f"(allowed: {', '.join(_VALIDATION_MODES)})"
+            ),
+        }
+    return {"ok": True, "normalized": v, "error": None}
+
+
+def _validate_validation_timeout(value: Any) -> Dict[str, Any]:
+    """Validate ``validation_timeout_s`` input.
+
+    Accepts positive int/float up to ``_VALIDATION_MAX_TIMEOUT_S``.
+    Absent value resolves to ``_VALIDATION_DEFAULT_TIMEOUT_S``. Never
+    raises.
+    """
+    if value is None:
+        return {"ok": True, "normalized": _VALIDATION_DEFAULT_TIMEOUT_S,
+                "error": None}
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return {"ok": False, "normalized": None,
+                "error": "validation_timeout_s must be a number"}
+    if value <= 0:
+        return {"ok": False, "normalized": None,
+                "error": "validation_timeout_s must be positive"}
+    normalized = min(float(value), float(_VALIDATION_MAX_TIMEOUT_S))
+    return {"ok": True, "normalized": normalized, "error": None}
+
+
+def _tail_log(text: str) -> str:
+    """Return the last ``_VALIDATION_LOG_TAIL_LINES`` lines of ``text``,
+    capped to ``_VALIDATION_LOG_TAIL_MAX_CHARS`` characters.
+    """
+    if not text:
+        return ""
+    lines = text.splitlines()
+    tail = "\n".join(lines[-_VALIDATION_LOG_TAIL_LINES:])
+    if len(tail) > _VALIDATION_LOG_TAIL_MAX_CHARS:
+        tail = tail[-_VALIDATION_LOG_TAIL_MAX_CHARS:]
+    return tail
+
+
+def _run_python_compile_validation(
+    *,
+    repo_path: str,
+    rel_path: str,
+    timeout_s: float,
+) -> Dict[str, Any]:
+    """Run ``python3 -m py_compile <rel_path>`` inside ``repo_path``.
+
+    The command is fixed — argv list, no shell, no string interpolation
+    into the command. ``rel_path`` has already passed slice-4b input
+    validation (charset, denylist, no traversal, resolves inside the
+    repo) before a single byte was written. This helper never raises:
+    timeout, process errors and non-zero exit codes are all captured
+    in the returned dict.
+
+    Returns:
+        {
+          "ran": True,
+          "mode": "python_compile",
+          "passed": bool,
+          "duration_ms": int,
+          "log_tail": str,
+          "error": str | None,
+        }
+    """
+    argv = [sys.executable, "-m", "py_compile", rel_path]
+    t0 = time.time()
+    try:
+        proc = subprocess.run(
+            argv,
+            cwd=repo_path,
+            capture_output=True,
+            text=True,
+            timeout=timeout_s,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        dur = int((time.time() - t0) * 1000)
+        log = _tail_log(
+            (exc.stderr.decode("utf-8", "replace") if isinstance(exc.stderr, bytes)
+             else (exc.stderr or "")) if exc.stderr else ""
+        )
+        return {
+            "ran": True,
+            "mode": "python_compile",
+            "passed": False,
+            "duration_ms": dur,
+            "log_tail": log,
+            "error": f"timeout after {timeout_s}s",
+        }
+    except Exception as exc:
+        dur = int((time.time() - t0) * 1000)
+        return {
+            "ran": True,
+            "mode": "python_compile",
+            "passed": False,
+            "duration_ms": dur,
+            "log_tail": "",
+            "error": f"process error: {str(exc)[:200]}",
+        }
+
+    dur = int((time.time() - t0) * 1000)
+    combined = (proc.stderr or "") + (
+        ("\n" + proc.stdout) if proc.stdout else ""
+    )
+    return {
+        "ran": True,
+        "mode": "python_compile",
+        "passed": proc.returncode == 0,
+        "duration_ms": dur,
+        "log_tail": _tail_log(combined),
+        "error": None,
+    }
+
+
+def _run_contestant_validation(
+    *,
+    mode: str,
+    code_change: Optional[Dict[str, Any]],
+    target_file: Optional[str],
+    timeout_s: float,
+) -> Dict[str, Any]:
+    """Decide whether to run validation for one contestant and run it.
+
+    Returns the canonical ``validation`` dict shape. Does NOT raise.
+    """
+    empty_stub = lambda err=None, ran=False: {  # noqa: E731
+        "ran": ran,
+        "mode": mode if mode != "none" else None,
+        "passed": None,
+        "duration_ms": None,
+        "log_tail": None,
+        "error": err,
+    }
+
+    if mode == "none":
+        return empty_stub()
+
+    if mode == "python_compile":
+        if not target_file:
+            return empty_stub("python_compile requires target_file")
+        if not target_file.lower().endswith(".py"):
+            return empty_stub("python_compile only supports .py files")
+        if not code_change or not code_change.get("written"):
+            return empty_stub("no code change to validate")
+        return _run_python_compile_validation(
+            repo_path=config.GITHUB_REPO_PATH,
+            rel_path=target_file,
+            timeout_s=timeout_s,
+        )
+
+    return empty_stub(f"unsupported validation_mode: {mode}")
+
+
 def handle_github_orchestrate_tournament(
     input_data: Dict[str, Any],
 ) -> Dict[str, Any]:
@@ -868,6 +1072,15 @@ def handle_github_orchestrate_tournament(
             Validated up front against a denylist of protected prefixes
             and an extension allowlist; if invalid the handler returns
             ``ok: False`` before creating any branch.
+        validation_mode (str): slice 5. One of ``"none"`` (default,
+            retrocompat) or ``"python_compile"``. When set to
+            ``"python_compile"`` AND a contestant actually wrote a
+            ``.py`` file (slice 4b), ``python3 -m py_compile`` is run
+            per contestant with a bounded timeout. Observational in
+            this slice — the judge is not re-run.
+        validation_timeout_s (int|float): slice 5. Per-contestant
+            validation timeout in seconds. Default 20, hard-capped at
+            60.
 
     Returns:
         ok, tournament_id, challenge, base, contestants,
@@ -898,6 +1111,29 @@ def handle_github_orchestrate_tournament(
                 "tournament_id": _generate_tournament_id(),
             }
         target_file = tf_check["normalized"]
+
+    # Slice 5: validate validation_mode + validation_timeout_s up front.
+    # Accepts missing/None as ``"none"`` (retrocompat default).
+    vm_check = _validate_validation_mode(input_data.get("validation_mode"))
+    if not vm_check["ok"]:
+        return {
+            "ok": False,
+            "error": vm_check["error"],
+            "tournament_id": _generate_tournament_id(),
+        }
+    validation_mode: str = vm_check["normalized"]
+
+    vt_check = _validate_validation_timeout(
+        input_data.get("validation_timeout_s"),
+    )
+    if not vt_check["ok"]:
+        return {
+            "ok": False,
+            "error": vt_check["error"],
+            "tournament_id": _generate_tournament_id(),
+        }
+    validation_timeout_s: float = vt_check["normalized"]
+
     tournament_id = _generate_tournament_id()
 
     # ---- 1. Preflight ----
@@ -990,6 +1226,18 @@ def handle_github_orchestrate_tournament(
                     target_file=target_file,
                 )
 
+            # Phase 2 slice 5 (opt-in): validate the contestant's code
+            # change. Never raises, never gates downstream steps —
+            # observational only. Failing contestants are marked but
+            # remain elegible for the winner selection already done by
+            # the judge.
+            validation = _run_contestant_validation(
+                mode=validation_mode,
+                code_change=code_change,
+                target_file=target_file,
+                timeout_s=validation_timeout_s,
+            )
+
             contestants.append({
                 "id": approach.get("id", i + 1),
                 "approach": approach.get("approach_name", f"Approach {label.upper()}"),
@@ -997,6 +1245,7 @@ def handle_github_orchestrate_tournament(
                 "proposal_excerpt": (approach.get("proposal") or "")[:500],
                 "artifact": artifact,
                 "code_change": code_change,
+                "validation": validation,
             })
 
         # ---- 4. Create final branch + cherry-pick the winner ----
@@ -1071,5 +1320,7 @@ def handle_github_orchestrate_tournament(
             "models_used": tournament.get("meta", {}).get("models_used", []),
             "generate_code": generate_code,
             "target_file": target_file,
+            "validation_mode": validation_mode,
+            "validation_timeout_s": validation_timeout_s,
         },
     }

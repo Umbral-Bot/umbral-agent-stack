@@ -1,4 +1,4 @@
-"""Branch-based tournament orchestration — Phase 1 + Phase 2 slices 1–6.
+"""Branch-based tournament orchestration — Phase 1 + Phase 2 slices 1–7a.
 
 Composes existing primitives (github.create_branch, tournament.run,
 github.commit_and_push) into a multi-branch comparison workflow. Each
@@ -76,10 +76,27 @@ NOT modified; the re-judge lives entirely inside
 ``github_tournament.py`` so slice 6 is additive and its blast radius
 is scoped to a single module. Automatic disqualification, pytest
 per contestant and execution sandboxing remain out of scope.
+
+Phase 2 slice 7a adds a third OPT-IN validation mode,
+``python_ast_lint``, that sits between ``python_compile`` and a real
+``pytest_target`` (deferred until sandbox infra exists). It runs a
+fixed static analyzer over the target file via
+``python3 -I -c <fixed script> <target_file>``: the script is a
+literal constant, uses only ``ast.parse`` + an ``ast.NodeVisitor``,
+and NEVER imports nor executes the target. On top of catching
+``SyntaxError`` it also flags duplicate top-level functions/classes
+(excluding ``@overload``) and stray ``return``/``yield``/``await``
+outside function scope. It keeps the same input contract
+(``validation_mode`` + ``validation_timeout_s``), the same
+``validation`` output shape, the same never-raises discipline and the
+same observational policy (failing contestants are reported but not
+disqualified). Real ``pytest_target`` and execution sandboxing remain
+out of scope.
 """
 
 import datetime
 import logging
+import os
 import re
 import subprocess
 import sys
@@ -868,8 +885,10 @@ def _cherry_pick_and_push(
 # ---------------------------------------------------------------------------
 
 # Narrow allowlist. `none` is the retrocompat default; `python_compile`
-# runs a fixed `python3 -m py_compile <target_file>` per contestant.
-_VALIDATION_MODES = ("none", "python_compile")
+# runs a fixed `python3 -m py_compile <target_file>` per contestant;
+# `python_ast_lint` runs a fixed static analyzer (no imports, no
+# execution of contestant code) on top of `ast.parse`.
+_VALIDATION_MODES = ("none", "python_compile", "python_ast_lint")
 
 # Default timeout for a single contestant's validation run.
 _VALIDATION_DEFAULT_TIMEOUT_S = 20
@@ -885,9 +904,9 @@ _VALIDATION_LOG_TAIL_MAX_CHARS = 2000
 def _validate_validation_mode(value: Any) -> Dict[str, Any]:
     """Validate the ``validation_mode`` input.
 
-    Returns ``{"ok": True, "normalized": "none"|"python_compile"}`` or
-    ``{"ok": False, "error": str}``. Treats absent/empty/None as
-    ``"none"``. Never raises.
+    Returns ``{"ok": True, "normalized": "none"|"python_compile"|
+    "python_ast_lint"}`` or ``{"ok": False, "error": str}``. Treats
+    absent/empty/None as ``"none"``. Never raises.
     """
     if value is None or value == "":
         return {"ok": True, "normalized": "none", "error": None}
@@ -1015,6 +1034,213 @@ def _run_python_compile_validation(
     }
 
 
+# Static analyzer script run as ``python3 -c _AST_LINT_SCRIPT <rel>``.
+#
+# IMPORTANT: This script MUST NEVER import or execute the target file.
+# It only reads its source and runs ``ast.parse`` + an ``ast.NodeVisitor``
+# over the AST. No code from the target is ever evaluated.
+#
+# Exit codes:
+#   0  clean
+#   1  issues found (SyntaxError or static-lint findings)
+#   2  internal script error (unreadable file, etc.)
+_AST_LINT_SCRIPT = r"""
+import ast, sys
+
+def main(argv):
+    if len(argv) != 2:
+        print("ast_lint: expected exactly one path argument", file=sys.stderr)
+        return 2
+    path = argv[1]
+    try:
+        with open(path, "rb") as f:
+            raw = f.read()
+    except OSError as exc:
+        print("ast_lint: cannot read {}: {}".format(path, exc), file=sys.stderr)
+        return 2
+    try:
+        src = raw.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        print("ast_lint: non-utf8 source ({}): {}".format(path, exc),
+              file=sys.stderr)
+        return 1
+    try:
+        tree = ast.parse(src, filename=path)
+    except SyntaxError as exc:
+        loc = "line {}".format(exc.lineno) if exc.lineno else "?"
+        print("ast_lint: SyntaxError at {}: {}".format(loc, exc.msg),
+              file=sys.stderr)
+        return 1
+
+    issues = []
+
+    def _is_overload(deco):
+        # Accept @overload and @typing.overload (common shapes only).
+        if isinstance(deco, ast.Name):
+            return deco.id == "overload"
+        if isinstance(deco, ast.Attribute):
+            return deco.attr == "overload"
+        return False
+
+    # --- Top-level duplicate functions/classes (excluding @overload). ---
+    seen_funcs = {}
+    seen_classes = {}
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            if any(_is_overload(d) for d in (node.decorator_list or [])):
+                continue
+            first = seen_funcs.get(node.name)
+            if first is None:
+                seen_funcs[node.name] = node.lineno
+            else:
+                issues.append(
+                    "duplicate top-level function '{}' at line {} "
+                    "(first defined at line {})".format(
+                        node.name, node.lineno, first))
+        elif isinstance(node, ast.ClassDef):
+            first = seen_classes.get(node.name)
+            if first is None:
+                seen_classes[node.name] = node.lineno
+            else:
+                issues.append(
+                    "duplicate top-level class '{}' at line {} "
+                    "(first defined at line {})".format(
+                        node.name, node.lineno, first))
+
+    # --- return/yield/yield from/await outside any function scope. ---
+    # ast.parse already rejects these as SyntaxError in CPython today,
+    # but we keep an explicit pass as a defensive net.
+    class _ScopeVisitor(ast.NodeVisitor):
+        def __init__(self):
+            self.depth = 0
+        def _enter(self, node):
+            self.depth += 1
+            self.generic_visit(node)
+            self.depth -= 1
+        def visit_FunctionDef(self, node):
+            self._enter(node)
+        def visit_AsyncFunctionDef(self, node):
+            self._enter(node)
+        def visit_Lambda(self, node):
+            self._enter(node)
+        def _flag(self, node, kind):
+            if self.depth == 0:
+                issues.append(
+                    "'{}' outside function at line {}".format(
+                        kind, getattr(node, "lineno", "?")))
+        def visit_Return(self, node):
+            self._flag(node, "return")
+            self.generic_visit(node)
+        def visit_Yield(self, node):
+            self._flag(node, "yield")
+            self.generic_visit(node)
+        def visit_YieldFrom(self, node):
+            self._flag(node, "yield from")
+            self.generic_visit(node)
+        def visit_Await(self, node):
+            self._flag(node, "await")
+            self.generic_visit(node)
+
+    _ScopeVisitor().visit(tree)
+
+    if issues:
+        for msg in issues:
+            print("ast_lint: " + msg, file=sys.stderr)
+        return 1
+    print("ast_lint: clean ({} bytes)".format(len(raw)))
+    return 0
+
+sys.exit(main(sys.argv))
+"""
+
+
+def _run_python_ast_lint_validation(
+    *,
+    repo_path: str,
+    rel_path: str,
+    timeout_s: float,
+) -> Dict[str, Any]:
+    """Run the static AST lint script against ``rel_path``.
+
+    Uses a fixed argv list, no shell, no string interpolation into the
+    command. ``rel_path`` has already passed slice-4b input validation
+    before reaching here. The analyzer in ``_AST_LINT_SCRIPT`` never
+    imports nor executes the target file; it only parses its source.
+    Never raises: timeout, process errors and non-zero exit codes are
+    all captured in the returned dict.
+
+    Returns:
+        {
+          "ran": True,
+          "mode": "python_ast_lint",
+          "passed": bool,
+          "duration_ms": int,
+          "log_tail": str,
+          "error": str | None,
+        }
+    """
+    argv = [sys.executable, "-I", "-c", _AST_LINT_SCRIPT, rel_path]
+    env = {
+        "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
+        "HOME": os.environ.get("HOME", "/tmp"),
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONUNBUFFERED": "1",
+    }
+    t0 = time.time()
+    try:
+        proc = subprocess.run(
+            argv,
+            cwd=repo_path,
+            capture_output=True,
+            text=True,
+            timeout=timeout_s,
+            check=False,
+            env=env,
+        )
+    except subprocess.TimeoutExpired as exc:
+        dur = int((time.time() - t0) * 1000)
+        log = _tail_log(
+            (exc.stderr.decode("utf-8", "replace") if isinstance(exc.stderr, bytes)
+             else (exc.stderr or "")) if exc.stderr else ""
+        )
+        return {
+            "ran": True,
+            "mode": "python_ast_lint",
+            "passed": False,
+            "duration_ms": dur,
+            "log_tail": log,
+            "error": f"timeout after {timeout_s}s",
+        }
+    except Exception as exc:
+        dur = int((time.time() - t0) * 1000)
+        return {
+            "ran": True,
+            "mode": "python_ast_lint",
+            "passed": False,
+            "duration_ms": dur,
+            "log_tail": "",
+            "error": f"process error: {str(exc)[:200]}",
+        }
+
+    dur = int((time.time() - t0) * 1000)
+    combined = (proc.stderr or "") + (
+        ("\n" + proc.stdout) if proc.stdout else ""
+    )
+    # Exit code 2 means the script itself had an internal problem (e.g.
+    # unreadable file) — surface it as an error rather than a fail.
+    err: Optional[str] = None
+    if proc.returncode == 2:
+        err = "ast_lint internal error"
+    return {
+        "ran": True,
+        "mode": "python_ast_lint",
+        "passed": proc.returncode == 0,
+        "duration_ms": dur,
+        "log_tail": _tail_log(combined),
+        "error": err,
+    }
+
+
 def _run_contestant_validation(
     *,
     mode: str,
@@ -1046,6 +1272,19 @@ def _run_contestant_validation(
         if not code_change or not code_change.get("written"):
             return empty_stub("no code change to validate")
         return _run_python_compile_validation(
+            repo_path=config.GITHUB_REPO_PATH,
+            rel_path=target_file,
+            timeout_s=timeout_s,
+        )
+
+    if mode == "python_ast_lint":
+        if not target_file:
+            return empty_stub("python_ast_lint requires target_file")
+        if not target_file.lower().endswith(".py"):
+            return empty_stub("python_ast_lint only supports .py files")
+        if not code_change or not code_change.get("written"):
+            return empty_stub("no code change to validate")
+        return _run_python_ast_lint_validation(
             repo_path=config.GITHUB_REPO_PATH,
             rel_path=target_file,
             timeout_s=timeout_s,

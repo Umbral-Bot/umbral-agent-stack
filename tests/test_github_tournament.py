@@ -29,13 +29,21 @@ from worker.tasks.github_tournament import (
     _build_rejudge_prompt,
     _cherry_pick_and_push,
     _code_prefix,
+    _compute_sandbox_image_ref,
+    _contestant_ref_for_validation,
     _detect_override_attempt,
+    _docker_available,
+    _docker_image_available,
     _final_branch_name,
     _generate_and_commit_code_change,
     _generate_tournament_id,
     _parse_file_block,
+    _prepare_pytest_target_context,
+    _pytest_target_docker_argv,
+    _read_file_at_ref,
     _resolve_inside_sandbox,
     _run_contestant_validation,
+    _run_pytest_target_validation,
     _run_python_ast_lint_validation,
     _run_python_compile_validation,
     _run_rejudge,
@@ -1899,11 +1907,12 @@ class TestValidateValidationMode:
         assert _validate_validation_mode("  python_compile  ")["normalized"] == "python_compile"
 
     def test_rejects_unknown_mode(self):
-        r = _validate_validation_mode("pytest_target")
+        r = _validate_validation_mode("pytest_full")
         assert r["ok"] is False
         assert "invalid validation_mode" in r["error"]
         assert "python_compile" in r["error"]
         assert "python_ast_lint" in r["error"]
+        assert "pytest_target" in r["error"]
 
     def test_rejects_non_string(self):
         r = _validate_validation_mode(42)
@@ -2406,7 +2415,7 @@ class TestRunContestantValidationDispatcher:
 
     def test_unknown_mode_returns_error_stub(self):
         r = _run_contestant_validation(
-            mode="pytest_target", code_change=None,
+            mode="pytest_full", code_change=None,
             target_file=None, timeout_s=10,
         )
         assert r["ran"] is False
@@ -2627,7 +2636,7 @@ class TestOrchestrateValidationIntegration:
     ):
         result = handle_github_orchestrate_tournament({
             "challenge": "c",
-            "validation_mode": "pytest_target",
+            "validation_mode": "pytest_full",
         })
         assert result["ok"] is False
         assert "invalid validation_mode" in result["error"]
@@ -3347,3 +3356,844 @@ class TestOrchestrateRejudgeIntegration:
         # flag surfaces the suspicious pick.
         assert result["verdict"]["winner_id"] == 1
         assert result["rejudge"]["override_attempt"] is True
+
+
+# ---------------------------------------------------------------------------
+# Phase 2 slice 7b — pytest_target (Docker-isolated) helpers
+# ---------------------------------------------------------------------------
+
+
+class TestValidateValidationModeAcceptsPytestTarget:
+    def test_pytest_target_is_valid(self):
+        r = _validate_validation_mode("pytest_target")
+        assert r["ok"] is True
+        assert r["normalized"] == "pytest_target"
+
+    def test_pytest_target_case_insensitive(self):
+        r = _validate_validation_mode("Pytest_Target")
+        assert r["ok"] is True
+        assert r["normalized"] == "pytest_target"
+
+    def test_error_message_lists_pytest_target(self):
+        r = _validate_validation_mode("bogus")
+        assert r["ok"] is False
+        assert "pytest_target" in r["error"]
+
+
+class TestComputeSandboxImageRef:
+    def test_happy_path(self, tmp_path):
+        (tmp_path / "pyproject.toml").write_bytes(b'[project]\nname="x"\n')
+        r = _compute_sandbox_image_ref(str(tmp_path))
+        assert r["ok"] is True
+        assert r["ref"].startswith("umbral-sandbox-pytest:")
+        assert len(r["tag"]) == 12
+
+    def test_deterministic(self, tmp_path):
+        (tmp_path / "pyproject.toml").write_bytes(b'[project]\nname="x"\n')
+        r1 = _compute_sandbox_image_ref(str(tmp_path))
+        r2 = _compute_sandbox_image_ref(str(tmp_path))
+        assert r1["tag"] == r2["tag"]
+
+    def test_different_pyproject_different_tag(self, tmp_path):
+        (tmp_path / "pyproject.toml").write_bytes(b'[project]\nname="a"\n')
+        a = _compute_sandbox_image_ref(str(tmp_path))
+        (tmp_path / "pyproject.toml").write_bytes(b'[project]\nname="b"\n')
+        b = _compute_sandbox_image_ref(str(tmp_path))
+        assert a["tag"] != b["tag"]
+
+    def test_missing_pyproject_is_graceful(self, tmp_path):
+        r = _compute_sandbox_image_ref(str(tmp_path / "ghost"))
+        assert r["ok"] is False
+        assert "cannot read" in r["error"]
+
+
+class TestReadFileAtRef:
+    def test_happy_path(self):
+        with patch(f"{MOD}.subprocess.run") as mock_run:
+            mock_run.return_value = subprocess.CompletedProcess(
+                args=[], returncode=0, stdout="hello\n", stderr="",
+            )
+            r = _read_file_at_ref(
+                repo_path="/repo", ref="abc123",
+                rel_path="worker/tasks/foo.py",
+            )
+        assert r["ok"] is True
+        assert r["content"] == "hello\n"
+        argv = mock_run.call_args.args[0]
+        assert argv == ["git", "show", "abc123:worker/tasks/foo.py"]
+        assert mock_run.call_args.kwargs["cwd"] == "/repo"
+
+    def test_non_zero_rc_fails(self):
+        with patch(f"{MOD}.subprocess.run") as mock_run:
+            mock_run.return_value = subprocess.CompletedProcess(
+                args=[], returncode=128, stdout="",
+                stderr="fatal: bad revision 'abc'\n",
+            )
+            r = _read_file_at_ref(
+                repo_path="/repo", ref="abc",
+                rel_path="worker/tasks/foo.py",
+            )
+        assert r["ok"] is False
+        assert "rc=128" in r["error"]
+        assert "bad revision" in r["error"]
+
+    def test_timeout(self):
+        with patch(
+            f"{MOD}.subprocess.run",
+            side_effect=subprocess.TimeoutExpired(cmd="git show", timeout=5),
+        ):
+            r = _read_file_at_ref(
+                repo_path="/repo", ref="abc",
+                rel_path="foo.py", timeout_s=5,
+            )
+        assert r["ok"] is False
+        assert "timeout" in r["error"]
+
+    def test_process_error(self):
+        with patch(f"{MOD}.subprocess.run", side_effect=FileNotFoundError("git")):
+            r = _read_file_at_ref(
+                repo_path="/repo", ref="abc", rel_path="foo.py",
+            )
+        assert r["ok"] is False
+        assert "git show error" in r["error"]
+
+    def test_rejects_empty_ref(self):
+        r = _read_file_at_ref(repo_path="/repo", ref="", rel_path="foo.py")
+        assert r["ok"] is False
+        assert "ref" in r["error"]
+
+    def test_rejects_empty_path(self):
+        r = _read_file_at_ref(repo_path="/repo", ref="abc", rel_path="")
+        assert r["ok"] is False
+        assert "rel_path" in r["error"]
+
+
+class TestDockerAvailable:
+    def test_present(self):
+        with patch(f"{MOD}.shutil.which", return_value="/usr/bin/docker"):
+            r = _docker_available()
+        assert r["ok"] is True
+        assert r["path"] == "/usr/bin/docker"
+
+    def test_missing(self):
+        with patch(f"{MOD}.shutil.which", return_value=None):
+            r = _docker_available()
+        assert r["ok"] is False
+        assert "not installed" in r["error"]
+
+
+class TestDockerImageAvailable:
+    def test_present(self):
+        with patch(f"{MOD}.subprocess.run") as mock_run:
+            mock_run.return_value = subprocess.CompletedProcess(
+                args=[], returncode=0, stdout="[{}]", stderr="",
+            )
+            r = _docker_image_available(image_ref="img:tag")
+        assert r["ok"] is True
+        argv = mock_run.call_args.args[0]
+        assert argv == ["docker", "image", "inspect", "img:tag"]
+
+    def test_missing(self):
+        with patch(f"{MOD}.subprocess.run") as mock_run:
+            mock_run.return_value = subprocess.CompletedProcess(
+                args=[], returncode=1, stdout="",
+                stderr="Error: No such image: img:tag\n",
+            )
+            r = _docker_image_available(image_ref="img:tag")
+        assert r["ok"] is False
+        assert "img:tag" in r["error"]
+        assert "refresh.sh" in r["error"]
+
+    def test_timeout(self):
+        with patch(
+            f"{MOD}.subprocess.run",
+            side_effect=subprocess.TimeoutExpired(cmd="docker", timeout=5),
+        ):
+            r = _docker_image_available(image_ref="img:tag", timeout_s=5)
+        assert r["ok"] is False
+        assert "timeout" in r["error"]
+
+    def test_rejects_empty_ref(self):
+        r = _docker_image_available(image_ref="")
+        assert r["ok"] is False
+
+
+class TestContestantRefForValidation:
+    def test_returns_sha_from_code_change(self):
+        cc = {"commit": {"ok": True, "sha": "deadbeef"}}
+        assert _contestant_ref_for_validation(cc) == "deadbeef"
+
+    def test_none_when_no_code_change(self):
+        assert _contestant_ref_for_validation(None) is None
+
+    def test_none_when_commit_failed(self):
+        cc = {"commit": {"ok": False, "sha": "deadbeef"}}
+        assert _contestant_ref_for_validation(cc) is None
+
+    def test_none_when_sha_missing(self):
+        cc = {"commit": {"ok": True}}
+        assert _contestant_ref_for_validation(cc) is None
+
+    def test_none_when_sha_empty(self):
+        cc = {"commit": {"ok": True, "sha": ""}}
+        assert _contestant_ref_for_validation(cc) is None
+
+
+def _ctx_stub_ok(tmp_path, target="tests/test_foo.py"):
+    ws = tmp_path / "umbral-sbx-tid-aaaaaaaa"
+    ws.mkdir()
+    return {
+        "ok": True,
+        "ws_path": ws,
+        "resolved_target": target,
+        "image_ref": "umbral-sandbox-pytest:abc123",
+        "allowlist_size": 5,
+        "error": None,
+    }
+
+
+class TestPreparePytestTargetContext:
+    def test_rejects_missing_target_file(self, tmp_path):
+        ctx = _prepare_pytest_target_context(
+            repo_path=str(tmp_path), target_file=None, tournament_id="tid-1",
+        )
+        assert ctx["ok"] is False
+        assert "requires target_file" in ctx["error"]
+
+    def test_rejects_non_py_target(self, tmp_path):
+        ctx = _prepare_pytest_target_context(
+            repo_path=str(tmp_path), target_file="worker/tasks/foo.md",
+            tournament_id="tid-1",
+        )
+        assert ctx["ok"] is False
+        assert ".py" in ctx["error"]
+
+    def test_surfaces_image_compute_error(self, tmp_path):
+        ctx = _prepare_pytest_target_context(
+            repo_path=str(tmp_path / "ghost"),
+            target_file="worker/tasks/foo.py", tournament_id="tid-1",
+        )
+        assert ctx["ok"] is False
+        assert "pyproject" in ctx["error"]
+
+    def test_surfaces_docker_missing(self, tmp_path):
+        (tmp_path / "pyproject.toml").write_bytes(b'[project]\nname="x"\n')
+        with patch(f"{MOD}.shutil.which", return_value=None):
+            ctx = _prepare_pytest_target_context(
+                repo_path=str(tmp_path),
+                target_file="worker/tasks/foo.py", tournament_id="tid-1",
+            )
+        assert ctx["ok"] is False
+        assert "docker" in ctx["error"]
+        assert ctx["image_ref"] is not None
+        assert ctx["ws_path"] is None
+
+    def test_surfaces_image_missing(self, tmp_path):
+        (tmp_path / "pyproject.toml").write_bytes(b'[project]\nname="x"\n')
+        with patch(f"{MOD}.shutil.which", return_value="/usr/bin/docker"), \
+             patch(f"{MOD}.subprocess.run") as mock_run:
+            mock_run.return_value = subprocess.CompletedProcess(
+                args=[], returncode=1, stdout="", stderr="No such image\n",
+            )
+            ctx = _prepare_pytest_target_context(
+                repo_path=str(tmp_path),
+                target_file="worker/tasks/foo.py", tournament_id="tid-1",
+            )
+        assert ctx["ok"] is False
+        assert "not available locally" in ctx["error"]
+        assert ctx["ws_path"] is None
+
+    def test_surfaces_allowlist_miss(self, tmp_path):
+        # pyproject present, docker mocked, image mocked, but the
+        # resolver can't find a candidate because our fake repo has
+        # no tests/ dir.
+        (tmp_path / "pyproject.toml").write_bytes(b'[project]\nname="x"\n')
+        with patch(f"{MOD}.shutil.which", return_value="/usr/bin/docker"), \
+             patch(f"{MOD}.subprocess.run") as mock_run:
+            mock_run.return_value = subprocess.CompletedProcess(
+                args=[], returncode=0, stdout="[]", stderr="",
+            )
+            ctx = _prepare_pytest_target_context(
+                repo_path=str(tmp_path),
+                target_file="worker/tasks/never_exists_in_repo.py",
+                tournament_id="tid-1",
+            )
+        # Allowlist load succeeds (real file) but no candidate matches
+        # on disk for that target_file.
+        assert ctx["ok"] is False
+        assert "no allowlisted pytest target" in ctx["error"]
+
+    def test_happy_path_builds_workspace(self, tmp_path, monkeypatch):
+        # Build a mini repo with the layout needed for resolve + build.
+        repo = tmp_path / "repo"
+        (repo / "worker" / "tasks").mkdir(parents=True)
+        (repo / "tests").mkdir()
+        (repo / "tests" / "test_github_tournament.py").write_text("")
+        (repo / "pyproject.toml").write_bytes(b'[project]\nname="x"\n')
+        # Redirect tempdir so the workspace lives under tmp_path.
+        ws_parent = tmp_path / "tmp"
+        ws_parent.mkdir()
+        monkeypatch.setattr(
+            "worker.sandbox.workspace.tempfile.gettempdir",
+            lambda: str(ws_parent),
+        )
+        with patch(f"{MOD}.shutil.which", return_value="/usr/bin/docker"), \
+             patch(f"{MOD}.subprocess.run") as mock_run:
+            mock_run.return_value = subprocess.CompletedProcess(
+                args=[], returncode=0, stdout="[]", stderr="",
+            )
+            ctx = _prepare_pytest_target_context(
+                repo_path=str(repo),
+                target_file="worker/tasks/github_tournament.py",
+                tournament_id="tid-1",
+            )
+        assert ctx["ok"] is True, ctx["error"]
+        assert ctx["resolved_target"] == "tests/test_github_tournament.py"
+        assert ctx["image_ref"].startswith("umbral-sandbox-pytest:")
+        assert ctx["allowlist_size"] >= 1
+        assert ctx["ws_path"].is_dir()
+        assert ctx["ws_path"].name.startswith("umbral-sbx-")
+
+
+class TestPytestTargetDockerArgv:
+    def test_has_hardening_flags(self, tmp_path):
+        argv = _pytest_target_docker_argv(
+            ws_path=tmp_path, validation_target="tests/test_x.py",
+            image_ref="img:abc",
+        )
+        # Command shape.
+        assert argv[:3] == ["docker", "run", "--rm"]
+        assert "--network=none" in argv
+        assert "--read-only" in argv
+        assert "--cap-drop=ALL" in argv
+        assert "--security-opt=no-new-privileges" in argv
+        assert "--user" in argv and "10001:10001" in argv
+        assert "--ipc=none" in argv
+        assert "--memory=512m" in argv
+        assert "--memory-swap=512m" in argv
+        assert "--cpus=1.0" in argv
+        assert "--pids-limit=256" in argv
+        # Three tmpfs mounts for /tmp, .pytest_cache, __pycache__.
+        tmpfs_count = argv.count("--tmpfs")
+        assert tmpfs_count == 3
+        # Stripped env.
+        assert "WORKER_TOKEN=sandbox-stub" in argv
+        assert "UMBRAL_DISABLE_CLAUDE=1" in argv
+        # No surprise env leak.
+        forbidden = [a for a in argv if a.startswith("AZURE_")
+                     or a.startswith("OPENAI_") or a.startswith("GITHUB_TOKEN")]
+        assert forbidden == []
+        # Mount source is the workspace; target is /work read-only.
+        mount_idx = argv.index("--mount")
+        mount_val = argv[mount_idx + 1]
+        assert f"source={tmp_path}" in mount_val
+        assert "target=/work" in mount_val
+        assert "readonly" in mount_val
+        # Image and pytest invocation.
+        img_pos = argv.index("img:abc")
+        assert argv[img_pos + 1:img_pos + 4] == ["python", "-m", "pytest"]
+        assert "tests/test_x.py" in argv
+        assert "-x" in argv
+        assert "-q" in argv
+        assert "--disable-warnings" in argv
+        assert "-p" in argv and "no:cacheprovider" in argv
+        assert "--rootdir=/work" in argv
+
+
+class TestRunPytestTargetValidation:
+    def test_happy_pass(self, tmp_path):
+        with patch(f"{MOD}.subprocess.run") as mock_run:
+            mock_run.return_value = subprocess.CompletedProcess(
+                args=[], returncode=0,
+                stdout=".                    [100%]\n1 passed in 0.05s\n",
+                stderr="",
+            )
+            r = _run_pytest_target_validation(
+                ws_path=tmp_path, validation_target="tests/test_x.py",
+                image_ref="img:abc", timeout_s=30,
+            )
+        assert r["ran"] is True
+        assert r["passed"] is True
+        assert r["mode"] == "pytest_target"
+        assert r["error"] is None
+        assert "1 passed" in r["log_tail"]
+
+    def test_pytest_failure_marks_not_passed(self, tmp_path):
+        with patch(f"{MOD}.subprocess.run") as mock_run:
+            mock_run.return_value = subprocess.CompletedProcess(
+                args=[], returncode=1,
+                stdout="F                    [100%]\n1 failed in 0.05s\n",
+                stderr="",
+            )
+            r = _run_pytest_target_validation(
+                ws_path=tmp_path, validation_target="tests/test_x.py",
+                image_ref="img:abc", timeout_s=30,
+            )
+        assert r["passed"] is False
+        assert r["error"] is None  # not a docker-level error
+        assert "1 failed" in r["log_tail"]
+
+    def test_docker_launch_failure_is_distinguished(self, tmp_path):
+        with patch(f"{MOD}.subprocess.run") as mock_run:
+            mock_run.return_value = subprocess.CompletedProcess(
+                args=[], returncode=125, stdout="",
+                stderr="docker: Error response from daemon: ...\n",
+            )
+            r = _run_pytest_target_validation(
+                ws_path=tmp_path, validation_target="tests/test_x.py",
+                image_ref="img:abc", timeout_s=30,
+            )
+        assert r["passed"] is False
+        assert r["error"] is not None
+        assert "docker/container launch failure" in r["error"]
+
+    def test_timeout(self, tmp_path):
+        with patch(
+            f"{MOD}.subprocess.run",
+            side_effect=subprocess.TimeoutExpired(
+                cmd="docker", timeout=5,
+                stderr="last partial output\n",
+            ),
+        ):
+            r = _run_pytest_target_validation(
+                ws_path=tmp_path, validation_target="tests/test_x.py",
+                image_ref="img:abc", timeout_s=5,
+            )
+        assert r["passed"] is False
+        assert "timeout after 5s" in r["error"]
+        assert "last partial output" in r["log_tail"]
+
+    def test_subprocess_exception(self, tmp_path):
+        with patch(f"{MOD}.subprocess.run", side_effect=FileNotFoundError("docker")):
+            r = _run_pytest_target_validation(
+                ws_path=tmp_path, validation_target="tests/test_x.py",
+                image_ref="img:abc", timeout_s=5,
+            )
+        assert r["passed"] is False
+        assert "docker run error" in r["error"]
+
+    def test_argv_has_no_shell_and_no_interpolation(self, tmp_path):
+        # Every arg must be its own element — no pre-joined command string.
+        with patch(f"{MOD}.subprocess.run") as mock_run:
+            mock_run.return_value = subprocess.CompletedProcess(
+                args=[], returncode=0, stdout="", stderr="",
+            )
+            _run_pytest_target_validation(
+                ws_path=tmp_path, validation_target="tests/test_x.py; rm -rf /",
+                image_ref="img:abc", timeout_s=5,
+            )
+        argv = mock_run.call_args.args[0]
+        assert isinstance(argv, list)
+        # No single item combines commands: each arg is passed verbatim.
+        # This confirms shell=False semantics.
+        assert mock_run.call_args.kwargs.get("capture_output") is True
+        assert "shell" not in mock_run.call_args.kwargs or \
+               mock_run.call_args.kwargs.get("shell") is False
+        # The suspicious target string is a LITERAL arg — pytest will
+        # reject it as a missing file but the host shell never sees it.
+        assert "tests/test_x.py; rm -rf /" in argv
+
+
+class TestRunContestantValidationPytestTarget:
+    def _cc_ok(self, sha="abc12345"):
+        return {
+            "written": True,
+            "commit": {"ok": True, "sha": sha},
+        }
+
+    def test_requires_target_file(self, tmp_path):
+        r = _run_contestant_validation(
+            mode="pytest_target", code_change=self._cc_ok(),
+            target_file=None, timeout_s=30,
+            pytest_ctx=_ctx_stub_ok(tmp_path),
+        )
+        assert r["ran"] is False
+        assert "target_file" in r["error"]
+
+    def test_rejects_non_py_target(self, tmp_path):
+        r = _run_contestant_validation(
+            mode="pytest_target", code_change=self._cc_ok(),
+            target_file="README.md", timeout_s=30,
+            pytest_ctx=_ctx_stub_ok(tmp_path),
+        )
+        assert r["ran"] is False
+        assert ".py" in r["error"]
+
+    def test_no_code_change(self, tmp_path):
+        r = _run_contestant_validation(
+            mode="pytest_target", code_change=None,
+            target_file="worker/tasks/foo.py", timeout_s=30,
+            pytest_ctx=_ctx_stub_ok(tmp_path),
+        )
+        assert r["ran"] is False
+        assert "no code change" in r["error"]
+
+    def test_no_context(self):
+        r = _run_contestant_validation(
+            mode="pytest_target", code_change=self._cc_ok(),
+            target_file="worker/tasks/foo.py", timeout_s=30,
+            pytest_ctx=None,
+        )
+        assert r["ran"] is False
+        assert "not initialized" in r["error"]
+
+    def test_context_failed_surfaces_its_error(self, tmp_path):
+        r = _run_contestant_validation(
+            mode="pytest_target", code_change=self._cc_ok(),
+            target_file="worker/tasks/foo.py", timeout_s=30,
+            pytest_ctx={"ok": False, "error": "docker missing"},
+        )
+        assert r["ran"] is False
+        assert "docker missing" in r["error"]
+
+    def test_no_contestant_commit(self, tmp_path):
+        cc = {"written": True, "commit": {"ok": False}}
+        r = _run_contestant_validation(
+            mode="pytest_target", code_change=cc,
+            target_file="worker/tasks/foo.py", timeout_s=30,
+            pytest_ctx=_ctx_stub_ok(tmp_path),
+        )
+        assert r["ran"] is False
+        assert "no contestant commit" in r["error"]
+
+    def test_git_show_failure(self, tmp_path):
+        with patch(f"{MOD}._read_file_at_ref",
+                   return_value={"ok": False, "content": None,
+                                 "error": "rc=128: bad rev"}) as mrf, \
+             patch(f"{MOD}._run_pytest_target_validation") as mrun:
+            r = _run_contestant_validation(
+                mode="pytest_target", code_change=self._cc_ok(),
+                target_file="worker/tasks/foo.py", timeout_s=30,
+                pytest_ctx=_ctx_stub_ok(tmp_path),
+            )
+        assert r["ran"] is False
+        assert "cannot read" in r["error"]
+        assert mrf.called
+        assert not mrun.called
+
+    def test_overwrite_failure(self, tmp_path):
+        with patch(f"{MOD}._read_file_at_ref",
+                   return_value={"ok": True, "content": "X = 1\n",
+                                 "error": None}), \
+             patch(f"{MOD}.overwrite_file_in_workspace",
+                   return_value={"ok": False, "error": "resolved escapes"}), \
+             patch(f"{MOD}._run_pytest_target_validation") as mrun:
+            r = _run_contestant_validation(
+                mode="pytest_target", code_change=self._cc_ok(),
+                target_file="worker/tasks/foo.py", timeout_s=30,
+                pytest_ctx=_ctx_stub_ok(tmp_path),
+            )
+        assert r["ran"] is False
+        assert "overwrite failed" in r["error"]
+        assert not mrun.called
+
+    def test_happy_path_calls_runner(self, tmp_path):
+        ctx = _ctx_stub_ok(tmp_path)
+        with patch(f"{MOD}._read_file_at_ref",
+                   return_value={"ok": True, "content": "X = 1\n",
+                                 "error": None}) as mrf, \
+             patch(f"{MOD}.overwrite_file_in_workspace",
+                   return_value={"ok": True, "error": None,
+                                 "path": ctx["ws_path"] / "x.py"}) as mow, \
+             patch(f"{MOD}._run_pytest_target_validation",
+                   return_value={"ran": True, "mode": "pytest_target",
+                                 "passed": True, "duration_ms": 100,
+                                 "log_tail": "1 passed", "error": None}) as mrun:
+            r = _run_contestant_validation(
+                mode="pytest_target", code_change=self._cc_ok(),
+                target_file="worker/tasks/foo.py", timeout_s=45,
+                pytest_ctx=ctx,
+            )
+        assert r["ran"] is True
+        assert r["passed"] is True
+        assert mrf.called
+        assert mow.called
+        assert mrun.call_args.kwargs["ws_path"] == ctx["ws_path"]
+        assert mrun.call_args.kwargs["validation_target"] == "tests/test_foo.py"
+        assert mrun.call_args.kwargs["image_ref"] == ctx["image_ref"]
+        assert mrun.call_args.kwargs["timeout_s"] == 45
+
+
+def _preflight_ok_7b():
+    return {"ok": True, "clean": True}
+
+
+class TestOrchestratePytestTargetIntegration:
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}._cherry_pick_and_push",
+           return_value={"cherry_picked": False, "pushed": False,
+                         "error": "skipped in test"})
+    @patch(f"{MOD}._generate_and_commit_code_change")
+    @patch(f"{MOD}._write_artifact_and_commit", side_effect=_artifact_noop)
+    @patch(f"{MOD}.handle_github_create_branch",
+           return_value={"ok": True, "branch_name": "rick/t/x/a", "created": True})
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok_7b())
+    @patch(f"{MOD}._prepare_pytest_target_context")
+    @patch(f"{MOD}.cleanup_workspace",
+           return_value={"ok": True, "error": None, "removed": True})
+    @patch(f"{MOD}._run_pytest_target_validation",
+           return_value={"ran": True, "mode": "pytest_target",
+                         "passed": True, "duration_ms": 100,
+                         "log_tail": "ok", "error": None})
+    @patch(f"{MOD}._read_file_at_ref",
+           return_value={"ok": True, "content": "X=1\n", "error": None})
+    @patch(f"{MOD}.overwrite_file_in_workspace",
+           return_value={"ok": True, "error": None, "path": "/tmp/x"})
+    def test_happy_flow_prepares_context_once_and_cleans_up(
+        self, mock_ow, mock_read, mock_run, mock_cleanup, mock_prep,
+        _pre, mock_tourn, _br, _art, mock_code, _cp, _co, tmp_path,
+    ):
+        ws = tmp_path / "umbral-sbx-x-aaaaaaaa"
+        ws.mkdir()
+        mock_prep.return_value = {
+            "ok": True, "ws_path": ws,
+            "resolved_target": "tests/test_foo.py",
+            "image_ref": "img:abc", "allowlist_size": 5, "error": None,
+        }
+        mock_tourn.return_value = {
+            "approaches": [
+                {"id": 1, "approach_name": "A", "proposal": "p1"},
+                {"id": 2, "approach_name": "B", "proposal": "p2"},
+            ],
+            "verdict": {"text": "Winner: Contestant #1", "winner_id": 1,
+                        "escalate": False},
+            "meta": {"total_llm_calls": 3, "models_used": ["m"]},
+        }
+        mock_code.return_value = {
+            "attempted": True, "written": True,
+            "path": "worker/tasks/foo.py", "mode": "target",
+            "commit": {"ok": True, "sha": "abc12345"},
+            "parse_error": None,
+        }
+
+        result = handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "generate_code": True,
+            "target_file": "worker/tasks/foo.py",
+            "validation_mode": "pytest_target",
+        })
+        assert result["ok"] is True
+        # Context prepared exactly once, regardless of contestant count.
+        assert mock_prep.call_count == 1
+        # Runner called once per contestant (2).
+        assert mock_run.call_count == 2
+        # Cleanup called exactly once in the finally block.
+        assert mock_cleanup.call_count == 1
+        assert mock_cleanup.call_args.args[0] == ws
+        # Meta surfaces the sandbox block.
+        meta = result["meta"]
+        assert meta["validation_mode"] == "pytest_target"
+        pt = meta["pytest_target"]
+        assert pt["ok"] is True
+        assert pt["image_ref"] == "img:abc"
+        assert pt["resolved_target"] == "tests/test_foo.py"
+        assert pt["allowlist_size"] == 5
+        assert pt["workspace_prepared"] is True
+
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}._cherry_pick_and_push",
+           return_value={"cherry_picked": False, "pushed": False,
+                         "error": "skipped"})
+    @patch(f"{MOD}._generate_and_commit_code_change")
+    @patch(f"{MOD}._write_artifact_and_commit", side_effect=_artifact_noop)
+    @patch(f"{MOD}.handle_github_create_branch",
+           return_value={"ok": True, "branch_name": "rick/t/x/a", "created": True})
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok_7b())
+    @patch(f"{MOD}._prepare_pytest_target_context")
+    @patch(f"{MOD}.cleanup_workspace")
+    @patch(f"{MOD}._run_pytest_target_validation")
+    def test_ctx_failure_propagates_per_contestant_and_no_cleanup(
+        self, mock_run, mock_cleanup, mock_prep, _pre, mock_tourn, _br,
+        _art, mock_code, _cp, _co,
+    ):
+        # Context prep fails (docker missing). The tournament must
+        # still succeed — each contestant just gets ran=False with
+        # the context error surfaced. The runner must NOT be called,
+        # and cleanup must NOT run because no workspace exists.
+        mock_prep.return_value = {
+            "ok": False, "ws_path": None,
+            "resolved_target": None, "image_ref": None,
+            "allowlist_size": 0,
+            "error": "docker is not installed or not in PATH",
+        }
+        mock_tourn.return_value = {
+            "approaches": [
+                {"id": 1, "approach_name": "A", "proposal": "p1"},
+                {"id": 2, "approach_name": "B", "proposal": "p2"},
+            ],
+            "verdict": {"text": "ESCALATE", "winner_id": None,
+                        "escalate": True},
+            "meta": {"total_llm_calls": 3, "models_used": ["m"]},
+        }
+        mock_code.return_value = {
+            "attempted": True, "written": True,
+            "path": "worker/tasks/foo.py", "mode": "target",
+            "commit": {"ok": True, "sha": "abc12345"},
+            "parse_error": None,
+        }
+        result = handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "generate_code": True,
+            "target_file": "worker/tasks/foo.py",
+            "validation_mode": "pytest_target",
+        })
+        assert result["ok"] is True
+        assert not mock_run.called
+        assert not mock_cleanup.called
+        for c in result["contestants"]:
+            v = c["validation"]
+            assert v["ran"] is False
+            assert "docker" in (v["error"] or "")
+        pt = result["meta"]["pytest_target"]
+        assert pt["ok"] is False
+        assert "docker" in pt["error"]
+
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_github_create_branch",
+           return_value={"ok": True, "branch_name": "rick/t/x/a", "created": True})
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok_7b())
+    @patch(f"{MOD}._prepare_pytest_target_context")
+    def test_default_timeout_applied_when_absent(
+        self, mock_prep, _pre, mock_tourn, _br, _co,
+    ):
+        # When mode=pytest_target and the caller omits
+        # validation_timeout_s, the handler must substitute the
+        # mode-specific default before validation.
+        mock_prep.return_value = {
+            "ok": False, "ws_path": None,
+            "resolved_target": None, "image_ref": None,
+            "allowlist_size": 0, "error": "short-circuit",
+        }
+        mock_tourn.return_value = {
+            "approaches": [],
+            "verdict": {"text": "ESCALATE", "winner_id": None,
+                        "escalate": True},
+            "meta": {"total_llm_calls": 0, "models_used": []},
+        }
+        result = handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "generate_code": True,
+            "target_file": "worker/tasks/foo.py",
+            "validation_mode": "pytest_target",
+        })
+        assert result["ok"] is True
+        assert result["meta"]["validation_timeout_s"] == 45
+
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_github_create_branch",
+           return_value={"ok": True, "branch_name": "rick/t/x/a", "created": True})
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok_7b())
+    @patch(f"{MOD}._prepare_pytest_target_context")
+    def test_explicit_timeout_is_honored_and_capped(
+        self, mock_prep, _pre, mock_tourn, _br, _co,
+    ):
+        mock_prep.return_value = {
+            "ok": False, "ws_path": None,
+            "resolved_target": None, "image_ref": None,
+            "allowlist_size": 0, "error": "short-circuit",
+        }
+        mock_tourn.return_value = {
+            "approaches": [],
+            "verdict": {"text": "ESCALATE", "winner_id": None,
+                        "escalate": True},
+            "meta": {"total_llm_calls": 0, "models_used": []},
+        }
+        result = handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "generate_code": True,
+            "target_file": "worker/tasks/foo.py",
+            "validation_mode": "pytest_target",
+            "validation_timeout_s": 99999,
+        })
+        assert result["ok"] is True
+        assert result["meta"]["validation_timeout_s"] == 60  # global cap
+
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_github_create_branch",
+           return_value={"ok": True, "branch_name": "rick/t/x/a", "created": True})
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok_7b())
+    @patch(f"{MOD}._prepare_pytest_target_context")
+    def test_other_modes_dont_prepare_context(
+        self, mock_prep, _pre, mock_tourn, _br, _co,
+    ):
+        mock_tourn.return_value = {
+            "approaches": [],
+            "verdict": {"text": "ESCALATE", "winner_id": None,
+                        "escalate": True},
+            "meta": {"total_llm_calls": 0, "models_used": []},
+        }
+        handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "generate_code": True,
+            "target_file": "worker/tasks/foo.py",
+            "validation_mode": "python_compile",
+        })
+        assert not mock_prep.called
+
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}._cherry_pick_and_push",
+           return_value={"cherry_picked": False, "pushed": False,
+                         "error": "skipped"})
+    @patch(f"{MOD}._generate_and_commit_code_change")
+    @patch(f"{MOD}._write_artifact_and_commit", side_effect=_artifact_noop)
+    @patch(f"{MOD}.handle_github_create_branch",
+           return_value={"ok": True, "branch_name": "rick/t/x/a", "created": True})
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok_7b())
+    @patch(f"{MOD}._prepare_pytest_target_context")
+    @patch(f"{MOD}.cleanup_workspace",
+           return_value={"ok": True, "error": None, "removed": True})
+    @patch(f"{MOD}._run_pytest_target_validation",
+           return_value={"ran": True, "mode": "pytest_target",
+                         "passed": False, "duration_ms": 50,
+                         "log_tail": "1 failed", "error": None})
+    @patch(f"{MOD}._read_file_at_ref",
+           return_value={"ok": True, "content": "X=1\n", "error": None})
+    @patch(f"{MOD}.overwrite_file_in_workspace",
+           return_value={"ok": True, "error": None, "path": "/tmp/x"})
+    def test_failing_pytest_does_not_disqualify(
+        self, mock_ow, mock_read, mock_run, mock_cleanup, mock_prep,
+        _pre, mock_tourn, _br, _art, mock_code, _cp, _co, tmp_path,
+    ):
+        # Observational policy: even if every contestant's pytest
+        # fails, the tournament continues and the judge's winner is
+        # respected.
+        ws = tmp_path / "umbral-sbx-y-bbbbbbbb"
+        ws.mkdir()
+        mock_prep.return_value = {
+            "ok": True, "ws_path": ws,
+            "resolved_target": "tests/test_foo.py",
+            "image_ref": "img:abc", "allowlist_size": 5, "error": None,
+        }
+        mock_tourn.return_value = {
+            "approaches": [
+                {"id": 1, "approach_name": "A", "proposal": "p1"},
+                {"id": 2, "approach_name": "B", "proposal": "p2"},
+            ],
+            "verdict": {"text": "Winner: Contestant #2", "winner_id": 2,
+                        "escalate": False},
+            "meta": {"total_llm_calls": 3, "models_used": ["m"]},
+        }
+        mock_code.return_value = {
+            "attempted": True, "written": True,
+            "path": "worker/tasks/foo.py", "mode": "target",
+            "commit": {"ok": True, "sha": "abc12345"},
+            "parse_error": None,
+        }
+        result = handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "generate_code": True,
+            "target_file": "worker/tasks/foo.py",
+            "validation_mode": "pytest_target",
+        })
+        assert result["ok"] is True
+        assert result["verdict"]["winner_id"] == 2
+        for c in result["contestants"]:
+            assert c["validation"]["ran"] is True
+            assert c["validation"]["passed"] is False
+        assert mock_cleanup.call_count == 1

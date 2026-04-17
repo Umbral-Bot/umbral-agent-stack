@@ -1623,8 +1623,9 @@ def _contestant_ref_for_validation(
     if not code_change:
         return None
     commit = code_change.get("commit") or {}
-    if commit.get("ok") and isinstance(commit.get("sha"), str) and commit["sha"]:
-        return commit["sha"]
+    sha = commit.get("commit_sha")
+    if commit.get("ok") and isinstance(sha, str) and sha:
+        return sha
     return None
 
 

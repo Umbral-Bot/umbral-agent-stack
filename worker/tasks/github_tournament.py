@@ -1,4 +1,4 @@
-"""Branch-based tournament orchestration — Phase 1 + Phase 2 slices 1–4.
+"""Branch-based tournament orchestration — Phase 1 + Phase 2 slices 1–4b.
 
 Composes existing primitives (github.create_branch, tournament.run,
 github.commit_and_push) into a multi-branch comparison workflow. Each
@@ -35,6 +35,17 @@ contestant. When ``input_data["generate_code"]`` is ``True``:
 When the flag is absent or ``False`` the behaviour is byte-identical to
 slices 1–3. Real pytest-per-contestant, multi-file changes and
 execution sandboxes are intentionally out of scope for slice 4.
+
+Phase 2 slice 4b extends slice 4a with an OPT-IN ``target_file`` field
+in the input. When ``generate_code=True`` AND ``target_file`` is set,
+each contestant is asked to modify THAT specific real-repo path
+instead of emitting a sandboxed file. The LLM must emit a FILE block
+whose path equals ``target_file`` byte-for-byte; anything else is
+rejected. ``target_file`` is validated up front against a denylist of
+protected prefixes (``.git/``, ``.github/``, ``.rick/``, ...) and an
+allowlist of extensions so a single invalid input can't produce bad
+branches. Multi-file changes, pytest-per-contestant and execution
+sandboxes remain out of scope.
 """
 
 import datetime
@@ -242,6 +253,28 @@ _CODE_MAX_BYTES = 100 * 1024
 # exotic — only the subset needed for typical source file names.
 _PATH_CHARSET_RE = re.compile(r"^[A-Za-z0-9._/-]+$")
 
+# Slice 4b: path prefixes that a ``target_file`` is NEVER allowed to
+# touch. Keeps the tournament subsystem, git metadata, CI config and
+# environment/virtualenv directories safe by construction.
+_TARGET_FILE_DENY_PREFIXES = (
+    ".git/",
+    ".github/",
+    ".rick/",
+    ".venv/",
+    "venv/",
+    "node_modules/",
+    "__pycache__/",
+)
+
+# Slice 4b: conservative extension allowlist for ``target_file``.
+# Intentionally narrow; can be relaxed in later slices once we have
+# pytest-per-contestant and execution sandboxing.
+_TARGET_FILE_ALLOWED_EXTS = (
+    ".py", ".md", ".txt", ".json",
+    ".yaml", ".yml", ".toml",
+    ".ini", ".cfg", ".sh",
+)
+
 # Parser for the single ``FILE: <path>\n```lang\n<content>\n``` `` block.
 # The path is captured up to end-of-line (non-greedy, ignoring trailing
 # spaces) so that malformed paths — including ones with spaces — still
@@ -260,6 +293,65 @@ def _code_prefix(tournament_id: str, label: str) -> str:
     return f"{_CODE_SUBDIR}/{tournament_id}/{label}/"
 
 
+def _validate_target_file(target_file: Any) -> Dict[str, Any]:
+    """Validate a slice-4b ``target_file`` input value.
+
+    Applies the same path rules as slice 4a (no absolute, no ``..``,
+    charset allowlist) plus two extra layers:
+
+      * Denylist of protected prefixes (``.git/``, ``.github/``,
+        ``.rick/``, ``.venv/``, ``venv/``, ``node_modules/``,
+        ``__pycache__/``).
+      * Extension allowlist (``.py``, ``.md``, ``.txt``, ``.json``,
+        ``.yaml``, ``.yml``, ``.toml``, ``.ini``, ``.cfg``, ``.sh``).
+
+    Returns ``{"ok": bool, "normalized": str | None, "error": str | None}``.
+    Never raises.
+    """
+    if target_file is None:
+        return {"ok": False, "normalized": None,
+                "error": "target_file is required for slice 4b"}
+    if not isinstance(target_file, str):
+        return {"ok": False, "normalized": None,
+                "error": "target_file must be a string"}
+
+    tf = target_file.strip()
+    if not tf:
+        return {"ok": False, "normalized": None,
+                "error": "target_file must not be empty"}
+
+    if tf.startswith("/"):
+        return {"ok": False, "normalized": None,
+                "error": "target_file must be a relative path"}
+
+    parts = tf.split("/")
+    if any(p in ("", "..", ".") for p in parts):
+        return {"ok": False, "normalized": None,
+                "error": "target_file must not contain '..', '.' or empty segments"}
+
+    if not _PATH_CHARSET_RE.match(tf):
+        return {"ok": False, "normalized": None,
+                "error": "target_file contains forbidden characters"}
+
+    for deny in _TARGET_FILE_DENY_PREFIXES:
+        if tf.startswith(deny):
+            return {"ok": False, "normalized": None,
+                    "error": f"target_file is under a protected prefix: '{deny}'"}
+
+    lower = tf.lower()
+    if not any(lower.endswith(ext) for ext in _TARGET_FILE_ALLOWED_EXTS):
+        return {
+            "ok": False,
+            "normalized": None,
+            "error": (
+                "target_file extension not allowed "
+                f"(allowed: {', '.join(_TARGET_FILE_ALLOWED_EXTS)})"
+            ),
+        }
+
+    return {"ok": True, "normalized": tf, "error": None}
+
+
 def _build_code_prompt(
     *,
     tournament_id: str,
@@ -268,11 +360,34 @@ def _build_code_prompt(
     approach_name: str,
     challenge: str,
     proposal: str,
+    target_file: Optional[str] = None,
 ) -> Dict[str, str]:
     """Build (system, user) prompts instructing the LLM to emit exactly
-    one sandboxed file block.
+    one FILE block.
+
+    If ``target_file`` is given (slice 4b), the prompt forces the path
+    to equal that value byte-for-byte. Otherwise (slice 4a) the prompt
+    forces the path to live under the contestant's sandbox prefix.
     """
-    prefix = _code_prefix(tournament_id, label)
+    if target_file:
+        path_rule = (
+            f"- <relative_path> MUST equal exactly: {target_file}\n"
+            "- Do NOT change the path, do NOT add suffixes or subdirs.\n"
+        )
+        task_tail = (
+            f"Now produce the single-file code change to `{target_file}` that "
+            "implements this proposal, following the FILE block format exactly."
+        )
+    else:
+        prefix = _code_prefix(tournament_id, label)
+        path_rule = (
+            f"- <relative_path> MUST start with: {prefix}\n"
+        )
+        task_tail = (
+            "Now produce the single-file code change that implements this "
+            "proposal, following the FILE block format exactly."
+        )
+
     system = (
         f"You are Contestant #{idx} implementing your approved approach.\n"
         f"Approach: {approach_name}\n\n"
@@ -283,7 +398,7 @@ def _build_code_prompt(
         "<full file content>\n"
         "```\n\n"
         "STRICT RULES (machine-parsed):\n"
-        f"- <relative_path> MUST start with: {prefix}\n"
+        + path_rule +
         "- <relative_path> MUST NOT contain '..' components.\n"
         "- <relative_path> MUST NOT start with '/'.\n"
         "- Use only characters [A-Za-z0-9._/-] in the path.\n"
@@ -295,16 +410,22 @@ def _build_code_prompt(
     user = (
         f"Challenge:\n{challenge}\n\n"
         f"Your previous textual proposal (for context):\n{proposal}\n\n"
-        "Now produce the single-file code change that implements this "
-        "proposal, following the FILE block format exactly."
+        + task_tail
     )
     return {"system": system, "user": user}
 
 
 def _parse_file_block(
-    text: str, *, expected_prefix: str,
+    text: str,
+    *,
+    expected_prefix: Optional[str] = None,
+    expected_path: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Parse the single FILE block from a slice-4 LLM response.
+
+    Exactly one of ``expected_prefix`` (slice 4a — path must start with
+    prefix) or ``expected_path`` (slice 4b — path must equal target
+    byte-for-byte) must be provided.
 
     Returns a dict with shape:
       {"ok": bool, "path": str | None, "content": str | None,
@@ -313,11 +434,19 @@ def _parse_file_block(
     Rejects the response if:
       - no FILE block is found,
       - more than one ``FILE:`` header appears,
-      - path fails any of the sandbox/charset checks,
+      - path fails the prefix/exact match, absolute/traversal or
+        charset checks,
       - content exceeds the size cap.
 
     Never raises.
     """
+    if expected_prefix is None and expected_path is None:
+        return {"ok": False, "path": None, "content": None,
+                "error": "parser misconfigured: need prefix or exact path"}
+    if expected_prefix is not None and expected_path is not None:
+        return {"ok": False, "path": None, "content": None,
+                "error": "parser misconfigured: pass only one of prefix/exact"}
+
     if not isinstance(text, str) or not text.strip():
         return {"ok": False, "path": None, "content": None,
                 "error": "empty response"}
@@ -339,10 +468,16 @@ def _parse_file_block(
     rel_path = m.group("path").strip()
     content = m.group("content")
 
-    # Path validation
-    if not rel_path.startswith(expected_prefix):
-        return {"ok": False, "path": rel_path, "content": None,
-                "error": f"path must start with '{expected_prefix}'"}
+    # Path validation — prefix (slice 4a) or exact (slice 4b).
+    if expected_path is not None:
+        if rel_path != expected_path:
+            return {"ok": False, "path": rel_path, "content": None,
+                    "error": f"path must equal exactly '{expected_path}'"}
+    else:
+        if not rel_path.startswith(expected_prefix):
+            return {"ok": False, "path": rel_path, "content": None,
+                    "error": f"path must start with '{expected_prefix}'"}
+
     if rel_path.startswith("/"):
         return {"ok": False, "path": rel_path, "content": None,
                 "error": "absolute path not allowed"}
@@ -350,8 +485,6 @@ def _parse_file_block(
     if any(p in ("", "..", ".") for p in parts):
         return {"ok": False, "path": rel_path, "content": None,
                 "error": "path must not contain '..' or '.' or empty segments"}
-    # Drop the leading prefix before charset check so we don't block the
-    # prefix's own characters; then verify every remaining segment.
     if not _PATH_CHARSET_RE.match(rel_path):
         return {"ok": False, "path": rel_path, "content": None,
                 "error": "path contains forbidden characters"}
@@ -369,10 +502,18 @@ def _parse_file_block(
 
 
 def _resolve_inside_sandbox(
-    repo_path: str, rel_path: str, expected_prefix: str,
+    repo_path: str,
+    rel_path: str,
+    expected_prefix: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Defense-in-depth: canonical-resolve the target path and confirm
-    it lives inside ``<repo>/<expected_prefix>``.
+    it lives inside ``<repo>`` (and, if ``expected_prefix`` is given,
+    inside ``<repo>/<expected_prefix>``).
+
+    In slice 4a the prefix is a contestant sandbox subdir. In slice 4b
+    the contestant is allowed to touch a real repo file, so
+    ``expected_prefix`` is ``None`` and the only constraint is that
+    the resolved target stays inside the repo root.
 
     Returns ``{"ok": True, "abs_path": Path}`` on success or
     ``{"ok": False, "error": str}`` on failure. Never raises.
@@ -380,7 +521,10 @@ def _resolve_inside_sandbox(
     try:
         repo = Path(repo_path).resolve()
         target = (repo / rel_path).resolve()
-        sandbox_root = (repo / expected_prefix).resolve()
+        if expected_prefix is not None:
+            sandbox_root = (repo / expected_prefix).resolve()
+        else:
+            sandbox_root = repo
     except Exception as exc:
         return {"ok": False,
                 "error": f"path resolution failed: {str(exc)[:120]}"}
@@ -388,8 +532,9 @@ def _resolve_inside_sandbox(
     try:
         target.relative_to(sandbox_root)
     except ValueError:
+        scope = "sandbox" if expected_prefix is not None else "repository"
         return {"ok": False,
-                "error": "resolved path escapes the sandbox"}
+                "error": f"resolved path escapes the {scope}"}
     return {"ok": True, "abs_path": target}
 
 
@@ -404,9 +549,16 @@ def _generate_and_commit_code_change(
     judge_model: Optional[str] = None,
     temperature: float = 0.3,
     max_tokens: int = 2048,
+    target_file: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Ask the LLM for a single-file code change, validate it, write it
     and commit it on the contestant branch.
+
+    If ``target_file`` is None (slice 4a), the contestant must emit a
+    file under ``.rick/contestants/{tid}/{label}/``. If ``target_file``
+    is set (slice 4b), the contestant must emit a FILE block whose
+    path equals ``target_file`` byte-for-byte; the file is written as
+    an overwrite / creation on that real repo path.
 
     Never raises: any failure (LLM error, parse error, sandbox escape,
     write error, commit error) is captured in the returned dict. On
@@ -417,14 +569,19 @@ def _generate_and_commit_code_change(
     Returns a dict shaped:
       {
         "attempted": True,
+        "mode": "target_file" | "sandbox",
+        "target_file": str | None,
         "path": str | None,
         "written": bool,
         "parse_error": str | None,
-        "commit": dict | None,   # same shape as handle_github_commit_and_push
+        "commit": dict | None,
       }
     """
+    mode = "target_file" if target_file else "sandbox"
     result: Dict[str, Any] = {
         "attempted": True,
+        "mode": mode,
+        "target_file": target_file,
         "path": None,
         "written": False,
         "parse_error": None,
@@ -446,6 +603,7 @@ def _generate_and_commit_code_change(
         approach_name=approach_name,
         challenge=challenge,
         proposal=proposal,
+        target_file=target_file,
     )
 
     # --- LLM call ---
@@ -468,16 +626,21 @@ def _generate_and_commit_code_change(
     text = llm_out.get("text", "") if isinstance(llm_out, dict) else ""
 
     # --- Parse ---
-    prefix = _code_prefix(tournament_id, label)
-    parsed = _parse_file_block(text, expected_prefix=prefix)
+    if target_file:
+        parsed = _parse_file_block(text, expected_path=target_file)
+        resolve_prefix = None
+    else:
+        prefix = _code_prefix(tournament_id, label)
+        parsed = _parse_file_block(text, expected_prefix=prefix)
+        resolve_prefix = prefix
     if not parsed["ok"]:
         result["parse_error"] = parsed["error"]
         result["path"] = parsed.get("path")
         return result
 
-    # --- Defense-in-depth sandbox check ---
+    # --- Defense-in-depth sandbox / repo-scope check ---
     sandbox = _resolve_inside_sandbox(
-        config.GITHUB_REPO_PATH, parsed["path"], prefix,
+        config.GITHUB_REPO_PATH, parsed["path"], resolve_prefix,
     )
     if not sandbox["ok"]:
         result["parse_error"] = sandbox["error"]
@@ -697,6 +860,14 @@ def handle_github_orchestrate_tournament(
         debate_rounds (int): default 1.
         temperature (float): default 0.9.
         max_tokens (int): default 2048.
+        generate_code (bool): opt-in, slice 4a+4b. When True, each
+            contestant also produces one FILE block that is written
+            and committed on its branch.
+        target_file (str): slice 4b. Optional real-repo path that
+            every contestant must modify. Requires ``generate_code=True``.
+            Validated up front against a denylist of protected prefixes
+            and an extension allowlist; if invalid the handler returns
+            ``ok: False`` before creating any branch.
 
     Returns:
         ok, tournament_id, challenge, base, contestants,
@@ -712,6 +883,21 @@ def handle_github_orchestrate_tournament(
     # Opt-in flag for slice 4. When False (default) behaviour is
     # byte-identical to slices 1–3.
     generate_code = bool(input_data.get("generate_code", False))
+    # Slice 4b: if ``target_file`` is provided (and generate_code is on),
+    # every contestant must emit a FILE block whose path equals that
+    # value. Validated up front so a bad value aborts before any
+    # branches are created.
+    raw_target_file = input_data.get("target_file")
+    target_file: Optional[str] = None
+    if generate_code and raw_target_file is not None:
+        tf_check = _validate_target_file(raw_target_file)
+        if not tf_check["ok"]:
+            return {
+                "ok": False,
+                "error": f"invalid target_file: {tf_check['error']}",
+                "tournament_id": _generate_tournament_id(),
+            }
+        target_file = tf_check["normalized"]
     tournament_id = _generate_tournament_id()
 
     # ---- 1. Preflight ----
@@ -801,6 +987,7 @@ def handle_github_orchestrate_tournament(
                     judge_model=input_data.get("judge_model"),
                     temperature=float(input_data.get("temperature", 0.3)),
                     max_tokens=int(input_data.get("max_tokens", 2048)),
+                    target_file=target_file,
                 )
 
             contestants.append({
@@ -882,5 +1069,7 @@ def handle_github_orchestrate_tournament(
             ),
             "total_duration_ms": int((time.time() - t0) * 1000),
             "models_used": tournament.get("meta", {}).get("models_used", []),
+            "generate_code": generate_code,
+            "target_file": target_file,
         },
     }

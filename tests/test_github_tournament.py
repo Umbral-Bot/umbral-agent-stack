@@ -4,7 +4,10 @@ Covers:
 - Phase 1: branch-based orchestration primitives.
 - Phase 2 slice 1: contestant proposal artifact committed per branch.
 - Phase 2 slice 2: final branch materialized via cherry-pick + push.
-- Phase 2 slice 4: opt-in single-file code change per contestant.
+- Phase 2 slice 4a: opt-in single-file code change per contestant
+  (sandboxed under .rick/contestants/).
+- Phase 2 slice 4b: opt-in real-repo single-file code change per
+  contestant, driven by a validated ``target_file`` input.
 """
 
 import re
@@ -24,6 +27,7 @@ from worker.tasks.github_tournament import (
     _generate_tournament_id,
     _parse_file_block,
     _resolve_inside_sandbox,
+    _validate_target_file,
     _winner_commit_info,
     _write_artifact_and_commit,
     handle_github_orchestrate_tournament,
@@ -91,9 +95,14 @@ def _code_change_noop(**kwargs):
     label = kwargs.get("label", "?")
     tid = kwargs.get("tournament_id", "x")
     branch = kwargs.get("branch", "")
+    target_file = kwargs.get("target_file")
+    path = target_file or f".rick/contestants/{tid}/{label}/change.py"
+    mode = "target_file" if target_file else "sandbox"
     return {
         "attempted": True,
-        "path": f".rick/contestants/{tid}/{label}/change.py",
+        "mode": mode,
+        "target_file": target_file,
+        "path": path,
         "written": True,
         "parse_error": None,
         "commit": {"ok": True, "branch": branch, "commit_sha": "c0dec0de"},
@@ -1419,3 +1428,416 @@ class TestOrchestrateCodeChangeIntegration:
         assert mock_cp.call_count == 1
         assert mock_cp.call_args.kwargs["winner_sha"] == "c0dec0de"
         assert result["final_result"]["from_commit_sha"] == "c0dec0de"
+
+
+# ---------------------------------------------------------------------------
+# Phase 2 slice 4b — target_file validation + real-repo code change
+# ---------------------------------------------------------------------------
+
+
+class TestValidateTargetFile:
+    """Unit tests for _validate_target_file input guardrails."""
+
+    def test_accepts_regular_py_file(self):
+        r = _validate_target_file("worker/tasks/example.py")
+        assert r["ok"] is True
+        assert r["normalized"] == "worker/tasks/example.py"
+        assert r["error"] is None
+
+    def test_accepts_markdown(self):
+        assert _validate_target_file("docs/notes.md")["ok"] is True
+
+    def test_accepts_toml(self):
+        assert _validate_target_file("pyproject.toml")["ok"] is True
+
+    def test_rejects_none(self):
+        r = _validate_target_file(None)
+        assert r["ok"] is False and "required" in r["error"]
+
+    def test_rejects_non_string(self):
+        r = _validate_target_file(42)
+        assert r["ok"] is False and "string" in r["error"]
+
+    def test_rejects_empty(self):
+        r = _validate_target_file("   ")
+        assert r["ok"] is False and "empty" in r["error"]
+
+    def test_rejects_absolute_path(self):
+        r = _validate_target_file("/etc/passwd")
+        assert r["ok"] is False and "relative" in r["error"]
+
+    def test_rejects_parent_traversal(self):
+        r = _validate_target_file("../outside.py")
+        assert r["ok"] is False and ".." in r["error"]
+
+    def test_rejects_dot_segment(self):
+        r = _validate_target_file("./config.py")
+        assert r["ok"] is False
+
+    def test_rejects_double_slash(self):
+        r = _validate_target_file("worker//tasks.py")
+        assert r["ok"] is False
+
+    def test_rejects_bad_charset(self):
+        r = _validate_target_file("worker/tasks/bad name.py")
+        assert r["ok"] is False and "forbidden" in r["error"]
+
+    @pytest.mark.parametrize("prefix", [
+        ".git/config", ".github/workflows/ci.yml",
+        ".rick/tournaments/x.py", ".venv/lib/x.py",
+        "venv/lib/x.py", "node_modules/pkg/index.js",
+        "__pycache__/x.py",
+    ])
+    def test_rejects_protected_prefixes(self, prefix):
+        r = _validate_target_file(prefix)
+        assert r["ok"] is False
+        assert "protected prefix" in r["error"]
+
+    def test_rejects_disallowed_extension(self):
+        r = _validate_target_file("malware.exe")
+        assert r["ok"] is False and "extension" in r["error"]
+
+    def test_rejects_binary_extension(self):
+        r = _validate_target_file("image.png")
+        assert r["ok"] is False and "extension" in r["error"]
+
+    def test_extension_is_case_insensitive(self):
+        assert _validate_target_file("README.MD")["ok"] is True
+
+
+class TestParseFileBlockExactMode:
+    """Slice 4b: parser must enforce byte-exact path match."""
+
+    def test_requires_one_of_prefix_or_exact(self):
+        r = _parse_file_block("FILE: x.py\n```py\nx\n```")
+        assert r["ok"] is False
+        assert "misconfigured" in r["error"]
+
+    def test_rejects_both_prefix_and_exact(self):
+        r = _parse_file_block(
+            "FILE: x.py\n```py\nx\n```",
+            expected_prefix=".rick/contestants/t/a/",
+            expected_path="worker/x.py",
+        )
+        assert r["ok"] is False
+        assert "misconfigured" in r["error"]
+
+    def test_accepts_exact_match(self):
+        text = "FILE: worker/tasks/foo.py\n```python\nprint('hi')\n```"
+        r = _parse_file_block(text, expected_path="worker/tasks/foo.py")
+        assert r["ok"] is True
+        assert r["path"] == "worker/tasks/foo.py"
+        assert "print('hi')" in r["content"]
+
+    def test_rejects_different_path(self):
+        text = "FILE: worker/tasks/other.py\n```python\nprint('hi')\n```"
+        r = _parse_file_block(text, expected_path="worker/tasks/foo.py")
+        assert r["ok"] is False
+        assert "equal exactly" in r["error"]
+
+    def test_rejects_extra_suffix(self):
+        text = "FILE: worker/tasks/foo.py.bak\n```python\nx=1\n```"
+        r = _parse_file_block(text, expected_path="worker/tasks/foo.py")
+        assert r["ok"] is False
+
+    def test_rejects_extra_subdir(self):
+        text = "FILE: worker/tasks/foo.py/evil.py\n```python\nx=1\n```"
+        r = _parse_file_block(text, expected_path="worker/tasks/foo.py")
+        assert r["ok"] is False
+
+    def test_rejects_case_mismatch(self):
+        text = "FILE: Worker/Tasks/Foo.py\n```python\nx=1\n```"
+        r = _parse_file_block(text, expected_path="worker/tasks/foo.py")
+        assert r["ok"] is False
+
+    def test_rejects_multiple_headers_in_exact_mode(self):
+        text = (
+            "FILE: worker/tasks/foo.py\n```python\na=1\n```\n"
+            "FILE: worker/tasks/foo.py\n```python\nb=2\n```"
+        )
+        r = _parse_file_block(text, expected_path="worker/tasks/foo.py")
+        assert r["ok"] is False
+        assert "multiple" in r["error"]
+
+    def test_exact_mode_still_enforces_size_cap(self):
+        huge = "x" * (101 * 1024)
+        text = f"FILE: worker/x.py\n```python\n{huge}\n```"
+        r = _parse_file_block(text, expected_path="worker/x.py")
+        assert r["ok"] is False
+        assert "exceeds" in r["error"]
+
+
+class TestBuildCodePromptTargetFile:
+    """Slice 4b: prompt differentiation for target_file mode."""
+
+    def test_prompt_requires_exact_path(self):
+        p = _build_code_prompt(
+            tournament_id="t1", label="a", idx=1,
+            approach_name="X", challenge="c", proposal="p",
+            target_file="worker/tasks/foo.py",
+        )
+        assert "MUST equal exactly: worker/tasks/foo.py" in p["system"]
+        assert "Do NOT change the path" in p["system"]
+        # sandbox hint should NOT be in the prompt
+        assert "MUST start with" not in p["system"]
+        assert "worker/tasks/foo.py" in p["user"]
+
+    def test_sandbox_mode_unchanged_when_no_target(self):
+        p = _build_code_prompt(
+            tournament_id="t1", label="a", idx=1,
+            approach_name="X", challenge="c", proposal="p",
+        )
+        assert "MUST start with: .rick/contestants/t1/a/" in p["system"]
+        assert "MUST equal exactly" not in p["system"]
+
+
+class TestResolveInsideSandboxNoPrefix:
+    """Slice 4b: resolver with no prefix validates repo-scope only."""
+
+    def test_accepts_path_inside_repo(self, tmp_path):
+        (tmp_path / "worker" / "tasks").mkdir(parents=True)
+        r = _resolve_inside_sandbox(str(tmp_path), "worker/tasks/x.py", None)
+        assert r["ok"] is True
+
+    def test_rejects_escape_via_symlink(self, tmp_path):
+        # Canonical resolution must catch a symlink to /etc
+        (tmp_path / "worker").mkdir()
+        outside = tmp_path.parent / "zz_outside_slice4b"
+        outside.mkdir(exist_ok=True)
+        link = tmp_path / "worker" / "link"
+        link.symlink_to(outside)
+        r = _resolve_inside_sandbox(
+            str(tmp_path), "worker/link/evil.py", None,
+        )
+        assert r["ok"] is False
+        assert "repository" in r["error"]
+
+
+class TestGenerateAndCommitCodeChangeTargetFile:
+    """Slice 4b: helper end-to-end with target_file."""
+
+    def _approach(self):
+        return {
+            "id": 1,
+            "approach_name": "Clean",
+            "proposal": "Add docstring",
+            "model_used": "azure_foundry",
+        }
+
+    @patch(f"{MOD}.handle_github_commit_and_push")
+    @patch(f"{MOD}.handle_llm_generate")
+    @patch(f"{MOD}.config")
+    def test_happy_path_writes_real_repo_file(
+        self, mock_cfg, mock_llm, mock_commit, tmp_path,
+    ):
+        mock_cfg.GITHUB_REPO_PATH = str(tmp_path)
+        mock_llm.return_value = {
+            "text": (
+                "FILE: worker/tasks/foo.py\n"
+                "```python\n"
+                "def hello():\n    return 1\n"
+                "```\n"
+            ),
+        }
+        mock_commit.return_value = {
+            "ok": True, "branch": "b", "commit_sha": "abc123",
+        }
+
+        result = _generate_and_commit_code_change(
+            tournament_id="t9", label="a", idx=1,
+            approach=self._approach(),
+            challenge="Do X",
+            branch="rick/t/t9/a",
+            target_file="worker/tasks/foo.py",
+        )
+
+        assert result["attempted"] is True
+        assert result["mode"] == "target_file"
+        assert result["target_file"] == "worker/tasks/foo.py"
+        assert result["written"] is True
+        assert result["parse_error"] is None
+        assert result["path"] == "worker/tasks/foo.py"
+        assert result["commit"]["ok"] is True
+
+        target = tmp_path / "worker" / "tasks" / "foo.py"
+        assert target.exists()
+        assert "def hello" in target.read_text()
+
+        # Commit must reference the real repo path, one file only.
+        kw = mock_commit.call_args.args[0]
+        assert kw["files"] == ["worker/tasks/foo.py"]
+        assert "rick/t/t9/a" in kw["branch_name"]
+
+    @patch(f"{MOD}.handle_github_commit_and_push")
+    @patch(f"{MOD}.handle_llm_generate")
+    @patch(f"{MOD}.config")
+    def test_rejects_llm_emitting_different_path(
+        self, mock_cfg, mock_llm, mock_commit, tmp_path,
+    ):
+        mock_cfg.GITHUB_REPO_PATH = str(tmp_path)
+        mock_llm.return_value = {
+            "text": (
+                "FILE: worker/tasks/other.py\n"
+                "```python\nx = 1\n```\n"
+            ),
+        }
+
+        result = _generate_and_commit_code_change(
+            tournament_id="t9", label="a", idx=1,
+            approach=self._approach(),
+            challenge="Do X",
+            branch="rick/t/t9/a",
+            target_file="worker/tasks/foo.py",
+        )
+
+        assert result["written"] is False
+        assert result["parse_error"] is not None
+        assert "equal exactly" in result["parse_error"]
+        mock_commit.assert_not_called()
+        # No file should be written anywhere under the repo.
+        assert not (tmp_path / "worker" / "tasks" / "other.py").exists()
+        assert not (tmp_path / "worker" / "tasks" / "foo.py").exists()
+
+    @patch(f"{MOD}.handle_github_commit_and_push")
+    @patch(f"{MOD}.handle_llm_generate")
+    @patch(f"{MOD}.config")
+    def test_result_mode_field_is_target_file(
+        self, mock_cfg, mock_llm, mock_commit, tmp_path,
+    ):
+        mock_cfg.GITHUB_REPO_PATH = str(tmp_path)
+        mock_llm.return_value = {"text": ""}
+        result = _generate_and_commit_code_change(
+            tournament_id="t9", label="a", idx=1,
+            approach=self._approach(), challenge="c",
+            branch="b", target_file="worker/x.py",
+        )
+        assert result["mode"] == "target_file"
+        assert result["target_file"] == "worker/x.py"
+
+
+class TestOrchestrateTargetFileIntegration:
+    """Slice 4b end-to-end wiring through handle_github_orchestrate_tournament."""
+
+    @patch(f"{MOD}._generate_and_commit_code_change",
+           side_effect=_code_change_noop)
+    @patch(f"{MOD}._cherry_pick_and_push", side_effect=_cherry_pick_noop)
+    @patch(f"{MOD}._write_artifact_and_commit", side_effect=_artifact_noop)
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_create_branch", side_effect=_create_branch_ok)
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    def test_target_file_forwarded_to_helper(
+        self, _pre, _br, mock_tourn, _chk, _art, _cp, mock_code,
+    ):
+        mock_tourn.return_value = _tournament_result(num=2, winner_id=1)
+
+        result = handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "generate_code": True,
+            "target_file": "worker/tasks/example.py",
+        })
+
+        assert result["ok"] is True
+        assert mock_code.call_count == 2
+        for call in mock_code.call_args_list:
+            assert call.kwargs["target_file"] == "worker/tasks/example.py"
+        assert result["meta"]["generate_code"] is True
+        assert result["meta"]["target_file"] == "worker/tasks/example.py"
+        for c in result["contestants"]:
+            assert c["code_change"]["mode"] == "target_file"
+            assert c["code_change"]["target_file"] == "worker/tasks/example.py"
+
+    @patch(f"{MOD}._generate_and_commit_code_change",
+           side_effect=_code_change_noop)
+    @patch(f"{MOD}._cherry_pick_and_push", side_effect=_cherry_pick_noop)
+    @patch(f"{MOD}._write_artifact_and_commit", side_effect=_artifact_noop)
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_create_branch", side_effect=_create_branch_ok)
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    def test_target_file_ignored_when_generate_code_off(
+        self, _pre, _br, mock_tourn, _chk, _art, _cp, mock_code,
+    ):
+        mock_tourn.return_value = _tournament_result(num=2, winner_id=1)
+
+        result = handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "generate_code": False,
+            "target_file": "worker/tasks/example.py",
+        })
+
+        assert result["ok"] is True
+        # Helper must not have been called at all.
+        mock_code.assert_not_called()
+        assert result["meta"]["generate_code"] is False
+        assert result["meta"]["target_file"] is None
+
+    @patch(f"{MOD}._generate_and_commit_code_change")
+    @patch(f"{MOD}._cherry_pick_and_push")
+    @patch(f"{MOD}._write_artifact_and_commit")
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_create_branch")
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    def test_invalid_target_file_aborts_before_any_branch(
+        self, _pre, mock_br, mock_tourn, _chk, mock_art, mock_cp, mock_code,
+    ):
+        result = handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "generate_code": True,
+            "target_file": ".git/config",
+        })
+
+        assert result["ok"] is False
+        assert "invalid target_file" in result["error"]
+        assert "protected prefix" in result["error"]
+        # Crucially: no branch, no tournament, no artifact, no code change,
+        # no cherry-pick triggered.
+        mock_br.assert_not_called()
+        mock_tourn.assert_not_called()
+        mock_art.assert_not_called()
+        mock_code.assert_not_called()
+        mock_cp.assert_not_called()
+
+    @patch(f"{MOD}._generate_and_commit_code_change")
+    @patch(f"{MOD}.handle_github_create_branch")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    def test_absolute_target_file_rejected_early(
+        self, _pre, mock_tourn, mock_br, mock_code,
+    ):
+        result = handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "generate_code": True,
+            "target_file": "/etc/passwd",
+        })
+        assert result["ok"] is False
+        assert "relative" in result["error"]
+        mock_br.assert_not_called()
+        mock_tourn.assert_not_called()
+        mock_code.assert_not_called()
+
+    @patch(f"{MOD}._generate_and_commit_code_change",
+           side_effect=_code_change_noop)
+    @patch(f"{MOD}._cherry_pick_and_push", side_effect=_cherry_pick_noop)
+    @patch(f"{MOD}._write_artifact_and_commit", side_effect=_artifact_noop)
+    @patch(f"{MOD}._checkout_base")
+    @patch(f"{MOD}.handle_tournament_run")
+    @patch(f"{MOD}.handle_github_create_branch", side_effect=_create_branch_ok)
+    @patch(f"{MOD}.handle_github_preflight", return_value=_preflight_ok())
+    def test_no_target_file_falls_back_to_sandbox_mode(
+        self, _pre, _br, mock_tourn, _chk, _art, _cp, mock_code,
+    ):
+        mock_tourn.return_value = _tournament_result(num=2, winner_id=1)
+
+        result = handle_github_orchestrate_tournament({
+            "challenge": "c",
+            "generate_code": True,
+        })
+
+        assert result["ok"] is True
+        for call in mock_code.call_args_list:
+            assert call.kwargs.get("target_file") is None
+        assert result["meta"]["target_file"] is None
+        for c in result["contestants"]:
+            assert c["code_change"]["mode"] == "sandbox"

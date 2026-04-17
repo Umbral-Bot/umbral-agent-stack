@@ -4,7 +4,9 @@ description: >-
   Operate Git and GitHub from the VPS: branches, commits, pushes, and pull requests.
   Use when "create branch", "commit and push", "open PR", "github preflight",
   "orchestrate tournament branches", "check git status", "push to GitHub",
-  or "branch cleanup".
+  "branch cleanup", "torneo real", "torneo de implementación",
+  "competir implementaciones en ramas", "benchmark de código real",
+  "poner a competir soluciones", "torneo sobre este cambio".
 metadata:
   openclaw:
     emoji: "\U0001F4BB"

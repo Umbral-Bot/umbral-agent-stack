@@ -209,6 +209,16 @@ Rick opera como 3 runtime agents con responsabilidades separadas. Las definicion
 
 **Regla clave:** delivery no se autovalida como "done" — QA valida. Orchestrator no ejecuta implementación — delivery ejecuta. QA no implementa fixes — devuelve a delivery con descripción exacta del fallo.
 
+### Agent governance
+
+Función sistémica que observa el ecosistema de agentes y produce recomendaciones estructuradas. **No es lo mismo que el equipo `improvement`** (que es routing de intents tipo "mejora/ooda"). Definición completa: `docs/70-agent-governance.md`.
+
+- **Observa:** uso, fricción, saturación/redundancia, demanda no cubierta.
+- **Produce:** reporte estructurado con señales + recomendaciones.
+- **No actúa por su cuenta:** propone; David decide.
+- **Fuentes de datos:** `system.ooda_report`, `system.self_eval`, Linear (`Mejora Continua Agent Stack`), ROLE.md boundaries.
+- **Se invoca:** on-demand por David o `rick-orchestrator` al cerrar una phase.
+
 ### Asignación práctica por rol
 
 - `main`: `linear-delivery-traceability`, `subagent-result-integration`, `notion-project-registry`, `system-interconnectivity-diagnostics`, `editorial-source-curation`, `competitive-funnel-benchmark`, `external-reference-intelligence`, `browser-automation-vm`, `windows`

@@ -156,6 +156,10 @@ Ejecutar semanalmente (o antes de cada revisión de estrategia) para evaluar la 
 - [ ] Verificar que no hay tareas bloqueadas sin acción
 - [ ] Confirmar que el Notion Poller daemon está activo y procesando
 
+### 3.7 Agent governance (al cerrar phase o milestone)
+
+Esta checklist cubre salud operativa semanal. Para una revisión estructural del ecosistema de agentes (uso, fricción, saturación, demanda no cubierta), ver `docs/70-agent-governance.md`. Agent-governance se invoca al cerrar una phase, un milestone estructural, o cuando se detecta fricción sistémica — no como parte de la rutina semanal.
+
 ---
 
 ## 4. Rutas de API relevantes para gobernanza

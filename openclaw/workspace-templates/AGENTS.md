@@ -193,10 +193,27 @@ Esto cubre, por ejemplo:
 
 No usar este proyecto para benchmarks, entregables de cliente o iniciativas de negocio. Para esos casos, seguir usando el proyecto oficial correspondiente.
 
+### Runtime agents — roles y handoffs
+
+Rick opera como 3 runtime agents con responsabilidades separadas. Las definiciones completas están en `openclaw/workspace-agent-overrides/<agent>/ROLE.md`.
+
+| Agente | Rol | Cuándo actúa |
+|--------|-----|-------------|
+| `rick-orchestrator` | Planifica, prioriza, delega, integra resultados | Recibe trabajo de David, descompone en slices, asigna owners |
+| `rick-delivery` | Ejecuta, produce artefactos, entrega resultados verificables | Recibe slices definidos, implementa, deja trazabilidad |
+| `rick-qa` | Valida, audita, declara riesgo residual | Verifica entregas contra criterios de aceptación con evidencia |
+
+**Flujo canónico:** orchestrator -> delivery -> qa -> orchestrator (cierre) -> David.
+
+**Handoffs:** cada agente debe declarar explícitamente cuándo pasa trabajo al siguiente. Ver `ROLE.md` de cada agente para los triggers específicos. Usar `agent-handoff-governance` para el formato obligatorio del handoff.
+
+**Regla clave:** delivery no se autovalida como "done" — QA valida. Orchestrator no ejecuta implementación — delivery ejecuta. QA no implementa fixes — devuelve a delivery con descripción exacta del fallo.
+
 ### Asignación práctica por rol
 
 - `main`: `linear-delivery-traceability`, `subagent-result-integration`, `notion-project-registry`, `system-interconnectivity-diagnostics`, `editorial-source-curation`, `competitive-funnel-benchmark`, `external-reference-intelligence`, `browser-automation-vm`, `windows`
 - `rick-orchestrator`: `subagent-result-integration`, `linear-issue-triage`, `linear-delivery-traceability`, `agent-handoff-governance`, `external-reference-intelligence`
+- `rick-delivery`: `linear-delivery-traceability`, `notion-project-registry`, `competitive-funnel-benchmark`, `editorial-source-curation`
 - `rick-qa`: `linear-project-auditor`, `linear-delivery-traceability`, `system-interconnectivity-diagnostics`
 - `rick-tracker`: `editorial-source-curation`
 - `rick-ops`: `n8n-editorial-orchestrator`, `browser-automation-vm`, `windows`

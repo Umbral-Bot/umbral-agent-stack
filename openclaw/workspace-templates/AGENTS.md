@@ -217,7 +217,7 @@ Función sistémica que observa el ecosistema de agentes y produce recomendacion
 - **Produce:** reporte estructurado con señales + recomendaciones.
 - **No actúa por su cuenta:** propone; David decide.
 - **Fuentes de datos:** `system.ooda_report`, `system.self_eval`, Linear (`Mejora Continua Agent Stack`), ROLE.md boundaries.
-- **Se invoca:** on-demand por David o `rick-orchestrator` al cerrar una phase.
+- **Se invoca:** on-demand, con 3 momentos preferidos: **cierre de phase**, **cierre de milestone estructural**, o **señal de fricción** detectada por David o `rick-orchestrator`. Output aterriza en Linear (`Mejora Continua Agent Stack`), no en chat.
 
 ### Asignación práctica por rol
 

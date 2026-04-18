@@ -135,9 +135,60 @@ When invoked, agent-governance produces a structured report:
 
 ## Invocation
 
-For now, agent-governance is invoked manually by David or by `rick-orchestrator` when a phase closes or when David asks "how is the system doing?"
+Agent-governance runs on demand, but has **preferred natural moments** where it should be invoked. It does not run on a cron or heartbeat — someone must trigger it.
 
-Future: if David approves, a periodic cron (e.g., weekly) can invoke this function and post the report to Notion or Linear.
+### Trigger moments
+
+| Moment | Who triggers | Why |
+|--------|-------------|-----|
+| **Phase close** | `rick-orchestrator` (or David directly) | A phase represents a coherent block of structural work. Closing it is the natural point to check whether the agent ecosystem changed for better or worse. |
+| **Milestone close** | `rick-orchestrator` (or David directly) | After a sequence of related PRs that change agent structure, skills, routing, or boundaries — e.g., adding runtime agents, new skills, new handlers. |
+| **Friction signal** | David (explicit request) or `rick-orchestrator` (suggestion to David) | When David observes recurring friction, or when `rick-orchestrator` detects repeated loops, escalations, blocked handoffs, or capability gaps across multiple slices. |
+
+### Who can invoke
+
+- **David**: directly, at any time. "How is the system doing?" or "Run governance review" or equivalent.
+- **`rick-orchestrator`**: suggests invocation to David when a trigger moment is detected. Does NOT run the governance analysis autonomously — proposes it and waits for David's go-ahead. Exception: if David has pre-approved governance at phase close (e.g., "always run governance when we close a phase"), `rick-orchestrator` can invoke without per-instance approval.
+
+### What happens at invocation
+
+1. **Data collection** — Gather inputs from available sources:
+   - `system.ooda_report` (task volume, failure rates, provider distribution)
+   - `system.self_eval` (quality scores)
+   - Linear `Mejora Continua Agent Stack` (blocked issues, enhancement requests, stale items)
+   - ROLE.md boundaries and AGENTS.md skill assignments (static analysis for overlap/gaps)
+
+2. **Analysis** — Evaluate the 4 signals (usage, friction, saturation/redundancy, unmet demand) using the collected data.
+
+3. **Report** — Produce a structured governance report (format defined in the "Output format" section above).
+
+4. **Persist** — The report must land in a concrete, reviewable location:
+   - **Primary**: Linear comment or issue in `Mejora Continua Agent Stack` (creates trazabilidad and allows David to act on findings directly).
+   - **Secondary** (if findings are significant): Notion deliverable under the relevant project, so David sees it in his normal review flow.
+   - **Never**: only in chat, only in a local file, or only in stdout. The report must be persisted where David will find it.
+
+5. **Action** — Recommendations from the report become Linear issues (if David approves) or are noted for the next phase. Governance does not implement its own recommendations.
+
+### Minimum viable invocation (today)
+
+With current infrastructure, a governance invocation looks like:
+
+1. `rick-orchestrator` (or David) decides a trigger moment has arrived.
+2. Rick runs `system.ooda_report` and `system.self_eval` to collect metrics.
+3. Rick reads ROLE.md files, AGENTS.md skill assignments, and recent Linear issues.
+4. Rick produces the governance report in the structured format.
+5. Rick posts the report as a Linear comment or issue in `Mejora Continua Agent Stack`.
+6. Rick summarizes findings for David (in Notion or Telegram, depending on context).
+7. David decides which recommendations to act on.
+
+No new handler, cron, or automation is needed for this flow. It uses existing tools and the existing governance report format.
+
+### What governance invocation is NOT
+
+- Not a cron job. It runs when triggered, not on a schedule.
+- Not a deploy gate. It does not block PRs, merges, or deploys.
+- Not a mandatory step. David can skip it if the phase was trivial or if time pressure requires it.
+- Not an autonomous action. Even when `rick-orchestrator` detects a trigger moment, it proposes — it does not execute without David's awareness.
 
 ## Next slices (not in scope now)
 

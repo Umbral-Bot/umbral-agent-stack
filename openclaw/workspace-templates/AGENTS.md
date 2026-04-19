@@ -225,6 +225,10 @@ Función sistémica que observa el ecosistema de agentes y produce recomendacion
 
 Contrato declarativo para el supervisor del equipo `improvement`. Coordina mejora continua interna (OODA, self-eval, Linear Mejora Continua). **No es un runtime agent todavía** — no tiene workspace en `openclaw.json`, no hay routing automático desde `teams.yaml`, y el campo `supervisor` en `TeamRouter` no tiene efecto. Definición completa: `openclaw/workspace-agent-overrides/improvement-supervisor/ROLE.md`. Condiciones de activación documentadas en ese ROLE.md.
 
+### Supervisor routing (design-only)
+
+El campo `supervisor` en `config/teams.yaml` define quién coordina un equipo, pero hoy es metadata sin efecto en el dispatcher. El contrato técnico de cómo activarlo — semántica, cuándo aplica, cuándo no, riesgos y gates de implementación — está en `docs/71-supervisor-routing-contract.md`. No hay cambios en runtime.
+
 ### Asignación práctica por rol
 
 - `main`: `linear-delivery-traceability`, `subagent-result-integration`, `notion-project-registry`, `system-interconnectivity-diagnostics`, `editorial-source-curation`, `competitive-funnel-benchmark`, `external-reference-intelligence`, `browser-automation-vm`, `windows`

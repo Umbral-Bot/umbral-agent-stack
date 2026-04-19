@@ -592,10 +592,13 @@ def _run_worker(
     """Worker thread: local WorkerClient siempre; VM WorkerClient solo si WORKER_URL_VM está definido."""
     r = redis.Redis(connection_pool=pool, decode_responses=True)
     queue = TaskQueue(r)
-    wc_local = WorkerClient(base_url=worker_url, token=worker_token)
-    wc_vm = WorkerClient(base_url=worker_url_vm, token=worker_token) if worker_url_vm else None
+    # Timeout 120s: composite tasks (composite.research_report) do multiple
+    # sequential API calls (LLM + research) that reliably take 30-60s.
+    # The default 30s caused 100% failure rate on those tasks.
+    wc_local = WorkerClient(base_url=worker_url, token=worker_token, timeout=120.0)
+    wc_vm = WorkerClient(base_url=worker_url_vm, token=worker_token, timeout=120.0) if worker_url_vm else None
     # GUI tasks (interactive automation) use a separate port on the VM (default 8089)
-    wc_vm_gui = WorkerClient(base_url=worker_url_vm_gui, token=worker_token) if worker_url_vm_gui else wc_vm
+    wc_vm_gui = WorkerClient(base_url=worker_url_vm_gui, token=worker_token, timeout=120.0) if worker_url_vm_gui else wc_vm
     capabilities = get_team_capabilities()
 
     while True:

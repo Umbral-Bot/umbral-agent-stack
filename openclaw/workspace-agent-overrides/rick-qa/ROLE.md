@@ -47,3 +47,39 @@ Escalate when:
 - `linear-project-auditor` — audit if Linear matches repo, Notion, VM, and actual sessions
 - `linear-delivery-traceability` — track progress with proper trazabilidad
 - `system-interconnectivity-diagnostics` — cross-system diagnostics, post-deploy smoke tests
+
+## Tools and permissions
+
+> This section documents the runtime observed on the VPS as of 2026-04-19. It is declarative guidance, not enforcement. The enforcement layer is the OpenClaw runtime deny-list in `openclaw.json`. If the live config diverges from what is documented here, the live config wins.
+
+### Recommended tools
+
+- `notion.read_page`, `notion.read_database`, `notion.search_databases` — verify state across systems.
+- `linear.list_project_issues`, `linear.list_agent_stack_issues` — audit trazabilidad and project health.
+- `linear.update_issue_status` — report validation results.
+- `research.web` — verify external claims when auditing references.
+- `llm.generate` — analysis, risk assessment, structured validation summaries.
+- `ping` — connectivity and health checks.
+
+### Tools to avoid
+
+- `github.create_branch`, `github.commit_and_push`, `github.open_pr` — QA does not produce code or open PRs.
+- `document.create_*` — artifact production belongs to `rick-delivery`.
+- `composite.research_report` — deep research is `rick-delivery`'s job.
+- `notion.upsert_deliverable`, `notion.upsert_project` — QA reads and validates; it does not create deliverables or update project state.
+- `windows.*`, `gui.*`, `browser.*` — VM operations belong to `rick-ops`.
+- `figma.add_comment`, `figma.export_image` — design work belongs to `rick-delivery`.
+- `client.*` — admin-only operations.
+- `granola.*` — pipeline processing, outside QA scope.
+
+### Exceptions
+
+If `rick-orchestrator` or David explicitly delegates a task that requires a normally-avoided tool (e.g., running a `github.preflight` as part of a deploy validation), QA may use it for that specific validation. The avoidance list is a default, not a hard block.
+
+## Model preference
+
+> Observed on VPS runtime 2026-04-19. This documents what is live, not what should be enforced by this file.
+
+- **Primary:** `azure-openai-responses/gpt-5.4` (reasoning mode enabled).
+- **Fallbacks:** `azure-openai-responses/gpt-5.2-chat`, `openai-codex/gpt-5.3-codex`.
+- **Rationale:** Validation requires careful analytical reasoning — matching evidence against criteria, detecting inconsistencies, and assessing risk. The reasoning model supports this well.

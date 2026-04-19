@@ -221,6 +221,10 @@ Función sistémica que observa el ecosistema de agentes y produce recomendacion
 - **Fuentes de datos:** `system.ooda_report`, `system.self_eval`, Linear (`Mejora Continua Agent Stack`), ROLE.md boundaries.
 - **Se invoca:** on-demand, con 3 momentos preferidos: **cierre de phase**, **cierre de milestone estructural**, o **señal de fricción** detectada por David o `rick-orchestrator`. Output aterriza en Linear (`Mejora Continua Agent Stack`), no en chat.
 
+### Improvement supervisor (design-only — no runtime activo)
+
+Contrato declarativo para el supervisor del equipo `improvement`. Coordina mejora continua interna (OODA, self-eval, Linear Mejora Continua). **No es un runtime agent todavía** — no tiene workspace en `openclaw.json`, no hay routing automático desde `teams.yaml`, y el campo `supervisor` en `TeamRouter` no tiene efecto. Definición completa: `openclaw/workspace-agent-overrides/improvement-supervisor/ROLE.md`. Condiciones de activación documentadas en ese ROLE.md.
+
 ### Asignación práctica por rol
 
 - `main`: `linear-delivery-traceability`, `subagent-result-integration`, `notion-project-registry`, `system-interconnectivity-diagnostics`, `editorial-source-curation`, `competitive-funnel-benchmark`, `external-reference-intelligence`, `browser-automation-vm`, `windows`

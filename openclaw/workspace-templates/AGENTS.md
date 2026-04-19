@@ -207,6 +207,8 @@ Rick opera como 3 runtime agents con responsabilidades separadas. Las definicion
 
 **Handoffs:** cada agente debe declarar explícitamente cuándo pasa trabajo al siguiente. Ver `ROLE.md` de cada agente para los triggers específicos. Usar `agent-handoff-governance` para el formato obligatorio del handoff.
 
+**Tools, permisos y modelo por rol:** cada `ROLE.md` documenta las tools recomendadas, las que debe evitar, excepciones y el modelo runtime observado. Consultar `openclaw/workspace-agent-overrides/<agent>/ROLE.md` para el detalle por agente.
+
 **Regla clave:** delivery no se autovalida como "done" — QA valida. Orchestrator no ejecuta implementación — delivery ejecuta. QA no implementa fixes — devuelve a delivery con descripción exacta del fallo.
 
 ### Agent governance

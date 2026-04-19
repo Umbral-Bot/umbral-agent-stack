@@ -68,7 +68,7 @@ Escalate when:
 
 - `linear.create_issue` (triage-level) — issue creation and triage belong to `rick-orchestrator`.
 - `linear.publish_agent_stack_followup` — stack meta-tracking is `rick-orchestrator`'s concern.
-- `windows.*`, `gui.*` — VM infrastructure belongs to `rick-ops`.
+- `windows.*`, `browser.*`, `gui.*` — VM/browser/infrastructure operations belong to `rick-ops`.
 - `client.*` — admin-only operations.
 - `granola.*` — pipeline processing, outside delivery scope.
 

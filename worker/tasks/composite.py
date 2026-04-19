@@ -126,16 +126,19 @@ def _generate_report_with_retry(
 
 def _generate_queries(topic: str, n: int) -> List[str]:
     """Use LLM to generate search queries for a topic."""
-    result = handle_llm_generate({
-        "prompt": QUERY_GEN_PROMPT.format(n=n, topic=topic),
-        "max_tokens": 512,
-        "temperature": 0.4,
-        "_task_id": _ACTIVE_CONTEXT.get("task_id"),
-        "_task_type": _ACTIVE_CONTEXT.get("task_type"),
-        "_source": _ACTIVE_CONTEXT.get("source"),
-        "_source_kind": _ACTIVE_CONTEXT.get("source_kind"),
-        "_usage_component": "composite.research_report.query_generation",
-    })
+    try:
+        result = handle_llm_generate({
+            "prompt": QUERY_GEN_PROMPT.format(n=n, topic=topic),
+            "max_tokens": 512,
+            "temperature": 0.4,
+            "_task_id": _ACTIVE_CONTEXT.get("task_id"),
+            "_task_type": _ACTIVE_CONTEXT.get("task_type"),
+            "_source": _ACTIVE_CONTEXT.get("source"),
+            "_source_kind": _ACTIVE_CONTEXT.get("source_kind"),
+            "_usage_component": "composite.research_report.query_generation",
+        })
+    except Exception as exc:
+        raise RuntimeError(f"Query generation LLM call failed: {exc}") from exc
     text = result.get("text", "")
     # Parse numbered list: "1. query\n2. query\n..."
     queries = []

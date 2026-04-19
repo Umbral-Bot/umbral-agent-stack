@@ -6,6 +6,13 @@
 > - Rick consume GPT/Kimi/Azure, Vertex 3.1, Notion, Linear, Tavily y audio Azure/Google principalmente a través del plugin `umbral-worker`.
 > - El estado validado y los resultados E2E quedaron documentados en [docs/audits/vps-openclaw-llm-audio-validation-2026-03-08.md](audits/vps-openclaw-llm-audio-validation-2026-03-08.md).
 
+> **Actualización 2026-04-19 — modelo y tools por rol:**
+> Las secciones 2, 3 y 4 de este documento (asignación de modelos y JSON de `agents.list`) reflejan la configuración planeada a 2026-03-08 y ya no coinciden con el runtime actual. El runtime real migró a `azure-openai-responses/gpt-5.4` como primary para orchestrator, delivery y qa.
+>
+> **Fuente canónica para tools y modelo por runtime role:** cada `ROLE.md` en `openclaw/workspace-agent-overrides/<agent>/ROLE.md` (PR #227). La fuente canónica para la config viva es `~/.openclaw/openclaw.json` en la VPS.
+>
+> Las secciones 1 (skill deployment) y 5 (Kimi-K2.5 setup) siguen vigentes.
+
 ## 1. Que Rick tenga el skill `openclaw-gateway`
 
 El skill está en el repo en `openclaw/workspace-templates/skills/openclaw-gateway/`. Para que Rick lo use en la VPS, debe existir en `~/.openclaw/workspace/skills/openclaw-gateway/` (workspace de Rick).
@@ -47,6 +54,8 @@ Tras eso, OpenClaw cargará el skill desde `<workspace>/skills` (prioridad sobre
 
 ## 2. Asignación de modelos por agente (Vertex vs AI Foundry)
 
+> **Superseded (2026-04-19).** La tabla y recomendaciones de esta sección reflejan el plan de 2026-03-08. El runtime actual usa `azure-openai-responses/gpt-5.4` como primary para orchestrator, delivery y qa. Consultar cada `ROLE.md` en `openclaw/workspace-agent-overrides/<agent>/ROLE.md` para el estado observado actual. Se conserva el contenido original abajo como referencia histórica.
+
 En tu config ya tienes:
 
 - **Vertex:** `google-vertex/gemini-2.5-flash` disponible para herramientas del Worker.
@@ -75,6 +84,8 @@ Si aún no tienes el provider de Azure/Foundry en OpenClaw, deja rick-orchestrat
 ---
 
 ## 3. JSON de `agents.list` con modelos por agente
+
+> **Superseded (2026-04-19).** Este JSON refleja el plan de 2026-03-08 (Gemini/Vertex para delivery y qa). La config viva en `~/.openclaw/openclaw.json` ya divergió. No usar este bloque como referencia para editar la config actual. Se conserva como referencia histórica.
 
 Pega este bloque dentro de `agents` en tu `openclaw.json` (sustituye o fusiona con tu `agents.list` actual). Los que no llevan `model` heredan el default (primary + fallbacks).
 
@@ -149,6 +160,8 @@ Pega este bloque dentro de `agents` en tu `openclaw.json` (sustituye o fusiona c
 ---
 
 ## 4. Resumen
+
+> **Superseded (2026-04-19).** Este resumen refleja el plan original. Para el estado actual de modelo y tools por rol, ver cada `ROLE.md` en `openclaw/workspace-agent-overrides/<agent>/ROLE.md`.
 
 1. **Skill para Rick:** copiar `openclaw/workspace-templates/skills/openclaw-gateway` a `~/.openclaw/workspace/skills/` en la VPS (Opción A con `sync_skills_to_vps.py` o Opción B con `cp` tras `git pull`).
 2. **Google 2.5 Flash:** rick-tracker.

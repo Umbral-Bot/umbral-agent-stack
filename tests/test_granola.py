@@ -329,15 +329,22 @@ class TestHandleGranolaProcessTranscript:
         )
         assert create_args.kwargs["properties"]["Estado"]["select"]["name"] == "Pendiente"
         assert create_args.kwargs["properties"]["Tags"]["multi_select"] == [{"name": "granola"}]
-        assert (
-            create_args.kwargs["properties"]["Trazabilidad"]["rich_text"][0]["text"]["content"]
-            == (
-                "granola_document_id=doc-123\n"
-                "source_updated_at=2026-03-31T12:00:00Z\n"
-                "source_url=https://app.granola.ai/doc-123\n"
-                "ingest_path=granola.process_transcript"
-            )
-        )
+        traceability_written = create_args.kwargs["properties"]["Trazabilidad"][
+            "rich_text"
+        ][0]["text"]["content"]
+        for required_line in (
+            "granola_document_id=doc-123",
+            "source_updated_at=2026-03-31T12:00:00Z",
+            "source_url=https://app.granola.ai/doc-123",
+            "ingest_path=granola.process_transcript",
+            "content_hash=",
+            "char_count=",
+            "segment_count=",
+            "ingested_at=",
+        ):
+            assert required_line in traceability_written, traceability_written
+        assert result["reconciliation"]["action"] == "create"
+        assert result["reconciliation_action"] == "create"
         assert len(create_args.kwargs["children"]) == 1
         assert (
             create_args.kwargs["children"][0]["paragraph"]["rich_text"][0]["text"]["content"]

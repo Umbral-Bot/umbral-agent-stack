@@ -166,12 +166,16 @@ def test_real_supervisors_registry_does_not_affect_dispatch_path():
 @pytest.mark.parametrize(
     "relative_path",
     [
-        "dispatcher/router.py",
         "dispatcher/service.py",
         "dispatcher/intent_classifier.py",
     ],
 )
 def test_runtime_files_do_not_import_supervisor_resolution(relative_path):
+    """Phase 5 invariance: supervisor resolution must NOT be consumed by the
+    service worker loop or the intent classifier. ``dispatcher/router.py`` is
+    the designated integration point since the observability-only wiring
+    slice and is covered by ``test_supervisor_runtime_observability_wiring``.
+    """
     root = Path(__file__).resolve().parent.parent
     source = (root / relative_path).read_text(encoding="utf-8")
 

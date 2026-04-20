@@ -315,12 +315,15 @@ class TestImportSafety:
 
 
 class TestRuntimeInvariance:
-    """Runtime files must not import the new ambiguity_signal module."""
+    """Service worker loop and intent classifier must not consume the
+    ambiguity_signal detector. ``dispatcher/router.py`` is the designated
+    integration point for the observability-only wiring slice and is
+    validated by ``tests/test_supervisor_runtime_observability_wiring.py``.
+    """
 
     @pytest.mark.parametrize(
         "relative_path",
         [
-            "dispatcher/router.py",
             "dispatcher/service.py",
             "dispatcher/intent_classifier.py",
         ],
@@ -330,5 +333,5 @@ class TestRuntimeInvariance:
         source = (root / relative_path).read_text(encoding="utf-8")
         assert "ambiguity_signal" not in source, (
             f"{relative_path} imports ambiguity_signal — this module must remain "
-            f"passive and not connected to runtime"
+            f"passive for non-router runtime code"
         )

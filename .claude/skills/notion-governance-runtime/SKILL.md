@@ -102,3 +102,38 @@ Antes de rediseñar todo, prioriza:
 - mantener V1 por inercia cuando V2 ya es la referencia
 - confundir trazabilidad técnica con comunicación útil para David
 - dejar la UX de Notion gobernada por conveniencia del runtime en vez de por utilidad real
+
+## Guardrails de capitalización Granola
+
+Cualquier cierre de una página raw de `Transcripciones Granola` hacia objetos
+canónicos (proyecto, oportunidad, tarea, entregable, bridge item, sesión
+curada) debe respetar los guardrails normativos documentados en:
+
+- `openclaw/workspace-templates/skills/granola-pipeline/SKILL.md`
+- `docs/54-granola-capitalize-raw-slice.md`
+
+Resumen operativo para Claude (usarlo antes de marcar una raw como
+capitalizada):
+
+1. **Trazabilidad de ingest = read+append.** No reemplazar el campo
+   `Trazabilidad` por completo. Preservar siempre, si existen,
+   `granola_document_id`, `source_updated_at`, `source_url`, `ingest_path`,
+   `content_hash`, `char_count`, `segment_count`, `truncation_detected`,
+   `ingested_at` y `reconciled_at`. Solo anexar `capitalization_mode`,
+   `canonical_target_type`, `canonical_target_name`, `canonical_target_url`
+   y `processed_at`. Prohibido emitir frases tipo
+   "Residuo legacy descartado" sobre trazabilidad de ingest — eso rompe la
+   reconciliación descrita en `docs/78-granola-transcript-finality-reconciliation.md`.
+2. **Reuniones comerciales = cadena completa, no tarea suelta.** Si hay
+   cliente/partner + oportunidad implicita, el cierre debe cubrir:
+   cliente -> proyecto/oportunidad (o `bridge item` si falta DB/permiso)
+   -> tarea vinculada -> entregable/propuesta si aplica -> trazabilidad
+   cruzada. Si falta algun paso, la raw queda como **capitalización
+   parcial** o **revisión requerida**, nunca como
+   `Estado=Procesada` + `Accion agente=Capitalizado`.
+3. **Datos fonéticos ambiguos.** No convertir transcripción fonética
+   ambigua (correos, nombres, dominios) en dato firme. Dejarlo como
+   "mencionado fonéticamente; confirmar" hasta que David lo valide.
+4. **Caso Comgrap Dynamo** funciona como test de regresión: si la
+   capitalización de una reunión con cliente nombrado y oportunidad
+   técnica clara se cierra como tarea suelta, la capitalización está mal.

@@ -1,13 +1,16 @@
 # Supervisor Observability Monitoring
 
-> Runbook for the Phase 5 supervisor observability monitoring tool. Use during the 24h monitoring window (per `docs/75`) and for ongoing health checks of the supervisor observability wiring.
+> Runbook for the Phase 5/6A supervisor observability monitoring tool. Use during the 24h monitoring window (per `docs/75`) and for ongoing health checks of the supervisor observability wiring.
 
 ## 1. Purpose
 
-After PR #241 merged the first runtime wiring slice (`_emit_supervisor_observability()` in `dispatcher/router.py`), a 24h monitoring window is required before proceeding. This tool provides a reusable, local-only, non-blocking way to:
+After PR #241 merged the first runtime wiring slice (`_emit_supervisor_observability()` in `dispatcher/router.py`), a 24h monitoring window is required before proceeding. PR #242 delivered the monitoring tool; Phase 6A closes the formatter gap by persisting structured supervisor events to `ops_log.jsonl` directly.
+
+This tool provides a reusable, local-only, non-blocking way to:
 
 - Count supervisor observability log lines from journald.
 - Analyze dispatch health from `ops_log.jsonl` (task completed/failed/blocked).
+- Read **structured supervisor events** persisted to `ops_log.jsonl` by `OpsLogger.supervisor_event()` (Phase 6A).
 - Run local simulation against the pure building blocks to verify event correctness.
 - Detect critical conditions: `should_block=True`, non-improvement events, raw text leakage.
 - Produce a structured go/no-go recommendation.
@@ -70,27 +73,33 @@ These conditions produce **ROLLBACK_RECOMMENDED**:
 ```
 # Supervisor Observability Monitoring Report
 
-**Recommendation: WATCH**
+**Recommendation: PASS_MONITORING**
 
 - Generated: 2026-04-20T17:00:00+00:00
 - Window: 60 minutes
-
-## Reasons
-
-- [WATCH] No supervisor_observability lines in journal (no traffic or formatter gap)
 
 ## Sources
 
 ### Journal
 - Available: True
-- Lines scanned: 0
-- `supervisor_observability`: 0
+- Lines scanned: 842
+- `supervisor_observability`: 3
+- `supervisor_observability_failed`: 0
 
 ### Ops Log
 - Available: True
 - Events in window: 150
 - Completed: 145, Failed: 3, Blocked: 2
-- Improvement team events: 0
+- Improvement team events: 4
+
+### Structured Supervisor Events (Phase 6A)
+- Available: True
+- Events in window: 3
+- By event_type: supervisor.ambiguity_signal=2, supervisor.resolution=1
+- By outcome: ambiguous=2, unresolved=1
+- By severity: info=3
+- By team: improvement=3
+- Latest event: 2026-04-20T16:58:11+00:00
 
 ### Simulation
 - Available: True
@@ -110,56 +119,68 @@ These conditions produce **ROLLBACK_RECOMMENDED**:
 - [ok] malformed_event_count: 0
 - [ok] error_event_count: 0
 
-## Known Limitation
+## Structured Telemetry Status
 
-The dispatcher logging format (`%(asctime)s [%(levelname)s] %(name)s: %(message)s`)
-does NOT serialize `extra` fields. `supervisor_event` dicts emitted by
-`_log_supervisor_event()` do not appear in stdout/journald output.
-Structured event data is only available via `--simulate`.
-Next improvement: configure JSON logging sink or OpsLogger integration.
+Structured supervisor observability events are persisted to `ops_log.jsonl`
+by `OpsLogger.supervisor_event()` (Phase 6A). The monitoring script reads
+them directly; the dispatcher logging formatter gap noted in PR #242 no
+longer blocks production visibility of event_type, outcome, team, or
+severity. The journald presence signal remains consumed as a secondary
+source for continuity.
 ```
 
-## 6. Known Limitation: Logging Format Gap
+## 6. Structured Supervisor Telemetry (Phase 6A — closed gap)
 
-The dispatcher (`dispatcher/service.py:38`) uses:
+Phase 6A resolves the previous formatter-gap limitation operationally. The dispatcher logging format (`dispatcher/service.py:38`) still does not serialize `extra` fields — that is unchanged by design to avoid touching the worker loop logging. Instead, `_log_supervisor_event()` now performs dual-channel delivery:
 
-```python
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+1. **Presence signal (unchanged)**: `logger.info("supervisor_observability", extra={"supervisor_event": record})`. Journald keeps counting the bare string marker for continuity with PR #242.
+2. **Structured persistence (Phase 6A)**: `OpsLogger.supervisor_event(record)` writes a JSONL line to `~/.config/umbral/ops_log.jsonl` with:
+
+```json
+{
+  "ts": "2026-04-20T17:00:00Z",
+  "event": "supervisor.ambiguity_signal",
+  "event_type": "supervisor.ambiguity_signal",
+  "team": "improvement",
+  "task_id": "...",
+  "task_type": "general",
+  "outcome": "ambiguous",
+  "severity": "info",
+  "fields": { "is_ambiguous": true, "reason": "positive_keyword_match", ... }
+}
 ```
 
-This format does **not** serialize `extra` fields. The `_log_supervisor_event()` method (`dispatcher/router.py:219-235`) passes the event dict via:
+### Safety properties (preserved end to end)
 
-```python
-logger.info("supervisor_observability", extra={"supervisor_event": record})
-```
+- Only keys from `_SAFE_SUPERVISOR_FIELD_KEYS` in `infra/ops_logger.py` are persisted under `fields`. Free-text keys (`text`, `prompt`, `original_request`, `query`, `question`) are **dropped**, not sanitized, so they can never reach disk.
+- `event_type` must start with `supervisor.`; any other record sent to the sink is silently rejected. This keeps the sink scoped and prevents accidental misuse.
+- The sink call is wrapped in a defensive `try/except` inside `_log_supervisor_event()`. OpsLogger failure never blocks dispatch.
+- `should_block=True` is **persisted** so it is auditable but **never enforced**: routing remains unchanged.
+- Improvement-only and ambiguous-only gates from PR #241 are upstream of the sink call; non-improvement and concrete tasks never reach it.
 
-In journald/stdout, this produces only the bare string `"supervisor_observability"` — the structured `supervisor_event` dict is lost. The monitoring script can count these lines as a presence signal but cannot extract event_type, outcome, team, or severity from production logs.
+### What the monitor reads
 
-**Structured event data is only available via `--simulate`**, which exercises the pure building blocks locally.
+`parse_supervisor_events()` scans `ops_log.jsonl` for records whose `event` starts with `supervisor.`, filters by `since`, and aggregates counts by `event_type`, `outcome`, `severity`, and `team`. It applies the same safety checks as simulation (`should_block=True`, non-improvement team, raw text / sentinel leakage) and feeds them into the recommendation engine. The recommendation can now reach **PASS_MONITORING** on the strength of structured events alone, without relying on simulation.
 
-### Next Improvement
+### Limitation downgrade
 
-A future slice should add one of:
-
-1. **JSON logging sink** — configure a `logging.Handler` that serializes `extra` fields to a JSON file.
-2. **OpsLogger integration** — emit supervisor events via `infra/ops_logger.py` alongside existing task lifecycle events.
-
-Either approach would make structured supervisor event data available for production monitoring without changing the event emission code in `router.py`.
+The "Known Limitation" block formerly documented here is resolved at the monitoring layer. A future refactor of `dispatcher/service.py` may still switch to a JSON formatter for extra fields, but it is no longer a prerequisite for production observability of supervisor events.
 
 ## 7. Data Sources
 
-| Source | What it provides | Limitation |
-|--------|-----------------|------------|
-| **journald** | Presence of `supervisor_observability` lines, failure lines | No structured event data (formatter gap) |
-| **ops_log.jsonl** | Task lifecycle (completed/failed/blocked), team breakdown | Does not contain supervisor observability events |
-| **Simulation** (`--simulate`) | Full structured event verification against building blocks | Local-only, does not reflect production traffic |
+| Source | What it provides | Status |
+|--------|-----------------|--------|
+| **journald** | Presence of `supervisor_observability` lines, failure lines | Secondary signal (formatter-agnostic presence) |
+| **ops_log.jsonl — task lifecycle** | Task lifecycle (completed/failed/blocked), team breakdown | Primary dispatch health |
+| **ops_log.jsonl — structured supervisor events** (Phase 6A) | `event_type`, `outcome`, `team`, `severity`, sanitized `fields` | Primary supervisor observability source |
+| **Simulation** (`--simulate`) | Full structured event verification against building blocks | Local sanity check, not production traffic |
 
 ## 8. Relationship to Previous Documents
 
 | Document | Relationship |
 |----------|-------------|
 | `docs/71` (Supervisor Routing Contract) | Defines what supervisor routing means. This tool monitors the first wiring slice. |
-| `docs/73` (Supervisor Resolution Contract) | Defines safety rules. This tool checks them via simulation. |
-| `docs/75` (Activation Playbook) | Defines 24h monitoring window, rollback triggers, and metrics. This tool implements that monitoring. |
-| `dispatcher/router.py` | Contains `_emit_supervisor_observability()`. This tool reads its output but does NOT modify it. |
-| `infra/ops_logger.py` | Existing structured log system. Future integration target. |
+| `docs/73` (Supervisor Resolution Contract) | Defines safety rules. This tool checks them via simulation and via structured events. |
+| `docs/75` (Activation Playbook) | Defines 24h monitoring window, rollback triggers, and metrics. This tool implements that monitoring with structured telemetry from Phase 6A. |
+| `dispatcher/router.py` | Contains `_emit_supervisor_observability()` and `_log_supervisor_event()`. This tool reads `ops_log.jsonl` written by the sink; it does NOT modify the router. |
+| `infra/ops_logger.py` | Hosts `OpsLogger.supervisor_event()` — the Phase 6A structured sink with whitelist enforcement. |

@@ -32,13 +32,47 @@ import os
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Mapping, Optional
 
 logger = logging.getLogger("infra.ops_logger")
 
 _DEFAULT_LOG_DIR = Path.home() / ".config" / "umbral"
 _DEFAULT_LOG_FILE = "ops_log.jsonl"
 _lock = threading.Lock()
+
+# Phase 6A — Structured supervisor telemetry whitelist.
+#
+# Only stable keys emitted by ``to_log_fields()`` on the passive Phase 5
+# building blocks (AmbiguitySignal, SupervisorResolution, plus the noop /
+# config-validation event builders) may be persisted. Anything else is
+# discarded silently to prevent raw user/task text from being written to
+# ``ops_log.jsonl``.
+_SAFE_SUPERVISOR_FIELD_KEYS: frozenset[str] = frozenset({
+    # AmbiguitySignal.to_log_fields()
+    "team",
+    "is_ambiguous",
+    "candidate_for_supervisor_review",
+    "reason",
+    "signal_type",
+    "confidence",
+    "matched_terms",
+    "fallback",
+    # SupervisorResolution.to_log_fields()
+    "supervisor_label",
+    "resolution_status",
+    "target_type",
+    "target",
+    "fallback_used",
+    "should_block",
+    # Config validation event fields
+    "issue_count",
+    "error_count",
+    "warning_count",
+    "issues",
+})
+
+_SUPERVISOR_EVENT_PREFIX = "supervisor."
+_SUPERVISOR_SCALAR_TYPES = (str, int, float, bool, type(None))
 
 
 class OpsLogger:
@@ -374,6 +408,54 @@ class OpsLogger:
             ev["details"] = details[:300]
         self._write(ev)
 
+    def supervisor_event(self, record: Any) -> None:
+        """
+        Persist a structured supervisor observability event (Phase 6A).
+
+        ``record`` is the JSON-serializable dict returned by
+        ``SupervisorObservabilityEvent.to_log_record()`` — the stable top-level
+        keys are ``event_type``, ``team``, ``task_id``, ``task_type``,
+        ``outcome``, ``severity``, ``fields``.
+
+        Design:
+        - The event is written to ``ops_log.jsonl`` with ``event``
+          set to the ``event_type`` (e.g. ``"supervisor.ambiguity_signal"``)
+          so it is filterable by the existing ``read_events(event_filter=...)``
+          API and by the monitoring script.
+        - Only keys from ``_SAFE_SUPERVISOR_FIELD_KEYS`` are kept in ``fields``.
+          Any free-text field (``text``, ``prompt``, ``original_request``,
+          ``query``, ``question``) is dropped to preserve the no-raw-text
+          invariant established by PR #241.
+        - ``event_type`` must start with ``"supervisor."``; otherwise the
+          record is silently dropped. This keeps the sink scoped to the
+          supervisor telemetry surface only.
+        - Defensive end to end: any failure (malformed input, I/O error,
+          serialization error) is logged at debug level and swallowed. The
+          method never raises, so dispatch is never affected.
+        """
+        try:
+            if not isinstance(record, Mapping):
+                return
+            event_type = record.get("event_type")
+            if not isinstance(event_type, str) or not event_type.startswith(
+                _SUPERVISOR_EVENT_PREFIX
+            ):
+                return
+
+            ev: Dict[str, Any] = {
+                "event": event_type,
+                "event_type": event_type,
+                "team": _coerce_supervisor_scalar(record.get("team")),
+                "task_id": _coerce_supervisor_scalar(record.get("task_id")),
+                "task_type": _coerce_supervisor_scalar(record.get("task_type")),
+                "outcome": _coerce_supervisor_scalar(record.get("outcome")),
+                "severity": _coerce_supervisor_scalar(record.get("severity")),
+                "fields": _sanitize_supervisor_fields(record.get("fields")),
+            }
+            self._write(ev)
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.debug("supervisor_event persistence failed: %s", exc)
+
     def read_events(self, limit: int = 1000, event_filter: Optional[str] = None) -> list[Dict[str, Any]]:
         """Lee los ultimos N eventos del log (para reportes)."""
         events: list[Dict[str, Any]] = []
@@ -401,6 +483,44 @@ class OpsLogger:
     @property
     def path(self) -> Path:
         return self._path
+
+
+def _coerce_supervisor_scalar(value: Any) -> Any:
+    """Return ``value`` only if it is a JSON-safe scalar, else ``None``."""
+    if isinstance(value, _SUPERVISOR_SCALAR_TYPES):
+        return value
+    return None
+
+
+def _sanitize_supervisor_fields(fields: Any) -> Dict[str, Any]:
+    """Keep only whitelisted keys with JSON-safe primitive/list/dict values.
+
+    Raw free-text fields are never allowed through. Lists are filtered to
+    scalars only. Nested dicts are filtered to scalar-valued entries only.
+    """
+    if not isinstance(fields, Mapping):
+        return {}
+    out: Dict[str, Any] = {}
+    for key, value in fields.items():
+        if not isinstance(key, str):
+            continue
+        if key not in _SAFE_SUPERVISOR_FIELD_KEYS:
+            continue
+        if isinstance(value, _SUPERVISOR_SCALAR_TYPES):
+            out[key] = value
+        elif isinstance(value, (list, tuple)):
+            out[key] = [
+                item for item in value
+                if isinstance(item, _SUPERVISOR_SCALAR_TYPES)
+            ]
+        elif isinstance(value, Mapping):
+            out[key] = {
+                kk: vv
+                for kk, vv in value.items()
+                if isinstance(kk, str)
+                and isinstance(vv, _SUPERVISOR_SCALAR_TYPES)
+            }
+    return out
 
 
 ops_log = OpsLogger()

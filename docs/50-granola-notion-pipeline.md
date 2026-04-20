@@ -468,6 +468,36 @@ Conclusión operativa:
 - el stack ya tiene una ruta compuesta y segura para `raw -> curado -> destino(s)`
 - cualquier automatización futura debería usar este patrón de composición explícita, no una clasificación opaca
 
+## 9.8 Guardrails de capitalizacion
+
+La capa de capitalizacion (del raw hacia objetos canonicos) debe seguir los
+guardrails documentados en detalle en:
+
+- `openclaw/workspace-templates/skills/granola-pipeline/SKILL.md`
+- `docs/54-granola-capitalize-raw-slice.md`
+
+Resumen normativo minimo (ver docs de detalle para el contrato completo):
+
+1. **Preservar la Trazabilidad de ingest.** Nunca reemplazar el campo
+   `Trazabilidad` de una pagina raw; solo anexar claves nuevas. Las claves
+   `granola_document_id`, `source_updated_at`, `source_url`, `ingest_path`,
+   `content_hash`, `char_count`, `segment_count`, `truncation_detected`,
+   `ingested_at` y `reconciled_at` no pueden borrarse ni marcarse como
+   residuo legacy. Esa trazabilidad sostiene la reconciliacion descrita en
+   `docs/78-granola-transcript-finality-reconciliation.md`.
+2. **Reuniones comerciales.** Si la reunion funda o cambia una oportunidad
+   comercial, el cierre no puede ser solo una tarea suelta. Orden correcto:
+   cliente/partner -> proyecto/oportunidad (o `bridge item` si no hay DB)
+   -> tarea vinculada -> entregable/propuesta si corresponde -> trazabilidad
+   cruzada. Si algun paso no se completa, la capitalizacion queda **parcial**
+   o **revision requerida** y la pagina raw no puede cerrar en
+   `Estado=Procesada` ni `Accion agente=Capitalizado`.
+3. **Datos ambiguos.** No promover transcripcion fonetica dudosa (correos,
+   nombres propios) a dato firme sin confirmacion humana.
+4. **Caso Comgrap Dynamo.** Queda documentado como test de regresion en
+   la skill y en `docs/54`: cualquier cambio futuro debe seguir cumpliendo
+   los guardrails sobre ese caso.
+
 ## 10. Referencias
 
 - `worker/notion_client.py`
@@ -476,6 +506,7 @@ Conclusión operativa:
 - `docs/57-granola-human-task-from-curated-session.md`
 - `docs/58-granola-commercial-project-from-curated-session.md`
 - `docs/59-granola-promote-operational-slice.md`
+- `docs/78-granola-transcript-finality-reconciliation.md`
 - `scripts/vm/granola_watcher.py`
 - `docs/18-notion-enlace-rick-convention.md`
 - `openclaw/workspace-templates/skills/granola-pipeline/SKILL.md`

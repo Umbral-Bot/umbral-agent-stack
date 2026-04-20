@@ -1,6 +1,6 @@
 # Supervisor Resolution Contract
 
-> Defines how the `supervisor` string in `config/teams.yaml` should be mapped to an invocable destination (agent, workflow, or manual owner) when supervisor routing is eventually implemented. This is a **design document** — no runtime, dispatcher, config, or worker changes are included. No registry file is created.
+> Defines how the `supervisor` string in `config/teams.yaml` should be mapped to an invocable destination (agent, workflow, or manual owner) when supervisor routing is eventually implemented. Since PR #234, a passive registry (`config/supervisors.yaml`) and pure resolver (`dispatcher/supervisor_resolution.py`) exist, but they are **not connected to runtime routing**. No dispatcher behavior changes, no runtime activation, no OpenClaw agent, no `supervisor_hint` in envelope.
 
 ## 1. Purpose
 
@@ -8,20 +8,23 @@ The [supervisor routing contract](71-supervisor-routing-contract.md) lists "supe
 
 - What "resolving a supervisor" means.
 - What types of targets a supervisor can resolve to.
-- A conceptual registry shape for future implementation.
+- The registry shape (now implemented as a passive file).
+- A pure resolver function (now implemented, not connected to runtime).
 - Safety rules that prevent premature or unsafe activation.
 - A decision table with resolution scenarios.
 
-## 2. Current state (2026-04-19)
+## 2. Current state (2026-04-20)
 
 | Component | Status |
 |-----------|--------|
-| `config/teams.yaml` | `supervisor: "Mejora Continua Supervisor"` for `improvement`. Human label, no ID. |
-| `dispatcher/team_config.py` | Loads `supervisor` as a string. Returns it in `get_team_capabilities()`. |
-| `dispatcher/router.py` | `dispatch()` never reads the `supervisor` field. `list_teams()` returns it as metadata. |
-| `dispatcher/service.py` | Worker loop never reads `supervisor`. |
-| Supervisor registry | Does not exist. No file, no function, no mapping. |
-| String→agent mapping | Does not exist. No way to go from `"Mejora Continua Supervisor"` to `improvement-supervisor`. |
+| `config/teams.yaml` | `supervisor: "Mejora Continua Supervisor"` for `improvement`. Human label, no ID. Unchanged. |
+| `dispatcher/team_config.py` | Loads `supervisor` as a string. Returns it in `get_team_capabilities()`. Unchanged. |
+| `dispatcher/router.py` | `dispatch()` never reads the `supervisor` field or the resolver. `list_teams()` returns supervisor as metadata. Unchanged. |
+| `dispatcher/service.py` | Worker loop never reads `supervisor` or the resolver. Unchanged. |
+| `config/supervisors.yaml` | **Exists (PR #234).** Passive registry with `improvement` entry at `status: "design_only"`. Not loaded by any runtime path. |
+| `dispatcher/supervisor_resolution.py` | **Exists (PR #234).** Pure resolver: `resolve_supervisor()` maps team key → registry entry. Not imported by router, service, or classifier. |
+| `tests/test_supervisor_resolution.py` | **Exists (PR #234).** 15 tests covering resolution, fallback, safety rules, registry loading, and performance. |
+| String→agent mapping | Implemented as pure lookup by team key in `dispatcher/supervisor_resolution.py`. Not consumed by runtime. |
 | `improvement-supervisor` in `openclaw.json` | Does not exist. No agent entry, no workspace. |
 | `improvement-supervisor` ROLE.md | Exists as design-only contract (PR #229). |
 
@@ -37,12 +40,12 @@ When a supervisor string is resolved, it must map to one of these target types:
 | `manual_owner` | A human (David) who receives the task for manual coordination. No automated agent. | David reviews improvement backlog manually. |
 | `none` | No resolvable supervisor. The team has no coordinator. Direct routing applies. | `lab` team (`supervisor: null`). |
 
-## 4. Proposed registry shape
+## 4. Registry shape
 
-This is a **conceptual structure** for future implementation. It is NOT implemented, NOT a file in the repo, and NOT loaded by any code.
+The registry file exists at `config/supervisors.yaml` since PR #234. It is **passive**: no runtime path loads it for dispatch. The current file contains only the `improvement` team entry. The full conceptual shape for all teams is shown below for reference.
 
 ```yaml
-# Conceptual only — not a real file
+# config/supervisors.yaml (improvement entry is real; others are conceptual for future use)
 supervisors:
   improvement:
     label: "Mejora Continua Supervisor"
@@ -86,16 +89,30 @@ supervisors:
 | `status` | Lifecycle state: `design_only` (contract exists, no runtime), `active` (resolvable and invocable), `disabled` (explicitly turned off). |
 | `fallback` | What happens when resolution fails: `direct` (route as today), `manual` (escalate to David), `disabled` (supervisor feature off for this team). |
 
-### Where this registry could live
+### Where this registry lives
 
-Options for future implementation (not decided now):
-- `config/supervisors.yaml` — standalone file, loaded by `team_config.py`.
-- Inline in `config/teams.yaml` — extend the existing team entry with `supervisor_type`, `supervisor_target`, `supervisor_status`.
-- In `openclaw.json` — as part of agent configuration.
+The passive implementation uses `config/supervisors.yaml` as a standalone file. The pure resolver in `dispatcher/supervisor_resolution.py` loads it via `load_supervisor_registry()`. Future runtime activation may revisit whether resolution belongs inline in `teams.yaml` or in `openclaw.json`, but for the passive phase `config/supervisors.yaml` is the canonical location.
 
-The decision depends on whether supervisor resolution is a dispatcher concern or an OpenClaw concern. This is left for the implementation slice.
+## 5. Resolution flow
 
-## 5. Resolution flow (conceptual)
+### Current (passive, PR #234)
+
+A pure resolver function exists at `dispatcher/supervisor_resolution.py`:
+
+```
+resolve_supervisor(team, teams_config=..., registry=..., target_available=None)
+  → Reads registry for team key (never matches on human label)
+  → Check status:
+      - "disabled" or "design_only" → return unresolved, fallback direct
+      - "active" → check target_available signal
+  → If target_available is True → return resolved, should_block=False
+  → If target_available is False or None → return unresolved/not_ready, fallback direct
+  → Every path returns should_block=False
+```
+
+This function is **not called by any runtime code**. It is only used by `tests/test_supervisor_resolution.py`. No dispatcher, router, or service imports it.
+
+### Future (runtime integration, not yet implemented)
 
 ```
 Task arrives with team="improvement", supervisor_hint=true
@@ -115,6 +132,8 @@ Task arrives with team="improvement", supervisor_hint=true
       - "manual" → notify David
       - "disabled" → drop supervisor hint, route direct
 ```
+
+Runtime integration requires `supervisor_hint` in the envelope, resolver wired into dispatch, and David approval. None of these exist today.
 
 ### Key properties
 
@@ -178,24 +197,26 @@ These rules are **non-negotiable constraints** for any future implementation of 
 
 ## 9. Implementation gates
 
-All of these must be met before any resolution code is written:
+Status after PR #234:
 
-1. **Registry file exists.** A `config/supervisors.yaml` (or equivalent) with the schema from section 4, loaded by `team_config.py` or a new resolver module.
-2. **Resolver function exists.** A pure function: `resolve_supervisor(team: str, registry: dict) -> ResolverResult` that returns target + type + fallback. No side effects.
-3. **Fallback tested.** Every failure path in the decision table (cases #2, #5, #9, #12) must be covered by tests that verify dispatch continues.
-4. **No regression.** All existing dispatcher tests pass without modification. Resolution is additive — it does not change any existing code path.
-5. **Observability.** Resolution attempts are logged: `task_id`, `team`, `resolution_result`, `target`, `fallback_used`. This enables monitoring before full rollout.
-6. **David approval.** The first `status: "active"` entry requires explicit David go-ahead.
+1. **Registry file exists.** Done (PR #234). `config/supervisors.yaml` with `improvement` entry at `status: "design_only"`. Loaded by `load_supervisor_registry()` in `dispatcher/supervisor_resolution.py`.
+2. **Resolver function exists.** Done (PR #234). Pure function `resolve_supervisor()` returns `SupervisorResolution` with target + type + fallback + should_block. No side effects. Not connected to runtime.
+3. **Fallback tested.** Done for resolver (PR #234). Tests cover cases #2, #5, #9, #12 from the decision table. Dispatcher-level fallback tests (proving dispatch is unchanged with registry present) are still pending before runtime wiring.
+4. **No regression.** Done for focused suites (PR #234). 162 tests pass. Full runtime wiring regression (proving `TeamRouter.dispatch()` is unchanged) is still pending.
+5. **Observability.** Partial (PR #234). `SupervisorResolution.to_log_fields()` provides stable fields for future logging. No runtime consumer emits these fields yet.
+6. **David approval.** Pending. The first `status: "active"` entry requires explicit David go-ahead.
 
 ## 10. Non-goals
 
-- **No code changes.** This document does not modify any Python file.
-- **No registry file creation.** The conceptual YAML in section 4 is not a real file.
+- **No runtime integration.** The resolver exists but is not called by `dispatcher/router.py`, `dispatcher/service.py`, or any runtime path.
+- **No dispatcher routing changes.** `TeamRouter.dispatch()` is unchanged. No supervisor logic in the dispatch path.
+- **No `supervisor_hint` in envelope.** The `TaskEnvelope` schema is unchanged. No ambiguity detection in the classifier.
+- **No runtime supervisor activation.** All supervisors remain `design_only` or `disabled`. No `status: "active"` entry.
+- **No new OpenClaw agent.** `improvement-supervisor` remains design-only. No workspace, no `openclaw.json` entry.
+- **No healthcheck implementation.** The resolver accepts `target_available` as a parameter but does not perform real health checks.
+- **No automatic invocation.** The resolver does not invoke agents, enqueue tasks, or call external workflows.
 - **No changes to `config/teams.yaml`.** The existing schema is unchanged.
-- **No changes to `dispatcher/` or `worker/`.** No resolver function, no resolution logic.
-- **No runtime supervisor activation.** All supervisors remain `design_only` or `disabled`.
-- **No new OpenClaw agent.** `improvement-supervisor` remains design-only.
-- **No decision on registry location.** Whether resolution lives in `config/supervisors.yaml`, `teams.yaml`, or `openclaw.json` is left for the implementation slice.
+- **No changes to `dispatcher/intent_classifier.py` or `dispatcher/service.py`.** These files are untouched.
 
 ## 11. Relationship to previous docs
 

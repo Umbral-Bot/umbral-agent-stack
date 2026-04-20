@@ -227,6 +227,22 @@ Ejemplos de señales a vigilar:
 - `action=defer` en cada corrida durante > 1 día para el mismo id → Granola
   nunca marca el documento como estable; investigar la reunión manualmente.
 
+## 7.1 Seguridad del matching por título/fecha
+
+`_find_existing_raw_candidate` sigue aceptando el fallback `exact_title_date` /
+`normalized_title_date` pero **ya no cruza barreras de `granola_document_id`**:
+
+- si el payload entrante trae un `granola_document_id` no vacío y existe una
+  página cuyo `granola_document_id` también es no vacío y **distinto**, la
+  página queda excluida del fallback aunque compartan título y fecha;
+- sólo se permite el match débil contra legacy pages *sin* `granola_document_id`,
+  que son exactamente las que necesitan ser reconciliadas / backfilleadas.
+
+Esto bloquea el caso en que dos reuniones reales distintas comparten título y
+día (muy frecuente con "Comgrap Dynamo", "Standup", "Revisión semanal", etc.)
+y evita que la ingesta colapse dos documentos Granola separados en una misma
+página raw.
+
 ## 8. Qué NO cambia
 
 - Dispatcher, supervisor, OpenClaw, `config/supervisors.yaml` y Phase 6B

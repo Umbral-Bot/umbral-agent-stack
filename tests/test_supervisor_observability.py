@@ -369,11 +369,16 @@ class TestImportSafety:
 class TestRuntimeInvariance:
 
     @pytest.mark.parametrize("relative_path", [
-        "dispatcher/router.py",
         "dispatcher/service.py",
         "dispatcher/intent_classifier.py",
     ])
     def test_runtime_files_do_not_import_supervisor_observability(self, relative_path):
+        """Phase 5 invariance: service worker loop and intent classifier must
+        not consume ``supervisor_observability``. ``dispatcher/router.py`` is
+        the designated integration point for the non-blocking observability
+        wiring slice and is validated by
+        ``tests/test_supervisor_runtime_observability_wiring.py``.
+        """
         root = Path(__file__).resolve().parent.parent
         source = (root / relative_path).read_text(encoding="utf-8")
         assert "supervisor_observability" not in source

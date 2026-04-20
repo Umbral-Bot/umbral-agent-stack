@@ -211,12 +211,19 @@ class TestPurityAndImports:
     @pytest.mark.parametrize(
         "relative_path",
         [
-            "dispatcher/router.py",
             "dispatcher/service.py",
             "dispatcher/intent_classifier.py",
         ],
     )
     def test_runtime_files_do_not_import_supervisor_resolution(self, relative_path):
+        """Phase 5 invariance: service worker loop and intent classifier must
+        not consume the supervisor resolver or the config validator.
+        ``dispatcher/router.py`` is the designated integration point for the
+        observability-only wiring slice and is validated by
+        ``tests/test_supervisor_runtime_observability_wiring.py``. The
+        consistency validator itself remains passive — it is not called from
+        runtime, only from operational tooling and tests.
+        """
         root = Path(__file__).resolve().parent.parent
         source = (root / relative_path).read_text(encoding="utf-8")
         assert "supervisor_resolution" not in source

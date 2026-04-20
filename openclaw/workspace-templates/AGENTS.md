@@ -229,6 +229,8 @@ Contrato declarativo para el supervisor del equipo `improvement`. Coordina mejor
 
 El campo `supervisor` en `config/teams.yaml` define quién coordina un equipo, pero hoy es metadata sin efecto en el dispatcher. El contrato técnico de cómo activarlo — semántica, cuándo aplica, cuándo no, riesgos y gates de implementación — está en `docs/71-supervisor-routing-contract.md`. La definición de cuándo una tarea `improvement` es ambigua (candidata a `supervisor_hint`) vs concreta (routing directo) está en `docs/72-ambiguous-improvement-task-detection.md`. El contrato de resolución — cómo mapear el string `supervisor` a un agente o destino invocable — está en `docs/73-supervisor-resolution-contract.md`. El circuito cerrado mínimo de mejora continua (signal→prioritization→delegation→execution→QA→closure) está en `docs/74-closed-ooda-loop-contract.md`. No hay cambios en runtime.
 
+El primer slice de implementación agrega `config/supervisors.yaml` y `dispatcher/supervisor_resolution.py` como registry/resolver pasivos: permiten validar resolución y campos de monitoreo, pero no cambian routing ni activan supervisores.
+
 ### Asignación práctica por rol
 
 - `main`: `linear-delivery-traceability`, `subagent-result-integration`, `notion-project-registry`, `system-interconnectivity-diagnostics`, `editorial-source-curation`, `competitive-funnel-benchmark`, `external-reference-intelligence`, `browser-automation-vm`, `windows`

@@ -17,6 +17,10 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from .. import config, notion_client
+from .granola_finality import (
+    decide_reconciliation,
+    detect_truncation,
+)
 from .notion import (
     handle_notion_upsert_bridge_item,
     handle_notion_upsert_deliverable,
@@ -446,6 +450,12 @@ def _build_raw_traceability_text(
         "content_hash",
         "shared_folder_path",
         "sha1",
+        "char_count",
+        "segment_count",
+        "ingested_at",
+        "reconciled_at",
+        "truncation_detected",
+        "truncation_reason",
     ):
         value = str((extra_fields or {}).get(key) or "").strip()
         if value:
@@ -504,6 +514,19 @@ def _extract_raw_candidate_value(
 def _build_existing_raw_candidate(page_data: Dict[str, Any]) -> Dict[str, Any]:
     traceability = _extract_raw_traceability(page_data)
     title = _extract_title_from_page(page_data)
+
+    def _traceability_int(key: str) -> int:
+        raw = str(traceability.get(key) or "").strip()
+        if not raw:
+            return 0
+        try:
+            return int(raw)
+        except ValueError:
+            return 0
+
+    truncation_raw = str(traceability.get("truncation_detected") or "").strip().lower()
+    truncation_detected = truncation_raw in {"true", "1", "yes"}
+
     return {
         "page_id": str(page_data.get("id") or "").strip(),
         "url": str(page_data.get("url") or "").strip(),
@@ -583,6 +606,11 @@ def _build_existing_raw_candidate(page_data: Dict[str, Any]) -> Dict[str, Any]:
             "Fecha que el agente proces?",
             "Processed At",
         ),
+        "char_count": _traceability_int("char_count"),
+        "segment_count": _traceability_int("segment_count"),
+        "truncation_detected": truncation_detected,
+        "ingested_at": str(traceability.get("ingested_at") or "").strip(),
+        "reconciled_at": str(traceability.get("reconciled_at") or "").strip(),
     }
 
 
@@ -722,10 +750,28 @@ def _find_existing_raw_candidate(
             return selected, "shared_folder_path_source_updated_at"
 
     if transcript_date:
+        # When the incoming payload carries a non-empty granola_document_id,
+        # we MUST NOT fall back to a title/date match against a page that is
+        # already bound to a different non-empty granola_document_id. Doing
+        # otherwise would merge two distinct Granola meetings (same title and
+        # date but different recordings) into a single raw page.
+        #
+        # Legacy rows without a granola_document_id are still eligible so the
+        # historical backfill path keeps working.
+        def _fallback_allows(candidate: Dict[str, Any]) -> bool:
+            candidate_doc_id = str(candidate.get("granola_document_id") or "").strip()
+            if not granola_document_id:
+                return True
+            if not candidate_doc_id:
+                return True
+            return candidate_doc_id == granola_document_id
+
         exact_title_matches = [
             item
             for item in candidates
-            if item.get("date") == transcript_date and item.get("title") == title
+            if item.get("date") == transcript_date
+            and item.get("title") == title
+            and _fallback_allows(item)
         ]
         if len(exact_title_matches) == 1:
             return exact_title_matches[0], "exact_title_date"
@@ -736,6 +782,7 @@ def _find_existing_raw_candidate(
             for item in candidates
             if item.get("date") == transcript_date
             and item.get("normalized_title") == normalized_title
+            and _fallback_allows(item)
         ]
         if len(normalized_matches) == 1:
             return normalized_matches[0], "normalized_title_date"
@@ -922,6 +969,46 @@ def _build_raw_transcript_properties(
         expected_types={"rich_text", "title"},
         used_fields=used_fields,
     )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Char Count", "Transcript Char Count"],
+        extra_traceability.get("char_count"),
+        expected_types={"number", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Segment Count", "Transcript Segment Count"],
+        extra_traceability.get("segment_count"),
+        expected_types={"number", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Ingested At"],
+        extra_traceability.get("ingested_at"),
+        expected_types={"date", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Reconciled At"],
+        extra_traceability.get("reconciled_at"),
+        expected_types={"date", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Truncation Detected", "Truncado"],
+        extra_traceability.get("truncation_detected"),
+        expected_types={"checkbox", "select", "rich_text"},
+        used_fields=used_fields,
+    )
 
     if is_create:
         today = _today_date()
@@ -993,6 +1080,10 @@ def _build_raw_transcript_properties(
     return properties, used_fields
 
 
+def _iso_now_utc() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
 def _upsert_raw_transcript_page(
     *,
     title: str,
@@ -1004,7 +1095,18 @@ def _upsert_raw_transcript_page(
     source_updated_at: str,
     source_url: str,
     extra_traceability: Dict[str, str],
+    stability_window: int | None = None,
+    min_chars: int | None = None,
+    force_reconcile: bool = False,
+    dry_run: bool = False,
 ) -> Dict[str, Any]:
+    """Upsert a Granola raw transcript page with finality + reconciliation checks.
+
+    When ``dry_run`` is truthy the function computes the decision and resolved
+    traceability but performs **no writes** against Notion (the DB schema is still
+    read so the preview is realistic). The return dict always contains the full
+    ``reconciliation`` summary so callers can audit what would happen.
+    """
     db_snapshot = notion_client.read_database(config.NOTION_GRANOLA_DB_ID, max_items=1)
     schema = db_snapshot.get("schema") or {}
     if not isinstance(schema, dict):
@@ -1030,22 +1132,105 @@ def _upsert_raw_transcript_page(
         sha1=str(extra_traceability.get("sha1") or "").strip(),
     )
 
+    decision = decide_reconciliation(
+        existing=existing_match,
+        new_content=content,
+        source_updated_at=source_updated_at,
+        stability_window=stability_window,
+        min_chars=min_chars,
+        force_reconcile=force_reconcile,
+    )
+    decision_dict = decision.as_dict()
+
     resolved_title = (
         str(existing_match.get("title") or "").strip()
         if existing_match
         else _resolve_new_raw_title(title, candidates)
     ) or title
+
+    if decision.action in {"defer", "noop"}:
+        return {
+            "page_id": str((existing_match or {}).get("page_id") or ""),
+            "url": str((existing_match or {}).get("url") or ""),
+            "created": False,
+            "updated": False,
+            "matched_existing": existing_match is not None,
+            "match_strategy": match_strategy,
+            "resolved_title": resolved_title,
+            "schema_fields_used": [],
+            "reconciliation": decision_dict,
+            "dry_run": bool(dry_run),
+        }
+
+    now_iso = _iso_now_utc()
+    merged_traceability = dict(extra_traceability or {})
+    new_metrics = decision_dict.get("new_metrics") or {}
+    char_count_val = str(new_metrics.get("char_count") or "").strip()
+    segment_count_val = str(new_metrics.get("segment_count") or "").strip()
+    content_hash_from_metrics = str(new_metrics.get("content_hash") or "").strip()
+    if char_count_val:
+        merged_traceability.setdefault("char_count", char_count_val)
+    if segment_count_val:
+        merged_traceability.setdefault("segment_count", segment_count_val)
+    if content_hash_from_metrics and not merged_traceability.get("content_hash"):
+        merged_traceability["content_hash"] = content_hash_from_metrics
+    truncation = decision_dict.get("truncation") or {}
+    if truncation.get("truncated"):
+        merged_traceability["truncation_detected"] = "true"
+        reason = str(truncation.get("reason") or "").strip()
+        if reason:
+            merged_traceability["truncation_reason"] = reason
+    else:
+        merged_traceability.setdefault("truncation_detected", "false")
+
+    if decision.action == "create":
+        merged_traceability.setdefault("ingested_at", now_iso)
+    elif decision.action == "reconcile":
+        merged_traceability["reconciled_at"] = now_iso
+        if existing_match and existing_match.get("ingested_at"):
+            merged_traceability.setdefault("ingested_at", existing_match["ingested_at"])
+        else:
+            merged_traceability.setdefault("ingested_at", now_iso)
+
+    effective_traceability_text = traceability_text
+    if not effective_traceability_text:
+        effective_traceability_text = _build_raw_traceability_text(
+            granola_document_id=granola_document_id,
+            source_updated_at=source_updated_at,
+            source_url=source_url,
+            extra_fields=merged_traceability,
+        )
+    else:
+        parsed_existing = _parse_traceability_text(effective_traceability_text)
+        extra_additions: list[str] = []
+        for key in (
+            "content_hash",
+            "char_count",
+            "segment_count",
+            "ingested_at",
+            "reconciled_at",
+            "truncation_detected",
+            "truncation_reason",
+        ):
+            value = str(merged_traceability.get(key) or "").strip()
+            if value and not parsed_existing.get(key):
+                extra_additions.append(f"{key}={value}")
+        if extra_additions:
+            effective_traceability_text = "\n".join(
+                [effective_traceability_text, *extra_additions]
+            )
+
     blocks = _build_transcript_paragraph_blocks(content)
     properties, used_fields = _build_raw_transcript_properties(
         schema=schema,
         title=resolved_title,
         source=source,
         date=date,
-        traceability_text=traceability_text,
+        traceability_text=effective_traceability_text,
         granola_document_id=granola_document_id,
         source_updated_at=source_updated_at,
         source_url=source_url,
-        extra_traceability=extra_traceability,
+        extra_traceability=merged_traceability,
         is_create=existing_match is None,
         existing_imported_at=str(existing_match.get("imported_at") or "").strip()
         if existing_match
@@ -1054,6 +1239,25 @@ def _upsert_raw_transcript_page(
         if existing_match
         else "",
     )
+
+    if dry_run:
+        preview_page_id = str((existing_match or {}).get("page_id") or "")
+        preview_url = str((existing_match or {}).get("url") or "")
+        return {
+            "page_id": preview_page_id,
+            "url": preview_url,
+            "created": existing_match is None,
+            "updated": existing_match is not None,
+            "matched_existing": existing_match is not None,
+            "match_strategy": match_strategy,
+            "resolved_title": resolved_title,
+            "schema_fields_used": used_fields,
+            "reconciliation": decision_dict,
+            "dry_run": True,
+            "preview_properties": properties,
+            "preview_block_count": len(blocks),
+            "effective_traceability_text": effective_traceability_text,
+        }
 
     if existing_match:
         page_id = str(existing_match.get("page_id") or "").strip()
@@ -1086,6 +1290,8 @@ def _upsert_raw_transcript_page(
     notion_result["match_strategy"] = match_strategy
     notion_result["resolved_title"] = resolved_title
     notion_result["schema_fields_used"] = used_fields
+    notion_result["reconciliation"] = decision_dict
+    notion_result["dry_run"] = False
     verification = _verify_raw_page_persistence(
         page_id=str(notion_result.get("page_id") or "").strip(),
         expected_blocks=blocks,
@@ -1221,7 +1427,12 @@ def _set_schema_property(
             return None
         payload[prop_name] = {"relation": [{"id": item} for item in ids]}
     elif prop_type == "checkbox":
-        payload[prop_name] = {"checkbox": bool(value)}
+        if isinstance(value, str):
+            payload[prop_name] = {
+                "checkbox": value.strip().lower() in {"true", "1", "yes", "on"}
+            }
+        else:
+            payload[prop_name] = {"checkbox": bool(value)}
     elif prop_type == "number":
         try:
             payload[prop_name] = {"number": float(value)}
@@ -1452,6 +1663,10 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
     source = input_data.get("source", "granola")
     notify_enlace = input_data.get("notify_enlace", True)
     allow_legacy_raw_task_writes = bool(input_data.get("allow_legacy_raw_task_writes"))
+    dry_run = bool(input_data.get("dry_run") or input_data.get("audit"))
+    force_reconcile = bool(input_data.get("force_reconcile"))
+    stability_window = input_data.get("stability_window_seconds")
+    min_chars_override = input_data.get("min_stable_chars")
     granola_document_id = _resolve_granola_document_id(input_data, content)
     source_updated_at = _resolve_source_updated_at(input_data, content)
     source_url = _resolve_source_url(input_data)
@@ -1475,7 +1690,12 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
         logger.info("Extracted %d action items from content", len(action_items))
 
     # Step 1: Upsert transcript page in Notion raw DB
-    logger.info("Upserting Granola transcript raw page: %s", title)
+    logger.info(
+        "Upserting Granola transcript raw page: %s (dry_run=%s, force=%s)",
+        title,
+        dry_run,
+        force_reconcile,
+    )
     page_result = _upsert_raw_transcript_page(
         title=title,
         content=content,
@@ -1486,23 +1706,43 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
         source_updated_at=source_updated_at,
         source_url=source_url,
         extra_traceability=extra_traceability,
+        stability_window=stability_window,
+        min_chars=min_chars_override,
+        force_reconcile=force_reconcile,
+        dry_run=dry_run,
     )
     page_id = page_result["page_id"]
     page_url = page_result.get("url", "")
+    reconciliation = page_result.get("reconciliation") or {}
+    action = str(reconciliation.get("action") or "").strip()
     logger.info(
-        "Raw page %s: %s (%s)",
-        "updated" if page_result.get("matched_existing") else "created",
+        "Granola raw action=%s reason=%s page_id=%s url=%s dry_run=%s",
+        action or "unknown",
+        str(reconciliation.get("reason") or "")[:200],
         page_id,
         page_url,
+        dry_run,
     )
 
-    action_items_for_tasks = action_items if allow_legacy_raw_task_writes else []
-    if action_items and not allow_legacy_raw_task_writes:
-        logger.info(
-            "Skipping %d raw action items for transcript %s due to V1 guardrail",
-            len(action_items),
-            page_id,
-        )
+    skip_downstream = action in {"defer", "noop"} or dry_run
+
+    action_items_for_tasks = (
+        action_items if (allow_legacy_raw_task_writes and not skip_downstream) else []
+    )
+    if action_items and not action_items_for_tasks:
+        if skip_downstream:
+            logger.info(
+                "Skipping %d raw action items because action=%s (dry_run=%s)",
+                len(action_items),
+                action,
+                dry_run,
+            )
+        else:
+            logger.info(
+                "Skipping %d raw action items for transcript %s due to V1 guardrail",
+                len(action_items),
+                page_id,
+            )
 
     # Step 2: Create action items as Notion tasks
     ai_created = 0
@@ -1537,12 +1777,15 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
 
     # Step 3: Notify Enlace in Control Room (literal @Enlace per convention)
     notification_sent = False
-    if notify_enlace:
+    if notify_enlace and not skip_downstream:
         try:
             attendees_str = f" ({', '.join(attendees)})" if attendees else ""
             transcript_ref = page_url or page_id
+            reconciled_suffix = ""
+            if action == "reconcile":
+                reconciled_suffix = " (reconciliada — transcript actualizado)"
             comment_text = (
-                f"Hola @Enlace, transcripción lista para revisar: "
+                f"Hola @Enlace, transcripción lista para revisar{reconciled_suffix}: "
                 f"{title}{attendees_str} — {date}. "
                 f"Página: {transcript_ref}. "
                 f"{len(action_items)} action items identificados."
@@ -1569,6 +1812,11 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
         "notion_page_id_sync": page_result.get("notion_page_id_sync") or {},
         "content_verification": page_result.get("content_verification") or {},
         "notification_sent": notification_sent,
+        "reconciliation": reconciliation,
+        "reconciliation_action": action or "unknown",
+        "dry_run": bool(dry_run),
+        "deferred": action == "defer",
+        "noop": action == "noop",
     }
 
 

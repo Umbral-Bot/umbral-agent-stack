@@ -26,6 +26,7 @@ from scripts.monitor_supervisor_observability import (
     compute_recommendation,
     format_markdown,
     parse_ops_log,
+    parse_supervisor_events,
     run_simulation,
     _check_fields_for_text,
     parse_journal,
@@ -378,8 +379,10 @@ class TestReport:
         }
         md = format_markdown(report)
         assert "WATCH" in md
-        assert "Known Limitation" in md
-        assert "extra" in md
+        # Phase 6A: the old "Known Limitation" section is replaced by a
+        # structured telemetry status note that references OpsLogger.
+        assert "Structured Telemetry Status" in md
+        assert "OpsLogger" in md or "ops_log.jsonl" in md
 
     def test_suspicious_content_not_printed_in_full(self):
         """Ensure the markdown report doesn't leak raw suspicious content."""
@@ -492,3 +495,278 @@ class TestSimulationIntegration:
     def test_simulation_no_non_improvement(self):
         result = run_simulation()
         assert result["non_improvement_event_count"] == 0
+
+
+# ── 8. Structured supervisor events parser (Phase 6A) ──────────────
+
+
+def _make_supervisor_record(
+    *,
+    event_type: str = "supervisor.ambiguity_signal",
+    team: str = "improvement",
+    task_id: str = "task-1",
+    task_type: str = "general",
+    outcome: str = "ambiguous",
+    severity: str = "info",
+    fields: Dict[str, Any] | None = None,
+    ts: str | None = None,
+) -> str:
+    rec: Dict[str, Any] = {
+        "event": event_type,
+        "event_type": event_type,
+        "team": team,
+        "task_id": task_id,
+        "task_type": task_type,
+        "outcome": outcome,
+        "severity": severity,
+        "fields": fields or {"is_ambiguous": True, "reason": "positive_keyword_match"},
+        "ts": ts or _now_iso(),
+    }
+    return json.dumps(rec)
+
+
+class TestParseSupervisorEvents:
+
+    def test_parses_structured_records(self):
+        path = _write_temp_ops_log([
+            _make_supervisor_record(event_type="supervisor.ambiguity_signal"),
+            _make_supervisor_record(
+                event_type="supervisor.resolution",
+                outcome="unresolved",
+                fields={
+                    "resolution_status": "unresolved",
+                    "should_block": False,
+                    "reason": "status_design_only",
+                },
+            ),
+            # Interleave a task_completed line that must NOT be counted.
+            _make_ops_line("task_completed", team="improvement"),
+        ])
+        since = datetime.now(timezone.utc) - timedelta(hours=1)
+        result = parse_supervisor_events(path, since=since)
+
+        assert result["available"] is True
+        assert result["events_in_window"] == 2
+        assert result["by_event_type"]["supervisor.ambiguity_signal"] == 1
+        assert result["by_event_type"]["supervisor.resolution"] == 1
+        assert result["by_team"]["improvement"] == 2
+        assert result["non_improvement_event_count"] == 0
+        assert result["should_block_true_count"] == 0
+        assert result["raw_text_leakage_suspected_count"] == 0
+
+    def test_flags_should_block_true(self):
+        path = _write_temp_ops_log([
+            _make_supervisor_record(
+                event_type="supervisor.resolution",
+                outcome="unresolved",
+                fields={"should_block": True, "resolution_status": "unresolved"},
+            ),
+        ])
+        since = datetime.now(timezone.utc) - timedelta(hours=1)
+        result = parse_supervisor_events(path, since=since)
+
+        assert result["should_block_true_count"] == 1
+
+    def test_flags_non_improvement_team(self):
+        path = _write_temp_ops_log([
+            _make_supervisor_record(team="delivery"),
+        ])
+        since = datetime.now(timezone.utc) - timedelta(hours=1)
+        result = parse_supervisor_events(path, since=since)
+
+        assert result["non_improvement_event_count"] == 1
+
+    def test_flags_raw_text_leakage(self):
+        path = _write_temp_ops_log([
+            _make_supervisor_record(
+                fields={
+                    "reason": "positive_keyword_match",
+                    "text": "a" * 80,  # suspicious key + long value
+                },
+            ),
+        ])
+        since = datetime.now(timezone.utc) - timedelta(hours=1)
+        result = parse_supervisor_events(path, since=since)
+
+        assert result["raw_text_leakage_suspected_count"] >= 1
+
+    def test_flags_unknown_event_type(self):
+        path = _write_temp_ops_log([
+            _make_supervisor_record(event_type="supervisor.something_new"),
+        ])
+        since = datetime.now(timezone.utc) - timedelta(hours=1)
+        result = parse_supervisor_events(path, since=since)
+
+        assert result["unknown_event_type_count"] == 1
+
+    def test_handles_missing_file(self):
+        result = parse_supervisor_events(Path("/nonexistent/file.jsonl"),
+                                          since=datetime.now(timezone.utc))
+        assert result["available"] is False
+        assert result["events_in_window"] == 0
+
+    def test_filters_by_time_window(self):
+        old_ts = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
+        path = _write_temp_ops_log([
+            _make_supervisor_record(ts=old_ts),
+            _make_supervisor_record(),
+        ])
+        since = datetime.now(timezone.utc) - timedelta(hours=1)
+        result = parse_supervisor_events(path, since=since)
+
+        assert result["events_in_window"] == 1
+
+
+class TestRecommendationWithStructuredEvents:
+
+    def _clean_journal(self) -> Dict[str, Any]:
+        return {
+            "available": True,
+            "marker_counts": {
+                "supervisor_observability": 0,
+                "supervisor_observability_failed": 0,
+                "supervisor_ambiguity_detection_failed": 0,
+                "supervisor_resolution_event_failed": 0,
+            },
+        }
+
+    def _clean_ops(self) -> Dict[str, Any]:
+        return {"available": True, "task_completed": 5, "task_failed": 0}
+
+    def test_pass_monitoring_with_structured_events_and_no_journal(self):
+        """Phase 6A: real structured events are sufficient for PASS_MONITORING
+        even when journald shows no supervisor_observability markers and
+        simulation was not run.
+        """
+        structured = {
+            "available": True,
+            "events_in_window": 3,
+            "by_event_type": {"supervisor.ambiguity_signal": 2, "supervisor.resolution": 1},
+            "by_outcome": {"ambiguous": 2, "unresolved": 1},
+            "by_severity": {"info": 3},
+            "by_team": {"improvement": 3},
+            "should_block_true_count": 0,
+            "non_improvement_event_count": 0,
+            "raw_text_leakage_suspected_count": 0,
+            "malformed_event_count": 0,
+            "error_event_count": 0,
+            "unknown_event_type_count": 0,
+            "latest_event_ts": _now_iso(),
+        }
+        rec = compute_recommendation(
+            journal=self._clean_journal(),
+            ops_log=self._clean_ops(),
+            simulation=None,
+            supervisor_events=structured,
+        )
+        assert rec["level"] == PASS_MONITORING
+
+    def test_rollback_on_structured_should_block_true(self):
+        structured = {
+            "available": True,
+            "events_in_window": 1,
+            "by_event_type": {"supervisor.resolution": 1},
+            "by_outcome": {"unresolved": 1},
+            "by_severity": {"warning": 1},
+            "by_team": {"improvement": 1},
+            "should_block_true_count": 1,
+            "non_improvement_event_count": 0,
+            "raw_text_leakage_suspected_count": 0,
+            "malformed_event_count": 0,
+            "error_event_count": 1,
+            "unknown_event_type_count": 0,
+            "latest_event_ts": _now_iso(),
+        }
+        rec = compute_recommendation(
+            journal=self._clean_journal(),
+            ops_log=self._clean_ops(),
+            simulation=None,
+            supervisor_events=structured,
+        )
+        assert rec["level"] == ROLLBACK_RECOMMENDED
+
+    def test_rollback_on_structured_non_improvement(self):
+        structured = {
+            "available": True,
+            "events_in_window": 1,
+            "by_event_type": {"supervisor.ambiguity_signal": 1},
+            "by_outcome": {"ambiguous": 1},
+            "by_severity": {"info": 1},
+            "by_team": {"delivery": 1},
+            "should_block_true_count": 0,
+            "non_improvement_event_count": 1,
+            "raw_text_leakage_suspected_count": 0,
+            "malformed_event_count": 0,
+            "error_event_count": 0,
+            "unknown_event_type_count": 0,
+            "latest_event_ts": _now_iso(),
+        }
+        rec = compute_recommendation(
+            journal=self._clean_journal(),
+            ops_log=self._clean_ops(),
+            simulation=None,
+            supervisor_events=structured,
+        )
+        assert rec["level"] == ROLLBACK_RECOMMENDED
+
+    def test_rollback_on_structured_raw_text_leakage(self):
+        structured = {
+            "available": True,
+            "events_in_window": 1,
+            "by_event_type": {"supervisor.ambiguity_signal": 1},
+            "by_outcome": {"ambiguous": 1},
+            "by_severity": {"info": 1},
+            "by_team": {"improvement": 1},
+            "should_block_true_count": 0,
+            "non_improvement_event_count": 0,
+            "raw_text_leakage_suspected_count": 1,
+            "malformed_event_count": 0,
+            "error_event_count": 0,
+            "unknown_event_type_count": 0,
+            "latest_event_ts": _now_iso(),
+        }
+        rec = compute_recommendation(
+            journal=self._clean_journal(),
+            ops_log=self._clean_ops(),
+            simulation=None,
+            supervisor_events=structured,
+        )
+        assert rec["level"] == ROLLBACK_RECOMMENDED
+
+    def test_watch_when_no_events_anywhere(self):
+        """Absence of any traffic still yields WATCH (not failure)."""
+        empty_structured = {
+            "available": True,
+            "events_in_window": 0,
+            "by_event_type": {},
+            "by_outcome": {},
+            "by_severity": {},
+            "by_team": {},
+            "should_block_true_count": 0,
+            "non_improvement_event_count": 0,
+            "raw_text_leakage_suspected_count": 0,
+            "malformed_event_count": 0,
+            "error_event_count": 0,
+            "unknown_event_type_count": 0,
+            "latest_event_ts": None,
+        }
+        rec = compute_recommendation(
+            journal=self._clean_journal(),
+            ops_log=self._clean_ops(),
+            simulation=None,
+            supervisor_events=empty_structured,
+        )
+        assert rec["level"] == WATCH
+
+    def test_supervisor_events_absent_falls_back_to_legacy_behavior(self):
+        """Phase 5 callers that do not pass supervisor_events keep working:
+        journal-only with obs_count>0 still yields PASS_MONITORING.
+        """
+        journal = self._clean_journal()
+        journal["marker_counts"]["supervisor_observability"] = 3
+        rec = compute_recommendation(
+            journal=journal,
+            ops_log=self._clean_ops(),
+            simulation=None,
+        )
+        assert rec["level"] == PASS_MONITORING

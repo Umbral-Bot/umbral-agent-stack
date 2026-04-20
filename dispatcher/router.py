@@ -27,6 +27,18 @@ from .team_config import get_team_capabilities
 
 logger = logging.getLogger("dispatcher.router")
 
+# Phase 6A — Structured supervisor telemetry sink.
+#
+# The OpsLogger singleton writes supervisor observability events as JSONL
+# records to ``~/.config/umbral/ops_log.jsonl`` alongside existing task
+# lifecycle events. Import is best-effort so a misconfigured log dir can
+# never prevent the router from loading. Persistence itself is wrapped in
+# defensive try/except inside ``_log_supervisor_event``.
+try:
+    from infra.ops_logger import ops_log as _ops_log
+except Exception:  # pragma: no cover - defensive import guard
+    _ops_log = None
+
 # Keys under ``envelope["input"]`` that may carry free-text context for
 # ambiguity detection. Text is passed to ``detect_ambiguity_signal()`` only;
 # it is never attached to emitted events or log records.
@@ -217,9 +229,20 @@ class TeamRouter:
             )
 
     def _log_supervisor_event(self, event: Any) -> None:
-        """Emit a single supervisor observability event via the module logger.
+        """Emit a single supervisor observability event.
 
-        Safe no-op on any error. Never raises.
+        Dual-channel delivery:
+        1. ``logger.info("supervisor_observability", ...)`` — presence signal
+           that survives journald/stdout even when the dispatcher logging
+           formatter drops ``extra`` fields. Preserves the backward-compatible
+           monitoring path from PR #241 / PR #242.
+        2. ``ops_log.supervisor_event(record)`` — structured persistence to
+           ``~/.config/umbral/ops_log.jsonl`` (Phase 6A). Enables the
+           monitoring script to see real event_type, outcome, team, severity
+           without relying on journald formatter changes.
+
+        Safe no-op on any error in either channel. Never raises. Dispatch is
+        never affected by a failure of either sink.
         """
         try:
             record = event.to_log_record()
@@ -232,6 +255,13 @@ class TeamRouter:
                 extra={"supervisor_event": record},
             )
         except Exception:
+            pass
+
+        try:
+            if _ops_log is not None:
+                _ops_log.supervisor_event(record)
+        except Exception:
+            # Structured persistence is best-effort; never propagate.
             pass
 
     def on_vm_back(self) -> Dict[str, Any]:

@@ -296,6 +296,50 @@ Este caso funciona como test de regresion documental: cualquier cambio
 futuro en la skill o en los handlers de capitalizacion debe seguir
 cumpliendo los guardrails G1-G4 sobre esta reunion.
 
+### G6. Trazabilidad de regularizaciones manuales
+
+Cuando una regularizacion se hace **por fuera del Worker** — por
+ejemplo con `curl` directo desde la VPS, un script ad-hoc, el panel
+Notion manual de David, o un agente como Copilot corrigiendo a mano
+una capitalizacion rota — Notion queda coherente pero el stack no
+recibe evento central en `ops_log.jsonl`.
+
+Regla normativa:
+
+> Toda regularizacion manual Notion con API/curl/script directo debe
+> emitir un `notion.operation_trace` con `operation_id`. No cerrar
+> como trazado si solo hay comentarios Notion.
+
+Herramientas (sin llamadas a Notion, no requieren `NOTION_API_KEY`):
+
+- `infra.ops_logger.OpsLogger.notion_operation(...)` — API
+  programatica para agentes Python internos.
+- `scripts/notion_trace_operation.py` — CLI con `--dry-run` y
+  `--operation-id` opcional.
+
+Campos minimos del evento:
+
+- `operation_id` (UUID4 auto si no se provee)
+- `actor`, `action`, `reason`
+- `raw_page_id`, `target_page_ids` (lista corta, max 25)
+- `source`, `source_kind`
+- `notion_reads`, `notion_writes`, `status`
+- `details` (truncado a 500 chars; prohibido meter transcript crudo o
+  prompts completos)
+
+Caso de regresion documental — Comgrap Dynamo (regularizado
+manualmente con `curl` sin dejar evento central inicialmente):
+
+- `raw_page_id`: `3485f443-fb5c-81e9-ae88-fe2fb7cd7b54`
+- tarea vinculada: `df938460-fdee-4752-b9d4-293bede5e541`
+- proyecto: `3485f443-fb5c-8198-9f54-fc5882302bf2`
+- `action`: `regularize_granola_capitalization`
+- `reason`: `task_only_capitalization_corrected_to_project_task`
+
+Detalles completos en
+`docs/78-granola-transcript-finality-reconciliation.md` (seccion 10)
+y `docs/50-granola-notion-pipeline.md` (seccion 9.9).
+
 ## Notas
 
 - Los docs repo-side que todavia usan `curated` deben leerse como alias legacy de `session_capitalizable`.
@@ -315,5 +359,7 @@ cumpliendo los guardrails G1-G4 sobre esta reunion.
 - `worker/notion_client.py`
 - `worker/tasks/granola.py`
 - `scripts/vm/granola_watcher.py`
+- `infra/ops_logger.py` (`notion_operation`)
+- `scripts/notion_trace_operation.py`
 
 Los docs `56-59` conservan naming legacy con `curated`; en el contrato vigente debe leerse como alias de `session_capitalizable`.

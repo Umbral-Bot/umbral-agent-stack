@@ -1,29 +1,29 @@
 #!/usr/bin/env python3
 """
-Supervisor Observability Monitoring — Phase 5 24h window tool.
+Supervisor Observability Monitoring — Phase 5/6A window tool.
 
-Parses available log sources (journald, ops_log.jsonl) and optionally runs
-local simulation against the passive building blocks to produce a structured
-monitoring report with safety flags and a go/no-go recommendation.
+Parses available log sources (journald, ops_log.jsonl, structured supervisor
+events from ops_log.jsonl) and optionally runs local simulation against the
+passive building blocks to produce a structured monitoring report with safety
+flags and a go/no-go recommendation.
 
 Data sources (graceful degradation):
   1. journald (via ``journalctl``): counts ``supervisor_observability`` and
      failure-related lines.  Falls back silently if journald unavailable.
-  2. ops_log.jsonl: structured JSONL with task lifecycle events.  Provides
-     dispatch health (completed/failed/blocked counts by team).
-  3. Local simulation (``--simulate``): exercises the pure building blocks
+  2. ops_log.jsonl — task lifecycle: structured JSONL with dispatch health
+     (completed/failed/blocked counts by team).
+  3. ops_log.jsonl — structured supervisor events (Phase 6A): records with
+     ``event`` starting with ``"supervisor."`` persisted by
+     ``OpsLogger.supervisor_event()``. Exposes real event_type, outcome,
+     team, severity, fields without relying on the journald formatter.
+  4. Local simulation (``--simulate``): exercises the pure building blocks
      from ``dispatcher/`` to verify event correctness without touching
      runtime.
 
-Known limitation:
-  The dispatcher logging format (``service.py:38``) uses
-  ``%(asctime)s [%(levelname)s] %(name)s: %(message)s`` which does NOT
-  serialize ``extra`` fields.  ``_log_supervisor_event()`` passes the event
-  dict via ``extra={"supervisor_event": record}`` but it never appears in
-  stdout/journald output.  Production log lines only show the bare string
-  ``"supervisor_observability"``.  Structured event data is available only
-  via local simulation (``--simulate``) until a JSON logging sink or
-  OpsLogger integration is added in a future slice.
+Phase 6A closes the previous formatter gap: structured supervisor event data
+is now available directly from ``ops_log.jsonl`` in production, not only via
+simulation. The journald presence signal is still consumed as a secondary
+source for continuity with PR #242 monitoring.
 
 Usage:
   python scripts/monitor_supervisor_observability.py --since-minutes 60
@@ -62,6 +62,14 @@ _SENTINEL_PATTERNS = (
     "TEXTO_SENSIBLE",
     "NO_DEBE_APARECER",
 )
+
+_SUPERVISOR_EVENT_PREFIX = "supervisor."
+_KNOWN_SUPERVISOR_EVENT_TYPES = frozenset({
+    "supervisor.ambiguity_signal",
+    "supervisor.resolution",
+    "supervisor.config_validation",
+    "supervisor.noop",
+})
 
 # Recommendation levels (ordered by severity).
 PASS_MONITORING = "PASS_MONITORING"
@@ -185,6 +193,143 @@ def parse_ops_log(
 
                 if team == "improvement":
                     result["improvement_events"] += 1
+
+    except Exception:
+        result["available"] = False
+
+    return result
+
+
+# ── Structured supervisor events (Phase 6A) ─────────────────────────
+
+
+def parse_supervisor_events(
+    path: Path,
+    *,
+    since: datetime,
+) -> Dict[str, Any]:
+    """Read ops_log.jsonl and extract structured supervisor observability
+    events persisted by ``OpsLogger.supervisor_event()`` (Phase 6A).
+
+    A record qualifies as a structured supervisor event when its ``event``
+    field starts with ``"supervisor."`` and it contains the stable top-level
+    keys (``event_type``, ``team``, ``task_id``, ``task_type``, ``outcome``,
+    ``severity``, ``fields``).
+
+    The parser also applies the same safety checks as ``run_simulation``:
+    ``should_block=True`` anywhere in ``fields``, non-improvement team, raw
+    text leakage suspicion via ``_check_fields_for_text``.
+
+    Never raises. Returns ``{"available": False, ...}`` when the file is
+    missing or unreadable.
+    """
+    result: Dict[str, Any] = {
+        "available": False,
+        "events_in_window": 0,
+        "by_event_type": {},
+        "by_outcome": {},
+        "by_severity": {},
+        "by_team": {},
+        "should_block_true_count": 0,
+        "non_improvement_event_count": 0,
+        "raw_text_leakage_suspected_count": 0,
+        "malformed_event_count": 0,
+        "error_event_count": 0,
+        "unknown_event_type_count": 0,
+        "latest_event_ts": None,
+    }
+
+    if not path.exists():
+        return result
+
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            result["available"] = True
+            for raw_line in f:
+                raw_line = raw_line.strip()
+                if not raw_line:
+                    continue
+                try:
+                    ev = json.loads(raw_line)
+                except json.JSONDecodeError:
+                    continue
+
+                event_type = ev.get("event") or ev.get("event_type")
+                if not isinstance(event_type, str) or not event_type.startswith(
+                    _SUPERVISOR_EVENT_PREFIX
+                ):
+                    continue
+
+                ts_str = ev.get("ts", "")
+                try:
+                    ts = datetime.fromisoformat(ts_str)
+                    if ts.tzinfo is None:
+                        ts = ts.replace(tzinfo=timezone.utc)
+                except (ValueError, TypeError):
+                    result["malformed_event_count"] += 1
+                    continue
+
+                if ts < since:
+                    continue
+
+                # Stable top-level keys are required for a structured event.
+                missing = [
+                    key for key in ("outcome", "severity")
+                    if key not in ev
+                ]
+                if missing:
+                    result["malformed_event_count"] += 1
+                    continue
+
+                result["events_in_window"] += 1
+
+                # Latest event wins for clock tracking.
+                if result["latest_event_ts"] is None or ts > datetime.fromisoformat(
+                    result["latest_event_ts"]
+                ).replace(tzinfo=timezone.utc):
+                    result["latest_event_ts"] = ts.isoformat()
+
+                result["by_event_type"][event_type] = (
+                    result["by_event_type"].get(event_type, 0) + 1
+                )
+
+                if event_type not in _KNOWN_SUPERVISOR_EVENT_TYPES:
+                    result["unknown_event_type_count"] += 1
+
+                outcome = ev.get("outcome")
+                if isinstance(outcome, str):
+                    result["by_outcome"][outcome] = (
+                        result["by_outcome"].get(outcome, 0) + 1
+                    )
+
+                severity = ev.get("severity")
+                if isinstance(severity, str):
+                    result["by_severity"][severity] = (
+                        result["by_severity"].get(severity, 0) + 1
+                    )
+                    if severity in ("error", "warning"):
+                        result["error_event_count"] += 1
+
+                team = ev.get("team")
+                if isinstance(team, str) and team:
+                    result["by_team"][team] = result["by_team"].get(team, 0) + 1
+                    if team != "improvement":
+                        result["non_improvement_event_count"] += 1
+                elif team is not None:
+                    # Non-string team → flag as malformed, but only for events
+                    # that semantically should have a team (ambiguity signal,
+                    # resolution, noop). config_validation carries team=None
+                    # by design.
+                    if event_type != "supervisor.config_validation":
+                        result["malformed_event_count"] += 1
+
+                fields = ev.get("fields")
+                if isinstance(fields, dict):
+                    if fields.get("should_block") is True:
+                        result["should_block_true_count"] += 1
+                    _check_fields_for_text(fields, result)
+                elif fields is not None:
+                    result["malformed_event_count"] += 1
 
     except Exception:
         result["available"] = False
@@ -441,8 +586,15 @@ def compute_recommendation(
     journal: Dict[str, Any],
     ops_log: Dict[str, Any],
     simulation: Optional[Dict[str, Any]],
+    supervisor_events: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
-    """Produce a recommendation from all data sources."""
+    """Produce a recommendation from all data sources.
+
+    ``supervisor_events`` (Phase 6A) carries the structured supervisor
+    records persisted by ``OpsLogger.supervisor_event()``. When present and
+    valid, it satisfies the "real event evidence" bar that previously
+    required journald formatter changes.
+    """
     reasons: List[str] = []
     level = PASS_MONITORING
 
@@ -452,6 +604,10 @@ def compute_recommendation(
         if severity_order.index(new_level) > severity_order.index(level):
             level = new_level
         reasons.append(f"[{new_level}] {reason}")
+
+    structured_events_in_window = 0
+    if supervisor_events and supervisor_events.get("available"):
+        structured_events_in_window = supervisor_events.get("events_in_window", 0)
 
     # Journal checks
     if journal.get("available"):
@@ -465,10 +621,15 @@ def compute_recommendation(
             escalate(INVESTIGATE, f"{failed_count} supervisor failure lines in journal")
 
         obs_count = markers.get("supervisor_observability", 0)
-        if obs_count == 0:
-            escalate(WATCH, "No supervisor_observability lines in journal (no traffic or formatter gap)")
+        if obs_count == 0 and structured_events_in_window == 0:
+            escalate(
+                WATCH,
+                "No supervisor_observability lines in journal and no structured "
+                "events in window (no ambiguous improvement traffic)",
+            )
     else:
-        escalate(WATCH, "journald not available — cannot verify supervisor log presence")
+        if structured_events_in_window == 0:
+            escalate(WATCH, "journald not available — cannot verify supervisor log presence")
 
     # Ops log checks
     if ops_log.get("available"):
@@ -480,6 +641,40 @@ def compute_recommendation(
                 escalate(INVESTIGATE, f"High task failure rate: {fail_rate:.1%} ({task_failed}/{task_completed + task_failed})")
     else:
         escalate(WATCH, "ops_log not available — cannot verify dispatch health")
+
+    # Structured supervisor events (Phase 6A). Absence of the sink is not a
+    # WATCH trigger on its own — the journal branch already expresses "no
+    # traffic". Presence of the sink adds safety-flag evidence.
+    if supervisor_events and supervisor_events.get("available"):
+        if supervisor_events.get("should_block_true_count", 0) > 0:
+            escalate(
+                ROLLBACK_RECOMMENDED,
+                f"should_block=True observed in {supervisor_events['should_block_true_count']} "
+                f"structured supervisor event(s)",
+            )
+        if supervisor_events.get("non_improvement_event_count", 0) > 0:
+            escalate(
+                ROLLBACK_RECOMMENDED,
+                f"Non-improvement team observed in "
+                f"{supervisor_events['non_improvement_event_count']} structured supervisor event(s)",
+            )
+        if supervisor_events.get("raw_text_leakage_suspected_count", 0) > 0:
+            escalate(
+                ROLLBACK_RECOMMENDED,
+                f"Raw text leakage suspected in "
+                f"{supervisor_events['raw_text_leakage_suspected_count']} structured supervisor event(s)",
+            )
+        if supervisor_events.get("malformed_event_count", 0) > 0:
+            escalate(
+                INVESTIGATE,
+                f"{supervisor_events['malformed_event_count']} malformed structured supervisor event(s)",
+            )
+        if supervisor_events.get("unknown_event_type_count", 0) > 0:
+            escalate(
+                INVESTIGATE,
+                f"{supervisor_events['unknown_event_type_count']} structured event(s) "
+                f"with unexpected event_type",
+            )
 
     # Simulation checks
     if simulation and simulation.get("available"):
@@ -512,6 +707,7 @@ def build_report(
     ops_log: Dict[str, Any],
     simulation: Optional[Dict[str, Any]],
     recommendation: Dict[str, Any],
+    supervisor_events: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Build the full structured report."""
     now = datetime.now(timezone.utc)
@@ -537,10 +733,32 @@ def build_report(
                 "task_blocked": ops_log.get("task_blocked", 0),
                 "improvement_events": ops_log.get("improvement_events", 0),
             },
+            "supervisor_events": _sanitize_supervisor_events(supervisor_events)
+            if supervisor_events
+            else None,
             "simulation": _sanitize_simulation(simulation) if simulation else None,
         },
-        "safety_flags": _compute_safety_flags(journal, ops_log, simulation),
+        "safety_flags": _compute_safety_flags(journal, ops_log, simulation, supervisor_events),
         "recommendation": recommendation,
+    }
+
+
+def _sanitize_supervisor_events(se: Dict[str, Any]) -> Dict[str, Any]:
+    """Return structured supervisor events summary without any raw text."""
+    return {
+        "available": se.get("available", False),
+        "events_in_window": se.get("events_in_window", 0),
+        "by_event_type": se.get("by_event_type", {}),
+        "by_outcome": se.get("by_outcome", {}),
+        "by_severity": se.get("by_severity", {}),
+        "by_team": se.get("by_team", {}),
+        "should_block_true_count": se.get("should_block_true_count", 0),
+        "non_improvement_event_count": se.get("non_improvement_event_count", 0),
+        "raw_text_leakage_suspected_count": se.get("raw_text_leakage_suspected_count", 0),
+        "malformed_event_count": se.get("malformed_event_count", 0),
+        "error_event_count": se.get("error_event_count", 0),
+        "unknown_event_type_count": se.get("unknown_event_type_count", 0),
+        "latest_event_ts": se.get("latest_event_ts"),
     }
 
 
@@ -561,8 +779,14 @@ def _compute_safety_flags(
     journal: Dict[str, Any],
     ops_log: Dict[str, Any],
     simulation: Optional[Dict[str, Any]],
+    supervisor_events: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
-    """Aggregate safety flags from all sources."""
+    """Aggregate safety flags from all sources.
+
+    Structured supervisor events (Phase 6A) contribute additively to the
+    simulation flags — a rollback trigger fires whether it originates in
+    real production events or in the simulation harness.
+    """
     flags: Dict[str, int] = {
         "supervisor_failure_lines": 0,
         "should_block_true_count": 0,
@@ -581,11 +805,18 @@ def _compute_safety_flags(
         )
 
     if simulation and simulation.get("available"):
-        flags["should_block_true_count"] = simulation.get("should_block_true_count", 0)
-        flags["non_improvement_event_count"] = simulation.get("non_improvement_event_count", 0)
-        flags["raw_text_leakage_suspected_count"] = simulation.get("raw_text_leakage_suspected_count", 0)
-        flags["malformed_event_count"] = simulation.get("malformed_event_count", 0)
-        flags["error_event_count"] = simulation.get("error_event_count", 0)
+        flags["should_block_true_count"] += simulation.get("should_block_true_count", 0)
+        flags["non_improvement_event_count"] += simulation.get("non_improvement_event_count", 0)
+        flags["raw_text_leakage_suspected_count"] += simulation.get("raw_text_leakage_suspected_count", 0)
+        flags["malformed_event_count"] += simulation.get("malformed_event_count", 0)
+        flags["error_event_count"] += simulation.get("error_event_count", 0)
+
+    if supervisor_events and supervisor_events.get("available"):
+        flags["should_block_true_count"] += supervisor_events.get("should_block_true_count", 0)
+        flags["non_improvement_event_count"] += supervisor_events.get("non_improvement_event_count", 0)
+        flags["raw_text_leakage_suspected_count"] += supervisor_events.get("raw_text_leakage_suspected_count", 0)
+        flags["malformed_event_count"] += supervisor_events.get("malformed_event_count", 0)
+        flags["error_event_count"] += supervisor_events.get("error_event_count", 0)
 
     return flags
 
@@ -638,6 +869,36 @@ def format_markdown(report: Dict[str, Any]) -> str:
             lines.append(f"- By team: {teams_str}")
     lines.append("")
 
+    se = src.get("supervisor_events")
+    if se:
+        lines.append("### Structured Supervisor Events (Phase 6A)")
+        lines.append(f"- Available: {se['available']}")
+        if se["available"]:
+            lines.append(f"- Events in window: {se['events_in_window']}")
+            if se.get("by_event_type"):
+                by_type = ", ".join(
+                    f"{k}={v}" for k, v in sorted(se["by_event_type"].items())
+                )
+                lines.append(f"- By event_type: {by_type}")
+            if se.get("by_outcome"):
+                by_outcome = ", ".join(
+                    f"{k}={v}" for k, v in sorted(se["by_outcome"].items())
+                )
+                lines.append(f"- By outcome: {by_outcome}")
+            if se.get("by_severity"):
+                by_severity = ", ".join(
+                    f"{k}={v}" for k, v in sorted(se["by_severity"].items())
+                )
+                lines.append(f"- By severity: {by_severity}")
+            if se.get("by_team"):
+                by_team = ", ".join(
+                    f"{k}={v}" for k, v in sorted(se["by_team"].items())
+                )
+                lines.append(f"- By team: {by_team}")
+            if se.get("latest_event_ts"):
+                lines.append(f"- Latest event: {se['latest_event_ts']}")
+        lines.append("")
+
     sim = src.get("simulation")
     if sim:
         lines.append("### Simulation")
@@ -657,14 +918,18 @@ def format_markdown(report: Dict[str, Any]) -> str:
         lines.append(f"- [{marker}] {key}: {value}")
     lines.append("")
 
-    # Known limitation
-    lines.append("## Known Limitation")
+    # Structured telemetry note (Phase 6A)
+    lines.append("## Structured Telemetry Status")
     lines.append("")
-    lines.append("The dispatcher logging format (`%(asctime)s [%(levelname)s] %(name)s: %(message)s`)")
-    lines.append("does NOT serialize `extra` fields. `supervisor_event` dicts emitted by")
-    lines.append("`_log_supervisor_event()` do not appear in stdout/journald output.")
-    lines.append("Structured event data is only available via `--simulate`.")
-    lines.append("Next improvement: configure JSON logging sink or OpsLogger integration.")
+    lines.append(
+        "Structured supervisor observability events are persisted to "
+        "`ops_log.jsonl` by `OpsLogger.supervisor_event()` (Phase 6A). "
+        "The monitoring script reads them directly; the dispatcher logging "
+        "formatter gap noted in PR #242 no longer blocks production visibility "
+        "of `event_type`, `outcome`, `team`, or `severity`. The journald "
+        "presence signal (`supervisor_observability` marker) remains consumed "
+        "as a secondary source for continuity."
+    )
     lines.append("")
 
     return "\n".join(lines)
@@ -732,6 +997,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     ops = parse_ops_log(Path(args.ops_log), since=since)
 
+    supervisor_events = parse_supervisor_events(
+        Path(args.ops_log),
+        since=since,
+    )
+
     simulation = run_simulation() if args.simulate else None
 
     # Compute recommendation
@@ -739,6 +1009,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         journal=journal,
         ops_log=ops,
         simulation=simulation,
+        supervisor_events=supervisor_events,
     )
 
     # Build report
@@ -748,6 +1019,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         ops_log=ops,
         simulation=simulation,
         recommendation=recommendation,
+        supervisor_events=supervisor_events,
     )
 
     # Output

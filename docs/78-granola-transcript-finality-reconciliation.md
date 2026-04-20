@@ -254,13 +254,109 @@ página raw.
 - El schema de la DB raw no requiere cambios para que la finality gate
   funcione — todo se persiste en `Trazabilidad` por default.
 
-## 9. Referencias
+## 10. Trazabilidad de regularizaciones manuales
 
-- `worker/tasks/granola_finality.py` (nuevo)
+### 10.1 Brecha observada (Comgrap Dynamo)
+
+PR #245 (este doc / reconciliación) y PR #246 (guardrails de
+capitalización) resuelven el problema sistémico en el pipeline:
+reuniones con identidad comercial ya no pueden cerrarse como “tarea
+suelta”, y los raws truncados pueden reconciliarse in-place.
+
+Pero en el caso real Comgrap Dynamo la regularización en Notion se hizo
+**a mano con `curl` directo desde la VPS**:
+
+- Se creó el proyecto `COMGRAP — Demo Dynamo / prefabricados de hormigon`.
+- Se vinculó raw ⇄ proyecto ⇄ tarea.
+- Se añadieron comentarios cruzados.
+- La raw quedó `Pendiente / Revision requerida`.
+
+Esa regularización es válida como trazabilidad humana dentro de Notion,
+pero **no dejó evento central en `ops_log.jsonl`**: no hay
+`operation_id`, no hay `trace_id`, no hay `source`, no hay conteo de
+lecturas/escrituras, y no hay forma de auditar desde el stack qué
+agente/script hizo qué operación sobre qué páginas.
+
+### 10.2 Regla normativa
+
+> Toda regularización manual sobre Notion hecha con API/curl/script
+> directo debe emitir un evento `notion.operation_trace` con
+> `operation_id`. No cerrar como trazado si solo hay comentarios en
+> Notion.
+
+### 10.3 Primitiva y CLI
+
+Disponibles en `main` (sin tocar runtime, supervisor, OpenClaw ni
+dispatcher routing):
+
+- `infra.ops_logger.OpsLogger.notion_operation(...)` — método Python.
+- `scripts/notion_trace_operation.py` — CLI con `--dry-run`.
+
+Campos del evento (clave = `notion.operation_trace`):
+
+| Campo              | Descripción                                              |
+|--------------------|----------------------------------------------------------|
+| `operation_id`     | UUID4 auto-generado si no se provee, o el valor dado.    |
+| `actor`            | Quién ejecutó (david, copilot, claude, rick, ...).       |
+| `action`           | Acción lógica corta (`regularize_granola_capitalization`).|
+| `reason`           | Motivo estructurado (truncado a 300 chars).              |
+| `raw_page_id`      | Página raw origen, si aplica.                            |
+| `target_page_ids`  | Lista corta (≤25) de IDs/URLs afectados, deduplicada.    |
+| `source`           | Origen (`vps_curl`, `copilot_script`, `cursor_agent`).   |
+| `source_kind`      | Subtipo (`manual_regularization`, `cli`, `curl`).        |
+| `notion_reads`     | Cantidad aproximada de reads reales a Notion.            |
+| `notion_writes`    | Cantidad aproximada de writes reales a Notion.           |
+| `status`           | `ok` / `partial` / `failed` / `rolled_back`.             |
+| `details`          | Texto breve (truncado a 500 chars). Sin transcript ni prompts. |
+| `ts`               | Aportado automáticamente por `OpsLogger._write`.         |
+
+### 10.4 Ejemplo de regresión — Comgrap Dynamo
+
+Este comando **no** hace llamadas a Notion; solo deja el breadcrumb:
+
+```bash
+python scripts/notion_trace_operation.py \
+    --actor copilot \
+    --action regularize_granola_capitalization \
+    --reason task_only_capitalization_corrected_to_project_task \
+    --raw-page-id 3485f443-fb5c-81e9-ae88-fe2fb7cd7b54 \
+    --target-page-id df938460-fdee-4752-b9d4-293bede5e541 \
+    --target-page-id 3485f443-fb5c-8198-9f54-fc5882302bf2 \
+    --source vps_curl \
+    --source-kind manual_regularization \
+    --notion-reads 3 --notion-writes 5 \
+    --status ok \
+    --details "created project, linked raw and task, added cross comments"
+```
+
+Dry-run equivalente (no escribe en `ops_log.jsonl`):
+
+```bash
+python scripts/notion_trace_operation.py --dry-run \
+    --actor copilot --action regularize_granola_capitalization \
+    --reason example
+```
+
+### 10.5 Garantías
+
+- No se persiste transcript completo, prompts completos ni contenido
+  largo de páginas Notion. `details` queda acotado a 500 chars.
+- `operation_id` siempre está presente en el evento persistido.
+- El logger **nunca rompe la operación del caller** si el write al log
+  falla; solo loguea el error a `logging.debug`.
+- El CLI **no** requiere `NOTION_API_KEY` porque no llama a Notion.
+
+## 11. Referencias
+
+- `worker/tasks/granola_finality.py` (PR #245)
 - `worker/tasks/granola.py` — `_upsert_raw_transcript_page`,
   `handle_granola_process_transcript`.
-- `scripts/repair_granola_transcript.py` (nuevo)
-- `tests/test_granola_transcript_reconciliation.py` (nuevo)
-- `docs/50-granola-notion-pipeline.md`
+- `scripts/repair_granola_transcript.py` (PR #245)
+- `tests/test_granola_transcript_reconciliation.py` (PR #245)
+- `infra/ops_logger.py` — `notion_operation(...)`, evento
+  `notion.operation_trace`.
+- `scripts/notion_trace_operation.py` — CLI con `--dry-run`.
+- `tests/test_notion_operation_trace.py`
+- `docs/50-granola-notion-pipeline.md` (§9.9)
 - `docs/64-granola-raw-ingest-batch.md`
 - `docs/65-granola-vm-raw-intake.md`

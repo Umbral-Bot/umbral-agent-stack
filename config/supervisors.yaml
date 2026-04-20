@@ -1,0 +1,14 @@
+# Phase 5 supervisor registry.
+#
+# This file is intentionally passive. It documents explicit supervisor targets for
+# future resolution, but nothing in dispatcher routing loads it yet.
+#
+# Safety invariant: entries with status != "active" must never activate routing.
+
+supervisors:
+  improvement:
+    label: "Mejora Continua Supervisor"
+    type: "openclaw_agent"
+    target: "improvement-supervisor"
+    status: "design_only"
+    fallback: "direct"

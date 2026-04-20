@@ -750,10 +750,28 @@ def _find_existing_raw_candidate(
             return selected, "shared_folder_path_source_updated_at"
 
     if transcript_date:
+        # When the incoming payload carries a non-empty granola_document_id,
+        # we MUST NOT fall back to a title/date match against a page that is
+        # already bound to a different non-empty granola_document_id. Doing
+        # otherwise would merge two distinct Granola meetings (same title and
+        # date but different recordings) into a single raw page.
+        #
+        # Legacy rows without a granola_document_id are still eligible so the
+        # historical backfill path keeps working.
+        def _fallback_allows(candidate: Dict[str, Any]) -> bool:
+            candidate_doc_id = str(candidate.get("granola_document_id") or "").strip()
+            if not granola_document_id:
+                return True
+            if not candidate_doc_id:
+                return True
+            return candidate_doc_id == granola_document_id
+
         exact_title_matches = [
             item
             for item in candidates
-            if item.get("date") == transcript_date and item.get("title") == title
+            if item.get("date") == transcript_date
+            and item.get("title") == title
+            and _fallback_allows(item)
         ]
         if len(exact_title_matches) == 1:
             return exact_title_matches[0], "exact_title_date"
@@ -764,6 +782,7 @@ def _find_existing_raw_candidate(
             for item in candidates
             if item.get("date") == transcript_date
             and item.get("normalized_title") == normalized_title
+            and _fallback_allows(item)
         ]
         if len(normalized_matches) == 1:
             return normalized_matches[0], "normalized_title_date"

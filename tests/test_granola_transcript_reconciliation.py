@@ -102,6 +102,13 @@ def _existing_page(
                 "type": "title",
                 "title": [{"plain_text": title, "text": {"content": title}}],
             },
+            # _extract_date_from_page reads "Fecha" / "Date" / ASCII variant
+            # first, so expose both spellings to match what the real Granola
+            # DB does in practice (legacy schema uses "Fecha de transcripción").
+            "Fecha": {
+                "type": "date",
+                "date": {"start": date},
+            },
             "Fecha de transcripción": {
                 "type": "date",
                 "date": {"start": date},
@@ -472,6 +479,114 @@ class TestProcessTranscriptReconciliation:
         ]["content"]
         assert resolved_title.startswith("Comgrap Dynamo")
         assert resolved_title != "Comgrap Dynamo" or result["page_id"] == "page-new"
+
+    @patch("worker.tasks.granola.notion_client")
+    def test_same_title_and_date_with_different_doc_id_does_not_update_existing(
+        self, mock_nc
+    ):
+        """Blocker fix: the title/date fallback must NOT match a page whose
+        granola_document_id is non-empty and different from the incoming one.
+
+        Scenario:
+            existing: title="Comgrap Dynamo", date="2026-04-20", doc_id="doc-a"
+            incoming: title="Comgrap Dynamo", date="2026-04-20", doc_id="doc-b"
+
+        Expected: a new raw page is created; the page bound to doc-a is left
+        untouched. Otherwise two independent Granola meetings would collapse
+        into the same raw row.
+        """
+        existing_page = _existing_page(
+            page_id="page-a",
+            title="Comgrap Dynamo",
+            date="2026-04-20",
+            granola_document_id="doc-a",
+            traceability_text=(
+                "granola_document_id=doc-a\n"
+                "source_updated_at=2026-04-20T09:00:00Z\n"
+                "ingest_path=granola.process_transcript"
+            ),
+            source_updated_at="2026-04-20T09:00:00Z",
+        )
+        _mock_db(mock_nc, existing_pages=[existing_page])
+        _mock_read_page_full_snapshot(mock_nc, _FULL_CONTENT, page_id="page-b")
+        mock_nc.create_database_page.return_value = {
+            "page_id": "page-b",
+            "url": "https://notion.so/page-b",
+            "created": True,
+        }
+
+        result = handle_granola_process_transcript(
+            {
+                "title": "Comgrap Dynamo",
+                "content": _FULL_CONTENT,
+                "date": "2026-04-20",
+                "granola_document_id": "doc-b",
+                "source_updated_at": "2026-04-20T15:00:00Z",
+                "notify_enlace": False,
+                "stability_window_seconds": 0,
+            }
+        )
+
+        assert result["matched_existing"] is False
+        assert result["match_strategy"] == ""
+        assert result["reconciliation_action"] == "create"
+        mock_nc.create_database_page.assert_called_once()
+        mock_nc.update_page_properties.assert_not_called()
+        mock_nc.replace_blocks_in_page.assert_not_called()
+        # Ensure we did not accidentally rewrite page-a.
+        update_calls = [
+            call
+            for call in mock_nc.method_calls
+            if call[0] in {"update_page_properties", "replace_blocks_in_page"}
+            and call.args
+            and call.args[0] == "page-a"
+        ]
+        assert update_calls == []
+
+    @patch("worker.tasks.granola.notion_client")
+    def test_legacy_page_without_document_id_can_still_match_by_title_date(
+        self, mock_nc
+    ):
+        """Control test: the title/date fallback must keep working against
+        legacy rows that have no granola_document_id stored yet, so those can
+        be reconciled/backfilled rather than duplicated.
+        """
+        existing_page = _existing_page(
+            page_id="page-legacy",
+            title="Comgrap Dynamo",
+            date="2026-04-20",
+            granola_document_id="",
+            traceability_text=(
+                "source_updated_at=2026-04-20T09:00:00Z\n"
+                "ingest_path=granola.process_transcript"
+            ),
+            source_updated_at="2026-04-20T09:00:00Z",
+        )
+        _mock_db(mock_nc, existing_pages=[existing_page])
+        _mock_read_page_full_snapshot(
+            mock_nc, _FULL_CONTENT, page_id="page-legacy"
+        )
+
+        result = handle_granola_process_transcript(
+            {
+                "title": "Comgrap Dynamo",
+                "content": _FULL_CONTENT,
+                "date": "2026-04-20",
+                "granola_document_id": "doc-b",
+                "source_updated_at": "2026-04-20T15:00:00Z",
+                "notify_enlace": False,
+                "stability_window_seconds": 0,
+            }
+        )
+
+        assert result["matched_existing"] is True
+        assert result["page_id"] == "page-legacy"
+        assert result["match_strategy"] in {
+            "exact_title_date",
+            "normalized_title_date",
+        }
+        mock_nc.create_database_page.assert_not_called()
+        mock_nc.update_page_properties.assert_called_once()
 
     @patch("worker.tasks.granola.notion_client")
     def test_stability_window_defers_fresh_documents(self, mock_nc):

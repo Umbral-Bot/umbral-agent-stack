@@ -90,6 +90,92 @@ Resultado:
   - la segunda corrida actualizo el mismo item puente (`created: false`)
   - con `add_trace_comments=false` para evitar ruido de comentarios
 
+## 6.1 Guardrails de capitalizacion (normativos)
+
+Estas reglas son **normativas** y aplican a cualquier corrida de
+`granola.capitalize_raw` (con o sin `allow_legacy_raw_to_canonical`) y a
+cualquier skill o agente que decida cerrar una pagina raw Granola.
+
+Referencia viva del contrato: `openclaw/workspace-templates/skills/granola-pipeline/SKILL.md`
+(seccion "Guardrails de capitalizacion").
+
+### 6.1.1 Preservacion de trazabilidad de ingest
+
+- El campo `Trazabilidad` de una pagina raw **nunca** puede ser reemplazado
+  por completo. La capitalizacion solo puede **anexar** claves.
+- Claves de ingest que deben sobrevivir si ya existen:
+  `granola_document_id`, `source_updated_at`, `source_url`, `ingest_path`,
+  `content_hash`, `char_count`, `segment_count`, `truncation_detected`,
+  `ingested_at`, `reconciled_at`.
+- La capitalizacion si puede anexar: `capitalization_mode`,
+  `canonical_target_type`, `canonical_target_name`, `canonical_target_url`,
+  `processed_at`.
+- Queda **prohibido** escribir frases tipo `Residuo legacy descartado`
+  sobre trazabilidad que contiene claves de ingest. Eso borra la
+  reconciliacion que garantiza `docs/78-granola-transcript-finality-reconciliation.md`.
+
+### 6.1.2 Reuniones comerciales / oportunidades
+
+Si la reunion funda o cambia una oportunidad comercial, una **tarea suelta
+no cierra la capitalizacion**. El orden correcto es:
+
+1. resolver cliente/partner;
+2. resolver o crear proyecto/oportunidad en `Asesorias & Proyectos`, o un
+   `bridge item` si no hay DB o permiso disponible;
+3. crear tarea vinculada al proyecto o bridge;
+4. crear o registrar entregable/propuesta si hay output revisable;
+5. dejar comentarios/trazabilidad cruzada entre transcript y objetos
+   creados.
+
+Si alguno de los pasos 1-4 no se puede completar, la capitalizacion es
+**parcial** o **revision requerida**. En ese caso:
+
+- `Estado` de la pagina raw no puede quedar en `Procesada`;
+- `Accion agente` no puede quedar en `Capitalizado`;
+- debe dejarse un comentario explicando el bloqueo (falta sharing, falta
+  dato del cliente, etc).
+
+### 6.1.3 Tarea suelta vs capitalizacion completa
+
+Una tarea sin proyecto/oportunidad ni bridge item asociado, para una
+reunion con identidad comercial clara, cuenta como **capitalizacion
+parcial** y no habilita cerrar la pagina raw.
+
+### 6.1.4 Datos ambiguos del transcript
+
+No convertir transcripcion fonetica ambigua en dato firme. Ejemplo real:
+`beam beam arroba congress` no puede guardarse como `beam@comgrap` sin
+confirmacion humana; debe registrarse como `correo mencionado
+foneticamente; confirmar direccion, posiblemente bim@comgrap o
+bim@comgrap.cl`.
+
+### 6.1.5 Caso Comgrap Dynamo (test de regresion)
+
+Resultado incorrecto observado sobre la raw `Comgrap Dynamo`:
+
+- solo una tarea suelta
+- `Destino canonico = Tarea`, `Estado = Procesada`,
+  `Accion agente = Capitalizado`
+- `URL artefacto` apuntando a la tarea suelta
+- `Trazabilidad` reescrita, con `granola_document_id`, `ingest_path` y
+  `source_updated_at` descartados
+- Log del agente reconocia que habria que evaluar un proyecto comercial y
+  cerro igual como capitalizado
+
+Resultado correcto esperado:
+
+- proyecto / oportunidad o bridge item:
+  `COMGRAP — Demo Dynamo / prefabricados de hormigon`
+- tarea vinculada:
+  `Enviar propuesta/estimacion demo Dynamo a Comgrap`
+- entregable/propuesta:
+  `Propuesta demo Dynamo/Revit para particion de muros prefabricados +
+  diseno generativo`
+- la pagina raw queda como `capitalizada` solo si los tres objetos minimos
+  estan creados y trazados; si falta alguno, queda como parcial o revision
+  requerida
+- la trazabilidad de ingest se preserva intacta
+
 ## 7. Implicancia arquitectonica
 
 Esto confirma una regla util:

@@ -7,7 +7,7 @@ Ubicacion default: ~/.config/umbral/ops_log.jsonl
 Eventos:
   task_queued, task_completed, task_failed, task_blocked, task_retried,
   model_selected, llm_usage, research_usage, quota_warning, quota_restricted, worker_health_change,
-  system_activity
+  system_activity, notion.operation_trace
 
 Parámetros opcionales de auditoría:
   trace_id      — ID de traza del envelope para correlacionar eventos end-to-end.
@@ -30,9 +30,10 @@ import json
 import logging
 import os
 import threading
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Mapping, Optional
+from typing import Any, Dict, Iterable, Mapping, Optional
 
 logger = logging.getLogger("infra.ops_logger")
 
@@ -73,6 +74,23 @@ _SAFE_SUPERVISOR_FIELD_KEYS: frozenset[str] = frozenset({
 
 _SUPERVISOR_EVENT_PREFIX = "supervisor."
 _SUPERVISOR_SCALAR_TYPES = (str, int, float, bool, type(None))
+
+# Notion manual operation trace — size limits.
+#
+# These limits exist to keep ``ops_log.jsonl`` small and to block raw
+# transcripts, prompts or long Notion page bodies from being persisted as
+# part of a ``notion.operation_trace`` event. The event is meant as an audit
+# breadcrumb (who / what / when / on which pages), not as a content archive.
+_NOTION_OP_DETAILS_MAX = 500
+_NOTION_OP_REASON_MAX = 300
+_NOTION_OP_ACTION_MAX = 120
+_NOTION_OP_ACTOR_MAX = 120
+_NOTION_OP_STATUS_MAX = 60
+_NOTION_OP_SOURCE_MAX = 200
+_NOTION_OP_TARGET_MAX_COUNT = 25
+_NOTION_OP_TARGET_ENTRY_MAX = 200
+_NOTION_OP_PAGE_ID_MAX = 200
+_NOTION_OPERATION_EVENT = "notion.operation_trace"
 
 
 class OpsLogger:
@@ -456,6 +474,94 @@ class OpsLogger:
         except Exception as exc:  # pragma: no cover - defensive
             logger.debug("supervisor_event persistence failed: %s", exc)
 
+    def notion_operation(
+        self,
+        *,
+        actor: str,
+        action: str,
+        reason: str,
+        raw_page_id: str | None = None,
+        target_page_ids: Iterable[str] | None = None,
+        source: str | None = None,
+        source_kind: str | None = None,
+        notion_reads: int | None = None,
+        notion_writes: int | None = None,
+        status: str = "ok",
+        details: str | None = None,
+        operation_id: str | None = None,
+        dry_run: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Registrar una operacion manual/directa sobre Notion como breadcrumb auditable.
+
+        Uso tipico: scripts/curl/API calls que regularizan Notion por fuera
+        del pipeline del Worker (ej. una capitalizacion corregida a mano) y
+        que de otra forma no dejarian traza central en ``ops_log.jsonl``.
+
+        Emite un unico evento ``notion.operation_trace`` append-only. El
+        metodo:
+
+        - genera un ``operation_id`` UUID4 si no viene provisto;
+        - trunca ``details`` / ``reason`` / ``action`` / ``actor`` /
+          ``target_page_ids`` a longitudes seguras (ver constantes
+          ``_NOTION_OP_*_MAX``);
+        - nunca persiste ``raw`` transcript, prompts completos o contenido
+          largo de paginas Notion — eso es responsabilidad del caller;
+        - nunca rompe la operacion del caller: cualquier fallo de
+          serializacion / IO queda contenido y devuelve el evento igual.
+
+        Retorna el dict del evento efectivamente construido (con el
+        ``operation_id`` resuelto y los campos truncados), para que el
+        caller pueda imprimirlo en stdout / JSON sin tener que releer el
+        log.
+        """
+        resolved_op_id = _normalize_operation_id(operation_id)
+
+        ev: Dict[str, Any] = {
+            "event": _NOTION_OPERATION_EVENT,
+            "operation_id": resolved_op_id,
+            "actor": _truncate(actor, _NOTION_OP_ACTOR_MAX) or "unknown",
+            "action": _truncate(action, _NOTION_OP_ACTION_MAX) or "unspecified",
+            "reason": _truncate(reason, _NOTION_OP_REASON_MAX) or "",
+            "status": _truncate(status, _NOTION_OP_STATUS_MAX) or "ok",
+        }
+
+        if source:
+            ev["source"] = _truncate(source, _NOTION_OP_SOURCE_MAX)
+        if source_kind:
+            ev["source_kind"] = _truncate(source_kind, _NOTION_OP_SOURCE_MAX)
+        if raw_page_id:
+            ev["raw_page_id"] = _truncate(raw_page_id, _NOTION_OP_PAGE_ID_MAX)
+
+        targets = _sanitize_target_page_ids(target_page_ids)
+        if targets:
+            ev["target_page_ids"] = targets
+
+        if notion_reads is not None:
+            try:
+                ev["notion_reads"] = int(notion_reads)
+            except (TypeError, ValueError):
+                pass
+        if notion_writes is not None:
+            try:
+                ev["notion_writes"] = int(notion_writes)
+            except (TypeError, ValueError):
+                pass
+
+        if details:
+            ev["details"] = _truncate(details, _NOTION_OP_DETAILS_MAX)
+
+        if dry_run:
+            ev = dict(ev)
+            ev["dry_run"] = True
+            return ev
+
+        try:
+            self._write(ev)
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.debug("notion_operation persistence failed: %s", exc)
+        return ev
+
     def read_events(self, limit: int = 1000, event_filter: Optional[str] = None) -> list[Dict[str, Any]]:
         """Lee los ultimos N eventos del log (para reportes)."""
         events: list[Dict[str, Any]] = []
@@ -483,6 +589,69 @@ class OpsLogger:
     @property
     def path(self) -> Path:
         return self._path
+
+
+def _truncate(value: Any, limit: int) -> str | None:
+    """Return ``str(value)`` truncated to ``limit`` chars, or ``None`` if empty."""
+    if value is None:
+        return None
+    try:
+        text = str(value)
+    except Exception:
+        return None
+    text = text.strip()
+    if not text:
+        return None
+    if limit > 0 and len(text) > limit:
+        return text[:limit]
+    return text
+
+
+def _normalize_operation_id(operation_id: Any) -> str:
+    """Return a non-empty operation id, generating a UUID4 if missing/invalid."""
+    if operation_id is None:
+        return str(uuid.uuid4())
+    try:
+        text = str(operation_id).strip()
+    except Exception:
+        return str(uuid.uuid4())
+    if not text:
+        return str(uuid.uuid4())
+    if len(text) > _NOTION_OP_PAGE_ID_MAX:
+        text = text[:_NOTION_OP_PAGE_ID_MAX]
+    return text
+
+
+def _sanitize_target_page_ids(targets: Any) -> list[str]:
+    """Normalize target_page_ids into a short list of bounded strings."""
+    if targets is None:
+        return []
+    if isinstance(targets, (str, bytes)):
+        targets = [targets]
+    try:
+        iterable = list(targets)
+    except TypeError:
+        return []
+    out: list[str] = []
+    seen: set[str] = set()
+    for item in iterable:
+        if item is None:
+            continue
+        try:
+            text = str(item).strip()
+        except Exception:
+            continue
+        if not text:
+            continue
+        if len(text) > _NOTION_OP_TARGET_ENTRY_MAX:
+            text = text[:_NOTION_OP_TARGET_ENTRY_MAX]
+        if text in seen:
+            continue
+        seen.add(text)
+        out.append(text)
+        if len(out) >= _NOTION_OP_TARGET_MAX_COUNT:
+            break
+    return out
 
 
 def _coerce_supervisor_scalar(value: Any) -> Any:

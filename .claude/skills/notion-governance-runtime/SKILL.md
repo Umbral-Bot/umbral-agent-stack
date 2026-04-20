@@ -137,3 +137,40 @@ capitalizada):
 4. **Caso Comgrap Dynamo** funciona como test de regresión: si la
    capitalización de una reunión con cliente nombrado y oportunidad
    técnica clara se cierra como tarea suelta, la capitalización está mal.
+
+## Trazabilidad de regularizaciones manuales Notion
+
+Cuando una operación crítica sobre Notion se hace por fuera del
+Worker (curl directo, script ad-hoc, panel manual de David, otro
+agente corrigiendo a mano, etc.), Notion queda coherente pero el
+stack no recibe evento central en `ops_log.jsonl`. Esto rompe la
+auditabilidad cross-agente.
+
+Regla normativa:
+
+> Toda regularización manual Notion con API/curl/script directo debe
+> emitir un `notion.operation_trace` con `operation_id`. No cerrar
+> como trazado si solo hay comentarios Notion.
+
+Para cumplirla sin llamar a Notion:
+
+- `infra.ops_logger.OpsLogger.notion_operation(...)` — método
+  programático (trunca `details`, sanitiza `target_page_ids`, genera
+  `operation_id` si no se provee, nunca rompe la operación del
+  caller).
+- `scripts/notion_trace_operation.py` — CLI con `--dry-run`.
+
+Contrato de seguridad: no persistir transcript crudo, prompts
+completos ni contenido largo de páginas Notion. `details` se trunca
+a 500 caracteres. `target_page_ids` es una lista corta (≤25).
+
+Caso de regresión documentado: **Comgrap Dynamo** fue regularizado
+con `curl` directo desde la VPS sin dejar breadcrumb central; el
+resultado es correcto en Notion pero deja brecha de auditoría
+sistémica. Usar ese caso como ejemplo al explicar el mecanismo.
+
+Referencias:
+
+- `docs/78-granola-transcript-finality-reconciliation.md` §10
+- `docs/50-granola-notion-pipeline.md` §9.9
+- `openclaw/workspace-templates/skills/granola-pipeline/SKILL.md` (G6)

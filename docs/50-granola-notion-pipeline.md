@@ -498,10 +498,71 @@ Resumen normativo minimo (ver docs de detalle para el contrato completo):
    la skill y en `docs/54`: cualquier cambio futuro debe seguir cumpliendo
    los guardrails sobre ese caso.
 
+## 9.9 Trazabilidad de regularizaciones manuales
+
+Cuando David, Enlace, Copilot, Claude o cualquier humano/agente corrige
+manualmente en Notion algo que se capitalizo mal (por ejemplo, reabrir
+un proyecto comercial que se habia cerrado como tarea suelta), la
+regularizacion puede hacerse con `curl` directo, con el panel Notion
+de David, con un script ad-hoc, o desde otro agente. Eso deja Notion
+coherente pero, por fuera del Worker, **no deja evento central en
+`ops_log.jsonl`**: no hay `operation_id`, no hay `trace_id` y no hay
+forma de auditar desde el stack quien hizo que operacion.
+
+La regla normativa es:
+
+> Toda regularizacion manual sobre Notion hecha con API/curl/script
+> directo debe emitir un evento `notion.operation_trace` con
+> `operation_id`. No cerrar como trazado si solo hay comentarios en
+> Notion.
+
+Herramientas disponibles para cumplirla sin llamadas reales a Notion:
+
+- `infra.ops_logger.OpsLogger.notion_operation(...)` — API programatica
+  para agentes Python internos. Trunca `details`, sanitiza
+  `target_page_ids`, genera `operation_id` si no se provee, nunca
+  rompe la operacion del caller si falla el write al log.
+- `scripts/notion_trace_operation.py` — CLI equivalente, con
+  `--dry-run`. No requiere `NOTION_API_KEY`.
+
+Ejemplo del caso de regresion **Comgrap Dynamo** (solo para auditoria,
+no ejecuta contra Notion):
+
+```bash
+python scripts/notion_trace_operation.py \
+    --actor copilot \
+    --action regularize_granola_capitalization \
+    --reason task_only_capitalization_corrected_to_project_task \
+    --raw-page-id 3485f443-fb5c-81e9-ae88-fe2fb7cd7b54 \
+    --target-page-id df938460-fdee-4752-b9d4-293bede5e541 \
+    --target-page-id 3485f443-fb5c-8198-9f54-fc5882302bf2 \
+    --source vps_curl \
+    --source-kind manual_regularization \
+    --notion-reads 3 --notion-writes 5 \
+    --status ok \
+    --details "created project, linked raw and task, added cross comments"
+```
+
+Detalle del contrato de seguridad:
+
+- **Nunca** se persiste transcript completo, prompts completos, ni
+  contenido largo de paginas Notion; `details` se trunca a 500
+  caracteres.
+- `target_page_ids` es una lista corta (maximo 25 entradas) de IDs o
+  URLs, con deduplicacion.
+- `operation_id` es requerido en el evento persistido; si no se
+  provee, el metodo/CLI genera un UUID4 estable para la corrida.
+
+Ver tambien:
+[`docs/78-granola-transcript-finality-reconciliation.md`](78-granola-transcript-finality-reconciliation.md)
+(seccion 10 — "Trazabilidad de regularizaciones manuales").
+
 ## 10. Referencias
 
 - `worker/notion_client.py`
 - `worker/tasks/granola.py`
+- `infra/ops_logger.py`
+- `scripts/notion_trace_operation.py`
 - `docs/56-granola-promote-curated-session.md`
 - `docs/57-granola-human-task-from-curated-session.md`
 - `docs/58-granola-commercial-project-from-curated-session.md`

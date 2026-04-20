@@ -313,3 +313,129 @@ def _normalize_entry(entry: Mapping[str, Any]) -> dict[str, str | None]:
 
 def _as_optional_str(value: Any) -> str | None:
     return value if isinstance(value, str) and value else None
+
+
+# ── Config consistency validation ────────────────────────────────
+
+
+@dataclass(frozen=True)
+class SupervisorConfigIssue:
+    """A single consistency issue between teams.yaml and supervisors.yaml."""
+
+    team: str
+    severity: str  # "error" | "warning"
+    code: str
+    message: str
+
+
+def validate_supervisor_config_consistency(
+    teams_config: Mapping[str, Any],
+    registry: Mapping[str, Any],
+) -> tuple[SupervisorConfigIssue, ...]:
+    """
+    Validate consistency between teams config and supervisor registry.
+
+    Pure function: takes already-loaded dicts, returns tuple of issues.
+    No file I/O, no logging, no side effects.
+    """
+    issues: list[SupervisorConfigIssue] = []
+
+    # Extract teams mapping
+    teams_raw = teams_config.get("teams") if isinstance(teams_config, Mapping) else None
+    teams: Mapping[str, Any] = teams_raw if isinstance(teams_raw, Mapping) else {}
+
+    # Extract supervisors mapping
+    supervisors = _supervisors_mapping(registry)
+
+    # Rule 1: every registry team must exist in teams config
+    for team_key in supervisors:
+        if not isinstance(team_key, str):
+            continue
+        if team_key not in teams:
+            issues.append(SupervisorConfigIssue(
+                team=team_key,
+                severity="error",
+                code="registry_team_missing_from_teams_config",
+                message=f"Registry defines '{team_key}' but it does not exist in teams config",
+            ))
+
+    # Rules 2-8: validate each registry entry and check label consistency
+    for team_key, entry in supervisors.items():
+        if not isinstance(team_key, str) or not isinstance(entry, Mapping):
+            continue
+        if team_key not in teams:
+            continue  # already reported in rule 1
+
+        # Rule 2: label consistency
+        team_info = teams.get(team_key)
+        if isinstance(team_info, Mapping):
+            teams_label = _as_optional_str(team_info.get("supervisor"))
+            registry_label = _as_optional_str(entry.get("label"))
+            if teams_label and registry_label and teams_label != registry_label:
+                issues.append(SupervisorConfigIssue(
+                    team=team_key,
+                    severity="error",
+                    code="supervisor_label_mismatch",
+                    message=(
+                        f"teams.yaml supervisor '{teams_label}' != "
+                        f"registry label '{registry_label}'"
+                    ),
+                ))
+
+        # Rule 4: valid status
+        status = _as_optional_str(entry.get("status")) or "disabled"
+        if status not in VALID_STATUSES:
+            issues.append(SupervisorConfigIssue(
+                team=team_key,
+                severity="error",
+                code="invalid_supervisor_status",
+                message=f"Invalid status '{status}'; allowed: {sorted(VALID_STATUSES)}",
+            ))
+
+        # Rule 5: valid type
+        target_type = _as_optional_str(entry.get("type")) or "none"
+        if target_type not in VALID_TARGET_TYPES:
+            issues.append(SupervisorConfigIssue(
+                team=team_key,
+                severity="error",
+                code="invalid_supervisor_type",
+                message=f"Invalid type '{target_type}'; allowed: {sorted(VALID_TARGET_TYPES)}",
+            ))
+
+        # Rule 6: valid fallback
+        fallback = _as_optional_str(entry.get("fallback")) or "direct"
+        if fallback not in VALID_FALLBACKS:
+            issues.append(SupervisorConfigIssue(
+                team=team_key,
+                severity="error",
+                code="invalid_supervisor_fallback",
+                message=f"Invalid fallback '{fallback}'; allowed: {sorted(VALID_FALLBACKS)}",
+            ))
+
+        # Rule 7: active requires target
+        target = _as_optional_str(entry.get("target"))
+        if status == "active" and target_type != "none" and not target:
+            issues.append(SupervisorConfigIssue(
+                team=team_key,
+                severity="error",
+                code="active_supervisor_missing_target",
+                message="status is 'active' but target is missing",
+            ))
+
+    # Rule 3: teams with supervisor should have registry entry (warning)
+    for team_key, team_info in teams.items():
+        if not isinstance(team_key, str) or not isinstance(team_info, Mapping):
+            continue
+        supervisor_label = _as_optional_str(team_info.get("supervisor"))
+        if supervisor_label and team_key not in supervisors:
+            issues.append(SupervisorConfigIssue(
+                team=team_key,
+                severity="warning",
+                code="team_supervisor_missing_registry_entry",
+                message=(
+                    f"Team '{team_key}' has supervisor '{supervisor_label}' "
+                    f"but no registry entry in supervisors.yaml"
+                ),
+            ))
+
+    return tuple(issues)

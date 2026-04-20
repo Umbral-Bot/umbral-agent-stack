@@ -172,6 +172,130 @@ Para lotes explicitos repo-side, usar:
 2. Rick o una herramienta intermedia la guarda como `.md`
 3. el Worker procesa ese material en la capa raw
 
+## Guardrails de capitalizacion
+
+Estas reglas aplican a cualquier cierre de una pagina raw Granola hacia
+objetos canonicos (proyecto, tarea, entregable, bridge item, sesion curada).
+Son normativas y no negociables.
+
+### G1. Preservacion de trazabilidad de ingest
+
+- **Nunca reemplazar por completo** el campo `Trazabilidad` de una pagina raw
+  de Granola. La capitalizacion solo puede **anexar** claves nuevas.
+- Claves de ingest/reconciliation que deben preservarse siempre si ya existen
+  en la pagina raw:
+  - `granola_document_id`
+  - `source_updated_at`
+  - `source_url`
+  - `ingest_path`
+  - `content_hash`
+  - `char_count`
+  - `segment_count`
+  - `truncation_detected`
+  - `ingested_at`
+  - `reconciled_at`
+- Claves que la capitalizacion si puede anexar:
+  - `capitalization_mode` (por ejemplo `bridge_item`, `project+task+deliverable`, `partial`)
+  - `canonical_target_type`
+  - `canonical_target_name`
+  - `canonical_target_url`
+  - `processed_at`
+- **Prohibido explicitamente** emitir una trazabilidad nueva que contenga
+  frases tipo `Residuo legacy descartado` cuando ese residuo incluye claves
+  de ingest. Esa accion borra evidencia y rompe la reconciliacion de PR
+  `fix(granola): reconcile updated transcripts before capitalization`
+  (ingest-side, ver `docs/78-granola-transcript-finality-reconciliation.md`).
+- Si se detecta que un campo de trazabilidad de ingest desaparecio entre una
+  corrida y otra, la capitalizacion cuenta como parcial y la pagina raw debe
+  quedar en estado revisable, no `Procesada`.
+
+### G2. Reuniones comerciales / oportunidades
+
+Si una reunion raw funda o cambia una oportunidad comercial, **el destino
+primario no puede ser solo una tarea suelta**. El orden canonico es:
+
+1. resolver el cliente/partner (nombre, dominio de correo, contacto);
+2. resolver o crear el proyecto / oportunidad comercial en la DB
+   `Asesorias & Proyectos`, o en su defecto registrar un `bridge item`
+   cuando no hay DB comercial disponible o no hay permiso de Rick;
+3. recien entonces crear la tarea operativa, vinculada al proyecto o al
+   bridge item;
+4. si hay un output revisable por David (propuesta, estimacion, demo,
+   briefing), crear o registrar un entregable/propuesta;
+5. dejar comentarios/trazabilidad cruzada entre la pagina raw y los objetos
+   creados (proyecto, tarea, entregable, bridge).
+
+Si no es posible crear/verificar el proyecto u oportunidad porque falta
+acceso, sharing o informacion:
+
+- la capitalizacion debe marcarse como **parcial** o **revision requerida**;
+- `Estado` de la pagina raw no puede quedar en `Procesada`;
+- `Accion agente` no puede quedar en `Capitalizado`;
+- debe dejarse un comentario explicando que bloquea el cierre.
+
+### G3. Tareas sueltas
+
+Crear solo una tarea puede ser correcto cuando la reunion es claramente
+operativa interna. **No es correcto** cuando la reunion tiene identidad
+comercial (cliente nombrado, propuesta mencionada, presupuesto,
+entregable).
+
+Una tarea sin proyecto/oportunidad ni bridge asociado, para una reunion con
+identidad comercial, cuenta como **capitalizacion parcial**, no como
+capitalizada.
+
+### G4. Datos ambiguos del transcript
+
+- No convertir transcripcion fonetica ambigua en dato firme.
+- Ejemplo real: `beam beam arroba congress` **no** debe guardarse como
+  `beam@comgrap` ni `beam@congress` sin confirmacion humana.
+- El registro correcto en ese caso es texto fenomenologico, por ejemplo:
+  `correo mencionado foneticamente; confirmar direccion, posiblemente
+  bim@comgrap o bim@comgrap.cl`.
+- Cualquier dato de contacto inferido por fonetica debe quedar marcado
+  como `sin confirmar` hasta que David o Enlace lo validen.
+
+### G5. Caso de regresion: Comgrap Dynamo
+
+Caso real observado (raw `Comgrap Dynamo`) que **no debe repetirse**:
+
+- Raw: `Comgrap Dynamo`
+- Cliente / partner: `COMGRAP`
+- Contexto: demo y propuesta para Dynamo / Revit aplicado a particion de
+  muros prefabricados de hormigon y diseno generativo.
+
+Resultado incorrecto observado:
+
+- solo se creo una tarea suelta
+- `Estado = Procesada`
+- `Accion agente = Capitalizado`
+- `Destino canonico = Tarea`
+- `URL artefacto` apuntando a una tarea aislada
+- la `Trazabilidad` fue reescrita y se descartaron campos legacy criticos
+  (`granola_document_id`, `ingest_path`, `source_updated_at`)
+- el Log del agente reconocia que habria que evaluar crear un proyecto en
+  `Asesorias & Proyectos` pero cerro igual como capitalizado
+
+Resultado correcto esperado segun los guardrails anteriores:
+
+- proyecto / oportunidad o `bridge item`:
+  `COMGRAP — Demo Dynamo / prefabricados de hormigon`
+- tarea vinculada a ese proyecto/bridge:
+  `Enviar propuesta/estimacion demo Dynamo a Comgrap`
+- entregable / propuesta:
+  `Propuesta demo Dynamo/Revit para particion de muros prefabricados +
+  diseno generativo`
+- la pagina raw solo puede quedar como `capitalizada` si los tres objetos
+  minimos estan creados y trazados; si alguno falta, queda como
+  capitalizacion parcial o revision requerida
+- la `Trazabilidad` de ingest (`granola_document_id`, `source_updated_at`,
+  `ingest_path`, `content_hash`, etc.) se preserva intacta y la
+  capitalizacion solo anexa sus propias claves nuevas
+
+Este caso funciona como test de regresion documental: cualquier cambio
+futuro en la skill o en los handlers de capitalizacion debe seguir
+cumpliendo los guardrails G1-G4 sobre esta reunion.
+
 ## Notas
 
 - Los docs repo-side que todavia usan `curated` deben leerse como alias legacy de `session_capitalizable`.
@@ -183,6 +307,7 @@ Para lotes explicitos repo-side, usar:
 
 - `docs/50-granola-notion-pipeline.md`
 - `docs/54-granola-capitalize-raw-slice.md`
+- `docs/78-granola-transcript-finality-reconciliation.md` (ingest-side)
 - `docs/56-granola-promote-curated-session.md`
 - `docs/57-granola-human-task-from-curated-session.md`
 - `docs/58-granola-commercial-project-from-curated-session.md`

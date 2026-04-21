@@ -325,6 +325,39 @@ Gold set (futuro)
 
 ---
 
+## 11. Delta de oportunidades detectadas
+
+Análisis completo en [opportunity analysis](2026-04-agent-stack-opportunity-analysis-from-perplexity.md). Resumen de cambios al roadmap:
+
+### Nuevos bloques transversales
+
+| Bloque | Qué | Prioridad | Timing |
+|--------|-----|-----------|--------|
+| T0 | Structured error classification en Worker (enum `error_class` + dedup Linear) | P1 | Independiente — puede ejecutarse ahora |
+| T1 | Research intake metadata en master index (`next_action_type`, `priority`, `blocks_decision`) | P2 | Después de merge PR #249 |
+| T2 | Provider health score en model router (auto-demote sin esperar quota) | P2 | Independiente |
+
+### Cambios en fases existentes
+
+| Fase | Agregar |
+|------|---------|
+| E2 | Definir subset de dimensiones de evaluación editorial (de UB-04) para gold set futuro |
+| E4 | Implementar `publish.attempt/success/failed` y `auth.expiry_warning` en OpsLogger |
+| E5 | Verificar comment invalidation tracking antes de LinkedIn HITL |
+
+### Movimientos de horizonte
+
+| Item | De → A | Razón |
+|------|--------|-------|
+| Gold set editorial | Later (E7) → Next (preparar en E2) | Sin gold set, torneo de prompts no tiene baseline |
+| CTA rate-limiting | Implícito → Next (resolver en E2) | Necesita decisión Redis vs Notion antes de generar borradores |
+
+### No se necesita nueva investigación Perplexity
+
+46 documentos existentes cubren editorial, bot, visual, CTA, gobernanza, routing y evaluation. Los huecos detectados son de ingeniería, no de research.
+
+---
+
 ## Referencias
 
 | Documento | Ubicación |

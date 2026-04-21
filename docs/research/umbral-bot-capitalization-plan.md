@@ -112,8 +112,8 @@ IDs y temas según [perplexity-master-index.md](perplexity-master-index.md). Sol
 | **Qué crear** | Framework de evaluación con gold set + 15 dimensiones |
 | **Ruta sugerida** | `agents/evals/gold-set-framework.md`, `agents/evals/dimensions.yaml`, `agents/evals/gold-set-bep.yaml` |
 | **Fuentes Perplexity** | UB-04 (laboratorio evaluación: 15 dimensiones, scoring rubrics, gold set design). Soporte: UB-07 P4 `research_p4_antipatterns.md` (antipatrones a evaluar) |
-| **Prioridad** | **P2** — necesario antes de iterar quality, pero puede arrancar después del routing |
-| **Dependencias** | Routing v1 (para saber qué evaluar), KB packages (para gold set content) |
+| **Prioridad** | **P1.5** — necesario antes de evaluar routing y calidad de respuestas. Routing no puede iterarse sin un gold set que mida calidad, latencia y UX de las respuestas ruteadas |
+| **Dependencias** | KB packages (para gold set content). Nota: routing depende de gold set para su evaluación, no al revés |
 | **Tipo** | Diseño + datos |
 | **Docs existentes** | `docs/agent-evaluation-lab.md` (propuesta previa — **parcialmente capitalizado**, reconciliar), `agents/evals/` (directorio existente) |
 | **Entregable** | Framework doc, schema de dimensiones, 1 gold set de ejemplo para BEP |
@@ -154,19 +154,32 @@ P1 (bloquea todo lo demás)
   ├── Spec Intake BEP            ← producto core (UB-03, UB-02, UB-R6, UB-R17)
   └── Spec Routing v1            ← cómo el bot decide (UB-10, UB-07 P3)
 
+P1.5 (necesario antes de iterar routing)
+  └── Gold Set Evaluation         ← calidad (UB-04)
+      Routing no puede iterarse sin gold set: necesita mediciones de
+      calidad, latencia y UX para validar thresholds y cascading.
+
 P2 (necesario pre-producción)
-  ├── Gold Set Evaluation         ← calidad (UB-04)
   ├── Gobernanza Multiagente      ← coordinación (UB-07 completo)
   └── KB Packages de dominio      ← contenido (UB-01, UB-02, UB-08, corpus UB-R*)
 
 Diferido (no tocar todavía)
+  ├── Routing implementation       ← requiere gold set evaluado
+  ├── Specialist activation        ← requiere routing + gobernanza
   ├── UB-05: Recomendaciones comerciales      ← fase 2
   ├── UB-06: Panel admin / data governance    ← fase 2
   └── UB-09: Grasshopper/Rhino               ← fase 2
 
 Secuencia sugerida:
-  KB Package Schema → Routing → Intake BEP → Gold Set → Gobernanza → KB Packages dominio
-  (Schema primero porque routing, intake y packages dependen de la estructura)
+  KB Package Schema → Gold Set Evaluation → Intake BEP → Routing Spec →
+  Gobernanza → KB Packages dominio
+  (Schema primero porque gold set, routing, intake y packages dependen
+  de la estructura. Gold set antes de routing porque routing necesita
+  métricas de evaluación para calibrar thresholds.)
+
+Primer PR en umbral-bot-copilot:
+  Schema YAML real (kb-package-schema.yaml) + 1 package ejemplo (bep-peb.yaml).
+  Scope mínimo, no incluye routing ni gobernanza.
 ```
 
 ---

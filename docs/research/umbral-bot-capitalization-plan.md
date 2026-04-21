@@ -79,33 +79,7 @@ IDs y temas según [perplexity-master-index.md](perplexity-master-index.md). Sol
 | **Docs existentes** | `docs/kb-package-architecture.md` (propuesta previa, verificar alineación) |
 | **Entregable** | Schema YAML validable, 2 packages ejemplo, README de convenciones |
 
-### 2. Spec Intake BEP (Conversational)
-
-| Campo | Detalle |
-|-------|---------|
-| **Qué crear** | Spec del flujo conversacional de intake para BEP consulting |
-| **Ruta sugerida** | `docs/specs/intake-bep-v1.md` |
-| **Fuentes Perplexity** | UB-03 (35 variables de intake, stages S0-S3, branching conversacional). Soporte: UB-02 (anatomía BEP/PEB), UB-R6 (corpus BEP/PEB/SDI), UB-R17 (agente experto BEP) |
-| **Prioridad** | **P1** — define el producto conversacional core |
-| **Dependencias** | KB packages (para saber qué knowledge necesita el intake) |
-| **Tipo** | Diseño |
-| **Docs existentes** | Ninguno específico para intake BEP |
-| **Entregable** | Spec con variables, stages, decision tree, validation rules, fallback paths |
-
-### 3. Spec Routing v1 (Cascading)
-
-| Campo | Detalle |
-|-------|---------|
-| **Qué crear** | Spec del sistema de routing multi-KB con cascading |
-| **Ruta sugerida** | `docs/specs/routing-v1.md` |
-| **Fuentes Perplexity** | UB-10 (cascada regex→embeddings→LLM, thresholds, abstain rate). Soporte: UB-07 P3 `research_p3_routing.md` (routing y handoffs inter-agente) |
-| **Prioridad** | **P1** — define cómo el bot selecciona knowledge |
-| **Dependencias** | KB package schema (para saber qué se rutea) |
-| **Tipo** | Diseño |
-| **Docs existentes** | Parcialmente en `docs/ARCHITECTURE.md` (verificar) |
-| **Entregable** | Spec con pipeline stages, fallback logic, confidence thresholds, metrics |
-
-### 4. Gold Set Evaluation Framework
+### 2. Gold Set Evaluation Framework (mínimo)
 
 | Campo | Detalle |
 |-------|---------|
@@ -117,6 +91,32 @@ IDs y temas según [perplexity-master-index.md](perplexity-master-index.md). Sol
 | **Tipo** | Diseño + datos |
 | **Docs existentes** | `docs/agent-evaluation-lab.md` (propuesta previa — **parcialmente capitalizado**, reconciliar), `agents/evals/` (directorio existente) |
 | **Entregable** | Framework doc, schema de dimensiones, 1 gold set de ejemplo para BEP |
+
+### 3. Spec Intake BEP (Conversational)
+
+| Campo | Detalle |
+|-------|---------|
+| **Qué crear** | Spec del flujo conversacional de intake para BEP consulting |
+| **Ruta sugerida** | `docs/specs/intake-bep-v1.md` |
+| **Fuentes Perplexity** | UB-03 (35 variables de intake, stages S0-S3, branching conversacional). Soporte: UB-02 (anatomía BEP/PEB), UB-R6 (corpus BEP/PEB/SDI), UB-R17 (agente experto BEP) |
+| **Prioridad** | **P1.5** — define el producto conversacional core. Puede avanzar en paralelo con Gold Set |
+| **Dependencias** | KB packages (para saber qué knowledge necesita el intake) |
+| **Tipo** | Diseño |
+| **Docs existentes** | Ninguno específico para intake BEP |
+| **Entregable** | Spec con variables, stages, decision tree, validation rules, fallback paths |
+
+### 4. Spec Routing v1 (Cascading)
+
+| Campo | Detalle |
+|-------|---------|
+| **Qué crear** | Spec del sistema de routing multi-KB con cascading |
+| **Ruta sugerida** | `docs/specs/routing-v1.md` |
+| **Fuentes Perplexity** | UB-10 (cascada regex→embeddings→LLM, thresholds, abstain rate). Soporte: UB-07 P3 `research_p3_routing.md` (routing y handoffs inter-agente) |
+| **Prioridad** | **P1 posterior** — define cómo el bot selecciona knowledge, pero solo después de gold set mínimo |
+| **Dependencias** | KB package schema (para saber qué se rutea), Gold Set mínimo (para calibrar thresholds con métricas de calidad, latencia y UX) |
+| **Tipo** | Diseño |
+| **Docs existentes** | Parcialmente en `docs/ARCHITECTURE.md` (verificar) |
+| **Entregable** | Spec con pipeline stages, fallback logic, confidence thresholds, metrics |
 
 ### 5. Gobernanza Multiagente (5 archivos)
 
@@ -149,15 +149,19 @@ IDs y temas según [perplexity-master-index.md](perplexity-master-index.md). Sol
 ## Matriz de prioridad y secuencia
 
 ```
-P1 (bloquea todo lo demás)
-  ├── KB Package YAML Contracts  ← fundacional (UB-07 P2, UB-R11)
-  ├── Spec Intake BEP            ← producto core (UB-03, UB-02, UB-R6, UB-R17)
-  └── Spec Routing v1            ← cómo el bot decide (UB-10, UB-07 P3)
+P1 (fundacional — bloquea todo lo demás)
+  └── KB Package YAML Contracts  ← schema + ejemplo (UB-07 P2, UB-R11)
 
-P1.5 (necesario antes de iterar routing)
-  └── Gold Set Evaluation         ← calidad (UB-04)
-      Routing no puede iterarse sin gold set: necesita mediciones de
-      calidad, latencia y UX para validar thresholds y cascading.
+P1.5 (necesario antes de routing)
+  ├── Gold Set Evaluation mínimo  ← calidad (UB-04)
+  │   Routing no puede iterarse sin gold set: necesita mediciones de
+  │   calidad, latencia y UX para validar thresholds y cascading.
+  └── Spec Intake BEP             ← producto core (UB-03, UB-02, UB-R6, UB-R17)
+      Puede avanzar en paralelo con Gold Set.
+
+P1 posterior (solo después de gold set mínimo)
+  └── Spec Routing v1             ← cómo el bot decide (UB-10, UB-07 P3)
+      Depende de KB schema + gold set mínimo.
 
 P2 (necesario pre-producción)
   ├── Gobernanza Multiagente      ← coordinación (UB-07 completo)

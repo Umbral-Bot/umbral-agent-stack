@@ -154,7 +154,7 @@ Las tasks `granola.*` siguen siendo válidas para:
 
 - crear página raw
 - extraer action items
-- capitalizar explicitamente una pagina raw hacia proyecto, entregable, puente o follow-up
+- capitalizar explicitamente una pagina raw hacia proyecto, puente o follow-up
 - crear follow-ups
 - notificar a Enlace
 
@@ -220,7 +220,7 @@ Hoy existen dos tasks explicitas y reversibles:
 - escribe solo en destinos pedidos de forma explicita
 - hoy opera solo sobre superficies que el stack ya gobierna:
   - `notion.upsert_project`
-  - `notion.upsert_deliverable`
+  - `notion.upsert_deliverable` (Bandeja de revision - Rick; solo outputs internos, no propuestas comerciales)
   - `notion.upsert_bridge_item`
   - `granola.create_followup`
 - deja comentarios de trazabilidad entre raw y destino cuando se usa con `add_trace_comments=true`
@@ -485,11 +485,15 @@ Resumen normativo minimo (ver docs de detalle para el contrato completo):
    `ingested_at` y `reconciled_at` no pueden borrarse ni marcarse como
    residuo legacy. Esa trazabilidad sostiene la reconciliacion descrita en
    `docs/78-granola-transcript-finality-reconciliation.md`.
-2. **Reuniones comerciales.** Si la reunion funda o cambia una oportunidad
-   comercial, el cierre no puede ser solo una tarea suelta. Orden correcto:
+2. **Reuniones comerciales (project-first).** Si la reunion funda o cambia
+   una oportunidad comercial, el cierre no puede ser solo una tarea suelta.
+   La salida canonica es la pagina del proyecto. Orden correcto:
    cliente/partner -> proyecto/oportunidad (o `bridge item` si no hay DB)
-   -> tarea vinculada -> entregable/propuesta si corresponde -> trazabilidad
-   cruzada. Si algun paso no se completa, la capitalizacion queda **parcial**
+   -> propuesta/presupuesto como seccion o subpagina del proyecto ->
+   tarea operativa (seguimiento) vinculada al proyecto -> trazabilidad
+   cruzada. No usar la DB humana "📦 Entregables" (eliminada) ni la
+   "Bandeja de revision - Rick" para propuestas comerciales Granola.
+   Si algun paso no se completa, la capitalizacion queda **parcial**
    o **revision requerida** y la pagina raw no puede cerrar en
    `Estado=Procesada` ni `Accion agente=Capitalizado`.
 3. **Datos ambiguos.** No promover transcripcion fonetica dudosa (correos,

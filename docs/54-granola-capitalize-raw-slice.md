@@ -21,7 +21,7 @@ Parte desde una pagina raw ya existente y:
 - exige destinos explicitos en el payload
 - hoy puede escribir a:
   - `notion.upsert_project`
-  - `notion.upsert_deliverable`
+  - `notion.upsert_deliverable` (Bandeja de revision - Rick; solo para outputs internos de agentes, no propuestas comerciales)
   - `notion.upsert_bridge_item`
   - `granola.create_followup`
 - agrega comentarios de trazabilidad entre raw y destino cuando `add_trace_comments=true`
@@ -114,18 +114,27 @@ Referencia viva del contrato: `openclaw/workspace-templates/skills/granola-pipel
   sobre trazabilidad que contiene claves de ingest. Eso borra la
   reconciliacion que garantiza `docs/78-granola-transcript-finality-reconciliation.md`.
 
-### 6.1.2 Reuniones comerciales / oportunidades
+### 6.1.2 Reuniones comerciales / oportunidades (project-first)
 
 Si la reunion funda o cambia una oportunidad comercial, una **tarea suelta
-no cierra la capitalizacion**. El orden correcto es:
+no cierra la capitalizacion**. La salida canonica es la **pagina del
+proyecto**. El orden correcto es:
 
 1. resolver cliente/partner;
 2. resolver o crear proyecto/oportunidad en `Asesorias & Proyectos`, o un
    `bridge item` si no hay DB o permiso disponible;
-3. crear tarea vinculada al proyecto o bridge;
-4. crear o registrar entregable/propuesta si hay output revisable;
+3. si hay output revisable (propuesta, estimacion, demo, briefing), crearlo
+   como **seccion o subpagina dentro del proyecto** — no como entregable
+   separado en otra DB;
+4. opcionalmente crear tarea operativa (seguimiento) vinculada al proyecto
+   o bridge;
 5. dejar comentarios/trazabilidad cruzada entre transcript y objetos
    creados.
+
+**No usar** la DB humana "📦 Entregables" (eliminada por David, ID
+`462adf65`) ni la "Bandeja de revision - Rick" (`NOTION_DELIVERABLES_DB_ID`)
+para propuestas comerciales Granola. La Bandeja de revision queda reservada
+para outputs internos de agentes.
 
 Si alguno de los pasos 1-4 no se puede completar, la capitalizacion es
 **parcial** o **revision requerida**. En ese caso:
@@ -162,18 +171,22 @@ Resultado incorrecto observado sobre la raw `Comgrap Dynamo`:
 - Log del agente reconocia que habria que evaluar un proyecto comercial y
   cerro igual como capitalizado
 
-Resultado correcto esperado:
+Resultado correcto esperado (project-first):
 
-- proyecto / oportunidad o bridge item:
+- proyecto canonico:
   `COMGRAP — Demo Dynamo / prefabricados de hormigon`
-- tarea vinculada:
-  `Enviar propuesta/estimacion demo Dynamo a Comgrap`
-- entregable/propuesta:
+  (pagina: `3485f443-fb5c-8198-9f54-fc5882302bf2`)
+- subpagina propuesta dentro del proyecto:
   `Propuesta demo Dynamo/Revit para particion de muros prefabricados +
   diseno generativo`
-- la pagina raw queda como `capitalizada` solo si los tres objetos minimos
-  estan creados y trazados; si falta alguno, queda como parcial o revision
-  requerida
+  (pagina: `2de7b1e7-45c3-49b3-aec2-ea29ffd262d8`)
+- tarea operativa vinculada:
+  `Enviar propuesta/estimacion demo Dynamo a Comgrap`
+  (pagina: `df938460-fdee-4752-b9d4-293bede5e541`)
+- nada en "📦 Entregables" (DB eliminada) ni en "Bandeja de revision - Rick"
+- la pagina raw queda como `capitalizada` solo si el proyecto y la
+  subpagina propuesta estan creados y trazados; si falta alguno, queda como
+  parcial o revision requerida
 - la trazabilidad de ingest se preserva intacta
 
 ## 7. Implicancia arquitectonica

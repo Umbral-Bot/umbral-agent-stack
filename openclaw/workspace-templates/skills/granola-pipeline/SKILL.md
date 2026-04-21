@@ -175,7 +175,7 @@ Para lotes explicitos repo-side, usar:
 ## Guardrails de capitalizacion
 
 Estas reglas aplican a cualquier cierre de una pagina raw Granola hacia
-objetos canonicos (proyecto, tarea, entregable, bridge item, sesion curada).
+objetos canonicos (proyecto, tarea, bridge item, sesion curada).
 Son normativas y no negociables.
 
 ### G1. Preservacion de trazabilidad de ingest
@@ -209,21 +209,29 @@ Son normativas y no negociables.
   corrida y otra, la capitalizacion cuenta como parcial y la pagina raw debe
   quedar en estado revisable, no `Procesada`.
 
-### G2. Reuniones comerciales / oportunidades
+### G2. Reuniones comerciales / oportunidades (project-first)
 
 Si una reunion raw funda o cambia una oportunidad comercial, **el destino
-primario no puede ser solo una tarea suelta**. El orden canonico es:
+primario no puede ser solo una tarea suelta**. La salida canonica es la
+**pagina del proyecto**. El orden es:
 
 1. resolver el cliente/partner (nombre, dominio de correo, contacto);
 2. resolver o crear el proyecto / oportunidad comercial en la DB
    `Asesorias & Proyectos`, o en su defecto registrar un `bridge item`
    cuando no hay DB comercial disponible o no hay permiso de Rick;
-3. recien entonces crear la tarea operativa, vinculada al proyecto o al
-   bridge item;
-4. si hay un output revisable por David (propuesta, estimacion, demo,
-   briefing), crear o registrar un entregable/propuesta;
+3. si hay un output revisable (propuesta, estimacion, demo, briefing),
+   crearlo como **seccion o subpagina dentro del proyecto** — no como
+   entregable separado en otra DB;
+4. opcionalmente crear la tarea operativa (seguimiento), vinculada al
+   proyecto o al bridge item;
 5. dejar comentarios/trazabilidad cruzada entre la pagina raw y los objetos
-   creados (proyecto, tarea, entregable, bridge).
+   creados.
+
+**No usar** la DB humana "📦 Entregables" (eliminada por David, ID
+`462adf65`) ni la "Bandeja de revision - Rick" (`NOTION_DELIVERABLES_DB_ID`)
+para propuestas o presupuestos comerciales Granola. La Bandeja de revision
+queda reservada para outputs internos de agentes (auditorias, benchmarks,
+smokes, reportes de revision, QA interno).
 
 Si no es posible crear/verificar el proyecto u oportunidad porque falta
 acceso, sharing o informacion:
@@ -276,17 +284,21 @@ Resultado incorrecto observado:
 - el Log del agente reconocia que habria que evaluar crear un proyecto en
   `Asesorias & Proyectos` pero cerro igual como capitalizado
 
-Resultado correcto esperado segun los guardrails anteriores:
+Resultado correcto esperado (project-first):
 
-- proyecto / oportunidad o `bridge item`:
+- proyecto canonico:
   `COMGRAP — Demo Dynamo / prefabricados de hormigon`
-- tarea vinculada a ese proyecto/bridge:
-  `Enviar propuesta/estimacion demo Dynamo a Comgrap`
-- entregable / propuesta:
+  (pagina: `3485f443-fb5c-8198-9f54-fc5882302bf2`)
+- subpagina propuesta dentro del proyecto:
   `Propuesta demo Dynamo/Revit para particion de muros prefabricados +
   diseno generativo`
-- la pagina raw solo puede quedar como `capitalizada` si los tres objetos
-  minimos estan creados y trazados; si alguno falta, queda como
+  (pagina: `2de7b1e7-45c3-49b3-aec2-ea29ffd262d8`)
+- tarea operativa (seguimiento), vinculada al proyecto:
+  `Enviar propuesta/estimacion demo Dynamo a Comgrap`
+  (pagina: `df938460-fdee-4752-b9d4-293bede5e541`)
+- nada en "📦 Entregables" (DB eliminada) ni en "Bandeja de revision - Rick"
+- la pagina raw solo puede quedar como `capitalizada` si el proyecto y la
+  subpagina propuesta estan creados y trazados; si falta alguno, queda como
   capitalizacion parcial o revision requerida
 - la `Trazabilidad` de ingest (`granola_document_id`, `source_updated_at`,
   `ingest_path`, `content_hash`, etc.) se preserva intacta y la
@@ -294,7 +306,7 @@ Resultado correcto esperado segun los guardrails anteriores:
 
 Este caso funciona como test de regresion documental: cualquier cambio
 futuro en la skill o en los handlers de capitalizacion debe seguir
-cumpliendo los guardrails G1-G4 sobre esta reunion.
+cumpliendo los guardrails G1-G4 y G7 sobre esta reunion.
 
 ### G6. Trazabilidad de regularizaciones manuales
 
@@ -339,6 +351,33 @@ manualmente con `curl` sin dejar evento central inicialmente):
 Detalles completos en
 `docs/78-granola-transcript-finality-reconciliation.md` (seccion 10)
 y `docs/50-granola-notion-pipeline.md` (seccion 9.9).
+
+### G7. Project-first para transcripciones comerciales Granola
+
+Para transcripciones Granola con proyecto u oportunidad comercial clara:
+
+1. **El proyecto es la salida canonica.** La pagina del proyecto en
+   `Asesorias & Proyectos` es la fuente de verdad.
+2. **Propuesta/presupuesto = seccion o subpagina del proyecto.** No crear
+   registros separados en otra DB.
+3. **Tarea = seguimiento operativo.** Opcional, vinculada al proyecto.
+4. **Raw = evidencia/trazabilidad.** No es destino final.
+5. **No usar "📦 Entregables"** — la DB humana con ID `462adf65` fue
+   eliminada por David y no forma parte del stack.
+6. **No usar "Bandeja de revision - Rick"** para propuestas comerciales.
+   `NOTION_DELIVERABLES_DB_ID` apunta a esa bandeja; su uso queda
+   reservado para outputs internos de agentes: auditorias, benchmarks,
+   smokes, reportes de revision, QA interno.
+
+Residue check documental para capitalizaciones comerciales:
+
+- [ ] raw Granola apunta a una salida canonica clara (proyecto)
+- [ ] proyecto contiene contexto y trazabilidad
+- [ ] propuesta/presupuesto vive como seccion o subpagina del proyecto
+- [ ] tarea, si existe, esta relacionada al proyecto
+- [ ] no hay entrega comercial en "Bandeja de revision - Rick"
+- [ ] no hay referencias a la DB humana eliminada `462adf65`
+- [ ] no hay datos foneticos ambiguos promovidos como dato firme
 
 ## Notas
 

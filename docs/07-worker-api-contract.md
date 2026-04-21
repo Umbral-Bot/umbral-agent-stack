@@ -317,7 +317,7 @@ Listar tareas recientes. Filtrable. Requiere auth.
 | `notion.update_page_properties` | Notion | Actualiza propiedades raw de una pÃ¡gina |
 | `notion.upsert_task` | Notion | Crea/actualiza tarea en Kanban y puede enlazarla a Proyecto/Entregable |
 | `notion.upsert_project` | Notion | Crea/actualiza proyecto en ðŸ“ Proyectos â€” Umbral |
-| `notion.upsert_deliverable` | Notion | Crea/actualiza entregable revisable en ðŸ“¬ Entregables Rick â€” Revision |
+| `notion.upsert_deliverable` | Notion | Crea/actualiza entregable interno en Bandeja de revision - Rick (auditorias, benchmarks, smokes, reportes). No usar para propuestas comerciales Granola. |
 | `notion.update_dashboard` | Notion | Actualiza dashboard Rick |
 | `notion.create_report_page` | Notion | Crea pÃ¡gina hija con reporte estructurado |
 | `windows.pad.run_flow` | Windows/RPA | Ejecuta flujo de Power Automate Desktop |

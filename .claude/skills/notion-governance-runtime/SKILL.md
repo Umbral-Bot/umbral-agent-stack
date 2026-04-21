@@ -106,7 +106,7 @@ Antes de rediseñar todo, prioriza:
 ## Guardrails de capitalización Granola
 
 Cualquier cierre de una página raw de `Transcripciones Granola` hacia objetos
-canónicos (proyecto, oportunidad, tarea, entregable, bridge item, sesión
+canónicos (proyecto, oportunidad, tarea, bridge item, sesión
 curada) debe respetar los guardrails normativos documentados en:
 
 - `openclaw/workspace-templates/skills/granola-pipeline/SKILL.md`
@@ -124,12 +124,14 @@ capitalizada):
    y `processed_at`. Prohibido emitir frases tipo
    "Residuo legacy descartado" sobre trazabilidad de ingest — eso rompe la
    reconciliación descrita en `docs/78-granola-transcript-finality-reconciliation.md`.
-2. **Reuniones comerciales = cadena completa, no tarea suelta.** Si hay
-   cliente/partner + oportunidad implicita, el cierre debe cubrir:
-   cliente -> proyecto/oportunidad (o `bridge item` si falta DB/permiso)
-   -> tarea vinculada -> entregable/propuesta si aplica -> trazabilidad
-   cruzada. Si falta algun paso, la raw queda como **capitalización
-   parcial** o **revisión requerida**, nunca como
+2. **Reuniones comerciales = project-first, no tarea suelta.** Si hay
+   cliente/partner + oportunidad implicita, la salida canonica es la pagina
+   del proyecto. Orden: cliente -> proyecto/oportunidad (o `bridge item` si
+   falta DB/permiso) -> propuesta/presupuesto como seccion o subpagina del
+   proyecto -> tarea operativa (seguimiento) vinculada -> trazabilidad
+   cruzada. No usar "📦 Entregables" (DB eliminada) ni "Bandeja de revision
+   - Rick" para propuestas comerciales Granola. Si falta algun paso, la raw
+   queda como **capitalización parcial** o **revisión requerida**, nunca como
    `Estado=Procesada` + `Accion agente=Capitalizado`.
 3. **Datos fonéticos ambiguos.** No convertir transcripción fonética
    ambigua (correos, nombres, dominios) en dato firme. Dejarlo como

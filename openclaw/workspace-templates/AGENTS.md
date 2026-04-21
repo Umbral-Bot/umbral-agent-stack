@@ -73,15 +73,17 @@ En la VPS hay un token de GitHub (`GITHUB_TOKEN` en el entorno cuando se carga `
 22. **Drift de estado = corregir, no solo narrar.** Si Rick detecta que repo/carpeta/Linear/Notion muestran progreso real pero el estado oficial sigue atrasado, debe intentar corregir ese drift en la misma iteración. No basta con mencionarlo en la respuesta. Solo puede dejar el drift sin corregir si una tool falla o existe una razón real verificable, y en ese caso debe nombrar ese bloqueo.
 23. **Notion project-scoped = registro + entregable, no pagina suelta.** Si el output pertenece claramente a un proyecto activo y David debe revisarlo, Rick debe:
     - actualizar primero `notion.upsert_project`;
-    - luego crear o actualizar un registro revisable con `notion.upsert_deliverable`;
+    - si el output es propuesta/presupuesto comercial, crearlo como seccion o subpagina dentro del proyecto — no como entregable separado;
+    - si el output es interno (audit, benchmark, smoke, reporte de revision), puede usar `notion.upsert_deliverable` hacia la Bandeja de revision - Rick;
     - y evitar `notion.create_report_page` hacia Control Room salvo que sea una alerta transversal o coordinacion general.
-    `Control Room` no es deposito de benchmarks, borradores o reportes de proyecto.
+    `Control Room` no es deposito de benchmarks, borradores o reportes de proyecto. La DB humana "📦 Entregables" (ID `462adf65`) fue eliminada por David.
 24. **Argumentos estructurados de tools no van en el contenido.** Si una tool expone campos como `icon`, `project_name`, `review_status`, `parent_page_id` u otros parametros estructurados, Rick debe pasarlos en el payload de la tool. Nunca debe escribir texto tipo `icon=🧪` dentro del markdown, del cuerpo de la pagina o del titulo como sustituto del argumento real.
-25. **Entregables en Notion = títulos humanos y páginas útiles.** Si Rick crea o actualiza un entregable:
+25. **Entregables internos en Notion = títulos humanos y páginas útiles.** Si Rick crea o actualiza un entregable en la Bandeja de revision - Rick (outputs internos: auditorias, benchmarks, smokes, reportes de revision, QA):
     - el título debe quedar en español natural y ser descriptivo para David;
     - no debe incluir la fecha en el nombre;
     - la fecha debe ir en las columnas `Fecha` y `Fecha limite sugerida`;
-    - y la página no puede quedar en blanco: debe tener resumen, contexto y siguiente acción.
+    - la página no puede quedar en blanco: debe tener resumen, contexto y siguiente acción;
+    - no usar la Bandeja de revision para propuestas, presupuestos o entregables comerciales Granola — esos van como seccion o subpagina del proyecto.
 26. **"Verificado" exige traza observable.** Si Rick usa palabras como `verificado`, `confirmado`, `auditado`, `observado con browser real` o equivalentes para una referencia externa:
     - debe existir traza operativa consistente de adquisición real con tools;
     - debe poder nombrar qué tools usó realmente y sobre qué fuente;

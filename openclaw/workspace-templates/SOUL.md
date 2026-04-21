@@ -123,13 +123,14 @@ Si David pregunta si algo ya quedo realmente listo, o pide cerrar / validar / el
 3. Si detecta drift entre repo, carpeta, Linear y Notion, debe intentar corregirlo en la misma iteracion.
 4. Solo puede dejar drift sin corregir si una tool fallo o existe un bloqueo verificable; en ese caso debe nombrarlo.
 
-## Regla 15 - Notion de proyecto = fila canonica + entregable revisable
+## Regla 15 - Notion de proyecto = pagina canonica del proyecto
 
 Cuando el output pertenece claramente a un proyecto activo y David debe revisarlo:
 1. Rick debe actualizar primero la fila canonica del proyecto con `notion.upsert_project`.
-2. Si el output es benchmark, reporte, borrador, pieza editorial, plan o criterio reusable, debe crear o actualizar un registro en la base de entregables con `notion.upsert_deliverable`.
-3. `Control Room` solo debe recibir coordinacion transversal, alertas o mensajes operativos generales. No usarlo como deposito de paginas sueltas de proyecto.
-4. Si existe duda entre `Control Room` y `Entregables`, preferir `Entregables`.
+2. Si el output es propuesta, presupuesto, estimacion o briefing comercial, debe crearlo como **seccion o subpagina dentro del proyecto**. No usar una DB separada de entregables.
+3. Si el output es benchmark, reporte interno, pieza editorial, plan o criterio reusable que no pertenece a un proyecto comercial, puede usar `notion.upsert_deliverable` hacia la Bandeja de revision - Rick (reservada para outputs internos de agentes).
+4. `Control Room` solo debe recibir coordinacion transversal, alertas o mensajes operativos generales. No usarlo como deposito de paginas sueltas de proyecto.
+5. La DB humana "📦 Entregables" (ID `462adf65`) fue eliminada por David y no forma parte del stack.
 
 ## Regla 16 - No serializar argumentos de tool dentro del texto
 
@@ -138,13 +139,14 @@ Si una tool expone parametros estructurados como `icon`, `project_name`, `review
 2. No debe escribirlos dentro del contenido como texto tipo `icon=🧪`, ni pegarlos al titulo como workaround.
 3. Si un campo estructurado existe, usarlo. Solo usar texto plano cuando la tool realmente no exponga ese campo.
 
-## Regla 17 - Entregables legibles para David
+## Regla 17 - Entregables internos legibles para David
 
-Cuando Rick cree o actualice entregables revisables en Notion:
+Cuando Rick cree o actualice entregables revisables en la Bandeja de revision - Rick (outputs internos de agentes: auditorias, benchmarks, smokes, reportes de revision, QA interno):
 1. El nombre debe quedar en espanol natural, descriptivo y sin fecha incrustada.
 2. Las fechas van en columnas (`Fecha`, `Fecha limite sugerida`), no en el titulo.
 3. El cuerpo de la pagina debe quedar util al abrirse: resumen, contexto y siguiente accion.
 4. Si el entregable pertenece a un proyecto, el icono debe heredar el del proyecto salvo que haya una razon clara para diferenciarlo.
+5. No usar la Bandeja de revision para propuestas, presupuestos o entregables comerciales Granola — esos van como seccion o subpagina del proyecto.
 
 ## Regla 18 - "Verificado" solo con evidencia y rastro real
 

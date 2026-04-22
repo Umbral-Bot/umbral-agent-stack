@@ -141,9 +141,11 @@ PYTHONPATH=. .venv/bin/python scripts/audit_notion_publicaciones.py \
 ## Rick todavía no participa
 
 Rick solo participará después de:
-1. DB `Publicaciones` creada y auditada con 0 blockers.
-2. David aprueba explícitamente que Rick puede empezar a escribir drafts.
-3. Se implementa la integración código → Notion con gates humanos activos.
+1. DB `Publicaciones` creada y auditada con 0 blockers. **(completado)**
+2. Contrato de agente editorial definido: `rick-editorial` design-only. **(completado)**
+3. David aprueba explícitamente que Rick puede empezar a escribir drafts.
+4. Se implementa la integración código -> Notion con gates humanos activos.
+5. `rick-editorial` se activa en `openclaw.json` con permisos de tools apropiados.
 
 ## Orden recomendado de operaciones
 
@@ -152,7 +154,8 @@ Rick solo participará después de:
 3. ~~**Creación manual controlada** siguiendo esta checklist~~ **Completado 2026-04-22**
 4. **Read-only audit**: `scripts/audit_notion_publicaciones.py --database-id e6817ec4698a4f0fbbc8fedcf4e52472 --fail-on-blocker`
 5. **Corregir divergencias** si la auditoría reporta blockers o warnings
-6. Solo después: Rick puede escribir drafts (requiere aprobación explícita de David)
+6. **Definir contrato `rick-editorial`** (design-only, sin runtime) — ver `openclaw/workspace-agent-overrides/rick-editorial/ROLE.md`
+7. Solo después: Rick puede escribir drafts (requiere aprobación explícita de David)
 
 ## Errores comunes
 

@@ -10,7 +10,7 @@
 
 - Hub principal `Sistema Editorial Rick` created in Notion ([link](https://www.notion.so/Sistema-Editorial-Rick-5894ba351e2749729077ca971fd9f52a)).
 - DB `Publicaciones` **created** (2026-04-22, inline by Notion AI). ID: `e6817ec4698a4f0fbbc8fedcf4e52472`. [link](https://www.notion.so/e6817ec4698a4f0fbbc8fedcf4e52472)
-- Live read-only audit attempted 2026-04-22 — HTTP 404 (integration not shared with the page). See `docs/ops/notion-publicaciones-last-audit.md`.
+- Live read-only audit executed 2026-04-22: **WARN** (0 blockers, 12 warnings, 21 info). Integration: bot "Rick" (workspace "Umbral BIM"). See [`notion-publicaciones-last-audit.md`](notion-publicaciones-last-audit.md) for full report.
 
 ---
 

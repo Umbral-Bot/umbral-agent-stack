@@ -7,6 +7,13 @@
 
 ---
 
+## Current state
+
+- Hub principal `Sistema Editorial Rick` created in Notion ([link](https://www.notion.so/Sistema-Editorial-Rick-5894ba351e2749729077ca971fd9f52a)).
+- DB `Publicaciones` **not yet created**. Use the [setup runbook](notion-publicaciones-setup-runbook.md) to create it manually.
+
+---
+
 ## What the dry-run does
 
 1. Loads the approved local schema (`publicaciones.schema.yaml`).

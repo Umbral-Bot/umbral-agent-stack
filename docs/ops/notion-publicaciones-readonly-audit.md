@@ -6,6 +6,13 @@
 
 ---
 
+## Current state
+
+- Hub principal `Sistema Editorial Rick` created in Notion ([link](https://www.notion.so/Sistema-Editorial-Rick-5894ba351e2749729077ca971fd9f52a)).
+- DB `Publicaciones` **not yet created**. Once created, run the audit with `--database-id` to verify alignment.
+
+---
+
 ## What it compares
 
 The auditor compares the approved local schema (`notion/schemas/publicaciones.schema.yaml`) against a Notion database's metadata. It checks:

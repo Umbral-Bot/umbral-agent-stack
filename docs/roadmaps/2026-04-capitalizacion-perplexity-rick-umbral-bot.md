@@ -270,14 +270,30 @@ Gold set (futuro)
 
 | # | Decisión | Opciones | Recomendación actual | Cuándo decidir | Qué desbloquea |
 |---|----------|----------|---------------------|----------------|----------------|
-| 1 | Ghost vs Astro+Git para blog v1 | Ghost self-hosted (ADR-005) / Astro+Git+Cloudflare Pages | Ghost v1 (más rápido de operar; Astro como objetivo futuro) | Antes de E4 | Publicación blog |
-| 2 | Vertex AI vs Gemini API directo para assets | Vertex AI (mejor SLA, ADR-006) / Gemini API consumer (más simple) | Vertex AI (billing activo, no-training, indemnización) | Antes de E3 | Pipeline de assets visuales |
-| 3 | Freepik API vs Freepik UI/stock | API pay-per-use (ADR-006) / Solo UI manual | API como fallback; UI para stock vectorial | Antes de E3 | Fallback visual |
-| 4 | Estructura copies por canal en Notion | Propiedades en `Publicaciones` / Subpáginas por canal | Propiedades (spec v1 §5.2) — más simple, menos overhead | Antes de E1 | Creación DB `Publicaciones` |
+| 1 | Ghost vs Astro+Git para blog v1 | Ghost self-hosted (ADR-005) / Astro+Git+Cloudflare Pages | **✅ Aceptado: Ghost v1** — ADR-005 accepted 2026-04-21; Astro como objetivo futuro | — | Publicación blog |
+| 2 | Vertex AI vs Gemini API directo para assets | Vertex AI (mejor SLA, ADR-006) / Gemini API consumer (más simple) | Vertex AI (billing activo, no-training, indemnización). Aceptado; pendiente UA-13 para automatización con cuentas de usuario | Antes de E3 | Pipeline de assets visuales |
+| 3 | Freepik API vs Freepik UI/stock | API pay-per-use (ADR-006) / Solo UI manual | API como fallback; UI para stock vectorial. Diferida hasta UA-13 | Antes de E3 | Fallback visual |
+| 4 | Estructura copies por canal en Notion | Propiedades en `Publicaciones` / Subpáginas por canal | **✅ Aceptado: propiedades en una sola DB `Publicaciones`** (spec v1 §5.2) | — | Creación DB `Publicaciones` |
 | 5 | PR #70 antes de PR #71 | Sí (docs primero) / No (schema independiente) | Sí — docs conceptuales dan contexto para entender schema | Ahora | Orden de merge en umbral-bot-2 |
 | 6 | Estrategia `AgenteUB-specialist` por latencia | Async / streaming-only / manual / bloqueado | Bloqueado hasta tener datos de gold set | Después de B2+B4 | Activación de specialist |
-| 7 | Cron scheduling editorial: n8n vs custom | n8n (existente en VPS) / Custom cron | n8n — ya desplegado, absorbe webhooks | Antes de E4 | Scheduling de publicación |
-| 8 | Idempotencia publicación: Redis vs Notion | Redis TTL 24h / Campo `content_hash` en Notion | Notion `content_hash` — zero-infra adicional | Antes de E4 | Pipeline de publicación |
+| 7 | Cron scheduling editorial: n8n vs custom | n8n (existente en VPS) / Custom cron | **Probable n8n** — ya desplegado en VPS; decisión final pendiente de UA-14 (orquestación editorial: n8n vs Make vs Agent Stack) | Antes de E4 | Scheduling de publicación |
+| 8 | Idempotencia publicación: Redis vs Notion | Redis TTL 24h / Campo `content_hash` en Notion | **✅ Aceptado: `content_hash` en Notion** — zero-infra adicional para v1; Redis TTL como v2 | — | Pipeline de publicación |
+
+### Investigaciones Perplexity pendientes
+
+| ID | Tema | Contexto | Cuándo solicitar |
+|----|------|----------|-----------------|
+| UA-13 | Automatización visual con cuentas de usuario, navegador y RPA | Plataformas sin API pública (Freepik UI, LinkedIn manual). Afecta ADR-006 (Freepik decision) y pipeline visual | Antes de E3 si se quiere automatizar Freepik; antes de E5 si se quiere asistir LinkedIn |
+| UA-14 | Orquestación editorial Rick: n8n vs Make vs Agent Stack | Qué capa coordina el flujo completo de publicación (scheduling, webhooks, retries). Afecta decisión #7 | Antes de E4 |
+
+### Referentes como señal de descubrimiento editorial
+
+La DB `Referentes` en Notion (25 registros, 13 propiedades) funciona como `discovery_signal` para el sistema editorial, no como `source_of_truth`. Los referentes informan:
+- **Curation (E2)**: qué temas y estilos narrativos resuenan con la audiencia target.
+- **Visual direction (E3)**: qué formatos visuales usan los referentes más relevantes.
+- **CTA patterns (E4)**: qué estrategias de conversión aplican los referentes en su nicho.
+
+**No es v1-blocking**: la DB ya existe y es usable. Las mejoras recomendadas (dedup, fill rate, campos computados) son incrementales y pueden aplicarse en paralelo con cualquier fase.
 
 ---
 
@@ -319,9 +335,11 @@ Gold set (futuro)
 
 3. **David revisa PR #71** (umbral-bot-2). Verificar `kb-package.schema.json` y `bep-peb.yaml`. Esto desbloquea gold set mínimo.
 
-4. **Decidir Ghost vs Astro para blog v1 y copies por canal en Notion** (decisiones #1 y #4 de §8). Esto desbloquea creación de DB `Publicaciones` y publicación blog.
+4. **Crear DB `Publicaciones` y `Perfil editorial David` en Notion** (E1). Ghost y copies-por-canal ya decididos (§8 #1, #4). Scope mínimo: schema de spec v1 §5, contenido de §4.3.
 
-5. **Crear DB `Publicaciones` y `Perfil editorial David` en Notion** (E1). Primera acción de implementación real. Scope mínimo: schema de spec v1 §5, contenido de §4.3.
+5. **Solicitar UA-14** (orquestación editorial: n8n vs Make vs Agent Stack). Desbloquea decisión final de scheduling (#7) antes de E4.
+
+6. **T0: structured error classification** como PR independiente. Aceptado por David como siguiente PR después de #249.
 
 ---
 
@@ -333,7 +351,7 @@ Análisis completo en [opportunity analysis](2026-04-agent-stack-opportunity-ana
 
 | Bloque | Qué | Prioridad | Timing |
 |--------|-----|-----------|--------|
-| T0 | Structured error classification en Worker (enum `error_class` + dedup Linear) | P1 | Independiente — puede ejecutarse ahora |
+| T0 | Structured error classification en Worker (enum `error_class` + dedup Linear) | P1 | **Aceptado** — siguiente PR después de #249 |
 | T1 | Research intake metadata en master index (`next_action_type`, `priority`, `blocks_decision`) | P2 | Después de merge PR #249 |
 | T2 | Provider health score en model router (auto-demote sin esperar quota) | P2 | Independiente |
 

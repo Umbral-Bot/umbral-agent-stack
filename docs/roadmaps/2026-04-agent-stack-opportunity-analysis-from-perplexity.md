@@ -179,7 +179,7 @@ Cambios respecto al [roadmap principal](2026-04-capitalizacion-perplexity-rick-u
 
 | Bloque | Objetivo | Prioridad | Timing |
 |--------|----------|-----------|--------|
-| **T0 — Error classification v1** | Structured error_class enum en Worker + OpsLogger. Dedup mejorada en Linear | P1 | Puede hacerse ahora; no depende de editorial ni bot |
+| **T0 — Error classification v1** | Structured error_class enum en Worker + OpsLogger. Dedup mejorada en Linear | P1 | **Aceptado por David** — siguiente PR después de #249 |
 | **T1 — Research intake metadata** | Agregar columnas `next_action_type`, `priority`, `blocks_decision` al master index | P2 | Después de merge PR #249 |
 | **T2 — Provider health score** | Auto-demote de providers degradados en model_router sin esperar quota exhaustion | P2 | Independiente; puede hacerse cuando haya bandwidth |
 
@@ -228,12 +228,29 @@ Además de los 12 items del [roadmap principal §7](2026-04-capitalizacion-perpl
 
 ---
 
+## 8.5. Referentes como señal de descubrimiento
+
+La DB `Referentes` en Notion (25 registros, 13 propiedades) es un `discovery_signal` para el Agent Stack editorial, no un `source_of_truth`. Los referentes alimentan:
+
+| Consumidor Agent Stack | Cómo lo usa | Fase |
+|------------------------|-------------|------|
+| Source curation (doc 67) | Estilo narrativo y expertise como filtro de afinidad | E2 |
+| Visual direction (ADR-006) | Formatos visuales de referentes como benchmark | E3 |
+| CTA patterns (UA-12) | Estrategias de conversión observadas en el nicho | E4 |
+| Gold set editorial (OPP-03) | Referentes como fuente de preguntas/temas para eval | Pre-E7 |
+
+**Estado actual**: DB usable, sin cambios requeridos para v1. Mejoras incrementales (dedup, fill rate, campos computados para afinidad) pueden aplicarse en paralelo con cualquier fase.
+
+**Investigación pendiente**: UA-13 podría afectar cómo se recopilan datos de referentes (scraping de perfiles públicos vs entrada manual).
+
+---
+
 ## 9. Recomendación final
 
 **Actualizar roadmap actual ahora** con el delta de §6. Específicamente:
 
 1. **Merge este documento** junto con el roadmap en PR #249.
-2. **T0 (error classification)** puede ejecutarse como PR independiente en cualquier momento — no depende del editorial ni del bot. Es el item de mayor impacto-por-esfuerzo.
+2. **T0 (error classification)** aceptado por David como siguiente PR después de #249. Puede ejecutarse de inmediato.
 3. **OPP-02 y OPP-07** (auth lifecycle + publish tracking) deben implementarse cuando se construya el primer adapter de canal (Ghost, en E4). No antes.
 4. **OPP-03** (gold set editorial) se prepara conceptualmente en E2 y se ejecuta antes de E7. No bloquea nada intermedio.
 5. **No crear ADR nuevo** para estas oportunidades. Son implementaciones incrementales que caben en specs cortas o directamente en PRs.

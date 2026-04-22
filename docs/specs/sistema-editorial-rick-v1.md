@@ -439,14 +439,16 @@ Toda pieza en DB `Publicaciones` debe tener completos antes de pasar a `ready_fo
 
 | # | Decisión | Contexto | Estado |
 |---|----------|----------|--------|
-| 1 | Ghost vs Astro+Git como blog primario | Ghost v1 propuesto en [ADR-005](../adr/ADR-005-publicacion-multicanal.md), Astro como objetivo futuro. Astro tiene portabilidad total y cero lock-in | **Propuesta en ADR-005** — pendiente de aprobación humana |
-| 2 | Vertex AI vs Gemini API directo para assets AI | Vertex propuesto en [ADR-006](../adr/ADR-006-capa-visual-editorial.md). Vertex tiene mejor SLA para preview. Gemini API es más simple | **Propuesta en ADR-006** — pendiente de aprobación humana |
-| 3 | Freepik API como fallback vs solo stock UI | Freepik como fallback propuesto en [ADR-006](../adr/ADR-006-capa-visual-editorial.md). API es pay-per-use independiente de suscripción | **Propuesta en ADR-006** — pendiente de aprobación humana |
+| 1 | Ghost vs Astro+Git como blog primario | Ghost v1 propuesto en [ADR-005](../adr/ADR-005-publicacion-multicanal.md), Astro como objetivo futuro. Astro tiene portabilidad total y cero lock-in | **✅ Aceptado** — Ghost self-hosted para v1; Astro como objetivo futuro (ADR-005 accepted 2026-04-21) |
+| 2 | Vertex AI vs Gemini API directo para assets AI | Vertex propuesto en [ADR-006](../adr/ADR-006-capa-visual-editorial.md). Vertex tiene mejor SLA para preview. Gemini API es más simple | **Propuesta en ADR-006** — aceptado Vertex; pendiente UA-13 para automatización con cuentas de usuario |
+| 3 | Freepik API como fallback vs solo stock UI | Freepik como fallback propuesto en [ADR-006](../adr/ADR-006-capa-visual-editorial.md). API es pay-per-use independiente de suscripción | **Propuesta en ADR-006** — diferida hasta UA-13 |
 | 4 | X API directa vs tool gestionado (Typefully/Buffer) | X asistido v1 propuesto en [ADR-005](../adr/ADR-005-publicacion-multicanal.md). Pay-per-use directa: ~$7/mes. Tool: $5-8/mes pero absorbe cambios | **Propuesta en ADR-005** — re-evaluar en v2 |
-| 5 | Estructura de copies por canal en Notion | ¿Propiedades en la misma DB o subpáginas? | **Abierta** — resolver antes de crear la DB |
+| 5 | Estructura de copies por canal en Notion | ¿Propiedades en la misma DB o subpáginas? | **✅ Aceptado** — propiedades en la misma DB `Publicaciones` (spec v1 §5.2). Una sola DB para v1 |
 | 6 | LinkedIn Company Page a futuro | Requiere entidad legal + CMA Development tier | **Diferida** — cuando exista entidad legal |
-| 7 | Cron scheduling: n8n vs custom cron | n8n ya existe en VPS; custom cron es más ligero | **Abierta** — resolver antes de implementar scheduling |
-| 8 | Idempotencia: Redis vs Notion computed | Redis TTL 24h vs campo content_hash en Notion | **Abierta** — resolver antes de implementar publishing pipeline |
+| 7 | Cron scheduling: n8n vs custom cron | n8n ya existe en VPS; custom cron es más ligero | **Probable n8n** — ya desplegado en VPS; decisión final pendiente de UA-14 (orquestación editorial: n8n vs Make vs Agent Stack) |
+| 8 | Idempotencia: Redis vs Notion computed | Redis TTL 24h vs campo content_hash en Notion | **✅ Aceptado** — `content_hash` en Notion para v1 (zero-infra adicional); Redis TTL como v2 |
+| 9 | Automatización visual con cuentas de usuario | Navegador + RPA para plataformas sin API (Freepik UI, LinkedIn manual) | **Pendiente** — investigación UA-13 por solicitar |
+| 10 | Orquestación editorial: n8n vs Make vs Agent Stack | Qué capa coordina el flujo de publicación | **Pendiente** — investigación UA-14 por solicitar |
 
 ---
 

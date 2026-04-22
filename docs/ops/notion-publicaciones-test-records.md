@@ -66,6 +66,7 @@ Antes de crear CAND-001, se define `rick-editorial` como agente design-only (`op
 
 La primera candidata real debe ser:
 - Preparada por `rick-editorial` (cuando se active) o mediante simulación explícita de su contrato de output.
+- Created using the payload template: [`docs/ops/rick-editorial-candidate-payload-template.md`](rick-editorial-candidate-payload-template.md).
 - Registrada manualmente en Notion por David o un operador autorizado.
 - Validada por `rick-qa` contra los criterios de aceptación del contrato.
 

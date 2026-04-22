@@ -1,0 +1,176 @@
+# Editorial Evaluation Dimensions
+#
+# Each dimension defines a quality axis for evaluating editorial output
+# in the Rick editorial system.  Weights must sum to 1.0.
+#
+# Referenced by gold set cases via evaluation_dimensions[].
+
+dimensions:
+  - id: strategic_fit
+    name: Ajuste estratégico
+    weight: 0.12
+    description: >
+      El contenido se alinea con los pilares narrativos de David
+      (automatización empática, puentes digitales, citizen developer,
+      BIM+IA aplicado) y con el posicionamiento de Umbral BIM.
+    good: >
+      Refuerza al menos un pilar narrativo de forma concreta y conecta
+      con la oferta/misión de David sin vender directamente.
+    bad: >
+      Contenido genérico de la industria sin conexión clara con los pilares
+      o con el posicionamiento de Umbral BIM.
+
+  - id: audience_relevance
+    name: Relevancia para audiencia AECO
+    weight: 0.12
+    description: >
+      El contenido aborda un problema, necesidad o interés real de la
+      audiencia AECO/BIM (arquitectos, coordinadores BIM, directores de
+      transformación digital).
+    good: >
+      Identifica un dolor concreto, ofrece perspectiva útil, y el lector
+      objetivo reconoce su situación en el texto.
+    bad: >
+      Escrito para una audiencia tech genérica, sin anclar en la realidad
+      AECO/BIM.  Usa ejemplos de industrias irrelevantes.
+
+  - id: technical_accuracy
+    name: Precisión técnica
+    weight: 0.10
+    description: >
+      Los hechos técnicos, datos y claims son verificables y correctos.
+      Separa hechos de inferencias.
+    good: >
+      Claims respaldados por fuentes verificables; datos citados con
+      contexto (fecha, fuente, alcance).  Inferencias marcadas como tales.
+    bad: >
+      Estadísticas sin fuente, datos inventados o desactualizados,
+      exageraciones presentadas como hechos.
+
+  - id: source_handling
+    name: Manejo de fuentes
+    weight: 0.10
+    description: >
+      Gestión correcta de fuentes externas: cita, atribución, y
+      distinción entre fuente primaria y secundaria.
+    good: >
+      Fuentes primarias citadas correctamente.  Si viene de un referente,
+      busca la fuente original en lugar de atribuir al referente como
+      fuente de verdad.
+    bad: >
+      Copia claims de referentes sin verificar origen.  No cita fuentes.
+      Presenta opinión de terceros como hecho propio.
+
+  - id: primary_source_discipline
+    name: Disciplina de fuente primaria
+    weight: 0.08
+    description: >
+      El contenido busca y prioriza fuentes primarias (papers, docs
+      oficiales, datos de fabricante) sobre fuentes secundarias o
+      contenido de referentes.
+    good: >
+      Ante una señal de referente, Rick busca el paper/doc original y
+      lo usa como base.  El referente se cita como discovery signal,
+      no como fuente de verdad.
+    bad: >
+      Toma el post del referente como verdad sin ir a la fuente.
+      Construye argumentos sobre resúmenes de terceros.
+
+  - id: voice_fit
+    name: Fidelidad a la voz editorial
+    weight: 0.10
+    description: >
+      El output suena como David: directo, técnico-pragmático, sin
+      jerga corporativa vacía ni slop de IA.
+    good: >
+      Tono concreto, oraciones con ritmo propio, vocabulario alineado
+      con el perfil editorial.  No suena a template genérico.
+    bad: >
+      Frases como "en el dinámico mundo de", "aprovechando sinergias",
+      "cutting-edge solutions".  Tono genérico de contenido IA.
+
+  - id: channel_fit
+    name: Adaptación al canal
+    weight: 0.08
+    description: >
+      El contenido respeta las reglas del canal destino (LinkedIn:
+      hook+tesis+CTA; blog: estructura larga con H2s; X: conciso).
+    good: >
+      LinkedIn: hook en 2 líneas, tesis única, CTA de uno de los 5 tipos
+      permitidos.  Blog: estructura H2, intro contextual, CTA al final.
+      X: conciso, sin perder rigor.
+    bad: >
+      Copia directa del blog a LinkedIn.  Post largo sin estructura.
+      X con párrafos de blog.
+
+  - id: cta_quality
+    name: Calidad del CTA
+    weight: 0.08
+    description: >
+      El CTA es claro, no agresivo, y corresponde al audience_stage.
+      Limitado a: diagnóstico, checklist, newsletter, recurso,
+      conversación exploratoria.
+    good: >
+      CTA suave en awareness, más directo en conversion.  Siempre
+      ofrece valor antes de pedir.  Tipo de CTA alineado con los 5
+      permitidos.
+    bad: >
+      "Compra ahora" en awareness.  CTA genérico sin relación con el
+      contenido.  No hay CTA cuando es necesario.
+
+  - id: visual_brief_quality
+    name: Calidad del brief visual
+    weight: 0.06
+    description: >
+      Si el contenido requiere visual, el brief es concreto y respeta
+      UA-13 (API-first, no UI automation, HITL para assets con personas
+      o marcas).
+    good: >
+      Brief especifica estilo, dimensiones, canal, y herramienta
+      (Freepik API/MCP, no capturas de pantalla ni RPA).  HITL
+      explícito si hay personas/marcas.
+    bad: >
+      Sin brief visual cuando es necesario.  Sugiere UI automation.
+      Usa modelos preview como producción.
+
+  - id: anti_ai_slop
+    name: Anti AI slop
+    weight: 0.08
+    description: >
+      El contenido evita patrones reconocibles de generación IA sin
+      edición humana.
+    good: >
+      Sin frases cliché de IA, sin repetición de estructura template,
+      sin adjetivos vacíos acumulados.  El texto tiene personalidad.
+    bad: >
+      "Revolutionizing the industry", "it's important to note that",
+      listas de 5 puntos idénticas en estructura, apertura con pregunta
+      retórica seguida de respuesta obvia.
+
+  - id: risk_control
+    name: Control de riesgos
+    weight: 0.04
+    description: >
+      El contenido no expone a David a riesgos legales, reputacionales
+      o técnicos innecesarios.
+    good: >
+      Separa hecho de opinión.  No hace claims de rendimiento sin
+      contexto.  No publica información confidencial.  Marca
+      incertidumbre cuando existe.
+    bad: >
+      Claims absolutos sin evidencia.  Comparaciones de producto sin
+      disclaimers.  Publicar antes de autorización.
+
+  - id: human_gate_compliance
+    name: Cumplimiento de gates humanos
+    weight: 0.04
+    description: >
+      El sistema respeta los gates editoriales: aprobado_contenido y
+      autorizar_publicacion.  Si hay comentario post-aprobación,
+      invalida la aprobación.
+    good: >
+      No publica sin gate.  Si David comenta después de aprobar,
+      Rick marca como pendiente de re-revisión antes de publicar.
+    bad: >
+      Publica sin aprobación.  Ignora comentarios post-aprobación.
+      Asume que aprobación es permanente.

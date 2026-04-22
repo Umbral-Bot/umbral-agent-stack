@@ -67,7 +67,9 @@ Guiar la creación manual y controlada de la DB Notion `Publicaciones` dentro de
 - [x] Schema local aprobado: `notion/schemas/publicaciones.schema.yaml`
 - [x] Hub principal creado en Notion: `Sistema Editorial Rick`
 - [x] DB `Publicaciones` creada inline en el hub (2026-04-22)
-- [ ] Ejecutar auditoría read-only contra DB real
+- [x] Ejecutar auditoría read-only contra DB real — WARN (0 blockers, 12 warnings, 21 info)
+- [ ] Corregir divergencias en Notion (propiedades faltantes, opciones diferentes)
+- [ ] Re-ejecutar auditoría hasta 0 blockers y 0 warnings
 - [ ] Confirmar si existe DB `Referentes` en el workspace
 - [ ] Confirmar si existe DB/página `Fuentes confiables` en el workspace
 

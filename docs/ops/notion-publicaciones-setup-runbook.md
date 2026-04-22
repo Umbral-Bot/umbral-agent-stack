@@ -70,7 +70,7 @@ Guiar la creación manual y controlada de la DB Notion `Publicaciones` dentro de
 - [x] Ejecutar auditoría read-only contra DB real — **PASS** (0 blockers, 0 warnings, 19 info) post-alineación schema v1
 - [x] Corregir divergencias principales (10 propiedades faltantes agregadas, Estado corregido)
 - [x] Alinear schema v1: `Proyecto` como rich_text, `Tipo de contenido` con opciones reales de Notion
-- [ ] Crear primer registro manual de prueba en Notion, sin Rick
+- [x] Crear primer registro manual de prueba en Notion, sin Rick — TEST-001 (2026-04-22)
 - [ ] Confirmar si existe DB `Referentes` en el workspace
 - [ ] Confirmar si existe DB/página `Fuentes confiables` en el workspace
 

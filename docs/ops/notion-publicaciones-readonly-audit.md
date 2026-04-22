@@ -11,6 +11,7 @@
 - Hub principal `Sistema Editorial Rick` created in Notion ([link](https://www.notion.so/Sistema-Editorial-Rick-5894ba351e2749729077ca971fd9f52a)).
 - DB `Publicaciones` **created** (2026-04-22, inline by Notion AI). ID: `e6817ec4698a4f0fbbc8fedcf4e52472`. [link](https://www.notion.so/e6817ec4698a4f0fbbc8fedcf4e52472)
 - Live read-only audit executed 2026-04-22 (3rd run, post-schema alignment): **PASS** (0 blockers, 0 warnings, 19 info). Schema aligned with v1 decisions: `Proyecto` as rich_text, `Tipo de contenido` with Notion's canonical options. See [`notion-publicaciones-last-audit.md`](notion-publicaciones-last-audit.md).
+- First manual test record **TEST-001** created in Notion (2026-04-22). Post-record audit: **PASS** (0B/0W/19I) — record creation does not affect schema audit. See [`notion-publicaciones-test-records.md`](notion-publicaciones-test-records.md).
 
 ---
 

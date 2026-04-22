@@ -64,7 +64,15 @@ Resultado completo en [`docs/ops/notion-publicaciones-last-audit.md`](notion-pub
 18 propiedades extra en Notion (no bloqueantes): Ángulo editorial, canal_publicado, Claim principal, Comentarios revisión, Copy Blog/LinkedIn/Newsletter/X, Creado por sistema, error_kind, Prioridad, publish_error, published_at, published_url, Repo reference, Responsable revisión, Resumen fuente, Última revisión humana.
 1 extra option: `Etapa audiencia` tiene `retention` en Notion (no en schema).
 
-**Siguiente paso**: crear primer registro manual de prueba en Notion, sin Rick.
+**Siguiente paso**: avanzar TEST-001 por la máquina de estados para validar el flujo editorial completo.
+
+### Test records
+
+| Record | Page ID | Estado | Creado |
+|--------|---------|--------|--------|
+| TEST-001 | `c98af1420cd949a9a2ff128a76955b6e` | Borrador | 2026-04-22 |
+
+Ver detalle en [`docs/ops/notion-publicaciones-test-records.md`](notion-publicaciones-test-records.md).
 
 ## Diferencias conocidas
 
@@ -82,5 +90,6 @@ Resultado completo en [`docs/ops/notion-publicaciones-last-audit.md`](notion-pub
 - Auditoría read-only #1 (2026-04-22): WARN (0 blockers, 12 warnings, 21 info).
 - Auditoría read-only #2 (2026-04-22, post-correcciones Notion): WARN (0 blockers, 2 warnings, 20 info).
 - Auditoría read-only #3 (2026-04-22, post-alineación schema v1): **PASS** (0 blockers, 0 warnings, 19 info).
+- Primer registro de prueba manual TEST-001 creado 2026-04-22. Auditoría post-record: **PASS** (0B/0W/19I).
 - Integration: bot "Rick" (`3145f443-fb5c-814d-bbd1-0027093cebce`), workspace "Umbral BIM".
 - Rick no participa todavía.

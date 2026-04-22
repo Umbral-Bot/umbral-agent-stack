@@ -1,0 +1,38 @@
+{
+  "object": "database",
+  "id": "fixture-publicaciones-missing-critical",
+  "title": [{"type": "text", "text": {"content": "Publicaciones"}}],
+  "properties": {
+    "Título": {"id": "title", "type": "title", "title": {}},
+    "publication_id": {"id": "p01", "type": "rich_text", "rich_text": {}},
+    "Canal": {
+      "id": "p02", "type": "select",
+      "select": {
+        "options": [
+          {"name": "blog", "color": "blue"},
+          {"name": "linkedin", "color": "green"},
+          {"name": "x", "color": "gray"},
+          {"name": "newsletter", "color": "purple"}
+        ]
+      }
+    },
+    "Estado": {
+      "id": "p05", "type": "status",
+      "status": {
+        "options": [
+          {"name": "Idea", "color": "default"},
+          {"name": "Borrador", "color": "blue"},
+          {"name": "Revisión pendiente", "color": "yellow"},
+          {"name": "Aprobado", "color": "green"},
+          {"name": "Autorizado", "color": "green"},
+          {"name": "Publicando", "color": "orange"},
+          {"name": "Publicado", "color": "green"},
+          {"name": "Descartado", "color": "red"}
+        ],
+        "groups": []
+      }
+    },
+    "gate_invalidado": {"id": "p08", "type": "checkbox", "checkbox": {}},
+    "Notas": {"id": "p25", "type": "rich_text", "rich_text": {}}
+  }
+}

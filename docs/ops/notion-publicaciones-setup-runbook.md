@@ -27,8 +27,17 @@ El hub principal ya fue creado en Notion:
 
 **Estado actual**:
 - Hub principal: creado.
-- DB `Publicaciones`: **no creada todavía**.
-- Siguiente paso: crear manualmente DB `Publicaciones` dentro del hub usando el plan y luego ejecutar auditoría read-only.
+- DB `Publicaciones`: **creada** (2026-04-22, inline por Notion AI).
+  - ID: `e6817ec4698a4f0fbbc8fedcf4e52472`
+  - URL: [link](https://www.notion.so/e6817ec4698a4f0fbbc8fedcf4e52472)
+  - Nombre visible: `📰 Publicaciones` (data source interno: `Publicaciones`)
+  - 34 propiedades creadas, 7 vistas creadas
+  - No se crearon automatizaciones ni registros de ejemplo
+- Siguiente paso: ejecutar auditoría read-only para verificar alineación con schema local y corregir divergencias si aparecen.
+
+**Limitaciones reportadas por Notion AI**:
+- Vista "Pendiente de aprobación" usa filtro avanzado AND (limitación de Notion, no soporta filtro simple con múltiples condiciones).
+- Notion AI agregó sección "Diferencias pendientes de auditoría" encima de la DB en la página.
 
 ---
 
@@ -57,7 +66,8 @@ Guiar la creación manual y controlada de la DB Notion `Publicaciones` dentro de
 
 - [x] Schema local aprobado: `notion/schemas/publicaciones.schema.yaml`
 - [x] Hub principal creado en Notion: `Sistema Editorial Rick`
-- [ ] Generar plan con provisioner: `scripts/plan_notion_publicaciones.py --validate`
+- [x] DB `Publicaciones` creada inline en el hub (2026-04-22)
+- [ ] Ejecutar auditoría read-only contra DB real
 - [ ] Confirmar si existe DB `Referentes` en el workspace
 - [ ] Confirmar si existe DB/página `Fuentes confiables` en el workspace
 
@@ -71,9 +81,10 @@ PYTHONPATH=. .venv/bin/python scripts/plan_notion_publicaciones.py --validate --
 
 ### Paso 2: Crear DB `Publicaciones`
 
-- [ ] Crear base de datos inline dentro de `Sistema Editorial Rick`
-- [ ] Nombrar: `Publicaciones`
-- [ ] Agregar las 26 propiedades según el plan generado
+- [x] Crear base de datos inline dentro de `Sistema Editorial Rick`
+- [x] Nombrar: `Publicaciones`
+- [x] Agregar las 26 propiedades según el plan generado
+- Nota: Notion AI creó 34 propiedades (8 extras pendientes de auditoría)
 
 ### Paso 3: Propiedades críticas
 
@@ -111,14 +122,14 @@ PYTHONPATH=. .venv/bin/python scripts/plan_notion_publicaciones.py --validate --
 
 ### Paso 7: Post-creación
 
-- [ ] Copiar database ID de `Publicaciones`
-- [ ] Registrar en `docs/ops/notion-publicaciones-ids-template.md`
+- [x] Copiar database ID de `Publicaciones` → `e6817ec4698a4f0fbbc8fedcf4e52472`
+- [x] Registrar en `docs/ops/notion-publicaciones-ids-template.md`
 - [ ] Correr auditor read-only (solo cuando David lo autorice):
 
 ```bash
 export NOTION_API_KEY="ntn_..."
 PYTHONPATH=. .venv/bin/python scripts/audit_notion_publicaciones.py \
-    --database-id <publicaciones-db-id> --validate-schema --fail-on-blocker
+    --database-id e6817ec4698a4f0fbbc8fedcf4e52472 --validate-schema --fail-on-blocker
 ```
 
 - [ ] Verificar 0 blockers
@@ -135,9 +146,10 @@ Rick solo participará después de:
 
 1. **Setup runbook** (este documento)
 2. **Dry-run provisioner**: `scripts/plan_notion_publicaciones.py --validate --markdown`
-3. **Creación manual controlada** siguiendo esta checklist
-4. **Read-only audit**: `scripts/audit_notion_publicaciones.py --database-id <id> --fail-on-blocker`
-5. Solo después: Rick puede escribir drafts (requiere aprobación explícita de David)
+3. ~~**Creación manual controlada** siguiendo esta checklist~~ **Completado 2026-04-22**
+4. **Read-only audit**: `scripts/audit_notion_publicaciones.py --database-id e6817ec4698a4f0fbbc8fedcf4e52472 --fail-on-blocker`
+5. **Corregir divergencias** si la auditoría reporta blockers o warnings
+6. Solo después: Rick puede escribir drafts (requiere aprobación explícita de David)
 
 ## Errores comunes
 

@@ -1,0 +1,453 @@
+# Publicaciones — Notion Database Schema Spec
+#
+# Defines the structure of the single editorial DB for Rick v1.
+# This spec is LOCAL ONLY.  It does NOT create the DB in Notion.
+# It serves as the source of truth for validation, tooling, and
+# future provisioning scripts.
+#
+# Decision context:
+#   - Single DB (David's decision, no separate Assets DB in v1)
+#   - Ghost as blog v1
+#   - LinkedIn/X with HITL
+#   - content_hash for idempotency
+#   - Two human gates: aprobado_contenido, autorizar_publicacion
+#   - Assets inline (visual briefs inside Publicaciones)
+#   - Referentes as discovery signal, not primary source
+
+database:
+  name: Publicaciones
+  version: 0.1.0
+  status: draft
+  owner: Rick / Umbral BIM
+
+  parent_policy:
+    recommended_parent: Sistema Editorial Automatizado Umbral
+    forbidden_parents:
+      - Control Room
+      - Bandeja de revisión - Rick
+      - Sistema Maestro Apoyo Editorial
+      - Asesorías & Proyectos
+
+  description: >
+    Base de datos única del sistema editorial Rick v1.  Contiene
+    publicaciones, variantes por canal, briefs visuales inline, y
+    el estado completo del pipeline editorial.  No separa assets
+    en DB aparte (decisión v1).
+
+# ---------------------------------------------------------------------------
+# Properties
+# ---------------------------------------------------------------------------
+
+properties:
+
+  # -- Identity --
+
+  - name: Título
+    type: title
+    required: true
+    description: Título de la publicación o variante.
+    max_length: 300
+
+  - name: publication_id
+    type: rich_text
+    required: true
+    description: >
+      Identificador estable generado por el sistema (UUID o slug).
+      No es el ID de Notion.  Usado para correlación con OpsLogger,
+      publish tracking, y deduplicación.
+    max_length: 200
+
+  # -- Classification --
+
+  - name: Canal
+    type: select
+    required: true
+    description: Canal destino de esta variante.
+    options:
+      - name: blog
+        color: blue
+        description: Ghost blog post
+      - name: linkedin
+        color: green
+        description: LinkedIn post
+      - name: x
+        color: gray
+        description: X (Twitter) post
+      - name: newsletter
+        color: purple
+        description: Newsletter edition
+    validation:
+      allowed_values: [blog, linkedin, x, newsletter]
+
+  - name: Tipo de contenido
+    type: select
+    required: true
+    description: Tipo de input editorial.
+    options:
+      - name: source_signal
+        description: Transformación de fuente primaria
+      - name: reference_post
+        description: Discovery desde referente
+      - name: raw_idea
+        description: Idea breve de David
+      - name: news_reactive
+        description: Noticia reactiva
+      - name: technical_explainer
+        description: Explainer técnico largo
+      - name: cta_variant
+        description: Variante de CTA / cross-channel
+      - name: thought_leadership
+        description: Opinión/perspectiva de David
+
+  - name: Etapa audiencia
+    type: select
+    required: false
+    description: Etapa del funnel para esta pieza.
+    options:
+      - name: awareness
+      - name: consideration
+      - name: trust
+      - name: conversion
+
+  # -- State machine --
+
+  - name: Estado
+    type: status
+    required: true
+    description: >
+      Estado principal del pipeline editorial.  La máquina de estados
+      avanza linealmente con excepciones documentadas.
+    groups:
+      - name: No iniciado
+        statuses:
+          - name: Idea
+            color: default
+            description: Capturada pero sin desarrollo.
+      - name: En progreso
+        statuses:
+          - name: Borrador
+            color: blue
+            description: Rick está generando/editando contenido.
+          - name: Revisión pendiente
+            color: yellow
+            description: Esperando aprobación de David.
+          - name: Aprobado
+            color: green
+            description: Gate aprobado_contenido pasado.
+          - name: Autorizado
+            color: green
+            description: Gate autorizar_publicacion pasado.
+          - name: Publicando
+            color: orange
+            description: En proceso de publicación a plataforma.
+      - name: Completado
+        statuses:
+          - name: Publicado
+            color: green
+            description: Confirmado en plataforma destino.
+          - name: Descartado
+            color: red
+            description: Rechazado o abandonado.
+
+  # -- Human gates --
+
+  - name: aprobado_contenido
+    type: checkbox
+    required: true
+    description: >
+      Gate humano 1.  David aprueba el contenido para el canal.
+      Si David comenta después de aprobar, este gate se invalida
+      y debe re-aprobarse antes de publicar.
+    default: false
+
+  - name: autorizar_publicacion
+    type: checkbox
+    required: true
+    description: >
+      Gate humano 2.  David autoriza la publicación efectiva.
+      Separado de aprobado_contenido porque una pieza puede estar
+      aprobada pero no lista para publicar (timing, dependencias).
+      LinkedIn/X requieren este gate en fases iniciales (HITL).
+    default: false
+
+  - name: gate_invalidado
+    type: checkbox
+    required: false
+    description: >
+      Se activa automáticamente si David deja comentario después de
+      aprobado_contenido=true.  Bloquea publicación hasta que ambos
+      gates se re-evalúen.
+    default: false
+
+  # -- Content integrity --
+
+  - name: content_hash
+    type: rich_text
+    required: false
+    description: >
+      SHA-256 truncado (16 hex chars) del contenido principal.
+      Determinista: mismo contenido → mismo hash.  Usado para
+      idempotencia en publish tracking (si el hash no cambió desde
+      el último publish_success, no re-publicar).
+    max_length: 64
+
+  - name: idempotency_key
+    type: rich_text
+    required: false
+    description: >
+      Clave derivada de canal + content_hash + page_id.  Usada por
+      publish tracking para deduplicación.
+    max_length: 64
+
+  # -- Source tracking --
+
+  - name: Fuente primaria
+    type: url
+    required: false
+    description: >
+      URL de la fuente primaria (paper, doc oficial, datos de fabricante).
+      No es el post del referente.
+
+  - name: Fuente referente
+    type: url
+    required: false
+    description: >
+      URL del referente que sirvió como discovery signal.
+      Se cita como señal de descubrimiento, no como fuente de verdad.
+
+  - name: Fuentes confiables
+    type: relation
+    required: false
+    description: >
+      Relación a DB de fuentes confiables/autoridad.  Para v1,
+      esta relación puede ser manual o semi-automática.
+    relation_database: Fuentes confiables
+
+  # -- Publishing metadata --
+
+  - name: platform_post_id
+    type: rich_text
+    required: false
+    description: >
+      ID del post en la plataforma destino (Ghost post ID, LinkedIn
+      share URN, X tweet ID).  Se llena solo después de publish_success.
+    max_length: 200
+
+  - name: publication_url
+    type: url
+    required: false
+    description: >
+      URL pública del post publicado.  Se llena después de
+      publish_success confirmado.
+
+  - name: Fecha publicación
+    type: date
+    required: false
+    description: Fecha/hora de publicación efectiva.
+
+  # -- Visual assets (inline, no separate DB in v1) --
+
+  - name: Visual brief
+    type: rich_text
+    required: false
+    description: >
+      Brief del asset visual.  Debe especificar estilo, dimensiones,
+      canal, herramienta (Freepik API/MCP, nunca UI automation).
+      HITL obligatorio si hay personas o marcas.
+    max_length: 2000
+
+  - name: Visual asset URL
+    type: url
+    required: false
+    description: >
+      URL del asset visual generado (después de producción).
+
+  - name: visual_hitl_required
+    type: checkbox
+    required: false
+    description: >
+      True si el visual incluye personas, marcas, o contenido que
+      requiere revisión humana antes de usar.
+    default: false
+
+  # -- Relations --
+
+  - name: Publicación padre
+    type: relation
+    required: false
+    description: >
+      Self-relation para variantes/copies.  El blog post original
+      es padre; LinkedIn/X/newsletter son variantes hijas.
+    relation_database: Publicaciones
+
+  - name: Proyecto
+    type: relation
+    required: false
+    description: Relación al proyecto padre en la DB de proyectos.
+    relation_database: Proyectos
+
+  # -- Audit --
+
+  - name: Creado por
+    type: created_by
+    required: false
+
+  - name: Última edición
+    type: last_edited_time
+    required: false
+
+  - name: trace_id
+    type: rich_text
+    required: false
+    description: >
+      ID de traza para correlacionar con OpsLogger events.
+    max_length: 200
+
+  - name: Notas
+    type: rich_text
+    required: false
+    description: Notas internas para el pipeline.
+    max_length: 2000
+
+# ---------------------------------------------------------------------------
+# State machine transitions
+# ---------------------------------------------------------------------------
+
+state_machine:
+  initial: Idea
+  transitions:
+    - from: Idea
+      to: Borrador
+      trigger: Rick comienza a generar contenido.
+
+    - from: Borrador
+      to: Revisión pendiente
+      trigger: Rick marca contenido como listo para revisión.
+
+    - from: Revisión pendiente
+      to: Aprobado
+      trigger: David aprueba contenido (aprobado_contenido = true).
+      gate: aprobado_contenido
+
+    - from: Revisión pendiente
+      to: Borrador
+      trigger: David rechaza o pide cambios.
+
+    - from: Aprobado
+      to: Autorizado
+      trigger: David autoriza publicación (autorizar_publicacion = true).
+      gate: autorizar_publicacion
+
+    - from: Aprobado
+      to: Revisión pendiente
+      trigger: >
+        David comenta después de aprobar → gate_invalidado = true,
+        aprobado_contenido = false.  Requiere re-revisión.
+
+    - from: Autorizado
+      to: Publicando
+      trigger: Sistema inicia publicación a plataforma.
+
+    - from: Autorizado
+      to: Revisión pendiente
+      trigger: >
+        David comenta después de autorizar → gate_invalidado = true,
+        ambos gates se resetean.
+
+    - from: Publicando
+      to: Publicado
+      trigger: >
+        Plataforma confirma publicación (publish_success).
+        Se llenan platform_post_id y publication_url.
+
+    - from: Publicando
+      to: Autorizado
+      trigger: >
+        Publicación falla (publish_failed).  No avanza a Publicado
+        sin confirmación de plataforma.
+
+    - from: ["Idea", "Borrador", "Revisión pendiente"]
+      to: Descartado
+      trigger: David o Rick descartan la pieza.
+
+# ---------------------------------------------------------------------------
+# Invariants
+# ---------------------------------------------------------------------------
+
+invariants:
+  - name: no_publish_without_gates
+    description: >
+      Estado no puede ser Publicando o Publicado si
+      aprobado_contenido = false o autorizar_publicacion = false.
+    check: >
+      if estado in (Publicando, Publicado):
+        assert aprobado_contenido == true
+        assert autorizar_publicacion == true
+
+  - name: gate_invalidation_on_comment
+    description: >
+      Si David comenta después de aprobado_contenido = true,
+      gate_invalidado = true y aprobado_contenido = false.
+      Publicación bloqueada hasta re-aprobación.
+
+  - name: no_publish_success_without_platform
+    description: >
+      Estado Publicado requiere platform_post_id no vacío.
+      No se marca Publicado sin confirmación real de la plataforma.
+
+  - name: content_hash_required_for_publish
+    description: >
+      Antes de publish_attempt, content_hash debe estar calculado.
+      idempotency_key se deriva automáticamente.
+
+  - name: linkedin_x_require_hitl
+    description: >
+      Canal linkedin o x requieren autorizar_publicacion = true
+      (HITL) en fases iniciales.  Ghost/blog puede eventualmente
+      automatizarse tras aprobado_contenido.
+
+  - name: no_separate_assets_db_v1
+    description: >
+      Assets visuales se gestionan inline en Publicaciones (campos
+      Visual brief, Visual asset URL, visual_hitl_required).
+      DB separada de assets es decisión diferida a v1.1/v2.
+
+  - name: referente_is_discovery_not_source
+    description: >
+      Fuente referente es señal de descubrimiento.  Fuente primaria
+      es la fuente de verdad.  Nunca citar al referente como fuente
+      primaria.
+
+# ---------------------------------------------------------------------------
+# Indexes / views (recommended, not enforced)
+# ---------------------------------------------------------------------------
+
+recommended_views:
+  - name: Pipeline editorial
+    type: board
+    group_by: Estado
+    filter: null
+    sort: Última edición desc
+    description: Vista Kanban del pipeline completo.
+
+  - name: Por canal
+    type: table
+    group_by: Canal
+    filter: "Estado != Descartado"
+    sort: Fecha publicación desc
+
+  - name: Pendientes de aprobación
+    type: table
+    filter: "Estado == Revisión pendiente"
+    sort: Última edición desc
+
+  - name: Gates invalidados
+    type: table
+    filter: "gate_invalidado == true"
+    sort: Última edición desc
+    description: Piezas donde David comentó post-aprobación.
+
+  - name: Publicados
+    type: table
+    filter: "Estado == Publicado"
+    sort: Fecha publicación desc

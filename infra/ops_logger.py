@@ -7,7 +7,8 @@ Ubicacion default: ~/.config/umbral/ops_log.jsonl
 Eventos:
   task_queued, task_completed, task_failed, task_blocked, task_retried,
   model_selected, llm_usage, research_usage, quota_warning, quota_restricted, worker_health_change,
-  system_activity, notion.operation_trace
+  system_activity, notion.operation_trace, auth_lifecycle_check,
+  publish_attempt, publish_success, publish_failed
 
 Parámetros opcionales de auditoría:
   trace_id      — ID de traza del envelope para correlacionar eventos end-to-end.
@@ -34,6 +35,8 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, Mapping, Optional
+
+from infra.error_classification import classify_error, normalize_error_kind
 
 logger = logging.getLogger("infra.ops_logger")
 
@@ -199,12 +202,19 @@ class OpsLogger:
         team: str,
         error: str,
         model: str = "",
+        error_kind: str | None = None,
+        error_code: str | None = None,
+        retryable: bool | None = None,
+        provider: str | None = None,
+        upstream_status: int | None = None,
         trace_id: str | None = None,
         input_summary: str | None = None,
         task_type: str | None = None,
         source: str | None = None,
         source_kind: str | None = None,
     ) -> None:
+        classification = classify_error(error)
+        resolved_kind = normalize_error_kind(error_kind or classification.error_kind)
         ev: Dict[str, Any] = {
             "event": "task_failed",
             "task_id": task_id,
@@ -212,7 +222,17 @@ class OpsLogger:
             "team": self._coerce(team),
             "model": self._coerce(model),
             "error": error[:500],
+            "error_kind": resolved_kind,
+            "error_code": (error_code or classification.error_code)[:120],
+            "retryable": classification.retryable if retryable is None else bool(retryable),
         }
+        if provider:
+            ev["provider"] = str(self._coerce(provider))[:120]
+        if upstream_status is not None:
+            try:
+                ev["upstream_status"] = int(upstream_status)
+            except (TypeError, ValueError):
+                pass
         self._apply_audit_context(
             ev,
             trace_id=trace_id,
@@ -561,6 +581,160 @@ class OpsLogger:
         except Exception as exc:  # pragma: no cover - defensive
             logger.debug("notion_operation persistence failed: %s", exc)
         return ev
+
+    def auth_lifecycle_check(
+        self,
+        *,
+        provider: str,
+        credential_ref: str,
+        status: str,
+        expires_at: str | None = None,
+        days_until_expiry: int | None = None,
+        warning_days: int = 14,
+        critical_days: int = 3,
+        reauth_required: bool = False,
+        source: str | None = None,
+        source_kind: str | None = None,
+        details: str | None = None,
+        trace_id: str | None = None,
+        **extra: Any,
+    ) -> None:
+        """Emit an ``auth_lifecycle_check`` event for credential lifecycle tracking.
+
+        Security invariant: sensitive fields (secret, token, api_key, password,
+        credential_value, etc.) are silently stripped even if passed via ``**extra``.
+        """
+        from infra.auth_lifecycle import _SENSITIVE_FIELD_NAMES
+
+        ev: Dict[str, Any] = {
+            "event": "auth_lifecycle_check",
+            "provider": str(provider)[:120],
+            "credential_ref": str(credential_ref)[:120],
+            "status": str(status)[:30],
+            "warning_days": int(warning_days),
+            "critical_days": int(critical_days),
+            "reauth_required": bool(reauth_required),
+        }
+        if expires_at is not None:
+            ev["expires_at"] = str(expires_at)[:40]
+        if days_until_expiry is not None:
+            ev["days_until_expiry"] = int(days_until_expiry)
+        if source:
+            ev["source"] = str(source)[:200]
+        if source_kind:
+            ev["source_kind"] = str(source_kind)[:200]
+        if details:
+            ev["details"] = str(details)[:300]
+        if trace_id:
+            ev["trace_id"] = str(trace_id)
+
+        # Strip sensitive fields from extra kwargs
+        for k, v in extra.items():
+            if k.lower() not in _SENSITIVE_FIELD_NAMES and k != "event":
+                ev[k] = v
+
+        self._write(ev)
+
+    # ------------------------------------------------------------------
+    # Publish tracking events (publish_attempt / publish_success / publish_failed)
+    # ------------------------------------------------------------------
+
+    def _build_publish_event(
+        self,
+        event_name: str,
+        *,
+        channel: str,
+        content_hash: str = "empty",
+        idempotency_key: str | None = None,
+        publication_id: str | None = None,
+        notion_page_id: str | None = None,
+        platform_post_id: str | None = None,
+        publication_url: str | None = None,
+        attempt: int = 1,
+        error_kind: str | None = None,
+        error_code: str | None = None,
+        retryable: bool | None = None,
+        provider: str | None = None,
+        metadata: Dict[str, Any] | None = None,
+        trace_id: str | None = None,
+        source: str | None = None,
+        source_kind: str | None = None,
+        **extra: Any,
+    ) -> None:
+        from infra.publish_tracking import (
+            _SENSITIVE_FIELD_NAMES,
+            normalize_publish_channel,
+            _derive_idempotency_key,
+        )
+
+        norm_channel = normalize_publish_channel(channel)
+        safe_hash = str(content_hash or "empty")[:64]
+        if not idempotency_key:
+            idempotency_key = _derive_idempotency_key(
+                norm_channel, safe_hash, notion_page_id,
+            )
+
+        ev: Dict[str, Any] = {
+            "event": event_name,
+            "channel": norm_channel,
+            "status": event_name.replace("publish_", ""),
+            "content_hash": safe_hash,
+            "idempotency_key": idempotency_key[:40],
+            "attempt": int(attempt),
+        }
+
+        # Optional fields
+        if publication_id is not None:
+            ev["publication_id"] = str(publication_id)[:200]
+        if notion_page_id is not None:
+            ev["notion_page_id"] = str(notion_page_id)[:200]
+        if platform_post_id is not None:
+            ev["platform_post_id"] = str(platform_post_id)[:200]
+        if publication_url is not None:
+            ev["publication_url"] = str(publication_url)[:500]
+        if error_kind is not None:
+            ev["error_kind"] = str(error_kind)[:120]
+        if error_code is not None:
+            ev["error_code"] = str(error_code)[:60]
+        if retryable is not None:
+            ev["retryable"] = bool(retryable)
+        if provider is not None:
+            ev["provider"] = str(provider)[:120]
+        if trace_id is not None:
+            ev["trace_id"] = str(trace_id)[:300]
+        if source is not None:
+            ev["source"] = str(source)[:200]
+        if source_kind is not None:
+            ev["source_kind"] = str(source_kind)[:200]
+
+        # Metadata — strip sensitive keys
+        if metadata and isinstance(metadata, dict):
+            safe_meta = {
+                k: v for k, v in metadata.items()
+                if k.lower() not in _SENSITIVE_FIELD_NAMES
+            }
+            if safe_meta:
+                ev["metadata"] = safe_meta
+
+        # Extra kwargs — strip sensitive
+        for k, v in extra.items():
+            if k.lower() not in _SENSITIVE_FIELD_NAMES and k not in ev:
+                ev[k] = str(v)[:300] if isinstance(v, str) else v
+
+        self._write(ev)
+
+    def publish_attempt(self, **kwargs: Any) -> None:
+        """Record a publish_attempt event (before calling the platform API)."""
+        self._build_publish_event("publish_attempt", **kwargs)
+
+    def publish_success(self, **kwargs: Any) -> None:
+        """Record a publish_success event (platform confirmed publication)."""
+        self._build_publish_event("publish_success", **kwargs)
+
+    def publish_failed(self, **kwargs: Any) -> None:
+        """Record a publish_failed event (platform rejected or errored)."""
+        self._build_publish_event("publish_failed", **kwargs)
+
 
     def read_events(self, limit: int = 1000, event_filter: Optional[str] = None) -> list[Dict[str, Any]]:
         """Lee los ultimos N eventos del log (para reportes)."""

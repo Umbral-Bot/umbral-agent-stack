@@ -202,14 +202,14 @@ Cambios respecto al [roadmap principal](2026-04-capitalizacion-perplexity-rick-u
 
 ### Veredicto: no hace falta nueva investigación ahora
 
-Las 46 investigaciones existentes cubren:
-- Editorial completo (UA-01 a UA-12, de los cuales 9 son canónicos)
+Las 48 investigaciones existentes cubren:
+- Editorial completo (UA-01 a UA-14, de los cuales 11 son canónicos)
 - Bot completo para v1 (UB-01 a UB-10 + 20 docs raíz)
-- Visual, CTA, publicación, gobernanza, routing, evaluation
+- Visual, CTA, publicación, gobernanza, routing, evaluation, automatización visual, orquestación editorial
 
 Los huecos detectados (error classification, auth lifecycle, provider health) son problemas de ingeniería del Agent Stack, no de investigación. Se resuelven con specs/implementación, no con más research.
 
-**Única excepción potencial**: si David decide que el torneo de prompts (UA-06) necesita más profundidad sobre metodología de A/B testing editorial con LLMs, podría justificarse UA-13. Pero eso es E7 y está en Later. No bloquea nada ahora.
+**UA-13 y UA-14 ahora capitalizados** — resolvieron las dos áreas pendientes: automatización visual (API-first, prohibición UI automation) y orquestación editorial (Agent Stack core + n8n bordes + Make lab). No queda hueco de investigación que bloquee decisiones de v1.
 
 ---
 
@@ -225,6 +225,12 @@ Además de los 12 items del [roadmap principal §7](2026-04-capitalizacion-perpl
 | 16 | No agregar dashboards de observabilidad sin caso de uso operativo concreto | Cada métrica debe responder: "¿qué acción tomo cuando este número cambia?" |
 | 17 | No solicitar nueva investigación Perplexity salvo hueco que bloquee decisión concreta en fase activa | 46 docs son suficientes. Más research sin capitalización agrava el problema |
 | 18 | No implementar circuit breaker completo para el model router | Provider health score (OPP-08) es suficiente. Circuit breaker full es overengineering para el volumen actual |
+| 19 | No automatizar UI de Freepik, Midjourney, Adobe Firefly ni Gemini app | AUP prohíbe bots/external tools/RPA sobre interfaces web, incluso con cuenta propia (UA-13) |
+| 20 | No hacer scraping de LinkedIn ni X | ToS prohíben acceso automatizado sin API. HITL obligatorio para publicación (UA-13) |
+| 21 | No usar Make para polling Notion productivo | Quema créditos Make y duplica Notion Poller del Agent Stack (UA-14) |
+| 22 | No usar SQLite para n8n en producción | No soporta concurrencia; corrompe bajo carga. Postgres desde día 1 (UA-14) |
+| 23 | No publicar en X/LinkedIn sin preview y consentimiento registrado | HITL obligatorio; `autorizar_publicacion` gate (UA-13, UA-14) |
+| 24 | No crear DB separada `Assets Visuales Rick` en v1 | Assets inline en `Publicaciones` por decisión de David; DB separada es v1.1/v2 |
 
 ---
 
@@ -241,7 +247,7 @@ La DB `Referentes` en Notion (25 registros, 13 propiedades) es un `discovery_sig
 
 **Estado actual**: DB usable, sin cambios requeridos para v1. Mejoras incrementales (dedup, fill rate, campos computados para afinidad) pueden aplicarse en paralelo con cualquier fase.
 
-**Investigación pendiente**: UA-13 podría afectar cómo se recopilan datos de referentes (scraping de perfiles públicos vs entrada manual).
+**Investigación resuelta**: UA-13 confirma que scraping de perfiles públicos está prohibido (LinkedIn/X ToS); datos de referentes deben ser entrada manual o vía API oficial de la plataforma si existe.
 
 ---
 
@@ -253,6 +259,6 @@ La DB `Referentes` en Notion (25 registros, 13 propiedades) es un `discovery_sig
 2. **T0 (error classification)** aceptado por David como siguiente PR después de #249. Puede ejecutarse de inmediato.
 3. **OPP-02 y OPP-07** (auth lifecycle + publish tracking) deben implementarse cuando se construya el primer adapter de canal (Ghost, en E4). No antes.
 4. **OPP-03** (gold set editorial) se prepara conceptualmente en E2 y se ejecuta antes de E7. No bloquea nada intermedio.
-5. **No crear ADR nuevo** para estas oportunidades. Son implementaciones incrementales que caben en specs cortas o directamente en PRs.
+5. **ADR-008 creado** para orquestación editorial (Agent Stack core + n8n bordes + Make lab). Las demás oportunidades son implementaciones incrementales que caben en specs cortas o directamente en PRs.
 
-El roadmap principal no necesita reestructuración. Los cambios son aditivos: 3 bloques transversales, 4 items en fases existentes, 1 item movido de Later a Next.
+El roadmap principal no necesita reestructuración. Los cambios son aditivos: 3 bloques transversales, 4 items en fases existentes, 1 item movido de Later a Next. UA-13 y UA-14 capitalizados en ADR-006, ADR-008, spec v1 y roadmap.

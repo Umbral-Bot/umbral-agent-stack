@@ -37,6 +37,8 @@ Ruta base: `G:\Mi unidad\04_Recursos\Referencias e Investigacion\Investigacion\P
 | UA-10 | `10_ Investigación Sobre Publicación Automatizada/` | `informe-publicacion-editorial.md` | Publicación automatizada v2 — specs por canal | **canónico** | — | Spec sistema editorial (canales, endpoints, auth, rate limits, pricing), DB Publicaciones, adapters | — |
 | UA-11 | `11_ Evaluación Visual Nano Banana vs Freepik/` | `capa-visual-rick-v1.md` | Capa visual Rick v2 — decisión arquitectural | **canónico** | — | ADR visual stack, asset_router, herramientas por caso de uso, licensing, riesgos preview | — |
 | UA-12 | `12_ Diseno de CTA para Thought Leadership B2B/` | `cta-funnel-sistema-editorial.md` | CTA/funnel v2 — taxonomía + reglas de decisión | **canónico** | — | Tipos de CTA, reglas de decisión Rick, rate-limiting, metadata `cta_type`, funnel 4 capas, anti-patrones | — |
+| UA-13 | `13_  Automatización Visual con Cuentas de Usuario/` | `UA-13_automatizacion_visual.md` | Automatización visual: API-first, prohibición UI automation, RPA limits | **canónico — capitalizado** | — | ADR-006 (API-first, Freepik API/MCP, prohibición UI automation), spec v1 §9, roadmap visual pipeline | Fuentes auxiliares: `ua13_freepik.md`, `ua13_google.md`, `ua13_rpa.md` |
+| UA-14 | `14_ Orquestación Editorial con Make n8n y Cron/` | `UA-14-orquestacion-editorial.md` | Orquestación editorial: Agent Stack core + n8n bordes + Make lab | **canónico — capitalizado** | — | ADR-008 (orquestación editorial), roadmap arquitectura, backlog técnico n8n | Nota: informe menciona 4 bloques fuente (`ua14-bloque1-make.md` a `ua14-bloque4-patrones.md`) pero solo el integrado está en carpeta |
 
 ### Cadena de sustitución Agent Stack
 
@@ -45,6 +47,8 @@ UA-07 (factibilidad publicación v1)  →  sustituido por  →  UA-10 (publicaci
 UA-08 (visual v1)                    →  sustituido por  →  UA-11 (visual v2)      ✅
 UA-09 (CTA v1)                       →  sustituido por  →  UA-12 (CTA v2)         ✅
 ```
+
+> **Nota de trazabilidad UA-14**: el informe integrado referencia cuatro bloques fuente que no están presentes como archivos separados en la carpeta. El informe integrado es la fuente canónica; la ausencia de bloques no bloquea decisiones.
 
 ---
 
@@ -125,11 +129,11 @@ UB-R1 (expertises v1)  →  sustituido por  →  UB-R2 (expertises v2) ✅
 
 | Categoría | Total | Canónicos | Históricos | Periféricos | Pendientes de integrar |
 |-----------|-------|-----------|------------|-------------|----------------------|
-| Agent Stack | 12 | 9 (01-06, 10-12) | 3 (07-09) | 0 | 3 (10, 11, 12) |
+| Agent Stack | 14 | 11 (01-06, 10-14) | 3 (07-09) | 0 | 3 (10, 11, 12) |
 | Umbral Bot (raíz) | 20 | 10 | 1 (R1) | 7 (R10, R12-R16, R18) | 1 (R19) |
 | Umbral Bot (numerados) | 10 (+5 sub-docs en UB-07) | 10 | 0 | 0 | 7 (01-03, 08, 10 nuevos; 04, 07 parciales) |
 | Transversales | 4 | 0 | 0 | 4 | 0 |
-| **Total** | **46** (+5 sub-docs) | **29** | **4** | **11** | **11** |
+| **Total** | **48** (+5 sub-docs) | **31** | **4** | **11** | **11** |
 
 ---
 

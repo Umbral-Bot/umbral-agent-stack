@@ -9,7 +9,7 @@
 
 ## 1. Resumen ejecutivo
 
-- **Rick Editorial**: 12 investigaciones Perplexity (UA-01 a UA-12) están indexadas y 9 son canónicas. Tres ADRs y una spec v1 completa formalizan las decisiones de publicación, visual y Notion. Falta aprobación humana para crear estructuras en Notion y conectar canales reales.
+- **Rick Editorial**: 14 investigaciones Perplexity (UA-01 a UA-14) están indexadas y 11 son canónicas. Cuatro ADRs y una spec v1 completa formalizan las decisiones de publicación, visual, Notion y orquestación. Falta aprobación humana para crear estructuras en Notion y conectar canales reales.
 - **Umbral Bot**: 10 investigaciones temáticas (UB-01 a UB-10) + 20 documentos raíz indexados. PR #70 formaliza docs conceptuales; PR #71 entrega el primer artefacto ejecutable (`kb-package.schema.json` + `bep-peb.yaml`). Gold Set mínimo debe preceder routing.
 - **Compartido**: `Fuentes confiables` (Notion DB) es el único recurso compartido entre ambos proyectos. El `perplexity-master-index.md` es la referencia canónica para toda investigación.
 - **Regla general**: no implementar automatización sin gates humanos; no activar routing sin gold set; no publicar sin `autorizar_publicacion = true`.
@@ -34,6 +34,12 @@
 | 10 | No specialist activation antes de resolver latencia/calidad/UX | [Capitalization plan — diferidos](../research/umbral-bot-capitalization-plan.md) |
 | 11 | KB Package YAML Contracts como artefacto fundacional P1 | [Capitalization plan §1](../research/umbral-bot-capitalization-plan.md) |
 | 12 | Perfil editorial derivado de UA-01 (dolor/audiencia) + UA-02 (autoridad) | [Spec v1 §4.3](../specs/sistema-editorial-rick-v1.md) |
+| 13 | API-first obligatorio para herramientas visuales de terceros; UI automation prohibida | [ADR-006](../adr/ADR-006-capa-visual-editorial.md) (actualizado con UA-13) |
+| 14 | Freepik API/MCP oficial como vía autorizada; Freepik UI automation prohibida | [ADR-006](../adr/ADR-006-capa-visual-editorial.md) (UA-13) |
+| 15 | Preview models no primarios de producción hasta GA/IP indemnification | [ADR-006](../adr/ADR-006-capa-visual-editorial.md) (UA-13) |
+| 16 | Orquestación editorial: Agent Stack core + n8n bordes + Make lab/stand-by | [ADR-008](../adr/ADR-008-orquestacion-editorial.md) (UA-14) |
+| 17 | n8n con Postgres desde día 1 (no SQLite en producción) | [ADR-008](../adr/ADR-008-orquestacion-editorial.md) (UA-14) |
+| 18 | No crear DB separada `Assets Visuales Rick` en v1; assets inline en `Publicaciones` | [Spec v1 §9.1](../specs/sistema-editorial-rick-v1.md) (reconciliación UA-13 vs decisión David) |
 
 ---
 
@@ -44,7 +50,7 @@
 | Campo | Detalle |
 |-------|---------|
 | **Objetivo** | David revisa y aprueba PR #249, ADRs y spec v1 antes de crear nada en Notion |
-| **Entradas** | PR #249 (este repo): `perplexity-master-index.md`, `umbral-bot-capitalization-plan.md`, `sistema-editorial-rick-v1.md`, ADR-005, ADR-006, ADR-007 |
+| **Entradas** | PR #249 (este repo): `perplexity-master-index.md`, `umbral-bot-capitalization-plan.md`, `sistema-editorial-rick-v1.md`, ADR-005, ADR-006, ADR-007, ADR-008 |
 | **Entregable** | PR #249 mergeado. ADRs en estado `Accepted` |
 | **Bloqueadores** | Revisión humana pendiente |
 | **No hacer todavía** | No crear DBs en Notion. No instalar Ghost. No registrar LinkedIn Developer App |
@@ -79,7 +85,7 @@
 | **Objetivo** | Generar assets visuales para piezas aprobadas usando la arquitectura de ADR-006 |
 | **Entradas** | Cuenta Google Cloud con billing activo (Vertex AI). Opcionalmente: Freepik API key |
 | **Entregable** | Assets generados (Vertex AI o diagrama) asignados a piezas. `featured_image_url` y `featured_image_alt` completados |
-| **Bloqueadores** | Decisión humana: Vertex AI vs Gemini API directo. Decisión: Freepik API vs solo stock UI |
+| **Bloqueadores** | Cuenta Google Cloud con billing activo. Freepik API key si se activa fallback. UA-13 confirma API-first (UI automation prohibida) |
 | **No hacer todavía** | No publicar. No automatizar generación en batch sin validación |
 | **Criterio de salida** | Al menos 1 asset AI y 1 diagrama Mermaid generados y validados |
 
@@ -90,7 +96,7 @@
 | **Objetivo** | Publicar la primera pieza en blog con automatización completa |
 | **Entradas** | Ghost self-hosted instalado en VPS. Custom Integration creada. Pieza en `publish_authorized` |
 | **Entregable** | Pieza publicada en Ghost. `Platform post ID` y `Publication URL` registrados en Notion |
-| **Bloqueadores** | Decisión humana: Ghost vs Astro+Git para blog v1. Instalación de Ghost en VPS |
+| **Bloqueadores** | Ghost self-hosted instalado. n8n con Postgres configurado (ADR-008). `N8N_ENCRYPTION_KEY` respaldada |
 | **No hacer todavía** | No publicar a LinkedIn ni X. No configurar cross-post a Hashnode |
 | **Criterio de salida** | 1 pieza publicada end-to-end: `draft` → `published`. Webhooks operativos |
 
@@ -263,6 +269,12 @@ Gold set (futuro)
 | 10 | No tocar `Sistema Maestro Apoyo Editorial` en Notion | Legacy, congelada hasta re-evaluación |
 | 11 | No crear KB packages de dominio antes de tener schema validado | Dependen de PR #71 |
 | 12 | No automatizar n8n editorial antes de fase manual estable | Gate de doc 68 §9: shortlist estable 3-4 semanas |
+| 13 | No automatizar UI de Freepik, Midjourney, Adobe Firefly ni Gemini app | AUP prohíbe bots/external tools/RPA sobre interfaces web, incluso con cuenta propia (UA-13) |
+| 14 | No hacer scraping de LinkedIn ni X | ToS prohíben acceso automatizado sin API. HITL obligatorio para publicación (UA-13) |
+| 15 | No usar Make para polling Notion productivo | Quema créditos Make y duplica Notion Poller del Agent Stack (UA-14) |
+| 16 | No usar SQLite para n8n en producción | No soporta concurrencia; corrompe bajo carga. Postgres desde día 1 (UA-14) |
+| 17 | No publicar en X/LinkedIn personal sin preview y consentimiento registrado | HITL obligatorio; `autorizar_publicacion` gate (UA-13, UA-14) |
+| 18 | No crear DB separada `Assets Visuales Rick` en v1 | Assets inline en `Publicaciones` por decisión de David. DB separada es v1.1/v2 (UA-13 reconciliación) |
 
 ---
 
@@ -271,20 +283,20 @@ Gold set (futuro)
 | # | Decisión | Opciones | Recomendación actual | Cuándo decidir | Qué desbloquea |
 |---|----------|----------|---------------------|----------------|----------------|
 | 1 | Ghost vs Astro+Git para blog v1 | Ghost self-hosted (ADR-005) / Astro+Git+Cloudflare Pages | **✅ Aceptado: Ghost v1** — ADR-005 accepted 2026-04-21; Astro como objetivo futuro | — | Publicación blog |
-| 2 | Vertex AI vs Gemini API directo para assets | Vertex AI (mejor SLA, ADR-006) / Gemini API consumer (más simple) | Vertex AI (billing activo, no-training, indemnización). Aceptado; pendiente UA-13 para automatización con cuentas de usuario | Antes de E3 | Pipeline de assets visuales |
-| 3 | Freepik API vs Freepik UI/stock | API pay-per-use (ADR-006) / Solo UI manual | API como fallback; UI para stock vectorial. Diferida hasta UA-13 | Antes de E3 | Fallback visual |
+| 2 | Vertex AI vs Gemini API directo para assets | Vertex AI (mejor SLA, ADR-006) / Gemini API consumer (más simple) | **✅ Aceptado: Vertex AI**. UA-13 confirma API-first y advierte preview models no primarios hasta GA | — | Pipeline de assets visuales |
+| 3 | Freepik API vs Freepik UI/stock | API pay-per-use (ADR-006) / Solo UI manual | **✅ Resuelto: Freepik API/MCP como vía autorizada**. UI automation prohibida (UA-13 AUP) | — | Fallback visual |
 | 4 | Estructura copies por canal en Notion | Propiedades en `Publicaciones` / Subpáginas por canal | **✅ Aceptado: propiedades en una sola DB `Publicaciones`** (spec v1 §5.2) | — | Creación DB `Publicaciones` |
 | 5 | PR #70 antes de PR #71 | Sí (docs primero) / No (schema independiente) | Sí — docs conceptuales dan contexto para entender schema | Ahora | Orden de merge en umbral-bot-2 |
 | 6 | Estrategia `AgenteUB-specialist` por latencia | Async / streaming-only / manual / bloqueado | Bloqueado hasta tener datos de gold set | Después de B2+B4 | Activación de specialist |
-| 7 | Cron scheduling editorial: n8n vs custom | n8n (existente en VPS) / Custom cron | **Probable n8n** — ya desplegado en VPS; decisión final pendiente de UA-14 (orquestación editorial: n8n vs Make vs Agent Stack) | Antes de E4 | Scheduling de publicación |
+| 7 | Cron scheduling editorial: n8n vs custom | n8n (existente en VPS) / Custom cron | **✅ Aceptado: n8n** — UA-14 recomienda Agent Stack core + n8n bordes. Ver [ADR-008](../adr/ADR-008-orquestacion-editorial.md) | — | Scheduling de publicación |
 | 8 | Idempotencia publicación: Redis vs Notion | Redis TTL 24h / Campo `content_hash` en Notion | **✅ Aceptado: `content_hash` en Notion** — zero-infra adicional para v1; Redis TTL como v2 | — | Pipeline de publicación |
 
-### Investigaciones Perplexity pendientes
+### Investigaciones Perplexity capitalizadas
 
-| ID | Tema | Contexto | Cuándo solicitar |
-|----|------|----------|-----------------|
-| UA-13 | Automatización visual con cuentas de usuario, navegador y RPA | Plataformas sin API pública (Freepik UI, LinkedIn manual). Afecta ADR-006 (Freepik decision) y pipeline visual | Antes de E3 si se quiere automatizar Freepik; antes de E5 si se quiere asistir LinkedIn |
-| UA-14 | Orquestación editorial Rick: n8n vs Make vs Agent Stack | Qué capa coordina el flujo completo de publicación (scheduling, webhooks, retries). Afecta decisión #7 | Antes de E4 |
+| ID | Tema | Estado | Capitalizado en |
+|----|------|--------|----------------|
+| UA-13 | Automatización visual con cuentas de usuario, navegador y RPA | **Capitalizado** | ADR-006 (API-first, Freepik API/MCP, prohibición UI automation), spec v1 §9.1, §14 #2/#3/#9 |
+| UA-14 | Orquestación editorial Rick: n8n vs Make vs Agent Stack | **Capitalizado** | ADR-008 (Agent Stack core + n8n bordes + Make lab), spec v1 §14 #7/#10, roadmap §8 #7 |
 
 ### Referentes como señal de descubrimiento editorial
 
@@ -294,6 +306,16 @@ La DB `Referentes` en Notion (25 registros, 13 propiedades) funciona como `disco
 - **CTA patterns (E4)**: qué estrategias de conversión aplican los referentes en su nicho.
 
 **No es v1-blocking**: la DB ya existe y es usable. Las mejoras recomendadas (dedup, fill rate, campos computados) son incrementales y pueden aplicarse en paralelo con cualquier fase.
+
+### Backlog técnico n8n/orquestación (UA-14)
+
+| Item | Razón | Cuándo | Bloquea |
+|------|-------|--------|---------|
+| n8n con Postgres | SQLite no soporta concurrencia; corrompe bajo carga | Antes de cualquier workflow productivo | E4 |
+| Backup `N8N_ENCRYPTION_KEY` fuera de VPS | Pérdida = todas las credenciales encriptadas perdidas | Inmediato al configurar n8n con Postgres | E4 |
+| Export nocturno n8n → Git | `n8n export:workflow --all` + commit al repo | Cron nocturno post n8n productivo | — |
+| Notion webhooks beta PoC | Mantener Poller como fallback hasta validar webhooks | Cuando Notion webhooks salga de beta | — |
+| Outbox/DLQ PoC | Retry estructurado para publicaciones fallidas | Antes de E5 (LinkedIn HITL) | E5 |
 
 ---
 
@@ -337,7 +359,7 @@ La DB `Referentes` en Notion (25 registros, 13 propiedades) funciona como `disco
 
 4. **Crear DB `Publicaciones` y `Perfil editorial David` en Notion** (E1). Ghost y copies-por-canal ya decididos (§8 #1, #4). Scope mínimo: schema de spec v1 §5, contenido de §4.3.
 
-5. **Solicitar UA-14** (orquestación editorial: n8n vs Make vs Agent Stack). Desbloquea decisión final de scheduling (#7) antes de E4.
+5. **Configurar n8n con Postgres** en VPS (ADR-008 backlog). Respaldar `N8N_ENCRYPTION_KEY`. Esto desbloquea workflows productivos para E4.
 
 6. **T0: structured error classification** como PR independiente. Aceptado por David como siguiente PR después de #249.
 
@@ -372,7 +394,7 @@ Análisis completo en [opportunity analysis](2026-04-agent-stack-opportunity-ana
 
 ### No se necesita nueva investigación Perplexity
 
-46 documentos existentes cubren editorial, bot, visual, CTA, gobernanza, routing y evaluation. Los huecos detectados son de ingeniería, no de research.
+48 documentos existentes cubren editorial, bot, visual, CTA, gobernanza, routing, evaluation, automatización visual y orquestación. Los huecos detectados son de ingeniería, no de research.
 
 ---
 
@@ -386,6 +408,7 @@ Análisis completo en [opportunity analysis](2026-04-agent-stack-opportunity-ana
 | ADR-005 Publicación Multicanal | [docs/adr/ADR-005-publicacion-multicanal.md](../adr/ADR-005-publicacion-multicanal.md) |
 | ADR-006 Capa Visual Editorial | [docs/adr/ADR-006-capa-visual-editorial.md](../adr/ADR-006-capa-visual-editorial.md) |
 | ADR-007 Notion como Hub Editorial | [docs/adr/ADR-007-notion-como-hub-editorial.md](../adr/ADR-007-notion-como-hub-editorial.md) |
+| ADR-008 Orquestación Editorial | [docs/adr/ADR-008-orquestacion-editorial.md](../adr/ADR-008-orquestacion-editorial.md) |
 | Editorial Source Curation | [docs/67-editorial-source-curation.md](../67-editorial-source-curation.md) |
 | Editorial Phase 1 Manual | [docs/68-editorial-phase-1-manual.md](../68-editorial-phase-1-manual.md) |
 | Editorial Automation Audit | [docs/audits/rick-editorial-automation-system-2026-03-09.md](../audits/rick-editorial-automation-system-2026-03-09.md) |

@@ -3,7 +3,7 @@
 > **Estado**: PROPUESTO — pendiente de revisión humana
 > **Creado**: 2026-04-21
 > **Autor**: Copilot (sesión de capitalización)
-> **Fuentes Perplexity**: UA-10 (publicación), UA-11 (visual), UA-12 (CTA/funnel)
+> **Fuentes Perplexity**: UA-10 (publicación), UA-11 (visual), UA-12 (CTA/funnel), UA-13 (automatización visual), UA-14 (orquestación editorial)
 > **Decisiones Notion previas**: auditoría aceptada en sesión anterior
 
 ---
@@ -267,14 +267,18 @@ Basado en UA-11 §§2-7.
 
 ### 9.1 Arquitectura visual
 
+**Principio rector (UA-13): API-first obligatorio.** Toda interacción programática con herramientas visuales de terceros debe usar APIs oficiales o MCPs autorizados. Prohibido automatizar UI de Freepik, Midjourney, Adobe Firefly, Gemini app con Playwright/PAD/RPA/bots.
+
 ```
 Rick asset_router
-  ├── AI primary: Vertex AI / gemini-3-pro-image-preview
-  ├── AI fallback: Freepik API (nano-banana-pro, ideogram-3, mystic)
+  ├── AI primary: Vertex AI / gemini-3-pro-image-preview (API)
+  ├── AI fallback: Freepik API o Freepik MCP oficial (API, nunca UI)
   ├── Vector / Stock: Freepik stock + Flaticon + Lucide/Heroicons
   ├── Diagramas: Mermaid + Excalidraw + tldraw + Graphviz
   └── Screenshots: capturas reales (Revit, Dynamo, Power BI, ACC, n8n)
 ```
+
+> **v1: assets inline en `Publicaciones`**. No crear DB separada `Assets Visuales Rick`. Metadata visual se registra con `featured_image_url` y `featured_image_alt` en §5.1. Si el volumen crece o se necesita trazabilidad de generación por prompt/modelo, considerar DB separada en v1.1/v2.
 
 ### 9.2 Reglas de decisión del asset_router
 
@@ -299,7 +303,7 @@ Rick asset_router
 | Vertex AI | Mismo base, SLA más estable | Región configurable (EU/US) |
 | Freepik API (NBP) | ~75 créditos/imagen, pay-per-use | Más caro que Google directo |
 
-**Decisión**: Vertex AI como canal primario. Freepik como fallback y stock. Ver [ADR-006](../adr/ADR-006-capa-visual-editorial.md).
+**Decisión**: Vertex AI como canal primario. Freepik API/MCP como fallback y stock (nunca UI automation). Ver [ADR-006](../adr/ADR-006-capa-visual-editorial.md). Modelos preview no deben ser proveedor primario de producción hasta GA/IP indemnification (UA-13).
 
 ### 9.4 Regla anti-AI-slop
 
@@ -440,15 +444,15 @@ Toda pieza en DB `Publicaciones` debe tener completos antes de pasar a `ready_fo
 | # | Decisión | Contexto | Estado |
 |---|----------|----------|--------|
 | 1 | Ghost vs Astro+Git como blog primario | Ghost v1 propuesto en [ADR-005](../adr/ADR-005-publicacion-multicanal.md), Astro como objetivo futuro. Astro tiene portabilidad total y cero lock-in | **✅ Aceptado** — Ghost self-hosted para v1; Astro como objetivo futuro (ADR-005 accepted 2026-04-21) |
-| 2 | Vertex AI vs Gemini API directo para assets AI | Vertex propuesto en [ADR-006](../adr/ADR-006-capa-visual-editorial.md). Vertex tiene mejor SLA para preview. Gemini API es más simple | **Propuesta en ADR-006** — aceptado Vertex; pendiente UA-13 para automatización con cuentas de usuario |
-| 3 | Freepik API como fallback vs solo stock UI | Freepik como fallback propuesto en [ADR-006](../adr/ADR-006-capa-visual-editorial.md). API es pay-per-use independiente de suscripción | **Propuesta en ADR-006** — diferida hasta UA-13 |
+| 2 | Vertex AI vs Gemini API directo para assets AI | Vertex propuesto en [ADR-006](../adr/ADR-006-capa-visual-editorial.md). Vertex tiene mejor SLA para preview. Gemini API es más simple | **Propuesta en ADR-006** — aceptado Vertex. UA-13 confirma API-first y advierte que preview models no deben ser primario de producción hasta GA |
+| 3 | Freepik API como fallback vs solo stock UI | Freepik como fallback propuesto en [ADR-006](../adr/ADR-006-capa-visual-editorial.md). API es pay-per-use independiente de suscripción | **Propuesta en ADR-006** — Freepik API y MCP oficial como vías autorizadas. UI automation prohibida (UA-13 AUP) |
 | 4 | X API directa vs tool gestionado (Typefully/Buffer) | X asistido v1 propuesto en [ADR-005](../adr/ADR-005-publicacion-multicanal.md). Pay-per-use directa: ~$7/mes. Tool: $5-8/mes pero absorbe cambios | **Propuesta en ADR-005** — re-evaluar en v2 |
 | 5 | Estructura de copies por canal en Notion | ¿Propiedades en la misma DB o subpáginas? | **✅ Aceptado** — propiedades en la misma DB `Publicaciones` (spec v1 §5.2). Una sola DB para v1 |
 | 6 | LinkedIn Company Page a futuro | Requiere entidad legal + CMA Development tier | **Diferida** — cuando exista entidad legal |
-| 7 | Cron scheduling: n8n vs custom cron | n8n ya existe en VPS; custom cron es más ligero | **Probable n8n** — ya desplegado en VPS; decisión final pendiente de UA-14 (orquestación editorial: n8n vs Make vs Agent Stack) |
+| 7 | Cron scheduling: n8n vs custom cron | n8n ya existe en VPS; custom cron es más ligero | **✅ Aceptado: n8n** — UA-14 recomienda Agent Stack core + n8n bordes. n8n cubre scheduling, webhooks, Wait/HITL. Ver [ADR-008](../adr/ADR-008-orquestacion-editorial.md) |
 | 8 | Idempotencia: Redis vs Notion computed | Redis TTL 24h vs campo content_hash en Notion | **✅ Aceptado** — `content_hash` en Notion para v1 (zero-infra adicional); Redis TTL como v2 |
-| 9 | Automatización visual con cuentas de usuario | Navegador + RPA para plataformas sin API (Freepik UI, LinkedIn manual) | **Pendiente** — investigación UA-13 por solicitar |
-| 10 | Orquestación editorial: n8n vs Make vs Agent Stack | Qué capa coordina el flujo de publicación | **Pendiente** — investigación UA-14 por solicitar |
+| 9 | Automatización visual con cuentas de usuario | Navegador + RPA para plataformas sin API (Freepik UI, LinkedIn manual) | **✅ Resuelto por UA-13** — UI automation prohibida para herramientas visuales de terceros (Freepik/Midjourney/Adobe/Gemini app). API-first obligatorio. Freepik API/MCP como vía autorizada |
+| 10 | Orquestación editorial: n8n vs Make vs Agent Stack | Qué capa coordina el flujo de publicación | **✅ Resuelto por UA-14** — Agent Stack core + n8n bordes + Make lab/stand-by. Ver [ADR-008](../adr/ADR-008-orquestacion-editorial.md) |
 
 ---
 
@@ -484,6 +488,8 @@ El sistema editorial v1 se considera **aceptado** cuando:
 | UA-10 | Publicación automatizada v2 | `Perplexity/Umbral Agent Stack/10_…/informe-publicacion-editorial.md` |
 | UA-11 | Capa visual Rick v2 | `Perplexity/Umbral Agent Stack/11_…/capa-visual-rick-v1.md` |
 | UA-12 | CTA/funnel v2 | `Perplexity/Umbral Agent Stack/12_…/cta-funnel-sistema-editorial.md` |
+| UA-13 | Automatización visual — API-first | `Perplexity/Umbral Agent Stack/13_…/UA-13_automatizacion_visual.md` |
+| UA-14 | Orquestación editorial | `Perplexity/Umbral Agent Stack/14_…/UA-14-orquestacion-editorial.md` |
 | UA-01 | Dolor audiencia | `Perplexity/Umbral Agent Stack/01_…/` |
 | UA-02 | Mapa de autoridad | `Perplexity/Umbral Agent Stack/02_…/` |
 | UA-04 | Dirección visual | `Perplexity/Umbral Agent Stack/04_…/` |

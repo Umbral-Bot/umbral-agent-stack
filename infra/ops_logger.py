@@ -7,7 +7,7 @@ Ubicacion default: ~/.config/umbral/ops_log.jsonl
 Eventos:
   task_queued, task_completed, task_failed, task_blocked, task_retried,
   model_selected, llm_usage, research_usage, quota_warning, quota_restricted, worker_health_change,
-  system_activity, notion.operation_trace
+  system_activity, notion.operation_trace, auth_lifecycle_check
 
 Parámetros opcionales de auditoría:
   trace_id      — ID de traza del envelope para correlacionar eventos end-to-end.
@@ -561,6 +561,59 @@ class OpsLogger:
         except Exception as exc:  # pragma: no cover - defensive
             logger.debug("notion_operation persistence failed: %s", exc)
         return ev
+
+    def auth_lifecycle_check(
+        self,
+        *,
+        provider: str,
+        credential_ref: str,
+        status: str,
+        expires_at: str | None = None,
+        days_until_expiry: int | None = None,
+        warning_days: int = 14,
+        critical_days: int = 3,
+        reauth_required: bool = False,
+        source: str | None = None,
+        source_kind: str | None = None,
+        details: str | None = None,
+        trace_id: str | None = None,
+        **extra: Any,
+    ) -> None:
+        """Emit an ``auth_lifecycle_check`` event for credential lifecycle tracking.
+
+        Security invariant: sensitive fields (secret, token, api_key, password,
+        credential_value, etc.) are silently stripped even if passed via ``**extra``.
+        """
+        from infra.auth_lifecycle import _SENSITIVE_FIELD_NAMES
+
+        ev: Dict[str, Any] = {
+            "event": "auth_lifecycle_check",
+            "provider": str(provider)[:120],
+            "credential_ref": str(credential_ref)[:120],
+            "status": str(status)[:30],
+            "warning_days": int(warning_days),
+            "critical_days": int(critical_days),
+            "reauth_required": bool(reauth_required),
+        }
+        if expires_at is not None:
+            ev["expires_at"] = str(expires_at)[:40]
+        if days_until_expiry is not None:
+            ev["days_until_expiry"] = int(days_until_expiry)
+        if source:
+            ev["source"] = str(source)[:200]
+        if source_kind:
+            ev["source_kind"] = str(source_kind)[:200]
+        if details:
+            ev["details"] = str(details)[:300]
+        if trace_id:
+            ev["trace_id"] = str(trace_id)
+
+        # Strip sensitive fields from extra kwargs
+        for k, v in extra.items():
+            if k.lower() not in _SENSITIVE_FIELD_NAMES and k != "event":
+                ev[k] = v
+
+        self._write(ev)
 
     def read_events(self, limit: int = 1000, event_filter: Optional[str] = None) -> list[Dict[str, Any]]:
         """Lee los ultimos N eventos del log (para reportes)."""

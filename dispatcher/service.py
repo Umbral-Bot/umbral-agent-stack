@@ -28,6 +28,7 @@ from dispatcher.router import TeamRouter
 from dispatcher.team_config import get_team_capabilities
 from dispatcher.task_routing import task_requires_vm
 from client.worker_client import WorkerClient
+from infra.error_classification import classify_error
 from infra.ops_logger import ops_log
 
 try:
@@ -770,12 +771,16 @@ def _run_worker(
                     )
 
             _input_summary = str(envelope.get("input", {}))[:200]
+            classification = classify_error(e)
             ops_log.task_failed(
                 task_id,
                 task,
                 team,
                 str(e),
                 model=selected_model,
+                error_kind=classification.error_kind,
+                error_code=classification.error_code,
+                retryable=classification.retryable,
                 input_summary=_input_summary,
                 **ops_context,
             )

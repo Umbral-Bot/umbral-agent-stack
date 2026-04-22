@@ -57,3 +57,19 @@ Registro de registros de prueba manuales creados en la DB `Publicaciones` para v
 - Prefijo `TEST-` para registros de prueba.
 - Formato: `TEST-NNN` (numeración secuencial).
 - Los registros de prueba se marcan como `Descartado` al terminar la validación, no se eliminan.
+
+---
+
+## Siguiente paso: primer contenido real candidato
+
+Después de completar la validación con TEST-001, el siguiente paso es crear manualmente el primer contenido editorial real en Publicaciones.
+
+**Reglas**:
+
+- Crear manualmente en Notion. No usar Rick.
+- No publicar. Mantener `aprobado_contenido=false` y `autorizar_publicacion=false`.
+- Requiere fuente primaria (`Fuente primaria`) o marcar explícitamente que la fuente está pendiente.
+- No calcular `content_hash` ni `idempotency_key` hasta que el contenido sea aprobado.
+- Re-ejecutar auditoría read-only después de la creación.
+- Documentar el candidato en este archivo o en un doc de seguimiento.
+- Rick permanece inactivo. No activar runtime, workers, ni publicación.

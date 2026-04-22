@@ -38,6 +38,7 @@ from fastapi import FastAPI, Header, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
+from infra.error_classification import classify_error
 from infra.ops_logger import ops_log
 
 from .config import RATE_LIMIT_INTERNAL_RPM, RATE_LIMIT_RPM, WORKER_TOKEN
@@ -581,6 +582,9 @@ async def run_task(
             team_value,
             f"Unknown task: {envelope.task}. Available: {list(TASK_HANDLERS.keys())}",
             model=selected_model,
+            error_kind="validation",
+            error_code="unknown_task",
+            retryable=False,
             input_summary=input_summary,
             **ops_context,
         )
@@ -622,6 +626,11 @@ async def run_task(
             team_value,
             exc.log_message(),
             model=selected_model,
+            error_kind=exc.error_kind,
+            error_code=exc.error_code,
+            retryable=exc.retryable,
+            provider=exc.provider,
+            upstream_status=exc.upstream_status,
             input_summary=input_summary,
             **ops_context,
         )
@@ -644,6 +653,9 @@ async def run_task(
             team_value,
             str(exc),
             model=selected_model,
+            error_kind="validation",
+            error_code="input_validation_failed",
+            retryable=False,
             input_summary=input_summary,
             **ops_context,
         )
@@ -660,12 +672,16 @@ async def run_task(
         raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:
         logger.exception("Task %s failed: %s", envelope.task, exc)
+        classification = classify_error(exc)
         ops_log.task_failed(
             envelope.task_id,
             envelope.task,
             team_value,
             str(exc),
             model=selected_model,
+            error_kind=classification.error_kind,
+            error_code=classification.error_code,
+            retryable=classification.retryable,
             input_summary=input_summary,
             **ops_context,
         )

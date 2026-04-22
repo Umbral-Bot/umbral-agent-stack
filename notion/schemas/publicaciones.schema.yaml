@@ -82,22 +82,22 @@ properties:
   - name: Tipo de contenido
     type: select
     required: true
-    description: Tipo de input editorial.
+    description: Tipo de input editorial (opciones v1 alineadas con DB Notion real).
     options:
-      - name: source_signal
-        description: Transformación de fuente primaria
-      - name: reference_post
-        description: Discovery desde referente
-      - name: raw_idea
-        description: Idea breve de David
-      - name: news_reactive
-        description: Noticia reactiva
-      - name: technical_explainer
-        description: Explainer técnico largo
-      - name: cta_variant
-        description: Variante de CTA / cross-channel
-      - name: thought_leadership
-        description: Opinión/perspectiva de David
+      - name: blog_post
+        description: Artículo de blog (Ghost)
+      - name: linkedin_post
+        description: Post de LinkedIn
+      - name: x_post
+        description: Post de X (Twitter)
+      - name: newsletter
+        description: Edición de newsletter
+      - name: carousel
+        description: Carrusel visual multi-slide
+      - name: visual_asset
+        description: Asset visual standalone
+      - name: thread
+        description: Hilo multi-post (X o LinkedIn)
 
   - name: Etapa audiencia
     type: select
@@ -281,10 +281,14 @@ properties:
     relation_database: Publicaciones
 
   - name: Proyecto
-    type: relation
+    type: rich_text
     required: false
-    description: Relación al proyecto padre en la DB de proyectos.
-    relation_database: Proyectos
+    description: >
+      Nombre o referencia del proyecto padre.  v1 fallback: kept as
+      text until the canonical projects database is decided.  A future
+      version may convert this to a relation once the target DB is
+      identified.
+    max_length: 200
 
   # -- Audit --
 

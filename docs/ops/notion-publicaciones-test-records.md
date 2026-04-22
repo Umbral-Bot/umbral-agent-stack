@@ -62,14 +62,20 @@ Registro de registros de prueba manuales creados en la DB `Publicaciones` para v
 
 ## Siguiente paso: primer contenido real candidato
 
-Después de completar la validación con TEST-001, el siguiente paso es crear manualmente el primer contenido editorial real en Publicaciones.
+Antes de crear CAND-001, se define `rick-editorial` como agente design-only (`openclaw/workspace-agent-overrides/rick-editorial/ROLE.md`).
+
+La primera candidata real debe ser:
+- Preparada por `rick-editorial` (cuando se active) o mediante simulación explícita de su contrato de output.
+- Registrada manualmente en Notion por David o un operador autorizado.
+- Validada por `rick-qa` contra los criterios de aceptación del contrato.
 
 **Reglas**:
 
-- Crear manualmente en Notion. No usar Rick.
+- No usar Rick para publicar. Rick sigue inactivo.
 - No publicar. Mantener `aprobado_contenido=false` y `autorizar_publicacion=false`.
+- Notion AI no opera contenido editorial; solo apoyó el setup inicial del hub y la DB.
 - Requiere fuente primaria (`Fuente primaria`) o marcar explícitamente que la fuente está pendiente.
 - No calcular `content_hash` ni `idempotency_key` hasta que el contenido sea aprobado.
 - Re-ejecutar auditoría read-only después de la creación.
 - Documentar el candidato en este archivo o en un doc de seguimiento.
-- Rick permanece inactivo. No activar runtime, workers, ni publicación.
+- David revisa antes de cualquier aprobación.

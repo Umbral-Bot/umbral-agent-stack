@@ -2,11 +2,11 @@
 
 - **Schema**: `notion/schemas/publicaciones.schema.yaml`
 - **Actual source**: `notion:e6817ec4698a4f0fbbc8fedcf4e52472`
-- **Verdict**: **WARN**
-- **Total differences**: 22
+- **Verdict**: **PASS**
+- **Total differences**: 19
 - **Blockers**: 0
-- **Warnings**: 2
-- **Info**: 20
+- **Warnings**: 0
+- **Info**: 19
 
 ## Differences
 
@@ -31,6 +31,3 @@
 | INFO | Resumen fuente | extra_property | Property 'Resumen fuente' (rich_text) exists in Notion but not in local schema. |
 | INFO | Última revisión humana | extra_property | Property 'Última revisión humana' (date) exists in Notion but not in local schema. |
 | INFO | Etapa audiencia | extra_options | Extra options in Notion: ['retention']. |
-| WARNING | Proyecto | type_mismatch | Type differs: schema='relation', Notion='rich_text'. |
-| WARNING | Tipo de contenido | missing_options | Missing options in Notion: ['cta_variant', 'news_reactive', 'raw_idea', 'reference_post', 'source_signal', 'technical_explainer', 'thought_leadership']. |
-| INFO | Tipo de contenido | extra_options | Extra options in Notion: ['blog_post', 'carousel', 'linkedin_post', 'newsletter', 'thread', 'visual_asset', 'x_post']. |

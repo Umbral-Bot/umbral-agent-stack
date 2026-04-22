@@ -10,7 +10,7 @@
 
 - Hub principal `Sistema Editorial Rick` created in Notion ([link](https://www.notion.so/Sistema-Editorial-Rick-5894ba351e2749729077ca971fd9f52a)).
 - DB `Publicaciones` **created** (2026-04-22, inline by Notion AI). ID: `e6817ec4698a4f0fbbc8fedcf4e52472`. [link](https://www.notion.so/e6817ec4698a4f0fbbc8fedcf4e52472)
-- Live read-only audit executed 2026-04-22 (2nd run, post-corrections): **WARN** (0 blockers, 2 warnings, 20 info). Improved from prior 12W/21I. Remaining: `Proyecto` type mismatch (relation vs rich_text), `Tipo de contenido` option names differ. See [`notion-publicaciones-last-audit.md`](notion-publicaciones-last-audit.md).
+- Live read-only audit executed 2026-04-22 (3rd run, post-schema alignment): **PASS** (0 blockers, 0 warnings, 19 info). Schema aligned with v1 decisions: `Proyecto` as rich_text, `Tipo de contenido` with Notion's canonical options. See [`notion-publicaciones-last-audit.md`](notion-publicaciones-last-audit.md).
 
 ---
 

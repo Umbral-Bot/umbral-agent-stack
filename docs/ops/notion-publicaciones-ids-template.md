@@ -35,7 +35,7 @@ Sistemas y Automatizaciones
 
 | Recurso | ID | URL | Estado | Notas |
 |---------|----|-----|--------|-------|
-| DB `Publicaciones` | `e6817ec4698a4f0fbbc8fedcf4e52472` | [link](https://www.notion.so/e6817ec4698a4f0fbbc8fedcf4e52472) | Creada — auditoría WARN (0 blockers, 12 warnings, 21 info) | Nombre visible: `📰 Publicaciones`, data source: `Publicaciones`. 34 propiedades en Notion (26 en schema + 18 extras - 10 faltantes). Última auditoría: 2026-04-22. |
+| DB `Publicaciones` | `e6817ec4698a4f0fbbc8fedcf4e52472` | [link](https://www.notion.so/e6817ec4698a4f0fbbc8fedcf4e52472) | Creada — auditoría WARN (0 blockers, 2 warnings, 20 info) | Nombre visible: `📰 Publicaciones`, data source: `Publicaciones`. 44 propiedades en Notion (26 del schema + 18 extras). Última auditoría: 2026-04-22. |
 | DB `Referentes` | _(completar o N/A)_ | | | |
 | DB/página `Fuentes confiables` | _(completar o N/A)_ | | | |
 
@@ -48,37 +48,40 @@ Sistemas y Automatizaciones
 
 ## Último resultado del auditor
 
-**Fecha**: 2026-04-22
-**Verdict**: WARN (0 blockers, 12 warnings, 21 info)
+**Fecha**: 2026-04-22 (segunda ejecución, post-correcciones)
+**Verdict**: WARN (0 blockers, 2 warnings, 20 info)
 **Integration**: bot "Rick" (`3145f443-fb5c-814d-bbd1-0027093cebce`), workspace "Umbral BIM"
+**Mejora**: de 12 warnings → 2 warnings (10 propiedades faltantes corregidas, Estado corregido)
 
 Resultado completo en [`docs/ops/notion-publicaciones-last-audit.md`](notion-publicaciones-last-audit.md).
 
 ### Resumen de divergencias
 
-**Propiedades faltantes en Notion (10 warnings)**:
-- `Creado por` (created_by), `Fecha publicación` (date), `Fuentes confiables` (relation), `Notas` (rich_text), `platform_post_id` (rich_text), `Proyecto` (relation), `Publicación padre` (relation), `publication_url` (url), `trace_id` (rich_text), `Última edición` (last_edited_time)
+**Warnings restantes (2)**:
+1. `Proyecto`: type mismatch — schema define `relation`, Notion tiene `rich_text` (fallback intencional porque hay varias DBs candidatas)
+2. `Tipo de contenido`: faltan 7 opciones del schema (`cta_variant`, `news_reactive`, `raw_idea`, `reference_post`, `source_signal`, `technical_explainer`, `thought_leadership`). Notion tiene opciones diferentes: `blog_post`, `carousel`, `linkedin_post`, `newsletter`, `thread`, `visual_asset`, `x_post`
 
 **Propiedades extra en Notion (18 info)**: Ángulo editorial, canal_publicado, Claim principal, Comentarios revisión, Copy Blog/LinkedIn/Newsletter/X, Creado por sistema, error_kind, Prioridad, publish_error, published_at, published_url, Repo reference, Responsable revisión, Resumen fuente, Última revisión humana
 
-**Opciones faltantes**:
-- `Estado`: falta `Revisión pendiente` (existe `Revisión` en su lugar) — WARNING
-- `Tipo de contenido`: faltan 7 opciones del schema, Notion tiene 7 diferentes — WARNING
+**Extra options (2 info)**:
+- `Etapa audiencia`: extra option `retention`
+- `Tipo de contenido`: 7 extra options (ver arriba)
 
-**Siguiente paso**: corregir divergencias en Notion (agregar propiedades faltantes, renombrar `Revisión` → `Revisión pendiente`, ajustar opciones de `Tipo de contenido`). Luego re-ejecutar auditoría.
+**Siguiente paso**: decidir si actualizar schema local para reflejar opciones reales de `Tipo de contenido`, o corregir Notion. `Proyecto` como `rich_text` es aceptable como fallback v1.
 
 ## Diferencias conocidas
 
-- Notion AI creó 34 propiedades; el schema local define 26. La auditoría encontró 18 extras y 10 faltantes.
+- Notion tiene 44 propiedades; el schema local define 26. Las 18 extras son intencionales (agregadas por Notion AI).
 - Nombre visible incluye icono `📰` pero el data source interno es `Publicaciones` (coincide con schema).
 - Vista "Pendiente de aprobación" usa filtro AND avanzado por limitación de Notion.
-- Estado `Revisión pendiente` aparece como `Revisión` en Notion.
-- Opciones de `Tipo de contenido` son completamente diferentes entre schema y Notion.
+- `Proyecto` es `rich_text` en Notion (fallback v1) vs `relation` en schema.
+- Opciones de `Tipo de contenido` difieren entre schema y Notion (schema usa snake_case técnico, Notion usa nombres en español/descriptivos).
 
 ## Notas
 
 - Hub creado 2026-04-22.
 - DB Publicaciones creada 2026-04-22 por Notion AI (manual, inline en hub).
-- Auditoría read-only ejecutada 2026-04-22: WARN (0 blockers, 12 warnings, 21 info).
+- Auditoría read-only #1 (2026-04-22): WARN (0 blockers, 12 warnings, 21 info).
+- Auditoría read-only #2 (2026-04-22, post-correcciones): WARN (0 blockers, 2 warnings, 20 info).
 - Integration: bot "Rick" (`3145f443-fb5c-814d-bbd1-0027093cebce`), workspace "Umbral BIM".
 - Rick no participa todavía.

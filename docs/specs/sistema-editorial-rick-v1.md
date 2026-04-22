@@ -81,6 +81,15 @@ Derivado de UA-01 (dolor/audiencia) y UA-02 (mapa de autoridad):
 
 Basado en UA-10 §7 y UA-12 §7.1. Una fila por pieza de contenido fuente.
 
+### Decisión de modelo de datos v1
+
+La implementación inicial usa una sola DB `Publicaciones`. Las variantes/copies por canal, metadata visual y datos de publicación viven dentro de esa entidad como propiedades (§5.2) o campos inline (§5.1). No se crean DBs separadas en v1:
+
+- **`Variantes`**: alternativa v1.1/v2 si la DB única `Publicaciones` queda corta.
+- **`Assets Visuales Rick`**: no crear DB separada de assets en v1; metadata visual inline en `Publicaciones` (`featured_image_url`, `featured_image_alt`). DB separada solo v1.1/v2 si volumen/trazabilidad lo justifican.
+- **`PublicationLog`**: diferido a v1.1/futuro; tracking mínimo inline en `Publicaciones` (§5.3).
+- **`newsletter`**: canal preparado en schema, no prioritario v1. Canales prioritarios v1: linkedin, blog, x.
+
 ### 5.1 Propiedades principales
 
 | Propiedad | Tipo Notion | Descripción | Obligatoria |
@@ -119,7 +128,7 @@ Basado en UA-10 §7 y UA-12 §7.1. Una fila por pieza de contenido fuente.
 | `Publication URL` | URL | URL pública final de la publicación | auto |
 | `Last publish error` | Rich text | Último mensaje de error de publicación (si aplica) | auto |
 
-### 5.2 Copies por canal (propiedades adicionales o subpáginas)
+### 5.2 Copies por canal (propiedades en `Publicaciones`)
 
 | Propiedad | Tipo | Descripción |
 |-----------|------|-------------|

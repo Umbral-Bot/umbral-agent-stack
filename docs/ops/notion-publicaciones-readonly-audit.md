@@ -9,7 +9,37 @@
 ## Current state
 
 - Hub principal `Sistema Editorial Rick` created in Notion ([link](https://www.notion.so/Sistema-Editorial-Rick-5894ba351e2749729077ca971fd9f52a)).
-- DB `Publicaciones` **not yet created**. Once created, run the audit with `--database-id` to verify alignment.
+- DB `Publicaciones` **created** (2026-04-22, inline by Notion AI). ID: `e6817ec4698a4f0fbbc8fedcf4e52472`. [link](https://www.notion.so/e6817ec4698a4f0fbbc8fedcf4e52472)
+- Live read-only audit attempted 2026-04-22 — HTTP 404 (integration not shared with the page). See `docs/ops/notion-publicaciones-last-audit.md`.
+
+---
+
+## Recommended live audit command
+
+Requires `NOTION_API_KEY` in the environment. **GET-only, read-only** — no writes to Notion.
+
+```bash
+export NOTION_API_KEY="ntn_..."
+PYTHONPATH=. .venv/bin/python scripts/audit_notion_publicaciones.py \
+    --database-id e6817ec4698a4f0fbbc8fedcf4e52472 --validate-schema --markdown
+```
+
+With fail-on-blocker (CI-friendly):
+
+```bash
+PYTHONPATH=. .venv/bin/python scripts/audit_notion_publicaciones.py \
+    --database-id e6817ec4698a4f0fbbc8fedcf4e52472 --validate-schema --fail-on-blocker
+```
+
+Save output to file:
+
+```bash
+PYTHONPATH=. .venv/bin/python scripts/audit_notion_publicaciones.py \
+    --database-id e6817ec4698a4f0fbbc8fedcf4e52472 --validate-schema --markdown \
+    --output docs/ops/notion-publicaciones-last-audit.md
+```
+
+If the audit fails due to permissions or token issues, do **not** modify the DB manually until access is resolved. Check that the Notion integration has been shared with the `Sistema Editorial Rick` page.
 
 ---
 

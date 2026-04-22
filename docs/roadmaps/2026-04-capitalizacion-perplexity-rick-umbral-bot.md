@@ -63,7 +63,7 @@
 | **Objetivo** | Crear las dos estructuras mínimas en Notion bajo el hub `Sistema Editorial Automatizado Umbral` |
 | **Entradas** | Spec v1 §4 y §5 aprobados. Hub existente en Notion |
 | **Entregable** | DB `Publicaciones` con schema completo (§5.1). Subpágina `Perfil editorial David` con contenido de §4.3. Link a `Fuentes confiables` |
-| **Bloqueadores** | Fase E0 completada. Decisión sobre copies por canal (propiedades vs subpáginas, spec v1 §14 decisión #5) |
+| **Bloqueadores** | Fase E0 completada. Copies por canal resuelto: propiedades en DB `Publicaciones` (spec v1 §5.2, decisión #5 aceptada) |
 | **No hacer todavía** | No crear `PublicationLog`. No tocar `Bandeja de revisión - Rick`, `Control Room`, `Sistema Maestro Apoyo Editorial` |
 | **Criterio de salida** | DB `Publicaciones` creada y verificada con al menos 1 fila de prueba. `Perfil editorial David` con pilares, audiencia y voz |
 

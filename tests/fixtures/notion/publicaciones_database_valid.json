@@ -1,0 +1,85 @@
+{
+  "object": "database",
+  "id": "fixture-publicaciones-valid",
+  "title": [{"type": "text", "text": {"content": "Publicaciones"}}],
+  "properties": {
+    "Título": {"id": "title", "type": "title", "title": {}},
+    "publication_id": {"id": "p01", "type": "rich_text", "rich_text": {}},
+    "Canal": {
+      "id": "p02", "type": "select",
+      "select": {
+        "options": [
+          {"name": "blog", "color": "blue"},
+          {"name": "linkedin", "color": "green"},
+          {"name": "x", "color": "gray"},
+          {"name": "newsletter", "color": "purple"}
+        ]
+      }
+    },
+    "Tipo de contenido": {
+      "id": "p03", "type": "select",
+      "select": {
+        "options": [
+          {"name": "source_signal"},
+          {"name": "reference_post"},
+          {"name": "raw_idea"},
+          {"name": "news_reactive"},
+          {"name": "technical_explainer"},
+          {"name": "cta_variant"},
+          {"name": "thought_leadership"}
+        ]
+      }
+    },
+    "Etapa audiencia": {
+      "id": "p04", "type": "select",
+      "select": {
+        "options": [
+          {"name": "awareness"},
+          {"name": "consideration"},
+          {"name": "trust"},
+          {"name": "conversion"}
+        ]
+      }
+    },
+    "Estado": {
+      "id": "p05", "type": "status",
+      "status": {
+        "options": [
+          {"name": "Idea", "color": "default"},
+          {"name": "Borrador", "color": "blue"},
+          {"name": "Revisión pendiente", "color": "yellow"},
+          {"name": "Aprobado", "color": "green"},
+          {"name": "Autorizado", "color": "green"},
+          {"name": "Publicando", "color": "orange"},
+          {"name": "Publicado", "color": "green"},
+          {"name": "Descartado", "color": "red"}
+        ],
+        "groups": [
+          {"name": "No iniciado", "option_ids": []},
+          {"name": "En progreso", "option_ids": []},
+          {"name": "Completado", "option_ids": []}
+        ]
+      }
+    },
+    "aprobado_contenido": {"id": "p06", "type": "checkbox", "checkbox": {}},
+    "autorizar_publicacion": {"id": "p07", "type": "checkbox", "checkbox": {}},
+    "gate_invalidado": {"id": "p08", "type": "checkbox", "checkbox": {}},
+    "content_hash": {"id": "p09", "type": "rich_text", "rich_text": {}},
+    "idempotency_key": {"id": "p10", "type": "rich_text", "rich_text": {}},
+    "Fuente primaria": {"id": "p11", "type": "url", "url": {}},
+    "Fuente referente": {"id": "p12", "type": "url", "url": {}},
+    "Fuentes confiables": {"id": "p13", "type": "relation", "relation": {"database_id": "some-id"}},
+    "platform_post_id": {"id": "p14", "type": "rich_text", "rich_text": {}},
+    "publication_url": {"id": "p15", "type": "url", "url": {}},
+    "Fecha publicación": {"id": "p16", "type": "date", "date": {}},
+    "Visual brief": {"id": "p17", "type": "rich_text", "rich_text": {}},
+    "Visual asset URL": {"id": "p18", "type": "url", "url": {}},
+    "visual_hitl_required": {"id": "p19", "type": "checkbox", "checkbox": {}},
+    "Publicación padre": {"id": "p20", "type": "relation", "relation": {"database_id": "self"}},
+    "Proyecto": {"id": "p21", "type": "relation", "relation": {"database_id": "proj-id"}},
+    "Creado por": {"id": "p22", "type": "created_by", "created_by": {}},
+    "Última edición": {"id": "p23", "type": "last_edited_time", "last_edited_time": {}},
+    "trace_id": {"id": "p24", "type": "rich_text", "rich_text": {}},
+    "Notas": {"id": "p25", "type": "rich_text", "rich_text": {}}
+  }
+}

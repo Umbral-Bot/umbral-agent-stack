@@ -100,6 +100,22 @@ Before a future PR enables actual Notion provisioning:
 - `build_provisioning_plan(dry_run=False)` raises `NotImplementedError`.
 - `--apply` CLI flag exits with error code 1 and a clear message.
 
+## Next step: read-only audit
+
+Before enabling `--apply`, run the read-only audit to compare the local schema against an existing Notion database (or fixture). See [`docs/ops/notion-publicaciones-readonly-audit.md`](notion-publicaciones-readonly-audit.md) for details.
+
+```bash
+# Fixture mode (offline)
+PYTHONPATH=. .venv/bin/python scripts/audit_notion_publicaciones.py \
+    --fixture tests/fixtures/notion/publicaciones_database_valid.json --validate-schema
+
+# Live read-only mode
+PYTHONPATH=. .venv/bin/python scripts/audit_notion_publicaciones.py \
+    --database-id <id> --fail-on-blocker
+```
+
+The audit must pass with zero blockers before any apply is considered.
+
 ## Relationships
 
 | Component | Relationship |

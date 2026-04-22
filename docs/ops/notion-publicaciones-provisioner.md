@@ -116,6 +116,14 @@ PYTHONPATH=. .venv/bin/python scripts/audit_notion_publicaciones.py \
 
 The audit must pass with zero blockers before any apply is considered.
 
+## Recommended order of operations
+
+1. **Setup runbook/checklist**: [`docs/ops/notion-publicaciones-setup-runbook.md`](notion-publicaciones-setup-runbook.md)
+2. **Dry-run provisioner** (this tool): generate and review the plan
+3. **Manual controlled creation**: follow the runbook checklist
+4. **Read-only audit**: verify DB matches schema with 0 blockers
+5. Only after all above: Rick can write drafts (requires David's explicit approval)
+
 ## Relationships
 
 | Component | Relationship |

@@ -97,6 +97,14 @@ The auditor normalizes property names before comparison:
 
 This means `content_hash` matches `Content Hash`, and `autorizar_publicacion` matches `Autorizar publicación`.
 
+## Recommended order of operations
+
+1. **Setup runbook/checklist**: [`docs/ops/notion-publicaciones-setup-runbook.md`](notion-publicaciones-setup-runbook.md)
+2. **Dry-run provisioner**: generate and review the provisioning plan
+3. **Manual controlled creation**: follow the runbook checklist
+4. **Read-only audit** (this tool): verify DB matches schema with 0 blockers
+5. Only after all above: Rick can write drafts (requires David's explicit approval)
+
 ## What is needed before enabling apply
 
 Before any future PR enables writes to Notion:

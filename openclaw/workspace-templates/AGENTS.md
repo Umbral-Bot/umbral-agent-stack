@@ -204,8 +204,12 @@ Rick opera como 3 runtime agents con responsabilidades separadas. Las definicion
 | `rick-orchestrator` | Planifica, prioriza, delega, integra resultados | Recibe trabajo de David, descompone en slices, asigna owners |
 | `rick-delivery` | Ejecuta, produce artefactos, entrega resultados verificables | Recibe slices definidos, implementa, deja trazabilidad |
 | `rick-qa` | Valida, audita, declara riesgo residual | Verifica entregas contra criterios de aceptación con evidencia |
+| `rick-editorial` | Operador editorial de borradores y candidatas | Recibe asignaciones editoriales, produce candidatas en Borrador con fuentes separadas |
+
+> `rick-editorial` is **design-only / not active**. No workspace in `openclaw.json`, no runtime routing. See `openclaw/workspace-agent-overrides/rick-editorial/ROLE.md` for full contract and activation conditions.
 
 **Flujo canónico:** orchestrator -> delivery -> qa -> orchestrator (cierre) -> David.
+**Flujo editorial:** orchestrator -> editorial -> qa -> orchestrator (cierre) -> David.
 
 **Handoffs:** cada agente debe declarar explícitamente cuándo pasa trabajo al siguiente. Ver `ROLE.md` de cada agente para los triggers específicos. Usar `agent-handoff-governance` para el formato obligatorio del handoff.
 
@@ -239,5 +243,6 @@ El primer slice de implementación agrega `config/supervisors.yaml` y `dispatche
 - `rick-orchestrator`: `subagent-result-integration`, `linear-issue-triage`, `linear-delivery-traceability`, `agent-handoff-governance`, `external-reference-intelligence`
 - `rick-delivery`: `linear-delivery-traceability`, `notion-project-registry`, `competitive-funnel-benchmark`, `editorial-source-curation`
 - `rick-qa`: `linear-project-auditor`, `linear-delivery-traceability`, `system-interconnectivity-diagnostics`
+- `rick-editorial`: `editorial-source-curation`, `editorial-voice-profile`, `community-pain-to-linkedin-engine`, `linkedin-content`, `multichannel-content-packager`, `external-reference-intelligence`
 - `rick-tracker`: `editorial-source-curation`
 - `rick-ops`: `n8n-editorial-orchestrator`, `browser-automation-vm`, `windows`

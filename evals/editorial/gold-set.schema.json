@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Editorial Gold Set Case",
+  "description": "Schema for editorial evaluation cases in the Rick editorial system gold set.",
+  "type": "object",
+  "required": [
+    "id",
+    "title",
+    "scenario",
+    "input_type",
+    "target_channels",
+    "audience_stage",
+    "source_policy",
+    "expected_behavior",
+    "must_include",
+    "must_avoid",
+    "evaluation_dimensions",
+    "minimum_score",
+    "human_gate_required"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^ED-GOLD-\\d{3}$",
+      "description": "Stable case identifier, e.g. ED-GOLD-001"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 200
+    },
+    "scenario": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 2000,
+      "description": "Narrative description of the editorial scenario to evaluate."
+    },
+    "input_type": {
+      "type": "string",
+      "enum": [
+        "source_signal",
+        "reference_post",
+        "raw_idea",
+        "news_reactive",
+        "technical_explainer",
+        "cta_variant"
+      ]
+    },
+    "target_channels": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["linkedin", "blog", "x"]
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "audience_stage": {
+      "type": "string",
+      "enum": ["awareness", "consideration", "trust", "conversion"]
+    },
+    "source_policy": {
+      "type": "string",
+      "enum": [
+        "requires_primary_source",
+        "opinion_allowed_with_attribution",
+        "no_external_source"
+      ]
+    },
+    "expected_behavior": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "must_include": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "must_avoid": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "evaluation_dimensions": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "description": "IDs of dimensions from dimensions.yaml to apply to this case."
+    },
+    "minimum_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "human_gate_required": {
+      "type": "boolean"
+    },
+    "notes": {
+      "type": "string",
+      "maxLength": 1000
+    }
+  },
+  "additionalProperties": false
+}

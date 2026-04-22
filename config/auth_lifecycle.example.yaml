@@ -1,0 +1,95 @@
+# Auth Lifecycle Tracking — Configuration Example
+#
+# This file declares credentials whose lifecycle Rick should track.
+# It does NOT store secrets. Only metadata about expiry, ownership,
+# and recovery playbooks.
+#
+# SECURITY: Never put actual tokens, API keys, passwords, or secret
+# values in this file. Only labels and metadata.
+#
+# Usage:
+#   python scripts/auth_lifecycle_check.py --config config/auth_lifecycle.example.yaml --dry-run
+#   python scripts/auth_lifecycle_check.py --config config/auth_lifecycle.yaml --write-ops-log
+
+credentials:
+  - provider: linkedin
+    credential_ref: linkedin_company_access_token
+    # expires_at: "2026-06-15T00:00:00Z"   # fill in after OAuth flow
+    warning_days: 14
+    critical_days: 5
+    notes: "OAuth 2.0 access token, 60-day TTL, no refresh (non-MDP). Re-auth required."
+    owner: david
+    reauth_playbook: >
+      1. Open LinkedIn Developer App > Auth tab.
+      2. Complete OAuth 2.0 Authorization Code flow.
+      3. Update expires_at in config/auth_lifecycle.yaml.
+      4. Update token in ~/.config/openclaw/env (LINKEDIN_ACCESS_TOKEN).
+
+  - provider: linkedin
+    credential_ref: linkedin_refresh_authorization
+    # expires_at: null  # long-lived; set if known
+    warning_days: 30
+    critical_days: 14
+    notes: "LinkedIn app authorization itself. Typically long-lived but can be revoked."
+    owner: david
+    reauth_playbook: >
+      1. Verify app status at https://www.linkedin.com/developers/apps.
+      2. Re-authorize if revoked.
+
+  - provider: ghost
+    credential_ref: ghost_admin_api_key
+    # expires_at: null  # Admin API keys don't expire, but JWT is per-request
+    warning_days: 90
+    critical_days: 30
+    notes: "Ghost Custom Integration id:secret. No expiry, but verify existence periodically."
+    owner: david
+    recovery_playbook: >
+      1. Open Ghost Admin > Settings > Integrations.
+      2. Verify Custom Integration exists and is active.
+      3. Regenerate if compromised.
+
+  - provider: n8n
+    credential_ref: n8n_encryption_key_backup
+    # expires_at: null  # does not expire, but loss = credential loss
+    warning_days: 90
+    critical_days: 30
+    notes: "N8N_ENCRYPTION_KEY must be backed up outside VPS. Loss = all n8n credentials lost."
+    owner: rick
+    recovery_playbook: >
+      1. Verify backup exists at documented location.
+      2. If lost, all n8n credential nodes must be re-configured.
+
+  - provider: freepik
+    credential_ref: freepik_api_key
+    # expires_at: null  # API keys typically don't expire
+    warning_days: 90
+    critical_days: 30
+    notes: "Freepik API key for pay-per-use access. No known expiry."
+    owner: david
+    recovery_playbook: >
+      1. Login to Freepik developer portal.
+      2. Regenerate API key if compromised.
+      3. Update in ~/.config/openclaw/env.
+
+  - provider: google
+    credential_ref: vertex_service_account
+    # expires_at: null  # Service accounts don't expire, but keys can be rotated
+    warning_days: 180
+    critical_days: 90
+    notes: "Vertex AI service account for visual assets. Key rotation recommended annually."
+    owner: david
+    recovery_playbook: >
+      1. Go to Google Cloud Console > IAM > Service Accounts.
+      2. Rotate key if needed.
+      3. Update service account JSON in secure location.
+
+  - provider: make
+    credential_ref: make_mcp_connection
+    # expires_at: null
+    warning_days: 90
+    critical_days: 30
+    notes: "Make.com connection for lab/stand-by MCP bridge. David has active subscription."
+    owner: david
+    recovery_playbook: >
+      1. Verify connection at make.com dashboard.
+      2. Re-authenticate if expired.

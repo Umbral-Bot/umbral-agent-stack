@@ -395,6 +395,9 @@ class TestRunEnvelope:
         assert kwargs["task_type"] == "coding"
         assert kwargs["source"] == "openclaw_gateway"
         assert kwargs["source_kind"] == "tool_enqueue"
+        assert kwargs["error_kind"] == "validation"
+        assert kwargs["error_code"] == "unknown_task"
+        assert kwargs["retryable"] is False
 
     def test_structured_task_error_returns_specific_status_and_body(self, client):
         trace_id = str(uuid.uuid4())
@@ -410,7 +413,10 @@ class TestRunEnvelope:
                 upstream_status=432,
             )
 
-        with patch.dict(worker_app.TASK_HANDLERS, {"research.web": _raise_structured_error}, clear=False):
+        with (
+            patch.dict(worker_app.TASK_HANDLERS, {"research.web": _raise_structured_error}, clear=False),
+            patch("worker.app.ops_log.task_failed") as task_failed,
+        ):
             resp = client.post(
                 "/run",
                 json={
@@ -434,6 +440,14 @@ class TestRunEnvelope:
         assert data["provider"] == "tavily"
         assert data["retryable"] is False
         assert data["upstream_status"] == 432
+
+        task_failed.assert_called_once()
+        kwargs = task_failed.call_args.kwargs
+        assert kwargs["error_kind"] == "quota"
+        assert kwargs["error_code"] == "research_provider_quota_exceeded"
+        assert kwargs["retryable"] is False
+        assert kwargs["provider"] == "tavily"
+        assert kwargs["upstream_status"] == 432
 
 
 # ---------------------------------------------------------------------------

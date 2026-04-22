@@ -26,6 +26,9 @@ class TestOpsLogger:
         assert events[0]["task_id"] == "t1"
         assert events[0]["duration_ms"] == 150
         assert events[1]["event"] == "task_failed"
+        assert events[1]["error_kind"] == "upstream"
+        assert events[1]["error_code"] == "task_failed_upstream"
+        assert events[1]["retryable"] is True
         assert events[2]["event"] == "task_blocked"
         assert events[3]["event"] == "model_selected"
         assert events[4]["event"] == "quota_warning"

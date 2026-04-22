@@ -35,6 +35,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, Mapping, Optional
 
+from infra.error_classification import classify_error, normalize_error_kind
+
 logger = logging.getLogger("infra.ops_logger")
 
 _DEFAULT_LOG_DIR = Path.home() / ".config" / "umbral"
@@ -199,12 +201,19 @@ class OpsLogger:
         team: str,
         error: str,
         model: str = "",
+        error_kind: str | None = None,
+        error_code: str | None = None,
+        retryable: bool | None = None,
+        provider: str | None = None,
+        upstream_status: int | None = None,
         trace_id: str | None = None,
         input_summary: str | None = None,
         task_type: str | None = None,
         source: str | None = None,
         source_kind: str | None = None,
     ) -> None:
+        classification = classify_error(error)
+        resolved_kind = normalize_error_kind(error_kind or classification.error_kind)
         ev: Dict[str, Any] = {
             "event": "task_failed",
             "task_id": task_id,
@@ -212,7 +221,17 @@ class OpsLogger:
             "team": self._coerce(team),
             "model": self._coerce(model),
             "error": error[:500],
+            "error_kind": resolved_kind,
+            "error_code": (error_code or classification.error_code)[:120],
+            "retryable": classification.retryable if retryable is None else bool(retryable),
         }
+        if provider:
+            ev["provider"] = str(self._coerce(provider))[:120]
+        if upstream_status is not None:
+            try:
+                ev["upstream_status"] = int(upstream_status)
+            except (TypeError, ValueError):
+                pass
         self._apply_audit_context(
             ev,
             trace_id=trace_id,

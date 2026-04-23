@@ -115,6 +115,14 @@ La primera candidata real debe ser:
 3. Codex creó el registro en Notion DB Publicaciones como `Borrador`.
 4. Auditoría estructural post-write: **PASS** (0B/0W/19I).
 
+### Body preview
+
+- **Body preview added**: yes (2026-04-23)
+- Page now contains visible review sections: proposal, variants, visual brief, traceability, and David checklist.
+- Appended via Notion API (PATCH block children), 75 blocks in 2 batches.
+- Properties not modified — append-only.
+- Ready for David review in Notion.
+
 ### Para David
 
 - Buscar en Notion: **CAND-001 — Automatizar sin gobernanza escala el desorden**
@@ -130,3 +138,4 @@ La primera candidata real debe ser:
 - [`cand-001-v2-rick-qa-request.md`](cand-001-v2-rick-qa-request.md)
 - [`cand-001-v2-rick-qa-result.md`](cand-001-v2-rick-qa-result.md)
 - [`cand-001-notion-draft-result.md`](cand-001-notion-draft-result.md)
+- [`cand-001-notion-page-body-update.md`](cand-001-notion-page-body-update.md)

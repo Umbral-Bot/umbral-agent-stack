@@ -44,6 +44,25 @@ First source-driven editorial flow. Unlike CAND-001 (opinion operativa without e
   2. Add explicit inferencia/hipotesis rows to extraction_matrix — resolved (3 subsections)
   3. Tie claim to sources more explicitly — resolved (inference rows with source attribution)
 - **rick-qa Run ID**: e7ede159-9b1c-4e04-9012-8c6e827e3e22
+- **Attribution policy verdict**: **pass** (Run ID: `b1b11ff1-a1f5-4c7d-8140-6eda57fd8495`)
+  - All 7 attribution dimensions validated
+  - No persons cited as public authorities in copy
+  - Discovery sources internal only (Marc Vidal, Aelion)
+  - Citable sources: The B1M (original_article), DeepLearning.AI/The Batch (analysis_source)
+
+## Attribution policy update (2026-04-23)
+
+David established a new editorial attribution rule: referentes used as editorial discovery must NOT be cited in public content as authorities when they are not the primary/original source. Changes applied:
+
+1. **Copy modified**: removed mentions of Andrew Ng, Marc Vidal, Ivan Gomez from LinkedIn and X copy. Replaced with concept-based formulations (AI-native teams, productivity paradox, early value in AEC).
+2. **Sources reclassified**:
+   - **Citable**: The B1M (original_article), DeepLearning.AI/The Batch (analysis_source)
+   - **Discovery/internal only**: Marc Vidal, Aelion.io/Ivan Gomez
+3. **Primary sources identified** behind Marc Vidal's articles: Robert Solow (1987), OECD (2025), McKinsey Global Institute, WEF (2025).
+4. **Notion body updated**: attribution policy section added, source headings reclassified, copy blocks updated.
+5. **Properties updated**: Copy LinkedIn, Copy X, Comentarios revision.
+6. **Policy document**: `docs/ops/editorial-source-attribution-policy.md`
+7. **Source reclassification**: `docs/ops/cand-002-source-reclassification.md`
 
 ## Notion page created
 
@@ -64,6 +83,8 @@ CAND-001 (PR #266) was the first editorial candidate — opinion operativa witho
 |-------|--------|---------|
 | rick-orchestrator | `0be78ce9-6621-4180-8f84-615da49cf6c4` | Generate CAND-002 payload |
 | rick-qa | `e7ede159-9b1c-4e04-9012-8c6e827e3e22` | Validate CAND-002 payload |
+| rick-qa | `33554772-9f2b-41a6-87de-21bab936874f` | Post-change validation (verdict: pass) |
+| rick-qa | `b1b11ff1-a1f5-4c7d-8140-6eda57fd8495` | Attribution policy validation (verdict: pass) |
 
 ## For David
 

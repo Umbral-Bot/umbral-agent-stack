@@ -1,63 +1,103 @@
-# CAND-003 — Source Intake from Notion Referentes DB
+# CAND-003 — Source Intake
 
 > **Date**: 2026-04-23
-> **Source**: Notion DB "Referentes" (`05f04d48c44943e8b4acc572a4ec6f19`)
-> **View**: `71d3f67ec4214b898cf1f43e3c034e2f`
-> **Selected by**: David
-> **Relation**: Same referentes DB as CAND-002. Different thesis, different source selection, different signals.
+> **Purpose**: Document source discovery for CAND-003 editorial candidate.
+> **Thesis target**: "Criterio antes que automatización" — before automating with AI in AEC, teams need explicit operational criteria.
+> **Source DB**: Notion "Referentes" (`05f04d48c44943e8b4acc572a4ec6f19`)
+> **Dedup reference**: CAND-002 used The B1M, The Batch (#342, #346, #348, #349), Marc Vidal (3 articles), Aelion.io
 
-## Thesis Direction
+## Source selection criteria for CAND-003
 
-**"Criterio antes que automatización"**: Before automating coordination in AEC, teams need explicit operational criteria — what constitutes sufficient quality, when to escalate, who reviews what, and what "good enough" means. Without defined criteria, automation amplifies chaos rather than reducing it.
+Signals prioritized for this thesis:
+- Algorithmic governance and audit criteria
+- Agent management, permissions, and oversight
+- What happens when organizations automate without explicit criteria
+- Operational criteria for AEC: review, coordination, escalation, quality gates
 
-**Differentiation from CAND-002**: CAND-002 diagnosed the gap (organizational readiness is the barrier). CAND-003 prescribes the response: define operational criteria before automating.
+## Sources analyzed
 
-## Referentes Selected for CAND-003
+| Source | URL | Access | New for CAND-003? | Relevance |
+|--------|-----|--------|-------------------|-----------|
+| The Batch #340 | deeplearning.ai/the-batch/issue-340 | Public | Yes (new issue) | Standardized AI audits — AVERI framework |
+| The Batch #343 | deeplearning.ai/the-batch/issue-343 | Public | Yes (new issue) | Frontier agent management — governance |
+| Marc Vidal — "El algoritmo como jefe supremo" | marcvidal.net | Public | Reused article, new extraction | Algorithmic management without human oversight |
+| OECD (2025) — Algorithmic management report | oecd.org | Primary source (cited by Vidal) | Primary source identified in CAND-002 | 79% of European companies use algorithmic tools |
+| McKinsey Global Institute | mckinsey.com | Primary source (cited by Vidal) | Primary source identified in CAND-002 | 30% of US labor hours could be automated by 2030 |
+| AVERI — AI Verification and Research Institute | averi (Brundage) | Primary source (cited by Batch #340) | New primary source | 8 audit principles, 4 assurance levels |
+| Aelion.io | aelion.io | Public landing | Reused, same extraction | ROI-first mindset in AEC |
 
-### Tier 1: AEC-direct (criteria and governance angle)
+## Sources attempted but not usable
 
-| # | Name | Platform | Relevance to CAND-003 |
-|---|------|----------|----------------------|
-| 4 | Fred Mills (The B1M) | theb1m.com | Mega-infrastructure readiness, feasibility criteria, ambition vs realistic criteria |
-| 3 | Ivan Gomez Rodriguez | aelion.io | ROI-first = criteria-first in AEC adoption |
-| 2 | Burcin Kaplanoglu | LinkedIn (blocked) | BIM implementation criteria, Construction 4.0 governance |
+| Source | URL | Issue |
+|--------|-----|-------|
+| Bernard Marr | bernardmarr.com/blog | 404 — blog page not accessible |
+| Dion Hinchcliffe | dionhinchcliffe.com | Not attempted (lower priority) |
+| Ruben Hassid / How to AI | howtoai.substack.com | Wrong Substack URL (identified in CAND-002) |
+| LinkedIn profiles (12) | linkedin.com | Blocked (auth required) |
 
-### Tier 2: IA/Digital (agent criteria and operational governance)
+## Dedup vs CAND-002
 
-| # | Name | Platform | Relevance to CAND-003 |
-|---|------|----------|----------------------|
-| 9 | Andrew Ng | deeplearning.ai/the-batch | Agent management criteria, Context Hub (explicit operational context for agents) |
-| 14 | Marc Vidal | marcvidal.net | Algorithmic governance criteria (→ OECD primary), productivity paradox (→ Solow primary) |
-| 15 | Dion Hinchcliffe | LinkedIn (blocked) | Digital transformation governance frameworks |
+| Source | CAND-002 extraction | CAND-003 extraction |
+|--------|---------------------|---------------------|
+| The Batch #349 | AI-native teams operate differently | Not used in CAND-003 |
+| The Batch #346 | Organizational resistance to AI | Not used in CAND-003 |
+| The Batch #340 | Not used in CAND-002 | AI audit standards, governance criteria |
+| The Batch #343 | Not used in CAND-002 | Agent management, permissions, guardrails |
+| Marc Vidal "Algoritmo" | Algorithmic management displacing oversight (evidence for productivity paradox) | Deeper extraction: who monitors the monitor? what criteria govern algorithmic decisions? |
+| OECD | 79% statistic cited as background | 79% statistic used as primary evidence: companies deploy algorithmic tools without audit criteria |
+| McKinsey | 30% automation potential cited as background | 30% automation potential without criteria = amplified ambiguity |
+| Aelion.io | ROI-first mindset (general) | ROI-first requires explicit criteria to evaluate "value from day one" |
+| The B1M | Data centres + investment follows clarity | Not primary for CAND-003 (weak fit for criteria thesis) |
 
-### Tier 3: Consultores (governance framing)
+## Source classification (per attribution policy, applied from start)
 
-| # | Name | Platform | Relevance to CAND-003 |
-|---|------|----------|----------------------|
-| 12 | Bernard Marr | bernardmarr.com (not accessed) | AI governance, organizational readiness criteria |
+```yaml
+source_classification:
+  - source_name: "DeepLearning.AI / The Batch"
+    source_url: "https://www.deeplearning.ai/the-batch"
+    type: analysis_source
+    public_citable: true
+    internal_trace_only: false
+    reason: "Newsletter producing original editorial analysis. Issues #340 and #343 contain original reporting on AI audit standards and agent management."
+    public_citation: "DeepLearning.AI or The Batch (as organization)"
 
-## Source Selection Rationale
+  - source_name: "OECD — Algorithmic Management Report (2025)"
+    source_url: "https://www.oecd.org"
+    type: primary_source
+    public_citable: true
+    internal_trace_only: false
+    reason: "Original report with verifiable data: 79% of European companies use algorithmic management tools."
+    public_citation: "OECD (as organization)"
 
-CAND-002 used these publications:
-- The B1M: "The World's Biggest Building Boom" + "Can Saudi Arabia still complete The LINE?"
-- The Batch: #349, #348, #346, #342
-- Marc Vidal: "Cuando los imperios olvidan innovar", "El algoritmo como jefe supremo", "La paradoja de la productividad"
-- Aelion.io: manifesto
+  - source_name: "AVERI — AI Verification and Research Institute (Brundage)"
+    source_url: ""
+    type: primary_source
+    public_citable: true
+    internal_trace_only: false
+    reason: "Published 8-principle audit framework with 4 assurance levels. Original research."
+    public_citation: "AVERI (as organization, not Miles Brundage by name)"
 
-**CAND-003 uses DIFFERENT publications** from the same sources:
-- The B1M: "Will Los Angeles Be Ready For The Next Olympics?" + "The Plan to Save Paris' Most Hated Building"
-- The Batch: #343 (Management for Agents) + #347 (Inside Claude Code, OpenAI exits Sora)
-- Marc Vidal: reuses "El algoritmo como jefe supremo" + "La paradoja de la productividad" but extracts DIFFERENT angle (governance criteria, not gap diagnosis)
-- Aelion.io: manifesto (contextual — same as CAND-002)
+  - source_name: "McKinsey Global Institute"
+    source_url: "https://www.mckinsey.com"
+    type: primary_source
+    public_citable: true
+    internal_trace_only: false
+    reason: "Original research: up to 30% of US labor hours could be automated by 2030."
+    public_citation: "McKinsey Global Institute (as organization)"
 
-## Sources NOT Used
+  - source_name: "Marc Vidal"
+    source_url: "https://www.marcvidal.net"
+    type: discovery_source
+    public_citable: false
+    internal_trace_only: true
+    reason: "Referente who analyzes OECD, McKinsey, EU data. Discovery path to primary sources. Not original source."
+    public_citation: "DO NOT cite in public copy"
 
-| Referente | Reason |
-|-----------|--------|
-| DotCSV, Daniel Shiffman, Lucas Dalto | No connection to operational criteria in AEC |
-| Alex Freberg, Cole Knaflic, Ruth Pozuelo | Data viz — tangential to thesis |
-| Pascal Bornet, Brian Solis, Sandeep Raut | Too generic for criteria-specific thesis |
-| Jose Luis Crespo, Grant Sanderson | Science/math communication — not AEC criteria |
-| Rodrigo Rojo, Martin Arosa | No public content found with governance/criteria angle |
-| Milos Temerinski, David Barco | BIM specialists but no public content on criteria frameworks |
-| Ignasi Perez Arnal | No public content accessed |
+  - source_name: "Aelion.io / Iván Gómez"
+    source_url: "https://aelion.io"
+    type: contextual_reference
+    public_citable: false
+    internal_trace_only: true
+    reason: "Landing page manifesto. Represents AEC sector mindset but no verifiable data."
+    public_citation: "DO NOT cite in public copy"
+```

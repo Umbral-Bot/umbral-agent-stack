@@ -1,53 +1,74 @@
 Actúa como rick-qa. Esta es una validación de atribución para CAND-003.
 
 Contexto:
-CAND-003 es la segunda candidata editorial source-driven. La política de atribución se aplicó DESDE EL INICIO del flujo (a diferencia de CAND-002, donde fue post-hoc). El copy fue escrito sin mencionar personas como autoridad pública.
+CAND-003 es la segunda candidata source-driven. Tesis: "Criterio antes que automatización". La política de atribución fue aplicada desde el inicio del borrador (lección de CAND-002).
 
-Política aplicada:
-- Referentes usados como descubrimiento editorial NO deben aparecer citados en el contenido final como origen de la idea si no son la fuente primaria/original.
-- Fuentes citables: The B1M (original_article), DeepLearning.AI/The Batch (analysis_source)
-- Discovery sources (solo interno): Marc Vidal → primarias: OECD (2025), Solow (1987)
-- Contextual reference (solo interno): Aelion.io/Ivan Gomez
+Fuentes clasificadas:
+- CITABLES: DeepLearning.AI / The Batch (analysis_source, issues #340 y #343), OECD (primary_source, 79% algorítmica), McKinsey Global Institute (primary_source, 30% automatización), AVERI (primary_source, framework auditoría IA)
+- DISCOVERY (solo interno): Marc Vidal (discovery_source, cita OECD/McKinsey/UE)
+- CONTEXTUAL (solo interno): Aelion.io / Iván Gómez (contextual_reference, manifesto sin datos)
 
-Copy LinkedIn a validar:
-"Hay una pregunta que falta en casi toda conversación sobre automatización en AEC:
+Copy LinkedIn:
+"En AEC hay cada vez más herramientas de IA disponibles. Pero antes de incorporarlas, hay una pregunta que muchos equipos no se hacen: ¿tenemos criterio operativo explícito para lo que ya hacemos?
 
-¿Cuál es tu criterio?
+Si una organización no tiene documentado qué constituye una revisión válida de un modelo BIM, qué dispara una escalación en coordinación, o qué criterio define que un entregable es suficiente, la IA no va a resolver eso. Va a ejecutar más rápido un proceso que nadie definió bien.
 
-No qué herramienta usás. No qué modelo probaste. Sino: ¿qué definiste como suficientemente bueno? ¿Cuándo se escala? ¿Quién revisa qué?
+No es un problema nuevo. A nivel global, reportes recientes muestran que la mayoría de empresas europeas ya usan herramientas algorítmicas de gestión. Pero los estándares para auditar esas herramientas recién se están proponiendo. Las plataformas más avanzadas de agentes de IA asignan permisos y guardarraíles, pero la supervisión humana sigue siendo implícita.
 
-En infraestructura, el patrón se ve claro. Una ciudad prometió una olimpíada sin autos, pero cuando los criterios reales no sostuvieron la ambición, el plan retrocedió. Un rascacielos se construyó sin criterios de integración urbana — el rechazo duró 50 años y la reparación cuesta €300M.
+Si trasladamos eso a construcción: los equipos están incorporando automatización sin haber formalizado sus criterios de trabajo. Revisiones que dependen de quién las hace, no de qué criterio aplican. Coordinación que funciona por costumbre, no por protocolo.
 
-En IA, el patrón se repite. Las plataformas de gestión de agentes más avanzadas no funcionan 'en general': definen permisos, umbrales, evaluación y escalamiento antes de ejecutar. Las arquitecturas que no definen criterios producen outputs incorrectos. Y cuando una tecnología impresionante no tiene criterios operativos sostenibles, se cancela.
+Automatizar eso no mejora el proceso. Lo acelera con ambigüedad incluida.
 
-En AEC pasa algo similar. Se adoptan herramientas con lógica aspiracional: mucha expectativa, poco criterio definido. Cuando no entregan valor, se culpa al software.
+Antes de escalar con IA, quizá la pregunta operativa es: ¿mi equipo tiene criterio explícito para revisión, aceptación, escalación y coordinación? Si la respuesta es no, la herramienta no es el problema."
 
-Pero el problema suele estar antes:
-— no había un umbral de calidad explícito,
-— no había criterio de revisión definido,
-— no había proceso de escalamiento claro.
+Copy X:
+"En AEC, la IA puede automatizar tareas. Pero si tu equipo no tiene criterio explícito para revisión, escalación y coordinación, lo que automatizas es la ambigüedad.
 
-La automatización amplifica lo que hay. Si hay criterio, amplifica orden. Si no, amplifica caos.
+79% de empresas europeas ya usan herramientas algorítmicas de gestión. Los estándares para auditarlas recién se están proponiendo. Antes de más herramientas: más criterio."
 
-Antes de sumar más tecnología, quizá convenga responder una pregunta más básica:
-¿tenés los criterios operativos para que funcione?"
+Premisa: "En AEC, automatizar sin criterio operativo explícito no acelera: amplifica la ambigüedad. Antes de escalar con IA, hay que definir qué constituye una revisión válida, qué dispara una escalación y qué hace que la coordinación sea suficiente."
 
-Copy X a validar:
-"En AEC, la pregunta correcta antes de automatizar no es qué herramienta usar.
+Page ID: 34b5f443-fb5c-8167-b184-e3c6cf1f6c3f
+Estado: Borrador
+Gates: aprobado_contenido=false, autorizar_publicacion=false, gate_invalidado=false
 
-Es qué criterio tenés definido.
+Valida específicamente:
+1. Que no se citan personas/referentes como fuentes públicas cuando no son fuente original.
+2. Que las fuentes citables son correctas (The Batch como analysis_source, OECD/McKinsey/AVERI como primary_source).
+3. Que los discovery sources quedan solo como trazabilidad interna.
+4. Que no se introduce source laundering.
+5. Que la tesis sigue sustentada.
+6. Que la conexión AEC sigue clara.
+7. Que el copy mantiene calidad editorial.
+8. Que gates siguen false y ready_for_publication=false.
 
-¿Qué es suficientemente bueno? ¿Quién revisa? ¿Cuándo se escala?
+Devuelve resultado en formato YAML:
 
-Sin eso definido, la automatización amplifica desorden, no lo resuelve."
-
-Criterios de validación:
-1. No menciona personas como autoridad pública (Andrew Ng, Marc Vidal, Ivan Gomez, Fred Mills)
-2. Fuentes citables correctamente clasificadas
-3. Discovery sources permanecen solo en trazabilidad interna
-4. No hay source laundering (presentar ideas de otros como propias sin trazabilidad)
-5. La tesis sigue sostenida sin nombres propios
-6. Conexión AEC clara
-7. Calidad editorial mantenida
-
-Devuelve resultado en YAML con verdict: pass | pass_with_changes | blocked.
+```yaml
+qa_attribution_result:
+  verdict: pass | pass_with_changes | blocked
+  attribution_validation:
+    no_person_as_public_authority: true | false
+    citable_sources_correct: true | false
+    discovery_sources_internal_only: true | false
+    no_source_laundering: true | false
+    thesis_still_supported: true | false
+    aec_connection_clear: true | false
+    editorial_quality_maintained: true | false
+    notes: ""
+  ready_for_human_review: true | false
+  ready_for_publication: false
+  blockers: []
+  required_changes: []
+  recommendations: []
+  validation_summary:
+    schema: pass | fail
+    sources_and_traceability: pass | fail
+    attribution_policy: pass | fail
+    aec_relevance: pass | fail
+    editorial_quality: pass | fail
+    governance: pass | fail
+    internal_disclosure: pass | fail
+  residual_risks: []
+  next_action: ""
+```

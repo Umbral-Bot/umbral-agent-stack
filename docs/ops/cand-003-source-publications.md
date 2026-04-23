@@ -1,93 +1,100 @@
 # CAND-003 — Source Publications Analysis
 
 > **Date**: 2026-04-23
-> **Purpose**: Capture publications from David's referentes for CAND-003 editorial extraction.
-> **Method**: Public web fetch (RSS/web pages). No login bypass. No scraping.
+> **Purpose**: Document publications analyzed for CAND-003 signal extraction.
 > **Thesis**: "Criterio antes que automatización"
 
 ## Sources Analyzed
 
-### 1. The B1M (Fred Mills) — theb1m.com
+### 1. DeepLearning.AI / The Batch — Issue #340 (2026-02-13) [CITABLE: analysis source]
 
-**Access status**: Public, read successfully.
-**Period reviewed**: Feb — Apr 2026
-**Publications selected** (different from CAND-002):
+**Title**: Claude Opus 4.6, xAI + SpaceX, AI Outperforms Doctors, Standardized AI Audits
+**Access**: Public, read successfully.
 
-| Date | Title | Editorial Signal for CAND-003 |
-|------|-------|-------------------------------|
-| 2026-04-13 | Will Los Angeles Be Ready For The Next Olympics? | Readiness = explicit criteria, not ambition. "Twenty-eight by 28" had 28 transport projects — many aspirational, not realistic. "No cars" retreated to "transit-first" when criteria didn't hold. |
-| 2026-02-11 | The Plan to Save Paris' Most Hated Building | Building without integration criteria → 50 years of rejection. France banned skyscrapers in central Paris. Now €300M renovation to fix the original absence of criteria. |
+**Key content — Standardized AI Audits (AVERI framework)**:
+- "AI is becoming ubiquitous, yet no standards exist for auditing its safety and security"
+- Independent auditors "typically have access only to public APIs" — cannot examine training data, model code, or documentation
+- "Different developers view risks in different ways, and measures of risk aren't standardized" — audit results not comparable
+- Miles Brundage's AVERI published framework with **8 audit principles**: independence, clarity, rigor, information access, continuous monitoring
+- **3 risk categories**: technology risk, organizational risk, assurance levels
+- "Auditors should analyze model vendors, and not just the models" — system prompts, retrieval sources, tool access
+- **4 Assurance Levels (AALs)**: AAL-1 (weeks, limited), AAL-2 (months, interviews), AAL-3 (years, near-full), AAL-4 (persistent, detecting deception)
 
-**Key signals for CAND-003**:
-- **LA Olympics**: The shift from "no-car Games" to "transit-first Games" demonstrates what happens when criteria aren't defined before committing to ambition. Joshua Schank (InfraStrategies): "A lot of the projects in 'Twenty-eight by 28' I think were much more aspirational... Not all of them were realistic. And I think the folks who were there at the time knew that."
-- **Tour Montparnasse**: Built in 1973 without urban integration criteria. Backlash was so strong France imposed 25m height limits across central Paris in 1977. The absence of criteria at design phase created 50+ years of organizational debt. The €300M renovation by Nouvelle AOM is the cost of missing criteria.
+**Editorial signal**: Even the most advanced AI labs lack agreed-upon criteria for evaluating AI systems. Without explicit audit standards, deployment is ungoverned. Direct parallel to AEC: teams deploy BIM/AI tools without review criteria.
 
-### 2. Andrew Ng / The Batch — deeplearning.ai/the-batch
+### 2. DeepLearning.AI / The Batch — Issue #343 (2026-03-06) [CITABLE: analysis source]
 
-**Access status**: Public, read successfully.
-**Period reviewed**: Mar — Apr 2026
-**Issues selected** (different from CAND-002):
+**Title**: Anthropic vs US Government, Nano Banana, Frontier Agent Management, Google Math
+**Access**: Public, read successfully.
 
-| Date | Issue | Key Theme | Criteria Connection |
-|------|-------|-----------|---------------------|
-| 2026-03-06 | #343 | Frontier agent management, Context Hub | Agent management requires explicit criteria: permissions, guardrails, evaluation metrics per agent. Context Hub: agents without explicit operational context hallucinate and use wrong APIs. |
-| 2026-04-03 | #347 | Inside Claude Code, OpenAI Exits Sora, Voice UI adoption | Claude Code architecture embeds criteria: 40+ tools each with permission gates, 3-tier memory, subagent coordination. Sora cancellation: capability without operational criteria = $1M/day loss → shutdown. Voice UIs: adoption barrier is knowing when/how to use, not the tech itself. |
+**Key content — Frontier Agent Management**:
+- OpenAI Frontier platform: "help orchestrate corporate cadres of agents, including building them, sharing information and business context among them"
+- Each agent gets "its own identity, permissions, and guardrails"
+- Companies control which employees access which agents
+- Evaluation: ground-truth data (accuracy) or model outputs (politeness assessment)
+- Agents "build memories, turning past interactions into useful context"
+- "Human oversight remains implicit in the design rather than formally outlined"
 
-**Key signals for CAND-003**:
+**Editorial signal**: Even frontier agent platforms treat oversight as implicit, not explicit. Governance criteria (who can use what, what constitutes acceptable output, when to escalate) are designed into platforms but not into organizational processes. In AEC, the same pattern: tools have built-in guardrails, but teams lack explicit operational criteria for using them.
 
-#### The Batch #343 — Management for Agents (OpenAI Frontier)
-- OpenAI launched Frontier: platform for orchestrating corporate agent cadres.
-- Each agent has own identity, permissions, guardrails. Companies control which employees can use it.
-- Frontier evaluates agents' outputs and provides feedback based on ground-truth metrics.
-- **Signal**: Even AI agent management requires CRITERIA (permissions, guardrails, evaluation) before deployment.
-- Andrew Ng on Context Hub: coding agents use outdated APIs, hallucinate parameters, don't know about tools they should use. Solution = explicit context/criteria.
-- **Signal**: Agents without explicit operational context produce wrong outputs. Criteria prevent hallucination.
+### 3. Marc Vidal — "El algoritmo como jefe supremo" (2026-03-23) [DISCOVERY SOURCE]
 
-#### The Batch #347 — Inside Claude Code
-- Source code leak revealed architecture: 40+ tools each with own permission modules and gates, 3-tier memory system, subagent swarms with shared memory.
-- **Signal**: The most advanced agent architectures embed explicit operational criteria at the architecture level — permissions, tool isolation, memory management.
+**Access**: Public (fetched in CAND-002 cycle, URL confirmed).
+**Note**: Reused article, different extraction angle for CAND-003.
 
-#### The Batch #347 — OpenAI Exits Video Generation (Sora)
-- Sora losing ~$1M/day. DAU peaked at 1M, halved quickly.
-- "The era in which an AI demo — however impressive — is sufficient to establish leadership may be drawing to a close."
-- **Signal**: Impressive capability without sustainable operational criteria = failure. Capability alone doesn't create value.
+**Key data cited by Vidal (primary sources)**:
+- **OECD (2025)**: 79% of European companies use algorithmic management tools
+- **McKinsey Global Institute**: up to 30% of US labor hours could be automated by 2030
+- **WEF (2025)**: 92M jobs displaced, 170M created before 2030
+- **EU AI Regulation (Feb 2025)**: banned emotional recognition in workplaces
 
-### 3. Marc Vidal — marcvidal.net (Discovery Source)
+**CAND-003 extraction angle** (distinct from CAND-002):
+- "¿Quién vigila al vigilante?" — who monitors the algorithmic decision-maker?
+- Companies deploy algorithmic management without criteria for: what decisions the algorithm can make, what triggers human review, what constitutes a valid algorithmic outcome
+- 79% of companies use these tools, but no report quantifies how many have explicit governance criteria for them
 
-**Access status**: Public, read successfully.
-**Period reviewed**: Mar 2026
-**Publications reused from CAND-002 with DIFFERENT extraction angle**:
+**Editorial signal**: Algorithmic management deployed without operational criteria. The 79% statistic shows adoption; the absence of governance criteria shows the gap. This is the CAND-003 thesis applied to the broader economy, translatable to AEC.
 
-| Date | Title | CAND-003 Criteria Angle (vs CAND-002 Gap Angle) |
-|------|-------|------------------------------------------------|
-| 2026-03-23 | El algoritmo como jefe supremo | CAND-002 extracted: algorithmic management replaces oversight. **CAND-003 extracts**: deploying algorithms without governance CRITERIA = opaque centralization. The OECD primary source shows 79% of companies lack criteria. |
-| 2026-03-09 | La paradoja de la productividad | CAND-002 extracted: tech without productivity gains. **CAND-003 extracts**: technology without PROCESS CRITERIA doesn't produce returns. Solow's insight is that criteria/process must change, not just tools. |
+### 4. OECD — Algorithmic Management Report (2025) [CITABLE: primary source]
 
-**Note**: Marc Vidal remains discovery_source (not citable). The primary sources are OECD and Solow.
+**Access**: Primary source, cited by Marc Vidal. Report data verified through Vidal's analysis.
+**Key data**: 79% of European companies use algorithmic management tools.
+**Relevance to thesis**: Massive adoption without proportional governance criteria.
 
-### 4. Aelion.io (Ivan Gomez Rodriguez)
+### 5. McKinsey Global Institute — Automation Data [CITABLE: primary source]
 
-**Access status**: Public landing page, no blog.
-**Key quote**: "La tecnología solo tiene sentido si genera valor desde el primer día."
-**CAND-003 angle**: ROI-first = criteria-first. The AEC mindset demands defined criteria for when technology generates value, not open-ended experimentation.
-**Classification**: Contextual reference (same as CAND-002).
+**Access**: Primary source, cited by Marc Vidal.
+**Key data**: Up to 30% of US labor hours could be automated by 2030.
+**Relevance to thesis**: Automation scale demands explicit criteria for what to automate vs what requires human judgment.
+
+### 6. AVERI — AI Verification and Research Institute [CITABLE: primary source]
+
+**Access**: Primary source, reported by The Batch #340.
+**Key data**: 8 audit principles, 4 assurance levels, 3 risk categories.
+**Relevance to thesis**: First proposed framework for explicit AI audit criteria. Demonstrates the gap: the framework is needed precisely because no criteria existed before.
+
+### 7. Aelion.io (Iván Gómez) [CONTEXTUAL REFERENCE]
+
+**Access**: Public landing page.
+**Key signal**: "La tecnología solo tiene sentido si genera valor desde el primer día."
+**CAND-003 extraction**: "Value from day one" requires criteria to define what "value" means operationally. Without that definition, the claim is aspirational, not measurable.
 
 ## Cross-Source Signal Matrix for CAND-003
 
-| Signal | Sources | Type | CAND-003 Relevance |
-|--------|---------|------|-------------------|
-| Undefined criteria lead to scope retreat | B1M (LA Olympics) | evidencia | "No car" → "transit-first" → "some car" = criteria erosion under pressure |
-| Building without criteria creates permanent debt | B1M (Tour Montparnasse) | evidencia | 50 years rejection + €300M fix = cost of absent criteria |
-| Agent management requires explicit criteria | Batch #343 (Frontier) | evidencia | Permissions, guardrails, evaluation metrics per agent |
-| Agents without context produce wrong output | Batch #343 (Context Hub) | evidencia | Explicit operational context prevents hallucination |
-| Advanced architectures embed criteria | Batch #347 (Claude Code) | evidencia | 40+ tools with permission gates, 3-tier memory |
-| Capability without criteria = failure | Batch #347 (Sora exit) | evidencia | $1M/day loss, DAU halved → cancelled |
-| Most companies deploy algorithms without governance criteria | OECD 2025 (behind Vidal) | evidencia | 79% European companies lack algorithmic governance criteria |
-| Technology without process criteria ≠ productivity | Solow 1987 (behind Vidal) | evidencia | Established economic principle |
-| AEC demands criteria-first value | Aelion.io | contextual | ROI-first = criteria-first sector mindset |
+| Signal | Source(s) | Type | CAND-003 Thesis Connection |
+|--------|-----------|------|---------------------------|
+| No AI audit standards exist | Batch #340, AVERI | Evidencia | Without criteria, AI deployment is ungoverned |
+| 79% of European companies use algorithmic tools | OECD via Vidal | Evidencia | Massive adoption outpaces governance |
+| Agent platforms treat oversight as implicit | Batch #343 | Evidencia | Even tech leaders don't formalize criteria |
+| 30% of US labor hours automatable by 2030 | McKinsey via Vidal | Evidencia | Scale of automation demands explicit criteria |
+| "¿Quién vigila al vigilante?" | Vidal (discovery) | Inferencia | No criteria = no accountability |
+| AEC's ROI-first filter demands day-one value | Aelion (contextual) | Inferencia | "Day-one value" needs operational definition |
+| AEC teams deploy BIM/AI without review protocols | Synthesis | Hipótesis | Sector-specific hypothesis from general pattern |
 
-## Strongest Pattern
+## Strongest editorial opportunity
 
-**Criteria before capability**: Across infrastructure (B1M), AI agent management (The Batch), and organizational research (OECD/Solow), the same pattern emerges — defining explicit operational criteria before deploying capability is what determines whether that capability produces value or amplifies disorder.
+**Pattern**: Multiple sources converge on the same gap — AI tools are deployed at scale (79% OECD, 30% McKinsey, frontier platforms, agentic workflows) but governance criteria remain implicit, undefined, or nonexistent (no audit standards, implicit oversight, algorithmic management without human review criteria).
 
-**Differentiation from CAND-002**: CAND-002 identified the gap between capability and readiness. CAND-003 identifies the specific missing element: explicit operational criteria. The prescription is not "get ready" (vague) but "define your criteria first" (actionable).
+**AEC translation**: In construction, this manifests as: BIM mandates without review criteria, AI tools without escalation protocols, coordination workflows without explicit quality thresholds. Teams automate what they don't fully understand, amplifying ambiguity rather than reducing it.
+
+**Formula candidate**: `pattern_synthesis` — combining signals from AI audit gap + agent governance + algorithmic management into AEC-specific thesis about operational criteria.

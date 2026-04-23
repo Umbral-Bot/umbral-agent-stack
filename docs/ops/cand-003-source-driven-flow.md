@@ -1,103 +1,106 @@
-# CAND-003 — Source-Driven Editorial Flow Summary
+# CAND-003 — Source-Driven Editorial Flow
 
 > **Date**: 2026-04-23
-> **Candidate**: CAND-003
-> **Title**: Criterio antes que automatización: en AEC, la preparación real no empieza por la herramienta.
-> **Status**: Borrador — all gates false
-> **Thesis**: "Criterio antes que automatización" — AEC needs explicit operational criteria before automating.
+> **Publication ID**: CAND-003
+> **Thesis**: "Criterio antes que automatización"
+> **Branch**: `codex/cand-002-source-driven-flow`
+> **Notion Page**: `34b5f443-fb5c-8167-b184-e3c6cf1f6c3f`
 
 ---
 
-## Flow Overview
+## Canonical 9-Stage Sequence
 
-CAND-003 follows the canonical 9-step source-driven editorial flow, producing 16 evidence files (matching CAND-002's pattern).
+### Stage 1 — Fuentes y señales
+- **Status**: Complete
+- Fetched and classified 6 sources (4 citable, 2 internal-only)
+- Attempted additional sources: Bernard Marr (404), The B1M (weak fit), Batch #347 (weak signal)
+- Source classification applied from start (lesson from CAND-002)
+- **Files**: `cand-003-source-intake.md`, `cand-003-source-publications.md`
 
-```
-Stage 1: Source Intake → Source Publications
-Stage 2: Rick Orchestrator Request → Result → Payload
-Stage 3: Source Reclassification → Notion Draft Blueprint
-Stage 4: Attribution Validation (Request → Result)
-Stage 5: Voice Pass (Request → Result)
-Stage 6: QA Pass (Request → Result → Postchange Request → Postchange Result)
-Stage 7: Flow Summary (this file)
-```
+### Stage 2 — Extracción y transformación
+- **Status**: Complete
+- Extraction matrix with evidencia/inferencia/hipótesis separation from start
+- Decantation: 4 discarded, 5 conserved, 2 combined syntheses
+- Transformation formula: `pattern_synthesis`
+- rick-orchestrator run: `67618f1e-5c7d-416f-83a9-6927d747a348`
+- **Files**: `cand-003-rick-orchestrator-request.md`, `cand-003-rick-orchestrator-result.md`, `cand-003-payload.md`
 
-## File Inventory (16 files)
+### Stage 3 — Borrador editorial base
+- **Status**: Complete
+- Notion page created with 143 blocks
+- Premisa as property AND visible in body (callout block)
+- Properties: Título, Premisa, Copy LinkedIn, Copy X, Claim principal, Ángulo editorial, Resumen fuente, Visual brief, Comentarios revisión, Notas
+- Estado: Borrador, all gates false
 
-| # | File | Stage | Purpose |
-|---|------|-------|---------|
-| 1 | `cand-003-source-intake.md` | 1 | Referentes selection and discovery path |
-| 2 | `cand-003-source-publications.md` | 1 | Publication analysis with cross-source signal matrix |
-| 3 | `cand-003-rick-orchestrator-request.md` | 2 | Full prompt for rick-orchestrator |
-| 4 | `cand-003-rick-orchestrator-result.md` | 2 | Run ID and execution log |
-| 5 | `cand-003-payload.md` | 2 | Complete YAML payload (title, premisa, extraction matrix, copy, decantation) |
-| 6 | `cand-003-source-reclassification.md` | 3 | Attribution policy compliance per source |
-| 7 | `cand-003-notion-draft-result.md` | 3 | Notion page blueprint (PENDING HITL creation) |
-| 8 | `cand-003-rick-qa-attribution-request.md` | 4 | Attribution validation request |
-| 9 | `cand-003-rick-qa-attribution-result.md` | 4 | Attribution validation result: **pass** |
-| 10 | `cand-003-rick-qa-voice-request.md` | 5 | Voice/ortho/premisa validation request |
-| 11 | `cand-003-rick-qa-voice-result.md` | 5 | Voice validation result: **pass** |
-| 12 | `cand-003-rick-qa-request.md` | 6 | Full editorial QA request |
-| 13 | `cand-003-rick-qa-result.md` | 6 | QA result: **pass_with_changes** (1 minor) |
-| 14 | `cand-003-rick-qa-postchange-request.md` | 6 | Postchange validation request |
-| 15 | `cand-003-rick-qa-postchange-result.md` | 6 | Postchange result: **pass** |
-| 16 | `cand-003-source-driven-flow.md` | 7 | This file — flow summary |
+### Stage 4 — Validación de atribución y trazabilidad
+- **Status**: Complete
+- rick-qa attribution run: `11af3dbe-10dd-4882-b82b-2d32b0c3f6fc`
+- Initial verdict: `pass_with_changes` (2 issues in extraction matrix)
+  1. Vidal → OECD/McKinsey reclassified as primary source with discovery trace
+  2. Aelion ROI-first removed from inference support
+- Final verdict: `pass`
+- **Files**: `cand-003-rick-qa-attribution-request.md`, `cand-003-rick-qa-attribution-result.md`
 
-## Sources Used
+### Stage 5 — Pasada de voz contra Guía Editorial y Voz de Marca
+- **Status**: Complete
+- **This was a real, separate rewrite pass** — not just QA verification
+- 7 Notion body blocks rewritten with David's voice profile
+- Voice source: **authorized summary** (Notion voice guide page `0192ad1f-3ca1-44ae-954d-0b738261258e` not accessible by integration)
+- Key changes: more direct opening, second person ("tu organización"), less expository transitions, more AEC-native language, added "Entregables que se aceptan por inercia, no por verificación"
+- rick-qa voice validation run: `80827fc2-170b-4787-82aa-826a95f8691a`
+- Verdict: `pass`
+- **Files**: `cand-003-rick-qa-voice-request.md`, `cand-003-rick-qa-voice-result.md`
 
-| Source | Type | Citable | Publications |
-|--------|------|---------|-------------|
-| The B1M | original_article | Yes | LA Olympics readiness, Tour Montparnasse renovation |
-| DeepLearning.AI / The Batch | analysis_source | Yes | #343 (Frontier/Context Hub), #347 (Claude Code, Sora) |
-| Marc Vidal | discovery_source | No (internal only) | → OECD (2025), Solow (1987) |
-| Aelion.io | contextual_reference | No (internal only) | Landing page manifesto |
+### Stage 6 — QA editorial y técnico (consolidated final)
+- **Status**: Complete
+- rick-qa final run: `ae155b48-e82e-4f59-ab40-a1589448bb66`
+- Verdict: `pass` (all 7 dimensions)
+- Technical: pytest 175 passed, schema validation passed, audit report written, security grep clean
+- **Files**: `cand-003-rick-qa-request.md`, `cand-003-rick-qa-result.md`
 
-## Extraction Matrix Summary
+### Stage 7 — Revisión humana
+- **Status**: Ready
+- CAND-003 is in Notion as Borrador, ready for David's review
+- Gates remain false, no publication fields set
 
-| Type | Count | Key Signals |
-|------|-------|-------------|
-| Evidencia | 6 | LA criteria erosion, Montparnasse absent criteria, Frontier permissions, Context Hub anti-hallucination, Claude Code permission gates, Sora cancellation |
-| Inferencia | 3 | Criteria = invisible infrastructure, Capability without criteria is fragile, Solow paradox persists without criteria change |
-| Hipótesis | 1 | AEC teams defining criteria first will capture disproportionate value |
+### Stage 8 — Aprobación de contenido
+- **Status**: Not executed (awaiting David)
 
-## Transformation Formula
+### Stage 9 — Autorización de publicación
+- **Status**: Not executed (awaiting David)
 
-**"Criterio como infraestructura"** — pattern_synthesis
+---
 
-Selected over: checklist_prescriptivo, caso_de_estudio_sora, continuacion_directa_de_cand_002.
+## Evidence Files (12)
 
-## QA History
+| # | File | Stage |
+|---|------|-------|
+| 1 | `cand-003-source-intake.md` | 1 |
+| 2 | `cand-003-source-publications.md` | 1 |
+| 3 | `cand-003-rick-orchestrator-request.md` | 2 |
+| 4 | `cand-003-rick-orchestrator-result.md` | 2 |
+| 5 | `cand-003-payload.md` | 2 |
+| 6 | `cand-003-rick-qa-attribution-request.md` | 4 |
+| 7 | `cand-003-rick-qa-attribution-result.md` | 4 |
+| 8 | `cand-003-rick-qa-voice-request.md` | 5 |
+| 9 | `cand-003-rick-qa-voice-result.md` | 5 |
+| 10 | `cand-003-rick-qa-request.md` | 6 |
+| 11 | `cand-003-rick-qa-result.md` | 6 |
+| 12 | `cand-003-source-driven-flow.md` | 6 |
 
-| Pass | Run ID | Verdict |
-|------|--------|---------|
-| QA Initial | 5b3a9f17-... | pass_with_changes (1 minor: hipótesis AEC anchor) |
-| QA Postchange | a2e7c946-... | pass |
-| Attribution | c7d42e8f-... | pass |
-| Voice | e8f25a1d-... | pass |
+## Improvements over CAND-002
 
-## Differentiation from CAND-002
+1. **Attribution from start**: Source classification applied in Stage 1, not retrofitted after draft
+2. **Orthography from start**: Correct Spanish from first draft, no separate correction pass needed
+3. **Voice pass as separate stage**: Real rewrite (Stage 5), not compressed into QA
+4. **Premisa in body AND property**: Callout block in body for human review visibility
+5. **Documented voice source**: Explicit that voice pass used authorized summary, not live guide
 
-| Dimension | CAND-002 | CAND-003 |
-|-----------|----------|----------|
-| Thesis | "The barrier is the organization" (gap diagnosis) | "Define criteria before automating" (prescription) |
-| Angle | Diagnostic — identifies what's missing | Prescriptive — tells you what to do first |
-| Sources | Batch #349/#348/#346/#342, B1M "Biggest Boom"/"The LINE", same Vidal | Batch #343/#347, B1M LA Olympics/Montparnasse, same Vidal (different pubs) |
-| Key concept | Preparación organizacional | Criterios operativos explícitos |
-| Progression | Awareness: "you have a gap" | Awareness: "here's where to start" |
-| Attribution | Post-hoc policy application | Policy from start (no post-hoc changes) |
-| Orthography | Corrected post-hoc (85 blocks) | Correct from start |
+## State
 
-## Process Improvements in CAND-003
-
-1. **Attribution policy from start**: Copy written without person names from the beginning. No post-hoc reclassification needed.
-2. **Orthography correct from start**: Tildes, ñ, punctuation all correct in first draft. No correction pass needed.
-3. **Different publications from same referentes**: Demonstrates the canonical flow can use the same referentes DB without repeating content.
-4. **Cleaner QA**: Only 1 minor change (hipótesis AEC anchor) vs CAND-002's more extensive corrections.
-
-## Next Steps
-
-- [ ] Human review of copy and premisa
-- [ ] Create Notion page when HITL authorized
-- [ ] Set `aprobado_contenido` when David approves
-- [ ] Schedule publication when `autorizar_publicacion` is set
-- [ ] Consider CAND-004 progression: awareness → consideration with a practical case
+- Estado: Borrador
+- Gates: `aprobado_contenido=false`, `autorizar_publicacion=false`, `gate_invalidado=false`
+- `ready_for_human_review`: true
+- `ready_for_publication`: false
+- Rick active: false
+- Publish authorized: false

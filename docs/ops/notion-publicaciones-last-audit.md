@@ -31,3 +31,4 @@
 | INFO | Resumen fuente | extra_property | Property 'Resumen fuente' (rich_text) exists in Notion but not in local schema. |
 | INFO | Última revisión humana | extra_property | Property 'Última revisión humana' (date) exists in Notion but not in local schema. |
 | INFO | Etapa audiencia | extra_options | Extra options in Notion: ['retention']. |
+

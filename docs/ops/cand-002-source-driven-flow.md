@@ -35,13 +35,14 @@ First source-driven editorial flow. Unlike CAND-001 (opinion operativa without e
 
 ## QA verdict
 
-- **Verdict**: pass_with_changes
-- **ready_to_create_notion_draft**: true
+- **Initial verdict**: pass_with_changes (Run ID: `e7ede159-9b1c-4e04-9012-8c6e827e3e22`)
+- **Post-change verdict**: **pass** (Run ID: `33554772-9f2b-41a6-87de-21bab936874f`)
+- **ready_for_human_review**: true
 - **Blockers**: 0
-- **Required changes**: 3 (all minor/mechanical, applied during page creation)
-  1. Add specific article URLs to source_set
-  2. Add explicit inferencia/hipotesis rows to extraction_matrix
-  3. Tie claim to sources more explicitly
+- **Required changes**: 3 (all resolved)
+  1. Add specific article URLs to source_set — resolved (URLs verificadas section added)
+  2. Add explicit inferencia/hipotesis rows to extraction_matrix — resolved (3 subsections)
+  3. Tie claim to sources more explicitly — resolved (inference rows with source attribution)
 - **rick-qa Run ID**: e7ede159-9b1c-4e04-9012-8c6e827e3e22
 
 ## Notion page created

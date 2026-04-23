@@ -80,6 +80,7 @@
     "Creado por": {"id": "p22", "type": "created_by", "created_by": {}},
     "Última edición": {"id": "p23", "type": "last_edited_time", "last_edited_time": {}},
     "trace_id": {"id": "p24", "type": "rich_text", "rich_text": {}},
-    "Notas": {"id": "p25", "type": "rich_text", "rich_text": {}}
+    "Notas": {"id": "p25", "type": "rich_text", "rich_text": {}},
+    "Premisa": {"id": "p26", "type": "rich_text", "rich_text": {}}
   }
 }

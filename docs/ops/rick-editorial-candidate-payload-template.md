@@ -36,6 +36,7 @@ prioridad: ""                  # (if applicable)
 # --- Editorial content ---
 claim_principal: ""
 angulo_editorial: ""
+premisa: ""                    # Afirmación breve, fuerte, clara — la tesis condensada en 1-2 frases operativas
 resumen_fuente: ""
 
 # --- Sources ---

@@ -74,6 +74,20 @@ Resultado completo en [`docs/ops/notion-publicaciones-last-audit.md`](notion-pub
 
 Ver detalle en [`docs/ops/notion-publicaciones-test-records.md`](notion-publicaciones-test-records.md).
 
+### Editorial candidates
+
+| Record | Page ID | Estado | QA Verdict | Creado |
+|--------|---------|--------|------------|--------|
+| CAND-001 | `34b5f443-fb5c-81dd-8338-cb0b46699250` | Borrador | pass | 2026-04-23 |
+| CAND-002 | `34b5f443-fb5c-81da-abe1-e586033ceed8` | Borrador | pass_with_changes | 2026-04-23 |
+
+CAND-001 URL: [link](https://www.notion.so/CAND-001-Automatizar-sin-gobernanza-escala-el-desorden-34b5f443fb5c81dd8338cb0b46699250)
+Status: `created_draft_pending_human_review`
+
+CAND-002 URL: [link](https://www.notion.so/CAND-002-La-IA-ya-cambio-de-ritmo-En-AEC-el-cuello-de-botella-sigue-siendo-la-organizacion-34b5f443fb5c81daabe1e586033ceed8)
+Status: `created_draft_pending_human_review`
+Type: source-driven (first)
+
 ## Diferencias conocidas
 
 - Notion tiene 45 propiedades; el schema local define 26. Las 19 extras son intencionales (agregadas por Notion AI).

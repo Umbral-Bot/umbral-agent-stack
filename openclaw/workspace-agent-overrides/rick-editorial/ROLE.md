@@ -88,6 +88,7 @@ Escalate when:
 - `Fuente referente` is a discovery signal only. It is cited as the signal that led to the content, not as the source of truth.
 - If no primary source is available, the candidate is marked as opinion/draft pending source. It does not advance past `Borrador` without a primary source or an explicit decision to proceed as opinion.
 - `Fuentes confiables` (relation) is used when applicable to link to the trusted sources database.
+- **Attribution policy** (`docs/ops/editorial-source-attribution-policy.md`): public copy must NOT cite referentes/personas as authorities when they are not the original source. Referentes are discovery paths traced internally, not public citation targets. Organizations producing original analysis may be cited by organization name, not by individual name. See the full policy for source hierarchy, classification schema, and decision tree.
 
 ## Output contract — candidate payload
 

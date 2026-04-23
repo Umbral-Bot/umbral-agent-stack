@@ -42,6 +42,17 @@ resumen_fuente: ""
 fuente_primaria: ""            # URL or "pending" — required for verifiable claims
 fuente_referente: ""           # URL or empty — discovery signal only, not source of truth
 
+# --- Source classification (per editorial-source-attribution-policy.md) ---
+source_classification:
+  - source_name: ""
+    source_url: ""
+    type: ""                   # primary_source | original_article | official_doc | analysis_source | discovery_source | contextual_reference
+    public_citable: false      # true only if primary/original source or org producing original analysis
+    internal_trace_only: false # true for discovery sources and contextual references
+    reason: ""
+    original_source_url: ""    # if discovery_source, URL of primary source found
+    original_source_name: ""   # name of primary source organization
+
 # --- Per-channel copies ---
 copy_linkedin: ""
 copy_x: ""
@@ -89,6 +100,8 @@ Before handing a candidate to `rick-qa` or David:
 - [ ] Human gates are all `false`.
 - [ ] No publication fields are set (`published_url`, `platform_post_id` empty).
 - [ ] Source separation is clear: `fuente_primaria` is the source of truth; `fuente_referente` is discovery signal only.
+- [ ] Source classification is present per `editorial-source-attribution-policy.md`.
+- [ ] No referentes cited as public authorities in copy when they are not the original source.
 - [ ] No unsupported factual claims without a primary source.
 - [ ] `visual_hitl_required` is explicitly set (true if people/brands/sensitive content).
 - [ ] `trace_id` is set for trazabilidad.

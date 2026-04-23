@@ -85,13 +85,29 @@ CAND-001 (PR #266) was the first editorial candidate — opinion operativa witho
 | rick-qa | `e7ede159-9b1c-4e04-9012-8c6e827e3e22` | Validate CAND-002 payload |
 | rick-qa | `33554772-9f2b-41a6-87de-21bab936874f` | Post-change validation (verdict: pass) |
 | rick-qa | `b1b11ff1-a1f5-4c7d-8140-6eda57fd8495` | Attribution policy validation (verdict: pass) |
+| rick-qa | `dce14a0f-e1f7-484d-8ce1-c78361ed11c4` | Voice/orthography validation (verdict: pass) |
+
+## Voice, orthography, and premisa update (2026-04-23)
+
+David instructed full Spanish orthography correction and voice alignment. Changes applied:
+
+1. **Orthography corrected**: all tildes (á, é, í, ó, ú), ñ, and punctuation corrected across 111 Notion blocks (26 public copy + 85 internal body).
+2. **Voice aligned to David**: copy rewritten to be more direct, operationally concrete, and AEC-focused. Removed generic AI conversation tone. Added construction-specific language (obra, coordinación, criterio de revisión, trazabilidad).
+3. **Anti-slop verified**: no banned patterns (no "En el mundo actual", no "No es solo X es Y", no em dash in copy, no consultant-speak).
+4. **Premisa column added** to DB Publicaciones (rich_text) and populated for CAND-002: "En AEC, más herramientas de IA no garantizan más valor. El cuello de botella es organizacional: roles, procesos y criterio de revisión no están diseñados para absorber la velocidad que la tecnología ya ofrece."
+5. **Properties updated**: Título (tildes), Copy LinkedIn, Copy X, Premisa, Ángulo editorial, Claim principal, Resumen fuente, Comentarios revisión, Notas.
+6. **Schema updated**: `notion/schemas/publicaciones.schema.yaml` now includes Premisa property.
+7. **Template updated**: `docs/ops/rick-editorial-candidate-payload-template.md` includes premisa field.
+8. **QA voice result**: `docs/ops/cand-002-rick-qa-voice-result.md`
+9. **QA voice request**: `docs/ops/cand-002-rick-qa-voice-request.md`
 
 ## For David
 
-1. Search in Notion: **CAND-002 — La IA ya cambio de ritmo**
-2. Review: propuesta LinkedIn, variante X, fuentes, formula de transformacion, checklist
+1. Search in Notion: **CAND-002 — La IA ya cambió de ritmo**
+2. Review: propuesta LinkedIn, variante X, premisa, fuentes, fórmula de transformación, checklist
 3. The page contains full traceability: what was extracted from each source, what was discarded, what was combined
 4. Use the checklist to approve/reject formula, sources, AEC relevance, and tone
+5. New: verify voice and orthography match David's editorial standard
 
 ## Next steps
 

@@ -307,6 +307,15 @@ properties:
       ID de traza para correlacionar con OpsLogger events.
     max_length: 200
 
+  - name: Premisa
+    type: rich_text
+    required: false
+    description: >
+      Premisa editorial de la pieza: afirmación breve, fuerte y clara
+      que condensa la tesis del contenido. No es el título ni el claim
+      completo — es la idea central en una o dos frases operativas.
+    max_length: 500
+
   - name: Notas
     type: rich_text
     required: false

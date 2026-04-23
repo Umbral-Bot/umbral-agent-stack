@@ -80,3 +80,62 @@ La primera candidata real debe ser:
 - Re-ejecutar auditoría read-only después de la creación.
 - Documentar el candidato en este archivo o en un doc de seguimiento.
 - David revisa antes de cualquier aprobación.
+
+---
+
+## CAND-001 — First Real Editorial Candidate
+
+| Campo | Valor |
+|-------|-------|
+| **Título** | CAND-001 — Automatizar sin gobernanza escala el desorden |
+| **Page URL** | [link](https://www.notion.so/CAND-001-Automatizar-sin-gobernanza-escala-el-desorden-34b5f443fb5c81dd8338cb0b46699250) |
+| **Page ID** | `34b5f443-fb5c-81dd-8338-cb0b46699250` |
+| **publication_id** | CAND-001 |
+| **trace_id** | CAND-001-v2-editorial-candidate |
+| **Canal** | linkedin |
+| **Tipo de contenido** | linkedin_post |
+| **Estado** | Borrador |
+| **Etapa audiencia** | awareness |
+| **Prioridad** | media |
+| **aprobado_contenido** | false |
+| **autorizar_publicacion** | false |
+| **gate_invalidado** | false |
+| **visual_hitl_required** | true |
+| **Creado por sistema** | false |
+| **Proyecto** | Sistema Editorial Rick |
+
+**Creado por**: Codex (technical operator), via OpenClaw flow
+**Fecha creación**: 2026-04-23
+**Propósito**: Primera candidata editorial real para revisión humana por David.
+
+### Flujo de creación
+
+1. `rick-orchestrator` generó payload v2 simulando `rick-editorial` (aplicando decisión editorial de David).
+2. `rick-qa` validó payload v2: **verdict: pass** (0 blockers, 0 required changes, `ready_to_create_notion_draft: true`).
+3. Codex creó el registro en Notion DB Publicaciones como `Borrador`.
+4. Auditoría estructural post-write: **PASS** (0B/0W/19I).
+
+### Body preview
+
+- **Body preview added**: yes (2026-04-23)
+- Page now contains visible review sections: proposal, variants, visual brief, traceability, and David checklist.
+- Appended via Notion API (PATCH block children), 75 blocks in 2 batches.
+- Properties not modified — append-only.
+- Ready for David review in Notion.
+
+### Para David
+
+- Buscar en Notion: **CAND-001 — Automatizar sin gobernanza escala el desorden**
+- Revisar copy LinkedIn, copy X, ángulo editorial y visual brief.
+- No está publicado. No hay gates marcados. No hay runtime activo.
+- Ready for human review, not ready for publication.
+
+### Evidence docs
+
+- [`cand-001-v2-rick-orchestrator-request.md`](cand-001-v2-rick-orchestrator-request.md)
+- [`cand-001-v2-rick-orchestrator-result.md`](cand-001-v2-rick-orchestrator-result.md)
+- [`cand-001-v2-payload.md`](cand-001-v2-payload.md)
+- [`cand-001-v2-rick-qa-request.md`](cand-001-v2-rick-qa-request.md)
+- [`cand-001-v2-rick-qa-result.md`](cand-001-v2-rick-qa-result.md)
+- [`cand-001-notion-draft-result.md`](cand-001-notion-draft-result.md)
+- [`cand-001-notion-page-body-update.md`](cand-001-notion-page-body-update.md)

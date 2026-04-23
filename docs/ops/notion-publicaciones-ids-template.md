@@ -72,6 +72,15 @@ Resultado completo en [`docs/ops/notion-publicaciones-last-audit.md`](notion-pub
 |--------|---------|--------|--------|
 | TEST-001 | `c98af1420cd949a9a2ff128a76955b6e` | Borrador | 2026-04-22 |
 
+### Editorial candidates
+
+| Record | Page ID | Estado | QA Verdict | Creado |
+|--------|---------|--------|------------|--------|
+| CAND-001 | `34b5f443-fb5c-81dd-8338-cb0b46699250` | Borrador | pass | 2026-04-23 |
+
+CAND-001 URL: [link](https://www.notion.so/CAND-001-Automatizar-sin-gobernanza-escala-el-desorden-34b5f443fb5c81dd8338cb0b46699250)
+Status: `created_draft_pending_human_review`
+
 Ver detalle en [`docs/ops/notion-publicaciones-test-records.md`](notion-publicaciones-test-records.md).
 
 ## Diferencias conocidas

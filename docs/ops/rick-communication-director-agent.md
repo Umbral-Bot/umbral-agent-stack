@@ -8,6 +8,8 @@
 
 It exists because CAND-003 showed a gap: the premise was acceptable, but the final copy used unnatural terms such as `escalacion` and `rick-qa` still returned `voice: pass`.
 
+Subsequent iterations of CAND-003 revealed a deeper calibration failure: the same voice issues reappeared across versions because human feedback was not being absorbed into the system as persistent rules. This led to the creation of `CALIBRATION.md` as the operational base for voice calibration, and to hardened opening/grounding checks in both the communication director workflow and `rick-qa` voice QA.
+
 ## Decision
 
 Create a new role instead of expanding an existing one.
@@ -98,9 +100,18 @@ Observed issues:
 
 System implication:
 
-- `rick-qa` needs stricter voice evidence.
+- `rick-qa` needs stricter voice evidence and opening coherence rules that block `voice: pass` for incoherent openings, bare sectoral labels, and ungrounded abstractions. QA does not rewrite — it blocks and returns to communication director.
 - The voice pass needs an independent communication review when David-facing copy is involved.
 - The system needs a blacklist and replacement table for terms that are technically understandable but unnatural in David's voice.
+- Repeated human feedback must be converted into persistent calibration rules in `CALIBRATION.md`, not re-corrected manually each time.
+
+## CALIBRATION.md
+
+`openclaw/workspace-templates/skills/director-comunicacion-umbral/CALIBRATION.md` is the persistent calibration file. It absorbs recurring human feedback as structured rules (pattern / rejected example / preferred example / reason / when applies / when doesn't apply).
+
+The communication director must read `CALIBRATION.md` before every review. When David's feedback reveals a new recurring pattern, the agent must propose a new entry as part of the handoff.
+
+`CALIBRATION.md` lives inside the skill directory, not as a workspace governance file. OpenClaw reads skills directly from the workspace skill path. The governance sync script (`scripts/sync_openclaw_workspace_governance.py`) handles `HEARTBEAT.md` only. Skill files including `CALIBRATION.md` are available to the agent through the skill's own directory structure.
 
 ## First handoff prompt
 

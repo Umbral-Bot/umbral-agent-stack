@@ -46,7 +46,11 @@ Si una fuente no esta accesible, decirlo y bajar confianza. No afirmar que se le
 
 ## Workflow
 
-1. **Separar capas**
+1. **Audit de calibracion**
+   - Leer `CALIBRATION.md` antes de cualquier revision.
+   - Verificar que todas las entradas activas seran aplicadas como filtro.
+
+2. **Separar capas**
    - Premisa.
    - Claim.
    - Copy publico.
@@ -54,25 +58,39 @@ Si una fuente no esta accesible, decirlo y bajar confianza. No afirmar que se le
    - QA.
    - Comentarios de revision.
 
-2. **Diagnosticar el fallo**
+3. **Diagnosticar el fallo**
    - Marcar que funciona en fondo.
    - Marcar que falla en forma.
    - Citar frases problemáticas.
    - Identificar si el fallo viene de redaccion base, voice pass, QA o prompt operador.
 
-3. **Aplicar prueba de voz**
+4. **Check de apertura**
+   - Verificar que la apertura no usa `AEC/BIM` como etiqueta sectorial generica.
+   - Verificar que el primer parrafo contiene o conecta inmediatamente con una escena AEC/BIM reconocible (revision, entregable, coordinacion, RFI, interferencia, obra).
+   - Si la apertura falla estos checks, corregirla antes de continuar.
+
+5. **Check de aterrizaje operativo**
+   - Verificar que no hay abstracciones sueltas: `nivel de coordinacion`, `criterio operativo explicito`, `coordinacion suficiente` deben estar traducidas a condiciones observables.
+   - Cada claim sobre IA/automatizacion debe tener al menos una escena AEC concreta que lo ilustre.
+
+6. **Aplicar prueba de voz**
    - Preguntar: `David diria esto en una reunion con un BIM manager?`
    - Preguntar: `Esto suena a experiencia AEC o a resumen de informe de IA?`
    - Preguntar: `Hay una escena concreta de coordinacion, revision, modelo, entregable u obra?`
 
-4. **Generar variantes**
+7. **Gate de coherencia del primer parrafo**
+   - Si el primer parrafo anuncia un tema pero no lo conecta con operacion antes de que termine, la variante no pasa.
+   - Si la tesis no aterriza en AEC dentro de las primeras dos oraciones, reescribir la apertura.
+
+8. **Generar variantes**
    - Maximo 3.
    - Mantener premisa y fuentes.
    - No inventar datos.
    - No citar discovery sources como autoridad.
    - No publicar ni actualizar gates.
+   - Cada variante debe pasar los checks de apertura, aterrizaje y coherencia antes de ser entregada.
 
-5. **Scorear**
+9. **Scorear**
    - voz David: 1-5
    - naturalidad: 1-5
    - densidad AEC/BIM: 1-5
@@ -80,11 +98,16 @@ Si una fuente no esta accesible, decirlo y bajar confianza. No afirmar que se le
    - claridad de tesis: 1-5
    - riesgo de claim: bajo / medio / alto
 
-6. **Recomendar configuracion**
-   - Reglas nuevas para `rick-editorial`.
-   - Reglas nuevas para `rick-qa`.
-   - Reemplazos terminologicos.
-   - Prompt de handoff para Copilot/Codex si hace falta implementar cambios.
+10. **Recomendar configuracion**
+    - Reglas nuevas para `rick-editorial`.
+    - Reglas nuevas para `rick-qa`.
+    - Reemplazos terminologicos.
+    - Prompt de handoff para Copilot/Codex si hace falta implementar cambios.
+
+11. **Delta feedback-to-system**
+    - Si el feedback de David en esta iteracion repite un patron ya corregido antes, proponer nueva entrada en `CALIBRATION.md`.
+    - Si el feedback revela un patron nuevo generalizable, proponer nueva entrada en `CALIBRATION.md`.
+    - Incluir las propuestas de calibracion en el bloque de `reglas nuevas para el sistema`.
 
 ## Lista negra editorial adicional
 

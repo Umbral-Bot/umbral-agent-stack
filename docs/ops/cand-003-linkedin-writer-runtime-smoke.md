@@ -115,6 +115,9 @@ After communication director and QA review, 3 refined variants generated:
 ## Estado
 
 - Dry-run: si.
+- Runtime smoke: passed after hardening.
+- Mandatory reads: ROLE.md, AGENTS.md, SKILL.md, LINKEDIN_WRITING_RULES.md, CALIBRATION.md.
+- Notion: confirmado por run operativo 2026-04-24. CAND-003 contiene Iteracion 2 con variantes refinadas.
 - Publicado: no.
+- Programado: no.
 - Gates: intactos.
-- Notion: pendiente actualizacion con iteracion refinada.

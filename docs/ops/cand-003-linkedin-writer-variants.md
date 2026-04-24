@@ -356,8 +356,12 @@ Antes de automatizar, conviene responder algo mas basico: ¿que significa que un
 ## Estado
 
 - Dry-run: si.
-- Notion editado: pendiente iteracion 2.
+- Notion editado: confirmado por run operativo 2026-04-24.
+- Seccion creada: "Iteracion 2 — Variantes refinadas (2026-04-24)".
+- Incluye: hardening de permisos, V-C2, V-A2, V-B2 y recomendacion.
 - Publicado: no.
+- Programado: no.
 - Gates: intactos.
+- Estado Notion: Borrador.
 - Fuente set: sin cambios.
 - CAND-002: no tocado.

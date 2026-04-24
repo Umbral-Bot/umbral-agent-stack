@@ -200,7 +200,7 @@ No usar este proyecto para benchmarks, entregables de cliente o iniciativas de n
 
 ### Runtime agents — roles y handoffs
 
-Rick opera como 3 runtime agents con responsabilidades separadas. Las definiciones completas están en `openclaw/workspace-agent-overrides/<agent>/ROLE.md`.
+Rick opera como 5 agentes con roles separados: 3 activos en runtime (orchestrator, delivery, qa), 1 design-only (editorial) y 1 en dry-run (communication-director). Las definiciones completas están en `openclaw/workspace-agent-overrides/<agent>/ROLE.md`.
 
 | Agente | Rol | Cuándo actúa |
 |--------|-----|-------------|

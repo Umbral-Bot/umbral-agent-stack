@@ -122,7 +122,7 @@ Entregar:
 - No publicar.
 - No marcar `aprobado_contenido`.
 - No marcar `autorizar_publicacion`.
-- No activar runtime.
+- No activar publicacion ni acciones write; este skill puede operar en agente dry-run si la config OpenClaw lo permite.
 - No usar Notion AI.
 - No cambiar fuentes ni atribucion.
 - No cambiar la premisa aprobada salvo propuesta explicita para David.

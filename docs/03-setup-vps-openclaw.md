@@ -199,6 +199,14 @@ Para registrar el Director de Comunicacion en la VPS, agregar una entrada equiva
 
 Luego correr el sync de gobernanza indicado arriba. Este agente queda para invocacion deliberada y dry-run; no debe tener routing autonomo, cron, publicacion ni permisos para marcar gates humanos.
 
+#### Smoke test
+
+```bash
+openclaw agent --agent rick-communication-director --message "Responde exactamente: OK-COMMUNICATION-DIRECTOR"
+```
+
+El smoke pasa si devuelve una respuesta coherente sin intentar escribir, publicar ni pedir permisos extra.
+
 ## Acceso a Control UI
 
 ### Importante: no exponer los puertos 18789/18791 a internet

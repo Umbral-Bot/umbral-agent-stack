@@ -208,10 +208,10 @@ Rick opera como 5 agentes con roles separados: 3 activos en runtime (orchestrato
 | `rick-delivery` | Ejecuta, produce artefactos, entrega resultados verificables | Recibe slices definidos, implementa, deja trazabilidad |
 | `rick-qa` | Valida, audita, declara riesgo residual | Verifica entregas contra criterios de aceptación con evidencia |
 | `rick-editorial` | Operador editorial de borradores y candidatas | Recibe asignaciones editoriales, produce candidatas en Borrador con fuentes separadas |
-| `rick-communication-director` | Curador narrativo y de voz | Revisa si el copy publico suena a David y propone variantes/configuracion |
+| `rick-communication-director` | Curador narrativo y de voz | Revisa si el copy publico suena a David, propone variantes/configuracion y convierte feedback humano recurrente en reglas persistentes de calibracion |
 
 > `rick-editorial` is **design-only / not active**. No workspace in `openclaw.json`, no runtime routing. See `openclaw/workspace-agent-overrides/rick-editorial/ROLE.md` for full contract and activation conditions.
-> `rick-communication-director` is **runtime-registered / read-only / dry-run**. It has a dedicated workspace identity for deliberate invocation, but no autonomous routing, no cron, no publication path, and no gate mutation. See `openclaw/workspace-agent-overrides/rick-communication-director/ROLE.md`.
+> `rick-communication-director` is **runtime-registered / read-only / dry-run**. It has a dedicated workspace identity for deliberate invocation, but no autonomous routing, no cron, no publication path, and no gate mutation. Handoffs to this agent also convert repeated human feedback into persistent calibration rules (`CALIBRATION.md`). See `openclaw/workspace-agent-overrides/rick-communication-director/ROLE.md`.
 
 **Flujo canónico:** orchestrator -> delivery -> qa -> orchestrator (cierre) -> David.
 **Flujo editorial:** orchestrator -> editorial -> communication-director (si aplica) -> qa -> orchestrator (cierre) -> David.

@@ -132,6 +132,30 @@ Preferred replacements:
 - `criterio operativo explicito` -> rotate with `reglas de revision`, `umbral de aceptacion`, `criterio de entrega`.
 - `coordinacion suficiente` -> `modelo revisable`, `entregable aceptable`, `interferencia resuelta`, `observacion cerrada`.
 
+## Opening and voice calibration rules
+
+These rules are mandatory checks before delivering any variant. They codify feedback from David that must not reappear as manual correction.
+
+### Apertura
+
+- Do not open a piece with `AEC/BIM` as a generic sectoral label. Prefer `sector AEC`, `industria de la construccion`, `equipos BIM`, or `En AEC` when immediately connected to an operational scene.
+- `AEC/BIM` may appear in the body when it refers to the real intersection of both disciplines in a concrete scene — not as a startup label.
+- The first paragraph must contain or immediately connect to a recognizable AEC/BIM scene (a review, a deliverable, a coordination session, an RFI, a clash, a site scenario). If the opening announces a thesis without grounding it in an operational scene within the first two sentences, the variant is not ready.
+
+### Abstraccion operativa
+
+- Do not use `nivel de coordinacion` as an abstract concept. Replace with observable conditions: `que queda resuelto`, `que interferencia se acepta`, `que observacion se puede cerrar`, `que entregable ya es revisable`.
+- `nivel de coordinacion` may be kept only if the piece explicitly defines what it means in operational terms (e.g., `medido por interferencias abiertas en el modelo federado`).
+
+### Feedback-to-system conversion
+
+- If David corrects the same pattern more than once across different iterations, the agent must propose a new entry in `CALIBRATION.md` as part of the handoff. Correcting the copy alone is insufficient; the system must also be corrected.
+- Every communication review must check the active entries in `CALIBRATION.md` before generating variants.
+
+### Calibration file
+
+The persistent calibration rules live in `openclaw/workspace-templates/skills/director-comunicacion-umbral/CALIBRATION.md`. Read it before every review. Update it when David's feedback reveals a new recurring pattern.
+
 ## Acceptance criteria
 
 A communication review is acceptable when:

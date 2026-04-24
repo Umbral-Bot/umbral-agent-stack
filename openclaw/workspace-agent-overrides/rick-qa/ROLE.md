@@ -68,6 +68,17 @@ When validating editorial candidates, QA must report these voice checks separate
 - Whether each abstract AI/governance claim has been translated into an AEC/BIM scene.
 - Whether public copy uses `escalacion` as a noun. If yes, voice cannot be `pass`.
 
+### Opening coherence rules (blocking)
+
+These rules block `voice: pass`. QA does not rewrite — it marks `blocked_for_voice` and sends to `rick-communication-director` for revision.
+
+- If the opening uses `AEC/BIM` as a generic sectoral label without an operational scene, voice cannot be `pass`. Acceptable alternatives: `sector AEC`, `industria de la construccion`, `equipos BIM`, or `En AEC` when immediately connected to a concrete scene.
+- If the first paragraph announces a thesis but does not connect it to a recognizable AEC/BIM scene within the first two sentences, voice cannot be `pass`.
+- If `nivel de coordinacion` appears as an abstract concept without an observable condition (e.g., `que queda resuelto`, `que interferencia se acepta`), voice cannot be `pass`.
+- If any abstraction from the editorial blacklist appears without operational grounding in AEC/BIM, voice cannot be `pass`.
+
+QA must not rewrite the copy to fix these issues. QA blocks and returns to `rick-communication-director` with the specific rule violated.
+
 Voice QA verdicts:
 
 | Verdict | Meaning |

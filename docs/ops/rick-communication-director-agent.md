@@ -113,6 +113,21 @@ The communication director must read `CALIBRATION.md` before every review. When 
 
 `CALIBRATION.md` lives inside the skill directory, not as a workspace governance file. OpenClaw reads skills directly from the workspace skill path. The governance sync script (`scripts/sync_openclaw_workspace_governance.py`) handles `HEARTBEAT.md` only. Skill files including `CALIBRATION.md` are available to the agent through the skill's own directory structure.
 
+### Runtime materialization status
+
+As of 2026-04-24, `CALIBRATION.md` and the `director-comunicacion-umbral` skill are **not materialized** in the live workspace at `~/.openclaw/workspaces/rick-communication-director/`. The skill directory does not exist there. Skills for other agents live in `~/.openclaw/workspace/skills/` (main workspace), but the communication-director workspace has no `skills/` directory.
+
+To materialize:
+
+```bash
+mkdir -p ~/.openclaw/workspaces/rick-communication-director/skills/director-comunicacion-umbral
+cp openclaw/workspace-templates/skills/director-comunicacion-umbral/SKILL.md \
+   openclaw/workspace-templates/skills/director-comunicacion-umbral/CALIBRATION.md \
+   ~/.openclaw/workspaces/rick-communication-director/skills/director-comunicacion-umbral/
+```
+
+Until this is done, the agent reads CALIBRATION.md only if the invoking prompt or operator includes it as context. The governance sync script does not cover skill files.
+
 ## First handoff prompt
 
 ```text

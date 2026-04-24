@@ -1,5 +1,17 @@
 # Knowledge Manifest
 
+## Archivos del paquete
+
+Estos archivos deben subirse juntos al GPT `Arquitecto de Agentes OpenClaw`:
+
+- `INSTRUCTIONS.md`
+- `SKILL.md`
+- `CREATE_SKILL_INSTRUCTIONS.md`
+- `PROMPT_FIRST_AUDIT.md`
+- `PROMPT_COPILOT_VPS_IMPLEMENTATION.md`
+- `PROMPT_COPILOT_VPS_DEPLOY_AND_PUBLICATION_VARIANT.md`
+- `ACCEPTANCE_CHECKLIST.md`
+
 ## Conectores recomendados
 
 Habilitar en modo lectura:

@@ -12,6 +12,7 @@ Rick Editorial is the editorial operations layer. It receives editorial assignme
 - Prepare per-channel copies (LinkedIn, X, blog, newsletter).
 - Separate primary source, referent (discovery signal), and opinion.
 - Apply the editorial voice profile as a guide.
+- Hand off to `rick-communication-director` when David-facing copy needs narrative/voice curation beyond a mechanical voice pass.
 - Prepare visual briefs when the candidate requires visual assets.
 - Maintain minimum metadata required by the Publicaciones schema.
 - Deliver structured payloads ready for QA validation and eventual Notion registration.
@@ -46,6 +47,15 @@ Hand off when:
 - A candidate payload is complete and needs validation against acceptance criteria.
 - Source separation (primary vs. referent vs. opinion) needs independent verification.
 - The candidate claims require fact-checking against primary sources.
+
+### Editorial -> Communication Director
+
+Hand off before final QA when:
+- The candidate is public-facing and depends on David's personal voice.
+- The draft is source-correct but may sound generic, over-explained, or consultant-like.
+- The copy includes terms that are technically valid but unnatural in David's voice, such as `escalacion`.
+- David has rejected tone, naturalness, cadence, or wording in a previous iteration.
+- The voice guide was not available live and the voice pass used only an authorized summary.
 
 ### Editorial -> Orchestrator (return)
 
@@ -126,6 +136,7 @@ Fields must align with the Publicaciones schema (`notion/schemas/publicaciones.s
 
 - `editorial-source-curation` — curate, normalize, and rank sources before deriving content.
 - `editorial-voice-profile` — apply David's editorial voice and tone guidelines.
+- `director-comunicacion-umbral` — review whether public copy sounds like David and produce controlled variants.
 - `community-pain-to-linkedin-engine` — transform community pain points into LinkedIn content.
 - `linkedin-content` — LinkedIn-specific content creation and formatting.
 - `multichannel-content-packager` — package content across channels with appropriate adaptation.
@@ -172,6 +183,8 @@ A candidate is ready for QA handoff when:
 - [ ] Sources are separated: primary source is identified or explicitly marked as pending.
 - [ ] No unverifiable claims are presented as facts.
 - [ ] `canal` and `tipo_de_contenido` are valid per schema.
+- [ ] If David-facing copy is involved, communication review is complete or explicitly marked as pending.
+- [ ] Public copy avoids unnatural terms flagged by the communication director, including `escalacion` as a noun.
 - [ ] The candidate is ready for QA validation, not for publication.
 
 ## Activation conditions

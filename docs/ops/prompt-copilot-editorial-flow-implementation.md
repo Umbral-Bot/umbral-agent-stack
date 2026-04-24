@@ -42,6 +42,7 @@ Lee obligatoriamente:
 - `.agents/PROTOCOL.md`
 - `.agents/board.md`
 - `docs/ops/editorial-agent-flow.md`
+- `docs/ops/linkedin-writing-rules-source.md`
 - `docs/68-editorial-phase-1-manual.md`
 - `docs/ops/rick-communication-director-agent.md`
 - `docs/ops/rick-editorial-candidate-payload-template.md`
@@ -145,15 +146,23 @@ Si decides crear `linkedin-post-writer`, crea:
 `LINKEDIN_WRITING_RULES.md` debe contener íntegramente el documento de David:
 “Instrucciones para un Agente Experto en Publicaciones de LinkedIn”.
 
+Fuente repo-side ya versionada:
+
+`docs/ops/linkedin-writing-rules-source.md`
+
+Copiar desde esa ruta hacia:
+
+`openclaw/workspace-templates/skills/linkedin-post-writer/LINKEDIN_WRITING_RULES.md`
+
 No resumir.
 No adaptar.
 No reescribir.
 No convertirlo en buenas prácticas.
 
-Si el documento completo no está disponible en el input, detente y reporta:
+Si `docs/ops/linkedin-writing-rules-source.md` no existe o parece incompleto, detente y reporta:
 
 ```text
-BLOCKED: missing full LINKEDIN_WRITING_RULES.md source
+BLOCKED: missing full docs/ops/linkedin-writing-rules-source.md source
 ```
 
 El `SKILL.md` debe exigir:

@@ -127,12 +127,24 @@ Files copied from `openclaw/workspace-templates/skills/director-comunicacion-umb
 
 Smoke test (Run ID `bf1d7859-e208-4cb4-8a66-4d00e77f127d`, model `azure-openai-responses/gpt-5.4`): the agent confirmed it sees both `director-comunicacion-umbral` and `CALIBRATION.md` at the workspace skill path. No Notion edits, no gates, no publication, no `openclaw.json` changes.
 
-The governance sync script does not cover skill files. To update after a `git pull`, re-copy manually:
+### Skill injection vs workspace bootstrap
+
+OpenClaw uses dynamic skill selection with a budget/relevance filter. Neither `skills.entries` with `enabled: true` nor `always: true` in frontmatter guarantee that a skill will be injected into a specific agent's system prompt. Out of 37 skills in the main workspace, only ~12 are selected per session.
+
+Because formal skill injection is not reliable for this use case, the agent uses a **workspace bootstrap workaround**: the `AGENTS.md` file (injected into the system prompt as a workspace file) includes a "Calibracion obligatoria" section that instructs the agent to read `CALIBRATION.md` and `SKILL.md` via tool before generating any editorial variants.
+
+Repo-side source: `openclaw/workspace-agent-overrides/rick-communication-director/AGENTS.md`.
+
+Verified on 2026-04-24 (Run ID `bd1cd92d`): agent confirmed 7 workspace files injected, AGENTS.md mentions calibracion obligatoria, 4 CAL entries read from CALIBRATION.md.
+
+The governance sync script does not cover skill files or `AGENTS.md`. To update after a `git pull`, re-copy manually:
 
 ```bash
 cp openclaw/workspace-templates/skills/director-comunicacion-umbral/SKILL.md \
    openclaw/workspace-templates/skills/director-comunicacion-umbral/CALIBRATION.md \
    ~/.openclaw/workspaces/rick-communication-director/skills/director-comunicacion-umbral/
+cp openclaw/workspace-agent-overrides/rick-communication-director/AGENTS.md \
+   ~/.openclaw/workspaces/rick-communication-director/AGENTS.md
 ```
 
 ## First handoff prompt

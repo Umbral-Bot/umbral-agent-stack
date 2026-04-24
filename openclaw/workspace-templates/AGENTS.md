@@ -211,7 +211,7 @@ Rick opera como 3 runtime agents con responsabilidades separadas. Las definicion
 | `rick-communication-director` | Curador narrativo y de voz | Revisa si el copy publico suena a David y propone variantes/configuracion |
 
 > `rick-editorial` is **design-only / not active**. No workspace in `openclaw.json`, no runtime routing. See `openclaw/workspace-agent-overrides/rick-editorial/ROLE.md` for full contract and activation conditions.
-> `rick-communication-director` is **design-only / read-only / not active**. No workspace in `openclaw.json`, no runtime routing. See `openclaw/workspace-agent-overrides/rick-communication-director/ROLE.md`.
+> `rick-communication-director` is **runtime-registered / read-only / dry-run**. It has a dedicated workspace identity for deliberate invocation, but no autonomous routing, no cron, no publication path, and no gate mutation. See `openclaw/workspace-agent-overrides/rick-communication-director/ROLE.md`.
 
 **Flujo canónico:** orchestrator -> delivery -> qa -> orchestrator (cierre) -> David.
 **Flujo editorial:** orchestrator -> editorial -> communication-director (si aplica) -> qa -> orchestrator (cierre) -> David.

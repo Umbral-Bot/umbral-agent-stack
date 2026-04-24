@@ -180,7 +180,8 @@ La etapa `5a` existe porque una pieza puede ser correcta, segura y trazable, per
 
 Regla de fase 1:
 
-- `rick-communication-director` es read-only y design-only.
+- `rick-communication-director` es runtime-registered, read-only y dry-run.
+- tiene workspace dedicado para invocacion deliberada, pero no routing autonomo.
 - no escribe en Notion
 - no modifica repos
 - no publica

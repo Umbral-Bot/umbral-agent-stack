@@ -66,6 +66,7 @@ def test_build_sync_plan_uses_template_for_main_and_detects_changes(tmp_path):
             ".openclaw/workspaces/rick-ops",
             ".openclaw/workspaces/rick-orchestrator",
             ".openclaw/workspaces/rick-qa",
+            ".openclaw/workspaces/rick-communication-director",
             ".openclaw/workspaces/rick-tracker",
         ],
     )
@@ -111,6 +112,7 @@ def test_build_sync_plan_includes_bootstrap_only_when_requested(tmp_path):
             ".openclaw/workspaces/rick-ops",
             ".openclaw/workspaces/rick-orchestrator",
             ".openclaw/workspaces/rick-qa",
+            ".openclaw/workspaces/rick-communication-director",
             ".openclaw/workspaces/rick-tracker",
         ],
     )
@@ -135,7 +137,14 @@ def test_apply_sync_plan_creates_backup_for_modified_targets(tmp_path):
     (template_dir / "BOOTSTRAP.md").write_text("boot\n", encoding="utf-8")
     (template_dir / "HEARTBEAT.md").write_text("heartbeat\n", encoding="utf-8")
 
-    for agent in ["rick-delivery", "rick-ops", "rick-orchestrator", "rick-qa", "rick-tracker"]:
+    for agent in [
+        "rick-delivery",
+        "rick-ops",
+        "rick-orchestrator",
+        "rick-qa",
+        "rick-communication-director",
+        "rick-tracker",
+    ]:
         agent_dir = repo_root / "openclaw" / "workspace-agent-overrides" / agent
         agent_dir.mkdir(parents=True)
         (agent_dir / "BOOTSTRAP.md").write_text("boot\n", encoding="utf-8")
@@ -150,6 +159,7 @@ def test_apply_sync_plan_creates_backup_for_modified_targets(tmp_path):
             ".openclaw/workspaces/rick-ops",
             ".openclaw/workspaces/rick-orchestrator",
             ".openclaw/workspaces/rick-qa",
+            ".openclaw/workspaces/rick-communication-director",
             ".openclaw/workspaces/rick-tracker",
         ],
     )
@@ -162,3 +172,51 @@ def test_apply_sync_plan_creates_backup_for_modified_targets(tmp_path):
     assert target.read_text(encoding="utf-8") == "heartbeat\n"
     backup_target = backup_root / ".openclaw" / "workspace" / "HEARTBEAT.md"
     assert backup_target.read_text(encoding="utf-8") == "old\n"
+
+
+def test_build_sync_plan_includes_communication_director_workspace(tmp_path):
+    module = _load_script_module(
+        "sync_openclaw_workspace_governance_communication_director",
+        "scripts/sync_openclaw_workspace_governance.py",
+    )
+    repo_root = tmp_path / "repo"
+    template_dir = repo_root / "openclaw" / "workspace-templates"
+    template_dir.mkdir(parents=True)
+    (template_dir / "HEARTBEAT.md").write_text("heartbeat\n", encoding="utf-8")
+
+    communication_dir = (
+        repo_root
+        / "openclaw"
+        / "workspace-agent-overrides"
+        / "rick-communication-director"
+    )
+    communication_dir.mkdir(parents=True)
+    (communication_dir / "HEARTBEAT.md").write_text("communication-heartbeat\n", encoding="utf-8")
+
+    home = tmp_path / "home"
+    _seed_workspace_root(
+        home,
+        [
+            ".openclaw/workspace",
+            ".openclaw/workspaces/rick-delivery",
+            ".openclaw/workspaces/rick-ops",
+            ".openclaw/workspaces/rick-orchestrator",
+            ".openclaw/workspaces/rick-qa",
+            ".openclaw/workspaces/rick-communication-director",
+            ".openclaw/workspaces/rick-tracker",
+        ],
+    )
+
+    plan = module.build_sync_plan(repo_root=repo_root, home=home)
+
+    communication_entry = next(
+        entry
+        for entry in plan
+        if entry.agent_id == "rick-communication-director"
+        and entry.filename == "HEARTBEAT.md"
+    )
+
+    assert communication_entry.source == communication_dir / "HEARTBEAT.md"
+    assert communication_entry.target == (
+        home / ".openclaw/workspaces/rick-communication-director/HEARTBEAT.md"
+    )

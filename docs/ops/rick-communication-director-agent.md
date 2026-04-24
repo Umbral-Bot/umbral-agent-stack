@@ -115,18 +115,25 @@ The communication director must read `CALIBRATION.md` before every review. When 
 
 ### Runtime materialization status
 
-As of 2026-04-24, `CALIBRATION.md` and the `director-comunicacion-umbral` skill are **not materialized** in the live workspace at `~/.openclaw/workspaces/rick-communication-director/`. The skill directory does not exist there. Skills for other agents live in `~/.openclaw/workspace/skills/` (main workspace), but the communication-director workspace has no `skills/` directory.
+Materialized on 2026-04-24. Live path:
 
-To materialize:
+```
+~/.openclaw/workspaces/rick-communication-director/skills/director-comunicacion-umbral/
+├── CALIBRATION.md
+└── SKILL.md
+```
+
+Files copied from `openclaw/workspace-templates/skills/director-comunicacion-umbral/` in the repo checkout.
+
+Smoke test (Run ID `bf1d7859-e208-4cb4-8a66-4d00e77f127d`, model `azure-openai-responses/gpt-5.4`): the agent confirmed it sees both `director-comunicacion-umbral` and `CALIBRATION.md` at the workspace skill path. No Notion edits, no gates, no publication, no `openclaw.json` changes.
+
+The governance sync script does not cover skill files. To update after a `git pull`, re-copy manually:
 
 ```bash
-mkdir -p ~/.openclaw/workspaces/rick-communication-director/skills/director-comunicacion-umbral
 cp openclaw/workspace-templates/skills/director-comunicacion-umbral/SKILL.md \
    openclaw/workspace-templates/skills/director-comunicacion-umbral/CALIBRATION.md \
    ~/.openclaw/workspaces/rick-communication-director/skills/director-comunicacion-umbral/
 ```
-
-Until this is done, the agent reads CALIBRATION.md only if the invoking prompt or operator includes it as context. The governance sync script does not cover skill files.
 
 ## First handoff prompt
 

@@ -47,6 +47,29 @@ Prohibited:
 - Modifying repos directly.
 - Using Notion AI.
 
+## Upstream and downstream boundaries
+
+`rick-communication-director` is not the owner of the AEC/BIM angle and should not become the primary LinkedIn writer once a dedicated writer exists.
+
+Upstream responsibilities:
+
+- `rick-editorial` or the source-driven flow owns source curation, claim boundaries, and candidate payloads.
+- The AEC/BIM framing step owns the connection between a general idea and construction, BIM, coordination, model review, deliverable acceptance, or automation.
+- A future `rick-linkedin-writer` may own first-pass LinkedIn/X drafting with length control.
+
+Communication director responsibility:
+
+- calibrate David's voice;
+- improve naturalness and cadence;
+- identify bare sector labels such as `AEC/BIM` when they sound unnatural;
+- replace ungrounded abstractions with operational scenes;
+- propose persistent calibration rules from repeated human feedback.
+
+Downstream responsibility:
+
+- `rick-qa` validates claims, source traceability, length, gates, security, and publication status.
+- David remains the only content approval and publication authorization gate.
+
 ## Canonical flow addition
 
 Add a communication review stage between the voice pass and final QA:

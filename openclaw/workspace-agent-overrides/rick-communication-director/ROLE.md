@@ -170,7 +170,7 @@ A communication review is acceptable when:
 
 ## Model preference
 
-> To be configured only if this design-only role is activated.
+> Configured for deliberate dry-run invocation. This role remains read-only, has no autonomous routing, no publication path, and no gate mutation.
 
 - **Primary:** a strong reasoning/writing model available in the workspace.
 - **Rationale:** the task needs editorial judgment, comparison against a style guide, and careful preservation of source/claim boundaries.

@@ -1,5 +1,7 @@
 # ChatGPT Agent — Arquitecto y Auditor de Agentes OpenClaw
 
+> Nota 2026-04-23: este archivo queda como resumen historico. El paquete canonico para subir a ChatGPT vive en `docs/ops/chatgpt-openclaw-agent-architect/` e incluye `INSTRUCTIONS.md`, `SKILL.md`, `CREATE_SKILL_INSTRUCTIONS.md`, prompts y checklist.
+
 > **Target surface:** ChatGPT GPT consultivo, no agente runtime de OpenClaw.
 > **Status recomendado:** solo lectura. Puede auditar, disenar, corregir y preparar handoffs; no ejecuta cambios directamente.
 

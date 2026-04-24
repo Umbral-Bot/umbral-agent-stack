@@ -160,6 +160,9 @@ Rick tiene dos tipos de torneo. Es crítico no confundirlos:
   - Usarla para ordenar backlog, detectar duplicados, definir prioridad, estado y next owner.
 - `skills/editorial-source-curation/SKILL.md`
   - Usarla para curar latest items, normalizar fuentes, rankear alineación y producir shortlist antes de derivar contenido.
+- `skills/director-comunicacion-umbral/SKILL.md`
+  - Usarla cuando una candidata editorial tiene buena premisa y fuentes pero el copy no suena a David.
+  - Debe producir diagnostico, variantes controladas, lista de frases problematicas y cambios sugeridos de configuracion sin publicar ni tocar gates.
 - `skills/competitive-funnel-benchmark/SKILL.md`
   - Usarla cuando David pida estudiar en profundidad a una persona, post, perfil, landing, lead magnet o funnel externo.
   - Obliga a cubrir varias fuentes, separar evidencia de inferencia y entregar un teardown utilizable para Umbral.
@@ -205,11 +208,13 @@ Rick opera como 3 runtime agents con responsabilidades separadas. Las definicion
 | `rick-delivery` | Ejecuta, produce artefactos, entrega resultados verificables | Recibe slices definidos, implementa, deja trazabilidad |
 | `rick-qa` | Valida, audita, declara riesgo residual | Verifica entregas contra criterios de aceptación con evidencia |
 | `rick-editorial` | Operador editorial de borradores y candidatas | Recibe asignaciones editoriales, produce candidatas en Borrador con fuentes separadas |
+| `rick-communication-director` | Curador narrativo y de voz | Revisa si el copy publico suena a David y propone variantes/configuracion |
 
 > `rick-editorial` is **design-only / not active**. No workspace in `openclaw.json`, no runtime routing. See `openclaw/workspace-agent-overrides/rick-editorial/ROLE.md` for full contract and activation conditions.
+> `rick-communication-director` is **design-only / read-only / not active**. No workspace in `openclaw.json`, no runtime routing. See `openclaw/workspace-agent-overrides/rick-communication-director/ROLE.md`.
 
 **Flujo canónico:** orchestrator -> delivery -> qa -> orchestrator (cierre) -> David.
-**Flujo editorial:** orchestrator -> editorial -> qa -> orchestrator (cierre) -> David.
+**Flujo editorial:** orchestrator -> editorial -> communication-director (si aplica) -> qa -> orchestrator (cierre) -> David.
 
 **Handoffs:** cada agente debe declarar explícitamente cuándo pasa trabajo al siguiente. Ver `ROLE.md` de cada agente para los triggers específicos. Usar `agent-handoff-governance` para el formato obligatorio del handoff.
 
@@ -240,9 +245,10 @@ El primer slice de implementación agrega `config/supervisors.yaml` y `dispatche
 ### Asignación práctica por rol
 
 - `main`: `linear-delivery-traceability`, `subagent-result-integration`, `notion-project-registry`, `system-interconnectivity-diagnostics`, `editorial-source-curation`, `competitive-funnel-benchmark`, `external-reference-intelligence`, `browser-automation-vm`, `windows`
-- `rick-orchestrator`: `subagent-result-integration`, `linear-issue-triage`, `linear-delivery-traceability`, `agent-handoff-governance`, `external-reference-intelligence`
+- `rick-orchestrator`: `subagent-result-integration`, `linear-issue-triage`, `linear-delivery-traceability`, `agent-handoff-governance`, `external-reference-intelligence`, `director-comunicacion-umbral`
 - `rick-delivery`: `linear-delivery-traceability`, `notion-project-registry`, `competitive-funnel-benchmark`, `editorial-source-curation`
-- `rick-qa`: `linear-project-auditor`, `linear-delivery-traceability`, `system-interconnectivity-diagnostics`
-- `rick-editorial`: `editorial-source-curation`, `editorial-voice-profile`, `community-pain-to-linkedin-engine`, `linkedin-content`, `multichannel-content-packager`, `external-reference-intelligence`
+- `rick-qa`: `linear-project-auditor`, `linear-delivery-traceability`, `system-interconnectivity-diagnostics`, `director-comunicacion-umbral`
+- `rick-editorial`: `editorial-source-curation`, `editorial-voice-profile`, `director-comunicacion-umbral`, `community-pain-to-linkedin-engine`, `linkedin-content`, `multichannel-content-packager`, `external-reference-intelligence`
+- `rick-communication-director`: `director-comunicacion-umbral`, `editorial-voice-profile`, `marca-personal-david`, `linkedin-content`, `publication-gatekeeper`
 - `rick-tracker`: `editorial-source-curation`
 - `rick-ops`: `n8n-editorial-orchestrator`, `browser-automation-vm`, `windows`

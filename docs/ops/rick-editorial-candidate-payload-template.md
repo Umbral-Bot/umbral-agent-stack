@@ -66,6 +66,13 @@ visual_hitl_required: false    # true if people, brands, or sensitive content
 
 # --- Review ---
 comentarios_revision: ""
+communication_review:
+  required: false              # true for public-facing copy when voice/narrative quality is material
+  status: ""                   # pending | pass | pass_with_changes | blocked_for_voice
+  reviewer: ""                 # rick-communication-director or external curator
+  voice_source: ""             # live_notion_guide | authorized_summary | marca_personal_docs | limited_evidence
+  selected_variant: ""         # V1 | V2 | V3 | custom | empty
+  notes: ""
 
 # --- Human gates (never set by rick-editorial) ---
 gates:
@@ -106,6 +113,9 @@ Before handing a candidate to `rick-qa` or David:
 - [ ] No unsupported factual claims without a primary source.
 - [ ] `visual_hitl_required` is explicitly set (true if people/brands/sensitive content).
 - [ ] `trace_id` is set for trazabilidad.
+- [ ] If public copy is involved, `communication_review` is present or explicitly marked not required.
+- [ ] Public copy does not use `escalacion` as a noun.
+- [ ] Voice validation reports phrases David probably would not say.
 - [ ] Ready for David review, not ready for publication.
 
 ## Usage

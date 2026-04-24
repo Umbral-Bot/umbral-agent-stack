@@ -156,3 +156,33 @@ Cada avance de este frente debe dejar:
 - artefacto verificable en la carpeta del proyecto
 - siguiente accion concreta
 - estado coherente del frente
+
+---
+
+## 11. Flujo canonico por candidata source-driven
+
+Cuando el sistema trabaje una candidata editorial con fuentes externas, usar esta secuencia:
+
+1. fuentes y senales
+2. extraccion y transformacion
+3. borrador editorial base
+4. validacion de atribucion y trazabilidad
+5. pasada de voz contra Guia Editorial y Voz de Marca
+5a. direccion de comunicacion / curaduria narrativa
+6. QA editorial y tecnico
+7. revision humana
+8. aprobacion de contenido
+9. autorizacion de publicacion
+
+La etapa `5a` existe porque una pieza puede ser correcta, segura y trazable, pero aun asi no sonar a David.
+
+`rick-communication-director` revisa naturalidad, ritmo, lenguaje, densidad AEC/BIM y frases que David probablemente no diria. No reemplaza a `rick-qa`: QA mantiene la validacion de fuentes, claims, schema, gates, seguridad y publicacion.
+
+Regla de fase 1:
+
+- `rick-communication-director` es read-only y design-only.
+- no escribe en Notion
+- no modifica repos
+- no publica
+- no marca gates
+- entrega variantes, diagnostico y prompts de configuracion

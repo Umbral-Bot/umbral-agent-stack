@@ -1,6 +1,6 @@
 # Rick Communication Director — Role Definition
 
-> **Status: design-only / read-only.** This agent has no workspace in `openclaw.json`, no runtime routing, no cron, and no automation. It is a contract for a future editorial communication reviewer. Activation requires explicit approval from David and a separate implementation PR.
+> **Status: runtime-registered / read-only / dry-run.** This agent has a dedicated workspace identity and governance sync target, but no autonomous routing, no cron, no publication path, and no write permissions. It can be invoked deliberately for communication review and configuration recommendations only.
 
 ## Identity
 
@@ -151,12 +151,26 @@ A communication review is acceptable when:
 - **Primary:** a strong reasoning/writing model available in the workspace.
 - **Rationale:** the task needs editorial judgment, comparison against a style guide, and careful preservation of source/claim boundaries.
 
-## Activation conditions
+## Runtime registration state
 
-This contract becomes active only when:
+Implemented repo-side:
 
-1. David explicitly approves activation of `rick-communication-director`.
-2. The Notion voice guide is shared with the agent or exported as approved reference material.
-3. A workspace entry is added to `openclaw.json` with read-only permissions.
-4. Routing rules are updated to include the communication review stage.
-5. A first candidate is reviewed in dry-run mode and David validates the result.
+1. Role contract exists at `openclaw/workspace-agent-overrides/rick-communication-director/ROLE.md`.
+2. Heartbeat exists at `openclaw/workspace-agent-overrides/rick-communication-director/HEARTBEAT.md`.
+3. Governance sync includes `~/.openclaw/workspaces/rick-communication-director`.
+4. Config reference includes an `agents.list` entry for `rick-communication-director`.
+
+Still not enabled:
+
+1. No autonomous routing rules.
+2. No cron or automation.
+3. No Notion writes.
+4. No publication permissions.
+5. No human gate mutation.
+
+Before production use:
+
+1. Share the live Notion voice guide with the agent, or provide an approved export.
+2. Run one dry-run review of CAND-003.
+3. David must validate at least one variant as closer to his voice.
+4. QA must re-check claim strength and attribution after any rewrite.

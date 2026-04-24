@@ -34,6 +34,9 @@ WORKSPACES = {
     "rick-ops": Path("~/.openclaw/workspaces/rick-ops").expanduser(),
     "rick-orchestrator": Path("~/.openclaw/workspaces/rick-orchestrator").expanduser(),
     "rick-qa": Path("~/.openclaw/workspaces/rick-qa").expanduser(),
+    "rick-communication-director": Path(
+        "~/.openclaw/workspaces/rick-communication-director"
+    ).expanduser(),
     "rick-tracker": Path("~/.openclaw/workspaces/rick-tracker").expanduser(),
 }
 

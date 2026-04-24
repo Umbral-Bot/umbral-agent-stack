@@ -79,6 +79,12 @@
       { "id": "rick-orchestrator", "name": "Rick Orchestrator", "workspace": "/home/rick/.openclaw/workspace", "model": "openai-codex/gpt-5.4" },
       { "id": "rick-delivery", "name": "Rick Delivery", "workspace": "/home/rick/.openclaw/workspace", "model": "openai-codex/gpt-5.3-codex" },
       { "id": "rick-qa", "name": "Rick QA", "workspace": "/home/rick/.openclaw/workspace", "model": "openai-codex/gpt-5.3-codex" },
+      {
+        "id": "rick-communication-director",
+        "name": "Rick Communication Director",
+        "workspace": "/home/rick/.openclaw/workspaces/rick-communication-director",
+        "model": "openai-codex/gpt-5.4"
+      },
       { "id": "rick-tracker", "name": "Rick Tracker", "workspace": "/home/rick/.openclaw/workspace", "model": "google/gemini-2.5-flash" },
       { "id": "rick-ops", "name": "Rick Ops", "workspace": "/home/rick/.openclaw/workspace", "model": "openai-codex/gpt-5.3-codex" }
     ]

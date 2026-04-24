@@ -1,6 +1,6 @@
-# Rick Communication Director — Phase 1 Design
+# Rick Communication Director — Phase 1 Implementation
 
-> **Status**: design-only, read-only. No runtime activation, no Notion writes, no publication.
+> **Status**: runtime-registered, read-only, dry-run. Dedicated workspace identity and governance sync are defined repo-side. No autonomous routing, no Notion writes, no publication, no human gate mutation.
 
 ## Purpose
 
@@ -32,6 +32,7 @@ Allowed:
 - Generate controlled variants.
 - Propose prompt/config changes.
 - Prepare handoffs for Copilot/Codex/VPS.
+- Be invoked deliberately as `rick-communication-director` after the live OpenClaw config is updated.
 
 Prohibited:
 
@@ -39,7 +40,7 @@ Prohibited:
 - Marking `aprobado_contenido`.
 - Marking `autorizar_publicacion`.
 - Changing gates.
-- Activating runtime.
+- Creating autonomous runtime routing, cron, or publication flow.
 - Editing Notion.
 - Modifying repos directly.
 - Using Notion AI.
@@ -62,6 +63,18 @@ Add a communication review stage between the voice pass and final QA:
 ```
 
 Stage `5a` does not replace QA. It validates naturalness, narrative, and David's voice. QA still validates sources, claims, gates, schema, and security.
+
+## OpenClaw implementation surface
+
+Repo-side implementation:
+
+- `openclaw/workspace-agent-overrides/rick-communication-director/ROLE.md`
+- `openclaw/workspace-agent-overrides/rick-communication-director/HEARTBEAT.md`
+- `openclaw/workspace-templates/skills/director-comunicacion-umbral/SKILL.md`
+- `scripts/sync_openclaw_workspace_governance.py` includes `~/.openclaw/workspaces/rick-communication-director`
+- `docs/openclaw-config-reference-2026-03.json5` includes a reference `agents.list` entry
+
+Live VPS activation still requires applying the config change to `~/.openclaw/openclaw.json`, running the governance sync, and smoke testing deliberate invocation. That is separate from autonomous routing.
 
 ## Evidence requirements
 
@@ -140,4 +153,4 @@ Entrega:
 - `escalacion` is absent from public copy.
 - Premise and source attribution are preserved unless David approves changes.
 - `rick-qa` can no longer pass voice without reporting phrases David probably would not say.
-- Any repo implementation remains draft and does not activate runtime.
+- Runtime registration remains read-only/dry-run and does not create autonomous routing or publication permissions.

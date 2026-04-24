@@ -184,6 +184,21 @@ Verificacion minima:
 
 Es aceptable que los agentes activos sigan apareciendo con `Bootstrap file ABSENT` si el workspace ya esta maduro y `skipBootstrap=true` quedo fijado.
 
+### Agente `rick-communication-director`
+
+Para registrar el Director de Comunicacion en la VPS, agregar una entrada equivalente a esta en `agents.list` de `~/.openclaw/openclaw.json`:
+
+```json
+{
+  "id": "rick-communication-director",
+  "name": "Rick Communication Director",
+  "workspace": "/home/rick/.openclaw/workspaces/rick-communication-director",
+  "model": "openai-codex/gpt-5.4"
+}
+```
+
+Luego correr el sync de gobernanza indicado arriba. Este agente queda para invocacion deliberada y dry-run; no debe tener routing autonomo, cron, publicacion ni permisos para marcar gates humanos.
+
 ## Acceso a Control UI
 
 ### Importante: no exponer los puertos 18789/18791 a internet

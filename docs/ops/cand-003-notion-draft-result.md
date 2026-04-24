@@ -103,3 +103,53 @@
 - ✅ Ready for David review in Notion.
 - ✅ CAND-002 not touched.
 - David should search: **CAND-003 — Criterio antes que automatización**
+
+---
+
+## V6.1 Update — 2026-04-24T05:14:00Z
+
+### Operation
+
+PATCH (update properties) + PATCH (append 12 body blocks).
+
+### Fields updated
+
+| Campo | Accion |
+|-------|--------|
+| Copy LinkedIn | Replaced with V6.1 (1799 chars) |
+| Copy X | Replaced with V6.1 (281 chars) |
+| Comentarios revision | Updated with V6.1 calibration note |
+| Body | Section "Version V6.1 — revision humana" appended (12 blocks) |
+
+### Fields verified unchanged
+
+| Campo | Valor |
+|-------|-------|
+| Estado | Borrador |
+| aprobado_contenido | false |
+| autorizar_publicacion | false |
+| gate_invalidado | false |
+| Premisa | Present (unchanged) |
+| published_at | null |
+| published_url | null |
+| publication_url | null |
+| canal_publicado | null |
+
+### Provenance
+
+| Step | Agent | Run ID |
+|------|-------|--------|
+| V6 generation | rick-communication-director | 11ec4fa9 |
+| V6.1 QA | rick-qa | 8efb1cfb |
+| QA verdict | rick-qa | pass_with_changes |
+| Notion update | Claude Code (technical operator) | direct API |
+
+### Confirmations
+
+- No publication.
+- No gates marked.
+- No runtime activation.
+- No CAND-002 touched.
+- Premisa in property and body.
+- Estado = Borrador.
+- Pending: David human review.

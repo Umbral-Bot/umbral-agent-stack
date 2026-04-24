@@ -70,7 +70,9 @@ Prohibited:
 
 ## Runtime materialization
 
-Not yet materialized. To activate:
+Materialized 2026-04-24. Permissions hardened (minimal alsoAllow, 29 deny entries). See `cand-003-linkedin-writer-runtime-smoke.md` for full evidence.
+
+Commands used:
 
 ```bash
 mkdir -p ~/.openclaw/workspaces/rick-linkedin-writer/skills/linkedin-post-writer

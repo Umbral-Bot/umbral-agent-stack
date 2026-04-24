@@ -187,10 +187,176 @@ Antes de automatizar, conviene definir algo más básico: qué significa que un 
 | V-B Estratégica | 2.5/5 | blocked | Necesita otra iteración |
 | V-C Conversacional | 4.5/5 | pass | **Base recomendada** |
 
+---
+
+## Iteracion 2 — Variantes refinadas
+
+> **Date**: 2026-04-24
+> **Trigger**: V-B blocked by QA, V-C too short (152 words < 180 min), V-A minor voice issues
+> **Changes**: V-B2 reescrita desde cero, V-C2 extendida con escenas BIM, V-A2 polish de naturalidad
+
+### V-A2 Operativa pulida (185 words)
+
+#### LinkedIn
+
+Automatizar una revision no sirve de mucho si el equipo todavia no definio que esta revisando.
+
+En muchos equipos BIM, ese punto aparece antes de cualquier herramienta.
+
+¿Que significa que un modelo esta listo para revision? ¿Que tipo de observacion obliga a rehacer? ¿Cuando un entregable puede pasar de etapa? ¿Que reporte ayuda de verdad a tomar una decision?
+
+Si esas respuestas no estan explicitadas, la automatizacion no corrige el proceso.
+
+Solo ejecuta mas rapido un criterio que todavia cambia segun quien revise, como se converse o que practica siga cada equipo.
+
+La capacidad tecnologica ya existe, y cada vez mas empresas incorporan sistemas para organizar y ejecutar trabajo.
+
+Pero en la practica, el valor no aparece solo por incorporar IA.
+
+Aparece cuando el equipo ya puso por escrito como revisar, como cerrar observaciones, como aceptar entregables y que umbrales usa para decidir.
+
+Por eso, la preparacion real no empieza en la herramienta.
+
+Empieza en dejar claro por escrito como se revisa, como se cierra y que se acepta.
+
+Si eso no esta claro, lo mas probable es que la automatizacion amplifique el desorden en vez de resolverlo.
+
+En tu flujo actual, ¿que criterio sigue sin estar definido por escrito?
+
+#### X
+
+En revision BIM, el problema no siempre es la herramienta. Suele aparecer antes: cuando nadie definio por escrito que significa "listo para revision", que observacion obliga a rehacer o que reporte sirve para decidir. Sin ese criterio, la IA acelera el desorden.
+
+#### Communication Director (V-A2)
+
+- Naturalidad: 4/5
+- Mejoras vs original: mas limpia, mas consistente, flujo mas claro
+- Problemas: "la capacidad tecnologica ya existe" enfria la voz; "que umbrales usa para decidir" suena analitico
+
+#### QA (V-A2)
+
+- Verdict: pass_with_changes
+- Claims: ok
+- Sources: ok (OECD claim reformulated more generically than original trace)
+- Anti-slop: clean
+- Lengths: LinkedIn 185 words ok, X 273 chars ok
+
+---
+
+### V-B2 Estrategica operativa (185 words)
+
+#### LinkedIn
+
+Un equipo puede tener una herramienta nueva y seguir atascado en lo mismo.
+
+Pasa cuando nadie definio con precision si un modelo esta listo para revision, cuando una observacion obliga a rehacer, cuando un entregable puede pasar de etapa o cuando un reporte realmente sirve para decidir.
+
+En ese punto, el problema ya no es tecnico. Es de criterio.
+
+Por eso, la preparacion real para automatizar no empieza en la herramienta.
+
+Empieza antes, en definir por escrito que revisa el equipo, que acepta, que devuelve y con que criterio toma una decision.
+
+Cada vez mas empresas usan sistemas algoritmicos para gestionar trabajo.
+
+Pero cuando esos criterios siguen implicitos, la automatizacion no corrige el proceso.
+
+Solo ejecuta mas rapido una forma de trabajar que todavia depende de interpretaciones, conversaciones sueltas o criterio no documentado.
+
+En equipos BIM, eso suele notarse muy rapido: revisiones que no cierran, observaciones que vuelven, entregables que avanzan sin acuerdo claro y reportes que informan, pero no ayudan a decidir.
+
+Antes de sumar otra capa de automatizacion, conviene resolver una pregunta mas basica:
+
+¿que tiene que estar claro para que el equipo pueda revisar, cerrar y avanzar sin ambiguedad?
+
+#### X
+
+Antes de automatizar, conviene cerrar algo mas basico: que significa que un modelo esta listo para revision, que observacion obliga a rehacer y que entregable puede pasar de etapa. Si ese criterio no esta escrito, la automatizacion acelera el desorden.
+
+#### Communication Director (V-B2)
+
+- Naturalidad: 3.5/5
+- Mejoras vs original: apertura mucho mejor (situacion concreta, no marco abstracto), mas AEC/BIM visible, cierre menos consultivo
+- Problemas: "sistemas algoritmicos para gestionar trabajo" suena importado de fuente; "conviene resolver una pregunta mas basica" algo distante
+
+#### QA (V-B2)
+
+- Verdict: pass
+- Claims: ok
+- Sources: ok
+- Anti-slop: clean
+- Voice: most balanced between thesis, operation, and claim control
+- Lengths: LinkedIn 185 words ok, X 266 chars ok
+
+---
+
+### V-C2 Conversacional extendida (190 words)
+
+#### LinkedIn
+
+Antes de automatizar algo en tu equipo, hay una pregunta mas util que "que herramienta usamos".
+
+La pregunta es otra: ¿ya tenemos claro que significa que algo esta suficientemente bien?
+
+En muchos equipos, el problema no aparece por falta de tecnologia.
+
+Aparece cuando nadie definio con precision que revisar, cuando una observacion obliga a rehacer, cuando un entregable puede pasar de etapa o que reporte realmente ayuda a tomar una decision.
+
+Eso se nota rapido en lo cotidiano: un modelo que para una persona ya esta listo para revision y para otra no, observaciones que se cierran sin acuerdo real, o entregables que avanzan de etapa aunque el criterio de aceptacion siga siendo difuso.
+
+La capacidad tecnologica ya existe, si.
+
+Pero si esos criterios siguen implicitos, la automatizacion no ordena el proceso. Solo ejecuta mas rapido un desorden que ya estaba ahi.
+
+Por eso, para mi, la preparacion real no empieza en la herramienta.
+
+Empieza en poner por escrito el criterio operativo que el equipo ya deberia estar usando para revisar, cerrar observaciones y aceptar entregables.
+
+Ahi suele estar la diferencia entre automatizar una mejora o amplificar la confusion.
+
+¿Que criterio sigue todavia "en la cabeza" de alguien en tu equipo?
+
+#### X
+
+Antes de automatizar, conviene responder algo mas basico: ¿que significa que un modelo esta suficientemente bien, que una observacion obliga a rehacer y que un entregable puede pasar de etapa? Si ese criterio sigue implicito, la automatizacion acelera el desorden.
+
+#### Communication Director (V-C2)
+
+- Naturalidad: 4.5/5
+- Mejoras vs original: mejor aterrizaje con escenas concretas, mejor ritmo visual, cierre fuerte y muy usable en voz David
+- Problemas: "la capacidad tecnologica ya existe" y "criterio operativo" suenan algo documentales
+
+#### QA (V-C2)
+
+- Verdict: pass_with_changes
+- Claims: ok
+- Sources: ok
+- Anti-slop: clean
+- Lengths: LinkedIn 190 words ok, X 274 chars ok
+- Note: "La capacidad tecnologica ya existe, si" sounds more absolute than source trace supports
+
+---
+
+### Iteracion 2 Summary
+
+| Version | ComDir score | QA verdict | Status |
+|---------|-------------|------------|--------|
+| V-A2 Operativa pulida | 4/5 | pass_with_changes | Candidata |
+| V-B2 Estrategica operativa | 3.5/5 | pass | Candidata (recuperada) |
+| V-C2 Conversacional extendida | 4.5/5 | pass_with_changes | **Base recomendada** |
+
+**Recomendacion**: V-C2 sigue siendo la mejor para David (mas natural, mejor ritmo, cierre fuerte). V-B2 recuperada tras reescritura completa. V-A2 solida como alternativa conservadora.
+
+**Orden final QA**: V-B2 > V-A2 > V-C2 (por solidez de claims)
+**Orden final ComDir**: V-C2 > V-A2 > V-B2 (por naturalidad y voz David)
+**Recomendacion combinada**: V-C2 como base, V-A2 como alternativa
+
+---
+
 ## Estado
 
-- Dry-run: sí.
-- Notion editado: no (pending).
+- Dry-run: si.
+- Notion editado: pendiente iteracion 2.
 - Publicado: no.
 - Gates: intactos.
 - Fuente set: sin cambios.

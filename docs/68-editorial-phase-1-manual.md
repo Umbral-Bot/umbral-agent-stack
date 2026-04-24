@@ -164,19 +164,30 @@ Cada avance de este frente debe dejar:
 Cuando el sistema trabaje una candidata editorial con fuentes externas, usar esta secuencia:
 
 1. fuentes y senales
-2. extraccion y transformacion
-3. borrador editorial base
-4. validacion de atribucion y trazabilidad
-5. pasada de voz contra Guia Editorial y Voz de Marca
-5a. direccion de comunicacion / curaduria narrativa
+2. curaduria de fuentes y candidate payload
+3. encuadre AEC/BIM y limites de claim
+4. borrador LinkedIn/X
+5. direccion de comunicacion / calibracion de voz David
 6. QA editorial y tecnico
-7. revision humana
-8. aprobacion de contenido
-9. autorizacion de publicacion
+7. registro en Notion como `Borrador` por operador autorizado
+8. revision humana de David
+9. aprobacion humana de contenido
+10. autorizacion humana de publicacion
 
-La etapa `5a` existe porque una pieza puede ser correcta, segura y trazable, pero aun asi no sonar a David.
+La etapa `3` existe porque una idea general sobre IA, automatizacion o procesos no debe convertirse en copy AEC/BIM si antes no se definio como aplica al sector, con que ejemplos operativos y con que limites de claim.
 
-`rick-communication-director` revisa naturalidad, ritmo, lenguaje, densidad AEC/BIM y frases que David probablemente no diria. No reemplaza a `rick-qa`: QA mantiene la validacion de fuentes, claims, schema, gates, seguridad y publicacion.
+Responsable inicial de etapa `3`:
+
+- `rick-editorial` o el flujo source-driven existente.
+- Si la carga se vuelve recurrente, crear un rol/skill dedicado `rick-aec-context-curator`.
+
+La etapa `4` puede ser asumida por un futuro `rick-linkedin-writer`. Ese agente debe redactar, controlar longitud y aplicar reglas LinkedIn, pero no debe inventar el angulo BIM/AEC ni agregar fuentes.
+
+La etapa `5` existe porque una pieza puede ser correcta, segura y trazable, pero aun asi no sonar a David.
+
+`rick-communication-director` revisa naturalidad, ritmo, lenguaje, apertura, cierre y frases que David probablemente no diria. No reemplaza a `rick-qa`: QA mantiene la validacion de fuentes, claims, schema, gates, seguridad, longitud y publicacion.
+
+Documento canonico ampliado: `docs/ops/editorial-agent-flow.md`.
 
 Regla de fase 1:
 

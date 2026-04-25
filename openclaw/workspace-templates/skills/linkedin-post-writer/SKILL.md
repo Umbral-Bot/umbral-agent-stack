@@ -145,6 +145,7 @@ Terminologia de consultor/paper prohibida:
 - "amplificar la confusion" / "amplificar el desorden" (preferir "el desorden crece" o "el problema se repite mas rapido")
 - "impacto operativo" (preferir "lo que cambia en la practica")
 - "sistemas algoritmicos para gestionar trabajo" (preferir formulacion concreta)
+- "herramientas algoritmicas de gestion" (preferir "este tipo de software" o formulacion concreta)
 
 Anti-patrones estructurales:
 - Apertura abstracta sin escena operativa reconocible.

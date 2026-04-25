@@ -77,6 +77,7 @@ Consultant/paper tone:
 - "amplificar la confusion" / "amplificar el desorden" (prefer "el desorden crece")
 - "impacto operativo" (prefer "lo que cambia en la practica")
 - "sistemas algoritmicos para gestionar trabajo" (prefer concrete equivalent)
+- "herramientas algoritmicas de gestion" (prefer "este tipo de software" or concrete equivalent)
 
 Structural anti-patterns:
 - Abstract opening without a recognizable operational scene.

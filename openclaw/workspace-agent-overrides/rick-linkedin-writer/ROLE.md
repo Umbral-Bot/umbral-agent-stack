@@ -58,14 +58,32 @@ Every draft must be handed off to `rick-communication-director` for voice calibr
 
 Reject or rewrite if the draft contains:
 
+Generic AI slop:
 - "En el dinamico mundo actual", "Como todos sabemos", "Hoy quiero hablar de"
 - "La formula definitiva", "El secreto que nadie te cuenta", "Transforma tu vida", "Resultados garantizados"
 - "sinergia", "ecosistema robusto", "solucion integral"
 - "apalancar", "potenciar", "empoderar" (without concrete context)
 - "Me complace", "Es un honor", "Reflexionando"
+
+Sectorial label misuse:
 - "escalacion" as noun in public copy
 - "AEC/BIM" as bare opening label
 - "nivel de coordinacion" without operational grounding
+
+Consultant/paper tone:
+- "capacidad tecnologica" (prefer concrete formulation)
+- "criterio operativo explicito" (prefer "reglas de revision", "que se acepta")
+- "umbrales de decision" (prefer "cuando algo pasa o no pasa")
+- "amplificar la confusion" / "amplificar el desorden" (prefer "el desorden crece")
+- "impacto operativo" (prefer "lo que cambia en la practica")
+- "sistemas algoritmicos para gestionar trabajo" (prefer concrete equivalent)
+
+Structural anti-patterns:
+- Abstract opening without a recognizable operational scene.
+- Direct entry to "modelo BIM" without prior process context.
+- Moralizing close or generic slogan.
+- Core word repeated more than 2 times.
+- Market claims without direct source support.
 
 ## Acceptance criteria
 

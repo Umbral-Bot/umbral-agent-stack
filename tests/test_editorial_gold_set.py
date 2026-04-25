@@ -179,6 +179,26 @@ class TestThematicCoverage:
         )
         assert found, "No case covers post-approval invalidation"
 
+    def test_covers_linkedin_editorial_quality(self, cases):
+        """At least one case penalizes abstract opening, consultant tone, or premature BIM entry."""
+        found = any(
+            "apertura abstracta" in " ".join(c.get("must_avoid", [])).lower()
+            or "tono consultor" in c.get("scenario", "").lower()
+            or "consultant" in c.get("notes", "").lower()
+            for c in cases
+        )
+        assert found, "No case covers LinkedIn editorial quality (abstract opening / consultant tone)"
+
+    def test_covers_writer_director_qa_separation(self, cases):
+        """At least one case covers separation of writer/director/QA responsibilities."""
+        found = any(
+            ("responsabilidad" in c.get("scenario", "").lower()
+             or "separaci" in c.get("title", "").lower())
+            and ("writer" in c.get("scenario", "").lower() or "director" in c.get("scenario", "").lower())
+            for c in cases
+        )
+        assert found, "No case covers writer/director/QA separation"
+
 
 # ---------------------------------------------------------------------------
 # Validators

@@ -79,6 +79,24 @@ Escribe el borrador siguiendo las reglas de LINKEDIN_WRITING_RULES.md:
 - sin datos inventados;
 - cierre con pregunta, reflexion o invitacion natural.
 
+Reglas de estructura obligatorias:
+
+1. **Tesis clara desde el inicio**: la primera o segunda oracion debe dejar claro de que trata el post.
+2. **Contexto general antes de ejemplos tecnicos**: describir el problema en terminos de proceso, revision, entregable u observaciones antes de mencionar "modelo BIM", "modelo federado" o tecnologia especifica.
+3. **Un solo hilo central**: no intentar cubrir dos ideas. Un post, una tesis.
+4. **Ritmo movil**: escribir para lectura en pantalla de telefono. Parrafos cortos, frases que respiran, sin bloques densos.
+5. **Vocabulario operativo en el desarrollo**: rotar con "revision", "observaciones", "entregables", "reportes", "rehacer", "aceptar", "decidir", "cerrar". No repetir la misma palabra abstracta mas de dos veces.
+
+Anti-patrones que invalidan el borrador:
+
+- Apertura abstracta sin situacion reconocible.
+- Entrada directa a "modelo BIM" sin contexto de proceso.
+- Tono de consultor: frases que suenan a informe o slide deck.
+- Cierre moralizante o con slogan generico.
+- Repeticion excesiva de la palabra nucleo (mas de 2 veces).
+- Exceso de sustantivos abstractos sin aterrizaje operativo.
+- Claims de mercado sin soporte ("cada vez mas empresas...").
+
 ### Paso 4 — Control de longitud
 
 | Tipo | Rango objetivo | Maximo normal |
@@ -103,6 +121,7 @@ Objetivo: <280 caracteres.
 
 Verificar que el borrador NO contiene:
 
+Frases genericas prohibidas:
 - "En el dinamico mundo actual"
 - "Como todos sabemos"
 - "Hoy quiero hablar de"
@@ -113,9 +132,26 @@ Verificar que el borrador NO contiene:
 - "sinergia", "ecosistema robusto", "solucion integral"
 - "apalancar", "potenciar", "empoderar" sin contexto
 - "Me complace", "Es un honor"
+
+Terminologia sectorial prohibida en apertura:
 - "escalacion" como sustantivo en copy publico
 - "AEC/BIM" como apertura generica sola
 - "nivel de coordinacion" sin aterrizaje operativo
+
+Terminologia de consultor/paper prohibida:
+- "capacidad tecnologica" (preferir "las herramientas ya estan" o similar)
+- "criterio operativo explicito" (preferir "reglas de revision", "que se acepta")
+- "umbrales de decision" (preferir "cuando algo pasa o no pasa")
+- "amplificar la confusion" / "amplificar el desorden" (preferir "el desorden crece" o "el problema se repite mas rapido")
+- "impacto operativo" (preferir "lo que cambia en la practica")
+- "sistemas algoritmicos para gestionar trabajo" (preferir formulacion concreta)
+
+Anti-patrones estructurales:
+- Apertura abstracta sin escena operativa reconocible.
+- Entrada directa a "modelo BIM" sin contexto de proceso previo.
+- Cierre con moraleja generica o slogan ("El verdadero desafio es...").
+- Repeticion de la palabra nucleo mas de 2 veces.
+- Claims de mercado sin soporte directo en las fuentes del payload.
 
 Si se detecta alguno, reescribir antes de entregar.
 

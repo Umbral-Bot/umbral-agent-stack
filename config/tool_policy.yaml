@@ -104,7 +104,95 @@ copilot_cli:
     - ":(){ :|:&"          # fork bomb
     - "sudo"
     - "su -"
-  missions: {}                      # vacío hasta F4
+  missions:
+    # F4: contracts only. capability sigue OFF a nivel global (enabled: false).
+    # Cada mission es read-only / artifact-only. max_files_touched: 0.
+    # Materialización (commits, PRs, archivos) la hace un humano fuera de la task.
+    research:
+      description: >-
+        Lectura y análisis del repo: explicar arquitectura, mapear módulos,
+        responder preguntas sobre el código. Sin escrituras.
+      allowed_operations:
+        - read_repo
+        - summarize
+        - explain
+        - cite_files
+      forbidden_operations:
+        - write_files
+        - run_subprocess
+        - network_egress
+        - shell_exec
+      max_wall_sec: 300
+      max_prompt_chars: 8000
+      max_output_chars: 32000
+      max_files_read: 200
+      max_files_touched: 0
+      network: none
+      execution_mode: dry_run_artifact_only
+      requires_human_materialization: true
+    lint-suggest:
+      description: >-
+        Explicar errores de lint/test, sugerir patches en texto (diff o
+        snippets). NO aplica el patch — humano lo materializa.
+      allowed_operations:
+        - read_repo
+        - read_lint_output
+        - propose_patch_text
+      forbidden_operations:
+        - apply_patch
+        - write_files
+        - run_subprocess
+        - network_egress
+      max_wall_sec: 300
+      max_prompt_chars: 12000
+      max_output_chars: 32000
+      max_files_read: 100
+      max_files_touched: 0
+      network: none
+      execution_mode: dry_run_artifact_only
+      requires_human_materialization: true
+    test-explain:
+      description: >-
+        Explicar tests existentes, su intent y los failures observados.
+        En F4 NO ejecuta tests reales; recibe output ya capturado por humano.
+      allowed_operations:
+        - read_repo
+        - read_test_output
+        - explain_failure
+      forbidden_operations:
+        - run_subprocess
+        - run_tests_directly
+        - write_files
+        - network_egress
+      max_wall_sec: 240
+      max_prompt_chars: 12000
+      max_output_chars: 24000
+      max_files_read: 100
+      max_files_touched: 0
+      network: none
+      execution_mode: dry_run_artifact_only
+      requires_human_materialization: true
+    runbook-draft:
+      description: >-
+        Generar borrador de runbook / documentación operativa como artifact
+        markdown. Output queda en reports/copilot-cli/<run_id>/ — humano
+        decide si lo mueve a docs/ o runbooks/.
+      allowed_operations:
+        - read_repo
+        - generate_markdown_artifact
+      forbidden_operations:
+        - write_to_docs_dir
+        - write_to_runbooks_dir
+        - run_subprocess
+        - network_egress
+      max_wall_sec: 300
+      max_prompt_chars: 12000
+      max_output_chars: 40000
+      max_files_read: 80
+      max_files_touched: 0
+      network: none
+      execution_mode: dry_run_artifact_only
+      requires_human_materialization: true
 
   # ---------------------------------------------------------------------
   # Egress profile (DESIGN ONLY, NO ACTIVATION). See docs/copilot-cli-

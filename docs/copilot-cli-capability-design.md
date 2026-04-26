@@ -428,6 +428,7 @@ Capas en serie, cada una falla CLOSED:
 | D11 | F3: registrar task `copilot_cli.run` con triple-gate, audit JSONL append-only, dry-run permanente (`phase_blocks_real_execution: true`), 17/17 tests verdes — capability sigue disabled | ✅ |
 | D12 | F4: definir contratos de las 4 missions (`research`, `lint-suggest`, `test-explain`, `runbook-draft`) como `dry_run_artifact_only` con `max_files_touched: 0`, `network: none`, `requires_human_materialization: true`; audit dir gitignorado; capability sigue disabled | ✅ |
 | D13 | F5: scaffold del agente `rick-tech` separado de `rick-delivery`; ROLE.md declara `copilot_cli.run` como única superficie de Copilot CLI, sin permisos de publish/merge/PR/comment/Notion; capability sigue disabled | ✅ |
+| D14 | F6 step 1: agregar flag `RICK_COPILOT_CLI_EXECUTE` (default false) + constante `_REAL_EXECUTION_IMPLEMENTED=False` (hard guard, code-only); documentar EnvironmentFile layout `/etc/umbral/copilot-cli{,-secrets}.env` (mode 0600, owner rick); capability sigue disabled, token no provisionado, subprocess no invocado | ✅ |
 
 
 ---
@@ -442,7 +443,8 @@ Capas en serie, cada una falla CLOSED:
 | **F3** | **✅ done** | **task `copilot_cli.run` registrada, triple-gate, audit JSONL, 17/17 tests, sin ejecución real** |
 | **F4** | **✅ done** | **contratos de las 4 missions en YAML; `dry_run_artifact_only`; reports/copilot-cli/ gitignored; 39/39 tests** |
 | **F5** | **✅ done** | **agente `rick-tech` con ROLE.md/HEARTBEAT.md propios; rick-delivery untouched; 55/55 tests** |
-| F6 | ⏸ pending approval | activación productiva: token plumbing + execute flag + egress + operation scoping enforcement |
+| **F6.step1** | **✅ done** | **flag `RICK_COPILOT_CLI_EXECUTE` + constante `_REAL_EXECUTION_IMPLEMENTED=False` + EnvironmentFile contract documentado; 63/63 tests; sin activación** |
+| F6.step2+ | ⏸ pending approval | systemd dropin artifact, egress activation, operation scoping enforcement, real subprocess wiring |
 | F7–F9 | ⏸ blocked | write-limited / PR-draft-limited / batch autónomo |
 
 ---

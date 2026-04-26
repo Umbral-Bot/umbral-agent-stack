@@ -214,7 +214,7 @@ def test_docker_argv_built_dry_run_no_subprocess(monkeypatch):
     res = handle_copilot_cli_run(_ok_input(mission="research"))
     assert res["ok"] is True
     assert res["would_run"] is False
-    assert res["phase"] == "F3"
+    assert res["phase"] == "F6.step1"
     assert res["phase_blocks_real_execution"] is True
     assert isinstance(res["docker_argv"], list)
     argv = res["docker_argv"]
@@ -414,3 +414,112 @@ def test_f4_reports_copilot_cli_is_gitignored():
     repo = Path(__file__).resolve().parents[1]
     gi = (repo / ".gitignore").read_text(encoding="utf-8")
     assert "reports/copilot-cli/" in gi
+
+
+# ---------------------------------------------------------------------------
+# F6 step 1 — execute flag + token plumbing contract
+# ---------------------------------------------------------------------------
+
+_EXEC_FLAG = "RICK_COPILOT_CLI_EXECUTE"
+
+
+def test_f6_execute_flag_default_false(monkeypatch):
+    monkeypatch.delenv(_EXEC_FLAG, raising=False)
+    from worker.tasks import copilot_cli as mod
+    assert mod._execute_enabled() is False
+
+
+def test_f6_real_execution_implemented_constant_is_false():
+    """Hard guard: tests fail loudly if someone flips this prematurely."""
+    from worker.tasks import copilot_cli as mod
+    assert mod._REAL_EXECUTION_IMPLEMENTED is False
+
+
+def _all_gates_open(monkeypatch, *, execute=True):
+    """Open env+policy+mission for the success-path tests."""
+    monkeypatch.setenv(_ENV_FLAG, "true")
+    if execute:
+        monkeypatch.setenv(_EXEC_FLAG, "true")
+    else:
+        monkeypatch.delenv(_EXEC_FLAG, raising=False)
+    from worker import tool_policy as tp
+    monkeypatch.setattr(tp, "is_copilot_cli_policy_enabled", lambda: True)
+    monkeypatch.setattr(tp, "get_copilot_cli_missions", lambda: {"research": {}})
+    monkeypatch.setattr(tp, "is_copilot_cli_mission_allowed", lambda n: n == "research")
+
+
+def test_f6_execute_flag_off_keeps_phase_blocked(monkeypatch):
+    _all_gates_open(monkeypatch, execute=False)
+    res = handle_copilot_cli_run(_ok_input(mission="research"))
+    assert res["ok"] is True
+    assert res["would_run"] is False
+    assert res["phase_blocks_real_execution"] is True
+    assert res["policy"]["execute_enabled"] is False
+    assert res["decision"] == "execute_flag_off_dry_run"
+
+
+def test_f6_execute_flag_on_still_blocked_by_real_execution_constant(monkeypatch):
+    """All three flags true, but _REAL_EXECUTION_IMPLEMENTED is still False."""
+    _all_gates_open(monkeypatch, execute=True)
+    import subprocess as _sp
+    def _explode(*a, **kw):
+        raise AssertionError("subprocess invoked in F6 step 1")
+    for name in ("run", "Popen", "call", "check_call", "check_output"):
+        monkeypatch.setattr(_sp, name, _explode)
+
+    res = handle_copilot_cli_run(_ok_input(mission="research"))
+    assert res["ok"] is True
+    assert res["would_run"] is False
+    assert res["phase_blocks_real_execution"] is True
+    assert res["policy"]["execute_enabled"] is True
+    assert res["policy"]["real_execution_implemented"] is False
+    assert res["decision"] == "real_execution_not_implemented"
+
+
+def test_f6_audit_records_all_three_flags(monkeypatch):
+    _all_gates_open(monkeypatch, execute=True)
+    res = handle_copilot_cli_run(_ok_input(mission="research"))
+    events = _read_audit(res["audit_log"])
+    p = events[-1]["policy"]
+    for key in (
+        "env_enabled",
+        "policy_enabled",
+        "execute_enabled",
+        "real_execution_implemented",
+        "phase_blocks_real_execution",
+    ):
+        assert key in p, f"audit policy missing {key}"
+
+
+def test_f6_gh_token_and_github_token_not_in_argv(monkeypatch):
+    """Even if GH_TOKEN/GITHUB_TOKEN are present in env, they must not
+    appear in the constructed docker argv (we use COPILOT_GITHUB_TOKEN)."""
+    monkeypatch.setenv("GH_TOKEN", "ghp_DO_NOT_LEAK_GH_TOKEN_AAAAAAAAAAAAA")
+    monkeypatch.setenv("GITHUB_TOKEN", "ghp_DO_NOT_LEAK_GITHUB_TOKEN_BBBBBBB")
+    monkeypatch.setenv("COPILOT_GITHUB_TOKEN", "github_pat_DO_NOT_LEAK_CCCCCCCCCC")
+    _all_gates_open(monkeypatch, execute=True)
+    res = handle_copilot_cli_run(_ok_input(mission="research"))
+    flat = json.dumps(res, default=str)
+    raw_audit = Path(res["audit_log"]).read_text(encoding="utf-8")
+    for needle in ("DO_NOT_LEAK_GH_TOKEN", "DO_NOT_LEAK_GITHUB_TOKEN", "DO_NOT_LEAK_C"):
+        assert needle not in flat, f"token leaked in response: {needle}"
+        assert needle not in raw_audit, f"token leaked in audit: {needle}"
+
+
+def test_f6_env_example_declares_execute_flag():
+    repo = Path(__file__).resolve().parents[1]
+    text = (repo / ".env.example").read_text(encoding="utf-8")
+    assert "RICK_COPILOT_CLI_EXECUTE=false" in text
+    assert "RICK_COPILOT_CLI_ENABLED=false" in text
+
+
+def test_f6_design_doc_documents_envfile_layout():
+    repo = Path(__file__).resolve().parents[1]
+    ev = (repo / "docs" / "copilot-cli-f6-step1-token-plumbing-evidence.md").read_text(encoding="utf-8")
+    assert "/etc/umbral/copilot-cli.env" in ev
+    assert "/etc/umbral/copilot-cli-secrets.env" in ev
+    assert "0600" in ev
+    assert "COPILOT_GITHUB_TOKEN" in ev
+    # Hard "no classic PAT" assertion.
+    assert "ghp_" in ev or "classic PAT" in ev.lower()
+    assert "no classic" in ev.lower() or "not supported" in ev.lower() or "NO usar classic" in ev or "no usar classic" in ev.lower()

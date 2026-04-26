@@ -26,7 +26,6 @@ docker run --rm \
     --pids-limit=256 \
     --cap-drop=ALL \
     --security-opt no-new-privileges \
-    --security-opt seccomp=unconfined \
     --user 10001:10001 \
     --ipc=none \
     --mount "type=bind,source=${REPO_ROOT},target=/work,readonly" \

@@ -24,6 +24,31 @@ bad()  { fail=$((fail+1)); printf '[smoke]  FAIL  %s\n' "$*"; }
 note "uid=$(id -u) gid=$(id -g) user=$(id -un 2>/dev/null || echo '?')"
 [ "$(id -u)" = "10001" ] && ok "uid is 10001 (non-root)" || bad "uid is not 10001"
 
+note "seccomp filter active (must be 2 = filter mode):"
+seccomp_mode="$(awk '/^Seccomp:/ {print $2}' /proc/self/status 2>/dev/null || echo unknown)"
+note "  /proc/self/status :: Seccomp = ${seccomp_mode}"
+if [ "${seccomp_mode}" = "2" ]; then
+    ok "seccomp filter mode active (default Docker profile)"
+else
+    bad "seccomp NOT in filter mode (got ${seccomp_mode}; expected 2)"
+fi
+
+note "no-new-privileges set:"
+nnp="$(awk '/^NoNewPrivs:/ {print $2}' /proc/self/status 2>/dev/null || echo unknown)"
+if [ "${nnp}" = "1" ]; then
+    ok "no_new_privs=1"
+else
+    bad "no_new_privs not set (got ${nnp})"
+fi
+
+note "capabilities (must be all-zero under cap-drop=ALL):"
+cap_eff="$(awk '/^CapEff:/ {print $2}' /proc/self/status 2>/dev/null || echo unknown)"
+if [ "${cap_eff}" = "0000000000000000" ]; then
+    ok "CapEff is 0 (all caps dropped)"
+else
+    bad "CapEff is not zero (got ${cap_eff})"
+fi
+
 note "copilot --version:"
 if command -v copilot >/dev/null 2>&1; then
     ver="$(copilot --version 2>&1 | head -1)"

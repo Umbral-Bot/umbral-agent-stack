@@ -30,16 +30,67 @@ done
 
 # Banned subcommands. MUST stay in sync with
 # config/tool_policy.yaml :: copilot_cli.banned_subcommands.
+#
+# Defense-in-depth: each pattern is matched as a substring against the
+# reconstructed command line. Variants of a destructive operation are
+# listed explicitly even if a shorter pattern would already cover them.
 banned="
 git push
+git push -f
+git push --force
+git push --force-with-lease
+git push --force-with-lease=
+git push --mirror
+git push --tags
+git push --delete
+git push origin
+git push --set-upstream
+git push -u
+git push --no-verify
 git remote add
+git remote set-url
+git config --global
+git filter-branch
+git update-ref
 gh pr create
 gh pr merge
 gh pr comment
-gh auth
+gh pr review
+gh pr close
+gh pr edit
+gh pr ready
+gh pr reopen
+gh release create
+gh release delete
+gh release upload
+gh repo create
+gh repo delete
+gh repo edit
+gh repo rename
+gh repo archive
+gh secret set
+gh secret delete
 gh secret
+gh auth login
+gh auth logout
+gh auth refresh
+gh auth setup-git
+gh auth
+gh api
+gh workflow run
+gh workflow disable
+gh workflow enable
+gh ssh-key add
+gh gpg-key add
 rm -rf
+rm -fr
 chmod -R
+chown -R
+dd if=
+mkfs
+:(){ :|:&
+sudo
+su -
 "
 
 while IFS= read -r pat; do

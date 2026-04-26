@@ -423,11 +423,29 @@ Capas en serie, cada una falla CLOSED:
 | D6 | F2 autorizada: build sandbox + Copilot CLI dentro del contenedor + smoke offline + verificación de hardening, sin activar capability, sin token real, sin instalar en host | ✅ |
 | D7 | Roadmap F1→F9 con dirección de autonomía progresiva (read-only → artifact-only → write-limited → PR-draft-limited → batch autónomo) | ✅ |
 | D8 | Diseño de batches/budget/tracking/artifacts/ranking/dashboard de créditos desde F2 | ✅ |
+| D9 | F2.5 hardening: seccomp default profile activo, deny-list explícita 53 patrones, egress diseñado pero no activado | ✅ |
+| D10 | Auth oficial confirmada: `COPILOT_GITHUB_TOKEN` + fine-grained PAT v2 con `Copilot Requests` (PAT clásico NO soportado) | ✅ |
+| D11 | F3: registrar task `copilot_cli.run` con triple-gate, audit JSONL append-only, dry-run permanente (`phase_blocks_real_execution: true`), 17/17 tests verdes — capability sigue disabled | ✅ |
 
 
 ---
 
-> **Próximo paso si este diseño se aprueba:** completar F1 con commit
-> separado del policy stub (`enabled: false`) y la entrada en
-> `.env.example`, abrir PR draft a main. **No se ejecuta nada de F2+
-> sin aprobación explícita de cada fase.**
+## 11. Estado por fase
+
+| Fase | Estado | Detalle |
+|---|---|---|
+| F1 | ✅ done | design + policy stub + .env.example |
+| F2 | ✅ done | sandbox image + offline smoke 8/8 |
+| F2.5 | ✅ done | seccomp default + deny-list 53 + wrapper tests 60/60 + auth confirmada |
+| **F3** | **✅ done** | **task `copilot_cli.run` registrada, triple-gate, audit JSONL, 17/17 tests, sin ejecución real** |
+| F4 | ⏸ pending approval | poblar `missions{}` con las 4 misiones aprobadas, tests por mission |
+| F5 | ⏸ blocked by F4 | agente `rick-tech` con ROLE.md propio |
+| F6 | ⏸ blocked | activación productiva limitada con egress |
+| F7–F9 | ⏸ blocked | write-limited / PR-draft-limited / batch autónomo |
+
+---
+
+> **Próximo paso si F3 se aprueba:** F4 = poblar el bloque
+> `copilot_cli.missions` con las 4 misiones, mantener `enabled: false`,
+> agregar mission-template tests. **F3 no ejecuta Copilot real ni
+> requiere token.**

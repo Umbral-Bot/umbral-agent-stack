@@ -28,3 +28,28 @@ tools:
   mcp:
     description: MCP tools para Windows (futuro)
     enabled: false
+
+# ---------------------------------------------------------------------------
+# GitHub Copilot CLI capability — DISABLED stub (Fase 1, design-only).
+# Ver docs/copilot-cli-capability-design.md para arquitectura completa.
+# Cualquier cambio aquí requiere revisión humana explícita por fase.
+# Defensa-en-profundidad: además de este stub, la capability respeta el
+# env flag RICK_COPILOT_CLI_ENABLED (default false). Ambos deben ser true
+# para habilitar la task copilot_cli.run.
+# ---------------------------------------------------------------------------
+copilot_cli:
+  enabled: false                    # MASTER SWITCH — no tocar sin aprobación.
+  default_max_wall_sec: 120
+  default_max_tokens: 8000
+  default_max_files_touched: 0      # 0 = read-only por mission default
+  banned_subcommands:
+    - "git push"
+    - "git remote add"
+    - "gh pr create"
+    - "gh pr merge"
+    - "gh pr comment"
+    - "gh auth"
+    - "gh secret"
+    - "rm -rf"
+    - "chmod -R"
+  missions: {}                      # vacío hasta F4

@@ -300,3 +300,117 @@ def test_task_registered():
     from worker.tasks import TASK_HANDLERS
     assert "copilot_cli.run" in TASK_HANDLERS
     assert TASK_HANDLERS["copilot_cli.run"] is handle_copilot_cli_run
+
+
+# ---------------------------------------------------------------------------
+# F4 — Mission contracts (read from real tool_policy.yaml)
+# ---------------------------------------------------------------------------
+
+_F4_MISSIONS = ("research", "lint-suggest", "test-explain", "runbook-draft")
+
+_REQUIRED_MISSION_KEYS = {
+    "description",
+    "allowed_operations",
+    "forbidden_operations",
+    "max_wall_sec",
+    "max_prompt_chars",
+    "max_output_chars",
+    "max_files_read",
+    "max_files_touched",
+    "network",
+    "execution_mode",
+    "requires_human_materialization",
+}
+
+
+def _real_missions():
+    """Bypass conftest env shims and read the actual tool_policy.yaml."""
+    from worker import tool_policy as tp
+    # Force a fresh load (function reads YAML each call).
+    return tp.get_copilot_cli_missions()
+
+
+@pytest.mark.parametrize("name", _F4_MISSIONS)
+def test_f4_mission_exists(name):
+    missions = _real_missions()
+    assert name in missions, f"F4 mission '{name}' missing from tool_policy.yaml"
+
+
+@pytest.mark.parametrize("name", _F4_MISSIONS)
+def test_f4_mission_has_required_keys(name):
+    m = _real_missions()[name]
+    missing = _REQUIRED_MISSION_KEYS - set(m.keys())
+    assert not missing, f"mission {name} missing keys: {missing}"
+
+
+@pytest.mark.parametrize("name", _F4_MISSIONS)
+def test_f4_mission_is_read_only(name):
+    m = _real_missions()[name]
+    assert m["max_files_touched"] == 0, f"{name} must be read-only in F4"
+    assert m["network"] == "none", f"{name} must run with network=none in F4"
+    assert m["execution_mode"] == "dry_run_artifact_only"
+    assert m["requires_human_materialization"] is True
+
+
+@pytest.mark.parametrize("name", _F4_MISSIONS)
+def test_f4_mission_limits_within_caps(name):
+    m = _real_missions()[name]
+    assert 5 <= m["max_wall_sec"] <= 600
+    assert 1 <= m["max_prompt_chars"] <= 16000
+    assert 1 <= m["max_output_chars"] <= 65536
+    assert isinstance(m["allowed_operations"], list) and m["allowed_operations"]
+    assert isinstance(m["forbidden_operations"], list) and m["forbidden_operations"]
+
+
+def test_f4_master_switch_still_off():
+    """Adding mission contracts MUST NOT flip the capability on."""
+    from worker import tool_policy as tp
+    assert tp.is_copilot_cli_policy_enabled() is False
+    assert tp.is_copilot_cli_egress_activated() is False
+
+
+def test_f4_valid_mission_still_blocked_when_capability_disabled():
+    """Even with a real mission name, gates default to disabled."""
+    res = handle_copilot_cli_run(_ok_input(mission="research"))
+    assert res["ok"] is False
+    assert res["error"] == "capability_disabled"
+
+
+def test_f4_unknown_mission_rejected_when_gates_pass(monkeypatch):
+    monkeypatch.setenv(_ENV_FLAG, "true")
+    from worker import tool_policy as tp
+    monkeypatch.setattr(tp, "is_copilot_cli_policy_enabled", lambda: True)
+    res = handle_copilot_cli_run(_ok_input(mission="nope-not-real"))
+    assert res["ok"] is False
+    assert res["error"] == "mission_not_allowed"
+    # Allowlist surfaced is the real F4 set.
+    for name in _F4_MISSIONS:
+        assert name in res["missions_allowed"]
+
+
+def test_f4_banned_subcommand_still_blocks_with_real_mission():
+    """Deny-list runs BEFORE capability gate — even with a real mission name."""
+    res = handle_copilot_cli_run(
+        _ok_input(mission="research", prompt="please run git push --force now")
+    )
+    assert res["ok"] is False
+    assert res["error"] == "banned_subcommand"
+
+
+def test_f4_audit_dir_default_is_under_reports_copilot_cli(monkeypatch):
+    """Production audit path is reports/copilot-cli/<YYYY-MM>/<id>.jsonl."""
+    monkeypatch.delenv(_AUDIT_BASE_ENV, raising=False)
+    from worker.tasks import copilot_cli as mod
+    p = mod._audit_log_path("test-id-only")
+    try:
+        assert "reports/copilot-cli" in str(p).replace(os.sep, "/")
+    finally:
+        if p.exists():
+            p.unlink()
+
+
+def test_f4_reports_copilot_cli_is_gitignored():
+    """Production audit path must NOT be tracked by git."""
+    repo = Path(__file__).resolve().parents[1]
+    gi = (repo / ".gitignore").read_text(encoding="utf-8")
+    assert "reports/copilot-cli/" in gi

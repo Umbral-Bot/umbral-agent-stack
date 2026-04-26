@@ -427,6 +427,7 @@ Capas en serie, cada una falla CLOSED:
 | D10 | Auth oficial confirmada: `COPILOT_GITHUB_TOKEN` + fine-grained PAT v2 con `Copilot Requests` (PAT clásico NO soportado) | ✅ |
 | D11 | F3: registrar task `copilot_cli.run` con triple-gate, audit JSONL append-only, dry-run permanente (`phase_blocks_real_execution: true`), 17/17 tests verdes — capability sigue disabled | ✅ |
 | D12 | F4: definir contratos de las 4 missions (`research`, `lint-suggest`, `test-explain`, `runbook-draft`) como `dry_run_artifact_only` con `max_files_touched: 0`, `network: none`, `requires_human_materialization: true`; audit dir gitignorado; capability sigue disabled | ✅ |
+| D13 | F5: scaffold del agente `rick-tech` separado de `rick-delivery`; ROLE.md declara `copilot_cli.run` como única superficie de Copilot CLI, sin permisos de publish/merge/PR/comment/Notion; capability sigue disabled | ✅ |
 
 
 ---
@@ -440,8 +441,8 @@ Capas en serie, cada una falla CLOSED:
 | F2.5 | ✅ done | seccomp default + deny-list 53 + wrapper tests 60/60 + auth confirmada |
 | **F3** | **✅ done** | **task `copilot_cli.run` registrada, triple-gate, audit JSONL, 17/17 tests, sin ejecución real** |
 | **F4** | **✅ done** | **contratos de las 4 missions en YAML; `dry_run_artifact_only`; reports/copilot-cli/ gitignored; 39/39 tests** |
-| F5 | ⏸ pending approval | agente `rick-tech` con ROLE.md propio |
-| F6 | ⏸ blocked | activación productiva limitada con egress |
+| **F5** | **✅ done** | **agente `rick-tech` con ROLE.md/HEARTBEAT.md propios; rick-delivery untouched; 55/55 tests** |
+| F6 | ⏸ pending approval | activación productiva: token plumbing + execute flag + egress + operation scoping enforcement |
 | F7–F9 | ⏸ blocked | write-limited / PR-draft-limited / batch autónomo |
 
 ---

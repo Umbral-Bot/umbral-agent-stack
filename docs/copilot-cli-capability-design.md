@@ -426,6 +426,7 @@ Capas en serie, cada una falla CLOSED:
 | D9 | F2.5 hardening: seccomp default profile activo, deny-list explícita 53 patrones, egress diseñado pero no activado | ✅ |
 | D10 | Auth oficial confirmada: `COPILOT_GITHUB_TOKEN` + fine-grained PAT v2 con `Copilot Requests` (PAT clásico NO soportado) | ✅ |
 | D11 | F3: registrar task `copilot_cli.run` con triple-gate, audit JSONL append-only, dry-run permanente (`phase_blocks_real_execution: true`), 17/17 tests verdes — capability sigue disabled | ✅ |
+| D12 | F4: definir contratos de las 4 missions (`research`, `lint-suggest`, `test-explain`, `runbook-draft`) como `dry_run_artifact_only` con `max_files_touched: 0`, `network: none`, `requires_human_materialization: true`; audit dir gitignorado; capability sigue disabled | ✅ |
 
 
 ---
@@ -438,8 +439,8 @@ Capas en serie, cada una falla CLOSED:
 | F2 | ✅ done | sandbox image + offline smoke 8/8 |
 | F2.5 | ✅ done | seccomp default + deny-list 53 + wrapper tests 60/60 + auth confirmada |
 | **F3** | **✅ done** | **task `copilot_cli.run` registrada, triple-gate, audit JSONL, 17/17 tests, sin ejecución real** |
-| F4 | ⏸ pending approval | poblar `missions{}` con las 4 misiones aprobadas, tests por mission |
-| F5 | ⏸ blocked by F4 | agente `rick-tech` con ROLE.md propio |
+| **F4** | **✅ done** | **contratos de las 4 missions en YAML; `dry_run_artifact_only`; reports/copilot-cli/ gitignored; 39/39 tests** |
+| F5 | ⏸ pending approval | agente `rick-tech` con ROLE.md propio |
 | F6 | ⏸ blocked | activación productiva limitada con egress |
 | F7–F9 | ⏸ blocked | write-limited / PR-draft-limited / batch autónomo |
 

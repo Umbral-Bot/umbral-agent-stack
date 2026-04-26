@@ -430,6 +430,7 @@ Capas en serie, cada una falla CLOSED:
 | D13 | F5: scaffold del agente `rick-tech` separado de `rick-delivery`; ROLE.md declara `copilot_cli.run` como única superficie de Copilot CLI, sin permisos de publish/merge/PR/comment/Notion; capability sigue disabled | ✅ |
 | D14 | F6 step 1: agregar flag `RICK_COPILOT_CLI_EXECUTE` (default false) + constante `_REAL_EXECUTION_IMPLEMENTED=False` (hard guard, code-only); documentar EnvironmentFile layout `/etc/umbral/copilot-cli{,-secrets}.env` (mode 0600, owner rick); capability sigue disabled, token no provisionado, subprocess no invocado | ✅ |
 | D15 | F6 step 2: artifacts de repo bajo `infra/systemd/`, `infra/env/` + verifier `scripts/verify_copilot_cli_env_contract.py` (chequea owner/mode, separación de variables, rechaza classic PAT, no imprime tokens); `/etc/umbral/*` NO creado, systemd live NO tocado, capability sigue disabled | ✅ |
+| D16 | F6 step 3: artifacts de diseño bajo `infra/networking/` (nft template + resolver design note) + verifier `scripts/verify_copilot_egress_contract.py` (parity policy↔artifact, default deny, no live commands uncommented, no DNS por defecto); `nftables`/`iptables`/Docker network NO tocados, `copilot_cli.egress.activated` sigue false | ✅ |
 
 
 ---
@@ -446,7 +447,8 @@ Capas en serie, cada una falla CLOSED:
 | **F5** | **✅ done** | **agente `rick-tech` con ROLE.md/HEARTBEAT.md propios; rick-delivery untouched; 55/55 tests** |
 | **F6.step1** | **✅ done** | **flag `RICK_COPILOT_CLI_EXECUTE` + constante `_REAL_EXECUTION_IMPLEMENTED=False` + EnvironmentFile contract documentado; 63/63 tests; sin activación** |
 | **F6.step2** | **✅ done** | **artifacts `infra/systemd/`, `infra/env/`, verifier `scripts/verify_copilot_cli_env_contract.py`; 74/74 tests; `/etc/umbral/*` no creado, systemd live no tocado** |
-| F6.step3+ | ⏸ pending approval | egress design/activation, operation scoping enforcement, real subprocess wiring |
+| **F6.step3** | **✅ done** | **artifacts `infra/networking/copilot-egress.nft.example` + `copilot-egress-resolver.md`, verifier `scripts/verify_copilot_egress_contract.py`; 86/86 tests; `nftables`/`iptables`/Docker network no tocados, egress sigue desactivado** |
+| F6.step4+ | ⏸ pending approval | resolver implementation (dry-run), live nft apply, operation scoping enforcement, real subprocess wiring |
 | F7–F9 | ⏸ blocked | write-limited / PR-draft-limited / batch autónomo |
 
 ---

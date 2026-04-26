@@ -45,6 +45,14 @@ logger = logging.getLogger("worker.tasks.copilot_cli")
 # ---------------------------------------------------------------------------
 
 _ENV_FLAG = "RICK_COPILOT_CLI_ENABLED"
+_EXEC_FLAG = "RICK_COPILOT_CLI_EXECUTE"
+
+# Hard safety constant: even if the operator sets every flag to true, F6
+# step 1 has not implemented the real execution path. This stays False
+# until F6 step N (token plumbing + egress + operation scoping
+# enforcement + real subprocess invocation) is reviewed and approved.
+# Tests assert this constant is False.
+_REAL_EXECUTION_IMPLEMENTED = False
 
 _REPO_ROOT: Path = Path(__file__).resolve().parents[2]
 
@@ -137,6 +145,10 @@ def _write_audit_event(path: Path, event: Dict[str, Any]) -> None:
 
 def _env_enabled() -> bool:
     return os.environ.get(_ENV_FLAG, "").strip().lower() == "true"
+
+
+def _execute_enabled() -> bool:
+    return os.environ.get(_EXEC_FLAG, "").strip().lower() == "true"
 
 
 def _scan_for_banned(text: str, banned: List[str]) -> Optional[str]:
@@ -280,10 +292,16 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
     audit_path_str = str(audit_path)
 
     env_enabled = _env_enabled()
+    execute_enabled = _execute_enabled()
     policy_enabled = tool_policy.is_copilot_cli_policy_enabled()
     egress_activated = tool_policy.is_copilot_cli_egress_activated()
     banned = tool_policy.get_copilot_cli_banned_subcommands()
     missions = tool_policy.get_copilot_cli_missions()
+
+    # F6 step 1 hard guard: even when all three flags are true, the real
+    # execution path has not been implemented. This guarantees no
+    # subprocess call can leak through misconfiguration.
+    real_execution_blocked = not _REAL_EXECUTION_IMPLEMENTED or not execute_enabled
 
     base_event: Dict[str, Any] = {
         "ts": _now_iso(),
@@ -293,6 +311,9 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
         "policy": {
             "env_enabled": env_enabled,
             "policy_enabled": policy_enabled,
+            "execute_enabled": execute_enabled,
+            "real_execution_implemented": _REAL_EXECUTION_IMPLEMENTED,
+            "phase_blocks_real_execution": real_execution_blocked,
             "egress_activated": egress_activated,
             "missions_count": len(missions),
         },
@@ -404,8 +425,13 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
             "mission_run_id": mission_run_id,
         }
 
-    # 6) All gates passed. F3 still does NOT execute Copilot. Build the
-    # docker argv that F6+ would run, write it to the audit log, return.
+    # 6) All gates passed (env + policy + mission). F6 step 1 still does
+    # NOT execute Copilot for two independent reasons:
+    #   a) RICK_COPILOT_CLI_EXECUTE flag — operator-controlled.
+    #   b) _REAL_EXECUTION_IMPLEMENTED constant — hard guard, only flipped
+    #      when F6 step N (subprocess wiring + token plumbing + egress)
+    #      ships under explicit review.
+    # Build the docker argv that F6 step N would run, audit it, return.
     image = os.environ.get("COPILOT_CLI_SANDBOX_IMAGE", _SANDBOX_IMAGE_DEFAULT)
     docker_argv = _build_docker_argv(
         mission_run_id=mission_run_id,
@@ -415,21 +441,36 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
     )
     redacted_argv = [_redact(a) for a in docker_argv]
 
+    if not execute_enabled:
+        decision = "execute_flag_off_dry_run"
+    elif not _REAL_EXECUTION_IMPLEMENTED:
+        decision = "real_execution_not_implemented"
+    else:
+        decision = "would_run_dry_run" if dry_run else "would_run_blocked_phase_f3"
+
     event = {
         **base_event,
-        "decision": "would_run_dry_run" if dry_run else "would_run_blocked_phase_f3",
+        "decision": decision,
         "image": image,
         "docker_argv_redacted": redacted_argv,
         "egress_activated": egress_activated,
-        "phase_blocks_real_execution": True,
+        "phase_blocks_real_execution": real_execution_blocked,
     }
     _write_audit_event(audit_path, event)
 
     return {
         "ok": True,
-        "would_run": False,  # F3: never executes
-        "phase": "F3",
-        "phase_blocks_real_execution": True,
+        "would_run": False,  # F6 step 1: never executes
+        "phase": "F6.step1",
+        "phase_blocks_real_execution": real_execution_blocked,
+        "decision": decision,
+        "policy": {
+            "env_enabled": env_enabled,
+            "policy_enabled": policy_enabled,
+            "execute_enabled": execute_enabled,
+            "real_execution_implemented": _REAL_EXECUTION_IMPLEMENTED,
+            "phase_blocks_real_execution": real_execution_blocked,
+        },
         "mission": mission,
         "mission_run_id": mission_run_id,
         "audit_log": audit_path_str,

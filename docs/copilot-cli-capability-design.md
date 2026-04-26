@@ -174,17 +174,32 @@ Nueva imagen `umbral-sandbox-copilot-cli`, hermana de
 
 ### 5.4 L4 — Identity & secrets
 
-- Crear GitHub App "Umbral Copilot CLI Runner" con permisos
-  **Contents: Read** sobre `Umbral-Bot/umbral-agent-stack` únicamente.
-  Sin `Contents: Write`, sin `Pull requests`, sin `Issues`, sin
-  `Workflows`.
-- Token instalado vía `EnvironmentFile` de systemd:
-  `/etc/umbral/copilot-cli.env`, `chmod 600`, owner `rick`.
-- Rotación: extender `infra/auth_lifecycle.py` con entry
-  `copilot_cli_github_app` que revalida cada N días.
-- Redaction: extender `_SENSITIVE_PATTERNS` de `worker/tasks/github.py`
-  para incluir tokens del GitHub App (formato `ghs_...`). Aplicar a
-  todo log, error y artifact escrito por la task.
+**Decisión D3 (David, 2026-04-26):** preferencia de credencial:
+- ✅ usar variable de entorno **`COPILOT_GITHUB_TOKEN`** inyectada al
+  contenedor en runtime (NO al host)
+- ❌ NO usar `GH_TOKEN`
+- ❌ NO usar `GITHUB_TOKEN`
+- ❌ NO depender de `gh auth login`
+- ❌ NO escribir credenciales a `~/.copilot/config.json`
+- ❌ NO usar PAT clásico
+
+**Modelo preferido:** GitHub App user-to-server token si Copilot CLI lo
+soporta en modo no-interactivo. **Fallback aceptable:** fine-grained PAT
+con permiso mínimo `Copilot Requests` (+ `Contents: read` solo para este
+repo si hace falta). **Verificación obligatoria antes de F3/F4:**
+confirmar contra documentación oficial qué token soporta realmente
+Copilot CLI en modo no-interactivo.
+
+**Decisión D4 (David, 2026-04-26):** EnvironmentFile separados:
+- `/etc/umbral/copilot-cli.env` — config no-secreta (flag, límites)
+- `/etc/umbral/copilot-cli-secrets.env` — secretos (`COPILOT_GITHUB_TOKEN`)
+- owner `rick`, `chmod 600`, jamás commiteado, jamás impreso en logs
+- rotación documentada por separado en F5
+
+**Defensa adicional:**
+- Redaction extendido en `_SENSITIVE_PATTERNS` para tokens
+  `ghs_*`, `ghu_*`, `github_pat_*`, `gho_*`, `ghp_*`.
+- Aplicar a TODO log, error, artifact escrito por la task.
 
 ### 5.5 L5 — Output gate
 
@@ -222,16 +237,63 @@ Ninguna mission de F4 escribe en `/work` (RO). Ninguna ejecuta `git
 push` o `gh pr *`. La materialización es **siempre** un paso humano
 posterior.
 
-## 7. Fases
+## 7. Fases (roadmap completo F1→F9)
 
-| Fase | Entregable | Bloquea a | Aprobación |
+> **Dirección estratégica (David, 2026-04-26):** el objetivo final NO es
+> quedarse en read-only. La autonomía de Rick × Copilot CLI debe crecer
+> en volumen y utilidad, con límites claros de mutación y aprobación
+> humana por fase. Cada fase desbloquea capacidades adicionales solo si
+> la anterior pasó la revisión.
+
+| Fase | Entregable | Mutación permitida | Aprobación |
 |---|---|---|---|
-| **F1** | Este doc + plan + (post-aprobación) policy stub disabled + flag en `.env.example` | F2 | David revisa diseño |
-| **F2** | Imagen sandbox `umbral-sandbox-copilot-cli` + smoke offline | F3 | David revisa Dockerfile |
-| **F3** | `worker/tasks/copilot_cli.py` con guards, sin missions registradas | F4 | David revisa task |
-| **F4** | Mission templates + smoke `research` end-to-end (flag aún `false` en prod) | F5 | David revisa missions |
-| **F5** | `rick-tech` ROLE.md (o extensión `rick-delivery`) + dispatcher routing | F6 | David revisa rol |
-| **F6** | Activación `RICK_COPILOT_CLI_ENABLED=true` en producción | — | **David explícito** |
+| **F1** | Design doc + plan + policy/env stub disabled | ninguna | David ✅ (2026-04-26) |
+| **F2** | Imagen sandbox `umbral-sandbox-copilot-cli` + smoke offline + hardening evidence | ninguna (host intacto) | David ✅ (2026-04-26) |
+| **F3** | `worker/tasks/copilot_cli.py` con guards, registrada pero `enabled=false` | ninguna | David |
+| **F4** | Mission templates read-only/artifact-only activables en entorno controlado | artifacts en `artifacts/copilot-cli/` | David |
+| **F5** | Agente `rick-tech` (NUEVO, no extender `rick-delivery`) con contrato propio: permisos, memoria, logs, límites, handoffs | ninguna nueva | David |
+| **F6** | Activación productiva limitada: flag global ON pero scope estrecho | runs Copilot reales, output read-only | David explícito |
+| **F7** | Write-limited bajo policy: missions pueden escribir a rutas allowlisted del repo (sin push) | escritura local en branch | David |
+| **F8** | PR-draft-limited bajo policy: la task puede crear branches y PR **draft**, sin merge ni comment | branch + PR draft | David |
+| **F9** | Autonomía por lotes: budget, dashboard de créditos vs valor, rollback, revisión humana asíncrona | batch missions con presupuesto duro | David |
+
+### 7.1 Mission set extendido
+
+**Aprobadas en F1 (read-only, target F4):**
+- `research`, `lint-suggest`, `test-explain`, `runbook-draft`
+
+**Candidatas para F4/F5 (read-only/artifact-only):**
+- `repo-tour` — recorrido estructurado del repo, output markdown
+- `dep-audit` — auditoría de dependencias, output report
+- `pr-review-draft` — review en draft, NUNCA comentado al PR
+- `implementation-plan` — plan de implementación, output markdown
+- `patch-proposal` — diff propuesto como artifact
+- `branch-plan` — plan de ramas + commits sin ejecutar
+- `codemod-plan` — plan de codemod sin ejecutar
+
+**Regla:** En F2/F3 ninguna mission ejecuta autonomía real. En F4 son
+read-only/artifact-only. En F7+ algunas pueden evolucionar a
+write-limited si pasan revisión y eval.
+
+### 7.2 Autonomía por lotes y créditos (F9 design seed)
+
+Diseñado desde F2 para no bloquear escala futura:
+
+- **batches**: lista de missions ejecutadas en serie/paralelo bajo un
+  `batch_id`, cada mission con su mission_run_id propio.
+- **presupuesto**: por corrida (`max_tokens`, `max_wall_sec`,
+  `max_files_touched`) y por batch (`max_total_tokens`, `max_runs`).
+- **tracking**: `reports/copilot-cli/<YYYY-MM>/credits-usage.jsonl`
+  append-only con `{batch_id, mission, tokens, wall_sec, ok, value_tag}`.
+- **artifacts**: `artifacts/copilot-cli/<batch_id>/<mission_run_id>/`
+  con patch + audit log + result.json.
+- **ranking**: futuro evaluador puntúa outputs (utilidad, calidad,
+  riesgo) para alimentar policy.
+- **dashboard semanal**: reporte "créditos usados vs valor producido".
+- **rollback**: cada artifact incluye reverse-patch o branch
+  descartable.
+- **revisión humana asíncrona**: cola de approvals para missions
+  write-limited / PR-draft.
 
 ## 8. Criterios de aceptación de F1 (esta PR)
 
@@ -243,18 +305,20 @@ posterior.
 - [ ] Plan de session sembrado en SQL (todos + deps). _(hecho fuera del repo)_
 - [ ] PR draft a main, sin merge.
 
-## 9. Decisiones pendientes (requieren input de David)
+## 9. Decisiones aprobadas (David, 2026-04-26)
 
-1. **Mission set inicial**: ¿las cuatro missions de §6 son las
-   correctas o agregar/quitar alguna? (p.ej. `repo-tour`, `dep-audit`).
-2. **Red del sandbox**: ¿`--network=none` estricto en F2 (más seguro,
-   missions sin LLM remoto) o egress filtrado desde el inicio?
-3. **GitHub App vs PAT clásico**: confirmar que App con read-only es
-   el modelo deseado, no un PAT scoped del usuario `rick`.
-4. **Ubicación del flag**: ¿`/etc/umbral/copilot-cli.env` aceptable, o
-   integrarlo en el `EnvironmentFile` existente del worker?
-5. **`rick-tech` vs extensión de `rick-delivery`**: ¿agente nuevo o
-   capability adicional sobre el rol existente?
+| # | Decisión | Aprobada |
+|---|---|---|
+| D1 | Mission set inicial: `research`, `lint-suggest`, `test-explain`, `runbook-draft` | ✅ |
+| D1bis | Candidatas F4/F5: `repo-tour`, `dep-audit`, `pr-review-draft`, `implementation-plan`, `patch-proposal`, `branch-plan`, `codemod-plan` | ✅ |
+| D2 | Sandbox F2 con `--network=none`, perfil `copilot-egress` filtrado solo para fases posteriores | ✅ |
+| D3 | Credencial vía `COPILOT_GITHUB_TOKEN` inyectada al contenedor; preferencia GitHub App user-to-server, fallback fine-grained PAT con `Copilot Requests`. NO `GH_TOKEN`, NO `GITHUB_TOKEN`, NO `gh auth login`, NO config.json, NO PAT clásico | ✅ |
+| D4 | EnvironmentFiles separados `/etc/umbral/copilot-cli.env` + `/etc/umbral/copilot-cli-secrets.env`, owner `rick`, chmod 600 | ✅ |
+| D5 | Agente nuevo `rick-tech` (o `rick-technical-operator`), NO extender `rick-delivery` | ✅ |
+| D6 | F2 autorizada: build sandbox + Copilot CLI dentro del contenedor + smoke offline + verificación de hardening, sin activar capability, sin token real, sin instalar en host | ✅ |
+| D7 | Roadmap F1→F9 con dirección de autonomía progresiva (read-only → artifact-only → write-limited → PR-draft-limited → batch autónomo) | ✅ |
+| D8 | Diseño de batches/budget/tracking/artifacts/ranking/dashboard de créditos desde F2 | ✅ |
+
 
 ---
 

@@ -1,0 +1,59 @@
+#!/bin/sh
+# copilot-cli-wrapper — defense-in-depth wrapper for any subcommand
+# the sandbox runner would otherwise pass directly to the shell.
+#
+# This wrapper enforces the L2 banned_subcommands list from
+# config/tool_policy.yaml. The sandbox already restricts the network
+# (--network=none in F2, filtered egress later) and the filesystem
+# (read-only mount + tmpfs scratch), but a wrapper that fails CLOSED
+# on banned patterns is an additional ring that does not depend on
+# network or fs state.
+#
+# This file is intentionally minimal and audited: substring match
+# only, no shell metacharacter eval, no command substitution on
+# arguments.
+
+set -u
+
+if [ "$#" -eq 0 ]; then
+    echo "copilot-cli-wrapper: no command given" >&2
+    exit 2
+fi
+
+# Reconstruct the full command line as a single string for substring
+# checks. Quoting is approximate because we only use it for matching;
+# we never re-evaluate the result.
+full=""
+for a in "$@"; do
+    if [ -z "${full}" ]; then full="$a"; else full="${full} $a"; fi
+done
+
+# Banned subcommands. MUST stay in sync with
+# config/tool_policy.yaml :: copilot_cli.banned_subcommands.
+banned="
+git push
+git remote add
+gh pr create
+gh pr merge
+gh pr comment
+gh auth
+gh secret
+rm -rf
+chmod -R
+"
+
+while IFS= read -r pat; do
+    [ -z "${pat}" ] && continue
+    case "${full}" in
+        *"${pat}"*)
+            printf 'BANNED_SUBCOMMAND: %s (matched pattern: %s)\n' "${full}" "${pat}" >&2
+            exit 126
+            ;;
+    esac
+done <<EOF
+${banned}
+EOF
+
+# If the command is allowed, exec it directly (no shell interpretation
+# of the original args beyond what the kernel does for execvp).
+exec "$@"

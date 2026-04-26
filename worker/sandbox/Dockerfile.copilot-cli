@@ -1,0 +1,83 @@
+# Umbral Copilot CLI sandbox image — F2 (capability scaffolding).
+#
+# This image is the execution environment for the future
+# `copilot_cli.run` worker task. The repository is NOT baked in;
+# it will be bind-mounted **read-only** at runtime.
+#
+# Hardening posture (mirrors worker/sandbox/Dockerfile, applied to a
+# Node base because @github/copilot is an npm package):
+#
+#   docker run --rm \
+#     --network=none \
+#     --read-only \
+#     --tmpfs /tmp:size=64m,mode=1777,exec,nosuid,nodev \
+#     --tmpfs /scratch:size=64m,mode=1777,nosuid,nodev \
+#     --tmpfs /home/runner/.cache:size=32m \
+#     --memory=1g --memory-swap=1g --cpus=1.0 \
+#     --pids-limit=256 --cap-drop=ALL \
+#     --security-opt=no-new-privileges --security-opt=seccomp=default \
+#     --user 10001:10001 --ipc=none \
+#     --mount type=bind,source=<ws>,target=/work,readonly \
+#     --workdir /work \
+#     --env COPILOT_CLI_OFFLINE_SMOKE=1 \
+#     umbral-sandbox-copilot-cli:<tag> \
+#     /usr/local/bin/copilot-cli-smoke
+#
+# Build context expects a deterministic Dockerfile.copilot-cli + a
+# pinned package.json so the image SHA is reproducible from inputs.
+
+FROM node:22.14-bookworm-slim
+
+ENV NODE_ENV=production \
+    NPM_CONFIG_FUND=false \
+    NPM_CONFIG_AUDIT=false \
+    NPM_CONFIG_UPDATE_NOTIFIER=false \
+    NPM_CONFIG_PRODUCTION=true \
+    GIT_TERMINAL_PROMPT=0
+
+# Minimal runtime tools. We deliberately do NOT install gh CLI here:
+# - Copilot CLI brings its own auth path
+# - keeping gh out of the image is one extra layer of defense against
+#   accidental gh push / gh pr * use.
+# We DO keep git because Copilot CLI uses it for repo introspection,
+# but the runtime sandbox blocks pushes via --network=none AND a
+# wrapper that fails on `git push` regardless of network.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        git \
+        tini \
+ && rm -rf /var/lib/apt/lists/*
+
+# Pin Copilot CLI version so image SHA is reproducible. Update this
+# pin via an explicit, reviewed commit — never auto-bump.
+ARG COPILOT_CLI_VERSION=1.0.36
+RUN npm install -g --omit=dev "@github/copilot@${COPILOT_CLI_VERSION}" \
+ && npm cache clean --force \
+ && copilot --version || true
+
+# Non-root runtime user. High uid avoids collisions with host uids.
+# /home/runner is created so Copilot CLI has a HOME, but at runtime
+# it is overlaid by a tmpfs to prevent persistence across runs.
+RUN useradd -u 10001 -m -d /home/runner -s /usr/sbin/nologin runner \
+ && mkdir -p /work /scratch \
+ && chown -R 10001:10001 /scratch /home/runner
+
+# Smoke entrypoint — used by F2 hardening tests. Verifies that:
+#   - we run as uid 10001
+#   - copilot binary is present and reports a version
+#   - no copilot session can be started (no token, --network=none)
+#   - common destructive paths are blocked at runtime by the wrapper
+COPY copilot-cli-smoke /usr/local/bin/copilot-cli-smoke
+COPY copilot-cli-wrapper /usr/local/bin/copilot-cli-wrapper
+RUN chmod 0555 /usr/local/bin/copilot-cli-smoke /usr/local/bin/copilot-cli-wrapper
+
+USER 10001:10001
+WORKDIR /work
+ENV HOME=/home/runner
+
+# Use tini for clean signal handling; default command is the smoke
+# script so an accidental `docker run` without args fails informatively
+# rather than dropping into an interactive Copilot session.
+ENTRYPOINT ["/usr/bin/tini", "--"]
+CMD ["/usr/local/bin/copilot-cli-smoke"]

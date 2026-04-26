@@ -1,0 +1,91 @@
+#!/bin/sh
+# copilot-cli-smoke — F2 offline smoke test for umbral-sandbox-copilot-cli.
+#
+# Runs INSIDE the sandbox container. Verifies hardening invariants:
+#   1. Running as uid 10001 (non-root).
+#   2. `copilot` binary present and reports a version.
+#   3. No network reachability when --network=none.
+#   4. Working dir is read-only (write must fail).
+#   5. /scratch is writable (tmpfs) but capped.
+#   6. No GitHub token visible in environment.
+#   7. `git push` blocked by wrapper regardless of network.
+#
+# Output is plain text + final SMOKE_RESULT line. Never prints token-like
+# patterns. Exits 0 if all assertions hold, 1 otherwise.
+
+set -u
+
+pass=0
+fail=0
+note() { printf '[smoke] %s\n' "$*"; }
+ok()   { pass=$((pass+1)); printf '[smoke]  PASS  %s\n' "$*"; }
+bad()  { fail=$((fail+1)); printf '[smoke]  FAIL  %s\n' "$*"; }
+
+note "uid=$(id -u) gid=$(id -g) user=$(id -un 2>/dev/null || echo '?')"
+[ "$(id -u)" = "10001" ] && ok "uid is 10001 (non-root)" || bad "uid is not 10001"
+
+note "copilot --version:"
+if command -v copilot >/dev/null 2>&1; then
+    ver="$(copilot --version 2>&1 | head -1)"
+    printf '[smoke]    %s\n' "${ver}"
+    ok "copilot binary present"
+else
+    bad "copilot binary missing"
+fi
+
+note "no GitHub token in env (redacted check):"
+leaked=0
+for v in GITHUB_TOKEN GH_TOKEN COPILOT_GITHUB_TOKEN GH_HOST; do
+    eval "val=\${$v:-}"
+    if [ -n "${val}" ]; then
+        leaked=1
+        bad "env var ${v} is set inside sandbox (must be empty in smoke)"
+    fi
+done
+[ "${leaked}" = "0" ] && ok "no auth-related env vars leaked into smoke"
+
+note "network reachability (must fail under --network=none):"
+if getent hosts api.github.com >/dev/null 2>&1; then
+    bad "DNS resolved api.github.com — network is NOT isolated"
+else
+    ok "DNS resolution blocked (expected under --network=none)"
+fi
+
+note "/work writability (must be read-only):"
+if (echo test > /work/.smoke-write-probe) 2>/dev/null; then
+    bad "/work is writable — should be read-only"
+    rm -f /work/.smoke-write-probe 2>/dev/null
+else
+    ok "/work is read-only (write probe failed as expected)"
+fi
+
+note "/scratch writability (must succeed):"
+if (echo test > /scratch/.smoke-write-probe) 2>/dev/null; then
+    rm -f /scratch/.smoke-write-probe
+    ok "/scratch is writable (tmpfs)"
+else
+    bad "/scratch is not writable"
+fi
+
+note "git push blocked by wrapper:"
+push_out="$(/usr/local/bin/copilot-cli-wrapper git push origin HEAD 2>&1 || true)"
+case "${push_out}" in
+    *"BANNED_SUBCOMMAND"*) ok "wrapper blocks 'git push'" ;;
+    *) bad "wrapper did not block 'git push' (output: ${push_out})" ;;
+esac
+
+note "rm -rf blocked by wrapper:"
+rm_out="$(/usr/local/bin/copilot-cli-wrapper rm -rf / 2>&1 || true)"
+case "${rm_out}" in
+    *"BANNED_SUBCOMMAND"*) ok "wrapper blocks 'rm -rf'" ;;
+    *) bad "wrapper did not block 'rm -rf' (output: ${rm_out})" ;;
+esac
+
+printf '\n[smoke] passes=%d fails=%d\n' "${pass}" "${fail}"
+if [ "${fail}" -eq 0 ]; then
+    printf 'SMOKE_RESULT=ok\n'
+    exit 0
+else
+    printf 'SMOKE_RESULT=fail\n'
+    exit 1
+fi

@@ -167,3 +167,169 @@ COPILOT_GITHUB_TOKEN en sandbox = (nunca inyectado en smoke)
 - F4 (missions definidas, smoke con token contra entorno controlado)
 - F5 (agente `rick-tech` con contrato propio)
 - F6 (aprobación explícita de David + flip de ambos flags + restart worker)
+
+---
+
+## F2.5 — Hardening cierre y auth confirmation (2026-04-26 PM)
+
+### Scope autorizado
+
+✅ Resolver problema de `seccomp` o documentar bloqueo
+✅ Confirmar oficialmente modelo de auth no-interactivo de Copilot CLI
+✅ Extender deny-list explícita para variantes de force push
+✅ Diseñar (sin activar) perfil `copilot-egress`
+✅ Actualizar docs/evidence
+❌ Sin activar capability, sin token real, sin runtime, sin Notion
+
+### F2.5.1 — Seccomp resuelto
+
+**Causa raíz:** Docker 29.2.1 interpreta `--security-opt seccomp=default`
+como un path a archivo (que no existe). El default profile se aplica
+**omitiendo** la flag por completo. Verificado:
+
+```
+docker run ... --security-opt seccomp=default ...
+  → docker: opening seccomp profile (default) failed: open default: no such file or directory
+
+docker run ... (sin seccomp flag) ...
+  → /proc/self/status :: Seccomp = 2   (filter mode)
+
+docker run ... --security-opt seccomp=unconfined ...
+  → /proc/self/status :: Seccomp = 0   (sin filtro)
+```
+
+**Decisión D9:** `run-copilot-cli-smoke.sh` ahora omite la flag seccomp
+para que se aplique el default profile. El smoke verifica
+`Seccomp = 2` en `/proc/self/status` como aserción de hardening.
+**No se requiere perfil custom todavía** — el default de Docker es
+suficiente para Node 22 + Copilot CLI 1.0.36 y bloquea ~44 syscalls
+peligrosos (mount, ptrace, kexec, reboot, etc.).
+
+Si en F3+ se necesita un perfil más estrecho (eliminando p.ej.
+`unshare`, `clone3`, `setrlimit`), se generará y commiteará en
+`worker/sandbox/seccomp-copilot-cli.json` y se referenciará desde el
+runner. Por ahora **no es bloqueante**.
+
+### F2.5.2 — Auth model confirmado
+
+Ejecutado dentro de la imagen `umbral-sandbox-copilot-cli:6940cf0f274d`:
+
+```
+$ copilot login --help
+Authenticate with Copilot via OAuth device flow.
+...
+Alternatively, Copilot CLI will use an authentication token found in
+environment variables. This method is most suitable for "headless" use
+such as automation. The following are checked in order of precedence:
+COPILOT_GITHUB_TOKEN, GH_TOKEN, GITHUB_TOKEN. See `copilot help
+environment` for more info.
+
+Supported token types include fine-grained personal access tokens (v2
+PATs) with the "Copilot Requests" permission, OAuth tokens from the
+GitHub Copilot CLI app, and OAuth tokens from the GitHub CLI (gh) app.
+
+Classic personal access tokens (ghp_) are not supported.
+```
+
+Cross-check oficial: [docs.github.com — Installing GitHub Copilot CLI](https://docs.github.com/en/copilot/how-tos/set-up/install-copilot-cli)
+
+**Conclusión (registrada en design §5.4 + §9 D3):**
+- ✅ Variable: `COPILOT_GITHUB_TOKEN` (precedencia 1, evita conflictos
+  con `gh`)
+- ✅ Token: fine-grained PAT v2 con único permiso `Copilot Requests`
+- ❌ Classic PAT (`ghp_*`): no soportado oficialmente
+- ❌ `GH_TOKEN` / `GITHUB_TOKEN`: técnicamente soportados pero los
+  evitamos para mantener separación de superficies
+- ❌ `gh auth login` y `~/.copilot/config.json`: no usar (config
+  persistente fuera de EnvironmentFile)
+
+GitHub App user-to-server **no se confirmó como soportado** explícitamente
+para Copilot CLI no-interactivo en docs oficiales. Si en el futuro se
+documenta, migrar.
+
+### F2.5.3 — Deny-list extendida y testeada
+
+`config/tool_policy.yaml :: copilot_cli.banned_subcommands` y
+`worker/sandbox/copilot-cli-wrapper` actualizados con todas las
+variantes explícitas (53 patrones banned, ver design §5.2).
+
+Nuevo script `worker/sandbox/test-copilot-cli-wrapper.sh` ejecuta
+batería offline:
+
+```
+[wrapper-test] image=umbral-sandbox-copilot-cli:6940cf0f274d
+[wrapper-test] banned cases: 53/53 PASS (every variant returns exit 126
+  with BANNED_SUBCOMMAND marker)
+[wrapper-test] allowed cases: 7/7 PASS (git status/log/diff/fetch,
+  ls/cat/echo never blocked)
+[wrapper-test] passes=60 fails=0
+WRAPPER_TEST_RESULT=ok
+```
+
+### F2.5.4 — Egress profile diseñado (NO activado)
+
+Ver design §10 completo. Resumen:
+- Perfil `copilot-egress` diseñado en `config/tool_policy.yaml`
+  (`activated: false`).
+- 6 endpoints permitidos (api.githubcopilot.com + variantes plan +
+  api.github.com + copilot-proxy.githubusercontent.com).
+- Capas en serie planificadas: red Docker dedicada + nftables DOCKER-USER
+  + DNS resolver allowlist + wrapper en contenedor (defensa en
+  profundidad).
+- Audit log path declarado: `reports/copilot-cli/egress/<YYYY-MM>/<batch_id>.jsonl`.
+- Apagado por triple flag (`copilot_cli.egress.activated`,
+  `RICK_COPILOT_CLI_ENABLED`, `COPILOT_EGRESS_ACTIVATED`).
+- **Estado actual:** `--network=none` estricto, sin reglas iptables, sin
+  red Docker creada. F2/F3/F4 permanecen en red cero.
+
+### F2.5.5 — Re-build + tests
+
+Image cambió por modificación de smoke + wrapper (tag determinista re-calculado):
+- Antes: `umbral-sandbox-copilot-cli:5abe3642c671`
+- Después: `umbral-sandbox-copilot-cli:6940cf0f274d`
+- Manifest cambió por hash determinista sobre `Dockerfile.copilot-cli +
+  copilot-cli-smoke + copilot-cli-wrapper`.
+
+Resultados:
+- `bash worker/sandbox/run-copilot-cli-smoke.sh` → **11/11 PASS**
+  (3 nuevas: seccomp filter mode, no_new_privs=1, CapEff=0)
+- `bash worker/sandbox/test-copilot-cli-wrapper.sh` → **60/60 PASS**
+
+### F2.5.6 — No-impacto verificado (re-check)
+
+| Aserción | Verificación |
+|---|---|
+| Host **NO** tiene Copilot CLI | `which copilot` → no encontrado |
+| Host **NO** tiene `gh` autenticado | `gh auth status` → "not logged in" |
+| Host **NO** tiene `@github/copilot` global | `npm ls -g --depth=0` → solo `clawhub`, `n8n`, `openclaw` |
+| Runtime intacto | `systemctl --user is-active openclaw-gateway openclaw-dispatcher umbral-worker` → `active active active` |
+| Capability sigue disabled | `RICK_COPILOT_CLI_ENABLED=false`, `copilot_cli.enabled=false` |
+| Token real **no usado** | smoke explícitamente verifica env vacío |
+| Notion / gates / `~/.openclaw/openclaw.json` | no tocados |
+| Whitespace | `git diff --check` → ok |
+
+### F2.5.7 — F3 ¿desbloqueada?
+
+✅ **Sí**, condicional a:
+1. ✅ Seccomp resuelto (default profile activo y verificado)
+2. ✅ Auth model confirmado (`COPILOT_GITHUB_TOKEN` + fine-grained PAT v2 con `Copilot Requests`)
+3. ✅ Deny-list explícita + testeada (60/60)
+4. ✅ Egress diseñado (no activado — F3 sigue en `--network=none`)
+
+**Riesgos remanentes registrados como TODO en F3, no bloqueantes:**
+- Perfil seccomp custom más estrecho (opcional; default ya cubre lo
+  esencial)
+- Implementación física de red `copilot-egress` (recién en F6+)
+- Cache de Copilot se re-extrae cada run (perf, no seguridad)
+
+### F2.5.8 — Reproducibilidad
+
+```bash
+cd /home/rick/umbral-agent-stack-copilot-cli
+git checkout rick/copilot-cli-capability-design
+bash worker/sandbox/refresh-copilot-cli.sh --print
+# umbral-sandbox-copilot-cli:6940cf0f274d
+bash worker/sandbox/refresh-copilot-cli.sh
+bash worker/sandbox/run-copilot-cli-smoke.sh    # → 11/11 PASS
+bash worker/sandbox/test-copilot-cli-wrapper.sh # → 60/60 PASS
+```

@@ -174,21 +174,37 @@ Nueva imagen `umbral-sandbox-copilot-cli`, hermana de
 
 ### 5.4 L4 — Identity & secrets
 
-**Decisión D3 (David, 2026-04-26):** preferencia de credencial:
+**Decisión D3 (David, 2026-04-26) + verificación F2.5 contra docs oficiales:** preferencia de credencial:
 - ✅ usar variable de entorno **`COPILOT_GITHUB_TOKEN`** inyectada al
   contenedor en runtime (NO al host)
-- ❌ NO usar `GH_TOKEN`
-- ❌ NO usar `GITHUB_TOKEN`
+- ❌ NO usar `GH_TOKEN` (precedencia 2 en Copilot CLI; lo evitamos para
+  no mezclar superficies y para no habilitar accidentalmente `gh`)
+- ❌ NO usar `GITHUB_TOKEN` (precedencia 3; mismo motivo)
 - ❌ NO depender de `gh auth login`
 - ❌ NO escribir credenciales a `~/.copilot/config.json`
-- ❌ NO usar PAT clásico
+- ❌ NO usar PAT clásico (`ghp_*`) — **explícitamente no soportado por
+  Copilot CLI según `copilot login --help`**
 
-**Modelo preferido:** GitHub App user-to-server token si Copilot CLI lo
-soporta en modo no-interactivo. **Fallback aceptable:** fine-grained PAT
-con permiso mínimo `Copilot Requests` (+ `Contents: read` solo para este
-repo si hace falta). **Verificación obligatoria antes de F3/F4:**
-confirmar contra documentación oficial qué token soporta realmente
-Copilot CLI en modo no-interactivo.
+**Confirmación oficial F2.5** (extracto literal de `copilot login --help`
+ejecutado dentro de la imagen `umbral-sandbox-copilot-cli:6940cf0f274d`,
+versión `@github/copilot@1.0.36`):
+
+> *"Copilot CLI will use an authentication token found in environment
+> variables. The following are checked in order of precedence:
+> `COPILOT_GITHUB_TOKEN`, `GH_TOKEN`, `GITHUB_TOKEN`. Supported token
+> types include fine-grained personal access tokens (v2 PATs) with the
+> "Copilot Requests" permission, OAuth tokens from the GitHub Copilot
+> CLI app, and OAuth tokens from the GitHub CLI (gh) app. Classic
+> personal access tokens (`ghp_`) are not supported."*
+
+Cross-check con [docs.github.com/en/copilot/how-tos/set-up/install-copilot-cli](https://docs.github.com/en/copilot/how-tos/set-up/install-copilot-cli):
+> *"You can also authenticate using a fine-grained personal access
+> token with the 'Copilot Requests' permission enabled."*
+
+**Modelo elegido:** fine-grained PAT v2 con permiso único `Copilot
+Requests` (sin `Contents: Write`, sin `Pull requests`, sin `Issues`).
+Si más adelante GitHub libera tokens de GitHub App user-to-server con
+soporte de Copilot CLI no-interactivo, migrar a esos.
 
 **Decisión D4 (David, 2026-04-26):** EnvironmentFile separados:
 - `/etc/umbral/copilot-cli.env` — config no-secreta (flag, límites)
@@ -306,6 +322,95 @@ Diseñado desde F2 para no bloquear escala futura:
 - [ ] PR draft a main, sin merge.
 
 ## 9. Decisiones aprobadas (David, 2026-04-26)
+
+| # | Decisión | Aprobada |
+|---|---|---|
+| D1 | Mission set inicial: `research`, `lint-suggest`, `test-explain`, `runbook-draft` | ✅ |
+| D1bis | Candidatas F4/F5: `repo-tour`, `dep-audit`, `pr-review-draft`, `implementation-plan`, `patch-proposal`, `branch-plan`, `codemod-plan` | ✅ |
+| D2 | Sandbox F2 con `--network=none`, perfil `copilot-egress` filtrado solo para fases posteriores | ✅ |
+| D3 | Credencial vía `COPILOT_GITHUB_TOKEN` inyectada al contenedor; **confirmado por docs oficiales (`copilot login --help`):** precedencia `COPILOT_GITHUB_TOKEN > GH_TOKEN > GITHUB_TOKEN`, soporta fine-grained PAT con `Copilot Requests`, OAuth de Copilot CLI app, OAuth de gh CLI app. **Classic PAT (`ghp_`) NO soportado.** En este stack: NO `GH_TOKEN`, NO `GITHUB_TOKEN`, NO `gh auth login`, NO config.json | ✅ |
+| D4 | EnvironmentFiles separados `/etc/umbral/copilot-cli.env` + `/etc/umbral/copilot-cli-secrets.env`, owner `rick`, chmod 600 | ✅ |
+| D5 | Agente nuevo `rick-tech` (o `rick-technical-operator`), NO extender `rick-delivery` | ✅ |
+| D6 | F2 autorizada: build sandbox + Copilot CLI dentro del contenedor + smoke offline + verificación de hardening, sin activar capability, sin token real, sin instalar en host | ✅ |
+| D7 | Roadmap F1→F9 con dirección de autonomía progresiva (read-only → artifact-only → write-limited → PR-draft-limited → batch autónomo) | ✅ |
+| D8 | Diseño de batches/budget/tracking/artifacts/ranking/dashboard de créditos desde F2 | ✅ |
+| D9 (F2.5) | Seccomp: usar perfil default de Docker (omitir `--security-opt seccomp`); smoke verifica `Seccomp=2` en `/proc/self/status` | ✅ |
+| D10 (F2.5) | Deny-list explícita extendida con todas las variantes de `git push`, `gh pr/release/repo/secret/auth/api/workflow`, `gh ssh-key/gpg-key`, fork bomb, sudo, etc. | ✅ |
+
+## 10. Egress profile design (DESIGN ONLY — NOT ACTIVATED)
+
+> **Status:** diseño F2.5; activación pendiente para F6+. Mientras tanto
+> el sandbox corre con `--network=none` estricto y **no** se permite
+> egress real.
+
+### 10.1 Endpoints permitidos (mínimos)
+
+| Host | Puerto | Propósito |
+|---|---|---|
+| `api.githubcopilot.com` | 443 | Endpoint principal de Copilot API |
+| `api.individual.githubcopilot.com` | 443 | Plan individual |
+| `api.business.githubcopilot.com` | 443 | Plan Business |
+| `api.enterprise.githubcopilot.com` | 443 | Plan Enterprise |
+| `api.github.com` | 443 | API REST (auth, repo metadata) |
+| `copilot-proxy.githubusercontent.com` | 443 | Streaming proxy |
+
+**Todo lo demás bloqueado por defecto.** Ningún wildcard. Ningún DNS
+abierto. Ningún access a registries de paquetes en runtime (paquetes ya
+están en la imagen).
+
+### 10.2 Cómo se aplicará (F6+)
+
+Capas en serie, cada una falla CLOSED:
+
+1. **Red Docker dedicada** `copilot-egress` (driver bridge).
+2. **iptables/nftables** en host: en la cadena `DOCKER-USER`, drop por
+   defecto para esa red, permit explícito a las IPs resueltas de los
+   hosts de §10.1, refrescadas vía cron + DNS resolver controlado.
+3. **DNS interno fijo**: el contenedor usa `--dns 1.1.1.1` ó un resolver
+   propio que solo resuelve los hosts allowlisted.
+4. **HTTP(S) proxy egress** opcional con allowlist por SNI (F8+ si se
+   necesita inspección).
+5. **Wrapper en contenedor**: aún con red, el wrapper sigue bloqueando
+   `git push`, `gh pr *`, etc. Doble defensa.
+
+### 10.3 Auditoría
+
+- `reports/copilot-cli/egress/<YYYY-MM>/<batch_id>.jsonl` — append-only
+  log de cada conexión (timestamp, host, sni, bytes_sent, bytes_recv,
+  duration_ms, batch_id, mission_run_id).
+- Conteo por host vs allowlist al final de cada batch.
+- Alarma en dispatcher si conteo de bloqueos > umbral.
+
+### 10.4 Cómo se apaga
+
+- `config/tool_policy.yaml :: copilot_cli.egress.activated` debe ser
+  `true` (default `false`).
+- `RICK_COPILOT_CLI_ENABLED=true` (worker).
+- `COPILOT_EGRESS_ACTIVATED=true` (variable separada para apagar la red
+  sin tocar la capability).
+- Apagado: cualquiera de las tres en `false` → vuelve a `--network=none`.
+
+### 10.5 Por qué NO red abierta
+
+- Copilot CLI puede sugerir cualquier `curl` arbitrario. Sin allowlist,
+  un prompt injection en un README malicioso podría exfiltrar secretos
+  del entorno.
+- La red allowlisted limita el blast radius incluso si el wrapper falla
+  y aunque el modelo decida ejecutar comandos creativos.
+- El runner Docker en F2 ya prueba que `--network=none` funciona; el
+  perfil `copilot-egress` es la mínima superficie adicional necesaria
+  para que Copilot pueda llamar a su backend.
+
+### 10.6 Estado actual
+
+- ⚠️ Diseñado en `config/tool_policy.yaml :: copilot_cli.egress`
+  (`activated: false`, endpoints listados, audit_log path documentado).
+- ❌ NO implementado: no existen reglas iptables/nftables, no existe
+  red Docker `copilot-egress`, no hay DNS resolver dedicado.
+- ❌ NO se ejecuta Copilot CLI con red real — todos los tests F2/F2.5
+  son `--network=none`.
+
+
 
 | # | Decisión | Aprobada |
 |---|---|---|

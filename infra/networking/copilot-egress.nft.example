@@ -1,0 +1,93 @@
+# NOTE: THIS FILE IS A REPO TEMPLATE — DO NOT APPLY IN F6 STEP 3.
+#
+# Layout for the Copilot CLI sandbox egress profile. The shipped policy
+# (config/tool_policy.yaml :: copilot_cli.egress.activated) MUST remain
+# false until F6 step 4+ is explicitly authorized by David.
+#
+# Apply procedure (operator only, NOT executed by the agent):
+#   sudo install -m 0644 infra/networking/copilot-egress.nft.example \
+#        /etc/nftables.d/copilot-egress.nft
+#   sudo nft -c -f /etc/nftables.d/copilot-egress.nft   # syntax check
+#   sudo nft -f /etc/nftables.d/copilot-egress.nft       # APPLY (manual)
+#
+# Rollback (operator only):
+#   sudo nft delete table inet copilot_egress
+#   sudo rm /etc/nftables.d/copilot-egress.nft
+#
+# Endpoint IP sets are populated by the resolver documented in
+# infra/networking/copilot-egress-resolver.md. The example IPs at the
+# bottom of this file are GENERATED / EPHEMERAL — they MUST be
+# refreshed from DNS and audited before any apply. Do NOT treat them
+# as stable infrastructure.
+
+# default deny — every packet not explicitly accepted is dropped + logged
+table inet copilot_egress {
+
+    # IP sets are filled by the resolver script in F6 step 4+. Here we
+    # only declare them so `nft -c` lints the file.
+    set copilot_v4 {
+        type ipv4_addr
+        flags interval
+        # populated by resolver — NOT APPLIED IN F6 STEP 3
+    }
+
+    set copilot_v6 {
+        type ipv6_addr
+        flags interval
+        # populated by resolver — NOT APPLIED IN F6 STEP 3
+    }
+
+    chain output {
+        type filter hook output priority 0; policy drop;
+
+        # Loopback only inside the container netns; harmless on host.
+        oifname "lo" accept
+
+        # Conntrack: allow returning packets for connections we initiated.
+        ct state established,related accept
+
+        # Allow DNS to the systemd-resolved stub on the host bridge so the
+        # sandbox can reach api.githubcopilot.com. Without this the
+        # container can't resolve names; with it, only DNS leaves — TCP
+        # 443 still requires the IP-set match below.
+        udp dport 53 ip daddr 127.0.0.53 accept
+        udp dport 53 ip daddr @copilot_v4 accept
+
+        # Copilot CLI HTTPS endpoints — IPv4
+        tcp dport 443 ip daddr @copilot_v4 \
+            log prefix "copilot-egress accept v4: " level info \
+            accept
+
+        # Copilot CLI HTTPS endpoints — IPv6
+        tcp dport 443 ip6 daddr @copilot_v6 \
+            log prefix "copilot-egress accept v6: " level info \
+            accept
+
+        # Default deny: log every drop so we can audit attempts to talk
+        # to anything other than Copilot.
+        log prefix "copilot-egress DROP: " level warn flags all
+        counter drop
+    }
+
+    chain input {
+        type filter hook input priority 0; policy drop;
+        iifname "lo" accept
+        ct state established,related accept
+    }
+
+    chain forward {
+        type filter hook forward priority 0; policy drop;
+    }
+}
+
+# Endpoints that MUST resolve into copilot_v4 / copilot_v6 (mirror of
+# config/tool_policy.yaml :: copilot_cli.egress.allowed_endpoints).
+# These comments are read by scripts/verify_copilot_egress_contract.py
+# to assert design / policy parity.
+#
+#   allowed: api.githubcopilot.com
+#   allowed: api.individual.githubcopilot.com
+#   allowed: api.business.githubcopilot.com
+#   allowed: api.enterprise.githubcopilot.com
+#   allowed: api.github.com
+#   allowed: copilot-proxy.githubusercontent.com

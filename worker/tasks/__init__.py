@@ -140,6 +140,7 @@ from .github import (
     handle_github_open_pr,
 )
 from .github_tournament import handle_github_orchestrate_tournament
+from .copilot_cli import handle_copilot_cli_run
 
 # Each handler: (input: dict) -> dict
 TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
@@ -245,4 +246,5 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "github.commit_and_push": handle_github_commit_and_push,
     "github.open_pr": handle_github_open_pr,
     "github.orchestrate_tournament": handle_github_orchestrate_tournament,
+    "copilot_cli.run": handle_copilot_cli_run,
 }

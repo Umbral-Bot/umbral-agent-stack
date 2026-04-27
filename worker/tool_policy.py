@@ -88,3 +88,57 @@ def get_fs_max_bytes_b64() -> int:
         return int(val)
     except Exception:
         return 5_000_000
+
+
+# ---------------------------------------------------------------------------
+# Copilot CLI capability — F3 policy gate (DISABLED by default).
+# Mirrors the YAML stanza ``copilot_cli:`` in config/tool_policy.yaml.
+# Defense-in-depth: this is the L2 layer; the L1 env flag
+# RICK_COPILOT_CLI_ENABLED must ALSO be true to enable the capability.
+# ---------------------------------------------------------------------------
+
+def _copilot_cli_section() -> Dict[str, Any]:
+    policy = _load_policy()
+    section = policy.get("copilot_cli", {})
+    return section if isinstance(section, dict) else {}
+
+
+def is_copilot_cli_policy_enabled() -> bool:
+    """L2 gate: copilot_cli.enabled in tool_policy.yaml. Default False."""
+    return bool(_copilot_cli_section().get("enabled", False))
+
+
+def get_copilot_cli_missions() -> Dict[str, Any]:
+    """Return the (possibly empty) missions allowlist.
+
+    Each value is a mission descriptor dict. Empty by default.
+    """
+    missions = _copilot_cli_section().get("missions", {}) or {}
+    return missions if isinstance(missions, dict) else {}
+
+
+def is_copilot_cli_mission_allowed(name: str) -> bool:
+    return bool(name) and name in get_copilot_cli_missions()
+
+
+def get_copilot_cli_banned_subcommands() -> List[str]:
+    raw = _copilot_cli_section().get("banned_subcommands", []) or []
+    if not isinstance(raw, list):
+        return []
+    return [str(p) for p in raw if isinstance(p, str) and p.strip()]
+
+
+def get_copilot_cli_default_limits() -> Dict[str, int]:
+    """Return per-mission default ceilings (wall_sec, tokens, files_touched)."""
+    s = _copilot_cli_section()
+    return {
+        "max_wall_sec": int(s.get("default_max_wall_sec", 120) or 120),
+        "max_tokens": int(s.get("default_max_tokens", 8000) or 8000),
+        "max_files_touched": int(s.get("default_max_files_touched", 0) or 0),
+    }
+
+
+def is_copilot_cli_egress_activated() -> bool:
+    """Triple-flag egress activation. Default False — F2/F3/F4 must be False."""
+    egress = _copilot_cli_section().get("egress", {}) or {}
+    return bool(egress.get("activated", False))

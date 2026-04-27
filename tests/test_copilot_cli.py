@@ -197,7 +197,7 @@ def test_docker_argv_built_dry_run_no_subprocess(monkeypatch):
     monkeypatch.setattr(
         tp,
         "get_copilot_cli_missions",
-        lambda: {"research": {"description": "test"}},
+        lambda: {"research": {"description": "test", "allowed_operations": ["read_repo"], "forbidden_operations": ["apply_patch", "git_push"]}},
     )
     monkeypatch.setattr(tp, "is_copilot_cli_mission_allowed", lambda n: n == "research")
 
@@ -242,7 +242,7 @@ def test_tokens_not_leaked_in_returned_argv(monkeypatch):
     monkeypatch.setattr(
         tp,
         "get_copilot_cli_missions",
-        lambda: {"research": {}},
+        lambda: {"research": {"allowed_operations": ["read_repo"], "forbidden_operations": ["apply_patch", "git_push"]}},
     )
     monkeypatch.setattr(tp, "is_copilot_cli_mission_allowed", lambda n: n == "research")
 
@@ -444,7 +444,7 @@ def _all_gates_open(monkeypatch, *, execute=True):
         monkeypatch.delenv(_EXEC_FLAG, raising=False)
     from worker import tool_policy as tp
     monkeypatch.setattr(tp, "is_copilot_cli_policy_enabled", lambda: True)
-    monkeypatch.setattr(tp, "get_copilot_cli_missions", lambda: {"research": {}})
+    monkeypatch.setattr(tp, "get_copilot_cli_missions", lambda: {"research": {"allowed_operations": ["read_repo"], "forbidden_operations": ["apply_patch", "git_push"]}})
     monkeypatch.setattr(tp, "is_copilot_cli_mission_allowed", lambda n: n == "research")
 
 
@@ -523,3 +523,240 @@ def test_f6_design_doc_documents_envfile_layout():
     # Hard "no classic PAT" assertion.
     assert "ghp_" in ev or "classic PAT" in ev.lower()
     assert "no classic" in ev.lower() or "not supported" in ev.lower() or "NO usar classic" in ev or "no usar classic" in ev.lower()
+
+
+# ---------------------------------------------------------------------------
+# F6 step 5 — operation scoping enforcement
+# ---------------------------------------------------------------------------
+
+
+def _all_gates_open_with_ops(monkeypatch, *, mission, allowed, forbidden,
+                             execute=False):
+    """Open every gate and stub the mission policy with the given ops."""
+    monkeypatch.setenv(_ENV_FLAG, "true")
+    if execute:
+        monkeypatch.setenv(_EXEC_FLAG, "true")
+    else:
+        monkeypatch.delenv(_EXEC_FLAG, raising=False)
+    from worker import tool_policy as tp
+    monkeypatch.setattr(tp, "is_copilot_cli_policy_enabled", lambda: True)
+    spec = {
+        "description": "test",
+        "allowed_operations": list(allowed),
+        "forbidden_operations": list(forbidden),
+    }
+    monkeypatch.setattr(tp, "get_copilot_cli_missions", lambda: {mission: spec})
+    monkeypatch.setattr(tp, "is_copilot_cli_mission_allowed",
+                        lambda n: n == mission)
+
+
+def test_f6step5_allowed_operation_passes_to_dry_run(monkeypatch):
+    _all_gates_open_with_ops(
+        monkeypatch, mission="research",
+        allowed=["read_repo", "summarize"],
+        forbidden=["apply_patch", "git_push"],
+    )
+    res = handle_copilot_cli_run(_ok_input(
+        mission="research", requested_operations=["read_repo"],
+    ))
+    assert res["ok"] is True
+    assert res["operations"]["decision"] == "allowed"
+    assert res["operations"]["requested"] == ["read_repo"]
+    assert "read_repo" in res["operations"]["allowed"]
+    events = _read_audit(res["audit_log"])
+    assert events[-1]["operation_decision"] == "allowed"
+
+
+def test_f6step5_forbidden_operation_rejects_before_docker_argv(monkeypatch):
+    _all_gates_open_with_ops(
+        monkeypatch, mission="lint-suggest",
+        allowed=["read_repo", "propose_patch_text"],
+        forbidden=["apply_patch", "write_files"],
+    )
+    res = handle_copilot_cli_run(_ok_input(
+        mission="lint-suggest",
+        requested_operations=["read_repo", "apply_patch"],
+    ))
+    assert res["ok"] is False
+    assert res["error"] == "operation_forbidden"
+    assert res["operation"] == "apply_patch"
+    assert res["operation_violation"] in (
+        "global_hard_deny", "mission_forbidden",
+    )
+    assert "docker_argv" not in res
+    events = _read_audit(res["audit_log"])
+    assert events[-1]["decision"] == "operation_forbidden"
+    assert events[-1]["operation_violation"] in (
+        "global_hard_deny", "mission_forbidden",
+    )
+
+
+def test_f6step5_unknown_operation_rejects(monkeypatch):
+    _all_gates_open_with_ops(
+        monkeypatch, mission="research",
+        allowed=["read_repo", "summarize"],
+        forbidden=["apply_patch"],
+    )
+    res = handle_copilot_cli_run(_ok_input(
+        mission="research",
+        requested_operations=["read_repo", "make_coffee"],
+    ))
+    assert res["ok"] is False
+    assert res["error"] == "unknown_operation"
+    assert res["operation"] == "make_coffee"
+    assert "docker_argv" not in res
+
+
+def test_f6step5_operation_not_in_allowed_list_rejects(monkeypatch):
+    _all_gates_open_with_ops(
+        monkeypatch, mission="research",
+        allowed=["read_repo"],
+        forbidden=["read_test_output"],   # declared somewhere in policy
+    )
+    # 'read_test_output' is declared (in forbidden) so it's "known",
+    # and falls into mission_forbidden.
+    res = handle_copilot_cli_run(_ok_input(
+        mission="research",
+        requested_operations=["read_test_output"],
+    ))
+    assert res["ok"] is False
+    assert res["error"] == "operation_forbidden"
+    assert res["operation_violation"] == "mission_forbidden"
+
+
+def test_f6step5_apply_patch_rejected_for_all_four_missions(monkeypatch):
+    for mission, allowed, forbidden in [
+        ("research", ["read_repo", "summarize"],
+         ["write_files", "run_subprocess"]),
+        ("lint-suggest", ["read_repo", "propose_patch_text"],
+         ["apply_patch", "write_files"]),
+        ("test-explain", ["read_repo", "explain_failure"],
+         ["run_subprocess", "run_tests_directly"]),
+        ("runbook-draft", ["read_repo", "generate_markdown_artifact"],
+         ["write_to_docs_dir", "write_to_runbooks_dir"]),
+    ]:
+        _all_gates_open_with_ops(
+            monkeypatch, mission=mission, allowed=allowed,
+            forbidden=forbidden,
+        )
+        res = handle_copilot_cli_run(_ok_input(
+            mission=mission, requested_operations=["apply_patch"],
+        ))
+        assert res["ok"] is False, f"mission={mission} accepted apply_patch"
+        assert res["error"] == "operation_forbidden", mission
+        assert res["operation"] == "apply_patch", mission
+
+
+def test_f6step5_global_hard_deny_blocks_git_push_open_pr_notion_write(monkeypatch):
+    _all_gates_open_with_ops(
+        monkeypatch, mission="research",
+        # Operator accidentally adds dangerous ops to allowed_operations.
+        allowed=["read_repo", "git_push", "gh_pr_create",
+                 "notion_write", "publish"],
+        forbidden=[],
+    )
+    for dangerous in ("git_push", "gh_pr_create", "notion_write", "publish"):
+        res = handle_copilot_cli_run(_ok_input(
+            mission="research", requested_operations=[dangerous],
+        ))
+        assert res["ok"] is False, dangerous
+        assert res["error"] == "operation_forbidden", dangerous
+        assert res["operation_violation"] == "global_hard_deny", dangerous
+        assert res["operation"] == dangerous
+
+
+def test_f6step5_audit_records_operation_lists(monkeypatch):
+    _all_gates_open_with_ops(
+        monkeypatch, mission="research",
+        allowed=["read_repo", "summarize"],
+        forbidden=["apply_patch"],
+    )
+    res = handle_copilot_cli_run(_ok_input(
+        mission="research", requested_operations=["read_repo"],
+    ))
+    assert res["ok"] is True
+    events = _read_audit(res["audit_log"])
+    last = events[-1]
+    assert last["requested_operations"] == ["read_repo"]
+    assert "read_repo" in last["allowed_operations"]
+    assert "apply_patch" in last["forbidden_operations"]
+    assert last["operation_decision"] == "allowed"
+
+
+def test_f6step5_no_subprocess_called_during_operation_enforcement(monkeypatch):
+    _all_gates_open_with_ops(
+        monkeypatch, mission="research",
+        allowed=["read_repo"],
+        forbidden=["apply_patch"],
+    )
+    import subprocess as _sp
+    def _explode(*a, **kw):
+        raise AssertionError("subprocess invoked during operation enforcement")
+    for name in ("run", "Popen", "call", "check_call", "check_output"):
+        monkeypatch.setattr(_sp, name, _explode)
+    # Both rejection paths and the success path must not call subprocess.
+    handle_copilot_cli_run(_ok_input(
+        mission="research", requested_operations=["read_repo"],
+    ))
+    handle_copilot_cli_run(_ok_input(
+        mission="research", requested_operations=["apply_patch"],
+    ))
+    handle_copilot_cli_run(_ok_input(
+        mission="research", requested_operations=["make_coffee"],
+    ))
+
+
+def test_f6step5_backward_compat_no_requested_operations(monkeypatch):
+    """Old payloads (pre F6 step 5) must still work."""
+    _all_gates_open_with_ops(
+        monkeypatch, mission="research",
+        allowed=["read_repo", "summarize"],
+        forbidden=["apply_patch"],
+    )
+    payload = _ok_input(mission="research")
+    assert "requested_operations" not in payload
+    res = handle_copilot_cli_run(payload)
+    assert res["ok"] is True
+    # Default inferred operation for `research` is `read_repo`.
+    assert res["operations"]["requested"] == ["read_repo"]
+    assert res["operations"]["decision"] == "allowed"
+
+
+def test_f6step5_empty_requested_operations_rejected(monkeypatch):
+    _all_gates_open_with_ops(
+        monkeypatch, mission="research",
+        allowed=["read_repo"],
+        forbidden=[],
+    )
+    res = handle_copilot_cli_run(_ok_input(
+        mission="research", requested_operations=[],
+    ))
+    assert res["ok"] is False
+    assert res["error"] == "operation_not_allowed"
+    assert res["operation_violation"] == "no_operation_requested"
+
+
+def test_f6step5_invalid_operation_name_rejects_at_schema(monkeypatch):
+    _all_gates_open_with_ops(
+        monkeypatch, mission="research",
+        allowed=["read_repo"],
+        forbidden=[],
+    )
+    res = handle_copilot_cli_run(_ok_input(
+        mission="research", requested_operations=["BadName!"],
+    ))
+    assert res["ok"] is False
+    assert res["error"] == "invalid_input"
+
+
+def test_f6step5_shipped_policy_missions_still_have_all_required_keys():
+    """Sanity: every shipped mission keeps allowed_operations + forbidden."""
+    from worker import tool_policy as tp
+    missions = tp.get_copilot_cli_missions()
+    assert set(missions.keys()) == {
+        "research", "lint-suggest", "test-explain", "runbook-draft",
+    }
+    for name, spec in missions.items():
+        assert isinstance(spec.get("allowed_operations"), list), name
+        assert isinstance(spec.get("forbidden_operations"), list), name
+        assert spec["allowed_operations"], name

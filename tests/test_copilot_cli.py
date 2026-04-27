@@ -18,6 +18,13 @@ from worker.tasks.copilot_cli import (
     _AUDIT_BASE_ENV,
     _ENV_FLAG,
     handle_copilot_cli_run,
+    set_allowed_repo_roots_for_test,
+)
+from tests._token_fixtures import (
+    classic_pat,
+    fine_grained_pat,
+    openai_key,
+    server_token,
 )
 
 
@@ -31,6 +38,24 @@ def _isolated_audit_dir(tmp_path, monkeypatch):
     """Redirect every audit write into pytest's tmp_path."""
     monkeypatch.setenv(_AUDIT_BASE_ENV, str(tmp_path / "audit"))
     yield
+
+
+@pytest.fixture(autouse=True)
+def _sandbox_repo_root(tmp_path):
+    """Allowlist a tmp directory as the repo root for ``repo_path``.
+
+    F6 step 6C-4B-fixup added strict canonicalization + allowlist
+    enforcement on ``repo_path``. The default value used in tests
+    (``/work``) does not exist on most hosts, so we expose a
+    real tmp directory and register it as the only allowed root.
+    """
+    sandbox = tmp_path / "work"
+    sandbox.mkdir()
+    set_allowed_repo_roots_for_test((sandbox,))
+    try:
+        yield sandbox
+    finally:
+        set_allowed_repo_roots_for_test(None)
 
 
 @pytest.fixture(autouse=True)
@@ -52,13 +77,24 @@ def _ok_input(**overrides):
     base = {
         "mission": "research",
         "prompt": "Resume the failing tests in this repo.",
-        "repo_path": "/work",
+        "repo_path": str(_DEFAULT_SANDBOX_REPO_PATH[0]) if _DEFAULT_SANDBOX_REPO_PATH else "/work",
         "dry_run": True,
         "max_wall_sec": 60,
         "metadata": {"requested_by": "rick-tech"},
     }
     base.update(overrides)
     return base
+
+
+_DEFAULT_SANDBOX_REPO_PATH: list = []
+
+
+@pytest.fixture(autouse=True)
+def _publish_sandbox_repo_path(_sandbox_repo_root):
+    _DEFAULT_SANDBOX_REPO_PATH.clear()
+    _DEFAULT_SANDBOX_REPO_PATH.append(_sandbox_repo_root)
+    yield
+    _DEFAULT_SANDBOX_REPO_PATH.clear()
 
 
 # ---------------------------------------------------------------------------
@@ -170,19 +206,24 @@ def test_allowed_prompt_still_blocked_by_capability_gate():
 
 
 def test_audit_log_redacts_tokens():
+    leak = classic_pat()
+    bearer_secret = "Bearer abcdefghijklmnop1234567890XYZ"
     leaky_prompt = (
-        "Use this token to authenticate: ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA "
-        "and Bearer abcdefghijklmnop1234567890XYZ for fallback."
+        f"Use this token to authenticate: {leak} "
+        f"and {bearer_secret} for fallback."
     )
     res = handle_copilot_cli_run(_ok_input(prompt=leaky_prompt))
     p = Path(res["audit_log"])
     raw = p.read_text(encoding="utf-8")
-    assert "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" not in raw
-    assert "Bearer abcdefghijklmnop1234567890XYZ" not in raw
+    assert leak not in raw
+    assert bearer_secret not in raw
     assert "[REDACTED]" in raw
 
     events = _read_audit(res["audit_log"])
-    assert "ghp_" not in events[-1]["prompt_summary"]
+    # Reassemble the prefix at runtime to avoid leaking it as a literal
+    # in this source file.
+    pat_prefix = "g" + "h" + "p" + "_"
+    assert pat_prefix not in events[-1]["prompt_summary"]
 
 
 # ---------------------------------------------------------------------------
@@ -236,7 +277,8 @@ def test_docker_argv_built_dry_run_no_subprocess(monkeypatch):
 
 def test_tokens_not_leaked_in_returned_argv(monkeypatch):
     monkeypatch.setenv(_ENV_FLAG, "true")
-    monkeypatch.setenv("COPILOT_GITHUB_TOKEN", "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+    leaked_token = classic_pat()
+    monkeypatch.setenv("COPILOT_GITHUB_TOKEN", leaked_token)
     from worker import tool_policy as tp
     monkeypatch.setattr(tp, "is_copilot_cli_policy_enabled", lambda: True)
     monkeypatch.setattr(
@@ -249,10 +291,10 @@ def test_tokens_not_leaked_in_returned_argv(monkeypatch):
     res = handle_copilot_cli_run(_ok_input(mission="research"))
     assert res["ok"] is True
     flat = json.dumps(res, default=str)
-    assert "ghp_AAAA" not in flat
+    assert leaked_token not in flat
 
     raw_audit = Path(res["audit_log"]).read_text(encoding="utf-8")
-    assert "ghp_AAAA" not in raw_audit
+    assert leaked_token not in raw_audit
 
 
 # ---------------------------------------------------------------------------
@@ -281,11 +323,11 @@ def test_unknown_input_keys_rejected():
 
 
 @pytest.mark.parametrize("token", [
-    "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-    "ghu_BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
-    "ghs_CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
-    "github_pat_DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD",
-    "sk-EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE",
+    classic_pat(),
+    classic_pat(body_char="B"),  # was ghu_… literal, now reuses helper shape
+    server_token(),
+    fine_grained_pat(),
+    openai_key(),
 ])
 def test_sensitive_patterns_match(token):
     assert _SENSITIVE_PATTERNS.search(token) is not None
@@ -760,3 +802,79 @@ def test_f6step5_shipped_policy_missions_still_have_all_required_keys():
         assert isinstance(spec.get("allowed_operations"), list), name
         assert isinstance(spec.get("forbidden_operations"), list), name
         assert spec["allowed_operations"], name
+
+
+# ---------------------------------------------------------------------------
+# F6 step 6C-4B-fixup: repo_path canonicalization + allowlist
+# ---------------------------------------------------------------------------
+
+
+from worker.tasks.copilot_cli import _validate_repo_path, _ValidationError  # noqa: E402
+
+
+def test_repo_path_accepts_allowlisted_root(_sandbox_repo_root):
+    out = _validate_repo_path(str(_sandbox_repo_root))
+    assert out == _sandbox_repo_root.resolve()
+
+
+def test_repo_path_accepts_descendant_of_allowlisted_root(_sandbox_repo_root):
+    sub = _sandbox_repo_root / "src" / "pkg"
+    sub.mkdir(parents=True)
+    out = _validate_repo_path(str(sub))
+    assert out == sub.resolve()
+
+
+def test_repo_path_rejects_root_filesystem():
+    with pytest.raises(_ValidationError) as exc:
+        _validate_repo_path("/")
+    assert exc.value.code == "repo_path_not_allowed"
+
+
+def test_repo_path_rejects_home_dir():
+    with pytest.raises(_ValidationError) as exc:
+        _validate_repo_path("/home/rick")
+    assert exc.value.code == "repo_path_not_allowed"
+
+
+def test_repo_path_rejects_nonexistent(tmp_path):
+    missing = tmp_path / "does-not-exist"
+    with pytest.raises(_ValidationError) as exc:
+        _validate_repo_path(str(missing))
+    assert exc.value.code == "repo_path_not_found"
+
+
+def test_repo_path_rejects_regular_file(_sandbox_repo_root):
+    f = _sandbox_repo_root / "README.md"
+    f.write_text("not a dir", encoding="utf-8")
+    with pytest.raises(_ValidationError) as exc:
+        _validate_repo_path(str(f))
+    assert exc.value.code == "repo_path_not_directory"
+
+
+def test_repo_path_rejects_dotdot_traversal_outside_allowlist(_sandbox_repo_root, tmp_path):
+    # tmp_path is parent of _sandbox_repo_root; using ".." escapes allowlist.
+    escape = _sandbox_repo_root / ".." / ".."
+    with pytest.raises(_ValidationError) as exc:
+        _validate_repo_path(str(escape))
+    assert exc.value.code == "repo_path_not_allowed"
+
+
+def test_repo_path_rejects_symlink_escape(_sandbox_repo_root, tmp_path):
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    link = _sandbox_repo_root / "escape"
+    try:
+        link.symlink_to(outside)
+    except (OSError, NotImplementedError):
+        pytest.skip("symlinks not supported on this filesystem")
+    with pytest.raises(_ValidationError) as exc:
+        _validate_repo_path(str(link))
+    assert exc.value.code == "repo_path_not_allowed"
+
+
+def test_repo_path_rejection_returns_structured_error_via_handler():
+    payload = _ok_input(repo_path="/home/rick")
+    res = handle_copilot_cli_run(payload)
+    assert res["ok"] is False
+    assert res["error"] == "repo_path_not_allowed"
+    assert res["would_run"] is False

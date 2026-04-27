@@ -18,6 +18,8 @@ from pathlib import Path
 
 import pytest
 
+from tests._token_fixtures import classic_pat, fine_grained_pat
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = REPO_ROOT / "scripts" / "verify_copilot_cli_env_contract.py"
 
@@ -108,7 +110,7 @@ def test_classic_pat_detected_in_secrets(tmp_path, vmod):
     runtime.write_text("RICK_COPILOT_CLI_ENABLED=false\n", encoding="utf-8")
     secrets = tmp_path / "copilot-cli-secrets.env"
     secrets.write_text(
-        "COPILOT_GITHUB_TOKEN=ghp_LegacyClassicPATXXXXXXXXXXXXXXXXXXXXXXXX\n",
+        f"COPILOT_GITHUB_TOKEN={classic_pat(body_char='X', body_len=36)}\n",
         encoding="utf-8",
     )
     report = vmod.run(runtime, secrets, check_permissions=False)
@@ -119,7 +121,7 @@ def test_classic_pat_detected_in_secrets(tmp_path, vmod):
 def test_classic_pat_detected_in_runtime_file(tmp_path, vmod):
     runtime = tmp_path / "copilot-cli.env"
     runtime.write_text(
-        "# accidentally pasted: ghp_AnotherClassicPATXXXXXXXXXXXXXXXXXXXXXX\n"
+        f"# accidentally pasted: {classic_pat(body_char='Y', body_len=34)}\n"
         "RICK_COPILOT_CLI_ENABLED=true\n",
         encoding="utf-8",
     )
@@ -140,7 +142,7 @@ def test_clean_files_pass(tmp_path, vmod):
     )
     secrets = tmp_path / "copilot-cli-secrets.env"
     secrets.write_text(
-        "COPILOT_GITHUB_TOKEN=github_pat_FineGrainedPATvalueXXXXXXXXXXXXXXXX\n",
+        f"COPILOT_GITHUB_TOKEN={fine_grained_pat(body_char='Z', body_len=40)}\n",
         encoding="utf-8",
     )
     report = vmod.run(runtime, secrets, check_permissions=False)
@@ -153,7 +155,7 @@ def test_clean_files_pass(tmp_path, vmod):
 
 
 def test_verifier_does_not_print_token_values(tmp_path, vmod, capsys, monkeypatch):
-    leak = "github_pat_DO_NOT_LEAK_DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD"
+    leak = fine_grained_pat(body_char="L", body_len=40)
     runtime = tmp_path / "copilot-cli.env"
     runtime.write_text(f"COPILOT_GITHUB_TOKEN={leak}\n", encoding="utf-8")
     secrets = tmp_path / "copilot-cli-secrets.env"

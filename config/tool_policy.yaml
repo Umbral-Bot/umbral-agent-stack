@@ -28,3 +28,188 @@ tools:
   mcp:
     description: MCP tools para Windows (futuro)
     enabled: false
+
+# ---------------------------------------------------------------------------
+# GitHub Copilot CLI capability — DISABLED stub (Fase 1, design-only).
+# Ver docs/copilot-cli-capability-design.md para arquitectura completa.
+# Cualquier cambio aquí requiere revisión humana explícita por fase.
+# Defensa-en-profundidad: además de este stub, la capability respeta el
+# env flag RICK_COPILOT_CLI_ENABLED (default false). Ambos deben ser true
+# para habilitar la task copilot_cli.run.
+# ---------------------------------------------------------------------------
+copilot_cli:
+  enabled: false                    # MASTER SWITCH — no tocar sin aprobación.
+  default_max_wall_sec: 120
+  default_max_tokens: 8000
+  default_max_files_touched: 0      # 0 = read-only por mission default
+  banned_subcommands:
+    # Git push variants — defensa en profundidad: substring match cubre
+    # también las variantes pero las listamos explícitamente para audit.
+    - "git push"
+    - "git push -f"
+    - "git push --force"
+    - "git push --force-with-lease"
+    - "git push --force-with-lease="
+    - "git push --mirror"
+    - "git push --tags"
+    - "git push --delete"
+    - "git push origin"
+    - "git push --set-upstream"
+    - "git push -u"
+    - "git push --no-verify"
+    # Otras mutaciones git remotas / globales
+    - "git remote add"
+    - "git remote set-url"
+    - "git config --global"
+    - "git filter-branch"
+    - "git update-ref"
+    # gh PR / release / repo / secret / auth — toda mutación remota
+    - "gh pr create"
+    - "gh pr merge"
+    - "gh pr comment"
+    - "gh pr review"
+    - "gh pr close"
+    - "gh pr edit"
+    - "gh pr ready"
+    - "gh pr reopen"
+    - "gh release create"
+    - "gh release delete"
+    - "gh release upload"
+    - "gh repo create"
+    - "gh repo delete"
+    - "gh repo edit"
+    - "gh repo rename"
+    - "gh repo archive"
+    - "gh secret set"
+    - "gh secret delete"
+    - "gh secret"
+    - "gh auth login"
+    - "gh auth logout"
+    - "gh auth refresh"
+    - "gh auth setup-git"
+    - "gh auth"
+    - "gh api"             # no API arbitraria a github.com
+    - "gh workflow run"
+    - "gh workflow disable"
+    - "gh workflow enable"
+    - "gh ssh-key add"
+    - "gh gpg-key add"
+    # Filesystem / shell destructivos
+    - "rm -rf"
+    - "rm -fr"
+    - "chmod -R"
+    - "chown -R"
+    - "dd if="
+    - "mkfs"
+    - ":(){ :|:&"          # fork bomb
+    - "sudo"
+    - "su -"
+  missions:
+    # F4: contracts only. capability sigue OFF a nivel global (enabled: false).
+    # Cada mission es read-only / artifact-only. max_files_touched: 0.
+    # Materialización (commits, PRs, archivos) la hace un humano fuera de la task.
+    research:
+      description: >-
+        Lectura y análisis del repo: explicar arquitectura, mapear módulos,
+        responder preguntas sobre el código. Sin escrituras.
+      allowed_operations:
+        - read_repo
+        - summarize
+        - explain
+        - cite_files
+      forbidden_operations:
+        - write_files
+        - run_subprocess
+        - network_egress
+        - shell_exec
+      max_wall_sec: 300
+      max_prompt_chars: 8000
+      max_output_chars: 32000
+      max_files_read: 200
+      max_files_touched: 0
+      network: none
+      execution_mode: dry_run_artifact_only
+      requires_human_materialization: true
+    lint-suggest:
+      description: >-
+        Explicar errores de lint/test, sugerir patches en texto (diff o
+        snippets). NO aplica el patch — humano lo materializa.
+      allowed_operations:
+        - read_repo
+        - read_lint_output
+        - propose_patch_text
+      forbidden_operations:
+        - apply_patch
+        - write_files
+        - run_subprocess
+        - network_egress
+      max_wall_sec: 300
+      max_prompt_chars: 12000
+      max_output_chars: 32000
+      max_files_read: 100
+      max_files_touched: 0
+      network: none
+      execution_mode: dry_run_artifact_only
+      requires_human_materialization: true
+    test-explain:
+      description: >-
+        Explicar tests existentes, su intent y los failures observados.
+        En F4 NO ejecuta tests reales; recibe output ya capturado por humano.
+      allowed_operations:
+        - read_repo
+        - read_test_output
+        - explain_failure
+      forbidden_operations:
+        - run_subprocess
+        - run_tests_directly
+        - write_files
+        - network_egress
+      max_wall_sec: 240
+      max_prompt_chars: 12000
+      max_output_chars: 24000
+      max_files_read: 100
+      max_files_touched: 0
+      network: none
+      execution_mode: dry_run_artifact_only
+      requires_human_materialization: true
+    runbook-draft:
+      description: >-
+        Generar borrador de runbook / documentación operativa como artifact
+        markdown. Output queda en reports/copilot-cli/<run_id>/ — humano
+        decide si lo mueve a docs/ o runbooks/.
+      allowed_operations:
+        - read_repo
+        - generate_markdown_artifact
+      forbidden_operations:
+        - write_to_docs_dir
+        - write_to_runbooks_dir
+        - run_subprocess
+        - network_egress
+      max_wall_sec: 300
+      max_prompt_chars: 12000
+      max_output_chars: 40000
+      max_files_read: 80
+      max_files_touched: 0
+      network: none
+      execution_mode: dry_run_artifact_only
+      requires_human_materialization: true
+
+  # ---------------------------------------------------------------------
+  # Egress profile (DESIGN ONLY, NO ACTIVATION). See docs/copilot-cli-
+  # capability-design.md §5.3 / §10. Used in F6+ when real Copilot calls
+  # are needed. F2/F3/F4 stay on --network=none.
+  # ---------------------------------------------------------------------
+  egress:
+    profile_name: copilot-egress
+    activated: false
+    allowed_endpoints:
+      - api.githubcopilot.com:443
+      - api.individual.githubcopilot.com:443
+      - api.business.githubcopilot.com:443
+      - api.enterprise.githubcopilot.com:443
+      - api.github.com:443
+      - copilot-proxy.githubusercontent.com:443
+    blocked_by_default:
+      - "*"
+    audit_log: reports/copilot-cli/egress/<YYYY-MM>/<batch_id>.jsonl
+    enforcement: docker network + egress firewall (nftables) + deny-by-default

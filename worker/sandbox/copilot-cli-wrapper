@@ -1,0 +1,110 @@
+#!/bin/sh
+# copilot-cli-wrapper — defense-in-depth wrapper for any subcommand
+# the sandbox runner would otherwise pass directly to the shell.
+#
+# This wrapper enforces the L2 banned_subcommands list from
+# config/tool_policy.yaml. The sandbox already restricts the network
+# (--network=none in F2, filtered egress later) and the filesystem
+# (read-only mount + tmpfs scratch), but a wrapper that fails CLOSED
+# on banned patterns is an additional ring that does not depend on
+# network or fs state.
+#
+# This file is intentionally minimal and audited: substring match
+# only, no shell metacharacter eval, no command substitution on
+# arguments.
+
+set -u
+
+if [ "$#" -eq 0 ]; then
+    echo "copilot-cli-wrapper: no command given" >&2
+    exit 2
+fi
+
+# Reconstruct the full command line as a single string for substring
+# checks. Quoting is approximate because we only use it for matching;
+# we never re-evaluate the result.
+full=""
+for a in "$@"; do
+    if [ -z "${full}" ]; then full="$a"; else full="${full} $a"; fi
+done
+
+# Banned subcommands. MUST stay in sync with
+# config/tool_policy.yaml :: copilot_cli.banned_subcommands.
+#
+# Defense-in-depth: each pattern is matched as a substring against the
+# reconstructed command line. Variants of a destructive operation are
+# listed explicitly even if a shorter pattern would already cover them.
+banned="
+git push
+git push -f
+git push --force
+git push --force-with-lease
+git push --force-with-lease=
+git push --mirror
+git push --tags
+git push --delete
+git push origin
+git push --set-upstream
+git push -u
+git push --no-verify
+git remote add
+git remote set-url
+git config --global
+git filter-branch
+git update-ref
+gh pr create
+gh pr merge
+gh pr comment
+gh pr review
+gh pr close
+gh pr edit
+gh pr ready
+gh pr reopen
+gh release create
+gh release delete
+gh release upload
+gh repo create
+gh repo delete
+gh repo edit
+gh repo rename
+gh repo archive
+gh secret set
+gh secret delete
+gh secret
+gh auth login
+gh auth logout
+gh auth refresh
+gh auth setup-git
+gh auth
+gh api
+gh workflow run
+gh workflow disable
+gh workflow enable
+gh ssh-key add
+gh gpg-key add
+rm -rf
+rm -fr
+chmod -R
+chown -R
+dd if=
+mkfs
+:(){ :|:&
+sudo
+su -
+"
+
+while IFS= read -r pat; do
+    [ -z "${pat}" ] && continue
+    case "${full}" in
+        *"${pat}"*)
+            printf 'BANNED_SUBCOMMAND: %s (matched pattern: %s)\n' "${full}" "${pat}" >&2
+            exit 126
+            ;;
+    esac
+done <<EOF
+${banned}
+EOF
+
+# If the command is allowed, exec it directly (no shell interpretation
+# of the original args beyond what the kernel does for execvp).
+exec "$@"

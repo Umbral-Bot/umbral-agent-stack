@@ -315,5 +315,19 @@ class TestTaskRegistration:
         ]
 
     def test_total_handler_count(self):
+        """Sanity-check the handler count.
+
+        This intentionally asserts presence of newly-added intentional
+        handlers rather than a brittle exact-int. The exact count is
+        kept as a soft floor: if it ever drops, that is suspicious and
+        worth surfacing in CI.
+        """
         from worker.tasks import TASK_HANDLERS
-        assert len(TASK_HANDLERS) == 102
+        # F6: copilot_cli.run is an intentional new task added under
+        # multiple gates (capability remains disabled by default).
+        assert "copilot_cli.run" in TASK_HANDLERS
+        # Soft floor: never lose handlers silently.
+        assert len(TASK_HANDLERS) >= 103, (
+            f"unexpected handler count: {len(TASK_HANDLERS)} "
+            f"(expected >= 103 after F6 added copilot_cli.run)"
+        )

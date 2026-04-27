@@ -439,6 +439,7 @@ Capas en serie, cada una falla CLOSED:
 | D22 | F6 step 6C-2: flip surgical de `RICK_COPILOT_CLI_ENABLED=false→true` + 1 restart; OLD_PID 675339 → NEW_PID 1114334; `COPILOT_GITHUB_TOKEN`/`RICK_COPILOT_CLI_ENABLED` ahora en `/proc/1114334/environ` (nombres only); 3 gates restantes siguen cerrados; descubierto layer extra: live worker corre desde `/home/rick/umbral-agent-stack/` en `main` `e6128bc` → `copilot_cli.run` no registrado → HTTP probe responde `Unknown task`; handler-level probe (con env=true simulado) rechaza con `capability_disabled/policy_off`; audit log sin token, gitignored | ✅ |
 | D23 | F6 step 6C-3: deployment plan documentado para landear branch F6 (HEAD `04150f2`) en live worktree (`main` `e6128bc`); merge-base==`origin/main` HEAD → strict fast-forward, `git merge-tree` sin conflictos; 43 files (5 M, 38 A), 8521 inserts; PR debe abrirse manual (gh no auth en VPS); deploy success criterion = probe 1 cambia de `Unknown task` a `capability_disabled/policy_off`; rollback = `git reset --hard e6128bc` + restart; sin merge, sin pull, sin restart, sin flip ejecutado | ✅ |
 | D24 | F6 step 6C-4A: PR body pre-redactado y committeado en `docs/pr-bodies/F6-rick-copilot-cli-capability.md` (título, checklist reviewer, "what this PR does NOT do", post-merge plan, rollback); `gh` no auth en VPS por diseño → PR debe abrirse por operator vía web UI; agente NO abrió PR ni inventó URL; sin merge, sin deploy, live worker untouched | ✅ |
+| D25 | F6 step 6C-4B: operator abrió PR draft #269 (`https://github.com/Umbral-Bot/umbral-agent-stack/pull/269`) base=`main` head=`rick/copilot-cli-capability-design` via web UI; agente NO usó `gh` (sigue no autenticado); URL/número reportados por operator y registrados en evidencia; live worker untouched (PID 1114334), todos los gates sin cambios desde 6C-2 | ✅ |
 
 
 ---
@@ -464,8 +465,9 @@ Capas en serie, cada una falla CLOSED:
 | **F6.step6C-2** | **✅ done** | **flip `RICK_COPILOT_CLI_ENABLED=true` + 1 restart (PID 675339→1114334); `COPILOT_GITHUB_TOKEN` ahora en proceso vivo; layer extra detectado: live worker corre desde `main` `e6128bc` → ruta `copilot_cli.run` no existe (HTTP `Unknown task`); handler-level probe (env=true) rechaza con `policy_off`; audit log sin token** |
 | **F6.step6C-3** | **✅ done** | **deployment plan documentado: feature branch (`04150f2`) es strict fast-forward de `main` (`e6128bc`), `merge-tree` sin conflictos, PR debe abrirse manual (gh no auth en VPS), success = probe 1 cambia de `Unknown task` a `capability_disabled/policy_off`; sin merge/pull/restart ejecutado** |
 | **F6.step6C-4A** | **✅ done** | **PR body redactado y committeado en `docs/pr-bodies/F6-rick-copilot-cli-capability.md`; `gh` no auth → operator abre PR por web UI; agente no abrió PR ni inventó URL; sin merge/deploy/flip** |
-| F6.step6C-4B | ⏸ pending operator | operator abre PR draft via web UI y reporta URL/número; agente añade addendum a `docs/copilot-cli-f6-step6c4a-pr-opened-evidence.md` |
-| F6.step6C-4C+ | ⏸ pending review+merge | reviewer aprueba checklist + merge --ff-only + `git pull --ff-only` en live worktree + 1 restart + probes |
+| **F6.step6C-4B** | **✅ done** | **operator abrió PR draft #269 vía web UI; agente registró URL/número en evidencia; sin `gh` API call por agente; live worker untouched (PID 1114334); sin merge** |
+| F6.step6C-4C | ⏸ pending review | reviewer walks 8-item checklist en PR body, aprueba, merge --ff-only a `main` |
+| F6.step6C-4D+ | ⏸ pending merge | operator `git pull --ff-only` en live worktree + 1 restart + probes 1-6; gates de policy/execute/code/egress siguen false |
 | F7–F9 | ⏸ blocked | write-limited / PR-draft-limited / batch autónomo |
 
 ---

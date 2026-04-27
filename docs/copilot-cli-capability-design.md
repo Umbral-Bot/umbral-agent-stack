@@ -432,6 +432,7 @@ Capas en serie, cada una falla CLOSED:
 | D15 | F6 step 2: artifacts de repo bajo `infra/systemd/`, `infra/env/` + verifier `scripts/verify_copilot_cli_env_contract.py` (chequea owner/mode, separación de variables, rechaza classic PAT, no imprime tokens); `/etc/umbral/*` NO creado, systemd live NO tocado, capability sigue disabled | ✅ |
 | D16 | F6 step 3: artifacts de diseño bajo `infra/networking/` (nft template + resolver design note) + verifier `scripts/verify_copilot_egress_contract.py` (parity policy↔artifact, default deny, no live commands uncommented, no DNS por defecto); `nftables`/`iptables`/Docker network NO tocados, `copilot_cli.egress.activated` sigue false | ✅ |
 | D17 | F6 step 4: resolver `scripts/copilot_egress_resolver.py` en dry-run only (lee policy, resuelve via `getaddrinfo`, imprime diff IP-set comentado para `nft`, refuse cache fuera de `reports/copilot-cli/egress-cache/` o `artifacts/copilot-cli/egress-cache/`, refuse activación, never invokes subprocess); `nft`/`iptables`/Docker network NO tocados, capability sigue disabled | ✅ |
+| D18 | F6 step 5: operation scoping enforcement en `worker/tasks/copilot_cli.py` — input `requested_operations`, gate por `allowed_operations`/`forbidden_operations`/global hard-deny (apply_patch/git_push/gh_pr_*/notion_*/publish/deploy/secret_*/shell_exec/run_subprocess/network_egress/write_files/write_to_*_dir/run_tests_directly), audit con `operation_decision`+`operation_violation`, fail-closed default; capability sigue disabled, no subprocess, no flags flipped | ✅ |
 
 
 ---
@@ -450,7 +451,8 @@ Capas en serie, cada una falla CLOSED:
 | **F6.step2** | **✅ done** | **artifacts `infra/systemd/`, `infra/env/`, verifier `scripts/verify_copilot_cli_env_contract.py`; 74/74 tests; `/etc/umbral/*` no creado, systemd live no tocado** |
 | **F6.step3** | **✅ done** | **artifacts `infra/networking/copilot-egress.nft.example` + `copilot-egress-resolver.md`, verifier `scripts/verify_copilot_egress_contract.py`; 86/86 tests; `nftables`/`iptables`/Docker network no tocados, egress sigue desactivado** |
 | **F6.step4** | **✅ done** | **resolver `scripts/copilot_egress_resolver.py` (dry-run only, JSON + nft-comentado, cache allow-list, refuse activation, no subprocess, no tokens); 102/102 tests; `nft`/`iptables`/Docker no tocados** |
-| F6.step5+ | ⏸ pending approval | live nft apply (operator-only), systemd resolver unit, kill-switch drill, real subprocess wiring |
+| **F6.step5** | **✅ done** | **operation scoping enforcement runtime: input `requested_operations`, gate por mission allow/forbid + global hard-deny, audit enriquecido, fail-closed; 114/114 tests; sin activación** |
+| F6.step6+ | ⏸ pending approval | operator-only staging (envfile + nft dropin + systemd dropin instalados; flags siguen false; sin `nft -f`), real subprocess wiring |
 | F7–F9 | ⏸ blocked | write-limited / PR-draft-limited / batch autónomo |
 
 ---

@@ -92,10 +92,54 @@ _ALLOWED_INPUT_KEYS = frozenset({
     "dry_run",
     "max_wall_sec",
     "metadata",
+    "requested_operations",
 })
 
 # Free-form fields that must be scanned against banned_subcommands.
 _BANNED_SCAN_FIELDS = ("prompt", "repo_path")
+
+# F6 step 5: operation scoping. If the caller does not supply
+# ``requested_operations`` we fall back to a conservative inferred
+# set per mission. The values here MUST be a strict subset of every
+# mission's ``allowed_operations`` from ``config/tool_policy.yaml`` so
+# that the default never bypasses the policy.
+_DEFAULT_INFERRED_OPERATIONS: Dict[str, List[str]] = {
+    "research": ["read_repo"],
+    "lint-suggest": ["read_repo"],
+    "test-explain": ["read_repo"],
+    "runbook-draft": ["read_repo"],
+}
+
+# Operations that are HARD-DENIED across every mission, regardless of
+# what the policy file says — defence-in-depth. If a future operator
+# accidentally adds one of these to ``allowed_operations`` for a
+# mission, the handler still refuses. Mirrors the no-publish /
+# no-merge / no-Notion / no-secret-mutation contract from `rick-tech`.
+_GLOBAL_HARD_DENY_OPERATIONS = frozenset({
+    "apply_patch",
+    "git_commit",
+    "git_push",
+    "gh_pr_create",
+    "gh_pr_merge",
+    "gh_pr_comment",
+    "gh_release_create",
+    "notion_write",
+    "notion_update",
+    "notion_delete",
+    "publish",
+    "deploy",
+    "secret_read",
+    "secret_write",
+    "shell_exec",
+    "run_subprocess",
+    "network_egress",
+    "write_files",
+    "write_to_docs_dir",
+    "write_to_runbooks_dir",
+    "run_tests_directly",
+})
+
+_OPERATION_NAME_RE = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
 
 
 # ---------------------------------------------------------------------------
@@ -165,6 +209,102 @@ def _scan_for_banned(text: str, banned: List[str]) -> Optional[str]:
         if pat in text:
             return pat
     return None
+
+
+def _coerce_op_list(raw: Any) -> List[str]:
+    if not isinstance(raw, list):
+        return []
+    out: List[str] = []
+    for item in raw:
+        if isinstance(item, str) and item.strip():
+            out.append(item.strip())
+    return out
+
+
+def _mission_operations(
+    missions: Dict[str, Any], mission: str,
+) -> tuple[List[str], List[str]]:
+    """Return ``(allowed_operations, forbidden_operations)`` for ``mission``."""
+    spec = missions.get(mission) or {}
+    if not isinstance(spec, dict):
+        return [], []
+    allowed = _coerce_op_list(spec.get("allowed_operations"))
+    forbidden = _coerce_op_list(spec.get("forbidden_operations"))
+    return allowed, forbidden
+
+
+def _resolve_requested_operations(
+    requested: Optional[List[str]],
+    mission: str,
+    allowed: List[str],
+) -> List[str]:
+    """Pick the conservative default if the caller didn't ask for anything.
+
+    The default MUST be a subset of ``allowed`` for the mission, otherwise
+    we return an empty list and let the gate reject with
+    ``operation_not_allowed`` (failing closed).
+    """
+    if requested is not None:
+        return requested
+    inferred = _DEFAULT_INFERRED_OPERATIONS.get(mission, [])
+    return [op for op in inferred if op in allowed]
+
+
+class _OperationDecision:
+    __slots__ = ("error", "violation", "operation")
+
+    def __init__(self, error: Optional[str], violation: Optional[str],
+                 operation: Optional[str]):
+        self.error = error
+        self.violation = violation
+        self.operation = operation
+
+    @property
+    def ok(self) -> bool:
+        return self.error is None
+
+
+def _enforce_operations(
+    requested: List[str],
+    allowed: List[str],
+    forbidden: List[str],
+) -> _OperationDecision:
+    """Reject ``requested`` against the per-mission policy + global hard deny.
+
+    Order of precedence (first match wins):
+      1. Empty requested set → ``operation_not_allowed``.
+      2. Operation in global hard-deny set → ``operation_forbidden``.
+      3. Operation in mission's ``forbidden_operations`` → ``operation_forbidden``.
+      4. Operation NOT in mission's ``allowed_operations`` → ``operation_not_allowed``.
+      5. (Reserved) Unknown operation never declared anywhere → ``unknown_operation``.
+
+    "Unknown" is reported when the operation name is not in any of the
+    three sets (allowed ∪ forbidden ∪ global hard-deny). This prevents
+    typos from silently masquerading as legitimate calls.
+    """
+    if not requested:
+        return _OperationDecision("operation_not_allowed",
+                                  "no_operation_requested", None)
+
+    allowed_set = set(allowed)
+    forbidden_set = set(forbidden)
+    known_universe = allowed_set | forbidden_set | _GLOBAL_HARD_DENY_OPERATIONS
+
+    for op in requested:
+        if op in _GLOBAL_HARD_DENY_OPERATIONS:
+            return _OperationDecision("operation_forbidden",
+                                      "global_hard_deny", op)
+        if op in forbidden_set:
+            return _OperationDecision("operation_forbidden",
+                                      "mission_forbidden", op)
+        if op not in known_universe:
+            return _OperationDecision("unknown_operation",
+                                      "not_declared_in_policy", op)
+        if op not in allowed_set:
+            return _OperationDecision("operation_not_allowed",
+                                      "not_in_mission_allowlist", op)
+
+    return _OperationDecision(None, None, None)
 
 
 def _build_docker_argv(
@@ -264,6 +404,44 @@ def _validate_input(data: Dict[str, Any]) -> Dict[str, Any]:
     if not isinstance(metadata, dict):
         raise _ValidationError("invalid_input", "'metadata' must be object")
 
+    requested_operations_raw = data.get("requested_operations", None)
+    requested_operations: Optional[List[str]]
+    if requested_operations_raw is None:
+        requested_operations = None
+    elif isinstance(requested_operations_raw, list):
+        if len(requested_operations_raw) > 16:
+            raise _ValidationError(
+                "invalid_input",
+                "'requested_operations' too long (>16 entries)",
+            )
+        cleaned: List[str] = []
+        for item in requested_operations_raw:
+            if not isinstance(item, str) or not item.strip():
+                raise _ValidationError(
+                    "invalid_input",
+                    "'requested_operations' entries must be non-empty strings",
+                )
+            name = item.strip()
+            if not _OPERATION_NAME_RE.match(name):
+                raise _ValidationError(
+                    "invalid_input",
+                    f"'requested_operations' entry not well-formed: {name!r}",
+                )
+            cleaned.append(name)
+        # Preserve order, drop duplicates.
+        seen: set = set()
+        deduped: List[str] = []
+        for n in cleaned:
+            if n not in seen:
+                seen.add(n)
+                deduped.append(n)
+        requested_operations = deduped
+    else:
+        raise _ValidationError(
+            "invalid_input",
+            "'requested_operations' must be a list of strings",
+        )
+
     return {
         "mission": mission.strip(),
         "prompt": prompt,
@@ -271,6 +449,7 @@ def _validate_input(data: Dict[str, Any]) -> Dict[str, Any]:
         "dry_run": dry_run,
         "max_wall_sec": max_wall_sec,
         "metadata": metadata,
+        "requested_operations": requested_operations,
     }
 
 
@@ -425,6 +604,43 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
             "mission_run_id": mission_run_id,
         }
 
+    # 5.5) Operation scoping enforcement (F6 step 5).
+    mission_allowed_ops, mission_forbidden_ops = _mission_operations(
+        missions, mission,
+    )
+    requested_ops = _resolve_requested_operations(
+        validated.get("requested_operations"), mission, mission_allowed_ops,
+    )
+    op_decision = _enforce_operations(
+        requested_ops, mission_allowed_ops, mission_forbidden_ops,
+    )
+    base_event["requested_operations"] = requested_ops
+    base_event["allowed_operations"] = mission_allowed_ops
+    base_event["forbidden_operations"] = mission_forbidden_ops
+    if not op_decision.ok:
+        event = {
+            **base_event,
+            "decision": op_decision.error,
+            "operation_decision": op_decision.error,
+            "operation_violation": op_decision.violation,
+            "operation": op_decision.operation,
+        }
+        _write_audit_event(audit_path, event)
+        return {
+            "ok": False,
+            "error": op_decision.error,
+            "operation": op_decision.operation,
+            "operation_violation": op_decision.violation,
+            "mission": mission,
+            "requested_operations": requested_ops,
+            "allowed_operations": mission_allowed_ops,
+            "forbidden_operations": mission_forbidden_ops,
+            "would_run": False,
+            "audit_log": audit_path_str,
+            "mission_run_id": mission_run_id,
+        }
+    base_event["operation_decision"] = "allowed"
+
     # 6) All gates passed (env + policy + mission). F6 step 1 still does
     # NOT execute Copilot for two independent reasons:
     #   a) RICK_COPILOT_CLI_EXECUTE flag — operator-controlled.
@@ -475,6 +691,12 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
         "mission_run_id": mission_run_id,
         "audit_log": audit_path_str,
         "docker_argv": redacted_argv,
+        "operations": {
+            "requested": requested_ops,
+            "allowed": mission_allowed_ops,
+            "forbidden": mission_forbidden_ops,
+            "decision": "allowed",
+        },
         "limits": {
             "max_wall_sec": max_wall_sec,
             **{k: v for k, v in tool_policy.get_copilot_cli_default_limits().items()

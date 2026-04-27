@@ -435,6 +435,7 @@ Capas en serie, cada una falla CLOSED:
 | D18 | F6 step 5: operation scoping enforcement en `worker/tasks/copilot_cli.py` — input `requested_operations`, gate por `allowed_operations`/`forbidden_operations`/global hard-deny (apply_patch/git_push/gh_pr_*/notion_*/publish/deploy/secret_*/shell_exec/run_subprocess/network_egress/write_files/write_to_*_dir/run_tests_directly), audit con `operation_decision`+`operation_violation`, fail-closed default; capability sigue disabled, no subprocess, no flags flipped | ✅ |
 | D19 | F6 step 6A: discovery read-only revela `umbral-worker.service` es **user-scope** (no `/etc/systemd/system/`), env file actual `/home/rick/.config/openclaw/env`, `/etc/nftables.conf` sin `include` (no autoload de `/etc/nftables.d/`); nuevo planner `scripts/plan_copilot_cli_live_staging.py` (read-only, refuse mutating verbs, refuse sudo) emite plan F6 step 6B con drop-in user-scope + envfiles bajo `~/.config/openclaw/`; `/etc` no tocado, systemd no reload, nft no aplicado | ✅ |
 | D20 | F6 step 6B: staging live user-scope ejecutado — envfiles `~/.config/openclaw/copilot-cli{,-secrets}.env` (0600), nft fragment `~/.config/openclaw/copilot-egress.nft` (0600, sin aplicar), drop-in `~/.config/systemd/user/umbral-worker.service.d/copilot-cli.conf` (0644), `systemctl --user daemon-reload` ejecutado; MainPID 675339 antes/después idéntico (NO restart); flags siguen false, sin token, sin `nft -f`, sin Docker network, `/etc` no tocado | ✅ |
+| D21 | F6 step 6C-1: operator pegó fine-grained PAT v2 (`github_pat_` prefix, length 104) en `~/.config/openclaw/copilot-cli-secrets.env` (0600); verifier `--strict` `OK — no findings` (warn `no_copilot_token` ya gone); MainPID 675339 idéntico (NO restart) → token NO cargado en proceso vivo; flags siguen false en 4 capas; token nunca impreso, nunca committeado, nunca pasó por chat del agente | ✅ |
 
 
 ---
@@ -456,7 +457,8 @@ Capas en serie, cada una falla CLOSED:
 | **F6.step5** | **✅ done** | **operation scoping enforcement runtime: input `requested_operations`, gate por mission allow/forbid + global hard-deny, audit enriquecido, fail-closed; 114/114 tests; sin activación** |
 | **F6.step6A** | **✅ done** | **discovery read-only del live host (user-scope unit, env file `~/.config/openclaw/env`, `/etc/nftables.conf` sin autoload), planner `scripts/plan_copilot_cli_live_staging.py` emite install pack user-scope; 132/132 tests; `/etc` no tocado, systemd no reload** |
 | **F6.step6B** | **✅ done** | **staging live user-scope: envfiles + nft fragment + drop-in instalados bajo `~/.config/openclaw/` y `~/.config/systemd/user/umbral-worker.service.d/`; `daemon-reload` ejecutado, MainPID 675339 idéntico antes/después (NO restart); flags siguen false, sin token, sin `nft -f`** |
-| F6.step6C+ | ⏸ pending approval | operator paste de fine-grained PAT v2 + flip de `RICK_COPILOT_CLI_ENABLED=true` (manteniendo `_REAL_EXECUTION_IMPLEMENTED=False`) + `systemctl --user restart` |
+| **F6.step6C-1** | **✅ done** | **operator pegó fine-grained PAT v2 en `~/.config/openclaw/copilot-cli-secrets.env`; verifier `--strict` OK no findings (warn `no_copilot_token` gone); MainPID 675339 idéntico → token NO en proceso vivo; flags siguen false; token nunca impreso/committeado** |
+| F6.step6C-2+ | ⏸ pending approval | flip de `RICK_COPILOT_CLI_ENABLED=true` + `systemctl --user restart`; layer-3 gate `_REAL_EXECUTION_IMPLEMENTED=False` debe seguir rechazando |
 | F7–F9 | ⏸ blocked | write-limited / PR-draft-limited / batch autónomo |
 
 ---

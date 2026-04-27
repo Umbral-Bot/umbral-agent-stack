@@ -830,10 +830,30 @@ def test_repo_path_rejects_root_filesystem():
     assert exc.value.code == "repo_path_not_allowed"
 
 
+def test_repo_path_rejects_existing_dir_outside_allowlist(tmp_path):
+    """Reject a real existing directory that is not inside the allowlist.
+
+    Uses tmp_path so the test is hermetic on CI runners (GitHub Actions
+    has no /home/rick). The autouse ``_sandbox_repo_root`` fixture
+    allowlists ``tmp_path/work``; this test passes its parent
+    (``tmp_path``) which exists but is not inside the allowlist.
+    """
+    with pytest.raises(_ValidationError) as exc:
+        _validate_repo_path(str(tmp_path))
+    assert exc.value.code == "repo_path_not_allowed"
+
+
 def test_repo_path_rejects_home_dir():
+    """Whichever of repo_path_not_allowed / repo_path_not_found is correct.
+
+    On the live VPS ``/home/rick`` exists but is outside the allowlist
+    → ``repo_path_not_allowed``. On hermetic CI runners (GitHub
+    Actions) ``/home/rick`` does not exist → ``repo_path_not_found``.
+    Both outcomes prove the path cannot be used as a repo root.
+    """
     with pytest.raises(_ValidationError) as exc:
         _validate_repo_path("/home/rick")
-    assert exc.value.code == "repo_path_not_allowed"
+    assert exc.value.code in {"repo_path_not_allowed", "repo_path_not_found"}
 
 
 def test_repo_path_rejects_nonexistent(tmp_path):
@@ -872,8 +892,12 @@ def test_repo_path_rejects_symlink_escape(_sandbox_repo_root, tmp_path):
     assert exc.value.code == "repo_path_not_allowed"
 
 
-def test_repo_path_rejection_returns_structured_error_via_handler():
-    payload = _ok_input(repo_path="/home/rick")
+def test_repo_path_rejection_returns_structured_error_via_handler(tmp_path):
+    # Use an existing-but-not-allowlisted dir so this test passes on
+    # both the VPS and on hermetic CI runners.
+    outside = tmp_path / "outside-allowlist"
+    outside.mkdir()
+    payload = _ok_input(repo_path=str(outside))
     res = handle_copilot_cli_run(payload)
     assert res["ok"] is False
     assert res["error"] == "repo_path_not_allowed"

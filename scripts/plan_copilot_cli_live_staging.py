@@ -34,7 +34,7 @@ import shlex
 import subprocess
 import sys
 from dataclasses import dataclass, field
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Optional
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -180,7 +180,12 @@ def discover_nftables(conf_path: Path = DEFAULT_NFTABLES_CONF) -> NftablesInfo:
 def recommended_paths(unit: UnitInfo) -> dict[str, str]:
     """Return the recommended future paths given the discovered unit scope."""
     if unit.scope == "user":
-        unit_dir = Path(unit.fragment_path or "").parent
+        # The discovered fragment path is always a Linux/VPS path, so we
+        # build the recommended drop-in path with PurePosixPath. Otherwise
+        # running this planner from Windows (CI / dev machines) would
+        # render mixed-separator strings that break downstream operator
+        # commands and tests.
+        unit_dir = PurePosixPath(unit.fragment_path or "").parent
         dropin_dir = unit_dir / "umbral-worker.service.d"
         return {
             "scope": "user",

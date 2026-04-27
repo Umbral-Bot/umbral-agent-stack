@@ -34,7 +34,7 @@ import re
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from .. import tool_policy
 
@@ -55,6 +55,102 @@ _EXEC_FLAG = "RICK_COPILOT_CLI_EXECUTE"
 _REAL_EXECUTION_IMPLEMENTED = False
 
 _REPO_ROOT: Path = Path(__file__).resolve().parents[2]
+
+# F6 step 6C-4B-fixup: allowlist of canonical repo roots that the
+# ``copilot_cli.run`` task is permitted to operate on. ``repo_path``
+# must canonicalize (via ``Path.resolve``) to one of these roots OR a
+# descendant of one. The check rejects ``/``, ``/home/rick``,
+# nonexistent paths, regular files, and any symlink that escapes
+# upward via resolution.
+#
+# The list is intentionally short:
+#   * the worker's own checkout (``_REPO_ROOT``);
+#   * the live VPS worktree at ``/home/rick/umbral-agent-stack`` (when
+#     this code actually runs from a feature worktree).
+#
+# Operators / tests can extend it via the ``COPILOT_CLI_ALLOWED_REPO_ROOTS``
+# env var (colon-separated absolute paths). Tests also use
+# ``set_allowed_repo_roots_for_test`` to make this deterministic.
+_HARDCODED_ALLOWED_REPO_ROOTS: Tuple[Path, ...] = (
+    _REPO_ROOT,
+    Path("/home/rick/umbral-agent-stack"),
+    Path("/home/rick/umbral-agent-stack-copilot-cli"),
+)
+
+_REPO_ROOTS_ENV = "COPILOT_CLI_ALLOWED_REPO_ROOTS"
+
+_ALLOWED_REPO_ROOTS_OVERRIDE: Optional[Tuple[Path, ...]] = None
+
+
+def set_allowed_repo_roots_for_test(roots: Optional[Tuple[Path, ...]]) -> None:
+    """Test helper: override the allowlist. Pass ``None`` to clear."""
+    global _ALLOWED_REPO_ROOTS_OVERRIDE
+    if roots is None:
+        _ALLOWED_REPO_ROOTS_OVERRIDE = None
+    else:
+        _ALLOWED_REPO_ROOTS_OVERRIDE = tuple(Path(r).resolve(strict=False) for r in roots)
+
+
+def _allowed_repo_roots() -> List[Path]:
+    if _ALLOWED_REPO_ROOTS_OVERRIDE is not None:
+        return list(_ALLOWED_REPO_ROOTS_OVERRIDE)
+    roots: List[Path] = []
+    seen: set = set()
+    for r in _HARDCODED_ALLOWED_REPO_ROOTS:
+        try:
+            resolved = r.resolve(strict=False)
+        except (OSError, RuntimeError):
+            continue
+        if resolved.exists() and resolved.is_dir() and str(resolved) not in seen:
+            roots.append(resolved)
+            seen.add(str(resolved))
+    extra = os.environ.get(_REPO_ROOTS_ENV, "").strip()
+    if extra:
+        for raw in extra.split(":"):
+            raw = raw.strip()
+            if not raw:
+                continue
+            try:
+                resolved = Path(raw).resolve(strict=False)
+            except (OSError, RuntimeError):
+                continue
+            if resolved.exists() and resolved.is_dir() and str(resolved) not in seen:
+                roots.append(resolved)
+                seen.add(str(resolved))
+    return roots
+
+
+def _validate_repo_path(raw: str) -> Path:
+    """Canonicalize ``raw`` and assert it is inside the allowlist.
+
+    Raises ``_ValidationError`` with a stable error code on rejection.
+    Never executes anything; pure path validation.
+    """
+    try:
+        candidate = Path(raw).resolve(strict=False)
+    except (OSError, RuntimeError):
+        raise _ValidationError("repo_path_not_resolved", "'repo_path' could not be canonicalized")
+    if not candidate.exists():
+        raise _ValidationError("repo_path_not_found", "'repo_path' does not exist")
+    if not candidate.is_dir():
+        raise _ValidationError("repo_path_not_directory", "'repo_path' is not a directory")
+    roots = _allowed_repo_roots()
+    if not roots:
+        # Defensive: if no root resolves on this host, refuse.
+        raise _ValidationError(
+            "repo_path_not_allowed",
+            "'repo_path' rejected: no allowlisted repo root exists on this host",
+        )
+    for root in roots:
+        try:
+            candidate.relative_to(root)
+        except ValueError:
+            continue
+        return candidate
+    raise _ValidationError(
+        "repo_path_not_allowed",
+        "'repo_path' is not inside any allow-listed repo root",
+    )
 
 _DEFAULT_AUDIT_BASE: Path = _REPO_ROOT / "reports" / "copilot-cli"
 
@@ -384,6 +480,8 @@ def _validate_input(data: Dict[str, Any]) -> Dict[str, Any]:
     repo_path = data.get("repo_path", str(_REPO_ROOT))
     if not isinstance(repo_path, str) or not repo_path.strip():
         raise _ValidationError("invalid_input", "'repo_path' must be non-empty string")
+    # F6 step 6C-4B-fixup: canonicalize + allowlist enforcement.
+    canonical_repo_path = _validate_repo_path(repo_path.strip())
 
     dry_run = data.get("dry_run", True)
     if not isinstance(dry_run, bool):
@@ -445,7 +543,7 @@ def _validate_input(data: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "mission": mission.strip(),
         "prompt": prompt,
-        "repo_path": repo_path.strip(),
+        "repo_path": str(canonical_repo_path),
         "dry_run": dry_run,
         "max_wall_sec": max_wall_sec,
         "metadata": metadata,

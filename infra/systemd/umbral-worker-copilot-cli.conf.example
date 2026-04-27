@@ -3,7 +3,26 @@
 # This file is a REPO ARTIFACT. It is NOT installed by F6 step 2.
 # Installation will happen in a future F6 step under explicit human review.
 #
-# Target install path (when authorized):
+# ──────────────────────────────────────────────────────────────────────────
+# IMPORTANT — TWO DEPLOYMENT SCOPES
+# ──────────────────────────────────────────────────────────────────────────
+# This template is written for the SYSTEM-SCOPE install
+# (/etc/systemd/system/...). Rick's actual VPS runs the worker as a
+# user-scope unit, so for Rick's deployment the canonical layout is:
+#
+#   Drop-in:   ~/.config/systemd/user/umbral-worker.service.d/copilot-cli.conf
+#   Runtime:   ~/.config/openclaw/copilot-cli.env          (mode 0600)
+#   Secrets:   ~/.config/openclaw/copilot-cli-secrets.env  (mode 0600)
+#   Reload:    systemctl --user daemon-reload   (no sudo)
+#
+# That layout is what F6 step 6B actually staged on the VPS. The
+# /etc/umbral/* paths below remain valid for any host that runs the
+# worker as a system service, but they are NOT the live layout for
+# Rick. See docs/copilot-cli-f6-step6a-live-staging-readiness-evidence.md
+# and docs/copilot-cli-f6-step6b-user-staging-evidence.md.
+# ──────────────────────────────────────────────────────────────────────────
+#
+# Target install path (system-scope, when authorized):
 #   /etc/systemd/system/umbral-worker.service.d/copilot-cli.conf
 #
 # Then:
@@ -28,6 +47,7 @@
 # See: docs/copilot-cli-capability-design.md
 #      docs/copilot-cli-f6-step1-token-plumbing-evidence.md
 #      docs/copilot-cli-f6-step2-envfile-artifacts-evidence.md
+#      docs/copilot-cli-f6-step6b-user-staging-evidence.md
 
 [Service]
 EnvironmentFile=-/etc/umbral/copilot-cli.env

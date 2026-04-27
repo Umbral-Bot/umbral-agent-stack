@@ -24,13 +24,25 @@ from __future__ import annotations
 
 import argparse
 import os
-import pwd
 import re
 import stat
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional, Tuple
+
+# ``pwd`` / ``grp`` only exist on POSIX. The verifier is shipped in a
+# repo that may be checked out on Windows for code review or CI; in
+# that case we degrade gracefully and skip owner/group/mode checks
+# rather than crashing on import.
+try:  # pragma: no cover - import side effect
+    import pwd
+    import grp
+    _POSIX = True
+except ImportError:  # pragma: no cover - exercised on Windows only
+    pwd = None  # type: ignore[assignment]
+    grp = None  # type: ignore[assignment]
+    _POSIX = False
 
 DEFAULT_RUNTIME_PATH = Path("/etc/umbral/copilot-cli.env")
 DEFAULT_SECRETS_PATH = Path("/etc/umbral/copilot-cli-secrets.env")
@@ -71,19 +83,25 @@ class Report:
 
 
 def _resolve_owner_group(uid: int, gid: int) -> Tuple[Optional[str], Optional[str]]:
+    if not _POSIX:
+        return None, None
     try:
-        owner = pwd.getpwuid(uid).pw_name
+        owner = pwd.getpwuid(uid).pw_name  # type: ignore[union-attr]
     except KeyError:
         owner = None
     try:
-        import grp
-        group = grp.getgrgid(gid).gr_name
+        group = grp.getgrgid(gid).gr_name  # type: ignore[union-attr]
     except (KeyError, ImportError):
         group = None
     return owner, group
 
 
 def check_perms(path: Path, report: Report) -> None:
+    if not _POSIX:
+        # Windows check-out: file mode and owner concepts don't map to
+        # the contract; skip silently. Strict-mode existence checks
+        # still fire below.
+        return
     try:
         st = path.stat()
     except FileNotFoundError:

@@ -15,6 +15,8 @@ from pathlib import Path
 
 import pytest
 
+from tests._token_fixtures import fine_grained_pat
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = REPO_ROOT / "scripts" / "plan_copilot_cli_live_staging.py"
 
@@ -269,7 +271,7 @@ def test_build_plan_guards_block_all_mutations(pmod):
 
 
 def test_main_does_not_print_tokens_from_env(pmod, monkeypatch, capsys):
-    leak = "github_pat_DO_NOT_LEAK_GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG"
+    leak = fine_grained_pat(body_char="G", body_len=40)
     monkeypatch.setenv("COPILOT_GITHUB_TOKEN", leak)
     monkeypatch.setenv("GH_TOKEN", leak)
     monkeypatch.setenv("GITHUB_TOKEN", leak)

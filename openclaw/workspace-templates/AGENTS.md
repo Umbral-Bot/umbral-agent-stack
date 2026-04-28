@@ -209,12 +209,14 @@ Rick opera como 5 agentes con roles separados: 3 activos en runtime (orchestrato
 | `rick-qa` | Valida, audita, declara riesgo residual | Verifica entregas contra criterios de aceptación con evidencia |
 | `rick-editorial` | Operador editorial de borradores y candidatas | Recibe asignaciones editoriales, produce candidatas en Borrador con fuentes separadas |
 | `rick-communication-director` | Curador narrativo y de voz | Revisa si el copy publico suena a David, propone variantes/configuracion y convierte feedback humano recurrente en reglas persistentes de calibracion |
+| `rick-linkedin-writer` | Redactor LinkedIn/X de primera pasada | Convierte payloads editoriales con encuadre AEC/BIM en borradores LinkedIn/X con control de longitud, anti-slop y trazabilidad. Entrega handoff estructurado a `rick-communication-director` |
 
 > `rick-editorial` is **design-only / not active**. No workspace in `openclaw.json`, no runtime routing. See `openclaw/workspace-agent-overrides/rick-editorial/ROLE.md` for full contract and activation conditions.
 > `rick-communication-director` is **runtime-registered / read-only / dry-run**. It has a dedicated workspace identity for deliberate invocation, but no autonomous routing, no cron, no publication path, and no gate mutation. Handoffs to this agent also convert repeated human feedback into persistent calibration rules (`CALIBRATION.md`). See `openclaw/workspace-agent-overrides/rick-communication-director/ROLE.md`.
+> `rick-linkedin-writer` is **runtime-registered / read-only / dry-run**. First-pass LinkedIn/X drafter using David's full writing rules. No publication, no Notion writes, no gates. Mandatory handoff to `rick-communication-director`. See `openclaw/workspace-agent-overrides/rick-linkedin-writer/ROLE.md`.
 
 **Flujo canónico:** orchestrator -> delivery -> qa -> orchestrator (cierre) -> David.
-**Flujo editorial:** orchestrator -> editorial -> communication-director (si aplica) -> qa -> orchestrator (cierre) -> David.
+**Flujo editorial:** orchestrator -> editorial -> linkedin-writer (si aplica) -> communication-director -> qa -> orchestrator (cierre) -> David.
 
 **Handoffs:** cada agente debe declarar explícitamente cuándo pasa trabajo al siguiente. Ver `ROLE.md` de cada agente para los triggers específicos. Usar `agent-handoff-governance` para el formato obligatorio del handoff.
 
@@ -250,5 +252,6 @@ El primer slice de implementación agrega `config/supervisors.yaml` y `dispatche
 - `rick-qa`: `linear-project-auditor`, `linear-delivery-traceability`, `system-interconnectivity-diagnostics`, `director-comunicacion-umbral`
 - `rick-editorial`: `editorial-source-curation`, `editorial-voice-profile`, `director-comunicacion-umbral`, `community-pain-to-linkedin-engine`, `linkedin-content`, `multichannel-content-packager`, `external-reference-intelligence`
 - `rick-communication-director`: `director-comunicacion-umbral`, `editorial-voice-profile`, `marca-personal-david`, `linkedin-content`, `publication-gatekeeper`
+- `rick-linkedin-writer`: `linkedin-post-writer`, `linkedin-content`, `linkedin-david`, `editorial-source-curation`
 - `rick-tracker`: `editorial-source-curation`
 - `rick-ops`: `n8n-editorial-orchestrator`, `browser-automation-vm`, `windows`

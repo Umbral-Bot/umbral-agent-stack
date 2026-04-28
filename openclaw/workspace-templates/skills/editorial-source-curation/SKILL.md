@@ -121,6 +121,55 @@ Mientras eso no ocurra:
 - Si `linkedin-content` o `linkedin-david` estan instaladas, usarlas para el draft final o la adaptacion de voz.
 - Si no estan instaladas, producir un brief estructurado listo para otra etapa.
 
+### 7. AEC/BIM context framing
+
+Cuando la candidata editorial conecta una idea general (IA, automatizacion, procesos) con el dominio AEC/BIM, producir un encuadre antes de entregar a redaccion.
+
+El encuadre debe responder:
+
+- Como aplica esta idea al sector AEC/BIM?
+- Que ejemplos operativos concretos la ilustran?
+- Que terminos deben evitarse?
+- Que limites de claim existen?
+- Que fuentes soportan cada claim?
+
+Output obligatorio del encuadre:
+
+```yaml
+aec_angle: ""
+bim_relevance: ""
+operational_examples:
+  - ""
+allowed_terms:
+  - ""
+terms_to_avoid:
+  - ""
+claim_boundaries:
+  - ""
+source_trace:
+  - claim: ""
+    source: ""
+    confidence: ""
+handoff_to_linkedin_writer:
+  objective: ""
+  audience: ""
+  tone: ""
+  constraints:
+    - ""
+```
+
+Reglas del encuadre:
+
+- No usar "AEC/BIM" como apertura generica. El contexto debe surgir de la escena operativa.
+- No usar "nivel de coordinacion" sin aterrizaje operativo.
+- No usar "escalacion" como sustantivo en copy publico.
+- No inventar ejemplos operativos no soportados por las fuentes.
+- No convertir inferencia en hecho.
+- No citar personas como autoridad publica.
+- Usar lenguaje condicional: "muchos equipos", "cuando los criterios no estan claros", "en equipos donde el proceso todavia es informal".
+
+El encuadre se entrega a `linkedin-post-writer` o al redactor que corresponda. Si no existe redactor dedicado, incluir el encuadre en el brief de contenido.
+
 ## Composicion con otras skills
 - `research`: usar para ampliar contexto, validar claims o encontrar supporting evidence alrededor de un item ya capturado. No reemplazar la cobertura explicita de las cuatro fuentes base.
 - `n8n`: usar solo para disenar o documentar una automatizacion aprobada, como feeds, alertas, Airtable o Notion handoff, o scoring pipelines. No afirmar que ya existe una automatizacion operativa si no se creo realmente y no hay permisos.

@@ -36,7 +36,7 @@ The core design rule is separation of responsibility:
 | --- | --- | --- | --- | --- |
 | 1-2 | `rick-editorial` or source-driven flow | design-only / manual today | Curate sources, separate primary source vs referent, produce candidate payload | Final voice, publication, gates |
 | 3 | `rick-editorial` now; future `rick-aec-context-curator` if needed | proposed responsibility | Connect the idea to AEC/BIM with defensible operational examples and claim boundaries | Writing polished LinkedIn copy, voice pass |
-| 4 | future `rick-linkedin-writer` using `linkedin-post-writer` | proposed agent | Write concise LinkedIn/X drafts from the payload and AEC/BIM frame | Inventing AEC/BIM context, adding sources, David voice finalization |
+| 4 | `rick-linkedin-writer` using `linkedin-post-writer` | runtime-registered, read-only/dry-run | Write concise LinkedIn/X drafts from the payload and AEC/BIM frame | Inventing AEC/BIM context, adding sources, David voice finalization |
 | 5 | `rick-communication-director` | runtime-registered, read-only/dry-run | Calibrate David's voice, naturalness, first paragraph, wording, closing cadence | Source curation, AEC/BIM thesis ownership, QA verdict |
 | 6 | `rick-qa` | existing QA role | Validate claims, traceability, length, safety, gates, publication restrictions | Primary drafting, rewriting as default |
 | 7 | Operator / Copilot / VPS handoff | manual / authorized | Register the current candidate in Notion as `Borrador` only | Approving gates or publishing |
@@ -161,10 +161,10 @@ For every runtime agent or skill, document separately:
 
 ## Current Implementation Stance
 
-As of this document:
+As of 2026-04-24:
 
 - `rick-communication-director` exists as runtime-registered, read-only/dry-run.
-- `rick-linkedin-writer` is proposed but not yet activated.
+- `rick-linkedin-writer` exists as runtime-registered, read-only/dry-run. Permissions hardened (minimal alsoAllow, 29 deny entries). See `cand-003-linkedin-writer-runtime-smoke.md`.
 - `rick-aec-context-curator` is a proposed responsibility, not necessarily a runtime agent.
 - The AEC/BIM framing responsibility should first be documented under `rick-editorial` or as a new skill before creating another runtime agent.
 - Notion updates remain operator/human controlled and must keep candidates in `Borrador`.

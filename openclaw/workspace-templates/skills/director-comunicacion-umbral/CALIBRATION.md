@@ -47,3 +47,21 @@ Este archivo absorbe feedback humano recurrente sobre voz, apertura, naturalidad
 - **Razon:** El objetivo es que el agente aprenda, no que David repita.
 - **Cuando aplica:** Siempre que el feedback de revision repita un patron ya corregido antes.
 - **Cuando no aplica:** Feedback unico o especifico de una pieza que no es generalizable.
+
+### CAL-005 — Penalizar tono de consultor o paper
+
+- **Patron observado:** El borrador usa terminologia que suena a informe de consultoria o paper academico en vez de a profesional hablando con pares.
+- **Ejemplo rechazado:** "La capacidad tecnologica ya existe", "criterio operativo explicito", "umbrales de decision", "amplificar la confusion", "impacto operativo", "sistemas algoritmicos para gestionar trabajo".
+- **Ejemplo preferido:** "Las herramientas ya estan", "las reglas con que el equipo revisa", "cuando algo pasa o no pasa", "el desorden crece", "lo que cambia en la practica".
+- **Razon:** David habla como profesional de AEC que trabaja en esto, no como consultor que presenta un framework. La audiencia nota la diferencia entre lenguaje vivido y lenguaje prestado de un informe.
+- **Cuando aplica:** Siempre en copy publico LinkedIn/X. Especialmente en revisiones de voz donde el score de naturalidad baja de 4/5.
+- **Cuando no aplica:** Documentacion interna, reportes tecnicos.
+
+### CAL-006 — Contextualizar antes de tecnificar
+
+- **Patron observado:** El borrador entra directamente a "modelo BIM", "modelo federado" o tecnologia especifica sin establecer primero el problema operativo general.
+- **Ejemplo rechazado:** "Cuando un modelo BIM tiene errores de coordinacion, la automatizacion no ayuda."
+- **Ejemplo preferido:** "Cuando nadie definio que revisar ni cuando algo esta listo, meter tecnologia no ordena nada. Eso se ve, por ejemplo, en la revision de modelos de coordinacion."
+- **Razon:** La audiencia conecta primero con un problema que reconoce de su dia a dia. El termino tecnico funciona mejor como ejemplo que aterriza, no como puerta de entrada.
+- **Cuando aplica:** Siempre en posts para audiencia AEC/BIM. Bloquear si "modelo BIM" aparece en las primeras dos oraciones sin contexto de proceso previo.
+- **Cuando no aplica:** Posts tecnicos dirigidos a usuarios avanzados donde BIM es contexto compartido.

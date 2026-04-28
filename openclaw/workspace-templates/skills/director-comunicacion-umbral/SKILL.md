@@ -113,13 +113,29 @@ Si una fuente no esta accesible, decirlo y bajar confianza. No afirmar que se le
 
 Evitar en copy publico salvo justificacion explicita:
 
+Terminologia sectorial:
 - `escalacion` como sustantivo.
 - `gobernanza proporcional` sin aterrizaje operativo.
 - `herramientas algoritmicas de gestion` sin traduccion a una escena AEC.
 - `supervision humana implicita` sin traduccion a revision, aprobacion o responsabilidad.
 - `amplifica la ambiguedad` repetido como muletilla.
 - `el patron no es exclusivo de construccion` como transicion generica.
+
+Terminologia de consultor/paper (nueva):
+- `capacidad tecnologica` (preferir "las herramientas ya estan" o equivalente concreto).
+- `criterio operativo explicito` (rotar con "reglas de revision", "que se acepta", "criterio de entrega").
+- `umbrales de decision` (preferir "cuando algo pasa o no pasa").
+- `amplificar la confusion` / `amplificar el desorden` (preferir "el desorden crece" o "el problema se repite mas rapido").
+- `impacto operativo` (preferir "lo que cambia en la practica").
+- `sistemas algoritmicos para gestionar trabajo` (preferir formulacion concreta).
+
+Anti-patrones estructurales:
 - Frases que explican la tesis sin mostrar donde se ve en BIM, coordinacion, entregables, RFIs, interferencias u obra.
+- Apertura abstracta sin escena operativa reconocible en las primeras dos oraciones.
+- Entrada directa a "modelo BIM" sin contexto de proceso previo.
+- Cierre moralizante o con slogan generico.
+- Repeticion de la palabra nucleo mas de 2 veces en el post.
+- Claims de mercado sin soporte en las fuentes del payload.
 
 Reemplazos preferidos:
 

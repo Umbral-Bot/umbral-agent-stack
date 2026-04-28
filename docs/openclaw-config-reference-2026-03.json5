@@ -85,6 +85,13 @@
         "workspace": "/home/rick/.openclaw/workspaces/rick-communication-director",
         "model": "openai-codex/gpt-5.4"
       },
+      {
+        "id": "rick-linkedin-writer",
+        "name": "Rick LinkedIn Writer",
+        "workspace": "/home/rick/.openclaw/workspaces/rick-linkedin-writer",
+        "model": "azure-openai-responses/gpt-5.4",
+        "// note": "read-only/dry-run. No publication, no Notion writes, no gates. Handoff to rick-communication-director."
+      },
       { "id": "rick-tracker", "name": "Rick Tracker", "workspace": "/home/rick/.openclaw/workspace", "model": "google/gemini-2.5-flash" },
       { "id": "rick-ops", "name": "Rick Ops", "workspace": "/home/rick/.openclaw/workspace", "model": "openai-codex/gpt-5.3-codex" }
     ]

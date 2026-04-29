@@ -41,3 +41,24 @@ teams:
     roles: [ping, health, admin]
     notion_page_id: null
     linear_team_key: "UMBRAL"
+
+  build:
+    # Equipo de desarrollo de software supervisado.
+    # Diseño completo: docs/architecture/06-codegen-team-design.md
+    # Rollout: docs/roadmap/codegen-rollout-phases.md
+    supervisor: "Build Supervisor"
+    description: "Diseño, implementación, revisión y debug de software con HITL gates"
+    requires_vm: false  # Corre en Worker VPS Linux (port 8089), no requiere VM Windows
+    roles:
+      - supervisor          # orquesta secuencia y aplica gates
+      - code-architect      # plan markdown, gate 1 (plan-approval)
+      - code-implementer    # sandbox Docker + PR draft
+      - code-reviewer       # LLM-as-judge + re-tests + gate 2 (merge-approval)
+      - code-debugger       # repro mínimo, max 3 iteraciones
+      - code-scribe         # docs + ADRs + governance post-merge
+    notion_page_id: null    # TODO Fase 1: crear página Control Room "Build Team"
+    linear_team_key: "UMBRAL"
+    # Fase 1: solo code-architect activo. Resto se habilita en Fase 2/3.
+    enabled_roles_phase_1: [supervisor, code-architect]
+    enabled_roles_phase_2: [supervisor, code-architect, code-implementer, code-reviewer]
+    enabled_roles_phase_3: [supervisor, code-architect, code-implementer, code-reviewer, code-debugger, code-scribe]

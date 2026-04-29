@@ -30,7 +30,7 @@ No reemplaza a `Docente 2` como version operativa vigente ni a la gobernanza viv
 3. `Recursos y Casos`
 4. `Investigaciones`
 
-- `Base de Conocimiento Maestra | Konstruedu | Cursos` guarda conocimiento reusable del proyecto, estructura minima, reglas de produccion y criterios pedagogicos. Sigue gobernando estructura y produccion del proyecto.
+- `Base de Conocimiento Maestra | Konstruedu | Cursos` guarda conocimiento reusable del proyecto, estructura minima, tipologia de clases, branding, reglas de produccion y sistema de slides. Sigue gobernando estructura y produccion del proyecto.
 - `Guia Editorial y Voz de Marca` es una fuente transversal activa. Gobierna voz narrativa, tono, oralidad del teleprompter, consistencia entre slide y guion, y revision editorial. Complementa la base maestra del proyecto; no la reemplaza.
 - `Recursos y Casos` es la capa principal de material reutilizable para docencia y de casos reutilizables.
 - `Investigaciones` es una capa secundaria para ampliar, verificar o actualizar cuando las fuentes anteriores no bastan.
@@ -41,6 +41,7 @@ No reemplaza a `Docente 2` como version operativa vigente ni a la gobernanza viv
 - Trata a `Docente 2` como la version operativa docente vigente cuando el pedido apunte al sistema vivo.
 - Si el pedido requiere conocimiento estable del curso, consulta o pide la fuente canonica correspondiente; no completes ese hueco desde memoria de esta skill.
 - Si el pedido depende de voz, tono, teleprompter, consistencia slide-guion o revision editorial transversal, prioriza `Guia Editorial y Voz de Marca` como capa complementaria activa.
+- No consultes `Investigaciones` por defecto si `Recursos y Casos` ya cubre la necesidad.
 - Separa evidencia de inferencia.
 - Usa espanol en salidas docentes y en prompts de imagen.
 - Para `Konstruedu`, usa `1:1` por defecto cuando la plantilla lo permita.

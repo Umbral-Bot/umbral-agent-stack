@@ -83,6 +83,7 @@ from .document_generator import (
 )
 from .granola import (
     handle_granola_process_transcript,
+    handle_granola_capitalize_raw,
     handle_granola_create_followup,
 )
 from .google_calendar import (
@@ -175,6 +176,7 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "document.create_pdf": handle_document_create_pdf,
     "document.create_presentation": handle_document_create_presentation,
     "granola.process_transcript": handle_granola_process_transcript,
+    "granola.capitalize_raw": handle_granola_capitalize_raw,
     "granola.create_followup": handle_granola_create_followup,
     "google.calendar.create_event": handle_google_calendar_create_event,
     "google.calendar.list_events": handle_google_calendar_list_events,

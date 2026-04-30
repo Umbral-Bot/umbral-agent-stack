@@ -3,9 +3,10 @@ Tests for Granola pipeline: handlers + watcher parser.
 """
 
 import os
+from datetime import datetime
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import patch, MagicMock
-from pathlib import Path
 
 
 # ---------------------------------------------------------------------------
@@ -108,6 +109,32 @@ Se discutieron temas varios.
 
         assert result["title"] == "2026-03-04-client-meeting"
 
+    def test_shared_folder_export_format_is_preserved_exactly(self):
+        md = (
+            "Meeting Title: Konstruedu\n"
+            "Date: Mar 30\n"
+            "Meeting participants: David, Konstruedu\n"
+            "\n"
+            "Transcript:\n"
+            " \n"
+            "Me: Revisemos el piloto.  \n"
+            "Them: Perfecto, partamos por el alcance.  \n"
+        )
+
+        class FixedDateTime(datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return cls(2026, 4, 1)
+
+        with patch("scripts.vm.granola_watcher.datetime", FixedDateTime):
+            result = parse_granola_markdown(md, "konstruedu.md")
+
+        assert result["title"] == "Konstruedu"
+        assert result["date"] == "2026-03-30"
+        assert result["attendees"] == ["David", "Konstruedu"]
+        assert result["content"] == md.strip()
+        assert result["action_items"] == []
+
 
 # ---------------------------------------------------------------------------
 # Handler tests
@@ -115,11 +142,13 @@ Se discutieron temas varios.
 
 os.environ.setdefault("WORKER_TOKEN", "test-token-12345")
 
-from worker.tasks.granola import (
+from worker.tasks.granola import (  # noqa: E402
     _build_action_item_task_id,
-    handle_granola_process_transcript,
-    handle_granola_create_followup,
+    _build_traceability_block,
     _extract_action_items_from_content,
+    handle_granola_capitalize_raw,
+    handle_granola_create_followup,
+    handle_granola_process_transcript,
 )
 
 
@@ -165,27 +194,28 @@ Unrelated text.
 
 class TestHandleGranolaProcessTranscript:
 
-    @patch("worker.tasks.granola.handle_notion_upsert_task")
     @patch("worker.tasks.granola.notion_client")
-    def test_success(self, mock_nc, mock_upsert_task):
+    def test_success(self, mock_nc):
         mock_nc.create_transcript_page.return_value = {
             "page_id": "page-123",
             "url": "https://notion.so/page-123",
         }
-        mock_upsert_task.return_value = {"page_id": "task-1", "created": True}
         mock_nc.add_comment.return_value = {"comment_id": "c-1"}
 
-        result = handle_granola_process_transcript({
-            "title": "Reunión con Cliente",
-            "content": "## Notes\n\nDiscusión de proyecto.\n\n## Action Items\n\n- [ ] Enviar propuesta (David, 2026-03-07)",
-            "date": "2026-03-04",
-            "attendees": ["David", "Cliente X"],
-            "source": "granola",
-        })
+        result = handle_granola_process_transcript(
+            {
+                "title": "Reunión con Cliente",
+                "content": "## Notes\n\nDiscusión de proyecto.\n\n## Action Items\n\n- [ ] Enviar propuesta (David, 2026-03-07)",
+                "date": "2026-03-04",
+                "attendees": ["David", "Cliente X"],
+                "source": "granola",
+            }
+        )
 
         assert result["page_id"] == "page-123"
         assert result["url"] == "https://notion.so/page-123"
-        assert result["action_items_created"] == 1
+        assert result["action_items_detected"] == 1
+        assert result["action_items_created"] == 0
         assert result["notification_sent"] is True
 
         mock_nc.create_transcript_page.assert_called_once_with(
@@ -197,47 +227,37 @@ class TestHandleGranolaProcessTranscript:
         mock_nc.add_comment.assert_called_once()
         assert mock_nc.add_comment.call_args.kwargs["page_id"] is None
         assert "Hola @Enlace" in mock_nc.add_comment.call_args.kwargs["text"]
-        mock_upsert_task.assert_called_once()
-        task_payload = mock_upsert_task.call_args.args[0]
-        assert task_payload["task"] == "granola.action_item"
-        assert task_payload["task_name"] == "[Granola] Enviar propuesta"
-        assert task_payload["project_name"] == "Proyecto Granola"
-        assert task_payload["source"] == "granola_process_transcript"
-        assert task_payload["source_kind"] == "action_item"
-        assert task_payload["task_id"] == _build_action_item_task_id(
-            "Reunión con Cliente",
-            "2026-03-04",
-            {"text": "Enviar propuesta", "assignee": "David", "due": "2026-03-07"},
-        )
 
-    @patch("worker.tasks.granola.handle_notion_upsert_task")
     @patch("worker.tasks.granola.notion_client")
-    def test_with_pre_parsed_action_items(self, mock_nc, mock_upsert_task):
+    def test_with_pre_parsed_action_items(self, mock_nc):
         mock_nc.create_transcript_page.return_value = {"page_id": "p1", "url": ""}
-        mock_upsert_task.return_value = {"page_id": "t1", "created": True}
         mock_nc.add_comment.return_value = {"comment_id": "c1"}
 
-        result = handle_granola_process_transcript({
-            "title": "Meeting",
-            "content": "Content",
-            "action_items": [
-                {"text": "Task 1", "assignee": "David", "due": "2026-03-10"},
-                {"text": "Task 2", "assignee": "Ana", "due": ""},
-            ],
-        })
+        result = handle_granola_process_transcript(
+            {
+                "title": "Meeting",
+                "content": "Content",
+                "action_items": [
+                    {"text": "Task 1", "assignee": "David", "due": "2026-03-10"},
+                    {"text": "Task 2", "assignee": "Ana", "due": ""},
+                ],
+            }
+        )
 
-        assert result["action_items_created"] == 2
-        assert mock_upsert_task.call_count == 2
+        assert result["action_items_detected"] == 2
+        assert result["action_items_created"] == 0
 
     @patch("worker.tasks.granola.notion_client")
     def test_no_enlace_notification(self, mock_nc):
         mock_nc.create_transcript_page.return_value = {"page_id": "p1", "url": ""}
 
-        result = handle_granola_process_transcript({
-            "title": "Quick note",
-            "content": "Just notes",
-            "notify_enlace": False,
-        })
+        result = handle_granola_process_transcript(
+            {
+                "title": "Quick note",
+                "content": "Just notes",
+                "notify_enlace": False,
+            }
+        )
 
         assert result["notification_sent"] is False
         mock_nc.add_comment.assert_not_called()
@@ -251,19 +271,150 @@ class TestHandleGranolaProcessTranscript:
             handle_granola_process_transcript({"title": "Test"})
 
 
+class TestHandleGranolaCapitalizeRaw:
+
+    @patch("worker.tasks.granola.config.GRANOLA_CAPITALIZATION_MODE", "raw_direct_v2")
+    @patch("worker.tasks.granola.handle_notion_upsert_task")
+    @patch("worker.tasks.granola.notion_client")
+    def test_task_dispatch_updates_raw_and_traceability(self, mock_nc, mock_upsert_task):
+        mock_nc.get_page_snapshot.return_value = {
+            "page_id": "raw-123",
+            "url": "https://notion.so/raw-123",
+            "title": "Reunión A",
+            "properties": {
+                "Fecha": "2026-04-03",
+                "Log del agente": "ingest ok",
+            },
+            "plain_text": "Transcript completo",
+        }
+        mock_upsert_task.return_value = {
+            "ok": True,
+            "page_id": "task-123",
+            "url": "https://notion.so/task-123",
+            "created": True,
+        }
+
+        result = handle_granola_capitalize_raw(
+            {
+                "raw_page_id": "raw-123",
+                "target_kind": "task",
+                "target_name": "Llamar a cliente",
+                "project_name": "Proyecto X",
+                "summary": "Resumen corto",
+                "notes": "Notas de soporte",
+                "next_action": "Llamar mañana",
+            }
+        )
+
+        assert result["ok"] is True
+        assert result["url"] == "https://notion.so/task-123"
+        task_payload = mock_upsert_task.call_args.args[0]
+        assert task_payload["task_name"] == "Llamar a cliente"
+        assert task_payload["project_name"] == "Proyecto X"
+        assert task_payload["source"] == "granola.capitalize_raw"
+        assert mock_nc.update_page_properties.call_count == 2
+        final_properties = mock_nc.update_page_properties.call_args_list[-1].kwargs["properties"]
+        assert final_properties["Estado agente"]["select"]["name"] == "Procesada"
+        assert final_properties["Accion agente"]["select"]["name"] == "Listo para promocion"
+        assert final_properties["Destino canonico"]["select"]["name"] == "Tarea"
+        assert final_properties["URL artefacto"]["url"] == "https://notion.so/task-123"
+        traceability = final_properties["Trazabilidad"]["rich_text"][0]["text"]["content"]
+        assert "capitalization_mode=raw_direct_v2" in traceability
+        assert "canonical_target_type=task" in traceability
+
+    @patch("worker.tasks.granola.config.GRANOLA_CAPITALIZATION_MODE", "legacy_session")
+    @patch("worker.tasks.granola.notion_client")
+    def test_requires_raw_direct_mode_for_live_write(self, mock_nc):
+        mock_nc.get_page_snapshot.return_value = {
+            "page_id": "raw-legacy",
+            "url": "https://notion.so/raw-legacy",
+            "title": "Legacy raw",
+            "properties": {"Fecha": "2026-04-03"},
+            "plain_text": "Transcript completo",
+        }
+
+        result = handle_granola_capitalize_raw(
+            {
+                "raw_page_id": "raw-legacy",
+                "target_kind": "task",
+                "target_name": "Task en legacy",
+            }
+        )
+
+        assert result["ok"] is False
+        assert result["skipped"] is True
+        mock_nc.update_page_properties.assert_not_called()
+
+    @patch("worker.tasks.granola.config.GRANOLA_CAPITALIZATION_MODE", "raw_direct_v2")
+    @patch("worker.tasks.granola.notion_client")
+    def test_unsupported_target_marks_review_required(self, mock_nc):
+        mock_nc.get_page_snapshot.return_value = {
+            "page_id": "raw-unsupported",
+            "url": "https://notion.so/raw-unsupported",
+            "title": "Sesion ambigua",
+            "properties": {"Fecha": "2026-04-03", "Log del agente": ""},
+            "plain_text": "Transcript completo",
+        }
+
+        result = handle_granola_capitalize_raw(
+            {
+                "raw_page_id": "raw-unsupported",
+                "target_kind": "program",
+                "target_name": "Programa IA",
+            }
+        )
+
+        assert result["ok"] is False
+        assert result["blocked"] is True
+        properties = mock_nc.update_page_properties.call_args.kwargs["properties"]
+        assert properties["Estado agente"]["select"]["name"] == "Revision requerida"
+        assert properties["Accion agente"]["select"]["name"] == "Bloqueado por ambiguedad"
+        assert properties["Destino canonico"]["select"]["name"] == "Programa"
+
+    @patch("worker.tasks.granola.config.GRANOLA_CAPITALIZATION_MODE", "raw_direct_v2")
+    @patch("worker.tasks.granola.notion_client")
+    def test_dry_run_returns_payload_without_writing(self, mock_nc):
+        mock_nc.get_page_snapshot.return_value = {
+            "page_id": "raw-dry",
+            "url": "https://notion.so/raw-dry",
+            "title": "Sesion dry",
+            "properties": {"Fecha": "2026-04-03"},
+            "plain_text": "Transcript completo",
+        }
+
+        result = handle_granola_capitalize_raw(
+            {
+                "raw_page_id": "raw-dry",
+                "target_kind": "deliverable",
+                "target_name": "Reporte final",
+                "project_name": "Proyecto X",
+                "dry_run": True,
+            }
+        )
+
+        assert result["ok"] is True
+        assert result["dry_run"] is True
+        assert result["handler"] == "notion.upsert_deliverable"
+        assert result["handler_payload"]["project_name"] == "Proyecto X"
+        assert "capitalization_mode=raw_direct_v2" in result["traceability"]
+        mock_nc.update_page_properties.assert_not_called()
+
+
 class TestHandleGranolaCreateFollowup:
 
     @patch("worker.tasks.granola.notion_client")
     def test_reminder(self, mock_nc):
         mock_nc.upsert_task.return_value = {"page_id": "t-1", "created": True}
 
-        result = handle_granola_create_followup({
-            "transcript_page_id": "page-123",
-            "followup_type": "reminder",
-            "title": "Client Meeting",
-            "date": "2026-03-04",
-            "due_date": "2026-03-11",
-        })
+        result = handle_granola_create_followup(
+            {
+                "transcript_page_id": "page-123",
+                "followup_type": "reminder",
+                "title": "Client Meeting",
+                "date": "2026-03-04",
+                "due_date": "2026-03-11",
+            }
+        )
 
         assert result["followup_type"] == "reminder"
         assert result["result"]["due_date"] == "2026-03-11"
@@ -275,13 +426,15 @@ class TestHandleGranolaCreateFollowup:
     def test_email_draft(self, mock_nc):
         mock_nc.add_comment.return_value = {"comment_id": "c-1"}
 
-        result = handle_granola_create_followup({
-            "transcript_page_id": "page-123",
-            "followup_type": "email_draft",
-            "title": "Sprint Review",
-            "date": "2026-03-04",
-            "action_items": [{"text": "Deploy v2", "assignee": "DevOps", "due": "2026-03-06"}],
-        })
+        result = handle_granola_create_followup(
+            {
+                "transcript_page_id": "page-123",
+                "followup_type": "email_draft",
+                "title": "Sprint Review",
+                "date": "2026-03-04",
+                "action_items": [{"text": "Deploy v2", "assignee": "DevOps", "due": "2026-03-06"}],
+            }
+        )
 
         assert result["followup_type"] == "email_draft"
         assert "Sprint Review" in result["result"]["draft"]
@@ -296,14 +449,16 @@ class TestHandleGranolaCreateFollowup:
             "ok": True,
         }
 
-        result = handle_granola_create_followup({
-            "transcript_page_id": "page-123",
-            "followup_type": "proposal",
-            "title": "Kickoff",
-            "date": "2026-03-04",
-            "attendees": ["David", "Client"],
-            "action_items": [{"text": "Start phase 1", "assignee": "David", "due": "2026-03-15"}],
-        })
+        result = handle_granola_create_followup(
+            {
+                "transcript_page_id": "page-123",
+                "followup_type": "proposal",
+                "title": "Kickoff",
+                "date": "2026-03-04",
+                "attendees": ["David", "Client"],
+                "action_items": [{"text": "Start phase 1", "assignee": "David", "due": "2026-03-15"}],
+            }
+        )
 
         assert result["followup_type"] == "proposal"
         assert result["result"]["ok"] is True
@@ -315,23 +470,27 @@ class TestHandleGranolaCreateFollowup:
 
     def test_invalid_followup_type(self):
         with pytest.raises(ValueError, match="'followup_type' must be one of"):
-            handle_granola_create_followup({
-                "transcript_page_id": "p-1",
-                "followup_type": "invalid",
-            })
+            handle_granola_create_followup(
+                {
+                    "transcript_page_id": "p-1",
+                    "followup_type": "invalid",
+                }
+            )
 
     @patch("worker.tasks.granola.notion_client")
     def test_reminder_default_due_date(self, mock_nc):
         mock_nc.upsert_task.return_value = {"page_id": "t-1", "created": True}
 
-        result = handle_granola_create_followup({
-            "transcript_page_id": "page-123",
-            "followup_type": "reminder",
-            "title": "Meeting",
-        })
+        result = handle_granola_create_followup(
+            {
+                "transcript_page_id": "page-123",
+                "followup_type": "reminder",
+                "title": "Meeting",
+            }
+        )
 
-        assert result["result"]["due_date"]  # Should have a default
-        assert len(result["result"]["due_date"]) == 10  # YYYY-MM-DD format
+        assert result["result"]["due_date"]
+        assert len(result["result"]["due_date"]) == 10
 
 
 def test_build_action_item_task_id_is_stable():
@@ -344,9 +503,22 @@ def test_build_action_item_task_id_is_stable():
     assert task_id_1.startswith("granola-action-item-")
 
 
+def test_build_traceability_block_has_expected_shape():
+    traceability = _build_traceability_block("raw-123", "task", "https://notion.so/task-123")
+
+    assert "source=granola" in traceability
+    assert "capitalization_mode=raw_direct_v2" in traceability
+    assert "raw_page_id=raw-123" in traceability
+    assert "canonical_target_type=task" in traceability
+    assert "canonical_target_url=https://notion.so/task-123" in traceability
+    assert "runtime_actor=granola.capitalize_raw" in traceability
+    assert "processed_at=" in traceability
+
+
 # ---------------------------------------------------------------------------
 # Watcher integration tests
 # ---------------------------------------------------------------------------
+
 
 class TestWatcherProcessFile:
 
@@ -391,7 +563,6 @@ class TestWatcherProcessFile:
             (tmp_path / f"meeting_{i}.md").write_text(
                 f"# Meeting {i}\n\nSome notes for meeting {i}.", encoding="utf-8"
             )
-        # Hidden file should be skipped
         (tmp_path / ".hidden.md").write_text("# Hidden\n\nShould be skipped.", encoding="utf-8")
 
         processed_dir = tmp_path / "processed"
@@ -401,3 +572,38 @@ class TestWatcherProcessFile:
 
         assert count == 3
         assert mock_send.call_count == 3
+
+    @patch("scripts.vm.granola_watcher.send_to_worker")
+    def test_process_file_shared_folder_export_preserves_exact_content(self, mock_send, tmp_path):
+        from scripts.vm.granola_watcher import process_file
+
+        md_file = tmp_path / "shared-export.md"
+        md_file.write_text(
+            "Meeting Title: ACI Autodesk\n"
+            "Date: Mar 17\n"
+            "Meeting participants: David, Autodesk\n"
+            "\n"
+            "Transcript:\n"
+            " \n"
+            "Me: Hola.  \n"
+            "Them: Buenas.  \n",
+            encoding="utf-8",
+        )
+
+        processed_dir = tmp_path / "processed"
+        mock_send.return_value = {"status": "ok"}
+
+        class FixedDateTime(datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return cls(2026, 4, 1)
+
+        with patch("scripts.vm.granola_watcher.datetime", FixedDateTime):
+            result = process_file(md_file, "http://localhost:8088", "test-token", processed_dir)
+
+        assert result is True
+        parsed = mock_send.call_args[0][3]
+        assert parsed["title"] == "ACI Autodesk"
+        assert parsed["date"] == "2026-03-17"
+        assert parsed["content"].startswith("Meeting Title: ACI Autodesk")
+        assert parsed["content"].endswith("Them: Buenas.")

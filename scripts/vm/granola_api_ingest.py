@@ -19,6 +19,7 @@ import argparse
 import json
 import os
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -116,18 +117,42 @@ def choose_document(
     raise RuntimeError("Provide one of: --document-id, --title-query, or --latest")
 
 
-def render_transcript_markdown(items: list[dict[str, Any]]) -> str:
-    lines = ["## Transcripción", ""]
+def _format_export_date(value: str | None) -> str:
+    raw = (value or "").strip()
+    if not raw:
+        return ""
+    try:
+        dt = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        return f"{dt.strftime('%b')} {dt.day}"
+    except ValueError:
+        return raw[:10] if len(raw) >= 10 else raw
+
+
+def render_transcript_markdown(
+    items: list[dict[str, Any]],
+    *,
+    title: str | None = None,
+    meeting_date: str | None = None,
+    attendees: list[str] | None = None,
+) -> str:
+    lines: list[str] = []
+    if title:
+        lines.append(f"Meeting Title: {title}")
+    formatted_date = _format_export_date(meeting_date)
+    if formatted_date:
+        lines.append(f"Date: {formatted_date}")
+    if attendees:
+        lines.append(f"Meeting participants: {', '.join(attendees)}")
+    if lines:
+        lines.append("")
+    lines.extend(["Transcript:", " "])
     for item in items:
         text = str(item.get("text") or "").strip()
         if not text:
             continue
         source = str(item.get("source") or "system").strip().lower()
-        speaker = "David/host" if source == "microphone" else "Interlocutor"
-        start = str(item.get("start_timestamp") or "").strip()
-        ts = start[11:19] if len(start) >= 19 else ""
-        prefix = f"[{ts}] " if ts else ""
-        lines.append(f"- **{speaker}:** {prefix}{text}")
+        speaker = "Me" if source == "microphone" else "Them"
+        lines.append(f"{speaker}: {text}  ")
     return "\n".join(lines).strip()
 
 
@@ -193,7 +218,12 @@ def ingest_document(
             if name:
                 attendees.append(name)
 
-    content = render_transcript_markdown(transcript_items)
+    content = render_transcript_markdown(
+        transcript_items,
+        title=title,
+        meeting_date=meeting_date,
+        attendees=attendees,
+    )
     payload = {
         "title": title,
         "content": content,

@@ -1,218 +1,153 @@
-# Granola → Notion Pipeline
+# Granola -> Notion Pipeline
 
-> Documento de diseño: pipeline automático para transferir transcripciones de reuniones desde Granola a Notion, con extracción de action items y follow-up proactivo de Rick. **Notion:** se usa la integración de Rick (`NOTION_API_KEY`); solo se configura `NOTION_GRANOLA_DB_ID` como ID de la base de datos destino (no hay integración Notion propia de Granola).
+Estado: 2026-04-03
 
-## 1. Investigación de Granola (plan básico)
+## Objetivo
 
-### 1a. Capacidades del plan básico
+Definir el flujo operativo actual para reuniones capturadas en Granola:
 
-| Característica | Disponible | Detalle |
-|----------------|-----------|---------|
-| Transcripción en tiempo real | Si | Unlimited meetings |
-| Export automático a carpeta | No | No existe export automático nativo |
-| Export CSV (bulk) | Parcial | Solo notas > 30 días; sin transcripts completos |
-| Export individual (copy) | Si | Copiar nota individual en formato Markdown |
-| Webhook nativo | No | Solo disponible via Zapier (plan Pro+) |
-| API pública | No | Solo plan Enterprise ($35+/user/mes) |
-| Export a Google Drive | No | No soportado directamente |
-| Almacenamiento local | Si | Cache en `%APPDATA%\Granola\cache-v3.json` (Windows) |
-| Zapier integration | Pro+ | No disponible en plan básico |
+1. preservar la transcripcion completa en `Transcripciones Granola`
+2. evitar promociones implicitas a superficies canonicas
+3. capitalizar despues desde raw solo cuando el target es deterministico
 
-### 1b. Metadata incluida en exports
+## Contrato vigente
 
-Cuando se copia una nota individual, Granola incluye:
+La ingesta oficial ya no debe asumir `raw -> Registro de Sesiones y Transcripciones` como paso persistente por defecto.
 
-- **Título de la reunión** (derivado del evento de calendario)
-- **Fecha y hora** de la reunión
-- **Participantes/attendees** (si vinculado a calendario)
-- **Notas del usuario** (las notas tomadas durante la reunión)
-- **Transcripción completa** (audio transcrito)
-- **Action items** (extraídos por AI, con asignación sugerida)
-- **Resumen AI** (summary generado automáticamente)
+El contrato de runtime del stack queda asi:
 
-### 1c. Acceso local al cache
+1. `granola_watcher.py` detecta o lee exports
+2. `granola.process_transcript` escribe solo en raw
+3. `granola.capitalize_raw` capitaliza desde raw a canonicos cuando el target es claro
 
-Herramientas de la comunidad (`granola-to-markdown`, `granola-cli`) demuestran que Granola almacena datos localmente en:
+El modo de rollout se controla con:
 
-- **macOS**: `~/Library/Application Support/Granola/cache-v3.json`
-- **Windows**: `%APPDATA%\Granola\cache-v3.json` (probable)
-
-El cache contiene documentos JSON con toda la metadata de las reuniones. Sin embargo, este formato no está documentado oficialmente y puede cambiar sin aviso.
-
-## 2. Arquitecturas evaluadas
-
-| Opción | Descripción | Pros | Contras |
-|--------|-------------|------|---------|
-| A — Rick lee VM | VM detecta archivo → Rick lo lee con `windows.fs.read_text` → sube a Notion | Sin dependencias externas | Requiere polling desde VPS; latencia alta |
-| B — Google Drive buffer | VM exporta a Google Drive → Rick detecta vía API → sube a Notion | Google Drive como buffer | Necesita Google Drive API; complejidad extra |
-| C — Webhook Granola | Granola webhook → Dispatcher → Worker → Notion | Más elegante | No disponible en plan básico |
-| **D — Watcher en VM** | **Script en VM monitorea carpeta → POST al Worker local → Notion** | **Automático; latencia baja; sin dependencias** | **Requiere script corriendo en VM** |
-
-### Arquitectura elegida: Opción D — Watcher en VM
-
-**Justificación:**
-
-1. **Simplicidad**: el script corre en la misma VM donde está Granola y el Worker.
-2. **Sin dependencias externas**: no requiere Google Drive API, Zapier, ni webhook.
-3. **Latencia mínima**: el watcher detecta archivos nuevos y los envía directamente al Worker local.
-4. **Robusto**: tolerante a reinicios (marca archivos procesados), sin estado externo.
-5. **Compatible con el flujo actual**: David exporta manualmente la nota (Copy → Paste en archivo `.md`) o usa `granola-to-markdown` para batch.
-
-### Flujo operativo
-
-```
-David termina reunión en Granola
-       │
-       ▼
-Exporta nota a carpeta monitoreada
-(manual copy/paste o granola-to-markdown)
-       │
-       ▼
-┌─────────────────────────────┐
-│  granola_watcher.py (VM)    │
-│  Monitorea GRANOLA_EXPORT_DIR│
-│  Detecta *.md nuevos        │
-└──────────┬──────────────────┘
-           │ POST /run
-           ▼
-┌─────────────────────────────┐
-│  Worker (VM :8088)          │
-│  task: granola.process_     │
-│        transcript           │
-│  1. Parsea markdown         │
-│  2. Extrae metadata         │
-│  3. Sube a Notion           │
-│  4. Extrae action items     │
-│  5. Crea tareas en Notion   │
-│  6. Notifica a Enlace       │
-└──────────┬──────────────────┘
-           │
-           ▼
-┌─────────────────────────────┐
-│  Notion (Granola Inbox DB)  │
-│  - Página con transcript    │
-│  - Action items como tareas │
-│  - Comentario para Enlace   │
-└─────────────────────────────┘
+```text
+GRANOLA_CAPITALIZATION_MODE=legacy_session | raw_direct_v2
 ```
 
-```mermaid
-flowchart TD
-    A[David termina reunión en Granola] --> B[Exporta nota a carpeta monitoreada]
-    B --> C[granola_watcher.py detecta .md nuevo]
-    C --> D[POST /run al Worker local]
-    D --> E[granola.process_transcript]
-    E --> F[Parsea markdown y extrae metadata]
-    F --> G[Crea página en Notion Granola Inbox]
-    F --> H[Extrae action items]
-    H --> I[Crea tareas en Notion via upsert_task]
-    G --> J[Notifica a Enlace via comentario]
+Default:
 
-    K[Rick detecta transcripción sin follow-up] --> L[granola.create_followup]
-    L --> M{followup_type}
-    M -->|reminder| N[Crea tarea en Notion con fecha límite]
-    M -->|email_draft| O[Genera borrador de email]
-    M -->|proposal| P[Genera documento Word con propuesta]
+```text
+GRANOLA_CAPITALIZATION_MODE=legacy_session
 ```
 
-## 3. Setup del watcher en VM
+En `legacy_session`, `granola.capitalize_raw` no hace writes canonicos live.
 
-### Instalación
+## Flujo operativo
 
-```powershell
-# En la VM Windows, desde el repo clonado:
-cd C:\GitHub\umbral-agent-stack
-
-# Instalar dependencias (requests ya incluido en el entorno)
-pip install watchdog requests
-
-# Crear carpetas
-mkdir C:\Users\rick\Documents\Granola
-mkdir C:\Users\rick\Documents\Granola\processed
+```text
+Granola export / cache / shared folder
+        |
+        v
+scripts/vm/granola_watcher.py
+        |
+        v
+POST /run -> granola.process_transcript
+        |
+        v
+Notion DB: Transcripciones Granola (raw)
+        |
+        +--> vistas V2 de review en raw
+        |
+        +--> granola.capitalize_raw (solo si target deterministico)
+                  |
+                  +--> notion.upsert_task
+                  +--> notion.upsert_project
+                  +--> notion.upsert_deliverable
 ```
 
-### Variables de entorno en VM
-
-```
-GRANOLA_EXPORT_DIR=C:\Users\rick\Documents\Granola
-GRANOLA_PROCESSED_DIR=C:\Users\rick\Documents\Granola\processed
-WORKER_URL=http://localhost:8088
-WORKER_TOKEN=<token del worker>
-```
-
-### Ejecución
-
-```powershell
-# Modo continuo (watcher con watchdog)
-python scripts/vm/granola_watcher.py
-
-# Modo one-shot (procesa archivos pendientes y sale)
-python scripts/vm/granola_watcher.py --once
-```
-
-### Registro como servicio (NSSM)
-
-```powershell
-nssm install granola-watcher "C:\Python312\python.exe" "C:\GitHub\umbral-agent-stack\scripts\vm\granola_watcher.py"
-nssm set granola-watcher AppDirectory "C:\GitHub\umbral-agent-stack"
-nssm set granola-watcher AppEnvironmentExtra "GRANOLA_EXPORT_DIR=C:\Users\rick\Documents\Granola" "WORKER_URL=http://localhost:8088" "WORKER_TOKEN=<token>"
-nssm start granola-watcher
-```
-
-## 4. Variables de entorno
-
-| Variable | Dónde | Requerida | Descripción |
-|----------|-------|-----------|-------------|
-| `GRANOLA_EXPORT_DIR` | VM | Si (watcher) | Carpeta donde se depositan los exports de Granola |
-| `GRANOLA_PROCESSED_DIR` | VM | No | Carpeta destino para archivos procesados (default: `{EXPORT_DIR}/processed`) |
-| `WORKER_URL` | VM | Si (watcher) | URL del Worker (default: `http://localhost:8088`) |
-| `WORKER_TOKEN` | VM + Worker | Si | Token de autenticación del Worker |
-| `NOTION_GRANOLA_DB_ID` | Worker | Si | ID de la DB de transcripciones en Notion. Usa la misma integración Rick (`NOTION_API_KEY`). |
-| `NOTION_TASKS_DB_ID` | Worker | No | ID de la DB Kanban para action items |
-| `ENLACE_NOTION_USER_ID` | Worker | No | ID de usuario de Enlace para @mentions en Notion |
-
-## 5. Handlers del Worker
+## Responsabilidades
 
 ### `granola.process_transcript`
 
-Recibe una transcripción parseada y ejecuta el pipeline completo:
+Responsabilidad exacta:
 
-1. Crea página en Notion (Granola Inbox DB)
-2. Extrae action items del contenido
-3. Crea tareas individuales en Notion (si `NOTION_TASKS_DB_ID` configurado)
-4. Notifica a Enlace con comentario en la página creada
+1. crear la pagina raw en `Transcripciones Granola`
+2. preservar transcript + metadata
+3. detectar action items solo como senal
+4. opcionalmente notificar a Enlace por comentario
 
-### `granola.create_followup`
+No debe:
 
-Handler proactivo que Rick usa para dar seguimiento:
+- crear tareas canonicas
+- crear proyectos
+- crear entregables
+- escribir en `Registro de Sesiones y Transcripciones`
 
-- `followup_type: "reminder"` → crea tarea en Notion con fecha límite
-- `followup_type: "email_draft"` → genera borrador de email (texto estructurado)
-- `followup_type: "proposal"` → genera resumen/propuesta formateado
+### `granola.capitalize_raw`
 
-## 6. Formato esperado de archivos Markdown
+Responsabilidad exacta:
 
-El watcher espera archivos `.md` con el siguiente formato (compatible con Granola export):
+1. leer una fila raw existente
+2. tomar transcript + metadata del raw
+3. escribir un target canonico soportado
+4. actualizar la fila raw con trazabilidad y estado
 
-```markdown
-# Título de la reunión
+Targets soportados en el primer corte:
 
-**Date:** 2026-03-04
-**Attendees:** David, Cliente X, Partner Y
+- `task`
+- `project`
+- `deliverable`
 
-## Notes
+Targets no soportados aun para write automatico:
 
-Contenido de las notas tomadas durante la reunión...
+- `program`
+- `resource`
 
-## Transcript
+Esos casos deben quedar en raw como `Revision requerida`.
 
-Transcripción completa del audio...
+## Variables de entorno
 
-## Action Items
+| Variable | Donde | Requerida | Descripcion |
+|---|---|---|---|
+| `GRANOLA_EXPORT_DIR` | VM watcher | si | carpeta de exports |
+| `GRANOLA_PROCESSED_DIR` | VM watcher | no | carpeta de procesados |
+| `WORKER_URL` | VM watcher | si | URL del worker |
+| `WORKER_TOKEN` | watcher + worker | si | auth Bearer |
+| `NOTION_GRANOLA_DB_ID` | worker | si | DB raw `Transcripciones Granola` |
+| `NOTION_GRANOLA_SESSION_DB_ID` | worker/scripts | no | DB legacy `Registro de Sesiones y Transcripciones`; solo auditoria y migracion |
+| `GRANOLA_CAPITALIZATION_MODE` | worker | no | `legacy_session` o `raw_direct_v2` |
+| `NOTION_TASKS_DB_ID` | worker | no | target canonico para `task` |
+| `NOTION_PROJECTS_DB_ID` | worker | no | target canonico para `project` |
+| `NOTION_DELIVERABLES_DB_ID` | worker | no | target canonico para `deliverable` |
+| `ENLACE_NOTION_USER_ID` | worker | no | soporte para comentarios de revision |
 
-- [ ] Enviar propuesta a Cliente X (David, 2026-03-07)
-- [ ] Revisar presupuesto (Partner Y, 2026-03-10)
-- [ ] Agendar siguiente reunión (David)
-```
+## Notas sobre schema raw
 
-El parser es flexible: si no encuentra las secciones esperadas, trata todo el contenido como transcripción.
+El rollout `raw_direct_v2` requiere que `Transcripciones Granola` tenga estos campos adicionales:
+
+- `Dominio propuesto`
+- `Tipo propuesto`
+- `Destino canonico`
+- `Proyecto relacionado`
+- `Programa relacionado`
+- `Recurso relacionado`
+
+Tambien requiere vistas V2:
+
+- `V2 - Raw pendientes`
+- `V2 - Raw revision requerida`
+- `V2 - Raw listos para capitalizar`
+- `V2 - Raw capitalizados`
+
+## Regla de seguridad
+
+Si el target es ambiguo o no esta soportado:
+
+- no escribir el canonico
+- dejar la fila raw en `Revision requerida`
+- registrar el motivo en `Log del agente`
+
+## Formatos de entrada
+
+El watcher debe soportar:
+
+- export markdown clasico con `## Notes / ## Transcript / ## Action Items`
+- export plano de carpeta compartida con:
+  - `Meeting Title:`
+  - `Date:`
+  - `Meeting participants:`
+  - `Transcript:`
+
+La regla principal es preservar el contenido raw exacto y completo.

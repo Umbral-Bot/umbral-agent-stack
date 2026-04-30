@@ -25,7 +25,7 @@ import re
 import shutil
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -87,9 +87,64 @@ def _get_poll_interval() -> int:
 # Markdown parser
 # ---------------------------------------------------------------------------
 
+_PLAIN_EXPORT_TITLE_RE = re.compile(r"^Meeting Title:\s*(.+)$", re.MULTILINE | re.IGNORECASE)
+_PLAIN_EXPORT_DATE_RE = re.compile(r"^Date:\s*(.+)$", re.MULTILINE | re.IGNORECASE)
+_PLAIN_EXPORT_PARTICIPANTS_RE = re.compile(
+    r"^Meeting participants:\s*(.+)$",
+    re.MULTILINE | re.IGNORECASE,
+)
+
+
+def _normalize_export_date(raw_date: str) -> str:
+    value = (raw_date or "").strip()
+    if not value:
+        return datetime.now().strftime("%Y-%m-%d")
+
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
+        return value
+
+    for fmt in ("%b %d, %Y", "%B %d, %Y", "%b %d %Y", "%B %d %Y"):
+        try:
+            return datetime.strptime(value, fmt).strftime("%Y-%m-%d")
+        except ValueError:
+            continue
+
+    today = datetime.now()
+    for fmt in ("%b %d", "%B %d"):
+        try:
+            parsed = datetime.strptime(f"{value} {today.year}", f"{fmt} %Y")
+            # If the inferred date is implausibly in the future, assume previous year.
+            if parsed.date() > (today + timedelta(days=30)).date():
+                parsed = parsed.replace(year=today.year - 1)
+            return parsed.strftime("%Y-%m-%d")
+        except ValueError:
+            continue
+
+    return datetime.now().strftime("%Y-%m-%d")
+
+
 def parse_granola_markdown(text: str, filename: str = "") -> dict[str, Any]:
     """Parse a Granola-exported markdown file into structured data."""
-    lines = text.strip().splitlines()
+    normalized_text = (text or "").replace("\r\n", "\n").replace("\r", "\n")
+    stripped_text = normalized_text.strip()
+
+    plain_title = _PLAIN_EXPORT_TITLE_RE.search(normalized_text)
+    if plain_title:
+        raw_date_match = _PLAIN_EXPORT_DATE_RE.search(normalized_text)
+        participants_match = _PLAIN_EXPORT_PARTICIPANTS_RE.search(normalized_text)
+        attendees = []
+        if participants_match:
+            attendees = [p.strip() for p in participants_match.group(1).split(",") if p.strip()]
+        return {
+            "title": plain_title.group(1).strip() or filename.replace(".md", "").strip() or "Reunión sin título",
+            "content": stripped_text or "(sin contenido)",
+            "date": _normalize_export_date(raw_date_match.group(1) if raw_date_match else ""),
+            "attendees": attendees,
+            "action_items": [],
+            "source": "granola",
+        }
+
+    lines = stripped_text.splitlines()
 
     title = filename.replace(".md", "").strip()
     date_str = ""

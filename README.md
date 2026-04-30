@@ -77,7 +77,9 @@ El worker expone un bus HTTP para ejecutar tareas, incluyendo integración con N
 | `NOTION_SUPERVISOR_API_KEY` | VPS (opc.) | Token integración **Supervisor** (alertas con identidad propia) |
 | `NOTION_SUPERVISOR_ALERT_PAGE_ID` | VPS (opc.) | Página destino de alertas del supervisor (ej. Dashboard Rick) |
 | `NOTION_TASKS_DB_ID` | opc. | ID DB Kanban tareas (`notion.upsert_task`) |
-| `NOTION_GRANOLA_DB_ID` | opc. | ID DB Granola Inbox; usa `NOTION_API_KEY` (Rick). Solo si usas pipeline transcripciones. |
+| `NOTION_GRANOLA_DB_ID` | opc. | ID de `Transcripciones Granola` (raw). |
+| `NOTION_GRANOLA_SESSION_DB_ID` | opc. | ID legacy de `Registro de Sesiones y Transcripciones`; solo auditoría/migración. |
+| `GRANOLA_CAPITALIZATION_MODE` | opc. | `legacy_session` o `raw_direct_v2`; default `legacy_session`. |
 
 Copiar `.env.example` → `.env` y rellenar con valores reales.
 
@@ -90,6 +92,8 @@ Copiar `.env.example` → `.env` y rellenar con valores reales.
 | `notion.add_comment` | `{text, page_id?}` | Comenta en Control Room (o página específica) |
 | `notion.poll_comments` | `{since?, limit?, page_id?}` | Lee comentarios recientes |
 | `notion.update_dashboard` | `{metrics: {nombre: valor}}` | Actualiza página Dashboard en Notion (doc 22) |
+| `granola.process_transcript` | `{title, content, date?, attendees?, action_items?}` | Ingesta solo a raw en `Transcripciones Granola` |
+| `granola.capitalize_raw` | `{raw_page_id, target_kind, target_name, ...}` | Capitaliza desde raw a `task`, `project` o `deliverable` cuando `GRANOLA_CAPITALIZATION_MODE=raw_direct_v2` |
 
 ### S3 — Loop Notion ↔ Rick (poller)
 

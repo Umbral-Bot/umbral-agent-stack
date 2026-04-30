@@ -141,6 +141,21 @@ class TestEnqueueSuccess:
             stored = json.loads(fake_redis.get(f"{TASK_KEY_PREFIX}{task_id}"))
             assert len(stored["input"]["msg"]) == MAX_STRING_VALUE_LEN
 
+    def test_enqueue_granola_transcript_keeps_full_content(self, client, fake_redis):
+        with patch("worker.app._get_redis", return_value=fake_redis):
+            resp = client.post(
+                "/enqueue",
+                json={
+                    "task": "granola.process_transcript",
+                    "input": {"title": "Audit", "content": "x" * 20_000},
+                },
+                headers=AUTH,
+            )
+            assert resp.status_code == 200
+            task_id = resp.json()["task_id"]
+            stored = json.loads(fake_redis.get(f"{TASK_KEY_PREFIX}{task_id}"))
+            assert len(stored["input"]["content"]) == 20_000
+
     def test_enqueue_is_in_pending_queue(self, client, fake_redis):
         with patch("worker.app._get_redis", return_value=fake_redis):
             resp = client.post(

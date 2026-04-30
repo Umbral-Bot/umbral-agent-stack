@@ -164,6 +164,16 @@ class TestSanitize:
         result = sanitize_input({"data": "x" * 20_000})
         assert len(result["data"]) == MAX_STRING_VALUE_LEN
 
+    def test_granola_transcript_content_is_not_truncated_for_task_specific_override(self):
+        from worker.sanitize import sanitize_input
+
+        result = sanitize_input(
+            {"content": "x" * 20_000},
+            task="granola.process_transcript",
+        )
+
+        assert len(result["content"]) == 20_000
+
     def test_injection_detection_raises_value_error(self, caplog):
         import logging
         from worker.sanitize import sanitize_input

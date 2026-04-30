@@ -30,3 +30,5 @@ Con **PR #129** ya mergeado a `main` (907a05a), cerrar el ciclo de **capitalizac
 
 ### cursor 2026-03-24
 Tarea creada; PROTOCOL.md actualizado con delegación temporal del lead a Codex (R23).
+### codex 2026-04-03 18:31
+Verifiqué de nuevo el estado de ambos repositorios (`umbral-agent-stack`, `notion-governance`) y confirmé que el cambio V2 del flujo Granola quedó repartido en código, docs y contrato de governance. También confirmé en Notion live que la DB raw ya tiene schema/vistas V2 y que el caso Konstruedu sigue siendo buen benchmark: el raw 2026-03-23 ya apunta al proyecto canónico, mientras que el raw 2026-04-01 sigue apuntando a sesión legacy. Dejé una nota externa para comparar la capitalización manual de Notion AI sin sesgarla desde Notion: `docs/audits/2026-04-03-konstruedu-manual-capitalization-expected-outcome.md`.

@@ -31,6 +31,8 @@ def test_create_transcript_page_supports_real_granola_schema(mock_require_notion
     mock_client = MagicMock()
     mock_client.get.return_value = schema_response
     mock_client.post.return_value = create_response
+    mock_client.patch.return_value.status_code = 200
+    mock_client.patch.return_value.json.return_value = {"results": []}
     mock_client_cls.return_value.__enter__.return_value = mock_client
 
     result = create_transcript_page(
@@ -48,6 +50,11 @@ def test_create_transcript_page_supports_real_granola_schema(mock_require_notion
     assert payload["properties"]["Tags"]["multi_select"][0]["name"] == "granola"
     assert "Fecha que Rick pasó a Notion" in payload["properties"]
     assert "Fecha que el agente procesó" in payload["properties"]
+    assert "children" not in payload
+
+    append_payload = mock_client.patch.call_args.kwargs["json"]
+    assert len(append_payload["children"]) == 11
+    assert append_payload["children"][0]["paragraph"]["rich_text"][0]["text"]["content"] == "Hola"
 
 
 @patch("worker.notion_client.httpx.Client")
@@ -77,6 +84,8 @@ def test_create_transcript_page_supports_legacy_schema(mock_require_notion, mock
     mock_client = MagicMock()
     mock_client.get.return_value = schema_response
     mock_client.post.return_value = create_response
+    mock_client.patch.return_value.status_code = 200
+    mock_client.patch.return_value.json.return_value = {"results": []}
     mock_client_cls.return_value.__enter__.return_value = mock_client
 
     result = create_transcript_page(
@@ -91,3 +100,50 @@ def test_create_transcript_page_supports_legacy_schema(mock_require_notion, mock
     assert payload["properties"]["Name"]["title"][0]["text"]["content"] == "Legacy meeting"
     assert payload["properties"]["Source"]["select"]["name"] == "granola"
     assert payload["properties"]["Date"]["date"]["start"] == "2026-03-09"
+    assert "children" not in payload
+
+    append_payload = mock_client.patch.call_args.kwargs["json"]
+    assert append_payload["children"][0]["paragraph"]["rich_text"][0]["text"]["content"] == "Body"
+
+
+@patch("worker.notion_client.httpx.Client")
+@patch("worker.notion_client.config.require_notion")
+@patch("worker.notion_client.config.NOTION_API_KEY", "ntn_test_key")
+@patch("worker.notion_client.config.NOTION_GRANOLA_DB_ID", "db-123")
+def test_create_transcript_page_splits_large_transcript_into_multiple_append_batches(mock_require_notion, mock_client_cls):
+    from worker.notion_client import create_transcript_page
+
+    schema_response = MagicMock()
+    schema_response.status_code = 200
+    schema_response.json.return_value = {
+        "id": "db-123",
+        "properties": {
+            "Name": {"type": "title"},
+            "Source": {"type": "select"},
+            "Date": {"type": "date"},
+        },
+    }
+    create_response = MagicMock()
+    create_response.status_code = 200
+    create_response.json.return_value = {
+        "id": "page-large",
+        "url": "https://www.notion.so/page-large",
+    }
+
+    mock_client = MagicMock()
+    mock_client.get.return_value = schema_response
+    mock_client.post.return_value = create_response
+    mock_client.patch.return_value.status_code = 200
+    mock_client.patch.return_value.json.return_value = {"results": []}
+    mock_client_cls.return_value.__enter__.return_value = mock_client
+
+    content = "\n".join(f"L{i}: {'x' * 120}" for i in range(120))
+    result = create_transcript_page(
+        title="Large transcript",
+        content=content,
+        source="granola",
+        date="2026-03-09",
+    )
+
+    assert result["page_id"] == "page-large"
+    assert mock_client.patch.call_count >= 2

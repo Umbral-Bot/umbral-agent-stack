@@ -12,8 +12,12 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
-from .. import notion_client
-from .notion import handle_notion_upsert_task
+from .. import config, notion_client
+from .notion import (
+    handle_notion_upsert_deliverable,
+    handle_notion_upsert_project,
+    handle_notion_upsert_task,
+)
 from .notion_markdown import markdown_to_blocks
 
 logger = logging.getLogger("worker.tasks.granola")
@@ -25,6 +29,16 @@ logger = logging.getLogger("worker.tasks.granola")
 _ACTION_ITEM_RE = re.compile(
     r"[-*]\s*\[[ x]?\]\s*(.+)", re.IGNORECASE
 )
+_RAW_CANONICAL_KIND_LABELS = {
+    "task": "Tarea",
+    "project": "Proyecto",
+    "deliverable": "Entregable",
+    "program": "Programa",
+    "resource": "Recurso",
+    "ignore": "Ignorar",
+}
+_SUPPORTED_RAW_CAPITALIZATION_KINDS = {"task", "project", "deliverable"}
+_RAW_PAGE_MAX_BLOCKS = 10_000
 
 
 def _build_action_item_task_id(title: str, date: str, item: Dict[str, str]) -> str:
@@ -70,6 +84,234 @@ def _extract_action_items_from_content(content: str) -> List[Dict[str, str]]:
                     item_text = item_text[: paren.start()].strip()
                 items.append({"text": item_text, "assignee": assignee, "due": due})
     return items
+
+
+def _now_utc() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _today_utc() -> str:
+    return _now_utc().strftime("%Y-%m-%d")
+
+
+def _now_utc_iso() -> str:
+    return _now_utc().strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _rich_text_property(text: str) -> dict[str, Any]:
+    return {"rich_text": [{"text": {"content": text[:2000]}}]}
+
+
+def _date_property(value: str) -> dict[str, Any]:
+    return {"date": {"start": value}}
+
+
+def _select_property(value: str) -> dict[str, Any]:
+    return {"select": {"name": value}}
+
+
+def _canonical_kind_label(kind: str) -> str:
+    return _RAW_CANONICAL_KIND_LABELS.get((kind or "").strip().lower(), "Ignorar")
+
+
+def _stable_capitalization_task_id(raw_page_id: str, target_kind: str, target_name: str) -> str:
+    digest = hashlib.sha1(
+        f"{raw_page_id.strip()}|{target_kind.strip().lower()}|{target_name.strip().lower()}".encode("utf-8")
+    ).hexdigest()[:16]
+    return f"granola-capitalization-{digest}"
+
+
+def _append_log(existing: Any, entry: str) -> str:
+    existing_text = str(existing or "").strip()
+    parts = [part for part in [existing_text, entry.strip()] if part]
+    if not parts:
+        return ""
+    merged = "\n".join(parts)
+    return merged[-2000:]
+
+
+def _build_traceability_block(raw_page_id: str, target_kind: str, canonical_url: str) -> str:
+    return "\n".join(
+        [
+            "source=granola",
+            "capitalization_mode=raw_direct_v2",
+            f"raw_page_id={raw_page_id}",
+            f"canonical_target_type={target_kind}",
+            f"canonical_target_url={canonical_url}",
+            "runtime_actor=granola.capitalize_raw",
+            f"processed_at={_now_utc_iso()}",
+        ]
+    )
+
+
+def _read_raw_snapshot(raw_page_id: str) -> dict[str, Any]:
+    snapshot = notion_client.get_page_snapshot(raw_page_id, max_blocks=_RAW_PAGE_MAX_BLOCKS)
+    title = str(snapshot.get("title") or "").strip()
+    content = str(snapshot.get("plain_text") or "").strip()
+    if not title:
+        raise ValueError("Raw page is missing a title")
+    if not content:
+        raise ValueError("Raw page is missing transcript content")
+    return snapshot
+
+
+def _build_raw_update_properties(
+    *,
+    estado_agente: str,
+    accion_agente: str,
+    estado: str | None = None,
+    resumen_agente: str | None = None,
+    log_agente: str | None = None,
+    trazabilidad: str | None = None,
+    destino_canonico: str | None = None,
+    url_artefacto: str | None = None,
+    processed_date: str | None = None,
+) -> dict[str, Any]:
+    properties: dict[str, Any] = {
+        "Estado agente": _select_property(estado_agente),
+        "Accion agente": _select_property(accion_agente),
+    }
+    if estado:
+        properties["Estado"] = _select_property(estado)
+    if resumen_agente is not None:
+        properties["Resumen agente"] = _rich_text_property(resumen_agente)
+    if log_agente is not None:
+        properties["Log del agente"] = _rich_text_property(log_agente)
+    if trazabilidad is not None:
+        properties["Trazabilidad"] = _rich_text_property(trazabilidad)
+    if destino_canonico is not None:
+        properties["Destino canonico"] = _select_property(destino_canonico)
+    if url_artefacto is not None:
+        properties["URL artefacto"] = {"url": url_artefacto}
+    if processed_date:
+        properties["Fecha que el agente procesó"] = _date_property(processed_date)
+    return properties
+
+
+def _mark_raw_review_required(
+    raw_snapshot: dict[str, Any],
+    *,
+    reason: str,
+    destino_canonico: str | None = None,
+    clear_artifact_url: bool = False,
+) -> dict[str, Any]:
+    properties = raw_snapshot.get("properties") or {}
+    log_value = _append_log(
+        properties.get("Log del agente"),
+        f"{_today_utc()} granola.capitalize_raw bloqueado: {reason}",
+    )
+    summary = f"Bloqueo por ambiguedad: {reason}"
+    update_properties = _build_raw_update_properties(
+        estado_agente="Revision requerida",
+        accion_agente="Bloqueado por ambiguedad",
+        estado="Pendiente",
+        resumen_agente=summary,
+        log_agente=log_value,
+        destino_canonico=destino_canonico,
+        url_artefacto="" if clear_artifact_url else None,
+        processed_date=_today_utc(),
+    )
+    notion_client.update_page_properties(
+        page_id_or_url=str(raw_snapshot.get("page_id") or ""),
+        properties=update_properties,
+    )
+    return {
+        "ok": False,
+        "raw_page_id": raw_snapshot.get("page_id"),
+        "blocked": True,
+        "reason": reason,
+    }
+
+
+def _build_task_capitalization_payload(
+    *,
+    raw_snapshot: dict[str, Any],
+    target_name: str,
+    project_name: str,
+    project_page_id: str,
+    summary: str,
+    notes: str,
+    next_action: str,
+) -> dict[str, Any]:
+    raw_page_id = str(raw_snapshot.get("page_id") or "")
+    raw_url = str(raw_snapshot.get("url") or "")
+    raw_title = str(raw_snapshot.get("title") or "")
+    raw_date = str((raw_snapshot.get("properties") or {}).get("Fecha") or _today_utc())
+    details = " ".join(part for part in [summary, notes, next_action] if part).strip()
+    if not details:
+        details = f"Revisar transcripcion raw: {raw_title} ({raw_date}). Ref: {raw_url or raw_page_id}"
+
+    payload: dict[str, Any] = {
+        "task_id": _stable_capitalization_task_id(raw_page_id, "task", target_name),
+        "status": "queued",
+        "team": "david",
+        "task": "granola.capitalize_raw",
+        "task_name": target_name,
+        "input_summary": details[:2000],
+        "source": "granola.capitalize_raw",
+        "source_kind": "task",
+    }
+    if project_name:
+        payload["project_name"] = project_name
+    if project_page_id:
+        payload["project_page_id"] = project_page_id
+    return payload
+
+
+def _build_project_capitalization_payload(
+    *,
+    raw_snapshot: dict[str, Any],
+    target_name: str,
+    summary: str,
+    notes: str,
+    next_action: str,
+) -> dict[str, Any]:
+    raw_title = str(raw_snapshot.get("title") or "")
+    raw_date = str((raw_snapshot.get("properties") or {}).get("Fecha") or _today_utc())
+    bloqueos = notes or ""
+    if not bloqueos:
+        bloqueos = f"Sin bloqueos confirmados; revisar reunion raw {raw_title} ({raw_date})."
+
+    payload: dict[str, Any] = {
+        "name": target_name,
+        "estado": "Activo",
+        "responsable": "David Moreira",
+        "agentes": ["Rick"],
+        "bloqueos": bloqueos,
+        "next_action": next_action or summary or f"Revisar reunion raw {raw_title}.",
+        "last_update_date": _today_utc(),
+    }
+    return payload
+
+
+def _build_deliverable_capitalization_payload(
+    *,
+    raw_snapshot: dict[str, Any],
+    target_name: str,
+    project_name: str,
+    project_page_id: str,
+    summary: str,
+    notes: str,
+    next_action: str,
+) -> dict[str, Any]:
+    raw_page_id = str(raw_snapshot.get("page_id") or "")
+    raw_url = str(raw_snapshot.get("url") or "")
+    raw_date = str((raw_snapshot.get("properties") or {}).get("Fecha") or _today_utc())
+    payload: dict[str, Any] = {
+        "name": target_name,
+        "date": raw_date,
+        "agent": "Rick",
+        "summary": summary or f"Capitalizado desde raw {raw_snapshot.get('title') or raw_page_id}",
+        "notes": notes or f"Fuente raw: {raw_url or raw_page_id}",
+        "next_action": next_action or "Revisar y decidir siguiente accion.",
+        "artifact_url": raw_url,
+        "source_task_id": raw_page_id,
+    }
+    if project_name:
+        payload["project_name"] = project_name
+    if project_page_id:
+        payload["project_page_id"] = project_page_id
+    return payload
 
 
 def _build_transcript_blocks(parsed: Dict[str, Any]) -> list[dict[str, Any]]:
@@ -150,7 +392,8 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
     Returns:
         page_id (str): ID de la página creada en Notion.
         url (str): URL de la página.
-        action_items_created (int): Número de action items creados como tareas.
+        action_items_detected (int): Número de action items detectados en el raw.
+        action_items_created (int): Siempre 0 en V2; la capitalización ocurre después.
         notification_sent (bool): Si se notificó a Enlace.
     """
     title = input_data.get("title", "").strip()
@@ -183,38 +426,7 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
     page_url = page_result.get("url", "")
     logger.info("Created page: %s (%s)", page_id, page_url)
 
-    # Step 2: Create action items as Notion tasks
-    ai_created = 0
-    for item in action_items:
-        try:
-            task_name = (item.get("text", "Action item") or "Action item").strip()[:200] or "Action item"
-            assignee = (item.get("assignee", "sin asignar") or "sin asignar").strip() or "sin asignar"
-            due = (item.get("due") or "").strip()
-            summary = (
-                f"De reunión: {title} ({date}). "
-                f"Responsable sugerido: {assignee}. "
-                f"Ref: {page_url or page_id}"
-            )
-            if due:
-                summary += f". Vence: {due}"
-            handle_notion_upsert_task(
-                {
-                    "task_id": _build_action_item_task_id(title, date, item),
-                    "status": "queued",
-                    "team": assignee,
-                    "task": "granola.action_item",
-                    "task_name": f"[Granola] {task_name}",
-                    "project_name": "Proyecto Granola",
-                    "input_summary": summary,
-                    "source": "granola_process_transcript",
-                    "source_kind": "action_item",
-                }
-            )
-            ai_created += 1
-        except Exception as e:
-            logger.warning("Failed to create action item task: %s", e)
-
-    # Step 3: Notify Enlace in Control Room (literal @Enlace per convention)
+    # Step 2: Notify Enlace in Control Room (literal @Enlace per convention)
     notification_sent = False
     if notify_enlace:
         try:
@@ -235,8 +447,194 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
     return {
         "page_id": page_id,
         "url": page_url,
-        "action_items_created": ai_created,
+        "action_items_detected": len(action_items),
+        "action_items_created": 0,
         "notification_sent": notification_sent,
+    }
+
+
+def handle_granola_capitalize_raw(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Capitalize a Granola raw page directly into a canonical target.
+
+    Input:
+        raw_page_id (str, required): raw page id in Transcripciones Granola.
+        target_kind (str, required): task | project | deliverable.
+        target_name (str, required): canonical target name.
+        project_name (str, optional): exact project name.
+        project_page_id (str, optional): exact project relation target.
+        summary (str, optional): short summary for the canonical target.
+        notes (str, optional): supporting notes or context.
+        next_action (str, optional): next action.
+        dry_run (bool, optional): when true, returns the planned write without mutating.
+    """
+    raw_page_id = str(input_data.get("raw_page_id") or "").strip()
+    target_kind = str(input_data.get("target_kind") or "").strip().lower()
+    target_name = str(input_data.get("target_name") or "").strip()
+    project_name = str(input_data.get("project_name") or "").strip()
+    project_page_id = str(input_data.get("project_page_id") or "").strip()
+    summary = str(input_data.get("summary") or "").strip()
+    notes = str(input_data.get("notes") or "").strip()
+    next_action = str(input_data.get("next_action") or "").strip()
+    dry_run = bool(input_data.get("dry_run", False))
+
+    if not raw_page_id:
+        raise ValueError("'raw_page_id' is required in input")
+    if not target_kind:
+        raise ValueError("'target_kind' is required in input")
+    if not target_name:
+        raise ValueError("'target_name' is required in input")
+
+    raw_snapshot = _read_raw_snapshot(raw_page_id)
+    destino_canonico = _canonical_kind_label(target_kind)
+
+    if not dry_run and config.GRANOLA_CAPITALIZATION_MODE != config.GRANOLA_CAPITALIZATION_MODE_RAW_DIRECT_V2:
+        return {
+            "ok": False,
+            "skipped": True,
+            "raw_page_id": raw_page_id,
+            "reason": (
+                "GRANOLA_CAPITALIZATION_MODE must be "
+                f"'{config.GRANOLA_CAPITALIZATION_MODE_RAW_DIRECT_V2}' to write canonical targets"
+            ),
+        }
+
+    if target_kind not in _SUPPORTED_RAW_CAPITALIZATION_KINDS:
+        reason = (
+            f"target_kind '{target_kind}' no está soportado en raw_direct_v2; "
+            "solo task, project y deliverable tienen write determinístico en este corte."
+        )
+        if dry_run:
+            return {
+                "ok": False,
+                "dry_run": True,
+                "blocked": True,
+                "raw_page_id": raw_page_id,
+                "target_kind": target_kind,
+                "target_name": target_name,
+                "reason": reason,
+            }
+        return _mark_raw_review_required(
+            raw_snapshot,
+            reason=reason,
+            destino_canonico=destino_canonico,
+        )
+
+    if target_kind == "task":
+        handler_payload = _build_task_capitalization_payload(
+            raw_snapshot=raw_snapshot,
+            target_name=target_name,
+            project_name=project_name,
+            project_page_id=project_page_id,
+            summary=summary,
+            notes=notes,
+            next_action=next_action,
+        )
+        handler_name = "notion.upsert_task"
+    elif target_kind == "project":
+        handler_payload = _build_project_capitalization_payload(
+            raw_snapshot=raw_snapshot,
+            target_name=target_name,
+            summary=summary,
+            notes=notes,
+            next_action=next_action,
+        )
+        handler_name = "notion.upsert_project"
+    else:
+        handler_payload = _build_deliverable_capitalization_payload(
+            raw_snapshot=raw_snapshot,
+            target_name=target_name,
+            project_name=project_name,
+            project_page_id=project_page_id,
+            summary=summary,
+            notes=notes,
+            next_action=next_action,
+        )
+        handler_name = "notion.upsert_deliverable"
+
+    if dry_run:
+        traceability = _build_traceability_block(raw_page_id, target_kind, "<pending>")
+        return {
+            "ok": True,
+            "dry_run": True,
+            "raw_page_id": raw_page_id,
+            "target_kind": target_kind,
+            "target_name": target_name,
+            "handler": handler_name,
+            "handler_payload": handler_payload,
+            "traceability": traceability,
+        }
+
+    pre_log = _append_log(
+        (raw_snapshot.get("properties") or {}).get("Log del agente"),
+        f"{_today_utc()} granola.capitalize_raw preparando write hacia {target_kind}:{target_name}",
+    )
+    notion_client.update_page_properties(
+        page_id_or_url=raw_page_id,
+        properties=_build_raw_update_properties(
+            estado_agente="Procesando",
+            accion_agente="Listo para promocion",
+            estado="Pendiente",
+            resumen_agente=summary or f"Preparando capitalizacion hacia {target_kind}:{target_name}",
+            log_agente=pre_log,
+            destino_canonico=destino_canonico,
+            processed_date=_today_utc(),
+        ),
+    )
+
+    if target_kind == "task":
+        result = handle_notion_upsert_task(handler_payload)
+    elif target_kind == "project":
+        result = handle_notion_upsert_project(handler_payload)
+    else:
+        result = handle_notion_upsert_deliverable(handler_payload)
+
+    if not result.get("ok", True) and not result.get("page_id"):
+        reason = str(result.get("error") or f"Canonical write failed for {target_kind}:{target_name}")
+        return _mark_raw_review_required(
+            raw_snapshot,
+            reason=reason,
+            destino_canonico=destino_canonico,
+        )
+
+    canonical_url = str(result.get("url") or "").strip()
+    if not canonical_url:
+        reason = f"Canonical write for {target_kind}:{target_name} returned no canonical URL"
+        return _mark_raw_review_required(
+            raw_snapshot,
+            reason=reason,
+            destino_canonico=destino_canonico,
+        )
+
+    traceability = _build_traceability_block(raw_page_id, target_kind, canonical_url)
+    success_log = _append_log(
+        pre_log,
+        f"{_today_utc()} granola.capitalize_raw wrote {target_kind}:{target_name} -> {canonical_url}",
+    )
+    notion_client.update_page_properties(
+        page_id_or_url=raw_page_id,
+        properties=_build_raw_update_properties(
+            estado_agente="Procesada",
+            accion_agente="Listo para promocion",
+            estado="Procesada",
+            resumen_agente=summary or f"Capitalizado como {destino_canonico.lower()}",
+            log_agente=success_log,
+            trazabilidad=traceability,
+            destino_canonico=destino_canonico,
+            url_artefacto=canonical_url,
+            processed_date=_today_utc(),
+        ),
+    )
+
+    return {
+        "ok": True,
+        "raw_page_id": raw_page_id,
+        "target_kind": target_kind,
+        "target_name": target_name,
+        "page_id": result.get("page_id"),
+        "url": canonical_url,
+        "created": result.get("created"),
+        "traceability": traceability,
     }
 
 

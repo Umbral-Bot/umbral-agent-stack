@@ -6,8 +6,10 @@ Uses httpx for HTTP requests. All IDs come from environment variables
 via worker.config — never hardcoded.
 """
 
+import json
 import logging
 import re
+import time
 from datetime import datetime, timezone
 from typing import Any
 
@@ -18,7 +20,11 @@ from . import config
 logger = logging.getLogger("worker.notion")
 
 NOTION_BASE_URL = "https://api.notion.com/v1"
-TIMEOUT = 60.0
+TIMEOUT = 180.0
+NOTION_BLOCK_APPEND_LIMIT = 100
+NOTION_APPEND_TEXT_BUDGET = 8000
+NOTION_MAX_ATTEMPTS = 3
+_RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
 
 
 # ---------------------------------------------------------------------------
@@ -46,6 +52,52 @@ def _check_response(resp: httpx.Response, context: str) -> dict[str, Any]:
             f"Notion API error ({resp.status_code}) during {context}: {detail}"
         )
     return resp.json()
+
+
+def _request_with_retries(
+    client: httpx.Client,
+    method: str,
+    url: str,
+    *,
+    context: str,
+    max_attempts: int = NOTION_MAX_ATTEMPTS,
+    **kwargs: Any,
+) -> httpx.Response:
+    request_fn = getattr(client, method.lower())
+    last_exc: Exception | None = None
+
+    for attempt in range(1, max_attempts + 1):
+        try:
+            resp = request_fn(url, **kwargs)
+        except (httpx.ReadTimeout, httpx.WriteTimeout, httpx.ConnectTimeout, httpx.RemoteProtocolError) as exc:
+            last_exc = exc
+            if attempt >= max_attempts:
+                raise
+            logger.warning(
+                "Retrying Notion %s after transport error on attempt %d/%d: %s",
+                context,
+                attempt,
+                max_attempts,
+                exc,
+            )
+            time.sleep(attempt)
+            continue
+
+        if resp.status_code in _RETRYABLE_STATUS_CODES and attempt < max_attempts:
+            logger.warning(
+                "Retrying Notion %s after HTTP %d on attempt %d/%d",
+                context,
+                resp.status_code,
+                attempt,
+                max_attempts,
+            )
+            time.sleep(attempt)
+            continue
+
+        return resp
+
+    assert last_exc is not None
+    raise last_exc
 
 
 def _extract_notion_page_id(page_id_or_url: str) -> str:
@@ -144,6 +196,73 @@ def _extract_block_text(block: dict[str, Any]) -> str:
     return ""
 
 
+def _rich_text_chunks(text: str) -> list[dict[str, Any]]:
+    if not text:
+        return []
+    return [
+        {"type": "text", "text": {"content": text[i : i + 2000]}}
+        for i in range(0, len(text), 2000)
+    ]
+
+
+def _paragraph_block_from_line(text: str) -> dict[str, Any]:
+    return {
+        "object": "block",
+        "type": "paragraph",
+        "paragraph": {
+            "rich_text": _rich_text_chunks(text),
+        },
+    }
+
+
+def transcript_text_to_blocks(content: str) -> list[dict[str, Any]]:
+    """
+    Convert transcript text into paragraph blocks preserving line boundaries.
+
+    Each source line becomes one paragraph block. This keeps the reconstructed
+    plain text stable when reading the page back from Notion.
+    """
+    normalized = (content or "").replace("\r\n", "\n").replace("\r", "\n")
+    lines = normalized.split("\n")
+    return [_paragraph_block_from_line(line) for line in lines]
+
+
+def _estimate_block_text_length(block: dict[str, Any]) -> int:
+    text = _extract_block_text(block)
+    if text:
+        return len(text)
+    return len(json.dumps(block, ensure_ascii=False))
+
+
+def _chunk_blocks_for_append(
+    blocks: list[dict[str, Any]],
+    *,
+    max_blocks: int = NOTION_BLOCK_APPEND_LIMIT,
+    max_text_budget: int = NOTION_APPEND_TEXT_BUDGET,
+) -> list[list[dict[str, Any]]]:
+    chunks: list[list[dict[str, Any]]] = []
+    current_chunk: list[dict[str, Any]] = []
+    current_budget = 0
+
+    for block in blocks:
+        block_budget = max(1, _estimate_block_text_length(block))
+        if current_chunk and (
+            len(current_chunk) >= max_blocks
+            or current_budget + block_budget > max_text_budget
+        ):
+            chunks.append(current_chunk)
+            current_chunk = []
+            current_budget = 0
+
+        current_chunk.append(block)
+        current_budget += block_budget
+
+    if current_chunk:
+        chunks.append(current_chunk)
+
+    return chunks
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -154,6 +273,7 @@ def create_transcript_page(
     content: str,
     source: str = "granola",
     date: str | None = None,
+    traceability_text: str | None = None,
 ) -> dict[str, Any]:
     """
     Create a page in the Granola Inbox database.
@@ -173,24 +293,15 @@ def create_transcript_page(
     if date is None:
         date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-    # Split content into Notion paragraph blocks (max 2000 chars each)
-    blocks = []
-    for i in range(0, len(content), 2000):
-        chunk = content[i : i + 2000]
-        blocks.append(
-            {
-                "object": "block",
-                "type": "paragraph",
-                "paragraph": {
-                    "rich_text": [{"type": "text", "text": {"content": chunk}}]
-                },
-            }
-        )
+    blocks = transcript_text_to_blocks(content)
 
     logger.info("Creating transcript page: %s (db=%s)", title, db_id)
     with httpx.Client(timeout=TIMEOUT) as client:
-        schema_resp = client.get(
+        schema_resp = _request_with_retries(
+            client,
+            "GET",
             f"{NOTION_BASE_URL}/databases/{db_id}",
+            context="create_transcript_page schema",
             headers=_headers(),
         )
         schema_data = _check_response(schema_resp, "create_transcript_page schema")
@@ -234,6 +345,11 @@ def create_transcript_page(
             ["Fecha que el agente procesó", "Fecha que el agente proceso", "Processed At"],
             {"date"},
         )
+        traceability_prop = _find_property_name(
+            db_properties,
+            ["Trazabilidad", "Traceability"],
+            {"rich_text", "url", "title"},
+        )
 
         properties: dict[str, Any] = {
             title_prop: {"title": [{"text": {"content": title}}]},
@@ -259,19 +375,36 @@ def create_transcript_page(
             properties[passed_prop] = {"date": {"start": today}}
         if processed_prop:
             properties[processed_prop] = {"date": {"start": today}}
+        if traceability_prop and (traceability_text or "").strip():
+            trace_value = (traceability_text or "").strip()
+            trace_type = str(db_properties[traceability_prop].get("type") or "")
+            if trace_type == "rich_text":
+                properties[traceability_prop] = {
+                    "rich_text": [{"text": {"content": trace_value[:2000]}}]
+                }
+            elif trace_type == "url":
+                properties[traceability_prop] = {"url": trace_value}
+            elif trace_type == "title":
+                properties[traceability_prop] = {
+                    "title": [{"text": {"content": trace_value[:2000]}}]
+                }
 
         payload = {
             "parent": {"database_id": db_id},
             "properties": properties,
-            "children": blocks,
         }
 
-        resp = client.post(
+        resp = _request_with_retries(
+            client,
+            "POST",
             f"{NOTION_BASE_URL}/pages",
+            context="create_transcript_page",
             headers=_headers(),
             json=payload,
         )
     result = _check_response(resp, "create_transcript_page")
+    if blocks:
+        append_blocks_to_page(result["id"], blocks)
     logger.info("Created page: %s", result.get("id"))
     return {"page_id": result["id"], "url": result.get("url", "")}
 
@@ -402,21 +535,42 @@ def read_page(
     """
     config.require_notion_core()
     page_id = _extract_notion_page_id(page_id_or_url)
-    max_blocks = max(1, min(int(max_blocks), 100))
+    max_blocks = max(1, int(max_blocks))
 
     with httpx.Client(timeout=TIMEOUT) as client:
-        page_resp = client.get(
+        page_resp = _request_with_retries(
+            client,
+            "GET",
             f"{NOTION_BASE_URL}/pages/{page_id}",
+            context="read_page metadata",
             headers=_headers(),
         )
         page_data = _check_response(page_resp, "read_page metadata")
 
-        blocks_resp = client.get(
-            f"{NOTION_BASE_URL}/blocks/{page_id}/children",
-            headers=_headers(),
-            params={"page_size": max_blocks},
-        )
-        blocks_data = _check_response(blocks_resp, "read_page children")
+        block_results: list[dict[str, Any]] = []
+        next_cursor: str | None = None
+        has_more = False
+        while len(block_results) < max_blocks:
+            params: dict[str, Any] = {"page_size": min(100, max_blocks - len(block_results))}
+            if next_cursor:
+                params["start_cursor"] = next_cursor
+            blocks_resp = _request_with_retries(
+                client,
+                "GET",
+                f"{NOTION_BASE_URL}/blocks/{page_id}/children",
+                context="read_page children",
+                headers=_headers(),
+                params=params,
+            )
+            blocks_data = _check_response(blocks_resp, "read_page children")
+            results = blocks_data.get("results", [])
+            if not isinstance(results, list):
+                results = []
+            block_results.extend(results)
+            next_cursor = blocks_data.get("next_cursor")
+            has_more = bool(blocks_data.get("has_more"))
+            if not next_cursor or not has_more:
+                break
 
     title = ""
     properties = page_data.get("properties", {})
@@ -427,7 +581,7 @@ def read_page(
                 break
 
     blocks: list[dict[str, Any]] = []
-    for block in blocks_data.get("results", []):
+    for block in block_results:
         if not isinstance(block, dict):
             continue
         blocks.append(
@@ -440,7 +594,7 @@ def read_page(
             }
         )
 
-    plain_text = "\n".join(item["text"] for item in blocks if item.get("text"))
+    plain_text = "\n".join(item["text"] for item in blocks)
 
     return {
         "page_id": page_data.get("id", page_id),
@@ -449,7 +603,7 @@ def read_page(
         "title": title,
         "blocks": blocks,
         "plain_text": plain_text,
-        "has_more": bool(blocks_data.get("has_more")),
+        "has_more": has_more,
         "max_blocks": max_blocks,
     }
 
@@ -540,6 +694,47 @@ def _flatten_property_value(prop: dict[str, Any]) -> Any:
         return formula
 
     return prop.get(prop_type)
+
+
+def flatten_page_properties(properties: dict[str, Any] | None) -> dict[str, Any]:
+    """Flatten raw Notion page properties into plain Python values."""
+    flat: dict[str, Any] = {}
+    if not isinstance(properties, dict):
+        return flat
+    for prop_name, prop_value in properties.items():
+        if isinstance(prop_value, dict):
+            flat[prop_name] = _flatten_property_value(prop_value)
+    return flat
+
+
+def get_page_snapshot(
+    page_id_or_url: str,
+    max_blocks: int = 10_000,
+) -> dict[str, Any]:
+    """
+    Return a combined metadata + body snapshot for a Notion page.
+
+    This is the runtime-friendly read helper for tasks that need both
+    flattened properties and the reconstructed plain-text body.
+    """
+    page = get_page(page_id_or_url)
+    body = read_page(page_id_or_url, max_blocks=max_blocks)
+    flat_properties = flatten_page_properties(page.get("properties"))
+    title = str(body.get("title") or flat_properties.get("Nombre") or flat_properties.get("Name") or "")
+
+    return {
+        "page_id": body.get("page_id") or page.get("id") or _extract_notion_page_id(page_id_or_url),
+        "url": body.get("url") or page.get("url") or "",
+        "title": title,
+        "last_edited_time": body.get("last_edited_time") or page.get("last_edited_time") or "",
+        "icon": page.get("icon"),
+        "properties_raw": page.get("properties") or {},
+        "properties": flat_properties,
+        "blocks": body.get("blocks") or [],
+        "plain_text": body.get("plain_text") or "",
+        "has_more": bool(body.get("has_more")),
+        "max_blocks": int(body.get("max_blocks") or max_blocks),
+    }
 
 
 def read_database(
@@ -726,12 +921,16 @@ def create_database_page(
     icon_payload = _normalize_icon(icon)
     if icon_payload:
         payload["icon"] = icon_payload
-    if children:
-        payload["children"] = children[:100]
+    child_chunks = _chunk_blocks_for_append(children or []) if children else []
+    if child_chunks:
+        payload["children"] = child_chunks[0]
 
     with httpx.Client(timeout=TIMEOUT) as client:
-        resp = client.post(
+        resp = _request_with_retries(
+            client,
+            "POST",
             f"{NOTION_BASE_URL}/pages",
+            context="create_database_page",
             headers=_headers(),
             json=payload,
         )
@@ -741,8 +940,11 @@ def create_database_page(
             if icon_payload and _is_icon_validation_error(exc):
                 logger.warning("Retrying create_database_page without icon after Notion icon validation error")
                 payload.pop("icon", None)
-                resp = client.post(
+                resp = _request_with_retries(
+                    client,
+                    "POST",
                     f"{NOTION_BASE_URL}/pages",
+                    context="create_database_page",
                     headers=_headers(),
                     json=payload,
                 )
@@ -751,11 +953,13 @@ def create_database_page(
                 raise
         page_id = result["id"]
 
-        if children and len(children) > 100:
-            for i in range(100, len(children), 100):
-                batch = children[i : i + 100]
-                resp = client.patch(
+        if len(child_chunks) > 1:
+            for batch in child_chunks[1:]:
+                resp = _request_with_retries(
+                    client,
+                    "PATCH",
                     f"{NOTION_BASE_URL}/blocks/{page_id}/children",
+                    context="append create_database_page blocks",
                     headers=_headers(),
                     json={"children": batch},
                 )
@@ -796,8 +1000,11 @@ def update_page_properties(
             payload["icon"] = icon_payload
         if archived is not None:
             payload["archived"] = bool(archived)
-        resp = client.patch(
+        resp = _request_with_retries(
+            client,
+            "PATCH",
             f"{NOTION_BASE_URL}/pages/{page_id}",
+            context="update_page_properties",
             headers=_headers(),
             json=payload,
         )
@@ -807,8 +1014,11 @@ def update_page_properties(
             if icon_payload and _is_icon_validation_error(exc):
                 logger.warning("Retrying update_page_properties without icon after Notion icon validation error")
                 payload.pop("icon", None)
-                resp = client.patch(
+                resp = _request_with_retries(
+                    client,
+                    "PATCH",
                     f"{NOTION_BASE_URL}/pages/{page_id}",
+                    context="update_page_properties",
                     headers=_headers(),
                     json=payload,
                 )
@@ -1417,8 +1627,11 @@ def query_database(
             if next_cursor:
                 body["start_cursor"] = next_cursor
 
-            resp = client.post(
+            resp = _request_with_retries(
+                client,
+                "POST",
                 f"{NOTION_BASE_URL}/databases/{database_id}/query",
+                context="query_database",
                 headers=_headers(),
                 json=body,
             )
@@ -1450,10 +1663,12 @@ def append_blocks_to_page(
         raise RuntimeError("NOTION_API_KEY not configured")
 
     with httpx.Client(timeout=TIMEOUT) as client:
-        for i in range(0, len(blocks), 100):
-            chunk = blocks[i : i + 100]
-            resp = client.patch(
+        for chunk in _chunk_blocks_for_append(blocks):
+            resp = _request_with_retries(
+                client,
+                "PATCH",
                 f"{NOTION_BASE_URL}/blocks/{page_id}/children",
+                context="append_blocks_to_page",
                 headers=_headers(),
                 json={"children": chunk},
             )
@@ -1491,8 +1706,11 @@ def replace_blocks_in_page(
             params = {"page_size": 100}
             if next_cursor:
                 params["start_cursor"] = next_cursor
-            resp = client.get(
+            resp = _request_with_retries(
+                client,
+                "GET",
                 f"{NOTION_BASE_URL}/blocks/{page_id}/children",
+                context="list blocks for replace",
                 headers=_headers(),
                 params=params,
             )
@@ -1506,16 +1724,21 @@ def replace_blocks_in_page(
             bid = eb.get("id")
             if not bid:
                 continue
-            resp = client.delete(
+            resp = _request_with_retries(
+                client,
+                "DELETE",
                 f"{NOTION_BASE_URL}/blocks/{bid}",
+                context="delete blocks for replace",
                 headers=_headers(),
             )
             _check_response(resp, "delete blocks for replace")
 
-        for i in range(0, len(blocks), 100):
-            chunk = blocks[i : i + 100]
-            resp = client.patch(
+        for chunk in _chunk_blocks_for_append(blocks):
+            resp = _request_with_retries(
+                client,
+                "PATCH",
                 f"{NOTION_BASE_URL}/blocks/{page_id}/children",
+                context="replace blocks",
                 headers=_headers(),
                 json={"children": chunk},
             )
@@ -1624,8 +1847,7 @@ def prepend_blocks_to_page(
 
         # 4. Append new blocks first, then old blocks
         all_blocks = list(blocks) + old_write_blocks
-        for i in range(0, len(all_blocks), 100):
-            chunk = all_blocks[i : i + 100]
+        for chunk in _chunk_blocks_for_append(all_blocks):
             resp = client.patch(
                 f"{NOTION_BASE_URL}/blocks/{page_id}/children",
                 headers=_headers(),

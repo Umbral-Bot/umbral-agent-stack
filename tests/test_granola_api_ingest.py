@@ -58,9 +58,16 @@ def test_render_transcript_markdown_formats_turns():
         },
     ]
 
-    content = render_transcript_markdown(items)
+    content = render_transcript_markdown(
+        items,
+        title="ACI Autodesk",
+        meeting_date="2026-03-17",
+        attendees=["David", "Autodesk"],
+    )
 
-    assert content.startswith("## Transcripción")
-    assert "**David/host:** [18:01:16]" in content
-    assert "**Interlocutor:** [18:01:21]" in content
-    assert "Hola, avancemos con el piloto." in content
+    assert content.startswith("Meeting Title: ACI Autodesk")
+    assert "Date: Mar 17" in content
+    assert "Meeting participants: David, Autodesk" in content
+    assert "\nTranscript:\n" in content
+    assert "Me: Hola, avancemos con el piloto." in content
+    assert "Them: Perfecto, revisemos los conectores." in content

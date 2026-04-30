@@ -241,7 +241,7 @@ async def run_task(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     try:
-        envelope.input = sanitize_input(envelope.input)
+        envelope.input = sanitize_input(envelope.input, task=envelope.task)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
 
@@ -366,7 +366,7 @@ async def enqueue_task(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     try:
-        sanitized_input = sanitize_input(body.input)
+        sanitized_input = sanitize_input(body.input, task=body.task)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
 

@@ -48,6 +48,7 @@ RATE_LIMIT_RPM: int = int(os.environ.get("RATE_LIMIT_RPM", "60"))
 NOTION_API_KEY: str | None = os.environ.get("NOTION_API_KEY")
 NOTION_CONTROL_ROOM_PAGE_ID: str | None = os.environ.get("NOTION_CONTROL_ROOM_PAGE_ID")
 NOTION_GRANOLA_DB_ID: str | None = os.environ.get("NOTION_GRANOLA_DB_ID")
+NOTION_GRANOLA_SESSION_DB_ID: str | None = os.environ.get("NOTION_GRANOLA_SESSION_DB_ID")
 NOTION_DASHBOARD_PAGE_ID: str | None = os.environ.get("NOTION_DASHBOARD_PAGE_ID")
 NOTION_TASKS_DB_ID: str | None = os.environ.get("NOTION_TASKS_DB_ID")
 NOTION_PROJECTS_DB_ID: str | None = os.environ.get("NOTION_PROJECTS_DB_ID")
@@ -58,6 +59,19 @@ NOTION_API_VERSION: str = os.environ.get("NOTION_API_VERSION", "2022-06-28")
 
 # Granola pipeline
 ENLACE_NOTION_USER_ID: str | None = os.environ.get("ENLACE_NOTION_USER_ID")
+GRANOLA_CAPITALIZATION_MODE_LEGACY_SESSION = "legacy_session"
+GRANOLA_CAPITALIZATION_MODE_RAW_DIRECT_V2 = "raw_direct_v2"
+_granola_capitalization_mode = (
+    os.environ.get("GRANOLA_CAPITALIZATION_MODE", GRANOLA_CAPITALIZATION_MODE_LEGACY_SESSION)
+    .strip()
+    .lower()
+)
+if _granola_capitalization_mode not in {
+    GRANOLA_CAPITALIZATION_MODE_LEGACY_SESSION,
+    GRANOLA_CAPITALIZATION_MODE_RAW_DIRECT_V2,
+}:
+    _granola_capitalization_mode = GRANOLA_CAPITALIZATION_MODE_LEGACY_SESSION
+GRANOLA_CAPITALIZATION_MODE: str = _granola_capitalization_mode
 
 # ---------------------------------------------------------------------------
 # Linear

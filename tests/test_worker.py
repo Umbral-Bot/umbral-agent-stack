@@ -8,6 +8,7 @@ Run with:
 
 import os
 import uuid
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -164,6 +165,25 @@ class TestRunLegacy:
         )
         assert resp.status_code == 200
         assert len(resp.json()["result"]["echo"]["msg"]) == MAX_STRING_VALUE_LEN
+
+    def test_legacy_granola_transcript_keeps_full_content(self, client):
+        long_content = "x" * 20_000
+
+        def fake_handler(payload):
+            return {"content_len": len(payload["content"])}
+
+        with patch.dict("worker.app.TASK_HANDLERS", {"granola.process_transcript": fake_handler}, clear=False):
+            resp = client.post(
+                "/run",
+                json={
+                    "task": "granola.process_transcript",
+                    "input": {"title": "Audit", "content": long_content},
+                },
+                headers=AUTH,
+            )
+
+        assert resp.status_code == 200
+        assert resp.json()["result"]["content_len"] == 20_000
 
 
 # ---------------------------------------------------------------------------

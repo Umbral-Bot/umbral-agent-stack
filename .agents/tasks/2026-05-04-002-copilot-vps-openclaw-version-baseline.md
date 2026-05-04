@@ -1,13 +1,13 @@
 ---
 id: "2026-05-04-002"
 title: "Copilot VPS — O14.0 Diagnóstico de versión OpenClaw (baseline pre-upgrade)"
-status: assigned
-assigned_to: copilot
+status: done
+assigned_to: claude-vps
 created_by: copilot-chat-notion-governance
 priority: medium
 sprint: Q2-2026
 created_at: 2026-05-04T00:00:00-03:00
-updated_at: 2026-05-04T00:00:00-03:00
+updated_at: 2026-05-04T15:05:00-03:00
 ---
 
 ## Contexto previo (leer antes de empezar)
@@ -92,3 +92,20 @@ ssh rick@<vps> "wc -l ~/.openclaw/openclaw.json && md5sum ~/.openclaw/openclaw.j
 ## Log
 
 - **2026-05-04** (copilot-chat-notion-governance): Tarea creada como delegación de O14.0 del Plan Q2. Aplicada skill `delegate-to-copilot-vps`. Justificación de delegación: O14.0 requiere SSH real a VPS (`openclaw --version`, `openclaw status --all`, `systemctl --user status`), Copilot Chat no tiene SSH. Owner per plan §3.5: O14 → `umbral-agent-stack`, ejecutado por Copilot VPS. Trigger: usuario pidió "O14" tras cierre de O13.0 (ADR-009 commit `1c6d5da`).
+
+### [claude-vps] 2026-05-04 15:05 -03 — Baseline producido y committeado
+
+Audit publicado en `docs/audits/2026-05-04-openclaw-version-baseline.md` (commit [`5d94e77`](https://github.com/Umbral-Bot/umbral-agent-stack/commit/5d94e77cd2fcd2546c27a7aaa9bf9bbe548d816e), `main`).
+
+Hallazgos clave:
+- **Versión instalada:** `2026.4.9` (npm global, `~/.npm-global/bin/openclaw`).
+- **Upstream latest stable:** `2026.5.3-1` (npm tag `latest`, publicada 2026-05-02).
+- **Delta:** 17 stable releases (~25 días de drift). Cadencia upstream ~1 release cada 1–2 días.
+- **Breaking changes que afecten a Umbral:** **cero**. Único Breaking en el rango (4.24, `registerEmbeddedExtensionFactory`) es Plugin SDK interno; Umbral consume CLI + gateway HTTP + `openclaw.json`, no escribe plugins SDK.
+- **Health snapshot:** gateway `active running` desde 2026-04-24, 9 agents, 165 sessions, default model `azure-openai-responses/gpt-5.4`. Issue pre-existente no relacionado: Codex `refresh_token_reused` (no bloqueante).
+- **Divergencias repo↔VPS documentadas:** unit file `openclaw-gateway.service` describe "v2026.3.2" pero binario es 4.9 (cosmético, no funcional); audits viejos del repo citan 2.25/3.2/3.23 — ninguno es pin activo.
+- **Recomendación para O14.1:** opción (b) upgrade tras O13.1 estable. Bajo riesgo (cero breaking aplicables), bajo beneficio inmediato pero drift creciente.
+
+Línea base para detectar drift en futuro upgrade O14.2: `openclaw.json` md5 = `0df7a03297a67d88f5be8f404c262946` (971 líneas).
+
+Tarea cerrada como `done`. Decisión final O14.1 queda en David.

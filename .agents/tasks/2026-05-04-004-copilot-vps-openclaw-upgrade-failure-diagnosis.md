@@ -4,7 +4,7 @@ title: OpenClaw upgrade FAILED via dashboard - diagnose & remediate (O14.2)
 assigned_to: copilot-vps
 created_by: copilot-chat
 created_at: 2026-05-04
-status: open
+status: blocked
 priority: high
 related_plan: notion-governance/docs/roadmap/12-q2-2026-platform-first-plan.md (O14.2)
 related_audit: umbral-agent-stack/docs/audits/2026-05-04-openclaw-version-baseline.md (commit 5d94e77)
@@ -114,3 +114,31 @@ Commit: `docs(O14.2): diagnose openclaw upgrade failure 2026-05-04 (global insta
 - **Cero acciones reversivas sin aprobación de David.** Diagnóstico, captura de logs, y `npm cache verify` (read-only) son seguros. Cualquier `npm install`, `--force`, `rm`, restart de service requiere OK explícito.
 - Aplicar VPS Reality Check Rule: el repo no sabe nada del fallo, solo la VPS lo sabe.
 - Si el step 1 muestra que el gateway NO está active, esa es la única acción crítica → reportar de inmediato y NO seguir con steps 2-6 hasta restablecer.
+
+# Log
+
+## [copilot-vps] 2026-05-04 ~19:50 -04 — Diagnóstico completado, runtime en SPLIT, recomendación R5
+
+Apéndice publicado en `docs/audits/2026-05-04-openclaw-version-baseline.md` sección `## Upgrade attempt 2026-05-04 — FAILED (O14.2)`.
+
+**Hallazgos clave:**
+
+- **Install npm completó OK** (`exit 0` en `~/.npm/_logs/2026-05-04T23_19_39_043Z-debug-0.log`). Files en `~/.npm-global/lib/node_modules/openclaw/` son `2026.5.3-1` (mtime 19:19).
+- **Runtime en SPLIT:** `openclaw --version` → `2026.5.3-1`, pero daemon `openclaw-gateway.service` (PID 1000650) sigue siendo el de `2026.4.9` corriendo desde 2026-04-24 — nunca reinició.
+- **Causa raíz:** "global install verify" es step del orquestador `update.run` del gateway (no de npm). El RPC reporta `status=error` swallowed sin mensaje subyacente. Tres intentos visibles en journal (19:17:44, 19:19:16, 19:19:55) con duraciones consistentes con install + verify.
+- **Hipótesis comunes descartadas:** disco (78G libre), npm cache (clean), permisos (OK), network (npm ping OK), node version (v24.14.0 vs `>=22.14.0` OK), peer deps (empty), integrity (sin EINTEGRITY), npm ls (clean).
+- **Síntoma colateral del SPLIT visible en log:** RPCs `models.list` y `commands.list` desde la dashboard nueva pegan al daemon viejo y devuelven `INVALID_REQUEST` (`unexpected property 'view'`, `unknown method`).
+- **Config sin drift:** md5 `~/.openclaw/openclaw.json` = `0df7a03297a67d88f5be8f404c262946` (mismo que baseline).
+
+**Recomendación R5 (otra) — restart explícito del gateway:**
+
+Plan propuesto (NO ejecutado):
+1. Snapshot `~/.openclaw/openclaw.json.bak-pre-5.3-restart`.
+2. `systemctl --user restart openclaw-gateway.service`.
+3. Validar `openclaw status --all` → versión `5.3-1` + active.
+4. Si gateway no levanta: `openclaw doctor --fix --non-interactive`.
+5. Rollback de emergencia: `npm install -g openclaw@2026.4.9 && systemctl --user restart`.
+
+**Status: `blocked`** — runtime degradado (SPLIT estado real), espera OK de David para ejecutar R5. Servicio NO está caído (active running), pero el mismatch CLI↔daemon es una degradación medible y los RPC errors observados confirman impacto funcional.
+
+**Cero acciones reversivas ejecutadas.** Todos los comandos corridos fueron read-only (`ls`, `df`, `cat`, `grep`, `journalctl`, `npm view`, `npm ping`, `npm cache verify`, `ps`, `systemctl is-active`).

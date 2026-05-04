@@ -101,6 +101,39 @@ copilot/docs-xxx  ← Documentation
 - Service tokens must be scoped to minimum required permissions
 - All external API calls must use authenticated sessions
 
+## VPS Reality Check Rule (CRITICAL — added 2026-05-04)
+
+**El repo refleja intención; la VPS refleja realidad. NUNCA declarar un cron, health, runtime, deploy o servicio como "broken" o "fixed" basado solo en lectura del repo.**
+
+Antes de afirmar el estado de cualquier componente runtime (cron jobs, systemd units, OpenClaw gateway, Worker, Dispatcher, Granola pipeline, writers a Notion, headers/dashboards refrescados por job, etc.), DEBES verificar en la VPS real:
+
+```bash
+# Patrones mínimos según el componente:
+# Cron / scheduling
+ssh rick@<vps> "crontab -l && systemctl list-timers --all | grep -i <pattern>"
+ssh rick@<vps> "sudo journalctl -u <unit> --since '24 hours ago' | tail -100"
+
+# OpenClaw / gateway
+ssh rick@<vps> "openclaw status --all && openclaw models status"
+ssh rick@<vps> "bash ~/umbral-agent-stack/scripts/vps/verify-openclaw.sh"
+
+# Logs de pipeline (Granola, etc.)
+ssh rick@<vps> "tail -200 ~/.config/umbral/ops_log.jsonl | jq 'select(.event | startswith(\"<prefix>\"))'"
+
+# Worker / health endpoints
+ssh rick@<vps> "curl -fsS http://127.0.0.1:8088/health"
+```
+
+**Reglas operativas:**
+
+1. Si la tarea menciona un cron stale, dashboard zombi, header desactualizado, agente que no escribe, etc.: la PRIMERA acción es SSH a la VPS, NO `grep` en el repo.
+2. El repo puede tener un script o ADR que diga "corre cada hora" — eso describe la intención de diseño, no el estado actual. Verificar el cron/timer real y el log real.
+3. Cuando reportes hallazgos, separa explícitamente: **"Repo dice X"** vs **"VPS muestra Y"**. Si difieren, la divergencia ES el hallazgo principal.
+4. Si no tienes acceso SSH en una sesión dada, declarar el límite y NO inventar el estado runtime. Pedir a David que ejecute el check o delegar vía mailbox.
+5. Esta regla aplica especialmente a investigaciones de zombi processes, cron drift, header refresh failures y cualquier debate "¿está corriendo o no?".
+
+**Antipatrón bloqueado:** "Leí el archivo `xxx.sh` en el repo y el cron debería correr cada hora, así que el problema es Z." — Esto NO es una verificación, es una hipótesis. La verificación requiere `journalctl`/`systemctl`/`tail log` en la VPS.
+
 ## Related Repositories
 
 - `umbral-bot-2`: Frontend chatbot (TypeScript/React, Lovable Cloud)

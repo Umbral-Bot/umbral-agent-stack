@@ -1,5 +1,44 @@
 # Umbral Agent Stack — Copilot Instructions
 
+## ⚠️ CRITICAL — Runtime lives on the VPS, not in this repo
+
+This repository is the **source code** of services that run on a remote VPS under systemd. Editing files here does NOT apply changes to the running system. A code change is only "applied" once the VPS has pulled the new commit AND the affected service has been restarted AND a health check confirms it's healthy.
+
+### Files whose changes require VPS deploy
+
+| Path edited | Service to restart on VPS |
+|---|---|
+| `worker/**` | `systemctl restart umbral-worker` (FastAPI on `:8088`) |
+| `dispatcher/**` | `systemctl restart umbral-dispatcher` |
+| `openclaw/**` | `systemctl restart umbral-openclaw` (gateway) |
+| `identity/**` | restart whichever service consumes it (typically worker + dispatcher) |
+| `client/**` | no service restart needed if SDK is consumed by external apps; if used internally, restart consumer service |
+| `config/**` | restart all services that read the changed file |
+| `scripts/**` | no restart; scripts are invoked on demand |
+| `tests/**`, `docs/**`, `runbooks/**`, `reports/**`, `.agents/**`, `.claude/**`, `.cursor/**` | no deploy needed (repo-only) |
+
+### Mandatory protocol after editing a runtime file
+
+1. Commit + push to `main` (or feature branch then PR).
+2. SSH into VPS (`ssh umbral@<vps-host>`).
+3. `cd /opt/umbral-agent-stack && git pull origin main`.
+4. If dependencies changed (`pyproject.toml`): `source .venv/bin/activate && pip install -e .`.
+5. Restart the affected service(s) per the table above.
+6. Run health check (see runbook for the specific service).
+7. **Only then** report the task as done.
+
+### When this protocol does NOT apply
+
+- Edits to `tests/`, `docs/`, `runbooks/`, `reports/`, `.agents/`, `.claude/`, `.cursor/` — repo-only.
+- PRs in draft state — deploy only after merge.
+- Local-only experimentation that won't be committed.
+
+### Skill that implements this
+
+[`.agents/skills/vps-deploy-after-edit/SKILL.md`](../.agents/skills/vps-deploy-after-edit/SKILL.md) — invocable end-to-end procedure with health-check commands per service.
+
+---
+
 ## Project Overview
 
 Hybrid multi-agent infrastructure for Umbral BIM. Combines OpenClaw on VPS with a Windows Worker VM, plus a roadmap for LangGraph/LiteLLM/PAD integration. This repo contains runbooks, scripts, operational docs, and the core Python codebase.

@@ -8,11 +8,11 @@ This repository is the **source code** of services that run on a remote VPS unde
 
 | Path edited | Service to restart on VPS |
 |---|---|
-| `worker/**` | `systemctl restart umbral-worker` (FastAPI on `:8088`) |
-| `dispatcher/**` | `systemctl restart umbral-dispatcher` |
-| `openclaw/**` | `systemctl restart umbral-openclaw` (gateway) |
-| `identity/**` | restart whichever service consumes it (typically worker + dispatcher) |
-| `client/**` | no service restart needed if SDK is consumed by external apps; if used internally, restart consumer service |
+| `worker/**` | `systemctl --user restart umbral-worker` (FastAPI on `127.0.0.1:8088`) |
+| `dispatcher/**` | `systemctl --user restart openclaw-dispatcher` |
+| `openclaw/**` | ⚠️ NO automatic mapping. The running `openclaw-gateway.service` is an **npm-global binary** (`openclaw-gateway --port 18789`), it does NOT consume code from `openclaw/**` in this repo. Edits here only affect runtime if/when the gateway is re-pointed to repo code. |
+| `identity/**` | restart whichever service consumes it (typically `umbral-worker` and/or `openclaw-dispatcher`) |
+| `client/**` | no restart needed if SDK is consumed by external apps; if used internally, restart consumer service |
 | `config/**` | restart all services that read the changed file |
 | `scripts/**` | no restart; scripts are invoked on demand |
 | `tests/**`, `docs/**`, `runbooks/**`, `reports/**`, `.agents/**`, `.claude/**`, `.cursor/**` | no deploy needed (repo-only) |
@@ -20,10 +20,10 @@ This repository is the **source code** of services that run on a remote VPS unde
 ### Mandatory protocol after editing a runtime file
 
 1. Commit + push to `main` (or feature branch then PR).
-2. SSH into VPS (`ssh umbral@<vps-host>`).
-3. `cd /opt/umbral-agent-stack && git pull origin main`.
+2. SSH into VPS as the runtime user (`ssh rick@<vps-host>`).
+3. `cd /home/rick/umbral-agent-stack && git pull origin main`.
 4. If dependencies changed (`pyproject.toml`): `source .venv/bin/activate && pip install -e .`.
-5. Restart the affected service(s) per the table above.
+5. Restart the affected service(s) per the table above using `systemctl --user restart <service>` (NOT `sudo` — services run as user units under `/home/rick/.config/systemd/user/`).
 6. Run health check (see runbook for the specific service).
 7. **Only then** report the task as done.
 

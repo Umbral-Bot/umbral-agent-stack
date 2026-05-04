@@ -35,11 +35,11 @@ Mapear los archivos cambiados a la tabla del `copilot-instructions.md` para sabe
 ### Step 2 — SSH a la VPS
 
 ```bash
-ssh umbral@<vps-host>
-cd /opt/umbral-agent-stack
+ssh rick@<vps-host>
+cd /home/rick/umbral-agent-stack
 ```
 
-(Ajustar el path real si difiere — verificar con `systemctl cat umbral-worker | grep WorkingDirectory`.)
+(Verificar el path real con `systemctl --user cat umbral-worker | grep WorkingDirectory`.)
 
 ### Step 3 — Pull del commit
 
@@ -67,23 +67,23 @@ pip install -e .
 Por cada servicio en la tabla del `copilot-instructions.md`:
 
 ```bash
-sudo systemctl restart umbral-worker      # o el servicio correspondiente
-sudo systemctl status umbral-worker --no-pager  # confirmar active (running)
+systemctl --user restart umbral-worker      # o el servicio correspondiente
+systemctl --user status umbral-worker --no-pager  # confirmar active (running)
 ```
 
 Si el servicio no arranca, **NO** intentar más restarts. Capturar logs y reportar:
 
 ```bash
-sudo journalctl -u umbral-worker -n 50 --no-pager
+journalctl --user -u umbral-worker -n 50 --no-pager
 ```
 
 ### Step 6 — Health check
 
 | Servicio | Health check |
 |---|---|
-| `umbral-worker` | `curl -s -H "Authorization: Bearer $WORKER_TOKEN" http://localhost:8088/health \| jq` |
-| `umbral-dispatcher` | revisar logs por `Dispatcher started`, sin errores `Connection refused` a Redis ni Worker |
-| `umbral-openclaw` | `curl -s http://localhost:<openclaw-port>/health \| jq` (port según `openclaw.json`) |
+| `umbral-worker` | `curl -s -H "Authorization: Bearer $WORKER_TOKEN" http://127.0.0.1:8088/health \| jq` |
+| `openclaw-dispatcher` | revisar `journalctl --user -u openclaw-dispatcher -n 50` por `Dispatcher started`, sin errores `Connection refused` a Redis ni Worker |
+| `openclaw-gateway` | ⚠️ NO se redeploya vía `git pull` (npm-global). Health: `curl -s http://127.0.0.1:18789/health \| jq`. Para actualizarlo: `npm update -g openclaw-gateway` + `systemctl --user restart openclaw-gateway` |
 
 Si algún health check falla, reportar y NO cerrar la tarea.
 
@@ -103,6 +103,7 @@ Formato:
 3. **Jamás restartear todos los servicios "por las dudas".** Solo los afectados por los archivos cambiados.
 4. **Aplicar [`secret-output-guard`](../secret-output-guard/SKILL.md) antes de citar contenido de logs al usuario** — los journalctl pueden contener tokens.
 5. **Si el usuario está en mitad de una sesión Copilot Chat sobre la VPS, no asumir que SSH propio funciona** — verificar primero `whoami` y `pwd` antes de ejecutar comandos destructivos.
+6. **Servicios corren como user units** (`systemctl --user`). No usar `sudo systemctl` — falla porque no hay unit files en `/etc/systemd/system/` para estos servicios.
 
 ## Anti-patterns
 
@@ -115,5 +116,5 @@ Formato:
 
 - Banner runtime en [`copilot-instructions.md`](../../.github/copilot-instructions.md) — sección `⚠️ CRITICAL — Runtime lives on the VPS`.
 - Runbooks operativos: [`runbooks/`](../../runbooks/).
-- Configuración de servicios: typically `/etc/systemd/system/umbral-*.service` en la VPS.
+- Configuración de servicios: `/home/rick/.config/systemd/user/{umbral-worker,openclaw-dispatcher,openclaw-gateway}.service` en la VPS productiva (user units, NO system units).
 - Reglas de coordinación cross-thread: `notion-governance/docs/roadmap/12-q2-2026-platform-first-plan.md` §1.5 (Opción C).

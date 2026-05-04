@@ -177,3 +177,136 @@ La decisión final (a/b/c) la toma David.
 ---
 
 **Fin baseline O14.0.** Commit hash de este audit se enlaza en `## Log` de `.agents/tasks/2026-05-04-002-...md`.
+
+---
+
+## Upgrade attempt 2026-05-04 — FAILED (O14.2)
+
+**Tarea origen:** `.agents/tasks/2026-05-04-004-copilot-vps-openclaw-upgrade-failure-diagnosis.md`
+**Disparo:** David clickeó "Update now" en dashboard del gateway (`2026.4.9` → `2026.5.3`) ~19:15 -04.
+**Tipo:** Diagnóstico read-only. **Cero acciones reversivas ejecutadas.**
+
+### Síntoma exacto del dashboard
+
+> **Update error: global install verify. See the gateway logs for the exact failure and retry once the cause is fixed.**
+
+Banner sigue mostrando "Update available v2026.5.3 (running v2026.4.9)" tras el intento.
+
+### Estado real del runtime — SPLIT
+
+```
+$ openclaw --version
+OpenClaw 2026.5.3-1 (2eae30e)
+
+$ ps -o pid,etime,cmd -p 1000650
+    PID     ELAPSED CMD
+1000650 10-15:45:59 openclaw-gateway
+
+$ systemctl --user is-active openclaw-gateway.service
+active
+
+$ jq -r '.version' /home/rick/.npm-global/lib/node_modules/openclaw/package.json
+2026.5.3-1
+```
+
+**Diagnóstico:** install en disco **completó OK**. El binario y `package.json` ya son `2026.5.3-1`. **Pero** el daemon corriendo (PID 1000650) sigue siendo el de `2026.4.9` arrancado 2026-04-24 — nunca se reinició. Resultado: nuevas invocaciones CLI usan código `5.3-1`, RPCs al gateway pegan al daemon `4.9`.
+
+### Logs relevantes
+
+**Gateway journal** — tres intentos `update.run completed ... status=error`:
+
+```
+19:17:44 [gateway] update.run completed actor=openclaw-control-ui ... restartReason=update.run status=error
+19:17:44 [ws] ⇄ res ✓ update.run 136183ms conn=b1c5747d…5cd2
+19:19:16 [gateway] update.run completed actor=openclaw-control-ui ... restartReason=update.run status=error
+19:19:16 [ws] ⇄ res ✓ update.run 22460ms conn=69afb71e…8453
+```
+
+El gateway loguea `status=error` **sin mensaje subyacente** — el error queda swallowed en el RPC. La duración del primer intento (136s) es consistente con un `npm install -g` completo + step adicional de verify.
+
+**npm debug log del intento (`~/.npm/_logs/2026-05-04T23_19_39_043Z-debug-0.log`, 352KB):**
+
+```
+4083 verbose cwd /home/rick/.npm-global/lib/node_modules/openclaw
+4084 verbose os Linux 6.8.0-106-generic
+4085 verbose node v24.14.0
+4086 verbose npm  v11.9.0
+4087 verbose exit 0
+4088 info ok
+```
+
+`npm install -g openclaw@latest` **exitó 0**. Cero `EACCES`/`EPERM`/`EEXIST`/`EINTEGRITY`/`ENOSPC` en el log. La falla está **downstream** de npm, en el step "verify" propio del orquestador del gateway (probablemente un health check post-install que el gateway corre antes del self-restart, y que falló porque el daemon viejo todavía está sirviendo y no responde con la versión nueva, o porque algún subprocess de verificación timeout-eó).
+
+### Hipótesis chequeadas y descartadas
+
+| Hipótesis | Check | Resultado |
+|---|---|---|
+| Disk full | `df -h` | 19G/96G usado, **78G libre** ✓ |
+| npm cache corrupto | `npm cache verify` | clean (4968 entries verified) ✓ |
+| Permisos `~/.npm-global` rotos | `ls -ld` | `rwxrwxr-x rick rick` ✓ |
+| Network / registry timeout | `npm ping` | PONG 753ms ✓ |
+| Node incompatible | `node --version` vs `engines.node` | v24.14.0 vs `>=22.14.0` ✓ |
+| Peer deps no satisfechas | `npm view ... peerDependencies` | empty ✓ |
+| `npm ls -g` extraneous/UNMET | inspección | clean ✓ |
+| Integrity hash mismatch | log `--verbose` | sin `EINTEGRITY` ✓ |
+
+**Ninguna de las hipótesis comunes aplica.** La install completó. La falla es del gateway verify, no de npm.
+
+### Causa raíz identificada
+
+**"global install verify" es un step del orquestador del gateway (control-ui RPC `update.run`), NO del subproceso `npm install`.** El subproceso `npm install -g openclaw@latest` exitó 0 limpio — los archivos ya están en disco con la versión nueva. Lo que falló es el step de verificación que el daemon corre **después** del install y **antes** del self-restart, probablemente porque:
+
+- El daemon viejo (PID 1000650, ya 10+ días corriendo) no se reinició para hacer el verify con la versión nueva, y el verify orquestado intra-proceso no detectó la nueva versión cargada.
+- O bien el verify intenta spawnear `openclaw --version` y comparar contra la target version, y algo en ese subproceso falla (sin más info porque el RPC no propaga el mensaje).
+
+El gateway reporta `status=error` swallowed sin stack — bug observable de UX/debuggability del orquestador upstream (no de Umbral).
+
+### Estado actual del runtime
+
+| Surface | Estado | Versión efectiva |
+|---|---|---|
+| CLI binario (`openclaw --version`) | ✓ funciona | `2026.5.3-1` |
+| Files en `~/.npm-global/lib/node_modules/openclaw/` | ✓ presentes | `2026.5.3-1` (mtime 2026-05-04 19:19) |
+| Symlink `~/.npm-global/bin/openclaw` | ✓ intacto | apunta a `openclaw.mjs` nuevo |
+| Daemon `openclaw-gateway.service` | ✓ active running | **`2026.4.9` (PID 1000650, since 2026-04-24)** |
+| `~/.openclaw/openclaw.json` md5 | ✓ unchanged | `0df7a03297a67d88f5be8f404c262946` (sin drift) |
+| `npm cache verify` | ✓ clean | 4968 entries |
+
+**Severidad:** SPLIT — runtime degradado pero servicio NO caído. Tráfico WS sigue siendo atendido por el daemon viejo. Las próximas invocaciones CLI usarán código nuevo (mismatch potencial si un script combina `openclaw --foo` con un RPC al gateway).
+
+### Recomendación de remediación
+
+**R5 (otra) — restart explícito del gateway service.**
+
+Razonamiento:
+- El install completó. La única acción pendiente es que el daemon levante el binario nuevo. `systemctl --user restart openclaw-gateway.service` debería hacerlo en una sola operación reversible (la unit ya apunta al symlink, que ya resuelve a `openclaw.mjs` nuevo).
+- Pre-restart conviene validar: snapshot config (`cp ~/.openclaw/openclaw.json ~/.openclaw/openclaw.json.bak-pre-5.3-restart`), confirmar md5 sin drift, y tener el comando de rollback listo (`npm install -g openclaw@2026.4.9` + restart) por si el daemon `5.3-1` falla al arrancar contra el config 4.9.
+- Per changelog 4.24 (capturado en §4 de este audit): el gateway nuevo **no auto-restaura config inválido**, falla cerrado y requiere `openclaw doctor --fix`. Si tras restart el gateway no levanta, ese es el siguiente paso.
+- Riesgo de R5: bajo. La instalación ya está hecha; solo se está completando el step que el orquestador no logró cerrar.
+- Riesgo de no hacer nada: el SPLIT crece — cada invocación CLI nueva (5.3-1) que pegue al daemon viejo (4.9) puede ver schema/RPC mismatch. Ya se observan en log dos errores `models.list` con `unexpected property 'view'` y `commands.list` con `unknown method` (líneas 19:18:39 y 19:19:19), que pueden ser exactamente este tipo de mismatch (CLI nueva preguntando con shape nuevo a daemon viejo).
+
+**Plan propuesto (NO ejecutado, requiere OK de David):**
+
+1. `cp ~/.openclaw/openclaw.json ~/.openclaw/openclaw.json.bak-pre-5.3-restart`
+2. `md5sum ~/.openclaw/openclaw.json` (esperado: `0df7a03297a67d88f5be8f404c262946`).
+3. `systemctl --user restart openclaw-gateway.service`
+4. `sleep 3 && systemctl --user status openclaw-gateway.service --no-pager | head -20`
+5. `openclaw status --all` — esperar versión `2026.5.3-1` y gateway `active`.
+6. Si gateway no levanta: `openclaw doctor --fix --non-interactive`.
+7. Rollback de emergencia si todo falla: `npm install -g openclaw@2026.4.9 && systemctl --user restart openclaw-gateway.service`.
+8. Refrescar cosmético `Description=` del unit file en oportunidad separada.
+
+**Alternativas consideradas y descartadas:**
+
+- **R1 (retry simple):** descartada. Re-clickear "Update now" probablemente reproduce el mismo verify-error porque el install ya está hecho y el daemon sigue siendo el mismo. No ataca la causa.
+- **R2 (cache + retry):** descartada. Cache está clean.
+- **R3 (CLI manual `npm install -g`):** descartada. **Ya se hizo** — el dashboard mismo lo ejecutó y exitó 0. Repetir sería redundante.
+- **R4 (hold en 4.9):** descartada como first-line. No hay evidencia de bug del paquete `5.3-1`; el problema es de orquestación. Si tras R5 el daemon `5.3-1` falla al arrancar, R4 (rollback a 4.9) pasa a ser el plan.
+
+### Notas para upstream (no-bloqueante)
+
+El orquestador `update.run` del gateway debería propagar el mensaje del error de verify al RPC en lugar de devolver `status=error` swallowed. El log actual obliga a inferir desde duración + ausencia de restart. Loggable como issue cosmético/UX en upstream OpenClaw cuando se quiera.
+
+---
+
+**Fin apéndice O14.2.** No se ejecutó remediación. Decisión queda en David.

@@ -408,9 +408,8 @@ def test_f4_mission_limits_within_caps(name):
 
 
 def test_f4_master_switch_still_off():
-    """F7 rehearsal 1: policy.enabled is now True in yaml, but every
-    deeper execution gate MUST remain closed. This test guards the
-    rehearsal contract: opening L2 must not implicitly open L3/L4/L5.
+    """F7 rehearsals: policy.enabled is True and L5 is now open, but
+    runtime execution still depends on the operator L3 and egress L4 gates.
     """
     from worker import tool_policy as tp
     from worker.tasks import copilot_cli as mod
@@ -418,8 +417,8 @@ def test_f4_master_switch_still_off():
     assert tp.is_copilot_cli_policy_enabled() is True
     # L4 egress gate: must stay closed.
     assert tp.is_copilot_cli_egress_activated() is False
-    # L5 code constant: must stay False (no real subprocess implementation).
-    assert mod._REAL_EXECUTION_IMPLEMENTED is False
+    # L5 code constant: opened by F7.5A.
+    assert mod._REAL_EXECUTION_IMPLEMENTED is True
 
 
 def test_f4_valid_mission_still_blocked_when_capability_disabled():
@@ -482,10 +481,10 @@ def test_f6_execute_flag_default_false(monkeypatch):
     assert mod._execute_enabled() is False
 
 
-def test_f6_real_execution_implemented_constant_is_false():
-    """Hard guard: tests fail loudly if someone flips this prematurely."""
+def test_f6_real_execution_implemented_constant_is_true():
+    """F7.5A: code gate is open; L3 remains the operator kill-switch."""
     from worker.tasks import copilot_cli as mod
-    assert mod._REAL_EXECUTION_IMPLEMENTED is False
+    assert mod._REAL_EXECUTION_IMPLEMENTED is True
 
 
 def _all_gates_open(monkeypatch, *, execute=True):
@@ -511,12 +510,32 @@ def test_f6_execute_flag_off_keeps_phase_blocked(monkeypatch):
     assert res["decision"] == "execute_flag_off_dry_run"
 
 
-def test_f6_execute_flag_on_still_blocked_by_real_execution_constant(monkeypatch):
-    """All three flags true, but _REAL_EXECUTION_IMPLEMENTED is still False."""
+def test_f6_execute_flag_on_reaches_dry_run_after_code_gate_open(monkeypatch):
+    """With L3+L5 open, dry_run still does not launch a subprocess."""
     _all_gates_open(monkeypatch, execute=True)
     import subprocess as _sp
     def _explode(*a, **kw):
-        raise AssertionError("subprocess invoked in F6 step 1")
+        raise AssertionError("subprocess invoked during dry_run")
+    for name in ("run", "Popen", "call", "check_call", "check_output"):
+        monkeypatch.setattr(_sp, name, _explode)
+
+    res = handle_copilot_cli_run(_ok_input(mission="research"))
+    assert res["ok"] is True
+    assert res["would_run"] is False
+    assert res["phase_blocks_real_execution"] is False
+    assert res["policy"]["execute_enabled"] is True
+    assert res["policy"]["real_execution_implemented"] is True
+    assert res["decision"] == "would_run_dry_run"
+
+
+def test_f7_5a_code_gate_open_but_execute_env_gate_blocks(monkeypatch):
+    """L5=True alone is insufficient; L3=false still blocks execution."""
+    _all_gates_open(monkeypatch, execute=False)
+    import subprocess as _sp
+
+    def _explode(*a, **kw):
+        raise AssertionError("subprocess invoked with execute flag off")
+
     for name in ("run", "Popen", "call", "check_call", "check_output"):
         monkeypatch.setattr(_sp, name, _explode)
 
@@ -524,9 +543,9 @@ def test_f6_execute_flag_on_still_blocked_by_real_execution_constant(monkeypatch
     assert res["ok"] is True
     assert res["would_run"] is False
     assert res["phase_blocks_real_execution"] is True
-    assert res["policy"]["execute_enabled"] is True
-    assert res["policy"]["real_execution_implemented"] is False
-    assert res["decision"] == "real_execution_not_implemented"
+    assert res["policy"]["execute_enabled"] is False
+    assert res["policy"]["real_execution_implemented"] is True
+    assert res["decision"] == "execute_flag_off_dry_run"
 
 
 def test_f6_audit_records_all_three_flags(monkeypatch):
@@ -561,10 +580,10 @@ def test_f7_rehearsal_yaml_egress_still_inactive():
     assert tp.is_copilot_cli_egress_activated() is False
 
 
-def test_f7_rehearsal_real_execution_constant_still_false():
-    """F7 rehearsal 1 must NOT touch the code constant."""
+def test_f7_rehearsal_real_execution_constant_now_true():
+    """F7.5A opened L5; L3 still controls actual execution."""
     from worker.tasks import copilot_cli as mod
-    assert mod._REAL_EXECUTION_IMPLEMENTED is False
+    assert mod._REAL_EXECUTION_IMPLEMENTED is True
 
 
 def test_f7_rehearsal_env_on_policy_on_execute_off_returns_dry_run(monkeypatch):
@@ -576,7 +595,7 @@ def test_f7_rehearsal_env_on_policy_on_execute_off_returns_dry_run(monkeypatch):
       - return ok=true, would_run=false
       - report decision="execute_flag_off_dry_run"
       - keep phase_blocks_real_execution=true
-      - keep policy.real_execution_implemented=false
+      - keep policy.real_execution_implemented=true
       - never invoke subprocess
     """
     monkeypatch.setenv(_ENV_FLAG, "true")
@@ -600,7 +619,7 @@ def test_f7_rehearsal_env_on_policy_on_execute_off_returns_dry_run(monkeypatch):
     assert res["policy"]["env_enabled"] is True
     assert res["policy"]["policy_enabled"] is True
     assert res["policy"]["execute_enabled"] is False
-    assert res["policy"]["real_execution_implemented"] is False
+    assert res["policy"]["real_execution_implemented"] is True
 
 
 def test_f6_gh_token_and_github_token_not_in_argv(monkeypatch):

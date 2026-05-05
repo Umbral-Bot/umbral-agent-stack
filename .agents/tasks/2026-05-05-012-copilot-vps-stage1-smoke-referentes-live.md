@@ -110,6 +110,61 @@ Pegar abajo (sección `## Resultado YYYY-MM-DD`):
 
 ---
 
-## Resultado YYYY-MM-DD
+## Resultado 2026-05-05
 
-_Pendiente — completar tras ejecución._
+**Ejecutor:** Claude (Copilot CLI) sobre VPS, branch `main`.
+
+### 1. Hash del commit en `main` al momento de ejecutar
+
+```
+54720d7 task(stage1): copilot-vps live smoke read-only Referentes
+```
+
+### 2. Path del archivo generado
+
+```
+reports/stage1-smoke-referentes-20260505T215456Z.json
+```
+
+### 3. JSON completo del reporte
+
+```json
+{
+  "overall_pass": false,
+  "setup_error": "Registry key referencias_referentes not found in /home/rick/notion-governance-git/registry/notion-data-sources.template.yaml",
+  "checks": {}
+}
+```
+
+### 4. Decisión sugerida
+
+**FAIL → setup_error (exit 3). Requiere acción de David.**
+
+**Diagnóstico:**
+
+- Pre-check 1 (repo en `main`, hash ≥ `54720d7`): ✅ verde.
+- Pre-check 2 (registry sibling): ✅ archivo existe en `/home/rick/notion-governance-git/registry/notion-data-sources.template.yaml` (la ruta default `~/notion-governance/registry/...` no existe en esta VPS — se usó `--registry` explícito según permite el task).
+- Pre-check 3 (`worker.config.NOTION_API_KEY`): ✅ `True`.
+- Ejecución (1 sola vez, sin reintento — el error es determinístico y no se resuelve con reintento):
+  - Exit code: `3` (`setup_error`).
+  - El script localizó el registry, lo parseó como YAML válido, pero **no encontró la entrada `referencias_referentes`** ni en `critical_databases:` ni en `reference_systems:` (las dos secciones donde `_find_referentes_registry_entry` la busca, ver `scripts/smoke/referentes_rest_read.py:148-155`).
+
+**Estado actual del registry en la VPS** (`/home/rick/notion-governance-git/registry/notion-data-sources.template.yaml`):
+
+- `critical_databases:` contiene `granola_raw_intake` (y otros), **no** `referencias_referentes`.
+- `reference_systems:` contiene `referencias_paginas_intake` (data_source `2755f443-fb5c-81ca-ab6d-000be11a33b3`), **no** `referencias_referentes`.
+- Búsqueda de `data_source_id: afc8d960-086c-4878-b562-7511dd02ff76` (Referentes) en todos los YAML bajo `~/notion-governance-git`, `~/notion-governance-local`, y el resto de `~/`: **0 hits**.
+
+**Restricciones respetadas:**
+
+- ❌ No se modificó el script `scripts/smoke/referentes_rest_read.py`.
+- ❌ No se modificó ningún archivo bajo `notion-governance-git/`.
+- ❌ Cero llamadas HTTP a Notion (el script aborta antes del primer fetch al fallar el setup).
+- ❌ El valor de `NOTION_API_KEY` no aparece en logs ni en este reporte.
+- ❌ El JSON no contiene `row_id` completos (no aplica — el setup_error abortó antes de leer filas).
+
+**Acción requerida de David / próximo paso:**
+
+El gate Stage 1 requiere actualizar `notion-governance` para incluir la entrada `referencias_referentes` con `data_source_id: afc8d960-086c-4878-b562-7511dd02ff76` y los campos esperados por el script (`expected_row_count: 26`, `expected_columns`, `expected_confianza`, `expected_flags`). Una vez mergeado en `notion-governance` y propagado al sibling de la VPS (`/home/rick/notion-governance-git`), reabrir esta task y reintentar.
+
+**No se procede a Stage 2 del plan LinkedIn.**

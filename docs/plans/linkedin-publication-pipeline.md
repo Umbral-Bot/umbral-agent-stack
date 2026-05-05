@@ -375,8 +375,8 @@ Cada candidato guardado en la base de publicaciones debe incluir:
 ## 9. Decisiones Abiertas
 
 1. **Autoridad de lectura/escritura Notion**: que token/tool lee referentes y escribe candidatos. Bloqueado por `2026-05-05-006-copilot-vps-audit-rick-notion-mcp-integration.md`.
-2. **Modelo de datos para publicaciones de referentes**: agregar links/campos en `👤 Referentes` o crear una base separada `Publicaciones de Referentes`.
-3. **Campos de fuentes por referente**: hoy existe `LinkedIn` y `Plataformas`, pero faltan posibles URLs estructuradas para X, YouTube, newsletter, RSS, web/blog, podcast, Medium, GitHub, etc.
+2. **Modelo de datos para publicaciones de referentes**: DECIDIDA 2026-05-05: schema extendido in-place en DB Referentes con 10 columnas nuevas (ver §2). No se creó base separada. Publicaciones descubiertas en runtime van a `Publicaciones de Referentes` (decisión #11).
+3. **Campos de fuentes por referente**: PARCIALMENTE CERRADA 2026-05-05: agregadas YouTube channel, Web/Newsletter, RSS feed. Pendientes solo: X/Twitter URL, Medium URL, GitHub URL, Podcast URL (hoy en `Otros canales` como rich_text). Reabrir cuando un referente real lo requiera.
 4. **Discovery por plataforma**: que metodo se permite para leer publicaciones recientes de LinkedIn, X, YouTube, newsletters y web/RSS sin violar limites ni depender de scraping fragil.
 5. **Cache y deduplicacion**: donde guardar publicaciones ya procesadas, fechas de captura, hash/URL canonica y estado.
 6. **Contrato de seleccion humana**: David selecciona por status, checkbox, comentario, relacion/ticket o webhook.
@@ -395,15 +395,7 @@ La base `👤 Referentes` debe seguir siendo el catalogo de personas. No convien
 Recomendacion preferida:
 
 1. Mantener `👤 Referentes` como base canonica de personas.
-2. Agregar solo campos de fuente por plataforma cuando falten:
-   - `LinkedIn` ya existe.
-   - `X/Twitter URL`.
-   - `YouTube URL`.
-   - `Newsletter URL`.
-   - `RSS URL`.
-   - `Web/Blog URL`.
-   - `Medium URL`.
-   - `GitHub URL`.
+2. Schema actual de `👤 Referentes` ya cubre el caso (ver §2). Decisión pendiente solo en §9.11: si las publicaciones descubiertas van a una base separada `Publicaciones de Referentes` o a un cache temporal de dry-run. Columnas extra por plataforma (X/Twitter, Medium, GitHub, Podcast) se agregarán cuando un referente real lo requiera, no preventivamente.
 3. Crear una base separada `Publicaciones de Referentes` para items descubiertos.
 
 Campos sugeridos para `Publicaciones de Referentes`:
@@ -432,7 +424,7 @@ Alternativa minima:
 
 1. Terminar y revisar el audit de integracion Notion MCP.
 2. Decidir contrato de lectura/escritura Notion.
-3. Ejecutar smoke test read-only de lectura de las 10 columnas nuevas de `👤 Referentes` via Notion MCP bajo el blocker del audit 006.
+3. Ejecutar smoke test read-only de lectura de las 10 columnas nuevas de `👤 Referentes` via Notion MCP bajo el blocker del audit 006. Criterios de éxito del smoke test: (a) lectura exitosa de las 10 columnas nuevas en al menos 3 filas con perfiles distintos (1 con `Confianza canales = ALTA`, 1 con `MEDIA`, 1 con `Flags canales` conteniendo `DUPLICADO`); (b) count total de la base = 26; (c) `LinkedIn activity feed` parsea como URL válida cuando está poblada; (d) `Confianza canales` devuelve uno de los 4 valores enumerados (ALTA/MEDIA/BAJA/POSIBLE_INACTIVO). Falla si cualquiera de los 4 no se cumple.
 4. Marcar ese smoke test como dependencia HARD del primer commit de codigo de Stage 1.
 5. Decidir modelo de datos para publicaciones de referentes: cache separada o superficie temporal de dry-run.
 6. Definir metodo permitido de discovery por plataforma.
@@ -462,3 +454,4 @@ Alternativa minima:
 ## Changelog del plan
 
 - 2026-05-05 — Codex — Stage 1 reanclado a la DB Referentes extendida (10 columnas nuevas, 26 filas, 1 duplicado, 1 sin LinkedIn). Sin cambios en vision, responsabilidades ni criterios. 3 open decisions nuevas (9.11, 9.12, 9.13). Smoke test de lectura MCP read-only agregado como dependencia HARD del primer commit de Stage 1.
+- 2026-05-05 (post-merge): cleanup §9.2/§9.3 (decididas), §10 actualizado al schema vigente, §11.3 con criterios de éxito explícitos. Sin cambios funcionales al diseño.

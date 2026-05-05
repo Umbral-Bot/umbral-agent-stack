@@ -27,12 +27,16 @@ Este es el **gate de salida de Stage 1**. Sin un `overall_pass: true` (o un fail
    git log --oneline -1   # debe mostrar 5fa022d o más reciente
    git status --short     # debe estar limpio
    ```
-2. **Sibling `notion-governance` accesible:**
+2. **Sibling `notion-governance` accesible Y actualizado a `origin/main`:**
    ```bash
-   ls -1 ~/notion-governance/registry/notion-data-sources.template.yaml
-   # Si no existe en ~/notion-governance, clonar:
-   #   cd ~ && git clone https://github.com/Umbral-Bot/notion-governance.git
-   # o pasar --registry <path> al script.
+   # Localizar el sibling existente. Posibles rutas: ~/notion-governance, ~/notion-governance-git, ~/notion-governance-local.
+   for d in ~/notion-governance ~/notion-governance-git ~/notion-governance-local; do
+     [ -d "$d/.git" ] && { echo "FOUND: $d"; cd "$d" && git fetch origin && git checkout main && git pull --ff-only origin main && git log --oneline -1 -- registry/notion-data-sources.template.yaml; break; }
+   done
+   # Si NINGUNO existe: cd ~ && git clone https://github.com/Umbral-Bot/notion-governance.git
+   # Verificar que la entry esperada está presente (debe imprimir 1 línea, número de línea ~435):
+   grep -n "referencias_referentes:" "$d/registry/notion-data-sources.template.yaml"
+   # Si no aparece: el sibling no está en main de origin con commit 9ede9e4 o superior. Hacer `git pull --ff-only origin main` y reintentar.
    ```
 3. **Env worker cargado** (mismo que usa `umbral-worker.service`):
    ```bash
@@ -78,7 +82,8 @@ python scripts/smoke/referentes_rest_read.py \
 
 ## Si falla
 
-- **Exit 3 (`setup_error`):** falta `NOTION_API_KEY` o registry sibling. Resolver pre-checks y reintentar. NO modificar el script.
+- **Exit 3 (`setup_error`) con mensaje sobre registry key faltante:** el sibling `notion-governance` está desactualizado o en una branch distinta de `main`. Re-ejecutar pre-check 2 (fetch + pull --ff-only origin main + grep `referencias_referentes:`). NO modificar el script. NO concluir que la entry "no existe" sin antes haber pulleado origin/main del sibling.
+- **Exit 3 (`setup_error`) con mensaje sobre `NOTION_API_KEY`:** falta env del worker. Resolver pre-check 3 y reintentar.
 - **Exit 4 (`runtime_error`):** error HTTP/red contra Notion. Pegar el `runtime_error` completo en el reporte; NO reintentar más de 2 veces.
 - **Exit 2 (`overall_pass: false`):** algún check (a)-(e) falló. NO arreglar la DB en este task. Pegar el JSON completo y dejar a David decidir (puede ser data drift legítimo: nuevas filas, enums añadidos, URL inválida en una fila concreta).
 

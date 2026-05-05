@@ -1,7 +1,7 @@
 ---
 id: "2026-05-05-001"
 title: "Agregar agente david-pocket-assistant al bot rick existente (O15.1 + O15.2 read-only Q2)"
-status: pending
+status: blocked
 assigned_to: copilot-vps
 created_by: copilot-chat-notion-governance
 priority: medium
@@ -139,4 +139,96 @@ Si en 2 semanas David usa `/q2` <3 veces → archivar agente y revertir ruteo (s
 
 ## Log
 
-(Copilot VPS llena con OUTPUT REAL al ejecutar.)
+### 2026-05-05 — `copilot-vps` — HOLD: routing nativo por prefix no existe en OpenClaw 5.3-1
+
+Veredicto: **HOLD**. No ejecuté Pasos 2-6 (cero modificaciones, cero snapshot necesario).
+
+#### Paso 1 — Discovery (OUTPUT REAL, secrets redactados)
+
+**md5 baseline `~/.openclaw/openclaw.json`:** `44be041f8650197b6e00c35034d96282`
+
+**OpenClaw runtime:** `2026.5.3-1 (2eae30e)` (post task 005, sano).
+
+**`channels.telegram` schema completo (live):**
+
+```json
+{
+  "enabled": true,
+  "dmPolicy": "allowlist",
+  "botToken": "<REDACTED>",
+  "allowFrom": ["<REDACTED_CHAT_ID>"],
+  "groupPolicy": "allowlist",
+  "streaming": { "mode": "off" }
+}
+```
+
+🔴 **Cero campos para routing por prefix, intent classifier, o per-agent dispatch.** El channel solo tiene policy de allowlist y modo de streaming.
+
+**Top-level keys de `openclaw.json`:**
+```
+acp, agents, auth, browser, channels, commands, gateway, messages, meta, models, plugins, skills, tools, wizard
+```
+
+**`routes`:** ausente (no hay clave `routes` top-level).
+**`defaultAgent`:** ausente top-level.
+**`commands`:** `{ "native": "auto", "nativeSkills": "auto", "restart": true, "ownerDisplay": "raw" }` — configura discovery de slash commands de skills, NO ruteo por prefix a agentes.
+**`messages`:** `{ "groupChat": { "visibleReplies": "message_tool" } }` — sin routing.
+**`acp.dispatch.enabled`:** `true`. **`acp.defaultAgent`:** `"codex"`. **`acp.allowedAgents`:** `["codex","pi","opencode","gemini","kimi"]` — son backends ACP (CLI bridges a LLMs externos), NO los agentes locales del workspace. ACP no rutea entre `main`/`rick-*`/etc.
+
+**Lista de agentes existentes (`~/.openclaw/agents/`):**
+
+```
+improvement-supervisor/
+main/                          ← default: true, name "Rick Main"
+rick-communication-director/
+rick-delivery/
+rick-linkedin-writer/
+rick-ops/
+rick-orchestrator/
+rick-qa/
+rick-tracker/
+```
+
+⚠️ **Hallazgo crítico vs premisa de la task:** **NO existe agente literal `rick`.** La premisa "agente `rick` actual" mapea al agente `main` (id `main`, name `"Rick Main"`, `default: true`), que ya tiene `subagents.allowAgents = [main, rick-orchestrator, rick-delivery, rick-qa, rick-tracker, rick-ops]`. Toda mensaje de Telegram aterriza por defecto en `main`.
+
+**Estructura interna del agent dir (no es `AGENTS.md` standalone):**
+`~/.openclaw/agents/main/agent/` contiene `auth-profiles.json`, `auth-state.json`, `auth.json`, `models.json` — config interno de autenticación/modelos por agente. NO hay `AGENTS.md`/`SOUL.md`/`IDENTITY.md` directamente bajo `agents/main/` ni bajo `agents/main/agent/`. La task v2 asumió esa estructura ("`~/.openclaw/agents/rick/AGENTS.md`") basándose en docs externos, no en la realidad del workspace.
+
+#### Por qué HOLD (no GO, no workaround)
+
+Las tres alternativas que la task v2 lista, evaluadas contra la realidad runtime:
+
+| Alternativa | Soportado nativamente en 5.3-1 | Veredicto |
+|---|---|---|
+| Routing por prefix nativo en `channels.telegram` | ❌ No hay campos de routing en el schema | NO |
+| Intent classifier nativo del gateway | ❌ No hay clave `intent`/`classifier` en `messages`/`channels`/`gateway` | NO |
+| Sub-agente delegado desde `main` (que `main` detecte `/q2` y delegue) | ⚠️ Técnicamente factible vía `subagents.allowAgents` + system prompt, **pero requiere modificar el system prompt/comportamiento del agente `main`** | **PROHIBIDO** por antipatrón explícito de la task ("❌ Modificar el agente `rick` existente") |
+
+La cuarta vía — workaround custom (middleware externo entre Telegram y gateway, hook en webhook, parser de mensajes en proxy) — está **explícitamente prohibida** por la task ("❌ Inventar workaround custom si el routing nativo no existe — preferir HOLD + reporte").
+
+#### Lo que David necesita decidir antes de un retry
+
+1. **Aceptar que el agente "rick" en este stack es `main` con default routing.** O renombrar/reorganizar la premisa de la task.
+2. **Levantar la prohibición de tocar `main`** para permitir alternativa C (delegación), o bien
+3. **Esperar a OpenClaw ≥ 5.4** que pueda traer routing nativo por prefix en channels (no hay confirmación en docs públicos a 2026-05-05; investigar release notes).
+4. **Re-scopear O15.1/O15.2** a un agente único (sin separación read-only): que `main` mismo responda Q2 cuando se le pregunte, sin prefix dispatch. Pierde el aislamiento de scope pero desbloquea el roadmap.
+
+#### Pasos NO ejecutados (y por qué)
+
+- **Paso 2 (snapshot):** no necesario — cero modificaciones planeadas en este intento.
+- **Paso 3 (workspace nuevo):** no creado. Crear el dir sin ruteo válido habría sido cosmético.
+- **Paso 4 (editar openclaw.json):** no editado.
+- **Paso 5 (reload):** no reload.
+- **Paso 6 (smoke test con David):** no se le pidió a David enviar mensajes — sin routing válido, los `/q2` aterrizarían en `main` (mismo comportamiento que cualquier otro mensaje), invalidando el test.
+
+#### Acciones de seguridad colaterales
+
+- **Token y chat ID:** capturados durante discovery, NO incluidos en este log (redactados como `<REDACTED>` / `<REDACTED_CHAT_ID>`). Cero exposición a git.
+- **md5 final:** `44be041f8650197b6e00c35034d96282` (idéntico al baseline, archivo intacto).
+
+#### Estado final
+
+- **Status:** `blocked`.
+- **Bloqueador:** decisión de David sobre las 4 opciones arriba.
+- **Runtime:** sin cambios, gateway healthy en `2026.5.3-1`.
+- **Siguiente acción:** esperar input de David. Cuando se desbloquee, esta task se puede re-trabajar como v3 con la opción elegida documentada en `revision_note`.

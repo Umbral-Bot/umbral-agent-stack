@@ -47,12 +47,9 @@ logger = logging.getLogger("worker.tasks.copilot_cli")
 _ENV_FLAG = "RICK_COPILOT_CLI_ENABLED"
 _EXEC_FLAG = "RICK_COPILOT_CLI_EXECUTE"
 
-# Hard safety constant: even if the operator sets every flag to true, F6
-# step 1 has not implemented the real execution path. This stays False
-# until F6 step N (token plumbing + egress + operation scoping
-# enforcement + real subprocess invocation) is reviewed and approved.
-# Tests assert this constant is False.
-_REAL_EXECUTION_IMPLEMENTED = False
+# F7.5A opens the code-side gate only. Real execution still requires the
+# operator-controlled RICK_COPILOT_CLI_EXECUTE flag and egress gate.
+_REAL_EXECUTION_IMPLEMENTED = True
 
 _REPO_ROOT: Path = Path(__file__).resolve().parents[2]
 

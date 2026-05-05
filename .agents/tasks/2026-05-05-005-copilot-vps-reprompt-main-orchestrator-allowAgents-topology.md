@@ -241,3 +241,132 @@ Commit: `feat(agents): re-prompt main+orchestrator y reconfigura allowAgents §5
 - Esta task NO depende de OAuth multi-canal (task 004). Las gerencias `rick-communication-director` y `rick-linkedin-writer` ya existen como agents en repo+VPS — solo falta hacerlos invocables vía `allowAgents`.
 - Una vez completada, queda desbloqueada Ola 2 (Mejora Continua) y Ola 1b (primer use case multi-canal end-to-end).
 - Los IDENTITY.md propuestos son **mínimos viables**. David puede iterarlos después; lo importante de esta task es: (1) topología `allowAgents` correcta, (2) prompts dicen explícitamente quién es CEO y quién meta-orquestador.
+
+---
+
+## Resultado 2026-05-05
+
+**Ejecutado por:** Copilot VPS (sesión Copilot Chat con shell local en VPS Hostinger `srv1431451`)
+**Fecha/hora:** 2026-05-05 10:16–10:18 ART
+**Modo:** write controlado. Tocados solo: `~/.openclaw/openclaw.json` (allowAgents de 2 agents), `IDENTITY.md` de `main` y `rick-orchestrator`.
+**SOUL/AGENTS/SKILL/TOOLS:** preservados intactos en ambos workspaces (verificado con `ls`).
+
+### 0. Branch + sync
+
+```
+$ git checkout main && git pull --ff-only origin main
+Switched to branch 'main'
+Updating 1e7c84a..e723722
+Fast-forward
+ .agents/tasks/2026-05-05-005-...md | 243 +++++++++++++
+```
+
+Nota: la rama tenía 2 archivos no commiteados de sesiones previas (`.agents/tasks/2026-05-04-001-...md` modified, `docs/ops/cand-003-...md` untracked). Ninguno relacionado con esta task. Se dejaron tal cual (no `git stash` necesario porque el checkout ya estaba en main).
+
+### 1. Backup `openclaw.json`
+
+```
+/home/rick/.openclaw/openclaw.json.bak.20260505-101629  (30829 bytes, owner rick:rick)
+```
+
+### 2. Snapshot pre-cambio (`allowAgents` antes)
+
+```
+main:                        ['main', 'rick-orchestrator', 'rick-delivery', 'rick-qa', 'rick-tracker', 'rick-ops']
+rick-orchestrator:           ['rick-delivery', 'rick-qa', 'rick-tracker', 'rick-ops']
+rick-delivery:               []
+rick-qa:                     []
+rick-tracker:                []
+rick-ops:                    []
+rick-communication-director: []
+rick-linkedin-writer:        []
+```
+
+### 3. Mutación `allowAgents` + validación JSON
+
+```
+$ python3 <<PY ...
+changed: ['main', 'rick-orchestrator']
+$ python3 -m json.tool ~/.openclaw/openclaw.json > /dev/null
+JSON OK
+```
+
+Solo `main` y `rick-orchestrator` recibieron el `subagents.allowAgents` actualizado. Ningún otro agent fue tocado. Orden de keys preservado vía `json.dumps(..., indent=2, ensure_ascii=False)` con `setdefault`.
+
+### 4. Re-prompt de `main` — path real
+
+**Path declarado en la task:** `~/.openclaw/agents/main/agent/IDENTITY.md` → **NO existe**. Ese directorio solo contiene `auth-profiles.json`, `auth-state.json`, `auth.json`, `models.json`, `models.json.bak.rs-fallback.`. Sin IDENTITY.
+
+**Path real (resuelto desde `agents.list[id=main].workspace`):** `/home/rick/.openclaw/workspace/IDENTITY.md` (workspace canónico de `main`, contiene también `AGENTS.md`, `SOUL.md`, etc. — todos preservados).
+
+**Acción:** backup `+ overwrite` con el bloque IDENTITY canónico de la task §4.
+
+```
+backup: /home/rick/.openclaw/workspace/IDENTITY.md.bak.20260505-101646
+target: /home/rick/.openclaw/workspace/IDENTITY.md
+head:   "# Rick (CEO)" + bloque Misión completo
+```
+
+### 5. Re-prompt de `rick-orchestrator` — path real
+
+**Path declarado en la task:** `~/.openclaw/agents/rick-orchestrator/agent/IDENTITY.md` → **NO existe** (mismo patrón: `~/.openclaw/agents/<id>/` solo guarda `sessions/` + `auth/`).
+
+**Path real (resuelto desde `agents.list[id=rick-orchestrator].workspace`):** `/home/rick/.openclaw/workspaces/rick-orchestrator/IDENTITY.md` (workspace canónico, contiene `AGENTS.md`, `SOUL.md`, `SKILL.md`, `TOOLS.md`, `HEARTBEAT.md`, `USER.md` — todos preservados).
+
+**Acción:** backup `+ overwrite` con el bloque IDENTITY canónico de la task §5.
+
+```
+backup: /home/rick/.openclaw/workspaces/rick-orchestrator/IDENTITY.md.bak.20260505-101646
+target: /home/rick/.openclaw/workspaces/rick-orchestrator/IDENTITY.md
+head:   "# Rick Orchestrator (meta-orquestador)" + bloque Misión completo
+```
+
+### 6. Restart gateway
+
+```
+$ systemctl --user restart openclaw-gateway
+● openclaw-gateway.service - OpenClaw Gateway (v2026.3.2)
+     Active: active (running) since Tue 2026-05-05 10:17:34 -04
+   Main PID: 1415756
+[gateway] loading configuration…
+[gateway] resolving authentication…
+[gateway] starting...
+```
+
+`openclaw status --all` confirma: **Agents: 8 total · 0 bootstrapping · 2 active · 61 sessions**. Sin errores de carga de ningún agent. **No se requirió rollback.**
+
+### 7. Verificación post-cambio
+
+**7.1 `allowAgents` efectivo:**
+
+```
+main:                        ['rick-orchestrator']
+rick-orchestrator:           ['rick-communication-director', 'rick-delivery', 'rick-ops', 'rick-qa', 'rick-tracker', 'rick-linkedin-writer']
+rick-delivery:               []
+rick-qa:                     []
+rick-tracker:                []
+rick-ops:                    []
+rick-communication-director: []
+rick-linkedin-writer:        []
+```
+
+Coincide exactamente con la topología objetivo §5.3.
+
+**7.3 Logs post-restart — errores/warnings analizados:**
+
+- ✅ Cero menciones de `error`/`fail` referenciando `main`, `rick-orchestrator` o cualquier agent.
+- ⚠️ "Config warnings" preexistente (plugin `acpx` stale + `plugins.load.paths` redundante) — heredado desde antes de esta task (mismo warning observado en task 003 commit `45ff7e1`). NO introducido por este cambio.
+- ⚠️ Ráfaga continua de `[ws] closed before connect conn=... reason=connect failed` desde `fwd=100.109.16.40` (un nodo tailnet) — **mismo rate antes y después del restart** (cada ~3-7s, presente desde 10:16:19 pre-cambio hasta 10:17:58 post-cambio sin variación). Es un bucle de reconexión con auth token inválido en ese cliente, **NO causado por esta task**. Reportar como observación operativa para `rick-ops` si David quiere investigarlo aparte.
+
+### 8. Errores y rollback
+
+**Sin errores bloqueantes. Sin rollback ejecutado.** Backup de `openclaw.json` y de los dos `IDENTITY.md.bak.*` quedan en disco para rollback rápido si se necesita en el futuro.
+
+### Conclusión
+
+Topología §5.3 implementada en runtime:
+- `main` (Rick CEO) ahora delega exclusivamente a `rick-orchestrator`.
+- `rick-orchestrator` ahora puede invocar a las 6 gerencias incluyendo `rick-communication-director` y `rick-linkedin-writer` (antes inalcanzables).
+- IDENTITY.md de ambos refleja explícitamente el rol CEO vs meta-orquestador.
+
+**Ola 1 fundamentos completada. Ola 1b (primer use case multi-canal end-to-end) y Ola 2 (Mejora Continua) desbloqueadas.**

@@ -396,7 +396,6 @@ Recomendacion preferida:
 
 1. Mantener `👤 Referentes` como base canonica de personas.
 2. Schema actual de `👤 Referentes` ya cubre el caso (ver §2). Decisión pendiente solo en §9.11: si las publicaciones descubiertas van a una base separada `Publicaciones de Referentes` o a un cache temporal de dry-run. Columnas extra por plataforma (X/Twitter, Medium, GitHub, Podcast) se agregarán cuando un referente real lo requiera, no preventivamente.
-3. Crear una base separada `Publicaciones de Referentes` para items descubiertos.
 
 Campos sugeridos para `Publicaciones de Referentes`:
 
@@ -424,7 +423,7 @@ Alternativa minima:
 
 1. Terminar y revisar el audit de integracion Notion MCP.
 2. Decidir contrato de lectura/escritura Notion.
-3. Ejecutar smoke test read-only de lectura de las 10 columnas nuevas de `👤 Referentes` via Notion MCP bajo el blocker del audit 006. Criterios de éxito del smoke test: (a) lectura exitosa de las 10 columnas nuevas en al menos 3 filas con perfiles distintos (1 con `Confianza canales = ALTA`, 1 con `MEDIA`, 1 con `Flags canales` conteniendo `DUPLICADO`); (b) count total de la base = 26; (c) `LinkedIn activity feed` parsea como URL válida cuando está poblada; (d) `Confianza canales` devuelve uno de los 4 valores enumerados (ALTA/MEDIA/BAJA/POSIBLE_INACTIVO). Falla si cualquiera de los 4 no se cumple.
+3. Ejecutar smoke test read-only de lectura de las 10 columnas nuevas de `👤 Referentes` via Notion MCP bajo el blocker del audit 006. Criterios de éxito del smoke test (verificados contra schema real vía Notion MCP, data_source_id `afc8d960-086c-4878-b562-7511dd02ff76`): (a) lectura exitosa de las 10 columnas nuevas en al menos 3 filas con perfiles distintos: 1 con `Confianza canales = ALTA`, 1 con `MEDIA`, 1 con `Confianza canales = DUPLICADO`; (b) count total de la base = 26; (c) `LinkedIn activity feed` parsea como URL válida cuando está poblada; (d) `Confianza canales` devuelve uno de los 4 valores enumerados reales: `ALTA` / `MEDIA` / `BAJA` / `DUPLICADO`; (e) `Flags canales` solo contiene valores del enum real: `ACTIVIDAD_BAJA` / `POSIBLE_INACTIVO` / `SLUG_DIFIERE` / `DUP` / `RSS_NO_CONFIRMADO` / `REQUIERE_VERIFICACION_MANUAL` / `SIN_LINKEDIN` / `CAMBIO_DE_PLATAFORMA`. Nota: la señal de dedup primaria es `Confianza canales = DUPLICADO`, no `DUP` en `Flags canales` (este último es informativo). Falla si cualquiera de los 5 no se cumple.
 4. Marcar ese smoke test como dependencia HARD del primer commit de codigo de Stage 1.
 5. Decidir modelo de datos para publicaciones de referentes: cache separada o superficie temporal de dry-run.
 6. Definir metodo permitido de discovery por plataforma.
@@ -455,3 +454,4 @@ Alternativa minima:
 
 - 2026-05-05 — Codex — Stage 1 reanclado a la DB Referentes extendida (10 columnas nuevas, 26 filas, 1 duplicado, 1 sin LinkedIn). Sin cambios en vision, responsabilidades ni criterios. 3 open decisions nuevas (9.11, 9.12, 9.13). Smoke test de lectura MCP read-only agregado como dependencia HARD del primer commit de Stage 1.
 - 2026-05-05 (post-merge): cleanup §9.2/§9.3 (decididas), §10 actualizado al schema vigente, §11.3 con criterios de éxito explícitos. Sin cambios funcionales al diseño.
+- 2026-05-05 (fix #283): §10 elimina item 3 incoherente con item 2; §11.3 corrige enums (`DUPLICADO` está en `Confianza canales` no en `Flags canales`; enum real ALTA/MEDIA/BAJA/DUPLICADO; agregado criterio (e) sobre `Flags canales`). Verificado contra schema real vía Notion MCP; `data_source_id = afc8d960-086c-4878-b562-7511dd02ff76`.

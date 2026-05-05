@@ -81,7 +81,13 @@ def main():
         logger.error("Redis unavailable: %s", e)
         sys.exit(1)
 
-    wc = WorkerClient(base_url=worker_url, token=worker_token)
+    # SEV-1 2026-05-05: notion.poll_comments paginates ALL comments on a page
+    # (oldest-first, since-filter applied post-fetch). On busy pages like
+    # OpenClaw (30c5f443, ~30k comments), one poll call can take 60s+. The
+    # default 30s WorkerClient timeout caused ReadTimeout → poller silenced
+    # since 2026-05-02 17:49 UTC. Bumping to 300s as a tactical mitigation
+    # while a cursor-checkpoint refactor of poll_comments is scoped.
+    wc = WorkerClient(base_url=worker_url, token=worker_token, timeout=300.0)
     queue = TaskQueue(r)
     scheduler = TaskScheduler(r)
 

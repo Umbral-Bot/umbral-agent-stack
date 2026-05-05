@@ -4,7 +4,7 @@ title: OpenClaw upgrade FAILED via dashboard - diagnose & remediate (O14.2)
 assigned_to: copilot-vps
 created_by: copilot-chat
 created_at: 2026-05-04
-status: blocked
+status: done
 priority: high
 related_plan: notion-governance/docs/roadmap/12-q2-2026-platform-first-plan.md (O14.2)
 related_audit: umbral-agent-stack/docs/audits/2026-05-04-openclaw-version-baseline.md (commit 5d94e77)
@@ -142,3 +142,9 @@ Plan propuesto (NO ejecutado):
 **Status: `blocked`** — runtime degradado (SPLIT estado real), espera OK de David para ejecutar R5. Servicio NO está caído (active running), pero el mismatch CLI↔daemon es una degradación medible y los RPC errors observados confirman impacto funcional.
 
 **Cero acciones reversivas ejecutadas.** Todos los comandos corridos fueron read-only (`ls`, `df`, `cat`, `grep`, `journalctl`, `npm view`, `npm ping`, `npm cache verify`, `ps`, `systemctl is-active`).
+
+## [copilot-vps] 2026-05-04 ~20:02 -04 — Resuelto por task 005 (R5 ejecutado)
+
+David aprobó R5. Ejecución en `.agents/tasks/2026-05-04-005-copilot-vps-openclaw-restart-r5-execute.md` (status: done). SPLIT resuelto: nuevo PID 1386078 corriendo `2026.5.3-1`. Apéndice de resolución en `docs/audits/2026-05-04-openclaw-version-baseline.md` sección `## Restart resolution 2026-05-04 — R5 EXECUTED`.
+
+Status: `blocked` → `done`.

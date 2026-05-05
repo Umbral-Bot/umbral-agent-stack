@@ -4,7 +4,7 @@ title: Execute R5 - restart openclaw gateway to resolve SPLIT (CLI 5.3-1 / daemo
 assigned_to: copilot-vps
 created_by: copilot-chat
 created_at: 2026-05-04
-status: open
+status: done
 priority: high
 related_plan: notion-governance/docs/roadmap/12-q2-2026-platform-first-plan.md (O14.2, O14.3)
 related_audit: umbral-agent-stack/docs/audits/2026-05-04-openclaw-version-baseline.md
@@ -116,3 +116,18 @@ Commit: `docs(O14.2/3): execute R5 restart, resolve SPLIT post-upgrade`
 - Step 7 (doctor) ejecutalo solo si fallan Steps 4-6, sin re-confirmar.
 - Step 8 (rollback) ejecutalo solo si Step 7 falla, sin re-confirmar — es el path de seguridad pre-aprobado.
 - Cualquier comportamiento NO previsto en este plan (config drift, errores raros, requiere acción fuera del plan) → DETENER y reportar antes de actuar.
+
+# Log
+
+## [copilot-vps] 2026-05-04 ~20:02 -04 — R5 ejecutado, SPLIT resuelto, GO
+
+Apéndice publicado en `docs/audits/2026-05-04-openclaw-version-baseline.md` sección `## Restart resolution 2026-05-04 — R5 EXECUTED (O14.2/O14.3)`.
+
+**Resumen:**
+- Steps 1-6 ejecutados. Steps 7-8 NO necesarios.
+- Step 1 detectó drift D1 (config normalizado por gateway-viejo pre-upgrade); diagnostiqué read-only y David aprobó como nuevo baseline (md5 `2bfe3a2f0e21cd8abb0b769d70193672`).
+- Restart exitoso: nuevo PID 1386078 (≠ 1000650), versión `2026.5.3-1` en CLI y daemon.
+- Smoke test pasa, modelos sanos, plugins cargados, sesiones preservadas, sin `INVALID_REQUEST`.
+- Veredicto: **GO**. SPLIT resuelto. Runtime sano en `2026.5.3-1`.
+
+Cierre: task 004 también marcada `done` (referencia esta task como resolución).

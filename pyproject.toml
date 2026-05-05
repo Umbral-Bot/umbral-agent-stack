@@ -15,6 +15,7 @@ dependencies = [
     "github-copilot-sdk>=0.2.0,<1.0.0",
     "azure-search-documents>=11.4.0,<12.0.0",
     "azure-identity>=1.15.0,<2.0.0",
+    "jinja2>=3.1.0,<4.0.0",
 ]
 
 [project.optional-dependencies]
@@ -43,7 +44,7 @@ all = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["worker*", "dispatcher*", "client*", "mcp_server*", "copilot_agent*"]
+include = ["worker*", "dispatcher*", "client*", "mcp_server*", "copilot_agent*", "mission_control*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Umbral Mission Control</title>
+    <script src="https://unpkg.com/htmx.org@1.9.12" integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2" crossorigin="anonymous"></script>
+    <style>
+      :root {
+        --bg: #0d1117;
+        --fg: #c9d1d9;
+        --muted: #8b949e;
+        --accent: #58a6ff;
+        --ok: #3fb950;
+        --warn: #d29922;
+        --err: #f85149;
+        --card: #161b22;
+      }
+      body {
+        background: var(--bg);
+        color: var(--fg);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        margin: 0;
+        padding: 24px;
+      }
+      h1 { color: var(--accent); margin: 0 0 8px; font-size: 18px; }
+      .subtitle { color: var(--muted); font-size: 12px; margin-bottom: 24px; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+      .card { background: var(--card); border: 1px solid #30363d; border-radius: 6px; padding: 16px; }
+      .card h2 { font-size: 13px; margin: 0 0 12px; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; }
+      pre { margin: 0; white-space: pre-wrap; word-break: break-all; font-size: 12px; line-height: 1.4; max-height: 400px; overflow: auto; }
+      .meta { color: var(--muted); font-size: 11px; margin-top: 8px; }
+    </style>
+  </head>
+  <body>
+    <h1>Umbral Mission Control · MVP read-only</h1>
+    <div class="subtitle">ADR-009 · O13.1 · auto-refresh cada 10s</div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Agents (openclaw.json)</h2>
+        <pre hx-get="/agents" hx-trigger="load, every 10s" hx-swap="innerHTML"
+             hx-headers='{"Authorization": "Bearer __PASTE_TOKEN__"}'>
+loading…
+        </pre>
+        <div class="meta">GET /agents</div>
+      </div>
+
+      <div class="card">
+        <h2>Quotas (Claude Pro)</h2>
+        <pre hx-get="/quotas" hx-trigger="load, every 10s" hx-swap="innerHTML"
+             hx-headers='{"Authorization": "Bearer __PASTE_TOKEN__"}'>
+loading…
+        </pre>
+        <div class="meta">GET /quotas</div>
+      </div>
+
+      <div class="card">
+        <h2>Queue (Redis)</h2>
+        <pre hx-get="/queue" hx-trigger="load, every 10s" hx-swap="innerHTML"
+             hx-headers='{"Authorization": "Bearer __PASTE_TOKEN__"}'>
+loading…
+        </pre>
+        <div class="meta">GET /queue</div>
+      </div>
+
+      <div class="card">
+        <h2>Tournaments</h2>
+        <pre hx-get="/tournaments" hx-trigger="load, every 30s" hx-swap="innerHTML"
+             hx-headers='{"Authorization": "Bearer __PASTE_TOKEN__"}'>
+loading…
+        </pre>
+        <div class="meta">GET /tournaments (placeholder hasta O13.4)</div>
+      </div>
+    </div>
+
+    <p class="subtitle" style="margin-top: 32px;">
+      Reemplazá <code>__PASTE_TOKEN__</code> en este HTML por tu
+      <code>MISSION_CONTROL_TOKEN</code> antes de servirlo, o consumí los endpoints
+      JSON directamente desde otro cliente.
+    </p>
+  </body>
+</html>

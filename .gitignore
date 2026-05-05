@@ -86,3 +86,6 @@ reports/runtime/generated/
 # committed; F3 evidence under docs/ stays tracked.
 reports/copilot-cli/
 artifacts/copilot-cli/
+
+# === Mission Control snapshots (ADR-009 D5) ===
+mission_control/snapshots/

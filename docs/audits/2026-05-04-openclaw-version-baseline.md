@@ -310,3 +310,87 @@ El orquestador `update.run` del gateway debería propagar el mensaje del error d
 ---
 
 **Fin apéndice O14.2.** No se ejecutó remediación. Decisión queda en David.
+
+---
+
+## Restart resolution 2026-05-04 — R5 EXECUTED (O14.2/O14.3)
+
+**Tarea origen:** `.agents/tasks/2026-05-04-005-copilot-vps-openclaw-restart-r5-execute.md`
+**Aprobación:** David, vía Copilot Chat, pre-execución de Steps 1-8.
+**Tipo:** Acción reversible ejecutada (restart del gateway service). Steps 7 (doctor) y 8 (rollback) no se dispararon — Steps 1-6 cerraron GO.
+
+### Resultado por step
+
+**Step 1 — Snapshot defensivo del config:**
+- `cp ~/.openclaw/openclaw.json ~/.openclaw/openclaw.json.bak-pre-5.3-restart` ejecutado.
+- `md5sum`: snapshot y vivo coinciden = `2bfe3a2f0e21cd8abb0b769d70193672`.
+- **Drift D1 detectado vs baseline O14.0** (`0df7a03297a67d88f5be8f404c262946`). DETUVE Steps 2-8 y reporté a David.
+  - **Diagnóstico (read-only):** mtime del config = `2026-05-04 19:17:36 -04`, **8 segundos antes** del primer `update.run` del dashboard (19:17:44).
+  - JSON válido, top keys estándar (`acp, agents, auth, browser, channels, commands, gateway, meta, models, plugins, skills, tools, wizard`). Sin claves nuevas/sospechosas. 963 líneas (era 971 — normalización condensó whitespace/comentarios).
+  - **Causa raíz:** gateway-viejo (4.9, PID 1000650) normalizó el config como step pre-upgrade del orquestador `update.run`, antes del install npm. No es modificación humana, no es schema-bump del paquete nuevo.
+  - **Veredicto: D1 (drift benigno).** Aprobado por David como nuevo baseline post-R5.
+
+**Step 2 — Estado pre-restart (confirma SPLIT):**
+- CLI: `OpenClaw 2026.5.3-1 (2eae30e)`.
+- Daemon: PID 1000650, ETIME `10-15:45:59` (corriendo desde 2026-04-24, versión 4.9 efectiva en runtime).
+- Service: `active (running)`.
+- SPLIT confirmado, idéntico al diagnóstico de task 004.
+
+**Step 3 — Restart:**
+- `systemctl --user restart openclaw-gateway.service` ejecutado.
+- `sleep 3` aplicado.
+
+**Step 4 — Verificación PID + versión efectiva:**
+- **Nuevo PID: `1386078`** (≠ 1000650 anterior). ✓
+- Service `active (running)` desde `2026-05-04 19:57:15 -04`. ✓
+- `openclaw --version` → `2026.5.3-1`. ✓
+- `openclaw status --all` reporta versión `2026.5.3-1` en daemon. ✓
+- 9 agents · 165 sesiones preservadas · 10 modelos configurados.
+- Default model `azure-openai-responses/gpt-5.4` presente con 5 fallbacks. ✓
+- 6 plugins cargados (browser, device-pair, memory-core, phone-control, talk-voice, telegram).
+- Memory: 692.7M peak (vs ~4.2G del daemon viejo tras 10 días).
+- Sin `INVALID_REQUEST` en `models.list` ni `commands.list`. ✓
+
+**Step 5 — Logs post-restart:**
+- Arranque limpio en 8.0s, "ready" a las 19:57:26, heartbeat OK.
+- Channels y sidecars up. Telegram conectado a `@Rick_lot_bot`.
+- Old daemon shutdown logueó error sobre `plugins.entries.irc/matrix/mattermost` requiriendo `>=2026.4.10` — irrelevante (nuevo daemon 5.3-1 satisface el requisito).
+- **Warnings no-bloqueantes en daemon nuevo (advisory):**
+  - `plugins.load.paths` redundant entry.
+  - `plugins.entries.acpx` / `plugins.allow acpx` not found.
+  - `tools.profile (coding) allowlist` con entradas `umbral_*` desconocidas (tools registradas por worker, no plugin-bundled — esperado).
+  - `AGENTS.md` (18456 > 12000) y `SOUL.md` (12285 > 12000) truncados en agent context.
+  - Recurring `Proxy headers detected from untrusted address. Configure gateway.trustedProxies`.
+- **Pre-existente (no upgrade-related):** `[openai-codex] Token refresh failed: 401 refresh_token_reused` — ya estaba en baseline O14.0, sigue igual.
+
+**Step 6 — Smoke test funcional:**
+- `bash scripts/vps/verify-openclaw.sh` ejecutado.
+- Gateway target `ws://127.0.0.1:18789` respondiendo. ✓
+- Skills: 29 eligible · 0 missing. ✓
+- Plugin compatibility: none failing. ✓
+- Channel issues: none. ✓
+- Tailscale: CONNECTED (100.113.249.25). ✓
+- "Port 18789 already in use" — es nuestro propio nuevo daemon (PID 1386078) — esperado, no es falla.
+
+**Steps 7 (doctor) y 8 (rollback):** **NO ejecutados.** Steps 4-6 cerraron exitosamente. Los warnings advisory de Step 5 no son fallas funcionales y no disparan Step 7 per criterios del plan.
+
+### Veredicto final: **GO**
+
+- **SPLIT resuelto.** Daemon nuevo PID 1386078 corriendo `2026.5.3-1`, CLI `2026.5.3-1`, sin mismatch.
+- Runtime sano: gateway active, modelos respondiendo, plugins cargados, sesiones preservadas, smoke test pasa.
+- Banner del dashboard "Update available v2026.5.3 (running v2026.4.9)" debería desaparecer en próxima carga.
+
+### Drift D1 — registro explícito
+
+**Config normalizado por gateway 4.9 pre-upgrade (mtime 2026-05-04 19:17:36 -04, 8s antes del primer `update.run`), aceptado como nuevo baseline post-R5. md5 nuevo: `2bfe3a2f0e21cd8abb0b769d70193672`.** Snapshot defensivo preservado en `~/.openclaw/openclaw.json.bak-pre-5.3-restart`. Diff funcional vs baseline O14.0 = normalización de whitespace/condensación (971 → 963 líneas), sin cambios semánticos.
+
+### Follow-ups (no-bloqueantes, fuera del scope de esta task)
+
+- Codex `refresh_token_reused` 401 — pre-existente, requiere re-auth manual si se va a usar Codex.
+- Cosmético: `Description=` del unit file sigue como "v2026.3.2" (arrastrado desde 3.2 → 4.9 → 5.3-1). Refrescar en oportunidad separada.
+- Warnings advisory de plugins/allowlist — evaluar si correr `openclaw doctor --fix` en ventana dedicada para limpiar (no urgente).
+- `AGENTS.md` y `SOUL.md` truncation a 12000 chars en agent context — evaluar reorganización si afecta calidad de agentes.
+
+---
+
+**Fin apéndice O14.2/O14.3.** Restart ejecutado, SPLIT resuelto, runtime sano en `2026.5.3-1`.

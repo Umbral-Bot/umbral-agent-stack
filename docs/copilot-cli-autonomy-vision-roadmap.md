@@ -373,6 +373,8 @@ Criterio de exito:
 
 Objetivo: permitir que Rick delegue una tarea tecnica read-only a Copilot CLI.
 
+Spec operativo: [`docs/copilot-cli-f8-spec.md`](copilot-cli-f8-spec.md).
+
 Misiones iniciales recomendadas:
 
 - `research`: leer repo y explicar un modulo.

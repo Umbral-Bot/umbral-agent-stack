@@ -232,3 +232,109 @@ La cuarta vía — workaround custom (middleware externo entre Telegram y gatewa
 - **Bloqueador:** decisión de David sobre las 4 opciones arriba.
 - **Runtime:** sin cambios, gateway healthy en `2026.5.3-1`.
 - **Siguiente acción:** esperar input de David. Cuando se desbloquee, esta task se puede re-trabajar como v3 con la opción elegida documentada en `revision_note`.
+
+### 2026-05-05 — `copilot-vps` — Análisis de comportamiento de delegación de `main` (input para A vs B)
+
+Disparador: David pidió "revisar últimos 30 días de actividad de OpenClaw gateway en VPS" para decidir entre alternativa A (delegation pattern desde `main`) vs B (re-scope a agente único).
+
+#### Alcance real del lookback
+
+| Fuente | Ventana cubierta | Razón |
+|---|---|---|
+| `journalctl --user -u openclaw-gateway` | **2026-04-28 22:32 → 2026-05-05 02:33** (~7 días) | Journal rotó / unidad reiniciada Apr 28; los 30d completos no existen en disco. |
+| `~/.openclaw/agents/main/sessions/*.jsonl` (no deleted/reset) | sesiones activas con mtime en últimos 30d | 13 sesiones activas: 1 del 2026-04-15, 12 entre 2026-05-04 y 2026-05-05 |
+| `~/.openclaw/agents/main/sessions/*.trajectory.jsonl` | últimos 30d | 13 trajectories completas |
+
+**Caveat:** la pregunta era 30d. Datos disponibles efectivos = 7d para journal, ~3 fechas dispersas en sessions. Reporto sobre lo que existe; no inflo a 30d.
+
+#### Evento-tipos en trajectories de `main` (13 runs activos)
+
+```
+13  session.started
+13  trace.metadata
+13  context.compiled
+13  prompt.submitted
+13  model.completed
+13  trace.artifacts
+13  session.ended
+```
+
+🔴 **Cero eventos de tipo `subagent.*`, `agent.spawn`, `tool.invoked` u otra señal de delegación.** Cada run de `main` es una secuencia lineal: prompt → model.completed → end. No hay fan-out a sub-agentes.
+
+#### Tool calls dentro de las sesiones (raw `*.jsonl`)
+
+```
+32  exec        (bash en workspace)
+19  read        (lectura de archivos)
+ 3  process     (process management)
+ 0  subagent / delegate / agent.invoke / spawn
+```
+
+Main resuelve todo con `exec`/`read` directos. Nunca instancia un sub-agente vía tool.
+
+#### Eventos `subagent` en el journal (full window 7d)
+
+```
+2 eventos totales, ambos warnings:
+  [warn] Subagent announce give up (retry-limit)
+  - run 25c7f05b... child=rick-tracker  requester=rick-orchestrator (NOT main)
+  - run fd2047c8... child=rick-tracker  requester=rick-orchestrator (NOT main)
+```
+
+🔴 **Cero invocaciones desde `main`. Las 2 únicas tentativas en 7d son `rick-orchestrator → rick-tracker` y AMBAS fallaron** (retry-limit, never answered).
+
+#### Tabla solicitada — subagent destino × invocaciones
+
+| Subagent | Invocaciones desde `main` (30d efectivo) | Invocaciones desde Telegram | Estado |
+|---|---:|---:|---|
+| `rick-orchestrator` | 0 | 0 | nunca invocado por main |
+| `rick-delivery` | 0 | 0 | nunca invocado por main |
+| `rick-qa` | 0 | 0 | nunca invocado por main |
+| `rick-tracker` | 0 | 0 | invocado 2× por `rick-orchestrator` (no por main); ambas fallaron retry-limit |
+| `rick-ops` | 0 | 0 | nunca invocado por main |
+| `improvement-supervisor` | 0 | 0 | nunca invocado por main |
+
+Telegram en el journal: **2 mensajes outbound** total (`sendMessage ok chat=1813248373` el 2026-05-05 01:45 y 02:29). **Cero mensajes inbound visibles** en el log a nivel "received/onMessage" — el provider los procesa internamente. No hay forma de distinguir origen Telegram vs CLI desde `sessionKey` actual; el journal sí muestra `agent:main:cron:*` (6 sesiones cron) y `agent:main:main` (2 interactivas) — el resto de las 13 trayectorias no exponen el canal en el sessionKey.
+
+#### Caso ancla: mensaje de David hoy (2026-05-05 06:25 UTC, sesión `0e627f1c…`)
+
+**David pidió explícitamente delegar:**
+> "Rick, necesito un status rápido en 3 puntos: 1. Estado del worker y dispatcher en la VPS… 2. Últimas 3 tareas… 3. Si hay algo que mañana requiera mi atención… **Si tenés que delegar a algún subagent (ops, tracker, qa) hacelo y decime explícitamente a quién delegaste y qué te respondió.**"
+
+**Rick (`main`) respondió:**
+> "**Delegación:** no hizo falta delegar a `ops`, `tracker` ni `qa`; lo validé directo en la VPS con `systemctl`, `verify_stack_vps.py` y el `ops_log` del dispatcher."
+
+Rick ejecutó 1 `exec` directo, no spawn, no invoke. Modelo: `gpt-5.4` Azure OpenAI Responses. Provider: `azure-openai-responses`. Una iteración, respuesta directa.
+
+**Patrón observado:** incluso con prompt explícito invitando a delegar, `main` opta por ejecutar directo. La preferencia no es accidental — es estructural en el comportamiento del agente actual.
+
+#### Veredicto
+
+🟥 **"Rick nunca delega"** (en datos disponibles). Cero delegaciones desde `main` en sesiones activas y en el journal de 7d. La única infraestructura de delegación viva (`rick-orchestrator → rick-tracker`) ha fallado las 2 veces que se ejecutó.
+
+#### Recomendación A vs B para O15.1
+
+Definiendo:
+- **A** = patrón de delegación (modificar `main` para que detecte `/q2` y delegue a `david-pocket-assistant`).
+- **B** = re-scope a agente único (`main` mismo responde Q2 sin prefix dispatch; sin agente nuevo).
+
+**Recomendación: B.**
+
+Razones, en orden de peso:
+
+1. **Evidencia empírica:** `main` no delega en producción, ni siquiera cuando se le pide explícitamente (caso 2026-05-05 06:25). Apostar O15.1 a un patrón que el agente ya rechaza en runtime es construir sobre arena.
+2. **Ratio de éxito de la única delegation chain viva:** 0/2 (`rick-orchestrator → rick-tracker` falló por retry-limit ambas veces). La capa subagent del runtime tiene problemas operativos sin resolver — no es momento de agregar otro consumer.
+3. **Costo/beneficio del aislamiento de scope:** el beneficio de B perdido (separar agente read-only) es bajo porque `main` ya tiene system prompt fuerte y tooling tipado; agregar guardas read-only en su system prompt para preguntas Q2 cuesta menos que mantener un segundo agente y un router.
+4. **Antipatrón de la task original:** A requiere "❌ Modificar el agente `rick` existente" — explícitamente prohibido. B no toca routing, solo agrega una sección al system prompt sobre cómo responder a preguntas de plan Q2.
+5. **Reversibilidad:** B se prueba con un edit de prompt y rollback git-trivial. A requiere editar `openclaw.json`, crear workspace nuevo, validar smoke tests con David desde celular, y rollback es manual con snapshot.
+
+**Próximo paso si David acepta B:** crear task v3 que NO crea agente nuevo, NO toca routing, solo:
+- Documenta en `~/.openclaw/workspace/AGENTS.md` (o equivalente) una sección "Q2 status mode" para que `main` responda preguntas tipo "en qué objetivo estamos / cuánto runway / próximas tareas" desde Telegram.
+- Usa skills existentes (`notion-page-audit`, `read-codex-handoffs`) sin modificar lista actual.
+- Quality gate de O15.3 sigue valiendo (si David usa <3 veces en 2 semanas → revertir el snippet del prompt).
+
+**Si David insiste en A:** habría que primero arreglar el chain `rick-orchestrator → rick-tracker` (retry-limit) y luego forzar un shift de comportamiento de `main` hacia delegación, lo cual probablemente requiere también tocar el system prompt de `main` — desbloqueando el antipatrón actual.
+
+#### Cero modificaciones runtime
+
+Solo lectura. md5 de `~/.openclaw/openclaw.json` sigue `44be041f8650197b6e00c35034d96282`. Ningún archivo tocado en `~/.openclaw/`. Token de Telegram y chat ID no expuestos (chat ID `1813248373` aparece en logs propios del gateway, no es secreto operativo y David ya lo conoce — pero igualmente lo trato como dato sensible: no se exporta al repo más allá de este log interno).

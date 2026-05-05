@@ -106,3 +106,116 @@ En este mismo archivo, agregar sección `## Resultado cleanup 2026-05-05` con:
 - **NO** tocar `ROLE.md` en el repo.
 - **NO** asumir que está limpio sin verificar logs post-restart.
 - **Recordar regla VPS Reality Check**: el repo describe intención, la VPS describe realidad. Acá la verdad gana = repo (design-only).
+
+---
+
+## Resultado cleanup 2026-05-05
+
+**Ejecutado por:** Copilot VPS (sesión Copilot Chat con shell local en VPS Hostinger `srv1431451`)
+**Fecha/hora:** 2026-05-05 03:44–03:46 ART
+**Modo:** edit (no read-only). Tocado únicamente `~/.openclaw/openclaw.json`.
+**Decisión rectora aplicada:** opción **(a)** de David — la verdad del repo (design-only) gana sobre el registro huérfano.
+
+### 1. Estado pre-cambio (paso 1)
+
+Backup creado:
+
+```
+/home/rick/.openclaw/openclaw.json.bak.20260505-034451
+```
+
+Entrada huérfana confirmada en `~/.openclaw/openclaw.json` (la task original sugería `.agents` pero la ruta real es `.agents.list`):
+
+```json
+[
+  {
+    "id": "improvement-supervisor",
+    "name": "improvement-supervisor",
+    "workspace": "/home/rick/.openclaw/workspaces/improvement-supervisor",
+    "agentDir": "/home/rick/.openclaw/agents/improvement-supervisor/agent",
+    "model": "azure-openai-responses/gpt-5.4"
+  }
+]
+```
+
+`agentDir` apunta a un path inexistente — confirmado:
+
+```
+/home/rick/.openclaw/agents/improvement-supervisor/
+└── sessions/   (solo histórico, NO el directorio agent/)
+```
+
+### 2. Referencias adicionales encontradas (paso 2)
+
+- **Bindings por `agentId`:** `[]` (ninguno).
+- **Strings en `openclaw.json`:** 4 ocurrencias, todas dentro de la única entrada del array `agents.list` (líneas 764-767). Cero referencias en `allowAgents`, `subagents`, `bindings`, `channels`, `hooks`, `taskflows`.
+- **Otros archivos en `~/.openclaw/`** (excluyendo `sessions/`, `ROLE.md`, backups):
+  - `/home/rick/.openclaw/logs/config-audit.jsonl` — audit log inmutable. Última mención: `2026-04-21T03:53:38Z` durante `openclaw agents add improvement-supervisor` (registro original). **No se toca** (es histórico).
+  - `/home/rick/.openclaw/openclaw.json.last-good` — snapshot del gateway, se regenera automáticamente al primer arranque limpio post-cambio. **No se toca** (autorregenera).
+
+**Conclusión paso 2:** sin bindings activos. Borrado seguro. **No hubo STOP.**
+
+### 3. Confirmación borrado + JSON válido (paso 3)
+
+```
+JSON válido (post-jq)
+agents.list count: 9 → 8
+agents.list ids: ["main", "rick-orchestrator", "rick-delivery", "rick-qa",
+                  "rick-tracker", "rick-ops", "rick-communication-director",
+                  "rick-linkedin-writer"]
+post-write verify: jq '.agents.list | map(select(.id == "improvement-supervisor"))' = []
+FINAL JSON válido
+```
+
+### 4. Gateway reload + logs (paso 4)
+
+```
+systemctl --user restart openclaw-gateway
+● openclaw-gateway.service - OpenClaw Gateway (v2026.3.2)
+     Active: active (running) since Tue 2026-05-05 03:45:31 -04
+   Main PID: 1401882
+[gateway] loading configuration…
+[gateway] resolving authentication…
+[gateway] starting...
+```
+
+**Búsqueda de errores/menciones tras restart:**
+
+```
+journalctl --user -u openclaw-gateway --since "1 minute ago" | grep -i improvement-supervisor
+→ (none — clean)
+```
+
+Las únicas warnings del arranque son **preexistentes y NO relacionadas** con esta task (plugin `acpx` stale en `plugins.entries`/`plugins.allow` y un path bundled redundante en `plugins.load.paths` — heredados de antes del cleanup). No introducidas por este cambio.
+
+**Validación CLI:**
+
+```
+$ openclaw status --all
+…
+│ Agents │ 8 total · 0 bootstrapping · 3 active · 92 sessions │
+…
+$ openclaw status --all | grep -i improvement
+→ (vacío)
+```
+
+Pasó de **9 → 8 agentes**. La gateway reconoce la nueva config sin reportar el huérfano.
+
+### 5. Path del backup
+
+```
+/home/rick/.openclaw/openclaw.json.bak.20260505-034451
+```
+
+(propietario `rick:rick`, modo `0600`, retenible para rollback rápido si fuera necesario revertir).
+
+### 6. Confirmación final
+
+**Ola 0 desbloqueada → modelo organizacional puede proceder a Ola 1.**
+
+Repo y runtime ahora están alineados:
+- Repo (`umbral-agent-stack/openclaw/workspace-agent-overrides/improvement-supervisor/ROLE.md`): **design-only, not registered** (sin cambios — intencional).
+- Runtime (`~/.openclaw/openclaw.json`): **sin entrada para `improvement-supervisor`** (acaba de borrarse).
+- `~/.openclaw/agents/improvement-supervisor/sessions/` y `~/.openclaw/workspaces/improvement-supervisor/ROLE.md`: **conservados** (anti-patrones respetados).
+
+La activación real queda diferida a Ola 2 siguiendo `umbral-agent-stack/docs/77-improvement-supervisor-phase6-activation-plan.md` cuando David lo apruebe.

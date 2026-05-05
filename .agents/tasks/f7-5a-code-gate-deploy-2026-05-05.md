@@ -1,13 +1,15 @@
 ---
 id: "2026-05-05-f7-5a-code-gate-deploy"
 title: "F7.5A Copilot CLI code gate deploy + runtime reality check"
-status: assigned
+status: done
 assigned_to: copilot-vps
 created_by: codex
 priority: high
 sprint: F7.5
 created_at: 2026-05-05T00:00:00-04:00
-updated_at: 2026-05-05T00:00:00-04:00
+updated_at: 2026-05-05T22:47:46Z
+verdict: verde
+verdict_reason: "L5=True deployed, L3 still closed, probe=execute_flag_off_dry_run, real_execution_implemented=true"
 ---
 
 ## Objetivo
@@ -244,3 +246,16 @@ Commit + push + PR a `main` con Codex como reviewer.
 
 Task creada después de mergear PR #291 (`[F7.5A] Copilot CLI — open code gate only`).
 Queda lista para ejecución por Copilot-VPS. Codex no ejecutó runtime VPS.
+
+### copilot-vps 2026-05-05T22:47:46Z
+
+Ejecutado bootstrap, pull `--ff-only` → HEAD `4b4b70a`.
+VPS Reality Check aplicado. L5 verificado `True` en disco antes del restart.
+
+O3: restart único PID `1418206 → 1438752`, health HTTP 200.
+O4: probe `copilot_cli.run` → `execute_flag_off_dry_run`, `real_execution_implemented=true`,
+`execute_enabled=false`, `would_run=false`, `egress_activated=false`.
+O5: no nft table, no Docker network, audit token scan clean.
+
+**Verdict:** 🟢 VERDE. L5 abierto en producción. L3 sigue cerrado.
+Report: `reports/copilot-cli/f7-5a-code-gate-deploy-2026-05-05.md`

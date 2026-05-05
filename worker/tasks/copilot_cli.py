@@ -47,12 +47,11 @@ logger = logging.getLogger("worker.tasks.copilot_cli")
 _ENV_FLAG = "RICK_COPILOT_CLI_ENABLED"
 _EXEC_FLAG = "RICK_COPILOT_CLI_EXECUTE"
 
-# Hard safety constant: even if the operator sets every flag to true, F6
-# step 1 has not implemented the real execution path. This stays False
-# until F6 step N (token plumbing + egress + operation scoping
-# enforcement + real subprocess invocation) is reviewed and approved.
-# Tests assert this constant is False.
-_REAL_EXECUTION_IMPLEMENTED = False
+# F7 rehearsal 5A: code gate opened — subprocess wiring, token plumbing,
+# egress, and operation scoping all reviewed and approved through rehearsals
+# 1–4C. Real execution still requires L3 (RICK_COPILOT_CLI_EXECUTE=true)
+# to be flipped by the operator before any subprocess is ever invoked.
+_REAL_EXECUTION_IMPLEMENTED = True
 
 _REPO_ROOT: Path = Path(__file__).resolve().parents[2]
 
@@ -559,10 +558,10 @@ def _validate_input(data: Dict[str, Any]) -> Dict[str, Any]:
 def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
     """F3 skeleton: validate → policy-gate → audit → return dry-run argv.
 
-    NEVER executes Copilot CLI in F3. NEVER calls subprocess. NEVER opens a
-    network socket. The capability remains DISABLED by default at multiple
-    layers; even with all flags flipped, F3 only returns the argv that
-    F6+ would execute.
+    F7 rehearsal 5A: _REAL_EXECUTION_IMPLEMENTED is now True. Real execution
+    still requires RICK_COPILOT_CLI_EXECUTE=true (L3) to be flipped by the
+    operator. With L3 closed the handler returns execute_flag_off_dry_run and
+    never invokes subprocess.
     """
     mission_run_id = uuid.uuid4().hex
     audit_path = _audit_log_path(mission_run_id)
@@ -575,9 +574,9 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
     banned = tool_policy.get_copilot_cli_banned_subcommands()
     missions = tool_policy.get_copilot_cli_missions()
 
-    # F6 step 1 hard guard: even when all three flags are true, the real
-    # execution path has not been implemented. This guarantees no
-    # subprocess call can leak through misconfiguration.
+    # F6 step 1 / F7 rehearsal 5A guard: with _REAL_EXECUTION_IMPLEMENTED=True,
+    # real execution is now gated solely by RICK_COPILOT_CLI_EXECUTE (L3).
+    # subprocess is only invoked when both are true.
     real_execution_blocked = not _REAL_EXECUTION_IMPLEMENTED or not execute_enabled
 
     base_event: Dict[str, Any] = {
@@ -739,13 +738,12 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
         }
     base_event["operation_decision"] = "allowed"
 
-    # 6) All gates passed (env + policy + mission). F6 step 1 still does
-    # NOT execute Copilot for two independent reasons:
-    #   a) RICK_COPILOT_CLI_EXECUTE flag — operator-controlled.
-    #   b) _REAL_EXECUTION_IMPLEMENTED constant — hard guard, only flipped
-    #      when F6 step N (subprocess wiring + token plumbing + egress)
-    #      ships under explicit review.
-    # Build the docker argv that F6 step N would run, audit it, return.
+    # 6) All gates passed (env + policy + mission). Execute decision:
+    #   a) RICK_COPILOT_CLI_EXECUTE flag (L3) — operator-controlled.
+    #      When false → execute_flag_off_dry_run (no subprocess).
+    #   b) _REAL_EXECUTION_IMPLEMENTED (L5) — now True (F7 rehearsal 5A).
+    #      When both L3 and L5 are true → subprocess will be invoked.
+    # Build the docker argv that would run, audit it, return.
     image = os.environ.get("COPILOT_CLI_SANDBOX_IMAGE", _SANDBOX_IMAGE_DEFAULT)
     docker_argv = _build_docker_argv(
         mission_run_id=mission_run_id,
@@ -774,7 +772,7 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
 
     return {
         "ok": True,
-        "would_run": False,  # F6 step 1: never executes
+        "would_run": False,  # F7 rehearsal 5A: L5 open, L3 still closes execution
         "phase": "F6.step1",
         "phase_blocks_real_execution": real_execution_blocked,
         "decision": decision,

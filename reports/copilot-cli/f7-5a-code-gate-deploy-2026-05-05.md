@@ -190,3 +190,19 @@ To proceed to F8 (first real run):
 The 5-gate infrastructure is now at final pre-execution state:
 - L1 ✅ OPEN · L2 ✅ OPEN · L3 ❌ CLOSED · L4 ❌ CLOSED · L5 ✅ OPEN
 - Only L3 and L4 stand between current state and first real Copilot run.
+
+---
+
+## Second-run addendum (2026-05-05T22:48:49Z)
+
+A second verification pass was performed in this same session after the report
+above was committed:
+
+- **Restart:** OLD_PID `1438752` → NEW_PID `1438899` (worker active/running, HTTP 200)
+- **Probe** `mission_run_id: 52865bcdc228426a84bfc55f158e10f6` — same results:
+  `decision=execute_flag_off_dry_run`, `real_execution_implemented=true`,
+  `execute_enabled=false`, `would_run=false`, `egress_activated=false`
+- **Side-effects:** no nft table, no Docker network, audit token scan clean
+- **Process env (PID 1438899):** `RICK_COPILOT_CLI_EXECUTE=false` confirmed
+
+Verdict unchanged: 🟢 **VERDE**

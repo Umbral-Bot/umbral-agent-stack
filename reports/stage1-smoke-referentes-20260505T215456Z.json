@@ -1,0 +1,5 @@
+{
+  "overall_pass": false,
+  "setup_error": "Registry key referencias_referentes not found in /home/rick/notion-governance-git/registry/notion-data-sources.template.yaml",
+  "checks": {}
+}

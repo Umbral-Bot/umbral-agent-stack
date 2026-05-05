@@ -5,6 +5,8 @@
 >
 > **Branch:** `rick/copilot-cli-capability-design`
 > **Owner:** rick-orchestrator (design), David (approval gate)
+>
+> **Vision / roadmap estratégico:** [`docs/copilot-cli-autonomy-vision-roadmap.md`](copilot-cli-autonomy-vision-roadmap.md)
 
 ## 1. Goal
 

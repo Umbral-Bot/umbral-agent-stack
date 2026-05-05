@@ -105,5 +105,8 @@ reports/*.json
 !reports/runtime/openclaw-runtime-snapshot-latest.json
 !reports/stage7_5_eval_v*.json
 
+# === Mission Control snapshots (ADR-009 D5) ===
+mission_control/snapshots/
+
 .cache/
 .coverage

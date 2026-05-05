@@ -1,0 +1,27 @@
+# Mission Control — service unit (systemd user)
+# Copiar a ~/.config/systemd/user/mission-control.service en la VPS,
+# luego: systemctl --user daemon-reload && systemctl --user enable --now mission-control
+#
+# Requiere en ~/.config/openclaw/env:
+#   MISSION_CONTROL_TOKEN=<token-largo-aleatorio>
+#   REDIS_URL=redis://localhost:6379/0   (ya existe, compartido con dispatcher)
+# Opcional:
+#   OPENCLAW_JSON_PATH=...
+#   OPENCLAW_QUOTA_STATE_PATH=...
+
+[Unit]
+Description=Umbral Mission Control (FastAPI read-only dashboard)
+After=network.target redis.service
+Wants=redis.service
+
+[Service]
+Type=simple
+WorkingDirectory=%h/umbral-agent-stack
+Environment=PYTHONPATH=%h/umbral-agent-stack
+EnvironmentFile=%h/.config/openclaw/env
+ExecStart=%h/umbral-agent-stack/.venv/bin/python -m uvicorn mission_control.app:app --host 127.0.0.1 --port 8089
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

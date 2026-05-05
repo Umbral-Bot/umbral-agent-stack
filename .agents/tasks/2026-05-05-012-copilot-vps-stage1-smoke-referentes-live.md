@@ -1,0 +1,115 @@
+# Task 012 — Stage 1 LinkedIn: smoke REST live de DB Referentes
+
+- **Date:** 2026-05-05
+- **Assigned to:** copilot-vps
+- **Type:** runtime verification (read-only contra Notion API, NO writes)
+- **Depends on:**
+  - PR #286 (mergeado a `main` en `5fa022d`) — script `scripts/smoke/referentes_rest_read.py`.
+  - `notion-governance` clonado o accesible como sibling (default `~/notion-governance`) con `registry/notion-data-sources.template.yaml` que contiene `referencias_referentes.data_source_id`.
+  - Audit 006 (`2026-05-05-006-...`) — confirma que la autoridad runtime correcta es `worker.config.NOTION_API_KEY`, NO la MCP de Rick.
+- **Plan reference:** `docs/plans/linkedin-publication-pipeline.md` §11.3 (Stage 1 smoke gate).
+- **Status:** ready
+- **Estimated effort:** ~15 min (sin debugging).
+
+---
+
+## Objetivo
+
+Ejecutar **live** el smoke read-only `scripts/smoke/referentes_rest_read.py` desde el entorno worker de la VPS, contra la DB Notion Referentes (`data_source_id = afc8d960-086c-4878-b562-7511dd02ff76`), y reportar el JSON completo de salida en este archivo.
+
+Este es el **gate de salida de Stage 1**. Sin un `overall_pass: true` (o un fail entendido y aceptado por David), no se procede a Stage 2 del plan LinkedIn.
+
+## Pre-checks (antes de ejecutar)
+
+1. **Repo sincronizado:**
+   ```bash
+   cd ~/umbral-agent-stack && git checkout main && git pull --ff-only origin main
+   git log --oneline -1   # debe mostrar 5fa022d o más reciente
+   git status --short     # debe estar limpio
+   ```
+2. **Sibling `notion-governance` accesible:**
+   ```bash
+   ls -1 ~/notion-governance/registry/notion-data-sources.template.yaml
+   # Si no existe en ~/notion-governance, clonar:
+   #   cd ~ && git clone https://github.com/Umbral-Bot/notion-governance.git
+   # o pasar --registry <path> al script.
+   ```
+3. **Env worker cargado** (mismo que usa `umbral-worker.service`):
+   ```bash
+   # NO imprimir el valor del token. Solo verificar presencia:
+   python - <<'PY'
+   from worker import config
+   print("NOTION_API_KEY set:", bool(config.NOTION_API_KEY))
+   PY
+   ```
+   Si imprime `False`: revisar que el shell tenga la misma fuente de env que el worker (`source ~/.config/openclaw/env` o equivalente).
+
+## Comando de ejecución
+
+```bash
+cd ~/umbral-agent-stack
+source .venv/bin/activate
+mkdir -p reports
+TS=$(date -u +%Y%m%dT%H%M%SZ)
+python scripts/smoke/referentes_rest_read.py \
+  --output reports/stage1-smoke-referentes-${TS}.json
+echo "exit=$?"
+```
+
+Si `notion-governance` está en otra ruta:
+```bash
+python scripts/smoke/referentes_rest_read.py \
+  --registry /ruta/a/notion-governance/registry/notion-data-sources.template.yaml \
+  --output reports/stage1-smoke-referentes-${TS}.json
+```
+
+## Criterios de éxito
+
+- **Exit code:** `0`
+- **JSON `overall_pass`:** `true`
+- **`row_count`:** `26` (igual a `expected_row_count` del registry)
+- **`checks.a_three_distinct_profiles_with_10_columns.pass`:** `true`
+- **`checks.b_row_count_26.pass`:** `true`
+- **`checks.c_linkedin_activity_feed_urls.pass`:** `true`
+- **`checks.d_confianza_enum.pass`:** `true`
+- **`checks.e_flags_enum.pass`:** `true`
+- **`authority.mode`:** `notion_rest_read_only`
+- **`authority.mutation_endpoints_used`:** `false`
+
+## Si falla
+
+- **Exit 3 (`setup_error`):** falta `NOTION_API_KEY` o registry sibling. Resolver pre-checks y reintentar. NO modificar el script.
+- **Exit 4 (`runtime_error`):** error HTTP/red contra Notion. Pegar el `runtime_error` completo en el reporte; NO reintentar más de 2 veces.
+- **Exit 2 (`overall_pass: false`):** algún check (a)-(e) falló. NO arreglar la DB en este task. Pegar el JSON completo y dejar a David decidir (puede ser data drift legítimo: nuevas filas, enums añadidos, URL inválida en una fila concreta).
+
+En cualquier fallo: **NO** committear cambios al script, **NO** reiniciar servicios, **NO** tocar la DB Notion. Solo reportar.
+
+## Restricciones operacionales
+
+- **NO** PATCH/POST/DELETE contra Notion (el script ya los bloquea internamente).
+- **NO** copiar el valor de `NOTION_API_KEY` ni en logs ni en el reporte.
+- **NO** subir el JSON de reporte si contiene IDs de fila completos en algún caso edge — el script ya emite solo `row_id_tail` (últimos 8 chars), confirmar antes de pegar.
+- **NO** dejar el repo VPS en branch distinta de `main` al cerrar.
+
+## Reporte de cierre
+
+Pegar abajo (sección `## Resultado YYYY-MM-DD`):
+
+1. Hash del commit en `main` al momento de ejecutar (`git log --oneline -1`).
+2. Path del archivo generado en `reports/`.
+3. **JSON completo** de `report` (puede ser largo — está OK, es el deliverable principal).
+4. Decisión sugerida: `PASS → notificar Stage 2 unblocked` / `FAIL → razón breve y si requiere acción de David`.
+
+## Quality gate
+
+- [ ] Pre-checks 1-3 verdes.
+- [ ] Comando ejecutado, JSON generado en `reports/`.
+- [ ] Reporte pegado en este archivo.
+- [ ] Repo VPS en `main`, working tree clean al cerrar.
+- [ ] Si pasó: David puede leer el JSON y decidir mergear el siguiente PR de Codex (Stage 2 ingest).
+
+---
+
+## Resultado YYYY-MM-DD
+
+_Pendiente — completar tras ejecución._

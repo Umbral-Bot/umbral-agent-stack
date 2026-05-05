@@ -38,7 +38,7 @@ tools:
 # para habilitar la task copilot_cli.run.
 # ---------------------------------------------------------------------------
 copilot_cli:
-  enabled: false                    # MASTER SWITCH — no tocar sin aprobación.
+  enabled: true                     # MASTER SWITCH — F7 rehearsal 1: policy gate open. Execution still blocked by RICK_COPILOT_CLI_EXECUTE=false, _REAL_EXECUTION_IMPLEMENTED=False, egress.activated=false.
   default_max_wall_sec: 120
   default_max_tokens: 8000
   default_max_files_touched: 0      # 0 = read-only por mission default

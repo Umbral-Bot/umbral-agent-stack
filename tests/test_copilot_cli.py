@@ -123,6 +123,9 @@ def test_capability_disabled_when_env_flag_unset():
 
 def test_capability_disabled_when_policy_off(monkeypatch):
     monkeypatch.setenv(_ENV_FLAG, "true")
+    # Force policy off independently of yaml (which is True since F7 rehearsal 1).
+    from worker import tool_policy as tp
+    monkeypatch.setattr(tp, "is_copilot_cli_policy_enabled", lambda: False)
     res = handle_copilot_cli_run(_ok_input())
     assert res["ok"] is False
     assert res["error"] == "capability_disabled"
@@ -405,10 +408,18 @@ def test_f4_mission_limits_within_caps(name):
 
 
 def test_f4_master_switch_still_off():
-    """Adding mission contracts MUST NOT flip the capability on."""
+    """F7 rehearsal 1: policy.enabled is now True in yaml, but every
+    deeper execution gate MUST remain closed. This test guards the
+    rehearsal contract: opening L2 must not implicitly open L3/L4/L5.
+    """
     from worker import tool_policy as tp
-    assert tp.is_copilot_cli_policy_enabled() is False
+    from worker.tasks import copilot_cli as mod
+    # L2 policy gate: open by F7 rehearsal 1.
+    assert tp.is_copilot_cli_policy_enabled() is True
+    # L4 egress gate: must stay closed.
     assert tp.is_copilot_cli_egress_activated() is False
+    # L5 code constant: must stay False (no real subprocess implementation).
+    assert mod._REAL_EXECUTION_IMPLEMENTED is False
 
 
 def test_f4_valid_mission_still_blocked_when_capability_disabled():
@@ -531,6 +542,65 @@ def test_f6_audit_records_all_three_flags(monkeypatch):
         "phase_blocks_real_execution",
     ):
         assert key in p, f"audit policy missing {key}"
+
+
+# ---------------------------------------------------------------------------
+# F7 rehearsal 1 — policy gate open, all deeper gates remain closed
+# ---------------------------------------------------------------------------
+
+
+def test_f7_rehearsal_yaml_policy_enabled_true():
+    """F7 rehearsal 1: yaml-loaded policy gate must report True."""
+    from worker import tool_policy as tp
+    assert tp.is_copilot_cli_policy_enabled() is True
+
+
+def test_f7_rehearsal_yaml_egress_still_inactive():
+    """F7 rehearsal 1 must NOT touch egress activation."""
+    from worker import tool_policy as tp
+    assert tp.is_copilot_cli_egress_activated() is False
+
+
+def test_f7_rehearsal_real_execution_constant_still_false():
+    """F7 rehearsal 1 must NOT touch the code constant."""
+    from worker.tasks import copilot_cli as mod
+    assert mod._REAL_EXECUTION_IMPLEMENTED is False
+
+
+def test_f7_rehearsal_env_on_policy_on_execute_off_returns_dry_run(monkeypatch):
+    """End-to-end behavioural contract for rehearsal 1.
+
+    With RICK_COPILOT_CLI_ENABLED=true and the yaml policy gate open
+    (NOT monkeypatched), but RICK_COPILOT_CLI_EXECUTE absent/false,
+    the handler must:
+      - return ok=true, would_run=false
+      - report decision="execute_flag_off_dry_run"
+      - keep phase_blocks_real_execution=true
+      - keep policy.real_execution_implemented=false
+      - never invoke subprocess
+    """
+    monkeypatch.setenv(_ENV_FLAG, "true")
+    monkeypatch.delenv(_EXEC_FLAG, raising=False)
+
+    # Subprocess explosion guard.
+    import subprocess as _sp
+
+    def _explode(*a, **kw):
+        raise AssertionError("subprocess invoked during F7 rehearsal 1")
+
+    for name in ("run", "Popen", "call", "check_call", "check_output"):
+        monkeypatch.setattr(_sp, name, _explode)
+
+    res = handle_copilot_cli_run(_ok_input(mission="research"))
+
+    assert res["ok"] is True
+    assert res["would_run"] is False
+    assert res["phase_blocks_real_execution"] is True
+    assert res["decision"] == "execute_flag_off_dry_run"
+    assert res["policy"]["env_enabled"] is True
+    assert res["policy"]["policy_enabled"] is True
+    assert res["policy"]["execute_enabled"] is False
+    assert res["policy"]["real_execution_implemented"] is False
 
 
 def test_f6_gh_token_and_github_token_not_in_argv(monkeypatch):

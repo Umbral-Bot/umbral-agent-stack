@@ -1,206 +1,141 @@
-# Task: OAuth setup for `rick.asistente@gmail.com` (Rick multi-canal Ola 1b)
+# Task: audit OAuth + multi-canal Rick state, close gaps only
 
-- **Created**: 2026-05-05
-- **Created by**: Copilot Chat (notion-governance / umbral-agent-stack-copilot workspace)
-- **Assigned to**: Copilot VPS (acceso SSH real a `rick@hostinger`) + David (acciones manuales en Google + Notion)
-- **Type**: provisioning (mixed: console manual + VPS storage + smoke test)
-- **Blocking**: Ola 1b del modelo organizacional (`notion-governance/docs/architecture/15-rick-organizational-model.md` §3.5 + §6) y §O15.1b del plan Q2 (`notion-governance/docs/roadmap/12-q2-2026-platform-first-plan.md`).
-- **Depends on**: O15.0 ✅ (Ola 0 cleanup completada commit `45ff7e1`).
-- **Decision reference**: §3.5 del modelo organizacional v1.1 → multi-canal real con cuenta `rick.asistente@gmail.com` propia, política Calendar `propose+confirm`, no bypass.
+- **Created**: 2026-05-05 (rev 2 — supersede de la versión inicial)
+- **Created by**: Copilot Chat
+- **Assigned to**: Copilot VPS (acceso SSH real a `rick@hostinger`)
+- **Type**: audit (read-only) → gap-closure (write only si hace falta)
+- **Blocking**: Ola 1b del modelo organizacional.
+- **Depends on**: O15.0 ✅ commit `45ff7e1`.
 
 ---
 
 ## Contexto
 
-Rick (agente `main` en OpenClaw) hoy solo tiene canal Telegram. Para cumplir §3.1 (Rick = único punto de contacto humano) en todos los canales que David usa diariamente, necesita identidad real y OAuth en:
+Audit de repo local 2026-05-05 reveló que **mucho del setup OAuth multi-canal ya existe** (commits firmados con `rick.asistente@gmail.com`, `GOOGLE_CALENDAR_*` operativo en `.env`/`env.rick`, `NOTION_API_KEY` activo, `docs/35-gmail-token-setup.md` documentado). David confirma que pasos 1-6 de la versión inicial de esta task ya estaban hechos de antes.
 
-| Canal | Cuenta | Permiso necesario | Política |
-|---|---|---|---|
-| Notion | `rick.asistente@gmail.com` invitado al workspace | guest con acceso a páginas relevantes | watcher por menciones `@Rick` |
-| Gmail | `rick.asistente@gmail.com` | OAuth read+send (scope: `gmail.modify` o `gmail.readonly` + `gmail.send`) | Rick lee y responde desde su propia dirección, NO desde la de David |
-| Calendar | calendar de David compartido con `rick.asistente@gmail.com` permiso edit | OAuth `calendar.events` | `propose+confirm`: Rick crea eventos `tentative` o con título `[PROPUESTA] ...`, David confirma manualmente |
-
-WhatsApp queda fuera de scope (Q3 condicional).
+**Esta task ya NO es "setup from scratch", es "verificar qué hay en VPS y completar SOLO lo que falta"**.
 
 ---
 
 ## Acciones requeridas (en orden)
 
-### 1. Acciones manuales de David (FUERA de VPS — bloqueante)
+### 1. Inventory state actual en VPS (read-only, NO mutar)
 
-**1.1 Crear cuenta Google `rick.asistente@gmail.com`** (si no existe).
-- Verificar 2FA habilitado.
-- Anotar contraseña en password manager personal de David (NO commitear, NO pegar en chat).
-
-**1.2 Notion guest invite**
-- Workspace David Moreira → Settings → Members → Invite guest → `rick.asistente@gmail.com`.
-- Permisos: empezar con acceso a páginas hub raíz que David quiera que Rick monitoree (NO full workspace). Refinar después.
-- Confirmar que Rick aparece como guest en `Configuración del workspace`.
-
-**1.3 Calendar share**
-- Calendar principal de David → Settings → Share with specific people → agregar `rick.asistente@gmail.com` con permission **"Make changes to events"** (necesario para crear propuestas tentativas).
-- NO darle "Make changes and manage sharing".
-
-**1.4 Google Cloud Console — OAuth client**
-- Proyecto: `umbral-rick-channels` (crear nuevo si no existe).
-- Habilitar APIs: **Gmail API**, **Google Calendar API**.
-- Pantalla de consentimiento OAuth: tipo `External`, app name `Rick Asistente`, user support email = David, scopes:
-  - `https://www.googleapis.com/auth/gmail.modify`
-  - `https://www.googleapis.com/auth/gmail.send`
-  - `https://www.googleapis.com/auth/calendar.events`
-- Test users: agregar `rick.asistente@gmail.com` y `david@umbralbim.cl` (o el que David use).
-- Crear OAuth client ID tipo **Desktop app** (más simple para flow CLI).
-- Descargar JSON `credentials.json`. **NO commitear.** Pasar a David por canal seguro (no Telegram, no email).
-
-**1.5 Notion integration token (para watcher API)**
-- notion.so/profile/integrations → New integration → name `Rick Watcher` → workspace David Moreira → tipo `Internal`.
-- Capabilities: `Read content`, `Update content`, `Insert content` (mínimo). NO User information sin restricción.
-- Copiar `Internal Integration Token` (`secret_xxx...`). **NO commitear.**
-- En cada página/database que Rick deba monitorear: `Connect to integration` → `Rick Watcher`.
-
----
-
-### 2. Acciones VPS (Copilot VPS, después de que David entregue credenciales)
-
-**2.1 Verificar pre-requisitos**
+Antes de empezar: `cd ~/umbral-agent-stack && git pull origin main` para tener esta versión rev 2 de la task.
 
 ```bash
 ssh rick@<vps-host>
-ls -la ~/.config/openclaw/env  # verificar que existe (Telegram token ya está acá)
-ls -la ~/.config/openclaw/secrets/ 2>/dev/null || mkdir -p ~/.config/openclaw/secrets && chmod 700 ~/.config/openclaw/secrets
-```
 
-**2.2 Almacenar credenciales (David las pasa por canal seguro a Copilot VPS)**
+# 1.1 Env vars relevantes (REDACTAR valores en el reporte; solo confirmar presencia/ausencia)
+for var in NOTION_API_KEY NOTION_CONTROL_ROOM_PAGE_ID NOTION_GRANOLA_DB_ID \
+           GOOGLE_CALENDAR_REFRESH_TOKEN GOOGLE_CALENDAR_CLIENT_ID GOOGLE_CALENDAR_CLIENT_SECRET \
+           GOOGLE_GMAIL_REFRESH_TOKEN GOOGLE_GMAIL_CLIENT_ID GOOGLE_GMAIL_CLIENT_SECRET GOOGLE_GMAIL_TOKEN; do
+  if grep -q "^${var}=" ~/.config/openclaw/env 2>/dev/null; then
+    echo "$var=PRESENT"
+  else
+    echo "$var=MISSING"
+  fi
+done
 
-Estructura esperada en `~/.config/openclaw/secrets/`:
+# 1.2 Lista de archivos en secrets/ (si existe)
+ls -la ~/.config/openclaw/secrets/ 2>/dev/null || echo "no secrets/ dir"
 
-```
-secrets/
-├── google-oauth-client.json       # credentials.json descargado (chmod 600)
-├── google-oauth-token.json        # generado por flow OAuth en 2.3 (chmod 600)
-└── notion-rick-watcher.token      # token Notion integration (chmod 600, contenido único = secret_xxx)
-```
+# 1.3 Verificar si Notion integration tiene acceso al workspace de David
+set -a; source ~/.config/openclaw/env; set +a
+curl -s -H "Authorization: Bearer $NOTION_API_KEY" -H "Notion-Version: 2022-06-28" \
+  https://api.notion.com/v1/users/me | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+print('NOTION_BOT_NAME=', d.get('name', 'N/A'))
+print('NOTION_BOT_TYPE=', d.get('type', 'N/A'))
+print('NOTION_BOT_OWNER=', d.get('bot', {}).get('owner', {}).get('type', 'N/A'))
+"
 
-```bash
-chmod 600 ~/.config/openclaw/secrets/*.json ~/.config/openclaw/secrets/*.token
-ls -la ~/.config/openclaw/secrets/
-```
-
-**2.3 Ejecutar OAuth flow Google (genera `google-oauth-token.json`)**
-
-Crear script helper `~/umbral-agent-stack/scripts/oauth/google-rick-bootstrap.py`:
-
-```python
-#!/usr/bin/env python3
-"""One-shot OAuth bootstrap for rick.asistente@gmail.com.
-Reads google-oauth-client.json, opens device flow URL, writes google-oauth-token.json.
-"""
-from pathlib import Path
-from google_auth_oauthlib.flow import InstalledAppFlow
-
-SCOPES = [
-    "https://www.googleapis.com/auth/gmail.modify",
-    "https://www.googleapis.com/auth/gmail.send",
-    "https://www.googleapis.com/auth/calendar.events",
-]
-SECRETS = Path.home() / ".config/openclaw/secrets"
-flow = InstalledAppFlow.from_client_secrets_file(
-    str(SECRETS / "google-oauth-client.json"), SCOPES
-)
-# Use console flow (no browser on VPS)
-creds = flow.run_console()
-(SECRETS / "google-oauth-token.json").write_text(creds.to_json())
-print("OK token saved")
-```
-
-```bash
+# 1.4 Smoke test Calendar (read próximos 3 eventos) — usa el refresh token existente
 cd ~/umbral-agent-stack
 source .venv/bin/activate
-pip install google-auth-oauthlib google-api-python-client
-python scripts/oauth/google-rick-bootstrap.py
-# David sigue el URL en su navegador, loguea como rick.asistente@gmail.com,
-# acepta scopes, copia código de vuelta al terminal.
-chmod 600 ~/.config/openclaw/secrets/google-oauth-token.json
-```
+python3 -c "
+import os, requests
+r = requests.post('https://oauth2.googleapis.com/token', data={
+    'client_id': os.environ['GOOGLE_CALENDAR_CLIENT_ID'],
+    'client_secret': os.environ['GOOGLE_CALENDAR_CLIENT_SECRET'],
+    'refresh_token': os.environ['GOOGLE_CALENDAR_REFRESH_TOKEN'],
+    'grant_type': 'refresh_token',
+})
+access = r.json()['access_token']
+ev = requests.get('https://www.googleapis.com/calendar/v3/calendars/primary/events',
+    headers={'Authorization': f'Bearer {access}'},
+    params={'maxResults': 3, 'orderBy': 'startTime', 'singleEvents': 'true',
+            'timeMin': '2026-05-05T00:00:00Z'}).json()
+print('CAL_EVENT_COUNT=', len(ev.get('items', [])))
+for e in ev.get('items', []):
+    title = e.get('summary', '(sin título)')
+    print('CAL', e.get('start', {}).get('dateTime', e.get('start', {}).get('date')), '-', title[:20] + '...')
+" 2>&1 | head -10
 
-**2.4 Smoke tests (read-only, NO mutar nada todavía)**
-
-```bash
-# Gmail: leer último mensaje en INBOX
-python -c "
-from pathlib import Path
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
-creds = Credentials.from_authorized_user_file(
-    str(Path.home() / '.config/openclaw/secrets/google-oauth-token.json'))
-svc = build('gmail', 'v1', credentials=creds)
-r = svc.users().messages().list(userId='me', maxResults=1).execute()
-print('Gmail OK, last msg id:', r.get('messages', [{}])[0].get('id', 'NONE'))
+# 1.5 Smoke test Gmail (SOLO si GOOGLE_GMAIL_REFRESH_TOKEN está presente)
+if grep -q '^GOOGLE_GMAIL_REFRESH_TOKEN=' ~/.config/openclaw/env; then
+  python3 -c "
+import os, requests
+r = requests.post('https://oauth2.googleapis.com/token', data={
+    'client_id': os.environ['GOOGLE_GMAIL_CLIENT_ID'],
+    'client_secret': os.environ['GOOGLE_GMAIL_CLIENT_SECRET'],
+    'refresh_token': os.environ['GOOGLE_GMAIL_REFRESH_TOKEN'],
+    'grant_type': 'refresh_token',
+})
+access = r.json()['access_token']
+m = requests.get('https://gmail.googleapis.com/gmail/v1/users/me/messages',
+    headers={'Authorization': f'Bearer {access}'}, params={'maxResults': 1}).json()
+mid = m.get('messages', [{}])[0].get('id', 'NONE')
+print('GMAIL last_msg_id=', mid[:6] + '...' if mid != 'NONE' else 'NONE')
+ti = requests.get(f'https://www.googleapis.com/oauth2/v3/tokeninfo?access_token={access}').json()
+print('GMAIL scopes=', ti.get('scope', 'N/A'))
+print('GMAIL email=', (ti.get('email', 'N/A')[:4] + '...' + ti.get('email', '')[-10:]) if ti.get('email') else 'N/A')
 "
-
-# Calendar: listar próximos 3 eventos
-python -c "
-from pathlib import Path
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
-from datetime import datetime, timezone
-creds = Credentials.from_authorized_user_file(
-    str(Path.home() / '.config/openclaw/secrets/google-oauth-token.json'))
-svc = build('calendar', 'v3', credentials=creds)
-now = datetime.now(timezone.utc).isoformat()
-r = svc.events().list(calendarId='primary', timeMin=now, maxResults=3, singleEvents=True, orderBy='startTime').execute()
-for e in r.get('items', []):
-    print('Cal:', e['start'].get('dateTime', e['start'].get('date')), '-', e.get('summary', '(no title)'))
-"
-
-# Notion: ping integration (lista usuarios accesibles → debe incluir rick.asistente)
-TOKEN=$(cat ~/.config/openclaw/secrets/notion-rick-watcher.token)
-curl -s -H "Authorization: Bearer $TOKEN" -H "Notion-Version: 2022-06-28" \
-  https://api.notion.com/v1/users | python -c "import sys, json; d = json.load(sys.stdin); print('Notion OK, users:', [u['name'] for u in d.get('results', [])])"
+else
+  echo "GMAIL_SKIP — no GOOGLE_GMAIL_REFRESH_TOKEN configured"
+fi
 ```
 
-**2.5 Registrar canales en `~/.config/openclaw/env`** (NO commitear este archivo, está en VPS solamente)
+### 2. Identificar gaps (en el reporte, NO ejecutar)
 
-Agregar al final de `~/.config/openclaw/env`:
+Con el output de paso 1, clasificar cada uno:
 
-```bash
-# Multi-canal Rick — añadido 2026-05-05 (task 004)
-GOOGLE_OAUTH_CLIENT_FILE=/home/rick/.config/openclaw/secrets/google-oauth-client.json
-GOOGLE_OAUTH_TOKEN_FILE=/home/rick/.config/openclaw/secrets/google-oauth-token.json
-NOTION_RICK_WATCHER_TOKEN_FILE=/home/rick/.config/openclaw/secrets/notion-rick-watcher.token
-```
+| Componente | Estado esperado | Acción si falta |
+|---|---|---|
+| `NOTION_API_KEY` válido + bot reconocido por API | PRESENT + NOTION_BOT_NAME no vacío | David crea/renueva integration Notion en notion.so/my-integrations |
+| Notion integration conectada a páginas | (no testeable vía API directa, requiere intentar fetch de page conocida) | David conecta integration a páginas/databases en Notion UI |
+| `GOOGLE_CALENDAR_*` refresh token operativo | smoke test devuelve CAL_EVENT_COUNT >= 0 sin error | David regenera refresh token siguiendo `docs/35-gmail-token-setup.md` (mismo patrón) |
+| `GOOGLE_GMAIL_*` refresh token + scope `gmail.send` | smoke test devuelve last_msg_id + scopes incluyen `gmail.send` (o `gmail.modify`) | David genera siguiendo `docs/35-gmail-token-setup.md` opción B |
 
-(Las skills `gmail-router`, `calendar-propose`, `notion-mention-router` se crearán en task 005 y leerán de estas env vars.)
+### 3. NO ejecutar gap-closure aún
 
----
+**STOP después del audit.** Reportá hallazgos. David decide qué cerrar y cómo (algunos requieren acciones manuales en consolas Google/Notion que Copilot VPS no puede hacer).
 
-### 3. Reportar (append al final de este archivo)
+### 4. Reportar (append al final de este archivo)
 
-Agregar sección `## Resultado OAuth setup 2026-05-05` con:
+Sección `## Resultado audit 2026-05-05`:
+1. Tabla de env vars con `PRESENT` / `MISSING` (NO dump de valores).
+2. Output del NOTION_BOT_NAME + type.
+3. Resultado smoke test Calendar (cantidad de eventos devueltos, **redactar títulos sensibles** — primeros 20 chars max).
+4. Resultado smoke test Gmail si aplica (last_msg_id truncado, scopes, email truncado).
+5. Tabla de gaps identificados con acción recomendada.
+6. Confirmación: NO mutaste nada.
 
-1. Confirmación 1.1-1.5 hechos por David (sí/no por ítem).
-2. Output de los 3 smoke tests (Gmail msg id, Calendar próximos 3, Notion users) — **redactar ID/email sensibles si aparecen**.
-3. Permisos finales de `~/.config/openclaw/secrets/*` (`ls -la`).
-4. Confirmación de que `~/.config/openclaw/env` quedó actualizado con las 3 nuevas vars.
-5. Cualquier blocker (ej. scope OAuth rechazado, integration Notion sin acceso a página esperada, etc.).
-
-Commit como `report(.agents/004): OAuth rick.asistente@gmail.com setup completed`.
+Commit: `report(.agents/004): audit OAuth multi-canal Rick state — gaps identified`. Push a `main`.
 
 ---
 
 ## Anti-patterns prohibidos
 
-- ❌ NO commitear `credentials.json`, `token.json`, ni el integration token Notion. **Aplicar `secret-output-guard` skill antes de cada commit/output.**
-- ❌ NO darle a Rick permission "Make changes and manage sharing" en Calendar (solo "Make changes to events").
-- ❌ NO pedirle a David `gmail.modify` + `gmail.send` en una segunda app si ya están en este OAuth client (un solo client cubre ambos scopes).
-- ❌ NO crear skills/agents OpenClaw todavía (eso es task 005). Esta task es 100 % provisioning + smoke test.
-- ❌ NO probar escritura (send email, create event, edit Notion page) hasta que David apruebe explícitamente. Smoke tests son read-only.
-- ❌ NO automatizar refresh del OAuth token con cron en esta task (Google token refresh es automático vía librería; manual rotation va en task de runbook).
+- ❌ NO commitear ningún valor de env var (tokens, secrets, IDs sensibles). Aplicar `secret-output-guard`.
+- ❌ NO crear OAuth client nuevo, NO regenerar refresh tokens, NO modificar `~/.config/openclaw/env`. Esta task es **read-only**.
+- ❌ NO crear `~/.config/openclaw/secrets/` si no existe. Por ahora la convención es env vars en `~/.config/openclaw/env`.
+- ❌ NO probar escritura (send email, create event, edit Notion page).
+- ❌ NO redactar el reporte mostrando email completo o ID de página Notion completo. Truncar.
 
 ---
 
 ## Notas
 
-- Una vez completada esta task, Rick tiene **identidad y permisos** en los 3 canales pero todavía NO sabe usarlos. La activación real (skills + handlers + binding al agente `main`) va en task 005.
-- Si OAuth se atasca por aprobación Google (scopes sensibles requieren verificación de la app), se puede mantener `Testing` mode con max 100 test users — suficiente para 2 (David + Rick).
-- Refresh token Google expira a los 7 días en `Testing` mode. Para uso continuado >7 días sin re-auth manual, hay que mover la app a `In production` (NO requiere verificación si test users ≤100 y no hay scopes restricted, pero validar antes).
+Versión rev 1 de esta task pedía setup completo de cero. Eso era incorrecto: la cuenta Rick ya existe, los tokens Calendar ya operan, integration Notion ya tiene `NOTION_API_KEY`. Esta rev 2 audita el delta real y reporta. La task 005 (re-prompt `main` + orchestrator + `subagents.allowAgents`) es independiente y puede ir en paralelo.

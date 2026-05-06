@@ -1,8 +1,8 @@
 """Tests for worker.tasks.copilot_cli — F3 skeleton.
 
-These tests NEVER spawn Docker, NEVER call subprocess and NEVER touch
-the host network. The capability is verified to be DISABLED by default
-through multiple gates, and the audit log is verified to redact tokens.
+These tests never spawn Docker or touch the host network. Real execution
+coverage uses subprocess mocks so the F8A code path is verified without
+leaving the test process.
 """
 
 from __future__ import annotations
@@ -16,6 +16,7 @@ import pytest
 from worker.tasks.copilot_cli import (
     _SENSITIVE_PATTERNS,
     _AUDIT_BASE_ENV,
+    _ARTIFACT_BASE_ENV,
     _ENV_FLAG,
     handle_copilot_cli_run,
     set_allowed_repo_roots_for_test,
@@ -37,6 +38,7 @@ from tests._token_fixtures import (
 def _isolated_audit_dir(tmp_path, monkeypatch):
     """Redirect every audit write into pytest's tmp_path."""
     monkeypatch.setenv(_AUDIT_BASE_ENV, str(tmp_path / "audit"))
+    monkeypatch.setenv(_ARTIFACT_BASE_ENV, str(tmp_path / "artifacts"))
     yield
 
 
@@ -258,7 +260,7 @@ def test_docker_argv_built_dry_run_no_subprocess(monkeypatch):
     res = handle_copilot_cli_run(_ok_input(mission="research"))
     assert res["ok"] is True
     assert res["would_run"] is False
-    assert res["phase"] == "F6.step1"
+    assert res["phase"] == "F8A.gated"
     assert res["phase_blocks_real_execution"] is True
     assert isinstance(res["docker_argv"], list)
     argv = res["docker_argv"]
@@ -496,6 +498,7 @@ def _all_gates_open(monkeypatch, *, execute=True):
         monkeypatch.delenv(_EXEC_FLAG, raising=False)
     from worker import tool_policy as tp
     monkeypatch.setattr(tp, "is_copilot_cli_policy_enabled", lambda: True)
+    monkeypatch.setattr(tp, "is_copilot_cli_egress_activated", lambda: True)
     monkeypatch.setattr(tp, "get_copilot_cli_missions", lambda: {"research": {"allowed_operations": ["read_repo"], "forbidden_operations": ["apply_patch", "git_push"]}})
     monkeypatch.setattr(tp, "is_copilot_cli_mission_allowed", lambda n: n == "research")
 
@@ -546,6 +549,106 @@ def test_f7_5a_code_gate_open_but_execute_env_gate_blocks(monkeypatch):
     assert res["policy"]["execute_enabled"] is False
     assert res["policy"]["real_execution_implemented"] is True
     assert res["decision"] == "execute_flag_off_dry_run"
+
+
+# ---------------------------------------------------------------------------
+# F8A — real execution path exists, but only behind L1-L5
+# ---------------------------------------------------------------------------
+
+
+def test_f8a_real_run_requires_egress_gate(monkeypatch):
+    _all_gates_open(monkeypatch, execute=True)
+    from worker import tool_policy as tp
+    monkeypatch.setattr(tp, "is_copilot_cli_egress_activated", lambda: False)
+
+    import subprocess as _sp
+
+    def _explode(*a, **kw):
+        raise AssertionError("subprocess invoked while egress gate is closed")
+
+    monkeypatch.setattr(_sp, "run", _explode)
+
+    res = handle_copilot_cli_run(_ok_input(mission="research", dry_run=False))
+    assert res["ok"] is False
+    assert res["error"] == "egress_not_activated"
+    assert res["decision"] == "egress_not_activated"
+    assert res["would_run"] is False
+    assert res["phase_blocks_real_execution"] is True
+
+
+def test_f8a_real_run_invokes_subprocess_and_writes_artifacts(monkeypatch):
+    _all_gates_open(monkeypatch, execute=True)
+    monkeypatch.setenv("COPILOT_GITHUB_TOKEN", "github_pat_" + "A" * 40)
+    prompt = "Generate a one paragraph README for this scratch directory."
+
+    import subprocess as _sp
+    calls = []
+
+    def _fake_run(argv, *, input, text, capture_output, timeout):
+        calls.append({
+            "argv": argv,
+            "input": input,
+            "text": text,
+            "capture_output": capture_output,
+            "timeout": timeout,
+        })
+        return _sp.CompletedProcess(argv, 0, stdout='{"summary":"ok"}\n', stderr="")
+
+    monkeypatch.setattr(_sp, "run", _fake_run)
+
+    res = handle_copilot_cli_run(_ok_input(
+        mission="research",
+        prompt=prompt,
+        dry_run=False,
+        metadata={"batch_id": "f8a-test", "agent_id": "agent-1"},
+    ))
+
+    assert res["ok"] is True
+    assert res["executed"] is True
+    assert res["decision"] == "completed"
+    assert res["exit_code"] == 0
+    assert calls and calls[0]["input"] == prompt
+    argv = calls[0]["argv"]
+    flat_argv = "\n".join(argv)
+    assert "COPILOT_GITHUB_TOKEN" in argv
+    assert "github_pat_" not in flat_argv
+    assert prompt not in flat_argv
+    assert "--network=bridge" in argv
+
+    manifest_path = Path(res["artifact_manifest"])
+    assert manifest_path.is_file()
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest["batch_id"] == "f8a-test"
+    assert manifest["agent_id"] == "agent-1"
+    assert manifest["tokens"]["source"] == "not_reported_by_github_copilot_cli"
+    assert manifest["cost_usd"]["source"] == "not_reported_by_github_copilot_cli"
+    assert manifest["secret_scan"]["status"] == "clean"
+    assert Path(manifest["stdout"]["path"]).read_text(encoding="utf-8") == '{"summary":"ok"}\n'
+
+
+def test_f8a_real_run_redacts_token_patterns_from_artifacts(monkeypatch):
+    _all_gates_open(monkeypatch, execute=True)
+
+    import subprocess as _sp
+
+    def _fake_run(argv, *, input, text, capture_output, timeout):
+        return _sp.CompletedProcess(
+            argv,
+            0,
+            stdout="accidental " + ("github_pat_" + "B" * 40),
+            stderr="",
+        )
+
+    monkeypatch.setattr(_sp, "run", _fake_run)
+
+    res = handle_copilot_cli_run(_ok_input(mission="research", dry_run=False))
+    assert res["ok"] is False
+    assert res["decision"] == "secret_pattern_redacted"
+    manifest = json.loads(Path(res["artifact_manifest"]).read_text(encoding="utf-8"))
+    stdout_text = Path(manifest["stdout"]["path"]).read_text(encoding="utf-8")
+    assert "github_pat_" not in stdout_text
+    assert "[REDACTED]" in stdout_text
+    assert manifest["secret_scan"]["status"] == "redacted"
 
 
 def test_f6_audit_records_all_three_flags(monkeypatch):
@@ -671,6 +774,7 @@ def _all_gates_open_with_ops(monkeypatch, *, mission, allowed, forbidden,
         monkeypatch.delenv(_EXEC_FLAG, raising=False)
     from worker import tool_policy as tp
     monkeypatch.setattr(tp, "is_copilot_cli_policy_enabled", lambda: True)
+    monkeypatch.setattr(tp, "is_copilot_cli_egress_activated", lambda: True)
     spec = {
         "description": "test",
         "allowed_operations": list(allowed),

@@ -1,20 +1,19 @@
-"""Task: copilot_cli.run — Rick × GitHub Copilot CLI capability (F3 skeleton).
+"""Task: copilot_cli.run — Rick × GitHub Copilot CLI capability.
 
 This task is the runtime surface for the Copilot CLI capability designed in
-``docs/copilot-cli-capability-design.md``. **It does NOT execute Copilot in
-F3.** It is registered, schema-validated, policy-gated, audit-logged and
-returns the docker argv it WOULD have run, but the actual ``docker run`` is
-intentionally not invoked.
+``docs/copilot-cli-capability-design.md``. It is schema-validated,
+policy-gated, audit-logged, and can execute a sandboxed Docker command only
+after every runtime gate is open.
 
-Triple-gate (any False = capability blocked):
+Runtime gates (any False = real execution blocked):
   1. L1 env flag    ``RICK_COPILOT_CLI_ENABLED == "true"``
   2. L2 policy flag ``config/tool_policy.yaml :: copilot_cli.enabled == true``
-  3. L4 mission     ``mission`` must exist in ``copilot_cli.missions`` allowlist
+  3. L3 execute     ``RICK_COPILOT_CLI_EXECUTE == "true"``
+  4. L4 egress      ``config/tool_policy.yaml :: copilot_cli.egress.activated``
+  5. L5 code gate   ``_REAL_EXECUTION_IMPLEMENTED is True``
 
-Plus L2 deny-list: substring match against ``copilot_cli.banned_subcommands``
-applied to (prompt + repo_path + any other free-form input field). Any match
-short-circuits with ``error: banned_subcommand`` BEFORE the gate check, so
-an attacker probing the surface still gets the same audit trail.
+Mission and operation allowlists are enforced before any subprocess call. The
+deny-list uses substring matching against ``copilot_cli.banned_subcommands``.
 
 Audit log:
   ``reports/copilot-cli/<YYYY-MM>/<mission_run_id>.jsonl`` (append-only,
@@ -22,15 +21,18 @@ Audit log:
   No prompt is stored in full — only a redacted summary truncated to
   ``_PROMPT_SUMMARY_MAX`` chars.
 
-The task NEVER calls ``subprocess`` and NEVER opens a network socket in F3.
+Dry-run and blocked paths never call ``subprocess``.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
 import re
+import subprocess
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -150,10 +152,14 @@ def _validate_repo_path(raw: str) -> Path:
     )
 
 _DEFAULT_AUDIT_BASE: Path = _REPO_ROOT / "reports" / "copilot-cli"
+_DEFAULT_ARTIFACT_BASE: Path = _REPO_ROOT / "artifacts" / "copilot-cli"
 
 _AUDIT_BASE_ENV = "COPILOT_CLI_AUDIT_DIR"
+_ARTIFACT_BASE_ENV = "COPILOT_CLI_ARTIFACT_DIR"
+_DOCKER_NETWORK_ENV = "COPILOT_CLI_DOCKER_NETWORK"
 
 _SANDBOX_IMAGE_DEFAULT = "umbral-sandbox-copilot-cli"
+_DEFAULT_DOCKER_NETWORK = "bridge"
 
 _PROMPT_SUMMARY_MAX = 200
 
@@ -278,6 +284,51 @@ def _write_audit_event(path: Path, event: Dict[str, Any]) -> None:
     line = json.dumps(event, ensure_ascii=False, sort_keys=True, default=str)
     with path.open("a", encoding="utf-8") as f:
         f.write(line + "\n")
+
+
+def _artifact_base_dir() -> Path:
+    """Resolve real-execution artifact directory. Tests override via env var."""
+    override = os.environ.get(_ARTIFACT_BASE_ENV, "").strip()
+    if override:
+        return Path(override)
+    return _DEFAULT_ARTIFACT_BASE
+
+
+def _safe_slug(raw: str, default: str) -> str:
+    value = re.sub(r"[^A-Za-z0-9_.-]+", "-", (raw or "").strip()).strip(".-")
+    return value[:80] or default
+
+
+def _artifact_dir(*, batch_id: str, agent_id: str, mission_run_id: str) -> Path:
+    base = _artifact_base_dir()
+    yyyy_mm = datetime.now(timezone.utc).strftime("%Y-%m")
+    target = base / yyyy_mm / _safe_slug(batch_id, "batch") / _safe_slug(agent_id, "agent") / mission_run_id
+    target.mkdir(parents=True, exist_ok=True)
+    return target
+
+
+def _sha256_text(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _sha256_file(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _write_json(path: Path, payload: Dict[str, Any]) -> None:
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True, default=str) + "\n",
+                    encoding="utf-8")
+
+
+def _metadata_string(metadata: Dict[str, Any], key: str, default: str) -> str:
+    value = metadata.get(key)
+    if isinstance(value, str) and value.strip():
+        return _safe_slug(value, default)
+    return default
 
 
 def _env_enabled() -> bool:
@@ -406,15 +457,18 @@ def _build_docker_argv(
     repo_path: str,
     image: str,
     max_wall_sec: int,
+    network: str = "none",
+    real_run: bool = False,
 ) -> List[str]:
-    """Construct the docker argv that WOULD be executed in F6+.
+    """Construct the docker argv.
 
-    F3 returns this list as part of the dry-run result. **This function
-    does not call subprocess.** The caller never executes the argv.
+    Dry-run mode targets the offline smoke binary and always uses
+    ``--network=none``. Real-run mode is still guarded by the caller's
+    L1-L5 checks and passes ``COPILOT_GITHUB_TOKEN`` by name only.
     """
-    return [
+    argv = [
         "docker", "run", "--rm",
-        "--network=none",
+        f"--network={network if real_run else 'none'}",
         "--read-only",
         "--tmpfs", "/tmp:size=64m,mode=1777,exec,nosuid,nodev",
         "--tmpfs", "/scratch:size=64m,mode=1777,nosuid,nodev",
@@ -429,9 +483,134 @@ def _build_docker_argv(
         "--workdir", "/work",
         "--name", f"copilot-cli-{mission_run_id}",
         "--stop-timeout", str(min(max_wall_sec, _MAX_WALL_SEC_CAP)),
-        image,
-        "/usr/local/bin/copilot-cli-smoke",
     ]
+    if real_run:
+        argv.extend([
+            "--env", "COPILOT_GITHUB_TOKEN",
+            "--env", "NO_COLOR=1",
+            image,
+            "/usr/local/bin/copilot-cli-wrapper",
+            "/bin/sh",
+            "-lc",
+            (
+                "set -eu\n"
+                "prompt_file=/tmp/copilot-prompt.txt\n"
+                "cat > \"$prompt_file\"\n"
+                "exec copilot --no-banner --no-color --no-auto-update "
+                "--no-remote --no-ask-user --disable-builtin-mcps "
+                "--secret-env-vars=COPILOT_GITHUB_TOKEN "
+                "--available-tools=view,grep,glob "
+                "--output-format=json --stream=off "
+                "--log-dir=/scratch/copilot-logs "
+                "--prompt \"$(cat \"$prompt_file\")\""
+            ),
+        ])
+    else:
+        argv.extend([image, "/usr/local/bin/copilot-cli-smoke"])
+    return argv
+
+
+def _run_docker_argv(argv: List[str], *, prompt: str, timeout_sec: int) -> Dict[str, Any]:
+    started = time.monotonic()
+    try:
+        completed = subprocess.run(
+            argv,
+            input=prompt,
+            text=True,
+            capture_output=True,
+            timeout=timeout_sec,
+        )
+        duration = time.monotonic() - started
+        return {
+            "status": "completed",
+            "exit_code": int(completed.returncode),
+            "stdout": completed.stdout or "",
+            "stderr": completed.stderr or "",
+            "duration_sec": round(duration, 3),
+        }
+    except subprocess.TimeoutExpired as exc:
+        duration = time.monotonic() - started
+        stdout = exc.stdout.decode("utf-8", errors="replace") if isinstance(exc.stdout, bytes) else (exc.stdout or "")
+        stderr = exc.stderr.decode("utf-8", errors="replace") if isinstance(exc.stderr, bytes) else (exc.stderr or "")
+        return {
+            "status": "timeout",
+            "exit_code": 124,
+            "stdout": stdout,
+            "stderr": stderr,
+            "duration_sec": round(duration, 3),
+        }
+    except FileNotFoundError as exc:
+        duration = time.monotonic() - started
+        return {
+            "status": "docker_not_available",
+            "exit_code": 127,
+            "stdout": "",
+            "stderr": str(exc),
+            "duration_sec": round(duration, 3),
+        }
+
+
+def _write_execution_artifacts(
+    *,
+    artifact_root: Path,
+    mission_run_id: str,
+    batch_id: str,
+    agent_id: str,
+    prompt: str,
+    docker_argv_redacted: List[str],
+    run_result: Dict[str, Any],
+) -> Dict[str, Any]:
+    stdout_raw = str(run_result.get("stdout", ""))
+    stderr_raw = str(run_result.get("stderr", ""))
+    stdout_redacted = _redact(stdout_raw)
+    stderr_redacted = _redact(stderr_raw)
+    secret_patterns_redacted = stdout_redacted != stdout_raw or stderr_redacted != stderr_raw
+
+    stdout_path = artifact_root / "stdout.txt"
+    stderr_path = artifact_root / "stderr.txt"
+    stdout_path.write_text(stdout_redacted, encoding="utf-8")
+    stderr_path.write_text(stderr_redacted, encoding="utf-8")
+
+    manifest = {
+        "schema_version": 1,
+        "created_at": _now_iso(),
+        "mission_run_id": mission_run_id,
+        "batch_id": batch_id,
+        "agent_id": agent_id,
+        "decision": run_result["status"],
+        "exit_code": run_result["exit_code"],
+        "duration_sec": run_result["duration_sec"],
+        "prompt_sha256": _sha256_text(prompt),
+        "docker_argv_redacted": docker_argv_redacted,
+        "stdout": {
+            "path": str(stdout_path),
+            "bytes": stdout_path.stat().st_size,
+            "sha256": _sha256_file(stdout_path),
+        },
+        "stderr": {
+            "path": str(stderr_path),
+            "bytes": stderr_path.stat().st_size,
+            "sha256": _sha256_file(stderr_path),
+        },
+        "secret_scan": {
+            "patterns_redacted": secret_patterns_redacted,
+            "status": "redacted" if secret_patterns_redacted else "clean",
+        },
+        "tokens": {
+            "input": None,
+            "output": None,
+            "total": None,
+            "source": "not_reported_by_github_copilot_cli",
+        },
+        "cost_usd": {
+            "value": None,
+            "source": "not_reported_by_github_copilot_cli",
+        },
+    }
+    manifest_path = artifact_root / "manifest.json"
+    manifest["manifest_path"] = str(manifest_path)
+    _write_json(manifest_path, manifest)
+    return manifest
 
 
 # ---------------------------------------------------------------------------
@@ -554,12 +733,11 @@ def _validate_input(data: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
-    """F3 skeleton: validate → policy-gate → audit → return dry-run argv.
+    """Validate, gate, audit, and optionally execute Copilot CLI in Docker.
 
-    NEVER executes Copilot CLI in F3. NEVER calls subprocess. NEVER opens a
-    network socket. The capability remains DISABLED by default at multiple
-    layers; even with all flags flipped, F3 only returns the argv that
-    F6+ would execute.
+    Real execution is reachable only when L1-L5 are open, ``dry_run`` is false,
+    and the egress policy is activated. All blocked paths still return evidence
+    without calling subprocess.
     """
     mission_run_id = uuid.uuid4().hex
     audit_path = _audit_log_path(mission_run_id)
@@ -572,15 +750,16 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
     banned = tool_policy.get_copilot_cli_banned_subcommands()
     missions = tool_policy.get_copilot_cli_missions()
 
-    # F6 step 1 hard guard: even when all three flags are true, the real
-    # execution path has not been implemented. This guarantees no
-    # subprocess call can leak through misconfiguration.
-    real_execution_blocked = not _REAL_EXECUTION_IMPLEMENTED or not execute_enabled
+    real_execution_blocked = (
+        not _REAL_EXECUTION_IMPLEMENTED
+        or not execute_enabled
+        or not egress_activated
+    )
 
     base_event: Dict[str, Any] = {
         "ts": _now_iso(),
         "mission_run_id": mission_run_id,
-        "phase": "F3",
+        "phase": "F8A",
         "task": "copilot_cli.run",
         "policy": {
             "env_enabled": env_enabled,
@@ -736,19 +915,18 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
         }
     base_event["operation_decision"] = "allowed"
 
-    # 6) All gates passed (env + policy + mission). F6 step 1 still does
-    # NOT execute Copilot for two independent reasons:
-    #   a) RICK_COPILOT_CLI_EXECUTE flag — operator-controlled.
-    #   b) _REAL_EXECUTION_IMPLEMENTED constant — hard guard, only flipped
-    #      when F6 step N (subprocess wiring + token plumbing + egress)
-    #      ships under explicit review.
-    # Build the docker argv that F6 step N would run, audit it, return.
+    # 6) All functional gates passed (env + policy + mission + operations).
+    # Real execution still requires L3, L4, L5 and dry_run=false.
     image = os.environ.get("COPILOT_CLI_SANDBOX_IMAGE", _SANDBOX_IMAGE_DEFAULT)
+    network = os.environ.get(_DOCKER_NETWORK_ENV, _DEFAULT_DOCKER_NETWORK).strip() or _DEFAULT_DOCKER_NETWORK
+    real_run_requested = execute_enabled and _REAL_EXECUTION_IMPLEMENTED and not dry_run
     docker_argv = _build_docker_argv(
         mission_run_id=mission_run_id,
         repo_path=repo_path,
         image=image,
         max_wall_sec=max_wall_sec,
+        network=network,
+        real_run=real_run_requested,
     )
     redacted_argv = [_redact(a) for a in docker_argv]
 
@@ -756,13 +934,134 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
         decision = "execute_flag_off_dry_run"
     elif not _REAL_EXECUTION_IMPLEMENTED:
         decision = "real_execution_not_implemented"
+    elif dry_run:
+        decision = "would_run_dry_run"
+    elif not egress_activated:
+        decision = "egress_not_activated"
     else:
-        decision = "would_run_dry_run" if dry_run else "would_run_blocked_phase_f3"
+        decision = "execute"
+
+    if decision == "egress_not_activated":
+        event = {
+            **base_event,
+            "decision": decision,
+            "image": image,
+            "docker_network": network,
+            "docker_argv_redacted": redacted_argv,
+            "egress_activated": egress_activated,
+            "phase_blocks_real_execution": True,
+        }
+        _write_audit_event(audit_path, event)
+        return {
+            "ok": False,
+            "error": "egress_not_activated",
+            "would_run": False,
+            "phase": "F8A.egress_gate",
+            "phase_blocks_real_execution": True,
+            "decision": decision,
+            "policy": {
+                "env_enabled": env_enabled,
+                "policy_enabled": policy_enabled,
+                "execute_enabled": execute_enabled,
+                "real_execution_implemented": _REAL_EXECUTION_IMPLEMENTED,
+                "phase_blocks_real_execution": True,
+            },
+            "mission": mission,
+            "mission_run_id": mission_run_id,
+            "audit_log": audit_path_str,
+            "docker_argv": redacted_argv,
+            "egress_activated": egress_activated,
+        }
+
+    if decision == "execute":
+        metadata = validated.get("metadata") or {}
+        batch_id = _metadata_string(metadata, "batch_id", "single")
+        agent_id = _metadata_string(metadata, "agent_id", "copilot-cli")
+        artifacts = _artifact_dir(
+            batch_id=batch_id,
+            agent_id=agent_id,
+            mission_run_id=mission_run_id,
+        )
+        start_event = {
+            **base_event,
+            "decision": "execute_started",
+            "image": image,
+            "docker_network": network,
+            "docker_argv_redacted": redacted_argv,
+            "artifact_dir": str(artifacts),
+            "egress_activated": egress_activated,
+            "phase_blocks_real_execution": False,
+        }
+        _write_audit_event(audit_path, start_event)
+        run_result = _run_docker_argv(docker_argv, prompt=prompt, timeout_sec=max_wall_sec)
+        manifest = _write_execution_artifacts(
+            artifact_root=artifacts,
+            mission_run_id=mission_run_id,
+            batch_id=batch_id,
+            agent_id=agent_id,
+            prompt=prompt,
+            docker_argv_redacted=redacted_argv,
+            run_result=run_result,
+        )
+        secret_redacted = manifest["secret_scan"]["patterns_redacted"]
+        execution_ok = run_result["exit_code"] == 0 and not secret_redacted
+        final_decision = (
+            "completed"
+            if execution_ok else
+            ("secret_pattern_redacted" if secret_redacted else run_result["status"])
+        )
+        event = {
+            **base_event,
+            "decision": final_decision,
+            "image": image,
+            "docker_network": network,
+            "exit_code": run_result["exit_code"],
+            "duration_sec": run_result["duration_sec"],
+            "artifact_manifest": manifest["manifest_path"],
+            "secret_scan": manifest["secret_scan"],
+            "egress_activated": egress_activated,
+            "phase_blocks_real_execution": False,
+        }
+        _write_audit_event(audit_path, event)
+        return {
+            "ok": execution_ok,
+            "executed": True,
+            "would_run": False,
+            "phase": "F8A.real_execution",
+            "phase_blocks_real_execution": False,
+            "decision": final_decision,
+            "exit_code": run_result["exit_code"],
+            "duration_sec": run_result["duration_sec"],
+            "policy": {
+                "env_enabled": env_enabled,
+                "policy_enabled": policy_enabled,
+                "execute_enabled": execute_enabled,
+                "real_execution_implemented": _REAL_EXECUTION_IMPLEMENTED,
+                "phase_blocks_real_execution": False,
+            },
+            "mission": mission,
+            "mission_run_id": mission_run_id,
+            "batch_id": batch_id,
+            "agent_id": agent_id,
+            "audit_log": audit_path_str,
+            "docker_argv": redacted_argv,
+            "artifact_dir": str(artifacts),
+            "artifact_manifest": manifest["manifest_path"],
+            "artifacts": {
+                "stdout": manifest["stdout"],
+                "stderr": manifest["stderr"],
+                "manifest": manifest["manifest_path"],
+            },
+            "tokens": manifest["tokens"],
+            "cost_usd": manifest["cost_usd"],
+            "egress_activated": egress_activated,
+        }
 
     event = {
         **base_event,
         "decision": decision,
         "image": image,
+        "docker_network": network,
         "docker_argv_redacted": redacted_argv,
         "egress_activated": egress_activated,
         "phase_blocks_real_execution": real_execution_blocked,
@@ -771,8 +1070,8 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
 
     return {
         "ok": True,
-        "would_run": False,  # F6 step 1: never executes
-        "phase": "F6.step1",
+        "would_run": False,
+        "phase": "F8A.gated",
         "phase_blocks_real_execution": real_execution_blocked,
         "decision": decision,
         "policy": {

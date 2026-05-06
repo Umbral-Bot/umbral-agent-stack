@@ -431,6 +431,17 @@ def _do_poll(
             logger.info("Skipping already processed comment %s", comment_id[:8])
             continue
 
+        # Ola 1b: @rick mention adapter (bypass legacy intent path)
+        from dispatcher.rick_mention import is_rick_mention, handle_rick_mention, _david_allowlist
+        if is_rick_mention(text, c.get("created_by"), _david_allowlist()):
+            handle_rick_mention(
+                text=text, comment_id=comment_id,
+                page_id=c.get("page_id"), page_kind=c.get("page_kind"),
+                author=c.get("created_by"),
+                wc=wc, queue=queue, scheduler=scheduler,
+            )
+            continue
+
         # Classify intent and route to team (S5 Hackathon - intelligent poller)
         from dispatcher.intent_classifier import classify_intent, route_to_team
 

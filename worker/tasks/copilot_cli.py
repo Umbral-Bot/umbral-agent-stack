@@ -469,6 +469,7 @@ def _build_docker_argv(
     """
     argv = [
         "docker", "run", "--rm",
+        "-i",
         f"--network={network if real_run else 'none'}",
         "--read-only",
         "--tmpfs", "/tmp:size=64m,mode=1777,exec,nosuid,nodev",
@@ -492,10 +493,9 @@ def _build_docker_argv(
             "--no-remote --no-ask-user --disable-builtin-mcps "
             "--secret-env-vars=COPILOT_GITHUB_TOKEN "
             "--available-tools=view,grep,glob "
-            "--log-dir=/scratch/copilot-logs "
         )
         if not diagnostic_mode:
-            copilot_flags += "--output-format=json --stream=off "
+            copilot_flags += "--log-dir=/scratch/copilot-logs --output-format=json --stream=off "
         else:
             copilot_flags += "--log-level=debug "
         argv.extend([

@@ -651,6 +651,27 @@ def test_f8a_real_run_redacts_token_patterns_from_artifacts(monkeypatch):
     assert manifest["secret_scan"]["status"] == "redacted"
 
 
+def test_f8a_diagnostic_mode_drops_json_stream_flags(monkeypatch):
+    _all_gates_open(monkeypatch, execute=True)
+    monkeypatch.setenv("COPILOT_CLI_DIAGNOSTIC_MODE", "true")
+
+    import subprocess as _sp
+    calls = []
+
+    def _fake_run(argv, *, input, text, capture_output, timeout):
+        calls.append(argv)
+        return _sp.CompletedProcess(argv, 1, stdout="", stderr="")
+
+    monkeypatch.setattr(_sp, "run", _fake_run)
+    res = handle_copilot_cli_run(_ok_input(mission="research", dry_run=False))
+
+    assert res["executed"] is True
+    flat_argv = "\n".join(calls[0])
+    assert "--log-level=debug" in flat_argv
+    assert "--output-format=json" not in flat_argv
+    assert "--stream=off" not in flat_argv
+
+
 def test_f6_audit_records_all_three_flags(monkeypatch):
     _all_gates_open(monkeypatch, execute=True)
     res = handle_copilot_cli_run(_ok_input(mission="research"))

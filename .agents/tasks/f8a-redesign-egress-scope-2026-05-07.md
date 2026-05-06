@@ -2,10 +2,12 @@
 id: f8a-redesign-egress-scope-2026-05-07
 title: "F8A scoped egress staging verification"
 assigned_to: copilot-vps
-status: todo
+status: done
 priority: high
 reviewer: codex
 created_at: 2026-05-07
+verdict: verde
+report: reports/copilot-cli/f8a-egress-scope-staging-2026-05-07.md
 ---
 
 # F8A scoped egress staging verification

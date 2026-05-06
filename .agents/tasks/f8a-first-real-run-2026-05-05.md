@@ -2,10 +2,14 @@
 id: f8a-first-real-run-2026-05-05
 title: "F8A first controlled real Docker execution"
 assigned_to: copilot-vps
-status: todo
+status: done
 priority: high
 reviewer: codex
 created_at: 2026-05-05
+completed_at: 2026-05-06
+verdict: amarillo
+report: reports/copilot-cli/f8a-first-real-run-2026-05-05.md
+mission_run_id: 49a1496515c84826b215ae9d8ec400e9
 ---
 
 # F8A — first controlled `copilot_cli.run` real-execution probe

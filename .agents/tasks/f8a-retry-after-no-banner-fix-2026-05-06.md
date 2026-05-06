@@ -2,10 +2,14 @@
 id: f8a-retry-after-no-banner-fix-2026-05-06
 title: "F8A retry after dropping obsolete --no-banner flag"
 assigned_to: copilot-vps
-status: todo
+status: done
+verdict: amarillo
 priority: high
 reviewer: codex
 created_at: 2026-05-06
+completed_at: 2026-05-06
+mission_run_id: ee5aa7b921d44fdcb435d1c0803656d2
+report: reports/copilot-cli/f8a-retry-after-no-banner-fix-2026-05-06.md
 ---
 
 # F8A retry after no-banner bugfix

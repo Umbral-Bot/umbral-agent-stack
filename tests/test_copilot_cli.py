@@ -672,6 +672,10 @@ def test_f8a_diagnostic_mode_drops_json_stream_flags(monkeypatch):
     assert "--log-dir=/scratch/copilot-logs" not in flat_argv
     assert "--output-format=json" not in flat_argv
     assert "--stream=off" not in flat_argv
+    assert 'prompt=$(cat "$prompt_file")' in flat_argv
+    assert '--prompt "$prompt"' in flat_argv
+    assert '--prompt "$(cat "$prompt_file")"' not in flat_argv
+    assert '$(cat \\"$prompt_file\\")' not in flat_argv
 
 
 def test_f6_audit_records_all_three_flags(monkeypatch):

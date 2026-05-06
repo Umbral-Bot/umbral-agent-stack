@@ -509,8 +509,9 @@ def _build_docker_argv(
                 "set -eu\n"
                 "prompt_file=/tmp/copilot-prompt.txt\n"
                 "cat > \"$prompt_file\"\n"
+                "prompt=$(cat \"$prompt_file\")\n"
                 f"exec copilot {copilot_flags}"
-                "--prompt \"$(cat \"$prompt_file\")\""
+                "--prompt \"$prompt\""
             ),
         ])
     else:

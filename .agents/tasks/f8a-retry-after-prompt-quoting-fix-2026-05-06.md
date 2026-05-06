@@ -2,10 +2,13 @@
 id: f8a-retry-after-prompt-quoting-fix-2026-05-06
 title: "F8A retry after wrapper prompt quoting fix"
 assigned_to: copilot-vps
-status: todo
+status: done
 priority: high
 reviewer: codex
 created_at: 2026-05-06
+verdict: amarillo
+mission_run_id: n/a
+report: reports/copilot-cli/f8a-retry-after-prompt-quoting-fix-2026-05-06.md
 ---
 
 # F8A retry after wrapper prompt quoting fix

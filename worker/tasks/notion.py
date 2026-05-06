@@ -12,11 +12,44 @@ Tasks: Notion integration handlers.
 - notion.upsert_project: crear o actualizar proyecto en DB 📁 Proyectos — Umbral
 """
 
+import logging
+import os
 import re
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict
 
 from .. import config, notion_client
+
+_poll_redis_client: Any | None = None
+_poll_redis_disabled = False
+_poll_logger = logging.getLogger("worker.notion.poll")
+
+
+def _get_poll_redis_client() -> Any | None:
+    """Lazily build a Redis client for poll_comments cursor checkpoint (ADR-010).
+
+    Returns None silently if `redis` isn't installed or REDIS_URL is unset/unreachable.
+    """
+    global _poll_redis_client, _poll_redis_disabled
+    if _poll_redis_client is not None:
+        return _poll_redis_client
+    if _poll_redis_disabled:
+        return None
+    redis_url = os.environ.get("REDIS_URL")
+    if not redis_url:
+        _poll_redis_disabled = True
+        return None
+    try:
+        import redis  # type: ignore
+
+        client = redis.from_url(redis_url, decode_responses=True)
+        client.ping()
+        _poll_redis_client = client
+        return client
+    except Exception as exc:
+        _poll_logger.warning("poll_comments cursor disabled (redis unavailable): %s", exc)
+        _poll_redis_disabled = True
+        return None
 from ..notion_client import (
     _block_heading1,
     _block_heading2,
@@ -108,6 +141,7 @@ def handle_notion_poll_comments(input_data: Dict[str, Any]) -> Dict[str, Any]:
         page_id=input_data.get("page_id"),
         since=input_data.get("since"),
         limit=input_data.get("limit", 20),
+        redis_client=_get_poll_redis_client(),
     )
 
 

@@ -1009,6 +1009,23 @@ def _build_raw_transcript_properties(
         expected_types={"checkbox", "select", "rich_text"},
         used_fields=used_fields,
     )
+    # O8a instrumentation: source vs Notion lengths for truncation diagnosis.
+    _set_schema_property(
+        properties,
+        schema,
+        ["Longitud origen", "Source Length", "Length Source"],
+        extra_traceability.get("source_length"),
+        expected_types={"number", "rich_text"},
+        used_fields=used_fields,
+    )
+    _set_schema_property(
+        properties,
+        schema,
+        ["Longitud Notion", "Notion Length", "Length Notion"],
+        extra_traceability.get("notion_length"),
+        expected_types={"number", "rich_text"},
+        used_fields=used_fields,
+    )
 
     if is_create:
         today = _today_date()
@@ -1211,6 +1228,8 @@ def _upsert_raw_transcript_page(
             "reconciled_at",
             "truncation_detected",
             "truncation_reason",
+            "source_length",
+            "notion_length",
         ):
             value = str(merged_traceability.get(key) or "").strip()
             if value and not parsed_existing.get(key):
@@ -1221,6 +1240,24 @@ def _upsert_raw_transcript_page(
             )
 
     blocks = _build_transcript_paragraph_blocks(content)
+    # O8a instrumentation: compare source content length vs effective Notion payload length.
+    source_length = len(content or "")
+    notion_length = sum(
+        len(
+            ((b.get("paragraph") or {}).get("rich_text") or [{}])[0]
+            .get("text", {})
+            .get("content", "")
+        )
+        for b in blocks
+    )
+    merged_traceability["source_length"] = str(source_length)
+    merged_traceability["notion_length"] = str(notion_length)
+    if notion_length < source_length:
+        merged_traceability["truncation_detected"] = "true"
+        merged_traceability.setdefault(
+            "truncation_reason",
+            f"notion_length<source_length ({notion_length}<{source_length})",
+        )
     properties, used_fields = _build_raw_transcript_properties(
         schema=schema,
         title=resolved_title,

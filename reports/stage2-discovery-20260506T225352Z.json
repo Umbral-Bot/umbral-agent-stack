@@ -1,0 +1,1022 @@
+{
+  "overall_pass": true,
+  "run_started_at": "2026-05-06T22:53:53Z",
+  "run_finished_at": "2026-05-06T22:54:19Z",
+  "registry": {
+    "data_source_id": "afc8d960-086c-4878-b562-7511dd02ff76",
+    "row_count": 26
+  },
+  "rsshub_base": "http://127.0.0.1:1200",
+  "skip_recent_minutes": 0,
+  "summary": {
+    "referentes_processed": 26,
+    "channels_attempted": 130,
+    "channels_ok": 17,
+    "channels_skip_recent": 0,
+    "channels_sin_acceso": 103,
+    "channels_error": 10,
+    "channels_parse_error": 0,
+    "items_total_seen": 437,
+    "items_new_this_run": 387
+  },
+  "per_referente": [
+    {
+      "referente_id_tail": "98249eb0",
+      "nombre": "Alex Freberg",
+      "channels": [
+        {
+          "canal": "rss",
+          "status": "http_error",
+          "items_found": 0,
+          "items_new": 0,
+          "error": "HTTP 404"
+        },
+        {
+          "canal": "youtube",
+          "status": "ok",
+          "items_found": 30,
+          "items_new": 30
+        },
+        {
+          "canal": "web_rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "linkedin",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "otros",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        }
+      ]
+    },
+    {
+      "referente_id_tail": "726980d2",
+      "nombre": "Ruben Hassid",
+      "channels": [
+        {
+          "canal": "rss",
+          "status": "http_error",
+          "items_found": 0,
+          "items_new": 0,
+          "error": "HTTP 403"
+        },
+        {
+          "canal": "youtube",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "web_rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "linkedin",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "otros",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        }
+      ]
+    },
+    {
+      "referente_id_tail": "a80c962d",
+      "nombre": "Nate Gentile",
+      "channels": [
+        {
+          "canal": "rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "youtube",
+          "status": "ok",
+          "items_found": 30,
+          "items_new": 30
+        },
+        {
+          "canal": "web_rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "linkedin",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "otros",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        }
+      ]
+    },
+    {
+      "referente_id_tail": "f45279d0",
+      "nombre": "Daniel Shiffman",
+      "channels": [
+        {
+          "canal": "rss",
+          "status": "http_error",
+          "items_found": 0,
+          "items_new": 0,
+          "error": "HTTP 404"
+        },
+        {
+          "canal": "youtube",
+          "status": "ok",
+          "items_found": 30,
+          "items_new": 30
+        },
+        {
+          "canal": "web_rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "linkedin",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "otros",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        }
+      ]
+    },
+    {
+      "referente_id_tail": "e7f7d82a",
+      "nombre": "Milos Temerinski",
+      "channels": [
+        {
+          "canal": "rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "youtube",
+          "status": "ok",
+          "items_found": 30,
+          "items_new": 30
+        },
+        {
+          "canal": "web_rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "linkedin",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "otros",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        }
+      ]
+    },
+    {
+      "referente_id_tail": "63bb2840",
+      "nombre": "Grant Sanderson",
+      "channels": [
+        {
+          "canal": "rss",
+          "status": "http_error",
+          "items_found": 0,
+          "items_new": 0,
+          "error": "HTTP 404"
+        },
+        {
+          "canal": "youtube",
+          "status": "ok",
+          "items_found": 30,
+          "items_new": 30
+        },
+        {
+          "canal": "web_rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "linkedin",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "otros",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        }
+      ]
+    },
+    {
+      "referente_id_tail": "5d9a5a17",
+      "nombre": "Marc Vidal",
+      "channels": [
+        {
+          "canal": "rss",
+          "status": "http_error",
+          "items_found": 0,
+          "items_new": 0,
+          "error": "HTTP 404"
+        },
+        {
+          "canal": "youtube",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "web_rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "linkedin",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "otros",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        }
+      ]
+    },
+    {
+      "referente_id_tail": "f8f19d8e",
+      "nombre": "Carlos Santana Vega",
+      "channels": [
+        {
+          "canal": "rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "youtube",
+          "status": "ok",
+          "items_found": 30,
+          "items_new": 30
+        },
+        {
+          "canal": "web_rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "linkedin",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "otros",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        }
+      ]
+    },
+    {
+      "referente_id_tail": "8a894992",
+      "nombre": "Burcin Kaplanoglu",
+      "channels": [
+        {
+          "canal": "rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "youtube",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "web_rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "linkedin",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "otros",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        }
+      ]
+    },
+    {
+      "referente_id_tail": "7d625c1d",
+      "nombre": "Lucas Dalto",
+      "channels": [
+        {
+          "canal": "rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "youtube",
+          "status": "ok",
+          "items_found": 30,
+          "items_new": 30
+        },
+        {
+          "canal": "web_rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "linkedin",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "otros",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        }
+      ]
+    },
+    {
+      "referente_id_tail": "7e82f8b2",
+      "nombre": "Dion Hinchcliffe",
+      "channels": [
+        {
+          "canal": "rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "youtube",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "web_rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "linkedin",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "otros",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        }
+      ]
+    },
+    {
+      "referente_id_tail": "054228fc",
+      "nombre": "Iván Gómez Rodríguez",
+      "channels": [
+        {
+          "canal": "rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "youtube",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "web_rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "linkedin",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "otros",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        }
+      ]
+    },
+    {
+      "referente_id_tail": "ad977f63",
+      "nombre": "Andrew Ng",
+      "channels": [
+        {
+          "canal": "rss",
+          "status": "http_error",
+          "items_found": 0,
+          "items_new": 0,
+          "error": "HTTP 404"
+        },
+        {
+          "canal": "youtube",
+          "status": "ok",
+          "items_found": 30,
+          "items_new": 30
+        },
+        {
+          "canal": "web_rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "linkedin",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "otros",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        }
+      ]
+    },
+    {
+      "referente_id_tail": "b0aa5a15",
+      "nombre": "Sandeep Raut",
+      "channels": [
+        {
+          "canal": "rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "youtube",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "web_rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "linkedin",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "otros",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        }
+      ]
+    },
+    {
+      "referente_id_tail": "f079aa8d",
+      "nombre": "Fred Mills",
+      "channels": [
+        {
+          "canal": "rss",
+          "status": "http_error",
+          "items_found": 0,
+          "items_new": 0,
+          "error": "HTTP 404"
+        },
+        {
+          "canal": "youtube",
+          "status": "ok",
+          "items_found": 30,
+          "items_new": 30
+        },
+        {
+          "canal": "web_rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "linkedin",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "otros",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        }
+      ]
+    },
+    {
+      "referente_id_tail": "cba7527a",
+      "nombre": "Pascal Bornet",
+      "channels": [
+        {
+          "canal": "rss",
+          "status": "http_error",
+          "items_found": 0,
+          "items_new": 0,
+          "error": "HTTP 403"
+        },
+        {
+          "canal": "youtube",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "web_rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "linkedin",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "otros",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        }
+      ]
+    },
+    {
+      "referente_id_tail": "222e0fab",
+      "nombre": "David Barco Moreno",
+      "channels": [
+        {
+          "canal": "rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "youtube",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "web_rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "linkedin",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "otros",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        }
+      ]
+    },
+    {
+      "referente_id_tail": "9c3b8e07",
+      "nombre": "Brian Solis",
+      "channels": [
+        {
+          "canal": "rss",
+          "status": "http_error",
+          "items_found": 0,
+          "items_new": 0,
+          "error": "HTTP 403"
+        },
+        {
+          "canal": "youtube",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "web_rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "linkedin",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "otros",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        }
+      ]
+    },
+    {
+      "referente_id_tail": "746386fc",
+      "nombre": "Pascal Bornet",
+      "channels": [
+        {
+          "canal": "rss",
+          "status": "http_error",
+          "items_found": 0,
+          "items_new": 0,
+          "error": "HTTP 403"
+        },
+        {
+          "canal": "youtube",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "web_rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "linkedin",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "otros",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        }
+      ]
+    },
+    {
+      "referente_id_tail": "eda67db7",
+      "nombre": "Cole Nussbaumer Knaflic",
+      "channels": [
+        {
+          "canal": "rss",
+          "status": "ok",
+          "items_found": 20,
+          "items_new": 0
+        },
+        {
+          "canal": "youtube",
+          "status": "ok",
+          "items_found": 30,
+          "items_new": 30
+        },
+        {
+          "canal": "web_rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "linkedin",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "otros",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        }
+      ]
+    },
+    {
+      "referente_id_tail": "bdc61ae0",
+      "nombre": "Bernard Marr",
+      "channels": [
+        {
+          "canal": "rss",
+          "status": "ok",
+          "items_found": 10,
+          "items_new": 0
+        },
+        {
+          "canal": "youtube",
+          "status": "ok",
+          "items_found": 30,
+          "items_new": 30
+        },
+        {
+          "canal": "web_rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "linkedin",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "otros",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        }
+      ]
+    },
+    {
+      "referente_id_tail": "902d2e6a",
+      "nombre": "Rodrigo Rojo",
+      "channels": [
+        {
+          "canal": "rss",
+          "status": "ok",
+          "items_found": 15,
+          "items_new": 0
+        },
+        {
+          "canal": "youtube",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "web_rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "linkedin",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "otros",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        }
+      ]
+    },
+    {
+      "referente_id_tail": "1610d37f",
+      "nombre": "Ruth Pozuelo Martinez",
+      "channels": [
+        {
+          "canal": "rss",
+          "status": "ok",
+          "items_found": 5,
+          "items_new": 0
+        },
+        {
+          "canal": "youtube",
+          "status": "ok",
+          "items_found": 27,
+          "items_new": 27
+        },
+        {
+          "canal": "web_rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "linkedin",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "otros",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        }
+      ]
+    },
+    {
+      "referente_id_tail": "e9089057",
+      "nombre": "José Luis Crespo",
+      "channels": [
+        {
+          "canal": "rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "youtube",
+          "status": "ok",
+          "items_found": 30,
+          "items_new": 30
+        },
+        {
+          "canal": "web_rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "linkedin",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "otros",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        }
+      ]
+    },
+    {
+      "referente_id_tail": "ba54c688",
+      "nombre": "Martín Arosa",
+      "channels": [
+        {
+          "canal": "rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "youtube",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "web_rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "linkedin",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "otros",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        }
+      ]
+    },
+    {
+      "referente_id_tail": "b9280fbe",
+      "nombre": "Ignasi Pérez Arnal",
+      "channels": [
+        {
+          "canal": "rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "youtube",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "web_rss",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "linkedin",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        },
+        {
+          "canal": "otros",
+          "status": "sin_acceso",
+          "items_found": 0,
+          "items_new": 0
+        }
+      ]
+    }
+  ],
+  "errors_sample": [
+    {
+      "referente_nombre": "Alex Freberg",
+      "canal": "rss",
+      "error": "HTTP 404"
+    },
+    {
+      "referente_nombre": "Ruben Hassid",
+      "canal": "rss",
+      "error": "HTTP 403"
+    },
+    {
+      "referente_nombre": "Daniel Shiffman",
+      "canal": "rss",
+      "error": "HTTP 404"
+    },
+    {
+      "referente_nombre": "Grant Sanderson",
+      "canal": "rss",
+      "error": "HTTP 404"
+    },
+    {
+      "referente_nombre": "Marc Vidal",
+      "canal": "rss",
+      "error": "HTTP 404"
+    },
+    {
+      "referente_nombre": "Andrew Ng",
+      "canal": "rss",
+      "error": "HTTP 404"
+    },
+    {
+      "referente_nombre": "Fred Mills",
+      "canal": "rss",
+      "error": "HTTP 404"
+    },
+    {
+      "referente_nombre": "Pascal Bornet",
+      "canal": "rss",
+      "error": "HTTP 403"
+    },
+    {
+      "referente_nombre": "Brian Solis",
+      "canal": "rss",
+      "error": "HTTP 403"
+    },
+    {
+      "referente_nombre": "Pascal Bornet",
+      "canal": "rss",
+      "error": "HTTP 403"
+    }
+  ]
+}

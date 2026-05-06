@@ -166,3 +166,145 @@ reports/stage1-smoke-referentes-20260505T215456Z.json
 El gate Stage 1 requiere actualizar `notion-governance` para incluir la entrada `referencias_referentes` con `data_source_id: afc8d960-086c-4878-b562-7511dd02ff76` y los campos esperados por el script (`expected_row_count: 26`, `expected_columns`, `expected_confianza`, `expected_flags`). Una vez mergeado en `notion-governance` y propagado al sibling de la VPS (`/home/rick/notion-governance-git`), reabrir esta task y reintentar.
 
 **No se procede a Stage 2 del plan LinkedIn.**
+
+---
+
+## Resultado 2026-05-05 (intento 2)
+
+**Ejecutor:** Copilot-VPS, branch `main`.
+
+### 1. Hash del commit en `main` al momento de ejecutar
+
+```
+0ad4566 (vendor: notion-governance snapshot @ 1d1c3c6 + task 012 vendored path)
+```
+
+### 2. Path del archivo generado
+
+```
+reports/stage1-smoke-referentes-20260506T033143Z.json
+```
+
+### 3. JSON completo del reporte
+
+```json
+{
+  "overall_pass": true,
+  "authority": {
+    "mode": "notion_rest_read_only",
+    "credential": "worker.config.NOTION_API_KEY",
+    "api_version": "2025-09-03",
+    "mutation_endpoints_used": false,
+    "query_note": "Notion data source row reads use POST /data_sources/{id}/query as a read-only endpoint."
+  },
+  "registry": {
+    "path": "vendor/notion-governance/registry/notion-data-sources.template.yaml",
+    "data_source_id": "afc8d960-086c-4878-b562-7511dd02ff76",
+    "database_id": "05f04d48c44943e8b4acc572a4ec6f19"
+  },
+  "data_source_id": "afc8d960-086c-4878-b562-7511dd02ff76",
+  "row_count": 26,
+  "checks": {
+    "a_three_distinct_profiles_with_10_columns": {
+      "pass": true,
+      "reason": "Required ALTA/MEDIA/DUPLICADO samples and 10-channel columns are readable",
+      "missing_sample_confidences": [],
+      "missing_schema_columns": [],
+      "sample_missing_columns": {}
+    },
+    "b_row_count_26": {
+      "pass": true,
+      "reason": "row_count=26, expected=26"
+    },
+    "c_linkedin_activity_feed_urls": {
+      "pass": true,
+      "reason": "All populated LinkedIn activity feed values are valid http(s) URLs",
+      "invalid_count": 0
+    },
+    "d_confianza_enum": {
+      "pass": true,
+      "reason": "Confianza canales values are within enum",
+      "invalid_values": []
+    },
+    "e_flags_enum": {
+      "pass": true,
+      "reason": "Flags canales values are within enum",
+      "invalid_values": []
+    }
+  },
+  "observed_enums": {
+    "confianza_canales": [
+      "ALTA",
+      "BAJA",
+      "DUPLICADO",
+      "MEDIA"
+    ],
+    "flags_canales": [
+      "ACTIVIDAD_BAJA",
+      "CAMBIO_DE_PLATAFORMA",
+      "DUP",
+      "REQUIERE_VERIFICACION_MANUAL",
+      "RSS_NO_CONFIRMADO",
+      "SIN_LINKEDIN",
+      "SLUG_DIFIERE"
+    ]
+  },
+  "invalid_urls": [],
+  "sample_rows": [
+    {
+      "row_id_tail": "98249eb0",
+      "nombre": "Alex Freberg",
+      "confianza_canales": "ALTA",
+      "flags_canales": [
+        "RSS_NO_CONFIRMADO"
+      ],
+      "channels_populated": [
+        "LinkedIn activity feed",
+        "YouTube channel",
+        "Web / Newsletter",
+        "RSS feed"
+      ]
+    },
+    {
+      "row_id_tail": "8a894992",
+      "nombre": "Burcin Kaplanoglu",
+      "confianza_canales": "MEDIA",
+      "flags_canales": [
+        "REQUIERE_VERIFICACION_MANUAL"
+      ],
+      "channels_populated": [
+        "LinkedIn activity feed",
+        "Otros canales"
+      ]
+    },
+    {
+      "row_id_tail": "cba7527a",
+      "nombre": "Pascal Bornet",
+      "confianza_canales": "DUPLICADO",
+      "flags_canales": [
+        "DUP",
+        "SLUG_DIFIERE"
+      ],
+      "channels_populated": [
+        "LinkedIn activity feed",
+        "Web / Newsletter",
+        "RSS feed",
+        "Otros canales"
+      ]
+    }
+  ]
+}
+```
+
+### 4. Decisión sugerida
+
+**PASS → Stage 2 unblocked.**
+
+- Exit code: `0`
+- `overall_pass`: `true`
+- `row_count`: `26` (= expected)
+- Checks (a)-(e): todos `pass: true`
+- `authority.mode`: `notion_rest_read_only`
+- `authority.mutation_endpoints_used`: `false`
+- Cero PATCH/POST/DELETE de mutación contra Notion
+- Cero secretos en este reporte

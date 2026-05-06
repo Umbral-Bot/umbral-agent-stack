@@ -1,0 +1,106 @@
+{
+  "overall_pass": true,
+  "authority": {
+    "mode": "notion_rest_read_only",
+    "credential": "worker.config.NOTION_API_KEY",
+    "api_version": "2025-09-03",
+    "mutation_endpoints_used": false,
+    "query_note": "Notion data source row reads use POST /data_sources/{id}/query as a read-only endpoint."
+  },
+  "registry": {
+    "path": "vendor/notion-governance/registry/notion-data-sources.template.yaml",
+    "data_source_id": "afc8d960-086c-4878-b562-7511dd02ff76",
+    "database_id": "05f04d48c44943e8b4acc572a4ec6f19"
+  },
+  "data_source_id": "afc8d960-086c-4878-b562-7511dd02ff76",
+  "row_count": 26,
+  "checks": {
+    "a_three_distinct_profiles_with_10_columns": {
+      "pass": true,
+      "reason": "Required ALTA/MEDIA/DUPLICADO samples and 10-channel columns are readable",
+      "missing_sample_confidences": [],
+      "missing_schema_columns": [],
+      "sample_missing_columns": {}
+    },
+    "b_row_count_26": {
+      "pass": true,
+      "reason": "row_count=26, expected=26"
+    },
+    "c_linkedin_activity_feed_urls": {
+      "pass": true,
+      "reason": "All populated LinkedIn activity feed values are valid http(s) URLs",
+      "invalid_count": 0
+    },
+    "d_confianza_enum": {
+      "pass": true,
+      "reason": "Confianza canales values are within enum",
+      "invalid_values": []
+    },
+    "e_flags_enum": {
+      "pass": true,
+      "reason": "Flags canales values are within enum",
+      "invalid_values": []
+    }
+  },
+  "observed_enums": {
+    "confianza_canales": [
+      "ALTA",
+      "BAJA",
+      "DUPLICADO",
+      "MEDIA"
+    ],
+    "flags_canales": [
+      "ACTIVIDAD_BAJA",
+      "CAMBIO_DE_PLATAFORMA",
+      "DUP",
+      "REQUIERE_VERIFICACION_MANUAL",
+      "RSS_NO_CONFIRMADO",
+      "SIN_LINKEDIN",
+      "SLUG_DIFIERE"
+    ]
+  },
+  "invalid_urls": [],
+  "sample_rows": [
+    {
+      "row_id_tail": "98249eb0",
+      "nombre": "Alex Freberg",
+      "confianza_canales": "ALTA",
+      "flags_canales": [
+        "RSS_NO_CONFIRMADO"
+      ],
+      "channels_populated": [
+        "LinkedIn activity feed",
+        "YouTube channel",
+        "Web / Newsletter",
+        "RSS feed"
+      ]
+    },
+    {
+      "row_id_tail": "8a894992",
+      "nombre": "Burcin Kaplanoglu",
+      "confianza_canales": "MEDIA",
+      "flags_canales": [
+        "REQUIERE_VERIFICACION_MANUAL"
+      ],
+      "channels_populated": [
+        "LinkedIn activity feed",
+        "Otros canales"
+      ]
+    },
+    {
+      "row_id_tail": "cba7527a",
+      "nombre": "Pascal Bornet",
+      "confianza_canales": "DUPLICADO",
+      "flags_canales": [
+        "DUP",
+        "SLUG_DIFIERE"
+      ],
+      "channels_populated": [
+        "LinkedIn activity feed",
+        "Web / Newsletter",
+        "RSS feed",
+        "Otros canales"
+      ]
+    }
+  ]
+}

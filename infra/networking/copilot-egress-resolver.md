@@ -39,7 +39,35 @@ Anything else MUST be added to `config/tool_policy.yaml ::
 copilot_cli.egress.allowed_endpoints` first, with a written rationale,
 and never inline in the resolver.
 
-## 3. TTL / cache strategy
+## 3. Scoped enforcement model
+
+The nft profile is scoped to the dedicated Docker bridge only:
+
+- Docker network name: `copilot-egress`
+- Linux bridge name: `br-copilot`
+- nft hook: `forward`
+- nft chain policy: `accept`
+- scoped drop: packets with `iifname "br-copilot"` that are not DNS or
+  HTTPS to the resolver-populated Copilot IP sets
+
+The profile MUST NOT install a host `output` hook with `policy drop`. F8A
+evidence on 2026-05-06 showed that host-wide output filtering blocks unrelated
+worker traffic such as Notion API calls. The intent is to sandbox the Copilot
+container, not the worker host.
+
+Operator-created network shape:
+
+```sh
+docker network create \
+  --driver bridge \
+  --opt com.docker.network.bridge.name=br-copilot \
+  --opt com.docker.network.bridge.enable_icc=false \
+  copilot-egress
+```
+
+`COPILOT_CLI_DOCKER_NETWORK` must be `copilot-egress` for any real run.
+
+## 4. TTL / cache strategy
 
 - Resolver runs on a systemd timer (`copilot-egress-resolver.timer`),
   cadence `OnCalendar=*:0/15` (every 15 minutes).
@@ -57,7 +85,7 @@ and never inline in the resolver.
 
 - A failed refresh keeps the previous set and logs `resolver_stale`.
 
-## 4. Fallback if DNS fails
+## 5. Fallback if DNS fails
 
 - If every authorized endpoint fails to resolve for ≥3 consecutive runs,
   the resolver:
@@ -69,7 +97,7 @@ and never inline in the resolver.
 - If `--strict` is passed and any endpoint fails to resolve, exit
   non-zero so the systemd unit is marked failed.
 
-## 5. Auditing connections
+## 6. Auditing connections
 
 - `nftables` `log prefix` directives on accept + drop chains forward
   to journald. Operator queries:
@@ -87,7 +115,7 @@ and never inline in the resolver.
   Schema: `{ts, run_id, endpoint, resolved_v4, resolved_v6, delta_v4, delta_v6, error}`.
   No tokens, no full packet payloads.
 
-## 6. Rollback
+## 7. Rollback
 
 Operator-only sequence (NOT executed by the agent in any phase):
 
@@ -99,14 +127,17 @@ sudo systemctl disable --now copilot-egress-resolver.service
 # 2. Remove the nft table (frees rules atomically).
 sudo nft delete table inet copilot_egress
 
-# 3. Remove the dropin.
+# 3. Remove the dedicated Docker network if no container is using it.
+docker network rm copilot-egress
+
+# 4. Remove the dropin.
 sudo rm -f /etc/nftables.d/copilot-egress.nft
 
-# 4. Flip policy off:
+# 5. Flip policy off:
 #    config/tool_policy.yaml :: copilot_cli.egress.activated = false
 #    (already the default)
 
-# 5. Confirm:
+# 6. Confirm:
 sudo nft list ruleset | grep -i copilot && echo "FAIL: rules still present" \
                                          || echo "rollback OK"
 ```
@@ -117,7 +148,7 @@ deletion) followed by a fresh resolve. Do **not** edit the IP set by
 hand on a live host — every modification must come from a re-run of
 the resolver so the audit trail stays intact.
 
-## 7. What F6 step 3 does NOT do
+## 8. What F6 step 3 does NOT do
 
 - Does NOT implement the resolver script.
 - Does NOT install the systemd timer or service.
@@ -126,7 +157,7 @@ the resolver so the audit trail stays intact.
 - Does NOT flip `copilot_cli.egress.activated`.
 - Does NOT make any real HTTPS call to Copilot.
 
-## 8. F6 step 4 unblock conditions
+## 9. F6 step 4 unblock conditions
 
 To advance to F6 step 4 (resolver implementation + dry-run install),
 the following must be true and signed off:
@@ -136,6 +167,6 @@ the following must be true and signed off:
    is final (no churn during step 4).
 3. `scripts/verify_copilot_egress_contract.py` exits 0 against this
    repo (parity between policy and artifact).
-4. Operator has confirmed that the production VPS uses
-   `nftables` (not legacy `iptables`) and that no other tenant on
-   this host depends on a permissive `output` policy.
+4. Operator has confirmed that the production VPS can create the dedicated
+   Docker bridge `copilot-egress` / `br-copilot` and that the nft table does
+   not affect host `output` traffic.

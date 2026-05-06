@@ -157,6 +157,7 @@ _DEFAULT_ARTIFACT_BASE: Path = _REPO_ROOT / "artifacts" / "copilot-cli"
 _AUDIT_BASE_ENV = "COPILOT_CLI_AUDIT_DIR"
 _ARTIFACT_BASE_ENV = "COPILOT_CLI_ARTIFACT_DIR"
 _DOCKER_NETWORK_ENV = "COPILOT_CLI_DOCKER_NETWORK"
+_CLI_DIAGNOSTIC_ENV = "COPILOT_CLI_DIAGNOSTIC_MODE"
 
 _SANDBOX_IMAGE_DEFAULT = "umbral-sandbox-copilot-cli"
 _DEFAULT_DOCKER_NETWORK = "bridge"
@@ -484,7 +485,19 @@ def _build_docker_argv(
         "--name", f"copilot-cli-{mission_run_id}",
         "--stop-timeout", str(min(max_wall_sec, _MAX_WALL_SEC_CAP)),
     ]
+    diagnostic_mode = os.environ.get(_CLI_DIAGNOSTIC_ENV, "").strip().lower() == "true"
     if real_run:
+        copilot_flags = (
+            "--no-color --no-auto-update "
+            "--no-remote --no-ask-user --disable-builtin-mcps "
+            "--secret-env-vars=COPILOT_GITHUB_TOKEN "
+            "--available-tools=view,grep,glob "
+            "--log-dir=/scratch/copilot-logs "
+        )
+        if not diagnostic_mode:
+            copilot_flags += "--output-format=json --stream=off "
+        else:
+            copilot_flags += "--log-level=debug "
         argv.extend([
             "--env", "COPILOT_GITHUB_TOKEN",
             "--env", "NO_COLOR=1",
@@ -496,12 +509,7 @@ def _build_docker_argv(
                 "set -eu\n"
                 "prompt_file=/tmp/copilot-prompt.txt\n"
                 "cat > \"$prompt_file\"\n"
-                "exec copilot --no-color --no-auto-update "
-                "--no-remote --no-ask-user --disable-builtin-mcps "
-                "--secret-env-vars=COPILOT_GITHUB_TOKEN "
-                "--available-tools=view,grep,glob "
-                "--output-format=json --stream=off "
-                "--log-dir=/scratch/copilot-logs "
+                f"exec copilot {copilot_flags}"
                 "--prompt \"$(cat \"$prompt_file\")\""
             ),
         ])

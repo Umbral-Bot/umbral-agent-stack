@@ -2,10 +2,14 @@
 id: f8a-diagnose-silent-exit-2026-05-06
 title: "F8A diagnose silent Copilot CLI exit 1"
 assigned_to: copilot-vps
-status: todo
+status: done
 priority: high
 reviewer: codex
 created_at: 2026-05-06
+verdict: amarillo
+mission_run_id: 5d270087a2944283957bc3d21e4059e7
+report: reports/copilot-cli/f8a-diagnose-silent-exit-2026-05-06.md
+root_cause: docker_run_argv_missing_-i_so_stdin_pipe_dropped_empty_prompt_reaches_copilot
 ---
 
 # F8A — diagnose silent Copilot CLI exit 1

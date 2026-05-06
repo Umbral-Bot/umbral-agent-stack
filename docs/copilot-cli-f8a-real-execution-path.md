@@ -78,7 +78,7 @@ Docker image/network overrides:
 
 ```bash
 COPILOT_CLI_SANDBOX_IMAGE=umbral-sandbox-copilot-cli:<tag>
-COPILOT_CLI_DOCKER_NETWORK=bridge
+COPILOT_CLI_DOCKER_NETWORK=copilot-egress
 ```
 
 ---

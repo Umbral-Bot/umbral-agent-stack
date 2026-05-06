@@ -496,7 +496,7 @@ def _build_docker_argv(
                 "set -eu\n"
                 "prompt_file=/tmp/copilot-prompt.txt\n"
                 "cat > \"$prompt_file\"\n"
-                "exec copilot --no-banner --no-color --no-auto-update "
+                "exec copilot --no-color --no-auto-update "
                 "--no-remote --no-ask-user --disable-builtin-mcps "
                 "--secret-env-vars=COPILOT_GITHUB_TOKEN "
                 "--available-tools=view,grep,glob "

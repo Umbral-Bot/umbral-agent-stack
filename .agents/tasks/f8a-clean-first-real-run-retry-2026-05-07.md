@@ -2,7 +2,8 @@
 id: f8a-clean-first-real-run-retry-2026-05-07
 title: "F8A clean first real Copilot CLI run retry"
 assigned_to: copilot-vps
-status: todo
+status: done
+verdict: amarillo
 priority: high
 reviewer: codex
 created_at: 2026-05-07

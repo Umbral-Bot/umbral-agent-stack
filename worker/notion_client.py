@@ -461,22 +461,74 @@ def add_comment(page_id: str | None, text: str) -> dict[str, Any]:
     return {"comment_id": result["id"]}
 
 
+CURSOR_REDIS_KEY_PREFIX = "notion:poll:cursor:"
+CURSOR_REDIS_TTL_SECONDS = 30 * 24 * 3600  # 30 days
+CURSOR_TAIL_SENTINEL = "__TAIL__"
+
+
+def _cursor_key(page_id: str) -> str:
+    return f"{CURSOR_REDIS_KEY_PREFIX}{page_id}"
+
+
+def _redis_get_cursor(redis_client: Any, page_id: str) -> str | None:
+    """Best-effort fetch of saved cursor. Returns None on any failure."""
+    if redis_client is None:
+        return None
+    try:
+        value = redis_client.get(_cursor_key(page_id))
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning("notion.poll_comments.redis_get_failed page=%s err=%s", page_id, exc)
+        return None
+    if value is None:
+        return None
+    if isinstance(value, bytes):
+        value = value.decode("utf-8", errors="replace")
+    return str(value) or None
+
+
+def _redis_set_cursor(redis_client: Any, page_id: str, cursor: str) -> None:
+    if redis_client is None or not cursor:
+        return
+    try:
+        redis_client.set(_cursor_key(page_id), cursor, ex=CURSOR_REDIS_TTL_SECONDS)
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning("notion.poll_comments.redis_set_failed page=%s err=%s", page_id, exc)
+
+
+def _redis_del_cursor(redis_client: Any, page_id: str) -> None:
+    if redis_client is None:
+        return
+    try:
+        redis_client.delete(_cursor_key(page_id))
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning("notion.poll_comments.redis_del_failed page=%s err=%s", page_id, exc)
+
+
 def poll_comments(
     page_id: str | None = None,
     since: str | None = None,
     limit: int = 20,
+    redis_client: Any | None = None,
 ) -> dict[str, Any]:
     """
     Read recent comments from a Notion page.
 
+    See ADR-010 for the cursor-checkpoint design (O8i).
+
     Args:
         page_id: The page to poll. Defaults to NOTION_CONTROL_ROOM_PAGE_ID.
-        since: ISO datetime string — only return comments created after this time.
-               If None, returns the most recent `limit` comments.
+        since: ISO datetime string — defensive post-fetch filter; only returns
+               comments created after this time. Applied on top of the cursor.
         limit: Max comments to return (Notion API max is 100).
+        redis_client: Optional Redis client (synchronous, str-decoded). When
+                      provided, persists per-page cursor in
+                      `notion:poll:cursor:<page_id>` (TTL 30d) so subsequent
+                      polls skip historical pagination. When None, falls back
+                      to legacy behavior (full pagination + `since` filter).
 
     Returns:
-        Dict with "comments" list and "count".
+        Dict with "comments", "count", and observability fields:
+        cursor_used, requests_count, bootstrap, cursor_reset.
     """
     config.require_notion_core()
     if page_id is None:
@@ -484,10 +536,36 @@ def poll_comments(
 
     since_dt = _parse_notion_datetime(since)
     page_size = max(1, min(limit, 100))
-    start_cursor: str | None = None
     comments: list[dict[str, Any]] = []
+    requests_count = 0
+    bootstrap = False
+    cursor_reset = False
 
-    logger.info("Polling comments from page %s (since=%s)", page_id, since)
+    saved_cursor = _redis_get_cursor(redis_client, page_id)
+    if saved_cursor == CURSOR_TAIL_SENTINEL:
+        # Last poll reached has_more=false. Start without cursor; this returns
+        # the oldest page again, but we drop everything we've already seen via
+        # the regular cursor save below. Simpler: just retry fresh paginate.
+        # For high-volume pages this is rare (only between bursts). Re-bootstrap
+        # to find the new tail efficiently.
+        saved_cursor = None
+        bootstrap = True
+
+    cursor_used = bool(saved_cursor)
+    if redis_client is not None and saved_cursor is None and not bootstrap:
+        # First-ever poll for this page: tail-seek bootstrap (D2). Walk to the
+        # end of pagination without accumulating, then save the final cursor.
+        bootstrap = True
+
+    logger.info(
+        "notion.poll_comments page=%s since=%s cursor_used=%s bootstrap=%s",
+        page_id, since, cursor_used, bootstrap,
+    )
+
+    start_cursor = saved_cursor
+    last_seen_cursor = saved_cursor  # cursor pointing at next unread page
+    reached_tail = False
+
     with httpx.Client(timeout=TIMEOUT) as client:
         while True:
             params: dict[str, Any] = {"block_id": page_id, "page_size": page_size}
@@ -499,38 +577,94 @@ def poll_comments(
                 headers=_headers(),
                 params=params,
             )
+            requests_count += 1
+
+            # Detect cursor invalidation (D3): Notion returns 400 for bad cursors.
+            if (
+                start_cursor
+                and resp.status_code == 400
+                and cursor_used
+                and not cursor_reset
+            ):
+                logger.warning(
+                    "notion.poll_comments.cursor_invalidated page=%s status=%s body=%s",
+                    page_id, resp.status_code, resp.text[:200],
+                )
+                _redis_del_cursor(redis_client, page_id)
+                cursor_reset = True
+                # Surface empty result this cycle; next cycle will re-bootstrap.
+                return {
+                    "comments": [],
+                    "count": 0,
+                    "cursor_used": cursor_used,
+                    "requests_count": requests_count,
+                    "bootstrap": bootstrap,
+                    "cursor_reset": True,
+                }
+
             data = _check_response(resp, "poll_comments")
 
-            for c in data.get("results", []):
-                created = c.get("created_time", "")
-                created_dt = _parse_notion_datetime(created)
+            if not bootstrap:
+                for c in data.get("results", []):
+                    created = c.get("created_time", "")
+                    created_dt = _parse_notion_datetime(created)
 
-                if since_dt and created_dt and created_dt <= since_dt:
-                    continue
+                    if since_dt and created_dt and created_dt <= since_dt:
+                        continue
 
-                text_parts = []
-                for rt in c.get("rich_text", []):
-                    text_parts.append(rt.get("plain_text", rt.get("text", {}).get("content", "")))
+                    text_parts = []
+                    for rt in c.get("rich_text", []):
+                        text_parts.append(
+                            rt.get("plain_text", rt.get("text", {}).get("content", ""))
+                        )
 
-                comments.append(
-                    {
-                        "id": c["id"],
-                        "created_time": created,
-                        "created_by": c.get("created_by", {}).get("id", "unknown"),
-                        "text": "".join(text_parts),
-                    }
-                )
+                    comments.append(
+                        {
+                            "id": c["id"],
+                            "created_time": created,
+                            "created_by": c.get("created_by", {}).get("id", "unknown"),
+                            "text": "".join(text_parts),
+                        }
+                    )
 
-            if len(comments) >= limit:
-                break
+            next_cursor = data.get("next_cursor")
+            if next_cursor:
+                last_seen_cursor = next_cursor
+
             if not data.get("has_more"):
+                reached_tail = True
                 break
-            start_cursor = data.get("next_cursor")
-            if not start_cursor:
+            if not bootstrap and len(comments) >= limit:
                 break
+            if not next_cursor:
+                reached_tail = True
+                break
+            start_cursor = next_cursor
 
-    comments.sort(key=lambda c: _parse_notion_datetime(c.get("created_time")) or datetime.min.replace(tzinfo=timezone.utc))
-    return {"comments": comments[:limit], "count": len(comments[:limit])}
+    # Persist cursor for next poll (D1 / D2).
+    if redis_client is not None:
+        if reached_tail:
+            # No further pages right now. Save the latest cursor we have so
+            # next poll resumes there (it remains valid as new comments append
+            # at the end). If we never saw any cursor (page had ≤page_size
+            # comments total), save sentinel so next cycle re-bootstraps.
+            cursor_to_save = last_seen_cursor or CURSOR_TAIL_SENTINEL
+        else:
+            cursor_to_save = start_cursor or last_seen_cursor or CURSOR_TAIL_SENTINEL
+        _redis_set_cursor(redis_client, page_id, cursor_to_save)
+
+    comments.sort(
+        key=lambda c: _parse_notion_datetime(c.get("created_time"))
+        or datetime.min.replace(tzinfo=timezone.utc)
+    )
+    return {
+        "comments": comments[:limit],
+        "count": len(comments[:limit]),
+        "cursor_used": cursor_used,
+        "requests_count": requests_count,
+        "bootstrap": bootstrap,
+        "cursor_reset": cursor_reset,
+    }
 
 
 def read_page(

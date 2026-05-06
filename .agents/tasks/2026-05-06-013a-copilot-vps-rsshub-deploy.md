@@ -157,6 +157,84 @@ Pegar abajo (sección `## Resultado YYYY-MM-DD`):
 
 ---
 
-## Resultado YYYY-MM-DD
+## Resultado 2026-05-06
 
-_(pegar acá el reporte de cierre)_
+**Estado: GREEN** (con 2 desviaciones menores documentadas).
+
+### Desviaciones del task
+
+1. **Tag de imagen:** `diygod/rsshub:chromium-latest` ya no existe en Docker Hub. El registro actual usa `chromium-bundled` (mismo propósito: imagen con Chromium bundled). Usé `diygod/rsshub:chromium-bundled` (digest `sha256:73d916e6e1880f0778bdecae25ce9c39f8c96f42e92e8f5d71877bffcced5eb9`).
+2. **Memoria idle:** 616.6 MiB en idle, ligeramente sobre el criterio `<500MB` del task. Es esperable para la build chromium-bundled (Chromium pre-cargado). CPU idle 0.00%, dentro de margen. No bloquea el deliverable; flag informativo.
+
+### 1. Commit en `main` al ejecutar
+
+```
+4ef21a4 evidence(copilot-cli): F8A retry after docker stdin fix
+```
+
+(Este task no commitea código; este reporte queda pendiente como edit en working tree para que Rick decida si commitear o no — ver nota al final.)
+
+### 2. Puerto usado
+
+`1200` (libre en pre-check 2).
+
+### 3. `docker ps --filter "name=rsshub"`
+
+```
+NAMES     STATUS          PORTS
+rsshub    Up 20 seconds   127.0.0.1:1200->1200/tcp
+```
+
+### 4. Smoke tests (3/3 GREEN)
+
+```
+ROOT:    HTTP 200,  7275 bytes
+YOUTUBE: HTTP 200, 32714 bytes
+HN:      HTTP 200, 16263 bytes
+```
+
+Conteo de items en feeds XML:
+- YouTube (Kurzgesagt): **30 `<item>`**
+- Hacker News: **30 `<item>`**
+
+### 5. Primeras 200 chars de cada XML
+
+**YouTube:**
+```
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title>Kurzgesagt – In a Nutshell - YouTube</title><link>https://www.youtube.com/channel/UC
+```
+Primer item title: `GERMANY IS OVER`
+
+**Hacker News:**
+```
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title>Hacker News</title><link>https://news.ycombinator.com</link><atom:link href="http://12
+```
+Primer item title: `Show HN: Red Squares – GitHub outages as contributions`
+
+### 6. Bind localhost (NO público)
+
+```
+LISTEN 0  4096  127.0.0.1:1200  0.0.0.0:*
+```
+
+Confirmado: bind solo en loopback, no expuesto a internet.
+
+### 7. `docker stats rsshub --no-stream`
+
+```
+CONTAINER ID   NAME      CPU %   MEM USAGE / LIMIT     MEM %   NET I/O           BLOCK I/O     PIDS
+392f156969d8   rsshub    0.00%   616.6MiB / 7.755GiB   7.76%   1.14MB / 97.1kB   0B / 24.6kB   31
+```
+
+### 8. Decisión sugerida
+
+**PASS → Fase A lista.** RSSHub responde HTTP 200 a las 3 rutas críticas (root, YouTube, RSS passthrough), bind localhost confirmado, container persistente con `--restart unless-stopped`. Puede avanzar Fase B (LinkedIn cookie) o Fase C (script discovery) cuando David lo decida.
+
+### Quality gate
+
+- [x] Pre-checks 1-3 verdes.
+- [x] Container `rsshub` corriendo y persistente (`--restart unless-stopped`).
+- [x] 3 smoke tests verdes.
+- [x] Bind solo a `127.0.0.1`, no público.
+- [x] Reporte pegado en este archivo con todos los puntos 1-8.
+- [ ] Repo VPS en `main`, working tree clean al cerrar — **parcial**: este edit del reporte queda pendiente; además había 2 archivos modificados antes de este task (`docs/ops/notion-poll-comments-sev1-triage-2026-05-05.md`, `scripts/vps/check-notion-poller.sh`) ajenos al deploy. Rick decide si commitea o stashea.

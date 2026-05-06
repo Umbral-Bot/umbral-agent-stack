@@ -1,0 +1,502 @@
+workspace:
+  name: "David Moreira Workspace"
+  environment: "production"
+  owner: "David Moreira"
+
+critical_pages:
+  workspace_hub:
+    title: "Workspace"
+    page_id: "REPLACE_ME"
+    canonical: true
+  systems_hub:
+    title: "Sistemas y Automatizaciones"
+    page_id: "d9f44c45-f208-48d1-a7eb-330a9884afb3"
+    canonical: true
+  teaching_hub:
+    title: "Docencia y Contenido"
+    page_id: "cd293b86-3449-4948-b436-0d3f4a4713fb"
+    canonical: true
+  governance_page:
+    title: "Gobernanza Notion"
+    page_id: "5b348139-464b-46fb-b7f3-8c5a36f6c7d5"
+    canonical: true
+    runtime_notes:
+      mirror_mode: "lightweight_operational_summary"
+      structural_detail_source: "repo governance docs and registries"
+      schema_detail_source: "docs/databases/"
+      canonical_surfaces_recognized:
+        - "Clientes y Partners"
+        - "Programas y Cursos"
+        - "Recursos y Casos"
+        - "Investigaciones"
+        - "Sistemas y Automatizaciones"
+      docencia_boundary: "Docencia y Contenido is navigation and context, not master storage"
+      teaching_operations_note: "active teaching projects may live operationally under their account in Clientes y Partners without replacing Programas y Cursos as the canonical program surface"
+  control_room:
+    title: "OpenClaw"
+    page_id: "30c5f443-fb5c-80ee-b721-dc5727b20dca"
+    canonical: true
+  dashboard_rick:
+    title: "Dashboard Rick"
+    page_id: "3265f443-fb5c-816d-9ce8-c5d6cf075f9c"
+    canonical: true
+
+critical_databases:
+  granola_raw_intake:
+    title: "Transcripciones Granola"
+    database_id: "3265f443fb5c81d789b9e16eacb0082d"
+    data_source_id: "3265f443-fb5c-817c-81d1-000b5b707f29"
+    status: "active"
+    lifecycle_state: "active"
+    layer: "raw"
+    v1_contract_stage: "raw"
+    owner: "Rick / OpenClaw"
+    ingestion_contract: "Granola cache index plus private local API hydration when needed"
+    runtime_notes:
+      validated_raw_source: true
+      validated_live_items_2026_03_27: 3
+      queue_status_2026_03_27: "no productive candidates pending"
+      operational_lifecycle_field: "Estado"
+      agent_telemetry_fields:
+        - "Estado agente"
+        - "Accion agente"
+      artifact_pointer_field: "URL artefacto"
+      artifact_pointer_target: "final_canonical_object_only"
+      current_session_contract: "raw_direct_v2"
+      supported_direct_write_targets:
+        - "Registro de Tareas y Proximas Acciones"
+        - "Proyectos — Umbral"
+        - "Entregables"
+      read_only_classification_targets:
+        - "Programas y Cursos"
+        - "Recursos y Casos"
+      legacy_session_surface: "Registro de Sesiones y Transcripciones"
+      retired_raw_states:
+        - "Capitalizada"
+  sesiones_curated:
+    title: "Registro de Sesiones y Transcripciones"
+    database_id: "7eca76a8d9f3403b9de11eb24229ac8c"
+    data_source_id: "f83124d0-081b-4511-8f6e-209a5fbb4cff"
+    status: "retired_from_v2_runtime"
+    lifecycle_state: "in_trash"
+    layer: "legacy_session_surface"
+    v1_contract_stage: "legacy_session_capitalizable"
+    contract_aliases:
+      - "curated"
+    runtime_notes:
+      active_runtime_role: "none"
+      legacy_status_note: "deleted live surface still fetchable for defensive validation"
+      defensive_read_only_when:
+        - "a raw row still carries an old URL artefacto"
+        - "the agent must confirm that the pointed page is a retired legacy session artifact"
+      granola_backlink_field: "URL fuente"
+      upstream_pointer_field: "URL fuente"
+      upstream_pointer_semantics:
+        Granola: "raw_notion_row_when_available"
+        Notion: "authoritative_upstream_notion_page_outside_raw_db"
+        legacy_external: "allowed_until_explicit_remap"
+      fecha_requirement:
+        meeting_or_event_like_records: "required"
+        notion_backed_class_or_content_artifacts_without_trustworthy_upstream_date: "optional"
+      notion_backed_active_row_rule:
+        keep_active_only_if: "real_session_or_event_like_unit"
+        content_backed_proxies: "archive_here_keep_upstream_canonical"
+  tareas_curated:
+    title: "Registro de Tareas y Proximas Acciones"
+    database_id: "517bfeb967584d33bf6f6ba1b853bb4a"
+    data_source_id: "e999b146-e709-439d-80f7-53cab141f8c8"
+    status: "active"
+    lifecycle_state: "active"
+    layer: "destination"
+    v1_contract_stage: "capitalization_target"
+    runtime_notes:
+      validated_as_downstream_target_from_curated_sessions: true
+  proyectos:
+    title: "Asesorías & Proyectos"
+    title_legacy_ascii: "Asesorias y Proyectos"
+    notion_icon: "💼"
+    naming_correction_2026_05_04: "Renamed from 'Asesorias y Proyectos' (ASCII, 'y') to 'Asesorías & Proyectos' (with tilde + ampersand) to match Notion live title text. Emoji 💼 lives in Notion icon field, NOT in title text. Confirmed by David via screenshot 2026-05-04. Closes P38 in O4 gap-analysis."
+    database_id: "3c1112c327cd445f848f041c4f8449c2"
+    data_source_id: "c6baa53d-1078-4618-8283-423068a44880"
+    status: "active"
+    lifecycle_state: "active"
+    layer: "destination"
+    v1_contract_stage: "capitalization_target"
+    runtime_notes:
+      validated_as_downstream_target_from_curated_sessions: true
+      client_relation_exists_live_2026_04_02: true
+      rick_runtime_relation_visible_after_share_2026_04_02: true
+      legacy_cliente_text_field_exists_but_no_runtime_writer: true
+      correction_2026_04_11: "Investigation confirmed no code in umbral-agent-stack writes to this DB or its Cliente field. The granola capitalizer writes to Proyectos Umbral (d4098fa4), not here."
+      correction_2026_04_30: "Re-investigation found runtime writer DOES exist: `handle_granola_update_commercial_project_from_curated_session` in `umbral-agent-stack/worker/tasks/granola.py:3193`. Gated by NOTION_COMMERCIAL_PROJECTS_DB_ID env var. Writes commercial fields (Estado, Acción Requerida, Fecha, Plazo, Monto, Tipo, Cliente) from curated sessions when project relation is verified. Earlier 2026-04-11 note was correct only for the granola capitalizer entry-point; this commercial slice was added/overlooked separately."
+      no_registered_runtime_write_path: false
+      registered_runtime_writers:
+        - function: "handle_granola_update_commercial_project_from_curated_session"
+          file: "worker/tasks/granola.py:3193"
+          repo: "umbral-agent-stack"
+          env_var: "NOTION_COMMERCIAL_PROJECTS_DB_ID"
+          gate: "explicit project relation OR project_page_id required; at least one commercial field required"
+          writes_fields:
+            - "Estado"
+            - "Acción Requerida"
+            - "Fecha"
+            - "Plazo"
+            - "Monto"
+            - "Tipo"
+            - "Cliente"
+  proyectos_umbral:
+    title: "Proyectos técnicos - Rick"
+    title_alias_legacy: "Proyectos — Umbral"
+    database_id: "d4098fa43280434a8ae4b11cab81246f"
+    data_source_id: "0102d4f2-5334-4224-8de1-23ea39f2e2a7"
+    status: "active"
+    lifecycle_state: "active"
+    layer: "agent_runtime"
+    v1_contract_stage: "not_applicable_v2_only"
+    runtime_notes:
+      active_writer: "handle_notion_upsert_project in worker/tasks/notion.py"
+      granola_capitalizer_target: true
+      env_var: "NOTION_PROJECTS_DB_ID"
+      location_in_notion: "Sistemas y Automatizaciones / OpenClaw"
+      schema_columns:
+        - "Nombre"
+        - "Estado"
+        - "Linear Project"
+        - "Ruta compartida"
+        - "Responsable"
+        - "Agentes"
+        - "Sprint"
+        - "Inicio"
+        - "Objetivo"
+        - "Issues abiertas"
+        - "Bloqueos"
+        - "Siguiente accion"
+        - "Ultimo update"
+        - "Tareas"
+      no_cliente_field: true
+      discovered_missing_from_registry_2026_04_11: true
+      correction_2026_04_30:
+        data_source_id_resolved: "0102d4f2-5334-4224-8de1-23ea39f2e2a7 confirmed via MCP read-only fetch"
+        title_aligned_to_live: "D-DIFF-3 option B: contract title updated from 'Proyectos — Umbral' to live name 'Proyectos técnicos - Rick'"
+        tareas_relation_target: "4e6b2dd4-ffb6-4cfe-b581-c9320f310084 (Tareas — Umbral Agent Stack)"
+  clientes:
+    title: "Clientes y Partners"
+    database_id: "b8431e5744034b64b5e49db93627c2be"
+    data_source_id: "c0ecc543-621b-4fe8-8419-b90cd8e2b429"
+    status: "active"
+    lifecycle_state: "active"
+    v1_contract_stage: "capitalization_target_or_placeholder_crm_surface"
+    runtime_notes:
+      canonical_account_layer_confirmed_2026_04_02: true
+      rick_runtime_query_status_2026_04_02_after_share: "ok"
+      project_relation_visible_in_runtime_after_share_2026_04_02: true
+      correction_2026_04_11: "No active writer depends on legacy Cliente. The sharing gap is closed. Commercial projects DB has no runtime write path at all."
+      no_active_cliente_dependency: true
+  entregables:
+    title: "Entregables"
+    database_id: "462adf658f3b45b99c7d0bc31c5a299f"
+    data_source_id: "1ad2d99c-8d67-4fba-b8fb-a03e4f57f86b"
+    status: "active"
+    lifecycle_state: "active"
+    v1_contract_stage: "capitalization_target"
+  programas:
+    title: "Programas y Cursos"
+    database_id: "3cc45587ddca4456a911f7f310889f01"
+    data_source_id: "c1d6af93-b88c-49c0-a1d2-a683821c253b"
+    status: "active"
+    lifecycle_state: "active"
+    v1_contract_stage: "capitalization_target"
+    runtime_notes:
+      companion_knowledge_base_pattern: "Base de Conocimiento Maestra | [Empresa] | Cursos"
+      companion_knowledge_scope: "reusable_course_knowledge_and_project_specific_slides_system"
+      agent_prompt_boundary: "teaching_prompts_are_behavior_only"
+      default_class_production_approach: "division"
+      default_class_output_sections:
+        - "Descripcion y material de apoyo"
+        - "Guion para teleprompter"
+        - "Estructura de diapositivas"
+      recurring_concept_source: "project_canonical_definitions_then_conceptos_fundamentales_when_designated"
+      editorial_boundary: "detailed_editorial_and_slides_rules_stay_in_the_companion_knowledge_base_not_in_agent_prompts"
+      docente_2_runtime_status: "frozen_current_operational_version_until_explicit_replacement"
+      image_prompt_language_default: "spanish"
+      konstruedu_image_prompt_default_aspect_ratio: "1:1_unless_template_requires_other_ratio"
+      image_prompt_quality_contract:
+        - "specify_the_concrete_interface_shown"
+        - "use_screenshot_like_wording_when_appropriate"
+        - "state_spatial_composition_explicitly"
+        - "keep_visual_style_consistent_with_project_system"
+        - "avoid_generic_prompt_wording"
+        - "include_aec_terminology_when_relevant"
+      konstruedu_master_cleanup_status: "executed"
+      konstruedu_removed_non_runtime_sections:
+        - "Navegacion rapida"
+        - "Mapa de relaciones entre bases"
+        - "Taxonomia maestra"
+        - "Flujo de trabajo operativo"
+        - "Guia de vistas disponibles"
+        - "Plantillas internas"
+        - "Ejemplo practico de reutilizacion"
+        - "Version minima viable vs. expandida"
+        - "Recomendaciones de mantenimiento"
+      konstruedu_no_legacy_retention_reason: "removed sections depended entirely on a six-base system that does not exist in the live runtime and had no independent operational value"
+      konstruedu_live_operational_sections:
+        - "Modo curso · Konstruedu"
+        - "Sistema de Diseño de Presentaciones KonstruEdu"
+        - "Criterios para prompts de imagen"
+        - "Criterios editoriales capitalizados"
+        - "Conceptos fundamentales"
+        - "Paleta y tipografia de referencia"
+      konstruedu_cleanup_effect:
+        - "removes false execution paths for the agent"
+        - "reduces runtime drift"
+        - "aligns the master base with the real live teaching system without creating new bases"
+      institution_minimum_values:
+        - "Butic"
+        - "UTFSM"
+        - "Tedi Virtual"
+        - "COMGRAP"
+        - "EnjofraBIM"
+        - "Konstruedu"
+        - "Otra"
+  recursos:
+    title: "Recursos y Casos"
+    database_id: "2eacc00e6d554d7281510f78b03677dd"
+    data_source_id: "42c93d48-1166-4629-9ebc-d5048629d4de"
+    status: "active"
+    lifecycle_state: "active"
+    v1_contract_stage: "capitalization_target"
+    runtime_notes:
+      governance_mode: "lightweight_index_not_longform_repository"
+      teacher_agent_entry_view: "Material reutilizable para docencia"
+      teacher_agent_entry_filter: "Reutilizable = true"
+      teacher_case_entry_view: "Casos de estudio reutilizables"
+      teacher_case_entry_filter: "Tipo = Caso de estudio AND Reutilizable = true"
+      orphan_case_type_repair_note: "6 rows left with null Tipo after the earlier rename were corrected to Caso de estudio"
+      summary_limit: "<=3 lines"
+      key_results_limit: "<=2 lines"
+      longform_content_lives_in_source_page: true
+      tipo_values:
+        - "Caso de estudio"
+        - "Experiencia directa"
+        - "Material base"
+        - "Recurso"
+        - "Herramienta nombrable"
+        - "Presentacion"
+        - "Guia"
+        - "Plantilla"
+        - "Otro"
+      traceability_fields:
+        - "Origen"
+        - "Permiso de mencion"
+        - "Relacion con David"
+      mass_migration_rule: "no_mass_automatic_migrations_without_editorial_review"
+      url_consolidation_note: "future_review_only_do_not_change_without_confirmed_criterion"
+
+  tareas_umbral_agent_stack:
+    title: "Tareas — Umbral Agent Stack"
+    icon: "📒"
+    data_source_id: "4e6b2dd4-ffb6-4cfe-b581-c9320f310084"
+    status: "active"
+    lifecycle_state: "active"
+    layer: "agent_runtime"
+    v1_contract_stage: "not_applicable_v2_only"
+    schema_doc: "docs/databases/17-tareas-umbral-agent-stack.md"
+    discovered_2026_04_30: true
+    runtime_notes:
+      role: "runtime_execution_log_for_worker_dispatcher"
+      not_human_pipeline: true
+      distinct_from_tareas_curated: "e999b146 (Registro de Tareas y Proximas Acciones) is the human pipeline; this DB logs automated worker executions"
+      relation_proyecto_target: "0102d4f2-5334-4224-8de1-23ea39f2e2a7 (Proyectos técnicos - Rick)"
+      relation_entregable_target: "82493dd7-4ed2-4cd1-9d0b-9572bcffe417 (Bandeja de revisión - Rick)"
+      schema_columns:
+        - "Task"
+        - "Status (queued, running, done, blocked, failed)"
+        - "Team (system, improvement, lab, marketing, advisory, ops, Rick, david, Codex, Test User)"
+        - "Source"
+        - "Source Kind"
+        - "Task ID"
+        - "Trace ID"
+        - "Model"
+        - "Input Summary"
+        - "Result Summary"
+        - "Error"
+        - "Created"
+        - "Proyecto (relation → Proyectos técnicos - Rick)"
+        - "Entregable (relation → Bandeja de revisión - Rick)"
+  bandeja_revision_rick:
+    title: "Bandeja de revisión - Rick"
+    icon: "📬"
+    data_source_id: "82493dd7-4ed2-4cd1-9d0b-9572bcffe417"
+    status: "active"
+    lifecycle_state: "active"
+    layer: "agent_runtime"
+    v1_contract_stage: "not_applicable_v2_only"
+    schema_doc: "docs/databases/18-bandeja-revision-rick.md"
+    discovered_2026_04_30: true
+    runtime_notes:
+      role: "review_queue_for_artifacts_produced_by_agents"
+      complementary_to_tareas_umbral_agent_stack: "Tareas logs execution; this DB stages produced artifacts awaiting human/agent review"
+      relation_tareas_origen_target: "4e6b2dd4-ffb6-4cfe-b581-c9320f310084 (Tareas — Umbral Agent Stack)"
+      relation_proyecto_target: "0102d4f2-5334-4224-8de1-23ea39f2e2a7 (Proyectos técnicos - Rick)"
+      schema_columns:
+        - "Nombre"
+        - "Tipo (Benchmark, Reporte, Borrador, Pieza editorial, Criterio, Plan, Auditoria)"
+        - "Estado revision (Pendiente revision, Aprobado, Aprobado con ajustes, Rechazado, Archivado)"
+        - "Agente (Rick, Claude, Codex, Cursor, Antigravity)"
+        - "Procedencia (Tarea, Historico, Smoke, Manual)"
+        - "Resumen"
+        - "Siguiente accion"
+        - "Observaciones"
+        - "Fecha"
+        - "Fecha limite sugerida"
+        - "Ultima actualizacion"
+        - "URL artefacto"
+        - "Ruta artefacto"
+        - "Linear Issue"
+        - "Task ID origen"
+        - "Tareas origen (relation → Tareas — Umbral Agent Stack)"
+        - "Proyecto (relation → Proyectos técnicos - Rick)"
+
+  desarrollos_cambios_sistema:
+    title: "Desarrollos y Cambios de Sistema"
+    database_id: "PLACEHOLDER_VERIFY_DATABASE_ID"
+    data_source_id: "PLACEHOLDER_VERIFY_DATA_SOURCE_ID"
+    status: "designed_not_yet_live"
+    lifecycle_state: "pending_creation"
+    layer: "traceability"
+    v1_contract_stage: "cross_repo_bridge"
+    schema_doc: "docs/databases/13-desarrollos-cambios-sistema.md"
+    adr: "docs/adr/02-cross-repo-traceability-bridge-objects.md"
+    runtime_notes:
+      parent_hub: "Sistemas y Automatizaciones"
+      bridges_gap_between:
+        - "code changes (PRs)"
+        - "runtime modifications"
+        - "governance contract updates"
+        - "operational meaning in Notion"
+      upstream_relations:
+        - "Investigaciones"
+      downstream_relations:
+        - "Sistemas / Agentes / Automatizaciones"
+        - "Registro de Tareas y Proximas Acciones"
+        - "Entregables"
+      repo_values:
+        - "umbral-agent-stack"
+        - "notion-governance"
+        - "umbral-bot-2"
+        - "Otro"
+
+notes:
+  - "Do not add a transversal systems database here unless a real governance gap remains after reconciling the live technical hub."
+  - "The 8 canonical entries above were normalized from direct confirmation on 2026-03-28. Proyectos Umbral (9th, active agent runtime DB) was discovered unregistered and added 2026-04-11. Desarrollos y Cambios de Sistema (10th) was designed 2026-04-11, pending live creation. On 2026-04-30 two more agent-runtime DBs were discovered via MCP read-only diff and added: Tareas — Umbral Agent Stack (worker execution log) and Bandeja de revisión - Rick (artifact review queue)."
+  - "Use lifecycle vocabulary explicitly: `active`, `archived`, `in_trash`."
+  - "The active session-derived runtime now capitalizes directly from `Transcripciones Granola`."
+  - "`Registro de Sesiones y Transcripciones` remains only as a legacy V1 residue and should not be treated as an active session bridge."
+  - "Teaching prompts such as `Docente 2` should remain behavior-only and should not duplicate company course knowledge."
+  - "`Gobernanza Notion` is a lightweight operational mirror; do not treat it as a replica of repo-side detailed schemas."
+  - "`Esquemas minimos V1` is archived because it drifted from the live governed bases; current schema detail lives in `docs/databases/`."
+
+reference_systems:
+  referencias_paginas_intake:
+    title: "Paginas"
+    host_page: "Referencias"
+    data_source_id: "2755f443-fb5c-81ca-ab6d-000be11a33b3"
+    status: "active"
+    lifecycle_state: "active"
+    layer: "reference_intake"
+    runtime_notes:
+      canonical_wrapper: "Paginas"
+      duplicate_wrapper_title: "Servicios y Herramientas"
+      duplicate_wrapper_removed_from_hub_canvas: true
+      duplicate_wrapper_manual_ui_closeout_completed: true
+      duplicate_wrapper_final_state: "deleted_historical_residue_only"
+      legacy_rows_backfilled_default_state: "Por revisar"
+      all_items_view_name: "Todas"
+      validation_states:
+        - "Capturada"
+        - "Por revisar"
+        - "Validada"
+        - "Apta para citar"
+        - "Descartada"
+  referencias_investigaciones:
+    title: "Investigaciones"
+    host_page: "Referencias"
+    database_id: "4271a1feb2b94027ac311fe1a612206a"
+    data_source_id: "2ea5c256-653e-4af0-a745-387b17c72ba2"
+    status: "active"
+    lifecycle_state: "active"
+    layer: "research_curated"
+    runtime_notes:
+      row_granularity: "one_curated_investigation_per_row"
+      docencia_consumption_mode: "secondary_curated_source_after_project_knowledge_project_rules_and_capitalized_resources"
+      docencia_priority_filters:
+        - "Estado = Completada"
+        - "Uso previsto relevant to request, especially Docencia"
+  referencias_referentes:
+    title: "Referentes"
+    host_page: "Referencias"
+    database_id: "05f04d48c44943e8b4acc572a4ec6f19"
+    data_source_id: "afc8d960-086c-4878-b562-7511dd02ff76"
+    status: "active"
+    lifecycle_state: "active"
+    layer: "reference_curated"
+    runtime_notes:
+      row_granularity: "one_referente_humano_per_row"
+      population_2026_05_05: 26
+      consumers:
+        - repo: "umbral-agent-stack"
+          plan: "docs/plans/linkedin-publication-pipeline.md"
+          stage: "Stage 1 (read-only)"
+          access_mode: "notion_mcp_read_only"
+          blocked_by_audit: "2026-05-05-006-copilot-vps-audit-rick-notion-mcp-integration"
+      schema_extension_2026_05_05:
+        rationale: "Anchor LinkedIn publication pipeline (Stage 1) on per-referente channel metadata instead of inferring channels at ingest time. Source: Perplexity Deep Research + Notion AI bulk capitalization."
+        new_columns:
+          - name: "LinkedIn activity feed"
+            type: "url"
+            role: "fuente_de_verdad_publicaciones_linkedin"
+          - name: "YouTube channel"
+            type: "url"
+          - name: "Web / Newsletter"
+            type: "url"
+          - name: "RSS feed"
+            type: "url"
+          - name: "Otros canales"
+            type: "rich_text"
+            note: "free-form for X/Twitter, Medium, GitHub, Podcast pending dedicated columns"
+          - name: "Última actividad detectada"
+            type: "text"
+            format_convention: "MMM YYYY (ej: Abr 2026) o NO VERIFICADO"
+          - name: "Confianza canales"
+            type: "select"
+            values: ["ALTA", "MEDIA", "BAJA", "DUPLICADO"]
+          - name: "Flags canales"
+            type: "multi_select"
+            values: ["ACTIVIDAD_BAJA", "POSIBLE_INACTIVO", "SLUG_DIFIERE", "DUP", "RSS_NO_CONFIRMADO", "REQUIERE_VERIFICACION_MANUAL", "SIN_LINKEDIN", "CAMBIO_DE_PLATAFORMA"]
+          - name: "Notas canales"
+            type: "rich_text"
+          - name: "Última auditoría canales"
+            type: "date"
+        known_data_findings_2026_05_05:
+          - "1 duplicado detectado: Pascal Bornet (decisión de consolidación pendiente)"
+          - "1 sin LinkedIn: QuantumFracture / José Luis Crespo"
+          - "5 con Confianza canales = BAJA (excluidos de Stage 1)"
+          - "Lucas Dalto: perfil LinkedIn bajo dominio ar.linkedin.com"
+          - "Pascal Bornet: multi-canal (LinkedIn + Newsletter + Substack)"
+        stage_1_consumption_rules:
+          - "filter Confianza canales ∈ {ALTA, MEDIA}  # excluye BAJA y DUPLICADO automáticamente"
+          - "exclude Flags canales contains POSIBLE_INACTIVO"
+          - "exclude Flags canales contains REQUIERE_VERIFICACION_MANUAL"
+          - "require ≥1 channel column populated (LinkedIn activity feed | YouTube channel | Web / Newsletter | RSS feed | Otros canales)"
+          - "DUP flag in Flags canales is informational; primary dedup signal is Confianza canales = DUPLICADO"
+        pending_schema_decisions:
+          - "X/Twitter URL column"
+          - "Medium URL column"
+          - "GitHub URL column"
+          - "Podcast URL column"
+      docencia_default_behavior: "do_not_consult_by_default_if_recursos_y_casos_already_covers_the_need"
+      contradiction_rule: "flag_conflict_with_capitalized_resource_and_propose_update"
+      downstream_targets:
+        - "Recursos y Casos"
+        - "Programas y Cursos"
+      non_goal: "do_not_use_as_primary_store_for_final_teaching_assets"

@@ -5,8 +5,9 @@
 - **Type:** runtime verification (read-only contra Notion API, NO writes)
 - **Depends on:**
   - PR #286 (mergeado a `main` en `5fa022d`) — script `scripts/smoke/referentes_rest_read.py`.
-  - `notion-governance` clonado o accesible como sibling (default `~/notion-governance`) con `registry/notion-data-sources.template.yaml` que contiene `referencias_referentes.data_source_id`.
+  - Snapshot vendored del registry en este mismo repo: `vendor/notion-governance/registry/notion-data-sources.template.yaml` (refrescado 2026-05-05 desde `notion-governance@1d1c3c6`). NO se requiere clonar `notion-governance` en la VPS.
   - Audit 006 (`2026-05-05-006-...`) — confirma que la autoridad runtime correcta es `worker.config.NOTION_API_KEY`, NO la MCP de Rick.
+  - Notion: integration Rick (la del `NOTION_API_KEY` de la VPS) tiene share confirmado sobre la página/DB **Referentes** (verificado 2026-05-05). No requiere acción adicional en Notion.
 - **Plan reference:** `docs/plans/linkedin-publication-pipeline.md` §11.3 (Stage 1 smoke gate).
 - **Status:** ready
 - **Estimated effort:** ~15 min (sin debugging).
@@ -27,17 +28,13 @@ Este es el **gate de salida de Stage 1**. Sin un `overall_pass: true` (o un fail
    git log --oneline -1   # debe mostrar 5fa022d o más reciente
    git status --short     # debe estar limpio
    ```
-2. **Sibling `notion-governance` accesible Y actualizado a `origin/main`:**
+2. **Registry vendored presente y con la entry esperada:**
    ```bash
-   # Localizar el sibling existente. Posibles rutas: ~/notion-governance, ~/notion-governance-git, ~/notion-governance-local.
-   for d in ~/notion-governance ~/notion-governance-git ~/notion-governance-local; do
-     [ -d "$d/.git" ] && { echo "FOUND: $d"; cd "$d" && git fetch origin && git checkout main && git pull --ff-only origin main && git log --oneline -1 -- registry/notion-data-sources.template.yaml; break; }
-   done
-   # Si NINGUNO existe: cd ~ && git clone https://github.com/Umbral-Bot/notion-governance.git
-   # Verificar que la entry esperada está presente (debe imprimir 1 línea, número de línea ~435):
-   grep -n "referencias_referentes:" "$d/registry/notion-data-sources.template.yaml"
-   # Si no aparece: el sibling no está en main de origin con commit 9ede9e4 o superior. Hacer `git pull --ff-only origin main` y reintentar.
+   ls -la ~/umbral-agent-stack/vendor/notion-governance/registry/notion-data-sources.template.yaml
+   grep -n "referencias_referentes:" ~/umbral-agent-stack/vendor/notion-governance/registry/notion-data-sources.template.yaml
+   # Esperado: 1 match alrededor de línea 435.
    ```
+   Si el archivo no existe: el `git pull` del pre-check 1 no trajo el snapshot. Verificar con `git log --oneline -- vendor/notion-governance/`. Abortar y notificar; NO clonar `notion-governance` ni reconstruir el registry desde cero.
 3. **Env worker cargado** (mismo que usa `umbral-worker.service`):
    ```bash
    # NO imprimir el valor del token. Solo verificar presencia:
@@ -53,18 +50,13 @@ Este es el **gate de salida de Stage 1**. Sin un `overall_pass: true` (o un fail
 ```bash
 cd ~/umbral-agent-stack
 source .venv/bin/activate
+set -a && source ~/.config/openclaw/env && set +a
 mkdir -p reports
 TS=$(date -u +%Y%m%dT%H%M%SZ)
 python scripts/smoke/referentes_rest_read.py \
+  --registry vendor/notion-governance/registry/notion-data-sources.template.yaml \
   --output reports/stage1-smoke-referentes-${TS}.json
 echo "exit=$?"
-```
-
-Si `notion-governance` está en otra ruta:
-```bash
-python scripts/smoke/referentes_rest_read.py \
-  --registry /ruta/a/notion-governance/registry/notion-data-sources.template.yaml \
-  --output reports/stage1-smoke-referentes-${TS}.json
 ```
 
 ## Criterios de éxito
@@ -82,8 +74,9 @@ python scripts/smoke/referentes_rest_read.py \
 
 ## Si falla
 
-- **Exit 3 (`setup_error`) con mensaje sobre registry key faltante:** el sibling `notion-governance` está desactualizado o en una branch distinta de `main`. Re-ejecutar pre-check 2 (fetch + pull --ff-only origin main + grep `referencias_referentes:`). NO modificar el script. NO concluir que la entry "no existe" sin antes haber pulleado origin/main del sibling.
+- **Exit 3 (`setup_error`) con mensaje sobre registry key faltante:** el snapshot vendored no contiene la entry o no está sincronizado. Confirmar con `git log --oneline -1 -- vendor/notion-governance/registry/notion-data-sources.template.yaml`. Si el snapshot no fue refrescado, NO modificarlo en la VPS — abortar y notificar a David para que haga el refresh-and-push desde Windows.
 - **Exit 3 (`setup_error`) con mensaje sobre `NOTION_API_KEY`:** falta env del worker. Resolver pre-check 3 y reintentar.
+- **HTTP 404 / `object_not_found` desde Notion:** la integration Rick perdió share sobre la DB Referentes. NO reintentar, notificar a David para re-share.
 - **Exit 4 (`runtime_error`):** error HTTP/red contra Notion. Pegar el `runtime_error` completo en el reporte; NO reintentar más de 2 veces.
 - **Exit 2 (`overall_pass: false`):** algún check (a)-(e) falló. NO arreglar la DB en este task. Pegar el JSON completo y dejar a David decidir (puede ser data drift legítimo: nuevas filas, enums añadidos, URL inválida en una fila concreta).
 

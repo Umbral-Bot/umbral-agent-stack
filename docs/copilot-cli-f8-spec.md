@@ -30,24 +30,28 @@ F8 must prove:
 
 ## 2. Current state and blocker
 
-Latest F7.5 evidence:
+Latest F7.5A evidence:
 
-- Report: `reports/copilot-cli/f7-5-first-run-2026-05-05.md`
-- Verdict: **amarillo**
-- Meaning: infrastructure healthy, but no run occurred because L3, L4 and L5 are
-  closed.
+- Report: `reports/copilot-cli/f7-5a-code-gate-deploy-2026-05-05.md`
+- Verdict: **verde**
+- Meaning: the code-side gate L5 is open in live runtime, and the worker still
+  blocks safely at L3 (`execute_flag_off_dry_run`).
 
-F8 cannot be marked closed until F7.5 has a **green** run report.
+This F8A PR implements the missing real subprocess/Docker execution path. It
+does **not** open L3 or L4 in production.
 
-Current gate posture from F7.5 evidence:
+Current gate posture after F7.5A:
 
-| Layer | Gate | F7.5 state | F8 implication |
+| Layer | Gate | Current state | F8 implication |
 |---|---|---:|---|
 | L1 | `RICK_COPILOT_CLI_ENABLED` | `true` | already open |
 | L2 | `copilot_cli.enabled` | `true` | already open |
 | L3 | `RICK_COPILOT_CLI_EXECUTE` | `false` | must open only inside approved run window |
 | L4 | `copilot_cli.egress.activated` + live nft/Docker egress | `false` / absent | must be provisioned before real run |
-| L5 | `_REAL_EXECUTION_IMPLEMENTED` | `False` | needs PR + deploy while L3 remains false |
+| L5 | `_REAL_EXECUTION_IMPLEMENTED` | `True` | code gate open; F8A adds the real execution path |
+
+F8 cannot be marked closed until at least 3 productive single-agent runs are
+green. F8A only makes the first controlled run technically possible.
 
 ---
 
@@ -277,16 +281,16 @@ Each run report must cite:
 
 ## 8. Gate opening plan for L3, L4, L5
 
-The remaining gates are L3, L4 and L5. For actual runtime safety, L3 must be
-the last gate opened because it is the fastest kill-switch. The table below uses
-the requested L3/L4/L5 framing, but the **activation order for a run is L5
-deploy with L3 false -> L4 egress -> L3 temporary window**.
+L5 is already open after F7.5A. For actual runtime safety, L3 remains the last
+gate opened because it is the fastest kill-switch. The activation order for one
+run is now: **deploy F8A with L3 false -> provision L4 egress -> open L3
+temporary window -> run once -> rollback L3**.
 
 | Gate | Evidence needed before opening | How to open | Rollback | Owner |
 |---|---|---|---|---|
 | L3 `RICK_COPILOT_CLI_EXECUTE` | F7.5A deployed; L4 egress ready; one approved brief; budget set; worker healthy; token present by name only | edit envfile `false -> true`, restart worker | restore backup envfile, restart worker | David/operator |
 | L4 `egress.activated` + live nft/Docker | resolver dry-run clean; IP sets populated; `sudo nft -c` clean; apply/rollback tested; no stale table | apply nft table with populated sets, create required Docker network, set policy `activated=true` by PR if handler requires it | delete nft table, remove Docker network, revert policy | Copilot-VPS under David approval |
-| L5 `_REAL_EXECUTION_IMPLEMENTED` | PR diff only changes code gate and tests/docs; CI green; L3 remains false; deploy probe still blocks at L3 | merge PR + pull live + restart worker | revert PR or deploy rollback commit | Codex/David approval |
+| L5 `_REAL_EXECUTION_IMPLEMENTED` | F7.5A evidence green; F8A code path tested with mocked subprocess; L3 remains false | already open in live; F8A deploy should still block at L3 until David opens it | revert PR or deploy rollback commit | Codex/David approval |
 
 ### Minimum evidence to keep L3 open during a run
 
@@ -419,14 +423,17 @@ Until then, "Modo Torneo" remains design-only.
 
 ## 12. Immediate next actions
 
-Given F7.5 is currently amarillo, the next actions are:
+Given F7.5A is green and F8A implements the real execution path, the next
+actions are:
 
-1. Review/merge the prepared F7.5A code-gate PR
-   `rick/copilot-cli-f7-code-gate-rehearsal`, if David approves L5.
-2. Deploy it with L3 still false.
-3. Ask Copilot-VPS to verify the live probe still blocks at L3.
-4. Provision L4 egress with populated IP sets.
-5. Run one F7.5 scratch task under a bounded L3 window.
-6. If green, start F8-B1 as the first productive single-agent run.
+1. Review/merge the F8A real-execution-path PR.
+2. Ask Copilot-VPS to deploy F8A with L3 still false and verify the probe still
+   blocks at `execute_flag_off_dry_run`.
+3. Provision L4 egress with populated IP sets and verify no broad egress.
+4. Open L3 for one approved scratch run window only.
+5. Execute one F8A/F7.5 scratch run with `dry_run=false`.
+6. Roll back L3 immediately and review artifacts, token scan, exit code,
+   duration, and cost/tokens source.
 
-No F8 productive run should occur while F7.5 remains amarillo.
+No F8 productive run should be counted until the one-shot F8A scratch run is
+green and reviewed.

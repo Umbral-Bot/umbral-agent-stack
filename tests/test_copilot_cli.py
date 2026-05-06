@@ -613,6 +613,7 @@ def test_f8a_real_run_invokes_subprocess_and_writes_artifacts(monkeypatch):
     assert "COPILOT_GITHUB_TOKEN" in argv
     assert "github_pat_" not in flat_argv
     assert prompt not in flat_argv
+    assert "-i" in argv
     assert "--network=bridge" in argv
 
     manifest_path = Path(res["artifact_manifest"])
@@ -668,6 +669,7 @@ def test_f8a_diagnostic_mode_drops_json_stream_flags(monkeypatch):
     assert res["executed"] is True
     flat_argv = "\n".join(calls[0])
     assert "--log-level=debug" in flat_argv
+    assert "--log-dir=/scratch/copilot-logs" not in flat_argv
     assert "--output-format=json" not in flat_argv
     assert "--stream=off" not in flat_argv
 

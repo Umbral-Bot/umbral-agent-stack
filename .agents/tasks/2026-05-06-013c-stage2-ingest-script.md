@@ -224,6 +224,77 @@ Pegar abajo (sección `## Resultado YYYY-MM-DD`):
 
 ---
 
-## Resultado YYYY-MM-DD
+## Resultado 2026-05-06
 
-(pendiente — completar tras ejecutar)
+**PASS — gate GREEN**
+
+- Branch: `copilot-vps/feat-stage2-ingest`
+- Commit feat: `eea139d` (squash merge en main: `81f8116`)
+- PR: https://github.com/Umbral-Bot/umbral-agent-stack/pull/309 (MERGED)
+- Reporte JSON: `reports/stage2-discovery-20260506T225352Z.json`
+- SQLite local (`~/.cache/rick-discovery/state.sqlite`):
+  - `discovered_items`: 437
+  - `fetch_log`: 260
+- Tests unitarios: 25 passed (`tests/test_stage2_ingest_url_canonical.py`)
+
+### Gate criteria
+
+| criterio                        | requerido | observado | resultado |
+|---------------------------------|-----------|-----------|-----------|
+| exit code                       | 0         | 0         | PASS      |
+| overall_pass                    | true      | true      | PASS      |
+| registry.row_count              | 26        | 26        | PASS      |
+| referentes_processed            | 26        | 26        | PASS      |
+| channels_ok                     | >= 5      | 17        | PASS      |
+| items_new_this_run              | >= 10     | 387       | PASS      |
+| items_total_seen                | -         | 437       | -         |
+| sin_acceso (LinkedIn/Otros/etc) | esperado  | 103       | OK        |
+| errors (HTTP 403/404 RSS)       | esperado  | 10        | OK        |
+| parse_error                     | 0         | 0         | PASS      |
+
+### Reporte JSON (summary)
+
+```json
+{
+  "overall_pass": true,
+  "run_started_at": "2026-05-06T22:53:53Z",
+  "run_finished_at": "2026-05-06T22:54:19Z",
+  "registry": {
+    "data_source_id": "afc8d960-086c-4878-b562-7511dd02ff76",
+    "row_count": 26
+  },
+  "rsshub_base": "http://127.0.0.1:1200",
+  "skip_recent_minutes": 0,
+  "summary": {
+    "referentes_processed": 26,
+    "channels_attempted": 130,
+    "channels_ok": 17,
+    "channels_skip_recent": 0,
+    "channels_sin_acceso": 103,
+    "channels_error": 10,
+    "channels_parse_error": 0,
+    "items_total_seen": 437,
+    "items_new_this_run": 387
+  },
+  "errors_sample": [
+    {"referente_nombre": "Alex Freberg",     "canal": "rss", "error": "HTTP 404"},
+    {"referente_nombre": "Ruben Hassid",     "canal": "rss", "error": "HTTP 403"},
+    {"referente_nombre": "Daniel Shiffman",  "canal": "rss", "error": "HTTP 404"},
+    {"referente_nombre": "Grant Sanderson",  "canal": "rss", "error": "HTTP 404"},
+    {"referente_nombre": "Marc Vidal",       "canal": "rss", "error": "HTTP 404"},
+    {"referente_nombre": "Andrew Ng",        "canal": "rss", "error": "HTTP 404"},
+    {"referente_nombre": "Fred Mills",       "canal": "rss", "error": "HTTP 404"},
+    {"referente_nombre": "Pascal Bornet",    "canal": "rss", "error": "HTTP 403"},
+    {"referente_nombre": "Brian Solis",      "canal": "rss", "error": "HTTP 403"},
+    {"referente_nombre": "Pascal Bornet",    "canal": "rss", "error": "HTTP 403"}
+  ]
+}
+```
+
+> `per_referente` (26 entradas, 130 canales) omitido por brevedad — ver `reports/stage2-discovery-20260506T225352Z.json` (committed en `eea139d`).
+
+### Notas
+
+- YouTube /@handle URLs requirieron extender `parse_youtube_channel_id` y `youtube_rsshub_path` con kind `handle` (RSSHub route `/youtube/user/@HANDLE`). Verificado vivo (HTTP 200) antes del code change.
+- Restricciones respetadas: 0 escrituras a Notion, RSSHub solo loopback, NOTION_API_KEY no logueado, RSSHub container no tocado.
+- Working tree del VPS: 2 archivos ajenos a esta task (`docs/ops/notion-poll-comments-sev1-triage-2026-05-05.md`, `scripts/vps/check-notion-poller.sh`) presentes con modificaciones previas — no tocados.

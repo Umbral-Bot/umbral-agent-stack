@@ -1,0 +1,81 @@
+{
+  "overall_pass": true,
+  "run_started_at": "2026-05-07T01:00:37Z",
+  "run_finished_at": "2026-05-07T01:00:37Z",
+  "mode": "dry-run",
+  "database_id": "e6817ec4-698a-4f0f-bbc8-fedcf4e52472",
+  "data_source_id": "dc833f1f-07d9-49d0-82ec-fdfad1c808c4",
+  "schema_observed": [],
+  "schema_valid": null,
+  "schema_issues": [
+    "schema fetch skipped in dry-run (0 HTTP calls)"
+  ],
+  "limit": null,
+  "rate_limit_sleep_ms": 350,
+  "summary": {
+    "pending_total": 20,
+    "considered": 20,
+    "created": 0,
+    "skipped_existing": 0,
+    "would_create": 20,
+    "errored": 0,
+    "retries_429": 0
+  },
+  "samples": {
+    "created": [],
+    "skipped_existing": [],
+    "would_create": [
+      {
+        "sqlite_id": 31,
+        "url_canonica": "https://www.rojo.me/nuevo-episodio-la-universidad-ya-no-sirve-para-esto",
+        "titulo": "🎙️ Nuevo Episodio: ¿La universidad ya no sirve para esto?"
+      },
+      {
+        "sqlite_id": 33,
+        "url_canonica": "https://www.rojo.me/nuevo-episodio-si-la-ia-es-tan-buena-para-que-servimos-los-humanos",
+        "titulo": "🎙️ Nuevo Episodio: Si la IA es tan buena, ¿para qué servimos"
+      },
+      {
+        "sqlite_id": 32,
+        "url_canonica": "https://www.rojo.me/resumen-resumido-179",
+        "titulo": "🫨 Quisiera Ser Yo - Resumen Resumido 179"
+      },
+      {
+        "sqlite_id": 1,
+        "url_canonica": "https://www.storytellingwithdata.com/blog/swdchallenge-human-ai",
+        "titulo": "#SWDchallenge: human + AI"
+      },
+      {
+        "sqlite_id": 408,
+        "url_canonica": "https://www.youtube.com/watch?v=1PIbKMyFMAY",
+        "titulo": "¿Existen Fisuras en el Universo?"
+      },
+      {
+        "sqlite_id": 353,
+        "url_canonica": "https://www.youtube.com/watch?v=27bLTrhZ4Mg",
+        "titulo": "The Future Of Google Search, Maps And AI Agents"
+      },
+      {
+        "sqlite_id": 82,
+        "url_canonica": "https://www.youtube.com/watch?v=3LnNwS6rqk8",
+        "titulo": "Monté el PC de BATMAN dentro de una Batcueva REAL"
+      },
+      {
+        "sqlite_id": 81,
+        "url_canonica": "https://www.youtube.com/watch?v=9Gr2QjvSQ-I",
+        "titulo": "Adiós Windows. Me paso a LINUX para SIEMPRE"
+      },
+      {
+        "sqlite_id": 293,
+        "url_canonica": "https://www.youtube.com/watch?v=A0lQPphWTkQ",
+        "titulo": "The US Megaproject You’ve (Probably) Never Heard Of"
+      },
+      {
+        "sqlite_id": 262,
+        "url_canonica": "https://www.youtube.com/watch?v=FNfIMnpz-ZY",
+        "titulo": "Become an AI power user 🌟 new course from Andrew Ng"
+      }
+    ],
+    "errored": []
+  }
+}

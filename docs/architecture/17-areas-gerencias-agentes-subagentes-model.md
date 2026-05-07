@@ -80,13 +80,13 @@ Resumen por Gerencia:
 - Crear agente nuevo sin RFC-lite previo (80% queries AECO se resuelven con generalista + KB correcto).
 - ACA scale-to-zero en servicio interactivo `bim-rag` (cold start 15-37s; `min_replicas=1` obligatorio).
 
-## 6. Decisiones tentativas pendientes confirmación David
+## 6. Decisiones confirmadas (gaps cerrados 2026-05-06)
 
-1. **Sources Área 2 LATAM (gap 1):** default tentativo Chile MINVU + Argentina IRAM + México NMX (top 3 ~80% PIB AECO LATAM hispano). Brasil fase 2 (idioma + ABNT). Perú/Colombia entran por pull, no push. Marcado `tentative_2026_05_06_pending_david_confirm` en registry. **Confirmar antes de codear `latam_regulation_crawler`.**
+1. **Sources Área 2 LATAM (gap 1):** ✅ confirmado — Chile MINVU + Argentina IRAM + México NMX (top 3 ~80% PIB AECO LATAM hispano). Brasil fase 2 (idioma + ABNT). Perú/Colombia entran por pull, no push. Registry: `decision_status: confirmed_2026_05_06_david`. Habilita codear `latam_regulation_crawler` en O16.2.
 
-2. **Estrategia Área 3 fine-tuning (gap 2):** default tentativo Q2 = datasets curados + RAG fuerte primero; sólo 1 fine-tuning experimental Phi-4 (open weights, dataset pequeño) en O16.6 para validar pipeline. Productivo = Q3 si eval continuo (Área 4) muestra gap específico que RAG no cierra. Marcado `tentative_2026_05_06_pending_david_confirm`. **Confirmar antes de gastar saldo en training.**
+2. **Estrategia Área 3 fine-tuning (gap 2):** ✅ confirmado — Q2 = datasets curados + RAG-first; sólo 1 fine-tuning experimental Phi-4 (open weights, dataset pequeño) en O16.6 para validar pipeline. Productivo = Q3 si eval continuo (Área 4) muestra gap específico que RAG no cierra. Registry: `decision_status: confirmed_2026_05_06_david`.
 
-3. **Naming Área 4 (gap 3):** ✅ resuelto — `Ops de Producto Bot AECO`.
+3. **Naming Área 4 (gap 3):** ✅ confirmado — `Ops de Producto Bot AECO`.
 
 ## 7. Pre-requisitos antes de O16.1
 

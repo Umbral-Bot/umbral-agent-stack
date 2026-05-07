@@ -128,6 +128,19 @@ def get_copilot_cli_banned_subcommands() -> List[str]:
     return [str(p) for p in raw if isinstance(p, str) and p.strip()]
 
 
+def get_copilot_cli_allowed_models() -> List[str]:
+    """Return optional model allowlist for Copilot CLI.
+
+    Empty means "no repo-side restriction beyond input-shape validation".
+    Actual availability is still enforced by GitHub Copilot plan/org policy and
+    by the installed Copilot CLI version.
+    """
+    raw = _copilot_cli_section().get("allowed_models", []) or []
+    if not isinstance(raw, list):
+        return []
+    return [str(p).strip() for p in raw if isinstance(p, str) and p.strip()]
+
+
 def get_copilot_cli_default_limits() -> Dict[str, int]:
     """Return per-mission default ceilings (wall_sec, tokens, files_touched)."""
     s = _copilot_cli_section()

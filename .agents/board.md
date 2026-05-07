@@ -342,3 +342,18 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 - secret-output-guard: respetado (ningún token impreso; comment_id/page_id solo parciales)
 - SOUL Reglas 21+22: respetadas (400 reproducido empíricamente con curl; sin payloads inventados)
 - constraint observado: .agents/board.md está protegido por GitHub Push Protection en branches no-main; esta entry se appendea directo en main (commit Copilot Chat post-merge PR346)
+
+## 2026-05-07-032 — fix orchestrator triage handler [DONE — handler merged, smoke real pendiente]
+- merged: PR #349 (commit 2eb4a7d4) 2026-05-07T18:41Z
+- decisión diseño: Opción C minimal (pipeline interno hard-coded /health; sin LLM, sin subagent, sin gateway)
+- enums extendidos: Team.RICK_ORCHESTRATOR + TaskType.TRIAGE
+- handler implementado: worker/tasks/rick_orchestrator.py + registrado en TASK_HANDLERS
+- 16 tests nuevos pasando (test_rick_orchestrator.py); 30/30 en suite combinada con rick_mention + notion_mention_router
+- CI: 16/16 nuevos PASS; failures preexistentes test_copilot_agent (idénticas a PR #346) NO regresión
+- worker restart: pid 59402 → 96364, active, 104 tasks_registered (incluye rick.orchestrator.triage)
+- smoke local: POST /run 200, JSON real /health, gap honesto (no_page_id) cuando falta page_id (SOUL Regla 22)
+- smoke real con David: PENDIENTE — repostear "@Rick ping worker /health y devolveme el JSON acá como reply" en Control Room (page id 30c5f443fb5c80eeb721dc5727b20dca); Copilot VPS verifica notion_poller log + dispatcher journalctl + worker journalctl; si OK → O15.1b PASS 100%
+- F-INC-002 + secret-output-guard #8 + SOUL Reglas 21/22: respetadas
+- gateway pid 75421 SIN restart (uptime ~4h continuo), openclaw.json intacto, model.primary=Vertex intacto, Vertex Fase 1 ventana hasta 2026-05-14 intacta
+- follow-up task 033: Opción A proxy a OpenClaw subagent rick-orchestrator (ventana post-2026-05-14)
+- follow-up bug Telegram-side detectado por David (no abierto aún): rick-orchestrator no tiene 'sessions_spawn' en tool policy → handoff a rick-ops bloqueado en Telegram. Path Telegram→OpenClaw confirma model.primary=Vertex engaging (write-path JSONL real, evidencia smoke gobernanza-side David 10:52-13:26 ART)

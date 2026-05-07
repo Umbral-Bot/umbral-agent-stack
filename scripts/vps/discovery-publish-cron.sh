@@ -82,34 +82,51 @@ fi
 
 if python -m scripts.discovery.stage4_push_notion "${STAGE4_FLAGS[@]}"; then
   log "stage4: OK"
-  log "done"
-  exit 0
 else
   rc=$?
   log "ERROR stage4 exited rc=$rc"
   exit "$rc"
 fi
 
+# ---------------------------------------------------------------------------
+# Stage 6: LLM combinator → propuestas editoriales (status='draft' en
+# state.sqlite tabla `proposals`). NO publica a Notion (eso es Stage 7,
+# que sigue siendo manual hasta gate humano — task 045 P8A).
+#
+# Conservador por diseño:
+#   --top-n 5            Limita input items leídos del ranking (default 5).
+#                        Cost guard interno aborta si est. tokens > 30k.
+#   Cache TTL 7d         Hardcoded en el script (~/.cache/rick-discovery/
+#                        llm_cache.sqlite); hits dentro de 7d evitan re-cobro.
+#
+# Falla NO aborta el cron: Stage 4 ya cumplió; Stage 6 es best-effort.
+# ---------------------------------------------------------------------------
+if [[ "${DISCOVERY_PUBLISH_DRYRUN:-0}" == "1" ]]; then
+  log "stage6: DRY-RUN (--no-llm, no persist)"
+  STAGE6_FLAGS=(--top-n 5 --no-llm --dry-run)
+else
+  log "stage6: COMMIT (real LLM call)"
+  STAGE6_FLAGS=(--top-n 5)
+fi
+
+if python scripts/discovery/stage6_llm_combinator.py "${STAGE6_FLAGS[@]}"; then
+  log "stage6: OK"
+else
+  rc=$?
+  log "WARN stage6 exited rc=$rc — continuando (Stage 4 ya cumplió)"
+fi
+
+log "done"
+exit 0
+
 # -----------------------------------------------------------------------------
-# Stage 6 + Stage 7 (NOT yet wired into this cron — Tasks 043 + 044)
+# Stage 7 (NOT wired — manual hasta gate humano; task 045 P8A FASE 2)
 # -----------------------------------------------------------------------------
-# Stage 6 (LLM combinator → propuestas editoriales en state.sqlite tabla
-# `proposals`):
+# Stage 7 escribe pages reales en Notion DB Publicaciones a partir de
+# proposals(status='draft'). Mantenerlo manual evita publicación automática
+# sin revisión editorial.
 #
-#   python scripts/discovery/stage6_llm_combinator.py --top-n 5
-#
-# Flags relevantes:
-#   --dry-run                   No persiste a state.sqlite (sólo imprime/JSON).
-#   --output-json <path>        Vuelca propuestas a archivo.
-#   --force-refresh-cache       Ignora hits cacheados (cache 7d en
-#                               ~/.cache/rick-discovery/llm_cache.sqlite).
-#   --no-llm                    Plumbing only, no llama al modelo.
-#   --model openclaw/main       Default. Routea a azure-openai-responses/gpt-5.4
-#                               vía gateway local 127.0.0.1:18789.
-#
-# Stage 7 (writer de drafts en DB Notion 'Publicaciones'):
-#
-#   python scripts/discovery/stage7_publish_drafts.py --limit 3
+#   python scripts/discovery/stage7_publish_drafts.py --status draft --limit 3
 #
 # Flags relevantes:
 #   --dry-run                   No crea pages, sólo imprime payload.
@@ -118,6 +135,5 @@ fi
 #   --publicaciones-db-id       Override del DB id (default
 #                               e6817ec4698a4f0fbbc8fedcf4e52472).
 #
-# Activación futura: NO añadir a este cron sin verificar manualmente al menos
-# una corrida con --dry-run en cada stage. Stage 6 cuesta ~$0.05-$0.10 por
-# llamada al LLM; Stage 7 escribe pages reales en Notion.
+# Riesgo conocido: idempotency es state-level (proposals.status), NO Notion-level.
+# Si state.sqlite se borra, re-correr Stage 7 duplica pages. Ver issue tech-debt.

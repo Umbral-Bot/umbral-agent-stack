@@ -388,3 +388,13 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 - no-regresión limpia: gateway pid 75421 intacto (etime 06:18:43 monotónicamente creciente, Vertex Fase 1 OK), openclaw.json/model.primary intactos, openclaw-dispatcher no tocado, cursor Redis `__TAIL__` intacto (daemon usa since-filter, no cursor); F-INC-002 + secret-output-guard #8 + SOUL 21/22: respetadas
 - stash VPS preservado: `vps-deploy-035-pre-pull-20260507T205002Z` (cambios ajenos discovery-publish-cron.sh, NO reaplicados)
 - side-finding (no investigar ahora): RuntimeError 404 en worker startup sobre database `7eca76a8…` (integration Rick sin acceso) — pre-existente, no afecta /health 200
+
+## 2026-05-07-037b — O15.1b cerrada al 100% [DONE]
+- ejecutor: Copilot Chat (merges PRs #362 spec + #364 fix) + Copilot VPS (deploy + verificación 4-hop) 2026-05-07T22:42-22:45Z
+- merges main: PR #362 spec (commit 0ee65977) + PR #364 fix (commit c8584f96, fix subyacente b62ef049)
+- VPS deploy: poller daemon respawn (pid 1571 → 120685 vía cron */5), openclaw-dispatcher restart (MainPID 120697); gateway pid 75421 intacto (etime monotónica +33min, Vertex Fase 1 OK), worker pid 114572 untouched, /health ok=True count=104 has_triage=True
+- smoke unitario código: `_control_room_poll_target()` retorna page_id_prefix=30c5f443 len=32 (vs None pre-fix) — Opción A confirmada cargada en runtime
+- smoke real end-to-end VERIFICADO VISUALMENTE: David postea `@Rick ping worker /health smoke-O15.1b T0=2026-05-07T06:42` en Control Room ~22:42Z; bot Rick (id 3145f443…) replica en mismo thread con JSON real de /health (ok=true, tasks_in_memory=1000, lista completa tasks_registered incluyendo notion.poll_comments, notion.add_comment, rick.orchestrator.triage). 4 hops PASS implícitos: H1 poller detectó comment, H2 dispatcher armó envelope con page_id resuelto (sin esto el handler hubiera skippeado), H3 worker handler ejecutó SIN `missing page_id; reply skipped`, H4 Notion API write OK con parent=comment David
+- O15.1b: ✅ 100%
+- side-finding capitalizado como task 038 candidata (NO blocker): 500 errors en `dispatcher/notion_poller.py:198` rama `_resolve_review_targets` `session_capitalizable`. Pre-existente, NO regresión 037, path Control Room funciona OK. Agendar Ola 2.
+- restricciones respetadas: F-INC-002 (fetch+log pre push), secret-output-guard #8 (IDs prefix-only), SOUL Reglas 21+22 (gap honesto declarado cuando smoke real bloqueado por dedupe Redis con comment viejo, esperó input nuevo de David en lugar de fabricar PASS), NO restart gateway, NO touch openclaw.json/model.primary

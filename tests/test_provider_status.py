@@ -91,8 +91,11 @@ class TestProviderStatusFormat:
 class TestProviderStatusConfigured:
     """Test that providers with/without env vars are classified correctly."""
 
-    def test_configured_provider_appears_in_configured_list(self, client, fake_redis):
+    def test_configured_provider_appears_in_configured_list(self, client, fake_redis, monkeypatch):
         """When ANTHROPIC_API_KEY is set, claude_pro should be configured."""
+        # Task 042: strip UMBRAL_DISABLE_CLAUDE leaked from ~/.config/openclaw/env
+        # at conftest import time (worker.config._load_openclaw_env).
+        monkeypatch.delenv("UMBRAL_DISABLE_CLAUDE", raising=False)
         env_override = {"ANTHROPIC_API_KEY": "sk-test-key-12345"}
         with (
             patch("worker.app._get_redis", return_value=fake_redis),

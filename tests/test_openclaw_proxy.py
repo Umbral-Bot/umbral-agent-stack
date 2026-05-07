@@ -29,6 +29,18 @@ def _env_without(*keys):
     return {k: v for k, v in os.environ.items() if k not in keys}
 
 
+@pytest.fixture(autouse=True)
+def _strip_umbral_disable_claude(monkeypatch):
+    """Task 042: worker.config._load_openclaw_env() runs at conftest import
+    time and ingests ~/.config/openclaw/env, which on the VPS sets
+    UMBRAL_DISABLE_CLAUDE=true. That leaks into every test process and
+    short-circuits Claude routing in worker.tasks.llm._detect_provider.
+    Strip the var by default; tests that explicitly need it set use
+    patch.dict / monkeypatch.setenv inside the test body.
+    """
+    monkeypatch.delenv("UMBRAL_DISABLE_CLAUDE", raising=False)
+
+
 # ---------------------------------------------------------------------------
 # _call_openclaw_proxy
 # ---------------------------------------------------------------------------

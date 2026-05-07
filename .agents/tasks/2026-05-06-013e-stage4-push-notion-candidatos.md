@@ -81,20 +81,32 @@ curl -s https://api.notion.com/v1/databases/${DB_ID} \
 
 **Esperado:** JSON con `data_sources: [{id: "<UUID>", name: "..."}]` (en API 2025-09-03 cada DB tiene 1+ data_sources). Anotar el `data_source_id` para uso en `POST /pages`.
 
-**Schema validation obligatoria** antes del primer write. Mapear las siguientes propiedades — si alguna falta, **ABORT** y reportar (no asumir, no crear):
+**Schema mapping (RESUELTO 2026-05-07 tras Phase 1 inspección live).**
 
-| Propósito (script) | Property name esperada en Notion | Tipo esperado | Required en payload |
+DB destino real: `e6817ec4-698a-4f0f-bbc8-fedcf4e52472` ("Publicaciones"), `data_source_id = dc833f1f-07d9-49d0-82ec-fdfad1c808c4`. Es la DB editorial humana (43 properties, workflow Idea→Publicado). Los candidatos auto-descubiertos entran en estado `Idea` y conviven con el flujo manual, filtrables por `Creado por sistema = true`.
+
+Mapeo canónico (NO improvisar, NO crear properties — si alguna no existe → ABORT):
+
+| Campo Stage 3 (SQLite) | Property Notion | Tipo Notion | Notas |
 |---|---|---|---|
-| Título principal | `Name` (o `Título` / `Title` — verificar) | `title` | sí |
-| URL fuente | `URL` (o `URL canónica`) | `url` | sí |
-| Canal | `Canal` | `select` | sí |
-| Fecha publicación origen | `Fecha publicación` | `date` | no |
-| Fecha promovido a candidato | `Promovido` | `date` | no |
-| Referente origen (relation) | `Referente` | `relation` → DB Referentes | no (warn si DB destino lo requiere) |
-| Trazabilidad SQLite | `Source SQLite ID` | `rich_text` o `number` | no |
-| Estado editorial | `Estado` | `select` | no (default Notion lo maneja) |
+| `titulo` | `Título` | `title` | sí, required |
+| `url_canonica` | `Fuente primaria` | `url` | sí, required (URL real del post LinkedIn) |
+| `url_canonica` (duplicado) | `idempotency_key` | `rich_text` | sí, required — usado como **clave de lookup idempotente** (filter exact-match) |
+| `canal` | `Canal` | `select` | sí, valor `linkedin` (option ya existente) |
+| `publicado_en` | `Fecha publicación` | `date` | si está disponible en SQLite; opcional |
+| `referente_nombre` + `sqlite_id` | `Notas` | `rich_text` | formato literal: `[ref: <referente_nombre> \| sqlite: <sqlite_id>]` |
+| (constante) | `Estado` | `status` | valor `Idea` (entra al inicio del workflow) |
+| (constante) | `Creado por sistema` | `checkbox` | `true` (convención existente para discriminar filas auto) |
 
-Mapeo concreto se ajusta según el schema real devuelto en Phase 1. **Si el nombre exacto de las property difiere → ABORT y registrar en el reporte JSON el schema observado.** No improvisar mapeos.
+Properties **deliberadamente skipeadas** (no existen como esperaba la spec original o son del workflow editorial humano):
+- `Promovido` (date) — no existe; trazabilidad queda en `created_time` Notion + `promovido_a_candidato_at` SQLite.
+- `Referente` (relation a DB Referentes) — no existe esa relation; nombre va en `Notas` como texto.
+- `Source SQLite ID` (rich_text) — no se crea property nueva; el sqlite_id va en `Notas`.
+- `Fuente referente` (url), `Fuentes confiables` (relation a DB `2b45f443-…`), copies por canal, gates editoriales, `trace_id`, `error_kind`, etc. — todos del workflow humano, fuera de scope Stage 4.
+
+**Lookup idempotente:** filter `idempotency_key` exact-match con `url_canonica`. Es más confiable que filtrar por `Fuente primaria` (url) porque `rich_text` no normaliza la URL.
+
+**Si Phase 1 detecta que alguna de las 8 properties mapeadas arriba no existe o cambió de tipo → ABORT y reportar diff.** No improvisar nuevos mapeos sin confirmación del owner.
 
 ### Phase 2 — SQLite migration (idempotente)
 
@@ -119,6 +131,8 @@ fetch_schema(notion, data_source_id) → SchemaSpec  # cached for the run
 validate_schema(schema, REQUIRED_PROPS) → ok | abort
 build_payload(item, schema) → dict   # mapping mínimo + voluntary fields
 query_existing(notion, data_source_id, url_canonica) → page_id | None
+  # IMPL: POST /v1/data_sources/{id}/query con
+  # filter = {"property": "idempotency_key", "rich_text": {"equals": url_canonica}}
 create_page(notion, data_source_id, payload) → page_id
 mark_persisted(sqlite, item.id, page_id, mode)
 main():

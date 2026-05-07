@@ -128,13 +128,13 @@ class TestUmbralCopilotAgent:
         agent = UmbralCopilotAgent()
         import asyncio
         with pytest.raises(RuntimeError, match="not started"):
-            asyncio.get_event_loop().run_until_complete(agent.run("test"))
+            asyncio.run(agent.run("test"))
 
     def test_stop_without_start_is_safe(self):
         agent = UmbralCopilotAgent()
         import asyncio
         # Should not raise
-        asyncio.get_event_loop().run_until_complete(agent.stop())
+        asyncio.run(agent.stop())
 
     def test_context_manager_protocol(self):
         """Agent supports async context manager."""

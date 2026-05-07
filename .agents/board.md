@@ -328,3 +328,17 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 - Motor de búsqueda: Tavily. LLM: Gemini 2.5 Flash.
 - Workflow: feature branch → PR → Cursor merge → deploy VPS
 
+
+## 2026-05-07-031 — diagnose orchestrator triage 400 (smoke O15.1b) [DONE]
+- merged: PR #346 (commit 100af660) 2026-05-07T17:53Z
+- status: done (read-only diagnosis; fix DIFERIDO a task 032)
+- hipótesis confirmada: HB primaria (Pydantic enum mismatch) + HA secundaria (model routing log) + HC latente (handler missing); HD descartada
+- root cause: dispatcher/rick_mention.py (Ola 1b) introdujo team='rick-orchestrator' y task_type='triage' sin extender los enums Team/TaskType en worker/models/__init__.py:43,51 ni registrar handler rick.orchestrator.triage en worker/tasks/__init__.py:TASK_HANDLERS. El 400 lo emite FastAPI/Pydantic en worker/app.py:523 antes del dispatch.
+- fix propuesto (NO aplicado): (1) extender enums Team+TaskType con RICK_ORCHESTRATOR/TRIAGE; (2) implementar handle_rick_orchestrator_triage (decisión de diseño: proxy a OpenClaw gateway agent o pipeline interno); (3) opcional quota_policy.yaml.routing.triage para coherencia telemetría
+- requires restart? sí — umbral-worker (NO el gateway). Ningún cambio toca openclaw.json ni model.primary. Vertex Fase 1 ventana hasta 2026-05-14 intacta.
+- task 032 follow-up: diseñar+implementar handler rick.orchestrator.triage + enum extension + tests + restart worker + smoke regresión
+- evidencia (working notes locales VPS): /tmp/031/payload-and-400-response.md, /tmp/031/model-routing.md, /tmp/031/verdict.md
+- F-INC-002: clean pre y post merge
+- secret-output-guard: respetado (ningún token impreso; comment_id/page_id solo parciales)
+- SOUL Reglas 21+22: respetadas (400 reproducido empíricamente con curl; sin payloads inventados)
+- constraint observado: .agents/board.md está protegido por GitHub Push Protection en branches no-main; esta entry se appendea directo en main (commit Copilot Chat post-merge PR346)

@@ -2,7 +2,7 @@
 
 - **id**: 2026-05-07-027-copilot-vps-cron-prestep-backfill-youtube-content
 - **assigned_to**: copilot-vps
-- **status**: BLOCKED — pending Rick decision (ver "Bloqueo / decisión requerida" abajo)
+- **status**: DONE — implementado 2026-05-08 (ver sección "Implementado" abajo)
 - **created_by**: rick
 - **created_at**: 2026-05-07
 - **audited_by**: copilot-vps (sesión Claude Opus 4.7)
@@ -124,3 +124,76 @@ Implementación mínima sugerida una vez decidido lo anterior:
 Cuando Rick responda D1–D5, cualquier agente puede implementar el wrapper +
 crontab line en una PR de seguimiento usando la "Recomendación" de arriba como
 referencia.
+
+---
+
+## Implementado 2026-05-08
+
+Rick respondió D1–D5; implementación delivered en esta misma branch.
+
+### Decisiones aplicadas
+
+| Decisión | Respuesta de Rick | Implementación |
+|---|---|---|
+| **D1** Automatizar | Sí, cron user-level rick | `crontab -e` para `rick`, no systemd |
+| **D2** Cadencia | `15 */6 * * *` (cada 6h) | Línea agregada |
+| **D3** Si backfill falla parcial | Continuar con stage4 (warning) | `if python ... ; then OK ; else WARN` (no `set -e` global) |
+| **D4** Storage IDs | `~/.config/openclaw/env` | 3 vars `UMBRAL_DISCOVERY_*` agregadas (chmod 600 preservado) |
+| **D5** Cap (`--limit`) | Sin tope | Wrapper no pasa `--limit` |
+
+### Cambios entregados
+
+1. **`~/.config/openclaw/env`** (no en repo, fuera de git):
+   ```
+   UMBRAL_DISCOVERY_DATABASE_ID=b9d3d8677b1e4247bafdcb0cc6f53024
+   UMBRAL_DISCOVERY_DATA_SOURCE_ID=9d4dbf65-664f-41b4-a7f6-ce378c274761
+   UMBRAL_DISCOVERY_REFERENTES_DS_ID=afc8d960-086c-4878-b562-7511dd02ff76
+   ```
+   Validado vía `GET /v1/data_sources/<ds>` → HTTP 200, title="Referentes".
+   Backup: `~/.config/openclaw/env.bak.027`.
+
+2. **`scripts/vps/discovery-publish-cron.sh`** (chmod +x): wrapper bash que
+   - source env
+   - activa `.venv`
+   - corre `backfill_youtube_content.py --commit` (continúa on failure, D3)
+   - corre `python -m scripts.discovery.stage4_push_notion ... --commit`
+   - soporta `DISCOVERY_PUBLISH_DRYRUN=1` para smoke
+
+3. **Crontab user `rick`** (línea agregada):
+   ```
+   15 */6 * * * bash /home/rick/umbral-agent-stack/scripts/vps/discovery-publish-cron.sh >> /tmp/discovery_publish.log 2>&1
+   ```
+
+### Verificación VPS Reality Check (2026-05-08)
+
+```bash
+$ crontab -l | grep discovery-publish
+15 */6 * * * bash /home/rick/umbral-agent-stack/scripts/vps/discovery-publish-cron.sh >> /tmp/discovery_publish.log 2>&1
+
+$ DISCOVERY_PUBLISH_DRYRUN=1 bash scripts/vps/discovery-publish-cron.sh
+[2026-05-07T18:24:35Z] discovery-publish: start ...
+[2026-05-07T18:24:35Z] discovery-publish: prestep: backfill_youtube_content (commit)
+pending=0 ok=0 not_found=0 extraction_error=0 skipped_no_video_id=0 commit=True
+[2026-05-07T18:24:35Z] discovery-publish: prestep: backfill OK
+[2026-05-07T18:24:35Z] discovery-publish: stage4: DRY-RUN (no --commit)
+... pending_total: 0, processed: 0, errors: 0 ...
+[2026-05-07T18:24:37Z] discovery-publish: stage4: OK
+[2026-05-07T18:24:37Z] discovery-publish: done
+
+$ bash scripts/vps/discovery-publish-cron.sh >> /tmp/discovery_publish.log 2>&1   # full --commit
+$ tail /tmp/discovery_publish.log   # report stage4-push-20260507T182513Z-commit.json, errors=0
+$ grep -E "AIza|api_key|secret_|Bearer |ntn_" /tmp/discovery_publish.log
+$ echo $?   # 1 → 0 secrets
+```
+
+Backlog estaba vacío (0 pending) en esta primera corrida — esperado (drenado en
+sesiones previas, PR #343). Próxima corrida scheduled: `00:15 UTC`. Cuando
+nuevos items YouTube se promuevan a candidato, esta cadencia los procesará
+sin requerir intervención manual.
+
+### Reversibilidad
+
+Para revertir:
+- `crontab -e` → eliminar la línea `discovery-publish-cron.sh`.
+- `cp ~/.config/openclaw/env.bak.027 ~/.config/openclaw/env`.
+- `git revert <commit-impl>` para sacar el wrapper.

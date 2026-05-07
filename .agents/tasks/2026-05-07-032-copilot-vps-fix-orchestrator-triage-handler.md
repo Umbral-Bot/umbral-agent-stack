@@ -1,7 +1,7 @@
 ---
 task_id: 2026-05-07-032
 title: Fix POST /run 400 rick.orchestrator.triage — extender enums + implementar handler + restart worker
-status: pending
+status: in-review
 requested_by: copilot-chat (autorizado por David 2026-05-07 post task 031 merged)
 assigned_to: copilot-vps
 related: 2026-05-07-031 (diagnosis HB+HA+HC, PR #346 merged commit 100af660), 2026-05-07-021 (Vertex primary fix), 2026-05-07-026 (mention H1 validated), notion-governance plan O15.1b smoke 2026-05-07T16:25Z PASS PARCIAL
@@ -177,3 +177,86 @@ openclaw.json intacto, Vertex Fase 1 ventana respetada
 - ❌ NO imprimir tokens.
 - ❌ NO escribir entries fabricadas en `~/.openclaw/trace/delegations.jsonl`.
 - ❌ NO implementar handler sin tests en el mismo commit.
+
+---
+
+## Close log — Copilot VPS 2026-05-07T18:35Z (in-review)
+
+### Decisión de diseño (B1): **Opción C minimal**
+
+Pipeline interno hard-coded (NO LLM, NO subagent OpenClaw, NO gateway). Comando `/health` reconocido → self-call al worker → reply al Notion comment con JSON real. Comando desconocido → reply honesto "no implementado en triage v0" (SOUL Regla 22). Justificación completa en `/tmp/032/design.md`.
+
+Razones para descartar A/B puras:
+- **Opción A** (proxy gateway): toca al gateway pid 75421 en ventana Vertex Fase 1 (hasta 2026-05-14); riesgo regresión task 021. Diferida a task 033 post-Fase-1.
+- **Opción B pura**: lo que se implementó. Suficiente para cerrar O15.1b.
+
+### Cambios (en este commit)
+
+| Archivo | Cambio |
+|---|---|
+| `worker/models/__init__.py` | `Team.RICK_ORCHESTRATOR='rick-orchestrator'`, `TaskType.TRIAGE='triage'` (HB fix) |
+| `worker/tasks/rick_orchestrator.py` | NUEVO — `handle_rick_orchestrator_triage` (Opción C minimal) |
+| `worker/tasks/__init__.py` | import + registro `"rick.orchestrator.triage"` en `TASK_HANDLERS` (HC fix) |
+| `tests/test_rick_orchestrator.py` | NUEVO — 16 tests (enum, registro, classifier, formato, integración con mocks) |
+
+### Tests
+
+- **16 tests nuevos pasando** (`tests/test_rick_orchestrator.py`).
+- **30/30 pasando** en suite combinada `test_rick_orchestrator + test_rick_mention + test_notion_mention_router`.
+- Pre-existentes en `test_worker.py` y `test_model_router.py` siguen fallando — verificado con stash: **NO son regresión** (problema de fixture cargando token al import time + precedencia claude_pro vs gemini_pro). Reportado pero fuera de scope.
+
+### Worker restart + smoke local (B5)
+
+```
+PID_OLD=59402  PID_NEW=96364  status=active
+GET /health → 200 OK; "rick.orchestrator.triage" presente en tasks_registered (104 total)
+POST /run smoke replay (payload /tmp/032/payload-replay.json, page_id=null)
+  → HTTP 200
+  → result.command="health"
+  → result.health={"ok":true,"version":"0.4.0",...}  (JSON real del worker, NO inventado)
+  → result.reply_posted=false, result.error="no_page_id_in_envelope"  (gap honesto SOUL Regla 22)
+```
+
+### Salvavidas honrados
+
+- ✅ **Gateway pid 75421 sin restart** (`ps -p 75421` ELAPSED ~04:00:00 → uptime continuo).
+- ✅ `openclaw.json` y `model.primary` no editados.
+- ✅ F-INC-002 verificado pre-pull (ahead=0, behind=3 → ff a `b82f88a`).
+- ✅ `secret-output-guard` regla #8: ningún token impreso.
+- ✅ SOUL Reglas 21+22: handler devuelve gap honesto cuando no puede ejecutar; tests verifican explícitamente que NO inventa JSON falso.
+- ✅ Tests en el mismo commit que el handler.
+
+### Pendiente B6 — smoke real con David
+
+David debe postear en Control Room (`30c5f443fb5c80eeb721dc5727b20dca`):
+> `@Rick ping worker /health y devolveme el JSON acá como reply`
+
+Verificación post-post (a ejecutar Copilot VPS con timestamp UTC del post):
+```bash
+tail -50 /tmp/notion_poller.log | grep -i "rick mention routed"
+journalctl --user -u openclaw-dispatcher --since "5 min ago" | grep "rick.orchestrator.triage" | tail -10
+journalctl --user -u umbral-worker --since "5 min ago" | grep -E "POST /run|rick.orchestrator" | tail -10
+```
+
+Esperado: `Rick mention routed` → `POST /run 200 OK` → reply en Notion con autor "Rick" + JSON real `/health`.
+
+### Texto sugerido para `.agents/board.md` (Copilot Chat lo appendea post-merge)
+
+```
+## 2026-05-07-032 — fix orchestrator triage handler [DONE]
+- decisión diseño: Opción C minimal (pipeline interno hard-coded /health; sin LLM, sin subagent, sin gateway)
+- enums extendidos (Team.RICK_ORCHESTRATOR + TaskType.TRIAGE) + handler implementado + 16 tests pasando
+- worker restart: pid 59402 → 96364, active, 104 tasks_registered (incluye rick.orchestrator.triage)
+- smoke local: POST /run 200, JSON real de /health en result, gap honesto cuando page_id null
+- smoke real timestamp: <COMPLETAR cuando David poste>
+- O15.1b: <PASS 100% si smoke real OK>
+- F-INC-002 + secret-output-guard #8 + SOUL Reglas 21/22: respetadas
+- gateway pid 75421 sin restart, openclaw.json intacto, Vertex Fase 1 ventana respetada
+- follow-up task 033: Opción A proxy a OpenClaw subagent rick-orchestrator (post 2026-05-14)
+```
+
+### Working notes locales (NO commit)
+
+- `/tmp/032/design.md` — decisión A/B/C + justificación.
+- `/tmp/032/payload-replay.json` — payload smoke local.
+- `/tmp/032/response-200.json` — response 200 captura.

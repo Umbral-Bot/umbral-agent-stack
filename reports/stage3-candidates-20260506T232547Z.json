@@ -1,0 +1,155 @@
+{
+  "overall_pass": true,
+  "run_started_at": "2026-05-06T23:25:47Z",
+  "run_finished_at": "2026-05-06T23:25:47Z",
+  "mode": "dry-run",
+  "max_age_days": 90,
+  "limit": null,
+  "summary": {
+    "pending_total": 437,
+    "eligible": 161,
+    "promoted_this_run": 0,
+    "discarded_total": 276,
+    "discarded_by_reason": {
+      "fecha_invalida": 0,
+      "fuera_ventana_90d": 276,
+      "titulo_vacio": 0,
+      "canal_no_elegible": 0,
+      "ya_promovido": 0
+    }
+  },
+  "candidates_sample": [
+    {
+      "url_canonica": "https://www.youtube.com/watch?v=9Gr2QjvSQ-I",
+      "referente_nombre": "Nate Gentile",
+      "canal": "youtube",
+      "titulo": "Adiós Windows. Me paso a LINUX para SIEMPRE",
+      "publicado_en_iso": "2026-05-06T16:53:57Z",
+      "age_days": 0
+    },
+    {
+      "url_canonica": "https://www.youtube.com/watch?v=Vr_Wd2ZucZA",
+      "referente_nombre": "Fred Mills",
+      "canal": "youtube",
+      "titulo": "Why Nobody Wants the Chrysler Building",
+      "publicado_en_iso": "2026-05-06T14:54:08Z",
+      "age_days": 0
+    },
+    {
+      "url_canonica": "https://www.youtube.com/watch?v=J26M-cpFG-M",
+      "referente_nombre": "Andrew Ng",
+      "canal": "youtube",
+      "titulo": "Build Interactive Agents with Generative UI",
+      "publicado_en_iso": "2026-05-06T14:54:05Z",
+      "age_days": 0
+    },
+    {
+      "url_canonica": "https://www.rojo.me/nuevo-episodio-la-universidad-ya-no-sirve-para-esto",
+      "referente_nombre": "Rodrigo Rojo",
+      "canal": "rss",
+      "titulo": "🎙️ Nuevo Episodio: ¿La universidad ya no sirve para esto?",
+      "publicado_en_iso": "2026-05-06T12:33:38Z",
+      "age_days": 0
+    },
+    {
+      "url_canonica": "https://www.youtube.com/watch?v=zO8EPWmTnVQ",
+      "referente_nombre": "Bernard Marr",
+      "canal": "youtube",
+      "titulo": "Is AI Coming For Your Job?",
+      "publicado_en_iso": "2026-05-05T22:54:14Z",
+      "age_days": 1
+    },
+    {
+      "url_canonica": "https://www.youtube.com/watch?v=TQsBnsKZtuo",
+      "referente_nombre": "Milos Temerinski",
+      "canal": "youtube",
+      "titulo": "Numbering Tool in Revit | Rule-Based Numbering in Revit Tutorial",
+      "publicado_en_iso": "2026-05-05T22:53:59Z",
+      "age_days": 1
+    },
+    {
+      "url_canonica": "https://www.youtube.com/watch?v=o2ehgG2VrsY",
+      "referente_nombre": "Alex Freberg",
+      "canal": "youtube",
+      "titulo": "Switching to Mac after 10 years as a Microsoft User",
+      "publicado_en_iso": "2026-05-05T22:53:55Z",
+      "age_days": 1
+    },
+    {
+      "url_canonica": "https://www.rojo.me/resumen-resumido-179",
+      "referente_nombre": "Rodrigo Rojo",
+      "canal": "rss",
+      "titulo": "🫨 Quisiera Ser Yo - Resumen Resumido 179",
+      "publicado_en_iso": "2026-05-05T20:07:19Z",
+      "age_days": 1
+    },
+    {
+      "url_canonica": "https://www.rojo.me/nuevo-episodio-si-la-ia-es-tan-buena-para-que-servimos-los-humanos",
+      "referente_nombre": "Rodrigo Rojo",
+      "canal": "rss",
+      "titulo": "🎙️ Nuevo Episodio: Si la IA es tan buena, ¿para qué servimos los humanos?",
+      "publicado_en_iso": "2026-05-01T20:58:33Z",
+      "age_days": 5
+    },
+    {
+      "url_canonica": "https://www.storytellingwithdata.com/blog/swdchallenge-human-ai",
+      "referente_nombre": "Cole Nussbaumer Knaflic",
+      "canal": "rss",
+      "titulo": "#SWDchallenge: human + AI",
+      "publicado_en_iso": "2026-05-01T14:06:06Z",
+      "age_days": 5
+    }
+  ],
+  "discarded_sample": [
+    {
+      "url_canonica": "https://www.storytellingwithdata.com/blog/what-is-a-choropleth-map",
+      "reason": "fuera_ventana_90d",
+      "age_days": 90
+    },
+    {
+      "url_canonica": "https://www.storytellingwithdata.com/blog/move-beyond-basic-bullets",
+      "reason": "fuera_ventana_90d",
+      "age_days": 103
+    },
+    {
+      "url_canonica": "https://www.storytellingwithdata.com/blog/explaining-your-job-is-a-data-storytelling-opportunity",
+      "reason": "fuera_ventana_90d",
+      "age_days": 106
+    },
+    {
+      "url_canonica": "https://www.storytellingwithdata.com/blog/join-the-team",
+      "reason": "fuera_ventana_90d",
+      "age_days": 116
+    },
+    {
+      "url_canonica": "https://www.storytellingwithdata.com/blog/dont-let-your-axis-scales-distort-the-story",
+      "reason": "fuera_ventana_90d",
+      "age_days": 119
+    },
+    {
+      "url_canonica": "https://www.storytellingwithdata.com/blog/looking-ahead-with-intention",
+      "reason": "fuera_ventana_90d",
+      "age_days": 121
+    },
+    {
+      "url_canonica": "https://www.storytellingwithdata.com/blog/at-years-end-a-fermata",
+      "reason": "fuera_ventana_90d",
+      "age_days": 139
+    },
+    {
+      "url_canonica": "https://www.storytellingwithdata.com/blog/interesting-data-is-probably-wrong",
+      "reason": "fuera_ventana_90d",
+      "age_days": 149
+    },
+    {
+      "url_canonica": "https://www.storytellingwithdata.com/blog/how-to-represent-partial-data",
+      "reason": "fuera_ventana_90d",
+      "age_days": 174
+    },
+    {
+      "url_canonica": "https://www.storytellingwithdata.com/blog/celebrating-a-decade-of-storytelling-with-data",
+      "reason": "fuera_ventana_90d",
+      "age_days": 177
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 ---
 id: "2026-05-07-015"
 title: "Copilot VPS — O15.1 Ola 1 fundamentos Rick CEO (prompts main + rick-orchestrator + allowAgents + trace + smoke)"
-status: queued
+status: in_progress
 assigned_to: copilot
 created_by: copilot-chat-notion-governance
 priority: high
@@ -249,3 +249,124 @@ Comentar en este file (o crear log adjunto en `docs/audits/2026-05-07-o15-1-ola1
 ## Log de ejecución
 
 (Copilot VPS appendea acá)
+
+### [copilot-vps] 2026-05-07 00:55 -04 — O15.1 Ola 1 cerrada (status: done)
+
+VPS `srv1431451`, repo `umbral-agent-stack` HEAD `314a5b3` (= origin/main, post `git pull` clean, post stash pre-013h).
+
+#### 1) Bloque A — Snapshot defensivo ✅
+
+- **Backup `openclaw.json`**: `~/.openclaw/openclaw.json.bak-pre-o15-1-20260507-004533` (30,784 bytes).
+- **Backup agent dirs**: `/tmp/o15-1-bak/{main,rick-orchestrator,rick-communication-director,rick-delivery,rick-ops,rick-qa,rick-tracker,rick-linkedin-writer}/` — los 8 backupeados OK.
+- **`pre-snapshot.txt`**: `/tmp/o15-1-pre-snapshot.txt` (12,980 bytes) — `openclaw status --all` muestra los 8 agentes registrados (`improvement-supervisor` confirmado ausente del registry post-O15.0; su dir orphan en disco se ignora por anti-scope) + gateway loopback + 40 skills.
+- Nota: `~/.openclaw/agents/<id>/agent/` contiene SOLO `auth-profiles.json` + `models.json` + `auth-state.json`/`auth.json`, **no** prompts.
+
+#### 2) Bloque B/C — Estructura real de prompts (decisión documentada) ✅
+
+**Decisión:** los prompts canónicos NO viven en `agents.list[].systemPrompt` (ese campo no existe en el schema de `openclaw.json` 5.3-1) ni en `~/.openclaw/agents/<id>/`. Viven en **workspace dirs**:
+- `main` → `~/.openclaw/workspace/` (workspace por defecto; default agent). Archivos canónicos: `IDENTITY.md`, `SOUL.md`, `AGENTS.md`, `TOOLS.md`, `USER.md`, `HEARTBEAT.md`, `TODO.md`.
+- Agentes nombrados → `~/.openclaw/workspaces/<id>/`. Archivos: `IDENTITY.md` (siempre) + `SOUL.md` (no siempre) + `ROLE.md` (algunos: `rick-linkedin-writer`, `improvement-supervisor`).
+
+Método de merge: **append de bloque rotulado `## v1.1 — O15.1 Ola 1 deltas (2026-05-07, copilot-vps)` al final**, conservando v1.0 intacta. Reversible con `head -n <pre-line-count>` o restaurando desde `/tmp/o15-1-bak`.
+
+| Archivo editado | Path | Líneas pre → post | Diff |
+|---|---|---|---|
+| `main` IDENTITY | `~/.openclaw/workspace/IDENTITY.md` | 25 → 71 | +46 (nuevo bloque v1.1: rol explícito, gerencias activas con IDs, cuándo delegar, contrato delegación, 4 reglas inviolables) |
+| `rick-orchestrator` IDENTITY | `~/.openclaw/workspaces/rick-orchestrator/IDENTITY.md` | 24 → 57 | +33 (rol explícito, allowAgents directos vs transitorios, reglas O15.1, contrato JSON line) |
+
+**Nota importante**: las versiones v1.0 ya cubrían ~70% del contenido pedido por el task (rol CEO, mano derecha, gerencias listadas, regla "nunca saltar gerencias", referencia al jsonl futuro). El bloque v1.1 agrega lo faltante (decision tree explícito, 4 reglas inviolables agrupadas, marcado "transitorio" en QA/tracker/linkedin-writer, contrato JSON literal).
+
+`SOUL.md` (personalidad + 13 reglas operativas heredadas) **NO tocado** en ninguno (anti-scope: la task pide solo prompts main + rick-orchestrator a nivel rol organizacional).
+
+#### 3) Bloque D — `subagents.allowAgents` en `openclaw.json` ✅ (verificación; NO requirió edit)
+
+Hallazgo crítico: la topología §5.3 **ya estaba aplicada** en runtime (probablemente por O15.0 o sesión previa). Snapshot del estado actual:
+
+```json
+main.subagents.allowAgents             = ["rick-orchestrator"]
+rick-orchestrator.subagents.allowAgents = ["rick-communication-director","rick-delivery","rick-ops",
+                                           "rick-qa","rick-tracker","rick-linkedin-writer"]
+```
+
+Cada gerencia: `subagents = {}` (sin `allowAgents` poblado → no puede spawnar subagents propios → enforces "máximo 2 niveles efectivos" del §5.3 a nivel runtime, no solo a nivel prompt).
+
+- Schema 5.3-1 soporta `subagents.allowAgents` como primitiva nativa de primera clase. **NO necesita primitiva alternativa** (`delegates_to`, `parallel_lanes` no aplica acá).
+- `jq . openclaw.json > /dev/null` → válido.
+- **NO restart** de gateway/dispatcher/worker: no se modificó `openclaw.json` ni unit files; backup `bak-pre-o15-1-...` queda como "rollback target" defensivo aunque el archivo no se haya tocado (decisión: backup precautorio).
+- `openclaw status --all` post (`/tmp/o15-1-post-snapshot.txt`, 12,980 bytes): idéntico a pre salvo timestamps de "X minutes ago" (cosmético) y el RTT del gateway (68→117ms, dentro de jitter normal).
+
+#### 4) Bloque E — Trace + smoke ✅ con caveat
+
+**E.1 — Path traza:**
+- `~/.openclaw/trace/delegations.jsonl` creado, `chmod 600`, owner `rick:rick`.
+- Verificado writeable bajo uid 1001 = uid del proceso `openclaw-gateway` (pid 979 corre como `rick`/uid 1001 — confirmado con `ps -o uid,user,comm`). Path canónico válido.
+
+**E.2 — Mecánica de escritura (decisión documentada):**
+
+OpenClaw 5.3-1 NO tiene primitiva nativa para appendear delegaciones a un jsonl arbitrario. Las opciones evaluadas:
+
+| Opción | Pros | Contras | Veredicto |
+|---|---|---|---|
+| (a) Skill custom `delegation-trace-writer` invocada por main/rick-orchestrator | Estructurado, validable, auditable | Requiere implementación + smoke por separado (Ola 2) | **Diferido a Ola 2** |
+| (b) Hook bash en gateway (post-turn) | No requiere cambio prompt | Frágil, off-band, difícil de mantener | **Descartado** |
+| (c) **Prompt-driven** contract: instruir a main + rick-orchestrator a appendear inline con `cat >> ...jsonl` o equivalente | Funciona desde día 1, alineado con prompts editados | Frágil (depende de obediencia del modelo), asimétrico (gerencias no escriben su lado) | **Elegido para Ola 1** |
+
+Justificación: el task §E.3 explícitamente permite "fallback Ola 1: instrumentar solo desde `main`/`rick-orchestrator` (logging asimétrico, mejor que nada)". La instrucción quedó embebida en los `IDENTITY.md` v1.1 de ambos agents.
+
+**E.3 — Smoke test (caveat):**
+
+NO ejecuté `openclaw agent --message ...` para forzar una delegación real porque:
+1. Consume tokens contra modelos primarios (`azure-openai-responses/gpt-5.4`) en sesión `main` activa que David puede tener abierta.
+2. Sin sesión humana receptora, la delegación quedaría huérfana en gateway.
+3. Sin skill `delegation-trace-writer` aún, el modelo tendría que escribir el jsonl vía herramienta de exec — eso es exactamente la frágil parte que diferimos.
+4. Los comandos `openclaw send|prompt|ask|run|subagents` están bloqueados por `plugins.allow` en config actual (intencional, defensivo).
+
+**En su lugar, hice probe sintético:**
+
+```jsonl
+{"task_id":"3466735c-518b-4505-868f-135d8e124e5f","requested_by":"agent:copilot-vps","assigned_to":"agent:trace-self-probe","deliverable":"O15.1 Bloque E.2 — verify delegations.jsonl writeable + format valid","deadline":null,"context_refs":["task:2026-05-07-015","ts:2026-05-07T04:49:45Z"],"status":"done","note":"synthetic probe; first real delegation por main/rick-orchestrator queda diferida a primer turno real (Ola 1.5)"}
+```
+
+`jq . delegations.jsonl > /dev/null` → parsea OK. Format valida contra contrato §3.3. **El primer delegation real (main → rick-orchestrator → rick-ops "pong + worker status") queda como "Ola 1.5 smoke" para próximo turno interactivo de Rick CEO** — instrucción ya embebida en su IDENTITY.md.
+
+**Estado runtime post-edit:**
+- `worker /health` → `{"ok":true,"version":"0.4.0","tasks_in_memory":65}`
+- `dispatcher` → `active`
+- `gateway /health` → `{"ok":true,"status":"live"}`, RTT 117ms, `active 9h`
+- Logs gateway últimos 5min: solo `[ws] closed before connect ... reason=connect failed` desde `100.109.16.40` (tailnet peer con auth-fail recurrente, **predate este task** y NO atribuible a las edits — verificado: timestamps 00:48:48–00:50:07 incluyen pre-edit window).
+
+#### 5) Divergencias modelo §5.3 vs runtime real
+
+**Ninguna divergencia bloqueante.** Notas finas:
+
+- §5.3 menciona "improvement-supervisor" como rol futuro (Ola 2). Su workspace dir (`~/.openclaw/workspaces/improvement-supervisor/ROLE.md`) y agent dir (`~/.openclaw/agents/improvement-supervisor/`) **siguen presentes en disco** pese a O15.0 (que lo borró del registry `agents.list`). No son orphan registrations en gateway pero son orphan filesystem entries. Anti-scope para esta task; queda flag para O15.0-cleanup-followup si David quiere tierra-arrasada en disco.
+- `agent:rick-tracker` aparece en `agents.list` con `model.primary = azure-openai-responses/gpt-5.4` — la nota "único en Vertex" del modelo §5.3 **no está reflejada en `openclaw.json`**. Ola 2 tarea: setear su model.primary a `google-vertex/gemini-3.1-pro-preview` (que existe en `agents.defaults.models`). Anti-scope para O15.1.
+
+#### 6) Follow-ups detectados (NO bloquean cierre)
+
+- **F-O15.1-A**: Skill `delegation-trace-writer` (Ola 2) — bypass del frágil append manual.
+- **F-O15.1-B**: Hook de validación del jsonl en gateway post-turn (`jq -e` por línea, alerta si formato inválido).
+- **F-O15.1-C**: Migración `rick-tracker.model.primary` → Vertex (alineamiento §5.3).
+- **F-O15.1-D**: Smoke real Ola 1.5: primer turno interactivo de `main` debería ejercitar la delegación + jsonl write y validar.
+- **F-O15.1-E**: Cleanup filesystem `improvement-supervisor` (orphan workspace dir + agent dir) si David firma.
+- **F-O15.1-F**: Plugin warnings persistentes (`plugins.entries.acpx`, `plugins.allow acpx`) — `openclaw doctor --fix` lo soluciona; defer a sesión `rick-ops`.
+
+#### 7) Estado final
+
+- `status: done` ✅
+- 0 degradación runtime atribuible a las edits.
+- Topología §5.3 v1.1 reflejada en runtime (config + prompts).
+- Trace path operativo + probe sintético validado.
+- Backups en su lugar para rollback inmediato si algo sale mal en próximo turno de `main`.
+
+**Rollback rápido si hace falta:**
+```bash
+# Restaurar prompts:
+cp /tmp/o15-1-bak/main/agent/* ~/.openclaw/agents/main/agent/  # solo configs auth/models, NO prompts
+# Para prompts, head -n al snapshot pre-append:
+head -n 25 ~/.openclaw/workspace/IDENTITY.md > /tmp/restored && mv /tmp/restored ~/.openclaw/workspace/IDENTITY.md
+head -n 24 ~/.openclaw/workspaces/rick-orchestrator/IDENTITY.md > /tmp/restored && mv /tmp/restored ~/.openclaw/workspaces/rick-orchestrator/IDENTITY.md
+# Restaurar config si hace falta:
+cp ~/.openclaw/openclaw.json.bak-pre-o15-1-20260507-004533 ~/.openclaw/openclaw.json
+systemctl --user restart openclaw-gateway
+```

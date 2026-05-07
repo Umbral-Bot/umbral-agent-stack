@@ -1,0 +1,361 @@
+{
+  "started": "2026-05-07T05:59:04.250390+00:00",
+  "finished": "2026-05-07T05:59:44.937272+00:00",
+  "summary": {
+    "total_items": 15,
+    "alt1_yt_dlp": {
+      "ok_count": 0,
+      "avg_elapsed_ms": 757.7,
+      "description_len_gt_500": 0
+    },
+    "alt2_transcript": {
+      "ok_count": 0,
+      "avg_elapsed_ms": 644.5,
+      "transcript_chars_gt_1000": 0
+    },
+    "alt3_atom": {
+      "ok_count": 2,
+      "avg_elapsed_ms": 1306.4,
+      "description_len_gt_500": 2
+    }
+  },
+  "recommendation": "Sample: 15 videos.\nalt1 (yt-dlp): ok=0%, useful_desc(>500c)=0%, avg=757.7 ms.\nalt2 (transcript): ok=0%, useful(>1000c)=0%, avg=644.5 ms.\nalt3 (atom): ok=13%, avg=1306.4 ms.\n\nRECOMENDACIÓN: NINGUNA alternativa supera 75% de éxito. Revisar bloqueos (IP de la VPS contra anti-bot YouTube, cookies, captcha). Considerar proxy o degradar Stage 2 a stub permanente para canal=youtube hasta resolver.",
+  "items": [
+    {
+      "sqlite_id": 52,
+      "video_id": "Vht4hoRHEek",
+      "url": "https://www.youtube.com/watch?v=Vht4hoRHEek",
+      "referente_id": "080bbf47-03b9-4362-b4ff-0bd198249eb0",
+      "titulo": "Learn ETL Pipelines in Databricks in Under 1 Hour | Data Engineering in Databricks",
+      "alt1_yt_dlp": {
+        "ok": false,
+        "error": "DownloadError: ERROR: [youtube] Vht4hoRHEek: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-d",
+        "elapsed_ms": 905
+      },
+      "alt2_transcript": {
+        "ok": false,
+        "error": "RequestBlocked: \nCould not retrieve a transcript for the video https://www.youtube.com/watch?v=Vht4hoRHEek! This is most likely caused by:\n\nYouTube is blocking requests from your IP. This usually is due to one of the following reasons:\n- You have done too many requests and your IP has been blocked b",
+        "elapsed_ms": 601
+      },
+      "alt3_atom": {
+        "ok": false,
+        "error": "HTTPStatusError: Client error '404 Not Found' for url 'https://www.youtube.com/feeds/videos.xml?channel_id=UC7cs8q-gJRlGwj4A8OmCmXg'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404",
+        "elapsed_ms": 1440
+      }
+    },
+    {
+      "sqlite_id": 81,
+      "video_id": "9Gr2QjvSQ-I",
+      "url": "https://www.youtube.com/watch?v=9Gr2QjvSQ-I",
+      "referente_id": "1848755f-3a58-4d11-ad97-8c23a80c962d",
+      "titulo": "Adiós Windows. Me paso a LINUX para SIEMPRE",
+      "alt1_yt_dlp": {
+        "ok": false,
+        "error": "DownloadError: ERROR: [youtube] 9Gr2QjvSQ-I: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-d",
+        "elapsed_ms": 697
+      },
+      "alt2_transcript": {
+        "ok": false,
+        "error": "RequestBlocked: \nCould not retrieve a transcript for the video https://www.youtube.com/watch?v=9Gr2QjvSQ-I! This is most likely caused by:\n\nYouTube is blocking requests from your IP. This usually is due to one of the following reasons:\n- You have done too many requests and your IP has been blocked b",
+        "elapsed_ms": 612
+      },
+      "alt3_atom": {
+        "ok": false,
+        "error": "HTTPStatusError: Client error '404 Not Found' for url 'https://www.youtube.com/feeds/videos.xml?channel_id=UC36xmz34q02JYaZYKrMwXng'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404",
+        "elapsed_ms": 1349
+      }
+    },
+    {
+      "sqlite_id": 82,
+      "video_id": "3LnNwS6rqk8",
+      "url": "https://www.youtube.com/watch?v=3LnNwS6rqk8",
+      "referente_id": "1848755f-3a58-4d11-ad97-8c23a80c962d",
+      "titulo": "Monté el PC de BATMAN dentro de una Batcueva REAL",
+      "alt1_yt_dlp": {
+        "ok": false,
+        "error": "DownloadError: ERROR: [youtube] 3LnNwS6rqk8: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-d",
+        "elapsed_ms": 695
+      },
+      "alt2_transcript": {
+        "ok": false,
+        "error": "RequestBlocked: \nCould not retrieve a transcript for the video https://www.youtube.com/watch?v=3LnNwS6rqk8! This is most likely caused by:\n\nYouTube is blocking requests from your IP. This usually is due to one of the following reasons:\n- You have done too many requests and your IP has been blocked b",
+        "elapsed_ms": 621
+      },
+      "alt3_atom": {
+        "ok": false,
+        "error": "HTTPStatusError: Client error '404 Not Found' for url 'https://www.youtube.com/feeds/videos.xml?channel_id=UC36xmz34q02JYaZYKrMwXng'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404",
+        "elapsed_ms": 763
+      }
+    },
+    {
+      "sqlite_id": 111,
+      "video_id": "s2jm2Z22ibA",
+      "url": "https://www.youtube.com/watch?v=s2jm2Z22ibA",
+      "referente_id": "186db773-ec72-4717-8098-ff12f45279d0",
+      "titulo": "Voice Chatbot (Coding Challenge 188)",
+      "alt1_yt_dlp": {
+        "ok": false,
+        "error": "DownloadError: ERROR: [youtube] s2jm2Z22ibA: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-d",
+        "elapsed_ms": 824
+      },
+      "alt2_transcript": {
+        "ok": false,
+        "error": "RequestBlocked: \nCould not retrieve a transcript for the video https://www.youtube.com/watch?v=s2jm2Z22ibA! This is most likely caused by:\n\nYouTube is blocking requests from your IP. This usually is due to one of the following reasons:\n- You have done too many requests and your IP has been blocked b",
+        "elapsed_ms": 650
+      },
+      "alt3_atom": {
+        "ok": false,
+        "error": "HTTPStatusError: Client error '404 Not Found' for url 'https://www.youtube.com/feeds/videos.xml?channel_id=UCvjgXvBlbQiydffZU7m1_aw'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404",
+        "elapsed_ms": 1513
+      }
+    },
+    {
+      "sqlite_id": 141,
+      "video_id": "TQsBnsKZtuo",
+      "url": "https://www.youtube.com/watch?v=TQsBnsKZtuo",
+      "referente_id": "23addaef-d334-4b86-b90a-649ce7f7d82a",
+      "titulo": "Numbering Tool in Revit | Rule-Based Numbering in Revit Tutorial",
+      "alt1_yt_dlp": {
+        "ok": false,
+        "error": "DownloadError: ERROR: [youtube] TQsBnsKZtuo: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-d",
+        "elapsed_ms": 625
+      },
+      "alt2_transcript": {
+        "ok": false,
+        "error": "RequestBlocked: \nCould not retrieve a transcript for the video https://www.youtube.com/watch?v=TQsBnsKZtuo! This is most likely caused by:\n\nYouTube is blocking requests from your IP. This usually is due to one of the following reasons:\n- You have done too many requests and your IP has been blocked b",
+        "elapsed_ms": 733
+      },
+      "alt3_atom": {
+        "ok": false,
+        "error": "HTTPStatusError: Client error '404 Not Found' for url 'https://www.youtube.com/feeds/videos.xml?channel_id=UCapzEjUWyv7H4GtPQrgybTQ'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404",
+        "elapsed_ms": 1333
+      }
+    },
+    {
+      "sqlite_id": 142,
+      "video_id": "npmoS_dqAho",
+      "url": "https://www.youtube.com/watch?v=npmoS_dqAho",
+      "referente_id": "23addaef-d334-4b86-b90a-649ce7f7d82a",
+      "titulo": "Am I Faster than Revit AI?",
+      "alt1_yt_dlp": {
+        "ok": false,
+        "error": "DownloadError: ERROR: [youtube] npmoS_dqAho: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-d",
+        "elapsed_ms": 841
+      },
+      "alt2_transcript": {
+        "ok": false,
+        "error": "RequestBlocked: \nCould not retrieve a transcript for the video https://www.youtube.com/watch?v=npmoS_dqAho! This is most likely caused by:\n\nYouTube is blocking requests from your IP. This usually is due to one of the following reasons:\n- You have done too many requests and your IP has been blocked b",
+        "elapsed_ms": 627
+      },
+      "alt3_atom": {
+        "ok": false,
+        "error": "HTTPStatusError: Client error '404 Not Found' for url 'https://www.youtube.com/feeds/videos.xml?channel_id=UCapzEjUWyv7H4GtPQrgybTQ'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404",
+        "elapsed_ms": 1451
+      }
+    },
+    {
+      "sqlite_id": 261,
+      "video_id": "J26M-cpFG-M",
+      "url": "https://www.youtube.com/watch?v=J26M-cpFG-M",
+      "referente_id": "6af76981-e122-41d4-9ef2-bb75ad977f63",
+      "titulo": "Build Interactive Agents with Generative UI",
+      "alt1_yt_dlp": {
+        "ok": false,
+        "error": "DownloadError: ERROR: [youtube] J26M-cpFG-M: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-d",
+        "elapsed_ms": 644
+      },
+      "alt2_transcript": {
+        "ok": false,
+        "error": "RequestBlocked: \nCould not retrieve a transcript for the video https://www.youtube.com/watch?v=J26M-cpFG-M! This is most likely caused by:\n\nYouTube is blocking requests from your IP. This usually is due to one of the following reasons:\n- You have done too many requests and your IP has been blocked b",
+        "elapsed_ms": 561
+      },
+      "alt3_atom": {
+        "ok": false,
+        "error": "HTTPStatusError: Client error '404 Not Found' for url 'https://www.youtube.com/feeds/videos.xml?channel_id=UCcIXc5mJsHVYTZR1maL5l9w'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404",
+        "elapsed_ms": 1234
+      }
+    },
+    {
+      "sqlite_id": 262,
+      "video_id": "FNfIMnpz-ZY",
+      "url": "https://www.youtube.com/watch?v=FNfIMnpz-ZY",
+      "referente_id": "6af76981-e122-41d4-9ef2-bb75ad977f63",
+      "titulo": "Become an AI power user 🌟 new course from Andrew Ng",
+      "alt1_yt_dlp": {
+        "ok": false,
+        "error": "DownloadError: ERROR: [youtube] FNfIMnpz-ZY: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-d",
+        "elapsed_ms": 722
+      },
+      "alt2_transcript": {
+        "ok": false,
+        "error": "RequestBlocked: \nCould not retrieve a transcript for the video https://www.youtube.com/watch?v=FNfIMnpz-ZY! This is most likely caused by:\n\nYouTube is blocking requests from your IP. This usually is due to one of the following reasons:\n- You have done too many requests and your IP has been blocked b",
+        "elapsed_ms": 736
+      },
+      "alt3_atom": {
+        "ok": false,
+        "error": "HTTPStatusError: Client error '404 Not Found' for url 'https://www.youtube.com/feeds/videos.xml?channel_id=UCcIXc5mJsHVYTZR1maL5l9w'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404",
+        "elapsed_ms": 1399
+      }
+    },
+    {
+      "sqlite_id": 291,
+      "video_id": "Vr_Wd2ZucZA",
+      "url": "https://www.youtube.com/watch?v=Vr_Wd2ZucZA",
+      "referente_id": "7f4f58e9-80cd-41e5-a78d-a0e0f079aa8d",
+      "titulo": "Why Nobody Wants the Chrysler Building",
+      "alt1_yt_dlp": {
+        "ok": false,
+        "error": "DownloadError: ERROR: [youtube] Vr_Wd2ZucZA: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-d",
+        "elapsed_ms": 780
+      },
+      "alt2_transcript": {
+        "ok": false,
+        "error": "RequestBlocked: \nCould not retrieve a transcript for the video https://www.youtube.com/watch?v=Vr_Wd2ZucZA! This is most likely caused by:\n\nYouTube is blocking requests from your IP. This usually is due to one of the following reasons:\n- You have done too many requests and your IP has been blocked b",
+        "elapsed_ms": 593
+      },
+      "alt3_atom": {
+        "ok": false,
+        "error": "HTTPStatusError: Server error '500 Internal Server Error' for url 'https://www.youtube.com/feeds/videos.xml?channel_id=UC6n8I1UDTKP1IWjQMg6_TwA'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500",
+        "elapsed_ms": 1385
+      }
+    },
+    {
+      "sqlite_id": 292,
+      "video_id": "vVfEs9wrW98",
+      "url": "https://www.youtube.com/watch?v=vVfEs9wrW98",
+      "referente_id": "7f4f58e9-80cd-41e5-a78d-a0e0f079aa8d",
+      "titulo": "Why the Jeddah Tower Won't Be One Kilometre Tall",
+      "alt1_yt_dlp": {
+        "ok": false,
+        "error": "DownloadError: ERROR: [youtube] vVfEs9wrW98: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-d",
+        "elapsed_ms": 730
+      },
+      "alt2_transcript": {
+        "ok": false,
+        "error": "RequestBlocked: \nCould not retrieve a transcript for the video https://www.youtube.com/watch?v=vVfEs9wrW98! This is most likely caused by:\n\nYouTube is blocking requests from your IP. This usually is due to one of the following reasons:\n- You have done too many requests and your IP has been blocked b",
+        "elapsed_ms": 656
+      },
+      "alt3_atom": {
+        "ok": false,
+        "error": "HTTPStatusError: Client error '404 Not Found' for url 'https://www.youtube.com/feeds/videos.xml?channel_id=UC6n8I1UDTKP1IWjQMg6_TwA'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404",
+        "elapsed_ms": 1383
+      }
+    },
+    {
+      "sqlite_id": 293,
+      "video_id": "A0lQPphWTkQ",
+      "url": "https://www.youtube.com/watch?v=A0lQPphWTkQ",
+      "referente_id": "7f4f58e9-80cd-41e5-a78d-a0e0f079aa8d",
+      "titulo": "The US Megaproject You’ve (Probably) Never Heard Of",
+      "alt1_yt_dlp": {
+        "ok": false,
+        "error": "DownloadError: ERROR: [youtube] A0lQPphWTkQ: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-d",
+        "elapsed_ms": 841
+      },
+      "alt2_transcript": {
+        "ok": false,
+        "error": "RequestBlocked: \nCould not retrieve a transcript for the video https://www.youtube.com/watch?v=A0lQPphWTkQ! This is most likely caused by:\n\nYouTube is blocking requests from your IP. This usually is due to one of the following reasons:\n- You have done too many requests and your IP has been blocked b",
+        "elapsed_ms": 662
+      },
+      "alt3_atom": {
+        "ok": false,
+        "error": "HTTPStatusError: Client error '404 Not Found' for url 'https://www.youtube.com/feeds/videos.xml?channel_id=UC6n8I1UDTKP1IWjQMg6_TwA'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404",
+        "elapsed_ms": 1508
+      }
+    },
+    {
+      "sqlite_id": 351,
+      "video_id": "zO8EPWmTnVQ",
+      "url": "https://www.youtube.com/watch?v=zO8EPWmTnVQ",
+      "referente_id": "d7c794b6-a61f-4739-b7fb-10e0bdc61ae0",
+      "titulo": "Is AI Coming For Your Job?",
+      "alt1_yt_dlp": {
+        "ok": false,
+        "error": "DownloadError: ERROR: [youtube] zO8EPWmTnVQ: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-d",
+        "elapsed_ms": 831
+      },
+      "alt2_transcript": {
+        "ok": false,
+        "error": "RequestBlocked: \nCould not retrieve a transcript for the video https://www.youtube.com/watch?v=zO8EPWmTnVQ! This is most likely caused by:\n\nYouTube is blocking requests from your IP. This usually is due to one of the following reasons:\n- You have done too many requests and your IP has been blocked b",
+        "elapsed_ms": 595
+      },
+      "alt3_atom": {
+        "ok": false,
+        "error": "HTTPStatusError: Client error '404 Not Found' for url 'https://www.youtube.com/feeds/videos.xml?channel_id=UCWstLaT61QUc-TvfxOjNpFw'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404",
+        "elapsed_ms": 1331
+      }
+    },
+    {
+      "sqlite_id": 352,
+      "video_id": "NGq0pdR0s2U",
+      "url": "https://www.youtube.com/watch?v=NGq0pdR0s2U",
+      "referente_id": "d7c794b6-a61f-4739-b7fb-10e0bdc61ae0",
+      "titulo": "What AI Really Is, Explained Simply",
+      "alt1_yt_dlp": {
+        "ok": false,
+        "error": "DownloadError: ERROR: [youtube] NGq0pdR0s2U: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-d",
+        "elapsed_ms": 762
+      },
+      "alt2_transcript": {
+        "ok": false,
+        "error": "RequestBlocked: \nCould not retrieve a transcript for the video https://www.youtube.com/watch?v=NGq0pdR0s2U! This is most likely caused by:\n\nYouTube is blocking requests from your IP. This usually is due to one of the following reasons:\n- You have done too many requests and your IP has been blocked b",
+        "elapsed_ms": 550
+      },
+      "alt3_atom": {
+        "ok": true,
+        "description_len": 1185,
+        "feed_bytes": 33628,
+        "channel_id_resolved_via": "watch_html",
+        "channel_id": "UCWstLaT61QUc-TvfxOjNpFw",
+        "elapsed_ms": 1436
+      }
+    },
+    {
+      "sqlite_id": 353,
+      "video_id": "27bLTrhZ4Mg",
+      "url": "https://www.youtube.com/watch?v=27bLTrhZ4Mg",
+      "referente_id": "d7c794b6-a61f-4739-b7fb-10e0bdc61ae0",
+      "titulo": "The Future Of Google Search, Maps And AI Agents",
+      "alt1_yt_dlp": {
+        "ok": false,
+        "error": "DownloadError: ERROR: [youtube] 27bLTrhZ4Mg: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-d",
+        "elapsed_ms": 711
+      },
+      "alt2_transcript": {
+        "ok": false,
+        "error": "RequestBlocked: \nCould not retrieve a transcript for the video https://www.youtube.com/watch?v=27bLTrhZ4Mg! This is most likely caused by:\n\nYouTube is blocking requests from your IP. This usually is due to one of the following reasons:\n- You have done too many requests and your IP has been blocked b",
+        "elapsed_ms": 736
+      },
+      "alt3_atom": {
+        "ok": true,
+        "description_len": 1242,
+        "feed_bytes": 33628,
+        "channel_id_resolved_via": "watch_html",
+        "channel_id": "UCWstLaT61QUc-TvfxOjNpFw",
+        "elapsed_ms": 626
+      }
+    },
+    {
+      "sqlite_id": 408,
+      "video_id": "1PIbKMyFMAY",
+      "url": "https://www.youtube.com/watch?v=1PIbKMyFMAY",
+      "referente_id": "e9271bac-4dd2-4b7a-a8b8-ccd2e9089057",
+      "titulo": "¿Existen Fisuras en el Universo?",
+      "alt1_yt_dlp": {
+        "ok": false,
+        "error": "DownloadError: ERROR: [youtube] 1PIbKMyFMAY: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-d",
+        "elapsed_ms": 757
+      },
+      "alt2_transcript": {
+        "ok": false,
+        "error": "RequestBlocked: \nCould not retrieve a transcript for the video https://www.youtube.com/watch?v=1PIbKMyFMAY! This is most likely caused by:\n\nYouTube is blocking requests from your IP. This usually is due to one of the following reasons:\n- You have done too many requests and your IP has been blocked b",
+        "elapsed_ms": 735
+      },
+      "alt3_atom": {
+        "ok": false,
+        "error": "HTTPStatusError: Client error '404 Not Found' for url 'https://www.youtube.com/feeds/videos.xml?channel_id=UCbdSYaPD-lr1kW27UJuk8Pw'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404",
+        "elapsed_ms": 1445
+      }
+    }
+  ]
+}

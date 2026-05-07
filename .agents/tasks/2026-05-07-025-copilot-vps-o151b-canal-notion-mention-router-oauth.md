@@ -1,7 +1,7 @@
 ---
 task_id: 2026-05-07-025
 title: O15.1b primer canal Notion — OAuth rick.asistente@gmail.com + watcher menciones + skill notion-mention-router + smoke con mención real
-status: pending
+status: done
 requested_by: copilot-chat (autorizado por David 2026-05-07 post task 023 close)
 assigned_to: copilot-vps
 related: 2026-05-07-023 (F-NEW2 closed, O15.1b unblocked), ADR docs/architecture/16-multichannel-rick-channels.md
@@ -191,3 +191,94 @@ Commit: `task(024): O15.1b canal Notion done — watcher [webhook|polling] + ski
 - Si bloque 3 requiere endpoint dispatcher que no existe → escalar a David antes de inventar route nueva (puede haber ADR pendiente).
 - Si bloque 4 webhook handler requiere reverse-proxy config nuevo → escalar (no tocar Caddy sin autorización).
 - Si la integration scope `Insert comments` no existe en Notion → fallback a `Update content` (más amplio, documentar trade-off + flag para revisar).
+
+---
+
+## Log de ejecución — 2026-05-07T12:17-12:23 (copilot-vps)
+
+### Bloque 0 — Setup + estado actual
+
+- F-INC-002: main al día con `7352cfa` (PR #343 YouTube Data API). Working tree limpio en main (excepto reports leftover de tasks anteriores no relacionados).
+- TS = `20260507-121739`.
+- **F-INC-003 detectado**: el task referencia `docs/architecture/16-multichannel-rick-channels.md` que **no existe en el repo**. ADR canales D1-D6 está inlineado en el body del task spec; procedí con esos principios documentados como rectores (no inventé interpretación nueva). Nota para próximos tasks: crear ese ADR formalmente (out-of-scope task 025) o actualizar tasks futuros para citar al task 025 spec en su lugar.
+- **Hallazgo grande**: la infraestructura Notion ya existe casi completa desde Ola 1b (2026-04):
+  - `dispatcher/notion_poller.py` (555 LoC) — daemon polling.
+  - `scripts/vps/notion-poller-daemon.py` + cron `*/5 * * * * scripts/vps/notion-poller-cron.sh` (auto-restart si daemon muere).
+  - `dispatcher/rick_mention.py` (90 LoC) — detect + dispatch a `rick.orchestrator.triage` con trace en `~/.openclaw/trace/delegations.jsonl`.
+  - `tests/test_rick_mention.py` 7/7 passing.
+  - Env var `DAVID_NOTION_USER_ID` ya configurada en `~/.config/openclaw/env`.
+- Worker `/health` OK (v0.4.0, 103 tasks).
+- Gateway pid 75421 (sin restart).
+
+### Bloque 1 — Decisión: **POLLING**
+
+- Ya en producción. Detalle completo y tabla comparativa: `/tmp/025/decision-watcher.md`.
+- Razones: (a) cero infra extra, (b) auto-recover via cron, (c) dedupe Redis maduro, (d) webhook implicaría exponer endpoint público nuevo + Caddy (ADR salvavidas: prohibido sin autorización), (e) Fase 1 estabilidad Vertex prefiere cero superficie nueva.
+- Trade-off: latencia hasta 60 min con default `NOTION_POLL_AT_MINUTE=10`. Mitigable a 5 min via `NOTION_POLL_INTERVAL_SEC=300` (documentado en runbook §1).
+
+### Bloque 2 — OAuth scaffold para `rick.asistente@gmail.com`
+
+- Nuevo directorio: `~/.config/umbral/notion/` (chmod default 775; el `.env` real será chmod 600 cuando David lo cree).
+- Archivo nuevo: `~/.config/umbral/notion/.env.template` (74 líneas, comentarios + 5 keys vacías). NO commiteado al repo (config per-host, fuera de tree).
+- Script nuevo: `scripts/notion/setup_rick_integration.py` (189 LoC) — valida token, lista users del workspace, busca `rick.asistente@gmail.com`, escribe `NOTION_RICK_USER_ID` y `NOTION_WORKSPACE_ID` al `.env`. Exit codes: 0=ok / 2=token vacío / 3=token inválido / 4=user no encontrado.
+- **`secret-output-guard` regla #8 cumplida**: el script solo loguea fingerprint `first4…last4` del token, nunca el value completo.
+- Verificación: `python -c "import ast; ast.parse(...)"` OK + dry-run con `.env-test-empty` exit code 2 (correcto).
+
+### Bloque 3 — Skill `notion-mention-router`
+
+- Wrapper canonical (named per task spec): `scripts/notion/notion_mention_router.py` (100 LoC). Re-exporta `is_rick_mention` y `handle_rick_mention` desde `dispatcher.rick_mention` + agrega `route_one_mention(comment, *, allowlist, wc, queue, scheduler, page_kind=None)` para dispatch programático.
+- **Decisión anti-duplicación**: el skill NO duplica la lógica de `dispatcher/rick_mention.py` (que ya está en producción con tests). El wrapper expone el nombre que pide el spec sin tocar código vivo.
+- Tests nuevos: `tests/test_notion_mention_router.py` (124 LoC, 6 tests).
+- Resultado: **`pytest tests/test_notion_mention_router.py tests/test_rick_mention.py -v` → 13/13 PASSED en 0.53s**.
+
+### Bloque 4 — Cron / activación
+
+- **Cron polling YA en producción** (no se duplica). Línea actual:
+  ```
+  */5 * * * * bash /home/rick/umbral-agent-stack/scripts/vps/notion-poller-cron.sh >> /tmp/notion_poller_cron.log 2>&1
+  ```
+- **Lo que NO está activado y queda diferido a David** (cumple "creado pero NO activado"):
+  - Reply path con autoría OAuth Rick (vs integration de David). Hoy `worker.tasks.notion.handle_notion_add_comment` usa `NOTION_API_KEY` (David). Cuando David complete OAuth setup B2 + autorice, próximo task implementará variant que use `NOTION_RICK_INTEGRATION_TOKEN` cuando `team == "rick-orchestrator"`.
+  - Migración a webhook (futura, no activada en este task).
+
+### Bloque 5 — Runbook
+
+- Nuevo: `docs/runbooks/rick-multichannel-setup.md` (179 LoC). 7 secciones: estado actual, decisión técnica, OAuth setup con checklist David interactivo (D1-D6 todos checkboxes), skill, activación pendiente, smoke procedure (deferido), troubleshooting.
+- Smoke explícitamente NO ejecutado en este task. Documentado paso a paso para que David lo ejecute después de §2 OAuth.
+
+### Bloque 6 — Cierre
+
+- **Estado preservación**:
+  - `~/.openclaw/openclaw.json`: NO tocado este task. Diff vs `.bak-pre-021-…` solo en `model.primary` (cambio del task 021). `model.primary` = `google-vertex/gemini-3.1-pro-preview` ✅.
+  - Gateway pid: **75421** (activo, sin restart consumido) ✅.
+  - `~/.config/openclaw/env`: NO tocado este task ✅.
+  - Workspaces SOUL: NO tocados este task ✅.
+  - Cron crontab: NO modificado este task ✅.
+- **F-INC-002**: pre-commit `git fetch && log origin/main..HEAD && log HEAD..origin/main` → ambos vacíos, sin divergencia.
+- **F-INC-003** (nuevo, anotado): ADR formal `docs/architecture/16-multichannel-rick-channels.md` inexistente; D1-D6 vienen del task spec body. Sin acción tomada en este task; recomendado próximo task crearlo formalmente.
+
+#### Archivos a commitear (solo task 025)
+
+- `.agents/tasks/2026-05-07-025-copilot-vps-o151b-canal-notion-mention-router-oauth.md` (modificado: status pending → done + log)
+- `scripts/notion/setup_rick_integration.py` (nuevo, 189 LoC)
+- `scripts/notion/notion_mention_router.py` (nuevo, 100 LoC)
+- `tests/test_notion_mention_router.py` (nuevo, 124 LoC)
+- `docs/runbooks/rick-multichannel-setup.md` (nuevo, 179 LoC)
+
+NO se commitea: reports `backfill-youtube-content-…` ni `stage4-push-…` (artefactos de task 013-K, fuera de scope).
+
+Mantenimiento `~/.config/umbral/notion/.env.template` y `.env` (cuando David lo cree): per-host, fuera del repo, nunca se commitea.
+
+#### Checklist David interactivo (gate de activación reply OAuth)
+
+- [ ] D1: cuenta `rick.asistente@gmail.com` en Notion confirmada/creada.
+- [ ] D2: invitada como guest del workspace.
+- [ ] D3: integration `Rick Asistente CEO` creada con scopes mínimos (`Read content`, `Insert comments`, `Read user information without email`).
+- [ ] D4: integration secret copiado.
+- [ ] D5: secret pegado en `~/.config/umbral/notion/.env` (chmod 600).
+- [ ] D6: páginas relevantes (incluido smoke page) compartidas con la integration.
+- [ ] D7: `python scripts/notion/setup_rick_integration.py` exit 0.
+- [ ] D8: smoke §5 del runbook ejecutado.
+- [ ] D9: David autoriza implementación del reply handler con `NOTION_RICK_INTEGRATION_TOKEN` (próximo task).
+
+Commit: `task(025): O15.1b canal Notion done — watcher polling [in-prod since Ola 1b] + skill notion-mention-router + runbook OAuth setup; reply OAuth autoría diferido a David (gate D1-D9)`. Push con F-INC-002 check.

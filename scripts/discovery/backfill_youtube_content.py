@@ -99,12 +99,43 @@ def select_promoted_youtube_without_content(conn: sqlite3.Connection) -> list[di
     ]
 
 
-def update_content(conn: sqlite3.Connection, sqlite_id: int, html: str) -> None:
-    conn.execute(
-        "UPDATE discovered_items SET contenido_html = ?, contenido_extraido_at = ? "
-        "WHERE rowid = ?",
-        (html, _now_iso(), sqlite_id),
-    )
+def update_content(
+    conn: sqlite3.Connection,
+    sqlite_id: int,
+    html: str,
+    *,
+    cleaned: bool = False,
+    removals_count: int | None = None,
+) -> None:
+    if cleaned:
+        conn.execute(
+            "UPDATE discovered_items SET contenido_html = ?, contenido_extraido_at = ?, "
+            "description_cleaned_at = ?, description_removals_count = ? "
+            "WHERE rowid = ?",
+            (html, _now_iso(), _now_iso(), removals_count, sqlite_id),
+        )
+    else:
+        conn.execute(
+            "UPDATE discovered_items SET contenido_html = ?, contenido_extraido_at = ? "
+            "WHERE rowid = ?",
+            (html, _now_iso(), sqlite_id),
+        )
+
+
+def ensure_cleaner_columns(conn: sqlite3.Connection) -> None:
+    """Idempotently add the description-cleaner tracking columns.
+
+    Adds ``description_cleaned_at TEXT`` and ``description_removals_count INTEGER``
+    to ``discovered_items`` if they do not already exist. Safe to call on every
+    invocation — a no-op when the columns are present.
+    """
+    existing = {r[1] for r in conn.execute("PRAGMA table_info(discovered_items)")}
+    if "description_cleaned_at" not in existing:
+        conn.execute("ALTER TABLE discovered_items ADD COLUMN description_cleaned_at TEXT")
+    if "description_removals_count" not in existing:
+        conn.execute(
+            "ALTER TABLE discovered_items ADD COLUMN description_removals_count INTEGER"
+        )
 
 
 def render_video_to_html(result: YoutubeExtractionResult) -> str:
@@ -202,15 +233,19 @@ async def run_backfill_async(
     commit: bool,
     reports_dir: Path,
     limit: int | None,
+    clean_description: bool = False,
 ) -> dict[str, Any]:
     started = _now_iso()
     conn = sqlite3.connect(str(sqlite_path))
+    if clean_description and commit:
+        ensure_cleaner_columns(conn)
     pending = select_promoted_youtube_without_content(conn)
     if limit is not None:
         pending = pending[:limit]
     summary: dict[str, Any] = {
         "started": started,
         "commit": commit,
+        "clean_description": clean_description,
         "pending_total": len(pending),
         "ok": 0,
         "not_found": 0,
@@ -231,8 +266,32 @@ async def run_backfill_async(
             res = await _enrich_one(client, row)
             status = res["status"]
             summary[status] = summary.get(status, 0) + 1
-            if status == "ok" and commit:
-                update_content(conn, row["sqlite_id"], res["html"])
+            if status == "ok":
+                final_html = res["html"]
+                removals_count: int | None = None
+                if clean_description:
+                    # Local import keeps the stripper optional at module level.
+                    from dispatcher.extractors.youtube_description_cleaner import (
+                        clean_html as _clean_html,
+                    )
+
+                    final_html, removals = _clean_html(res["html"])
+                    removals_count = len(removals)
+                    res["removals_count"] = removals_count
+                    res["removals_reasons"] = sorted({r.reason for r in removals})
+                    print(
+                        f"  cleaned sid={row['sqlite_id']} "
+                        f"removals={removals_count} reasons={res['removals_reasons']}",
+                        flush=True,
+                    )
+                if commit:
+                    update_content(
+                        conn,
+                        row["sqlite_id"],
+                        final_html,
+                        cleaned=clean_description,
+                        removals_count=removals_count,
+                    )
             # Strip ``html`` from the report payload (can be large).
             res_for_report = {k: v for k, v in res.items() if k != "html"}
             summary["items"].append(res_for_report)
@@ -265,6 +324,15 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         "--limit", type=int, default=None,
         help="Optional cap on number of pending rows to process.",
     )
+    p.add_argument(
+        "--clean-description", action="store_true",
+        help=(
+            "Pass extracted contenido_html through "
+            "dispatcher.extractors.youtube_description_cleaner before writing. "
+            "OPT-IN. Stamps description_cleaned_at + description_removals_count "
+            "(columns auto-created if missing)."
+        ),
+    )
     return p.parse_args(argv)
 
 
@@ -277,6 +345,7 @@ def main(argv: list[str] | None = None) -> int:
                 commit=args.commit,
                 reports_dir=args.reports_dir,
                 limit=args.limit,
+                clean_description=args.clean_description,
             )
         )
     except YoutubeApiKeyMissing as exc:

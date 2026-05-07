@@ -2,10 +2,12 @@
 id: f8c-retry-after-github-meta-egress-fix-2026-05-07
 title: "F8C retry direct Copilot diagnostic with GitHub Meta CIDR egress"
 assigned_to: copilot-vps
-status: todo
+status: done
 priority: high
 reviewer: codex
 created_at: 2026-05-07
+completed_at: 2026-05-07
+verdict: amarillo
 report: reports/copilot-cli/f8c-retry-after-github-meta-egress-fix-2026-05-07.md
 ---
 

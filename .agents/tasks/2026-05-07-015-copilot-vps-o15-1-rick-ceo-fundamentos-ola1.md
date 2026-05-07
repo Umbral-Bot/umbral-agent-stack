@@ -1,7 +1,7 @@
 ---
 id: "2026-05-07-015"
 title: "Copilot VPS — O15.1 Ola 1 fundamentos Rick CEO (prompts main + rick-orchestrator + allowAgents + trace + smoke)"
-status: in_progress
+status: done
 assigned_to: copilot
 created_by: copilot-chat-notion-governance
 priority: high

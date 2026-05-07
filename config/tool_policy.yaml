@@ -42,6 +42,24 @@ copilot_cli:
   default_max_wall_sec: 120
   default_max_tokens: 8000
   default_max_files_touched: 0      # 0 = read-only por mission default
+  # Copilot CLI accepts a model override via --model. This repo-side list only
+  # controls which model names Rick/subagents may request; GitHub still enforces
+  # actual plan/org/model-policy availability. Source checked 2026-05-07:
+  # https://docs.github.com/en/copilot/reference/ai-models/supported-models
+  allowed_models:
+    - Claude Opus 4.7
+    - Claude Opus 4.6
+    - Claude Opus 4.6 (fast mode) (preview)
+    - Claude Sonnet 4.6
+    - Claude Sonnet 4.5
+    - GPT-5.5
+    - GPT-5.4
+    - GPT-5.4 mini
+    - GPT-5.3-Codex
+    - GPT-5.2-Codex
+    - Gemini 3.1 Pro
+    - Gemini 3 Flash
+    - Grok Code Fast 1
   banned_subcommands:
     # Git push variants — defensa en profundidad: substring match cubre
     # también las variantes pero las listamos explícitamente para audit.

@@ -322,6 +322,13 @@ def test_unknown_input_keys_rejected():
     assert res["error"] == "invalid_input"
 
 
+def test_invalid_model_name_rejected():
+    res = handle_copilot_cli_run(_ok_input(model='Claude Opus 4.7"; rm -rf /'))
+    assert res["ok"] is False
+    assert res["error"] == "invalid_input"
+    assert res["would_run"] is False
+
+
 # ---------------------------------------------------------------------------
 # 11. Sensitive pattern regex sanity (defensive)
 # ---------------------------------------------------------------------------
@@ -678,6 +685,58 @@ def test_f8a_diagnostic_mode_drops_json_stream_flags(monkeypatch):
     assert '$(cat \\"$prompt_file\\")' not in flat_argv
 
 
+def test_f8a_model_override_passes_model_flag_and_records_manifest(monkeypatch):
+    _all_gates_open(monkeypatch, execute=True)
+
+    import subprocess as _sp
+    calls = []
+
+    def _fake_run(argv, *, input, text, capture_output, timeout):
+        calls.append(argv)
+        return _sp.CompletedProcess(argv, 0, stdout="ok\n", stderr="")
+
+    monkeypatch.setattr(_sp, "run", _fake_run)
+
+    res = handle_copilot_cli_run(_ok_input(
+        mission="research",
+        model="Claude Opus 4.7",
+        dry_run=False,
+    ))
+
+    assert res["ok"] is True
+    assert res["model"] == "Claude Opus 4.7"
+    flat_argv = "\n".join(calls[0])
+    assert "--model 'Claude Opus 4.7'" in flat_argv
+    manifest = json.loads(Path(res["artifact_manifest"]).read_text(encoding="utf-8"))
+    assert manifest["model"] == "Claude Opus 4.7"
+    events = _read_audit(res["audit_log"])
+    assert events[-1]["model"] == "Claude Opus 4.7"
+
+
+def test_f8a_model_override_rejects_policy_disallowed_model(monkeypatch):
+    _all_gates_open(monkeypatch, execute=True)
+    from worker import tool_policy as tp
+    monkeypatch.setattr(tp, "get_copilot_cli_allowed_models", lambda: ["Claude Sonnet 4.6"])
+
+    import subprocess as _sp
+
+    def _explode(*a, **kw):
+        raise AssertionError("subprocess invoked after model_not_allowed")
+
+    monkeypatch.setattr(_sp, "run", _explode)
+
+    res = handle_copilot_cli_run(_ok_input(
+        mission="research",
+        model="Claude Opus 4.7",
+        dry_run=False,
+    ))
+
+    assert res["ok"] is False
+    assert res["error"] == "model_not_allowed"
+    assert res["model"] == "Claude Opus 4.7"
+    assert "docker_argv" not in res
+
+
 def test_f6_audit_records_all_three_flags(monkeypatch):
     _all_gates_open(monkeypatch, execute=True)
     res = handle_copilot_cli_run(_ok_input(mission="research"))
@@ -702,6 +761,11 @@ def test_f7_rehearsal_yaml_policy_enabled_true():
     """F7 rehearsal 1: yaml-loaded policy gate must report True."""
     from worker import tool_policy as tp
     assert tp.is_copilot_cli_policy_enabled() is True
+
+
+def test_copilot_cli_allowed_models_include_opus_4_7():
+    from worker import tool_policy as tp
+    assert "Claude Opus 4.7" in tp.get_copilot_cli_allowed_models()
 
 
 def test_f7_rehearsal_yaml_egress_still_inactive():

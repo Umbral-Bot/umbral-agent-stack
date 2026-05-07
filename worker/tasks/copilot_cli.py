@@ -31,6 +31,7 @@ import json
 import logging
 import os
 import re
+import shlex
 import subprocess
 import time
 import uuid
@@ -187,6 +188,7 @@ _MIN_WALL_SEC = 5
 # Allowed top-level keys in the input envelope. Anything else is rejected.
 _ALLOWED_INPUT_KEYS = frozenset({
     "mission",
+    "model",
     "prompt",
     "repo_path",
     "dry_run",
@@ -240,6 +242,11 @@ _GLOBAL_HARD_DENY_OPERATIONS = frozenset({
 })
 
 _OPERATION_NAME_RE = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
+
+# GitHub Copilot CLI accepts model names via --model. The value is later
+# interpolated into a /bin/sh -lc script, so keep the character set small and
+# quote it with shlex before use.
+_MODEL_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9 ._:+()/-]{0,79}$")
 
 
 # ---------------------------------------------------------------------------
@@ -460,6 +467,7 @@ def _build_docker_argv(
     max_wall_sec: int,
     network: str = "none",
     real_run: bool = False,
+    model: Optional[str] = None,
 ) -> List[str]:
     """Construct the docker argv.
 
@@ -499,6 +507,8 @@ def _build_docker_argv(
             copilot_flags += "--log-dir=/scratch/copilot-logs --output-format=json --stream=off "
         else:
             copilot_flags += "--log-level=debug "
+        if model:
+            copilot_flags += f"--model {shlex.quote(model)} "
         argv.extend([
             "--env", "COPILOT_GITHUB_TOKEN",
             "--env", "NO_COLOR=1",
@@ -569,6 +579,7 @@ def _write_execution_artifacts(
     prompt: str,
     docker_argv_redacted: List[str],
     run_result: Dict[str, Any],
+    model: Optional[str] = None,
 ) -> Dict[str, Any]:
     stdout_raw = str(run_result.get("stdout", ""))
     stderr_raw = str(run_result.get("stderr", ""))
@@ -591,6 +602,7 @@ def _write_execution_artifacts(
         "exit_code": run_result["exit_code"],
         "duration_sec": run_result["duration_sec"],
         "prompt_sha256": _sha256_text(prompt),
+        "model": model,
         "docker_argv_redacted": docker_argv_redacted,
         "stdout": {
             "path": str(stdout_path),
@@ -663,6 +675,22 @@ def _validate_input(data: Dict[str, Any]) -> Dict[str, Any]:
     if len(prompt) > 16_000:
         raise _ValidationError("invalid_input", "'prompt' too long (>16000 chars)")
 
+    model_raw = data.get("model", None)
+    model: Optional[str]
+    if model_raw is None:
+        model = None
+    elif isinstance(model_raw, str):
+        model = model_raw.strip()
+        if not model:
+            model = None
+        elif not _MODEL_NAME_RE.match(model):
+            raise _ValidationError(
+                "invalid_input",
+                "'model' contains unsupported characters",
+            )
+    else:
+        raise _ValidationError("invalid_input", "'model' must be string")
+
     repo_path = data.get("repo_path", str(_REPO_ROOT))
     if not isinstance(repo_path, str) or not repo_path.strip():
         raise _ValidationError("invalid_input", "'repo_path' must be non-empty string")
@@ -728,6 +756,7 @@ def _validate_input(data: Dict[str, Any]) -> Dict[str, Any]:
 
     return {
         "mission": mission.strip(),
+        "model": model,
         "prompt": prompt,
         "repo_path": str(canonical_repo_path),
         "dry_run": dry_run,
@@ -804,6 +833,7 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
         }
 
     mission = validated["mission"]
+    model = validated.get("model")
     prompt = validated["prompt"]
     repo_path = validated["repo_path"]
     dry_run = validated["dry_run"]
@@ -814,6 +844,8 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
     base_event["repo_path"] = repo_path
     base_event["dry_run"] = dry_run
     base_event["max_wall_sec"] = max_wall_sec
+    if model:
+        base_event["model"] = model
     base_event["prompt_summary"] = _summarize(prompt)
     base_event["metadata_keys"] = sorted((validated.get("metadata") or {}).keys())
 
@@ -925,6 +957,27 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
         }
     base_event["operation_decision"] = "allowed"
 
+    # 5.6) Optional model override. GitHub Copilot controls actual plan/org
+    # availability; this policy layer restricts which model names Rick can
+    # request through the worker surface.
+    allowed_models = tool_policy.get_copilot_cli_allowed_models()
+    if model and allowed_models and model not in allowed_models:
+        event = {
+            **base_event,
+            "decision": "model_not_allowed",
+            "allowed_models": allowed_models,
+        }
+        _write_audit_event(audit_path, event)
+        return {
+            "ok": False,
+            "error": "model_not_allowed",
+            "model": model,
+            "allowed_models": allowed_models,
+            "would_run": False,
+            "audit_log": audit_path_str,
+            "mission_run_id": mission_run_id,
+        }
+
     # 6) All functional gates passed (env + policy + mission + operations).
     # Real execution still requires L3, L4, L5 and dry_run=false.
     image = os.environ.get("COPILOT_CLI_SANDBOX_IMAGE", _SANDBOX_IMAGE_DEFAULT)
@@ -937,6 +990,7 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
         max_wall_sec=max_wall_sec,
         network=network,
         real_run=real_run_requested,
+        model=model,
     )
     redacted_argv = [_redact(a) for a in docker_argv]
 
@@ -977,6 +1031,7 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
                 "phase_blocks_real_execution": True,
             },
             "mission": mission,
+            "model": model,
             "mission_run_id": mission_run_id,
             "audit_log": audit_path_str,
             "docker_argv": redacted_argv,
@@ -1012,6 +1067,7 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
             prompt=prompt,
             docker_argv_redacted=redacted_argv,
             run_result=run_result,
+            model=model,
         )
         secret_redacted = manifest["secret_scan"]["patterns_redacted"]
         execution_ok = run_result["exit_code"] == 0 and not secret_redacted
@@ -1050,6 +1106,7 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
                 "phase_blocks_real_execution": False,
             },
             "mission": mission,
+            "model": model,
             "mission_run_id": mission_run_id,
             "batch_id": batch_id,
             "agent_id": agent_id,
@@ -1092,6 +1149,7 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
             "phase_blocks_real_execution": real_execution_blocked,
         },
         "mission": mission,
+        "model": model,
         "mission_run_id": mission_run_id,
         "audit_log": audit_path_str,
         "docker_argv": redacted_argv,

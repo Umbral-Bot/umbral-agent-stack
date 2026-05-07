@@ -265,6 +265,15 @@ def _divider() -> dict[str, Any]:
     return {"object": "block", "type": "divider", "divider": {}}
 
 
+def _quote(text: str) -> dict[str, Any]:
+    """013-I: emit a Notion `quote` block with inline annotations parsed."""
+    return {
+        "object": "block",
+        "type": "quote",
+        "quote": {"rich_text": _rich_text(text)},
+    }
+
+
 _HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 _BULLET_RE = re.compile(r"^\s*[-*+]\s+(.+?)\s*$")
 _NUMBERED_RE = re.compile(r"^\s*\d+\.\s+(.+?)\s*$")
@@ -279,6 +288,10 @@ _DIVIDER_RE = re.compile(r"^\s*\\?(?:-{3,}|\*{3,}|_{3,})\s*$")
 _BOLD_ONLY_LINE_RE = re.compile(
     r"^\s*(?:\*\*|__)(?P<inner>[^\s*_][^*_]*?[^\s*_]|[^\s*_])(?:\*\*|__)\s*$"
 )
+# 013-I: blockquote — line starts with ``>`` (optionally one space).
+# Must NOT match the nested case ``> >`` as nested (treat as blockquote whose
+# content literally starts with ``>``).
+_BLOCKQUOTE_RE = re.compile(r"^\s*>\s?(.*)$")
 
 
 def _is_bold_only_line(text: str) -> tuple[bool, bool]:
@@ -294,6 +307,7 @@ def _md_lines_to_blocks(md: str) -> list[dict[str, Any]]:
     blocks: list[dict[str, Any]] = []
     paragraph_buf: list[str] = []
     lines = md.splitlines()
+    skip_until = 0  # 013-I: cursor advance after multi-line group consumption.
 
     def flush_paragraph(*, lookahead_idx: int | None = None) -> None:
         if not paragraph_buf:
@@ -324,6 +338,8 @@ def _md_lines_to_blocks(md: str) -> list[dict[str, Any]]:
         blocks.append(_paragraph(text))
 
     for idx, raw_line in enumerate(lines):
+        if idx < skip_until:
+            continue
         line = raw_line.rstrip()
         if not line.strip():
             flush_paragraph(lookahead_idx=idx + 1)
@@ -343,6 +359,31 @@ def _md_lines_to_blocks(md: str) -> list[dict[str, Any]]:
             flush_paragraph(lookahead_idx=idx + 1)
             alt, url = m.group(1), m.group(2)
             blocks.append(_image(url, alt=alt))
+            continue
+        # 013-I: blockquote detection. Greedily consume consecutive ``>`` lines
+        # into a single Notion ``quote`` block. Inline annotations preserved
+        # via ``_parse_inline`` (links, bold/italic, etc.). A blank line or a
+        # non-``>`` line terminates the group. Nested ``> >`` is out of scope:
+        # treated as a blockquote whose content literally begins with ``>``.
+        m = _BLOCKQUOTE_RE.match(line)
+        if m:
+            flush_paragraph(lookahead_idx=idx + 1)
+            quote_lines: list[str] = [m.group(1)]
+            j = idx + 1
+            while j < len(lines):
+                nxt = lines[j].rstrip()
+                if not nxt.strip():
+                    break
+                nm = _BLOCKQUOTE_RE.match(nxt)
+                if not nm:
+                    break
+                quote_lines.append(nm.group(1))
+                j += 1
+            # Notion supports ``\n`` inside a single rich_text content; join
+            # lines so multi-line author quotes render as one quote block.
+            content = "\n".join(quote_lines).strip("\n")
+            blocks.append(_quote(content))
+            skip_until = j
             continue
         m = _HEADING_RE.match(line)
         if m:

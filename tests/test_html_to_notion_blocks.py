@@ -342,3 +342,93 @@ class TestNestedAndBlockExtensions:
         bold_spans = [s for s in spans if s.get("annotations", {}).get("bold")]
         assert bold_spans, f"expected bold span; got {spans}"
         assert any("X" in s["text"]["content"] for s in bold_spans)
+
+
+# --- 013-I: blockquote → Notion quote block ---
+
+
+class TestBlockquote:
+    def test_single_line_blockquote_emits_quote_block(self):
+        out = html_to_notion_blocks(
+            "<p>antes</p><blockquote>cita simple</blockquote><p>despues</p>"
+        )
+        types = [b["type"] for b in out]
+        assert "quote" in types, f"expected a quote block; got {types}"
+        q = next(b for b in out if b["type"] == "quote")
+        joined = "".join(s["text"]["content"] for s in q["quote"]["rich_text"])
+        assert "cita simple" in joined
+        # Must NOT carry the literal ``>`` marker.
+        assert not joined.lstrip().startswith(">")
+        # And no paragraph with literal ``> `` should remain.
+        for b in out:
+            if b["type"] == "paragraph":
+                ptxt = "".join(s["text"]["content"] for s in b["paragraph"]["rich_text"])
+                assert not ptxt.startswith("> "), f"leaked > in paragraph: {ptxt!r}"
+
+    def test_multi_line_blockquote_groups_into_one_quote_block(self):
+        # Multi-line <blockquote> with two paragraphs inside renders via
+        # markdownify as two consecutive ``> `` lines that must group into ONE
+        # Notion quote block.
+        html = (
+            "<blockquote><p>linea uno</p><p>linea dos</p></blockquote>"
+            "<p>fuera</p>"
+        )
+        out = html_to_notion_blocks(html)
+        quotes = [b for b in out if b["type"] == "quote"]
+        assert len(quotes) == 1, (
+            f"expected exactly one grouped quote block; got {len(quotes)}: "
+            f"{[b['type'] for b in out]}"
+        )
+        joined = "".join(s["text"]["content"] for s in quotes[0]["quote"]["rich_text"])
+        assert "linea uno" in joined and "linea dos" in joined
+
+    def test_blockquote_with_bold_inline_preserves_annotations(self):
+        out = html_to_notion_blocks(
+            "<blockquote>Esto es <strong>importante</strong> ya.</blockquote>"
+        )
+        quotes = [b for b in out if b["type"] == "quote"]
+        assert quotes
+        spans = quotes[0]["quote"]["rich_text"]
+        bolds = [s for s in spans if s.get("annotations", {}).get("bold")]
+        assert bolds, f"expected bold span inside quote; got {spans}"
+        assert any("importante" in s["text"]["content"] for s in bolds)
+        joined = "".join(s["text"]["content"] for s in spans)
+        assert "**" not in joined
+
+    def test_blockquote_with_link_preserves_link(self):
+        out = html_to_notion_blocks(
+            '<blockquote>ver <a href="https://x.test/y">acá</a> ya</blockquote>'
+        )
+        quotes = [b for b in out if b["type"] == "quote"]
+        assert quotes
+        spans = quotes[0]["quote"]["rich_text"]
+        link_spans = [s for s in spans if s["text"].get("link", {}).get("url") == "https://x.test/y"]
+        assert link_spans, f"expected link span inside quote; got {spans}"
+        assert any("acá" in s["text"]["content"] for s in link_spans)
+
+    def test_paragraph_with_gt_in_middle_NOT_treated_as_quote(self):
+        # Negative: ``>`` only triggers quote at the START of a line.
+        out = html_to_notion_blocks(
+            "<p>5 > 3 es verdadero matemáticamente.</p>"
+        )
+        types = [b["type"] for b in out]
+        assert "quote" not in types, f"unexpected quote: {types}"
+        assert out[0]["type"] == "paragraph"
+        joined = "".join(s["text"]["content"] for s in out[0]["paragraph"]["rich_text"])
+        assert "5 > 3" in joined or "5 &gt; 3" in joined
+
+    def test_blockquote_bold_in_link_inside_quote(self):
+        # Composition: quote + nested-link-with-bold (013-H feature must hold
+        # inside quote rich_text too).
+        out = html_to_notion_blocks(
+            '<blockquote>mira <a href="https://x.test"><strong>X</strong></a></blockquote>'
+        )
+        quotes = [b for b in out if b["type"] == "quote"]
+        assert quotes
+        spans = quotes[0]["quote"]["rich_text"]
+        bold_link = [
+            s for s in spans
+            if s["text"].get("link", {}).get("url") == "https://x.test"
+            and s.get("annotations", {}).get("bold")
+        ]
+        assert bold_link, f"expected bold+link span inside quote; got {spans}"

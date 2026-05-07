@@ -1,8 +1,18 @@
-"""013-H quality gate: GET /blocks/children for given Notion page IDs and grep
-all rich_text content for forbidden literal markdown remnants.
+"""013-H/013-I quality gate: GET /blocks/children for given Notion page IDs and
+grep all rich_text content for forbidden literal markdown remnants.
 
 Read-only. Token sourced from NOTION_API_KEY env var; sent only in headers.
-Forbidden tokens (per task spec): ``**``, ``__``, ``\\*``, ``\\---``, ``\\!\\[``, ``[![``.
+
+Forbidden tokens (per task spec, anywhere in rich_text content):
+    ``**``, ``__``, ``\\*``, ``\\---``, ``\\!\\[``, ``[![``
+
+013-I extension: additionally flag any ``paragraph`` block whose first
+``rich_text`` span ``content`` starts with ``> ``. We do NOT scan ``quote``
+blocks for that pattern (their content legitimately may begin with text
+containing ``>``); the leak we want to catch is a markdown blockquote that
+ended up rendered as a plain paragraph with the literal ``> `` marker still
+at the start.
+
 Exit code 0 if zero hits across all pages, 1 otherwise.
 
 Usage:
@@ -91,16 +101,29 @@ def scan_page(client: httpx.Client, page_id: str) -> dict:
     hits: list[dict] = []
     total_spans = 0
     for b in blocks:
-        for kind, content in _iter_rich_text(b):
+        block_type = b.get("type")
+        spans_in_block = list(_iter_rich_text(b))
+        for kind, content in spans_in_block:
             total_spans += 1
             for tok in FORBIDDEN:
                 if tok in content:
                     hits.append({
-                        "block_type": b.get("type"),
+                        "block_type": block_type,
                         "container": kind,
                         "forbidden_token": tok,
                         "content_excerpt": content[:120],
                     })
+        # 013-I: leaked-blockquote check — only on ``paragraph`` blocks, only
+        # on the FIRST rich_text span. ``quote`` blocks are excluded by design.
+        if block_type == "paragraph":
+            para_spans = [c for k, c in spans_in_block if k == "paragraph"]
+            if para_spans and para_spans[0].lstrip().startswith("> "):
+                hits.append({
+                    "block_type": block_type,
+                    "container": "paragraph",
+                    "forbidden_token": "> (leaked blockquote)",
+                    "content_excerpt": para_spans[0][:120],
+                })
     return {
         "page_id": page_id,
         "blocks_total": len(blocks),

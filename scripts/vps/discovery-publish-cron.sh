@@ -89,3 +89,35 @@ else
   log "ERROR stage4 exited rc=$rc"
   exit "$rc"
 fi
+
+# -----------------------------------------------------------------------------
+# Stage 6 + Stage 7 (NOT yet wired into this cron — Tasks 043 + 044)
+# -----------------------------------------------------------------------------
+# Stage 6 (LLM combinator → propuestas editoriales en state.sqlite tabla
+# `proposals`):
+#
+#   python scripts/discovery/stage6_llm_combinator.py --top-n 5
+#
+# Flags relevantes:
+#   --dry-run                   No persiste a state.sqlite (sólo imprime/JSON).
+#   --output-json <path>        Vuelca propuestas a archivo.
+#   --force-refresh-cache       Ignora hits cacheados (cache 7d en
+#                               ~/.cache/rick-discovery/llm_cache.sqlite).
+#   --no-llm                    Plumbing only, no llama al modelo.
+#   --model openclaw/main       Default. Routea a azure-openai-responses/gpt-5.4
+#                               vía gateway local 127.0.0.1:18789.
+#
+# Stage 7 (writer de drafts en DB Notion 'Publicaciones'):
+#
+#   python scripts/discovery/stage7_publish_drafts.py --limit 3
+#
+# Flags relevantes:
+#   --dry-run                   No crea pages, sólo imprime payload.
+#   --status draft              Filtra por status en proposals (default).
+#   --limit N                   Procesa N propuestas pendientes.
+#   --publicaciones-db-id       Override del DB id (default
+#                               e6817ec4698a4f0fbbc8fedcf4e52472).
+#
+# Activación futura: NO añadir a este cron sin verificar manualmente al menos
+# una corrida con --dry-run en cada stage. Stage 6 cuesta ~$0.05-$0.10 por
+# llamada al LLM; Stage 7 escribe pages reales en Notion.

@@ -3,7 +3,7 @@ id: 2026-05-07-038
 title: Diagnose 500 errors in `_resolve_review_targets` (rama `session_capitalizable`)
 status: open
 priority: P1
-assigned_to: codex
+assigned_to: copilot-vps
 created_at: 2026-05-07
 created_by: claude (post-037 deploy, side-finding capitalizado en cierre O15.1b)
 parent: 2026-05-07-037

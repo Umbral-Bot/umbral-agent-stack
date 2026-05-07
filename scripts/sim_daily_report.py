@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 from collections import Counter
 from datetime import datetime, timedelta, timezone
@@ -30,6 +31,7 @@ from client.worker_client import WorkerClient
 from dispatcher.extractors.notion_comment_paginator import (
     SAFE_LIMIT,
     post_long_comment,
+    render_text_to_blocks,
 )
 from infra.ops_logger import OpsLogger
 
@@ -248,6 +250,10 @@ class _SimNotionAdapter:
     Wraps :mod:`worker.notion_client` so the paginator can call ``add_comment``
     and ``create_subpage`` without knowing about HTTP details. Requires
     ``NOTION_API_KEY`` in env (same precondition as the rest of the worker).
+
+    Task 047 adds two extra methods used by the comment_plus_page idempotency
+    path: :meth:`find_subpage_by_title` (search existing daily subpage) and
+    :meth:`list_recent_comments` (skip duplicate comment posts).
     """
 
     def add_comment(self, parent_id: str, text: str) -> dict[str, Any]:
@@ -281,6 +287,219 @@ class _SimNotionAdapter:
         if rest:
             nc.append_blocks_to_page(page_id, rest)
         return {"page_id": page_id, "url": result.get("url", "")}
+
+    def find_subpage_by_title(
+        self, parent_page_id: str, title: str, *, max_pages: int = 500
+    ) -> dict[str, Any] | None:
+        """Return ``{'page_id', 'url'}`` for first child_page with exact title, else None.
+
+        Iterates ``GET /blocks/{parent}/children`` and filters ``child_page``
+        blocks. Stops at ``max_pages`` to avoid runaway scans on huge parents.
+        """
+        import httpx
+        from worker import notion_client as nc
+
+        cursor: str | None = None
+        scanned = 0
+        with httpx.Client(timeout=nc.TIMEOUT) as http:
+            while scanned < max_pages:
+                params: dict[str, Any] = {"page_size": 100}
+                if cursor:
+                    params["start_cursor"] = cursor
+                resp = http.get(
+                    f"{nc.NOTION_BASE_URL}/blocks/{parent_page_id}/children",
+                    headers=nc._headers(),
+                    params=params,
+                )
+                data = nc._check_response(resp, "sim.list_children")
+                for block in data.get("results", []) or []:
+                    if block.get("type") != "child_page":
+                        continue
+                    scanned += 1
+                    block_title = (block.get("child_page") or {}).get("title", "")
+                    if block_title == title:
+                        page_id = block["id"]
+                        return {
+                            "page_id": page_id,
+                            "url": f"https://www.notion.so/{page_id.replace('-', '')}",
+                        }
+                if not data.get("has_more"):
+                    return None
+                cursor = data.get("next_cursor")
+                if not cursor:
+                    return None
+        return None
+
+    def list_recent_comments(
+        self, parent_page_id: str, *, limit: int = 50
+    ) -> list[dict[str, Any]]:
+        """List up to ``limit`` recent comments on ``parent_page_id``."""
+        import httpx
+        from worker import notion_client as nc
+
+        out: list[dict[str, Any]] = []
+        cursor: str | None = None
+        with httpx.Client(timeout=nc.TIMEOUT) as http:
+            while len(out) < limit:
+                params: dict[str, Any] = {
+                    "block_id": parent_page_id,
+                    "page_size": min(100, limit - len(out)),
+                }
+                if cursor:
+                    params["start_cursor"] = cursor
+                resp = http.get(
+                    f"{nc.NOTION_BASE_URL}/comments",
+                    headers=nc._headers(),
+                    params=params,
+                )
+                data = nc._check_response(resp, "sim.list_comments")
+                out.extend(data.get("results", []) or [])
+                if not data.get("has_more"):
+                    break
+                cursor = data.get("next_cursor")
+                if not cursor:
+                    break
+        return out
+
+
+# ---------------------------------------------------------------------------
+# Compact-comment + idempotent-subpage flow (Task 047)
+# ---------------------------------------------------------------------------
+
+_HEADER_DATE_RE = re.compile(r"\((\d{4}-\d{2}-\d{2})")
+_RESEARCH_RE = re.compile(
+    r"research\.web:\s*(\d+)\s*total\s*\|\s*(\d+)\s*exitosas\s*\|\s*(\d+)\s*fallidas"
+)
+_LLM_RE = re.compile(
+    r"llm\.generate:\s*(\d+)\s*total\s*\|\s*(\d+)\s*exitosas\s*\|\s*(\d+)\s*fallidas"
+)
+
+
+def build_summary_line(report_text: str) -> str:
+    """Extract a single-line activity summary from the rendered report.
+
+    Pulls the ``research.web`` and ``llm.generate`` counters from the
+    ``Actividad:`` section. Returns a 1-line string suitable for the
+    compact comment posted alongside a child page.
+    """
+    parts: list[str] = []
+    rm = _RESEARCH_RE.search(report_text)
+    if rm:
+        total, ok, failed = rm.groups()
+        parts.append(f"research.web {total} ({ok} ok / {failed} fail)")
+    lm = _LLM_RE.search(report_text)
+    if lm:
+        total, ok, failed = lm.groups()
+        parts.append(f"llm.generate {total} ({ok} ok / {failed} fail)")
+    if not parts:
+        return "Sin actividad detectada"
+    return " | ".join(parts)
+
+
+def build_page_title(report_text: str, *, fallback_now: datetime | None = None) -> str:
+    """Return a deterministic, date-only title used to dedupe daily subpages.
+
+    Format: ``SIM Daily Report YYYY-MM-DD``. The same date in multiple runs
+    maps to the same title, which lets :meth:`find_subpage_by_title` reuse
+    the existing page.
+    """
+    first_line = report_text.splitlines()[0] if report_text else ""
+    m = _HEADER_DATE_RE.search(first_line)
+    if m:
+        return f"SIM Daily Report {m.group(1)}"
+    now = fallback_now or datetime.now(timezone.utc)
+    return f"SIM Daily Report {now.strftime('%Y-%m-%d')}"
+
+
+def _post_with_subpage(
+    adapter: Any,
+    *,
+    comment_parent_id: str,
+    body_page_parent_id: str,
+    report_text: str,
+) -> dict[str, Any]:
+    """Comment-plus-page mode with idempotent reuse of both page and comment.
+
+    1. Resolve daily page title from the report header.
+    2. If the title already exists under ``body_page_parent_id`` → reuse
+       (do NOT re-append blocks; assume same-day re-run).
+       Else → create subpage with full body rendered as paragraph blocks.
+    3. Build a compact comment: ``<header>\n<summary>\nVer detalle: <url>``.
+    4. If a recent comment on ``comment_parent_id`` already contains the
+       page URL, skip posting. Else post.
+    """
+    page_title = build_page_title(report_text)
+    summary = build_summary_line(report_text)
+    header_line = report_text.splitlines()[0] if report_text else "SIM Daily Report"
+
+    existing = None
+    if hasattr(adapter, "find_subpage_by_title"):
+        try:
+            existing = adapter.find_subpage_by_title(body_page_parent_id, page_title)
+        except Exception as exc:  # noqa: BLE001 - log + fall through to create
+            print(f"WARN: find_subpage_by_title failed: {exc}", file=sys.stderr)
+            existing = None
+
+    page_reused = existing is not None
+    if existing:
+        page_id = existing["page_id"]
+        page_url = existing.get("url") or (
+            f"https://www.notion.so/{page_id.replace('-', '')}"
+        )
+        print(f"sim.idempotent.page_reused page_id={page_id} title={page_title!r}")
+    else:
+        blocks = render_text_to_blocks(report_text)
+        page = adapter.create_subpage(body_page_parent_id, page_title, blocks)
+        page_id = page["page_id"]
+        page_url = page.get("url") or f"https://www.notion.so/{page_id.replace('-', '')}"
+
+    compact = f"{header_line}\n{summary}\nVer detalle completo: {page_url}"
+
+    # Idempotency marker: the bare page id (no dashes) is a substring of every
+    # Notion URL form for that page (slugged, plain, etc.), so it survives
+    # mismatches between create-response URL and find_subpage fallback URL.
+    page_id_marker = page_id.replace("-", "")
+
+    existing_cid = None
+    if hasattr(adapter, "list_recent_comments"):
+        try:
+            for c in adapter.list_recent_comments(comment_parent_id, limit=50):
+                for rt in c.get("rich_text", []) or []:
+                    content = (rt.get("text") or {}).get("content") or ""
+                    if page_id_marker and page_id_marker in content.replace("-", ""):
+                        existing_cid = c.get("id")
+                        break
+                if existing_cid:
+                    break
+        except Exception as exc:  # noqa: BLE001 - log + fall through to post
+            print(f"WARN: list_recent_comments failed: {exc}", file=sys.stderr)
+            existing_cid = None
+
+    if existing_cid:
+        print(
+            f"sim.idempotent.comment_skipped comment_id={existing_cid} "
+            f"page_url={page_url}"
+        )
+        return {
+            "comment_id": existing_cid,
+            "page_id": page_id,
+            "truncated": False,
+            "parts": 1,
+            "reused_page": page_reused,
+            "reused_comment": True,
+            "comment_chars": len(compact),
+        }
+
+    posted = adapter.add_comment(comment_parent_id, compact)
+    return {
+        "comment_id": posted["comment_id"],
+        "page_id": page_id,
+        "truncated": False,
+        "parts": 1,
+        "reused_page": page_reused,
+        "reused_comment": False,
+        "comment_chars": len(compact),
+    }
 
 
 def post_report_via_worker(report_text: str, page_id: str | None = None) -> dict[str, Any]:
@@ -319,18 +538,37 @@ def post_report(
         raise RuntimeError(
             "post_report: page_id required (pass --page-id or set NOTION_CONTROL_ROOM_PAGE_ID)"
         )
-    if body_page_parent_id is None and len(report_text) > SAFE_LIMIT:
+    adapter = client if client is not None else _SimNotionAdapter()
+
+    # Short report: legacy single-comment path (preserves Task 036b behavior).
+    if len(report_text) <= SAFE_LIMIT:
+        return post_long_comment(
+            adapter,
+            page_id,
+            report_text,
+            body_page_parent_id=None,
+        )
+
+    # Long without subpage parent: fall back to numbered-comments split.
+    if not body_page_parent_id:
         print(
             "WARN: report exceeds SAFE_LIMIT but no --sim-reports-parent-page-id / "
             "SIM_REPORTS_PARENT_PAGE configured. Falling back to numbered split comments.",
             file=sys.stderr,
         )
-    adapter = client if client is not None else _SimNotionAdapter()
-    return post_long_comment(
+        return post_long_comment(
+            adapter,
+            page_id,
+            report_text,
+            body_page_parent_id=None,
+        )
+
+    # Long with subpage parent: compact-comment + idempotent subpage (Task 047).
+    return _post_with_subpage(
         adapter,
-        page_id,
-        report_text,
+        comment_parent_id=page_id,
         body_page_parent_id=body_page_parent_id,
+        report_text=report_text,
     )
 
 
@@ -394,6 +632,12 @@ def main() -> int:
         msg = f"\nNotion comment posted: {result.get('comment_id', 'unknown')} (parts={result.get('parts', 1)})"
         if result.get("page_id"):
             msg += f" subpage={result['page_id']}"
+        if result.get("comment_chars") is not None:
+            msg += f" comment_chars={result['comment_chars']}"
+        if result.get("reused_page"):
+            msg += " reused_page=true"
+        if result.get("reused_comment"):
+            msg += " reused_comment=true"
         print(msg)
         return 0
     except Exception as e:

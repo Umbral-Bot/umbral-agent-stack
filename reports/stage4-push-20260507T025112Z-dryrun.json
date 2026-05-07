@@ -1,0 +1,177 @@
+{
+  "started": "2026-05-07T02:51:12Z",
+  "finished": "2026-05-07T02:51:12Z",
+  "commit": false,
+  "dry_run": true,
+  "database_id": "b9d3d8677b1e4247bafdcb0cc6f53024",
+  "data_source_id": "9d4dbf65-664f-41b4-a7f6-ce378c274761",
+  "pending_total": 20,
+  "processed": 20,
+  "would_create": 20,
+  "created": 0,
+  "already_present": 0,
+  "created_no_body": 0,
+  "errors": 0,
+  "items": [
+    {
+      "sqlite_id": 1,
+      "url_canonica": "https://www.storytellingwithdata.com/blog/swdchallenge-human-ai",
+      "status": "would_create",
+      "notion_page_id": null,
+      "error": null,
+      "blocks_count": 1
+    },
+    {
+      "sqlite_id": 31,
+      "url_canonica": "https://www.rojo.me/nuevo-episodio-la-universidad-ya-no-sirve-para-esto",
+      "status": "would_create",
+      "notion_page_id": null,
+      "error": null,
+      "blocks_count": 1
+    },
+    {
+      "sqlite_id": 32,
+      "url_canonica": "https://www.rojo.me/resumen-resumido-179",
+      "status": "would_create",
+      "notion_page_id": null,
+      "error": null,
+      "blocks_count": 1
+    },
+    {
+      "sqlite_id": 33,
+      "url_canonica": "https://www.rojo.me/nuevo-episodio-si-la-ia-es-tan-buena-para-que-servimos-los-humanos",
+      "status": "would_create",
+      "notion_page_id": null,
+      "error": null,
+      "blocks_count": 1
+    },
+    {
+      "sqlite_id": 51,
+      "url_canonica": "https://www.youtube.com/watch?v=o2ehgG2VrsY",
+      "status": "would_create",
+      "notion_page_id": null,
+      "error": null,
+      "blocks_count": 1
+    },
+    {
+      "sqlite_id": 52,
+      "url_canonica": "https://www.youtube.com/watch?v=Vht4hoRHEek",
+      "status": "would_create",
+      "notion_page_id": null,
+      "error": null,
+      "blocks_count": 1
+    },
+    {
+      "sqlite_id": 81,
+      "url_canonica": "https://www.youtube.com/watch?v=9Gr2QjvSQ-I",
+      "status": "would_create",
+      "notion_page_id": null,
+      "error": null,
+      "blocks_count": 1
+    },
+    {
+      "sqlite_id": 82,
+      "url_canonica": "https://www.youtube.com/watch?v=3LnNwS6rqk8",
+      "status": "would_create",
+      "notion_page_id": null,
+      "error": null,
+      "blocks_count": 1
+    },
+    {
+      "sqlite_id": 111,
+      "url_canonica": "https://www.youtube.com/watch?v=s2jm2Z22ibA",
+      "status": "would_create",
+      "notion_page_id": null,
+      "error": null,
+      "blocks_count": 1
+    },
+    {
+      "sqlite_id": 141,
+      "url_canonica": "https://www.youtube.com/watch?v=TQsBnsKZtuo",
+      "status": "would_create",
+      "notion_page_id": null,
+      "error": null,
+      "blocks_count": 1
+    },
+    {
+      "sqlite_id": 142,
+      "url_canonica": "https://www.youtube.com/watch?v=npmoS_dqAho",
+      "status": "would_create",
+      "notion_page_id": null,
+      "error": null,
+      "blocks_count": 1
+    },
+    {
+      "sqlite_id": 261,
+      "url_canonica": "https://www.youtube.com/watch?v=J26M-cpFG-M",
+      "status": "would_create",
+      "notion_page_id": null,
+      "error": null,
+      "blocks_count": 1
+    },
+    {
+      "sqlite_id": 262,
+      "url_canonica": "https://www.youtube.com/watch?v=FNfIMnpz-ZY",
+      "status": "would_create",
+      "notion_page_id": null,
+      "error": null,
+      "blocks_count": 1
+    },
+    {
+      "sqlite_id": 291,
+      "url_canonica": "https://www.youtube.com/watch?v=Vr_Wd2ZucZA",
+      "status": "would_create",
+      "notion_page_id": null,
+      "error": null,
+      "blocks_count": 1
+    },
+    {
+      "sqlite_id": 292,
+      "url_canonica": "https://www.youtube.com/watch?v=vVfEs9wrW98",
+      "status": "would_create",
+      "notion_page_id": null,
+      "error": null,
+      "blocks_count": 1
+    },
+    {
+      "sqlite_id": 293,
+      "url_canonica": "https://www.youtube.com/watch?v=A0lQPphWTkQ",
+      "status": "would_create",
+      "notion_page_id": null,
+      "error": null,
+      "blocks_count": 1
+    },
+    {
+      "sqlite_id": 351,
+      "url_canonica": "https://www.youtube.com/watch?v=zO8EPWmTnVQ",
+      "status": "would_create",
+      "notion_page_id": null,
+      "error": null,
+      "blocks_count": 1
+    },
+    {
+      "sqlite_id": 352,
+      "url_canonica": "https://www.youtube.com/watch?v=NGq0pdR0s2U",
+      "status": "would_create",
+      "notion_page_id": null,
+      "error": null,
+      "blocks_count": 1
+    },
+    {
+      "sqlite_id": 353,
+      "url_canonica": "https://www.youtube.com/watch?v=27bLTrhZ4Mg",
+      "status": "would_create",
+      "notion_page_id": null,
+      "error": null,
+      "blocks_count": 1
+    },
+    {
+      "sqlite_id": 408,
+      "url_canonica": "https://www.youtube.com/watch?v=1PIbKMyFMAY",
+      "status": "would_create",
+      "notion_page_id": null,
+      "error": null,
+      "blocks_count": 1
+    }
+  ]
+}

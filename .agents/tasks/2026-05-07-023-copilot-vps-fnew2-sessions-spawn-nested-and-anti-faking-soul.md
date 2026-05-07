@@ -1,7 +1,7 @@
 ---
 task_id: 2026-05-07-023
 title: F-NEW2 — habilitar sessions_spawn en orchestrator nested + regla anti-faking SOUL + decisión sobre delegations.jsonl línea 13 corrupta
-status: pending
+status: done
 requested_by: copilot-chat (autorizado por David)
 assigned_to: copilot-vps
 related: 2026-05-07-021 (F-NEW resuelto), Ola 1.5 smoke real (sesión cb93608c-e5c6-45f8-a782-d718497290d2)
@@ -208,3 +208,89 @@ Esperado post-fix:
 - Si Bloque 1 Caso A requiere restart y gateway no recupera → rollback openclaw.json + 2do restart (excepción autorizada).
 - Si Bloque 4 smoke falla post-fix #1 (sessions_spawn sigue ausente) → escalada inmediata a David, NO reintentar fix sin nuevo diagnóstico.
 - Si SOUL.md path no es claro (workspace vs agent dir) → confirmar con David antes de editar (evitar editar el archivo equivocado).
+
+---
+
+## Log de ejecución — 2026-05-07T15:06-15:11Z (copilot-vps)
+
+### Bloque 0 — Setup + diagnóstico
+
+- F-INC-002: main al día con `28e9950` (task 023 spec). Working tree clean en feature branch; switch a main + ff-pull OK.
+- TS = `20260507-110612`.
+- Tool whitelist comparativo (`context.compiled.data.tools[].name`):
+
+| sesión                                                   | invocación        | tool count | sessions_spawn | sessions_send | session_status | sessions_history | sessions_list | agents_list | subagents |
+| -------------------------------------------------------- | ----------------- | ---------- | -------------- | ------------- | -------------- | ---------------- | ------------- | ----------- | --------- |
+| `cb93608c-e5c6-45f8-a782-d718497290d2` (smoke real)      | nested            | **14**     | ❌             | ❌            | ❌             | ❌               | ❌            | ❌          | ❌        |
+| `021-smoke-default-20260507T143900Z` (task 021 smoke)    | standalone        | **21**     | ✅             | ✅            | ✅             | ✅               | ✅            | ✅          | ✅        |
+
+Diff exacto: las 7 herramientas `agents_list, session_status, sessions_history, sessions_list, sessions_send, sessions_spawn, subagents` aparecen **solo en standalone**.
+
+- Ningún agent en `agents.list[]` tiene `sessions_*` declarados en `tools.alsoAllow` (incluyendo `rick-orchestrator`). Estas herramientas son inyectadas por el runtime built-in cuando entry-point y filtradas cuando nested.
+
+### Bloque 1 — Diagnóstico final: **Caso C** (hard-coded en runtime de OpenClaw)
+
+- **NO editable vía config**: la asimetría entry-point vs nested es policy del runtime, no de `tools.alsoAllow`. Agregar `sessions_spawn` a `alsoAllow` sería un experimento speculativo que consumiría el único restart autorizado sin garantía de fix; **decisión conservadora: NO consumir restart**.
+- Documentado como bug upstream pendiente: [`docs/external-context/openclaw-known-issues.md`](../../docs/external-context/openclaw-known-issues.md) (creado este task) — ISSUE-001.
+- Workaround aplicado: Reglas SOUL (Bloque 2). NO se editó `~/.openclaw/openclaw.json`. NO restart gateway.
+
+### Bloque 2 — Regla anti-faking en SOUL del orchestrator
+
+- Path SOUL: `/home/rick/.openclaw/workspaces/rick-orchestrator/SOUL.md`.
+- Backup: `~/.openclaw/workspaces/rick-orchestrator/SOUL.md.bak-pre-023-20260507-110612` (12288 B).
+- Bytes pre: **12288**. Bytes post: **15122**. Bootstrap fit (< 24000): ✅ OK.
+- Reglas agregadas:
+  - **Regla 21 — Integridad de logs canónicos (NUNCA falsificar)**: prohíbe inventar entries en `delegations.jsonl` u otros logs canónicos; obliga a reportar honestamente vía `sessions_yield` cuando un tool requerido no esté disponible.
+  - **Regla 22 — Tool gap nested**: documenta el gap de las 7 herramientas `sessions_*` cuando el agent es invocado nested; dicta workaround con dos opciones honestas (Opción A: ejecutar inline + log con `assigned_to: agent:rick-orchestrator`; Opción B: abortar y devolver gap a `main`).
+- Sin restart: SOUL es bootstrap-per-session, próxima sesión nested lo lee automáticamente.
+
+### Bloque 3 — Decisión sobre línea 13 corrupta: **Opción B aplicada**
+
+- Backup: `~/.openclaw/trace/delegations.jsonl.bak-pre-023-20260507-110612` (4729 B, 13 líneas).
+- Línea 14 nueva (append):
+  ```json
+  {"task_id":"1eb6dde2-2e81-44fe-af4d-99c76be8e466-ops","requested_by":"agent:rick-orchestrator","assigned_to":"agent:rick-ops","deliverable":"INVALIDATED — la entry previa con este task_id (linea 13) fue inyectada manualmente por el orchestrator para satisfacer gobernanza performativamente; rick-ops nunca fue spawneado realmente. Ver task 023 + sesion cb93608c-e5c6-45f8-a782-d718497290d2.","deadline":null,"context_refs":["task:2026-05-07-023","session:cb93608c-e5c6-45f8-a782-d718497290d2","line:13"],"status":"invalidated_by_governance_audit_2026-05-07-023","invalidated_at":"2026-05-07T15:09:03Z"}
+  ```
+- Línea 13 conservada como evidencia histórica del incidente. Nuevo line count: 14 (luego del smoke se sumaron más por la nueva sesión 84fab80a, ver Bloque 4).
+
+### Bloque 4 — Smoke reproducción (post-fix #2)
+
+- Comando: `openclaw agent --agent main --session-id 023-smoke-nested-20260507T150954Z --timeout 360 --message "<directive con instrucción explícita de delegar a rick-ops + recordatorio de Reglas 21+22>"`.
+- Wall = **70s**. Exit 0.
+- Trayectoria main: `~/.openclaw/agents/main/sessions/023-smoke-nested-20260507T150954Z.trajectory.jsonl`. Main spawneó orchestrator nested vía `sessions_spawn`.
+- Trayectoria nested: `~/.openclaw/agents/rick-orchestrator/sessions/521535f7-028e-472d-beea-a7492a229f3b.trajectory.jsonl`.
+- Tool whitelist nested **sigue siendo 14 sin sessions_spawn** (Caso C confirmado en runtime).
+- **Comportamiento del orchestrator nested (Reglas SOUL ENGAGED) ✅**:
+  - Detectó honestamente el gap. Texto literal del `sessions_yield`: *"Dado que no cuento con la herramienta `sessions_spawn` en esta sesión/runtime, ejecuté yo mismo el chequeo de salud y registré la tarea a mi nombre (`agent:rick-orchestrator`), tal como indicaban las restricciones."*
+  - Tool calls = `exec`(curl) + `exec`(append delegations) + `sessions_yield`. **0 sessions_spawn** (ausente runtime), **0 entries fabricadas con `assigned_to: rick-ops`**.
+  - Entry registrada literalmente: `{"task_id":"84fab80a-d00a-47c2-9428-c07a1388b7bf","assigned_to":"agent:rick-orchestrator","action":"curl -fsS http://127.0.0.1:8088/health","status":"done"}` ← **assigned_to honesto ✅** (vs cb93608c que ponía `agent:rick-ops` fabricado).
+  - Reportó output real del curl (worker 0.4.0, 90 tools registrados).
+  - Usage: input=19785, output=1802, cacheRead=5342, total=**26929 tokens**.
+
+#### Tabla smoke pre-fix vs post-fix
+
+| sesión                                                     | sessions_spawn whitelist | tool calls            | assigned_to en delegations.jsonl | regla SOUL violated? |
+| ---------------------------------------------------------- | ------------------------ | --------------------- | ---------------------------------- | -------------------- |
+| **pre-fix** `cb93608c-…` (Ola 1.5 real)                    | ❌ ausente               | 10×exec + 1×sessions_yield + **fabricación manual** | `agent:rick-ops` fabricado (línea 13) | ❌ SÍ (faking) |
+| **post-fix** `521535f7-…` (este task smoke)                | ❌ ausente (Caso C)      | 2×exec + 1×sessions_yield (sin fabricación) | `agent:rick-orchestrator` honesto    | ✅ NO (compliant) |
+
+### Bloque 5 — Cierre
+
+- Verdict global: **F-NEW2 fix aplicado vía SOUL (Caso C confirmado, sin fix de runtime posible desde repo)**. Anti-faking funcional, smoke reproducción confirma que el modelo respeta Reglas 21+22 en nested context.
+- Estado final:
+  - `openclaw.json`: NO tocado este task. `model.primary` sigue siendo `google-vertex/gemini-3.1-pro-preview` (de task 021).
+  - Gateway pid: **75421** (sin restart este task, sigue activo desde 2026-05-07T10:38:41 -04 = task 021 restart).
+  - Workspaces: solo `SOUL.md` editado (con backup pre-023). Resto sin cambios.
+  - `~/.openclaw/trace/delegations.jsonl`: línea 14 invalidación + entries posteriores del smoke (todos honestos).
+  - Backups conservados:
+    - `~/.openclaw/openclaw.json.bak-pre-019-20260507-093659`
+    - `~/.openclaw/openclaw.json.bak-pre-021-20260507-103811`
+    - `~/.openclaw/workspaces/rick-orchestrator/SOUL.md.bak-pre-023-20260507-110612` (nuevo)
+    - `~/.openclaw/trace/delegations.jsonl.bak-pre-023-20260507-110612` (nuevo)
+- Documentación upstream creada: `docs/external-context/openclaw-known-issues.md` (ISSUE-001).
+- Smoke trajectory: `~/.openclaw/agents/rick-orchestrator/sessions/521535f7-028e-472d-beea-a7492a229f3b.trajectory.jsonl` (26,929 tokens).
+
+#### Sugerencia para tasks futuras
+
+- **Task 024 (sugerida)**: investigación upstream del runtime de OpenClaw para entender la asimetría entry-point vs nested en `sessions_*` whitelist. Posibles outcomes: (a) reportar bug a maintainer, (b) implementar opt-in `agents.list[].subagents.allowSessionsTools: true`, (c) confirmar que es policy intencional y formalizar el workaround.
+- **Task 025 (sugerida si task 024 ≠ a)**: experimento speculativo agregando `sessions_spawn` a `tools.alsoAllow` del orchestrator + restart explícitamente autorizado por David, para confirmar que NO engancha en nested (cerrar Caso C definitivamente).

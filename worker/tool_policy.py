@@ -141,6 +141,44 @@ def get_copilot_cli_allowed_models() -> List[str]:
     return [str(p).strip() for p in raw if isinstance(p, str) and p.strip()]
 
 
+def get_copilot_cli_model_aliases() -> Dict[str, str]:
+    """Return display-name -> CLI-slug aliases for Copilot CLI models."""
+    raw = _copilot_cli_section().get("model_aliases", {}) or {}
+    if not isinstance(raw, dict):
+        return {}
+    aliases: Dict[str, str] = {}
+    for key, value in raw.items():
+        if isinstance(key, str) and isinstance(value, str):
+            src = key.strip()
+            dst = value.strip()
+            if src and dst:
+                aliases[src] = dst
+    return aliases
+
+
+def get_copilot_cli_default_model() -> Optional[str]:
+    """Return the policy default model slug, if configured."""
+    raw = _copilot_cli_section().get("default_model")
+    if not isinstance(raw, str):
+        return None
+    value = raw.strip()
+    return value or None
+
+
+def is_copilot_cli_default_model_forced() -> bool:
+    """Whether explicit model overrides must resolve to the default model."""
+    return bool(_copilot_cli_section().get("force_default_model", False))
+
+
+def get_copilot_cli_default_reasoning_effort() -> Optional[str]:
+    """Return Copilot CLI reasoning effort, constrained to documented values."""
+    raw = _copilot_cli_section().get("default_reasoning_effort")
+    if not isinstance(raw, str):
+        return None
+    value = raw.strip().lower()
+    return value if value in {"low", "medium", "high"} else None
+
+
 def get_copilot_cli_default_limits() -> Dict[str, int]:
     """Return per-mission default ceilings (wall_sec, tokens, files_touched)."""
     s = _copilot_cli_section()

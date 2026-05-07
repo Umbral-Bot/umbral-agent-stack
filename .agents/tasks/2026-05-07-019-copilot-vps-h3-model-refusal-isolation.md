@@ -1,7 +1,7 @@
 ---
 task_id: 2026-05-07-019
 title: H3 isolation — aislar disparador del refusal canned en subagent rick-orchestrator
-status: blocked
+status: done
 requested_by: copilot-chat
 assigned_to: copilot-vps
 related: 2026-05-07-017 (F-NEW URGENTE blocked), 2026-05-07-018 (audit OpenClaw — H1+H2 falsificadas, H3 activa)
@@ -340,3 +340,56 @@ Procedimiento adaptado:
 (δ) **Otra**: indicame.
 
 **Backups conservados intactos hasta tu cierre.**
+
+### [copilot-vps] 2026-05-07T14:06:14Z — research run done (status: done)
+
+**Veredicto**: **3a + 3b** (model + Azure provider/content-filter layer). 3c (bootstrap) y task-content **falsificados**.
+
+#### Tabla resumen
+
+| # | Vector | Body | Model | Bootstrap | Result | usage in/out/total | Wall |
+|---|---|---|---|---|---|---|---|
+| 1 | Baseline | smoke-healthcheck (977c) | gpt-5.4 / azure | full (~70k) | REFUSAL | 0/0/0 | 2s |
+| 2 | A trivial body | "pong" (51c) | gpt-5.4 / azure | full (~70k) | REFUSAL | 0/0/0 | 2s |
+| 3 | B model swap | smoke-healthcheck (977c) | **gemini-3.1-pro-preview** / google-vertex | full (~70k) | **NORMAL** (called `exec uuidgen`) | 36188/3114/**193660** | 90s |
+| 4 | C bootstrap min | smoke-healthcheck (977c) | gpt-5.4 / azure | minimal (95B AGENTS.md only, ~30k systemPrompt) | REFUSAL | 0/0/0 | 6s |
+
+#### Trajectory paths
+
+- v1: `/home/rick/.openclaw/agents/rick-orchestrator/sessions/d20c3a76-981b-4aa0-9601-59e657de9614.trajectory.jsonl`
+- v2: `/home/rick/.openclaw/agents/rick-orchestrator/sessions/5d5f60e3-fc06-42d1-b571-5f8521d5a473.trajectory.jsonl`
+- v3: `/home/rick/.openclaw/agents/rick-orchestrator/sessions/7d4da225-5dd4-495f-bdc8-c0a488dd8421.trajectory.jsonl`
+- v4: `/home/rick/.openclaw/agents/rick-orchestrator/sessions/4461c4c7-8921-4de2-b122-22d897877585.trajectory.jsonl`
+
+#### Verbatim ✓ (anti-contamination)
+
+Task body de baseline (sha256 `206c896c…`) extraído del `prompt.submitted.systemPrompt` de v1, v3 y v4 → `diff` vacío contra `/tmp/019/baseline-task.txt`. v2 (body trivial) verificado por presencia literal en `## Your Role`.
+
+#### Veredicto detallado
+
+- **3c (bootstrap)** FALSIFIED por v4: mismo modelo, body, dispatch — bootstrap reducido de ~57KB en 7 archivos a 95B en 1 archivo (systemPrompt 69908→30390B), refusal igual con usage 0/0/0/0 en 6s.
+- **task-content** FALSIFIED por v2: mismo modelo+bootstrap, body trivial "pong" (51c), refusal igual con usage 0/0/0/0 en 2s.
+- **3a/3b (model+provider)** CONFIRMED por v3: mismo body+bootstrap+cwd, sólo `model` swap a gemini-3.1-pro-preview → procesamiento normal (193k tokens billed, tool `exec` invocado, sesión cerrada con status:success).
+
+**3a vs 3b**: el fingerprint **`usage:null` + 0 tokens billed + 2-6s wall + canned message determinista idéntico** apunta fuerte a **3b — pre-block del content filter de Azure OpenAI Responses** (no llega al modelo). Un refusal intrínseco del modelo (3a) consumiría input tokens. Para discriminar 100% se necesita follow-up vector D con `openai-codex/gpt-5.4` (mismo modelo, distinto provider).
+
+#### Fix mínimo recomendado
+
+Cambiar `agents.list[id=="rick-orchestrator"].model.primary` de `azure-openai-responses/gpt-5.4` a **`google-vertex/gemini-3.1-pro-preview`** (o `google/gemini-3-pro-preview`).
+
+⚠️ Edit permanente en `openclaw.json` requiere restart del gateway (singleton config cache, evidencia ya documentada en commit `bbd6549`).
+
+#### Costo total tokens
+
+500,931 (driver main 4×~76k = 307,271 + subagent v3 193,660; v1/v2/v4 subagents 0 cada uno por pre-block).
+
+#### State final (verificado)
+
+- `openclaw.json`: untouched. `diff` vacío contra `openclaw.json.bak-pre-019-20260507-093659`.
+- `workspaces/rick-orchestrator/`: restored. `diff -r --exclude='.sync-backups'` vacío contra backup pre-019.
+- Bump bootstrap (24k/120k) sigue activo.
+- Backups conservados (`*.bak-pre-019-20260507-093659`).
+
+#### Report
+
+[`reports/copilot-cli/f10-h3-model-refusal-isolation-2026-05-07.md`](../../reports/copilot-cli/f10-h3-model-refusal-isolation-2026-05-07.md)

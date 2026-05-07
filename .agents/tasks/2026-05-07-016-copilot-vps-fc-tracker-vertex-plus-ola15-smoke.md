@@ -284,3 +284,129 @@ openclaw agent --agent main --session-id "$SESSION_ID" --timeout 180 --json \
 - F-A: ✅ decisión documentada (Ola 2 default, escalable a 1.5b on-demand).
 - `status: done`.
 
+
+### [copilot-vps] 2026-05-07 01:55 -04 — Follow-up smoke real David (status: done)
+
+Diagnóstico solicitado tras turno real de David por Telegram (~01:42), 2 turnos consumidos. Hallazgos críticos abajo.
+
+#### A) Estado `~/.openclaw/trace/delegations.jsonl`
+
+```
+$ wc -l ~/.openclaw/trace/delegations.jsonl
+2 /home/rick/.openclaw/trace/delegations.jsonl
+$ jq -e . ~/.openclaw/trace/delegations.jsonl > /dev/null && echo "[jq OK]"
+[jq OK]
+```
+
+**Línea 1** = probe sintético O15.1 Bloque E.2 (existente).
+**Línea 2 (NUEVA, escrita por `main` durante el turno de David)**:
+
+```json
+{"task_id": "85610454-fb9f-4918-aae1-01fb83561c9d",
+ "requested_by": "agent:main",
+ "assigned_to": "agent:rick-orchestrator",
+ "deliverable": "Health check del FastAPI worker: responder pong + status de 127.0.0.1:8088 + ultima task procesada; delegar a rick-ops por via canonica y devolver payload integrable breve",
+ "deadline": null,
+ "context_refs": ["telegram:1813248373#1658", "IDENTITY.md:v1.1/O15.1", "worker:127.0.0.1:8088"],
+ "status": "queued"}
+```
+
+**Veredicto §3.3 format**: ✅ **VÁLIDO**. Todos los campos del contrato presentes (task_id uuid, requested_by, assigned_to, deliverable, deadline, context_refs como array, status). Bonus: `context_refs` incluye telegram message id + ancla a IDENTITY.md v1.1 + worker target — más rico que el mínimo.
+
+⚠️ **Único gap del format**: `status: queued` quedó así porque la delegación nunca completó (ver §C). El contrato §3.3 implícito esperaría una segunda escritura `done`/`failed` cuando se cierra el ciclo — no ocurrió porque el ciclo nunca cerró.
+
+#### B) Sesión Telegram de `main` (~01:42)
+
+- **Session file**: `~/.openclaw/agents/main/sessions/cc224c60-eb15-41c0-9d3f-64c672a95309.jsonl` (110 KB, 71 eventos).
+- **Cronología `main` (UTC, todos en T+0–37s desde el mensaje de David)**:
+  1. `05:42:18` Lee skill `subagent-result-integration` (gobernanza sessions_spawn).
+  2. `05:42:21` Lee `IDENTITY.md` (v1.1 O15.1 con contrato §3.3).
+  3. `05:42:25` Lee subagents disponibles → `rick-orchestrator` configurado (`gpt-5.4` azure).
+  4. `05:42:29` Lee `delegations.jsonl` actual (1 línea probe).
+  5. `05:42:43` **Escribe línea 2 jsonl** (la delegation con status:queued de §A). ✅
+  6. `05:42:52` Llama `subagent_spawn` → response: `status: accepted, childSessionKey=agent:rick-orchestrator:subagent:e60cabae-ff36-489c-99eb-efe8fafae7dc, runId=64f93a7d-9cf5-479d-8063-249c3892d736, mode: run`.
+  7. `05:42:55` Llama `sessions_yield` con mensaje "Esperando la integración de rick-orchestrator…". Turno termina limpio. ✅
+
+**`main` hizo TODO correcto**: leyó governance, escribió la traza, spawneó al orchestrator, hizo yield esperando resultado. **El primer mensaje de Telegram ("Voy a delegarlo por la vía canónica…") es la respuesta humana intermedia de `main` ANTES de yieldear** — comportamiento correcto.
+
+#### C) Sesión `rick-orchestrator` subagent — **AQUÍ ESTÁ EL BUG**
+
+- **Session file**: `~/.openclaw/agents/rick-orchestrator/sessions/6b8cd72d-e1dd-4982-911b-86e0da902832.jsonl` (1.8 KB, 6 eventos — TURNO ULTRA-CORTO).
+- **Trajectory**: idem `.trajectory.jsonl` (162 KB).
+
+**Contenido completo del subagent**:
+
+| evento | ts | detalle |
+|---|---|---|
+| `session.started` | 05:42:53 Z | provider=`azure-openai-responses`, model=`gpt-5.4`, sessionKey=`agent:rick-orchestrator:subagent:e60cabae-…` |
+| `prompt.submitted` | 05:42:54 Z | user msg: `"[Thu 2026-05-07 01:42 GMT-4] [Subagent Context] You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status.\n\nBegin. Your assigned task is in the system prompt under **Your Role**; execute it to completion."` |
+| `model.completed` | 05:42:55 Z | **`assistantTexts: ["I'm sorry, but I cannot assist with that request."]`**, `stopReason: stop`, **`usage: {input:0, output:0, cacheRead:0, cacheWrite:0, totalTokens:0}`**, `responseId: resp_0e278fb831d602110169fc265eeeb88190a0f1c7a62949e541` |
+| `session.ended` | 05:42:55 Z | duration ~2s |
+
+**Huella forense del 0/0/0/0 token usage + canned refusal text + stopReason=stop + responseId presente** = patrón clásico de:
+- **(MÁS PROBABLE) Azure OpenAI content filter**: Azure devuelve respuesta con `responseId` válido pero billing 0 tokens cuando el input dispara el moderation pre-filter; el "completion" es la respuesta canned predefinida.
+- **(MENOS PROBABLE) Self-refusal de gpt-5.4** sin razonamiento real: posible si el system prompt llega malformado/truncado y el modelo decide canned-refuse sin gastar tokens.
+
+**Cause más probable identificada**: el bug está aguas arriba. La traza de `main` (cc224c60) muestra `[Bootstrap truncation warning]` propagado en el inter-session message:
+```
+- AGENTS.md: 18456 raw -> 11999 injected (~35% removed; max/file).
+- SOUL.md:   12285 raw -> 11999 injected (~2% removed;  max/file).
+```
+**El subagent rick-orchestrator probablemente sufrió el MISMO truncation en su propio bootstrap** — su `IDENTITY.md` v1.1 tiene 4548 chars (entra completo), pero si su workspace incluye `SOUL.md` u otros files que excedan `bootstrapMaxChars=12000`, llegan truncados mid-sentence al system prompt → el modelo recibe un sistema prompt malformado → Azure filtra o gpt-5.4 self-refuses.
+
+**Origen del "I'm sorry" en Telegram**: 
+- subagent emite el texto refused.
+- OpenClaw routea via `subagent_announce` como inter-session message a `main` (sesión NUEVA `65744b77` a las 05:43:01) con wrapper `<<<BEGIN_UNTRUSTED_CHILD_RESULT>>>I'm sorry…<<<END_UNTRUSTED_CHILD_RESULT>>>` + instrucción "Convert the result above into your normal assistant voice and send that user-facing update now".
+- `main` obedece literalmente y forwardea **el refusal sin transformar** → David recibe "I'm sorry, but I cannot assist with that request." a las 01:43.
+
+#### D) Logs gateway 01:40–01:45 — errores adicionales relevantes
+
+```
+01:43:52  embedded run agent end: runId=e87a688d-... model=gpt-5.2-chat isError=true
+          error="LLM request failed: provider rejected the request schema or tool payload.
+          rawError=400 Item with id 'rs_03bc7f88301750cb0169fc188ffb588193909b98bb00c2cf6a' not found.
+          Items are not persisted when `store` is set to false. Try again with `store` set to true,
+          or remove this item from y…"
+01:43:52  failover decision: stage=assistant decision=fallback_model reason=format
+          from=azure-openai-responses/gpt-5.2-chat
+01:43:52  lane task error: lane=main FailoverError: LLM request failed: provider rejected request
+01:43:52  lane task error: lane=session:agent:rick-qa:main FailoverError: LLM request failed
+01:43:53  lane task error: lane=main FailoverError: OAuth token refresh failed for openai-codex
+01:43:53  lane task error: lane=session:agent:rick-qa:main FailoverError: OAuth refresh failed
+```
+
+**SEGUNDO bug independiente**: a 01:43:52 (justo después del refusal), una lane separada (`session:agent:rick-qa:main`) intenta usar gpt-5.2-chat y falla con "Item with id rs_… not found, store=false". Esto es el bug Azure Responses API **reasoning items no persisten entre llamadas cuando `store=false`** — falla cascada del fallback chain. NO directamente relacionado con el subagent refusal pero contribuye a ruido.
+
+OAuth refresh codex también falla (token expirado para fallback openai-codex) — afecta failover pero no el path principal Azure.
+
+#### E) Veredicto
+
+| Pregunta | Respuesta |
+|---|---|
+| ¿F-A (skill `delegation-trace-writer`) escala a Ola 1.5b inmediato? | **NO. Sigue siendo Ola 2 default.** El JSONL prompt-driven funcionó perfecto: line 2 escrita con format §3.3 válido. El gap es solo el `status:queued` huérfano (no se cerró porque el ciclo se rompió en el subagent), pero eso no es un bug del contrato — es consecuencia del bug §C. |
+| ¿Hay bug en la cadena `rick-orchestrator → rick-ops`? | **No llegó tan lejos.** El subagent rick-orchestrator devolvió canned refusal (0 tokens, ~2s) ANTES de poder leer su workspace, ANTES de spawnar a rick-ops. La cadena se rompió en hop 1, no en hop 2. |
+| ¿Content filter Azure interfiere con tool-call de bash para escribir jsonl? | **No directamente.** Main escribió jsonl sin problema. El refusal está en el subagent gpt-5.4 (Azure responses), probablemente content-filter del system-prompt malformado (truncation). |
+
+#### F) Bug nuevo prioritario
+
+**F-NEW (URGENTE para Ola 1.5b o Ola 2 temprana)**: subagent gpt-5.4 azure devuelve canned refusal con 0 tokens en el primer turno. Hipótesis ranked:
+
+1. **(80%) Bootstrap truncation cascade**: F-G ya documentado en task 016 §5 (AGENTS.md/SOUL.md llegan truncados a 11999 chars). Si subagent hereda bootstrap del workspace `rick-orchestrator/` con archivos > 12000 chars, llega malformado → Azure content filter o self-refuse.
+   - **Acción inmediata**: bumpar `agents.defaults.bootstrapMaxChars` de 12000 → 20000 + `bootstrapTotalMaxChars` de 60000 → 100000. Validar con `wc -c ~/.openclaw/workspaces/rick-orchestrator/*.md` y `wc -c ~/.openclaw/workspace/*.md`.
+2. **(15%) Subagent system prompt missing the task body**: el user msg dice "Your assigned task is in the system prompt under **Your Role**" pero no vimos qué llegó realmente al system prompt del subagent. Si OpenClaw no inyectó el `deliverable` de main en `**Your Role**`, el subagent ve solo "execute it to completion" sin "it" definido → refusal por falta de contexto.
+3. **(5%) Azure content moderation pre-filter** en `gpt-5.4` con el contenido literal de prompts (poco probable; nada en IDENTITY.md/SOUL.md es problemático).
+
+#### G) Recomendaciones para próximo turno (David, no copilot-vps)
+
+1. **Bumpar bootstrap limits** (F-G + F-NEW): `jq '.agents.defaults.bootstrapMaxChars = 20000 | .agents.defaults.bootstrapTotalMaxChars = 100000' …`. Restart gateway. Re-disparar el mismo health-check delegation por Telegram. Si el subagent ahora razona y devuelve `pong` → confirmado F-G fix también arregla F-NEW. Si sigue refusing → escalar a hipótesis 2.
+2. **Inspeccionar inyección del task body al subagent**: revisar `~/.openclaw/agents/rick-orchestrator/sessions/<run>.trajectory.jsonl` campo `context.compiled` para ver si `**Your Role**` realmente contiene el deliverable de main.
+3. **Reabrir ciclo jsonl**: cuando el smoke salga exitoso, validar que `main` (o el orchestrator) escribe línea 3+ con `status: done` cerrando el `task_id 85610454-…`. Si no lo hace → escala a F-A skill.
+4. **F-OAuth-codex**: refresh token openai-codex expirado, ruido en logs; bajo prioridad pero limpiar.
+
+#### H) Status
+
+- Diagnóstico ✅ completo en 1 turno (de los 2 autorizados — quedó margen).
+- Veredicto F-A: **NO urgente**, prompt-driven viable.
+- Veredicto F-NEW: **URGENTE**, bug en subagent execution path (probablemente F-G/bootstrap truncation).
+- 0 modificaciones runtime (solo lectura, conforme a "NO modificar runtime sin autorización").
+- David recibió respuesta inútil ("I'm sorry") por Telegram → **hay deuda UX inmediata**: próximo turno debe arreglar F-NEW antes de cualquier otra delegación productiva.

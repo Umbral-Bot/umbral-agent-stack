@@ -2,10 +2,13 @@
 id: f8b-diagnose-egress-and-model-power-2026-05-07
 title: "F8B diagnose Copilot egress drops and model-power path"
 assigned_to: copilot-vps
-status: todo
+status: done
 priority: high
 reviewer: codex
 created_at: 2026-05-07
+completed_at: 2026-05-07
+verdict: amarillo
+report: reports/copilot-cli/f8b-diagnose-egress-and-model-power-2026-05-07.md
 ---
 
 # F8B diagnose Copilot egress drops and model-power path

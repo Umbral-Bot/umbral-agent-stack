@@ -219,12 +219,22 @@ def _resolve_review_targets(wc: WorkerClient) -> list[dict[str, str]]:
     return deduped
 
 
+def _control_room_poll_target() -> dict[str, str | None]:
+    page_id = os.environ.get("NOTION_CONTROL_ROOM_PAGE_ID", "").strip() or None
+    if not page_id:
+        logger.warning(
+            "Control Room poll target missing NOTION_CONTROL_ROOM_PAGE_ID; "
+            "page_id remains unset for control_room comments"
+        )
+    return {"page_id": page_id, "page_kind": "control_room"}
+
+
 def _collect_candidate_comments(wc: WorkerClient, last_ts: str | None, limit: int) -> list[dict]:
     """Poll comments from Control Room plus active review targets."""
     effective_since = _compute_effective_since(last_ts)
     comments_by_id: dict[str, dict] = {}
 
-    poll_targets: list[dict[str, str | None]] = [{"page_id": None, "page_kind": "control_room"}]
+    poll_targets: list[dict[str, str | None]] = [_control_room_poll_target()]
     poll_targets.extend(_resolve_review_targets(wc))
 
     for target in poll_targets:
@@ -242,8 +252,8 @@ def _collect_candidate_comments(wc: WorkerClient, last_ts: str | None, limit: in
             merged = dict(comment)
             if page_id:
                 merged.setdefault("page_id", page_id)
-                if page_kind:
-                    merged.setdefault("page_kind", page_kind)
+            if page_kind:
+                merged.setdefault("page_kind", page_kind)
             comments_by_id.setdefault(comment_id, merged)
 
     return sorted(

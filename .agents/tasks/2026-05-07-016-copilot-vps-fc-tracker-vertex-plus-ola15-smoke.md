@@ -1,7 +1,7 @@
 ---
 id: "2026-05-07-016"
 title: "Copilot VPS — F-C rick-tracker→Vertex + Ola 1.5 smoke real (primera delegación end-to-end main→rick-ops)"
-status: queued
+status: done
 assigned_to: copilot
 created_by: copilot-chat-notion-governance
 priority: high
@@ -169,3 +169,118 @@ Appendear log al final de este file con:
 ## Log de ejecución
 
 (Copilot VPS appendea acá)
+
+### [copilot-vps] 2026-05-07 01:25 -04 — F-C + Ola 1.5 cerrada (status: done)
+
+VPS `srv1431451`, repo `umbral-agent-stack` HEAD post-pull `17cc085` → este commit `task(F-C+Ola1.5): rick-tracker→Vertex + smoke real delegacion end-to-end` (commit `17cc085` ya estaba en main; nuestro append es separado).
+
+#### 1) Bloque A — F-C `rick-tracker.model.primary` → Vertex Gemini ✅ (verificación; SIN edit)
+
+**Hallazgo crítico que corrige reporte O15.1 §5:** el runtime YA tiene exactamente la config §5.3 esperada. Mi análisis previo en O15.1 fue incorrecto (probablemente confundí `agents.defaults.models[].id` con per-agent `model.primary`).
+
+Estado real verificado:
+
+```json
+".agents.list[id==rick-tracker].model" = {
+  "primary":   "google-vertex/gemini-3.1-pro-preview",
+  "fallbacks": ["google/gemini-3-pro-preview", "google/gemini-3-flash-preview"]
+}
+```
+
+- **ID Vertex elegido**: ya estaba `google-vertex/gemini-3.1-pro-preview` (exactamente el §5.3). Confirmado en `agents.defaults.models` (lista de 10 modelos disponibles, incluye este + 4 azure + 2 google + 2 openai-codex).
+- **Fallbacks**: chain doble Google (`gemini-3-pro-preview` → `gemini-3-flash-preview`), sin azure como ultimate fallback. Documentado pero NO modificado (anti-scope: §5.3 no exige azure-as-graceful, y agregar fallback fuera-de-spec sería cambio unilateral).
+- **Provider wiring**: `models.providers` solo tiene literal `azure-openai-responses`. PERO gateway logs muestran cada heartbeat (cada hora desde `May 06 15:33`):
+  ```
+  The user provided Vertex AI API key will take precedence over the project/location from the environment variables.
+  ```
+  → Vertex SÍ está wired, vía mecanismo implícito de OpenClaw 5.3-1 (probablemente lectura directa de `GOOGLE_API_KEY` + `GOOGLE_CLOUD_PROJECT` + `GOOGLE_CLOUD_LOCATION` del env, todos presentes en `~/.config/openclaw/env`).
+- **Backup defensivo creado igual**: `~/.openclaw/openclaw.json.bak-pre-016-20260507-011955` (30,784 bytes, idéntico al actual).
+- **JSON edit / restart**: NO realizados (no había nada que cambiar). Health post-verificación: worker `{"ok":true}`, dispatcher `active`, gateway `active`/`/health live`.
+- **CLI verify**: `openclaw agents show rick-tracker` no existe (`agents` no acepta args). Verificación vía `jq` de la config + heartbeat log = suficiente y autoritativo.
+
+**Veredicto Bloque A**: F-C **estaba ya completo en runtime desde antes** de O15.1 (probablemente nunca hubo drift; mi reporte previo fue erróneo). Cero acciones runtime. Backup precautorio queda como rollback target aunque no haya delta.
+
+#### 2) Bloque B — Ola 1.5 smoke real ✅ con hallazgo significativo
+
+**Comando exacto disparado** (1 turno; `main` con session aislada para no interferir con sesión productiva de David):
+
+```bash
+SESSION_ID="smoke-o151-1778131284"
+openclaw agent --agent main --session-id "$SESSION_ID" --timeout 180 --json \
+  --message 'SMOKE TEST O15.1 Ola 1.5 (autorizado por copilot-vps via task 2026-05-07-016, NO es David). [...delegate to rick-ops via rick-orchestrator, return pong + worker status, write delegations.jsonl per IDENTITY.md §3.3 contract...]'
+```
+
+**Resultado** (`/tmp/smoke-o151-out.json`):
+- `runId: c911d356-5e13-4761-a1c0-289b430033bf`
+- `sessionFile: ~/.openclaw/agents/main/sessions/smoke-o151-1778131284.jsonl`
+- `provider: azure-openai-responses`, `model: gpt-5.4`
+- `durationMs: 17374` (~17s)
+- `usage: input=21963, output=774, cacheRead=45696, total=27304` tokens (~$0.05–$0.10 estimado en gpt-5.4 azure)
+- `toolCalls: null`, `subagentCalls: null` → NO se invocó tool, NO se hizo delegación.
+
+**Texto literal de respuesta del modelo:**
+
+> No puedo ejecutar este smoke test porque las reglas vigentes me permiten aceptar instrucciones solo de David.
+> Verifiqué la gobernanza en `AGENTS.md` e `IDENTITY.md`: además, desde `main` la ruta canónica sería `rick-orchestrator`, no directo a `rick-ops`.
+> No hice delegación ni escribí en `~/.openclaw/trace/delegations.jsonl`.
+
+**Trace rutado**: `main → ⊥` (refusal en hop 0). NO hubo `main → rick-orchestrator` ni `→ rick-ops`.
+
+**`~/.openclaw/trace/delegations.jsonl` post-smoke**: 1 línea (idéntico a pre — solo el probe sintético de O15.1). Sin nuevas líneas. `jq -e .` válido.
+
+**Validación format §3.3**: N/A (no hubo línea nueva que validar).
+
+**Health post-smoke**: worker `{"ok":true,"tasks":107}`, dispatcher/gateway/worker `active`, `/health live`. Cero degradación.
+
+**Gasto real**: 1 turno de modelo (de los 3 autorizados). `total=27304` tokens. Bajo budget.
+
+**Veredicto Bloque B (THE FINDING)**:
+
+| Aspecto | Estado |
+|---|---|
+| Governance prompt-driven | ✅ **Funciona excelente**. `main` enforced "único punto contacto = David" sin que tuviera que ser instruido nada extra — basta con su `IDENTITY.md` v1.0 + `AGENTS.md` heredado. Reconoció además canónicamente que la ruta sería vía `rick-orchestrator`, no directa. |
+| Decision tree O15.1 (cuándo delegar) | ✅ **Validado indirectamente**. El modelo cita la jerarquía correcta sin haber sido prompteado a hacerlo en este turno. |
+| JSONL write-path | ⚠️ **NO validado end-to-end**. El modelo nunca llegó a la fase de escribir porque abortó antes (correctamente). Sigue siendo desconocido si: (a) el modelo *podría* invocar bash tool para `cat >> ~/.openclaw/trace/delegations.jsonl`, (b) el format saldría válido §3.3, (c) un hop ↔ una línea efectivamente. |
+| Smoke synthetic via copilot-vps | ❌ **Bloqueado por governance**. Es exactamente lo que queremos en producción (no aceptar órdenes de no-David), pero hace inviable el smoke sin David presente. |
+
+#### 3) Decisión sobre F-A urgencia (skill `delegation-trace-writer`)
+
+**Decisión: NO urgente para Ola 1; SÍ recomendado para Ola 2.**
+
+**Rationale:**
+
+- **No es blocker**: David puede ejercitar la primera delegación real en su próximo turno interactivo (e.g., "andá pingeando worker via rick-ops"). Eso validará el path jsonl-write end-to-end sin necesidad de skill custom.
+- **Riesgo de bypass del gate**: agregar a `IDENTITY.md` una excepción tipo "SMOKE TEST autorizado por copilot-vps puede saltarse el gate David" abre vector de prompt injection. **Rechazado**.
+- **Razones para Ola 2**:
+  1. **Costo**: bash skill determinista evita tokens de tool-call LLM en cada delegación (~500 tokens × N delegaciones/día).
+  2. **Format guarantee**: skill bash con `jq -nc` template no falla en estructura, mientras LLM puede generar jsonl mal formado bajo presión de contexto largo.
+  3. **Audit-grade**: skill puede agregar campos automáticos (uuid, ts UTC ISO, host) sin depender de obediencia del modelo.
+  4. **Asimetría asimismo resuelta**: skill invocable desde main, rick-orchestrator y gerencias por igual → 1 línea por hop garantizada.
+- **Alternativa minimalista Ola 1.5**: dejar que David valide en su primer turno real. Si la línea sale válida → confirmar prompt-driven viable. Si sale ausente o malformada → priorizar skill como F-A inmediato.
+
+**Acción recomendada al Cline humano (David):**
+> En tu próximo turno con `main`, hacé un comando trivial tipo *"pingeá worker vía rick-ops y registrá la delegación"*. Yo te paso el resultado del jsonl después. Si falla → activamos skill `delegation-trace-writer` Ola 1.5b. Si funciona → queda para Ola 2 como mejora de costo/audit.
+
+#### 4) Estado runtime final
+
+- `rick-tracker` correctamente en Vertex Gemini 3.1-pro (sin drift).
+- `main`/orchestrator IDENTITY.md v1.1 deltas operativos y enforce governance correctamente.
+- Trace file con 1 línea probe sintético (de O15.1).
+- Worker/dispatcher/gateway todos `active`. Tasks count subió 65→107 (carga normal del día).
+- Backup `~/.openclaw/openclaw.json.bak-pre-016-20260507-011955` queda como rollback target precautorio.
+
+#### 5) Follow-ups detectados (NO bloquean cierre)
+
+- **F-A** (Ola 2 default; potencialmente Ola 1.5b si David confirma fallo): skill `delegation-trace-writer`.
+- **F-C-revised**: corrección a mi reporte O15.1 §5 — no había drift en rick-tracker. Asentado en este log.
+- **F-O15.1-A** (de la task previa) sigue pendiente — depende del veredicto de la primera delegación real de David.
+- **NEW F-G**: bootstrap truncation warnings en system prompt (`AGENTS.md` rawChars=18456 → injectedChars=11999 truncado; `SOUL.md` 12285→11999 truncado, both `per-file-limit`). El modelo opera con AGENTS.md y SOUL.md PARCIALES. Considerar split o bump del `bootstrapMaxChars` (12000 default) a 20000 para sesiones críticas. Anti-scope para esta task.
+- **NEW F-H**: el comando `openclaw agents show <id>` no existe en CLI 5.3-1 (`agents` no acepta args). Para introspección de agente individual hay que usar `jq` directo sobre `openclaw.json` o `openclaw status` (que muestra todos). Documentar como gap CLI.
+
+#### 6) Status
+
+- F-C: ✅ verificado (runtime ya alineado; sin acciones).
+- Ola 1.5 smoke: ✅ ejecutado 1 turno; veredicto = governance ok, jsonl-path pending real-David turn.
+- F-A: ✅ decisión documentada (Ola 2 default, escalable a 1.5b on-demand).
+- `status: done`.
+

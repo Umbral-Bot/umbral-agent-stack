@@ -1,7 +1,7 @@
 ---
 task_id: 2026-05-07-019
 title: H3 isolation — aislar disparador del refusal canned en subagent rick-orchestrator
-status: pending
+status: blocked
 requested_by: copilot-chat
 assigned_to: copilot-vps
 related: 2026-05-07-017 (F-NEW URGENTE blocked), 2026-05-07-018 (audit OpenClaw — H1+H2 falsificadas, H3 activa)
@@ -219,3 +219,124 @@ git push origin main
 ## Resultado esperado
 
 Comentario en este task log con tabla veredicto + link al report. Veredicto único o combinación. Fix mínimo propuesto. F-NEW del Plan Q2 actualizable a "diagnóstico cerrado, fix pending" con plan de acción concreto.
+
+### [copilot-vps] 2026-05-07T13:44:58Z — pre-flight blocked (status: blocked)
+
+**Estado**: Bloque 0 (setup + backups) ejecutado OK. Bloque 1+ NO ejecutados. Status flipped a `blocked` por hallazgo procedural en Vector B que invalida la receta del task spec y requiere confirmación tuya antes de proceder con dispatchs costosos.
+
+#### Backups creados (intactos)
+
+```
+~/.openclaw/openclaw.json.bak-pre-019-20260507-093659                       (30858 bytes)
+~/.openclaw/workspaces/rick-orchestrator.bak-pre-019-20260507-093659/       (full tree, ls verified)
+```
+
+#### Setup data verificada
+
+- Modelo actual rick-orchestrator: `primary=azure-openai-responses/gpt-5.4`, fallbacks=`[gpt-5.2-chat, openai-codex/gpt-5.4]`.
+- Modelos disponibles para Vector B: `gpt-5.4-mini` **NO** existe en el catálogo. Candidatos viables (en orden):
+  - `google-vertex/gemini-3.1-pro-preview` (provider distinto, alta capacidad).
+  - `azure-openai-responses/gpt-5.4-pro` (mismo provider, modelo más capaz).
+  - `google/gemini-3-pro-preview` (provider distinto, 195k ctx).
+- Gateway running: pid 54835, uptime desde 2026-05-07 01:57:16 -04 (~7h45min al momento del setup).
+- Trajectory baseline confirmado: `82f4ecc3-...` con `assistantTexts: ["I'm sorry, but I cannot assist with that request."]`, `promptCache.lastCallUsage = {input:0, output:0, cacheRead:0, cacheWrite:0, total:0}`, `compactionCount: 0`. **Refusal verificada en datos reales del runtime**.
+- Dispatch path original (extraído de `agent:main:explicit:smoke-o151-retest-1778133479`): `agent:main` invocó tool `sessions_spawn` con args:
+  `{runtime: "subagent", agentId: "rick-orchestrator", label: "...", cwd: "...", timeoutSeconds: 180, task: "<smoke task body>"}` (sin `model` param, hereda del config).
+
+#### Blocker — Vector B según receta del task spec NO funciona
+
+**Receta del task** (Bloque 3):
+
+```bash
+jq --arg m "<MODEL_ID>" '(.agents.list[] | select(.id=="rick-orchestrator") | .model.primary) = $m' ~/.openclaw/openclaw.json > /tmp/...
+mv /tmp/... ~/.openclaw/openclaw.json
+# disparar test
+cp .bak ~/.openclaw/openclaw.json   # revert
+```
+
+**Por qué NO funciona**:
+
+OpenClaw `2026.5.3-1` (instalada) implementa el config como **singleton pinned snapshot por proceso**. Evidencia desde dist:
+
+1. `/home/rick/.npm-global/lib/node_modules/openclaw/dist/io-FwM1Kn_Q.js`:
+
+   ```js
+   function loadConfig() {
+     return loadPinnedRuntimeConfig(() => createConfigIO().loadConfig());
+   }
+   function getRuntimeConfig() {
+     return loadConfig();
+   }
+   ```
+
+2. `/home/rick/.npm-global/lib/node_modules/openclaw/dist/runtime-snapshot-DLdUvYCx.js`:
+
+   ```js
+   function loadPinnedRuntimeConfig(loadFresh) {
+     if (runtimeConfigSnapshot) return runtimeConfigSnapshot;  // ← cache hit
+     const config = loadFresh();
+     setRuntimeConfigSnapshot(config);
+     return getRuntimeConfigSnapshot() ?? config;
+   }
+   ```
+
+   El refresh sólo se dispara desde el lifecycle de WRITE oficial (`finalizeRuntimeSnapshotWrite`), no por edits raw del archivo desde fuera del proceso. `fs.watch` sobre `openclaw.json` no aparece en la dist (`grep -lF "fs.watch" dist/*.js` no encuentra el archivo de config en watchers).
+
+⇒ El gateway lleva `runtimeConfigSnapshot` cargado desde `2026-05-07 01:57:16`. Editar `openclaw.json` a las 09:36 **NO** modifica el snapshot en memoria. El spawn de rick-orchestrator seguiría usando `gpt-5.4`, dando un falso negativo del Vector B.
+
+**Para que la receta original funcione** habría que reiniciar el gateway entre el edit y el dispatch — pero el task spec lo prohíbe explícitamente:
+> "0 restarts gateway/worker/dispatcher."
+
+#### Adaptación viable propuesta (necesita tu green light)
+
+**Vector B via `sessions_spawn` con `model` override** (sin tocar `openclaw.json`, sin restart):
+
+Confirmado en dist (`openclaw-tools-D7Zj4hDN.js`): el handler de `sessions_spawn` lee `const modelOverride = readStringParam(params, "model");` y lo aplica per-spawn. Coincide con la audit del task 018 (subagent-spawn.ts:280 upstream).
+
+Procedimiento adaptado:
+
+```text
+[Baseline] openclaw agent --agent main --session-id 019-baseline-<TS> --message "<directiva: invocá sessions_spawn con runtime=subagent, agentId=rick-orchestrator, label=019-baseline, timeoutSeconds=180, task=<<<task body literal smoke health-check verbatim del baseline>>>>"
+
+[Vector A] Mismo, pero task = "Respondé únicamente con la palabra: pong. Nada más."
+
+[Vector B] Mismo task body que baseline + parámetro extra "model: google-vertex/gemini-3.1-pro-preview" en el sessions_spawn.
+
+[Vector C] mv AGENTS.md/SOUL.md/IDENTITY.md a backup tmp + AGENTS.md mínimo + dispatch baseline + revert.
+```
+
+**Ventajas**:
+- Cero file edits a `openclaw.json`.
+- Cero restarts.
+- Vector B usa el mismo mecanismo per-call que ya existe en el código (zero-risk).
+
+**Riesgos/limitaciones que requieren tu confirmación**:
+
+1. **Determinismo del driver `main`**: tengo que esperar que `main` (gpt-5.4 también) invoque `sessions_spawn` con los args literales que le pido. Si interpreta o reformula el `task` body, contamino el experimento. Mitigación: incluir el task body entre delimitadores explícitos (`<<<TASK_BODY>>>` ... `<<<END>>>`) y pedirle "copia-pega exacto, no parafrases". Riesgo residual: ~15-25% de que main edite el body de algún vector.
+2. **Costo en tokens**: 4 dispatches × (main turn ~10-20k input + subagent turn ~70k systemPrompt). Estimado total: ~400-500k tokens input + outputs. Azure pricing aplicable.
+3. **Vector C** (bootstrap minimal): la receta del task funciona OK (mover archivos + revert), no hay blocker procedural.
+4. **Caveat de Vector A**: si simplifico el task body, también cambio el contenido del bloque `## Your Role`, lo cual puede confundir el aislamiento entre 3a/3b/3c. Si A=OK no podemos saber si fue task body simplificado o si el modelo pasó por menor "carga" de prompt.
+
+#### Lo que NO hice (intencional, esperando confirmación)
+
+- ❌ Bloque 1 baseline replicate.
+- ❌ Bloque 2 Vector A.
+- ❌ Bloque 3 Vector B.
+- ❌ Bloque 4 Vector C.
+- ❌ Bloque 5 tabla veredicto.
+- ❌ Report `reports/copilot-cli/f10-...md`.
+- ❌ Edits a `openclaw.json` (la receta original lo pedía pero como no funciona, evité gastar el ciclo).
+
+#### Pregunta para David
+
+**¿Aprobás la adaptación?** Tres opciones:
+
+(α) **Adaptado**: proceder con `sessions_spawn(model=X)` per-call (sin file edits, sin restart). Acepto el riesgo de determinismo del driver main; lo mitigo con delimitadores literales.
+
+(β) **Original con restart**: autorizás 1 (uno) restart controlado del gateway entre Vector B edit y revert (con health check antes y después). Esto preserva la receta del spec literal.
+
+(γ) **Bypass del wrapper subagent**: invocar `openclaw agent --agent rick-orchestrator --model X --message "<prompt completo equivalente>"` directamente (sin pasar por main + sessions_spawn). Determinístico pero NO replica el path real del subagent (no hay `## Subagent Context` en systemPrompt). Útil sólo como sanity check, no como repro.
+
+(δ) **Otra**: indicame.
+
+**Backups conservados intactos hasta tu cierre.**

@@ -357,3 +357,18 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 - gateway pid 75421 SIN restart (uptime ~4h continuo), openclaw.json intacto, model.primary=Vertex intacto, Vertex Fase 1 ventana hasta 2026-05-14 intacta
 - follow-up task 033: Opción A proxy a OpenClaw subagent rick-orchestrator (ventana post-2026-05-14)
 - follow-up bug Telegram-side detectado por David (no abierto aún): rick-orchestrator no tiene 'sessions_spawn' en tool policy → handoff a rick-ops bloqueado en Telegram. Path Telegram→OpenClaw confirma model.primary=Vertex engaging (write-path JSONL real, evidencia smoke gobernanza-side David 10:52-13:26 ART)
+
+## 2026-05-07-032b — smoke real O15.1b [FAIL — bug pre-existente bloquea canal]
+- ejecutor: Copilot VPS 2026-05-07T18:54Z (post comment David T0=2026-05-07T18:44:00.000Z en Control Room page 30c5f443…)
+- verdict: SMOKE REAL FAIL — O15.1b NO cierra al 100%
+- handler `rick.orchestrator.triage` (entregable task 032) SANO y registrado: `/health.tasks_registered` lo lista; smoke local previo PASS 14:35:31 -04
+- canal Notion → poller → dispatcher → worker → reply BLOQUEADO antes del Hop2 (dispatcher)
+- root cause confirmado empíricamente (NO regresión task 032; bug pre-existente): `worker/notion_client.poll_comments` (líneas ~500-665). Redis cursor `notion:poll:cursor:30c5f443…` = sentinel `"__TAIL__"` (TTL ~30d) → `poll_comments` entra `bootstrap=True` → 1 GET trae 2 comments con `has_more=False` y `next_cursor=None` → guard `if not bootstrap:` DESCARTA resultados → re-graba sentinel → loop perpetuo de 0 comments. Cualquier página con ≤page_size=20 comments queda atrapada.
+- evidencia hops vacíos: H1 poller log "0 comments" en ciclo 18:53:14 con since 17:25Z (ventana cubre 18:44); H2 dispatcher journalctl since 14:30 local sin "Rick mention routed" ni "rick.orchestrator"; H3 worker journalctl sin "Executing task rick.orchestrator.triage" ni id 3595f443; H4 Notion API 0 replies por bot Rick (3145f443) post-T0 (B3 anti-fabricación cross-check)
+- comment David presente vía Notion API directa: id 3595f443-fb5c-80e4…, by 1e3d872b… (allowlist), text matchea exactamente
+- no-regresión limpia: gateway pid 75421 intacto (etime ~4h18m, Vertex Fase 1 OK), worker /health ok 104 tasks, ambos services active, ops_log limpio (0 eventos rick.orchestrator), repo 0 ahead/0 behind `e36358b9` al momento del check
+- F-INC-002 + secret-output-guard #8 + SOUL 21/22: respetadas. NO restart worker, NO touch gateway, NO borrar cursor (tentador pero vuelve al loop perpetuo)
+- artefactos VPS: `/tmp/032/smoke-real-fail.md` + `/tmp/032/comments-window.json` + spec local `/home/rick/umbral-agent-stack/.agents/tasks/2026-05-07-035-fix-poll-comments-bootstrap-collect.md` (NO pusheado — branch actual reservada para otra task; pendiente recrear o branch dedicada)
+- follow-up task 035 (P0-blocker para cerrar O15.1b): fix poll_comments bootstrap collect — recomendación Opción A: remover guard `if not bootstrap:` para que también colecte resultados durante bootstrap cuando no hay más páginas
+- follow-up task 036 (Media): helper `notion_safe_comment` para chunkear replies > 2000 chars (límite duro Notion API `rich_text.content`); auditar todos los call sites de `add_comment`
+- follow-up Telegram-side (gobernanza smoke David): `rick-orchestrator` falta `sessions_spawn` en tool policy → task pendiente

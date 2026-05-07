@@ -232,6 +232,25 @@ Despues de una seleccion explicita, Rick genera un brief visual y usa una futura
 
 Este plan no implementa esa herramienta. Solo declara el requisito futuro.
 
+## 4.A. Estado (snapshot 2026-05-07)
+
+> Mantener este snapshot vivo. Cada PR que toque el pipeline debe actualizarlo o explicar por qué no aplica.
+
+| Etapa | Estado | Evidencia / artefacto |
+|---|---|---|
+| Etapa 0 — leer catálogo Referentes | ✅ runtime real | `scripts/discovery/stage1_load_referentes.py`; audit 006 |
+| Etapa 1 — descubrir publicaciones | ⚠️ parcial (2/5 canales productivos) | `docs/audits/2026-05-08-pipeline-editorial-gap-analysis.md` (cobertura 14/26 = 53.8%) |
+| Etapa 2 — ranking de candidatos | ✅ heurístico determinístico (Stage 5 v0) | `scripts/discovery/stage5_rank_candidates.py`; `tests/discovery/test_stage5_ranking.py` (10 tests green) |
+| Etapa 3 — combinación AEC | ⏸ stub (Fase LLM, próximo PR) | `scripts/discovery/stage6_aec_combine.py` (raise `NotImplementedError`) |
+| Etapa 4 — push a Notion (Stage 4) | ✅ runtime real | `reports/stage4-push-*-commit*.json` |
+| Etapa 5 — selección humana | 🟡 contrato definido, sin trigger | sección §6, decisiones abiertas §9 |
+| Etapa 6 — voice pass / copy LinkedIn | ⏸ no implementado (Fase LLM) | `rick-communication-director` skills declaradas |
+| Etapa 7 — escritura Notion final | ✅ desbloqueada (audit 006) | era falsa premisa MCP; REST con `NOTION_API_KEY` ya escribe vía Stage 4 |
+| Etapa 8 — trigger imagen | ⏸ decisión abierta | §4 Etapa 8 |
+| Etapa 9 — generación imagen Nano Banana 2 | ⏸ futura | fuera de scope hoy |
+
+Agente declarado (no activo): `openclaw/workspace-agent-overrides/rick-linkedin-writer/` (ROLE.md, SKILL.md, INPUTS.md, OUTPUTS.md). Activación gated por David.
+
 ## 5. Criterios 1/2/3 Como Texto Para `SKILL.md`
 
 El siguiente texto esta escrito para poder migrarse despues a `SKILL.md` de `rick-linkedin-writer`, una vez aprobada la arquitectura.

@@ -85,7 +85,11 @@ def fetch_and_index(
     if not url:
         return {}
     try:
-        r = client.get(url, timeout=20.0)
+        # follow_redirects=True: 013-G diagnose found Rodrigo Rojo's feed at
+        # https://rojo.me/feed serves a 302 to https://www.rojo.me/feed. Without
+        # this flag backfill silently drops every redirected feed (matches stage2
+        # behaviour in `_fetch_and_parse`).
+        r = client.get(url, timeout=20.0, follow_redirects=True)
         if r.status_code >= 400:
             return {}
         items = parse_feed_xml(r.text)

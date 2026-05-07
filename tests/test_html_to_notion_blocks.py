@@ -97,3 +97,94 @@ class TestHtmlToNotionBlocks:
         assert "visible" in joined
         assert "alert" not in joined
         assert ".x" not in joined
+
+
+# --- 013-G: inline annotations + heading inline parsing ---
+
+
+def _spans(block: dict) -> list[dict]:
+    key = block["type"]
+    return block[key]["rich_text"]
+
+
+class TestInlineAnnotations:
+    def test_bold_inline_produces_annotation(self):
+        # Both ** and __ should produce bold annotation.
+        out = html_to_notion_blocks("<p>Esto es <strong>negrita</strong> ya.</p>")
+        spans = _spans(out[0])
+        bolds = [s for s in spans if s.get("annotations", {}).get("bold")]
+        assert bolds, "expected at least one bold span"
+        assert any("negrita" in s["text"]["content"] for s in bolds)
+        # Plain spans must NOT carry an annotations dict (or carry default-only).
+        plain = [s for s in spans if s["text"]["content"].strip() == "Esto es"]
+        assert plain
+        assert not plain[0].get("annotations", {}).get("bold")
+
+    def test_italic_inline_produces_annotation(self):
+        out = html_to_notion_blocks("<p>Esto es <em>itálica</em> ahora.</p>")
+        spans = _spans(out[0])
+        italics = [s for s in spans if s.get("annotations", {}).get("italic")]
+        assert italics
+        assert any("itálica" in s["text"]["content"] for s in italics)
+
+    def test_link_inline_produces_text_link(self):
+        out = html_to_notion_blocks('<p>Ver <a href="https://x.test/y">acá</a>.</p>')
+        spans = _spans(out[0])
+        links = [s for s in spans if s["text"].get("link")]
+        assert links and links[0]["text"]["link"]["url"] == "https://x.test/y"
+        assert links[0]["text"]["content"] == "acá"
+        # Link spans should NOT carry bold/italic by default.
+        assert not links[0].get("annotations", {}).get("bold")
+        assert not links[0].get("annotations", {}).get("italic")
+
+    def test_heading_h1_h2_h3_block_types(self):
+        out = html_to_notion_blocks(
+            "<h1>uno</h1><h2>dos</h2><h3>tres</h3><h4>cuatro</h4>"
+        )
+        types = [b["type"] for b in out]
+        assert types[0] == "heading_1"
+        assert types[1] == "heading_2"
+        assert types[2] == "heading_3"
+        # h4 must collapse to heading_3.
+        assert types[3] == "heading_3"
+        # Heading content should be plain text — no literal ``#`` in rich_text.
+        for b in out:
+            joined = "".join(s["text"]["content"] for s in _spans(b))
+            assert not joined.startswith("#"), f"heading leaked literal hash: {joined!r}"
+
+    def test_mixed_inline_in_bullet(self):
+        # Bulleted list item should also pass through the inline parser.
+        out = html_to_notion_blocks(
+            "<ul><li>Mira <strong>esto</strong> en <a href='https://x.test'>link</a></li></ul>"
+        )
+        bullets = [b for b in out if b["type"] == "bulleted_list_item"]
+        assert bullets
+        spans = _spans(bullets[0])
+        assert any(s.get("annotations", {}).get("bold") for s in spans)
+        assert any(s["text"].get("link") for s in spans)
+
+    def test_inline_parser_fallback_on_exception(self, monkeypatch):
+        # Force _parse_inline to raise; helper must fall back to plain text.
+        from scripts.discovery import html_to_notion_blocks as mod
+
+        def boom(_text):
+            raise RuntimeError("synthetic")
+
+        monkeypatch.setattr(mod, "_parse_inline", boom)
+        out = mod.html_to_notion_blocks("<p>contenido importante</p>")
+        assert len(out) == 1
+        spans = _spans(out[0])
+        joined = "".join(s["text"]["content"] for s in spans)
+        assert "contenido importante" in joined
+        # Fallback must NOT have annotations applied.
+        assert not any(s.get("annotations", {}).get("bold") for s in spans)
+
+    def test_no_double_processing_when_no_markdown(self):
+        out = html_to_notion_blocks("<p>texto plano sin marcas.</p>")
+        spans = _spans(out[0])
+        # Single plain span, no annotations.
+        assert len(spans) == 1
+        assert spans[0]["text"]["content"] == "texto plano sin marcas."
+        assert "annotations" not in spans[0] or not any(
+            spans[0]["annotations"].get(k) for k in ("bold", "italic", "code", "strikethrough")
+        )

@@ -8,20 +8,38 @@ Designed to satisfy the Notion REST API (version 2025-09-03):
   paragraph.
 - Supported block types: heading_1/2/3, paragraph, bulleted_list_item, numbered_list_item,
   image (external URL).
-- Links inside paragraphs preserve href via ``rich_text[].text.link.url``.
+- Inline annotations supported on rich_text: bold (``**x**`` / ``__x__``), italic
+  (``*x*`` / ``_x_``), code (backtick-wrapped), strikethrough (``~~x~~``), and links
+  (``[text](url)``). Backslash escapes for ``*``, ``_``, backtick, ``~`` produce
+  literal characters with no annotation.
+- Limitation: nested annotations are NOT supported (e.g. ``**bold _italic_**`` will
+  emit a single bold span keeping the inner ``_italic_`` markers literal). On any
+  parser failure the line falls back to a single plain-text span.
 
-If conversion fails for any reason, callers should fall back to a single
+If conversion fails entirely, callers should fall back to a single
 ``created_no_body`` paragraph (handled outside this module).
 """
 
 from __future__ import annotations
 
+import logging
 import re
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 MAX_BLOCKS = 90
 MAX_RICH_TEXT_LEN = 1900  # Notion limit is 2000; leave some headroom.
 TRUNC_NOTICE = "[contenido truncado]"
+
+DEFAULT_ANNOTATIONS = {
+    "bold": False,
+    "italic": False,
+    "strikethrough": False,
+    "underline": False,
+    "code": False,
+    "color": "default",
+}
 
 
 def _chunks(text: str, size: int = MAX_RICH_TEXT_LEN) -> list[str]:
@@ -30,48 +48,114 @@ def _chunks(text: str, size: int = MAX_RICH_TEXT_LEN) -> list[str]:
     return [text[i : i + size] for i in range(0, len(text), size)]
 
 
-def _rich_text_plain(text: str) -> list[dict[str, Any]]:
-    return [{"type": "text", "text": {"content": chunk}} for chunk in _chunks(text)]
-
-
-_LINK_RE = re.compile(r"\[([^\]]+)\]\(([^)\s]+)\)")
-_IMG_RE = re.compile(r"!\[([^\]]*)\]\(([^)\s]+)\)")
-
-
-def _rich_text_with_links(text: str) -> list[dict[str, Any]]:
-    """Parse inline markdown links into Notion rich_text segments.
-
-    Strips inline images first (they become standalone image blocks elsewhere).
-    Bold/italic are flattened to plain text — keeps converter simple and avoids
-    misparsing edge cases.
-    """
-    text = _IMG_RE.sub("", text)
+def _make_span(content: str, *, link: str | None = None,
+               annotations: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+    """Build one or more Notion text spans (chunked to MAX_RICH_TEXT_LEN)."""
     out: list[dict[str, Any]] = []
-    pos = 0
-    for m in _LINK_RE.finditer(text):
-        before = text[pos : m.start()]
-        if before:
-            out.extend(_rich_text_plain(before))
-        label, url = m.group(1), m.group(2)
-        for chunk in _chunks(label):
-            out.append({
-                "type": "text",
-                "text": {"content": chunk, "link": {"url": url}},
-            })
-        pos = m.end()
-    tail = text[pos:]
-    if tail:
-        out.extend(_rich_text_plain(tail))
-    if not out:
-        out = [{"type": "text", "text": {"content": ""}}]
+    for chunk in _chunks(content):
+        text_obj: dict[str, Any] = {"content": chunk}
+        if link:
+            text_obj["link"] = {"url": link}
+        span: dict[str, Any] = {"type": "text", "text": text_obj}
+        if annotations:
+            # Merge over defaults so Notion gets a complete annotations object.
+            merged = {**DEFAULT_ANNOTATIONS, **annotations}
+            span["annotations"] = merged
+        out.append(span)
     return out
 
+
+# ---------- Inline markdown parser ----------
+
+# Order matters in the alternation: longer tokens first to avoid eating ``**`` as ``*``.
+# Group names tell us which kind of span matched.
+_INLINE_RE = re.compile(
+    r"""
+    (?P<image>!\[(?P<image_alt>[^\]]*)\]\((?P<image_url>[^)\s]+)\))      # ![alt](url) - stripped
+    | (?P<link>\[(?P<link_label>[^\]]+)\]\((?P<link_url>[^)\s]+)\))      # [label](url)
+    | (?P<bold_star>\*\*(?P<bold_star_inner>[^\s*][^*]*?[^\s*]|[^\s*])\*\*)
+    | (?P<bold_us>__(?P<bold_us_inner>[^\s_][^_]*?[^\s_]|[^\s_])__)
+    | (?P<italic_star>\*(?P<italic_star_inner>[^\s*][^*]*?[^\s*]|[^\s*])\*)
+    | (?P<italic_us>(?<![A-Za-z0-9_])_(?P<italic_us_inner>[^\s_][^_]*?[^\s_]|[^\s_])_(?![A-Za-z0-9_]))
+    | (?P<code>`(?P<code_inner>[^`]+)`)
+    | (?P<strike>~~(?P<strike_inner>[^~]+)~~)
+    """,
+    re.VERBOSE,
+)
+
+
+def _unescape(text: str) -> str:
+    """Convert backslash-escaped markdown punctuation to literal characters."""
+    return re.sub(r"\\([\\*_`~\[\]()!#~])", r"\1", text)
+
+
+def _parse_inline(text: str) -> list[dict[str, Any]]:
+    """Parse markdown-flavored ``text`` into a list of Notion rich_text spans.
+
+    Strategy: scan for the next inline token (regex alternation) and emit a plain
+    span for the gap before it. Non-nesting; precedence is encoded in the regex
+    alternation order. Backslash-escaped punctuation is preserved as literal.
+    """
+    spans: list[dict[str, Any]] = []
+    pos = 0
+    for m in _INLINE_RE.finditer(text):
+        if m.start() > pos:
+            gap = _unescape(text[pos : m.start()])
+            if gap:
+                spans.extend(_make_span(gap))
+
+        if m.group("image") is not None:
+            # Inline images are emitted as separate image blocks elsewhere; drop here.
+            pass
+        elif m.group("link") is not None:
+            label = _unescape(m.group("link_label"))
+            url = m.group("link_url")
+            spans.extend(_make_span(label, link=url))
+        elif m.group("bold_star") is not None:
+            spans.extend(_make_span(_unescape(m.group("bold_star_inner")),
+                                    annotations={"bold": True}))
+        elif m.group("bold_us") is not None:
+            spans.extend(_make_span(_unescape(m.group("bold_us_inner")),
+                                    annotations={"bold": True}))
+        elif m.group("italic_star") is not None:
+            spans.extend(_make_span(_unescape(m.group("italic_star_inner")),
+                                    annotations={"italic": True}))
+        elif m.group("italic_us") is not None:
+            spans.extend(_make_span(_unescape(m.group("italic_us_inner")),
+                                    annotations={"italic": True}))
+        elif m.group("code") is not None:
+            spans.extend(_make_span(m.group("code_inner"),
+                                    annotations={"code": True}))
+        elif m.group("strike") is not None:
+            spans.extend(_make_span(_unescape(m.group("strike_inner")),
+                                    annotations={"strikethrough": True}))
+        pos = m.end()
+
+    if pos < len(text):
+        tail = _unescape(text[pos:])
+        if tail:
+            spans.extend(_make_span(tail))
+    if not spans:
+        spans = _make_span("")
+    return spans
+
+
+def _rich_text(text: str) -> list[dict[str, Any]]:
+    """Public-ish helper: parse inline markdown, fall back to plain text on failure."""
+    try:
+        return _parse_inline(text)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("inline parser failed (%s); falling back to plain text", exc)
+        return _make_span(text)
+
+
+# ---------- Block builders ----------
 
 def _paragraph(text: str) -> dict[str, Any]:
     return {
         "object": "block",
         "type": "paragraph",
-        "paragraph": {"rich_text": _rich_text_with_links(text)},
+        "paragraph": {"rich_text": _rich_text(text)},
     }
 
 
@@ -81,7 +165,7 @@ def _heading(level: int, text: str) -> dict[str, Any]:
     return {
         "object": "block",
         "type": key,
-        key: {"rich_text": _rich_text_with_links(text)},
+        key: {"rich_text": _rich_text(text)},
     }
 
 
@@ -90,7 +174,7 @@ def _list_item(numbered: bool, text: str) -> dict[str, Any]:
     return {
         "object": "block",
         "type": key,
-        key: {"rich_text": _rich_text_with_links(text)},
+        key: {"rich_text": _rich_text(text)},
     }
 
 
@@ -101,7 +185,7 @@ def _image(url: str, alt: str = "") -> dict[str, Any]:
         "image": {"type": "external", "external": {"url": url}},
     }
     if alt:
-        block["image"]["caption"] = _rich_text_plain(alt[:MAX_RICH_TEXT_LEN])
+        block["image"]["caption"] = _make_span(alt[:MAX_RICH_TEXT_LEN])
     return block
 
 
@@ -165,7 +249,6 @@ def html_to_notion_blocks(html: str | None, *, max_blocks: int = MAX_BLOCKS) -> 
     """
     if not html or not html.strip():
         return []
-    # markdownify is the only third-party dep we add for 013-F.
     from bs4 import BeautifulSoup
     from markdownify import markdownify as md_convert
 
@@ -183,3 +266,4 @@ def html_to_notion_blocks(html: str | None, *, max_blocks: int = MAX_BLOCKS) -> 
 def fallback_no_body_block() -> dict[str, Any]:
     """Single paragraph block used when html conversion fails or content is empty."""
     return _paragraph("created_no_body")
+

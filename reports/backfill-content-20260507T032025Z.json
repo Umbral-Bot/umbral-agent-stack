@@ -1,0 +1,56 @@
+{
+  "started": "2026-05-07T03:20:21Z",
+  "commit": true,
+  "pending_total": 19,
+  "matched": 3,
+  "unmatched": 16,
+  "feed_errors": 0,
+  "by_referente": {
+    "Rodrigo Rojo": {
+      "pending": 3,
+      "matched": 3,
+      "unmatched": 0
+    },
+    "Alex Freberg": {
+      "pending": 2,
+      "matched": 0,
+      "unmatched": 2
+    },
+    "Nate Gentile": {
+      "pending": 2,
+      "matched": 0,
+      "unmatched": 2
+    },
+    "Daniel Shiffman": {
+      "pending": 1,
+      "matched": 0,
+      "unmatched": 1
+    },
+    "Milos Temerinski": {
+      "pending": 2,
+      "matched": 0,
+      "unmatched": 2
+    },
+    "Andrew Ng": {
+      "pending": 2,
+      "matched": 0,
+      "unmatched": 2
+    },
+    "Fred Mills": {
+      "pending": 3,
+      "matched": 0,
+      "unmatched": 3
+    },
+    "Bernard Marr": {
+      "pending": 3,
+      "matched": 0,
+      "unmatched": 3
+    },
+    "José Luis Crespo": {
+      "pending": 1,
+      "matched": 0,
+      "unmatched": 1
+    }
+  },
+  "finished": "2026-05-07T03:20:25Z"
+}

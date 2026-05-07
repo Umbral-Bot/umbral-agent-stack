@@ -1,5 +1,5 @@
 ---
-task_id: 2026-05-07-024
+task_id: 2026-05-07-025
 title: O15.1b primer canal Notion — OAuth rick.asistente@gmail.com + watcher menciones + skill notion-mention-router + smoke con mención real
 status: pending
 requested_by: copilot-chat (autorizado por David 2026-05-07 post task 023 close)
@@ -8,6 +8,7 @@ related: 2026-05-07-023 (F-NEW2 closed, O15.1b unblocked), ADR docs/architecture
 priority: high
 deadline: 2026-05-12
 estimated_turns: 2-3 (bloque 4 OAuth interactive deferred a David)
+note: renumbered from 024→025 post creation due to F-INC-002 collision (Codex created concurrent 2026-05-07-024-fix-test-copilot-agent-preexisting-fails)
 ---
 
 # O15.1b primer canal — Notion mention router

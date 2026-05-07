@@ -47,6 +47,9 @@ Copilot runs.
 - Do not modify repo files from inside the Copilot sandbox.
 - Open scoped nft/Docker network only inside the diagnostic window.
 - Always rollback nft table and Docker network if this task created it.
+- Capture structured metrics JSON with:
+  `docker_start_ms`, `container_ready_ms`, `copilot_exit_ms`,
+  `nft_drop_delta`, `first_stdout_byte_ms`.
 - If `Claude Opus 4.7` is unavailable, capture the exact non-secret error and
   continue with the egress diagnosis using the default model only if that does
   not require a second canonical `copilot_cli.run`.
@@ -200,7 +203,8 @@ sudo nft list table inet copilot_egress > "$BACKUP_DIR/nft-table-during-before.t
 
 Run exactly one direct sandbox Copilot probe, not via `copilot_cli.run`.
 This uses the same security posture as the worker path but keeps stdout/stderr
-visible for diagnosis.
+visible for diagnosis. It also records wall-clock timing markers in
+`/tmp/f8b-timings.json`.
 
 ```bash
 RUN_ID="f8b-direct-$(date -u +%Y%m%dT%H%M%SZ)"
@@ -209,6 +213,11 @@ ERR="/tmp/$RUN_ID.err"
 echo "$RUN_ID" > /tmp/f8b-run-id
 JOURNAL_START=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 echo "$JOURNAL_START" > /tmp/f8b-journal-start
+HOST_T0_MS=$(python3 - <<'PY'
+import time
+print(time.time_ns() // 1_000_000)
+PY
+)
 
 PID=$(systemctl --user show umbral-worker.service -p MainPID --value)
 TOKEN=$(tr '\0' '\n' < /proc/$PID/environ | awk -F= '$1=="COPILOT_GITHUB_TOKEN"{print $2; exit}')
@@ -231,6 +240,10 @@ printf 'Return exactly: F8B_OK\n' | docker run --rm -i \
   /usr/local/bin/copilot-cli-wrapper \
   /bin/sh -lc '
     set -eu
+    python3 - <<PY >&2
+import time
+print("F8B_CONTAINER_READY_MS=" + str(time.time_ns() // 1_000_000))
+PY
     cat > /tmp/prompt.txt
     prompt=$(cat /tmp/prompt.txt)
     exec copilot --no-color --no-auto-update --no-remote --no-ask-user \
@@ -240,16 +253,58 @@ printf 'Return exactly: F8B_OK\n' | docker run --rm -i \
       --log-level=debug \
       --model "Claude Opus 4.7" \
       --prompt "$prompt"
-' > "$OUT" 2> "$ERR"
+  ' > "$OUT" 2> "$ERR"
 RC=$?
 unset TOKEN COPILOT_GITHUB_TOKEN
 JOURNAL_END=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 echo "$JOURNAL_END" > /tmp/f8b-journal-end
+HOST_T1_MS=$(python3 - <<'PY'
+import time
+print(time.time_ns() // 1_000_000)
+PY
+)
 echo "DIRECT_RC=$RC"
 echo "stdout_bytes=$(wc -c < "$OUT")"
 echo "stderr_bytes=$(wc -c < "$ERR")"
 head -80 "$OUT"
 head -120 "$ERR"
+
+python3 - "$HOST_T0_MS" "$HOST_T1_MS" "$OUT" "$ERR" <<'PY' > /tmp/f8b-timings.json
+import json
+import pathlib
+import re
+import sys
+
+t0 = int(sys.argv[1])
+t1 = int(sys.argv[2])
+out_path = pathlib.Path(sys.argv[3])
+err_path = pathlib.Path(sys.argv[4])
+
+ready_ms = None
+if err_path.exists():
+    m = re.search(r"F8B_CONTAINER_READY_MS=(\d+)", err_path.read_text(errors="replace"))
+    if m:
+        ready_ms = int(m.group(1))
+
+first_stdout_byte_ms = None
+if out_path.exists() and out_path.stat().st_size > 0:
+    # Exact first-byte timing is not observable after redirected docker output;
+    # use process-exit time as conservative upper bound and state that in report.
+    first_stdout_byte_ms = t1 - t0
+
+payload = {
+    "docker_start_ms": 0,
+    "container_ready_ms": None if ready_ms is None else ready_ms - t0,
+    "copilot_exit_ms": t1 - t0,
+    "nft_drop_delta": None,
+    "first_stdout_byte_ms": first_stdout_byte_ms,
+    "first_stdout_byte_ms_semantics": "upper_bound_process_exit_time_when_stdout_nonempty",
+    "stdout_bytes": out_path.stat().st_size if out_path.exists() else 0,
+    "stderr_bytes": err_path.stat().st_size if err_path.exists() else 0,
+}
+print(json.dumps(payload, indent=2, sort_keys=True))
+PY
+cat /tmp/f8b-timings.json
 ```
 
 If shell exits before `unset TOKEN COPILOT_GITHUB_TOKEN`, run that unset
@@ -271,6 +326,39 @@ journalctl -k \
   | grep -i 'copilot-egress' >> "$BACKUP_DIR/kernel-nft-window.txt" || true
 
 cat "$BACKUP_DIR/kernel-nft-window.txt" | tail -80
+
+python3 - "$BACKUP_DIR" /tmp/f8b-timings.json <<'PY'
+import json
+import pathlib
+import re
+import sys
+
+backup = pathlib.Path(sys.argv[1])
+timings_path = pathlib.Path(sys.argv[2])
+payload = json.loads(timings_path.read_text())
+
+before = (backup / "nft-table-during-before.txt").read_text(errors="replace")
+after = (backup / "nft-table-during-after.txt").read_text(errors="replace")
+
+def drop_counter(text):
+    # Best-effort parse of the scoped drop counter line.
+    m = re.search(r"counter packets\s+(\d+)\s+bytes\s+(\d+)\s+drop", text)
+    if not m:
+        return None
+    return {"packets": int(m.group(1)), "bytes": int(m.group(2))}
+
+b = drop_counter(before) or {"packets": 0, "bytes": 0}
+a = drop_counter(after) or {"packets": 0, "bytes": 0}
+payload["nft_drop_delta"] = {
+    "packets": a["packets"] - b["packets"],
+    "bytes": a["bytes"] - b["bytes"],
+}
+
+out = backup / "f8b-metrics.json"
+out.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+print(out)
+print(out.read_text())
+PY
 ```
 
 Classify:
@@ -308,6 +396,9 @@ Include:
 - Copilot CLI version and help snippets for `--model`/tools
 - model requested: `Claude Opus 4.7`
 - direct run rc/stdout/stderr byte counts and short redacted excerpts
+- structured metrics JSON from `$BACKUP_DIR/f8b-metrics.json`:
+  `docker_start_ms`, `container_ready_ms`, `copilot_exit_ms`,
+  `nft_drop_delta`, `first_stdout_byte_ms`
 - nft resolver counts
 - before/after nft counters
 - kernel nft drop logs with no secrets

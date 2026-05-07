@@ -77,7 +77,9 @@ That is not an engineering-safe next step.
 1. **Now:** enable model override with read-only tools. Preferred requested
    model for maximum reasoning: `Claude Opus 4.7`.
 2. **F8B:** diagnose scoped egress drops and confirm `--model` behavior in the
-   sandbox with the refreshed token.
+   sandbox with the refreshed token. The report must include structured
+   metrics JSON: `docker_start_ms`, `container_ready_ms`, `copilot_exit_ms`,
+   `nft_drop_delta`, and `first_stdout_byte_ms`.
 3. **F8C:** widen the scoped egress allow-list based on evidence; rerun one
    canonical read-only `copilot_cli.run`.
 4. **F9:** add artifact-only write/diff generation, still no commits or PR
@@ -85,6 +87,22 @@ That is not an engineering-safe next step.
 5. **F10:** consider restricted shell/write permissions in an isolated throwaway
    worktree with explicit deny rules for `git push`, `gh pr *`, secrets, deploy,
    and external publication.
+
+## Plan B shelf criteria
+
+Do not pivot away from Docker rootless + scoped nft while Plan A is still
+making measurable progress. A future ADR for a bubblewrap/sandbox-runtime
+Plan B is warranted only if F8B/F8C evidence shows one of these objective
+conditions:
+
+- Scoped egress drops persist after the resolver/allow-list is widened from
+  observed destination evidence.
+- Two additional F8A/F8B/F8C iterations fail to reach a stable green run.
+- Cold start p95 is greater than 5 seconds across three measured samples.
+- The team cannot map required Copilot egress to stable FQDN/IP policy.
+
+Evidence of container escape is not a Plan B trigger. It is an incident trigger:
+stop immediately, rotate secrets, and write a post-mortem.
 
 ## Payload example
 

@@ -5,13 +5,13 @@
 - Approval: `APPROVE_F8A_RUN6_AFTER_TOKEN_REFRESH=YES`
 - Branch: `rick/f8a-run6-after-token-refresh-2026-05-07`
 - main HEAD at start: `ed4e5ca` (includes #316 fixes + #318 stop evidence)
-- This report supersedes the prior "O0 stop" version of the same path
-  (PR #318) because token rotation succeeded and the canonical run was
-  executed end-to-end.
+- This report continues the prior "O0 stop" evidence from PR #318 because
+  token rotation later succeeded and the canonical run was executed
+  end-to-end.
 
 ## Verdict
 
-**amarillo** — infra path executed end-to-end, scoped egress activated only inside the run window, exactly one `copilot_cli.run` issued, rollback clean. Copilot CLI itself exited `1` with zero bytes on both stdout and stderr (provider/auth side, no Umbral runtime regression).
+**amarillo** — infra path executed end-to-end, scoped egress activated only inside the run window, exactly one `copilot_cli.run` issued, rollback clean. Copilot CLI itself exited `1` with zero bytes on both stdout and stderr (provider/network-side limitation, no Umbral runtime regression).
 
 ## O0 — token refresh verification
 
@@ -196,3 +196,63 @@ Backup directory retained at `/home/rick/.copilot/backups/f8a-run6-20260507T0050
 - Scoped nft only (`table inet copilot_egress`, `chain forward`); no host-wide drop.
 - Token never printed; only `present_by_name`.
 - Rollback complete and verified.
+
+## Appendix — prior O0 stop evidence retained
+
+Before this successful O0 + real-run attempt, the same task was invoked twice
+while the live token was still invalid. Those attempts are part of the same
+F8A run-6 lifecycle and are retained here for traceability.
+
+### O0 stop after history recovery
+
+PR #316 restored the canonical task, scoped egress fixes, and writable
+`/home/runner/.copilot` tmpfs to `main`. The first O0 attempt after that
+recovery stopped correctly before opening L3/L4:
+
+```text
+COPILOT_GITHUB_TOKEN=present_by_name
+GITHUB_USER_HTTP=401
+TOKEN_STATUS=invalid
+error_message=Bad credentials
+```
+
+Safety state for that stop:
+
+```text
+RICK_COPILOT_CLI_ENABLED=true
+RICK_COPILOT_CLI_EXECUTE=false
+COPILOT_CLI_DIAGNOSTIC_MODE absent
+egress.activated=false
+no nft table inet copilot_egress
+no docker network copilot-egress
+worker /health HTTP 200
+```
+
+### O0 re-attempt before token rotation
+
+A second O0-only re-attempt also stopped correctly. Source checks were already
+good on `main` (`d3e9a65`), including the writable Copilot home tmpfs and
+`verify_copilot_egress_contract.py -> OK`, but the token had not been rotated:
+
+```text
+OLD_PID=14687 NEW_PID=16571
+worker_health=200
+COPILOT_GITHUB_TOKEN=present_by_name
+RICK_COPILOT_CLI_ENABLED=true
+RICK_COPILOT_CLI_EXECUTE=false
+GITHUB_USER_HTTP=401
+error_message=Bad credentials
+TOKEN_STATUS=invalid_or_expired
+```
+
+Token-source forensics for that stop:
+
+| Check | Result |
+| --- | --- |
+| EnvironmentFile for token | `/home/rick/.config/openclaw/copilot-cli-secrets.env` |
+| Secrets file mtime | `2026-04-26 23:20:07 -04` |
+| disk_token vs process_token | identical content; no refresh pending on disk |
+
+No L3/L4, nft table, Docker network, or `copilot_cli.run` was used in either
+O0 stop. The only real execution in this lifecycle is
+`mission_run_id=4c00f4de3f474abdbae75252725d58a8`.

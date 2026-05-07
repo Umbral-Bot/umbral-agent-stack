@@ -57,7 +57,9 @@ NOTION_VERSION = "2025-09-03"
 RATE_LIMIT_SLEEP_S = 0.34  # ~3 req/s
 
 MAX_POST_CHARS = 3000
-DEFAULT_APPROVED_STATES = ("Aprobado", "Autorizado")
+# Only "Autorizado" gates publication. "Aprobado" is an intermediate
+# editorial state (content reviewed) but does NOT authorise publishing.
+DEFAULT_APPROVED_STATES = ("Autorizado",)
 
 # LinkedIn UGC Posts payload constants (used to build the offline draft).
 LINKEDIN_UGC_ENDPOINT = "/v2/ugcPosts"

@@ -69,7 +69,7 @@ def _set_image_status(db: Path, pid: int, status: str = "ok") -> None:
     conn.close()
 
 
-def _make_page(estado: str = "Aprobado", *, copy_linkedin: str = "",
+def _make_page(estado: str = "Autorizado", *, copy_linkedin: str = "",
                cover_url: str = "", title: str = "Mi titular",
                source: str = "https://src.test/article") -> dict:
     props: dict = {

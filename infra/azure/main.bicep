@@ -4,6 +4,7 @@
 // Tasks:
 //   - 2026-05-07-039 (scaffold)
 //   - 2026-05-07-040 (cross-cutting infra: UAMI + LAW + AppInsights + CAE)
+//   - 2026-05-07-041 (data plane: Storage + Cosmos + Key Vault + RBAC)
 // targetScope: subscription (necesita crear el RG)
 // =============================================================================
 
@@ -33,6 +34,9 @@ param totalMonthlyBudgetUsd int = 7206
 @maxValue(730)
 param logRetentionDays int = 30
 
+@description('Object ID for Key Vault Administrator (David). Empty = skip.')
+param kvAdminObjectId string = ''
+
 @description('Tags applied to the resource group + all resources.')
 param tags object = {
   owner: 'david-moreira'
@@ -51,6 +55,9 @@ var uamiName = 'uami-umbral-agents-${environment}'
 var workspaceName = 'log-umbral-agents-${environment}'
 var appInsightsName = 'appi-umbral-agents-${environment}'
 var caeName = 'cae-umbral-agents-${environment}'
+var storageName = 'stumbralagents${environment}'
+var cosmosName = 'cosmos-umbral-agents-${environment}'
+var kvName = 'kv-umbral-agents-${environment}'
 
 // -----------------------------------------------------------------------------
 // Resource Group
@@ -101,11 +108,43 @@ module mod_cae 'modules/container-apps-env.bicep' = {
 }
 
 // -----------------------------------------------------------------------------
-// Sub-task 041 — data plane (PENDIENTE)
+// Sub-task 041 — data plane
 // -----------------------------------------------------------------------------
-// module mod_storage 'modules/storage.bicep' = { ... }
-// module mod_cosmos  'modules/cosmos.bicep' = { ... }
-// module mod_kv      'modules/key-vault.bicep' = { ... }
+
+module mod_storage 'modules/storage.bicep' = {
+  name: 'deploy-storage'
+  scope: rg
+  params: {
+    name: storageName
+    location: location
+    tags: tags
+    principalIdContributor: mod_uami.outputs.principalId
+  }
+}
+
+module mod_cosmos 'modules/cosmos.bicep' = {
+  name: 'deploy-cosmos'
+  scope: rg
+  params: {
+    name: cosmosName
+    location: location
+    tags: tags
+    principalIdDataContributor: mod_uami.outputs.principalId
+  }
+}
+
+module mod_kv 'modules/key-vault.bicep' = {
+  name: 'deploy-kv'
+  scope: rg
+  params: {
+    name: kvName
+    location: location
+    tags: tags
+    principalIdReader: mod_uami.outputs.principalId
+    principalIdAdmin: kvAdminObjectId
+    appInsightsConnectionString: mod_logs.outputs.appInsightsConnectionString
+  }
+}
 
 // -----------------------------------------------------------------------------
 // Sub-task 042 — agent-specific services (PENDIENTE)
@@ -139,3 +178,11 @@ output appInsightsId string = mod_logs.outputs.appInsightsId
 
 output containerAppsEnvId string = mod_cae.outputs.resourceId
 output containerAppsEnvDefaultDomain string = mod_cae.outputs.defaultDomain
+
+// 041 data plane
+output storageAccountId string = mod_storage.outputs.resourceId
+output storageBlobEndpoint string = mod_storage.outputs.blobEndpoint
+output cosmosAccountId string = mod_cosmos.outputs.resourceId
+output cosmosEndpoint string = mod_cosmos.outputs.endpoint
+output keyVaultId string = mod_kv.outputs.resourceId
+output keyVaultUri string = mod_kv.outputs.vaultUri

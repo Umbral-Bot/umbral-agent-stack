@@ -111,4 +111,5 @@ output appInsightsId string = appInsights.id
 output appInsightsName string = appInsights.name
 
 @description('App Insights connection string. Pasar a Key Vault (task 041) — NO loguear.')
+@secure()
 output appInsightsConnectionString string = appInsights.properties.ConnectionString

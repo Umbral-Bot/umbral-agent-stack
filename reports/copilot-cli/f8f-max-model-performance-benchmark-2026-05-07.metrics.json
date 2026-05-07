@@ -1,0 +1,191 @@
+{
+  "models_tested": [
+    {
+      "family": "openai",
+      "candidates_tried": [
+        "GPT-5.5",
+        "gpt-5.5"
+      ],
+      "selected": "gpt-5.5",
+      "available": true
+    },
+    {
+      "family": "anthropic",
+      "candidates_tried": [
+        "Claude Opus 4.6 (fast mode) (preview)",
+        "Claude Opus 4.6",
+        "claude-opus-4.6"
+      ],
+      "selected": null,
+      "available": false,
+      "reason": "all variants rejected by CLI"
+    }
+  ],
+  "tests": [
+    {
+      "label": "T1_oai",
+      "model": "gpt-5.5",
+      "test_id": "T1_oai",
+      "mode": "direct",
+      "rc": 0,
+      "wall_ms": 8404,
+      "container_ready_ms": 263,
+      "copilot_exit_ms": 8140,
+      "first_stdout_byte_ms": null,
+      "stdout_bytes": 258,
+      "stderr_bytes": 121,
+      "nft_drop_delta": {
+        "packets": 0,
+        "bytes": 0
+      },
+      "token_leak": false,
+      "secret_scan": "clean",
+      "request_footer": "Requests  7.5 Premium (5s);Tokens    \u2191 7.3k \u2022 \u2193 10 \u2022 3.6k (cached);",
+      "quality_score": null,
+      "notes": ""
+    },
+    {
+      "label": "T2_oai",
+      "model": "gpt-5.5",
+      "test_id": "T2_oai",
+      "mode": "direct",
+      "rc": 0,
+      "wall_ms": 10053,
+      "container_ready_ms": 209,
+      "copilot_exit_ms": 9844,
+      "first_stdout_byte_ms": null,
+      "stdout_bytes": 252,
+      "stderr_bytes": 140,
+      "nft_drop_delta": {
+        "packets": 0,
+        "bytes": 0
+      },
+      "token_leak": false,
+      "secret_scan": "clean",
+      "request_footer": "Requests  7.5 Premium (5s);Tokens    \u2191 7.3k \u2022 \u2193 17 \u2022 3.6k (cached) \u2022 10 (reasoning);",
+      "quality_score": null,
+      "notes": ""
+    },
+    {
+      "label": "T3_oai",
+      "model": "gpt-5.5",
+      "test_id": "T3_oai",
+      "mode": "direct",
+      "rc": 0,
+      "wall_ms": 63263,
+      "container_ready_ms": 289,
+      "copilot_exit_ms": 62973,
+      "first_stdout_byte_ms": null,
+      "stdout_bytes": 9316,
+      "stderr_bytes": 148,
+      "nft_drop_delta": {
+        "packets": 0,
+        "bytes": 0
+      },
+      "token_leak": false,
+      "secret_scan": "clean",
+      "request_footer": "Requests  7.5 Premium (59s);Tokens    \u2191 406.8k \u2022 \u2193 3.1k \u2022 322.6k (cached) \u2022 541 (reasoning);",
+      "quality_score": null,
+      "notes": ""
+    },
+    {
+      "label": "T4_oai",
+      "model": "gpt-5.5",
+      "test_id": "T4_oai",
+      "mode": "direct",
+      "rc": 0,
+      "wall_ms": 70400,
+      "container_ready_ms": 244,
+      "copilot_exit_ms": 70156,
+      "first_stdout_byte_ms": null,
+      "stdout_bytes": 10803,
+      "stderr_bytes": 150,
+      "nft_drop_delta": {
+        "packets": 0,
+        "bytes": 0
+      },
+      "token_leak": false,
+      "secret_scan": "clean",
+      "request_footer": "Requests  7.5 Premium (1m 5s);Tokens    \u2191 241.8k \u2022 \u2193 3.3k \u2022 170.5k (cached) \u2022 593 (reasoning);",
+      "quality_score": null,
+      "notes": ""
+    },
+    {
+      "label": "T5_oai",
+      "model": "gpt-5.5",
+      "test_id": "T5_oai",
+      "mode": "direct",
+      "rc": 0,
+      "wall_ms": 51430,
+      "container_ready_ms": 249,
+      "copilot_exit_ms": 51180,
+      "first_stdout_byte_ms": null,
+      "stdout_bytes": 7961,
+      "stderr_bytes": 146,
+      "nft_drop_delta": {
+        "packets": 0,
+        "bytes": 0
+      },
+      "token_leak": false,
+      "secret_scan": "clean",
+      "request_footer": "Requests  7.5 Premium (46s);Tokens    \u2191 47.4k \u2022 \u2193 2.3k \u2022 14.3k (cached) \u2022 511 (reasoning);",
+      "quality_score": null,
+      "notes": ""
+    },
+    {
+      "label": "T6_oai",
+      "model": "gpt-5.5",
+      "test_id": "T6_oai",
+      "mode": "direct",
+      "rc": 0,
+      "wall_ms": 61227,
+      "container_ready_ms": 316,
+      "copilot_exit_ms": 60911,
+      "first_stdout_byte_ms": null,
+      "stdout_bytes": 9759,
+      "stderr_bytes": 146,
+      "nft_drop_delta": {
+        "packets": 0,
+        "bytes": 0
+      },
+      "token_leak": false,
+      "secret_scan": "clean",
+      "request_footer": "Requests  7.5 Premium (57s);Tokens    \u2191 73.0k \u2022 \u2193 3.2k \u2022 42.5k (cached) \u2022 677 (reasoning);",
+      "quality_score": null,
+      "notes": ""
+    },
+    {
+      "label": "T7_oai",
+      "model": "gpt-5.5",
+      "test_id": "T7_oai",
+      "mode": "direct",
+      "rc": 0,
+      "wall_ms": 20082,
+      "container_ready_ms": 206,
+      "copilot_exit_ms": 19876,
+      "first_stdout_byte_ms": null,
+      "stdout_bytes": 1725,
+      "stderr_bytes": 145,
+      "nft_drop_delta": {
+        "packets": 0,
+        "bytes": 0
+      },
+      "token_leak": false,
+      "secret_scan": "clean",
+      "request_footer": "Requests  7.5 Premium (16s);Tokens    \u2191 31.8k \u2022 \u2193 612 \u2022 14.3k (cached) \u2022 200 (reasoning);",
+      "quality_score": null,
+      "notes": ""
+    },
+    {
+      "label": "T8_oai_canonical",
+      "model": "GPT-5.5 (display) / gpt-5.5 (cli)",
+      "result": "red",
+      "exit_code": 1,
+      "stderr": "Error: Model \"GPT-5.5\" from --model flag is not available.",
+      "audit_log": "/home/rick/umbral-agent-stack/reports/copilot-cli/2026-05/1c53eb33a4f24d0eae5fd746140afe99.jsonl",
+      "secret_scan": "clean",
+      "egress_activated": true,
+      "issue": "canonical model override gap: policy display name not translated to CLI model id"
+    }
+  ]
+}

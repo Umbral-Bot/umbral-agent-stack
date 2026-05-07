@@ -2,18 +2,16 @@
 // managed-identity.bicep — User-Assigned Managed Identity compartida
 // =============================================================================
 // Sub-task: 2026-05-07-040 (O16.1 cross-cutting infra)
-// AVM ref: br/public:avm/res/managed-identity/user-assigned-identity:0.4.0
-// Status: PLACEHOLDER — impl en 040
+// Status: REAL (direct resource — UAMI es primitivo; AVM no agrega valor)
 // =============================================================================
-// Params esperados:
-//   - name (string): 'uami-umbral-agents-${environment}'
-//   - location (string)
-//   - tags (object)
-//
-// Outputs esperados:
-//   - resourceId (string)
-//   - principalId (string)  ← clave para roleAssignments en otros modules
-//   - clientId (string)
+// La UAMI provee `principalId` consumido por:
+//   - App Insights RBAC (Monitoring Metrics Publisher)  — task 040 (este)
+//   - Storage RBAC (Storage Blob Data Contributor)      — task 041
+//   - Cosmos RBAC (Built-in Data Contributor)           — task 041
+//   - Key Vault RBAC (Secrets User)                     — task 041
+//   - AI Search RBAC (Index Data + Service Contributor) — task 042
+//   - Service Bus RBAC (Sender + Receiver)              — task 042
+//   - Document Intelligence RBAC (Cognitive Services User) — task 042
 // =============================================================================
 
 @description('Name of the user-assigned managed identity.')
@@ -25,17 +23,6 @@ param location string
 @description('Tags.')
 param tags object = {}
 
-// TODO 040 — replace with AVM reference:
-// module uami 'br/public:avm/res/managed-identity/user-assigned-identity:0.4.0' = {
-//   name: 'uami-deploy'
-//   params: {
-//     name: name
-//     location: location
-//     tags: tags
-//   }
-// }
-
-// Stub para que validate pase
 resource uami 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   name: name
   location: location
@@ -45,3 +32,4 @@ resource uami 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
 output resourceId string = uami.id
 output principalId string = uami.properties.principalId
 output clientId string = uami.properties.clientId
+output name string = uami.name

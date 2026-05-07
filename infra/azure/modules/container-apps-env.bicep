@@ -2,27 +2,13 @@
 // container-apps-env.bicep — Container Apps Environment (Consumption plan)
 // =============================================================================
 // Sub-task: 2026-05-07-040 (O16.1 cross-cutting infra)
-// AVM ref: br/public:avm/res/app/managed-environment:0.8.0
-// Status: PLACEHOLDER — impl en 040
+// Status: REAL (direct ARM resource)
 // =============================================================================
-// Params esperados:
-//   - name (string): 'cae-umbral-agents-${env}'
-//   - location (string)
-//   - tags (object)
-//   - logAnalyticsWorkspaceId (string)
-//   - logAnalyticsCustomerId (string)
+// Plan: Consumption (scale-to-0). Sin VNet integration en Q2.
+// Workload profile: Consumption (default). Logs → Log Analytics workspace.
 //
-// Outputs esperados:
-//   - resourceId (string)
-//   - defaultDomain (string)
-//   - staticIp (string)
-//
-// Notas:
-//   - Plan = consumption (scale-to-0)
-//   - zoneRedundant = false (Sponsorship single-region)
-//   - Workload profile: 'Consumption' (no dedicated)
-//   - Container Apps Jobs específicas (crawler, ingester, eval) se crean en
-//     repos de cada agente vía CI/CD, NO acá.
+// Container Apps Jobs concretos (crawler, ingester, eval) NO se crean acá —
+// los crea cada repo agente vía CI/CD apuntando a este environment.
 // =============================================================================
 
 @description('Container Apps Environment name.')
@@ -34,15 +20,43 @@ param location string
 @description('Tags.')
 param tags object = {}
 
-@description('Log Analytics workspace resource ID.')
-param logAnalyticsWorkspaceId string
+@description('Resource name of the Log Analytics workspace (same RG as this module).')
+param logAnalyticsWorkspaceName string
 
-@description('Log Analytics workspace customer (workspace) ID.')
-param logAnalyticsCustomerId string
+@description('Enable zone redundancy. False for Sponsorship (single-region cost-effective).')
+param zoneRedundant bool = false
 
-// TODO 040 — replace with AVM reference
+// Reference workspace as existing — sharedKey resuelto sin cruzar boundary.
+resource workspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' existing = {
+  name: logAnalyticsWorkspaceName
+}
 
-// Outputs (placeholder)
-output resourceId string = ''
-output defaultDomain string = ''
-output staticIp string = ''
+// NOTA: Managed Environment NO soporta identity ni publicNetworkAccess a nivel
+// de environment. La identity (UAMI) se asigna por Container App / Job al deploy
+// (responsabilidad de cada repo agente). El environment solo provee el host.
+resource cae 'Microsoft.App/managedEnvironments@2024-03-01' = {
+  name: name
+  location: location
+  tags: tags
+  properties: {
+    appLogsConfiguration: {
+      destination: 'log-analytics'
+      logAnalyticsConfiguration: {
+        customerId: workspace.properties.customerId
+        sharedKey: workspace.listKeys().primarySharedKey
+      }
+    }
+    zoneRedundant: zoneRedundant
+    workloadProfiles: [
+      {
+        name: 'Consumption'
+        workloadProfileType: 'Consumption'
+      }
+    ]
+  }
+}
+
+output resourceId string = cae.id
+output name string = cae.name
+output defaultDomain string = cae.properties.defaultDomain
+output staticIp string = cae.properties.staticIp

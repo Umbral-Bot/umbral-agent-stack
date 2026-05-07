@@ -372,3 +372,19 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 - follow-up task 035 (P0-blocker para cerrar O15.1b): fix poll_comments bootstrap collect — recomendación Opción A: remover guard `if not bootstrap:` para que también colecte resultados durante bootstrap cuando no hay más páginas
 - follow-up task 036 (Media): helper `notion_safe_comment` para chunkear replies > 2000 chars (límite duro Notion API `rich_text.content`); auditar todos los call sites de `add_comment`
 - follow-up Telegram-side (gobernanza smoke David): `rick-orchestrator` falta `sessions_spawn` en tool policy → task pendiente
+
+
+## 2026-05-07-035b — task 035 deploy + smoke real B6 [PARTIAL — fix verified, channel still blocked by task 037]
+- ejecutor: Copilot Chat (merges PRs #353 + #361) + Copilot VPS (deploy + reproducción runtime) 2026-05-07T20:50-21:00Z
+- merges main: PR #353 spec (commit 61651e41) + PR #361 fix (commit fcd0c69f, fix subyacente 8d6036db)
+- VPS deploy: git pull `fcd0c69f` clean, sin pyproject changes, sin reinstall deps
+- worker restart: pid 96364 → 114572, active running, /health ok 104 tasks `triage` ∈
+- fix runtime VERIFICADO empíricamente: `poll_comments(page=30c5f443…, since=2026-05-07T17:25Z, cursor=__TAIL__)` retorna count=4 (vs count=0 perpetuo pre-fix); incluye comment David `3595f443…` 18:44Z. Bug 035 eliminado en runtime real, no solo en código.
+- daemon poller pid 1571 vivo (1d 2h 18min uptime, NO down — diagnóstico previo de poller down fue erróneo: pgrep mal escrito `notion_poller` vs `notion-poller-daemon`; gap honesto declarado y corregido)
+- entrega end-to-end CONFIRMADA hops 1-3: H1 poller 16:51:08 ART `Rick mention routed comment=3595f443 author=1e3d872b page=? trace=75e1c4b9`; H2 dispatcher routed `Executing task 987bbfca rick.orchestrator.triage -> VPS`; H3 worker handler `classify command=health comment=3595f443 trace=75e1c4b9`
+- NUEVO BLOCKER post-fix-035 (NO regresión task 035; bug pre-existente enmascarado): handler skipped reply `WARNING rick.orchestrator.triage missing page_id in envelope; reply skipped`. Causa raíz: `dispatcher/notion_poller.py:227` arma poll_targets `[{page_id: None, page_kind: control_room}]` → envelope al worker llega con page_id=null → handler hace gap honesto (SOUL Regla 22) y skip. Comment David 18:44Z sigue SIN reply real; los 2 comments bot Rick a 20:51Z son outputs de OTROS workflows (SIM Daily Report, research_and_post), no responden al /health.
+- O15.1b NO cierra al 100% — abre task 037
+- follow-up task 037 (P0-blocker para cerrar O15.1b): fix `dispatcher/notion_poller.py` resolución page_id para control_room — cuando `page_kind=control_room` y `page_id is None`, resolver con `os.environ['NOTION_CONTROL_ROOM_PAGE_ID']` antes de routing. Alternativa defensiva en handler: fallback a CONTROL_ROOM env si page_id None y page_kind control_room.
+- no-regresión limpia: gateway pid 75421 intacto (etime 06:18:43 monotónicamente creciente, Vertex Fase 1 OK), openclaw.json/model.primary intactos, openclaw-dispatcher no tocado, cursor Redis `__TAIL__` intacto (daemon usa since-filter, no cursor); F-INC-002 + secret-output-guard #8 + SOUL 21/22: respetadas
+- stash VPS preservado: `vps-deploy-035-pre-pull-20260507T205002Z` (cambios ajenos discovery-publish-cron.sh, NO reaplicados)
+- side-finding (no investigar ahora): RuntimeError 404 en worker startup sobre database `7eca76a8…` (integration Rick sin acceso) — pre-existente, no afecta /health 200

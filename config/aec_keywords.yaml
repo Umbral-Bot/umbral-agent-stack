@@ -1,0 +1,69 @@
+# config/aec_keywords.yaml
+#
+# Keywords y pesos para Stage 5 (ranking determinístico) y referencia para
+# Stage 6/7 (LLM). Editable. Cualquier cambio re-calibra el ranking.
+#
+# Uso:
+#   from scripts.discovery.stage5_rank_candidates import load_config
+#   cfg = load_config("config/aec_keywords.yaml")
+#
+# Disciplina:
+# - Matching es case-insensitive y respeta word boundaries (regex \b...\b).
+# - Multi-palabra (e.g. "ISO 19650") se trata como secuencia literal con \b.
+# - Acentos preservados (BIM, IA, MEP no cambian; "automatización" sí).
+
+version: 1
+
+weights:
+  w1_core_aec: 0.4
+  w2_adyacente: 0.3
+  w3_recency: 0.2
+  w4_referente: 0.1
+
+# Recency: ítems con publicado_en >= hoy: bonus 1.0; >= 90d: bonus 0.0; lineal entre.
+recency:
+  full_bonus_within_days: 0
+  zero_bonus_after_days: 90
+
+# Referente priority: peso por canal de origen (proxy de "confianza canales").
+# Calibrable cuando se importe la confianza real desde la DB Referentes.
+referente_canal_weights:
+  youtube: 1.0     # 013-K extractor estable
+  rss: 0.9
+  web_rss: 0.8
+  linkedin: 0.5    # stub hoy, baja confianza hasta resolver O18
+  otros: 0.3
+
+buckets:
+  core_aec:
+    - BIM
+    - CDE
+    - IFC
+    - BCF
+    - ISO 19650
+    - LOD
+    - LOI
+    - Revit
+    - ArchiCAD
+    - Construcción
+    - Arquitectura
+    - Ingeniería
+    - Coordinación
+    - MEP
+    - Estructura
+
+  adyacente:
+    - automatización
+    - IA aplicada
+    - productividad profesional
+    - low-code
+    - no-code
+    - RPA
+    - gemelo digital
+    - twin
+
+  voz_david:
+    - práctico
+    - técnico-operativo
+    - anti-hype
+    - anti-slop

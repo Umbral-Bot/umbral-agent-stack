@@ -45,7 +45,14 @@ def quota_tracker(redis_client, provider_config):
 
 @pytest.fixture(autouse=True)
 def _set_provider_env_vars(monkeypatch):
-    """Simula que los providers principales están configurados."""
+    """Simula que los providers principales están configurados.
+
+    Task 042: also strip UMBRAL_DISABLE_CLAUDE because worker.config loads
+    ~/.config/openclaw/env at import time, leaking the production VPS setting
+    (UMBRAL_DISABLE_CLAUDE=true) into the test process and breaking Claude
+    routing tests.
+    """
+    monkeypatch.delenv("UMBRAL_DISABLE_CLAUDE", raising=False)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
     monkeypatch.setenv("GOOGLE_API_KEY", "goog-test")
     monkeypatch.setenv("GOOGLE_API_KEY_RICK_UMBRAL", "goog-vertex-test")

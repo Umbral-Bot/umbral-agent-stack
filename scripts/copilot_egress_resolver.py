@@ -27,11 +27,15 @@ import json
 import os
 import socket
 import sys
+import urllib.error
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_POLICY = REPO_ROOT / "config" / "tool_policy.yaml"
+GITHUB_META_URL = "https://api.github.com/meta"
+GITHUB_META_KEYS = ("api", "web", "copilot_api")
 
 # Cache writes are only allowed under these prefixes (relative to repo
 # root). Both are gitignored from F4. Any other --write-cache target is
@@ -138,6 +142,106 @@ def resolve_endpoint(endpoint: str, *, getaddrinfo=socket.getaddrinfo) -> Endpoi
 
 
 # ---------------------------------------------------------------------------
+# GitHub Meta CIDR expansion
+# ---------------------------------------------------------------------------
+
+
+def _is_public_network(obj: ipaddress._BaseNetwork) -> bool:
+    return not (
+        obj.is_loopback
+        or obj.is_link_local
+        or obj.is_multicast
+        or obj.is_unspecified
+        or obj.is_private
+    )
+
+
+def _ip_sort_key(value: str) -> tuple[int, int, int]:
+    network = ipaddress.ip_network(value, strict=False)
+    return (network.version, int(network.network_address), network.prefixlen)
+
+
+def _dedupe_overlapping_values(values: set[str]) -> list[str]:
+    """Sort nft elements and remove IPs/subnets covered by broader CIDRs."""
+    raw_ips: list[tuple[str, ipaddress._BaseAddress]] = []
+    cidrs: list[tuple[str, ipaddress._BaseNetwork]] = []
+
+    for value in values:
+        if "/" in value:
+            cidrs.append((value, ipaddress.ip_network(value, strict=False)))
+        else:
+            raw_ips.append((value, ipaddress.ip_address(value)))
+
+    kept_cidrs: list[tuple[str, ipaddress._BaseNetwork]] = []
+    for value, network in cidrs:
+        covered = any(
+            network.version == other.version
+            and network != other
+            and network.subnet_of(other)
+            for _other_value, other in cidrs
+        )
+        if not covered:
+            kept_cidrs.append((value, network))
+
+    kept_raw = [
+        value
+        for value, address in raw_ips
+        if not any(
+            address.version == network.version and address in network
+            for _cidr_value, network in kept_cidrs
+        )
+    ]
+    return sorted(set(kept_raw).union(value for value, _network in kept_cidrs),
+                  key=_ip_sort_key)
+
+
+def fetch_github_meta(*, urlopen=urllib.request.urlopen) -> dict:
+    """Fetch GitHub Meta without reading or sending credentials."""
+    request = urllib.request.Request(
+        GITHUB_META_URL,
+        headers={
+            "Accept": "application/vnd.github+json",
+            "User-Agent": "umbral-copilot-egress-resolver",
+        },
+    )
+    try:
+        with urlopen(request, timeout=20) as response:
+            raw = response.read()
+    except (OSError, urllib.error.URLError) as exc:
+        raise RuntimeError(f"github_meta_fetch_failed: {exc}") from exc
+    return json.loads(raw.decode("utf-8"))
+
+
+def _github_meta_networks(meta: dict, *, keys=GITHUB_META_KEYS) -> tuple[list[str], list[str], list[dict]]:
+    v4: set[str] = set()
+    v6: set[str] = set()
+    errors: list[dict] = []
+
+    for key in keys:
+        entries = meta.get(key, [])
+        if entries is None:
+            entries = []
+        if not isinstance(entries, list):
+            errors.append({"endpoint": f"github_meta.{key}", "error": "not_a_list"})
+            continue
+        for raw in entries:
+            try:
+                network = ipaddress.ip_network(str(raw), strict=False)
+            except ValueError:
+                errors.append({"endpoint": f"github_meta.{key}", "error": f"invalid_cidr:{raw}"})
+                continue
+            if not _is_public_network(network):
+                errors.append({"endpoint": f"github_meta.{key}", "error": f"non_public_cidr:{network}"})
+                continue
+            if network.version == 6:
+                v6.add(str(network))
+            else:
+                v4.add(str(network))
+
+    return _dedupe_overlapping_values(v4), _dedupe_overlapping_values(v6), errors
+
+
+# ---------------------------------------------------------------------------
 # Aggregation
 # ---------------------------------------------------------------------------
 
@@ -148,16 +252,46 @@ def _flatten(results: list[EndpointResult]) -> tuple[list[str], list[str]]:
     for r in results:
         v4.update(r.v4)
         v6.update(r.v6)
-    return sorted(v4), sorted(v6)
+    return _dedupe_overlapping_values(v4), _dedupe_overlapping_values(v6)
 
 
 def build_report(
     endpoints: list[str],
     *,
     getaddrinfo=socket.getaddrinfo,
+    include_github_meta: bool = False,
+    github_meta: dict | None = None,
+    github_meta_fetcher=fetch_github_meta,
 ) -> dict:
     results = [resolve_endpoint(e, getaddrinfo=getaddrinfo) for e in endpoints]
     v4, v6 = _flatten(results)
+    errors = [
+        {"endpoint": r.endpoint, "error": r.error}
+        for r in results if r.error
+    ]
+    github_meta_section = {
+        "included": include_github_meta,
+        "source": GITHUB_META_URL,
+        "keys": list(GITHUB_META_KEYS),
+        "copilot_v4": [],
+        "copilot_v6": [],
+        "errors": [],
+    }
+
+    if include_github_meta:
+        try:
+            meta = github_meta if github_meta is not None else github_meta_fetcher()
+            meta_v4, meta_v6, meta_errors = _github_meta_networks(meta)
+        except Exception as exc:  # noqa: BLE001 - report dry-run diagnostics, don't hide cause.
+            meta_v4, meta_v6 = [], []
+            meta_errors = [{"endpoint": "github_meta", "error": str(exc)}]
+        github_meta_section["copilot_v4"] = meta_v4
+        github_meta_section["copilot_v6"] = meta_v6
+        github_meta_section["errors"] = meta_errors
+        errors.extend(meta_errors)
+        v4 = _dedupe_overlapping_values(set(v4).union(meta_v4))
+        v6 = _dedupe_overlapping_values(set(v6).union(meta_v6))
+
     return {
         "schema": "copilot-egress-resolver/v1",
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -169,10 +303,8 @@ def build_report(
             "copilot_v4": v4,
             "copilot_v6": v6,
         },
-        "errors": [
-            {"endpoint": r.endpoint, "error": r.error}
-            for r in results if r.error
-        ],
+        "github_meta": github_meta_section,
+        "errors": errors,
     }
 
 
@@ -264,6 +396,9 @@ def run(
     write_cache_path: Path | None = None,
     strict: bool = True,
     getaddrinfo=socket.getaddrinfo,
+    include_github_meta: bool = False,
+    github_meta: dict | None = None,
+    github_meta_fetcher=fetch_github_meta,
 ) -> tuple[int, str, dict]:
     activated, endpoints = load_policy_endpoints(policy_path)
     if activated is True:
@@ -276,7 +411,13 @@ def run(
         )
     if not endpoints:
         return (2, "ERROR: no allowed_endpoints in policy.\n", {})
-    report = build_report(endpoints, getaddrinfo=getaddrinfo)
+    report = build_report(
+        endpoints,
+        getaddrinfo=getaddrinfo,
+        include_github_meta=include_github_meta,
+        github_meta=github_meta,
+        github_meta_fetcher=github_meta_fetcher,
+    )
     if write_cache_path is not None:
         try:
             write_cache(report, write_cache_path)
@@ -306,6 +447,9 @@ def main(argv: list[str] | None = None) -> int:
                              "artifacts/copilot-cli/egress-cache/")
     parser.add_argument("--non-strict", action="store_true",
                         help="report DNS errors but exit 0")
+    parser.add_argument("--include-github-meta", action="store_true",
+                        help="merge public GitHub Meta CIDRs into the dry-run "
+                             "IP sets for GitHub load-balanced endpoints")
     args = parser.parse_args(argv)
 
     rc, text, _ = run(
@@ -313,6 +457,7 @@ def main(argv: list[str] | None = None) -> int:
         fmt=args.format,
         write_cache_path=args.write_cache,
         strict=not args.non_strict,
+        include_github_meta=args.include_github_meta,
     )
     sys.stdout.write(text)
     return rc

@@ -125,6 +125,125 @@ def test_filters_loopback_and_private_addresses(tmp_path, rmod):
 
 
 # ---------------------------------------------------------------------------
+# GitHub Meta CIDR expansion
+# ---------------------------------------------------------------------------
+
+
+def test_include_github_meta_merges_public_cidrs(tmp_path, rmod):
+    policy = _write_policy(tmp_path, endpoints=[
+        "api.githubcopilot.com:443", "api.github.com:443",
+    ])
+    stub = _stub_getaddrinfo({
+        "api.githubcopilot.com": [(socket.AF_INET, "140.82.114.21")],
+        "api.github.com": [(socket.AF_INET, "4.228.31.149")],
+    })
+    github_meta = {
+        "api": ["140.82.112.0/20", "192.30.252.0/22"],
+        "web": ["140.82.112.0/20"],  # duplicate must collapse
+        "copilot_api": ["4.237.22.32/27", "2606:50c0::/32"],
+    }
+
+    rc, _text, report = rmod.run(
+        policy_path=policy,
+        getaddrinfo=stub,
+        include_github_meta=True,
+        github_meta=github_meta,
+    )
+
+    assert rc == 0
+    assert "140.82.114.21" not in report["ip_sets"]["copilot_v4"]
+    assert "140.82.112.0/20" in report["ip_sets"]["copilot_v4"]
+    assert report["ip_sets"]["copilot_v4"].count("140.82.112.0/20") == 1
+    assert "2606:50c0::/32" in report["ip_sets"]["copilot_v6"]
+    assert report["github_meta"]["included"] is True
+    assert report["github_meta"]["copilot_v4"] == [
+        "4.237.22.32/27",
+        "140.82.112.0/20",
+        "192.30.252.0/22",
+    ]
+    assert report["github_meta"]["errors"] == []
+
+
+def test_github_meta_cidr_removes_overlapping_dns_ips(tmp_path, rmod):
+    policy = _write_policy(tmp_path, endpoints=["api.githubcopilot.com:443"])
+    stub = _stub_getaddrinfo({
+        "api.githubcopilot.com": [(socket.AF_INET, "140.82.113.21")],
+    })
+
+    rc, _text, report = rmod.run(
+        policy_path=policy,
+        getaddrinfo=stub,
+        include_github_meta=True,
+        github_meta={"api": ["140.82.112.0/20"]},
+    )
+
+    assert rc == 0
+    assert report["ip_sets"]["copilot_v4"] == ["140.82.112.0/20"]
+
+
+def test_include_github_meta_records_invalid_cidrs(tmp_path, rmod):
+    policy = _write_policy(tmp_path, endpoints=["api.github.com:443"])
+    stub = _stub_getaddrinfo({
+        "api.github.com": [(socket.AF_INET, "4.228.31.149")],
+    })
+    github_meta = {
+        "api": ["not-a-cidr", "10.0.0.0/8", "140.82.112.0/20"],
+    }
+
+    rc, _text, report = rmod.run(
+        policy_path=policy,
+        getaddrinfo=stub,
+        include_github_meta=True,
+        github_meta=github_meta,
+        strict=False,
+    )
+
+    assert rc == 0
+    assert "140.82.112.0/20" in report["ip_sets"]["copilot_v4"]
+    error_text = json.dumps(report["github_meta"]["errors"])
+    assert "invalid_cidr:not-a-cidr" in error_text
+    assert "non_public_cidr:10.0.0.0/8" in error_text
+
+
+def test_default_does_not_fetch_github_meta(tmp_path, rmod):
+    policy = _write_policy(tmp_path, endpoints=["api.github.com:443"])
+    stub = _stub_getaddrinfo({
+        "api.github.com": [(socket.AF_INET, "4.228.31.149")],
+    })
+
+    def _unexpected_fetch():
+        raise AssertionError("GitHub Meta fetch should be opt-in")
+
+    rc, _text, report = rmod.run(
+        policy_path=policy,
+        getaddrinfo=stub,
+        github_meta_fetcher=_unexpected_fetch,
+    )
+
+    assert rc == 0
+    assert report["github_meta"]["included"] is False
+    assert report["github_meta"]["copilot_v4"] == []
+
+
+def test_nft_format_can_render_github_meta_cidr(tmp_path, rmod):
+    policy = _write_policy(tmp_path, endpoints=["api.github.com:443"])
+    stub = _stub_getaddrinfo({
+        "api.github.com": [(socket.AF_INET, "4.228.31.149")],
+    })
+    rc, text, _report = rmod.run(
+        policy_path=policy,
+        fmt="nft",
+        getaddrinfo=stub,
+        include_github_meta=True,
+        github_meta={"api": ["140.82.112.0/20"]},
+    )
+
+    assert rc == 0
+    assert "140.82.112.0/20" in text
+    assert "nft add element inet copilot_egress copilot_v4" in text
+
+
+# ---------------------------------------------------------------------------
 # Output formats
 # ---------------------------------------------------------------------------
 

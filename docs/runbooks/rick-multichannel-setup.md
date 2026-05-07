@@ -1,8 +1,8 @@
 # Rick multichannel setup — Notion (canal #1)
 
-> **Scope**: setup operativo del primer canal de Rick (Notion) end-to-end. OAuth identity, watcher, mention router, smoke. Tasks rectoras: 025 (este task) + ADR D1-D6 (identidad única / autoría OAuth / bypass prohibido / least-privilege / propose+confirm / whitelist).
+> **Scope**: setup operativo del primer canal de Rick (Notion) end-to-end. Detección, dispatch, reply, smoke. Tasks rectoras: 023 (SOUL Reglas 21+22) → 025 (skill wrapper + scaffold) → **026 (modelo bot integration confirmado, H1 string match)**.
 >
-> **Status overall**: detección + dispatch en producción desde Ola 1b. **OAuth identity Rick (`rick.asistente@gmail.com`) PENDIENTE** — David completar §2 antes de habilitar reply autoría real. Smoke §4 deferido.
+> **Status overall**: detección + dispatch + reply en producción desde Ola 1b. Identidad final del agente en Notion = **integration bot "Rick"** (no usuario humano). D2 ADR (autoría OAuth real) **relajada permanente** para canal Notion (ver `notion-governance/docs/architecture/16-multichannel-rick-channels.md` §6 fila 2026-05-07).
 
 ---
 
@@ -13,167 +13,188 @@
 | Watcher polling daemon                 | `scripts/vps/notion-poller-daemon.py`                                             | **running** (cron `*/5` lo mantiene vivo) |
 | Cron supervisor                        | `crontab` line `*/5 * * * * scripts/vps/notion-poller-cron.sh`                     | activo             |
 | Mention detector                       | `dispatcher/rick_mention.py`                                                      | en producción      |
-| Skill wrapper (canonical)              | `scripts/notion/notion_mention_router.py`                                         | nuevo (task 025)   |
+| Skill wrapper (canonical)              | `scripts/notion/notion_mention_router.py`                                         | task 025           |
 | Tests                                  | `tests/test_rick_mention.py` (7) + `tests/test_notion_mention_router.py` (6)      | 13/13 passing      |
 | Trace                                  | `~/.openclaw/trace/delegations.jsonl` (append-only)                               | activo             |
-| Allowlist envvar                       | `DAVID_NOTION_USER_ID` en `~/.config/openclaw/env`                                | configurado        |
-| Integration token (David)              | `NOTION_API_KEY` en `~/.config/openclaw/env`                                      | en uso (read+post) |
-| **Integration token (Rick OAuth)**     | `~/.config/umbral/notion/.env` clave `NOTION_RICK_INTEGRATION_TOKEN`              | **vacío — David debe poblar** |
-| Watcher mode                           | polling (decisión task 025 B1)                                                    | activo             |
+| Allowlist envvar                       | `DAVID_NOTION_USER_ID` en `~/.config/openclaw/env`                                | configurado (uuid 36) |
+| Integration token "Rick"               | `NOTION_API_KEY` en `~/.config/openclaw/env`                                      | en uso (read+post). Bot id `3145f443-fb5c-814d-bbd1-0027093cebce`, name=`Rick`, workspace=`Umbral BIM`. |
+| Páginas/DBs conectadas a integration   | 15 (David 2026-05-07)                                                              | Páginas, Registro de Tareas, Publicaciones, Referentes, Publicaciones de Referentes, Alertas del Supervisor, Clientes y Partners, Fuentes, Gobernanza Notion, Implementación Agente ACC Copilot - Claude, Mi Perfil, OpenClaw, Sistema Editorial Rick, Umbral BIM, Asesorías & Proyectos, Referencias |
+| Página objetivo del polling            | `NOTION_CONTROL_ROOM_PAGE_ID` (single-page scope)                                 | configurado        |
+| Watcher mode                           | polling                                                                           | activo             |
 | Latencia detección actual              | hasta 60 min (depende de `NOTION_POLL_AT_MINUTE` default `10`)                    | mitigable a 5 min  |
 
 ---
 
-## 1. Decisión técnica — webhook vs polling
+## 1. Modelo de identidad (decisión 2026-05-07, task 026)
 
-**Polling** ya en producción. Detalle completo + tabla comparativa en `/tmp/025/decision-watcher.md` (este task) y log de cierre del task 025. Tradeoffs principales:
+**Identidad final visible de Rick en Notion = integration bot "Rick"** (preexistente, owner=workspace, name="Rick", id `3145f443…7093cebce`).
 
-- Polling: cero infra extra, auto-recover, dedupe Redis, pero latencia ≤ 60 min con config actual.
-- Webhook: < 10s latencia pero requiere endpoint público + Caddy reverse-proxy nuevo (fuera de scope; prohibido sin autorización explícita).
+Razones (David 2026-05-07):
+
+- Crear seat humano `rick.asistente@gmail.com` requería suscripción extra.
+- Notion no permite invitar bots como members; la distinción "humano vs bot" en autoría visible es aceptable para el flujo conversacional con David.
+- D2 ADR (autoría OAuth real) queda **relajada permanente** SOLO para canal Notion; aplica para futuros canales (Telegram, Linear, Email) caso por caso.
+
+**Cancela cualquier futuro task de "reply OAuth autoría Rick" en Notion.** El reply path actual (`NOTION_API_KEY` integration) es la solución final, no transitoria.
+
+---
+
+## 2. Decisión técnica — webhook vs polling
+
+**Polling** ya en producción. Tradeoffs:
+
+- Polling: cero infra extra, auto-recover, dedupe Redis, latencia ≤ 60 min con config actual.
+- Webhook: < 10 s latencia pero requiere endpoint público + Caddy reverse-proxy nuevo (fuera de scope; prohibido sin autorización explícita).
 
 Mejora opcional sin migrar a webhook:
 
 ```bash
 # David ejecuta para reducir latencia a 5 min:
 echo 'NOTION_POLL_INTERVAL_SEC=300' >> ~/.config/openclaw/env
-# Reiniciar el daemon para que recoja la var:
 PID=$(cat /tmp/notion_poller.pid 2>/dev/null) && [ -n "$PID" ] && kill "$PID"  # cron lo levanta de nuevo en < 5 min
 ```
 
 ---
 
-## 2. OAuth setup — identidad `rick.asistente@gmail.com`
+## 3. Mention mechanism (verificado en task 026 — hipótesis H1)
 
-> **Por qué**: ADR D2 exige autoría real OAuth. Hoy todas las respuestas en Notion van firmadas como integration bot de David, no como Rick. Para cumplir D2 completamente y separar identidades, Rick necesita su propia integration con scopes mínimos.
+**El watcher dispara por string match `@rick` (regex), NO por mention.user.id.**
 
-### 2.1. Pasos David (interactivos — Notion UI)
+Detección en `dispatcher/rick_mention.py`:
 
-> ⚠️ **secret-output-guard regla #8**: NUNCA pegar el integration secret en chat, comentarios, commits, ni en logs visibles. Solo en el archivo `~/.config/umbral/notion/.env` (chmod 600).
-
-- [ ] **D1**. Crear / confirmar cuenta `rick.asistente@gmail.com` en Notion (login dedicado, separado del de David).
-- [ ] **D2**. En el workspace personal de David, invitar a `rick.asistente@gmail.com` como **guest** (no admin). Validar que aparece en Settings → Members → Guests.
-- [ ] **D3**. Crear integration en <https://www.notion.so/my-integrations>:
-  - Name: `Rick Asistente CEO`
-  - Associated workspace: el de David
-  - Type: `Internal`
-  - **Scopes mínimos** (tildar SOLO estas 3, ADR D4 least-privilege):
-    - [ ] Read content
-    - [ ] Insert comments
-    - [ ] Read user information without email
-- [ ] **D4**. Copiar el integration secret (formato `secret_xxxxxxxxxxxxxx`).
-- [ ] **D5**. Pegar el secret en `~/.config/umbral/notion/.env` (crear desde template):
-  ```bash
-  cp ~/.config/umbral/notion/.env.template ~/.config/umbral/notion/.env
-  chmod 600 ~/.config/umbral/notion/.env
-  $EDITOR ~/.config/umbral/notion/.env  # pegar valor en NOTION_RICK_INTEGRATION_TOKEN=
-  ```
-- [ ] **D6**. Compartir explícitamente con la integration **solo** las páginas/databases donde Rick puede operar (Notion es share-per-page). Recomendación inicial: la página "Rick smoke 2026-05-07" + Control Room. NO compartir databases sensibles.
-
-### 2.2. Auto-popular `NOTION_RICK_USER_ID` y `NOTION_WORKSPACE_ID` (Copilot VPS o David)
-
-```bash
-cd ~/umbral-agent-stack
-source .venv/bin/activate
-python scripts/notion/setup_rick_integration.py
-# Esperado: log con fingerprint del token (NUNCA full token), bot name, y "Found rick user_id=… workspace_id=…".
-# Si "User rick.asistente@gmail.com not found": volver a §2.1.D2 (invitar como guest) o §2.1.D6 (compartir página).
+```python
+_RICK_MENTION_RE = re.compile(r"@rick(?:-orchestrator)?\b", re.IGNORECASE)
 ```
 
-Exit codes:
+Pasos del watcher (verificado contra código en commit `5d62c5d`):
 
-| Código | Significado |
-| ------ | ----------- |
-| `0`    | OK, env actualizado |
-| `2`    | Token vacío en .env (volver a §2.1.D5) |
-| `3`    | Token inválido / API rechaza (rotar token, repetir D3-D5) |
-| `4`    | Rick user no encontrado en workspace (D2/D6) |
+1. Cron `*/5` mantiene vivo `scripts/vps/notion-poller-daemon.py`.
+2. `dispatcher.notion_poller` llama `wc.notion_poll_comments(page_id=NOTION_CONTROL_ROOM_PAGE_ID, …)` cada `NOTION_POLL_INTERVAL_SEC` (o cada hora a XX:10 si no seteado).
+3. `worker.notion_client.poll_comments` → `GET https://api.notion.com/v1/comments?block_id=<page_id>` con `Authorization: Bearer NOTION_API_KEY`.
+4. Para cada comment retornado:
+   - Skip si `text` empieza con `Rick:` (echo prevention del propio reply).
+   - Skip si Redis dedupe lo marca como ya procesado (TTL 24h).
+   - **Si `is_rick_mention(text, created_by, {DAVID_NOTION_USER_ID})` → True**:
+     - `handle_rick_mention()` enqueue envelope `task: rick.orchestrator.triage`, `team: rick-orchestrator`.
+     - Append a `~/.openclaw/trace/delegations.jsonl` (`from: channel-adapter:notion-poller`).
+   - Else → fallback `intent_classifier` + `smart_reply`.
 
-Validar resultado:
+### Implicancias UX para David
 
-```bash
-grep -E '^(NOTION_RICK_USER_ID|NOTION_WORKSPACE_ID)=' ~/.config/umbral/notion/.env
-# Ambas líneas deben tener uuid.
-```
+- **Comentar `@rick ...` o `@Rick ...` en plain text** dentro de la Control Room. Word-boundary `\b`, case-insensitive. Alias `@rick-orchestrator` también funciona.
+- **NO** es necesario usar el dropdown nativo `@` de Notion (no podríamos: el bot no es @-mencionable como user). Es texto literal.
+- **Scope single-page**: el polling solo lee la página apuntada por `NOTION_CONTROL_ROOM_PAGE_ID`. Los comments en las otras 14 páginas conectadas a la integration **no disparan el mention router** (sí pueden disparar otros workflows del poller, pero ese es scope distinto).
+- **Allowlist autor**: solo `DAVID_NOTION_USER_ID`. Comments de cualquier otro autor son ignorados por el mention path (D6 ADR least-privilege/whitelist).
+
+### Env vars consumidas (verificado, no spec)
+
+| Var                              | Consumida en                                                         | Uso                                                                  |
+| -------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `NOTION_API_KEY`                 | `worker/notion_client.py`                                            | Único token del poller (es la integration "Rick").                  |
+| `NOTION_CONTROL_ROOM_PAGE_ID`    | `dispatcher/notion_poller.py:210`                                    | Página objetivo del polling.                                        |
+| `DAVID_NOTION_USER_ID`           | `dispatcher/rick_mention.py:_david_allowlist`                        | Allowlist autor.                                                    |
+| `NOTION_POLL_AT_MINUTE`          | `dispatcher/notion_poller.py:498`                                    | Default 10 → polling solo XX:10 si interval no seteado.             |
+| `NOTION_POLL_INTERVAL_SEC`       | `dispatcher/notion_poller.py:497`                                    | Override de at_minute (recomendado 300 para latencia 5 min).         |
+| `NOTION_POLL_OVERLAP_SEC`        | `dispatcher/notion_poller.py:103`                                    | Buffer hacia atrás para comments de borde.                          |
+| `REDIS_URL` / `WORKER_URL` / `WORKER_TOKEN` | `dispatcher/notion_poller.py:494-496`                       | Conexiones internas.                                                |
+
+**No se consume `NOTION_RICK_USER_ID` en producción.** El script `scripts/notion/setup_rick_integration.py` (task 025) escribía ese valor pero nada lo leía. Marcado deprecated en task 026; solo corre con `--force-deprecated`.
 
 ---
 
-## 3. Skill `notion-mention-router`
+## 4. Skill `notion-mention-router`
 
-- Wrapper canonical: `scripts/notion/notion_mention_router.py`. Re-exporta `is_rick_mention` y `handle_rick_mention` de `dispatcher.rick_mention` + agrega `route_one_mention(comment, *, allowlist, wc, queue, scheduler, page_kind=None)` para dispatch programático.
+- Wrapper canonical: `scripts/notion/notion_mention_router.py`. Re-exporta `is_rick_mention` y `handle_rick_mention` de `dispatcher.rick_mention` + agrega `route_one_mention(comment, *, allowlist, wc, queue, scheduler, page_kind=None)`.
 - Tests: `tests/test_notion_mention_router.py` (6) + `tests/test_rick_mention.py` (7) → **13/13 passing**.
-- Comportamiento:
-  - Filtra texto por regex `@rick` (case-insensitive, alias `@rick-orchestrator`).
-  - Filtra author por `allowlist` (default `{DAVID_NOTION_USER_ID}` per ADR D6).
-  - Enqueue envelope `task: rick.orchestrator.triage`, `team: rick-orchestrator`.
-  - Escribe entry trace en `~/.openclaw/trace/delegations.jsonl` con `from: channel-adapter:notion-poller`, `to: rick-orchestrator`, intent `triage`.
-  - Idempotencia: dedupe por `comment_id` en Redis (`umbral:notion_poller:processed_comment:*` TTL 24h, manejado por `dispatcher/notion_poller.py`).
 
 ---
 
-## 4. Cron / activación (NO ejecutar hasta David autorice)
-
-El cron de polling ya corre (§0). Lo que **NO** está activado y requiere autorización David:
-
-- [ ] Reply path "Rick autorizado" usando `NOTION_RICK_INTEGRATION_TOKEN` (vs integration de David). Hoy las respuestas (cuando existan) postean con `NOTION_API_KEY` por el handler `worker.tasks.notion.handle_notion_add_comment`. Para activar autoría OAuth Rick:
-  1. Completar §2 OAuth setup (token + IDs poblados).
-  2. Implementar variant del handler que use `NOTION_RICK_INTEGRATION_TOKEN` cuando `team == "rick-orchestrator"` (NO en este task — escalar nuevo task si se requiere).
-  3. Smoke §5 OK.
-  4. David autoriza switch.
-
-> **Salvavidas**: hasta que §2 + handler nuevo estén OK, el reply de Rick (cuando suceda) saldrá firmado como integration bot de David. Esto es funcionalmente correcto pero **viola D2 estrictamente**. Documentado como gap aceptado para Fase 1.
-
----
-
-## 5. Smoke (David ejecuta — NO en task 025)
+## 5. Smoke
 
 Pre-requisitos:
 
-- §2 OAuth setup completo (`NOTION_RICK_USER_ID` poblado).
-- Daemon polling vivo: `pgrep -f notion-poller-daemon` debe devolver PID.
+- Daemon polling vivo: `[ -f /tmp/notion_poller.pid ] && kill -0 $(cat /tmp/notion_poller.pid)`.
 - Worker /health OK: `curl -fsS http://127.0.0.1:8088/health | jq .ok` → `true`.
+- `NOTION_API_KEY`, `NOTION_CONTROL_ROOM_PAGE_ID`, `DAVID_NOTION_USER_ID` poblados en `~/.config/openclaw/env`.
+- Verificar bot identity (read-only):
+  ```bash
+  set -a; source ~/.config/openclaw/env; set +a
+  curl -fsS https://api.notion.com/v1/users/me \
+    -H "Authorization: Bearer $NOTION_API_KEY" \
+    -H "Notion-Version: 2022-06-28" \
+    | jq '{id, type, name, workspace_name: .bot.workspace_name}'
+  # Esperado: {"id":"3145f443-…","type":"bot","name":"Rick","workspace_name":"Umbral BIM"}
+  ```
 
 Pasos:
 
-1. **David** crea página Notion "Rick smoke 2026-05-07" y la comparte con la integration (§2.1.D6).
-2. **David** escribe en la página:
+1. **David** va a la página Control Room (la apuntada por `NOTION_CONTROL_ROOM_PAGE_ID`).
+2. Postea un comentario en plain text:
    ```
-   @Rick, pingeá worker /health y devolveme el JSON acá como comentario.
+   @Rick ping worker /health y devolveme el JSON acá como reply
    ```
-3. Esperado:
-   - Watcher detecta el comment dentro de N segundos (≤ 60 min config actual; ≤ 5 min si aplicó tweak §1; < 10 s si migra a webhook futuro).
-   - Aparece entry en `~/.openclaw/trace/delegations.jsonl`:
-     ```json
-     {"from":"channel-adapter:notion-poller","to":"rick-orchestrator","intent":"triage", "ref":{"comment_id":"…","page_id":"…"}, ...}
-     ```
-   - Orchestrator nested respeta Reglas 21+22 SOUL (anti-faking + tool-gap workaround). Si reply path activado: comentario nuevo en la misma página firmado por Rick (autoría real OAuth si §4 hecho, integration bot si gap aún abierto).
-   - Entry final con `assigned_to: agent:rick-orchestrator` honesta (NO fabricación rick-ops).
+3. Espera ≤ N min (≤ 60 min config default; ≤ 5 min con `NOTION_POLL_INTERVAL_SEC=300`).
+4. **Copilot VPS** verifica:
+   ```bash
+   tail -50 /tmp/notion_poller.log | grep -i "rick mention routed"
+   tail -5 ~/.openclaw/trace/delegations.jsonl | jq -c '{from, to, intent, ref}'
+   ```
+   Debe haber:
+   - Línea `Rick mention routed: comment=… author=… page=… trace=…` en `notion_poller.log`.
+   - Entry nueva en `delegations.jsonl` con `from: channel-adapter:notion-poller`, `to: rick-orchestrator`, `intent: triage`.
+5. Reply: la integration "Rick" postea un comentario en la misma página con la respuesta del orchestrator. Autor visible en UI = `Rick (integration bot)`.
 
-Verificación post-smoke:
+### Failure triage
 
-```bash
-tail -5 ~/.openclaw/trace/delegations.jsonl | jq -c '{ts, from, to, intent, ref}'
-grep -c notion-poller ~/.openclaw/trace/delegations.jsonl  # debe haber subido ≥ 1
-```
+- **No `Rick mention routed` log line**: regex no matcheó (texto del comment sin `@rick`) o autor no en allowlist (verificar `DAVID_NOTION_USER_ID`).
+- **Routed pero no reply**: orchestrator falló. NO arreglar en task de canal — abrir task separado con captura de logs.
+- **`/v1/users/me` devuelve 401**: `NOTION_API_KEY` corrupto o revocado en `~/.config/openclaw/env`. Escalar a David.
 
 ---
 
-## 6. Troubleshooting rápido
+## 6. Cron / activación
+
+Cron de polling y reply path **activos**. No requiere autorización adicional (D2 relajada permanente cierra el último gap conceptual).
+
+Reply path: `worker.tasks.notion.handle_notion_add_comment` usa `NOTION_API_KEY` (= integration "Rick"). Autor visible = bot Rick. ✅ aceptado como modelo final.
+
+---
+
+## 7. Troubleshooting rápido
 
 | Síntoma                                                 | Causa probable                                | Fix                                                                   |
 | ------------------------------------------------------- | --------------------------------------------- | --------------------------------------------------------------------- |
-| `setup_rick_integration.py` exit 3                      | Token revocado o mal pegado                   | Rotar en my-integrations + repegar en `.env` (`chmod 600`)            |
-| `setup_rick_integration.py` exit 4                      | Rick no es guest o página no compartida       | Invitar guest (§2.1.D2) y/o compartir página (§2.1.D6)                |
-| Mention de David no se procesa                          | `DAVID_NOTION_USER_ID` mal en `~/.config/openclaw/env` | Validar UUID con `python scripts/notion/setup_rick_integration.py` (loguea workspace users) |
-| Daemon polling muerto                                   | OOM / segfault                                | El cron `*/5 notion-poller-cron.sh` lo levanta automáticamente. Si persiste, `tail /tmp/notion_poller.log` |
-| Latencia > 1h                                           | `NOTION_POLL_AT_MINUTE=10` corre solo XX:10   | Setear `NOTION_POLL_INTERVAL_SEC=300` (§1) y reiniciar daemon         |
+| Mention de David no se procesa                          | `DAVID_NOTION_USER_ID` mal o página fuera de Control Room | Validar UUID; postear en Control Room (no en otras 14 páginas) |
+| `/v1/users/me` 401                                      | `NOTION_API_KEY` revocado                     | Rotar integration secret en my-integrations + actualizar env + restart daemon |
+| Daemon polling muerto                                   | OOM / segfault                                | El cron `*/5 notion-poller-cron.sh` lo levanta. Si persiste, `tail /tmp/notion_poller.log` |
+| Latencia > 1h                                           | `NOTION_POLL_AT_MINUTE=10` corre solo XX:10   | Setear `NOTION_POLL_INTERVAL_SEC=300` (§2) y reiniciar daemon         |
 | Entry duplicada en `delegations.jsonl`                  | Dedupe Redis se borró                         | Verificar Redis vivo: `redis-cli ping` → `PONG`. Restart dispatcher si necesario. |
+| Reply firmado distinto de "Rick"                        | `NOTION_API_KEY` apunta a otra integration    | `/v1/users/me` debe devolver `name: "Rick"`                           |
 
 ---
 
-## 7. Referencias
+## 8. Checklist legacy D1-D9 (obsoleto post-2026-05-07)
 
+| Item | Estado          | Nota                                                                          |
+| ---- | --------------- | ----------------------------------------------------------------------------- |
+| D1   | N/A             | No se crea cuenta humana `rick.asistente@gmail.com`.                          |
+| D2   | N/A             | No se invita guest. Bot integration NO es member.                             |
+| D3   | DONE (preexistente) | Integration "Rick" creada antes del task 025. Token en `NOTION_API_KEY`.   |
+| D4   | DONE            | Token capturado en `NOTION_API_KEY`.                                          |
+| D5   | DONE            | Token preexistente; `~/.config/umbral/notion/.env` scaffold del task 025 NO usado. |
+| D6   | DONE (15 páginas) | Conexiones manuales David 2026-05-07.                                       |
+| D7   | DEPRECATED      | `setup_rick_integration.py` ya no necesario (H1 → no se consume `NOTION_RICK_USER_ID`). Corre solo con `--force-deprecated`. |
+| D8   | DONE post-smoke | Validación end-to-end en task 026 §5.                                         |
+| D9   | CANCEL          | D2 relajada permanente (ADR16 §6 fila 2026-05-07 commit `820a2a8` notion-governance). |
+
+---
+
+## 9. Referencias
+
+- Task 026 spec: `.agents/tasks/2026-05-07-026-copilot-vps-validar-mention-detection-bot-integration.md`
 - Task 025 spec: `.agents/tasks/2026-05-07-025-copilot-vps-o151b-canal-notion-mention-router-oauth.md`
-- ADR canales D1-D6 (inlined en task 025 spec; archivo formal `docs/architecture/16-multichannel-rick-channels.md` pendiente de creación, F-INC-003 anotado en log).
+- ADR canales D1-D6 + §6 fila 2026-05-07: `notion-governance/docs/architecture/16-multichannel-rick-channels.md` (commit `820a2a8`).
 - Reglas SOUL 21+22: `~/.openclaw/workspaces/rick-orchestrator/SOUL.md` (task 023).
 - Trace canónico: `~/.openclaw/trace/delegations.jsonl`.
-- Decisión watcher: `/tmp/025/decision-watcher.md` (snapshot de cierre task 025).
+- B1 archeology task 026: `/tmp/026/code-archeology.md` (working note local).
+- B2 bot identity task 026: `/tmp/026/bot-user.md` (working note local).

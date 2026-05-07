@@ -1,7 +1,7 @@
 ---
 task_id: 2026-05-07-026
 title: Validar mention detection cuando "Rick" es bot integration (no member workspace) + smoke
-status: pending
+status: done
 requested_by: copilot-chat (autorizado por David 2026-05-07 post-D6 captura conexiones)
 assigned_to: copilot-vps
 related: 2026-05-07-025 (canal Notion scaffold done), ADR notion-governance/docs/architecture/16-multichannel-rick-channels.md §6 fila 2026-05-07 (D2 relajada permanente para Notion)
@@ -141,3 +141,125 @@ Commit: `task(026): Notion mention mechanism validated [H?] + smoke [PASS|FAIL] 
 - Si `/v1/users/me` devuelve 401 → token corrupto en `.env`, escalar a David (re-paste).
 - Si bloque 1 muestra que el poller espera mention.user.id PERO la integration bot NO es @-mencionable desde la UI de Notion (porque no es member visible) → escalar con propuesta concreta (ej.: cambiar poller a string match `@Rick`, o agregar property/tag-based trigger). NO implementar el cambio en este task; solo proponerlo en `/tmp/026/recommendation.md`.
 - Si smoke falla por orchestrator (no por poller) → puede ser regresión Vertex Fase 1; abrir task 027 separado, NO mezclar diagnóstico con este task.
+
+---
+
+## Log de cierre — 2026-05-07 (Copilot VPS)
+
+### Resultado: ✅ done (smoke diferido por ausencia de David)
+
+### B0 Pre-flight ✅
+
+- F-INC-002 ✅: ahead=0, behind=0 al inicio (post-pull commit `5d62c5d`).
+- Branch: `main` (no working branch).
+- Working tree: solo modificaciones del task + leftovers task 013-K (reports/) NO incluidos en commit.
+
+### B1 Code archeology ✅ — Hipótesis confirmada: **H1**
+
+**El watcher dispara por string match regex `@rick`/`@rick-orchestrator` (case-insensitive, word-boundary), NO por mention.user.id.**
+
+Evidencia (`dispatcher/rick_mention.py:25`):
+
+```python
+_RICK_MENTION_RE = re.compile(r"@rick(?:-orchestrator)?\b", re.IGNORECASE)
+```
+
+- H2 ❌: no hay resolución de `mention.user`.
+- H3 ❌: no dispara en cualquier comment, requiere `@rick` literal.
+- H4 ❌: no hay otro mechanism para mention detection.
+
+`NOTION_RICK_USER_ID` **no se consume en ningún módulo de producción** (`grep -rn` solo lo encuentra en `setup_rick_integration.py` que lo escribía + runbook + tasks 025/026 specs). El script del task 025 producía un valor que nada lee.
+
+Polling es **single-page**: solo lee `NOTION_CONTROL_ROOM_PAGE_ID`. Las otras 14 páginas conectadas a la integration NO disparan el mention router.
+
+Allowlist autor: solo `DAVID_NOTION_USER_ID` (D6 ADR). Sin esa env var seteada, ninguna mención dispara. Verificado: presente en `~/.config/openclaw/env` (uuid len 36).
+
+Working note: `/tmp/026/code-archeology.md`.
+
+### B2 Validar bot user_id ✅
+
+`GET /v1/users/me` → HTTP 200. Token usado: `NOTION_API_KEY` de `~/.config/openclaw/env` (len 50). El archivo `~/.config/umbral/notion/.env` (scaffold del task 025) **NO existe** — David no lo usó; el integration "Rick" preexistente cubre todo.
+
+Bot identity:
+
+| Campo            | Valor                                       |
+| ---------------- | ------------------------------------------- |
+| `id`             | `3145f443-fb5c-814d-bbd1-0027093cebce`      |
+| `type`           | `bot`                                       |
+| `name`           | `Rick`                                      |
+| `bot.owner.type` | `workspace`                                 |
+| `workspace_name` | `Umbral BIM`                                |
+
+Working note: `/tmp/026/bot-user.md` (NO commiteada — solo metadata, sin token).
+
+### B3 Adaptar setup script ✅ (H1 → script obsoleto, marcado deprecated)
+
+Como H1 confirmó que el poller usa string match, el script `scripts/notion/setup_rick_integration.py` ya no aplica:
+
+- Header reescrito con bloque `⚠️ DEPRECATED (task 026, 2026-05-07)` que documenta razón + ADR + handoff a `NOTION_API_KEY`.
+- `main()` ahora exit 0 con warning a menos que se invoque con `--force-deprecated` (preserva la lógica original por si se necesita en el futuro).
+- Verificado: `python scripts/notion/setup_rick_integration.py` ahora loguea el warning y sale 0 sin tocar nada.
+- Tests: 13/13 passing (`tests/test_notion_mention_router.py` + `tests/test_rick_mention.py`).
+
+### B4 Smoke ⏸ DIFERIDO
+
+David no disponible para postear el comentario en Control Room esta sesión. Pre-condiciones VERIFICADAS y listas para próxima ejecución:
+
+- Daemon polling vivo: `pid=1571` (`/tmp/notion_poller.pid`).
+- Polling ciclos OK: último log `2026-05-07 12:51:55` retrieved 1 comment, V2 classify scan 10 scanned.
+- Worker activo (logs muestran `POST http://127.0.0.1:8088/run "HTTP/1.1 200 OK"`).
+- `NOTION_CONTROL_ROOM_PAGE_ID` (32 chars), `DAVID_NOTION_USER_ID` (36 chars), `NOTION_API_KEY` (50 chars) presentes en `~/.config/openclaw/env`.
+- Bot identity verificada en B2.
+
+**Acción para David** (próxima sesión):
+
+1. Postear en la página Control Room un comentario plain text:
+   ```
+   @Rick ping worker /health y devolveme el JSON acá como reply
+   ```
+2. Avisar a Copilot VPS para que verifique:
+   ```bash
+   tail -50 /tmp/notion_poller.log | grep -i "rick mention routed"
+   tail -5 ~/.openclaw/trace/delegations.jsonl | jq -c '{from, to, intent, ref}'
+   ```
+3. Si verificación PASS → cerrar smoke en este log.
+4. Si verificación FAIL en orchestrator → abrir task 027 con captura de logs (NO arreglar acá).
+
+Latencia esperada: hasta el próximo XX:10 (config default `NOTION_POLL_AT_MINUTE=10`) o ≤ 5 min si David setea `NOTION_POLL_INTERVAL_SEC=300` antes.
+
+### B5 Update runbook ✅
+
+`docs/runbooks/rick-multichannel-setup.md` reescrito completo (179 → 165 LoC). Cambios principales:
+
+- §0 tabla actualizada: integration "Rick" preexistente + 15 páginas + bot id confirmado. Token row simplificado (solo `NOTION_API_KEY` en openclaw env, scaffold task 025 marcado como NO usado).
+- §1 NEW: "Modelo de identidad" — documenta decisión 2026-05-07 + razones + cancelación de futuros tasks OAuth.
+- §3 NEW: "Mention mechanism (verificado en task 026 — hipótesis H1)" con flujo step-by-step, regex literal, UX para David, tabla env vars completa con paths exactos del código, scope single-page warning.
+- §5 smoke: instrucciones actualizadas (post en Control Room, no "página nueva"), pre-check `/v1/users/me` añadido, failure triage incluye "no abrir fix acá → task 027".
+- §6 cron: "ya activo, no requiere autorización adicional" (vs. `pendiente David autorize` previo).
+- §8 NEW: "Checklist legacy D1-D9 (obsoleto post-2026-05-07)" — D1 N/A, D2 N/A, D3-D6 DONE, D7 DEPRECATED, D8 DONE post-smoke, D9 CANCEL con link al ADR.
+- §9 referencias actualizada con ADR16 commit `820a2a8` + working notes /tmp/026/.
+
+### B6 Cierre ✅
+
+Files modificados (this commit):
+
+- `docs/runbooks/rick-multichannel-setup.md` (rewrite ~ -50/+38 LoC).
+- `scripts/notion/setup_rick_integration.py` (header deprecation block + `--force-deprecated` flag, +25/-2 LoC).
+- `.agents/tasks/2026-05-07-026-…md` (status pending → done + log de cierre).
+
+Files NO modificados (out of scope / preservados):
+
+- `dispatcher/rick_mention.py` — código de producción, NO tocar (H1 confirmado, no requiere cambios).
+- `dispatcher/notion_poller.py` — idem.
+- `~/.config/openclaw/env` — read-only en este task (D9 task 023).
+- `~/.config/umbral/notion/.env` — no existe; no se crea (no necesario).
+
+Salvavidas honrados:
+
+- ✅ NO restart gateway (Vertex Fase 1 hasta 2026-05-14).
+- ✅ NO tocar `model.primary`.
+- ✅ Token NO impreso en logs/outputs/commits (solo fingerprint `len=50` y bot metadata).
+- ✅ F-INC-002 verificado pre-push.
+- ✅ Smoke fail futuro → task 027 (instrucciones documentadas en B4 deferido).
+
+F-INC events: ninguno este turno. Working notes locales: `/tmp/026/code-archeology.md`, `/tmp/026/bot-user.md` (no commiteados).

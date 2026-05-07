@@ -1,8 +1,22 @@
 """Setup Rick's Notion integration identity.
 
-Validates the integration token from `~/.config/umbral/notion/.env`, lists
-workspace users, locates `rick.asistente@gmail.com`, and writes back
-`NOTION_RICK_USER_ID` + `NOTION_WORKSPACE_ID` for the channel adapter.
+⚠️ DEPRECATED (task 026, 2026-05-07) — this script is no longer required.
+
+Background:
+- ADR `notion-governance/docs/architecture/16-multichannel-rick-channels.md`
+  §6 fila 2026-05-07: D2 (autoría OAuth real) **relajada permanente** para
+  canal Notion. No hay seat humano `rick.asistente@gmail.com` en el workspace.
+- Task 026 confirmó (hipótesis H1) que `dispatcher/rick_mention.py` usa
+  string match regex `@rick`/`@rick-orchestrator` sobre plain text del
+  comentario; **no consume `NOTION_RICK_USER_ID` en ningún módulo de
+  producción**. El valor que este script escribía nunca se leía.
+- El integration bot "Rick" preexistente (token en `NOTION_API_KEY` de
+  `~/.config/openclaw/env`) ya cubre detection + reply.
+
+Original purpose (kept for historical reference):
+  Validates the integration token from `~/.config/umbral/notion/.env`, lists
+  workspace users, locates `rick.asistente@gmail.com`, and writes back
+  `NOTION_RICK_USER_ID` + `NOTION_WORKSPACE_ID` for the channel adapter.
 
 Per ADR D2 (autoría real OAuth) — this token must NOT be reused across
 identities and MUST NOT be logged. We only print fingerprints.
@@ -134,9 +148,22 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--env", default=str(DEFAULT_ENV_PATH), help="Path to env file.")
     parser.add_argument("--dry-run", action="store_true", help="Do not write back IDs.")
+    parser.add_argument(
+        "--force-deprecated",
+        action="store_true",
+        help="Run anyway. Without this flag the script exits 0 with a deprecation notice.",
+    )
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+    if not args.force_deprecated:
+        logger.warning(
+            "DEPRECATED (task 026, 2026-05-07): mention detection uses string match @rick, "
+            "no NOTION_RICK_USER_ID is consumed in production. Bot integration token already "
+            "lives in NOTION_API_KEY (~/.config/openclaw/env). Re-run with --force-deprecated "
+            "only if you intentionally want the legacy behavior. See docs/runbooks/rick-multichannel-setup.md."
+        )
+        return 0
     env_path = Path(args.env).expanduser()
     env = _read_env(env_path)
     token = env.get("NOTION_RICK_INTEGRATION_TOKEN", "")

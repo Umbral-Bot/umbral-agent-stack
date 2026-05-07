@@ -124,16 +124,37 @@ _YT_C_RE = re.compile(r"^/c/([\w.-]+)/?")
 _YT_HANDLE_RE = re.compile(r"^/@([\w.-]+)/?")
 
 
-def parse_youtube_channel_id(url: str) -> tuple[str, str] | None:
+_YT_NETLOCS = {"youtube.com", "www.youtube.com", "m.youtube.com"}
+_YT_BARE_HANDLE_RE = re.compile(r"^@([\w.-]+)/?$")
+
+
+def parse_youtube_channel_id(url: str | None) -> tuple[str, str] | None:
     """Return (id_or_name, kind) for a YouTube channel URL.
 
     Kinds: 'channel' (UC...), 'c' (custom URL), 'user' (legacy), 'handle' (@name).
     Returns None for unknown shapes and non-YouTube URLs.
+
+    Hardening defensivo (task 033, 2026-05-08):
+    - Acepta URL sin scheme (`youtube.com/@x`).
+    - Acepta handle suelto (`@x`).
     """
-    if not url:
+    if not url or not isinstance(url, str):
         return None
-    parsed = urlparse(url.strip())
-    if parsed.netloc.lower() not in {"youtube.com", "www.youtube.com", "m.youtube.com"}:
+    s = url.strip()
+    if not s:
+        return None
+
+    # Bare handle (`@username`) — sin / ni netloc.
+    if (m := _YT_BARE_HANDLE_RE.match(s)) is not None:
+        return (m.group(1), "handle")
+
+    # If urlparse can't find a scheme, prefix `https://` and re-parse.
+    # `urlparse("youtube.com/@x")` yields netloc='', path='youtube.com/@x'.
+    parsed = urlparse(s)
+    if not parsed.netloc and parsed.scheme not in {"http", "https"}:
+        parsed = urlparse(f"https://{s}")
+
+    if parsed.netloc.lower() not in _YT_NETLOCS:
         return None
     path = parsed.path or "/"
     if m := _YT_CHANNEL_RE.match(path):

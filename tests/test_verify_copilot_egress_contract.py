@@ -57,10 +57,13 @@ def _write_nft(tmp_path: Path, hosts: list[str], *,
     parts = []
     if include_warning:
         parts.append("# DO NOT APPLY IN F6 STEP 3")
+    parts.append('define copilot_bridge = "br-copilot"')
     parts.append("table inet copilot_egress {")
-    parts.append("    chain output {")
+    parts.append("    chain forward {")
+    parts.append("        type filter hook forward priority filter; policy accept;")
+    parts.append("        iifname != $copilot_bridge accept")
     if include_default_deny:
-        parts.append("        type filter hook output priority 0; policy drop;")
+        parts.append("        counter drop")
     parts.append("    }")
     parts.append("}")
     for h in hosts:
@@ -129,6 +132,20 @@ def test_fails_when_default_deny_missing(tmp_path, vmod):
     report = vmod.run(policy_path=policy, nft_path=nft, resolver_doc_path=doc)
     codes = {f.code for f in report.errors()}
     assert "missing_marker" in codes
+
+
+def test_fails_when_host_wide_output_drop_present(tmp_path, vmod):
+    hosts = ["api.githubcopilot.com"]
+    policy = _write_policy(tmp_path, endpoints=[h + ":443" for h in hosts])
+    nft = _write_nft(
+        tmp_path,
+        hosts,
+        extra="chain output { type filter hook output priority 0; policy drop; }",
+    )
+    doc = _write_resolver_doc(tmp_path, hosts)
+    report = vmod.run(policy_path=policy, nft_path=nft, resolver_doc_path=doc)
+    codes = {f.code for f in report.errors()}
+    assert "host_wide_output_drop" in codes
 
 
 def test_fails_when_apply_warning_missing(tmp_path, vmod):

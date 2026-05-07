@@ -160,7 +160,7 @@ _DOCKER_NETWORK_ENV = "COPILOT_CLI_DOCKER_NETWORK"
 _CLI_DIAGNOSTIC_ENV = "COPILOT_CLI_DIAGNOSTIC_MODE"
 
 _SANDBOX_IMAGE_DEFAULT = "umbral-sandbox-copilot-cli"
-_DEFAULT_DOCKER_NETWORK = "bridge"
+_DEFAULT_DOCKER_NETWORK = "copilot-egress"
 
 _PROMPT_SUMMARY_MAX = 200
 
@@ -475,6 +475,7 @@ def _build_docker_argv(
         "--tmpfs", "/tmp:size=64m,mode=1777,exec,nosuid,nodev",
         "--tmpfs", "/scratch:size=64m,mode=1777,nosuid,nodev",
         "--tmpfs", "/home/runner/.cache:size=32m,mode=1777",
+        "--tmpfs", "/home/runner/.copilot:size=32m,mode=1777",
         "--memory=1g", "--memory-swap=1g", "--cpus=1.0",
         "--pids-limit=256",
         "--cap-drop=ALL",

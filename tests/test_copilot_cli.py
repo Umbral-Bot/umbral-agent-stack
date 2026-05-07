@@ -614,7 +614,7 @@ def test_f8a_real_run_invokes_subprocess_and_writes_artifacts(monkeypatch):
     assert "github_pat_" not in flat_argv
     assert prompt not in flat_argv
     assert "-i" in argv
-    assert "--network=bridge" in argv
+    assert "--network=copilot-egress" in argv
 
     manifest_path = Path(res["artifact_manifest"])
     assert manifest_path.is_file()

@@ -272,7 +272,7 @@ $ iptables -L INPUT -n -v --line-numbers | head -10
 
 ```powershell
 # PowerShell desde C:\GitHub\notion-governance
-$TOKEN = $env:HOSTINGER_API_TOKEN  # ← env var; el literal usado durante el incidente fue rotado el 2026-05-06
+$TOKEN = "<REDACTED-rotated-2026-05-06>"  # ⚠️ rotar después del incidente
 curl.exe -s -X POST -H "Authorization: Bearer $TOKEN" `
   "https://developers.hostinger.com/api/vps/v1/virtual-machines/1431451/restart"
 # Output: {"id":92742006,"name":"ct_restart","state":"sent","created_at":"2026-05-06T18:36:44Z","updated_at":"2026-05-06T18:36:44Z"}
@@ -335,4 +335,4 @@ curl.exe -s -H "Authorization: Bearer $TOKEN" `
 - Evidencia raw: [`reports/vps-freeze-2026-05-06/`](../reports/vps-freeze-2026-05-06/)
 - Changelog: [`changelog/2026-05-06.md`](../changelog/2026-05-06.md)
 - Branch a auditar (Pendiente H): `rick/copilot-cli-f7-policy-gate-rehearsal-evidence` — verificar si la rehearsal del chain `copilot-egress` correlaciona temporalmente con el detach.
-- Token Hostinger usado durante el incidente: `<REDACTED-rotated-2026-05-06>` → ya rotado; nuevo token en env var `HOSTINGER_API_TOKEN` referenciado vía `${env:HOSTINGER_API_TOKEN}` en `mcp.json`.
+- Token Hostinger usado durante el incidente: `<REDACTED-rotated-2026-05-06>` → **rotar** post-incidente y mover a secret manager (NO dejar en `mcp.json` literal).

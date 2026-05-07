@@ -38,7 +38,10 @@ _DANGEROUS_LIVE_CMDS = (
 
 _REQUIRED_NFT_MARKERS = (
     "DO NOT APPLY",
-    "policy drop",
+    "define copilot_bridge",
+    "policy accept",
+    "iifname != $copilot_bridge accept",
+    "counter drop",
     "table inet copilot_egress",
 )
 
@@ -162,6 +165,13 @@ def check_nft_artifact(nft_path: Path, endpoints: Iterable[str], report: Report)
         if marker not in text:
             report.add(str(nft_path), "error", "missing_marker",
                        f"required marker {marker!r} not present")
+    if re.search(r"chain\s+output\s*\{[^}]*hook\s+output[^}]*policy\s+drop", text, re.S):
+        report.add(
+            str(nft_path),
+            "error",
+            "host_wide_output_drop",
+            "egress profile must not install a host-wide output hook with policy drop",
+        )
     # Endpoint parity: every authorized host must appear somewhere in
     # the artifact (we keep them as comments at the bottom — see the
     # template's `allowed:` lines).

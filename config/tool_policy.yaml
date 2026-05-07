@@ -212,4 +212,4 @@ copilot_cli:
     blocked_by_default:
       - "*"
     audit_log: reports/copilot-cli/egress/<YYYY-MM>/<batch_id>.jsonl
-    enforcement: docker network + egress firewall (nftables) + deny-by-default
+    enforcement: dedicated Docker bridge (copilot-egress/br-copilot) + scoped nftables forward chain + deny-by-default for sandbox only

@@ -79,10 +79,12 @@ CANAL_MAP = {
 class ItemOutcome:
     sqlite_id: int
     url_canonica: str
-    status: str  # would_create | created | already_present | created_no_body | error
+    status: str  # would_create | created | already_present | created_no_body | updated | error
     notion_page_id: str | None = None
     error: str | None = None
     blocks_count: int = 0
+    deleted_blocks: int = 0
+    appended_blocks: int = 0
 
 
 @dataclass
@@ -99,6 +101,7 @@ class RunSummary:
     created: int = 0
     already_present: int = 0
     created_no_body: int = 0
+    updated: int = 0
     errors: int = 0
     items: list[ItemOutcome] = field(default_factory=list)
 
@@ -148,6 +151,12 @@ class NotionClient:
 
     def post(self, path: str, json_body: Any) -> httpx.Response:
         return self._request("POST", path, json=json_body)
+
+    def patch(self, path: str, json_body: Any) -> httpx.Response:
+        return self._request("PATCH", path, json=json_body)
+
+    def delete(self, path: str) -> httpx.Response:
+        return self._request("DELETE", path)
 
 
 # ---------- Schema validation ----------
@@ -247,14 +256,24 @@ def ensure_notion_page_id_column(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
-def select_pending(conn: sqlite3.Connection, *, limit: int | None = None) -> list[dict[str, Any]]:
+def select_pending(
+    conn: sqlite3.Connection,
+    *,
+    limit: int | None = None,
+    include_existing: bool = False,
+) -> list[dict[str, Any]]:
+    """Promoted items pending push. With ``include_existing`` (used by
+    ``--update-existing``) also returns items already linked to a Notion page.
+    """
     sql = (
         "SELECT rowid, url_canonica, referente_id, referente_nombre, canal, titulo, "
-        "       publicado_en, contenido_html "
+        "       publicado_en, contenido_html, notion_page_id "
         "FROM discovered_items "
-        "WHERE promovido_a_candidato_at IS NOT NULL AND notion_page_id IS NULL "
-        "ORDER BY rowid"
+        "WHERE promovido_a_candidato_at IS NOT NULL"
     )
+    if not include_existing:
+        sql += " AND notion_page_id IS NULL"
+    sql += " ORDER BY rowid"
     if limit is not None:
         sql += f" LIMIT {int(limit)}"
     cur = conn.execute(sql)
@@ -364,6 +383,50 @@ def create_page(client: NotionClient, payload: dict[str, Any]) -> dict[str, Any]
     return r.json()
 
 
+def update_existing_page(
+    client: NotionClient,
+    *,
+    page_id: str,
+    payload: dict[str, Any],
+) -> tuple[int, int]:
+    """Update title + replace body of an existing Notion page.
+    Returns ``(deleted, appended)``. Sleeps RATE_LIMIT_SLEEP_S between calls.
+    """
+    def _check(r: httpx.Response, what: str) -> httpx.Response:
+        if r.status_code >= 400:
+            raise RuntimeError(f"{what} HTTP {r.status_code}: {r.text[:500]}")
+        time.sleep(RATE_LIMIT_SLEEP_S)
+        return r
+
+    props = payload.get("properties") or {}
+    if props:
+        _check(client.patch(f"/pages/{page_id}", {"properties": props}), "patch_page")
+    deleted = 0
+    cursor: str | None = None
+    while True:
+        path = f"/blocks/{page_id}/children?page_size=100"
+        if cursor:
+            path += f"&start_cursor={cursor}"
+        data = _check(client.get(path), "get_children").json()
+        for block in data.get("results", []):
+            bid = block.get("id")
+            if not bid:
+                continue
+            _check(client.delete(f"/blocks/{bid}"), "delete_block")
+            deleted += 1
+        if not data.get("has_more"):
+            break
+        cursor = data.get("next_cursor")
+    children = payload.get("children") or [fallback_no_body_block()]
+    appended = 0
+    for i in range(0, len(children), 100):
+        chunk = children[i:i + 100]
+        _check(client.patch(f"/blocks/{page_id}/children", {"children": chunk}),
+               "append_children")
+        appended += len(chunk)
+    return deleted, appended
+
+
 # ---------- Orchestration ----------
 
 def _now_iso() -> str:
@@ -382,6 +445,7 @@ def process_items(
     data_source_id: str,
     referentes_index: dict[str, str],
     commit: bool,
+    update_existing: bool = False,
 ) -> RunSummary:
     summary = RunSummary(
         started=_now_iso(),
@@ -434,10 +498,22 @@ def process_items(
                 )
                 time.sleep(RATE_LIMIT_SLEEP_S)
                 if existing_id:
-                    outcome.status = "already_present"
-                    outcome.notion_page_id = existing_id
-                    summary.already_present += 1
-                    mark_persisted(conn, item["rowid"], existing_id)
+                    if update_existing:
+                        deleted, appended = update_existing_page(
+                            client, page_id=existing_id, payload=payload,
+                        )
+                        outcome.status = "updated"
+                        outcome.notion_page_id = existing_id
+                        outcome.deleted_blocks = deleted
+                        outcome.appended_blocks = appended
+                        summary.updated += 1
+                        mark_persisted(conn, item["rowid"], existing_id)
+                        print(f"updated sid={item['rowid']} deleted={deleted} appended={appended}", flush=True)
+                    else:
+                        outcome.status = "already_present"
+                        outcome.notion_page_id = existing_id
+                        summary.already_present += 1
+                        mark_persisted(conn, item["rowid"], existing_id)
                 else:
                     page = create_page(client, payload)
                     page_id = page.get("id")
@@ -495,6 +571,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
                    help="Notion data_source id of the Referentes DB used to resolve relations.")
     p.add_argument("--commit", action="store_true",
                    help="Actually create pages (default: dry-run, no /pages calls).")
+    p.add_argument("--update-existing", action="store_true",
+                   help="Opt-in: when item is already_present, PATCH title + replace blocks. Default OFF.")
     p.add_argument("--limit", type=int, default=None,
                    help="Max items to process this run.")
     p.add_argument("--reports-dir", type=Path, default=DEFAULT_REPORTS_DIR)
@@ -507,7 +585,8 @@ def main(argv: list[str] | None = None) -> int:
 
     conn = sqlite3.connect(str(args.sqlite))
     ensure_notion_page_id_column(conn)
-    items = select_pending(conn, limit=args.limit)
+    items = select_pending(conn, limit=args.limit,
+                           include_existing=args.update_existing)
 
     client = NotionClient(api_key)
     try:
@@ -527,6 +606,7 @@ def main(argv: list[str] | None = None) -> int:
             data_source_id=args.data_source_id,
             referentes_index=referentes_index,
             commit=args.commit,
+            update_existing=args.update_existing,
         )
         summary.database_id = args.database_id
     finally:

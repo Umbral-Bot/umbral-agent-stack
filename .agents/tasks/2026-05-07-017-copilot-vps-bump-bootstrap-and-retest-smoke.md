@@ -1,7 +1,7 @@
 ---
 task_id: 2026-05-07-017
 title: Bump bootstrap limits + re-test smoke health-check delegation
-status: queued
+status: blocked
 requested_by: copilot-chat
 assigned_to: copilot-vps
 related: 2026-05-07-016 (F-G + F-NEW)
@@ -185,3 +185,120 @@ Commit con `user.name='copilot-vps'`, push a `origin/main`. Status `done` si re-
 - Modelo §5.3, §3.3, §3.4 embebidos en `~/.openclaw/workspace/IDENTITY.md` v1.1 y `~/.openclaw/workspaces/rick-orchestrator/IDENTITY.md` v1.1.
 
 ## Log
+
+### [copilot-vps] 2026-05-07 02:00 GMT-4 — bump bootstrap + retest (status: blocked)
+
+**Resumen ejecutivo**: bump aplicado y verificado runtime; truncation cascade eliminada. **Pero el subagent rick-orchestrator sigue emitiendo el mismo canned refusal**. F-G falsa como root cause de F-NEW. Hipótesis 2 (task body no se inyecta en `**Your Role**`) **CONFIRMADA** vía inspección de `context.compiled` en trajectory. No-go para cerrar F-NEW. Escalación requerida (out of scope para esta task).
+
+#### A. Sizes observados (justifican el bump)
+
+| Workspace | File | Size (chars) | > 12k default? |
+|---|---|---|---|
+| `~/.openclaw/workspace/` (main) | `AGENTS.md` | 18 641 | sí (truncado pre-bump) |
+|  | `SOUL.md` | 12 288 | sí (~marginal) |
+|  | `TOOLS.md` | 7 159 | no |
+|  | `IDENTITY.md` | 4 658 | no |
+| `~/.openclaw/workspaces/rick-orchestrator/` | `AGENTS.md` | 17 002 | sí |
+|  | `SOUL.md` | 12 288 | sí |
+|  | `SKILL.md` | 8 669 | no |
+|  | `TOOLS.md` | 7 169 | no |
+|  | `IDENTITY.md` | 3 405 | no |
+| `~/.openclaw/workspaces/rick-ops/` | (todos) | < 8 k | no |
+
+`AGENTS.md` y `SOUL.md` requieren > 12 000 chars; el bump a 24 000 cubre ambos con margen.
+
+#### B. Valores antes/después
+
+```jsonc
+// before
+.agents.defaults.bootstrapMaxChars      = null   // OpenClaw default = 12000
+.agents.defaults.bootstrapTotalMaxChars = null   // OpenClaw default = 60000
+
+// after
+.agents.defaults.bootstrapMaxChars      = 24000
+.agents.defaults.bootstrapTotalMaxChars = 120000
+```
+
+**Backup**: `~/.openclaw/openclaw.json.bak-pre-017-20260507-015651` (30 784 bytes, intacto).
+
+#### C. Health checks post-restart
+
+```text
+systemctl --user is-active openclaw-gateway openclaw-dispatcher umbral-worker
+→ active / active / active
+
+curl /health (gateway 18789) → {"ok":true,"status":"live"}
+curl /health (worker  8088 ) → {"ok":true,"version":"0.4.0","tasks":529}
+
+journalctl: "[reload] config change detected; evaluating reload (agents.defaults.bootstrapMaxChars, agents.defaults.bootstrapTotalMaxChars)"
+journalctl: "[gateway] ready" (pid 54835, anterior pid 979)
+```
+
+Restart fully clean.
+
+#### D. Re-test smoke (`smoke-o151-retest-1778133479`)
+
+**Trigger**: `openclaw agent --agent main --session-id smoke-o151-retest-1778133479 --timeout 240 --json --message "<RE-TEST O15.1 …>"`. Exit 0.
+
+| Capa | Resultado |
+|---|---|
+| `main` (gpt-5.4 azure) | OK — usage 19 947 in / 2 032 out / 122 496 cacheRead / 25 754 total. `result.payloads = []` (no respuesta final tras delegación). `status: ok` por harness. |
+| `~/.openclaw/trace/delegations.jsonl` | 2 → 3 líneas. **Sólo se escribió la línea queued de main → rick-orchestrator** (`task_id 8d31...`). NO se cerró. NO hubo segundo hop a rick-ops. |
+| `rick-orchestrator` subagent (`82f4ecc3-...jsonl`) | 6 events, 1 assistant message: **`"I'm sorry, but I cannot assist with that request."`** mismo patrón que el turno fallido de David ~01:42. responseId presente, sin tool calls. |
+| `rick-ops` | última sesión `f2732e49` mtime 01:50 — **no fue tocada en el retest**. |
+
+#### Bootstrap verification (¿llegó el bump al runtime?)
+
+Inspección de `~/.openclaw/agents/rick-orchestrator/sessions/82f4ecc3-...trajectory.jsonl` evento `context.compiled.systemPrompt`:
+
+- Length: **69 535 chars** (vs. ~12 000 truncado pre-bump).
+- `grep "raw -> [0-9]+ injected\|Bootstrap truncation\|max-chars\|max/file"` → **0 matches**.
+- AGENTS.md (17 002), SOUL.md (12 288), SKILL.md (8 669), etc. ahora caben enteros.
+
+**Conclusión runtime**: el bump se aplicó perfectamente y eliminó la truncation cascade. **F-G como hotfix queda hecho.**
+
+#### E. Veredicto (mapping a tabla §E)
+
+Resultado D = fila 2 ("Subagent sigue refusing con 0 tokens"... pero con matiz: aquí el subagent SÍ consumió ~2 k tokens output emitiendo el refusal — patrón self-refusal del modelo, NO Azure content filter pre-tx).
+
+→ **Hipótesis 1 (F-G) FALSA como causa raíz de F-NEW.**
+→ Escalar a Hipótesis 2 (task body no inyectado en `**Your Role**`).
+
+#### Hipótesis 2 — confirmada por evidencia
+
+`prompt.submitted.prompt` enviado al subagent gpt-5.4:
+
+```
+[Thu 2026-05-07 01:58 GMT-4] [Subagent Context] You are running as a subagent (depth 1/1).
+Results auto-announce to your requester; do not busy-poll for status.
+
+Begin. Your assigned task is in the system prompt under **Your Role**; execute it to completion.
+```
+
+Sin embargo:
+- `systemPrompt` (69 535 chars) NO contiene ninguna sección titulada `**Your Role**`.
+- `grep -nE "Your Role|RE-TEST|health check|rick-ops|delegá|task_id"` sobre el systemPrompt → **0 matches** del cuerpo de la task; solo matches de paths de SKILL.md irrelevantes.
+- El subagent recibe la consigna "tu tarea está en `**Your Role**`" pero esa sección no existe → no tiene instrucción accionable → falla a un canned refusal `"I'm sorry, but I cannot assist with that request."` (output ~2 k tokens, responseId presente).
+
+Esto es un **bug de OpenClaw runtime layer** (la inyección del `assignedTask`/`message` del padre al child no está colocando el task body bajo el header `**Your Role**` en el systemPrompt del subagent). Aplica a TODOS los subagents, no sólo rick-orchestrator. Reproduce 100 % tanto desde Telegram como desde CLI.
+
+#### Próximos pasos (out of scope para esta task)
+
+1. **F-NEW URGENTE permanece bloqueado** hasta resolver hipótesis 2.
+2. Opciones:
+   - **(a)** Reportar bug upstream a OpenClaw (`Umbral-Bot/openclaw` o equivalente) — la inyección de `assignedTask` debe escribir el cuerpo bajo `**Your Role**` en el systemPrompt del child, o cambiar el prompt boilerplate del child para apuntar a donde sí está el task (¿en el primer turno user message? aquí el user message también está vacío del task body).
+   - **(b)** Workaround config-side: si OpenClaw soporta `agents.list[id==rick-orchestrator].subagentPromptTemplate` o equivalente, redefinir el prompt para que cite el task desde donde sí esté.
+   - **(c)** Revisar si en versión OpenClaw `2026.5.6` (update available, no aplicada) este bug está resuelto.
+3. **No** desplegar más changes runtime sin decisión humana (David/copilot-chat).
+4. **David puede seguir usando agentes one-hop directamente** (`/usemain` o equivalente) si necesita ejecución urgente — solo está roto el patrón delegación-padre→hijo.
+
+#### Side-effects positivos del bump
+
+- Aunque no resolvió F-NEW, **es una mejora real**: AGENTS.md y SOUL.md ya no llegan truncados mid-sentence al modelo; calidad del system prompt mejora para todos los agents (main + gerencias). Recomiendo dejar el bump aplicado.
+- Cost impact: systemPrompt subió de ~12k a ~70k chars (~17.5k tokens). cacheRead del retest: 122 496 (mucho cache hit). Vía Azure prompt cache, costo marginal mínimo en sesiones repetidas.
+
+#### Riesgo nuevo identificado
+
+`rick-orchestrator/sessions/sessions.json` y `f2732e49.trajectory.jsonl` tienen mode `0600` correcto. `f2732e49.jsonl` tiene mode `0664` (debería ser `0600`). No es regresión de esta task pero queda anotado para potencial F-perm.
+
+**Status**: blocked. Bump aplicado, F-G hotfix done, F-NEW URGENTE escala a hipótesis 2 (bug OpenClaw layer).

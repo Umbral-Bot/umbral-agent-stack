@@ -32,6 +32,7 @@ docs = [
 test = [
     "pytest>=7.0.0",
     "fakeredis>=2.0.0",
+    "beautifulsoup4>=4.12",
     "python-docx>=1.1.0",
     "docxtpl>=0.16.0",
     "fpdf2>=2.7.0",

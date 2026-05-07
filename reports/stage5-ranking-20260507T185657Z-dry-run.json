@@ -1,0 +1,384 @@
+{
+  "config": {
+    "buckets_loaded": {
+      "adyacente_count": 8,
+      "core_aec_count": 15,
+      "voz_david_count": 4
+    },
+    "weights": {
+      "w1_core_aec": 0.4,
+      "w2_adyacente": 0.3,
+      "w3_recency": 0.2,
+      "w4_referente": 0.1
+    }
+  },
+  "items": [
+    {
+      "canal": "youtube",
+      "publicado_en": "Tue, 28 Apr 2026 22:53:59 GMT",
+      "rank": 1,
+      "ranking_reason": {
+        "adyacente": {
+          "matches": [],
+          "normalized": 0.0,
+          "raw_count": 0,
+          "weighted": 0.0
+        },
+        "core_aec": {
+          "matches": [
+            "Revit"
+          ],
+          "normalized": 0.466667,
+          "raw_count": 7,
+          "weighted": 0.186667
+        },
+        "recency": {
+          "days_old": null,
+          "normalized": 0.0,
+          "weighted": 0.0
+        },
+        "referente": {
+          "canal": "youtube",
+          "weight_canal": 1.0,
+          "weighted": 0.1
+        },
+        "total": 0.286667
+      },
+      "ranking_score": 0.286667,
+      "referente_id": "23addaef-d334-4b86-b90a-649ce7f7d82a",
+      "referente_nombre": "Milos Temerinski",
+      "titulo": "Am I Faster than Revit AI? [v2-clean]",
+      "url_canonica": "https://www.youtube.com/watch?v=npmoS_dqAho"
+    },
+    {
+      "canal": "youtube",
+      "publicado_en": "Tue, 05 May 2026 22:53:59 GMT",
+      "rank": 2,
+      "ranking_reason": {
+        "adyacente": {
+          "matches": [],
+          "normalized": 0.0,
+          "raw_count": 0,
+          "weighted": 0.0
+        },
+        "core_aec": {
+          "matches": [
+            "Revit"
+          ],
+          "normalized": 0.4,
+          "raw_count": 6,
+          "weighted": 0.16
+        },
+        "recency": {
+          "days_old": null,
+          "normalized": 0.0,
+          "weighted": 0.0
+        },
+        "referente": {
+          "canal": "youtube",
+          "weight_canal": 1.0,
+          "weighted": 0.1
+        },
+        "total": 0.26
+      },
+      "ranking_score": 0.26,
+      "referente_id": "23addaef-d334-4b86-b90a-649ce7f7d82a",
+      "referente_nombre": "Milos Temerinski",
+      "titulo": "Numbering Tool in Revit | Rule-Based Numbering in Revit Tutorial [v2-clean]",
+      "url_canonica": "https://www.youtube.com/watch?v=TQsBnsKZtuo"
+    },
+    {
+      "canal": "youtube",
+      "publicado_en": "Thu, 30 Apr 2026 22:54:19 GMT",
+      "rank": 3,
+      "ranking_reason": {
+        "adyacente": {
+          "matches": [],
+          "normalized": 0.0,
+          "raw_count": 0,
+          "weighted": 0.0
+        },
+        "core_aec": {
+          "matches": [],
+          "normalized": 0.0,
+          "raw_count": 0,
+          "weighted": 0.0
+        },
+        "recency": {
+          "days_old": null,
+          "normalized": 0.0,
+          "weighted": 0.0
+        },
+        "referente": {
+          "canal": "youtube",
+          "weight_canal": 1.0,
+          "weighted": 0.1
+        },
+        "total": 0.1
+      },
+      "ranking_score": 0.1,
+      "referente_id": "e9271bac-4dd2-4b7a-a8b8-ccd2e9089057",
+      "referente_nombre": "José Luis Crespo",
+      "titulo": "¿Existen Fisuras en el Universo? [v2-clean]",
+      "url_canonica": "https://www.youtube.com/watch?v=1PIbKMyFMAY"
+    },
+    {
+      "canal": "youtube",
+      "publicado_en": "Thu, 23 Apr 2026 22:54:14 GMT",
+      "rank": 4,
+      "ranking_reason": {
+        "adyacente": {
+          "matches": [],
+          "normalized": 0.0,
+          "raw_count": 0,
+          "weighted": 0.0
+        },
+        "core_aec": {
+          "matches": [],
+          "normalized": 0.0,
+          "raw_count": 0,
+          "weighted": 0.0
+        },
+        "recency": {
+          "days_old": null,
+          "normalized": 0.0,
+          "weighted": 0.0
+        },
+        "referente": {
+          "canal": "youtube",
+          "weight_canal": 1.0,
+          "weighted": 0.1
+        },
+        "total": 0.1
+      },
+      "ranking_score": 0.1,
+      "referente_id": "d7c794b6-a61f-4739-b7fb-10e0bdc61ae0",
+      "referente_nombre": "Bernard Marr",
+      "titulo": "The Future Of Google Search, Maps And AI Agents [v2-clean]",
+      "url_canonica": "https://www.youtube.com/watch?v=27bLTrhZ4Mg"
+    },
+    {
+      "canal": "youtube",
+      "publicado_en": "Mon, 27 Apr 2026 22:53:57 GMT",
+      "rank": 5,
+      "ranking_reason": {
+        "adyacente": {
+          "matches": [],
+          "normalized": 0.0,
+          "raw_count": 0,
+          "weighted": 0.0
+        },
+        "core_aec": {
+          "matches": [],
+          "normalized": 0.0,
+          "raw_count": 0,
+          "weighted": 0.0
+        },
+        "recency": {
+          "days_old": null,
+          "normalized": 0.0,
+          "weighted": 0.0
+        },
+        "referente": {
+          "canal": "youtube",
+          "weight_canal": 1.0,
+          "weighted": 0.1
+        },
+        "total": 0.1
+      },
+      "ranking_score": 0.1,
+      "referente_id": "1848755f-3a58-4d11-ad97-8c23a80c962d",
+      "referente_nombre": "Nate Gentile",
+      "titulo": "Monté el PC de BATMAN dentro de una Batcueva REAL [v2-clean]",
+      "url_canonica": "https://www.youtube.com/watch?v=3LnNwS6rqk8"
+    },
+    {
+      "canal": "youtube",
+      "publicado_en": "Wed, 06 May 2026 16:53:57 GMT",
+      "rank": 6,
+      "ranking_reason": {
+        "adyacente": {
+          "matches": [],
+          "normalized": 0.0,
+          "raw_count": 0,
+          "weighted": 0.0
+        },
+        "core_aec": {
+          "matches": [],
+          "normalized": 0.0,
+          "raw_count": 0,
+          "weighted": 0.0
+        },
+        "recency": {
+          "days_old": null,
+          "normalized": 0.0,
+          "weighted": 0.0
+        },
+        "referente": {
+          "canal": "youtube",
+          "weight_canal": 1.0,
+          "weighted": 0.1
+        },
+        "total": 0.1
+      },
+      "ranking_score": 0.1,
+      "referente_id": "1848755f-3a58-4d11-ad97-8c23a80c962d",
+      "referente_nombre": "Nate Gentile",
+      "titulo": "Adiós Windows. Me paso a LINUX para SIEMPRE [v2-clean]",
+      "url_canonica": "https://www.youtube.com/watch?v=9Gr2QjvSQ-I"
+    },
+    {
+      "canal": "youtube",
+      "publicado_en": "Mon, 27 Apr 2026 22:54:08 GMT",
+      "rank": 7,
+      "ranking_reason": {
+        "adyacente": {
+          "matches": [],
+          "normalized": 0.0,
+          "raw_count": 0,
+          "weighted": 0.0
+        },
+        "core_aec": {
+          "matches": [],
+          "normalized": 0.0,
+          "raw_count": 0,
+          "weighted": 0.0
+        },
+        "recency": {
+          "days_old": null,
+          "normalized": 0.0,
+          "weighted": 0.0
+        },
+        "referente": {
+          "canal": "youtube",
+          "weight_canal": 1.0,
+          "weighted": 0.1
+        },
+        "total": 0.1
+      },
+      "ranking_score": 0.1,
+      "referente_id": "7f4f58e9-80cd-41e5-a78d-a0e0f079aa8d",
+      "referente_nombre": "Fred Mills",
+      "titulo": "The US Megaproject You’ve (Probably) Never Heard Of [v2-clean]",
+      "url_canonica": "https://www.youtube.com/watch?v=A0lQPphWTkQ"
+    },
+    {
+      "canal": "youtube",
+      "publicado_en": "Tue, 28 Apr 2026 22:54:05 GMT",
+      "rank": 8,
+      "ranking_reason": {
+        "adyacente": {
+          "matches": [],
+          "normalized": 0.0,
+          "raw_count": 0,
+          "weighted": 0.0
+        },
+        "core_aec": {
+          "matches": [],
+          "normalized": 0.0,
+          "raw_count": 0,
+          "weighted": 0.0
+        },
+        "recency": {
+          "days_old": null,
+          "normalized": 0.0,
+          "weighted": 0.0
+        },
+        "referente": {
+          "canal": "youtube",
+          "weight_canal": 1.0,
+          "weighted": 0.1
+        },
+        "total": 0.1
+      },
+      "ranking_score": 0.1,
+      "referente_id": "6af76981-e122-41d4-9ef2-bb75ad977f63",
+      "referente_nombre": "Andrew Ng",
+      "titulo": "Become an AI power user 🌟 new course from Andrew Ng [v2-clean]",
+      "url_canonica": "https://www.youtube.com/watch?v=FNfIMnpz-ZY"
+    },
+    {
+      "canal": "youtube",
+      "publicado_en": "Wed, 06 May 2026 14:54:05 GMT",
+      "rank": 9,
+      "ranking_reason": {
+        "adyacente": {
+          "matches": [],
+          "normalized": 0.0,
+          "raw_count": 0,
+          "weighted": 0.0
+        },
+        "core_aec": {
+          "matches": [],
+          "normalized": 0.0,
+          "raw_count": 0,
+          "weighted": 0.0
+        },
+        "recency": {
+          "days_old": null,
+          "normalized": 0.0,
+          "weighted": 0.0
+        },
+        "referente": {
+          "canal": "youtube",
+          "weight_canal": 1.0,
+          "weighted": 0.1
+        },
+        "total": 0.1
+      },
+      "ranking_score": 0.1,
+      "referente_id": "6af76981-e122-41d4-9ef2-bb75ad977f63",
+      "referente_nombre": "Andrew Ng",
+      "titulo": "Build Interactive Agents with Generative UI [v2-clean]",
+      "url_canonica": "https://www.youtube.com/watch?v=J26M-cpFG-M"
+    },
+    {
+      "canal": "youtube",
+      "publicado_en": "Wed, 29 Apr 2026 22:54:14 GMT",
+      "rank": 10,
+      "ranking_reason": {
+        "adyacente": {
+          "matches": [],
+          "normalized": 0.0,
+          "raw_count": 0,
+          "weighted": 0.0
+        },
+        "core_aec": {
+          "matches": [],
+          "normalized": 0.0,
+          "raw_count": 0,
+          "weighted": 0.0
+        },
+        "recency": {
+          "days_old": null,
+          "normalized": 0.0,
+          "weighted": 0.0
+        },
+        "referente": {
+          "canal": "youtube",
+          "weight_canal": 1.0,
+          "weighted": 0.1
+        },
+        "total": 0.1
+      },
+      "ranking_score": 0.1,
+      "referente_id": "d7c794b6-a61f-4739-b7fb-10e0bdc61ae0",
+      "referente_nombre": "Bernard Marr",
+      "titulo": "What AI Really Is, Explained Simply [v2-clean]",
+      "url_canonica": "https://www.youtube.com/watch?v=NGq0pdR0s2U"
+    }
+  ],
+  "mode": "dry-run",
+  "stage": "stage5_rank_candidates",
+  "stats": {
+    "candidates_eligible": 20,
+    "candidates_skipped_no_text": 0,
+    "candidates_total": 20,
+    "score_max": 0.286667,
+    "score_median": 0.1,
+    "score_min": 0.09
+  },
+  "timestamp_utc": "2026-05-07T18:56:57Z",
+  "top_n": 10,
+  "version": "v0-deterministic"
+}

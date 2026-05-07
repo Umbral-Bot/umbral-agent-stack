@@ -2,7 +2,7 @@
 
 ## Estado
 
-Proposed — 2026-05-08
+Accepted — 2026-05-07
 
 > **Relación con ADR-008**: ADR-008 (`ADR-008-orquestacion-editorial.md`, Accepted 2026-04-21) estableció la arquitectura macro: **Agent Stack core + n8n self-hosted como capa de bordes + Make como lab/stand-by**. Este ADR-011 no la revisa: la complementa. ADR-008 respondió *"¿qué motor coordina el flujo editorial?"*. ADR-011 responde *"frente a una integración nueva, ¿cómo decide el equipo en qué motor cae, sin debate caso por caso?"*. ADR-011 agrega: matriz operativa, criterios duros de decisión, anti-patrones explícitos, reglas de promoción n8n→core y topología de comunicación entre los tres motores.
 

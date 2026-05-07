@@ -21,6 +21,139 @@ def test_extract_poll_comments_result_supports_worker_envelope():
     assert comments[0]["id"] == "c-1"
 
 
+def test_control_room_target_resolves_page_id_from_env():
+    wc = MagicMock()
+    wc.notion_poll_comments.return_value = {
+        "ok": True,
+        "result": {
+            "comments": [
+                {
+                    "id": "c-control",
+                    "created_time": "2026-05-07T18:44:00.000Z",
+                    "created_by": "user-1",
+                    "text": "@Rick ping worker /health",
+                }
+            ]
+        },
+    }
+    queue = MagicMock()
+    scheduler = MagicMock()
+    r = MagicMock()
+    r.get.return_value = "2026-05-07T18:40:00+00:00"
+    r.set.return_value = True
+
+    with patch.dict(
+        "os.environ",
+        {
+            "NOTION_CONTROL_ROOM_PAGE_ID": "control-room-page",
+            "NOTION_DELIVERABLES_DB_ID": "",
+            "NOTION_PROJECTS_DB_ID": "",
+            "NOTION_CURATED_SESSIONS_DB_ID": "",
+            "NOTION_GRANOLA_DB_ID": "",
+            "NOTION_POLL_OVERLAP_SEC": "300",
+        },
+        clear=False,
+    ):
+        with patch("dispatcher.rick_mention._david_allowlist", return_value={"user-1"}):
+            with patch("dispatcher.rick_mention.is_rick_mention", return_value=True):
+                with patch("dispatcher.rick_mention.handle_rick_mention") as mock_handle_rick:
+                    _do_poll(wc, queue, r, scheduler)
+
+    wc.notion_poll_comments.assert_called_once_with(
+        since="2026-05-07T18:35:00+00:00",
+        limit=20,
+        page_id="control-room-page",
+    )
+    mock_handle_rick.assert_called_once()
+    assert mock_handle_rick.call_args.kwargs["page_id"] == "control-room-page"
+    assert mock_handle_rick.call_args.kwargs["page_kind"] == "control_room"
+
+
+def test_control_room_target_no_env_keeps_none_with_warning(caplog):
+    wc = MagicMock()
+    wc.notion_poll_comments.return_value = {
+        "ok": True,
+        "result": {
+            "comments": [
+                {
+                    "id": "c-control",
+                    "created_time": "2026-05-07T18:44:00.000Z",
+                    "text": "@Rick ping worker /health",
+                }
+            ]
+        },
+    }
+
+    with patch.dict(
+        "os.environ",
+        {
+            "NOTION_CONTROL_ROOM_PAGE_ID": "",
+            "NOTION_DELIVERABLES_DB_ID": "",
+            "NOTION_PROJECTS_DB_ID": "",
+            "NOTION_CURATED_SESSIONS_DB_ID": "",
+            "NOTION_GRANOLA_DB_ID": "",
+            "NOTION_POLL_OVERLAP_SEC": "300",
+        },
+        clear=False,
+    ):
+        with caplog.at_level("WARNING", logger="dispatcher.notion_poller"):
+            comments = _collect_candidate_comments(wc, "2026-05-07T18:40:00+00:00", 20)
+
+    wc.notion_poll_comments.assert_called_once_with(
+        since="2026-05-07T18:35:00+00:00",
+        limit=20,
+        page_id=None,
+    )
+    assert comments[0]["page_kind"] == "control_room"
+    assert "page_id" not in comments[0]
+    assert "NOTION_CONTROL_ROOM_PAGE_ID" in caplog.text
+
+
+def test_control_room_target_no_env_logs_warning_no_silent_none(caplog):
+    wc = MagicMock()
+    wc.notion_poll_comments.return_value = {
+        "ok": True,
+        "result": {
+            "comments": [
+                {
+                    "id": "c-control",
+                    "created_time": "2026-05-07T18:44:00.000Z",
+                    "created_by": "user-1",
+                    "text": "@Rick ping worker /health",
+                }
+            ]
+        },
+    }
+    queue = MagicMock()
+    scheduler = MagicMock()
+    r = MagicMock()
+    r.get.return_value = "2026-05-07T18:40:00+00:00"
+    r.set.return_value = True
+
+    with patch.dict(
+        "os.environ",
+        {
+            "NOTION_CONTROL_ROOM_PAGE_ID": "",
+            "NOTION_DELIVERABLES_DB_ID": "",
+            "NOTION_PROJECTS_DB_ID": "",
+            "NOTION_CURATED_SESSIONS_DB_ID": "",
+            "NOTION_GRANOLA_DB_ID": "",
+            "NOTION_POLL_OVERLAP_SEC": "300",
+        },
+        clear=False,
+    ):
+        with caplog.at_level("WARNING", logger="dispatcher.notion_poller"):
+            with patch("dispatcher.rick_mention._david_allowlist", return_value={"user-1"}):
+                with patch("dispatcher.rick_mention.is_rick_mention", return_value=True):
+                    with patch("dispatcher.rick_mention.handle_rick_mention") as mock_handle_rick:
+                        _do_poll(wc, queue, r, scheduler)
+
+    assert "NOTION_CONTROL_ROOM_PAGE_ID" in caplog.text
+    mock_handle_rick.assert_called_once()
+    assert mock_handle_rick.call_args.kwargs["page_id"] is None
+    assert mock_handle_rick.call_args.kwargs["page_kind"] == "control_room"
+
+
 @patch("dispatcher.notion_poller.handle_smart_reply")
 def test_do_poll_advances_last_ts_from_worker_envelope(mock_handle_smart_reply):
     wc = MagicMock()
@@ -56,6 +189,9 @@ def test_do_poll_advances_last_ts_from_worker_envelope(mock_handle_smart_reply):
         {
             "NOTION_DELIVERABLES_DB_ID": "deliverables-db",
             "NOTION_PROJECTS_DB_ID": "projects-db",
+            "NOTION_CURATED_SESSIONS_DB_ID": "",
+            "NOTION_GRANOLA_DB_ID": "",
+            "NOTION_CONTROL_ROOM_PAGE_ID": "",
         },
         clear=False,
     ):
@@ -108,6 +244,9 @@ def test_do_poll_accepts_direct_comments_shape(mock_handle_smart_reply):
         {
             "NOTION_DELIVERABLES_DB_ID": "deliverables-db",
             "NOTION_PROJECTS_DB_ID": "projects-db",
+            "NOTION_CURATED_SESSIONS_DB_ID": "",
+            "NOTION_GRANOLA_DB_ID": "",
+            "NOTION_CONTROL_ROOM_PAGE_ID": "",
         },
         clear=False,
     ):
@@ -150,6 +289,9 @@ def test_do_poll_skips_already_processed_comment(mock_handle_smart_reply):
         {
             "NOTION_DELIVERABLES_DB_ID": "deliverables-db",
             "NOTION_PROJECTS_DB_ID": "projects-db",
+            "NOTION_CURATED_SESSIONS_DB_ID": "",
+            "NOTION_GRANOLA_DB_ID": "",
+            "NOTION_CONTROL_ROOM_PAGE_ID": "",
         },
         clear=False,
     ):
@@ -239,6 +381,7 @@ def test_collect_candidate_comments_includes_review_targets_and_deduplicates():
         {
             "NOTION_DELIVERABLES_DB_ID": "deliverables-db",
             "NOTION_PROJECTS_DB_ID": "projects-db",
+            "NOTION_CURATED_SESSIONS_DB_ID": "",
             "NOTION_CONTROL_ROOM_PAGE_ID": "control-room-page",
             "NOTION_POLL_OVERLAP_SEC": "300",
         },
@@ -247,12 +390,14 @@ def test_collect_candidate_comments_includes_review_targets_and_deduplicates():
         comments = _collect_candidate_comments(wc, "2026-03-16T21:00:00+00:00", 20)
 
     assert [comment["id"] for comment in comments] == ["c-1", "c-2", "c-3"]
+    assert comments[0]["page_id"] == "control-room-page"
+    assert comments[0]["page_kind"] == "control_room"
     assert comments[1]["page_id"] == "deliverable-1"
     assert comments[1]["page_kind"] == "deliverable"
     assert comments[2]["page_id"] == "project-1"
     assert comments[2]["page_kind"] == "project"
     expected_calls = [
-        {"since": "2026-03-16T20:55:00+00:00", "limit": 20, "page_id": None},
+        {"since": "2026-03-16T20:55:00+00:00", "limit": 20, "page_id": "control-room-page"},
         {"since": "2026-03-16T20:55:00+00:00", "limit": 20, "page_id": "deliverable-1"},
         {"since": "2026-03-16T20:55:00+00:00", "limit": 20, "page_id": "deliverable-2"},
         {"since": "2026-03-16T20:55:00+00:00", "limit": 20, "page_id": "project-1"},
@@ -308,10 +453,12 @@ def test_collect_candidate_comments_includes_session_capitalizable_targets():
         comments = _collect_candidate_comments(wc, "2026-03-16T21:00:00+00:00", 20)
 
     assert [comment["id"] for comment in comments] == ["c-1", "c-2"]
+    assert comments[0]["page_id"] == "control-room-page"
+    assert comments[0]["page_kind"] == "control_room"
     assert comments[1]["page_id"] == "session-1"
     assert comments[1]["page_kind"] == "session_capitalizable"
     expected_calls = [
-        {"since": "2026-03-16T20:55:00+00:00", "limit": 20, "page_id": None},
+        {"since": "2026-03-16T20:55:00+00:00", "limit": 20, "page_id": "control-room-page"},
         {"since": "2026-03-16T20:55:00+00:00", "limit": 20, "page_id": "session-1"},
     ]
     assert [call.kwargs for call in wc.notion_poll_comments.call_args_list] == expected_calls
@@ -334,6 +481,7 @@ def test_collect_candidate_comments_falls_back_when_deliverable_filter_fails():
             "NOTION_DELIVERABLES_DB_ID": "deliverables-db",
             "NOTION_PROJECTS_DB_ID": "projects-db",
             "NOTION_CURATED_SESSIONS_DB_ID": "",
+            "NOTION_CONTROL_ROOM_PAGE_ID": "",
         },
         clear=False,
     ):

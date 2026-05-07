@@ -27,11 +27,15 @@ CLI_SCRIPT = "scripts/plan_notion_publicaciones.py"
 # ---------------------------------------------------------------------------
 
 def _run_cli(*args: str, expect_ok: bool = True) -> subprocess.CompletedProcess[str]:
+    env = {k: v for k, v in __import__("os").environ.items() if k != "NOTION_API_KEY"}
+    env["PYTHONPATH"] = "."
+    env["PYTHONIOENCODING"] = "utf-8"
     result = subprocess.run(
         [sys.executable, CLI_SCRIPT, *args],
         capture_output=True,
+        encoding="utf-8",
         text=True,
-        env={**{"PYTHONPATH": "."}, **{k: v for k, v in __import__("os").environ.items() if k != "NOTION_API_KEY"}},
+        env=env,
     )
     if expect_ok:
         assert result.returncode == 0, f"CLI failed:\n{result.stderr}"

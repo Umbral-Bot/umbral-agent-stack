@@ -33,7 +33,7 @@ import re
 import shutil
 import tempfile
 import uuid
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger("worker.sandbox.workspace")
@@ -344,7 +344,11 @@ def overwrite_file_in_workspace(
         return {"ok": False, "error": "rel_path must be a non-empty string"}
     if not isinstance(content, str):
         return {"ok": False, "error": "content must be a string"}
-    if os.path.isabs(rel_path):
+    if (
+        os.path.isabs(rel_path)
+        or PurePosixPath(rel_path).is_absolute()
+        or PureWindowsPath(rel_path).is_absolute()
+    ):
         return {"ok": False, "error": "rel_path must be relative"}
     if ".." in Path(rel_path).parts:
         return {"ok": False, "error": "rel_path must not contain '..'"}

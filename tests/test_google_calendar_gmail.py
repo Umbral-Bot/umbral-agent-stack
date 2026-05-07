@@ -389,7 +389,7 @@ class TestBuildRFC2822Message:
 
 class TestAuthHelpers:
 
-    @patch.dict(os.environ, {"GOOGLE_CALENDAR_TOKEN": "bearer-cal-123"})
+    @patch.dict(os.environ, {"GOOGLE_CALENDAR_TOKEN": "bearer-cal-123"}, clear=True)
     def test_calendar_headers_bearer(self):
         headers = _get_calendar_headers()
         assert headers["Authorization"] == "Bearer bearer-cal-123"
@@ -448,7 +448,7 @@ class TestAuthHelpers:
         assert headers["Authorization"] == "Bearer refreshed-calendar-token"
         assert headers["Content-Type"] == "application/json"
 
-    @patch.dict(os.environ, {"GOOGLE_GMAIL_TOKEN": "bearer-gmail-456"})
+    @patch.dict(os.environ, {"GOOGLE_GMAIL_TOKEN": "bearer-gmail-456"}, clear=True)
     def test_gmail_headers_bearer(self):
         headers = _get_gmail_headers()
         assert headers["Authorization"] == "Bearer bearer-gmail-456"

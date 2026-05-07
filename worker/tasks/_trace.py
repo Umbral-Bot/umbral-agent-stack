@@ -2,19 +2,27 @@
 
 Single public helper: ``append_delegation(record)``.
 
-POSIX-only (uses ``fcntl.flock``). Runs only on the VPS Linux runtime.
+Uses ``fcntl.flock`` on the VPS Linux runtime. Local non-POSIX test runs
+fall back to process-local locking around append-only writes.
 """
 from __future__ import annotations
 
-import fcntl
 import json
 import logging
 import os
+import threading
 import uuid
+from contextlib import nullcontext
 from datetime import datetime, timezone
 from pathlib import Path
 
+try:
+    import fcntl
+except ImportError:  # pragma: no cover - exercised on Windows local runs
+    fcntl = None  # type: ignore[assignment]
+
 logger = logging.getLogger(__name__)
+_FALLBACK_LOCK = threading.Lock()
 
 DEFAULT_LOG_PATH = Path(
     os.environ.get("UMBRAL_DELEGATIONS_LOG", "~/.local/state/umbral/delegations.jsonl")
@@ -70,20 +78,24 @@ def append_delegation(record: dict) -> None:
     ).expanduser()
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
-    existed = log_path.exists()
-    fd = os.open(log_path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, _FILE_MODE)
-    try:
-        if existed:
-            current_mode = log_path.stat().st_mode & 0o777
-            if current_mode != _FILE_MODE:
-                logger.warning("delegations log mode was %o, forcing %o",
-                               current_mode, _FILE_MODE)
-                os.chmod(log_path, _FILE_MODE)
-        fcntl.flock(fd, fcntl.LOCK_EX)
+    lock_context = _FALLBACK_LOCK if fcntl is None else nullcontext()
+    with lock_context:
+        existed = log_path.exists()
+        fd = os.open(log_path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, _FILE_MODE)
         try:
-            line = json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n"
-            os.write(fd, line.encode("utf-8"))
+            if existed:
+                current_mode = log_path.stat().st_mode & 0o777
+                if current_mode != _FILE_MODE:
+                    logger.warning("delegations log mode was %o, forcing %o",
+                                   current_mode, _FILE_MODE)
+                    os.chmod(log_path, _FILE_MODE)
+            if fcntl is not None:
+                fcntl.flock(fd, fcntl.LOCK_EX)
+            try:
+                line = json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n"
+                os.write(fd, line.encode("utf-8"))
+            finally:
+                if fcntl is not None:
+                    fcntl.flock(fd, fcntl.LOCK_UN)
         finally:
-            fcntl.flock(fd, fcntl.LOCK_UN)
-    finally:
-        os.close(fd)
+            os.close(fd)

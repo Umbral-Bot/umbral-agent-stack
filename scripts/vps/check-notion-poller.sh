@@ -18,8 +18,12 @@ fi
 # 2. Process running?
 echo ""
 echo "2. Process:"
-if pgrep -f "dispatcher.notion_poller" > /dev/null 2>&1; then
-    echo "   âœ… Poller process running (PID: $(pgrep -f 'dispatcher.notion_poller' | head -1))"
+DAEMON_PID="$(pgrep -f 'notion-poller-daemon.py' | head -1 || true)"
+MODULE_PID="$(pgrep -f 'dispatcher.notion_poller' | head -1 || true)"
+if [ -n "$DAEMON_PID" ]; then
+    echo "   âœ… Poller daemon running (PID: $DAEMON_PID)"
+elif [ -n "$MODULE_PID" ]; then
+    echo "   âœ… Poller module running (PID: $MODULE_PID)"
 else
     echo "   â„¹ï¸  No poller process (normal if using --once cron mode)"
 fi

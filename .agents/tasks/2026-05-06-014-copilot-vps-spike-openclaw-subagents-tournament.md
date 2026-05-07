@@ -109,3 +109,55 @@ En este mismo archivo, agregar sección `## Resultado spike 2026-05-XX` con:
 4. Path al ADR creado paso 4.
 5. Decisión final (A/B/C) y estimación implementación.
 6. Confirmación: **"O7.0 cerrado → O7 puede definir formato tournament estándar."**
+
+---
+
+## Resultado spike 2026-05-06 (copilot-vps)
+
+### 1. Discovery (paso 1)
+
+- **OpenClaw versión:** `2026.5.3-1 (2eae30e)` — `/home/rick/.npm-global/bin/openclaw`.
+- **`subagents`:** primitiva real. Tool `sessions_spawn` (perfiles `coding` y `full`) + slash `/subagents {list, kill, log, info, send, steer, spawn}`. Bundled docs en `lib/node_modules/openclaw/docs/tools/subagents.md` (557 líneas).
+- **`parallel-specialist-lanes`:** **patrón de diseño**, no bloque de config. Documentado en `concepts/parallel-specialist-lanes.md`. Implementado vía agentes aislados (`agents.list[]`) + el patrón Owns/Does-not-own/Chat-budget/Handoff/Tool-posture.
+- **Comandos / config syntax descubiertos:** ver §2 del ADR.
+
+### 2. Spike (paso 2)
+
+**Live spawn deliberadamente NO ejecutado** — justificación en §3 del ADR. Evidencia equivalente:
+
+- 3 runs subagent históricos exitosos en `openclaw tasks list --runtime subagent` (rick-ops + rick-tracker x2).
+- Bloques `subagents.allowAgents` activos en `~/.openclaw/openclaw.json` (rick-orchestrator → 6 rick-* agents).
+- `openclaw config get agents.defaults.subagents` → `{"maxConcurrent": 8}` (effective).
+
+### 3. Gap analysis (paso 3)
+
+| Requerimiento tournament | Cubierto nativo | Gap |
+|---|---|---|
+| 1 issue → N branches paralelos | ✅ spawn (sessions_spawn ×N, respeta maxConcurrent) | Branch creation = app-side (git en lane task body) |
+| Métricas: PRs creados, % mergeable, tiempo revisión | ✅ per-task (status, timestamps, run/token stats, transcript path, delivery) | Aggregation: wrapper lee `tasks list --json` + `gh pr list` |
+| Cap tokens / kill switch | ✅ runTimeoutSeconds + `/subagents kill` + cheaper subagent model | USD budget cap → wrapper traduce a runTimeoutSeconds |
+| Selección de winner | ✅ pattern (announce-chain depth-2 → orchestrator decide) | Rubric = wrapper concern (skill prompt) |
+| Cleanup branches losers | ✅ session auto-archive (60min). ❌ git branches | Wrapper: `gh pr close` + (opcional) `git push :branch` |
+| Integración Mission Control (O13.4) | ✅ `tasks list --runtime subagent --json` | Wrapper poll/subscribe → Notion/Linear |
+
+**Cobertura: 5/6 requerimientos ≥80% nativos.** Winner selection es pattern by design.
+
+### 4. ADR creado
+
+[docs/adr/tournament-on-openclaw-primitives.md](../../docs/adr/tournament-on-openclaw-primitives.md)
+
+### 5. Decisión final + estimación
+
+**Decisión: A — Wrapper-only.**
+
+OpenClaw cubre spawn / aislamiento / concurrencia / timeouts / kill / archive / nesting / per-task tracking / push completion / depth-2 orchestrator. El wrapper solo orquesta; no reimplementa runtime.
+
+**Estimación: ~12–15h** (skill 4–6h + lane task body 3–4h + Mission Control glue 2–3h + smoke + retro 2h).
+
+### 6. Pre-condition flagged (no auto-aplicado por spike)
+
+`agents.defaults.subagents.maxSpawnDepth` debe flipear de `1` (default) a `2` antes del primer tournament, porque el patrón orquestador requiere depth 2 (main → orchestrator → workers). Esto exige PR explícito a `~/.openclaw/openclaw.json` con sign-off de David (skill `openclaw-vps-operator` lo trata como runtime topology change). NO lo aplico en este spike.
+
+### 7. Confirmación
+
+**O7.0 cerrado → O7 puede definir formato tournament estándar.**

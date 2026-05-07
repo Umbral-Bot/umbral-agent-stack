@@ -1,0 +1,1196 @@
+{
+  "summary": {
+    "items_analyzed": 16,
+    "avg_blocks_pre": 18.62,
+    "avg_blocks_post": 15.81,
+    "avg_block_reduction_pct": 15.1,
+    "total_removals": 43,
+    "global_reasons_histogram": {
+      "section_header": 4,
+      "promo_keyword": 6,
+      "legal_disclaimer": 2,
+      "sponsor_domain_only": 14,
+      "social_links_only": 6,
+      "hashtag_only": 8
+    },
+    "top3_reduction": [
+      {
+        "sqlite_id": 291,
+        "referente": "Fred Mills",
+        "titulo": "Why Nobody Wants the Chrysler Building",
+        "url": "https://www.youtube.com/watch?v=Vr_Wd2ZucZA",
+        "html_chars_pre": 2945,
+        "html_chars_post": 2373,
+        "blocks_pre": 26,
+        "blocks_post": 20,
+        "blocks_delta": 6,
+        "removed_count": 6,
+        "removed_sample": [
+          {
+            "reason": "sponsor_domain_only",
+            "text": "🔥 Pre-order Fred&#x27;s book MEGA BUILDS now 👉 https://bit.ly/3Y63G6X"
+          },
+          {
+            "reason": "promo_keyword",
+            "text": "This video contains paid promotion for FJ Dynamics."
+          },
+          {
+            "reason": "sponsor_domain_only",
+            "text": "For more by The B1M subscribe now 👉 https://bit.ly/the-b1m"
+          },
+          {
+            "reason": "social_links_only",
+            "text": "Follow Get Construction Talking Instagram - https://www.instagram.com/getconstructiontalking/X - https://twitter.com/GetConstTalkingLinkedIn - https://www.linkedin.com/company/get-construction-talking"
+          },
+          {
+            "reason": "hashtag_only",
+            "text": "#construction #architecture #chryslerbuilding"
+          }
+        ],
+        "removed_reasons_histogram": {
+          "sponsor_domain_only": 2,
+          "promo_keyword": 1,
+          "social_links_only": 1,
+          "hashtag_only": 1,
+          "legal_disclaimer": 1
+        },
+        "kept_blocks_preview": [
+          {
+            "type": "paragraph",
+            "text": "Duración: 21m19s · Publicado: 2026-05-06 · Canal: The B1M · Vistas: 591,832 · Likes: 19,498"
+          },
+          {
+            "type": "heading_2",
+            "text": "Descripción"
+          },
+          {
+            "type": "paragraph",
+            "text": "New York City's iconic Chrysler Building is in trouble... To find out more about how FJD Trion can revolutionise your next project, click on"
+          },
+          {
+            "type": "paragraph",
+            "text": "Full story here: https://theb1m.com/video/why-nobody-wants-the-chrysler-building"
+          },
+          {
+            "type": "paragraph",
+            "text": "Additional footage and images: The Dronalist, AMC, Universal Pictures."
+          },
+          {
+            "type": "paragraph",
+            "text": "We're raising awareness of construction's mental health crisis through our Get Construction Talking initiative. There’s a video series on ou"
+          },
+          {
+            "type": "paragraph",
+            "text": "Listen to The World's Best Construction Podcast by The B1M Apple - https://apple.co/3OssZsH Spotify - https://spoti.fi/3om1NkB Amazon Music "
+          },
+          {
+            "type": "paragraph",
+            "text": "View this video and more at - https://www.TheB1M.com/ Follow us on X - http://www.x.com/TheB1M/ Like us on Facebook - http://www.facebook.co"
+          }
+        ]
+      },
+      {
+        "sqlite_id": 292,
+        "referente": "Fred Mills",
+        "titulo": "Why the Jeddah Tower Won't Be One Kilometre Tall",
+        "url": "https://www.youtube.com/watch?v=vVfEs9wrW98",
+        "html_chars_pre": 3023,
+        "html_chars_post": 2462,
+        "blocks_pre": 29,
+        "blocks_post": 23,
+        "blocks_delta": 6,
+        "removed_count": 6,
+        "removed_sample": [
+          {
+            "reason": "sponsor_domain_only",
+            "text": "🔥 Pre-order Fred&#x27;s book MEGA BUILDS now 👉 https://bit.ly/3Y63G6X"
+          },
+          {
+            "reason": "promo_keyword",
+            "text": "This video contains paid promotion for Rayon."
+          },
+          {
+            "reason": "sponsor_domain_only",
+            "text": "For more by The B1M subscribe now 👉 https://bit.ly/the-b1m"
+          },
+          {
+            "reason": "social_links_only",
+            "text": "Follow Get Construction Talking Instagram - https://www.instagram.com/getconstructiontalking/X - https://twitter.com/GetConstTalkingLinkedIn - https://www.linkedin.com/company/get-construction-talking"
+          },
+          {
+            "reason": "hashtag_only",
+            "text": "#construction #architecture #jeddahtower"
+          }
+        ],
+        "removed_reasons_histogram": {
+          "sponsor_domain_only": 2,
+          "promo_keyword": 1,
+          "social_links_only": 1,
+          "hashtag_only": 1,
+          "legal_disclaimer": 1
+        },
+        "kept_blocks_preview": [
+          {
+            "type": "paragraph",
+            "text": "Duración: 17m28s · Publicado: 2026-04-29 · Canal: The B1M · Vistas: 933,356 · Likes: 20,620"
+          },
+          {
+            "type": "heading_2",
+            "text": "Descripción"
+          },
+          {
+            "type": "paragraph",
+            "text": "How Tall is Supertall? Rayon is the all-in-one, effortless CAD tool for going from concept to completion. Try it (for free) here: https://ra"
+          },
+          {
+            "type": "paragraph",
+            "text": "Full story here: https://theb1m.com/video/skyscraper-vanity-heights"
+          },
+          {
+            "type": "paragraph",
+            "text": "Additional footage and images: 20th Century Fox, Warner Bros. Interactive Entertainment, 20th Century Fox, Paramount Pictures, New Line Cine"
+          },
+          {
+            "type": "paragraph",
+            "text": "We're raising awareness of construction's mental health crisis through our Get Construction Talking initiative. There’s a video series on ou"
+          },
+          {
+            "type": "paragraph",
+            "text": "Listen to The World's Best Construction Podcast by The B1M Apple - https://apple.co/3OssZsH Spotify - https://spoti.fi/3om1NkB Amazon Music "
+          },
+          {
+            "type": "paragraph",
+            "text": "View this video and more at - https://www.TheB1M.com/ Follow us on X - http://www.x.com/TheB1M/ Like us on Facebook - http://www.facebook.co"
+          }
+        ]
+      },
+      {
+        "sqlite_id": 293,
+        "referente": "Fred Mills",
+        "titulo": "The US Megaproject You’ve (Probably) Never Heard Of",
+        "url": "https://www.youtube.com/watch?v=A0lQPphWTkQ",
+        "html_chars_pre": 3255,
+        "html_chars_post": 2693,
+        "blocks_pre": 31,
+        "blocks_post": 25,
+        "blocks_delta": 6,
+        "removed_count": 6,
+        "removed_sample": [
+          {
+            "reason": "sponsor_domain_only",
+            "text": "🔥 Pre-order Fred&#x27;s book MEGA BUILDS now 👉 https://bit.ly/3Y63G6X"
+          },
+          {
+            "reason": "promo_keyword",
+            "text": "This video contains paid promotion for KiwiCo."
+          },
+          {
+            "reason": "sponsor_domain_only",
+            "text": "For more by The B1M subscribe now 👉 https://bit.ly/the-b1m"
+          },
+          {
+            "reason": "social_links_only",
+            "text": "Follow Get Construction Talking Instagram - https://www.instagram.com/getconstructiontalking/X - https://twitter.com/GetConstTalkingLinkedIn - https://www.linkedin.com/company/get-construction-talking"
+          },
+          {
+            "reason": "hashtag_only",
+            "text": "#construction #architecture #engineering"
+          }
+        ],
+        "removed_reasons_histogram": {
+          "sponsor_domain_only": 2,
+          "promo_keyword": 1,
+          "social_links_only": 1,
+          "hashtag_only": 1,
+          "legal_disclaimer": 1
+        },
+        "kept_blocks_preview": [
+          {
+            "type": "paragraph",
+            "text": "Duración: 18m15s · Publicado: 2026-04-27 · Canal: The B1M · Vistas: 796,734 · Likes: 21,413"
+          },
+          {
+            "type": "heading_2",
+            "text": "Descripción"
+          },
+          {
+            "type": "paragraph",
+            "text": "Why America is rebuilding the world's first bridge-tunnel. Inspire the future scientists and engineers that you love by visiting https://www"
+          },
+          {
+            "type": "paragraph",
+            "text": "Full story here - https://theb1m.com/video/hampton-roads-bridge-tunnel-expansion"
+          },
+          {
+            "type": "paragraph",
+            "text": "00:00 Intro 00:57 Norfolk, Virginia 01:43 What’s a Bridge-Tunnel? 02:32 Immersed Tubes 06:12 The HRBT 08:40 The TBM 10:00 The North Island 1"
+          },
+          {
+            "type": "paragraph",
+            "text": "Additional footage and images: Virginia Department of Transportation, U.S. Navy, Ben Schumin, Gordie Howe International Bridge, Herrenknecht"
+          },
+          {
+            "type": "paragraph",
+            "text": "We're raising awareness of construction's mental health crisis through our Get Construction Talking initiative. There’s a video series on ou"
+          },
+          {
+            "type": "paragraph",
+            "text": "Listen to The World's Best Construction Podcast by The B1M Apple - https://apple.co/3OssZsH Spotify - https://spoti.fi/3om1NkB Amazon Music "
+          }
+        ]
+      }
+    ],
+    "items_with_zero_removals": [
+      {
+        "sqlite_id": 408,
+        "titulo": "¿Existen Fisuras en el Universo?"
+      }
+    ]
+  },
+  "items": [
+    {
+      "sqlite_id": 51,
+      "referente": "Alex Freberg",
+      "titulo": "Switching to Mac after 10 years as a Microsoft User",
+      "url": "https://www.youtube.com/watch?v=o2ehgG2VrsY",
+      "html_chars_pre": 1801,
+      "html_chars_post": 1441,
+      "blocks_pre": 18,
+      "blocks_post": 13,
+      "blocks_delta": 5,
+      "removed_count": 4,
+      "removed_sample": [
+        {
+          "reason": "section_header",
+          "text": "RESOURCES:"
+        },
+        {
+          "reason": "promo_keyword",
+          "text": "*Please note I may earn a small commission for any purchase through these links - Thanks for supporting the channel!*____________________________________________"
+        },
+        {
+          "reason": "section_header",
+          "text": "BECOME A MEMBER -"
+        },
+        {
+          "reason": "legal_disclaimer",
+          "text": "*All opinions or statements in this video are my own and do not reflect the opinion of the company I work for or have ever worked for*"
+        }
+      ],
+      "removed_reasons_histogram": {
+        "section_header": 2,
+        "promo_keyword": 1,
+        "legal_disclaimer": 1
+      },
+      "kept_blocks_preview": [
+        {
+          "type": "paragraph",
+          "text": "Duración: 8m20s · Publicado: 2026-05-05 · Canal: Alex The Analyst · Vistas: 2,851 · Likes: 136"
+        },
+        {
+          "type": "heading_2",
+          "text": "Descripción"
+        },
+        {
+          "type": "paragraph",
+          "text": "I didn't think this would ever happen, but here I am. I'm switching from Microsoft to Mac."
+        },
+        {
+          "type": "paragraph",
+          "text": "I didn't think I really could since I use so many Microsoft products for my work, but as I found out, you can use almost everything on a Mac"
+        },
+        {
+          "type": "divider",
+          "text": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "💻Analyst Builder - https://www.analystbuilder.com/"
+        },
+        {
+          "type": "paragraph",
+          "text": "📖Take my Full MySQL Course Here: https://bit.ly/3tqOipr 📖Take my Full Python Course Here: https://bit.ly/48O581R 📖Practice Technical Intervi"
+        },
+        {
+          "type": "paragraph",
+          "text": "Coursera Courses: Google Data Analyst Certification: https://coursera.pxf.io/5bBd62 Data Analysis with Python - https://coursera.pxf.io/BXY3"
+        }
+      ]
+    },
+    {
+      "sqlite_id": 52,
+      "referente": "Alex Freberg",
+      "titulo": "Learn ETL Pipelines in Databricks in Under 1 Hour | Data Engineering in Databricks",
+      "url": "https://www.youtube.com/watch?v=Vht4hoRHEek",
+      "html_chars_pre": 2385,
+      "html_chars_post": 2024,
+      "blocks_pre": 28,
+      "blocks_post": 23,
+      "blocks_delta": 5,
+      "removed_count": 4,
+      "removed_sample": [
+        {
+          "reason": "section_header",
+          "text": "RESOURCES:"
+        },
+        {
+          "reason": "promo_keyword",
+          "text": "*Please note I may earn a small commission for any purchase through these links - Thanks for supporting the channel!*____________________________________________"
+        },
+        {
+          "reason": "section_header",
+          "text": "BECOME A MEMBER -"
+        },
+        {
+          "reason": "legal_disclaimer",
+          "text": "*All opinions or statements in this video are my own and do not reflect the opinion of the company I work for or have ever worked for*"
+        }
+      ],
+      "removed_reasons_histogram": {
+        "section_header": 2,
+        "promo_keyword": 1,
+        "legal_disclaimer": 1
+      },
+      "kept_blocks_preview": [
+        {
+          "type": "paragraph",
+          "text": "Duración: 1h04m56s · Publicado: 2026-04-28 · Canal: Alex The Analyst · Vistas: 6,417 · Likes: 255"
+        },
+        {
+          "type": "heading_2",
+          "text": "Descripción"
+        },
+        {
+          "type": "paragraph",
+          "text": "In this series we are going to dive into the Data Engineering side of Databricks!"
+        },
+        {
+          "type": "paragraph",
+          "text": "This video will orchestrating jobs to automate our data pipelines."
+        },
+        {
+          "type": "paragraph",
+          "text": "Get the Data Here: https://github.com/AlexTheAnalyst/DatabricksSeries/tree/main/Data%20Engineering"
+        },
+        {
+          "type": "paragraph",
+          "text": "Try out Databricks Free: http://signup.databricks.com/?provider=DB_FREE_TIER&utm_source=youtube&utm_medium=video&utm_campaign=AlextheAnalyst"
+        },
+        {
+          "type": "divider",
+          "text": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "💻Analyst Builder - https://www.analystbuilder.com/"
+        }
+      ]
+    },
+    {
+      "sqlite_id": 81,
+      "referente": "Nate Gentile",
+      "titulo": "Adiós Windows. Me paso a LINUX para SIEMPRE",
+      "url": "https://www.youtube.com/watch?v=9Gr2QjvSQ-I",
+      "html_chars_pre": 1113,
+      "html_chars_post": 727,
+      "blocks_pre": 8,
+      "blocks_post": 4,
+      "blocks_delta": 4,
+      "removed_count": 4,
+      "removed_sample": [
+        {
+          "reason": "promo_keyword",
+          "text": "¡Ve a https://surfshark.com/nate o usa el código NATE al finalizar tu compra para obtener 4 meses adicionales de Surfshark VPN!"
+        },
+        {
+          "reason": "sponsor_domain_only",
+          "text": "Mi libro ENTIENDE LA TECNOLOGÍA ➞ https://amzn.to/3Z2dcrP"
+        },
+        {
+          "reason": "social_links_only",
+          "text": "Redes Sociales:📷 Instagram ➞ https://instagram.com/nategentile7🐦 Twitter ➞ https://twitter.com/nategentile7🔴 Twitch ➞ https://twitch.tv/nategentile7"
+        },
+        {
+          "reason": "hashtag_only",
+          "text": "#linux"
+        }
+      ],
+      "removed_reasons_histogram": {
+        "promo_keyword": 1,
+        "sponsor_domain_only": 1,
+        "social_links_only": 1,
+        "hashtag_only": 1
+      },
+      "kept_blocks_preview": [
+        {
+          "type": "paragraph",
+          "text": "Duración: 30m51s · Publicado: 2026-05-06 · Canal: Nate Gentile · Vistas: 576,061 · Likes: 40,877"
+        },
+        {
+          "type": "heading_2",
+          "text": "Descripción"
+        },
+        {
+          "type": "paragraph",
+          "text": "Aprende todo sobre TECNOLOGÍA: 👨‍🎓 MASTERMIND ➞ https://mastermind.ac"
+        },
+        {
+          "type": "paragraph",
+          "text": "Series de este canal: 🖥️ Montaje PCs ➞ https://bit.ly/30OCj3M 💾 Divulgación Informática ➞ https://bit.ly/3nx4Ch2 ⚙️ Videos de Hardware ➞ htt"
+        }
+      ]
+    },
+    {
+      "sqlite_id": 82,
+      "referente": "Nate Gentile",
+      "titulo": "Monté el PC de BATMAN dentro de una Batcueva REAL",
+      "url": "https://www.youtube.com/watch?v=3LnNwS6rqk8",
+      "html_chars_pre": 2024,
+      "html_chars_post": 1750,
+      "blocks_pre": 15,
+      "blocks_post": 12,
+      "blocks_delta": 3,
+      "removed_count": 3,
+      "removed_sample": [
+        {
+          "reason": "sponsor_domain_only",
+          "text": "🧠 AMD Ryzen 7 9850X3D➞ Coolmod:https://tidd.ly/4cN6jl3 / Amazon:https://amzn.to/41ZdHVl / PCComponentes:https://tidd.ly/3R2H7Q2"
+        },
+        {
+          "reason": "sponsor_domain_only",
+          "text": "💧 Alphacool Apex 1 AM5➞ Amazon: https://amzn.to/4vRrLxM"
+        },
+        {
+          "reason": "sponsor_domain_only",
+          "text": "Mi libro ENTIENDE LA TECNOLOGÍA ➞ https://amzn.to/3Z2dcrP"
+        }
+      ],
+      "removed_reasons_histogram": {
+        "sponsor_domain_only": 3
+      },
+      "kept_blocks_preview": [
+        {
+          "type": "paragraph",
+          "text": "Duración: 24m38s · Publicado: 2026-04-27 · Canal: Nate Gentile · Vistas: 458,077 · Likes: 26,431"
+        },
+        {
+          "type": "heading_2",
+          "text": "Descripción"
+        },
+        {
+          "type": "paragraph",
+          "text": "Consigue 5TB y un 85% de descuento en Internxt: 👉 https://internxt.com/nate"
+        },
+        {
+          "type": "paragraph",
+          "text": "🖥️ Componetes del PC de Batman"
+        },
+        {
+          "type": "paragraph",
+          "text": "🧩 ASUS ROG Crosshair X870E Extreme ➞ Coolmod: https://tidd.ly/4sZ8pUO / Amazon: https://amzn.to/3Qy7VaN / PCComponentes: https://tidd.ly/42t"
+        },
+        {
+          "type": "paragraph",
+          "text": "🧠 Corsair DDR5 Vengeance ➞ Coolmod: https://tidd.ly/4vT1XS7 / Amazon: https://amzn.to/4mU8TKp / PCComponentes: https://tidd.ly/3P6ySBY"
+        },
+        {
+          "type": "paragraph",
+          "text": "🎮 ASUS TUF Gaming Radeon RX 9070 XT ➞ Coolmod: https://tidd.ly/3R3hQFq / Amazon:https://amzn.to/4sY6ikc / PCComponentes: https://tidd.ly/4mV"
+        },
+        {
+          "type": "paragraph",
+          "text": "⚡ Seasonic Prime TX-1600 Noctua Edition ➞ Coolmod: https://tidd.ly/4tCpYLK / Amazon: https://amzn.to/4tAc24J / PCComponentes: https://tidd.l"
+        }
+      ]
+    },
+    {
+      "sqlite_id": 111,
+      "referente": "Daniel Shiffman",
+      "titulo": "Voice Chatbot (Coding Challenge 188)",
+      "url": "https://www.youtube.com/watch?v=s2jm2Z22ibA",
+      "html_chars_pre": 6539,
+      "html_chars_post": 6416,
+      "blocks_pre": 40,
+      "blocks_post": 39,
+      "blocks_delta": 1,
+      "removed_count": 1,
+      "removed_sample": [
+        {
+          "reason": "hashtag_only",
+          "text": "#texttospeech #speechtotext #chatbot #rivescript #llms #agents #ai #transformersjs #webaudioapi #javascript #p5js"
+        }
+      ],
+      "removed_reasons_histogram": {
+        "hashtag_only": 1
+      },
+      "kept_blocks_preview": [
+        {
+          "type": "paragraph",
+          "text": "Duración: 39m28s · Publicado: 2026-04-27 · Canal: The Coding Train · Vistas: 16,740 · Likes: 774"
+        },
+        {
+          "type": "heading_2",
+          "text": "Descripción"
+        },
+        {
+          "type": "paragraph",
+          "text": "In this coding challenge, I build a conversational voice chatbot entirely in the browser with p5.js. I combine three pieces: speech-to-text "
+        },
+        {
+          "type": "paragraph",
+          "text": "🚀 Watch this video ad-free on Nebula https://nebula.tv/videos/codingtrain-coding-challenge-188-voice-chatbot"
+        },
+        {
+          "type": "paragraph",
+          "text": "p5.js Web Editor Sketches: 🕹️ LLM Chatbot: https://editor.p5js.org/codingtrain/sketches/RHhT9I4Nm 🕹️ Number Guessing Bot: https://editor.p5j"
+        },
+        {
+          "type": "paragraph",
+          "text": "🎥 Previous: https://youtu.be/g3-PXyF8U70?list=PLRqwX-V7Uu6ZiZxtDDRCi6uhfTH4FilpH 🎥 All: https://www.youtube.com/playlist?list=PLRqwX-V7Uu6Zi"
+        },
+        {
+          "type": "paragraph",
+          "text": "References: 📓 p5.2 Reference: https://beta.p5js.org 📓 Introducing Whisper: https://cdn.openai.com/papers/whisper.pdf 📓 Model Cards for Model"
+        },
+        {
+          "type": "paragraph",
+          "text": "Videos: 🚂 https://youtu.be/0Ad5Frf8NBM 🚂 https://youtu.be/KR61bXsPlLU"
+        }
+      ]
+    },
+    {
+      "sqlite_id": 141,
+      "referente": "Milos Temerinski",
+      "titulo": "Numbering Tool in Revit | Rule-Based Numbering in Revit Tutorial",
+      "url": "https://www.youtube.com/watch?v=TQsBnsKZtuo",
+      "html_chars_pre": 2369,
+      "html_chars_post": 2162,
+      "blocks_pre": 29,
+      "blocks_post": 28,
+      "blocks_delta": 1,
+      "removed_count": 1,
+      "removed_sample": [
+        {
+          "reason": "social_links_only",
+          "text": "Instagram: https://www.instagram.com/balkanarchitect/Facebook: https://www.facebook.com/Balkan-Architect-278024016289562/?modal=admin_todo_tourTwitter: https://twitter.com/ArchitectBalkan"
+        }
+      ],
+      "removed_reasons_histogram": {
+        "social_links_only": 1
+      },
+      "kept_blocks_preview": [
+        {
+          "type": "paragraph",
+          "text": "Duración: 13m32s · Publicado: 2026-05-05 · Canal: Balkan Architect · Vistas: 2,142 · Likes: 76"
+        },
+        {
+          "type": "heading_2",
+          "text": "Descripción"
+        },
+        {
+          "type": "paragraph",
+          "text": "Get all Revit Courses: https://balkanarchitect.com?utm_source=youtube&utm_medium=12YT26 My Revit project files: https://www.patreon.com/balk"
+        },
+        {
+          "type": "paragraph",
+          "text": "Get my Personal Revit Template + Family Pack: https://balkanarchitect.com/p/balkan-architect-architecture-template-metric?utm_source=youtube"
+        },
+        {
+          "type": "paragraph",
+          "text": "Learn how to use the new Numbering Tool in Revit 2027 to quickly and efficiently tag and organize your elements. In this tutorial, you’ll se"
+        },
+        {
+          "type": "paragraph",
+          "text": "Perfect for improving your workflow and saving time on real projects."
+        },
+        {
+          "type": "paragraph",
+          "text": "Subscribe for more! Please Like this Tutorial!"
+        },
+        {
+          "type": "paragraph",
+          "text": "Follow me on social media:"
+        }
+      ]
+    },
+    {
+      "sqlite_id": 142,
+      "referente": "Milos Temerinski",
+      "titulo": "Am I Faster than Revit AI?",
+      "url": "https://www.youtube.com/watch?v=npmoS_dqAho",
+      "html_chars_pre": 2284,
+      "html_chars_post": 2077,
+      "blocks_pre": 24,
+      "blocks_post": 23,
+      "blocks_delta": 1,
+      "removed_count": 1,
+      "removed_sample": [
+        {
+          "reason": "social_links_only",
+          "text": "Instagram: https://www.instagram.com/balkanarchitect/Facebook: https://www.facebook.com/Balkan-Architect-278024016289562/?modal=admin_todo_tourTwitter: https://twitter.com/ArchitectBalkan"
+        }
+      ],
+      "removed_reasons_histogram": {
+        "social_links_only": 1
+      },
+      "kept_blocks_preview": [
+        {
+          "type": "paragraph",
+          "text": "Duración: 23m30s · Publicado: 2026-04-28 · Canal: Balkan Architect · Vistas: 10,539 · Likes: 251"
+        },
+        {
+          "type": "heading_2",
+          "text": "Descripción"
+        },
+        {
+          "type": "paragraph",
+          "text": "Try PlanForm for free: https://pdf.fastcadreader.com/ 14-day free VIP trial for our audience, to apply send an email at officialcadreader@gm"
+        },
+        {
+          "type": "paragraph",
+          "text": "Get all Revit Courses:https://balkanarchitect.com?utm_source=youtube&utm_medium=15YT26 My Revit project files: https://www.patreon.com/balka"
+        },
+        {
+          "type": "paragraph",
+          "text": "Get my Personal Revit Template + Family Pack: https://balkanarchitect.com/p/balkan-architect-architecture-template-metric?utm_source=youtube"
+        },
+        {
+          "type": "paragraph",
+          "text": "Can Autodesk’s new AI Assistant actually beat a human in Revit? In this video, I test it with 7 real tasks inside Revit 2027 and compare the"
+        },
+        {
+          "type": "paragraph",
+          "text": "Subscribe for more! Please Like this Tutorial!"
+        },
+        {
+          "type": "paragraph",
+          "text": "Follow me on social media:"
+        }
+      ]
+    },
+    {
+      "sqlite_id": 261,
+      "referente": "Andrew Ng",
+      "titulo": "Build Interactive Agents with Generative UI",
+      "url": "https://www.youtube.com/watch?v=J26M-cpFG-M",
+      "html_chars_pre": 1225,
+      "html_chars_post": 1140,
+      "blocks_pre": 7,
+      "blocks_post": 5,
+      "blocks_delta": 2,
+      "removed_count": 2,
+      "removed_sample": [
+        {
+          "reason": "sponsor_domain_only",
+          "text": "Enroll now: https://bit.ly/4cPZYGJ"
+        },
+        {
+          "reason": "sponsor_domain_only",
+          "text": "Learn more: https://bit.ly/4cPZYGJ"
+        }
+      ],
+      "removed_reasons_histogram": {
+        "sponsor_domain_only": 2
+      },
+      "kept_blocks_preview": [
+        {
+          "type": "paragraph",
+          "text": "Duración: 1m43s · Publicado: 2026-05-06 · Canal: DeepLearningAI · Vistas: 1,216 · Likes: 60"
+        },
+        {
+          "type": "heading_2",
+          "text": "Descripción"
+        },
+        {
+          "type": "paragraph",
+          "text": "Introducing Build Interactive Agents with Generative UI, taught by Atai Barkai, co-founder of CopilotKit, the team behind the AG-UI protocol"
+        },
+        {
+          "type": "paragraph",
+          "text": "Most agents today still talk to users in plain text. But users don't just want to read a response, they want something to see and act on. Th"
+        },
+        {
+          "type": "paragraph",
+          "text": "You'll work across the full Generative UI Spectrum, from hand-crafted components you control precisely, to declarative layouts the agent ass"
+        }
+      ]
+    },
+    {
+      "sqlite_id": 262,
+      "referente": "Andrew Ng",
+      "titulo": "Become an AI power user 🌟 new course from Andrew Ng",
+      "url": "https://www.youtube.com/watch?v=FNfIMnpz-ZY",
+      "html_chars_pre": 1103,
+      "html_chars_post": 1018,
+      "blocks_pre": 12,
+      "blocks_post": 10,
+      "blocks_delta": 2,
+      "removed_count": 2,
+      "removed_sample": [
+        {
+          "reason": "sponsor_domain_only",
+          "text": "Enroll now: https://bit.ly/4cwVyEy"
+        },
+        {
+          "reason": "sponsor_domain_only",
+          "text": "Learn more: https://bit.ly/4cwVyEy"
+        }
+      ],
+      "removed_reasons_histogram": {
+        "sponsor_domain_only": 2
+      },
+      "kept_blocks_preview": [
+        {
+          "type": "paragraph",
+          "text": "Duración: 1m52s · Publicado: 2026-04-28 · Canal: DeepLearningAI · Vistas: 9,998 · Likes: 390"
+        },
+        {
+          "type": "heading_2",
+          "text": "Descripción"
+        },
+        {
+          "type": "paragraph",
+          "text": "Become an AI power user at work and in everyday tasks!"
+        },
+        {
+          "type": "paragraph",
+          "text": "In AI Prompting for Everyone, taught by AI Pioneer Andrew Ng, you’ll learn how to prompt modern AI tools to get results that are more accura"
+        },
+        {
+          "type": "paragraph",
+          "text": "You’ll learn how to:"
+        },
+        {
+          "type": "bulleted_list_item",
+          "text": "Find information using web search and deep research modes"
+        },
+        {
+          "type": "bulleted_list_item",
+          "text": "Brainstorm and write with AI as a thought partner that gives useful feedback"
+        },
+        {
+          "type": "bulleted_list_item",
+          "text": "Create and build images, websites, and simple apps (no coding required)"
+        }
+      ]
+    },
+    {
+      "sqlite_id": 291,
+      "referente": "Fred Mills",
+      "titulo": "Why Nobody Wants the Chrysler Building",
+      "url": "https://www.youtube.com/watch?v=Vr_Wd2ZucZA",
+      "html_chars_pre": 2945,
+      "html_chars_post": 2373,
+      "blocks_pre": 26,
+      "blocks_post": 20,
+      "blocks_delta": 6,
+      "removed_count": 6,
+      "removed_sample": [
+        {
+          "reason": "sponsor_domain_only",
+          "text": "🔥 Pre-order Fred&#x27;s book MEGA BUILDS now 👉 https://bit.ly/3Y63G6X"
+        },
+        {
+          "reason": "promo_keyword",
+          "text": "This video contains paid promotion for FJ Dynamics."
+        },
+        {
+          "reason": "sponsor_domain_only",
+          "text": "For more by The B1M subscribe now 👉 https://bit.ly/the-b1m"
+        },
+        {
+          "reason": "social_links_only",
+          "text": "Follow Get Construction Talking Instagram - https://www.instagram.com/getconstructiontalking/X - https://twitter.com/GetConstTalkingLinkedIn - https://www.linkedin.com/company/get-construction-talking"
+        },
+        {
+          "reason": "hashtag_only",
+          "text": "#construction #architecture #chryslerbuilding"
+        }
+      ],
+      "removed_reasons_histogram": {
+        "sponsor_domain_only": 2,
+        "promo_keyword": 1,
+        "social_links_only": 1,
+        "hashtag_only": 1,
+        "legal_disclaimer": 1
+      },
+      "kept_blocks_preview": [
+        {
+          "type": "paragraph",
+          "text": "Duración: 21m19s · Publicado: 2026-05-06 · Canal: The B1M · Vistas: 591,832 · Likes: 19,498"
+        },
+        {
+          "type": "heading_2",
+          "text": "Descripción"
+        },
+        {
+          "type": "paragraph",
+          "text": "New York City's iconic Chrysler Building is in trouble... To find out more about how FJD Trion can revolutionise your next project, click on"
+        },
+        {
+          "type": "paragraph",
+          "text": "Full story here: https://theb1m.com/video/why-nobody-wants-the-chrysler-building"
+        },
+        {
+          "type": "paragraph",
+          "text": "Additional footage and images: The Dronalist, AMC, Universal Pictures."
+        },
+        {
+          "type": "paragraph",
+          "text": "We're raising awareness of construction's mental health crisis through our Get Construction Talking initiative. There’s a video series on ou"
+        },
+        {
+          "type": "paragraph",
+          "text": "Listen to The World's Best Construction Podcast by The B1M Apple - https://apple.co/3OssZsH Spotify - https://spoti.fi/3om1NkB Amazon Music "
+        },
+        {
+          "type": "paragraph",
+          "text": "View this video and more at - https://www.TheB1M.com/ Follow us on X - http://www.x.com/TheB1M/ Like us on Facebook - http://www.facebook.co"
+        }
+      ]
+    },
+    {
+      "sqlite_id": 292,
+      "referente": "Fred Mills",
+      "titulo": "Why the Jeddah Tower Won't Be One Kilometre Tall",
+      "url": "https://www.youtube.com/watch?v=vVfEs9wrW98",
+      "html_chars_pre": 3023,
+      "html_chars_post": 2462,
+      "blocks_pre": 29,
+      "blocks_post": 23,
+      "blocks_delta": 6,
+      "removed_count": 6,
+      "removed_sample": [
+        {
+          "reason": "sponsor_domain_only",
+          "text": "🔥 Pre-order Fred&#x27;s book MEGA BUILDS now 👉 https://bit.ly/3Y63G6X"
+        },
+        {
+          "reason": "promo_keyword",
+          "text": "This video contains paid promotion for Rayon."
+        },
+        {
+          "reason": "sponsor_domain_only",
+          "text": "For more by The B1M subscribe now 👉 https://bit.ly/the-b1m"
+        },
+        {
+          "reason": "social_links_only",
+          "text": "Follow Get Construction Talking Instagram - https://www.instagram.com/getconstructiontalking/X - https://twitter.com/GetConstTalkingLinkedIn - https://www.linkedin.com/company/get-construction-talking"
+        },
+        {
+          "reason": "hashtag_only",
+          "text": "#construction #architecture #jeddahtower"
+        }
+      ],
+      "removed_reasons_histogram": {
+        "sponsor_domain_only": 2,
+        "promo_keyword": 1,
+        "social_links_only": 1,
+        "hashtag_only": 1,
+        "legal_disclaimer": 1
+      },
+      "kept_blocks_preview": [
+        {
+          "type": "paragraph",
+          "text": "Duración: 17m28s · Publicado: 2026-04-29 · Canal: The B1M · Vistas: 933,356 · Likes: 20,620"
+        },
+        {
+          "type": "heading_2",
+          "text": "Descripción"
+        },
+        {
+          "type": "paragraph",
+          "text": "How Tall is Supertall? Rayon is the all-in-one, effortless CAD tool for going from concept to completion. Try it (for free) here: https://ra"
+        },
+        {
+          "type": "paragraph",
+          "text": "Full story here: https://theb1m.com/video/skyscraper-vanity-heights"
+        },
+        {
+          "type": "paragraph",
+          "text": "Additional footage and images: 20th Century Fox, Warner Bros. Interactive Entertainment, 20th Century Fox, Paramount Pictures, New Line Cine"
+        },
+        {
+          "type": "paragraph",
+          "text": "We're raising awareness of construction's mental health crisis through our Get Construction Talking initiative. There’s a video series on ou"
+        },
+        {
+          "type": "paragraph",
+          "text": "Listen to The World's Best Construction Podcast by The B1M Apple - https://apple.co/3OssZsH Spotify - https://spoti.fi/3om1NkB Amazon Music "
+        },
+        {
+          "type": "paragraph",
+          "text": "View this video and more at - https://www.TheB1M.com/ Follow us on X - http://www.x.com/TheB1M/ Like us on Facebook - http://www.facebook.co"
+        }
+      ]
+    },
+    {
+      "sqlite_id": 293,
+      "referente": "Fred Mills",
+      "titulo": "The US Megaproject You’ve (Probably) Never Heard Of",
+      "url": "https://www.youtube.com/watch?v=A0lQPphWTkQ",
+      "html_chars_pre": 3255,
+      "html_chars_post": 2693,
+      "blocks_pre": 31,
+      "blocks_post": 25,
+      "blocks_delta": 6,
+      "removed_count": 6,
+      "removed_sample": [
+        {
+          "reason": "sponsor_domain_only",
+          "text": "🔥 Pre-order Fred&#x27;s book MEGA BUILDS now 👉 https://bit.ly/3Y63G6X"
+        },
+        {
+          "reason": "promo_keyword",
+          "text": "This video contains paid promotion for KiwiCo."
+        },
+        {
+          "reason": "sponsor_domain_only",
+          "text": "For more by The B1M subscribe now 👉 https://bit.ly/the-b1m"
+        },
+        {
+          "reason": "social_links_only",
+          "text": "Follow Get Construction Talking Instagram - https://www.instagram.com/getconstructiontalking/X - https://twitter.com/GetConstTalkingLinkedIn - https://www.linkedin.com/company/get-construction-talking"
+        },
+        {
+          "reason": "hashtag_only",
+          "text": "#construction #architecture #engineering"
+        }
+      ],
+      "removed_reasons_histogram": {
+        "sponsor_domain_only": 2,
+        "promo_keyword": 1,
+        "social_links_only": 1,
+        "hashtag_only": 1,
+        "legal_disclaimer": 1
+      },
+      "kept_blocks_preview": [
+        {
+          "type": "paragraph",
+          "text": "Duración: 18m15s · Publicado: 2026-04-27 · Canal: The B1M · Vistas: 796,734 · Likes: 21,413"
+        },
+        {
+          "type": "heading_2",
+          "text": "Descripción"
+        },
+        {
+          "type": "paragraph",
+          "text": "Why America is rebuilding the world's first bridge-tunnel. Inspire the future scientists and engineers that you love by visiting https://www"
+        },
+        {
+          "type": "paragraph",
+          "text": "Full story here - https://theb1m.com/video/hampton-roads-bridge-tunnel-expansion"
+        },
+        {
+          "type": "paragraph",
+          "text": "00:00 Intro 00:57 Norfolk, Virginia 01:43 What’s a Bridge-Tunnel? 02:32 Immersed Tubes 06:12 The HRBT 08:40 The TBM 10:00 The North Island 1"
+        },
+        {
+          "type": "paragraph",
+          "text": "Additional footage and images: Virginia Department of Transportation, U.S. Navy, Ben Schumin, Gordie Howe International Bridge, Herrenknecht"
+        },
+        {
+          "type": "paragraph",
+          "text": "We're raising awareness of construction's mental health crisis through our Get Construction Talking initiative. There’s a video series on ou"
+        },
+        {
+          "type": "paragraph",
+          "text": "Listen to The World's Best Construction Podcast by The B1M Apple - https://apple.co/3OssZsH Spotify - https://spoti.fi/3om1NkB Amazon Music "
+        }
+      ]
+    },
+    {
+      "sqlite_id": 351,
+      "referente": "Bernard Marr",
+      "titulo": "Is AI Coming For Your Job?",
+      "url": "https://www.youtube.com/watch?v=zO8EPWmTnVQ",
+      "html_chars_pre": 1404,
+      "html_chars_post": 1256,
+      "blocks_pre": 8,
+      "blocks_post": 7,
+      "blocks_delta": 1,
+      "removed_count": 1,
+      "removed_sample": [
+        {
+          "reason": "hashtag_only",
+          "text": "#AI #FutureOfWork #AIAndJobs #ArtificialIntelligence #Careers #JobDisplacement #WorkplaceTransformation #Upskilling #Leadership #TechTrends"
+        }
+      ],
+      "removed_reasons_histogram": {
+        "hashtag_only": 1
+      },
+      "kept_blocks_preview": [
+        {
+          "type": "paragraph",
+          "text": "Duración: 3m33s · Publicado: 2026-05-05 · Canal: Bernard Marr · Vistas: 35,209 · Likes: 1,340"
+        },
+        {
+          "type": "heading_2",
+          "text": "Descripción"
+        },
+        {
+          "type": "paragraph",
+          "text": "💼 Is AI coming for your job? The real answer is more nuanced, and more important, than many people think."
+        },
+        {
+          "type": "paragraph",
+          "text": "In this video, I explain how AI is changing the world of work, why some jobs will be displaced, why many more will be augmented, and what th"
+        },
+        {
+          "type": "paragraph",
+          "text": "🔹 Whether AI will replace jobs or transform them 🔹 Why most jobs are made up of tasks, some of which AI can take over 🔹 Which kinds of work "
+        },
+        {
+          "type": "paragraph",
+          "text": "If you want to understand AI and jobs, the future of work, job displacement, AI augmentation, career development, and the skills people will"
+        },
+        {
+          "type": "paragraph",
+          "text": "🎥 On this channel, I break down the biggest trends in AI, business, leadership, and technology in a way that is easy to understand and usefu"
+        }
+      ]
+    },
+    {
+      "sqlite_id": 352,
+      "referente": "Bernard Marr",
+      "titulo": "What AI Really Is, Explained Simply",
+      "url": "https://www.youtube.com/watch?v=NGq0pdR0s2U",
+      "html_chars_pre": 1373,
+      "html_chars_post": 1234,
+      "blocks_pre": 8,
+      "blocks_post": 7,
+      "blocks_delta": 1,
+      "removed_count": 1,
+      "removed_sample": [
+        {
+          "reason": "hashtag_only",
+          "text": "#AI #ArtificialIntelligence #ChatGPT #GenerativeAI #LLM #MachineLearning #AIBias #AIHallucinations #BusinessTechnology #TechTrends"
+        }
+      ],
+      "removed_reasons_histogram": {
+        "hashtag_only": 1
+      },
+      "kept_blocks_preview": [
+        {
+          "type": "paragraph",
+          "text": "Duración: 3m14s · Publicado: 2026-04-29 · Canal: Bernard Marr · Vistas: 55,790 · Likes: 2,144"
+        },
+        {
+          "type": "heading_2",
+          "text": "Descripción"
+        },
+        {
+          "type": "paragraph",
+          "text": "🤖 AI can feel almost magical, but to use it well, we need to understand what it is, how it works, and where its limits really are."
+        },
+        {
+          "type": "paragraph",
+          "text": "In this video, I explain AI in simple terms, including how tools like ChatGPT, Gemini, and Copilot generate responses, why they can sound so"
+        },
+        {
+          "type": "paragraph",
+          "text": "🔹 What today’s AI models actually are 🔹 How neural networks, transformers, and tokens work 🔹 Why AI predicts text rather than truly understa"
+        },
+        {
+          "type": "paragraph",
+          "text": "If you want to understand artificial intelligence, large language models, how ChatGPT works, AI hallucinations, AI bias, and the limits of g"
+        },
+        {
+          "type": "paragraph",
+          "text": "🎥 On this channel, I break down the biggest trends in AI, business, leadership, and technology in a way that is easy to understand and usefu"
+        }
+      ]
+    },
+    {
+      "sqlite_id": 353,
+      "referente": "Bernard Marr",
+      "titulo": "The Future Of Google Search, Maps And AI Agents",
+      "url": "https://www.youtube.com/watch?v=27bLTrhZ4Mg",
+      "html_chars_pre": 1397,
+      "html_chars_post": 1199,
+      "blocks_pre": 6,
+      "blocks_post": 5,
+      "blocks_delta": 1,
+      "removed_count": 1,
+      "removed_sample": [
+        {
+          "reason": "hashtag_only",
+          "text": "#Google #AI #ArtificialIntelligence #GoogleSearch #GoogleMaps #AIAgents #AgenticAI #GenerativeAI #FutureOfSearch #NickFox #BernardMarr #TechnologyTrends #DigitalTransformation #AIInnovation"
+        }
+      ],
+      "removed_reasons_histogram": {
+        "hashtag_only": 1
+      },
+      "kept_blocks_preview": [
+        {
+          "type": "paragraph",
+          "text": "Duración: 57m00s · Publicado: 2026-04-23 · Canal: Bernard Marr · Vistas: 82,047 · Likes: 103"
+        },
+        {
+          "type": "heading_2",
+          "text": "Descripción"
+        },
+        {
+          "type": "paragraph",
+          "text": "🌍🤖 How is Google reimagining Search, Maps, and AI agents for the next era of technology? In this interview, I speak with Nick Fox, Senior Vi"
+        },
+        {
+          "type": "paragraph",
+          "text": "We explore how Google is enabling more natural and specific questions in Search, how AI can help people discover better answers faster, how "
+        },
+        {
+          "type": "paragraph",
+          "text": "This is a must-watch conversation for anyone interested in artificial intelligence, Google Search, AI agents, the future of Maps, digital ad"
+        }
+      ]
+    },
+    {
+      "sqlite_id": 408,
+      "referente": "José Luis Crespo",
+      "titulo": "¿Existen Fisuras en el Universo?",
+      "url": "https://www.youtube.com/watch?v=1PIbKMyFMAY",
+      "html_chars_pre": 1444,
+      "html_chars_post": 1443,
+      "blocks_pre": 9,
+      "blocks_post": 9,
+      "blocks_delta": 0,
+      "removed_count": 0,
+      "removed_sample": [],
+      "removed_reasons_histogram": {},
+      "kept_blocks_preview": [
+        {
+          "type": "paragraph",
+          "text": "Duración: 18m34s · Publicado: 2026-04-30 · Canal: QuantumFracture · Vistas: 183,332 · Likes: 11,460"
+        },
+        {
+          "type": "heading_2",
+          "text": "Descripción"
+        },
+        {
+          "type": "paragraph",
+          "text": "¡PREPLY! Consigue un 50% de descuento en tu primera clase con el código: QUANTUM50 o pulsando aquí: http://preply.sjv.io/R0Gy99"
+        },
+        {
+          "type": "paragraph",
+          "text": "¡Puede que el universo esté roto! Que presente fisuras formadas en sus primeros instantes. Cicatrices del cosmos primitivo. Algunas atravesa"
+        },
+        {
+          "type": "paragraph",
+          "text": "⚛️No te pierdas ningún vídeo: solo tienes que... SUSCRIBIRTE, ¡es GRATIS!: https://www.youtube.com/user/QuantumFracture 🐦¡Sígueme en TWITTER"
+        },
+        {
+          "type": "paragraph",
+          "text": "✊¡HAZTE MIEMBRO DE QF! https://www.youtube.com/user/QuantumFracture/join"
+        },
+        {
+          "type": "paragraph",
+          "text": "👕¡Las CAMISETAS DE QUANTUMFRACTURE! https://www.quantumfracture.es/#shop"
+        },
+        {
+          "type": "paragraph",
+          "text": "Referencias y bibliografía aquí: https://drive.google.com/file/d/1KoE7-_eyq3O34VJTdHRevvFFG7Pepb2j/view?usp=sharing"
+        }
+      ]
+    }
+  ]
+}

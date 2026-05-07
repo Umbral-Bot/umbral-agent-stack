@@ -84,7 +84,7 @@ def test_parse_iso_duration_variants():
 
 
 @pytest.mark.skipif(
-    os.environ.get("YOUTUBE_DATA_API_KEY"),
+    bool(os.environ.get("YOUTUBE_DATA_API_KEY")),
     reason="YOUTUBE_DATA_API_KEY is set; live Data API test belongs in integration suite.",
 )
 def test_data_api_skipped_without_key():

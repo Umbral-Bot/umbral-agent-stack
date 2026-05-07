@@ -330,7 +330,11 @@ class TestTasksByTaskType:
 # ---------------------------------------------------------------------------
 
 class TestBuildReport:
-    def test_build_report_with_temp_log(self, tmp_path):
+    def test_build_report_with_temp_log(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(
+            "scripts.governance_metrics_report.get_quota_usage",
+            lambda: {},
+        )
         log_dir = tmp_path / ".config" / "umbral"
         log_dir.mkdir(parents=True)
         log_file = log_dir / "ops_log.jsonl"

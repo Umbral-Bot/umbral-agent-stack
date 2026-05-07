@@ -33,6 +33,13 @@ from worker.sandbox.workspace import (
 )
 
 
+def _symlink_or_skip(link: Path, target: Path, *, target_is_directory: bool = False) -> None:
+    try:
+        link.symlink_to(target, target_is_directory=target_is_directory)
+    except OSError as exc:
+        pytest.skip(f"symlink creation unavailable on this platform: {exc}")
+
+
 # ---------------------------------------------------------------------------
 # load_test_allowlist
 # ---------------------------------------------------------------------------
@@ -327,7 +334,7 @@ class TestBuildWorkspace:
         outside = tmp_path / "outside"
         outside.mkdir()
         (outside / "leak.txt").write_text("should not be copied")
-        (repo / "worker_link").symlink_to(outside, target_is_directory=True)
+        _symlink_or_skip(repo / "worker_link", outside, target_is_directory=True)
         r = build_workspace(repo, "tid", parent_dir=tmp_path / "wsroot")
         assert r["ok"] is True
         assert not (r["path"] / "worker_link").exists()
@@ -338,7 +345,7 @@ class TestBuildWorkspace:
         outside = tmp_path / "outside"
         outside.mkdir()
         (outside / "leak.txt").write_text("should not be copied")
-        (repo / "worker" / "link").symlink_to(outside, target_is_directory=True)
+        _symlink_or_skip(repo / "worker" / "link", outside, target_is_directory=True)
         r = build_workspace(repo, "tid", parent_dir=tmp_path / "wsroot")
         assert r["ok"] is True
         assert not (r["path"] / "worker" / "link").exists()

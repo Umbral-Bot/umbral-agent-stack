@@ -97,3 +97,338 @@ class TestHtmlToNotionBlocks:
         assert "visible" in joined
         assert "alert" not in joined
         assert ".x" not in joined
+
+
+# --- 013-G: inline annotations + heading inline parsing ---
+
+
+def _spans(block: dict) -> list[dict]:
+    key = block["type"]
+    return block[key]["rich_text"]
+
+
+class TestInlineAnnotations:
+    def test_bold_inline_produces_annotation(self):
+        # Both ** and __ should produce bold annotation.
+        out = html_to_notion_blocks("<p>Esto es <strong>negrita</strong> ya.</p>")
+        spans = _spans(out[0])
+        bolds = [s for s in spans if s.get("annotations", {}).get("bold")]
+        assert bolds, "expected at least one bold span"
+        assert any("negrita" in s["text"]["content"] for s in bolds)
+        # Plain spans must NOT carry an annotations dict (or carry default-only).
+        plain = [s for s in spans if s["text"]["content"].strip() == "Esto es"]
+        assert plain
+        assert not plain[0].get("annotations", {}).get("bold")
+
+    def test_italic_inline_produces_annotation(self):
+        out = html_to_notion_blocks("<p>Esto es <em>itálica</em> ahora.</p>")
+        spans = _spans(out[0])
+        italics = [s for s in spans if s.get("annotations", {}).get("italic")]
+        assert italics
+        assert any("itálica" in s["text"]["content"] for s in italics)
+
+    def test_link_inline_produces_text_link(self):
+        out = html_to_notion_blocks('<p>Ver <a href="https://x.test/y">acá</a>.</p>')
+        spans = _spans(out[0])
+        links = [s for s in spans if s["text"].get("link")]
+        assert links and links[0]["text"]["link"]["url"] == "https://x.test/y"
+        assert links[0]["text"]["content"] == "acá"
+        # Link spans should NOT carry bold/italic by default.
+        assert not links[0].get("annotations", {}).get("bold")
+        assert not links[0].get("annotations", {}).get("italic")
+
+    def test_heading_h1_h2_h3_block_types(self):
+        out = html_to_notion_blocks(
+            "<h1>uno</h1><h2>dos</h2><h3>tres</h3><h4>cuatro</h4>"
+        )
+        types = [b["type"] for b in out]
+        assert types[0] == "heading_1"
+        assert types[1] == "heading_2"
+        assert types[2] == "heading_3"
+        # h4 must collapse to heading_3.
+        assert types[3] == "heading_3"
+        # Heading content should be plain text — no literal ``#`` in rich_text.
+        for b in out:
+            joined = "".join(s["text"]["content"] for s in _spans(b))
+            assert not joined.startswith("#"), f"heading leaked literal hash: {joined!r}"
+
+    def test_mixed_inline_in_bullet(self):
+        # Bulleted list item should also pass through the inline parser.
+        out = html_to_notion_blocks(
+            "<ul><li>Mira <strong>esto</strong> en <a href='https://x.test'>link</a></li></ul>"
+        )
+        bullets = [b for b in out if b["type"] == "bulleted_list_item"]
+        assert bullets
+        spans = _spans(bullets[0])
+        assert any(s.get("annotations", {}).get("bold") for s in spans)
+        assert any(s["text"].get("link") for s in spans)
+
+    def test_inline_parser_fallback_on_exception(self, monkeypatch):
+        # Force _parse_inline to raise; helper must fall back to plain text.
+        from scripts.discovery import html_to_notion_blocks as mod
+
+        def boom(_text):
+            raise RuntimeError("synthetic")
+
+        monkeypatch.setattr(mod, "_parse_inline", boom)
+        out = mod.html_to_notion_blocks("<p>contenido importante</p>")
+        assert len(out) == 1
+        spans = _spans(out[0])
+        joined = "".join(s["text"]["content"] for s in spans)
+        assert "contenido importante" in joined
+        # Fallback must NOT have annotations applied.
+        assert not any(s.get("annotations", {}).get("bold") for s in spans)
+
+    def test_no_double_processing_when_no_markdown(self):
+        out = html_to_notion_blocks("<p>texto plano sin marcas.</p>")
+        spans = _spans(out[0])
+        # Single plain span, no annotations.
+        assert len(spans) == 1
+        assert spans[0]["text"]["content"] == "texto plano sin marcas."
+        assert "annotations" not in spans[0] or not any(
+            spans[0]["annotations"].get(k) for k in ("bold", "italic", "code", "strikethrough")
+        )
+
+
+# --- 013-H: nested inline + heading-from-bold + divider + image-in-link ---
+
+
+class TestNestedAndBlockExtensions:
+    def test_bold_inside_link_label_preserves_link_and_bold(self):
+        # Markdown source equivalent: [**OpenClaw**](https://x.test)
+        out = html_to_notion_blocks(
+            '<p><a href="https://x.test"><strong>OpenClaw</strong></a></p>'
+        )
+        spans = _spans(out[0])
+        # Must have at least one span with BOTH the link AND bold annotation.
+        # NO literal ``**`` in any content.
+        joined = "".join(s["text"]["content"] for s in spans)
+        assert "**" not in joined, f"literal ** leaked: {joined!r}"
+        assert "OpenClaw" in joined
+        bold_link = [
+            s for s in spans
+            if s["text"].get("link", {}).get("url") == "https://x.test"
+            and s.get("annotations", {}).get("bold")
+        ]
+        assert bold_link, f"expected at least one span with link AND bold; got {spans}"
+
+    def test_italic_inside_link_label_preserves_link_and_italic(self):
+        out = html_to_notion_blocks(
+            '<p><a href="https://x.test"><em>cursiva</em></a></p>'
+        )
+        spans = _spans(out[0])
+        joined = "".join(s["text"]["content"] for s in spans)
+        assert "*" not in joined and "_" not in joined, (
+            f"literal italic marker leaked: {joined!r}"
+        )
+        ital_link = [
+            s for s in spans
+            if s["text"].get("link", {}).get("url") == "https://x.test"
+            and s.get("annotations", {}).get("italic")
+        ]
+        assert ital_link
+
+    def test_link_with_mixed_inline_in_label_produces_multi_span(self):
+        # [foo **bar** baz](url) → multiple spans, all with link, middle bold.
+        out = html_to_notion_blocks(
+            '<p><a href="https://x.test">foo <strong>bar</strong> baz</a></p>'
+        )
+        spans = _spans(out[0])
+        link_spans = [
+            s for s in spans
+            if s["text"].get("link", {}).get("url") == "https://x.test"
+        ]
+        assert len(link_spans) >= 3, f"expected ≥3 link spans; got {len(link_spans)}"
+        bold_link_spans = [s for s in link_spans if s.get("annotations", {}).get("bold")]
+        assert bold_link_spans, "expected a span with both link AND bold"
+        joined = "".join(s["text"]["content"] for s in spans)
+        assert "**" not in joined
+        assert "foo" in joined and "bar" in joined and "baz" in joined
+
+    def test_heading_inferred_from_bold_only_paragraph_ending_in_colon(self):
+        # <p><strong>Título:</strong></p> → markdownify → "**Título:**" → heading_3.
+        out = html_to_notion_blocks(
+            "<p><strong>Qué aprenderás:</strong></p><p>contenido normal.</p>"
+        )
+        types = [b["type"] for b in out]
+        assert types[0] == "heading_3", f"expected heading_3 first; got {types}"
+        joined = "".join(s["text"]["content"] for s in _spans(out[0]))
+        assert "**" not in joined
+        assert "Qué aprenderás:" in joined
+
+    def test_heading_inferred_when_followed_by_list(self):
+        out = html_to_notion_blocks(
+            "<p><strong>Frameworks</strong></p><ul><li>uno</li><li>dos</li></ul>"
+        )
+        types = [b["type"] for b in out]
+        assert types[0] == "heading_3", f"expected heading_3 (followed by list); got {types}"
+        bullets = [b for b in out if b["type"] == "bulleted_list_item"]
+        assert len(bullets) == 2
+
+    def test_bold_inline_in_paragraph_NOT_inferred_as_heading(self):
+        out = html_to_notion_blocks(
+            "<p>Esto es <strong>importante</strong> y sigue.</p>"
+        )
+        assert out[0]["type"] == "paragraph"
+        spans = _spans(out[0])
+        assert any(s.get("annotations", {}).get("bold") for s in spans)
+
+    def test_bold_only_paragraph_without_colon_and_no_list_stays_paragraph(self):
+        # Conservative: `**foo**` alone (no colon, next is a normal paragraph)
+        # must NOT promote to heading_3.
+        out = html_to_notion_blocks(
+            "<p><strong>foo</strong></p><p>parrafo normal.</p>"
+        )
+        assert out[0]["type"] == "paragraph", (
+            f"unexpected promotion: {[b['type'] for b in out]}"
+        )
+        spans = _spans(out[0])
+        assert any(s.get("annotations", {}).get("bold") for s in spans)
+
+    def test_three_dashes_emits_divider_block(self):
+        out = html_to_notion_blocks("<p>antes</p><hr/><p>despues</p>")
+        types = [b["type"] for b in out]
+        assert "divider" in types, f"expected a divider block; got {types}"
+        for b in out:
+            if b["type"] == "paragraph":
+                joined = "".join(s["text"]["content"] for s in _spans(b))
+                assert joined.strip() not in ("---", "\\---", "***", "___")
+
+    def test_image_in_link_pattern_emits_image_block_with_caption_link(self):
+        out = html_to_notion_blocks(
+            '<p><a href="https://x.test/video">'
+            '<img src="https://cdn.test/thumb.jpg" alt="video thumbnail"/>'
+            '</a></p>'
+        )
+        imgs = [b for b in out if b["type"] == "image"]
+        assert imgs, f"expected an image block; got {[b['type'] for b in out]}"
+        img = imgs[0]
+        assert img["image"]["external"]["url"] == "https://cdn.test/thumb.jpg"
+        caption = img["image"].get("caption", [])
+        assert caption, "image must have caption"
+        assert caption[0]["text"].get("link", {}).get("url") == "https://x.test/video"
+        assert "video thumbnail" in caption[0]["text"]["content"]
+
+    def test_no_literal_escape_sequences_in_link_labels(self):
+        html = (
+            '<p>Mira <a href="https://x.test"><strong>negrita-en-link</strong></a> '
+            'y otra <a href="https://y.test">link normal</a>.</p>'
+            '<hr/>'
+            '<p><a href="https://x.test/video">'
+            '<img src="https://cdn.test/t.jpg" alt="t"/></a></p>'
+        )
+        out = html_to_notion_blocks(html)
+        for b in out:
+            if b["type"] in ("divider", "image"):
+                continue
+            spans = _spans(b)
+            for s in spans:
+                content = s["text"]["content"]
+                for forbidden in ("**", "__", "\\*", "\\---", "\\!\\[", "[!["):
+                    assert forbidden not in content, (
+                        f"forbidden literal {forbidden!r} found in content {content!r}"
+                    )
+
+    def test_quad_asterisks_collapse_to_bold(self):
+        # 013-H regression: source HTML may have nested <strong><b>...</b></strong>
+        # producing ``****X****`` after markdownify; previously the outer ``**``
+        # leaked as literal.  Now collapsed to ``**X**`` and emitted as bold.
+        out = html_to_notion_blocks(
+            "<p>foo <strong><b>X</b></strong> bar</p>"
+        )
+        spans = _spans(out[0])
+        joined = "".join(s["text"]["content"] for s in spans)
+        assert "**" not in joined, f"literal ** leaked: {joined!r}"
+        bold_spans = [s for s in spans if s.get("annotations", {}).get("bold")]
+        assert bold_spans, f"expected bold span; got {spans}"
+        assert any("X" in s["text"]["content"] for s in bold_spans)
+
+
+# --- 013-I: blockquote → Notion quote block ---
+
+
+class TestBlockquote:
+    def test_single_line_blockquote_emits_quote_block(self):
+        out = html_to_notion_blocks(
+            "<p>antes</p><blockquote>cita simple</blockquote><p>despues</p>"
+        )
+        types = [b["type"] for b in out]
+        assert "quote" in types, f"expected a quote block; got {types}"
+        q = next(b for b in out if b["type"] == "quote")
+        joined = "".join(s["text"]["content"] for s in q["quote"]["rich_text"])
+        assert "cita simple" in joined
+        # Must NOT carry the literal ``>`` marker.
+        assert not joined.lstrip().startswith(">")
+        # And no paragraph with literal ``> `` should remain.
+        for b in out:
+            if b["type"] == "paragraph":
+                ptxt = "".join(s["text"]["content"] for s in b["paragraph"]["rich_text"])
+                assert not ptxt.startswith("> "), f"leaked > in paragraph: {ptxt!r}"
+
+    def test_multi_line_blockquote_groups_into_one_quote_block(self):
+        # Multi-line <blockquote> with two paragraphs inside renders via
+        # markdownify as two consecutive ``> `` lines that must group into ONE
+        # Notion quote block.
+        html = (
+            "<blockquote><p>linea uno</p><p>linea dos</p></blockquote>"
+            "<p>fuera</p>"
+        )
+        out = html_to_notion_blocks(html)
+        quotes = [b for b in out if b["type"] == "quote"]
+        assert len(quotes) == 1, (
+            f"expected exactly one grouped quote block; got {len(quotes)}: "
+            f"{[b['type'] for b in out]}"
+        )
+        joined = "".join(s["text"]["content"] for s in quotes[0]["quote"]["rich_text"])
+        assert "linea uno" in joined and "linea dos" in joined
+
+    def test_blockquote_with_bold_inline_preserves_annotations(self):
+        out = html_to_notion_blocks(
+            "<blockquote>Esto es <strong>importante</strong> ya.</blockquote>"
+        )
+        quotes = [b for b in out if b["type"] == "quote"]
+        assert quotes
+        spans = quotes[0]["quote"]["rich_text"]
+        bolds = [s for s in spans if s.get("annotations", {}).get("bold")]
+        assert bolds, f"expected bold span inside quote; got {spans}"
+        assert any("importante" in s["text"]["content"] for s in bolds)
+        joined = "".join(s["text"]["content"] for s in spans)
+        assert "**" not in joined
+
+    def test_blockquote_with_link_preserves_link(self):
+        out = html_to_notion_blocks(
+            '<blockquote>ver <a href="https://x.test/y">acá</a> ya</blockquote>'
+        )
+        quotes = [b for b in out if b["type"] == "quote"]
+        assert quotes
+        spans = quotes[0]["quote"]["rich_text"]
+        link_spans = [s for s in spans if s["text"].get("link", {}).get("url") == "https://x.test/y"]
+        assert link_spans, f"expected link span inside quote; got {spans}"
+        assert any("acá" in s["text"]["content"] for s in link_spans)
+
+    def test_paragraph_with_gt_in_middle_NOT_treated_as_quote(self):
+        # Negative: ``>`` only triggers quote at the START of a line.
+        out = html_to_notion_blocks(
+            "<p>5 > 3 es verdadero matemáticamente.</p>"
+        )
+        types = [b["type"] for b in out]
+        assert "quote" not in types, f"unexpected quote: {types}"
+        assert out[0]["type"] == "paragraph"
+        joined = "".join(s["text"]["content"] for s in out[0]["paragraph"]["rich_text"])
+        assert "5 > 3" in joined or "5 &gt; 3" in joined
+
+    def test_blockquote_bold_in_link_inside_quote(self):
+        # Composition: quote + nested-link-with-bold (013-H feature must hold
+        # inside quote rich_text too).
+        out = html_to_notion_blocks(
+            '<blockquote>mira <a href="https://x.test"><strong>X</strong></a></blockquote>'
+        )
+        quotes = [b for b in out if b["type"] == "quote"]
+        assert quotes
+        spans = quotes[0]["quote"]["rich_text"]
+        bold_link = [
+            s for s in spans
+            if s["text"].get("link", {}).get("url") == "https://x.test"
+            and s.get("annotations", {}).get("bold")
+        ]
+        assert bold_link, f"expected bold+link span inside quote; got {spans}"

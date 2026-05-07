@@ -1,7 +1,7 @@
 ---
 task_id: 2026-05-07-031
 title: Diagnosticar POST /run 400 Bad Request en task type rick.orchestrator.triage (smoke O15.1b)
-status: pending
+status: done
 requested_by: copilot-chat (autorizado por David 2026-05-07 post smoke real)
 assigned_to: copilot-vps
 related: 2026-05-07-026 (mention detection validated H1), 2026-05-07-021 (F-NEW fix Vertex primary), notion-governance plan O15.1b smoke 2026-05-07T16:25Z PASS PARCIAL, ADR notion-governance/docs/architecture/16-multichannel-rick-channels.md (referencia local en docs/external-context/adr-16-multichannel-rick-channels.md)
@@ -182,3 +182,92 @@ sin restart, Vertex Fase 1 ventana respetada
 - ❌ NO inventar payload o response si no podés reproducirlos — reportar gap honestamente.
 - ❌ NO imprimir tokens.
 - ❌ NO escribir en `~/.openclaw/trace/delegations.jsonl` entries fabricadas (SOUL Regla 21).
+
+---
+
+## Log de cierre — 2026-05-07T17:50Z (Copilot VPS)
+
+### Resultado: ✅ done (read-only diagnosis; fix DIFERIDO a task 032 por diseño de handler)
+
+### B0 Pre-flight ✅
+
+- F-INC-002: ahead 0, behind 2 (commits 030 + 031); pull --ff-only OK; nuevo branch `copilot-vps/031-diagnose-orchestrator-triage-400` desde `main` post-pull.
+- Working tree limpio salvo leftovers task 013-K (reports/) NO incluidos en commit.
+
+### B1 Payload + response 400 ✅ (reproducido empíricamente)
+
+`curl -X POST http://127.0.0.1:8088/run` con payload reconstruido idéntico al que produce `dispatcher/rick_mention.py` para task `9574eb63b4b346cab89b1965111912b0` → **HTTP 400** con detail Pydantic exacto:
+
+```
+"detail":"Invalid request body: 2 validation errors for TaskEnvelope
+  team       — Input should be 'marketing'|'advisory'|'improvement'|'lab'|'system' [input='rick-orchestrator']
+  task_type  — Input should be 'coding'|'writing'|'research'|'critical'|'ms_stack'|'general' [input='triage']"
+```
+
+Evidencia completa en `/tmp/031/payload-and-400-response.md` (response body 514 bytes capturado). Token NUNCA impreso (solo `len=48` para `WORKER_TOKEN`).
+
+### B2 Code archeology model routing ✅
+
+`model=azure_foundry` viene del `dispatcher.model_router`, NO del gateway OpenClaw:
+
+1. `task_type="triage"` no está en `DEFAULT_ROUTING` ni en `config/quota_policy.yaml`.
+2. `_normalize_task_type("triage")` → `"general"`.
+3. `routing["general"].preferred = "azure_foundry"`.
+
+`agents.list[].model.primary` (Vertex post-task-021) **no se consulta** desde el dispatcher. Solo se consultaría si el handler hipotético `rick.orchestrator.triage` invocara al subagente vía OpenClaw gateway. **No hay regresión del task 021.** Detalles en `/tmp/031/model-routing.md`.
+
+### B3 Verdict ✅
+
+- **HB primaria** confirmada (Pydantic enum mismatch en `team` y `task_type`).
+- **HA secundaria** confirmada (model routing path independiente de openclaw.json).
+- **HC latente** confirmada (handler `rick.orchestrator.triage` no existe en `TASK_HANDLERS`).
+- **HD descartada** (Azure nunca se invocó; 400 es FastAPI validation pre-dispatch).
+
+**Root cause (1 línea)**: Ola 1b (`dispatcher/rick_mention.py`) introdujo un envelope con `team="rick-orchestrator"` + `task_type="triage"` + `task="rick.orchestrator.triage"` sin extender los enums `Team`/`TaskType` (`worker/models/__init__.py:43,51`) ni registrar el handler en `worker/tasks/__init__.py:TASK_HANDLERS`.
+
+### B4 Smoke regresión ⏸ DIFERIDO
+
+Fix propuesto requiere:
+
+- Restart del **worker** (`umbral-worker`) — NO del gateway. Vertex Fase 1 intacta.
+- Implementación nueva del handler `handle_rick_orchestrator_triage` (decisión de diseño: ¿proxy al subagente OpenClaw vía CLI/API, o pipeline interno con `llm.generate`?).
+- Tests del handler.
+- Coordinación con David para repetir smoke `@Rick ping worker /health`.
+
+→ **Diferido a task 032** (no es trivial; spec del task 031 explícitamente pide diferir si requiere restart o feature work).
+
+### B5 Capitalización ✅
+
+- `.agents/board.md`: nueva entrada `## 2026-05-07-031` con verdict, evidence paths, restart requirement, follow-up task 032 anotado.
+- Branch: `copilot-vps/031-diagnose-orchestrator-triage-400`.
+- Commit + PR: ver final del log de cierre.
+
+### Files modificados (este commit)
+
+- `.agents/tasks/2026-05-07-031-copilot-vps-diagnose-orchestrator-triage-400.md` (status pending → done + log).
+- `.agents/board.md` (append entry 031).
+
+### Files NO modificados (out of scope / preservados)
+
+- `dispatcher/rick_mention.py` — código de producción Ola 1b, NO tocar (fix va en task 032).
+- `worker/models/__init__.py` — fix de enums DIFERIDO a task 032.
+- `worker/tasks/__init__.py` — registro de handler DIFERIDO a task 032.
+- `~/.openclaw/openclaw.json` — `agents.list[].model.primary` Vertex intacto (Vertex Fase 1).
+- `~/.config/openclaw/env` — read-only.
+
+### Working notes locales (NO commiteadas)
+
+- `/tmp/031/payload-9574.json` — payload sanitizado del POST /run reproducido.
+- `/tmp/031/response-400.txt` — response body completo del 400.
+- `/tmp/031/payload-and-400-response.md` — análisis B1.
+- `/tmp/031/model-routing.md` — análisis B2.
+- `/tmp/031/verdict.md` — verdict B3 + fix proposal.
+
+### Salvavidas honrados
+
+- ✅ Gateway pid 75421 sin restart (no se ejecutó ningún `systemctl restart openclaw-gateway`).
+- ✅ `openclaw.json` y `model.primary` intactos (no se editaron).
+- ✅ No inline fix aplicado; diferido a task 032 con scope explícito.
+- ✅ F-INC-002 verificado pre-pull y pre-push.
+- ✅ `secret-output-guard` regla #8: ningún token impreso (`WORKER_TOKEN`, `NOTION_API_KEY`, etc. solo referenciadas por nombre o longitud).
+- ✅ SOUL Reglas 21+22: 400 reproducido con curl real, payload reconstruido del código (NO inventado), response body capturado tal cual; verdict apoyado en evidencia verificable.

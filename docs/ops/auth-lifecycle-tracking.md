@@ -44,7 +44,7 @@ python scripts/auth_lifecycle_check.py --config config/auth_lifecycle.example.ya
 
 Output:
 ```
-  [?] linkedin/linkedin_company_access_token: unknown (n/a)
+  [?] linkedin/linkedin_personal_access_token: unknown (n/a)
   [?] ghost/ghost_admin_api_key: unknown (n/a)
   ...
 7 credentials evaluated (dry-run, no log written).

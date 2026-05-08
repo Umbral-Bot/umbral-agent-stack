@@ -1,8 +1,8 @@
 ---
 id: 2026-05-08-O7a-pat-issues-write-scope
 title: O7a — extend Copilot-VPS PAT with issues:write for tournament wrapper
-status: open
-verdict: pending
+status: done
+verdict: verde
 owner: david
 reviewer: copilot-chat
 phase: O7-followup
@@ -65,3 +65,10 @@ extended.
 This unblocks the wrapper task (real `multi-agent-tournament-orchestrator`
 build). Without this, the wrapper would have to inline the contract into
 the report just like the smoke did.
+
+## Verification (2026-05-08, Copilot-VPS)
+
+- `gh auth status` confirmed authentication active.
+- Smoke comment posted on issue #375 (id=4404123920) and deleted in same run.
+- Scope `issues:write` operative on PAT.
+- Closed verde.

@@ -178,7 +178,7 @@ PYTHONPATH=. python3 scripts/e2e_validation.py --notion
 **CI**: GitHub Actions runs pytest on every push/PR to `main` (Python 3.11 + 3.12). See [.github/workflows/test.yml](.github/workflows/test.yml).
 
 ## 📂 Estructura del Repositorio
-
+> Comentarios alineados con `#` + 3 espacios para mantener una columna consistente.
 ```
 ├── client/            # WorkerClient SDK (Python)
 ├── docs/              # Documentación completa paso a paso
@@ -186,7 +186,7 @@ PYTHONPATH=. python3 scripts/e2e_validation.py --notion
 ├── worker/            # Código FastAPI del worker
 │   ├── app.py         #   App principal (endpoints)
 │   ├── config.py      #   Variables de entorno centralizadas
-│   ├── notion_client.py #  Cliente Notion API
+│   ├── notion_client.py #   Cliente Notion API
 │   └── tasks/         #   Handlers de tareas (ping, notion.*)
 ├── tests/             # 536+ unit tests (pytest + fakeredis)
 ├── openclaw/          # Config templates, scripts, systemd units

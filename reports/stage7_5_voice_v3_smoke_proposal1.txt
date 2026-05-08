@@ -1,0 +1,12 @@
+La IA puede acelerar Revit. No va a ordenar tus estándares por arte de magia.
+
+En AECO LATAM ya se empieza a notar un cambio: la conversación sobre IA en Revit dejó de ser curiosidad técnica y empezó a tocar rendimiento real. Pero hay una trampa. Muchos equipos quieren sumar copilotos, prompts y automatizaciones cuando todavía no resolvieron algo más básico: cómo nombran, cómo clasifican, qué parámetros gobiernan y quién responde por la calidad del dato.
+
+Ahí aparece el problema concreto. Si tu oficina modela de una forma, documenta de otra y coordina con criterios que dependen de cada persona, la IA no te va a devolver consistencia. Te va a devolver velocidad sobre un sistema desordenado. Y en BIM, acelerar el desorden no es innovación. Es producir errores más rápido.
+
+Lo que veo es simple: el valor no lo va a capturar primero quien pruebe más herramientas, sino quien tenga antes la estructura mínima para que esas herramientas operen bien. Estándares utilizables, plantillas vivas, parámetros controlados, automatizaciones pequeñas pero confiables y datos que sirvan para revisar, cuantificar, coordinar y decidir.
+
+Revit no queda fuera de juego por la IA. Queda más expuesto. Porque ahora se nota mucho más qué equipos construyeron un sistema de trabajo y cuáles todavía dependen de criterio manual repartido en PDFs, reuniones y memoria individual. La ventaja ya no está solo en modelar. Está en haber preparado el terreno para que la inteligencia trabaje sobre algo gobernable.
+
+Fuente: https://www.youtube.com/watch?v=npmoS_dqAho
+#BIM #AECO #IA #Revit #Automatizacion

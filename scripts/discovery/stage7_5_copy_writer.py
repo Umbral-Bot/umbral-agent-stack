@@ -412,14 +412,20 @@ def build_copy_prompt(
         )
     except ModuleNotFoundError:
         import importlib.util as _ilu  # noqa: PLC0415
-        _spec = _ilu.spec_from_file_location(
-            "_stage7_5_eval_copy",
-            Path(__file__).with_name("eval_stage7_5_copy.py"),
-        )
-        if not (_spec and _spec.loader):
-            raise
-        _mod = _ilu.module_from_spec(_spec)
-        _spec.loader.exec_module(_mod)  # type: ignore[union-attr]
+        import sys as _sys  # noqa: PLC0415
+        _name = "_stage7_5_eval_copy"
+        if _name in _sys.modules:
+            _mod = _sys.modules[_name]
+        else:
+            _spec = _ilu.spec_from_file_location(
+                _name,
+                Path(__file__).with_name("eval_stage7_5_copy.py"),
+            )
+            if not (_spec and _spec.loader):
+                raise
+            _mod = _ilu.module_from_spec(_spec)
+            _sys.modules[_name] = _mod
+            _spec.loader.exec_module(_mod)  # type: ignore[union-attr]
         _eval_build_copy_prompt = _mod.build_copy_prompt
 
     titular = proposal_row.get("titular") or _read_title(page_props.get("Título")) or ""
@@ -515,13 +521,20 @@ def _import_evaluator() -> Any:
         return _evmod
     except ModuleNotFoundError:
         import importlib.util as _ilu  # noqa: PLC0415
+        import sys as _sys  # noqa: PLC0415
+        mod_name = "_stage7_5_eval_copy"
+        if mod_name in _sys.modules:
+            return _sys.modules[mod_name]
         spec = _ilu.spec_from_file_location(
-            "_stage7_5_eval_copy",
+            mod_name,
             Path(__file__).with_name("eval_stage7_5_copy.py"),
         )
         if not (spec and spec.loader):
             raise
         mod = _ilu.module_from_spec(spec)
+        # Register BEFORE exec so dataclass introspection (cls.__module__ lookup)
+        # can resolve the module via sys.modules.
+        _sys.modules[mod_name] = mod
         spec.loader.exec_module(mod)  # type: ignore[union-attr]
         return mod
 

@@ -37,7 +37,8 @@ def test_auth_url_prints_url_with_required_params(env_creds, capsys, tokens_path
         "response_type=code",
         "client_id=fake-client-id",
         "redirect_uri=http%3A%2F%2Flocalhost%3A8765%2Fcallback",
-        "scope=w_member_social",
+        # OIDC scopes only (r_liteprofile/r_basicprofile dropped — deprecated).
+        "scope=openid+profile+email+w_member_social",
     ):
         assert needle in out, f"missing {needle}"
 
@@ -159,7 +160,7 @@ def test_refresh_without_stored_tokens_fails(env_creds, tokens_path):
 # ---------- whoami ----------
 
 def _mock_get(monkeypatch, status_code=200, body=None):
-    body = body or {"id": "abc123XYZ"}
+    body = body or {"sub": "abc123XYZ"}
     resp = MagicMock(spec=httpx.Response)
     resp.status_code = status_code
     resp.text = json.dumps(body)
@@ -174,7 +175,7 @@ def _mock_get(monkeypatch, status_code=200, body=None):
 
 def test_whoami_persists_urn(env_creds, monkeypatch, tokens_path, capsys):
     _seed_tokens(tokens_path)
-    client = _mock_get(monkeypatch, body={"id": "abc123XYZ"})
+    client = _mock_get(monkeypatch, body={"sub": "abc123XYZ"})
     rc = mod.main(["--tokens-path", str(tokens_path), "whoami"])
     out = capsys.readouterr().out.strip()
     assert rc == 0

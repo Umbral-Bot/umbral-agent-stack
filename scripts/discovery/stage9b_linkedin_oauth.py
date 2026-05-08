@@ -4,7 +4,7 @@ Subcommands:
     auth-url        Print the LinkedIn authorization URL (3-legged OAuth).
     exchange-code   Exchange an authorization ?code= for access+refresh tokens.
     refresh         Refresh the access_token using the stored refresh_token.
-    whoami          GET /v2/me, persist member URN, print URN.
+    whoami          GET /v2/userinfo (OIDC), persist member URN, print URN.
     check-expiry    Exit 1 if refresh_token expires in < 30 days, else 0.
 
 Tokens are persisted to ``~/.config/rick-discovery/linkedin-tokens.json`` with
@@ -38,10 +38,15 @@ import httpx
 LINKEDIN_AUTH_URL = "https://www.linkedin.com/oauth/v2/authorization"
 LINKEDIN_TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken"
 LINKEDIN_API_BASE = "https://api.linkedin.com"
-LINKEDIN_ME_PATH = "/v2/me"
+# OIDC userinfo endpoint (replaces deprecated /v2/me which required
+# r_liteprofile, no longer granted to new apps). Returns 'sub' = member id.
+LINKEDIN_USERINFO_PATH = "/v2/userinfo"
 
 DEFAULT_REDIRECT_URI = "http://localhost:8765/callback"
-DEFAULT_SCOPES = "w_member_social r_liteprofile r_basicprofile openid profile email"
+# OIDC scopes only. r_liteprofile + r_basicprofile are deprecated and not
+# available to apps created after 2023; including them causes LinkedIn to
+# reject the auth URL before consent.
+DEFAULT_SCOPES = "openid profile email w_member_social"
 
 DEFAULT_TOKENS_PATH = Path.home() / ".config" / "rick-discovery" / "linkedin-tokens.json"
 
@@ -251,20 +256,22 @@ def cmd_whoami(args: argparse.Namespace) -> int:
         return 2
     with httpx.Client(timeout=30.0) as c:
         r = c.get(
-            f"{LINKEDIN_API_BASE}{LINKEDIN_ME_PATH}",
+            f"{LINKEDIN_API_BASE}{LINKEDIN_USERINFO_PATH}",
             headers={
                 "Authorization": f"Bearer {access}",
                 "X-Restli-Protocol-Version": "2.0.0",
             },
         )
     if r.status_code != 200:
-        print(f"ERROR: /v2/me HTTP {r.status_code}: {r.text[:200]!r}",
+        print(f"ERROR: /v2/userinfo HTTP {r.status_code}: {r.text[:200]!r}",
               file=sys.stderr)
         return 1
     body = r.json()
-    member_id = body.get("id") or ""
+    # OIDC: 'sub' is the member id; reconstruct the LinkedIn URN.
+    member_id = body.get("sub") or ""
     if not member_id:
-        print(f"ERROR: no 'id' in /v2/me response: {body!r}", file=sys.stderr)
+        print(f"ERROR: no 'sub' in /v2/userinfo response: {body!r}",
+              file=sys.stderr)
         return 1
     urn = f"urn:li:person:{member_id}"
     tokens["member_urn"] = urn
@@ -364,7 +371,7 @@ def main(argv: list[str] | None = None) -> int:
     p_ex.add_argument("--code", required=True)
 
     sub.add_parser("refresh", help="Refresh the access_token.")
-    sub.add_parser("whoami", help="GET /v2/me + persist member URN.")
+    sub.add_parser("whoami", help="GET /v2/userinfo + persist member URN.")
     sub.add_parser("check-expiry",
                    help="Exit 1 if refresh_token expires in <30d.")
 

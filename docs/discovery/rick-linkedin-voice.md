@@ -2,7 +2,47 @@
 
 > **Owner**: editorial system Rick (Umbral BIM).
 > **Consumida por**: `prompts/rick/linkedin-copy-system.md`, `prompts/rick/linkedin-copy-user.md`, evaluator `scripts/discovery/eval_stage7_5_copy.py`, e Hilo A `stage7_5_copy_writer`.
-> **Status**: v1 (2026-05-08). Iterar contra fixtures + evaluator antes de modificar.
+> **Status**: v2 (2026-05-08). Iterar contra fixtures + evaluator antes de modificar.
+
+## Changelog v1 → v2
+
+Tras review humano, v1 obtenía score 1.000 contra el evaluator pero las copies tenían fallas reales:
+
+- "Mi lectura es simple" repetida en 4/6 copies (efecto plantilla).
+- "El problema no es X, es Y" sobreusada como muletilla retórica.
+- Foco casi exclusivo en herramienta sin aterrizar el plano organizacional (equipo, adopción, proceso, criterio, rol).
+- Tono confrontacional sin balance pedagógico-propositivo.
+- Threshold 0.80 demasiado lenient para la varianza real de la voz.
+
+v2 endurece prompt y eval con cinco reglas nuevas:
+
+- **R13** (hard) — Anti-repetición cross-batch: ningún 4-grama puede aparecer en más de 2 copies del mismo lote.
+- **R14** (hard) — Sensibilidad organizacional: el copy debe mencionar al menos uno de 13 tokens (adopción, equipo, proceso, criterio, trazabilidad, gobernanza, organización, persona, rol, decisión, etc.).
+- **R15** (soft) — Balance pedagógico: si el hook es confrontacional, el cuerpo debe contener ≥2 frases propositivas ("lo que sirve", "el camino", "la pregunta útil", "criterio", "propuesta", "para mí el punto").
+- **R16** (soft, batch) — Muletillas con cupo: "Mi lectura es simple" puede aparecer máximo 1 vez en cualquier lote de 10. R16 también opera en single-copy.
+- **R17** (soft) — Verificabilidad: línea dedicada `Fuente: <url>` antes de hashtags.
+
+Scoring v2 ponderado en 6 dimensiones:
+
+| Dimensión | Peso | Reglas |
+|---|---|---|
+| Claridad técnica | 0.25 | R1, R2, R3 |
+| Criterio operativo | 0.20 | R12, R14 |
+| Tono David | 0.20 | R6, R8, R9, R11, R15 |
+| Baja muletilla | 0.15 | R13, R16 |
+| Sensibilidad organizacional | 0.10 | R14 |
+| Verificabilidad | 0.10 | R4, R17 |
+
+Threshold pasa de 0.80 → 0.85. Hard rules deben pasar al 100%.
+
+Hard rules v2 (10): R1, R2, R4, R5, R7, R8, R9, R11, R13, R14.
+Soft rules v2 (7): R3, R6, R10, R12, R15, R16, R17.
+
+Fixtures: F1–F6 (originales) + F7-org-cambio-proceso, F8-org-adopcion-dificil, F9-org-equipo-resistente, F10-org-rol-ambiguo (organizacionales nuevos).
+
+Modo batch (`--batch-mode`, default ON) habilita R13/R16 cross-fixture.
+
+Prompt v1 archivado en `prompts/rick/archive/linkedin-copy-system-v1.md`.
 
 Este documento define la voz de Rick para LinkedIn. Es la fuente única para el prompt y para el set de reglas que un copy debe cumplir. Si el doc cambia, hay que regenerar fixtures y re-correr el evaluator.
 

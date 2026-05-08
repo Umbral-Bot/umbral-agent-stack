@@ -47,7 +47,9 @@ CREATE TABLE IF NOT EXISTS discovered_items (
   titulo             TEXT,
   publicado_en       TEXT,
   primera_vez_visto  TEXT NOT NULL,
-  promovido_a_candidato_at TEXT
+  promovido_a_candidato_at TEXT,
+  contenido_html        TEXT,
+  contenido_extraido_at TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_discovered_referente ON discovered_items(referente_id, canal);
 CREATE TABLE IF NOT EXISTS fetch_log (
@@ -122,16 +124,37 @@ _YT_C_RE = re.compile(r"^/c/([\w.-]+)/?")
 _YT_HANDLE_RE = re.compile(r"^/@([\w.-]+)/?")
 
 
-def parse_youtube_channel_id(url: str) -> tuple[str, str] | None:
+_YT_NETLOCS = {"youtube.com", "www.youtube.com", "m.youtube.com"}
+_YT_BARE_HANDLE_RE = re.compile(r"^@([\w.-]+)/?$")
+
+
+def parse_youtube_channel_id(url: str | None) -> tuple[str, str] | None:
     """Return (id_or_name, kind) for a YouTube channel URL.
 
     Kinds: 'channel' (UC...), 'c' (custom URL), 'user' (legacy), 'handle' (@name).
     Returns None for unknown shapes and non-YouTube URLs.
+
+    Hardening defensivo (task 033, 2026-05-08):
+    - Acepta URL sin scheme (`youtube.com/@x`).
+    - Acepta handle suelto (`@x`).
     """
-    if not url:
+    if not url or not isinstance(url, str):
         return None
-    parsed = urlparse(url.strip())
-    if parsed.netloc.lower() not in {"youtube.com", "www.youtube.com", "m.youtube.com"}:
+    s = url.strip()
+    if not s:
+        return None
+
+    # Bare handle (`@username`) — sin / ni netloc.
+    if (m := _YT_BARE_HANDLE_RE.match(s)) is not None:
+        return (m.group(1), "handle")
+
+    # If urlparse can't find a scheme, prefix `https://` and re-parse.
+    # `urlparse("youtube.com/@x")` yields netloc='', path='youtube.com/@x'.
+    parsed = urlparse(s)
+    if not parsed.netloc and parsed.scheme not in {"http", "https"}:
+        parsed = urlparse(f"https://{s}")
+
+    if parsed.netloc.lower() not in _YT_NETLOCS:
         return None
     path = parsed.path or "/"
     if m := _YT_CHANNEL_RE.match(path):
@@ -185,6 +208,18 @@ def init_sqlite(db_path: Path) -> sqlite3.Connection:
     db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(db_path))
     conn.executescript(SCHEMA_DDL)
+    # Idempotent migrations for pre-existing DBs (013-F).
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(discovered_items)")}
+    if "contenido_html" not in cols:
+        conn.execute("ALTER TABLE discovered_items ADD COLUMN contenido_html TEXT")
+    if "contenido_extraido_at" not in cols:
+        conn.execute("ALTER TABLE discovered_items ADD COLUMN contenido_extraido_at TEXT")
+    if "notion_page_id" not in cols:
+        conn.execute("ALTER TABLE discovered_items ADD COLUMN notion_page_id TEXT")
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_discovered_notion_page "
+            "ON discovered_items(notion_page_id)"
+        )
     conn.commit()
     return conn
 
@@ -225,13 +260,21 @@ def upsert_item(
     canal: str,
     titulo: str | None,
     publicado_en: str | None,
+    contenido_html: str | None = None,
 ) -> bool:
-    """Insert if new. Returns True if a new row was created."""
+    """Insert if new. Returns True if a new row was created.
+
+    On INSERT, persists ``contenido_html`` (may be NULL) and stamps
+    ``contenido_extraido_at`` with the current time iff content was captured.
+    """
+    extraido_at = _now_iso() if contenido_html else None
     cur = conn.execute(
         "INSERT OR IGNORE INTO discovered_items "
-        "(url_canonica, referente_id, referente_nombre, canal, titulo, publicado_en, primera_vez_visto) "
-        "VALUES (?,?,?,?,?,?,?)",
-        (url_canonica, referente_id, referente_nombre, canal, titulo, publicado_en, _now_iso()),
+        "(url_canonica, referente_id, referente_nombre, canal, titulo, "
+        " publicado_en, primera_vez_visto, contenido_html, contenido_extraido_at) "
+        "VALUES (?,?,?,?,?,?,?,?,?)",
+        (url_canonica, referente_id, referente_nombre, canal, titulo, publicado_en,
+         _now_iso(), contenido_html, extraido_at),
     )
     return cur.rowcount > 0
 
@@ -269,13 +312,19 @@ def parse_feed_xml(text: str) -> list[dict[str, Any]]:
 
 
 def _extract_rss_item(item: ET.Element) -> dict[str, Any]:
+    from .content_extractor import extract_html_from_rss_item
+
     title = _find_text(item, "title")
     link = _find_text(item, "link")
     pub = _find_text(item, "pubDate") or _find_text(item, "{http://purl.org/dc/elements/1.1/}date")
-    return {"titulo": title, "url": link, "publicado_en": pub}
+    contenido_html = extract_html_from_rss_item(item)
+    return {"titulo": title, "url": link, "publicado_en": pub,
+            "contenido_html": contenido_html}
 
 
 def _extract_atom_entry(entry: ET.Element, ns: str) -> dict[str, Any]:
+    from .content_extractor import extract_html_from_atom_entry
+
     title_el = entry.find(f"{ns}title")
     title = (title_el.text or "").strip() if title_el is not None else None
     url = None
@@ -290,7 +339,9 @@ def _extract_atom_entry(entry: ET.Element, ns: str) -> dict[str, Any]:
             url = link.attrib.get("href") or (link.text or "").strip() or None
     pub_el = entry.find(f"{ns}published") or entry.find(f"{ns}updated")
     pub = (pub_el.text or "").strip() if pub_el is not None else None
-    return {"titulo": title, "url": url, "publicado_en": pub}
+    contenido_html = extract_html_from_atom_entry(entry)
+    return {"titulo": title, "url": url, "publicado_en": pub,
+            "contenido_html": contenido_html}
 
 
 def _find_text(item: ET.Element, tag: str) -> str | None:
@@ -489,6 +540,7 @@ def process_channel(
             canal=canal,
             titulo=(it.get("titulo") or None),
             publicado_en=(it.get("publicado_en") or None),
+            contenido_html=(it.get("contenido_html") or None),
         ):
             items_new += 1
 

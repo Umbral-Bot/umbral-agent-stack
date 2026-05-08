@@ -99,6 +99,9 @@ class TestGetConfiguredProviders:
 
     def test_detects_all_with_complete_env(self, monkeypatch):
         """All providers detected when all env vars are set."""
+        # Task 042: strip UMBRAL_DISABLE_CLAUDE leaked from ~/.config/openclaw/env
+        # via worker.config import-time hook in conftest.
+        monkeypatch.delenv("UMBRAL_DISABLE_CLAUDE", raising=False)
         monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
         monkeypatch.setenv("GOOGLE_API_KEY", "goog-test")
         monkeypatch.setenv("GOOGLE_API_KEY_RICK_UMBRAL", "goog-vertex")
@@ -165,6 +168,8 @@ class TestModelRouterProviderSkipping:
 
     def test_uses_preferred_when_configured(self, quota_tracker, monkeypatch):
         """Normal case: preferred provider is configured and used."""
+        # Task 042: strip UMBRAL_DISABLE_CLAUDE leaked from VPS env file.
+        monkeypatch.delenv("UMBRAL_DISABLE_CLAUDE", raising=False)
         monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
         monkeypatch.setenv("GOOGLE_API_KEY", "goog-test")
         monkeypatch.delenv("AZURE_OPENAI_ENDPOINT", raising=False)
@@ -198,6 +203,8 @@ class TestFullRoutingFlow:
 
     def test_coding_selects_claude_then_quota_increments(self, quota_tracker, monkeypatch):
         """coding→claude_pro selected, quota records usage."""
+        # Task 042: strip UMBRAL_DISABLE_CLAUDE leaked from VPS env file.
+        monkeypatch.delenv("UMBRAL_DISABLE_CLAUDE", raising=False)
         monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
         monkeypatch.setenv("GOOGLE_API_KEY", "goog-test")
         monkeypatch.delenv("AZURE_OPENAI_ENDPOINT", raising=False)

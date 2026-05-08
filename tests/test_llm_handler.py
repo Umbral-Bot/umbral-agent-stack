@@ -33,6 +33,20 @@ def _headers_lower(req):
     return {k.lower(): v for k, v in req.header_items()}
 
 
+@pytest.fixture(autouse=True)
+def _strip_vps_env_leaks(monkeypatch):
+    """Task 042: worker.config._load_openclaw_env() runs at conftest import
+    time and ingests ~/.config/openclaw/env. On the VPS dev box this loads
+    UMBRAL_DISABLE_CLAUDE=true, which short-circuits every Claude routing
+    test in worker.tasks.llm._detect_provider before the assertion runs.
+
+    Strip the var by default; tests that explicitly need it set use
+    monkeypatch.setenv inside the test body
+    (e.g. test_detect_provider_claude_respects_disable_flag).
+    """
+    monkeypatch.delenv("UMBRAL_DISABLE_CLAUDE", raising=False)
+
+
 def test_handle_llm_generate_requires_prompt():
     with pytest.raises(ValueError, match="prompt"):
         handle_llm_generate({})
@@ -246,6 +260,10 @@ def test_handle_llm_generate_vertex31_alias_maps_to_gemini3(monkeypatch):
 
 def test_openai_success_with_mocked_urllib(monkeypatch):
     monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    # Task 042: strip leaked AZURE_OPENAI_* from ~/.config/openclaw/env so
+    # gpt-4o-mini routes to native openai instead of azure_foundry.
+    monkeypatch.delenv("AZURE_OPENAI_ENDPOINT", raising=False)
+    monkeypatch.delenv("AZURE_OPENAI_API_KEY", raising=False)
     monkeypatch.setenv("OPENAI_API_KEY", "openai-test-key")
     fake_payload = {
         "choices": [

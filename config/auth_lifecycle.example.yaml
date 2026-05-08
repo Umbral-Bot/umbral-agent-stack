@@ -13,28 +13,38 @@
 
 credentials:
   - provider: linkedin
-    credential_ref: linkedin_company_access_token
+    credential_ref: linkedin_personal_access_token
     # expires_at: "2026-06-15T00:00:00Z"   # fill in after OAuth flow
     warning_days: 14
     critical_days: 5
+    # Per ADR-005: Rick publishes on personal profile (no Company Page, no legal entity).
     notes: "OAuth 2.0 access token, 60-day TTL, no refresh (non-MDP). Re-auth required."
     owner: david
+    mdp_approved: false
+    expected_scopes: ["w_member_social"]
+    # NOTE on refresh_token (only if MDP is granted in the future):
+    # LinkedIn refresh_tokens DO NOT rotate. The 365-day TTL is preserved
+    # from initial issuance. Day 59 after refreshing = 306 days remaining
+    # (365 - 59), NOT 365. Plan re-consent before the original TTL elapses.
     reauth_playbook: >
-      1. Open LinkedIn Developer App > Auth tab.
+      1. Open LinkedIn Developer App > Auth tab
+         (shortcut: https://www.linkedin.com/developers/tools/oauth/token-generator).
       2. Complete OAuth 2.0 Authorization Code flow.
       3. Update expires_at in config/auth_lifecycle.yaml.
       4. Update token in ~/.config/openclaw/env (LINKEDIN_ACCESS_TOKEN).
 
   - provider: linkedin
-    credential_ref: linkedin_refresh_authorization
+    credential_ref: linkedin_app_authorization
     # expires_at: null  # long-lived; set if known
     warning_days: 30
     critical_days: 14
+    # This is the user's consent to the LinkedIn app, NOT an OAuth refresh_token.
     notes: "LinkedIn app authorization itself. Typically long-lived but can be revoked."
     owner: david
     reauth_playbook: >
       1. Verify app status at https://www.linkedin.com/developers/apps.
-      2. Re-authorize if revoked.
+      2. Re-authorize if revoked
+         (shortcut: https://www.linkedin.com/developers/tools/oauth/token-generator).
 
   - provider: ghost
     credential_ref: ghost_admin_api_key

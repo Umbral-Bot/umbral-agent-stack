@@ -1,0 +1,52 @@
+{
+  "started": "2026-05-07T03:21:34Z",
+  "commit": true,
+  "requested_ids": [
+    1,
+    31,
+    32,
+    33,
+    51
+  ],
+  "results": [
+    {
+      "sqlite_id": 1,
+      "referente": "Cole Nussbaumer Knaflic",
+      "notion_page_id": "3595f443-fb5c-81cf-af51-cf22d1ad1dfd",
+      "action": "archived",
+      "archived_confirmed": true
+    },
+    {
+      "sqlite_id": 31,
+      "referente": "Rodrigo Rojo",
+      "notion_page_id": "3595f443-fb5c-81de-8094-cc82b35a33d4",
+      "action": "archived",
+      "archived_confirmed": true
+    },
+    {
+      "sqlite_id": 32,
+      "referente": "Rodrigo Rojo",
+      "notion_page_id": "3595f443-fb5c-81d0-827c-eb71b962be5d",
+      "action": "archived",
+      "archived_confirmed": true
+    },
+    {
+      "sqlite_id": 33,
+      "referente": "Rodrigo Rojo",
+      "notion_page_id": "3595f443-fb5c-810b-8c5f-d1905209fc84",
+      "action": "archived",
+      "archived_confirmed": true
+    },
+    {
+      "sqlite_id": 51,
+      "referente": "Alex Freberg",
+      "notion_page_id": "3595f443-fb5c-81bf-8c4a-c2bb2d19db69",
+      "action": "archived",
+      "archived_confirmed": true
+    }
+  ],
+  "archived_ok": 5,
+  "skipped_no_page_id": 0,
+  "errors": 0,
+  "finished": "2026-05-07T03:21:42Z"
+}

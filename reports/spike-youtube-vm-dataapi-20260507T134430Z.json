@@ -1,0 +1,230 @@
+{
+  "spike": "013-K",
+  "started": "2026-05-07T13:44:30.460162+00:00",
+  "finished": "2026-05-07T13:44:36.481206+00:00",
+  "source_report": "reports/spike-youtube-20260507T055904Z.json",
+  "sample_limit": 8,
+  "vm_health": {
+    "ok": true,
+    "worker_url_vm": "http://100.109.16.40:8088",
+    "version": "0.4.0",
+    "tasks_registered_count": 80,
+    "has_browser_navigate": true,
+    "has_yt_dlp_task": false,
+    "elapsed_ms": 218
+  },
+  "data_api_key_present": false,
+  "summary": {
+    "sample_size": 8,
+    "via_a_vm_browser": {
+      "navigate_ok": 8,
+      "useful_for_extraction": 0,
+      "redirected_to_sorry": 8,
+      "redirected_to_sorry_pct": 100.0,
+      "bot_challenge_count": 8,
+      "bot_challenge_pct": 100.0,
+      "avg_elapsed_ms": 752.1
+    },
+    "via_b_data_api": {
+      "ok_count": 0,
+      "has_long_desc_count": 0,
+      "avg_elapsed_ms": null
+    }
+  },
+  "blockers": {
+    "via_a": [
+      "VM IP también bloqueado por Google: 8/8 requests redirigidos a `google.com/sorry/index?...` (reCAPTCHA). El supuesto 'IP residencial de la VM destraba YouTube' NO se cumple con esta VM. Owner: Rick — evaluar proxy residencial pago, cookies de browser real, o descartar VIA A definitivamente. Mientras tanto, VIA A NO es una solución para 013-K.",
+      "VM worker no tiene tarea `youtube.fetch` registrada — esto es la implementación esperada de 013-K (no es bloqueo del spike, es el work-item resultante)."
+    ],
+    "via_b": [
+      "YOUTUBE_DATA_API_KEY no presente. Owner: David — crear API key en Google Cloud Console (proyecto nuevo o existente), habilitar 'YouTube Data API v3', restringir por IP de la VPS, y exportar la variable en el systemd unit del dispatcher."
+    ]
+  },
+  "recommendation": "RECOMENDACIÓN 013-K: VIA A INVALIDADA. La VM está reachable y `browser.navigate` funciona, pero 100% de los requests son redirigidos a `google.com/sorry/index?...` con un reCAPTCHA — el IP de egreso de la VM también está marcado por Google. Conclusión: cambiar de IP residencial NO es la solución; el problema es 'cualquier IP que ya pegó suficientes requests a YouTube'. **Próximo paso obligatorio:** desbloquear VIA B (YouTube Data API v3). David debe crear la API key — sin eso, Stage 2 para canal=youtube queda en stub. NO implementar yt-dlp en la VM hasta resolver el captcha del lado VM (cookies de un browser real, rotación de IP, o proxy residencial pago).",
+  "items": [
+    {
+      "sqlite_id": 52,
+      "video_id": "Vht4hoRHEek",
+      "url": "https://www.youtube.com/watch?v=Vht4hoRHEek",
+      "titulo": "Learn ETL Pipelines in Databricks in Under 1 Hour | Data Engineering in Databricks",
+      "referente_id": "080bbf47-03b9-4362-b4ff-0bd198249eb0",
+      "via_a_vm_browser": {
+        "ok": true,
+        "html_bytes": 5179,
+        "text_bytes": 328,
+        "final_url": "https://www.google.com/sorry/index?continue=https://www.youtube.com/watch%3Fv%3DVht4hoRHEek&q=EgS1K9mvGL6u8s8GIjDsi46SdFK5Hols3VKQyxsJ-4aCN8iHZ16_ZVs9WByjmG-GL5Vvq60KGoD2YBXzCrYyAnJSWgFD",
+        "redirected_to_sorry": true,
+        "has_player_marker": false,
+        "has_bot_challenge": true,
+        "has_short_description_field": false,
+        "useful_for_extraction": false,
+        "elapsed_ms": 698
+      },
+      "via_b_data_api": {
+        "ok": false,
+        "skipped": true
+      }
+    },
+    {
+      "sqlite_id": 81,
+      "video_id": "9Gr2QjvSQ-I",
+      "url": "https://www.youtube.com/watch?v=9Gr2QjvSQ-I",
+      "titulo": "Adiós Windows. Me paso a LINUX para SIEMPRE",
+      "referente_id": "1848755f-3a58-4d11-ad97-8c23a80c962d",
+      "via_a_vm_browser": {
+        "ok": true,
+        "html_bytes": 5178,
+        "text_bytes": 328,
+        "final_url": "https://www.google.com/sorry/index?continue=https://www.youtube.com/watch%3Fv%3D9Gr2QjvSQ-I&q=EgS1K9mvGL-u8s8GIjB1h9Vw3KWLCfk4-VA3iaEGfh0hHvl5c5zBwi5_vt_UVHbFKDVpfPEc8GpsiOUKu34yAnJSWgFD",
+        "redirected_to_sorry": true,
+        "has_player_marker": false,
+        "has_bot_challenge": true,
+        "has_short_description_field": false,
+        "useful_for_extraction": false,
+        "elapsed_ms": 730
+      },
+      "via_b_data_api": {
+        "ok": false,
+        "skipped": true
+      }
+    },
+    {
+      "sqlite_id": 82,
+      "video_id": "3LnNwS6rqk8",
+      "url": "https://www.youtube.com/watch?v=3LnNwS6rqk8",
+      "titulo": "Monté el PC de BATMAN dentro de una Batcueva REAL",
+      "referente_id": "1848755f-3a58-4d11-ad97-8c23a80c962d",
+      "via_a_vm_browser": {
+        "ok": true,
+        "html_bytes": 5179,
+        "text_bytes": 328,
+        "final_url": "https://www.google.com/sorry/index?continue=https://www.youtube.com/watch%3Fv%3D3LnNwS6rqk8&q=EgS1K9mvGMCu8s8GIjDZBD4X7F5TtMSvF3YXCPE_F4PtHLhFs90Jf_Jk9bUBC7PqeVZRTOQjcK9LlTvnVowyAnJSWgFD",
+        "redirected_to_sorry": true,
+        "has_player_marker": false,
+        "has_bot_challenge": true,
+        "has_short_description_field": false,
+        "useful_for_extraction": false,
+        "elapsed_ms": 882
+      },
+      "via_b_data_api": {
+        "ok": false,
+        "skipped": true
+      }
+    },
+    {
+      "sqlite_id": 111,
+      "video_id": "s2jm2Z22ibA",
+      "url": "https://www.youtube.com/watch?v=s2jm2Z22ibA",
+      "titulo": "Voice Chatbot (Coding Challenge 188)",
+      "referente_id": "186db773-ec72-4717-8098-ff12f45279d0",
+      "via_a_vm_browser": {
+        "ok": true,
+        "html_bytes": 5179,
+        "text_bytes": 328,
+        "final_url": "https://www.google.com/sorry/index?continue=https://www.youtube.com/watch%3Fv%3Ds2jm2Z22ibA&q=EgS1K9mvGMCu8s8GIjBqbfuXmJpONZhfSaJnSHAW6Yq3NPPuLFctwVoK8Od2Q2y3aV_uNqXmtip1coUK8SsyAnJSWgFD",
+        "redirected_to_sorry": true,
+        "has_player_marker": false,
+        "has_bot_challenge": true,
+        "has_short_description_field": false,
+        "useful_for_extraction": false,
+        "elapsed_ms": 639
+      },
+      "via_b_data_api": {
+        "ok": false,
+        "skipped": true
+      }
+    },
+    {
+      "sqlite_id": 141,
+      "video_id": "TQsBnsKZtuo",
+      "url": "https://www.youtube.com/watch?v=TQsBnsKZtuo",
+      "titulo": "Numbering Tool in Revit | Rule-Based Numbering in Revit Tutorial",
+      "referente_id": "23addaef-d334-4b86-b90a-649ce7f7d82a",
+      "via_a_vm_browser": {
+        "ok": true,
+        "html_bytes": 5179,
+        "text_bytes": 328,
+        "final_url": "https://www.google.com/sorry/index?continue=https://www.youtube.com/watch%3Fv%3DTQsBnsKZtuo&q=EgS1K9mvGMGu8s8GIjCmn-zcVafz3bubuScj3s3h5Kl1Z6z_WDUkthxZcoSbNb2QVxyKAI2GOTGfiiunXM8yAnJSWgFD",
+        "redirected_to_sorry": true,
+        "has_player_marker": false,
+        "has_bot_challenge": true,
+        "has_short_description_field": false,
+        "useful_for_extraction": false,
+        "elapsed_ms": 675
+      },
+      "via_b_data_api": {
+        "ok": false,
+        "skipped": true
+      }
+    },
+    {
+      "sqlite_id": 142,
+      "video_id": "npmoS_dqAho",
+      "url": "https://www.youtube.com/watch?v=npmoS_dqAho",
+      "titulo": "Am I Faster than Revit AI?",
+      "referente_id": "23addaef-d334-4b86-b90a-649ce7f7d82a",
+      "via_a_vm_browser": {
+        "ok": true,
+        "html_bytes": 5179,
+        "text_bytes": 328,
+        "final_url": "https://www.google.com/sorry/index?continue=https://www.youtube.com/watch%3Fv%3DnpmoS_dqAho&q=EgS1K9mvGMKu8s8GIjDgXBzXmt-U31Vj-YM1_tnrVuC4EJIYOgJ2AXmDEv5ryXVajJ_sREuSqlt5GBYQniUyAnJSWgFD",
+        "redirected_to_sorry": true,
+        "has_player_marker": false,
+        "has_bot_challenge": true,
+        "has_short_description_field": false,
+        "useful_for_extraction": false,
+        "elapsed_ms": 808
+      },
+      "via_b_data_api": {
+        "ok": false,
+        "skipped": true
+      }
+    },
+    {
+      "sqlite_id": 261,
+      "video_id": "J26M-cpFG-M",
+      "url": "https://www.youtube.com/watch?v=J26M-cpFG-M",
+      "titulo": "Build Interactive Agents with Generative UI",
+      "referente_id": "6af76981-e122-41d4-9ef2-bb75ad977f63",
+      "via_a_vm_browser": {
+        "ok": true,
+        "html_bytes": 5179,
+        "text_bytes": 328,
+        "final_url": "https://www.google.com/sorry/index?continue=https://www.youtube.com/watch%3Fv%3DJ26M-cpFG-M&q=EgS1K9mvGMOu8s8GIjA1no7Kcdar-scU_T-7mg4PARFfjX4byD-idp24wEb5Sc9_Y5Sxm-_ayGAhm2kbxPQyAnJSWgFD",
+        "redirected_to_sorry": true,
+        "has_player_marker": false,
+        "has_bot_challenge": true,
+        "has_short_description_field": false,
+        "useful_for_extraction": false,
+        "elapsed_ms": 756
+      },
+      "via_b_data_api": {
+        "ok": false,
+        "skipped": true
+      }
+    },
+    {
+      "sqlite_id": 262,
+      "video_id": "FNfIMnpz-ZY",
+      "url": "https://www.youtube.com/watch?v=FNfIMnpz-ZY",
+      "titulo": "Become an AI power user 🌟 new course from Andrew Ng",
+      "referente_id": "6af76981-e122-41d4-9ef2-bb75ad977f63",
+      "via_a_vm_browser": {
+        "ok": true,
+        "html_bytes": 5179,
+        "text_bytes": 328,
+        "final_url": "https://www.google.com/sorry/index?continue=https://www.youtube.com/watch%3Fv%3DFNfIMnpz-ZY&q=EgS1K9mvGMOu8s8GIjDPYvYjocehT29CdO79UAbPOdeITr9H0d02yCRPVnjmReukR3XSELTkoo2V5cxjnIMyAnJSWgFD",
+        "redirected_to_sorry": true,
+        "has_player_marker": false,
+        "has_bot_challenge": true,
+        "has_short_description_field": false,
+        "useful_for_extraction": false,
+        "elapsed_ms": 829
+      },
+      "via_b_data_api": {
+        "ok": false,
+        "skipped": true
+      }
+    }
+  ]
+}

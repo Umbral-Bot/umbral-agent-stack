@@ -1,0 +1,407 @@
+{
+  "spike": "013-K",
+  "started": "2026-05-07T14:39:58.279159+00:00",
+  "finished": "2026-05-07T14:40:07.148559+00:00",
+  "source_report": "reports/spike-youtube-20260507T055904Z.json",
+  "sample_limit": 8,
+  "vm_health": {
+    "ok": true,
+    "worker_url_vm": "http://100.109.16.40:8088",
+    "version": "0.4.0",
+    "tasks_registered_count": 80,
+    "has_browser_navigate": true,
+    "has_yt_dlp_task": false,
+    "elapsed_ms": 220
+  },
+  "data_api_key_present": true,
+  "summary": {
+    "sample_size": 8,
+    "via_a_vm_browser": {
+      "navigate_ok": 8,
+      "useful_for_extraction": 0,
+      "redirected_to_sorry": 8,
+      "redirected_to_sorry_pct": 100.0,
+      "bot_challenge_count": 8,
+      "bot_challenge_pct": 100.0,
+      "avg_elapsed_ms": 858.1
+    },
+    "via_b_data_api": {
+      "ok_count": 7,
+      "has_long_desc_count": 7,
+      "avg_elapsed_ms": 249.9
+    }
+  },
+  "blockers": {
+    "via_a": [
+      "VM IP también bloqueado por Google: 8/8 requests redirigidos a `google.com/sorry/index?...` (reCAPTCHA). El supuesto 'IP residencial de la VM destraba YouTube' NO se cumple con esta VM. Owner: Rick — evaluar proxy residencial pago, cookies de browser real, o descartar VIA A definitivamente. Mientras tanto, VIA A NO es una solución para 013-K.",
+      "VM worker no tiene tarea `youtube.fetch` registrada — esto es la implementación esperada de 013-K (no es bloqueo del spike, es el work-item resultante)."
+    ],
+    "via_b": []
+  },
+  "recommendation": "RECOMENDACIÓN 013-K: implementar SOLO VIA B (YouTube Data API v3). VIA A invalidada: 100% de requests desde la VM son redirigidos a `google.com/sorry` (reCAPTCHA) — el IP de la VM también está flagged por Google. Data API entrega 88% de descripciones >500c, suficiente para evitar created_no_body. Sin transcript: aceptable para Stage 2 v1.",
+  "items": [
+    {
+      "sqlite_id": 52,
+      "video_id": "Vht4hoRHEek",
+      "url": "https://www.youtube.com/watch?v=Vht4hoRHEek",
+      "titulo": "Learn ETL Pipelines in Databricks in Under 1 Hour | Data Engineering in Databricks",
+      "referente_id": "080bbf47-03b9-4362-b4ff-0bd198249eb0",
+      "via_a_vm_browser": {
+        "ok": true,
+        "html_bytes": 5179,
+        "text_bytes": 328,
+        "final_url": "https://www.google.com/sorry/index?continue=https://www.youtube.com/watch%3Fv%3DVht4hoRHEek&q=EgS1K9mvGL7I8s8GIjAcC2LliwcGRnplDBtC3bFwGm6wnfZ6AhQUIDvwi6ERwTIBFCMpQxOevrxPlCgsbdYyAnJSWgFD",
+        "redirected_to_sorry": true,
+        "has_player_marker": false,
+        "has_bot_challenge": true,
+        "has_short_description_field": false,
+        "useful_for_extraction": false,
+        "elapsed_ms": 854
+      },
+      "via_b_data_api": {
+        "ok": true,
+        "elapsed_ms": 173,
+        "found": true,
+        "fields": {
+          "title": "Learn ETL Pipelines in Databricks in Under 1 Hour | Data Engineering in Databricks",
+          "description": "In this series we are going to dive into the Data Engineering side of Databricks!\n\nThis video will orchestrating jobs to automate our data pipelines.\n\nGet the Data Here: https://github.com/AlexTheAnalyst/DatabricksSeries/tree/main/Data%20Engineering\n\nTry out Databricks Free: http://signup.databricks.com/?provider=DB_FREE_TIER&utm_source=youtube&utm_medium=video&utm_campaign=AlextheAnalystDE\n\n____________________________________________ \n\nRESOURCES:\n\n💻Analyst Builder - https://www.analystbuilder.com/\n\n📖Take my Full MySQL Course Here: https://bit.ly/3tqOipr\n📖Take my Full Python Course Here: https://bit.ly/48O581R\n📖Practice Technical Interview Questions: https://bit.ly/46pDqqL\n\nCoursera Courses:\nGoogle Data Analyst Certification: https://coursera.pxf.io/5bBd62\nData Analysis with Python - https://coursera.pxf.io/BXY3Wy\nIBM Data Analysis Specialization - https://coursera.pxf.io/AoYOdR\nTableau Data Visualization - https://coursera.pxf.io/MXYqaN\n\n*Please note I may earn a small commission for any purchase through these links - Thanks for supporting the channel!*\n____________________________________________ \n\nBECOME A MEMBER - \n\nWant to support the channel? Consider becoming a member! I do Monthly Livestreams and you get some awesome Emoji's to use in chat and comments!\n\nhttps://www.youtube.com/channel/UC7cs8q-gJRlGwj4A8OmCmXg/join\n____________________________________________ \n\nWebsites: \n💻Website: AlexTheAnalyst.com\n💾GitHub: https://github.com/AlexTheAnalyst\n📱Instagram: @Alex_The_Analyst\n____________________________________________\n\n0:00 Intro\n0:48 What is ELT\n2:10 Data Ingestion\n8:25 Building ETL Pipelines\n29:06 Orchestration and Automation\n41:16 Building a Full ETL Pipeline\n\n\n\n*All opinions or statements in this video are my own and do not reflect the opinion of the company I work for or have ever worked for*",
+          "description_len": 1835,
+          "tags": [
+            "Data Analyst",
+            "Data Analyst job",
+            "Data Analyst Career",
+            "Data Analytics",
+            "Alex The Analyst"
+          ],
+          "tags_count": 5,
+          "channel_id": "UC7cs8q-gJRlGwj4A8OmCmXg",
+          "channel_title": "Alex The Analyst",
+          "published_at": "2026-04-28T12:00:57Z",
+          "duration_iso": "PT1H4M56S",
+          "duration_seconds": 3896,
+          "view_count": "6417",
+          "like_count": "255",
+          "comment_count": "6",
+          "default_language": "en",
+          "default_audio_language": "en",
+          "category_id": "27"
+        },
+        "has_long_description": true,
+        "has_tags": true,
+        "has_duration": true
+      }
+    },
+    {
+      "sqlite_id": 81,
+      "video_id": "9Gr2QjvSQ-I",
+      "url": "https://www.youtube.com/watch?v=9Gr2QjvSQ-I",
+      "titulo": "Adiós Windows. Me paso a LINUX para SIEMPRE",
+      "referente_id": "1848755f-3a58-4d11-ad97-8c23a80c962d",
+      "via_a_vm_browser": {
+        "ok": true,
+        "html_bytes": 5179,
+        "text_bytes": 328,
+        "final_url": "https://www.google.com/sorry/index?continue=https://www.youtube.com/watch%3Fv%3D9Gr2QjvSQ-I&q=EgS1K9mvGL_I8s8GIjASTYAp20W9K3F_DMXMXKZ8C1_ztjP3cGAO38uEJaZcXIM0PGp6C50SDwJXgaCWiIQyAnJSWgFD",
+        "redirected_to_sorry": true,
+        "has_player_marker": false,
+        "has_bot_challenge": true,
+        "has_short_description_field": false,
+        "useful_for_extraction": false,
+        "elapsed_ms": 769
+      },
+      "via_b_data_api": {
+        "ok": true,
+        "elapsed_ms": 214,
+        "found": true,
+        "fields": {
+          "title": "Adiós Windows. Me paso a LINUX para SIEMPRE",
+          "description": "¡Ve a https://surfshark.com/nate o usa el código NATE al finalizar tu compra para obtener 4 meses adicionales de Surfshark VPN!\n\nMi libro ENTIENDE LA TECNOLOGÍA ➞ https://amzn.to/3Z2dcrP\n\nAprende todo sobre TECNOLOGÍA:\n👨‍🎓 MASTERMIND ➞ https://mastermind.ac\n\nSeries de este canal:\n🖥️ Montaje PCs ➞ https://bit.ly/30OCj3M\n💾 Divulgación Informática ➞ https://bit.ly/3nx4Ch2\n⚙️ Videos de Hardware ➞ https://bit.ly/3nxTGzE\n🧰 PC Modding ➞ https://bit.ly/34DeY6o\n⌨️ Guías Teclados Mecánicos ➞ https://bit.ly/2Gxz7Tz\n🖱️ Guías Mouse de Gaming ➞ https://bit.ly/3nGFRzh\n💻 Portátiles ➞ https://bit.ly/3jFUxvX\n🎧 Auriculares para jugar ➞ https://bit.ly/3iL1jzg\n👁️‍🗨️ Retro PC ➞ https://bit.ly/2GFq1Ec\n⚗️ Nate Labs ➞ https://bit.ly/30P6Grc\n\nRedes Sociales:\n📷 Instagram ➞ https://instagram.com/nategentile7\n🐦 Twitter ➞ https://twitter.com/nategentile7\n🔴 Twitch ➞ https://twitch.tv/nategentile7\n\n#linux",
+          "description_len": 886,
+          "tags": [
+            "tecnologia",
+            "informatica"
+          ],
+          "tags_count": 2,
+          "channel_id": "UC36xmz34q02JYaZYKrMwXng",
+          "channel_title": "Nate Gentile",
+          "published_at": "2026-05-06T16:44:47Z",
+          "duration_iso": "PT30M51S",
+          "duration_seconds": 1851,
+          "view_count": "549865",
+          "like_count": "39684",
+          "comment_count": "2520",
+          "default_language": "es",
+          "default_audio_language": "es",
+          "category_id": "28"
+        },
+        "has_long_description": true,
+        "has_tags": true,
+        "has_duration": true
+      }
+    },
+    {
+      "sqlite_id": 82,
+      "video_id": "3LnNwS6rqk8",
+      "url": "https://www.youtube.com/watch?v=3LnNwS6rqk8",
+      "titulo": "Monté el PC de BATMAN dentro de una Batcueva REAL",
+      "referente_id": "1848755f-3a58-4d11-ad97-8c23a80c962d",
+      "via_a_vm_browser": {
+        "ok": true,
+        "html_bytes": 5179,
+        "text_bytes": 328,
+        "final_url": "https://www.google.com/sorry/index?continue=https://www.youtube.com/watch%3Fv%3D3LnNwS6rqk8&q=EgS1K9mvGMDI8s8GIjBouKpMVaLprZN5zyhUsqUvqjsgtiMiyPqZ7Joo0cmA5rxaGmXg8_vnenBPZpV_gNoyAnJSWgFD",
+        "redirected_to_sorry": true,
+        "has_player_marker": false,
+        "has_bot_challenge": true,
+        "has_short_description_field": false,
+        "useful_for_extraction": false,
+        "elapsed_ms": 905
+      },
+      "via_b_data_api": {
+        "ok": true,
+        "elapsed_ms": 423,
+        "found": true,
+        "fields": {
+          "title": "Monté el PC de BATMAN dentro de una Batcueva REAL",
+          "description": "Consigue 5TB y un 85% de descuento en Internxt:\n👉  https://internxt.com/nate\n\n🖥️ Componetes del PC de Batman\n\n🧩 ASUS ROG Crosshair X870E Extreme\n➞ Coolmod: https://tidd.ly/4sZ8pUO / Amazon: https://amzn.to/3Qy7VaN / PCComponentes: https://tidd.ly/42tfe6i\n\n🧠 AMD Ryzen 7 9850X3D\n➞ Coolmod:https://tidd.ly/4cN6jl3 / Amazon:https://amzn.to/41ZdHVl / PCComponentes:https://tidd.ly/3R2H7Q2\n\n🧠 Corsair DDR5 Vengeance\n➞ Coolmod: https://tidd.ly/4vT1XS7 / Amazon: https://amzn.to/4mU8TKp / PCComponentes: https://tidd.ly/3P6ySBY\n\n💧 Alphacool Apex 1 AM5\n➞ Amazon: https://amzn.to/4vRrLxM\n\n🎮 ASUS TUF Gaming Radeon RX 9070 XT\n➞ Coolmod: https://tidd.ly/3R3hQFq / Amazon:https://amzn.to/4sY6ikc / PCComponentes: https://tidd.ly/4mVT324\n\n⚡ Seasonic Prime TX-1600 Noctua Edition\n➞ Coolmod: https://tidd.ly/4tCpYLK / Amazon: https://amzn.to/4tAc24J / PCComponentes: https://tidd.ly/48p6PUS\n\n🕹️ Thrustmaster HOTAS Warthog\n➞ Coolmod: https://tidd.ly/4cMb91Q / Amazon: https://amzn.to/4vPKbPH / PCComponentes: https://tidd.ly/4sUdNIR\n\nMi libro ENTIENDE LA TECNOLOGÍA ➞ https://amzn.to/3Z2dcrP\n\nAprende todo sobre TECNOLOGÍA:\n👨‍🎓 MASTERMIND ➞ https://mastermind.ac\n\nSeries de este canal:\n🖥️ Montaje PCs ➞ https://bit.ly/30OCj3M\n💾 Divulgación Informática ➞ https://bit.ly/3nx4Ch2\n⚙️ Videos de Hardware ➞ https://bit.ly/3nxTGzE\n🧰 PC Modding ➞ https://bit.ly/34DeY6o\n⌨️ Guías Teclados Mecánicos ➞ https://bit.ly/2Gxz7Tz\n🖱️ Guías Mouse de Gaming ➞ https://bit.ly/3nGFRzh\n💻 Portátiles ➞ https://bit.ly/3jFUxvX\n🎧 Auriculares para jugar ➞ https://bit.ly/3iL1jzg\n👁️‍🗨️ Retro PC ➞ https://bit.ly/2GFq1Ec\n⚗️ Nate Labs ➞ https://bit.ly/30P6Grc\n\nRedes Sociales:\n📷 Instagram ➞   / nategentile7  \n🐦 Twitter ➞   / nategentile7  \n🔴 Twitch ➞   / nategentile7",
+          "description_len": 1723,
+          "tags": [
+            "tecnologia",
+            "informatica"
+          ],
+          "tags_count": 2,
+          "channel_id": "UC36xmz34q02JYaZYKrMwXng",
+          "channel_title": "Nate Gentile",
+          "published_at": "2026-04-27T19:35:13Z",
+          "duration_iso": "PT24M38S",
+          "duration_seconds": 1478,
+          "view_count": "457725",
+          "like_count": "26410",
+          "comment_count": "747",
+          "default_language": "es",
+          "default_audio_language": "es",
+          "category_id": "28"
+        },
+        "has_long_description": true,
+        "has_tags": true,
+        "has_duration": true
+      }
+    },
+    {
+      "sqlite_id": 111,
+      "video_id": "s2jm2Z22ibA",
+      "url": "https://www.youtube.com/watch?v=s2jm2Z22ibA",
+      "titulo": "Voice Chatbot (Coding Challenge 188)",
+      "referente_id": "186db773-ec72-4717-8098-ff12f45279d0",
+      "via_a_vm_browser": {
+        "ok": true,
+        "html_bytes": 5179,
+        "text_bytes": 328,
+        "final_url": "https://www.google.com/sorry/index?continue=https://www.youtube.com/watch%3Fv%3Ds2jm2Z22ibA&q=EgS1K9mvGMHI8s8GIjAyPvpjuhRHDwTwWW7zV38IwYHtxVPyZClbRa6Q5TDAFoadqkwg2BkNT4adFQYeOOkyAnJSWgFD",
+        "redirected_to_sorry": true,
+        "has_player_marker": false,
+        "has_bot_challenge": true,
+        "has_short_description_field": false,
+        "useful_for_extraction": false,
+        "elapsed_ms": 961
+      },
+      "via_b_data_api": {
+        "ok": true,
+        "elapsed_ms": 280,
+        "found": true,
+        "fields": {
+          "title": "Coding Challenge 188: Voice Chatbot",
+          "description": "In this coding challenge, I build a conversational voice chatbot entirely in the browser with p5.js. I combine three pieces: speech-to-text with OpenAI's Whisper model, text-to-speech with Kokoro TTS, and a \"brain\" for the bot. I also explore the transformers.js pipeline API and the Web Audio API. For the bot's brain, I start with a simple ELIZA-style therapist, then incorporate a RiveScript number-guessing game, and finally a local LLM. Code: https://thecodingtrain.com/challenges/188-voice-chatbot\n\n🚀 Watch this video ad-free on Nebula https://nebula.tv/videos/codingtrain-coding-challenge-188-voice-chatbot\n\np5.js Web Editor Sketches:\n🕹️ LLM Chatbot: https://editor.p5js.org/codingtrain/sketches/RHhT9I4Nm\n🕹️ Number Guessing Bot: https://editor.p5js.org/codingtrain/sketches/AJw7zMN9q\n🕹️ Therapy Bot: https://editor.p5js.org/codingtrain/sketches/37LFEPUVV\n🕹️ Model Loading Bars: https://editor.p5js.org/codingtrain/sketches/E9Ob3x8eJ\n🕹️ Waveform of Recording: https://editor.p5js.org/codingtrain/sketches/cck49wDub\n🕹️ Real Time Waveform: https://editor.p5js.org/codingtrain/sketches/aaRIT-x6a\n\n🎥 Previous: https://youtu.be/g3-PXyF8U70?list=PLRqwX-V7Uu6ZiZxtDDRCi6uhfTH4FilpH\n🎥 All: https://www.youtube.com/playlist?list=PLRqwX-V7Uu6ZiZxtDDRCi6uhfTH4FilpH\n\nReferences:\n📓 p5.2 Reference: https://beta.p5js.org\n📓 Introducing Whisper: https://cdn.openai.com/papers/whisper.pdf\n📓 Model Cards for Model Reporting: https://arxiv.org/abs/1810.03993\n📓 Open Neural Network Exchange: https://onnx.ai\n📓 Onnx-community Whisper-tiny.en model: https://huggingface.co/onnx-community/whisper-tiny.en\n📓 Xenova: https://github.com/xenova\n📓 Transformers.js: https://huggingface.co/docs/transformers.js/installation\n📓 Announcing the new p5.sound.js library!: https://medium.com/processing-foundation/announcing-the-new-p5-sound-js-library-42efc154bed0\n📓 getUserMedia() documentation: https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia\n📓 MediaRecorder() documentation: https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder\n📓 Kokoro Repo: https://github.com/hexgrad/kokoro\n📓 KokoroTTS Model: https://huggingface.co/hexgrad/Kokoro-82M\n📓 ELIZA: https://en.wikipedia.org/wiki/ELIZA\n📓 Rivescript: https://www.rivescript.com\n📓 SmolLM3: https://huggingface.co/HuggingFaceTB/SmolLM3-3B\n📓 Running models on WebGPU: https://huggingface.co/docs/transformers.js/guides/webgpu\n📓 Using quantized models (dtypes): https://huggingface.co/docs/transformers.js/v3.8.1/guides/dtypes\n\nVideos:\n🚂 https://youtu.be/0Ad5Frf8NBM\n🚂 https://youtu.be/KR61bXsPlLU\n\nLive Stream Archives:\n🔴 https://www.youtube.com/watch?v=KRDJAHArqaw\n\nRelated Coding Challenges:\n🚂 https://youtu.be/eGFJ8vugIWA\n🚂 https://youtu.be/8Z9FRiW2Jlc\n🚂 https://youtu.be/iFTgphKCP9U\n\nTimestamps:\n0:00:00 Hello!\n0:00:35 Mapping out the pieces: speech-to-text, text-to-speech, and the brain\n0:01:07 Thoughts on AI and creative exploration\n0:02:44 Choosing the tools: Whisper and Kokoro TTS\n0:04:06 Building a push-to-talk UI in p5.js\n0:04:51 Finding models on Hugging Face with Transformers.js\n0:05:36 About the Whisper model and model cards\n0:06:55 Loading the Whisper pipeline in p5.js\n0:09:04 Accessing the microphone with getUserMedia\n0:10:44 Capturing audio with MediaRecorder\n0:12:05 Processing audio chunks into a waveform\n0:15:55 Speech-to-text working!\n0:16:36 Building the chatbot brain (ELIZA-style therapist)\n0:18:50 Setting up Kokoro TTS for text-to-speech\n0:21:07 Playing synthesized audio with AudioBufferSource\n0:23:41 Text-to-speech working!\n0:25:32 Handling playback events\n0:26:56 Swapping in a RiveScript number-guessing brain\n0:31:22 Adding a language model (SmolLM2) as the brain\n0:38:33 Final demo: the random number chatbot\n0:39:03 Goodbye!\n\nEditing by Mathieu Blanchette\nAnimations by Jason Heglund\nMusic from Epidemic Sound\n\n🚂 Website: https://thecodingtrain.com/\n👾 Share Your Creation! https://thecodingtrain.com/guides/passenger-showcase-guide\n🚩 Suggest Topics: https://github.com/CodingTrain/Suggestion-Box\n💡 GitHub: https://github.com/CodingTrain\n💬 Discord: https://thecodingtrain.com/discord\n💖 Membership: http://youtube.com/thecodingtrain/join\n🛒 Store: https://standard.tv/codingtrain\n🖋️ Twitter: https://twitter.com/thecodingtrain\n📸 Instagram: https://www.instagram.com/the.coding.train/\n\n🎥 https://www.youtube.com/playlist?list=PLRqwX-V7Uu6ZiZxtDDRCi6uhfTH4FilpH\n🎥 https://www.youtube.com/playlist?list=PLRqwX-V7Uu6Zy51Q-x9tMWIv9cueOFTFA\n\n🔗 p5.js: https://p5js.org\n🔗 p5.js Web Editor: https://editor.p5js.org/\n🔗 Processing: https://processing.org\n\n📄 Code of Conduct: https://github.com/CodingTrain/Code-of-Conduct\n\nThis description was auto-generated. If you see a problem, please open an issue: https://github.com/CodingTrain/thecodingtrain.com/issues/new\n\n#texttospeech #speechtotext #chatbot #rivescript #llms #agents #ai #transformersjs #webaudioapi #javascript #p5js",
+          "description_len": 4863,
+          "tags": [],
+          "tags_count": 0,
+          "channel_id": "UCvjgXvBlbQiydffZU7m1_aw",
+          "channel_title": "The Coding Train",
+          "published_at": "2026-04-27T16:20:34Z",
+          "duration_iso": "PT39M28S",
+          "duration_seconds": 2368,
+          "view_count": "16740",
+          "like_count": "774",
+          "comment_count": "45",
+          "default_language": "en",
+          "default_audio_language": "en-US",
+          "category_id": "27"
+        },
+        "has_long_description": true,
+        "has_tags": false,
+        "has_duration": true
+      }
+    },
+    {
+      "sqlite_id": 141,
+      "video_id": "TQsBnsKZtuo",
+      "url": "https://www.youtube.com/watch?v=TQsBnsKZtuo",
+      "titulo": "Numbering Tool in Revit | Rule-Based Numbering in Revit Tutorial",
+      "referente_id": "23addaef-d334-4b86-b90a-649ce7f7d82a",
+      "via_a_vm_browser": {
+        "ok": true,
+        "html_bytes": 5179,
+        "text_bytes": 328,
+        "final_url": "https://www.google.com/sorry/index?continue=https://www.youtube.com/watch%3Fv%3DTQsBnsKZtuo&q=EgS1K9mvGMPI8s8GIjALS0fJrgT5hmVFF7l5AlQF4AZNkuIEmfNqOVQ2frwKspWiYZsU1po3yh8NEYwTCiEyAnJSWgFD",
+        "redirected_to_sorry": true,
+        "has_player_marker": false,
+        "has_bot_challenge": true,
+        "has_short_description_field": false,
+        "useful_for_extraction": false,
+        "elapsed_ms": 853
+      },
+      "via_b_data_api": {
+        "ok": true,
+        "elapsed_ms": 246,
+        "found": true,
+        "fields": {
+          "title": "Numbering Tool in Revit | Rule-Based Numbering in Revit Tutorial",
+          "description": "Get all Revit Courses: https://balkanarchitect.com?utm_source=youtube&utm_medium=12YT26\nMy Revit project files: https://www.patreon.com/balkanarchitect\n\nGet my Personal Revit Template + Family Pack: https://balkanarchitect.com/p/balkan-architect-architecture-template-metric?utm_source=youtube&utm_medium=12YT26\n\nLearn how to use the new Numbering Tool in Revit 2027 to quickly and efficiently tag and organize your elements. In this tutorial, you’ll see how to automate parking space numbering and create advanced door tags that include room data and custom parameters.\n\nPerfect for improving your workflow and saving time on real projects.\n\nSubscribe for more!\nPlease Like this Tutorial!\n\nFollow me on social media:\n\nInstagram: https://www.instagram.com/balkanarchitect/\nFacebook: https://www.facebook.com/Balkan-Architect-278024016289562/?modal=admin_todo_tour\nTwitter: https://twitter.com/ArchitectBalkan\n\nTimestamps:\n00:00 Introduction (Numbering Tool)  \n00:24 Parking Example Overview  \n01:38 Tagging Parking Spaces  \n02:06 Using Numbering Tool  \n02:54 Creating Filter & Template  \n04:24 Applying Parking Numbering  \n05:31 Auto-Updating Numbers  \n05:44 Door Example Overview  \n06:50 Tagging Doors  \n07:12 Creating Door Template  \n07:45 Filtering Doors  \n08:38 Using Room-Based Numbering  \n09:25 Applying Door Tags  \n10:22 Editing Tag Appearance  \n10:56 Adding Door Type Info  \n12:07 Final Result   \n13:02 Outro  \n\n\n\n12YT26",
+          "description_len": 1428,
+          "tags": [
+            "Revit",
+            "balkan architect",
+            "BIM",
+            "tutorial",
+            "Autodesk"
+          ],
+          "tags_count": 5,
+          "channel_id": "UCapzEjUWyv7H4GtPQrgybTQ",
+          "channel_title": "Balkan Architect",
+          "published_at": "2026-05-05T14:00:56Z",
+          "duration_iso": "PT13M32S",
+          "duration_seconds": 812,
+          "view_count": "2141",
+          "like_count": "76",
+          "comment_count": "6",
+          "default_language": "en",
+          "default_audio_language": "en",
+          "category_id": "27"
+        },
+        "has_long_description": true,
+        "has_tags": true,
+        "has_duration": true
+      }
+    },
+    {
+      "sqlite_id": 142,
+      "video_id": "npmoS_dqAho",
+      "url": "https://www.youtube.com/watch?v=npmoS_dqAho",
+      "titulo": "Am I Faster than Revit AI?",
+      "referente_id": "23addaef-d334-4b86-b90a-649ce7f7d82a",
+      "via_a_vm_browser": {
+        "ok": true,
+        "html_bytes": 5179,
+        "text_bytes": 328,
+        "final_url": "https://www.google.com/sorry/index?continue=https://www.youtube.com/watch%3Fv%3DnpmoS_dqAho&q=EgS1K9mvGMTI8s8GIjDkclQR4PHTDHsgf-RoIHwHmm-5pHpDiGeBjN4MCh6ci1ziAamQjD6UohPDps-vBqAyAnJSWgFD",
+        "redirected_to_sorry": true,
+        "has_player_marker": false,
+        "has_bot_challenge": true,
+        "has_short_description_field": false,
+        "useful_for_extraction": false,
+        "elapsed_ms": 912
+      },
+      "via_b_data_api": {
+        "ok": true,
+        "elapsed_ms": 196,
+        "found": true,
+        "fields": {
+          "title": "Am I Faster than Revit AI?",
+          "description": "Try PlanForm for free: https://pdf.fastcadreader.com/\n14-day free VIP trial for our audience, to apply send an email at officialcadreader@gmail.com\n\nGet all Revit Courses:https://balkanarchitect.com?utm_source=youtube&utm_medium=15YT26\nMy Revit project files: https://www.patreon.com/balkanarchitect\n\nGet my Personal Revit Template + Family Pack: https://balkanarchitect.com/p/balkan-architect-architecture-template-metric?utm_source=youtube&utm_medium=15YT26\n\nCan Autodesk’s new AI Assistant actually beat a human in Revit? In this video, I test it with 7 real tasks inside Revit 2027 and compare the speed, accuracy, and results side by side. Some tasks were impressive, others failed completely. Watch to see who wins the ultimate Revit vs AI challenge!\n\nSubscribe for more!\nPlease Like this Tutorial!\n\nFollow me on social media:\n\nInstagram: https://www.instagram.com/balkanarchitect/\nFacebook: https://www.facebook.com/Balkan-Architect-278024016289562/?modal=admin_todo_tour\nTwitter: https://twitter.com/ArchitectBalkan\n\nTimestamps:\n00:00 Introduction\n02:16 Autodesk Assistant Overview\n02:51 Task 1 - Move Level by 200mm\n03:57 Task 2 - Placing Elevations\n05:56 Task 3 - Color Largest Room Red\n08:09 Task 4 - Count Doors in Project\n09:00 Task 5 - Change Railings on Level 2\n11:43 Task 6 - Change Curtain Wall Panels to Solid\n13:32 Task 7 - Calculate Opening Percentage on Wall\n18:37 Final Results Comparison\n21:02 Human vs AI Verdict\n22:38 Outro\n\n15YT26",
+          "description_len": 1456,
+          "tags": [
+            "Revit",
+            "balkan architect",
+            "BIM",
+            "tutorial",
+            "Autodesk"
+          ],
+          "tags_count": 5,
+          "channel_id": "UCapzEjUWyv7H4GtPQrgybTQ",
+          "channel_title": "Balkan Architect",
+          "published_at": "2026-04-28T14:01:19Z",
+          "duration_iso": "PT23M30S",
+          "duration_seconds": 1410,
+          "view_count": "10457",
+          "like_count": "249",
+          "comment_count": "20",
+          "default_language": "en",
+          "default_audio_language": "en",
+          "category_id": "27"
+        },
+        "has_long_description": true,
+        "has_tags": true,
+        "has_duration": true
+      }
+    },
+    {
+      "sqlite_id": 261,
+      "video_id": "J26M-cpFG-M",
+      "url": "https://www.youtube.com/watch?v=J26M-cpFG-M",
+      "titulo": "Build Interactive Agents with Generative UI",
+      "referente_id": "6af76981-e122-41d4-9ef2-bb75ad977f63",
+      "via_a_vm_browser": {
+        "ok": true,
+        "html_bytes": 5179,
+        "text_bytes": 328,
+        "final_url": "https://www.google.com/sorry/index?continue=https://www.youtube.com/watch%3Fv%3DJ26M-cpFG-M&q=EgS1K9mvGMXI8s8GIjDomgObzemJjVhee7jMgWSFnzio2BduvLIx48XuHNPqfVjGreqkbrvWZ5bW8i83-xYyAnJSWgFD",
+        "redirected_to_sorry": true,
+        "has_player_marker": false,
+        "has_bot_challenge": true,
+        "has_short_description_field": false,
+        "useful_for_extraction": false,
+        "elapsed_ms": 831
+      },
+      "via_b_data_api": {
+        "ok": true,
+        "elapsed_ms": 319,
+        "found": true,
+        "fields": {
+          "title": "Build Interactive Agents with Generative UI",
+          "description": "Enroll now: https://bit.ly/4cPZYGJ\n\nIntroducing Build Interactive Agents with Generative UI, taught by Atai Barkai, co-founder of CopilotKit, the team behind the AG-UI protocol.\n\nMost agents today still talk to users in plain text. But users don't just want to read a response, they want something to see and act on. This course teaches you to build that interactivity: a fullstack agent interface where the agent renders charts, forms, whiteboards, and interactive components on demand.\n\nYou'll work across the full Generative UI Spectrum, from hand-crafted components you control precisely, to declarative layouts the agent assembles from building blocks, all the way to open-ended experiences powered by MCP Apps. You'll finish by building a canvas application where the agent works alongside the user on shared data. By the end, you'll have a production-ready fullstack agent built on CopilotKit and AG-UI, an open protocol with first-party integrations across LangGraph, Google, AWS, Microsoft, and more.\n\nLearn more: https://bit.ly/4cPZYGJ",
+          "description_len": 1045,
+          "tags": [],
+          "tags_count": 0,
+          "channel_id": "UCcIXc5mJsHVYTZR1maL5l9w",
+          "channel_title": "DeepLearningAI",
+          "published_at": "2026-05-06T14:45:14Z",
+          "duration_iso": "PT1M43S",
+          "duration_seconds": 103,
+          "view_count": "1167",
+          "like_count": "58",
+          "comment_count": "1",
+          "default_language": "en",
+          "default_audio_language": "en",
+          "category_id": "27"
+        },
+        "has_long_description": true,
+        "has_tags": false,
+        "has_duration": true
+      }
+    },
+    {
+      "sqlite_id": 262,
+      "video_id": "FNfIMnpz-ZY",
+      "url": "https://www.youtube.com/watch?v=FNfIMnpz-ZY",
+      "titulo": "Become an AI power user 🌟 new course from Andrew Ng",
+      "referente_id": "6af76981-e122-41d4-9ef2-bb75ad977f63",
+      "via_a_vm_browser": {
+        "ok": true,
+        "html_bytes": 5179,
+        "text_bytes": 328,
+        "final_url": "https://www.google.com/sorry/index?continue=https://www.youtube.com/watch%3Fv%3DFNfIMnpz-ZY&q=EgS1K9mvGMbI8s8GIjBFcr68D1xKOnPABBgiRMOV2AaW7sWPsjdBOwk2_6xV80-BcAMADiloO0AZWvDKGBwyAnJSWgFD",
+        "redirected_to_sorry": true,
+        "has_player_marker": false,
+        "has_bot_challenge": true,
+        "has_short_description_field": false,
+        "useful_for_extraction": false,
+        "elapsed_ms": 780
+      },
+      "via_b_data_api": {
+        "ok": false,
+        "error": "HTTP 400: {\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"API key expired. Please renew the API key.\",\n    \"errors\": [\n      {\n        \"message\": \"API key expired. Please renew the API key.\",\n        \"domain\": \"global\",\n        \"reason\": \"badRequest\"\n      }\n    ],\n    \"status\": \"INVALID_ARGUMENT\",\n    \"detai",
+        "elapsed_ms": 148
+      }
+    }
+  ]
+}

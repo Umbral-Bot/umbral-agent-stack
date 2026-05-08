@@ -64,6 +64,13 @@ from worker.tasks.github_tournament import (
 MOD = "worker.tasks.github_tournament"
 
 
+def _symlink_or_skip(link, target, *, target_is_directory=False):
+    try:
+        link.symlink_to(target, target_is_directory=target_is_directory)
+    except OSError as exc:
+        pytest.skip(f"symlink creation unavailable on this platform: {exc}")
+
+
 # ---------------------------------------------------------------------------
 # Factories
 # ---------------------------------------------------------------------------
@@ -1633,7 +1640,7 @@ class TestResolveInsideSandboxNoPrefix:
         outside = tmp_path.parent / "zz_outside_slice4b"
         outside.mkdir(exist_ok=True)
         link = tmp_path / "worker" / "link"
-        link.symlink_to(outside)
+        _symlink_or_skip(link, outside)
         r = _resolve_inside_sandbox(
             str(tmp_path), "worker/link/evil.py", None,
         )

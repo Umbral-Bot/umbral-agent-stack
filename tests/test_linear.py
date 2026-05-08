@@ -7,7 +7,10 @@ from unittest.mock import patch
 class TestLinearTasks:
     def test_create_issue_no_api_key(self):
         from worker.tasks.linear import handle_linear_create_issue
-        with patch("worker.tasks.linear.config.LINEAR_API_KEY", None):
+        # Task 042: also patch _linear_api_key, which falls back to reading
+        # ~/.config/openclaw/env directly when config.LINEAR_API_KEY is unset.
+        with patch("worker.tasks.linear.config.LINEAR_API_KEY", None), \
+             patch("worker.tasks.linear._linear_api_key", return_value=None):
             r = handle_linear_create_issue({"title": "Test"})
         assert r["ok"] is False
         assert "LINEAR_API_KEY" in r["error"]
@@ -21,7 +24,9 @@ class TestLinearTasks:
 
     def test_list_teams_no_api_key(self):
         from worker.tasks.linear import handle_linear_list_teams
-        with patch("worker.tasks.linear.config.LINEAR_API_KEY", None):
+        # Task 042: also patch _linear_api_key disk fallback.
+        with patch("worker.tasks.linear.config.LINEAR_API_KEY", None), \
+             patch("worker.tasks.linear._linear_api_key", return_value=None):
             r = handle_linear_list_teams({})
         assert r["ok"] is False
         assert r["teams"] == []

@@ -1,0 +1,57 @@
+{
+  "started": "2026-05-07T02:52:38Z",
+  "finished": "2026-05-07T02:52:54Z",
+  "commit": true,
+  "dry_run": false,
+  "database_id": "b9d3d8677b1e4247bafdcb0cc6f53024",
+  "data_source_id": "9d4dbf65-664f-41b4-a7f6-ce378c274761",
+  "pending_total": 5,
+  "processed": 5,
+  "would_create": 0,
+  "created": 1,
+  "already_present": 0,
+  "created_no_body": 4,
+  "errors": 0,
+  "items": [
+    {
+      "sqlite_id": 1,
+      "url_canonica": "https://www.storytellingwithdata.com/blog/swdchallenge-human-ai",
+      "status": "created",
+      "notion_page_id": "3595f443-fb5c-81cf-af51-cf22d1ad1dfd",
+      "error": null,
+      "blocks_count": 21
+    },
+    {
+      "sqlite_id": 31,
+      "url_canonica": "https://www.rojo.me/nuevo-episodio-la-universidad-ya-no-sirve-para-esto",
+      "status": "created_no_body",
+      "notion_page_id": "3595f443-fb5c-81de-8094-cc82b35a33d4",
+      "error": null,
+      "blocks_count": 1
+    },
+    {
+      "sqlite_id": 32,
+      "url_canonica": "https://www.rojo.me/resumen-resumido-179",
+      "status": "created_no_body",
+      "notion_page_id": "3595f443-fb5c-81d0-827c-eb71b962be5d",
+      "error": null,
+      "blocks_count": 1
+    },
+    {
+      "sqlite_id": 33,
+      "url_canonica": "https://www.rojo.me/nuevo-episodio-si-la-ia-es-tan-buena-para-que-servimos-los-humanos",
+      "status": "created_no_body",
+      "notion_page_id": "3595f443-fb5c-810b-8c5f-d1905209fc84",
+      "error": null,
+      "blocks_count": 1
+    },
+    {
+      "sqlite_id": 51,
+      "url_canonica": "https://www.youtube.com/watch?v=o2ehgG2VrsY",
+      "status": "created_no_body",
+      "notion_page_id": "3595f443-fb5c-81bf-8c4a-c2bb2d19db69",
+      "error": null,
+      "blocks_count": 1
+    }
+  ]
+}

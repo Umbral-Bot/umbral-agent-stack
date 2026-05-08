@@ -15,9 +15,11 @@ CLI_SCRIPT = "scripts/notion_publicaciones_setup_checklist.py"
 def _run_cli(*args: str, expect_ok: bool = True) -> subprocess.CompletedProcess[str]:
     env = {k: v for k, v in os.environ.items() if k != "NOTION_API_KEY"}
     env["PYTHONPATH"] = "."
+    env["PYTHONIOENCODING"] = "utf-8"
     result = subprocess.run(
         [sys.executable, CLI_SCRIPT, *args],
         capture_output=True,
+        encoding="utf-8",
         text=True,
         env=env,
     )
@@ -127,7 +129,7 @@ class TestOutputFormats:
         result = _run_cli("--output", str(out))
         assert result.returncode == 0
         assert out.exists()
-        content = out.read_text()
+        content = out.read_text(encoding="utf-8")
         assert "Setup checklist — Publicaciones" in content
 
 

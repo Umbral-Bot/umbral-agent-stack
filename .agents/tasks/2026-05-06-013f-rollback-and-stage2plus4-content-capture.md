@@ -436,3 +436,53 @@ Pegar abajo (sección `## Resultado YYYY-MM-DD`):
 - [ ] Re-run idempotencia: 20 skipped, 0 created.
 - [ ] Todos los tests verdes.
 - [ ] Coordinador (Copilot Chat Windows) puede actualizar `notion-governance/registry/` con la nueva DB en PR aparte (follow-up, no bloqueante).
+
+## Resultado 2026-05-07
+
+**Phase 1 — Rollback (DONE)**
+- Las 5 páginas creadas por 013-E archivadas vía PATCH `{archived: true}` (todas devolvieron `archived: true, in_trash: true`).
+- SQLite reset: `UPDATE discovered_items SET notion_page_id = NULL WHERE rowid IN (1,31,32,33,408)` → 5 filas afectadas; conteo `notion_page_id NOT NULL` pasó de 5 → 0.
+- PR #323 cerrado sin merge: `gh pr close 323 --comment "..."` ✓.
+
+**Phase 2 — Stage 2 content capture (DONE)**
+- `stage2_ingest.py`: `SCHEMA_DDL` ahora incluye `contenido_html`/`contenido_extraido_at`; `init_sqlite` corre migración idempotente (`PRAGMA table_info` + `ALTER TABLE` solo si falta); `_extract_rss_item`/`_extract_atom_entry` ahora delegan a `content_extractor.extract_html_from_*`; `upsert_item` persiste `contenido_html` y estampa `contenido_extraido_at` solo si hay contenido.
+- Nuevo módulo `scripts/discovery/content_extractor.py` (puro, sin HTTP).
+- Nuevo script `scripts/discovery/backfill_content_for_promoted.py` (default dry-run, `--commit` opt-in, reusa `parse_feed_xml` de Stage 2, no scraping HTTP de páginas).
+- Backfill ejecutado: `pending_total=20`, `matched=1`, `unmatched=19`, `feed_errors=0` (los 19 unmatched son items viejos que ya no aparecen en la ventana de feeds actual — esperado per spec, caen a `created_no_body`). Reporte: `reports/backfill-content-20260507T025202Z.json`.
+
+**Phase 3 — Stage 4 retarget (DONE)**
+- `scripts/discovery/stage4_push_notion.py` reescrito para la DB nueva `📰 Publicaciones de Referentes`. Properties: Título, Enlace, Canal (real, no hardcoded), Referente (relation lookup vía cache de Referentes), Fecha publicación, Estado revisión = "Sin revisar", Sqlite ID, Creado por sistema=True, idempotency_key=url_canonica.
+- `CANAL_MAP`: rss/web_rss → blog; youtube → youtube; linkedin → linkedin; otros/otro → otro; etc.
+- Body: `html_to_notion_blocks(contenido_html)` → markdown via `markdownify` → blocks (paragraph/heading/list/image/links). Trunca a 90 blocks + nota; chunkea rich_text a 1900 chars. Si conversión falla o html=NULL → `fallback_no_body_block()` ("created_no_body").
+- Token solo en headers; `__repr__` redactado; rate-limit 350ms; backoff 429 1/2/4/8s (4 retries); abort tras 3 errores no-429 consecutivos.
+- Nuevo módulo `scripts/discovery/html_to_notion_blocks.py`.
+- `markdownify>=0.11.6,<1.0.0` agregado a `pyproject.toml`.
+
+**Tests (DONE — 39 nuevos, todos green)**
+- `tests/test_stage4_push_notion.py` (12 tests): TestBuildPayload, TestValidateSchema, TestQueryExisting, TestTokenRedaction, Test429Backoff, TestDryRunNoPagesCall, TestCommitMarksPersisted, TestIdempotencySecondRun, TestMigrationIdempotent, TestCreatedNoBody.
+- `tests/test_stage2_content_extraction.py` (10 tests).
+- `tests/test_html_to_notion_blocks.py` (11 tests).
+- Suite total: las 110 fallas preexistentes en `tests/test_worker.py` (envelope/tasks API) NO fueron introducidas por 013-F — verificado en `main` vanilla con misma cantidad de fallas. No bloquean este PR.
+
+**Phase 4.1 — Dry-run (DONE)**
+- Cmd: `python -m scripts.discovery.stage4_push_notion --database-id b9d3d8677b1e4247bafdcb0cc6f53024 --data-source-id 9d4dbf65-664f-41b4-a7f6-ce378c274761 --referentes-data-source-id afc8d960-086c-4878-b562-7511dd02ff76`
+- Resultado: `pending_total=20`, `would_create=20`, `created=0`, `errors=0`, **0 POSTs a /pages** (verificado en tests). Reporte: `reports/stage4-push-20260507T025112Z-dryrun.json`.
+
+**Phase 4.3 — Commit --limit 5 (DONE → STOP)**
+- 5 páginas creadas en `📰 Publicaciones de Referentes`:
+
+  | sqlite_id | url | status | notion_page_id | blocks |
+  |---|---|---|---|---|
+  | 1   | https://www.storytellingwithdata.com/blog/swdchallenge-human-ai | created | 3595f443-fb5c-81cf-af51-cf22d1ad1dfd | 21 |
+  | 31  | https://www.rojo.me/nuevo-episodio-la-universidad-ya-no-sirve-para-esto | created_no_body | 3595f443-fb5c-81de-8094-cc82b35a33d4 | 1 |
+  | 32  | https://www.rojo.me/resumen-resumido-179 | created_no_body | 3595f443-fb5c-81d0-827c-eb71b962be5d | 1 |
+  | 33  | https://www.rojo.me/nuevo-episodio-si-la-ia-es-tan-buena-para-que-servimos-los-humanos | created_no_body | 3595f443-fb5c-810b-8c5f-d1905209fc84 | 1 |
+  | 51  | https://www.youtube.com/watch?v=o2ehgG2VrsY | created_no_body | 3595f443-fb5c-81bf-8c4a-c2bb2d19db69 | 1 |
+
+- Errores: 0. Reporte: `reports/stage4-push-20260507T025254Z-commit5.json`.
+- Verificación de body en la página con contenido completo (sqlite_id=1): GET `/blocks/{id}/children?page_size=5` devolvió image + 3 paragraphs + 1 bulleted_list_item (`has_more: True` → más bloques disponibles). Render OK.
+- Las 5 filas en SQLite ahora tienen `notion_page_id` poblado (idempotencia activa).
+
+**STOP — esperando go/no-go para Phase 4.4 bulk (15 items restantes).**
+
+Phase 4.4/4.5 NO ejecutadas. Aplicaré bulk + idempotency rerun solo tras autorización explícita.

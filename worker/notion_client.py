@@ -543,18 +543,16 @@ def poll_comments(
 
     saved_cursor = _redis_get_cursor(redis_client, page_id)
     if saved_cursor == CURSOR_TAIL_SENTINEL:
-        # Last poll reached has_more=false. Start without cursor; this returns
-        # the oldest page again, but we drop everything we've already seen via
-        # the regular cursor save below. Simpler: just retry fresh paginate.
-        # For high-volume pages this is rare (only between bursts). Re-bootstrap
-        # to find the new tail efficiently.
+        # Last poll reached has_more=false without a concrete cursor. Start
+        # fresh, collect anything newer than `since`, and walk back to tail.
         saved_cursor = None
         bootstrap = True
 
     cursor_used = bool(saved_cursor)
     if redis_client is not None and saved_cursor is None and not bootstrap:
         # First-ever poll for this page: tail-seek bootstrap (D2). Walk to the
-        # end of pagination without accumulating, then save the final cursor.
+        # end of pagination, skip historical comments via `since`, then save
+        # the final cursor.
         bootstrap = True
 
     logger.info(
@@ -604,28 +602,27 @@ def poll_comments(
 
             data = _check_response(resp, "poll_comments")
 
-            if not bootstrap:
-                for c in data.get("results", []):
-                    created = c.get("created_time", "")
-                    created_dt = _parse_notion_datetime(created)
+            for c in data.get("results", []):
+                created = c.get("created_time", "")
+                created_dt = _parse_notion_datetime(created)
 
-                    if since_dt and created_dt and created_dt <= since_dt:
-                        continue
+                if since_dt and created_dt and created_dt <= since_dt:
+                    continue
 
-                    text_parts = []
-                    for rt in c.get("rich_text", []):
-                        text_parts.append(
-                            rt.get("plain_text", rt.get("text", {}).get("content", ""))
-                        )
-
-                    comments.append(
-                        {
-                            "id": c["id"],
-                            "created_time": created,
-                            "created_by": c.get("created_by", {}).get("id", "unknown"),
-                            "text": "".join(text_parts),
-                        }
+                text_parts = []
+                for rt in c.get("rich_text", []):
+                    text_parts.append(
+                        rt.get("plain_text", rt.get("text", {}).get("content", ""))
                     )
+
+                comments.append(
+                    {
+                        "id": c["id"],
+                        "created_time": created,
+                        "created_by": c.get("created_by", {}).get("id", "unknown"),
+                        "text": "".join(text_parts),
+                    }
+                )
 
             next_cursor = data.get("next_cursor")
             if next_cursor:

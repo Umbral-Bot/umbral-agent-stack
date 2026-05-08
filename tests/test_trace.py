@@ -21,6 +21,10 @@ def log_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 def test_creates_file_with_mode_600(log_path: Path) -> None:
     _trace.append_delegation({"from": "a", "to": "b", "intent": "triage"})
     assert log_path.exists()
+    if os.name == "nt":
+        # NTFS does not expose POSIX 0600 bits through st_mode.
+        assert os.access(log_path, os.W_OK)
+        return
     assert (log_path.stat().st_mode & 0o777) == 0o600
 
 

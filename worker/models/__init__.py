@@ -46,6 +46,7 @@ class Team(str, Enum):
     IMPROVEMENT = "improvement"
     LAB = "lab"
     SYSTEM = "system"
+    RICK_ORCHESTRATOR = "rick-orchestrator"
 
 
 class TaskType(str, Enum):
@@ -55,6 +56,7 @@ class TaskType(str, Enum):
     CRITICAL = "critical"
     MS_STACK = "ms_stack"
     GENERAL = "general"
+    TRIAGE = "triage"
 
 
 _ENVELOPE_HINT_FIELDS = {

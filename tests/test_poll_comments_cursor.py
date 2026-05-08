@@ -13,8 +13,8 @@ def _make_response(status, body):
 @patch("worker.notion_client.httpx.Client")
 @patch("worker.notion_client.config.require_notion_core")
 @patch("worker.notion_client.config.NOTION_API_KEY", "ntn_test_key")
-def test_bootstrap_walks_to_tail_without_returning_history(_req, mock_client_cls):
-    """First poll on a page with no Redis cursor should seek to tail and return [] ."""
+def test_bootstrap_walks_to_tail_and_applies_since_filter(_req, mock_client_cls):
+    """First poll with no Redis cursor should seek tail and collect only post-since comments."""
     from worker.notion_client import poll_comments, _cursor_key
 
     page_a = _make_response(200, {
@@ -34,11 +34,16 @@ def test_bootstrap_walks_to_tail_without_returning_history(_req, mock_client_cls
     redis_mock = MagicMock()
     redis_mock.get.return_value = None  # no saved cursor
 
-    result = poll_comments(page_id="P", limit=20, redis_client=redis_mock)
+    result = poll_comments(
+        page_id="P",
+        limit=20,
+        since="2025-01-15T00:00:00+00:00",
+        redis_client=redis_mock,
+    )
 
     assert result["bootstrap"] is True
-    assert result["count"] == 0
-    assert result["comments"] == []
+    assert result["count"] == 1
+    assert result["comments"][0]["id"] == "old-b"
     assert result["requests_count"] == 2
     # cursor saved (last next_cursor seen = "cur-A")
     redis_mock.set.assert_called_once()
@@ -135,7 +140,7 @@ def test_no_redis_falls_back_to_legacy_since_filter(_req, mock_client_cls):
 @patch("worker.notion_client.config.require_notion_core")
 @patch("worker.notion_client.config.NOTION_API_KEY", "ntn_test_key")
 def test_tail_sentinel_triggers_rebootstrap(_req, mock_client_cls):
-    """When saved cursor == sentinel, treat as bootstrap (re-seek tail)."""
+    """When saved cursor == sentinel, treat as bootstrap and collect post-since results."""
     from worker.notion_client import poll_comments, CURSOR_TAIL_SENTINEL
 
     resp = _make_response(200, {
@@ -150,7 +155,13 @@ def test_tail_sentinel_triggers_rebootstrap(_req, mock_client_cls):
     redis_mock = MagicMock()
     redis_mock.get.return_value = CURSOR_TAIL_SENTINEL
 
-    result = poll_comments(page_id="P", limit=20, redis_client=redis_mock)
+    result = poll_comments(
+        page_id="P",
+        limit=20,
+        since="2026-04-30T00:00:00+00:00",
+        redis_client=redis_mock,
+    )
 
     assert result["bootstrap"] is True
-    assert result["count"] == 0  # bootstrap discards results
+    assert result["count"] == 1
+    assert result["comments"][0]["id"] == "x"

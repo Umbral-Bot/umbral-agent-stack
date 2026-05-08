@@ -109,11 +109,12 @@ def test_main_with_notion_flag_posts(monkeypatch, capsys):
 
     def _fake_post(*args, **kwargs):  # noqa: ARG001
         called["post"] = True
-        return {"comment_id": "cmt-123"}
+        return {"comment_id": "cmt-123", "parts": 1, "page_id": None}
 
     monkeypatch.setattr(sim_daily_report, "OpsLogger", _DummyOpsLogger)
     monkeypatch.setattr(sim_daily_report, "_load_task_details", lambda task_ids: {})  # noqa: ARG005
-    monkeypatch.setattr(sim_daily_report, "post_report_via_worker", _fake_post)
+    # Task 036b: main() now calls post_report (paginator wrapper), not post_report_via_worker.
+    monkeypatch.setattr(sim_daily_report, "post_report", _fake_post)
     monkeypatch.setattr(
         sys,
         "argv",

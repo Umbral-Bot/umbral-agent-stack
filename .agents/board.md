@@ -328,3 +328,73 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 - Motor de búsqueda: Tavily. LLM: Gemini 2.5 Flash.
 - Workflow: feature branch → PR → Cursor merge → deploy VPS
 
+
+## 2026-05-07-031 — diagnose orchestrator triage 400 (smoke O15.1b) [DONE]
+- merged: PR #346 (commit 100af660) 2026-05-07T17:53Z
+- status: done (read-only diagnosis; fix DIFERIDO a task 032)
+- hipótesis confirmada: HB primaria (Pydantic enum mismatch) + HA secundaria (model routing log) + HC latente (handler missing); HD descartada
+- root cause: dispatcher/rick_mention.py (Ola 1b) introdujo team='rick-orchestrator' y task_type='triage' sin extender los enums Team/TaskType en worker/models/__init__.py:43,51 ni registrar handler rick.orchestrator.triage en worker/tasks/__init__.py:TASK_HANDLERS. El 400 lo emite FastAPI/Pydantic en worker/app.py:523 antes del dispatch.
+- fix propuesto (NO aplicado): (1) extender enums Team+TaskType con RICK_ORCHESTRATOR/TRIAGE; (2) implementar handle_rick_orchestrator_triage (decisión de diseño: proxy a OpenClaw gateway agent o pipeline interno); (3) opcional quota_policy.yaml.routing.triage para coherencia telemetría
+- requires restart? sí — umbral-worker (NO el gateway). Ningún cambio toca openclaw.json ni model.primary. Vertex Fase 1 ventana hasta 2026-05-14 intacta.
+- task 032 follow-up: diseñar+implementar handler rick.orchestrator.triage + enum extension + tests + restart worker + smoke regresión
+- evidencia (working notes locales VPS): /tmp/031/payload-and-400-response.md, /tmp/031/model-routing.md, /tmp/031/verdict.md
+- F-INC-002: clean pre y post merge
+- secret-output-guard: respetado (ningún token impreso; comment_id/page_id solo parciales)
+- SOUL Reglas 21+22: respetadas (400 reproducido empíricamente con curl; sin payloads inventados)
+- constraint observado: .agents/board.md está protegido por GitHub Push Protection en branches no-main; esta entry se appendea directo en main (commit Copilot Chat post-merge PR346)
+
+## 2026-05-07-032 — fix orchestrator triage handler [DONE — handler merged, smoke real pendiente]
+- merged: PR #349 (commit 2eb4a7d4) 2026-05-07T18:41Z
+- decisión diseño: Opción C minimal (pipeline interno hard-coded /health; sin LLM, sin subagent, sin gateway)
+- enums extendidos: Team.RICK_ORCHESTRATOR + TaskType.TRIAGE
+- handler implementado: worker/tasks/rick_orchestrator.py + registrado en TASK_HANDLERS
+- 16 tests nuevos pasando (test_rick_orchestrator.py); 30/30 en suite combinada con rick_mention + notion_mention_router
+- CI: 16/16 nuevos PASS; failures preexistentes test_copilot_agent (idénticas a PR #346) NO regresión
+- worker restart: pid 59402 → 96364, active, 104 tasks_registered (incluye rick.orchestrator.triage)
+- smoke local: POST /run 200, JSON real /health, gap honesto (no_page_id) cuando falta page_id (SOUL Regla 22)
+- smoke real con David: PENDIENTE — repostear "@Rick ping worker /health y devolveme el JSON acá como reply" en Control Room (page id 30c5f443fb5c80eeb721dc5727b20dca); Copilot VPS verifica notion_poller log + dispatcher journalctl + worker journalctl; si OK → O15.1b PASS 100%
+- F-INC-002 + secret-output-guard #8 + SOUL Reglas 21/22: respetadas
+- gateway pid 75421 SIN restart (uptime ~4h continuo), openclaw.json intacto, model.primary=Vertex intacto, Vertex Fase 1 ventana hasta 2026-05-14 intacta
+- follow-up task 033: Opción A proxy a OpenClaw subagent rick-orchestrator (ventana post-2026-05-14)
+- follow-up bug Telegram-side detectado por David (no abierto aún): rick-orchestrator no tiene 'sessions_spawn' en tool policy → handoff a rick-ops bloqueado en Telegram. Path Telegram→OpenClaw confirma model.primary=Vertex engaging (write-path JSONL real, evidencia smoke gobernanza-side David 10:52-13:26 ART)
+
+## 2026-05-07-032b — smoke real O15.1b [FAIL — bug pre-existente bloquea canal]
+- ejecutor: Copilot VPS 2026-05-07T18:54Z (post comment David T0=2026-05-07T18:44:00.000Z en Control Room page 30c5f443…)
+- verdict: SMOKE REAL FAIL — O15.1b NO cierra al 100%
+- handler `rick.orchestrator.triage` (entregable task 032) SANO y registrado: `/health.tasks_registered` lo lista; smoke local previo PASS 14:35:31 -04
+- canal Notion → poller → dispatcher → worker → reply BLOQUEADO antes del Hop2 (dispatcher)
+- root cause confirmado empíricamente (NO regresión task 032; bug pre-existente): `worker/notion_client.poll_comments` (líneas ~500-665). Redis cursor `notion:poll:cursor:30c5f443…` = sentinel `"__TAIL__"` (TTL ~30d) → `poll_comments` entra `bootstrap=True` → 1 GET trae 2 comments con `has_more=False` y `next_cursor=None` → guard `if not bootstrap:` DESCARTA resultados → re-graba sentinel → loop perpetuo de 0 comments. Cualquier página con ≤page_size=20 comments queda atrapada.
+- evidencia hops vacíos: H1 poller log "0 comments" en ciclo 18:53:14 con since 17:25Z (ventana cubre 18:44); H2 dispatcher journalctl since 14:30 local sin "Rick mention routed" ni "rick.orchestrator"; H3 worker journalctl sin "Executing task rick.orchestrator.triage" ni id 3595f443; H4 Notion API 0 replies por bot Rick (3145f443) post-T0 (B3 anti-fabricación cross-check)
+- comment David presente vía Notion API directa: id 3595f443-fb5c-80e4…, by 1e3d872b… (allowlist), text matchea exactamente
+- no-regresión limpia: gateway pid 75421 intacto (etime ~4h18m, Vertex Fase 1 OK), worker /health ok 104 tasks, ambos services active, ops_log limpio (0 eventos rick.orchestrator), repo 0 ahead/0 behind `e36358b9` al momento del check
+- F-INC-002 + secret-output-guard #8 + SOUL 21/22: respetadas. NO restart worker, NO touch gateway, NO borrar cursor (tentador pero vuelve al loop perpetuo)
+- artefactos VPS: `/tmp/032/smoke-real-fail.md` + `/tmp/032/comments-window.json` + spec local `/home/rick/umbral-agent-stack/.agents/tasks/2026-05-07-035-fix-poll-comments-bootstrap-collect.md` (NO pusheado — branch actual reservada para otra task; pendiente recrear o branch dedicada)
+- follow-up task 035 (P0-blocker para cerrar O15.1b): fix poll_comments bootstrap collect — recomendación Opción A: remover guard `if not bootstrap:` para que también colecte resultados durante bootstrap cuando no hay más páginas
+- follow-up task 036 (Media): helper `notion_safe_comment` para chunkear replies > 2000 chars (límite duro Notion API `rich_text.content`); auditar todos los call sites de `add_comment`
+- follow-up Telegram-side (gobernanza smoke David): `rick-orchestrator` falta `sessions_spawn` en tool policy → task pendiente
+
+
+## 2026-05-07-035b — task 035 deploy + smoke real B6 [PARTIAL — fix verified, channel still blocked by task 037]
+- ejecutor: Copilot Chat (merges PRs #353 + #361) + Copilot VPS (deploy + reproducción runtime) 2026-05-07T20:50-21:00Z
+- merges main: PR #353 spec (commit 61651e41) + PR #361 fix (commit fcd0c69f, fix subyacente 8d6036db)
+- VPS deploy: git pull `fcd0c69f` clean, sin pyproject changes, sin reinstall deps
+- worker restart: pid 96364 → 114572, active running, /health ok 104 tasks `triage` ∈
+- fix runtime VERIFICADO empíricamente: `poll_comments(page=30c5f443…, since=2026-05-07T17:25Z, cursor=__TAIL__)` retorna count=4 (vs count=0 perpetuo pre-fix); incluye comment David `3595f443…` 18:44Z. Bug 035 eliminado en runtime real, no solo en código.
+- daemon poller pid 1571 vivo (1d 2h 18min uptime, NO down — diagnóstico previo de poller down fue erróneo: pgrep mal escrito `notion_poller` vs `notion-poller-daemon`; gap honesto declarado y corregido)
+- entrega end-to-end CONFIRMADA hops 1-3: H1 poller 16:51:08 ART `Rick mention routed comment=3595f443 author=1e3d872b page=? trace=75e1c4b9`; H2 dispatcher routed `Executing task 987bbfca rick.orchestrator.triage -> VPS`; H3 worker handler `classify command=health comment=3595f443 trace=75e1c4b9`
+- NUEVO BLOCKER post-fix-035 (NO regresión task 035; bug pre-existente enmascarado): handler skipped reply `WARNING rick.orchestrator.triage missing page_id in envelope; reply skipped`. Causa raíz: `dispatcher/notion_poller.py:227` arma poll_targets `[{page_id: None, page_kind: control_room}]` → envelope al worker llega con page_id=null → handler hace gap honesto (SOUL Regla 22) y skip. Comment David 18:44Z sigue SIN reply real; los 2 comments bot Rick a 20:51Z son outputs de OTROS workflows (SIM Daily Report, research_and_post), no responden al /health.
+- O15.1b NO cierra al 100% — abre task 037
+- follow-up task 037 (P0-blocker para cerrar O15.1b): fix `dispatcher/notion_poller.py` resolución page_id para control_room — cuando `page_kind=control_room` y `page_id is None`, resolver con `os.environ['NOTION_CONTROL_ROOM_PAGE_ID']` antes de routing. Alternativa defensiva en handler: fallback a CONTROL_ROOM env si page_id None y page_kind control_room.
+- no-regresión limpia: gateway pid 75421 intacto (etime 06:18:43 monotónicamente creciente, Vertex Fase 1 OK), openclaw.json/model.primary intactos, openclaw-dispatcher no tocado, cursor Redis `__TAIL__` intacto (daemon usa since-filter, no cursor); F-INC-002 + secret-output-guard #8 + SOUL 21/22: respetadas
+- stash VPS preservado: `vps-deploy-035-pre-pull-20260507T205002Z` (cambios ajenos discovery-publish-cron.sh, NO reaplicados)
+- side-finding (no investigar ahora): RuntimeError 404 en worker startup sobre database `7eca76a8…` (integration Rick sin acceso) — pre-existente, no afecta /health 200
+
+## 2026-05-07-037b — O15.1b cerrada al 100% [DONE]
+- ejecutor: Copilot Chat (merges PRs #362 spec + #364 fix) + Copilot VPS (deploy + verificación 4-hop) 2026-05-07T22:42-22:45Z
+- merges main: PR #362 spec (commit 0ee65977) + PR #364 fix (commit c8584f96, fix subyacente b62ef049)
+- VPS deploy: poller daemon respawn (pid 1571 → 120685 vía cron */5), openclaw-dispatcher restart (MainPID 120697); gateway pid 75421 intacto (etime monotónica +33min, Vertex Fase 1 OK), worker pid 114572 untouched, /health ok=True count=104 has_triage=True
+- smoke unitario código: `_control_room_poll_target()` retorna page_id_prefix=30c5f443 len=32 (vs None pre-fix) — Opción A confirmada cargada en runtime
+- smoke real end-to-end VERIFICADO VISUALMENTE: David postea `@Rick ping worker /health smoke-O15.1b T0=2026-05-07T06:42` en Control Room ~22:42Z; bot Rick (id 3145f443…) replica en mismo thread con JSON real de /health (ok=true, tasks_in_memory=1000, lista completa tasks_registered incluyendo notion.poll_comments, notion.add_comment, rick.orchestrator.triage). 4 hops PASS implícitos: H1 poller detectó comment, H2 dispatcher armó envelope con page_id resuelto (sin esto el handler hubiera skippeado), H3 worker handler ejecutó SIN `missing page_id; reply skipped`, H4 Notion API write OK con parent=comment David
+- O15.1b: ✅ 100%
+- side-finding capitalizado como task 038 candidata (NO blocker): 500 errors en `dispatcher/notion_poller.py:198` rama `_resolve_review_targets` `session_capitalizable`. Pre-existente, NO regresión 037, path Control Room funciona OK. Agendar Ola 2.
+- restricciones respetadas: F-INC-002 (fetch+log pre push), secret-output-guard #8 (IDs prefix-only), SOUL Reglas 21+22 (gap honesto declarado cuando smoke real bloqueado por dedupe Redis con comment viejo, esperó input nuevo de David en lugar de fabricar PASS), NO restart gateway, NO touch openclaw.json/model.primary

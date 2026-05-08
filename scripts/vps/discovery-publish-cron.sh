@@ -1,0 +1,152 @@
+#!/usr/bin/env bash
+# Discovery publish cron — task 027.
+#
+# Cadencia: cada 6h ("15 */6 * * *") via crontab user (rick).
+#
+# Pasos:
+#   1. Prestep: backfill contenido_html de items YouTube promovidos sin contenido
+#      (Data API v3). Si falla parcial → warning, no abort (D3).
+#   2. Stage 4: push a Notion (DB Referentes). Items sin contenido_html quedan
+#      marcados created_no_body por stage4 (downstream, no aborta acá).
+#
+# IDs vienen de ~/.config/openclaw/env (D4):
+#   - UMBRAL_DISCOVERY_DATABASE_ID
+#   - UMBRAL_DISCOVERY_DATA_SOURCE_ID
+#   - UMBRAL_DISCOVERY_REFERENTES_DS_ID
+#
+# Sin --limit (D5): curaduría humana ocurre downstream en DB Publicaciones.
+#
+# Uso:
+#   bash scripts/vps/discovery-publish-cron.sh             # full run con --commit
+#   DISCOVERY_PUBLISH_DRYRUN=1 bash ...discovery-publish-cron.sh   # smoke (stage4 dry)
+
+set -uo pipefail
+
+REPO_DIR="${REPO_DIR:-$HOME/umbral-agent-stack}"
+ENV_FILE="${ENV_FILE:-$HOME/.config/openclaw/env}"
+
+ts() { date -u +%Y-%m-%dT%H:%M:%SZ; }
+log() { echo "[$(ts)] discovery-publish: $*"; }
+
+log "start (repo=$REPO_DIR env=$ENV_FILE)"
+
+if [[ ! -f "$ENV_FILE" ]]; then
+  log "FATAL env file not found: $ENV_FILE"
+  exit 2
+fi
+
+# shellcheck disable=SC1090
+set -a
+source "$ENV_FILE"
+set +a
+
+cd "$REPO_DIR" || { log "FATAL cannot cd $REPO_DIR"; exit 2; }
+
+# Activate venv (best-effort; cron has minimal PATH).
+# shellcheck disable=SC1091
+source .venv/bin/activate 2>/dev/null || {
+  log "FATAL .venv not found in $REPO_DIR"
+  exit 2
+}
+
+: "${UMBRAL_DISCOVERY_DATABASE_ID:?missing in env}"
+: "${UMBRAL_DISCOVERY_DATA_SOURCE_ID:?missing in env}"
+: "${UMBRAL_DISCOVERY_REFERENTES_DS_ID:?missing in env}"
+
+# ---------------------------------------------------------------------------
+# Prestep: backfill_youtube_content (siempre --commit; D3 = continuar si falla)
+# ---------------------------------------------------------------------------
+log "prestep: backfill_youtube_content (commit)"
+if python scripts/discovery/backfill_youtube_content.py --commit; then
+  log "prestep: backfill OK"
+else
+  rc=$?
+  log "WARN prestep backfill exited rc=$rc — continuando con stage4 (D3)"
+fi
+
+# ---------------------------------------------------------------------------
+# Stage 4: push promovidos a Notion (Referentes)
+# ---------------------------------------------------------------------------
+STAGE4_FLAGS=(
+  --database-id              "$UMBRAL_DISCOVERY_DATABASE_ID"
+  --data-source-id           "$UMBRAL_DISCOVERY_DATA_SOURCE_ID"
+  --referentes-data-source-id "$UMBRAL_DISCOVERY_REFERENTES_DS_ID"
+)
+
+if [[ "${DISCOVERY_PUBLISH_DRYRUN:-0}" == "1" ]]; then
+  log "stage4: DRY-RUN (no --commit)"
+else
+  STAGE4_FLAGS+=(--commit)
+  log "stage4: COMMIT"
+fi
+
+if python -m scripts.discovery.stage4_push_notion "${STAGE4_FLAGS[@]}"; then
+  log "stage4: OK"
+else
+  rc=$?
+  log "ERROR stage4 exited rc=$rc"
+  exit "$rc"
+fi
+
+# ---------------------------------------------------------------------------
+# Stage 6: LLM combinator → propuestas editoriales (status='draft' en
+# state.sqlite tabla `proposals`). NO publica a Notion (eso es Stage 7,
+# que sigue siendo manual hasta gate humano — task 045 P8A).
+#
+# Conservador por diseño:
+#   --top-n 5            Limita input items leídos del ranking (default 5).
+#                        Cost guard interno aborta si est. tokens > 30k.
+#   Cache TTL 7d         Hardcoded en el script (~/.cache/rick-discovery/
+#                        llm_cache.sqlite); hits dentro de 7d evitan re-cobro.
+#
+# Falla NO aborta el cron: Stage 4 ya cumplió; Stage 6 es best-effort.
+# ---------------------------------------------------------------------------
+if [[ "${DISCOVERY_PUBLISH_DRYRUN:-0}" == "1" ]]; then
+  log "stage6: DRY-RUN (--no-llm, no persist)"
+  STAGE6_FLAGS=(--top-n 5 --no-llm --dry-run)
+else
+  log "stage6: COMMIT (real LLM call)"
+  STAGE6_FLAGS=(--top-n 5)
+fi
+
+if python scripts/discovery/stage6_llm_combinator.py "${STAGE6_FLAGS[@]}"; then
+  log "stage6: OK"
+else
+  rc=$?
+  log "WARN stage6 exited rc=$rc — continuando (Stage 4 ya cumplió)"
+fi
+
+# ---------------------------------------------------------------------------
+# StageX: Pipeline Editorial dashboard → Notion Control Room subpage.
+# Best-effort observability layer. NEVER aborta el cron: failures aquí solo
+# afectan al panel de métricas, no al pipeline de publicación.
+# ---------------------------------------------------------------------------
+log "stageX: pipeline_dashboard"
+if python scripts/discovery/stageX_pipeline_dashboard.py >/dev/null; then
+  log "stageX: OK"
+else
+  rc=$?
+  log "WARN stageX exited rc=$rc — dashboard no actualizado (no aborta el cron)"
+fi
+
+log "done"
+exit 0
+
+# -----------------------------------------------------------------------------
+# Stage 7 (NOT wired — manual hasta gate humano; task 045 P8A FASE 2)
+# -----------------------------------------------------------------------------
+# Stage 7 escribe pages reales en Notion DB Publicaciones a partir de
+# proposals(status='draft'). Mantenerlo manual evita publicación automática
+# sin revisión editorial.
+#
+#   python scripts/discovery/stage7_publish_drafts.py --status draft --limit 3
+#
+# Flags relevantes:
+#   --dry-run                   No crea pages, sólo imprime payload.
+#   --status draft              Filtra por status en proposals (default).
+#   --limit N                   Procesa N propuestas pendientes.
+#   --publicaciones-db-id       Override del DB id (default
+#                               e6817ec4698a4f0fbbc8fedcf4e52472).
+#
+# Riesgo conocido: idempotency es state-level (proposals.status), NO Notion-level.
+# Si state.sqlite se borra, re-correr Stage 7 duplica pages. Ver issue tech-debt.

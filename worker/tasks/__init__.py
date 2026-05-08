@@ -141,6 +141,7 @@ from .github import (
 )
 from .github_tournament import handle_github_orchestrate_tournament
 from .copilot_cli import handle_copilot_cli_run
+from .rick_orchestrator import handle_rick_orchestrator_triage
 
 # Each handler: (input: dict) -> dict
 TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
@@ -247,4 +248,5 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "github.open_pr": handle_github_open_pr,
     "github.orchestrate_tournament": handle_github_orchestrate_tournament,
     "copilot_cli.run": handle_copilot_cli_run,
+    "rick.orchestrator.triage": handle_rick_orchestrator_triage,
 }

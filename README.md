@@ -186,7 +186,7 @@ PYTHONPATH=. python3 scripts/e2e_validation.py --notion
 ├── worker/            # Código FastAPI del worker
 │   ├── app.py         #   App principal (endpoints)
 │   ├── config.py      #   Variables de entorno centralizadas
-│   ├── notion_client.py #  Cliente Notion API
+│   ├── notion_client.py #   Cliente Notion API
 │   └── tasks/         #   Handlers de tareas (ping, notion.*)
 ├── tests/             # 536+ unit tests (pytest + fakeredis)
 ├── openclaw/          # Config templates, scripts, systemd units

@@ -88,6 +88,22 @@ COPY_COLUMNS: dict[str, str] = {
     "copy_text": "TEXT",
     "copy_model_used": "TEXT",
     "copy_cost_usd_estimate": "REAL",
+    # Multi-format extension (Stage 7.5 multiformat). One column per format.
+    # ``copy_text`` (above) remains the canonical single-format LinkedIn copy
+    # for backward compat; the per-format columns are populated additionally
+    # when ``--multiformat`` / ``--formats`` are used.
+    "copy_blog_text": "TEXT",
+    "copy_share_text": "TEXT",
+    "copy_standalone_text": "TEXT",
+    "copy_blog_status": "TEXT",
+    "copy_share_status": "TEXT",
+    "copy_standalone_status": "TEXT",
+    "copy_blog_last_error": "TEXT",
+    "copy_share_last_error": "TEXT",
+    "copy_standalone_last_error": "TEXT",
+    "copy_blog_cost_usd": "REAL",
+    "copy_share_cost_usd": "REAL",
+    "copy_standalone_cost_usd": "REAL",
 }
 
 
@@ -532,6 +548,478 @@ def validate_copy(
             raise CopyValidationError("missing_source_url")
 
 
+# =============================================================================
+# MULTI-FORMAT EXTENSION (Stage 7.5 multiformat)
+# =============================================================================
+#
+# Adds support for generating ≥1 copy formats per proposal in a single
+# pipeline pass. Three formats are defined; each maps to a prompt pair on
+# disk (``prompts/rick/{format}-{system|user}.md``), a SQLite text column
+# (``copy_{format}_text``), per-format status/error/cost columns, and a
+# format-specific validator.
+#
+# Backward compat:
+#   * Default behavior (no ``--multiformat`` and no ``--formats``) is
+#     unchanged: single ``linkedin_standalone`` copy written to
+#     ``copy_text`` plus the Notion ``Copy LinkedIn`` property, exactly
+#     like the pre-multiformat version.
+#   * The legacy ``build_copy_prompt`` and ``process_proposal`` paths
+#     remain operational for callers that haven't switched to the
+#     multi-format API.
+#
+# Notion writes for blog/share are best-effort and gated by schema:
+# if the corresponding Notion property does not exist on the
+# ``Publicaciones`` data source, the write is skipped with a non-fatal
+# warning and the SQLite column is still populated. Hilo C is responsible
+# for adding ``Copy Blog`` and ``Copy LinkedIn Share`` properties to the
+# Notion schema before multi-format Notion writes succeed.
+
+FORMATS: tuple[str, ...] = ("linkedin_standalone", "linkedin_share", "blog")
+
+FORMAT_CONFIG: dict[str, dict[str, Any]] = {
+    "linkedin_standalone": {
+        "prompt_system_file": "linkedin-standalone-system.md",
+        "prompt_user_file": "linkedin-standalone-user.md",
+        "fallback_prompt_system_file": "linkedin-copy-system.md",
+        "fallback_prompt_user_file": "linkedin-copy-user.md",
+        "sqlite_text_col": "copy_standalone_text",
+        "sqlite_status_col": "copy_standalone_status",
+        "sqlite_error_col": "copy_standalone_last_error",
+        "sqlite_cost_col": "copy_standalone_cost_usd",
+        "notion_property": "Copy LinkedIn",
+        "min_chars": 400,
+        "max_chars": 3000,
+        "hashtag_min": 3,
+        "hashtag_max": 5,
+        "requires_source_url": True,
+        "requires_blog_url": False,
+        "requires_h1": False,
+        "_doc": "Existing LinkedIn standalone copy (pre-multiformat). Same constraints as legacy.",
+    },
+    "linkedin_share": {
+        "prompt_system_file": "linkedin-share-system.md",
+        "prompt_user_file": "linkedin-share-user.md",
+        "fallback_prompt_system_file": None,
+        "fallback_prompt_user_file": None,
+        "sqlite_text_col": "copy_share_text",
+        "sqlite_status_col": "copy_share_status",
+        "sqlite_error_col": "copy_share_last_error",
+        "sqlite_cost_col": "copy_share_cost_usd",
+        "notion_property": "Copy LinkedIn Share",
+        "min_chars": 400,
+        "max_chars": 1500,
+        "hashtag_min": 3,
+        "hashtag_max": 5,
+        "requires_source_url": False,
+        "requires_blog_url": True,
+        "requires_h1": False,
+        "_doc": "Short LinkedIn post linking to a published blog article (uses blog_url).",
+    },
+    "blog": {
+        "prompt_system_file": "blog-system.md",
+        "prompt_user_file": "blog-user.md",
+        "fallback_prompt_system_file": None,
+        "fallback_prompt_user_file": None,
+        "sqlite_text_col": "copy_blog_text",
+        "sqlite_status_col": "copy_blog_status",
+        "sqlite_error_col": "copy_blog_last_error",
+        "sqlite_cost_col": "copy_blog_cost_usd",
+        "notion_property": "Copy Blog",
+        "min_chars": 2000,
+        "max_chars": 6000,
+        "hashtag_min": 0,
+        "hashtag_max": 0,
+        "requires_source_url": True,
+        "requires_blog_url": False,
+        "requires_h1": True,
+        "_doc": "Long-form blog article in Markdown. No hashtags. H1 required.",
+    },
+}
+
+PROMPT_DIR_DEFAULT = Path(__file__).resolve().parents[2] / "prompts" / "rick"
+
+import re as _re  # local alias to avoid disturbing top imports
+
+_HASHTAG_RE = _re.compile(r"#[A-Za-z][A-Za-z0-9_]*")
+_H1_RE = _re.compile(r"^\s*#\s+\S+", _re.MULTILINE)
+
+
+def parse_formats_arg(raw: str | None, *, multiformat: bool) -> list[str]:
+    """Resolve the user's ``--formats`` / ``--multiformat`` choice.
+
+    Precedence:
+      * ``--formats a,b,c`` always wins if non-empty.
+      * Else ``--multiformat`` selects all three formats (``FORMATS``).
+      * Else returns ``['linkedin_standalone']`` (legacy default).
+
+    Unknown format names raise ``ValueError`` early so the CLI fails fast.
+    """
+    if raw:
+        out: list[str] = []
+        for tok in raw.split(","):
+            t = tok.strip()
+            if not t:
+                continue
+            if t not in FORMAT_CONFIG:
+                raise ValueError(
+                    f"unknown format {t!r}; valid={list(FORMAT_CONFIG)}"
+                )
+            if t not in out:
+                out.append(t)
+        if not out:
+            raise ValueError("--formats was empty after parsing")
+        return out
+    if multiformat:
+        return list(FORMATS)
+    return ["linkedin_standalone"]
+
+
+def _read_prompt_file(prompt_dir: Path, filename: str) -> str:
+    return (prompt_dir / filename).read_text(encoding="utf-8")
+
+
+def build_format_prompt(
+    format_name: str,
+    proposal_row: dict[str, Any],
+    page_props: dict[str, Any] | None = None,
+    *,
+    prompt_dir: Path = PROMPT_DIR_DEFAULT,
+) -> tuple[str, str]:
+    """Return ``(system_prompt, user_prompt)`` for ``format_name``.
+
+    Loads the prompt files from ``prompts/rick/`` per ``FORMAT_CONFIG``.
+    Falls back to legacy filenames (``linkedin-copy-{system,user}.md``)
+    only for ``linkedin_standalone`` if the new files are missing.
+
+    Variables interpolated into the user prompt:
+      * ``titular``, ``summary``, ``key_points`` (joined with newlines),
+        ``disciplines`` (joined with ", "),
+      * ``source_url`` (canonical fuente),
+      * ``blog_url`` (only relevant for ``linkedin_share``).
+
+    Page props are accepted for symmetry with ``build_copy_prompt`` but
+    are NOT required — fixture-based callers pass ``None`` and the
+    function reads everything from ``proposal_row``.
+    """
+    if format_name not in FORMAT_CONFIG:
+        raise ValueError(f"unknown format {format_name!r}")
+    cfg = FORMAT_CONFIG[format_name]
+    page_props = page_props or {}
+
+    sys_file = cfg["prompt_system_file"]
+    usr_file = cfg["prompt_user_file"]
+    try:
+        system = _read_prompt_file(prompt_dir, sys_file)
+        user_tmpl = _read_prompt_file(prompt_dir, usr_file)
+    except FileNotFoundError:
+        fb_sys = cfg.get("fallback_prompt_system_file")
+        fb_usr = cfg.get("fallback_prompt_user_file")
+        if not fb_sys or not fb_usr:
+            raise
+        system = _read_prompt_file(prompt_dir, fb_sys)
+        user_tmpl = _read_prompt_file(prompt_dir, fb_usr)
+
+    titular = (
+        proposal_row.get("titular")
+        or _read_title(page_props.get("Título"))
+        or ""
+    )
+    disciplines_list = (
+        proposal_row.get("disciplines")
+        or proposal_row.get("disciplinas")
+        or ["BIM"]
+    )
+    disciplines = ", ".join(disciplines_list)
+    summary = proposal_row.get("summary") or _read_rich_text(page_props.get("Body raw")) or _read_rich_text(page_props.get("Cuerpo")) or ""
+    key_points_list = proposal_row.get("key_points") or []
+    key_points = "\n".join(f"- {p}" for p in key_points_list) or "- (sin puntos específicos)"
+    source_url = (
+        _read_url(page_props.get("Fuente primaria"))
+        or _read_url(page_props.get("Fuente referente"))
+        or proposal_row.get("source_url")
+        or (proposal_row.get("fuentes_urls") or [""])[0]
+        or ""
+    )
+    blog_url = (
+        _read_url(page_props.get("Blog URL"))
+        or proposal_row.get("blog_url")
+        or ""
+    )
+    user = user_tmpl.format(
+        titular=titular,
+        summary=summary,
+        source_url=source_url,
+        blog_url=blog_url,
+        disciplines=disciplines,
+        key_points=key_points,
+    )
+    return system, user
+
+
+def validate_format_copy(
+    format_name: str,
+    copy_text: str,
+    *,
+    source_url: str = "",
+    blog_url: str = "",
+    allow_no_source: bool = False,
+) -> None:
+    """Per-format validator. Raises ``CopyValidationError`` on first violation.
+
+    Validates length, hashtag count, source/blog URL presence, H1 (blog
+    only), and the universal prohibited-token list. Emoji / register /
+    CTA blocklists are NOT checked here — those live in the evaluator
+    (``score_copy_*``) and are graded as scoring rules, not gates.
+    """
+    if format_name not in FORMAT_CONFIG:
+        raise ValueError(f"unknown format {format_name!r}")
+    cfg = FORMAT_CONFIG[format_name]
+    if not copy_text or not copy_text.strip():
+        raise CopyValidationError("empty_copy")
+    n = len(copy_text)
+    if n < cfg["min_chars"]:
+        raise CopyValidationError(f"too_short:{n}<{cfg['min_chars']}")
+    if n > cfg["max_chars"]:
+        raise CopyValidationError(f"too_long:{n}>{cfg['max_chars']}")
+    for tok in PROHIBITED_TOKENS:
+        if tok in copy_text:
+            raise CopyValidationError(f"prohibited_token:{tok!r}")
+    hashtags = _HASHTAG_RE.findall(copy_text)
+    hmin = int(cfg["hashtag_min"])
+    hmax = int(cfg["hashtag_max"])
+    if not (hmin <= len(hashtags) <= hmax):
+        raise CopyValidationError(
+            f"hashtag_count_out_of_range:{len(hashtags)} not in [{hmin},{hmax}]"
+        )
+    if cfg.get("requires_h1") and not _H1_RE.search(copy_text):
+        raise CopyValidationError("missing_h1")
+    if cfg.get("requires_source_url") and not allow_no_source:
+        if not source_url or source_url not in copy_text:
+            raise CopyValidationError("missing_source_url")
+    if cfg.get("requires_blog_url") and not allow_no_source:
+        if not blog_url or blog_url not in copy_text:
+            raise CopyValidationError("missing_blog_url")
+
+
+def generate_format(
+    format_name: str,
+    *,
+    proposal: dict[str, Any],
+    page_props: dict[str, Any] | None = None,
+    model: str,
+    gateway_url: str,
+    gateway_token: str,
+    cache_db: Path | None = None,
+    prompt_dir: Path = PROMPT_DIR_DEFAULT,
+    cost_per_1k_input: float = DEFAULT_COST_PER_1K_INPUT_USD,
+    cost_per_1k_output: float = DEFAULT_COST_PER_1K_OUTPUT_USD,
+    allow_no_source: bool = False,
+    use_cache: bool = True,
+    llm_caller: Any = None,
+) -> dict[str, Any]:
+    """Generate + validate a single format copy for one proposal.
+
+    Returns ``{'status': 'ok'|'failed', 'format': name, 'copy_text': str,
+    'cost_usd': float, 'error': str|None, 'cache_hit': bool}``.
+
+    If ``llm_caller`` is provided (signature ``(system, user, model) -> str``)
+    it is used in place of ``llm_call`` — useful for tests and for the
+    evaluator script which may want a stubbed gateway.
+    """
+    cfg = FORMAT_CONFIG.get(format_name)
+    if cfg is None:
+        return {"status": "failed", "format": format_name, "copy_text": "",
+                "cost_usd": 0.0, "error": f"unknown_format:{format_name}",
+                "cache_hit": False}
+    try:
+        system, user = build_format_prompt(format_name, proposal, page_props,
+                                           prompt_dir=prompt_dir)
+    except FileNotFoundError as e:
+        return {"status": "failed", "format": format_name, "copy_text": "",
+                "cost_usd": 0.0, "error": f"prompt_missing:{e!s:.120s}",
+                "cache_hit": False}
+
+    cache_key_text = system + "\n---\n" + user
+    cached: str | None = None
+    if use_cache and cache_db is not None:
+        cached = cache_get(cache_db, model, cache_key_text)
+    cache_hit = cached is not None
+
+    if cached is None:
+        try:
+            if llm_caller is not None:
+                copy_text = llm_caller(system, user, model)
+            else:
+                copy_text = llm_call(
+                    system_prompt=system, user_prompt=user, model=model,
+                    gateway_url=gateway_url, auth_token=gateway_token,
+                )
+        except Exception as e:  # noqa: BLE001
+            return {"status": "failed", "format": format_name, "copy_text": "",
+                    "cost_usd": 0.0,
+                    "error": f"llm_error:{e!s:.200s}", "cache_hit": False}
+        if use_cache and cache_db is not None:
+            cache_put(cache_db, model, cache_key_text, copy_text)
+    else:
+        copy_text = cached
+
+    copy_text = (copy_text or "").strip()
+    source_url = (
+        proposal.get("source_url")
+        or (proposal.get("fuentes_urls") or [""])[0]
+        or ""
+    )
+    blog_url = proposal.get("blog_url") or ""
+    try:
+        validate_format_copy(
+            format_name, copy_text,
+            source_url=source_url, blog_url=blog_url,
+            allow_no_source=allow_no_source,
+        )
+    except CopyValidationError as e:
+        return {"status": "failed", "format": format_name,
+                "copy_text": copy_text, "cost_usd": 0.0,
+                "error": f"validation_failed:{e!s}", "cache_hit": cache_hit}
+    cost = _estimate_cost_usd(
+        len(system) + len(user),
+        len(copy_text),
+        in_per_1k=cost_per_1k_input,
+        out_per_1k=cost_per_1k_output,
+    )
+    return {"status": "ok", "format": format_name, "copy_text": copy_text,
+            "cost_usd": cost, "error": None, "cache_hit": cache_hit}
+
+
+def _persist_format_result(
+    db_path: Path, proposal_id: int, format_name: str,
+    *, status: str, copy_text: str, cost_usd: float, error: str | None,
+) -> None:
+    cfg = FORMAT_CONFIG[format_name]
+    text_col = cfg["sqlite_text_col"]
+    status_col = cfg["sqlite_status_col"]
+    err_col = cfg["sqlite_error_col"]
+    cost_col = cfg["sqlite_cost_col"]
+    conn = sqlite3.connect(db_path)
+    try:
+        conn.execute(
+            f"UPDATE proposals SET {text_col}=?, {status_col}=?, "
+            f"{err_col}=?, {cost_col}=?, copy_last_attempt_at=? WHERE id=?",
+            (copy_text, status, (error or "")[:500] if error else None,
+             float(cost_usd), int(time.time()), int(proposal_id)),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def process_proposal_pack(
+    *,
+    proposal: dict[str, Any],
+    formats: list[str],
+    notion: NotionClient | None,
+    schema_props: dict[str, dict[str, Any]] | None,
+    model: str,
+    gateway_url: str,
+    gateway_token: str,
+    cache_db: Path | None,
+    state_db: Path | None,
+    ops_log: Path,
+    prompt_dir: Path = PROMPT_DIR_DEFAULT,
+    dry_run: bool = False,
+    allow_no_source: bool = False,
+    cost_per_1k_input: float = DEFAULT_COST_PER_1K_INPUT_USD,
+    cost_per_1k_output: float = DEFAULT_COST_PER_1K_OUTPUT_USD,
+    page_props: dict[str, Any] | None = None,
+    llm_caller: Any = None,
+    notion_write: bool = True,
+) -> dict[str, Any]:
+    """Generate + persist a pack of formats for one proposal.
+
+    Returns a dict ``{'proposal_id', 'results': {fmt: result_dict, ...},
+    'ok_count', 'failed_count', 'notion_writes': {fmt: 'written'|'skipped:reason'}}``.
+
+    On ``dry_run=True`` no LLM is called and no writes happen — instead
+    each format result has ``status='dry_run'``.
+
+    ``notion_write=False`` skips Notion writes entirely (still persists to
+    SQLite if ``state_db`` is provided).
+    """
+    pid = int(proposal["id"]) if "id" in proposal else 0
+    results: dict[str, dict[str, Any]] = {}
+    notion_writes: dict[str, str] = {}
+    ok = failed = 0
+
+    for fmt in formats:
+        if dry_run:
+            results[fmt] = {"status": "dry_run", "format": fmt,
+                            "copy_text": "", "cost_usd": 0.0,
+                            "error": None, "cache_hit": False}
+            continue
+        res = generate_format(
+            fmt, proposal=proposal, page_props=page_props,
+            model=model, gateway_url=gateway_url,
+            gateway_token=gateway_token, cache_db=cache_db,
+            prompt_dir=prompt_dir,
+            cost_per_1k_input=cost_per_1k_input,
+            cost_per_1k_output=cost_per_1k_output,
+            allow_no_source=allow_no_source,
+            llm_caller=llm_caller,
+        )
+        results[fmt] = res
+        if res["status"] == "ok":
+            ok += 1
+        else:
+            failed += 1
+        if state_db is not None and pid:
+            _persist_format_result(
+                state_db, pid, fmt,
+                status=res["status"],
+                copy_text=res["copy_text"],
+                cost_usd=res["cost_usd"],
+                error=res["error"],
+            )
+        # Notion write per format (best-effort, gated by schema).
+        if notion_write and notion is not None and res["status"] == "ok":
+            prop_name = FORMAT_CONFIG[fmt]["notion_property"]
+            page_id = proposal.get("notion_page_id")
+            if not page_id:
+                notion_writes[fmt] = "skipped:no_page_id"
+            elif schema_props is not None and prop_name not in schema_props:
+                notion_writes[fmt] = f"skipped:property_missing:{prop_name}"
+            else:
+                try:
+                    payload = {"properties": {
+                        prop_name: {"rich_text": _chunk_rich_text(res["copy_text"])},
+                    }}
+                    notion.patch(f"/pages/{page_id}", payload)
+                    notion_writes[fmt] = "written"
+                except Exception as e:  # noqa: BLE001
+                    notion_writes[fmt] = f"failed:{e!s:.120s}"
+        elif res["status"] == "ok":
+            notion_writes[fmt] = "skipped:notion_write_disabled"
+
+        log_event(
+            "stage7_5.multiformat.format_done",
+            ops_log=ops_log,
+            proposal_id=pid,
+            format=fmt,
+            status=res["status"],
+            copy_chars=len(res["copy_text"]),
+            cache_hit=res["cache_hit"],
+            cost_usd=round(res["cost_usd"], 6),
+            error=res["error"],
+            notion_write=notion_writes.get(fmt),
+        )
+
+    return {
+        "proposal_id": pid,
+        "results": results,
+        "ok_count": ok,
+        "failed_count": failed,
+        "notion_writes": notion_writes,
+    }
+
+
 # ---------- Notion write ----------
 
 def _chunk_rich_text(text: str, max_seg: int = NOTION_RICH_TEXT_SEGMENT_MAX) -> list[dict[str, Any]]:
@@ -787,11 +1275,27 @@ def main(argv: list[str] | None = None) -> int:
                    default=DEFAULT_COST_PER_1K_INPUT_USD)
     p.add_argument("--cost-per-1k-output-usd", type=float,
                    default=DEFAULT_COST_PER_1K_OUTPUT_USD)
+    p.add_argument("--multiformat", action="store_true",
+                   help="Generate all 3 formats (linkedin_standalone, "
+                        "linkedin_share, blog) per proposal. Equivalent to "
+                        "--formats linkedin_standalone,linkedin_share,blog.")
+    p.add_argument("--formats", default=None,
+                   help="Comma-separated subset of formats to generate "
+                        "(linkedin_standalone, linkedin_share, blog). "
+                        "Overrides --multiformat. Default: linkedin_standalone "
+                        "(legacy behavior).")
     args = p.parse_args(argv)
 
     state_db = Path(args.state_db)
     cache_db = Path(args.cache_db)
     ops_log = Path(args.ops_log)
+
+    try:
+        active_formats = parse_formats_arg(args.formats, multiformat=args.multiformat)
+    except ValueError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        return 2
+    multiformat_mode = active_formats != ["linkedin_standalone"]
 
     ensure_copy_columns(state_db)
 
@@ -849,6 +1353,47 @@ def main(argv: list[str] | None = None) -> int:
 
         ok = skipped = failed = 0
         for prop in proposals:
+            if multiformat_mode:
+                pack = process_proposal_pack(
+                    proposal=prop,
+                    formats=active_formats,
+                    notion=notion,
+                    schema_props=schema_props,
+                    model=args.model,
+                    gateway_url=args.gateway_url,
+                    gateway_token=gateway_token,
+                    cache_db=cache_db,
+                    state_db=state_db,
+                    ops_log=ops_log,
+                    dry_run=False,
+                    allow_no_source=args.allow_no_source,
+                    cost_per_1k_input=args.cost_per_1k_input_usd,
+                    cost_per_1k_output=args.cost_per_1k_output_usd,
+                )
+                pack_ok = pack["ok_count"]
+                pack_failed = pack["failed_count"]
+                if pack_failed == 0:
+                    ok += 1
+                    summaries = ", ".join(
+                        f"{f}={'OK' if r['status']=='ok' else r['status']}"
+                        for f, r in pack["results"].items()
+                    )
+                    print(
+                        f"pack_ready proposal_id={prop['id']} "
+                        f"formats=[{summaries}] notion={pack['notion_writes']}"
+                    )
+                else:
+                    failed += 1
+                    summaries = ", ".join(
+                        f"{f}:{r['status']}({r.get('error') or ''})"
+                        for f, r in pack["results"].items()
+                    )
+                    print(
+                        f"FAIL_PACK proposal_id={prop['id']} {summaries}",
+                        file=sys.stderr,
+                    )
+                continue
+
             status, msg = process_proposal(
                 proposal=prop,
                 notion=notion,

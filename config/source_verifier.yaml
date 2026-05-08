@@ -1,0 +1,60 @@
+# Stage 7.5 source verifier configuration.
+# Used by scripts/discovery/source_verifier.py BEFORE any LLM call to detect
+# suspect sources (sandbox URLs, dead links, redirect spam) and avoid wasting
+# LLM tokens or publishing copies anchored on broken evidence.
+
+# Hard-block: any URL whose host equals or ends with ".<entry>" matches.
+blocklist_domains:
+  - example.com
+  - example.org
+  - example.net
+  - localhost
+  - placeholder.test
+
+# Hard-block: any URL whose host ends with one of these TLDs.
+blocklist_tlds:
+  - ".test"
+  - ".invalid"
+  - ".local"
+  - ".example"
+
+# Soft warning skip-list. Hosts that are considered editorially trustworthy
+# do NOT raise the "new_domain" warning even if the body looks thin.
+allowlist_high_trust:
+  - arxiv.org
+  - autodesk.com
+  - buildingsmart.org
+  - sedibim.cl
+  - mit.edu
+  - acm.org
+  - ieee.org
+  - sciencedirect.com
+  - springer.com
+  - wiley.com
+  - construible.es
+  - aecweekly.com
+  - revistabit.cl
+  - linkedin.com
+  - github.com
+
+# Days. Any non-allowlist domain whose body is also short flags this warning.
+warning_new_domain_days: 180
+
+# arXiv: only accept /abs/YYYY.NNNNN where YYYY is in
+# [arxiv_min_year, current_year + arxiv_max_year_offset].
+arxiv_min_year: 2020
+arxiv_max_year_offset: 1
+
+# Soft warning threshold for "short_body".
+short_body_min_chars: 400
+
+# Hard-block any final response with a content-type outside this list.
+allowed_content_types:
+  - text/html
+  - application/pdf
+  - application/xml
+  - text/xml
+  - application/xhtml+xml
+
+http_timeout_s: 10.0
+http_retries: 1

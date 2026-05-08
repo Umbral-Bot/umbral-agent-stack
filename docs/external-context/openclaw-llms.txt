@@ -1,0 +1,48 @@
+# MyClaw
+
+> MyClaw is a managed hosting platform for OpenClaw (formerly Clawdbot) — an open-source AI computer-use assistant. MyClaw provides always-on cloud instances with subscription plans starting at $19/month, so users can run their personal AI assistant 24/7 without any DevOps.
+
+MyClaw handles VM provisioning, automatic updates, security, and backups. Users interact with their OpenClaw instance through a web-based terminal and chat interface. The platform also offers API credits for programmatic access, a referral program, and an affiliate partner program.
+
+## Pricing
+
+- [Pricing](https://myclaw.ai/pricing): Three subscription tiers — Lite ($19/mo, 2 vCPU, 4GB RAM), Pro ($39/mo, 4 vCPU, 8GB RAM), Max ($79/mo, 8 vCPU, 16GB RAM). Annual plans available at ~15% discount.
+- [Compare](https://myclaw.ai/compare): Comparison of Local vs VPS vs MyClaw hosting — covers setup time, technical skill, uptime, security, maintenance, and cost.
+
+## Blog
+
+- [What is OpenClaw?](https://myclaw.ai/blog/what-is-openclaw): A complete guide to OpenClaw (Clawdbot) — what it is, what it can do, and how it works.
+- [How to Install OpenClaw](https://myclaw.ai/blog/how-to-install-openclaw): Complete installation guide for Windows, Mac, and Linux.
+- [Getting Started with OpenClaw](https://myclaw.ai/blog/openclaw-getting-started): Set up your AI assistant in minutes.
+- [OpenClaw Hosting Guide](https://myclaw.ai/blog/openclaw-hosting-guide): Deploy Clawdbot in the cloud.
+- [Clawdbot is Now OpenClaw](https://myclaw.ai/blog/clawdbot-is-now-openclaw): Everything you need to know about the rebrand.
+
+## Use Cases
+
+- [Use Cases Overview](https://myclaw.ai/use-cases): 80+ real-world applications across automation, developer tools, productivity, smart home, creative work, and more.
+- [Code Automation](https://myclaw.ai/use-cases/code-automation): AI code reviews, test generation, and refactoring — around the clock.
+- [Smart File Management](https://myclaw.ai/use-cases/file-management): Batch rename, organize, and convert files with natural language commands.
+- [Team AI Assistant](https://myclaw.ai/use-cases/team-assistant): Shared knowledge base connected to Slack, Notion, and JIRA.
+
+## Tutorials
+
+- [Tutorials](https://myclaw.ai/tutorial): Step-by-step guides for setting up and using OpenClaw.
+- [Channel Connection](https://myclaw.ai/tutorial/channel-connection): Connect OpenClaw to your communication channels.
+- [Self-Rescue Guide](https://myclaw.ai/tutorial/self-rescue-guide): Troubleshooting and recovery guide.
+- [Google Workspace Integration](https://myclaw.ai/tutorial/google-workspace): Integrate OpenClaw with Gmail and Google Workspace.
+
+## Company
+
+- [About](https://myclaw.ai/about): Our mission, commitments, and approach to privacy and security.
+- [Updates](https://myclaw.ai/updates): Product announcements and changelog.
+
+## Support
+
+- [Support](https://myclaw.ai/support): Submit a support ticket or track an existing one.
+
+## Optional
+
+- [Privacy Policy](https://myclaw.ai/privacy): How we collect, use, and protect your data.
+- [Terms of Service](https://myclaw.ai/terms): Service terms, billing, cancellation, and refund policies.
+- [Refund Policy](https://myclaw.ai/refund-policy): Monthly and annual subscription refund details.
+- [Affiliate Program](https://myclaw.ai/affiliate): Partner program for earning commissions on referrals.

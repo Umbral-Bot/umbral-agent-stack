@@ -4,18 +4,19 @@ foundry_connection.py — O16.2/051 cablea connection Foundry → AI Search.
 Crea (o actualiza) una connection en el Foundry project del AgenteUB que apunta
 a `srch-umbral-kb-prod` con auth AAD (UAMI). Idempotente.
 
-Endpoint usado (Azure ARM):
+Endpoint usado (Azure ARM, Foundry new pattern):
   PUT /subscriptions/{sub}/resourceGroups/{rg}/providers/
-      Microsoft.MachineLearningServices/workspaces/{workspace}/
-      connections/{name}?api-version=2024-04-01-preview
+      Microsoft.CognitiveServices/accounts/{account}/projects/{project}/
+      connections/{name}?api-version=2025-04-01-preview
 
 Auth local: DefaultAzureCredential con scope `https://management.azure.com/.default`.
 
 Uso:
     python scripts/aeco-kb/foundry_connection.py \\
-      --foundry-sub <foundry-sub-id> \\
-      --foundry-rg <foundry-rg> \\
-      --foundry-workspace umbralbim \\
+      --foundry-sub f14f61f0-e692-4fbb-900d-73e55a632374 \\
+      --foundry-rg rg-dm-8454 \\
+      --foundry-account umbralbim-resource \\
+      --foundry-project umbralbim \\
       --search-service srch-umbral-kb-prod \\
       --search-rg rg-umbral-agents-prod \\
       --search-sub f14f61f0-e692-4fbb-900d-73e55a632374
@@ -30,14 +31,15 @@ import sys
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("aeco-foundry-connection")
 
-ARM_API_VERSION = "2024-04-01-preview"
+ARM_API_VERSION = "2025-04-01-preview"
 CONNECTION_NAME = "aeco-kb-search"
 
 
 def upsert_connection(
     foundry_sub: str,
     foundry_rg: str,
-    foundry_workspace: str,
+    foundry_account: str,
+    foundry_project: str,
     search_service: str,
     search_rg: str,
     search_sub: str,
@@ -57,8 +59,8 @@ def upsert_connection(
     arm_url = (
         f"https://management.azure.com/subscriptions/{foundry_sub}"
         f"/resourceGroups/{foundry_rg}"
-        f"/providers/Microsoft.MachineLearningServices/workspaces/{foundry_workspace}"
-        f"/connections/{CONNECTION_NAME}"
+        f"/providers/Microsoft.CognitiveServices/accounts/{foundry_account}"
+        f"/projects/{foundry_project}/connections/{CONNECTION_NAME}"
         f"?api-version={ARM_API_VERSION}"
     )
 
@@ -91,9 +93,10 @@ def upsert_connection(
 
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--foundry-sub", required=True, help="Subscription ID del Foundry project.")
-    p.add_argument("--foundry-rg", required=True, help="RG del Foundry project (umbralbim-resource).")
-    p.add_argument("--foundry-workspace", default="umbralbim", help="Foundry workspace name.")
+    p.add_argument("--foundry-sub", default="f14f61f0-e692-4fbb-900d-73e55a632374", help="Subscription ID del Foundry account.")
+    p.add_argument("--foundry-rg", default="rg-dm-8454", help="RG del Foundry account (umbralbim-resource).")
+    p.add_argument("--foundry-account", default="umbralbim-resource", help="Foundry CognitiveServices account name.")
+    p.add_argument("--foundry-project", default="umbralbim", help="Foundry project name.")
     p.add_argument("--search-service", default="srch-umbral-kb-prod")
     p.add_argument("--search-rg", default="rg-umbral-agents-prod")
     p.add_argument("--search-sub", default="f14f61f0-e692-4fbb-900d-73e55a632374")
@@ -102,7 +105,8 @@ def main(argv: list[str] | None = None) -> int:
     return upsert_connection(
         foundry_sub=args.foundry_sub,
         foundry_rg=args.foundry_rg,
-        foundry_workspace=args.foundry_workspace,
+        foundry_account=args.foundry_account,
+        foundry_project=args.foundry_project,
         search_service=args.search_service,
         search_rg=args.search_rg,
         search_sub=args.search_sub,

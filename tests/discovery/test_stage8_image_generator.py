@@ -283,10 +283,10 @@ def test_process_proposal_happy_path_marks_ok(
     conn.close()
     assert row == ("ok", "https://files.notion.so/abc.png")
 
-    # Cover patch + insert child block + URL prop patch + GET = 4 patches/posts
+    # Cover patch + URL prop patch + GET = 2 patches + 1 get (no body block)
     client.upload_file.assert_called_once()
-    # at least cover + body insert + URL prop = 3 patches
-    assert client.patch.call_count >= 3
+    # cover + URL prop = 2 patches (issue #371: body block removed)
+    assert client.patch.call_count >= 2
 
 
 # --------------------------------------------------------------------------
@@ -314,9 +314,10 @@ def test_attach_image_skips_url_prop_when_missing_in_schema(
         schema_props=schema,
     )
     assert url == "https://x"
-    # Must have set cover + inserted body block, but NOT updated URL prop.
-    # We can verify by counting patch calls (cover + body = 2; URL prop adds 3).
-    assert client.patch.call_count == 2
+    # Must have set cover only (no body block, no URL prop). Issue #371:
+    # the embedded body image block was removed because Notion's append-only
+    # /children endpoint placed it at the bottom.
+    assert client.patch.call_count == 1
 
 
 # --------------------------------------------------------------------------

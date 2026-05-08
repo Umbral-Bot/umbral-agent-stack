@@ -53,7 +53,11 @@ HASHTAG_RE = re.compile(r"#[A-Za-z][A-Za-z0-9_]*")
 
 # ----------------------------- Rule definitions ----------------------------- #
 
-HARD_RULES = ("R1", "R2", "R4", "R5", "R7", "R8", "R9", "R11")
+# R17 (source_url_verified, hard) was introduced 2026-05-08 alongside the
+# pre-LLM source verifier. Fixtures bypass it via
+# ``fixture_skip_source_verify=true`` so the canned eval (which uses sandbox
+# example.* URLs) does not require live HTTP probes.
+HARD_RULES = ("R1", "R2", "R4", "R5", "R7", "R8", "R9", "R11", "R17")
 SOFT_RULES = ("R3", "R6", "R10", "R12")
 
 
@@ -205,6 +209,40 @@ def score_copy(copy_text: str, fixture: dict[str, Any], rules_cfg: dict[str, Any
     disciplines_hit = [d for d in expected if d.lower() in text_lower]
     results.append(RuleResult("R12", "Mentions ≥1 expected discipline", bool(disciplines_hit), "soft",
                               f"hit={disciplines_hit}"))
+
+    # R17 source URL verified (hard).
+    # Fixture flag ``fixture_skip_source_verify=true`` short-circuits with
+    # PASS — required because the canned fixtures use ``example.*`` URLs
+    # which the live verifier (rightly) blocklists. Real evaluator runs
+    # against real proposals will exercise the verifier end-to-end.
+    if fixture.get("fixture_skip_source_verify", False):
+        results.append(RuleResult(
+            "R17", "Source URL verified", True, "hard",
+            "fixture_skip_source_verify=True",
+        ))
+    else:
+        try:
+            from scripts.discovery import source_verifier as _sv  # type: ignore
+        except Exception as e:  # noqa: BLE001
+            results.append(RuleResult(
+                "R17", "Source URL verified", False, "hard",
+                f"verifier_unavailable:{e!s:.120s}",
+            ))
+        else:
+            src_url = ""
+            for u in URL_RE.findall(text):
+                src_url = u.rstrip(",.;:)")
+                break
+            if not src_url:
+                src_url = fixture.get("source_url", "") or ""
+            try:
+                v = _sv.verify_source(src_url)
+                ok_v = bool(v.get("ok"))
+                detail = f"reason={v.get('reason') or 'ok'} url={src_url}"
+            except Exception as e:  # noqa: BLE001
+                ok_v = False
+                detail = f"verifier_crash:{e!s:.120s}"
+            results.append(RuleResult("R17", "Source URL verified", ok_v, "hard", detail))
 
     # Aggregate
     hard_total = sum(1 for r in results if r.severity == "hard")

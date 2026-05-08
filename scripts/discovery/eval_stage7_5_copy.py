@@ -45,20 +45,33 @@ DEFAULT_REPORTS_DIR = REPO_ROOT / "reports"
 
 DEFAULT_GATEWAY_URL = os.environ.get("OPENCLAW_GATEWAY_URL", "http://127.0.0.1:18789")
 DEFAULT_MODEL = "openclaw/main"
-DEFAULT_THRESHOLD = 0.80
+DEFAULT_THRESHOLD = 0.85  # v2 raised from 0.80
 
 URL_RE = re.compile(r"https?://\S+", re.IGNORECASE)
 HASHTAG_RE = re.compile(r"#[A-Za-z][A-Za-z0-9_]*")
+WORD_RE = re.compile(r"[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9]+")
 
 
 # ----------------------------- Rule definitions ----------------------------- #
 
-# R17 (source_url_verified, hard) was introduced 2026-05-08 alongside the
-# pre-LLM source verifier. Fixtures bypass it via
-# ``fixture_skip_source_verify=true`` so the canned eval (which uses sandbox
-# example.* URLs) does not require live HTTP probes.
-HARD_RULES = ("R1", "R2", "R4", "R5", "R7", "R8", "R9", "R11", "R17")
-SOFT_RULES = ("R3", "R6", "R10", "R12")
+# v2: R13 (anti-repetition cross-batch) and R14 (organizational sensitivity)
+# are now hard. R15 (balance pedagógico), R16 (muletilla), R17 (verificabilidad)
+# are soft.
+HARD_RULES = ("R1", "R2", "R4", "R5", "R7", "R8", "R9", "R11", "R13", "R14")
+SOFT_RULES = ("R3", "R6", "R10", "R12", "R15", "R16", "R17")
+
+# v2 weighted scoring dimensions. Sum of weights = 1.0.
+# Each dimension's score is the mean pass-ratio (0/1 per rule per copy) over
+# its constituent rules. The 'sensibilidad_organizacional' dimension is R14
+# again, giving R14 effective double weight as required by the spec.
+VOICE_DIMENSIONS = (
+    ("claridad_tecnica",            0.25, ("R1", "R2", "R3")),
+    ("criterio_operativo",          0.20, ("R12", "R14")),
+    ("tono_david",                  0.20, ("R6", "R8", "R9", "R11", "R15")),
+    ("baja_muletilla",              0.15, ("R13", "R16")),
+    ("sensibilidad_organizacional", 0.10, ("R14",)),
+    ("verificabilidad",             0.10, ("R4", "R17")),
+)
 
 
 @dataclass
@@ -126,6 +139,22 @@ def _split_post(copy: str) -> dict[str, str]:
 
 def _count_paragraphs(body: str) -> int:
     return len([p for p in re.split(r"\n\s*\n", body) if p.strip()])
+
+
+def _word_tokens_lower(text: str) -> list[str]:
+    return [w.lower() for w in WORD_RE.findall(text)]
+
+
+def _ngrams(tokens: list[str], n: int) -> set[tuple[str, ...]]:
+    if len(tokens) < n:
+        return set()
+    return {tuple(tokens[i:i + n]) for i in range(len(tokens) - n + 1)}
+
+
+def _count_substr_ci(text: str, needle: str) -> int:
+    if not needle:
+        return 0
+    return text.lower().count(needle.lower())
 
 
 # ----------------------------- Rule evaluations ---------------------------- #
@@ -210,48 +239,64 @@ def score_copy(copy_text: str, fixture: dict[str, Any], rules_cfg: dict[str, Any
     results.append(RuleResult("R12", "Mentions ≥1 expected discipline", bool(disciplines_hit), "soft",
                               f"hit={disciplines_hit}"))
 
-    # R17 source URL verified (hard).
-    # Fixture flag ``fixture_skip_source_verify=true`` short-circuits with
-    # PASS — required because the canned fixtures use ``example.*`` URLs
-    # which the live verifier (rightly) blocklists. Real evaluator runs
-    # against real proposals will exercise the verifier end-to-end.
-    if fixture.get("fixture_skip_source_verify", False):
-        results.append(RuleResult(
-            "R17", "Source URL verified", True, "hard",
-            "fixture_skip_source_verify=True",
-        ))
-    else:
-        try:
-            from scripts.discovery import source_verifier as _sv  # type: ignore
-        except Exception as e:  # noqa: BLE001
-            results.append(RuleResult(
-                "R17", "Source URL verified", False, "hard",
-                f"verifier_unavailable:{e!s:.120s}",
-            ))
-        else:
-            src_url = ""
-            for u in URL_RE.findall(text):
-                src_url = u.rstrip(",.;:)")
-                break
-            if not src_url:
-                src_url = fixture.get("source_url", "") or ""
-            try:
-                v = _sv.verify_source(src_url)
-                ok_v = bool(v.get("ok"))
-                detail = f"reason={v.get('reason') or 'ok'} url={src_url}"
-            except Exception as e:  # noqa: BLE001
-                ok_v = False
-                detail = f"verifier_crash:{e!s:.120s}"
-            results.append(RuleResult("R17", "Source URL verified", ok_v, "hard", detail))
+    # R13 anti-repetition cross-batch (hard): single-copy mode passes by
+    # default — the batch pass is computed by ``apply_batch_rules`` after all
+    # copies are scored. Here we only flag intra-copy duplicate 4-grams
+    # repeated more than twice as a soft tell, which never trips the rule on
+    # its own.
+    results.append(RuleResult("R13", "No 4-gram repeated in >2 copies of batch", True, "hard",
+                              "batch-deferred"))
 
-    # Aggregate
+    # R14 organizational sensitivity (hard): mention ≥1 org token.
+    org_tokens = g.get("R14_org_tokens", [])
+    org_hits = [t for t in org_tokens if t.lower() in text_lower]
+    results.append(RuleResult("R14", "Mentions ≥1 organizational token", bool(org_hits), "hard",
+                              f"hit={org_hits[:5]}"))
+
+    # R15 balance pedagógico (soft): if hook is confrontational, body must
+    # contain ≥R15_min_propositive propositive tokens.
+    confront_tokens = g.get("R15_confrontational_tokens", [])
+    proposit_tokens = g.get("R15_propositive_tokens", [])
+    min_prop = int(g.get("R15_min_propositive", 2))
+    hook_lower = hook.lower()
+    is_confrontational = any(t.lower() in hook_lower for t in confront_tokens)
+    if is_confrontational:
+        body_lower = body.lower()
+        prop_hits = [t for t in proposit_tokens if t.lower() in body_lower]
+        passed = len(prop_hits) >= min_prop
+        detail = f"confrontational hook; propositive_hits={prop_hits}"
+    else:
+        passed = True
+        detail = "hook not confrontational"
+    results.append(RuleResult("R15", "Balance crítico-propositivo", passed, "soft", detail))
+
+    # R16 muletilla (soft): max R16_max_per_copy occurrences of any muletilla
+    # phrase per copy. Cross-batch enforcement is in apply_batch_rules.
+    muletillas = g.get("R16_muletilla_phrases", [])
+    max_per_copy = int(g.get("R16_max_per_copy", 1))
+    counts = {m: _count_substr_ci(text, m) for m in muletillas}
+    over = {m: c for m, c in counts.items() if c > max_per_copy}
+    results.append(RuleResult("R16", "Muletilla 'Mi lectura es simple' bajo cupo", not over, "soft",
+                              f"counts={counts}"))
+
+    # R17 verificabilidad (soft): URL appears on a dedicated source line whose
+    # prefix is one of R17_attribution_prefixes.
+    prefixes = g.get("R17_attribution_prefixes", ["fuente", "vía", "via", "origen"])
+    src_lower = source_line.lower()
+    has_prefix = any(re.match(rf"^{re.escape(pref)}\s*[:\-]", src_lower) for pref in prefixes)
+    has_url = bool(URL_RE.search(source_line))
+    results.append(RuleResult("R17", "URL en línea de atribución dedicada", has_prefix and has_url, "soft",
+                              f"source_line='{source_line[:80]}'"))
+
+    # Aggregate (hard/soft simple ratios kept for back-compat reporting; the
+    # canonical score is now ``voice_match_score`` — computed below).
     hard_total = sum(1 for r in results if r.severity == "hard")
     soft_total = sum(1 for r in results if r.severity == "soft")
     hard_pass = sum(1 for r in results if r.severity == "hard" and r.passed)
     soft_pass = sum(1 for r in results if r.severity == "soft" and r.passed)
     hard_ratio = hard_pass / hard_total if hard_total else 0.0
     soft_ratio = soft_pass / soft_total if soft_total else 0.0
-    score = 0.7 * hard_ratio + 0.3 * soft_ratio
+    score = compute_voice_match_score(results)
 
     return CopyEval(
         fixture_id=fixture.get("id", "?"),
@@ -262,6 +307,87 @@ def score_copy(copy_text: str, fixture: dict[str, Any], rules_cfg: dict[str, Any
         hard_pass_ratio=round(hard_ratio, 4),
         soft_pass_ratio=round(soft_ratio, 4),
     )
+
+
+def compute_voice_match_score(rules: list[RuleResult]) -> float:
+    """v2 weighted voice-match score over VOICE_DIMENSIONS.
+
+    Each dimension contributes ``weight * mean(pass-ratio over its rules)``.
+    A missing rule is treated as 0 to keep the function defensive.
+    """
+    pass_by_id = {r.rule_id: (1.0 if r.passed else 0.0) for r in rules}
+    total = 0.0
+    for _name, weight, rule_ids in VOICE_DIMENSIONS:
+        if not rule_ids:
+            continue
+        contrib = sum(pass_by_id.get(rid, 0.0) for rid in rule_ids) / len(rule_ids)
+        total += weight * contrib
+    return total
+
+
+def apply_batch_rules(results: list["CopyEval"], rules_cfg: dict[str, Any]) -> None:
+    """Apply cross-fixture rules R13 and R16 in-place on a batch of evals.
+
+    R13: any 4-gram (configurable size) appearing in more copies than
+    ``R13_max_copies_per_ngram`` causes every copy that contains it to fail R13.
+    R16: of all copies that contain the muletilla phrase, only the first
+    (in input order) keeps R16 passing; subsequent copies fail R16.
+
+    After flipping rule outcomes, recomputes ``score`` and the hard/soft
+    ratios so the aggregate report reflects batch context.
+    """
+    g = rules_cfg.get("global_rules", {})
+    n_size = int(g.get("R13_ngram_size", 4))
+    max_copies = int(g.get("R13_max_copies_per_ngram", 2))
+    muletillas = g.get("R16_muletilla_phrases", [])
+    max_per_batch = int(g.get("R16_max_per_batch", 1))
+
+    valid = [r for r in results if r.error is None and r.copy_text]
+    if len(valid) < 2:
+        return
+
+    # ---- R13: cross-batch n-gram repetition --------------------------------
+    ngram_to_copies: dict[tuple[str, ...], set[int]] = {}
+    per_copy_ngrams: list[set[tuple[str, ...]]] = []
+    for idx, ev in enumerate(valid):
+        toks = _word_tokens_lower(ev.copy_text)
+        ngs = _ngrams(toks, n_size)
+        per_copy_ngrams.append(ngs)
+        for ng in ngs:
+            ngram_to_copies.setdefault(ng, set()).add(idx)
+
+    overused = {ng for ng, idxs in ngram_to_copies.items() if len(idxs) > max_copies}
+    for idx, ev in enumerate(valid):
+        if per_copy_ngrams[idx] & overused:
+            offenders = sorted(" ".join(ng) for ng in (per_copy_ngrams[idx] & overused))[:3]
+            for r in ev.rules:
+                if r.rule_id == "R13":
+                    r.passed = False
+                    r.detail = f"shares {len(per_copy_ngrams[idx] & overused)} 4-gram(s) with >2 copies; e.g. {offenders}"
+
+    # ---- R16: muletilla cap per batch --------------------------------------
+    if muletillas:
+        seen = 0
+        for ev in valid:
+            has = any(_count_substr_ci(ev.copy_text, m) > 0 for m in muletillas)
+            if not has:
+                continue
+            seen += 1
+            if seen > max_per_batch:
+                for r in ev.rules:
+                    if r.rule_id == "R16":
+                        r.passed = False
+                        r.detail = f"{r.detail}; batch cap exceeded ({seen}>{max_per_batch})"
+
+    # ---- Recompute scores --------------------------------------------------
+    for ev in valid:
+        hard_total = sum(1 for r in ev.rules if r.severity == "hard")
+        soft_total = sum(1 for r in ev.rules if r.severity == "soft")
+        hard_pass = sum(1 for r in ev.rules if r.severity == "hard" and r.passed)
+        soft_pass = sum(1 for r in ev.rules if r.severity == "soft" and r.passed)
+        ev.hard_pass_ratio = round(hard_pass / hard_total if hard_total else 0.0, 4)
+        ev.soft_pass_ratio = round(soft_pass / soft_total if soft_total else 0.0, 4)
+        ev.score = round(compute_voice_match_score(ev.rules), 4)
 
 
 # -------------------------- LLM call (gateway) ----------------------------- #
@@ -398,6 +524,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD)
     parser.add_argument("--temperature", type=float, default=0.7)
     parser.add_argument("--dry-run", action="store_true", help="don't call gateway, emit a fake copy (for smoke)")
+    parser.add_argument("--batch-mode", dest="batch_mode", action="store_true", default=True,
+                        help="apply cross-fixture R13 (n-gram) and R16 (muletilla) rules (default: on)")
+    parser.add_argument("--no-batch-mode", dest="batch_mode", action="store_false",
+                        help="disable cross-fixture batch rules (R13/R16 evaluate per-copy only)")
     args = parser.parse_args(argv)
 
     fixtures_dir = Path(args.fixtures_dir)
@@ -415,6 +545,8 @@ def main(argv: list[str] | None = None) -> int:
 
     t0 = time.time()
     results = run_evaluator(proposals, rules_cfg, llm_call=llm, model=args.model, prompt_dir=Path(args.prompt_dir))
+    if args.batch_mode:
+        apply_batch_rules(results, rules_cfg)
     elapsed = round(time.time() - t0, 2)
 
     agg = aggregate(results, rules_cfg)
@@ -425,6 +557,9 @@ def main(argv: list[str] | None = None) -> int:
         "gateway_url": args.gateway_url,
         "elapsed_sec": elapsed,
         "threshold": args.threshold,
+        "temperature": args.temperature,
+        "batch_mode": args.batch_mode,
+        "scoring_version": "v2",
         "aggregate": agg,
         "per_fixture": [
             {**asdict(r), "rules": [asdict(rr) for rr in r.rules]}

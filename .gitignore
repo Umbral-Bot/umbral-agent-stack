@@ -103,3 +103,5 @@ reports/*.json
 !reports/**/*.metrics.json
 !reports/runtime/openclaw-runtime-snapshot-latest.json
 !reports/stage7_5_eval_v*.json
+
+.cache/

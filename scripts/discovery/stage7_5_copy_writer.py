@@ -81,7 +81,22 @@ PROHIBITED_TOKENS = ("[TODO]", "__", "<")
 
 COPY_LINKEDIN_PROP = "Copy LinkedIn"
 ESTADO_PROP = "Estado"
+# Spec-level Estado names (used in code/tests/docs).
 ESTADO_TARGET = "En revisión"
+# Live Notion DB has different option labels than the spec. We map at write
+# time so spec names stay stable but the actual PATCH lands the option that
+# truly exists in Notion. Decision: map in code, do NOT rename in Notion UI.
+#   spec "En revisión" -> live "Revisión pendiente"
+#   spec "Rechazado"   -> live "Descartado"
+ESTADO_LIVE_MAP: dict[str, str] = {
+    "En revisión": "Revisión pendiente",
+    "Rechazado": "Descartado",
+}
+
+
+def estado_live_name(spec_name: str) -> str:
+    """Translate a spec-level Estado name to the actual Notion option name."""
+    return ESTADO_LIVE_MAP.get(spec_name, spec_name)
 
 LLM_TIMEOUT_S = 60.0
 LLM_MAX_RETRIES = 2
@@ -381,28 +396,57 @@ def build_copy_prompt(
 ) -> tuple[str, str]:
     """Return ``(system_prompt, user_prompt)``.
 
-    Extension point for Hilo B: replace the body of this function to
-    refine the prompt without touching the rest of the pipeline.
+    Adapter on top of the canonical Hilo B helper
+    ``scripts.discovery.eval_stage7_5_copy.build_copy_prompt``, which loads
+    ``prompts/rick/linkedin-copy-{system,user}.md``. We translate the writer
+    inputs (proposals row + Notion page props) into the fixture shape the
+    eval helper expects.
     """
+    # Lazy import. Try package import first (works under pytest and
+    # ``python -m scripts.discovery.stage7_5_copy_writer``), then fall back
+    # to a sibling-file load (works when launched as
+    # ``python scripts/discovery/stage7_5_copy_writer.py``).
+    try:
+        from scripts.discovery.eval_stage7_5_copy import (  # noqa: PLC0415
+            build_copy_prompt as _eval_build_copy_prompt,
+        )
+    except ModuleNotFoundError:
+        import importlib.util as _ilu  # noqa: PLC0415
+        _spec = _ilu.spec_from_file_location(
+            "_stage7_5_eval_copy",
+            Path(__file__).with_name("eval_stage7_5_copy.py"),
+        )
+        if not (_spec and _spec.loader):
+            raise
+        _mod = _ilu.module_from_spec(_spec)
+        _spec.loader.exec_module(_mod)  # type: ignore[union-attr]
+        _eval_build_copy_prompt = _mod.build_copy_prompt
+
     titular = proposal_row.get("titular") or _read_title(page_props.get("Título")) or ""
-    angulo = proposal_row.get("angulo") or ""
-    disciplinas = ", ".join(proposal_row.get("disciplinas") or []) or "BIM"
-    fuente_url = (
+    body_raw = (
+        _read_rich_text(page_props.get("Body raw"))
+        or _read_rich_text(page_props.get("Cuerpo"))
+        or proposal_row.get("angulo")
+        or ""
+    )
+    summary = _truncate(body_raw, 3000)
+    source_url = (
         _read_url(page_props.get("Fuente primaria"))
         or _read_url(page_props.get("Fuente referente"))
         or (proposal_row.get("fuentes_urls") or [""])[0]
         or ""
     )
-    body_raw = _read_rich_text(page_props.get("Body raw")) or _read_rich_text(page_props.get("Cuerpo"))
-    body_truncado = _truncate(body_raw or "", 3000)
-    user_prompt = USER_PROMPT_TEMPLATE.format(
-        titular=titular,
-        angulo=angulo,
-        disciplinas=disciplinas,
-        body_raw=body_truncado,
-        fuente_url=fuente_url,
-    )
-    return SYSTEM_PROMPT, user_prompt
+    disciplines = list(proposal_row.get("disciplinas") or []) or ["BIM"]
+    key_points = list(proposal_row.get("key_points") or [])
+    fixture: dict[str, Any] = {
+        "id": str(proposal_row.get("id", "")),
+        "titular": titular,
+        "summary": summary,
+        "source_url": source_url,
+        "disciplines": disciplines,
+        "key_points": key_points,
+    }
+    return _eval_build_copy_prompt(fixture)
 
 
 def estimate_tokens(text: str) -> int:
@@ -563,12 +607,18 @@ def write_copy_to_notion(
     copy_text: str,
     estado_property_type: str,
 ) -> None:
-    """PATCH ``Copy LinkedIn`` (rich_text) and ``Estado`` (select|status)."""
+    """PATCH ``Copy LinkedIn`` (rich_text) and ``Estado`` (select|status).
+
+    Estado is written using the live Notion option name (see
+    :data:`ESTADO_LIVE_MAP`); spec name ``En revisión`` becomes the actual
+    DB option ``Revisión pendiente``.
+    """
     estado_value: dict[str, Any]
+    estado_live = estado_live_name(ESTADO_TARGET)
     if estado_property_type == "select":
-        estado_value = {"select": {"name": ESTADO_TARGET}}
+        estado_value = {"select": {"name": estado_live}}
     else:
-        estado_value = {"status": {"name": ESTADO_TARGET}}
+        estado_value = {"status": {"name": estado_live}}
     payload = {
         "properties": {
             COPY_LINKEDIN_PROP: {"rich_text": _chunk_rich_text(copy_text)},
@@ -631,8 +681,9 @@ def process_proposal(
         if not dry_run:
             mark_copy_status(state_db, pid, "failed", msg)
         return "failed", msg
-    if ESTADO_TARGET not in (estado_entry.get("options") or []):
-        msg = f"notion_estado_option_missing:{ESTADO_TARGET}"
+    estado_live = estado_live_name(ESTADO_TARGET)
+    if estado_live not in (estado_entry.get("options") or []):
+        msg = f"notion_estado_option_missing:{estado_live}"
         if not dry_run:
             mark_copy_status(state_db, pid, "failed", msg)
         return "failed", msg

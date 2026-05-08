@@ -36,6 +36,10 @@ param storageAccountName string
 @description('Container image.')
 param image string = 'ghcr.io/umbral-bot/aeco-source-crawler:latest'
 
+@description('GHCR PAT (classic) con scope read:packages — para pull de imagen privada.')
+@secure()
+param ghcrPat string
+
 @description('Replica timeout (crawler con rate-limit 1 req/s + ≤100 docs cabe en 30 min).')
 @minValue(60)
 @maxValue(7200)
@@ -66,6 +70,16 @@ resource job 'Microsoft.App/jobs@2024-03-01' = {
         replicaCompletionCount: 1
         parallelism: 1
       }
+      secrets: [
+        { name: 'ghcr-pat', value: ghcrPat }
+      ]
+      registries: [
+        {
+          server: 'ghcr.io'
+          username: 'umbral-bot'
+          passwordSecretRef: 'ghcr-pat'
+        }
+      ]
     }
     template: {
       containers: [

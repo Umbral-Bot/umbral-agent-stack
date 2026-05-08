@@ -10,6 +10,7 @@ Servicio target: `srch-umbral-kb-prod` (AI Search Basic, RG `rg-umbral-agents-pr
 |---|---|---|
 | `create_initial_index.py` | 046 | Crea índice vacío `aeco-kb-es-vYYYYMMDD` + alias estable `aeco-kb-es-current`. Idempotente. |
 | `pdf_parser.py` | 047 | Parsea 1 PDF de `crudos/aeco/raw/...` con DI prebuilt-layout + chunkea + escribe JSONL a `crudos/aeco/parsed/...`. Idempotente vía `parser_version`. |
+| `source_crawler.py` | 048 | Descarga PDFs desde `seeds/{source_type}.yaml` con rate-limit 1 req/s + dedupe SHA-256, manifest JSONL append-only en `crudos/aeco/raw/_manifest/{source}.jsonl`. |
 
 ## Auth
 
@@ -101,3 +102,37 @@ Trigger automático Event Grid → SB → KEDA: cableado en sub-task 050. Q2 inv
 14 campos. Vector profile `hnsw-cosine` (HNSW + cosine, 1536 dims). Semantic config `default-semantic-cfg`.
 
 Ver detalle en [`.agents/tasks/2026-05-07-046-o16-2-ai-search-index-schema-alias.md`](../../.agents/tasks/2026-05-07-046-o16-2-ai-search-index-schema-alias.md).
+
+## Sub-task 048 — `source_crawler.py`
+
+Crawler parametrizado por `--source-type`. Lee seeds estáticos en `scripts/aeco-kb/seeds/{source_type}.yaml`, aplica rate-limit 1 req/s + User-Agent identificable, respeta `robots.txt` best-effort, dedupe SHA-256 contra metadata del blob existente, escribe a `crudos/aeco/raw/{source_type}/{doc_id}.pdf` y appendea manifest JSONL en `crudos/aeco/raw/_manifest/{source_type}.jsonl`.
+
+### Smoke local
+
+```powershell
+pip install -e .[aeco-kb]
+az login --tenant f67a8c0b-ec74-47cd-836c-355c5a6162d4
+
+# Dry-run (sin tocar Azure)
+python scripts/aeco-kb/source_crawler.py --source-type buildingsmart --max-docs 3 --dry-run
+
+# Real
+python scripts/aeco-kb/source_crawler.py --source-type buildingsmart --max-docs 3
+```
+
+### Container Apps Job (manual trigger)
+
+Definido en `infra/azure/modules/aeco-source-crawler-job.bicep`. Image: `ghcr.io/umbral-bot/aeco-source-crawler:latest`.
+
+```bash
+az containerapp job start --name aeco-source-crawler --resource-group rg-umbral-agents-prod \
+    --env-vars "SOURCE_TYPE=buildingsmart" "MAX_DOCS=30"
+```
+
+### Seeds
+
+Q2 carga `buildingsmart` (3 PDFs IFC) + `minvu` (placeholders, validar URLs antes del primer run). `iram` y `nmx` quedan vacíos; se pueblan en sub-task 050.
+
+### Cron
+
+Q2: invocación manual. Cron diario 03:00 UTC se cablea en **050** (cambio `triggerType: 'Schedule'` + `scheduleTriggerConfig`).

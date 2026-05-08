@@ -1,0 +1,19 @@
+# O16.2/048 — MINVU (Chile) seeds (Q2 smoke)
+# DDU oficiales publicadas como PDF en https://www.minvu.gob.cl/
+# Validar URLs antes del primer run real (Q2 puede requerir update tras cambios sitio).
+source_type: minvu
+jurisdiction: cl
+doc_type: regulation
+default_lang: es
+
+seeds:
+  # PLACEHOLDERS — actualizar URLs reales al ejecutar smoke.
+  # Buscar manualmente DDU recientes en https://www.minvu.gob.cl/elementos-tecnicos/circulares-ddu/
+  - url: https://www.minvu.gob.cl/wp-content/uploads/2024/12/DDU-475.pdf
+    doc_id: DDU-475-2024
+    version: "2024-12"
+    valid_from: "2024-12-01"
+  - url: https://www.minvu.gob.cl/wp-content/uploads/2024/06/DDU-470.pdf
+    doc_id: DDU-470-2024
+    version: "2024-06"
+    valid_from: "2024-06-01"

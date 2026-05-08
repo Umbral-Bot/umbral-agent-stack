@@ -1,0 +1,38 @@
+{
+  "_comment": "Synthetic Wave 1 fixtures for Stage 6 multi-platform dispatcher. NOT real production candidates.",
+  "candidates": [
+    {
+      "id": "SYN-AECO-001",
+      "topic": "AECO digital twins",
+      "title": "Cómo los gemelos digitales reducen retrabajo en obra",
+      "summary": "Caso sintético: integrar BIM + IoT en sitio para acortar el ciclo RFI.",
+      "url": "https://example.invalid/syn-aeco-001",
+      "mock_angle": {
+        "title": "Gemelos digitales: del modelo al sitio",
+        "hook": "El RFI promedio cuesta 3 días. ¿Y si el modelo respondiera primero?"
+      }
+    },
+    {
+      "id": "SYN-IA-OBRA-002",
+      "topic": "AI applied to construction QA",
+      "title": "IA aplicada a control de calidad en obra",
+      "summary": "Caso sintético: visión computacional sobre fotos de avance para detectar desvíos vs modelo.",
+      "url": "https://example.invalid/syn-ia-obra-002",
+      "mock_angle": {
+        "title": "QA con visión computacional",
+        "hook": "Cada foto de avance puede ser un test contra el modelo."
+      }
+    },
+    {
+      "id": "SYN-LOWCODE-003",
+      "topic": "Low-code para equipos de obra",
+      "title": "Low-code: cuándo sí, cuándo no en oficinas técnicas",
+      "summary": "Caso sintético: criterios para decidir entre low-code y desarrollo a medida en flujos de oficina técnica.",
+      "url": "https://example.invalid/syn-lowcode-003",
+      "mock_angle": {
+        "title": "Low-code con disciplina",
+        "hook": "Low-code escala lo repetible, no la ambigüedad."
+      }
+    }
+  ]
+}

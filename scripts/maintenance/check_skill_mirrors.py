@@ -28,8 +28,15 @@ from pathlib import Path
 
 HOME = Path(os.path.expanduser("~"))
 
-# Each entry: canonical user-level path -> list of full-mirror paths that must
-# match it byte-for-byte. Paths are absolute.
+# Each entry: canonical path -> list of full-mirror paths that must match it
+# byte-for-byte. Stub-pointer mirrors (e.g. notion-governance/skills/<name>/
+# SKILL.md that intentionally only references the canonical) must NOT be
+# listed here.
+#
+# Canonical conventions:
+# - secret-output-guard: ~/.copilot/skills/ (cross-cutting agent contract)
+# - notion-governance-* and friends: notion-governance/.agents/skills/
+#   (governance contract owns them; ~/.codex and ~/.copilot are mirrors)
 MIRRORED_SKILLS: dict[Path, list[Path]] = {
     HOME / ".copilot" / "skills" / "secret-output-guard" / "SKILL.md": [
         HOME / ".codex" / "skills" / "secret-output-guard" / "SKILL.md",
@@ -37,6 +44,37 @@ MIRRORED_SKILLS: dict[Path, list[Path]] = {
         Path("C:/GitHub/umbral-agent-stack/.agents/skills/secret-output-guard/SKILL.md"),
     ],
 }
+
+# Skills owned by notion-governance that are mirrored to ~/.codex (and
+# sometimes ~/.copilot). Auto-built below to keep the entry list compact.
+_NOTION_GOV_REPO = Path("C:/GitHub/notion-governance/.agents/skills")
+_NOTION_GOV_MIRRORED = [
+    "agents-canonical-registry",
+    "notion-context-routing",
+    "notion-contextual-email-draft",
+    "notion-duplicate-consolidation",
+    "notion-normalize-page",
+    "notion-page-audit",
+    "notion-session-capitalization",
+    "notion-system-card",
+]
+for _name in _NOTION_GOV_MIRRORED:
+    MIRRORED_SKILLS[_NOTION_GOV_REPO / _name / "SKILL.md"] = [
+        HOME / ".codex" / "skills" / _name / "SKILL.md",
+    ]
+
+# notion-governance-expert: 3-way (also lives in ~/.copilot)
+MIRRORED_SKILLS[
+    _NOTION_GOV_REPO / "notion-governance-expert" / "SKILL.md"
+] = [
+    HOME / ".codex" / "skills" / "notion-governance-expert" / "SKILL.md",
+    HOME / ".copilot" / "skills" / "notion-governance-expert" / "SKILL.md",
+]
+
+# Known-drift skills NOT registered here (need David's call on canonical):
+#   - cursor-hooks-sync (.codex 2106B vs notion-governance 2166B)
+#   - q-friday-retro (.codex 3921B vs notion-governance 4588B)
+# Add to MIRRORED_SKILLS once a canonical is chosen.
 
 
 def sha256_prefix(path: Path) -> str:

@@ -39,6 +39,10 @@ from typing import Any
 
 import httpx
 
+# Historical pin: this is the source-of-record from the original 013-J spike
+# (2026-05-07). Kept as default so existing reruns keep working. New runs
+# should pass --source-report explicitly to point at the latest 013-J output.
+# If the file is removed, --source-report becomes effectively required.
 DEFAULT_SOURCE = Path("reports/spike-youtube-20260507T055904Z.json")
 DEFAULT_LIMIT = 8
 DATA_API_URL = "https://www.googleapis.com/youtube/v3/videos"

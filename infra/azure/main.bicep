@@ -6,6 +6,7 @@
 //   - 2026-05-07-040 (cross-cutting infra: UAMI + LAW + AppInsights + CAE)
 //   - 2026-05-07-041 (data plane: Storage + Cosmos + Key Vault + RBAC)
 //   - 2026-05-07-042 (agent services: Service Bus + AI Search + Document Intelligence)
+//   - 2026-05-07-043 (budget alerts: per-service + total Op B = 7206 USD/mes)
 // targetScope: subscription (necesita crear el RG)
 // =============================================================================
 
@@ -190,9 +191,17 @@ module mod_di 'modules/document-intelligence.bicep' = {
 }
 
 // -----------------------------------------------------------------------------
-// Sub-task 043 — budget alerts (PENDIENTE)
+// Sub-task 043 — budget alerts (subscription scope)
 // -----------------------------------------------------------------------------
-// module mod_budgets 'modules/budget-alerts.bicep' = { ... }
+
+module mod_budgets 'modules/budget-alerts.bicep' = {
+  name: 'deploy-budgets'
+  params: {
+    alertEmail: alertEmail
+    totalMonthlyBudgetUsd: totalMonthlyBudgetUsd
+    resourceGroupName: rg.name
+  }
+}
 
 // -----------------------------------------------------------------------------
 // Outputs
@@ -230,3 +239,7 @@ output searchServiceId string = mod_search.outputs.resourceId
 output searchServiceEndpoint string = mod_search.outputs.endpoint
 output docIntelligenceId string = mod_di.outputs.resourceId
 output docIntelligenceEndpoint string = mod_di.outputs.endpoint
+
+// 043 budgets
+output totalBudgetId string = mod_budgets.outputs.totalBudgetId
+output perServiceBudgetIds array = mod_budgets.outputs.budgetIds

@@ -1,8 +1,8 @@
 ---
 id: f8g-verify-canonical-pin-vps-2026-05-08
 title: F8G verify — canonical gpt-5.5 high-effort pin (worker-mediated T8 re-run)
-status: open
-verdict: pending
+status: done
+verdict: amarillo
 owner: copilot-vps
 reviewer: copilot-chat
 phase: F8G-verify
@@ -10,6 +10,22 @@ depends_on:
   - f8g-pin-gpt55-high-effort (PR #337, merged to main 2026-05-08)
   - f8f-max-model-performance-benchmark-2026-05-07 (T8 RED baseline)
 created: 2026-05-08
+closed: 2026-05-08
+notes: |
+  Pin behaviour fully verified at the worker layer:
+    - T8a default path: model resolves to `gpt-5.5`, reasoning_effort to `high`,
+      docker_argv carries `--model gpt-5.5 --reasoning-effort high` (lowercase
+      slug — fixes F8F T8 RED).
+    - T8b override-rejection: worker rejects `model: "Claude Opus 4.6"` pre-CLI
+      with `model_not_allowed` + `forced_default_model: gpt-5.5`.
+  Real-CLI acceptance gates (exit 0 markers, manifest, secret_scan=clean, zero
+  nft drops) are N/A: the F8F-era `copilot-egress` Docker bridge + nft scoped
+  chain were torn down post-F8F and re-provisioning is governance-gated → F8H
+  recommended.
+  Report: reports/copilot-cli/f8g-verify-canonical-pin-2026-05-08.md
+  Metrics: reports/copilot-cli/f8g-verify-canonical-pin-2026-05-08.metrics.json
+  Only flag toggled: RICK_COPILOT_CLI_EXECUTE false→true→false (byte-for-byte
+  diff against backup verified). /health ok pre+post.
 ---
 
 # F8G verify — re-run canonical T8 against the merged pin

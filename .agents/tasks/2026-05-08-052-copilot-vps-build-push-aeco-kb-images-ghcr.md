@@ -1,13 +1,13 @@
 ---
 id: "2026-05-08-052"
 title: "Build + push 3 imágenes ACA Jobs O16.2 a GHCR (aeco-source-crawler / aeco-pdf-parser / aeco-index-pipeline)"
-status: assigned
+status: blocked
 assigned_to: copilot
 created_by: copilot-chat-notion-governance
 priority: high
 sprint: Q2-2026 / O16.2
 created_at: "2026-05-08T05:45:00Z"
-updated_at: "2026-05-08T05:45:00Z"
+updated_at: "2026-05-08T07:30:00Z"
 ---
 
 ## Contexto previo
@@ -130,3 +130,35 @@ Final: `python scripts/aeco-kb/smoke_agenteub_kb.py` y update audit.
   imposible local (no Docker en Windows host). Commits referencia:
   - umbral-agent-stack/main `fa199201` (audit + foundry_connection patch)
   - notion-governance/main `79e2532` (plan Q2 marca repo cerrado)
+
+- 2026-05-08T07:30Z — Copilot Coding Agent (VPS): **BLOCKED** por scope
+  insuficiente del PAT.
+  - Repo synced a main `2bc58f6` (4 commits ahead del fa199201 referenciado).
+  - Docker 29.2.1 disponible en VPS.
+  - `$GHCR_PAT` NO está en env. Único token GitHub disponible es
+    `GITHUB_TOKEN` en `~/.config/openclaw/env` (fine-grained PAT, no classic).
+  - `docker login ghcr.io -u umbral-bot --password-stdin` con `GITHUB_TOKEN`
+    → `Login Succeeded` (engaña porque login solo valida bearer, no scopes).
+  - **Builds ejecutados**: 3/3 OK (cached desde sesión previa, aparentemente).
+    Imágenes locales presentes con tags `:v1` y `:latest`. Manifest list
+    digests locales (NO digests remotos GHCR todavía):
+    - `aeco-source-crawler:v1` → `sha256:43e5a859936941e21803a1004655fb0d8b373c367d03d840b8d1a7274c5bf0bf`
+    - `aeco-pdf-parser:v1`     → `sha256:d8ae1237f96461c29aea9590b95d738741bae33ecc35202ad6b2eae9a56fc86e`
+    - `aeco-index-pipeline:v1` → `sha256:680cca042d9da520facc0dc81682b17ce1784c2cddcbcf9ccf8ca53713a48f5c`
+  - **Push 6/6 FAILED** todos con:
+    `error from registry: permission_denied: The token provided does not match expected scopes.`
+  - **Probe API extra**: `GET /orgs/umbral-bot/packages` con el mismo token
+    → HTTP 403. Confirma fine-grained sin permisos sobre packages de la org.
+  - **Acción requerida (David)**: generar PAT classic en
+    https://github.com/settings/tokens con scopes:
+    - `write:packages`
+    - `read:packages`
+    - `admin:packages` (para PATCH visibility public)
+    Exportar como `GHCR_PAT` y/o agregar al env file. Luego este task puede
+    re-correr el bloque push (paso 3 en adelante) — los builds ya están
+    listos en local, no necesitan rebuild.
+  - **Antipatrón confirmado**: el spec ya advertía "Usar PAT con scope
+    insuficiente". El fine-grained `GITHUB_TOKEN` actual **no sirve**
+    para GHCR push aunque docker login devuelva éxito.
+  - Runtime VPS intacto: gateway pid 75421 sin tocar, no se reinició
+    nada, no se editó código fuera del Log de este task.

@@ -2,36 +2,10 @@
 // document-intelligence.bicep — Document Intelligence (Form Recognizer S0)
 // =============================================================================
 // Sub-task: 2026-05-07-042 (O16.1 agent-specific services)
-// AVM ref: br/public:avm/res/cognitive-services/account:0.10.0
-// Status: PLACEHOLDER — impl en 042
+// Status: REAL (direct ARM resources)
 // =============================================================================
-// Params esperados:
-//   - name (string): 'di-umbral-${env}'
-//   - location (string)  ← validar disponibilidad en eastus2
-//   - tags (object)
-//   - principalIdReader (string)  ← uami para Cognitive Services User
-//
-// Outputs esperados:
-//   - resourceId (string)
-//   - endpoint (string)
-//
-// Kind: 'FormRecognizer' (Document Intelligence v4)
-// SKU: 'S0' (pay-per-page; F0 free tier limita 500 págs/mes y NO sirve para producción)
-//
-// Modelos a usar (built-in, no custom Q2):
-//   - prebuilt-layout (PDFs estructurados)
-//   - prebuilt-read (OCR puro)
-//   - prebuilt-document (key-value generic)
-//
-// Custom models llegan en Q3 si datasets justifican.
-//
-// RBAC:
-//   - Cognitive Services User → uami.principalId
-//
-// Settings clave:
-//   - publicNetworkAccess: 'Enabled' (Q3 evaluar Private Endpoint)
-//   - disableLocalAuth: true (forzar AAD via uami)
-//   - customSubDomainName: name (requerido para AAD)
+// kind=FormRecognizer S0. AAD-only (disableLocalAuth=true) via UAMI.
+// customSubDomainName requerido para AAD. Modelos prebuilt en runtime.
 // =============================================================================
 
 @description('Document Intelligence account name.')
@@ -46,7 +20,39 @@ param tags object = {}
 @description('Principal ID for Cognitive Services User.')
 param principalIdReader string
 
-// TODO 042 — replace with AVM reference at kind=FormRecognizer, sku=S0
+resource di 'Microsoft.CognitiveServices/accounts@2024-10-01' = {
+  name: name
+  location: location
+  tags: tags
+  kind: 'FormRecognizer'
+  sku: {
+    name: 'S0'
+  }
+  properties: {
+    customSubDomainName: name
+    publicNetworkAccess: 'Enabled'
+    disableLocalAuth: true
+    networkAcls: {
+      defaultAction: 'Allow'
+      bypass: 'AzureServices'
+    }
+  }
+}
 
-output resourceId string = ''
-output endpoint string = ''
+// RBAC: Cognitive Services User → UAMI
+// Built-in: a97b65f3-24c7-4388-baec-2e87135dc908
+var cogSvcUserRoleId = 'a97b65f3-24c7-4388-baec-2e87135dc908'
+
+resource diUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  scope: di
+  name: guid(di.id, principalIdReader, cogSvcUserRoleId)
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', cogSvcUserRoleId)
+    principalId: principalIdReader
+    principalType: 'ServicePrincipal'
+  }
+}
+
+output resourceId string = di.id
+output name string = di.name
+output endpoint string = di.properties.endpoint

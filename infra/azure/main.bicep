@@ -5,6 +5,7 @@
 //   - 2026-05-07-039 (scaffold)
 //   - 2026-05-07-040 (cross-cutting infra: UAMI + LAW + AppInsights + CAE)
 //   - 2026-05-07-041 (data plane: Storage + Cosmos + Key Vault + RBAC)
+//   - 2026-05-07-042 (agent services: Service Bus + AI Search + Document Intelligence)
 // targetScope: subscription (necesita crear el RG)
 // =============================================================================
 
@@ -58,6 +59,9 @@ var caeName = 'cae-umbral-agents-${environment}'
 var storageName = 'stumbralagents${environment}'
 var cosmosName = 'cosmos-umbral-agents-${environment}'
 var kvName = 'kv-umbral-agents-${environment}'
+var sbName = 'sb-umbral-mailbox-${environment}'
+var searchName = 'srch-umbral-kb-${environment}'
+var diName = 'di-umbral-${environment}'
 
 // -----------------------------------------------------------------------------
 // Resource Group
@@ -147,11 +151,43 @@ module mod_kv 'modules/key-vault.bicep' = {
 }
 
 // -----------------------------------------------------------------------------
-// Sub-task 042 — agent-specific services (PENDIENTE)
+// Sub-task 042 — agent-specific services
 // -----------------------------------------------------------------------------
-// module mod_sb     'modules/service-bus.bicep' = { ... }
-// module mod_search 'modules/ai-search.bicep' = { ... }
-// module mod_di     'modules/document-intelligence.bicep' = { ... }
+
+module mod_sb 'modules/service-bus.bicep' = {
+  name: 'deploy-sb'
+  scope: rg
+  params: {
+    name: sbName
+    location: location
+    tags: tags
+    principalIdSender: mod_uami.outputs.principalId
+    principalIdReceiver: mod_uami.outputs.principalId
+  }
+}
+
+module mod_search 'modules/ai-search.bicep' = {
+  name: 'deploy-search'
+  scope: rg
+  params: {
+    name: searchName
+    location: location
+    tags: tags
+    principalIdContributor: mod_uami.outputs.principalId
+    principalIdDataContributor: mod_uami.outputs.principalId
+  }
+}
+
+module mod_di 'modules/document-intelligence.bicep' = {
+  name: 'deploy-di'
+  scope: rg
+  params: {
+    name: diName
+    location: location
+    tags: tags
+    principalIdReader: mod_uami.outputs.principalId
+  }
+}
 
 // -----------------------------------------------------------------------------
 // Sub-task 043 — budget alerts (PENDIENTE)
@@ -186,3 +222,11 @@ output cosmosAccountId string = mod_cosmos.outputs.resourceId
 output cosmosEndpoint string = mod_cosmos.outputs.endpoint
 output keyVaultId string = mod_kv.outputs.resourceId
 output keyVaultUri string = mod_kv.outputs.vaultUri
+
+// 042 agent-specific services
+output serviceBusNamespaceId string = mod_sb.outputs.resourceId
+output serviceBusNamespaceEndpoint string = mod_sb.outputs.namespaceEndpoint
+output searchServiceId string = mod_search.outputs.resourceId
+output searchServiceEndpoint string = mod_search.outputs.endpoint
+output docIntelligenceId string = mod_di.outputs.resourceId
+output docIntelligenceEndpoint string = mod_di.outputs.endpoint

@@ -2,41 +2,11 @@
 // ai-search.bicep — AI Search (Basic tier — Opción B conservadora)
 // =============================================================================
 // Sub-task: 2026-05-07-042 (O16.1 agent-specific services)
-// AVM ref: br/public:avm/res/search/search-service:0.7.0
-// Status: PLACEHOLDER — impl en 042
+// Status: REAL (direct ARM resources)
 // =============================================================================
-// Params esperados:
-//   - name (string): 'srch-umbral-kb-${env}'
-//   - location (string)
-//   - tags (object)
-//   - principalIdContributor (string)  ← uami para Search Service Contributor
-//   - principalIdDataContributor (string)  ← uami para Search Index Data Contributor
-//
-// Outputs esperados:
-//   - resourceId (string)
-//   - endpoint (string)
-//   - name (string)
-//
-// Tier:
-//   - 'basic' = $75/mes base — 1 partition × 1 replica, 2GB storage, 15 indexes
-//   - Promover a 'standard' (S1) cuando KB > 5GB o queries > 60/min sostenido
-//
-// Settings clave:
-//   - replicaCount: 1
-//   - partitionCount: 1
-//   - hostingMode: 'default'
-//   - publicNetworkAccess: 'enabled' (Q3 evaluar Private Endpoint)
-//   - authOptions: 'aadOrApiKey' (preferimos AAD via uami)
-//   - semanticSearch: 'free' (incluido en Basic)
-//
-// RBAC:
-//   - Search Service Contributor → uami (mgmt: crear/eliminar indexes)
-//   - Search Index Data Contributor → uami (data plane: read/write docs)
-//
-// Indexes esperados (creados por agentes en runtime):
-//   - aeco-kb-es-vYYYYMMDD
-//   - aeco-kb-en-vYYYYMMDD
-//   - aeco-kb-pt-vYYYYMMDD
+// Basic = $75/mes base, 1 partition x 1 replica, 2GB, 15 indexes, semantic free.
+// Promover a S1 cuando KB >5GB o queries >60/min sostenido.
+// AAD-first via UAMI (authOptions: aadOrApiKey).
 // =============================================================================
 
 @description('AI Search service name.')
@@ -54,8 +24,56 @@ param principalIdContributor string
 @description('Principal ID for Search Index Data Contributor.')
 param principalIdDataContributor string
 
-// TODO 042 — replace with AVM reference at sku=basic
+resource search 'Microsoft.Search/searchServices@2024-03-01-preview' = {
+  name: name
+  location: location
+  tags: tags
+  sku: {
+    name: 'basic'
+  }
+  properties: {
+    replicaCount: 1
+    partitionCount: 1
+    hostingMode: 'default'
+    publicNetworkAccess: 'enabled'
+    disableLocalAuth: false
+    authOptions: {
+      aadOrApiKey: {
+        aadAuthFailureMode: 'http401WithBearerChallenge'
+      }
+    }
+    semanticSearch: 'free'
+  }
+}
 
-output resourceId string = ''
-output endpoint string = ''
-output serviceName string = name
+// RBAC: Search Service Contributor (mgmt: crear/eliminar indexes)
+// Built-in: 7ca78c08-252a-4471-8644-bb5ff32d4ba0
+var searchServiceContributorRoleId = '7ca78c08-252a-4471-8644-bb5ff32d4ba0'
+
+resource searchSvcContrib 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  scope: search
+  name: guid(search.id, principalIdContributor, searchServiceContributorRoleId)
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', searchServiceContributorRoleId)
+    principalId: principalIdContributor
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// RBAC: Search Index Data Contributor (data plane: read/write docs)
+// Built-in: 8ebe5a00-799e-43f5-93ac-243d3dce84a7
+var searchIndexDataContributorRoleId = '8ebe5a00-799e-43f5-93ac-243d3dce84a7'
+
+resource searchIdxContrib 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  scope: search
+  name: guid(search.id, principalIdDataContributor, searchIndexDataContributorRoleId)
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', searchIndexDataContributorRoleId)
+    principalId: principalIdDataContributor
+    principalType: 'ServicePrincipal'
+  }
+}
+
+output resourceId string = search.id
+output serviceName string = search.name
+output endpoint string = 'https://${search.name}.search.windows.net'

@@ -44,6 +44,15 @@ from typing import Any
 
 import httpx
 
+# Optional source verifier (Stage 7.5 pre-LLM gate). Imported best-effort so
+# the module still loads even if the verifier file is moved/renamed; the
+# gate is treated as "skipped" in that case (logged) and copy generation
+# proceeds. The gate is exercised by ``process_proposal`` below.
+try:  # pragma: no cover - exercised in tests via monkeypatch
+    from scripts.discovery import source_verifier as _source_verifier  # type: ignore
+except Exception:  # noqa: BLE001
+    _source_verifier = None  # type: ignore[assignment]
+
 DEFAULT_STATE_DB = Path.home() / ".cache" / "rick-discovery" / "state.sqlite"
 DEFAULT_CACHE_DB = Path.home() / ".cache" / "rick-discovery" / "llm_cache.sqlite"
 DEFAULT_OPS_LOG = Path.home() / ".config" / "umbral" / "ops_log.jsonl"
@@ -595,6 +604,7 @@ def process_proposal(
     cost_per_1k_input: float,
     cost_per_1k_output: float,
     use_llm: bool = True,
+    skip_source_verify: bool = False,
 ) -> tuple[str, str]:
     """Return ``(status, message)`` for one proposal.
 
@@ -665,6 +675,61 @@ def process_proposal(
             finally:
                 conn.close()
         return "skipped_existing_copy", f"chars={len(existing_copy)}"
+
+    # Pre-LLM source URL verification gate (Stage 7.5).
+    # Hard-blocks copies that would be built on suspect sources (sandbox URLs,
+    # dead links, redirect spam, malformed arXiv URLs, non-textual content).
+    # Bypass with the dev-only flag ``--skip-source-verify``.
+    if not skip_source_verify and _source_verifier is not None:
+        source_url = (
+            _read_url(props.get("Fuente primaria"))
+            or _read_url(props.get("Fuente referente"))
+            or (proposal.get("fuentes_urls") or [""])[0]
+            or ""
+        )
+        try:
+            verdict = _source_verifier.verify_source(
+                source_url,
+                ops_log=ops_log,
+            )
+        except Exception as e:  # noqa: BLE001 - fail closed on verifier crash
+            msg = f"source_verifier_crash:{e!s:.160s}"
+            log_event(
+                "stage7_5.source_blocked",
+                ops_log=ops_log, proposal_id=pid,
+                url=source_url, reason="verifier_crash",
+                error=str(e)[:200],
+            )
+            if not dry_run:
+                mark_copy_status(state_db, pid, "failed_source_unverified", msg)
+            return "failed_source_unverified", msg
+        if not verdict.get("ok"):
+            reason = verdict.get("reason") or "unknown"
+            log_event(
+                "stage7_5.source_blocked",
+                ops_log=ops_log, proposal_id=pid,
+                url=source_url, reason=reason,
+                details=verdict.get("details", {}),
+            )
+            if not dry_run:
+                mark_copy_status(
+                    state_db, pid, "failed_source_unverified",
+                    f"source_unverified:{reason}",
+                )
+            return "failed_source_unverified", f"reason={reason} url={source_url}"
+        if verdict.get("warnings"):
+            log_event(
+                "stage7_5.source_warnings",
+                ops_log=ops_log, proposal_id=pid,
+                url=source_url, warnings=verdict.get("warnings"),
+            )
+    elif not skip_source_verify and _source_verifier is None:
+        # Module unavailable: log once per proposal and proceed (fail-open
+        # only when explicitly missing, never on verifier exception).
+        log_event(
+            "stage7_5.source_verifier_unavailable",
+            ops_log=ops_log, proposal_id=pid,
+        )
 
     # Build prompt + cost guard.
     system_prompt, user_prompt = build_copy_prompt(proposal, props)
@@ -780,6 +845,15 @@ def main(argv: list[str] | None = None) -> int:
                    help="Overwrite existing non-empty Copy LinkedIn in Notion.")
     p.add_argument("--allow-no-source", action="store_true",
                    help="Skip source-URL substring validation.")
+    p.add_argument(
+        "--skip-source-verify",
+        action="store_true",
+        help=(
+            "DEV ONLY: bypass the pre-LLM source URL verification gate. "
+            "Do NOT use in production runs — it disables hard blocks on "
+            "sandbox URLs, dead links, and redirect hijacks."
+        ),
+    )
     p.add_argument("--model", default=DEFAULT_MODEL)
     p.add_argument("--gateway-url", default=DEFAULT_GATEWAY_URL)
     p.add_argument("--publicaciones-ds-id", default=DEFAULT_PUBLICACIONES_DS_ID)
@@ -864,6 +938,7 @@ def main(argv: list[str] | None = None) -> int:
                 allow_no_source=args.allow_no_source,
                 cost_per_1k_input=args.cost_per_1k_input_usd,
                 cost_per_1k_output=args.cost_per_1k_output_usd,
+                skip_source_verify=args.skip_source_verify,
             )
             if status == "copy_ready":
                 ok += 1

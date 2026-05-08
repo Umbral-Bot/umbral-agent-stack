@@ -2,73 +2,96 @@
   {
     "id": "F1-bim-only-clash-detection",
     "titular": "Estudio sobre coordinación BIM en proyectos hospitalarios chilenos",
-    "disciplines": ["BIM"],
+    "disciplines": [
+      "BIM"
+    ],
     "summary": "Una investigación de la Universidad Católica de Chile analizó 12 proyectos hospitalarios en Santiago y Concepción, midiendo el costo de retrabajo asociado a clashes detectados después del inicio de obra. El estudio concluye que el 41% de los retrabajos en MEP eran detectables en fase de coordinación BIM si el modelo federado hubiera sido revisado contra el BEP. La causa más frecuente del retrabajo no fue la ausencia de detección sino la falta de un protocolo claro para gestionar las clashes detectadas en revisión.",
     "key_points": [
       "41% del retrabajo MEP era prevenible con coordinación BIM federada",
       "El problema no es detectar clashes, es gestionar quién los resuelve y en qué revisión",
       "Proyectos sin BEP claro no aprovechan el modelo federado aunque exista"
     ],
-    "source_url": "https://example.cl/uc/bim-coordinacion-hospitales-2026.pdf"
+    "source_url": "https://example.cl/uc/bim-coordinacion-hospitales-2026.pdf",
+    "fixture_skip_source_verify": true
   },
   {
     "id": "F2-bim-plus-ia-paper",
     "titular": "Paper preliminar: LLM entrenado para revisar IFC contra BEP",
-    "disciplines": ["BIM", "IA"],
+    "disciplines": [
+      "BIM",
+      "IA"
+    ],
     "summary": "Un paper preprint en arXiv describe un experimento donde un LLM open-source es fine-tuneado para leer modelos IFC y validar consistencia contra un BEP escrito en lenguaje natural. Resultados preliminares: precisión 78% detectando incumplimientos de naming convention, 64% detectando ausencia de propiedades requeridas, 42% en chequeos semánticos complejos. El dataset es pequeño (190 modelos, sesgo a proyectos europeos residenciales). Los autores señalan que el cuello de botella no es el modelo IA sino la falta de BEP estructurados que sirvan como ground truth.",
     "key_points": [
       "LLM puede automatizar chequeos sintácticos de IFC con precisión razonable",
       "Performance cae fuerte en chequeos semánticos complejos",
       "Sin BEP estructurado, la IA no tiene contra qué validar"
     ],
-    "source_url": "https://arxiv.org/abs/2604.12345"
+    "source_url": "https://arxiv.org/abs/2604.12345",
+    "fixture_skip_source_verify": true
   },
   {
     "id": "F3-bim-plus-automation-dynamo",
     "titular": "Caso: estudio de arquitectura automatiza nomenclatura de familias Revit con Dynamo",
-    "disciplines": ["BIM", "automation"],
+    "disciplines": [
+      "BIM",
+      "automation"
+    ],
     "summary": "Un estudio mediano (35 personas) en Buenos Aires publicó un caso donde implementaron un script Dynamo + Python para validar y autocorregir nomenclatura de familias en proyectos Revit. El equipo reporta una reducción del 78% en tiempo dedicado a chequeos manuales de QA pre-entrega, recuperando aproximadamente 6 horas por proyecto en la fase de cierre. El script no se compartió públicamente pero los autores describen la lógica general: parseo del estándar interno desde un Excel maestro, comparación contra el modelo, log de violaciones, autocorrección de las clases bajas (mayúsculas, espacios, prefijos).",
     "key_points": [
       "Automatización low-code tipo Dynamo libera 6h/proyecto en QA pre-entrega",
       "El estándar de nomenclatura tiene que existir como dato estructurado, no como PDF",
       "Autocorrección solo de errores triviales; el resto va a revisión humana"
     ],
-    "source_url": "https://blog.example.ar/automatizacion-dynamo-naming"
+    "source_url": "https://blog.example.ar/automatizacion-dynamo-naming",
+    "fixture_skip_source_verify": true
   },
   {
     "id": "F4-low-code-citizen-dev",
     "titular": "Discusión: ¿realmente cualquier persona puede ser citizen developer en AECO?",
-    "disciplines": ["low-code", "automation"],
+    "disciplines": [
+      "low-code",
+      "automation"
+    ],
     "summary": "Una nota de opinión en Construction Tech Review LATAM cuestiona la promesa del low-code en estudios de arquitectura. El autor entrevista a 8 estudios que adoptaron Power Automate o Make en los últimos 18 meses. Patrón común: los flujos iniciales los arma un arquitecto curioso, funcionan unos meses, y se rompen cuando hay un cambio en la fuente (Revit upgrade, cambio de plantilla en Notion, etc). Los estudios que sostuvieron las automatizaciones tenían a alguien con background técnico documentando flows y manejando versionado, no solo el arquitecto entusiasta.",
     "key_points": [
       "Low-code escala mal sin gobernanza técnica mínima",
       "El arquitecto-builder es válido para prototipo, no para producción",
       "Versionado y documentación de flows es lo que diferencia adopción duradera"
     ],
-    "source_url": "https://constructiontechreview-latam.example.com/lowcode-aeco-mito"
+    "source_url": "https://constructiontechreview-latam.example.com/lowcode-aeco-mito",
+    "fixture_skip_source_verify": true
   },
   {
     "id": "F5-mix-ia-bim-low-code-edge",
     "titular": "Anuncio Autodesk: AI Assist para Revit con integraciones low-code abiertas",
-    "disciplines": ["BIM", "IA", "low-code"],
+    "disciplines": [
+      "BIM",
+      "IA",
+      "low-code"
+    ],
     "summary": "Autodesk anunció AI Assist para Revit en su evento anual, una capa de IA generativa que asiste con generación de familias, sugerencias de coordinación y generación de planos a partir de prompt en lenguaje natural. La feature incluye un endpoint de automation accesible desde Power Automate y otras plataformas low-code. Disponibilidad inicial en EE.UU. y Reino Unido, LATAM Q3 2026. El anuncio levantó dos preocupaciones repetidas en redes: 1) qué pasa con la propiedad intelectual de los modelos usados como training data; 2) cómo se integra esto con BEPs locales que no están en inglés.",
     "key_points": [
       "AI Assist combina generación + automation low-code en un solo producto",
       "Disponibilidad LATAM tarde (Q3 2026)",
       "Dudas abiertas sobre IP del training data y soporte multilingüe del BEP"
     ],
-    "source_url": "https://www.autodesk.com/news/ai-assist-revit-2026"
+    "source_url": "https://www.autodesk.com/news/ai-assist-revit-2026",
+    "fixture_skip_source_verify": true
   },
   {
     "id": "F6-edge-bim-no-tech",
     "titular": "Encuesta SEDIBIM 2026: 60% de obras en LATAM declara BIM, 18% lo usa para coordinación real",
-    "disciplines": ["BIM"],
+    "disciplines": [
+      "BIM"
+    ],
     "summary": "La encuesta anual SEDIBIM 2026 (n=1247 profesionales AECO en 9 países LATAM) muestra una brecha grande entre adopción declarada y uso real de BIM. 60% reporta usar BIM en sus proyectos. Solo 18% reporta usar el modelo para detección activa de clashes y resolución de coordinación entre disciplinas. La brecha más fuerte es Chile (62% adopción declarada, 14% uso coordinación) y Perú (58% / 11%). El informe correlaciona uso real con la presencia de un BIM Manager dedicado y un BEP firmado al inicio del proyecto.",
     "key_points": [
       "Brecha de 3-4x entre BIM declarado y BIM realmente usado para coordinar",
       "Sin BIM Manager dedicado y BEP firmado, BIM se queda en modelado decorativo",
       "Chile y Perú con peor brecha"
     ],
-    "source_url": "https://sedibim.example.org/encuesta-2026-informe.pdf"
+    "source_url": "https://sedibim.example.org/encuesta-2026-informe.pdf",
+    "fixture_skip_source_verify": true
   }
 ]

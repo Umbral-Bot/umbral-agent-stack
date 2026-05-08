@@ -69,6 +69,30 @@ def state_db(tmp_path: Path) -> Path:
     return db
 
 
+@pytest.fixture(autouse=True)
+def _bypass_source_verifier(monkeypatch):
+    """Existing fixtures use ``https://src.test/article`` which is rightly
+    blocklisted by the new pre-LLM source verifier. These tests were written
+    for the prior pipeline and exercise validation/persistence semantics, NOT
+    source verification — so we stub the verifier to always pass. Tests that
+    need to exercise the gate live further down (``test_source_gate_*``) and
+    explicitly disable this autouse via ``monkeypatch.undo()``.
+    """
+    if mod._source_verifier is None:
+        return
+    monkeypatch.setattr(
+        mod._source_verifier,
+        "verify_source",
+        lambda url, **kw: {
+            "ok": True,
+            "url": url,
+            "reason": "",
+            "warnings": [],
+            "details": {"host": "src.test", "from_cache": False, "cache_age_s": None},
+        },
+    )
+
+
 def _set_copy_status(db: Path, pid: int, status: str,
                      attempt_at: int | None = None) -> None:
     conn = sqlite3.connect(db)
@@ -604,3 +628,197 @@ def test_proposal_id_filter(state_db: Path, monkeypatch):
     )
     assert [r["id"] for r in rows] == [p2]
     assert p1  # silence unused
+
+
+# ---------- Source verifier gate (Stage 7.5 pre-LLM hard block) ----------
+
+def _run_with_verifier(state_db, monkeypatch, *, page, schema, verifier_result,
+                       extra_args=None, llm_called=None, tmp_path=None):
+    """Run mod.main() once with a stubbed verifier returning ``verifier_result``.
+
+    Returns ``(rc, fake_notion_client)``. The default autouse
+    ``_bypass_source_verifier`` fixture is overridden here. A per-test
+    ``--cache-db`` is required because the LLM cache is keyed by prompt
+    content; sharing the user's real cache across tests causes ``llm_call``
+    to be skipped on cache hits and breaks call-count assertions.
+    """
+    monkeypatch.setenv("NOTION_API_KEY", "k")
+    monkeypatch.setattr(mod, "_gateway_token", lambda: "gw-tok")
+    fake = _fake_notion(page=page)
+    monkeypatch.setattr(mod, "NotionClient", lambda token: fake)
+    monkeypatch.setattr(mod, "fetch_publicaciones_schema", lambda c, ds: schema)
+
+    def _llm(**kw):
+        if llm_called is not None:
+            llm_called["called"] = True
+        return _good_copy()
+    monkeypatch.setattr(mod, "llm_call", _llm)
+
+    # Override the autouse bypass so the real gate logic is exercised.
+    monkeypatch.setattr(
+        mod._source_verifier, "verify_source",
+        lambda url, **kw: verifier_result,
+    )
+
+    args = ["--state-db", str(state_db)]
+    if tmp_path is not None:
+        args += ["--cache-db", str(tmp_path / "llm_cache.sqlite")]
+    args += list(extra_args or [])
+    rc = mod.main(args)
+    return rc, fake
+
+
+def test_source_gate_blocks_on_blocklist_domain(state_db: Path, monkeypatch):
+    pid = _insert(state_db, titular="Bad source", notion_page_id="page-bl",
+                  fuentes_urls=json.dumps(["https://example.com/x"]))
+    page = _make_page(source="https://example.com/x")
+    schema = _good_schema()
+    llm_flag = {"called": False}
+    rc, fake = _run_with_verifier(
+        state_db, monkeypatch, page=page, schema=schema,
+        verifier_result={
+            "ok": False, "url": "https://example.com/x",
+            "reason": "blocklist_domain", "warnings": [],
+            "details": {"host": "example.com"},
+        },
+        llm_called=llm_flag,
+    )
+    assert rc == 1
+    assert llm_flag["called"] is False, "LLM must not run when source blocked"
+    fake.patch.assert_not_called(), "Notion must not be patched on source block"
+    conn = sqlite3.connect(state_db)
+    row = conn.execute(
+        "SELECT copy_status, copy_last_error FROM proposals WHERE id=?", (pid,)
+    ).fetchone()
+    conn.close()
+    assert row[0] == "failed_source_unverified"
+    assert "blocklist_domain" in (row[1] or "")
+
+
+def test_source_gate_blocks_on_http_404(state_db: Path, monkeypatch):
+    pid = _insert(state_db, titular="Dead link", notion_page_id="page-404")
+    page = _make_page()
+    llm_flag = {"called": False}
+    rc, fake = _run_with_verifier(
+        state_db, monkeypatch, page=page, schema=_good_schema(),
+        verifier_result={
+            "ok": False, "url": "https://src.test/article",
+            "reason": "http_404", "warnings": [],
+            "details": {"host": "src.test", "status_code": 404},
+        },
+        llm_called=llm_flag,
+    )
+    assert rc == 1
+    assert llm_flag["called"] is False
+    fake.patch.assert_not_called()
+    conn = sqlite3.connect(state_db)
+    status = conn.execute("SELECT copy_status FROM proposals WHERE id=?", (pid,)).fetchone()[0]
+    conn.close()
+    assert status == "failed_source_unverified"
+
+
+def test_source_gate_passes_when_verifier_ok(state_db: Path, monkeypatch, tmp_path):
+    pid = _insert(state_db, titular="Good", notion_page_id="page-ok")
+    page = _make_page()
+    llm_flag = {"called": False}
+    rc, fake = _run_with_verifier(
+        state_db, monkeypatch, page=page, schema=_good_schema(),
+        verifier_result={
+            "ok": True, "url": "https://src.test/article",
+            "reason": "", "warnings": [],
+            "details": {"host": "src.test"},
+        },
+        llm_called=llm_flag,
+        tmp_path=tmp_path,
+    )
+    assert rc == 0
+    assert llm_flag["called"] is True
+    fake.patch.assert_called_once()
+    assert pid
+
+
+def test_source_gate_skip_flag_bypasses(state_db: Path, monkeypatch, tmp_path):
+    pid = _insert(state_db, titular="Skip", notion_page_id="page-skip")
+    page = _make_page()
+    llm_flag = {"called": False}
+
+    def _explode(url, **kw):
+        pytest.fail("verifier must not be called when --skip-source-verify is set")
+
+    monkeypatch.setenv("NOTION_API_KEY", "k")
+    monkeypatch.setattr(mod, "_gateway_token", lambda: "gw-tok")
+    fake = _fake_notion(page=page)
+    monkeypatch.setattr(mod, "NotionClient", lambda token: fake)
+    monkeypatch.setattr(mod, "fetch_publicaciones_schema", lambda c, ds: _good_schema())
+    def _llm(**kw):
+        llm_flag["called"] = True
+        return _good_copy()
+    monkeypatch.setattr(mod, "llm_call", _llm)
+    monkeypatch.setattr(mod._source_verifier, "verify_source", _explode)
+
+    rc = mod.main([
+        "--state-db", str(state_db),
+        "--cache-db", str(tmp_path / "llm_cache.sqlite"),
+        "--skip-source-verify",
+    ])
+    assert rc == 0
+    assert llm_flag["called"] is True
+    assert pid
+
+
+def test_source_gate_verifier_crash_fails_closed(state_db: Path, monkeypatch):
+    pid = _insert(state_db, titular="Crash", notion_page_id="page-crash")
+    page = _make_page()
+    llm_flag = {"called": False}
+
+    monkeypatch.setenv("NOTION_API_KEY", "k")
+    monkeypatch.setattr(mod, "_gateway_token", lambda: "gw-tok")
+    fake = _fake_notion(page=page)
+    monkeypatch.setattr(mod, "NotionClient", lambda token: fake)
+    monkeypatch.setattr(mod, "fetch_publicaciones_schema", lambda c, ds: _good_schema())
+    def _llm(**kw):
+        llm_flag["called"] = True
+        return _good_copy()
+    monkeypatch.setattr(mod, "llm_call", _llm)
+
+    def _crash(url, **kw):
+        raise RuntimeError("unexpected verifier failure")
+    monkeypatch.setattr(mod._source_verifier, "verify_source", _crash)
+
+    rc = mod.main(["--state-db", str(state_db)])
+    assert rc == 1
+    assert llm_flag["called"] is False, "LLM must not run when verifier crashes (fail-closed)"
+    fake.patch.assert_not_called()
+    conn = sqlite3.connect(state_db)
+    row = conn.execute(
+        "SELECT copy_status, copy_last_error FROM proposals WHERE id=?", (pid,)
+    ).fetchone()
+    conn.close()
+    assert row[0] == "failed_source_unverified"
+    assert "verifier_crash" in (row[1] or "")
+
+
+def test_source_gate_logs_blocked_event(state_db: Path, monkeypatch, tmp_path):
+    """The hook must emit ``stage7_5.source_blocked`` to the ops log."""
+    ops = tmp_path / "ops.jsonl"
+    monkeypatch.setattr(mod, "DEFAULT_OPS_LOG", ops)
+    _insert(state_db, titular="Log", notion_page_id="page-log",
+            fuentes_urls=json.dumps(["https://example.com/x"]))
+    page = _make_page(source="https://example.com/x")
+    rc, _ = _run_with_verifier(
+        state_db, monkeypatch, page=page, schema=_good_schema(),
+        verifier_result={
+            "ok": False, "url": "https://example.com/x",
+            "reason": "blocklist_domain", "warnings": [],
+            "details": {"host": "example.com"},
+        },
+        extra_args=["--ops-log", str(ops)],
+    )
+    assert rc == 1
+    lines = [
+        json.loads(line) for line in ops.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    blocked = [r for r in lines if r["event"] == "stage7_5.source_blocked"]
+    assert blocked, lines
+    assert blocked[0]["reason"] == "blocklist_domain"

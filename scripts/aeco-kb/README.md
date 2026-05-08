@@ -13,6 +13,8 @@ Servicio target: `srch-umbral-kb-prod` (AI Search Basic, RG `rg-umbral-agents-pr
 | `source_crawler.py` | 048 | Descarga PDFs desde `seeds/{source_type}.yaml` con rate-limit 1 req/s + dedupe SHA-256, manifest JSONL append-only en `crudos/aeco/raw/_manifest/{source}.jsonl`. |
 | `version_detector.py` | 049 | Lee `aeco/parsed/{source}/*.chunks.jsonl` + manifest del index activo, emite diff JSON `{added, changed, removed, unchanged}`. |
 | `index_publisher.py` | 049 | Clona schema del index activo → `aeco-kb-es-vYYYYMMDD` → embebe (Foundry text-embedding-3-small) → upload → valida (count + sample query) → alias swap atómico. |
+| `run_pipeline.sh` | 050 | Bash orquestador secuencial Q2: arranca crawler → parser → publisher por cada source vía `az containerapp job start` y espera con polling. |
+| `verify_kb.py` | 050 | Gate post-pipeline: doc_count >= min, cobertura >=1 chunk por jurisdicción, sample queries devuelven hits. |
 
 ## Auth
 
@@ -181,4 +183,32 @@ Manual repointing del alias al index previo:
 ```bash
 az search alias create-or-update --service-name srch-umbral-kb-prod --resource-group rg-umbral-agents-prod --name aeco-kb-es-current --indexes aeco-kb-es-v20260501
 ```
+
+
+## Sub-task 050 — pipeline e2e + IRAM/NMX seeds
+
+Orquestación Q2 secuencial vía bash. Q3 upgrade -> Service Bus chained.
+
+```bash
+# Trigger pipeline e2e (require az login + UAMI roles + imágenes built/pushed)
+bash scripts/aeco-kb/run_pipeline.sh buildingsmart minvu iram nmx
+
+# Validar gate >=500 chunks + cobertura por jurisdicción
+python scripts/aeco-kb/verify_kb.py --min-chunks 500 --jurisdictions ar,cl,mx,intl
+```
+
+### Bicep umbrella
+
+Despliega los 3 jobs en una sola operación (referencia los módulos existentes):
+
+```bash
+az deployment group create -g rg-umbral-agents-prod \`n  -f infra/azure/aeco-kb-pipeline.bicep \`n  -p location=eastus2 \`n  -p environmentId=$CAE_ID \`n  -p userAssignedIdentityId=$UAMI_ID \`n  -p userAssignedIdentityClientId=$UAMI_CLIENT_ID \`n  -p storageAccountName=stumbralagentsprod \`n  -p searchServiceName=srch-umbral-kb-prod \`n  -p diEndpoint=https://di-umbral-prod.cognitiveservices.azure.com/
+```
+
+### Seeds populated
+
+- `seeds/buildingsmart.yaml` (3 PDFs IFC 4.3.x — international).
+- `seeds/minvu.yaml` (2 placeholders DDU — validar HEAD).
+- `seeds/iram.yaml` (2 PDFs SISCO + IRAM ISO 19650-1).
+- `seeds/nmx.yaml` (2 PDFs SHCP Estrategia BIM + NMX-R-098).
 

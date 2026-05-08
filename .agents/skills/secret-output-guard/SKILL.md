@@ -93,3 +93,26 @@ Algunas herramientas oficiales imprimen prefijos parcialmente enmascarados de se
 ## Sugerencia futura
 
 Cuando el repo tenga >50 commits con outputs estructurados, evaluar instalar `gitleaks` como pre-commit hook (`policies/05` §"Live agent contract changes" implica formalizar esto en `pre-commit-config.yaml`).
+
+## Cómo verificar que las copias mirror están en sync
+
+Esta skill vive en 4 ubicaciones que deben coincidir byte-a-byte:
+
+1. `~/.copilot/skills/secret-output-guard/SKILL.md` — canonical (esta copia)
+2. `~/.codex/skills/secret-output-guard/SKILL.md`
+3. `<umbral-agent-stack>/.agents/skills/secret-output-guard/SKILL.md`
+4. `<notion-governance>/.agents/skills/secret-output-guard/SKILL.md`
+
+(`<notion-governance>/skills/secret-output-guard/SKILL.md` es un **stub-pointer**, NO una copia mirror — no editar.)
+
+Para detectar drift:
+```powershell
+python C:\GitHub\umbral-agent-stack\scripts\maintenance\check_skill_mirrors.py
+```
+
+Para sincronizar mirrors drifteadas desde la canonical:
+```powershell
+python C:\GitHub\umbral-agent-stack\scripts\maintenance\check_skill_mirrors.py --fix
+```
+
+**Origen:** O7c (2026-05-08). Después de F-INC-001 + O7c se descubrió que las copias en los repos habían drifteado silenciosamente (notion-governance: 1943B vs canonical 5650B; umbral-agent-stack: 3350B). El script `check_skill_mirrors.py` previene recurrencia.

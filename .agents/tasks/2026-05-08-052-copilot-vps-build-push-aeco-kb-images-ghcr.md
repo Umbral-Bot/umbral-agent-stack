@@ -1,13 +1,13 @@
 ---
 id: "2026-05-08-052"
 title: "Build + push 3 imágenes ACA Jobs O16.2 a GHCR (aeco-source-crawler / aeco-pdf-parser / aeco-index-pipeline)"
-status: blocked
+status: in_progress
 assigned_to: copilot
 created_by: copilot-chat-notion-governance
 priority: high
 sprint: Q2-2026 / O16.2
 created_at: "2026-05-08T05:45:00Z"
-updated_at: "2026-05-08T07:30:00Z"
+updated_at: "2026-05-08T18:40:00Z"
 ---
 
 ## Contexto previo
@@ -162,3 +162,43 @@ Final: `python scripts/aeco-kb/smoke_agenteub_kb.py` y update audit.
     para GHCR push aunque docker login devuelva éxito.
   - Runtime VPS intacto: gateway pid 75421 sin tocar, no se reinició
     nada, no se editó código fuera del Log de este task.
+
+- 2026-05-08T18:40Z — Copilot Coding Agent (VPS): **PUSH COMPLETO 6/6**,
+  visibility manual pendiente.
+  - PAT classic `GHCR_PAT` (len=40) cargado desde `~/.config/openclaw/env`.
+  - Scopes confirmados via `x-oauth-scopes` header:
+    `delete:packages, repo, write:packages` (NO incluye `admin:packages`).
+  - `docker logout ghcr.io && docker login ghcr.io -u umbral-bot --password-stdin`
+    con `$GHCR_PAT` → `Login Succeeded`.
+  - **Push 6/6 OK** (no rebuild — imágenes locales reutilizadas). Digests
+    remotos GHCR confirmados (matchean exactos los locales):
+    - `ghcr.io/umbral-bot/aeco-source-crawler:v1` y `:latest`
+      → `sha256:43e5a859936941e21803a1004655fb0d8b373c367d03d840b8d1a7274c5bf0bf`
+    - `ghcr.io/umbral-bot/aeco-pdf-parser:v1` y `:latest`
+      → `sha256:d8ae1237f96461c29aea9590b95d738741bae33ecc35202ad6b2eae9a56fc86e`
+    - `ghcr.io/umbral-bot/aeco-index-pipeline:v1` y `:latest`
+      → `sha256:680cca042d9da520facc0dc81682b17ce1784c2cddcbcf9ccf8ca53713a48f5c`
+  - **Visibility PATCH 0/3 — HTTP 404** en los 3 packages.
+    - GET `/orgs/umbral-bot/packages/container/<pkg>` → HTTP 200 × 3
+      (confirma packages existen e indexados).
+    - PATCH `.../visibility` con `visibility=public` → HTTP 404 × 3.
+    - Causa raíz: PAT classic NO incluye scope `admin:packages`, requerido
+      por GitHub para PATCH visibility. GitHub devuelve 404 (no 403) en
+      este endpoint cuando falta el scope (comportamiento documentado).
+  - **Pull anónimo (post-logout) 0/3** — `unauthorized` en los 3 packages,
+    confirma packages siguen privados.
+  - **Acción manual requerida (David)** — togglear visibility a Public en
+    el browser (≈30s, no requiere nuevo PAT):
+    - https://github.com/orgs/umbral-bot/packages/container/aeco-source-crawler/settings
+    - https://github.com/orgs/umbral-bot/packages/container/aeco-pdf-parser/settings
+    - https://github.com/orgs/umbral-bot/packages/container/aeco-index-pipeline/settings
+    Sección "Danger Zone" → "Change package visibility" → Public.
+    Alternativa programática: regenerar PAT classic agregando
+    `admin:packages` y re-correr solo el bloque PATCH del paso 8.
+  - **Status**: queda `in_progress` (NO `done`). Antipatrón explícito del
+    spec: no marcar `done` sin verificar pull anónimo end-to-end. PR #379
+    queda OPEN hasta que visibility sea Public y `docker pull` anónimo
+    devuelva OK en los 3 packages.
+  - **Cleanup**: `docker logout ghcr.io` ejecutado. Runtime intacto
+    (gateway pid 75421, worker pid 114572, dispatcher pid 120697,
+    notion-poller pid 120685 — ninguno tocado).

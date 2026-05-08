@@ -47,8 +47,12 @@ youtube = [
 discovery = [
     "rapidfuzz>=3.0.0,<4.0.0",
 ]
+aeco-kb = [
+    "azure-ai-documentintelligence>=1.0.0,<2.0.0",
+    "azure-storage-blob>=12.19.0,<13.0.0",
+]
 all = [
-    "umbral-agent-stack[browser,docs,test,youtube,discovery]",
+    "umbral-agent-stack[browser,docs,test,youtube,discovery,aeco-kb]",
     "weasyprint>=61.0",
 ]
 

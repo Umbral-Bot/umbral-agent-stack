@@ -9,6 +9,7 @@ Servicio target: `srch-umbral-kb-prod` (AI Search Basic, RG `rg-umbral-agents-pr
 | Script | Sub-task | Propósito |
 |---|---|---|
 | `create_initial_index.py` | 046 | Crea índice vacío `aeco-kb-es-vYYYYMMDD` + alias estable `aeco-kb-es-current`. Idempotente. |
+| `pdf_parser.py` | 047 | Parsea 1 PDF de `crudos/aeco/raw/...` con DI prebuilt-layout + chunkea + escribe JSONL a `crudos/aeco/parsed/...`. Idempotente vía `parser_version`. |
 
 ## Auth
 
@@ -58,6 +59,42 @@ az search alias show `
 3. Alias swap atómico (sub-task 049 — `index-publisher`).
 
 El alias garantiza zero-downtime: el `AgenteUB` File Search siempre apunta a `aeco-kb-es-current`.
+
+## Sub-task 047 — `pdf_parser.py`
+
+Parser DI prebuilt-layout. Lee 1 PDF, chunkea párrafo-aware (target 50-800 tokens estimados), serializa tablas a markdown, escribe JSONL a `crudos/aeco/parsed/{source_type}/{doc_id}.chunks.jsonl`.
+
+### Smoke local
+
+```powershell
+pip install -e .[aeco-kb]
+az login --tenant f67a8c0b-ec74-47cd-836c-355c5a6162d4
+
+# Local: invocar por path (la carpeta tiene guión, no es módulo Python)
+python scripts/aeco-kb/pdf_parser.py `
+    --blob-path aeco/raw/buildingsmart/sample.pdf `
+    --source-type buildingsmart --jurisdiction intl `
+    --doc-type spec --version IFC4.3.2.0 --lang es --dry-run
+```
+
+> En el container, el Dockerfile renombra la carpeta a `scripts/aeco_kb/` (underscore) para permitir `python -m scripts.aeco_kb.pdf_parser` como entrypoint.
+
+### Container Apps Job (manual trigger)
+
+Definido en `infra/azure/modules/aeco-pdf-parser-job.bicep`. Image: `ghcr.io/umbral-bot/aeco-pdf-parser:latest`. Build vía Dockerfile en `infra/docker/aeco-pdf-parser/Dockerfile`.
+
+```bash
+az containerapp job start --name aeco-pdf-parser --resource-group rg-umbral-agents-prod \
+    --env-vars "INPUT_BLOB_PATH=aeco/raw/buildingsmart/IFC4.3.2.0.pdf" \
+               "SOURCE_TYPE=buildingsmart" "JURISDICTION=intl" \
+               "DOC_TYPE=spec" "VERSION=IFC4.3.2.0" "LANG=es"
+```
+
+Trigger automático Event Grid → SB → KEDA: cableado en sub-task 050. Q2 invoca manualmente.
+
+### Idempotencia
+
+`PARSER_VERSION = "v1.0.0"` constante en el script. Si el output existe con el mismo version, skip. Bump manual cuando cambie chunking o se actualice DI model.
 
 ## Schema (lockeado en task 045 §D3 + 046)
 

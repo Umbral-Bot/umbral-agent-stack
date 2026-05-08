@@ -34,7 +34,9 @@ resource di 'Microsoft.CognitiveServices/accounts@2024-10-01' = {
     disableLocalAuth: true
     networkAcls: {
       defaultAction: 'Allow'
-      bypass: 'AzureServices'
+      // FormRecognizer kind no soporta bypass:'AzureServices' (NetworkAclsBypassNotSupported, smoke 044)
+      ipRules: []
+      virtualNetworkRules: []
     }
   }
 }

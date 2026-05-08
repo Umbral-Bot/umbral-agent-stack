@@ -23,6 +23,9 @@ param environment string = 'prod'
 @description('Azure region for all resources.')
 param location string = 'eastus2'
 
+@description('Override region for AI Search (eastus2 tenía InsufficientResourcesAvailable Basic SKU en smoke 044, fallback a eastus).')
+param searchLocation string = 'eastus'
+
 @description('Email recipient for budget + monitor alerts.')
 param alertEmail string = 'alertas@umbralbim.cl'
 
@@ -172,7 +175,7 @@ module mod_search 'modules/ai-search.bicep' = {
   scope: rg
   params: {
     name: searchName
-    location: location
+    location: searchLocation
     tags: tags
     principalIdContributor: mod_uami.outputs.principalId
     principalIdDataContributor: mod_uami.outputs.principalId

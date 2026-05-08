@@ -13,6 +13,9 @@ param environment = 'prod'
 param location = 'eastus2'
 param alertEmail = 'alertas@umbralbim.cl'
 param totalMonthlyBudgetUsd = 7206
+// David Moreira (dm@umbralbim.cl) — KV Admin para leer secretos en data-plane.
+// Obtenido vía `az ad signed-in-user show --query id -o tsv` en smoke 044.
+param kvAdminObjectId = 'daf2e5a6-25df-433b-bc05-32a7478ecd95'
 param tags = {
   owner: 'david-moreira'
   project: 'umbral-agents'

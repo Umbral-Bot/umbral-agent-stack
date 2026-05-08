@@ -27,6 +27,10 @@ worker_err.txt
 update.zip
 vps_pub_key.txt
 
+# === Bicep compiled artifacts + deploy logs ===
+infra/azure/main.json
+infra/azure/deploy-*-output.json
+
 # === Python ===
 __pycache__/
 *.py[cod]

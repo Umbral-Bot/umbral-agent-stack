@@ -55,8 +55,9 @@ resource kv 'Microsoft.KeyVault/vaults@2023-07-01' = {
 }
 
 // RBAC: Key Vault Secrets User → UAMI
-// Built-in ID: 4633458b-17de-457c-b1cd-3cf7ff1ed1e9
-var kvSecretsUserRoleId = '4633458b-17de-457c-b1cd-3cf7ff1ed1e9'
+// Built-in ID en esta subscription: 4633458b-17de-408a-b874-0445c86b69e6
+// (verificado via `az role definition list --name 'Key Vault Secrets User'` 2026-05-07)
+var kvSecretsUserRoleId = '4633458b-17de-408a-b874-0445c86b69e6'
 
 resource kvSecretsUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   scope: kv

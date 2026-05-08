@@ -1,0 +1,1336 @@
+{
+  "generated_at": "2026-05-08T13:11:37Z",
+  "model": "openclaw/main",
+  "gateway_url": "http://127.0.0.1:18789",
+  "elapsed_sec": 259.84,
+  "threshold": 0.85,
+  "temperature": 0.8,
+  "batch_mode": true,
+  "scoring_version": "v2",
+  "aggregate": {
+    "n": 10,
+    "score": 0.94,
+    "rule_pass_pct": {
+      "R1": 1.0,
+      "R2": 1.0,
+      "R3": 1.0,
+      "R4": 1.0,
+      "R5": 1.0,
+      "R6": 1.0,
+      "R7": 1.0,
+      "R8": 1.0,
+      "R9": 1.0,
+      "R10": 1.0,
+      "R11": 1.0,
+      "R12": 1.0,
+      "R13": 0.2,
+      "R14": 1.0,
+      "R15": 1.0,
+      "R16": 1.0,
+      "R17": 1.0
+    },
+    "hard_all_100": false
+  },
+  "per_fixture": [
+    {
+      "fixture_id": "F1-bim-only-clash-detection",
+      "model": "openclaw/main",
+      "copy_text": "Si en hospitalería coordinas clashes sin dueño, el costo aparece en obra.\n\nEl dato me parece demasiado serio para tratarlo como una mejora “nice to have”: en 12 proyectos hospitalarios chilenos, el 41% del retrabajo MEP podía haberse evitado antes de construir. No estamos hablando de renders ni de orden documental. Estamos hablando de horas de obra, interferencias entre especialidades y plata que se quema tarde.\n\nLo más incómodo del estudio es otra cosa: muchas interferencias sí habían sido vistas en coordinación BIM, pero nadie dejó amarrado quién respondía, en qué revisión se cerraban y bajo qué criterio se validaban contra el BEP. O sea, el modelo federado existía, la detección existía, y aun así el retrabajo llegó a terreno.\n\nEn AECO LATAM este dolor es muy concreto. La oficina técnica revisa, el coordinador BIM comenta, los proyectistas corrigen “después” y obra arranca con definiciones a medio cerrar. Cuando el BEP no fija responsables, ventanas de revisión y reglas de cierre, BIM deja de ser un sistema de decisión y queda como registro elegante de problemas ya conocidos.\n\nYo lo veo así: una clash sin owner, sin fecha y sin versión de cierre no es coordinación. Es una alerta suelta. En proyectos hospitalarios, donde MEP toca operación crítica, esa ambigüedad no se paga en teoría; la paga el equipo cuando hay que desmontar, rehacer y justificar por qué el modelo “avisó” pero el proceso no resolvió.\n\nFuente: https://example.cl/uc/bim-coordinacion-hospitales-2026.pdf\n#BIM #AECO #Construccion #Ingenieria #UmbralBIM",
+      "rules": [
+        {
+          "rule_id": "R1",
+          "description": "Total length in [400,3000]",
+          "passed": true,
+          "severity": "hard",
+          "detail": "len=1542"
+        },
+        {
+          "rule_id": "R2",
+          "description": "Hook ≤120 chars and non-empty",
+          "passed": true,
+          "severity": "hard",
+          "detail": "hook_len=73"
+        },
+        {
+          "rule_id": "R3",
+          "description": "Body length in [600,1800]",
+          "passed": true,
+          "severity": "soft",
+          "detail": "body_len=1351"
+        },
+        {
+          "rule_id": "R4",
+          "description": "Contains source URL",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R5",
+          "description": "Hashtag count in [3,5]",
+          "passed": true,
+          "severity": "hard",
+          "detail": "count=5"
+        },
+        {
+          "rule_id": "R6",
+          "description": "All hashtags in allowlist",
+          "passed": true,
+          "severity": "soft",
+          "detail": ""
+        },
+        {
+          "rule_id": "R7",
+          "description": "No decorative emojis",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R8",
+          "description": "No marketing-slop tokens",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R9",
+          "description": "No usted/vosotros",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R10",
+          "description": "Body has ≥3 paragraphs",
+          "passed": true,
+          "severity": "soft",
+          "detail": "paragraphs=4"
+        },
+        {
+          "rule_id": "R11",
+          "description": "No commercial CTA",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R12",
+          "description": "Mentions ≥1 expected discipline",
+          "passed": true,
+          "severity": "soft",
+          "detail": "hit=['BIM']"
+        },
+        {
+          "rule_id": "R13",
+          "description": "No 4-gram repeated in >2 copies of batch",
+          "passed": false,
+          "severity": "hard",
+          "detail": "shares 2 4-gram(s) with >2 copies; e.g. ['bim deja de ser', 'pdf bim aeco construccion']"
+        },
+        {
+          "rule_id": "R14",
+          "description": "Mentions ≥1 organizational token",
+          "passed": true,
+          "severity": "hard",
+          "detail": "hit=['equipo', 'proceso', 'criterio', 'decisión']"
+        },
+        {
+          "rule_id": "R15",
+          "description": "Balance crítico-propositivo",
+          "passed": true,
+          "severity": "soft",
+          "detail": "hook not confrontational"
+        },
+        {
+          "rule_id": "R16",
+          "description": "Muletilla 'Mi lectura es simple' bajo cupo",
+          "passed": true,
+          "severity": "soft",
+          "detail": "counts={'mi lectura es simple': 0}"
+        },
+        {
+          "rule_id": "R17",
+          "description": "URL en línea de atribución dedicada",
+          "passed": true,
+          "severity": "soft",
+          "detail": "source_line='Fuente: https://example.cl/uc/bim-coordinacion-hospitales-2026.pdf'"
+        }
+      ],
+      "score": 0.925,
+      "hard_pass_ratio": 0.9,
+      "soft_pass_ratio": 1.0,
+      "error": null
+    },
+    {
+      "fixture_id": "F2-bim-plus-ia-paper",
+      "model": "openclaw/main",
+      "copy_text": "Un LLM no arregla un BEP escrito como acta de reunión.\n\nEste preprint me parece valioso por una razón incómoda: muestra que la IA sí puede ayudar a revisar IFC, pero también deja claro dónde se rompe. En convenciones de nombre logra 78% de precisión, en propiedades requeridas 64%, y en chequeos semánticos complejos cae a 42%. Sirve para ordenar lo básico. No alcanza para delegarle criterio.\n\nEn AECO LATAM eso toca un dolor muy concreto: equipos que piden automatización mientras el BEP vive entre PDFs, texto ambiguo y acuerdos verbales de coordinación. Después el coordinador BIM termina interpretando excepciones a mano, y la oficina técnica descubre tarde que el modelo no estaba listo para controlar nada.\n\nLo interesante del paper no es el modelo open-source. Es que los autores admiten que el límite real está en la calidad del ground truth. Traducido a obra: si el BEP no define campos, reglas, ejemplos y responsables con estructura mínima, la IA no valida; adivina. Y cuando una máquina adivina sobre IFC, el costo lo paga el equipo en retrabajo y discusiones de entrega.\n\nYo sí veo valor en usar LLM para chequeos sintácticos de BIM: naming, presencia de propiedades, consistencia documental. Pero vender eso como revisión integral del modelo es apresurado. La decisión seria no es “qué IA compro”, sino “qué nivel de gobernanza de datos estoy dispuesto a sostener para que esa IA no invente criterio donde hoy falta proceso”.\n\nPara mí, el aprendizaje útil no va por más hype de IA. Va por convertir el BEP en un artefacto auditable, no en una declaración de intenciones. Cuando eso pasa, recién ahí un LLM puede volverse una capa de control útil para el equipo, en vez de otra promesa que se cae en la primera coordinación real.\n\nFuente: https://arxiv.org/abs/2604.12345\n\n#BIM #IFC #IA #AECO #UmbralBIM",
+      "rules": [
+        {
+          "rule_id": "R1",
+          "description": "Total length in [400,3000]",
+          "passed": true,
+          "severity": "hard",
+          "detail": "len=1817"
+        },
+        {
+          "rule_id": "R2",
+          "description": "Hook ≤120 chars and non-empty",
+          "passed": true,
+          "severity": "hard",
+          "detail": "hook_len=54"
+        },
+        {
+          "rule_id": "R3",
+          "description": "Body length in [600,1800]",
+          "passed": true,
+          "severity": "soft",
+          "detail": "body_len=1687"
+        },
+        {
+          "rule_id": "R4",
+          "description": "Contains source URL",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R5",
+          "description": "Hashtag count in [3,5]",
+          "passed": true,
+          "severity": "hard",
+          "detail": "count=5"
+        },
+        {
+          "rule_id": "R6",
+          "description": "All hashtags in allowlist",
+          "passed": true,
+          "severity": "soft",
+          "detail": ""
+        },
+        {
+          "rule_id": "R7",
+          "description": "No decorative emojis",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R8",
+          "description": "No marketing-slop tokens",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R9",
+          "description": "No usted/vosotros",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R10",
+          "description": "Body has ≥3 paragraphs",
+          "passed": true,
+          "severity": "soft",
+          "detail": "paragraphs=5"
+        },
+        {
+          "rule_id": "R11",
+          "description": "No commercial CTA",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R12",
+          "description": "Mentions ≥1 expected discipline",
+          "passed": true,
+          "severity": "soft",
+          "detail": "hit=['BIM', 'IA']"
+        },
+        {
+          "rule_id": "R13",
+          "description": "No 4-gram repeated in >2 copies of batch",
+          "passed": true,
+          "severity": "hard",
+          "detail": "batch-deferred"
+        },
+        {
+          "rule_id": "R14",
+          "description": "Mentions ≥1 organizational token",
+          "passed": true,
+          "severity": "hard",
+          "detail": "hit=['equipo', 'proceso', 'criterio', 'gobernanza', 'rol']"
+        },
+        {
+          "rule_id": "R15",
+          "description": "Balance crítico-propositivo",
+          "passed": true,
+          "severity": "soft",
+          "detail": "hook not confrontational"
+        },
+        {
+          "rule_id": "R16",
+          "description": "Muletilla 'Mi lectura es simple' bajo cupo",
+          "passed": true,
+          "severity": "soft",
+          "detail": "counts={'mi lectura es simple': 0}"
+        },
+        {
+          "rule_id": "R17",
+          "description": "URL en línea de atribución dedicada",
+          "passed": true,
+          "severity": "soft",
+          "detail": "source_line='Fuente: https://arxiv.org/abs/2604.12345'"
+        }
+      ],
+      "score": 1.0,
+      "hard_pass_ratio": 1.0,
+      "soft_pass_ratio": 1.0,
+      "error": null
+    },
+    {
+      "fixture_id": "F3-bim-plus-automation-dynamo",
+      "model": "openclaw/main",
+      "copy_text": "Cuando la nomenclatura depende de memoria, el cierre de Revit se vuelve carísimo.\n\nEste caso me interesa porque no automatiza algo vistoso: automatiza disciplina. Un estudio de 35 personas bajó 78% el tiempo de chequeo manual antes de entregar y recuperó unas 6 horas por proyecto con Dynamo + Python. En BIM, esa ganancia no luce tanto en una presentación; se nota cuando el equipo entra en fase de cierre y deja de apagar incendios tontos.\n\nEn AECO LATAM, este dolor es demasiado común: familias con prefijos distintos, mayúsculas inconsistentes, espacios sobrantes y nombres que cambian según quién modeló. Después QA entra a perseguir detalles que nunca debieron llegar al final del proceso. Ahí una oficina quema horas de gente buena en correcciones mecánicas en vez de usarlas para revisar calidad real del modelo.\n\nLo más sólido del enfoque no es el script. Es la decisión de ordenar el estándar como dato estructurado. Si la regla vive en un Excel maestro y no en un documento olvidado, Dynamo puede contrastar, registrar violaciones y corregir solo lo trivial. Lo dudoso se deriva a revisión humana, que es donde sí hace falta criterio.\n\nYo tomaría este caso como una señal práctica: muchas firmas quieren automatizar lo espectacular y dejan intacto lo repetitivo que desgasta al coordinador BIM. Para mí, una automatización útil no reemplaza revisión; limpia el ruido para que la revisión humana llegue a lo que realmente importa.\n\nFuente: https://blog.example.ar/automatizacion-dynamo-naming\n#BIM #Revit #Automation #Dynamo #UmbralBIM",
+      "rules": [
+        {
+          "rule_id": "R1",
+          "description": "Total length in [400,3000]",
+          "passed": true,
+          "severity": "hard",
+          "detail": "len=1545"
+        },
+        {
+          "rule_id": "R2",
+          "description": "Hook ≤120 chars and non-empty",
+          "passed": true,
+          "severity": "hard",
+          "detail": "hook_len=81"
+        },
+        {
+          "rule_id": "R3",
+          "description": "Body length in [600,1800]",
+          "passed": true,
+          "severity": "soft",
+          "detail": "body_len=1357"
+        },
+        {
+          "rule_id": "R4",
+          "description": "Contains source URL",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R5",
+          "description": "Hashtag count in [3,5]",
+          "passed": true,
+          "severity": "hard",
+          "detail": "count=5"
+        },
+        {
+          "rule_id": "R6",
+          "description": "All hashtags in allowlist",
+          "passed": true,
+          "severity": "soft",
+          "detail": ""
+        },
+        {
+          "rule_id": "R7",
+          "description": "No decorative emojis",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R8",
+          "description": "No marketing-slop tokens",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R9",
+          "description": "No usted/vosotros",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R10",
+          "description": "Body has ≥3 paragraphs",
+          "passed": true,
+          "severity": "soft",
+          "detail": "paragraphs=4"
+        },
+        {
+          "rule_id": "R11",
+          "description": "No commercial CTA",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R12",
+          "description": "Mentions ≥1 expected discipline",
+          "passed": true,
+          "severity": "soft",
+          "detail": "hit=['BIM', 'automation', 'Dynamo']"
+        },
+        {
+          "rule_id": "R13",
+          "description": "No 4-gram repeated in >2 copies of batch",
+          "passed": false,
+          "severity": "hard",
+          "detail": "shares 1 4-gram(s) with >2 copies; e.g. ['fuente https blog example']"
+        },
+        {
+          "rule_id": "R14",
+          "description": "Mentions ≥1 organizational token",
+          "passed": true,
+          "severity": "hard",
+          "detail": "hit=['equipo', 'proceso', 'criterio', 'persona', 'decisión']"
+        },
+        {
+          "rule_id": "R15",
+          "description": "Balance crítico-propositivo",
+          "passed": true,
+          "severity": "soft",
+          "detail": "hook not confrontational"
+        },
+        {
+          "rule_id": "R16",
+          "description": "Muletilla 'Mi lectura es simple' bajo cupo",
+          "passed": true,
+          "severity": "soft",
+          "detail": "counts={'mi lectura es simple': 0}"
+        },
+        {
+          "rule_id": "R17",
+          "description": "URL en línea de atribución dedicada",
+          "passed": true,
+          "severity": "soft",
+          "detail": "source_line='Fuente: https://blog.example.ar/automatizacion-dynamo-naming'"
+        }
+      ],
+      "score": 0.925,
+      "hard_pass_ratio": 0.9,
+      "soft_pass_ratio": 1.0,
+      "error": null
+    },
+    {
+      "fixture_id": "F4-low-code-citizen-dev",
+      "model": "openclaw/main",
+      "copy_text": "Si tu flujo low-code depende de una sola persona, no tienes automatización: tienes una apuesta.\n\nLa idea de que cualquier persona puede ser citizen developer suena bien hasta que cambia una plantilla en Notion, actualizas Revit y el flujo deja de correr justo en semana de entrega. En AECO LATAM ese golpe no es teórico. Pega en coordinación, en trazabilidad y en horas que el equipo ya no tiene.\n\nLa nota cita 8 estudios y el patrón me parece clarísimo: el arquitecto curioso arma algo útil, gana tiempo un par de meses y después aparece la fragilidad. No porque haya hecho mal el flow, sino porque prototipar y sostener operación no son la misma disciplina. Power Automate o Make no eliminan la necesidad de criterio técnico; la desplazan.\n\nYo sí creo en el arquitecto-builder, pero para explorar, probar y descubrir dónde hay valor. Cuando ese flujo pasa a tocar entregables, reportes, aprobaciones o información de proyecto, ya entran otras reglas: documentación, versionado, naming consistente, control de cambios y alguien que entienda dependencias. Ahí se define si hay adopción real o solo entusiasmo inicial.\n\nPara una oficina técnica, la decisión concreta no es “¿activamos low-code sí o no?”. La decisión seria es quién se hace cargo cuando cambie la fuente, cómo queda registrado el flujo y bajo qué criterio se aprueba una modificación. Si eso no existe, la automatización no baja carga operativa; la cambia de lugar y se la deja al coordinador o al arquitecto que “más o menos entiende”.\n\nLow-code en AECO funciona. Lo que no funciona es tratar producción como si siguiera siendo una prueba entre dos personas y un tablero bonito.\n\nFuente: https://constructiontechreview-latam.example.com/lowcode-aeco-mito\n#AECO #LowCode #Automation #BIM #UmbralBIM",
+      "rules": [
+        {
+          "rule_id": "R1",
+          "description": "Total length in [400,3000]",
+          "passed": true,
+          "severity": "hard",
+          "detail": "len=1763"
+        },
+        {
+          "rule_id": "R2",
+          "description": "Hook ≤120 chars and non-empty",
+          "passed": true,
+          "severity": "hard",
+          "detail": "hook_len=95"
+        },
+        {
+          "rule_id": "R3",
+          "description": "Body length in [600,1800]",
+          "passed": true,
+          "severity": "soft",
+          "detail": "body_len=1547"
+        },
+        {
+          "rule_id": "R4",
+          "description": "Contains source URL",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R5",
+          "description": "Hashtag count in [3,5]",
+          "passed": true,
+          "severity": "hard",
+          "detail": "count=5"
+        },
+        {
+          "rule_id": "R6",
+          "description": "All hashtags in allowlist",
+          "passed": true,
+          "severity": "soft",
+          "detail": ""
+        },
+        {
+          "rule_id": "R7",
+          "description": "No decorative emojis",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R8",
+          "description": "No marketing-slop tokens",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R9",
+          "description": "No usted/vosotros",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R10",
+          "description": "Body has ≥3 paragraphs",
+          "passed": true,
+          "severity": "soft",
+          "detail": "paragraphs=5"
+        },
+        {
+          "rule_id": "R11",
+          "description": "No commercial CTA",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R12",
+          "description": "Mentions ≥1 expected discipline",
+          "passed": true,
+          "severity": "soft",
+          "detail": "hit=['low-code', 'automation']"
+        },
+        {
+          "rule_id": "R13",
+          "description": "No 4-gram repeated in >2 copies of batch",
+          "passed": false,
+          "severity": "hard",
+          "detail": "shares 1 4-gram(s) with >2 copies; e.g. ['la idea de que']"
+        },
+        {
+          "rule_id": "R14",
+          "description": "Mentions ≥1 organizational token",
+          "passed": true,
+          "severity": "hard",
+          "detail": "hit=['adopción', 'equipo', 'criterio', 'trazabilidad', 'persona']"
+        },
+        {
+          "rule_id": "R15",
+          "description": "Balance crítico-propositivo",
+          "passed": true,
+          "severity": "soft",
+          "detail": "hook not confrontational"
+        },
+        {
+          "rule_id": "R16",
+          "description": "Muletilla 'Mi lectura es simple' bajo cupo",
+          "passed": true,
+          "severity": "soft",
+          "detail": "counts={'mi lectura es simple': 0}"
+        },
+        {
+          "rule_id": "R17",
+          "description": "URL en línea de atribución dedicada",
+          "passed": true,
+          "severity": "soft",
+          "detail": "source_line='Fuente: https://constructiontechreview-latam.example.com/lowcode-aeco-mito'"
+        }
+      ],
+      "score": 0.925,
+      "hard_pass_ratio": 0.9,
+      "soft_pass_ratio": 1.0,
+      "error": null
+    },
+    {
+      "fixture_id": "F5-mix-ia-bim-low-code-edge",
+      "model": "openclaw/main",
+      "copy_text": "Autodesk no anunció solo IA para Revit; anunció quién controla el criterio del proyecto.\n\nLo relevante de AI Assist no es que te sugiera familias o te ayude con planos. Lo relevante es que Autodesk lo conecte con Power Automate y otras capas low-code. Ahí ya no hablas de una feature simpática, sino de meter generación y automatización dentro del flujo de producción BIM.\n\nEn AECO LATAM eso toca una decisión muy concreta: si vas a automatizar criterio sin haber ordenado antes tus estándares, tu oficina técnica va a correr más rápido hacia la inconsistencia. Un BEP local, con nomenclaturas propias, revisiones en español y exigencias de cliente bastante terrenales, no se traduce solo porque el prompt suene elegante.\n\nAdemás, la salida tardía para la región importa más de lo que parece. Q3 2026 no es solo una fecha comercial; es una ventana para que equipos BIM, jefes de disciplina y líderes de implementación definan qué parte del criterio delegan, qué parte queda bajo revisión humana y cómo documentan esa decisión para que no termine escondida en hábitos de cada modelador.\n\nLa otra alerta está bien puesta: training data e IP. Si Autodesk no deja claro de dónde aprende, con qué permisos y bajo qué límites, cualquier oficina seria va a frenar el uso en entregables sensibles. En construcción, la confianza no se juega en la demo. Se juega cuando una automatización entra a un proceso con trazabilidad, responsabilidad contractual y revisión coordinada.\n\nYo no lo leería como “IA para trabajar menos”. Lo leería como una presión nueva sobre gobernanza BIM. La ventaja no va a quedar en quien escriba mejores prompts, sino en quien tenga reglas claras, automatizaciones acotadas y criterio suficiente para no tercerizar su estándar a una caja negra.\n\nFuente: https://www.autodesk.com/news/ai-assist-revit-2026\n#BIM #IA #LowCode #Automation #UmbralBIM",
+      "rules": [
+        {
+          "rule_id": "R1",
+          "description": "Total length in [400,3000]",
+          "passed": true,
+          "severity": "hard",
+          "detail": "len=1862"
+        },
+        {
+          "rule_id": "R2",
+          "description": "Hook ≤120 chars and non-empty",
+          "passed": true,
+          "severity": "hard",
+          "detail": "hook_len=88"
+        },
+        {
+          "rule_id": "R3",
+          "description": "Body length in [600,1800]",
+          "passed": true,
+          "severity": "soft",
+          "detail": "body_len=1671"
+        },
+        {
+          "rule_id": "R4",
+          "description": "Contains source URL",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R5",
+          "description": "Hashtag count in [3,5]",
+          "passed": true,
+          "severity": "hard",
+          "detail": "count=5"
+        },
+        {
+          "rule_id": "R6",
+          "description": "All hashtags in allowlist",
+          "passed": true,
+          "severity": "soft",
+          "detail": ""
+        },
+        {
+          "rule_id": "R7",
+          "description": "No decorative emojis",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R8",
+          "description": "No marketing-slop tokens",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R9",
+          "description": "No usted/vosotros",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R10",
+          "description": "Body has ≥3 paragraphs",
+          "passed": true,
+          "severity": "soft",
+          "detail": "paragraphs=5"
+        },
+        {
+          "rule_id": "R11",
+          "description": "No commercial CTA",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R12",
+          "description": "Mentions ≥1 expected discipline",
+          "passed": true,
+          "severity": "soft",
+          "detail": "hit=['BIM', 'IA', 'low-code']"
+        },
+        {
+          "rule_id": "R13",
+          "description": "No 4-gram repeated in >2 copies of batch",
+          "passed": true,
+          "severity": "hard",
+          "detail": "batch-deferred"
+        },
+        {
+          "rule_id": "R14",
+          "description": "Mentions ≥1 organizational token",
+          "passed": true,
+          "severity": "hard",
+          "detail": "hit=['equipo', 'proceso', 'criterio', 'trazabilidad', 'gobernanza']"
+        },
+        {
+          "rule_id": "R15",
+          "description": "Balance crítico-propositivo",
+          "passed": true,
+          "severity": "soft",
+          "detail": "hook not confrontational"
+        },
+        {
+          "rule_id": "R16",
+          "description": "Muletilla 'Mi lectura es simple' bajo cupo",
+          "passed": true,
+          "severity": "soft",
+          "detail": "counts={'mi lectura es simple': 0}"
+        },
+        {
+          "rule_id": "R17",
+          "description": "URL en línea de atribución dedicada",
+          "passed": true,
+          "severity": "soft",
+          "detail": "source_line='Fuente: https://www.autodesk.com/news/ai-assist-revit-2026'"
+        }
+      ],
+      "score": 1.0,
+      "hard_pass_ratio": 1.0,
+      "soft_pass_ratio": 1.0,
+      "error": null
+    },
+    {
+      "fixture_id": "F6-edge-bim-no-tech",
+      "model": "openclaw/main",
+      "copy_text": "Decir que haces BIM no coordina una obra.\n\nSi 60% de las obras en LATAM dice que usa BIM, pero solo 18% lo lleva a coordinación real, entonces hay una ficción operativa que el sector todavía tolera. Para mí, eso no habla de software. Habla de criterio de proyecto.\n\nEn obra, la diferencia se nota rápido: un modelo puede verse ordenado y aun así no evitar interferencias, retrabajo, RFIs tardíos ni reuniones eternas entre arquitectura, estructura y especialidades. Cuando el modelo no entra de verdad en la conversación técnica, BIM queda reducido a producción de geometría con buena presentación.\n\nLos datos de Chile y Perú son especialmente duros porque muestran una brecha demasiado grande entre discurso y uso efectivo. Y el informe marca algo que en AECO LATAM muchos prefieren esquivar: cuando no hay BIM Manager dedicado ni un BEP firmado desde el arranque, la coordinación queda librada a voluntad, no a proceso.\n\nAhí está la decisión concreta para una oficina técnica, una gerencia de proyecto o un coordinador: seguir midiendo madurez por “tenemos modelo” o empezar a medirla por “resolvemos choques antes de obra”. Son dos conversaciones muy distintas. La primera sirve para la lámina. La segunda cambia tiempos, responsabilidades y costo de error.\n\nBIM empieza a valer cuando ordena decisiones entre personas, no cuando solo ordena archivos.\n\nFuente: https://sedibim.example.org/encuesta-2026-informe.pdf\n#BIM #AECO #Construccion #OpenBIM #UmbralBIM",
+      "rules": [
+        {
+          "rule_id": "R1",
+          "description": "Total length in [400,3000]",
+          "passed": true,
+          "severity": "hard",
+          "detail": "len=1462"
+        },
+        {
+          "rule_id": "R2",
+          "description": "Hook ≤120 chars and non-empty",
+          "passed": true,
+          "severity": "hard",
+          "detail": "hook_len=41"
+        },
+        {
+          "rule_id": "R3",
+          "description": "Body length in [600,1800]",
+          "passed": true,
+          "severity": "soft",
+          "detail": "body_len=1311"
+        },
+        {
+          "rule_id": "R4",
+          "description": "Contains source URL",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R5",
+          "description": "Hashtag count in [3,5]",
+          "passed": true,
+          "severity": "hard",
+          "detail": "count=5"
+        },
+        {
+          "rule_id": "R6",
+          "description": "All hashtags in allowlist",
+          "passed": true,
+          "severity": "soft",
+          "detail": ""
+        },
+        {
+          "rule_id": "R7",
+          "description": "No decorative emojis",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R8",
+          "description": "No marketing-slop tokens",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R9",
+          "description": "No usted/vosotros",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R10",
+          "description": "Body has ≥3 paragraphs",
+          "passed": true,
+          "severity": "soft",
+          "detail": "paragraphs=5"
+        },
+        {
+          "rule_id": "R11",
+          "description": "No commercial CTA",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R12",
+          "description": "Mentions ≥1 expected discipline",
+          "passed": true,
+          "severity": "soft",
+          "detail": "hit=['BIM']"
+        },
+        {
+          "rule_id": "R13",
+          "description": "No 4-gram repeated in >2 copies of batch",
+          "passed": false,
+          "severity": "hard",
+          "detail": "shares 1 4-gram(s) with >2 copies; e.g. ['pdf bim aeco construccion']"
+        },
+        {
+          "rule_id": "R14",
+          "description": "Mentions ≥1 organizational token",
+          "passed": true,
+          "severity": "hard",
+          "detail": "hit=['proceso', 'criterio', 'persona', 'decisión', 'decision']"
+        },
+        {
+          "rule_id": "R15",
+          "description": "Balance crítico-propositivo",
+          "passed": true,
+          "severity": "soft",
+          "detail": "hook not confrontational"
+        },
+        {
+          "rule_id": "R16",
+          "description": "Muletilla 'Mi lectura es simple' bajo cupo",
+          "passed": true,
+          "severity": "soft",
+          "detail": "counts={'mi lectura es simple': 0}"
+        },
+        {
+          "rule_id": "R17",
+          "description": "URL en línea de atribución dedicada",
+          "passed": true,
+          "severity": "soft",
+          "detail": "source_line='Fuente: https://sedibim.example.org/encuesta-2026-informe.pdf'"
+        }
+      ],
+      "score": 0.925,
+      "hard_pass_ratio": 0.9,
+      "soft_pass_ratio": 1.0,
+      "error": null
+    },
+    {
+      "fixture_id": "F7-org-cambio-proceso",
+      "model": "openclaw/main",
+      "copy_text": "Tu migración BIM no se cae por Revit; se cae cuando el cliente sigue firmando papel.\n\nLeí el post-mortem de un estudio de 50 personas en Lima que resolvió la parte técnica en 4 meses: plantillas, BEP y operación BIM. Lo que casi le cuesta su cuenta principal fueron 14 meses de fricción para cambiar algo mucho menos visible: qué se revisaba, quién decidía y qué se aceptaba como entregable contractual.\n\nEn LATAM esto pega directo en obra y en oficina técnica. Muchos equipos creen que pasar a BIM-first es una mejora de producción, cuando en realidad toca un hábito de poder: la jefatura de obra, el área contractual y el cliente todavía confían en el plano firmado porque ahí aprendieron a discutir riesgo, aprobar cambios y cubrirse.\n\nSi ese ritual no cambia, el modelo queda como pieza de apoyo y el papel sigue gobernando la decisión. Por eso rescato la salida que encontraron: tres reuniones híbridas, modelo federado abierto en pantalla, acuerdos registrados y trazabilidad de lo resuelto. La automation acá no reemplaza criterio; le da estructura a la revisión y deja evidencia útil.\n\nYo lo veo así: adoptar BIM-first no es solo modelar mejor. Es rediseñar la conversación con el cliente para que la información digital también tenga peso contractual y operativo. Si tu contrato ya cambió pero tu mesa de revisión sigue anclada en el plano impreso, la migración todavía no terminó.\n\nFuente: https://blog.example.pe/migracion-bim-first-postmortem-2026\n#BIM #AECO #Automation #Construccion #UmbralBIM",
+      "rules": [
+        {
+          "rule_id": "R1",
+          "description": "Total length in [400,3000]",
+          "passed": true,
+          "severity": "hard",
+          "detail": "len=1507"
+        },
+        {
+          "rule_id": "R2",
+          "description": "Hook ≤120 chars and non-empty",
+          "passed": true,
+          "severity": "hard",
+          "detail": "hook_len=84"
+        },
+        {
+          "rule_id": "R3",
+          "description": "Body length in [600,1800]",
+          "passed": true,
+          "severity": "soft",
+          "detail": "body_len=1304"
+        },
+        {
+          "rule_id": "R4",
+          "description": "Contains source URL",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R5",
+          "description": "Hashtag count in [3,5]",
+          "passed": true,
+          "severity": "hard",
+          "detail": "count=5"
+        },
+        {
+          "rule_id": "R6",
+          "description": "All hashtags in allowlist",
+          "passed": true,
+          "severity": "soft",
+          "detail": ""
+        },
+        {
+          "rule_id": "R7",
+          "description": "No decorative emojis",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R8",
+          "description": "No marketing-slop tokens",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R9",
+          "description": "No usted/vosotros",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R10",
+          "description": "Body has ≥3 paragraphs",
+          "passed": true,
+          "severity": "soft",
+          "detail": "paragraphs=4"
+        },
+        {
+          "rule_id": "R11",
+          "description": "No commercial CTA",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R12",
+          "description": "Mentions ≥1 expected discipline",
+          "passed": true,
+          "severity": "soft",
+          "detail": "hit=['BIM', 'automation']"
+        },
+        {
+          "rule_id": "R13",
+          "description": "No 4-gram repeated in >2 copies of batch",
+          "passed": false,
+          "severity": "hard",
+          "detail": "shares 1 4-gram(s) with >2 copies; e.g. ['fuente https blog example']"
+        },
+        {
+          "rule_id": "R14",
+          "description": "Mentions ≥1 organizational token",
+          "passed": true,
+          "severity": "hard",
+          "detail": "hit=['equipo', 'criterio', 'trazabilidad', 'persona', 'decisión']"
+        },
+        {
+          "rule_id": "R15",
+          "description": "Balance crítico-propositivo",
+          "passed": true,
+          "severity": "soft",
+          "detail": "hook not confrontational"
+        },
+        {
+          "rule_id": "R16",
+          "description": "Muletilla 'Mi lectura es simple' bajo cupo",
+          "passed": true,
+          "severity": "soft",
+          "detail": "counts={'mi lectura es simple': 0}"
+        },
+        {
+          "rule_id": "R17",
+          "description": "URL en línea de atribución dedicada",
+          "passed": true,
+          "severity": "soft",
+          "detail": "source_line='Fuente: https://blog.example.pe/migracion-bim-first-postmortem-2026'"
+        }
+      ],
+      "score": 0.925,
+      "hard_pass_ratio": 0.9,
+      "soft_pass_ratio": 1.0,
+      "error": null
+    },
+    {
+      "fixture_id": "F8-org-adopcion-dificil",
+      "model": "openclaw/main",
+      "copy_text": "Decir “hacemos BIM” cuando solo lo usan dos personas es maquillarte un problema de gestión.\n\nEl dato que me importa de esta encuesta no es el 70% que declara BIM. Es el 22% que dice que más de la mitad del equipo lo usa de verdad en su trabajo diario. En demasiados estudios de LATAM, el modelo queda en manos del BIM Manager y de un coordinador junior, mientras la operación real sigue corriendo por CAD 2D, planillas y PDFs.\n\nEso duele en decisiones muy concretas. El equipo senior define criterios fuera del modelo, la coordinación llega tarde, los cambios pierden trazabilidad y alguien tiene que traducir entre lo que “está modelado” y lo que en verdad se va a construir. Así BIM deja de ser un sistema de trabajo y queda como una capa técnica encima de un estudio que sigue funcionando igual que antes.\n\nYo no compro la idea de que esto se resuelve con más licencias o con un BEP bien redactado y guardado como anexo. Si el BEP no ordena revisiones, responsabilidades y hábitos semanales, es documentación decorativa. Y si no existe un plan de formación sostenido, la adopción nunca sale del rincón técnico.\n\nLa decisión incómoda para cualquier oficina AECO no es comprar software. Es pedirle al equipo senior que entre al modelo, revise ahí y tome decisiones ahí. Cuando eso no pasa, la organización le dice a todos que BIM es importante, pero no lo suficiente como para cambiar el poder, el tiempo ni el proceso.\n\nCuando un estudio me dice “ya trabajamos en BIM”, yo miro otra cosa: cuántas decisiones relevantes pasan por el modelo sin intermediarios. Si son pocas, no hay adopción. Hay una isla.\n\nFuente: https://bimforum-latam.example.org/encuesta-adopcion-2026.pdf\n\n#BIM #AECO #Construccion #OpenBIM #UmbralBIM",
+      "rules": [
+        {
+          "rule_id": "R1",
+          "description": "Total length in [400,3000]",
+          "passed": true,
+          "severity": "hard",
+          "detail": "len=1722"
+        },
+        {
+          "rule_id": "R2",
+          "description": "Hook ≤120 chars and non-empty",
+          "passed": true,
+          "severity": "hard",
+          "detail": "hook_len=91"
+        },
+        {
+          "rule_id": "R3",
+          "description": "Body length in [600,1800]",
+          "passed": true,
+          "severity": "soft",
+          "detail": "body_len=1512"
+        },
+        {
+          "rule_id": "R4",
+          "description": "Contains source URL",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R5",
+          "description": "Hashtag count in [3,5]",
+          "passed": true,
+          "severity": "hard",
+          "detail": "count=5"
+        },
+        {
+          "rule_id": "R6",
+          "description": "All hashtags in allowlist",
+          "passed": true,
+          "severity": "soft",
+          "detail": ""
+        },
+        {
+          "rule_id": "R7",
+          "description": "No decorative emojis",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R8",
+          "description": "No marketing-slop tokens",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R9",
+          "description": "No usted/vosotros",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R10",
+          "description": "Body has ≥3 paragraphs",
+          "passed": true,
+          "severity": "soft",
+          "detail": "paragraphs=5"
+        },
+        {
+          "rule_id": "R11",
+          "description": "No commercial CTA",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R12",
+          "description": "Mentions ≥1 expected discipline",
+          "passed": true,
+          "severity": "soft",
+          "detail": "hit=['BIM']"
+        },
+        {
+          "rule_id": "R13",
+          "description": "No 4-gram repeated in >2 copies of batch",
+          "passed": false,
+          "severity": "hard",
+          "detail": "shares 3 4-gram(s) with >2 copies; e.g. ['bim deja de ser', 'la idea de que', 'pdf bim aeco construccion']"
+        },
+        {
+          "rule_id": "R14",
+          "description": "Mentions ≥1 organizational token",
+          "passed": true,
+          "severity": "hard",
+          "detail": "hit=['adopción', 'adopcion', 'equipo', 'proceso', 'criterio']"
+        },
+        {
+          "rule_id": "R15",
+          "description": "Balance crítico-propositivo",
+          "passed": true,
+          "severity": "soft",
+          "detail": "hook not confrontational"
+        },
+        {
+          "rule_id": "R16",
+          "description": "Muletilla 'Mi lectura es simple' bajo cupo",
+          "passed": true,
+          "severity": "soft",
+          "detail": "counts={'mi lectura es simple': 0}"
+        },
+        {
+          "rule_id": "R17",
+          "description": "URL en línea de atribución dedicada",
+          "passed": true,
+          "severity": "soft",
+          "detail": "source_line='Fuente: https://bimforum-latam.example.org/encuesta-adopcion-2026.pdf'"
+        }
+      ],
+      "score": 0.925,
+      "hard_pass_ratio": 0.9,
+      "soft_pass_ratio": 1.0,
+      "error": null
+    },
+    {
+      "fixture_id": "F9-org-equipo-resistente",
+      "model": "openclaw/main",
+      "copy_text": "Cuando BIM parte la oficina, lo que está en juego es quién decide.\n\nEste caso de Córdoba me parece valioso porque muestra algo que en AECO LATAM pasa seguido y casi nunca se dice tan claro. La fricción no apareció por una licencia, una plantilla o un plan de capacitación. Apareció cuando un equipo senior sintió que la migración le cambiaba el lugar desde donde piensa y entrega proyecto.\n\nSi un arquitecto con 15 años de oficio siente que la decisión proyectual queda subordinada al modelo, va a defender su criterio aunque el roadmap diga “mes 7: adopción total”. Y tiene sentido. En muchas oficinas, el cliente sigue aprobando planos, no familias ni parámetros. Ahí la discusión deja de ser tecnológica y pasa a ser de autoría, responsabilidad y control de entrega.\n\nPor eso no compro la idea de que una migración a BIM se resuelve imponiendo un cronograma. Cuando se fuerza así, la jefatura técnica puede avanzar en método, pero al mismo tiempo romper confianza interna. Ese costo organizacional después aparece en rotación, desgaste y decisiones tomadas a media agua.\n\nEl acuerdo que destrabó este caso me parece inteligente: el senior conserva la decisión proyectual en sus términos y el equipo BIM la traduce al modelo con trazabilidad, consistencia y automation donde sí aporta. Esa separación no debilita BIM. Lo vuelve viable para una oficina real, donde coordinar también es cuidar egos, roles y criterio técnico.\n\nFuente: https://blog.example.com.ar/caso-resistencia-bim-2026\n#BIM #AECO #Automation #Arquitectura #UmbralBIM",
+      "rules": [
+        {
+          "rule_id": "R1",
+          "description": "Total length in [400,3000]",
+          "passed": true,
+          "severity": "hard",
+          "detail": "len=1536"
+        },
+        {
+          "rule_id": "R2",
+          "description": "Hook ≤120 chars and non-empty",
+          "passed": true,
+          "severity": "hard",
+          "detail": "hook_len=66"
+        },
+        {
+          "rule_id": "R3",
+          "description": "Body length in [600,1800]",
+          "passed": true,
+          "severity": "soft",
+          "detail": "body_len=1357"
+        },
+        {
+          "rule_id": "R4",
+          "description": "Contains source URL",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R5",
+          "description": "Hashtag count in [3,5]",
+          "passed": true,
+          "severity": "hard",
+          "detail": "count=5"
+        },
+        {
+          "rule_id": "R6",
+          "description": "All hashtags in allowlist",
+          "passed": true,
+          "severity": "soft",
+          "detail": ""
+        },
+        {
+          "rule_id": "R7",
+          "description": "No decorative emojis",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R8",
+          "description": "No marketing-slop tokens",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R9",
+          "description": "No usted/vosotros",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R10",
+          "description": "Body has ≥3 paragraphs",
+          "passed": true,
+          "severity": "soft",
+          "detail": "paragraphs=4"
+        },
+        {
+          "rule_id": "R11",
+          "description": "No commercial CTA",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R12",
+          "description": "Mentions ≥1 expected discipline",
+          "passed": true,
+          "severity": "soft",
+          "detail": "hit=['BIM', 'automation']"
+        },
+        {
+          "rule_id": "R13",
+          "description": "No 4-gram repeated in >2 copies of batch",
+          "passed": false,
+          "severity": "hard",
+          "detail": "shares 2 4-gram(s) with >2 copies; e.g. ['fuente https blog example', 'la idea de que']"
+        },
+        {
+          "rule_id": "R14",
+          "description": "Mentions ≥1 organizational token",
+          "passed": true,
+          "severity": "hard",
+          "detail": "hit=['adopción', 'equipo', 'criterio', 'trazabilidad', 'organizacion']"
+        },
+        {
+          "rule_id": "R15",
+          "description": "Balance crítico-propositivo",
+          "passed": true,
+          "severity": "soft",
+          "detail": "hook not confrontational"
+        },
+        {
+          "rule_id": "R16",
+          "description": "Muletilla 'Mi lectura es simple' bajo cupo",
+          "passed": true,
+          "severity": "soft",
+          "detail": "counts={'mi lectura es simple': 0}"
+        },
+        {
+          "rule_id": "R17",
+          "description": "URL en línea de atribución dedicada",
+          "passed": true,
+          "severity": "soft",
+          "detail": "source_line='Fuente: https://blog.example.com.ar/caso-resistencia-bim-2026'"
+        }
+      ],
+      "score": 0.925,
+      "hard_pass_ratio": 0.9,
+      "soft_pass_ratio": 1.0,
+      "error": null
+    },
+    {
+      "fixture_id": "F10-org-rol-ambiguo",
+      "model": "openclaw/main",
+      "copy_text": "Cuando la IA detecta un clash y la obra avanza igual, falló la cadena de decisión.\n\nEn AECO LATAM todavía hablamos de IA en coordinación BIM como si fuera una mejora de velocidad. Yo no lo compro. Si el sistema encuentra interferencias, las ordena y las sube antes que el equipo, lo que cambió no es solo la detección: cambió quién filtra, quién valida y quién responde cuando nadie actúa a tiempo.\n\nAhí aparece el dolor real de oficina técnica y obra. El coordinador BIM deja de ser solo quien revisa modelos y pasa a sostener una función nueva: curar hallazgos de IA con criterio de impacto, urgencia y trazabilidad. Si esa tarea existe en la práctica pero no existe en el BEP, ya tienes una zona gris firmada por nadie.\n\nY esa zona gris sale cara. Porque cuando un clash mal priorizado llega a obra, la discusión no va a ser si la IA “ayudó”. La discusión va a ser quién tenía la responsabilidad operativa de mirar ese hallazgo, descartarlo, escalarlo o exigir cierre. Sin esa definición, la herramienta acelera la detección, pero también acelera el desorden.\n\nPara mí, la decisión madura no es comprar más IA. Es rediseñar la cadena de coordinación BIM antes de meterla en producción: criterios de validación, umbrales de criticidad, responsables por disciplina y rastro de decisión. Si eso no queda escrito, la IA no automatiza coordinación. Solo reparte ambigüedad más rápido.\n\nFuente: https://camarco.example.org.ar/mesa-ia-coordinacion-bim-2026\n\n#BIM #IA #AECO #Construccion #UmbralBIM",
+      "rules": [
+        {
+          "rule_id": "R1",
+          "description": "Total length in [400,3000]",
+          "passed": true,
+          "severity": "hard",
+          "detail": "len=1493"
+        },
+        {
+          "rule_id": "R2",
+          "description": "Hook ≤120 chars and non-empty",
+          "passed": true,
+          "severity": "hard",
+          "detail": "hook_len=82"
+        },
+        {
+          "rule_id": "R3",
+          "description": "Body length in [600,1800]",
+          "passed": true,
+          "severity": "soft",
+          "detail": "body_len=1298"
+        },
+        {
+          "rule_id": "R4",
+          "description": "Contains source URL",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R5",
+          "description": "Hashtag count in [3,5]",
+          "passed": true,
+          "severity": "hard",
+          "detail": "count=5"
+        },
+        {
+          "rule_id": "R6",
+          "description": "All hashtags in allowlist",
+          "passed": true,
+          "severity": "soft",
+          "detail": ""
+        },
+        {
+          "rule_id": "R7",
+          "description": "No decorative emojis",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R8",
+          "description": "No marketing-slop tokens",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R9",
+          "description": "No usted/vosotros",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R10",
+          "description": "Body has ≥3 paragraphs",
+          "passed": true,
+          "severity": "soft",
+          "detail": "paragraphs=4"
+        },
+        {
+          "rule_id": "R11",
+          "description": "No commercial CTA",
+          "passed": true,
+          "severity": "hard",
+          "detail": ""
+        },
+        {
+          "rule_id": "R12",
+          "description": "Mentions ≥1 expected discipline",
+          "passed": true,
+          "severity": "soft",
+          "detail": "hit=['BIM', 'IA']"
+        },
+        {
+          "rule_id": "R13",
+          "description": "No 4-gram repeated in >2 copies of batch",
+          "passed": false,
+          "severity": "hard",
+          "detail": "shares 1 4-gram(s) with >2 copies; e.g. ['bim deja de ser']"
+        },
+        {
+          "rule_id": "R14",
+          "description": "Mentions ≥1 organizational token",
+          "passed": true,
+          "severity": "hard",
+          "detail": "hit=['equipo', 'criterio', 'trazabilidad', 'decisión']"
+        },
+        {
+          "rule_id": "R15",
+          "description": "Balance crítico-propositivo",
+          "passed": true,
+          "severity": "soft",
+          "detail": "hook not confrontational"
+        },
+        {
+          "rule_id": "R16",
+          "description": "Muletilla 'Mi lectura es simple' bajo cupo",
+          "passed": true,
+          "severity": "soft",
+          "detail": "counts={'mi lectura es simple': 0}"
+        },
+        {
+          "rule_id": "R17",
+          "description": "URL en línea de atribución dedicada",
+          "passed": true,
+          "severity": "soft",
+          "detail": "source_line='Fuente: https://camarco.example.org.ar/mesa-ia-coordinacion-bim-2026'"
+        }
+      ],
+      "score": 0.925,
+      "hard_pass_ratio": 0.9,
+      "soft_pass_ratio": 1.0,
+      "error": null
+    }
+  ]
+}

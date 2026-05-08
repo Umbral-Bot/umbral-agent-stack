@@ -1,8 +1,8 @@
 ---
 id: 2026-05-08-O7c-gh-auth-status-leak-pattern
 title: O7c — document gh auth status PAT-prefix leak pattern in secret-output-guard
-status: open
-verdict: pending
+status: done
+verdict: verde
 owner: copilot-chat
 reviewer: david
 phase: O7-followup
@@ -64,3 +64,10 @@ Update `secret-output-guard` skill (canonical: user-level
 
 Low priority but high signal-to-effort ratio. Single-PR change to the
 canonical skill.
+
+## Verification (2026-05-08, Copilot-Chat)
+
+- Updated canonical skill `c:\Users\david\.copilot\skills\secret-output-guard\SKILL.md` adding `Tool-emitted partial leaks` section with 7 patterns: gh auth status, git config --list, az account show, gh api secrets, kubectl get secret, docker inspect, systemctl show.
+- Synced to mirrors: `~/.codex/skills/secret-output-guard/SKILL.md` (canonical user-level), `notion-governance/.agents/skills/secret-output-guard/SKILL.md`, `umbral-agent-stack/.agents/skills/secret-output-guard/SKILL.md`.
+- All 4 locations have sha256 prefix `7D80F48DD09C` (verified).
+- Closed verde.

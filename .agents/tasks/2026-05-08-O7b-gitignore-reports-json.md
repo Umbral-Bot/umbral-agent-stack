@@ -1,8 +1,8 @@
 ---
 id: 2026-05-08-O7b-gitignore-reports-json
 title: O7b — decide policy for reports/*.json untracked accumulation
-status: open
-verdict: pending
+status: done
+verdict: verde
 owner: copilot-chat
 reviewer: david
 phase: O7-followup
@@ -79,3 +79,23 @@ paths remain stable (no breaking change for downstream consumers).
 Out of scope: deleting the existing 16 JSON files. They were pre-existing
 before O7 smoke and Copilot-VPS left them untouched — handle separately if
 needed.
+
+## Decision (2026-05-08, Copilot-Chat)
+
+**Option A (narrow + allow-list).** Implementado en .gitignore (block `reports/*.json` top-level prospectivamente; allow-list `reports/**/manifest.json`, `reports/**/*.metrics.json`, y el snapshot canonical `reports/runtime/openclaw-runtime-snapshot-latest.json`).
+
+Razon de elegir A sobre B: las 23 JSONs reportadas por Copilot-VPS como `untracked` en VPS estaban en realidad **tracked** en main (committeadas en sesiones previas de stage*/spike*). El problema real es prospectivo (futuros runs), no curativo. Option B (writer-level _scratch/) requiere refactor de varios writers para resolver lo mismo que A resuelve en 4 lineas. Option C (manual cleanup) deja la fricion repitiendose.
+
+## Verification (2026-05-08, Copilot-Chat)
+
+- Editado .gitignore (lineas 99-108).
+- 0 tracked files quedaron newly-ignored (`git ls-files reports/` x `git check-ignore` = vacio).
+- Smoke creando `reports/test-ephemera-O7b.json` confirma block (line 100 match).
+- Smoke creando `reports/test-lane/manifest.json` confirma allow-list (no ignored).
+- Smoke creando `reports/test-lane2/foo.metrics.json` confirma allow-list (no ignored).
+- Closed verde.
+
+## Out of scope
+
+- No se borraron las 23 JSONs ya tracked top-level. Limpieza opcional para sesion futura (`git rm reports/030-stripper-spike-*.json` etc. si se decide podar historia activa).
+- Option B (writer routing a `reports/_scratch/`) sigue siendo opcion futura si la fricion vuelve a aparecer.

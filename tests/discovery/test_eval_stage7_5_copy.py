@@ -194,3 +194,195 @@ def test_split_post_separates_hashtag_line():
     assert parts["hook"] == "hook here."
     assert "#BIM" in parts["hashtag_line"]
     assert "Fuente" not in parts["body"]
+
+
+# ----------- Voice v3 tests (T10) -----------
+
+def test_score_copy_backwards_compatible_three_args(rules_cfg, proposals):
+    """Calling score_copy with the legacy 3-arg signature must still work."""
+    res = ev.score_copy(_good_copy(), _good_fixture(proposals), rules_cfg)
+    assert isinstance(res, ev.CopyEval)
+    # voice fields exist with defaults
+    assert hasattr(res, "voice_match_score")
+    assert hasattr(res, "voice_dimensions")
+    assert hasattr(res, "approved")
+    assert hasattr(res, "hard_rejects")
+
+
+def test_voice_match_score_dimensions_present(rules_cfg, proposals):
+    res = ev.score_copy(_good_copy(), _good_fixture(proposals), rules_cfg)
+    expected = {
+        "technical_clarity",
+        "operational_criteria",
+        "david_voice_fit",
+        "low_repetition",
+        "organizational_sensitivity",
+        "source_verifiability",
+    }
+    assert expected.issubset(set(res.voice_dimensions.keys()))
+    assert 0.0 <= res.voice_match_score <= 1.0
+
+
+def test_score_batch_flags_repeated_moderated_phrase(rules_cfg, proposals):
+    """If the same moderated phrase appears in >1 copies, V3_HR1 fires."""
+    base = _good_copy()
+    fixture = _good_fixture(proposals)
+    # Both copies contain the moderated phrase "Mi lectura es" already.
+    results = ev.score_batch([base, base], [fixture, fixture], rules_cfg)
+    rids = [rid for r in results for rid in r.hard_reject_rule_ids]
+    assert "V3_HR1_BATCH_REPETITION" in rids
+
+
+def test_score_batch_flags_repeated_4gram(rules_cfg, proposals):
+    """An identical 4-gram appearing in >ngram_max_copies copies triggers HR1."""
+    fixture = _good_fixture(proposals)
+    # ngram_max_copies = 2, so 3 identical copies must trigger.
+    base = _good_copy()
+    results = ev.score_batch([base, base, base], [fixture] * 3, rules_cfg)
+    rids = [rid for r in results for rid in r.hard_reject_rule_ids]
+    assert "V3_HR1_BATCH_REPETITION" in rids
+
+
+def test_fixture_skip_source_verify_allows_example_domain(rules_cfg, proposals):
+    """In fixture mode with skip flag, example.cl source must NOT trigger HR3."""
+    fixture = _good_fixture(proposals)
+    payload = {
+        "id": fixture["id"],
+        "titular": fixture["titular"],
+        "summary": fixture.get("angulo", ""),
+        "key_points": fixture.get("key_points", []),
+        "source_url": "https://example.cl/whatever.pdf",
+        "fixture_skip_source_verify": True,
+    }
+    res = ev.score_copy(
+        _good_copy(), fixture, rules_cfg,
+        source_payload=payload, source_verification_mode="fixture",
+    )
+    assert "V3_HR3_UNVERIFIED_SOURCE_LIVE" not in res.hard_reject_rule_ids
+
+
+def test_live_source_verify_rejects_example_domain(rules_cfg, proposals):
+    """In live mode, an example.* domain MUST trigger HR3."""
+    fixture = {**_good_fixture(proposals), "fixture_skip_source_verify": False}
+    payload = {
+        "id": fixture["id"],
+        "titular": fixture["titular"],
+        "summary": fixture.get("angulo", ""),
+        "key_points": fixture.get("key_points", []),
+        "source_url": "https://example.cl/whatever.pdf",
+        "fixture_skip_source_verify": False,
+    }
+    res = ev.score_copy(
+        _good_copy(), fixture, rules_cfg,
+        source_payload=payload, source_verification_mode="live",
+    )
+    assert "V3_HR3_UNVERIFIED_SOURCE_LIVE" in res.hard_reject_rule_ids
+
+
+def test_unsupported_percentage_rejected(rules_cfg, proposals):
+    """A percentage in the copy that does not appear in the source blob → HR2."""
+    fixture = _good_fixture(proposals)
+    text = (
+        "Hook técnico sobre BIM y coordinación de modelos federados.\n\n"
+        "Encontré que un 87% de los proyectos AECO en LATAM fallan en gestión "
+        "de hallazgos cuando no hay un BEP firmado. Mi lectura es que sin "
+        "criterios de revisión claros, BIM se queda en modelado decorativo y "
+        "no aporta valor de obra. Lo concreto: definir disciplina de "
+        "coordinación entre equipos antes de la primera revisión federada.\n\n"
+        "Si tu modelo federado nunca generó un cambio de revisión, "
+        "probablemente no lo estás usando para coordinar.\n\n"
+        "Fuente: https://example.cl/uc/bim-coordinacion-hospitales-2026.pdf\n\n"
+        "#BIM #AECO #Construccion"
+    )
+    payload = {
+        "id": fixture["id"],
+        "titular": fixture["titular"],
+        "summary": "BIM coordinacion sin porcentajes",
+        "key_points": ["coordinación", "hallazgos"],
+        "source_url": "https://example.cl/uc/bim-coordinacion-hospitales-2026.pdf",
+        "fixture_skip_source_verify": True,
+    }
+    res = ev.score_copy(
+        text, fixture, rules_cfg,
+        source_payload=payload, source_verification_mode="fixture",
+    )
+    assert "V3_HR2_UNSUPPORTED_FACT" in res.hard_reject_rule_ids
+
+
+def test_confrontational_without_pedagogy_rejected(rules_cfg, proposals):
+    """Multiple confrontational signals + no practical exit term → HR4."""
+    fixture = _good_fixture(proposals)
+    text = (
+        "Si tu BIM no entrega valor, no estás haciendo BIM.\n\n"
+        "Es ridículo. Nunca lo verán igual. La gente no entiende. "
+        "Solo modelan polígonos sueltos sin sentido. Falla todo. "
+        "Está mal hace años. Es vergonzoso para el sector AECO. "
+        "Reconozcan de una vez que el problema son ustedes.\n\n"
+        "Agenda una llamada y descubre el próximo nivel.\n\n"
+        "Fuente: https://example.cl/uc/bim-coordinacion-hospitales-2026.pdf\n\n"
+        "#BIM #AECO #Construccion"
+    )
+    payload = {
+        "id": fixture["id"], "titular": fixture["titular"],
+        "summary": "", "key_points": [],
+        "source_url": "https://example.cl/x.pdf",
+        "fixture_skip_source_verify": True,
+    }
+    res = ev.score_copy(
+        text, fixture, rules_cfg,
+        source_payload=payload, source_verification_mode="fixture",
+    )
+    assert "V3_HR4_CONFRONTATIONAL_NO_PEDAGOGY" in res.hard_reject_rule_ids
+
+
+def test_diagnosis_without_practical_exit_rejected(rules_cfg, proposals):
+    """A diagnosis copy with no practical-exit cue triggers HR5."""
+    fixture = _good_fixture(proposals)
+    text = (
+        "El sector AECO arrastra un problema serio en LATAM.\n\n"
+        "Hay mucho ruido y mucha falla en cómo se entregan modelos. "
+        "Lo veo en cada equipo que conozco. Cuello de botella tras cuello "
+        "de botella. Riesgo acumulado en cada entrega. "
+        "Mucha fricción entre disciplinas. Una pena, la verdad.\n\n"
+        "Fuente: https://example.cl/uc/bim-coordinacion-hospitales-2026.pdf\n\n"
+        "#BIM #AECO #Construccion"
+    )
+    payload = {
+        "id": fixture["id"], "titular": fixture["titular"],
+        "summary": "", "key_points": [],
+        "source_url": "https://example.cl/x.pdf",
+        "fixture_skip_source_verify": True,
+    }
+    res = ev.score_copy(
+        text, fixture, rules_cfg,
+        source_payload=payload, source_verification_mode="fixture",
+    )
+    assert "V3_HR5_DIAGNOSIS_WITHOUT_PRACTICAL_EXIT" in res.hard_reject_rule_ids
+
+
+def test_temperatures_cli_report(tmp_path, monkeypatch):
+    """CLI with --temperatures must emit a multi-temperature report shape."""
+    fixtures_dir = REPO_ROOT / "tests" / "discovery" / "fixtures"
+    out = tmp_path / "report.json"
+    canned = _good_copy()
+
+    # Stub the gateway-calling helper used inside run_evaluator.
+    monkeypatch.setattr(ev, "_call_gateway", lambda *a, **kw: canned, raising=False)
+
+    rc = ev.main([
+        "--fixtures", str(fixtures_dir / "stage7_5_proposals.json"),
+        "--rules", str(fixtures_dir / "stage7_5_golden_copies.json"),
+        "--report", str(out),
+        "--temperatures", "0.6,0.8",
+        "--dry-run",
+        "--source-verification-mode", "fixture",
+    ])
+    # rc may be 1 because dry-run produces empty copies that fail rules; we only
+    # care that the multi-temperature report is well formed.
+    assert rc in (0, 1)
+    payload = json.loads(out.read_text(encoding="utf-8"))
+    assert "runs_by_temperature" in payload
+    assert set(payload["runs_by_temperature"].keys()) == {"0.6", "0.8"}
+    assert "aggregate_by_temperature" in payload
+    assert "overall" in payload
+

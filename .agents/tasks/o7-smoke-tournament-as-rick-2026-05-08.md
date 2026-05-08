@@ -1,8 +1,8 @@
 ---
 id: o7-smoke-tournament-as-rick-2026-05-08
 title: O7 smoke — simulated tournament from rick (manual, no wrapper yet)
-status: open
-verdict: pending
+status: done
+verdict: verde
 owner: copilot-vps
 reviewer: copilot-chat
 phase: O7-smoke
@@ -10,6 +10,15 @@ depends_on:
   - docs/79-tournament-protocol-openclaw-native.md (v1 contract)
   - docs/adr/tournament-on-openclaw-primitives.md (Decision A — Wrapper-only)
 created: 2026-05-08
+closed: 2026-05-08
+notes: |
+  tournament_id: umbral-agent-stack-375-fa19920
+  issue: https://github.com/Umbral-Bot/umbral-agent-stack/issues/375
+  winner PR (merged): https://github.com/Umbral-Bot/umbral-agent-stack/pull/376 (lane docs-concise, +1/-1)
+  loser PR (closed, branch preserved): https://github.com/Umbral-Bot/umbral-agent-stack/pull/377 (lane docs-explanatory, +2/-2)
+  report: reports/tournaments/umbral-agent-stack-375-fa19920.md
+  metrics: reports/tournaments/umbral-agent-stack-375-fa19920.metrics.json
+  divergences: PAT lacks issues:write (no contract comment on issue); pre-existing untracked reports/*.json in worktree
 ---
 
 # O7 smoke — manual tournament simulation as if launched from rick

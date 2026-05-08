@@ -15,6 +15,8 @@ Servicio target: `srch-umbral-kb-prod` (AI Search Basic, RG `rg-umbral-agents-pr
 | `index_publisher.py` | 049 | Clona schema del index activo → `aeco-kb-es-vYYYYMMDD` → embebe (Foundry text-embedding-3-small) → upload → valida (count + sample query) → alias swap atómico. |
 | `run_pipeline.sh` | 050 | Bash orquestador secuencial Q2: arranca crawler → parser → publisher por cada source vía `az containerapp job start` y espera con polling. |
 | `verify_kb.py` | 050 | Gate post-pipeline: doc_count >= min, cobertura >=1 chunk por jurisdicción, sample queries devuelven hits. |
+| `foundry_connection.py` | 051 | Crea/actualiza connection `aeco-kb-search` en Foundry project `umbralbim` (cross-RG, AAD auth). Idempotente. |
+| `smoke_agenteub_kb.py` | 051 | Smoke automatizado: invoca AgenteUB Responses API, valida `aeco-kb-es-vYYYYMMDD` + URL fuente en respuesta. |
 
 ## Auth
 

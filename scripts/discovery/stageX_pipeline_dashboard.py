@@ -51,6 +51,26 @@ CRON_MINUTE = 15
 # ---------------------------------------------------------------------------
 
 @dataclass
+class CopyReviewRow:
+    id: int
+    titular: str
+    notion_page_url: str
+    copy_len: int
+    copy_model_used: str
+    copy_last_attempt_at: str
+    copy_cost_usd_estimate: float
+
+
+@dataclass
+class CopyReviewPending:
+    """Stage 7.5 review queue: pages with copy_status='copy_ready' awaiting
+    David's authorisation (linkedin_status still NULL)."""
+    available: bool = False
+    rows: list[CopyReviewRow] = field(default_factory=list)
+    total_cost_usd: float = 0.0
+
+
+@dataclass
 class Metrics:
     total: int = 0
     status: dict[str, int] = field(default_factory=dict)
@@ -62,6 +82,7 @@ class Metrics:
     cron_last_run: str | None = None
     cron_next_run: str | None = None
     has_linkedin_column: bool = False
+    copy_review_pending: CopyReviewPending = field(default_factory=CopyReviewPending)
     generated_at: str = ""
 
 
@@ -135,7 +156,168 @@ def collect_metrics(
     next_ts = compute_next_cron_run(now)
     m.cron_next_run = next_ts.isoformat(timespec="seconds")
 
+    m.copy_review_pending = collect_copy_review_pending(db_path)
+
     return m
+
+
+# ---------------------------------------------------------------------------
+# Stage 7.5 — Copy review pending tab
+# ---------------------------------------------------------------------------
+
+# Columns required to render the "Copy review pending" tab. If any are missing
+# in the proposals table the dashboard shows a placeholder note instead of
+# failing — Stage 7.5 (Hilo A) owns the migration that adds these columns.
+COPY_REVIEW_COLUMNS = (
+    "copy_status",
+    "copy_model_used",
+    "copy_last_attempt_at",
+    "copy_cost_usd_estimate",
+)
+
+
+def _fmt_attempt_at(value: Any) -> str:
+    """Render copy_last_attempt_at — accepts epoch seconds or ISO strings."""
+    if value is None:
+        return ""
+    if isinstance(value, (int, float)):
+        try:
+            return datetime.fromtimestamp(int(value), tz=timezone.utc).isoformat(
+                timespec="seconds"
+            )
+        except (OverflowError, OSError, ValueError):
+            return str(value)
+    return str(value)
+
+
+def _build_page_url(notion_page_id: str) -> str:
+    """Return a usable Notion URL for the page id (dashes optional)."""
+    pid = (notion_page_id or "").replace("-", "")
+    return f"https://www.notion.so/{pid}" if pid else ""
+
+
+def collect_copy_review_pending(db_path: Path) -> CopyReviewPending:
+    """Query proposals for rows ready for David's copy review.
+
+    Returns ``available=False`` when the Stage 7.5 columns are not present
+    yet. This is the expected state until Hilo A lands its migration.
+    """
+    out = CopyReviewPending()
+    conn = sqlite3.connect(str(db_path))
+    try:
+        cols = _column_names(conn, "proposals")
+        if not all(c in cols for c in COPY_REVIEW_COLUMNS):
+            return out
+        out.available = True
+        # ``linkedin_status`` may not exist either; coalesce defensively.
+        linkedin_clause = (
+            "AND COALESCE(linkedin_status, '') = '' "
+            if "linkedin_status" in cols
+            else ""
+        )
+        sql_base = (
+            "SELECT id, titular, notion_page_id, "
+            "       COALESCE(copy_model_used, '') AS copy_model_used, "
+            "       COALESCE(copy_last_attempt_at, '') AS copy_last_attempt_at, "
+            "       COALESCE(copy_cost_usd_estimate, 0.0) AS copy_cost_usd_estimate, "
+            "       {copy_len_expr} AS copy_len_inline "
+            "FROM proposals "
+            "WHERE notion_page_id IS NOT NULL "
+            "  AND COALESCE(copy_status, '') = 'copy_ready' "
+            "  {linkedin_clause}"
+            "ORDER BY id ASC"
+        )
+        copy_len_expr = "0"
+        for candidate in ("copy_text", "copy_linkedin"):
+            if candidate in cols:
+                copy_len_expr = f"COALESCE(LENGTH({candidate}), 0)"
+                break
+        sql = sql_base.format(
+            copy_len_expr=copy_len_expr, linkedin_clause=linkedin_clause
+        )
+        for row in conn.execute(sql):
+            (rid, tit, page_id, model, attempt_at, cost, copy_len) = row
+            out.rows.append(
+                CopyReviewRow(
+                    id=int(rid),
+                    titular=str(tit or ""),
+                    notion_page_url=_build_page_url(str(page_id or "")),
+                    copy_len=int(copy_len or 0),
+                    copy_model_used=str(model or ""),
+                    copy_last_attempt_at=_fmt_attempt_at(attempt_at),
+                    copy_cost_usd_estimate=float(cost or 0.0),
+                )
+            )
+        out.total_cost_usd = sum(r.copy_cost_usd_estimate for r in out.rows)
+    finally:
+        conn.close()
+    return out
+
+
+def render_copy_review_markdown(pending: CopyReviewPending) -> str:
+    """Render the markdown section for the Copy review pending tab."""
+    lines = ["## Copy review pending (Stage 7.5)"]
+    if not pending.available:
+        lines.append("_(esperando Stage 7.5 core — columnas `copy_*` aún no presentes)_")
+        lines.append("")
+        return "\n".join(lines)
+
+    n = len(pending.rows)
+    lines.append(
+        f"_Total esperando revisión: **{n}**_  "
+        f"_Costo acumulado USD: **${pending.total_cost_usd:.4f}**_"
+    )
+    lines.append("")
+    if n == 0:
+        lines.append("_(sin pages pendientes)_")
+        lines.append("")
+        return "\n".join(lines)
+
+    lines.append("| ID | Titular | Page | Copy len | Modelo | Último intento |")
+    lines.append("| ---: | --- | --- | ---: | --- | --- |")
+    for r in pending.rows:
+        url_md = f"[abrir]({r.notion_page_url})" if r.notion_page_url else "—"
+        titular = (r.titular or "").replace("|", "\\|")
+        lines.append(
+            f"| {r.id} | {titular} | {url_md} | {r.copy_len} | "
+            f"{r.copy_model_used or '—'} | {r.copy_last_attempt_at or '—'} |"
+        )
+    lines.append("")
+    return "\n".join(lines)
+
+
+def build_copy_review_blocks(pending: CopyReviewPending) -> list[dict[str, Any]]:
+    """Render the Copy review pending tab as Notion blocks."""
+    blocks: list[dict[str, Any]] = [_heading_2("Copy review pending (Stage 7.5)")]
+    if not pending.available:
+        blocks.append(
+            _paragraph("(esperando Stage 7.5 core — columnas copy_* aún no presentes)")
+        )
+        return blocks
+    n = len(pending.rows)
+    blocks.append(
+        _paragraph(
+            f"Total esperando revisión: {n}  |  "
+            f"Costo acumulado USD: ${pending.total_cost_usd:.4f}"
+        )
+    )
+    if n == 0:
+        blocks.append(_paragraph("(sin pages pendientes)"))
+        return blocks
+    headers = ["ID", "Titular", "Page", "Copy len", "Modelo", "Último intento"]
+    rows = [
+        [
+            str(r.id),
+            r.titular[:200],
+            r.notion_page_url or "—",
+            str(r.copy_len),
+            r.copy_model_used or "—",
+            r.copy_last_attempt_at or "—",
+        ]
+        for r in pending.rows
+    ]
+    blocks.append(_table(headers, rows))
+    return blocks
 
 
 def parse_last_cron_run(log_path: Path) -> datetime | None:
@@ -222,6 +404,7 @@ def render_markdown(m: Metrics) -> str:
     lines.append(f"- Última corrida: `{m.cron_last_run or 'desconocida'}`")
     lines.append(f"- Próxima corrida: `{m.cron_next_run}`")
     lines.append("")
+    lines.append(render_copy_review_markdown(m.copy_review_pending))
     lines.append(f"_Última actualización: `{m.generated_at}`_")
     return "\n".join(lines)
 
@@ -295,6 +478,8 @@ def build_blocks(m: Metrics) -> list[dict[str, Any]]:
     blocks.append(_heading_2("Cron 15 */6 * * * UTC"))
     blocks.append(_paragraph(f"Última corrida: {m.cron_last_run or 'desconocida'}"))
     blocks.append(_paragraph(f"Próxima corrida: {m.cron_next_run}"))
+
+    blocks.extend(build_copy_review_blocks(m.copy_review_pending))
 
     blocks.append(_paragraph(f"Última actualización (UTC): {m.generated_at}"))
     return blocks

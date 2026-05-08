@@ -1,0 +1,238 @@
+{
+  "started": "2026-05-07T18:55:54Z",
+  "commit": true,
+  "clean_description": true,
+  "pending_total": 16,
+  "ok": 16,
+  "not_found": 0,
+  "extraction_error": 0,
+  "skipped_no_video_id": 0,
+  "items": [
+    {
+      "sqlite_id": 51,
+      "url_canonica": "https://www.youtube.com/watch?v=o2ehgG2VrsY",
+      "video_id": "o2ehgG2VrsY",
+      "status": "ok",
+      "error": null,
+      "description_length": 1526,
+      "duration_seconds": 500,
+      "removals_count": 4,
+      "removals_reasons": [
+        "legal_disclaimer",
+        "promo_keyword",
+        "section_header"
+      ]
+    },
+    {
+      "sqlite_id": 52,
+      "url_canonica": "https://www.youtube.com/watch?v=Vht4hoRHEek",
+      "video_id": "Vht4hoRHEek",
+      "status": "ok",
+      "error": null,
+      "description_length": 1835,
+      "duration_seconds": 3896,
+      "removals_count": 4,
+      "removals_reasons": [
+        "legal_disclaimer",
+        "promo_keyword",
+        "section_header"
+      ]
+    },
+    {
+      "sqlite_id": 81,
+      "url_canonica": "https://www.youtube.com/watch?v=9Gr2QjvSQ-I",
+      "video_id": "9Gr2QjvSQ-I",
+      "status": "ok",
+      "error": null,
+      "description_length": 886,
+      "duration_seconds": 1851,
+      "removals_count": 4,
+      "removals_reasons": [
+        "hashtag_only",
+        "promo_keyword",
+        "social_links_only",
+        "sponsor_domain_only"
+      ]
+    },
+    {
+      "sqlite_id": 82,
+      "url_canonica": "https://www.youtube.com/watch?v=3LnNwS6rqk8",
+      "video_id": "3LnNwS6rqk8",
+      "status": "ok",
+      "error": null,
+      "description_length": 1723,
+      "duration_seconds": 1478,
+      "removals_count": 3,
+      "removals_reasons": [
+        "sponsor_domain_only"
+      ]
+    },
+    {
+      "sqlite_id": 111,
+      "url_canonica": "https://www.youtube.com/watch?v=s2jm2Z22ibA",
+      "video_id": "s2jm2Z22ibA",
+      "status": "ok",
+      "error": null,
+      "description_length": 4863,
+      "duration_seconds": 2368,
+      "removals_count": 1,
+      "removals_reasons": [
+        "hashtag_only"
+      ]
+    },
+    {
+      "sqlite_id": 141,
+      "url_canonica": "https://www.youtube.com/watch?v=TQsBnsKZtuo",
+      "video_id": "TQsBnsKZtuo",
+      "status": "ok",
+      "error": null,
+      "description_length": 1428,
+      "duration_seconds": 812,
+      "removals_count": 1,
+      "removals_reasons": [
+        "social_links_only"
+      ]
+    },
+    {
+      "sqlite_id": 142,
+      "url_canonica": "https://www.youtube.com/watch?v=npmoS_dqAho",
+      "video_id": "npmoS_dqAho",
+      "status": "ok",
+      "error": null,
+      "description_length": 1456,
+      "duration_seconds": 1410,
+      "removals_count": 1,
+      "removals_reasons": [
+        "social_links_only"
+      ]
+    },
+    {
+      "sqlite_id": 261,
+      "url_canonica": "https://www.youtube.com/watch?v=J26M-cpFG-M",
+      "video_id": "J26M-cpFG-M",
+      "status": "ok",
+      "error": null,
+      "description_length": 1045,
+      "duration_seconds": 103,
+      "removals_count": 2,
+      "removals_reasons": [
+        "sponsor_domain_only"
+      ]
+    },
+    {
+      "sqlite_id": 262,
+      "url_canonica": "https://www.youtube.com/watch?v=FNfIMnpz-ZY",
+      "video_id": "FNfIMnpz-ZY",
+      "status": "ok",
+      "error": null,
+      "description_length": 916,
+      "duration_seconds": 112,
+      "removals_count": 2,
+      "removals_reasons": [
+        "sponsor_domain_only"
+      ]
+    },
+    {
+      "sqlite_id": 291,
+      "url_canonica": "https://www.youtube.com/watch?v=Vr_Wd2ZucZA",
+      "video_id": "Vr_Wd2ZucZA",
+      "status": "ok",
+      "error": null,
+      "description_length": 2315,
+      "duration_seconds": 1279,
+      "removals_count": 6,
+      "removals_reasons": [
+        "hashtag_only",
+        "legal_disclaimer",
+        "promo_keyword",
+        "social_links_only",
+        "sponsor_domain_only"
+      ]
+    },
+    {
+      "sqlite_id": 292,
+      "url_canonica": "https://www.youtube.com/watch?v=vVfEs9wrW98",
+      "video_id": "vVfEs9wrW98",
+      "status": "ok",
+      "error": null,
+      "description_length": 2388,
+      "duration_seconds": 1048,
+      "removals_count": 6,
+      "removals_reasons": [
+        "hashtag_only",
+        "legal_disclaimer",
+        "promo_keyword",
+        "social_links_only",
+        "sponsor_domain_only"
+      ]
+    },
+    {
+      "sqlite_id": 293,
+      "url_canonica": "https://www.youtube.com/watch?v=A0lQPphWTkQ",
+      "video_id": "A0lQPphWTkQ",
+      "status": "ok",
+      "error": null,
+      "description_length": 2525,
+      "duration_seconds": 1095,
+      "removals_count": 6,
+      "removals_reasons": [
+        "hashtag_only",
+        "legal_disclaimer",
+        "promo_keyword",
+        "social_links_only",
+        "sponsor_domain_only"
+      ]
+    },
+    {
+      "sqlite_id": 351,
+      "url_canonica": "https://www.youtube.com/watch?v=zO8EPWmTnVQ",
+      "video_id": "zO8EPWmTnVQ",
+      "status": "ok",
+      "error": null,
+      "description_length": 1216,
+      "duration_seconds": 213,
+      "removals_count": 1,
+      "removals_reasons": [
+        "hashtag_only"
+      ]
+    },
+    {
+      "sqlite_id": 352,
+      "url_canonica": "https://www.youtube.com/watch?v=NGq0pdR0s2U",
+      "video_id": "NGq0pdR0s2U",
+      "status": "ok",
+      "error": null,
+      "description_length": 1185,
+      "duration_seconds": 194,
+      "removals_count": 1,
+      "removals_reasons": [
+        "hashtag_only"
+      ]
+    },
+    {
+      "sqlite_id": 353,
+      "url_canonica": "https://www.youtube.com/watch?v=27bLTrhZ4Mg",
+      "video_id": "27bLTrhZ4Mg",
+      "status": "ok",
+      "error": null,
+      "description_length": 1242,
+      "duration_seconds": 3420,
+      "removals_count": 1,
+      "removals_reasons": [
+        "hashtag_only"
+      ]
+    },
+    {
+      "sqlite_id": 408,
+      "url_canonica": "https://www.youtube.com/watch?v=1PIbKMyFMAY",
+      "video_id": "1PIbKMyFMAY",
+      "status": "ok",
+      "error": null,
+      "description_length": 1242,
+      "duration_seconds": 1114,
+      "removals_count": 0,
+      "removals_reasons": []
+    }
+  ],
+  "finished": "2026-05-07T18:55:56Z"
+}

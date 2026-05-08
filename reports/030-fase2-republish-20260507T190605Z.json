@@ -1,0 +1,134 @@
+{
+  "timestamp_utc": "20260507T190605Z",
+  "updated": 16,
+  "items": [
+    {
+      "sqlite_id": 51,
+      "notion_page_id": "3595f443-fb5c-81ee-87d7-e8bc52d5bdb2",
+      "titulo_v2": "Switching to Mac after 10 years as a Microsoft User [v2-clean]",
+      "deleted_blocks": 1,
+      "new_blocks": 13,
+      "removals_count": 4
+    },
+    {
+      "sqlite_id": 52,
+      "notion_page_id": "3595f443-fb5c-81ce-ba7b-d8b2769f8f80",
+      "titulo_v2": "Learn ETL Pipelines in Databricks in Under 1 Hour | Data Engineering in Databricks [v2-clean]",
+      "deleted_blocks": 28,
+      "new_blocks": 23,
+      "removals_count": 4
+    },
+    {
+      "sqlite_id": 81,
+      "notion_page_id": "3595f443-fb5c-81b4-a7ef-c2ff72b66eb9",
+      "titulo_v2": "Adiós Windows. Me paso a LINUX para SIEMPRE [v2-clean]",
+      "deleted_blocks": 8,
+      "new_blocks": 4,
+      "removals_count": 4
+    },
+    {
+      "sqlite_id": 82,
+      "notion_page_id": "3595f443-fb5c-8142-9b4a-feb67879134c",
+      "titulo_v2": "Monté el PC de BATMAN dentro de una Batcueva REAL [v2-clean]",
+      "deleted_blocks": 15,
+      "new_blocks": 12,
+      "removals_count": 3
+    },
+    {
+      "sqlite_id": 111,
+      "notion_page_id": "3595f443-fb5c-81ce-a4bd-ea4414b1f79d",
+      "titulo_v2": "Voice Chatbot (Coding Challenge 188) [v2-clean]",
+      "deleted_blocks": 40,
+      "new_blocks": 39,
+      "removals_count": 1
+    },
+    {
+      "sqlite_id": 141,
+      "notion_page_id": "3595f443-fb5c-8187-9265-d38dbcd989cd",
+      "titulo_v2": "Numbering Tool in Revit | Rule-Based Numbering in Revit Tutorial [v2-clean]",
+      "deleted_blocks": 29,
+      "new_blocks": 28,
+      "removals_count": 1
+    },
+    {
+      "sqlite_id": 142,
+      "notion_page_id": "3595f443-fb5c-810b-996b-c28ab40fab8c",
+      "titulo_v2": "Am I Faster than Revit AI? [v2-clean]",
+      "deleted_blocks": 24,
+      "new_blocks": 23,
+      "removals_count": 1
+    },
+    {
+      "sqlite_id": 261,
+      "notion_page_id": "3595f443-fb5c-8152-a2b8-ce926ffe4ddb",
+      "titulo_v2": "Build Interactive Agents with Generative UI [v2-clean]",
+      "deleted_blocks": 7,
+      "new_blocks": 5,
+      "removals_count": 2
+    },
+    {
+      "sqlite_id": 262,
+      "notion_page_id": "3595f443-fb5c-81ec-a3c9-c817ed0b2a8d",
+      "titulo_v2": "Become an AI power user 🌟 new course from Andrew Ng [v2-clean]",
+      "deleted_blocks": 12,
+      "new_blocks": 10,
+      "removals_count": 2
+    },
+    {
+      "sqlite_id": 291,
+      "notion_page_id": "3595f443-fb5c-8130-8e09-e174f1c43aae",
+      "titulo_v2": "Why Nobody Wants the Chrysler Building [v2-clean]",
+      "deleted_blocks": 26,
+      "new_blocks": 20,
+      "removals_count": 6
+    },
+    {
+      "sqlite_id": 292,
+      "notion_page_id": "3595f443-fb5c-8132-ae19-fc635239d84d",
+      "titulo_v2": "Why the Jeddah Tower Won't Be One Kilometre Tall [v2-clean]",
+      "deleted_blocks": 29,
+      "new_blocks": 23,
+      "removals_count": 6
+    },
+    {
+      "sqlite_id": 293,
+      "notion_page_id": "3595f443-fb5c-817d-b0a6-e14d6341a959",
+      "titulo_v2": "The US Megaproject You’ve (Probably) Never Heard Of [v2-clean]",
+      "deleted_blocks": 31,
+      "new_blocks": 25,
+      "removals_count": 6
+    },
+    {
+      "sqlite_id": 351,
+      "notion_page_id": "3595f443-fb5c-81f9-be7f-cae2cf1f8989",
+      "titulo_v2": "Is AI Coming For Your Job? [v2-clean]",
+      "deleted_blocks": 8,
+      "new_blocks": 7,
+      "removals_count": 1
+    },
+    {
+      "sqlite_id": 352,
+      "notion_page_id": "3595f443-fb5c-8102-93f1-f9aebd32c39f",
+      "titulo_v2": "What AI Really Is, Explained Simply [v2-clean]",
+      "deleted_blocks": 8,
+      "new_blocks": 7,
+      "removals_count": 1
+    },
+    {
+      "sqlite_id": 353,
+      "notion_page_id": "3595f443-fb5c-81ff-a152-da5daf54193c",
+      "titulo_v2": "The Future Of Google Search, Maps And AI Agents [v2-clean]",
+      "deleted_blocks": 6,
+      "new_blocks": 5,
+      "removals_count": 1
+    },
+    {
+      "sqlite_id": 408,
+      "notion_page_id": "3595f443-fb5c-816e-a113-c7eb67029576",
+      "titulo_v2": "¿Existen Fisuras en el Universo? [v2-clean]",
+      "deleted_blocks": 9,
+      "new_blocks": 9,
+      "removals_count": 0
+    }
+  ]
+}

@@ -1,0 +1,145 @@
+{
+  "started": "2026-05-07T18:56:24Z",
+  "finished": "2026-05-07T18:56:38Z",
+  "commit": true,
+  "dry_run": false,
+  "database_id": "b9d3d8677b1e4247bafdcb0cc6f53024",
+  "data_source_id": "9d4dbf65-664f-41b4-a7f6-ce378c274761",
+  "pending_total": 16,
+  "processed": 16,
+  "would_create": 0,
+  "created": 0,
+  "already_present": 16,
+  "created_no_body": 0,
+  "errors": 0,
+  "items": [
+    {
+      "sqlite_id": 51,
+      "url_canonica": "https://www.youtube.com/watch?v=o2ehgG2VrsY",
+      "status": "already_present",
+      "notion_page_id": "3595f443-fb5c-81ee-87d7-e8bc52d5bdb2",
+      "error": null,
+      "blocks_count": 13
+    },
+    {
+      "sqlite_id": 52,
+      "url_canonica": "https://www.youtube.com/watch?v=Vht4hoRHEek",
+      "status": "already_present",
+      "notion_page_id": "3595f443-fb5c-81ce-ba7b-d8b2769f8f80",
+      "error": null,
+      "blocks_count": 23
+    },
+    {
+      "sqlite_id": 81,
+      "url_canonica": "https://www.youtube.com/watch?v=9Gr2QjvSQ-I",
+      "status": "already_present",
+      "notion_page_id": "3595f443-fb5c-81b4-a7ef-c2ff72b66eb9",
+      "error": null,
+      "blocks_count": 4
+    },
+    {
+      "sqlite_id": 82,
+      "url_canonica": "https://www.youtube.com/watch?v=3LnNwS6rqk8",
+      "status": "already_present",
+      "notion_page_id": "3595f443-fb5c-8142-9b4a-feb67879134c",
+      "error": null,
+      "blocks_count": 12
+    },
+    {
+      "sqlite_id": 111,
+      "url_canonica": "https://www.youtube.com/watch?v=s2jm2Z22ibA",
+      "status": "already_present",
+      "notion_page_id": "3595f443-fb5c-81ce-a4bd-ea4414b1f79d",
+      "error": null,
+      "blocks_count": 39
+    },
+    {
+      "sqlite_id": 141,
+      "url_canonica": "https://www.youtube.com/watch?v=TQsBnsKZtuo",
+      "status": "already_present",
+      "notion_page_id": "3595f443-fb5c-8187-9265-d38dbcd989cd",
+      "error": null,
+      "blocks_count": 28
+    },
+    {
+      "sqlite_id": 142,
+      "url_canonica": "https://www.youtube.com/watch?v=npmoS_dqAho",
+      "status": "already_present",
+      "notion_page_id": "3595f443-fb5c-810b-996b-c28ab40fab8c",
+      "error": null,
+      "blocks_count": 23
+    },
+    {
+      "sqlite_id": 261,
+      "url_canonica": "https://www.youtube.com/watch?v=J26M-cpFG-M",
+      "status": "already_present",
+      "notion_page_id": "3595f443-fb5c-8152-a2b8-ce926ffe4ddb",
+      "error": null,
+      "blocks_count": 5
+    },
+    {
+      "sqlite_id": 262,
+      "url_canonica": "https://www.youtube.com/watch?v=FNfIMnpz-ZY",
+      "status": "already_present",
+      "notion_page_id": "3595f443-fb5c-81ec-a3c9-c817ed0b2a8d",
+      "error": null,
+      "blocks_count": 10
+    },
+    {
+      "sqlite_id": 291,
+      "url_canonica": "https://www.youtube.com/watch?v=Vr_Wd2ZucZA",
+      "status": "already_present",
+      "notion_page_id": "3595f443-fb5c-8130-8e09-e174f1c43aae",
+      "error": null,
+      "blocks_count": 20
+    },
+    {
+      "sqlite_id": 292,
+      "url_canonica": "https://www.youtube.com/watch?v=vVfEs9wrW98",
+      "status": "already_present",
+      "notion_page_id": "3595f443-fb5c-8132-ae19-fc635239d84d",
+      "error": null,
+      "blocks_count": 23
+    },
+    {
+      "sqlite_id": 293,
+      "url_canonica": "https://www.youtube.com/watch?v=A0lQPphWTkQ",
+      "status": "already_present",
+      "notion_page_id": "3595f443-fb5c-817d-b0a6-e14d6341a959",
+      "error": null,
+      "blocks_count": 25
+    },
+    {
+      "sqlite_id": 351,
+      "url_canonica": "https://www.youtube.com/watch?v=zO8EPWmTnVQ",
+      "status": "already_present",
+      "notion_page_id": "3595f443-fb5c-81f9-be7f-cae2cf1f8989",
+      "error": null,
+      "blocks_count": 7
+    },
+    {
+      "sqlite_id": 352,
+      "url_canonica": "https://www.youtube.com/watch?v=NGq0pdR0s2U",
+      "status": "already_present",
+      "notion_page_id": "3595f443-fb5c-8102-93f1-f9aebd32c39f",
+      "error": null,
+      "blocks_count": 7
+    },
+    {
+      "sqlite_id": 353,
+      "url_canonica": "https://www.youtube.com/watch?v=27bLTrhZ4Mg",
+      "status": "already_present",
+      "notion_page_id": "3595f443-fb5c-81ff-a152-da5daf54193c",
+      "error": null,
+      "blocks_count": 5
+    },
+    {
+      "sqlite_id": 408,
+      "url_canonica": "https://www.youtube.com/watch?v=1PIbKMyFMAY",
+      "status": "already_present",
+      "notion_page_id": "3595f443-fb5c-816e-a113-c7eb67029576",
+      "error": null,
+      "blocks_count": 9
+    }
+  ]
+}

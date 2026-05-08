@@ -10,10 +10,13 @@
     Pide confirmación explícita antes de aplicar (operationalSafety).
 
 .PREREQUISITES
-    - Task 2026-05-08-052 cerrada (3 imágenes Docker en GHCR public visibility):
+    - Task 2026-05-08-052 cerrada (3 imágenes Docker en GHCR — PRIVATE):
         ghcr.io/umbral-bot/aeco-source-crawler:latest
         ghcr.io/umbral-bot/aeco-pdf-parser:latest
         ghcr.io/umbral-bot/aeco-index-pipeline:latest
+    - Variable de entorno `GHCR_PAT` con PAT classic (scope read:packages)
+      para que ACA Jobs hagan pull de las imágenes privadas. Ejemplo:
+        $env:GHCR_PAT = 'ghp_xxxxxxxxxxxx'
     - `az login --tenant f67a8c0b-ec74-47cd-836c-355c5a6162d4`
     - Sub activa: f14f61f0-e692-4fbb-900d-73e55a632374
 
@@ -47,6 +50,12 @@ if (-not $account) {
     exit 1
 }
 
+$ghcrPat = $env:GHCR_PAT
+if (-not $ghcrPat) {
+    Write-Error "Falta `$env:GHCR_PAT (PAT classic con scope read:packages para pull de imágenes privadas).`nSetéalo con: `$env:GHCR_PAT = 'ghp_...'"
+    exit 1
+}
+
 $action = if ($WhatIf) { 'WHAT-IF' } else { 'DEPLOY' }
 
 Write-Host "═══════════════════════════════════════════════════════" -ForegroundColor Yellow
@@ -67,6 +76,7 @@ Write-Host "    uamiClientId:          $uamiClientId"
 Write-Host "    storageAccountName:    $storageAccount"
 Write-Host "    searchServiceName:     $searchService"
 Write-Host "    diEndpoint:            $diEndpoint"
+Write-Host "    ghcrPat:               *** (len=$($ghcrPat.Length))"
 Write-Host ""
 
 if (-not $WhatIf) {
@@ -93,6 +103,7 @@ az deployment group $cmd `
     --parameters storageAccountName=$storageAccount `
     --parameters searchServiceName=$searchService `
     --parameters diEndpoint=$diEndpoint `
+    --parameters ghcrPat=$ghcrPat `
     --output table
 
 if ($LASTEXITCODE -eq 0 -and -not $WhatIf) {

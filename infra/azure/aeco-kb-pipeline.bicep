@@ -50,6 +50,10 @@ param embeddingEndpoint string = 'https://umbralbim-resource.openai.azure.com'
 @description('Embedding deployment name.')
 param embeddingDeployment string = 'text-embedding-3-small'
 
+@description('GHCR PAT (classic) con scope read:packages — pull de imágenes privadas.')
+@secure()
+param ghcrPat string
+
 module sourceCrawler 'modules/aeco-source-crawler-job.bicep' = {
   name: 'aeco-source-crawler-job'
   params: {
@@ -59,6 +63,7 @@ module sourceCrawler 'modules/aeco-source-crawler-job.bicep' = {
     userAssignedIdentityId: userAssignedIdentityId
     userAssignedIdentityClientId: userAssignedIdentityClientId
     storageAccountName: storageAccountName
+    ghcrPat: ghcrPat
   }
 }
 
@@ -72,6 +77,7 @@ module pdfParser 'modules/aeco-pdf-parser-job.bicep' = {
     userAssignedIdentityClientId: userAssignedIdentityClientId
     diEndpoint: diEndpoint
     storageAccountName: storageAccountName
+    ghcrPat: ghcrPat
   }
 }
 
@@ -87,6 +93,7 @@ module indexPipeline 'modules/aeco-index-pipeline-job.bicep' = {
     searchServiceName: searchServiceName
     embeddingEndpoint: embeddingEndpoint
     embeddingDeployment: embeddingDeployment
+    ghcrPat: ghcrPat
   }
 }
 

@@ -47,6 +47,10 @@ param embeddingDeployment string = 'text-embedding-3-small'
 @description('Container image.')
 param image string = 'ghcr.io/umbral-bot/aeco-index-pipeline:latest'
 
+@description('GHCR PAT (classic) con scope read:packages — para pull de imagen privada.')
+@secure()
+param ghcrPat string
+
 @description('Replica timeout (publisher con embeddings + uploads cabe en 60 min para 500 chunks).')
 @minValue(60)
 @maxValue(7200)
@@ -77,6 +81,16 @@ resource job 'Microsoft.App/jobs@2024-03-01' = {
         replicaCompletionCount: 1
         parallelism: 1
       }
+      secrets: [
+        { name: 'ghcr-pat', value: ghcrPat }
+      ]
+      registries: [
+        {
+          server: 'ghcr.io'
+          username: 'umbral-bot'
+          passwordSecretRef: 'ghcr-pat'
+        }
+      ]
     }
     template: {
       containers: [

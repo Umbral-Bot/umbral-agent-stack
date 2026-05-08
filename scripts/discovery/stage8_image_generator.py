@@ -9,7 +9,11 @@ no image yet, this script:
 3. Saves the bytes locally under ``~/.cache/rick-discovery/images/``.
 4. Uploads the file to Notion via the 2025-09-03 ``/file_uploads`` API
    (single-part flow).
-5. Sets the page cover and inserts an ``image`` block at the top of the body.
+5. Sets the page cover (banner). The cover acts as the hero/visual asset.
+   No body image block is inserted: Notion's ``PATCH /blocks/{id}/children``
+   only appends, so the block always landed at the bottom (issue #371). The
+   cover already fulfils the editorial hero role for AEC publications, so the
+   redundant trailing block has been removed.
 6. Writes the Notion-hosted URL to the page's ``Visual asset URL`` property.
 7. Updates ``proposals.image_status`` / ``image_url`` / ``image_prompt``.
 
@@ -414,12 +418,24 @@ def attach_image_to_notion(
     caption: str,
     schema_props: dict[str, str] | None,
 ) -> str:
-    """Upload + set cover + insert image block + (optionally) set URL prop.
+    """Upload + set cover + (optionally) set URL prop.
+
+    Sets the page cover only. The previous implementation also inserted an
+    image block at the body via ``PATCH /blocks/{page_id}/children``, but the
+    Notion API only appends children, so the block always landed at the
+    bottom of the page (issue #371). The cover already serves as the hero
+    image for AEC editorial pages, so the redundant trailing block was
+    removed.
+
+    The ``caption`` argument is retained for backward compatibility but is
+    no longer used (the cover has no caption surface in the Notion API).
 
     Returns the Notion-hosted file URL (signed). If the schema lacks the
     ``Visual asset URL`` property, the URL is still returned but the property
     update is skipped (logged as a soft warning).
     """
+    del caption  # no body block anymore; kept in signature for compatibility
+
     upload = client.upload_file(file_path)
     upload_id = upload["id"]
 
@@ -434,30 +450,13 @@ def attach_image_to_notion(
         },
     )
 
-    # 2. Insert an image block at the top of the page body.
-    image_block = {
-        "object": "block",
-        "type": "image",
-        "image": {
-            "type": "file_upload",
-            "file_upload": {"id": upload_id},
-            "caption": [
-                {"type": "text", "text": {"content": caption[:2000]}}
-            ],
-        },
-    }
-    client.patch(
-        f"/blocks/{page_id}/children",
-        {"children": [image_block]},
-    )
-
-    # 3. Re-GET the page to recover the signed file URL Notion stored.
+    # 2. Re-GET the page to recover the signed file URL Notion stored.
     page = client.get(f"/pages/{page_id}")
     cover = page.get("cover") or {}
     file_obj = cover.get("file") or cover.get("external") or {}
     notion_file_url = file_obj.get("url") or ""
 
-    # 4. Set the Visual asset URL property if the schema supports it.
+    # 3. Set the Visual asset URL property if the schema supports it.
     if schema_props is not None and VISUAL_ASSET_URL_PROP in schema_props:
         if notion_file_url:
             client.patch(
@@ -471,7 +470,7 @@ def attach_image_to_notion(
     elif schema_props is not None:
         logger.warning(
             "Schema gap: '%s' property missing from DB Publicaciones; "
-            "page %s has cover+body image but no URL property set.",
+            "page %s has cover but no URL property set.",
             VISUAL_ASSET_URL_PROP,
             page_id,
         )
@@ -682,8 +681,8 @@ def main(argv: list[str] | None = None) -> int:
             )
             if VISUAL_ASSET_URL_PROP not in schema_props:
                 logger.warning(
-                    "DB Publicaciones lacks '%s' property — cover + body "
-                    "block will still be set.",
+                    "DB Publicaciones lacks '%s' property — cover will "
+                    "still be set.",
                     VISUAL_ASSET_URL_PROP,
                 )
         except httpx.HTTPError as exc:

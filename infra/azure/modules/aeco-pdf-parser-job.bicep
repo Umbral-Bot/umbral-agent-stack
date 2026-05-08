@@ -43,6 +43,10 @@ param storageAccountName string
 @description('Container image (override en CI/CD para pin de tag inmutable).')
 param image string = 'ghcr.io/umbral-bot/aeco-pdf-parser:latest'
 
+@description('GHCR PAT (classic) con scope read:packages — para pull de imagen privada.')
+@secure()
+param ghcrPat string
+
 @description('Replica timeout en segundos (PDFs grandes pueden tomar 5-10 min).')
 @minValue(60)
 @maxValue(3600)
@@ -73,6 +77,16 @@ resource job 'Microsoft.App/jobs@2024-03-01' = {
         replicaCompletionCount: 1
         parallelism: 1
       }
+      secrets: [
+        { name: 'ghcr-pat', value: ghcrPat }
+      ]
+      registries: [
+        {
+          server: 'ghcr.io'
+          username: 'umbral-bot'
+          passwordSecretRef: 'ghcr-pat'
+        }
+      ]
     }
     template: {
       containers: [

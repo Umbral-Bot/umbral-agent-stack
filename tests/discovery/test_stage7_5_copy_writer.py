@@ -822,3 +822,128 @@ def test_source_gate_logs_blocked_event(state_db: Path, monkeypatch, tmp_path):
     blocked = [r for r in lines if r["event"] == "stage7_5.source_blocked"]
     assert blocked, lines
     assert blocked[0]["reason"] == "blocklist_domain"
+
+
+
+# ---------- Hilo D integration: canonical prompt + ESTADO_LIVE_MAP ---------- #
+
+def test_estado_live_map_constants():
+    """Spec→live mapping is the single source of truth, applied at write."""
+    assert mod.ESTADO_TARGET == "En revisión"
+    assert mod.ESTADO_LIVE_MAP == {
+        "En revisión": "Revisión pendiente",
+        "Rechazado": "Descartado",
+    }
+    assert mod.estado_live_name("En revisión") == "Revisión pendiente"
+    assert mod.estado_live_name("Rechazado") == "Descartado"
+    # Unknown names pass through.
+    assert mod.estado_live_name("Aprobado") == "Aprobado"
+
+
+def test_build_copy_prompt_uses_canonical_files():
+    """build_copy_prompt must delegate to prompts/rick/linkedin-copy-*.md.
+
+    Smoke contract: system prompt must contain known anchors from the
+    canonical voice doc (Hilo B), proving the wiring is real and not the
+    old inline placeholder.
+    """
+    proposal_row = {
+        "id": 99,
+        "titular": "BIM coordinado en obra",
+        "angulo": "por qué importa",
+        "disciplinas": ["BIM", "IFC"],
+        "fuentes_urls": ["https://src.test/article"],
+        "key_points": ["punto A", "punto B"],
+    }
+    page_props = {
+        "Título": {"type": "title", "title": [{"plain_text": "T"}]},
+        "Fuente primaria": {"type": "url", "url": "https://src.test/article"},
+        "Body raw": {"type": "rich_text",
+                     "rich_text": [{"plain_text": "Resumen body."}]},
+    }
+    system, user = mod.build_copy_prompt(proposal_row, page_props)
+    # Anchors that only exist in the canonical system prompt.
+    assert "Sos Rick" in system
+    assert "AECO" in system
+    assert "Tuteo" in system
+    # User-prompt placeholders were filled.
+    assert "BIM coordinado en obra" in user
+    assert "https://src.test/article" in user
+    assert "BIM, IFC" in user
+    assert "punto A" in user
+
+
+def test_e2e_integration_status_writes_revision_pendiente(
+    state_db: Path, monkeypatch
+):
+    """End-to-end: stub LLM, status-typed Estado → PATCH ships live name."""
+    pid = _insert(state_db, titular="E2E status", notion_page_id="page-E2ES")
+    monkeypatch.setenv("NOTION_API_KEY", "k")
+    monkeypatch.setattr(mod, "_gateway_token", lambda: "tok")
+    page = _make_page(estado_type="status")
+    fake = _fake_notion(page=page)
+    fake.get.return_value = page
+    monkeypatch.setattr(mod, "NotionClient", lambda token: fake)
+    monkeypatch.setattr(mod, "fetch_publicaciones_schema",
+                        lambda c, ds: _good_schema(estado_type="status"))
+    canned = _good_copy()
+    monkeypatch.setattr(mod, "llm_call", lambda **kw: canned)
+
+    rc = mod.main(["--state-db", str(state_db), "--proposal-id", str(pid)])
+    assert rc == 0
+    fake.patch.assert_called_once()
+    payload = fake.patch.call_args.args[1]
+    estado = payload["properties"]["Estado"]
+    assert estado == {"status": {"name": "Revisión pendiente"}}
+    # Must NOT ship the spec name.
+    assert "En revisión" not in json.dumps(estado, ensure_ascii=False)
+
+
+def test_e2e_integration_select_writes_revision_pendiente(
+    state_db: Path, monkeypatch
+):
+    """Same end-to-end path but with select-typed Estado prop."""
+    pid = _insert(state_db, titular="E2E select", notion_page_id="page-E2EL")
+    monkeypatch.setenv("NOTION_API_KEY", "k")
+    monkeypatch.setattr(mod, "_gateway_token", lambda: "tok")
+    page = _make_page(estado_type="select")
+    fake = _fake_notion(page=page)
+    fake.get.return_value = page
+    monkeypatch.setattr(mod, "NotionClient", lambda token: fake)
+    monkeypatch.setattr(mod, "fetch_publicaciones_schema",
+                        lambda c, ds: _good_schema(estado_type="select"))
+    canned = _good_copy()
+    monkeypatch.setattr(mod, "llm_call", lambda **kw: canned)
+
+    rc = mod.main(["--state-db", str(state_db), "--proposal-id", str(pid)])
+    assert rc == 0
+    payload = fake.patch.call_args.args[1]
+    assert payload["properties"]["Estado"] == {
+        "select": {"name": "Revisión pendiente"}
+    }
+
+
+def test_schema_validation_uses_live_name(state_db: Path, monkeypatch):
+    """If live option name is missing, abort with the live name in error."""
+    pid = _insert(state_db, titular="Live name missing",
+                  notion_page_id="page-LN1")
+    monkeypatch.setenv("NOTION_API_KEY", "k")
+    monkeypatch.setattr(mod, "_gateway_token", lambda: "tok")
+    # Schema still has spec name "En revisión" but NOT live "Revisión pendiente".
+    schema = _good_schema(
+        estado_options=["Borrador", "Autorizado", "En revisión"],
+    )
+    fake = MagicMock()
+    monkeypatch.setattr(mod, "NotionClient", lambda token: fake)
+    monkeypatch.setattr(mod, "fetch_publicaciones_schema", lambda c, ds: schema)
+    monkeypatch.setattr(mod, "llm_call", lambda **kw: pytest.fail("no LLM"))
+
+    rc = mod.main(["--state-db", str(state_db)])
+    assert rc == 1
+    conn = sqlite3.connect(state_db)
+    row = conn.execute(
+        "SELECT copy_status, copy_last_error FROM proposals WHERE id=?", (pid,)
+    ).fetchone()
+    conn.close()
+    assert row[0] == "failed"
+    assert "notion_estado_option_missing:Revisión pendiente" in (row[1] or "")

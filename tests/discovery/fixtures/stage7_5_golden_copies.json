@@ -1,0 +1,39 @@
+{
+  "_doc": "Per-fixture rules for evaluator. Each entry references the proposal id and lists the expected disciplines (case-insensitive substring match) the copy must mention to satisfy R12. Global rules R1..R11 are defined in scripts/discovery/eval_stage7_5_copy.py and apply to every fixture identically.",
+  "global_rules": {
+    "R1_total_len_min": 400,
+    "R1_total_len_max": 3000,
+    "R2_hook_max_chars": 120,
+    "R3_body_min": 600,
+    "R3_body_max": 1800,
+    "R4_requires_url": true,
+    "R5_hashtag_min": 3,
+    "R5_hashtag_max": 5,
+    "R6_hashtag_allowlist": [
+      "#BIM", "#AECO", "#Construccion", "#Arquitectura", "#Ingenieria", "#OpenBIM",
+      "#IFC", "#Revit", "#ArchiCAD", "#Navisworks", "#Dynamo", "#Grasshopper", "#OpenCDE",
+      "#IA", "#InteligenciaArtificial", "#LowCode", "#Automation", "#Automatizacion", "#GenAI", "#LLM", "#MachineLearning", "#DigitalTwin",
+      "#UmbralBIM"
+    ],
+    "R7_emoji_blocklist": ["✨","🚀","💡","🔥","🎯","🙌","👇","🤖","⚡","🌟","💪","🎉","❤️","💯","✅","🟢","🔴","🟡","📊","📈","⭐","💼","📌","👀","🙏","😀","😃","😄","😎","🎓","🏗️","🏢"],
+    "R8_token_blocklist": ["transformación digital","transformacion digital","synergia","synergy","powered by","Don't miss","[TODO]","__","revolución digital","revolucion digital","unlock potential","game changer","next level","el futuro del trabajo"],
+    "R9_register_blocklist": ["usted","vosotros","vuestro","vuestra"],
+    "R10_min_paragraphs": 3,
+    "R11_cta_blocklist": ["agendá tu demo","agenda tu demo","agendá una demo","reservá tu","reserva tu","contactanos","contáctanos","book a call","book your","link en bio","escribime al dm","escribeme al dm","mandame dm","escribeme un dm","mandame un dm"]
+  },
+  "per_fixture": [
+    {"id": "F1-bim-only-clash-detection", "disciplines": ["BIM"]},
+    {"id": "F2-bim-plus-ia-paper", "disciplines": ["BIM", "IA"]},
+    {"id": "F3-bim-plus-automation-dynamo", "disciplines": ["BIM", "automation", "Dynamo"]},
+    {"id": "F4-low-code-citizen-dev", "disciplines": ["low-code", "automation"]},
+    {"id": "F5-mix-ia-bim-low-code-edge", "disciplines": ["BIM", "IA", "low-code"]},
+    {"id": "F6-edge-bim-no-tech", "disciplines": ["BIM"]}
+  ],
+  "scoring": {
+    "hard_rules": ["R1","R2","R4","R5","R7","R8","R9","R11"],
+    "soft_rules": ["R3","R6","R10","R12"],
+    "formula": "score = 0.7 * (hard_pass / hard_total) + 0.3 * (soft_pass / soft_total)",
+    "threshold": 0.80,
+    "hard_rule_pass_required": 1.0
+  }
+}

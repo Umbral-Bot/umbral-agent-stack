@@ -116,6 +116,19 @@ else
   log "WARN stage6 exited rc=$rc — continuando (Stage 4 ya cumplió)"
 fi
 
+# ---------------------------------------------------------------------------
+# StageX: Pipeline Editorial dashboard → Notion Control Room subpage.
+# Best-effort observability layer. NEVER aborta el cron: failures aquí solo
+# afectan al panel de métricas, no al pipeline de publicación.
+# ---------------------------------------------------------------------------
+log "stageX: pipeline_dashboard"
+if python scripts/discovery/stageX_pipeline_dashboard.py >/dev/null; then
+  log "stageX: OK"
+else
+  rc=$?
+  log "WARN stageX exited rc=$rc — dashboard no actualizado (no aborta el cron)"
+fi
+
 log "done"
 exit 0
 

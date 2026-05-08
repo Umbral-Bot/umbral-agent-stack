@@ -11,6 +11,8 @@ Servicio target: `srch-umbral-kb-prod` (AI Search Basic, RG `rg-umbral-agents-pr
 | `create_initial_index.py` | 046 | Crea índice vacío `aeco-kb-es-vYYYYMMDD` + alias estable `aeco-kb-es-current`. Idempotente. |
 | `pdf_parser.py` | 047 | Parsea 1 PDF de `crudos/aeco/raw/...` con DI prebuilt-layout + chunkea + escribe JSONL a `crudos/aeco/parsed/...`. Idempotente vía `parser_version`. |
 | `source_crawler.py` | 048 | Descarga PDFs desde `seeds/{source_type}.yaml` con rate-limit 1 req/s + dedupe SHA-256, manifest JSONL append-only en `crudos/aeco/raw/_manifest/{source}.jsonl`. |
+| `version_detector.py` | 049 | Lee `aeco/parsed/{source}/*.chunks.jsonl` + manifest del index activo, emite diff JSON `{added, changed, removed, unchanged}`. |
+| `index_publisher.py` | 049 | Clona schema del index activo → `aeco-kb-es-vYYYYMMDD` → embebe (Foundry text-embedding-3-small) → upload → valida (count + sample query) → alias swap atómico. |
 
 ## Auth
 
@@ -136,3 +138,47 @@ Q2 carga `buildingsmart` (3 PDFs IFC) + `minvu` (placeholders, validar URLs ante
 ### Cron
 
 Q2: invocación manual. Cron diario 03:00 UTC se cablea en **050** (cambio `triggerType: 'Schedule'` + `scheduleTriggerConfig`).
+
+## Sub-task 049 — version-detector + index-publisher
+
+### version_detector.py
+
+Lee parsed chunks bajo `crudos/aeco/parsed/{source}/` y los compara con el manifest del index activo (alias target) en `crudos/aeco/index/{index}/manifest.jsonl`. Emite diff JSON.
+
+```powershell
+az login --tenant f67a8c0b-ec74-47cd-836c-355c5a6162d4
+python scripts/aeco-kb/version_detector.py --source-type buildingsmart
+```
+
+### index_publisher.py
+
+Pipeline completo: clona schema, embebe, sube docs, valida (gate), swap atómico del alias. Escribe nuevo manifest del index publicado.
+
+```powershell
+python scripts/aeco-kb/index_publisher.py --source-types buildingsmart minvu --dry-run
+python scripts/aeco-kb/index_publisher.py --source-types buildingsmart minvu
+```
+
+Gate de validación pre-swap:
+
+- `documentCount >= expected * 0.95`.
+- Sample query `IFC OR norma OR construcción` devuelve >= 3 results.
+- Failure rate uploads <= 5%.
+
+### Container Apps Job (manual trigger)
+
+Definido en `infra/azure/modules/aeco-index-pipeline-job.bicep`. Image: `ghcr.io/umbral-bot/aeco-index-pipeline:latest`. Subcomandos vía args:
+
+```bash
+az containerapp job start --name aeco-index-pipeline --resource-group rg-umbral-agents-prod --args 'detect --source-type buildingsmart'
+az containerapp job start --name aeco-index-pipeline --resource-group rg-umbral-agents-prod --args 'publish --source-types buildingsmart minvu'
+```
+
+### Rollback
+
+Manual repointing del alias al index previo:
+
+```bash
+az search alias create-or-update --service-name srch-umbral-kb-prod --resource-group rg-umbral-agents-prod --name aeco-kb-es-current --indexes aeco-kb-es-v20260501
+```
+

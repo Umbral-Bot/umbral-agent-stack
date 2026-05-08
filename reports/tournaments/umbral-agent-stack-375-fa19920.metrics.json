@@ -1,0 +1,59 @@
+{
+  "tournament_id": "umbral-agent-stack-375-fa19920",
+  "issue_id": "Umbral-Bot/umbral-agent-stack#375",
+  "lanes_total": 2,
+  "lanes_completed": 2,
+  "lanes_pr_mergeable": 2,
+  "winner_specialty": "docs-concise",
+  "winner_pr": "Umbral-Bot/umbral-agent-stack#376",
+  "loser_pr": "Umbral-Bot/umbral-agent-stack#377",
+  "lanes": [
+    {
+      "specialty": "docs-concise",
+      "branch": "tournament/umbral-agent-stack-375-fa19920/lane-docs-concise",
+      "pr": "Umbral-Bot/umbral-agent-stack#376",
+      "additions": 1,
+      "deletions": 1,
+      "ci_conclusion": "success",
+      "outcome": "merged"
+    },
+    {
+      "specialty": "docs-explanatory",
+      "branch": "tournament/umbral-agent-stack-375-fa19920/lane-docs-explanatory",
+      "pr": "Umbral-Bot/umbral-agent-stack#377",
+      "additions": 2,
+      "deletions": 2,
+      "ci_conclusion": "success",
+      "outcome": "closed_kept"
+    }
+  ],
+  "winner_rubric": "smallest line delta passing CI; tie -> docs-concise",
+  "rubric_decision": {
+    "metric": "additions+deletions",
+    "docs_concise": 2,
+    "docs_explanatory": 4,
+    "tiebreak_used": false
+  },
+  "cleanup_policy": "keep-losers",
+  "cleanup_verified": true,
+  "cleanup_evidence": {
+    "subagents_spawned_during_smoke": 0,
+    "winner_branch_remote_present": false,
+    "loser_branch_remote_present": true,
+    "tournament_prs_terminal": 2,
+    "worker_health_post": "ok"
+  },
+  "time_to_first_pr_seconds": null,
+  "time_to_winner_seconds": null,
+  "duration_sec": 252,
+  "tokens_total": null,
+  "usd_estimated": 0.0,
+  "usd_budget_cap": 0.50,
+  "mode": "manual-simulation",
+  "verdict": "verde",
+  "divergences": [
+    "PAT lacks issues:write for gh issue comment (addComment GraphQL forbidden); contract documented in report instead",
+    "Pre-existing untracked reports/*.json artifacts in worktree at smoke start (not from smoke)",
+    "gh auth status emitted partially-masked PAT prefix; not a real leak but logged"
+  ]
+}

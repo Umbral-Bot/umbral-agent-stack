@@ -42,11 +42,22 @@ copilot_cli:
   default_max_wall_sec: 120
   default_max_tokens: 8000
   default_max_files_touched: 0      # 0 = read-only por mission default
+  # F8G: default/fixed model for canonical read-only Copilot CLI runs.
+  # F8F proved that the CLI accepts the slug `gpt-5.5`, not the display name
+  # `GPT-5.5`. GitHub Copilot CLI currently documents reasoning efforts only
+  # up to `high`, so this is the maximum configurable effort level here.
+  default_model: gpt-5.5
+  force_default_model: true
+  default_reasoning_effort: high
+  model_aliases:
+    GPT-5.5: gpt-5.5
+    GPT 5.5: gpt-5.5
   # Copilot CLI accepts a model override via --model. This repo-side list only
   # controls which model names Rick/subagents may request; GitHub still enforces
   # actual plan/org/model-policy availability. Source checked 2026-05-07:
   # https://docs.github.com/en/copilot/reference/ai-models/supported-models
   allowed_models:
+    - gpt-5.5
     - Claude Opus 4.7
     - Claude Opus 4.6
     - Claude Opus 4.6 (fast mode) (preview)

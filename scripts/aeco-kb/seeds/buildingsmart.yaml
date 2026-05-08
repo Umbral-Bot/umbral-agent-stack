@@ -1,0 +1,21 @@
+# O16.2/048 — buildingSMART seeds (Q2 smoke)
+# Solo PDFs públicos de standards.buildingsmart.org. URLs validadas en repo —
+# si una falla persistente, el crawler la marca status=failed en manifest.
+source_type: buildingsmart
+jurisdiction: intl
+doc_type: spec
+default_lang: en  # buildingSMART original; traducción ES diferida a Q3
+
+seeds:
+  - url: https://standards.buildingsmart.org/IFC/RELEASE/IFC4_3/IFC4_3_2_0/IFC4_3_2_0.pdf
+    doc_id: IFC-4.3.2.0
+    version: IFC-4.3.2.0
+    valid_from: "2024-04-01"
+  - url: https://standards.buildingsmart.org/IFC/RELEASE/IFC4_3/IFC4_3_1_0/IFC4_3_1_0.pdf
+    doc_id: IFC-4.3.1.0
+    version: IFC-4.3.1.0
+    valid_from: "2023-08-01"
+  - url: https://standards.buildingsmart.org/IFC/RELEASE/IFC4_3/IFC4_3_0_0/IFC4_3_0_0.pdf
+    doc_id: IFC-4.3.0.0
+    version: IFC-4.3.0.0
+    valid_from: "2022-12-01"

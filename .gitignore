@@ -27,6 +27,10 @@ worker_err.txt
 update.zip
 vps_pub_key.txt
 
+# === Bicep compiled artifacts + deploy logs ===
+infra/azure/main.json
+infra/azure/deploy-*-output.json
+
 # === Python ===
 __pycache__/
 *.py[cod]
@@ -86,3 +90,15 @@ reports/runtime/generated/
 # committed; F3 evidence under docs/ stays tracked.
 reports/copilot-cli/
 artifacts/copilot-cli/
+
+# === reports/*.json hygiene (O7b, 2026-05-08) ===
+# Pipeline scripts (stage*/spike*/qa-grep/backfill/rerender-pages/etc.) dump
+# JSON ephemera at reports/ top-level. Block new ones from polluting
+# `git status`. Pre-existing tracked files are unaffected (gitignore only
+# blocks untracked adds). For curated/structured artifacts, place them under
+# reports/<lane>/ and use the allow-list below or the per-lane policy.
+reports/*.json
+# Allow-list: structured artifacts produced by governed lanes
+!reports/**/manifest.json
+!reports/**/*.metrics.json
+!reports/runtime/openclaw-runtime-snapshot-latest.json

@@ -1,0 +1,95 @@
+{
+  "report_id": "f8g-verify-canonical-pin-2026-05-08",
+  "phase": "F8G-verify",
+  "verdict": "amarillo",
+  "pin_under_test": {
+    "default_model": "gpt-5.5",
+    "force_default_model": true,
+    "default_reasoning_effort": "high",
+    "model_aliases": {"GPT-5.5": "gpt-5.5", "GPT 5.5": "gpt-5.5"},
+    "config_source": "config/tool_policy.yaml lines 49-54",
+    "merged_in_pr": 337
+  },
+  "gate_state_at_start": {
+    "L2_policy_enabled": true,
+    "L3_RICK_COPILOT_CLI_EXECUTE": false,
+    "L4_egress_activated": false,
+    "L5_real_execution_implemented": true,
+    "docker_network_copilot_egress_present": false,
+    "nft_table_copilot_egress_present": false
+  },
+  "t8a_default_path": {
+    "result": "partial",
+    "sub_probes": [
+      {
+        "label": "gates_as_found_L3_off",
+        "decision": "execute_flag_off_dry_run",
+        "resolved_model": "gpt-5.5",
+        "resolved_reasoning_effort": "high",
+        "requested_model": null,
+        "audit_log": "reports/copilot-cli/2026-05/b32ad6c5e40d4ffa98c136e84a370d86.jsonl",
+        "latency_ms": 113,
+        "cli_invoked": false
+      },
+      {
+        "label": "L3_flipped_egress_off",
+        "decision": "egress_not_activated",
+        "resolved_model": "gpt-5.5",
+        "resolved_reasoning_effort": "high",
+        "docker_argv_model_slice": "--model gpt-5.5 --reasoning-effort high",
+        "audit_log": "reports/copilot-cli/2026-05/74275a43b2714dac80c0e4ad35078bb2.jsonl",
+        "latency_ms": 89,
+        "cli_invoked": false
+      }
+    ],
+    "gate_eval": {
+      "audit_records_gpt55_high": "pass",
+      "manifest_records_gpt55_high": "n/a (no real CLI run; egress closed)",
+      "no_cli_rejection": "pass (CLI not invoked; argv carries lowercase slug gpt-5.5)",
+      "secret_scan_clean": "n/a (no real run)",
+      "zero_nft_drops": "n/a (nft chain absent)",
+      "exit_0_markers": "n/a (no subprocess executed)"
+    }
+  },
+  "t8b_override_rejection": {
+    "result": "pass",
+    "requested_model": "Claude Opus 4.6",
+    "decision": "model_not_allowed",
+    "forced_default_model": "gpt-5.5",
+    "allowed_models": ["gpt-5.5"],
+    "audit_log": "reports/copilot-cli/2026-05/0b9f99a40d1f457aaefb1f4258b1b6a3.jsonl",
+    "latency_ms": 81,
+    "rejected_pre_cli": true,
+    "cli_invoked": false,
+    "gate_eval": {
+      "non_zero_from_worker_not_cli": "pass",
+      "audit_cites_force_default_model": "pass",
+      "secret_scan_clean": "n/a",
+      "zero_nft_drops": "n/a"
+    }
+  },
+  "tokens_in": 0,
+  "tokens_out": 0,
+  "cost_estimate_usd": 0.0,
+  "post_probe_state": {
+    "L3_reverted": true,
+    "L4_unchanged": true,
+    "service_dropin_clean": true,
+    "config_tool_policy_yaml_clean": true,
+    "worker_health_post": "ok"
+  },
+  "divergences": [
+    "copilot-egress Docker network and nft scoped chain torn down post-F8F; not re-provisioned by this verify task (governance-gated).",
+    "audit's `requested_model` field omitted when no alias matches and force_default rejects (small forensic gap, not a regression).",
+    "Real-CLI acceptance gates (manifest, secret_scan, nft drops, exit 0) cannot be satisfied without re-provisioning the egress lane — F8H follow-up recommended."
+  ],
+  "task_constraint_compliance": {
+    "no_secrets_in_report": true,
+    "no_long_lived_overrides": true,
+    "no_patch_to_tool_policy_yaml": true,
+    "f8h_followup_recommended": true
+  },
+  "t8a": "partial",
+  "t8b": "pass",
+  "latency_ms": {"t8a_l3_off": 113, "t8a_l3_on": 89, "t8b": 81}
+}

@@ -254,6 +254,26 @@ _MODEL_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9 ._:+()/-]{0,79}$")
 # ---------------------------------------------------------------------------
 
 
+def _resolve_policy_model(requested_model: Optional[str]) -> Tuple[Optional[str], Optional[str], bool]:
+    """Resolve requested/display model names to the CLI slug enforced by policy.
+
+    Returns ``(effective_model, default_model, forced_default)``. If no model is
+    requested, the policy default is used. Aliases allow humans to request
+    display names such as ``GPT-5.5`` while the CLI receives ``gpt-5.5``.
+    """
+    aliases = {
+        source: target
+        for source, target in tool_policy.get_copilot_cli_model_aliases().items()
+        if _MODEL_NAME_RE.match(target)
+    }
+    raw_default_model = tool_policy.get_copilot_cli_default_model()
+    default_model = raw_default_model if raw_default_model and _MODEL_NAME_RE.match(raw_default_model) else None
+    forced_default = tool_policy.is_copilot_cli_default_model_forced()
+    if requested_model:
+        return aliases.get(requested_model, requested_model), default_model, forced_default
+    return default_model, default_model, forced_default
+
+
 def _redact(text: str) -> str:
     if not text:
         return ""
@@ -468,6 +488,7 @@ def _build_docker_argv(
     network: str = "none",
     real_run: bool = False,
     model: Optional[str] = None,
+    reasoning_effort: Optional[str] = None,
 ) -> List[str]:
     """Construct the docker argv.
 
@@ -509,6 +530,8 @@ def _build_docker_argv(
             copilot_flags += "--log-level=debug "
         if model:
             copilot_flags += f"--model {shlex.quote(model)} "
+        if reasoning_effort:
+            copilot_flags += f"--reasoning-effort {shlex.quote(reasoning_effort)} "
         argv.extend([
             "--env", "COPILOT_GITHUB_TOKEN",
             "--env", "NO_COLOR=1",
@@ -580,6 +603,7 @@ def _write_execution_artifacts(
     docker_argv_redacted: List[str],
     run_result: Dict[str, Any],
     model: Optional[str] = None,
+    reasoning_effort: Optional[str] = None,
 ) -> Dict[str, Any]:
     stdout_raw = str(run_result.get("stdout", ""))
     stderr_raw = str(run_result.get("stderr", ""))
@@ -603,6 +627,7 @@ def _write_execution_artifacts(
         "duration_sec": run_result["duration_sec"],
         "prompt_sha256": _sha256_text(prompt),
         "model": model,
+        "reasoning_effort": reasoning_effort,
         "docker_argv_redacted": docker_argv_redacted,
         "stdout": {
             "path": str(stdout_path),
@@ -833,7 +858,9 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
         }
 
     mission = validated["mission"]
-    model = validated.get("model")
+    requested_model = validated.get("model")
+    model, default_model, force_default_model = _resolve_policy_model(requested_model)
+    reasoning_effort = tool_policy.get_copilot_cli_default_reasoning_effort()
     prompt = validated["prompt"]
     repo_path = validated["repo_path"]
     dry_run = validated["dry_run"]
@@ -846,6 +873,10 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
     base_event["max_wall_sec"] = max_wall_sec
     if model:
         base_event["model"] = model
+    if requested_model and requested_model != model:
+        base_event["requested_model"] = requested_model
+    if reasoning_effort:
+        base_event["reasoning_effort"] = reasoning_effort
     base_event["prompt_summary"] = _summarize(prompt)
     base_event["metadata_keys"] = sorted((validated.get("metadata") or {}).keys())
 
@@ -957,11 +988,12 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
         }
     base_event["operation_decision"] = "allowed"
 
-    # 5.6) Optional model override. GitHub Copilot controls actual plan/org
-    # availability; this policy layer restricts which model names Rick can
-    # request through the worker surface.
+    # 5.6) Model policy. GitHub Copilot controls actual plan/org
+    # availability; this layer restricts what Rick can request and resolves
+    # display names to CLI slugs (e.g. GPT-5.5 -> gpt-5.5).
     allowed_models = tool_policy.get_copilot_cli_allowed_models()
-    if model and allowed_models and model not in allowed_models:
+    requested_or_effective = {m for m in (requested_model, model) if m}
+    if model and allowed_models and requested_or_effective.isdisjoint(set(allowed_models)):
         event = {
             **base_event,
             "decision": "model_not_allowed",
@@ -973,6 +1005,25 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
             "error": "model_not_allowed",
             "model": model,
             "allowed_models": allowed_models,
+            "would_run": False,
+            "audit_log": audit_path_str,
+            "mission_run_id": mission_run_id,
+        }
+    if force_default_model and default_model and model != default_model:
+        event = {
+            **base_event,
+            "decision": "model_not_allowed",
+            "allowed_models": [default_model],
+            "forced_default_model": default_model,
+        }
+        _write_audit_event(audit_path, event)
+        return {
+            "ok": False,
+            "error": "model_not_allowed",
+            "model": model,
+            "requested_model": requested_model,
+            "forced_default_model": default_model,
+            "allowed_models": [default_model],
             "would_run": False,
             "audit_log": audit_path_str,
             "mission_run_id": mission_run_id,
@@ -991,6 +1042,7 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
         network=network,
         real_run=real_run_requested,
         model=model,
+        reasoning_effort=reasoning_effort,
     )
     redacted_argv = [_redact(a) for a in docker_argv]
 
@@ -1032,6 +1084,7 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
             },
             "mission": mission,
             "model": model,
+            "reasoning_effort": reasoning_effort,
             "mission_run_id": mission_run_id,
             "audit_log": audit_path_str,
             "docker_argv": redacted_argv,
@@ -1068,6 +1121,7 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
             docker_argv_redacted=redacted_argv,
             run_result=run_result,
             model=model,
+            reasoning_effort=reasoning_effort,
         )
         secret_redacted = manifest["secret_scan"]["patterns_redacted"]
         execution_ok = run_result["exit_code"] == 0 and not secret_redacted
@@ -1107,6 +1161,7 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
             },
             "mission": mission,
             "model": model,
+            "reasoning_effort": reasoning_effort,
             "mission_run_id": mission_run_id,
             "batch_id": batch_id,
             "agent_id": agent_id,
@@ -1150,6 +1205,7 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
         },
         "mission": mission,
         "model": model,
+        "reasoning_effort": reasoning_effort,
         "mission_run_id": mission_run_id,
         "audit_log": audit_path_str,
         "docker_argv": redacted_argv,

@@ -1,0 +1,20 @@
+# O16.2/050 — IRAM (Argentina) seeds
+# Nota: IRAM no publica la mayoría de sus normas en PDF gratuito; se incluyen
+# referencias públicas de la Estrategia BIM Argentina (SISCO) que adoptan
+# IRAM/ISO 19650. Validar HEAD vía source_crawler --dry-run antes del primer
+# crawl real; reemplazar URLs rotas en runtime sin redeploy (seeds.yaml en imagen).
+source_type: iram
+jurisdiction: ar
+doc_type: regulation
+default_lang: es
+seeds:
+  - id: sisco-estrategia-bim-ar-2023
+    url: https://www.argentina.gob.ar/sites/default/files/sisco-estrategia-bim-ar-2023.pdf
+    version: "2023"
+    valid_from: "2023-01-01"
+    title: "Estrategia BIM Argentina — adopción IRAM/ISO 19650"
+  - id: iram-iso-19650-1-resumen-2022
+    url: https://www.iram.org.ar/wp-content/uploads/2022/iso-19650-1-resumen.pdf
+    version: "2022"
+    valid_from: "2022-06-01"
+    title: "ISO 19650-1 — Resumen ejecutivo IRAM"

@@ -226,6 +226,116 @@ def score_copy(copy_text: str, fixture: dict[str, Any], rules_cfg: dict[str, Any
     )
 
 
+# --------------------- Multi-format scoring (Stage 7.5 multiformat) -------- #
+#
+# Per-format wrappers around ``score_copy`` that apply the format-specific
+# rule overrides defined in ``stage7_5_golden_copies.json`` under the
+# ``formats`` block. Universal rules (R7 emojis, R8 marketing-slop, R9
+# register, R11 CTA, R12 disciplines) are kept identical across formats.
+# Length, hashtag count, paragraph count and source/blog URL requirements
+# are remapped per format.
+
+FORMAT_NAMES_EVAL = ("linkedin_standalone", "linkedin_share", "blog")
+
+
+def _format_overrides(rules_cfg: dict[str, Any], format_name: str) -> dict[str, Any]:
+    """Return a deep-copy of ``rules_cfg`` with ``global_rules`` overridden
+    by the per-format settings in ``rules_cfg['formats'][format_name]``.
+
+    If the ``formats`` block is missing (legacy fixture file), the base
+    ``rules_cfg`` is returned unchanged — in which case scoring degrades
+    gracefully to the linkedin_standalone defaults.
+    """
+    if format_name not in FORMAT_NAMES_EVAL:
+        raise ValueError(f"unknown format {format_name!r}")
+    fmt_cfg = (rules_cfg.get("formats") or {}).get(format_name)
+    if fmt_cfg is None:
+        return rules_cfg
+    out = json.loads(json.dumps(rules_cfg))  # cheap deep-copy
+    g = out["global_rules"]
+    # Length
+    g["R1_total_len_min"] = int(fmt_cfg.get("total_len_min", g["R1_total_len_min"]))
+    g["R1_total_len_max"] = int(fmt_cfg.get("total_len_max", g["R1_total_len_max"]))
+    g["R2_hook_max_chars"] = int(fmt_cfg.get("hook_max_chars", g["R2_hook_max_chars"]))
+    g["R3_body_min"] = int(fmt_cfg.get("body_min", g["R3_body_min"]))
+    g["R3_body_max"] = int(fmt_cfg.get("body_max", g["R3_body_max"]))
+    # Hashtags
+    g["R5_hashtag_min"] = int(fmt_cfg.get("hashtag_min", g["R5_hashtag_min"]))
+    g["R5_hashtag_max"] = int(fmt_cfg.get("hashtag_max", g["R5_hashtag_max"]))
+    # Paragraphs
+    g["R10_min_paragraphs"] = int(fmt_cfg.get("min_paragraphs", g["R10_min_paragraphs"]))
+    out["_active_format"] = format_name
+    out["_format_cfg"] = fmt_cfg
+    return out
+
+
+def _maybe_swap_url_rule(ev: CopyEval, copy_text: str, fixture: dict[str, Any],
+                        format_name: str) -> CopyEval:
+    """For ``linkedin_share`` and ``blog``, R4 semantics shift:
+
+      * linkedin_share: R4 must check ``blog_url`` substring (NOT source_url).
+      * blog: R4 keeps source_url semantics (already correct).
+
+    For blog format additionally adds R13_blog_h1 rule (hard).
+    """
+    if format_name == "linkedin_share":
+        blog_url = fixture.get("blog_url") or ""
+        for r in ev.rules:
+            if r.rule_id == "R4":
+                r.description = "Contains blog URL"
+                r.passed = bool(blog_url) and (blog_url in copy_text)
+                r.detail = f"blog_url_present={r.passed}"
+                break
+    if format_name == "blog":
+        h1_ok = bool(re.search(r"^\s*#\s+\S+", copy_text, re.MULTILINE))
+        ev.rules.append(RuleResult(
+            "R13", "Blog has H1 (line starting with '# ')", h1_ok, "hard",
+            f"h1_present={h1_ok}",
+        ))
+        # Recompute aggregates after appending
+        hard_total = sum(1 for r in ev.rules if r.severity == "hard")
+        soft_total = sum(1 for r in ev.rules if r.severity == "soft")
+        hard_pass = sum(1 for r in ev.rules if r.severity == "hard" and r.passed)
+        soft_pass = sum(1 for r in ev.rules if r.severity == "soft" and r.passed)
+        hard_ratio = hard_pass / hard_total if hard_total else 0.0
+        soft_ratio = soft_pass / soft_total if soft_total else 0.0
+        ev.score = round(0.7 * hard_ratio + 0.3 * soft_ratio, 4)
+        ev.hard_pass_ratio = round(hard_ratio, 4)
+        ev.soft_pass_ratio = round(soft_ratio, 4)
+    return ev
+
+
+def score_copy_standalone(copy_text: str, fixture: dict[str, Any],
+                          rules_cfg: dict[str, Any]) -> CopyEval:
+    """Score copy assuming linkedin_standalone format (= legacy ``score_copy``)."""
+    cfg = _format_overrides(rules_cfg, "linkedin_standalone")
+    ev = score_copy(copy_text, fixture, cfg)
+    return _maybe_swap_url_rule(ev, copy_text, fixture, "linkedin_standalone")
+
+
+def score_copy_share(copy_text: str, fixture: dict[str, Any],
+                     rules_cfg: dict[str, Any]) -> CopyEval:
+    """Score copy assuming linkedin_share format (short, links to blog_url)."""
+    cfg = _format_overrides(rules_cfg, "linkedin_share")
+    ev = score_copy(copy_text, fixture, cfg)
+    return _maybe_swap_url_rule(ev, copy_text, fixture, "linkedin_share")
+
+
+def score_copy_blog(copy_text: str, fixture: dict[str, Any],
+                    rules_cfg: dict[str, Any]) -> CopyEval:
+    """Score copy assuming blog format (long-form, no hashtags, requires H1)."""
+    cfg = _format_overrides(rules_cfg, "blog")
+    ev = score_copy(copy_text, fixture, cfg)
+    return _maybe_swap_url_rule(ev, copy_text, fixture, "blog")
+
+
+SCORERS_BY_FORMAT = {
+    "linkedin_standalone": score_copy_standalone,
+    "linkedin_share": score_copy_share,
+    "blog": score_copy_blog,
+}
+
+
 # -------------------------- LLM call (gateway) ----------------------------- #
 
 def _resolve_gateway_token() -> str:
@@ -294,21 +404,42 @@ def run_evaluator(
     llm_call: Callable[[str, str], str],
     model: str,
     prompt_dir: Path = DEFAULT_PROMPT_DIR,
+    format_name: str = "linkedin_standalone",
 ) -> list[CopyEval]:
+    """Run the evaluator across all proposals for a single ``format_name``.
+
+    For the legacy ``linkedin_standalone`` format the existing
+    ``build_copy_prompt`` (linkedin-copy-{system,user}.md) is used to keep
+    backward compat with the v1 voice fixture; for the other formats the
+    writer's ``build_format_prompt`` is used so prompt content stays in
+    sync between writer and evaluator.
+    """
     out: list[CopyEval] = []
     fixture_rules = {f["id"]: f for f in rules_cfg.get("per_fixture", [])}
+    scorer = SCORERS_BY_FORMAT.get(format_name, score_copy_standalone)
+    use_writer_loader = format_name in ("linkedin_share", "blog")
+    if use_writer_loader:
+        # Lazy import — keeps the evaluator usable even if the writer
+        # module fails to import for unrelated reasons (e.g. missing httpx).
+        from scripts.discovery.stage7_5_copy_writer import (  # type: ignore
+            build_format_prompt as _writer_build,
+        )
     for prop in proposals:
         try:
-            system, user = build_copy_prompt(prop, prompt_dir=prompt_dir)
+            if use_writer_loader:
+                system, user = _writer_build(format_name, prop, prompt_dir=prompt_dir)
+            else:
+                system, user = build_copy_prompt(prop, prompt_dir=prompt_dir)
             copy = llm_call(system, user)
         except Exception as exc:  # noqa: BLE001
-            ev = CopyEval(fixture_id=prop["id"], model=model, copy_text="", rules=[], error=f"{type(exc).__name__}: {exc}")
+            ev = CopyEval(fixture_id=prop["id"], model=model, copy_text="",
+                          rules=[], error=f"{type(exc).__name__}: {exc}")
             out.append(ev)
             continue
         # Strip code fences if model wrapped output
         copy_clean = re.sub(r"^```[a-zA-Z]*\n|\n```$", "", copy.strip())
         merged_fixture = {**prop, **fixture_rules.get(prop["id"], {})}
-        ev = score_copy(copy_clean, merged_fixture, rules_cfg)
+        ev = scorer(copy_clean, merged_fixture, rules_cfg)
         ev.model = model
         out.append(ev)
     return out
@@ -360,6 +491,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD)
     parser.add_argument("--temperature", type=float, default=0.7)
     parser.add_argument("--dry-run", action="store_true", help="don't call gateway, emit a fake copy (for smoke)")
+    parser.add_argument(
+        "--format", dest="format_name",
+        default="linkedin_standalone",
+        choices=list(FORMAT_NAMES_EVAL),
+        help="Copy format to evaluate. Default: linkedin_standalone (legacy).",
+    )
     args = parser.parse_args(argv)
 
     fixtures_dir = Path(args.fixtures_dir)
@@ -376,7 +513,10 @@ def main(argv: list[str] | None = None) -> int:
         llm = _real
 
     t0 = time.time()
-    results = run_evaluator(proposals, rules_cfg, llm_call=llm, model=args.model, prompt_dir=Path(args.prompt_dir))
+    results = run_evaluator(
+        proposals, rules_cfg, llm_call=llm, model=args.model,
+        prompt_dir=Path(args.prompt_dir), format_name=args.format_name,
+    )
     elapsed = round(time.time() - t0, 2)
 
     agg = aggregate(results, rules_cfg)
@@ -384,6 +524,7 @@ def main(argv: list[str] | None = None) -> int:
     report = {
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "model": args.model,
+        "format": args.format_name,
         "gateway_url": args.gateway_url,
         "elapsed_sec": elapsed,
         "threshold": args.threshold,
@@ -396,7 +537,7 @@ def main(argv: list[str] | None = None) -> int:
     out_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
 
     # Stdout summary
-    print(f"\n=== Stage 7.5 LinkedIn copy eval — model={args.model} ===")
+    print(f"\n=== Stage 7.5 copy eval — model={args.model} format={args.format_name} ===")
     print(f"Fixtures evaluated : {agg['n']}/{len(proposals)}")
     print(f"Aggregate score    : {agg['score']:.3f} (threshold {args.threshold:.2f})")
     print(f"Hard rules @ 100%  : {agg['hard_all_100']}")

@@ -9,7 +9,8 @@
       "El problema no es detectar clashes, es gestionar quién los resuelve y en qué revisión",
       "Proyectos sin BEP claro no aprovechan el modelo federado aunque exista"
     ],
-    "source_url": "https://example.cl/uc/bim-coordinacion-hospitales-2026.pdf"
+    "source_url": "https://example.cl/uc/bim-coordinacion-hospitales-2026.pdf",
+    "blog_url": "https://blog.umbralbim.com/bim-coordinacion-hospitales-chile-2026"
   },
   {
     "id": "F2-bim-plus-ia-paper",
@@ -21,7 +22,8 @@
       "Performance cae fuerte en chequeos semánticos complejos",
       "Sin BEP estructurado, la IA no tiene contra qué validar"
     ],
-    "source_url": "https://arxiv.org/abs/2604.12345"
+    "source_url": "https://arxiv.org/abs/2604.12345",
+    "blog_url": "https://blog.umbralbim.com/llm-validacion-ifc-bep-paper"
   },
   {
     "id": "F3-bim-plus-automation-dynamo",
@@ -33,7 +35,8 @@
       "El estándar de nomenclatura tiene que existir como dato estructurado, no como PDF",
       "Autocorrección solo de errores triviales; el resto va a revisión humana"
     ],
-    "source_url": "https://blog.example.ar/automatizacion-dynamo-naming"
+    "source_url": "https://blog.example.ar/automatizacion-dynamo-naming",
+    "blog_url": "https://blog.umbralbim.com/dynamo-naming-automation-caso-bsas"
   },
   {
     "id": "F4-low-code-citizen-dev",
@@ -45,7 +48,8 @@
       "El arquitecto-builder es válido para prototipo, no para producción",
       "Versionado y documentación de flows es lo que diferencia adopción duradera"
     ],
-    "source_url": "https://constructiontechreview-latam.example.com/lowcode-aeco-mito"
+    "source_url": "https://constructiontechreview-latam.example.com/lowcode-aeco-mito",
+    "blog_url": "https://blog.umbralbim.com/citizen-developer-aeco-mito"
   },
   {
     "id": "F5-mix-ia-bim-low-code-edge",
@@ -57,7 +61,8 @@
       "Disponibilidad LATAM tarde (Q3 2026)",
       "Dudas abiertas sobre IP del training data y soporte multilingüe del BEP"
     ],
-    "source_url": "https://www.autodesk.com/news/ai-assist-revit-2026"
+    "source_url": "https://www.autodesk.com/news/ai-assist-revit-2026",
+    "blog_url": "https://blog.umbralbim.com/autodesk-ai-assist-revit-lectura-aeco-latam"
   },
   {
     "id": "F6-edge-bim-no-tech",
@@ -69,6 +74,59 @@
       "Sin BIM Manager dedicado y BEP firmado, BIM se queda en modelado decorativo",
       "Chile y Perú con peor brecha"
     ],
-    "source_url": "https://sedibim.example.org/encuesta-2026-informe.pdf"
+    "source_url": "https://sedibim.example.org/encuesta-2026-informe.pdf",
+    "blog_url": "https://blog.umbralbim.com/sedibim-2026-brecha-bim-coordinacion-latam"
+  },
+  {
+    "id": "F7-openbim-ifc-export-pain",
+    "titular": "Mesa redonda buildingSMART LATAM: el IFC que exportamos no es el IFC que el cliente puede consumir",
+    "disciplines": ["BIM", "OpenBIM", "IFC"],
+    "summary": "Una mesa redonda de buildingSMART capítulo LATAM reunió 14 BIM Managers de Argentina, Chile, Colombia y México para discutir el estado del intercambio OpenBIM en proyectos públicos. El consenso fue que el IFC exportado desde Revit, ArchiCAD o Tekla rara vez pasa una validación IDS (Information Delivery Specification) en primera entrega. Los problemas más reportados: psets propietarios sin mapping a psets estándar, naming inconsistente entre disciplinas, geometría aprobada pero parámetros vacíos. Tres de los participantes reportaron rechazos formales del IFC en obra pública por incumplimiento de IDS firmado en el BEP.",
+    "key_points": [
+      "Exportar IFC ≠ exportar IFC consumible: el IDS es el filtro real",
+      "Psets propietarios sin mapping rompen la promesa OpenBIM en proyectos multi-software",
+      "Obras públicas empiezan a rechazar IFC formalmente, no solo a observarlo"
+    ],
+    "source_url": "https://buildingsmart-latam.example.org/mesa-redonda-ifc-2026",
+    "blog_url": "https://blog.umbralbim.com/openbim-ifc-ids-mesa-redonda-latam-2026"
+  },
+  {
+    "id": "F8-bim-mep-coordination-tradeoff",
+    "titular": "Caso EPC mexicano: optimizar el modelo MEP federado costó más que el clash detection que resolvió",
+    "disciplines": ["BIM", "MEP"],
+    "summary": "Un EPC mexicano publicó un postmortem detallado de un proyecto industrial donde decidieron federar y optimizar agresivamente el modelo MEP para correr clash detection automatizado en Navisworks. El equipo invirtió ~480 horas en limpiar familias, normalizar parámetros y armar pipelines de federación. El clash detection encontró 312 hard clashes resueltos en oficina antes de obra, evitando aproximadamente 200 horas de retrabajo. Conclusión del postmortem: el ROI fue negativo en este proyecto, pero los autores defienden la inversión porque el pipeline ahora es reutilizable en los próximos 4 proyectos del portfolio.",
+    "key_points": [
+      "Coordinación BIM federada como inversión de portfolio, no de proyecto único",
+      "El primer proyecto que paga el setup pierde plata; los siguientes la recuperan",
+      "Sin visión de portfolio, la decisión BIM se ve cara y se descarta"
+    ],
+    "source_url": "https://example.mx/epc/postmortem-mep-bim-2026",
+    "blog_url": "https://blog.umbralbim.com/bim-mep-coordinacion-roi-portfolio-mexico"
+  },
+  {
+    "id": "F9-genai-revit-plugin-skeptic",
+    "titular": "Reseña crítica: probé 4 plugins GenAI para Revit en un proyecto real y dejé de usar 3",
+    "disciplines": ["BIM", "IA", "GenAI", "Revit"],
+    "summary": "Un BIM Coordinator chileno publicó una reseña en su blog tras probar durante un trimestre 4 plugins de IA generativa para Revit (generación de familias, sugerencias de coordinación, autocompletado de schedules, generación de planos a partir de texto) en un proyecto residencial de 12.000 m². Conclusión: solo el plugin de autocompletado de schedules le ahorró tiempo neto. Los otros 3 generaban output que requería más tiempo en revisar y corregir que en hacerlo manualmente. El autor enfatiza que la limitación no fue del modelo en sí, sino de la falta de un BEP estructurado contra el cual el plugin pudiera anclar el output.",
+    "key_points": [
+      "GenAI en Revit: 1 de 4 plugins netamente positivos para productividad",
+      "Sin BEP estructurado, la IA agrega trabajo de revisión, no lo quita",
+      "Schedules es el caso de uso menos riesgoso; geometría es el más riesgoso"
+    ],
+    "source_url": "https://blog.example.cl/bim-coord/genai-revit-resena-2026",
+    "blog_url": "https://blog.umbralbim.com/genai-plugins-revit-resena-bim-coordinator"
+  },
+  {
+    "id": "F10-edge-isobim-nondigital-team",
+    "titular": "ISO 19650 en estudios pequeños sin equipo digital: ¿adopción simbólica o cambio real?",
+    "disciplines": ["BIM", "ISO19650"],
+    "summary": "Un consultor BIM uruguayo recopiló datos de 22 estudios de arquitectura pequeños (≤8 personas) que firmaron contratos exigiendo cumplimiento ISO 19650 en proyectos públicos durante 2025. Solo 4 lograron implementar las prácticas mínimas (CDE estructurado, BEP firmado, matriz de responsabilidades). Los 18 restantes reportaron BEP firmado pero CDE inexistente o reemplazado por carpetas Drive sin disciplina de versionado. El consultor argumenta que la presión normativa sin acompañamiento técnico genera adopción de papel, no cambio operativo, y propone esquemas de mentoría entre estudios maduros y nuevos como vía intermedia.",
+    "key_points": [
+      "ISO 19650 firmada ≠ ISO 19650 implementada: 4 de 22 estudios pequeños",
+      "Sin acompañamiento técnico, la presión normativa genera adopción simbólica",
+      "Mentoría entre estudios maduros y nuevos como puente realista en LATAM"
+    ],
+    "source_url": "https://example.uy/consultor-bim/iso19650-estudios-pequenos-2026",
+    "blog_url": "https://blog.umbralbim.com/iso19650-estudios-pequenos-adopcion-simbolica-uruguay"
   }
 ]

@@ -422,6 +422,7 @@ def process_channel(
                 stats.signals_unique += 1
             else:
                 stats.signals_duplicate += 1
+            conn.commit()
         return
 
     if canal_tipo not in ("rss", "web"):
@@ -435,6 +436,7 @@ def process_channel(
                 published_at=None, discovered_at=discovered_at,
                 dedup_h=h, source_status="out_of_scope_stage1",
             )
+            conn.commit()
         return
 
     host = (urllib.parse.urlsplit(canal_url).hostname or "").lower()

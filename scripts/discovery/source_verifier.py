@@ -90,8 +90,10 @@ DEFAULT_HIGH_TRUST = (
     "github.com",
 )
 
-# arXiv abs URL: /abs/YYYY.NNNNN[vN]/?  where YYYY ∈ [arxiv_min_year, current_year+offset]
-_ARXIV_ABS_RE = re.compile(r"^/abs/(\d{4})\.(\d{4,5})(v\d+)?/?$")
+# arXiv abs URL (post-2007 scheme): /abs/YYMM.NNNNN[vN]/?  where YY = year-2000
+# and MM ∈ [01, 12]. Year resolved as 2000+YY must lie in
+# [arxiv_min_year, current_year + arxiv_max_year_offset].
+_ARXIV_ABS_RE = re.compile(r"^/abs/(\d{2})(\d{2})\.(\d{4,5})(v\d+)?/?$")
 _TITLE_RE = re.compile(r"<title[^>]*>(.*?)</title>", re.IGNORECASE | re.DOTALL)
 
 
@@ -220,7 +222,11 @@ def _check_arxiv(url: str, config: VerifierConfig) -> str | None:
     m = _ARXIV_ABS_RE.match(u.path or "")
     if not m:
         return "arxiv_malformed"
-    year = int(m.group(1))
+    yy = int(m.group(1))
+    mm = int(m.group(2))
+    if mm < 1 or mm > 12:
+        return "arxiv_malformed"
+    year = 2000 + yy  # arXiv new scheme started in 2007 (YYMM.NNNNN)
     current_year = datetime.now(timezone.utc).year
     if year < config.arxiv_min_year or year > current_year + config.arxiv_max_year_offset:
         return "arxiv_year_out_of_range"

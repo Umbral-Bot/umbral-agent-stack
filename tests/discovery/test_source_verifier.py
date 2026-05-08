@@ -117,7 +117,7 @@ def test_arxiv_valid_passes(cfg, cache, ops_log):
     client = _mk_client(handler)
     try:
         v = sv.verify_source(
-            "https://arxiv.org/abs/2024.12345",
+            "https://arxiv.org/abs/2401.12345",
             config=cfg, cache_db=cache, ops_log=ops_log, client=client,
         )
     finally:
@@ -138,9 +138,9 @@ def test_arxiv_malformed_path_blocks(cfg, cache, ops_log):
 
 
 def test_arxiv_year_too_old_blocks(cfg, cache, ops_log):
-    # arxiv_min_year default = 2020.
+    # arxiv_min_year default = 2020. YY=19 → year 2019, MM=01 valid.
     v = sv.verify_source(
-        "https://arxiv.org/abs/1999.12345",
+        "https://arxiv.org/abs/1901.12345",
         config=cfg, cache_db=cache, ops_log=ops_log,
         client=_mk_client(lambda r: pytest.fail("no http")),
     )
@@ -149,8 +149,9 @@ def test_arxiv_year_too_old_blocks(cfg, cache, ops_log):
 
 
 def test_arxiv_year_too_far_future_blocks(cfg, cache, ops_log):
+    # YY=29 → year 2029, MM=01 valid. current_year=2026 + offset 1 = 2027 max.
     v = sv.verify_source(
-        "https://arxiv.org/abs/2999.12345",
+        "https://arxiv.org/abs/2901.12345",
         config=cfg, cache_db=cache, ops_log=ops_log,
         client=_mk_client(lambda r: pytest.fail("no http")),
     )
@@ -336,7 +337,7 @@ def test_warning_short_body(cfg, cache, ops_log):
     client = _mk_client(handler)
     try:
         v = sv.verify_source(
-            "https://arxiv.org/abs/2024.12345",
+            "https://arxiv.org/abs/2401.12345",
             config=cfg, cache_db=cache, ops_log=ops_log, client=client,
         )
     finally:
@@ -361,7 +362,7 @@ def test_empty_url_blocks(cfg, cache, ops_log):
 
 def test_no_scheme_blocks(cfg, cache, ops_log):
     v = sv.verify_source(
-        "arxiv.org/abs/2024.12345",
+        "arxiv.org/abs/2401.12345",
         config=cfg, cache_db=cache, ops_log=ops_log,
         client=_mk_client(lambda r: pytest.fail("no http")),
     )
@@ -397,7 +398,7 @@ def test_cache_hit_short_circuits_http(cfg, cache, ops_log):
     c1 = _mk_client(handler)
     try:
         v1 = sv.verify_source(
-            "https://arxiv.org/abs/2024.12345",
+            "https://arxiv.org/abs/2401.12345",
             config=cfg, cache_db=cache, ops_log=ops_log, client=c1,
         )
     finally:
@@ -411,7 +412,7 @@ def test_cache_hit_short_circuits_http(cfg, cache, ops_log):
     c2 = _mk_client(handler)
     try:
         v2 = sv.verify_source(
-            "https://arxiv.org/abs/2024.12345",
+            "https://arxiv.org/abs/2401.12345",
             config=cfg, cache_db=cache, ops_log=ops_log, client=c2,
         )
     finally:
@@ -432,11 +433,11 @@ def test_cache_disabled_always_probes(cfg, cache, ops_log):
     c = _mk_client(handler)
     try:
         sv.verify_source(
-            "https://arxiv.org/abs/2024.12345",
+            "https://arxiv.org/abs/2401.12345",
             config=cfg, cache_db=cache, ops_log=ops_log, client=c, use_cache=False,
         )
         sv.verify_source(
-            "https://arxiv.org/abs/2024.12345",
+            "https://arxiv.org/abs/2401.12345",
             config=cfg, cache_db=cache, ops_log=ops_log, client=c, use_cache=False,
         )
     finally:
@@ -452,7 +453,7 @@ def test_cache_ttl_expiry(cfg, cache, ops_log, monkeypatch):
     c = _mk_client(handler)
     try:
         sv.verify_source(
-            "https://arxiv.org/abs/2024.12345",
+            "https://arxiv.org/abs/2401.12345",
             config=cfg, cache_db=cache, ops_log=ops_log, client=c,
         )
     finally:
@@ -467,7 +468,7 @@ def test_cache_ttl_expiry(cfg, cache, ops_log, monkeypatch):
     conn.commit()
     conn.close()
 
-    cached = sv.cache_get(cache, "https://arxiv.org/abs/2024.12345")
+    cached = sv.cache_get(cache, "https://arxiv.org/abs/2401.12345")
     assert cached is None  # expired
 
 
@@ -537,7 +538,7 @@ def test_ops_log_written_on_verified(cfg, cache, ops_log):
     c = _mk_client(handler)
     try:
         sv.verify_source(
-            "https://arxiv.org/abs/2024.12345",
+            "https://arxiv.org/abs/2401.12345",
             config=cfg, cache_db=cache, ops_log=ops_log, client=c,
         )
     finally:

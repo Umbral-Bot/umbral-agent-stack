@@ -7,7 +7,7 @@ created_by: copilot-chat-notion-governance
 priority: high
 sprint: Q2-2026 / O16.2
 created_at: "2026-05-08T05:45:00Z"
-updated_at: "2026-05-08T07:30:00Z"
+updated_at: "2026-05-08T18:21:00Z"
 ---
 
 ## Contexto previo
@@ -162,3 +162,50 @@ Final: `python scripts/aeco-kb/smoke_agenteub_kb.py` y update audit.
     para GHCR push aunque docker login devuelva éxito.
   - Runtime VPS intacto: gateway pid 75421 sin tocar, no se reinició
     nada, no se editó código fuera del Log de este task.
+
+- 2026-05-08T18:21Z — Copilot Coding Agent (VPS): **PUSHES 6/6 OK** con
+  PAT classic `GHCR_PAT` (scopes `repo, write:packages, delete:packages`).
+  Ningún rebuild — usados los layers cacheados de la sesión 07:30Z.
+
+  Digests REMOTOS confirmados (idénticos a los locales del log previo):
+
+  | Image | Tag | Remote digest |
+  |---|---|---|
+  | `ghcr.io/umbral-bot/aeco-source-crawler` | `:v1` y `:latest` | `sha256:43e5a859936941e21803a1004655fb0d8b373c367d03d840b8d1a7274c5bf0bf` |
+  | `ghcr.io/umbral-bot/aeco-pdf-parser`     | `:v1` y `:latest` | `sha256:d8ae1237f96461c29aea9590b95d738741bae33ecc35202ad6b2eae9a56fc86e` |
+  | `ghcr.io/umbral-bot/aeco-index-pipeline` | `:v1` y `:latest` | `sha256:680cca042d9da520facc0dc81682b17ce1784c2cddcbcf9ccf8ca53713a48f5c` |
+
+  Cada push reportó "Layer already exists" para todas las capas + `digest:`
+  línea final: tags `:v1` y `:latest` apuntan al mismo manifest por imagen
+  (esperado, mismo build tageado dos veces).
+
+  **VISIBILITY: bloqueado por scope.** PATCH
+  `/orgs/Umbral-Bot/packages/container/<pkg>/visibility -f visibility=public`
+  retorna HTTP 404 con los 3 packages. Owner real es Organization
+  `Umbral-Bot` (capitalizado), GET sobre el mismo path funciona — confirma
+  que el resource existe y es visible al token. El 404 es la firma típica
+  de GitHub cuando falta `admin:packages` en el PAT (devuelve 404 en lugar
+  de 403 por seguridad). Los packages quedan `visibility: private`.
+
+  Pull anónimo NO ejecutado porque seguro fallará con `denied` mientras los
+  packages estén privados — verificarlo ahora sería ruido sin señal.
+
+  **Acción mínima requerida (David, 1 min UI)**:
+  1. Abrir https://github.com/orgs/Umbral-Bot/packages
+  2. Click en cada uno de los 3 packages (`aeco-source-crawler`,
+     `aeco-pdf-parser`, `aeco-index-pipeline`).
+  3. Package settings → Danger Zone → "Change visibility" → Public →
+     confirmar tipeando el package name.
+  4. Avisar y este task corre el verify pull anónimo y flipea a `done`.
+
+  **Alternativa (si David prefiere automatizar)**: regenerar `GHCR_PAT` en
+  https://github.com/settings/tokens (classic) agregando scope
+  `admin:packages` además de los actuales, exportar al env file, y este
+  task re-ejecuta los 3 PATCH + verify pull anónimo automáticamente.
+
+  Status sigue `blocked` — ahora `blocked-on-visibility-only`. Los
+  pushes son persistentes (digests publicados en GHCR), no se pierden si
+  esto queda esperando al flip manual.
+
+  Runtime VPS intacto: gateway pid 75421 sin tocar, no se reinició nada,
+  no se editó código fuera de este Log.

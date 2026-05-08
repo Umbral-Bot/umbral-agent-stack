@@ -412,14 +412,20 @@ def build_copy_prompt(
         )
     except ModuleNotFoundError:
         import importlib.util as _ilu  # noqa: PLC0415
-        _spec = _ilu.spec_from_file_location(
-            "_stage7_5_eval_copy",
-            Path(__file__).with_name("eval_stage7_5_copy.py"),
-        )
-        if not (_spec and _spec.loader):
-            raise
-        _mod = _ilu.module_from_spec(_spec)
-        _spec.loader.exec_module(_mod)  # type: ignore[union-attr]
+        import sys as _sys  # noqa: PLC0415
+        _name = "_stage7_5_eval_copy"
+        if _name in _sys.modules:
+            _mod = _sys.modules[_name]
+        else:
+            _spec = _ilu.spec_from_file_location(
+                _name,
+                Path(__file__).with_name("eval_stage7_5_copy.py"),
+            )
+            if not (_spec and _spec.loader):
+                raise
+            _mod = _ilu.module_from_spec(_spec)
+            _sys.modules[_name] = _mod
+            _spec.loader.exec_module(_mod)  # type: ignore[union-attr]
         _eval_build_copy_prompt = _mod.build_copy_prompt
 
     titular = proposal_row.get("titular") or _read_title(page_props.get("Título")) or ""
@@ -451,6 +457,185 @@ def build_copy_prompt(
 
 def estimate_tokens(text: str) -> int:
     return max(1, len(text) // APPROX_CHARS_PER_TOKEN)
+
+
+# ---------- Voice v3 helpers ----------
+
+def build_voice_source_payload(
+    *,
+    proposal: dict[str, Any],
+    page_props: dict[str, Any] | None,
+    source_url: str,
+) -> dict[str, Any]:
+    """Build the source_payload dict consumed by the evaluator (voice v3)."""
+    titular = proposal.get("titular") or ""
+    if not titular and page_props:
+        try:
+            titular = (page_props.get("Titular", {}) or page_props.get("Título", {})
+                       or {}).get("title", [{}])[0].get("plain_text", "")
+        except (AttributeError, IndexError, TypeError):
+            titular = ""
+    summary = (
+        proposal.get("summary")
+        or proposal.get("body_raw")
+        or proposal.get("angulo")
+        or ""
+    )
+    if not summary and page_props:
+        summary = _read_rich_text(page_props.get("Body raw")) \
+            or _read_rich_text(page_props.get("Cuerpo")) or ""
+    return {
+        "id": str(proposal.get("id", "")),
+        "titular": titular,
+        "summary": summary,
+        "key_points": proposal.get("key_points") or [],
+        "source_url": source_url,
+        "fixture_skip_source_verify": False,
+    }
+
+
+def build_repair_instruction(
+    *, copy_text: str, eval_result: Any, attempt: int,  # noqa: ARG001
+) -> str:
+    reasons = "; ".join(
+        f"{hr['rule_id']}: {hr.get('reason', '')}"
+        for hr in (getattr(eval_result, "hard_rejects", []) or [])
+    ) or f"voice_match_score below threshold ({getattr(eval_result, 'voice_match_score', 0.0):.2f})"
+    findings = getattr(eval_result, "batch_repetition_findings", []) or []
+    used_phrases = ", ".join(
+        f.get("value", "") for f in findings if f.get("type") == "moderated_phrase"
+    )
+    return (
+        f"Reescribe el copy manteniendo la misma fuente y los mismos hechos del input. "
+        f"Corrige estos problemas detectados (intento {attempt}): {reasons}. "
+        f"Evita repetir estas frases ya usadas: {used_phrases}. "
+        f"Cambia apertura, transición y cierre. Mantén tono técnico, consultivo, con salida práctica. "
+        f"Devuelve solo el copy final, sin metadatos."
+    )
+
+
+def _import_evaluator() -> Any:
+    """Lazy import of the evaluator module to avoid import cycles."""
+    try:
+        from scripts.discovery import eval_stage7_5_copy as _evmod  # noqa: PLC0415
+        return _evmod
+    except ModuleNotFoundError:
+        import importlib.util as _ilu  # noqa: PLC0415
+        import sys as _sys  # noqa: PLC0415
+        mod_name = "_stage7_5_eval_copy"
+        if mod_name in _sys.modules:
+            return _sys.modules[mod_name]
+        spec = _ilu.spec_from_file_location(
+            mod_name,
+            Path(__file__).with_name("eval_stage7_5_copy.py"),
+        )
+        if not (spec and spec.loader):
+            raise
+        mod = _ilu.module_from_spec(spec)
+        # Register BEFORE exec so dataclass introspection (cls.__module__ lookup)
+        # can resolve the module via sys.modules.
+        _sys.modules[mod_name] = mod
+        spec.loader.exec_module(mod)  # type: ignore[union-attr]
+        return mod
+
+
+# Hard reject rules that cannot be fixed by rewriting (factual / source).
+NON_REPARABLE_HR = frozenset({
+    "V3_HR2_UNSUPPORTED_FACT",
+    "V3_HR3_UNVERIFIED_SOURCE_LIVE",
+})
+
+
+def generate_copy_with_voice_retry(
+    *,
+    system_prompt: str,
+    user_prompt: str,
+    model: str,
+    gateway_url: str,
+    gateway_token: str,
+    cache_db: Path | None,
+    proposal_id: int,
+    fixture: dict[str, Any],
+    rules_cfg: dict[str, Any],
+    source_payload: dict[str, Any],
+    ops_log: Path,
+    max_attempts: int = 2,
+) -> tuple[str | None, Any]:
+    """Generate a copy with up to max_attempts repair retries.
+
+    Returns (copy_text, eval_result) if approved.
+    Returns (None, last_eval_result) if all attempts rejected (or non-reparable).
+    """
+    evmod = _import_evaluator()
+
+    current_user_prompt = user_prompt
+    last_eval = None
+
+    for attempt in range(max_attempts + 1):
+        # Cache only on first attempt; retries always go to the LLM.
+        copy_text: str | None = None
+        if attempt == 0 and cache_db is not None:
+            cached = cache_get(cache_db, model,
+                               system_prompt + "\n---\n" + current_user_prompt)
+            if cached is not None:
+                copy_text = cached
+                log_event("stage7_5.cache.hit", ops_log=ops_log,
+                          proposal_id=proposal_id, model=model)
+        if copy_text is None:
+            copy_text = llm_call(
+                system_prompt=system_prompt,
+                user_prompt=current_user_prompt,
+                model=model,
+                gateway_url=gateway_url,
+                auth_token=gateway_token,
+            )
+            if attempt == 0 and cache_db is not None:
+                cache_put(cache_db, model,
+                          system_prompt + "\n---\n" + current_user_prompt,
+                          copy_text)
+        copy_text = (copy_text or "").strip()
+
+        ev = evmod.score_copy(
+            copy_text, fixture, rules_cfg,
+            source_payload=source_payload,
+            source_verification_mode="live",
+        )
+        last_eval = ev
+
+        if ev.approved:
+            log_event("stage7_5.voice_eval.passed", ops_log=ops_log,
+                      proposal_id=proposal_id, attempt=attempt,
+                      voice_match_score=ev.voice_match_score)
+            return copy_text, ev
+
+        log_event("stage7_5.voice_eval.failed", ops_log=ops_log,
+                  proposal_id=proposal_id, attempt=attempt,
+                  hard_reject_rule_ids=ev.hard_reject_rule_ids,
+                  voice_match_score=ev.voice_match_score)
+
+        if any(rid in NON_REPARABLE_HR for rid in ev.hard_reject_rule_ids):
+            log_event("stage7_5.voice_reject_final", ops_log=ops_log,
+                      proposal_id=proposal_id, reason="non_reparable",
+                      hard_reject_rule_ids=ev.hard_reject_rule_ids)
+            return None, ev
+
+        if attempt >= max_attempts:
+            break
+
+        log_event("stage7_5.voice_retry", ops_log=ops_log,
+                  proposal_id=proposal_id, attempt=attempt + 1,
+                  reasons=ev.hard_reject_rule_ids)
+        repair = build_repair_instruction(
+            copy_text=copy_text, eval_result=ev, attempt=attempt + 1)
+        current_user_prompt = (
+            f"{user_prompt}\n\n---\nINSTRUCCIÓN DE REPARACIÓN:\n{repair}"
+        )
+
+    log_event("stage7_5.voice_reject_final", ops_log=ops_log,
+              proposal_id=proposal_id, reason="max_attempts_exhausted",
+              hard_reject_rule_ids=getattr(last_eval, "hard_reject_rule_ids", []),
+              voice_match_score=getattr(last_eval, "voice_match_score", 0.0))
+    return None, last_eval
 
 
 # ---------- Cache ----------
@@ -655,6 +840,7 @@ def process_proposal(
     cost_per_1k_output: float,
     use_llm: bool = True,
     skip_source_verify: bool = False,
+    enable_voice_v3: bool = False,
 ) -> tuple[str, str]:
     """Return ``(status, message)`` for one proposal.
 
@@ -796,36 +982,93 @@ def process_proposal(
     if not use_llm or dry_run:
         return "dry_run", f"would_call_llm est_in_tokens={est_in_tokens}"
 
-    # Cache lookup.
-    cache_prompt_key = system_prompt + "\n---\n" + user_prompt
-    cached = cache_get(cache_db, model, cache_prompt_key)
-    if cached is not None:
-        log_event("stage7_5.cache.hit", ops_log=ops_log, proposal_id=pid, model=model)
-        copy_text = cached
-    else:
-        try:
-            copy_text = llm_call(
-                system_prompt=system_prompt,
-                user_prompt=user_prompt,
-                model=model,
-                gateway_url=gateway_url,
-                auth_token=gateway_token,
-            )
-        except Exception as e:  # noqa: BLE001
-            msg = f"llm_error:{e!s:.200s}"
-            mark_copy_status(state_db, pid, "failed", msg)
-            return "failed", msg
-        cache_put(cache_db, model, cache_prompt_key, copy_text)
-
-    copy_text = copy_text.strip()
-
-    # Resolve canonical source URL for validation.
+    # Resolve canonical source URL (also used by validate_copy + voice payload).
     source_url = (
         _read_url(props.get("Fuente primaria"))
         or _read_url(props.get("Fuente referente"))
         or (proposal.get("fuentes_urls") or [""])[0]
         or ""
     )
+
+    # Build voice v3 fixture + source payload for evaluator.
+    disciplines = list(proposal.get("disciplinas") or []) or ["BIM"]
+    eval_fixture = {
+        "id": str(proposal.get("id", "")),
+        "titular": proposal.get("titular") or _read_title(props.get("Título")) or "",
+        "summary": proposal.get("angulo") or "",
+        "source_url": source_url,
+        "disciplines": disciplines,
+        "key_points": proposal.get("key_points") or [],
+        "fixture_skip_source_verify": False,
+    }
+    source_payload = build_voice_source_payload(
+        proposal=proposal, page_props=props, source_url=source_url,
+    )
+
+    # Load voice v3 rules_cfg (golden file). If unavailable (deployment edge),
+    # fall back to allowing the legacy validate_copy path only.
+    rules_cfg: dict[str, Any] = {}
+    try:
+        rules_path = Path(__file__).resolve().parents[2] / "tests" / "discovery" / "fixtures" / "stage7_5_golden_copies.json"
+        if rules_path.is_file():
+            rules_cfg = json.loads(rules_path.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001
+        rules_cfg = {}
+
+    voice_cfg = (rules_cfg.get("scoring", {}) or {}).get("voice_v3", {}) or {}
+    max_attempts = int(voice_cfg.get("repair_max_attempts", 2))
+
+    # Run voice retry loop (only if rules_cfg is loaded; otherwise legacy path).
+    if enable_voice_v3 and rules_cfg and voice_cfg:
+        try:
+            copy_text, ev_result = generate_copy_with_voice_retry(
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                model=model,
+                gateway_url=gateway_url,
+                gateway_token=gateway_token,
+                cache_db=cache_db,
+                proposal_id=pid,
+                fixture=eval_fixture,
+                rules_cfg=rules_cfg,
+                source_payload=source_payload,
+                ops_log=ops_log,
+                max_attempts=max_attempts,
+            )
+        except Exception as e:  # noqa: BLE001
+            msg = f"llm_error:{e!s:.200s}"
+            mark_copy_status(state_db, pid, "failed", msg)
+            return "failed", msg
+        if copy_text is None:
+            reason = "voice_reject"
+            if ev_result is not None:
+                rids = ",".join(ev_result.hard_reject_rule_ids or []) or "voice_score"
+                reason = f"voice_reject:{rids}"
+            mark_copy_status(state_db, pid, "failed_voice_reject", reason)
+            return "failed_voice_reject", reason
+    else:
+        # Legacy path (no voice rules available).
+        cache_prompt_key = system_prompt + "\n---\n" + user_prompt
+        cached = cache_get(cache_db, model, cache_prompt_key)
+        if cached is not None:
+            log_event("stage7_5.cache.hit", ops_log=ops_log, proposal_id=pid, model=model)
+            copy_text = cached
+        else:
+            try:
+                copy_text = llm_call(
+                    system_prompt=system_prompt,
+                    user_prompt=user_prompt,
+                    model=model,
+                    gateway_url=gateway_url,
+                    auth_token=gateway_token,
+                )
+            except Exception as e:  # noqa: BLE001
+                msg = f"llm_error:{e!s:.200s}"
+                mark_copy_status(state_db, pid, "failed", msg)
+                return "failed", msg
+            cache_put(cache_db, model, cache_prompt_key, copy_text)
+
+    copy_text = copy_text.strip()
 
     try:
         validate_copy(copy_text, source_url=source_url, allow_no_source=allow_no_source)
@@ -905,6 +1148,8 @@ def main(argv: list[str] | None = None) -> int:
             "sandbox URLs, dead links, and redirect hijacks."
         ),
     )
+    p.add_argument("--enable-voice-v3", action="store_true",
+                   help="Enable Voice v3 evaluator + repair retry loop.")
     p.add_argument("--model", default=DEFAULT_MODEL)
     p.add_argument("--gateway-url", default=DEFAULT_GATEWAY_URL)
     p.add_argument("--publicaciones-ds-id", default=DEFAULT_PUBLICACIONES_DS_ID)
@@ -990,6 +1235,7 @@ def main(argv: list[str] | None = None) -> int:
                 cost_per_1k_input=args.cost_per_1k_input_usd,
                 cost_per_1k_output=args.cost_per_1k_output_usd,
                 skip_source_verify=args.skip_source_verify,
+                enable_voice_v3=args.enable_voice_v3,
             )
             if status == "copy_ready":
                 ok += 1

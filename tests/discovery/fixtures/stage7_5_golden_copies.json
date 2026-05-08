@@ -34,6 +34,43 @@
     "soft_rules": ["R3","R6","R10","R12"],
     "formula": "score = 0.7 * (hard_pass / hard_total) + 0.3 * (soft_pass / soft_total)",
     "threshold": 0.80,
-    "hard_rule_pass_required": 1.0
+    "hard_rule_pass_required": 1.0,
+    "voice_v3": {
+      "_doc": "Voice v3 grounded editorial layer. Adds: voice_match_score (0..1) computed from 6 weighted dimensions; batch-aware repetition detection (4-grams across batch + moderated-phrases cap); 5 hard reject rules V3_HR1..V3_HR5; per-fixture source-verifiability bypass via 'fixture_skip_source_verify'. Approval requires hard_pass_ratio >= 1.0 AND score >= threshold AND voice_match_score >= voice_match_score_threshold AND no V3_HRx triggered.",
+      "threshold": 0.85,
+      "voice_match_score_threshold": 0.80,
+      "weights": {
+        "technical_clarity": 0.25,
+        "operational_criteria": 0.20,
+        "david_voice_fit": 0.20,
+        "low_repetition": 0.15,
+        "organizational_sensitivity": 0.10,
+        "source_verifiability": 0.10
+      },
+      "moderated_phrases": [
+        "Mi lectura es simple",
+        "Mi lectura es",
+        "Para mí, el punto",
+        "El problema no es",
+        "La decisión no es",
+        "La pregunta útil es",
+        "En LATAM veo",
+        "Lo que veo en proyecto",
+        "PDF decorativo",
+        "automatizar ruido",
+        "la IA no te salva"
+      ],
+      "moderated_phrases_max_per_batch": 1,
+      "ngram_size": 4,
+      "ngram_max_copies": 2,
+      "repair_max_attempts": 2,
+      "hard_reject_rules": [
+        "V3_HR1_BATCH_REPETITION",
+        "V3_HR2_UNSUPPORTED_FACT",
+        "V3_HR3_UNVERIFIED_SOURCE_LIVE",
+        "V3_HR4_CONFRONTATIONAL_NO_PEDAGOGY",
+        "V3_HR5_DIAGNOSIS_WITHOUT_PRACTICAL_EXIT"
+      ]
+    }
   }
 }

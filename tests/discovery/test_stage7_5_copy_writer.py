@@ -137,7 +137,8 @@ def _good_schema(*, with_copy: bool = True, with_estado: bool = True,
         schema["Estado"] = {
             "type": estado_type,
             "options": estado_options if estado_options is not None
-            else ["Borrador", "Aprobado", "Autorizado", "En revisión"],
+            else ["Borrador", "Aprobado", "Autorizado", "Revisión pendiente",
+                  "Descartado"],
         }
     return schema
 
@@ -258,7 +259,7 @@ def test_force_overwrite_replaces_existing(state_db: Path, monkeypatch):
     fake.patch.assert_called_once()
     payload = fake.patch.call_args.args[1]
     assert "Copy LinkedIn" in payload["properties"]
-    assert payload["properties"]["Estado"] == {"status": {"name": "En revisión"}}
+    assert payload["properties"]["Estado"] == {"status": {"name": "Revisión pendiente"}}
     conn = sqlite3.connect(state_db)
     row = conn.execute(
         "SELECT copy_status, copy_text FROM proposals WHERE id=?", (pid,)
@@ -403,7 +404,7 @@ def test_property_missing_aborts_row(state_db: Path, monkeypatch):
 
 
 def test_estado_option_missing(state_db: Path, monkeypatch):
-    pid = _insert(state_db, titular="No En revisión option",
+    pid = _insert(state_db, titular="No Revisión pendiente option",
                   notion_page_id="page-E1")
     monkeypatch.setenv("NOTION_API_KEY", "k")
     monkeypatch.setattr(mod, "_gateway_token", lambda: "tok")
@@ -421,7 +422,7 @@ def test_estado_option_missing(state_db: Path, monkeypatch):
     ).fetchone()
     conn.close()
     assert row[0] == "failed"
-    assert "notion_estado_option_missing:En revisión" in (row[1] or "")
+    assert "notion_estado_option_missing:Revisión pendiente" in (row[1] or "")
 
 
 def test_cost_guard_aborts(state_db: Path, monkeypatch):
@@ -947,3 +948,153 @@ def test_schema_validation_uses_live_name(state_db: Path, monkeypatch):
     conn.close()
     assert row[0] == "failed"
     assert "notion_estado_option_missing:Revisión pendiente" in (row[1] or "")
+
+
+# ---------- Voice v3 tests (T10) ----------
+
+def test_writer_branch_has_estado_live_map():
+    """Verify ESTADO_LIVE_MAP is present and resolves spec→live names."""
+    assert hasattr(mod, "ESTADO_LIVE_MAP")
+    assert mod.ESTADO_LIVE_MAP.get("En revisión") == "Revisión pendiente"
+    assert mod.ESTADO_LIVE_MAP.get("Rechazado") == "Descartado"
+    assert mod.estado_live_name("En revisión") == "Revisión pendiente"
+    assert mod.estado_live_name("Rechazado") == "Descartado"
+
+
+def test_writer_voice_retry_rewrites_on_reparable_reject(
+    state_db: Path, monkeypatch, tmp_path: Path,
+):
+    """First LLM call returns a HR4-tripping copy; second returns a clean one."""
+    pid = _insert(state_db, titular="Retry me", notion_page_id="page-VR1")
+    monkeypatch.setenv("NOTION_API_KEY", "k")
+    monkeypatch.setattr(mod, "_gateway_token", lambda: "tok")
+    page = _make_page()
+    fake = _fake_notion(page=page)
+    fake.get.return_value = page
+    monkeypatch.setattr(mod, "NotionClient", lambda token: fake)
+    monkeypatch.setattr(mod, "fetch_publicaciones_schema", lambda c, ds: _good_schema())
+
+    # Bad copy: triggers HR4 (confrontational, no practical exit) — reparable.
+    bad_copy = (
+        "Si tu BIM no entrega valor, no estás haciendo BIM.\n\n"
+        "Es ridículo. Nunca lo verán igual. La gente no entiende. "
+        "Solo modelan polígonos sueltos sin sentido. Falla todo. "
+        "Está mal hace años. Es vergonzoso para el sector AECO. "
+        "Reconozcan de una vez que el problema son ustedes.\n\n"
+        "Agenda una llamada y descubre el próximo nivel.\n\n"
+        "Fuente: https://src.test/article\n\n"
+        "#BIM #AECO #Construccion"
+    )
+    good_copy = (
+        "Coordinación BIM real cambia cómo se vive una obra hospitalaria.\n\n"
+        "Leí un caso que mira coordinación BIM en hospitales y lo que más me "
+        "hizo pensar es que mucho retrabajo MEP es detectable antes de obra "
+        "si el modelo federado se revisa contra el BEP.\n\n"
+        "Mi lectura: el problema no es detectar el clash, es decidir quién "
+        "lo asume y en qué revisión. Sin un protocolo claro de gestión de "
+        "hallazgos, BIM se queda en modelado decorativo.\n\n"
+        "Eso aplica a casi cualquier proyecto que vimos acompañando equipos. "
+        "La tecnología está. Lo que falta es disciplina de coordinación entre "
+        "disciplinas y un BEP firmado que aterrice criterios.\n\n"
+        "Si tu modelo federado nunca generó un cambio de revisión, "
+        "probablemente no lo estás usando para coordinar.\n\n"
+        "Fuente: https://src.test/article\n\n#BIM #AECO #Construccion"
+    )
+    calls = {"n": 0}
+
+    def fake_llm(**kw):
+        calls["n"] += 1
+        return bad_copy if calls["n"] == 1 else good_copy
+
+    monkeypatch.setattr(mod, "llm_call", fake_llm)
+    ops_log = tmp_path / "ops.jsonl"
+
+    rc = mod.main([
+        "--state-db", str(state_db),
+        "--ops-log", str(ops_log),
+        "--enable-voice-v3",
+        "--proposal-id", str(pid),
+    ])
+    assert rc == 0
+    # Both attempts were tried.
+    assert calls["n"] >= 2
+    # Final patch sent the clean copy.
+    fake.patch.assert_called_once()
+    # ops_log must contain a voice_retry event.
+    log_text = ops_log.read_text(encoding="utf-8")
+    assert "stage7_5.voice_retry" in log_text
+    assert "stage7_5.voice_eval.passed" in log_text
+
+
+def test_writer_voice_final_reject_does_not_patch_notion(
+    state_db: Path, monkeypatch, tmp_path: Path,
+):
+    """All retries reject → mark failed_voice_reject, no Notion PATCH."""
+    pid = _insert(state_db, titular="Reject final", notion_page_id="page-VR2")
+    monkeypatch.setenv("NOTION_API_KEY", "k")
+    monkeypatch.setattr(mod, "_gateway_token", lambda: "tok")
+    page = _make_page()
+    fake = _fake_notion(page=page)
+    fake.get.return_value = page
+    monkeypatch.setattr(mod, "NotionClient", lambda token: fake)
+    monkeypatch.setattr(mod, "fetch_publicaciones_schema", lambda c, ds: _good_schema())
+
+    bad_copy = (
+        "Si tu BIM no entrega valor, no estás haciendo BIM.\n\n"
+        "Es ridículo. Nunca lo verán igual. La gente no entiende. "
+        "Solo modelan polígonos sueltos sin sentido. Falla todo. "
+        "Está mal hace años. Es vergonzoso para el sector AECO. "
+        "Reconozcan de una vez que el problema son ustedes.\n\n"
+        "Agenda una llamada y descubre el próximo nivel.\n\n"
+        "Fuente: https://src.test/article\n\n"
+        "#BIM #AECO #Construccion"
+    )
+    monkeypatch.setattr(mod, "llm_call", lambda **kw: bad_copy)
+    ops_log = tmp_path / "ops.jsonl"
+
+    rc = mod.main([
+        "--state-db", str(state_db),
+        "--ops-log", str(ops_log),
+        "--enable-voice-v3",
+        "--proposal-id", str(pid),
+    ])
+    assert rc == 1
+    fake.patch.assert_not_called()
+    conn = sqlite3.connect(state_db)
+    row = conn.execute(
+        "SELECT copy_status, copy_last_error FROM proposals WHERE id=?", (pid,)
+    ).fetchone()
+    conn.close()
+    assert row[0] == "failed_voice_reject"
+    assert "voice_reject" in (row[1] or "")
+    log_text = ops_log.read_text(encoding="utf-8")
+    assert "stage7_5.voice_reject_final" in log_text
+
+
+def test_writer_does_not_overwrite_existing_copy_without_force(
+    state_db: Path, monkeypatch,
+):
+    """If Notion already has Copy LinkedIn populated and no --force-overwrite,
+    skip the proposal (no LLM call, no PATCH)."""
+    pid = _insert(state_db, titular="Already done", notion_page_id="page-EX1")
+    monkeypatch.setenv("NOTION_API_KEY", "k")
+    monkeypatch.setattr(mod, "_gateway_token", lambda: "tok")
+    existing = "Copy ya existente en Notion que no debe ser sobrescrito."
+    page = _make_page(copy_linkedin=existing)
+    fake = _fake_notion(page=page)
+    fake.get.return_value = page
+    monkeypatch.setattr(mod, "NotionClient", lambda token: fake)
+    monkeypatch.setattr(mod, "fetch_publicaciones_schema", lambda c, ds: _good_schema())
+
+    monkeypatch.setattr(mod, "llm_call",
+                        lambda **kw: pytest.fail("LLM must not be called"))
+
+    rc = mod.main(["--state-db", str(state_db), "--proposal-id", str(pid)])
+    assert rc == 0
+    fake.patch.assert_not_called()
+    conn = sqlite3.connect(state_db)
+    row = conn.execute(
+        "SELECT copy_status FROM proposals WHERE id=?", (pid,)
+    ).fetchone()
+    conn.close()
+    assert row[0] == "copy_ready"

@@ -11,11 +11,39 @@ external review (conflict #6: "two hash layers without contract").
 
 ## 1. Matrix
 
+### §1a — Hashes de identidad de señal (implementados Wave 1)
+
 | Hash | Where it is computed | Inputs | Stage owner | Purpose | Stability |
 |---|---|---|---|---|---|
-| `dedup_hash` (a.k.a. `signal_hash`) | S1 — [`scripts/discovery/stage1_discover_signals.py`](../../scripts/discovery/stage1_discover_signals.py) `dedup_hash(canonical_url, published_at)` | `sha256(canonical_url + "\n" + (published_at or ""))` | H2 | Discovery dedup — keep one row per `(URL, pub_date)` in `signals_raw.dedup_hash UNIQUE`. Prevents re-processing the same item across cron runs. | Deterministic by construction. **Independent of wall clock** (`None`/`""` is hashed as empty string, not as `now()`). |
-| `content_hash` | S2 — [`scripts/discovery/lib/dedup.py`](../../scripts/discovery/lib/dedup.py) `compute_content_hash(canonical_url, title, excerpt)` | `sha256(canonical_url + "\n" + normalize(title) + "\n" + normalize(excerpt))` | H3 | Pre-publish content dedup — detect URL-distinct mirrors of the same content. Stored on `signals_verified.content_hash`. | Deterministic. Date-independent. Sensitive to title/excerpt edits. |
-| `idempotency_key` | S2 — [`scripts/discovery/lib/dedup.py`](../../scripts/discovery/lib/dedup.py) `compute_idempotency_key(canonical_url, content_hash)` | `sha256(canonical_url + "\n" + content_hash)` | H3 | Idempotency for downstream POSTs (LinkedIn / blog / newsletter). Stored on `signals_verified.idempotency_key`. Re-used by S10 (Hilo 6) and reconciled with the existing `📰 Publicaciones.idempotency_key` Notion property. | Deterministic. Changes iff `content_hash` changes. |
+| `dedup_hash` (a.k.a. `signal_hash`) | S1 — [`scripts/discovery/stage1_discover_signals.py`](../../scripts/discovery/stage1_discover_signals.py) `dedup_hash(canonical_url, published_at)` | `sha256(canonical_url + "\n" + (published_at or ""))` | H2 | Discovery dedup — keep one row per `(URL, pub_date)` in `signals_raw.dedup_hash UNIQUE`. Prevents re-processing the same item across cron runs. | Deterministic by construction. **Independent of wall clock** (`None`/`""` is hashed as empty string, not as `now()`). See §3 risk R1. |
+| `content_hash` (alias semántico `source_content_hash`) | S2 — [`scripts/discovery/lib/dedup.py`](../../scripts/discovery/lib/dedup.py) `compute_content_hash(canonical_url, title, excerpt)` (alias `compute_source_content_hash`) | `sha256(canonical_url + "\n" + normalize(title) + "\n" + normalize(excerpt))` | H3 | **Identidad de la fuente/señal** — detect URL-distinct mirrors of the same source. Stored on `signals_verified.content_hash`. **NO representa el copy final publicable.** | Deterministic. Date-independent. Sensitive to source-side title/excerpt edits. |
+| `idempotency_key` | S2 — [`scripts/discovery/lib/dedup.py`](../../scripts/discovery/lib/dedup.py) `compute_idempotency_key(canonical_url, content_hash)` | `sha256(canonical_url + "\n" + content_hash)` | H3 | Idempotency for downstream POSTs sobre la **señal**, no sobre el copy final. Stored on `signals_verified.idempotency_key`. Re-used by S10 (Hilo 6) and reconciled with the existing `📰 Publicaciones.idempotency_key` Notion property. | Deterministic. Changes iff `content_hash` (= `source_content_hash`) changes. |
+
+### §1b — Hash de contenido publicable (DIFERIDO, no implementado en Wave 1.5)
+
+> **Contrato pendiente.** `publication_content_hash` (a.k.a. `approved_copy_hash`)
+> debe computarse sobre el **copy final aprobado en S6/S7**, NO sobre los
+> inputs de la señal origen. Este hash es el que `register_published`
+> *debería* consultar para idempotencia REAL del POST a LinkedIn.
+>
+> Hoy `register_published` usa `content_hash` (= `source_content_hash`); esto
+> constituye un **guard provisional aceptable para Wave 1.5 mientras no
+> exista `publication_content_hash`, y NO representa idempotencia final
+> de publicación**. Cualquier divergencia entre la señal origen y el copy
+> final aprobado (variantes editoriales en S6/S7, ediciones humanas) hace
+> que la idempotencia actual proteja la identidad equivocada.
+>
+> **Wave 2 ticket (obligatorio antes de cualquier publicación real):**
+> definir, computar y persistir `publication_content_hash` en
+> `published_history` separado de `content_hash`. Migrar
+> `register_published` para consultar el nuevo hash. Hasta entonces,
+> mantener `do-not-merge` en cualquier path que active publicación real
+> a LinkedIn.
+
+El alias en código `compute_source_content_hash` (= `compute_content_hash`)
+se expone en [`scripts/discovery/lib/dedup.py`](../../scripts/discovery/lib/dedup.py)
+para que código nuevo refleje la semántica correcta sin requerir migración
+de schema.
 
 ## 2. Naming alias
 
@@ -41,6 +69,15 @@ idempotent in that case.
 prior hash, and a second `signals_raw` row will be inserted for the same
 URL. This is **expected and tolerated in Wave 1**: S2 will still dedup
 downstream via `content_hash`, and S10 will dedup via `idempotency_key`.
+
+**Riesgo R1 documentado (NO "estable"):** dos URLs idénticos sin `pubDate`
+upstream colisionan en el mismo `dedup_hash` aunque sean publicaciones
+distintas (caso real RSS sin `pubDate`). El `UNIQUE(dedup_hash)` los trata
+como el mismo item. Para feeds donde el publisher omite la fecha de forma
+consistente esto es un riesgo de **dedup falso-positivo**, no un
+comportamiento estable. Wave 2 debe añadir o bien (a) `signal_first_seen_hash`
+separado, o (b) métrica `signals_raw.no_pub_date_total` + alerta cuando supere
+un umbral. **Marcado como riesgo R1, no como problema resuelto.**
 
 **Gap (postponed Wave 2):** there is no observability counter for this case
 (rows with `published_at IS NULL`) in `signals_raw`. Wave 2 should add a

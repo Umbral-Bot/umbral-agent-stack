@@ -28,6 +28,7 @@ from datetime import datetime, timezone
 __all__ = [
     "normalize_text",
     "compute_content_hash",
+    "compute_source_content_hash",
     "compute_idempotency_key",
     "is_duplicate",
     "register_published",
@@ -139,3 +140,18 @@ def register_published(
         (content_hash, published_url, now, platform),
     )
     db_conn.commit()
+
+
+# --- Wave 1.5 Fix: contract aliases ---
+# `content_hash` semánticamente representa identidad de la fuente/señal
+# (URL + title + excerpt del referente origen). Por contrato, NO representa
+# el copy final que se publicaría — ese hash (publication_content_hash) se
+# computará en S10 sobre el copy aprobado y NO existe en Wave 1.5.
+# Ver: docs/editorial-pipeline/hash-contract.md §1bis.
+compute_source_content_hash = compute_content_hash
+"""Alias semántico de :func:`compute_content_hash`. Identidad de la
+fuente/señal (canonical_url + normalized title + excerpt), NO del copy
+final aprobado para publicación. Wave 2 introducirá
+``compute_publication_content_hash`` separado, computado sobre el copy
+final post-S6/S7. Ver ``docs/editorial-pipeline/hash-contract.md``."""
+

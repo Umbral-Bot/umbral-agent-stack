@@ -28,6 +28,15 @@ depends_on: 2026-05-08-001-copilot-vps-wave1_5-integration
 > - No crear DBs en Notion.
 > - No escribir gates humanos.
 
+> **Incidente operativo menor (2026-05-09, registrado para trazabilidad):**
+> el commit que introdujo este task file en `main` (`8b06a3e`) incluyó por
+> error 6 archivos que pertenecían solo a `wave1.5-integration` (residuo
+> staged de un temp clone reutilizado). Limpiado inmediatamente con commit
+> de revert `b3a2007` en `main`. NO se hizo force-push ni reescritura de
+> historia; la branch `wave1.5-integration` quedó intacta con sus 6 archivos
+> originales. No requiere acción adicional. Documentado solo como incidente
+> operativo.
+
 ---
 
 ## Decisiones técnicas pre-tomadas (NO re-deliberar)
@@ -211,13 +220,17 @@ Reemplazar/extender §1 con dos secciones:
 > debe computarse sobre el copy final aprobado en S6/S7, NO sobre los inputs
 > de la señal origen. Este hash es el que `register_published` debería
 > consultar para idempotencia REAL del POST a LinkedIn. Hoy
-> `register_published` usa `content_hash` (= `source_content_hash`), lo cual
-> es suficiente para Wave 1 porque el copy es 1:1 con la señal, pero
-> introducirá ambigüedad cuando S6/S7 generen variantes editoriales.
+> `register_published` usa `content_hash` (= `source_content_hash`); esto
+> constituye un **guard provisional aceptable para Wave 1.5 mientras no
+> exista `publication_content_hash`, y NO representa idempotencia final
+> de publicación**. Cualquier divergencia entre la señal origen y el copy
+> final aprobado (variantes editoriales en S6/S7, ediciones humanas) hará
+> que la idempotencia actual proteja la identidad equivocada.
 >
-> **Wave 2 ticket:** definir, computar y persistir `publication_content_hash`
-> en `published_history` separado de `content_hash`. Migrar
-> `register_published` para usar el nuevo hash.
+> **Wave 2 ticket (obligatorio antes de cualquier publicación real):**
+> definir, computar y persistir `publication_content_hash` en
+> `published_history` separado de `content_hash`. Migrar
+> `register_published` para consultar el nuevo hash.
 
 Reemplazar/extender §3 (edge case `published_at` ausente): añadir nota
 explícita de que la "estabilidad" del `dedup_hash` con `published_at=None`
@@ -433,14 +446,48 @@ git push origin wave1.5-integration
 
 ---
 
-## Fase 8 — Marcar task done
+## Fase 8 — Cierre de task (NO modificar status desde feature branch)
+
+**Convención observada en este repo:** los task files NO se marcan `status: done`
+desde la branch de trabajo del PR. El task previo `2026-05-08-001` quedó en
+`status: assigned` aún después de completarse Wave 1.5. Marcar `done` desde
+`wave1.5-integration` desalinearía el archivo entre la branch del PR y `main`,
+y tampoco hay garantía de cuándo el task file llegará a `main` (depende del
+merge de #400, que David autoriza después).
+
+**Acción correcta:**
+
+- NO editar el frontmatter `status:` del task file desde `wave1.5-integration`.
+- NO commitear cambios al task file en esta branch.
+- Registrar el cierre operativo del task **dentro de**
+  `docs/audits/2026-05-09-wave1_5-fix-report.md` (sección "Cierre de task").
+- Si David quiere actualizar el frontmatter a `status: done`, lo hará él
+  mismo en `main` después de mergear #400 (o en una PR separada de
+  housekeeping).
 
 ```bash
-# Editar este archivo: status: open → status: done
-sed -i 's/^status: open$/status: done/' .agents/tasks/2026-05-09-001-copilot-vps-wave1_5-fix.md
-git add .agents/tasks/2026-05-09-001-copilot-vps-wave1_5-fix.md
-git commit -m "task(wave1.5-fix): mark 2026-05-09-001 done"
-git push origin wave1.5-integration
+# Solo verificación, sin escribir:
+git show wave1.5-integration:.agents/tasks/2026-05-09-001-copilot-vps-wave1_5-fix.md \
+  | head -10
+# Esperado: status: open (sin cambios)
+```
+
+En el reporte de Fase 7 añadir bloque:
+
+```markdown
+## Cierre de task
+
+Task file: `.agents/tasks/2026-05-09-001-copilot-vps-wave1_5-fix.md`.
+
+Frontmatter `status:` deliberadamente NO se modifica desde
+`wave1.5-integration` (sigue convención observada con task `2026-05-08-001`,
+que permaneció `status: assigned` aún tras completarse Wave 1.5). El cierre
+operativo del task se registra acá, en este reporte. Si se requiere reflejar
+`status: done` en `main`, hacerlo en una PR de housekeeping separada después
+del merge de #400.
+
+Estado de ejecución del task: **TERMINADO** — todas las fases 1-7 completadas
+con criterios de aceptación cumplidos (ver checklist al final de este reporte).
 ```
 
 ---
@@ -460,8 +507,8 @@ git push origin wave1.5-integration
 - [ ] Sin escritura a Notion ni LinkedIn (verificable por `git diff`).
 - [ ] PR #400 sigue draft + label `do-not-merge`.
 - [ ] PRs #394–#399 sin tocar (siguen draft + `do-not-merge`).
-- [ ] `docs/audits/2026-05-09-wave1_5-fix-report.md` creado con resumen + log "Repo dice X vs VPS muestra Y".
-- [ ] Task file marcado `status: done`.
+- [ ] `docs/audits/2026-05-09-wave1_5-fix-report.md` creado con resumen + log "Repo dice X vs VPS muestra Y" + sección "Cierre de task".
+- [ ] Task file frontmatter `status:` **NO modificado** desde `wave1.5-integration` (sigue convención observada con task `2026-05-08-001`).
 
 ## Anti-criterios (si pasa cualquiera de estos, ABORT y reportar)
 

@@ -50,7 +50,7 @@ brief #9.
 | 5 | Orden de merge inicial vs corregido | equipo + review externa | propuesta inicial: H1→H4→H3→H2→H5→H6 | review externa corrigió a: **H1→H4→H2→H3→H5→H6**; ejecutado en este orden | **Aplicado** |
 | 6 | Dos capas de hash sin contrato (`signal_hash` H2 vs `content_hash`/`idempotency_key` H3) | review externa | sin doc cross-stage | Wave 1.5 produce [`docs/editorial-pipeline/hash-contract.md`](../editorial-pipeline/hash-contract.md) + 9 tests en `test_hash_contract.py` | **Resuelto (documentación + tests)** |
 | 7 | Duplicación potencial clientes Notion | review externa | sospecha | live: `notion_publicaciones.py` no hace HTTP (pura parsing); `notion_read.py` único módulo con cliente | **Falsa alarma — ver [`docs/editorial-pipeline/notion-helpers-policy.md`](../editorial-pipeline/notion-helpers-policy.md)** |
-| 8 | Ambigüedad `Canal` vs `Tipo de contenido`/`Formato` (carrusel/video) | review externa | docs vagos | `scripts/discovery/lib/variants.py` define `PLATFORMS = ("linkedin","x","blog","newsletter","carousel","video")` → carrusel/video son tratados como plataformas, no formatos | **Postponed Wave 2 (junto con D2)** |
+| 8 | Ambigüedad `Canal` vs `Tipo de contenido`/`Formato` (carrusel/video) | review externa | docs vagos | `scripts/discovery/lib/variants.py` define `PLATFORMS = ("linkedin","x","blog","newsletter","carousel","video")` → carrusel/video son tratados como plataformas, no formatos | **NO cumplido en Wave 1.5 — deuda explícita Wave 2.** Brief original pedía confirmar carrusel/video como `formato`, no como `Canal`. Implementación H5 dejó ambos como plataformas. No se corrige en este fix porque rompería 38 tests H5; corrección semántica + refactor de tests es scope Wave 2 (ver §12 backlog item #1). |
 | 9 | Dashboard `stageX_pipeline_dashboard.py` no leería eventos `publish_guard.block/pass` | review externa | sospecha | NO verificado en este task (fuera de scope Wave 1.5; dashboard es Stage X, no parte de las 6 PRs) | **Postponed Wave 2** |
 | 10 | Stage 7.5 FROZEN pero H5 importa `stage7_5_copy_writer` para delegación | review externa | riesgo de side-effects al importar | `import scripts.discovery.stage6_generate_variants` ejecutado en CLI sin error y sin escribir nada → import limpio | **Resuelto (verificado)** |
 
@@ -173,7 +173,28 @@ $ python -c "from scripts.discovery.lib import publish_guard, gates, dedup; prin
 /home/rick/umbral-agent-stack/scripts/discovery/lib/gates.py /home/rick/umbral-agent-stack/scripts/discovery/lib/dedup.py
 ```
 
+## 10bis. Wave 1.5 Fix (2026-05-09)
+
+Correcciones aplicadas sobre `wave1.5-integration` tras la review externa
+que diagnosticó tres blockers pre-merge. Decisiones técnicas se documentan
+en `.agents/tasks/2026-05-09-001-copilot-vps-wave1_5-fix.md`.
+
+| Item | Estado pre-fix | Estado post-fix | Commit |
+|---|---|---|---|
+| `test_stage9c_idempotency::test_successful_post_calls_register_published` | 1 failed en suite completa | **PASSED** en suite completa | `0e111bd` |
+| Suite total `tests/discovery/` + `tests/lib/` | 402 passed / 1 failed | **403 passed / 0 failed** | `0e111bd` |
+| `content_hash` documentado como "contenido final" (engañoso) | sí | corregido — alias `source_content_hash` + contrato `publication_content_hash` diferido explícito (Wave 2) | `0f633e6` |
+| Carrusel/video declarado "Postponed Wave 2" sin admitir incumplimiento | sí | **corregido — declarado NO cumplido + carry-over backlog top** (este reporte §3#8 + §12#1) | _commit que contiene este §10bis_ |
+
+Ver también: [`docs/audits/2026-05-09-wave1_5-fix-report.md`](./2026-05-09-wave1_5-fix-report.md).
+
 ## 11. Recomendación final por PR
+
+> **Estado post-Wave 1.5 Fix (2026-05-09):** suite verde (403 passed / 0 failed),
+> hash contract corregido (alias `source_content_hash` + contrato
+> `publication_content_hash` diferido explícito), carrusel/video documentado
+> como deuda Wave 2 explícita. Ver §10bis para detalle pre/post fix.
+> PR #400 listo para review final por David antes de quitar `do-not-merge`.
 
 | PR | Branch | Recomendación | Razón |
 |---|---|---|---|
@@ -190,15 +211,26 @@ mergear cuando se apruebe la integración.
 
 ## 12. Wave 2 backlog
 
-1. **D2** — definir canónico de S6 (`stage6_aec_combine` vs `stage6_llm_combinator` vs `stage6_generate_variants` H5).
-2. **D4** — naming "Etapa N" vs "Stage M" — migración doc + código.
-3. **D5** — política S8 imagen (cuándo dispara, pre/post review).
-4. Ambigüedad **Canal vs Formato** (carrusel/video tratados como plataformas en `variants.PLATFORMS`).
-5. Dashboard `stageX_pipeline_dashboard.py` debe consumir eventos `publish_guard.pass/block` y conteos discovery/verification.
-6. Fix de aislamiento del test `test_stage9c_idempotency.py::test_successful_post_calls_register_published` (ver §10).
-7. SQLite hardening: `PRAGMA busy_timeout=5000` por connect; runner de migraciones con `schema_migrations` table.
-8. Observabilidad para `signals_raw.published_at IS NULL` (gap mencionado en hash-contract.md §3 / sqlite-policy.md §5).
-9. Cuando Hilo 6 implemente writer real S10 (`PATCH /v1/pages/{id}`), considerar refactor de auth/retry compartido entre `notion_read.py` y `notion_publicaciones.py`.
+1. **[CARRY-OVER WAVE 1.5]** Ambigüedad **Canal vs Formato** — separar
+   `PLATFORMS = (linkedin, x, blog, newsletter)` de
+   `FORMATS = (carousel, video, thread, post_largo, post_corto, ...)` en
+   `scripts/discovery/lib/variants.py`. Refactor de los 38 tests H5 que
+   asumen el shape actual. **Brief original Wave 1.5 lo pidió como
+   criterio §7a; quedó NO cumplido.**
+2. **[CARRY-OVER WAVE 1.5]** `publication_content_hash` separado de
+   `source_content_hash` — definir, computar sobre el copy final post-S6/S7,
+   persistir en `published_history`, migrar `register_published` para
+   usarlo. **Brief original Wave 1.5 lo pidió como criterio §8c; quedó NO
+   cumplido.** Hasta entonces, el guard provisional descrito en
+   `hash-contract.md §1b` aplica y NO debe activarse publicación real.
+3. **D2** — definir canónico de S6 (`stage6_aec_combine` vs `stage6_llm_combinator` vs `stage6_generate_variants` H5).
+4. **D4** — naming "Etapa N" vs "Stage M" — migración doc + código.
+5. **D5** — política S8 imagen (cuándo dispara, pre/post review).
+6. Dashboard `stageX_pipeline_dashboard.py` debe consumir eventos `publish_guard.pass/block` y conteos discovery/verification.
+7. Fix de aislamiento del test `test_stage9c_idempotency.py::test_successful_post_calls_register_published` (ver §10) — **resuelto en Wave 1.5 Fix vía opción (c), commit `0e111bd`**.
+8. SQLite hardening: `PRAGMA busy_timeout=5000` por connect; runner de migraciones con `schema_migrations` table.
+9. Observabilidad para `signals_raw.published_at IS NULL` (gap mencionado en hash-contract.md §3 / sqlite-policy.md §5).
+10. Cuando Hilo 6 implemente writer real S10 (`PATCH /v1/pages/{id}`), considerar refactor de auth/retry compartido entre `notion_read.py` y `notion_publicaciones.py`.
 
 ---
 

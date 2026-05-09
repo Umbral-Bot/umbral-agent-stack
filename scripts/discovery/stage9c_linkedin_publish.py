@@ -332,8 +332,17 @@ def publish_one(
     access_token: str, dry_run: bool,
     client: httpx.Client | None = None,
     notion_fetcher=fetch_notion_page,
+    dedup_module: Any = None,
 ) -> tuple[str, str]:
-    """Return (status, message). Status: published | skipped | failed | blocked."""
+    """Return (status, message). Status: published | skipped | failed | blocked.
+
+    ``dedup_module`` is an optional injection point for the dedup module used
+    to call ``register_published`` after a successful POST. Tests pass a fake
+    explicitly to avoid the previously fragile ``sys.modules`` patching path
+    that did not propagate through the parent package's cached attribute.
+    Production callers leave it at ``None`` and the real module is imported
+    lazily (honouring ``sys.modules`` overrides for back-compat).
+    """
     pid = int(row["id"])
     if is_already_published(state_db, pid):
         return "skipped", "already published"
@@ -403,8 +412,18 @@ def publish_one(
                 f"https://www.linkedin.com/feed/update/{post_urn}/"
             )
             try:
-                # Lazy import: Hilo 3 dedup may not be merged yet.
-                from scripts.discovery.lib import dedup as _dedup
+                # Resolve dedup once: prefer the injected module (tests),
+                # else fall back to the lazy import (production / back-compat).
+                # Hilo 3 dedup may not be merged in some test envs.
+                if dedup_module is not None:
+                    _dedup = dedup_module
+                else:
+                    import sys as _sys
+                    _name = "scripts.discovery.lib.dedup"
+                    if _name in _sys.modules:
+                        _dedup = _sys.modules[_name]
+                    else:
+                        from scripts.discovery.lib import dedup as _dedup
                 _dedup.register_published(
                     db_conn, content_hash, published_url, "linkedin",
                 )

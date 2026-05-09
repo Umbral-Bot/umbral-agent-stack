@@ -103,7 +103,7 @@ def test_successful_post_calls_register_published(
 ):
     """201 Created → register_published(content_hash, feed_url, 'linkedin')."""
     register_calls: list[tuple] = []
-    install_fake_dedup(
+    fake_dedup = install_fake_dedup(
         is_duplicate=lambda db, h: False,
         register=lambda db, h, url, plat: register_calls.append(
             (h, url, plat)
@@ -130,6 +130,7 @@ def test_successful_post_calls_register_published(
         author_urn="urn:li:person:rick",
         access_token="AT-fake", dry_run=False,
         notion_fetcher=lambda pid: {"id": pid},
+        dedup_module=fake_dedup,
     )
     assert status == "published"
     assert msg == "urn:li:share:9999"

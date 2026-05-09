@@ -110,15 +110,26 @@ S2 ingest → S3 promote (SQLite) → S4 push → S5 rank → S6 combine (stub/L
 - Cero llamadas HTTP reales a LinkedIn (mock obligatorio).
 - Stage 7.5: FROZEN — no tocar.
 
-## 7. Decisiones pendientes (5 ABIERTAS — no resolver unilateralmente)
+## 7. Decisiones pendientes — actualizado tras Wave 1.5
 
-> Estas decisiones afectan diseño y deben ser resueltas por David en revisión humana. Hilo 1 NO las resuelve.
+> Update 2026-05-08 (branch `wave1.5-integration`): tras integrar H1+H2+H3+H4+H5+H6, dos de las 5 decisiones quedaron resueltas en código. Las 3 restantes siguen abiertas para Wave 2.
 
-1. **D1 — Romper o mantener colapso S0+S1 dentro de S2.** Hoy `stage2_ingest.py` hace S0 (lectura Referentes) + S1 (descubrimiento publicaciones) + persistencia en SQLite en un solo script. ¿Se rompe en `stage1_discover_publications.py` separado para testabilidad y cobertura por canal, o se mantiene? **Owner decisión:** David. **Handoff:** Hilo 2.
-2. **D2 — Canónico de S6.** Existen `stage6_aec_combine.py` (stub) y `stage6_llm_combinator.py` (real). ¿Cuál es canónico? ¿Se renombra el stub para evitar confusión? ¿Se elimina? **Owner decisión:** David. **Handoff:** futuro hilo S6.
-3. **D3 — Gate de aprobación pre-S9c.** Hoy no hay un mecanismo formal "Aprobado → puede publicar". `Estado=Revisión pendiente` permite review pero no marca aprobación. ¿Se añade `Estado=Aprobado` + `aprobado_contenido` + `autorizar_publicacion` (con doble confirmación)? **Owner decisión:** David. **Handoff:** futuro hilo de publicación.
-4. **D4 — Naming canónico.** Doc histórica usa "Etapa 0..9", código usa "Stage 2..9c+X". ¿Migramos doc al naming código (Stage N) o viceversa? Decidir antes de cualquier nuevo doc. **Owner decisión:** David. **Handoff:** transversal.
-5. **D5 — Política de imagen S8.** Hoy `stage8_image_generator.py` existe pero el master plan histórico declara la imagen como "futura". ¿Es producción real o experimento? ¿Cuándo dispara? ¿Pre-review o post-review? **Owner decisión:** David. **Handoff:** futuro hilo S8.
+1. **D1 — Romper o mantener colapso S0+S1.** **RESUELTO.** Wave 1 (H2 #397) implementó el split en dos scripts independientes:
+   - `scripts/discovery/stage0_load_referentes.py` (lectura Referentes → `referentes_snapshot`).
+   - `scripts/discovery/stage1_discover_signals.py` (descubrimiento por canal → `signals_raw`).
+   Verificado en smoke run de `wave1.5-integration` (ver [`reports/2026-05-08-wave1_5-smoke.md`](../../reports/2026-05-08-wave1_5-smoke.md)).
+2. **D2 — Canónico de S6.** **ABIERTO — postponed Wave 2.** H5 (#395) introdujo `scripts/discovery/lib/variants.py` y `stage6_generate_variants.py` como capa nueva, pero los dos `stage6_*.py` históricos (`aec_combine` y `llm_combinator`) no se renombraron ni borraron. Decidir en Wave 2 cuál queda y cuál se archiva. **Owner decisión:** David.
+3. **D3 — Gate de aprobación pre-S9c.** **RESUELTO.** H6 (#399) implementó `scripts/discovery/lib/publish_guard.assert_can_publish` que evalúa los 6 gates (incluyendo `aprobado_contenido` y `autorizar_publicacion`) antes de cualquier POST a LinkedIn. Verificado con 3 escenarios sintéticos (pass / blocked-gate / blocked-dup) — ver [`reports/2026-05-08-wave1_5-stage10-dryrun.md`](../../reports/2026-05-08-wave1_5-stage10-dryrun.md).
+4. **D4 — Naming canónico ("Etapa N" vs "Stage M").** **ABIERTO — postponed Wave 2.** Wave 1.5 no tocó nomenclatura. Sigue conviviendo "Etapa 0..9" (doc histórica) con "Stage 0..11" (código nuevo). **Owner decisión:** David.
+5. **D5 — Política de imagen S8.** **ABIERTO — postponed Wave 2.** Wave 1.5 no tocó S8. Sigue sin definirse si `stage8_image_generator.py` es producción o experimento, ni cuándo dispara. **Owner decisión:** David.
+
+### Conflictos cruzados Wave 1.5 (referencia rápida)
+
+Detalle completo en [`docs/audits/2026-05-08-wave1_5-integration-report.md`](../audits/2026-05-08-wave1_5-integration-report.md). Resumen:
+
+- Contratos nuevos formalizados en Wave 1.5: hashes ([`./hash-contract.md`](./hash-contract.md)), SQLite ([`./sqlite-policy.md`](./sqlite-policy.md)), helpers Notion ([`./notion-helpers-policy.md`](./notion-helpers-policy.md)).
+- Stage 7.5 verificado FROZEN (`git diff main wave1.5-integration -- scripts/discovery/stage7_5_*` = 0).
+- Ambigüedad **Canal vs Formato** (carrusel/video) detectada en H5 → postponed Wave 2 junto con D2.
 
 ## 8. Anti-patterns observados (NO REPETIR)
 

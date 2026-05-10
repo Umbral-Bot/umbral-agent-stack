@@ -10,10 +10,11 @@ that gate any real publication attempt:
   (default ``1``).
 * ``MAX_POSTS_PER_DAY`` — hard cap on real publishes per UTC day
   (default ``1``). NOT YET ENFORCED as a real daily cap: enforcement
-  requires ``published_history`` rows and lands with #404-lite. In #405
-  this flag is parsed and exposed for visibility, and a configuration
-  warning is emitted if it is set inconsistently with ``MAX_POSTS``, but
-  it MUST NOT be presented as an operational guarantee.
+  against ``published_history`` rows is deferred (out of #404-lite
+  scope; lands with Wave 2.B or a follow-up issue). In #405 this flag
+  is parsed and exposed for visibility, and a configuration warning is
+  emitted if it is set inconsistently with ``MAX_POSTS``, but it MUST
+  NOT be presented as an operational guarantee.
 
 Defaults are chosen so that, with NO env vars set, ``allows_real_publish``
 returns ``False``. Garbage values never raise — they fall to defaults and
@@ -197,8 +198,9 @@ class PublishFlags:
         Equivalent to ``publish_enabled AND not dry_run AND max_posts > 0``.
 
         Note: ``max_posts_per_day`` is intentionally NOT part of this
-        decision; its enforcement requires ``published_history`` rows and
-        lands with #404-lite. See :meth:`cross_validation_warnings`
+        decision; its enforcement against ``published_history`` rows is
+        deferred (out of #404-lite scope; lands with Wave 2.B or a
+        follow-up issue). See :meth:`cross_validation_warnings`
         ``daily_cap_not_enforced``.
         """
         return (
@@ -257,6 +259,7 @@ class PublishFlags:
             warnings.append("publish_with_zero_cap")
         if self.max_posts_per_day < self.max_posts:
             warnings.append("daily_cap_below_per_run")
-        # Always informational while #404-lite is open.
+        # Always informational until daily-cap enforcement lands
+        # (out of #404-lite scope; deferred to Wave 2.B or follow-up).
         warnings.append("daily_cap_not_enforced")
         return warnings

@@ -52,6 +52,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from scripts.discovery.lib.publish_flags import PublishFlags
+
 __all__ = [
     "PublishBlockedError",
     "assert_can_publish",
@@ -143,8 +145,9 @@ def assert_can_publish(
     notion_page: dict[str, Any],
     content_hash: str,
     db_conn: sqlite3.Connection,
+    flags: PublishFlags | None = None,
 ) -> None:
-    """Raise :class:`PublishBlockedError` if any of the 6 gates fail.
+    """Raise :class:`PublishBlockedError` if any gate or runtime flag blocks publish.
 
     Parameters
     ----------
@@ -159,16 +162,57 @@ def assert_can_publish(
         store the hash yet.
     db_conn
         Open SQLite connection backing ``published_history``.
+    flags
+        Optional :class:`PublishFlags` snapshot. When supplied AND the
+        flags would NOT allow a real publish, this function raises
+        :class:`PublishBlockedError` with reasons drawn from
+        :meth:`PublishFlags.block_reasons` BEFORE evaluating editorial
+        gates or touching the DB. When omitted, behaviour is byte-identical
+        to the pre-#405 version (legacy path, covered by
+        ``test_publish_guard.py``).
 
     Side-effects
     ------------
-    * Emits exactly one structured log line to ops_log:
-      ``publish_guard.pass`` on success, ``publish_guard.block`` on failure.
+    * Emits exactly one structured log line to ops_log per call:
+      - ``publish_guard.runtime_block`` if runtime flags refuse publish.
+      - ``publish_guard.pass`` on full success.
+      - ``publish_guard.block`` if editorial gates fail.
     * Never writes to ``published_history`` (that is the publisher's job
       via :func:`dedup.register_published` AFTER the real POST succeeds).
     """
     page = dict(notion_page or {})
     page_id = page.get("id", "") or ""
+
+    # Wave 2.A / #405 — runtime stop button.
+    #
+    # Semantics:
+    #   * ``flags is None`` → legacy behaviour, byte-identical to pre-#405
+    #     (verified by ``test_call_without_flags_preserves_legacy_behavior``).
+    #   * ``flags`` explicit → fail-closed runtime policy. If the flags
+    #     would NOT allow a real publish, we refuse here BEFORE evaluating
+    #     editorial gates or touching the DB. We emit
+    #     ``publish_guard.runtime_block`` and raise ``PublishBlockedError``
+    #     with reason codes from :meth:`PublishFlags.block_reasons`.
+    #
+    # This makes the stop button an active block, not a passive marker.
+    if flags is not None and not flags.allows_real_publish():
+        runtime_reasons = flags.block_reasons()
+        _emit_log(
+            "publish_guard.runtime_block",
+            page_id=page_id,
+            content_hash=content_hash,
+            reasons=list(runtime_reasons),
+            publish_enabled=flags.publish_enabled,
+            dry_run=flags.dry_run,
+            max_posts=flags.max_posts,
+            max_posts_per_day=flags.max_posts_per_day,
+            cross_validation=flags.cross_validation_warnings(),
+        )
+        raise PublishBlockedError(
+            list(runtime_reasons),
+            page_id=page_id,
+            content_hash=content_hash,
+        )
 
     gates_mod = _load_module("scripts.discovery.lib.gates")
     dedup_mod = _load_module("scripts.discovery.lib.dedup")

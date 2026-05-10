@@ -16,10 +16,12 @@ import logging
 import pytest
 
 from scripts.discovery.lib.publish_flags import (
+    CROSS_VALIDATION_CODES,
     DEFAULT_DRY_RUN,
     DEFAULT_MAX_POSTS,
     DEFAULT_MAX_POSTS_PER_DAY,
     DEFAULT_PUBLISH_ENABLED,
+    RUNTIME_BLOCK_REASONS,
     PublishFlags,
 )
 
@@ -233,3 +235,132 @@ def test_from_env_uses_os_environ_when_no_arg(monkeypatch):
     monkeypatch.delenv("MAX_POSTS_PER_DAY", raising=False)
     flags = PublishFlags.from_env()
     assert flags.allows_real_publish() is False
+
+
+# --------------------------------------------------------------------------- #
+# block_reasons() — Wave 2.A / #405 hardening
+# --------------------------------------------------------------------------- #
+
+def test_block_reasons_empty_when_real_publish_allowed():
+    flags = PublishFlags(
+        publish_enabled=True, dry_run=False, max_posts=1, max_posts_per_day=1,
+    )
+    assert flags.allows_real_publish() is True
+    assert flags.block_reasons() == []
+
+
+def test_block_reasons_default_state_lists_all_three():
+    flags = PublishFlags.from_env({})
+    # Defaults: publish_enabled=False, dry_run=True, max_posts=1.
+    # Two reasons expected (max_posts=1 does NOT trigger max_posts_zero).
+    assert flags.block_reasons() == ["publish_disabled", "dry_run_enabled"]
+
+
+def test_block_reasons_max_posts_zero_only():
+    flags = PublishFlags(
+        publish_enabled=True, dry_run=False, max_posts=0, max_posts_per_day=1,
+    )
+    assert flags.block_reasons() == ["max_posts_zero"]
+
+
+def test_block_reasons_all_three_failures():
+    flags = PublishFlags(
+        publish_enabled=False, dry_run=True, max_posts=0, max_posts_per_day=1,
+    )
+    assert flags.block_reasons() == [
+        "publish_disabled",
+        "dry_run_enabled",
+        "max_posts_zero",
+    ]
+
+
+def test_block_reasons_codes_are_subset_of_runtime_block_reasons():
+    flags = PublishFlags(
+        publish_enabled=False, dry_run=True, max_posts=0, max_posts_per_day=1,
+    )
+    for code in flags.block_reasons():
+        assert code in RUNTIME_BLOCK_REASONS
+
+
+# --------------------------------------------------------------------------- #
+# cross_validation_warnings() — Wave 2.A / #405 hardening
+# --------------------------------------------------------------------------- #
+
+def test_cross_validation_codes_constant_is_stable():
+    expected = {
+        "publish_with_dry_run",
+        "publish_with_zero_cap",
+        "daily_cap_below_per_run",
+        "daily_cap_not_enforced",
+    }
+    assert set(CROSS_VALIDATION_CODES) == expected
+
+
+def test_cross_validation_publish_with_dry_run():
+    flags = PublishFlags(
+        publish_enabled=True, dry_run=True, max_posts=1, max_posts_per_day=1,
+    )
+    assert "publish_with_dry_run" in flags.cross_validation_warnings()
+
+
+def test_cross_validation_publish_with_zero_cap():
+    flags = PublishFlags(
+        publish_enabled=True, dry_run=False, max_posts=0, max_posts_per_day=1,
+    )
+    warns = flags.cross_validation_warnings()
+    assert "publish_with_zero_cap" in warns
+
+
+def test_cross_validation_daily_cap_below_per_run():
+    flags = PublishFlags(
+        publish_enabled=True, dry_run=False, max_posts=5, max_posts_per_day=1,
+    )
+    warns = flags.cross_validation_warnings()
+    assert "daily_cap_below_per_run" in warns
+
+
+def test_cross_validation_daily_cap_not_enforced_is_always_present():
+    """Informational reminder that #404-lite owns daily-cap enforcement."""
+    for flags in [
+        PublishFlags.from_env({}),
+        PublishFlags(True, False, 1, 1),
+        PublishFlags(False, True, 0, 0),
+    ]:
+        assert "daily_cap_not_enforced" in flags.cross_validation_warnings()
+
+
+def test_cross_validation_warnings_are_emitted_via_logging(caplog):
+    """from_env must emit a WARNING per cross-validation code."""
+    with caplog.at_level(logging.WARNING, logger="scripts.discovery.lib.publish_flags"):
+        PublishFlags.from_env(
+            {
+                "PUBLISH_ENABLED": "true",
+                "DRY_RUN": "true",
+                "MAX_POSTS": "5",
+                "MAX_POSTS_PER_DAY": "1",
+            }
+        )
+    msgs = [r.getMessage() for r in caplog.records]
+    joined = "\n".join(msgs)
+    assert "publish_with_dry_run" in joined
+    assert "daily_cap_below_per_run" in joined
+    assert "daily_cap_not_enforced" in joined
+
+
+def test_clean_config_only_emits_informational_warning(caplog):
+    """A coherent config emits only ``daily_cap_not_enforced``."""
+    with caplog.at_level(logging.WARNING, logger="scripts.discovery.lib.publish_flags"):
+        PublishFlags.from_env(
+            {
+                "PUBLISH_ENABLED": "true",
+                "DRY_RUN": "false",
+                "MAX_POSTS": "1",
+                "MAX_POSTS_PER_DAY": "5",
+            }
+        )
+    msgs = [r.getMessage() for r in caplog.records]
+    joined = "\n".join(msgs)
+    assert "daily_cap_not_enforced" in joined
+    assert "publish_with_dry_run" not in joined
+    assert "publish_with_zero_cap" not in joined
+    assert "daily_cap_below_per_run" not in joined

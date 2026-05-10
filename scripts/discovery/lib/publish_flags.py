@@ -9,12 +9,28 @@ that gate any real publication attempt:
 * ``MAX_POSTS`` — hard cap on real publishes per execution
   (default ``1``).
 * ``MAX_POSTS_PER_DAY`` — hard cap on real publishes per UTC day
-  (default ``1``); enforcement against ``published_history`` lands with
-  #404-lite.
+  (default ``1``). NOT YET ENFORCED as a real daily cap: enforcement
+  requires ``published_history`` rows and lands with #404-lite. In #405
+  this flag is parsed and exposed for visibility, and a configuration
+  warning is emitted if it is set inconsistently with ``MAX_POSTS``, but
+  it MUST NOT be presented as an operational guarantee.
 
 Defaults are chosen so that, with NO env vars set, ``allows_real_publish``
 returns ``False``. Garbage values never raise — they fall to defaults and
 emit a warning.
+
+Public API
+----------
+* :class:`PublishFlags` — frozen dataclass snapshot.
+* ``PublishFlags.from_env(env=None)`` — fail-closed builder.
+* ``PublishFlags.allows_real_publish()`` — single-line predicate consumed
+  by :mod:`publish_guard` and any future publisher.
+* ``PublishFlags.block_reasons()`` — explicit, stable, audit-grade list
+  of reason codes for why a real publish would be rejected. Empty when
+  :meth:`allows_real_publish` is ``True``.
+* ``PublishFlags.cross_validation_warnings()`` — non-blocking diagnostic
+  warnings about suspicious flag combinations (e.g. ``PUBLISH_ENABLED``
+  on while ``DRY_RUN`` also on, or ``MAX_POSTS_PER_DAY < MAX_POSTS``).
 
 See ``docs/editorial-pipeline/runtime-flags-contract.md`` for the full
 contract.
@@ -27,7 +43,29 @@ import os
 from dataclasses import dataclass
 from typing import Mapping, Optional
 
-__all__ = ["PublishFlags"]
+__all__ = [
+    "PublishFlags",
+    "RUNTIME_BLOCK_REASONS",
+    "CROSS_VALIDATION_CODES",
+]
+
+# Stable runtime block reasons (ordered, audit-grade).
+# Consumed by ``publish_guard.assert_can_publish`` to populate the
+# ``publish_guard.runtime_block`` event and the raised
+# ``PublishBlockedError`` reasons list.
+RUNTIME_BLOCK_REASONS: tuple[str, ...] = (
+    "publish_disabled",   # PUBLISH_ENABLED=false
+    "dry_run_enabled",    # DRY_RUN=true
+    "max_posts_zero",     # MAX_POSTS <= 0
+)
+
+# Stable cross-validation warning codes (non-blocking).
+CROSS_VALIDATION_CODES: tuple[str, ...] = (
+    "publish_with_dry_run",       # PUBLISH_ENABLED=true AND DRY_RUN=true
+    "publish_with_zero_cap",      # PUBLISH_ENABLED=true AND MAX_POSTS=0
+    "daily_cap_below_per_run",    # MAX_POSTS_PER_DAY < MAX_POSTS
+    "daily_cap_not_enforced",     # informational: enforcement deferred to #404-lite
+)
 
 _LOG = logging.getLogger(__name__)
 
@@ -114,10 +152,12 @@ class PublishFlags:
     ) -> "PublishFlags":
         """Build a :class:`PublishFlags` from a mapping (defaults to ``os.environ``).
 
-        Never raises; unparseable values fall back to defaults.
+        Never raises; unparseable values fall back to defaults. Suspicious
+        but parseable combinations are logged via
+        :meth:`cross_validation_warnings` once the snapshot is built.
         """
         source: Mapping[str, str] = os.environ if env is None else env
-        return cls(
+        flags = cls(
             publish_enabled=_parse_bool(
                 source.get("PUBLISH_ENABLED"),
                 DEFAULT_PUBLISH_ENABLED,
@@ -139,6 +179,17 @@ class PublishFlags:
                 name="MAX_POSTS_PER_DAY",
             ),
         )
+        for code in flags.cross_validation_warnings():
+            _LOG.warning(
+                "publish_flags: cross-validation warning %s "
+                "(publish_enabled=%s dry_run=%s max_posts=%d max_posts_per_day=%d)",
+                code,
+                flags.publish_enabled,
+                flags.dry_run,
+                flags.max_posts,
+                flags.max_posts_per_day,
+            )
+        return flags
 
     def allows_real_publish(self) -> bool:
         """Return True only if a real publish may proceed.
@@ -147,10 +198,65 @@ class PublishFlags:
 
         Note: ``max_posts_per_day`` is intentionally NOT part of this
         decision; its enforcement requires ``published_history`` rows and
-        lands with #404-lite.
+        lands with #404-lite. See :meth:`cross_validation_warnings`
+        ``daily_cap_not_enforced``.
         """
         return (
             self.publish_enabled
             and not self.dry_run
             and self.max_posts > 0
         )
+
+    def block_reasons(self) -> list[str]:
+        """Return ordered, stable reason codes for why real publish is blocked.
+
+        Empty list when :meth:`allows_real_publish` is ``True``. Codes are
+        drawn from :data:`RUNTIME_BLOCK_REASONS` and emitted verbatim by
+        :func:`scripts.discovery.lib.publish_guard.assert_can_publish`
+        in the ``publish_guard.runtime_block`` ops_log event and in the
+        raised :class:`PublishBlockedError`.
+
+        ``MAX_POSTS_PER_DAY`` is intentionally NOT a block reason in
+        #405; see module docstring and :meth:`cross_validation_warnings`.
+        """
+        reasons: list[str] = []
+        if not self.publish_enabled:
+            reasons.append("publish_disabled")
+        if self.dry_run:
+            reasons.append("dry_run_enabled")
+        if self.max_posts <= 0:
+            reasons.append("max_posts_zero")
+        return reasons
+
+    def cross_validation_warnings(self) -> list[str]:
+        """Return non-blocking diagnostic codes for suspicious combinations.
+
+        These are emitted as ``logging.WARNING`` from :meth:`from_env`
+        and re-emitted by ``publish_guard`` so an operator notices
+        configurations that parse cleanly but are inconsistent.
+
+        Codes (stable, drawn from :data:`CROSS_VALIDATION_CODES`):
+
+        * ``publish_with_dry_run`` — ``PUBLISH_ENABLED=true`` while
+          ``DRY_RUN=true``. Defensive: real publish still blocked, but the
+          intent looks contradictory.
+        * ``publish_with_zero_cap`` — ``PUBLISH_ENABLED=true`` while
+          ``MAX_POSTS=0``. Hard stop, but the operator probably meant
+          ``MAX_POSTS>=1``.
+        * ``daily_cap_below_per_run`` — ``MAX_POSTS_PER_DAY < MAX_POSTS``.
+          Operator may believe the daily cap already applies; in #405 it
+          does not (see ``daily_cap_not_enforced``).
+        * ``daily_cap_not_enforced`` — informational reminder that
+          ``MAX_POSTS_PER_DAY`` parsing is wired but enforcement against
+          ``published_history`` lands with #404-lite.
+        """
+        warnings: list[str] = []
+        if self.publish_enabled and self.dry_run:
+            warnings.append("publish_with_dry_run")
+        if self.publish_enabled and self.max_posts == 0:
+            warnings.append("publish_with_zero_cap")
+        if self.max_posts_per_day < self.max_posts:
+            warnings.append("daily_cap_below_per_run")
+        # Always informational while #404-lite is open.
+        warnings.append("daily_cap_not_enforced")
+        return warnings

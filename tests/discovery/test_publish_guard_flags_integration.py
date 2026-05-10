@@ -1,18 +1,17 @@
 """Integration test for ``publish_guard`` × ``PublishFlags`` (#405).
 
-Verifies:
-* When ``flags.allows_real_publish() is False`` (the fail-closed default),
-  ``assert_can_publish`` returns ``None`` AND emits a
-  ``publish_guard.dry_run`` marker AND a ``publish_guard.pass`` line.
-  Crucially, no real publish path is invoked: the guard never receives a
-  publisher to call.
-* When ``flags.allows_real_publish() is True``, ``assert_can_publish``
-  returns ``None`` (gates passed) and emits ``publish_guard.pass`` only.
-* The integration does NOT change the contract for callers that pass no
-  ``flags`` argument (covered by ``test_publish_guard.py`` already).
+Wave 2.A semantics (post-hardening):
 
-In Wave 2.A there is no real publisher wired through the guard, so this
-test only verifies the boundary the guard exposes via ops_log.
+* When ``flags.allows_real_publish() is False`` and ``flags`` is passed
+  explicitly, ``assert_can_publish`` RAISES :class:`PublishBlockedError`
+  BEFORE evaluating editorial gates or touching the DB. It emits exactly
+  one ``publish_guard.runtime_block`` ops_log entry. The error reasons
+  match :meth:`PublishFlags.block_reasons`.
+* When ``flags.allows_real_publish() is True``, behaviour matches the
+  legacy gate-only path: emits a single ``publish_guard.pass`` and
+  returns ``None``.
+* When ``flags`` is omitted, behaviour is byte-identical to the pre-#405
+  version (covered by ``test_publish_guard.py``).
 """
 
 from __future__ import annotations
@@ -23,7 +22,10 @@ import sqlite3
 import pytest
 
 from scripts.discovery.lib.publish_flags import PublishFlags
-from scripts.discovery.lib.publish_guard import assert_can_publish
+from scripts.discovery.lib.publish_guard import (
+    PublishBlockedError,
+    assert_can_publish,
+)
 
 
 def _all_ok_page(content_hash: str = "h" * 64) -> dict:
@@ -51,12 +53,13 @@ def _open_db(tmp_path):
 
 
 # --------------------------------------------------------------------------- #
-# Fail-closed flags → marker emitted, no real-write path reached
+# Fail-closed flags → BLOCK (raise) before gates / DB
 # --------------------------------------------------------------------------- #
 
-def test_failclosed_flags_emit_dry_run_marker_and_block_real_publish(
+def test_failclosed_flags_block_real_publish_with_runtime_block_event(
     tmp_path, isolate_ops_log, fake_gates_pass_all, fake_dedup_no_duplicates,
 ):
+    """Default-shaped flags must raise PublishBlockedError before gates run."""
     flags = PublishFlags(
         publish_enabled=False,
         dry_run=True,
@@ -67,25 +70,31 @@ def test_failclosed_flags_emit_dry_run_marker_and_block_real_publish(
 
     db = _open_db(tmp_path)
     try:
-        result = assert_can_publish(_all_ok_page(), "h" * 64, db, flags=flags)
+        with pytest.raises(PublishBlockedError) as exc:
+            assert_can_publish(_all_ok_page(), "h" * 64, db, flags=flags)
     finally:
         db.close()
 
-    assert result is None
+    # Reason codes must mirror block_reasons() exactly.
+    assert exc.value.reasons == flags.block_reasons()
+    assert "publish_disabled" in exc.value.reasons
+    assert "dry_run_enabled" in exc.value.reasons
+    assert exc.value.page_id == "page-405"
+
     entries = _read_log(isolate_ops_log)
     events = [e["event"] for e in entries]
-    assert "publish_guard.dry_run" in events
-    assert "publish_guard.pass" in events
+    # Exactly one runtime_block, no gate.pass / gate.block.
+    assert events == ["publish_guard.runtime_block"]
+    rec = entries[0]
+    assert rec["publish_enabled"] is False
+    assert rec["dry_run"] is True
+    assert rec["max_posts"] == 1
+    assert rec["max_posts_per_day"] == 1
+    assert rec["reasons"] == flags.block_reasons()
+    assert "cross_validation" in rec  # informational warnings echoed
 
-    dry_rec = next(e for e in entries if e["event"] == "publish_guard.dry_run")
-    assert dry_rec["publish_enabled"] is False
-    assert dry_rec["dry_run"] is True
-    assert dry_rec["max_posts"] == 1
-    assert dry_rec["max_posts_per_day"] == 1
-    assert dry_rec["page_id"] == "page-405"
 
-
-def test_default_env_is_failclosed(
+def test_default_env_is_failclosed_and_raises(
     tmp_path, isolate_ops_log, fake_gates_pass_all, fake_dedup_no_duplicates,
 ):
     """The defaults that ship with the contract block real writes."""
@@ -94,19 +103,41 @@ def test_default_env_is_failclosed(
 
     db = _open_db(tmp_path)
     try:
-        assert_can_publish(_all_ok_page(), "h" * 64, db, flags=flags) is None
+        with pytest.raises(PublishBlockedError):
+            assert_can_publish(_all_ok_page(), "h" * 64, db, flags=flags)
     finally:
         db.close()
 
     events = [e["event"] for e in _read_log(isolate_ops_log)]
-    assert events.count("publish_guard.dry_run") == 1
+    assert events == ["publish_guard.runtime_block"]
+
+
+def test_max_posts_zero_is_a_runtime_block_reason(
+    tmp_path, isolate_ops_log, fake_gates_pass_all, fake_dedup_no_duplicates,
+):
+    flags = PublishFlags(
+        publish_enabled=True,
+        dry_run=False,
+        max_posts=0,
+        max_posts_per_day=1,
+    )
+    assert flags.allows_real_publish() is False
+
+    db = _open_db(tmp_path)
+    try:
+        with pytest.raises(PublishBlockedError) as exc:
+            assert_can_publish(_all_ok_page(), "h" * 64, db, flags=flags)
+    finally:
+        db.close()
+
+    assert "max_posts_zero" in exc.value.reasons
 
 
 # --------------------------------------------------------------------------- #
-# All-on flags → no marker, only the pass line
+# All-on flags → no runtime block, only the gate pass line
 # --------------------------------------------------------------------------- #
 
-def test_allon_flags_skip_dry_run_marker(
+def test_allon_flags_pass_through_to_gates(
     tmp_path, isolate_ops_log, fake_gates_pass_all, fake_dedup_no_duplicates,
 ):
     flags = PublishFlags(

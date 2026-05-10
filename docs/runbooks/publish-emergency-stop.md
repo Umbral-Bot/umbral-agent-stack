@@ -17,6 +17,18 @@ Activate this runbook the moment ANY of the following occurs:
 - Any publisher in the stack starts emitting outbound HTTP traffic to a
   publish target endpoint.
 
+## Step 0 — Page David BEFORE touching anything
+
+Before executing Step 1, send a one-line message to David through the
+fastest available channel (Notion comment in `Control Room`,
+WhatsApp, SMS):
+
+> `[publish-incident][PXX:00 UTC] starting publish-emergency-stop runbook on <vps>. Reason: <one-line>. Will report back inside 15 min.`
+
+Do NOT wait for an answer; proceed with Step 1 immediately. The
+notification is for traceability, not authorization — the runbook is
+pre-authorized for any P0 publish situation.
+
 ## Step 1 — Hard kill via env
 
 ```bash
@@ -39,8 +51,74 @@ fail-closed (`PUBLISH_ENABLED=false`, `DRY_RUN=true`), so simply removing
 overrides also stops new publishes. Any new process started after this
 edit reads the new env.
 
-## Step 2 — Disable cron
+## Step 1.5 — Kill in-flight publisher processes and stop systemd units
 
+Step 1 only affects processes started AFTER the env edit. Anything already
+running keeps the in-memory flags from when it was launched. Force the
+running processes down NOW:
+
+```bash
+# Identify any publish-path process. Patterns cover Stage 9c (publisher),
+# Stage 9b (LinkedIn OAuth refresh) and any module name containing
+# "publisher" or "publish_".
+pgrep -af 'stage9c|stage_9c|publisher\.py|scripts\.discovery.*publish' || \
+  echo 'OK no publisher process running'
+
+# Kill them (SIGTERM first, then SIGKILL after 5s if still alive).
+pkill -TERM -f 'stage9c|stage_9c|publisher\.py|scripts\.discovery.*publish' || true
+sleep 5
+pkill -KILL -f 'stage9c|stage_9c|publisher\.py|scripts\.discovery.*publish' || true
+
+# Stop user systemd units that wrap the publish path (no `sudo`; services
+# run as user units under ~/.config/systemd/user/).
+systemctl --user list-units --type=service --all | \
+  grep -iE 'publish|stage9|linkedin' || echo 'OK no matching unit'
+# For each match found above:
+#   systemctl --user stop  <unit>
+#   systemctl --user disable <unit>   # also stops at boot
+
+# OBJECTIVE STOP VERIFICATION (must echo OK both lines):
+pgrep -af 'stage9c|stage_9c|publisher\.py|scripts\.discovery.*publish' && \
+  echo 'FAIL still running' || echo 'OK no publish process'
+systemctl --user is-active --quiet 'umbral-publish*' && \
+  echo 'FAIL unit active' || echo 'OK no active publish unit'
+```
+
+If either FAIL line appears, escalate immediately and re-run with
+elevated patterns; do NOT continue to Step 2 until both verifications
+echo `OK`.
+
+## Step 1.6 — Revert deployment if a recent commit triggered the incident
+
+If the incident correlates with a recent merge, revert the deployment to
+the previous known-good commit BEFORE re-enabling anything. Use a clean
+revert commit, never `git reset --hard` on `main`:
+
+```bash
+cd ~/umbral-agent-stack
+git fetch --all --prune
+git log --oneline -10 main          # identify the offending commit <SHA>
+git checkout main
+git pull --ff-only origin main
+
+# Create a revert on a temporary branch, push, open PR (do NOT push
+# straight to main from the VPS).
+git checkout -b incident/revert-<SHA>
+git revert --no-edit <SHA>
+git push origin incident/revert-<SHA>
+# Open PR via gh from your workstation:
+#   gh pr create --base main --head incident/revert-<SHA> \
+#     --title "incident: revert <SHA> (publish emergency)" \
+#     --body  "See docs/audits/incidents/<UTC-date>-publish-incident.md"
+
+# After the PR is merged from a workstation, redeploy on the VPS:
+git checkout main && git pull --ff-only origin main
+# Re-run the per-service restart from the VPS-deploy-after-edit skill
+# for whichever service consumed the offending file. Do NOT skip the
+# associated health check.
+```
+
+## Step 2 — Disable cron
 ```bash
 crontab -l > /tmp/crontab-backup-$(date +%s).txt
 crontab -e   # comment out any line invoking the publish path or stage9c
@@ -118,6 +196,31 @@ print('OK kill switch effective')
 
 # 2. Confirm no cron entry will run a publisher:
 crontab -l | grep -iE 'publish|stage9|linkedin' || echo 'OK no publish cron'
+
+# 3. Confirm no publisher process is running (objective stop verification):
+pgrep -af 'stage9c|stage_9c|publisher\.py|scripts\.discovery.*publish' && \
+  echo 'FAIL still running' || echo 'OK no publish process'
+
+# 4. Confirm no active systemd publish unit:
+systemctl --user list-units --state=active --type=service --no-legend | \
+  grep -iE 'publish|stage9|linkedin' && \
+  echo 'FAIL active publish unit' || echo 'OK no active publish unit'
+
+# 5. Confirm publish_guard now raises on any explicit flags call:
+PYTHONPATH=~/umbral-agent-stack ~/umbral-agent-stack/.venv/bin/python -c "
+import sqlite3, tempfile, os
+from scripts.discovery.lib.publish_flags import PublishFlags
+from scripts.discovery.lib.publish_guard import (
+    PublishBlockedError, assert_can_publish,
+)
+flags = PublishFlags.from_env(os.environ)
+db = sqlite3.connect(':memory:')
+try:
+    assert_can_publish({'id': 'verify'}, 'h'*64, db, flags=flags)
+    print('FAIL: guard did not raise')
+except PublishBlockedError as exc:
+    print('OK: guard raised with reasons=', exc.reasons)
+"
 ```
 
 ## What this runbook does NOT solve

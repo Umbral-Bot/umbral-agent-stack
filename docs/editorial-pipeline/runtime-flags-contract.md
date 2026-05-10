@@ -52,7 +52,56 @@ class PublishFlags:
 
     def allows_real_publish(self) -> bool:
         """True only if publish_enabled AND not dry_run AND max_posts > 0."""
+
+    def block_reasons(self) -> list[str]:
+        """Ordered subset of {publish_disabled, dry_run_enabled, max_posts_zero}.
+
+        Empty when allows_real_publish() is True. Consumed verbatim by
+        publish_guard.assert_can_publish to populate the
+        publish_guard.runtime_block ops_log event and the raised
+        PublishBlockedError.reasons.
+        """
+
+    def cross_validation_warnings(self) -> list[str]:
+        """Non-blocking diagnostic codes for suspicious flag combinations.
+
+        Codes (stable):
+          - publish_with_dry_run        # PUBLISH_ENABLED=true AND DRY_RUN=true
+          - publish_with_zero_cap       # PUBLISH_ENABLED=true AND MAX_POSTS=0
+          - daily_cap_below_per_run     # MAX_POSTS_PER_DAY < MAX_POSTS
+          - daily_cap_not_enforced      # informational; #404-lite owns enforcement
+        """
 ```
+
+## Stop-button semantics (Wave 2.A / #405 hardening)
+
+`publish_guard.assert_can_publish(..., flags=flags)` is the single
+chokepoint between the editorial pipeline and any real publish target.
+
+* **`flags=None` (legacy)** — byte-identical to the pre-#405 version:
+  evaluates the 6 editorial gates and either `publish_guard.pass` or
+  `publish_guard.block`. Verified by
+  `tests/discovery/test_publish_guard_flags_integration.py::test_call_without_flags_preserves_legacy_behavior`.
+* **`flags` explicit AND `flags.allows_real_publish() is False`** —
+  raises `PublishBlockedError(reasons=flags.block_reasons(), ...)`
+  BEFORE evaluating editorial gates or touching the DB. Emits exactly
+  one `publish_guard.runtime_block` ops_log entry that echoes the parsed
+  flags and the cross-validation warning codes for forensics.
+  This is the **active stop button**: not a passive marker.
+* **`flags` explicit AND `flags.allows_real_publish() is True`** — falls
+  through to the gates path; outcome is `publish_guard.pass` or
+  `publish_guard.block` exactly like the legacy path.
+
+## `MAX_POSTS_PER_DAY` is NOT enforced in #405
+
+`MAX_POSTS_PER_DAY` is parsed and exposed for visibility, but
+`allows_real_publish()` and `block_reasons()` deliberately ignore it.
+Real daily-cap enforcement requires querying `published_history` rows by
+UTC day, which depends on the `publication_content_hash` schema (#402)
+and the `publish_log.jsonl` (#404-lite). Until both land, treat
+`MAX_POSTS_PER_DAY` as a configuration hint, NOT an operational
+guarantee. `cross_validation_warnings()` emits `daily_cap_not_enforced`
+on every call as a permanent reminder.
 
 ## Consumers
 

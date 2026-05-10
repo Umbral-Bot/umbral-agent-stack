@@ -118,12 +118,19 @@ def register_published(
     content_hash: str,
     published_url: str,
     platform: str,
+    publication_content_hash: str | None = None,
 ) -> None:
     """Append a publication to ``published_history``. Idempotent on PK.
 
     Raises ``ValueError`` if any required field is empty — register is
     a write-only signal of "we just published this", and we want callers
     to fail loudly instead of silently logging a sentinel row.
+
+    ``publication_content_hash`` is an OPTIONAL Wave 2.A (#402) field. When
+    supplied, it is persisted alongside the signal-grade ``content_hash``;
+    when omitted, the row stores ``NULL`` for back-compat with Wave 1.5
+    callers. See
+    ``docs/editorial-pipeline/publication-content-hash-contract.md``.
     """
     if not content_hash:
         raise ValueError("content_hash required")
@@ -133,12 +140,33 @@ def register_published(
         raise ValueError("platform required")
     ensure_published_history_schema(db_conn)
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
-    db_conn.execute(
-        "INSERT OR IGNORE INTO published_history "
-        "(content_hash, published_url, published_at, platform) "
-        "VALUES (?,?,?,?)",
-        (content_hash, published_url, now, platform),
-    )
+    if publication_content_hash is not None:
+        # Lazy import keeps ``dedup`` dependency-free for legacy importers.
+        from scripts.discovery.lib.publication_hash import (
+            ensure_publication_hash_column,
+        )
+
+        ensure_publication_hash_column(db_conn)
+        db_conn.execute(
+            "INSERT OR IGNORE INTO published_history "
+            "(content_hash, published_url, published_at, platform, "
+            "publication_content_hash) "
+            "VALUES (?,?,?,?,?)",
+            (
+                content_hash,
+                published_url,
+                now,
+                platform,
+                publication_content_hash,
+            ),
+        )
+    else:
+        db_conn.execute(
+            "INSERT OR IGNORE INTO published_history "
+            "(content_hash, published_url, published_at, platform) "
+            "VALUES (?,?,?,?)",
+            (content_hash, published_url, now, platform),
+        )
     db_conn.commit()
 
 

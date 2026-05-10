@@ -89,3 +89,123 @@ autorización explícita de David.
   `gh pr merge 407 --merge` (NO squash).
 - Estado: esperando autorización explícita de David. NO ejecutar
   todavía.
+
+---
+
+## 2026-05-10 — #407 MERGED (autorizado por David)
+
+- Autorización explícita: David, mismo día.
+- Secuencia ejecutada desde Copilot Chat (no VPS):
+  `gh pr ready 407` → `gh pr edit 407 --remove-label do-not-merge` →
+  `gh pr merge 407 --merge` (no squash, sin `--delete-branch`).
+- HEAD pre-merge: `84cd0e8d` (sin cambios desde VPS-1 PASS).
+- CI pre-merge: SUCCESS en 3.11 y 3.12 (workflow Tests).
+- Merge commit: `30e5489f29b962a8c651850830363638a3ed1d2e`.
+- `origin/main` HEAD post-merge: `30e5489f`.
+- PR #407 estado final: `MERGED` a `2026-05-10T09:47:15Z`.
+- Branch `copilot-vps/wave2a-405-stop-button` preservada (no
+  borrada — útil como base estable para rebase de #410).
+- Restricciones respetadas: cero VPS touch, cero publish, cero cron,
+  cero runtime cambio, cero edición Stage 7.5 / variants / O16.2 /
+  Azure / GHCR / Notion writes productivos.
+
+---
+
+## 2026-05-10 — B (gap-check #411 hardening) — NO GAP
+
+Verificación read-only contra `origin/rrss-wave2a/404-lite-publish-log`
+HEAD `2c6fe460`, motivada por el addendum del plan
+(`docs/audits/2026-05-10-wave2a-plan.md` líneas 67-76):
+"#404-lite debe persistir `flags.publish_enabled`, `flags.dry_run`,
+`flags.max_posts`, `flags.max_posts_per_day`, `block_reasons()`".
+
+Cobertura del contrato `docs/editorial-pipeline/publish-log-contract.md`:
+
+| Campo plan-required                  | Documentado | Writer-preserva | Test round-trip |
+|---|---|---|---|
+| `publish_enabled`                    | ✅          | ✅              | ✅               |
+| `dry_run`                            | ✅          | ✅              | ✅               |
+| `max_posts`                          | ✅          | ✅              | ✅               |
+| `max_posts_per_day`                  | ✅          | ✅              | ✅               |
+| `block_reasons` (lista)              | ✅          | ✅              | ✅               |
+| `cross_validation` (lista warnings)  | ✅          | ✅              | ✅               |
+| `publication_content_hash`           | ✅          | ✅              | ✅               |
+| `source_content_hash`                | ✅          | ✅              | ✅               |
+| `would_publish`                      | ✅          | ✅              | ✅               |
+| `gate_outcomes` (dict 6 gates)       | ✅          | ✅              | ✅               |
+
+Mecanismo: `write_event(event)` hace `dict(event)` shallow copy +
+`setdefault("timestamp_utc", _utc_now_iso())`; no descarta keys. El
+test `test_roundtrip_contract_shaped_event`
+(`tests/lib/test_publish_log.py`) ejercita los 13 campos del contrato y
+asserta `evt[k] == v` para cada uno.
+
+Conclusión B: **NO HAY GAP.** El writer #411 ya cumple el addendum del
+plan. La integración con `publish_guard` (que es quien debe llenar esos
+campos) sigue siendo trabajo de un PR posterior, fuera de #411.
+
+---
+
+## 2026-05-10 — A (doc-fix `timestamp` → `timestamp_utc` en #411) — NO-OP en repo
+
+Auditoría exhaustiva del eje `timestamp` vs `timestamp_utc`:
+
+- `git grep '"timestamp" in events'` sobre TODAS las refs remotas:
+  cero coincidencias en código/runbook/contract/tests.
+  Única aparición: este propio changelog auto-referenciándose
+  (línea 49 del entry RRSS 1).
+- `docs/runbooks/publish-emergency-stop.md` (en main post-merge #407):
+  solo hace `tail -200 ~/.config/umbral/publish_log.jsonl`, sin
+  asserts sobre keys.
+- `docs/audits/2026-05-10-wave2a-vps-prompts.md` (sección VPS-3, smoke
+  de #411): usa `print('events:', read_events())` — sin assert.
+- `docs/editorial-pipeline/publish-log-contract.md`: solo
+  `timestamp_utc`.
+- `scripts/discovery/lib/publish_log.py`: solo `timestamp_utc`.
+- `tests/lib/test_publish_log.py`: solo `timestamp_utc`.
+
+Conclusión A: el "doc bug" reportado en el entry RRSS 1 fue
+**transitorio en un prompt enviado a Copilot-VPS** (smoke ad-hoc), NO
+una inconsistencia persistida en el repo. **No hay archivo que
+modificar en branch #411.** El repo ya es coherente sobre la key
+canónica `timestamp_utc`.
+
+Recomendación: dejar el motivo 1 del PARTIAL de RRSS 1 como nota
+histórica del proceso, no como bug abierto. El PARTIAL queda reducido
+al motivo 2 (drift local cross-thread, ya mitigado con la regla
+`fetch + reset --hard` documentada en user memory
+`cross-repo-handoff-rules.md`).
+
+---
+
+## 2026-05-10 — Estado actual de PRs Wave 2.A
+
+| PR | Branch | HEAD | Estado |
+|---|---|---|---|
+| #407 | `copilot-vps/wave2a-405-stop-button` | `84cd0e8d` | **MERGED** (`30e5489f`) |
+| #410 | `rrss-wave2a/402-publication-content-hash` | `3a2dc4d8` | open / draft / `do-not-merge` — **rebase pendiente** sobre nuevo `origin/main` |
+| #411 | `rrss-wave2a/404-lite-publish-log` | `2c6fe460` | open / draft / `do-not-merge` — código PASS, contrato cumple plan, sin doc-fix necesario; listo para VPS-3 + merge cuando David autorice |
+| #412 | `rrss-wave2a/docs-and-prompts` | (este commit) | open / draft / `do-not-merge` — bitácora viva |
+| #414 | `rrss-wave2a/406-source-use-and-secrets` | `2b475fb` | open / draft / `do-not-merge` — doc-only, mergeable en cualquier momento |
+
+---
+
+## 2026-05-10 — Próxima decisión requerida de David
+
+Tres caminos no-bloqueantes que pueden ejecutarse en paralelo o en
+serie según prioridad. NINGUNO requiere ejecución todavía:
+
+1. **Rebase #410** sobre nuevo `origin/main` (post-#407). Conflicto
+   esperado en `scripts/discovery/lib/publish_flags.py` resuelto con
+   `git checkout --theirs` (preservar A1 fix de #407). Push
+   `--force-with-lease`. Después: VPS-2 (review profundo + tests).
+2. **Merge #414** (#406 doc-only, sin dependencias técnicas, ya verde).
+3. **Merge #411** (#404-lite, código PASS, contrato cumple plan,
+   restricciones intactas; opcional VPS-3 antes de merge).
+
+Recomendación: primero (1) rebase #410 para liberar el siguiente
+bloqueante de la cadena del plan, y en paralelo (2) merge #414 (cero
+riesgo). #411 puede mergearse cuando lo decidás.
+
+NO ejecutado: VPS-2, VPS-3, rebase #410, merges #410/#411/#414/#412,
+n8n, O16.2, Stage 7.5, runtime.

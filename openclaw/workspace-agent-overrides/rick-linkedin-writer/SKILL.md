@@ -30,6 +30,8 @@ Primero debes convertir el catálogo de referentes en un conjunto de publicacion
 
 > **Nota operativa (2026-05):** este prepaso ya está implementado en las Etapas 1-4 del pipeline (`scripts/discovery/stage1_load_referentes.py`, `stage2_ingest.py`, `stage3_promote.py`, `stage4_push_notion.py`). El catálogo de items vive en SQLite. `rick-linkedin-writer` consume desde ahí, no re-descubre.
 
+> ⚠️ **BANNER cross-ref (2026-05-08, Hilo 1 wave1):** la cita anterior a `scripts/discovery/stage1_load_referentes.py` es **falsa atribución** — ese archivo NO existe en `main`. La lectura de Referentes + descubrimiento de publicaciones está colapsada hoy dentro de `scripts/discovery/stage2_ingest.py`. Spec canónica end-to-end: [`docs/editorial-pipeline/master-plan.md`](../../../docs/editorial-pipeline/master-plan.md). Drift: [`docs/audits/2026-05-08-editorial-drift-audit.md`](../../../docs/audits/2026-05-08-editorial-drift-audit.md).
+
 ## Criterio 1 — seleccionar la referencia más relevante para David
 
 Cuando ya tengas publicaciones candidatas descubiertas desde los referentes de David, selecciona primero la publicación/referencia más relevante para su perfil editorial.

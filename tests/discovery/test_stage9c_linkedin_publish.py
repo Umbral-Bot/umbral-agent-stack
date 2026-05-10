@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import sys
+import types
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -11,6 +13,34 @@ import pytest
 
 from scripts.discovery import stage9c_linkedin_publish as mod
 from scripts.discovery import stage9b_linkedin_oauth as oauth
+
+
+@pytest.fixture(autouse=True)
+def _stub_guard_dependencies(monkeypatch):
+    """Install fake gates/dedup so the stage10 publish-guard always passes.
+
+    These tests pre-date Hilo 6 and exercise stage9c HTTP/state behaviour
+    only. The dedicated guard tests live in test_publish_guard.py and the
+    dry-run/idempotency contracts in test_stage9c_dry_run.py /
+    test_stage9c_idempotency.py.
+    """
+    gmod = types.ModuleType("scripts.discovery.lib.gates")
+
+    def _ev(_p, _d):
+        return types.SimpleNamespace(
+            aprobado_contenido=True, autorizar_publicacion=True,
+            gate_invalidado=False, fuente_primaria_ok=True,
+            plataforma_seleccionada=True, no_duplicado=True,
+        )
+    gmod.evaluate_gates = _ev
+    gmod.can_publish = lambda s: (True, [])
+    monkeypatch.setitem(sys.modules, "scripts.discovery.lib.gates", gmod)
+
+    dmod = types.ModuleType("scripts.discovery.lib.dedup")
+    dmod.is_duplicate = lambda db, h: False
+    dmod.register_published = lambda *a, **kw: None
+    monkeypatch.setitem(sys.modules, "scripts.discovery.lib.dedup", dmod)
+
 
 
 # ---------- Helpers ----------
@@ -267,7 +297,7 @@ def test_publish_one_http_400_marks_failed(state_db, monkeypatch):
 def test_publish_one_dry_run_no_post(state_db, monkeypatch, capsys):
     mod.ensure_publish_columns(state_db)
     _insert_draft(state_db, status="draft_ready")
-    # If httpx is invoked, fail loudly:
+    # If httpx.Client is invoked, fail loudly:
     monkeypatch.setattr(mod.httpx, "Client",
                         lambda *a, **kw: pytest.fail("httpx not allowed"))
     row = mod.read_publishable(state_db, limit=1)[0]
@@ -278,8 +308,12 @@ def test_publish_one_dry_run_no_post(state_db, monkeypatch, capsys):
     )
     assert status == "skipped"
     out = capsys.readouterr().out
-    assert "urn:li:person:rick" in out
-    # meta keys must not appear in printed payload
+    # Hilo 6 dry-run JSON contract: would_publish + content_hash + reasons.
+    payload = json.loads(out.strip().splitlines()[0])
+    assert payload["would_publish"] is True
+    assert payload["reasons_blocked"] == []
+    assert len(payload["content_hash"]) == 64
+    # Old payload-dump output must NOT appear.
     assert "_offline_draft" not in out
     assert "_built_at" not in out
 
@@ -327,7 +361,11 @@ def test_main_dry_run_uses_member_urn_from_tokens(
     ])
     assert rc == 0
     out = capsys.readouterr().out
-    assert "urn:li:person:tokens-urn" in out
+    # Hilo 6: dry-run prints the JSON contract (no payload dump). The
+    # author URN is no longer echoed in stdout — it goes into the actual
+    # POSTed payload only on real publish.
+    assert "would_publish" in out
+    assert "content_hash" in out
 
 
 def test_main_refreshes_expired_token(

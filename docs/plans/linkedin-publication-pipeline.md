@@ -1,5 +1,7 @@
 # Plan Del Pipeline De Publicaciones LinkedIn
 
+> ⚠️ **BANNER (2026-05-08, Hilo 1 wave1):** Este documento describe SOLO el canal LinkedIn. La spec canónica end-to-end del pipeline editorial vive ahora en [`docs/editorial-pipeline/master-plan.md`](../editorial-pipeline/master-plan.md). Las referencias en este archivo a `scripts/discovery/stage1_load_referentes.py` (ver línea ~241 y tabla §4.A) son **aspiracionales** — ese script NO existe en `main`. Lo que hoy hace S0+S1 está colapsado dentro de `scripts/discovery/stage2_ingest.py`. Drift detallado: [`docs/audits/2026-05-08-editorial-drift-audit.md`](../audits/2026-05-08-editorial-drift-audit.md). Para el contrato S1 propuesto ver [`docs/editorial-pipeline/stage1-discovery-spec.md`](../editorial-pipeline/stage1-discovery-spec.md).
+
 > **Estado**: solo diseno, cero codigo.
 > **Owner natural**: `rick-linkedin-writer`, orquestado por `rick-orchestrator`.
 > **Restriccion arquitectonica**: disenar encima de la topologia Rick, Ola 1 ya en runtime (`3cbf344`, segun David). No disenar esto como `worker/` tasks paralelas.

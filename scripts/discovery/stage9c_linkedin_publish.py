@@ -34,9 +34,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import hashlib
+import logging
+
 import httpx
 
 from scripts.discovery import stage9b_linkedin_oauth as oauth
+from scripts.discovery.lib.publish_guard import (
+    PublishBlockedError,
+    assert_can_publish,
+)
+
+logger = logging.getLogger(__name__)
 
 LINKEDIN_API_BASE = "https://api.linkedin.com"
 LINKEDIN_UGC_PATH = "/v2/ugcPosts"
@@ -207,14 +216,133 @@ def post_ugc(
             client.close()
 
 
+# ---------- Stage 10 publish-guard helpers ----------
+
+_WS_RE_NORM = None  # populated lazily
+
+
+def _normalize_text(s: str) -> str:
+    """Mirror of ``dedup.normalize_text`` — kept inline so this file does
+    not require Hilo 3 at import time."""
+    import re as _re
+    global _WS_RE_NORM
+    if _WS_RE_NORM is None:
+        _WS_RE_NORM = _re.compile(r"\s+")
+    if s is None:
+        return ""
+    if not isinstance(s, str):
+        s = str(s)
+    return _WS_RE_NORM.sub(" ", s.strip().lower())
+
+
+def compute_payload_content_hash(
+    payload: dict[str, Any], *, canonical_url: str = "",
+    title: str = "",
+) -> str:
+    """sha256 over canonical_url + normalized title + LinkedIn copy text.
+
+    Matches ``dedup.compute_content_hash`` semantics so the hash computed
+    pre-POST collides with the hash stored by ``register_published`` after
+    a successful publish.
+    """
+    try:
+        text = (
+            payload.get("specificContent", {})
+            .get("com.linkedin.ugc.ShareContent", {})
+            .get("shareCommentary", {})
+            .get("text", "")
+        ) or ""
+    except AttributeError:
+        text = ""
+    url = (canonical_url or "").strip()
+    payload_str = f"{url}\n{_normalize_text(title)}\n{_normalize_text(text)}"
+    return hashlib.sha256(payload_str.encode("utf-8")).hexdigest()
+
+
+def fetch_notion_page(page_id: str) -> dict[str, Any]:
+    """GET https://api.notion.com/v1/pages/{id}.
+
+    Pure helper isolated for test injection. Reads ``NOTION_API_KEY`` from
+    env. Returns ``{"id": page_id}`` if the env var is missing — the guard
+    will then block on every Notion-checkbox gate (correct fail-safe).
+    """
+    if not page_id:
+        return {}
+    token = os.environ.get("NOTION_API_KEY", "").strip()
+    if not token:
+        return {"id": page_id}
+    try:
+        r = httpx.get(
+            f"https://api.notion.com/v1/pages/{page_id}",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Notion-Version": "2025-09-03",
+            },
+            timeout=15.0,
+        )
+        if r.status_code == 200:
+            return r.json()
+    except (httpx.HTTPError, ValueError):
+        pass
+    return {"id": page_id}
+
+
+def _emit_dry_run_json(
+    *, proposal_id: int, page_id: str, content_hash: str,
+    would_publish: bool, reasons_blocked: list[str],
+) -> None:
+    """Stable JSON contract for ``--dry-run`` (Hilo 6 spec §5.4)."""
+    print(json.dumps({
+        "proposal_id": proposal_id,
+        "page_id": page_id,
+        "content_hash": content_hash,
+        "would_publish": would_publish,
+        "reasons_blocked": reasons_blocked,
+    }, ensure_ascii=False))
+
+
+def _notify_blocked(page_id: str, reasons: list[str]) -> None:
+    """Best-effort Notion review-comment when a publish is blocked.
+
+    Imports lazily to keep stage9c usable when Notion creds are missing.
+    Never raises.
+    """
+    if not page_id:
+        return
+    try:
+        from scripts.discovery import stage7_5_post_review_comment as srvc
+    except ImportError:
+        return
+    fn = getattr(srvc, "post_blocked_comment", None) or getattr(
+        srvc, "post_review_comment", None
+    )
+    if fn is None:
+        return
+    try:  # pragma: no cover — exercised only with Notion creds
+        fn(page_id=page_id, blocked_reasons=reasons)
+    except Exception as e:  # noqa: BLE001
+        logger.warning("stage9c.notify_blocked_failed page_id=%s err=%s",
+                       page_id, e)
+
+
 # ---------- Per-row pipeline ----------
 
 def publish_one(
     *, row: dict[str, Any], state_db: Path, author_urn: str,
     access_token: str, dry_run: bool,
     client: httpx.Client | None = None,
+    notion_fetcher=fetch_notion_page,
+    dedup_module: Any = None,
 ) -> tuple[str, str]:
-    """Return (status, message). Status: published | skipped | failed."""
+    """Return (status, message). Status: published | skipped | failed | blocked.
+
+    ``dedup_module`` is an optional injection point for the dedup module used
+    to call ``register_published`` after a successful POST. Tests pass a fake
+    explicitly to avoid the previously fragile ``sys.modules`` patching path
+    that did not propagate through the parent package's cached attribute.
+    Production callers leave it at ``None`` and the real module is imported
+    lazily (honouring ``sys.modules`` overrides for back-compat).
+    """
     pid = int(row["id"])
     if is_already_published(state_db, pid):
         return "skipped", "already published"
@@ -231,34 +359,95 @@ def publish_one(
     clean = strip_meta_keys(payload)
     clean = resolve_author(clean, author_urn=author_urn)
 
-    if dry_run:
-        # Print payload (no secrets in payload itself).
-        print(json.dumps({"proposal_id": pid, "payload": clean}, indent=2,
-                         ensure_ascii=False))
-        return "skipped", "dry-run"
+    # ---- Stage 10 publish guard: 6 gates BEFORE any POST ----
+    notion_page_id = (row.get("notion_page_id") or "").strip()
+    notion_page = notion_fetcher(notion_page_id) if notion_page_id else {}
+    content_hash = compute_payload_content_hash(clean)
 
+    db_conn = sqlite3.connect(state_db)
     try:
-        status_code, post_urn, body = post_ugc(
-            payload=clean, access_token=access_token, client=client,
-        )
-    except Exception as e:  # noqa: BLE001
-        msg = f"http error: {e!s:.200s}"
+        try:
+            assert_can_publish(notion_page, content_hash, db_conn)
+        except PublishBlockedError as e:
+            reasons = e.reasons
+            logger.warning(
+                "stage9c.blocked proposal_id=%s page_id=%s reasons=%s",
+                pid, notion_page_id, reasons,
+            )
+            log_event(
+                "stage9c.blocked",
+                proposal_id=pid, page_id=notion_page_id,
+                content_hash=content_hash, reasons=reasons,
+            )
+            if dry_run:
+                _emit_dry_run_json(
+                    proposal_id=pid, page_id=notion_page_id,
+                    content_hash=content_hash, would_publish=False,
+                    reasons_blocked=reasons,
+                )
+            else:
+                _notify_blocked(notion_page_id, reasons)
+            return "blocked", f"gates_failed={reasons}"
+
+        if dry_run:
+            _emit_dry_run_json(
+                proposal_id=pid, page_id=notion_page_id,
+                content_hash=content_hash, would_publish=True,
+                reasons_blocked=[],
+            )
+            return "skipped", "dry-run"
+
+        try:
+            status_code, post_urn, body = post_ugc(
+                payload=clean, access_token=access_token, client=client,
+            )
+        except Exception as e:  # noqa: BLE001
+            msg = f"http error: {e!s:.200s}"
+            mark_failed(state_db, pid, error=msg)
+            return "failed", msg
+
+        if status_code == 201 and post_urn:
+            mark_published(state_db, pid, post_urn=post_urn)
+            published_url = (
+                f"https://www.linkedin.com/feed/update/{post_urn}/"
+            )
+            try:
+                # Resolve dedup once: prefer the injected module (tests),
+                # else fall back to the lazy import (production / back-compat).
+                # Hilo 3 dedup may not be merged in some test envs.
+                if dedup_module is not None:
+                    _dedup = dedup_module
+                else:
+                    import sys as _sys
+                    _name = "scripts.discovery.lib.dedup"
+                    if _name in _sys.modules:
+                        _dedup = _sys.modules[_name]
+                    else:
+                        from scripts.discovery.lib import dedup as _dedup
+                _dedup.register_published(
+                    db_conn, content_hash, published_url, "linkedin",
+                )
+            except Exception as e:  # noqa: BLE001
+                logger.warning(
+                    "stage9c.register_published_failed pid=%s err=%s",
+                    pid, e,
+                )
+            log_event(
+                "stage9c.published",
+                proposal_id=pid, post_urn=post_urn,
+                content_hash=content_hash,
+            )
+            return "published", post_urn
+
+        # Failure path. Body may contain LinkedIn error message; safe to log.
+        err_text = json.dumps(body)[:300] if body else f"HTTP {status_code}"
+        msg = f"HTTP {status_code} {err_text}"
         mark_failed(state_db, pid, error=msg)
+        log_event("stage9c.failed",
+                  proposal_id=pid, http_status=status_code)
         return "failed", msg
-
-    if status_code == 201 and post_urn:
-        mark_published(state_db, pid, post_urn=post_urn)
-        log_event("stage9c.published",
-                  proposal_id=pid, post_urn=post_urn)
-        return "published", post_urn
-
-    # Failure path. Body may contain LinkedIn error message; safe to log.
-    err_text = json.dumps(body)[:300] if body else f"HTTP {status_code}"
-    msg = f"HTTP {status_code} {err_text}"
-    mark_failed(state_db, pid, error=msg)
-    log_event("stage9c.failed",
-              proposal_id=pid, http_status=status_code)
-    return "failed", msg
+    finally:
+        db_conn.close()
 
 
 # ---------- CLI ----------
@@ -309,7 +498,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"ERROR: cannot get access_token: {e}", file=sys.stderr)
             return 2
 
-    published = skipped = failed = 0
+    published = skipped = failed = blocked = 0
     for i, row in enumerate(rows):
         if i > 0 and not args.dry_run:
             time.sleep(RATE_LIMIT_SLEEP_S)
@@ -323,12 +512,19 @@ def main(argv: list[str] | None = None) -> int:
         elif status == "skipped":
             skipped += 1
             print(f"skip proposal_id={row['id']} {msg}")
+        elif status == "blocked":
+            blocked += 1
+            # Blocking is the expected outcome of the guard, NOT an error.
+            # exit 0 (per Hilo 6 spec §5.3).
+            print(f"blocked proposal_id={row['id']} {msg}")
         else:
             failed += 1
             print(f"FAIL proposal_id={row['id']} {msg}", file=sys.stderr)
 
-    print(f"summary published={published} skipped={skipped} failed={failed} "
-          f"dry_run={args.dry_run}")
+    print(
+        f"summary published={published} skipped={skipped} "
+        f"blocked={blocked} failed={failed} dry_run={args.dry_run}"
+    )
     return 0 if failed == 0 else 1
 
 

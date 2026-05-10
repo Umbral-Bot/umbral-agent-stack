@@ -1,7 +1,7 @@
 ---
 id: "2026-05-08-001"
 title: "Wave 1.5 — integration branch H1+H4+H2+H3 → smoke S0→S2 → reconcile hashes/SQLite/Notion helpers → integrate H5 → integrate H6"
-status: assigned
+status: done
 assigned_to: copilot
 created_by: copilot-chat-windows
 priority: high
@@ -369,3 +369,29 @@ Restricciones operativas activas (no negociables):
 - 0 gates humanos.
 - 0 modificaciones a Stage 7.5.
 - Las 6 PRs originales se mantienen draft + `do-not-merge` hasta que David revise el reporte de Wave 1.5.
+
+### 2026-05-08 — Copilot-VPS (ejecución Wave 1.5)
+
+Branch `wave1.5-integration` creada desde main `8d118a8`. Ejecutadas las 13 fases del procedimiento mínimo. Reporte completo en [`docs/audits/2026-05-08-wave1_5-integration-report.md`](../../docs/audits/2026-05-08-wave1_5-integration-report.md).
+
+**Repo dice X vs VPS muestra Y (separación explícita por fase):**
+
+- **Fase 1 (H1):** Repo dice "stub `notion-schema.md` pendiente Hilo 4". VPS confirma merge limpio, 0 cambios en `scripts/`. ✅
+- **Fase 2 (H4):** Repo predijo conflicto en `notion-schema.md`. VPS confirma conflicto add/add → resuelto manteniendo H4 (versión completa). 30 tests `lib/` verdes. ✅
+- **Fase 3 (H2):** Repo predijo conflicto en `lib/__init__.py`. VPS confirma + adicional en `stage1-discovery-spec.md` (también stub vs real). Ambos resueltos. 61 tests verdes. ✅
+- **Fase 4 (H3):** Repo predijo riesgo de contrato `signals_raw` columna URL. VPS muestra que S2 introspecta `PRAGMA table_info` y acepta `url` o `source_url` → contrato funciona en branch integrada (cross-conflict #1 resuelto en código). 336 tests verdes. ✅
+- **Fase 5 (smoke):** Repo describe 4 stages independientes. VPS muestra: 70 referentes, 116 signals_raw, 30 signals_verified, 0 LinkedIn HTTP, 0 Notion writes. Migraciones idempotentes verificadas. ✅
+- **Fase 6 (hash contract):** Repo (review externa) sospechaba `signal_hash` inestable cuando `iso_pub` ausente. VPS muestra implementación `dedup_hash(canonical_url, published_at or "")` → es **estable** en el caso None/"". Documentado + 9 tests nuevos verdes. ✅
+- **Fase 7 (sqlite policy):** Repo no documentaba PRAGMAs. VPS muestra `journal_mode=delete`, `busy_timeout=0`. Decisiones explícitas en `sqlite-policy.md`. ✅
+- **Fase 8 (notion helpers):** Repo (review externa) sospechaba duplicación de cliente Notion. VPS confirma que `notion_publicaciones.py` NO hace HTTP (pura parsing); única fuente de cliente es `notion_read.py`. Falsa alarma documentada. ✅
+- **Fase 9 (H5):** Repo declaraba Stage 7.5 FROZEN. VPS confirma `git diff main HEAD -- 'scripts/discovery/stage7_5_*' = 0`. Import sin side-effects verificado. 38 tests H5 verdes. ✅
+- **Fase 10 (H6):** Repo declaraba "publish_guard sin lazy fallback en branch integrada". VPS confirma: NO hay `try/except ImportError`; el `importlib.import_module` con `sys.modules` lookup es **deferred resolution para tests**, no fallback. Dry-run S10 (3 escenarios) verde. **Hallazgo de integración:** 1 test (`test_stage9c_idempotency::test_successful_post_calls_register_published`) falla en suite completa por aislamiento `sys.modules` vs atributo de paquete padre. Pasa aislado. **NO se reescribió** (antipattern brief #9). Reportado para Wave 2. Suite total: 402 passed, 1 failed. ✅ con caveat documentado.
+- **Fase 11 (master plan §7):** Actualizado: D1 = resuelto (split S0/S1 H2), D3 = resuelto (publish_guard 6 gates H6), D2/D4/D5 = postponed Wave 2 + agregada ambigüedad Canal vs Formato. ✅
+- **Fase 12 (verificación final):** Stage 7.5 freeze = 0, CAND-002/3/4 grep exit=1, 7 commits H1..H6+policies+plan. ✅
+- **Fase 13 (push + PR):** branch pushed; PR draft creado con label `do-not-merge`. ✅
+
+**Criterios de aceptación: 11/11 cumplidos.** El criterio "publish_guard SIN lazy fallback" se interpreta cumplido (sin `try/except ImportError`). Detalle por criterio en §11 del reporte.
+
+**Antipatrones bloqueados:** ningún merge a main, ningún write a Notion, ningún POST LinkedIn, Stage 7.5 intacto, sin gates humanos marcados, sin DBs Notion creadas, sin refactor de helpers, sin fix a `signal_hash`, sin reescribir el test que falla, sin fixtures CAND-002/3/4, suite re-corrida tras cada merge.
+
+**Las 6 PRs originales (#394–#399) permanecen draft + `do-not-merge`.**

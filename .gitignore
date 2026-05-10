@@ -105,3 +105,4 @@ reports/*.json
 !reports/stage7_5_eval_v*.json
 
 .cache/
+.coverage

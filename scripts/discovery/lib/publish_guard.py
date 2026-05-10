@@ -52,6 +52,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from scripts.discovery.lib.publish_flags import PublishFlags
+
 __all__ = [
     "PublishBlockedError",
     "assert_can_publish",
@@ -143,6 +145,7 @@ def assert_can_publish(
     notion_page: dict[str, Any],
     content_hash: str,
     db_conn: sqlite3.Connection,
+    flags: PublishFlags | None = None,
 ) -> None:
     """Raise :class:`PublishBlockedError` if any of the 6 gates fail.
 
@@ -188,6 +191,21 @@ def assert_can_publish(
     ok, reasons = gates_mod.can_publish(evaluated)
 
     if ok:
+        # Wave 2.A / #405: when callers explicitly pass a ``flags`` object
+        # AND those flags would block a real write, emit a marker so
+        # observers can see that no real publish would happen even if the
+        # publisher tried to proceed. NEVER raises. When ``flags`` is not
+        # supplied, behaviour is byte-identical to the pre-#405 version.
+        if flags is not None and not flags.allows_real_publish():
+            _emit_log(
+                "publish_guard.dry_run",
+                page_id=page_id,
+                content_hash=content_hash,
+                publish_enabled=flags.publish_enabled,
+                dry_run=flags.dry_run,
+                max_posts=flags.max_posts,
+                max_posts_per_day=flags.max_posts_per_day,
+            )
         _emit_log(
             "publish_guard.pass",
             page_id=page_id,

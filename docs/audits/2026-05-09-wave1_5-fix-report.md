@@ -147,3 +147,20 @@ real a Notion/LinkedIn).
 - [x] PR #400 sigue draft + `do-not-merge` (Fase 6).
 - [x] PRs #394–#399 sin tocar.
 - [x] Task file frontmatter `status:` **NO modificado** desde `wave1.5-integration`.
+
+---
+
+## Notas operativas
+
+### gh pr edit --body-file truncates large PR bodies
+
+- `gh pr edit 400 --body-file docs/audits/2026-05-08-wave1_5-integration-report.md` salió con código 0 y warning de GraphQL ("Projects classic deprecated"), pero **no actualizó correctamente el body grande del PR**.
+- Se verificó que el body resultante no contenía `§10bis` (la sección recién añadida).
+- Workaround aplicado:
+
+      BODY=$(jq -Rs . < docs/audits/2026-05-08-wave1_5-integration-report.md)
+      echo "{\"body\": $BODY}" > /tmp/pr400-payload.json
+      gh api -X PATCH /repos/Umbral-Bot/umbral-agent-stack/pulls/400 --input /tmp/pr400-payload.json
+
+- Resultado: body actualizado correctamente, largo aproximado 17k caracteres, con ocurrencias de `10bis` confirmadas.
+- **Recomendación futura**: para PR bodies grandes (> ~14k chars), usar REST PATCH directo (`gh api -X PATCH /repos/.../pulls/N --input payload.json`) en vez de `gh pr edit --body-file`.

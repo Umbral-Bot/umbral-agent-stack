@@ -8,12 +8,12 @@ jurisdiction: ar
 doc_type: regulation
 default_lang: es
 seeds:
-  - id: sisco-estrategia-bim-ar-2023
+  - doc_id: sisco-estrategia-bim-ar-2023
     url: https://www.argentina.gob.ar/sites/default/files/sisco-estrategia-bim-ar-2023.pdf
     version: "2023"
     valid_from: "2023-01-01"
     title: "Estrategia BIM Argentina — adopción IRAM/ISO 19650"
-  - id: iram-iso-19650-1-resumen-2022
+  - doc_id: iram-iso-19650-1-resumen-2022
     url: https://www.iram.org.ar/wp-content/uploads/2022/iso-19650-1-resumen.pdf
     version: "2022"
     valid_from: "2022-06-01"

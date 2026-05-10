@@ -7,12 +7,12 @@ jurisdiction: mx
 doc_type: regulation
 default_lang: es
 seeds:
-  - id: shcp-estrategia-bim-mx-2019
+  - doc_id: shcp-estrategia-bim-mx-2019
     url: https://www.gob.mx/cms/uploads/attachment/file/451706/Estrategia_BIM_MX.pdf
     version: "2019"
     valid_from: "2019-09-01"
     title: "Estrategia para la Implementación BIM México (SHCP)"
-  - id: dof-nmx-r-098-scfi-2018
+  - doc_id: dof-nmx-r-098-scfi-2018
     url: https://www.dof.gob.mx/normasOficiales/7220/seeco/seeco.pdf
     version: "2018"
     valid_from: "2018-12-01"

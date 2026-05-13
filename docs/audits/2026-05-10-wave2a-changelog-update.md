@@ -209,3 +209,111 @@ riesgo). #411 puede mergearse cuando lo decidás.
 
 NO ejecutado: VPS-2, VPS-3, rebase #410, merges #410/#411/#414/#412,
 n8n, O16.2, Stage 7.5, runtime.
+
+---
+
+## 2026-05-13 — Rebase #410 sobre nuevo `origin/main` (autorizado por David)
+
+- Pre-rebase HEAD: `3a2dc4d8` (con 5 commits del antiguo #407 como
+  ancestros locales).
+- Audit pre-rebase: cero overlap con archivos tocados por #407
+  (`publish_flags.py`, `publish_guard.py`, `runtime-flags-contract.md`,
+  `publish-emergency-stop.md`). Confirmó que el conflicto previsto en
+  `publish_flags.py` era hipótesis errónea — #410 nunca tocó ese
+  archivo.
+- Comando: `git rebase origin/main` desde worktree `.tmp-rrss-402`.
+- Resultado: `Rebasing (1/1) Successfully rebased and updated`.
+  **Cero conflictos.** No fue necesario aplicar `--theirs` ni
+  cherry-pick manual.
+- Post-rebase HEAD: `dc42e38f4cb10071990edef92a8721844a235c5a` (single
+  commit `feat(wave2a/402): publication_content_hash contract +
+  dry-run guard` directamente sobre merge `30e5489f`).
+- Files preservados (5):
+  - `docs/editorial-pipeline/publication-content-hash-contract.md`
+  - `scripts/discovery/lib/dedup.py`
+  - `scripts/discovery/lib/publication_hash.py`
+  - `tests/discovery/test_publish_guard_publication_hash_integration.py`
+  - `tests/lib/test_publication_hash.py`
+- Tests ejecutados localmente (Windows venv, Python 3.12):
+  ```
+  pytest tests/lib/test_publication_hash.py \
+         tests/discovery/test_publish_guard_publication_hash_integration.py \
+         tests/lib/test_publish_flags.py \
+         tests/discovery/test_publish_guard_flags_integration.py \
+         tests/discovery/test_publish_guard.py
+  → 132 passed in 1.51s
+  ```
+  Cubre: hash contract (#410) + integration con guard (#410) + flags
+  helper (#407 ya en main) + flags integration (#407) + guard core
+  (#407). Confirma que la combinación post-rebase es coherente.
+- Push: `git push --force-with-lease` → OK
+  (`3a2dc4d8...dc42e38f forced update`).
+- Re-targeting de base: `gh pr edit 410 --base main` (antes apuntaba a
+  `copilot-vps/wave2a-405-stop-button` que ya no existe como branch
+  destino útil). Ahora base = `main`.
+- Estado final #410: open / draft / `do-not-merge` / `wave2` /
+  **MERGEABLE** / base `main` / HEAD `dc42e38f`.
+- Restricciones: cero VPS touch, cero merge, cero runtime, cero
+  `variants.py`, cero Stage 7.5, cero Azure/GHCR, cero n8n, cero Notion
+  productivo, cero publish.
+
+**Listo para review profundo repo-side antes de VPS-2.** No
+ejecutar VPS-2 hasta autorización explícita.
+
+---
+
+## 2026-05-13 — Spot-check de seguridad #414 (doc-only)
+
+Verificación previa a recomendación de merge:
+
+- Files (2): `docs/editorial-pipeline/source-use-policy.md`,
+  `docs/runbooks/secrets-and-tokens.md`. Cero archivos runtime.
+- Scan de patrones de secrets reales (`sk-`, `ghp_`, `github_pat_`,
+  `xoxb-`, `AIza...`, `eyJ...`, `AKIA...`, `password=...`, `token=...`)
+  sobre el contenido del runbook: las únicas coincidencias son
+  **regex literales dentro del propio runbook** mostrando cómo
+  escanear secrets (ejemplo: bloque `git grep -nE "(sk-|ghp_|xoxb-|secret_|EAA)[A-Za-z0-9]"`).
+  No hay tokens reales, claves API, refresh tokens ni passwords
+  embebidos.
+- Placeholders esperados: 7 ocurrencias (`REPLACE`, `TODO`, `<your`,
+  `placeholder`, etc.). Consistente con doc-only que enseña proceso.
+- Restricciones cumplidas: cero toque a n8n runtime, cero toque a
+  publicación, cero toque a O16.2, cero toque a Stage 7.5, cero toque a
+  `variants.py`.
+- Estado #414: open / draft / `do-not-merge` / `wave2` / `mergeable`
+  re-evaluándose post-rebase #410 (esperable: `MERGEABLE` — no toca
+  archivos en común con #410 ni con #407 ya mergeado).
+
+**Recomendación de merge:** APROBABLE. Cero riesgo runtime.
+Esperando autorización explícita de David antes de ejecutar
+`gh pr ready 414 → gh pr edit 414 --remove-label do-not-merge → gh pr merge 414 --merge`.
+
+---
+
+## 2026-05-13 — Estado actual de PRs Wave 2.A
+
+| PR | HEAD | Base | Estado |
+|---|---|---|---|
+| #407 | `30e5489f` (merge) | — | **MERGED** (2026-05-10) |
+| #410 | `dc42e38f` | `main` | open / draft / `do-not-merge` / `MERGEABLE` — **rebase OK + tests 132/132 verdes**; pendiente review repo-side antes de VPS-2 |
+| #411 | `2c6fe460` | `main` | open / draft / `do-not-merge` — código PASS, contrato cumple plan, pendiente VPS-3 |
+| #412 | (este commit) | `main` | open / draft / `do-not-merge` — bitácora viva |
+| #414 | `2b475fb9` | `main` | open / draft / `do-not-merge` — doc-only, spot-check secrets PASS, recomendado para merge cuando David autorice |
+
+---
+
+## 2026-05-13 — Próxima decisión requerida de David
+
+Tres caminos no-bloqueantes en orden recomendado:
+
+1. **Review profundo repo-side de #410 post-rebase** (diff en GitHub
+   sobre nuevo base `main`). Si OK → autorizar VPS-2 (prompt ya
+   redactado en `wave2a-vps-prompts.md`, sigue válido sin cambios:
+   apunta a `origin/rrss-wave2a/402-publication-content-hash` que
+   ahora es `dc42e38f`).
+2. **Merge #414** (#406 doc-only, spot-check PASS, sin dependencias).
+3. **Autorizar VPS-3 para #411** (prompt ya redactado, sigue válido
+   sin cambios).
+
+NO ejecutado en esta pasada: VPS-2, VPS-3, merges, n8n, O16.2,
+Stage 7.5, runtime, Notion writes productivos, publicación, cron.

@@ -317,3 +317,93 @@ Tres caminos no-bloqueantes en orden recomendado:
 
 NO ejecutado en esta pasada: VPS-2, VPS-3, merges, n8n, O16.2,
 Stage 7.5, runtime, Notion writes productivos, publicación, cron.
+
+
+---
+
+## 2026-05-13 (PM) — #414 MERGED + Review profundo #410 + Prompts VPS refrescados (autorizado por David)
+
+David autorizó: (1) merge #414; (2) preparar/ejecutar VPS-3; (3) NO VPS-2 hasta review repo-side profundo de #410. Hold sobre merge #410 y merge #411.
+
+### #414 — MERGED via squash
+- Pre-merge audit: HEAD `2b475fb9`, base `main`, MERGEABLE, draft + `do-not-merge`, exactly 2 doc files (`source-use-policy.md`, `secrets-and-tokens.md`). PASS.
+- Acciones: `gh pr ready 414` → `gh pr edit 414 --remove-label do-not-merge` → `gh pr merge 414 --squash --delete-branch`.
+- **Merge SHA**: `5f2d84e0dff8cb30af4798a8cb32a17f275abb68`.
+- **Merged at**: 2026-05-13T13:15:13Z.
+- Branch `rrss-wave2a/406-source-use-and-secrets` eliminada del remoto.
+- Restricciones cumplidas: cero runtime, cero secrets reales, cero cron, cero n8n, cero O16.2, cero Stage 7.5, cero `variants.py`, cero publicación.
+
+### Review profundo #410 (HEAD `dc42e38f`, base `main`) — VEREDICTO: **GO para VPS-2**
+
+**Contrato** (`docs/editorial-pipeline/publication-content-hash-contract.md`)
+- Definición exacta confirmada: `payload = channel.lower + "\n" + norm(title) + "\n" + norm(body) + "\n" + source_content_hash`, sha256 hex.
+- Distinto de `source_content_hash`: el test `test_distinct_from_source_content_hash` verifica que ambos hashes difieren para la misma fuente.
+- Responde la pregunta correcta: "¿ya publiqué esta copia en este canal?" — sí (el `channel` está en el payload, dos canales con misma copia generan hashes distintos por diseño).
+- No depende de metadata mutable: cero referencias a `published_at`, wall clock, row PK o cualquier campo modificable.
+
+**Implementación** (`scripts/discovery/lib/publication_hash.py` + delta en `dedup.py`)
+- Normalización (`normalize_publication_text`):
+  - Whitespace: `_HWS_RE = [ \t\f\v]+` colapsa horizontal interno a un espacio (no toca `\n`). PASS.
+  - Párrafos: `_BLANK_RUN_RE = \n{3,}` colapsa a exactamente `\n\n`. PASS.
+  - Case-preserving: explícitamente documentado y testeado (`test_preserves_case`, `test_body_case_flips_hash`). PASS.
+  - Unicode: heredado del decode UTF-8 estándar de Python `str` + `sha256(s.encode("utf-8"))`. No hay normalización NFC/NFD intencional — esto es CORRECTO porque la decisión documentada es preservar la copia tal como se aprobó (NFC vs NFD distintos representan bytes distintos en LinkedIn/blog payload). Acepto.
+  - Title: misma normalización que body. PASS.
+  - Channel: `(channel or "").strip().lower()` — alinea con `gates._VALID_CHANNELS`. PASS.
+  - `source_content_hash`: `(source_content_hash or "").strip()` — defaults a `""` para llamadas sin binding. PASS.
+- Persistencia (`published_history` adicción columnar):
+  - `ensure_publication_hash_column`: usa `PRAGMA table_info` (vía `_column_exists`) para detectar columna faltante; `ALTER TABLE ADD COLUMN` aditiva (no rewrite); `CREATE INDEX IF NOT EXISTS`; envuelta en `try/except sqlite3.OperationalError` para tolerar tabla ausente. Idempotente y safe en concurrent VPS access. PASS.
+  - `register_publication_hash`: requiere ambos hashes; `UPDATE` por `content_hash` (PK); idempotente (UPDATE con mismo valor = no-op). PASS.
+  - `is_duplicate_publication`: `SELECT 1 ... LIMIT 1`; tolera columna/tabla ausente (returns False); empty hash → False. Indexado. PASS.
+- Compatibilidad si falta columna: `is_duplicate_publication` returns False; `register_published(...)` legacy path NO añade la columna (lazy — solo cuando `publication_content_hash is not None`). Test `test_legacy_call_path_unchanged` confirma. PASS.
+- Compatibilidad con filas antiguas: NULL en `publication_content_hash` ≠ cualquier hash no vacío → filas Wave 1.5 nunca se confunden con duplicados. Test `test_legacy_row_without_pub_hash` confirma. PASS.
+- Idempotencia: `INSERT OR IGNORE` preserva, `UPDATE` mismo valor no-op, migraciones aditivas. PASS.
+- Riesgo SQLite: ZERO. ALTER aditivo (no rewrite), PRAGMA detection, `OperationalError` tolerada, lazy import en `dedup.py` evita ciclos. PASS.
+
+**Integración** (`tests/discovery/test_publish_guard_publication_hash_integration.py`)
+- Las 4 ordenaciones del contrato están testeadas:
+  1. Block flags + duplicate → `runtime_block` log único, `PublishBlockedError` con `publish_disabled` + `dry_run_enabled` reasons. Flag-check fires FIRST (nunca consulta `is_duplicate_publication`). PASS.
+  2. Allow flags + duplicate → guard pass + publisher-side `is_duplicate_publication` returns True. PASS.
+  3. Allow flags + fresh copy → guard pass + `is_duplicate_publication` returns False. PASS.
+  4. `flags=None` legacy → byte-identical pre-#402 path (single `publish_guard.pass` log). PASS.
+- `flags=None` preserva legacy: confirmado por test (4).
+- No activa publisher real: cero imports HTTP, cero LinkedIn/blog clients, cero credentials. Pure SQLite local + sha256 puro.
+
+**Tests** (132 total verdes en repo-side rehearsal local)
+Cubre todos los casos críticos del checklist de David:
+- ✅ Mismo body, distinto channel → `test_channel_separates_hashes`
+- ✅ Mismo body, distinto title → `test_title_changes_flip_hash`
+- ✅ Cambios de whitespace → `test_whitespace_only_edits_do_not_flip` + `test_extra_blank_lines_collapsed`
+- ✅ Distinto `source_content_hash` con copia idéntica → `test_source_binding_separates_unrelated_signals`
+- ✅ Fila legacy sin `publication_content_hash` → `test_legacy_row_without_pub_hash`
+- ✅ Tabla sin columna → `test_no_op_when_table_missing` + `test_missing_table_returns_false`
+- ✅ Duplicado por publication hash → `test_round_trip_match`
+- ✅ No duplicado por src diff con copia distinta → cubierto por integration test (3)
+Tests adicionales no-bloqueantes (no requeridos por contrato): SHA stability cross-Python (es spec, no necesario testear).
+
+**Restricciones** (verificadas por `git diff --name-only origin/main..HEAD`)
+- Cero Stage 7.5 / `variants.py` (no en files modificados).
+- Cero LinkedIn / blog HTTP (no imports).
+- Cero Notion writes (no API calls).
+- Cero cron (no scheduling).
+- Cero n8n (no n8n refs).
+- Cero O16.2 (no aeco-kb / o16 refs).
+- Cero Azure / GHCR / Container Apps (no infra deltas).
+
+**VEREDICTO**: **GO para VPS-2** sin ajustes. Implementación cumple el contrato 1:1, integración con #405 es correcta y los tests cubren todos los escenarios. Listo para verificación read-only en VPS antes de re-evaluar autorización de merge.
+
+### Prompts VPS refrescados (commit en este mismo PR #412)
+
+`docs/audits/2026-05-10-wave2a-vps-prompts.md` actualizado:
+- **VPS-2** reescrito: nuevo HEAD `dc42e38f`, nueva base `main` (post-rebase), 5 archivos esperados, 132 tests targeted, ABORT criteria explícitos. Listo para pegar.
+- **VPS-3** reescrito con requisitos explícitos de David: round-trip script in-line que valida (a) no-mutación del dict original, (b) `timestamp_utc` añadido y UTC, (c) campos canónicos preservados (event/channel/would_publish/block_reasons/flags/publication_content_hash/source_content_hash), (d) sub-dict `flags` con sus 4 campos, (e) append-only, (f) JSONL parseable. Verifica que `publish_log.py` NO importa `publish_guard`. Usa `PUBLISH_LOG_PATH` temporal con timestamp único, nunca toca `~/.config/umbral/publish_log.jsonl` productivo. Reporta PASS/PARTIAL/FAIL.
+
+### #412 estado
+- HEAD avanzando con este commit (no merge).
+
+### Próxima decisión requerida de David
+1. **Pegar VPS-2** (`docs/audits/2026-05-10-wave2a-vps-prompts.md` § VPS-2) en sesión Copilot-VPS — read-only, sin merge.
+2. **Pegar VPS-3** (§ VPS-3) en sesión Copilot-VPS — read-only, sin merge. Reportar PASS/PARTIAL/FAIL.
+3. Tras VPS-2 PASS + review repo-side OK → autorizar merge #410.
+4. Tras VPS-3 PASS → autorizar merge #411.
+
+**NO ejecutado en esta pasada**: VPS-2, VPS-3 (sólo redactados), merge #410, merge #411, merge #412, n8n, O16.2, Stage 7.5, `variants.py`, runtime, Notion writes productivos, publicación, cron, Azure/GHCR/Container Apps.

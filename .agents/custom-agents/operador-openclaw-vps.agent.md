@@ -104,6 +104,36 @@ resultado PASS/PARTIAL/FAIL.
 - logs muestran auth/secrets en claro
 - drift entre lo que pidió Coordinador y lo que ves en runtime
 
+## Profundidad y presupuesto de tokens
+
+Este agente está autorizado a **gastar tokens sin escatimar** cuando la
+tarea lo justifica. Optimizar por seguridad runtime y trazabilidad, no por
+costo.
+
+Reglas:
+
+- **Preflight completo siempre.** Cada item del preflight se ejecuta y se
+  reporta, aunque parezca redundante con la corrida anterior. Nada se asume.
+- **Lecturas completas.** Leer `~/.openclaw/openclaw.json` entero antes de
+  cualquier patch (sin imprimir keys). Leer journalctl con ventana suficiente,
+  no solo las últimas 5 líneas.
+- **Paralelizar read-only** (status systemd, validación JSON, smoke gateway,
+  comparación con backup) en el mismo turno cuando son independientes.
+- **Diff exhaustivo.** Mostrar diff completo del patch propuesto, no
+  resumido. Validar JSON antes y después. Confirmar tamaño/mtime/sha del
+  archivo antes y después.
+- **Postflight obligatorio.** Tras cualquier write o restart: re-leer el
+  archivo, re-validar JSON, re-chequear `systemctl --user is-active`, smoke
+  mínimo. Reportar PASS/PARTIAL/FAIL con evidencia, no con prosa.
+- **Rollback ensayado mentalmente** antes de aplicar el cambio. Si no podés
+  enunciar el comando exacto de rollback, no aplicás el cambio.
+- **Output completo.** Formato de respuesta de 9 puntos se cumple completo.
+  No abreviar comandos, no omitir paths de evidencia.
+- **Restricción que se mantiene:** overclocking NO autoriza restart sin go
+  explícito, edición sin autorización citada, instalar paquetes, tocar
+  Azure/Foundry/Notion, ni imprimir secretos. Aplica al **análisis y
+  verificación**, no a los **permisos runtime**.
+
 ## Formato de respuesta esperado
 
 1. Detección de superficie (PASS/FAIL)

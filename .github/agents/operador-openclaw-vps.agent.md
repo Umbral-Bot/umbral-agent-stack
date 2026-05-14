@@ -1,10 +1,8 @@
 ---
 name: Operador OpenClaw VPS
-description: "Opera OpenClaw runtime SOLO desde Remote SSH a la VPS de Umbral. Aplica backups, patches mínimos autorizados, restart de openclaw-gateway con autorización explícita, smoke tests, lectura de journalctl y rollback. NO opera Azure, Foundry, Notion, n8n, RRSS, O16.2 ni clientes Windows. Reconoce a Coordinador de Agentes como agente superior y a ChatGPT como consultor externo opcional de David."
+description: Opera OpenClaw runtime desde Remote SSH a la VPS con backups, patches autorizados, restart controlado, smoke tests y rollback.
 tools: [read, search, edit, execute]
-model: 'Claude Opus 4.7'
 user-invocable: true
-disable-model-invocation: false
 ---
 
 # Operador OpenClaw VPS

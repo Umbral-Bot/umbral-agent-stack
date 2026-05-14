@@ -138,3 +138,24 @@ ssh rick@<vps> "curl -fsS http://127.0.0.1:8088/health"
 
 - `umbral-bot-2`: Frontend chatbot (TypeScript/React, Lovable Cloud)
 - `notion-governance`: Notion workspace governance rules and prompts
+
+## Surface split rule
+
+For tasks involving Azure Foundry, OpenClaw, or VPS runtime, always read:
+
+- [`.agents/instructions/coordinador-de-agentes.md`](../.agents/instructions/coordinador-de-agentes.md)
+- [`.agents/skills/windows-vps-execution-split/SKILL.md`](../.agents/skills/windows-vps-execution-split/SKILL.md)
+- [`.agents/skills/openclaw-foundry-activation/SKILL.md`](../.agents/skills/openclaw-foundry-activation/SKILL.md)
+
+Before acting.
+
+Core rule:
+
+- Windows Copilot handles Azure / Foundry audit and configuration.
+- VPS Copilot handles OpenClaw runtime.
+- ChatGPT may act as David's optional external consultant.
+- Cross-surface tasks must be split into explicit prompts.
+- Never install Azure CLI on VPS just to run Foundry audits.
+- Never edit OpenClaw runtime from Windows.
+- Never configure Azure / Foundry without David's explicit authorization.
+- Never restart OpenClaw gateway without David's explicit authorization.

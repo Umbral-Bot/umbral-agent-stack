@@ -201,4 +201,60 @@ GitHub UI  ─generate PAT classic─►  pwsh local
 | Fase 1 (preflight read-only) | Sí | 2026-05-15 |
 | Fase 2 (KV secret create) | Sí | 2026-05-15 |
 | Fase 3 (script + runbook + audit + PR draft + what-if) | Sí | 2026-05-15 |
+| Fase 3.1 (resolver drift de smoke residual antes de PR ready) | Sí | 2026-05-15 |
 | Fase 4 (deploy real) | **PENDIENTE** | — |
+
+---
+
+## 11. Resolución de drift (Fase 3.1)
+
+What-if inicial reveló 2 Modify a recursos existentes. Investigación read-only clasificó cada uno antes de tocar bicep:
+
+### 11.1 `aeco-source-crawler` env vars `SOURCE_TYPE` + `MAX_DOCS`
+
+**Clasificación**: runtime override, NO config base.
+
+**Evidencia**:
+- `scripts/aeco-kb/run_pipeline.sh` los pasa como `--args --source-type "$src"` (NO como `--env-vars`).
+- `scripts/aeco-kb/source_crawler.py` línea 320: `--max-docs` flag con `default=int(os.environ.get("MAX_DOCS", "100"))`.
+- `infra/azure/modules/aeco-source-crawler-job.bicep` línea 97 (pre-existente): comentario explícito `// Override per-invocation: SOURCE_TYPE, MAX_DOCS`.
+- `MAX_DOCS=1` no aparece en ningún commit del repo — confirma que es smoke residual aplicado vía `az containerapp job update --set-env-vars` post-deploy.
+- Task 048 (`2026-05-08-048`) lista `SOURCE_TYPE=buildingsmart` + `MAX_DOCS=30` como ejemplo de **invocación** (`job start --env-vars`), no como deploy spec.
+
+**Decisión**: NO agregar al bicep. El re-deploy las limpiará — esto es **intencional** y restaura idempotencia. Las invocaciones reales pasarán SOURCE_TYPE/MAX_DOCS por `job start --env-vars` o `--args`.
+
+### 11.2 `aeco-source-crawler` image tag `:latest` vs `o16.2-2e66dda`
+
+**Clasificación**: pin inmutable intencional.
+
+**Evidencia**:
+- Commit `cd9f225b` (2026-05-10) task `coord-ag-2a-build-push-aeco-source-crawler-pinned` build+push del tag con flag `do_not_merge: true` y digest `sha256:ce04d7f5d8a96a82c9a7197394c86e60146350e21408b4eed03f868c2cbfeedc`.
+- Task indica explícitamente: `LATEST_TOCADO: NO`, `V1_TOCADO: NO`. El tag es pin de trazabilidad O16.2.
+- Update runtime aplicado por David: `az containerapp job update --image ghcr.io/umbral-bot/aeco-source-crawler:o16.2-2e66dda`.
+
+**Decisión**: cambiar default del param `image` en `aeco-source-crawler-job.bicep` a `ghcr.io/umbral-bot/aeco-source-crawler:o16.2-2e66dda`. Ahora bicep es la fuente de verdad del pin; futuros pins se hacen via PR (no via `--image` manual).
+
+### 11.3 `workloadProfileName: 'Consumption'` en los 3 jobs
+
+**Clasificación**: ruido what-if (ARM lo agrega por default en CAE Consumption-only).
+
+**Decisión**: declarar explícitamente `workloadProfileName: 'Consumption'` en los 3 módulos de jobs. Sin cambio funcional; elimina noise del what-if y hace el bicep self-documenting.
+
+### 11.4 What-if post-fix
+
+```
+~ Microsoft.App/jobs/aeco-source-crawler [2024-03-01]
+    ~ properties.template.containers: [
+      ~ 0:
+        ~ env: [
+          - 3: { name: "SOURCE_TYPE", value: "buildingsmart" }
+          - 4: { name: "MAX_DOCS",    value: "1"           }
+        ]
+      ]
+
+= Microsoft.App/jobs/aeco-index-pipeline
+* Microsoft.App/jobs/aeco-pdf-parser  (Ignore — deployPdfParser=false)
+... 13 Ignore total
+```
+
+**Resultado**: 1 Modify (intencional, documentado), 1 NoChange, 13 Ignore, 0 Delete, 0 Create. Stop conditions: PASS.

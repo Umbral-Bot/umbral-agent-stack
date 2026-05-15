@@ -206,6 +206,8 @@ az containerapp job delete `
 - Pasar el PAT como variable de entorno persistente (`$env:GHCR_PAT`) — usar solo memoria de la sesión PS y limpiar al final.
 - Usar el secret `ghcr-pat` para un scope distinto de `read:packages` (rotar a un PAT distinto si se necesita write).
 - Compartir el PAT entre humanos / chats / Notion / mailbox de agentes.
+- Aplicar parámetros runtime (`SOURCE_TYPE`, `MAX_DOCS`, fechas, etc.) con `az containerapp job update --set-env-vars` — eso crea drift bicep ↔ runtime que reaparece como Modify en cada what-if. **Siempre** pasarlos por invocación: `az containerapp job start --env-vars KEY=value` o vía `--args` (ver `scripts/aeco-kb/run_pipeline.sh`).
+- Cambiar el `image` de un job con `containerapp job update --image` sin actualizar el bicep en la misma PR — si el pin es intencional, debe quedar como default del param `image` en `infra/azure/modules/aeco-source-crawler-job.bicep` (ver Fase 3.1 del audit doc).
 
 ---
 

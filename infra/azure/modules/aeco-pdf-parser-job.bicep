@@ -69,6 +69,7 @@ resource job 'Microsoft.App/jobs@2024-03-01' = {
   }
   properties: {
     environmentId: environmentId
+    workloadProfileName: 'Consumption'
     configuration: {
       triggerType: 'Manual'
       replicaTimeout: replicaTimeoutSeconds

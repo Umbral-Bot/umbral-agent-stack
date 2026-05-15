@@ -8,7 +8,10 @@
 // source_type, dedupe SHA-256, persiste en crudos/aeco/raw/{source}/.
 //
 // Identity: UAMI uami-umbral-agents-prod (Storage Blob Data Contributor en O16.1).
-// Image: ghcr.io/umbral-bot/aeco-source-crawler:latest.
+// Image: ghcr.io/umbral-bot/aeco-source-crawler:o16.2-2e66dda (privado GHCR — pin
+//   inmutable de task coord-ag-2a 2026-05-10 por trazabilidad O16.2; digest
+//   sha256:ce04d7f5d8a96a82c9a7197394c86e60146350e21408b4eed03f868c2cbfeedc).
+//   Q3 migrar a ACR + alias semántico.
 // Cron diario 03:00 UTC: cableado en 050 (Q2 manual).
 // =============================================================================
 
@@ -33,8 +36,8 @@ param userAssignedIdentityClientId string
 @description('Storage account name.')
 param storageAccountName string
 
-@description('Container image.')
-param image string = 'ghcr.io/umbral-bot/aeco-source-crawler:latest'
+@description('Container image. Default: pin O16.2 task coord-ag-2a (2026-05-10). Override en CI/CD para nuevos pins inmutables.')
+param image string = 'ghcr.io/umbral-bot/aeco-source-crawler:o16.2-2e66dda'
 
 @description('GHCR PAT (classic) con scope read:packages — para pull de imagen privada.')
 @secure()
@@ -62,6 +65,7 @@ resource job 'Microsoft.App/jobs@2024-03-01' = {
   }
   properties: {
     environmentId: environmentId
+    workloadProfileName: 'Consumption'
     configuration: {
       triggerType: 'Manual'
       replicaTimeout: replicaTimeoutSeconds

@@ -54,6 +54,9 @@ param embeddingDeployment string = 'text-embedding-3-small'
 @secure()
 param ghcrPat string
 
+@description('Si true, despliega el job aeco-pdf-parser. Default false (solo crawler + index-pipeline en Q2; parser se activa cuando hay PDFs reales).')
+param deployPdfParser bool = false
+
 module sourceCrawler 'modules/aeco-source-crawler-job.bicep' = {
   name: 'aeco-source-crawler-job'
   params: {
@@ -67,7 +70,7 @@ module sourceCrawler 'modules/aeco-source-crawler-job.bicep' = {
   }
 }
 
-module pdfParser 'modules/aeco-pdf-parser-job.bicep' = {
+module pdfParser 'modules/aeco-pdf-parser-job.bicep' = if (deployPdfParser) {
   name: 'aeco-pdf-parser-job'
   params: {
     location: location
@@ -98,5 +101,5 @@ module indexPipeline 'modules/aeco-index-pipeline-job.bicep' = {
 }
 
 output crawlerJobName string = sourceCrawler.outputs.name
-output parserJobName string = pdfParser.outputs.name
+output parserJobName string = deployPdfParser ? pdfParser!.outputs.name : ''
 output publisherJobName string = indexPipeline.outputs.name

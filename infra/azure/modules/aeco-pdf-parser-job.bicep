@@ -13,7 +13,7 @@
 //   - Storage Blob Data Contributor → stumbralagentsprod
 // ).
 //
-// Image: ghcr.io/umbral-bot/aeco-pdf-parser:latest (público GHCR — Q3 migrar a ACR).
+// Image: ghcr.io/umbral-bot/aeco-pdf-parser:latest (privado GHCR — registry credentials con secret ghcr-pat desde Key Vault; Q3 migrar a ACR).
 // =============================================================================
 
 @description('Job name.')
@@ -69,6 +69,7 @@ resource job 'Microsoft.App/jobs@2024-03-01' = {
   }
   properties: {
     environmentId: environmentId
+    workloadProfileName: 'Consumption'
     configuration: {
       triggerType: 'Manual'
       replicaTimeout: replicaTimeoutSeconds

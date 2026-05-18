@@ -41,7 +41,7 @@ def main():
         "schema_version": "0.1",
         "task_id": task_id,
         "team": "system",  # system/marketing/advisory → VPS Worker; improvement/lab → VM
-        "task_type": "testing",
+        "task_type": "general",  # see ADR-012: enum valid values are coding|writing|research|critical|ms_stack|general|triage
         "task": "ping",
         "input": {"message": "hello from dispatcher test via redis", "ts": time.time()}
     }

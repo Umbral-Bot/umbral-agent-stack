@@ -12,6 +12,7 @@ if [[ -f "$HOME/.config/openclaw/env" ]]; then
     load_openclaw_env "$HOME/.config/openclaw/env"
 fi
 
+bash "$REPO/scripts/vps/ensure-main-for-run.sh" 2>/dev/null || true
 cd "$REPO"
 source .venv/bin/activate 2>/dev/null || true
 

@@ -9,6 +9,9 @@ LOG_TAG="[daily-digest]"
 
 echo "${LOG_TAG} $(date -u '+%Y-%m-%d %H:%M:%S UTC') â€” Starting daily digest"
 
+# Run from main (stack runs from main; Rick works on branch rick)
+REPO="${REPO_DIR}" bash "${REPO_DIR}/scripts/vps/ensure-main-for-run.sh" 2>/dev/null || true
+
 # Activate virtualenv
 if [ -f "${VENV_DIR}/bin/activate" ]; then
     # shellcheck disable=SC1091

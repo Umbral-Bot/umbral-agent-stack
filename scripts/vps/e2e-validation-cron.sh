@@ -12,6 +12,7 @@ set -euo pipefail
 REPO_DIR="${REPO_DIR:-$HOME/umbral-agent-stack}"
 LOG_FILE="/tmp/e2e_validation.log"
 
+REPO="$REPO_DIR" bash "$REPO_DIR/scripts/vps/ensure-main-for-run.sh" 2>/dev/null || true
 cd "$REPO_DIR"
 
 # Activate virtualenv if present

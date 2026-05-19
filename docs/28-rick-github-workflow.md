@@ -37,11 +37,13 @@ Así nadie (incluido Rick) mergea sin pasar por PR.
 
 ### 4. Flujo de trabajo de Rick
 
-1. Rick (o el agente que actúe como Rick) trabaja en una rama: `rick/feature-x` o `rick/fix-y`
-2. Push a su rama
+**No hay clon de main para editar.** Un solo clone en la VPS; `main` solo para ejecutar y actualizar con `git pull` (tras merges). Nunca commit ni push a `main` desde la VPS.
+
+1. Rick (en la VPS) se pone en la rama `rick/vps`: `bash scripts/vps/rick-branch-for-change.sh` (crea la rama desde main si no existe)
+2. Trabaja en la rama `rick/vps`, commit, push: `git push -u origin rick/vps`
 3. Abre PR hacia `main`
-4. David (o Cursor) revisa, comenta, aprueba
-5. Merge del PR a `main`
+4. David (o Cursor) revisa, comenta, aprueba y **mergea**
+5. En la VPS: `git checkout main && git pull origin main` para recibir el cambio
 
 ### 5. Acceso de Rick al repo
 

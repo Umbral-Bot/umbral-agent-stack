@@ -16,8 +16,8 @@ DISPATCHER_CTL="$REPO/scripts/vps/dispatcher-service.sh"
 
 cd "$REPO"
 
-echo "=== 1. Git pull ==="
-git pull origin main 2>/dev/null || true
+echo "=== 1. Repo en main y actualizado ==="
+bash "$REPO/scripts/vps/ensure-main-for-run.sh" 2>/dev/null || true
 
 echo ""
 echo "=== 2. Venv y dependencias ==="

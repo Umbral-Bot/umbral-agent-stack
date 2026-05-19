@@ -3,7 +3,9 @@
 # Cron recomendado: 0 8,14,20 * * * bash ~/umbral-agent-stack/scripts/vps/sim-daily-cron.sh
 set -euo pipefail
 
-cd ~/umbral-agent-stack
+REPO="${REPO:-$HOME/umbral-agent-stack}"
+bash "$REPO/scripts/vps/ensure-main-for-run.sh" 2>/dev/null || true
+cd "$REPO"
 source .venv/bin/activate
 # shellcheck disable=SC1091
 source "$HOME/umbral-agent-stack/scripts/vps/load-openclaw-env.sh"

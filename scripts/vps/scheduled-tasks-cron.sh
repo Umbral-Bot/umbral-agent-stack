@@ -5,6 +5,7 @@
 set -euo pipefail
 
 REPO_DIR="${REPO_DIR:-$HOME/umbral-agent-stack}"
+REPO="$REPO_DIR" bash "$REPO_DIR/scripts/vps/ensure-main-for-run.sh" 2>/dev/null || true
 cd "$REPO_DIR"
 
 source .venv/bin/activate 2>/dev/null || true

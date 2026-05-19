@@ -75,6 +75,7 @@ check_worker() {
 
 restart_worker() {
     echo "${LOG_PREFIX} Worker: DOWN - restarting..."
+    REPO="$REPO" bash "$REPO/scripts/vps/ensure-main-for-run.sh" 2>/dev/null || true
     cd "$REPO"
     if [ -f "$ENV_FILE" ]; then
         # shellcheck disable=SC1091
@@ -127,6 +128,7 @@ check_dispatcher() {
 
 restart_dispatcher() {
     echo "${LOG_PREFIX} Dispatcher: DOWN or drifted - reconciling via systemd..."
+    REPO="$REPO" bash "$REPO/scripts/vps/ensure-main-for-run.sh" 2>/dev/null || true
     if bash "$DISPATCHER_CTL" reconcile > /tmp/dispatcher_reconcile.log 2>&1; then
         echo "${LOG_PREFIX} Dispatcher: reconciled"
         RESTARTED+=("Dispatcher")

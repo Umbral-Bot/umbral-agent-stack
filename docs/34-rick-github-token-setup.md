@@ -2,6 +2,8 @@
 
 Rick (en la VPS) necesita acceso al repo para: `git clone`, `git pull`, leer archivos, hacer commit, push a ramas y abrir Pull Requests. **No** debe poder hacer merge de PRs; eso lo hace David (o Cursor).
 
+**No hay clonación de main para trabajar.** En la VPS hay un **solo clone** del repo. La rama `main` se usa **solo para ejecutar** el stack y **solo se actualiza con `git pull`** (recibir código ya mergeado). **Nunca** commit ni push a `main` desde la VPS. Todo cambio se hace en la rama **`rick/vps`** (se usa `rick/vps` y no `rick` porque ya existen ramas `rick/*`), push de esa rama y PR; el merge a `main` lo hace David (o Cursor). Runbook: [docs/62-operational-runbook.md](62-operational-runbook.md) §7.0. Scripts: `scripts/vps/rick-branch-for-change.sh` (dejar repo en rama `rick/vps`), `scripts/vps/rick-ensure-not-pushing-main.sh` (comprobar que no se hace push a main).
+
 **Configuración actual (dos mecanismos):**
 
 - **Git (clone, pull, push):** SSH con **deploy key** del repo (`vps-rickm`). La deploy key solo permite operaciones git; no puede mergear PRs ni usar la API.

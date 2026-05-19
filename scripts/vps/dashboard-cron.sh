@@ -6,7 +6,9 @@
 
 set -uo pipefail
 
-cd ~/umbral-agent-stack
+REPO="${REPO:-$HOME/umbral-agent-stack}"
+bash "$REPO/scripts/vps/ensure-main-for-run.sh" 2>/dev/null || true
+cd "$REPO"
 source .venv/bin/activate 2>/dev/null || true
 
 if [ -f ~/.config/openclaw/env ]; then

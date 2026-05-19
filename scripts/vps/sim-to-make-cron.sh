@@ -10,6 +10,8 @@ LOG_TAG="[sim-to-make]"
 
 echo "${LOG_TAG} $(date -u '+%Y-%m-%d %H:%M:%S UTC') â€” Starting SIMâ†’Make pipeline"
 
+REPO="${REPO_DIR}" bash "${REPO_DIR}/scripts/vps/ensure-main-for-run.sh" 2>/dev/null || true
+
 # Activate virtualenv
 if [ -f "${VENV_DIR}/bin/activate" ]; then
     # shellcheck disable=SC1091

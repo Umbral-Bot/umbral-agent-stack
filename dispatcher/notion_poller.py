@@ -18,6 +18,7 @@ import sys
 import time
 from datetime import datetime, timedelta, timezone
 
+import httpx
 import redis
 
 # Repo root en PATH para client + dispatcher
@@ -39,6 +40,91 @@ REDIS_KEY_PROCESSED_COMMENT_PREFIX = "umbral:notion_poller:processed_comment:"
 PROCESSED_COMMENT_TTL_SEC = 24 * 60 * 60
 DEFAULT_POLL_AT_MINUTE = 10  # XX:10 de cada hora (despues de Enlace a las XX:00)
 ECHO_PREFIX = "Rick:"  # Comentarios que empiezan por esto los ignoramos (son nuestros)
+
+# B2 anti-loop defense (Fase 2): author.id del bot/integration como guard primario.
+# - Override por env NOTION_BOT_USER_ID si existe (mas predecible, zero HTTP).
+# - Si no, resolver una vez via Notion /v1/users/me y cachear en memoria del proceso.
+# - Si no se puede resolver, mantener ECHO_PREFIX como fallback (no breaking change).
+# Ver docs/audits/openclaw-e2e-cycle-001/B2_ANTI_LOOP_DECISION.md
+NOTION_API_BASE_URL = "https://api.notion.com/v1"
+NOTION_API_VERSION = "2022-06-28"
+_NOTION_BOT_HTTP_TIMEOUT_SEC = 5.0
+_BOT_USER_ID_CACHE: dict[str, str | None] = {}
+_BOT_USER_ID_SENTINEL = "__resolved__"
+
+
+def _resolve_bot_user_id() -> str | None:
+    """Return the Notion bot/integration user id, or None if unresolvable.
+
+    Resolution order:
+      1. Env var NOTION_BOT_USER_ID (override, no HTTP).
+      2. GET https://api.notion.com/v1/users/me using NOTION_API_KEY (cached per process).
+
+    Never prints tokens or full headers. On failure logs a single warning per process
+    and caches None so we do not retry on every poll cycle (avoid rate-limit risk).
+    Callers must treat None as "author guard unavailable, fallback to ECHO_PREFIX".
+    """
+    override = os.environ.get("NOTION_BOT_USER_ID", "").strip()
+    if override:
+        return override
+
+    if _BOT_USER_ID_SENTINEL in _BOT_USER_ID_CACHE:
+        return _BOT_USER_ID_CACHE.get("value")
+
+    token = os.environ.get("NOTION_API_KEY", "").strip()
+    if not token:
+        logger.warning(
+            "B2 author guard: NOTION_BOT_USER_ID not set and NOTION_API_KEY missing; "
+            "falling back to ECHO_PREFIX only."
+        )
+        _BOT_USER_ID_CACHE[_BOT_USER_ID_SENTINEL] = "1"
+        _BOT_USER_ID_CACHE["value"] = None
+        return None
+
+    try:
+        with httpx.Client(timeout=_NOTION_BOT_HTTP_TIMEOUT_SEC) as client:
+            resp = client.get(
+                f"{NOTION_API_BASE_URL}/users/me",
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Notion-Version": NOTION_API_VERSION,
+                },
+            )
+        if resp.status_code >= 400:
+            logger.warning(
+                "B2 author guard: /users/me returned HTTP %d; falling back to ECHO_PREFIX only.",
+                resp.status_code,
+            )
+            _BOT_USER_ID_CACHE[_BOT_USER_ID_SENTINEL] = "1"
+            _BOT_USER_ID_CACHE["value"] = None
+            return None
+        data = resp.json() if resp.content else {}
+        bot_id = (data or {}).get("id")
+        if not isinstance(bot_id, str) or not bot_id:
+            logger.warning(
+                "B2 author guard: /users/me response missing 'id'; falling back to ECHO_PREFIX only."
+            )
+            _BOT_USER_ID_CACHE[_BOT_USER_ID_SENTINEL] = "1"
+            _BOT_USER_ID_CACHE["value"] = None
+            return None
+        logger.info("B2 author guard: bot user id resolved (cached for process lifetime).")
+        _BOT_USER_ID_CACHE[_BOT_USER_ID_SENTINEL] = "1"
+        _BOT_USER_ID_CACHE["value"] = bot_id
+        return bot_id
+    except Exception as exc:  # noqa: BLE001 honest gap — never break poll cycle
+        logger.warning(
+            "B2 author guard: /users/me call failed (%s: %s); falling back to ECHO_PREFIX only.",
+            type(exc).__name__,
+            str(exc)[:160],
+        )
+        _BOT_USER_ID_CACHE[_BOT_USER_ID_SENTINEL] = "1"
+        _BOT_USER_ID_CACHE["value"] = None
+        return None
+
+
+def _reset_bot_user_id_cache() -> None:
+    """Test-only helper: clear the module-level cache so tests can re-resolve."""
+    _BOT_USER_ID_CACHE.clear()
 DEFAULT_POLL_OVERLAP_SEC = 5 * 60
 DEFAULT_REVIEW_TARGET_LIMIT = 30
 REVIEW_DELIVERABLE_STATUSES = (
@@ -427,14 +513,28 @@ def _do_poll(
 
     logger.info("Notion poll retrieved %d comments since %s", len(comments), last_ts)
 
+    bot_user_id = _resolve_bot_user_id()
+
     for c in comments:
         created = c.get("created_time", "")
         created_dt = _parse_notion_datetime(created)
         text = (c.get("text") or "").strip()
         comment_id = c.get("id", "")
+        author = c.get("created_by")
 
         if created_dt and created_dt > latest_dt:
             latest_dt = created_dt
+        # B2 Capa 1 (primaria): author.id del bot/integration.
+        # Si conocemos el bot_user_id y el author coincide, skip silencioso.
+        # Cubre replies del worker que NO empiezan con "Rick:" (handler v0
+        # rick.orchestrator.triage emite "Worker /health response:", etc).
+        if bot_user_id and author == bot_user_id:
+            logger.debug(
+                "Skipping bot-authored comment %s (author guard)", (comment_id or "?")[:8]
+            )
+            continue
+        # B2 Capa 2 (defense-in-depth): ECHO_PREFIX. Cubre el caso de bot_user_id
+        # no resoluble y replies de smart_reply (que siempre prefijan "Rick:").
         if text.startswith(ECHO_PREFIX):
             continue
         if not _claim_comment_processing(r, comment_id):
@@ -443,11 +543,11 @@ def _do_poll(
 
         # Ola 1b: @rick mention adapter (bypass legacy intent path)
         from dispatcher.rick_mention import is_rick_mention, handle_rick_mention, _david_allowlist
-        if is_rick_mention(text, c.get("created_by"), _david_allowlist()):
+        if is_rick_mention(text, author, _david_allowlist()):
             handle_rick_mention(
                 text=text, comment_id=comment_id,
                 page_id=c.get("page_id"), page_kind=c.get("page_kind"),
-                author=c.get("created_by"),
+                author=author,
                 wc=wc, queue=queue, scheduler=scheduler,
             )
             continue

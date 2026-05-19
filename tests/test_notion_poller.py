@@ -492,3 +492,255 @@ def test_collect_candidate_comments_falls_back_when_deliverable_filter_fails():
     assert wc.run.call_count == 2
     # poll_comments called for control room + project-1 (deliverables skipped)
     assert wc.notion_poll_comments.call_count == 2
+
+# ---------------------------------------------------------------------------
+# B2 Fase 2: anti-loop author.id guard tests
+# ---------------------------------------------------------------------------
+
+import pytest
+
+from dispatcher.notion_poller import (
+    _resolve_bot_user_id,
+    _reset_bot_user_id_cache,
+)
+
+
+@pytest.fixture(autouse=False)
+def _clear_bot_cache():
+    _reset_bot_user_id_cache()
+    yield
+    _reset_bot_user_id_cache()
+
+
+def test_resolve_bot_user_id_env_override_no_http(_clear_bot_cache, caplog):
+    """B2: NOTION_BOT_USER_ID env var takes precedence and skips HTTP entirely."""
+    with patch.dict("os.environ", {"NOTION_BOT_USER_ID": "bot-from-env"}, clear=False):
+        with patch("dispatcher.notion_poller.httpx.Client") as mock_client:
+            result = _resolve_bot_user_id()
+    assert result == "bot-from-env"
+    mock_client.assert_not_called()
+
+
+def test_resolve_bot_user_id_falls_back_to_users_me(_clear_bot_cache):
+    """B2: with no env override, GET /v1/users/me resolves bot id and caches it."""
+    fake_resp = MagicMock()
+    fake_resp.status_code = 200
+    fake_resp.content = b'{"id":"bot-from-api"}'
+    fake_resp.json.return_value = {"id": "bot-from-api", "type": "bot"}
+
+    mock_ctx = MagicMock()
+    mock_ctx.__enter__.return_value.get.return_value = fake_resp
+
+    with patch.dict(
+        "os.environ",
+        {"NOTION_BOT_USER_ID": "", "NOTION_API_KEY": "secret_xxx"},
+        clear=False,
+    ):
+        with patch("dispatcher.notion_poller.httpx.Client", return_value=mock_ctx) as mock_client:
+            first = _resolve_bot_user_id()
+            second = _resolve_bot_user_id()
+
+    assert first == "bot-from-api"
+    assert second == "bot-from-api"
+    # Cached: HTTP client constructed only once.
+    assert mock_client.call_count == 1
+
+
+def test_resolve_bot_user_id_no_token_returns_none_and_warns(_clear_bot_cache, caplog):
+    """B2: if NOTION_API_KEY missing, return None and log a single warning."""
+    with patch.dict(
+        "os.environ",
+        {"NOTION_BOT_USER_ID": "", "NOTION_API_KEY": ""},
+        clear=False,
+    ):
+        with patch("dispatcher.notion_poller.httpx.Client") as mock_client:
+            with caplog.at_level("WARNING", logger="dispatcher.notion_poller"):
+                result = _resolve_bot_user_id()
+    assert result is None
+    assert "ECHO_PREFIX" in caplog.text
+    mock_client.assert_not_called()
+
+
+def test_resolve_bot_user_id_http_error_returns_none(_clear_bot_cache, caplog):
+    """B2: 4xx from /v1/users/me leaves us with None, no exception leaks."""
+    fake_resp = MagicMock()
+    fake_resp.status_code = 401
+    fake_resp.content = b''
+    mock_ctx = MagicMock()
+    mock_ctx.__enter__.return_value.get.return_value = fake_resp
+
+    with patch.dict(
+        "os.environ",
+        {"NOTION_BOT_USER_ID": "", "NOTION_API_KEY": "secret_xxx"},
+        clear=False,
+    ):
+        with patch("dispatcher.notion_poller.httpx.Client", return_value=mock_ctx):
+            with caplog.at_level("WARNING", logger="dispatcher.notion_poller"):
+                result = _resolve_bot_user_id()
+    assert result is None
+    assert "ECHO_PREFIX" in caplog.text
+
+
+@patch("dispatcher.notion_poller.handle_smart_reply")
+def test_do_poll_skips_bot_reply_without_rick_prefix(mock_smart, _clear_bot_cache):
+    """B2 critical: a bot reply that does NOT start with 'Rick:' is still ignored
+    by the author.id guard (this is the gap that ECHO_PREFIX alone did not cover)."""
+    wc = MagicMock()
+    wc.run.side_effect = [{"ok": True, "result": {"items": []}}, {"ok": True, "result": {"items": []}}]
+    wc.notion_poll_comments.return_value = {
+        "ok": True,
+        "result": {
+            "comments": [
+                {
+                    "id": "c-bot-1",
+                    "created_time": "2026-05-15T10:00:00.000Z",
+                    "created_by": "bot-from-env",
+                    "text": "Worker /health response:\n{\"status\":\"ok\"}",
+                }
+            ]
+        },
+    }
+    queue = MagicMock(); scheduler = MagicMock(); r = MagicMock()
+    r.get.return_value = "2026-05-15T09:00:00+00:00"
+    r.set.return_value = True
+
+    with patch.dict(
+        "os.environ",
+        {
+            "NOTION_BOT_USER_ID": "bot-from-env",
+            "NOTION_CONTROL_ROOM_PAGE_ID": "",
+            "NOTION_DELIVERABLES_DB_ID": "",
+            "NOTION_PROJECTS_DB_ID": "",
+            "NOTION_CURATED_SESSIONS_DB_ID": "",
+            "NOTION_GRANOLA_DB_ID": "",
+        },
+        clear=False,
+    ):
+        _do_poll(wc, queue, r, scheduler)
+
+    mock_smart.assert_not_called()
+    queue.enqueue.assert_not_called()
+
+
+@patch("dispatcher.notion_poller.handle_smart_reply")
+def test_do_poll_skips_bot_reply_with_rick_prefix(mock_smart, _clear_bot_cache):
+    """B2: a bot reply that DOES start with 'Rick:' is skipped by the author guard
+    (would also be caught by ECHO_PREFIX; both layers active)."""
+    wc = MagicMock()
+    wc.run.side_effect = [{"ok": True, "result": {"items": []}}, {"ok": True, "result": {"items": []}}]
+    wc.notion_poll_comments.return_value = {
+        "ok": True,
+        "result": {
+            "comments": [
+                {
+                    "id": "c-bot-2",
+                    "created_time": "2026-05-15T10:00:00.000Z",
+                    "created_by": "bot-from-env",
+                    "text": "Rick: Tarea registrada para equipo [research].",
+                }
+            ]
+        },
+    }
+    queue = MagicMock(); scheduler = MagicMock(); r = MagicMock()
+    r.get.return_value = "2026-05-15T09:00:00+00:00"
+    r.set.return_value = True
+
+    with patch.dict(
+        "os.environ",
+        {
+            "NOTION_BOT_USER_ID": "bot-from-env",
+            "NOTION_CONTROL_ROOM_PAGE_ID": "",
+            "NOTION_DELIVERABLES_DB_ID": "",
+            "NOTION_PROJECTS_DB_ID": "",
+            "NOTION_CURATED_SESSIONS_DB_ID": "",
+            "NOTION_GRANOLA_DB_ID": "",
+        },
+        clear=False,
+    ):
+        _do_poll(wc, queue, r, scheduler)
+
+    mock_smart.assert_not_called()
+
+
+@patch("dispatcher.notion_poller.handle_smart_reply")
+def test_do_poll_fallback_echo_prefix_when_bot_id_unresolvable(mock_smart, _clear_bot_cache):
+    """B2: with no bot_user_id env and no NOTION_API_KEY, the author guard returns None
+    and ECHO_PREFIX fallback still skips 'Rick:'-prefixed comments. No regression."""
+    wc = MagicMock()
+    wc.run.side_effect = [{"ok": True, "result": {"items": []}}, {"ok": True, "result": {"items": []}}]
+    wc.notion_poll_comments.return_value = {
+        "ok": True,
+        "result": {
+            "comments": [
+                {
+                    "id": "c-fallback",
+                    "created_time": "2026-05-15T10:00:00.000Z",
+                    "created_by": "some-author",
+                    "text": "Rick: legacy echo",
+                }
+            ]
+        },
+    }
+    queue = MagicMock(); scheduler = MagicMock(); r = MagicMock()
+    r.get.return_value = "2026-05-15T09:00:00+00:00"
+    r.set.return_value = True
+
+    with patch.dict(
+        "os.environ",
+        {
+            "NOTION_BOT_USER_ID": "",
+            "NOTION_API_KEY": "",
+            "NOTION_CONTROL_ROOM_PAGE_ID": "",
+            "NOTION_DELIVERABLES_DB_ID": "",
+            "NOTION_PROJECTS_DB_ID": "",
+            "NOTION_CURATED_SESSIONS_DB_ID": "",
+            "NOTION_GRANOLA_DB_ID": "",
+        },
+        clear=False,
+    ):
+        _do_poll(wc, queue, r, scheduler)
+
+    mock_smart.assert_not_called()
+
+
+@patch("dispatcher.notion_poller.handle_smart_reply")
+def test_do_poll_processes_authorized_david_mention(mock_smart, _clear_bot_cache):
+    """B2 regression: David's @rick mention is still routed (author guard does not block
+    non-bot authors). Bot id is set; David's author id differs from bot id."""
+    wc = MagicMock()
+    wc.run.side_effect = [{"ok": True, "result": {"items": []}}, {"ok": True, "result": {"items": []}}]
+    wc.notion_poll_comments.return_value = {
+        "ok": True,
+        "result": {
+            "comments": [
+                {
+                    "id": "c-david",
+                    "created_time": "2026-05-15T10:00:00.000Z",
+                    "created_by": "user-david",
+                    "text": "@rick /health",
+                }
+            ]
+        },
+    }
+    queue = MagicMock(); scheduler = MagicMock(); r = MagicMock()
+    r.get.return_value = "2026-05-15T09:00:00+00:00"
+    r.set.return_value = True
+
+    with patch.dict(
+        "os.environ",
+        {
+            "NOTION_BOT_USER_ID": "bot-from-env",
+            "DAVID_NOTION_USER_ID": "user-david",
+            "NOTION_CONTROL_ROOM_PAGE_ID": "",
+            "NOTION_DELIVERABLES_DB_ID": "",
+            "NOTION_PROJECTS_DB_ID": "",
+            "NOTION_CURATED_SESSIONS_DB_ID": "",
+            "NOTION_GRANOLA_DB_ID": "",
+        },
+        clear=False,
+    ):
+        with patch("dispatcher.rick_mention.handle_rick_mention") as mock_rick:
+            _do_poll(wc, queue, r, scheduler)
+
+    mock_rick.assert_called_once()
+    mock_smart.assert_not_called()

@@ -103,3 +103,19 @@ Entregables esperados en el handoff:
 ## Capitalización
 
 Una vez resuelto, actualizar plan Q2 (`notion-governance/docs/roadmap/12-q2-2026-platform-first-plan.md`) en O15.2 (Ola 2) o en O8 (Granola loop) según corresponda al verdict, y board entry `2026-05-07-038`.
+
+---
+
+## Apéndice 2026-05-19 — Re-confirmación post-deploy B2 (PR #422)
+
+Durante el deploy de B2 (PR #422, merge `4ee27abd`, ver [`changelog/2026-05-19.md`](../../changelog/2026-05-19.md)), Copilot-VPS observó el mismo `Traceback` en `/tmp/notion_poller.log` **tanto en el daemon viejo (PID 120685, código pre-B2)** como en el **daemon nuevo (PID 477105, código post-B2)** con firma idéntica.
+
+Confirmación operativa:
+
+- **NO causado por B2** — la firma es independiente del cambio (B2 toca `_process_page_comments`, no `_resolve_review_targets`).
+- **Sigue siendo NON-blocker** — el `except Exception` del bloque captura silenciosamente y deja avanzar los demás targets (`deliverable`, `project`, `control_room`). El path Control Room (que alimenta a Rick mention router) sigue funcionando.
+- **Task 038 sigue abierta** con prioridad y owner originales. Esta nota solo documenta que el hallazgo persiste 12 días después de capturado, sin regresión ni mejora.
+
+Líneas exactas afectadas en `/tmp/notion_poller.log` el 2026-05-19: `12:48:45` (pre-deploy), `12:49:54` y `12:51:09` (post-deploy). Evidencia bruta en VPS: `~/.coord-ag-evidence/b2-deploy-422/refresh-daemon-post.txt`.
+
+Sin cambios al scope ni a la prioridad de esta task.

@@ -56,10 +56,35 @@ Sin redacción de bytes. Los archivos en repo son byte-exact respecto al origen 
 - Evidencia original en VPS intacta.
 - Sin restarts de servicios.
 - Sin edits a ~/.openclaw/openclaw.json ni ~/.config/openclaw/env.
-- Sin Notion writes.
+- Sin Notion writes durante la creación de este PR de evidencia. (El ciclo bajo prueba SÍ generó un reply Notion esperado — `reply_posted=true` en `task-status.txt` — que es output normal del flujo @rick → reply y está documentado en REPORT.md. Detalle en JUDGE_ADDENDUM.md §2.)
 - Sin cambios a Azure / Foundry / GHCR / n8n / RRSS / Key Vault.
 - Push solo a rama evidence/openclaw-e2e-cycle-001, NO a main.
 - PR abierto en estado DRAFT.
 
 ## Política de retención
 Este PR puede cerrarse sin merge si David decide no conservar la evidencia en el repo. La fuente de verdad sigue siendo `~/.coord-ag-evidence/openclaw-e2e-cycle-001/` en la VPS.
+
+---
+
+## Patch documental 2026-05-18 (post-juicio externo)
+
+Tras juicio externo de ChatGPT, se agregó el archivo `JUDGE_ADDENDUM.md` con
+clarificaciones a este PR. REPORT.md y los 3 archivos .txt **no fueron modificados**:
+permanecen byte-exact respecto al origen capturado en VPS durante el ciclo.
+
+Resumen del addendum:
+1. T1 citado en REPORT.md (`17:41:42Z`) era confirmación humana post-evento, no el
+   timestamp real del primer evento. El timestamp canónico del inicio del ciclo es
+   `2026-05-18T17:39:52Z` (visible en observation-loop.txt, envelope-trace.txt y
+   journald).
+2. "Sin Notion writes" en este README aplica a la creación del PR, no al ciclo
+   (el ciclo sí escribió el reply esperado en Notion).
+
+Ver `JUDGE_ADDENDUM.md` para detalle.
+
+### Impacto sobre hashes
+
+- REPORT.md, observation-loop.txt, envelope-trace.txt, task-status.txt:
+  **intactos**, sha256 repo = sha256 origen VPS (verificable abajo).
+- README.md: editado (bullet Notion corregido + esta sección).
+- JUDGE_ADDENDUM.md: nuevo archivo (sin sha256 origen, es metadata del PR).

@@ -744,3 +744,30 @@ def test_do_poll_processes_authorized_david_mention(mock_smart, _clear_bot_cache
 
     mock_rick.assert_called_once()
     mock_smart.assert_not_called()
+
+
+def test_resolve_bot_user_id_malformed_json_returns_none(_clear_bot_cache, caplog):
+    """B2: 200 OK with non-JSON body \u2192 None + warning, no exception leaks."""
+    import json as _json
+
+    fake_resp = MagicMock()
+    fake_resp.status_code = 200
+    fake_resp.content = b"not json"
+    fake_resp.json.side_effect = _json.JSONDecodeError("Expecting value", "doc", 0)
+
+    mock_ctx = MagicMock()
+    mock_ctx.__enter__.return_value.get.return_value = fake_resp
+
+    with patch.dict(
+        "os.environ",
+        {"NOTION_BOT_USER_ID": "", "NOTION_API_KEY": "secret_xxx"},
+        clear=False,
+    ):
+        with patch("dispatcher.notion_poller.httpx.Client", return_value=mock_ctx):
+            with caplog.at_level("WARNING", logger="dispatcher.notion_poller"):
+                result = _resolve_bot_user_id()
+
+    assert result is None
+    assert "ECHO_PREFIX" in caplog.text
+    # Token MUST NOT appear in the log message under any circumstance.
+    assert "secret_xxx" not in caplog.text

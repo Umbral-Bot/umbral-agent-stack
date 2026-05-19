@@ -80,6 +80,32 @@ Run: `python -m pytest tests/test_notion_poller.py -v` → 18 passed.
 - Touching `dispatcher/smart_reply.py` or `dispatcher/rick_mention.py` semantics.
 - Notion comment writes (no live Notion call from this PR).
 
+## Deploy notes (NOT executed in this PR)
+
+The poller module `dispatcher/notion_poller.py` is loaded by **two independent VPS processes** (per task 037 evidence, `docs/roadmap/12-q2-2026-platform-first-plan.md`):
+
+1. `openclaw-dispatcher.service` (systemd user unit) → imports it via `dispatcher/service.py`.
+2. `scripts/vps/notion-poller-daemon.py` → launched by `cron */5 notion-poller-cron.sh` (auto-respawn, NOT a systemd unit).
+
+Both must run new code for the guard to be effective end-to-end. Restarting only one leaves a partial deploy until the other path is refreshed.
+
+Recommended sequence (with explicit authorization, separate from this PR):
+
+```
+systemctl --user restart openclaw-dispatcher   # immediate
+pkill -f notion-poller-daemon.py               # forces cron to respawn within 5 min
+# or wait one cron cycle if no urgency
+```
+
+Verification (after restart of either process):
+
+```
+journalctl --user -u openclaw-dispatcher --since '2 min ago' | grep 'B2 author guard'
+tail -50 /tmp/notion_poller_cron.log | grep 'B2 author guard'
+```
+
+Expected: a single INFO line `B2 author guard: bot user id resolved (cached for process lifetime).` per process on first poll after restart.
+
 ## Rollback
 
 Single commit on isolated branch. Revert: `git revert <sha>` or close PR without merging. Runtime is unaffected until VPS pulls + service restart.

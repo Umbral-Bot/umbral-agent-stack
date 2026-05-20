@@ -75,6 +75,10 @@ check_worker() {
 
 restart_worker() {
     echo "${LOG_PREFIX} Worker: DOWN - restarting..."
+    if ! REPO="$REPO" bash "$REPO/scripts/vps/ensure-main-for-run.sh"; then
+        echo "${LOG_PREFIX} Worker: restart SKIPPED (ensure-main-for-run gate failed)"
+        return 0
+    fi
     cd "$REPO"
     if [ -f "$ENV_FILE" ]; then
         # shellcheck disable=SC1091
@@ -127,6 +131,10 @@ check_dispatcher() {
 
 restart_dispatcher() {
     echo "${LOG_PREFIX} Dispatcher: DOWN or drifted - reconciling via systemd..."
+    if ! REPO="$REPO" bash "$REPO/scripts/vps/ensure-main-for-run.sh"; then
+        echo "${LOG_PREFIX} Dispatcher: restart SKIPPED (ensure-main-for-run gate failed)"
+        return 0
+    fi
     if bash "$DISPATCHER_CTL" reconcile > /tmp/dispatcher_reconcile.log 2>&1; then
         echo "${LOG_PREFIX} Dispatcher: reconciled"
         RESTARTED+=("Dispatcher")

@@ -12,6 +12,10 @@ if [[ -f "$HOME/.config/openclaw/env" ]]; then
     load_openclaw_env "$HOME/.config/openclaw/env"
 fi
 
+if ! bash "$REPO/scripts/vps/ensure-main-for-run.sh"; then
+    echo "[ensure-main-for-run] blocked; skipping this run" >&2
+    exit 0
+fi
 cd "$REPO"
 source .venv/bin/activate 2>/dev/null || true
 

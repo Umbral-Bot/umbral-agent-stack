@@ -5,6 +5,10 @@
 set -euo pipefail
 
 REPO_DIR="${REPO_DIR:-$HOME/umbral-agent-stack}"
+if ! REPO="$REPO_DIR" bash "$REPO_DIR/scripts/vps/ensure-main-for-run.sh"; then
+    echo "[ensure-main-for-run] blocked; skipping this run" >&2
+    exit 0
+fi
 cd "$REPO_DIR"
 
 source .venv/bin/activate 2>/dev/null || true

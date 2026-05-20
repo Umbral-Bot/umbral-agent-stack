@@ -18,6 +18,11 @@ if [ -f "$PID_FILE" ]; then
     fi
 fi
 
+# Run from main so daemon uses merged code
+if ! REPO="$REPO_DIR" bash "$REPO_DIR/scripts/vps/ensure-main-for-run.sh"; then
+    echo "[ensure-main-for-run] blocked; skipping this run" >&2
+    exit 0
+fi
 # Start the daemon
 cd "$REPO_DIR"
 source .venv/bin/activate

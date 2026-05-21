@@ -84,6 +84,29 @@ Algunas herramientas oficiales imprimen prefijos parcialmente enmascarados de se
 
 **Ejemplos en esta tabla:** todos usan placeholder `<REDACTED>`. Nunca pegar tokens reales (ni siquiera enmascarados) como ejemplo.
 
+## Triage de hallazgos: real vs falso positivo
+
+No todo match del guardrail es un leak. Cada hallazgo debe pasar por triage **antes** de decidir qué hacer.
+
+### Si el hallazgo es un leak real
+
+1. **Rotar la credencial** afectada en su sistema de origen (Azure, GitHub, Notion, etc.).
+2. **Redactar el output** donde apareció: reemplazar con `<REDACTED>` en logs, PRs, evidencia y memoria de chat si es posible.
+3. **Reportar a David** con: qué secreto, dónde apareció, ya rotado sí/no, qué superficies pudieron leerlo.
+4. Abrir issue o task de seguimiento para verificar que no quedó cacheado en otro lado (CI logs, artifacts, screenshots).
+
+### Si el hallazgo es un falso positivo
+
+Documentar explícitamente (no silenciar sin justificación):
+
+- **(a) Patrón que matcheó** — qué regla del guardrail disparó (ej. `sk-...`, `ghp_...`, prefijo `eyJ`).
+- **(b) Origen del valor** — por qué no es un secreto activo (placeholder en docs, ejemplo de la propia skill, hash público, fixture de test, token expirado/revocado y verificado como tal).
+- **(c) Evidencia de que no es secreto activo** — link al doc fuente, commit que introdujo el placeholder, o verificación de revocación.
+
+### Regla dura
+
+**Nunca silenciar el guardrail sin justificación escrita.** Si no podés producir (a) + (b) + (c) para un falso positivo, tratá el hallazgo como leak real hasta demostrar lo contrario. Inclinar la duda hacia rotar/redactar es siempre más barato que asumir que era un placeholder y equivocarse.
+
 ## What this skill does NOT do
 
 - No reemplaza un escáner real (`gitleaks`, `trufflehog`). Es un guardrail conductual.

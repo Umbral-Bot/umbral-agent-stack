@@ -34,13 +34,17 @@ HOME = Path(os.path.expanduser("~"))
 # listed here.
 #
 # Canonical conventions:
-# - secret-output-guard: ~/.copilot/skills/ (cross-cutting agent contract)
+# - secret-output-guard: notion-governance/.agents/skills/ (governance owns
+#   the cross-cutting agent contract; ~/.copilot, ~/.codex and the UAS repo
+#   mirror are kept in sync from it). Promoted by C8-C1d-bis (2026-05-XX)
+#   because the NG copy carried the full "Triage de hallazgos" section that
+#   the user-level copies lacked.
 # - notion-governance-* and friends: notion-governance/.agents/skills/
 #   (governance contract owns them; ~/.codex and ~/.copilot are mirrors)
 MIRRORED_SKILLS: dict[Path, list[Path]] = {
-    HOME / ".copilot" / "skills" / "secret-output-guard" / "SKILL.md": [
+    Path("C:/GitHub/notion-governance/.agents/skills/secret-output-guard/SKILL.md"): [
+        HOME / ".copilot" / "skills" / "secret-output-guard" / "SKILL.md",
         HOME / ".codex" / "skills" / "secret-output-guard" / "SKILL.md",
-        Path("C:/GitHub/notion-governance/.agents/skills/secret-output-guard/SKILL.md"),
         Path("C:/GitHub/umbral-agent-stack/.agents/skills/secret-output-guard/SKILL.md"),
     ],
 }

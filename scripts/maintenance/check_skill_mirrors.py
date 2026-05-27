@@ -75,10 +75,19 @@ MIRRORED_SKILLS[
     HOME / ".copilot" / "skills" / "notion-governance-expert" / "SKILL.md",
 ]
 
-# Known-drift skills NOT registered here (need David's call on canonical):
-#   - cursor-hooks-sync (.codex 2106B vs notion-governance 2166B)
-#   - q-friday-retro (.codex 3921B vs notion-governance 4588B)
-# Add to MIRRORED_SKILLS once a canonical is chosen.
+# C8-C1d-b (2026-05-27): cursor-hooks-sync and q-friday-retro are mirrored
+# only into ~/.codex. ~/.copilot is intentionally out of scope for these two
+# because they are not confirmed cross-cutting skills (secret-output-guard
+# remains the separate cross-cutting case handled above). The canonical
+# source for both lives in notion-governance. q-friday-retro is the canonical
+# name; any legacy q2-friday-retro mirror is corrected by --fix from the
+# canonical.
+MIRRORED_SKILLS[_NOTION_GOV_REPO / "cursor-hooks-sync" / "SKILL.md"] = [
+    HOME / ".codex" / "skills" / "cursor-hooks-sync" / "SKILL.md",
+]
+MIRRORED_SKILLS[_NOTION_GOV_REPO / "q-friday-retro" / "SKILL.md"] = [
+    HOME / ".codex" / "skills" / "q-friday-retro" / "SKILL.md",
+]
 
 
 def sha256_prefix(path: Path) -> str:

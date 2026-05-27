@@ -11,9 +11,8 @@ Dar a Claude un modo operativo experto para trabajar con el OpenClaw real instal
 
 ## Superficies canónicas
 
-- Runtime/deploy reference: `/home/rick/umbral-agent-stack`
-- Clean working copy: `/home/rick/umbral-agent-stack-main-clean`
-- Notion governance reference: `/home/rick/notion-governance-git`
+- Runtime/deploy reference (única superficie canónica VPS): `~/umbral-agent-stack`
+- Notion governance reference: clonar limpio bajo `~/notion-governance` solo cuando sea necesario; NO usar los paths stale `~/notion-governance-git` ni `~/notion-governance-local`
 - Live OpenClaw config: `~/.openclaw/openclaw.json`
 - Live env: `~/.config/openclaw/env`
 - Live workspace: `~/.openclaw/workspace`
@@ -106,8 +105,8 @@ Verifica siempre:
 
 ### 5. Elegir bien la superficie de edición
 
-- Si vas a diagnosticar runtime, lee `/home/rick/umbral-agent-stack`
-- Si vas a editar código, usa `/home/rick/umbral-agent-stack-main-clean`
+- Si vas a diagnosticar runtime, lee `~/umbral-agent-stack`
+- Si vas a editar código en la VPS, usa un clone temporal autorizado bajo `/tmp/<task>-clean` o un worktree dedicado, según autorización del Coordinador de Agentes
 - No mezcles fixes en el repo desplegado salvo mandato explícito del usuario
 
 ### 6. Tratar la VM como recurso opcional

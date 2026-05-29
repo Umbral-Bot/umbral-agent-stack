@@ -26,32 +26,77 @@ import shutil
 import sys
 from pathlib import Path
 
-HOME = Path(os.path.expanduser("~"))
+HOME = Path.home()
+SCRIPT_PATH = Path(__file__).resolve()
+DEFAULT_UMBRAL_AGENT_STACK_REPO = SCRIPT_PATH.parents[2]
+UMBRAL_AGENT_STACK_ENV = "UMBRAL_AGENT_STACK_REPO"
+NOTION_GOVERNANCE_ENV = "NOTION_GOVERNANCE_REPO"
 
-# Each entry: canonical path -> list of full-mirror paths that must match it
-# byte-for-byte. Stub-pointer mirrors (e.g. notion-governance/skills/<name>/
-# SKILL.md that intentionally only references the canonical) must NOT be
-# listed here.
-#
-# Canonical conventions:
-# - secret-output-guard: notion-governance/.agents/skills/ (governance owns
-#   the cross-cutting agent contract; ~/.copilot, ~/.codex and the UAS repo
-#   mirror are kept in sync from it). Promoted by C8-C1d-bis (2026-05-XX)
-#   because the NG copy carried the full "Triage de hallazgos" section that
-#   the user-level copies lacked.
-# - notion-governance-* and friends: notion-governance/.agents/skills/
-#   (governance contract owns them; ~/.codex and ~/.copilot are mirrors)
-MIRRORED_SKILLS: dict[Path, list[Path]] = {
-    Path("C:/GitHub/notion-governance/.agents/skills/secret-output-guard/SKILL.md"): [
-        HOME / ".copilot" / "skills" / "secret-output-guard" / "SKILL.md",
-        HOME / ".codex" / "skills" / "secret-output-guard" / "SKILL.md",
-        Path("C:/GitHub/umbral-agent-stack/.agents/skills/secret-output-guard/SKILL.md"),
-    ],
-}
 
-# Skills owned by notion-governance that are mirrored to ~/.codex (and
-# sometimes ~/.copilot). Auto-built below to keep the entry list compact.
-_NOTION_GOV_REPO = Path("C:/GitHub/notion-governance/.agents/skills")
+def _resolved_path(path_text: str) -> Path:
+    return Path(path_text).expanduser().resolve()
+
+
+def _unique_paths(paths: list[Path]) -> list[Path]:
+    seen: set[str] = set()
+    unique: list[Path] = []
+    for path in paths:
+        key = str(path).casefold() if os.name == "nt" else str(path)
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(path)
+    return unique
+
+
+def _windows_github_repo(repo_name: str) -> Path | None:
+    if os.name != "nt":
+        return None
+    system_drive = os.environ.get("SystemDrive", "C:")
+    return Path(system_drive) / "GitHub" / repo_name
+
+
+def resolve_umbral_agent_stack_repo() -> Path:
+    override = os.environ.get(UMBRAL_AGENT_STACK_ENV)
+    if override:
+        repo = _resolved_path(override)
+        if not (repo / "scripts" / "maintenance" / "check_skill_mirrors.py").is_file():
+            raise RuntimeError(
+                f"{UMBRAL_AGENT_STACK_ENV} does not look like umbral-agent-stack: {repo}"
+            )
+        return repo
+    return DEFAULT_UMBRAL_AGENT_STACK_REPO
+
+
+def resolve_notion_governance_repo(umbral_agent_stack_repo: Path) -> Path:
+    override = os.environ.get(NOTION_GOVERNANCE_ENV)
+    if override:
+        candidates = [_resolved_path(override)]
+    else:
+        candidates = [
+            umbral_agent_stack_repo.parent / "notion-governance",
+            Path.home() / "notion-governance",
+        ]
+        windows_repo = _windows_github_repo("notion-governance")
+        if windows_repo is not None:
+            candidates.append(windows_repo)
+
+    checked = _unique_paths([path.resolve() for path in candidates])
+    for repo in checked:
+        if (repo / ".agents" / "skills").is_dir():
+            return repo
+
+    checked_text = "; ".join(str(path) for path in checked)
+    if override:
+        raise RuntimeError(
+            f"{NOTION_GOVERNANCE_ENV} was set but does not contain .agents/skills: "
+            f"{checked_text}"
+        )
+    raise RuntimeError(
+        "Could not locate notion-governance. Set "
+        f"{NOTION_GOVERNANCE_ENV}=<repo-root>. Checked: {checked_text}"
+    )
+
 _NOTION_GOV_MIRRORED = [
     "agents-canonical-registry",
     "notion-context-routing",
@@ -62,32 +107,57 @@ _NOTION_GOV_MIRRORED = [
     "notion-session-capitalization",
     "notion-system-card",
 ]
-for _name in _NOTION_GOV_MIRRORED:
-    MIRRORED_SKILLS[_NOTION_GOV_REPO / _name / "SKILL.md"] = [
-        HOME / ".codex" / "skills" / _name / "SKILL.md",
+
+
+def build_mirrored_skills() -> dict[Path, list[Path]]:
+    umbral_agent_stack_repo = resolve_umbral_agent_stack_repo()
+    notion_governance_repo = resolve_notion_governance_repo(umbral_agent_stack_repo)
+    notion_gov_skills = notion_governance_repo / ".agents" / "skills"
+
+    # Canonical repo paths resolve differently on Windows and the VPS; the
+    # mirror contract stays byte-for-byte identical. --fix remains explicit.
+    mirrored_skills: dict[Path, list[Path]] = {
+        notion_gov_skills / "secret-output-guard" / "SKILL.md": [
+            HOME / ".copilot" / "skills" / "secret-output-guard" / "SKILL.md",
+            HOME / ".codex" / "skills" / "secret-output-guard" / "SKILL.md",
+            umbral_agent_stack_repo
+            / ".agents"
+            / "skills"
+            / "secret-output-guard"
+            / "SKILL.md",
+        ],
+    }
+
+    # Skills owned by notion-governance that are mirrored to ~/.codex (and
+    # sometimes ~/.copilot). Auto-built below to keep the entry list compact.
+    for name in _NOTION_GOV_MIRRORED:
+        mirrored_skills[notion_gov_skills / name / "SKILL.md"] = [
+            HOME / ".codex" / "skills" / name / "SKILL.md",
+        ]
+
+    # notion-governance-expert: 3-way (also lives in ~/.copilot)
+    mirrored_skills[
+        notion_gov_skills / "notion-governance-expert" / "SKILL.md"
+    ] = [
+        HOME / ".codex" / "skills" / "notion-governance-expert" / "SKILL.md",
+        HOME / ".copilot" / "skills" / "notion-governance-expert" / "SKILL.md",
     ]
 
-# notion-governance-expert: 3-way (also lives in ~/.copilot)
-MIRRORED_SKILLS[
-    _NOTION_GOV_REPO / "notion-governance-expert" / "SKILL.md"
-] = [
-    HOME / ".codex" / "skills" / "notion-governance-expert" / "SKILL.md",
-    HOME / ".copilot" / "skills" / "notion-governance-expert" / "SKILL.md",
-]
+    # C8-C1d-b (2026-05-27): cursor-hooks-sync and q-friday-retro are mirrored
+    # only into ~/.codex. ~/.copilot is intentionally out of scope for these two
+    # because they are not confirmed cross-cutting skills (secret-output-guard
+    # remains the separate cross-cutting case handled above). The canonical
+    # source for both lives in notion-governance. q-friday-retro is the canonical
+    # name; any legacy q2-friday-retro mirror is corrected by --fix from the
+    # canonical.
+    mirrored_skills[notion_gov_skills / "cursor-hooks-sync" / "SKILL.md"] = [
+        HOME / ".codex" / "skills" / "cursor-hooks-sync" / "SKILL.md",
+    ]
+    mirrored_skills[notion_gov_skills / "q-friday-retro" / "SKILL.md"] = [
+        HOME / ".codex" / "skills" / "q-friday-retro" / "SKILL.md",
+    ]
 
-# C8-C1d-b (2026-05-27): cursor-hooks-sync and q-friday-retro are mirrored
-# only into ~/.codex. ~/.copilot is intentionally out of scope for these two
-# because they are not confirmed cross-cutting skills (secret-output-guard
-# remains the separate cross-cutting case handled above). The canonical
-# source for both lives in notion-governance. q-friday-retro is the canonical
-# name; any legacy q2-friday-retro mirror is corrected by --fix from the
-# canonical.
-MIRRORED_SKILLS[_NOTION_GOV_REPO / "cursor-hooks-sync" / "SKILL.md"] = [
-    HOME / ".codex" / "skills" / "cursor-hooks-sync" / "SKILL.md",
-]
-MIRRORED_SKILLS[_NOTION_GOV_REPO / "q-friday-retro" / "SKILL.md"] = [
-    HOME / ".codex" / "skills" / "q-friday-retro" / "SKILL.md",
-]
+    return mirrored_skills
 
 
 def sha256_prefix(path: Path) -> str:
@@ -96,8 +166,14 @@ def sha256_prefix(path: Path) -> str:
 
 
 def check(fix: bool) -> int:
+    try:
+        mirrored_skills = build_mirrored_skills()
+    except RuntimeError as exc:
+        print(f"[ERR ] {exc}", file=sys.stderr)
+        return 1
+
     drift_count = 0
-    for canonical, mirrors in MIRRORED_SKILLS.items():
+    for canonical, mirrors in mirrored_skills.items():
         if not canonical.exists():
             print(f"[ERR ] canonical missing: {canonical}", file=sys.stderr)
             drift_count += 1

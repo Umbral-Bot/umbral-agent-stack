@@ -398,3 +398,11 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 - O15.1b: ✅ 100%
 - side-finding capitalizado como task 038 candidata (NO blocker): 500 errors en `dispatcher/notion_poller.py:198` rama `_resolve_review_targets` `session_capitalizable`. Pre-existente, NO regresión 037, path Control Room funciona OK. Agendar Ola 2.
 - restricciones respetadas: F-INC-002 (fetch+log pre push), secret-output-guard #8 (IDs prefix-only), SOUL Reglas 21+22 (gap honesto declarado cuando smoke real bloqueado por dedupe Redis con comment viejo, esperó input nuevo de David en lugar de fabricar PASS), NO restart gateway, NO touch openclaw.json/model.primary
+
+## 2026-05-30-001 — Verificación read-only runtime torneo+multi-agente+OpenClaw (base Q2 v2) [ASSIGNED → copilot-vps]
+- creada por: Cursor (lead) 2026-05-30 como paso D0.2 del nuevo Plan Q2 v2 (`notion-governance/docs/roadmap/13-q2-2026-v2-deployment-spine.md`)
+- origen: revisión completa Q2 agendada 2026-05-30 + diagnóstico `notion-governance/docs/audits/2026-05-30-q2-tournament-multiagent-openclaw-diagnostic.md`
+- scope: READ-ONLY. Confirmar `maxSpawnDepth` (clave para torneo O7/D1.1), `agents.list` + `model.primary` vigente, health gateway :18789 + worker :8088, y estado real Granola (muerto desde 2026-05-11 según VPS check 2026-05-20)
+- NO ejecuta restart worker (acción A1 / D0.1) — eso es gate separado de David
+- archivo tarea: `.agents/tasks/2026-05-30-001-verify-tournament-multiagent-openclaw-runtime.md`
+- handoff a David: ejecutar esta verificación + decidir gates G-D0 (restart worker), G-D1a (maxSpawnDepth 1→2), G-D1c (provider primary) listados en Q2 v2 §6

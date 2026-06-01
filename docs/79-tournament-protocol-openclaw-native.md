@@ -5,7 +5,7 @@
 - **Closes:** O7 → checkbox "Definir formato tournament estándar" (Plan Q2-2026 línea ~468).
 - **Built on:** [`docs/adr/tournament-on-openclaw-primitives.md`](adr/tournament-on-openclaw-primitives.md) (ADR commit `aecc68c`, Decision A — Wrapper-only).
 - **Implemented by (pending, ~12-15h):** skill `multi-agent-tournament-orchestrator` (a crear en `~/.openclaw/skills/`).
-- **Related:** [`docs/69-tournament-over-branches-runbook.md`](69-tournament-over-branches-runbook.md) — handler legacy `github.orchestrate_tournament` (Python). Este protocolo lo **reemplaza** para tournaments multi-agente reales sobre OpenClaw 2026.5.3+; el handler legacy queda como fallback LLM-puro.
+- **Related:** [`docs/architecture/tournament-protocol.md`](architecture/tournament-protocol.md) — launch point G-D1b (standalone/main). [`docs/69-tournament-over-branches-runbook.md`](69-tournament-over-branches-runbook.md) — handler legacy `github.orchestrate_tournament` (fallback LLM-puro).
 
 ---
 
@@ -34,7 +34,7 @@ Un tournament es una unidad atómica con:
 
 1. **N entre 2 y 5.** Más allá de 5 viola `agents.defaults.subagents.maxChildrenPerAgent: 5`. Si necesitás más, abrí dos tournaments paralelos sobre el mismo issue (anti-patrón en v1).
 2. **Cada lane es un agente distinto.** No se puede tener dos lanes con el mismo `agent_id` (rompe la metáfora "specialist lane" y duplica transcript path).
-3. **El orchestrator que dispara los spawns es siempre depth-1.** El usuario (David) dispara `rick-orchestrator`, este invoca el skill, el skill spawnea los lanes (depth 2). No se permite anidar tournaments.
+3. **El spawn parent es `main` en sesión standalone (G-D1b).** El wrapper corre en `main` con `sessions_spawn` disponible. **No** lanzar desde `rick-orchestrator` nested (ISSUE-001 filtra spawn). Ver [`docs/architecture/tournament-protocol.md`](architecture/tournament-protocol.md).
 4. **El branch base es siempre `main` actualizado.** Pre-flight aborta si el repo tiene worktree dirty o si `git fetch origin main` no es fast-forward.
 
 ---
@@ -68,18 +68,19 @@ lane:
 ## 4. Flujo end-to-end
 
 ```
-USER → rick-orchestrator (depth 0)
+USER → main (standalone entry — G-D1b; NOT nested rick-orchestrator)
         │
         │  /skills run multi-agent-tournament-orchestrator <tournament_spec.yaml>
         ▼
    Pre-flight (wrapper)
+     ├── standalone session + sessions_spawn available?     ← ISSUE-001 / G-D1b
      ├── git status clean? + main fast-forward?
      ├── allowAgents cubre todos los lanes?
-     ├── agents.defaults.subagents.maxSpawnDepth >= 2?     ← bloquea si no
+     ├── agents.defaults.subagents.maxSpawnDepth >= 2?
      └── usd_budget_cap → runTimeoutSeconds por lane
         │
         ▼
-   sessions_spawn × N (depth 1 → depth 2)
+   sessions_spawn × N (depth 0 → depth 1 lane agents)
      ├── lane-backend-typescript (rick-delivery)    ─┐
      ├── lane-python              (rick-delivery)    │  paralelo, isolated
      └── lane-no-code             (rick-ops)        ─┘

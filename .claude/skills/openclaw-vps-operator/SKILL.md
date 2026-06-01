@@ -12,7 +12,8 @@ Dar a Claude un modo operativo experto para trabajar con el OpenClaw real instal
 ## Superficies canónicas
 
 - Runtime/deploy reference (única superficie canónica VPS): `~/umbral-agent-stack`
-- Notion governance reference: clonar limpio bajo `~/notion-governance` solo cuando sea necesario; NO usar los paths stale `~/notion-governance-git` ni `~/notion-governance-local`
+- Notion governance en VPS: **solo** `~/umbral-agent-stack/vendor/notion-governance/` (snapshot pinneado, read-only). **NO** clonar `notion-governance` en VPS; NO usar paths stale `~/notion-governance`, `~/notion-governance-git` ni `~/notion-governance-local`
+- Para operaciones runtime con backup/patch/restart/rollback: preferir la skill canónica de repo `.agents/skills/openclaw-vps-operator/SKILL.md` (Copilot/VPS); esta copia Claude es orientación y runbooks
 - Live OpenClaw config: `~/.openclaw/openclaw.json`
 - Live env: `~/.config/openclaw/env`
 - Live workspace: `~/.openclaw/workspace`

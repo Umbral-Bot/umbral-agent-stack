@@ -30,14 +30,14 @@ ssh $VPS_USER@$VPS_HOST "cat ~/.openclaw/openclaw.json"
 
 ## Verificar que OpenClaw está corriendo
 ```bash
-ssh $VPS_USER@$VPS_HOST "systemctl status openclaw"
+ssh $VPS_USER@$VPS_HOST "systemctl --user status openclaw-gateway.service"
 ssh $VPS_USER@$VPS_HOST "bash ~/umbral-agent-stack/scripts/vps/verify-openclaw.sh"
 ```
 
 ## Reiniciar OpenClaw
 ```bash
-ssh $VPS_USER@$VPS_HOST "systemctl restart openclaw"
-ssh $VPS_USER@$VPS_HOST "journalctl -u openclaw -n 50 --no-pager"
+ssh $VPS_USER@$VPS_HOST "systemctl --user restart openclaw-gateway.service"
+ssh $VPS_USER@$VPS_HOST "journalctl --user -u openclaw-gateway.service -n 50 --no-pager"
 ```
 
 ## Trabajar con skills de Rick
@@ -59,7 +59,7 @@ skills/<nombre>/
 1. Crear o editar `openclaw/workspace-templates/skills/<nombre>/SKILL.md`
 2. Seguir el formato de skills existentes (ver `skills/linear/SKILL.md` como referencia)
 3. Commitear y pushear al repo
-4. En VPS: `git pull && systemctl restart openclaw`
+4. En VPS: `git pull && systemctl --user restart openclaw-gateway.service` (solo con autorización)
 
 ### Formato mínimo de SKILL.md
 ```markdown
@@ -98,7 +98,7 @@ npm install
 npm run build
 # Copiar al VPS
 scp -r . $VPS_USER@$VPS_HOST:~/umbral-agent-stack/openclaw/extensions/umbral-worker/
-ssh $VPS_USER@$VPS_HOST "systemctl restart openclaw"
+ssh $VPS_USER@$VPS_HOST "systemctl --user restart openclaw-gateway.service"
 ```
 
 ## SOUL.md — Reglas de Rick

@@ -1,0 +1,35 @@
+# Smoke tournament spec — docs/79 §7
+# Use only after D2.2 dry-run passes on VPS. Replace issue_* with a trivial doc typo issue David approves.
+
+tournament_id: umbral-agent-stack-smoke-00000000
+issue_id: Umbral-Bot/umbral-agent-stack#0
+issue_url: https://github.com/Umbral-Bot/umbral-agent-stack/issues/REPLACE
+issue_title: "Smoke — fix trivial doc typo (tournament pre-flight)"
+repo_path: ~/umbral-agent-stack
+usd_budget_cap: 0.25
+cleanup_policy: keep-losers
+winner_rubric: |
+  Smoke rubric: choose the PR with fewer total line changes (additions + deletions).
+  If tied, prefer the PR whose checks are green first.
+  This is a smoke test only — correctness means minimal diff that fixes the typo.
+lanes:
+  - specialty: lane-a
+    agent_id: rick-delivery
+    runTimeoutSeconds: 900
+    task_template: |
+      # Tournament lane A (smoke)
+      Issue: {{issue_url}}
+      Branch: tournament/{{tournament_id}}/lane-lane-a
+      Fix the approved trivial typo on the issue. Minimal diff only.
+      PR title: [tournament:{{tournament_id}}:lane-a] {{issue_title}}
+      Announce JSON: pr_url, diff_stats, checks_status, specialty=lane-a
+  - specialty: lane-b
+    agent_id: rick-delivery
+    runTimeoutSeconds: 900
+    task_template: |
+      # Tournament lane B (smoke)
+      Issue: {{issue_url}}
+      Branch: tournament/{{tournament_id}}/lane-lane-b
+      Same issue as lane A — independent implementation. Minimal diff only.
+      PR title: [tournament:{{tournament_id}}:lane-b] {{issue_title}}
+      Announce JSON: pr_url, diff_stats, checks_status, specialty=lane-b

@@ -7,12 +7,15 @@ set -euo pipefail
 echo "=== VerificaciÃ³n del Umbral Agent Stack ==="
 echo ""
 
-# 1. OpenClaw service
-echo "1. OpenClaw Service:"
-if systemctl --user is-active openclaw > /dev/null 2>&1; then
-    echo "   âœ… OpenClaw: RUNNING"
+# 1. OpenClaw gateway (canonical unit: openclaw-gateway.service)
+echo "1. OpenClaw Gateway Service:"
+if systemctl --user is-active openclaw-gateway.service > /dev/null 2>&1; then
+    echo "   OK openclaw-gateway.service: RUNNING"
+elif systemctl --user is-active openclaw-gateway > /dev/null 2>&1; then
+    echo "   OK openclaw-gateway: RUNNING (legacy unit name without .service)"
 else
-    echo "   âŒ OpenClaw: NOT RUNNING"
+    echo "   FAIL openclaw-gateway: NOT RUNNING"
+    echo "   (legacy openclaw.service is deprecated; not checked as source of truth)"
 fi
 
 # 2. OpenClaw status

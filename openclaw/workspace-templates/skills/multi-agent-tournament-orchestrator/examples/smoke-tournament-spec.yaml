@@ -18,6 +18,7 @@ lanes:
     runTimeoutSeconds: 900
     task_template: |
       # Tournament lane A (smoke)
+      Fix the typo in file `docs/ops/smoke-tournament-marker.md` (path relative to repo root).
       Issue: {{issue_url}}
       Branch: tournament/{{tournament_id}}/lane-lane-a
       Fix the approved trivial typo on the issue. Minimal diff only.
@@ -28,6 +29,7 @@ lanes:
     runTimeoutSeconds: 900
     task_template: |
       # Tournament lane B (smoke)
+      Fix the typo in file `docs/ops/smoke-tournament-marker.md` (path relative to repo root).
       Issue: {{issue_url}}
       Branch: tournament/{{tournament_id}}/lane-lane-b
       Same issue as lane A — independent implementation. Minimal diff only.

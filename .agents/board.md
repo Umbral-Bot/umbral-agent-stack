@@ -415,6 +415,10 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 | M2-VPS-02 | M2_VPS02_SYNC_OK |
 | M2-VPS-03 | M2_VPS03_OK |
 
+## 2026-06-01-005 — D3.0 tournament smoke [DONE → M1_D30_SMOKE_OK]
+- Issue #434; winner PR #435 (lane-a); spawn sessions_spawn x2 verified.
+- Scripts: `scripts/vps/d3-smoke-*.sh`
+
 ## 2026-06-01-004 — EDITORIAL-03 [DONE → M2_VPS03_OK]
 - Azure host fix + writer pause. Gateway pid 1057064. policy-05 §1e.
 

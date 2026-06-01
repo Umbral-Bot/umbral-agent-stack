@@ -24,7 +24,7 @@ lanes:
       PR title: [tournament:{{tournament_id}}:lane-a] {{issue_title}}
       Announce JSON: pr_url, diff_stats, checks_status, specialty=lane-a
   - specialty: lane-b
-    agent_id: rick-delivery
+    agent_id: rick-qa
     runTimeoutSeconds: 900
     task_template: |
       # Tournament lane B (smoke)

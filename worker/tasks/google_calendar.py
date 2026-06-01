@@ -24,7 +24,7 @@ logger = logging.getLogger("worker.tasks.google_calendar")
 
 CALENDAR_API_BASE = "https://www.googleapis.com/calendar/v3"
 DEFAULT_TIMEZONE = "America/Santiago"
-CALENDAR_SCOPES = ["https://www.googleapis.com/auth/calendar"]
+CALENDAR_SCOPES = ["https://www.googleapis.com/auth/calendar.events"]
 
 
 def _get_calendar_headers() -> Dict[str, str]:

@@ -1,8 +1,9 @@
 ---
 id: 2026-06-01-014-gd52-oauth-scope-decision
 title: "G-D5.2 — decisión scope OAuth ADR-16 vs tokens live"
-status: pending
+status: decided
 assigned_to: david
+decision: B
 created_by: cursor
 created: 2026-06-01
 ---
@@ -20,8 +21,20 @@ created: 2026-06-01
 
 ## Gate David
 
-Responder en chat: A, B o C.
+**Decisión: B** — Re-OAuth con scopes ADR mínimos (2026-06-01). Drift verificado: Calendar over-scoped (`calendar` full).
 
 ## VEREDICTO
 
-_Pendiente decisión David_
+**G_D52_DECISION_B** — Ejecutar runbook `docs/ops/gd52-reoauth-runbook.md` + task 015 VPS.
+
+### 2026-06-01 — Cursor (cierre G-D5.2)
+
+- Umbral-bot: redirect OAuth Playground eliminado (solo umbralbim.io + Supabase).
+- Client **Rick OpenClaw** creado (GCP `future-yeti-455715-u7`).
+- OAuth Playground: consent `rick.asistente@gmail.com`, scopes `gmail.modify` + `calendar.events`.
+- VPS `~/.config/openclaw/env`: credenciales rotadas (client `285813488732-ij582…`).
+- Worker: desplegados `gmail.py` / `google_calendar.py` con scopes ADR-16 (pendiente commit a `main`).
+- Smoke PASS: tokeninfo, Gmail profile, `gmail.list_drafts`, `google.calendar.list_events`.
+- Evidencia: `~/.coord-ag-evidence/G-D5.2/` en VPS.
+
+**G_D52_VPS_REOAUTH_OK**

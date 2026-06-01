@@ -25,7 +25,7 @@ from typing import Any, Dict, List, Optional
 logger = logging.getLogger("worker.tasks.gmail")
 
 GMAIL_API_BASE = "https://gmail.googleapis.com/gmail/v1"
-GMAIL_SCOPES = ["https://www.googleapis.com/auth/gmail.compose", "https://www.googleapis.com/auth/gmail.readonly"]
+GMAIL_SCOPES = ["https://www.googleapis.com/auth/gmail.modify"]
 
 
 def _get_gmail_headers() -> Dict[str, str]:

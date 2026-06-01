@@ -2,93 +2,110 @@
 
 Copy-paste blocks for David. **Cursor must push `main` before VPS prompts.**
 
-Last push: _update after commit_
+Last push: _after commit_
 
 ---
 
-## Estado rápido (2026-06-01)
+## Estado (2026-06-01)
 
-| Hilo | Estado | Acción |
+| Hilo | Superficie | Estado |
 |---|---|---|
-| **A** Copilot-VPS D3.1 | ✅ Hecho | #437 mergeado squash (David aprobó) |
-| **B** Copilot-VPS O15 delegación | ✅ Hecho | `O15_DELEGATION_SMOKE_OK` |
-| **C** Copilot Windows OAuth discovery | ✅ Hecho | `D51_OAUTH_DISCOVERY_OK` |
-| **E** Copilot-VPS G-D5.1 audit | 🔴 **PEGAR AHORA** | Task 011 |
-| **F** Copilot-VPS delivery post-mortem | ⏸ opcional | Task 012 (si se crea) |
+| A–E | VPS / Windows | ✅ Cerrados (D3.1, O15, discovery, G-D5.1) |
+| F | Copilot-VPS | ✅ Post-mortem impl lane (read-only) |
+| G | Copilot Windows | ✅ **Cerrado** — `env.rick` NO trackeado; `.gitignore` ok (Cursor verificó) |
+| **H** | Copilot-VPS | 🔴 **Siguiente opcional** — cleanup worktree |
+| **I** | Copilot Windows | 🟡 Prep G-D5.2 (decisión, no OAuth) |
+| **J** | Cursor (este chat) | 🟡 Task 012 lane PR gate |
 
 ---
 
-## Thread E — Copilot-VPS · G-D5.1 OAuth audit (SIGUIENTE)
+## Thread H — Copilot-VPS · cleanup worktree D3.1 (opcional)
 
-**Dónde:** hilo **Copilot con SSH VPS** (nuevo o el de O15 delegación ya cerrado).
+**Dónde:** hilo **Copilot-VPS** (SSH). Solo housekeeping.
 
 ```
-Sos Copilot-VPS (rick@srv1431451.hstgr.cloud). David aprobó opción b: audit read-only primero.
+Sos Copilot-VPS. Read-only primero; remove solo si autorizo abajo.
 
-Lee y ejecuta:
+  ~/umbral-agent-stack/.agents/tasks/2026-06-01-013-copilot-vps-d31-worktree-cleanup.md
 
-  ~/umbral-agent-stack/.agents/tasks/2026-06-01-011-copilot-vps-gd51-oauth-audit.md
+Preflight: cd ~/umbral-agent-stack && git pull --ff-only origin main && echo TASK_FILE_OK
 
-Preflight:
-  cd ~/umbral-agent-stack && git pull --ff-only origin main && git log -1 --oneline
-  test -f .agents/tasks/2026-06-01-011-copilot-vps-gd51-oauth-audit.md && echo TASK_FILE_OK
+Inventariá git worktree list y el worktree umbral-agent-stack-lane-sqlite-impl
+(0 commits, nunca pusheado — ver post-mortem Thread F).
 
-Objetivo: inventariar vars GOOGLE_* en ~/.config/openclaw/env (solo nombres SET/UNSET, NUNCA valores),
-smoke read-only Gmail + Calendar vía Worker si aplica, tabla vs ADR-16 G1-G5.
+Si David NO dijo "autorizo remove worktree" en este mensaje → solo reporte read-only.
+Si SÍ autorizó → git worktree remove + evidencia en ~/.coord-ag-evidence/D3.1-cleanup/
 
-Evidencia: ~/.coord-ag-evidence/G-D5.1/
-NO OAuth browser, NO gateway restart, NO imprimir tokens.
-
-VEREDICTO: G_D51_VPS_AUDIT_OK o bloqueo honesto. Log + push task si actualizás.
+VEREDICTO: D31_WORKTREE_CLEANUP_OK
 ```
 
----
-
-## Thread B — Copilot-VPS · O15 delegación ✅ CERRADO
-
-Ya ejecutado (`O15_DELEGATION_SMOKE_OK`, push `52a4b6e`). **No pegar de nuevo** salvo regresión.
-
----
-
-## Thread A — Copilot-VPS · D3.1 torneo ✅ CERRADO
-
-Torneo partial + **#437 mergeado squash** por David. **No pegar de nuevo.**
-
-Follow-up opcional (post-mortem lane delivery vacía) — pedir a Cursor task 012.
-
----
-
-## Thread C — Copilot Windows · OAuth discovery ✅ CERRADO
-
-Discovery hecho en task 010. **No pegar de nuevo.**
-
----
-
-## Thread G — Copilot Windows · housekeeping env.rick (opcional, 2 min)
-
-**Dónde:** Copilot Chat **Windows** (sin SSH). Solo si querés confirmar local.
+**Variante con remove autorizado** (pegá solo si querés borrar el worktree):
 
 ```
-Read-only en c:\GitHub\umbral-agent-stack:
-
-1. Confirmá que env.rick NO está trackeado: git ls-files env.rick (debe estar vacío).
-2. Confirmá que .gitignore incluye la línea env.rick (Cursor ya la agregó).
-3. NO abras ni pegues contenido de env.rick ni .env.
-
-Reportá: TRACKED yes/no, gitignore ok yes/no.
+… (mismo prompt) … David autoriza remove del worktree lane-sqlite-impl huérfano.
 ```
 
 ---
 
-## Thread F — Copilot-VPS · post-mortem rick-delivery lane vacía (opcional)
+## Thread I — Copilot Windows · prep decisión G-D5.2 (sin OAuth)
 
-**Dónde:** hilo VPS **después** de G-D5.1, si David pide diagnosticar por qué sqlite-impl entregó 0.
+**Dónde:** Copilot Chat **Windows**, sin SSH.
 
 ```
-Sos Copilot-VPS. Read-only post-mortem D3.1 lane sqlite-impl (rick-delivery):
+Sos Copilot Windows. Read-only — preparar decisión para David, NO ejecutar OAuth.
 
-Revisá sesión subagent f430c306... en ~/.openclaw/agents/rick-delivery/sessions/
-y evidencia ~/.coord-ag-evidence/D3.1/. Explicá por qué el run terminó done sin commits.
+Lee:
+  c:\GitHub\umbral-agent-stack\.agents\tasks\2026-06-01-014-gd52-oauth-scope-decision.md
+  c:\GitHub\notion-governance\docs\architecture\16-multichannel-rick-channels.md (§2.3 Gmail, §2.4 Calendar, D6)
 
-NO fixes, NO prompt changes — solo diagnóstico + recomendación para task Cursor.
+Contexto: G-D5.1 OK — Gmail+Calendar smoke PASS en VPS. Drift de scope vs ADR mínimo.
+
+Entregá a David una recomendación clara entre:
+  A) Aceptar tokens actuales + documentar excepción
+  B) Re-OAuth scopes ADR (gmail.modify, calendar.events) — listar pasos, no ejecutar
+  C) Diferir Q3
+
+Una página max. Sin pegar secretos. Sin tocar VPS.
 ```
+
+---
+
+## Thread J — Cursor (este chat) · fix lane PR gate
+
+**Dónde:** acá en Cursor, no Copilot.
+
+```
+Implementá task 2026-06-01-012-tournament-lane-pr-gate:
+orquestador trata lane sin PR como incomplete (docs/79 + skill tournament).
+```
+
+*(O pegalo en un hilo Cursor nuevo si preferís contexto limpio.)*
+
+---
+
+## Thread K — Copilot-VPS · re-run solo lane impl (solo post Task 012 + autorización)
+
+**Dónde:** Copilot-VPS — **NO pegar hasta** Cursor cierre task 012 y David autorice.
+
+```
+Sos Copilot-VPS. Re-run acotado lane sqlite-impl para issue #403 usando spec
+d31-issue-403-tournament-spec.yaml pero SOLO lane rick-delivery (no re-ejecutar qa).
+
+Precondición: task 012 mergeada + git pull main + preflight PASS.
+David autorizó re-run impl lane.
+
+Evidencia ~/.coord-ag-evidence/D3.1-rerun-impl/
+NO merge automático — reportar PR URL o incomplete con causa.
+```
+
+---
+
+## Cerrados — no repetir
+
+- **E** G-D5.1 → `G_D51_VPS_AUDIT_OK` (`e68cf2b`)
+- **F** Post-mortem → diagnóstico en chat; recomendación → task 012
+- **G** env.rick → NO tracked (`git ls-files` vacío); `.gitignore` línea 8 ok
+
+## Decisión David (sin prompt — respondé en chat)
+
+**G-D5.2 OAuth scope:** ¿**A** aceptar tokens actuales, **B** re-OAuth ADR, o **C** diferir?

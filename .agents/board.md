@@ -415,7 +415,10 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 | M2-VPS-02 | M2_VPS02_SYNC_OK |
 | M2-VPS-03 | M2_VPS03_OK |
 
-## 2026-06-01-011 — G-D5.1 OAuth VPS audit [ASSIGNED → copilot-vps]
+## 2026-06-01-014 — G-D5.2 OAuth scope decision [PENDING → David]
+## 2026-06-01-013 — D3.1 worktree cleanup [ASSIGNED → copilot-vps]
+## 2026-06-01-012 — Tournament lane PR gate [ASSIGNED → cursor]
+## 2026-06-01-011 — G-D5.1 OAuth VPS audit [DONE → G_D51_VPS_AUDIT_OK]
 ## 2026-06-01-008 — D3.1 tournament #403 [DONE → M1_D31_TOURNAMENT_PARTIAL, #437 merged]
 ## 2026-06-01-010 — D5.1 OAuth discovery Windows [DONE → D51_OAUTH_DISCOVERY_OK]
 ## 2026-06-01-009 — O15 delegation smoke [DONE → O15_DELEGATION_SMOKE_OK]

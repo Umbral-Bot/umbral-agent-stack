@@ -90,6 +90,19 @@ https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/cal
 
 ## Variables VPS (`~/.config/openclaw/env`)
 
+El archivo **no está en git**. Orden correcto:
+
+1. `git pull --ff-only origin main` (código worker)
+2. `bash scripts/vps/patch-rick-oauth-env.sh /tmp/rick-oauth.pending` (solo vars `GOOGLE_*`)
+3. `systemctl --user restart umbral-worker`
+4. `bash scripts/vps/smoke-gd52-oauth.sh`
+
+Atajo (pull + patch + restart + smoke):
+
+```bash
+bash scripts/vps/deploy-gd52-oauth.sh /tmp/rick-oauth.pending
+```
+
 ```env
 GOOGLE_GMAIL_CLIENT_ID=...
 GOOGLE_GMAIL_CLIENT_SECRET=...

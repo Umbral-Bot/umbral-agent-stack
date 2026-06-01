@@ -415,6 +415,11 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 - Runtime estable post G-D1a-RESTART: `maxSpawnDepth=2`, gateway active pid 1045197 (since 2026-06-01 05:38:52), health 200. Sin writes.
 - Gates G-D1a + G-D1a-RESTART verificados y repo↔VPS alineados.
 
+## 2026-06-01 — EDITORIAL-02 cross-ref (Mega 1, VPS read-only) [DONE → EDITORIAL_02_DIAG_READY]
+- Task: `.agents/tasks/2026-06-01-001-copilot-vps-editorial-02-diag-linkedin-writer-granola.md` (⚠️ mismo día-ID que G-D1a; slugs distintos).
+- Granola: V2 sano, skip/dedup — **G-D0 diferido** para editorial. FailoverError: Azure store=false cross-agent.
+- Siguiente editorial: G-ED-HITO (Cursor) + EDITORIAL-03 VPS (pause writer + Azure fix). **No mezclar con torneo D2.**
+
 ## 2026-06-01-001 — G-D1a: elevar maxSpawnDepth a 2 en openclaw.json (VPS) [DONE → G_D1a_PATCH_OK]
 - creada por: Cursor (lead) 2026-06-01 como D1.1 / gate G-D1a del Plan Q2 v2 (`notion-governance/docs/roadmap/13-q2-2026-v2-deployment-spine.md §6`)
 - ejecutado por Copilot-VPS 2026-06-01 05:25 (skill `openclaw-vps-operator`). VEREDICTO **G_D1a_PATCH_OK**.

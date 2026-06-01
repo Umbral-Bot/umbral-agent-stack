@@ -30,8 +30,20 @@ def _seed(conn: sqlite3.Connection, rows):
     s2.ensure_schema(conn)
     for sid, url, title, excerpt in rows:
         conn.execute(
-            "INSERT INTO signals_raw (signal_id, url, title, excerpt) VALUES (?,?,?,?)",
-            (sid, url, title, excerpt),
+            "INSERT INTO signals_raw "
+            "(signal_id, referente_id, canal_tipo, url, title, excerpt, discovered_at, dedup_hash, source_status) "
+            "VALUES (?,?,?,?,?,?,?,?,?)",
+            (
+                sid,
+                f"ref-{sid}",
+                "web",
+                url,
+                title,
+                excerpt,
+                "2026-01-01T00:00:00+00:00",
+                f"dedup-{sid}",
+                "ok",
+            ),
         )
     conn.commit()
 
@@ -211,8 +223,10 @@ def test_retry_failed_picks_up_timeout(monkeypatch, conn):
     monkeypatch.setattr(s2.time, "sleep", lambda s: None)
     s2.ensure_schema(conn)
     conn.execute(
-        "INSERT INTO signals_raw (signal_id, url, title, excerpt) VALUES (?,?,?,?)",
-        (1, "https://x/y", "T", "E"),
+        "INSERT INTO signals_raw "
+        "(signal_id, referente_id, canal_tipo, url, title, excerpt, discovered_at, dedup_hash, source_status) "
+        "VALUES (?,?,?,?,?,?,?,?,?)",
+        (1, "ref-1", "web", "https://x/y", "T", "E", "2026-01-01T00:00:00+00:00", "dedup-1", "ok"),
     )
     # pre-existing timeout verdict
     conn.execute(
@@ -329,8 +343,10 @@ def test_main_dry_run(monkeypatch, tmp_path):
     conn = sqlite3.connect(db)
     s2.ensure_schema(conn)
     conn.execute(
-        "INSERT INTO signals_raw (signal_id, url, title, excerpt) VALUES (?,?,?,?)",
-        (1, "https://x/y", "T", "E"),
+        "INSERT INTO signals_raw "
+        "(signal_id, referente_id, canal_tipo, url, title, excerpt, discovered_at, dedup_hash, source_status) "
+        "VALUES (?,?,?,?,?,?,?,?,?)",
+        (1, "ref-1", "web", "https://x/y", "T", "E", "2026-01-01T00:00:00+00:00", "dedup-1", "ok"),
     )
     conn.commit()
     conn.close()

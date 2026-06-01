@@ -42,9 +42,12 @@ from scripts.discovery.lib.notion_read import (
     normalize_referente,
     query_data_source,
 )
+from scripts.discovery.lib.sqlite_utils import (
+    apply_migrations as apply_discovery_migrations,
+    open_sqlite as open_discovery_sqlite,
+)
 
 DEFAULT_SQLITE = Path("~/.cache/rick-discovery/state.sqlite").expanduser()
-MIGRATION_PATH = Path(__file__).parent / "migrations" / "0001_referentes_signals.sql"
 
 log = logging.getLogger("stage0_load_referentes")
 
@@ -53,18 +56,12 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
-def apply_migrations(conn: sqlite3.Connection, migration_path: Path = MIGRATION_PATH) -> None:
-    sql = migration_path.read_text(encoding="utf-8")
-    conn.executescript(sql)
-    conn.commit()
+def apply_migrations(conn: sqlite3.Connection) -> None:
+    apply_discovery_migrations(conn)
 
 
 def open_sqlite(path: Path) -> sqlite3.Connection:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(str(path))
-    conn.row_factory = sqlite3.Row
-    apply_migrations(conn)
-    return conn
+    return open_discovery_sqlite(path)
 
 
 def filter_referentes(

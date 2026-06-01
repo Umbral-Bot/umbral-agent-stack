@@ -41,6 +41,8 @@ from xml.etree import ElementTree as ET
 
 import httpx
 
+from scripts.discovery.lib.sqlite_utils import open_sqlite as open_discovery_sqlite
+
 USER_AGENT = "UmbralBIM-Editorial-Bot/1.0 (+contacto@umbralbim.cl)"
 DEFAULT_TIMEOUT_S = 10.0
 DEFAULT_MIN_INTERVAL_S = 2.0
@@ -574,11 +576,7 @@ def run(
     robots: RobotsCache | None = None,
     limiter: RateLimiter | None = None,
 ) -> dict[str, Any]:
-    conn = sqlite3.connect(str(sqlite_path))
-    conn.row_factory = sqlite3.Row
-    # Ensure schema.
-    from scripts.discovery.stage0_load_referentes import apply_migrations
-    apply_migrations(conn)
+    conn = open_discovery_sqlite(sqlite_path)
 
     rows = _load_snapshot_rows(conn, canal=canal, snapshot_max_age_hours=snapshot_max_age_hours)
     stats = StageStats()

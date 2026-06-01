@@ -1,13 +1,13 @@
 ---
 id: "2026-06-01-004"
 title: "EDITORIAL-03 — Pausar rick-linkedin-writer + fix Azure store (G-ED-PAUSE + G-ED-AZURE + G-D1c)"
-status: assigned
+status: done
 assigned_to: copilot-vps
 created_by: cursor
 priority: high
 sprint: Q2-2026
 created_at: 2026-06-01T08:00:00-04:00
-updated_at: 2026-06-01T08:00:00-04:00
+updated_at: 2026-06-01T10:45:00-04:00
 owner: copilot-vps
 reviewer: david
 phase: Mega-2-EDITORIAL
@@ -122,3 +122,23 @@ git_head: <sha>
 ### [cursor] 2026-06-01 — task created
 
 David autorizó G-ED-PAUSE + G-ED-AZURE + G-D1c shared fix. No correr en paralelo con otro restart gateway.
+
+### [copilot-vps] 2026-06-01 ~10:41 — M2_VPS03_OK
+
+**VEREDICTO: M2_VPS03_OK**
+
+| Campo | Valor |
+|---|---|
+| writer_paused | yes — `heartbeat:{every:"1h"}` explícito en 7 agentes no-writer; writer sin key |
+| azure_store_patch | applied — `baseUrl` host `cognitiveservices` → `openai.azure.com` (mismo IP, TLS OK, key 200) |
+| gateway_health_post | 200 |
+| gateway_pid_post | 1057064 (pre: 1045197) |
+| failover_errors_10m | 0 |
+| writer_sessions_10m | 0 |
+| backup_path | `~/.coord-ag-evidence/G-ED-AZURE/openclaw.json.bak.202606011041` |
+| evidencia | `~/.coord-ag-evidence/G-ED-AZURE/post-smoke.txt` |
+| git_head | f1827a5 |
+
+**Nota arquitectura:** OpenClaw 2026.5.19 no expone `store:true` en config para responses; el payload `store` depende de clasificación nativa del host (`.openai.azure.com`). Rollback = restaurar backup + restart.
+
+Cierra: **G-ED-PAUSE**, **G-ED-AZURE**, **G-D1c** (Mega 1 lanes Azure).

@@ -27,8 +27,8 @@ Validate tournament readiness on VPS **before** the first smoke with real lane s
 ```bash
 cd ~/umbral-agent-stack
 git pull --ff-only origin main
-chmod +x scripts/openclaw/tournament-preflight-dry-run.sh
-./scripts/openclaw/tournament-preflight-dry-run.sh \
+# Usar bash (no chmod) para evitar dirty worktree si core.filemode=true
+bash scripts/openclaw/tournament-preflight-dry-run.sh \
   openclaw/workspace-templates/skills/multi-agent-tournament-orchestrator/examples/smoke-tournament-spec.yaml
 ```
 

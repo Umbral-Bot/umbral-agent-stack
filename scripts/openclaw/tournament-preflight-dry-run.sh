@@ -62,11 +62,11 @@ else
   bad "not a git repo: $REPO_PATH"
 fi
 
-# 4 gh auth
+# 4 gh auth (required before real tournament PR/merge; David-scoped)
 if gh auth status >/dev/null 2>&1; then
   ok "gh auth status green"
 else
-  bad "gh auth status failed"
+  note "gh auth status failed — expected until David runs gh auth login (D3.0 gate)"
 fi
 
 # 5 gateway health (optional)
@@ -108,8 +108,8 @@ fi
 echo ""
 echo "=== Summary: OK=$pass FAIL=$fail WARN=$warn ==="
 if [[ "$fail" -gt 0 ]]; then
-  echo "Result: NOT READY for spawn"
+  echo "Result: NOT READY for spawn (hard FAIL above)"
   exit 1
 fi
-echo "Result: DRY-RUN PASSED (spawn still requires G-D1b manual + David gate)"
+echo "Result: DRY-RUN PASSED (spawn still requires G-D1b manual + gh auth + David gate)"
 exit 0

@@ -403,18 +403,28 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 - Copilot-VPS 2026-06-01 05:38: restart gateway pid 1045197, health 200, `maxSpawnDepth=2` **efectivo en runtime**.
 - pre/post gateway: 2026-05-21 11:15:35 → 2026-06-01 05:38:52. OpenClaw 2026.5.19, 8 agentes smoke OK.
 - intacto: model.primary gpt-5.4, worker, Granola. evidencia: `~/.coord-ag-evidence/G-D1a-RESTART/`.
-- D1.1 spine cerrado. policy-05 boundary registrado. Siguiente: ~~D1.2~~ ✅, D1.3 G-D1c, D2.2 dry-run VPS.
+- D1.1 spine cerrado. D1.2 ✅ D1.3 ✅ (M2_VPS03_OK). D2.2 M1_VPS02_D22_OK.
+
+## 2026-06-01 — Oleada paralela W/V [CAPITALIZED]
+| Hilo | VEREDICTO |
+|---|---|
+| INFRA-WIN-01 | S2_G8_RECLONE_BLOCKED |
+| Q2-WIN-01 | Q2_WIN01_READ_ONLY |
+| M2-WIN-01 | M2_WIN01_SPEC_DRAFT_READY |
+| M1-VPS-02 | M1_VPS02_D22_OK |
+| M2-VPS-02 | M2_VPS02_SYNC_OK |
+| M2-VPS-03 | M2_VPS03_OK |
+
+## 2026-06-01-004 — EDITORIAL-03 [DONE → M2_VPS03_OK]
+- Azure host fix + writer pause. Gateway pid 1057064. policy-05 §1e.
+
+## 2026-06-01-003 — D2.1 + D2.2 [DONE / D22_OK]
+- Skill synced VPS; dry-run OK. Pendiente: gh auth + G-D1b manual.
 
 ## 2026-06-01-003 — D2.1: skill multi-agent-tournament-orchestrator [DONE]
 - G-D1b: `main`/standalone — `docs/architecture/tournament-protocol.md`.
 - Skill v1 + smoke spec + dry-run script + `docs/ops/tournament-d2.2-dry-run-checklist.md`.
 - Task: `.agents/tasks/2026-06-01-003-d2.1-multi-agent-tournament-orchestrator-skill.md`.
-- Siguiente: **push main** → Copilot-VPS sync skill → D2.2 dry-run (sin spawn).
-
-## 2026-06-01-004 — EDITORIAL-03: pause writer + Azure store [ASSIGNED → copilot-vps]
-- Gates David: G-ED-PAUSE + G-ED-AZURE + G-D1c (fix compartido Mega 1+Mega 2).
-- Task: `.agents/tasks/2026-06-01-004-editorial-03-pause-writer-azure-store-fix.md`
-- **No paralelo** con otro restart gateway. Ejecutar tras M1-VPS-02 o secuencial si choque.
 
 ## 2026-06-01 — Regla handoff VPS + push main [DONE]
 - David: siempre push `main` antes de handoff Copilot-VPS que lea `.agents/tasks/*.md`; tareas incluyen `git pull --ff-only origin main`.

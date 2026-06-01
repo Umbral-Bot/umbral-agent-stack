@@ -3,7 +3,7 @@
 Copy-paste blocks for David. Cursor updates this file when creating VPS tasks.
 **Rule:** Cursor must push `main` before you paste a VPS prompt.
 
-Last push for prompts below: **pending** — update SHA after commit.
+Last push for prompts below: **`c8d5bc90`** (2026-06-01).
 
 ---
 

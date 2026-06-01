@@ -71,6 +71,11 @@ from scripts.discovery.lib.dedup import (
     compute_content_hash,
     compute_idempotency_key,
 )
+from scripts.discovery.lib.sqlite_utils import (
+    apply_migrations as apply_discovery_migrations,
+    configure_connection,
+    open_sqlite as open_discovery_sqlite,
+)
 
 DEFAULT_DB = Path.home() / ".cache" / "rick-discovery" / "state.sqlite"
 DEFAULT_BATCH = 50
@@ -107,45 +112,10 @@ _TAG_RE = re.compile(r"<[^>]+>")
 # Schema bootstrap
 # --------------------------------------------------------------------------- #
 
-SIGNALS_VERIFIED_DDL = """
-CREATE TABLE IF NOT EXISTS signals_verified (
-    signal_id        INTEGER PRIMARY KEY,
-    canonical_url    TEXT NOT NULL,
-    source_status    TEXT NOT NULL,
-    content_hash     TEXT NOT NULL,
-    idempotency_key  TEXT NOT NULL,
-    paywall_detected INTEGER NOT NULL DEFAULT 0,
-    verified_at      TEXT NOT NULL,
-    http_status      INTEGER,
-    final_url        TEXT,
-    error            TEXT
-);
-CREATE INDEX IF NOT EXISTS idx_signals_verified_content_hash
-    ON signals_verified(content_hash);
-CREATE INDEX IF NOT EXISTS idx_signals_verified_idempotency_key
-    ON signals_verified(idempotency_key);
-CREATE INDEX IF NOT EXISTS idx_signals_verified_status
-    ON signals_verified(source_status);
-"""
-
-# Minimal signals_raw shape used as a safety net when 0001 has not been
-# applied yet (e.g. test DBs). We never DROP an existing table.
-SIGNALS_RAW_FALLBACK_DDL = """
-CREATE TABLE IF NOT EXISTS signals_raw (
-    signal_id     INTEGER PRIMARY KEY AUTOINCREMENT,
-    url           TEXT,
-    title         TEXT,
-    excerpt       TEXT,
-    canonical_url TEXT,
-    source_status TEXT
-);
-"""
-
 
 def ensure_schema(conn: sqlite3.Connection) -> None:
-    conn.executescript(SIGNALS_VERIFIED_DDL)
-    conn.executescript(SIGNALS_RAW_FALLBACK_DDL)
-    conn.commit()
+    configure_connection(conn)
+    apply_discovery_migrations(conn)
 
 
 # --------------------------------------------------------------------------- #
@@ -518,7 +488,7 @@ def main(argv: list[str] | None = None) -> int:
 
     db_path = Path(args.db)
     db_path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(db_path)
+    conn = open_discovery_sqlite(db_path, row_factory=None)
     try:
         with _build_client() as client:
             verdicts = run(

@@ -415,9 +415,10 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 | M2-VPS-02 | M2_VPS02_SYNC_OK |
 | M2-VPS-03 | M2_VPS03_OK |
 
-## 2026-06-01-010 — D5.1 OAuth discovery [ASSIGNED → copilot-windows]
-## 2026-06-01-009 — O15 delegation smoke [ASSIGNED → copilot-vps]
-## 2026-06-01-008 — D3.1 tournament #403 [ASSIGNED → copilot-vps]
+## 2026-06-01-011 — G-D5.1 OAuth VPS audit [ASSIGNED → copilot-vps]
+## 2026-06-01-008 — D3.1 tournament #403 [DONE → M1_D31_TOURNAMENT_PARTIAL, #437 merged]
+## 2026-06-01-010 — D5.1 OAuth discovery Windows [DONE → D51_OAUTH_DISCOVERY_OK]
+## 2026-06-01-009 — O15 delegation smoke [DONE → O15_DELEGATION_SMOKE_OK]
 
 ## 2026-06-01-007 — O15 Ola 3 gerencias semilla prompts [DONE → O15_OLA3_VPS_OK]
 - ROLE: delivery, ops (new), communication-director, linkedin-writer; charter `docs/ops/o15-ola3-gerencias-semillas-charter.md`

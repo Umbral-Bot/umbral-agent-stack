@@ -5,6 +5,7 @@
 # === SECRETS & CREDENTIALS ===
 .env
 *.env
+env.rick
 !env.template
 openclaw/env
 **/auth-profiles.json

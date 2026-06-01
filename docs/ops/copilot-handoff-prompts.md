@@ -1,78 +1,94 @@
 # Copilot handoff prompts (Windows + VPS)
 
-Copy-paste blocks for David. Cursor updates this file when creating VPS tasks.
-**Rule:** Cursor must push `main` before you paste a VPS prompt.
+Copy-paste blocks for David. **Cursor must push `main` before VPS prompts.**
 
-Last push for prompts below: **`8c557504`** (2026-06-01).
+Last push: _update after commit_
 
 ---
 
-## Thread A — Copilot-VPS · D3.1 torneo real (#403)
+## Estado rápido (2026-06-01)
 
-**Cuándo:** nuevo hilo Copilot con acceso SSH VPS, o hilo VPS existente limpio.
+| Hilo | Estado | Acción |
+|---|---|---|
+| **A** Copilot-VPS D3.1 | ✅ Hecho | #437 mergeado squash (David aprobó) |
+| **B** Copilot-VPS O15 delegación | ✅ Hecho | `O15_DELEGATION_SMOKE_OK` |
+| **C** Copilot Windows OAuth discovery | ✅ Hecho | `D51_OAUTH_DISCOVERY_OK` |
+| **E** Copilot-VPS G-D5.1 audit | 🔴 **PEGAR AHORA** | Task 011 |
+| **F** Copilot-VPS delivery post-mortem | ⏸ opcional | Task 012 (si se crea) |
+
+---
+
+## Thread E — Copilot-VPS · G-D5.1 OAuth audit (SIGUIENTE)
+
+**Dónde:** hilo **Copilot con SSH VPS** (nuevo o el de O15 delegación ya cerrado).
 
 ```
-Sos Copilot-VPS (rick@srv1431451.hstgr.cloud). Lee y ejecuta la tarea:
+Sos Copilot-VPS (rick@srv1431451.hstgr.cloud). David aprobó opción b: audit read-only primero.
 
-  ~/umbral-agent-stack/.agents/tasks/2026-06-01-008-d3.1-tournament-issue-403.md
+Lee y ejecuta:
 
-Preflight obligatorio (PROTOCOL.md):
+  ~/umbral-agent-stack/.agents/tasks/2026-06-01-011-copilot-vps-gd51-oauth-audit.md
+
+Preflight:
   cd ~/umbral-agent-stack && git pull --ff-only origin main && git log -1 --oneline
-  test -f .agents/tasks/2026-06-01-008-d3.1-tournament-issue-403.md && echo TASK_FILE_OK
+  test -f .agents/tasks/2026-06-01-011-copilot-vps-gd51-oauth-audit.md && echo TASK_FILE_OK
 
-Skill: openclaw-vps-operator + publication-gatekeeper (merge solo con rubric + autorización en task).
+Objetivo: inventariar vars GOOGLE_* en ~/.config/openclaw/env (solo nombres SET/UNSET, NUNCA valores),
+smoke read-only Gmail + Calendar vía Worker si aplica, tabla vs ADR-16 G1-G5.
 
-David autorizó torneo real D3.1 y merge del winner si cumple rubric del spec YAML.
-NO reinicies gateway salvo allowAgents roto. Evidencia en ~/.coord-ag-evidence/D3.1/
+Evidencia: ~/.coord-ag-evidence/G-D5.1/
+NO OAuth browser, NO gateway restart, NO imprimir tokens.
 
-Al cerrar: VEREDICTO en el Log de la task + comentario en issue #403 con JSON métricas.
+VEREDICTO: G_D51_VPS_AUDIT_OK o bloqueo honesto. Log + push task si actualizás.
 ```
 
 ---
 
-## Thread B — Copilot-VPS · O15 delegación smoke
+## Thread B — Copilot-VPS · O15 delegación ✅ CERRADO
 
-**Cuándo:** hilo VPS separado (no mezclar con torneo activo si main está ocupado).
+Ya ejecutado (`O15_DELEGATION_SMOKE_OK`, push `52a4b6e`). **No pegar de nuevo** salvo regresión.
+
+---
+
+## Thread A — Copilot-VPS · D3.1 torneo ✅ CERRADO
+
+Torneo partial + **#437 mergeado squash** por David. **No pegar de nuevo.**
+
+Follow-up opcional (post-mortem lane delivery vacía) — pedir a Cursor task 012.
+
+---
+
+## Thread C — Copilot Windows · OAuth discovery ✅ CERRADO
+
+Discovery hecho en task 010. **No pegar de nuevo.**
+
+---
+
+## Thread G — Copilot Windows · housekeeping env.rick (opcional, 2 min)
+
+**Dónde:** Copilot Chat **Windows** (sin SSH). Solo si querés confirmar local.
 
 ```
-Sos Copilot-VPS. Ejecuta smoke de delegación O15 (read-only + traza):
+Read-only en c:\GitHub\umbral-agent-stack:
 
-  ~/umbral-agent-stack/.agents/tasks/2026-06-01-009-copilot-vps-o15-delegation-smoke.md
+1. Confirmá que env.rick NO está trackeado: git ls-files env.rick (debe estar vacío).
+2. Confirmá que .gitignore incluye la línea env.rick (Cursor ya la agregó).
+3. NO abras ni pegues contenido de env.rick ni .env.
 
-Preflight: git pull --ff-only origin main en ~/umbral-agent-stack.
-
-Objetivo: una delegación orchestrator → rick-ops (health read-only), registro en
-~/.openclaw/trace/delegations.jsonl, reporte a main. NO torneo, NO openclaw.json writes.
-
-VEREDICTO esperado: O15_DELEGATION_SMOKE_OK o bloqueo honesto con evidencia.
+Reportá: TRACKED yes/no, gitignore ok yes/no.
 ```
 
 ---
 
-## Thread C — Copilot Windows · D5.1 OAuth discovery (read-only)
+## Thread F — Copilot-VPS · post-mortem rick-delivery lane vacía (opcional)
 
-**Cuándo:** Copilot Chat en VS Code / Windows, sin SSH.
-
-```
-Sos Copilot Windows (workstation David). Tarea read-only D5.1 prep:
-
-  c:\GitHub\umbral-agent-stack\.agents\tasks\2026-06-01-010-copilot-windows-o15-gmail-calendar-discovery.md
-
-NO toques VPS ni openclaw.json. Inventaria en Windows + repo qué falta para OAuth
-rick.asistente@gmail.com (Gmail + Calendar + Notion guest): creds, env vars, docs ADR-16.
-
-Entrega: tabla gaps + recomendación de siguiente gate para David. Sin prometer OAuth live.
-```
-
----
-
-## Thread D — Copilot Windows · Revisar spec torneo (opcional)
+**Dónde:** hilo VPS **después** de G-D5.1, si David pide diagnosticar por qué sqlite-impl entregó 0.
 
 ```
-Revisá en repo umbral-agent-stack (main):
+Sos Copilot-VPS. Read-only post-mortem D3.1 lane sqlite-impl (rick-delivery):
 
-  openclaw/workspace-templates/skills/multi-agent-tournament-orchestrator/examples/d31-issue-403-tournament-spec.yaml
+Revisá sesión subagent f430c306... en ~/.openclaw/agents/rick-delivery/sessions/
+y evidencia ~/.coord-ag-evidence/D3.1/. Explicá por qué el run terminó done sin commits.
 
-¿El scope de lanes sqlite-impl / sqlite-qa es acotado y mergeable? Sugerí ajustes al
-winner_rubric o task_template sin ejecutar nada en VPS.
+NO fixes, NO prompt changes — solo diagnóstico + recomendación para task Cursor.
 ```

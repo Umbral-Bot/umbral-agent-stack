@@ -410,6 +410,11 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 - PROTOCOL § Handoffs Copilot-VPS + copilot-instructions.md actualizados; tareas 001/002/2026-05-30-001 con Preflight repo.
 - Pushed: `umbral-agent-stack` **d65b080f**, `notion-governance` **411da7c**.
 
+## 2026-06-01 — VPS_SYNC post-push [DONE → VPS_SYNC_OK]
+- Copilot-VPS: `git pull --ff-only` → HEAD **daeda1df**; TASK_001/002/D02 OK.
+- Runtime estable post G-D1a-RESTART: `maxSpawnDepth=2`, gateway active pid 1045197 (since 2026-06-01 05:38:52), health 200. Sin writes.
+- Gates G-D1a + G-D1a-RESTART verificados y repo↔VPS alineados.
+
 ## 2026-06-01-001 — G-D1a: elevar maxSpawnDepth a 2 en openclaw.json (VPS) [DONE → G_D1a_PATCH_OK]
 - creada por: Cursor (lead) 2026-06-01 como D1.1 / gate G-D1a del Plan Q2 v2 (`notion-governance/docs/roadmap/13-q2-2026-v2-deployment-spine.md §6`)
 - ejecutado por Copilot-VPS 2026-06-01 05:25 (skill `openclaw-vps-operator`). VEREDICTO **G_D1a_PATCH_OK**.

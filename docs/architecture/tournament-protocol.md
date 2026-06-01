@@ -78,9 +78,9 @@ Until then, docs and smoke tests reference **option A only**.
 Before any tournament spawn:
 
 1. `agents.defaults.subagents.maxSpawnDepth >= 2` — ✅ VPS 2026-06-01.
-2. Current session is **standalone** with `sessions_spawn` available — **new gate from G-D1b**.
-3. Each lane `agent_id` in `allowAgents` of spawn parent (`main`).
-4. `gh auth status` green in lane workspace.
+2. Current session is **standalone** with `sessions_spawn` available — ✅ D3.0 smoke 2026-06-01.
+3. Each lane `agent_id` in `allowAgents` of spawn parent (`main`) — ✅ VPS **`["rick-orchestrator", "rick-delivery", "rick-qa"]`** (D3.0; David confirmed keep 2026-06-01).
+4. `gh auth status` green in lane workspace — ✅ VPS 2026-06-01.
 5. Git worktree clean; `main` fast-forward.
 
 ---

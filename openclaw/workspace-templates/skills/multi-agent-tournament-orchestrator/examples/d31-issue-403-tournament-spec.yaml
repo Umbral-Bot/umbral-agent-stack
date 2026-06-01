@@ -1,0 +1,51 @@
+# D3.1 — First real tournament (issue #403 SQLite hardening)
+# David authorized 2026-06-01. Run from main standalone only (G-D1b).
+# Preflight: scripts/openclaw/tournament-preflight-dry-run.sh this file
+
+issue_id: Umbral-Bot/umbral-agent-stack#403
+issue_url: https://github.com/Umbral-Bot/umbral-agent-stack/issues/403
+issue_title: "Wave 2 — SQLite hardening"
+repo_path: ~/umbral-agent-stack
+usd_budget_cap: 1.50
+cleanup_policy: keep-losers
+winner_rubric: |
+  Real tournament rubric (issue #403 acceptance):
+  1. Meets acceptance in issue body (busy_timeout, migration runner + schema_migrations, policy doc).
+  2. Idempotent migrations; no database is locked under concurrent smoke pattern if tested.
+  3. Smallest correct diff that satisfies (1) — tie-break fewer total line changes, then green checks.
+  4. Reject PRs that scope-creep outside sqlite discovery stages / migrations / policy doc.
+lanes:
+  - specialty: sqlite-impl
+    agent_id: rick-delivery
+    runTimeoutSeconds: 2400
+    task_template: |
+      # Tournament lane: sqlite-impl (D3.1)
+      Issue: {{issue_url}}
+      Branch: tournament/{{tournament_id}}/lane-sqlite-impl
+      Read issue acceptance + `docs/editorial-pipeline/sqlite-policy.md`.
+
+      Implement:
+      - PRAGMA busy_timeout=5000 at connection setup in discovery stage scripts.
+      - Migration runner with `schema_migrations` table (ordered, idempotent).
+      - Update sqlite-policy.md for what you changed.
+
+      Contract:
+      - NO merge yourself. NO touch other lanes.
+      - PR title: [tournament:{{tournament_id}}:sqlite-impl] {{issue_title}}
+      - Announce JSON: pr_url, diff_stats, checks_status, specialty=sqlite-impl
+  - specialty: sqlite-qa
+    agent_id: rick-qa
+    runTimeoutSeconds: 2400
+    task_template: |
+      # Tournament lane: sqlite-qa (D3.1)
+      Issue: {{issue_url}}
+      Branch: tournament/{{tournament_id}}/lane-sqlite-qa
+      Same issue as sqlite-impl lane — independent implementation.
+
+      Emphasize: tests or smoke script proving idempotent migrations + busy_timeout;
+      still deliver full fix if tests alone insufficient.
+
+      Contract:
+      - NO merge yourself.
+      - PR title: [tournament:{{tournament_id}}:sqlite-qa] {{issue_title}}
+      - Announce JSON: pr_url, diff_stats, checks_status, specialty=sqlite-qa

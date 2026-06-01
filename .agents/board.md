@@ -415,7 +415,7 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 | M2-VPS-02 | M2_VPS02_SYNC_OK |
 | M2-VPS-03 | M2_VPS03_OK |
 
-## 2026-06-01-006 — O15 Ola 2 Mejora Continua prompts [IN_PROGRESS]
+## 2026-06-01-006 — O15 Ola 2 Mejora Continua prompts [DONE → O15_OLA2_VPS_OK]
 - Repo: `main` + `rick-orchestrator` IDENTITY; QA/tracker ROLE; charter `docs/ops/o15-ola2-mejora-continua-charter.md`
 - Sync script: `IDENTITY.md` / `ROLE.md` (override-only)
 - Pendiente VPS: pull + `sync_openclaw_workspace_governance.py --execute`

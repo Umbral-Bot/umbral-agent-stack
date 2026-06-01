@@ -1,7 +1,7 @@
 ---
 id: 2026-06-01-006-o15-ola2-mejora-continua-prompts
 title: "O15 Ola 2 — Mejora Continua prompts + sync IDENTITY/ROLE"
-status: in_progress
+status: done
 assigned_to: cursor
 created: 2026-06-01
 gates:
@@ -42,8 +42,8 @@ Verificar presencia de bloques O15 en:
 
 ### 2026-06-01 — Cursor
 
-Repo-side prompts + charter + sync script extendido. Pendiente: pull + execute en VPS.
+Repo-side prompts + charter + sync script extendido. VPS pull `e5494cb0` + sync execute 2026-06-01T16:28:05Z — main/orchestrator IDENTITY UPDATE; QA/tracker ROLE CREATE.
 
 ## VEREDICTO
 
-_Pendiente VPS sync → **O15_OLA2_REPO_OK**_
+**O15_OLA2_VPS_OK**

@@ -1,10 +1,10 @@
 # Smoke tournament spec — docs/79 §7
 # Use only after D2.2 dry-run passes on VPS. Replace issue_* with a trivial doc typo issue David approves.
 
-tournament_id: umbral-agent-stack-smoke-00000000
-issue_id: Umbral-Bot/umbral-agent-stack#0
-issue_url: https://github.com/Umbral-Bot/umbral-agent-stack/issues/REPLACE
-issue_title: "Smoke — fix trivial doc typo (tournament pre-flight)"
+tournament_id: umbral-agent-stack-434-484277c0
+issue_id: Umbral-Bot/umbral-agent-stack#434
+issue_url: https://github.com/Umbral-Bot/umbral-agent-stack/issues/434
+issue_title: "Smoke D3.0: fix typo Tournamnet in smoke-tournament-marker.md"
 repo_path: ~/umbral-agent-stack
 usd_budget_cap: 0.25
 cleanup_policy: keep-losers

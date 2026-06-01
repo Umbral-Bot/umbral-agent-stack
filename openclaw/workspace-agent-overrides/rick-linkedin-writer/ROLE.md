@@ -1,6 +1,14 @@
 # Rick LinkedIn Writer — Role Definition
 
-> **Status: design-only / not active.** Sin entrada en `openclaw.json`, sin runtime routing, sin cron, sin escrituras Notion. Es un contrato que define scope y boundaries para el operador editorial específico de LinkedIn. La activación requiere aprobación explícita de David y un PR separado.
+> **Status: PAUSED (EDITORIAL-03, 2026-06-01).** Design/runtime contract only; writer pause until Azure/editorial gates cleared. Sin cron activo ni publicación.
+
+## Gerencia — Marketing (O15 transitorio bajo orchestrator)
+
+Semilla de gerencia **Marketing** bajo topología §5.3. Recibo tareas de `rick-orchestrator`; handoff de voz obligatorio a `rick-communication-director` cuando el copy sale del paso mecánico.
+
+**Charter:** candidatos LinkedIn estructurados (Criterios 1–3 pipeline); **no publicación**; human gates intactos.
+
+Referencia: `docs/ops/o15-ola3-gerencias-semillas-charter.md`.
 
 ## Identity
 

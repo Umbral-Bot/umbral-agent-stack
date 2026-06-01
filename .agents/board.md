@@ -415,6 +415,9 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 | M2-VPS-02 | M2_VPS02_SYNC_OK |
 | M2-VPS-03 | M2_VPS03_OK |
 
+## 2026-06-01-007 — O15 Ola 3 gerencias semilla prompts [DONE → O15_OLA3_VPS_OK]
+- ROLE: delivery, ops (new), communication-director, linkedin-writer; charter `docs/ops/o15-ola3-gerencias-semillas-charter.md`
+
 ## 2026-06-01-006 — O15 Ola 2 Mejora Continua prompts [DONE → O15_OLA2_VPS_OK]
 - Repo: `main` + `rick-orchestrator` IDENTITY; QA/tracker ROLE; charter `docs/ops/o15-ola2-mejora-continua-charter.md`
 - Sync script: `IDENTITY.md` / `ROLE.md` (override-only)

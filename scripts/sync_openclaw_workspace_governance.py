@@ -41,6 +41,9 @@ WORKSPACES = {
         "~/.openclaw/workspaces/rick-communication-director"
     ).expanduser(),
     "rick-tracker": Path("~/.openclaw/workspaces/rick-tracker").expanduser(),
+    "rick-linkedin-writer": Path(
+        "~/.openclaw/workspaces/rick-linkedin-writer"
+    ).expanduser(),
 }
 
 

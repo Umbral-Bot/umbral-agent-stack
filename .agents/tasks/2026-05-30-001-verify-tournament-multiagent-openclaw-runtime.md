@@ -28,6 +28,21 @@ Cerrar los `[VPS?]` del diagnóstico Q2 v2 con una verificación **read-only** d
 - Pendientes de confirmar hoy: `maxSpawnDepth`, `agents.list`, `model.primary` vigente, salud gateway/worker, y estado real de la pipeline Granola (muerta desde 2026-05-11 según VPS check 2026-05-20).
 - Skills aplicables: `openclaw-vps-operator`, `windows-vps-execution-split`, `secret-output-guard` (NO imprimir valores de tokens; solo fingerprints/longitud).
 
+## Preflight repo (Copilot-VPS — obligatorio, primer paso)
+
+Cursor debe haber hecho **push a `main`** antes de este handoff. En VPS:
+
+```bash
+cd ~/umbral-agent-stack
+git fetch origin main
+git checkout main
+git pull --ff-only origin main
+git log -1 --oneline
+test -f .agents/tasks/2026-05-30-001-verify-tournament-multiagent-openclaw-runtime.md && echo TASK_FILE_OK || echo TASK_FILE_MISSING
+```
+
+Si `TASK_FILE_MISSING` → STOP y reportar a Cursor (falta sync).
+
 ## Acciones requeridas (todas read-only)
 
 ### 1. Gateway + agentes OpenClaw

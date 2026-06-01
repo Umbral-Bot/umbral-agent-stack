@@ -117,7 +117,7 @@ USER → rick-orchestrator (depth 0)
 
 Las 3 del ADR §7, copiadas como gate del skill:
 
-1. `agents.defaults.subagents.maxSpawnDepth >= 2` en `~/.openclaw/openclaw.json`. **Hoy: NO. Default es 1.** Requiere PR separado + sign-off David vía skill `openclaw-vps-operator`. **Sin esto el primer tournament no corre.**
+1. `agents.defaults.subagents.maxSpawnDepth >= 2` en `~/.openclaw/openclaw.json`. **VPS (2026-06-01): ✅ `2` en disco y runtime efectivo** (gates G-D1a + G-D1a-RESTART; evidencia `~/.coord-ag-evidence/G-D1a/`). Sin esto el primer tournament no corre.
 2. Cada `agent_id` de los lanes tiene `tools.profile: "coding"` (necesario para `git`/`gh`).
 3. `gh auth status` green dentro del workspace de cada lane (hoy: OK como user `rick`, token `UmbralBIM`).
 

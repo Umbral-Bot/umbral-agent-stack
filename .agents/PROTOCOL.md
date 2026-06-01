@@ -20,13 +20,53 @@
 4. **Al iniciar sesión**, el agente lee `.agents/board.md` para entender el estado actual.
 5. **Al terminar trabajo**, el agente actualiza el estado de la tarea y agrega una entrada al log.
 
+## Handoffs Copilot-VPS (runtime en VPS)
+
+Cuando Cursor (lead) crea o asigna una tarea con `owner: copilot-vps` o que referencia
+archivos del repo (`.agents/tasks/*.md`, `docs/`, skills):
+
+### Obligación de Cursor **antes** del handoff
+
+1. **Commit + push a `main`** en cada repo que la tarea cite (típicamente
+   `umbral-agent-stack`; también `notion-governance` si referencia `docs/audits/` o
+   `docs/roadmap/`).
+2. Anotar en el **Log** de la tarea el commit SHA pusheado (o en el board).
+3. **No pedir a David que pegue el prompt** hasta confirmar push OK (`git push origin main`).
+
+Sin push previo, Copilot-VPS no encontrará el archivo de tarea → STOP predecible.
+
+### Obligación de Copilot-VPS **al iniciar** (preflight repo)
+
+Ejecutar **antes** de leer la tarea o tocar runtime:
+
+```bash
+cd ~/umbral-agent-stack
+git fetch origin main
+git checkout main
+git pull --ff-only origin main
+git log -1 --oneline
+test -f .agents/tasks/<YYYY-MM-DD-NNN-*.md> && echo TASK_FILE_OK || echo TASK_FILE_MISSING
+```
+
+Si `TASK_FILE_MISSING` → STOP y reportar a Cursor (falta sync; no improvisar).
+
+Si la tarea cita `notion-governance/`, el clone en VPS debe estar actualizado por la
+misma regla cuando aplique (submodule, segundo clone, o lectura vía path acordado).
+
+### Plantilla en cada tarea VPS
+
+Toda tarea con `owner: copilot-vps` debe incluir una sección **## Preflight repo** con el
+bloque `git pull` anterior y el path exacto del archivo de tarea.
+
 ### Delegación temporal del lead (2026-03-24 — sprint R23)
 
-Por decisión de David, **Codex** asume el **rol de coordinación** hasta nuevo aviso: cerrar capitalización de hallazgos (ramas `codex/*`, follow-ups del diagnóstico, deuda operativa documentada). Cursor pasa a **apoyo** (revisión puntual si David lo pide).
+Por decisión de David, **Codex** asume el **rol de coordinación** hasta nuevo aviso:
 
 - **Codex** puede: crear/actualizar tareas en `.agents/tasks/`, editar `.agents/board.md`, y **delegar en Claude** creando una tarea con `assigned_to: claude` (David pega el contenido en Claude Code).
 - **Claude** (Claude Code): ejecuta tareas explícitas en `.agents/tasks/` cuando `assigned_to: claude` y el mismo formato de Log/criterios.
 - **Fin de la delegación:** David o Cursor lo anuncian en `board.md` y se restaura la regla “board lo mantiene Cursor” salvo excepciones futuras.
+
+Cursor retoma lead por defecto para handoffs VPS salvo anuncio contrario en `board.md`.
 
 ## Estructura de archivos
 
@@ -127,6 +167,18 @@ Cuando la tarea en `tasks/` indique **"para GitHub Copilot"** o que el agente ti
 2. Usar **credenciales desde `.env`** (variables ya listadas en `.env.example`). No hardcodear keys; no commitear `.env`.
 3. Si hace falta una key de Azure (p. ej. Bing Search), crearla en el Portal y añadir el valor solo a `.env` (y en VPS a `~/.config/openclaw/env`).
 4. Al terminar, actualizar `status` a `done` y añadir entrada en **## Log** con archivos modificados y resultado de pruebas.
+
+### Para Copilot-VPS (runtime OpenClaw / worker en VPS)
+
+Cuando `owner: copilot-vps` o la tarea toca `~/.openclaw/`, systemd user services, o evidencia
+en `~/.coord-ag-evidence/`:
+
+1. **Preflight repo** (obligatorio): `git pull --ff-only origin main` en `~/umbral-agent-stack`;
+   verificar que existe el archivo `.agents/tasks/<id>-*.md` citado en el handoff.
+2. Leer skill `openclaw-vps-operator` (`.agents/skills/openclaw-vps-operator/SKILL.md`).
+3. Respetar `secret-output-guard`; no imprimir tokens.
+4. Al terminar: VEREDICTO + evidencia + entrada en **## Log** de la tarea (David o Cursor
+   actualiza el archivo en repo en un commit posterior).
 
 ## Convenciones
 

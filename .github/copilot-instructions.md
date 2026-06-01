@@ -33,6 +33,26 @@ This repository is the **source code** of services that run on a remote VPS unde
 - PRs in draft state — deploy only after merge.
 - Local-only experimentation that won't be committed.
 
+### Handoffs Copilot-VPS (task files en `.agents/tasks/`)
+
+Cuando Cursor asigna una tarea que Copilot-VPS debe leer del repo:
+
+1. **Cursor:** commit + push a `main` **antes** de pedir a David que pegue el prompt.
+2. **Copilot-VPS — primer comando obligatorio:**
+
+```bash
+cd ~/umbral-agent-stack
+git fetch origin main
+git checkout main
+git pull --ff-only origin main
+git log -1 --oneline
+test -f .agents/tasks/<task-file>.md && echo TASK_FILE_OK || echo TASK_FILE_MISSING
+```
+
+3. Si `TASK_FILE_MISSING` → STOP (no improvisar; falta push de Cursor).
+
+Ver también `.agents/PROTOCOL.md` § Handoffs Copilot-VPS.
+
 ### Skill that implements this
 
 [`.agents/skills/vps-deploy-after-edit/SKILL.md`](../.agents/skills/vps-deploy-after-edit/SKILL.md) — invocable end-to-end procedure with health-check commands per service.

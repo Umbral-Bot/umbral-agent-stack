@@ -399,6 +399,21 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 - side-finding capitalizado como task 038 candidata (NO blocker): 500 errors en `dispatcher/notion_poller.py:198` rama `_resolve_review_targets` `session_capitalizable`. Pre-existente, NO regresión 037, path Control Room funciona OK. Agendar Ola 2.
 - restricciones respetadas: F-INC-002 (fetch+log pre push), secret-output-guard #8 (IDs prefix-only), SOUL Reglas 21+22 (gap honesto declarado cuando smoke real bloqueado por dedupe Redis con comment viejo, esperó input nuevo de David en lugar de fabricar PASS), NO restart gateway, NO touch openclaw.json/model.primary
 
+## 2026-06-01-002 — G-D1a-RESTART: gateway + smoke post maxSpawnDepth=2 [DONE → G_D1a_RESTART_OK]
+- Copilot-VPS 2026-06-01 05:38: restart gateway pid 1045197, health 200, `maxSpawnDepth=2` **efectivo en runtime**.
+- pre/post gateway: 2026-05-21 11:15:35 → 2026-06-01 05:38:52. OpenClaw 2026.5.19, 8 agentes smoke OK.
+- intacto: model.primary gpt-5.4, worker, Granola. evidencia: `~/.coord-ag-evidence/G-D1a-RESTART/`.
+- D1.1 spine cerrado. policy-05 boundary registrado. Siguiente: D1.2 launch-point, D1.3 G-D1c, D2 wrapper.
+
+## 2026-06-01-001 — G-D1a: elevar maxSpawnDepth a 2 en openclaw.json (VPS) [DONE → G_D1a_PATCH_OK]
+- creada por: Cursor (lead) 2026-06-01 como D1.1 / gate G-D1a del Plan Q2 v2 (`notion-governance/docs/roadmap/13-q2-2026-v2-deployment-spine.md §6`)
+- ejecutado por Copilot-VPS 2026-06-01 05:25 (skill `openclaw-vps-operator`). VEREDICTO **G_D1a_PATCH_OK**.
+- resultado: `agents.defaults.subagents.maxSpawnDepth` `<NOT SET>` → `2` (única adición). `JSON_VALID`. backup `~/.coord-ag-evidence/G-D1a/openclaw.json.bak.202606010525`.
+- **NO restart**: gateway activo desde 2026-05-21 11:15:35 sin cambio → patch en disco, **NO efectivo en runtime** hasta `G-D1a-RESTART` (gate separado, pendiente firma David).
+- torneos siguen bloqueados (depth efectivo = default) hasta el restart.
+- archivo tarea: `.agents/tasks/2026-06-01-001-gd1a-set-maxspawndepth.md`
+- capitalizado: spine D1.1 + outcome D0.3 (`notion-governance/docs/audits/2026-05-30-vps-reality-check-q2v2-d0.md`, sección G-D1a verificada; resto D0.2 PENDING).
+
 ## 2026-05-30-001 — Verificación read-only runtime torneo+multi-agente+OpenClaw (base Q2 v2) [ASSIGNED → copilot-vps]
 - creada por: Cursor (lead) 2026-05-30 como paso D0.2 del nuevo Plan Q2 v2 (`notion-governance/docs/roadmap/13-q2-2026-v2-deployment-spine.md`)
 - origen: revisión completa Q2 agendada 2026-05-30 + diagnóstico `notion-governance/docs/audits/2026-05-30-q2-tournament-multiagent-openclaw-diagnostic.md`

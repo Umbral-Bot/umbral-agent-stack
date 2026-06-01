@@ -2,9 +2,10 @@
 Sync canonical OpenClaw workspace governance files into live VPS workspaces.
 
 This script is intended to run inside the VPS checkout after `git pull`.
-It syncs the persistent workspace governance file (`HEARTBEAT.md`) into the
-canonical OpenClaw workspaces, applying per-agent overrides where present and
-writing backups for replaced files.
+It syncs persistent workspace governance files (`HEARTBEAT.md`, and per-agent
+`IDENTITY.md` / `ROLE.md` when overrides exist) into the canonical OpenClaw
+workspaces, applying per-agent overrides where present and writing backups for
+replaced files.
 
 `BOOTSTRAP.md` remains versioned in the repo as an onboarding asset, but mature
 workspaces should normally keep `skipBootstrap=true` and avoid persisting that
@@ -28,6 +29,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 TEMPLATE_DIR = REPO_ROOT / "openclaw" / "workspace-templates"
 OVERRIDES_DIR = REPO_ROOT / "openclaw" / "workspace-agent-overrides"
 DEFAULT_FILES = ("HEARTBEAT.md",)
+# Sync only when an agent-specific override exists (avoid pushing template IDENTITY to all workspaces).
+OVERRIDE_ONLY_FILES = ("IDENTITY.md", "ROLE.md")
 WORKSPACES = {
     "main": Path("~/.openclaw/workspace").expanduser(),
     "rick-delivery": Path("~/.openclaw/workspaces/rick-delivery").expanduser(),
@@ -66,7 +69,7 @@ def build_sync_plan(
 ) -> list[SyncEntry]:
     resolved_home = home or Path.home()
     plan: list[SyncEntry] = []
-    filenames = list(DEFAULT_FILES)
+    filenames = list(DEFAULT_FILES) + list(OVERRIDE_ONLY_FILES)
     if include_bootstrap:
         filenames.insert(0, "BOOTSTRAP.md")
 
@@ -75,6 +78,9 @@ def build_sync_plan(
         if home is not None:
             target_dir = resolved_home / raw_target_dir.expanduser().relative_to(Path.home())
         for filename in filenames:
+            override = repo_root / "openclaw" / "workspace-agent-overrides" / agent_id / filename
+            if filename in OVERRIDE_ONLY_FILES and not override.exists():
+                continue
             source = governance_source_for(agent_id, filename, repo_root=repo_root)
             if not source.exists():
                 raise FileNotFoundError(f"Missing governance source: {source}")

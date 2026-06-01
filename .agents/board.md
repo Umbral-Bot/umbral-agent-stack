@@ -415,6 +415,11 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 | M2-VPS-02 | M2_VPS02_SYNC_OK |
 | M2-VPS-03 | M2_VPS03_OK |
 
+## 2026-06-01-006 — O15 Ola 2 Mejora Continua prompts [IN_PROGRESS]
+- Repo: `main` + `rick-orchestrator` IDENTITY; QA/tracker ROLE; charter `docs/ops/o15-ola2-mejora-continua-charter.md`
+- Sync script: `IDENTITY.md` / `ROLE.md` (override-only)
+- Pendiente VPS: pull + `sync_openclaw_workspace_governance.py --execute`
+
 ## 2026-06-01-005 — D3.0 tournament smoke [DONE → M1_D30_SMOKE_OK]
 - Issue #434; winner PR #435 (lane-a); spawn sessions_spawn x2 verified.
 - Scripts: `scripts/vps/d3-smoke-*.sh`

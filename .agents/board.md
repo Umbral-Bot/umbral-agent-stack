@@ -405,6 +405,11 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 - intacto: model.primary gpt-5.4, worker, Granola. evidencia: `~/.coord-ag-evidence/G-D1a-RESTART/`.
 - D1.1 spine cerrado. policy-05 boundary registrado. Siguiente: D1.2 launch-point, D1.3 G-D1c, D2 wrapper.
 
+## 2026-06-01 — Regla handoff VPS + push main [DONE]
+- David: siempre push `main` antes de handoff Copilot-VPS que lea `.agents/tasks/*.md`; tareas incluyen `git pull --ff-only origin main`.
+- PROTOCOL § Handoffs Copilot-VPS + copilot-instructions.md actualizados; tareas 001/002/2026-05-30-001 con Preflight repo.
+- Pushed: `umbral-agent-stack` **d65b080f**, `notion-governance` **411da7c**.
+
 ## 2026-06-01-001 — G-D1a: elevar maxSpawnDepth a 2 en openclaw.json (VPS) [DONE → G_D1a_PATCH_OK]
 - creada por: Cursor (lead) 2026-06-01 como D1.1 / gate G-D1a del Plan Q2 v2 (`notion-governance/docs/roadmap/13-q2-2026-v2-deployment-spine.md §6`)
 - ejecutado por Copilot-VPS 2026-06-01 05:25 (skill `openclaw-vps-operator`). VEREDICTO **G_D1a_PATCH_OK**.

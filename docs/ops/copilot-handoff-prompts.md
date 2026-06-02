@@ -2,19 +2,19 @@
 
 Copy-paste blocks for David. **Cursor pushes `main` before VPS prompts.**
 
-Last updated: 2026-06-02 — **D33_WINNER_MERGED** @ `da8eba85` (#446); #447 OPEN
+Last updated: 2026-06-02 — **D3.3 CERRADO** — `D33_VPS_POST_MERGE_OK` @ `fce55518`
 
 ---
 
 ## Prompts listos para enviar (orden)
 
-| # | Agente | Cuándo | Autorización David |
-|---|---|---|---|
-| 3 | **Copilot-VPS** | 🔴 **SIGUIENTE** | post-merge AD (read-only) |
-| — | Copilot Windows | ✅ | `D33_WINNER_MERGED` — #446 squash @ `da8eba85` |
-| 1c | Copilot-VPS | ✅ | `D33_DELIVERY_LANE_RESCUED` — PR #447 |
+| # | Agente | Estado |
+|---|---|---|
+| D3.3 torneo | ✅ | PARTIAL → rescate #447 → winner #446 @ `da8eba85` → VPS sync OK |
+| D3.4 retro | ⏸ | Cursor — protocolo torneos post-3 runs |
+| #447 loser | ⏸ | cerrar PR cuando no se necesite comparación |
 
-Cierre torneo: winner [#446](https://github.com/Umbral-Bot/umbral-agent-stack/pull/446) merged · loser [#447](https://github.com/Umbral-Bot/umbral-agent-stack/pull/447) kept open
+Cierre: [#445](https://github.com/Umbral-Bot/umbral-agent-stack/issues/445) · winner merged · [#447](https://github.com/Umbral-Bot/umbral-agent-stack/pull/447) OPEN
 
 ---
 
@@ -27,7 +27,7 @@ Cierre torneo: winner [#446](https://github.com/Umbral-Bot/umbral-agent-stack/pu
 | **AB** | Copilot-VPS | ✅ | `M1_D33_TOURNAMENT_PARTIAL` → rescate + judge |
 | **1c** | Copilot-VPS | ✅ | PR #447 rescate delivery |
 | **AC** | Copilot Windows | ✅ | `D33_WINNER_MERGED` #446 @ `da8eba85` |
-| **AD** | Copilot-VPS | 🔴 | post-merge sync |
+| **AD** | Copilot-VPS | ✅ | `D33_VPS_POST_MERGE_OK` @ `fce55518` |
 | **AF/AG** | paralelo | ⏸ | Mission Control / Granola |
 
 **HEAD:** `da8eba85` (`feat: ... (#446)`). **#447** OPEN (loser kept). Issue #445: cerrar tras AD + opcional close issue.

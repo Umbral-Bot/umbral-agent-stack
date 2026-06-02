@@ -1,7 +1,7 @@
 ---
 id: 2026-06-01-012-tournament-lane-pr-gate
 title: "D3.1 follow-up — lane done only when PR exists (orchestrator + docs/79)"
-status: assigned
+status: done
 assigned_to: cursor
 created_by: copilot-vps-post-mortem
 created: 2026-06-01
@@ -31,4 +31,17 @@ Post-mortem Copilot-VPS Thread F: session `d4427b0c`, subagent `f430c306`, turn 
 
 ## VEREDICTO
 
-_Pendiente → **M1_D31_LANE_GATE_OK**_
+**M1_D31_LANE_GATE_OK**
+
+## Log
+
+### codex 2026-06-02
+
+- Implementado gate documental: lane completa sólo con branch pusheado + PR URL verificada.
+- Actualizados:
+  - `docs/79-tournament-protocol-openclaw-native.md`
+  - `openclaw/workspace-templates/skills/multi-agent-tournament-orchestrator/SKILL.md`
+  - `docs/architecture/tournament-protocol.md`
+- Validación: `git diff --check`.
+- PR: https://github.com/Umbral-Bot/umbral-agent-stack/pull/441
+- PR sin merge.

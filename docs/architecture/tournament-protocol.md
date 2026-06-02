@@ -83,6 +83,8 @@ Before any tournament spawn:
 4. `gh auth status` green in lane workspace — ✅ VPS 2026-06-01.
 5. Git worktree clean; `main` fast-forward.
 
+Lane completion is defined by `docs/79` §4.1: branch pushed + verified PR URL. A lane with subagent success but no PR must be recorded as `lane_incomplete` and excluded from judge.
+
 ---
 
 ## 6. References

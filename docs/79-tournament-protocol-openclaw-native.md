@@ -36,6 +36,7 @@ Un tournament es una unidad atómica con:
 2. **Cada lane es un agente distinto.** No se puede tener dos lanes con el mismo `agent_id` (rompe la metáfora "specialist lane" y duplica transcript path).
 3. **El spawn parent es `main` en sesión standalone (G-D1b).** El wrapper corre en `main` con `sessions_spawn` disponible. **No** lanzar desde `rick-orchestrator` nested (ISSUE-001 filtra spawn). Ver [`docs/architecture/tournament-protocol.md`](architecture/tournament-protocol.md).
 4. **El branch base es siempre `main` actualizado.** Pre-flight aborta si el repo tiene worktree dirty o si `git fetch origin main` no es fast-forward.
+5. **Una lane sólo está completa con branch pusheado + PR URL verificada.** Un subagent puede reportar `finalStatus=success`, pero el wrapper debe tratar la lane como `lane_incomplete` si no existe `pr_url` válido y verificable con `gh pr view`.
 
 ---
 
@@ -88,8 +89,9 @@ USER → main (standalone entry — G-D1b; NOT nested rick-orchestrator)
         │  cada lane:
         │   1. crear branch tournament/<id>/lane-<specialty>
         │   2. implementar
-        │   3. gh pr create
-        │   4. announce-back: { pr_url, diff_stats, checks_status }
+        │   3. push branch
+        │   4. gh pr create
+        │   5. announce-back: { pr_url, diff_stats, checks_status }
         ▼
    Push-completion (nativo) → orchestrator junta los N announces
         │
@@ -114,6 +116,26 @@ USER → main (standalone entry — G-D1b; NOT nested rick-orchestrator)
 
 ---
 
+## 4.1 Phase collect: lane completion gate
+
+Durante collect, el wrapper no debe inferir completion desde el estado del subagent. La regla de verdad es:
+
+```text
+lane_complete = branch_pushed && pr_url_present && gh_pr_view_ok
+```
+
+Checklist por lane:
+
+1. Buscar announce-back con `pr_url`.
+2. Verificar que el branch remoto `tournament/<tournament_id>/lane-<specialty>` existe.
+3. Ejecutar `gh pr view <pr_url> --json url,headRefName,title,mergeable,statusCheckRollup`.
+4. Confirmar que `headRefName` coincide con el branch de la lane y que el título empieza con `[tournament:<tournament_id>:<specialty>]`.
+5. Si cualquier paso falla, registrar `lane_incomplete` aunque el subagent haya terminado con `finalStatus=success`.
+
+Un tournament puede pasar a judge sólo con lanes completas. Para v1, abortar si hay menos de 2 PRs válidos; con 2+ PRs válidos, las lanes sin PR quedan excluidas de `lanes_completed` y se reportan como incompletas en métricas.
+
+---
+
 ## 5. Pre-conditions (chequeadas por el wrapper)
 
 Las 3 del ADR §7, copiadas como gate del skill:
@@ -134,6 +156,7 @@ Por tournament (post-merge), el wrapper emite:
   "issue_id": "Umbral-Bot/umbral-agent-stack#321",
   "lanes_total": 3,
   "lanes_completed": 3,
+  "lane_incomplete": 0,
   "lanes_pr_mergeable": 2,
   "winner_specialty": "backend-typescript",
   "time_to_first_pr_seconds": 412,

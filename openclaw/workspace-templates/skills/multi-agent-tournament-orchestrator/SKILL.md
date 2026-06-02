@@ -78,7 +78,7 @@ lanes:
       ...
 ```
 
-**Invariants:** 2–5 lanes; distinct `agent_id` per lane; branch `tournament/<tournament_id>/lane-<specialty>`; PR title `[tournament:<tournament_id>:<specialty>] <issue_title>`.
+**Invariants:** 2–5 lanes; distinct `agent_id` per lane; branch `tournament/<tournament_id>/lane-<specialty>`; PR title `[tournament:<tournament_id>:<specialty>] <issue_title>`. A lane is complete only after branch push + verified PR URL; subagent `finalStatus=success` without PR is `lane_incomplete`.
 
 Example smoke spec: `examples/smoke-tournament-spec.yaml` in this skill folder.
 
@@ -134,7 +134,7 @@ sessions_spawn({
 ## Tournament lane contract (read-only)
 - Branch: `tournament/<tournament_id>/lane-<specialty>` from updated `main`.
 - Do NOT merge your own PR.
-- When done, create PR with title `[tournament:<tournament_id>:<specialty>] <issue_title>`.
+- Push the branch and create PR with title `[tournament:<tournament_id>:<specialty>] <issue_title>`.
 - Announce back to parent with JSON:
   {"pr_url":"...","diff_stats":"...","checks_status":"...","specialty":"<specialty>"}
 ```
@@ -150,9 +150,12 @@ sessions_spawn({
 ## Phase 3 — Collect PRs
 
 1. Wait until N announce-backs received or all lanes timeout.
-2. For each announce, parse `pr_url`; verify title matches `[tournament:<tournament_id>:<specialty>]`.
-3. Enrich with `gh pr view <url> --json title,mergeable,statusCheckRollup,additions,deletions`.
-4. If lane failed without PR: mark `lanes_completed` accordingly; continue if ≥2 PRs mergeable (else abort tournament).
+2. For each lane, require `branch_pushed && pr_url_present && gh_pr_view_ok`.
+3. For each announce, parse `pr_url`; verify title matches `[tournament:<tournament_id>:<specialty>]`.
+4. Enrich with `gh pr view <url> --json url,headRefName,title,mergeable,statusCheckRollup,additions,deletions`.
+5. Verify `headRefName == tournament/<tournament_id>/lane-<specialty>`.
+6. If the subagent reports `finalStatus=success` but no verified PR exists, mark the lane `lane_incomplete`; do not count it in `lanes_completed`.
+7. Continue only if ≥2 verified PRs are present; otherwise abort tournament before judge.
 
 Record `time_to_first_pr_seconds` from spawn start to first valid PR.
 
@@ -160,7 +163,7 @@ Record `time_to_first_pr_seconds` from spawn start to first valid PR.
 
 ## Phase 4 — Judge (orchestrator turn on `main`)
 
-1. Load `winner_rubric` + collected PR metadata into one message.
+1. Load `winner_rubric` + verified PR metadata into one message. Exclude `lane_incomplete` lanes from winner consideration.
 2. Decide `winner_specialty` explicitly (name the lane, cite PR URL).
 3. **David gate:** if tournament is not smoke and David has not said "ok, merge winner" → stop after recommendation, do not merge.
 
@@ -209,6 +212,7 @@ Emit JSON (stdout + optional Notion/Linear when wired):
   "issue_id": "<owner/repo>#<n>",
   "lanes_total": 3,
   "lanes_completed": 3,
+  "lane_incomplete": 0,
   "lanes_pr_mergeable": 2,
   "winner_specialty": "backend-typescript",
   "winner_pr_url": "https://github.com/.../pull/...",

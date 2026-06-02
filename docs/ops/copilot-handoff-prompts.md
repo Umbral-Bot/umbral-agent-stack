@@ -549,6 +549,8 @@ VEREDICTO: D41_VPS_POST_MERGE_OK | D41_VPS_POST_MERGE_BLOCKED
 Incluir: HEAD SHA, pytest summary, confirmación mission_control/ presente
 ```
 
+**Resultado VPS 2026-06-02:** `D41_VPS_POST_MERGE_OK` — HEAD `9730bfa6`; `MISSION_CONTROL_TREE_OK`; `ADR_DOC_OK`; `.venv` **35 passed**; `python3` sin pytest (retry .venv); sin deploy/restart/env.
+
 ---
 
 ## PROMPT 5 — Copilot-VPS · Thread AG · D5.3 Granola soak (paralelo)
@@ -597,6 +599,129 @@ Log: $LOG
 
 ---
 
+## PROMPT 5b — Copilot-VPS · D5.3 follow-up poller (read-only) 🔴
+
+**Pegar tras `D53_GRANOLA_SOAK_DEGRADED`.** Objetivo: explicar *por qué* poller degradado + cursor vacío — **sin restart** salvo frase explícita David.
+
+```
+Sos Copilot-VPS. D5.3 follow-up — diagnóstico notion-poller y cursor Redis. READ-ONLY.
+
+cd ~/umbral-agent-stack && git pull --ff-only origin main
+
+EV=~/.coord-ag-evidence/D5.3
+mkdir -p "$EV"
+LOG="$EV/poller-diagnostic-$(date +%Y%m%d%H%M).log"
+exec > >(tee -a "$LOG") 2>&1
+
+echo "=== poller process ==="
+pgrep -af notion-poller || true
+for pid in $(pgrep -f notion-poller 2>/dev/null || true); do
+  ps -p "$pid" -o pid,lstart,etime,cmd --no-headers
+  ls -l /proc/$pid/cwd 2>/dev/null || true
+done
+
+echo "=== systemd units (user) ==="
+systemctl --user list-unit-files 2>/dev/null | grep -i notion || true
+systemctl --user status notion-poller 2>&1 | head -20 || true
+ls -la ~/.config/systemd/user/*notion* 2>/dev/null || true
+ls -la ~/umbral-agent-stack/infra/systemd/*notion* 2>/dev/null || true
+
+echo "=== repo poller entrypoint ==="
+ls -la scripts/vps/notion-poller* 2>/dev/null || true
+head -40 scripts/vps/notion-poller-daemon.py 2>/dev/null || true
+
+echo "=== redis notion keys ==="
+redis-cli KEYS 'notion:*' 2>/dev/null | head -30
+redis-cli GET notion:poll:cursor 2>/dev/null | wc -c
+redis-cli TTL notion:poll:cursor 2>/dev/null || true
+
+echo "=== worker granola 7d (sample) ==="
+journalctl --user -u umbral-worker --since "7 days ago" --no-pager 2>/dev/null | grep -iE 'granola|notion.poll|poller' | tail -15 || true
+
+echo "=== ops_log last 5 granola ==="
+grep -i granola ~/.config/umbral/ops_log.jsonl 2>/dev/null | tail -5 || true
+
+echo "=== git worktree dirty? ==="
+git status --short --branch --untracked-files=no | head -10
+
+Tabla: hallazgo | evidencia | hipótesis | acción recomendada (sin ejecutar)
+Recomendación debe separar: (A) solo observar, (B) reiniciar poller con autorización, (C) reiniciar worker G-D0
+
+VEREDICTO: D53_POLLER_DIAG_READY | D53_POLLER_DIAG_BLOCKED
+Log: $LOG
+```
+
+---
+
+## PROMPT 6 — Copilot Windows · cerrar PR #447 (loser D3.3) ⏸
+
+**Solo si David autoriza cerrar sin merge** (lane delivery rescate; winner ya es #446):
+
+```
+autorizo cerrar PR 447 sin merge
+
+Sos Copilot Windows. Cerrar PR #447 (loser D3.3 delivery lane) sin merge.
+
+cd C:\GitHub\umbral-agent-stack
+git pull --ff-only origin main
+gh pr view 447 --repo Umbral-Bot/umbral-agent-stack --json number,state,title,headRefName
+gh pr close 447 --repo Umbral-Bot/umbral-agent-stack --comment "Cierre administrativo: winner torneo D3.3 fue PR #446 @ da8eba85. Lane delivery (#447) no mergeada por decisión David."
+
+VEREDICTO: D33_PR447_CLOSED | D33_PR447_CLOSE_BLOCKED
+```
+
+---
+
+## PROMPT 6b — Copilot Windows · cerrar issue #445 ⏸
+
+**Solo si David confirma que #445 puede cerrarse** (merge vía #446; comentarios judge ya publicados):
+
+```
+autorizo cerrar issue 445
+
+Sos Copilot Windows.
+
+gh issue view 445 --repo Umbral-Bot/umbral-agent-stack --json state,title,closedAt
+gh issue close 445 --repo Umbral-Bot/umbral-agent-stack --comment "Torneo D3.3 cerrado: winner PR #446 squash da8eba85. Lane delivery #447 no mergeada. Retro: docs/ops/d3-tournament-retro-2026-06-02.md"
+
+VEREDICTO: D33_ISSUE445_CLOSED | D33_ISSUE445_CLOSE_BLOCKED
+```
+
+---
+
+## PROMPT G-D0 — Copilot-VPS · restart worker (gate explícito) ⏸
+
+**NO pegar sin frase literal de David:** `autorizo restart worker G-D0`
+
+```
+autorizo restart worker G-D0
+
+Sos Copilot-VPS. Gate G-D0 — restart umbral-worker controlado.
+
+cd ~/umbral-agent-stack && git pull --ff-only origin main
+EV=~/.coord-ag-evidence/G-D0
+mkdir -p "$EV"
+LOG="$EV/worker-restart-$(date +%Y%m%d%H%M).log"
+exec > >(tee -a "$LOG") 2>&1
+
+echo "=== pre: health ==="
+curl -sS -o /dev/null -w "%{http_code}" http://127.0.0.1:8088/health || true
+journalctl --user -u umbral-worker -n 5 --no-pager 2>/dev/null || true
+
+systemctl --user restart umbral-worker
+sleep 3
+systemctl --user is-active umbral-worker
+curl -sS http://127.0.0.1:8088/health | head -c 200; echo
+
+echo "=== post: granola grep 5m ==="
+journalctl --user -u umbral-worker --since "5 minutes ago" --no-pager 2>/dev/null | grep -iE 'granola|error' | tail -10 || true
+
+VEREDICTO: G_D0_RESTART_OK | G_D0_RESTART_BLOCKED
+Log: $LOG
+```
+
+---
+
 ## Archivo — Torneo D3.3 AB (cerrado PARTIAL)
 
 | Campo | Valor |
@@ -631,13 +756,15 @@ Log: $LOG
 
 ## Próximo foco Q2
 
-| Prioridad | Spine | Secuencia |
-|---|---|---|
-| 1 | **D4.1** | Mission Control PR (AF) |
-| 2 | D4.1 | AF paralelo |
-| 3 | D5.3 | AG paralelo |
-| 4 | D3.4 | Retro protocolo tras D3.3 |
-| 5 | D6.1 | KB AECO (26-jun) |
+| Prioridad | Spine | Prompt | Agente |
+|---|---|---|---|
+| 1 | **D5.3** | **5b** poller diagnostic | Copilot-VPS |
+| 2 | D3 cleanup | **6** cerrar #447 | Copilot Windows (gate David) |
+| 3 | D3 cleanup | **6b** cerrar #445 | Copilot Windows (gate David) |
+| 4 | G-D0 | restart worker | Copilot-VPS (solo `autorizo restart worker G-D0`) |
+| 5 | D6.1 | KB AECO | 26-jun |
+
+**Cerrado 2026-06-02:** D3.4 retro · D4.1 (#448 + VPS post-merge).
 
 Friday retro **2026-06-05** — actualizar dashboard §4 spine v2.
 

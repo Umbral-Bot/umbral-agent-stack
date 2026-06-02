@@ -11,9 +11,9 @@ Last updated: 2026-06-02 — D4.1 BLOCKED · D5.3 DEGRADED
 | # | Agente | Estado |
 |---|---|---|
 | D3 + D3.4 | ✅ | retro `d3-tournament-retro-2026-06-02.md` |
-| D4.1 | 🟡 | `D41_MISSION_CONTROL_PR_BLOCKED` — ver **PROMPT 4b** |
+| D4.1 | 🟢 | **PR #448** — `D41_MISSION_CONTROL_PR_READY` (Cursor cherry-pick) |
 | D5.3 | 🟡 | `D53_GRANOLA_SOAK_DEGRADED` — ver notas abajo |
-| **4b** | 🔴 **SIGUIENTE** | Copilot Windows — cherry-pick O13.1 + PR |
+| **4b** | ✅ | Hecho — merge #448 pendiente Copilot Windows |
 | #447 | ⏸ | cerrar PR loser |
 
 Retro doc: [`d3-tournament-retro-2026-06-02.md`](d3-tournament-retro-2026-06-02.md)
@@ -410,7 +410,9 @@ Entregable: PR URL + count tests mission + 5 bullets diff summary
 VEREDICTO: D41_MISSION_CONTROL_PR_READY | D41_MISSION_CONTROL_PR_BLOCKED
 ```
 
-**Resultado VPS 2026-06-02:** `D41_MISSION_CONTROL_PR_BLOCKED` — rebase conflict `.gitignore` + `pyproject.toml`; rama remota stale; **sin PR**; tests mission **35 passed** en rama pre-rebase (.venv).
+**Resultado VPS 2026-06-02:** `D41_MISSION_CONTROL_PR_BLOCKED` — rebase conflict; sin PR.
+
+**Desbloqueo Cursor Windows 2026-06-02:** `D41_MISSION_CONTROL_PR_READY` — cherry-pick `3f150c46` → rama `copilot/feat-mission-control-o13-1-rebase` @ `49fa9d7a`; conflictos resueltos (ambos deps + ambos gitignore blocks); **35 passed**; **PR #448** https://github.com/Umbral-Bot/umbral-agent-stack/pull/448 — merge squash pendiente Copilot Windows.
 
 ---
 

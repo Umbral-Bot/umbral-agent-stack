@@ -423,9 +423,9 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 - Loser [#447](https://github.com/Umbral-Bot/umbral-agent-stack/pull/447) kept open
 - **D33_VPS_POST_MERGE_OK** @ `fce55518`
 - **D3.4 retro:** `M1_D34_TOURNAMENT_RETRO_OK` — `docs/ops/d3-tournament-retro-2026-06-02.md`
-- **D4.1:** `D41_MISSION_CONTROL_PR_BLOCKED` (rebase conflict; sin PR) → **PROMPT 4b** Windows cherry-pick `3f150c46`
+- **D4.1:** `D41_MISSION_CONTROL_PR_READY` — **PR #448** (cherry-pick `49fa9d7a`); merge squash → Copilot Windows
 - **D5.3:** `D53_GRANOLA_SOAK_DEGRADED` — poller degradado, cursor vacío, sin Granola reciente
-- **Siguiente:** PROMPT 4b; opcional G-D0/poller (David gate)
+- **Siguiente:** merge #448; opcional G-D0/poller (David gate); cerrar #447
 - Lección D3.2: exigir PR URL por lane antes de announce done
 
 ## 2026-06-02-019 — D3.2 tournament O2 backup alerts #440 [DONE — salvage merged]

@@ -2,7 +2,7 @@
 
 Copy-paste blocks for David. **Cursor pushes `main` before VPS prompts.**
 
-Last updated: 2026-06-02 — **D3.4 retro OK** · siguiente **D4.1**
+Last updated: 2026-06-02 — D4.1 BLOCKED · D5.3 DEGRADED
 
 ---
 
@@ -10,10 +10,11 @@ Last updated: 2026-06-02 — **D3.4 retro OK** · siguiente **D4.1**
 
 | # | Agente | Estado |
 |---|---|---|
-| D3 (0–3 + retro) | ✅ | Retro: `docs/ops/d3-tournament-retro-2026-06-02.md` |
-| **D4.1** | 🔴 **SIGUIENTE** | Copilot Windows — Mission Control PR |
-| D5.3 | ⏸ | Copilot-VPS — Granola soak (PROMPT 5) |
-| #447 | ⏸ | cerrar PR loser cuando no haga falta |
+| D3 + D3.4 | ✅ | retro `d3-tournament-retro-2026-06-02.md` |
+| D4.1 | 🟡 | `D41_MISSION_CONTROL_PR_BLOCKED` — ver **PROMPT 4b** |
+| D5.3 | 🟡 | `D53_GRANOLA_SOAK_DEGRADED` — ver notas abajo |
+| **4b** | 🔴 **SIGUIENTE** | Copilot Windows — cherry-pick O13.1 + PR |
+| #447 | ⏸ | cerrar PR loser |
 
 Retro doc: [`d3-tournament-retro-2026-06-02.md`](d3-tournament-retro-2026-06-02.md)
 
@@ -29,7 +30,8 @@ Retro doc: [`d3-tournament-retro-2026-06-02.md`](d3-tournament-retro-2026-06-02.
 | **1c** | Copilot-VPS | ✅ | PR #447 rescate delivery |
 | **AC** | Copilot Windows | ✅ | `D33_WINNER_MERGED` #446 @ `da8eba85` |
 | **AD** | Copilot-VPS | ✅ | `D33_VPS_POST_MERGE_OK` @ `fce55518` |
-| **AF/AG** | paralelo | ⏸ | Mission Control / Granola |
+| **D4.1** | VPS probe | 🟡 | rebase conflict; sin PR |
+| **D5.3** | VPS soak | 🟡 | `D53_GRANOLA_SOAK_DEGRADED` |
 
 **HEAD:** `da8eba85` (`feat: ... (#446)`). **#447** OPEN (loser kept). Issue #445: cerrar tras AD + opcional close issue.
 
@@ -408,6 +410,55 @@ Entregable: PR URL + count tests mission + 5 bullets diff summary
 VEREDICTO: D41_MISSION_CONTROL_PR_READY | D41_MISSION_CONTROL_PR_BLOCKED
 ```
 
+**Resultado VPS 2026-06-02:** `D41_MISSION_CONTROL_PR_BLOCKED` — rebase conflict `.gitignore` + `pyproject.toml`; rama remota stale; **sin PR**; tests mission **35 passed** en rama pre-rebase (.venv).
+
+---
+
+## PROMPT 4b — Copilot Windows · D4.1 desbloqueo (cherry-pick) 🔴
+
+**No rebasear la rama entera** (cientos de commits ya en main). Cherry-pick solo el scaffold O13.1.
+
+```
+/goal Crear PR Mission Control O13.1 desde main limpio: cherry-pick commit scaffold, resolver solo conflictos en pyproject.toml y .gitignore, pytest mission verde, abrir PR. Responder en español.
+
+Sos Copilot Windows. D4.1 desbloqueo tras D41_MISSION_CONTROL_PR_BLOCKED.
+
+=== Contexto ===
+- Rama remota stale: copilot/feat-mission-control-o13-1 @ e1d2bc38
+- Commit scaffold O13.1: 3f150c46 feat(mission_control): O13.1 scaffold FastAPI + 5 endpoints + HTMX dashboard
+- VPS: rebase origin/main → conflict .gitignore + pyproject.toml; sin PR
+- VPS tests en rama vieja: 35 passed (-k mission) con .venv
+
+=== Fase 0 — main limpio ===
+cd C:\GitHub\umbral-agent-stack
+git fetch origin
+git checkout main
+git pull --ff-only origin main
+git status --short --branch
+
+=== Fase 1 — Rama fresca (preferido) ===
+git checkout -b copilot/feat-mission-control-o13-1-rebase main
+git cherry-pick 3f150c46
+# Si conflictos: resolver MÍNIMO en pyproject.toml + .gitignore (mantener deps/tests mission_control de 3f150c46 + main actual)
+# NO traer commits de seguridad/env antiguos de la rama vieja
+
+=== Fase 2 — Tests ===
+.\.venv\Scripts\python.exe -m pytest tests/ -k mission -q
+# Debe pasar (~35 tests). Si falla → documentar y NO abrir PR
+
+=== Fase 3 — Push + PR ===
+git push -u origin copilot/feat-mission-control-o13-1-rebase
+gh pr create --repo Umbral-Bot/umbral-agent-stack \
+  --head copilot/feat-mission-control-o13-1-rebase \
+  --base main \
+  --title "feat(mission_control): O13.1 scaffold FastAPI read-only dashboard" \
+  --body "D4.1 O13.1. Cherry-pick 3f150c46 onto current main (stale branch rebase blocked). FastAPI :8089 read-only. Test plan: pytest -k mission. NO deploy VPS in this PR."
+
+=== Fase 4 — Veredicto ===
+VEREDICTO: D41_MISSION_CONTROL_PR_READY | D41_MISSION_CONTROL_PR_BLOCKED
+Incluir: PR URL, conflictos resueltos (si hubo), pytest summary, archivos mission_control tocados
+```
+
 ---
 
 ## PROMPT 5 — Copilot-VPS · Thread AG · D5.3 Granola soak (paralelo)
@@ -442,6 +493,17 @@ Tabla final: componente | alive | último evento | errores 24h | truncamiento ev
 VEREDICTO: D53_GRANOLA_SOAK_OK | D53_GRANOLA_SOAK_DEGRADED | D53_GRANOLA_SOAK_BLOCKED
 Log: $LOG
 ```
+
+**Resultado VPS 2026-06-02:** `D53_GRANOLA_SOAK_DEGRADED`
+
+| Componente | Hallazgo |
+|---|---|
+| notion-poller | Proceso vivo desde May 24; **unit systemd inactive/not-found** |
+| redis cursor | **vacío** |
+| ops_log Granola | **0 eventos** Jun 01–02; último visible Apr 24 |
+| worker/dispatcher | activos; sin truncamiento Granola 24h |
+
+**No reiniciar** sin `autorizo restart worker G-D0` o runbook poller explícito. Evidencia: `~/.coord-ag-evidence/D5.3/granola-soak-*.log`
 
 ---
 

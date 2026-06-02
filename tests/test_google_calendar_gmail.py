@@ -442,7 +442,7 @@ class TestAuthHelpers:
             token_uri="https://oauth2.googleapis.com/token",
             client_id="calendar-client-id",
             client_secret="calendar-client-secret",
-            scopes=["https://www.googleapis.com/auth/calendar"],
+            scopes=["https://www.googleapis.com/auth/calendar.events"],
         )
         mock_creds.refresh.assert_called_once_with("request-sentinel")
         assert headers["Authorization"] == "Bearer refreshed-calendar-token"

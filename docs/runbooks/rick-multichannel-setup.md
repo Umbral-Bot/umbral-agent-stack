@@ -226,7 +226,7 @@ from client.worker_client import WorkerClient
 
 wc = WorkerClient()
 print(wc.run("google.calendar.list_events", {
-    "calendar_id": "primary",
+    "calendar_id": "david.a.moreira.m@gmail.com",
     "max_results": 5,
 }))
 PY
@@ -235,5 +235,6 @@ PY
 ### 10.3 Propuesta de evento (recordatorio de gate)
 
 - `calendar-propose` debe construir título de propuesta con prefijo `[PROPUESTA]`.
+- `calendar-propose` debe usar el `calendar_id` explícito del calendario primary de David compartido con Rick; no usar `primary` desde Rick.
 - `gmail-router` debe usar `gmail.create_draft` para outbound y **no** `send` directo.
-- Si la skill usa `calendar_id` explícito en `create_event`, validar manualmente whitelist de David (D6) en el flujo de operación.
+- Validar whitelist de David (D6) en el flujo de operación antes de crear propuestas.

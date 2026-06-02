@@ -7,12 +7,14 @@ whitelist checks are enforced before forwarding.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Set
+from typing import AbstractSet, Any, Dict, List, Optional
 
 from client.worker_client import WorkerClient
 
 
 PROPOSE_PREFIX = "[PROPUESTA]"
+DAVID_PRIMARY_CALENDAR_ID = "david.a.moreira.m@gmail.com"
+DAVID_ALLOWED_CALENDAR_IDS: AbstractSet[str] = frozenset({DAVID_PRIMARY_CALENDAR_ID})
 
 
 def _normalize_prefix(title: str) -> str:
@@ -36,11 +38,11 @@ def create_event_proposal(
     title: str,
     start: str,
     end: Optional[str] = None,
-    calendar_id: str = "primary",
+    calendar_id: str = DAVID_PRIMARY_CALENDAR_ID,
     timezone: str = "America/Santiago",
     description: str = "",
     attendees: Optional[List[str]] = None,
-    allowed_calendar_ids: Optional[Set[str]] = None,
+    allowed_calendar_ids: Optional[AbstractSet[str]] = None,
     wc: Optional[WorkerClient] = None,
 ) -> Dict[str, Any]:
     """Create a calendar proposal (`google.calendar.create_event`) with explicit prefix."""
@@ -49,11 +51,14 @@ def create_event_proposal(
     if not start:
         return {"ok": False, "error": "start is required"}
 
-    if allowed_calendar_ids is not None and calendar_id not in allowed_calendar_ids:
+    effective_allowed_calendar_ids = (
+        DAVID_ALLOWED_CALENDAR_IDS if allowed_calendar_ids is None else allowed_calendar_ids
+    )
+    if calendar_id not in effective_allowed_calendar_ids:
         return {
             "ok": False,
             "error": "calendar_id not in whitelist",
-            "allowed_calendar_ids": sorted(allowed_calendar_ids),
+            "allowed_calendar_ids": sorted(effective_allowed_calendar_ids),
         }
 
     payload: Dict[str, Any] = {
@@ -72,19 +77,22 @@ def create_event_proposal(
 
 
 def list_events(
-    calendar_id: str = "primary",
+    calendar_id: str = DAVID_PRIMARY_CALENDAR_ID,
     time_min: Optional[str] = None,
     time_max: Optional[str] = None,
     max_results: int = 10,
-    allowed_calendar_ids: Optional[Set[str]] = None,
+    allowed_calendar_ids: Optional[AbstractSet[str]] = None,
     wc: Optional[WorkerClient] = None,
 ) -> Dict[str, Any]:
     """List events (`google.calendar.list_events`) from a whitelist-limited calendar."""
-    if allowed_calendar_ids is not None and calendar_id not in allowed_calendar_ids:
+    effective_allowed_calendar_ids = (
+        DAVID_ALLOWED_CALENDAR_IDS if allowed_calendar_ids is None else allowed_calendar_ids
+    )
+    if calendar_id not in effective_allowed_calendar_ids:
         return {
             "ok": False,
             "error": "calendar_id not in whitelist",
-            "allowed_calendar_ids": sorted(allowed_calendar_ids),
+            "allowed_calendar_ids": sorted(effective_allowed_calendar_ids),
         }
 
     payload: Dict[str, Any] = {
@@ -98,4 +106,10 @@ def list_events(
     return _run("google.calendar.list_events", payload, wc=wc)
 
 
-__all__ = ["create_event_proposal", "list_events", "PROPOSE_PREFIX"]
+__all__ = [
+    "create_event_proposal",
+    "list_events",
+    "PROPOSE_PREFIX",
+    "DAVID_PRIMARY_CALENDAR_ID",
+    "DAVID_ALLOWED_CALENDAR_IDS",
+]

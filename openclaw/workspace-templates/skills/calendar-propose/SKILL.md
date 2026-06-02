@@ -21,7 +21,7 @@ Skill para trabajar con Calendar en el canal de Rick.
 - Sigue ADR-16:
   - **D4**: scope mínimo `https://www.googleapis.com/auth/calendar.events`.
   - **D5**: escritura Calendar = `propose + confirm` (no autoapply).
-  - **D6**: whitelisting de calendar_id por design del entorno (David-primary en este gate).
+  - **D6**: whitelist estricta de `calendar_id` al primary de David compartido con Rick.
 
 ## Recomendación de gate humano
 
@@ -44,7 +44,7 @@ Inputs sugeridos:
   "end": "2026-03-10T11:00:00",
   "timezone": "America/Santiago",
   "attendees": ["cliente@email.com"],
-  "calendar_id": "primary"
+  "calendar_id": "david.a.moreira.m@gmail.com"
 }
 ```
 
@@ -56,7 +56,7 @@ Task: `google.calendar.list_events`
 
 ```json
 {
-  "calendar_id": "primary",
+  "calendar_id": "david.a.moreira.m@gmail.com",
   "time_min": "2026-03-01T00:00:00Z",
   "time_max": "2026-03-02T00:00:00Z",
   "max_results": 10
@@ -71,6 +71,7 @@ Retorna `{"ok": true, "events": [{"id": "...", "summary": "...", "start": "...",
 - No borra eventos.
 - No crea calendarios nuevos.
 - No usa `calendar` scope global.
+- No usa `primary` desde Rick; ADR-16 exige el `calendar_id` explícito del calendario de David.
 
 ## Notas de implementación
 

@@ -59,7 +59,7 @@ No deploy VPS en este task — handoff separado a Copilot-VPS post-merge PR.
 
 - [x] Dos skills con SKILL.md completos y consistentes con ADR-16 D5/D6
 - [x] Tests nuevos pasan; no regresión en suite existente relacionada
-- [x] Runbook actualizado con comandos smoke read-only (list drafts, list events David primary)
+- [x] Runbook actualizado con comandos smoke read-only (list drafts, list events David calendar_id explícito)
 - [x] PR `codex/feat-o15-gmail-calendar-skills` — **no merge** (Copilot merge master)
 - [x] Log en este task con PR #439 + resumen diseño
 

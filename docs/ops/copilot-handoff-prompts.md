@@ -12,12 +12,11 @@ Last updated: 2026-06-02 — D4.1 cerrado · D5.3 + cleanup siguientes
 |---|---|---|
 | D3 + D3.4 | ✅ | retro `d3-tournament-retro-2026-06-02.md` |
 | D4.1 | ✅ | `D41_MERGED` + `D41_VPS_POST_MERGE_OK` @ `9730bfa6` |
-| D5.3 | 🟡 | soak DEGRADED · diag READY → **5c + 5d** |
-| **5c** | ✅ | `D53_FIX_ALREADY_IN_MAIN` — sin PR (#361 + tests OK) |
-| **5d** | ⏭ omitir | No hay PR — ir directo a **5e** |
-| **5e** | 🔴 **SIGUIENTE** | Copilot-VPS — runtime apply (gate David) |
-| **5b** | ✅ | `D53_POLLER_DIAG_READY` — log `poller-diagnostic-202606021409.log` |
-| **5e** | ⏸ | Copilot-VPS — restart poller/worker **después** de merge 5d |
+| D5.3 | 🟡 | soak DEGRADED · código OK en main → **5e** runtime |
+| **5c** | ✅ | `D53_FIX_ALREADY_IN_MAIN` — sin PR (#361 + 11 pytest) |
+| **5d** | ⏭ | omitir (no PR) |
+| **5e** | 🔴 **SIGUIENTE** | Copilot-VPS — restart poller+worker (gate David) |
+| **5b** | ✅ | `D53_POLLER_DIAG_READY` |
 | **6** | ⏸ | Copilot Windows — cerrar PR **#447** (David gate) |
 | **6b** | ⏸ | Copilot Windows — cerrar issue **#445** (David gate) |
 | **3d** | ✅ | VPS post-merge D4.1 |
@@ -708,13 +707,21 @@ gh pr create --repo Umbral-Bot/umbral-agent-stack \
 - [ ] Merge vía PROMPT 5d (Copilot Windows)
 - [ ] Después merge: PROMPT 5e VPS restart (David gate)"
 
-VEREDICTO: D53_FIX_PR_READY | D53_FIX_PR_BLOCKED
+VEREDICTO: D53_FIX_PR_READY | D53_FIX_PR_BLOCKED | D53_FIX_ALREADY_IN_MAIN
 Incluir: PR URL, diff summary, pytest output, si el bug ya estaba fixed en main (solo test)
 ```
 
+**Resultado Cursor 2026-06-02:** `D53_FIX_ALREADY_IN_MAIN` — sin `if not bootstrap` en `poll_comments`; `tests/test_notion_poll_bootstrap.py` + cursor tests **11 passed**; logs VPS `bootstrap=True`/`cursor_used=False` son esperables con `__TAIL__`. **No abrir PR.** Siguiente: **5e** (omitir 5d).
+
 ---
 
-## PROMPT 5d — Copilot Windows · merge PR D5.3 🔴 (2/2)
+## PROMPT 5d — Copilot Windows · merge PR D5.3 ⏭
+
+**Omitir** si 5c devolvió `D53_FIX_ALREADY_IN_MAIN` (caso 2026-06-02). Solo usar si existe PR con fix nuevo y CI verde.
+
+---
+
+## PROMPT 5d (legacy) — Copilot Windows · merge PR D5.3
 
 **Para:** **Copilot Windows**. **Después** de `D53_FIX_PR_READY` (o si PR ya existe con CI verde). Hace **squash merge** — no implementa código.
 

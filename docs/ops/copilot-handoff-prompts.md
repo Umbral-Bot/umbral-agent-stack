@@ -13,7 +13,8 @@ Last updated: 2026-06-02 — D4.1 BLOCKED · D5.3 DEGRADED
 | D3 + D3.4 | ✅ | retro `d3-tournament-retro-2026-06-02.md` |
 | D4.1 | 🟢 | **PR #448** — `D41_MISSION_CONTROL_PR_READY` (Cursor cherry-pick) |
 | D5.3 | 🟡 | `D53_GRANOLA_SOAK_DEGRADED` — ver notas abajo |
-| **4b** | ✅ | Hecho — merge #448 pendiente Copilot Windows |
+| **4c** | 🔴 **SIGUIENTE** | Copilot Windows — merge squash **#448** |
+| **4b** | ✅ | Hecho (Cursor) |
 | #447 | ⏸ | cerrar PR loser |
 
 Retro doc: [`d3-tournament-retro-2026-06-02.md`](d3-tournament-retro-2026-06-02.md)
@@ -30,7 +31,7 @@ Retro doc: [`d3-tournament-retro-2026-06-02.md`](d3-tournament-retro-2026-06-02.
 | **1c** | Copilot-VPS | ✅ | PR #447 rescate delivery |
 | **AC** | Copilot Windows | ✅ | `D33_WINNER_MERGED` #446 @ `da8eba85` |
 | **AD** | Copilot-VPS | ✅ | `D33_VPS_POST_MERGE_OK` @ `fce55518` |
-| **D4.1** | VPS probe | 🟡 | rebase conflict; sin PR |
+| **D4.1** | PR #448 | 🟢 | merge 4c → post-merge VPS opcional |
 | **D5.3** | VPS soak | 🟡 | `D53_GRANOLA_SOAK_DEGRADED` |
 
 **HEAD:** `da8eba85` (`feat: ... (#446)`). **#447** OPEN (loser kept). Issue #445: cerrar tras AD + opcional close issue.
@@ -460,6 +461,53 @@ gh pr create --repo Umbral-Bot/umbral-agent-stack \
 VEREDICTO: D41_MISSION_CONTROL_PR_READY | D41_MISSION_CONTROL_PR_BLOCKED
 Incluir: PR URL, conflictos resueltos (si hubo), pytest summary, archivos mission_control tocados
 ```
+
+---
+
+## PROMPT 4c — Copilot Windows · merge #448 (D4.1) 🔴
+
+**Pegar en Copilot Windows** (CI ya verde 2026-06-02; `mergeable: MERGEABLE`):
+
+```
+autorizo merge D4.1 PR 448
+
+Sos Copilot Windows. Merge squash Mission Control O13.1 — PR #448 únicamente.
+
+=== Contexto ===
+- PR: https://github.com/Umbral-Bot/umbral-agent-stack/pull/448
+- Head: copilot/feat-mission-control-o13-1-rebase @ 49fa9d7a (cherry-pick 3f150c46)
+- Scope: scaffold read-only FastAPI + HTMX; NO deploy VPS; NO gateway restart; NO touch openclaw env
+- Pre-check local: pytest -k mission → 35 passed (Cursor)
+
+=== Fase 0 — Verificar antes de merge ===
+cd C:\GitHub\umbral-agent-stack
+git fetch origin
+git checkout main
+git pull --ff-only origin main
+gh pr view 448 --repo Umbral-Bot/umbral-agent-stack --json mergeStateStatus,statusCheckRollup,title,files,additions,deletions
+gh pr checks 448 --repo Umbral-Bot/umbral-agent-stack
+# STOP si checks no SUCCESS o mergeStateStatus no CLEAN
+
+=== Fase 1 — Smoke diff (solo mission_control) ===
+gh pr diff 448 --repo Umbral-Bot/umbral-agent-stack --color=never | findstr /i "mission_control pyproject .gitignore"
+.\.venv\Scripts\python.exe -m pytest tests/ -k mission -q
+# STOP si pytest falla
+
+=== Fase 2 — Merge ===
+gh pr merge 448 --repo Umbral-Bot/umbral-agent-stack --squash --delete-branch
+git pull --ff-only origin main
+git log -1 --oneline
+git show --stat -1 --oneline | findstr mission_control
+
+=== Fase 3 — Cierre ===
+# NO abrir follow-up deploy en este turno
+# Opcional: comentar en PR body post-merge SHA
+
+VEREDICTO: D41_MERGED | D41_MERGE_448_BLOCKED
+Incluir: squash SHA en main, checks finales, pytest summary, confirmación mission_control/ en tree
+```
+
+**Después de `D41_MERGED`:** pegar PROMPT 3 adaptado (post-merge) en Copilot-VPS — `git pull`, `pytest -k mission`, sin restart servicios.
 
 ---
 

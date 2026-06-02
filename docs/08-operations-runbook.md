@@ -65,6 +65,10 @@ curl -sf http://WINDOWS_TAILSCALE_IP:8088/health > /dev/null && echo "✅ Worker
 tailscale status > /dev/null 2>&1 && echo "✅ Tailscale OK" || echo "❌ Tailscale DOWN"
 ```
 
+## Registry backup failure alert
+
+For the Windows registry backup 2-day failure detector, see `docs/ops/registry-backup-alert-runbook.md`.
+
 ## Logs
 
 ### VPS — OpenClaw

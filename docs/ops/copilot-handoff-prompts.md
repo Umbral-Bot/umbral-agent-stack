@@ -2,7 +2,7 @@
 
 Copy-paste blocks for David. **Cursor pushes `main` before VPS prompts.**
 
-Last updated: 2026-06-02 — W/AA cerrados; **AB sigue** @ HEAD `6f560d6b`
+Last updated: 2026-06-02 — AB en curso (PR #446 QA OK; delivery pendiente push)
 
 ---
 
@@ -10,7 +10,8 @@ Last updated: 2026-06-02 — W/AA cerrados; **AB sigue** @ HEAD `6f560d6b`
 
 | # | Agente | Cuándo | Autorización David |
 |---|---|---|---|
-| 1 | **Copilot-VPS** | **Ahora** | `autorizo torneo D3.3` + `autorizo sync tournament skill` |
+| 1 | **Copilot-VPS** | En curso | torneo spawned; ver **PROMPT 1b** con `/goal` |
+| 1b | **Copilot-VPS** | **Ahora** | continuar Fases 2→6 hasta veredicto |
 | 2 | Copilot Windows | Tras torneo + 2 PRs | `autorizo merge winner D3.3` |
 | 3 | Copilot-VPS | Tras merge winner | (automático post-AC) |
 | 4 | Copilot Windows | Paralelo | — (D4.1 Mission Control) |
@@ -24,7 +25,7 @@ Last updated: 2026-06-02 — W/AA cerrados; **AB sigue** @ HEAD `6f560d6b`
 |---|---|---|---|
 | **W** | Copilot-VPS | ✅ | `D32_WORKTREE_CLEANUP_NOOP_OK` |
 | **AA** | Copilot-VPS | ✅ | `D33_PREFLIGHT_OK` @ `420e9f6f` |
-| **AB** | Copilot-VPS | 🔴 **ENVIAR AHORA** | torneo real #445 |
+| **AB** | Copilot-VPS | 🟡 en curso | PR #446 (qa); delivery sin PR — **PROMPT 1b** |
 | **AC** | Copilot Windows | ⏸ | judge + merge winner |
 | **AD** | Copilot-VPS | ⏸ | post-merge winner |
 | **AF** | Copilot Windows | ⏸ paralelo | Mission Control PR |
@@ -129,6 +130,92 @@ M1_D33_TOURNAMENT_BLOCKED → crash pre-spawn o worktree corrupto
 
 NO merge winner. Esperar Prompt 2 (Copilot Windows) + autorización David.
 Incluir en respuesta: pr_urls.txt completo, final-metrics.json, tail 30 líneas openclaw-agent.log
+```
+
+---
+
+## PROMPT 1b — Copilot-VPS · AB continuación (Fase 2→6) con `/goal` 🔴
+
+**Pegar cuando hay ≥1 PR o el watcher esté cerca del deadline:**
+
+```
+/goal Terminar torneo D3.3 issue #445: cerrar Fase 2 (monitoreo), ejecutar Fases 3–6 y emitir VEREDICTO final en español. No reiniciar torneo. No merge winner. No tocar ~/.config/openclaw/env ni reiniciar gateway.
+
+Responde SIEMPRE en español.
+
+Contexto actual (no contradecir sin verificar):
+- Parent yielded OK; lanes: good-cloud (rick-delivery), quick-lagoon (rick-qa).
+- PR abierto conocido: #446 (lane sync-qa) — confirmar con gh.
+- Delivery: commits locales en rama tournament/.../lane-sync-delivery; push/PR aún pendiente o bloqueado.
+- Evidencia: ~/.coord-ag-evidence/D3.3/ (watch.txt, openclaw-agent.log, session.txt).
+
+=== Fase 2 — Cierre monitoreo (máx 20 min adicionales) ===
+EV=~/.coord-ag-evidence/D3.3
+TID=umbral-agent-stack-445-d5f34a07
+
+# Si el watcher bash sigue vivo: esperar BOTH_PRS_PRESENT o LANES_IDLE_BREAK o 20 min; luego documentar watch_end en watch.txt.
+# Paralelo cada 3 min (no matar watcher sin necesidad):
+gh pr list --repo Umbral-Bot/umbral-agent-stack --search "tournament:$TID" --state open --json number,title,url,headRefName | tee "$EV/open-prs-snapshot.json"
+
+# Diagnóstico delivery (read-only, NO impersonar la lane con push salvo evidencia de que la sesión terminó y solo falta reporte):
+tail -c 8000 /home/rick/.openclaw/agents/rick-delivery/sessions/a054b56a-db12-423b-ac41-68436bcd73ec.jsonl | tr ',' '\n' | grep -iE 'push|pr create|fatal|error|rejected|gh auth|compact|lane-sync-delivery' | tail -25 | tee "$EV/delivery-lane-tail.txt"
+git ls-remote --heads origin 'refs/heads/tournament/*445*' | tee "$EV/remote-445-branches.txt"
+stat -c '%y %n' /home/rick/.openclaw/agents/rick-delivery/sessions/a054b56a-db12-423b-ac41-68436bcd73ec.jsonl /home/rick/.openclaw/agents/rick-qa/sessions/6f3b9126-dd2c-420e-84bf-31e55887f775.jsonl | tee -a "$EV/lane-mtime.txt"
+
+Criterio para pasar a Fase 3:
+- pr_count >= 2, O
+- watcher terminó (LANES_IDLE_BREAK / BOTH_PRS_PRESENT), O
+- 20 min sin actividad lane (mtime jsonl >20 min) con pr_count < 2
+
+=== Fase 3 — Collect (OBLIGATORIO) ===
+cd ~/umbral-agent-stack
+# Restaurar main solo ahora (lanes ya terminaron o están idle):
+git checkout main 2>/dev/null || true
+git pull --ff-only origin main
+
+grep -oE 'https://github.com/Umbral-Bot/umbral-agent-stack/pull/[0-9]+' "$EV/openclaw-agent.log" | sort -u > "$EV/pr-urls-from-log.txt"
+gh pr list --repo Umbral-Bot/umbral-agent-stack --search "tournament:$TID" --state open --json url --jq '.[].url' >> "$EV/pr-urls-from-log.txt" 2>/dev/null || true
+gh pr list --repo Umbral-Bot/umbral-agent-stack --search "tournament" --state open --json number,title,url,headRefName >> "$EV/open-prs-final.json"
+sort -u "$EV/pr-urls-from-log.txt" -o "$EV/pr-urls.txt"
+PR_COUNT=$(wc -l < "$EV/pr-urls.txt" | tr -d ' ')
+echo "pr_count=$PR_COUNT" | tee -a "$EV/run-meta.txt"
+
+python3 - <<'PY' | tee "$EV/final-metrics.json"
+import json, pathlib, re
+ev = pathlib.Path.home() / ".coord-ag-evidence/D3.3"
+log = (ev / "openclaw-agent.log").read_text(errors="replace") if (ev / "openclaw-agent.log").exists() else ""
+prs = [l.strip() for l in (ev/"pr-urls.txt").read_text().splitlines() if l.strip()] if (ev/"pr-urls.txt").exists() else []
+print(json.dumps({
+  "tournament": "D3.3", "issue": 445,
+  "pr_urls": prs, "pr_count": len(prs), "lanes_expected": 2,
+  "lanes": {"sync-qa": "PR #446 si existe en pr_urls", "sync-delivery": "ver delivery-lane-tail.txt + remote branches"},
+  "yielded": "yielded=true" in log.lower(),
+  "spawn_count": len(re.findall(r"sessions_spawn", log, re.I)),
+  "delivery_blocked_hypothesis": "leer delivery-lane-tail.txt",
+}, indent=2, ensure_ascii=False))
+PY
+
+=== Fase 4 — Comentario issue 445 (OBLIGATORIO) ===
+gh issue comment 445 --repo Umbral-Bot/umbral-agent-stack --body-file "$EV/final-metrics.json"
+
+=== Fase 5 — Worktree + task log ===
+git status --short --branch | tee "$EV/worktree-final.txt"
+git branch -a | grep -i tournament | tee "$EV/branches-final.txt" || true
+# Append resumen a .agents/tasks/2026-06-02-020-d3.3-tournament-sync-skills-adapters.md (Log Copilot-VPS) — NO commit salvo David lo pida
+
+=== Fase 6 — VEREDICTO (español, una sola línea + tabla) ===
+M1_D33_TOURNAMENT_OK      → solo si pr_count=2 y ambos títulos contienen [tournament:...]
+M1_D33_TOURNAMENT_PARTIAL → si pr_count<2 (tabla obligatoria: lane | branch remota | PR URL | causa)
+M1_D33_TOURNAMENT_BLOCKED → solo si no hubo spawn o evidencia corrupta
+
+Entregable final en español:
+1) VEREDICTO
+2) Tabla lanes (qa vs delivery)
+3) pr-urls.txt
+4) Rutas evidencia en D3.3
+5) Siguiente paso para David (merge winner vs salvage vs esperar delivery)
+
+NO merge. NO segundo torneo.
 ```
 
 ---

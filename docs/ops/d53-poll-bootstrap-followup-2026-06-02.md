@@ -7,6 +7,7 @@
 | Soak | `D53_GRANOLA_SOAK_DEGRADED` |
 | Diagnóstico poller | `D53_POLLER_DIAG_READY` |
 | Fix código (5c) | **`D53_FIX_ALREADY_IN_MAIN`** |
+| Runtime (5e) | **`D53_RUNTIME_APPLIED_OK`** — poller pid 1130156, worker health OK |
 
 ## Hallazgo Cursor 5c (repo `main` @ post-`7a4ffb04`)
 
@@ -35,7 +36,7 @@ Comportamiento **esperado** cuando:
 
 1. ~~5c PR~~ — **omitir** (fix ya en `main`).
 2. ~~5d merge~~ — **omitir** (no hay PR).
-3. **5e** Copilot-VPS — `autorizo reiniciar notion-poller y worker G-D0` + `git pull` + verificar logs.
+3. ~~**5e**~~ — ✅ `D53_RUNTIME_APPLIED_OK` (2026-06-02): poller 1130156, `cursor_used=True` en página 30c5….
 
 ## Evidencia VPS
 

@@ -2,7 +2,7 @@
 
 Copy-paste blocks for David. **Cursor pushes `main` before VPS prompts.**
 
-Last updated: 2026-06-02 — D4.1 cerrado · D5.3 + cleanup siguientes
+Last updated: 2026-06-02 — D5.3 runtime OK · cleanup opcional
 
 ---
 
@@ -12,10 +12,11 @@ Last updated: 2026-06-02 — D4.1 cerrado · D5.3 + cleanup siguientes
 |---|---|---|
 | D3 + D3.4 | ✅ | retro `d3-tournament-retro-2026-06-02.md` |
 | D4.1 | ✅ | `D41_MERGED` + `D41_VPS_POST_MERGE_OK` @ `9730bfa6` |
-| D5.3 | 🟡 | soak DEGRADED · código OK en main → **5e** runtime |
-| **5c** | ✅ | `D53_FIX_ALREADY_IN_MAIN` — sin PR (#361 + 11 pytest) |
-| **5d** | ⏭ | omitir (no PR) |
-| **5e** | 🔴 **SIGUIENTE** | Copilot-VPS — restart poller+worker (gate David) |
+| D5.3 | ✅ | `D53_RUNTIME_APPLIED_OK` — poller pid 1130156, worker health OK |
+| **5c** | ✅ | `D53_FIX_ALREADY_IN_MAIN` |
+| **5d** | ⏭ | omitido |
+| **5e** | ✅ | VPS restart poller+worker 2026-06-02 |
+| **6** | ⏸ **SIGUIENTE** | Copilot Windows — cerrar #447 (gate David) |
 | **5b** | ✅ | `D53_POLLER_DIAG_READY` |
 | **6** | ⏸ | Copilot Windows — cerrar PR **#447** (David gate) |
 | **6b** | ⏸ | Copilot Windows — cerrar issue **#445** (David gate) |
@@ -40,7 +41,7 @@ Retro doc: [`d3-tournament-retro-2026-06-02.md`](d3-tournament-retro-2026-06-02.
 | **AE** | Copilot Windows | ✅ | `D41_MERGED` #448 @ `805aa57b` |
 | **AF** | Copilot-VPS | ✅ | `D41_VPS_POST_MERGE_OK` @ `9730bfa6` |
 | **D5.3** | diag | ✅ | `D53_POLLER_DIAG_READY` |
-| **D5.3** | fix+merge | 🔴 | **5c** Cursor PR → **5d** Windows merge → **5e** VPS restart |
+| **D5.3** | runtime | ✅ | `D53_RUNTIME_APPLIED_OK` @ `c204cf9` |
 
 **HEAD VPS/main:** `9730bfa6` (incluye docs D4.1; feature squash `805aa57b`). **#447** OPEN. **#445** OPEN (winner ya mergeado vía #446).
 
@@ -796,6 +797,10 @@ journalctl --user -u umbral-worker --since "2 minutes ago" --no-pager | grep -iE
 VEREDICTO: D53_RUNTIME_APPLIED_OK | D53_RUNTIME_APPLIED_BLOCKED
 ```
 
+**Resultado VPS 2026-06-02:** `D53_RUNTIME_APPLIED_OK` — HEAD `c204cf9`; poller viejo detenido; worker `active` + `/health` OK; poller nuevo **pid 1130156** vía `notion-poller-cron.sh`; poll `2 comments`; `page=30c5… cursor_used=True bootstrap=False` confirmado; otras páginas aún bootstrap en primer ciclo (esperado).
+
+**D5.3 cierre:** soak quedó `DEGRADED` en observación inicial; tras 5b→5c→5e el canal Notion poll está operativo en runtime. Granola en `ops_log` sigue sin eventos recientes — no reabrir soak salvo pedido David.
+
 ---
 
 ## PROMPT 6 — Copilot Windows · cerrar PR #447 (loser D3.3) ⏸
@@ -903,10 +908,8 @@ Log: $LOG
 
 | Prioridad | Spine | Prompt | Agente |
 |---|---|---|---|
-| 1 | **D5.3** | **5c** fix + PR | **Cursor** |
-| 2 | **D5.3** | **5d** merge PR | **Copilot Windows** |
-| 3 | **D5.3** | **5e** restart runtime | Copilot-VPS (gate David) |
-| 4 | D3 cleanup | **6** cerrar #447 | Copilot Windows (gate David) |
+| 1 | D5.3 | ✅ | 5b→5c→5e cerrado |
+| 2 | D3 cleanup | **6** cerrar #447 | Copilot Windows (gate David) |
 | 3 | D3 cleanup | **6b** cerrar #445 | Copilot Windows (gate David) |
 | 4 | G-D0 | restart worker | Copilot-VPS (solo `autorizo restart worker G-D0`) |
 | 5 | D6.1 | KB AECO | 26-jun |

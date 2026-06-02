@@ -1,0 +1,56 @@
+# D3.2 — Real tournament #2 (issue #440 O2 backup failure alerts)
+# Run from main standalone only (G-D1b). Preflight:
+#   bash scripts/openclaw/tournament-preflight-dry-run.sh this file
+
+issue_id: Umbral-Bot/umbral-agent-stack#440
+issue_url: https://github.com/Umbral-Bot/umbral-agent-stack/issues/440
+issue_title: "O2 post-MVP — registry backup failure alert (2 consecutive days)"
+repo_path: ~/umbral-agent-stack
+usd_budget_cap: 1.50
+cleanup_policy: keep-losers
+winner_rubric: |
+  Tournament rubric (issue #440 acceptance):
+  1. Meets issue acceptance: alert script for 2 consecutive backup failures + tests + runbook.
+  2. Tests use fixtures only; CI-safe; no secrets or real %LOCALAPPDATA% paths in tests.
+  3. Smallest correct diff — tie-break fewer total line changes, then green checks.
+  4. Reject scope-creep: no Task Scheduler install, no backup repo migration, no VPS/OpenClaw runtime.
+  5. Lane without PR URL = incomplete (docs/79 collect phase; task 012 gate).
+lanes:
+  - specialty: backup-impl
+    agent_id: rick-delivery
+    runTimeoutSeconds: 2400
+    task_template: |
+      # Tournament lane: backup-impl (D3.2)
+      Issue: {{issue_url}}
+      Branch: tournament/{{tournament_id}}/lane-backup-impl
+
+      Read issue acceptance. Canonical backup scripts live in notion-governance
+      (`scripts/daily-registry-backup.ps1`, logs under umbral-registry-backup).
+
+      Implement:
+      - Python alert/health script under `scripts/registry/` (or documented path).
+      - Unit tests with log fixtures simulating 2 consecutive failures.
+      - Runbook `docs/ops/registry-backup-alert-runbook.md`.
+
+      Contract:
+      - NO merge yourself. NO touch other lanes.
+      - PR title: [tournament:{{tournament_id}}:backup-impl] {{issue_title}}
+      - Announce JSON: pr_url, diff_stats, checks_status, specialty=backup-impl
+  - specialty: backup-qa
+    agent_id: rick-qa
+    runTimeoutSeconds: 2400
+    task_template: |
+      # Tournament lane: backup-qa (D3.2)
+      Issue: {{issue_url}}
+      Branch: tournament/{{tournament_id}}/lane-backup-qa
+
+      Same issue — independent implementation. Emphasize tests + edge cases:
+      - single failure then success (no alert)
+      - missing log dir
+      - malformed log lines
+      Still deliver full solution if tests alone insufficient.
+
+      Contract:
+      - NO merge yourself.
+      - PR title: [tournament:{{tournament_id}}:backup-qa] {{issue_title}}
+      - Announce JSON: pr_url, diff_stats, checks_status, specialty=backup-qa

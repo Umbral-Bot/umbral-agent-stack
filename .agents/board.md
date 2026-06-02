@@ -418,8 +418,12 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 ## 2026-06-01-017 — G-D5.2 gate closeout sync [ASSIGNED → copilot-vps]
 - Post O/P/N: VPS pull #438, refresh traceability, VEREDICTO **G_D52_GATE_CLOSED**
 
-## 2026-06-01-018 — O15 Gmail/Calendar OpenClaw skills [ASSIGNED → codex]
-- Gate D5.1 skills router; PR codex/*; meta task
+## 2026-06-02-019 — D3.2 tournament O2 backup alerts #440 [ASSIGNED → copilot-vps]
+- Issue #440, spec d32-issue-440, script d3.2-tournament-run.sh
+- Phase 0 Cursor; preflight Thread T → torneo Thread U
+
+## 2026-06-01-018 — O15 Gmail/Calendar OpenClaw skills [DONE → O15_OPENCLAW_WORKSPACE_SKILLS_OK]
+- PR #439 `3388bf9c`; skills live VPS workspace
 
 ## 2026-06-01-016 — G-D5.2 Calendar E2E [DONE → G_D52_CALENDAR_E2E_OK]
 - Copilot-VPS: list_events david.a.moreira.m@gmail.com, events_count=3, evidencia calendar-david-primary-list.json

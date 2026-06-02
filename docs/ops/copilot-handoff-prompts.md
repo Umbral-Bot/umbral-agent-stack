@@ -2,83 +2,125 @@
 
 Copy-paste blocks for David. **Cursor pushes `main` before VPS prompts.**
 
-Last updated: 2026-06-02 (G-D5.2 hilos O/P/N cerrados; gate formal → Q; skills → Codex 018)
+Last updated: 2026-06-02 (Phase 0 D3.2 ready — issue #440, task 019)
 
 ---
 
-## Estado G-D5.2
+## Estado activo
 
-| Hilo | Superficie | VEREDICTO |
+| Hilo | Superficie | Estado |
 |---|---|---|
-| L | Copilot-VPS | ✅ G_D52_VPS_CLOSEOUT_OK (015) |
-| O | Copilot-VPS | ✅ G_D52_CALENDAR_E2E_OK (016) |
-| P | Copilot Windows | ✅ GD52_DOCS35_MERGED (#438 → `1187eaa9`) |
-| N | Notion | ✅ ADR16_LIVE_LOG_OK |
-| **Q** | Copilot-VPS | 🔴 **Siguiente** — gate closeout sync (017) |
-| **R** | Codex (meta) | 🟡 O15 skills Gmail/Calendar (018) |
-| H | Copilot-VPS | 🟡 opcional — worktree D3.1 (013) |
+| **S** | Codex meta | 🟡 task 012 lane PR gate (recomendado antes torneo) |
+| **T** | Copilot-VPS | 🔴 **Siguiente** — D3.2 preflight (task 019) |
+| **U** | David + Copilot-VPS | ⏸ torneo run (`autorizo torneo D3.2`) |
+| **V** | Copilot Windows | ⏸ merge winner post-torneo |
 
-**VPS env:** NO re-patch. Client `285813488732-ij582…`, smoke PASS.
+**G-D5.2 + O15:** ✅ cerrados (`3388bf9c`, skills live VPS).
 
-Trazabilidad: `~/.coord-ag-evidence/G-D5.2/traceability-report.md`
+Issue torneo: [#440](https://github.com/Umbral-Bot/umbral-agent-stack/issues/440)
 
 ---
 
-## Thread Q — Copilot-VPS · gate G-D5.2 closed (task 017) 🔴 SIGUIENTE
-
-**Dónde:** Copilot-VPS (SSH). Read-only salvo refresh traceability script.
+## Thread T — Copilot-VPS · D3.2 preflight (task 019) 🔴 SIGUIENTE
 
 ```
-Sos Copilot-VPS. Cierre formal gate G-D5.2 post hilos O/P/N.
+Sos Copilot-VPS. Preflight torneo D3.2 O2 backup alerts — SIN spawn.
 
-Lee:
-  ~/umbral-agent-stack/.agents/tasks/2026-06-01-017-copilot-vps-gd52-gate-closeout-sync.md
-  ~/.coord-ag-evidence/G-D5.2/traceability-report.md
-  ~/.coord-ag-evidence/G-D5.2/calendar-david-primary-list.json
+Preflight repo:
+  cd ~/umbral-agent-stack && git pull --ff-only origin main && git log -1 --oneline
+  test -f .agents/tasks/2026-06-02-019-d3.2-tournament-o2-backup-alerts.md && echo TASK_FILE_OK
+
+Lee task 019 + spec:
+  openclaw/workspace-templates/skills/multi-agent-tournament-orchestrator/examples/d32-issue-440-o2-backup-alerts-spec.yaml
+
+Ejecutar:
+  mkdir -p ~/.coord-ag-evidence/D3.2
+  bash scripts/openclaw/tournament-preflight-dry-run.sh \
+    openclaw/workspace-templates/skills/multi-agent-tournament-orchestrator/examples/d32-issue-440-o2-backup-alerts-spec.yaml
+  bash scripts/vps/check-main-allowagents.sh
+
+Si falta skill live y David dice "autorizo sync tournament skill":
+  rsync -a openclaw/workspace-templates/skills/multi-agent-tournament-orchestrator/ \
+    ~/.openclaw/workspace/skills/multi-agent-tournament-orchestrator/
+
+NO openclaw agent run. NO env. Worktree clean report.
+
+VEREDICTO: D32_PREFLIGHT_OK | D32_PREFLIGHT_BLOCKED
+```
+
+---
+
+## Thread U — Copilot-VPS · run torneo D3.2
+
+**Requiere:** `D32_PREFLIGHT_OK` + David escribe `autorizo torneo D3.2`
+
+```
+autorizo torneo D3.2
+
+Sos Copilot-VPS. Torneo real #2 issue #440.
+
+cd ~/umbral-agent-stack && git pull --ff-only origin main && git status --short
+# CLEAN required
+
+bash scripts/vps/d3.2-tournament-run.sh
+
+Evidencia: ~/.coord-ag-evidence/D3.2/
+Lane sin PR URL = incomplete.
+
+NO merge salvo "autorizo merge winner D3.2".
+
+VEREDICTO: M1_D32_TOURNAMENT_OK | M1_D32_TOURNAMENT_PARTIAL
+```
+
+---
+
+## Thread V — Copilot Windows · merge winner D3.2
+
+**Requiere:** PR URLs del torneo + `autorizo merge winner D3.2`
+
+```
+Sos Copilot Windows. Judge + merge torneo D3.2 (#440).
+
+cd C:\GitHub\umbral-agent-stack && git pull --ff-only origin main
+
+Revisar PRs [tournament:...] — rubric en spec d32-issue-440.
+gh pr merge <winner> --squash
+gh issue comment 440 --repo Umbral-Bot/umbral-agent-stack --body "<metrics JSON>"
+
+VEREDICTO: D32_WINNER_MERGED
+```
+
+---
+
+## Thread S — Codex meta · lane gate task 012 (paralelo recomendado)
+
+```
+Sos Codex meta. Task 012 tournament lane PR gate.
 
 Preflight:
-  cd ~/umbral-agent-stack && git pull --ff-only origin main && git log -1 --oneline
-  # Esperado: 1187eaa9 Align Google OAuth docs with ADR scopes (#438) o posterior
+  cd C:\GitHub\umbral-agent-stack
+  git pull --ff-only origin main
+  Test-Path .agents/tasks/2026-06-01-012-tournament-lane-pr-gate.md
 
-NO tocar ~/.config/openclaw/env — NO re-OAuth.
-
-Ejecutá:
-  bash scripts/vps/write-gd52-traceability.sh
-  bash scripts/vps/smoke-gd52-oauth.sh
-  Reconfirmar list_events calendar_id=david.a.moreira.m@gmail.com (read-only)
-
-PASS → VEREDICTO: G_D52_GATE_CLOSED
-Actualizá Log task 017. NO merge PRs.
+Lane done solo con PR URL. PR sin merge.
+VEREDICTO: M1_D31_LANE_GATE_OK
 ```
 
 ---
 
-## Thread R — Codex · O15 Gmail + Calendar skills (task 018) 🟡 META
+## Thread Q — G-D5.2 (CERRADO)
 
-**Dónde:** Codex VS Code (modo extendido / meta). Repo: `umbral-agent-stack` o clone codex-coordinador.
-
-```
-Sos Codex con razonamiento extendido. Gate D5.1 skills router (spine Q2).
-
-Lee task completa:
-  umbral-agent-stack/.agents/tasks/2026-06-01-018-codex-o15-gmail-calendar-skills.md
-
-ADR fuente (canónico):
-  notion-governance/docs/architecture/16-multichannel-rick-channels.md
-  §2.3 Gmail, §2.4 Calendar, D5 propose+confirm, D6 whitelist
-
-Entrega: skills OpenClaw gmail-router + calendar-propose (SKILL.md + tests + runbook).
-Patrón: scripts/notion/notion_mention_router.py — wrapper fino, lógica en worker.
-
-NO VPS, NO env, NO ampliar scopes, NO outbound/eventos sin gate humano.
-
-PR branch codex/feat-o15-gmail-calendar-skills — Copilot merge después.
-VEREDICTO: O15_GMAIL_CALENDAR_SKILLS_OK
-```
+`G_D52_GATE_CLOSED` — no repetir.
 
 ---
 
-## Thread O/P/N — CERRADOS (no repetir)
+## Thread R — O15 skills (CERRADO)
+
+PR #439 → `3388bf9c` + `O15_OPENCLAW_WORKSPACE_SKILLS_OK`
+
+---
+
+## Thread O/P/N/Q — CERRADOS (no repetir)
 
 | Thread | VEREDICTO |
 |---|---|
@@ -98,15 +140,15 @@ VEREDICTO: D31_WORKTREE_CLEANUP_OK
 
 ---
 
-## Próximo foco Q2 (post G-D5.2)
+## Próximo foco Q2
 
 | Prioridad | Spine | Agente | Acción |
 |---|---|---|---|
-| 1 | D5.1 skills | Codex 018 | gmail-router + calendar-propose |
-| 2 | D3.2 | Cursor/Codex | Torneo #2 (issue lane) |
-| 3 | D4.1 | Copilot Windows | PR Mission Control O13.1 |
-| 4 | D5.3 | Copilot-VPS | Granola soak post G-D0 |
-| 5 | D6.1 | Copilot + Azure | O16.2 KB AECO smoke (deadline 26-jun) |
+| 1 | **D3.2** | VPS + Windows | Torneo #440 (preflight → run → merge) |
+| 2 | D3.2 prep | Codex meta | Task 012 lane gate (paralelo) |
+| 3 | D4.1 | Copilot Windows | Mission Control PR |
+| 4 | D5.3 | Copilot-VPS | Granola soak |
+| 5 | D6.1 | Azure | KB AECO (26-jun) |
 
 Friday retro **2026-06-05** — actualizar dashboard §4 spine v2.
 

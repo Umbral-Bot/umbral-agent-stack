@@ -2,7 +2,7 @@
 
 Copy-paste blocks for David. **Cursor pushes `main` before VPS prompts.**
 
-Last updated: 2026-06-02 — **D3.3 CERRADO** — `D33_VPS_POST_MERGE_OK` @ `fce55518`
+Last updated: 2026-06-02 — **D3.4 retro OK** · siguiente **D4.1**
 
 ---
 
@@ -10,11 +10,12 @@ Last updated: 2026-06-02 — **D3.3 CERRADO** — `D33_VPS_POST_MERGE_OK` @ `fce
 
 | # | Agente | Estado |
 |---|---|---|
-| D3.3 torneo | ✅ | PARTIAL → rescate #447 → winner #446 @ `da8eba85` → VPS sync OK |
-| D3.4 retro | ⏸ | Cursor — protocolo torneos post-3 runs |
-| #447 loser | ⏸ | cerrar PR cuando no se necesite comparación |
+| D3 (0–3 + retro) | ✅ | Retro: `docs/ops/d3-tournament-retro-2026-06-02.md` |
+| **D4.1** | 🔴 **SIGUIENTE** | Copilot Windows — Mission Control PR |
+| D5.3 | ⏸ | Copilot-VPS — Granola soak (PROMPT 5) |
+| #447 | ⏸ | cerrar PR loser cuando no haga falta |
 
-Cierre: [#445](https://github.com/Umbral-Bot/umbral-agent-stack/issues/445) · winner merged · [#447](https://github.com/Umbral-Bot/umbral-agent-stack/pull/447) OPEN
+Retro doc: [`d3-tournament-retro-2026-06-02.md`](d3-tournament-retro-2026-06-02.md)
 
 ---
 
@@ -480,7 +481,7 @@ Log: $LOG
 
 | Prioridad | Spine | Secuencia |
 |---|---|---|
-| 1 | **D3.3** | **1c rescate** → AC judge → AD |
+| 1 | **D4.1** | Mission Control PR (AF) |
 | 2 | D4.1 | AF paralelo |
 | 3 | D5.3 | AG paralelo |
 | 4 | D3.4 | Retro protocolo tras D3.3 |

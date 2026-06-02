@@ -134,6 +134,25 @@ Checklist por lane:
 
 Un tournament puede pasar a judge sólo con lanes completas. Para v1, abortar si hay menos de 2 PRs válidos; con 2+ PRs válidos, las lanes sin PR quedan excluidas de `lanes_completed` y se reportan como incompletas en métricas.
 
+**VEREDICTO torneo (operativo):**
+
+- `M1_D3x_TOURNAMENT_OK` — `pr_count >= 2`, spawn evidenciado, métricas en issue.
+- `M1_D3x_TOURNAMENT_PARTIAL` — spawn OK pero `pr_count < 2`; ver §4.2 rescate.
+- Parent **nunca** hace `gh pr merge` del winner (Copilot Windows + autorización David).
+
+---
+
+## 4.2 Lane rescue (sin segundo torneo)
+
+Si collect reporta lane con commits locales y sin PR (causa típica: compactación de sesión antes de push):
+
+1. Registrar en `final-metrics.json` → `lanes[].status: NO_PR` + `cause`.
+2. David: `autorizo rescate lane <specialty> D3.x`.
+3. Push + `gh pr create` desde la rama existente (Copilot-VPS).
+4. Judge cuando existan ≥2 PRs abiertos con prefijo `[tournament:...]`.
+
+Retro: [`docs/ops/d3-tournament-retro-2026-06-02.md`](ops/d3-tournament-retro-2026-06-02.md).
+
 ---
 
 ## 5. Pre-conditions (chequeadas por el wrapper)
@@ -194,6 +213,14 @@ El primer PR del wrapper **debe** incluir un end-to-end smoke contra un issue tr
 - Soporte `cleanup_policy: hard-delete` (borrar branches losers automáticamente). Requiere política explícita de retención de evidencia forense; postergado.
 - Tournaments anidados (orchestrator dispara sub-orchestrators). Bloqueado por `maxSpawnDepth: 2`. No hay caso de uso v1.
 - Integración con `github.orchestrate_tournament` legacy: el handler Python queda como fallback LLM-puro (sin código real, sólo discovery/develop/debate/judge). Si en algún momento se quiere tournament sin código, se invoca el handler directamente, no este protocolo.
+
+---
+
+## 10. Post-three-tournaments retro (D3.4)
+
+- **Date:** 2026-06-02
+- **Doc:** [`docs/ops/d3-tournament-retro-2026-06-02.md`](ops/d3-tournament-retro-2026-06-02.md)
+- **Architecture updates:** [`docs/architecture/tournament-protocol.md`](architecture/tournament-protocol.md) §6–§7
 
 ---
 

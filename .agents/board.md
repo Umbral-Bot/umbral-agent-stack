@@ -422,7 +422,8 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 - Torneo: **M1_D33_TOURNAMENT_PARTIAL** → rescate #447 → judge → **D33_WINNER_MERGED** #446 @ **`da8eba85`**
 - Loser [#447](https://github.com/Umbral-Bot/umbral-agent-stack/pull/447) kept open
 - **D33_VPS_POST_MERGE_OK** @ `fce55518`
-- **Siguiente:** cerrar #445 (opcional); archivar #447; **D3.4** retro protocolo torneos
+- **D3.4 retro:** `M1_D34_TOURNAMENT_RETRO_OK` — `docs/ops/d3-tournament-retro-2026-06-02.md`
+- **Siguiente:** **D4.1** Mission Control PR; opcional cerrar #447
 - Lección D3.2: exigir PR URL por lane antes de announce done
 
 ## 2026-06-02-019 — D3.2 tournament O2 backup alerts #440 [DONE — salvage merged]

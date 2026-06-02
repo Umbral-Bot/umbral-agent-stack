@@ -87,9 +87,39 @@ Lane completion is defined by `docs/79` §4.1: branch pushed + verified PR URL. 
 
 ---
 
-## 6. References
+## 6. Lane rescue (post-PARTIAL) — v1.1
+
+When collect ends with `pr_count < lanes_expected` but a lane has **local commits** on `tournament/<id>/lane-<specialty>`:
+
+1. **Do not** re-run the parent tournament (no second `openclaw agent` spawn).
+2. David authorizes: `autorizo rescate lane <specialty> D3.x`.
+3. Copilot-VPS: `git push` + `gh pr create` with `[tournament:...]` title (see PROMPT 1c in `docs/ops/copilot-handoff-prompts.md`).
+4. Re-run judge on Copilot Windows when ≥2 PRs exist.
+
+Evidence: D3.3 delivery `9741e7c` → PR #447 → judge vs #446.
+
+---
+
+## 7. Lessons learned (D3.4 retro 2026-06-02)
+
+Full retro: [`docs/ops/d3-tournament-retro-2026-06-02.md`](../ops/d3-tournament-retro-2026-06-02.md).
+
+| Lesson | Enforcement |
+|---|---|
+| Spawn OK ≠ tournament OK | `final-metrics.json` must list `pr_urls[]`; VEREDICTO OK only if `pr_count >= 2` |
+| Sync spec before run | `rsync` `multi-agent-tournament-orchestrator` to `~/.openclaw/workspace/skills/` |
+| Watcher until BOTH PRs or idle break | AB collect; do not merge from parent |
+| Judge + merge on Windows | Copilot Windows after David `autorizo merge winner` |
+| Salvage is plan B, not failure of infra | Document in issue comment + retro |
+
+**v1.1 optional (not blocking):** per-lane `git worktree`; lane task_template last line = mandatory PR URL in announce.
+
+---
+
+## 8. References
 
 - Protocol contract: `docs/79-tournament-protocol-openclaw-native.md`
+- D3.4 retro: `docs/ops/d3-tournament-retro-2026-06-02.md`
 - ADR: `docs/adr/tournament-on-openclaw-primitives.md`
 - ISSUE-001: `docs/external-context/openclaw-known-issues.md`
 - Implementation task: `.agents/tasks/2026-06-01-003-d2.1-multi-agent-tournament-orchestrator-skill.md`

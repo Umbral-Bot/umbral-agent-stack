@@ -13,8 +13,9 @@ Last updated: 2026-06-02 — D4.1 cerrado · D5.3 + cleanup siguientes
 | D3 + D3.4 | ✅ | retro `d3-tournament-retro-2026-06-02.md` |
 | D4.1 | ✅ | `D41_MERGED` + `D41_VPS_POST_MERGE_OK` @ `9730bfa6` |
 | D5.3 | 🟡 | soak DEGRADED · diag READY → **5c + 5d** |
-| **5c** | 🔴 **1/2** | **Cursor** — fix bootstrap + PR |
-| **5d** | 🔴 **2/2** | **Copilot Windows** — merge PR 5c |
+| **5c** | ✅ | `D53_FIX_ALREADY_IN_MAIN` — sin PR (#361 + tests OK) |
+| **5d** | ⏭ omitir | No hay PR — ir directo a **5e** |
+| **5e** | 🔴 **SIGUIENTE** | Copilot-VPS — runtime apply (gate David) |
 | **5b** | ✅ | `D53_POLLER_DIAG_READY` — log `poller-diagnostic-202606021409.log` |
 | **5e** | ⏸ | Copilot-VPS — restart poller/worker **después** de merge 5d |
 | **6** | ⏸ | Copilot Windows — cerrar PR **#447** (David gate) |

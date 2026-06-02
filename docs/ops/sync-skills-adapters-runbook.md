@@ -28,7 +28,7 @@ Out of scope:
 - `--dry-run` is the default behavior
 - tests must use temp directories only
 - no secrets are needed
-- malformed `SKILL.md` frontmatter fails fast
+- malformed `SKILL.md` frontmatter falls back to slug-only metadata so dry-runs stay usable
 - unknown platforms are rejected by the CLI
 
 ## Usage
@@ -95,7 +95,13 @@ The command exits `0` and prints `planned_writes=0` plus `No skills found.`
 
 ### Malformed frontmatter
 
-The command exits `1` and prints the exact `SKILL.md` path plus the YAML parse failure.
+The command stays usable in dry-run mode:
+
+- `name` falls back to the directory slug
+- `description` becomes empty
+- adapter output remains deterministic
+
+This keeps CI fixtures and partial skills from breaking the whole plan while still surfacing the degraded metadata in the output/JSON.
 
 ## Verification
 

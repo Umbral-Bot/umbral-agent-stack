@@ -32,6 +32,7 @@ from sync_skills_adapters import (  # noqa: E402,F401
     main,
     normalize_platform,
     parse_skill_frontmatter,
+    resolve_platforms,
     plan_to_json,
     plan_to_text,
     render_cursor_rule,

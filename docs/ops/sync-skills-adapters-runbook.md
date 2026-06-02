@@ -6,6 +6,8 @@ Issue #445 extends the skills sync story beyond the legacy VPS-only SCP helper i
 
 For this change, we **introduced** `scripts/sync_skills_adapters.py` instead of expanding the SCP script. That keeps workstation-facing adapters (`codex`, `cursor`) isolated from live VPS transport logic, makes dry-runs deterministic, and keeps CI safely local-only.
 
+`scripts/sync_skills_to_vps.py` remains as a compatibility entrypoint that forwards to the adapter implementation for existing tests and operator habits.
+
 ## Scope
 
 This adapter script reads skills from:

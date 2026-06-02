@@ -2,7 +2,7 @@
 
 Copy-paste blocks for David. **Cursor pushes `main` before VPS prompts.**
 
-Last updated: 2026-06-02 — AB en curso (PR #446 QA OK; delivery pendiente push)
+Last updated: 2026-06-02 — **M1_D33_TOURNAMENT_PARTIAL** (PR #446; delivery local `9741e7c`)
 
 ---
 
@@ -10,12 +10,12 @@ Last updated: 2026-06-02 — AB en curso (PR #446 QA OK; delivery pendiente push
 
 | # | Agente | Cuándo | Autorización David |
 |---|---|---|---|
-| 1 | **Copilot-VPS** | En curso | torneo spawned; ver **PROMPT 1b** con `/goal` |
-| 1b | **Copilot-VPS** | **Ahora** | continuar Fases 2→6 hasta veredicto |
-| 2 | Copilot Windows | Tras torneo + 2 PRs | `autorizo merge winner D3.3` |
-| 3 | Copilot-VPS | Tras merge winner | (automático post-AC) |
-| 4 | Copilot Windows | Paralelo | — (D4.1 Mission Control) |
-| 5 | Copilot-VPS | Paralelo | — (D5.3 Granola soak) |
+| 1c | **Copilot-VPS** | 🔴 **SIGUIENTE** | `autorizo rescate lane delivery D3.3` |
+| 2 | Copilot Windows | Tras PR #447 (o 2 PRs) | `autorizo merge winner D3.3` |
+| 3 | Copilot-VPS | Tras merge winner | post-merge AD |
+| 2-alt | Copilot Windows | Solo si no rescatas delivery | merge solo #446 (ver 2b) |
+
+Torneo AB/1b: ✅ cerrado → `M1_D33_TOURNAMENT_PARTIAL` · evidencia `~/.coord-ag-evidence/D3.3/` · [issue comment](https://github.com/Umbral-Bot/umbral-agent-stack/issues/445#issuecomment-4604044479)
 
 ---
 
@@ -24,16 +24,16 @@ Last updated: 2026-06-02 — AB en curso (PR #446 QA OK; delivery pendiente push
 | Hilo | Superficie | Estado | Siguiente |
 |---|---|---|---|
 | **W** | Copilot-VPS | ✅ | `D32_WORKTREE_CLEANUP_NOOP_OK` |
-| **AA** | Copilot-VPS | ✅ | `D33_PREFLIGHT_OK` @ `420e9f6f` |
-| **AB** | Copilot-VPS | 🟡 en curso | PR #446 (qa); delivery sin PR — **PROMPT 1b** |
-| **AC** | Copilot Windows | ⏸ | judge + merge winner |
-| **AD** | Copilot-VPS | ⏸ | post-merge winner |
-| **AF** | Copilot Windows | ⏸ paralelo | Mission Control PR |
-| **AG** | Copilot-VPS | ⏸ paralelo | Granola soak |
+| **AA** | Copilot-VPS | ✅ | `D33_PREFLIGHT_OK` |
+| **AB** | Copilot-VPS | ✅ | `M1_D33_TOURNAMENT_PARTIAL` — #446 qa; delivery NO_PR |
+| **1c** | Copilot-VPS | 🔴 | rescate push+PR lane delivery |
+| **AC** | Copilot Windows | ⏸ | judge + merge (2 PRs) |
+| **AD** | Copilot-VPS | ⏸ | post-merge |
+| **AF/AG** | paralelo | ⏸ | Mission Control / Granola |
 
-**HEAD canónico:** `6f560d6b` (capitalización preflight). Issue torneo: [#445](https://github.com/Umbral-Bot/umbral-agent-stack/issues/445)
+**HEAD:** `9ee9615b`. **PR torneo abierto:** [#446](https://github.com/Umbral-Bot/umbral-agent-stack/pull/446) (sync-qa). **Delivery local:** rama `tournament/.../lane-sync-delivery` commit `9741e7c` (no en origin).
 
-**Lección D3.2:** lane sin PR URL = INCOMPLETE. No declarar `M1_D33_TOURNAMENT_OK` si `pr_count < 2`.
+**Recomendación:** rescate **1c** → judge **2** (como D3.2 salvage, pero la entrega ya existe en VPS).
 
 ---
 
@@ -220,9 +220,63 @@ NO merge. NO segundo torneo.
 
 ---
 
+## PROMPT 1c — Copilot-VPS · rescate lane delivery (push + PR) 🔴
+
+**Requiere:** `autorizo rescate lane delivery D3.3`
+
+**Objetivo:** convertir commit local `9741e7c` en PR tournament sin re-ejecutar torneo.
+
+```
+/goal Rescatar lane sync-delivery del torneo D3.3: push rama local + gh pr create con título [tournament:...] y reportar URL. Responder en español. NO merge. NO segundo torneo. NO tocar gateway/env.
+
+autorizo rescate lane delivery D3.3
+
+Sos Copilot-VPS. Salvage operativo post M1_D33_TOURNAMENT_PARTIAL.
+
+=== Fase 0 — Verificar rama local ===
+cd ~/umbral-agent-stack
+git fetch origin main
+git checkout tournament/umbral-agent-stack-445-d5f34a07/lane-sync-delivery 2>/dev/null || git branch -a | grep lane-sync-delivery
+git log -1 --oneline
+git status --short
+# Esperado: commit 9741e7c o similar "feat: add codex and cursor skill sync adapters"
+ls -la scripts/sync_skills_adapters.py tests/test_sync_skills_adapters.py docs/ops/sync-skills-adapters-runbook.md 2>/dev/null | tee ~/.coord-ag-evidence/D3.3/rescue-file-check.txt
+
+=== Fase 1 — Push (solo esta rama) ===
+BRANCH=tournament/umbral-agent-stack-445-d5f34a07/lane-sync-delivery
+git push -u origin "$BRANCH" 2>&1 | tee ~/.coord-ag-evidence/D3.3/rescue-push.log
+git ls-remote --heads origin "$BRANCH" | tee ~/.coord-ag-evidence/D3.3/rescue-remote-head.txt
+
+=== Fase 2 — PR create ===
+gh pr create --repo Umbral-Bot/umbral-agent-stack \
+  --head "$BRANCH" \
+  --base main \
+  --title "[tournament:umbral-agent-stack-445-d5f34a07:sync-delivery] O3 sync_skills adapters (rescate lane delivery)" \
+  --body "Salvage post M1_D33_TOURNAMENT_PARTIAL. Lane delivery commiteo local antes de compactacion; push+PR manual autorizado por David. Competidor vs PR #446 (sync-qa). Closes #445 solo si David mergea este PR como winner." \
+  2>&1 | tee ~/.coord-ag-evidence/D3.3/rescue-pr-create.log
+
+# Capturar URL:
+grep -oE 'https://github.com/Umbral-Bot/umbral-agent-stack/pull/[0-9]+' ~/.coord-ag-evidence/D3.3/rescue-pr-create.log | tee ~/.coord-ag-evidence/D3.3/rescue-pr-url.txt
+
+=== Fase 3 — Actualizar métricas issue ===
+EV=~/.coord-ag-evidence/D3.3
+{ echo "## Rescate lane delivery D3.3"; cat "$EV/rescue-pr-url.txt" 2>/dev/null; echo ""; gh pr view $(basename $(cat "$EV/rescue-pr-url.txt") | sed 's|.*/||') --repo Umbral-Bot/umbral-agent-stack --json number,url,title 2>/dev/null; } > "$EV/issue-445-rescue-comment.md"
+gh issue comment 445 --repo Umbral-Bot/umbral-agent-stack --body-file "$EV/issue-445-rescue-comment.md"
+
+=== Fase 4 — Restaurar main ===
+git checkout main
+git pull --ff-only origin main
+git status --short --branch
+
+VEREDICTO: D33_DELIVERY_LANE_RESCUED | D33_DELIVERY_LANE_RESCUE_BLOCKED
+Incluir: PR URL nueva, push log, si pytest local pasa en la rama antes de push (opcional: python3 -m pytest tests/ -k sync_skills -q)
+```
+
+---
+
 ## PROMPT 2 — Copilot Windows · Thread AC · judge + merge winner
 
-**Pegar después del torneo, cuando existan ≥2 PRs tournament:**
+**Requiere:** PR #446 + PR rescate delivery (1c) + `autorizo merge winner D3.3`
 
 ```
 autorizo merge winner D3.3
@@ -276,6 +330,28 @@ gh issue comment 445 --repo Umbral-Bot/umbral-agent-stack --body "Winner: PR #<W
 
 VEREDICTO: D33_WINNER_MERGED
 Incluir: winner URL, squash SHA, loser URL, rubric table summary
+```
+
+---
+
+## PROMPT 2b — Copilot Windows · merge solo #446 (atajo, sin rescate delivery)
+
+**Solo si David NO quiere rescate delivery y acepta cerrar #445 con una sola entrega:**
+
+```
+autorizo merge winner D3.3 solo PR 446
+
+Sos Copilot Windows. Judge único PR #446 (sync-qa) y merge si cumple rubric d33.
+
+cd C:\GitHub\umbral-agent-stack && git pull --ff-only origin main
+gh pr view 446 --repo Umbral-Bot/umbral-agent-stack --json mergeStateStatus,statusCheckRollup,title,files
+gh pr diff 446 --repo Umbral-Bot/umbral-agent-stack --color=never
+python -m pytest tests/ -k sync_skills -q
+
+Si CLEAN + checks OK → gh pr merge 446 --squash --delete-branch
+gh issue comment 445 --body "Winner único: PR #446. Lane delivery quedó NO_PR (commit local 9741e7c no mergeado)."
+
+VEREDICTO: D33_WINNER_MERGED_SINGLE_PR | D33_MERGE_446_BLOCKED
 ```
 
 ---
@@ -371,6 +447,18 @@ Log: $LOG
 
 ---
 
+## Archivo — Torneo D3.3 AB (cerrado PARTIAL)
+
+| Campo | Valor |
+|---|---|
+| VEREDICTO | `M1_D33_TOURNAMENT_PARTIAL` |
+| pr_count | 1 — [#446](https://github.com/Umbral-Bot/umbral-agent-stack/pull/446) sync-qa |
+| delivery | commit `9741e7c` local, sin push |
+| watch | `LANES_IDLE_BREAK prs=1` @ 11:34:45 |
+| issue comment | [#445#issuecomment-4604044479](https://github.com/Umbral-Bot/umbral-agent-stack/issues/445#issuecomment-4604044479) |
+
+---
+
 ## Archivo — Threads W / AA (cerrados)
 
 | Hilo | VEREDICTO | Notas |
@@ -395,7 +483,7 @@ Log: $LOG
 
 | Prioridad | Spine | Secuencia |
 |---|---|---|
-| 1 | **D3.3** | **AB** → AC → AD |
+| 1 | **D3.3** | **1c rescate** → AC judge → AD |
 | 2 | D4.1 | AF paralelo |
 | 3 | D5.3 | AG paralelo |
 | 4 | D3.4 | Retro protocolo tras D3.3 |

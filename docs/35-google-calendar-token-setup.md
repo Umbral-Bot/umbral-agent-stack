@@ -10,6 +10,9 @@ El Worker usa Google Calendar con una de estas opciones:
    calendarios de servicio o Workspace, no suele ser la mejor opcion para un
    calendario personal compartido.
 
+Scope canonico ADR-16 / G-D5.2: `https://www.googleapis.com/auth/calendar.events`.
+No usar `https://www.googleapis.com/auth/calendar` para Rick.
+
 ---
 
 ## Opcion A - Rapido (access token, caduca en ~1 h)
@@ -19,7 +22,7 @@ El Worker usa Google Calendar con una de estas opciones:
 3. Scope:
 
    ```text
-   https://www.googleapis.com/auth/calendar
+   https://www.googleapis.com/auth/calendar.events
    ```
 
 4. Autoriza con la cuenta de Google de Rick.
@@ -39,18 +42,20 @@ obtiene y renueva el access token solo.
 ### 1. Crear credenciales OAuth en Google Cloud
 
 1. Habilita **Google Calendar API** en tu proyecto.
-2. Configura Google Auth Platform:
+2. Para Rick, usa el proyecto GCP `future-yeti-455715-u7` y el cliente OAuth
+   `Rick OpenClaw`; **no uses `Umbral-bot`**.
+3. Configura Google Auth Platform:
    - `Branding`
    - `Audience`
    - `Data Access`
-3. Agrega el scope:
+4. Agrega el scope:
 
    ```text
-   https://www.googleapis.com/auth/calendar
+   https://www.googleapis.com/auth/calendar.events
    ```
 
-4. Si la app esta en modo testing, agrega la cuenta de Rick como `Test user`.
-5. Crea un cliente OAuth tipo **Web application** si vas a usar OAuth
+5. Si la app esta en modo testing, agrega la cuenta de Rick como `Test user`.
+6. Crea un cliente OAuth tipo **Web application** si vas a usar OAuth
    Playground y agrega este redirect URI:
 
    ```text
@@ -62,7 +67,7 @@ obtiene y renueva el access token solo.
 1. Abre <https://developers.google.com/oauthplayground/>.
 2. Activa `Use your own OAuth credentials`.
 3. Pega `Client ID` y `Client secret`.
-4. Usa el scope `https://www.googleapis.com/auth/calendar`.
+4. Usa el scope `https://www.googleapis.com/auth/calendar.events`.
 5. Autoriza con la cuenta de Google de Rick.
 6. Haz `Exchange authorization code for tokens`.
 7. Copia:
@@ -82,14 +87,16 @@ GOOGLE_CALENDAR_CLIENT_SECRET=GOCSPX-...
 
 No hace falta `GOOGLE_CALENDAR_TOKEN` si usas refresh token.
 
-### 4. Calendarios compartidos
+### 4. Calendario compartido permitido
 
-Si Rick debe operar sobre un calendario compartido:
+ADR-16 permite un solo calendario: el primary de David compartido con Rick con
+permiso para hacer cambios en eventos. Desde la cuenta de Rick, ese calendario
+se opera con `calendar_id` explicito; no uses `primary`, porque `primary` seria
+el calendario propio de Rick.
 
-1. Comparte el calendario con la cuenta de Google de Rick.
-2. Usa el `calendar_id` explicito del calendario compartido.
-3. **No** uses `primary` si quieres leer o escribir en ese calendario
-   compartido.
+1. Comparte el calendario primary de David con la cuenta de Google de Rick.
+2. Usa el `calendar_id` explicito de ese calendario compartido.
+3. No agregues otros calendars sin actualizar ADR-16.
 
 Ejemplo:
 
@@ -136,3 +143,8 @@ Ejemplo:
 Si tu app OAuth sigue en modo `Testing`, Google puede expirar el refresh token
 en ~7 dias. Para un setup realmente estable, cambia el publishing status cuando
 corresponda o recrea el token despues de publicar.
+
+## Referencias
+
+- Re-OAuth Rick G-D5.2: [ops/gd52-reoauth-runbook.md](./ops/gd52-reoauth-runbook.md)
+- Gmail (mismo patron OAuth/refresh en el Worker): [35-gmail-token-setup.md](./35-gmail-token-setup.md)

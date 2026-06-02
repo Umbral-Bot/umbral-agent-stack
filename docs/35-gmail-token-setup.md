@@ -5,12 +5,15 @@ El Worker usa Gmail con una de estas opciones:
 1. **Access token solo** (`GOOGLE_GMAIL_TOKEN`) — caduca en ~1 h; hay que renovarlo a mano.
 2. **Refresh token** (`GOOGLE_GMAIL_REFRESH_TOKEN` + `GOOGLE_GMAIL_CLIENT_ID` + `GOOGLE_GMAIL_CLIENT_SECRET`) — **recomendado**: el Worker renueva el access token solo; no expira en la práctica.
 
+Scope canónico ADR-16 / G-D5.2: `https://www.googleapis.com/auth/gmail.modify`.
+No usar `gmail.compose` + `gmail.readonly` ni `mail.google.com/` para Rick.
+
 ---
 
 ## Opción A: Rápido (access token, caduca en ~1 h)
 
 1. **Página:** https://developers.google.com/oauthplayground/
-2. Step 1: **Gmail API v1** → scope `https://www.googleapis.com/auth/gmail.compose` (y opcional `gmail.readonly` para listar borradores).
+2. Step 1: **Gmail API v1** → scope `https://www.googleapis.com/auth/gmail.modify`.
 3. **Authorize APIs** → iniciar sesión → Allow.
 4. Step 2: **Exchange authorization code for tokens**.
 5. Copiá el **Access token** a tu `.env`:
@@ -29,8 +32,9 @@ El Worker ya soporta refresh token: si configurás los tres env, obtiene y renue
 1. https://console.cloud.google.com/ → tu proyecto.
 2. **APIs y servicios** → **Biblioteca** → **Gmail API** → Habilitar.
 3. **Credenciales** → **Crear credenciales** → **ID de cliente de OAuth**.
-4. Tipo: **Aplicación de escritorio**. Nombre ej. `Umbral Gmail`.
-5. **Crear** → Descargar JSON. Guardá el **Client ID** y **Client secret** (o el JSON).
+4. Para Rick, usar el proyecto GCP `future-yeti-455715-u7` y el cliente OAuth `Rick OpenClaw`; **no usar `Umbral-bot`**.
+5. Tipo: **Aplicación de escritorio**. Nombre ej. `Rick OpenClaw`.
+6. **Crear** → Descargar JSON. Guardá el **Client ID** y **Client secret** (o el JSON).
 
 ### 2. Obtener el refresh token (una sola vez)
 
@@ -38,7 +42,7 @@ El Worker ya soporta refresh token: si configurás los tres env, obtiene y renue
 
 1. https://developers.google.com/oauthplayground/
 2. Icono de **engranaje** (arriba derecha) → **Use your own OAuth credentials** → pegar Client ID y Client secret.
-3. Step 1: scope `https://www.googleapis.com/auth/gmail.compose` (y si querés `gmail.readonly`).
+3. Step 1: scope `https://www.googleapis.com/auth/gmail.modify`.
 4. **Authorize APIs** → iniciar sesión con la cuenta Gmail (rick.asistente@gmail.com) → Allow.
 5. Step 2: **Exchange authorization code for tokens**.
 6. Copiá el **Refresh token** (no el Access token). Ese no lo revoca Google a las 24 h porque son *tus* credenciales.
@@ -50,8 +54,7 @@ Mismo proyecto: creá `credentials.json` con el JSON descargado. En la misma car
 ```python
 from google_auth_oauthlib.flow import InstalledAppFlow
 SCOPES = [
-    "https://www.googleapis.com/auth/gmail.compose",
-    "https://www.googleapis.com/auth/gmail.readonly",
+    "https://www.googleapis.com/auth/gmail.modify",
 ]
 creds = InstalledAppFlow.from_client_secrets_file("credentials.json", SCOPES).run_local_server(port=0)
 print("GOOGLE_GMAIL_REFRESH_TOKEN=" + creds.refresh_token)
@@ -85,6 +88,7 @@ No hace falta `GOOGLE_GMAIL_TOKEN`: el Worker usa el refresh token para obtener 
 ## Referencias
 
 - **Google Calendar** (mismo patrón OAuth/refresh en el Worker): [35-google-calendar-token-setup.md](./35-google-calendar-token-setup.md)
+- Re-OAuth Rick G-D5.2: [ops/gd52-reoauth-runbook.md](./ops/gd52-reoauth-runbook.md)
 - Gmail API sending: https://developers.google.com/workspace/gmail/api/guides/sending
 - Quickstart Python: https://developers.google.com/gmail/api/quickstart/python
 - Skill Gmail en el repo: `openclaw/workspace-templates/skills/gmail/SKILL.md`

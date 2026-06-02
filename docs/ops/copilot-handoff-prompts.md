@@ -2,7 +2,7 @@
 
 Copy-paste blocks for David. **Cursor pushes `main` before VPS prompts.**
 
-Last updated: 2026-06-02 — D4.1 MERGED · D5.3 DEGRADED
+Last updated: 2026-06-02 — D4.1 cerrado · D5.3 + cleanup siguientes
 
 ---
 
@@ -11,12 +11,14 @@ Last updated: 2026-06-02 — D4.1 MERGED · D5.3 DEGRADED
 | # | Agente | Estado |
 |---|---|---|
 | D3 + D3.4 | ✅ | retro `d3-tournament-retro-2026-06-02.md` |
-| D4.1 | ✅ | `D41_MERGED` — #448 @ `805aa57b` |
-| D5.3 | 🟡 | `D53_GRANOLA_SOAK_DEGRADED` — ver notas abajo |
-| **3d** | 🔴 **SIGUIENTE** | Copilot-VPS — post-merge D4.1 (read-only) |
-| **4c** | ✅ | Copilot Windows merge #448 |
-| **4b** | ✅ | Cursor cherry-pick + PR |
-| #447 | ⏸ | cerrar PR loser |
+| D4.1 | ✅ | `D41_MERGED` + `D41_VPS_POST_MERGE_OK` @ `9730bfa6` |
+| D5.3 | 🟡 | `D53_GRANOLA_SOAK_DEGRADED` → **PROMPT 5b** |
+| **5b** | 🔴 **SIGUIENTE** | Copilot-VPS — diagnóstico poller (read-only) |
+| **6** | ⏸ | Copilot Windows — cerrar PR **#447** (David gate) |
+| **6b** | ⏸ | Copilot Windows — cerrar issue **#445** (David gate) |
+| **3d** | ✅ | VPS post-merge D4.1 |
+| **4c** | ✅ | merge #448 |
+| **4b** | ✅ | cherry-pick + PR |
 
 Retro doc: [`d3-tournament-retro-2026-06-02.md`](d3-tournament-retro-2026-06-02.md)
 
@@ -33,10 +35,10 @@ Retro doc: [`d3-tournament-retro-2026-06-02.md`](d3-tournament-retro-2026-06-02.
 | **AC** | Copilot Windows | ✅ | `D33_WINNER_MERGED` #446 @ `da8eba85` |
 | **AD** | Copilot-VPS | ✅ | `D33_VPS_POST_MERGE_OK` @ `fce55518` |
 | **AE** | Copilot Windows | ✅ | `D41_MERGED` #448 @ `805aa57b` |
-| **D4.1** | VPS post-merge | 🔴 | PROMPT 3d |
-| **D5.3** | VPS soak | 🟡 | `D53_GRANOLA_SOAK_DEGRADED` |
+| **AF** | Copilot-VPS | ✅ | `D41_VPS_POST_MERGE_OK` @ `9730bfa6` |
+| **D5.3** | VPS soak | 🟡 | `D53_GRANOLA_SOAK_DEGRADED` → **5b** |
 
-**HEAD:** `805aa57b` (`feat(mission_control): O13.1 ... (#448)`). **#447** OPEN (opcional cerrar). Issue #445: opcional cerrar.
+**HEAD VPS/main:** `9730bfa6` (incluye docs D4.1; feature squash `805aa57b`). **#447** OPEN. **#445** OPEN (winner ya mergeado vía #446).
 
 ---
 

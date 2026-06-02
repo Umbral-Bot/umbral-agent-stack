@@ -77,11 +77,18 @@ Criterio PASS:
 - Client **Umbral-bot**: redirect OAuth Playground **eliminado** (solo umbralbim.io + Supabase).
 - Client **Rick OpenClaw**: creado; redirect solo OAuth Playground.
 
-## 5. Pendiente planificado (post G-D5.2)
+## 5. Cierre G-D5.2 (2026-06-02)
 
-1. **Copilot-VPS:** cierre formal task 015 — re-smoke + consolidar evidencia + revocar consent viejo en cuenta Rick (browser David) si aplica.
-2. **Copilot Windows:** alinear \`docs/35-gmail-token-setup.md\` y \`docs/35-google-calendar-token-setup.md\` a scopes ADR-16.
-3. **Notion governance:** actualizar log §6 ADR-16 (re-OAuth completado, fecha, gate G-D5.2).
+| Hilo | VEREDICTO | Evidencia |
+|---|---|---|
+| Copilot-VPS closeout (015) | G_D52_VPS_CLOSEOUT_OK | closeout-audit.txt, tokeninfo, smokes |
+| Copilot-VPS Calendar E2E (016) | G_D52_CALENDAR_E2E_OK | calendar-david-primary-list.json |
+| Copilot Windows docs (PR #438) | GD52_DOCS35_MERGED | commit 1187eaa9 |
+| Notion live §6 mirror | ADR16_LIVE_LOG_OK | Gobernanza Notion |
+
+Pendiente gate formal: task 017 → **G_D52_GATE_CLOSED** (VPS sync + traceability refresh).
+
+Skills OpenClaw Gmail/Calendar: task 018 (Codex).
 
 ## VEREDICTO
 

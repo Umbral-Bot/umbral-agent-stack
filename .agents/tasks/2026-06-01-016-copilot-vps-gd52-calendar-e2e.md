@@ -1,7 +1,7 @@
 # Task 016 — G-D5.2 Calendar E2E Rick → David primary (Copilot-VPS)
 
 - **assigned_to:** copilot-vps
-- **status:** assigned
+- **status:** done
 - **created:** 2026-06-02
 - **depends_on:** 2026-06-01-015 (G_D52_VPS_CLOSEOUT_OK)
 - **gate:** G-D5.2 calendar channel
@@ -33,9 +33,9 @@ curl -sS -X POST http://127.0.0.1:8088/run \
 
 ## Pass criteria
 
-- [ ] `calendar_id=david.a.moreira.m@gmail.com` returns events (non-empty or empty list OK)
-- [ ] tokeninfo still `calendar.events` + `gmail.modify`
-- [ ] Log notes: share calendar confirmed (Rick UI) — no env change needed
+- [x] `calendar_id=david.a.moreira.m@gmail.com` returns events (non-empty or empty list OK)
+- [x] tokeninfo still `calendar.events` + `gmail.modify`
+- [x] Log notes: share calendar confirmed (Rick UI) — no env change needed
 
 ## Boundaries
 
@@ -44,6 +44,14 @@ curl -sS -X POST http://127.0.0.1:8088/run \
 
 ## VEREDICTO
 
-(pending) → **G_D52_CALENDAR_E2E_OK** or **G_D52_CALENDAR_E2E_BLOCKED** with reason
+**G_D52_CALENDAR_E2E_OK**
 
 ## Log
+
+### 2026-06-02 — Copilot-VPS
+
+1. Preflight: `git pull --ff-only origin main` → TASK_FILE_OK.
+2. `bash scripts/vps/smoke-gd52-oauth.sh` → PASS (`calendar.events` + `gmail.modify`, `rick.asistente@gmail.com`, inner_ok Gmail + Calendar).
+3. `google.calendar.list_events` con `calendar_id=david.a.moreira.m@gmail.com` → `ok=True`, `inner_ok=True`, `events_count=3`.
+4. Evidencia: `~/.coord-ag-evidence/G-D5.2/calendar-david-primary-list.json`.
+5. NO env patch, NO re-OAuth, NO eventos creados.

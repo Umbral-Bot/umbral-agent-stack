@@ -140,4 +140,4 @@ Worker constants actualizados a scopes ADR:
 - `worker/tasks/gmail.py` → `gmail.modify`
 - `worker/tasks/google_calendar.py` → `calendar.events`
 
-Docs 35-* pendientes de alineación en follow-up (no bloquean re-OAuth).
+Docs 35-* alineados en main vía PR #438 (2026-06-02). Notion §6 mirror live (ADR16_LIVE_LOG_OK).

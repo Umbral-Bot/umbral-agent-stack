@@ -2,7 +2,7 @@
 
 Copy-paste blocks for David. **Cursor pushes `main` before VPS prompts.**
 
-Last updated: 2026-06-02 — D4.1 BLOCKED · D5.3 DEGRADED
+Last updated: 2026-06-02 — D4.1 MERGED · D5.3 DEGRADED
 
 ---
 
@@ -11,10 +11,11 @@ Last updated: 2026-06-02 — D4.1 BLOCKED · D5.3 DEGRADED
 | # | Agente | Estado |
 |---|---|---|
 | D3 + D3.4 | ✅ | retro `d3-tournament-retro-2026-06-02.md` |
-| D4.1 | 🟢 | **PR #448** — `D41_MISSION_CONTROL_PR_READY` (Cursor cherry-pick) |
+| D4.1 | ✅ | `D41_MERGED` — #448 @ `805aa57b` |
 | D5.3 | 🟡 | `D53_GRANOLA_SOAK_DEGRADED` — ver notas abajo |
-| **4c** | 🔴 **SIGUIENTE** | Copilot Windows — merge squash **#448** |
-| **4b** | ✅ | Hecho (Cursor) |
+| **3d** | 🔴 **SIGUIENTE** | Copilot-VPS — post-merge D4.1 (read-only) |
+| **4c** | ✅ | Copilot Windows merge #448 |
+| **4b** | ✅ | Cursor cherry-pick + PR |
 | #447 | ⏸ | cerrar PR loser |
 
 Retro doc: [`d3-tournament-retro-2026-06-02.md`](d3-tournament-retro-2026-06-02.md)
@@ -31,10 +32,11 @@ Retro doc: [`d3-tournament-retro-2026-06-02.md`](d3-tournament-retro-2026-06-02.
 | **1c** | Copilot-VPS | ✅ | PR #447 rescate delivery |
 | **AC** | Copilot Windows | ✅ | `D33_WINNER_MERGED` #446 @ `da8eba85` |
 | **AD** | Copilot-VPS | ✅ | `D33_VPS_POST_MERGE_OK` @ `fce55518` |
-| **D4.1** | PR #448 | 🟢 | merge 4c → post-merge VPS opcional |
+| **AE** | Copilot Windows | ✅ | `D41_MERGED` #448 @ `805aa57b` |
+| **D4.1** | VPS post-merge | 🔴 | PROMPT 3d |
 | **D5.3** | VPS soak | 🟡 | `D53_GRANOLA_SOAK_DEGRADED` |
 
-**HEAD:** `da8eba85` (`feat: ... (#446)`). **#447** OPEN (loser kept). Issue #445: cerrar tras AD + opcional close issue.
+**HEAD:** `805aa57b` (`feat(mission_control): O13.1 ... (#448)`). **#447** OPEN (opcional cerrar). Issue #445: opcional cerrar.
 
 ---
 
@@ -507,7 +509,43 @@ VEREDICTO: D41_MERGED | D41_MERGE_448_BLOCKED
 Incluir: squash SHA en main, checks finales, pytest summary, confirmación mission_control/ en tree
 ```
 
-**Después de `D41_MERGED`:** pegar PROMPT 3 adaptado (post-merge) en Copilot-VPS — `git pull`, `pytest -k mission`, sin restart servicios.
+**Resultado Copilot Windows 2026-06-02:** `D41_MERGED` — squash `805aa57be0fa297f31801a57b83ca907005d291e`; checks 3.11/3.12 SUCCESS; worktree smoke **35 passed, 2 skipped**; `mission_control/` en `HEAD`; sin deploy/runtime.
+
+---
+
+## PROMPT 3d — Copilot-VPS · post-merge D4.1 (#448) 🔴
+
+**Pegar después de `D41_MERGED`:**
+
+```
+Sos Copilot-VPS. Post-merge D4.1 Mission Control — read-only sync. NO deploy mission-control.service. NO gateway restart. NO touch ~/.config/openclaw/env.
+
+cd ~/umbral-agent-stack
+git fetch origin main && git checkout main && git pull --ff-only origin main
+git log -1 --oneline
+git status --short --branch
+
+# HEAD debe ser squash #448 (805aa57b o posterior docs-only)
+test -d mission_control && echo MISSION_CONTROL_TREE_OK || echo MISSION_CONTROL_TREE_MISSING
+test -f docs/architecture/mission-control.md && echo ADR_DOC_OK || echo ADR_DOC_MISSING
+
+# Tests (usar .venv si python3 del sistema no tiene pytest)
+set +e
+python3 -m pytest tests/ -k mission -q 2>/tmp/d41-post-merge-stderr.txt
+TEST_RC=$?
+if [ "$TEST_RC" -ne 0 ] && [ -x .venv/bin/python ]; then
+  echo "=== retry .venv ==="
+  .venv/bin/python -m pytest tests/ -k mission -q
+  TEST_RC=$?
+fi
+exit "$TEST_RC"
+
+# NO: systemctl restart, openclaw gateway, pip install global sin runbook
+# NO: levantar :8089 en producción en este turno
+
+VEREDICTO: D41_VPS_POST_MERGE_OK | D41_VPS_POST_MERGE_BLOCKED
+Incluir: HEAD SHA, pytest summary, confirmación mission_control/ presente
+```
 
 ---
 

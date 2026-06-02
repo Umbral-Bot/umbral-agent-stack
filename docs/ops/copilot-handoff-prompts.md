@@ -12,8 +12,11 @@ Last updated: 2026-06-02 — D4.1 cerrado · D5.3 + cleanup siguientes
 |---|---|---|
 | D3 + D3.4 | ✅ | retro `d3-tournament-retro-2026-06-02.md` |
 | D4.1 | ✅ | `D41_MERGED` + `D41_VPS_POST_MERGE_OK` @ `9730bfa6` |
-| D5.3 | 🟡 | `D53_GRANOLA_SOAK_DEGRADED` → **PROMPT 5b** |
-| **5b** | 🔴 **SIGUIENTE** | Copilot-VPS — diagnóstico poller (read-only) |
+| D5.3 | 🟡 | soak DEGRADED · diag READY → **5c + 5d** |
+| **5c** | 🔴 **1/2** | **Cursor** — fix bootstrap + PR |
+| **5d** | 🔴 **2/2** | **Copilot Windows** — merge PR 5c |
+| **5b** | ✅ | `D53_POLLER_DIAG_READY` — log `poller-diagnostic-202606021409.log` |
+| **5e** | ⏸ | Copilot-VPS — restart poller/worker **después** de merge 5d |
 | **6** | ⏸ | Copilot Windows — cerrar PR **#447** (David gate) |
 | **6b** | ⏸ | Copilot Windows — cerrar issue **#445** (David gate) |
 | **3d** | ✅ | VPS post-merge D4.1 |
@@ -36,7 +39,8 @@ Retro doc: [`d3-tournament-retro-2026-06-02.md`](d3-tournament-retro-2026-06-02.
 | **AD** | Copilot-VPS | ✅ | `D33_VPS_POST_MERGE_OK` @ `fce55518` |
 | **AE** | Copilot Windows | ✅ | `D41_MERGED` #448 @ `805aa57b` |
 | **AF** | Copilot-VPS | ✅ | `D41_VPS_POST_MERGE_OK` @ `9730bfa6` |
-| **D5.3** | VPS soak | 🟡 | `D53_GRANOLA_SOAK_DEGRADED` → **5b** |
+| **D5.3** | diag | ✅ | `D53_POLLER_DIAG_READY` |
+| **D5.3** | fix+merge | 🔴 | **5c** Cursor PR → **5d** Windows merge → **5e** VPS restart |
 
 **HEAD VPS/main:** `9730bfa6` (incluye docs D4.1; feature squash `805aa57b`). **#447** OPEN. **#445** OPEN (winner ya mergeado vía #446).
 
@@ -651,6 +655,139 @@ VEREDICTO: D53_POLLER_DIAG_READY | D53_POLLER_DIAG_BLOCKED
 Log: $LOG
 ```
 
+**Resultado VPS 2026-06-02:** `D53_POLLER_DIAG_READY` — poller pid 649811 desde May 24, sin `notion-poller.service`; cursores per-page en Redis; global `notion:poll:cursor` ausente (esperado ADR-010); worker loguea `cursor_used=False bootstrap=True`; ops_log Granola último ~Apr 24. Log: `~/.coord-ag-evidence/D5.3/poller-diagnostic-202606021409.log`
+
+---
+
+## PROMPT 5c — Cursor · fix poll_comments bootstrap + PR 🔴 (1/2)
+
+**Para:** **Cursor** (repo `umbral-agent-stack`). **No** Copilot-VPS. Objetivo: código + tests + **push + PR**. Merge lo hace **5d** (Copilot Windows).
+
+**Contexto diag:** `bootstrap=True` + cursores `notion:poll:cursor:<page_id>` presentes; bug histórico documentado en board §2026-05-07-032b (guard `if not bootstrap:` descarta resultados con `__TAIL__`). PR #361 pudo haber mergeado fix; verificar si `main` aún reproduce y cerrar gap.
+
+```
+/goal Verificar y, si hace falta, corregir poll_comments bootstrap en worker/notion_client.py; pytest verde; abrir PR. Responder en español.
+
+Sos Cursor en C:\GitHub\umbral-agent-stack. D5.3 follow-up código — NO tocar VPS ni reiniciar servicios.
+
+=== Fase 0 — Baseline ===
+git fetch origin && git checkout main && git pull --ff-only origin main
+git log -1 --oneline
+rg -n "if not bootstrap" worker/notion_client.py
+rg -n "CURSOR_REDIS_KEY_PREFIX|__TAIL__" worker/notion_client.py
+
+=== Fase 1 — Análisis ===
+# Leer ADR-010 y poll_comments (~500-665)
+# Si el guard anti-bootstrap sigue descartando la única página cuando has_more=false → aplicar fix mínimo (Opción A board: colectar también en bootstrap)
+# Si main ya tiene fix correcto: añadir test de regresión que reproduzca __TAIL__ + has_more=false → count>0
+# Scope mínimo: worker/notion_client.py + tests/test_notion_poller.py o tests/ existentes poll_comments
+
+=== Fase 2 — Implementar + tests ===
+git checkout -b cursor/fix-d53-poll-comments-bootstrap main
+# editar solo lo necesario
+.\.venv\Scripts\python.exe -m pytest tests/ -k "poll_comments or notion_poller" -q
+.\.venv\Scripts\python.exe -m pytest tests/test_notion_client.py -q 2>$null
+# Si no existe test_notion_client, usar -k poll en tests/
+
+=== Fase 3 — Commit + push + PR ===
+git add worker/notion_client.py tests/
+git commit -m "fix(notion): collect comments during bootstrap tail-seek (#D5.3)"
+git push -u origin cursor/fix-d53-poll-comments-bootstrap
+gh pr create --repo Umbral-Bot/umbral-agent-stack \
+  --head cursor/fix-d53-poll-comments-bootstrap \
+  --base main \
+  --title "fix(notion): poll_comments bootstrap collect (D5.3)" \
+  --body "## Summary
+- Cierra gap D53_POLLER_DIAG: bootstrap no debe descartar página única con has_more=false.
+- Ref: ADR-010, board 2026-05-07-032b.
+
+## Test plan
+- [x] pytest -k poll_comments|notion_poller
+- [ ] CI green
+- [ ] Merge vía PROMPT 5d (Copilot Windows)
+- [ ] Después merge: PROMPT 5e VPS restart (David gate)"
+
+VEREDICTO: D53_FIX_PR_READY | D53_FIX_PR_BLOCKED
+Incluir: PR URL, diff summary, pytest output, si el bug ya estaba fixed en main (solo test)
+```
+
+---
+
+## PROMPT 5d — Copilot Windows · merge PR D5.3 🔴 (2/2)
+
+**Para:** **Copilot Windows**. **Después** de `D53_FIX_PR_READY` (o si PR ya existe con CI verde). Hace **squash merge** — no implementa código.
+
+```
+autorizo merge D5.3 poll bootstrap PR
+
+Sos Copilot Windows. Merge squash del PR de Cursor para D5.3 (poll_comments bootstrap).
+
+=== Fase 0 ===
+cd C:\GitHub\umbral-agent-stack
+git pull --ff-only origin main
+# Reemplazar <PR_NUM> por el número que devolvió 5c (ej. 449)
+$PR = <PR_NUM>
+gh pr view $PR --repo Umbral-Bot/umbral-agent-stack --json mergeStateStatus,statusCheckRollup,title,url
+gh pr checks $PR --repo Umbral-Bot/umbral-agent-stack
+# STOP si no CLEAN / checks no SUCCESS
+
+=== Fase 1 — Smoke worktree ===
+$tmp = Join-Path $env:TEMP ('uas-d53-' + [guid]::NewGuid().ToString('N'))
+git fetch origin pull/$PR/head
+git worktree add --detach $tmp FETCH_HEAD
+Set-Location $tmp
+C:\GitHub\umbral-agent-stack\.venv\Scripts\python.exe -m pytest tests/ -k "poll_comments or notion_poller" -q
+$rc = $LASTEXITCODE
+Set-Location C:\GitHub\umbral-agent-stack
+git worktree remove --force $tmp
+if ($rc -ne 0) { throw "pytest failed $rc" }
+
+=== Fase 2 — Merge ===
+gh pr merge $PR --repo Umbral-Bot/umbral-agent-stack --squash --delete-branch
+git pull --ff-only origin main
+git log -1 --oneline
+
+VEREDICTO: D53_FIX_MERGED | D53_FIX_MERGE_BLOCKED
+Incluir: squash SHA, PR URL, checks finales
+```
+
+**Después de `D53_FIX_MERGED`:** David autoriza **PROMPT 5e** en VPS (`autorizo reiniciar notion-poller y worker G-D0`) para aplicar código en runtime.
+
+---
+
+## PROMPT 5e — Copilot-VPS · aplicar fix en runtime (post-merge) ⏸
+
+**Solo tras 5d + frase:** `autorizo reiniciar notion-poller y worker G-D0`
+
+```
+autorizo reiniciar notion-poller y worker G-D0
+
+Sos Copilot-VPS. Aplicar merge D5.3 en runtime — pull, restart controlado, verificar logs.
+
+cd ~/umbral-agent-stack && git pull --ff-only origin main
+git log -1 --oneline
+
+# Parar poller huérfano (pid viejo May 24)
+pkill -f notion-poller-daemon.py || true
+sleep 2
+pgrep -af notion-poller || echo POLLER_STOPPED
+
+# Reiniciar worker
+systemctl --user restart umbral-worker
+sleep 3
+systemctl --user is-active umbral-worker
+
+# Relanzar poller vía script gobernado (NO inventar unit)
+bash scripts/vps/notion-poller-cron.sh 2>/dev/null || python3 scripts/vps/notion-poller-daemon.py &
+sleep 5
+pgrep -af notion-poller
+
+# Verificar 10 min ventana: cursor_used=True al menos una vez
+journalctl --user -u umbral-worker --since "2 minutes ago" --no-pager | grep -iE 'poll_comments|cursor_used|bootstrap' | tail -20
+
+VEREDICTO: D53_RUNTIME_APPLIED_OK | D53_RUNTIME_APPLIED_BLOCKED
+```
+
 ---
 
 ## PROMPT 6 — Copilot Windows · cerrar PR #447 (loser D3.3) ⏸
@@ -758,8 +895,10 @@ Log: $LOG
 
 | Prioridad | Spine | Prompt | Agente |
 |---|---|---|---|
-| 1 | **D5.3** | **5b** poller diagnostic | Copilot-VPS |
-| 2 | D3 cleanup | **6** cerrar #447 | Copilot Windows (gate David) |
+| 1 | **D5.3** | **5c** fix + PR | **Cursor** |
+| 2 | **D5.3** | **5d** merge PR | **Copilot Windows** |
+| 3 | **D5.3** | **5e** restart runtime | Copilot-VPS (gate David) |
+| 4 | D3 cleanup | **6** cerrar #447 | Copilot Windows (gate David) |
 | 3 | D3 cleanup | **6b** cerrar #445 | Copilot Windows (gate David) |
 | 4 | G-D0 | restart worker | Copilot-VPS (solo `autorizo restart worker G-D0`) |
 | 5 | D6.1 | KB AECO | 26-jun |

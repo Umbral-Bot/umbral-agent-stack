@@ -424,8 +424,8 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 - **D33_VPS_POST_MERGE_OK** @ `fce55518`
 - **D3.4 retro:** `M1_D34_TOURNAMENT_RETRO_OK` — `docs/ops/d3-tournament-retro-2026-06-02.md`
 - **D4.1:** ✅ `D41_MERGED` (#448 @ `805aa57b`) + `D41_VPS_POST_MERGE_OK` (HEAD `9730bfa6`, 35 passed mission)
-- **D5.3:** `D53_GRANOLA_SOAK_DEGRADED` — poller May 24 sin unit; cursor vacío
-- **Siguiente:** PROMPT **5b** poller diag; **6/6b** cerrar #447/#445 si David autoriza; G-D0 solo con frase explícita
+- **D5.3:** soak DEGRADED · `D53_POLLER_DIAG_READY` (2026-06-02) — bootstrap=True en worker; per-page cursors OK
+- **Siguiente:** **5c** Cursor PR fix → **5d** merge Windows → **5e** VPS restart (gate David)
 - Lección D3.2: exigir PR URL por lane antes de announce done
 
 ## 2026-06-02-019 — D3.2 tournament O2 backup alerts #440 [DONE — salvage merged]

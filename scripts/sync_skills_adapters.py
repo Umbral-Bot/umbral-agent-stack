@@ -100,7 +100,14 @@ def _split_frontmatter(text: str) -> tuple[dict, str]:
 def parse_skill_frontmatter(skill_md: Path) -> dict:
     """Parse a SKILL.md file with graceful fallback on malformed frontmatter."""
     text = skill_md.read_text(encoding="utf-8", errors="replace")
+    lines = text.splitlines()
     frontmatter, _body = _split_frontmatter(text)
+
+    parse_error = ""
+    if not lines or lines[0].strip() != "---":
+        parse_error = "Missing opening frontmatter delimiter"
+    elif not frontmatter:
+        parse_error = "Invalid YAML or missing closing frontmatter delimiter"
 
     name = str(frontmatter.get("name") or skill_md.parent.name).strip()
     description = str(frontmatter.get("description") or "").strip()
@@ -135,7 +142,7 @@ def parse_skill_frontmatter(skill_md: Path) -> dict:
         "emoji": emoji,
         "env_vars": deduped_env,
         "path": rel_path_str,
-        "parse_error": "" if frontmatter else "frontmatter_missing_or_invalid",
+        "parse_error": parse_error,
     }
 
 
@@ -319,7 +326,8 @@ def plan_to_text(plan: list[SyncPlanEntry], *, requested_platform: str, skills_d
     lines.append("")
     for entry in plan:
         lines.append(
-            " | ".join(
+            f"[{entry.platform}] {entry.slug} :: "
+            + " | ".join(
                 [
                     entry.platform,
                     entry.slug,
@@ -384,7 +392,8 @@ def main(argv: list[str] | None = None) -> int:
     print(output, end="")
 
     if not dry_run:
-        apply_local_sync(plan)
+        changed = apply_local_sync(plan)
+        print(f"[execute] Processed {len(plan)} write(s); changed={changed}")
 
     return 0
 

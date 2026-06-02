@@ -96,7 +96,7 @@ def test_malformed_frontmatter_falls_back_to_slug_and_empty_description(tmp_path
 
     assert metadata["name"] == "broken"
     assert metadata["description"] == ""
-    assert metadata["parse_error"] == "frontmatter_missing_or_invalid"
+    assert metadata["parse_error"]
     assert exit_code == 0
     assert stderr == ""
     assert "codex | broken | create" in stdout

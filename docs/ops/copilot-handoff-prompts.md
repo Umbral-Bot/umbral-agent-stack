@@ -2,7 +2,7 @@
 
 Copy-paste blocks for David. **Cursor pushes `main` before VPS prompts.**
 
-Last updated: 2026-06-02 — **M1_D33_TOURNAMENT_PARTIAL** (PR #446; delivery local `9741e7c`)
+Last updated: 2026-06-02 — **D33_WINNER_MERGED** @ `da8eba85` (#446); #447 OPEN
 
 ---
 
@@ -10,12 +10,11 @@ Last updated: 2026-06-02 — **M1_D33_TOURNAMENT_PARTIAL** (PR #446; delivery lo
 
 | # | Agente | Cuándo | Autorización David |
 |---|---|---|---|
-| 1c | **Copilot-VPS** | 🔴 **SIGUIENTE** | `autorizo rescate lane delivery D3.3` |
-| 2 | Copilot Windows | Tras PR #447 (o 2 PRs) | `autorizo merge winner D3.3` |
-| 3 | Copilot-VPS | Tras merge winner | post-merge AD |
-| 2-alt | Copilot Windows | Solo si no rescatas delivery | merge solo #446 (ver 2b) |
+| 3 | **Copilot-VPS** | 🔴 **SIGUIENTE** | post-merge AD (read-only) |
+| — | Copilot Windows | ✅ | `D33_WINNER_MERGED` — #446 squash @ `da8eba85` |
+| 1c | Copilot-VPS | ✅ | `D33_DELIVERY_LANE_RESCUED` — PR #447 |
 
-Torneo AB/1b: ✅ cerrado → `M1_D33_TOURNAMENT_PARTIAL` · evidencia `~/.coord-ag-evidence/D3.3/` · [issue comment](https://github.com/Umbral-Bot/umbral-agent-stack/issues/445#issuecomment-4604044479)
+Cierre torneo: winner [#446](https://github.com/Umbral-Bot/umbral-agent-stack/pull/446) merged · loser [#447](https://github.com/Umbral-Bot/umbral-agent-stack/pull/447) kept open
 
 ---
 
@@ -25,15 +24,13 @@ Torneo AB/1b: ✅ cerrado → `M1_D33_TOURNAMENT_PARTIAL` · evidencia `~/.coord
 |---|---|---|---|
 | **W** | Copilot-VPS | ✅ | `D32_WORKTREE_CLEANUP_NOOP_OK` |
 | **AA** | Copilot-VPS | ✅ | `D33_PREFLIGHT_OK` |
-| **AB** | Copilot-VPS | ✅ | `M1_D33_TOURNAMENT_PARTIAL` — #446 qa; delivery NO_PR |
-| **1c** | Copilot-VPS | 🔴 | rescate push+PR lane delivery |
-| **AC** | Copilot Windows | ⏸ | judge + merge (2 PRs) |
-| **AD** | Copilot-VPS | ⏸ | post-merge |
+| **AB** | Copilot-VPS | ✅ | `M1_D33_TOURNAMENT_PARTIAL` → rescate + judge |
+| **1c** | Copilot-VPS | ✅ | PR #447 rescate delivery |
+| **AC** | Copilot Windows | ✅ | `D33_WINNER_MERGED` #446 @ `da8eba85` |
+| **AD** | Copilot-VPS | 🔴 | post-merge sync |
 | **AF/AG** | paralelo | ⏸ | Mission Control / Granola |
 
-**HEAD:** `9ee9615b`. **PR torneo abierto:** [#446](https://github.com/Umbral-Bot/umbral-agent-stack/pull/446) (sync-qa). **Delivery local:** rama `tournament/.../lane-sync-delivery` commit `9741e7c` (no en origin).
-
-**Recomendación:** rescate **1c** → judge **2** (como D3.2 salvage, pero la entrega ya existe en VPS).
+**HEAD:** `da8eba85` (`feat: ... (#446)`). **#447** OPEN (loser kept). Issue #445: cerrar tras AD + opcional close issue.
 
 ---
 

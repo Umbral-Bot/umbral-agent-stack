@@ -418,10 +418,10 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 ## 2026-06-01-017 — G-D5.2 gate closeout sync [ASSIGNED → copilot-vps]
 - Post O/P/N: VPS pull #438, refresh traceability, VEREDICTO **G_D52_GATE_CLOSED**
 
-## 2026-06-02-020 — D3.3 tournament sync_skills adapters #445 [DONE → PARTIAL]
-- **M1_D33_TOURNAMENT_PARTIAL** — PR [#446](https://github.com/Umbral-Bot/umbral-agent-stack/pull/446) (qa); delivery `9741e7c` local sin PR
-- Evidencia: `~/.coord-ag-evidence/D3.3/` · [comment #445](https://github.com/Umbral-Bot/umbral-agent-stack/issues/445#issuecomment-4604044479)
-- **Siguiente:** PROMPT **1c** rescate delivery → PROMPT **2** judge+merge (o **2b** solo #446)
+## 2026-06-02-020 — D3.3 tournament sync_skills adapters #445 [DONE]
+- Torneo: **M1_D33_TOURNAMENT_PARTIAL** → rescate #447 → judge → **D33_WINNER_MERGED** #446 @ **`da8eba85`**
+- Loser [#447](https://github.com/Umbral-Bot/umbral-agent-stack/pull/447) kept open
+- **Siguiente:** PROMPT **3** VPS post-merge AD; cerrar #445; D3.4 retro protocolo
 - Lección D3.2: exigir PR URL por lane antes de announce done
 
 ## 2026-06-02-019 — D3.2 tournament O2 backup alerts #440 [DONE — salvage merged]

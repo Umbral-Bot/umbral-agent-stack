@@ -1,0 +1,58 @@
+# D3.3 — Real tournament #3 (issue #445 O3 sync_skills adapters)
+# Run from main standalone only (G-D1b). Preflight:
+#   bash scripts/openclaw/tournament-preflight-dry-run.sh this file
+
+issue_id: Umbral-Bot/umbral-agent-stack#445
+issue_url: https://github.com/Umbral-Bot/umbral-agent-stack/issues/445
+issue_title: "O3 D3.3 — sync_skills platform adapters (Codex + Cursor dry-run)"
+repo_path: ~/umbral-agent-stack
+usd_budget_cap: 1.50
+cleanup_policy: keep-losers
+winner_rubric: |
+  Tournament rubric (issue #445 acceptance):
+  1. Meets issue acceptance: codex + cursor adapters, dry-run default, tests + runbook.
+  2. Tests use fixtures/temp dirs only; CI-safe; no secrets, no real ~/.codex or ~/.cursor writes in tests.
+  3. Smallest correct diff — tie-break fewer total line changes, then green checks.
+  4. Reject scope-creep: no umbral-skills-registry bulk migration, no VPS SCP execute in CI, no gateway/env.
+  5. Lane without PR URL = incomplete (docs/79 collect phase; task 012 gate #441).
+  6. Prefer extending scripts/sync_skills_to_vps.py OR new scripts/sync_skills_adapters/ — document choice in PR.
+lanes:
+  - specialty: sync-delivery
+    agent_id: rick-delivery
+    runTimeoutSeconds: 2400
+    task_template: |
+      # Tournament lane: sync-delivery (D3.3)
+      Issue: {{issue_url}}
+      Branch: tournament/{{tournament_id}}/lane-sync-delivery
+
+      Read issue #445 acceptance. Baseline: scripts/sync_skills_to_vps.py (VPS SCP only today).
+
+      Implement:
+      - Platform adapters: codex + cursor with --dry-run default and --platform flag.
+      - Unit tests with fixtures under tests/fixtures/sync_skills/ (create dirs as needed).
+      - Runbook docs/ops/sync-skills-adapters-runbook.md.
+
+      Contract:
+      - NO merge yourself. NO touch other lanes.
+      - Run pytest locally before PR: python -m pytest tests/ -k sync_skills -q
+      - PR title: [tournament:{{tournament_id}}:sync-delivery] {{issue_title}}
+      - Announce JSON: pr_url, diff_stats, checks_status, specialty=sync-delivery
+  - specialty: sync-qa
+    agent_id: rick-qa
+    runTimeoutSeconds: 2400
+    task_template: |
+      # Tournament lane: sync-qa (D3.3)
+      Issue: {{issue_url}}
+      Branch: tournament/{{tournament_id}}/lane-sync-qa
+
+      Same issue — independent implementation. Emphasize edge cases:
+      - unknown platform rejected
+      - empty skills dir
+      - malformed SKILL.md frontmatter
+      - idempotent dry-run (same output twice)
+      Still deliver full solution if tests alone insufficient.
+
+      Contract:
+      - NO merge yourself.
+      - PR title: [tournament:{{tournament_id}}:sync-qa] {{issue_title}}
+      - Announce JSON: pr_url, diff_stats, checks_status, specialty=sync-qa

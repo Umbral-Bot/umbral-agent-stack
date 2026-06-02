@@ -418,9 +418,17 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 ## 2026-06-01-017 — G-D5.2 gate closeout sync [ASSIGNED → copilot-vps]
 - Post O/P/N: VPS pull #438, refresh traceability, VEREDICTO **G_D52_GATE_CLOSED**
 
-## 2026-06-02-019 — D3.2 tournament O2 backup alerts #440 [ASSIGNED → copilot-vps]
-- Issue #440, spec d32-issue-440, script d3.2-tournament-run.sh
-- Phase 0 Cursor; preflight Thread T → torneo Thread U
+## 2026-06-02-020 — D3.3 tournament sync_skills adapters #445 [ASSIGNED → copilot-vps]
+- Issue [#445](https://github.com/Umbral-Bot/umbral-agent-stack/issues/445), spec `d33-issue-445`, script `d3.3-tournament-run.sh`, task 020
+- Phase 0 Cursor 2026-06-02; **siguiente:** Thread AA preflight VPS
+- Lección D3.2: exigir PR URL por lane antes de announce done
+
+## 2026-06-02-019 — D3.2 tournament O2 backup alerts #440 [DONE — salvage merged]
+- Issue #440 cerrado vía salvage PR **#444** → **`2fe58535`** (`D32_ISSUE440_MERGED` Copilot Windows 2026-06-02)
+- VPS post-merge: **`D32_VPS_POST_MERGE_OK`** @ `2fe5853`
+- Torneo real: **`M1_D32_TOURNAMENT_PARTIAL`** (0 PR URLs; gate #441 OK). Entregable funcional = salvage Codex, no winner de torneo.
+- Evidencia torneo: `~/.coord-ag-evidence/D3.2/` (intacta). Opcional cleanup worktree: requiere `autorizo cleanup worktree D3.2`
+- Siguiente torneo competitivo: **D3.3** (`sync_skills`)
 
 ## 2026-06-01-018 — O15 Gmail/Calendar OpenClaw skills [DONE → O15_OPENCLAW_WORKSPACE_SKILLS_OK]
 - PR #439 `3388bf9c`; skills live VPS workspace
@@ -430,7 +438,8 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 
 ## 2026-06-01-014 — G-D5.2 OAuth scope decision [DONE → opción B]
 ## 2026-06-01-013 — D3.1 worktree cleanup [ASSIGNED → copilot-vps]
-## 2026-06-01-012 — Tournament lane PR gate [ASSIGNED → cursor]
+## 2026-06-01-012 — Tournament lane PR gate [DONE → M1_D31_LANE_GATE_OK]
+- PR #441 → **`462ef1c1`**
 ## 2026-06-01-011 — G-D5.1 OAuth VPS audit [DONE → G_D51_VPS_AUDIT_OK]
 ## 2026-06-01-008 — D3.1 tournament #403 [DONE → M1_D31_TOURNAMENT_PARTIAL, #437 merged]
 ## 2026-06-01-010 — D5.1 OAuth discovery Windows [DONE → D51_OAUTH_DISCOVERY_OK]

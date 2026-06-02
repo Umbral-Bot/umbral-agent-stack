@@ -32,9 +32,8 @@ created: 2026-06-01
 - Umbral-bot: redirect OAuth Playground eliminado (solo umbralbim.io + Supabase).
 - Client **Rick OpenClaw** creado (GCP `future-yeti-455715-u7`).
 - OAuth Playground: consent `rick.asistente@gmail.com`, scopes `gmail.modify` + `calendar.events`.
-- VPS `~/.config/openclaw/env`: credenciales rotadas (client `285813488732-ij582…`).
-- Worker: desplegados `gmail.py` / `google_calendar.py` con scopes ADR-16 (pendiente commit a `main`).
-- Smoke PASS: tokeninfo, Gmail profile, `gmail.list_drafts`, `google.calendar.list_events`.
-- Evidencia: `~/.coord-ag-evidence/G-D5.2/` en VPS.
+- VPS `~/.config/openclaw/env`: **valores rotados** (6 vars OAuth; client `285813488732-ij582…`; no se agregaron nombres nuevos).
+- Worker en `main`: scopes ADR-16 + scripts `patch`/`smoke`/`deploy`.
+- Smoke PASS post-pull. Trazabilidad: `bash scripts/vps/write-gd52-traceability.sh` → `~/.coord-ag-evidence/G-D5.2/traceability-report.md`.
 
-**G_D52_VPS_REOAUTH_OK**
+**G_D52_VPS_REOAUTH_OK** — follow-up formal: task **015** Copilot-VPS.

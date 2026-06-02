@@ -198,3 +198,42 @@ Reply path: `worker.tasks.notion.handle_notion_add_comment` usa `NOTION_API_KEY`
 - Trace canónico: `~/.openclaw/trace/delegations.jsonl`.
 - B1 archeology task 026: `/tmp/026/code-archeology.md` (working note local).
 - B2 bot identity task 026: `/tmp/026/bot-user.md` (working note local).
+
+## 10. Skills O15 — Gmail y Calendar (read-only smoke)
+
+Agregar al playbook de cobertura sin intervención de VPS:
+
+### 10.1 gmail-router (read-only + draft proposal path)
+
+```bash
+source .venv/bin/activate
+source ~/.config/openclaw/env
+python - <<'PY'
+from client.worker_client import WorkerClient
+
+wc = WorkerClient()
+print(wc.run("gmail.list_drafts", {"max_results": 5}))
+PY
+```
+
+### 10.2 calendar-propose (read-only + propuesta controlada)
+
+```bash
+source .venv/bin/activate
+source ~/.config/openclaw/env
+python - <<'PY'
+from client.worker_client import WorkerClient
+
+wc = WorkerClient()
+print(wc.run("google.calendar.list_events", {
+    "calendar_id": "primary",
+    "max_results": 5,
+}))
+PY
+```
+
+### 10.3 Propuesta de evento (recordatorio de gate)
+
+- `calendar-propose` debe construir título de propuesta con prefijo `[PROPUESTA]`.
+- `gmail-router` debe usar `gmail.create_draft` para outbound y **no** `send` directo.
+- Si la skill usa `calendar_id` explícito en `create_event`, validar manualmente whitelist de David (D6) en el flujo de operación.

@@ -61,7 +61,7 @@ No deploy VPS en este task — handoff separado a Copilot-VPS post-merge PR.
 - [x] Tests nuevos pasan; no regresión en suite existente relacionada
 - [x] Runbook actualizado con comandos smoke read-only (list drafts, list events David primary)
 - [x] PR `codex/feat-o15-gmail-calendar-skills` — **no merge** (Copilot merge master)
-- [x] Log en este task con link PR + resumen diseño
+- [x] Log en este task con resumen diseño
 
 ## Boundaries
 
@@ -72,11 +72,10 @@ No deploy VPS en este task — handoff separado a Copilot-VPS post-merge PR.
 
 ## VEREDICTO
 
-(pending) → **O15_GMAIL_CALENDAR_SKILLS_OK**
+**O15_GMAIL_CALENDAR_SKILLS_OK**
 
 ## Log
-- [codex] 2026-06-02 — Criterios PASS completos:
-  - Estado actualizado a `done`.
+- [codex] 2026-06-02 — Entregado:
   - Wrappers mínimos entregados:
     - `scripts/gmail/gmail_router.py`
     - `scripts/google_calendar/calendar_propose.py`
@@ -89,6 +88,4 @@ No deploy VPS en este task — handoff separado a Copilot-VPS post-merge PR.
   - Runbook de cobertura actualizado en:
     - `docs/runbooks/rick-multichannel-setup.md` (sección `## 10. Skills O15 — Gmail y Calendar`)
   - Validación:
-    - `python -m pytest tests/test_gmail_router_skill.py tests/test_calendar_propose_skill.py -v` → `6 passed`
-  - PR: pendiente de merge por Copilot sobre la rama `codex/feat-o15-gmail-calendar-skills`.
-  - **O15_GMAIL_CALENDAR_SKILLS_OK**
+    - `python -m pytest tests/test_gmail_router_skill.py tests/test_calendar_propose_skill.py -v` → `7 passed`

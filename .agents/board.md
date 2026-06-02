@@ -418,9 +418,10 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 ## 2026-06-01-017 — G-D5.2 gate closeout sync [ASSIGNED → copilot-vps]
 - Post O/P/N: VPS pull #438, refresh traceability, VEREDICTO **G_D52_GATE_CLOSED**
 
-## 2026-06-02-020 — D3.3 tournament sync_skills adapters #445 [ASSIGNED → copilot-vps]
+## 2026-06-02-020 — D3.3 tournament sync_skills adapters #445 [IN_PROGRESS → copilot-vps]
 - Issue [#445](https://github.com/Umbral-Bot/umbral-agent-stack/issues/445), spec `d33-issue-445`, script `d3.3-tournament-run.sh`, task 020
-- Phase 0 Cursor 2026-06-02; **siguiente:** Thread AA preflight VPS
+- **D32_WORKTREE_CLEANUP_NOOP_OK** + **D33_PREFLIGHT_OK** @ `420e9f6f` (evidencia `~/.coord-ag-evidence/D3.3/`)
+- **Siguiente:** Thread AB — `autorizo torneo D3.3`
 - Lección D3.2: exigir PR URL por lane antes de announce done
 
 ## 2026-06-02-019 — D3.2 tournament O2 backup alerts #440 [DONE — salvage merged]

@@ -426,7 +426,8 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 - **D4.1:** ✅ `D41_MERGED` (#448 @ `805aa57b`) + `D41_VPS_POST_MERGE_OK` (HEAD `9730bfa6`, 35 passed mission)
 - **D5.3:** ✅ `D53_RUNTIME_APPLIED_OK` (poller 1130156, worker health OK, cursor_used=True en 30c5…)
 - **5c:** `D53_FIX_ALREADY_IN_MAIN` · soak inicial `D53_GRANOLA_SOAK_DEGRADED` (Granola ops_log quieto)
-- **Siguiente:** PROMPT **D6.1a** AECO KB preflight/what-if (Copilot Windows) · Friday retro
+- **D6.1a:** ✅ `D61_AECO_KB_PREFLIGHT_OK` — Azure/GHCR what-if read-only OK; único drift esperado `aeco-source-crawler` env vars `SOURCE_TYPE`/`MAX_DOCS`.
+- **Siguiente:** PROMPT **D6.1b** deploy real AECO KB (Copilot Windows, requiere `autorizo deploy AECO KB D6.1`) · Friday retro
 - Lección D3.2: exigir PR URL por lane antes de announce done
 
 ## 2026-06-02-019 — D3.2 tournament O2 backup alerts #440 [DONE — salvage merged]

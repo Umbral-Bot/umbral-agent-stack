@@ -2,7 +2,7 @@
 
 Copy-paste blocks for David. **Cursor pushes `main` before VPS prompts.**
 
-Last updated: 2026-06-03 — D3 cleanup cerrado · D5.3 runtime OK · D6.1 preflight siguiente
+Last updated: 2026-06-03 — D6.1a preflight OK · D3 cleanup cerrado · D5.3 runtime OK
 
 ---
 
@@ -19,7 +19,8 @@ Last updated: 2026-06-03 — D3 cleanup cerrado · D5.3 runtime OK · D6.1 prefl
 | **5b** | ✅ | `D53_POLLER_DIAG_READY` |
 | **6** | ✅ | `D33_PR447_CLOSED` — PR #447 cerrado sin merge 2026-06-03 |
 | **6b** | ✅ | `D33_ISSUE445_CLOSED` — issue #445 cerrado 2026-06-03 |
-| **D6.1a** | ⏭ **SIGUIENTE** | Copilot Windows — AECO KB Azure/GHCR preflight read-only |
+| **D6.1a** | ✅ | `D61_AECO_KB_PREFLIGHT_OK` — what-if read-only sin deploy |
+| **D6.1b** | ⏸ **SIGUIENTE** | Copilot Windows — deploy real AECO KB con gate David |
 | **3d** | ✅ | VPS post-merge D4.1 |
 | **4c** | ✅ | merge #448 |
 | **4b** | ✅ | cherry-pick + PR |
@@ -877,7 +878,7 @@ Log: $LOG
 
 ---
 
-## PROMPT D6.1a — Copilot Windows · AECO KB preflight/what-if (read-only) ⏭
+## PROMPT D6.1a — Copilot Windows · AECO KB preflight/what-if (read-only) ✅
 
 **Pegar en Copilot Windows.** No ejecuta deploy real. Sirve para decidir si D6.1 puede avanzar sin esperar a Cursor.
 
@@ -925,16 +926,37 @@ VEREDICTO: D61_AECO_KB_PREFLIGHT_OK | D61_AECO_KB_PREFLIGHT_BLOCKED
 Incluir: HEAD, subscription, ghcr-pat metadata sin valor, resumen what-if, ruta log local, siguiente paso recomendado.
 ```
 
+**Resultado Copilot Windows 2026-06-03:** `D61_AECO_KB_PREFLIGHT_OK`.
+
+| Check | Resultado |
+|---|---|
+| HEAD | `b9205ca7` (`docs: close D3 cleanup and add D6.1 prompts`) |
+| Branch | `main...origin/main`, limpio |
+| PowerShell / Azure CLI | PowerShell `7.6.2`, Azure CLI `2.83.0` |
+| Subscription | `f14f61f0-e692-4fbb-900d-73e55a632374` / tenant `f67a8c0b-ec74-47cd-836c-355c5a6162d4` |
+| RG / Search / UAMI | `rg-umbral-agents-prod` `eastus2`; `srch-umbral-kb-prod` `basic/running`; `uami-umbral-agents-prod` |
+| `ghcr-pat` | enabled, expires `2026-08-13T13:53:15+00:00`, content type correcto |
+| Secret guard | No se imprimió PAT; log sin patrones `ghp_`/`github_pat_` |
+| GHCR smoke | HTTP `200` |
+| What-if | `WhatIfOnly (NO deploy)` |
+| Deletes / Creates / Modifies / Nochange | `0` / `0` / `1` / `1` |
+| Modify esperado | `Microsoft.App/jobs/aeco-source-crawler`: removería env vars runtime persistidas `SOURCE_TYPE=buildingsmart` y `MAX_DOCS=1` |
+| Log local | `d61-aeco-kb-whatif-20260603-001756.log` |
+
+Clasificación: el único `Modify` no bloquea D6.1b; debe tratarse como saneamiento explícitamente autorizado del drift del job `aeco-source-crawler`.
+
 ---
 
 ## PROMPT D6.1b — Copilot Windows · AECO KB deploy real (gate explícito) ⏸
 
 **NO pegar sin frase literal de David:** `autorizo deploy AECO KB D6.1`. Requiere `D61_AECO_KB_PREFLIGHT_OK`.
 
+**Gate incluye autorización explícita para el único drift detectado en D6.1a:** el deploy puede remover de `aeco-source-crawler` las env vars runtime persistidas `SOURCE_TYPE=buildingsmart` y `MAX_DOCS=1`. Esas variables deben pasarse al arrancar el job, no quedar fijas en el template.
+
 ```
 autorizo deploy AECO KB D6.1
 
-Sos Copilot Windows. Ejecutar deploy real controlado del pipeline AECO KB. Responder en español. NO imprimir secretos. STOP ante cualquier Delete/Modify inesperado.
+Sos Copilot Windows. Ejecutar deploy real controlado del pipeline AECO KB. Responder en español. NO imprimir secretos. STOP ante cualquier Delete/Modify inesperado distinto del drift autorizado en `aeco-source-crawler` (`SOURCE_TYPE`/`MAX_DOCS`).
 
 cd C:\GitHub\umbral-agent-stack
 git fetch origin main
@@ -945,14 +967,18 @@ git log -1 --oneline
 # Repetir what-if y revisar antes de confirmar DEPLOY.
 pwsh -NoProfile -File .\scripts\deploy\deploy-aeco-kb-pipeline.ps1
 
-# Solo si el what-if sigue limpio:
+# Solo si el what-if sigue limpio o contiene únicamente el drift autorizado:
+# - 0 Delete reales
+# - 0 Create no esperados
+# - Modify permitido: Microsoft.App/jobs/aeco-source-crawler removiendo SOURCE_TYPE/MAX_DOCS persistidos
+# - STOP si aparece Modify/Delete sobre recursos fuera de los jobs aeco-* esperados
 pwsh -NoProfile -File .\scripts\deploy\deploy-aeco-kb-pipeline.ps1 -WhatIfOnly:$false
 # Cuando el script pida confirmación interactiva, escribir exactamente: DEPLOY
 
 az containerapp job list -g rg-umbral-agents-prod --query "[?starts_with(name, 'aeco-')].{name:name, provisioningState:properties.provisioningState}" -o table
 
 VEREDICTO: D61_AECO_KB_DEPLOY_OK | D61_AECO_KB_DEPLOY_BLOCKED
-Incluir: jobs creados, deployment name, salida final del script sin secretos, y si queda listo para PROMPT D6.1c run_pipeline.
+Incluir: jobs creados/modificados, deployment name, confirmación de 0 deletes reales, salida final del script sin secretos, y si queda listo para PROMPT D6.1c run_pipeline.
 ```
 
 ---
@@ -1023,9 +1049,10 @@ Incluir: job executions, verify summary, índice versionado `aeco-kb-es-vYYYYMMD
 |---|---|---|---|
 | 1 | D3 cleanup | ✅ | #447/#445 cerrados por Codex 2026-06-03 |
 | 2 | D5.3 | ✅ | 5b→5c→5e cerrado |
-| 3 | D6.1 | **D6.1a** AECO KB preflight/what-if | Copilot Windows |
-| 4 | D6.1 | **D6.1b/c** deploy + run/verify | Windows/VPS con gate David |
-| 5 | G-D0 | restart worker opcional | Copilot-VPS (solo `autorizo restart worker G-D0`) |
+| 3 | D6.1 | ✅ **D6.1a** AECO KB preflight/what-if | Copilot Windows |
+| 4 | D6.1 | **D6.1b** deploy real | Copilot Windows con gate David |
+| 5 | D6.1 | **D6.1c** run/verify | VPS/Linux post deploy |
+| 6 | G-D0 | restart worker opcional | Copilot-VPS (solo `autorizo restart worker G-D0`) |
 
 **Cerrado 2026-06-02/03:** D3.4 retro · D4.1 (#448 + VPS post-merge) · D3 cleanup (#447/#445).
 

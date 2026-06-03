@@ -428,7 +428,8 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 - **5c:** `D53_FIX_ALREADY_IN_MAIN` · soak inicial `D53_GRANOLA_SOAK_DEGRADED` (Granola ops_log quieto)
 - **D6.1a:** ✅ `D61_AECO_KB_PREFLIGHT_OK` — Azure/GHCR what-if read-only OK; único drift esperado `aeco-source-crawler` env vars `SOURCE_TYPE`/`MAX_DOCS`.
 - **D6.1b:** ✅ `D61_AECO_KB_DEPLOY_OK` — deployment `aeco-kb-pipeline-20260603-064344` `Succeeded`; jobs `aeco-source-crawler` + `aeco-index-pipeline` manual/succeeded; drift `SOURCE_TYPE`/`MAX_DOCS` saneado; no runtime run.
-- **Siguiente:** PROMPT **D6.1c** run `buildingsmart` + `verify_kb.py` (Copilot-VPS/Linux) · Friday retro
+- **D6.1c:** ⚠️ `D61_AECO_KB_RUN_VERIFY_BLOCKED` — Copilot-VPS no tiene `az` ni `azure.identity`; regla de superficie prohíbe instalar Azure CLI en VPS. Evidencia `~/.coord-ag-evidence/D6.1/aeco-kb-run-202606030717.log`.
+- **Siguiente:** PROMPT **D6.1d** run `buildingsmart` + `verify_kb.py` en Copilot Windows/Azure-auth · Friday retro
 - Lección D3.2: exigir PR URL por lane antes de announce done
 
 ## 2026-06-02-019 — D3.2 tournament O2 backup alerts #440 [DONE — salvage merged]

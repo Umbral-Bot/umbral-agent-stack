@@ -2,7 +2,7 @@
 
 Copy-paste blocks for David. **Cursor pushes `main` before VPS prompts.**
 
-Last updated: 2026-06-03 — D6.1b deploy OK · D6.1c run/verify siguiente
+Last updated: 2026-06-03 — D6.1c blocked on VPS · D6.1d Windows run/verify siguiente
 
 ---
 
@@ -21,7 +21,8 @@ Last updated: 2026-06-03 — D6.1b deploy OK · D6.1c run/verify siguiente
 | **6b** | ✅ | `D33_ISSUE445_CLOSED` — issue #445 cerrado 2026-06-03 |
 | **D6.1a** | ✅ | `D61_AECO_KB_PREFLIGHT_OK` — what-if read-only sin deploy |
 | **D6.1b** | ✅ | `D61_AECO_KB_DEPLOY_OK` — Azure deployment `Succeeded` |
-| **D6.1c** | ⏸ **SIGUIENTE** | Copilot-VPS/Linux — run `buildingsmart` + `verify_kb.py` |
+| **D6.1c** | ⚠️ | `D61_AECO_KB_RUN_VERIFY_BLOCKED` — VPS sin `az`/`azure.identity` |
+| **D6.1d** | ⏸ **SIGUIENTE** | Copilot Windows — run `buildingsmart` + `verify_kb.py` |
 | **3d** | ✅ | VPS post-merge D4.1 |
 | **4c** | ✅ | merge #448 |
 | **4b** | ✅ | cherry-pick + PR |
@@ -1002,7 +1003,7 @@ Incluir: jobs creados/modificados, deployment name, confirmación de 0 deletes r
 
 ---
 
-## PROMPT D6.1c — Copilot-VPS/Linux · AECO KB run + verify (post deploy) ⏸
+## PROMPT D6.1c — Copilot-VPS/Linux · AECO KB run + verify (post deploy) ⚠️
 
 **Solo después de `D61_AECO_KB_DEPLOY_OK` y az login válido en el entorno que lo ejecute.** Si `az account show` falla, no intentar recuperar secretos ni tocar Key Vault; devolver `D61_AECO_KB_RUN_VERIFY_BLOCKED`.
 
@@ -1033,6 +1034,98 @@ az search alias show --service-name srch-umbral-kb-prod --resource-group rg-umbr
 
 VEREDICTO: D61_AECO_KB_RUN_VERIFY_OK | D61_AECO_KB_RUN_VERIFY_BLOCKED
 Incluir: job executions, verify summary, índice versionado `aeco-kb-es-vYYYYMMDD`, alias `aeco-kb-es-current`, LOG, y cualquier error de ACA job sin secretos.
+```
+
+**Resultado Copilot-VPS 2026-06-03:** `D61_AECO_KB_RUN_VERIFY_BLOCKED`.
+
+| Check | Resultado |
+|---|---|
+| HEAD VPS | `a0008de` (`docs: record D6.1 AECO KB deploy`) |
+| `az` CLI | `az: command not found` |
+| `az containerapp job` | no disponible |
+| `azure.identity` | `ModuleNotFoundError` |
+| `httpx` | presente |
+| Regla aplicada | no instalar Azure CLI / SDK en VPS sin autorización excepcional; Azure/Foundry corresponde a Copilot Windows |
+| Runtime pipeline | no ejecutado |
+| Notion / secretos | no tocado; sin secretos impresos |
+| Evidencia VPS | `~/.coord-ag-evidence/D6.1/aeco-kb-run-202606030717.log` |
+
+Clasificación: bloqueo de superficie, no de Azure. El siguiente intento debe correr en Copilot Windows o runner autenticado con `az`.
+
+---
+
+## PROMPT D6.1d — Copilot Windows · AECO KB run + verify (Azure-auth) ⏸
+
+**Pegar en Copilot Windows.** Requiere Azure CLI autenticado. No toca Notion. No instalar Azure CLI en VPS.
+
+```
+Sos Copilot Windows. Ejecutar runtime D6.1 AECO KB desde la superficie Azure correcta: arrancar ACA Jobs para `buildingsmart`, esperar completions, correr `verify_kb.py --min-chunks 150`, y reportar veredicto. Responder en español. NO imprimir secretos. NO tocar Notion. NO modificar deployments.
+
+cd C:\GitHub\umbral-agent-stack
+git fetch origin main
+git checkout main
+git pull --ff-only origin main
+git log -1 --oneline
+git status --short --branch
+
+$ErrorActionPreference = "Stop"
+$rg = "rg-umbral-agents-prod"
+$sub = "f14f61f0-e692-4fbb-900d-73e55a632374"
+$ev = Join-Path $env:TEMP ("d61-aeco-kb-run-" + (Get-Date -Format "yyyyMMdd-HHmmss"))
+New-Item -ItemType Directory -Force -Path $ev | Out-Null
+$log = Join-Path $ev "run.log"
+Start-Transcript -Path $log
+
+az account set --subscription $sub
+az account show --query "{name:name, subscription:id, tenant:tenantId}" -o json
+
+Write-Host "=== pre jobs ==="
+az containerapp job list -g $rg --query "[?starts_with(name, 'aeco-')].{name:name,state:properties.provisioningState,trigger:properties.configuration.triggerType,image:properties.template.containers[0].image}" -o json
+
+function Start-AcaJobAndWait {
+  param(
+    [Parameter(Mandatory=$true)][string]$Name,
+    [Parameter(Mandatory=$true)][string[]]$JobArgs,
+    [int]$TimeoutSeconds = 3600,
+    [int]$PollSeconds = 30
+  )
+  Write-Host "=== starting $Name args=$($JobArgs -join ' ') ==="
+  $execName = az containerapp job start --name $Name --resource-group $rg --args @JobArgs --query name -o tsv
+  Write-Host "EXECUTION $Name/$execName"
+  $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+  while ((Get-Date) -lt $deadline) {
+    $status = az containerapp job execution show --name $Name --resource-group $rg --job-execution-name $execName --query properties.status -o tsv 2>$null
+    Write-Host "STATUS $Name/$execName $status"
+    if ($status -eq "Succeeded") { return $execName }
+    if ($status -in @("Failed","Degraded","Canceled")) { throw "$Name/$execName ended $status" }
+    Start-Sleep -Seconds $PollSeconds
+  }
+  throw "$Name timed out after $TimeoutSeconds seconds"
+}
+
+$execs = @()
+$execs += Start-AcaJobAndWait -Name "aeco-source-crawler" -JobArgs @("--source-type","buildingsmart")
+$execs += Start-AcaJobAndWait -Name "aeco-pdf-parser" -JobArgs @("--source-type","buildingsmart")
+$execs += Start-AcaJobAndWait -Name "aeco-index-pipeline" -JobArgs @("publish","--source-types","buildingsmart")
+$execs | Set-Content -Path (Join-Path $ev "executions.txt")
+
+Write-Host "=== verify deps ==="
+$py = ".\.venv\Scripts\python.exe"
+if (-not (Test-Path $py)) { $py = "python" }
+& $py -c "import azure.identity, httpx; print('verify deps OK')"
+
+Write-Host "=== verify kb ==="
+& $py scripts/aeco-kb/verify_kb.py --min-chunks 150 --jurisdictions intl
+
+Write-Host "=== post alias ==="
+az search alias show --service-name srch-umbral-kb-prod --resource-group $rg --alias-name aeco-kb-es-current -o json
+
+$secretPatternCount = (Select-String -Path $log -Pattern 'ghp_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+|Authorization\s*[:=]|Bearer\s+[A-Za-z0-9+/=_\-.]+' -AllMatches -ErrorAction SilentlyContinue).Matches.Count
+Write-Host "SECRET_PATTERN_COUNT=$secretPatternCount"
+Stop-Transcript
+
+Write-Host "VEREDICTO: D61_AECO_KB_RUN_VERIFY_OK | D61_AECO_KB_RUN_VERIFY_BLOCKED"
+# Incluir en la respuesta: executions.txt, verify summary, índice versionado `aeco-kb-es-vYYYYMMDD`, alias `aeco-kb-es-current`, log folder `$ev`, y cualquier error de ACA job sin secretos.
 ```
 
 ---
@@ -1077,8 +1170,9 @@ Incluir: job executions, verify summary, índice versionado `aeco-kb-es-vYYYYMMD
 | 2 | D5.3 | ✅ | 5b→5c→5e cerrado |
 | 3 | D6.1 | ✅ **D6.1a** AECO KB preflight/what-if | Copilot Windows |
 | 4 | D6.1 | ✅ **D6.1b** deploy real | Copilot Windows |
-| 5 | D6.1 | **D6.1c** run/verify | VPS/Linux post deploy |
-| 6 | G-D0 | restart worker opcional | Copilot-VPS (solo `autorizo restart worker G-D0`) |
+| 5 | D6.1 | ⚠️ **D6.1c** run/verify | VPS blocked: no `az`/`azure.identity` |
+| 6 | D6.1 | **D6.1d** run/verify | Copilot Windows Azure-auth |
+| 7 | G-D0 | restart worker opcional | Copilot-VPS (solo `autorizo restart worker G-D0`) |
 
 **Cerrado 2026-06-02/03:** D3.4 retro · D4.1 (#448 + VPS post-merge) · D3 cleanup (#447/#445).
 

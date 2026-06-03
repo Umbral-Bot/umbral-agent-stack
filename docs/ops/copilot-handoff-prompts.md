@@ -2,9 +2,14 @@
 
 Copy-paste blocks for David. **Cursor pushes `main` before VPS prompts.**
 
-Last updated: 2026-06-03 — D6.1c blocked on VPS · D6.1d Windows run/verify siguiente
+Last updated: 2026-06-03 — D6.1c blocked on VPS · D6.1d historico superado por core-first prompt pack
 
 ---
+
+> Core-first update: no usar el D6.1d historico como siguiente paso directo.
+> Despues de PR #449 hay que reconstruir/pushear imagenes GHCR y actualizar
+> los ACA Jobs antes de correr Azure. Prompt activo:
+> `docs/ops/core-first-next-prompts-2026-06-03.md`.
 
 ## Prompts listos para enviar (orden)
 
@@ -22,7 +27,7 @@ Last updated: 2026-06-03 — D6.1c blocked on VPS · D6.1d Windows run/verify si
 | **D6.1a** | ✅ | `D61_AECO_KB_PREFLIGHT_OK` — what-if read-only sin deploy |
 | **D6.1b** | ✅ | `D61_AECO_KB_DEPLOY_OK` — Azure deployment `Succeeded` |
 | **D6.1c** | ⚠️ | `D61_AECO_KB_RUN_VERIFY_BLOCKED` — VPS sin `az`/`azure.identity` |
-| **D6.1d** | ⏸ **SIGUIENTE** | Copilot Windows — run `buildingsmart` + `verify_kb.py` |
+| **D6.1d** | ⚠️ **HISTORICO** | Superado por `docs/ops/core-first-next-prompts-2026-06-03.md` |
 | **3d** | ✅ | VPS post-merge D4.1 |
 | **4c** | ✅ | merge #448 |
 | **4b** | ✅ | cherry-pick + PR |
@@ -1054,9 +1059,13 @@ Clasificación: bloqueo de superficie, no de Azure. El siguiente intento debe co
 
 ---
 
-## PROMPT D6.1d — Copilot Windows · AECO KB run + verify (Azure-auth) ⏸
+## PROMPT D6.1d — HISTORICO / no usar directo
 
-**Pegar en Copilot Windows.** Requiere Azure CLI autenticado. No toca Notion. No instalar Azure CLI en VPS.
+Este bloque queda archivado para trazabilidad. No usarlo como siguiente paso:
+despues de PR #449 primero hay que rebuild/push de imagenes GHCR y actualizar
+los ACA Jobs. Usar `docs/ops/core-first-next-prompts-2026-06-03.md`.
+
+**Historico original:** Copilot Windows con Azure CLI autenticado. No toca Notion. No instalar Azure CLI en VPS.
 
 ```
 Sos Copilot Windows. Ejecutar runtime D6.1 AECO KB desde la superficie Azure correcta: arrancar ACA Jobs para `buildingsmart`, esperar completions, correr `verify_kb.py --min-chunks 150`, y reportar veredicto. Responder en español. NO imprimir secretos. NO tocar Notion. NO modificar deployments.
@@ -1171,7 +1180,7 @@ Write-Host "VEREDICTO: D61_AECO_KB_RUN_VERIFY_OK | D61_AECO_KB_RUN_VERIFY_BLOCKE
 | 3 | D6.1 | ✅ **D6.1a** AECO KB preflight/what-if | Copilot Windows |
 | 4 | D6.1 | ✅ **D6.1b** deploy real | Copilot Windows |
 | 5 | D6.1 | ⚠️ **D6.1c** run/verify | VPS blocked: no `az`/`azure.identity` |
-| 6 | D6.1 | **D6.1d** run/verify | Copilot Windows Azure-auth |
+| 6 | D6.1 | **Core-first prompts** rebuild/push + update ACA + run/verify | `docs/ops/core-first-next-prompts-2026-06-03.md` |
 | 7 | G-D0 | restart worker opcional | Copilot-VPS (solo `autorizo restart worker G-D0`) |
 
 **Cerrado 2026-06-02/03:** D3.4 retro · D4.1 (#448 + VPS post-merge) · D3 cleanup (#447/#445).

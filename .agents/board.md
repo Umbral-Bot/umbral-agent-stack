@@ -427,7 +427,8 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 - **D5.3:** ✅ `D53_RUNTIME_APPLIED_OK` (poller 1130156, worker health OK, cursor_used=True en 30c5…)
 - **5c:** `D53_FIX_ALREADY_IN_MAIN` · soak inicial `D53_GRANOLA_SOAK_DEGRADED` (Granola ops_log quieto)
 - **D6.1a:** ✅ `D61_AECO_KB_PREFLIGHT_OK` — Azure/GHCR what-if read-only OK; único drift esperado `aeco-source-crawler` env vars `SOURCE_TYPE`/`MAX_DOCS`.
-- **Siguiente:** PROMPT **D6.1b** deploy real AECO KB (Copilot Windows, requiere `autorizo deploy AECO KB D6.1`) · Friday retro
+- **D6.1b:** ✅ `D61_AECO_KB_DEPLOY_OK` — deployment `aeco-kb-pipeline-20260603-064344` `Succeeded`; jobs `aeco-source-crawler` + `aeco-index-pipeline` manual/succeeded; drift `SOURCE_TYPE`/`MAX_DOCS` saneado; no runtime run.
+- **Siguiente:** PROMPT **D6.1c** run `buildingsmart` + `verify_kb.py` (Copilot-VPS/Linux) · Friday retro
 - Lección D3.2: exigir PR URL por lane antes de announce done
 
 ## 2026-06-02-019 — D3.2 tournament O2 backup alerts #440 [DONE — salvage merged]

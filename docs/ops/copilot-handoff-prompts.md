@@ -2,7 +2,7 @@
 
 Copy-paste blocks for David. **Cursor pushes `main` before VPS prompts.**
 
-Last updated: 2026-06-03 — D6.1a preflight OK · D3 cleanup cerrado · D5.3 runtime OK
+Last updated: 2026-06-03 — D6.1b deploy OK · D6.1c run/verify siguiente
 
 ---
 
@@ -20,7 +20,8 @@ Last updated: 2026-06-03 — D6.1a preflight OK · D3 cleanup cerrado · D5.3 ru
 | **6** | ✅ | `D33_PR447_CLOSED` — PR #447 cerrado sin merge 2026-06-03 |
 | **6b** | ✅ | `D33_ISSUE445_CLOSED` — issue #445 cerrado 2026-06-03 |
 | **D6.1a** | ✅ | `D61_AECO_KB_PREFLIGHT_OK` — what-if read-only sin deploy |
-| **D6.1b** | ⏸ **SIGUIENTE** | Copilot Windows — deploy real AECO KB con gate David |
+| **D6.1b** | ✅ | `D61_AECO_KB_DEPLOY_OK` — Azure deployment `Succeeded` |
+| **D6.1c** | ⏸ **SIGUIENTE** | Copilot-VPS/Linux — run `buildingsmart` + `verify_kb.py` |
 | **3d** | ✅ | VPS post-merge D4.1 |
 | **4c** | ✅ | merge #448 |
 | **4b** | ✅ | cherry-pick + PR |
@@ -947,7 +948,7 @@ Clasificación: el único `Modify` no bloquea D6.1b; debe tratarse como saneamie
 
 ---
 
-## PROMPT D6.1b — Copilot Windows · AECO KB deploy real (gate explícito) ⏸
+## PROMPT D6.1b — Copilot Windows · AECO KB deploy real (gate explícito) ✅
 
 **NO pegar sin frase literal de David:** `autorizo deploy AECO KB D6.1`. Requiere `D61_AECO_KB_PREFLIGHT_OK`.
 
@@ -981,20 +982,39 @@ VEREDICTO: D61_AECO_KB_DEPLOY_OK | D61_AECO_KB_DEPLOY_BLOCKED
 Incluir: jobs creados/modificados, deployment name, confirmación de 0 deletes reales, salida final del script sin secretos, y si queda listo para PROMPT D6.1c run_pipeline.
 ```
 
+**Resultado Copilot Windows 2026-06-03:** `D61_AECO_KB_DEPLOY_OK`.
+
+| Check | Resultado |
+|---|---|
+| HEAD usado | `296598cf` (`docs: record D6.1 preflight result`) |
+| Subscription | `f14f61f0-e692-4fbb-900d-73e55a632374` |
+| Deployment | `aeco-kb-pipeline-20260603-064344` |
+| Estado Azure | `Succeeded` |
+| Timestamp | `2026-06-03T10:46:12.683165+00:00` |
+| Mode | `Incremental` |
+| `aeco-source-crawler` | `Succeeded`, `Manual`, image `ghcr.io/umbral-bot/aeco-source-crawler:o16.2-2e66dda` |
+| `aeco-index-pipeline` | `Succeeded`, `Manual`, image `ghcr.io/umbral-bot/aeco-index-pipeline:latest` |
+| `aeco-pdf-parser` | existe y está `Succeeded`; deploy corrió con `DeployPdfParser=False` |
+| Drift `SOURCE_TYPE`/`MAX_DOCS` | saneado; ya no aparecen como env vars persistidas en `aeco-source-crawler` |
+| Runtime pipeline | No ejecutado; no hubo `containerapp job start` |
+| Secret guard | log sin `ghp_`, `github_pat_`, `Authorization` ni `Bearer`; script confirmó PAT removido de memoria |
+| Log local | `d61-aeco-kb-deploy-20260603-064344.log` |
+
 ---
 
 ## PROMPT D6.1c — Copilot-VPS/Linux · AECO KB run + verify (post deploy) ⏸
 
-**Solo después de `D61_AECO_KB_DEPLOY_OK` y az login válido en el entorno que lo ejecute.**
+**Solo después de `D61_AECO_KB_DEPLOY_OK` y az login válido en el entorno que lo ejecute.** Si `az account show` falla, no intentar recuperar secretos ni tocar Key Vault; devolver `D61_AECO_KB_RUN_VERIFY_BLOCKED`.
 
 ```
-Sos Copilot-VPS o terminal Linux con Azure CLI autenticado. Ejecutar pipeline AECO KB buildingsmart-only y verificar índice. Responder en español. NO tocar Notion.
+Sos Copilot-VPS o terminal Linux con Azure CLI autenticado. Ejecutar pipeline AECO KB buildingsmart-only y verificar índice. Responder en español. NO tocar Notion. NO imprimir secretos.
 
 cd ~/umbral-agent-stack
 git fetch origin main && git checkout main && git pull --ff-only origin main
 git log -1 --oneline
 
 az account set --subscription f14f61f0-e692-4fbb-900d-73e55a632374
+az account show --query "{name:name, subscription:id, tenant:tenantId}" -o json
 az containerapp job list -g rg-umbral-agents-prod --query "[?starts_with(name, 'aeco-')].name" -o tsv
 
 EV=~/.coord-ag-evidence/D6.1
@@ -1002,11 +1022,17 @@ mkdir -p "$EV"
 LOG="$EV/aeco-kb-run-$(date +%Y%m%d%H%M).log"
 exec > >(tee -a "$LOG") 2>&1
 
+echo "=== pre jobs ==="
+az containerapp job list -g rg-umbral-agents-prod --query "[?starts_with(name, 'aeco-')].{name:name,state:properties.provisioningState,trigger:properties.configuration.triggerType,image:properties.template.containers[0].image}" -o json
+
 bash scripts/aeco-kb/run_pipeline.sh buildingsmart
 python3 scripts/aeco-kb/verify_kb.py --min-chunks 150
 
+echo "=== post index aliases ==="
+az search alias show --service-name srch-umbral-kb-prod --resource-group rg-umbral-agents-prod --alias-name aeco-kb-es-current -o json || true
+
 VEREDICTO: D61_AECO_KB_RUN_VERIFY_OK | D61_AECO_KB_RUN_VERIFY_BLOCKED
-Incluir: job executions, verify summary, índice versionado `aeco-kb-es-vYYYYMMDD`, alias `aeco-kb-es-current`, LOG.
+Incluir: job executions, verify summary, índice versionado `aeco-kb-es-vYYYYMMDD`, alias `aeco-kb-es-current`, LOG, y cualquier error de ACA job sin secretos.
 ```
 
 ---
@@ -1050,7 +1076,7 @@ Incluir: job executions, verify summary, índice versionado `aeco-kb-es-vYYYYMMD
 | 1 | D3 cleanup | ✅ | #447/#445 cerrados por Codex 2026-06-03 |
 | 2 | D5.3 | ✅ | 5b→5c→5e cerrado |
 | 3 | D6.1 | ✅ **D6.1a** AECO KB preflight/what-if | Copilot Windows |
-| 4 | D6.1 | **D6.1b** deploy real | Copilot Windows con gate David |
+| 4 | D6.1 | ✅ **D6.1b** deploy real | Copilot Windows |
 | 5 | D6.1 | **D6.1c** run/verify | VPS/Linux post deploy |
 | 6 | G-D0 | restart worker opcional | Copilot-VPS (solo `autorizo restart worker G-D0`) |
 

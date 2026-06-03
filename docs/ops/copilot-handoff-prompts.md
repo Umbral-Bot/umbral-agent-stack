@@ -2,7 +2,7 @@
 
 Copy-paste blocks for David. **Cursor pushes `main` before VPS prompts.**
 
-Last updated: 2026-06-02 — D5.3 runtime OK · cleanup opcional
+Last updated: 2026-06-03 — D3 cleanup cerrado · D5.3 runtime OK · D6.1 preflight siguiente
 
 ---
 
@@ -16,10 +16,10 @@ Last updated: 2026-06-02 — D5.3 runtime OK · cleanup opcional
 | **5c** | ✅ | `D53_FIX_ALREADY_IN_MAIN` |
 | **5d** | ⏭ | omitido |
 | **5e** | ✅ | VPS restart poller+worker 2026-06-02 |
-| **6** | ⏸ **SIGUIENTE** | Copilot Windows — cerrar #447 (gate David) |
 | **5b** | ✅ | `D53_POLLER_DIAG_READY` |
-| **6** | ⏸ | Copilot Windows — cerrar PR **#447** (David gate) |
-| **6b** | ⏸ | Copilot Windows — cerrar issue **#445** (David gate) |
+| **6** | ✅ | `D33_PR447_CLOSED` — PR #447 cerrado sin merge 2026-06-03 |
+| **6b** | ✅ | `D33_ISSUE445_CLOSED` — issue #445 cerrado 2026-06-03 |
+| **D6.1a** | ⏭ **SIGUIENTE** | Copilot Windows — AECO KB Azure/GHCR preflight read-only |
 | **3d** | ✅ | VPS post-merge D4.1 |
 | **4c** | ✅ | merge #448 |
 | **4b** | ✅ | cherry-pick + PR |
@@ -42,8 +42,9 @@ Retro doc: [`d3-tournament-retro-2026-06-02.md`](d3-tournament-retro-2026-06-02.
 | **AF** | Copilot-VPS | ✅ | `D41_VPS_POST_MERGE_OK` @ `9730bfa6` |
 | **D5.3** | diag | ✅ | `D53_POLLER_DIAG_READY` |
 | **D5.3** | runtime | ✅ | `D53_RUNTIME_APPLIED_OK` @ `c204cf9` |
+| **6/6b** | Codex/GitHub | ✅ | #447 CLOSED sin merge; #445 CLOSED |
 
-**HEAD VPS/main:** `9730bfa6` (incluye docs D4.1; feature squash `805aa57b`). **#447** OPEN. **#445** OPEN (winner ya mergeado vía #446).
+**HEAD main local:** `841bb252` (docs D5.3 runtime lane). **#447** CLOSED sin merge. **#445** CLOSED. Winner D3.3 ya mergeado vía #446 @ `da8eba85`.
 
 ---
 
@@ -803,7 +804,7 @@ VEREDICTO: D53_RUNTIME_APPLIED_OK | D53_RUNTIME_APPLIED_BLOCKED
 
 ---
 
-## PROMPT 6 — Copilot Windows · cerrar PR #447 (loser D3.3) ⏸
+## PROMPT 6 — Copilot Windows · cerrar PR #447 (loser D3.3) ✅
 
 **Solo si David autoriza cerrar sin merge** (lane delivery rescate; winner ya es #446):
 
@@ -820,9 +821,11 @@ gh pr close 447 --repo Umbral-Bot/umbral-agent-stack --comment "Cierre administr
 VEREDICTO: D33_PR447_CLOSED | D33_PR447_CLOSE_BLOCKED
 ```
 
+**Resultado Codex 2026-06-03:** `D33_PR447_CLOSED` — PR #447 cerrado sin merge; `mergedAt=null`, `closedAt=2026-06-03T03:54:54Z`.
+
 ---
 
-## PROMPT 6b — Copilot Windows · cerrar issue #445 ⏸
+## PROMPT 6b — Copilot Windows · cerrar issue #445 ✅
 
 **Solo si David confirma que #445 puede cerrarse** (merge vía #446; comentarios judge ya publicados):
 
@@ -836,6 +839,8 @@ gh issue close 445 --repo Umbral-Bot/umbral-agent-stack --comment "Torneo D3.3 c
 
 VEREDICTO: D33_ISSUE445_CLOSED | D33_ISSUE445_CLOSE_BLOCKED
 ```
+
+**Resultado Codex 2026-06-03:** `D33_ISSUE445_CLOSED` — issue #445 cerrado; `closedAt=2026-06-03T03:54:57Z`.
 
 ---
 
@@ -872,13 +877,121 @@ Log: $LOG
 
 ---
 
+## PROMPT D6.1a — Copilot Windows · AECO KB preflight/what-if (read-only) ⏭
+
+**Pegar en Copilot Windows.** No ejecuta deploy real. Sirve para decidir si D6.1 puede avanzar sin esperar a Cursor.
+
+```
+/goal D6.1a AECO KB: verificar estado Azure/GHCR y ejecutar what-if read-only del pipeline. Responder en español. NO deploy real. NO imprimir secretos. NO tocar Notion.
+
+Sos Copilot Windows. Preflight seguro para D6.1 / O16.2 KB AECO.
+
+=== Contexto ===
+- Acceptance D6.1: Bot Umbral/AgenteUB debe citar un párrafo buildingSMART/IFC con índice `aeco-kb-es-vYYYYMMDD` + URL fuente visible antes del Friday retro 2026-06-26.
+- Source of truth: `docs/audits/2026-05-10-o16-2-execution-plan.md`, `runbooks/aeco-kb-pipeline-deploy.md`, `scripts/deploy/deploy-aeco-kb-pipeline.ps1`, `scripts/aeco-kb/README.md`.
+- Este prompt solo prueba readiness. Deploy real queda para D6.1b con gate explícito de David.
+
+=== Fase 0 — Repo limpio ===
+cd C:\GitHub\umbral-agent-stack
+git fetch origin main
+git checkout main
+git pull --ff-only origin main
+git log -1 --oneline
+git status --short --branch
+
+=== Fase 1 — Tooling y Azure session ===
+pwsh -NoProfile -Command '$PSVersionTable.PSVersion'
+az version --query '"azure-cli"' -o tsv
+az account show --query "{name:name, subscription:id, tenant:tenantId}" -o json
+az account set --subscription f14f61f0-e692-4fbb-900d-73e55a632374
+
+=== Fase 2 — Verificaciones sin secretos ===
+az group show -n rg-umbral-agents-prod --query "{name:name, location:location}" -o json
+az keyvault secret show --vault-name kv-umbral-agents-prod --name ghcr-pat --query "{enabled:attributes.enabled, expires:attributes.expires, contentType:contentType}" -o json
+az search service show -g rg-umbral-agents-prod -n srch-umbral-kb-prod --query "{name:name, sku:sku.name, status:status}" -o json
+az identity list -g rg-umbral-agents-prod --query "[?starts_with(name, 'uami-umbral-agents')].{name:name, clientId:clientId}" -o json
+
+=== Fase 3 — What-if seguro ===
+$log = Join-Path $env:TEMP ("d61-aeco-kb-whatif-" + (Get-Date -Format "yyyyMMdd-HHmmss") + ".log")
+pwsh -NoProfile -File .\scripts\deploy\deploy-aeco-kb-pipeline.ps1 2>&1 | Tee-Object -FilePath $log
+Write-Host "LOG=$log"
+
+=== Fase 4 — Reporte ===
+# Leer el log y clasificar:
+# - OK si el script termina sin error, GHCR smoke no imprime secreto, what-if no contiene Delete y solo crea/actualiza jobs esperados.
+# - BLOCKED si falta az login, permisos KV/RG, ghcr-pat disabled/expired, GHCR manifest falla, o what-if propone Delete/Modify riesgoso.
+
+VEREDICTO: D61_AECO_KB_PREFLIGHT_OK | D61_AECO_KB_PREFLIGHT_BLOCKED
+Incluir: HEAD, subscription, ghcr-pat metadata sin valor, resumen what-if, ruta log local, siguiente paso recomendado.
+```
+
+---
+
+## PROMPT D6.1b — Copilot Windows · AECO KB deploy real (gate explícito) ⏸
+
+**NO pegar sin frase literal de David:** `autorizo deploy AECO KB D6.1`. Requiere `D61_AECO_KB_PREFLIGHT_OK`.
+
+```
+autorizo deploy AECO KB D6.1
+
+Sos Copilot Windows. Ejecutar deploy real controlado del pipeline AECO KB. Responder en español. NO imprimir secretos. STOP ante cualquier Delete/Modify inesperado.
+
+cd C:\GitHub\umbral-agent-stack
+git fetch origin main
+git checkout main
+git pull --ff-only origin main
+git log -1 --oneline
+
+# Repetir what-if y revisar antes de confirmar DEPLOY.
+pwsh -NoProfile -File .\scripts\deploy\deploy-aeco-kb-pipeline.ps1
+
+# Solo si el what-if sigue limpio:
+pwsh -NoProfile -File .\scripts\deploy\deploy-aeco-kb-pipeline.ps1 -WhatIfOnly:$false
+# Cuando el script pida confirmación interactiva, escribir exactamente: DEPLOY
+
+az containerapp job list -g rg-umbral-agents-prod --query "[?starts_with(name, 'aeco-')].{name:name, provisioningState:properties.provisioningState}" -o table
+
+VEREDICTO: D61_AECO_KB_DEPLOY_OK | D61_AECO_KB_DEPLOY_BLOCKED
+Incluir: jobs creados, deployment name, salida final del script sin secretos, y si queda listo para PROMPT D6.1c run_pipeline.
+```
+
+---
+
+## PROMPT D6.1c — Copilot-VPS/Linux · AECO KB run + verify (post deploy) ⏸
+
+**Solo después de `D61_AECO_KB_DEPLOY_OK` y az login válido en el entorno que lo ejecute.**
+
+```
+Sos Copilot-VPS o terminal Linux con Azure CLI autenticado. Ejecutar pipeline AECO KB buildingsmart-only y verificar índice. Responder en español. NO tocar Notion.
+
+cd ~/umbral-agent-stack
+git fetch origin main && git checkout main && git pull --ff-only origin main
+git log -1 --oneline
+
+az account set --subscription f14f61f0-e692-4fbb-900d-73e55a632374
+az containerapp job list -g rg-umbral-agents-prod --query "[?starts_with(name, 'aeco-')].name" -o tsv
+
+EV=~/.coord-ag-evidence/D6.1
+mkdir -p "$EV"
+LOG="$EV/aeco-kb-run-$(date +%Y%m%d%H%M).log"
+exec > >(tee -a "$LOG") 2>&1
+
+bash scripts/aeco-kb/run_pipeline.sh buildingsmart
+python3 scripts/aeco-kb/verify_kb.py --min-chunks 150
+
+VEREDICTO: D61_AECO_KB_RUN_VERIFY_OK | D61_AECO_KB_RUN_VERIFY_BLOCKED
+Incluir: job executions, verify summary, índice versionado `aeco-kb-es-vYYYYMMDD`, alias `aeco-kb-es-current`, LOG.
+```
+
+---
+
 ## Archivo — Torneo D3.3 AB (cerrado PARTIAL)
 
 | Campo | Valor |
 |---|---|
 | VEREDICTO | `M1_D33_TOURNAMENT_PARTIAL` |
 | pr_count | 1 — [#446](https://github.com/Umbral-Bot/umbral-agent-stack/pull/446) sync-qa |
-| delivery | commit `9741e7c` local, sin push |
+| delivery | PR #447 rescate delivery cerrado sin merge 2026-06-03 |
 | watch | `LANES_IDLE_BREAK prs=1` @ 11:34:45 |
 | issue comment | [#445#issuecomment-4604044479](https://github.com/Umbral-Bot/umbral-agent-stack/issues/445#issuecomment-4604044479) |
 
@@ -908,13 +1021,13 @@ Log: $LOG
 
 | Prioridad | Spine | Prompt | Agente |
 |---|---|---|---|
-| 1 | D5.3 | ✅ | 5b→5c→5e cerrado |
-| 2 | D3 cleanup | **6** cerrar #447 | Copilot Windows (gate David) |
-| 3 | D3 cleanup | **6b** cerrar #445 | Copilot Windows (gate David) |
-| 4 | G-D0 | restart worker | Copilot-VPS (solo `autorizo restart worker G-D0`) |
-| 5 | D6.1 | KB AECO | 26-jun |
+| 1 | D3 cleanup | ✅ | #447/#445 cerrados por Codex 2026-06-03 |
+| 2 | D5.3 | ✅ | 5b→5c→5e cerrado |
+| 3 | D6.1 | **D6.1a** AECO KB preflight/what-if | Copilot Windows |
+| 4 | D6.1 | **D6.1b/c** deploy + run/verify | Windows/VPS con gate David |
+| 5 | G-D0 | restart worker opcional | Copilot-VPS (solo `autorizo restart worker G-D0`) |
 
-**Cerrado 2026-06-02:** D3.4 retro · D4.1 (#448 + VPS post-merge).
+**Cerrado 2026-06-02/03:** D3.4 retro · D4.1 (#448 + VPS post-merge) · D3 cleanup (#447/#445).
 
 Friday retro **2026-06-05** — actualizar dashboard §4 spine v2.
 

@@ -1,6 +1,6 @@
 # Agent Board — Umbral Agent Stack
 
-> Última actualización: 2026-03-24 por **codex**
+> Última actualización: 2026-06-03 por **codex**
 > Sprint activo: **R23**
 > **Coordinación:** **Cursor** retoma el lead. Codex cerró la capitalización R23 (`2026-03-24-001`), limpió ramas/PRs `codex/*` y no dejó follow-ups nuevos de ese frente.
 > **RONDA 23 — capitalización Codex cerrada**.
@@ -420,13 +420,13 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 
 ## 2026-06-02-020 — D3.3 tournament sync_skills adapters #445 [DONE]
 - Torneo: **M1_D33_TOURNAMENT_PARTIAL** → rescate #447 → judge → **D33_WINNER_MERGED** #446 @ **`da8eba85`**
-- Loser [#447](https://github.com/Umbral-Bot/umbral-agent-stack/pull/447) kept open
+- Loser [#447](https://github.com/Umbral-Bot/umbral-agent-stack/pull/447) **closed without merge** 2026-06-03; issue [#445](https://github.com/Umbral-Bot/umbral-agent-stack/issues/445) **closed** 2026-06-03
 - **D33_VPS_POST_MERGE_OK** @ `fce55518`
 - **D3.4 retro:** `M1_D34_TOURNAMENT_RETRO_OK` — `docs/ops/d3-tournament-retro-2026-06-02.md`
 - **D4.1:** ✅ `D41_MERGED` (#448 @ `805aa57b`) + `D41_VPS_POST_MERGE_OK` (HEAD `9730bfa6`, 35 passed mission)
 - **D5.3:** ✅ `D53_RUNTIME_APPLIED_OK` (poller 1130156, worker health OK, cursor_used=True en 30c5…)
 - **5c:** `D53_FIX_ALREADY_IN_MAIN` · soak inicial `D53_GRANOLA_SOAK_DEGRADED` (Granola ops_log quieto)
-- **Siguiente:** PROMPT **6/6b** cerrar #447/#445 (gate David) · D6.1 / Friday retro
+- **Siguiente:** PROMPT **D6.1a** AECO KB preflight/what-if (Copilot Windows) · Friday retro
 - Lección D3.2: exigir PR URL por lane antes de announce done
 
 ## 2026-06-02-019 — D3.2 tournament O2 backup alerts #440 [DONE — salvage merged]

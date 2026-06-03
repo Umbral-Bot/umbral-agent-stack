@@ -54,8 +54,9 @@ lane:
 
     Contract (read-only invariants):
       - NO modificás otros lanes, NO mergeás vos mismo.
-      - Al terminar: gh pr create --title "[tournament:<tournament_id>:<specialty>]" --body-file <body>.
+      - Al terminar: git push -u origin <branch> y gh pr create --title "[tournament:<tournament_id>:<specialty>]" --body-file <body>.
       - Anunciá de vuelta: PR URL + diff stats + checks status.
+      - La última línea del announce debe ser literal: PR_URL=https://github.com/Umbral-Bot/umbral-agent-stack/pull/<n>
   model: gpt-5-mini                    # opcional; default lane agent's model
   runTimeoutSeconds: 1800              # opcional; el wrapper puede sobrescribir vía usd_budget_cap
 ```
@@ -91,7 +92,7 @@ USER → main (standalone entry — G-D1b; NOT nested rick-orchestrator)
         │   2. implementar
         │   3. push branch
         │   4. gh pr create
-        │   5. announce-back: { pr_url, diff_stats, checks_status }
+        │   5. announce-back: { pr_url, diff_stats, checks_status } + línea final PR_URL=https://...
         ▼
    Push-completion (nativo) → orchestrator junta los N announces
         │

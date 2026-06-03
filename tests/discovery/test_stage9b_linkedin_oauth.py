@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -90,9 +91,12 @@ def test_exchange_code_persists_tokens(env_creds, monkeypatch, tokens_path, caps
     assert data["refresh_token"] == "RT-xyz"
     assert "access_token_expires_at" in data
     assert "refresh_token_expires_at" in data
-    # Permissions = 0600
+    # Permissions = 0600 where POSIX mode bits are meaningful.
     mode = oct(tokens_path.stat().st_mode & 0o777)
-    assert mode == "0o600"
+    if os.name == "nt":
+        assert mode in {"0o600", "0o666"}
+    else:
+        assert mode == "0o600"
     # And the POST body contains the expected fields.
     sent = client.post.call_args
     assert sent.kwargs["data"]["grant_type"] == "authorization_code"

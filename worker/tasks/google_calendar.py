@@ -5,9 +5,9 @@ Tasks: Google Calendar integration handlers.
 - google.calendar.list_events: List upcoming events from Google Calendar.
 
 Auth (first supported stable match wins):
+  - GOOGLE_CALENDAR_TOKEN: OAuth Bearer access token (expires ~1h).
   - GOOGLE_CALENDAR_REFRESH_TOKEN + GOOGLE_CALENDAR_CLIENT_ID +
     GOOGLE_CALENDAR_CLIENT_SECRET: long-lived; Worker refreshes access token.
-  - GOOGLE_CALENDAR_TOKEN: OAuth Bearer access token (expires ~1h).
   - GOOGLE_SERVICE_ACCOUNT_JSON: service account file.
 Docs: https://developers.google.com/calendar/api/v3/reference
 """
@@ -31,11 +31,18 @@ def _get_calendar_headers() -> Dict[str, str]:
     """Build authorization headers for Google Calendar API.
 
     Order:
-      1. GOOGLE_CALENDAR_REFRESH_TOKEN + GOOGLE_CALENDAR_CLIENT_ID +
+      1. GOOGLE_CALENDAR_TOKEN
+      2. GOOGLE_CALENDAR_REFRESH_TOKEN + GOOGLE_CALENDAR_CLIENT_ID +
          GOOGLE_CALENDAR_CLIENT_SECRET
-      2. GOOGLE_CALENDAR_TOKEN
       3. GOOGLE_SERVICE_ACCOUNT_JSON
     """
+    token = os.environ.get("GOOGLE_CALENDAR_TOKEN")
+    if token:
+        return {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+
     refresh_token = os.environ.get("GOOGLE_CALENDAR_REFRESH_TOKEN")
     client_id = os.environ.get("GOOGLE_CALENDAR_CLIENT_ID")
     client_secret = os.environ.get("GOOGLE_CALENDAR_CLIENT_SECRET")
@@ -69,13 +76,6 @@ def _get_calendar_headers() -> Dict[str, str]:
         except Exception as exc:
             logger.warning("Google Calendar refresh token flow failed: %s", exc)
             raise ValueError(f"Failed to refresh Google Calendar token: {exc}") from exc
-
-    token = os.environ.get("GOOGLE_CALENDAR_TOKEN")
-    if token:
-        return {
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json",
-        }
 
     sa_path = os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON")
     if sa_path:

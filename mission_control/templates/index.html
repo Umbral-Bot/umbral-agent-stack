@@ -69,7 +69,25 @@ loading…
              hx-headers='{"Authorization": "Bearer __PASTE_TOKEN__"}'>
 loading…
         </pre>
-        <div class="meta">GET /tournaments (placeholder hasta O13.4)</div>
+        <div class="meta">GET /tournaments · read-only, launcher disabled</div>
+      </div>
+
+      <div class="card">
+        <h2>Gates</h2>
+        <pre hx-get="/gates" hx-trigger="load, every 30s" hx-swap="innerHTML"
+             hx-headers='{"Authorization": "Bearer __PASTE_TOKEN__"}'>
+loading…
+        </pre>
+        <div class="meta">GET /gates</div>
+      </div>
+
+      <div class="card">
+        <h2>Risks</h2>
+        <pre hx-get="/risks" hx-trigger="load, every 30s" hx-swap="innerHTML"
+             hx-headers='{"Authorization": "Bearer __PASTE_TOKEN__"}'>
+loading…
+        </pre>
+        <div class="meta">GET /risks</div>
       </div>
     </div>
 

@@ -36,7 +36,9 @@ curl -fsS -H "Authorization: Bearer $MISSION_CONTROL_TOKEN" \
 | GET | `/agents` | bearer | lectura de `openclaw.json` |
 | GET | `/quotas` | bearer | state file de quota Claude Pro |
 | GET | `/queue` | bearer | longitudes de colas Redis conocidas |
-| GET | `/tournaments` | bearer | placeholder hasta O13.4 |
+| GET | `/tournaments` | bearer | estado D3.x read-only; launcher deshabilitado |
+| GET | `/gates` | bearer | gates D6.1, D5/O15, editorial, security, tests |
+| GET | `/risks` | bearer | riesgos operativos: pip-audit, `.env` ACL, board drift, stale PRs |
 
 Todos los endpoints (excepto `/health`) requieren `Authorization: Bearer
 $MISSION_CONTROL_TOKEN`. Si la env var no está seteada, todas las rutas

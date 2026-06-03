@@ -398,11 +398,25 @@ class TestAuthHelpers:
     @patch.dict(
         os.environ,
         {
+            "GOOGLE_CALENDAR_TOKEN": "bearer-cal-123",
+            "GOOGLE_CALENDAR_REFRESH_TOKEN": "stale-refresh",
+            "GOOGLE_CALENDAR_CLIENT_ID": "deleted-client",
+            "GOOGLE_CALENDAR_CLIENT_SECRET": "stale-secret",
+        },
+        clear=True,
+    )
+    def test_calendar_bearer_wins_over_refresh_credentials(self):
+        headers = _get_calendar_headers()
+        assert headers["Authorization"] == "Bearer bearer-cal-123"
+
+    @patch.dict(
+        os.environ,
+        {
             "GOOGLE_CALENDAR_REFRESH_TOKEN": "refresh-cal-123",
             "GOOGLE_CALENDAR_CLIENT_ID": "calendar-client-id",
             "GOOGLE_CALENDAR_CLIENT_SECRET": "calendar-client-secret",
         },
-        clear=False,
+        clear=True,
     )
     def test_calendar_headers_refresh_token(self):
         mock_creds = MagicMock()

@@ -102,6 +102,11 @@ Acceptance del fallback:
 - El summary lista digest para source crawler, pdf parser e index pipeline.
 - El tag reportado se pasa a `PROMPT 2`.
 
+Si el workflow falla con `403 Forbidden` en GHCR, ejecutar primero el prompt
+`GHCR auth fix` de `docs/ops/aeco-ghcr-build-workflow.md`. El run real
+`26923231791` fallo asi porque no existe repo secret `GHCR_PAT` y los tokens
+disponibles no tienen `read:packages`/`write:packages`.
+
 ```text
 Sos Copilot Builder. Rebuild/push de imagenes AECO KB post PR #449.
 Responder en espanol. NO imprimir secretos. NO tocar Azure. NO reiniciar gateway/worker.

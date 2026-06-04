@@ -147,6 +147,10 @@ def test_index_publisher_search_doc_uses_chunk_metadata_fallback():
     )
 
     assert doc["source_url"].startswith("https://standards.buildingsmart.org/")
+    assert doc["id"] == mod.search_document_key("IFC-4.3.2.0-overview", 7)
+    assert "." not in doc["id"]
+    assert set(doc["id"]) <= set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-")
+    assert doc["parent_doc_id"] == "IFC-4.3.2.0-overview"
     assert doc["jurisdiction"] == "intl"
     assert doc["doc_type"] == "spec"
     assert doc["version"] == "IFC-4.3.2.0"

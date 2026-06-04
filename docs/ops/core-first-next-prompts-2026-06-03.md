@@ -105,7 +105,8 @@ Acceptance del fallback:
 Si el workflow falla con `403 Forbidden` en GHCR, ejecutar primero el prompt
 `GHCR auth fix` de `docs/ops/aeco-ghcr-build-workflow.md`. El run real
 `26923231791` fallo asi porque no existe repo secret `GHCR_PAT` y los tokens
-disponibles no tienen `read:packages`/`write:packages`.
+disponibles no tienen `read:packages`/`write:packages`. Tracking issue:
+https://github.com/Umbral-Bot/umbral-agent-stack/issues/452.
 
 ```text
 Sos Copilot Builder. Rebuild/push de imagenes AECO KB post PR #449.

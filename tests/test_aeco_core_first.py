@@ -151,3 +151,36 @@ def test_index_publisher_search_doc_uses_chunk_metadata_fallback():
     assert doc["doc_type"] == "spec"
     assert doc["version"] == "IFC-4.3.2.0"
     assert doc["lang"] == "en"
+
+
+def test_index_publisher_upload_docs_uses_safe_default_batches(monkeypatch):
+    mod = _load_script_module("aeco_index_publisher_batch_test", "scripts/aeco-kb/index_publisher.py")
+    monkeypatch.delenv("UPLOAD_BATCH_SIZE", raising=False)
+    batch_sizes: list[int] = []
+
+    def fake_search_request(method, url, token, body=None, timeout=60):
+        assert method == "POST"
+        assert timeout == 120
+        batch = body["value"]
+        batch_sizes.append(len(batch))
+        return {"value": [{"status": True, "key": item["id"]} for item in batch]}
+
+    monkeypatch.setattr(mod, "search_request", fake_search_request)
+    docs = [{"id": f"doc-{i}"} for i in range(205)]
+
+    assert mod.upload_docs("svc", "idx", docs, "token") == 0
+    assert batch_sizes == [100, 100, 5]
+
+
+def test_create_initial_index_imports_without_search_alias_model():
+    mod = _load_script_module("aeco_create_initial_index_test", "scripts/aeco-kb/create_initial_index.py")
+
+    assert callable(mod.create_or_update_alias_rest)
+
+
+def test_index_pipeline_entrypoint_handles_missing_args():
+    entrypoint = REPO_ROOT / "infra/docker/aeco-index-pipeline/entrypoint.sh"
+    text = entrypoint.read_text(encoding="utf-8")
+
+    assert 'if [ "$#" -gt 0 ]; then' in text
+    assert 'CMD="publish"' in text

@@ -55,6 +55,7 @@ ALIAS_API_CANDIDATES = (
 
 EMBED_BATCH_SIZE = 16
 EMBED_RETRY_BACKOFFS = [2, 8, 32]
+DEFAULT_UPLOAD_BATCH_SIZE = 100
 GATE_DOC_COUNT_TOLERANCE = 0.95
 GATE_SAMPLE_QUERY = "IFC OR norma OR construcción"
 GATE_MIN_RESULTS = 3
@@ -85,6 +86,22 @@ def search_request(method: str, url: str, token: str, body=None, timeout=60):
         r = client.request(method, url, headers=headers, json=body)
         r.raise_for_status()
         return r.json() if r.content else {}
+
+
+def upload_batch_size() -> int:
+    raw = os.environ.get("UPLOAD_BATCH_SIZE", str(DEFAULT_UPLOAD_BATCH_SIZE))
+    try:
+        value = int(raw)
+    except ValueError:
+        log.warning("Invalid UPLOAD_BATCH_SIZE=%r; using %d", raw, DEFAULT_UPLOAD_BATCH_SIZE)
+        return DEFAULT_UPLOAD_BATCH_SIZE
+    if value < 1:
+        log.warning("UPLOAD_BATCH_SIZE=%d is too small; using 1", value)
+        return 1
+    if value > 1000:
+        log.warning("UPLOAD_BATCH_SIZE=%d exceeds Azure Search doc limit; using 1000", value)
+        return 1000
+    return value
 
 
 def alias_url(search_service: str, alias: str, api_version: str, style: str) -> str:
@@ -139,11 +156,24 @@ def upload_docs(search_service: str, index_name: str, docs: list[dict], token: s
         return 0
     url = f"https://{search_service}.search.windows.net/indexes/{index_name}/docs/index?api-version={SEARCH_API_VERSION}"
     failed = 0
-    BATCH = 500
-    for i in range(0, len(docs), BATCH):
-        batch = docs[i:i + BATCH]
+    batch_size = upload_batch_size()
+    for i in range(0, len(docs), batch_size):
+        batch = docs[i:i + batch_size]
         body = {"value": [{"@search.action": "upload", **d} for d in batch]}
-        result = search_request("POST", url, token, body=body, timeout=120)
+        try:
+            result = search_request("POST", url, token, body=body, timeout=120)
+        except Exception as exc:
+            response = getattr(exc, "response", None)
+            text = getattr(response, "text", "")[:2000] if response is not None else ""
+            log.error(
+                "Upload batch failed index=%s offset=%d batch_size=%d error=%s body=%s",
+                index_name,
+                i,
+                len(batch),
+                exc,
+                text,
+            )
+            raise
         for r in result.get("value", []):
             if not r.get("status"):
                 failed += 1

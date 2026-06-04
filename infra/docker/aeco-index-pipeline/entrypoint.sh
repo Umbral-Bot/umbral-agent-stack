@@ -3,8 +3,12 @@
 # Subcomandos: detect | publish
 set -eu
 
-CMD="${1:-publish}"
-shift || true
+if [ "$#" -gt 0 ]; then
+    CMD="$1"
+    shift
+else
+    CMD="publish"
+fi
 
 echo "[entrypoint] aeco-index-pipeline starting at $(date -u +%FT%TZ)"
 echo "[entrypoint] CMD=${CMD}"

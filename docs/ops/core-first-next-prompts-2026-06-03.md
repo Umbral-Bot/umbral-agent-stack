@@ -27,6 +27,8 @@ Archivos de apoyo:
 1. David/Cursor revisa y mergea PR #449 si lo aprueba.
 2. Builder con Docker reconstruye y pushea las 3 imagenes AECO KB desde `main`.
 3. Copilot Windows/Azure-auth actualiza ACA Jobs al tag nuevo y ejecuta D6.1e.
+   - Si GHCR pull sigue `DENIED` y no hay `GHCR_PAT` local, usar `PROMPT 2c`
+     solo con autorizacion explicita de David porque cambia registry/RBAC.
 4. Copilot-VPS despliega Mission Control read-only.
 5. Tracker cleanup: inventariar stale PRs; cerrar solo con autorizacion.
 6. D3.5 tournament rerun solo si David autoriza costo/tiempo.
@@ -354,6 +356,148 @@ Acceptance:
 - No se ejecuto crawler/parser/publisher todavia.
 - Comentar issue #454 con resultado.
 ```
+
+---
+
+### PROMPT 2c - Fallback ACR autorizado si GHCR sigue DENIED
+
+Usar solo si David autoriza explicitamente una de estas frases:
+
+- `autorizo ACR fallback usando <ACR_LOGIN_SERVER_EXISTENTE>`
+- `autorizo crear ACR prod para AECO KB`
+
+No usar este prompt como retry silencioso. Cambia la fuente de imagenes de GHCR
+a Azure Container Registry, agrega/usa RBAC `AcrPull` y cambia la registry de
+los ACA Jobs. El camino preferido sigue siendo `PROMPT 2b` con `GHCR_PAT` local.
+
+Contexto real 2026-06-04:
+
+- No hay ACR en `rg-umbral-agents-prod`.
+- Hay ACRs en otras RGs de la suscripcion:
+  - `acrconsultorcurdm.azurecr.io` (`rg-acc-copilot-aec40`)
+  - `acrpptxrenderqadm.azurecr.io` (`rg-acc-copilot-aec40`)
+  - `crumbralnonprodszncn7q3omyek.azurecr.io` (`rg-umbral-nonprod-centralus`)
+  - `umbralaf1k16acr.azurecr.io` (`rg-dm-8454`)
+- UAMI de los jobs: `uami-umbral-agents-prod`, principal
+  `ebe48a91-588c-4331-b3ee-0d58906e48cd`.
+- Esa UAMI no tiene `AcrPull` al momento de esta nota.
+- El diseno Q2 actual documentado en Bicep usa GHCR privado con `ghcr-pat`;
+  ACR estaba diferido a Q3.
+
+```text
+Sos Copilot Windows/Azure-auth. Ejecutar fallback ACR para AECO KB solo porque
+David autorizo explicitamente este cambio. Responder en espanol. NO imprimir
+secretos. NO ejecutar crawler/parser/publisher hasta que los 3 ACA Jobs apunten
+a las imagenes ACR nuevas.
+
+Autorizacion recibida de David:
+`<PEGAR_FRASE_DE_AUTORIZACION>`
+
+Objetivo:
+- Construir las 3 imagenes AECO KB desde `main` en ACR.
+- Dar `AcrPull` a `uami-umbral-agents-prod`.
+- Cambiar los 3 ACA Jobs para pull por identidad manejada desde ACR.
+- Verificar que los 3 jobs apuntan al tag ACR nuevo.
+- Luego continuar con Prompt 2 run/verify.
+
+Preflight repo:
+cd C:\GitHub\umbral-agent-stack
+git fetch origin main
+git checkout main
+git pull --ff-only origin main
+git status --short --branch
+git log -1 --oneline
+
+if (-not (Test-Path docs\ops\core-first-next-prompts-2026-06-03.md)) { throw "MISSING_PROMPT_PACK" }
+if (-not (Select-String -Path scripts\aeco-kb\source_crawler.py -Pattern "preflight-only" -Quiet)) { throw "MISSING_PREFLIGHT_ONLY" }
+
+$rg = "rg-umbral-agents-prod"
+$uamiId = "/subscriptions/f14f61f0-e692-4fbb-900d-73e55a632374/resourceGroups/rg-umbral-agents-prod/providers/Microsoft.ManagedIdentity/userAssignedIdentities/uami-umbral-agents-prod"
+$uamiPrincipal = "ebe48a91-588c-4331-b3ee-0d58906e48cd"
+$tag = "core-first-24e070d7"
+
+az account show --query "{tenant:tenantId,subscription:id,user:user.name}" -o json
+az containerapp job list -g $rg --query "[?starts_with(name, 'aeco-')].{name:name,image:properties.template.containers[0].image,state:properties.provisioningState}" -o table
+az acr list --query "[].{resourceGroup:resourceGroup,name:name,loginServer:loginServer,sku:sku.name}" -o table
+
+Seleccion ACR:
+- Si David autorizo un ACR existente:
+  $acrLogin = "<ACR_LOGIN_SERVER_EXISTENTE>"
+  $acrName = ($acrLogin -split "\.")[0]
+  $acr = az acr show --name $acrName --query "{id:id,loginServer:loginServer}" -o json | ConvertFrom-Json
+- Si David autorizo crear ACR prod:
+  # Elegir nombre globalmente unico; ejemplo no canonico:
+  $acrName = "crumbralagentsprod<suffix>"
+  az acr create --resource-group $rg --name $acrName --sku Basic --admin-enabled false
+  if ($LASTEXITCODE -ne 0) { throw "ACR_CREATE_FAILED" }
+  $acr = az acr show --name $acrName --query "{id:id,loginServer:loginServer}" -o json | ConvertFrom-Json
+  $acrLogin = $acr.loginServer
+
+RBAC AcrPull:
+az role assignment create --assignee $uamiPrincipal --role AcrPull --scope $acr.id
+if ($LASTEXITCODE -ne 0) {
+  # Puede ser benigno si ya existia; confirmar antes de seguir.
+  az role assignment list --assignee $uamiPrincipal --scope $acr.id --query "[?roleDefinitionName=='AcrPull']" -o json
+}
+
+Build remoto ACR:
+$builds = @(
+  @{ name="aeco-source-crawler"; dockerfile="infra/docker/aeco-source-crawler/Dockerfile" },
+  @{ name="aeco-pdf-parser"; dockerfile="infra/docker/aeco-pdf-parser/Dockerfile" },
+  @{ name="aeco-index-pipeline"; dockerfile="infra/docker/aeco-index-pipeline/Dockerfile" }
+)
+foreach ($b in $builds) {
+  az acr build --registry $acrName --file $b.dockerfile --image "$($b.name):$tag" --image "$($b.name):latest" .
+  if ($LASTEXITCODE -ne 0) { throw "ACR_BUILD_FAILED $($b.name)" }
+}
+
+Guardar estado previo para rollback:
+$previous = @{}
+foreach ($job in @("aeco-source-crawler","aeco-pdf-parser","aeco-index-pipeline")) {
+  $previous[$job] = az containerapp job show --name $job --resource-group $rg --query "{image:properties.template.containers[0].image,registries:properties.configuration.registries}" -o json | ConvertFrom-Json
+}
+
+Set registry por UAMI + update imagenes:
+$images = @{
+  "aeco-source-crawler" = "$acrLogin/aeco-source-crawler:$tag"
+  "aeco-pdf-parser" = "$acrLogin/aeco-pdf-parser:$tag"
+  "aeco-index-pipeline" = "$acrLogin/aeco-index-pipeline:$tag"
+}
+foreach ($job in $images.Keys) {
+  az containerapp job registry set --name $job --resource-group $rg --server $acrLogin --identity $uamiId
+  if ($LASTEXITCODE -ne 0) { throw "REGISTRY_SET_FAILED $job" }
+  az containerapp job update --name $job --resource-group $rg --image $images[$job]
+  if ($LASTEXITCODE -ne 0) { throw "IMAGE_UPDATE_FAILED $job" }
+}
+
+Verify image pointers:
+$state = az containerapp job list -g $rg --query "[?starts_with(name, 'aeco-')].{name:name,image:properties.template.containers[0].image,state:properties.provisioningState}" -o table
+$state
+# STOP si cualquiera de los 3 jobs no apunta a $acrLogin + $tag.
+
+Despues de verificar los 3 jobs:
+- Continuar Prompt 2 desde "Helper run/wait" y ejecutar D6.1e.
+
+Rollback si falla antes del run:
+- Restaurar image previo de cada job con `az containerapp job update --image`.
+- Restaurar registry GHCR con `az containerapp job registry set --server ghcr.io --username umbral-bot --password-secret ghcr-pat` si el CLI lo soporta.
+- NO borrar ACR ni role assignments sin autorizacion explicita; documentar deuda.
+
+Final obligatorio:
+- VEREDICTO: D61_ACR_FALLBACK_IMAGES_OK, D61_AECO_KB_RUN_VERIFY_OK, o D61_ACR_FALLBACK_BLOCKED
+- ACR usado/creado
+- tag usado
+- 3 imagenes finales
+- si D6.1e corrio: execution IDs, doc/chunk count, alias target
+- confirmar que no se imprimieron secretos
+```
+
+Acceptance:
+
+- Autorizacion explicita de David registrada.
+- Los 3 ACA Jobs apuntan a imagenes ACR `core-first-24e070d7`.
+- UAMI tiene `AcrPull` sobre el ACR.
+- D6.1e solo corre despues de verificar los 3 image pointers.
 
 ---
 

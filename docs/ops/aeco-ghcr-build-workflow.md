@@ -103,6 +103,12 @@ secret `ghcr-pat` distinto del repo secret `GHCR_PAT`. Caso real:
   `aeco-pdf-parser:core-first-24e070d7`.
 - Tracking issue: https://github.com/Umbral-Bot/umbral-agent-stack/issues/454.
 
-Fix: actualizar el secret ACA `ghcr-pat` en los tres jobs con un PAT que pueda
-tirar los tres packages, o hacer los packages pullables por ACA. Ver `PROMPT
-2b` en `docs/ops/core-first-next-prompts-2026-06-03.md`.
+Fix primario: actualizar el secret ACA `ghcr-pat` en los tres jobs con un PAT
+que pueda tirar los tres packages, o hacer los packages pullables por ACA. Ver
+`PROMPT 2b` en `docs/ops/core-first-next-prompts-2026-06-03.md`.
+
+Fallback autorizado: si GHCR sigue `DENIED` y no hay `GHCR_PAT` local, migrar
+temporalmente las imagenes AECO KB a Azure Container Registry solo con
+autorizacion explicita de David. Ver `PROMPT 2c` en
+`docs/ops/core-first-next-prompts-2026-06-03.md`. Esto cambia registry/RBAC y no
+debe ejecutarse como retry silencioso.

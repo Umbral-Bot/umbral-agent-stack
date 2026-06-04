@@ -127,6 +127,13 @@ def test_verify_kb_alias_resolution_falls_back_after_bad_api(monkeypatch):
     assert len(seen_urls) == 2
 
 
+def test_verify_kb_uses_configurable_neutral_sample_queries():
+    mod = _load_script_module("aeco_verify_kb_queries_test", "scripts/aeco-kb/verify_kb.py")
+
+    assert mod.csv_list("IFC, ISO 19650, BIM") == ["IFC", "ISO 19650", "BIM"]
+    assert "construcci\u00f3n" not in mod.DEFAULT_SAMPLE_QUERIES
+
+
 def test_index_publisher_search_doc_uses_chunk_metadata_fallback():
     mod = _load_script_module("aeco_index_publisher_test", "scripts/aeco-kb/index_publisher.py")
 

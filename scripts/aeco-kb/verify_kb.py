@@ -31,7 +31,7 @@ ALIAS_API_CANDIDATES = (
     ("2025-11-01-preview", "odata"),
     ("2023-07-01-Preview", "classic"),
 )
-SAMPLE_QUERIES = ["IFC", "ISO 19650", "BIM", "construcción"]
+DEFAULT_SAMPLE_QUERIES = ["IFC", "ISO 19650", "BIM"]
 
 
 def alias_url(search_service: str, alias: str, api_version: str, style: str) -> str:
@@ -40,6 +40,10 @@ def alias_url(search_service: str, alias: str, api_version: str, style: str) -> 
     if style == "odata":
         return f"{endpoint}/aliases('{encoded}')?api-version={api_version}"
     return f"{endpoint}/aliases/{encoded}?api-version={api_version}"
+
+
+def csv_list(raw: str) -> list[str]:
+    return [value.strip() for value in raw.split(",") if value.strip()]
 
 
 def get_active_index(search_service: str, alias: str, token: str) -> str | None:
@@ -96,7 +100,13 @@ def sample_search(search_service: str, index: str, token: str, query: str) -> in
         return len(r.json().get("value", []))
 
 
-def run(search_service: str, alias: str, min_chunks: int, jurisdictions: list[str]) -> int:
+def run(
+    search_service: str,
+    alias: str,
+    min_chunks: int,
+    jurisdictions: list[str],
+    sample_queries: list[str],
+) -> int:
     from azure.identity import DefaultAzureCredential
 
     credential = DefaultAzureCredential()
@@ -124,7 +134,7 @@ def run(search_service: str, alias: str, min_chunks: int, jurisdictions: list[st
             failures.append(f"jurisdiction '{j}' has 0 chunks")
 
     # Gate 3 — sample queries
-    for q in SAMPLE_QUERIES:
+    for q in sample_queries:
         n = sample_search(search_service, active, token, q)
         log.info("  query='%s' -> %d hits", q, n)
         if n < 1:
@@ -146,9 +156,15 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--jurisdictions",
                    default=os.environ.get("JURISDICTIONS", "ar,cl,mx,intl"),
                    help="Comma-separated list. Default: ar,cl,mx,intl")
+    p.add_argument("--sample-queries",
+                   default=os.environ.get("SAMPLE_QUERIES", ",".join(DEFAULT_SAMPLE_QUERIES)),
+                   help="Comma-separated smoke queries. Default: IFC,ISO 19650,BIM")
     args = p.parse_args(argv)
-    juris = [j.strip() for j in args.jurisdictions.split(",") if j.strip()]
-    return run(args.search_service, args.alias, args.min_chunks, juris)
+    juris = csv_list(args.jurisdictions)
+    sample_queries = csv_list(args.sample_queries)
+    if not sample_queries:
+        p.error("--sample-queries must include at least one query")
+    return run(args.search_service, args.alias, args.min_chunks, juris, sample_queries)
 
 
 if __name__ == "__main__":

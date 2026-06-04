@@ -27,7 +27,9 @@ import json
 import os
 import sys
 from datetime import datetime, timezone
+from urllib.parse import quote
 
+import httpx
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
 from azure.identity import DefaultAzureCredential
 from azure.search.documents.indexes import SearchIndexClient
@@ -35,7 +37,6 @@ from azure.search.documents.indexes.models import (
     HnswAlgorithmConfiguration,
     HnswParameters,
     SearchableField,
-    SearchAlias,
     SearchField,
     SearchFieldDataType,
     SearchIndex,
@@ -60,6 +61,32 @@ EMBEDDING_DIMENSIONS = 1536  # text-embedding-3-small
 VECTOR_PROFILE_NAME = "hnsw-cosine"
 VECTOR_ALGORITHM_NAME = "hnsw-default"
 SEMANTIC_CONFIG_NAME = "default-semantic-cfg"
+ALIAS_API_CANDIDATES = (
+    ("2026-04-01", "odata"),
+    ("2025-11-01-preview", "odata"),
+    ("2023-07-01-Preview", "classic"),
+)
+
+
+def alias_url(endpoint: str, alias: str, api_version: str, style: str) -> str:
+    encoded = quote(alias, safe="")
+    if style == "odata":
+        return f"{endpoint}/aliases('{encoded}')?api-version={api_version}"
+    return f"{endpoint}/aliases/{encoded}?api-version={api_version}"
+
+
+def create_or_update_alias_rest(endpoint: str, alias_name: str, index_name: str, credential) -> str:
+    token = credential.get_token("https://search.azure.com/.default").token
+    body = {"name": alias_name, "indexes": [index_name]}
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    diagnostics: list[str] = []
+    with httpx.Client(timeout=30) as client:
+        for api_version, style in ALIAS_API_CANDIDATES:
+            response = client.put(alias_url(endpoint, alias_name, api_version, style), headers=headers, json=body)
+            if response.status_code < 400:
+                return api_version
+            diagnostics.append(f"{api_version}/{style} -> HTTP {response.status_code}: {response.text[:300]}")
+    raise RuntimeError(f"alias create_or_update failed: {'; '.join(diagnostics)}")
 
 
 def build_index(index_name: str) -> SearchIndex:
@@ -270,15 +297,14 @@ def main(argv: list[str] | None = None) -> int:
         print(f"[error] index create_or_update falló: {exc.message}", file=sys.stderr)
         return 2
 
-    alias = SearchAlias(name=args.alias_name, indexes=[index_name])
     try:
-        client.create_or_update_alias(alias)
-        print(f"[ok] alias create_or_update → {args.alias_name} → [{index_name}]")
+        api_version = create_or_update_alias_rest(endpoint, args.alias_name, index_name, credential)
+        print(f"[ok] alias create_or_update → {args.alias_name} → [{index_name}] via {api_version}")
     except ResourceExistsError as exc:
         # Algunos SDK levantan esto si el alias existe apuntando al mismo target — idempotente OK.
         print(f"[ok] alias ya existente sin cambios: {exc.message}")
-    except HttpResponseError as exc:
-        print(f"[error] alias create_or_update falló: {exc.message}", file=sys.stderr)
+    except (HttpResponseError, RuntimeError) as exc:
+        print(f"[error] alias create_or_update falló: {exc}", file=sys.stderr)
         return 3
 
     print("\n[done] Validar con:")

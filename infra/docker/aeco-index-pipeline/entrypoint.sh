@@ -1,6 +1,6 @@
 #!/bin/sh
 # O16.2/049 — entrypoint del Container Apps Job aeco-index-pipeline
-# Subcomandos: detect | publish
+# Subcomandos: detect | publish | verify
 set -eu
 
 if [ "$#" -gt 0 ]; then
@@ -21,8 +21,11 @@ case "${CMD}" in
     publish)
         exec python -m scripts.aeco_kb.index_publisher "$@"
         ;;
+    verify)
+        exec python -m scripts.aeco_kb.verify_kb "$@"
+        ;;
     *)
-        echo "[entrypoint] Unknown subcommand '${CMD}'. Use 'detect' or 'publish'." >&2
+        echo "[entrypoint] Unknown subcommand '${CMD}'. Use 'detect', 'publish' or 'verify'." >&2
         exit 2
         ;;
 esac

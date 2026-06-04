@@ -18,6 +18,7 @@ RUN pip install --no-cache-dir \
 COPY scripts/aeco-kb/__init__.py /app/scripts/aeco_kb/__init__.py
 COPY scripts/aeco-kb/version_detector.py /app/scripts/aeco_kb/version_detector.py
 COPY scripts/aeco-kb/index_publisher.py /app/scripts/aeco_kb/index_publisher.py
+COPY scripts/aeco-kb/verify_kb.py /app/scripts/aeco_kb/verify_kb.py
 COPY infra/docker/aeco-index-pipeline/entrypoint.sh /app/entrypoint.sh
 
 RUN chmod +x /app/entrypoint.sh && chmod -R a+r /app

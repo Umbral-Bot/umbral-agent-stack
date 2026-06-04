@@ -429,7 +429,7 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 - **D6.1a:** ✅ `D61_AECO_KB_PREFLIGHT_OK` — Azure/GHCR what-if read-only OK; único drift esperado `aeco-source-crawler` env vars `SOURCE_TYPE`/`MAX_DOCS`.
 - **D6.1b:** ✅ `D61_AECO_KB_DEPLOY_OK` — deployment `aeco-kb-pipeline-20260603-064344` `Succeeded`; jobs `aeco-source-crawler` + `aeco-index-pipeline` manual/succeeded; drift `SOURCE_TYPE`/`MAX_DOCS` saneado; no runtime run.
 - **D6.1c:** ⚠️ `D61_AECO_KB_RUN_VERIFY_BLOCKED` — Copilot-VPS no tiene `az` ni `azure.identity`; regla de superficie prohíbe instalar Azure CLI en VPS. Evidencia `~/.coord-ag-evidence/D6.1/aeco-kb-run-202606030717.log`.
-- **Siguiente:** PR #449 mergeado @ `f4e7c0e4`; workflow Prompt 1 mergeado #450 @ `24e070d7`; run GHCR `26923231791` fallo por package auth `403`. Siguiente: crear `GHCR_PAT` repo secret o dar package write access al repo, luego rerun tag `core-first-24e070d7` y continuar D6.1e update ACA Jobs + run/verify Windows/Azure-auth · Friday retro
+- **Siguiente:** PR #449 mergeado @ `f4e7c0e4`; workflow Prompt 1 mergeado #450 @ `24e070d7`; run GHCR `26923231791` fallo por package auth `403`; tracking issue #452. Siguiente: crear `GHCR_PAT` repo secret o dar package write access al repo, luego rerun tag `core-first-24e070d7` y continuar D6.1e update ACA Jobs + run/verify Windows/Azure-auth · Friday retro
 - Lección D3.2: exigir PR URL por lane antes de announce done
 
 ## 2026-06-02-019 — D3.2 tournament O2 backup alerts #440 [DONE — salvage merged]

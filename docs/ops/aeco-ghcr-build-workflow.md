@@ -61,6 +61,7 @@ Sos David/GitHub admin. Desbloquear push GHCR para AECO KB images.
 Contexto:
 - Repo: Umbral-Bot/umbral-agent-stack
 - Workflow: AECO KB GHCR Images
+- Tracking issue: https://github.com/Umbral-Bot/umbral-agent-stack/issues/452
 - Run fallido: https://github.com/Umbral-Bot/umbral-agent-stack/actions/runs/26923231791
 - Error real: GHCR 403 al pushear ghcr.io/umbral-bot/aeco-source-crawler:core-first-24e070d7
 - Tokens disponibles en Codex no tienen read:packages; repo secret GHCR_PAT no existe.

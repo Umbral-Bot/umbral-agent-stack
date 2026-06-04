@@ -24,6 +24,7 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 import logging
 import os
@@ -63,7 +64,6 @@ GATE_MAX_FAILURE_PCT = 0.05
 
 VALID_SOURCE_TYPES = {"buildingsmart", "minvu", "iram", "nmx"}
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -102,6 +102,12 @@ def upload_batch_size() -> int:
         log.warning("UPLOAD_BATCH_SIZE=%d exceeds Azure Search doc limit; using 1000", value)
         return 1000
     return value
+
+
+def search_document_key(doc_id: str, chunk_id: object) -> str:
+    """Return an Azure Search-safe document key for stable source ids."""
+    raw = f"{doc_id}__{chunk_id}"
+    return base64.urlsafe_b64encode(raw.encode("utf-8")).decode("ascii").rstrip("=")
 
 
 def alias_url(search_service: str, alias: str, api_version: str, style: str) -> str:
@@ -274,7 +280,7 @@ def chunk_to_search_doc(chunk: dict, kb_version: str) -> dict:
     doc_id = meta.get("doc_id") or chunk.get("parent_doc_id", "unknown")
     chunk_id = chunk.get("chunk_id", 0)
     return {
-        "id": f"{doc_id}__{chunk_id}",
+        "id": search_document_key(str(doc_id), chunk_id),
         "content": chunk.get("content", ""),
         "content_vector": chunk.get("content_vector"),
         "source_url": meta.get("source_url") or chunk.get("source_url", ""),

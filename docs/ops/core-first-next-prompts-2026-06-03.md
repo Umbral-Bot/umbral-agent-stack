@@ -81,6 +81,27 @@ Acceptance:
 Usar en una superficie con Docker y GHCR PAT. La VPS sirve si tiene Docker y `GHCR_PAT`.
 No requiere Azure CLI.
 
+Si la workstation no tiene Docker/WSL/Podman o falta `GHCR_PAT`, usar el
+fallback CI documentado en `docs/ops/aeco-ghcr-build-workflow.md`:
+
+```powershell
+cd C:\GitHub\umbral-agent-stack
+git checkout main
+git pull --ff-only origin main
+$sha = git rev-parse --short=8 HEAD
+$tag = "core-first-$sha"
+gh workflow run "AECO KB GHCR Images" --repo Umbral-Bot/umbral-agent-stack --ref main -f tag=$tag
+$run = gh run list --repo Umbral-Bot/umbral-agent-stack --workflow "AECO KB GHCR Images" --limit 1 --json databaseId --jq ".[0].databaseId"
+gh run watch $run --repo Umbral-Bot/umbral-agent-stack --exit-status
+gh run view $run --repo Umbral-Bot/umbral-agent-stack --json conclusion,url,headSha,displayTitle
+```
+
+Acceptance del fallback:
+
+- Workflow `AECO KB GHCR Images` termina `success`.
+- El summary lista digest para source crawler, pdf parser e index pipeline.
+- El tag reportado se pasa a `PROMPT 2`.
+
 ```text
 Sos Copilot Builder. Rebuild/push de imagenes AECO KB post PR #449.
 Responder en espanol. NO imprimir secretos. NO tocar Azure. NO reiniciar gateway/worker.

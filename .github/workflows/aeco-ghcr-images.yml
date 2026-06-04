@@ -1,0 +1,99 @@
+name: AECO KB GHCR Images
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Image tag to publish. Defaults to core-first-<short-sha>."
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    name: Build and push AECO KB images
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve image tag
+        id: meta
+        shell: bash
+        env:
+          TAG_INPUT: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          short_sha="${GITHUB_SHA::8}"
+          tag="$TAG_INPUT"
+          if [ -z "$tag" ]; then
+            tag="core-first-${short_sha}"
+          fi
+          case "$tag" in
+            *[!A-Za-z0-9_.-]*|"")
+              echo "Invalid image tag: $tag" >&2
+              exit 2
+              ;;
+          esac
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "short_sha=$short_sha" >> "$GITHUB_OUTPUT"
+          echo "Using image tag: $tag"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push source crawler
+        id: source_crawler
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/docker/aeco-source-crawler/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/umbral-bot/aeco-source-crawler:${{ steps.meta.outputs.tag }}
+            ghcr.io/umbral-bot/aeco-source-crawler:latest
+
+      - name: Build and push PDF parser
+        id: pdf_parser
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/docker/aeco-pdf-parser/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/umbral-bot/aeco-pdf-parser:${{ steps.meta.outputs.tag }}
+            ghcr.io/umbral-bot/aeco-pdf-parser:latest
+
+      - name: Build and push index pipeline
+        id: index_pipeline
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/docker/aeco-index-pipeline/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/umbral-bot/aeco-index-pipeline:${{ steps.meta.outputs.tag }}
+            ghcr.io/umbral-bot/aeco-index-pipeline:latest
+
+      - name: Publish digest summary
+        shell: bash
+        run: |
+          {
+            echo "## AECO KB images"
+            echo
+            echo "- tag: \`${{ steps.meta.outputs.tag }}\`"
+            echo "- source crawler: \`${{ steps.source_crawler.outputs.digest }}\`"
+            echo "- pdf parser: \`${{ steps.pdf_parser.outputs.digest }}\`"
+            echo "- index pipeline: \`${{ steps.index_pipeline.outputs.digest }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"

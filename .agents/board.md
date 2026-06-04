@@ -1,6 +1,6 @@
 # Agent Board — Umbral Agent Stack
 
-> Última actualización: 2026-06-03 por **codex**
+> Última actualización: 2026-06-04 por **codex**
 > Sprint activo: **R23**
 > **Coordinación:** **Cursor** retoma el lead. Codex cerró la capitalización R23 (`2026-03-24-001`), limpió ramas/PRs `codex/*` y no dejó follow-ups nuevos de ese frente.
 > **RONDA 23 — capitalización Codex cerrada**.
@@ -429,7 +429,7 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 - **D6.1a:** ✅ `D61_AECO_KB_PREFLIGHT_OK` — Azure/GHCR what-if read-only OK; único drift esperado `aeco-source-crawler` env vars `SOURCE_TYPE`/`MAX_DOCS`.
 - **D6.1b:** ✅ `D61_AECO_KB_DEPLOY_OK` — deployment `aeco-kb-pipeline-20260603-064344` `Succeeded`; jobs `aeco-source-crawler` + `aeco-index-pipeline` manual/succeeded; drift `SOURCE_TYPE`/`MAX_DOCS` saneado; no runtime run.
 - **D6.1c:** ⚠️ `D61_AECO_KB_RUN_VERIFY_BLOCKED` — Copilot-VPS no tiene `az` ni `azure.identity`; regla de superficie prohíbe instalar Azure CLI en VPS. Evidencia `~/.coord-ag-evidence/D6.1/aeco-kb-run-202606030717.log`.
-- **Siguiente:** Prompt 1 GHCR OK — workflow run `26926489943`, tag `core-first-24e070d7`. Prompt 2 bloqueado: ACA pull `DENIED` al actualizar `aeco-pdf-parser`; rollback aplicado a `aeco-source-crawler`; tracking issue #454. Reintento 2026-06-04: `GHCR_PAT` ausente en proceso/User/Machine, repo secret `GHCR_PAT` existe pero no es legible, UAMI sin `AcrPull`, sin ACR en `rg-umbral-agents-prod`; no se ejecuto pipeline y ACA sigue sin estado mixto. Siguiente: actualizar ACA secret `ghcr-pat` desde una sesion Windows/Azure que tenga `GHCR_PAT`, hacer packages pullables por ACA, o pedir autorizacion explicita para `PROMPT 2c` ACR fallback; luego reintentar update 3 jobs + D6.1e run/verify Windows/Azure-auth · Friday retro
+- **D6.1e:** ✅ `D6_1E_AECO_KB_BUILDINGSMART_OK` — GHCR pull auth reparado en ACA, 3 jobs alineados a `core-first-e98cd374`, crawler `aeco-source-crawler-do3yotx`, parser `aeco-pdf-parser-wz51605`, publisher `aeco-index-pipeline-j70gux1`, verify ACA/UAMI `aeco-index-pipeline-ahu3zpk`. Alias `aeco-kb-es-current` -> `aeco-kb-es-v20260604-0509`; doc_count 1187, `jurisdiction=intl` 1187, queries `IFC`/`ISO 19650`/`BIM` con 3 hits. Issue #454 cerrado. PRs runtime: #457, #458, #459, #460.
 - Lección D3.2: exigir PR URL por lane antes de announce done
 
 ## 2026-06-02-019 — D3.2 tournament O2 backup alerts #440 [DONE — salvage merged]

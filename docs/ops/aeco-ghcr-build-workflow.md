@@ -40,10 +40,53 @@ gh run view $run --repo Umbral-Bot/umbral-agent-stack --json conclusion,url,head
 - `latest` se actualiza junto con el tag inmutable.
 - El siguiente paso usa ese tag en ACA Jobs antes de correr D6.1e.
 
+## GHCR auth
+
+El workflow requiere una de estas dos condiciones:
+
+1. Repo secret `GHCR_PAT` con un classic PAT que tenga `read:packages` y
+   `write:packages` sobre los packages de `Umbral-Bot`.
+2. Los package settings de GHCR conceden write access a
+   `Umbral-Bot/umbral-agent-stack`, y el run se dispara con
+   `allow_github_token=true`.
+
+Sin una de esas condiciones, el workflow falla antes de construir imagenes para
+evitar gastar tiempo en builds que terminan en `403 Forbidden`.
+
+### Prompt GHCR auth fix
+
+```text
+Sos David/GitHub admin. Desbloquear push GHCR para AECO KB images.
+
+Contexto:
+- Repo: Umbral-Bot/umbral-agent-stack
+- Workflow: AECO KB GHCR Images
+- Run fallido: https://github.com/Umbral-Bot/umbral-agent-stack/actions/runs/26923231791
+- Error real: GHCR 403 al pushear ghcr.io/umbral-bot/aeco-source-crawler:core-first-24e070d7
+- Tokens disponibles en Codex no tienen read:packages; repo secret GHCR_PAT no existe.
+
+Opcion A recomendada:
+1. Crear classic PAT con scopes `read:packages` y `write:packages`.
+2. Guardarlo como repo secret `GHCR_PAT` en Umbral-Bot/umbral-agent-stack.
+3. Avisar para rerun del workflow con tag `core-first-24e070d7`.
+
+Opcion B:
+1. En GitHub Packages, abrir cada package:
+   - aeco-source-crawler
+   - aeco-pdf-parser
+   - aeco-index-pipeline
+2. Package settings -> Manage Actions access.
+3. Dar write access a `Umbral-Bot/umbral-agent-stack`.
+4. Rerun con `allow_github_token=true`.
+
+No imprimir PAT en chats ni logs.
+```
+
 ## Notas
 
 - Este workflow reemplaza el build local cuando no hay Docker/WSL/Podman.
 - No usa `GHCR_PAT` local: GitHub Actions publica con `GITHUB_TOKEN` y
-  `packages: write`.
+  `packages: write` solo si el package concede acceso al repo; si no, usa
+  repo secret `GHCR_PAT`.
 - Si GHCR rechaza el push por permisos de package, el fix es de permisos de
   paquete/org en GitHub, no de codigo del pipeline.

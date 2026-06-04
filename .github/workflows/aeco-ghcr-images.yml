@@ -7,6 +7,11 @@ on:
         description: "Image tag to publish. Defaults to core-first-<short-sha>."
         required: false
         type: string
+      allow_github_token:
+        description: "Allow fallback to GITHUB_TOKEN when package settings grant this repo write access."
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -46,12 +51,28 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Check GHCR auth source
+        shell: bash
+        env:
+          HAS_GHCR_PAT: ${{ secrets.GHCR_PAT != '' }}
+          ALLOW_GITHUB_TOKEN: ${{ inputs.allow_github_token }}
+        run: |
+          set -euo pipefail
+          if [ "$HAS_GHCR_PAT" = "true" ]; then
+            echo "GHCR auth mode: GHCR_PAT repo secret"
+          elif [ "$ALLOW_GITHUB_TOKEN" = "true" ]; then
+            echo "::warning::GHCR_PAT is missing; using GITHUB_TOKEN. This only works if GHCR package settings grant this repository write access."
+          else
+            echo "::error::GHCR_PAT repo secret is missing. Add a classic PAT with read:packages/write:packages as GHCR_PAT, or rerun with allow_github_token=true after granting this repo package write access."
+            exit 2
+          fi
+
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GHCR_PAT != '' && secrets.GHCR_PAT || secrets.GITHUB_TOKEN }}
 
       - name: Build and push source crawler
         id: source_crawler

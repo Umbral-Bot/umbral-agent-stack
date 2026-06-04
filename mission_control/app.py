@@ -20,7 +20,7 @@ from fastapi.templating import Jinja2Templates
 
 from . import config
 from .auth import require_token
-from .routes import agents, gates, health, queue, quotas, risks, tournaments
+from .routes import agents, evals, gates, health, queue, quotas, risks, tournaments
 
 logging.basicConfig(
     level=logging.INFO,
@@ -66,6 +66,7 @@ app.include_router(tournaments.router, dependencies=_auth)
 app.include_router(queue.router, dependencies=_auth)
 app.include_router(gates.router, dependencies=_auth)
 app.include_router(risks.router, dependencies=_auth)
+app.include_router(evals.router, dependencies=_auth)
 
 
 _templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))

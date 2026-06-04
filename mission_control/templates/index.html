@@ -89,6 +89,15 @@ loading…
         </pre>
         <div class="meta">GET /risks</div>
       </div>
+
+      <div class="card">
+        <h2>Evals</h2>
+        <pre hx-get="/evals" hx-trigger="load, every 30s" hx-swap="innerHTML"
+             hx-headers='{"Authorization": "Bearer __PASTE_TOKEN__"}'>
+loading…
+        </pre>
+        <div class="meta">GET /evals · latest harness report only</div>
+      </div>
     </div>
 
     <p class="subtitle" style="margin-top: 32px;">

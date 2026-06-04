@@ -15,16 +15,18 @@ Decisiones congeladas: [`ADR-009`](../adr/ADR-009-mission-control-scope.md).
 ┌─────────────────────────────────────────────────────────────┐
 │   mission_control.app  (FastAPI :8089, bind 127.0.0.1)       │
 │   ─ /health  (anónimo)                                       │
-│   ─ /agents, /quotas, /queue, /tournaments  (bearer)         │
+│   ─ /agents, /quotas, /queue, /tournaments, /evals (bearer)  │
 └──────┬──────────────────┬───────────────────┬───────────────┘
        │                  │                   │
        ▼                  ▼                   ▼
    adapters/          adapters/           adapters/
    openclaw.py        redis_queue.py      quota.py
+                                          evals.py
        │                  │                   │
        ▼                  ▼                   ▼
    ~/.openclaw/       redis://localhost   ~/.config/openclaw/
    openclaw.json      :6379/0             claude-quota-state.json
+                                          reports/evals/generated/*.json
                        (compartido con
                         dispatcher)
 ```

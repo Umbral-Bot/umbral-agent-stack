@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from mission_control.adapters import openclaw, quota
+from mission_control.adapters import evals, openclaw, quota
 
 
 def test_openclaw_missing_file(tmp_path):
@@ -71,3 +71,20 @@ def test_quota_valid_file(tmp_path):
     state = quota.read_state(p)
     assert state["available"] is True
     assert state["state"] == payload
+
+
+def test_evals_missing_file(tmp_path):
+    state = evals.read_latest_report(tmp_path / "missing.json")
+    assert state["available"] is False
+    assert state["read_only"] is True
+    assert "not found" in state["error"]
+
+
+def test_evals_valid_file(tmp_path):
+    p = tmp_path / "eval.json"
+    payload = {"overall_status": "pass", "summary": {"suites_total": 3}}
+    p.write_text(json.dumps(payload), encoding="utf-8")
+    state = evals.read_latest_report(p)
+    assert state["available"] is True
+    assert state["read_only"] is True
+    assert state["report"] == payload

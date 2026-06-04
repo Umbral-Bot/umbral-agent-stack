@@ -86,6 +86,7 @@ docs/audits/notion-curation-snapshot-2026-03-16.json
 err.txt
 test.txt
 reports/runtime/generated/
+reports/evals/generated/
 # Copilot CLI capability — F4: audit logs and per-run artifacts
 # (see docs/copilot-cli-capability-design.md). Production output, not
 # committed; F3 evidence under docs/ stays tracked.

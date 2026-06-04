@@ -24,6 +24,18 @@ QUOTA_STATE_PATH: Path = Path(
         str(Path.home() / ".config" / "openclaw" / "claude-quota-state.json"),
     )
 )
+EVAL_REPORT_PATH: Path = Path(
+    os.getenv(
+        "MISSION_CONTROL_EVAL_REPORT_PATH",
+        str(
+            Path(__file__).resolve().parents[1]
+            / "reports"
+            / "evals"
+            / "generated"
+            / "core-eval-harness-latest.json"
+        ),
+    )
+)
 
 # --- Persistencia (ADR-009 D5) ---
 SNAPSHOTS_DIR: Path = Path(

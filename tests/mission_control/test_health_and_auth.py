@@ -63,7 +63,11 @@ def test_gates_and_risks_are_authenticated_read_only(client):
     assert gates.json()["read_only"] is True
     assert risks.json()["read_only"] is True
     assert any(gate["id"] == "D6.1" for gate in gates.json()["gates"])
+    evals = client.get("/evals", headers=headers)
+
+    assert evals.status_code == 200
     assert any(risk["id"] == "stale-prs" for risk in risks.json()["risks"])
+    assert evals.json()["read_only"] is True
 
 
 def test_503_when_token_unset(monkeypatch):

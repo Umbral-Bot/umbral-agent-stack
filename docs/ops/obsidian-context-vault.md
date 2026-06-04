@@ -16,8 +16,8 @@ Use Obsidian as a complementary context vault, not as the source of truth.
 
 ```text
 Windows Obsidian app
-  -> Obsidian Sync remote vault
-  -> VPS Headless Sync mirror, pull-only
+  -> private Git repository for the vault
+  -> VPS git pull mirror, pull-only
   -> agents read markdown context
 ```
 
@@ -27,13 +27,17 @@ push edits back to the vault in v0.
 ## Required vault folders
 
 ```text
-00-inbox/
-10-decisions/
-20-meetings/
-30-research/
-40-runbooks/
-90-evals/
+00_inbox/
+10_decisiones/
+20_reuniones/
+30_investigacion/
+40_runbooks/
+90_evals/
 ```
+
+The checker also accepts the previous English/hyphen names for compatibility
+with early mirrors: `00-inbox`, `10-decisions`, `20-meetings`, `30-research`,
+`40-runbooks`, `90-evals`.
 
 ## Environment
 
@@ -42,7 +46,7 @@ export OBSIDIAN_VAULT_PATH=/srv/umbral-obsidian-vault
 export OBSIDIAN_SYNC_MODE=pull-only
 ```
 
-Do not store the Obsidian account password, sync password, API keys, or
+Do not store API keys, OAuth files, private keys, browser sessions, or
 application tokens in the vault or repo.
 
 ## VPS setup prompt for Copilot-VPS
@@ -62,22 +66,21 @@ git log -1 --oneline
 test -f docs/ops/obsidian-context-vault.md && echo OBSIDIAN_RUNBOOK_OK || echo OBSIDIAN_RUNBOOK_MISSING
 
 Objetivo:
-- Instalar Obsidian Headless Sync si no existe: npm install -g obsidian-headless
-- Crear /srv/umbral-obsidian-vault con owner rick y permisos 700
-- Configurar Headless Sync contra el remote vault aprobado por David
-- Dejar el mirror en modo pull-only
-- No imprimir passwords, tokens ni recovery keys
+- Clonar el repo privado del vault autorizado por David en ~/umbral-obsidian-vault
+- Si ya existe, hacer git pull --ff-only
+- Dejar el mirror en modo pull-only operacional
+- No imprimir tokens ni credenciales GitHub
 - No configurar ningun writer desde VPS hacia el vault
 
 Checks:
-export OBSIDIAN_VAULT_PATH=/srv/umbral-obsidian-vault
+export OBSIDIAN_VAULT_PATH=$HOME/umbral-obsidian-vault
 export OBSIDIAN_SYNC_MODE=pull-only
-ob sync-status --path "$OBSIDIAN_VAULT_PATH"
+git -C "$OBSIDIAN_VAULT_PATH" status --short --branch
 python scripts/obsidian_context_check.py --vault-path "$OBSIDIAN_VAULT_PATH" --require-pull-only
 
 Entrega:
-- VEREDICTO: OBSIDIAN_CONTEXT_MIRROR_OK o OBSIDIAN_CONTEXT_MIRROR_BLOCKED
-- Salida redacted de ob sync-status
+- VEREDICTO: OBSIDIAN_CONTEXT_GIT_MIRROR_OK o OBSIDIAN_CONTEXT_GIT_MIRROR_BLOCKED
+- Salida redacted de git status/log
 - Salida de obsidian_context_check.py
 - Cualquier comando systemd/user timer creado, si aplica
 ```
@@ -92,7 +95,6 @@ python scripts/obsidian_context_check.py --vault-path $env:OBSIDIAN_VAULT_PATH -
 
 ## Security rules
 
-- Keep community plugins restricted by default on server mirrors.
 - Do not place `.env`, private keys, browser session files, or OAuth token files
   in the vault.
 - If the vault is versioned with Git, ignore `.obsidian/workspace.json` and

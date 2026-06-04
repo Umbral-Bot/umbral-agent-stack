@@ -10,14 +10,16 @@ from pathlib import Path
 from typing import Any
 
 
-DEFAULT_REQUIRED_FOLDERS = (
-    "00-inbox",
-    "10-decisions",
-    "20-meetings",
-    "30-research",
-    "40-runbooks",
-    "90-evals",
+DEFAULT_REQUIRED_FOLDER_ALIASES = (
+    ("00_inbox", "00-inbox"),
+    ("10_decisiones", "10-decisiones", "10-decisions"),
+    ("20_reuniones", "20-reuniones", "20-meetings"),
+    ("30_investigacion", "30-investigacion", "30-research"),
+    ("40_runbooks", "40-runbooks"),
+    ("90_evals", "90-evals"),
 )
+
+DEFAULT_REQUIRED_FOLDERS = tuple(aliases[0] for aliases in DEFAULT_REQUIRED_FOLDER_ALIASES)
 
 SUSPICIOUS_EXACT_NAMES = {
     ".env",
@@ -41,6 +43,7 @@ def check_vault(
     vault_path: Path,
     *,
     required_folders: tuple[str, ...] = DEFAULT_REQUIRED_FOLDERS,
+    required_folder_aliases: tuple[tuple[str, ...], ...] | None = DEFAULT_REQUIRED_FOLDER_ALIASES,
     require_pull_only: bool = False,
     max_files: int = 5000,
 ) -> dict[str, Any]:
@@ -57,9 +60,12 @@ def check_vault(
         errors.append(f"vault path is not a directory: {vault_path}")
         return _result(vault_path, errors, warnings, checked_files, suspicious_files, nested_vaults)
 
-    missing_folders = [name for name in required_folders if not (vault_path / name).is_dir()]
-    for name in missing_folders:
-        errors.append(f"missing required folder: {name}")
+    folder_groups = required_folder_aliases or tuple((name,) for name in required_folders)
+    missing_folder_groups = [
+        aliases for aliases in folder_groups if not any((vault_path / name).is_dir() for name in aliases)
+    ]
+    for aliases in missing_folder_groups:
+        errors.append(f"missing required folder: one of {', '.join(aliases)}")
 
     sync_mode = os.getenv("OBSIDIAN_SYNC_MODE")
     if require_pull_only and sync_mode != "pull-only":
@@ -108,6 +114,7 @@ def _result(
         "suspicious_files": suspicious_files,
         "nested_vaults": nested_vaults,
         "sync_mode": os.getenv("OBSIDIAN_SYNC_MODE"),
+        "required_folder_aliases": [list(aliases) for aliases in DEFAULT_REQUIRED_FOLDER_ALIASES],
     }
 
 

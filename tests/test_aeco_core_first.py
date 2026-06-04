@@ -188,3 +188,13 @@ def test_index_pipeline_entrypoint_handles_missing_args():
 
     assert 'if [ "$#" -gt 0 ]; then' in text
     assert 'CMD="publish"' in text
+
+
+def test_index_pipeline_image_includes_verify_gate():
+    dockerfile = REPO_ROOT / "infra/docker/aeco-index-pipeline/Dockerfile"
+    entrypoint = REPO_ROOT / "infra/docker/aeco-index-pipeline/entrypoint.sh"
+
+    assert "COPY scripts/aeco-kb/verify_kb.py /app/scripts/aeco_kb/verify_kb.py" in dockerfile.read_text(
+        encoding="utf-8"
+    )
+    assert "python -m scripts.aeco_kb.verify_kb" in entrypoint.read_text(encoding="utf-8")

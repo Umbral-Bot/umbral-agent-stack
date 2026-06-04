@@ -1,6 +1,11 @@
 from __future__ import annotations
 
-from scripts.obsidian_context_check import DEFAULT_REQUIRED_FOLDERS, check_vault, main
+from scripts.obsidian_context_check import (
+    DEFAULT_REQUIRED_FOLDER_ALIASES,
+    DEFAULT_REQUIRED_FOLDERS,
+    check_vault,
+    main,
+)
 
 
 def _make_vault(tmp_path):
@@ -23,20 +28,34 @@ def test_obsidian_context_check_passes_for_expected_vault(tmp_path, monkeypatch)
     assert result["errors"] == []
 
 
+def test_obsidian_context_check_passes_for_legacy_english_names(tmp_path, monkeypatch):
+    vault = tmp_path / "vault"
+    vault.mkdir()
+    (vault / ".obsidian").mkdir()
+    for aliases in DEFAULT_REQUIRED_FOLDER_ALIASES:
+        (vault / aliases[-1]).mkdir()
+    monkeypatch.setenv("OBSIDIAN_SYNC_MODE", "pull-only")
+
+    result = check_vault(vault, require_pull_only=True)
+
+    assert result["status"] == "pass"
+    assert result["errors"] == []
+
+
 def test_obsidian_context_check_fails_missing_folder(tmp_path, monkeypatch):
     vault = _make_vault(tmp_path)
-    (vault / "90-evals").rmdir()
+    (vault / "90_evals").rmdir()
     monkeypatch.setenv("OBSIDIAN_SYNC_MODE", "pull-only")
 
     result = check_vault(vault, require_pull_only=True)
 
     assert result["status"] == "fail"
-    assert any("missing required folder: 90-evals" in error for error in result["errors"])
+    assert any("90_evals" in error for error in result["errors"])
 
 
 def test_obsidian_context_check_fails_secret_like_file(tmp_path, monkeypatch):
     vault = _make_vault(tmp_path)
-    (vault / "00-inbox" / ".env").write_text("SECRET=value", encoding="utf-8")
+    (vault / "00_inbox" / ".env").write_text("SECRET=value", encoding="utf-8")
     monkeypatch.setenv("OBSIDIAN_SYNC_MODE", "pull-only")
 
     result = check_vault(vault, require_pull_only=True)

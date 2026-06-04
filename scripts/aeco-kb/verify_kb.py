@@ -18,6 +18,7 @@ import argparse
 import logging
 import os
 import sys
+from urllib.parse import quote
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("aeco-verify-kb")
@@ -25,19 +26,40 @@ log = logging.getLogger("aeco-verify-kb")
 DEFAULT_SEARCH_SERVICE = "srch-umbral-kb-prod"
 DEFAULT_ALIAS = "aeco-kb-es-current"
 SEARCH_API_VERSION = "2024-07-01"
+ALIAS_API_CANDIDATES = (
+    ("2026-04-01", "odata"),
+    ("2025-11-01-preview", "odata"),
+    ("2023-07-01-Preview", "classic"),
+)
 SAMPLE_QUERIES = ["IFC", "ISO 19650", "BIM", "construcción"]
+
+
+def alias_url(search_service: str, alias: str, api_version: str, style: str) -> str:
+    endpoint = f"https://{search_service}.search.windows.net"
+    encoded = quote(alias, safe="")
+    if style == "odata":
+        return f"{endpoint}/aliases('{encoded}')?api-version={api_version}"
+    return f"{endpoint}/aliases/{encoded}?api-version={api_version}"
 
 
 def get_active_index(search_service: str, alias: str, token: str) -> str | None:
     import httpx
 
-    url = f"https://{search_service}.search.windows.net/aliases/{alias}?api-version={SEARCH_API_VERSION}"
+    diagnostics: list[str] = []
     with httpx.Client(timeout=30) as client:
-        r = client.get(url, headers={"Authorization": f"Bearer {token}"})
-        if r.status_code == 404:
-            return None
-        r.raise_for_status()
-        return r.json().get("indexes", [None])[0]
+        for api_version, style in ALIAS_API_CANDIDATES:
+            url = alias_url(search_service, alias, api_version, style)
+            r = client.get(url, headers={"Authorization": f"Bearer {token}", "Accept": "application/json"})
+            if r.status_code == 200:
+                indexes = r.json().get("indexes", [])
+                return indexes[0] if indexes else None
+            if r.status_code in {400, 404}:
+                body = r.text.replace("\n", " ")[:300]
+                diagnostics.append(f"{api_version}/{style} -> HTTP {r.status_code}: {body}")
+                continue
+            r.raise_for_status()
+    log.error("Alias %s could not be resolved. Attempts: %s", alias, "; ".join(diagnostics))
+    return None
 
 
 def get_doc_count(search_service: str, index: str, token: str) -> int:

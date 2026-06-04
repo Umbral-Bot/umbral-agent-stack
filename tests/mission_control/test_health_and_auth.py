@@ -47,7 +47,23 @@ def test_authenticated_endpoint_accepts_valid_bearer(client):
     assert res.status_code == 200
     body = res.json()
     assert body["active"] == []
+    assert body["read_only"] is True
+    assert body["launcher_enabled"] is False
     assert "note" in body
+
+
+def test_gates_and_risks_are_authenticated_read_only(client):
+    headers = {"Authorization": "Bearer test-token-123"}
+
+    gates = client.get("/gates", headers=headers)
+    risks = client.get("/risks", headers=headers)
+
+    assert gates.status_code == 200
+    assert risks.status_code == 200
+    assert gates.json()["read_only"] is True
+    assert risks.json()["read_only"] is True
+    assert any(gate["id"] == "D6.1" for gate in gates.json()["gates"])
+    assert any(risk["id"] == "stale-prs" for risk in risks.json()["risks"])
 
 
 def test_503_when_token_unset(monkeypatch):

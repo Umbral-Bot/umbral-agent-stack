@@ -69,7 +69,11 @@ El alias garantiza zero-downtime: el `AgenteUB` File Search siempre apunta a `ae
 
 ## Sub-task 047 — `pdf_parser.py`
 
-Parser DI prebuilt-layout. Lee 1 PDF, chunkea párrafo-aware (target 50-800 tokens estimados), serializa tablas a markdown, escribe JSONL a `crudos/aeco/parsed/{source_type}/{doc_id}.chunks.jsonl`.
+Parser DI prebuilt-layout para PDFs y parser textual stdlib para raw HTML/TXT/EXP.
+Lee 1 blob o enumera `crudos/aeco/raw/{source_type}/` cuando se invoca sólo con
+`--source-type`, chunkea párrafo-aware (target 50-800 tokens estimados), serializa
+tablas a markdown si vienen de PDF, y escribe JSONL a
+`crudos/aeco/parsed/{source_type}/{doc_id}.chunks.jsonl`.
 
 ### Smoke local
 
@@ -82,6 +86,9 @@ python scripts/aeco-kb/pdf_parser.py `
     --blob-path aeco/raw/buildingsmart/sample.pdf `
     --source-type buildingsmart --jurisdiction intl `
     --doc-type spec --version IFC4.3.2.0 --lang es --dry-run
+
+# Enumerar raw blobs del source; buildingSMART toma defaults intl/spec/en.
+python scripts/aeco-kb/pdf_parser.py --source-type buildingsmart --dry-run
 ```
 
 > En el container, el Dockerfile renombra la carpeta a `scripts/aeco_kb/` (underscore) para permitir `python -m scripts.aeco_kb.pdf_parser` como entrypoint.
@@ -92,9 +99,7 @@ Definido en `infra/azure/modules/aeco-pdf-parser-job.bicep`. Image: `ghcr.io/umb
 
 ```bash
 az containerapp job start --name aeco-pdf-parser --resource-group rg-umbral-agents-prod \
-    --env-vars "INPUT_BLOB_PATH=aeco/raw/buildingsmart/IFC4.3.2.0.pdf" \
-               "SOURCE_TYPE=buildingsmart" "JURISDICTION=intl" \
-               "DOC_TYPE=spec" "VERSION=IFC4.3.2.0" "LANG=es"
+    --args --source-type buildingsmart
 ```
 
 Trigger automático Event Grid → SB → KEDA: cableado en sub-task 050. Q2 invoca manualmente.
@@ -111,7 +116,12 @@ Ver detalle en [`.agents/tasks/2026-05-07-046-o16-2-ai-search-index-schema-alias
 
 ## Sub-task 048 — `source_crawler.py`
 
-Crawler parametrizado por `--source-type`. Lee seeds estáticos en `scripts/aeco-kb/seeds/{source_type}.yaml`, aplica rate-limit 1 req/s + User-Agent identificable, respeta `robots.txt` best-effort, dedupe SHA-256 contra metadata del blob existente, escribe a `crudos/aeco/raw/{source_type}/{doc_id}.pdf` y appendea manifest JSONL en `crudos/aeco/raw/_manifest/{source_type}.jsonl`.
+Crawler parametrizado por `--source-type`. Lee seeds estáticos en
+`scripts/aeco-kb/seeds/{source_type}.yaml`, corre preflight HTTP, aplica
+rate-limit 1 req/s + User-Agent identificable, respeta `robots.txt` best-effort,
+dedupe SHA-256 contra metadata del blob existente, escribe a
+`crudos/aeco/raw/{source_type}/{doc_id}.{ext}` y appendea manifest JSONL en
+`crudos/aeco/raw/_manifest/{source_type}.jsonl`.
 
 ### Smoke local
 
@@ -121,6 +131,9 @@ az login --tenant f67a8c0b-ec74-47cd-836c-355c5a6162d4
 
 # Dry-run (sin tocar Azure)
 python scripts/aeco-kb/source_crawler.py --source-type buildingsmart --max-docs 3 --dry-run
+
+# Preflight estricto (sin credenciales Azure)
+python scripts/aeco-kb/source_crawler.py --source-type buildingsmart --preflight-only
 
 # Real
 python scripts/aeco-kb/source_crawler.py --source-type buildingsmart --max-docs 3
@@ -137,7 +150,11 @@ az containerapp job start --name aeco-source-crawler --resource-group rg-umbral-
 
 ### Seeds
 
-Q2 carga `buildingsmart` (3 PDFs IFC) + `minvu` (placeholders, validar URLs antes del primer run). `iram` y `nmx` quedan vacíos; se pueblan en sub-task 050.
+Q2 carga `buildingsmart` desde la publicación oficial actual de IFC 4.3.2.0
+en HTML/EXP bajo `standards.buildingsmart.org/IFC/RELEASE/IFC4_3/HTML/`.
+Los PDFs directos `IFC4_3_*.pdf` usados antes devuelven 404 y no deben usarse.
+`minvu` queda como placeholder; validar URLs con `--preflight-only` antes del
+primer run. `iram` y `nmx` quedan vacíos; se pueblan en sub-task 050.
 
 ### Cron
 

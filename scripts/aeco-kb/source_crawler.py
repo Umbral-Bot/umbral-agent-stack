@@ -1,9 +1,9 @@
 """
 source_crawler.py — O16.2 sub-task 048
 
-Crawler parametrizado por --source-type que descarga PDFs desde seeds estáticos
-(`scripts/aeco-kb/seeds/{source_type}.yaml`), aplica rate-limit + dedupe SHA-256,
-y persiste en `crudos/aeco/raw/{source_type}/{doc_id}.pdf`.
+Crawler parametrizado por --source-type que descarga documentos desde seeds
+estáticos (`scripts/aeco-kb/seeds/{source_type}.yaml`), aplica rate-limit +
+dedupe SHA-256, y persiste en `crudos/aeco/raw/{source_type}/{doc_id}.{ext}`.
 
 Manifest append-only en `crudos/aeco/raw/_manifest/{source_type}.jsonl`.
 
@@ -13,6 +13,7 @@ Auth: DefaultAzureCredential
 
 Uso:
     python scripts/aeco-kb/source_crawler.py --source-type buildingsmart --max-docs 30
+    python scripts/aeco-kb/source_crawler.py --source-type buildingsmart --preflight-only
 """
 
 from __future__ import annotations
@@ -52,6 +53,19 @@ SEEDS_DIR = Path(__file__).parent / "seeds"
 
 VALID_SOURCE_TYPES = {"buildingsmart", "minvu", "iram", "nmx"}
 VALID_JURISDICTIONS = {"intl", "cl", "ar", "mx"}
+CONTENT_TYPE_EXTENSIONS = {
+    "application/pdf": "pdf",
+    "text/html": "html",
+    "text/plain": "txt",
+}
+URL_EXTENSION_CONTENT_TYPES = {
+    ".pdf": "application/pdf",
+    ".html": "text/html",
+    ".htm": "text/html",
+    ".exp": "text/plain",
+    ".txt": "text/plain",
+    ".md": "text/plain",
+}
 
 
 @dataclass
@@ -60,10 +74,20 @@ class Seed:
     doc_id: str
     version: str | None
     valid_from: str | None
+    expected_content_type: str | None
     source_type: str
     jurisdiction: str
     doc_type: str
     default_lang: str
+
+
+@dataclass
+class SeedPreflight:
+    seed: Seed
+    ok: bool
+    status_code: int | None
+    content_type: str | None
+    error: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -98,6 +122,7 @@ def load_seeds(source_type: str) -> list[Seed]:
                 doc_id=entry["doc_id"],
                 version=entry.get("version"),
                 valid_from=entry.get("valid_from"),
+                expected_content_type=entry.get("content_type") or entry.get("expected_content_type"),
                 **base,
             )
         )
@@ -132,8 +157,109 @@ def can_fetch(url: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# HTTP download with retry
+# HTTP preflight/download with retry
 # ---------------------------------------------------------------------------
+
+
+def normalize_content_type(value: str | None) -> str:
+    return (value or "").split(";", 1)[0].strip().lower()
+
+
+def infer_content_type_from_url(url: str) -> str | None:
+    suffix = Path(urlparse(url).path).suffix.lower()
+    return URL_EXTENSION_CONTENT_TYPES.get(suffix)
+
+
+def effective_content_type(header_value: str | None, url: str) -> str:
+    ct = normalize_content_type(header_value)
+    if not ct or ct == "application/octet-stream":
+        return infer_content_type_from_url(url) or ct
+    return ct
+
+
+def supported_extension(content_type: str | None, url: str) -> str | None:
+    ct = normalize_content_type(content_type) or infer_content_type_from_url(url)
+    return CONTENT_TYPE_EXTENSIONS.get(ct or "")
+
+
+def preflight_seed_url(client, seed: Seed) -> SeedPreflight:
+    import httpx
+
+    try:
+        response = client.head(seed.url)
+        content_type = effective_content_type(response.headers.get("content-type"), seed.url)
+        if response.status_code in {403, 405} or (response.status_code < 400 and not content_type):
+            response = client.get(seed.url, headers={"Range": "bytes=0-0"})
+            content_type = effective_content_type(response.headers.get("content-type"), seed.url)
+        status_code = response.status_code
+        if status_code >= 400:
+            return SeedPreflight(
+                seed=seed,
+                ok=False,
+                status_code=status_code,
+                content_type=content_type or None,
+                error=f"HTTP {status_code}",
+            )
+        expected = normalize_content_type(seed.expected_content_type)
+        if expected and content_type != expected:
+            return SeedPreflight(
+                seed=seed,
+                ok=False,
+                status_code=status_code,
+                content_type=content_type or None,
+                error=f"content_type {content_type or 'unknown'} != expected {expected}",
+            )
+        if not supported_extension(content_type, seed.url):
+            return SeedPreflight(
+                seed=seed,
+                ok=False,
+                status_code=status_code,
+                content_type=content_type or None,
+                error=f"unsupported content_type {content_type or 'unknown'}",
+            )
+        return SeedPreflight(
+            seed=seed,
+            ok=True,
+            status_code=status_code,
+            content_type=content_type or None,
+        )
+    except httpx.HTTPError as exc:
+        return SeedPreflight(
+            seed=seed,
+            ok=False,
+            status_code=None,
+            content_type=None,
+            error=f"{type(exc).__name__}: {exc}",
+        )
+
+
+def preflight_seeds(seeds: list[Seed]) -> list[SeedPreflight]:
+    import httpx
+
+    results: list[SeedPreflight] = []
+    with httpx.Client(
+        headers={"User-Agent": USER_AGENT},
+        timeout=httpx.Timeout(HTTP_TIMEOUT_SECONDS),
+        follow_redirects=True,
+    ) as client:
+        for seed in seeds:
+            results.append(preflight_seed_url(client, seed))
+    return results
+
+
+def log_preflight_results(results: list[SeedPreflight]) -> None:
+    for result in results:
+        status = "OK" if result.ok else "FAIL"
+        detail = result.error or result.content_type or ""
+        log.info(
+            "preflight %s status=%s content_type=%s doc_id=%s url=%s %s",
+            status,
+            result.status_code,
+            result.content_type or "unknown",
+            result.seed.doc_id,
+            result.seed.url,
+            detail,
+        )
 
 
 def download(url: str) -> tuple[bytes, str]:
@@ -156,7 +282,7 @@ def download(url: str) -> tuple[bytes, str]:
                     last_exc = RuntimeError(f"HTTP {r.status_code}")
                     continue
                 r.raise_for_status()
-                ct = r.headers.get("content-type", "").split(";")[0].strip().lower()
+                ct = effective_content_type(r.headers.get("content-type"), url)
                 return r.content, ct
         except Exception as exc:
             last_exc = exc
@@ -219,6 +345,8 @@ def run(
     storage_account: str,
     container: str,
     dry_run: bool,
+    preflight_only: bool = False,
+    skip_preflight: bool = False,
 ) -> int:
     from azure.identity import DefaultAzureCredential
 
@@ -232,13 +360,27 @@ def run(
         return 0
     seeds = seeds[:max_docs]
 
+    if not skip_preflight:
+        preflight = preflight_seeds(seeds)
+        log_preflight_results(preflight)
+        failures = [result for result in preflight if not result.ok]
+        if failures:
+            log.error("Seed preflight failed for %d/%d seeds; aborting before Azure I/O.", len(failures), len(seeds))
+            return 1
+        if preflight_only:
+            log.info("Preflight passed for %d seeds.", len(seeds))
+            return 0
+    elif preflight_only:
+        log.warning("--preflight-only with --skip-preflight has no work.")
+        return 0
+
     credential = None if dry_run else DefaultAzureCredential()
     svc = None if dry_run else get_blob_service(storage_account, credential)
 
     manifest_path = f"aeco/raw/_manifest/{source_type}.jsonl"
     manifest_client = None if dry_run else svc.get_blob_client(container=container, blob=manifest_path)
 
-    counts = {"new": 0, "skipped": 0, "updated": 0, "failed": 0, "robots_blocked": 0, "skipped_html": 0}
+    counts = {"new": 0, "skipped": 0, "updated": 0, "failed": 0, "robots_blocked": 0, "unsupported": 0}
 
     for i, seed in enumerate(seeds):
         if i > 0:
@@ -257,24 +399,10 @@ def run(
             counts["failed"] += 1
             continue
 
-        if content_type == "application/pdf":
-            ext = "pdf"
-        elif content_type == "text/html":
-            log.warning("HTML content for %s — skipping (Q2 PDF-only smoke)", seed.url)
-            counts["skipped_html"] += 1
-            if not dry_run:
-                append_manifest(manifest_client, {
-                    "doc_id": seed.doc_id,
-                    "source_url": seed.url,
-                    "content_type": content_type,
-                    "size_bytes": len(content),
-                    "downloaded_at": datetime.now(timezone.utc).isoformat(),
-                    "status": "skipped_html",
-                })
-            continue
-        else:
+        ext = supported_extension(content_type, seed.url)
+        if not ext:
             log.warning("Unsupported content-type=%s for %s", content_type, seed.url)
-            counts["failed"] += 1
+            counts["unsupported"] += 1
             continue
 
         sha256_hex = hashlib.sha256(content).hexdigest()
@@ -302,16 +430,20 @@ def run(
             "doc_id": seed.doc_id,
             "sha256": sha256_hex,
             "source_url": seed.url,
+            "source_type": seed.source_type,
+            "jurisdiction": seed.jurisdiction,
+            "doc_type": seed.doc_type,
             "content_type": content_type,
             "size_bytes": len(content),
             "version": seed.version,
             "valid_from": seed.valid_from,
+            "default_lang": seed.default_lang,
             "downloaded_at": datetime.now(timezone.utc).isoformat(),
             "status": status,
         })
 
     log.info("Crawler done. Counts: %s", counts)
-    return 0 if counts["failed"] == 0 else 1
+    return 0 if counts["failed"] == 0 and counts["unsupported"] == 0 else 1
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -321,6 +453,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument("--storage-account", default=os.environ.get("STORAGE_ACCOUNT", DEFAULT_STORAGE_ACCOUNT))
     p.add_argument("--container", default=os.environ.get("CONTAINER", DEFAULT_CONTAINER))
     p.add_argument("--dry-run", action="store_true")
+    p.add_argument("--preflight-only", action="store_true", help="Validate seed URLs and exit before Azure I/O.")
+    p.add_argument("--skip-preflight", action="store_true", help="Bypass seed URL preflight.")
     args = p.parse_args(argv)
     if not args.source_type:
         p.error("--source-type required (or env SOURCE_TYPE)")
@@ -335,6 +469,8 @@ def main(argv: list[str] | None = None) -> int:
         storage_account=args.storage_account,
         container=args.container,
         dry_run=args.dry_run,
+        preflight_only=args.preflight_only,
+        skip_preflight=args.skip_preflight,
     )
 
 

@@ -60,8 +60,6 @@ def _load_env() -> None:
             break
 
 
-_load_env()
-
 import httpx
 
 logging.basicConfig(
@@ -839,6 +837,8 @@ def post_to_notion(base_url: str, token: str, text: str) -> None:
 # ── Main ────────────────────────────────────────────────────────
 
 def main():
+    _load_env()
+
     parser = argparse.ArgumentParser(description="Umbral E2E Validation Suite")
     parser.add_argument("--notion", action="store_true", help="Post results to Notion Control Room")
     parser.add_argument("--quiet", action="store_true", help="Print summary only")

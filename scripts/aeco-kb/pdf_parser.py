@@ -38,6 +38,7 @@ import re
 import sys
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
+from html.parser import HTMLParser
 from pathlib import PurePosixPath
 from typing import Iterator
 
@@ -63,6 +64,14 @@ DEFAULT_OUTPUT_CONTAINER = "crudos"
 TOKEN_TARGET_MIN = 50
 TOKEN_TARGET_MAX = 800
 SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
+SUPPORTED_RAW_EXTENSIONS = {".pdf", ".html", ".htm", ".txt", ".exp", ".md"}
+TEXT_RAW_EXTENSIONS = {".html", ".htm", ".txt", ".exp", ".md"}
+SOURCE_DEFAULTS = {
+    "buildingsmart": {"jurisdiction": "intl", "doc_type": "spec", "lang": "en"},
+    "minvu": {"jurisdiction": "cl", "doc_type": "regulation", "lang": "es"},
+    "iram": {"jurisdiction": "ar", "doc_type": "regulation", "lang": "es"},
+    "nmx": {"jurisdiction": "mx", "doc_type": "regulation", "lang": "es"},
+}
 
 
 # ---------------------------------------------------------------------------
@@ -171,8 +180,95 @@ def chunk_paragraphs(paragraphs: list[str], headings: dict[int, str]) -> Iterato
 
 
 # ---------------------------------------------------------------------------
-# DI invocation
+# Text/HTML parsing and DI invocation
 # ---------------------------------------------------------------------------
+
+
+class _HTMLTextExtractor(HTMLParser):
+    """Small stdlib-only HTML text extractor for standards pages."""
+
+    block_tags = {
+        "article", "aside", "blockquote", "br", "dd", "div", "dl", "dt",
+        "figcaption", "figure", "footer", "h1", "h2", "h3", "h4", "h5",
+        "h6", "header", "hr", "li", "main", "nav", "ol", "p", "pre",
+        "section", "table", "td", "th", "tr", "ul",
+    }
+    skip_tags = {"script", "style", "noscript", "svg"}
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self._parts: list[str] = []
+        self._skip_depth = 0
+
+    def handle_starttag(self, tag: str, attrs) -> None:  # noqa: ANN001
+        tag = tag.lower()
+        if tag in self.skip_tags:
+            self._skip_depth += 1
+            return
+        if self._skip_depth == 0 and tag in self.block_tags:
+            self._parts.append("\n")
+
+    def handle_endtag(self, tag: str) -> None:
+        tag = tag.lower()
+        if tag in self.skip_tags and self._skip_depth > 0:
+            self._skip_depth -= 1
+            return
+        if self._skip_depth == 0 and tag in self.block_tags:
+            self._parts.append("\n")
+
+    def handle_data(self, data: str) -> None:
+        if self._skip_depth == 0:
+            self._parts.append(data)
+
+    def text(self) -> str:
+        return "".join(self._parts)
+
+
+def _html_to_text(raw: str) -> str:
+    parser = _HTMLTextExtractor()
+    parser.feed(raw)
+    parser.close()
+    return parser.text()
+
+
+def _split_text_blocks(text: str) -> list[str]:
+    text = text.replace("\r\n", "\n").replace("\r", "\n").replace("\x00", "")
+    text = re.sub(r"[ \t]+", " ", text)
+    blocks = [
+        re.sub(r"\n+", "\n", block).strip()
+        for block in re.split(r"\n\s*\n+", text)
+    ]
+    return [
+        block
+        for block in blocks
+        if len(block.split()) >= 3 or (block and len(block) <= 120 and not block.endswith("."))
+    ]
+
+
+def parse_text_bytes(content: bytes, blob_path: str) -> tuple[list[str], dict[int, str], list[str]]:
+    """Parse HTML/text raw docs without Azure Document Intelligence."""
+    raw = content.decode("utf-8", errors="ignore")
+    suffix = PurePosixPath(blob_path).suffix.lower()
+    text = _html_to_text(raw) if suffix in {".html", ".htm"} else raw
+    paragraphs = _split_text_blocks(text)
+    log.info("Text parser extracted %d blocks from %s", len(paragraphs), blob_path)
+    return paragraphs, {}, []
+
+
+def is_supported_raw_blob(blob_path: str) -> bool:
+    return PurePosixPath(blob_path).suffix.lower() in SUPPORTED_RAW_EXTENSIONS
+
+
+def is_text_raw_blob(blob_path: str) -> bool:
+    return PurePosixPath(blob_path).suffix.lower() in TEXT_RAW_EXTENSIONS
+
+
+def default_lang_from_env() -> str | None:
+    for name in ("AECO_LANG", "DOC_LANG", "LANG"):
+        value = os.environ.get(name, "").strip()
+        if re.fullmatch(r"[a-z]{2}", value, flags=re.IGNORECASE):
+            return value.lower()
+    return None
 
 
 def parse_pdf_with_di(
@@ -265,12 +361,45 @@ def download_blob(account: str, container: str, blob_path: str, credential) -> b
     return blob.download_blob().readall()
 
 
+def list_raw_blobs(account: str, container: str, source_type: str, credential) -> list[str]:
+    svc = get_blob_service(account, credential)
+    container_client = svc.get_container_client(container)
+    prefix = f"aeco/raw/{source_type}/"
+    blob_names: list[str] = []
+    for blob in container_client.list_blobs(name_starts_with=prefix):
+        if is_supported_raw_blob(blob.name):
+            blob_names.append(blob.name)
+    blob_names.sort()
+    return blob_names
+
+
+def load_raw_manifest(account: str, container: str, source_type: str, credential) -> dict[str, dict]:
+    svc = get_blob_service(account, credential)
+    blob = svc.get_blob_client(container=container, blob=f"aeco/raw/_manifest/{source_type}.jsonl")
+    if not blob.exists():
+        return {}
+    raw = blob.download_blob().readall().decode("utf-8", errors="ignore")
+    manifest: dict[str, dict] = {}
+    for line in raw.splitlines():
+        if not line.strip():
+            continue
+        try:
+            item = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        doc_id = item.get("doc_id")
+        if doc_id:
+            manifest[doc_id] = item
+    return manifest
+
+
 def upload_jsonl(
     account: str,
     container: str,
     blob_path: str,
     chunks: list[Chunk],
     credential,
+    doc_metadata: dict | None = None,
 ) -> None:
     svc = get_blob_service(account, credential)
     blob = svc.get_blob_client(container=container, blob=blob_path)
@@ -282,7 +411,14 @@ def upload_jsonl(
         # como sidecar `_meta` campo del primer chunk para idempotencia.
         buf.write(json.dumps(idx_doc, ensure_ascii=False) + "\n")
     # Header line con metadata del parser (primera línea = "_meta")
-    full = json.dumps({"_meta": {"parser_version": PARSER_VERSION, "model": DI_MODEL_ID, "generated_at": datetime.now(timezone.utc).isoformat()}}, ensure_ascii=False) + "\n" + buf.getvalue()
+    meta = {
+        "parser_version": PARSER_VERSION,
+        "model": DI_MODEL_ID,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    if doc_metadata:
+        meta.update({k: v for k, v in doc_metadata.items() if v is not None})
+    full = json.dumps({"_meta": meta}, ensure_ascii=False) + "\n" + buf.getvalue()
     blob.upload_blob(full.encode("utf-8"), overwrite=True)
     log.info("Uploaded %d chunks → %s/%s", len(chunks), container, blob_path)
 
@@ -335,6 +471,10 @@ def run(
 
     credential = DefaultAzureCredential()
 
+    if not is_supported_raw_blob(blob_path):
+        log.error("Unsupported raw blob extension for %s", blob_path)
+        return 2
+
     if not force:
         existing = existing_parser_version(storage_account, output_container, output_path, credential)
         if existing == PARSER_VERSION:
@@ -343,7 +483,10 @@ def run(
 
     pdf_bytes = download_blob(storage_account, input_container, blob_path, credential)
 
-    paragraphs, headings, tables_md = parse_pdf_with_di(pdf_bytes, di_endpoint, credential)
+    if is_text_raw_blob(blob_path):
+        paragraphs, headings, tables_md = parse_text_bytes(pdf_bytes, blob_path)
+    else:
+        paragraphs, headings, tables_md = parse_pdf_with_di(pdf_bytes, di_endpoint, credential)
 
     chunks: list[Chunk] = []
     for idx, text in enumerate(chunk_paragraphs(paragraphs, headings)):
@@ -395,8 +538,71 @@ def run(
         print(f"\n[dry-run] {len(chunks)} chunks → would upload to {output_container}/{output_path}")
         return 0
 
-    upload_jsonl(storage_account, output_container, output_path, chunks, credential)
+    upload_jsonl(
+        storage_account,
+        output_container,
+        output_path,
+        chunks,
+        credential,
+        doc_metadata={
+            "doc_id": parent_doc_id,
+            "source_url": source_url,
+            "source_type": source_type,
+            "jurisdiction": jurisdiction,
+            "doc_type": doc_type,
+            "version": version,
+            "lang": lang,
+            "valid_from": valid_from,
+        },
+    )
     return 0
+
+
+def run_source(
+    source_type: str,
+    jurisdiction: str,
+    doc_type: str,
+    version: str | None,
+    lang: str,
+    di_endpoint: str,
+    storage_account: str,
+    input_container: str,
+    output_container: str,
+    force: bool,
+    dry_run: bool,
+) -> int:
+    from azure.identity import DefaultAzureCredential
+
+    credential = DefaultAzureCredential()
+    blob_paths = list_raw_blobs(storage_account, input_container, source_type, credential)
+    if not blob_paths:
+        log.error("No supported raw blobs found under aeco/raw/%s/", source_type)
+        return 1
+
+    manifest = load_raw_manifest(storage_account, input_container, source_type, credential)
+    failures = 0
+    for blob_path in blob_paths:
+        doc_id = PurePosixPath(blob_path).stem
+        item = manifest.get(doc_id, {})
+        rc = run(
+            blob_path=blob_path,
+            source_type=source_type,
+            jurisdiction=jurisdiction,
+            doc_type=doc_type,
+            version=item.get("version") or version,
+            lang=item.get("default_lang") or lang,
+            source_url=item.get("source_url"),
+            valid_from=item.get("valid_from"),
+            di_endpoint=di_endpoint,
+            storage_account=storage_account,
+            input_container=input_container,
+            output_container=output_container,
+            force=force,
+            dry_run=dry_run,
+        )
+        if rc != 0:
+            failures += 1
+    return 0 if failures == 0 else 1
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -406,7 +612,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--jurisdiction", default=os.environ.get("JURISDICTION"), choices=["intl", "cl", "ar", "mx"])
     parser.add_argument("--doc-type", default=os.environ.get("DOC_TYPE"), choices=["spec", "regulation", "guide"])
     parser.add_argument("--version", default=os.environ.get("VERSION"))
-    parser.add_argument("--lang", default=os.environ.get("LANG", "es"))
+    parser.add_argument("--lang", default=default_lang_from_env())
     parser.add_argument("--source-url", default=os.environ.get("SOURCE_URL"))
     parser.add_argument("--valid-from", default=os.environ.get("VALID_FROM"))
     parser.add_argument("--di-endpoint", default=os.environ.get("DI_ENDPOINT", DEFAULT_DI_ENDPOINT))
@@ -416,7 +622,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args(argv)
-    missing = [n for n in ("blob_path", "source_type", "jurisdiction", "doc_type") if not getattr(args, n)]
+
+    defaults = SOURCE_DEFAULTS.get(args.source_type or "", {})
+    args.jurisdiction = args.jurisdiction or defaults.get("jurisdiction")
+    args.doc_type = args.doc_type or defaults.get("doc_type")
+    args.lang = args.lang or defaults.get("lang") or "es"
+
+    missing = [n for n in ("source_type", "jurisdiction", "doc_type") if not getattr(args, n)]
     if missing:
         parser.error(f"missing required arguments: {missing}")
     return args
@@ -424,6 +636,20 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
+    if not args.blob_path:
+        return run_source(
+            source_type=args.source_type,
+            jurisdiction=args.jurisdiction,
+            doc_type=args.doc_type,
+            version=args.version,
+            lang=args.lang,
+            di_endpoint=args.di_endpoint,
+            storage_account=args.storage_account,
+            input_container=args.input_container,
+            output_container=args.output_container,
+            force=args.force,
+            dry_run=args.dry_run,
+        )
     return run(
         blob_path=args.blob_path,
         source_type=args.source_type,

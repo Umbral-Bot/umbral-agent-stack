@@ -30,6 +30,7 @@ import os
 import sys
 import time
 from datetime import datetime, timezone
+from urllib.parse import quote
 
 logging.basicConfig(
     level=logging.INFO,
@@ -46,6 +47,11 @@ DEFAULT_EMBEDDING_ENDPOINT = "https://umbralbim-resource.openai.azure.com"
 DEFAULT_EMBEDDING_DEPLOYMENT = "text-embedding-3-small"
 DEFAULT_EMBEDDING_API_VERSION = "2024-10-21"
 SEARCH_API_VERSION = "2024-07-01"
+ALIAS_API_CANDIDATES = (
+    ("2026-04-01", "odata"),
+    ("2025-11-01-preview", "odata"),
+    ("2023-07-01-Preview", "classic"),
+)
 
 EMBED_BATCH_SIZE = 16
 EMBED_RETRY_BACKOFFS = [2, 8, 32]
@@ -81,16 +87,32 @@ def search_request(method: str, url: str, token: str, body=None, timeout=60):
         return r.json() if r.content else {}
 
 
+def alias_url(search_service: str, alias: str, api_version: str, style: str) -> str:
+    endpoint = f"https://{search_service}.search.windows.net"
+    encoded = quote(alias, safe="")
+    if style == "odata":
+        return f"{endpoint}/aliases('{encoded}')?api-version={api_version}"
+    return f"{endpoint}/aliases/{encoded}?api-version={api_version}"
+
+
 def get_active_index(search_service: str, alias: str, token: str) -> str | None:
     import httpx
 
-    url = f"https://{search_service}.search.windows.net/aliases/{alias}?api-version={SEARCH_API_VERSION}"
+    diagnostics: list[str] = []
     with httpx.Client(timeout=30) as client:
-        r = client.get(url, headers={"Authorization": f"Bearer {token}"})
-        if r.status_code == 404:
-            return None
-        r.raise_for_status()
-        return r.json().get("indexes", [None])[0]
+        for api_version, style in ALIAS_API_CANDIDATES:
+            url = alias_url(search_service, alias, api_version, style)
+            r = client.get(url, headers={"Authorization": f"Bearer {token}", "Accept": "application/json"})
+            if r.status_code == 200:
+                indexes = r.json().get("indexes", [])
+                return indexes[0] if indexes else None
+            if r.status_code in {400, 404}:
+                body = r.text.replace("\n", " ")[:300]
+                diagnostics.append(f"{api_version}/{style} -> HTTP {r.status_code}: {body}")
+                continue
+            r.raise_for_status()
+    log.error("Alias %s could not be resolved. Attempts: %s", alias, "; ".join(diagnostics))
+    return None
 
 
 def list_indexes(search_service: str, token: str) -> set[str]:
@@ -146,10 +168,17 @@ def sample_query(search_service: str, index_name: str, token: str, query: str, t
 
 
 def alias_swap(search_service: str, alias: str, new_index: str, token: str) -> None:
-    url = f"https://{search_service}.search.windows.net/aliases/{alias}?api-version={SEARCH_API_VERSION}"
     body = {"name": alias, "indexes": [new_index]}
-    search_request("PUT", url, token, body=body)
-    log.info("Alias %s swapped → %s", alias, new_index)
+    diagnostics: list[str] = []
+    for api_version, style in ALIAS_API_CANDIDATES:
+        url = alias_url(search_service, alias, api_version, style)
+        try:
+            search_request("PUT", url, token, body=body)
+            log.info("Alias %s swapped → %s via api-version=%s", alias, new_index, api_version)
+            return
+        except Exception as exc:  # noqa: BLE001 — try current + legacy alias APIs
+            diagnostics.append(f"{api_version}/{style}: {type(exc).__name__}: {exc}")
+    raise RuntimeError(f"Alias swap failed for {alias}: {'; '.join(diagnostics)}")
 
 
 # ---------------------------------------------------------------------------
@@ -201,7 +230,7 @@ def load_chunks_for_source(svc, container: str, source_type: str) -> list[dict]:
                 continue
             obj = json.loads(line)
             if obj.get("_meta"):
-                meta = obj
+                meta = obj.get("_meta") or {}
                 continue
             obj["_doc_meta"] = meta
             obj["source_type"] = source_type
@@ -218,13 +247,13 @@ def chunk_to_search_doc(chunk: dict, kb_version: str) -> dict:
         "id": f"{doc_id}__{chunk_id}",
         "content": chunk.get("content", ""),
         "content_vector": chunk.get("content_vector"),
-        "source_url": meta.get("source_url", ""),
+        "source_url": meta.get("source_url") or chunk.get("source_url", ""),
         "source_type": chunk.get("source_type"),
-        "jurisdiction": meta.get("jurisdiction", ""),
-        "doc_type": meta.get("doc_type", ""),
-        "version": meta.get("version", ""),
-        "lang": meta.get("default_lang", "es"),
-        "valid_from": meta.get("valid_from"),
+        "jurisdiction": meta.get("jurisdiction") or chunk.get("jurisdiction", ""),
+        "doc_type": meta.get("doc_type") or chunk.get("doc_type", ""),
+        "version": meta.get("version") or chunk.get("version", ""),
+        "lang": meta.get("default_lang") or meta.get("lang") or chunk.get("lang", "es"),
+        "valid_from": meta.get("valid_from") or chunk.get("valid_from"),
         "valid_to": meta.get("valid_to"),
         "chunk_id": chunk_id,
         "parent_doc_id": doc_id,

@@ -91,3 +91,18 @@ No imprimir PAT en chats ni logs.
   repo secret `GHCR_PAT`.
 - Si GHCR rechaza el push por permisos de package, el fix es de permisos de
   paquete/org en GitHub, no de codigo del pipeline.
+
+## Post-push ACA pull auth
+
+Prompt 1 puede pasar aunque Prompt 2 falle si Azure Container Apps usa un
+secret `ghcr-pat` distinto del repo secret `GHCR_PAT`. Caso real:
+
+- Workflow GHCR success: `26926489943`.
+- Tag: `core-first-24e070d7`.
+- Prompt 2 bloqueado en ACA pull `DENIED` para
+  `aeco-pdf-parser:core-first-24e070d7`.
+- Tracking issue: https://github.com/Umbral-Bot/umbral-agent-stack/issues/454.
+
+Fix: actualizar el secret ACA `ghcr-pat` en los tres jobs con un PAT que pueda
+tirar los tres packages, o hacer los packages pullables por ACA. Ver `PROMPT
+2b` en `docs/ops/core-first-next-prompts-2026-06-03.md`.

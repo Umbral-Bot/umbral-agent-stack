@@ -39,6 +39,7 @@ curl -fsS -H "Authorization: Bearer $MISSION_CONTROL_TOKEN" \
 | GET | `/tournaments` | bearer | estado D3.x read-only; launcher deshabilitado |
 | GET | `/gates` | bearer | gates D6.1, D5/O15, editorial, security, tests |
 | GET | `/risks` | bearer | riesgos operativos: pip-audit, `.env` ACL, board drift, stale PRs |
+| GET | `/evals` | bearer | ultimo reporte JSON de `scripts/eval_harness.py --write` |
 
 Todos los endpoints (excepto `/health`) requieren `Authorization: Bearer
 $MISSION_CONTROL_TOKEN`. Si la env var no está seteada, todas las rutas
@@ -54,6 +55,7 @@ autenticadas responden **503** (fail-closed por diseño).
 | `REDIS_URL` | `redis://localhost:6379/0` | Compartido con `dispatcher/` |
 | `OPENCLAW_JSON_PATH` | `~/.openclaw/openclaw.json` | Best-effort: si no existe, `/agents` devuelve `available=false` |
 | `OPENCLAW_QUOTA_STATE_PATH` | `~/.config/openclaw/claude-quota-state.json` | Idem |
+| `MISSION_CONTROL_EVAL_REPORT_PATH` | `reports/evals/generated/core-eval-harness-latest.json` | Best-effort: si no existe, `/evals` devuelve `available=false` |
 | `MISSION_CONTROL_SNAPSHOTS_DIR` | `mission_control/snapshots/` | Git-ignored |
 
 ## Quality gate (ADR-009 D6)

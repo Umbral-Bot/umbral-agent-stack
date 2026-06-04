@@ -108,6 +108,10 @@ Si el workflow falla con `403 Forbidden` en GHCR, ejecutar primero el prompt
 disponibles no tienen `read:packages`/`write:packages`. Tracking issue:
 https://github.com/Umbral-Bot/umbral-agent-stack/issues/452.
 
+Estado 2026-06-04: Prompt 1 paso con run
+https://github.com/Umbral-Bot/umbral-agent-stack/actions/runs/26926489943
+y tag `core-first-24e070d7`.
+
 ```text
 Sos Copilot Builder. Rebuild/push de imagenes AECO KB post PR #449.
 Responder en espanol. NO imprimir secretos. NO tocar Azure. NO reiniciar gateway/worker.
@@ -282,6 +286,74 @@ Acceptance:
 - Preflight seeds buildingSMART pasa sin 404.
 - Los 3 ACA jobs ejecutan con tag nuevo.
 - `verify_kb.py --min-chunks 150 --jurisdictions intl` pasa.
+
+### PROMPT 2b - Desbloquear pull GHCR en ACA Jobs
+
+Usar si Prompt 2 falla al actualizar imagenes con `DENIED` desde GHCR.
+
+Contexto real 2026-06-04:
+
+- `aeco-source-crawler` pudo actualizar a `core-first-24e070d7`.
+- `aeco-pdf-parser` fallo al actualizar a `core-first-24e070d7` con pull
+  `DENIED`.
+- No se ejecuto pipeline.
+- Rollback aplicado: `aeco-source-crawler` volvió a
+  `ghcr.io/umbral-bot/aeco-source-crawler:o16.2-2e66dda`.
+- Tracking issue: https://github.com/Umbral-Bot/umbral-agent-stack/issues/454.
+
+```text
+Sos Copilot Windows. Desbloquear pull GHCR de ACA Jobs para AECO KB.
+Responder en espanol. NO imprimir GHCR_PAT. NO ejecutar pipeline todavia.
+
+Objetivo:
+- Actualizar el secret ACA `ghcr-pat` o permisos GHCR para que los 3 ACA Jobs
+  puedan tirar `core-first-24e070d7`.
+- Luego actualizar las 3 imagenes.
+- Solo despues de las 3 imagenes actualizadas, continuar Prompt 2 run/verify.
+
+Preflight:
+cd C:\GitHub\umbral-agent-stack
+git fetch origin main
+git checkout main
+git pull --ff-only origin main
+
+$rg = "rg-umbral-agents-prod"
+$tag = "core-first-24e070d7"
+az account show --query "{tenant:tenantId,subscription:id,user:user.name}" -o json
+az containerapp job list -g $rg --query "[?starts_with(name, 'aeco-')].{name:name,image:properties.template.containers[0].image,state:properties.provisioningState}" -o table
+
+Opcion A recomendada:
+- Si David expuso el PAT como env var local `GHCR_PAT`, actualizar el secret ACA:
+
+if (-not $env:GHCR_PAT) { throw "GHCR_PAT missing locally; David must expose PAT only as env var" }
+foreach ($job in @("aeco-source-crawler", "aeco-pdf-parser", "aeco-index-pipeline")) {
+  az containerapp job secret set --name $job --resource-group $rg --secrets "ghcr-pat=$env:GHCR_PAT"
+}
+
+Opcion B:
+- Si David hizo publicos los packages o ajusto permisos de package para pull,
+  no tocar secrets y pasar directo al update.
+
+Actualizar imagenes:
+$images = @{
+  "aeco-source-crawler" = "ghcr.io/umbral-bot/aeco-source-crawler:$tag"
+  "aeco-pdf-parser" = "ghcr.io/umbral-bot/aeco-pdf-parser:$tag"
+  "aeco-index-pipeline" = "ghcr.io/umbral-bot/aeco-index-pipeline:$tag"
+}
+
+foreach ($job in $images.Keys) {
+  az containerapp job update --name $job --resource-group $rg --image $images[$job]
+  if ($LASTEXITCODE -ne 0) { throw "image update failed for $job" }
+}
+
+az containerapp job list -g $rg --query "[?starts_with(name, 'aeco-')].{name:name,image:properties.template.containers[0].image,state:properties.provisioningState}" -o table
+
+Acceptance:
+- Los 3 jobs apuntan a `core-first-24e070d7`.
+- No se imprimio GHCR_PAT.
+- No se ejecuto crawler/parser/publisher todavia.
+- Comentar issue #454 con resultado.
+```
 
 ---
 

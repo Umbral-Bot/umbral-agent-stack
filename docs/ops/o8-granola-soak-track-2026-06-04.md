@@ -15,6 +15,13 @@
 
 Cerrar O8a (métricas truncamiento), O8d (validador automático), decisión O8f (capitalización hooks) — ver spine `notion-governance` D5.3.
 
+## O8d gap-check fix
+
+- **Fix en PR:** corregir `scripts/vps/granola-gap-check.sh` para usar helper Python testeable.
+- **Causa:** `worker.notion_client.read_database` devuelve rows aplanadas; `Fecha` llega como `{"start": "YYYY-MM-DD"}` y no como raw Notion `{"type": "date", "date": ...}`. El check anterior filtraba por `type == "date"` dentro de la row y podía terminar en OK vacuo.
+- **Alcance:** repo-only desde Windows; sin cron, sin VPS, sin restart. Copilot-VPS debe ejecutar el soak fresco solo después de merge/deploy autorizado.
+- **Tests:** `tests/test_granola_gap_check.py` cubre shape actual aplanado y shape raw heredado.
+
 ## Prompt Copilot-VPS (ejecutar David)
 
 ```text

@@ -7,8 +7,8 @@ OpenClaw plugin for **tournament lane** GitHub operations. Implements roadmap **
 | Component | State |
 |-----------|--------|
 | `openclaw.plugin.json` | ✅ Manifest |
-| `index.ts` | ⏳ Pending — mirror `umbral-worker` after Worker tasks exist |
-| Worker `tournament_lane.*` | ⏳ Pending — see `docs/ops/d36-tournament-github-cli-plugin-roadmap-2026-06-04.md` |
+| `index.ts` | ✅ Tool bridge for `tournament_lane.*` |
+| Worker `tournament_lane.*` | ✅ Implemented in `worker/tasks/tournament_lane_github.py` |
 | VPS `plugins.load.paths` | ⏳ Do not enable until `index.ts` ships |
 
 ## Planned tools

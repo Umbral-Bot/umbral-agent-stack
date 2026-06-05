@@ -1,6 +1,6 @@
 # D3.6 — Plugin + skill GitHub CLI para participantes de torneo
 
-- **Estado:** 📋 Roadmap (scaffold repo; implementación Worker + plugin en fases).
+- **Estado:** 🚧 Fases 2–3 implementadas en PR; deploy/allowlist VPS pendiente.
 - **Owner:** Codex (Worker + plugin TS) / Copilot-VPS (deploy + allowlist) / Cursor (docs + skill + protocolo).
 - **Depende:** D3.4 retro ✅, protocolo `docs/79` §3–§4, preflight torneo 8/8.
 - **No confundir con:** skill `tournament` (ideacional) ni `github.orchestrate_tournament` (Worker legacy `rick/t/{id}/`).
@@ -46,7 +46,7 @@ main (orchestrator)
 - [ ] Referencia en `multi-agent-tournament-orchestrator` (append lane contract)
 - [ ] `d35-tournament-judge-kit` § “herramientas lane”
 
-### Fase 2 — Worker tasks `tournament_lane.*`
+### Fase 2 — Worker tasks `tournament_lane.*` (implementado en PR D3.6)
 
 Nuevo módulo `worker/tasks/tournament_lane_github.py`:
 
@@ -69,7 +69,7 @@ Registrar en `worker/tasks/__init__.py`. Tests en `tests/test_tournament_lane_gi
 
 **PR sugerido:** Codex, issue “D3.6 tournament lane github tasks”.
 
-### Fase 3 — Plugin `umbral-tournament-github`
+### Fase 3 — Plugin `umbral-tournament-github` (implementado en PR D3.6; no habilitado en VPS)
 
 Carpeta: [`openclaw/extensions/umbral-tournament-github/`](../../openclaw/extensions/umbral-tournament-github/).
 

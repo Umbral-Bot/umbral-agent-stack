@@ -25,7 +25,7 @@
 3. **O8** — Granola soak (no confundir con poll bootstrap OK).
 4. **D3.6** — Plugin + skill GitHub CLI para lanes → [`d36-tournament-github-cli-plugin-roadmap-2026-06-04.md`](d36-tournament-github-cli-plugin-roadmap-2026-06-04.md).
 5. **D3.5** — Torneo limpio opcional → [`d35-tournament-judge-kit-2026-06-04.md`](d35-tournament-judge-kit-2026-06-04.md); exige skill `tournament-github-cli` en VPS.
-6. **Editorial** — Wave 2 + HITL Notion; **cero publicación** hasta doble gate.
+6. **Editorial** — Wave 2 plan ✅ · HITL live ✅ ([editorial-hitl-notion-live-2026-06-04.md](editorial-hitl-notion-live-2026-06-04.md), [editorial-wave2-plan-2026-06-04.md](editorial-wave2-plan-2026-06-04.md)).
 7. **Lead Intel** — Después de KB + MC estables.
 8. **Friday retro** — Actualizar spine/board sin drift.
 

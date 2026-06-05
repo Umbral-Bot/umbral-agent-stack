@@ -1,6 +1,6 @@
 # Editorial HITL — Preview Notion (dry-run 2026-06-04)
 
-- **Veredicto:** `EDITORIAL_HITL_NOTION_PREVIEW_OK` (desde spec + CAND docs; live Notion requiere MCP en sesión con auth).
+- **Veredicto preview:** `EDITORIAL_HITL_NOTION_PREVIEW_OK` · **Live:** ver [`editorial-hitl-notion-live-2026-06-04.md`](editorial-hitl-notion-live-2026-06-04.md) (`EDITORIAL_HITL_NOTION_LIVE_OK`).
 - **DB canónica:** `Publicaciones` — `e6817ec4698a4f0fbbc8fedcf4e52472`
 - **Spec:** `docs/specs/sistema-editorial-rick-v1.md` §5–§6
 - **Cero publicación:** ningún canal externo; gates en `false` hasta orden explícita de David.

@@ -7,6 +7,8 @@ description: >-
   "branch cleanup", "torneo real", "torneo de implementación",
   "competir implementaciones en ramas", "benchmark de código real",
   "poner a competir soluciones", "torneo sobre este cambio".
+  NOT for OpenClaw-native tournament lanes (tournament/*/lane-*) — use skill
+  tournament-github-cli and plugin umbral-tournament-github instead.
 metadata:
   openclaw:
     emoji: "\U0001F4BB"

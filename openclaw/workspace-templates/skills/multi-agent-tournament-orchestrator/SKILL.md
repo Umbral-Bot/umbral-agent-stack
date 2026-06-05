@@ -132,9 +132,13 @@ sessions_spawn({
 
 ```markdown
 ## Tournament lane contract (read-only)
+- Load and follow skill `tournament-github-cli` (GitHub CLI for lanes).
+- Prefer `umbral_tournament_*` plugin tools when D3.6 is deployed; else shell `gh` per skill.
+- Do NOT use `github-ops` / `umbral_github_*` (`rick/` branches are forbidden in lanes).
 - Branch: `tournament/<tournament_id>/lane-<specialty>` from updated `main`.
 - Do NOT merge your own PR.
 - Push the branch and create PR with title `[tournament:<tournament_id>:<specialty>] <issue_title>`.
+- Last announce line MUST be literal: PR_URL=https://github.com/Umbral-Bot/umbral-agent-stack/pull/<n>
 - Announce back to parent with JSON:
   {"pr_url":"...","diff_stats":"...","checks_status":"...","specialty":"<specialty>"}
 ```

@@ -1,0 +1,30 @@
+{
+  "id": "umbral-tournament-github",
+  "name": "Umbral Tournament GitHub",
+  "description": "Typed GitHub CLI tools for OpenClaw-native tournament lane agents (branches tournament/*/lane-*).",
+  "skills": ["./skills"],
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "baseUrl": {
+        "type": "string",
+        "description": "Worker base URL (default http://127.0.0.1:8088)."
+      },
+      "tokenFile": {
+        "type": "string",
+        "description": "Bearer token file for Worker API."
+      },
+      "defaultRepoPath": {
+        "type": "string",
+        "description": "Git working copy on VPS (e.g. /home/rick/umbral-agent-stack)."
+      },
+      "timeoutMs": {
+        "type": "integer",
+        "minimum": 1000,
+        "maximum": 120000,
+        "default": 60000
+      }
+    }
+  }
+}

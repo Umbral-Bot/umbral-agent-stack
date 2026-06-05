@@ -1,6 +1,6 @@
 # Agent Board — Umbral Agent Stack
 
-> Última actualización: 2026-06-04 por **codex**
+> Última actualización: 2026-06-04 por **cursor**
 > Sprint activo: **R23**
 > **Coordinación:** **Cursor** retoma el lead. Codex cerró la capitalización R23 (`2026-03-24-001`), limpió ramas/PRs `codex/*` y no dejó follow-ups nuevos de ese frente.
 > **RONDA 23 — capitalización Codex cerrada**.
@@ -417,6 +417,12 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 
 ## 2026-06-01-017 — G-D5.2 gate closeout sync [ASSIGNED → copilot-vps]
 - Post O/P/N: VPS pull #438, refresh traceability, VEREDICTO **G_D52_GATE_CLOSED**
+
+## 2026-06-04 — Core-first tracker + docs [IN PROGRESS — Cursor]
+- **P4:** `TRACKER_CLEANUP_INVENTORY_READY` (Codex)
+- **P4-close:** `STALE_PRS_442_443_CLOSED` (#442/#443 sin merge; canon #444)
+- **Docs:** unified plan, d35 judge kit, d36 tournament gh plugin roadmap, core-first refresh, editorial HITL preview (commit pendiente push)
+- **Siguiente:** Codex D3.6 PR · VPS sync skill tournament-github-cli · Notion live HITL verify · D3.5 tras D3.6
 
 ## 2026-06-02-020 — D3.3 tournament sync_skills adapters #445 [DONE]
 - Torneo: **M1_D33_TOURNAMENT_PARTIAL** → rescate #447 → judge → **D33_WINNER_MERGED** #446 @ **`da8eba85`**

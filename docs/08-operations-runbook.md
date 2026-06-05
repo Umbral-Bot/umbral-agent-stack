@@ -92,3 +92,7 @@ Get-Content C:\openclaw-worker\service-stderr.log -Tail 50
 # En vivo
 Get-Content C:\openclaw-worker\service-stdout.log -Wait
 ```
+
+## Registry backup alert (O2 post-MVP)
+
+Runbook canónico del check de alerta (2 días consecutivos sin backup OK): [`docs/ops/registry-backup-alert-runbook.md`](ops/registry-backup-alert-runbook.md). Implementación en repo: `scripts/registry/registry_backup_alert.py`.

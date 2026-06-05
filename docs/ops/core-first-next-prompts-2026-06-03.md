@@ -2,10 +2,14 @@
 
 Prompt pack para continuar el plan core-first sin depender de memoria del hilo.
 
-Estado de base:
+Estado de base (2026-06-04):
 
-- PR activo: https://github.com/Umbral-Bot/umbral-agent-stack/pull/449
-- Branch: `codex/core-first-stabilization`
+- PR #449 **merged**; `main` alineado (ver `git log -1`).
+- D6.1e **done** (`aeco-kb-es-current`, 1187 docs).
+- Mission Control **deploy verificado** en VPS (`:8089`, read-only).
+- Plan unificado: [`q2-core-first-unified-plan-2026-06-04.md`](q2-core-first-unified-plan-2026-06-04.md).
+- Kit juzgar torneos (D3.5): [`d35-tournament-judge-kit-2026-06-04.md`](d35-tournament-judge-kit-2026-06-04.md).
+- Plugin/skill gh torneo (D3.6): [`d36-tournament-github-cli-plugin-roadmap-2026-06-04.md`](d36-tournament-github-cli-plugin-roadmap-2026-06-04.md).
 - No mergear ni cerrar PRs stale sin autorizacion explicita de David.
 - No publicar LinkedIn sin HITL estricto.
 
@@ -24,15 +28,14 @@ Archivos de apoyo:
 
 ## Orden minimo
 
-1. David/Cursor revisa y mergea PR #449 si lo aprueba.
-2. Builder con Docker reconstruye y pushea las 3 imagenes AECO KB desde `main`.
-3. Copilot Windows/Azure-auth actualiza ACA Jobs al tag nuevo y ejecuta D6.1e.
-   - Si GHCR pull sigue `DENIED` y no hay `GHCR_PAT` local, usar `PROMPT 2c`
-     solo con autorizacion explicita de David porque cambia registry/RBAC.
-4. Copilot-VPS despliega Mission Control read-only.
-5. Tracker cleanup: inventariar stale PRs; cerrar solo con autorizacion.
-6. D3.5 tournament rerun solo si David autoriza costo/tiempo.
-7. Cursor/editorial Wave 2 con LinkedIn HITL estricto.
+1. ~~PR #449 merge~~ — **hecho**.
+2. ~~D6.1e KB rebuild/deploy~~ — **hecho** (salvo regresión).
+3. ~~Mission Control deploy VPS~~ — **hecho** (PROMPT 3).
+4. **SIGUIENTE:** PROMPT 4 inventario read-only (#442/#443 + drift docs).
+5. Cerrar stale PRs solo con `autorizo cerrar PR #NNN` (post-inventario).
+6. D3.6 plugin+skill `tournament-github-cli` para lanes (roadmap; ver d36).
+7. D3.5 torneo limpio solo con `autorizo D3.5 clean tournament rerun` + kit judge + skill lane sincronizada en VPS.
+7. Cursor/editorial Wave 2 + dry-run HITL Notion (sin publicar).
 
 ---
 
@@ -623,7 +626,33 @@ Acceptance:
 
 ---
 
+## PROMPT 5a - D3.6 tournament GitHub CLI plugin + skill (Codex)
+
+Roadmap: [`d36-tournament-github-cli-plugin-roadmap-2026-06-04.md`](d36-tournament-github-cli-plugin-roadmap-2026-06-04.md). Skill lane ya en repo; falta Worker + `index.ts` plugin.
+
+```text
+autorizo PR D3.6 worker tournament_lane github
+
+Sos Codex. Implementar Fase 2 y 3 del roadmap D3.6 en umbral-agent-stack.
+Responder en espanol. PR contra main. NO merge. NO habilitar plugin en VPS.
+
+Entregables:
+1. worker/tasks/tournament_lane_github.py + tests + registro en tasks/__init__.py
+2. openclaw/extensions/umbral-tournament-github/index.ts (tools espejo umbral-worker)
+3. Actualizar docs/79 §3 task_template si aplica
+
+Guardrails: ramas solo tournament/<id>/lane-<specialty>; PR title [tournament:...]; sin merge PR.
+
+VEREDICTO en PR description: D36_TOURNAMENT_GITHUB_PLUGIN_PR_READY
+```
+
+---
+
 ## PROMPT 5 - D3.5 clean tournament rerun opcional
+
+**Evaluar/juzgar:** [`d35-tournament-judge-kit-2026-06-04.md`](d35-tournament-judge-kit-2026-06-04.md) (scorecard David + prompt judge Windows).
+
+**Prerequisito recomendado:** D3.6 Fase 1 skill sincronizada en VPS; Fase 2–3 mergeadas antes de D3.5 si se quiere minimizar PARTIAL.
 
 Usar solo si David autoriza costo/tiempo:
 

@@ -140,6 +140,13 @@ from .github import (
     handle_github_open_pr,
 )
 from .github_tournament import handle_github_orchestrate_tournament
+from .tournament_lane_github import (
+    handle_tournament_lane_preflight,
+    handle_tournament_lane_create_branch,
+    handle_tournament_lane_commit_and_push,
+    handle_tournament_lane_open_pr,
+    handle_tournament_lane_verify_pr,
+)
 from .copilot_cli import handle_copilot_cli_run
 from .rick_orchestrator import handle_rick_orchestrator_triage
 
@@ -247,6 +254,11 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "github.commit_and_push": handle_github_commit_and_push,
     "github.open_pr": handle_github_open_pr,
     "github.orchestrate_tournament": handle_github_orchestrate_tournament,
+    "tournament_lane.preflight": handle_tournament_lane_preflight,
+    "tournament_lane.create_branch": handle_tournament_lane_create_branch,
+    "tournament_lane.commit_and_push": handle_tournament_lane_commit_and_push,
+    "tournament_lane.open_pr": handle_tournament_lane_open_pr,
+    "tournament_lane.verify_pr": handle_tournament_lane_verify_pr,
     "copilot_cli.run": handle_copilot_cli_run,
     "rick.orchestrator.triage": handle_rick_orchestrator_triage,
 }

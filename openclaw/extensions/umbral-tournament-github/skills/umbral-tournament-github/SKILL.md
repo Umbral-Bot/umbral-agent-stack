@@ -23,6 +23,7 @@ When this plugin is **enabled** on the gateway, prefer these tools over raw shel
 | `umbral_tournament_open_pr` | `tournament_lane.open_pr` |
 | `umbral_tournament_verify_pr` | `tournament_lane.verify_pr` |
 
-Until Phase 3 is deployed, follow **`tournament-github-cli`** shell fallback.
+If this plugin is not enabled in the active gateway profile yet, follow
+**`tournament-github-cli`** shell fallback and report `TOOLING_DEGRADED`.
 
 See: `docs/ops/d36-tournament-github-cli-plugin-roadmap-2026-06-04.md`

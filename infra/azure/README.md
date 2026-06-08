@@ -154,6 +154,38 @@ Subscription ID NO se commitea — se pasa via env var `AZURE_SUBSCRIPTION_ID` o
 
 ---
 
+## Editorial blog (ADR-010 — opt-in, off by default)
+
+Capa de publicación del blog editorial: Storage (`editorial-posts`) + Azure
+Function (Python 3.12) + CDN opcional. Módulo
+[`modules/editorial-blog.bicep`](modules/editorial-blog.bicep), conectado en
+`main.bicep` tras el flag **`deployEditorialBlog=false`** (no se despliega salvo
+que se active explícitamente). Detalle en
+[ADR-010](../../docs/adr/ADR-010-azure-editorial-blog-cms.md) y
+[runbook](../../docs/ops/azure-editorial-blog-runbook.md).
+
+```powershell
+# preview (no consume créditos)
+./scripts/what-if-editorial-blog.ps1
+
+# deploy real (operador; secreto desde Key Vault)
+az deployment sub create --location eastus2 `
+  --template-file main.bicep --parameters main.bicepparam `
+  --parameters deployEditorialBlog=true editorialWorkerToken="<kv>"
+```
+
+### Variables de entorno
+
+| Variable | Componente | Descripción |
+|----------|-----------|-------------|
+| `EDITORIAL_BLOG_FUNCTION_URL` | Worker | URL completa del endpoint de la Function |
+| `EDITORIAL_BLOG_FUNCTION_KEY` | Worker | function key (`x-functions-key`) |
+| `EDITORIAL_BLOG_STORAGE_ACCOUNT` | Function | cuenta de storage (auth Managed Identity) |
+| `EDITORIAL_BLOG_CDN_BASE_URL` | Function / SPA | base pública del CDN para el SPA |
+
+Secreto compartido `WORKER_TOKEN` (`x-worker-token`) opcional, reutiliza el del
+Worker. Nada de esto se commitea — Key Vault / `@secure()` params / app settings.
+
 ## TODO confirmar (decisiones pendientes / a calibrar)
 
 - [ ] Subscription ID Sponsorship — leer de `az account show` al primer deploy.

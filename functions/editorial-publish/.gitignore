@@ -1,0 +1,7 @@
+# Never commit real local settings (may hold connection strings / tokens).
+local.settings.json
+__pycache__/
+.python_packages/
+.venv/
+bin/
+obj/

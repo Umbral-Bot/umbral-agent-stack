@@ -1,0 +1,17 @@
+{
+  "slug": "criterios-de-aceptacion-antes-de-automatizar-bim",
+  "title": "Criterios de aceptación antes de automatizar en BIM",
+  "excerpt": "Antes de escalar IA o automatización en equipos BIM, hace falta definir cuándo un modelo, una observación o un entregable están realmente listos.",
+  "body_markdown": "## El problema\n\nMuchos equipos BIM intentan automatizar coordinación, revisión de modelos o cierre de observaciones antes de tener criterios de aceptación explícitos. Cuando el criterio es informal, la automatización amplifica el desacuerdo en vez de resolverlo.\n\n## Qué proponemos\n\nDefinir, por etapa, qué significa \"listo\":\n\n- **Modelo listo para revisión**: criterios mínimos de completitud y nomenclatura.\n- **Observación que requiere retrabajo**: condición clara, no opinión.\n- **Entregable listo para avanzar**: aceptación registrada, no implícita.\n\n## Por qué importa\n\nCon criterios explícitos, la IA y la automatización ayudan a decidir. Sin ellos, solo aceleran el ruido. El orden correcto es: primero el criterio, después la herramienta.\n\n> Nota: aplica a equipos donde el proceso todavía es informal; no implica que todos los equipos BIM tengan este problema.",
+  "hero_image_url": "https://cdn.umbralbim.io/heroes/criterios-aceptacion-bim.jpg",
+  "author": "David Moreira",
+  "published_at": "2026-06-07T12:00:00Z",
+  "notion_page_id": "cand0001-0000-4000-8000-000000000001",
+  "content_hash": "44614490ab0e27d024ce72ccfc83dcb9332f129c07a455a772a5939e3e928099",
+  "tags": [
+    "BIM",
+    "IA",
+    "Coordinación"
+  ],
+  "canonical_url": "https://umbralbim.io/noticias/criterios-de-aceptacion-antes-de-automatizar-bim"
+}

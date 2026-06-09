@@ -105,8 +105,44 @@ else
   bad "skill template missing: $skill_path"
 fi
 
+# 8 plugin umbral-tournament-github (D3.6 Fase 3) — read-only, never mutate live config
+if [[ -f "$OPENCLAW_JSON" ]]; then
+  plugin_enabled="$(jq -r '.plugins.entries["umbral-tournament-github"].enabled // empty' "$OPENCLAW_JSON" 2>/dev/null || echo "")"
+  if [[ "$plugin_enabled" == "true" ]]; then
+    ok "plugin umbral-tournament-github enabled in openclaw.json"
+  elif [[ -n "$plugin_enabled" ]]; then
+    note "plugin umbral-tournament-github present but enabled=$plugin_enabled (deploy pending — D3.6 Fase 3)"
+  else
+    note "plugin umbral-tournament-github not in openclaw.json (deploy pending — D3.6 Fase 3)"
+  fi
+else
+  note "openclaw.json not found — skip plugin check"
+fi
+
+# 9 lane skill tournament-github-cli — repo template (hard) + workspace sync (warn)
+repo_lane_skill="$REPO_PATH/openclaw/workspace-templates/skills/tournament-github-cli/SKILL.md"
+if [[ -f "$repo_lane_skill" ]]; then
+  ok "lane skill template in repo (tournament-github-cli)"
+else
+  bad "lane skill template missing: $repo_lane_skill"
+fi
+ws_lane_skill="${WORKSPACE_SKILLS_DIR:-$HOME/.openclaw/workspace/skills}/tournament-github-cli/SKILL.md"
+if [[ -f "$ws_lane_skill" ]]; then
+  ok "lane skill synced to workspace: $ws_lane_skill"
+else
+  note "lane skill not synced to workspace ($ws_lane_skill) — rsync before real tournament (D3.6)"
+fi
+
 echo ""
 echo "=== Summary: OK=$pass FAIL=$fail WARN=$warn ==="
+if [[ "$fail" -gt 0 ]]; then
+  verdict="BLOCKED"
+elif [[ "$warn" -gt 0 ]]; then
+  verdict="PARTIAL"
+else
+  verdict="OK"
+fi
+echo "PREFLIGHT_VERDICT=$verdict"
 if [[ "$fail" -gt 0 ]]; then
   echo "Result: NOT READY for spawn (hard FAIL above)"
   exit 1

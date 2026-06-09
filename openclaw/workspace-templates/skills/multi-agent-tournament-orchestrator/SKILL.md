@@ -93,6 +93,22 @@ Example smoke spec: `examples/smoke-tournament-spec.yaml` in this skill folder.
 
 ---
 
+## Phase 0b — Sync orchestrator + lane skills to VPS (RC-3, mandatory)
+
+Before any spawn, ensure the live VPS workspace has the **current** repo skills. RC-3 (retro D3.4): repo spec ≠ live VPS spec caused D3.3 drift.
+
+```bash
+# on VPS repo clone (~/umbral-agent-stack), after: git pull --ff-only origin main
+rsync -a openclaw/workspace-templates/skills/multi-agent-tournament-orchestrator/ \
+  <vps-workspace-skills>/multi-agent-tournament-orchestrator/
+rsync -a openclaw/workspace-templates/skills/tournament-github-cli/ \
+  <vps-workspace-skills>/tournament-github-cli/
+```
+
+Verify both skills are listed for `main` (orchestrator) and the lane agents before continuing. **Abort** if the live skill differs from `main`.
+
+---
+
 ## Phase 1 — Pre-flight (wrapper aborts if any fails)
 
 Execute in order; emit a checklist table to David before spawn.
@@ -136,11 +152,13 @@ sessions_spawn({
 - Prefer `umbral_tournament_*` plugin tools when D3.6 is deployed; else shell `gh` per skill.
 - Do NOT use `github-ops` / `umbral_github_*` (`rick/` branches are forbidden in lanes).
 - Branch: `tournament/<tournament_id>/lane-<specialty>` from updated `main`.
+- Worktree per lane (≥2 lanes): create the branch via `tournament_lane.create_branch` `use_worktree=true` (or `scripts/openclaw/tournament-lane-worktree.sh create <repo_path> <tournament_id> <specialty>`); work in the returned `worktree_path` (RC-4).
 - Do NOT merge your own PR.
 - Push the branch and create PR with title `[tournament:<tournament_id>:<specialty>] <issue_title>`.
+- Push + open PR within ~20 min of starting (RC-1); the lane is incomplete without a verified PR_URL.
 - Last announce line MUST be literal: PR_URL=https://github.com/Umbral-Bot/umbral-agent-stack/pull/<n>
 - Announce back to parent with JSON:
-  {"pr_url":"...","diff_stats":"...","checks_status":"...","specialty":"<specialty>"}
+  {"pr_url":"...","diff_stats":"...","checks_status":"...","specialty":"<specialty>","worktree_path":"..."}
 ```
 
 **Orchestrator rules:**

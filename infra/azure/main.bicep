@@ -42,6 +42,24 @@ param logRetentionDays int = 30
 @description('Object ID for Key Vault Administrator (David). Empty = skip.')
 param kvAdminObjectId string = ''
 
+// --- Editorial blog (ADR-010) — opt-in, off by default ---
+
+@description('Deploy the editorial blog publishing layer (Storage + Function + CDN). Off by default.')
+param deployEditorialBlog bool = false
+
+@description('Allow anonymous public blob read on the editorial container (prefer CDN instead).')
+param editorialPublicBlobRead bool = false
+
+@description('Deploy an Azure CDN endpoint in front of the editorial blob origin.')
+param deployEditorialCdn bool = true
+
+@description('Canonical public base URL for the blog (canonical_url + LinkedIn/X links).')
+param editorialCanonicalBaseUrl string = 'https://umbralbim.io'
+
+@description('Shared secret sent by the Worker as x-worker-token. Pass via Key Vault / secure param — never commit.')
+@secure()
+param editorialWorkerToken string = ''
+
 @description('Tags applied to the resource group + all resources.')
 param tags object = {
   owner: 'david-moreira'
@@ -66,6 +84,9 @@ var kvName = 'kv-umbral-agents-${environment}'
 var sbName = 'sb-umbral-mailbox-${environment}'
 var searchName = 'srch-umbral-kb-${environment}'
 var diName = 'di-umbral-${environment}'
+var editorialStorageName = 'steditorial${environment}'
+var editorialFunctionName = 'func-umbral-editorial-${environment}'
+var editorialPlanName = 'plan-umbral-editorial-${environment}'
 
 // -----------------------------------------------------------------------------
 // Resource Group
@@ -194,6 +215,27 @@ module mod_di 'modules/document-intelligence.bicep' = {
 }
 
 // -----------------------------------------------------------------------------
+// Editorial blog (ADR-010) — opt-in publishing layer (Storage + Function + CDN)
+// -----------------------------------------------------------------------------
+
+module mod_editorial 'modules/editorial-blog.bicep' = if (deployEditorialBlog) {
+  name: 'deploy-editorial-blog'
+  scope: rg
+  params: {
+    storageAccountName: editorialStorageName
+    functionAppName: editorialFunctionName
+    planName: editorialPlanName
+    location: location
+    tags: tags
+    canonicalBaseUrl: editorialCanonicalBaseUrl
+    appInsightsConnectionString: mod_logs.outputs.appInsightsConnectionString
+    workerToken: editorialWorkerToken
+    enablePublicBlobRead: editorialPublicBlobRead
+    deployCdn: deployEditorialCdn
+  }
+}
+
+// -----------------------------------------------------------------------------
 // Sub-task 043 — budget alerts (subscription scope)
 // -----------------------------------------------------------------------------
 
@@ -246,3 +288,10 @@ output docIntelligenceEndpoint string = mod_di.outputs.endpoint
 // 043 budgets
 output totalBudgetId string = mod_budgets.outputs.totalBudgetId
 output perServiceBudgetIds array = mod_budgets.outputs.budgetIds
+
+// Editorial blog (ADR-010) — empty strings when deployEditorialBlog = false
+output editorialStorageAccountName string = deployEditorialBlog ? mod_editorial!.outputs.storageAccountName : ''
+output editorialFunctionName string = deployEditorialBlog ? mod_editorial!.outputs.functionAppName : ''
+output editorialFunctionPublishUrl string = deployEditorialBlog ? mod_editorial!.outputs.functionPublishUrl : ''
+output editorialCdnEndpointHostName string = deployEditorialBlog ? mod_editorial!.outputs.cdnEndpointHostName : ''
+output editorialPublicReadBaseUrl string = deployEditorialBlog ? mod_editorial!.outputs.publicReadBaseUrl : ''

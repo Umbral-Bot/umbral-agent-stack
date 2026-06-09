@@ -149,6 +149,7 @@ from .tournament_lane_github import (
 )
 from .copilot_cli import handle_copilot_cli_run
 from .rick_orchestrator import handle_rick_orchestrator_triage
+from .editorial_publish import handle_web_publish_editorial_post
 
 # Each handler: (input: dict) -> dict
 TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
@@ -261,4 +262,5 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "tournament_lane.verify_pr": handle_tournament_lane_verify_pr,
     "copilot_cli.run": handle_copilot_cli_run,
     "rick.orchestrator.triage": handle_rick_orchestrator_triage,
+    "web.publish_editorial_post": handle_web_publish_editorial_post,
 }

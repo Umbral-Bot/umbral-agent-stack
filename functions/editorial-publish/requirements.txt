@@ -1,0 +1,5 @@
+# Azure Functions Python worker — editorial blog publisher.
+# Pinned conservatively; aligned with the repo's aeco-kb extra in pyproject.toml.
+azure-functions>=1.18.0,<2.0.0
+azure-storage-blob>=12.19.0,<13.0.0
+azure-identity>=1.15.0,<2.0.0

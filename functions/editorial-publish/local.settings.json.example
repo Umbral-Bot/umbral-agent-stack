@@ -1,0 +1,12 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "python",
+    "EDITORIAL_BLOG_CONNECTION_STRING": "UseDevelopmentStorage=true",
+    "EDITORIAL_BLOG_CONTAINER": "editorial-posts",
+    "EDITORIAL_BLOG_CANONICAL_BASE_URL": "https://umbralbim.io",
+    "EDITORIAL_BLOG_CDN_BASE_URL": "",
+    "WORKER_TOKEN": ""
+  }
+}

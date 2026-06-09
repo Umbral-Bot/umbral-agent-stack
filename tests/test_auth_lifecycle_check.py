@@ -208,11 +208,16 @@ class TestAuthLifecycleCheckScript:
     def test_main_json_output(self, tmp_path, capsys):
         from scripts.auth_lifecycle_check import main
 
+        # main() evaluates against the real wall clock (it does not inject `now`),
+        # so anchor the expiry to real now with a wide margin. Anchoring to the
+        # frozen NOW made this test rot once wall-clock drifted within the default
+        # warning window (14d), flipping the status from "ok" to "warning".
+        far_future = datetime.now(timezone.utc) + timedelta(days=365)
         config_path = self._write_config(tmp_path, [
             {
                 "provider": "test",
                 "credential_ref": "test_ref",
-                "expires_at": (NOW + timedelta(days=60)).isoformat(),
+                "expires_at": far_future.isoformat(),
             },
         ])
         ret = main(["--config", str(config_path), "--json"])

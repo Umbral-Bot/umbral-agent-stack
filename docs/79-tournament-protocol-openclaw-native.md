@@ -170,6 +170,33 @@ Tras **RC-4** (retro D3.4), en todo torneo con **≥2 lanes** cada lane trabaja 
 
 Torneos de 1 lane (smoke) pueden omitir el worktree; el flujo estándar lo usa.
 
+### 4.3.1 Ejemplo — Lane closeout (announce)
+
+El `worktree_path` que devuelve `tournament_lane.create_branch`
+(`input.use_worktree=true`) viaja hasta el announce-back de cierre de la lane, de
+modo que el parent audita el aislamiento RC-4 sin inspeccionar el filesystem. La
+skill `tournament-github-cli` (§8) cierra con este JSON, seguido en la **última
+línea** por el literal `PR_URL=` en solitario:
+
+```json
+{
+  "specialty": "openclaw-skill",
+  "branch": "tournament/<tournament_id>/lane-openclaw-skill",
+  "worktree_path": "~/.coord-ag-evidence/worktrees/<tournament_id>/lane-openclaw-skill",
+  "diff_stats": "+1 -0",
+  "checks_status": "pending",
+  "tooling": "plugin"
+}
+```
+
+```text
+PR_URL=https://github.com/Umbral-Bot/umbral-agent-stack/pull/123
+```
+
+Esa última línea literal es la que el parent parsea en el gate de completitud
+(§4.1); el campo `worktree_path` evidencia el aislamiento por lane (§4.3, v1.1
+post-PR #467).
+
 ---
 
 ## 5. Pre-conditions (chequeadas por el wrapper)

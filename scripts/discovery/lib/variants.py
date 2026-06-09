@@ -20,7 +20,11 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 # ---------------------------------------------------------------------------
 
 PLATFORMS = ("linkedin", "x", "blog", "newsletter", "carousel", "video")
-ASPECT_RATIOS = ("1:1", "16:9", "9:16", "4:5")
+# "4:3" es el Magnific canónico Umbral (editorial LinkedIn, blog hero, PIT) —
+# docs/ops/umbral-bim-magnific-visual-style-v1.md. Los demás ratios quedan para
+# casos explícitos por plataforma.
+ASPECT_RATIOS = ("4:3", "1:1", "16:9", "9:16", "4:5")
+MAGNIFIC_CANONICAL_ASPECT_RATIO = "4:3"
 
 X_MAX_CHARS_PER_TWEET = 280
 X_MAX_HASHTAGS = 2
@@ -235,7 +239,7 @@ class VisualBrief(BaseModel):
     mood: str = Field(..., min_length=1)
     text_overlay: str | None = None
     negative_prompts: list[str] = Field(..., min_length=1)
-    aspect_ratio: Literal["1:1", "16:9", "9:16", "4:5"]
+    aspect_ratio: Literal["4:3", "1:1", "16:9", "9:16", "4:5"]
     target_platform: Literal[
         "linkedin", "x", "blog", "newsletter", "carousel", "video"
     ]
@@ -254,4 +258,5 @@ __all__ = [
     "VisualBrief",
     "PLATFORMS",
     "ASPECT_RATIOS",
+    "MAGNIFIC_CANONICAL_ASPECT_RATIO",
 ]

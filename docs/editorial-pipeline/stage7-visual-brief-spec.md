@@ -23,25 +23,25 @@ class VisualBrief(BaseModel):
     mood: str                 # tono emocional / atmósfera
     text_overlay: str | None  # texto opcional sobre la imagen
     negative_prompts: list[str]  # qué NO mostrar (>=1 elemento)
-    aspect_ratio: Literal["1:1", "16:9", "9:16", "4:5"]
+    aspect_ratio: Literal["4:3", "1:1", "16:9", "9:16", "4:5"]
     target_platform: Literal["linkedin", "x", "blog", "newsletter", "carousel", "video"]
 ```
 
 Validators:
 
 - `negative_prompts` no vacío (mínimo 1 entrada).
-- `aspect_ratio` ∈ `{"1:1", "16:9", "9:16", "4:5"}`.
+- `aspect_ratio` ∈ `{"4:3", "1:1", "16:9", "9:16", "4:5"}` — `4:3` es el Magnific canónico Umbral ([estilo visual v1](../ops/umbral-bim-magnific-visual-style-v1.md)).
 - `target_platform` ∈ las 6 plataformas soportadas.
 
 ## Cuándo se requiere `Visual asset URL`
 
 | Plataforma | Visual obligatorio | Aspect ratio default | Notas |
 |---|---|---|---|
-| LinkedIn | **sí** | `1:1` o `4:5` | hero image; runtime hoy vía Stage 8 |
+| LinkedIn | **sí** | **`4:3`** (Magnific canónico Umbral) | hero image; runtime hoy vía Stage 8. `1:1`/`4:5` deprecados como default — [estilo visual v1](../ops/umbral-bim-magnific-visual-style-v1.md) |
 | X | opcional | `16:9` | recomendado para hooks fuertes |
-| Blog (hero) | **sí** | `16:9` | hero del artículo |
+| Blog (hero) | **sí** | **`4:3`** (Magnific canónico Umbral) | hero editorial del artículo (antes `16:9`) |
 | Newsletter | opcional | `16:9` o `4:5` | header de email |
-| Carrusel | **obligatorio por slide** | `4:5` (LinkedIn) / `1:1` (IG) | 1 brief por slide |
+| Carrusel | **obligatorio por slide** | `4:5` (LinkedIn) / `1:1` (IG) | 1 brief por slide (requerimiento duro de plataforma, no Magnific default) |
 | Video | **sí — thumbnail** | `9:16` (vertical) | thumbnail + briefs por escena en Wave 2 |
 
 ## Mapeo a Notion (sin escrituras Wave 1)

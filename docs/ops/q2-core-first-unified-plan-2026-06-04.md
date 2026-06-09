@@ -17,6 +17,7 @@
 | PR #442/#443 | OPEN, CONFLICTING, stale D3.2 | GitHub | inventario → cierre con autorización |
 | PR #449 | MERGED 2026-06-04 | GitHub | cabecera core-first actualizada |
 | eval #462 | MERGED | repo | usar en MC/evals |
+| PIT-1 spec | **EN PR** (`claude/feat-pit-1-spec-magnific-43`, 2026-06-09) | repo | review David → merge → PIT-2/PIT-3 |
 
 ## Secuencia acordada
 
@@ -26,8 +27,9 @@
 4. **D3.6** — Plugin + skill GitHub CLI para lanes → [`d36-tournament-github-cli-plugin-roadmap-2026-06-04.md`](d36-tournament-github-cli-plugin-roadmap-2026-06-04.md).
 5. **D3.5** — Torneo limpio opcional → [`d35-tournament-judge-kit-2026-06-04.md`](d35-tournament-judge-kit-2026-06-04.md); exige skill `tournament-github-cli` en VPS.
 6. **Editorial** — Wave 2 plan ✅ · HITL live ✅ ([editorial-hitl-notion-live-2026-06-04.md](editorial-hitl-notion-live-2026-06-04.md), [editorial-wave2-plan-2026-06-04.md](editorial-wave2-plan-2026-06-04.md)).
-7. **Lead Intel** — Después de KB + MC estables.
-8. **Friday retro** — Actualizar spine/board sin drift.
+7. **PIT-1** — Spec torneo de producto en PR ([product-innovation-tournament-vision-2026-06-09.md](product-innovation-tournament-vision-2026-06-09.md)); post-merge: D3.5b Copilot-VPS, deploy pit-vault (PIT-3), research sandbox (PIT-2). Magnific canónico 4:3 incluido.
+8. **Lead Intel** — Después de KB + MC estables.
+9. **Friday retro** — Actualizar spine/board sin drift.
 
 ## Gates David (frases exactas)
 
@@ -38,6 +40,7 @@
 | Merge winner torneo | `autorizo merge winner D3.x` (+ PR número si aplica) |
 | Patch docs spine | `autorizo patch docs-only unified plan` |
 | Publicar LinkedIn | `aprobado_contenido` + `autorizar_publicacion` + `ok, publica` |
+| Lanzar torneo PIT | `ok, arranca` (tras spec validado — [SKILL](../../openclaw/workspace-templates/skills/product-innovation-tournament/SKILL.md)) |
 
 ## Contradicción resuelta (MC vs tracker)
 

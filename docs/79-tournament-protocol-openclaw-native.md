@@ -54,7 +54,10 @@ lane:
 
     Contract (read-only invariants):
       - NO modificás otros lanes, NO mergeás vos mismo.
-      - Al terminar: git push -u origin <branch> y gh pr create --title "[tournament:<tournament_id>:<specialty>]" --body-file <body>.
+      - Worktree aislado por lane (torneos >=2 lanes): tournament_lane.create_branch con input.use_worktree=true (RC-4, ver §4.3).
+      - Último paso de tooling = umbral_tournament_open_pr (plugin D3.6), ANTES de cualquier `gh pr create` manual de fallback.
+      - Al terminar: branch pusheado + PR abierto vía umbral_tournament_open_pr
+        (fallback shell: git push -u origin <branch> y gh pr create --title "[tournament:<tournament_id>:<specialty>]" --body-file <body>).
       - Anunciá de vuelta: PR URL + diff stats + checks status.
       - La última línea del announce debe ser literal: PR_URL=https://github.com/Umbral-Bot/umbral-agent-stack/pull/<n>
   model: gpt-5-mini                    # opcional; default lane agent's model
@@ -153,6 +156,19 @@ Si collect reporta lane con commits locales y sin PR (causa típica: compactaci�
 4. Judge cuando existan ≥2 PRs abiertos con prefijo `[tournament:...]`.
 
 Retro: [`docs/ops/d3-tournament-retro-2026-06-02.md`](ops/d3-tournament-retro-2026-06-02.md).
+
+---
+
+## 4.3 Worktree por lane (obligatorio en torneos ≥2 lanes)
+
+Tras **RC-4** (retro D3.4), en todo torneo con **≥2 lanes** cada lane trabaja en un **git worktree aislado**, no en el clone compartido. Evita el riesgo D3.3: una lane hace `git checkout` de su rama delivery mientras otra lane sigue editando el mismo worktree.
+
+- **Helper:** [`scripts/openclaw/tournament-lane-worktree.sh`](../scripts/openclaw/tournament-lane-worktree.sh) `create <repo_path> <tournament_id> <specialty>` crea `~/.coord-ag-evidence/worktrees/<tournament_id>/lane-<specialty>` sobre la rama `tournament/<tournament_id>/lane-<specialty>` desde `origin/main`. Idempotente; `remove` no borra la rama (keep-losers).
+- **Worker:** `tournament_lane.create_branch` con `input.use_worktree=true` delega en el helper y devuelve `worktree_path` (+ `worktree_verdict`) en el resultado, para collect y evidencia.
+- **Clone compartido:** permanece en `main` limpio; el parent restaura/colecta sin pelear por el worktree.
+- **Cleanup:** `tournament-lane-worktree.sh remove <repo_path> <tournament_id> <specialty>` (refuses si hay cambios sin commitear, salvo `TOURNAMENT_WORKTREE_FORCE=1`).
+
+Torneos de 1 lane (smoke) pueden omitir el worktree; el flujo estándar lo usa.
 
 ---
 

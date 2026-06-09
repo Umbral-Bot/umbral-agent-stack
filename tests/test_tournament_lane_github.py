@@ -1,10 +1,16 @@
 """Tests for tournament lane GitHub Worker tasks."""
 
 import json
+import os
+import shutil
 import subprocess
-from unittest.mock import patch
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 from worker.tasks.tournament_lane_github import (
+    _parse_worktree_output,
     _validate_lane_branch,
     handle_tournament_lane_commit_and_push,
     handle_tournament_lane_create_branch,
@@ -15,6 +21,15 @@ from worker.tasks.tournament_lane_github import (
 
 
 MOD = "worker.tasks.tournament_lane_github"
+
+_BASH = shutil.which("bash")
+_GIT = shutil.which("git")
+_WORKTREE_HELPER = (
+    Path(__file__).resolve().parents[1]
+    / "scripts"
+    / "openclaw"
+    / "tournament-lane-worktree.sh"
+)
 
 
 def _completed(stdout="", stderr="", returncode=0):
@@ -341,3 +356,211 @@ def test_worker_registry_exposes_tournament_lane_tasks():
         "tournament_lane.verify_pr",
     ]:
         assert task in TASK_HANDLERS
+
+
+class TestParseWorktreeOutput:
+    def test_parses_known_keys_and_ignores_noise(self):
+        stdout = (
+            "Preparing worktree (new branch ...)\n"
+            "WORKTREE_PATH=/wt/d36/lane-qa\n"
+            "BRANCH=tournament/d36/lane-qa\n"
+            "WORKTREE_VERDICT=CREATED\n"
+            "unrelated=line\n"
+        )
+        parsed = _parse_worktree_output(stdout)
+        assert parsed["WORKTREE_PATH"] == "/wt/d36/lane-qa"
+        assert parsed["WORKTREE_VERDICT"] == "CREATED"
+        assert "unrelated" not in parsed
+
+
+class TestTournamentLaneCreateBranchWorktree:
+    def test_use_worktree_delegates_to_helper_and_skips_checkout(self):
+        calls = []
+        helper = MagicMock()
+        helper.is_file.return_value = True
+
+        def fake_run(args, **kwargs):
+            calls.append(args)
+            return _completed(
+                stdout=(
+                    "WORKTREE_PATH=/wt/d36/lane-qa\n"
+                    "BRANCH=tournament/d36/lane-qa\n"
+                    "WORKTREE_VERDICT=CREATED\n"
+                )
+            )
+
+        with patch(f"{MOD}._resolve_repo_path", return_value="/tmp/repo"), \
+             patch(f"{MOD}._status_porcelain", return_value=""), \
+             patch(f"{MOD}._worktree_helper_path", return_value=helper), \
+             patch(f"{MOD}._run", side_effect=fake_run):
+            result = handle_tournament_lane_create_branch({
+                "tournament_id": "d36",
+                "specialty": "qa",
+                "use_worktree": True,
+            })
+
+        assert result["ok"] is True
+        assert result["use_worktree"] is True
+        assert result["worktree_path"] == "/wt/d36/lane-qa"
+        assert result["worktree_verdict"] == "CREATED"
+        assert result["branch"] == "tournament/d36/lane-qa"
+        # Helper was invoked with the create action...
+        assert any(a[:2] == ["bash", str(helper)] and "create" in a for a in calls)
+        # ...and the shared-checkout path was never taken.
+        assert all(a[:2] != ["git", "checkout"] for a in calls)
+
+    def test_use_worktree_accepts_string_flag(self):
+        helper = MagicMock()
+        helper.is_file.return_value = True
+
+        with patch(f"{MOD}._resolve_repo_path", return_value="/tmp/repo"), \
+             patch(f"{MOD}._status_porcelain", return_value=""), \
+             patch(f"{MOD}._worktree_helper_path", return_value=helper), \
+             patch(
+                 f"{MOD}._run",
+                 return_value=_completed(
+                     stdout="WORKTREE_PATH=/wt/d36/lane-qa\nWORKTREE_VERDICT=EXISTS\n"
+                 ),
+             ):
+            result = handle_tournament_lane_create_branch({
+                "tournament_id": "d36",
+                "specialty": "qa",
+                "use_worktree": "true",
+            })
+
+        assert result["ok"] is True
+        assert result["worktree_verdict"] == "EXISTS"
+
+    def test_use_worktree_missing_helper_errors(self):
+        helper = MagicMock()
+        helper.is_file.return_value = False
+
+        with patch(f"{MOD}._resolve_repo_path", return_value="/tmp/repo"), \
+             patch(f"{MOD}._status_porcelain", return_value=""), \
+             patch(f"{MOD}._worktree_helper_path", return_value=helper):
+            result = handle_tournament_lane_create_branch({
+                "tournament_id": "d36",
+                "specialty": "qa",
+                "use_worktree": True,
+            })
+
+        assert result["ok"] is False
+        assert "worktree helper not found" in result["error"]
+
+    def test_default_path_reports_no_worktree(self):
+        def fake_run(args, **kwargs):
+            if args[:4] == ["git", "show-ref", "--verify", "--quiet"]:
+                return _completed(returncode=1)
+            if args[:3] == ["git", "ls-remote", "--exit-code"]:
+                return _completed(returncode=2)
+            return _completed()
+
+        with patch(f"{MOD}._resolve_repo_path", return_value="/tmp/repo"), \
+             patch(f"{MOD}._status_porcelain", return_value=""), \
+             patch(f"{MOD}._run", side_effect=fake_run):
+            result = handle_tournament_lane_create_branch({
+                "tournament_id": "d36",
+                "specialty": "qa",
+            })
+
+        assert result["ok"] is True
+        assert result["use_worktree"] is False
+        assert result["worktree_path"] is None
+
+
+@pytest.mark.skipif(
+    not _BASH or not _GIT or not _WORKTREE_HELPER.is_file(),
+    reason="requires bash, git, and the worktree helper script",
+)
+class TestWorktreeHelperScript:
+    def _init_repo(self, repo: Path):
+        def git(*args):
+            subprocess.run(
+                [_GIT, *args],
+                cwd=repo,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+        git("init", "-q")
+        git("config", "user.email", "lane@test.local")
+        git("config", "user.name", "lane")
+        git("commit", "-q", "--allow-empty", "-m", "init")
+        git("branch", "-M", "main")
+
+    def _run_helper(self, repo: Path, wt_root: Path, action: str):
+        env = dict(os.environ, TOURNAMENT_WORKTREE_ROOT=str(wt_root).replace("\\", "/"))
+        return subprocess.run(
+            [
+                _BASH,
+                str(_WORKTREE_HELPER).replace("\\", "/"),
+                action,
+                str(repo).replace("\\", "/"),
+                "tourz",
+                "qa",
+                "main",
+            ],
+            cwd=repo,
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+
+    def _branch_exists(self, repo: Path) -> bool:
+        return subprocess.run(
+            [_GIT, "show-ref", "--verify", "--quiet", "refs/heads/tournament/tourz/lane-qa"],
+            cwd=repo,
+            capture_output=True,
+            text=True,
+        ).returncode == 0
+
+    def test_create_remove_idempotent_keeps_branch(self, tmp_path):
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        wt_root = tmp_path / "wt"
+        self._init_repo(repo)
+        expected = wt_root / "tourz" / "lane-qa"
+
+        created = self._run_helper(repo, wt_root, "create")
+        assert created.returncode == 0, created.stderr
+        assert "WORKTREE_VERDICT=CREATED" in created.stdout
+        assert expected.is_dir()
+        assert self._branch_exists(repo)
+
+        again = self._run_helper(repo, wt_root, "create")
+        assert again.returncode == 0, again.stderr
+        assert "WORKTREE_VERDICT=EXISTS" in again.stdout
+
+        removed = self._run_helper(repo, wt_root, "remove")
+        assert removed.returncode == 0, removed.stderr
+        assert "WORKTREE_VERDICT=REMOVED" in removed.stdout
+        assert not expected.exists()
+        # keep-losers: branch must survive worktree removal
+        assert self._branch_exists(repo)
+
+        absent = self._run_helper(repo, wt_root, "remove")
+        assert absent.returncode == 0, absent.stderr
+        assert "WORKTREE_VERDICT=ABSENT" in absent.stdout
+
+    def test_rejects_invalid_specialty(self, tmp_path):
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        self._init_repo(repo)
+        env = dict(os.environ, TOURNAMENT_WORKTREE_ROOT=str(tmp_path / "wt"))
+        result = subprocess.run(
+            [
+                _BASH,
+                str(_WORKTREE_HELPER).replace("\\", "/"),
+                "create",
+                str(repo).replace("\\", "/"),
+                "tourz",
+                "bad/specialty",
+            ],
+            cwd=repo,
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode != 0
+        assert "invalid specialty" in result.stderr

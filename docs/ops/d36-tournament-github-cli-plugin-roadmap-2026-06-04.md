@@ -94,9 +94,10 @@ Config VPS (`plugins.entries.umbral-tournament-github`):
 
 ### Fase 4 — Integración protocolo + D3.5
 
-- Actualizar `docs/79` §3 `task_template`: “usar `umbral_tournament_open_pr` antes de gh manual”.
-- `tournament-preflight-dry-run.sh`: check plugin loaded + skill synced.
-- D3.5 acceptance: lanes deben reportar tool calls `umbral_tournament_*` en transcript (evidencia).
+- [x] Actualizar `docs/79` §3 `task_template`: “usar `umbral_tournament_open_pr` antes de gh manual” (PR tournament v1.1 hardening).
+- [x] `tournament-preflight-dry-run.sh`: check plugin loaded + skill synced + `PREFLIGHT_VERDICT=OK|PARTIAL|BLOCKED`.
+- [x] Worktree por lane (RC-4): helper `scripts/openclaw/tournament-lane-worktree.sh` + `tournament_lane.create_branch use_worktree=true`; `docs/79` §4.3.
+- [ ] D3.5 acceptance: lanes deben reportar tool calls `umbral_tournament_*` en transcript (evidencia).
 
 ### Fase 5 — Deprecación gradual shell libre
 

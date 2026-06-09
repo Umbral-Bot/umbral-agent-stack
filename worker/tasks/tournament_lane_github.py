@@ -330,6 +330,64 @@ def _summarize_checks(rollup: Any) -> Dict[str, Any]:
     }
 
 
+_WORKTREE_HELPER_REL = ("scripts", "openclaw", "tournament-lane-worktree.sh")
+_WORKTREE_KEYS = {"WORKTREE_PATH", "BRANCH", "WORKTREE_VERDICT"}
+
+
+def _is_truthy(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value != 0
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+    return False
+
+
+def _worktree_helper_path(repo_path: str) -> Path:
+    return Path(repo_path).joinpath(*_WORKTREE_HELPER_REL)
+
+
+def _parse_worktree_output(stdout: str) -> Dict[str, str]:
+    parsed: Dict[str, str] = {}
+    for raw_line in (stdout or "").splitlines():
+        line = raw_line.strip()
+        if "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        if key in _WORKTREE_KEYS:
+            parsed[key] = value.strip()
+    return parsed
+
+
+def _create_lane_worktree(
+    repo_path: str,
+    tournament_id: str,
+    specialty: str,
+    base: str,
+) -> Dict[str, Any]:
+    """Delegate isolated worktree creation to the shell helper (RC-4)."""
+    helper = _worktree_helper_path(repo_path)
+    if not helper.is_file():
+        raise ValueError(f"worktree helper not found in repo: {helper}")
+    result = _run(
+        ["bash", str(helper), "create", repo_path, tournament_id, specialty, base],
+        repo_path=repo_path,
+        timeout=120,
+    )
+    parsed = _parse_worktree_output(result.stdout)
+    worktree_path = parsed.get("WORKTREE_PATH")
+    if not worktree_path:
+        raise RuntimeError(
+            "worktree helper did not return WORKTREE_PATH: "
+            f"{_sanitize_output(result.stdout)}"
+        )
+    return {
+        "worktree_path": worktree_path,
+        "worktree_verdict": parsed.get("WORKTREE_VERDICT"),
+    }
+
+
 def handle_tournament_lane_preflight(input_data: Dict[str, Any]) -> Dict[str, Any]:
     """Validate gh auth, repo path, clean worktree, and main ff-only readiness."""
     try:
@@ -372,12 +430,32 @@ def handle_tournament_lane_preflight(input_data: Dict[str, Any]) -> Dict[str, An
 
 
 def handle_tournament_lane_create_branch(input_data: Dict[str, Any]) -> Dict[str, Any]:
-    """Create ``tournament/<id>/lane-<specialty>`` from ``origin/main``."""
+    """Create ``tournament/<id>/lane-<specialty>`` from ``origin/main``.
+
+    With ``use_worktree=true`` the lane branch is created inside an isolated git
+    worktree via ``scripts/openclaw/tournament-lane-worktree.sh`` (RC-4), keeping
+    the shared clone on ``main`` so concurrent lanes never collide. Without it the
+    legacy shared-checkout behaviour is preserved (backward compatible).
+    """
     try:
         repo_path = _resolve_repo_path(input_data)
         branch, tournament_id, specialty = _branch_from_input(input_data)
         base = _validate_base(input_data.get("base"))
         _ensure_clean_worktree(repo_path)
+
+        if _is_truthy(input_data.get("use_worktree")):
+            worktree = _create_lane_worktree(repo_path, tournament_id, specialty, base)
+            return {
+                "ok": True,
+                "repo_path": repo_path,
+                "branch": branch,
+                "tournament_id": tournament_id,
+                "specialty": specialty,
+                "base": base,
+                "use_worktree": True,
+                "worktree_path": worktree["worktree_path"],
+                "worktree_verdict": worktree["worktree_verdict"],
+            }
 
         local = _run(
             ["git", "show-ref", "--verify", "--quiet", f"refs/heads/{branch}"],
@@ -409,6 +487,8 @@ def handle_tournament_lane_create_branch(input_data: Dict[str, Any]) -> Dict[str
             "tournament_id": tournament_id,
             "specialty": specialty,
             "base": base,
+            "use_worktree": False,
+            "worktree_path": None,
         }
     except Exception as exc:
         return {"ok": False, "error": str(exc)}

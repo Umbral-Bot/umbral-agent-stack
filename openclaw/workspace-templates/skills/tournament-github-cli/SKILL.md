@@ -28,13 +28,22 @@ You are a **lane** in an OpenClaw-native tournament (`docs/79`). Your job ends w
 4. **PR title:** `[tournament:<tournament_id>:<specialty>] <issue_title>`
 5. **Last line of announce to parent (literal):** `PR_URL=https://github.com/Umbral-Bot/umbral-agent-stack/pull/<n>`
 6. **Do not** use `umbral_github_*` or `github.create_branch` with `rick/` prefix — wrong contract.
+7. **Worktree per lane (≥2 lanes):** create the branch in an isolated worktree (`use_worktree=true`); never share the clone checkout with another lane (RC-4).
+
+## Timing — push before compaction (RC-1)
+
+The top failure mode in D3.1–D3.3 was a lane that implemented but never pushed/opened a PR before the session idled or compacted. Operating rule:
+
+- Within **~20 minutes** of starting you MUST have **pushed the branch and opened the PR** (`umbral_tournament_open_pr`) — even if work continues afterward with follow-up commits.
+- Push **early**, open the PR, then iterate. Do not batch everything into one final push.
+- The lane is **incomplete without a verified `PR_URL`**, no matter how good the local diff looks.
 
 ## Tool priority
 
 | Step | Preferred (D3.6 plugin) | Fallback (coding shell) |
 |------|-------------------------|-------------------------|
 | Preflight | `umbral_tournament_preflight` | `gh auth status`; `git status`; `git fetch origin main` |
-| Branch | `umbral_tournament_create_lane_branch` | `git checkout -b tournament/...` |
+| Branch (worktree) | `umbral_tournament_create_lane_branch` (`use_worktree=true`) | `scripts/openclaw/tournament-lane-worktree.sh create <repo_path> <id> <specialty>` |
 | Commit+push | `umbral_tournament_commit_and_push` | `git add <files>`; `git commit`; `git push -u origin HEAD` |
 | Open PR | `umbral_tournament_open_pr` | `gh pr create --title "..." --body-file ...` |
 | Verify | `umbral_tournament_verify_pr` | `gh pr view <url> --json url,headRefName,title,mergeable,statusCheckRollup` |
@@ -60,15 +69,24 @@ gh auth status
 
 Abort with exact error if not clean or gh not authenticated.
 
-### 3. Create and checkout lane branch
+### 3. Create lane branch in an isolated worktree (RC-4)
+
+Tournaments with **≥2 lanes**: create the branch inside a dedicated worktree so you never share a checkout with another lane.
+
+Preferred (plugin): `umbral_tournament_create_lane_branch` with `use_worktree=true` → returns `worktree_path`. Work from that path.
+
+Fallback (shell):
 
 ```bash
-git checkout -b tournament/<tournament_id>/lane-<specialty>
+scripts/openclaw/tournament-lane-worktree.sh create <repo_path> <tournament_id> <specialty>
+# cd into the printed WORKTREE_PATH=... before implementing
 ```
+
+Single-lane smoke may instead use `git checkout -b tournament/<tournament_id>/lane-<specialty>` in the shared clone.
 
 ### 4. Implement issue scope
 
-- Touch only files required by the issue.
+- Touch only files required by the issue (inside the lane worktree).
 - Run tests the issue implies (e.g. `pytest` paths from task).
 
 ### 5. Commit and push (explicit files)

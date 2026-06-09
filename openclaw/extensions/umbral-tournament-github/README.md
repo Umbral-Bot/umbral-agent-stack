@@ -44,6 +44,18 @@ OpenClaw plugin for **tournament lane** GitHub operations. Implements roadmap **
 4. `rsync` skill `tournament-github-cli` to VPS workspace skills.
 5. Restart gateway; run tournament preflight dry-run.
 
+## Worker input contract
+
+The plugin sends parameters inside the run envelope's **`input`** object (see
+`buildTaskInput` in [`index.ts`](index.ts)). Worker handlers read
+**`input.repo_path`** — defaulting to plugin `config.defaultRepoPath` — **not** a
+separate top-level `payload` field.
+
+Worktree isolation flag (RC-4): pass **`input.use_worktree=true`** to
+`umbral_tournament_create_lane_branch` and the Worker builds an isolated worktree
+via `scripts/openclaw/tournament-lane-worktree.sh`, returning `worktree_path` in
+the result. Default (flag absent) keeps the legacy shared-checkout behaviour.
+
 ## Skill for agents
 
 Use repo template: `openclaw/workspace-templates/skills/tournament-github-cli/SKILL.md`

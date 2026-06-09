@@ -44,10 +44,12 @@ Copilot Windows → judge + merge (gate)
 Pedir carpeta evidencia: `~/.coord-ag-evidence/D3.5/` con:
 
 - `run-start.txt` (SHA `main`)
-- `final-metrics.json` o equivalente con `pr_urls[]`
+- `final-metrics.json` o equivalente con `pr_urls[]` y, por lane, `worktree_path` (aislamiento RC-4; lo devuelve `tournament_lane.create_branch` con `use_worktree=true`)
 - Log de VEREDICTO: `D35_CLEAN_TOURNAMENT_OK` | `PARTIAL` | `BLOCKED`
 
 **Regla dura:** `OK` solo si `pr_count >= 2` y cada URL verificada con `gh pr view`.
+
+**Aislamiento (criterio scorecard §3):** verificar que cada lane reporta su `worktree_path` bajo `~/.coord-ag-evidence/worktrees/<tournament_id>/lane-<specialty>` — confirma que la lane no compartió worktree (ver `docs/79` §4.3).
 
 ---
 

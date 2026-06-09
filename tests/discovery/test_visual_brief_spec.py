@@ -61,3 +61,16 @@ def test_visual_brief_text_overlay_optional():
     assert vb.text_overlay == "3 días → 3 horas"
     vb2 = VisualBrief(**_valid_kwargs(text_overlay=None))
     assert vb2.text_overlay is None
+
+
+def test_visual_brief_accepts_4_3_magnific_canonical():
+    # PIT-1: 4:3 es el Magnific canónico Umbral para LinkedIn y blog hero
+    # (docs/ops/umbral-bim-magnific-visual-style-v1.md).
+    from scripts.discovery.lib.variants import MAGNIFIC_CANONICAL_ASPECT_RATIO
+
+    assert MAGNIFIC_CANONICAL_ASPECT_RATIO == "4:3"
+    for platform in ("linkedin", "blog"):
+        vb = VisualBrief(
+            **_valid_kwargs(aspect_ratio="4:3", target_platform=platform)
+        )
+        assert vb.aspect_ratio == "4:3"

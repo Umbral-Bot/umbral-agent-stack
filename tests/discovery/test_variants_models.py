@@ -340,4 +340,6 @@ def test_video_storyboard_4_to_6_scenes():
 
 
 def test_visual_brief_aspect_ratio_constants_match():
-    assert set(ASPECT_RATIOS) == {"1:1", "16:9", "9:16", "4:5"}
+    # "4:3" añadido en PIT-1: Magnific canónico Umbral (editorial LinkedIn,
+    # blog hero, PIT) — docs/ops/umbral-bim-magnific-visual-style-v1.md
+    assert set(ASPECT_RATIOS) == {"4:3", "1:1", "16:9", "9:16", "4:5"}

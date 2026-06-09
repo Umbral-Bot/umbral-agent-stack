@@ -1,0 +1,59 @@
+# PIT spec v1 — piloto salud mental (ejemplo canónico)
+# Valida con: python scripts/pit/pit_spec_validate.py examples/pit-salud-mental-pilot.yaml
+# Contrato: docs/schemas/pit-spec-v1.schema.json
+schema_version: 1
+pit_id: pit-salud-mental-pilot
+mode: product
+title: "Micro-herramienta de chequeo de carga mental para equipos AECO"
+problem_statement: >-
+  Equipos de obra y oficina técnica acumulan carga mental sin señales tempranas.
+  Explorar qué micro-intervención digital (check-in diario, semáforo de carga,
+  nudge de pausa) genera adopción real sin fricción ni estigma.
+
+lane_count: 3
+iteration_count: 5
+budget_usd: 200
+
+prototype_output: html
+research_profile: mixed
+
+kpi_definitions:
+  - kpi_id: checkin_completion
+    name: "Tasa de check-ins completados"
+    unit: "%"
+    kpi_expected: 60
+    direction: increase
+    weight: 2.0
+  - kpi_id: time_to_checkin
+    name: "Tiempo medio para completar un check-in"
+    unit: "segundos"
+    kpi_expected: 30
+    direction: decrease
+    weight: 1.0
+  - kpi_id: opt_in_signals
+    name: "Señales de opt-in voluntario (personas que repiten día 2)"
+    unit: "usuarios"
+    kpi_expected: 5
+    direction: increase
+    weight: 1.0
+
+hypothesis_seed: >-
+  La fricción percibida (tiempo + número de taps) es la variable clave
+  correlacionada con la tasa de check-ins completados.
+
+visual_generation:
+  enabled: true
+  provider: magnific
+  aspect_ratio: "4:3"
+  style_ref: null
+
+synthetic_personas:
+  enabled: true
+  labeled: true
+
+preview_mode: tunnel+mission-control
+vault: umbral-pit-vault
+template_name: null
+notes: >-
+  Piloto PIT-1: personas sintéticas etiquetadas para señales tempranas;
+  ningún dato real de salud. Preview solo túnel + Mission Control.

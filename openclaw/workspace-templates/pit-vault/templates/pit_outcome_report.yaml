@@ -1,0 +1,82 @@
+# pit_outcome_report v1 — reporte de cierre de un torneo PIT.
+# Lo escribe Rick en pit/<pit_id>/outcome/pit_outcome_report.yaml tras el judge.
+# Plantilla: reemplazar los <...> y borrar los comentarios-guía que no apliquen.
+schema_version: 1
+pit_id: <pit_id>
+title: "<título del torneo>"
+spec_path: pit/<pit_id>/spec/pit_spec.yaml
+
+dates:
+  started_at: <YYYY-MM-DD>
+  closed_at: <YYYY-MM-DD>
+
+budget:
+  budget_usd: <del spec>
+  usd_estimated_spent: <estimación real al cierre>
+
+lanes:
+  # Una entrada por lane. fulfillment = score del kpi_pack de la última iteración.
+  - lane_id: lane-<slug>
+    hypothesis_final: "<variable clave + enunciado de la última iteración>"
+    hypothesis_validated: true   # true | false | null
+    iterations_run: <n>
+    prototype_url: "<túnel/Mission Control — nunca pública>"
+    kpi_pack: pit/<pit_id>/lanes/lane-<slug>/iterations/<n>/kpi_pack.json
+    fulfillment_score: <0-1>
+    status: complete             # complete | lane_incomplete | stuck
+
+winner:
+  lane_id: lane-<slug>
+  rationale: |
+    <3 bullets: por qué ganó — fulfillment, calidad de hipótesis, señal KPI>
+  david_gate: "<frase literal de David que autorizó el cierre, o pending>"
+
+kpi_summary:
+  # Agregado del torneo contra el spec (lane ganadora).
+  - kpi_id: <kpi_id>
+    unit: "<unidad>"
+    kpi_expected: <objetivo>
+    kpi_achieved: <logrado lane ganadora>
+    synthetic_share: <0-1>       # fracción de la señal que vino de personas sintéticas
+
+learnings:
+  validated:
+    - "<aprendizaje respaldado por KPI>"
+  refuted:
+    - "<hipótesis refutada — también es resultado>"
+  inconclusive:
+    - "<qué quedó sin señal suficiente>"
+
+stuck_log:
+  # Tarjetas que pasaron >1 iteración en Stuck (obligatorio reportarlas).
+  - lane_id: lane-<slug>
+    card: "<título tarjeta>"
+    blocker: "<qué lo bloqueó>"
+    resolution: "<cómo se resolvió o por qué no>"
+
+fulfillment_decision:
+  # Qué se hace con el prototipo ganador (columna Fulfillment del negocio).
+  next_step: <archive | iterate-new-pit | fulfillment-track>
+  notes: "<decisión David>"
+
+template_saved:
+  # Si David dijo "guarda como plantilla PIT <nombre>".
+  saved: false
+  template_name: null            # templates/pit-<nombre>.yaml
+
+improvement_handoff:
+  # Handoff a mejora continua — proceso en docs/ops/pit-handoff-mejora-continua.md.
+  # Propuestas de cambio a prompts/skills/procesos. NO se auto-mergean.
+  sent: false
+  proposals:
+    - "<mejora de prompt/skill/proceso detectada en este torneo>"
+
+pit7_audit:
+  # PIT-7: revisión general de procesos post-construcción (checklist en
+  # docs/ops/pit-process-index.md §PIT-7). Se completa cuando PIT-7 corra.
+  reviewed: false
+  notes: null
+
+archive:
+  # Al cerrar: Rick mueve pit/<pit_id>/ a archive/<pit_id>/ (las lanes no).
+  moved_to_archive: false

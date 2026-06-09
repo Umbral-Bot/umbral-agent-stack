@@ -59,6 +59,19 @@ _DEFAULT_NOTION_PROP_MAP: Dict[str, str] = {
 # Fields that are worker-side gates and must NOT be forwarded to the function.
 _GATE_FIELDS = frozenset({"autorizar_publicacion", "aprobado_contenido"})
 
+# Task B — post-publish RAG hook. After a successful (non-dry-run, gated) publish
+# the body is indexed into Azure AI Search by reusing worker/tasks/rag.py (no
+# duplicated embedding logic). Best-effort: missing env / errors never fail the
+# publish — the blog blob is already live.
+_DEFAULT_RAG_INDEX = "umbral-editorial"
+_RAG_REQUIRED_ENV = (
+    "AZURE_SEARCH_ENDPOINT",
+    "AZURE_SEARCH_API_KEY",
+    "AZURE_OPENAI_ENDPOINT",
+    "AZURE_OPENAI_API_KEY",
+)
+_RAG_SOURCE_TYPE = "editorial_blog"
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -290,6 +303,60 @@ def _maybe_write_back(notion_page_id: str, published_url: str, prop_name: str) -
 
 
 # ---------------------------------------------------------------------------
+# Task B — post-publish RAG indexing (reuses worker/tasks/rag.py)
+# ---------------------------------------------------------------------------
+
+
+def _rag_missing_env() -> List[str]:
+    return [k for k in _RAG_REQUIRED_ENV if not (os.environ.get(k) or "").strip()]
+
+
+def _maybe_index_rag(
+    post: Dict[str, Any], *, index_after_publish: bool, skip_rag_index: bool
+) -> Dict[str, Any]:
+    """Index the published body into Azure AI Search (best-effort).
+
+    Returns a dict merged into the handler response. Never raises: a skip or
+    failure leaves the publish ``ok`` untouched.
+    """
+    if skip_rag_index:
+        return {"rag_indexed": False, "rag_skipped_reason": "skip_rag_index"}
+    if not index_after_publish:
+        return {"rag_indexed": False, "rag_skipped_reason": "index_after_publish_false"}
+
+    missing = _rag_missing_env()
+    if missing:
+        return {"rag_indexed": False, "rag_skipped_reason": f"missing_env:{','.join(missing)}"}
+
+    index_name = (os.environ.get("EDITORIAL_RAG_INDEX_NAME") or _DEFAULT_RAG_INDEX).strip() or _DEFAULT_RAG_INDEX
+    try:
+        from .rag import handle_rag_index
+
+        result = handle_rag_index(
+            {
+                "documents": [
+                    {
+                        "content": post["body_markdown"],
+                        "title": post["title"],
+                        "source": post.get("canonical_url") or post["slug"],
+                        "source_type": _RAG_SOURCE_TYPE,
+                    }
+                ],
+                "index_name": index_name,
+            }
+        )
+        return {
+            "rag_indexed": True,
+            "rag_index_name": index_name,
+            "rag_chunks": result.get("chunks"),
+            "rag_result": result,
+        }
+    except Exception as exc:  # noqa: BLE001 — RAG is best-effort; publish already succeeded
+        logger.warning("RAG index after publish failed (publish still ok): %s", exc)
+        return {"rag_indexed": False, "rag_index_name": index_name, "rag_error": str(exc)}
+
+
+# ---------------------------------------------------------------------------
 # Visual asset resolution (deliverable F — stub, schema not in repo)
 # ---------------------------------------------------------------------------
 
@@ -325,6 +392,11 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
         write_back_to_notion (bool, default False): persist published_url to Notion.
         notion_prop_map (dict, optional): override Notion property names.
         timeout (int, default 30): function call timeout (1-120).
+        index_after_publish (bool, default True): index body into Azure AI Search
+            (index ``EDITORIAL_RAG_INDEX_NAME`` / default ``umbral-editorial``)
+            after a successful publish. Skips (publish stays ok) when the
+            AZURE_SEARCH_* / AZURE_OPENAI_* env is missing.
+        skip_rag_index (bool, default False): force-skip the RAG indexing hook.
 
     Returns a dict with ``ok``. ``ok=False`` + ``would_publish=False`` means the
     gate blocked publication (no network call was made).
@@ -339,6 +411,8 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
     if not (1 <= timeout <= 120):
         raise ValueError("'timeout' must be between 1 and 120 seconds")
     prop_map = {**_DEFAULT_NOTION_PROP_MAP, **(input_data.get("notion_prop_map") or {})}
+    index_after_publish = bool(input_data.get("index_after_publish", True))
+    skip_rag_index = bool(input_data.get("skip_rag_index", False))
 
     # 1) Resolve source + raw payload.
     if isinstance(explicit_payload, dict):
@@ -392,6 +466,8 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
             "published_url": post["canonical_url"],
             "content_hash": post["content_hash"],
             "payload": function_payload,
+            "rag_indexed": False,
+            "rag_skipped_reason": "dry_run",
         }
 
     # 5) Call the Azure Function.
@@ -436,5 +512,14 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
             response["published_url"],
             prop_map.get("canonical_url", "published_url"),
         )
+
+    # 7) Task B — post-publish RAG indexing (best-effort; never fails the publish).
+    response.update(
+        _maybe_index_rag(
+            post,
+            index_after_publish=index_after_publish,
+            skip_rag_index=skip_rag_index,
+        )
+    )
 
     return response

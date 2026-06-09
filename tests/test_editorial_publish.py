@@ -101,12 +101,30 @@ def _notion_page(authorized: bool = True, approved: bool = True) -> Dict[str, An
     }
 
 
+_RAG_ENV = (
+    "AZURE_SEARCH_ENDPOINT",
+    "AZURE_SEARCH_API_KEY",
+    "AZURE_OPENAI_ENDPOINT",
+    "AZURE_OPENAI_API_KEY",
+)
+
+
 @pytest.fixture(autouse=True)
 def _clean_env(monkeypatch):
     monkeypatch.setenv("EDITORIAL_BLOG_FUNCTION_URL", FUNCTION_URL)
     monkeypatch.setenv("EDITORIAL_BLOG_FUNCTION_KEY", "fn-key-123")
     monkeypatch.setenv("WORKER_TOKEN", "wt-456")
     monkeypatch.delenv("EDITORIAL_BLOG_CANONICAL_BASE_URL", raising=False)
+    # RAG hook env off by default → deterministic skip unless a test sets it.
+    for _k in (*_RAG_ENV, "EDITORIAL_RAG_INDEX_NAME"):
+        monkeypatch.delenv(_k, raising=False)
+
+
+def _set_rag_env(monkeypatch):
+    monkeypatch.setenv("AZURE_SEARCH_ENDPOINT", "https://search.example.net")
+    monkeypatch.setenv("AZURE_SEARCH_API_KEY", "search-key")
+    monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://oai.example.net")
+    monkeypatch.setenv("AZURE_OPENAI_API_KEY", "oai-key")
 
 
 # ======================================================================
@@ -350,6 +368,106 @@ class TestNotionSource:
         assert result["ok"] is True
         assert result["notion_write_back"]["ok"] is True
         mock_update.assert_called_once()
+
+
+# ======================================================================
+# Task B — post-publish RAG indexing hook
+# ======================================================================
+
+
+class TestRagHook:
+    @patch("worker.tasks.rag.handle_rag_index")
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_indexes_on_success(self, mock_urlopen, mock_rag, monkeypatch):
+        _set_rag_env(monkeypatch)
+        mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
+        mock_rag.return_value = {"indexed": 1, "chunks": 2, "documents": 1, "errors": []}
+
+        result = handle_web_publish_editorial_post({"payload": _authorized_payload()})
+
+        assert result["ok"] is True
+        assert result["rag_indexed"] is True
+        assert result["rag_index_name"] == "umbral-editorial"
+        assert result["rag_chunks"] == 2
+
+        mock_rag.assert_called_once()
+        rag_input = mock_rag.call_args[0][0]
+        assert rag_input["index_name"] == "umbral-editorial"
+        doc = rag_input["documents"][0]
+        assert doc["content"] == _authorized_payload()["body_markdown"]
+        assert doc["source_type"] == "editorial_blog"
+        assert doc["source"] == result["published_url"]
+
+    @patch("worker.tasks.rag.handle_rag_index")
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_skipped_when_env_missing(self, mock_urlopen, mock_rag):
+        mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
+        result = handle_web_publish_editorial_post({"payload": _authorized_payload()})
+
+        assert result["ok"] is True  # publish stays ok
+        assert result["rag_indexed"] is False
+        assert result["rag_skipped_reason"].startswith("missing_env:")
+        assert "AZURE_SEARCH_ENDPOINT" in result["rag_skipped_reason"]
+        mock_rag.assert_not_called()
+
+    @patch("worker.tasks.rag.handle_rag_index")
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_skip_rag_index_flag(self, mock_urlopen, mock_rag, monkeypatch):
+        _set_rag_env(monkeypatch)
+        mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
+        result = handle_web_publish_editorial_post(
+            {"payload": _authorized_payload(), "skip_rag_index": True}
+        )
+        assert result["ok"] is True
+        assert result["rag_indexed"] is False
+        assert result["rag_skipped_reason"] == "skip_rag_index"
+        mock_rag.assert_not_called()
+
+    @patch("worker.tasks.rag.handle_rag_index")
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_index_after_publish_false(self, mock_urlopen, mock_rag, monkeypatch):
+        _set_rag_env(monkeypatch)
+        mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
+        result = handle_web_publish_editorial_post(
+            {"payload": _authorized_payload(), "index_after_publish": False}
+        )
+        assert result["rag_indexed"] is False
+        assert result["rag_skipped_reason"] == "index_after_publish_false"
+        mock_rag.assert_not_called()
+
+    @patch("worker.tasks.rag.handle_rag_index")
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_custom_index_name(self, mock_urlopen, mock_rag, monkeypatch):
+        _set_rag_env(monkeypatch)
+        monkeypatch.setenv("EDITORIAL_RAG_INDEX_NAME", "umbral-editorial-staging")
+        mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
+        mock_rag.return_value = {"indexed": 1, "chunks": 1, "documents": 1, "errors": []}
+        result = handle_web_publish_editorial_post({"payload": _authorized_payload()})
+        assert result["rag_index_name"] == "umbral-editorial-staging"
+        assert mock_rag.call_args[0][0]["index_name"] == "umbral-editorial-staging"
+
+    @patch("worker.tasks.rag.handle_rag_index")
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_rag_error_keeps_publish_ok(self, mock_urlopen, mock_rag, monkeypatch):
+        _set_rag_env(monkeypatch)
+        mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
+        mock_rag.side_effect = RuntimeError("search down")
+        result = handle_web_publish_editorial_post({"payload": _authorized_payload()})
+        assert result["ok"] is True  # publish already happened; RAG is best-effort
+        assert result["rag_indexed"] is False
+        assert "search down" in result["rag_error"]
+
+    @patch("worker.tasks.rag.handle_rag_index")
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_dry_run_skips_rag(self, mock_urlopen, mock_rag, monkeypatch):
+        _set_rag_env(monkeypatch)
+        result = handle_web_publish_editorial_post(
+            {"payload": _authorized_payload(), "dry_run": True}
+        )
+        assert result["rag_indexed"] is False
+        assert result["rag_skipped_reason"] == "dry_run"
+        mock_rag.assert_not_called()
+        mock_urlopen.assert_not_called()
 
 
 # ======================================================================

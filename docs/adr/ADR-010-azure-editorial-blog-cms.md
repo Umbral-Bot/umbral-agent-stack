@@ -67,6 +67,20 @@ true` cuando la fuente es Notion). Si el gate no está abierto: `ok=false`,
 `would_publish=false`, **sin llamada de red**. Esto refleja el espíritu de los
 guardrails de `copilot_cli` (fail-closed) y la regla "solo David abre los gates".
 
+### Post-publish: indexado RAG (Task B)
+
+Tras un publish exitoso (no `dry_run`, gate abierto), el handler indexa
+`body_markdown` en Azure AI Search **reutilizando `worker/tasks/rag.py`**
+(`rag.index` → embeddings, sin duplicar lógica). Índice por defecto
+`umbral-editorial` (env `EDITORIAL_RAG_INDEX_NAME`), `source_type =
+editorial_blog`.
+
+Es **best-effort**: si falta el env (`AZURE_SEARCH_*` / `AZURE_OPENAI_*`) o el
+indexado falla, el publish **sigue `ok`** y la respuesta incluye
+`rag_indexed=false` + `rag_skipped_reason` / `rag_error`. Flags de entrada:
+`index_after_publish=true` (default), `skip_rag_index=false`. El blog ya está
+publicado; el RAG enriquece pero nunca bloquea.
+
 ### Seguridad
 
 - Auth de la Function: function key (`x-functions-key`) + opcional secreto
@@ -142,6 +156,8 @@ más simple y barato (sin RU/s). Migrable si el volumen crece.
 | `EDITORIAL_BLOG_STORAGE_ACCOUNT` | Function | cuenta de storage (auth MI) |
 | `EDITORIAL_BLOG_CDN_BASE_URL` | Function / SPA | base pública del CDN |
 | `WORKER_TOKEN` | Worker + Function | secreto compartido `x-worker-token` |
+| `EDITORIAL_RAG_INDEX_NAME` | Worker | índice RAG post-publish (default `umbral-editorial`) |
+| `AZURE_SEARCH_*` / `AZURE_OPENAI_*` | Worker | requeridos por el hook RAG; si faltan, se omite |
 
 ## Referencias
 

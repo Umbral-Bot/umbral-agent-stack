@@ -27,6 +27,9 @@ func --version    # Azure Functions Core Tools v4
 | `EDITORIAL_BLOG_FUNCTION_KEY` | yes | function key → header `x-functions-key` |
 | `EDITORIAL_BLOG_CANONICAL_BASE_URL` | no | default `https://umbralbim.io` |
 | `WORKER_TOKEN` | recommended | shared secret → header `x-worker-token` |
+| `EDITORIAL_RAG_INDEX_NAME` | no | post-publish RAG index (default `umbral-editorial`) |
+| `AZURE_SEARCH_ENDPOINT` / `AZURE_SEARCH_API_KEY` | for RAG hook | else the hook skips (publish still ok) |
+| `AZURE_OPENAI_ENDPOINT` / `AZURE_OPENAI_API_KEY` | for RAG hook | embeddings; else the hook skips |
 
 ### Function (app settings — set by Bicep / `az functionapp config appsettings`)
 
@@ -128,6 +131,32 @@ $env:WORKER_TOKEN="test"
 Re-run the smoke with the **same** payload → response `index_updated: false`
 (content unchanged, slug not duplicated). Change the title → `index_updated:
 true` and the entry is updated in place.
+
+## 5b. Post-publish RAG indexing (Task B)
+
+After a successful publish (not `dry_run`, gate open), the Worker indexes
+`body_markdown` into Azure AI Search by reusing `worker/tasks/rag.py` (`rag.index`
+→ embeddings). Index defaults to `umbral-editorial` (`EDITORIAL_RAG_INDEX_NAME`),
+`source_type = editorial_blog`.
+
+Best-effort, never blocks the blog:
+
+- Missing `AZURE_SEARCH_*` / `AZURE_OPENAI_*` → response has `rag_indexed:false` +
+  `rag_skipped_reason:"missing_env:…"`; the blog is still published.
+- Indexing error → `rag_indexed:false` + `rag_error`; publish stays `ok`.
+- Flags: `index_after_publish` (default `true`), `skip_rag_index` (default `false`).
+
+Ensure the index exists once (idempotent):
+
+```powershell
+# via the worker rag.ensure_index task (or rag.index auto-creates on first write)
+$env:WORKER_TOKEN="test"
+.\.venv\Scripts\python.exe -c "from worker.tasks.rag import handle_rag_ensure_index as e; import json; print(json.dumps(e({'index_name':'umbral-editorial'})))"
+```
+
+Verify after a real publish: response includes `rag_indexed: true` and
+`rag_chunks: N`, and `rag.search`/`rag.query` against `umbral-editorial` return
+the post.
 
 ## 6. Rollback
 

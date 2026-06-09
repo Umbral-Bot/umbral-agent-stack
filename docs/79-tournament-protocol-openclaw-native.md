@@ -144,6 +144,25 @@ Un tournament puede pasar a judge sólo con lanes completas. Para v1, abortar si
 - `M1_D3x_TOURNAMENT_PARTIAL` — spawn OK pero `pr_count < 2`; ver §4.2 rescate.
 - Parent **nunca** hace `gh pr merge` del winner (Copilot Windows + autorización David).
 
+### 4.1.1 Ejemplo — Lane closeout
+
+El announce-back de cierre de una lane debe reportar el `worktree_path` aislado
+(RC-4, §4.3) y terminar con la línea literal `PR_URL=` que el parent parsea para
+el gate de completitud (§4.1):
+
+```text
+[lane docs-only] closeout
+  branch:        tournament/<tournament_id>/lane-docs-only
+  worktree_path: ~/.coord-ag-evidence/worktrees/<tournament_id>/lane-docs-only
+  diff_stats:    +12 -0
+  checks:        pending
+PR_URL=https://github.com/Umbral-Bot/umbral-agent-stack/pull/123
+```
+
+El parent considera la lane completa sólo si esa última línea contiene una URL
+verificable con `gh pr view`; el `worktree_path` confirma el aislamiento por lane
+(§4.3, v1.1 post-PR #467).
+
 ---
 
 ## 4.2 Lane rescue (sin segundo torneo)

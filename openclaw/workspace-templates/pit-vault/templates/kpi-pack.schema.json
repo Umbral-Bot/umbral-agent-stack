@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Umbral-Bot/umbral-agent-stack/openclaw/workspace-templates/pit-vault/templates/kpi-pack.schema.json",
+  "title": "PIT KPI Pack v1",
+  "description": "Reporte por lane x iteración de un torneo PIT. Cada iteración produce exactamente un kpi_pack en pit/<pit_id>/lanes/<lane_id>/iterations/<n>/kpi_pack.json. El cierre de lane exige el kpi_pack de la última iteración + PROTOTYPE_URL + fulfillment_score (paralelo product del PR_URL de D3). Fórmula fulfillment: docs/ops/pit-kanban-kpi-protocol.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "pit_id",
+    "lane_id",
+    "iteration",
+    "hypothesis",
+    "kpis",
+    "fulfillment_score"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "pit_id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$" },
+    "lane_id": { "type": "string", "pattern": "^lane-[a-z0-9][a-z0-9-]{1,63}$" },
+    "iteration": {
+      "description": "1-based; <= iteration_count del pit_spec.",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "hypothesis": {
+      "description": "Hipótesis de la iteración: variable clave correlacionada a un KPI del spec.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["variable", "statement", "kpi_id"],
+      "properties": {
+        "variable": {
+          "description": "La variable clave que la lane manipula (ej. 'fricción percibida: taps hasta completar').",
+          "type": "string",
+          "minLength": 1
+        },
+        "statement": {
+          "description": "Enunciado falsable: si cambio <variable>, espero mover <kpi_id> en <dirección>.",
+          "type": "string",
+          "minLength": 1
+        },
+        "kpi_id": {
+          "description": "kpi_id del pit_spec al que la hipótesis se correlaciona.",
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]{1,63}$"
+        },
+        "validated": {
+          "description": "Resultado de la iteración: la correlación se observó (true), se refutó (false) o quedó inconclusa (null).",
+          "type": ["boolean", "null"],
+          "default": null
+        }
+      }
+    },
+    "kpis": {
+      "description": "Medición de cada KPI del spec en esta iteración. kpi_expected/direction/weight copiados del spec para trazabilidad.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kpi_id", "unit", "kpi_expected", "kpi_achieved"],
+        "properties": {
+          "kpi_id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_-]{1,63}$" },
+          "unit": { "type": "string", "minLength": 1 },
+          "kpi_expected": { "type": "number" },
+          "kpi_achieved": { "type": "number" },
+          "direction": {
+            "type": "string",
+            "enum": ["increase", "decrease"],
+            "default": "increase"
+          },
+          "weight": { "type": "number", "exclusiveMinimum": 0, "default": 1.0 },
+          "evidence_url": {
+            "description": "Link interno (Mission Control, vault) a la evidencia de la medición. No URLs públicas.",
+            "type": ["string", "null"],
+            "default": null
+          },
+          "synthetic": {
+            "description": "true si la señal proviene de personas sintéticas. Las señales sintéticas SIEMPRE se etiquetan.",
+            "type": "boolean",
+            "default": false
+          }
+        }
+      }
+    },
+    "fulfillment_score": {
+      "description": "Score 0-1 calculado con compute_fulfillment (scripts/pit/pit_spec_validate.py) según docs/ops/pit-kanban-kpi-protocol.md.",
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "prototype_url": {
+      "description": "URL del prototipo de la iteración vía túnel + Mission Control. NUNCA URL pública. Obligatoria en la iteración de cierre.",
+      "type": ["string", "null"],
+      "default": null
+    },
+    "visual_assets": {
+      "description": "Visuales Magnific generados para esta iteración (gate: columna Prototype o hipótesis validada).",
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["url", "provider", "aspect_ratio"],
+        "properties": {
+          "url": { "type": "string", "minLength": 1 },
+          "provider": { "const": "magnific" },
+          "aspect_ratio": {
+            "type": "string",
+            "enum": ["4:3", "16:9", "9:16", "4:5", "1:1"],
+            "default": "4:3"
+          },
+          "style_ref": { "type": ["string", "null"], "default": null }
+        }
+      }
+    },
+    "synthetic_personas": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "used": { "type": "boolean", "default": false },
+        "labeled": { "const": true, "default": true },
+        "count": { "type": "integer", "minimum": 0, "default": 0 }
+      }
+    },
+    "kanban_column": {
+      "description": "Columna del kanban donde quedó la lane al cerrar la iteración.",
+      "type": "string",
+      "enum": [
+        "Backlog",
+        "Research",
+        "Hypothesis",
+        "Prototype",
+        "KPI Track",
+        "Fulfillment",
+        "Review",
+        "Done",
+        "Stuck"
+      ]
+    },
+    "notes": { "type": ["string", "null"], "default": null }
+  }
+}

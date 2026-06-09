@@ -1,0 +1,179 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Umbral-Bot/umbral-agent-stack/docs/schemas/pit-spec-v1.schema.json",
+  "title": "PIT Spec v1 — Product Innovation Tournament",
+  "description": "Contrato de entrada de un torneo de producto (PIT). Modo 'product': lanes compiten con prototipos + KPI (PROTOTYPE_URL + KPI_PACK), a diferencia del modo D3 'code' (PR_URL, ver docs/79-tournament-protocol-openclaw-native.md). Fuente ejecutable: scripts/pit/pit_spec_validate.py (pydantic). Este JSON Schema es el contrato documentado; tests/test_pit_spec_validate.py verifica la coherencia entre ambos.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "pit_id",
+    "title",
+    "problem_statement",
+    "lane_count",
+    "iteration_count",
+    "budget_usd",
+    "kpi_definitions"
+  ],
+  "properties": {
+    "schema_version": {
+      "description": "Versión del contrato pit_spec.",
+      "const": 1,
+      "default": 1
+    },
+    "pit_id": {
+      "description": "Slug único del torneo. Se usa en rutas del pit-vault (pit/<pit_id>/), labels de spawn y reportes.",
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"
+    },
+    "mode": {
+      "description": "Discriminador de modo. pit_spec v1 modela SOLO torneos de producto. Los torneos de código (D3) usan el tournament spec de docs/79 §2-§3.",
+      "const": "product",
+      "default": "product"
+    },
+    "title": {
+      "description": "Título humano del torneo.",
+      "type": "string",
+      "minLength": 1
+    },
+    "problem_statement": {
+      "description": "Problema/oportunidad a explorar. Es el insumo de la fase Research; las hipótesis por lane se derivan de aquí.",
+      "type": "string",
+      "minLength": 1
+    },
+    "lane_count": {
+      "description": "Cantidad de lanes (agentes efímeros) en paralelo. Hereda el límite OpenClaw maxChildrenPerAgent=5 (docs/79 §2 invariante 1).",
+      "type": "integer",
+      "minimum": 2,
+      "maximum": 5
+    },
+    "iteration_count": {
+      "description": "Iteraciones hipótesis→prototipo→KPI por lane. SIEMPRE desde input David (sin default).",
+      "type": "integer",
+      "minimum": 2,
+      "maximum": 10
+    },
+    "budget_usd": {
+      "description": "Presupuesto total del torneo en USD. SIEMPRE desde input David — el runtime NO aplica default silencioso. El wrapper reparte budget/lane_count por lane.",
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "prototype_output": {
+      "description": "Formato del prototipo por lane. v1 runtime soporta html; figma/both quedan declarables para handoff manual.",
+      "type": "string",
+      "enum": ["html", "figma", "both"],
+      "default": "html"
+    },
+    "research_profile": {
+      "description": "Tier de research que ejecutan las lanes antes de formular hipótesis.",
+      "type": "string",
+      "enum": ["academic", "market_pain", "competitive", "mixed"],
+      "default": "mixed"
+    },
+    "kpi_definitions": {
+      "description": "KPIs del torneo. Cada lane reporta kpi_achieved contra estos kpi_expected en cada iteración (kpi-pack). Unidad variable (%, usuarios, señales, USD, …).",
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/KpiDefinition" }
+    },
+    "hypothesis_seed": {
+      "description": "Hipótesis inicial opcional de David. Las hipótesis operativas viven por lane/iteración en el kpi-pack (variable clave correlacionada a KPI).",
+      "type": ["string", "null"],
+      "default": null
+    },
+    "visual_generation": {
+      "$ref": "#/$defs/VisualGeneration",
+      "description": "Generación visual Magnific para mockups/hero del prototipo. Default aspect_ratio 4:3 (canónico Umbral). Gate: solo tras hipótesis validada o columna Prototype; Rick actúa de broker (docs/ops/pit-visual-magnific.md)."
+    },
+    "synthetic_personas": {
+      "$ref": "#/$defs/SyntheticPersonas",
+      "description": "Personas sintéticas para señales KPI tempranas. Permitidas, SIEMPRE etiquetadas como sintéticas en el kpi-pack."
+    },
+    "preview_mode": {
+      "description": "Cómo se expone el prototipo a David: túnel + Mission Control. NUNCA URL pública en v1.",
+      "const": "tunnel+mission-control",
+      "default": "tunnel+mission-control"
+    },
+    "vault": {
+      "description": "Vault Obsidian del torneo: umbral-pit-vault, separado del vault personal pull-only (docs/ops/pit-vault-layout.md).",
+      "const": "umbral-pit-vault",
+      "default": "umbral-pit-vault"
+    },
+    "template_name": {
+      "description": "Si David dice 'guarda como plantilla PIT <nombre>', el spec se persiste en templates/ del pit-vault bajo este nombre.",
+      "type": ["string", "null"],
+      "default": null
+    },
+    "notes": {
+      "description": "Notas libres de David para las lanes.",
+      "type": ["string", "null"],
+      "default": null
+    }
+  },
+  "$defs": {
+    "KpiDefinition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kpi_id", "name", "unit", "kpi_expected"],
+      "properties": {
+        "kpi_id": {
+          "description": "Slug único del KPI dentro del torneo.",
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]{1,63}$"
+        },
+        "name": { "type": "string", "minLength": 1 },
+        "unit": {
+          "description": "Unidad variable: '%', 'usuarios', 'señales', 'USD', 'min', …",
+          "type": "string",
+          "minLength": 1
+        },
+        "kpi_expected": {
+          "description": "Valor objetivo. Para direction=increase debe ser > 0 (denominador del fulfillment).",
+          "type": "number"
+        },
+        "direction": {
+          "description": "increase: más es mejor. decrease: menos es mejor.",
+          "type": "string",
+          "enum": ["increase", "decrease"],
+          "default": "increase"
+        },
+        "weight": {
+          "description": "Peso relativo en fulfillment_score (docs/ops/pit-kanban-kpi-protocol.md).",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "default": 1.0
+        }
+      }
+    },
+    "VisualGeneration": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean", "default": false },
+        "provider": { "const": "magnific", "default": "magnific" },
+        "aspect_ratio": {
+          "description": "Default 4:3 — Magnific canónico Umbral (editorial LinkedIn, blog hero editorial y PIT).",
+          "type": "string",
+          "enum": ["4:3", "16:9", "9:16", "4:5", "1:1"],
+          "default": "4:3"
+        },
+        "style_ref": {
+          "description": "Referencia opcional de estilo (docs/ops/umbral-bim-magnific-visual-style-v1.md).",
+          "type": ["string", "null"],
+          "default": null
+        }
+      }
+    },
+    "SyntheticPersonas": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean", "default": false },
+        "labeled": {
+          "description": "Las señales de personas sintéticas SIEMPRE van etiquetadas. No es configurable.",
+          "const": true,
+          "default": true
+        }
+      }
+    }
+  }
+}

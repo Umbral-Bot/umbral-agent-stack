@@ -1,0 +1,18 @@
+# PIT-2b — lanes del piloto pit-salud-mental-pilot (ejemplo canónico).
+# Identidades derivadas por Rick por torneo (docs/ops/pit-ephemeral-agent-generator.md §2):
+# el slug nombra el ÁNGULO de exploración, no una tecnología. Count == spec.lane_count.
+# Uso: scripts/pit/pit_tournament_run.sh examples/pit-salud-mental-pilot.yaml \
+#        examples/pit-salud-mental-pilot.lanes.yaml --gate "ok, arranca" --plan-only
+lanes:
+  - lane_id: lane-friccion
+    lane_focus: >-
+      Minimizar la fricción del check-in diario (tiempo + taps) como palanca de
+      adopción: explorar variantes de micro-interacción de <30 segundos.
+  - lane_id: lane-nudges
+    lane_focus: >-
+      Nudges de pausa contextuales (momento, tono, canal) que generen opt-in
+      voluntario sin estigma ni sensación de vigilancia.
+  - lane_id: lane-semaforo
+    lane_focus: >-
+      Semáforo de carga mental agregado por equipo: señal temprana visible para
+      el equipo sin exponer datos individuales.

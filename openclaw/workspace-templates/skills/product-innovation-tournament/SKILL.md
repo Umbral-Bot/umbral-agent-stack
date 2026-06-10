@@ -17,7 +17,7 @@ metadata:
 
 Skill de Rick para torneos de **producto**: lanes paralelas que investigan, formulan hipótesis, prototipan y miden KPI. Implementa [`docs/ops/product-innovation-tournament-vision-2026-06-09.md`](../../../../docs/ops/product-innovation-tournament-vision-2026-06-09.md); contrato de entrada en [`docs/schemas/pit-spec-v1.schema.json`](../../../../docs/schemas/pit-spec-v1.schema.json).
 
-**Status:** v1.1 (PIT-2) — parser + gate + contratos + runner smoke local (tasks `pit.*` + dry-run, [`docs/ops/pit-2-runner-protocol.md`](../../../../docs/ops/pit-2-runner-protocol.md)). El spawn real de agentes efímeros OpenClaw es **PIT-2b** (siguiente PR) y requiere pit-vault desplegado + autorización David por torneo.
+**Status:** v1.2 (PIT-2b) — parser + gate + contratos + runner smoke local (tasks `pit.*` + dry-run) **+ spawn real de agentes efímeros** vía `scripts/pit/pit_tournament_run.sh` ([`docs/ops/pit-2-runner-protocol.md`](../../../../docs/ops/pit-2-runner-protocol.md) §7). El spawn real requiere pit-vault desplegado + smoke `PIT_DRY_RUN_PASS` + autorización David por torneo (gate literal).
 
 ## When to use
 
@@ -116,16 +116,54 @@ Recibido el literal `ok, arranca`, Rick **NO spawnea todavía**: primero corre e
 
 Smoke rojo ⇒ STOP: se corrige spec/vault/runner y se repite. No hay spawn con smoke rojo.
 
-> **PIT-2b (siguiente PR):** el spawn real de agentes efímeros OpenClaw (`sessions_spawn` + generador de efímeros + announce real por sesión). Esta versión del runner NO spawnea agentes — la sección siguiente queda como contrato para PIT-2b.
+## Spawn — agentes efímeros (PIT-2b, ejecutable)
 
-## Spawn — agentes efímeros (PIT-2b, contrato)
+Procedimiento del generador en [`docs/ops/pit-ephemeral-agent-generator.md`](../../../../docs/ops/pit-ephemeral-agent-generator.md); el runner que lo ejecuta es `scripts/pit/pit_tournament_run.sh` ([protocolo §7](../../../../docs/ops/pit-2-runner-protocol.md)).
 
-Procedimiento completo en [`docs/ops/pit-ephemeral-agent-generator.md`](../../../../docs/ops/pit-ephemeral-agent-generator.md). Resumen del contrato:
+Con el smoke en `PIT_DRY_RUN_PASS`, Rick:
 
-1. Rick genera **por torneo** `lane_count` agentes efímeros nuevos (prompt desde [`pit-lane-agent/ROLE.template.md`](../../pit-lane-agent/ROLE.template.md), skills mínimas, accesos acotados). No se reutilizan agentes de torneos anteriores.
-2. Cada lane recibe: su `lane_id`, el spec, `budget_usd / lane_count`, `iteration_count`, write scope `pit/<pit_id>/lanes/<lane_id>/` y el tablero kanban inicial desde `templates/kanban-lane.md`.
-3. Límites heredados de OpenClaw: 2–5 lanes (`maxChildrenPerAgent: 5`), spawn desde `main` standalone (G-D1b, ISSUE-001) — mismas hard rules que D3.
-4. Al cierre del torneo los agentes efímeros se desactivan (kill + limpieza de registro); sus artefactos quedan en el vault.
+1. **Deriva las identidades de lane** y las escribe en un `lanes.yaml`
+   (`lanes: [{lane_id, lane_focus}, ...]`, count == `lane_count`): el slug
+   nombra el **ángulo de exploración**, no una tecnología (ej.
+   [`examples/pit-salud-mental-pilot.lanes.yaml`](../../../../examples/pit-salud-mental-pilot.lanes.yaml)).
+2. **Lanza el runner** pasando la frase literal del gate David (sin la frase
+   exacta el runner aborta `PIT_RUN_BLOCKED`):
+
+   ```bash
+   bash scripts/pit/pit_tournament_run.sh pit/<pit_id>/spec/pit_spec.yaml \
+     <lanes.yaml> --gate "ok, arranca"
+   ```
+
+El runner automatiza el ciclo completo del generador (§2):
+
+- **Gates pre-spawn:** frase literal + smoke `PIT_DRY_RUN_PASS` fresco (≤24 h,
+  mismo `pit_id`/`lane_count`) + `pit.preflight` PASS contra el vault real.
+  Cualquier fallo ⇒ `PIT_RUN_BLOCKED` (exit 2), sin tocar el runtime.
+- **Generate:** render de `ROLE.template.md` por lane + `agents.yaml` en
+  `pit/<pit_id>/spec/` (histórico de qué efímeros existieron).
+- **Register:** alta de los efímeros (`<pit_id>-<lane_id>`) en `agents.list` de
+  `openclaw.json` (backup previo + escritura atómica) + allowAgents de `main`
+  + restart gateway. No se reciclan ids de torneos anteriores (abort si existen).
+- **Spawn:** `openclaw agent --agent main` standalone (G-D1b) con el fan-out
+  `sessions_spawn` × N en un solo turno + yield; si `main` reporta
+  `PIT_SPAWN_BLOCKED_ISSUE_001` (sesión nested) no hay collect.
+- **Collect:** patrón D3.5b (lane result files) — verifica cada lane contra el
+  vault con la misma implementación de `pit.lane_announce`: `lane_complete`
+  obligatorio = `announce.md` presente **+** kpi_pack reproducible.
+- **Kill + desregistro:** SIEMPRE al cierre (aunque el collect falle): kill de
+  hijos vivos del torneo (por label, nunca ajenos), baja de `agents.list` +
+  allowAgents, `agents.yaml` actualizado como histórico (`killed_at`,
+  `deregistered`).
+
+Veredictos en `~/.coord-ag-evidence/pit-run/<pit_id>/run-metrics.json`:
+`PIT_RUN_PASS` (todas las lanes completas) · `PIT_RUN_PARTIAL` (≥2 completas —
+judge posible) · `PIT_RUN_FAIL` (<2) · `PIT_RUN_BLOCKED` (abort pre-spawn) ·
+`PIT_RUN_PLAN_ONLY` (`--plan-only`: valida y renderiza plan sin registro ni
+spawn — usar para validación post-merge en VPS sin gastar budget).
+
+Límites heredados de OpenClaw (sin cambios): 2–5 lanes
+(`maxChildrenPerAgent: 5`), spawn desde `main` standalone (G-D1b, ISSUE-001),
+`maxSpawnDepth >= 2` — mismas hard rules que D3.
 
 ### Ciclo por lane (× iteration_count)
 
@@ -150,6 +188,7 @@ lane_complete = prototype_reachable && kpi_pack_valido_contra_schema && fulfillm
 ```
 
 - `kpi_pack.json` debe validar contra `kpi-pack.schema.json` y su `fulfillment_score` debe reproducirse con `compute_fulfillment()`. Verificación ejecutable: task `pit.lane_announce` → `lane_complete` + `incomplete_reasons` (PIT-2).
+- **Lane result file (PIT-2b, patrón D3.5b):** la lane persiste esas mismas 3 líneas en `pit/<pit_id>/lanes/<lane_id>/announce.md`; el collect del runner exige `announce.md` presente + kpi_pack reproducible — el transcript del subagente no es fuente de verdad.
 - `finalStatus=success` sin esas tres líneas verificables ⇒ `lane_incomplete`.
 - Judge solo con ≥2 lanes completas; el winner y la decisión de fulfillment llevan gate David y se registran en [`pit_outcome_report.yaml`](../../pit-vault/templates/pit_outcome_report.yaml).
 
@@ -163,6 +202,9 @@ lane_complete = prototype_reachable && kpi_pack_valido_contra_schema && fulfillm
 | David no respondió literal `ok, arranca` | STOP — no spawn |
 | `pit_spec_validate.py` ≠ pass | STOP — corregir spec |
 | Smoke PIT-2 en rojo (`PIT_PREFLIGHT_FAIL` o `PIT_DRY_RUN_FAIL`) | STOP — no spawn hasta veredicto PASS |
+| Smoke PASS viejo (>24 h) o de otro spec (`pit_id`/`lane_count` distintos) | STOP — re-correr el smoke para ESTE spec (`PIT_RUN_BLOCKED`) |
+| Runner invocado sin `--gate "ok, arranca"` literal | STOP — `PIT_RUN_BLOCKED`, el runner no spawnea |
+| `agent_id` efímero ya registrado (reciclado de otro torneo) | STOP — `PIT_RUN_BLOCKED`, generar identidades nuevas |
 | pit-vault sin desplegar o `pit_vault_check.py` fail | STOP — deploy/fix vault primero |
 | Pedido de URL pública para el prototipo | STOP — solo túnel + Mission Control en v1 |
 | Lane pide escribir fuera de su subárbol | STOP — write scope `pit/<pit_id>/lanes/<lane_id>/` |

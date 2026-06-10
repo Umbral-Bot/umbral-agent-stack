@@ -56,6 +56,11 @@ KPI_PACK=pit/{{pit_id}}/lanes/{{lane_id}}/iterations/<última>/kpi_pack.json
 FULFILLMENT=<score 0-1>
 ```
 
+Además del announce al parent, guardá ESAS MISMAS tres líneas en
+`pit/{{pit_id}}/lanes/{{lane_id}}/announce.md` (lane result file, patrón
+D3.5b): el collect del torneo verifica ese archivo + tu `kpi_pack.json`
+contra el vault, no tu transcript.
+
 Sin esas líneas verificables tu lane cuenta como `lane_incomplete`, aunque
 hayas terminado "bien".
 

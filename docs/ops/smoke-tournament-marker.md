@@ -2,7 +2,7 @@
 
 Intentional typo for the first OpenClaw-native tournament smoke (`docs/79` §7).
 
-- **Typo:** `Tournament` → `Tournament` (line below)
+- **Typo:** `Tournamnet` → `Tournament` (line below)
 - **Do not fix on main** except via smoke PRs.
 
 Status: pending smoke fix via tournament lanes.

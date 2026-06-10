@@ -17,7 +17,7 @@ metadata:
 
 Skill de Rick para torneos de **producto**: lanes paralelas que investigan, formulan hipótesis, prototipan y miden KPI. Implementa [`docs/ops/product-innovation-tournament-vision-2026-06-09.md`](../../../../docs/ops/product-innovation-tournament-vision-2026-06-09.md); contrato de entrada en [`docs/schemas/pit-spec-v1.schema.json`](../../../../docs/schemas/pit-spec-v1.schema.json).
 
-**Status:** v1 procedure (PIT-1) — parser + gate + contratos. El spawn real requiere pit-vault desplegado + autorización David por torneo.
+**Status:** v1.1 (PIT-2) — parser + gate + contratos + runner smoke local (tasks `pit.*` + dry-run, [`docs/ops/pit-2-runner-protocol.md`](../../../../docs/ops/pit-2-runner-protocol.md)). El spawn real de agentes efímeros OpenClaw es **PIT-2b** (siguiente PR) y requiere pit-vault desplegado + autorización David por torneo.
 
 ## When to use
 
@@ -107,7 +107,18 @@ Para lanzar respondé literalmente: ok, arranca
 
 ---
 
-## Spawn — agentes efímeros (Phase 2)
+## Smoke runner PIT-2 (post-gate, pre-spawn — obligatorio)
+
+Recibido el literal `ok, arranca`, Rick **NO spawnea todavía**: primero corre el smoke local del runner ([`docs/ops/pit-2-runner-protocol.md`](../../../../docs/ops/pit-2-runner-protocol.md)):
+
+1. **`pit.preflight`** (Worker task) — valida `pit_spec.yaml`, budget (`budget_usd` = max cost estimate; kill switch @100 % documentado, enforcement real PIT-3), vault path y `pit_vault_check`. Veredicto requerido: `PIT_PREFLIGHT_PASS`.
+2. **`bash scripts/pit/pit_tournament_dry_run.sh <spec.yaml>`** — simula las N lanes en secuencia (init → 1 iteración fake → fulfillment → announce) sobre un vault scratch. Sin internet, sin Magnific, sin `sessions_spawn`. Evidencia: `~/.coord-ag-evidence/pit-dry-run/<pit_id>/final-metrics.json` con veredicto `PIT_DRY_RUN_PASS`.
+
+Smoke rojo ⇒ STOP: se corrige spec/vault/runner y se repite. No hay spawn con smoke rojo.
+
+> **PIT-2b (siguiente PR):** el spawn real de agentes efímeros OpenClaw (`sessions_spawn` + generador de efímeros + announce real por sesión). Esta versión del runner NO spawnea agentes — la sección siguiente queda como contrato para PIT-2b.
+
+## Spawn — agentes efímeros (PIT-2b, contrato)
 
 Procedimiento completo en [`docs/ops/pit-ephemeral-agent-generator.md`](../../../../docs/ops/pit-ephemeral-agent-generator.md). Resumen del contrato:
 
@@ -138,7 +149,7 @@ Verificación del parent (regla de verdad, paralela a docs/79 §4.1):
 lane_complete = prototype_reachable && kpi_pack_valido_contra_schema && fulfillment == compute_fulfillment(kpi_pack.kpis)
 ```
 
-- `kpi_pack.json` debe validar contra `kpi-pack.schema.json` y su `fulfillment_score` debe reproducirse con `compute_fulfillment()`.
+- `kpi_pack.json` debe validar contra `kpi-pack.schema.json` y su `fulfillment_score` debe reproducirse con `compute_fulfillment()`. Verificación ejecutable: task `pit.lane_announce` → `lane_complete` + `incomplete_reasons` (PIT-2).
 - `finalStatus=success` sin esas tres líneas verificables ⇒ `lane_incomplete`.
 - Judge solo con ≥2 lanes completas; el winner y la decisión de fulfillment llevan gate David y se registran en [`pit_outcome_report.yaml`](../../pit-vault/templates/pit_outcome_report.yaml).
 
@@ -151,6 +162,7 @@ lane_complete = prototype_reachable && kpi_pack_valido_contra_schema && fulfillm
 | Falta `budget_usd` o `iteration_count` en el input | STOP — preguntar a David (jamás default) |
 | David no respondió literal `ok, arranca` | STOP — no spawn |
 | `pit_spec_validate.py` ≠ pass | STOP — corregir spec |
+| Smoke PIT-2 en rojo (`PIT_PREFLIGHT_FAIL` o `PIT_DRY_RUN_FAIL`) | STOP — no spawn hasta veredicto PASS |
 | pit-vault sin desplegar o `pit_vault_check.py` fail | STOP — deploy/fix vault primero |
 | Pedido de URL pública para el prototipo | STOP — solo túnel + Mission Control en v1 |
 | Lane pide escribir fuera de su subárbol | STOP — write scope `pit/<pit_id>/lanes/<lane_id>/` |

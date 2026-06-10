@@ -1,6 +1,6 @@
 # PIT — Generador de agentes efímeros (procedimiento Rick)
 
-- **Status:** v1 (PIT-1 spec) — 2026-06-09. Procedimiento documentado; el wiring runtime llega con el deploy del pit-vault (post-merge).
+- **Status:** v1.1 (PIT-2b) — 2026-06-10. Procedimiento ejecutable: los pasos §2.2–§2.7 los automatiza `scripts/pit/pit_tournament_run.sh` ([`pit-2-runner-protocol.md`](pit-2-runner-protocol.md) §7); Rick deriva las identidades (§2.1) en un `lanes.yaml` y lanza el runner con el gate literal.
 - **Decisión David:** cada torneo PIT usa **agentes efímeros nuevos** — Rick genera sus prompts, skills y accesos por torneo. No se reciclan agentes entre torneos (evita drift de contexto y privilegios acumulados).
 - **Plantilla de rol:** [`openclaw/workspace-templates/pit-lane-agent/ROLE.template.md`](../../openclaw/workspace-templates/pit-lane-agent/ROLE.template.md).
 

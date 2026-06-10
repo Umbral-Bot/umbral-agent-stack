@@ -1,8 +1,8 @@
 # PIT — Índice de procesos
 
-- **Status:** v1.1 — 2026-06-10 (PIT-2 runner smoke implementado). Punto de entrada único a todos los procesos PIT; si un proceso no está aquí, no es canónico.
+- **Status:** v1.2 — 2026-06-10 (PIT-2 runner smoke + PIT-2b spawn real implementados). Punto de entrada único a todos los procesos PIT; si un proceso no está aquí, no es canónico.
 - **Visión:** [`product-innovation-tournament-vision-2026-06-09.md`](product-innovation-tournament-vision-2026-06-09.md).
-- **Re-scope PIT-2 (2026-06-10):** PIT-2 = runner de orquestación ejecutable (smoke local, [`pit-2-runner-protocol.md`](pit-2-runner-protocol.md)); el spawn real OpenClaw es PIT-2b y el research sandbox quedó re-secuenciado post PIT-2b.
+- **Re-scope PIT-2 (2026-06-10):** PIT-2 = runner de orquestación ejecutable (smoke local, [`pit-2-runner-protocol.md`](pit-2-runner-protocol.md)); PIT-2b = spawn real OpenClaw post-smoke (mismo protocolo §7); el research sandbox quedó re-secuenciado post PIT-2b.
 
 ---
 
@@ -22,14 +22,16 @@
 | 10 | **Archive** | [pit-vault-layout.md](pit-vault-layout.md) §2 | Rick mueve `pit/<pit_id>/` → `archive/<pit_id>/` al cierre; las lanes nunca |
 | 11 | **Capitalización** (mejora continua) | [pit-handoff-mejora-continua.md](pit-handoff-mejora-continua.md) | `improvement_handoff.proposals[]` → improvement-supervisor → PR con gate humano; sin auto-merge |
 | 12 | **Vault** (estructura + checks) | [pit-vault-layout.md](pit-vault-layout.md) | `umbral-pit-vault` separado; writes solo `pit/`; `pit_vault_init.sh` + `pit_vault_check.py` |
-| 13 | **Runner smoke (PIT-2)** | [pit-2-runner-protocol.md](pit-2-runner-protocol.md) | Tasks Worker `pit.preflight / pit.lane_init / pit.iteration_close / pit.lane_announce` + `pit_tournament_dry_run.sh` (N lanes simuladas, sin spawn OpenClaw); budget kill switch documentado (stub — enforcement PIT-3); spawn real = PIT-2b |
+| 13 | **Runner smoke (PIT-2)** | [pit-2-runner-protocol.md](pit-2-runner-protocol.md) | Tasks Worker `pit.preflight / pit.lane_init / pit.iteration_close / pit.lane_announce` + `pit_tournament_dry_run.sh` (N lanes simuladas, sin spawn OpenClaw); budget kill switch documentado (stub — enforcement PIT-3) |
+| 14 | **Runner spawn (PIT-2b)** | [pit-2-runner-protocol.md](pit-2-runner-protocol.md) §7 | `pit_tournament_run.sh`: gate literal + smoke `PIT_DRY_RUN_PASS` fresco → register efímeros → `sessions_spawn` × N desde `main` standalone (G-D1b) → collect contra el vault (lane result file `announce.md` + `pit.lane_announce`) → kill/desregistro SIEMPRE; veredictos `PIT_RUN_PASS\|PARTIAL\|FAIL\|BLOCKED\|PLAN_ONLY` |
 
 ## Contratos ejecutables
 
 - `python scripts/pit/pit_spec_validate.py <spec.yaml>` — spec válido antes del gate.
 - `python scripts/pit/pit_vault_check.py --vault-path <vault> --require-write-scope` — vault sano (con `PIT_VAULT_WRITE_SCOPE=pit`).
 - `bash scripts/pit/pit_tournament_dry_run.sh examples/pit-salud-mental-pilot.yaml` — smoke PIT-2 local (sin OpenClaw); veredicto `PIT_DRY_RUN_PASS` en `~/.coord-ag-evidence/pit-dry-run/<pit_id>/final-metrics.json`.
-- `WORKER_TOKEN=test python -m pytest tests/test_pit_spec_validate.py tests/test_pit_vault_check.py tests/test_pit_runner_tasks.py tests/test_pit_dry_run.py -q` — contratos verdes en CI/local.
+- `bash scripts/pit/pit_tournament_run.sh <spec.yaml> <lanes.yaml> --gate "ok, arranca" [--plan-only]` — torneo real PIT-2b post-smoke (`--plan-only` valida sin spawn); veredicto `PIT_RUN_*` en `~/.coord-ag-evidence/pit-run/<pit_id>/run-metrics.json`.
+- `WORKER_TOKEN=test python -m pytest tests/test_pit_spec_validate.py tests/test_pit_vault_check.py tests/test_pit_runner_tasks.py tests/test_pit_dry_run.py tests/test_pit_tournament_run.py -q` — contratos verdes en CI/local.
 
 ---
 

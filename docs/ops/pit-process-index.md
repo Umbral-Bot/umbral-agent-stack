@@ -1,7 +1,8 @@
 # PIT — Índice de procesos
 
-- **Status:** v1 (PIT-1 spec) — 2026-06-09. Punto de entrada único a todos los procesos PIT; si un proceso no está aquí, no es canónico.
+- **Status:** v1.1 — 2026-06-10 (PIT-2 runner smoke implementado). Punto de entrada único a todos los procesos PIT; si un proceso no está aquí, no es canónico.
 - **Visión:** [`product-innovation-tournament-vision-2026-06-09.md`](product-innovation-tournament-vision-2026-06-09.md).
+- **Re-scope PIT-2 (2026-06-10):** PIT-2 = runner de orquestación ejecutable (smoke local, [`pit-2-runner-protocol.md`](pit-2-runner-protocol.md)); el spawn real OpenClaw es PIT-2b y el research sandbox quedó re-secuenciado post PIT-2b.
 
 ---
 
@@ -11,7 +12,7 @@
 |---|---------|--------------|---------|
 | 1 | **Spawn** (invocación → torneo) | [SKILL product-innovation-tournament](../../openclaw/workspace-templates/skills/product-innovation-tournament/SKILL.md) | NL o `/torneo_producto` → parser → `pit_spec.yaml` validado → gate literal `ok, arranca` → spawn de agentes efímeros |
 | 2 | **Agentes efímeros** | [pit-ephemeral-agent-generator.md](pit-ephemeral-agent-generator.md) | Rick genera prompts/skills/accesos por torneo desde [`ROLE.template.md`](../../openclaw/workspace-templates/pit-lane-agent/ROLE.template.md); kill + desregistro al cierre |
-| 3 | **Research** | [pit-kanban-kpi-protocol.md](pit-kanban-kpi-protocol.md) §1 + SKILL | Tiers `academic \| market_pain \| competitive \| mixed` según spec; fuentes citadas en notes.md. Sandbox `pit.research_fetch` = PIT-2 (interface primero) |
+| 3 | **Research** | [pit-kanban-kpi-protocol.md](pit-kanban-kpi-protocol.md) §1 + SKILL | Tiers `academic \| market_pain \| competitive \| mixed` según spec; fuentes citadas en notes.md. Sandbox `pit.research_fetch` re-secuenciado post PIT-2b (PIT-2 pasó a ser el runner) |
 | 4 | **Broker** (visual + capacidades) | [pit-visual-magnific.md](pit-visual-magnific.md) + [copilot-cli-autonomy-vision-roadmap.md](../copilot-cli-autonomy-vision-roadmap.md) | Las lanes no llaman servicios externos directo: piden a Rick. v1: visual Magnific; futuro: mismo patrón broker para Copilot CLI |
 | 5 | **Kanban** | [pit-kanban-kpi-protocol.md](pit-kanban-kpi-protocol.md) §1 | 9 columnas canónicas (Backlog → … → Done, Stuck); plantilla [`kanban-lane.md`](../../openclaw/workspace-templates/pit-vault/templates/kanban-lane.md) |
 | 6 | **KPI + fulfillment** | [pit-kanban-kpi-protocol.md](pit-kanban-kpi-protocol.md) §2–§3 | Hipótesis ↔ KPI; `kpi_pack.json` por iteración ([schema](../../openclaw/workspace-templates/pit-vault/templates/kpi-pack.schema.json)); fórmula 0–1 ejecutable (`compute_fulfillment`) |
@@ -21,12 +22,14 @@
 | 10 | **Archive** | [pit-vault-layout.md](pit-vault-layout.md) §2 | Rick mueve `pit/<pit_id>/` → `archive/<pit_id>/` al cierre; las lanes nunca |
 | 11 | **Capitalización** (mejora continua) | [pit-handoff-mejora-continua.md](pit-handoff-mejora-continua.md) | `improvement_handoff.proposals[]` → improvement-supervisor → PR con gate humano; sin auto-merge |
 | 12 | **Vault** (estructura + checks) | [pit-vault-layout.md](pit-vault-layout.md) | `umbral-pit-vault` separado; writes solo `pit/`; `pit_vault_init.sh` + `pit_vault_check.py` |
+| 13 | **Runner smoke (PIT-2)** | [pit-2-runner-protocol.md](pit-2-runner-protocol.md) | Tasks Worker `pit.preflight / pit.lane_init / pit.iteration_close / pit.lane_announce` + `pit_tournament_dry_run.sh` (N lanes simuladas, sin spawn OpenClaw); budget kill switch documentado (stub — enforcement PIT-3); spawn real = PIT-2b |
 
 ## Contratos ejecutables
 
 - `python scripts/pit/pit_spec_validate.py <spec.yaml>` — spec válido antes del gate.
 - `python scripts/pit/pit_vault_check.py --vault-path <vault> --require-write-scope` — vault sano (con `PIT_VAULT_WRITE_SCOPE=pit`).
-- `WORKER_TOKEN=test python -m pytest tests/test_pit_spec_validate.py tests/test_pit_vault_check.py -q` — contratos verdes en CI/local.
+- `bash scripts/pit/pit_tournament_dry_run.sh examples/pit-salud-mental-pilot.yaml` — smoke PIT-2 local (sin OpenClaw); veredicto `PIT_DRY_RUN_PASS` en `~/.coord-ag-evidence/pit-dry-run/<pit_id>/final-metrics.json`.
+- `WORKER_TOKEN=test python -m pytest tests/test_pit_spec_validate.py tests/test_pit_vault_check.py tests/test_pit_runner_tasks.py tests/test_pit_dry_run.py -q` — contratos verdes en CI/local.
 
 ---
 

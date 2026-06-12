@@ -186,6 +186,7 @@ def test_read_tournament_detail_happy(vault: Path, evidence: Path) -> None:
     assert alpha["fulfillment_score"] == pytest.approx(0.82)
     assert alpha["hypothesis_final"] == {
         "variable": "onboarding copy",
+        "statement": None,
         "kpi_id": "kpi-activation",
         "validated": True,
     }

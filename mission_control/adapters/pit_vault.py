@@ -47,6 +47,13 @@ ANNOUNCE_KEYS = ("PROTOTYPE_URL", "KPI_PACK", "FULFILLMENT")
 _SPEC_SUMMARY_KEYS = ("title", "mode", "lane_count", "iteration_count", "budget_usd")
 _KPI_DEF_KEYS = ("kpi_id", "name", "unit", "kpi_expected", "direction", "weight")
 
+# Direction values meaning "lower is better" (schema enum is increase/decrease;
+# legacy fixtures also used up/down).
+_DECREASE_DIRECTIONS = ("decrease", "down")
+
+# Fulfillment scores closer than this are an "empate" for the judge UI.
+_FULFILLMENT_TIE_EPSILON = 0.005
+
 
 # ---------------------------------------------------------------------------
 # Input validation (raise BEFORE touching the filesystem)
@@ -208,6 +215,8 @@ def _spec_detail(spec: dict[str, Any] | None) -> dict[str, Any] | None:
     if not isinstance(spec, dict):
         return None
     detail = _spec_summary(spec)
+    seed = spec.get("hypothesis_seed")
+    detail["hypothesis_seed"] = seed if isinstance(seed, str) else None
     kpi_definitions: list[dict[str, Any]] = []
     raw_defs = spec.get("kpi_definitions")
     if isinstance(raw_defs, list):
@@ -241,7 +250,53 @@ def _fulfillment_matches(announce_value: str | None, score: Any) -> bool:
         return False
 
 
-def _scan_lane(lane_dir: Path, pit_id: str, rel_root: str) -> dict[str, Any]:
+def _normalize_kpis(
+    raw_kpis: Any, kpi_defs: dict[str, dict[str, Any]] | None
+) -> list[dict[str, Any]]:
+    """Normalize a kpi_pack ``kpis`` list for the judge UI.
+
+    Same rules as the v1 iteration detail: unit/expected/direction come from
+    the pack (schema v1) with fallback to the spec ``kpi_definitions`` by
+    kpi_id; legacy fixture packs use ``value`` instead of ``kpi_achieved``.
+    """
+    defs = kpi_defs or {}
+    kpis: list[dict[str, Any]] = []
+    if not isinstance(raw_kpis, list):
+        return kpis
+    for raw in raw_kpis:
+        if not isinstance(raw, dict):
+            continue
+        kpi_id = raw.get("kpi_id")
+        spec_def = defs.get(kpi_id, {}) if isinstance(kpi_id, str) else {}
+        achieved = raw.get("kpi_achieved")
+        if achieved is None:
+            achieved = raw.get("value")
+        kpis.append(
+            {
+                "kpi_id": kpi_id,
+                "name": raw.get("name") or spec_def.get("name"),
+                "unit": raw.get("unit") or spec_def.get("unit"),
+                "expected": (
+                    raw.get("kpi_expected")
+                    if raw.get("kpi_expected") is not None
+                    else spec_def.get("kpi_expected")
+                ),
+                "achieved": achieved,
+                "direction": raw.get("direction") or spec_def.get("direction"),
+                "synthetic": raw.get("synthetic") is True,
+            }
+        )
+    return kpis
+
+
+def _scan_lane(
+    lane_dir: Path,
+    pit_id: str,
+    rel_root: str,
+    *,
+    kpi_defs: dict[str, dict[str, Any]] | None = None,
+    deep: bool = False,
+) -> dict[str, Any]:
     lane_id = lane_dir.name
 
     iterations_dir = lane_dir / "iterations"
@@ -263,6 +318,7 @@ def _scan_lane(lane_dir: Path, pit_id: str, rel_root: str) -> dict[str, Any]:
     synthetic_share: float | None = None
     kpi_pack_path: str | None = None
     pack_valid = False
+    kpis_final: list[dict[str, Any]] = []
     if last_dir is not None:
         pack_file = last_dir / "kpi_pack.json"
         if pack_file.is_file():
@@ -279,6 +335,7 @@ def _scan_lane(lane_dir: Path, pit_id: str, rel_root: str) -> dict[str, Any]:
                 if isinstance(hypothesis, dict):
                     hypothesis_final = {
                         "variable": hypothesis.get("variable"),
+                        "statement": hypothesis.get("statement"),
                         "kpi_id": hypothesis.get("kpi_id"),
                         "validated": hypothesis.get("validated"),
                     }
@@ -290,6 +347,20 @@ def _scan_lane(lane_dir: Path, pit_id: str, rel_root: str) -> dict[str, Any]:
                         if isinstance(kpi, dict) and kpi.get("synthetic") is True
                     )
                     synthetic_share = round(flagged / len(kpis), 4)
+                if deep:
+                    kpis_final = _normalize_kpis(pack.get("kpis"), kpi_defs)
+
+    fulfillment_series: list[dict[str, Any]] = []
+    if deep:
+        for iter_dir in with_pack:
+            pack, _error = _load_json(iter_dir / "kpi_pack.json")
+            if not isinstance(pack, dict):
+                continue
+            score = pack.get("fulfillment_score")
+            if isinstance(score, (int, float)) and not isinstance(score, bool):
+                fulfillment_series.append(
+                    {"n": int(iter_dir.name), "fulfillment": float(score)}
+                )
 
     prototype_entry: str | None = None
     if last_dir is not None:
@@ -327,7 +398,7 @@ def _scan_lane(lane_dir: Path, pit_id: str, rel_root: str) -> dict[str, Any]:
         and _fulfillment_matches(announce.get("FULFILLMENT"), fulfillment_score)
     )
 
-    return {
+    result = {
         "lane_id": lane_id,
         "announce_present": announce_present,
         "lane_complete": lane_complete,
@@ -340,9 +411,20 @@ def _scan_lane(lane_dir: Path, pit_id: str, rel_root: str) -> dict[str, Any]:
         "prototype": prototype,
         "announce": announce,
     }
+    if deep:
+        result["fulfillment_series"] = fulfillment_series
+        result["kpis_final"] = kpis_final
+    return result
 
 
-def _scan_lanes(tournament_dir: Path, pit_id: str, rel_root: str) -> list[dict[str, Any]]:
+def _scan_lanes(
+    tournament_dir: Path,
+    pit_id: str,
+    rel_root: str,
+    *,
+    kpi_defs: dict[str, dict[str, Any]] | None = None,
+    deep: bool = False,
+) -> list[dict[str, Any]]:
     lanes_root = tournament_dir / "lanes"
     if not lanes_root.is_dir():
         return []
@@ -352,7 +434,7 @@ def _scan_lanes(tournament_dir: Path, pit_id: str, rel_root: str) -> list[dict[s
             continue
         if _safe_child(lanes_root, entry.name) is None:
             continue
-        lanes.append(_scan_lane(entry, pit_id, rel_root))
+        lanes.append(_scan_lane(entry, pit_id, rel_root, kpi_defs=kpi_defs, deep=deep))
     return lanes
 
 
@@ -442,6 +524,150 @@ def list_tournaments(
     }
 
 
+# ---------------------------------------------------------------------------
+# Judge compare block (P5.2b) — pure derivation, no filesystem access
+# ---------------------------------------------------------------------------
+
+
+def _fmt_number(value: float) -> str:
+    return f"{value:g}"
+
+
+def compute_compare(lanes: list[dict[str, Any]]) -> dict[str, Any]:
+    """Derived comparison block for the judge UI (``GET /pit/tournaments/{id}``).
+
+    Pure function over the deep lanes payload of :func:`read_tournament`:
+
+    - ``fulfillment_tie``: ≥2 numeric scores within ``_FULFILLMENT_TIE_EPSILON``.
+    - ``best_fulfillment``: lane_id of the unique leader, else ``None``.
+    - ``highlights``: at most ONE badge per KPI (direction-aware best across
+      lanes; a strict tie at the best value yields no badge — un "mejor"
+      repartido no informa nada).
+    - ``watch``: ≤3 'Qué mirar' bullets templated from data only (never agent
+      opinion).
+    - ``synthetic_all``: every lane with a known share is ~100 % synthetic.
+    """
+    scores = [
+        (lane["lane_id"], float(lane["fulfillment_score"]))
+        for lane in lanes
+        if isinstance(lane.get("fulfillment_score"), (int, float))
+        and not isinstance(lane.get("fulfillment_score"), bool)
+    ]
+    fulfillment_tie = (
+        len(scores) >= 2
+        and max(s for _, s in scores) - min(s for _, s in scores)
+        < _FULFILLMENT_TIE_EPSILON
+    )
+    best_fulfillment: str | None = None
+    if scores and not fulfillment_tie:
+        top = max(s for _, s in scores)
+        leaders = [
+            lane_id for lane_id, s in scores if top - s < _FULFILLMENT_TIE_EPSILON
+        ]
+        if len(leaders) == 1:
+            best_fulfillment = leaders[0]
+
+    # Collect KPI values per kpi_id, preserving first-seen (spec) order.
+    kpi_order: list[str] = []
+    kpi_values: dict[str, dict[str, Any]] = {}
+    for lane in lanes:
+        for kpi in lane.get("kpis_final") or []:
+            kpi_id = kpi.get("kpi_id")
+            achieved = kpi.get("achieved")
+            if not isinstance(kpi_id, str):
+                continue
+            if not isinstance(achieved, (int, float)) or isinstance(achieved, bool):
+                continue
+            if kpi_id not in kpi_values:
+                kpi_order.append(kpi_id)
+                kpi_values[kpi_id] = {
+                    "name": kpi.get("name"),
+                    "unit": kpi.get("unit"),
+                    "direction": kpi.get("direction"),
+                    "values": [],
+                }
+            entry = kpi_values[kpi_id]
+            entry["values"].append((lane["lane_id"], float(achieved)))
+            entry["name"] = entry["name"] or kpi.get("name")
+            entry["unit"] = entry["unit"] or kpi.get("unit")
+            entry["direction"] = entry["direction"] or kpi.get("direction")
+
+    highlights: list[dict[str, Any]] = []
+    for kpi_id in kpi_order:
+        entry = kpi_values[kpi_id]
+        values: list[tuple[str, float]] = entry["values"]
+        if len(values) < 2:
+            continue
+        minimize = entry["direction"] in _DECREASE_DIRECTIONS
+        best_value = min(v for _, v in values) if minimize else max(v for _, v in values)
+        leaders = [lane_id for lane_id, v in values if abs(v - best_value) < 1e-9]
+        if len(leaders) != 1:
+            continue  # strict tie → no badge for this KPI
+        display = entry["name"] or kpi_id
+        highlights.append(
+            {
+                "kpi_id": kpi_id,
+                "name": entry["name"],
+                "unit": entry["unit"],
+                "lane_id": leaders[0],
+                "value": best_value,
+                "label": f"Mejor {display}",
+            }
+        )
+
+    shares = [
+        float(lane["synthetic_share"])
+        for lane in lanes
+        if isinstance(lane.get("synthetic_share"), (int, float))
+        and not isinstance(lane.get("synthetic_share"), bool)
+    ]
+    synthetic_all = bool(shares) and all(share >= 0.999 for share in shares)
+
+    watch: list[str] = []
+    if scores:
+        if fulfillment_tie:
+            watch.append(
+                f"Fulfillment empatado en {max(s for _, s in scores):.2f} en las "
+                f"{len(scores)} lanes — desempatá por KPIs."
+            )
+        elif best_fulfillment is not None:
+            top = max(s for _, s in scores)
+            watch.append(f"{best_fulfillment} lidera fulfillment ({top:.2f}).")
+    if highlights:
+        parts = []
+        for hl in highlights:
+            unit = f" {hl['unit']}" if hl["unit"] else ""
+            parts.append(
+                f"{hl['lane_id']} lidera {hl['name'] or hl['kpi_id']} "
+                f"({_fmt_number(hl['value'])}{unit})"
+            )
+        watch.append("; ".join(parts) + ".")
+    hypotheses = [
+        lane["hypothesis_final"]
+        for lane in lanes
+        if isinstance(lane.get("hypothesis_final"), dict)
+    ]
+    if hypotheses:
+        validated = sum(1 for h in hypotheses if h.get("validated") is True)
+        if validated == len(hypotheses):
+            watch.append(
+                f"{validated}/{len(hypotheses)} lanes validaron su hipótesis final."
+            )
+        else:
+            watch.append(
+                f"{validated}/{len(hypotheses)} lanes validaron su hipótesis final; "
+                f"{len(hypotheses) - validated} sin validar."
+            )
+
+    return {
+        "fulfillment_tie": fulfillment_tie,
+        "best_fulfillment": best_fulfillment,
+        "highlights": highlights,
+        "watch": watch[:3],
+        "synthetic_all": synthetic_all,
+    }
+
+
 def read_tournament(
     vault_path: Path,
     evidence_dir: Path,
@@ -454,8 +680,14 @@ def read_tournament(
     if tournament_dir is None:
         return None
     spec, source, _error = _read_spec(tournament_dir, pit_id, spec_fallback_dir)
+    spec_detail = _spec_detail(spec)
+    kpi_defs: dict[str, dict[str, Any]] = {}
+    if spec_detail is not None:
+        for definition in spec_detail["kpi_definitions"]:
+            if isinstance(definition.get("kpi_id"), str):
+                kpi_defs[definition["kpi_id"]] = definition
     rel_root = "archive" if archived else "pit"
-    lanes = _scan_lanes(tournament_dir, pit_id, rel_root)
+    lanes = _scan_lanes(tournament_dir, pit_id, rel_root, kpi_defs=kpi_defs, deep=True)
     outcome = _read_outcome(tournament_dir)
     evidence = _read_run_evidence(evidence_dir, pit_id)
     return {
@@ -469,8 +701,9 @@ def read_tournament(
             lane_dir_count=len(lanes),
         ),
         "spec_source": source,
-        "spec": _spec_detail(spec),
+        "spec": spec_detail,
         "lanes": lanes,
+        "compare": compute_compare(lanes),
         "outcome": outcome,
         "evidence": evidence,
     }

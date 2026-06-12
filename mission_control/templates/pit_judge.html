@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Mission Control · PIT judge</title>
+    <style>
+      :root {
+        --bg: #0d1117;
+        --fg: #e6edf3;
+        --muted: #8b949e;
+        --accent: #58a6ff;
+        --ok: #3fb950;
+        --warn: #d29922;
+        --err: #f85149;
+        --card: #161b22;
+        --border: #30363d;
+        --track: #21262d;
+      }
+      * { box-sizing: border-box; }
+      body {
+        background: var(--bg);
+        color: var(--fg);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        margin: 0;
+        padding: 24px;
+        font-size: 14px;
+      }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+      a { color: var(--accent); }
+      .topbar { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+      .topbar h1 { font-size: 20px; margin: 0; }
+      .topbar .spacer { flex: 1; }
+      .chip {
+        display: inline-block; padding: 2px 10px; border-radius: 999px;
+        font-size: 12px; border: 1px solid var(--muted); color: var(--muted);
+      }
+      .chip.running { border-color: var(--accent); color: var(--accent); }
+      .chip.judge_pending { border-color: var(--warn); color: var(--warn); }
+      .chip.closed, .chip.archived { border-color: var(--ok); color: var(--ok); }
+      .meta { color: var(--muted); font-size: 12.5px; margin-top: 6px; line-height: 1.5; }
+      .seed { color: var(--muted); font-size: 13px; margin-top: 8px; max-width: 980px; line-height: 1.5; }
+      .seed em { color: var(--fg); font-style: normal; }
+      button, .btn {
+        background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+        color: var(--fg); font-family: inherit; font-size: 13px; padding: 6px 12px;
+        cursor: pointer; text-decoration: none; display: inline-block;
+      }
+      button:hover, .btn:hover { border-color: var(--accent); color: var(--accent); }
+      button:disabled { opacity: 0.45; cursor: not-allowed; }
+      .btn-primary {
+        background: #1f6feb; border-color: #1f6feb; color: #fff; font-weight: 600;
+      }
+      .btn-primary:hover { background: #388bfd; color: #fff; }
+      .banner {
+        border-radius: 6px; padding: 10px 14px; font-size: 13.5px; margin: 16px 0 0;
+      }
+      .banner.synthetic {
+        background: rgba(210, 153, 34, 0.12); border: 1px solid var(--warn);
+        color: #e3b341; font-weight: 600;
+      }
+      .banner.winner { border: 1px solid var(--ok); color: var(--ok); }
+      .banner.pending { border: 1px dashed var(--border); color: var(--muted); }
+      .banner.error { border: 1px solid var(--err); color: var(--err); }
+      .watch {
+        background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+        padding: 14px 18px; margin-top: 16px;
+      }
+      .watch h2 {
+        margin: 0 0 8px; font-size: 12px; letter-spacing: 1.5px;
+        text-transform: uppercase; color: var(--accent);
+      }
+      .watch ul { margin: 0; padding-left: 18px; }
+      .watch li { margin: 4px 0; line-height: 1.5; }
+      .grid {
+        display: grid; gap: 16px; margin-top: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+        align-items: stretch;
+      }
+      .lane {
+        background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+        padding: 18px; display: flex; flex-direction: column; gap: 14px;
+      }
+      .lane.winner-lane { border-color: var(--ok); }
+      .lane h3 { margin: 0; font-size: 16px; }
+      .lane .lane-id { color: var(--muted); font-size: 11.5px; }
+      .tagline { color: var(--fg); font-size: 13px; line-height: 1.45; min-height: 2.6em; }
+      .fulfillment-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+      .fulfillment-big { font-size: 34px; font-weight: 700; line-height: 1; }
+      .f-ok { color: var(--ok); }
+      .f-warn { color: var(--warn); }
+      .f-err { color: var(--err); }
+      .f-na { color: var(--muted); font-size: 20px; }
+      .pill {
+        display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px;
+        border: 1px solid var(--muted); color: var(--muted); white-space: nowrap;
+      }
+      .pill.tie { border-color: var(--warn); color: var(--warn); }
+      .pill.best { border-color: var(--ok); color: var(--ok); font-weight: 600; }
+      .pill.trophy { border-color: var(--ok); color: var(--ok); }
+      .spark-label { color: var(--muted); font-size: 11px; }
+      .kpis { display: flex; flex-direction: column; gap: 10px; }
+      .kpi .kpi-head { display: flex; align-items: baseline; gap: 8px; }
+      .kpi .kpi-name { font-size: 12.5px; color: var(--muted); flex: 1; }
+      .kpi .kpi-value { font-size: 16px; font-weight: 600; }
+      .kpi .kpi-unit { font-size: 11.5px; color: var(--muted); }
+      .bar { height: 7px; border-radius: 4px; background: var(--track); margin-top: 4px; overflow: hidden; }
+      .bar .fill { height: 100%; border-radius: 4px; background: var(--muted); }
+      .bar .fill.ok { background: var(--ok); }
+      .bar .fill.warn { background: var(--warn); }
+      .bar .fill.err { background: var(--err); }
+      .kpi .objective { color: var(--muted); font-size: 11px; margin-top: 3px; }
+      .hyp { font-size: 13px; line-height: 1.45; border-top: 1px solid var(--track); padding-top: 12px; }
+      .hyp .state-ok { color: var(--ok); font-weight: 700; }
+      .hyp .state-err { color: var(--err); font-weight: 700; }
+      .hyp .state-na { color: var(--muted); font-weight: 700; }
+      .actions { display: flex; gap: 10px; margin-top: auto; }
+      .detail { border-top: 1px solid var(--track); padding-top: 10px; display: none; }
+      .detail table { border-collapse: collapse; width: 100%; font-size: 12px; }
+      .detail th, .detail td {
+        text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--track);
+      }
+      .detail th {
+        color: var(--muted); font-weight: normal; font-size: 10.5px;
+        text-transform: uppercase; letter-spacing: 1px;
+      }
+      .footer { color: var(--muted); font-size: 12px; margin-top: 28px; line-height: 1.6; }
+      .picker-card {
+        background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+        padding: 18px; margin-top: 14px; display: flex; gap: 14px; align-items: center;
+        flex-wrap: wrap;
+      }
+      .picker-card .grow { flex: 1; min-width: 220px; }
+      #error-box { display: none; margin-top: 24px; }
+      #error-box .hint { color: var(--muted); font-size: 13px; margin-top: 10px; line-height: 1.6; }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div class="topbar">
+        <h1 id="page-title">PIT judge</h1>
+        <span id="status-chip" class="chip" style="display:none"></span>
+        <span class="spacer"></span>
+        <button id="refresh" type="button" title="recargar datos">&#10227; refresh</button>
+        <a class="btn" href="/pit/judge">torneos</a>
+        <button id="change-token" type="button" title="borrar token de esta pestaña">cambiar token</button>
+      </div>
+      <div id="content"></div>
+      <div id="error-box" class="banner error" role="alert"></div>
+      <div class="footer">
+        read-only (ADR-009) · sin acciones de ejecución · sin polling — refresh manual ·
+        datos: <span class="mono">GET /pit/tournaments[/{pit_id}]</span> con bearer en
+        <span class="mono">sessionStorage</span> · vista clásica: <span class="mono">/pit</span> (bearer header)
+      </div>
+    </div>
+
+    <script>
+      "use strict";
+      // pit_id viene del path (regex-validado server-side); NUNCA datos del vault.
+      var PIT_ID = {{ pit_id | tojson }};
+
+      var content = document.getElementById("content");
+      var errorBox = document.getElementById("error-box");
+
+      function el(tag, className, text) {
+        var node = document.createElement(tag);
+        if (className) { node.className = className; }
+        if (text !== undefined && text !== null) { node.textContent = text; }
+        return node;
+      }
+
+      function mcToken() { return sessionStorage.getItem("mc_token"); }
+
+      function gotoAccess() {
+        location.href = "/pit/access?next=" + encodeURIComponent(location.pathname);
+      }
+
+      function showError(message, hints) {
+        errorBox.textContent = "";
+        errorBox.appendChild(el("div", null, message));
+        (hints || []).forEach(function (hint) {
+          var div = el("div", "hint");
+          div.appendChild(hint);
+          errorBox.appendChild(div);
+        });
+        errorBox.style.display = "block";
+      }
+
+      function accessLink(label) {
+        var a = el("a", null, label || "volvé a /pit/access");
+        a.href = "/pit/access?next=" + encodeURIComponent(location.pathname);
+        return a;
+      }
+
+      function fetchJSON(path) {
+        var token = mcToken();
+        if (!token) {
+          gotoAccess();
+          return Promise.reject(new Error("redirect"));
+        }
+        return fetch(path, { headers: { "Authorization": "Bearer " + token } })
+          .catch(function () {
+            throw {
+              human: "Túnel caído — no llego al server.",
+              hints: [document.createTextNode(
+                "Verificá: ssh -N -L 18089:127.0.0.1:8089 vps-umbral y recargá " +
+                "http://127.0.0.1:18089" + location.pathname
+              )]
+            };
+          })
+          .then(function (res) {
+            if (res.status === 401 || res.status === 403) {
+              sessionStorage.removeItem("mc_token");
+              throw {
+                human: "Token faltante o inválido.",
+                hints: [accessLink("Volvé a /pit/access y pegá el token de nuevo.")]
+              };
+            }
+            if (res.status === 503) {
+              throw {
+                human: "Mission Control sin MISSION_CONTROL_TOKEN configurado (fail-closed).",
+                hints: []
+              };
+            }
+            if (res.status === 404) {
+              var notFound = new Error("404");
+              notFound.is404 = true;
+              throw notFound;
+            }
+            if (!res.ok) { throw { human: "HTTP " + res.status, hints: [] }; }
+            return res.json();
+          });
+      }
+
+      function num(value) {
+        return (typeof value === "number" && isFinite(value)) ? value : null;
+      }
+
+      function fmtNum(value) {
+        var v = num(value);
+        if (v === null) { return "—"; }
+        return String(parseFloat(v.toFixed(2)));
+      }
+
+      function isDecrease(direction) {
+        return direction === "decrease" || direction === "down";
+      }
+
+      function goalRatio(kpi) {
+        var achieved = num(kpi.achieved);
+        var expected = num(kpi.expected);
+        if (achieved === null || expected === null || expected <= 0) { return null; }
+        if (isDecrease(kpi.direction)) {
+          if (achieved <= 0) { return 1.5; }
+          return expected / achieved;
+        }
+        return achieved / expected;
+      }
+
+      function fulfillmentClass(score) {
+        if (score === null) { return "f-na"; }
+        if (score >= 0.7) { return "f-ok"; }
+        if (score >= 0.4) { return "f-warn"; }
+        return "f-err";
+      }
+
+      function sparkline(series) {
+        var points = (series || []).filter(function (p) {
+          return p && num(p.fulfillment) !== null && num(p.n) !== null;
+        });
+        if (points.length < 2) { return null; }
+        var width = 150, height = 32, pad = 3;
+        var ns = "http://www.w3.org/2000/svg";
+        var svg = document.createElementNS(ns, "svg");
+        svg.setAttribute("width", width);
+        svg.setAttribute("height", height);
+        svg.setAttribute("aria-label", "fulfillment por iteración");
+        var minN = points[0].n, maxN = points[points.length - 1].n;
+        var coords = points.map(function (p) {
+          var x = maxN === minN ? width / 2 :
+            pad + (p.n - minN) / (maxN - minN) * (width - 2 * pad);
+          // Escala fija 0..1: comparable entre lanes.
+          var clamped = Math.max(0, Math.min(1, p.fulfillment));
+          var y = height - pad - clamped * (height - 2 * pad);
+          return [x, y];
+        });
+        var line = document.createElementNS(ns, "polyline");
+        line.setAttribute("points", coords.map(function (c) { return c.join(","); }).join(" "));
+        line.setAttribute("fill", "none");
+        line.setAttribute("stroke", "#58a6ff");
+        line.setAttribute("stroke-width", "1.6");
+        svg.appendChild(line);
+        var last = coords[coords.length - 1];
+        var dot = document.createElementNS(ns, "circle");
+        dot.setAttribute("cx", last[0]);
+        dot.setAttribute("cy", last[1]);
+        dot.setAttribute("r", "2.6");
+        dot.setAttribute("fill", "#58a6ff");
+        svg.appendChild(dot);
+        return svg;
+      }
+
+      function openPreview(pitId, lane, button) {
+        var iter = lane.last_iteration;
+        button.disabled = true;
+        fetchJSON("/pit/tournaments/" + encodeURIComponent(pitId) +
+                  "/lanes/" + encodeURIComponent(lane.lane_id) +
+                  "/iterations/" + iter + "/preview-link")
+          .then(function (body) {
+            window.open(body.url, "_blank", "noopener");
+          })
+          .catch(function (err) {
+            if (err && err.message === "redirect") { return; }
+            showError(
+              "No pude abrir el prototipo de " + lane.lane_id + ": " +
+              ((err && err.human) || "error inesperado."),
+              (err && err.hints) || []
+            );
+          })
+          .then(function () { button.disabled = false; });
+      }
+
+      function kpiCell(value) {
+        return el("td", "mono", value === null || value === undefined ? "—" : String(value));
+      }
+
+      function loadIterationDetail(pitId, lane, container) {
+        container.textContent = "cargando iteraciones…";
+        var iters = [];
+        for (var n = 1; n <= (lane.last_iteration || 0); n++) { iters.push(n); }
+        Promise.all(iters.map(function (n) {
+          return fetchJSON("/pit/tournaments/" + encodeURIComponent(pitId) +
+                           "/lanes/" + encodeURIComponent(lane.lane_id) + "/kpi/" + n)
+            .catch(function (err) {
+              if (err && err.is404) { return null; }
+              throw err;
+            });
+        }))
+          .then(function (payloads) {
+            container.textContent = "";
+            var table = el("table");
+            var thead = el("thead");
+            var headRow = el("tr");
+            ["iter", "fulfillment", "kpi_id", "objetivo", "logrado", "sintético"].forEach(function (h) {
+              headRow.appendChild(el("th", null, h));
+            });
+            thead.appendChild(headRow);
+            table.appendChild(thead);
+            var tbody = el("tbody");
+            payloads.forEach(function (payload) {
+              if (!payload || !payload.kpi_pack) { return; }
+              var pack = payload.kpi_pack;
+              var kpis = Array.isArray(pack.kpis) ? pack.kpis : [];
+              if (!kpis.length) { kpis = [null]; }
+              kpis.forEach(function (kpi, index) {
+                var row = el("tr");
+                row.appendChild(kpiCell(index === 0 ? payload.iteration : ""));
+                row.appendChild(kpiCell(
+                  index === 0 && num(pack.fulfillment_score) !== null
+                    ? pack.fulfillment_score.toFixed(2) : ""
+                ));
+                if (kpi) {
+                  var achieved = kpi.kpi_achieved !== undefined && kpi.kpi_achieved !== null
+                    ? kpi.kpi_achieved : kpi.value;
+                  row.appendChild(kpiCell(kpi.kpi_id));
+                  row.appendChild(kpiCell(kpi.kpi_expected));
+                  row.appendChild(kpiCell(achieved));
+                  row.appendChild(kpiCell(kpi.synthetic === true ? "✓" : "—"));
+                } else {
+                  row.appendChild(kpiCell("sin KPIs parseables"));
+                  row.appendChild(kpiCell(null));
+                  row.appendChild(kpiCell(null));
+                  row.appendChild(kpiCell(null));
+                }
+                tbody.appendChild(row);
+              });
+            });
+            table.appendChild(tbody);
+            container.appendChild(table);
+          })
+          .catch(function (err) {
+            if (err && err.message === "redirect") { return; }
+            container.textContent = (err && err.human) || "no pude leer los kpi_packs.";
+          });
+      }
+
+      function laneCard(pitId, lane, compare, winnerLaneId) {
+        var card = el("div", "lane");
+        if (winnerLaneId && lane.lane_id === winnerLaneId) {
+          card.classList.add("winner-lane");
+        }
+
+        var head = el("div");
+        var title = el("h3", null, lane.lane_id.replace(/^lane-/, ""));
+        if (winnerLaneId && lane.lane_id === winnerLaneId) {
+          title.appendChild(document.createTextNode(" "));
+          var trophy = el("span", "pill trophy", "🏆 winner");
+          title.appendChild(trophy);
+        }
+        head.appendChild(title);
+        head.appendChild(el("div", "lane-id mono", lane.lane_id +
+          " · " + (lane.iterations_run || 0) + " iter" +
+          (lane.lane_complete ? " · announce ✓" : " · incompleta")));
+        card.appendChild(head);
+
+        var hyp = lane.hypothesis_final || null;
+        var tagline = "Sin hipótesis registrada todavía.";
+        if (hyp) {
+          tagline = hyp.statement || (hyp.variable ? "Variable: " + hyp.variable : tagline);
+        }
+        card.appendChild(el("div", "tagline", tagline));
+
+        var fulfillment = num(lane.fulfillment_score);
+        var row = el("div", "fulfillment-row");
+        var big = el("span", "fulfillment-big mono " + fulfillmentClass(fulfillment),
+          fulfillment === null ? "∅" : fulfillment.toFixed(2));
+        row.appendChild(big);
+        var labelWrap = el("div");
+        labelWrap.appendChild(el("div", "spark-label", "fulfillment final"));
+        if (compare.fulfillment_tie && fulfillment !== null) {
+          labelWrap.appendChild(el("span", "pill tie", "empate"));
+        } else if (compare.best_fulfillment === lane.lane_id) {
+          labelWrap.appendChild(el("span", "pill best", "líder fulfillment"));
+        }
+        row.appendChild(labelWrap);
+        var spark = sparkline(lane.fulfillment_series);
+        if (spark) {
+          var sparkWrap = el("div");
+          sparkWrap.appendChild(spark);
+          sparkWrap.appendChild(el("div", "spark-label", "iter 1→" + (lane.last_iteration || "?")));
+          row.appendChild(sparkWrap);
+        }
+        card.appendChild(row);
+
+        var kpis = el("div", "kpis");
+        var highlights = compare.highlights || [];
+        (lane.kpis_final || []).forEach(function (kpi) {
+          var box = el("div", "kpi");
+          var headRow = el("div", "kpi-head");
+          headRow.appendChild(el("span", "kpi-name", kpi.name || kpi.kpi_id || "kpi"));
+          var isBest = highlights.some(function (h) {
+            return h.kpi_id === kpi.kpi_id && h.lane_id === lane.lane_id;
+          });
+          if (isBest) {
+            // En la fila ya se lee el nombre del KPI: el pill corto evita
+            // que el label largo rompa el layout de la card.
+            headRow.appendChild(el("span", "pill best", "★ mejor"));
+          }
+          headRow.appendChild(el("span", "kpi-value mono", fmtNum(kpi.achieved)));
+          if (kpi.unit) { headRow.appendChild(el("span", "kpi-unit", String(kpi.unit))); }
+          box.appendChild(headRow);
+          var ratio = goalRatio(kpi);
+          if (ratio !== null) {
+            var bar = el("div", "bar");
+            var fill = el("div", "fill " +
+              (ratio >= 1 ? "ok" : (ratio >= 0.7 ? "warn" : "err")));
+            fill.style.width = Math.max(2, Math.min(100, ratio * 100)) + "%";
+            bar.appendChild(fill);
+            box.appendChild(bar);
+            box.appendChild(el("div", "objective",
+              "objetivo " + (isDecrease(kpi.direction) ? "≤" : "≥") + " " +
+              fmtNum(kpi.expected) + (kpi.unit ? " " + kpi.unit : "") +
+              " · cumplimiento " + Math.round(ratio * 100) + " %"));
+          } else if (num(kpi.expected) !== null) {
+            box.appendChild(el("div", "objective",
+              "objetivo " + (isDecrease(kpi.direction) ? "≤" : "≥") + " " + fmtNum(kpi.expected)));
+          }
+          kpis.appendChild(box);
+        });
+        if (!(lane.kpis_final || []).length) {
+          kpis.appendChild(el("div", "objective", "Sin KPIs parseables en la última iteración."));
+        }
+        card.appendChild(kpis);
+
+        var hypRow = el("div", "hyp");
+        if (hyp && hyp.validated === true) {
+          hypRow.appendChild(el("span", "state-ok", "✓ hipótesis validada"));
+        } else if (hyp && hyp.validated === false) {
+          hypRow.appendChild(el("span", "state-err", "✗ hipótesis no validada"));
+        } else {
+          hypRow.appendChild(el("span", "state-na", "∅ hipótesis sin conclusión"));
+        }
+        if (hyp && hyp.kpi_id) {
+          hypRow.appendChild(document.createTextNode(" "));
+          var kpiRef = el("span", "spark-label mono", "(" + hyp.kpi_id + ")");
+          hypRow.appendChild(kpiRef);
+        }
+        card.appendChild(hypRow);
+
+        var actions = el("div", "actions");
+        var previewButton = el("button", "btn-primary", "► Ver prototipo");
+        previewButton.type = "button";
+        if (lane.prototype && lane.prototype.available && lane.last_iteration) {
+          previewButton.addEventListener("click", function () {
+            openPreview(pitId, lane, previewButton);
+          });
+        } else {
+          previewButton.disabled = true;
+          previewButton.title = "sin prototipo en la última iteración";
+        }
+        actions.appendChild(previewButton);
+        var detailButton = el("button", null, "Detalle KPI ▾");
+        detailButton.type = "button";
+        actions.appendChild(detailButton);
+        card.appendChild(actions);
+
+        var detail = el("div", "detail");
+        var detailLoaded = false;
+        detailButton.addEventListener("click", function () {
+          var visible = detail.style.display === "block";
+          detail.style.display = visible ? "none" : "block";
+          detailButton.textContent = visible ? "Detalle KPI ▾" : "Detalle KPI ▴";
+          if (!visible && !detailLoaded) {
+            detailLoaded = true;
+            loadIterationDetail(pitId, lane, detail);
+          }
+        });
+        card.appendChild(detail);
+
+        return card;
+      }
+
+      function renderTournament(payload) {
+        content.textContent = "";
+        errorBox.style.display = "none";
+
+        var spec = payload.spec || {};
+        document.getElementById("page-title").textContent =
+          spec.title || payload.pit_id;
+        document.title = "PIT judge · " + payload.pit_id;
+        var chip = document.getElementById("status-chip");
+        chip.textContent = payload.status;
+        chip.className = "chip " + payload.status;
+        chip.style.display = "inline-block";
+
+        var meta = el("div", "meta mono");
+        var metaParts = [payload.pit_id];
+        metaParts.push((payload.lanes || []).length + " lanes");
+        if (spec.iteration_count) { metaParts.push(spec.iteration_count + " iteraciones"); }
+        if (spec.budget_usd) { metaParts.push("budget $" + spec.budget_usd); }
+        metaParts.push("runner: " + ((payload.evidence || {}).verdict || "sin evidencia"));
+        metaParts.push("spec: " + (payload.spec_source || "ausente"));
+        meta.textContent = metaParts.join(" · ");
+        content.appendChild(meta);
+
+        if (spec.hypothesis_seed) {
+          var seed = el("div", "seed");
+          seed.appendChild(el("em", null, "Semilla: "));
+          seed.appendChild(document.createTextNode(spec.hypothesis_seed));
+          content.appendChild(seed);
+        }
+
+        var compare = payload.compare || { highlights: [], watch: [] };
+
+        if (compare.synthetic_all) {
+          content.appendChild(el("div", "banner synthetic",
+            "⚠ KPIs 100 % sintéticos — comparar prototipo e hipótesis, no adopción real."));
+        }
+
+        var outcome = payload.outcome || {};
+        if (outcome.present && outcome.winner_lane_id) {
+          var winnerBanner = el("div", "banner winner");
+          winnerBanner.textContent = "winner: " + outcome.winner_lane_id +
+            " · david_gate: " + (outcome.david_gate || "—");
+          content.appendChild(winnerBanner);
+        }
+
+        if ((compare.watch || []).length) {
+          var watch = el("div", "watch");
+          watch.appendChild(el("h2", null, "Qué mirar"));
+          var list = el("ul");
+          compare.watch.forEach(function (bullet) {
+            list.appendChild(el("li", null, bullet));
+          });
+          watch.appendChild(list);
+          content.appendChild(watch);
+        }
+
+        var grid = el("div", "grid");
+        (payload.lanes || []).forEach(function (lane) {
+          grid.appendChild(laneCard(payload.pit_id, lane, compare, outcome.winner_lane_id));
+        });
+        if (!(payload.lanes || []).length) {
+          grid.appendChild(el("div", "meta", "Sin lanes en el vault para este torneo."));
+        }
+        content.appendChild(grid);
+
+        if (!outcome.present) {
+          content.appendChild(el("div", "banner pending",
+            "judge pendiente — decidí winner y pedile a Rick el outcome report."));
+        }
+      }
+
+      function renderPicker(payload) {
+        content.textContent = "";
+        errorBox.style.display = "none";
+        document.getElementById("page-title").textContent = "PIT judge — elegí torneo";
+        var tournaments = payload.tournaments || [];
+        if (!tournaments.length) {
+          content.appendChild(el("div", "meta", "Sin torneos en el vault (" +
+            ((payload.vault || {}).path || "?") + ")."));
+          return;
+        }
+        tournaments.forEach(function (t) {
+          var card = el("div", "picker-card");
+          var grow = el("div", "grow");
+          var name = el("div", null, t.title || t.pit_id);
+          name.style.fontWeight = "600";
+          grow.appendChild(name);
+          grow.appendChild(el("div", "meta mono", t.pit_id +
+            " · lanes completas " + t.lanes_complete + "/" + (t.lane_count || "?") +
+            (t.budget_usd ? " · $" + t.budget_usd : "") +
+            " · runner " + (t.run_verdict || "—")));
+          card.appendChild(grow);
+          card.appendChild(el("span", "chip " + t.status, t.status));
+          var open = el("a", "btn btn-primary", "Abrir judge");
+          open.href = "/pit/judge/" + encodeURIComponent(t.pit_id);
+          card.appendChild(open);
+          content.appendChild(card);
+        });
+      }
+
+      function load() {
+        if (PIT_ID) {
+          fetchJSON("/pit/tournaments/" + encodeURIComponent(PIT_ID))
+            .then(renderTournament)
+            .catch(function (err) {
+              if (err && err.message === "redirect") { return; }
+              if (err && err.is404) {
+                showError("Torneo " + PIT_ID + " no encontrado en el vault.", [accessLink()]);
+                return;
+              }
+              showError((err && err.human) || "Error inesperado.", (err && err.hints) || []);
+            });
+        } else {
+          fetchJSON("/pit/tournaments")
+            .then(renderPicker)
+            .catch(function (err) {
+              if (err && err.message === "redirect") { return; }
+              showError((err && err.human) || "Error inesperado.", (err && err.hints) || []);
+            });
+        }
+      }
+
+      document.getElementById("refresh").addEventListener("click", function () {
+        load();
+      });
+      document.getElementById("change-token").addEventListener("click", function () {
+        sessionStorage.removeItem("mc_token");
+        gotoAccess();
+      });
+
+      if (location.protocol === "file:") {
+        showError("No abras este HTML guardado como archivo.", [
+          document.createTextNode(
+            "Usá http://127.0.0.1:18089/pit/judge con el túnel SSH activo " +
+            "(ssh -N -L 18089:127.0.0.1:8089 vps-umbral)."
+          )
+        ]);
+      } else if (!mcToken()) {
+        gotoAccess();
+      } else {
+        load();
+      }
+    </script>
+  </body>
+</html>

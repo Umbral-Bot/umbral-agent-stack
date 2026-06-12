@@ -19,7 +19,8 @@ export MISSION_CONTROL_TOKEN="dev-token-cambiar"
 python -m uvicorn mission_control.app:app --host 127.0.0.1 --port 8089
 ```
 
-Abrí `http://127.0.0.1:8089/` (reemplazá `__PASTE_TOKEN__` en el HTML por tu token)
+Abrí `http://127.0.0.1:8089/pit/access`, pegá tu token (queda en
+`sessionStorage`, no en el HTML) y saltá al judge `/pit/judge/{pit_id}` —
 o consumí JSON con curl:
 
 ```bash
@@ -40,7 +41,10 @@ curl -fsS -H "Authorization: Bearer $MISSION_CONTROL_TOKEN" \
 | GET | `/gates` | bearer | gates D6.1, D5/O15, editorial, security, tests |
 | GET | `/risks` | bearer | riesgos operativos: pip-audit, `.env` ACL, board drift, stale PRs |
 | GET | `/evals` | bearer | ultimo reporte JSON de `scripts/eval_harness.py --write` |
-| GET | `/pit` | bearer | dashboard judge PIT (HTMX, refresh manual, read-only, PIT-5 P5.2) |
+| GET | `/pit` | bearer | dashboard judge PIT v1 (HTMX, refresh manual, read-only, PIT-5 P5.2) |
+| GET | `/pit/access` | anónimo (shell) | landing para pegar el token → `sessionStorage` → redirect al judge (P5.2b). No expone datos: solo HTML estático |
+| GET | `/pit/judge` | anónimo (shell) | judge v2, picker de torneos. Los datos se cargan client-side vía fetch al JSON API con bearer |
+| GET | `/pit/judge/{pit_id}` | anónimo (shell) | judge v2 de un torneo: cards por lane, badges relativos, sparklines, panel "Qué mirar", banner synthetic |
 | GET | `/pit/tournaments` | bearer | lista torneos del PIT vault (read-only, PIT-5 P5.1) |
 | GET | `/pit/tournaments/{pit_id}` | bearer | detalle: spec, lanes, announce, outcome, evidencia runner |
 | GET | `/pit/tournaments/{pit_id}/lanes/{lane_id}/kpi/{iteration}` | bearer | kpi_pack.json crudo de una iteración |
@@ -51,6 +55,35 @@ curl -fsS -H "Authorization: Bearer $MISSION_CONTROL_TOKEN" \
 Todos los endpoints (excepto `/health`) requieren `Authorization: Bearer
 $MISSION_CONTROL_TOKEN`. Si la env var no está seteada, todas las rutas
 autenticadas responden **503** (fail-closed por diseño).
+
+Excepciones documentadas: `/pit/access` y `/pit/judge*` sirven **shells HTML
+sin datos** (el browser luego llama al JSON API con el bearer guardado en
+`sessionStorage`), y `/pit/preview/*` usa firma HMAC + cookie (P5.3). Ninguna
+de las tres afloja el JSON API.
+
+### Judge UX v2 (PIT-5 P5.2b) — flujo David
+
+Research que respalda el diseño: [`docs/ops/pit-judge-ux-research-brief.md`](../docs/ops/pit-judge-ux-research-brief.md).
+
+1. **Túnel + browser en un paso** (Windows):
+   ```powershell
+   .\scripts\ops\pit-judge-open.ps1        # default -Port 18089 -SshTarget vps-umbral
+   ```
+   El script verifica `http://127.0.0.1:18089/health`, ofrece levantar
+   `ssh -N -L 18089:127.0.0.1:8089 vps-umbral` si el túnel está caído, copia el
+   token al portapapeles (sin imprimirlo) y abre `/pit/access`.
+   > El puerto local es **18089** porque 8089 suele estar ocupado en la máquina
+   > de David; en la VPS Mission Control sigue en `127.0.0.1:8089`.
+2. **Pegar el token** en `/pit/access` → se valida contra `/pit/tournaments`
+   y queda en `sessionStorage` (se borra al cerrar la pestaña; nunca viaja en URL).
+3. **Decidir en el judge** `/pit/judge/{pit_id}`: una card por lane con
+   fulfillment grande + sparkline iter 1→n, barras KPI vs objetivo del spec,
+   badges "Mejor X" (uno por métrica; empate estricto = sin badge), hipótesis
+   ✓/✗/∅, botón [► Ver prototipo] (preview firmado P5.3) y [Detalle KPI ▾].
+   Banner amarillo cuando los KPIs son 100 % sintéticos.
+
+Sin ModHeader, sin editar HTML, sin token hardcodeado (`__PASTE_TOKEN__` fue
+eliminado de las superficies PIT — bugfix P5.2b).
 
 ### Preview de prototipos (PIT-5 P5.3)
 

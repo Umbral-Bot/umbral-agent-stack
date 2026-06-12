@@ -63,7 +63,8 @@
     <div class="subtitle">
       ADR-009 read-only · PIT-5 P5.2 · sin acciones de ejecución ·
       refresh manual + carga inicial (sin polling) ·
-      <a href="/">&larr; dashboard</a>
+      <a href="/">&larr; dashboard</a> ·
+      <a href="/pit/judge">vista judge v2 &rarr;</a>
     </div>
 
     <div class="toolbar">
@@ -76,8 +77,7 @@
          hx-select="#pit-data"
          hx-target="#pit-data"
          hx-swap="outerHTML"
-         hx-trigger="load, click from:#pit-refresh"
-         hx-headers='{"Authorization": "Bearer __PASTE_TOKEN__"}'>
+         hx-trigger="load, click from:#pit-refresh">
       <div id="pit-data">
 
         {% if not vault.available %}
@@ -260,28 +260,63 @@
     </div>
 
     <script>
+      // P5.2b: el bearer viene de sessionStorage (cargado en /pit/access) —
+      // cero tokens hardcodeados en el HTML. Si ModHeader ya inyecta el
+      // header, ambos caminos conviven.
+      function mcToken() { return sessionStorage.getItem("mc_token"); }
+
+      function tokenHint() {
+        if (location.protocol === "file:") {
+          return "No abras este HTML guardado como archivo; usá " +
+                 "http://127.0.0.1:18089/pit con el túnel SSH activo.";
+        }
+        if (!mcToken()) {
+          return "Token faltante — volvé a /pit/access y pegá tu MISSION_CONTROL_TOKEN.";
+        }
+        return "Túnel caído — verificá: ssh -N -L 18089:127.0.0.1:8089 vps-umbral";
+      }
+
+      document.body.addEventListener("htmx:configRequest", function (event) {
+        var token = mcToken();
+        if (token) {
+          event.detail.headers["Authorization"] = "Bearer " + token;
+        }
+      });
+
       function openPreview(el) {
         // P5.3: pide la URL firmada (bearer) y la abre en tab nueva. El href
         // directo (sin firma) responde 401: solo sirve como path informativo.
         var url = "/pit/tournaments/" + encodeURIComponent(el.dataset.pit) +
                   "/lanes/" + encodeURIComponent(el.dataset.lane) +
                   "/iterations/" + el.dataset.iter + "/preview-link";
-        fetch(url, { headers: { "Authorization": "Bearer __PASTE_TOKEN__" } })
+        var headers = {};
+        if (mcToken()) { headers["Authorization"] = "Bearer " + mcToken(); }
+        fetch(url, { headers: headers })
           .then(function (res) {
+            if (res.status === 401 || res.status === 403) {
+              throw new Error("Token faltante o inválido — volvé a /pit/access.");
+            }
             if (!res.ok) { throw new Error("HTTP " + res.status); }
             return res.json();
           })
           .then(function (body) { window.open(body.url, "_blank", "noopener"); })
-          .catch(function (err) { alert("preview: " + err.message); });
+          .catch(function (err) {
+            alert("preview: " + (err instanceof TypeError ? tokenHint() : err.message));
+          });
         return false;
       }
 
       function dlPack(pitId, laneId, n) {
+        var headers = {};
+        if (mcToken()) { headers["Authorization"] = "Bearer " + mcToken(); }
         fetch("/pit/tournaments/" + encodeURIComponent(pitId) +
               "/lanes/" + encodeURIComponent(laneId) + "/kpi/" + n, {
-          headers: { "Authorization": "Bearer __PASTE_TOKEN__" }
+          headers: headers
         })
           .then(function (res) {
+            if (res.status === 401 || res.status === 403) {
+              throw new Error("Token faltante o inválido — volvé a /pit/access.");
+            }
             if (!res.ok) { throw new Error("HTTP " + res.status); }
             return res.blob();
           })
@@ -292,14 +327,17 @@
             a.click();
             URL.revokeObjectURL(a.href);
           })
-          .catch(function (err) { alert("kpi_pack: " + err.message); });
+          .catch(function (err) {
+            alert("kpi_pack: " + (err instanceof TypeError ? tokenHint() : err.message));
+          });
       }
     </script>
 
     <p class="subtitle" style="margin-top: 32px;">
-      Reemplazá <code>__PASTE_TOKEN__</code> en este HTML por tu
-      <code>MISSION_CONTROL_TOKEN</code> para habilitar refresh y descargas, o
-      consumí los endpoints JSON <code>/pit/*</code> directamente.
+      El bearer sale de <code>sessionStorage</code>: pasá una vez por
+      <a href="/pit/access">/pit/access</a> y pegá tu
+      <code>MISSION_CONTROL_TOKEN</code> para habilitar refresh, previews y
+      descargas — o consumí los endpoints JSON <code>/pit/*</code> directamente.
     </p>
   </body>
 </html>

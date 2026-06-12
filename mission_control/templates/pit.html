@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Umbral Mission Control · PIT judge</title>
+    <script src="https://unpkg.com/htmx.org@1.9.12" integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2" crossorigin="anonymous"></script>
+    <style>
+      :root {
+        --bg: #0d1117;
+        --fg: #c9d1d9;
+        --muted: #8b949e;
+        --accent: #58a6ff;
+        --ok: #3fb950;
+        --warn: #d29922;
+        --err: #f85149;
+        --card: #161b22;
+      }
+      body {
+        background: var(--bg);
+        color: var(--fg);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        margin: 0;
+        padding: 24px;
+      }
+      h1 { color: var(--accent); margin: 0 0 8px; font-size: 18px; }
+      h2 { font-size: 13px; margin: 0 0 12px; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; }
+      h3 { font-size: 12px; margin: 16px 0 8px; color: var(--fg); }
+      a { color: var(--accent); }
+      .subtitle { color: var(--muted); font-size: 12px; margin-bottom: 24px; }
+      .card { background: var(--card); border: 1px solid #30363d; border-radius: 6px; padding: 16px; margin-bottom: 16px; }
+      .meta { color: var(--muted); font-size: 11px; margin-top: 8px; }
+      .muted { color: var(--muted); }
+      table { border-collapse: collapse; width: 100%; font-size: 12px; }
+      th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid #30363d; vertical-align: top; }
+      th { color: var(--muted); font-weight: normal; text-transform: uppercase; font-size: 10px; letter-spacing: 1px; }
+      .badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 11px; border: 1px solid var(--muted); color: var(--muted); }
+      .b-running { border-color: var(--accent); color: var(--accent); }
+      .b-judge_pending { border-color: var(--warn); color: var(--warn); }
+      .b-closed { border-color: var(--ok); color: var(--ok); }
+      .fulfillment { font-size: 20px; font-weight: bold; }
+      .f-ok { color: var(--ok); }
+      .f-warn { color: var(--warn); }
+      .f-err { color: var(--err); }
+      .f-na { color: var(--muted); font-size: 13px; }
+      .state-ok { color: var(--ok); }
+      .state-warn { color: var(--warn); }
+      .hyp-check { font-weight: bold; }
+      .banner { border: 1px solid var(--warn); color: var(--warn); border-radius: 6px; padding: 8px 12px; font-size: 12px; margin-bottom: 12px; }
+      .banner.ok { border-color: var(--ok); color: var(--ok); }
+      .banner.err { border-color: var(--err); color: var(--err); }
+      button { background: var(--card); border: 1px solid #30363d; border-radius: 6px; color: var(--fg); font-family: inherit; font-size: 12px; padding: 4px 10px; cursor: pointer; }
+      button:hover { border-color: var(--accent); color: var(--accent); }
+      button.dl { font-size: 11px; padding: 2px 8px; margin: 0 4px 4px 0; }
+      details { margin: 4px 0; }
+      details summary { cursor: pointer; color: var(--muted); font-size: 11px; }
+      details[open] > summary { color: var(--accent); }
+      .kpi-detail td, .kpi-detail th { border-bottom: 1px solid #21262d; }
+      .toolbar { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; }
+    </style>
+  </head>
+  <body>
+    <h1>Umbral Mission Control · PIT judge</h1>
+    <div class="subtitle">
+      ADR-009 read-only · PIT-5 P5.2 · sin acciones de ejecución ·
+      refresh manual + carga inicial (sin polling) ·
+      <a href="/">&larr; dashboard</a>
+    </div>
+
+    <div class="toolbar">
+      <button id="pit-refresh" type="button">&#10227; refresh</button>
+      <span class="meta">vault: <code>{{ vault.path }}</code> · generado {{ generated_at }}</span>
+    </div>
+
+    <div id="pit-refresh-zone"
+         hx-get="/pit"
+         hx-select="#pit-data"
+         hx-target="#pit-data"
+         hx-swap="outerHTML"
+         hx-trigger="load, click from:#pit-refresh"
+         hx-headers='{"Authorization": "Bearer __PASTE_TOKEN__"}'>
+      <div id="pit-data">
+
+        {% if not vault.available %}
+        <div class="banner err">
+          PIT vault no disponible en <code>{{ vault.path }}</code> —
+          revisá <code>PIT_VAULT_PATH</code> (available: false).
+        </div>
+        {% endif %}
+
+        <div class="card">
+          <h2>Torneos</h2>
+          {% if tournaments %}
+          <table>
+            <thead>
+              <tr>
+                <th>pit_id</th><th>título</th><th>status</th>
+                <th>lanes completas</th><th>budget</th><th>runner</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for t in tournaments %}
+              <tr>
+                <td><a href="#pit-{{ t.pit_id }}">{{ t.pit_id }}</a></td>
+                <td>{{ t.title if t.title is not none else "—" }}</td>
+                <td><span class="badge b-{{ t.status }}">{{ t.status }}</span></td>
+                <td>{{ t.lanes_complete }} / {{ t.lane_total if t.lane_total is not none else "?" }}</td>
+                <td>{% if t.budget_usd is not none %}${{ t.budget_usd }}{% else %}—{% endif %}</td>
+                <td>{{ t.run_verdict if t.run_verdict is not none else "—" }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <div class="meta">Sin torneos en el vault.</div>
+          {% endif %}
+          <div class="meta">GET /pit/tournaments · read-only</div>
+        </div>
+
+        {% for t in tournaments %}
+        <div class="card" id="pit-{{ t.pit_id }}">
+          <h2>{{ t.pit_id }} <span class="badge b-{{ t.status }}">{{ t.status }}</span></h2>
+          <div class="meta">
+            {{ t.title if t.title is not none else "sin título" }} ·
+            spec: {{ t.spec_source if t.spec_source is not none else "ausente" }} ·
+            runner: {{ t.run_verdict if t.run_verdict is not none else "sin evidencia" }}
+            {% if t.archived %} · archivado{% endif %}
+          </div>
+
+          {% if t.outcome.present %}
+          <div class="banner ok">
+            winner: <strong>{{ t.outcome.winner_lane_id if t.outcome.winner_lane_id is not none else "?" }}</strong>
+            · david_gate: {{ t.outcome.david_gate if t.outcome.david_gate is not none else "—" }}
+          </div>
+          {% else %}
+          <div class="banner">
+            judge pendiente — decidí winner y pedile a Rick el outcome report.
+          </div>
+          {% endif %}
+
+          <table>
+            <thead>
+              <tr>
+                <th>lane</th>
+                <th>estado</th>
+                <th>iter</th>
+                <th>fulfillment última iter</th>
+                <th>hipótesis final</th>
+                <th>% sintético</th>
+                <th>prototipo</th>
+                <th>kpi_pack</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for lane in t.lanes %}
+              <tr>
+                <td>{{ lane.lane_id }}</td>
+                <td>
+                  {% if lane.lane_complete %}
+                  <span class="state-ok">complete</span>
+                  {% else %}
+                  <span class="state-warn">lane_incomplete</span>
+                  {% endif %}
+                </td>
+                <td>{{ lane.iterations_run }}{% if lane.last_iteration is not none %} (última: {{ lane.last_iteration }}){% endif %}</td>
+                <td>
+                  {% if lane.fulfillment_score is not none %}
+                  <span class="fulfillment {% if lane.fulfillment_score >= 0.7 %}f-ok{% elif lane.fulfillment_score >= 0.4 %}f-warn{% else %}f-err{% endif %}">{{ "%.2f"|format(lane.fulfillment_score) }}</span>
+                  {% else %}
+                  <span class="fulfillment f-na">∅</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if lane.hypothesis_final is not none %}
+                  {% if lane.hypothesis_final.validated is true %}
+                  <span class="hyp-check state-ok">✓</span>
+                  {% elif lane.hypothesis_final.validated is false %}
+                  <span class="hyp-check" style="color: var(--err)">✗</span>
+                  {% else %}
+                  <span class="hyp-check muted">∅</span>
+                  {% endif %}
+                  {{ lane.hypothesis_final.variable if lane.hypothesis_final.variable is not none else "—" }}
+                  <span class="muted">({{ lane.hypothesis_final.kpi_id if lane.hypothesis_final.kpi_id is not none else "?" }})</span>
+                  {% else %}
+                  <span class="hyp-check muted">∅</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if lane.synthetic_share is not none %}
+                  {{ "%.0f"|format(lane.synthetic_share * 100) }}%
+                  {% else %}
+                  —
+                  {% endif %}
+                </td>
+                <td>
+                  {% if lane.prototype.available and lane.prototype.preview_path %}
+                  <a href="{{ lane.prototype.preview_path }}" target="_blank" rel="noopener">Prototipo ▶</a>
+                  {% else %}
+                  <span class="muted">∅</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% for it in lane.iterations %}
+                  <button class="dl" type="button"
+                          onclick="dlPack('{{ t.pit_id }}', '{{ lane.lane_id }}', {{ it.n }})">kpi_pack ⬇ {{ it.n }}</button>
+                  {% else %}
+                  <span class="muted">—</span>
+                  {% endfor %}
+                </td>
+              </tr>
+              <tr>
+                <td colspan="8">
+                  <details>
+                    <summary>KPI detalle · {{ lane.lane_id }}</summary>
+                    {% for it in lane.iterations %}
+                    <details class="iter" {% if loop.last %}open{% endif %}>
+                      <summary>iteración {{ it.n }}{% if it.fulfillment is not none %} · fulfillment {{ "%.2f"|format(it.fulfillment) }}{% endif %}</summary>
+                      {% if it.kpis %}
+                      <table class="kpi-detail">
+                        <thead>
+                          <tr>
+                            <th>kpi_id</th><th>unit</th><th>expected</th>
+                            <th>achieved</th><th>direction</th><th>synthetic</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% for kpi in it.kpis %}
+                          <tr>
+                            <td>{{ kpi.kpi_id if kpi.kpi_id is not none else "?" }}</td>
+                            <td>{{ kpi.unit if kpi.unit is not none else "—" }}</td>
+                            <td>{{ kpi.expected if kpi.expected is not none else "—" }}</td>
+                            <td>{{ kpi.achieved if kpi.achieved is not none else "—" }}</td>
+                            <td>{{ kpi.direction if kpi.direction is not none else "—" }}</td>
+                            <td>{% if kpi.synthetic %}<span class="state-warn">✓ sintético</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+                          </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                      {% else %}
+                      <div class="meta">kpi_pack sin KPIs parseables.</div>
+                      {% endif %}
+                    </details>
+                    {% else %}
+                    <div class="meta">Sin kpi_packs legibles para esta lane.</div>
+                    {% endfor %}
+                  </details>
+                </td>
+              </tr>
+              {% else %}
+              <tr><td colspan="8" class="muted">Sin lanes.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <div class="meta">GET /pit/tournaments/{{ t.pit_id }} · preview servido recién en P5.3 (el link puede dar 404)</div>
+        </div>
+        {% endfor %}
+
+      </div>
+    </div>
+
+    <script>
+      function dlPack(pitId, laneId, n) {
+        fetch("/pit/tournaments/" + encodeURIComponent(pitId) +
+              "/lanes/" + encodeURIComponent(laneId) + "/kpi/" + n, {
+          headers: { "Authorization": "Bearer __PASTE_TOKEN__" }
+        })
+          .then(function (res) {
+            if (!res.ok) { throw new Error("HTTP " + res.status); }
+            return res.blob();
+          })
+          .then(function (blob) {
+            var a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = pitId + "_" + laneId + "_iter" + n + "_kpi_pack.json";
+            a.click();
+            URL.revokeObjectURL(a.href);
+          })
+          .catch(function (err) { alert("kpi_pack: " + err.message); });
+      }
+    </script>
+
+    <p class="subtitle" style="margin-top: 32px;">
+      Reemplazá <code>__PASTE_TOKEN__</code> en este HTML por tu
+      <code>MISSION_CONTROL_TOKEN</code> para habilitar refresh y descargas, o
+      consumí los endpoints JSON <code>/pit/*</code> directamente.
+    </p>
+  </body>
+</html>

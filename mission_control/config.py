@@ -37,6 +37,21 @@ EVAL_REPORT_PATH: Path = Path(
     )
 )
 
+# --- PIT vault (PIT-5 P5.1, solo lectura) ---
+PIT_VAULT_PATH: Path = Path(
+    os.getenv("PIT_VAULT_PATH", str(Path.home() / "umbral-pit-vault"))
+)
+PIT_EVIDENCE_DIR: Path = Path(
+    os.getenv("PIT_EVIDENCE_DIR", str(Path.home() / ".coord-ag-evidence"))
+)
+# Fallback de spec (hallazgo P5.0: el vault piloto no tiene spec/pit_spec.yaml).
+PIT_SPEC_FALLBACK_DIR: Path = Path(
+    os.getenv(
+        "PIT_SPEC_FALLBACK_DIR",
+        str(Path(__file__).resolve().parents[1] / "examples"),
+    )
+)
+
 # --- Persistencia (ADR-009 D5) ---
 SNAPSHOTS_DIR: Path = Path(
     os.getenv(

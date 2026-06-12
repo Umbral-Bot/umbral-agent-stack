@@ -40,6 +40,9 @@ curl -fsS -H "Authorization: Bearer $MISSION_CONTROL_TOKEN" \
 | GET | `/gates` | bearer | gates D6.1, D5/O15, editorial, security, tests |
 | GET | `/risks` | bearer | riesgos operativos: pip-audit, `.env` ACL, board drift, stale PRs |
 | GET | `/evals` | bearer | ultimo reporte JSON de `scripts/eval_harness.py --write` |
+| GET | `/pit/tournaments` | bearer | lista torneos del PIT vault (read-only, PIT-5 P5.1) |
+| GET | `/pit/tournaments/{pit_id}` | bearer | detalle: spec, lanes, announce, outcome, evidencia runner |
+| GET | `/pit/tournaments/{pit_id}/lanes/{lane_id}/kpi/{iteration}` | bearer | kpi_pack.json crudo de una iteración |
 
 Todos los endpoints (excepto `/health`) requieren `Authorization: Bearer
 $MISSION_CONTROL_TOKEN`. Si la env var no está seteada, todas las rutas
@@ -56,6 +59,9 @@ autenticadas responden **503** (fail-closed por diseño).
 | `OPENCLAW_JSON_PATH` | `~/.openclaw/openclaw.json` | Best-effort: si no existe, `/agents` devuelve `available=false` |
 | `OPENCLAW_QUOTA_STATE_PATH` | `~/.config/openclaw/claude-quota-state.json` | Idem |
 | `MISSION_CONTROL_EVAL_REPORT_PATH` | `reports/evals/generated/core-eval-harness-latest.json` | Best-effort: si no existe, `/evals` devuelve `available=false` |
+| `PIT_VAULT_PATH` | `~/umbral-pit-vault` | PIT vault (layout `docs/ops/pit-vault-layout.md`). Si no existe, `/pit/tournaments` devuelve `available=false` |
+| `PIT_EVIDENCE_DIR` | `~/.coord-ag-evidence` | Evidencia del runner (`pit-run/<pit_id>/run-metrics.json`), best-effort |
+| `PIT_SPEC_FALLBACK_DIR` | `examples/` (repo) | Fallback de `pit_spec.yaml` cuando el vault no lo tiene (hallazgo P5.0) |
 | `MISSION_CONTROL_SNAPSHOTS_DIR` | `mission_control/snapshots/` | Git-ignored |
 
 ## Quality gate (ADR-009 D6)

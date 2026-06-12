@@ -141,3 +141,31 @@ Esto cumple la regla anti-sprawl §6 del plan ("usar ≥1 vez en Q2 o entra a `e
 - ADR-002 notion-vs-queue: precedente de separación de canales.
 - Skill `openclaw-gateway`: `umbral-agent-stack/openclaw/workspace-templates/skills/openclaw-gateway/`.
 - Script de quota: `umbral-agent-stack/scripts/openclaw-claude-quota.py`.
+
+## Addendum 2026-06-12 — PIT read-only routes (`/pit/*`)
+
+PIT-5 P5.1 (plan: `docs/ops/pit-5-mission-control-v2-implementation-plan.md`)
+agrega a Mission Control el namespace **`/pit/*`** manteniendo la postura D1:
+**solo lectura, solo GET, sin launcher, sin escrituras**.
+
+- **Nuevas fuentes de datos** (todas best-effort, lectura directa de
+  filesystem): el PIT vault (`PIT_VAULT_PATH`, default `~/umbral-pit-vault`,
+  layout según `docs/ops/pit-vault-layout.md`), la evidencia del runner
+  (`PIT_EVIDENCE_DIR/pit-run/<pit_id>/run-metrics.json`, default
+  `~/.coord-ag-evidence`) y el fallback de specs en el repo
+  (`PIT_SPEC_FALLBACK_DIR`, default `examples/` — hallazgo P5.0: el vault
+  piloto no tiene `spec/pit_spec.yaml`).
+- **Namespace separado de D3**: `/tournaments` (historia estática de torneos
+  de modelos) NO se toca; los torneos PIT viven bajo `/pit/tournaments`.
+- **Adapter nuevo** `mission_control/adapters/pit_vault.py`: nunca abre
+  archivos en modo escritura (hay test que lo garantiza), valida `pit_id` /
+  `lane_id` / `iteration` con los mismos regexes de
+  `kpi-pack.schema.json` **antes** de tocar filesystem (422 en rutas,
+  `ValueError` en adapter) y contiene los paths resueltos dentro del vault
+  (defensa anti path-traversal).
+- **Auth**: mismas reglas D4 (bearer `MISSION_CONTROL_TOKEN`, 503 fail-closed).
+- El preview HTML del prototipo (`/pit/preview/...`) NO entra en P5.1; se
+  decide e implementa en P5.3 (el shape ya expone `preview_path` estable).
+
+Esto no altera D1–D7; es una extensión de fuentes de lectura del mismo
+dashboard.

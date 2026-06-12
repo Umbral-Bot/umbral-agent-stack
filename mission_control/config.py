@@ -52,6 +52,33 @@ PIT_SPEC_FALLBACK_DIR: Path = Path(
     )
 )
 
+# --- PIT preview (PIT-5 P5.3, URL firmada + cookie HttpOnly) ---
+# TTL de la firma HMAC y de la cookie path-scoped (plan §4 P5.3: 15 min).
+PIT_PREVIEW_TTL_SECONDS: int = int(os.getenv("PIT_PREVIEW_TTL_SECONDS", "900"))
+# Allowlist de extensiones servibles desde prototype/ (plan §P5.3, ajustada
+# por P5.0: el piloto real solo tiene .html y .json; se suman css/js y assets
+# típicos de prototipos estáticos). Todo lo demás → 403.
+PIT_PREVIEW_ALLOWED_EXTENSIONS: frozenset[str] = frozenset(
+    {
+        ".html",
+        ".htm",
+        ".css",
+        ".js",
+        ".json",
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".svg",
+        ".webp",
+        ".gif",
+        ".ico",
+        ".woff",
+        ".woff2",
+        ".txt",
+        ".md",
+    }
+)
+
 # --- Persistencia (ADR-009 D5) ---
 SNAPSHOTS_DIR: Path = Path(
     os.getenv(

@@ -193,7 +193,9 @@
                 </td>
                 <td>
                   {% if lane.prototype.available and lane.prototype.preview_path %}
-                  <a href="{{ lane.prototype.preview_path }}" target="_blank" rel="noopener">Prototipo ▶</a>
+                  <a href="{{ lane.prototype.preview_path }}"
+                     data-pit="{{ t.pit_id }}" data-lane="{{ lane.lane_id }}" data-iter="{{ lane.last_iteration }}"
+                     onclick="return openPreview(this);" target="_blank" rel="noopener">Prototipo ▶</a>
                   {% else %}
                   <span class="muted">∅</span>
                   {% endif %}
@@ -250,7 +252,7 @@
               {% endfor %}
             </tbody>
           </table>
-          <div class="meta">GET /pit/tournaments/{{ t.pit_id }} · preview servido recién en P5.3 (el link puede dar 404)</div>
+          <div class="meta">GET /pit/tournaments/{{ t.pit_id }} · preview firmado (P5.3, TTL corto — el click pide preview-link)</div>
         </div>
         {% endfor %}
 
@@ -258,6 +260,22 @@
     </div>
 
     <script>
+      function openPreview(el) {
+        // P5.3: pide la URL firmada (bearer) y la abre en tab nueva. El href
+        // directo (sin firma) responde 401: solo sirve como path informativo.
+        var url = "/pit/tournaments/" + encodeURIComponent(el.dataset.pit) +
+                  "/lanes/" + encodeURIComponent(el.dataset.lane) +
+                  "/iterations/" + el.dataset.iter + "/preview-link";
+        fetch(url, { headers: { "Authorization": "Bearer __PASTE_TOKEN__" } })
+          .then(function (res) {
+            if (!res.ok) { throw new Error("HTTP " + res.status); }
+            return res.json();
+          })
+          .then(function (body) { window.open(body.url, "_blank", "noopener"); })
+          .catch(function (err) { alert("preview: " + err.message); });
+        return false;
+      }
+
       function dlPack(pitId, laneId, n) {
         fetch("/pit/tournaments/" + encodeURIComponent(pitId) +
               "/lanes/" + encodeURIComponent(laneId) + "/kpi/" + n, {

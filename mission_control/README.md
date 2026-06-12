@@ -44,10 +44,27 @@ curl -fsS -H "Authorization: Bearer $MISSION_CONTROL_TOKEN" \
 | GET | `/pit/tournaments` | bearer | lista torneos del PIT vault (read-only, PIT-5 P5.1) |
 | GET | `/pit/tournaments/{pit_id}` | bearer | detalle: spec, lanes, announce, outcome, evidencia runner |
 | GET | `/pit/tournaments/{pit_id}/lanes/{lane_id}/kpi/{iteration}` | bearer | kpi_pack.json crudo de una iteración |
+| GET | `/pit/tournaments/{pit_id}/lanes/{lane_id}/iterations/{n}/preview-link` | bearer | emite URL firmada HMAC (TTL 15 min) para el preview (PIT-5 P5.3) |
+| GET | `/pit/preview/{pit_id}/{lane_id}/{n}/{path}` | firma/cookie | sirve los archivos de `prototype/` — primer hit valida `?t=` y setea cookie HttpOnly path-scoped; assets siguientes van por cookie |
+| GET | `/pit-preview/{pit_id}/{lane_id}/...` | — (redirect) | alias legacy de los announce del piloto → 307 a `/pit/preview/...` (rewrite puro, sin auth ni filesystem) |
 
 Todos los endpoints (excepto `/health`) requieren `Authorization: Bearer
 $MISSION_CONTROL_TOKEN`. Si la env var no está seteada, todas las rutas
 autenticadas responden **503** (fail-closed por diseño).
+
+### Preview de prototipos (PIT-5 P5.3)
+
+El preview usa **dos planos de auth** (plan PIT-5 §3): JSON = bearer; HTML
+estático = URL firmada `HMAC-SHA256(MISSION_CONTROL_TOKEN, "<pit>/<lane>/<n>:<expiry>")`
+de vida corta que setea una cookie `HttpOnly; SameSite=Strict` con `Path`
+acotado a `/pit/preview/<pit>/<lane>/<n>/`. El JS de un prototipo no puede
+leer el token ni llamar a las rutas bearer; su blast radius son sus propios
+archivos. Guards: realpath dentro de `<vault>/pit/.../prototype/` (corta
+`..`, `%2e%2e` y symlinks que escapen), allowlist de extensiones con
+Content-Type explícito + `nosniff`, sin directory listing, CSP self-only +
+`Referrer-Policy: no-referrer` en HTML. Solo se sirve el subtree activo
+`pit/` (nunca `archive/`); el archivo se resuelve siempre por filesystem,
+nunca desde el `PROTOTYPE_URL` del announce.
 
 ## Variables de entorno
 
@@ -63,6 +80,7 @@ autenticadas responden **503** (fail-closed por diseño).
 | `PIT_VAULT_PATH` | `~/umbral-pit-vault` | PIT vault (layout `docs/ops/pit-vault-layout.md`). Si no existe, `/pit/tournaments` devuelve `available=false` |
 | `PIT_EVIDENCE_DIR` | `~/.coord-ag-evidence` | Evidencia del runner (`pit-run/<pit_id>/run-metrics.json`), best-effort |
 | `PIT_SPEC_FALLBACK_DIR` | `examples/` (repo) | Fallback de `pit_spec.yaml` cuando el vault no lo tiene (hallazgo P5.0) |
+| `PIT_PREVIEW_TTL_SECONDS` | `900` | TTL de la firma HMAC y la cookie del preview (15 min) |
 | `MISSION_CONTROL_SNAPSHOTS_DIR` | `mission_control/snapshots/` | Git-ignored |
 
 ## Quality gate (ADR-009 D6)

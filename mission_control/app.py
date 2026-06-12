@@ -23,7 +23,18 @@ from fastapi.templating import Jinja2Templates
 from . import config
 from .adapters import pit_vault
 from .auth import require_token
-from .routes import agents, evals, gates, health, pit, queue, quotas, risks, tournaments
+from .routes import (
+    agents,
+    evals,
+    gates,
+    health,
+    pit,
+    pit_preview,
+    queue,
+    quotas,
+    risks,
+    tournaments,
+)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -71,6 +82,14 @@ app.include_router(gates.router, dependencies=_auth)
 app.include_router(risks.router, dependencies=_auth)
 app.include_router(evals.router, dependencies=_auth)
 app.include_router(pit.router, dependencies=_auth)
+app.include_router(pit_preview.link_router, dependencies=_auth)
+
+# Preview estático de prototipos (PIT-5 P5.3): auth propia por URL firmada
+# HMAC + cookie HttpOnly path-scoped — NO bearer global (un <a href>/asset
+# relativo no manda headers). Las rutas JSON /pit/* siguen bearer-only.
+app.include_router(pit_preview.preview_router)
+# Alias legacy /pit-preview/* → redirect a /pit/preview/ (rewrite puro).
+app.include_router(pit_preview.alias_router)
 
 
 _templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))

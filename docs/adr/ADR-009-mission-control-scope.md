@@ -169,3 +169,29 @@ agrega a Mission Control el namespace **`/pit/*`** manteniendo la postura D1:
 
 Esto no altera D1–D7; es una extensión de fuentes de lectura del mismo
 dashboard.
+
+## Addendum 2026-06-19 — Judge UX v2: shells HTML sin bearer (`/pit/access`, `/pit/judge`)
+
+PIT-5 P5.2b agrega dos páginas **sin** dependencia de bearer:
+
+- `GET /pit/access` — landing para pegar el token. Lo valida contra
+  `/pit/tournaments` y lo guarda en `sessionStorage` del browser.
+- `GET /pit/judge` y `GET /pit/judge/{pit_id}` — shells del judge v2.
+
+**Por qué no rompe D4 (auth fail-closed):** las tres rutas devuelven HTML
+estático **sin un solo byte del vault** (hay test que lo garantiza: el shell
+se renderiza sin tocar filesystem; `pit_id` solo se valida por regex y se
+re-emite). Todos los datos los carga el browser vía `fetch` al JSON API
+existente con `Authorization: Bearer` desde `sessionStorage` — el JSON
+sigue 401/403/503 igual que antes. Es el mismo patrón de dos planos que el
+preview P5.3 (HTML estático con su propio mecanismo, JSON con bearer).
+
+Decisiones asociadas:
+
+- El token nunca viaja por URL ni queda hardcodeado en HTML
+  (`__PASTE_TOKEN__` eliminado de las superficies PIT — bugfix de la
+  regresión "Failed to fetch" que David reprodujo en el piloto).
+- `sessionStorage` (no `localStorage`): el token muere con la pestaña.
+- Sin acciones de ejecución: el judge v2 mantiene D1 (read-only, sin
+  launcher, refresh manual sin polling).
+- Bind sigue `127.0.0.1` + túnel SSH (D2); puerto local documentado 18089.

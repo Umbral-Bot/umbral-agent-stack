@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Mission Control · PIT judge — acceso</title>
+    <style>
+      :root {
+        --bg: #0d1117;
+        --fg: #e6edf3;
+        --muted: #8b949e;
+        --accent: #58a6ff;
+        --ok: #3fb950;
+        --warn: #d29922;
+        --err: #f85149;
+        --card: #161b22;
+        --border: #30363d;
+      }
+      * { box-sizing: border-box; }
+      body {
+        background: var(--bg);
+        color: var(--fg);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .panel {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 28px;
+        width: 100%;
+        max-width: 460px;
+      }
+      h1 { font-size: 18px; margin: 0 0 4px; color: var(--fg); }
+      .sub { color: var(--muted); font-size: 13px; margin: 0 0 20px; }
+      label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+      input[type="password"] {
+        width: 100%;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--fg);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 13px;
+        padding: 9px 10px;
+      }
+      input[type="password"]:focus { outline: none; border-color: var(--accent); }
+      button {
+        margin-top: 14px;
+        width: 100%;
+        background: #1f6feb;
+        border: 1px solid #1f6feb;
+        border-radius: 6px;
+        color: #fff;
+        font-size: 14px;
+        font-weight: 600;
+        padding: 9px 12px;
+        cursor: pointer;
+      }
+      button:hover { background: #388bfd; }
+      button:disabled { opacity: 0.6; cursor: wait; }
+      .error {
+        display: none;
+        margin-top: 14px;
+        border: 1px solid var(--err);
+        color: var(--err);
+        border-radius: 6px;
+        padding: 10px 12px;
+        font-size: 13px;
+      }
+      .hint { color: var(--muted); font-size: 12px; margin-top: 18px; line-height: 1.5; }
+      .hint code { color: var(--fg); }
+    </style>
+  </head>
+  <body>
+    <div class="panel">
+      <h1>Mission Control · PIT judge</h1>
+      <p class="sub">
+        Pegá tu <span class="mono">MISSION_CONTROL_TOKEN</span> para entrar.
+        Queda solo en <span class="mono">sessionStorage</span> de esta pestaña
+        (se borra al cerrarla); nunca se loguea ni viaja en la URL.
+      </p>
+
+      <label for="token">Token</label>
+      <input id="token" type="password" autocomplete="off"
+             placeholder="MISSION_CONTROL_TOKEN" autofocus />
+      <button id="enter" type="button">Entrar</button>
+      <div id="error" class="error" role="alert"></div>
+
+      <p class="hint">
+        ¿Túnel? <code>ssh -N -L 18089:127.0.0.1:8089 vps-umbral</code> y abrí
+        <code>http://127.0.0.1:18089/pit/access</code>.
+        No abras este HTML guardado como archivo (<code>file://</code>):
+        el navegador bloquea los fetch.
+      </p>
+    </div>
+
+    <script>
+      (function () {
+        "use strict";
+        var input = document.getElementById("token");
+        var button = document.getElementById("enter");
+        var errorBox = document.getElementById("error");
+
+        function showError(message) {
+          errorBox.textContent = message;
+          errorBox.style.display = "block";
+        }
+
+        if (location.protocol === "file:") {
+          showError(
+            "No abras este HTML guardado como archivo; usá " +
+            "http://127.0.0.1:18089/pit/access (túnel SSH activo)."
+          );
+          button.disabled = true;
+          return;
+        }
+
+        function safeNext() {
+          // Anti open-redirect: solo paths internos /pit/*.
+          var params = new URLSearchParams(location.search);
+          var next = params.get("next") || "";
+          if (/^\/pit\/[A-Za-z0-9/_-]*$/.test(next)) { return next; }
+          return null;
+        }
+
+        function go() {
+          var token = input.value.trim();
+          errorBox.style.display = "none";
+          if (!token) {
+            showError("Pegá el token primero.");
+            return;
+          }
+          button.disabled = true;
+          fetch("/pit/tournaments", {
+            headers: { "Authorization": "Bearer " + token }
+          })
+            .then(function (res) {
+              if (res.status === 401 || res.status === 403) {
+                throw new Error("Token inválido — revisá MISSION_CONTROL_TOKEN en la VPS.");
+              }
+              if (res.status === 503) {
+                throw new Error("Mission Control sin token configurado en el server (fail-closed).");
+              }
+              if (!res.ok) { throw new Error("HTTP " + res.status); }
+              return res.json();
+            })
+            .then(function (body) {
+              sessionStorage.setItem("mc_token", token);
+              var next = safeNext();
+              if (next) { location.href = next; return; }
+              var active = (body.tournaments || []).filter(function (t) {
+                return !t.archived;
+              });
+              if (active.length === 1) {
+                location.href = "/pit/judge/" + encodeURIComponent(active[0].pit_id);
+              } else {
+                location.href = "/pit/judge";
+              }
+            })
+            .catch(function (err) {
+              button.disabled = false;
+              if (err instanceof TypeError) {
+                showError(
+                  "Túnel caído — no llego al server. Verificá: " +
+                  "ssh -N -L 18089:127.0.0.1:8089 vps-umbral"
+                );
+              } else {
+                showError(err.message);
+              }
+            });
+        }
+
+        button.addEventListener("click", go);
+        input.addEventListener("keydown", function (event) {
+          if (event.key === "Enter") { go(); }
+        });
+      })();
+    </script>
+  </body>
+</html>

@@ -91,6 +91,11 @@ app.include_router(pit_preview.preview_router)
 # Alias legacy /pit-preview/* → redirect a /pit/preview/ (rewrite puro).
 app.include_router(pit_preview.alias_router)
 
+# Judge UX v2 (PIT-5 P5.2b): shells HTML sin bearer (/pit/access, /pit/judge).
+# No renderizan datos del vault; el JS cliente fetchea las rutas JSON con el
+# bearer guardado en sessionStorage. ADR-009 addendum 2026-06 (P5.2b).
+app.include_router(pit.pages_router)
+
 
 _templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))
 

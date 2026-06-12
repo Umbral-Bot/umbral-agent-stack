@@ -40,6 +40,7 @@ curl -fsS -H "Authorization: Bearer $MISSION_CONTROL_TOKEN" \
 | GET | `/gates` | bearer | gates D6.1, D5/O15, editorial, security, tests |
 | GET | `/risks` | bearer | riesgos operativos: pip-audit, `.env` ACL, board drift, stale PRs |
 | GET | `/evals` | bearer | ultimo reporte JSON de `scripts/eval_harness.py --write` |
+| GET | `/pit` | bearer | dashboard judge PIT (HTMX, refresh manual, read-only, PIT-5 P5.2) |
 | GET | `/pit/tournaments` | bearer | lista torneos del PIT vault (read-only, PIT-5 P5.1) |
 | GET | `/pit/tournaments/{pit_id}` | bearer | detalle: spec, lanes, announce, outcome, evidencia runner |
 | GET | `/pit/tournaments/{pit_id}/lanes/{lane_id}/kpi/{iteration}` | bearer | kpi_pack.json crudo de una iteración |

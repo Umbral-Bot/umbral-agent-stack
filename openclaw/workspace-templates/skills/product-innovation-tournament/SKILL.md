@@ -15,9 +15,22 @@ metadata:
 
 # Product Innovation Tournament (PIT)
 
-Skill de Rick para torneos de **producto**: lanes paralelas que investigan, formulan hipótesis, prototipan y miden KPI. Implementa [`docs/ops/product-innovation-tournament-vision-2026-06-09.md`](../../../../docs/ops/product-innovation-tournament-vision-2026-06-09.md); contrato de entrada en [`docs/schemas/pit-spec-v1.schema.json`](../../../../docs/schemas/pit-spec-v1.schema.json).
+Skill de Rick para torneos de **producto**: lanes paralelas que investigan, formulan hipótesis, prototipan y miden KPI. El contrato canónico vigente para Ruta B broker-real es [`docs/ops/pit-tournament-v2-contract.md`](../../../../docs/ops/pit-tournament-v2-contract.md). La visión histórica sigue en [`docs/ops/product-innovation-tournament-vision-2026-06-09.md`](../../../../docs/ops/product-innovation-tournament-vision-2026-06-09.md); contrato de entrada v1 en [`docs/schemas/pit-spec-v1.schema.json`](../../../../docs/schemas/pit-spec-v1.schema.json).
 
-**Status:** v1.2 (PIT-2b) — parser + gate + contratos + runner smoke local (tasks `pit.*` + dry-run) **+ spawn real de agentes efímeros** vía `scripts/pit/pit_tournament_run.sh` ([`docs/ops/pit-2-runner-protocol.md`](../../../../docs/ops/pit-2-runner-protocol.md) §7). El spawn real requiere pit-vault desplegado + smoke `PIT_DRY_RUN_PASS` + autorización David por torneo (gate literal).
+**Status:** v2.0 P0 alignment — parser + gate + contratos + runner smoke local (tasks `pit.*` + dry-run) **+ spawn real de agentes efímeros** vía `scripts/pit/pit_tournament_run.sh` ([`docs/ops/pit-2-runner-protocol.md`](../../../../docs/ops/pit-2-runner-protocol.md) §7). El spawn real requiere pit-vault desplegado + smoke `PIT_DRY_RUN_PASS` + autorización David por torneo (gate literal) + preflight Ruta B cuando `coding_broker: copilot_cli`.
+
+## Contrato canónico v2 — Ruta B broker-only
+
+Cuando el spec declare `coding_broker: copilot_cli`, la regla es literal:
+
+- OpenClaw lane = orquestador; Worker `copilot_cli.run` = única superficie de coding/repo.
+- Las lanes **NO** implementan vía `azure-openai-responses`, coding directo, shell propia, GitHub directo ni herramientas OpenClaw alternativas.
+- Cada batch broker debe incluir `pit_id`, `lane_id`, `batch_id` e `iteration`.
+- Los modelos de lane quedan en `lane_models[]`; no inventar slugs no verificados. Usar placeholders `TODO_P3_VPS_VERIFY_*` hasta P3.
+- Si `copilot_cli.run` falla, la lane queda `blocked`; no hay mock silent fallback ni implementación alternativa para simular éxito.
+- `PIT_RUN_PASS_BROKER_REAL` solo existe si el ledger de tokens + audit JSONL + Mission Control judge + gate David están completos.
+
+Fuente de verdad: [`docs/ops/pit-tournament-v2-contract.md`](../../../../docs/ops/pit-tournament-v2-contract.md). Contrato técnico corto: [`docs/ops/pit-broker-contract.md`](../../../../docs/ops/pit-broker-contract.md).
 
 ## When to use
 
@@ -101,9 +114,26 @@ PIT listo para arrancar — confirmá:
 Para lanzar respondé literalmente: ok, arranca
 ```
 
+- En Telegram, esta confirmación debe tener **12 líneas o menos**; el detalle completo queda en el pit-vault.
 - **Solo** la frase literal **`ok, arranca`** dispara el spawn. "dale", "sí", "go" → repetir el gate.
 - Cualquier corrección de David → re-parsear, re-validar, re-presentar el gate.
 - Sin respuesta = sin torneo. No hay auto-arranque.
+
+---
+
+## Preflight Ruta B antes de spawn broker-real
+
+Antes de spawnear lanes para un torneo con `coding_broker: copilot_cli`, Rick debe comprobar:
+
+1. **P1 infra:** imagen sandbox Copilot CLI y red `copilot-egress` listas si el spec pide execute/egress.
+2. **P2 probe:** Worker `copilot_cli.run` probado al menos en read-only con audit JSONL.
+3. **Repo clone/read:** `repo_read` existe, ref fijado y paths allowlist/denylist cargados.
+4. **Allowlist:** comandos, egress y MCP coinciden con `permissions`.
+5. **`pit_spec_validate`:** spec validado y sin defaults silenciosos en `budget_usd` ni `iterations`.
+6. **`secrets_scope`:** solo referencias declarativas; ningún valor secreto en prompt, vault o logs.
+7. **Token ledger:** `metrics/token_ledger.yaml` preparado o el torneo queda como no broker-real.
+
+Si una condición requerida falla, el veredicto es `PIT_RUN_BLOCKED` o `NEEDS_RERUN`, no fallback.
 
 ---
 
@@ -208,6 +238,9 @@ lane_complete = prototype_reachable && kpi_pack_valido_contra_schema && fulfillm
 | pit-vault sin desplegar o `pit_vault_check.py` fail | STOP — deploy/fix vault primero |
 | Pedido de URL pública para el prototipo | STOP — solo túnel + Mission Control en v1 |
 | Lane pide escribir fuera de su subárbol | STOP — write scope `pit/<pit_id>/lanes/<lane_id>/` |
+| `coding_broker: copilot_cli` pero la lane intenta implementar vía `azure-openai-responses`, OpenClaw directo o GitHub directo | STOP — `PIT_LANE_SPEC_VIOLATION` |
+| Worker `copilot_cli.run` falla o no está disponible | STOP — lane `blocked`; sin mock silent fallback |
+| Falta P1/P2 para un torneo que requiere broker-real | STOP — `PIT_RUN_BLOCKED`; no re-run hasta cerrar paquetes |
 | Lane pide llamar Magnific directo o sin gate de columna | STOP — Rick broker + gate Prototype |
 | Señal sintética sin etiquetar | STOP — labeled es obligatorio |
 | Sesión nested sin `sessions_spawn` | STOP — ISSUE-001 / G-D1b (igual que D3) |
@@ -224,6 +257,9 @@ lane_complete = prototype_reachable && kpi_pack_valido_contra_schema && fulfillm
 ## Referencias
 
 - Visión y decisiones: `docs/ops/product-innovation-tournament-vision-2026-06-09.md`
+- Contrato canónico Ruta B v2: `docs/ops/pit-tournament-v2-contract.md`
+- Contrato técnico broker: `docs/ops/pit-broker-contract.md`
+- Resumen mega-diagnóstico 2026-06-20: `docs/ops/pit-mega-diagnostic-20260620-summary.md`
 - Schema spec: `docs/schemas/pit-spec-v1.schema.json` + `scripts/pit/pit_spec_validate.py`
 - Kanban/KPI: `docs/ops/pit-kanban-kpi-protocol.md`
 - Vault: `docs/ops/pit-vault-layout.md` + `scripts/pit/pit_vault_check.py`

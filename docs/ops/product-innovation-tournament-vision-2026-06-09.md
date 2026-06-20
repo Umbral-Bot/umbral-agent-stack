@@ -1,5 +1,11 @@
 # Product Innovation Tournament (PIT) — Visión y decisiones
 
+> **Superseded parcialmente por [`pit-tournament-v2-contract.md`](pit-tournament-v2-contract.md).**
+> Este documento conserva la historia y decisiones PIT v1 del 2026-06-09.
+> Para Ruta B broker-real vía Worker `copilot_cli.run`, permisos por torneo,
+> token ledger, Mission Control judge y gates David, usar el contrato v2 como
+> fuente de verdad.
+
 - **Status:** v1 — 2026-06-09. Consolidado en PIT-1 (este doc no existía en `main`; integra las decisiones David de la sesión 2026-06-09).
 - **Owner de visión:** David. **Orquestación:** Rick / OpenClaw.
 - **Spec PR:** PIT-1 (`claude/feat-pit-1-spec-magnific-43`).

@@ -39,6 +39,26 @@ Anything else MUST be added to `config/tool_policy.yaml ::
 copilot_cli.egress.allowed_endpoints` first, with a written rationale,
 and never inline in the resolver.
 
+### GitHub Meta requirement for live activation
+
+For live activation, live probes, or any nft set that will guard a real
+Copilot CLI container, DNS-only resolution is insufficient. The resolver
+MUST include public GitHub Meta CIDRs:
+
+```sh
+python scripts/copilot_egress_resolver.py \
+  --for-live-activation \
+  --include-github-meta \
+  --format json
+```
+
+`--for-live-activation` is an operator intent marker and implies
+`--include-github-meta`; the explicit flag is still shown in runbooks so
+the requirement is visible in command transcripts. Before applying nft,
+operators must assert that the output contains `140.82.112.0/20`, the
+GitHub load-balancer range that covers `140.82.112.21:443`. Run2 missed
+that range because it used DNS answers only.
+
 ## 3. Scoped enforcement model
 
 The nft profile is scoped to the dedicated Docker bridge only:

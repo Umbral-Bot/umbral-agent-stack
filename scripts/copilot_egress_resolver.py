@@ -260,9 +260,11 @@ def build_report(
     *,
     getaddrinfo=socket.getaddrinfo,
     include_github_meta: bool = False,
+    for_live_activation: bool = False,
     github_meta: dict | None = None,
     github_meta_fetcher=fetch_github_meta,
 ) -> dict:
+    include_github_meta = include_github_meta or for_live_activation
     results = [resolve_endpoint(e, getaddrinfo=getaddrinfo) for e in endpoints]
     v4, v6 = _flatten(results)
     errors = [
@@ -297,6 +299,7 @@ def build_report(
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "dry_run": True,
         "would_apply": False,
+        "for_live_activation": for_live_activation,
         "policy_endpoints": endpoints,
         "endpoints": [r.to_dict() for r in results],
         "ip_sets": {
@@ -397,6 +400,7 @@ def run(
     strict: bool = True,
     getaddrinfo=socket.getaddrinfo,
     include_github_meta: bool = False,
+    for_live_activation: bool = False,
     github_meta: dict | None = None,
     github_meta_fetcher=fetch_github_meta,
 ) -> tuple[int, str, dict]:
@@ -415,6 +419,7 @@ def run(
         endpoints,
         getaddrinfo=getaddrinfo,
         include_github_meta=include_github_meta,
+        for_live_activation=for_live_activation,
         github_meta=github_meta,
         github_meta_fetcher=github_meta_fetcher,
     )
@@ -450,6 +455,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--include-github-meta", action="store_true",
                         help="merge public GitHub Meta CIDRs into the dry-run "
                              "IP sets for GitHub load-balanced endpoints")
+    parser.add_argument("--for-live-activation", action="store_true",
+                        help="operator intent marker for live activation planning; "
+                             "implies --include-github-meta but still stays dry-run "
+                             "and never touches nftables")
     args = parser.parse_args(argv)
 
     rc, text, _ = run(
@@ -458,6 +467,7 @@ def main(argv: list[str] | None = None) -> int:
         write_cache_path=args.write_cache,
         strict=not args.non_strict,
         include_github_meta=args.include_github_meta,
+        for_live_activation=args.for_live_activation,
     )
     sys.stdout.write(text)
     return rc

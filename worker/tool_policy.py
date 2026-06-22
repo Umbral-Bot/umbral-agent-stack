@@ -171,12 +171,12 @@ def is_copilot_cli_default_model_forced() -> bool:
 
 
 def get_copilot_cli_default_reasoning_effort() -> Optional[str]:
-    """Return Copilot CLI reasoning effort, constrained to documented values."""
+    """Return Copilot CLI reasoning effort, constrained to supported values."""
     raw = _copilot_cli_section().get("default_reasoning_effort")
     if not isinstance(raw, str):
         return None
     value = raw.strip().lower()
-    return value if value in {"low", "medium", "high"} else None
+    return value if value in {"low", "medium", "high", "xhigh"} else None
 
 
 def get_copilot_cli_default_limits() -> Dict[str, int]:

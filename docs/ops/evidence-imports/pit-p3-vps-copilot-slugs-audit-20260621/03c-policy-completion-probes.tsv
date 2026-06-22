@@ -1,0 +1,7 @@
+slug_candidate	rc	available	premium_req	error_summary
+claude-opus-4.6	0	true	3 Premium (5	Changes +0 -0 Requests 3 Premium (5s) Tokens ↑ 3.5k • ↓ 9 • 0 (cached)
+claude-opus-4.8	0	true	1 Premium (5	Changes +0 -0 Requests 1 Premium (5s) Tokens ↑ 4.3k • ↓ 14 • 0 (cached)
+claude-sonnet-4.6	0	true	1 Premium (5	Changes +0 -0 Requests 1 Premium (5s) Tokens ↑ 3.5k • ↓ 9 • 0 (cached)
+gpt-5.3-codex	0	true	1 Premium (4	Changes +0 -0 Requests 1 Premium (4s) Tokens ↑ 4.2k • ↓ 23 • 0 (cached) • 13 (reasoning)
+gpt-5.2-codex	1	false	NA	Error: Model "gpt-5.2-codex" from --model flag is not available.
+gemini-3.1-pro	1	false	NA	Error: Model "gemini-3.1-pro" from --model flag is not available.

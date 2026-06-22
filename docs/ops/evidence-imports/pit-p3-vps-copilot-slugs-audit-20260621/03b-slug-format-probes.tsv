@@ -1,0 +1,7 @@
+slug_candidate	rc	available	error_summary
+gpt-5.4	0	true	 Changes +0 -0 Requests 1 Premium (5s) Tokens ↑ 4.2k • ↓ 30 • 0 (cached) • 20 (reasoning)
+gpt-5.4-mini	0	true	 Changes +0 -0 Requests 0.33 Premium (5s) Tokens ↑ 4.2k • ↓ 27 • 0 (cached) • 17 (reasoning)
+claude-opus-4.7	0	true	 Changes +0 -0 Requests 7.5 Premium (11s) Tokens ↑ 4.7k • ↓ 16 • 0 (cached)
+claude-sonnet-4.5	0	true	 Changes +0 -0 Requests 1 Premium (7s) Tokens ↑ 3.5k • ↓ 62 • 0 (cached)
+gemini-3-flash	1	false	Error: Model "gemini-3-flash" from --model flag is not available.
+grok-code-fast-1	1	false	Error: Model "grok-code-fast-1" from --model flag is not available.

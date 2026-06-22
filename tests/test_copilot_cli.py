@@ -721,7 +721,7 @@ def test_f8g_model_alias_resolves_gpt55_slug_effort_and_records_manifest(monkeyp
 def test_f8a_model_override_rejects_policy_disallowed_model(monkeypatch):
     _all_gates_open(monkeypatch, execute=True)
     from worker import tool_policy as tp
-    monkeypatch.setattr(tp, "get_copilot_cli_allowed_models", lambda: ["Claude Sonnet 4.6"])
+    monkeypatch.setattr(tp, "get_copilot_cli_allowed_models", lambda: ["claude-sonnet-4.6"])
 
     import subprocess as _sp
 
@@ -738,11 +738,11 @@ def test_f8a_model_override_rejects_policy_disallowed_model(monkeypatch):
 
     assert res["ok"] is False
     assert res["error"] == "model_not_allowed"
-    assert res["model"] == "Claude Opus 4.7"
+    assert res["model"] == "claude-opus-4.7"
     assert "docker_argv" not in res
 
 
-def test_f8g_default_model_is_forced_when_no_model_requested(monkeypatch):
+def test_f8g_default_model_is_used_when_no_model_requested(monkeypatch):
     _all_gates_open(monkeypatch, execute=True)
 
     import subprocess as _sp
@@ -764,15 +764,30 @@ def test_f8g_default_model_is_forced_when_no_model_requested(monkeypatch):
     assert "--reasoning-effort high" in flat_argv
 
 
-def test_f8g_forced_default_rejects_non_default_model(monkeypatch):
+def test_f8g_slug_model_override_allowed_for_lane(monkeypatch):
+    _all_gates_open(monkeypatch, execute=True)
+
+    res = handle_copilot_cli_run(_ok_input(
+        mission="research",
+        model="claude-opus-4.7",
+    ))
+
+    assert res["ok"] is True
+    assert res["model"] == "claude-opus-4.7"
+    assert res["decision"] == "would_run_dry_run"
+
+
+def test_f8g_display_model_alias_allowed_for_lane(monkeypatch):
     _all_gates_open(monkeypatch, execute=True)
 
     import subprocess as _sp
+    calls = []
 
-    def _explode(*a, **kw):
-        raise AssertionError("subprocess invoked after forced model rejection")
+    def _fake_run(argv, *, input, text, capture_output, timeout):
+        calls.append(argv)
+        return _sp.CompletedProcess(argv, 0, stdout="ok\n", stderr="")
 
-    monkeypatch.setattr(_sp, "run", _explode)
+    monkeypatch.setattr(_sp, "run", _fake_run)
 
     res = handle_copilot_cli_run(_ok_input(
         mission="research",
@@ -780,11 +795,10 @@ def test_f8g_forced_default_rejects_non_default_model(monkeypatch):
         dry_run=False,
     ))
 
-    assert res["ok"] is False
-    assert res["error"] == "model_not_allowed"
-    assert res["forced_default_model"] == "gpt-5.5"
-    assert res["model"] == "Claude Opus 4.7"
-    assert "docker_argv" not in res
+    assert res["ok"] is True
+    assert res["model"] == "claude-opus-4.7"
+    flat_argv = "\n".join(calls[0])
+    assert "--model claude-opus-4.7" in flat_argv
 
 
 def test_f6_audit_records_all_three_flags(monkeypatch):
@@ -816,11 +830,23 @@ def test_f7_rehearsal_yaml_policy_enabled_true():
 def test_copilot_cli_default_model_is_gpt55_high_effort():
     from worker import tool_policy as tp
     assert tp.get_copilot_cli_default_model() == "gpt-5.5"
-    assert tp.is_copilot_cli_default_model_forced() is True
+    assert tp.is_copilot_cli_default_model_forced() is False
     assert tp.get_copilot_cli_default_reasoning_effort() == "high"
-    assert tp.get_copilot_cli_model_aliases()["GPT-5.5"] == "gpt-5.5"
-    assert "gpt-5.5" in tp.get_copilot_cli_allowed_models()
-    assert "Claude Opus 4.7" in tp.get_copilot_cli_allowed_models()
+    aliases = tp.get_copilot_cli_model_aliases()
+    assert aliases["GPT-5.5"] == "gpt-5.5"
+    assert aliases["Claude Opus 4.7"] == "claude-opus-4.7"
+    allowed = tp.get_copilot_cli_allowed_models()
+    assert "gpt-5.5" in allowed
+    assert "claude-opus-4.7" in allowed
+    assert "Claude Opus 4.7" not in allowed
+    for removed in ("gpt-5.2-codex", "gemini-3.1-pro", "gemini-3-flash", "grok-code-fast-1"):
+        assert removed not in allowed
+
+
+def test_copilot_cli_reasoning_effort_accepts_xhigh(monkeypatch):
+    from worker import tool_policy as tp
+    monkeypatch.setattr(tp, "_copilot_cli_section", lambda: {"default_reasoning_effort": "xhigh"})
+    assert tp.get_copilot_cli_default_reasoning_effort() == "xhigh"
 
 
 def test_f7_rehearsal_yaml_egress_still_inactive():

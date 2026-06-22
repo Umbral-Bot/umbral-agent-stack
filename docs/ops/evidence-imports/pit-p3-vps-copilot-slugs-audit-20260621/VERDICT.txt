@@ -1,0 +1,36 @@
+VERDICT=P3_SLUGS_OK
+ts_utc=2026-06-21T17:29Z
+host=srv1431451
+repo_HEAD=802f431
+token_fp=a19dbad9a470
+token_login=UmbralBIM
+cli_version=1.0.36
+
+# Gate / state
+FASE0_GATE=GO
+gates_post=L3:false L4:activated_false nft:ABSENT worker:200 containers_leftover:0 repo:clean
+secret_scan_pat_hits=0
+
+# Structural findings
+models_list_subcommand=ABSENT (copilot models list -> Invalid command format)
+model_flag_requires=lowercase_slug (display names rejected as "not available")
+reasoning_effort_choices=low|medium|high|xhigh (policy comment "up to high" STALE)
+
+# Availability (UmbralBIM token, probed 2026-06-21)
+available_slugs=gpt-5.5,gpt-5.4,gpt-5.4-mini,gpt-5.3-codex,claude-opus-4.8,claude-opus-4.7,claude-opus-4.6,claude-sonnet-4.6,claude-sonnet-4.5
+not_available_slugs=gpt-5.2-codex,gemini-3.1-pro,gemini-3-flash,grok-code-fast-1
+rejected_display_names=GPT-5.5,Claude Opus 4.7,Claude Opus 4.8,fable-5-max
+deferred=claude-opus-4.6 (fast mode) (preview)  # slug unconfirmed
+gpt55_confirmed=YES (MODEL_PROBE_OK, exit 0)
+
+# Premium multipliers observed
+mult_gpt-5.4-mini=0.33x
+mult_1x=gpt-5.4,gpt-5.3-codex,claude-opus-4.8,claude-sonnet-4.6,claude-sonnet-4.5
+mult_claude-opus-4.6=3x
+mult_7.5x=gpt-5.5,claude-opus-4.7
+
+# Caveat for PR
+force_default_model=true  # pins every lane to default_model(gpt-5.5); expanding allowed_models is moot per-lane until relaxed
+
+evidence_dir=~/.coord-ag-evidence/pit-p3-vps-copilot-slugs-audit-20260621
+next=Codex P3 PR: convert allowed_models to slugs + keep aliases + drop 4 unentitled + decide force_default_model lever. NO merge on VPS.

@@ -194,6 +194,62 @@ lane_complete = prototype_reachable && kpi_pack_valido_contra_schema && fulfillm
 
 ---
 
+## Broker-only enforcement (PIT-P5)
+
+Las lanes que **leen/analizan el repo o escriben código** NO hablan con un proveedor LLM directo: **todo pasa por el Worker task `copilot_cli.run`** (contrato P4, [`docs/ops/pit-p4-broker-contract-20260621.md`](../../../../docs/ops/pit-p4-broker-contract-20260621.md)). El broker es el único que resuelve modelo→slug, aplica `reasoning_effort`, audita y corre el sandbox Docker `--network=none`. (Para visual de producto el broker sigue siendo Magnific, arriba.)
+
+**Regla dura:** una lane que intente invocar un LLM directo para coding/análisis de repo ⇒ `lane_blocked`. Sin fallback silencioso a proveedor directo.
+
+### Preflight obligatorio (antes de spawnear lanes broker)
+
+Todo en verde o STOP:
+
+- [ ] `P2_PROBE_REAL_OK` (probe real, run3)
+- [ ] `P3_SLUGS_OK` — slugs + aliases en [`config/tool_policy.yaml`](../../../../config/tool_policy.yaml), `force_default_model: false`
+- [ ] PRs `#481`, `#482`, `#483` mergeados en `main`
+- [ ] `P4_RUNTIME_LOAD_OK` — worker reiniciado con el contrato P4 en runtime
+- [ ] `pit_spec_validate` PASS sobre el spec del torneo:
+      `python scripts/pit/pit_spec_validate.py <spec.yaml>` → `status: pass`
+
+### Payload canónico de lane (broker)
+
+Cada lane se despacha como `copilot_cli.run` con metadata PIT completa (correlación audit↔respuesta):
+
+```json
+{
+  "task": "copilot_cli.run",
+  "input": {
+    "mission": "research",
+    "model": "Claude Opus 4.7",
+    "reasoning_effort": "xhigh",
+    "repo_path": "/work",
+    "dry_run": true,
+    "metadata": {
+      "batch_id": "<batch>",
+      "agent_id": "<agente efímero>",
+      "pit_id": "<pit_id>",
+      "lane_id": "<lane_id>",
+      "iteration": 1
+    }
+  }
+}
+```
+
+`batch_id`, `agent_id`, `pit_id`, `lane_id`, `iteration` son **obligatorios**. Grammar de ids y `reasoning_effort` permitidos (incl. alias `max`→`xhigh`) en P4. Spec ejecutable + validador: [`examples/pit/pit_spec.v2.yaml`](../../../../examples/pit/pit_spec.v2.yaml) (`broker_contract.forbid_direct_llm_repo_analysis: true`).
+
+### Fallback policy
+
+- `copilot_cli.run` falla (timeout, error de policy, gate cerrado) ⇒ lane `blocked` con motivo registrado. **Nunca** reintento con proveedor directo ni degradación silenciosa.
+- Los gates de runtime (L3 execute, L4 egress, nft) son del operador VPS; **la skill nunca los abre**.
+
+### Comms
+
+Resumen a David ≤ 12 líneas (veredicto + estado de lanes + blockers). Payloads, audit JSONL y respuestas completas van a evidencia/vault, no al chat.
+
+Doc operativa: [`docs/ops/pit-p5-broker-enforce-20260622.md`](../../../../docs/ops/pit-p5-broker-enforce-20260622.md).
+
+---
+
 ## Hard stops
 
 | Condición | Acción |
@@ -209,6 +265,9 @@ lane_complete = prototype_reachable && kpi_pack_valido_contra_schema && fulfillm
 | Pedido de URL pública para el prototipo | STOP — solo túnel + Mission Control en v1 |
 | Lane pide escribir fuera de su subárbol | STOP — write scope `pit/<pit_id>/lanes/<lane_id>/` |
 | Lane pide llamar Magnific directo o sin gate de columna | STOP — Rick broker + gate Prototype |
+| Lane intenta LLM directo para coding/repo-analysis | STOP — `lane_blocked`; todo por `copilot_cli.run` (P5) |
+| Preflight P5 incompleto (P2/P3 · #481-483 · P4 · validate) | STOP — no spawn de lanes broker |
+| `copilot_cli.run` falla en una lane | lane `blocked`, sin fallback a proveedor directo |
 | Señal sintética sin etiquetar | STOP — labeled es obligatorio |
 | Sesión nested sin `sessions_spawn` | STOP — ISSUE-001 / G-D1b (igual que D3) |
 

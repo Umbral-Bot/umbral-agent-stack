@@ -14,7 +14,11 @@ from scripts.pit.pit_spec_validate import (
     PROTOTYPE_OUTPUTS,
     RESEARCH_PROFILES,
     PitSpec,
+    PitSpecV2,
     compute_fulfillment,
+    is_broker_spec,
+    main,
+    validate_broker_file,
     validate_file,
 )
 
@@ -372,3 +376,124 @@ def test_kpi_pack_schema_rejects_unlabeled_synthetic_and_bad_score():
     missing_hypothesis.pop("hypothesis")
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=missing_hypothesis, schema=schema)
+
+
+# ---------------------------------------------------------------------------
+# PIT spec v2 — broker-only contract (P5)
+# ---------------------------------------------------------------------------
+
+EXAMPLE_V2_PATH = REPO_ROOT / "examples" / "pit" / "pit_spec.v2.yaml"
+
+
+def _broker_spec(**overrides) -> dict:
+    base = dict(
+        schema_version=2,
+        pit_id="pit-broker-smoke-01",
+        title="broker smoke",
+        repo_path="/home/rick/umbral-agent-stack",
+        budget_usd_total=25.0,
+        lanes=[
+            {
+                "lane_id": "lane-a",
+                "model": "claude-opus-4.7",
+                "reasoning_effort": "xhigh",
+                "mission": "research",
+                "max_iterations": 3,
+            }
+        ],
+        secrets_scope={"allow": [], "deny": ["WORKER_TOKEN"]},
+        broker_contract={
+            "required_task": "copilot_cli.run",
+            "forbid_direct_llm_repo_analysis": True,
+        },
+    )
+    base.update(overrides)
+    return base
+
+
+def _write_and_validate(tmp_path: Path, spec: dict) -> dict:
+    path = tmp_path / "pit_spec.v2.yaml"
+    path.write_text(yaml.safe_dump(spec, sort_keys=False), encoding="utf-8")
+    return validate_broker_file(path)
+
+
+def test_v2_detection_routes_broker():
+    assert is_broker_spec({"schema_version": 2})
+    assert is_broker_spec({"broker_contract": {}})
+    assert not is_broker_spec({"schema_version": 1, "pit_id": "x"})
+
+
+def test_v2_example_spec_passes():
+    result = validate_broker_file(EXAMPLE_V2_PATH)
+    assert result["status"] == "pass", result["errors"]
+    assert result["spec"]["lane_count"] == 2
+
+
+def test_v2_main_exit_zero_for_example():
+    assert main([str(EXAMPLE_V2_PATH)]) == 0
+
+
+def test_v2_valid_minimal_spec_passes(tmp_path):
+    result = _write_and_validate(tmp_path, _broker_spec())
+    assert result["status"] == "pass", result["errors"]
+
+
+def test_v2_invalid_lane_id_fails(tmp_path):
+    spec = _broker_spec()
+    spec["lanes"][0]["lane_id"] = "lane id with spaces!"
+    result = _write_and_validate(tmp_path, spec)
+    assert result["status"] == "fail"
+    assert any("lane_id" in e for e in result["errors"])
+
+
+def test_v2_invalid_model_fails(tmp_path):
+    spec = _broker_spec()
+    spec["lanes"][0]["model"] = "totally-not-a-model"
+    result = _write_and_validate(tmp_path, spec)
+    assert result["status"] == "fail"
+    assert any("invalid_model" in e for e in result["errors"])
+
+
+def test_v2_invalid_reasoning_effort_fails(tmp_path):
+    spec = _broker_spec()
+    spec["lanes"][0]["reasoning_effort"] = "turbo"
+    result = _write_and_validate(tmp_path, spec)
+    assert result["status"] == "fail"
+    assert any("invalid_reasoning_effort" in e for e in result["errors"])
+
+
+def test_v2_display_model_alias_passes(tmp_path):
+    spec = _broker_spec()
+    spec["lanes"][0]["model"] = "Claude Opus 4.7"
+    spec["lanes"][0]["reasoning_effort"] = "max"
+    result = _write_and_validate(tmp_path, spec)
+    assert result["status"] == "pass", result["errors"]
+    assert result["spec"]["lanes"][0]["model_slug"] == "claude-opus-4.7"
+
+
+def test_v2_forbid_flag_must_be_true(tmp_path):
+    spec = _broker_spec()
+    spec["broker_contract"]["forbid_direct_llm_repo_analysis"] = False
+    result = _write_and_validate(tmp_path, spec)
+    assert result["status"] == "fail"
+    assert any("forbid_direct_llm_repo_analysis" in e for e in result["errors"])
+
+
+def test_v2_secrets_deny_requires_worker_token(tmp_path):
+    spec = _broker_spec()
+    spec["secrets_scope"]["deny"] = ["NOTION_API_KEY"]
+    result = _write_and_validate(tmp_path, spec)
+    assert result["status"] == "fail"
+    assert any("WORKER_TOKEN" in e for e in result["errors"])
+
+
+def test_v2_required_task_enforced(tmp_path):
+    spec = _broker_spec()
+    spec["broker_contract"]["required_task"] = "something.else"
+    result = _write_and_validate(tmp_path, spec)
+    assert result["status"] == "fail"
+    assert any("required_task" in e for e in result["errors"])
+
+
+def test_v2_pitspec_model_importable():
+    assert PitSpecV2.__name__ == "PitSpecV2"

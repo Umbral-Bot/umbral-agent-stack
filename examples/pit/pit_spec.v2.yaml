@@ -1,0 +1,49 @@
+# PIT spec v2 — broker-only code / repo-analysis tournament (P5).
+#
+# Every lane is dispatched through the Worker task `copilot_cli.run` (P4 broker
+# contract). Lanes never call an LLM provider directly for coding or repo
+# analysis. Validate with:
+#
+#   python scripts/pit/pit_spec_validate.py examples/pit/pit_spec.v2.yaml
+#
+# See docs/ops/pit-p5-broker-enforce-20260622.md and
+# docs/ops/pit-p4-broker-contract-20260621.md.
+schema_version: 2
+pit_id: pit-broker-smoke-01
+title: PIT broker-only contract smoke
+repo_path: /home/rick/umbral-agent-stack
+budget_usd_total: 25.0
+
+lanes:
+  # Slug already in config/tool_policy.yaml -> copilot_cli.allowed_models.
+  - lane_id: lane-contract-a
+    model: claude-opus-4.7
+    reasoning_effort: xhigh
+    mission: research
+    max_iterations: 3
+  # Display name resolved to a slug via copilot_cli.model_aliases; `max` is the
+  # display alias normalized to `xhigh` by the broker at run time.
+  - lane_id: lane-contract-b
+    model: Claude Opus 4.7
+    reasoning_effort: max
+    mission: research
+    max_iterations: 2
+
+# Logical secret names only — never values. Lanes run inside the worker sandbox
+# and receive no secrets; WORKER_TOKEN (the worker's own auth) is always denied.
+secrets_scope:
+  allow: []
+  deny:
+    - WORKER_TOKEN
+    - NOTION_API_KEY
+    - GITHUB_TOKEN
+    - OPENAI_API_KEY
+
+broker_contract:
+  required_task: copilot_cli.run
+  forbid_direct_llm_repo_analysis: true
+
+notes: >-
+  All coding / repo-analysis work routes through worker copilot_cli.run.
+  A lane that cannot reach the broker is marked blocked — never a silent
+  fallback to a direct LLM provider.

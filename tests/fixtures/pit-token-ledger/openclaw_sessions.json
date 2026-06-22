@@ -1,0 +1,22 @@
+{
+  "sess-alpha-1": {
+    "model": "claude-opus-4.7",
+    "modelProvider": "anthropic",
+    "inputTokens": 1000,
+    "outputTokens": 200,
+    "totalTokens": 1200,
+    "cacheRead": 50,
+    "cacheWrite": 0,
+    "updatedAt": "2026-06-21T10:00:00Z",
+    "origin": "tournament"
+  },
+  "sess-alpha-2": {
+    "model": "claude-opus-4.7",
+    "modelProvider": "anthropic",
+    "inputTokens": 500,
+    "outputTokens": 100,
+    "totalTokens": 600,
+    "cacheRead": 0,
+    "updatedAt": "2026-06-21T10:05:00Z"
+  }
+}

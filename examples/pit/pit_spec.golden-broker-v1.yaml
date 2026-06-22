@@ -1,0 +1,57 @@
+# PIT spec v2 — golden broker tournament #3 (readiness template, NOT executed).
+#
+# Three lanes, each a distinct allowed model, every lane dispatched through the
+# Worker task `copilot_cli.run` (P4 broker contract). Lanes never call an LLM
+# provider directly for coding or repo analysis. Validate with:
+#
+#   python scripts/pit/pit_spec_validate.py examples/pit/pit_spec.golden-broker-v1.yaml
+#
+# This file is a proposal for golden tournament #3. Spawning it requires David's
+# explicit GO to open L3 (execute) + L4 (egress) for a bounded window, and the
+# sandbox image `umbral-sandbox-copilot-cli` rebuilt on the VPS
+# (worker/sandbox/refresh-copilot-cli.sh). See
+# docs/ops/pit-readiness-golden-20260622.md.
+schema_version: 2
+pit_id: pit-golden-broker-v1
+title: Golden broker tournament #3
+repo_path: /home/rick/umbral-agent-stack
+budget_usd_total: 150.0
+
+lanes:
+  # Slug already in config/tool_policy.yaml -> copilot_cli.allowed_models.
+  - lane_id: lane-gpt55
+    model: gpt-5.5
+    reasoning_effort: high
+    mission: research
+    max_iterations: 3
+  - lane_id: lane-opus47
+    model: claude-opus-4.7
+    reasoning_effort: xhigh
+    mission: research
+    max_iterations: 3
+  - lane_id: lane-gpt54-mini
+    model: gpt-5.4-mini
+    reasoning_effort: medium
+    mission: research
+    max_iterations: 2
+
+# Logical secret names only — never values. Lanes run inside the worker sandbox
+# and receive no secrets; WORKER_TOKEN (the worker's own auth) is always denied.
+secrets_scope:
+  allow: []
+  deny:
+    - WORKER_TOKEN
+    - NOTION_API_KEY
+    - GITHUB_TOKEN
+    - OPENAI_API_KEY
+
+broker_contract:
+  required_task: copilot_cli.run
+  forbid_direct_llm_repo_analysis: true
+
+notes: >-
+  Golden tournament #3 proposal. All coding / repo-analysis work routes through
+  worker copilot_cli.run; a lane that cannot reach the broker is marked blocked,
+  never a silent fallback to a direct LLM provider. Per-lane models span three
+  distinct allowed slugs (gpt-5.5, claude-opus-4.7, gpt-5.4-mini) to compare
+  cost/quality under the broker contract.

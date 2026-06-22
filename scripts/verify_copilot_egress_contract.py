@@ -24,6 +24,9 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_POLICY = REPO_ROOT / "config" / "tool_policy.yaml"
 DEFAULT_NFT = REPO_ROOT / "infra" / "networking" / "copilot-egress.nft.example"
 DEFAULT_RESOLVER_DOC = REPO_ROOT / "infra" / "networking" / "copilot-egress-resolver.md"
+DEFAULT_ACTIVATION_PLAYBOOKS = (
+    REPO_ROOT / "docs" / "copilot-cli-f6-step6c4f-activation-playbook.md",
+)
 
 # Live-firewall commands that must NEVER appear uncommented in the
 # repo artifacts (they would be dangerous if executed by mistake).
@@ -50,6 +53,11 @@ _REQUIRED_RESOLVER_MARKERS = (
     "rollback",
 )
 
+_GITHUB_META_LIVE_FLAGS = (
+    "--include-github-meta",
+    "--for-live-activation",
+)
+
 
 @dataclass
 class Finding:
@@ -68,6 +76,9 @@ class Report:
 
     def errors(self) -> list[Finding]:
         return [f for f in self.findings if f.severity == "error"]
+
+    def warnings(self) -> list[Finding]:
+        return [f for f in self.findings if f.severity == "warn"]
 
     def render(self) -> str:
         if not self.findings:
@@ -224,6 +235,52 @@ def check_resolver_doc(doc_path: Path, endpoints: Iterable[str], report: Report)
     # is the authoritative dangerous-command surface.
 
 
+def _logical_command_lines(text: str) -> Iterable[tuple[int, str]]:
+    """Yield shell-ish logical lines, joining trailing-backslash commands."""
+    start_lineno = 0
+    buffer = ""
+    for lineno, raw in enumerate(text.splitlines(), 1):
+        line = raw.rstrip()
+        if buffer:
+            buffer += " " + line.rstrip("\\").strip()
+        else:
+            start_lineno = lineno
+            buffer = line.rstrip("\\").strip()
+        if line.endswith("\\"):
+            continue
+        yield start_lineno, buffer
+        buffer = ""
+    if buffer:
+        yield start_lineno, buffer
+
+
+def check_activation_playbooks(playbook_paths: Iterable[Path], report: Report) -> None:
+    for playbook_path in playbook_paths:
+        if not playbook_path.exists():
+            report.add(str(playbook_path), "warn", "missing_activation_playbook",
+                       "activation playbook not found; GitHub Meta resolver command not checked")
+            continue
+        text = playbook_path.read_text(encoding="utf-8")
+        resolver_commands = [
+            (lineno, command)
+            for lineno, command in _logical_command_lines(text)
+            if "scripts/copilot_egress_resolver.py" in command
+        ]
+        if not resolver_commands:
+            report.add(str(playbook_path), "warn", "missing_resolver_command",
+                       "activation playbook does not show a resolver command to audit")
+            continue
+        for lineno, command in resolver_commands:
+            if not any(flag in command for flag in _GITHUB_META_LIVE_FLAGS):
+                report.add(
+                    str(playbook_path),
+                    "error",
+                    "github_meta_flag_missing",
+                    f"line {lineno}: live resolver command must include "
+                    "--include-github-meta or --for-live-activation",
+                )
+
+
 def maybe_resolve(endpoints: Iterable[str], report: Report) -> None:
     """Optional DNS sanity check. Read-only, results discarded."""
     import socket
@@ -243,6 +300,7 @@ def run(
     policy_path: Path = DEFAULT_POLICY,
     nft_path: Path = DEFAULT_NFT,
     resolver_doc_path: Path = DEFAULT_RESOLVER_DOC,
+    activation_playbook_paths: Iterable[Path] = DEFAULT_ACTIVATION_PLAYBOOKS,
     *,
     resolve: bool = False,
 ) -> Report:
@@ -250,6 +308,7 @@ def run(
     _activated, endpoints = check_policy(policy_path, report)
     check_nft_artifact(nft_path, endpoints, report)
     check_resolver_doc(resolver_doc_path, endpoints, report)
+    check_activation_playbooks(activation_playbook_paths, report)
     if resolve:
         maybe_resolve(endpoints, report)
     return report
@@ -262,6 +321,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--policy", type=Path, default=DEFAULT_POLICY)
     parser.add_argument("--nft", type=Path, default=DEFAULT_NFT)
     parser.add_argument("--resolver-doc", type=Path, default=DEFAULT_RESOLVER_DOC)
+    parser.add_argument("--activation-playbook", type=Path, action="append",
+                        help="activation playbook to scan for live resolver commands; "
+                             "defaults to the canonical F6 step 6C-4F playbook")
+    parser.add_argument("--strict", action="store_true",
+                        help="exit non-zero for warnings as well as errors")
     parser.add_argument(
         "--resolve",
         action="store_true",
@@ -273,10 +337,17 @@ def main(argv: list[str] | None = None) -> int:
         policy_path=args.policy,
         nft_path=args.nft,
         resolver_doc_path=args.resolver_doc,
+        activation_playbook_paths=(
+            args.activation_playbook
+            if args.activation_playbook is not None
+            else DEFAULT_ACTIVATION_PLAYBOOKS
+        ),
         resolve=args.resolve,
     )
     print(report.render())
-    return 1 if report.errors() else 0
+    if report.errors() or (args.strict and report.warnings()):
+        return 1
+    return 0
 
 
 if __name__ == "__main__":

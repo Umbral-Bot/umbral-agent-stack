@@ -84,6 +84,18 @@ def _write_resolver_doc(tmp_path: Path, hosts: list[str]) -> Path:
     return p
 
 
+def _write_activation_playbook(tmp_path: Path, command: str) -> Path:
+    p = tmp_path / "activation-playbook.md"
+    p.write_text(
+        "# Activation playbook\n\n"
+        "```sh\n"
+        f"{command}\n"
+        "```\n",
+        encoding="utf-8",
+    )
+    return p
+
+
 # ---------------------------------------------------------------------------
 # Happy path
 # ---------------------------------------------------------------------------
@@ -99,7 +111,17 @@ def test_synthetic_minimal_artifacts_pass(tmp_path, vmod):
     policy = _write_policy(tmp_path, endpoints=[h + ":443" for h in hosts])
     nft = _write_nft(tmp_path, hosts)
     doc = _write_resolver_doc(tmp_path, hosts)
-    report = vmod.run(policy_path=policy, nft_path=nft, resolver_doc_path=doc)
+    playbook = _write_activation_playbook(
+        tmp_path,
+        "python scripts/copilot_egress_resolver.py "
+        "--for-live-activation --include-github-meta --format json",
+    )
+    report = vmod.run(
+        policy_path=policy,
+        nft_path=nft,
+        resolver_doc_path=doc,
+        activation_playbook_paths=[playbook],
+    )
     assert report.errors() == [], report.render()
 
 
@@ -199,6 +221,53 @@ def test_commented_live_command_is_ok(tmp_path, vmod):
                      extra="# nft add element inet copilot_egress copilot_v4 { 1.2.3.4 }")
     doc = _write_resolver_doc(tmp_path, hosts)
     report = vmod.run(policy_path=policy, nft_path=nft, resolver_doc_path=doc)
+    assert report.errors() == [], report.render()
+
+
+# ---------------------------------------------------------------------------
+# Live activation playbooks must include GitHub Meta
+# ---------------------------------------------------------------------------
+
+
+def test_activation_playbook_resolver_requires_github_meta_flag(tmp_path, vmod):
+    hosts = ["api.githubcopilot.com", "api.github.com"]
+    policy = _write_policy(tmp_path, endpoints=[h + ":443" for h in hosts])
+    nft = _write_nft(tmp_path, hosts)
+    doc = _write_resolver_doc(tmp_path, hosts)
+    playbook = _write_activation_playbook(
+        tmp_path,
+        "python scripts/copilot_egress_resolver.py --format json",
+    )
+
+    report = vmod.run(
+        policy_path=policy,
+        nft_path=nft,
+        resolver_doc_path=doc,
+        activation_playbook_paths=[playbook],
+    )
+
+    codes = {f.code for f in report.errors()}
+    assert "github_meta_flag_missing" in codes
+
+
+def test_activation_playbook_accepts_for_live_activation_alias(tmp_path, vmod):
+    hosts = ["api.githubcopilot.com", "api.github.com"]
+    policy = _write_policy(tmp_path, endpoints=[h + ":443" for h in hosts])
+    nft = _write_nft(tmp_path, hosts)
+    doc = _write_resolver_doc(tmp_path, hosts)
+    playbook = _write_activation_playbook(
+        tmp_path,
+        "python scripts/copilot_egress_resolver.py "
+        "--for-live-activation --format json",
+    )
+
+    report = vmod.run(
+        policy_path=policy,
+        nft_path=nft,
+        resolver_doc_path=doc,
+        activation_playbook_paths=[playbook],
+    )
+
     assert report.errors() == [], report.render()
 
 

@@ -164,6 +164,25 @@ def test_include_github_meta_merges_public_cidrs(tmp_path, rmod):
     assert report["github_meta"]["errors"] == []
 
 
+def test_for_live_activation_implies_github_meta(tmp_path, rmod):
+    policy = _write_policy(tmp_path, endpoints=["api.github.com:443"])
+    stub = _stub_getaddrinfo({
+        "api.github.com": [(socket.AF_INET, "140.82.112.21")],
+    })
+
+    rc, _text, report = rmod.run(
+        policy_path=policy,
+        getaddrinfo=stub,
+        for_live_activation=True,
+        github_meta={"api": ["140.82.112.0/20"]},
+    )
+
+    assert rc == 0
+    assert report["for_live_activation"] is True
+    assert report["github_meta"]["included"] is True
+    assert report["ip_sets"]["copilot_v4"] == ["140.82.112.0/20"]
+
+
 def test_github_meta_cidr_removes_overlapping_dns_ips(tmp_path, rmod):
     policy = _write_policy(tmp_path, endpoints=["api.githubcopilot.com:443"])
     stub = _stub_getaddrinfo({

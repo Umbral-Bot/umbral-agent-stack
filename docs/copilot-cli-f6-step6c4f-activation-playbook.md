@@ -181,8 +181,14 @@ systemctl --user restart umbral-worker.service
 ### Gate G4 — `copilot_cli.egress.activated` (network plane)
 
 #### Pre-requisites
-- Resolver dry-run on the merged main produces a stable allow-list
-  (`scripts/copilot_egress_resolver.py --dry-run` JSON deterministic).
+- Resolver dry-run on the merged main produces a stable allow-list with
+  GitHub Meta CIDRs included. For any live activation or live probe,
+  the resolver command MUST include `--include-github-meta`; the safer
+  operator alias is `--for-live-activation`, which implies the same
+  inclusion and remains dry-run only.
+- The resolver output MUST include `140.82.112.0/20` before nft is
+  applied. This is the GitHub load-balancer range that run2 missed
+  when the resolver was run from DNS answers only.
 - `infra/networking/copilot-egress.nft.example` reviewed by a network
   operator.
 - Docker network `copilot-cli-egress` plan reviewed.
@@ -196,13 +202,32 @@ systemctl --user restart umbral-worker.service
 cd /home/rick/umbral-agent-stack
 git pull --ff-only origin main
 
-# 2. Apply the staged nft fragment (operator chooses scope; current
+# 2. Resolve the live allow-list. This is mandatory before nft apply.
+# NEVER use DNS-only output for live activation.
+EVID=~/.coord-ag-evidence/copilot-cli-g4-activation-$(date -u +%Y%m%dT%H%M%SZ)
+mkdir -p "$EVID"
+python scripts/copilot_egress_resolver.py \
+  --for-live-activation \
+  --include-github-meta \
+  --format json > "$EVID/copilot-egress-resolver.json"
+python scripts/copilot_egress_resolver.py \
+  --for-live-activation \
+  --include-github-meta \
+  --format nft > "$EVID/copilot-egress-resolver.nft.txt"
+grep -q '140.82.112.0/20' "$EVID/copilot-egress-resolver.json"
+grep -q '140.82.112.0/20' "$EVID/copilot-egress-resolver.nft.txt"
+
+# 3. Build/apply the staged nft fragment from the resolver JSON. Do not
+# pipe the resolver's dry-run nft text into nft directly; it is evidence,
+# not an apply artifact.
+#
+# Apply the staged nft fragment (operator chooses scope; current
 # staging is at ~/.config/openclaw/copilot-egress.nft, mode 0600,
 # never auto-loaded):
 sudo nft -c -f ~/.config/openclaw/copilot-egress.nft   # syntax check first
 sudo nft       -f ~/.config/openclaw/copilot-egress.nft
 
-# 3. Create the Docker network for egress isolation:
+# 4. Create the Docker network for egress isolation:
 docker network create \
   --driver bridge \
   --subnet  10.42.0.0/30 \
@@ -210,11 +235,11 @@ docker network create \
   --opt 'com.docker.network.bridge.enable_icc=false' \
   copilot-cli-egress
 
-# 4. Verify:
+# 5. Verify:
 sudo nft list ruleset | grep -A20 'table inet copilot_cli'
 docker network inspect copilot-cli-egress
 
-# 5. Restart worker so it picks up the activation flag:
+# 6. Restart worker so it picks up the activation flag:
 systemctl --user restart umbral-worker.service
 ```
 

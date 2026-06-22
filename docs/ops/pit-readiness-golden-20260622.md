@@ -12,13 +12,21 @@ This is the readiness gate before any golden tournament. The companion spec
 template is `examples/pit/pit_spec.golden-broker-v1.yaml` (validated, **not**
 executed).
 
+> **UPDATE — closure 2026-06-22 (post #486):** broker-real has since been
+> **achieved**. P1b rebuilt and pinned the sandbox image
+> (`umbral-sandbox-copilot-cli:6940cf0f274d`), and P9 ran the golden tournament for
+> real (3 lanes, exit 0, `DROP_DELTA=0`, byte-identical rollback) →
+> **`P9_BROKER_GOLDEN_OK` / `PIT_RUN_PASS_BROKER_REAL` REACHED**. The NO-GO below is
+> historical; see `docs/ops/pit-broker-real-pass-handoff-20260622.md` for the final
+> handoff and operational recipe.
+
 ---
 
 ## GO/NO-GO matrix
 
 | Gate / Paquete | Veredicto histórico | Evidencia | Estado para torneo |
 |---|---|---|---|
-| **P1 infra** | partial | docker network `copilot-egress` **PRESENT**; sandbox image `umbral-sandbox-copilot-cli` **ABSENT** (only `redis:7-alpine`, `diygod/rsshub` on host) | **GO (dry)** · **NO-GO (broker-real)** — image must be rebuilt |
+| **P1 infra** | OK (post-P1b) | docker network `copilot-egress` **PRESENT**; sandbox image **rebuilt + pinned** `umbral-sandbox-copilot-cli:6940cf0f274d` (P1b: `pit-p1b-sandbox-rebuild-20260622`) | **GO** — image present, gates closed |
 | **P2 dry** | OK | `pit-p2a-dry-run-probe-20260620` | **GO** |
 | **P2 real** | `P2_PROBE_REAL_OK` | `pit-p2c-retry-egress-execute-read-probe-20260621-run3/VERDICT.txt` (`decision=completed`, `executed=true`) | **GO capability** — but proven with image tag `6940cf0f274d` now absent (see P1) |
 | **P3 slugs** | `P3_SLUGS_OK` | `pit-p3-vps-copilot-slugs-audit-20260621`; `config/tool_policy.yaml` allowed_models (slugs) | **GO** |
@@ -48,6 +56,17 @@ executed).
   `execute_flag_off_dry_run`, `would_run=false` — it never touches Docker, so the
   absent sandbox image is irrelevant for dry).
 
+- **`PIT_TOURNAMENT_BROKER_REAL_GO` → ACHIEVED** ✅ (closure 2026-06-22)
+  The historical HOLD below was resolved: **P1b** rebuilt and pinned the sandbox
+  image, and **P9 golden** executed the tournament for real (3 lanes via
+  `copilot_cli.run`, `exit_code=0`, `DROP_DELTA=0`, gates rolled back
+  byte-identical). Verdict **`P9_BROKER_GOLDEN_OK`**, milestone
+  **`PIT_RUN_PASS_BROKER_REAL` REACHED**. Evidence:
+  `pit-p9-broker-golden-3lanes-20260622` (31 files). Final handoff:
+  `docs/ops/pit-broker-real-pass-handoff-20260622.md`.
+
+<details><summary>Historical NO-GO (pre-P1b/P9) — superseded</summary>
+
 - **`PIT_TOURNAMENT_BROKER_REAL_NO_GO`** ⛔ (HOLD)
   Broker-real does **not** meet the minimum criteria, because **P1 infra is not GO**:
   the sandbox image `umbral-sandbox-copilot-cli` is **absent** on the VPS (pruned
@@ -57,12 +76,14 @@ executed).
   `~/.config/openclaw/copilot-cli.env`. Without the image, a real run would fail at
   `docker run`.
 
+</details>
+
 ### Minimum criteria for broker-real (and current status)
 
 | Criterio | Estado |
 |---|---|
-| P1–P6 GO | ❌ (P1 image absent) |
-| P2_PROBE_REAL_OK vigente | ⚠️ verdict vigente, image artifact gone |
+| P1–P6 GO | ✅ (P1 image rebuilt+pinned in P1b) |
+| P2_PROBE_REAL_OK vigente | ✅ (image `6940cf0f274d` present) |
 | P5 validator pass on objective spec | ✅ |
 | token ledger collector operational | ✅ |
 | worker health 200 | ✅ |
@@ -78,9 +99,14 @@ executed).
    `RICK_COPILOT_CLI_EXECUTE=true`, L4 `egress.activated=true`, and the `nft inet
    copilot_egress` table — for the tournament window only, closed afterward.
 
-> **Recommendation:** `P9_DRY_GO` (dry-run golden tournament authorized) +
+> **Recommendation (original):** `P9_DRY_GO` (dry-run golden tournament authorized) +
 > `P9_BROKER_REAL_HOLD` (broker-real on hold pending sandbox-image rebuild and an
 > explicit execute+egress window from David).
+>
+> **Final (closure 2026-06-22):** both resolved — dry ran (`P9_DRY_SMOKE_OK`) and
+> broker-real ran in an authorized window (`P9_BROKER_GOLDEN_OK` →
+> `PIT_RUN_PASS_BROKER_REAL`). Next optional phase is **P10** (full Rick/OpenClaw
+> orchestration), not required for the broker-real milestone.
 
 ---
 

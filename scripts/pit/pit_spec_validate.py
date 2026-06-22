@@ -387,6 +387,21 @@ class BrokerContract(BaseModel):
         return v
 
 
+class OpenClawOrchestration(BaseModel):
+    """P10: how the runner spawns/collects the ephemeral OpenClaw lane agents.
+
+    Optional block. When ``enabled`` is true the tournament runner takes the
+    broker spawn path (ephemeral ``<pit_id>-lane-*`` agents each issue ONE
+    ``copilot_cli.run``) instead of treating the spec as a plan-only artifact.
+    """
+
+    enabled: bool = False
+    spawn_from: Literal["main_standalone"] = "main_standalone"
+    collect_mode: Literal["broker_announce"] = "broker_announce"
+
+    model_config = {"extra": "forbid"}
+
+
 class PitSpecV2(BaseModel):
     """pit_spec v2 contract (code / broker-only mode)."""
 
@@ -399,6 +414,7 @@ class PitSpecV2(BaseModel):
     broker_contract: BrokerContract
     title: str | None = None
     notes: str | None = None
+    openclaw_orchestration: OpenClawOrchestration | None = None
 
     model_config = {"extra": "forbid"}
 
@@ -482,6 +498,15 @@ def validate_broker_file(path: Path) -> dict[str, Any]:
             "broker_required_task": spec.broker_contract.required_task,
             "forbid_direct_llm_repo_analysis": spec.broker_contract.forbid_direct_llm_repo_analysis,
             "secrets_deny": spec.secrets_scope.deny,
+            "openclaw_orchestration": (
+                {
+                    "enabled": spec.openclaw_orchestration.enabled,
+                    "spawn_from": spec.openclaw_orchestration.spawn_from,
+                    "collect_mode": spec.openclaw_orchestration.collect_mode,
+                }
+                if spec.openclaw_orchestration is not None
+                else None
+            ),
         }
     return {
         "spec_path": str(path),

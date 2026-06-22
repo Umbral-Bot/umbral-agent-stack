@@ -998,6 +998,163 @@ def test_f6step5_forbidden_operation_rejects_before_docker_argv(monkeypatch):
     )
 
 
+# ---------------------------------------------------------------------------
+# P4 — PIT broker contract: lane metadata, audit correlation, reasoning_effort
+# ---------------------------------------------------------------------------
+
+
+_PIT_METADATA = {
+    "batch_id": "pit-batch-01",
+    "agent_id": "copilot-a",
+    "lane_id": "lane-friccion",
+    "pit_id": "pit-salud-mental",
+    "iteration": 3,
+}
+
+
+def test_p4_pit_metadata_appears_in_audit(monkeypatch):
+    """lane_id / pit_id / iteration (and batch/agent) land in the audit JSONL."""
+    _all_gates_open(monkeypatch, execute=True)
+    res = handle_copilot_cli_run(_ok_input(
+        mission="research",
+        dry_run=True,
+        metadata=dict(_PIT_METADATA),
+    ))
+    assert res["decision"] == "would_run_dry_run"
+    last = _read_audit(res["audit_log"])[-1]
+    assert last["batch_id"] == "pit-batch-01"
+    assert last["agent_id"] == "copilot-a"
+    assert last["lane_id"] == "lane-friccion"
+    assert last["pit_id"] == "pit-salud-mental"
+    assert last["iteration"] == 3
+
+
+def test_p4_dry_run_with_pit_metadata_echoes_correlation(monkeypatch):
+    """Dry-run response echoes the PIT correlation fields back to the caller."""
+    _all_gates_open(monkeypatch, execute=True)
+    res = handle_copilot_cli_run(_ok_input(
+        mission="research",
+        dry_run=True,
+        metadata=dict(_PIT_METADATA),
+    ))
+    assert res["ok"] is True
+    assert res["decision"].startswith("would_run")
+    assert res["batch_id"] == "pit-batch-01"
+    assert res["agent_id"] == "copilot-a"
+    assert res["lane_id"] == "lane-friccion"
+    assert res["pit_id"] == "pit-salud-mental"
+    assert res["iteration"] == 3
+
+
+def test_p4_reasoning_effort_xhigh_accepted_and_passed_to_argv(monkeypatch):
+    """reasoning_effort=xhigh is accepted and reaches the docker argv."""
+    _all_gates_open(monkeypatch, execute=True)
+
+    import subprocess as _sp
+    calls = []
+
+    def _fake_run(argv, *, input, text, capture_output, timeout):
+        calls.append(argv)
+        return _sp.CompletedProcess(argv, 0, stdout="ok\n", stderr="")
+
+    monkeypatch.setattr(_sp, "run", _fake_run)
+
+    res = handle_copilot_cli_run(_ok_input(
+        mission="research",
+        dry_run=False,
+        reasoning_effort="xhigh",
+    ))
+
+    assert res["ok"] is True
+    assert res["reasoning_effort"] == "xhigh"
+    assert "--reasoning-effort xhigh" in "\n".join(calls[0])
+
+
+def test_p4_reasoning_effort_max_alias_normalizes_to_xhigh(monkeypatch):
+    """The display alias 'max' normalizes to 'xhigh'."""
+    _all_gates_open(monkeypatch, execute=True)
+
+    import subprocess as _sp
+    calls = []
+
+    def _fake_run(argv, *, input, text, capture_output, timeout):
+        calls.append(argv)
+        return _sp.CompletedProcess(argv, 0, stdout="ok\n", stderr="")
+
+    monkeypatch.setattr(_sp, "run", _fake_run)
+
+    res = handle_copilot_cli_run(_ok_input(
+        mission="research",
+        dry_run=False,
+        reasoning_effort="max",
+    ))
+
+    assert res["ok"] is True
+    assert res["reasoning_effort"] == "xhigh"
+    assert "--reasoning-effort xhigh" in "\n".join(calls[0])
+
+
+def test_p4_reasoning_effort_bogus_rejected_without_opaque_invalid_input(monkeypatch):
+    """An unknown reasoning_effort yields a specific error, not invalid_input."""
+    _all_gates_open(monkeypatch, execute=True)
+
+    import subprocess as _sp
+
+    def _explode(*a, **kw):
+        raise AssertionError("subprocess invoked despite invalid reasoning_effort")
+
+    monkeypatch.setattr(_sp, "run", _explode)
+
+    res = handle_copilot_cli_run(_ok_input(
+        mission="research",
+        dry_run=False,
+        reasoning_effort="bogus",
+    ))
+
+    assert res["ok"] is False
+    assert res["error"] == "invalid_reasoning_effort"
+    assert "docker_argv" not in res
+    last = _read_audit(res["audit_log"])[-1]
+    assert last["error"] == "invalid_reasoning_effort"
+
+
+def test_p4_invalid_pit_metadata_field_rejected_with_field_code(monkeypatch):
+    """A malformed lane_id yields invalid_metadata:<field>, not invalid_input."""
+    _all_gates_open(monkeypatch, execute=True)
+    res = handle_copilot_cli_run(_ok_input(
+        mission="research",
+        metadata={"lane_id": "lane/../evil"},
+    ))
+    assert res["ok"] is False
+    assert res["error"].startswith("invalid_metadata:")
+    assert res["error"] == "invalid_metadata:lane_id"
+
+
+def test_p4_invalid_iteration_out_of_range_rejected(monkeypatch):
+    """iteration above the allowed ceiling is rejected with a field code."""
+    _all_gates_open(monkeypatch, execute=True)
+    res = handle_copilot_cli_run(_ok_input(
+        mission="research",
+        metadata={"iteration": 1000},
+    ))
+    assert res["ok"] is False
+    assert res["error"] == "invalid_metadata:iteration"
+
+
+def test_p4_display_model_resolves_to_slug_with_pit_metadata(monkeypatch):
+    """Post-P3 alias: 'Claude Opus 4.7' resolves to the slug for a lane run."""
+    _all_gates_open(monkeypatch, execute=True)
+    res = handle_copilot_cli_run(_ok_input(
+        mission="research",
+        model="Claude Opus 4.7",
+        dry_run=True,
+        metadata=dict(_PIT_METADATA),
+    ))
+    assert res["ok"] is True
+    assert res["model"] == "claude-opus-4.7"
+    assert res["lane_id"] == "lane-friccion"
+
+
 def test_f6step5_unknown_operation_rejects(monkeypatch):
     _all_gates_open_with_ops(
         monkeypatch, mission="research",

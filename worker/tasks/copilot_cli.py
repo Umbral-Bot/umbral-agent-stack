@@ -194,6 +194,7 @@ _ALLOWED_INPUT_KEYS = frozenset({
     "dry_run",
     "max_wall_sec",
     "metadata",
+    "reasoning_effort",
     "requested_operations",
 })
 
@@ -247,6 +248,23 @@ _OPERATION_NAME_RE = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
 # interpolated into a /bin/sh -lc script, so keep the character set small and
 # quote it with shlex before use.
 _MODEL_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9 ._:+()/-]{0,79}$")
+
+# PIT broker contract (P4). Lane-correlation metadata threaded through the
+# audit trail and the worker response so a tournament can join every event
+# back to its batch / lane / iteration. Values are kept to a small, safe
+# slug charset because they end up in audit JSONL and artifact paths.
+_PIT_METADATA_STRING_FIELDS = ("batch_id", "agent_id", "lane_id", "pit_id")
+_PIT_METADATA_VALUE_RE = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
+_PIT_ITERATION_MIN = 0
+_PIT_ITERATION_MAX = 999
+
+# reasoning_effort contract. GitHub Copilot CLI 1.0.36 exposes the choices
+# low|medium|high|xhigh (see
+# docs/ops/evidence-imports/pit-p3-vps-copilot-slugs-audit-20260621). The
+# broker additionally accepts the display alias ``max`` and normalizes it to
+# ``xhigh`` so callers can speak the same vocabulary as the model picker.
+_ALLOWED_REASONING_EFFORTS = frozenset({"low", "medium", "high", "xhigh"})
+_REASONING_EFFORT_ALIASES = {"max": "xhigh"}
 
 
 # ---------------------------------------------------------------------------
@@ -357,6 +375,25 @@ def _metadata_string(metadata: Dict[str, Any], key: str, default: str) -> str:
     if isinstance(value, str) and value.strip():
         return _safe_slug(value, default)
     return default
+
+
+def _pit_correlation(metadata: Dict[str, Any]) -> Dict[str, Any]:
+    """Optional PIT lane-correlation fields, included only when present + valid.
+
+    ``batch_id`` / ``agent_id`` always have a default and are surfaced
+    separately; here we only echo the genuinely optional ``pit_id`` /
+    ``lane_id`` / ``iteration`` so a response or audit event stays clean when
+    the caller is not running inside a tournament.
+    """
+    fields: Dict[str, Any] = {}
+    for key in ("pit_id", "lane_id"):
+        value = metadata.get(key)
+        if isinstance(value, str) and value.strip():
+            fields[key] = value.strip()
+    iteration = metadata.get("iteration")
+    if isinstance(iteration, int) and not isinstance(iteration, bool):
+        fields["iteration"] = iteration
+    return fields
 
 
 def _env_enabled() -> bool:
@@ -673,6 +710,67 @@ class _ValidationError(Exception):
         self.extra = extra
 
 
+def _validate_pit_metadata(metadata: Dict[str, Any]) -> None:
+    """Validate PIT lane-correlation metadata in place.
+
+    Raises ``_ValidationError`` with a field-specific code
+    (``invalid_metadata:<field>``) so the caller gets an actionable error
+    rather than an opaque ``invalid_input``.
+    """
+    for field in _PIT_METADATA_STRING_FIELDS:
+        if field not in metadata or metadata[field] is None:
+            continue
+        value = metadata[field]
+        if not isinstance(value, str) or not _PIT_METADATA_VALUE_RE.match(value):
+            raise _ValidationError(
+                f"invalid_metadata:{field}",
+                f"metadata.{field} must match ^[A-Za-z0-9._-]{{1,64}}$",
+                field=field,
+            )
+    if "iteration" in metadata and metadata["iteration"] is not None:
+        value = metadata["iteration"]
+        if isinstance(value, bool) or not isinstance(value, int):
+            raise _ValidationError(
+                "invalid_metadata:iteration",
+                "metadata.iteration must be an integer in [0, 999]",
+                field="iteration",
+            )
+        if not (_PIT_ITERATION_MIN <= value <= _PIT_ITERATION_MAX):
+            raise _ValidationError(
+                "invalid_metadata:iteration",
+                "metadata.iteration out of range [0, 999]",
+                field="iteration",
+            )
+
+
+def _normalize_reasoning_effort(raw: Any) -> Optional[str]:
+    """Validate + normalize a requested ``reasoning_effort``.
+
+    Returns ``None`` when absent (the policy default applies). Unknown values
+    raise ``invalid_reasoning_effort`` with the offending value rather than a
+    generic ``invalid_input`` so callers know exactly what was rejected.
+    ``max`` is accepted as a display alias for ``xhigh``.
+    """
+    if raw is None:
+        return None
+    if not isinstance(raw, str) or not raw.strip():
+        raise _ValidationError(
+            "invalid_reasoning_effort",
+            "'reasoning_effort' must be one of low|medium|high|xhigh",
+            requested_reasoning_effort=raw,
+        )
+    value = raw.strip().lower()
+    value = _REASONING_EFFORT_ALIASES.get(value, value)
+    if value not in _ALLOWED_REASONING_EFFORTS:
+        raise _ValidationError(
+            "invalid_reasoning_effort",
+            "'reasoning_effort' must be one of low|medium|high|xhigh "
+            f"(got {raw!r})",
+            requested_reasoning_effort=raw,
+        )
+    return value
+
+
 def _validate_input(data: Dict[str, Any]) -> Dict[str, Any]:
     if not isinstance(data, dict):
         raise _ValidationError("invalid_input", "input must be a JSON object")
@@ -740,6 +838,9 @@ def _validate_input(data: Dict[str, Any]) -> Dict[str, Any]:
     metadata = data.get("metadata", {}) or {}
     if not isinstance(metadata, dict):
         raise _ValidationError("invalid_input", "'metadata' must be object")
+    _validate_pit_metadata(metadata)
+
+    reasoning_effort = _normalize_reasoning_effort(data.get("reasoning_effort"))
 
     requested_operations_raw = data.get("requested_operations", None)
     requested_operations: Optional[List[str]]
@@ -787,6 +888,7 @@ def _validate_input(data: Dict[str, Any]) -> Dict[str, Any]:
         "dry_run": dry_run,
         "max_wall_sec": max_wall_sec,
         "metadata": metadata,
+        "reasoning_effort": reasoning_effort,
         "requested_operations": requested_operations,
     }
 
@@ -860,11 +962,21 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
     mission = validated["mission"]
     requested_model = validated.get("model")
     model, default_model, force_default_model = _resolve_policy_model(requested_model)
-    reasoning_effort = tool_policy.get_copilot_cli_default_reasoning_effort()
+    reasoning_effort = (
+        validated.get("reasoning_effort")
+        or tool_policy.get_copilot_cli_default_reasoning_effort()
+    )
     prompt = validated["prompt"]
     repo_path = validated["repo_path"]
     dry_run = validated["dry_run"]
     max_wall_sec = validated["max_wall_sec"]
+
+    # PIT broker correlation. Resolve once so every audit event and the final
+    # response speak the same batch / lane / iteration vocabulary.
+    metadata = validated.get("metadata") or {}
+    batch_id = _metadata_string(metadata, "batch_id", "single")
+    agent_id = _metadata_string(metadata, "agent_id", "copilot-cli")
+    pit_corr = _pit_correlation(metadata)
 
     # Always populate the redacted summary on subsequent events.
     base_event["mission"] = mission
@@ -878,7 +990,10 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
     if reasoning_effort:
         base_event["reasoning_effort"] = reasoning_effort
     base_event["prompt_summary"] = _summarize(prompt)
-    base_event["metadata_keys"] = sorted((validated.get("metadata") or {}).keys())
+    base_event["metadata_keys"] = sorted(metadata.keys())
+    base_event["batch_id"] = batch_id
+    base_event["agent_id"] = agent_id
+    base_event.update(pit_corr)
 
     # 2) Banned subcommand scan — BEFORE the capability gate so even
     # disabled-state probes get the same audit trail.
@@ -1086,15 +1201,15 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
             "model": model,
             "reasoning_effort": reasoning_effort,
             "mission_run_id": mission_run_id,
+            "batch_id": batch_id,
+            "agent_id": agent_id,
+            **pit_corr,
             "audit_log": audit_path_str,
             "docker_argv": redacted_argv,
             "egress_activated": egress_activated,
         }
 
     if decision == "execute":
-        metadata = validated.get("metadata") or {}
-        batch_id = _metadata_string(metadata, "batch_id", "single")
-        agent_id = _metadata_string(metadata, "agent_id", "copilot-cli")
         artifacts = _artifact_dir(
             batch_id=batch_id,
             agent_id=agent_id,
@@ -1165,6 +1280,7 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
             "mission_run_id": mission_run_id,
             "batch_id": batch_id,
             "agent_id": agent_id,
+            **pit_corr,
             "audit_log": audit_path_str,
             "docker_argv": redacted_argv,
             "artifact_dir": str(artifacts),
@@ -1207,6 +1323,9 @@ def handle_copilot_cli_run(input_data: Dict[str, Any]) -> Dict[str, Any]:
         "model": model,
         "reasoning_effort": reasoning_effort,
         "mission_run_id": mission_run_id,
+        "batch_id": batch_id,
+        "agent_id": agent_id,
+        **pit_corr,
         "audit_log": audit_path_str,
         "docker_argv": redacted_argv,
         "operations": {

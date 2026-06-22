@@ -252,6 +252,61 @@ are never mutated by the window script — only verified in `status`.
 P10 success criterion: `lanes=3`, **`openclaw_total>0`**, per-lane present, and
 the broker verdict `P10_OPENCLAW_BROKER_RUN_PASS` (or `_PARTIAL` ≥2 lanes).
 
+### 7.1 Refire results — 2026-06-22 §6.2 read-only probe (gates CLOSED)
+
+First real spawn executed under §6.2 (gates never opened). Authorization phrase:
+`ok, arranca` ("copilot_cli read-only probe"). Evidence dir
+`~/.coord-ag-evidence/pit-p10-openclaw-broker-fase8-refire-20260622`.
+
+**Outcome — orchestration + dispatch proven end-to-end:**
+
+- `PIT_SPAWN_FIRED 3` in the gateway journal → 3 ephemeral lanes spawned via
+  `sessions_spawn` under the standalone `main` agent (G-D1b).
+- All 3 lanes POSTed `copilot_cli.run` to the Worker and received **HTTP 200**
+  (`"ok":true`, real `task_id`/`trace_id`) — lane→Worker auth works (the
+  `WORKER_TOKEN` reaches lanes via the gateway `EnvironmentFile`, not the
+  orchestrator env). This closes the auth gap that blocked the prior attempt.
+- The Worker gated execution at the **egress layer** for every lane:
+  `error:"egress_not_activated"`, `would_run:false`, `egress_activated:false` →
+  `BROKER_EXECUTED=false`, `BROKER_EXIT=1`, with a real `BROKER_AUDIT_ID` +
+  audit log per lane. This is the intended read-only probe — the broker reached
+  the final gate and correctly refused real execution because egress is off.
+
+| lane | model | session | input | output | audit_id (8) |
+|---|---|---|---|---|---|
+| lane-foundry-tools | gpt-5.5/high | df06db1a | 52,494 | 1,861 | 5550e52f |
+| lane-codex-depth | claude-opus-4.7/xhigh | 8544144a | 27,581 | 1,729 | 87cc44ec |
+| lane-cost-mini | gpt-5.4-mini/medium | 840bcfa1 | 48,068 | 1,645 | fba4c7f6 |
+
+**`openclaw_total` = 133,378 tokens** (input 128,143 + output 5,235) vs **P9 = 0**.
+The P10 headline (real OpenClaw agents spend tokens, not direct POSTs) is met.
+
+**⚠ Collector path-convention gap (follow-up, not a run failure):**
+`pit_collect_tokens.py` globs `agents/<pit_id>-lane-*/sessions/sessions.json`, but
+this runner spawns lanes as `sessions_spawn` **sub-sessions of `main`**, so their
+token records live in `~/.openclaw/agents/main/sessions/sessions.json` (1:1 to each
+lane via trajectory `lane_id` match). The official collector therefore reports
+`openclaw_total=0` with the note *"no openclaw lane agents matched …"* while
+correctly capturing `copilot_cli_calls=3`. The authoritative spend is the direct
+read above (`31-ledger-direct.txt`). **Fix forward:** teach the collector to also
+attribute `agents/main/sessions/` entries by `lane_id`, or have the runner spawn
+into dedicated `<pit_id>-lane-*` agent dirs. Token records persist after cleanup
+(the `finally` kills live sub-sessions + deregisters agents; it does not delete the
+`main` session store).
+
+**Broker verdict caveat:** `broker_complete` requires `BROKER_EXECUTED=true`, so
+with egress gated the strict verdict is FAIL/PARTIAL **by design** — that label
+reflects the intentional gating, not a defect. The collection loop also blocks
+until `lane_timeout` (1800 s) because no lane reaches `broker_complete`; the probe
+was ended early with `SIGINT` once all lanes had written terminal results.
+
+**Gates after run:** nft `copilot_egress` ABSENT (closed), worker health 200, no
+orphan lane processes, VPS returned to `main`. Secret scan over evidence: CLEAN.
+
+**§6.3 (real egress execution, `BROKER_EXECUTED=true`) was NOT run** — it requires
+David's explicit §6.1 window phrase, which was not given. Recommended as the
+optional next escalation.
+
 ---
 
 ## 8. Default gate state (must hold outside an authorized window)

@@ -63,7 +63,7 @@ try:
         DEFAULT_EVIDENCE_ROOT as DRY_RUN_EVIDENCE_ROOT,
         DRY_RUN_PASS,
     )
-    from scripts.pit.pit_spec_validate import PitSpec, load_spec
+    from scripts.pit.pit_spec_validate import PitSpec, is_broker_spec, load_spec
 except ImportError:  # invocado como script directo
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
     from scripts.pit import pit_runner_core as core
@@ -71,7 +71,7 @@ except ImportError:  # invocado como script directo
         DEFAULT_EVIDENCE_ROOT as DRY_RUN_EVIDENCE_ROOT,
         DRY_RUN_PASS,
     )
-    from scripts.pit.pit_spec_validate import PitSpec, load_spec
+    from scripts.pit.pit_spec_validate import PitSpec, is_broker_spec, load_spec
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 ROLE_TEMPLATE_PATH = (
@@ -941,7 +941,30 @@ def _write_metrics(evidence: Path, metrics: dict[str, Any]) -> None:
     _log(f"verdict: {metrics['verdict']}")
 
 
+def _is_broker_spec_file(path: Path) -> bool:
+    """True si el pit_spec en disco es v2/broker (schema_version 2 o broker_contract)."""
+    try:
+        raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        return False
+    return isinstance(raw, dict) and is_broker_spec(raw)
+
+
 def main(argv: list[str] | None = None) -> int:
+    raw_args = list(sys.argv[1:] if argv is None else argv)
+    # Dispatch broker (pit_spec v2 / P10): si el primer positional es un spec
+    # broker, delega el run COMPLETO a pit_broker_run sin tocar el camino v1 de
+    # producto (su parser queda intacto y maneja todos los flags broker-only).
+    if (
+        raw_args
+        and not raw_args[0].startswith("-")
+        and _is_broker_spec_file(Path(raw_args[0]))
+    ):
+        from scripts.pit import pit_broker_run
+
+        _log("broker spec detected -> delegating to pit_broker_run (P10)")
+        return pit_broker_run.main(raw_args)
+
     parser = argparse.ArgumentParser(
         description="PIT-2b — spawn real de agentes efímeros OpenClaw (post-smoke)."
     )

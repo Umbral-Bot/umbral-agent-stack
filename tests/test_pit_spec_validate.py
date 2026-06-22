@@ -497,3 +497,50 @@ def test_v2_required_task_enforced(tmp_path):
 
 def test_v2_pitspec_model_importable():
     assert PitSpecV2.__name__ == "PitSpecV2"
+
+
+# ---------------------------------------------------------------------------
+# openclaw_orchestration (P10) — optional block on the broker spec
+# ---------------------------------------------------------------------------
+
+
+def _orchestration(**overrides) -> dict:
+    base = dict(
+        enabled=True,
+        spawn_from="main_standalone",
+        collect_mode="broker_announce",
+    )
+    base.update(overrides)
+    return base
+
+
+def test_v2_orchestration_block_accepted(tmp_path):
+    spec = _broker_spec(openclaw_orchestration=_orchestration())
+    result = _write_and_validate(tmp_path, spec)
+    assert result["status"] == "pass", result["errors"]
+
+
+def test_v2_orchestration_absent_still_passes(tmp_path):
+    result = _write_and_validate(tmp_path, _broker_spec())
+    assert result["status"] == "pass", result["errors"]
+
+
+def test_v2_orchestration_bad_spawn_from_fails(tmp_path):
+    spec = _broker_spec(openclaw_orchestration=_orchestration(spawn_from="random_agent"))
+    result = _write_and_validate(tmp_path, spec)
+    assert result["status"] == "fail"
+    assert any("spawn_from" in e for e in result["errors"])
+
+
+def test_v2_orchestration_bad_collect_mode_fails(tmp_path):
+    spec = _broker_spec(openclaw_orchestration=_orchestration(collect_mode="transcript"))
+    result = _write_and_validate(tmp_path, spec)
+    assert result["status"] == "fail"
+    assert any("collect_mode" in e for e in result["errors"])
+
+
+def test_v2_example_openclaw_broker_spec_passes():
+    path = REPO_ROOT / "examples" / "pit" / "pit_spec.openclaw-broker-v1.yaml"
+    result = validate_broker_file(path)
+    assert result["status"] == "pass", result["errors"]
+    assert result["spec"]["lane_count"] == 3

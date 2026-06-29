@@ -1,0 +1,64 @@
+# Benchmark editorial Umbral v1.0
+# Validado por David via ChatGPT asesor externo (2026-06-05)
+# VEREDICTO: BENCHMARK_EDITORIAL_VALIDATED
+# Uso: filtrar variantes LinkedIn AEC/BIM antes de revisión humana
+
+benchmark_editorial_umbral:
+  version: "1.0"
+  canal: LinkedIn AEC/BIM
+  objetivo: Filtrar variantes antes de revisión humana
+  veredicto: BENCHMARK_EDITORIAL_VALIDATED
+
+  umbral_de_paso:
+    promedio_general: 7.0
+    anti_ai_slop_min: 8
+    aec_operativo_min: 7
+    fail_automatico_si_aparece:
+      - "En el mundo actual"
+      - "No es solo X, es Y"
+      - "No es esto, es esto otro"
+      - "Aquí es donde entra"
+      - capturar valor sin escena AEC concreta
+      - impacto sin escena AEC concreta
+      - preparación organizacional repetido sin obra/coordinación/revisión/entregable
+      - equipos AI-native en párrafo 1 sin aterrizaje AEC
+      - em dash en copy público
+      - apertura abstracta
+      - mini-ensayo con más de una idea central
+      - pregunta retórica con respuesta inmediata
+
+  dimensiones:
+    - voice_fit
+    - aec_operativo
+    - anti_ai_slop
+    - tesis_unica
+    - linkedin_fit
+    - atribucion_segura
+    - diferenciacion_david
+
+  casos_fail:
+    - id: FAIL_01
+      titulo: Apertura genérica de consultoría
+    - id: FAIL_02
+      titulo: Falsa profundidad con fórmula X/Y
+    - id: FAIL_03
+      titulo: Mini-ensayo sin foco
+    - id: FAIL_04
+      titulo: Pregunta retórica con respuesta inmediata
+    - id: FAIL_05
+      titulo: Énfasis grandilocuente sin evidencia
+
+  casos_pass:
+    - id: PASS_01
+      titulo: Revisión que vuelve al equipo
+    - id: PASS_02
+      titulo: Entregable sin criterio
+    - id: PASS_03
+      titulo: Automatización como puente
+    - id: PASS_04
+      titulo: Citizen developer AECO sin épica
+    - id: PASS_05
+      titulo: IA aplicada con cautela
+
+  # Pack completo (10 casos + rúbrica + plantilla Decision Brief):
+  # Ver conversación ChatGPT 2026-06-05 o docs/ops/editorial-decision-brief-and-benchmark-2026-06-05.md

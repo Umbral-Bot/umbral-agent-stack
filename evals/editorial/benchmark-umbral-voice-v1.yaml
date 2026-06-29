@@ -17,6 +17,8 @@ benchmark_editorial_umbral:
       - "En el mundo actual"
       - "No es solo X, es Y"
       - "No es esto, es esto otro"
+      - "no es solo"                  # variante bare (LinkedIn CAND-001)
+      - "Ahí aparece el problema"     # transición genérica
       - "Aquí es donde entra"
       - capturar valor sin escena AEC concreta
       - impacto sin escena AEC concreta
@@ -26,6 +28,16 @@ benchmark_editorial_umbral:
       - apertura abstracta
       - mini-ensayo con más de una idea central
       - pregunta retórica con respuesta inmediata
+
+    flags_revision_obligatoria:
+      # SOFT: QA debe justificar cada hallazgo, no es fail automático directo
+      - 'real / realidad usado como énfasis SIN sustantivo medible/operativo (OK: "decisión real del equipo"; FLAG: "el riesgo real", "lo real es")'
+      - abstracción sin escena AEC en el mismo párrafo
+
+    reglas_cuantitativas:
+      max_repeticion_verbo_riesgo: 2   # p.ej. "amplificar" >2x = fail
+      max_repeticion_nucleo: 2
+      exige_escena_aec_por_claim: true
 
   dimensiones:
     - voice_fit

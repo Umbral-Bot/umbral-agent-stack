@@ -219,6 +219,20 @@ def build_broker_lanes(
                 f"lane_focus for {lane_id} must not contain quotes or newlines "
                 "(it is embedded into the broker JSON payload)"
             )
+        # max_wall_sec opcional por-lane desde el lanes.yaml de enriquecimiento.
+        # El worker (copilot_cli.run) lo valida en [5, 600]; default 120 preserva
+        # el comportamiento previo. Permite que lanes high/xhigh excedan 120s.
+        try:
+            max_wall_sec = int(enr.get("max_wall_sec", 120))
+        except (TypeError, ValueError):
+            raise RunBlocked(
+                f"lanes[{lane_id}].max_wall_sec must be an integer, "
+                f"got {enr.get('max_wall_sec')!r}"
+            )
+        if not (5 <= max_wall_sec <= 600):
+            raise RunBlocked(
+                f"lanes[{lane_id}].max_wall_sec out of range [5, 600]: {max_wall_sec}"
+            )
         lanes.append(
             {
                 "lane_id": lane_id,
@@ -226,6 +240,7 @@ def build_broker_lanes(
                 "reasoning_effort": lane.reasoning_effort,
                 "mission": lane.mission,
                 "max_iterations": lane.max_iterations,
+                "max_wall_sec": max_wall_sec,
                 "lane_focus": lane_focus,
                 # Identidad efímera 1:1 con el torneo (lleva el pit_id): nunca se
                 # recicla entre torneos.
@@ -387,6 +402,7 @@ def _broker_payload(spec: PitSpecV2, lane: dict[str, Any]) -> dict[str, Any]:
         "prompt": lane["lane_focus"],
         "repo_path": spec.repo_path,
         "dry_run": False,
+        "max_wall_sec": lane.get("max_wall_sec", 120),
         "metadata": {
             "batch_id": lane["batch_id"],
             "agent_id": lane["agent_id"],

@@ -1,0 +1,25 @@
+# Lanes file — P10 OpenClaw broker probe. Pairs each spec lane_id with a short
+# analytical focus rendered into the broker ROLE prompt ({{lane_focus}}).
+#
+# For v2 broker specs this file is OPTIONAL: the authoritative lane definitions
+# (model, reasoning_effort, mission, max_iterations) live in
+# examples/pit/pit_spec.openclaw-broker-v4.yaml. This file only enriches the
+# per-lane narrative; if omitted, lane_focus defaults to the lane mission.
+#
+# lane_id values must match the spec and core.LANE_ID_RE (^lane-[a-z0-9-]+$).
+lanes:
+  - lane_id: lane-foundry-tools
+    max_wall_sec: 300
+    lane_focus: >-
+      Map how the worker tool surface and Foundry/OpenClaw tool registrations are
+      wired (worker/tasks/*, config/tool_policy.yaml). Read-only summary only.
+  - lane_id: lane-codex-depth
+    max_wall_sec: 300
+    lane_focus: >-
+      Deep structural read of the dispatcher/worker control plane and the PIT
+      runner bridge (scripts/pit/*). Explain module boundaries. Read-only.
+  - lane_id: lane-cost-mini
+    max_wall_sec: 300
+    lane_focus: >-
+      Low-cost breadth pass: inventory entrypoints and config files, cite the
+      key files a newcomer needs. Read-only, minimal tokens.

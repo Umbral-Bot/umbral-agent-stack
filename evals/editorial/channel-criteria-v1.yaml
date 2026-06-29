@@ -1,0 +1,48 @@
+# Criterios editoriales por canal — Umbral/David (v1)
+# Complementa benchmark-umbral-voice-v1.yaml y CALIBRATION.md
+
+schema_version: 1
+
+regla_voz_umbral:
+  - Usar escenas concretas de AEC/BIM antes que abstracciones.
+  - Preferir frases directas y operativas.
+  - Evitar tono consultor, grandilocuente o genérico.
+  - Evitar fórmulas repetidas (ver benchmark fail_automatico_si_aparece).
+  - No usar "real" o "realidad" como intensificador vacío.
+  - Evitar guiones largos en copy público.
+  - Mantener la tesis en una frase clara.
+  - No inventar datos, cifras, normas, benchmarks ni estudios en piezas de opinión sin fuente primaria.
+  - 'Cierre preferente para esta línea editorial: "Primero claridad. Después velocidad."'
+
+linkedin:
+  gancho: concreto
+  longitud_objetivo_chars: [500, 700]
+  primer_parrafo: escena o afirmación fuerte, no introducción genérica
+  preferir_afirmativa_sobre_pregunta_inicial: true
+  respiracion: párrafos breves para feed
+  alt1_cand001_apertura: >-
+    Un equipo BIM puede sumar un agente que revise modelos antes de definir
+    qué cuenta como una revisión válida.
+
+blog:
+  estructura: clara sin relleno
+  parrafo: una idea nueva por párrafo
+  escenas_aec:
+    - modelo
+    - interferencias
+    - clash
+    - RFI
+    - entregable
+    - revisión
+    - trazabilidad
+    - versión del modelo
+    - aprobación humana
+  tono: opinión operativa, no paper ni consultoría
+
+x:
+  formato: sintético
+  componentes:
+    - una tesis
+    - una condición operativa
+    - un cierre
+  sin_adornos: true

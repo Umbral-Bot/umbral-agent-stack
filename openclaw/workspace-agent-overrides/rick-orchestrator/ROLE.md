@@ -94,6 +94,6 @@ If David or the orchestrator itself determines that a normally-avoided tool is t
 
 > Observed on VPS runtime 2026-04-19. This documents what is live, not what should be enforced by this file.
 
-- **Primary:** `azure-openai-responses/gpt-5.4` (reasoning mode enabled).
-- **Fallbacks:** `azure-openai-responses/gpt-5.2-chat`, `openai-codex/gpt-5.4`.
-- **Rationale:** Orchestration requires strong planning, synthesis, and multi-step reasoning. The Azure Foundry endpoint is the primary provider in this stack.
+- **Primary (required):** `azure-openai-responses/gpt-5.5` (reasoning mode enabled, xhigh).
+- **Fallbacks:** `azure-openai-responses/gpt-5.4` only after explicit logged failure.
+- **Rationale:** Orchestration requires strong planning, synthesis, and multi-step reasoning. Editorial routes use GPT-5.5 per `config/editorial-model.yaml`.

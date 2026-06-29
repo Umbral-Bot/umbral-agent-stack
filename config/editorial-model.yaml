@@ -1,0 +1,34 @@
+# Editorial production model contract (repo-side source of truth).
+# Live enforcement: OpenClaw ~/.openclaw/openclaw.json on VPS + editorial_model_guard.py
+# See docs/editorial-pipeline/editorial-model-contract.md
+
+schema_version: 1
+required_provider: azure-openai-responses
+required_model: gpt-5.5
+required_model_id: azure-openai-responses/gpt-5.5
+thinking_default_editorial: xhigh
+thinking_default_tracker: medium
+
+# Agents that MUST use required_model_id for copy generation / voice review
+editorial_agents:
+  - rick-orchestrator
+  - rick-linkedin-writer
+  - rick-communication-director
+  - rick-qa
+  - main
+
+# Fallback allowed only after explicit failure + logged override (never silent)
+allowed_fallback_after_failure:
+  - azure-openai-responses/gpt-5.4
+
+forbidden_silent_fallback:
+  - openai-codex/gpt-5.4
+  - google/gemini-2.5-flash
+  - google-vertex/gemini-2.5-flash
+
+openclaw_alias_notes:
+  openclaw/main: resolves to agents.defaults.model.primary in openclaw.json
+  stage7_5_copy_writer: uses openclaw/main gateway path — inherits VPS default
+
+on_model_mismatch: fail_explicit
+# Pipeline scripts MUST call editorial_model_guard.assert_editorial_model() before LLM copy gen.

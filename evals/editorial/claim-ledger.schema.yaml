@@ -1,18 +1,14 @@
 # Claim ledger schema — editorial versioning C2
-# Traza cada afirmación de una publicación a su fuente, confianza y método.
-# Precondición de Gate 1 (revisión humana): sin ledger no se habilita.
-
 schema_version: 1
 proposito: trazar cada afirmación → fuente → confianza → método
 campos_por_claim:
-  - claim            # texto de la afirmación
-  - claim_type       # dato | opinión | inferencia
-  - fuente           # nombre o "N/A — opinión editorial"
-  - url              # link o null
-  - confianza        # alta | media | baja
-  - metodo           # cómo se obtuvo (research.web, experiencia, etc.)
-  - evidencia        # cita / quote / null
+  - claim
+  - claim_type
+  - fuente
+  - url
+  - confianza
+  - metodo
+  - evidencia
 regla_opinion: >-
-  Si claim_type=opinión y fuente=N/A, exigir campo razon explícita
-  ("opinión editorial Umbral, sin fuente externa porque ...").
-precondicion_gate1: true   # sin ledger no se habilita revisión humana
+  Si claim_type=opinión y fuente=N/A, exigir campo razon explícita.
+precondicion_gate1: true

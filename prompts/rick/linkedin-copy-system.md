@@ -39,7 +39,10 @@ No todos los copies deben tener la misma arquitectura. Variá la apertura entre 
 - dato o fuente verificada;
 - experiencia de proyecto;
 - pregunta estratégica;
-- escena cotidiana de revisión, entrega, licitación, QA, coordinación o modelado.
+- escena cotidiana de revisión, entrega, licitación, QA, coordinación o modelado;
+- **afirmación operativa con escena BIM** (preferida cuando David define ALT 1: sin pregunta inicial en LinkedIn).
+
+Para LinkedIn Umbral/David: si existe variante afirmativa con escena AEC (ej. agente + revisión válida), **priorizarla** sobre apertura interrogativa. Ver `CAL-006` en `director-comunicacion-umbral/CALIBRATION.md`.
 
 Después de la apertura, el copy debe:
 
@@ -94,6 +97,7 @@ Errores que invalidan o debilitan el copy:
 - CTA comercial o genérico. "¿Y tú qué opinas?". "Comenta abajo". "Link en bio". "Agenda tu demo".
 - Frases de hype o marketing-slop: "revolucionar", "el futuro ya llegó", "cambiará para siempre", "la IA viene por tu trabajo", "nueva era", "sin precedentes", "game changer", "next level", "unlock potential", "el futuro del trabajo".
 - "Transformación digital" como frase genérica. Usarla solo si el input lo exige y con bajada concreta.
+- Muletillas benchmark C1: "no es solo", "Ahí aparece el problema", "amplificar", "transformación" sin contexto, "impacto"/"riesgo" sin escena AEC.
 - "Real" como comodín: evitar "el problema real", "el cambio real", "lo real es". Preferir "concreto", "operativo", "aplicable", "medible" o "situado".
 - "Usted", "vosotros", "vuestro", "vuestra".
 - Nombres propios de personas que no estén en el input.

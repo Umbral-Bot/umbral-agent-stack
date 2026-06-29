@@ -1,13 +1,15 @@
-# Benchmark editorial Umbral v1.0
-# Validado por David via ChatGPT asesor externo (2026-06-05)
+# Benchmark editorial Umbral v1.1
+# Validado por David via ChatGPT asesor externo (2026-06-05); C1 reforzado 2026-06-29
 # VEREDICTO: BENCHMARK_EDITORIAL_VALIDATED
-# Uso: filtrar variantes LinkedIn AEC/BIM antes de revisión humana
+# Uso: filtrar variantes multicanal AEC/BIM antes de revisión humana
+# Canal criteria: evals/editorial/channel-criteria-v1.yaml
 
 benchmark_editorial_umbral:
-  version: "1.0"
-  canal: LinkedIn AEC/BIM
+  version: "1.1"
+  canal: multicanal AEC/BIM
   objetivo: Filtrar variantes antes de revisión humana
   veredicto: BENCHMARK_EDITORIAL_VALIDATED
+  modelo_produccion_requerido: azure-openai-responses/gpt-5.5
 
   umbral_de_paso:
     promedio_general: 7.0
@@ -17,11 +19,14 @@ benchmark_editorial_umbral:
       - "En el mundo actual"
       - "No es solo X, es Y"
       - "No es esto, es esto otro"
-      - "no es solo"                  # variante bare (LinkedIn CAND-001)
-      - "Ahí aparece el problema"     # transición genérica
+      - "no es solo"
+      - "Ahí aparece el problema"
       - "Aquí es donde entra"
+      - amplificar
+      - transformación sin contexto operativo
       - capturar valor sin escena AEC concreta
       - impacto sin escena AEC concreta
+      - riesgo sin describir qué falla
       - preparación organizacional repetido sin obra/coordinación/revisión/entregable
       - equipos AI-native en párrafo 1 sin aterrizaje AEC
       - em dash en copy público
@@ -30,14 +35,14 @@ benchmark_editorial_umbral:
       - pregunta retórica con respuesta inmediata
 
     flags_revision_obligatoria:
-      # SOFT: QA debe justificar cada hallazgo, no es fail automático directo
       - 'real / realidad usado como énfasis SIN sustantivo medible/operativo (OK: "decisión real del equipo"; FLAG: "el riesgo real", "lo real es")'
       - abstracción sin escena AEC en el mismo párrafo
 
     reglas_cuantitativas:
-      max_repeticion_verbo_riesgo: 2   # p.ej. "amplificar" >2x = fail
+      max_repeticion_verbo_riesgo: 2
       max_repeticion_nucleo: 2
       exige_escena_aec_por_claim: true
+      linkedin_longitud_objetivo: [500, 700]
 
   dimensiones:
     - voice_fit

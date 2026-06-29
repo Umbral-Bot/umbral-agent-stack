@@ -167,9 +167,9 @@ If `rick-orchestrator` or David delegates a task that requires a normally-avoide
 
 ## Model preference
 
-> To be configured when activated. This documents the recommended model, not enforcement.
+> When activated, MUST use `azure-openai-responses/gpt-5.5`. Currently design-only.
 
-- **Primary:** `azure-openai-responses/gpt-5.4` (reasoning mode enabled).
+- **Primary (required):** `azure-openai-responses/gpt-5.5` (reasoning mode enabled).
 - **Rationale:** Editorial work requires strong reasoning for source separation, claim verification, tone calibration, and structured output generation.
 
 ## Acceptance criteria for a candidate

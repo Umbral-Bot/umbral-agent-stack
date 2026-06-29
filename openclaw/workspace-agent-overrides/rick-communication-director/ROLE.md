@@ -180,10 +180,12 @@ A communication review is acceptable when:
 
 ## Model preference
 
-> Configured for deliberate dry-run invocation. This role remains read-only, has no autonomous routing, no publication path, and no gate mutation.
+> Configured for deliberate dry-run invocation. Production editorial MUST use GPT-5.5 via OpenClaw.
 
-- **Primary:** a strong reasoning/writing model available in the workspace.
-- **Rationale:** the task needs editorial judgment, comparison against a style guide, and careful preservation of source/claim boundaries.
+- **Primary (required):** `azure-openai-responses/gpt-5.5` with `thinkingDefault: xhigh`.
+- **Fallback:** `azure-openai-responses/gpt-5.4` only after explicit logged failure — never silent.
+- **Contract:** `config/editorial-model.yaml`, `docs/editorial-pipeline/editorial-model-contract.md`
+- **Rationale:** editorial judgment, voice calibration, and AEC scene grounding require the promoted Foundry model.
 
 ## Runtime registration state
 

@@ -13,6 +13,8 @@ El producto lleva una idea desde **señales del sector** hasta **publicación mu
 
 David no pega prompts en ninguna herramienta. Su único panel de control de contenido es **Notion**. Telegram es solo el botón final de seguridad.
 
+**Modelo editorial (v2.1):** redacción y voice pass vía OpenClaw `azure-openai-responses/gpt-5.5`. Contrato: `docs/editorial-pipeline/editorial-model-contract.md`. Sin fallback silencioso.
+
 ---
 
 ## 2. Flujo confirmado (end-to-end)

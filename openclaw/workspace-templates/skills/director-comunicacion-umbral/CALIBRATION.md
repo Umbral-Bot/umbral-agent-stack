@@ -56,3 +56,12 @@ Este archivo absorbe feedback humano recurrente sobre voz, apertura, naturalidad
 - **Razon:** feedback recurrente CAND-001; refuerza C1 anti-muletilla del benchmark v1.
 - **Cuando aplica:** revision de cualquier candidato editorial.
 - **Cuando no aplica:** cita textual de fuente externa donde la palabra es parte del dato, no enfasis.
+
+### CAL-006 — LinkedIn ALT 1 afirmativa (feedback David CAND-001 2026-06-29)
+
+- **Patron preferido:** abrir con escena o afirmacion operativa, no con pregunta retorica inicial.
+- **Ejemplo preferido (ALT 1):** `Un equipo BIM puede sumar un agente que revise modelos antes de definir que cuenta como una revision valida.`
+- **Ejemplo a evitar como apertura:** `¿Ya esta suficientemente ordenado el proceso...?` cuando existe variante afirmativa con mas peso editorial.
+- **Razon:** la audiencia AEC reconoce la escena antes que el marco abstracto; menos tono consultor.
+- **Cuando aplica:** LinkedIn y hooks de blog cuando David pida variante afirmativa.
+- **Cuando no aplica:** piezas donde David elige deliberadamente apertura interrogativa (decision explicita).

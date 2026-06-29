@@ -146,8 +146,9 @@ autorizar_publicacion: false  # NEVER set by writer
 > Declarativo, no enforcement.
 
 - **Stage 5 (ranking determinístico):** sin LLM. Heurística pura.
-- **Stage 6 (combinación AEC):** TBD. Candidato `azure-openai-responses/gpt-5.4` reasoning mode. Decisión de modelo/costo abierta (ver §"Decisiones abiertas" en `docs/plans/linkedin-publication-pipeline.md`).
-- **Stage 7 (redacción copy):** TBD. Candidato `azure-openai-responses/gpt-5.4`.
+- **Stage 6 (combinación AEC):** `azure-openai-responses/gpt-5.5` + xhigh.
+- **Stage 7 (redacción copy):** `azure-openai-responses/gpt-5.5` + xhigh.
+- **Contract:** `docs/editorial-pipeline/editorial-model-contract.md`
 
 ## Acceptance criteria
 

@@ -80,11 +80,12 @@ When validating editorial candidates, QA must report these voice checks separate
 
 ### Benchmark enforcement (C1)
 
-QA editorial DEBE correr `evals/editorial/benchmark-umbral-voice-v1.yaml` sobre cada variante:
+QA editorial DEBE correr `evals/editorial/benchmark-umbral-voice-v1.yaml` y `evals/editorial/channel-criteria-v1.yaml`:
 
-- Aplicar `fail_automatico_si_aparece` y `flags_revision_obligatoria` (estos ultimos son SOFT: QA debe justificar cada hallazgo, no fallan por si solos).
-- Salida estructurada obligatoria por hallazgo: `frase_original | regla_violada | correccion_propuesta`.
-- `voice: pass` NO se emite si queda algun `fail_automatico` sin resolver.
+- Aplicar `fail_automatico_si_aparece` y `flags_revision_obligatoria` (SOFT: justificar hallazgo).
+- Salida estructurada: `frase_original | regla_violada | correccion_propuesta`.
+- `voice: pass` NO si queda `fail_automatico` sin resolver.
+- LinkedIn: verificar apertura afirmativa cuando David definió ALT 1 (CAL-006).
 
 ### Opening coherence rules (blocking)
 
@@ -137,8 +138,9 @@ If `rick-orchestrator` or David explicitly delegates a task that requires a norm
 
 ## Model preference
 
-> Observed on VPS runtime 2026-04-19. This documents what is live, not what should be enforced by this file.
+> Production editorial QA MUST run under GPT-5.5 via OpenClaw. See `config/editorial-model.yaml`.
 
-- **Primary:** `azure-openai-responses/gpt-5.4` (reasoning mode enabled).
-- **Fallbacks:** `azure-openai-responses/gpt-5.2-chat`, `openai-codex/gpt-5.3-codex`.
-- **Rationale:** Validation requires careful analytical reasoning — matching evidence against criteria, detecting inconsistencies, and assessing risk. The reasoning model supports this well.
+- **Primary (required):** `azure-openai-responses/gpt-5.5` (reasoning mode enabled, `xhigh`).
+- **Fallbacks:** `azure-openai-responses/gpt-5.4` only after explicit logged failure.
+- **Forbidden silent fallback:** Gemini, Codex, or any model other than required without `EditorialModelError`.
+- **Rationale:** validation requires careful analytical reasoning against benchmark C1 and channel criteria.

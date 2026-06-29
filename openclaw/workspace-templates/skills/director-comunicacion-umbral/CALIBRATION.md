@@ -47,3 +47,12 @@ Este archivo absorbe feedback humano recurrente sobre voz, apertura, naturalidad
 - **Razon:** El objetivo es que el agente aprenda, no que David repita.
 - **Cuando aplica:** Siempre que el feedback de revision repita un patron ya corregido antes.
 - **Cuando no aplica:** Feedback unico o especifico de una pieza que no es generalizable.
+
+### CAL-005 — Muletillas de enfasis y repeticion (feedback CAND-001 2026-06-29)
+
+- **"real"/"realidad" como muletilla de enfasis** -> reescribir con condicion observable. FLAG: `el riesgo real`, `lo real es`; OK: `decision real del equipo`.
+- **"amplificar" repetido** -> variar el verbo o aterrizar en escena concreta (clash, RFI, entregable, sesion de coordinacion).
+- **"no es solo X" sin Y operativo** -> eliminar; si no hay contraparte medible, la formula sobra.
+- **Razon:** feedback recurrente CAND-001; refuerza C1 anti-muletilla del benchmark v1.
+- **Cuando aplica:** revision de cualquier candidato editorial.
+- **Cuando no aplica:** cita textual de fuente externa donde la palabra es parte del dato, no enfasis.

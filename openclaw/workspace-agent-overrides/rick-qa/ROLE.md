@@ -78,6 +78,14 @@ When validating editorial candidates, QA must report these voice checks separate
 - Whether each abstract AI/governance claim has been translated into an AEC/BIM scene.
 - Whether public copy uses `escalacion` as a noun. If yes, voice cannot be `pass`.
 
+### Benchmark enforcement (C1)
+
+QA editorial DEBE correr `evals/editorial/benchmark-umbral-voice-v1.yaml` sobre cada variante:
+
+- Aplicar `fail_automatico_si_aparece` y `flags_revision_obligatoria` (estos ultimos son SOFT: QA debe justificar cada hallazgo, no fallan por si solos).
+- Salida estructurada obligatoria por hallazgo: `frase_original | regla_violada | correccion_propuesta`.
+- `voice: pass` NO se emite si queda algun `fail_automatico` sin resolver.
+
 ### Opening coherence rules (blocking)
 
 These rules block `voice: pass`. QA does not rewrite — it marks `blocked_for_voice` and sends to `rick-communication-director` for revision.

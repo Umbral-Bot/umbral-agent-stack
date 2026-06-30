@@ -1,19 +1,21 @@
-# CAND-001 — copy editorial final (human-reviewed ALT 1, 2026-06-29)
+# CAND-001 — copy editorial final (human-reviewed ALT 1, v3.1 sensitivity fix)
 # Apply to Notion via: python scripts/editorial/apply_publication_copy.py --publication-id CAND-001
 # Gates: do NOT set aprobado_contenido / autorizar_publicacion from automation
 
 publication_id: CAND-001
 notion_page_id: 34b5f443-fb5c-81dd-8338-cb0b46699250
-trace_id: CAND-001-v3-human-editorial-alt1
+trace_id: CAND-001-v3.1-human-editorial-sensitivity-fix
 claim_type: opinión
 fuente_primaria: null
 linkedin_variant: ALT1_afirmativa
 
 comentarios_revision: >-
-  Ajuste editorial humano aplicado. LinkedIn definido como ALT 1 afirmativa,
-  sin pregunta inicial. Blog podado para mayor voz Umbral/David, con escenas
-  BIM/AEC más concretas y menor tono consultor. X ajustado a síntesis respirada.
-  Mantener como opinión operativa sin fuente primaria externa.
+  Ajuste humano v3.1 aplicado: se elimina lectura sensible sobre dependencia de
+  pocas personas, se evita aludir a procesos lentos, se suaviza una frase forzada
+  sobre fuente/conflicto y se corrige el lenguaje técnico usando incidencias/issues
+  cuando corresponde. La pieza mantiene foco en gobernanza mínima, trazabilidad y
+  criterio compartido. LinkedIn ALT 1 sin cambios. Mantener como opinión operativa
+  sin fuente primaria externa.
 
 copy_linkedin: |
   Un equipo BIM puede sumar un agente que revise modelos antes de definir qué cuenta como una revisión válida.
@@ -27,21 +29,21 @@ copy_linkedin: |
   Primero claridad. Después velocidad.
 
 copy_blog: |
-  Muchos equipos de arquitectura, ingeniería y construcción miran la IA como una forma de acelerar tareas que hoy dependen de pocas personas: revisar un modelo, detectar interferencias, redactar un RFI o preparar un entregable.
+  Muchos equipos de arquitectura, ingeniería y construcción miran la IA como una forma de acelerar tareas críticas del flujo de proyecto: revisar modelos, detectar interferencias, redactar un RFI o preparar un entregable.
 
-  La intención es razonable. Pero antes de sumar velocidad conviene hacer una pregunta incómoda: el proceso que se quiere automatizar, ¿ya está lo bastante ordenado para soportarla?
+  La intención es razonable. Pero antes de sumar velocidad conviene hacer una pregunta incómoda: ese proceso, ¿ya tiene criterios claros, responsables definidos y trazabilidad suficiente para soportarla?
 
-  Cuando un equipo no define qué cuenta como una revisión válida, quién acepta una interferencia o qué fuente prevalece ante un conflicto, automatizar no elimina el desorden. Lo vuelve más rápido y más difícil de rastrear.
+  Cuando un equipo no define qué cuenta como una revisión válida, quién valida una incidencia o qué antecedente se usa cuando hay versiones distintas, automatizar no elimina el desorden. Lo vuelve más rápido y más difícil de rastrear.
 
   El cuello de botella deja de ser la coordinación manual y pasa a ser la falta de criterio compartido.
 
-  Esto no implica frenar la IA ni volver a procesos lentos. Implica entender qué sistema se está acelerando.
+  Esto no implica frenar la IA ni negar su valor. Implica entender qué sistema se está acelerando.
 
-  Si la coordinación es clara, un agente puede ordenar clashes, mantener consistencia entre disciplinas y responder más rápido a un cambio. Si la coordinación es ambigua, ese mismo agente puede repetir errores, dar por cerradas observaciones sin validar y arrastrar decisiones sin contexto al siguiente entregable.
+  Si la coordinación está bien definida, un agente puede ayudar a agrupar incidencias, resumir observaciones repetidas y preparar el seguimiento de cambios. Si la coordinación es ambigua, ese mismo agente puede repetir errores, dar por cerradas observaciones sin validar y arrastrar decisiones sin contexto al siguiente entregable.
 
   La diferencia aparece en decisiones simples.
 
-  Si un agente va a clasificar interferencias, alguien debe definir antes qué se acepta, qué se escala y qué queda como pendiente. Si va a revisar un entregable, tiene que estar claro cuándo devuelve el caso a una persona. Si va a generar documentos, el equipo debe saber qué fuente manda y quién responde por la versión final.
+  Si un agente va a clasificar incidencias, alguien debe definir antes qué se acepta, qué se escala y qué queda como pendiente. Si va a revisar un entregable, tiene que estar claro cuándo devuelve el caso a una persona. Si va a generar documentos, el equipo debe saber qué fuente manda y quién responde por la versión final.
 
   En equipos técnicos esto pesa más, porque las decisiones afectan coordinación, calidad documental y comunicación con el cliente.
 

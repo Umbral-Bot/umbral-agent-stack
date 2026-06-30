@@ -65,3 +65,14 @@ Este archivo absorbe feedback humano recurrente sobre voz, apertura, naturalidad
 - **Razon:** la audiencia AEC reconoce la escena antes que el marco abstracto; menos tono consultor.
 - **Cuando aplica:** LinkedIn y hooks de blog cuando David pida variante afirmativa.
 - **Cuando no aplica:** piezas donde David elige deliberadamente apertura interrogativa (decision explicita).
+
+### CAL-007 — Sensibilidad y precision tecnica BIM (feedback David CAND-001 v3.1 2026-06-30)
+
+- **Evitar:** "pocas personas" como marco de la automatizacion; "procesos lentos" o lecturas que aludan al lector como deficiente.
+- **Evitar:** frases forzadas tipo "que fuente prevalece ante un conflicto" sin escena operativa clara.
+- **Evitar:** atribuir al agente "mantener consistencia entre disciplinas" como si resolviera coordinacion por si solo.
+- **Preferir:** apoyo a agrupar incidencias, resumir observaciones repetidas y preparar seguimiento de cambios, con criterios y validacion humana.
+- **Terminologia:** usar "incidencias"/issues cuando se habla de clasificacion o gestion; reservar "interferencias"/clashes para deteccion geometrica.
+- **Razon:** feedback humano v3.1; tono respetuoso con el lector y precision AEC sin sobreprometer capacidades del agente.
+- **Cuando aplica:** blog y piezas largas de opinion operativa AEC/BIM.
+- **Cuando no aplica:** citas textuales de fuente externa.

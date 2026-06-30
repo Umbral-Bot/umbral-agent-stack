@@ -1,8 +1,8 @@
 # CAND-001 — Handoff editorial final (ALT 1 afirmativa)
 
-> **Estado:** copy final humano aplicado al repo (2026-06-29). Pendiente Gate 1 David.  
+> **Estado:** copy v3.1 humano aplicado al repo (2026-06-30). Pendiente Gate 1 David.  
 > **Page ID:** `34b5f443-fb5c-81dd-8338-cb0b46699250`  
-> **trace_id:** `CAND-001-v3-human-editorial-alt1`  
+> **trace_id:** `CAND-001-v3.1-human-editorial-sensitivity-fix`  
 > **claim_type:** `opinión` — sin fuente primaria externa  
 > **Canónico YAML:** `evals/editorial/cand-001-final-copy.yaml`  
 > **Apply Notion:** `python scripts/editorial/apply_publication_copy.py --publication-id CAND-001`
@@ -49,7 +49,7 @@ Primero claridad. Después velocidad.
 
 ## D. Comentarios revisión (Notion)
 
-Ajuste editorial humano aplicado. LinkedIn definido como ALT 1 afirmativa, sin pregunta inicial. Blog podado para mayor voz Umbral/David, con escenas BIM/AEC más concretas y menor tono consultor. X ajustado a síntesis respirada. Mantener como opinión operativa sin fuente primaria externa.
+Ajuste humano v3.1 aplicado: se elimina lectura sensible sobre dependencia de pocas personas, se evita aludir a procesos lentos, se suaviza una frase forzada sobre fuente/conflicto y se corrige el lenguaje técnico usando incidencias/issues cuando corresponde. La pieza mantiene foco en gobernanza mínima, trazabilidad y criterio compartido. LinkedIn ALT 1 sin cambios. Mantener como opinión operativa sin fuente primaria externa.
 
 ---
 
@@ -57,7 +57,7 @@ Ajuste editorial humano aplicado. LinkedIn definido como ALT 1 afirmativa, sin p
 
 - Benchmark: `evals/editorial/benchmark-umbral-voice-v1.yaml` v1.1
 - Canales: `evals/editorial/channel-criteria-v1.yaml`
-- Calibración: `CAL-005`, `CAL-006` en `director-comunicacion-umbral/CALIBRATION.md`
+- Calibración: `CAL-005`, `CAL-006`, `CAL-007` en `director-comunicacion-umbral/CALIBRATION.md`
 - Modelo producción: `azure-openai-responses/gpt-5.5` — ver `docs/editorial-pipeline/editorial-model-contract.md`
 
 ---
@@ -69,7 +69,8 @@ Ajuste editorial humano aplicado. LinkedIn definido como ALT 1 afirmativa, sin p
 | v1 baseline | handoff 2026-06-07 (superseded) |
 | v2 OpenClaw | `~/coord-ag-evidence/cand-001-fase4/` (VPS) |
 | v3 micro-fix | `~/coord-ag-evidence/cand-001-fase4b/` (VPS) |
-| **final ALT 1** | `evals/editorial/cand-001-final-copy.yaml` |
+| v3.1 sensitivity | PR post-#492 — blog v3.1, LinkedIn/X sin cambios |
+| **canónico** | `evals/editorial/cand-001-final-copy.yaml` |
 
 ---
 

@@ -37,6 +37,8 @@ benchmark_editorial_umbral:
     flags_revision_obligatoria:
       - 'real / realidad usado como énfasis SIN sustantivo medible/operativo (OK: "decisión real del equipo"; FLAG: "el riesgo real", "lo real es")'
       - abstracción sin escena AEC en el mismo párrafo
+      - 'procesos lentos / pocas personas como marco de automatización (sensibilidad lector; ver CAL-007)'
+      - 'agente que mantiene consistencia entre disciplinas sin criterios ni validación humana'
 
     reglas_cuantitativas:
       max_repeticion_verbo_riesgo: 2

@@ -26,3 +26,13 @@ Backward-compatible: no cambia pipeline v1; añade precondiciones de artefacto.
 
 Rick no escribe copy en Notion sin ledger (C2) y revision log (C3) cuando el flujo versioning está activo.
 Los gates `aprobado_contenido` y `autorizar_publicacion` son solo de David.
+
+## Sensibilidad editorial (preventivo)
+
+Aplicar en revision humana y en generacion (ver CAL-007 en `director-comunicacion-umbral/CALIBRATION.md`):
+
+- Evitar formular la automatizacion como reemplazo de personas o reduccion de dependencia de "pocas personas".
+- Enfocar la IA como apoyo a procesos, trazabilidad, revision, sintesis, priorizacion y criterio compartido.
+- Evitar frases que hagan sentir al lector que su proceso actual es lento, atrasado o deficiente.
+- En BIM/AEC: distinguir interferencias/clashes de incidencias/issues gestionables.
+- No atribuir al agente "mantener consistencia entre disciplinas" sin criterios, responsables y validacion humana.

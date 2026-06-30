@@ -1,0 +1,55 @@
+﻿MEGAPROMPT — Copilot-VPS · APPLY CAND-001 v3.1 a Notion (solo copy, gates intactos)
+====================================================================================
+Fecha: 2026-06-30
+Owner ejecución: Copilot-VPS
+Coordinador: Cursor (David autoriza pegando este bloque)
+PR repo: https://github.com/Umbral-Bot/umbral-agent-stack/pull/493
+Rama: cursor/cand001-blog-v31-sensitivity-fix → merge a main ANTES de apply (o checkout rama si merge pendiente)
+
+=== CONTEXTO ===
+- CAND-001 ya tiene v3 en Notion (trace_id CAND-001-v3-human-editorial-alt1).
+- David pidió ajuste humano v3.1 SOLO en Copy Blog (+ trace_id + Comentarios revisión).
+- Copy LinkedIn y Copy X NO cambian respecto a v3.
+- Gates humanos siguen en NO. NO publicar.
+
+=== PRECONDICIÓN (David/Cursor) ===
+[ ] PR #493 mergeado a main, O autorizar checkout temporal de cursor/cand001-blog-v31-sensitivity-fix
+[ ] aprobado_contenido = false en Notion antes de apply (script aborta si true)
+[ ] autorizar_publicacion = false en Notion antes de apply
+
+=== REGLAS DURAS ===
+1. NO marcar aprobado_contenido ni autorizar_publicacion.
+2. NO cambiar Estado a publicado ni tocur URL publicada.
+3. NO reescribir copy desde LLM: solo YAML canónico del repo.
+4. NO tocar gates visuales ni imágenes Magnific en este apply.
+5. Evidencia obligatoria en ~/coord-ag-evidence/cand-001-apply-v31/
+
+=== FASE 0 — Repo limpio ===
+cd ~/umbral-agent-stack
+git fetch origin
+git checkout main && git pull --ff-only origin main
+git log -1 --oneline
+
+=== FASE 1 — Preflight YAML ===
+grep '^trace_id:' evals/editorial/cand-001-final-copy.yaml
+grep -q 'tareas críticas del flujo de proyecto' evals/editorial/cand-001-final-copy.yaml && echo BLOG_V31_OK
+grep 'procesos lentos' evals/editorial/cand-001-final-copy.yaml && echo FAIL || echo NO_PROCESOS_LENTOS_OK
+python -m pytest tests/test_editorial_production.py -v
+
+=== FASE 2 — Dry-run ===
+python scripts/editorial/apply_publication_copy.py --publication-id CAND-001 --dry-run
+
+=== FASE 3 — Apply ===
+mkdir -p ~/coord-ag-evidence/cand-001-apply-v31
+python scripts/editorial/apply_publication_copy.py --publication-id CAND-001 --verify-openclaw ~/.openclaw/openclaw.json 2>&1 | tee ~/coord-ag-evidence/cand-001-apply-v31/apply.log
+
+=== FASE 4 — Verificación Notion ===
+Page: 34b5f443-fb5c-81dd-8338-cb0b46699250
+[ ] trace_id = CAND-001-v3.1-human-editorial-sensitivity-fix
+[ ] Copy Blog v3.1 (tareas críticas / clasificar incidencias)
+[ ] LinkedIn + X sin cambios vs v3
+[ ] aprobado_contenido = NO · autorizar_publicacion = NO · Estado Borrador
+
+=== VEREDICTO ===
+CAND001_NOTION_APPLY_V31_COMPLETE
+evidencia: ~/coord-ag-evidence/cand-001-apply-v31/

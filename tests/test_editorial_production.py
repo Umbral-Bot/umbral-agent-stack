@@ -42,6 +42,12 @@ def test_cand001_final_copy_validates():
     assert "?" not in payload["copy_linkedin"].strip().split("\n")[0]
     assert "Primero claridad" in payload["copy_linkedin"]
     assert "amplificar" not in payload["copy_blog"].lower()
+    assert payload["trace_id"] == "CAND-001-v3.1-human-editorial-sensitivity-fix"
+    blog = payload["copy_blog"]
+    assert "procesos lentos" not in blog.lower()
+    assert "pocas personas" not in blog.lower()
+    assert "clasificar incidencias" in blog
+    assert "agrupar incidencias" in blog
 
 
 def test_cand001_linkedin_opens_with_affirmation():

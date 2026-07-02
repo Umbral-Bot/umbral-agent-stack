@@ -42,6 +42,11 @@ Notion (Copy Blog + metadata + gates)
           posts/{slug}.json   # post completo (schema_version 1)
           index.json          # listado liviano, published_at desc
   → SPA umbralbim.io fetch CDN/Blob público (handoff Lovable, repo aparte)
+
+Operadores / Rick cleanup
+  → Worker task web.unpublish_editorial_post   (sin gate de publicación)
+    → Azure Function POST /api/unpublish-editorial-post
+      → remove index.json entry + delete posts/{slug}.json idempotently
 ```
 
 ### Componentes
@@ -52,8 +57,10 @@ Notion (Copy Blog + metadata + gates)
   `posts/{slug}.json`.
 - **Function** (Python 3.12, v2 model, Consumption): valida el payload, escribe
   el blob del post y hace **upsert idempotente** de `index.json` con
-  concurrencia optimista por ETag. Idempotencia por `notion_page_id` /
-  `content_hash` → re-publicar el mismo contenido no duplica el slug.
+  concurrencia optimista por ETag. También expone `unpublish-editorial-post`,
+  que remueve una entrada por `notion_page_id` o `slug` y borra el blob del post
+  de forma idempotente. Idempotencia por `notion_page_id` / `content_hash` →
+  re-publicar el mismo contenido no duplica el slug.
 - **Identidad**: Managed Identity de la Function con *Storage Blob Data
   Contributor* (escribe blobs sin account key).
 - **CDN** (opcional, `Standard_Microsoft`): origen = blob, compresión + caché
@@ -66,6 +73,10 @@ El handler del Worker **nunca** llama a la Function sin
 true` cuando la fuente es Notion). Si el gate no está abierto: `ok=false`,
 `would_publish=false`, **sin llamada de red**. Esto refleja el espíritu de los
 guardrails de `copilot_cli` (fail-closed) y la regla "solo David abre los gates".
+
+`web.unpublish_editorial_post` es la operación inversa de limpieza/rollback y no
+requiere `autorizar_publicacion`. No crea contenido público; solo quita una
+entrada existente del índice y opcionalmente borra `posts/{slug}.json`.
 
 ### Post-publish: indexado RAG (Task B)
 
@@ -87,6 +98,23 @@ publicado; el RAG enriquece pero nunca bloquea.
   compartido `x-worker-token` (`WORKER_TOKEN`).
 - Secrets vía Key Vault / `@secure()` params / app settings — **nunca** en git.
 - Sin deploy productivo desde el PR: solo `az bicep build` + `what-if`.
+
+### Contrato de baja
+
+`POST /api/unpublish-editorial-post` acepta:
+
+```json
+{
+  "slug": "kebab-case",
+  "notion_page_id": "uuid-opcional",
+  "delete_post_blob": true
+}
+```
+
+Debe venir `slug` o `notion_page_id`. Si viene `notion_page_id`, ese match tiene
+precedencia; si no viene, se usa `slug`. La respuesta 200 incluye
+`index_updated`, `removed_from_index` y `post_blob_deleted`. No encontrar la
+entrada o el blob no es error, para permitir retries seguros.
 
 ## Alternativas consideradas
 
@@ -145,6 +173,7 @@ más simple y barato (sin RU/s). Migrable si el volumen crece.
 | Exposición pública no deseada de blobs | Baja | Medio | `enablePublicBlobRead=false` por defecto; preferir CDN |
 | `index.json` crece demasiado | Baja (v1) | Medio | Límite documentado; migración a DB como plan B |
 | Slug renombrado deja blob huérfano | Baja | Bajo | Upsert por `notion_page_id` quita la entrada vieja del índice (blob viejo queda sin listar; limpieza manual) |
+| Cleanup manual rompe `index.json` | Media | Medio | Endpoint unpublish con ETag retry y smoke script; evitar edición manual salvo emergencia |
 | Secreto `WORKER_TOKEN` filtrado | Baja | Medio | Key Vault / app settings; rotación documentada en runbook |
 
 ## Variables de entorno

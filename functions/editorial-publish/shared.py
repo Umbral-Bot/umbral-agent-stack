@@ -11,6 +11,8 @@ Contract (mirrors docs/ops/azure-editorial-blog-runbook.md):
 
 Idempotency: re-publishing the same content (same ``notion_page_id`` /
 ``content_hash``) updates in place and never duplicates a slug.
+Unpublishing removes one entry by ``notion_page_id`` or ``slug`` and keeps the
+remaining entries sorted with the same ordering contract.
 """
 
 from __future__ import annotations
@@ -242,3 +244,51 @@ def upsert_index(
 
     items.sort(key=_sort_key, reverse=True)
     return items, changed
+
+
+def remove_from_index(
+    index: Any,
+    *,
+    slug: Optional[str] = None,
+    notion_page_id: Optional[str] = None,
+) -> Tuple[List[Dict[str, Any]], bool, Optional[Dict[str, Any]]]:
+    """Remove one entry from ``index`` idempotently.
+
+    If ``notion_page_id`` is supplied it is the lookup key; otherwise ``slug`` is
+    used. A missing entry is not an error and returns ``changed=False``.
+    """
+    clean_slug = (slug or "").strip()
+    clean_notion_page_id = (notion_page_id or "").strip()
+    if not clean_slug and not clean_notion_page_id:
+        raise PayloadError("provide 'slug' or 'notion_page_id'")
+    if clean_slug and not SLUG_RE.match(clean_slug):
+        raise PayloadError(
+            "'slug' must be lowercase kebab-case (a-z, 0-9, single hyphens)"
+        )
+
+    if index is None:
+        items: List[Dict[str, Any]] = []
+    elif isinstance(index, list):
+        items = [dict(x) for x in index if isinstance(x, dict)]
+    else:
+        raise PayloadError("index.json must contain a JSON array")
+
+    match_i = -1
+    if clean_notion_page_id:
+        for i, existing in enumerate(items):
+            if existing.get("notion_page_id") == clean_notion_page_id:
+                match_i = i
+                break
+    else:
+        for i, existing in enumerate(items):
+            if existing.get("slug") == clean_slug:
+                match_i = i
+                break
+
+    if match_i == -1:
+        items.sort(key=_sort_key, reverse=True)
+        return items, False, None
+
+    removed = items.pop(match_i)
+    items.sort(key=_sort_key, reverse=True)
+    return items, True, removed

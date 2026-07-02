@@ -7,7 +7,7 @@ smoke, rollback. **No production deploy happens from the feature PR** — only
 
 - Infra: [`infra/azure/modules/editorial-blog.bicep`](../../infra/azure/modules/editorial-blog.bicep)
 - Function: [`functions/editorial-publish/`](../../functions/editorial-publish/)
-- Worker task: `web.publish_editorial_post`
+- Worker tasks: `web.publish_editorial_post`, `web.unpublish_editorial_post`
 
 ## 0. Prerequisites
 
@@ -132,6 +132,54 @@ Re-run the smoke with the **same** payload → response `index_updated: false`
 (content unchanged, slug not duplicated). Change the title → `index_updated:
 true` and the entry is updated in place.
 
+## 5a. Unpublish / cleanup
+
+Use the Function endpoint instead of editing `index.json` or deleting blobs by
+hand. This is the supported rollback path for individual posts and for smoke
+fixtures.
+
+```powershell
+$env:EDITORIAL_BLOG_FUNCTION_URL = "https://func-umbral-editorial-prod.azurewebsites.net/api/unpublish-editorial-post"
+$env:EDITORIAL_BLOG_FUNCTION_KEY = "<function-key>"
+$env:WORKER_TOKEN = "<worker-token>"
+
+./scripts/smoke-unpublish-editorial-post.ps1 -Slug criterios-de-aceptacion-antes-de-automatizar-bim
+```
+
+Request contract:
+
+```json
+{
+  "slug": "kebab-case",
+  "notion_page_id": "uuid-opcional",
+  "delete_post_blob": true
+}
+```
+
+Provide either `slug` or `notion_page_id`. If `notion_page_id` is present, the
+Function removes the matching `index.json` entry by that id and uses the removed
+entry's slug for blob deletion. Missing entries and missing post blobs are
+idempotent 200 responses.
+
+Expected response:
+
+```json
+{
+  "ok": true,
+  "slug": "criterios-de-aceptacion-antes-de-automatizar-bim",
+  "index_updated": true,
+  "post_blob_deleted": true,
+  "removed_from_index": true
+}
+```
+
+Worker dry-run (no network, no human publish gate required):
+
+```powershell
+$env:WORKER_TOKEN="test"
+.\.venv\Scripts\python.exe -c "from worker.tasks.editorial_publish import handle_web_unpublish_editorial_post as h; import json; print(json.dumps(h({'slug':'criterios-de-aceptacion-antes-de-automatizar-bim', 'dry_run': True}), indent=2))"
+```
+
 ## 5b. Post-publish RAG indexing (Task B)
 
 After a successful publish (not `dry_run`, gate open), the Worker indexes
@@ -160,10 +208,13 @@ the post.
 
 ## 6. Rollback
 
-The blog is static JSON; rollback = restore/remove blobs.
+The blog is static JSON; rollback = unpublish or restore blobs.
 
-- **Unpublish one post**: delete `posts/{slug}.json` and remove its entry from
-  `index.json` (or re-publish a previous version of the post).
+- **Unpublish one post**: prefer `POST /api/unpublish-editorial-post` or
+  `scripts/smoke-unpublish-editorial-post.ps1`, which removes the index entry
+  and deletes `posts/{slug}.json` idempotently.
+- **Manual emergency fallback**: delete `posts/{slug}.json` and remove its entry
+  from `index.json` only if the Function path is unavailable.
   ```powershell
   az storage blob delete --account-name steditorialprod --container-name editorial-posts `
     --name posts/<slug>.json --auth-mode login

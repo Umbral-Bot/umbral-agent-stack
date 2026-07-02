@@ -1,13 +1,18 @@
 # Function: `editorial-publish`
 
-Azure Function (Python **v2** programming model) that publishes editorial blog
-posts to Blob Storage. It is the Azure-side endpoint behind the Worker task
-`web.publish_editorial_post` (ADR-010).
+Azure Function (Python **v2** programming model) that publishes and unpublishes
+editorial blog posts in Blob Storage. It is the Azure-side endpoint behind the
+Worker tasks `web.publish_editorial_post` and `web.unpublish_editorial_post`
+(ADR-010).
 
 ```
 POST /api/publish-editorial-post
   → editorial-posts/posts/{slug}.json     (full post, schema_version 1)
   → editorial-posts/index.json            (light listing, published_at desc)
+
+POST /api/unpublish-editorial-post
+  → remove one index.json entry
+  → optionally delete editorial-posts/posts/{slug}.json
 ```
 
 > v2 model note: there is **no hand-written `function.json`** — the binding is
@@ -49,7 +54,7 @@ POST /api/publish-editorial-post
 | `EDITORIAL_BLOG_CDN_BASE_URL` | no | used to build `public_json_url` |
 | `WORKER_TOKEN` | no | enables the `x-worker-token` check |
 
-## Request body
+## Publish request body
 
 ```json
 {
@@ -87,6 +92,30 @@ computes it if the caller doesn't).
 `index_updated` is `false` when re-publishing byte-identical content
 (idempotent — the slug is never duplicated).
 
+## Unpublish request body
+
+```json
+{
+  "slug": "ia-en-coordinacion-bim",
+  "notion_page_id": "11111111-1111-1111-1111-111111111111",
+  "delete_post_blob": true
+}
+```
+
+Provide `slug` or `notion_page_id`. When `notion_page_id` is provided, it is the
+index lookup key and the removed entry supplies the slug for blob deletion.
+Missing entries and missing post blobs are successful no-ops.
+
+```json
+{
+  "ok": true,
+  "slug": "ia-en-coordinacion-bim",
+  "index_updated": true,
+  "post_blob_deleted": true,
+  "removed_from_index": true
+}
+```
+
 ## Run locally
 
 ```bash
@@ -112,6 +141,12 @@ curl -sS -X POST "https://<function-app>.azurewebsites.net/api/publish-editorial
   -H "x-functions-key: $EDITORIAL_BLOG_FUNCTION_KEY" \
   -H "x-worker-token: $WORKER_TOKEN" \
   --data @../../scripts/editorial/fixture-post-cand001.json | jq
+
+curl -sS -X POST "https://<function-app>.azurewebsites.net/api/unpublish-editorial-post" \
+  -H "Content-Type: application/json" \
+  -H "x-functions-key: $EDITORIAL_BLOG_FUNCTION_KEY" \
+  -H "x-worker-token: $WORKER_TOKEN" \
+  --data '{"slug":"ia-en-coordinacion-bim"}' | jq
 ```
 
 ## Deploy

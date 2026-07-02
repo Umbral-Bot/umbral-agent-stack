@@ -235,6 +235,13 @@ def _function_url() -> str:
     return (os.environ.get("EDITORIAL_BLOG_FUNCTION_URL") or "").strip()
 
 
+def _unpublish_function_url() -> str:
+    url = _function_url()
+    if url.endswith("/publish-editorial-post"):
+        return f"{url.rsplit('/', 1)[0]}/unpublish-editorial-post"
+    return url
+
+
 def _validate_function_url(url: str) -> None:
     parsed = urlparse(url)
     if parsed.scheme not in ("http", "https"):
@@ -260,7 +267,7 @@ def _post_to_function(url: str, payload: Dict[str, Any], timeout: int) -> Dict[s
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     req = urllib.request.Request(url, data=body, method="POST", headers=headers)
 
-    logger.info("Publishing editorial post slug=%s (%d bytes)", payload.get("slug"), len(body))
+    logger.info("Calling editorial function slug=%s (%d bytes)", payload.get("slug"), len(body))
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             text = resp.read().decode("utf-8", errors="replace")
@@ -522,4 +529,78 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
         )
     )
 
+    return response
+
+
+def handle_web_unpublish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Unpublish a blog post through the ADR-010 Azure Function.
+
+    Unlike publish, this reverse/cleanup operation does not require
+    ``autorizar_publicacion``. It removes the entry from ``index.json`` and, by
+    default, asks the Function to delete ``posts/{slug}.json``.
+    """
+    if not isinstance(input_data, dict):
+        raise ValueError("input must be a JSON object")
+
+    slug = str(input_data.get("slug") or "").strip()
+    notion_page_id = str(input_data.get("notion_page_id") or "").strip()
+    if not slug and not notion_page_id:
+        raise ValueError("provide either 'slug' or 'notion_page_id'")
+    if slug and not _SLUG_RE.match(slug):
+        raise ValueError("'slug' must be lowercase kebab-case (a-z, 0-9, hyphens)")
+
+    timeout = int(input_data.get("timeout", 30))
+    if not (1 <= timeout <= 120):
+        raise ValueError("'timeout' must be between 1 and 120 seconds")
+
+    delete_post_blob = input_data.get("delete_post_blob", True)
+    if not isinstance(delete_post_blob, bool):
+        raise ValueError("'delete_post_blob' must be a boolean")
+
+    payload: Dict[str, Any] = {"delete_post_blob": delete_post_blob}
+    if slug:
+        payload["slug"] = slug
+    if notion_page_id:
+        payload["notion_page_id"] = notion_page_id
+
+    if input_data.get("dry_run", False):
+        return {
+            "ok": True,
+            "would_unpublish": True,
+            "dry_run": True,
+            "slug": slug or None,
+            "notion_page_id": notion_page_id or None,
+            "delete_post_blob": delete_post_blob,
+            "payload": payload,
+        }
+
+    url = _unpublish_function_url()
+    if not url:
+        return {
+            "ok": False,
+            "error": "not_configured",
+            "detail": "EDITORIAL_BLOG_FUNCTION_URL is not set",
+            "would_unpublish": True,
+            "slug": slug or None,
+        }
+    _validate_function_url(url)
+
+    result = _post_to_function(url, payload, timeout)
+    status_code = result["status_code"]
+    data = result.get("data") or {}
+    ok = 200 <= status_code < 300 and bool(data.get("ok", status_code < 300))
+    response: Dict[str, Any] = {
+        "ok": ok,
+        "unpublished": ok,
+        "slug": data.get("slug") or slug or None,
+        "notion_page_id": notion_page_id or None,
+        "status_code": status_code,
+        "index_updated": data.get("index_updated"),
+        "removed_from_index": data.get("removed_from_index"),
+        "post_blob_deleted": data.get("post_blob_deleted"),
+    }
+    if not ok:
+        response["error"] = data.get("error") or "function_error"
+        if "error_body" in result:
+            response["detail"] = result["error_body"][:500]
     return response

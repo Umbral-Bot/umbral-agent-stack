@@ -30,9 +30,11 @@ from azure.core.exceptions import HttpResponseError, ResourceModifiedError, Reso
 
 from shared import (
     PayloadError,
+    SLUG_RE,
     build_post_document,
     index_entry_from_post,
     now_iso,
+    remove_from_index,
     upsert_index,
 )
 
@@ -106,6 +108,17 @@ def _write_post(container_client, slug: str, doc: Dict[str, Any]) -> str:
     return blob_path
 
 
+def _delete_post(container_client, slug: str) -> bool:
+    """Delete ``posts/{slug}.json``. Returns False when it was already absent."""
+    blob_path = f"{POSTS_PREFIX}/{slug}.json"
+    blob = container_client.get_blob_client(blob_path)
+    try:
+        blob.delete_blob()
+        return True
+    except ResourceNotFoundError:
+        return False
+
+
 def _json_content_settings():
     from azure.storage.blob import ContentSettings
 
@@ -177,6 +190,33 @@ def _upsert_index_with_retry(container_client, entry: Dict[str, Any]) -> bool:
     raise RuntimeError(f"index.json upsert failed after {_INDEX_MAX_RETRIES} retries: {last_err}")
 
 
+def _remove_index_with_retry(
+    container_client,
+    *,
+    slug: Optional[str] = None,
+    notion_page_id: Optional[str] = None,
+) -> Tuple[bool, Optional[Dict[str, Any]]]:
+    """Read-modify-write index.json for unpublish. Returns (changed, removed)."""
+    last_err: Optional[Exception] = None
+    for attempt in range(_INDEX_MAX_RETRIES):
+        index, etag = _read_index(container_client)
+        items, changed, removed = remove_from_index(
+            index, slug=slug, notion_page_id=notion_page_id
+        )
+        if not changed:
+            return False, removed
+        try:
+            _write_index(container_client, items, etag)
+            return True, removed
+        except (ResourceModifiedError, HttpResponseError) as exc:
+            status = getattr(exc, "status_code", None)
+            if status not in (409, 412):
+                raise
+            last_err = exc
+            logger.info("index.json concurrency conflict (attempt %d), retrying", attempt + 1)
+    raise RuntimeError(f"index.json remove failed after {_INDEX_MAX_RETRIES} retries: {last_err}")
+
+
 # ---------------------------------------------------------------------------
 # HTTP handler
 # ---------------------------------------------------------------------------
@@ -195,6 +235,23 @@ def _worker_token_ok(req: func.HttpRequest) -> bool:
     if not expected:
         return True  # not configured → rely on the Azure function key only
     return req.headers.get("x-worker-token", "") == expected
+
+
+def _unpublish_payload(payload: Any) -> Tuple[str, str, bool]:
+    if not isinstance(payload, dict):
+        raise PayloadError("payload must be a JSON object")
+    slug = str(payload.get("slug") or "").strip()
+    notion_page_id = str(payload.get("notion_page_id") or "").strip()
+    if not slug and not notion_page_id:
+        raise PayloadError("provide 'slug' or 'notion_page_id'")
+    if slug and not SLUG_RE.match(slug):
+        raise PayloadError(
+            "'slug' must be lowercase kebab-case (a-z, 0-9, single hyphens)"
+        )
+    delete_post_blob = payload.get("delete_post_blob", True)
+    if not isinstance(delete_post_blob, bool):
+        raise PayloadError("'delete_post_blob' must be a boolean")
+    return slug, notion_page_id, delete_post_blob
 
 
 @app.route(route="publish-editorial-post", methods=["POST"])
@@ -239,6 +296,50 @@ def publish_editorial_post(req: func.HttpRequest) -> func.HttpResponse:
             "slug": slug,
             "content_hash": doc["content_hash"],
             "public_json_url": public_json_url,
+        },
+        200,
+    )
+
+
+@app.route(route="unpublish-editorial-post", methods=["POST"])
+def unpublish_editorial_post(req: func.HttpRequest) -> func.HttpResponse:
+    if not _worker_token_ok(req):
+        return _json_response({"ok": False, "error": "unauthorized"}, 401)
+
+    try:
+        payload = req.get_json()
+    except ValueError:
+        return _json_response({"ok": False, "error": "invalid_json_body"}, 400)
+
+    try:
+        slug, notion_page_id, delete_post_blob = _unpublish_payload(payload)
+    except PayloadError as exc:
+        return _json_response({"ok": False, "error": "invalid_payload", "detail": str(exc)}, 400)
+
+    try:
+        container_client = _get_container_client()
+        _ensure_container(container_client)
+        index_updated, removed = _remove_index_with_retry(
+            container_client, slug=slug or None, notion_page_id=notion_page_id or None
+        )
+        target_slug = slug or str((removed or {}).get("slug") or "")
+        if delete_post_blob and target_slug:
+            post_blob_deleted: Any = _delete_post(container_client, target_slug)
+        elif delete_post_blob:
+            post_blob_deleted = "skipped"
+        else:
+            post_blob_deleted = "skipped"
+    except Exception as exc:  # noqa: BLE001 — surface a clean 500 to the worker
+        logger.exception("editorial unpublish failed slug=%s notion_page_id=%s", slug, notion_page_id)
+        return _json_response({"ok": False, "error": "storage_error", "detail": str(exc)}, 500)
+
+    return _json_response(
+        {
+            "ok": True,
+            "slug": target_slug or slug or None,
+            "index_updated": index_updated,
+            "post_blob_deleted": post_blob_deleted,
+            "removed_from_index": bool(index_updated),
         },
         200,
     )

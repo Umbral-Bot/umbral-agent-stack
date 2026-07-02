@@ -1,0 +1,148 @@
+# CAND-001 — marco de referencia interno (Perplexity §3, depurado Cursor 2026-07-02)
+# claim_type CAND-001 sigue siendo: opinión — NO usar como citas públicas sin cambiar claim_type.
+# Uso: Decision Brief §3 interno / intake CAND-004+ source-driven.
+
+publication_id: CAND-001
+notion_page_id: 34b5f443-fb5c-81dd-8338-cb0b46699250
+trace_id: CAND-001-v3.1-human-editorial-sensitivity-fix
+internal_trace_only: true
+claim_type_context: opinión
+thesis: Automatizar sin gobernanza escala el desorden
+
+pattern_synthesis: |
+  Los marcos normativos existentes (ISO 19650, BCF, NBIMS-US) ya definen prerrequisitos
+  de gobernanza — roles, estados auditables, BEP con criterios de aceptación — pero la
+  narrativa de adopción de IA en AEC a menudo opera como si esos marcos no existieran.
+  McKinsey documenta que la brecha de productividad en construcción persiste por
+  fragmentación de procesos, no solo por falta de herramientas. Automatizar sin esos
+  controles previos amplifica el desorden, no lo resuelve.
+
+source_classification:
+  - source_name: ISO 19650-1:2018 — Concepts and Principles
+    source_url: https://www.iso.org/standard/68078.html
+    type: official_doc
+    public_citable: true
+    internal_trace_only: false
+    claim_supported: Sin CDE con estados y roles, no hay fuente autoritativa ni trazabilidad
+    evidence_or_inference: evidencia
+    tier: 1
+    notes: Citar versión publicada 2018; revisión DIS en curso.
+
+  - source_name: ISO 19650-2:2018 — Information Management Process
+    source_url: https://www.iso.org/standard/68079.html
+    type: official_doc
+    public_citable: true
+    internal_trace_only: false
+    claim_supported: EIR + BEP son contrato de calidad previo a automatizar revisión de modelos
+    evidence_or_inference: evidencia
+    tier: 1
+    notes: URL corregida (Perplexity apuntaba a CD en desarrollo 89704).
+
+  - source_name: ISO 19650-4:2022 — Information Exchange
+    source_url: https://www.iso.org/standard/78244.html
+    type: official_doc
+    public_citable: true
+    internal_trace_only: false
+    claim_supported: Sin rol reviewer explícito, la automatización no tiene actor responsable
+    evidence_or_inference: evidencia
+    tier: 1
+    notes: Preferir iso.org sobre mirrors third-party (iteh.ai).
+
+  - source_name: BIM Collaboration Format (BCF) — buildingSMART
+    source_url: https://www.buildingsmart.org/standards/bsi-standards/bim-collaboration-format/
+    type: official_doc
+    public_citable: true
+    internal_trace_only: false
+    claim_supported: Sin BCF estructurado, clash automation no genera trazabilidad auditable
+    evidence_or_inference: evidencia
+    tier: 1
+
+  - source_name: Reinventing Construction — McKinsey Global Institute (2017)
+    source_url: https://www.mckinsey.com/capabilities/operations/our-insights/reinventing-construction-through-a-productivity-revolution
+    type: primary_source
+    public_citable: true
+    internal_trace_only: false
+    claim_supported: Fragmentación de información y procesos como causa raíz de baja productividad
+    evidence_or_inference: evidencia
+    tier: 2
+    notes: Verificar cifra $1.6T en executive summary antes de citar en copy.
+
+  - source_name: Delivering on Construction Productivity Is No Longer Optional — McKinsey (2024)
+    source_url: https://www.mckinsey.com/capabilities/operations/our-insights/delivering-on-construction-productivity-is-no-longer-optional
+    type: primary_source
+    public_citable: true
+    internal_trace_only: false
+    claim_supported: Más herramientas sin proceso no cierra la brecha de productividad
+    evidence_or_inference: inferencia
+    tier: 2
+    notes: No citar estadísticas sin leer artículo completo.
+
+  - source_name: National BIM Standard–United States (NBIMS-US) About
+    source_url: https://nibs.org/nbims/about
+    type: official_doc
+    public_citable: true
+    internal_trace_only: false
+    claim_supported: Problema central es gestión de información en industria fragmentada
+    evidence_or_inference: evidencia
+    tier: 3
+
+  - source_name: BIM Project Execution Planning Guide v2.2 — Penn State
+    source_url: https://bim.psu.edu/downloads/
+    type: primary_source
+    public_citable: true
+    internal_trace_only: false
+    claim_supported: Sin BEP documentado, automatización opera sin contrato de aceptación
+    evidence_or_inference: evidencia
+    tier: 3
+
+  - source_name: NBIMS-US V3 — Introduction to Practice Documents (5.1)
+    source_url: https://nibs.org/wp-content/uploads/2025/04/NBIMS-US_V3_5.1_Introduction_to_Practice_Documents.pdf
+    type: official_doc
+    public_citable: true
+    internal_trace_only: false
+    claim_supported: BEP incluye quality control procedures previas a coordinación 3D
+    evidence_or_inference: evidencia
+    tier: 3
+
+  - source_name: Why AI Governance Is Becoming a Competitive Advantage in AEC — Achievion
+    source_url: https://achievion.com/blog/why-ai-governance-is-becoming-a-competitive-advantage-in-aec.html
+    type: analysis_source
+    public_citable: true
+    internal_trace_only: false
+    claim_supported: Compliance checkers BIM sin governance amplifican inconsistencias
+    evidence_or_inference: inferencia
+    tier: 4
+    notes: Vendor blog; no usar como autoridad principal en copy.
+
+  - source_name: AI in AEC — Data Security, Review Rules, Governance — RemoteAE
+    source_url: https://remoteae.com/ai-in-aec-data-security/
+    type: analysis_source
+    public_citable: true
+    internal_trace_only: false
+    claim_supported: Controles de IA se construyen post facto — valida tesis de despliegue prematuro
+    evidence_or_inference: inferencia
+    tier: 4
+    notes: Vendor blog; señal contemporánea, no norma.
+
+  - source_name: How to Use AI with BIM Workflows — BuildCopilot
+    source_url: https://buildcopilot.ai/guides/ai-for-bim-workflows
+    type: contextual_reference
+    public_citable: false
+    internal_trace_only: true
+    claim_supported: Narrativa dominante ignora prerrequisitos de gobernanza
+    evidence_or_inference: hipotesis
+    tier: discovery
+    notes: Contraste interno; NO citar en copy público.
+
+  - source_name: ISO 19650 — Wikipedia (discovery only)
+    source_url: https://en.wikipedia.org/wiki/ISO_19650
+    type: contextual_reference
+    public_citable: false
+    internal_trace_only: true
+    claim_supported: Mapa rápido de partes del estándar
+    evidence_or_inference: inferencia
+    tier: discovery
+
+gaps:
+  - No hay informe OECD/WEF específico AEC + gobernanza IA con datos propios verificados.
+  - WEF Future of Jobs 2025 solo como contexto transversal opcional.

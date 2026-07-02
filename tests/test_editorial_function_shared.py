@@ -150,3 +150,61 @@ class TestIndexUpsert:
         entry = shared.index_entry_from_post(doc)
         assert set(entry.keys()) == set(shared.INDEX_FIELDS)
         assert "body_markdown" not in entry
+
+
+class TestIndexRemove:
+    def _entry(self, slug, npid, pub):
+        return {
+            "slug": slug,
+            "title": slug,
+            "excerpt": "",
+            "hero_image_url": "",
+            "published_at": pub,
+            "tags": [],
+            "notion_page_id": npid,
+            "content_hash": "h",
+        }
+
+    def test_remove_by_notion_page_id_precedence(self):
+        index = [
+            self._entry("slug-a", "n1", "2026-01-01"),
+            self._entry("slug-b", "n2", "2026-02-01"),
+        ]
+        items, changed, removed = shared.remove_from_index(
+            index, slug="slug-a", notion_page_id="n2"
+        )
+        assert changed is True
+        assert removed["slug"] == "slug-b"
+        assert [x["slug"] for x in items] == ["slug-a"]
+
+    def test_remove_by_slug(self):
+        index = [
+            self._entry("slug-a", "n1", "2026-01-01"),
+            self._entry("slug-b", "n2", "2026-02-01"),
+        ]
+        items, changed, removed = shared.remove_from_index(index, slug="slug-a")
+        assert changed is True
+        assert removed["notion_page_id"] == "n1"
+        assert [x["slug"] for x in items] == ["slug-b"]
+
+    def test_missing_match_is_idempotent_and_sorted(self):
+        index = [
+            self._entry("slug-a", "n1", "2026-01-01"),
+            self._entry("slug-c", "n3", "2026-03-01"),
+            self._entry("slug-b", "n2", "2026-02-01"),
+        ]
+        items, changed, removed = shared.remove_from_index(index, slug="slug-x")
+        assert changed is False
+        assert removed is None
+        assert [x["slug"] for x in items] == ["slug-c", "slug-b", "slug-a"]
+
+    def test_empty_index_is_noop(self):
+        items, changed, removed = shared.remove_from_index(None, slug="slug-a")
+        assert items == []
+        assert changed is False
+        assert removed is None
+
+    @pytest.mark.parametrize("kwargs", [{}, {"slug": "Bad Slug"}])
+    def test_invalid_payload(self, kwargs):
+        with pytest.raises(shared.PayloadError):
+            shared.remove_from_index([], **kwargs)

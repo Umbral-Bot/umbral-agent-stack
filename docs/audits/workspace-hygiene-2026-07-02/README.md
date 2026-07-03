@@ -6,7 +6,11 @@
 
 ```
 WORKSPACE_HYGIENE_AUDIT_READY | clones_windows=17 | rescue=4 | hilos_activos=5 | canonical_proposed=YES
+WORKSPACE_HYGIENE_PASS8_DONE  | rescue_base_pr=#498 (merged) | rescue_coord_pr=#499 (merged) | branches_cleaned=13
 ```
+
+> **Estado final 2026-07-03:** G-WH-1 firmado · Pass 8A–8E ejecutados · task 006 **done**.
+> Pendiente David: G-WH-2 (borrado a 30 días), archivado Fase A, PRs zombis mayo, handoff MEGAPROMPT VPS.
 
 ## Índice
 

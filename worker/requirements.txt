@@ -15,5 +15,10 @@ weasyprint>=61.0
 python-pptx>=0.6.23
 openpyxl>=3.1.0
 
+# --- Google Drive (PIT-TG-DRIVE: entrega deck post-torneo) ---
+google-api-python-client>=2.100.0,<3.0.0
+google-auth>=2.0.0,<3.0.0
+google-auth-oauthlib>=1.0.0,<2.0.0
+
 # --- Dev / Test ---
 pytest>=7.0.0

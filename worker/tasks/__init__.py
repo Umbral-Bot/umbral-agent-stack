@@ -95,6 +95,10 @@ from .google_calendar import (
     handle_google_calendar_create_event,
     handle_google_calendar_list_events,
 )
+from .google_drive import (
+    handle_google_drive_upload_file,
+    handle_google_drive_upload_presentation,
+)
 from .gmail import (
     handle_gmail_create_draft,
     handle_gmail_list_drafts,
@@ -231,6 +235,8 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "granola.create_followup": handle_granola_create_followup,
     "google.calendar.create_event": handle_google_calendar_create_event,
     "google.calendar.list_events": handle_google_calendar_list_events,
+    "google_drive.upload_file": handle_google_drive_upload_file,
+    "google_drive.upload_presentation": handle_google_drive_upload_presentation,
     "gmail.create_draft": handle_gmail_create_draft,
     "gmail.list_drafts": handle_gmail_list_drafts,
     "google.audio.generate": handle_google_audio_generate,

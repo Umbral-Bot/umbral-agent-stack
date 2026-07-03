@@ -14,7 +14,7 @@
 | 2026-07-02-004 | Rick voz capitalización persona MVP | cursor | 🔴 assigned |
 | 2026-07-02-005 | Notion MCP opportunity audit | codex/cursor | 🔴 assigned (hilo paralelo) |
 | 2026-07-02-006 | **Workspace hygiene audit + Pass 8** | copilot | ✅ done — `WORKSPACE_HYGIENE_PASS8_DONE` · rescates **#498/#499 merged** · 13 ramas locales limpiadas · pendiente David: G-WH-2, Fase A, zombis mayo, handoff MEGAPROMPT VPS |
-| 2026-07-03-007 | Bloque decisión PRs (#480 + zombis mayo + #321) | copilot | ✅ doc rec — [`docs/ops/pr-decision-block-2026-07-03.md`](../docs/ops/pr-decision-block-2026-07-03.md) · rec_480=CLOSE · zombis→CLOSE (421/418 con rescate señalado) · #321: 2 piezas únicas (ADR codegen + runbook off-sponsorship 2026-07-30) · **0 merges/0 cierres — espera autorización David** |
+| 2026-07-03-007 | Bloque decisión PRs (#480 + zombis mayo + #321) | copilot | ✅ **EJECUTADO** — 7 PRs cerrados sin merge (#480 #421 #418 #413 #389 #379 #321) con autorización David · rescates merged: **#508** (evidencia E2E 421), **#509** (test_pdf_parser 418, 16/16), **#510** (ADR-013 + runbook off-sponsorship 321) · main `ae34e08` · ⚠️ runbook off-sponsorship: deadline 2026-07-30, trigger ya activo — revisar |
 
 > Auditoría 006: 17 clones Windows (objetivo 5), 4 rescates, 5 hilos activos. MEGAPROMPT VPS listo post-main.
 

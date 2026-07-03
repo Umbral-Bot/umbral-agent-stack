@@ -38,7 +38,24 @@
 
 ## Ejecución
 
+### Ejecutado — 2026-07-03 (autorización explícita de David, mensaje 08:37 -04:00)
+
+| PR | Acción | Detalle |
+|----|--------|---------|
+| #480 | ✅ CERRADO sin merge | Comentario con motivo (contrato P0 superseded) |
+| #413 | ✅ CERRADO sin merge | DO NOT MERGE; pin crawler ya en main (c-via-3) |
+| #389 | ✅ CERRADO sin merge | DRAFT; multiformat ya en main por otra vía |
+| #379 | ✅ CERRADO sin merge | Blocker resuelto por C-VIA-3 |
+| #421 | ✅ RESCATADO + CERRADO | Rescue **PR #508 merged** (`rescue/windows/pr421-e2e-evidence-2026-07`): 6 archivos evidencia E2E Cycle 001 (+344) |
+| #418 | ✅ RESCATADO + CERRADO | Rescue **PR #509 merged** (`rescue/windows/pr418-pdf-parser-test-2026-07`): `tests/test_pdf_parser.py` adaptado (lang→SOURCE_DEFAULTS "en"), 16/16 pass local + CI verde |
+| #321 | ✅ RESCATADO + CERRADO | Rescue **PR #510 merged** (`rescue/windows/pr321-adr-runbook-2026-07`): ADR renumerado **ADR-013**-codegen-backend-stage-gate + runbook `azure-off-sponsorship-2026-07-30.md`. Cierre condicionado cumplido (CI verde) |
+
+- CI: `test (3.11)` + `test (3.12)` verdes en #508/#509/#510 antes de cada merge (merge commit, convención del repo).
+- Ramas rescue eliminadas (local + remoto) post-merge. Main final: `ae34e08` (+798 líneas rescatadas).
+- ⚠️ Seguimiento: el runbook off-sponsorship tiene **trigger calendario ya activo** (2026-06-30) y deadline **2026-07-30**; conviene que David lo revise esta semana.
+
+### Gate original (histórico, 1ª pasada 2026-07-03 AM)
+
 - Merges ejecutados: **0**. Cierres ejecutados: **0**.
-- Motivo: el prompt no contiene autorización explícita (las frases "Autorizo…" figuran solo como plantilla del gate).
-- Para ejecutar, David responde con: `Autorizo merge #480` (no recomendado; la recomendación es CLOSE), `Autorizo cierre #480`, y/o `Autorizo cierre zombis #421 #418 #413 #389 #379`.
-- #321 requiere frase propia tras decidir sobre el rescate: `Autorizo cierre #321 (con/sin rescate)`.
+- Motivo: el prompt no contenía autorización explícita (las frases "Autorizo…" figuraban solo como plantilla del gate).
+- Resuelto: David autorizó en el segundo mensaje (cierre #480, zombis, y rescates 421/418/321 con condición CI verde).

@@ -29,6 +29,18 @@ Rick usa este skill para redactar posts de LinkedIn, proponer calendarios de con
 | **Tono** | Directo, pragmatico, sin buzzwords. Como hablar con un colega experto |
 | **Idioma** | Espanol. Terminos tecnicos en ingles cuando no hay equivalente preciso |
 
+## Reglas editoriales para piezas source-driven
+
+Cuando el post no nace de un caso propio sino de una tesis editorial:
+
+- abrir con una tesis clara y natural, no con una etiqueta sectorial;
+- enmarcar primero el problema como revision, entregable, observaciones, decision o proceso;
+- bajar a `modelo BIM` despues de ese contexto, no como primer reflejo;
+- sostener una sola idea central;
+- evitar frases empaquetadas o demasiado documentales (`criterio operativo`, `capacidad tecnologica`, `umbrales`);
+- preferir claims modestos y defendibles;
+- cortar cualquier frente secundario que convierta el post en miniarticulo.
+
 ## Algoritmo LinkedIn 2025 — Claves para BIM/AEC
 
 ### Como funciona el alcance
@@ -180,6 +192,7 @@ Las primeras 2 lineas son lo visible antes del "ver mas". Determinan si alguien 
 **Formula de la pregunta directa:**
 - "¿Cuanto tiempo le dedicais a tareas que podria hacer un script?"
 - "¿Por que el BIM en LATAM sigue siendo teoria en la mayoria de empresas?"
+- "Antes de automatizar una revision, ¿ya esta claro que significa que algo esta listo?"
 
 **Formula de la contradiccion:**
 - "La IA va a reemplazar a los arquitectos. Yo pienso lo contrario."
@@ -196,6 +209,8 @@ Las primeras 2 lineas son lo visible antes del "ver mas". Determinan si alguien 
 - "En el mundo actual de..."
 - "Como profesional apasionado por..."
 - "Hoy quiero hablar de un tema importante..."
+- "En AEC/BIM..." como etiqueta de arranque sin escena operativa.
+- Abrir directo con `modelo BIM` si antes no se enmarco el problema como proceso o revision.
 
 ## Templates por situacion
 
@@ -293,8 +308,21 @@ Si vas a estar en [lugar/evento], nos vemos alli.
 
 - **Post sin CTA:** Siempre terminar con pregunta o instruccion clara
 - **Parrafos largos:** Maximo 3 lineas por bloque (mobile first)
+- **Post miniarticulo:** Si parece un ensayo de 2-3 ideas, recortar hasta dejar un solo hilo
+- **Repeticion de palabra nucleo:** Si `criterio`, `proceso` o `automatizacion` dominan el texto, reescribir
 - **Hashtags en exceso:** Maximo 3-5, especificos
 - **Compartir sin comentar:** Siempre agregar contexto propio al compartir
+
+### Formulas a vigilar en esta linea editorial
+
+Evitar salvo necesidad fuerte:
+
+- `criterio operativo`
+- `capacidad tecnologica`
+- `umbrales`
+- `amplificar la confusion`
+- `amplificar el desorden`
+- claims de adopcion amplia sin soporte visible
 
 ### Hashtags recomendados para David
 

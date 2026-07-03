@@ -139,8 +139,10 @@ These terms or patterns require replacement or explicit justification in public 
 Preferred replacements:
 
 - `escalacion` -> `cuando escalar`, `a quien derivarlo`, `cuando levantar el problema`, `cuando subirlo de nivel`.
-- `criterio operativo explicito` -> rotate with `reglas de revision`, `umbral de aceptacion`, `criterio de entrega`.
+- `criterio operativo explicito` -> rotate with `reglas de revision`, `que cuenta como listo`, `cuando aceptar`, `cuando devolver`, `como se revisa`.
 - `coordinacion suficiente` -> `modelo revisable`, `entregable aceptable`, `interferencia resuelta`, `observacion cerrada`.
+- `capacidad tecnologica` -> `la herramienta puede estar disponible`, `la tecnologia ya esta sobre la mesa`.
+- `umbrales` -> `cuando aceptar`, `cuando devolver`, `que se da por cerrado`.
 
 ## Opening and voice calibration rules
 
@@ -151,11 +153,20 @@ These rules are mandatory checks before delivering any variant. They codify feed
 - Do not open a piece with `AEC/BIM` as a generic sectoral label. Prefer `sector AEC`, `industria de la construccion`, `equipos BIM`, or `En AEC` when immediately connected to an operational scene.
 - `AEC/BIM` may appear in the body when it refers to the real intersection of both disciplines in a concrete scene — not as a startup label.
 - The first paragraph must contain or immediately connect to a recognizable AEC/BIM scene (a review, a deliverable, a coordination session, an RFI, a clash, a site scenario). If the opening announces a thesis without grounding it in an operational scene within the first two sentences, the variant is not ready.
+- Frame the problem first in process language (`revision`, `entregable`, `observaciones`, `decision`, `rehacer`, `aceptar`) before dropping into `modelo BIM`. A sudden opening on `modelo BIM` without that framing is a calibration failure unless the piece is explicitly technical from line 1.
 
 ### Abstraccion operativa
 
 - Do not use `nivel de coordinacion` as an abstract concept. Replace with observable conditions: `que queda resuelto`, `que interferencia se acepta`, `que observacion se puede cerrar`, `que entregable ya es revisable`.
 - `nivel de coordinacion` may be kept only if the piece explicitly defines what it means in operational terms (e.g., `medido por interferencias abiertas en el modelo federado`).
+- Treat `capacidad tecnologica`, `criterio operativo`, `umbrales`, and similar abstractions as suspect by default. Keep them only if they are translated into an observable team decision or supported by a source.
+- Broad market-adoption lines (`cada vez mas empresas...`, `la tecnologia ya existe...`) require extra scrutiny. If the claim does not add necessary value, cut it.
+
+### Length and cadence
+
+- LinkedIn copy should usually stay in the medium range, not drift into mini-essay mode.
+- If the piece starts repeating the thesis in new words instead of adding an operational scene, cut it.
+- Repetition of the nucleus word (`criterio`, `proceso`, `automatizacion`) is a quality smell and must be reduced before delivery.
 
 ### Feedback-to-system conversion
 

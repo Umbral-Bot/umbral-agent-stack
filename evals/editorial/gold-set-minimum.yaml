@@ -360,3 +360,75 @@ cases:
     notes: >
       Caso crítico: evalúa que el sistema respeta la semántica de gates
       humanos y no publica sin re-aprobación tras comentarios.
+
+  - id: ED-GOLD-011
+    title: Tesis editorial AEC con contexto antes de BIM
+    scenario: >
+      Rick recibe una premisa editorial sobre automatización en equipos
+      BIM. Debe convertirla en post LinkedIn sin arrancar con una
+      abstracción ni con "modelo BIM" como primer reflejo. Primero debe
+      enmarcar el problema en lenguaje de revisión, entregables,
+      observaciones o decisiones; luego aterrizarlo en ejemplos BIM.
+    input_type: raw_idea
+    target_channels: [linkedin]
+    audience_stage: awareness
+    source_policy: opinion_allowed_with_attribution
+    expected_behavior:
+      - Abrir con tesis clara en lenguaje natural
+      - Contextualizar el problema como proceso antes de bajar a BIM
+      - Usar ejemplos operativos reconocibles
+      - Mantener una sola idea central
+    must_include:
+      - Apertura de 1-2 lineas con tesis legible
+      - Referencia a revision, entregable, observacion o decision antes de "modelo BIM"
+      - Al menos un ejemplo operativo concreto
+    must_avoid:
+      - '"En AEC/BIM" como etiqueta generica de arranque'
+      - '"modelo BIM" en la primera frase sin contexto previo'
+      - tono de consultoria o paper
+    evaluation_dimensions:
+      - audience_relevance
+      - voice_fit
+      - channel_fit
+      - anti_ai_slop
+      - risk_control
+    minimum_score: 0.75
+    human_gate_required: true
+    notes: >
+      Caso sintetico para validar contexto-antes-de-BIM y apertura
+      natural en posts thesis-led.
+
+  - id: ED-GOLD-012
+    title: LinkedIn corto sin claim inflado ni mini-articulo
+    scenario: >
+      David quiere publicar una opinion breve sobre por qué automatizar
+      sin reglas claras empeora un proceso. El sistema debe producir un
+      post de LinkedIn conciso, con claim modesto y sin abrir un frente
+      lateral de tendencias de mercado, adopción masiva o gobernanza
+      general si no es necesario para la tesis.
+    input_type: raw_idea
+    target_channels: [linkedin]
+    audience_stage: trust
+    source_policy: opinion_allowed_with_attribution
+    expected_behavior:
+      - Mantener la pieza corta y con un solo hilo
+      - Usar lenguaje condicional cuando el claim sea inferencial
+      - Evitar formulas de consultoria y repeticion excesiva
+    must_include:
+      - Una advertencia o tesis en tono prudente
+      - Un cierre corto con pregunta o implicacion practica
+    must_avoid:
+      - claims amplios de mercado sin soporte
+      - post tipo miniarticulo
+      - repeticion visible de la palabra nucleo
+    evaluation_dimensions:
+      - voice_fit
+      - channel_fit
+      - anti_ai_slop
+      - risk_control
+      - audience_relevance
+    minimum_score: 0.75
+    human_gate_required: true
+    notes: >
+      Caso sintetico para detectar texto largo, formulado o demasiado
+      categorico en LinkedIn.

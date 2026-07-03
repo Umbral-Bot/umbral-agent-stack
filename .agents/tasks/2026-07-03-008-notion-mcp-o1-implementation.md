@@ -1,13 +1,13 @@
 ---
 id: "2026-07-03-008"
 title: "Ola O1 Notion MCP (G-NMCP-1) — implementación quick wins"
-status: in_progress
+status: done
 assigned_to: copilot
 created_by: cursor
 priority: high
 sprint: notion-mcp-eval
 created_at: "2026-07-03"
-updated_at: "2026-07-03T13:00"
+updated_at: "2026-07-03T13:30"
 ---
 
 ## Objetivo
@@ -29,7 +29,7 @@ Ejecutar la Ola O1 autorizada por David (gate **G-NMCP-1**, megaprompt `NOTION-M
 - [x] `docs/audits/notion-mcp-smoke-readonly-2026-07-03.md` (QW-2 — **BLOCKED**, ver log)
 - [x] `scripts/README.md` (regla QW-3, scripts legacy-ok)
 - [x] Referencia en `docs/62-operational-runbook.md` + nota cierre OQ#3 en task 006
-- [x] PR governance separado (QW-4): actor `ide_mcp_agent`
+- [x] PR governance separado (QW-4): actor `ide_mcp_agent` — **#15 MERGED**
 - [ ] Fase 0 rotación tokens VPS — **handoff Copilot-VPS** (no ejecutable desde Windows; requiere Notion web para crear tokens + superficie VPS)
 - [x] Board actualizado
 
@@ -50,3 +50,9 @@ Ejecutar en VPS según megaprompt `NOTION-MCP-O1-v1` §FASE 0 (backup env → to
 ### [copilot] 2026-07-03 13:10 — QW-2 re-run (megaprompt NOTION-MCP-QW2-RERUN-v1)
 
 Paso A negativo: las tools `notion-API-*` siguen **no disponibles en la sesión del agente** (último tool-change notice 12:47 las lista como removidas; sin re-alta posterior). Veredicto se mantiene: **`QW2_SMOKE_BLOCKED` (host)** — 0 llamadas, sin resultados inventados, STOP según megaprompt. Evidencia actualizada con tabla de intentos, pasos VS Code precisados (`MCP: List Servers` → server Running → **reiniciar sesión del agente** para re-inyectar tools) y plantilla "Resultado live" lista para el próximo re-run. Cambios appendeados a **PR #513** (aún OPEN — un solo PR para O1, opción permitida por el megaprompt).
+
+### [copilot] 2026-07-03 13:30 — O1 CERRADA (megaprompt NOTION-MCP-O1-CLOSE-v2)
+
+- QW-2 intento 3: **BLOCKED (host/session)** — server confirmado por David = hosted `mcp.notion.com` (HTTP); el fallo persistente es la re-inyección de tools a una sesión ya iniciada, no la config. Próximo re-run: server Running + **chat nuevo**.
+- Merges autorizados y ejecutados: **notion-governance#15** (squash `f9047b5`) + **UAS#513** (squash `8326e79`), ramas remotas borradas.
+- Task → **done**. Pendientes que NO son de esta ola: rotación tokens VPS (handoff arriba), ST-1 (defer), O2 (gate G-NMCP-2).

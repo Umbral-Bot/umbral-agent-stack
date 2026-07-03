@@ -42,6 +42,8 @@
 
 Archivo de configuración en VPS: `~/.config/openclaw/env`
 
+> **Superficie dev (Windows/IDE):** las lecturas ad-hoc de Notion desde Cursor/Copilot usan el **MCP del host**, no scripts REST nuevos ni el token del Worker. Writes de producción siguen siendo Worker REST únicamente. Contrato y tabla de decisión: [`docs/ops/notion-mcp-ide-surface.md`](ops/notion-mcp-ide-surface.md) (Ola O1, gate G-NMCP-1).
+
 **Notion (Rick + Supervisor):** Resumen de variables y roles: [auditoría Notion](auditoria-notion-env-vars.md).
 
 | Variable | Requerida | Descripción |

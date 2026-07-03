@@ -2,6 +2,9 @@
 """
 CLI: Audit Notion Publicaciones DB against local schema (read-only).
 
+NOTE (QW-3, O1 2026-07-03): legacy-ok. Para lecturas ad-hoc nuevas de Notion
+usar el MCP del IDE, no clonar este patrón — ver docs/ops/notion-mcp-ide-surface.md.
+
 Compares the approved local schema against a Notion database metadata
 fixture or a live Notion database via GET only.  No writes to Notion.
 

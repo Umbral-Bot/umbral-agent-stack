@@ -74,3 +74,14 @@ Post-merge #496 + #495:
 - Propuesta canónica: UN checkout (`~/umbral-agent-stack`), resto ARCHIVE→`~/archive/uas/` post-gate; convergencia `rick/vps` vía rama rescue + PR selectivo, NUNCA merge silencioso. ~880 MB recuperables.
 - Prohibiciones respetadas: 0 deletes/moves, 0 restarts, 0 push runtime, 0 ediciones `~/.openclaw`, 0 merges.
 - **Pendiente David: firma G-WH-VPS-1** (autoriza push ramas rescue + moves + worktree remove/prune) → luego G-WH-VPS-2 (30 días).
+
+### [copilot] 2026-07-03 04:55 — VPS rescue PRs procesados (Windows merge master)
+
+`VPS_RESCUE_PRS_DONE | pr_rick_vps=#502 | pr_stash=n/a-dup | pr_poller=#503 | pr_untracked=#504`
+
+- **#502 MERGED** (rick-vps-orphans, extracción selectiva — rama original sin merge-base): CAND-PROD001 decision brief, linear-first operating model + `.rick/`, `linear_create_issue.py` modo estandarizado. Descartes: `identity/*` byte-igual (cero drift, task 004 safe), vm-ssh + runbook §7.2.1 ya absorbidos, resto main-superset.
+- **stash windows-fs-b64 → SIN PR**: `windows.fs.write_bytes_b64` ya en main (`worker/tasks/windows_fs_bin.py`); delta WIP `linear_create_issue.py` == versión orphans (cubierto por #502); README +1 trivial. Rama rescue queda en origin para verificación David.
+- **#503 MERGED** (poller-hardening): hardening `check-notion-poller.sh` ya byte-idéntico en main; rescatada la task 2026-05-07-001 versión Log completo, cerrada `done`; 18 commits docs-refresh = ruido blocker gh-auth (descartados), pr-draft + helper descartados.
+- **#504 MERGED** (canonical-untracked): auditoría schema editorial 2026-06-16 (reubicada a `docs/audits/`, hallazgo crítico `audience_stage` spec vs código) + specs PIT broker v2/v3 (`pit_spec_validate.py` → pass ×2, completan serie v1–v4; ejemplos ejecutables del contrato #480).
+- CI verde (3.11+3.12) en los 3 PRs antes de merge. Ramas `rescue/copilot-vps/*` originales intactas en origin (limpieza = decisión David post-verificación).
+- **Pendiente David:** G-WH-VPS-2 (30 días) · borrar ramas rescue origin tras verificar · PR #480 + zombis mayo.

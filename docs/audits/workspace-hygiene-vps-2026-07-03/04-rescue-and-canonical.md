@@ -60,3 +60,46 @@ Estado: local `rick/vps` = 13↑/5↓ vs main, **7↑/141↓ vs `origin/rick/vps
 
 - 0 archivos borrados/movidos · 0 `worktree remove/prune` · 0 restarts · 0 ediciones a `~/.openclaw/*` o units · 0 push de ramas runtime · 0 merges.
 - Único write fuera de esta rama de docs: fetch de remote-tracking refs (necesario para el censo; no toca ramas locales ni working trees).
+
+---
+
+## F. Fase B ejecutada (2026-07-03, autorizada por David — G-WH-VPS-1 Fase B)
+
+```
+VPS_ARCHIVE_FASE_B_DONE | archived=9 | worktrees_removed=3(+1 prune) | mb_freed=~43_deleted+879_archived | stashes_listed=24 | branches_remaining=101
+```
+
+### F.1 Refspec persistido (VPS-P2-2 ✅)
+
+`remote.origin.fetch` ampliado con `+refs/heads/*:refs/remotes/origin/*` + `fetch --prune` → 243 remote-tracking refs (242 heads reales + HEAD). Los censos ya no dan falsos únicos.
+
+### F.2 Worktrees removidos (DELETE-candidate del Pass V1, pre-verificados clean)
+
+| Path | Rama (sigue viva en canónico) | Respaldo |
+|---|---|---|
+| `~/umbral-agent-stack-lane-sqlite-impl` | `tournament/…403…/lane-sqlite-impl` @ 52a4b6e | ancestro de origin/main |
+| `…/434…/lane-lane-a` | `tournament/…434…/lane-lane-a` @ 34e9b6b | tip en origin |
+| `…/434…/lane-lane-b` | `tournament/…434…/lane-lane-b` @ 63e9111 | ⚠️ **rama remota borrada en origin post-audit** → la rama local del canónico es ahora el único respaldo (candidata única NUEVA para triage R-V5) |
+| dirs vacíos `434-484277c0/` y `d35-33863db/` + worktree prunable `/tmp/lane-b-clean-SjKNoJ` | — | `rmdir` + `git worktree prune` |
+
+### F.3 Archivado a `~/archive/uas/` (mv/worktree move, NO rm) — 9 paths, ~879 MB
+
+3 clones (backup-pre-cand001 456M · cursor 390M · cand001-apply 33M) + 6 worktrees `rick/*` (tips == origin re-verificados el mismo día). Los 6 worktrees se movieron con `git worktree move` → siguen registrados y funcionales desde el canónico. Manifest completo con motivos y restore: `~/archive/uas/WHY.md`. Home queda con UN solo checkout: el canónico.
+
+### F.4 R-V3 completado (hallazgo durante guards)
+
+Los PRs #502–#504 (Windows merge master) capitalizaron R-V1/R-V2/R-V4 pero **R-V3 seguía sin respaldo**. Antes de archivar el backup se pushearon ambas variantes:
+- `rescue/copilot-vps/editorial-contract-paths-canonical-2026-07` @ 5a6b7aa
+- `rescue/copilot-vps/editorial-contract-paths-backup-2026-07` @ 18cdc48
+
+### F.5 Untracked del canónico (colisión resuelta)
+
+El pull a db589ca colisionó con los 4 PIT specs locales (ya tracked en main vía #504). Verificados **byte-idénticos** → apartados a `/tmp/fase-b-pit-backup/` y pull completado. `00_auditoria_schema_rick_cursor.md` local = **idéntico** al relocado `docs/audits/2026-06-16-auditoria-schema-editorial-rick.md` → queda como único untracked del canónico, borrable sin pérdida (decisión David).
+
+### F.6 Estado post-Fase B
+
+- Censo ramas canónico: **84 backed · 19 merged · 101 candidatas** (204 locales; las 2 nuevas backed = ramas rescue R-V3 fetched). 24 stashes intactos (solo listados — triage R-V5 pendiente).
+- Runtime: 4 services `active`, gateway `ActiveEnterTimestamp` original (jul-02 10:06), worker /health 200, clone `rick/vps` sin tocar.
+- Disco: canónico 489M · archive 960M · raíz 36% uso. El espacio archivado se libera físicamente recién en G-WH-VPS-2.
+- Deudas cerradas: VPS-P0-1 ✅ (#502) · VPS-P0-2 ✅ (#503) · VPS-P2-2 ✅ (F.1) · VPS-P2-3 parcial (d35 + /tmp prune ✅; `rick-orchestrator.bak` + `IDENTITY.md.bak` quedan — están dentro de `~/.openclaw`, zona NO TOCAR de esta fase).
+- Pendiente: **G-WH-VPS-2** (≥30 días, borrado archive) · triage R-V5 (24 stashes + 101 ramas, incluida lane-lane-b) · VPS-P1-2 drift OpenClaw · VPS-P1-3 `origin/rick/vps` · VPS-P2-1 · VPS-P2-4.

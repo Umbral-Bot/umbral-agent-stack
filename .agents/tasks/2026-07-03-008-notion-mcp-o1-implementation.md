@@ -30,7 +30,7 @@ Ejecutar la Ola O1 autorizada por David (gate **G-NMCP-1**, megaprompt `NOTION-M
 - [x] `scripts/README.md` (regla QW-3, scripts legacy-ok)
 - [x] Referencia en `docs/62-operational-runbook.md` + nota cierre OQ#3 en task 006
 - [x] PR governance separado (QW-4): actor `ide_mcp_agent` — **#15 MERGED**
-- [ ] Fase 0 rotación tokens VPS — **handoff Copilot-VPS** (no ejecutable desde Windows; requiere Notion web para crear tokens + superficie VPS)
+- [x] Fase 0 rotación tokens VPS — **DONE 2026-07-03** (ejecutada en VPS; smoke PASS, tokens viejos revocados, 281 JSONL redactados)
 - [x] Board actualizado
 
 ## Log
@@ -56,3 +56,9 @@ Paso A negativo: las tools `notion-API-*` siguen **no disponibles en la sesión 
 - QW-2 intento 3: **BLOCKED (host/session)** — server confirmado por David = hosted `mcp.notion.com` (HTTP); el fallo persistente es la re-inyección de tools a una sesión ya iniciada, no la config. Próximo re-run: server Running + **chat nuevo**.
 - Merges autorizados y ejecutados: **notion-governance#15** (squash `f9047b5`) + **UAS#513** (squash `8326e79`), ramas remotas borradas.
 - Task → **done**. Pendientes que NO son de esta ola: rotación tokens VPS (handoff arriba), ST-1 (defer), O2 (gate G-NMCP-2).
+
+### [copilot] 2026-07-03 15:40 — Fase 0 rotación DONE + doc topología env (megaprompt NOTION-ENV-TOPOLOGY-DOC-v1)
+
+- **Fase 0 rotación VPS: DONE** (ejecutada en VPS 2026-07-03): env canónico `~/.config/openclaw/env` + hallazgo clave — el gateway carga ADEMÁS `~/.openclaw/gateway.systemd.env` (`NOTION_API_KEY`, estaba desincronizado). Units reales: `umbral-worker`, `openclaw-dispatcher`, `openclaw-gateway`, `mission-control` (**no existe** `openclaw-worker-vps` en esta VPS). Smoke PASS post-revocación; tokens viejos revocados; **281 JSONL redactados**. Evidencia: `~/.coord-ag-evidence/notion-token-rotation-2026-07-03.md`.
+- **Deuda 006 §6.8.4 (tokens en session JSONL): cerrada operativamente** — rotación + redacción + revocación.
+- **Doc topología:** este PR — runbook 62 §1.4.1 (tabla archivos env, regla doble-archivo, hash-check, restart units reales) + notas en setup 03 y runbook-worker-on-vps.

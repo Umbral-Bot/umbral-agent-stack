@@ -39,6 +39,8 @@ python3 -m uvicorn worker.app:app --host 127.0.0.1 --port 8088 --log-level info
 
 ### Opción B — Servicio systemd (usuario)
 
+> **Nota (2026-07-03):** el nombre de la unit puede variar por VPS. En la VPS actual el worker corre como **`umbral-worker`** (no existe `openclaw-worker-vps` allí). Verificar el nombre real con `systemctl --user list-units | grep -Ei 'worker|openclaw'` y usar ese nombre en los comandos siguientes. Env canónico sigue siendo `~/.config/openclaw/env`; topología completa (incl. `gateway.systemd.env`) en [runbook operacional §1.4.1](../docs/62-operational-runbook.md).
+
 ```bash
 # Copiar template y ajustar WorkingDirectory si hace falta
 mkdir -p ~/.config/systemd/user

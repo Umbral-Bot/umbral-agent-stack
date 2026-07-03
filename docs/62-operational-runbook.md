@@ -70,6 +70,33 @@ Archivo de configuración en VPS: `~/.config/openclaw/env`
 
 *Requeridas para funcionalidades de Notion; sin ellas solo `ping` funciona completamente. Para que el aviso a Notion del supervisor funcione, el Worker debe tener `NOTION_API_KEY` y `NOTION_CONTROL_ROOM_PAGE_ID` (o `NOTION_SUPERVISOR_ALERT_PAGE_ID` si el script lo soporta) en su entorno al arrancar.
 
+#### 1.4.1 Topología env VPS (canónico + gateway)
+
+> Verificada en la rotación de tokens Notion 2026-07-03 (Fase 0 O1, task `2026-07-03-008`). Evidencia VPS: `~/.coord-ag-evidence/notion-token-rotation-2026-07-03.md` (sin tokens).
+
+| Archivo | Consumidores | Variables clave |
+|---|---|---|
+| `~/.config/openclaw/env` | **Canónico** — `umbral-worker`, `openclaw-dispatcher`, `mission-control`, crons, scripts (`source` + `EnvironmentFile=`) | `WORKER_*`, `REDIS_*`, `NOTION_*` (Rick + Supervisor), `GITHUB_TOKEN`, resto del stack |
+| `~/.openclaw/gateway.systemd.env` | `openclaw-gateway` (unit systemd) — **excepción documentada**: el gateway carga ADEMÁS este archivo | `NOTION_API_KEY` (+ otras específicas del gateway si aplica) |
+| `~/umbral-agent-stack/.env` | **NO auto-cargado** por servicios ni por la app; puede estar vacío | Ignorar en ops — no es fuente de runtime |
+
+**Regla de rotación (`NOTION_API_KEY` y afines):** actualizar **AMBOS** archivos (`~/.config/openclaw/env` **y** `~/.openclaw/gateway.systemd.env`) — en la rotación 2026-07-03 el gateway estaba desincronizado precisamente por olvidar el segundo. Backup previo de ambos (`cp <archivo> <archivo>.bak.$(date +%Y%m%d)` + `chmod 600`).
+
+Verificación de sincronía sin imprimir valores (los dos hashes deben coincidir):
+
+```bash
+grep '^NOTION_API_KEY=' ~/.config/openclaw/env ~/.openclaw/gateway.systemd.env | sha256sum
+```
+
+Restart post-rotación (units reales de esta VPS — **no existe** `openclaw-worker-vps` aquí):
+
+```bash
+systemctl --user daemon-reload
+systemctl --user restart umbral-worker openclaw-dispatcher openclaw-gateway mission-control
+```
+
+Smoke: `curl -fsS http://127.0.0.1:8088/health` + `source ~/.config/openclaw/env && PYTHONPATH=. python3 scripts/smoke_test.py`. Revocar tokens viejos SOLO tras smoke verde.
+
 **Supervisor con identidad propia (recomendado):** Para que los avisos de reinicio aparezcan como **"Supervisor"** (no como Rick) y vayan a **Alertas del Supervisor**: (1) En Notion, crear una integración (nombre ej. "Supervisor", avatar distinto). (2) En la página `Alertas del Supervisor`, **••• → Add connections** y conectar esa integración. (3) En la VPS, en `~/.config/openclaw/env`, definir `NOTION_SUPERVISOR_API_KEY` (token de esa integración) y `NOTION_SUPERVISOR_ALERT_PAGE_ID=0fd13978b220498e9465b4fb2efc5f4a`. El script del supervisor postea entonces directo a la API de Notion y el comentario sale como Supervisor en la página dedicada de alertas.
 
 ### 1.5 Notion: conectar la integración a la página

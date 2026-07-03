@@ -1,0 +1,14 @@
+=== OBSERVATION WINDOW START 17:42:47Z ===
+[2026-05-18T17:42:47Z] iter=1 queue_depth=0 processed_count=19 last_ts=2026-05-18T17:41:00+00:00
+[2026-05-18T17:42:57Z] iter=2 queue_depth=0 processed_count=19 last_ts=2026-05-18T17:41:00+00:00
+[2026-05-18T17:43:07Z] iter=3 queue_depth=0 processed_count=19 last_ts=2026-05-18T17:41:00+00:00
+[2026-05-18T17:43:17Z] iter=4 queue_depth=0 processed_count=19 last_ts=2026-05-18T17:41:00+00:00
+[2026-05-18T17:43:27Z] iter=5 queue_depth=0 processed_count=19 last_ts=2026-05-18T17:41:00+00:00
+[2026-05-18T17:43:37Z] iter=6 queue_depth=0 processed_count=19 last_ts=2026-05-18T17:41:00+00:00
+[2026-05-18T17:43:47Z] iter=7 queue_depth=0 processed_count=19 last_ts=2026-05-18T17:41:00+00:00
+[2026-05-18T17:43:57Z] iter=8 queue_depth=0 processed_count=19 last_ts=2026-05-18T17:41:00+00:00
+[2026-05-18T17:44:07Z] iter=9 queue_depth=0 processed_count=19 last_ts=2026-05-18T17:41:00+00:00
+[2026-05-18T17:44:17Z] iter=10 queue_depth=0 processed_count=19 last_ts=2026-05-18T17:41:00+00:00
+[2026-05-18T17:44:27Z] iter=11 queue_depth=0 processed_count=19 last_ts=2026-05-18T17:41:00+00:00
+[2026-05-18T17:44:37Z] iter=12 queue_depth=0 processed_count=19 last_ts=2026-05-18T17:41:00+00:00
+=== OBSERVATION WINDOW END 17:44:47Z ===

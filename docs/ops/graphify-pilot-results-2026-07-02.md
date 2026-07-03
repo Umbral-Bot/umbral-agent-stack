@@ -1,7 +1,7 @@
 # Graphify pilot results — 2026-07-02 (F1–F4)
 
 > F1–F2 por Cursor (preflight Azure + grafo). F3–F4 por Copilot Windows (Claude Fable 5).
-> **Veredicto propuesto: `GRAPHIFY_PILOT_GO_PARTIAL | goldset=8/10 | cost=$3.53 | leaks=0 | escenario=S7 | directriz=R6`** — pendiente firma G-GR-1 (David).
+> **Veredicto: `GRAPHIFY_PILOT_GO_PARTIAL | goldset=8/10 | cost=$3.53 | leaks=0 | escenario=S7 | directriz=R6`** — **G-GR-1 firmado por David 2026-07-02**: uso local opcional, sin skill/install/artefactos compartidos (R6+R7), revisión 30 días; gap `runbooks/` documentado sin re-generar.
 
 ## Azure provisioning ✅
 
@@ -70,7 +70,7 @@ motivo=U-nula: baseline grep/glob fue más preciso (9.5 vs 8.0) y ~17× más rá
 el grafo solo aporta en exploración relacional (vecindad de handlers, impacto)
 ```
 
-**Siguiente paso (plan §5, rama GO parcial):** revisión a **30 días** — si hubo uso real y valioso (registro cualitativo en board), reabrir F5–F7; si no → degradar a NOGO silencioso (desinstalar opcional). Firma **G-GR-1 pendiente de David**.
+**Siguiente paso (plan §5, rama GO parcial):** revisión a **30 días** — si hubo uso real y valioso (registro cualitativo en board), reabrir F5–F7; si no → degradar a NOGO silencioso (desinstalar opcional). **G-GR-1 firmado por David (2026-07-02)**: PR entra en limpieza workspace (task `2026-07-02-006`); task 002 → done al merge.
 
 ### Hallazgos capitalizables
 

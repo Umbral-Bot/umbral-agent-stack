@@ -61,4 +61,11 @@ F3–F4 completados en Windows (rama `copilot/graphify-pilot-f1-f4`):
 - Hallazgo: `runbooks/` = 0 nodos en grafo F2 (gap por chunks 429) → costó 0.5 en A-Q9.
 - F4: P alta · C ok ($3.53) · S limpio · **U nula/negativa** · O ligera → **S7 → R6**.
 - Veredicto propuesto: `GRAPHIFY_PILOT_GO_PARTIAL | goldset=8/10 | cost=$3.53 | leaks=0 | escenario=S7 | directriz=R6` — uso local opcional, sin skill/AGENTS.md/artefactos compartidos; revisión 30 días.
-- **Pendiente: firma G-GR-1 de David** → al firmar, pasar status a done y registrar veredicto final en board.
+
+### [copilot] 2026-07-02 21:15 — G-GR-1 FIRMADO (David)
+`GRAPHIFY_PILOT_GO_PARTIAL` **aceptado** (S7 · R6). Decisiones de David:
+1. PR #495 NO se mergea todavía — entra en la limpieza workspace (task `2026-07-02-006`).
+2. NO `graphify install` / NO skill / NO versionar `graphify-out/` (R6 + R7).
+3. Uso local opcional por agente; **revisión a 30 días** (registro cualitativo en board si hay uso real).
+4. Gap `runbooks/` documentado; NO re-generar grafo ahora.
+Hilo Graphify cerrado. Status queda `review` → pasar a `done` al mergear el PR en la pasada de orden.

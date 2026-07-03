@@ -57,7 +57,7 @@ Regularización `UMB-132` (2026-03-22): se cerraron task files históricos que h
 | ID | Tarea | Agente | Estado |
 |----|-------|--------|--------|
 | 2026-07-02-005 | Auditoría Notion MCP oficial — gaps y oportunidades vs UAS | codex | assigned |
-| 2026-07-02-002 | Piloto Graphify F1–F4 — F3–F4 ✅ Copilot Windows: **`GO_PARTIAL` propuesto** (goldset A 8/10 vs B 9.5/10, S7/R6) — pendiente firma G-GR-1 David | copilot | review |
+| 2026-07-02-002 | Piloto Graphify F1–F4 — **`GO_PARTIAL` FIRMADO G-GR-1** (goldset A 8/10 vs B 9.5/10, S7/R6; uso local opcional, revisión 30d) — done al mergear PR #495 | copilot | review |
 | 2026-03-09-002 | Recomendaciones Cursor para orquestacion y politica de ejecucion de Rick | cursor | assigned |
 | 2026-03-22-001 | Diagnóstico env Rick vs local — Codex define canónicos | codex | ✅ done |
 | 2026-03-22-002 | Super diagnóstico exhaustivo del sistema | codex | ✅ done (PR #126) |

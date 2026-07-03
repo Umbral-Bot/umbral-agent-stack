@@ -1,0 +1,225 @@
+MEGAPROMPT — Copilot Windows · Piloto Graphify F1–F4 · umbral-agent-stack
+Versión: UAS-GRAPHIFY-PILOT-EXEC-v3 · 2026-07-02
+Autorización: G-GR-0 (David)
+Modelo sesión: Claude Fable 5 · 1M tokens (si no está disponible, usar el modelo más capaz disponible)
+
+================================================================================
+ROL
+================================================================================
+Sos GitHub Copilot en la workstation Windows de David (NO Copilot-VPS).
+Ejecutás el piloto local de Graphify sobre Umbral Agent Stack de punta a punta:
+sync repo, instalar tool global, generar grafo, auditar seguridad, gold-set A/B,
+decisión F4, evidencia, PR.
+
+NO tenés SSH a la VPS. NO tocás OpenClaw runtime, systemd, crons ni producción Azure.
+
+Superficie correcta: Windows local. Copilot-VPS queda explícitamente fuera de este piloto.
+
+================================================================================
+REPO CANÓNICO (obligatorio)
+================================================================================
+GitHub: Umbral-Bot/umbral-agent-stack
+Clone Copilot Windows (orden del equipo): C:\GitHub\umbral-agent-stack-copilot
+
+NO uses umbral-agent-stack ni codex-coordinador para este piloto.
+Si abrís otra carpeta por error → STOP.
+
+================================================================================
+PREFLIGHT CLON — ejecutar primero (obligatorio, bloqueante)
+================================================================================
+# 0) Entrar al clon Copilot
+cd C:\GitHub\umbral-agent-stack-copilot
+
+# 1) Verificar identidad del clon
+git remote get-url origin
+# Debe ser: https://github.com/Umbral-Bot/umbral-agent-stack.git
+# Si no → STOP: carpeta equivocada.
+
+git status -sb
+git fetch origin main
+
+# 2) Si hay cambios locales ajenos al piloto → stashear o avisar David
+# git stash push -m "pre-graphify-pilot" --include-untracked
+
+# 3) Sync main
+git checkout main
+git pull --ff-only origin main
+git log -1 --oneline
+
+# 4) Verificar docs del piloto en ESTE clon
+$checks = @(
+  'docs/ops/graphify-obsidian-eval-2026-07-02.md',
+  'docs/ops/graphify-pilot-plan-2026-07-02.md',
+  'docs/ops/MEGAPROMPT-copilot-windows-graphify-pilot-f1-f4.txt',
+  'docs/ops/graphify-pilot-results-2026-07-02.md',
+  '.agents/tasks/2026-07-02-002-graphify-pilot-f1-f4.md',
+  '.graphifyignore'
+)
+$checks | ForEach-Object { if (Test-Path $_) { "OK $_" } else { "MISSING $_" } }
+# Cualquier MISSING → STOP y pedir a David/Cursor push a main antes de continuar.
+
+# 5) Rama de trabajo Copilot
+git checkout -b copilot/graphify-pilot-f1-f4 2>$null
+git checkout copilot/graphify-pilot-f1-f4
+
+# 6) F1–F2: graphify-out/ debe existir aquí (Cursor ya generó en este clone)
+if (-not (Test-Path graphify-out\graph.json)) {
+  Write-Host "STOP: graph.json ausente — ejecutar F2 aquí o pedir a Cursor"
+}
+
+# 7) Confirmar cwd antes de graphify query (F3)
+pwd
+# Debe terminar en \umbral-agent-stack-copilot
+
+================================================================================
+LECTURA OBLIGATORIA (read-only)
+================================================================================
+1. docs/ops/graphify-obsidian-eval-2026-07-02.md  (evaluación + §9 .graphifyignore)
+2. docs/ops/graphify-pilot-plan-2026-07-02.md     (fases, escenarios S1–S8, R0–R7)
+3. .agents/tasks/2026-07-02-002-graphify-pilot-f1-f4.md
+4. .agents/PROTOCOL.md (Log + board al cerrar)
+5. .gitignore (Graphify lo hereda automáticamente)
+
+================================================================================
+PARÁMETROS DEL PILOTO (David)
+================================================================================
+Umbral de coste primera pasada: USD 10  (si cost.json > 10 → directriz R2)
+Backend LLM: azure (--backend azure)
+AZURE_OPENAI_API_KEY y AZURE_OPENAI_ENDPOINT deben estar en la sesión de shell
+  SOLO para F2 (graphify . --backend azure). F1 no las necesita.
+  Preflight — NO leer .env del repo; NO usar umbralbim-resource (es producto web):
+    az cognitiveservices account show -g rg-umbral-agents-prod -n oai-umbral-agents-prod --query name -o tsv
+    Si falla → STOP F2: crear recurso según docs/ops/azure-openai-umbral-agents-provisioning.md
+  Recurso canónico UAS/Rick/Graphify:
+    oai-umbral-agents-prod @ rg-umbral-agents-prod (eastus2)
+    Endpoint: https://oai-umbral-agents-prod.cognitiveservices.azure.com/
+  Guía: docs/ops/azure-openai-umbral-agents-provisioning.md
+Brazo A: graph-first (graphify query / path / explain)
+Brazo B: baseline grep/read-only (sin graphify) — misma sesión Copilot, sin usar el grafo
+
+================================================================================
+PROHIBIDO (kill-switches)
+================================================================================
+- graphify install          (modifica AGENTS.md / .cursor/rules/)
+- graphify hook install     (hooks git)
+- graphify install --platform claw
+- Añadir graphifyy a pyproject.toml o worker/requirements.txt
+- Commitear graphify-out/ (graph.json, cache/, cost.json, graph.html)
+- Ejecutar en VPS / SSH remoto / Copilot-VPS
+- Exponer grafo a Rick / MCP / OpenClaw
+- Indexar .env, sessions/, auth-profiles, dumps, evidencia sin .graphifyignore
+- Mergear el PR (David/Cursor deciden)
+
+================================================================================
+FASE 1 — Instalación global
+================================================================================
+uv tool install "graphifyy[openai]"
+# si graphify no está en PATH:
+#   uv tool update-shell  → nueva terminal, o: python -m graphify --version
+
+graphify --version
+# Si falla en Windows nativo → 1 reintento WSL (directriz R5); si falla → BLOCKED
+
+================================================================================
+FASE 2 — .graphifyignore + generación del grafo
+================================================================================
+1. Crear .graphifyignore en la raíz ANTES de la primera pasada.
+   Copiar contenido de docs/ops/graphify-obsidian-eval-2026-07-02.md §9.
+   Ajustar solo si hay evidencia de ruido/fuga; máx 2 pasadas totales en todo el piloto.
+
+2. Generar grafo (David debe tener vars Azure en la sesión):
+   graphify . --no-viz --backend azure
+
+3. Anotar: duración, tamaño graph.json, cost.json
+
+4. Auditoría de seguridad OBLIGATORIA (leaks=0 antes de F3):
+   rg -i "sk-[a-z0-9]{20,}|ghp_[a-z0-9]{20,}|bearer [a-z0-9]{20,}" graphify-out\graph.json
+   rg -c "\.env|sessions/|auth-profiles" graphify-out\graph.json
+
+   Si hay fuga → R0: purge graphify-out\, corregir .graphifyignore, máx 1 reintento.
+   Si reincide → GRAPHIFY_PILOT_NOGO | motivo=security
+
+5. Si cost.json > USD 10 → R2: segunda pasada code-only + docs core
+   (excluir .agents/tasks/, docs/external-context/, tests/fixtures/ en .graphifyignore;
+    mantener docs/[0-9]*.md, docs/adr/, runbooks/, worker/, dispatcher/)
+
+Evidencia local:
+  New-Item -ItemType Directory -Force -Path C:\coord-ag-evidence\graphify-pilot
+  Copy-Item graphify-out\cost.json C:\coord-ag-evidence\graphify-pilot\
+  # NO copiar graph.json completo al repo
+
+Veredicto F2: GRAPHIFY_PILOT_READY | nodes=N | cost=$X | leaks=0
+
+================================================================================
+FASE 3 — Gold-set (10 preguntas)
+================================================================================
+Usar la tabla verificada de docs/ops/graphify-obsidian-eval-2026-07-02.md §3.
+
+Por cada pregunta registrar en C:\coord-ag-evidence\graphify-pilot\goldset-results.md:
+
+| # | Pregunta | Brazo | Respuesta | Queries/reads | Archivos leídos | Tiempo | Score 0/0.5/1 |
+
+Brazo A (graph-first):
+  graphify query "..."
+  graphify path "..." "..."  (cuando aplique)
+  Máx 2 lecturas de archivo para verificar.
+
+Brazo B (baseline, sin graphify — NO usar graphify ni graph.json):
+  rg / Read / Glob normales en el repo.
+
+Scoring: 1=correcta y completa · 0.5=parcial · 0=incorrecta (vs respuesta esperada §3 eval).
+
+================================================================================
+FASE 4 — Decisión (aplicar matriz del plan §4)
+================================================================================
+Calcular variables:
+  P = precisión brazo A (alta ≥8/10 · media 6–7 · baja ≤5)
+  C = coste vs umbral USD 10
+  S = seguridad (limpio / fuga)
+  U = utilidad vs brazo B (A lee menos archivos y tarda menos?)
+  O = fricción regen incremental (<5 min / pesada)
+
+Identificar escenario S1–S8 y directriz R0–R7 del plan.
+Proponer veredicto (David firma G-GR-1):
+
+  GRAPHIFY_PILOT_GO
+  GRAPHIFY_PILOT_GO_PARTIAL | motivo=...
+  GRAPHIFY_PILOT_NOGO       | motivo=...
+  GRAPHIFY_PILOT_BLOCKED    | motivo=...
+
+Post-piloto siguiente paso (solo indicar, NO ejecutar salvo GO explícito):
+  GO → F5 skill + F6 Obsidian + F7 versionado (plan §5)
+  GO parcial → uso local opcional, revisión 30 días
+  NOGO → doc cierre + alternativas (plan §5)
+
+================================================================================
+ENTREGABLES REPO (Copilot Windows)
+================================================================================
+1. Actualizar Log en .agents/tasks/2026-07-02-002-graphify-pilot-f1-f4.md
+   (status: done | blocked | in_progress según resultado)
+2. Actualizar .agents/board.md — línea piloto Graphify con veredicto
+3. Commitear SOLO:
+   - .graphifyignore
+   - docs/ops/graphify-pilot-results-2026-07-02.md  (resumen F2–F4, sin secretos)
+   - cambios en task + board
+   NO commitear graphify-out/
+4. Push rama copilot/graphify-pilot-f1-f4
+5. Crear PR a main con gh pr create:
+   título: "ops(graphify): pilot F1–F4 — .graphifyignore + results"
+   NO mergear PR (David/Cursor deciden)
+
+================================================================================
+FORMATO RESPUESTA FINAL (pegar a David)
+================================================================================
+GRAPHIFY_PILOT_<VEREDICTO> | goldset=A/10 | cost=$X | leaks=0|N | escenario=S? | directriz=R?
+
+Resumen 5 bullets:
+- Repo sync (HEAD sha)
+- F1/F2 status
+- Gold-set A vs B
+- Decisión propuesta + siguiente paso
+- PR URL (si creado)
+
+Si F2 y no existe oai-umbral-agents-prod → STOP: pedir a David crear recurso (portal o CLI en provisioning doc).
+Si existe pero faltan vars sesión → pedir Key1+Endpoint de oai-umbral-agents-prod (NO umbralbim).
+F1 puede completarse sin Azure.

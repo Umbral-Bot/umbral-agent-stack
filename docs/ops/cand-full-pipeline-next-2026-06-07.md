@@ -1,6 +1,7 @@
 # Próxima candidata — Pipeline completo desde cero (CAND-004+)
 
 > **Después** de cerrar CAND-001 como ejemplo manual.  
+> **Gate CAND-001:** `CAND001_BLOG_EXAMPLE_COMPLETE` alcanzado 2026-07-02 (`docs/ops/cand-001-closeout-2026-07-02.md`).  
 > **Tipo:** source-driven (con trazabilidad de publicaciones).  
 > **Rick + Worker + n8n** según `production-flow-v2-2026-06-06.md`.
 

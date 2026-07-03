@@ -1,0 +1,104 @@
+MEGAPROMPT — Copilot VPS · Auditoria workspace UAS en VPS (espejo de la auditoria Windows)
+Version: UAS-VPS-WORKSPACE-HYGIENE-v1 · 2026-07-02
+Modo: diagnostico + propuesta · NO destructivo · NO restart de servicios
+Generado por: Copilot Windows (task 2026-07-02-006, Pass 10) — NO ejecutado desde Windows
+Referencia Windows: docs/audits/workspace-hygiene-2026-07-02/ (README + 01..09)
+
+================================================================================
+ROL
+================================================================================
+Sos GitHub Copilot en la VPS de Umbral (usuario rick). Ejecutas la auditoria
+espejo del workspace: checkouts del repo en el filesystem, ramas, dirty state,
+workspaces OpenClaw, crons/systemd que leen el repo, y propuesta de checkout
+canonico unico.
+
+NO borras nada, NO restarteas servicios, NO tocas ~/.openclaw ni
+openclaw-gateway.service, NO haces push de ramas runtime. Solo lectura +
+reporte + propuesta. Todo delete/move queda para gate G-WH-VPS-1 (David).
+
+================================================================================
+PREFLIGHT (bloqueante)
+================================================================================
+cd ~/umbral-agent-stack
+git fetch origin main
+git checkout main 2>/dev/null || git status -sb   # si checkout falla por dirty: REPORTAR, no forzar
+git pull --ff-only origin main 2>/dev/null || echo "PULL_BLOCKED (reportar motivo)"
+git log -1 --oneline
+test -f .agents/tasks/2026-07-02-006-workspace-hygiene-audit.md && echo TASK_FILE_OK || echo TASK_FILE_MISSING
+
+Si TASK_FILE_MISSING => STOP y reportar a Cursor (falta merge del PR del audit
+Windows; no improvisar).
+
+================================================================================
+PASS V1 — Inventario checkouts UAS en la VPS
+================================================================================
+find ~ -maxdepth 3 -type d -name 'umbral-agent-stack*' 2>/dev/null
+find /opt /srv /tmp -maxdepth 3 -type d -name 'umbral-agent-stack*' 2>/dev/null
+
+Por cada checkout encontrado:
+  git -C <path> remote -v
+  git -C <path> branch -a --list | head -30
+  git -C <path> status -sb
+  git -C <path> log -1 --format='%h %ad %s' --date=short
+  git -C <path> rev-list --count HEAD..origin/main 2>/dev/null   # behind
+  git -C <path> rev-list --count origin/main..HEAD 2>/dev/null   # ahead
+  git -C <path> stash list
+
+Clasificar cada uno: KEEP / ARCHIVE / RESCUE (dirty o ahead con material unico)
+/ DELETE-CANDIDATE. Mismo criterio que Windows Pass 1.
+
+Atencion especial:
+- rama rick/vps (o similar) vs main: cuantos commits diverge, que archivos, y
+  si algun cron/servicio corre DESDE esa rama.
+- git stash con material unico.
+
+================================================================================
+PASS V2 — Consumidores del repo en runtime
+================================================================================
+crontab -l
+systemctl --user list-units --type=service --all | grep -Ei 'umbral|openclaw|worker|dispatcher'
+systemctl --user list-timers --all
+grep -RIl 'umbral-agent-stack' ~/.config/systemd/user/ 2>/dev/null
+
+Por cada unit/cron que apunte a un path del repo: anotar QUE path usa.
+Si algun servicio lee un checkout NO canonico => hallazgo P0.
+
+NO restart, NO edit de units.
+
+================================================================================
+PASS V3 — Workspaces OpenClaw vs repo
+================================================================================
+ls ~/.openclaw/workspace* 2>/dev/null; openclaw status --all 2>/dev/null | head -40
+Comparar openclaw/workspace-templates y workspace-agent-overrides del repo main
+vs lo desplegado (solo diff de nombres/fechas, no volcar contenido sensible).
+Anotar drift repo->runtime (regla VPS Reality Check: reportar "repo dice X /
+VPS muestra Y").
+
+================================================================================
+PASS V4 — Rescate y propuesta canonica VPS
+================================================================================
+- Lista RESCUE: paths con dirty/ahead unico (diff --stat top 20 por checkout).
+- Propuesta: UN checkout canonico ~/umbral-agent-stack en main, actualizado por
+  el protocolo pull --ff-only; todo lo demas ARCHIVE a ~/archive/uas/ (mover,
+  no borrar) tras gate G-WH-VPS-1.
+- Si rick/vps diverge de main: proponer plan de convergencia (PR o descarte
+  explicito), NUNCA merge silencioso.
+
+================================================================================
+PASS V5 — Reporte
+================================================================================
+Escribir docs/audits/workspace-hygiene-2026-07-02/10-vps-checkouts.md en una
+rama nueva copilot-vps/workspace-hygiene-vps-2026-07-02 + PR (NO merge).
+Actualizar Log de .agents/tasks/2026-07-02-006-workspace-hygiene-audit.md.
+
+Veredicto final:
+VPS_WORKSPACE_HYGIENE_READY | checkouts=N | rescue=N | crons_repo=N | drift_openclaw=YES/NO
+
+================================================================================
+PROHIBIDO
+================================================================================
+- rm -rf / mover checkouts sin gate G-WH-VPS-1
+- systemctl restart/stop de cualquier unit
+- Tocar ~/.openclaw/openclaw.json o gateway
+- Push a main / merge de PRs
+- Volcar secretos (env, tokens, keys) en el reporte

@@ -1,8 +1,21 @@
 # Agent Board — Umbral Agent Stack
 
-> Última actualización: 2026-07-02 por **cursor**  
-> Sprint activo: **Editorial CAND-001 cerrado** → siguiente: **CAND-004+ pipeline** (ver `docs/ops/cand-full-pipeline-next-2026-06-07.md`)  
-> **Coordinación:** **Cursor** lead. Codex entregó unpublish editorial (PR #494 merged); CAND-001 blog-only ejemplo completo.
+> Última actualización: 2026-07-03 por **cursor** (post-merge #496 + G-WH-1)
+> Sprint activo: **workspace-hygiene Pass 8** + Graphify #495 + Rick voz 004 + Notion MCP 005
+> **Coordinación:** **Cursor** lead.
+
+## Sprint 2026-07-02 — hilos vivos
+
+| ID | Tarea | Agente | Estado |
+|----|-------|--------|--------|
+| 2026-07-02-001 | CAND-001 blog unpublish closeout | copilot | ✅ done (`CAND001_BLOG_EXAMPLE_COMPLETE`, PR #494 merged) |
+| 2026-07-02-002 | Graphify piloto F1–F4 | copilot | 🟡 GO_PARTIAL S7/R6 — **PR #495** merge conflict resolviendo, G-GR-1 firmado |
+| 2026-07-02-003 | Rick voz TTS MVP restart+smoke (VPS) | copilot-vps | ✅ done (no rehacer) |
+| 2026-07-02-004 | Rick voz capitalización persona MVP | cursor | 🔴 assigned |
+| 2026-07-02-005 | Notion MCP opportunity audit | codex/cursor | 🔴 assigned (hilo paralelo) |
+| 2026-07-02-006 | **Workspace hygiene audit** | copilot | 🟡 **PR #496 merged** — G-WH-1 firmado → Pass 8 rescates + VPS handoff |
+
+> Auditoría 006: 17 clones Windows (objetivo 5), 4 rescates, 5 hilos activos. MEGAPROMPT VPS listo post-main.
 
 ## Estado del sistema (actualizado 2026-03-07 — auditoría en vivo)
 

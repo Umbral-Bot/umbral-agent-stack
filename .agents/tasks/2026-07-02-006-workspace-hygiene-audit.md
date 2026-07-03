@@ -61,3 +61,16 @@ Post-merge #496 + #495:
 - **8E** — este PR: task done, board, README veredicto final, debt register (P0-2 ✅, P1-1 ✅, P1-9 ✅ con evaluate-gate.ps1 adjudicado a P10-SEC63 y rescatado).
 - Prohibiciones respetadas: 0 clones movidos/borrados (G-WH-2 pendiente), 0 VPS, graphify-out/ sin commitear, sin umbralbim-resource.
 - **Pendiente David:** G-WH-2 (30 días) · archivado Fase A · PRs #480 + zombis mayo (#421 #418 #413 #389 #379 #321) · pegar MEGAPROMPT VPS en Copilot-VPS.
+
+### [copilot-vps] 2026-07-03 — Espejo VPS (Pass 10) ejecutado
+
+`WORKSPACE_HYGIENE_VPS_READY | checkouts=15 | rescue=5 | canonical_proposed=YES` (extendido: `crons_repo=17 | drift_openclaw=YES`)
+
+- MEGAPROMPT VPS ejecutado completo (Pass V1–V5), read-only. Reporte: `docs/audits/workspace-hygiene-vps-2026-07-03/` + pointer `10-vps-checkouts.md` en el dir Windows.
+- **V1:** 15 checkouts (5 clones + 10 worktrees) + 2 residuos. Canónico `~/umbral-agent-stack` main @ 60f605a sano (0↓/0↑) con 24 stashes y 103 ramas con tip no respaldado (censo contra ls-remote real: 81 backed / 19 merged / 103 candidatas).
+- **V2:** SIN P0 runtime — 17 crons + worker/dispatcher/mission-control leen solo el canónico; gateway npm-global como documenta copilot-instructions.
+- **V3:** drift OpenClaw runtime→repo: AGENTS (524 líneas), SOUL (386), VOICE (140) evolucionados en `~/.openclaw/workspace/` sin capitalizar; override main/ solo cubre IDENTITY. Overrides rick-editorial/rick-tech sin desplegar.
+- **V4 — RESCUE (5 grupos):** R-V1 `rick/vps` 7 commits sin respaldo (CAND-PROD001 brief jun-07 + Embudo V2 + vm-ssh marzo) + stash único · R-V2 poller-healthcheck-hardening ~20 commits no en origin · R-V3 commit 18cdc48 backup (patch-id ≠ variante canónico 5a6b7aa, ambos fuera de main) · R-V4 5 untracked canónico (00_auditoria + PIT broker v2/v3) · R-V5 24 stashes + triage 103 ramas.
+- Propuesta canónica: UN checkout (`~/umbral-agent-stack`), resto ARCHIVE→`~/archive/uas/` post-gate; convergencia `rick/vps` vía rama rescue + PR selectivo, NUNCA merge silencioso. ~880 MB recuperables.
+- Prohibiciones respetadas: 0 deletes/moves, 0 restarts, 0 push runtime, 0 ediciones `~/.openclaw`, 0 merges.
+- **Pendiente David: firma G-WH-VPS-1** (autoriza push ramas rescue + moves + worktree remove/prune) → luego G-WH-VPS-2 (30 días).

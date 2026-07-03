@@ -7,9 +7,31 @@
 | 3 | **Codex/Cursor** | hilo nuevo | [`MEGAPROMPT-notion-mcp-opportunity-audit-2026-07-02.md`](MEGAPROMPT-notion-mcp-opportunity-audit-2026-07-02.md) | 2026-07-02-005 |
 | 1 | **Copilot** | Windows | [`MEGAPROMPT-copilot-windows-graphify-pilot-f1-f4.txt`](MEGAPROMPT-copilot-windows-graphify-pilot-f1-f4.txt) | 2026-07-02-002-graphify |
 | 2 | **Cursor** | lead | [`MEGAPROMPT-cursor-capitalize-rick-voice-persona-mvp.md`](MEGAPROMPT-cursor-capitalize-rick-voice-persona-mvp.md) | 2026-07-02-004 |
+| 4 | **Copilot** | Windows (mismo hilo WH) | [`MEGAPROMPT-copilot-windows-workspace-hygiene-pass8-2026-07-03.md`](MEGAPROMPT-copilot-windows-workspace-hygiene-pass8-2026-07-03.md) | 2026-07-02-006 Pass 8 |
+
+---
+
+## Prompt 4 — Copilot Windows · Workspace Hygiene Pass 8 (mismo hilo WH)
+
+```text
+G-WH-1 ya firmado. PR #496 y #495 merged. Ejecutá Pass 8 según
+docs/ops/MEGAPROMPT-copilot-windows-workspace-hygiene-pass8-2026-07-03.md
+
+=== PREFLIGHT ===
+cd C:\GitHub\umbral-agent-stack-copilot
+git fetch origin main && git checkout main && git pull --ff-only origin main
+git log -1 --oneline   # debe incluir merge #495
+
+Clone: C:\GitHub\umbral-agent-stack-copilot
+Tu trabajo: rescates 8A/8B, verificaciones 8C, limpieza ramas 8D, cierre 8E.
+Mergeá tus PRs tras CI verde. NO archivar clones físicos. NO VPS.
+```
+
+| — | Copilot-VPS | VPS | *(post Pass 8)* [`MEGAPROMPT-copilot-vps-workspace-hygiene-audit-2026-07-02.txt`](MEGAPROMPT-copilot-vps-workspace-hygiene-audit-2026-07-02.txt) | 2026-07-02-006 VPS |
 | — | Copilot-VPS | VPS | *(done — no rehacer)* | 2026-07-02-003 |
 
 **Deuda Fase 2 voz:** [`MEGAPROMPT-rick-voice-realtime-phase2.md`](MEGAPROMPT-rick-voice-realtime-phase2.md)
+
 
 ---
 

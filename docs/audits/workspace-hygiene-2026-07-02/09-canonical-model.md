@@ -1,6 +1,6 @@
 # Pass 9 — Modelo canónico propuesto (Windows + GitHub)
 
-> **Gate: G-WH-1 (firma David).** Nada de esto se ejecuta hasta la firma. Rescates de Pass 8 van ANTES de cualquier archivado.
+> **Gate: G-WH-1 — FIRMADO 2026-07-03 por David** (vía Cursor, misma sesión post-merge #496). Rescates Pass 8 en curso. Archivado Fase A sigue bloqueado hasta cierre Pass 8 + PRs de rescate.
 
 ## Clone canónico por superficie
 
@@ -28,8 +28,8 @@ Racional: el base sigue siendo el proyecto registrado de Cursor (actividad hoy) 
 
 | IDE/superficie | Hilo | Task/PR | Próximo paso |
 |---|---|---|---|
-| Copilot Windows | **GR — Graphify F3–F4** | `2026-07-02-002` / **PR #495** | David: merge o cierre (G-GR-1 ya firmado, GO_PARTIAL S7/R6) |
-| Copilot Windows | **WH — este audit** | `2026-07-02-006` / PR de esta rama | David: revisar + G-WH-1 |
+| Copilot Windows | **GR — Graphify F3–F4** | `2026-07-02-002` / **PR #495** | ✅ merged — task 002 done |
+| Copilot Windows | **WH — Pass 8 rescates** | `2026-07-02-006` / Pass 8 | ejecutar `MEGAPROMPT-copilot-windows-workspace-hygiene-pass8-2026-07-03.md` |
 | Cursor | **RV — Rick voz capitalización** | `2026-07-02-004` | ejecutar megaprompt (no rehacer smoke VPS) |
 | Codex o Cursor | **NM — Notion MCP audit** | `2026-07-02-005` | hilo nuevo paralelo, read-only |
 | Codex | **PIT v2 contrato** | **PR #480** | David: decisión merge/cierre → luego ARCHIVAR |

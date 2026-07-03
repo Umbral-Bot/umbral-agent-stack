@@ -1,6 +1,6 @@
 # Workspace Hygiene Audit — 2026-07-02
 
-> Task `2026-07-02-006` · ejecutado por Copilot Windows · rama `copilot/workspace-hygiene-audit-2026-07-02` · **modo diagnóstico: nada borrado, nada mergeado, VPS intacta**.
+> Task `2026-07-02-006` · Copilot Windows Pass 0–11 · **PR #496 merged** · **G-WH-1 firmado 2026-07-03** · Pass 8 en curso.
 
 ## Veredicto
 
@@ -25,8 +25,8 @@ WORKSPACE_HYGIENE_AUDIT_READY | clones_windows=17 | rescue=4 | hilos_activos=5 |
 
 ## Los 5 hilos activos (MANTENER)
 
-1. **GR** Graphify F3–F4 — PR #495, decisión merge David
-2. **WH** este audit — PR abierto, gate G-WH-1
+1. **GR** Graphify — ✅ PR #495 merged, task 002 done
+2. **WH** Pass 8 rescates — `docs/ops/MEGAPROMPT-copilot-windows-workspace-hygiene-pass8-2026-07-03.md`
 3. **RV** Rick voz capitalización — Cursor, task 004
 4. **NM** Notion MCP audit — Codex/Cursor, task 005
 5. **PIT** contrato v2 — PR #480, decisión David
@@ -37,7 +37,7 @@ Todo lo demás: ARCHIVAR (detalle en Pass 9).
 
 | Gate | Decisión |
 |---|---|
-| **G-WH-1** | Aprobar modelo canónico + rescates Pass 8 + archivado Fase A (mover, no borrar) |
+| **G-WH-1** | ✅ Firmado 2026-07-03 — modelo canónico aprobado; Pass 8 autorizado |
 | **G-WH-2** | (a 30 días) borrado definitivo de lo archivado |
-| PR #495 | merge/cierre Graphify |
+| PR #495 | ✅ merged |
 | PR #480 + zombis mayo | merge/cierre según Pass 3 |

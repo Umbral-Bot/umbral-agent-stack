@@ -45,6 +45,8 @@
 
 ## 2. Flujo end-to-end
 
+> **Update 2026-06-06:** la experiencia de producción confirmada por David vive en `docs/editorial-pipeline/production-flow-v2-2026-06-06.md` (fuente de verdad de gates y canales). Resumen de cambios sobre los "Gates humanos" de abajo: **Gate 1 "Texto aprobado"** dispara generación de imágenes (Magnific) → David **elige imagen** → **Gate 2 "Autorizar publicación"** → **confirmación final por Telegram**. La edición de David en Notion es la versión final (no re-QA). Canales auto v1: LinkedIn empresa (API, `ADR-009`), Blog (Ghost), X (API de pago), Newsletter (plataforma TBD). Las restricciones "Ola 1" de §0 (no publicar) siguen vigentes hasta que la implementación de v2 esté lista y aprobada.
+
 ```
 S2 ingest → S3 promote (SQLite) → S4 push → S5 rank → S6 combine (stub/LLM)
         → S7 drafts (Notion) → S7.5 copy LinkedIn (FROZEN) → S8 image

@@ -2,7 +2,7 @@
 
 Copy-paste blocks for David. **Cursor pushes `main` before VPS prompts.**
 
-Last updated: 2026-06-03 — D6.1c blocked on VPS · D6.1d historico superado por core-first prompt pack
+Last updated: 2026-07-02 — Graphify pilot F1–F4 → Copilot Windows (VPS fuera)
 
 ---
 
@@ -40,6 +40,8 @@ Retro doc: [`d3-tournament-retro-2026-06-02.md`](d3-tournament-retro-2026-06-02.
 
 | Hilo | Superficie | Estado | Siguiente |
 |---|---|---|---|
+| **GR** | Copilot Windows | 🔴 assigned | Graphify F1–F4 — `MEGAPROMPT-copilot-windows-graphify-pilot-f1-f4.txt` |
+| **RV** | Cursor lead | 🟡 assigned | Rick voz capitalización — `MEGAPROMPT-cursor-capitalize-rick-voice-persona-mvp.md` |
 | **W** | Copilot-VPS | ✅ | `D32_WORKTREE_CLEANUP_NOOP_OK` |
 | **AA** | Copilot-VPS | ✅ | `D33_PREFLIGHT_OK` |
 | **AB** | Copilot-VPS | ✅ | `M1_D33_TOURNAMENT_PARTIAL` → rescate + judge |

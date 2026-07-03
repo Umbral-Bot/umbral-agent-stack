@@ -1,9 +1,22 @@
 # Agent Board — Umbral Agent Stack
 
-> Última actualización: 2026-06-04 por **cursor**
-> Sprint activo: **R23**
-> **Coordinación:** **Cursor** retoma el lead. Codex cerró la capitalización R23 (`2026-03-24-001`), limpió ramas/PRs `codex/*` y no dejó follow-ups nuevos de ese frente.
-> **RONDA 23 — capitalización Codex cerrada**.
+> Última actualización: 2026-07-02 por **copilot** (workspace hygiene audit)
+> Sprint activo: **workspace-hygiene** (sobre R23)
+> **Coordinación:** **Cursor** lead.
+
+## Sprint 2026-07-02 — hilos vivos
+
+| ID | Tarea | Agente | Estado |
+|----|-------|--------|--------|
+| 2026-07-02-001 | CAND-001 blog unpublish closeout | copilot | ✅ done (`CAND001_BLOG_EXAMPLE_COMPLETE`, PR #494 merged) |
+| 2026-07-02-002 | Graphify piloto F1–F4 | copilot | 🟡 GO_PARTIAL S7/R6 — **PR #495 abierto**, G-GR-1 firmado, decisión merge David |
+| 2026-07-02-003 | Rick voz TTS MVP restart+smoke (VPS) | copilot-vps | ✅ done (no rehacer) |
+| 2026-07-02-004 | Rick voz capitalización persona MVP | cursor | 🔴 assigned |
+| 2026-07-02-005 | Notion MCP opportunity audit | codex/cursor | 🔴 assigned (hilo paralelo) |
+| 2026-07-02-006 | **Workspace hygiene audit** | copilot | 🟡 `WORKSPACE_HYGIENE_AUDIT_READY` — PR abierto, gate **G-WH-1** David → `docs/audits/workspace-hygiene-2026-07-02/` |
+
+> Auditoría 006: 17 clones Windows (objetivo 5), 4 rescates, 5 hilos activos, modelo canónico propuesto (Pass 9). MEGAPROMPT VPS espejo generado sin ejecutar.
+
 
 ## Estado del sistema (actualizado 2026-03-07 — auditoría en vivo)
 

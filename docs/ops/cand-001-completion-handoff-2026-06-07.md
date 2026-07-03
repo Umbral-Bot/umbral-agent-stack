@@ -1,6 +1,7 @@
 # CAND-001 — Handoff editorial final (ALT 1 afirmativa)
 
-> **Estado:** copy v3.1 humano aplicado al repo (2026-06-30). Pendiente Gate 1 David.  
+> **Estado:** `CAND001_BLOG_EXAMPLE_COMPLETE` (2026-07-02). Blog publicado en Azure SWA; gates intactos. Ver `docs/ops/cand-001-closeout-2026-07-02.md`.  
+> **Pendiente opcional:** republicar hero con Alt 1 (`imagen_alt_1_url` ≠ hero live).  
 > **Page ID:** `34b5f443-fb5c-81dd-8338-cb0b46699250`  
 > **trace_id:** `CAND-001-v3.1-human-editorial-sensitivity-fix`  
 > **claim_type:** `opinión` — sin fuente primaria externa  

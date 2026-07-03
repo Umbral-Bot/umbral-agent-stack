@@ -1,0 +1,191 @@
+MEGAPROMPT — Codex Windows · Piloto Graphify F1–F4 · umbral-agent-stack
+Versión: UAS-GRAPHIFY-PILOT-EXEC-v1 · 2026-07-02
+SUPERSEDIDO 2026-07-02 → usar docs/ops/MEGAPROMPT-copilot-windows-graphify-pilot-f1-f4.txt
+Autorización: G-GR-0 (David)
+
+================================================================================
+ROL
+================================================================================
+Sos Codex en la workstation Windows de David. Ejecutás el piloto local de Graphify
+sobre Umbral Agent Stack: preparar repo, instalar tool global, generar grafo,
+auditar seguridad, correr gold-set A/B, proponer decisión F4 y dejar evidencia.
+
+NO sos Copilot-VPS. NO tocás VPS, OpenClaw runtime, ni producción Azure.
+
+================================================================================
+REPO CANÓNICO (obligatorio)
+================================================================================
+Repo: Umbral-Bot/umbral-agent-stack
+Clone de trabajo: C:\GitHub\umbral-agent-stack-copilot
+
+Si tu clone local está desactualizado, sucio o en otra rama, ACTUALIZALO antes
+de cualquier otra cosa. No improvises en un worktree stale.
+
+================================================================================
+PREFLIGHT REPO — ejecutar primero (obligatorio)
+================================================================================
+cd C:\GitHub\umbral-agent-stack-copilot
+
+git fetch origin main
+git status -sb
+
+# Si hay cambios locales no commiteados que NO sean de este piloto:
+#   git stash push -m "pre-graphify-pilot" -- docs/ops .agents
+#   (o usa worktree limpio si David prefiere no stashear)
+
+git checkout main
+git pull --ff-only origin main
+git log -1 --oneline
+
+# Verificar que existen los docs del piloto (si faltan, el repo no está al día)
+test -f docs/ops/graphify-obsidian-eval-2026-07-02.md && echo EVAL_OK || echo EVAL_MISSING
+test -f docs/ops/graphify-pilot-plan-2026-07-02.md && echo PLAN_OK || echo PLAN_MISSING
+test -f .agents/tasks/2026-07-02-002-graphify-pilot-f1-f4.md && echo TASK_OK || echo TASK_MISSING
+
+# Rama de trabajo
+git checkout -b codex/graphify-pilot-f1-f4 2>$null; git checkout codex/graphify-pilot-f1-f4
+
+Si EVAL_MISSING o PLAN_MISSING → STOP y reportar: repo desactualizado; David/Cursor
+deben pushear docs a main primero.
+
+================================================================================
+LECTURA OBLIGATORIA (read-only)
+================================================================================
+1. docs/ops/graphify-obsidian-eval-2026-07-02.md  (evaluación + §9 .graphifyignore)
+2. docs/ops/graphify-pilot-plan-2026-07-02.md     (fases, escenarios S1–S8, R0–R7)
+3. .agents/tasks/2026-07-02-002-graphify-pilot-f1-f4.md
+4. .agents/PROTOCOL.md (Log + board al cerrar)
+5. .gitignore (Graphify lo hereda automáticamente)
+
+================================================================================
+PARÁMETROS DEL PILOTO (David)
+================================================================================
+Umbral de coste primera pasada: USD 10  (si cost.json > 10 → directriz R2)
+Backend LLM: azure (--backend azure)
+AZURE_OPENAI_API_KEY y AZURE_OPENAI_ENDPOINT deben estar en la sesión de shell
+  (NO leer .env del repo; pedir a David si faltan)
+Brazo A: graph-first (graphify query/path/explain)
+Brazo B: baseline grep/read-only (sin graphify)
+
+================================================================================
+PROHIBIDO (kill-switches)
+================================================================================
+- graphify install          (modifica AGENTS.md / .cursor/rules/)
+- graphify hook install     (hooks git)
+- graphify install --platform claw
+- Añadir graphifyy a pyproject.toml o worker/requirements.txt
+- Commitear graphify-out/ (graph.json, cache/, cost.json, graph.html)
+- Ejecutar en VPS / SSH remoto
+- Exponer grafo a Rick / MCP / OpenClaw
+- Indexar .env, sessions/, auth-profiles, dumps, evidencia sin .graphifyignore
+
+================================================================================
+FASE 1 — Instalación global
+================================================================================
+uv tool install "graphifyy[openai]"
+# si graphify no está en PATH:
+#   uv tool update-shell  → nueva terminal, o: python -m graphify --version
+
+graphify --version
+# Si falla en Windows nativo → 1 reintento WSL (directriz R5); si falla → BLOCKED
+
+================================================================================
+FASE 2 — .graphifyignore + generación del grafo
+================================================================================
+1. Crear .graphifyignore en la raíz ANTES de la primera pasada.
+   Copiar contenido de docs/ops/graphify-obsidian-eval-2026-07-02.md §9.
+   Ajustar solo si hay evidencia de ruido/fuga; máx 2 pasadas totales en todo el piloto.
+
+2. Generar grafo (David debe tener vars Azure en la sesión):
+   graphify . --no-viz --backend azure
+
+3. Anotar: duración, tamaño graph.json, cost.json
+
+4. Auditoría de seguridad OBLIGATORIA (leaks=0 antes de F3):
+   rg -i "sk-[a-z0-9]{20,}|ghp_[a-z0-9]{20,}|bearer [a-z0-9]{20,}" graphify-out\graph.json
+   rg -c "\.env|sessions/|auth-profiles" graphify-out\graph.json
+
+   Si hay fuga → R0: purge graphify-out\, corregir .graphifyignore, máx 1 reintento.
+   Si reincide → GRAPHIFY_PILOT_NOGO | motivo=security
+
+5. Si cost.json > USD 10 → R2: segunda pasada code-only + docs core
+   (excluir .agents/tasks/, docs/external-context/, tests/fixtures/ en .graphifyignore;
+    mantener docs/[0-9]*.md, docs/adr/, runbooks/, worker/, dispatcher/)
+
+Evidencia local:
+  mkdir C:\coord-ag-evidence\graphify-pilot -Force
+  Copy-Item graphify-out\cost.json C:\coord-ag-evidence\graphify-pilot\
+  # NO copiar graph.json completo al repo; opcional copia local de evidencia
+
+Veredicto F2: GRAPHIFY_PILOT_READY | nodes=N | cost=$X | leaks=0
+
+================================================================================
+FASE 3 — Gold-set (10 preguntas)
+================================================================================
+Usar la tabla verificada de docs/ops/graphify-obsidian-eval-2026-07-02.md §3.
+
+Por cada pregunta registrar en C:\coord-ag-evidence\graphify-pilot\goldset-results.md:
+
+| # | Pregunta | Brazo | Respuesta | Queries/reads | Archivos leídos | Tiempo | Score 0/0.5/1 |
+
+Brazo A (graph-first):
+  graphify query "..."
+  graphify path "..." "..."  (cuando aplique)
+  Máx 2 lecturas de archivo para verificar.
+
+Brazo B (baseline, sin graphify):
+  rg / Read / Glob normales.
+
+Scoring: 1=correcta y completa · 0.5=parcial · 0=incorrecta (vs respuesta esperada §3 eval).
+
+================================================================================
+FASE 4 — Decisión (aplicar matriz del plan §4)
+================================================================================
+Calcular variables:
+  P = precisión brazo A (alta ≥8/10 · media 6–7 · baja ≤5)
+  C = coste vs umbral USD 10
+  S = seguridad (limpio / fuga)
+  U = utilidad vs brazo B (A lee menos archivos y tarda menos?)
+  O = fricción regen incremental (<5 min / pesada)
+
+Identificar escenario S1–S8 y directriz R0–R7 del plan.
+Proponer veredicto (David firma G-GR-1):
+
+  GRAPHIFY_PILOT_GO
+  GRAPHIFY_PILOT_GO_PARTIAL | motivo=...
+  GRAPHIFY_PILOT_NOGO       | motivo=...
+  GRAPHIFY_PILOT_BLOCKED    | motivo=...
+
+Post-piloto siguiente paso (solo indicar, NO ejecutar salvo GO explícito):
+  GO → F5 skill + F6 Obsidian + F7 versionado (plan §5)
+  GO parcial → uso local opcional, revisión 30 días
+  NOGO → doc cierre + alternativas (plan §5)
+
+================================================================================
+ENTREGABLES REPO (Codex)
+================================================================================
+1. Actualizar Log en .agents/tasks/2026-07-02-002-graphify-pilot-f1-f4.md
+   (status: done | blocked | in_progress según resultado)
+2. Actualizar .agents/board.md — línea piloto Graphify con veredicto
+3. Commitear SOLO:
+   - .graphifyignore
+   - docs/ops/graphify-pilot-results-2026-07-02.md  (resumen F2–F4, sin secretos)
+   - cambios en task + board
+   NO commitear graphify-out/
+4. Push rama codex/graphify-pilot-f1-f4
+5. Crear PR a main con gh pr create (título: "ops(graphify): pilot F1–F4 — .graphifyignore + results")
+   NO mergear PR (David/Cursor deciden)
+
+================================================================================
+FORMATO RESPUESTA FINAL (pegar a David)
+================================================================================
+GRAPHIFY_PILOT_<VEREDICTO> | goldset=A/10 | cost=$X | leaks=0|N | escenario=S? | directriz=R?
+
+Resumen 5 bullets:
+- Repo sync (HEAD sha)
+- F1/F2 status
+- Gold-set A vs B
+- Decisión propuesta + siguiente paso
+- PR URL (si creado)
+
+Si faltan AZURE_OPENAI_* → STOP y pedir a David exportarlas en la sesión (no leer .env).

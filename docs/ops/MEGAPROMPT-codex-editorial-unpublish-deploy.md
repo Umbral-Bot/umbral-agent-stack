@@ -4,16 +4,16 @@
 > **Clone Windows:** `C:\GitHub\umbral-agent-stack-copilot`  
 > **NO usar:** `C:\GitHub\_wt\*`, `umbral-agent-stack-codex-coordinador`, `umbral-bot-*`
 
-## Estado (2026-07-02)
+## Estado (2026-07-02) — CERRADO
 
 | Item | Estado |
 |------|--------|
-| Rama | `codex/feat-editorial-unpublish` → PR [#494](https://github.com/Umbral-Bot/umbral-agent-stack/pull/494) |
+| PR [#494](https://github.com/Umbral-Bot/umbral-agent-stack/pull/494) | ✅ **merged** → `main` @ `1660538` |
 | Deploy Function prod | ✅ |
-| Fixture smoke eliminado | ✅ (`index.json` solo CAND-001) |
-| CAND-001 intacto | ✅ SWA 200 |
+| Fixture smoke eliminado | ✅ (`criterios-de-aceptacion-antes-de-automatizar-bim` → 404) |
+| CAND-001 intacto | ✅ SWA 200 — único post en índice |
 | Evidencia | `C:\coord-ag-evidence\cand-001-unpublish-fixture\` |
-| Merge main | ⏳ pendiente (revisar CI PR #494) |
+| Bitácora | `docs/ops/cand-001-closeout-2026-07-02.md` |
 
 ## Prompt de arranque (pegar en Codex)
 

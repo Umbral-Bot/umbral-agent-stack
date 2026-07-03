@@ -30,10 +30,12 @@ Rick **no publica automáticamente** en v1 a LinkedIn ni X. El human-in-the-loop
 
 ---
 
+> **Update 2026-06-06:** dos puntos de esta sección quedaron superados por el flujo confirmado en `docs/editorial-pipeline/production-flow-v2-2026-06-06.md`: (1) **LinkedIn Company Page pasa a in-scope** vía API (ver `ADR-009`); (2) **X pasa a publicación automática vía API** (David confirma tier de pago). El proveedor visual primario pasa a **Magnific** (ver `ADR-006` update). La publicación LinkedIn objetivo es **cuenta empresa**, no perfil personal.
+
 ## 3. Fuera de alcance v1
 
-- Publicación a LinkedIn Company Page (requiere CMA + entidad legal).
-- Publicación directa a X vía API (diferido a v2; v1 es asistida).
+- ~~Publicación a LinkedIn Company Page (requiere CMA + entidad legal).~~ **Movido a in-scope (2026-06-06, ADR-009).**
+- ~~Publicación directa a X vía API (diferido a v2; v1 es asistida).~~ **Movido a in-scope automático (2026-06-06, requiere API de pago).**
 - Blog en Astro + Git + Cloudflare Pages (objetivo futuro; v1 usa Ghost).
 - Cross-post a Hashnode (posible en v2 con `canonicalUrl`).
 - Radar de noticias reactivas (UA-05 — no priorizado).
@@ -148,6 +150,13 @@ El tracking mínimo de publicación por canal se registra inline en `Publicacion
 ---
 
 ## 6. Estados y gates
+
+> **Update 2026-06-06 (superado por v2):** la experiencia confirmada redefine los gates. Ver `docs/editorial-pipeline/production-flow-v2-2026-06-06.md`. Cambios clave:
+> - **Gate 1 = "Texto aprobado"** dispara la generación de imágenes (Magnific); **Gate 2 = "Autorizar publicación"** habilita la confirmación final por Telegram.
+> - **La edición de David en Notion es la verdad final**: editar el texto **NO** invalida la aprobación (se reemplaza la regla previa "si David comenta/edita, vuelve a `ready_for_review`"). Se publica exactamente lo que quedó en Notion.
+> - Entre Gate 1 y Gate 2 se intercala la **selección de imagen** por David.
+> - La publicación efectiva requiere **confirmación final por Telegram** ("ok publica") además de los gates.
+> El diagrama de estados de abajo queda como referencia histórica de v1.
 
 ```
 draft

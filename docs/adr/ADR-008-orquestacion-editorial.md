@@ -4,6 +4,8 @@
 
 Accepted — 2026-04-21
 
+> **Update 2026-06-06:** sin cambios en la arquitectura core/bordes/lab. Cambia el **alcance de canales auto v1** según `docs/editorial-pipeline/production-flow-v2-2026-06-06.md`: LinkedIn **cuenta empresa** vía API (`ADR-009`), Blog (Ghost), **X automático vía API de pago** (deja de ser "manual v1"), y Newsletter (plataforma TBD). La restricción "no usar nodo LinkedIn directo de n8n; usar HTTP Request con versión explícita" sigue vigente.
+
 ## Contexto
 
 El sistema editorial de Rick necesita coordinar un flujo multi-step: generación de borradores, revisión humana (HITL), scheduling, publicación multi-canal, alertas de auth expiry, y webhooks entrantes. La investigación UA-14 evaluó tres arquitecturas posibles: Make como core, n8n como core, y Agent Stack core + n8n como capa de bordes.

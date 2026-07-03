@@ -1,0 +1,150 @@
+MEGAPROMPT — Codex Windows · CAND-001 Fase 6 · publicación blog-only (blob + smoke SWA)
+
+Superficie: Codex en Windows (Azure CLI + PowerShell). NO Copilot. NO VPS Rick. NO LinkedIn/X. NO Telegram.
+
+═══════════════════════════════════════════════════════════════
+CONTEXTO
+═══════════════════════════════════════════════════════════════
+
+CAND-001 · Notion page 34b5f443-fb5c-81dd-8338-cb0b46699250
+URL: https://www.notion.so/CAND-001-Automatizar-sin-gobernanza-escala-el-desorden-34b5f443fb5c81dd8338cb0b46699250
+
+trace_id canónico: CAND-001-v3.1-human-editorial-sensitivity-fix
+Gate 1 (aprobado_contenido): David ya marcó Sí
+Gate imagen: David ya eligió alt en Selección imagen
+Gate 2 (autorizar_publicacion): DEBE permanecer false — ejemplo manual blog-only
+
+Objetivo: publicar SOLO el blog a steditorialprod + smoke en SWA staging.
+Veredicto esperado: CAND001_BLOG_PUBLISH_COMPLETE
+
+═══════════════════════════════════════════════════════════════
+REPOS (preparados por Cursor — usar SOLO estos)
+═══════════════════════════════════════════════════════════════
+
+1) Ejecución (copy + publish scripts):
+   C:\GitHub\_wt\cand001-f6-agent-stack
+   Detached @ 6d492d7 (main remoto, limpio)
+   Canónico: evals/editorial/cand-001-final-copy.yaml
+
+2) Contrato SPA /noticias (solo lectura):
+   C:\GitHub\_wt\cand001-f6-blog
+   Detached @ origin/main 21a8bd7
+
+NO USAR (sucios o desactualizados):
+   C:\GitHub\umbral-agent-stack-codex-coordinador  (127 commits behind, dirty)
+   C:\GitHub\umbral-bot-copilot                     (rama dirty)
+   C:\GitHub\umbral-bot-codex-clean                (rama feature dirty)
+
+Alternativa aceptable si _wt no existe: C:\GitHub\umbral-agent-stack-copilot @ main 6d492d7
+
+═══════════════════════════════════════════════════════════════
+PREFLIGHT (bloqueante — no publicar si falla)
+═══════════════════════════════════════════════════════════════
+
+Azure:
+[ ] az account show → dm@umbralbim.cl
+[ ] func-umbral-editorial-prod = Running (rg-umbral-agents-prod)
+[ ] steditorialprod en rg-umbral-agents-prod (eastus2) — NO rg-umbral-prod-centralus
+[ ] CDN index.json 200:
+    https://steditorialprod.blob.core.windows.net/editorial-posts/index.json
+[ ] SWA /noticias 200:
+    https://zealous-ground-0ef6aa910.7.azurestaticapps.net/noticias
+
+Notion read-back (NOTION_API_KEY, MCP Notion, o pedir a David):
+[ ] aprobado_contenido = true
+[ ] autorizar_publicacion = false  ← NO TOCAR
+[ ] Selección imagen = Alt N (anotar número)
+[ ] Estado imagen = Seleccionada
+[ ] Visual asset URL = HTTPS directa (blob/CDN), NO link UI app.magnific.com
+[ ] Copy Blog = v3.1 (si difiere del YAML, Notion gana)
+
+Si Visual asset URL no es HTTPS directa → STOP (CAND001_BLOG_PUBLISH_BLOCKED).
+
+═══════════════════════════════════════════════════════════════
+RUTA DE PUBLICACIÓN
+═══════════════════════════════════════════════════════════════
+
+NO usar worker.tasks.editorial_publish — hard gate autorizar_publicacion=true.
+
+Usar POST directo a Azure Function (ADR-010):
+  Runbook: docs/ops/azure-editorial-blog-runbook.md
+  Script:  scripts/smoke-publish-editorial-post.ps1
+
+Function URL:
+  https://func-umbral-editorial-prod.azurewebsites.net/api/publish-editorial-post
+
+Function key:
+  az functionapp function keys list -g rg-umbral-agents-prod -n func-umbral-editorial-prod --function-name publish_editorial_post -o tsv --query default
+
+WORKER_TOKEN (obligatorio en prod):
+  az functionapp config appsettings list -g rg-umbral-agents-prod -n func-umbral-editorial-prod --query "[?name=='WORKER_TOKEN'].value" -o tsv
+  Exportar a $env:WORKER_TOKEN en la sesión — NO pegar en chat, logs ni commits.
+
+═══════════════════════════════════════════════════════════════
+PAYLOAD (schema_version 1)
+═══════════════════════════════════════════════════════════════
+
+slug: automatizar-sin-gobernanza-escala-el-desorden
+title: Automatizar sin gobernanza escala el desorden
+excerpt: primera frase del blog o bajada Notion (≤200 chars)
+body_markdown: Copy Blog Notion (verdad) o evals/editorial/cand-001-final-copy.yaml
+hero_image_url: Visual asset URL de Notion
+author: David Moreira
+published_at: ISO UTC (ej. 2026-06-29T15:00:00Z)
+notion_page_id: 34b5f443-fb5c-81dd-8338-cb0b46699250
+tags: ["BIM", "IA", "Gobernanza", "Coordinación"]
+canonical_url: omitir → Function usa https://umbralbim.io/noticias/{slug}
+
+content_hash: sha256(title + NUL + excerpt + NUL + body_markdown)
+  (smoke script lo calcula si falta)
+
+Crear: scripts/editorial/fixture-post-cand001-live.json
+Dry-run: ./scripts/smoke-publish-editorial-post.ps1 -FixturePath scripts/editorial/fixture-post-cand001-live.json -PrintOnly
+
+═══════════════════════════════════════════════════════════════
+EJECUCIÓN
+═══════════════════════════════════════════════════════════════
+
+cd C:\GitHub\_wt\cand001-f6-agent-stack
+
+$env:EDITORIAL_BLOG_FUNCTION_URL = "https://func-umbral-editorial-prod.azurewebsites.net/api/publish-editorial-post"
+$env:EDITORIAL_BLOG_FUNCTION_KEY = "<az keys list>"
+# $env:WORKER_TOKEN = "<si app setting existe>"
+
+New-Item -ItemType Directory -Force -Path C:\coord-ag-evidence\cand-001-fase6-blog
+./scripts/smoke-publish-editorial-post.ps1 -FixturePath scripts/editorial/fixture-post-cand001-live.json `
+  2>&1 | Tee-Object C:\coord-ag-evidence\cand-001-fase6-blog\publish.log
+
+Post-publish:
+[ ] ok=true, blob posts/automatizar-sin-gobernanza-escala-el-desorden.json
+[ ] index.json tiene 2 slugs (fixture + CAND-001)
+[ ] Blob JSON público 200
+[ ] SWA lista + detalle 200 (URLs arriba)
+
+Notion write-back (solo URL, sin gates):
+[ ] published_url / URL blog = published_url devuelto
+[ ] Comentario: trace_id + slug + hero URL
+[ ] autorizar_publicacion sigue false
+
+═══════════════════════════════════════════════════════════════
+EVIDENCIA
+═══════════════════════════════════════════════════════════════
+
+C:\coord-ag-evidence\cand-001-fase6-blog\
+  publish.log
+  fixture-post-cand001-live.json
+  index-after.json
+  smoke-swa-noticias.txt
+  notion-readback.json
+
+═══════════════════════════════════════════════════════════════
+VEREDICTO (una línea)
+═══════════════════════════════════════════════════════════════
+
+OK:
+  CAND001_BLOG_PUBLISH_COMPLETE | slug=automatizar-sin-gobernanza-escala-el-desorden | swa=200 | notion_url_written=yes | gates_intact=yes
+
+BLOCK:
+  CAND001_BLOG_PUBLISH_BLOCKED | reason=<bloqueo> | next=<acción>
+
+Prohibido: LinkedIn/X, autorizar_publicacion, merge PR, git pull sobre worktrees sucios.

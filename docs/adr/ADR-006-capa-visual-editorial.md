@@ -4,6 +4,12 @@
 
 Proposed — 2026-04-21 (actualizado con hallazgos UA-13)
 
+> **Update 2026-06-06 (supersede parcial):** David confirmó **Magnific** (vía MCP, suscripción propia) como proveedor visual primario para imágenes de la pieza, en reemplazo de Vertex AI `gemini-3-pro-image-preview` / Freepik como capa AI principal. La decisión de proveedor primario de las secciones "Capa 1" y "Capa 2" queda **superada** por esto. Se mantienen sin cambios: el principio **API-first**, la regla **anti-AI-slop**, la **Capa 3 determinista** (diagramas/screenshots/charts) y el **HITL** para publicación.
+>
+> **Capacidad confirmada (MCP docs 2026-06-06):** `images_generate` genera desde texto; `images_upscale` mejora assets existentes. Setup operativo: `docs/ops/magnific-editorial-setup-2026-06-06.md`. OAuth Magnific pendiente de primera conexión en browser.
+>
+> Flujo y posición de las imágenes en el pipeline: ver `docs/editorial-pipeline/production-flow-v2-2026-06-06.md` (las imágenes se generan **tras el Gate 1 "texto aprobado"** y se suben a Notion para que David elija una antes del Gate 2).
+
 ## Contexto
 
 El sistema editorial de Rick necesita generar assets visuales para cada pieza publicada: portadas, imágenes con texto, iconografía, diagramas, screenshots. La investigación UA-11 evaluó Nano Banana Pro (Gemini 3 Pro Image de Google) y Freepik como opciones, incluyendo pricing, capacidades, licencias y riesgos.

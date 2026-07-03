@@ -85,3 +85,16 @@ Post-merge #496 + #495:
 - **#504 MERGED** (canonical-untracked): auditoría schema editorial 2026-06-16 (reubicada a `docs/audits/`, hallazgo crítico `audience_stage` spec vs código) + specs PIT broker v2/v3 (`pit_spec_validate.py` → pass ×2, completan serie v1–v4; ejemplos ejecutables del contrato #480).
 - CI verde (3.11+3.12) en los 3 PRs antes de merge. Ramas `rescue/copilot-vps/*` originales intactas en origin (limpieza = decisión David post-verificación).
 - **Pendiente David:** G-WH-VPS-2 (30 días) · borrar ramas rescue origin tras verificar · PR #480 + zombis mayo.
+
+### [copilot-vps] 2026-07-03 — G-WH-VPS-1 Fase B ejecutada (archivado post-rescate)
+
+`VPS_ARCHIVE_FASE_B_DONE | archived=9 | worktrees_removed=3(+1 prune) | mb_freed=~43_deleted+879_archived | stashes_listed=24 | branches_remaining=101`
+
+- **Refspec** persistido en canónico (`+refs/heads/*`) + fetch --prune → 243 refs; VPS-P2-2 ✅.
+- **Worktrees removidos** (pre-verificados clean, ramas locales conservan commits): lane-sqlite-impl, lane-lane-a, lane-lane-b + dirs vacíos 434/d35 + prune `/tmp/lane-b-clean`. ⚠️ Hallazgo: rama remota `lane-lane-b` fue borrada en origin post-audit → rama local @ 63e9111 es ahora único respaldo (entra al triage R-V5).
+- **Archivados 9 paths (~879 MB) a `~/archive/uas/`** con manifest `WHY.md`: 3 clones (backup 456M, cursor 390M, cand001-apply 33M) + 6 worktrees rick/* vía `git worktree move` (tips == origin re-verificados). Home queda con solo el canónico.
+- **R-V3 completado durante guards** (los PRs #502–504 no lo cubrían): `rescue/copilot-vps/editorial-contract-paths-canonical-2026-07` @ 5a6b7aa + `…-backup-2026-07` @ 18cdc48.
+- **Colisión pull resuelta**: 4 PIT specs locales byte-idénticos a main (#504) → apartados a /tmp; `00_auditoria` local idéntico al relocado en docs/audits/ → único untracked restante, borrable (decisión David).
+- Prohibiciones: canónico/rick-vps/workspaces OpenClaw intactos · 24 stashes solo listados · 0 restarts (gateway timestamp original, worker 200).
+- Detalle completo: `docs/audits/workspace-hygiene-vps-2026-07-03/04-rescue-and-canonical.md` §F.
+- **Pendiente David:** G-WH-VPS-2 (≥30 días, borrado archive) · triage R-V5 (24 stashes + 101 ramas) · drift OpenClaw (VPS-P1-2) · audit `origin/rick/vps` (VPS-P1-3).

@@ -46,3 +46,7 @@ Arranque O1. Preflight OK (`main@ccf9529`), rama `copilot/feat-notion-mcp-o1-gat
 ## Handoff Fase 0 — rotación tokens VPS (para Copilot-VPS / David)
 
 Ejecutar en VPS según megaprompt `NOTION-MCP-O1-v1` §FASE 0 (backup env → tokens nuevos en Notion web → editar `~/.config/openclaw/env` → `systemctl --user daemon-reload && systemctl --user restart openclaw-worker-vps openclaw-dispatcher openclaw-gateway` → smoke `curl http://127.0.0.1:8088/health` + `scripts/smoke_test.py` → grep `ntn_` en `~/.openclaw/agents/*/sessions/*.jsonl` y redactar líneas → evidencia en `~/.coord-ag-evidence/notion-token-rotation-2026-07-03.md`, sin tokens). Revocar tokens viejos SOLO tras smoke verde.
+
+### [copilot] 2026-07-03 13:10 — QW-2 re-run (megaprompt NOTION-MCP-QW2-RERUN-v1)
+
+Paso A negativo: las tools `notion-API-*` siguen **no disponibles en la sesión del agente** (último tool-change notice 12:47 las lista como removidas; sin re-alta posterior). Veredicto se mantiene: **`QW2_SMOKE_BLOCKED` (host)** — 0 llamadas, sin resultados inventados, STOP según megaprompt. Evidencia actualizada con tabla de intentos, pasos VS Code precisados (`MCP: List Servers` → server Running → **reiniciar sesión del agente** para re-inyectar tools) y plantilla "Resultado live" lista para el próximo re-run. Cambios appendeados a **PR #513** (aún OPEN — un solo PR para O1, opción permitida por el megaprompt).

@@ -1,4 +1,8 @@
-"""Read raw comments from Notion API directly."""
+"""Read raw comments from Notion API directly.
+
+NOTE (QW-3, O1 2026-07-03): legacy-ok. Para lecturas ad-hoc nuevas de Notion
+usar el MCP del IDE, no clonar este patrón — ver docs/ops/notion-mcp-ide-surface.md.
+"""
 import os, sys, httpx, json
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 

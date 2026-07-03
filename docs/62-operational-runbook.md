@@ -577,6 +577,8 @@ Runbook completo: [runbooks/runbook-vm-openclaw-node.md](../runbooks/runbook-vm-
 | `~/.config/openclaw/env` | Variables de entorno (secretos) | VPS only |
 | `~/.config/umbral/ops_log.jsonl` | Log de operaciones (append-only) | VPS only |
 
+**Entrega Telegram post-torneo PIT (PIT-TG-DRIVE):** al cierre de un torneo de producto, el deck ejecutivo `.pptx` se genera desde el outcome report y se sube a la carpeta Google Drive compartida Rick↔David (`GOOGLE_DRIVE_*` en `~/.config/openclaw/env`); Rick envía por Telegram **solo el link** (`webViewLink`), nunca el archivo adjunto. Setup OAuth, smoke y troubleshooting en [`docs/ops/pit-telegram-drive-deliverables-runbook.md`](ops/pit-telegram-drive-deliverables-runbook.md).
+
 ---
 
 ## 9. Contactos y escalación

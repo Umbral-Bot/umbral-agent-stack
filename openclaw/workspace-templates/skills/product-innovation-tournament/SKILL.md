@@ -269,6 +269,7 @@ Doc operativa: [`docs/ops/pit-p5-broker-enforce-20260622.md`](../../../../docs/o
 | Preflight P5 incompleto (P2/P3 · #481-483 · P4 · validate) | STOP — no spawn de lanes broker |
 | `copilot_cli.run` falla en una lane | lane `blocked`, sin fallback a proveedor directo |
 | Señal sintética sin etiquetar | STOP — labeled es obligatorio |
+| Pedido de adjuntar el `.pptx` por Telegram | STOP — v1 entrega SOLO link Drive (PIT-TG-DRIVE); sin Drive → fallback texto + MC hint |
 | Sesión nested sin `sessions_spawn` | STOP — ISSUE-001 / G-D1b (igual que D3) |
 
 ---
@@ -276,9 +277,61 @@ Doc operativa: [`docs/ops/pit-p5-broker-enforce-20260622.md`](../../../../docs/o
 ## Post-torneo
 
 1. Outcome report → `pit/<pit_id>/outcome/pit_outcome_report.yaml`.
-2. Handoff mejora continua (improvement-supervisor) — propuestas documentadas, **no** auto-merge de prompts: [`pit-handoff-mejora-continua.md`](../../../../docs/ops/pit-handoff-mejora-continua.md).
-3. Archivar: mover `pit/<pit_id>/` → `archive/<pit_id>/` (lo hace Rick).
-4. Índice de procesos + checklist PIT-7: [`pit-process-index.md`](../../../../docs/ops/pit-process-index.md).
+2. **Entrega Telegram** (deck ejecutivo en Drive) → sección siguiente.
+3. Handoff mejora continua (improvement-supervisor) — propuestas documentadas, **no** auto-merge de prompts: [`pit-handoff-mejora-continua.md`](../../../../docs/ops/pit-handoff-mejora-continua.md).
+4. Archivar: mover `pit/<pit_id>/` → `archive/<pit_id>/` (lo hace Rick).
+5. Índice de procesos + checklist PIT-7: [`pit-process-index.md`](../../../../docs/ops/pit-process-index.md).
+
+---
+
+## Entrega Telegram post-torneo (PIT-TG-DRIVE)
+
+Tras judge + outcome report + gate David (winner cerrado, `david_gate` ≠ pending):
+
+1. Rick (o el operador) corre el deliver pack contra el vault:
+
+   ```bash
+   python scripts/pit/pit_deliver_telegram_pack.py --pit-id <pit_id>   # --dry-run para validar sin Drive
+   ```
+
+   El script construye el deck (`pit/<pit_id>/deliverables/<pit_id>-outcome-deck.pptx`,
+   builder [`pit_build_outcome_deck.py`](../../../../scripts/pit/pit_build_outcome_deck.py)),
+   lo sube a la carpeta Drive compartida Rick↔David (Worker task
+   `google_drive.upload_file`) y escribe
+   `pit/<pit_id>/deliverables/telegram_pack.json` con `summary_lines[]` listos.
+   Veredicto: `PIT_DELIVER_PACK_OK | drive_url=…` (setup en
+   [`pit-telegram-drive-deliverables-runbook.md`](../../../../docs/ops/pit-telegram-drive-deliverables-runbook.md)).
+
+2. Rick envía por Telegram la plantilla fija (≤12 líneas + link Drive — formato
+   ejecutivo de [`queue-002 §9`](../../../../docs/ops/pit-tournament-queue-002-sharepoint-acc-umbral-bim.md)):
+
+   ```text
+   TORNEO PIT · <pit_id>
+   Estado: cerrado · Winner: <lane_id> · Fulfillment: <score>
+   Resumen:
+   • <1 línea problema>
+   • <N lanes> · budget <spent>/<budget> USD (estimado)
+   • KPI clave: <kpi_id> <achieved> vs <expected> <unit>
+   • Aprendizaje: <1 validated o refuted>
+   Deck ejecutivo (Google Drive):
+   <web_view_link>
+   Preview prototipos (PC + túnel): scripts/ops/pit-judge-open.ps1 → /pit/judge/<pit_id>
+   Detalle vault: pit/<pit_id>/outcome/pit_outcome_report.yaml
+   ```
+
+3. Rick registra la entrega en el outcome (`deliverables:` — `drive_deck_url`,
+   `drive_file_id`, `telegram_sent_at`).
+
+Reglas duras:
+
+- **NUNCA** `sendDocument`/`sendPhoto` del `.pptx` por Telegram en v1 — solo el link Drive.
+- Si Drive no está configurado (`PIT_DELIVER_PACK_FAIL | reason=drive_not_configured`):
+  fallback texto + MC judge hint (comportamiento actual). Rick **no inventa** links.
+- Si el upload falla: reportar `PIT_DELIVER_PACK_FAIL` + motivo; sin link no hay mensaje "con deck".
+- El deck va SOLO a `GOOGLE_DRIVE_PIT_FOLDER_ID` (carpeta compartida); el prototipo HTML
+  sigue en túnel + Mission Control — nunca URL pública.
+
+---
 
 ## Referencias
 

@@ -34,6 +34,10 @@ docs = [
     "python-pptx>=0.6.23",
     "openpyxl>=3.1.0",
 ]
+drive = [
+    "google-api-python-client>=2.100.0,<3.0.0",
+    "google-auth-oauthlib>=1.0.0,<2.0.0",
+]
 test = [
     "pytest>=9.0.3",
     "pygments>=2.20.0,<3.0.0",
@@ -58,7 +62,7 @@ aeco-kb = [
     "azure-storage-blob>=12.19.0,<13.0.0",
 ]
 all = [
-    "umbral-agent-stack[browser,docs,test,youtube,discovery,aeco-kb]",
+    "umbral-agent-stack[browser,docs,test,youtube,discovery,aeco-kb,drive]",
     "weasyprint>=61.0",
 ]
 

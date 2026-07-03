@@ -59,6 +59,14 @@ fulfillment_decision:
   next_step: <archive | iterate-new-pit | fulfillment-track>
   notes: "<decisión David>"
 
+deliverables:
+  # Entrega Telegram post-torneo (PIT-TG-DRIVE) — completar tras el deliver pack.
+  # El deck vive en pit/<pit_id>/deliverables/<pit_id>-outcome-deck.pptx; por
+  # Telegram va SOLO el link Drive (nunca el .pptx adjunto).
+  drive_deck_url: null           # webViewLink devuelto por google_drive.upload_file
+  drive_file_id: null
+  telegram_sent_at: null         # <YYYY-MM-DDTHH:MM> cuando Rick envió el resumen
+
 template_saved:
   # Si David dijo "guarda como plantilla PIT <nombre>".
   saved: false

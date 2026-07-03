@@ -18,6 +18,7 @@
 | 6 | **KPI + fulfillment** | [pit-kanban-kpi-protocol.md](pit-kanban-kpi-protocol.md) §2–§3 | Hipótesis ↔ KPI; `kpi_pack.json` por iteración ([schema](../../openclaw/workspace-templates/pit-vault/templates/kpi-pack.schema.json)); fórmula 0–1 ejecutable (`compute_fulfillment`) |
 | 7 | **Visual Magnific 4:3** | [pit-visual-magnific.md](pit-visual-magnific.md) + [umbral-bim-magnific-visual-style-v1.md](umbral-bim-magnific-visual-style-v1.md) | Default `4:3` canónico Umbral; gate columna Prototype; sin autopublicación |
 | 8 | **Cierre de lane y torneo** | SKILL §Cierre + [pit-kanban-kpi-protocol.md](pit-kanban-kpi-protocol.md) §4 | `PROTOTYPE_URL=` + `KPI_PACK=` + `FULFILLMENT=` verificables; judge ≥2 lanes completas; gate David; [`pit_outcome_report.yaml`](../../openclaw/workspace-templates/pit-vault/templates/pit_outcome_report.yaml) |
+| 8b | **Entrega Telegram** (deck Drive) | [pit-telegram-drive-deliverables-runbook.md](pit-telegram-drive-deliverables-runbook.md) + SKILL §Entrega Telegram | Post-outcome: `pit_deliver_telegram_pack.py` → deck `.pptx` en `pit/<pit_id>/deliverables/` → upload a carpeta Drive compartida Rick↔David → Rick manda **solo el link** por Telegram (≤12 líneas; nunca el archivo) |
 | 9 | **Plantillas** | SKILL §Plantillas | "guarda como plantilla PIT `<nombre>`" → `templates/pit-<nombre>.yaml`; budget e iteraciones se re-preguntan SIEMPRE al reusar |
 | 10 | **Archive** | [pit-vault-layout.md](pit-vault-layout.md) §2 | Rick mueve `pit/<pit_id>/` → `archive/<pit_id>/` al cierre; las lanes nunca |
 | 11 | **Capitalización** (mejora continua) | [pit-handoff-mejora-continua.md](pit-handoff-mejora-continua.md) | `improvement_handoff.proposals[]` → improvement-supervisor → PR con gate humano; sin auto-merge |
@@ -31,6 +32,7 @@
 - `python scripts/pit/pit_vault_check.py --vault-path <vault> --require-write-scope` — vault sano (con `PIT_VAULT_WRITE_SCOPE=pit`).
 - `bash scripts/pit/pit_tournament_dry_run.sh examples/pit-salud-mental-pilot.yaml` — smoke PIT-2 local (sin OpenClaw); veredicto `PIT_DRY_RUN_PASS` en `~/.coord-ag-evidence/pit-dry-run/<pit_id>/final-metrics.json`.
 - `bash scripts/pit/pit_tournament_run.sh <spec.yaml> <lanes.yaml> --gate "ok, arranca" [--plan-only]` — torneo real PIT-2b post-smoke (`--plan-only` valida sin spawn); veredicto `PIT_RUN_*` en `~/.coord-ag-evidence/pit-run/<pit_id>/run-metrics.json`.
+- `python scripts/pit/pit_deliver_telegram_pack.py --pit-id <pit_id> [--dry-run]` — entrega post-torneo (paso 8b): deck + upload Drive + `telegram_pack.json`; veredicto `PIT_DELIVER_PACK_OK|DRY_OK|FAIL`.
 - `WORKER_TOKEN=test python -m pytest tests/test_pit_spec_validate.py tests/test_pit_vault_check.py tests/test_pit_runner_tasks.py tests/test_pit_dry_run.py tests/test_pit_tournament_run.py -q` — contratos verdes en CI/local.
 
 ---

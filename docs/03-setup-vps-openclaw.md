@@ -52,6 +52,8 @@ chmod 600 ~/.config/openclaw/env
 
 ### Unit systemd con EnvironmentFile
 
+> **Excepción documentada (verificada 2026-07-03):** en la VPS actual, la unit del gateway carga **además** `~/.openclaw/gateway.systemd.env` (contiene `NOTION_API_KEY`). Al rotar tokens Notion hay que actualizar ese archivo **y** `~/.config/openclaw/env` — ver topología completa en [runbook operacional §1.4.1](62-operational-runbook.md).
+
 ```ini
 # ~/.config/systemd/user/openclaw-gateway.service
 [Unit]

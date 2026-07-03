@@ -1,7 +1,7 @@
 # Agent Board — Umbral Agent Stack
 
-> Última actualización: 2026-07-02 por **copilot** (workspace hygiene audit)
-> Sprint activo: **workspace-hygiene** (sobre R23)
+> Última actualización: 2026-07-03 por **cursor** (post-merge #496 + G-WH-1)
+> Sprint activo: **workspace-hygiene Pass 8** + Graphify #495 + Rick voz 004 + Notion MCP 005
 > **Coordinación:** **Cursor** lead.
 
 ## Sprint 2026-07-02 — hilos vivos
@@ -9,14 +9,13 @@
 | ID | Tarea | Agente | Estado |
 |----|-------|--------|--------|
 | 2026-07-02-001 | CAND-001 blog unpublish closeout | copilot | ✅ done (`CAND001_BLOG_EXAMPLE_COMPLETE`, PR #494 merged) |
-| 2026-07-02-002 | Graphify piloto F1–F4 | copilot | 🟡 GO_PARTIAL S7/R6 — **PR #495 abierto**, G-GR-1 firmado, decisión merge David |
+| 2026-07-02-002 | Graphify piloto F1–F4 | copilot | 🟡 GO_PARTIAL S7/R6 — **PR #495** merge conflict resolviendo, G-GR-1 firmado |
 | 2026-07-02-003 | Rick voz TTS MVP restart+smoke (VPS) | copilot-vps | ✅ done (no rehacer) |
 | 2026-07-02-004 | Rick voz capitalización persona MVP | cursor | 🔴 assigned |
 | 2026-07-02-005 | Notion MCP opportunity audit | codex/cursor | 🔴 assigned (hilo paralelo) |
-| 2026-07-02-006 | **Workspace hygiene audit** | copilot | 🟡 `WORKSPACE_HYGIENE_AUDIT_READY` — PR abierto, gate **G-WH-1** David → `docs/audits/workspace-hygiene-2026-07-02/` |
+| 2026-07-02-006 | **Workspace hygiene audit** | copilot | 🟡 **PR #496 merged** — G-WH-1 firmado → Pass 8 rescates + VPS handoff |
 
-> Auditoría 006: 17 clones Windows (objetivo 5), 4 rescates, 5 hilos activos, modelo canónico propuesto (Pass 9). MEGAPROMPT VPS espejo generado sin ejecutar.
-
+> Auditoría 006: 17 clones Windows (objetivo 5), 4 rescates, 5 hilos activos. MEGAPROMPT VPS listo post-main.
 
 ## Estado del sistema (actualizado 2026-03-07 — auditoría en vivo)
 
@@ -36,12 +35,42 @@
 | VM SSH/WinRM | ❌ Puertos 22/5985 cerrados — solo :8088 abierto |
 | Cuotas Redis | ❌ Vacías — Dispatcher no despacha exitosamente |
 
+## Editorial CAND-001 — Cerrado (2026-07-02)
+
+| ID | Tarea | Agente | Estado |
+|----|-------|--------|--------|
+| — | Unpublish endpoint + eliminar fixture smoke | codex | ✅ PR [#494](https://github.com/Umbral-Bot/umbral-agent-stack/pull/494) merged; fixture `criterios-de-aceptacion-antes-de-automatizar-bim` → 404 |
+| — | Fase 6 blog CAND-001 manual (SWA + Notion URL) | codex/cursor | ✅ slug `automatizar-sin-gobernanza-escala-el-desorden` live |
+| 2026-07-02-001 | Closeout bitácora + verificación gates | cursor | ✅ done |
+
+**Veredicto:** `CAND001_BLOG_EXAMPLE_COMPLETE` — doc `docs/ops/cand-001-closeout-2026-07-02.md`
+
+**Deferido (no bloquea cierre):** republicar hero **Alt 1** (live = Alt 2 `7d3b9a`; Notion `Selección imagen` = Alt 1).
+
+**Siguiente frente:** CAND-004+ pipeline source-driven — prompt Rick en `docs/ops/cand-full-pipeline-next-2026-06-07.md`.
+
+---
+
+## Rick voz MVP (2026-07-02)
+
+| ID | Tarea | Agente | Estado |
+|----|-------|--------|--------|
+| 2026-07-02-003 | Push-to-talk Telegram STT/TTS + fallbacks + persona VPS | copilot-vps | ✅ done (runtime) |
+| 2026-07-02-004 | Capitalizar templates/runbook/governance sync VOICE.md | cursor | assigned |
+
+**MEGAPROMPT capitalización:** `docs/ops/MEGAPROMPT-cursor-capitalize-rick-voice-persona-mvp.md`  
+**Deuda Fase 2:** `docs/ops/MEGAPROMPT-rick-voice-realtime-phase2.md` (gpt-realtime + Tailscale web; NO TG bot)
+
+---
+
 ## Trabajo vivo
 
 Regularización `UMB-132` (2026-03-22): se cerraron task files históricos que habían quedado `assigned` o `blocked` pese a corresponder a rondas cerradas o diagnósticos archivados. La coordinación activa queda reducida a las tareas realmente vivas.
 
 | ID | Tarea | Agente | Estado |
 |----|-------|--------|--------|
+| 2026-07-02-005 | Auditoría Notion MCP oficial — gaps y oportunidades vs UAS | codex | assigned |
+| 2026-07-02-002 | Piloto Graphify F1–F4 — **`GO_PARTIAL` FIRMADO G-GR-1** (goldset A 8/10 vs B 9.5/10, S7/R6; uso local opcional, revisión 30d) — done al mergear PR #495 | copilot | review |
 | 2026-03-09-002 | Recomendaciones Cursor para orquestacion y politica de ejecucion de Rick | cursor | assigned |
 | 2026-03-22-001 | Diagnóstico env Rick vs local — Codex define canónicos | codex | ✅ done |
 | 2026-03-22-002 | Super diagnóstico exhaustivo del sistema | codex | ✅ done (PR #126) |
@@ -490,6 +519,13 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 
 ## 2026-06-01-003 — D2.1 + D2.2 [DONE / D22_OK]
 - Skill synced VPS; dry-run OK. Pendiente: gh auth + G-D1b manual.
+
+## 2026-07-02 — CAND-001 blog-only + unpublish editorial [DONE]
+- Codex: `POST /api/unpublish-editorial-post` + deploy prod; smoke eliminó fixture `criterios-de-aceptacion-antes-de-automatizar-bim`.
+- PR #494 merged `main` @ `1660538` (unpublish + YAML Perplexity §3 interno).
+- CAND-001 blog live SWA; gates Notion intactos; closeout `docs/ops/cand-001-closeout-2026-07-02.md`.
+- Task: `.agents/tasks/2026-07-02-001-cand001-blog-unpublish-closeout.md`.
+- Abierto: hero Alt 1 vs Alt 2 en blob (republicación opcional).
 
 ## 2026-06-01-003 — D2.1: skill multi-agent-tournament-orchestrator [DONE]
 - G-D1b: `main`/standalone — `docs/architecture/tournament-protocol.md`.

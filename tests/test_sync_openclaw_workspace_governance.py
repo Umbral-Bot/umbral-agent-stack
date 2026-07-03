@@ -32,6 +32,9 @@ def test_governance_source_prefers_agent_override(tmp_path):
     (repo_root / "openclaw" / "workspace-templates" / "HEARTBEAT.md").write_text(
         "template\n", encoding="utf-8"
     )
+    (repo_root / "openclaw" / "workspace-templates" / "VOICE.md").write_text(
+        "voice\n", encoding="utf-8"
+    )
     override = repo_root / "openclaw" / "workspace-agent-overrides" / "rick-ops" / "HEARTBEAT.md"
     override.write_text("override\n", encoding="utf-8")
 
@@ -52,6 +55,7 @@ def test_build_sync_plan_uses_template_for_main_and_detects_changes(tmp_path):
     overrides_dir.mkdir(parents=True)
     (template_dir / "BOOTSTRAP.md").write_text("boot-template\n", encoding="utf-8")
     (template_dir / "HEARTBEAT.md").write_text("main-heartbeat\n", encoding="utf-8")
+    (template_dir / "VOICE.md").write_text("voice\n", encoding="utf-8")
     (overrides_dir / "HEARTBEAT.md").write_text("ops-heartbeat\n", encoding="utf-8")
     (repo_root / "openclaw" / "workspace-agent-overrides" / "rick-ops" / "BOOTSTRAP.md").write_text(
         "ops-boot\n", encoding="utf-8"
@@ -102,6 +106,7 @@ def test_build_sync_plan_includes_bootstrap_only_when_requested(tmp_path):
     template_dir.mkdir(parents=True)
     (template_dir / "BOOTSTRAP.md").write_text("boot\n", encoding="utf-8")
     (template_dir / "HEARTBEAT.md").write_text("heartbeat\n", encoding="utf-8")
+    (template_dir / "VOICE.md").write_text("voice\n", encoding="utf-8")
 
     home = tmp_path / "home"
     _seed_workspace_root(
@@ -122,7 +127,10 @@ def test_build_sync_plan_includes_bootstrap_only_when_requested(tmp_path):
         repo_root=repo_root, home=home, include_bootstrap=True
     )
 
-    assert all(entry.filename == "HEARTBEAT.md" for entry in default_plan)
+    assert all(
+        entry.filename in ("HEARTBEAT.md", "VOICE.md") for entry in default_plan
+    )
+    assert any(entry.filename == "VOICE.md" and entry.agent_id == "main" for entry in default_plan)
     assert any(entry.filename == "BOOTSTRAP.md" for entry in bootstrap_plan)
 
 
@@ -136,6 +144,7 @@ def test_apply_sync_plan_creates_backup_for_modified_targets(tmp_path):
     template_dir.mkdir(parents=True)
     (template_dir / "BOOTSTRAP.md").write_text("boot\n", encoding="utf-8")
     (template_dir / "HEARTBEAT.md").write_text("heartbeat\n", encoding="utf-8")
+    (template_dir / "VOICE.md").write_text("voice\n", encoding="utf-8")
 
     for agent in [
         "rick-delivery",
@@ -183,6 +192,7 @@ def test_build_sync_plan_includes_communication_director_workspace(tmp_path):
     template_dir = repo_root / "openclaw" / "workspace-templates"
     template_dir.mkdir(parents=True)
     (template_dir / "HEARTBEAT.md").write_text("heartbeat\n", encoding="utf-8")
+    (template_dir / "VOICE.md").write_text("voice\n", encoding="utf-8")
 
     communication_dir = (
         repo_root
@@ -220,3 +230,38 @@ def test_build_sync_plan_includes_communication_director_workspace(tmp_path):
     assert communication_entry.target == (
         home / ".openclaw/workspaces/rick-communication-director/HEARTBEAT.md"
     )
+
+
+def test_build_sync_plan_includes_voice_md_for_main_only(tmp_path):
+    module = _load_script_module(
+        "sync_openclaw_workspace_governance_voice",
+        "scripts/sync_openclaw_workspace_governance.py",
+    )
+    repo_root = tmp_path / "repo"
+    template_dir = repo_root / "openclaw" / "workspace-templates"
+    template_dir.mkdir(parents=True)
+    (template_dir / "HEARTBEAT.md").write_text("heartbeat\n", encoding="utf-8")
+    (template_dir / "VOICE.md").write_text("voice-persona\n", encoding="utf-8")
+
+    home = tmp_path / "home"
+    _seed_workspace_root(
+        home,
+        [
+            ".openclaw/workspace",
+            ".openclaw/workspaces/rick-delivery",
+            ".openclaw/workspaces/rick-ops",
+            ".openclaw/workspaces/rick-orchestrator",
+            ".openclaw/workspaces/rick-qa",
+            ".openclaw/workspaces/rick-communication-director",
+            ".openclaw/workspaces/rick-tracker",
+        ],
+    )
+
+    plan = module.build_sync_plan(repo_root=repo_root, home=home)
+
+    main_voice = next(
+        entry for entry in plan if entry.agent_id == "main" and entry.filename == "VOICE.md"
+    )
+    assert main_voice.source == template_dir / "VOICE.md"
+    assert main_voice.target == home / ".openclaw/workspace/VOICE.md"
+    assert not any(entry.filename == "VOICE.md" and entry.agent_id != "main" for entry in plan)

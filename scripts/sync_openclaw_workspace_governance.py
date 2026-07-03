@@ -2,8 +2,8 @@
 Sync canonical OpenClaw workspace governance files into live VPS workspaces.
 
 This script is intended to run inside the VPS checkout after `git pull`.
-It syncs persistent workspace governance files (`HEARTBEAT.md`, and per-agent
-`IDENTITY.md` / `ROLE.md` when overrides exist) into the canonical OpenClaw
+It syncs persistent workspace governance files (`HEARTBEAT.md`, `VOICE.md` for Rick Main,
+and per-agent `IDENTITY.md` / `ROLE.md` when overrides exist) into the canonical OpenClaw
 workspaces, applying per-agent overrides where present and writing backups for
 replaced files.
 
@@ -29,6 +29,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 TEMPLATE_DIR = REPO_ROOT / "openclaw" / "workspace-templates"
 OVERRIDES_DIR = REPO_ROOT / "openclaw" / "workspace-agent-overrides"
 DEFAULT_FILES = ("HEARTBEAT.md",)
+# Bootstrap persona files synced only into Rick Main workspace (~/.openclaw/workspace).
+MAIN_ONLY_TEMPLATE_FILES = ("VOICE.md",)
 # Sync only when an agent-specific override exists (avoid pushing template IDENTITY to all workspaces).
 OVERRIDE_ONLY_FILES = ("IDENTITY.md", "ROLE.md")
 WORKSPACES = {
@@ -104,6 +106,29 @@ def build_sync_plan(
                     content_changed=content_changed,
                 )
             )
+
+        if agent_id == "main":
+            for filename in MAIN_ONLY_TEMPLATE_FILES:
+                source = repo_root / "openclaw" / "workspace-templates" / filename
+                if not source.exists():
+                    raise FileNotFoundError(f"Missing governance source: {source}")
+                target = target_dir / filename
+                target_exists = target.exists()
+                content_changed = True
+                if target_exists:
+                    content_changed = source.read_text(encoding="utf-8") != target.read_text(
+                        encoding="utf-8"
+                    )
+                plan.append(
+                    SyncEntry(
+                        agent_id=agent_id,
+                        filename=filename,
+                        source=source,
+                        target=target,
+                        target_exists=target_exists,
+                        content_changed=content_changed,
+                    )
+                )
 
     return plan
 

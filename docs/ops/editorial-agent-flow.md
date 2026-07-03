@@ -115,6 +115,9 @@ Default output should be concise:
 - LinkedIn medium by default: 180-260 words;
 - compressed version required if the draft exceeds 300 words without explicit reason;
 - X copy should be direct and not try to summarize everything.
+- for thesis-led posts, frame the problem first as review, deliverable, observations, decision, or process before dropping into `modelo BIM`;
+- avoid consultant-language formulas such as `criterio operativo`, `capacidad tecnologica`, `umbrales`, or formulaic closings like `amplificar la confusion` unless there is a strong reason to keep them;
+- prefer one central idea over market panorama or extra sub-arguments.
 
 ## Communication Director Responsibility
 
@@ -123,8 +126,10 @@ Default output should be concise:
 It may:
 
 - improve first paragraph coherence;
+- force context-before-BIM sequencing when the draft enters too fast into a technical object;
 - remove bare sector labels such as `AEC/BIM` when they sound unnatural;
 - replace abstract phrases with operational scenes;
+- prune repeated nucleus words and over-written closings;
 - tighten the closing cadence;
 - convert repeated human feedback into persistent calibration rules.
 
@@ -140,6 +145,8 @@ It must check:
 - claim strength;
 - unsupported AEC/BIM generalizations;
 - length policy;
+- abrupt technical entry (`modelo BIM`) without prior process framing;
+- repeated nucleus words and consultant-like abstractions;
 - artificial or generic voice;
 - gates remain false;
 - Notion remains `Borrador`;
@@ -168,6 +175,7 @@ As of this document:
 - `rick-aec-context-curator` is a proposed responsibility, not necessarily a runtime agent.
 - The AEC/BIM framing responsibility should first be documented under `rick-editorial` or as a new skill before creating another runtime agent.
 - Notion updates remain operator/human controlled and must keep candidates in `Borrador`.
+- In the current repo state, first-pass LinkedIn behavior is still effectively shaped by the source payload plus generic LinkedIn skills (`linkedin-content`, `linkedin-david`) and then tightened by `rick-communication-director`. Do not assume a dedicated runtime writer exists unless separately verified live.
 
 ## Implementation Decision Rules
 

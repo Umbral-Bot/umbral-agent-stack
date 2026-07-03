@@ -93,8 +93,18 @@ These rules block `voice: pass`. QA does not rewrite — it marks `blocked_for_v
 
 - If the opening uses `AEC/BIM` as a generic sectoral label without an operational scene, voice cannot be `pass`. Acceptable alternatives: `sector AEC`, `industria de la construccion`, `equipos BIM`, or `En AEC` when immediately connected to a concrete scene.
 - If the first paragraph announces a thesis but does not connect it to a recognizable AEC/BIM scene within the first two sentences, voice cannot be `pass`.
+- If the piece jumps directly into `modelo BIM` before framing the issue as process, review, deliverable, observation, or team decision, voice cannot be `pass` unless the whole piece is explicitly technical from line 1.
 - If `nivel de coordinacion` appears as an abstract concept without an observable condition (e.g., `que queda resuelto`, `que interferencia se acepta`), voice cannot be `pass`.
 - If any abstraction from the editorial blacklist appears without operational grounding in AEC/BIM, voice cannot be `pass`.
+- If the copy relies on consultant-sounding formulas such as `capacidad tecnologica`, `criterio operativo`, `umbrales`, or `amplificar la confusion/el desorden` without necessity or grounding, voice cannot be `pass`.
+
+### Length and density rules
+
+These rules block the overall editorial verdict even if source safety is fine.
+
+- If a LinkedIn post reads like a mini-article, opens subthemes that are not needed for the central thesis, or exceeds the documented medium range without justification, QA must return `pass_with_changes` or `blocked_for_voice`.
+- If the same nucleus word is repeated enough to make the text sound written rather than spoken, QA must flag it explicitly and avoid `voice: pass`.
+- If a broad adoption or market claim is presented in categorical language where conditional wording would be safer, QA must downgrade the verdict.
 
 QA must not rewrite the copy to fix these issues. QA blocks and returns to `rick-communication-director` with the specific rule violated.
 

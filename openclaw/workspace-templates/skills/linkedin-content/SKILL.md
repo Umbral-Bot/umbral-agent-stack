@@ -190,6 +190,18 @@ Antes de publicar cualquier post verificar:
 - **Primera persona real:** "En OXXO Chile hice X" > "Las empresas deben hacer X"
 - **Sin conclusion generica:** No terminar con "espero que les sirva" o "reflexionemos"
 
+## Reglas para LinkedIn editorial source-driven
+
+Cuando el post venga de una premisa editorial y no de un caso propio:
+
+- tesis clara desde la apertura;
+- contexto general primero: revision, entregable, observaciones, decision, proceso;
+- ejemplos BIM despues: modelo BIM, observacion, entregable, reporte;
+- una sola idea central;
+- evitar tono de consultoria, paper o informe;
+- evitar claims de mercado si no agregan valor o no tienen soporte claro;
+- comprimir si el texto se va a formato miniarticulo.
+
 ## Templates de Post
 
 ### Post corto (caso real, <300 palabras)
@@ -218,4 +230,15 @@ Lo que cambiaria: [leccion honesta].
 [Lista de puntos con saltos de linea]
 
 [Cierre: aplicacion practica para el lector]
+```
+
+### Post editorial source-driven (<220 palabras)
+```
+[Tesis clara en 1-2 lineas]
+
+[Contexto de proceso: revision, entregable, observaciones, decision]
+
+[2-4 ejemplos operativos reconocibles]
+
+[Cierre corto: riesgo o pregunta util]
 ```

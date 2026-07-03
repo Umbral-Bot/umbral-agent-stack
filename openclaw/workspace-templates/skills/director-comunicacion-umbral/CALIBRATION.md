@@ -76,3 +76,30 @@ Este archivo absorbe feedback humano recurrente sobre voz, apertura, naturalidad
 - **Razon:** feedback humano v3.1; tono respetuoso con el lector y precision AEC sin sobreprometer capacidades del agente.
 - **Cuando aplica:** blog y piezas largas de opinion operativa AEC/BIM.
 - **Cuando no aplica:** citas textuales de fuente externa.
+
+### CAL-008 — Contexto antes de `modelo BIM` (rescate coordinador 2026-05-30, renumerado ex CAL-005)
+
+- **Patron observado:** La pieza entra demasiado rapido en `modelo BIM` y parece saltarse el problema general de revision, entregables, observaciones o decision.
+- **Ejemplo rechazado:** `Cuando un equipo todavia no tiene claro si un modelo BIM esta listo para revision...`
+- **Ejemplo preferido:** `Cuando un equipo todavia no tiene claro si algo esta listo para revision...` y despues bajar a `modelo BIM`, observacion o entregable dentro del desarrollo.
+- **Razon:** David suele enmarcar primero el problema como forma de trabajo o criterio de revision, y luego aterrizarlo en escenas BIM. Si el texto tecnifica demasiado pronto, suena escrito y estrecha la entrada.
+- **Cuando aplica:** Posts LinkedIn o X donde la tesis trata de proceso, revision, entregables o decisiones de equipo.
+- **Cuando no aplica:** Piezas estrictamente tecnicas cuyo tema central es el modelo BIM desde la primera linea.
+
+### CAL-009 — Frases formuladas que suenan a consultoria (rescate coordinador 2026-05-30, renumerado ex CAL-006)
+
+- **Patron observado:** El texto usa frases tecnicamente entendibles pero poco naturales para voz David.
+- **Ejemplo rechazado:** `capacidad tecnologica`, `criterio operativo explicito`, `umbrales`, `amplificar la confusion`.
+- **Ejemplo preferido:** `la herramienta`, `reglas de revision`, `cuando aceptar`, `cuando devolver`, `puede acelerar un problema mal definido`.
+- **Razon:** Estas formulas condensan la tesis, pero suenan mas a framework que a alguien hablando desde operacion BIM.
+- **Cuando aplica:** Siempre que la pieza dependa de una de estas frases para sostener la tesis.
+- **Cuando no aplica:** Si la frase aparece citada, delimitada como termino tecnico, o respaldada por una fuente concreta que justifique mantenerla.
+
+### CAL-010 — Longitud y densidad de post LinkedIn (rescate coordinador 2026-05-30, renumerado ex CAL-007)
+
+- **Patron observado:** El texto se vuelve miniarticulo: abre bien, pero sigue explicando la tesis demasiado tiempo.
+- **Ejemplo rechazado:** abrir, ejemplificar, abrir un frente de tendencia de mercado y cerrar repitiendo la misma idea.
+- **Ejemplo preferido:** tesis clara, una escena operativa, 2-4 ejemplos reconocibles, cierre corto.
+- **Razon:** Cuando el texto se alarga, pierde ritmo movil y empieza a sonar ensamblado.
+- **Cuando aplica:** Posts de LinkedIn awareness o trust.
+- **Cuando no aplica:** Blog, newsletter o piezas tecnicas largas con estructura propia.

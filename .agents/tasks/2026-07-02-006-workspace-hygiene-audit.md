@@ -108,3 +108,14 @@ Post-merge #496 + #495:
 - **Kept=5 canónicos intactos:** base (Cursor lead), -copilot, -codex-coordinador, -claude, -antigravity (congelado). `backup/local-untracked-2026-04-29` y `graphify-out/` no tocados.
 - Post-move verificado: `C:\GitHub` solo contiene los 5 canónicos + 3 dirty bloqueados bajo patrón `umbral-agent*`; `copilot-worktrees\umbral-agent-stack\` vacío (prune del padre pendiente, opcional).
 - **Pendiente David:** G-WH-2 (≥30 días, borrado de `_archive\uas\`) · decidir rescate de los 3 dirty bloqueados · PRs #480 + zombis mayo.
+
+### [copilot] 2026-07-03 — Cierre Fase A: triage 3 dirty + hallazgo estructural codex (autorizado David)
+
+`WINDOWS_FASE_A_COMPLETE | moved_extra=2 | rescued_audits=NO | codex=KEEP-reclasificado`
+
+- **cand001-v31 → MOVIDO** a `_archive\uas\`: `_patch_blog_prompt.py` verificado one-shot ya aplicado en main (`prompts/rick/blog-copy-system.md:27` §Sensibilidad editorial) → descartado, dirty=0. Era linked worktree del base (commits preservados en object store del base + rama pushed).
+- **_wt-editorial-pr-492 → MOVIDO** a `_archive\uas\`: `PR_BODY.md` artefacto de sesión, PRs #492/#494 confirmados MERGED vía gh → descartado, dirty=0. Linked worktree del base (idem preservación).
+- **codex → dirty triageado 14→0 pero NO MOVIDO — reclasificado KEEP.** Hallazgo durante el move (lock persistente → bisect de handles): el canónico `-codex-coordinador` es linked worktree cuyo `.git` real vive en `codex\.git\worktrees\umbral-agent-stack-main-review`, y codex registra ~26 worktrees más de Codex CLI (`~/.codex/worktrees/*`, procesos vivos = origen del lock). Archivar codex + G-WH-2 destruiría la historia git del coordinador (KEEP con 16 dirty de rescate pendiente per Pass 1). Triage aplicado: 10 modified Granola V1 `git checkout -- .` (superseded Pass 8) + 4 audits night-watch `git clean -fd` — los 4 verificados en main con igualdad EOL-normalizada (delta solo CRLF/LF; rescued_audits=NO).
+- **WHY.md actualizado**: 2 filas nuevas movidos, sección "NO archivado — reclasificado KEEP" para codex, notas de worktrees.
+- Estado final workspace: `C:\GitHub` = 5 canónicos + codex (KEEP estructural) + forge; `_archive\uas\` = 15 paths + WHY.md.
+- **Pendiente David:** G-WH-2 (≥30 días) · **nueva tarea**: desenredar codex→coordinador (`git worktree repair`/re-clone coordinador standalone) para poder re-archivar codex · PRs #480 + zombis mayo.

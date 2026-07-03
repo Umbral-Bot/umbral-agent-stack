@@ -8,10 +8,11 @@
 WORKSPACE_HYGIENE_AUDIT_READY | clones_windows=17 | rescue=4 | hilos_activos=5 | canonical_proposed=YES
 WORKSPACE_HYGIENE_PASS8_DONE  | rescue_base_pr=#498 (merged) | rescue_coord_pr=#499 (merged) | branches_cleaned=13
 WINDOWS_ARCHIVE_FASE_A_DONE   | moved=13 | kept=5 | dirty_blocked=3 | archive=C:\GitHub\_archive\uas
+WINDOWS_FASE_A_COMPLETE       | moved_extra=2 | codex=KEEP (padre git del coordinador) | rescued_audits=NO (ya en main)
 ```
 
-> **Estado final 2026-07-03:** G-WH-1 firmado · Pass 8A–8E ejecutados · task 006 **done** · VPS Fase B ejecutada · **Windows Fase A ejecutada** (13 clones/worktrees movidos a `C:\GitHub\_archive\uas\` con `WHY.md`; 3 bloqueados por dirty: `-codex`, `-cand001-v31`, `_wt-editorial-pr-492`).
-> Pendiente David: G-WH-2 (borrado a 30 días), rescate/decisión de los 3 dirty bloqueados, PRs zombis mayo.
+> **Estado final 2026-07-03:** G-WH-1 firmado · Pass 8A–8E ejecutados · task 006 **done** · VPS Fase B ejecutada · **Windows Fase A COMPLETA**: 15 paths en `C:\GitHub\_archive\uas\` con `WHY.md`; los 3 dirty triageados a 0 con autorización David; `-codex` reclasificado **KEEP** — es el object store padre del canónico `-codex-coordinador` (su `.git` vive en `codex\.git\worktrees\`), archivarlo + G-WH-2 destruiría la historia del coordinador.
+> Pendiente David: G-WH-2 (borrado a 30 días), desenredo codex→coordinador (repair a standalone) antes de re-archivar codex, PRs zombis mayo.
 
 ## Índice
 

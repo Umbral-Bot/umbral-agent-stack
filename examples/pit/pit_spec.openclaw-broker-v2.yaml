@@ -1,0 +1,75 @@
+# PIT spec v2 — P10 OpenClaw broker-real probe (readiness template, NOT executed).
+#
+# Three ephemeral OpenClaw lane agents (pit-openclaw-broker-v2-lane-*), each
+# dispatching exactly ONE Worker task `copilot_cli.run` (P4 broker contract) as a
+# read-only `research` probe. Closes the gap between PIT-2b (spawns Rick, the
+# product agent) and P9 (broker proven via direct worker POSTs, openclaw_total=0):
+# here the *agents* issue the broker call, so the token ledger shows
+# openclaw_total>0 once they actually run (Fase 8, David GO required).
+#
+# Validate with:
+#   python scripts/pit/pit_spec_validate.py examples/pit/pit_spec.openclaw-broker-v2.yaml
+#
+# Plan-only / dry-run keep gates CLOSED. Spawning for real requires David's
+# explicit GO to open L3 (execute) + L4 (egress) for a bounded window plus the
+# `openclaw` binary on PATH (/home/rick/.npm-global/bin). See
+# docs/ops/pit-p10-openclaw-broker-runbook.md.
+schema_version: 2
+pit_id: pit-openclaw-broker-v2
+title: P10 OpenClaw broker-real probe
+repo_path: /home/rick/umbral-agent-stack
+budget_usd_total: 90.0
+
+lanes:
+  # Each model slug is in config/tool_policy.yaml -> copilot_cli.allowed_models.
+  # mission: research = read_repo + summarize + explain + cite_files (read-only).
+  # max_iterations: 1 = exactly one broker dispatch per lane.
+  - lane_id: lane-foundry-tools
+    model: gpt-5.5
+    reasoning_effort: high
+    mission: research
+    max_iterations: 1
+  - lane_id: lane-codex-depth
+    model: claude-opus-4.7
+    reasoning_effort: xhigh
+    mission: research
+    max_iterations: 1
+  - lane_id: lane-cost-mini
+    model: gpt-5.4-mini
+    reasoning_effort: medium
+    mission: research
+    max_iterations: 1
+
+# Logical secret names only — never values. The copilot_cli sandbox receives NO
+# secrets; WORKER_TOKEN (the worker's own auth) is always denied to the sandbox.
+secrets_scope:
+  allow: []
+  deny:
+    - WORKER_TOKEN
+    - NOTION_API_KEY
+    - GITHUB_TOKEN
+    - OPENAI_API_KEY
+
+broker_contract:
+  required_task: copilot_cli.run
+  forbid_direct_llm_repo_analysis: true
+
+# P10-specific: how the runner orchestrates the ephemeral OpenClaw agents.
+#   enabled:      true  -> broker run path (vs v1 product tournament)
+#   spawn_from:   main_standalone -> only the standalone `main` session exposes
+#                 sessions_spawn (ISSUE-001 / G-D1b); nested sessions cannot spawn.
+#   collect_mode: broker_announce -> a lane is complete when its announce.md has
+#                 BROKER_EXECUTED=true AND BROKER_EXIT=0 AND broker_result.json exists.
+openclaw_orchestration:
+  enabled: true
+  spawn_from: main_standalone
+  collect_mode: broker_announce
+
+notes: >-
+  P10 broker-real probe. Every lane routes its single read-only repo analysis
+  through worker copilot_cli.run; a lane that cannot reach the broker is marked
+  blocked, never a silent fallback to a direct LLM provider. Three distinct
+  allowed model slugs (gpt-5.5, claude-opus-4.7, gpt-5.4-mini) compare
+  cost/quality under the broker contract. Success signal is openclaw_total>0 in
+  the token ledger (per-lane ephemeral agent sessions), which P9 could not
+  produce with direct worker POSTs.

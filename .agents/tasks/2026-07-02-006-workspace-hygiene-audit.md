@@ -98,3 +98,13 @@ Post-merge #496 + #495:
 - Prohibiciones: canónico/rick-vps/workspaces OpenClaw intactos · 24 stashes solo listados · 0 restarts (gateway timestamp original, worker 200).
 - Detalle completo: `docs/audits/workspace-hygiene-vps-2026-07-03/04-rescue-and-canonical.md` §F.
 - **Pendiente David:** G-WH-VPS-2 (≥30 días, borrado archive) · triage R-V5 (24 stashes + 101 ramas) · drift OpenClaw (VPS-P1-2) · audit `origin/rick/vps` (VPS-P1-3).
+
+### [copilot] 2026-07-03 — G-WH-1 Fase A Windows ejecutada (archivado clones, NO borrado)
+
+`WINDOWS_ARCHIVE_FASE_A_DONE | moved=13 | kept=5 | dirty_blocked=3 | pr=este`
+
+- **Movidos 13 paths a `C:\GitHub\_archive\uas\`** con `Move-Item` (cero `Remove-Item`, G-WH-2 respetado) + manifest `WHY.md` (tabla path | rama | HEAD | motivo | fecha): config, codex-pit-v2-contract, copilot-fresh, p2c-egress-repo, pit-closure, pit-p3, pit-p5, pit-p6, pit-readiness, pit-p10, y 3 worktrees `umbralbim-*` (didactic-fortnight, legendary-dollop, stunning-fiesta — cherry vs origin/main = `-` re-verificado en vivo).
+- **Dirty-check por clone antes de cada move** (doble: batch + re-check inline). **3 bloqueados, NO movidos:** `-codex` (dirty=14, trabajo Granola sin commitear: 10 modified worker/scripts/tests + 4 audits night-watch untracked), `-cand001-v31` (dirty=1, `_patch_blog_prompt.py` — ya verificado en Pass 8C como aplicado en main, pero se respeta la regla dirty>0=STOP), `_wt-editorial-pr-492` (dirty=1, `PR_BODY.md`, upstream gone).
+- **Kept=5 canónicos intactos:** base (Cursor lead), -copilot, -codex-coordinador, -claude, -antigravity (congelado). `backup/local-untracked-2026-04-29` y `graphify-out/` no tocados.
+- Post-move verificado: `C:\GitHub` solo contiene los 5 canónicos + 3 dirty bloqueados bajo patrón `umbral-agent*`; `copilot-worktrees\umbral-agent-stack\` vacío (prune del padre pendiente, opcional).
+- **Pendiente David:** G-WH-2 (≥30 días, borrado de `_archive\uas\`) · decidir rescate de los 3 dirty bloqueados · PRs #480 + zombis mayo.

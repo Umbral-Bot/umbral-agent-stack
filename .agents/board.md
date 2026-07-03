@@ -1,9 +1,8 @@
 # Agent Board — Umbral Agent Stack
 
-> Última actualización: 2026-06-04 por **cursor**
-> Sprint activo: **R23**
-> **Coordinación:** **Cursor** retoma el lead. Codex cerró la capitalización R23 (`2026-03-24-001`), limpió ramas/PRs `codex/*` y no dejó follow-ups nuevos de ese frente.
-> **RONDA 23 — capitalización Codex cerrada**.
+> Última actualización: 2026-07-02 por **cursor**  
+> Sprint activo: **Editorial CAND-001 cerrado** → siguiente: **CAND-004+ pipeline** (ver `docs/ops/cand-full-pipeline-next-2026-06-07.md`)  
+> **Coordinación:** **Cursor** lead. Codex entregó unpublish editorial (PR #494 merged); CAND-001 blog-only ejemplo completo.
 
 ## Estado del sistema (actualizado 2026-03-07 — auditoría en vivo)
 
@@ -23,12 +22,42 @@
 | VM SSH/WinRM | ❌ Puertos 22/5985 cerrados — solo :8088 abierto |
 | Cuotas Redis | ❌ Vacías — Dispatcher no despacha exitosamente |
 
+## Editorial CAND-001 — Cerrado (2026-07-02)
+
+| ID | Tarea | Agente | Estado |
+|----|-------|--------|--------|
+| — | Unpublish endpoint + eliminar fixture smoke | codex | ✅ PR [#494](https://github.com/Umbral-Bot/umbral-agent-stack/pull/494) merged; fixture `criterios-de-aceptacion-antes-de-automatizar-bim` → 404 |
+| — | Fase 6 blog CAND-001 manual (SWA + Notion URL) | codex/cursor | ✅ slug `automatizar-sin-gobernanza-escala-el-desorden` live |
+| 2026-07-02-001 | Closeout bitácora + verificación gates | cursor | ✅ done |
+
+**Veredicto:** `CAND001_BLOG_EXAMPLE_COMPLETE` — doc `docs/ops/cand-001-closeout-2026-07-02.md`
+
+**Deferido (no bloquea cierre):** republicar hero **Alt 1** (live = Alt 2 `7d3b9a`; Notion `Selección imagen` = Alt 1).
+
+**Siguiente frente:** CAND-004+ pipeline source-driven — prompt Rick en `docs/ops/cand-full-pipeline-next-2026-06-07.md`.
+
+---
+
+## Rick voz MVP (2026-07-02)
+
+| ID | Tarea | Agente | Estado |
+|----|-------|--------|--------|
+| 2026-07-02-003 | Push-to-talk Telegram STT/TTS + fallbacks + persona VPS | copilot-vps | ✅ done (runtime) |
+| 2026-07-02-004 | Capitalizar templates/runbook/governance sync VOICE.md | cursor | assigned |
+
+**MEGAPROMPT capitalización:** `docs/ops/MEGAPROMPT-cursor-capitalize-rick-voice-persona-mvp.md`  
+**Deuda Fase 2:** `docs/ops/MEGAPROMPT-rick-voice-realtime-phase2.md` (gpt-realtime + Tailscale web; NO TG bot)
+
+---
+
 ## Trabajo vivo
 
 Regularización `UMB-132` (2026-03-22): se cerraron task files históricos que habían quedado `assigned` o `blocked` pese a corresponder a rondas cerradas o diagnósticos archivados. La coordinación activa queda reducida a las tareas realmente vivas.
 
 | ID | Tarea | Agente | Estado |
 |----|-------|--------|--------|
+| 2026-07-02-005 | Auditoría Notion MCP oficial — gaps y oportunidades vs UAS | codex | assigned |
+| 2026-07-02-002 | Piloto Graphify F1–F4 — F3–F4 ✅ Copilot Windows: **`GO_PARTIAL` propuesto** (goldset A 8/10 vs B 9.5/10, S7/R6) — pendiente firma G-GR-1 David | copilot | review |
 | 2026-03-09-002 | Recomendaciones Cursor para orquestacion y politica de ejecucion de Rick | cursor | assigned |
 | 2026-03-22-001 | Diagnóstico env Rick vs local — Codex define canónicos | codex | ✅ done |
 | 2026-03-22-002 | Super diagnóstico exhaustivo del sistema | codex | ✅ done (PR #126) |
@@ -477,6 +506,13 @@ Multi-modelo real: Worker habla con Gemini + OpenAI + Anthropic, Dispatcher enru
 
 ## 2026-06-01-003 — D2.1 + D2.2 [DONE / D22_OK]
 - Skill synced VPS; dry-run OK. Pendiente: gh auth + G-D1b manual.
+
+## 2026-07-02 — CAND-001 blog-only + unpublish editorial [DONE]
+- Codex: `POST /api/unpublish-editorial-post` + deploy prod; smoke eliminó fixture `criterios-de-aceptacion-antes-de-automatizar-bim`.
+- PR #494 merged `main` @ `1660538` (unpublish + YAML Perplexity §3 interno).
+- CAND-001 blog live SWA; gates Notion intactos; closeout `docs/ops/cand-001-closeout-2026-07-02.md`.
+- Task: `.agents/tasks/2026-07-02-001-cand001-blog-unpublish-closeout.md`.
+- Abierto: hero Alt 1 vs Alt 2 en blob (republicación opcional).
 
 ## 2026-06-01-003 — D2.1: skill multi-agent-tournament-orchestrator [DONE]
 - G-D1b: `main`/standalone — `docs/architecture/tournament-protocol.md`.

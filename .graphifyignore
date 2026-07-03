@@ -1,0 +1,56 @@
+# ============================================================
+# .graphifyignore — umbral-agent-stack (piloto v0, 2026-07)
+# Graphify hereda .gitignore (merge; este archivo gana y solo
+# puede excluir más). Capa 1 = .gitignore; capa 2 = esto.
+# ============================================================
+
+# --- OBLIGATORIO: secretos (redundante con .gitignore a propósito)
+.env
+*.env
+env.rick
+openclaw/env
+**/auth-profiles.json
+**/sessions/
+**/*.pem
+**/*.key
+**/token*.json
+
+# --- OBLIGATORIO: estado local de asistentes IDE/agentes
+.claude/
+.cursor/
+.codex/
+.openclaw/
+.vscode/
+.idea/
+
+# --- OBLIGATORIO: salida de graphify (no auto-indexarse) y cachés
+graphify-out/
+__pycache__/
+.pytest_cache/
+.venv/
+venv/
+node_modules/
+dist/
+build/
+*.egg-info/
+.cache/
+.coverage
+
+# --- OBLIGATORIO: logs, evidencia, reportes generados, snapshots
+*.log
+logs/
+reports/
+artifacts/
+mission_control/snapshots/
+docs/ops/evidence-imports/
+docs/audits/*.json
+
+# --- OPCIONAL (recomendado en v0)
+.agents/tasks/
+.agents/prompts-*
+docs/external-context/
+tests/fixtures/
+*.png
+*.pdf
+*.zip
+*.pptx

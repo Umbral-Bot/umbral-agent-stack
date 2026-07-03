@@ -12,7 +12,7 @@
 | 2026-07-02-002 | Graphify piloto F1–F4 | copilot | ✅ done (GO_PARTIAL S7/R6, PR #495 merged, G-GR-1) |
 | 2026-07-02-003 | Rick voz TTS MVP restart+smoke (VPS) | copilot-vps | ✅ done (no rehacer) |
 | 2026-07-02-004 | Rick voz capitalización persona MVP | cursor | ✅ done — PR cursor/rick-voice-capitalize-mvp |
-| 2026-07-02-005 | Notion MCP opportunity audit | codex/cursor | 🔴 assigned (hilo paralelo) |
+| 2026-07-02-005 | Notion MCP opportunity audit | copilot | ✅ done — `NOTION_MCP_AUDIT_READY` · [`docs/audits/notion-mcp-opportunity-audit-2026-07-03.md`](../docs/audits/notion-mcp-opportunity-audit-2026-07-03.md) · 4 QW / 4 ST / 2 DF · rec **O1** (gate G-NMCP-1) · smoke live BLOCKED parcial (tools MCP removidas de sesión) |
 | 2026-07-02-006 | **Workspace hygiene audit + Pass 8** | copilot | ✅ done — `WORKSPACE_HYGIENE_PASS8_DONE` · rescates **#498/#499 merged** · 13 ramas locales limpiadas · pendiente David: G-WH-2, Fase A, zombis mayo, handoff MEGAPROMPT VPS |
 | 2026-07-03-007 | Bloque decisión PRs (#480 + zombis mayo + #321) | copilot | ✅ **EJECUTADO** — 7 PRs cerrados sin merge (#480 #421 #418 #413 #389 #379 #321) con autorización David · rescates merged: **#508** (evidencia E2E 421), **#509** (test_pdf_parser 418, 16/16), **#510** (ADR-013 + runbook off-sponsorship 321) · main `ae34e08` · ⚠️ runbook off-sponsorship: deadline 2026-07-30, trigger ya activo — revisar |
 
@@ -70,7 +70,7 @@ Regularización `UMB-132` (2026-03-22): se cerraron task files históricos que h
 
 | ID | Tarea | Agente | Estado |
 |----|-------|--------|--------|
-| 2026-07-02-005 | Auditoría Notion MCP oficial — gaps y oportunidades vs UAS | codex | assigned |
+| 2026-07-02-005 | Auditoría Notion MCP oficial — gaps y oportunidades vs UAS | copilot | ✅ done (`NOTION_MCP_AUDIT_READY`, audit 2026-07-03, rec O1) |
 | 2026-07-02-002 | Piloto Graphify F1–F4 — **`GO_PARTIAL` FIRMADO G-GR-1** (goldset A 8/10 vs B 9.5/10, S7/R6; uso local opcional, revisión 30d) — done al mergear PR #495 | copilot | review |
 | 2026-03-09-002 | Recomendaciones Cursor para orquestacion y politica de ejecucion de Rick | cursor | assigned |
 | 2026-03-22-001 | Diagnóstico env Rick vs local — Codex define canónicos | codex | ✅ done |

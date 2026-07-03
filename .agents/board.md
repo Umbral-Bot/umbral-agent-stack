@@ -13,7 +13,7 @@
 | 2026-07-02-003 | Rick voz TTS MVP restart+smoke (VPS) | copilot-vps | ✅ done (no rehacer) |
 | 2026-07-02-004 | Rick voz capitalización persona MVP | cursor | ✅ done — PR cursor/rick-voice-capitalize-mvp |
 | 2026-07-02-005 | Notion MCP opportunity audit | copilot | ✅ done — `NOTION_MCP_AUDIT_READY` · [`docs/audits/notion-mcp-opportunity-audit-2026-07-03.md`](../docs/audits/notion-mcp-opportunity-audit-2026-07-03.md) · 4 QW / 4 ST / 2 DF · rec **O1** (gate G-NMCP-1) · smoke live BLOCKED parcial (tools MCP removidas de sesión) |
-| 2026-07-03-008 | **Ola O1 Notion MCP (G-NMCP-1)** | copilot | 🟡 in_progress — QW-1/QW-3/F5 docs en PR UAS · QW-4 PR governance · QW-2 smoke **BLOCKED** (tools host desconectadas) · Fase 0 rotación → **handoff Copilot-VPS** · ST-1 defer confirmado |
+| 2026-07-03-008 | **Ola O1 Notion MCP (G-NMCP-1)** | copilot | ✅ done — PRs merged: **UAS#513** (`8326e79`) + **governance#15** (`f9047b5`) · QW-1/QW-3/F5 OK · QW-2 smoke **BLOCKED×3** (hosted `mcp.notion.com` confirmado; falta chat nuevo con server Running) · Fase 0 rotación → handoff Copilot-VPS · ST-1 defer |
 | 2026-07-02-006 | **Workspace hygiene audit + Pass 8** | copilot | ✅ done — `WORKSPACE_HYGIENE_PASS8_DONE` · rescates **#498/#499 merged** · 13 ramas locales limpiadas · pendiente David: G-WH-2, Fase A, zombis mayo, handoff MEGAPROMPT VPS |
 | 2026-07-03-007 | Bloque decisión PRs (#480 + zombis mayo + #321) | copilot | ✅ **EJECUTADO** — 7 PRs cerrados sin merge (#480 #421 #418 #413 #389 #379 #321) con autorización David · rescates merged: **#508** (evidencia E2E 421), **#509** (test_pdf_parser 418, 16/16), **#510** (ADR-013 + runbook off-sponsorship 321) · main `ae34e08` · ⚠️ runbook off-sponsorship: deadline 2026-07-30, trigger ya activo — revisar |
 

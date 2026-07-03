@@ -9,18 +9,18 @@
 | # | Fecha/hora (-04:00) | Resultado | Detalle |
 |---|---|---|---|
 | 1 | 2026-07-03 ~12:50 (ejecución O1) | BLOCKED | Tools `notion-API-*` removidas de la sesión (tool-change notice 10:13) |
-| 2 | 2026-07-03 13:05 (re-run QW-2) | **BLOCKED** | Paso A negativo: el último tool-change notice de la sesión (12:47) lista las ~25 tools `notion-API-*` como *no longer available* y **no llegó notificación de re-alta**. 0 llamadas ejecutadas; sin resultados inventados. |
+| 2 | 2026-07-03 13:05 (re-run QW-2) | BLOCKED | Paso A negativo: el último tool-change notice de la sesión (12:47) lista las ~25 tools `notion-API-*` como *no longer available* y **no llegó notificación de re-alta**. 0 llamadas ejecutadas; sin resultados inventados. |
+| 3 | 2026-07-03 13:20 (O1-close) | **BLOCKED** | Server confirmado por David = **hosted `https://mcp.notion.com/mcp`** (HTTP; tools esperadas `notion-search`/`notion-fetch`/`notion-create-pages` — el catálogo `notion-API-*` de intentos 1-2 era un wrapper distinto de otra sesión). Aun así, ninguna tool Notion (hosted ni wrapper) fue re-inyectada a esta sesión del agente ya iniciada. Fallo = re-inyección de sesión, no config del server. 0 llamadas. |
 
 ## Qué pasó
 
 La precondición del megaprompt ("Notion MCP conectado en el host, tools visibles") **no se cumple en la sesión del agente**: aunque el server esté configurado en el host, las tools no fueron re-inyectadas a esta conversación. 0 llamadas MCP ejecutadas, 0 writes, 0 lecturas.
 
-## Evidencia disponible (del registro del host, sesión del audit)
+## Evidencia disponible
 
-- Catálogo: ~25 tools `notion-API-*` (wrapper OpenAPI estilo `@notionhq/notion-mcp-server`), incl. `post-search`, `retrieve-a-page`, `retrieve-a-database`, `query-data-source`, `retrieve/update-page-markdown`, `get-self`, `get-users`, `create-a-comment`.
-- Las tools `*-page-markdown` + soporte `data-source` ⇒ server actualizado (API 2025-09+).
-- `notion-create-attachment` NO presente ⇒ wrapper local, no el hosted `mcp.notion.com`.
-- Transport y OAuth scope: **no verificables sin conexión** (el wrapper corre típicamente stdio local con un token de integration; a confirmar).
+- **Server real (confirmado David, O1-close):** hosted **`https://mcp.notion.com/mcp`** (Streamable HTTP + OAuth) en el `mcp.json` de VS Code. Tools esperadas: `notion-search`, `notion-fetch`, `notion-create-pages`, y **`notion-create-attachment`** (relevante para ST-1, que sigue defer).
+- Catálogo observado en intentos 1-2: ~25 tools `notion-API-*` (wrapper OpenAPI) — correspondía a **otra sesión/configuración**, no al hosted actual.
+- Transport: HTTP (hosted). Identidad/OAuth scope: **no verificables sin llamada live** (`get-self`/fetch mínimo pendiente).
 
 ## Pasos para David (reconexión y re-run) — precisados tras intento 2
 
@@ -37,11 +37,11 @@ La precondición del megaprompt ("Notion MCP conectado en el host, tools visible
 
 | Tool | OK/FAIL | Notas |
 |---|---|---|
-| `notion-API-get-self` | — | No ejecutado (tools no visibles en sesión — 2 intentos) |
-| `notion-API-post-search` | — | No ejecutado |
-| `notion-API-retrieve-page-markdown` | — | No ejecutado |
+| identidad (`get-self`/fetch mínimo) | — | No ejecutado (3 intentos; tools nunca visibles en la sesión del agente) |
+| `notion-search` | — | No ejecutado |
+| `notion-fetch` (página `OpenClaw`) | — | No ejecutado |
 
-*(Completar en el próximo re-run con tools live.)*
+*(Completar en el próximo re-run con tools live: sesión de chat NUEVA con el server `notion` Running ANTES de abrirla.)*
 
 ## Gate de scope (queda armado)
 

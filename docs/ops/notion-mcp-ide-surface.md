@@ -31,13 +31,13 @@ En el host IDE (config MCP de VS Code / Copilot / Cursor), **fuera de este repo*
 
 ## 4. Tools relevantes observadas
 
-Catálogo registrado en el host durante el audit #512 (~25 tools, wrapper OpenAPI): `notion-API-post-search`, `notion-API-retrieve-a-page`, `notion-API-retrieve-a-database`, `notion-API-query-data-source`, `notion-API-retrieve-a-data-source`, `notion-API-post-page`, `notion-API-patch-page`, `notion-API-move-page`, `notion-API-patch-block-children`, `notion-API-retrieve/update/delete-a-block`, `notion-API-create/retrieve-a-comment`, `notion-API-get-users/get-self`, **`notion-API-retrieve-page-markdown`**, **`notion-API-update-page-markdown`**, `notion-API-list-data-source-templates`.
+**Config actual del host (confirmada 2026-07-03, O1-close):** hosted **`https://mcp.notion.com/mcp`** — tools de alto nivel `notion-search`, `notion-fetch`, `notion-create-pages`, `notion-create-attachment`, etc. Catálogo histórico de la sesión del audit #512 (~25 tools `notion-API-*`, wrapper OpenAPI: `post-search`, `retrieve/update-page-markdown`, `query-data-source`, `get-self`…) correspondía a otra configuración.
 
-> Verificación live (transport, workspace visible, get-self) pendiente del smoke QW-2 — al cierre de O1 las tools estaban desconectadas de la sesión ([estado BLOCKED](../audits/notion-mcp-smoke-readonly-2026-07-03.md)).
+> Verificación live (identidad, workspace visible) pendiente del smoke QW-2 — 3 intentos BLOCKED por re-inyección de sesión ([estado](../audits/notion-mcp-smoke-readonly-2026-07-03.md)).
 
-## 5. Diferencia vs hosted `mcp.notion.com`
+## 5. Hosted `mcp.notion.com` — implicancias
 
-El hosted oficial (Streamable HTTP + OAuth) expone tools de más alto nivel (`notion-create-pages`, `notion-update-page`, **`notion-create-attachment`** para HTML interactivo embebible). El wrapper local del host NO expone `create-attachment` → la capability HTML requiere el hosted. Ver §8 (defer ST-1).
+El hosted (Streamable HTTP + OAuth) es la config vigente del host y expone **`notion-create-attachment`** (HTML interactivo embebible) → la capability ST-1 está técnicamente disponible cuando el smoke pase, pero **sigue DEFER por decisión David** (ver §8). El scope OAuth (qué workspaces ve) es exactamente lo que el smoke QW-2 debe verificar antes de cualquier write.
 
 ## 6. Diferencia vs Worker REST y vs `mcp_server/` interno
 

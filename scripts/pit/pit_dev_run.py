@@ -824,6 +824,16 @@ def run_dev_tournament(
                 agent["status"] = "closed"
             write_generated_artifacts(spec, ephemerals, agents_doc, vault=vault, out_dir=evidence)
 
+        # 11. Token ledger (billing truth, best-effort): las sesiones de los
+        # efímeros persisten en disco tras el kill; se colectan acá para que
+        # el cierre nunca quede sin contabilidad. El gate DURO vive en
+        # pit_deliver_telegram_pack (tokens_total not_reported ⇒ no entrega);
+        # este hook solo deja el ledger listo. Fail-soft: un error se registra
+        # en métricas, no tumba el run.
+        metrics["token_ledger"] = _collect_token_ledger(
+            spec.pit_id, vault, openclaw_root=config_path.parent
+        )
+
         metrics["verdict"] = _dev_verdict(metrics)
         _write_metrics(evidence, metrics)
         return metrics
@@ -832,6 +842,47 @@ def run_dev_tournament(
             os.environ.pop("PIT_VAULT_WRITE_SCOPE", None)
         else:
             os.environ["PIT_VAULT_WRITE_SCOPE"] = previous_scope
+
+
+def _collect_token_ledger(
+    pit_id: str, vault: Path, *, openclaw_root: Path
+) -> dict[str, Any]:
+    """Escribe ``pit/<pit_id>/metrics/token_ledger.yaml`` (read-only sources).
+
+    Best-effort: devuelve un resumen para run-metrics; en error devuelve
+    ``{"ok": False, "error": ...}`` sin romper el cierre del torneo.
+    """
+    try:
+        from scripts.pit import pit_collect_tokens as tokens_mod
+
+        warnings: list[str] = []
+        openclaw_lanes, oc_warn = tokens_mod.collect_openclaw(openclaw_root, pit_id)
+        warnings.extend(oc_warn)
+        audit_root = REPO_ROOT / tokens_mod.DEFAULT_AUDIT_ROOT
+        copilot_lanes, cc_warn = tokens_mod.collect_copilot_cli(audit_root, pit_id)
+        warnings.extend(cc_warn)
+        budgets = tokens_mod.load_lane_budgets(vault, pit_id)
+        ledger = tokens_mod.build_ledger(
+            pit_id, openclaw_lanes, copilot_lanes, budgets, warnings=warnings
+        )
+        ledger_path = tokens_mod.default_output_path(vault, pit_id)
+        ledger_path.parent.mkdir(parents=True, exist_ok=True)
+        ledger_path.write_text(tokens_mod.dump_yaml(ledger), encoding="utf-8")
+        total = ledger["tournament_total"]
+        _log(
+            f"token ledger: {ledger_path} — tokens_total={total['tokens']['total']} "
+            f"usd_estimated_total={total['usd_estimated_total']}"
+        )
+        return {
+            "ok": True,
+            "path": str(ledger_path),
+            "tokens_total": total["tokens"]["total"],
+            "usd_estimated_total": total["usd_estimated_total"],
+            "warnings": len(warnings),
+        }
+    except Exception as exc:  # nunca tumba el cierre; el gate duro es del deliver
+        _log(f"token ledger: FAILED ({exc}) — correr pit_collect_tokens.py manualmente")
+        return {"ok": False, "error": str(exc)}
 
 
 def _dev_verdict(metrics: dict[str, Any]) -> str:

@@ -16,10 +16,15 @@ import pytest
 yaml = pytest.importorskip("yaml")
 
 from scripts.pit.pit_collect_tokens import (  # noqa: E402
+    CLI_PRICING_SOURCE,
+    DEFAULT_PRICING_PER_MTOK,
+    DEFAULT_PRICING_SOURCE,
     NOT_REPORTED,
+    TOKENS_NOT_REPORTED,
     build_ledger,
     collect_copilot_cli,
     collect_openclaw,
+    estimate_usd,
     lane_from_agent_dir,
     load_lane_budgets,
     main,
@@ -265,3 +270,142 @@ def test_load_lane_budgets_even_split(tmp_path: Path) -> None:
 
 def test_load_lane_budgets_missing_spec_is_empty(tmp_path: Path) -> None:
     assert load_lane_budgets(tmp_path, PIT_ID) == {}
+
+
+# ---------------------------------------------------------------------------
+# Billing truth (postmortem pit-dev-ifc-viewer) — USD estimado + update-outcome
+# ---------------------------------------------------------------------------
+def test_estimate_usd_documented_formula() -> None:
+    # usd = (input*rate_in + cache*rate_cache + output*rate_out) / 1e6
+    usd = estimate_usd(1_000_000, 100_000, 2_000_000)
+    expected = round(
+        (
+            1_000_000 * DEFAULT_PRICING_PER_MTOK["input"]
+            + 2_000_000 * DEFAULT_PRICING_PER_MTOK["cache_read"]
+            + 100_000 * DEFAULT_PRICING_PER_MTOK["output"]
+        )
+        / 1e6,
+        4,
+    )
+    assert usd == expected
+    assert estimate_usd(0, 0, 0) == 0.0
+    # override de tabla
+    assert estimate_usd(2_000_000, 0, 0, {"input": 2.0, "cache_read": 0, "output": 0}) == 4.0
+
+
+def test_build_ledger_estimates_usd_and_records_pricing() -> None:
+    ledger = build_ledger(
+        PIT_ID,
+        openclaw_lanes={
+            "lane-alpha": {
+                "input": 1900, "output": 400, "total": 2300,
+                "cache_read": 50, "model": "m", "sessions": 1, "events": 1,
+            }
+        },
+        copilot_lanes={},
+    )
+    lane = ledger["lanes"]["lane-alpha"]
+    # (1900*1.25 + 50*0.125 + 400*10) / 1e6 = 0.0064 — el campo ya no queda None
+    assert lane["budget_usd_estimated"] == pytest.approx(0.0064, abs=1e-4)
+    total = ledger["tournament_total"]
+    assert total["tokens"] == {"input": 1900, "output": 400, "cache_read": 50, "total": 2300}
+    assert total["usd_estimated_total"] == lane["budget_usd_estimated"]
+    pricing = ledger["pricing"]
+    assert pricing["source"] == DEFAULT_PRICING_SOURCE
+    assert pricing["usd_per_mtok"] == DEFAULT_PRICING_PER_MTOK
+    assert "formula" in pricing
+
+
+def _make_outcome(vault: Path, budget: dict | None = None) -> Path:
+    outcome_dir = vault / "pit" / PIT_ID / "outcome"
+    outcome_dir.mkdir(parents=True, exist_ok=True)
+    doc = {
+        "schema_version": 1,
+        "pit_id": PIT_ID,
+        "budget": budget if budget is not None else {"budget_usd": 50},
+    }
+    path = outcome_dir / "pit_outcome_report.yaml"
+    path.write_text(yaml.safe_dump(doc, allow_unicode=True), encoding="utf-8")
+    return path
+
+
+def test_update_outcome_populates_billing_truth(tmp_path: Path) -> None:
+    oc_root = tmp_path / "openclaw"
+    _make_openclaw(oc_root, PIT_ID, "lane-alpha", sessions_json=True, jsonl=True)
+    vault = tmp_path / "vault"
+    outcome_path = _make_outcome(vault, {"budget_usd": 50, "usd_estimated_spent": 0.0})
+
+    rc = main([
+        "--pit-id", PIT_ID,
+        "--vault-root", str(vault),
+        "--openclaw-root", str(oc_root),
+        "--audit-root", str(tmp_path / "no-audit"),
+        "--update-outcome",
+    ])
+
+    assert rc == 0
+    budget = yaml.safe_load(outcome_path.read_text(encoding="utf-8"))["budget"]
+    assert budget["budget_usd"] == 50  # el TECHO nunca se toca
+    assert budget["tokens_total"] == 2300
+    assert budget["tokens_input"] == 1900
+    assert budget["tokens_output"] == 400
+    assert budget["tokens_cache_read"] == 50
+    assert budget["usd_estimated_spent"] == pytest.approx(0.0064, abs=1e-4)
+    assert budget["pricing_source"] == DEFAULT_PRICING_SOURCE
+    assert budget["token_ledger"] == f"pit/{PIT_ID}/metrics/token_ledger.yaml"
+    # y el ledger quedó en el vault
+    assert (vault / "pit" / PIT_ID / "metrics" / "token_ledger.yaml").is_file()
+
+
+def test_update_outcome_without_data_writes_not_reported(tmp_path: Path) -> None:
+    vault = tmp_path / "vault"
+    outcome_path = _make_outcome(vault, {"budget_usd": 50, "usd_estimated_spent": 12.5})
+
+    rc = main([
+        "--pit-id", PIT_ID,
+        "--vault-root", str(vault),
+        "--openclaw-root", str(tmp_path / "empty-openclaw"),
+        "--audit-root", str(tmp_path / "empty-audit"),
+        "--update-outcome",
+    ])
+
+    assert rc == 0
+    budget = yaml.safe_load(outcome_path.read_text(encoding="utf-8"))["budget"]
+    # honesto: sin datos NO se inventa un 0 — marker que bloquea el deliver dev
+    assert budget["tokens_total"] == TOKENS_NOT_REPORTED
+    # y el gasto previo NO se pisa con basura
+    assert budget["usd_estimated_spent"] == 12.5
+
+
+def test_update_outcome_missing_outcome_exit_2(tmp_path: Path, capsys) -> None:
+    rc = main([
+        "--pit-id", PIT_ID,
+        "--vault-root", str(tmp_path / "vault"),
+        "--openclaw-root", str(tmp_path / "empty"),
+        "--audit-root", str(tmp_path / "empty"),
+        "--update-outcome",
+    ])
+    assert rc == 2
+    assert "outcome_missing" in capsys.readouterr().err
+
+
+def test_cli_pricing_override_sets_source(tmp_path: Path) -> None:
+    oc_root = tmp_path / "openclaw"
+    _make_openclaw(oc_root, PIT_ID, "lane-alpha", sessions_json=True, jsonl=False)
+    out = tmp_path / "ledger.yaml"
+
+    rc = main([
+        "--pit-id", PIT_ID,
+        "--vault-root", str(tmp_path / "vault"),
+        "--openclaw-root", str(oc_root),
+        "--audit-root", str(tmp_path / "no-audit"),
+        "--output", str(out),
+        "--usd-per-mtok-input", "2.0",
+    ])
+
+    assert rc == 0
+    data = yaml.safe_load(out.read_text(encoding="utf-8"))
+    assert data["pricing"]["source"] == CLI_PRICING_SOURCE
+    assert data["pricing"]["usd_per_mtok"]["input"] == 2.0
+    # el resto de la tabla conserva el default documentado
+    assert data["pricing"]["usd_per_mtok"]["output"] == DEFAULT_PRICING_PER_MTOK["output"]

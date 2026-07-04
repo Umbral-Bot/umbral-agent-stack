@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/Umbral-Bot/umbral-agent-stack/openclaw/workspace-templates/pit-vault/templates/judge-scorecard.schema.json",
-  "title": "PIT-DEV Judge Scorecard v1",
-  "description": "Scorecard de UN juez ejecutor sobre UNA lane de un torneo PIT-DEV. Cada juez instala/ejecuta el deliverable en su workdir aislado (pit/<pit_id>/judge/<judge_id>/<lane_id>/) y escribe pit/<pit_id>/judge/scorecards/<judge_id>--<lane_id>.json. El ranking agregado NO decide: Rick consolida y David da el gate de winner. Protocolo: docs/ops/pit-dev-judge-protocol.md.",
+  "title": "PIT-DEV Judge Scorecard v2",
+  "description": "Scorecard de UN juez ejecutor sobre UNA lane de un torneo PIT-DEV. Cada juez instala/ejecuta el deliverable en su workdir aislado (pit/<pit_id>/judge/<judge_id>/<lane_id>/) y escribe pit/<pit_id>/judge/scorecards/<judge_id>--<lane_id>.json. v2 (postmortem pit-dev-ifc-viewer): meets_functional_spec=true exige functional_evidence con input REAL — fixture de test + HTTP 200 + tests offline no bastan. El ranking agregado NO decide: Rick consolida y David da el gate de winner. Protocolo: docs/ops/pit-dev-judge-protocol.md.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -16,8 +16,15 @@
     "meets_functional_spec",
     "criteria"
   ],
+  "if": {
+    "properties": { "meets_functional_spec": { "const": true } },
+    "required": ["meets_functional_spec"]
+  },
+  "then": {
+    "required": ["functional_evidence"]
+  },
   "properties": {
-    "schema_version": { "const": 1 },
+    "schema_version": { "enum": [1, 2] },
     "pit_id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$" },
     "lane_id": { "type": "string", "pattern": "^lane-[a-z0-9][a-z0-9-]{1,63}$" },
     "judge_id": { "type": "string", "pattern": "^judge-[a-z0-9][a-z0-9-]{0,63}$" },
@@ -34,8 +41,32 @@
       "type": "boolean"
     },
     "meets_functional_spec": {
-      "description": "¿Cumple el deliverable_spec funcional del pit_spec?",
+      "description": "¿Cumple el deliverable_spec funcional del pit_spec? true EXIGE functional_evidence con input real (v2).",
       "type": "boolean"
+    },
+    "functional_evidence": {
+      "description": "Evidencia de la verificación funcional con input REAL (obligatoria si meets_functional_spec=true). Un fixture de test (p.ej. mini-site.ifc 4.4KB), un curl HTTP 200 o los tests offline del deliverable NO son evidencia funcional.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["real_input_used", "input_description"],
+      "properties": {
+        "real_input_used": {
+          "description": "true SOLO si la verificación usó un input de producción/representativo (no sintético, no fixture del propio deliverable).",
+          "type": "boolean"
+        },
+        "input_description": {
+          "description": "Qué input real se usó (nombre, tamaño, origen) y qué se observó.",
+          "type": "string",
+          "minLength": 1
+        },
+        "synthetic_share": {
+          "description": "Fracción de la evidencia que sigue siendo sintética (0 = todo real).",
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 1,
+          "default": null
+        }
+      }
     },
     "criteria": {
       "description": "Rúbrica ejecutable: score 0-1 por criterio. Los PESOS viven en el pit_spec (rubric_weights), no acá.",

@@ -199,13 +199,18 @@ def handle_document_create_presentation(input_data: Dict[str, Any]) -> Dict[str,
     """Create a PowerPoint (.pptx) presentation.
 
     Input:
-        slides: list[dict]  — each with 'title', 'content', optional 'notes'
+        slides: list[dict]  — each with 'title', 'content', optional 'notes',
+                              optional 'image_path' (PNG/JPG embedded below the
+                              text; missing file raises — evidence slides must
+                              not silently drop their image)
         output_path: str    — (optional)
 
     Returns:
-        ok: bool, path: str | None, slide_count: int, size_bytes: int, [base64: str]
+        ok: bool, path: str | None, slide_count: int, image_count: int,
+        size_bytes: int, [base64: str]
     """
     from pptx import Presentation
+    from pptx.util import Inches
 
     slides_data = input_data.get("slides")
     if not slides_data or not isinstance(slides_data, list):
@@ -214,11 +219,13 @@ def handle_document_create_presentation(input_data: Dict[str, Any]) -> Dict[str,
     output_path = input_data.get("output_path")
 
     prs = Presentation()
+    image_count = 0
 
     for i, sd in enumerate(slides_data):
         title = sd.get("title", f"Slide {i + 1}")
         content = sd.get("content", "")
         notes = sd.get("notes")
+        image_path = sd.get("image_path")
 
         if i == 0 and len(slides_data) > 1:
             layout = prs.slide_layouts[0]  # Title Slide
@@ -234,6 +241,14 @@ def handle_document_create_presentation(input_data: Dict[str, Any]) -> Dict[str,
         else:
             slide.placeholders[1].text = content
 
+        if image_path:
+            if not os.path.isfile(image_path):
+                raise ValueError(f"slide image not found: {image_path}")
+            slide.shapes.add_picture(
+                str(image_path), Inches(0.6), Inches(2.0), height=Inches(4.6)
+            )
+            image_count += 1
+
         if notes:
             slide.notes_slide.notes_text_frame.text = notes
 
@@ -241,17 +256,30 @@ def handle_document_create_presentation(input_data: Dict[str, Any]) -> Dict[str,
         os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
         prs.save(output_path)
         size = os.path.getsize(output_path)
-        logger.info("PPTX saved: %s (%d bytes, %d slides)", output_path, size, len(slides_data))
-        return {"ok": True, "path": output_path, "slide_count": len(slides_data), "size_bytes": size}
+        logger.info(
+            "PPTX saved: %s (%d bytes, %d slides, %d images)",
+            output_path, size, len(slides_data), image_count,
+        )
+        return {
+            "ok": True,
+            "path": output_path,
+            "slide_count": len(slides_data),
+            "image_count": image_count,
+            "size_bytes": size,
+        }
 
     buf = BytesIO()
     prs.save(buf)
     b64 = base64.b64encode(buf.getvalue()).decode()
-    logger.info("PPTX generated in-memory (%d bytes, %d slides)", len(buf.getvalue()), len(slides_data))
+    logger.info(
+        "PPTX generated in-memory (%d bytes, %d slides, %d images)",
+        len(buf.getvalue()), len(slides_data), image_count,
+    )
     return {
         "ok": True,
         "path": None,
         "slide_count": len(slides_data),
+        "image_count": image_count,
         "size_bytes": len(buf.getvalue()),
         "base64": b64,
     }

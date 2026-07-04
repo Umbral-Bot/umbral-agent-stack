@@ -7,11 +7,26 @@ Flujo (PIT-TG-DRIVE — orden canónico de entrega en SKILL §Post-torneo):
      ``david_gate`` cuenta como pending por PREFIJO ("pending", "pending
      review de David", …), no por igualdad exacta.
   2. Construye el deck ejecutivo con ``pit_build_outcome_deck.build_deck``.
-  3. **Solo PIT-DEV** (spec v3, ``mode: dev`` en ``pit/<pit_id>/spec/``):
+  3. **Solo PIT-DEV** (spec v3, ``mode: dev`` en ``pit/<pit_id>/spec/``) —
+     gates de calidad fail-closed (postmortem ``pit-dev-ifc-viewer``):
      a. gate de trazabilidad — ``check_traceability`` debe dar
         ``TRACE_COMPLETE`` y ``traceability/report.md`` debe existir
         (FAIL ``traceability_report_missing`` / ``traceability_gaps:<lista>``);
-     b. zip del deliverable winner
+     b. **billing truth** — ``budget.tokens_total`` numérico > 0 en el outcome
+        (lo puebla ``pit_collect_tokens.py --update-outcome``); con
+        ``not_reported``/ausente NO hay entrega (FAIL
+        ``tokens_total_not_reported``);
+     c. **QA de producto** — bloque ``human_qa`` con ``QA_PASS`` (y los
+        screenshots reales en ``deliverables/qa-screenshots/``) o
+        ``QA_SKIPPED_WITH_REASON`` con motivo auditable (lo escribe
+        ``pit_dev_human_qa_gate.py``); FAIL ``human_qa_missing`` /
+        ``human_qa_failed:<status>`` / ``human_qa_skip_without_reason`` /
+        ``qa_screenshots_missing:<detalle>``;
+     d. **fulfillment explícito** — ``fulfillment_decision.product_fulfillment``
+        ∈ {accepted, rejected, pending_validation}: el cierre procedural NUNCA
+        implica aceptación de producto (FAIL ``product_fulfillment_missing`` /
+        ``product_fulfillment_invalid:<v>``);
+     e. zip del deliverable winner
         (``pit/<pit_id>/lanes/<winner>/deliverable/`` →
         ``pit/<pit_id>/deliverables/<pit_id>-<winner>-deliverable.zip``).
   4. Sube el .pptx (y el .zip en PIT-DEV) a la carpeta compartida Rick↔David
@@ -64,6 +79,12 @@ from scripts.pit.pit_build_outcome_deck import (  # noqa: E402
     build_deck,
     load_yaml,
 )
+from scripts.pit.pit_dev_human_qa_gate import (  # noqa: E402
+    STATUS_PASS as QA_STATUS_PASS,
+    STATUS_SKIPPED as QA_STATUS_SKIPPED,
+    check_screenshots,
+    qa_screenshots_dir,
+)
 from scripts.pit.pit_spec_validate import is_dev_spec  # noqa: E402
 from scripts.pit.pit_traceability_check import check_traceability  # noqa: E402
 
@@ -73,6 +94,15 @@ VERDICT_FAIL = "PIT_DELIVER_PACK_FAIL"
 
 _PENDING_VALUES = {"", "null", "none"}
 _PENDING_PREFIX = "pending"
+
+# Fulfillment de producto explícito (gate C, postmortem pit-dev-ifc-viewer):
+# cierre procedural (trace + gate David) ≠ aceptación del producto.
+PRODUCT_FULFILLMENT_VALUES = frozenset({"accepted", "rejected", "pending_validation"})
+PRODUCT_FULFILLMENT_LABELS = {
+    "accepted": "aceptado",
+    "rejected": "rechazado",
+    "pending_validation": "pendiente validación David",
+}
 
 
 def default_vault_path() -> Path:
@@ -132,6 +162,63 @@ def assert_traceability_complete(vault_path: Path, pit_id: str) -> None:
         raise ValueError(f"traceability_gaps:{gaps}")
 
 
+def assert_billing_truth(outcome: dict[str, Any]) -> None:
+    """Gate PIT-DEV: billing truth — ``budget.tokens_total`` numérico > 0.
+
+    ``budget_usd`` es el TECHO autorizado, no el gasto; sin
+    ``tokens_total`` real (lo puebla ``pit_collect_tokens.py
+    --update-outcome``) el torneo NO se entrega como cerrado. Un
+    ``not_reported`` honesto bloquea — un \"0/50 USD\" engañoso ya no pasa.
+    """
+    budget = outcome.get("budget") or {}
+    tokens_total = budget.get("tokens_total")
+    if isinstance(tokens_total, bool) or not isinstance(tokens_total, (int, float)):
+        raise ValueError("tokens_total_not_reported")
+    if tokens_total <= 0:
+        raise ValueError("tokens_total_not_reported")
+
+
+def assert_human_qa(outcome: dict[str, Any], vault_path: Path, pit_id: str) -> None:
+    """Gate PIT-DEV: QA de producto (``pit_dev_human_qa_gate.py``) fail-closed.
+
+    ``QA_PASS`` exige además que los screenshots sigan en
+    ``deliverables/qa-screenshots/`` (≥3 PNG reales). ``QA_SKIPPED_WITH_REASON``
+    pasa SOLO con motivo no vacío — queda visible en el pack, no es un verde
+    silencioso. Todo lo demás (ausente, QA_FAIL, estados desconocidos) bloquea.
+    """
+    block = outcome.get("human_qa")
+    if not isinstance(block, dict):
+        raise ValueError("human_qa_missing")
+    status = _clean(block.get("status"), "")
+    if status == QA_STATUS_PASS:
+        try:
+            check_screenshots(qa_screenshots_dir(vault_path, pit_id))
+        except ValueError as exc:
+            raise ValueError(f"qa_screenshots_missing:{exc}") from exc
+        return
+    if status == QA_STATUS_SKIPPED:
+        if not _clean(block.get("reason"), ""):
+            raise ValueError("human_qa_skip_without_reason")
+        return
+    raise ValueError(f"human_qa_failed:{status or 'unknown'}")
+
+
+def assert_product_fulfillment(outcome: dict[str, Any]) -> str:
+    """Gate PIT-DEV: fulfillment de producto EXPLÍCITO (≠ cierre procedural).
+
+    Devuelve el valor validado. ``pending_validation`` es legítimo (David
+    decide post-pack) pero tiene que estar declarado — la ausencia era el bug
+    del incidente: cierre admin leído como aceptación de producto.
+    """
+    decision = outcome.get("fulfillment_decision") or {}
+    value = _clean(decision.get("product_fulfillment"), "")
+    if not value:
+        raise ValueError("product_fulfillment_missing")
+    if value not in PRODUCT_FULFILLMENT_VALUES:
+        raise ValueError(f"product_fulfillment_invalid:{value}")
+    return value
+
+
 def build_deliverable_zip(vault_path: Path, pit_id: str, winner_lane: str) -> Path:
     """Zipea ``lanes/<winner>/deliverable/`` en ``deliverables/`` (PIT-DEV)."""
     deliverable_dir = (
@@ -172,8 +259,10 @@ def build_summary_lines(
 ) -> list[str]:
     """Plantilla Telegram ejecutiva (≤12 líneas) — SKILL §Entrega Telegram.
 
-    En PIT-DEV la línea de preview de prototipos (v1) se reemplaza por el link
-    al zip del deliverable winner en Drive.
+    Billing truth: la línea de budget SIEMPRE distingue gasto estimado de
+    techo autorizado (nunca un \"0/50\" ambiguo). En PIT-DEV la línea de
+    preview (v1) se reemplaza por el zip del winner en Drive y se agrega la
+    línea Producto (fulfillment explícito + estado QA).
     """
     pit_id = _clean(outcome.get("pit_id"), "pit-?")
     winner = outcome.get("winner") or {}
@@ -187,6 +276,17 @@ def build_summary_lines(
 
     budget = outcome.get("budget") or {}
     lanes_count = len(outcome.get("lanes") or [])
+    spent = _fmt_num(budget.get("usd_estimated_spent"), "no reportado")
+    ceiling = _fmt_num(budget.get("budget_usd"))
+    tokens_total = budget.get("tokens_total")
+    if isinstance(tokens_total, (int, float)) and not isinstance(tokens_total, bool):
+        tokens_text = f" · tokens {_fmt_num(tokens_total)}"
+    else:
+        tokens_text = " · tokens not_reported"
+    budget_line = (
+        f"• {lanes_count} lanes · gasto estimado {spent} USD / techo {ceiling} USD"
+        f"{tokens_text}"
+    )
 
     problem_line = _clean(outcome.get("title"), pit_id)
 
@@ -224,8 +324,7 @@ def build_summary_lines(
         f"Estado: cerrado · Winner: {winner_lane} · Fulfillment: {fulfillment}",
         "Resumen:",
         f"• {problem_line}",
-        f"• {lanes_count} lanes · budget {_fmt_num(budget.get('usd_estimated_spent'))}/"
-        f"{_fmt_num(budget.get('budget_usd'))} USD (estimado)",
+        budget_line,
         f"• {kpi_line}",
         f"• {learning_line}",
         "Deck ejecutivo (Google Drive):",
@@ -233,6 +332,16 @@ def build_summary_lines(
         artifact_line,
         f"Detalle vault: pit/{pit_id}/outcome/pit_outcome_report.yaml",
     ]
+    if dev_mode:
+        decision = outcome.get("fulfillment_decision") or {}
+        pf_value = _clean(decision.get("product_fulfillment"), "")
+        pf_label = PRODUCT_FULFILLMENT_LABELS.get(pf_value, pf_value or "no declarado")
+        qa_block = outcome.get("human_qa") or {}
+        qa_status = _clean(qa_block.get("status"), "sin QA")
+        product_line = f"• Producto: fulfillment {pf_label} · QA {qa_status}"
+        if qa_status == QA_STATUS_SKIPPED:
+            product_line += f" ({_clean(qa_block.get('reason'), 's/motivo')})"
+        lines.insert(7, product_line)
     assert len(lines) <= 12, "plantilla Telegram debe ser ≤12 líneas"
     return lines
 
@@ -267,6 +376,16 @@ def deliver(
     dev_mode = is_dev_tournament(vault_path, pit_id)
     winner_lane = _clean((outcome.get("winner") or {}).get("lane_id"), "")
 
+    if dev_mode:
+        # Gates de calidad PIT-DEV (fail-closed, ANTES de construir nada):
+        # trazabilidad + billing truth + QA producto + fulfillment explícito.
+        # Postmortem pit-dev-ifc-viewer: el cierre procedural verde no vuelve
+        # a taparse una calidad de producto inaceptable.
+        assert_traceability_complete(vault_path, pit_id)
+        assert_billing_truth(outcome)
+        assert_human_qa(outcome, vault_path, pit_id)
+        assert_product_fulfillment(outcome)
+
     deck = build_deck(outcome_path)
     deck_path = deck.get("path")
     if not deck.get("ok") or not deck_path:
@@ -274,9 +393,8 @@ def deliver(
 
     zip_path: Path | None = None
     if dev_mode:
-        # Orden canónico PIT-DEV (SKILL §Post-torneo): sin TRACE_COMPLETE
-        # no hay entrega; el zip del deliverable winner viaja con el deck.
-        assert_traceability_complete(vault_path, pit_id)
+        # Orden canónico PIT-DEV (SKILL §Post-torneo): el zip del deliverable
+        # winner viaja con el deck.
         zip_path = build_deliverable_zip(vault_path, pit_id, winner_lane)
 
     drive_url: str | None = None

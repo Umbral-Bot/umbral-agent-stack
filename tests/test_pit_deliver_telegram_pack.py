@@ -1,7 +1,10 @@
 """Tests — scripts/pit/pit_deliver_telegram_pack.py (PIT-TG-DRIVE Fase 3).
 
 ``--dry-run`` no requiere Drive ni red; el path real se prueba mockeando el
-handler ``google_drive.upload_file``.
+handler ``google_drive.upload_file``. Los gates de calidad PIT-DEV (billing
+truth, QA producto, fulfillment explícito — postmortem pit-dev-ifc-viewer)
+se cubren con un vault dev \"verde completo\" al que cada test le quita una
+pieza.
 """
 
 from __future__ import annotations
@@ -13,6 +16,7 @@ import pytest
 import yaml
 
 from scripts.pit import pit_deliver_telegram_pack as deliver_mod
+from tests.pit_qa_helpers import write_real_png
 from worker.tasks import google_drive as gd
 
 PIT_ID = "pit-deliver-test"
@@ -41,6 +45,32 @@ def _outcome(closed: bool = True) -> dict:
         "learnings": {"validated": ["fricción manda"], "refuted": [], "inconclusive": []},
         "fulfillment_decision": {"next_step": "fulfillment-track", "notes": "seguir"},
     }
+
+
+def _dev_outcome(closed: bool = True) -> dict:
+    """Outcome PIT-DEV \"verde completo\": pasa TODOS los gates de calidad."""
+    outcome = _outcome(closed=closed)
+    outcome["budget"] = {
+        "budget_usd": 50,
+        "usd_estimated_spent": 7.85,
+        "tokens_total": 6_270_000,
+        "pricing_source": "default_gpt5_class_per_mtok_v1",
+        "token_ledger": f"pit/{PIT_ID}/metrics/token_ledger.yaml",
+    }
+    outcome["human_qa"] = {
+        "status": "QA_PASS",
+        "real_ifc_upload": "pass",
+        "ifc_file": "real-building.ifc",
+        "ifc_size_bytes": 2_400_000,
+        "elements_parsed": 128,
+        "screenshots_dir": f"pit/{PIT_ID}/deliverables/qa-screenshots",
+        "screenshots": ["01-viewer-3d.png", "02-properties.png", "03-observation.png"],
+        "verified_at": "2026-07-04T12:00:00Z",
+        "mode": "auto",
+        "reason": None,
+    }
+    outcome["fulfillment_decision"]["product_fulfillment"] = "pending_validation"
+    return outcome
 
 
 def _make_vault(tmp_path: Path, outcome: dict) -> Path:
@@ -259,8 +289,14 @@ def test_real_run_upload_failure_is_fail_verdict(
 # ---------------------------------------------------------------------------
 
 
-def _make_dev_vault(tmp_path: Path, outcome: dict, *, with_deliverable: bool = True) -> Path:
-    """Vault dev: outcome + spec (mode: dev) + deliverable winner opcional."""
+def _make_dev_vault(
+    tmp_path: Path,
+    outcome: dict,
+    *,
+    with_deliverable: bool = True,
+    with_qa_screenshots: bool = True,
+) -> Path:
+    """Vault dev: outcome + spec (mode: dev) + deliverable winner + evidencia QA."""
     vault = _make_vault(tmp_path, outcome)
     spec_dir = vault / "pit" / PIT_ID / "spec"
     spec_dir.mkdir(parents=True, exist_ok=True)
@@ -273,6 +309,10 @@ def _make_dev_vault(tmp_path: Path, outcome: dict, *, with_deliverable: bool = T
         deliverable.mkdir(parents=True, exist_ok=True)
         (deliverable / "README.md").write_text("producto", encoding="utf-8")
         (deliverable / "app.py").write_text("print('ok')", encoding="utf-8")
+    if with_qa_screenshots:
+        shots_dir = vault / "pit" / PIT_ID / "deliverables" / "qa-screenshots"
+        for name in ("01-viewer-3d.png", "02-properties.png", "03-observation.png"):
+            write_real_png(shots_dir / name)
     return vault
 
 
@@ -290,7 +330,7 @@ def test_dev_fail_when_traceability_report_missing(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     pytest.importorskip("pptx")
-    vault = _make_dev_vault(tmp_path, _outcome())
+    vault = _make_dev_vault(tmp_path, _dev_outcome())
     rc = deliver_mod.main(["--pit-id", PIT_ID, "--vault-path", str(vault), "--dry-run"])
     out = capsys.readouterr().out
     assert rc == 2
@@ -303,7 +343,7 @@ def test_dev_fail_when_traceability_gaps(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     pytest.importorskip("pptx")
-    vault = _make_dev_vault(tmp_path, _outcome())
+    vault = _make_dev_vault(tmp_path, _dev_outcome())
     _trace_report(vault)
     monkeypatch.setattr(
         deliver_mod,
@@ -322,7 +362,7 @@ def test_dev_fail_when_winner_deliverable_missing(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     pytest.importorskip("pptx")
-    vault = _make_dev_vault(tmp_path, _outcome(), with_deliverable=False)
+    vault = _make_dev_vault(tmp_path, _dev_outcome(), with_deliverable=False)
     _trace_report(vault)
     monkeypatch.setattr(deliver_mod, "check_traceability", _fake_trace_ok)
     rc = deliver_mod.main(["--pit-id", PIT_ID, "--vault-path", str(vault), "--dry-run"])
@@ -337,7 +377,7 @@ def test_dev_dry_run_builds_zip_and_pack(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     pytest.importorskip("pptx")
-    vault = _make_dev_vault(tmp_path, _outcome())
+    vault = _make_dev_vault(tmp_path, _dev_outcome())
     _trace_report(vault)
     monkeypatch.setattr(deliver_mod, "check_traceability", _fake_trace_ok)
     rc = deliver_mod.main(["--pit-id", PIT_ID, "--vault-path", str(vault), "--dry-run"])
@@ -360,6 +400,14 @@ def test_dev_dry_run_builds_zip_and_pack(
     assert "notion_page_url" in pack and pack["notion_page_url"] is None
     assert len(pack["summary_lines"]) <= 12
     assert any("Deliverable winner (zip" in line for line in pack["summary_lines"])
+    # billing truth: gasto estimado ≠ techo, tokens visibles
+    budget_line = next(l for l in pack["summary_lines"] if "techo" in l)
+    assert "gasto estimado 7.85 USD / techo 50 USD" in budget_line
+    assert "tokens 6270000" in budget_line
+    # fulfillment de producto explícito + estado QA en la línea Producto
+    product_line = next(l for l in pack["summary_lines"] if l.startswith("• Producto"))
+    assert "pendiente validación David" in product_line
+    assert "QA QA_PASS" in product_line
 
 
 def test_dev_real_run_uploads_deck_and_zip(
@@ -368,7 +416,7 @@ def test_dev_real_run_uploads_deck_and_zip(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     pytest.importorskip("pptx")
-    vault = _make_dev_vault(tmp_path, _outcome())
+    vault = _make_dev_vault(tmp_path, _dev_outcome())
     _trace_report(vault)
     monkeypatch.setattr(deliver_mod, "check_traceability", _fake_trace_ok)
     for name, value in (
@@ -419,7 +467,7 @@ def test_dev_zip_upload_failure_is_fail_verdict(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     pytest.importorskip("pptx")
-    vault = _make_dev_vault(tmp_path, _outcome())
+    vault = _make_dev_vault(tmp_path, _dev_outcome())
     _trace_report(vault)
     monkeypatch.setattr(deliver_mod, "check_traceability", _fake_trace_ok)
     for name, value in (
@@ -465,3 +513,214 @@ def test_v1_pack_keeps_dev_fields_null_and_no_dev_gates(
     assert pack["drive_deliverable_zip_url"] is None
     assert pack["notion_page_url"] is None
     assert any("Preview prototipos" in line for line in pack["summary_lines"])
+    # billing truth también en v1: nunca "41/200" ambiguo
+    budget_line = next(l for l in pack["summary_lines"] if "techo" in l)
+    assert "gasto estimado 41 USD / techo 200 USD" in budget_line
+    assert "tokens not_reported" in budget_line
+    # la línea Producto es solo PIT-DEV
+    assert not any(l.startswith("• Producto") for l in pack["summary_lines"])
+
+
+# ---------------------------------------------------------------------------
+# PIT-DEV — quality gates (postmortem pit-dev-ifc-viewer)
+# ---------------------------------------------------------------------------
+
+
+def _green_dev_vault(tmp_path: Path, outcome: dict, monkeypatch: pytest.MonkeyPatch, **kwargs) -> Path:
+    """Vault dev con trazabilidad OK — cada test le quita UNA pieza."""
+    vault = _make_dev_vault(tmp_path, outcome, **kwargs)
+    _trace_report(vault)
+    monkeypatch.setattr(deliver_mod, "check_traceability", _fake_trace_ok)
+    return vault
+
+
+@pytest.mark.parametrize(
+    "tokens_total, reason",
+    [
+        (None, "ausente"),
+        ("not_reported", "marker honesto del collector"),
+        (0, "cero no es gasto real"),
+    ],
+)
+def test_dev_fail_when_tokens_total_not_reported(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    tokens_total,
+    reason,
+) -> None:
+    pytest.importorskip("pptx")
+    outcome = _dev_outcome()
+    if tokens_total is None:
+        outcome["budget"].pop("tokens_total")
+    else:
+        outcome["budget"]["tokens_total"] = tokens_total
+    vault = _green_dev_vault(tmp_path, outcome, monkeypatch)
+    rc = deliver_mod.main(["--pit-id", PIT_ID, "--vault-path", str(vault), "--dry-run"])
+    out = capsys.readouterr().out
+    assert rc == 2, reason
+    assert "tokens_total_not_reported" in out
+
+
+def test_dev_fail_when_human_qa_missing(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    pytest.importorskip("pptx")
+    outcome = _dev_outcome()
+    outcome.pop("human_qa")
+    vault = _green_dev_vault(tmp_path, outcome, monkeypatch)
+    rc = deliver_mod.main(["--pit-id", PIT_ID, "--vault-path", str(vault), "--dry-run"])
+    out = capsys.readouterr().out
+    assert rc == 2
+    assert "human_qa_missing" in out
+
+
+def test_dev_fail_when_human_qa_failed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    pytest.importorskip("pptx")
+    outcome = _dev_outcome()
+    outcome["human_qa"]["status"] = "QA_FAIL"
+    vault = _green_dev_vault(tmp_path, outcome, monkeypatch)
+    rc = deliver_mod.main(["--pit-id", PIT_ID, "--vault-path", str(vault), "--dry-run"])
+    out = capsys.readouterr().out
+    assert rc == 2
+    assert "human_qa_failed:QA_FAIL" in out
+
+
+def test_dev_fail_when_qa_pass_but_screenshots_gone(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """QA_PASS declarado en el outcome pero sin PNGs en disco ⇒ no hay entrega."""
+    pytest.importorskip("pptx")
+    vault = _green_dev_vault(
+        tmp_path, _dev_outcome(), monkeypatch, with_qa_screenshots=False
+    )
+    rc = deliver_mod.main(["--pit-id", PIT_ID, "--vault-path", str(vault), "--dry-run"])
+    out = capsys.readouterr().out
+    assert rc == 2
+    assert "qa_screenshots_missing" in out
+
+
+def test_dev_qa_skipped_with_reason_delivers_and_is_visible(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    pytest.importorskip("pptx")
+    outcome = _dev_outcome()
+    outcome["human_qa"] = {
+        "status": "QA_SKIPPED_WITH_REASON",
+        "real_ifc_upload": "skipped",
+        "reason": "deliverable es una CLI sin superficie visual",
+    }
+    vault = _green_dev_vault(
+        tmp_path, outcome, monkeypatch, with_qa_screenshots=False
+    )
+    rc = deliver_mod.main(["--pit-id", PIT_ID, "--vault-path", str(vault), "--dry-run"])
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "PIT_DELIVER_PACK_DRY_OK" in out
+    pack = json.loads(
+        (vault / "pit" / PIT_ID / "deliverables" / "telegram_pack.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    product_line = next(l for l in pack["summary_lines"] if l.startswith("• Producto"))
+    assert "QA QA_SKIPPED_WITH_REASON" in product_line
+    assert "CLI sin superficie visual" in product_line
+
+
+def test_dev_fail_when_qa_skip_without_reason(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    pytest.importorskip("pptx")
+    outcome = _dev_outcome()
+    outcome["human_qa"] = {"status": "QA_SKIPPED_WITH_REASON", "reason": ""}
+    vault = _green_dev_vault(tmp_path, outcome, monkeypatch, with_qa_screenshots=False)
+    rc = deliver_mod.main(["--pit-id", PIT_ID, "--vault-path", str(vault), "--dry-run"])
+    out = capsys.readouterr().out
+    assert rc == 2
+    assert "human_qa_skip_without_reason" in out
+
+
+def test_dev_fail_when_product_fulfillment_missing(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    pytest.importorskip("pptx")
+    outcome = _dev_outcome()
+    outcome["fulfillment_decision"].pop("product_fulfillment")
+    vault = _green_dev_vault(tmp_path, outcome, monkeypatch)
+    rc = deliver_mod.main(["--pit-id", PIT_ID, "--vault-path", str(vault), "--dry-run"])
+    out = capsys.readouterr().out
+    assert rc == 2
+    assert "product_fulfillment_missing" in out
+
+
+def test_dev_fail_when_product_fulfillment_invalid(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    pytest.importorskip("pptx")
+    outcome = _dev_outcome()
+    outcome["fulfillment_decision"]["product_fulfillment"] = "shipped"
+    vault = _green_dev_vault(tmp_path, outcome, monkeypatch)
+    rc = deliver_mod.main(["--pit-id", PIT_ID, "--vault-path", str(vault), "--dry-run"])
+    out = capsys.readouterr().out
+    assert rc == 2
+    assert "product_fulfillment_invalid:shipped" in out
+
+
+def test_dev_rejected_product_still_delivers_but_visible(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Rechazo explícito (caso pit-dev-ifc-viewer) NO bloquea el pack — lo cuenta."""
+    pytest.importorskip("pptx")
+    outcome = _dev_outcome()
+    outcome["fulfillment_decision"]["product_fulfillment"] = "rejected"
+    vault = _green_dev_vault(tmp_path, outcome, monkeypatch)
+    rc = deliver_mod.main(["--pit-id", PIT_ID, "--vault-path", str(vault), "--dry-run"])
+    assert rc == 0
+    capsys.readouterr()
+    pack = json.loads(
+        (vault / "pit" / PIT_ID / "deliverables" / "telegram_pack.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    product_line = next(l for l in pack["summary_lines"] if l.startswith("• Producto"))
+    assert "fulfillment rechazado" in product_line
+
+
+def test_dev_deck_embeds_qa_screenshots(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """El deck de un dev con QA_PASS lleva las capturas (nunca más 0 imágenes)."""
+    pptx = pytest.importorskip("pptx")
+    vault = _green_dev_vault(tmp_path, _dev_outcome(), monkeypatch)
+    rc = deliver_mod.main(["--pit-id", PIT_ID, "--vault-path", str(vault), "--dry-run"])
+    assert rc == 0
+    capsys.readouterr()
+    deck_path = vault / "pit" / PIT_ID / "deliverables" / f"{PIT_ID}-outcome-deck.pptx"
+    prs = pptx.Presentation(str(deck_path))
+    picture_count = sum(
+        1
+        for slide in prs.slides
+        for shape in slide.shapes
+        if shape.shape_type == 13  # PICTURE
+    )
+    assert picture_count >= 3

@@ -11,8 +11,14 @@ dates:
   closed_at: <YYYY-MM-DD>
 
 budget:
-  budget_usd: <del spec>
-  usd_estimated_spent: <estimación real al cierre>
+  budget_usd: <del spec — TECHO autorizado por David, NO es gasto>
+  usd_estimated_spent: <estimación real al cierre — la puebla pit_collect_tokens.py --update-outcome>
+  # Billing truth (postmortem pit-dev-ifc-viewer): correr
+  #   python scripts/pit/pit_collect_tokens.py --pit-id <pit_id> --update-outcome
+  # antes del deliver. En PIT-DEV, tokens_total "not_reported" BLOQUEA la entrega.
+  tokens_total: not_reported     # suma OpenClaw input+output (+copilot si reporta)
+  pricing_source: null           # default_gpt5_class_per_mtok_v1 | cli_override
+  token_ledger: pit/<pit_id>/metrics/token_ledger.yaml
 
 lanes:
   # Una entrada por lane. fulfillment = score del kpi_pack de la última iteración.
@@ -58,6 +64,25 @@ fulfillment_decision:
   # Qué se hace con el prototipo ganador (columna Fulfillment del negocio).
   next_step: <archive | iterate-new-pit | fulfillment-track>
   notes: "<decisión David>"
+  # Fulfillment de PRODUCTO explícito (postmortem pit-dev-ifc-viewer): el
+  # cierre procedural (trace + gate David) NO implica aceptación del producto.
+  # En PIT-DEV este campo es obligatorio para el deliver (fail-closed).
+  product_fulfillment: pending_validation   # accepted | rejected | pending_validation
+  product_fulfillment_reason: null          # "<por qué se acepta/rechaza>"
+
+human_qa:
+  # Gate de QA de producto PIT-DEV — lo escribe scripts/pit/pit_dev_human_qa_gate.py
+  # (NO completar a mano; QA_FAIL o ausente bloquea pit_deliver_telegram_pack.py).
+  status: null                   # QA_PASS | QA_FAIL | QA_SKIPPED_WITH_REASON
+  real_ifc_upload: null          # pass | fail | skipped (input real >100KB, no fixture)
+  ifc_file: null
+  ifc_size_bytes: null
+  elements_parsed: null
+  screenshots_dir: pit/<pit_id>/deliverables/qa-screenshots
+  screenshots: []                # ≥3 PNG reales: vista 3D, propiedades, observación/export
+  verified_at: null              # ISO8601
+  mode: null                     # auto | evidence | skip
+  reason: null                   # obligatorio si QA_SKIPPED_WITH_REASON
 
 deliverables:
   # Entrega Telegram post-torneo (PIT-TG-DRIVE) — completar tras el deliver pack.

@@ -7,14 +7,18 @@ Toma ``pit/<pit_id>/outcome/pit_outcome_report.yaml`` (+ opcional
 Worker ``document.create_presentation`` (import directo — mismo código).
 
 Slides (mapeo desde la plantilla de outcome):
-  1. Título · pit_id · fechas · budget vs gasto estimado
+  1. Título · pit_id · fechas · gasto estimado vs techo budget · tokens
   2. Problem statement (del spec si está)
   3. Tabla de lanes (lane_id, fulfillment, status, hypothesis_validated)
   4. Winner + rationale + gate David
   5. KPI summary (expected vs achieved, synthetic_share)
   6. Learnings (validated / refuted / inconclusive)
-  7. Próximo paso (fulfillment_decision) + preview MC (hint, nunca URL pública)
+  7. Próximo paso (fulfillment_decision + product_fulfillment + QA producto)
+     + preview MC (hint, nunca URL pública)
   8. (solo si hay) Stuck log
+  9+ (PIT-DEV con QA) capturas reales de deliverables/qa-screenshots/ — una
+     slide por PNG (evidencia visual del gate pit_dev_human_qa_gate.py; el
+     deck de un torneo con QA_PASS ya no puede salir sin imágenes)
 
 Uso::
 
@@ -87,8 +91,9 @@ def build_slides(
     outcome: dict[str, Any],
     spec: dict[str, Any] | None = None,
     run_metrics: dict[str, Any] | None = None,
+    qa_screenshots: list[Path] | None = None,
 ) -> list[dict[str, str]]:
-    """Mapear outcome (+spec/metrics) → slides para document.create_presentation."""
+    """Mapear outcome (+spec/metrics/QA) → slides para document.create_presentation."""
     spec = spec or {}
     pit_id = _clean(outcome.get("pit_id"), "pit-?")
     title = _clean(outcome.get("title"), _clean(spec.get("title"), pit_id))
@@ -96,18 +101,27 @@ def build_slides(
     dates = outcome.get("dates") or {}
     budget = outcome.get("budget") or {}
     budget_usd = _fmt_num(budget.get("budget_usd"))
-    spent = _fmt_num(budget.get("usd_estimated_spent"))
+    spent = _fmt_num(budget.get("usd_estimated_spent"), "no reportado")
+    tokens_total = budget.get("tokens_total")
+    if isinstance(tokens_total, (int, float)) and not isinstance(tokens_total, bool):
+        tokens_line = f"Tokens: {_fmt_num(tokens_total)}"
+        source = _clean(budget.get("pricing_source"), "")
+        if source != "—":
+            tokens_line += f" · pricing: {source}"
+    else:
+        tokens_line = "Tokens: not_reported"
 
     slides: list[dict[str, str]] = []
 
-    # 1 — Título
+    # 1 — Título (billing truth: gasto estimado ≠ techo autorizado)
     verdict = ""
     if run_metrics:
         verdict = _clean(run_metrics.get("verdict"), "")
     title_lines = [
         f"{pit_id}",
         f"Periodo: {_clean(dates.get('started_at'))} → {_clean(dates.get('closed_at'))}",
-        f"Budget: {spent} / {budget_usd} USD (estimado)",
+        f"Gasto estimado: {spent} USD · techo budget: {budget_usd} USD",
+        tokens_line,
     ]
     if verdict:
         title_lines.append(f"Runner: {verdict}")
@@ -183,10 +197,15 @@ def build_slides(
         "content": "\n".join(learn_lines) or "Sin learnings registrados.",
     })
 
-    # 7 — Próximo paso + preview
+    # 7 — Próximo paso + fulfillment producto + QA + preview
     decision = outcome.get("fulfillment_decision") or {}
+    product_fulfillment = _clean(decision.get("product_fulfillment"), "no declarado")
+    qa_block = outcome.get("human_qa") or {}
+    qa_status = _clean(qa_block.get("status"), "sin QA registrado")
     next_lines = [
         f"Próximo paso: {_clean(decision.get('next_step'))}",
+        f"Fulfillment producto: {product_fulfillment} (cierre procedural ≠ aceptación de producto)",
+        f"QA producto: {qa_status}",
         _clean(decision.get("notes"), ""),
         "",
         "Preview prototipos (PC + túnel, nunca URL pública):",
@@ -213,7 +232,24 @@ def build_slides(
     if stuck_lines:
         slides.append({"title": "Stuck log", "content": "\n".join(stuck_lines)})
 
+    # 9+ — Evidencia QA (PIT-DEV): una slide por captura real. Postmortem
+    # pit-dev-ifc-viewer: el deck salió con 7 slides y 0 imágenes.
+    for shot in qa_screenshots or []:
+        slides.append({
+            "title": f"QA producto — {shot.stem}",
+            "content": f"Captura del gate de QA ({shot.name})",
+            "image_path": str(shot),
+        })
+
     return slides
+
+
+def find_qa_screenshots(outcome_path: Path) -> list[Path]:
+    """PNG reales del gate QA en pit/<pit_id>/deliverables/qa-screenshots/."""
+    shots_dir = outcome_path.parent.parent / "deliverables" / "qa-screenshots"
+    if not shots_dir.is_dir():
+        return []
+    return sorted(p for p in shots_dir.glob("*.png") if p.is_file())
 
 
 def default_output_path(outcome_path: Path, pit_id: str) -> Path:
@@ -240,7 +276,12 @@ def build_deck(
 
     run_metrics = load_run_metrics(run_metrics_path)
 
-    slides = build_slides(outcome, spec=spec, run_metrics=run_metrics)
+    slides = build_slides(
+        outcome,
+        spec=spec,
+        run_metrics=run_metrics,
+        qa_screenshots=find_qa_screenshots(outcome_path),
+    )
 
     if output_path is None:
         output_path = default_output_path(outcome_path, pit_id)

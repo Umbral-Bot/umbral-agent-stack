@@ -333,10 +333,11 @@ Este es el mensaje de **CIERRE** — el único reporte espontáneo de fin de tor
 ```text
 TORNEO PIT-DEV · <pit_id>
 Estado: cerrado · Winner: <lane_id> (gate David: <frase/pending>)
+Producto: fulfillment <accepted|rejected|pending_validation> · QA <QA_PASS|QA_SKIPPED (motivo)>
 Scores (rúbrica ejecutable): <lane> <score> · <lane> <score> · <lane> <score>
 Seguridad: <EGRESS_CLEAN × N | EGRESS_FLAGGED: lane-x (<motivo>)>
 Trazabilidad: <TRACE_COMPLETE | TRACE_GAPS(<lista>)>
-Eficiencia: <spent>/<budget> USD (est.) · tokens: <total o not_reported> · duración: <hh:mm>
+Eficiencia: gasto estimado <spent> USD / techo <budget> USD · tokens: <total — not_reported bloquea entrega> · duración: <hh:mm>
 vs torneo anterior: <mejor/peor en costo/tiempo, 1 línea>
 Deliverable winner: pit/<pit_id>/lanes/<lane>/deliverable/ (instala: <sí/no> · tests: <N pass>)
 Mejoras registradas: <n> propuestas → handoff mejora continua §5
@@ -374,17 +375,20 @@ La misma política vive en el rol del orquestador
 
 ## Post-torneo
 
-**Orden canónico de entrega (obligatorio antes de declarar el torneo "terminado")** — en PIT-DEV lo hace cumplir `pit_deliver_telegram_pack.py` (fail-closed):
+**Orden canónico de entrega (obligatorio antes de declarar el torneo "terminado")** — en PIT-DEV lo hace cumplir `pit_deliver_telegram_pack.py` (fail-closed; gates del postmortem [`pit-dev-ifc-viewer-postmortem-2026-07-04.md`](../../../../docs/ops/pit-dev-ifc-viewer-postmortem-2026-07-04.md)):
 
 1. **Outcome report** → `pit/<pit_id>/outcome/pit_outcome_report.yaml` (+ deck borrador con [`pit_build_outcome_deck.py`](../../../../scripts/pit/pit_build_outcome_deck.py)).
-2. **Trazabilidad PASS** (PIT-DEV): fase `--phase traceability` corrida y `TRACE_COMPLETE` (`pit/<pit_id>/traceability/report.md`). Con `TRACE_GAPS` NO hay entrega: informe a Rick → mejora continua.
-3. **Gate David sobre el winner**: `david_gate` con la frase literal registrada en el outcome. Cualquier valor vacío o que **empiece con** `pending` (prefijo, no igualdad exacta) sigue siendo pending → no hay entrega.
-4. **Drive upload** (deliver pack, sección siguiente): deck ejecutivo **+ zip del deliverable winner (PIT-DEV)** a `GOOGLE_DRIVE_PIT_FOLDER_ID`.
-5. **Telegram CIERRE** — único mensaje espontáneo de fin (política §Comms): rendición ≤15 líneas + links Drive.
-6. **(fase 2) Notion publish** — subpágina con el resumen + links; hoy es un hook documentado (`notion_publish_stub`, `notion_page_url: null` en el pack), NO implementado.
-7. Handoff mejora continua (improvement-supervisor) — propuestas documentadas, **no** auto-merge de prompts: [`pit-handoff-mejora-continua.md`](../../../../docs/ops/pit-handoff-mejora-continua.md).
-8. Archivar: mover `pit/<pit_id>/` → `archive/<pit_id>/` (lo hace Rick).
-9. Índice de procesos + checklist PIT-7: [`pit-process-index.md`](../../../../docs/ops/pit-process-index.md).
+2. **Billing truth (PIT-DEV)**: `python scripts/pit/pit_collect_tokens.py --pit-id <pit_id> --update-outcome` → escribe `pit/<pit_id>/metrics/token_ledger.yaml` y puebla `budget.tokens_total` + `usd_estimated_spent` + `pricing_source` en el outcome. `budget_usd` es el **TECHO autorizado, no el gasto** — nunca reportar "0/50" ambiguo. Con `tokens_total: not_reported` NO hay entrega (FAIL `tokens_total_not_reported`).
+3. **QA de producto (PIT-DEV)**: [`pit_dev_human_qa_gate.py`](../../../../scripts/pit/pit_dev_human_qa_gate.py) — input real (IFC >100 KB, no fixtures tipo `mini-site.ifc`), ≥1 elemento parseado, ≥3 screenshots reales en `deliverables/qa-screenshots/` (vista 3D, propiedades, observación/export) → bloque `human_qa` en el outcome. Sin `QA_PASS` (o `QA_SKIPPED_WITH_REASON` con motivo auditable) NO hay entrega. Las capturas se embeben en el deck (el deck de un dev con QA ya no puede salir sin imágenes).
+4. **Fulfillment explícito (PIT-DEV)**: `fulfillment_decision.product_fulfillment: accepted | rejected | pending_validation` en el outcome — **el cierre procedural NUNCA implica aceptación de producto**. Ausente/ inválido ⇒ FAIL `product_fulfillment_missing`/`product_fulfillment_invalid`.
+5. **Trazabilidad PASS** (PIT-DEV): fase `--phase traceability` corrida y `TRACE_COMPLETE` (`pit/<pit_id>/traceability/report.md`). Con `TRACE_GAPS` NO hay entrega: informe a Rick → mejora continua.
+6. **Gate David sobre el winner**: `david_gate` con la frase literal registrada en el outcome. Cualquier valor vacío o que **empiece con** `pending` (prefijo, no igualdad exacta) sigue siendo pending → no hay entrega.
+7. **Drive upload** (deliver pack, sección siguiente): deck ejecutivo **+ zip del deliverable winner (PIT-DEV)** a `GOOGLE_DRIVE_PIT_FOLDER_ID`.
+8. **Telegram CIERRE** — único mensaje espontáneo de fin (política §Comms): rendición ≤15 líneas + links Drive.
+9. **(fase 2) Notion publish** — subpágina con el resumen + links; hoy es un hook documentado (`notion_publish_stub`, `notion_page_url: null` en el pack), NO implementado.
+10. Handoff mejora continua (improvement-supervisor) — propuestas documentadas, **no** auto-merge de prompts: [`pit-handoff-mejora-continua.md`](../../../../docs/ops/pit-handoff-mejora-continua.md).
+11. Archivar: mover `pit/<pit_id>/` → `archive/<pit_id>/` (lo hace Rick).
+12. Índice de procesos + checklist PIT-7: [`pit-process-index.md`](../../../../docs/ops/pit-process-index.md).
 
 ---
 
@@ -399,9 +403,13 @@ Tras judge + outcome report + gate David (winner cerrado, `david_gate` sin prefi
    ```
 
    El script construye el deck (`pit/<pit_id>/deliverables/<pit_id>-outcome-deck.pptx`,
-   builder [`pit_build_outcome_deck.py`](../../../../scripts/pit/pit_build_outcome_deck.py)),
-   en PIT-DEV **verifica trazabilidad** (`TRACE_COMPLETE`, fail-closed) y **zipea el
-   deliverable winner** (`pit/<pit_id>/deliverables/<pit_id>-<winner>-deliverable.zip`),
+   builder [`pit_build_outcome_deck.py`](../../../../scripts/pit/pit_build_outcome_deck.py),
+   que embebe las capturas de `deliverables/qa-screenshots/` si existen),
+   en PIT-DEV **verifica los gates de calidad fail-closed** — trazabilidad
+   (`TRACE_COMPLETE`), billing truth (`budget.tokens_total` real), QA de
+   producto (`human_qa` con `QA_PASS`/skip auditable) y fulfillment explícito
+   (`product_fulfillment`) — y **zipea el deliverable winner**
+   (`pit/<pit_id>/deliverables/<pit_id>-<winner>-deliverable.zip`),
    sube deck (+ zip) a la carpeta Drive compartida Rick↔David (Worker task
    `google_drive.upload_file`) y escribe
    `pit/<pit_id>/deliverables/telegram_pack.json` con `summary_lines[]` listos
@@ -417,9 +425,10 @@ Tras judge + outcome report + gate David (winner cerrado, `david_gate` sin prefi
    Estado: cerrado · Winner: <lane_id> · Fulfillment: <score>
    Resumen:
    • <1 línea problema>
-   • <N lanes> · budget <spent>/<budget> USD (estimado)
+   • <N lanes> · gasto estimado <spent> USD / techo <budget> USD · tokens <total|not_reported>
    • KPI clave: <kpi_id> <achieved> vs <expected> <unit>
    • Aprendizaje: <1 validated o refuted>
+   • Producto (PIT-DEV): fulfillment <estado> · QA <estado>
    Deck ejecutivo (Google Drive):
    <web_view_link>
    Preview prototipos (PC + túnel): scripts/ops/pit-judge-open.ps1 → /pit/judge/<pit_id>
@@ -437,6 +446,14 @@ Reglas duras:
 - Si el upload falla: reportar `PIT_DELIVER_PACK_FAIL` + motivo; sin link no hay mensaje "con deck".
 - PIT-DEV sin `TRACE_COMPLETE` (`traceability_report_missing` / `traceability_gaps:<lista>`)
   o sin deliverable winner (`winner_deliverable_missing`) ⇒ FAIL, no hay entrega parcial.
+- PIT-DEV con `tokens_total` ausente/`not_reported` ⇒ FAIL `tokens_total_not_reported`
+  (correr `pit_collect_tokens.py --update-outcome` primero). `budget_usd` es techo, NO gasto.
+- PIT-DEV sin bloque `human_qa` válido ⇒ FAIL (`human_qa_missing` / `human_qa_failed:<status>` /
+  `human_qa_skip_without_reason` / `qa_screenshots_missing`). Correr
+  `pit_dev_human_qa_gate.py` con un input REAL antes del deliver.
+- PIT-DEV sin `fulfillment_decision.product_fulfillment` explícito ⇒ FAIL
+  (`product_fulfillment_missing` / `product_fulfillment_invalid:<v>`) — cierre
+  procedural ≠ aceptación de producto (postmortem pit-dev-ifc-viewer).
 - El deck y el zip van SOLO a `GOOGLE_DRIVE_PIT_FOLDER_ID` (carpeta compartida); el prototipo HTML
   sigue en túnel + Mission Control — nunca URL pública.
 
@@ -446,6 +463,7 @@ Reglas duras:
 
 - Visión y decisiones: `docs/ops/product-innovation-tournament-vision-2026-06-09.md`
 - PIT-DEV (modo dev, spec v3): `docs/ops/pit-dev-mode-vision-2026-07-03.md`
+- Postmortem quality gates: `docs/ops/pit-dev-ifc-viewer-postmortem-2026-07-04.md`
 - Schema spec: `docs/schemas/pit-spec-v1.schema.json` + `scripts/pit/pit_spec_validate.py`
 - Kanban/KPI: `docs/ops/pit-kanban-kpi-protocol.md`
 - Vault: `docs/ops/pit-vault-layout.md` + `scripts/pit/pit_vault_check.py`

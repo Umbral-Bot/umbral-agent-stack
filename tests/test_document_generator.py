@@ -336,6 +336,42 @@ class TestCreatePresentation:
         assert result["ok"] is True
         assert result["slide_count"] == 1
 
+    def test_slide_with_image(self, tmp_path):
+        """image_path embebe la captura en la slide (evidencia QA PIT-DEV)."""
+        from io import BytesIO
+
+        from pptx import Presentation
+
+        from tests.pit_qa_helpers import write_real_png
+
+        shot = write_real_png(tmp_path / "qa-shot.png")
+        result = handle_document_create_presentation({
+            "slides": [
+                {"title": "S1", "content": "sin imagen"},
+                {"title": "QA", "content": "captura", "image_path": str(shot)},
+            ],
+        })
+        assert result["ok"] is True
+        assert result["image_count"] == 1
+        raw = base64.b64decode(result["base64"])
+        prs = Presentation(BytesIO(raw))
+        pictures = [
+            shape
+            for slide in prs.slides
+            for shape in slide.shapes
+            if shape.shape_type == 13  # PICTURE
+        ]
+        assert len(pictures) == 1
+
+    def test_slide_with_missing_image_raises(self, tmp_path):
+        """Una slide de evidencia no puede perder su imagen en silencio."""
+        with pytest.raises(ValueError, match="slide image not found"):
+            handle_document_create_presentation({
+                "slides": [
+                    {"title": "QA", "content": "x", "image_path": str(tmp_path / "nope.png")},
+                ],
+            })
+
 
 # ── Handler registration ─────────────────────────────────────────────────────
 

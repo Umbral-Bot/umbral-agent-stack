@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-"""PIT spec v1 — modelos pydantic + validador CLI.
+"""PIT spec — modelos pydantic + validador CLI (v1 product · v2 broker · v3 dev).
 
 Fuente ejecutable del contrato documentado en
 ``docs/schemas/pit-spec-v1.schema.json``. Un pit_spec describe un torneo de
 producto (modo ``product``: PROTOTYPE_URL + KPI), a diferencia del modo D3
-``code`` (PR_URL, ver docs/79-tournament-protocol-openclaw-native.md).
+``code`` (PR_URL, ver docs/79-tournament-protocol-openclaw-native.md). El modo
+``dev`` (schema_version 3, PIT-DEV) describe un torneo de producto técnico
+usable (DELIVERABLE_PATH + TEST_REPORT + JUDGE_SCORE) — contrato en
+``docs/ops/pit-dev-mode-vision-2026-07-03.md``.
 
 Reglas no negociables (decisiones David 2026-06-09):
 
@@ -547,9 +550,156 @@ def format_broker_markdown(result: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+# ---------------------------------------------------------------------------
+# PIT spec v3 — dev mode (PIT-DEV: developer product tournaments)
+# ---------------------------------------------------------------------------
+# A v3 spec describes a *developer product* tournament: lanes build a usable
+# technical deliverable (installed/executed/evaluated by judge agents) instead
+# of an HTML prototype (v1) or a single broker dispatch (v2). Contract:
+# docs/ops/pit-dev-mode-vision-2026-07-03.md. Detected by
+# ``schema_version: 3`` or ``mode: dev`` — v1 product and v2 broker specs are
+# untouched (their classes and detection stay byte-identical).
+
+DEV_RUBRIC_CRITERIA = ("funcionalidad", "robustez", "dx", "docs", "testabilidad")
+
+# security_monitor / traceability are mandatory *and explicit*: the spec must
+# literally declare them as "required" (no silent default — same philosophy as
+# budget_usd / iteration_count coming from David's input).
+DEV_REQUIRED_LITERAL = "required"
+
+
+class RubricWeights(BaseModel):
+    """Pesos de la rúbrica ejecutable del judge-dev (todos > 0)."""
+
+    funcionalidad: float = Field(default=1.0, gt=0)
+    robustez: float = Field(default=1.0, gt=0)
+    dx: float = Field(default=1.0, gt=0)
+    docs: float = Field(default=1.0, gt=0)
+    testabilidad: float = Field(default=1.0, gt=0)
+
+    model_config = {"extra": "forbid"}
+
+    def as_dict(self) -> dict[str, float]:
+        return {criterion: getattr(self, criterion) for criterion in DEV_RUBRIC_CRITERIA}
+
+
+class PitSpecDev(BaseModel):
+    """Contrato pit_spec v3 (modo dev — PIT-DEV).
+
+    NO incluye ``visual_generation``: Magnific está prohibido para toda
+    lane/juez/subagente en TODOS los modos (visión David §8); cualquier visual
+    del deck es decisión de Rick post-judge, fuera del spec de lanes.
+    ``extra: forbid`` bloquea que se lo intente colar.
+    """
+
+    schema_version: Literal[3] = 3
+    pit_id: str = Field(..., pattern=r"^[a-z0-9][a-z0-9-]{2,63}$")
+    mode: Literal["dev"] = "dev"
+    title: str = Field(..., min_length=1)
+    problem_statement: str = Field(..., min_length=1)
+    deliverable_spec: str = Field(..., min_length=1)
+    repo_ref: str = Field(..., min_length=1)
+    lane_count: int = Field(..., ge=2, le=5)
+    iteration_count: int = Field(..., ge=2, le=10)
+    budget_usd: float = Field(..., gt=0)
+    judge_count: int = Field(default=2, ge=1, le=5)
+    rubric_weights: RubricWeights = Field(default_factory=RubricWeights)
+    security_monitor: Literal["required"] = Field(...)
+    traceability: Literal["required"] = Field(...)
+    vault: Literal["umbral-pit-vault"] = PIT_VAULT_NAME
+    notes: str | None = None
+
+    model_config = {"extra": "forbid"}
+
+    @property
+    def budget_per_lane_usd(self) -> float:
+        return self.budget_usd / self.lane_count
+
+
+def is_dev_spec(raw: dict[str, Any]) -> bool:
+    """True cuando el mapping crudo es un spec v3 dev (vs v1 product / v2 broker)."""
+    return raw.get("schema_version") == 3 or raw.get("mode") == "dev"
+
+
+def load_dev_spec(path: Path) -> PitSpecDev:
+    """Carga + valida un spec v3 dev; levanta ValidationError/ValueError si inválido."""
+    raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    if not isinstance(raw, dict):
+        raise ValueError(f"spec root must be a mapping, got {type(raw).__name__}")
+    return PitSpecDev.model_validate(raw)
+
+
+def validate_dev_file(path: Path) -> dict[str, Any]:
+    """Valida un spec v3 dev; devuelve ``status``/``errors``/``spec`` con errores por campo."""
+    errors: list[str] = []
+    spec_summary: dict[str, Any] = {}
+    try:
+        spec = load_dev_spec(path)
+    except FileNotFoundError:
+        errors.append(f"spec file not found: {path}")
+    except ValidationError as exc:
+        errors.extend(_format_validation_errors(exc))
+    except (ValueError, yaml.YAMLError) as exc:
+        errors.append(str(exc))
+    else:
+        spec_summary = {
+            "schema_version": 3,
+            "pit_id": spec.pit_id,
+            "mode": spec.mode,
+            "lane_count": spec.lane_count,
+            "iteration_count": spec.iteration_count,
+            "budget_usd": spec.budget_usd,
+            "budget_per_lane_usd": round(spec.budget_per_lane_usd, 2),
+            "deliverable_spec": spec.deliverable_spec,
+            "repo_ref": spec.repo_ref,
+            "judge_count": spec.judge_count,
+            "rubric_weights": spec.rubric_weights.as_dict(),
+            "security_monitor": spec.security_monitor,
+            "traceability": spec.traceability,
+        }
+    return {
+        "spec_path": str(path),
+        "schema_version": 3,
+        "status": "fail" if errors else "pass",
+        "errors": errors,
+        "spec": spec_summary,
+    }
+
+
+def format_dev_markdown(result: dict[str, Any]) -> str:
+    lines = [
+        "# PIT Spec Validate — v3 dev (PIT-DEV)",
+        "",
+        f"- Status: `{result['status']}`",
+        f"- Spec: `{result['spec_path']}`",
+    ]
+    if result["spec"]:
+        spec = result["spec"]
+        weights = ", ".join(
+            f"`{k}={v}`" for k, v in spec["rubric_weights"].items()
+        )
+        lines.extend(
+            [
+                f"- pit_id: `{spec['pit_id']}` | lanes: `{spec['lane_count']}` | "
+                f"iteraciones (tope): `{spec['iteration_count']}`",
+                f"- budget: `{spec['budget_usd']}` USD "
+                f"(`{spec['budget_per_lane_usd']}` por lane)",
+                f"- repo_ref: `{spec['repo_ref']}` | judges: `{spec['judge_count']}`",
+                f"- rubric: {weights}",
+                f"- security_monitor: `{spec['security_monitor']}` | "
+                f"traceability: `{spec['traceability']}`",
+                f"- deliverable_spec: {spec['deliverable_spec']}",
+            ]
+        )
+    if result["errors"]:
+        lines.extend(["", "## Errors"])
+        lines.extend(f"- {error}" for error in result["errors"])
+    return "\n".join(lines) + "\n"
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Validate a PIT spec (v1 product or v2 broker) YAML/JSON file."
+        description="Validate a PIT spec (v1 product, v2 broker or v3 dev) YAML/JSON file."
     )
     parser.add_argument("spec_path", type=Path, help="Path to pit_spec YAML/JSON.")
     parser.add_argument("--format", choices=("markdown", "json"), default="markdown")
@@ -563,6 +713,9 @@ def main(argv: list[str] | None = None) -> int:
     if isinstance(raw, dict) and is_broker_spec(raw):
         result = validate_broker_file(args.spec_path)
         rendered = format_broker_markdown(result)
+    elif isinstance(raw, dict) and is_dev_spec(raw):
+        result = validate_dev_file(args.spec_path)
+        rendered = format_dev_markdown(result)
     else:
         result = validate_file(args.spec_path)
         rendered = format_markdown(result)

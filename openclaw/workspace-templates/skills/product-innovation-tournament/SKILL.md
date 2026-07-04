@@ -4,8 +4,10 @@ description: >-
   PIT — Product Innovation Tournament: parser NL + alias /torneo_producto que
   convierte un pedido de David en pit_spec.yaml validado, confirma con gate
   literal "ok, arranca" y orquesta N lanes efímeras que compiten con
-  prototipos + KPI (PROTOTYPE_URL + KPI_PACK + fulfillment). NO es el torneo
-  de código D3 (PR_URL) — ese es multi-agent-tournament-orchestrator.
+  prototipos + KPI (PROTOTYPE_URL + KPI_PACK + fulfillment). Incluye el modo
+  PIT-DEV (spec v3): torneos de producto técnico usable con jueces ejecutores,
+  security-egress y trazabilidad. NO es el torneo de código D3 (PR_URL) — ese
+  es multi-agent-tournament-orchestrator.
 metadata:
   openclaw:
     emoji: "🧪"
@@ -17,7 +19,7 @@ metadata:
 
 Skill de Rick para torneos de **producto**: lanes paralelas que investigan, formulan hipótesis, prototipan y miden KPI. Implementa [`docs/ops/product-innovation-tournament-vision-2026-06-09.md`](../../../../docs/ops/product-innovation-tournament-vision-2026-06-09.md); contrato de entrada en [`docs/schemas/pit-spec-v1.schema.json`](../../../../docs/schemas/pit-spec-v1.schema.json).
 
-**Status:** v1.2 (PIT-2b) — parser + gate + contratos + runner smoke local (tasks `pit.*` + dry-run) **+ spawn real de agentes efímeros** vía `scripts/pit/pit_tournament_run.sh` ([`docs/ops/pit-2-runner-protocol.md`](../../../../docs/ops/pit-2-runner-protocol.md) §7). El spawn real requiere pit-vault desplegado + smoke `PIT_DRY_RUN_PASS` + autorización David por torneo (gate literal).
+**Status:** v1.3 (PIT-2b + PIT-DEV) — parser + gate + contratos + runner smoke local (tasks `pit.*` + dry-run) **+ spawn real de agentes efímeros** vía `scripts/pit/pit_tournament_run.sh` ([`docs/ops/pit-2-runner-protocol.md`](../../../../docs/ops/pit-2-runner-protocol.md) §7) **+ modo PIT-DEV** (spec v3, §PIT-DEV abajo). El spawn real requiere pit-vault desplegado + smoke `PIT_DRY_RUN_PASS` + autorización David por torneo (gate literal).
 
 ## When to use
 
@@ -63,7 +65,7 @@ Extraer del mensaje de David estas variables; lo que falte se **pregunta**, no s
 | `prototype_output` | "html" / "figma" / "both" | `html` (v1) |
 | `research_profile` | "académico/papers" → `academic`; "dolores/mercado" → `market_pain`; "competencia" → `competitive`; mezcla o nada → `mixed` (confirmar en gate) | `mixed` |
 | `kpi_definitions` | KPIs con unidad y objetivo ("60% de check-ins") | **NO — si no hay ≥1 KPI con kpi_expected, preguntar** |
-| `visual_generation` | "con visuales/mockups Magnific" → enabled + `aspect_ratio: "4:3"` (default canónico; otro ratio solo si David lo pide explícito) | enabled=false |
+| `visual_generation` | "con visuales/mockups Magnific" → enabled + `aspect_ratio: "4:3"` (default canónico). **Semántica PIT-DEV FASE 6:** habilita SOLO la generación de Rick post-judge para el deck — jamás una herramienta de lane | enabled=false |
 | `synthetic_personas` | "con personas sintéticas" → enabled (labeled siempre true) | enabled=false |
 | `hypothesis_seed` | si David ya trae una hipótesis | null |
 | `template_name` | — (ver Plantillas) | null |
@@ -95,7 +97,7 @@ PIT listo para arrancar — confirmá:
   prototipo:        html · preview: túnel + Mission Control (NO URL pública)
   research:         mixed
   KPIs:             checkin_completion (60 %), time_to_checkin (30 s ↓), opt_in_signals (5 usuarios)
-  visual:           Magnific 4:3 (gate: columna Prototype)
+  visual:           Magnific 4:3 (SOLO Rick post-judge para el deck; lanes jamás)
   personas sint.:   sí, etiquetadas
 
 Para lanzar respondé literalmente: ok, arranca
@@ -167,7 +169,7 @@ Límites heredados de OpenClaw (sin cambios): 2–5 lanes
 
 ### Ciclo por lane (× iteration_count)
 
-`Research → Hypothesis → Prototype → KPI Track → Fulfillment → Review` sobre el tablero de 9 columnas ([protocolo](../../../../docs/ops/pit-kanban-kpi-protocol.md)). Research según `research_profile` (tiers: academic | market_pain | competitive | mixed). Visual Magnific solo con gate de columna ([pit-visual-magnific](../../../../docs/ops/pit-visual-magnific.md)); Rick es el broker — las lanes **no** llaman a Magnific directo.
+`Research → Hypothesis → Prototype → KPI Track → Fulfillment → Review` sobre el tablero de 9 columnas ([protocolo](../../../../docs/ops/pit-kanban-kpi-protocol.md)). Research según `research_profile` (tiers: academic | market_pain | competitive | mixed). **Magnific: PROHIBIDO para toda lane/juez/subagente en TODOS los modos** — ni invocarlo ni pedirlo; cualquier visual es decisión de Rick post-judge para el deck ([pit-visual-magnific](../../../../docs/ops/pit-visual-magnific.md)).
 
 ---
 
@@ -264,13 +266,81 @@ Doc operativa: [`docs/ops/pit-p5-broker-enforce-20260622.md`](../../../../docs/o
 | pit-vault sin desplegar o `pit_vault_check.py` fail | STOP — deploy/fix vault primero |
 | Pedido de URL pública para el prototipo | STOP — solo túnel + Mission Control en v1 |
 | Lane pide escribir fuera de su subárbol | STOP — write scope `pit/<pit_id>/lanes/<lane_id>/` |
-| Lane pide llamar Magnific directo o sin gate de columna | STOP — Rick broker + gate Prototype |
+| **Lane/juez/subagente pide o invoca Magnific (CUALQUIER modo)** | STOP — `lane_blocked`; Magnific es SOLO Rick, post-judge, fuera de las lanes (FASE 6). El registro de efímeros lo deniega vía `tools.deny` |
 | Lane intenta LLM directo para coding/repo-analysis | STOP — `lane_blocked`; todo por `copilot_cli.run` (P5) |
 | Preflight P5 incompleto (P2/P3 · #481-483 · P4 · validate) | STOP — no spawn de lanes broker |
 | `copilot_cli.run` falla en una lane | lane `blocked`, sin fallback a proveedor directo |
 | Señal sintética sin etiquetar | STOP — labeled es obligatorio |
 | Pedido de adjuntar el `.pptx` por Telegram | STOP — v1 entrega SOLO link Drive (PIT-TG-DRIVE); sin Drive → fallback texto + MC hint |
 | Sesión nested sin `sessions_spawn` | STOP — ISSUE-001 / G-D1b (igual que D3) |
+
+---
+
+## PIT-DEV — torneo "developer product" (spec v3, `mode: dev`)
+
+Modo nuevo (visión David 2026-07-03, [`pit-dev-mode-vision-2026-07-03.md`](../../../../docs/ops/pit-dev-mode-vision-2026-07-03.md)): el deliverable es un **producto técnico usable** (ej.: API/MCP server para manejar umbral-agent-stack desde IDEs), no un mock HTML. v1 producto y v2 broker quedan intactos.
+
+| | **D3 code** | **PIT product (v1)** | **PIT-DEV (v3)** |
+|---|---|---|---|
+| Cierre de lane | `PR_URL=` | `PROTOTYPE_URL=` + `KPI_PACK=` + `FULFILLMENT=` | `DELIVERABLE_PATH=` + `TEST_REPORT=` + `SELF_ASSESSMENT=` |
+| Juez | rubric sobre diffs | fulfillment + scorecard producto | **jueces ejecutores**: instalan, corren y evalúan (rúbrica ejecutable + `JUDGE_SCORE`) |
+
+### Qué cambia respecto a v1
+
+- **Workspace curado por lane**: snapshot del repo (ref pinneado del spec, `git archive`) + `CONTEXT_INDEX.md` — las lanes NUNCA trabajan sobre `main` vivo. El producto va en `deliverable/`, fuera del snapshot ([`pit_lane_workspace_init.sh`](../../../../scripts/pit/pit_lane_workspace_init.sh)).
+- **Tests reales**: cada iteración con tests deja `test_report.json` (schema en vault `templates/`); `lane_complete` = deliverable presente + report válido (`exit_code: 0`) + tests **re-ejecutables** por el collect.
+- **Security-egress**: lanes y jueces DECLARAN su egress (`egress.jsonl`); el agente `<pit_id>-security` consolida, contrasta y emite `EGRESS_CLEAN | EGRESS_FLAGGED` por lane ([`pit-security-egress-monitor.md`](../../../../docs/ops/pit-security-egress-monitor.md)).
+- **Jueces ejecutores** (`judge_count`, default 2), spawneados POST-cierre de lanes: scorecards contra `judge-scorecard.schema.json` + ranking agregado — **el ranking NO decide** ([`pit-dev-judge-protocol.md`](../../../../docs/ops/pit-dev-judge-protocol.md)).
+- **Trazabilidad post-torneo**: agente + script verifican la cadena spec→…→deck ([`pit-traceability-agent.md`](../../../../docs/ops/pit-traceability-agent.md), [`pit_traceability_check.py`](../../../../scripts/pit/pit_traceability_check.py)).
+
+### Runner
+
+El runner v1 detecta el spec dev y delega (mismo patrón que el broker v2):
+
+```bash
+bash scripts/pit/pit_tournament_run.sh pit/<pit_id>/spec/pit_spec.yaml \
+  <lanes.yaml> --gate "ok, arranca"            # fases: lanes → security → judges
+bash scripts/pit/pit_tournament_run.sh <spec.yaml> <lanes.yaml> \
+  --gate "ok, arranca" --plan-only              # validación post-merge sin spawn
+python scripts/pit/pit_dev_run.py <spec.yaml> --phase traceability \
+  --gate "ok, arranca"                          # post-outcome/deck
+```
+
+Kill + desregistro SIEMPRE al cierre (todos los efímeros del torneo: lanes, security, judges, traceability — prefijo `<pit_id>-`).
+
+### Gates David explícitos (PIT-DEV)
+
+1. **Spawn:** literal `ok, arranca` — sin la frase exacta el runner aborta `PIT_RUN_BLOCKED`.
+2. **Pre-judge:** si security flaggeó una lane (`EGRESS_FLAGGED`), el judge NO corre sobre ella; incluirla exige decisión explícita (`--judge-flagged-lanes "<motivo>"`, registrada en métricas; + gate David si es grave). Sin `verdict.md` no hay judge (fail-closed).
+3. **Winner:** el ranking del judge NO decide — Rick consolida y David da el gate (regla existente).
+4. **Acción externa:** cualquier salida (Drive/Telegram, flujo PIT-TG-DRIVE) pide autorización, como siempre.
+
+### Hard stops PIT-DEV (además de los generales)
+
+| Condición | Acción |
+|---|---|
+| Falta `deliverable_spec`, `repo_ref`, `budget_usd`, `iteration_count`, `security_monitor: required` o `traceability: required` en el spec | STOP — `pit_spec_validate` ≠ pass |
+| Lane parchea el snapshot para "mejorar main" | STOP — el torneo produce un artefacto nuevo, no un PR |
+| `workspace/` fuera de `pit/<pit_id>/lanes/<lane_id>/` | STOP — `pit_vault_check` falla |
+| Egress real no declarado (divergencia ledger vs logs) | lane `EGRESS_FLAGGED` — judge bloqueado sin decisión explícita |
+| Juez evalúa una lane flaggeada sin decisión registrada | STOP |
+| Lane/juez pide Magnific | STOP — `lane_blocked` (regla global FASE 6) |
+
+### Rendición a David (cierre — plantilla ≤15 líneas)
+
+```text
+TORNEO PIT-DEV · <pit_id>
+Estado: cerrado · Winner: <lane_id> (gate David: <frase/pending>)
+Scores (rúbrica ejecutable): <lane> <score> · <lane> <score> · <lane> <score>
+Seguridad: <EGRESS_CLEAN × N | EGRESS_FLAGGED: lane-x (<motivo>)>
+Trazabilidad: <TRACE_COMPLETE | TRACE_GAPS(<lista>)>
+Eficiencia: <spent>/<budget> USD (est.) · tokens: <total o not_reported> · duración: <hh:mm>
+vs torneo anterior: <mejor/peor en costo/tiempo, 1 línea>
+Deliverable winner: pit/<pit_id>/lanes/<lane>/deliverable/ (instala: <sí/no> · tests: <N pass>)
+Mejoras registradas: <n> propuestas → handoff mejora continua §5
+Deck: <link Drive | pending gate>
+Próximo paso propuesto: <1 línea — requiere tu autorización>
+```
 
 ---
 
@@ -336,6 +406,7 @@ Reglas duras:
 ## Referencias
 
 - Visión y decisiones: `docs/ops/product-innovation-tournament-vision-2026-06-09.md`
+- PIT-DEV (modo dev, spec v3): `docs/ops/pit-dev-mode-vision-2026-07-03.md`
 - Schema spec: `docs/schemas/pit-spec-v1.schema.json` + `scripts/pit/pit_spec_validate.py`
 - Kanban/KPI: `docs/ops/pit-kanban-kpi-protocol.md`
 - Vault: `docs/ops/pit-vault-layout.md` + `scripts/pit/pit_vault_check.py`

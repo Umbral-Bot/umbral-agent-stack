@@ -39,6 +39,26 @@ ROOT_ALLOWLIST = {"readme.md", ".gitignore", ".gitattributes"}
 
 EXPECTED_WRITE_SCOPE_ENV = "pit"
 
+# PIT-DEV (FASE 2): un directorio ``workspace/`` (snapshot curado por lane)
+# SOLO es válido en pit/<pit_id>/lanes/<lane_id>/workspace/ — o anidado bajo
+# uno válido (el snapshot del repo puede contener sus propios "workspace").
+WORKSPACE_DIR_NAME = "workspace"
+
+
+def _workspace_dir_is_valid(rel_parts: tuple[str, ...]) -> bool:
+    """True si el dir cuelga de un workspace bien ubicado.
+
+    Ubicación canónica: ``pit/<pit_id>/lanes/<lane_id>/workspace`` (índice 4).
+    Un dir ``workspace`` anidado más adentro (p. ej. dentro del snapshot del
+    repo) es válido mientras el de índice 4 exista en su path.
+    """
+    return (
+        len(rel_parts) >= 5
+        and rel_parts[0] == "pit"
+        and rel_parts[2] == "lanes"
+        and rel_parts[4] == WORKSPACE_DIR_NAME
+    )
+
 
 def _is_suspicious(path: Path) -> bool:
     name = path.name.lower()
@@ -58,18 +78,19 @@ def check_pit_vault(
     nested_vaults: list[str] = []
     stray_root_files: list[str] = []
     tournaments: list[str] = []
+    misplaced_workspaces: list[str] = []
 
     if not vault_path.exists():
         errors.append(f"vault path not found: {vault_path}")
         return _result(
             vault_path, errors, warnings, checked_files, suspicious_files,
-            nested_vaults, stray_root_files, tournaments,
+            nested_vaults, stray_root_files, tournaments, misplaced_workspaces,
         )
     if not vault_path.is_dir():
         errors.append(f"vault path is not a directory: {vault_path}")
         return _result(
             vault_path, errors, warnings, checked_files, suspicious_files,
-            nested_vaults, stray_root_files, tournaments,
+            nested_vaults, stray_root_files, tournaments, misplaced_workspaces,
         )
 
     for folder in REQUIRED_FOLDERS:
@@ -101,11 +122,20 @@ def check_pit_vault(
         checked_files += 1
         if path.is_dir() and path.name == ".obsidian" and path.resolve() != root_obsidian:
             nested_vaults.append(str(path.relative_to(vault_path)))
+        if path.is_dir() and path.name == WORKSPACE_DIR_NAME:
+            rel_parts = path.relative_to(vault_path).parts
+            if not _workspace_dir_is_valid(rel_parts):
+                misplaced_workspaces.append(str(path.relative_to(vault_path)))
         if path.is_file() and _is_suspicious(path):
             suspicious_files.append(str(path.relative_to(vault_path)))
 
     for nested in nested_vaults:
         errors.append(f"nested Obsidian vault detected: {nested}")
+    for misplaced in misplaced_workspaces:
+        errors.append(
+            "workspace/ only allowed under pit/<pit_id>/lanes/<lane_id>/ "
+            f"(found: {misplaced})"
+        )
     for secret_like in suspicious_files:
         errors.append(f"secret-like file detected in vault: {secret_like}")
 
@@ -127,7 +157,7 @@ def check_pit_vault(
 
     return _result(
         vault_path, errors, warnings, checked_files, suspicious_files,
-        nested_vaults, stray_root_files, tournaments,
+        nested_vaults, stray_root_files, tournaments, misplaced_workspaces,
     )
 
 
@@ -140,6 +170,7 @@ def _result(
     nested_vaults: list[str],
     stray_root_files: list[str],
     tournaments: list[str],
+    misplaced_workspaces: list[str] | None = None,
 ) -> dict[str, Any]:
     return {
         "read_only": True,
@@ -152,6 +183,7 @@ def _result(
         "nested_vaults": nested_vaults,
         "stray_root_files": stray_root_files,
         "tournaments": tournaments,
+        "misplaced_workspaces": misplaced_workspaces or [],
         "write_scope": os.getenv("PIT_VAULT_WRITE_SCOPE"),
         "writable_roots": list(WRITABLE_ROOTS),
         "required_folders": list(REQUIRED_FOLDERS),

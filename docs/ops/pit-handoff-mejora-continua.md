@@ -1,6 +1,6 @@
 # PIT — Handoff de mejora continua (improvement-supervisor)
 
-- **Status:** v1 (PIT-1 spec) — 2026-06-09.
+- **Status:** v1.1 (PIT-1 spec + PIT-DEV §5) — 2026-07-03.
 - **Decisión David:** el handoff a mejora continua es un **proceso documentado** con revisión humana — **no** hay auto-merge de prompts/skills. Ninguna propuesta de mejora cambia el runtime por sí sola.
 
 ---
@@ -41,3 +41,43 @@ Reglas:
 ## 4. Relación con PIT-7
 
 PIT-7 (revisión general de procesos post-construcción) consume los `improvement_handoff` de todos los torneos corridos hasta entonces y audita el sistema completo con el checklist del [índice de procesos](pit-process-index.md). Este handoff es el flujo continuo; PIT-7 es la auditoría de cierre de fase.
+
+## 5. Trazabilidad + eficiencia (PIT-DEV — visión §6-§7)
+
+Además de las fricciones de proceso, cada torneo **PIT-DEV** alimenta este
+handoff con dos señales estructuradas, para que **cada torneo sea más
+eficiente que el anterior**:
+
+### 5.1 Trazabilidad
+
+- El [agente de trazabilidad](pit-traceability-agent.md) corre
+  `scripts/pit/pit_traceability_check.py` post-outcome: cadena
+  spec→lanes→iteraciones→tests→judge→outcome→deck, cada eslabón
+  `PRESENT | MISSING | UNVERIFIABLE`, veredicto
+  `TRACE_COMPLETE | TRACE_GAPS(<lista>)` en
+  `pit/<pit_id>/traceability/report.md`.
+- Con `TRACE_GAPS` el agente **no arregla nada**: informa a Rick. **Rick
+  redacta la propuesta de estrategia de trazabilidad automática** (qué
+  eslabón falló y cómo se automatiza su captura) y la registra como proposal
+  en `improvement_handoff.proposals[]` — mismo ciclo: clasificación,
+  umbral de patrón, vía PR, sin auto-merge.
+
+### 5.2 Eficiencia (tokens / costo / tiempo)
+
+- **Tokens/costo por lane:** reusar el collector P6
+  [`pit_collect_tokens.py`](../../scripts/pit/pit_collect_tokens.py)
+  (`token_ledger.yaml`: sesiones OpenClaw por lane + audit del broker; cuando
+  el CLI no reporta usage queda `source: not_reported_by_github_copilot_cli`).
+- **Tiempo por fase:** de `run-metrics.json` del runner dev
+  (`started_at`/`finished_at` + spawn/collect por fase lanes → security →
+  judges → traceability).
+- **Comparativa vs torneo anterior:** Rick contrasta costo estimado, tokens y
+  duración contra el último torneo PIT-DEV cerrado y registra la delta en el
+  cierre (plantilla de rendición ≤15 líneas del SKILL §PIT-DEV, línea
+  "vs torneo anterior").
+- Las ineficiencias detectadas (fase que se comió el budget, lane que quemó
+  tokens en loops, timeouts mal calibrados) entran como proposals con la
+  evidencia del ledger/metrics citada — no como lore oral.
+
+Rick rinde ambas señales a David en el cierre y pide autorización para
+cualquier decisión importante derivada (visión §7).

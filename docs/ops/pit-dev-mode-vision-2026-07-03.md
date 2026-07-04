@@ -162,7 +162,35 @@ y health del Worker. Instalable con `pip install -e .` dentro del deliverable,
 con tests propios ejecutables offline (mock del Worker), README con setup para
 ambos IDEs y sin secretos hardcodeados (el token se lee de env)."*
 
-## 7. Referencias
+## 7. Cierre y entrega post-torneo (orden canónico)
+
+**Paso final obligatorio antes de declarar el torneo "terminado"** — lo hace
+cumplir [`pit_deliver_telegram_pack.py`](../../scripts/pit/pit_deliver_telegram_pack.py)
+(fail-closed) y está espejado en el SKILL §Post-torneo:
+
+1. **Outcome report** escrito (`pit/<pit_id>/outcome/pit_outcome_report.yaml`)
+   + deck borrador (`pit_build_outcome_deck.py`, no exige winner cerrado).
+2. **Trazabilidad PASS**: `pit_dev_run.py --phase traceability` corrido y
+   veredicto `TRACE_COMPLETE` en `pit/<pit_id>/traceability/report.md`. Con
+   `TRACE_GAPS` NO hay entrega (`traceability_gaps:<lista>`): informe a Rick →
+   estrategia → mejora continua.
+3. **Gate David sobre el winner**: `david_gate` con la frase literal en el
+   outcome. Regla de pending por **prefijo**: vacío, `pending`, `pending review
+   de David`, `pending_gate`, … siguen siendo pending (no igualdad exacta).
+4. **Drive upload** a `GOOGLE_DRIVE_PIT_FOLDER_ID`: deck ejecutivo **+ zip del
+   deliverable winner** (`pit/<pit_id>/deliverables/<pit_id>-<winner>-deliverable.zip`,
+   generado desde `lanes/<winner>/deliverable/`; sin deliverable ⇒
+   `winner_deliverable_missing`, no hay entrega parcial).
+5. **Telegram CIERRE**: rendición ≤15 líneas + links Drive — único mensaje
+   espontáneo de fin, según la política de comunicación del SKILL
+   (INICIO / BLOQUEO / CIERRE; sin progreso granular).
+6. **(fase 2) Notion publish**: subpágina con resumen + links Drive. Hoy es un
+   **hook documentado, NO implementado** (`notion_publish_stub` →
+   `notion_page_url: null` en `telegram_pack.json`); cuando exista, usará la
+   task Worker `notion.create_page` bajo el índice PIT del Control Room y el
+   CIERRE sumará el link Notion.
+
+## 8. Referencias
 
 - Spec v3 + validador: `scripts/pit/pit_spec_validate.py` (`PitSpecDev`)
 - Workspace curado: `scripts/pit/pit_lane_workspace_init.py` + §4

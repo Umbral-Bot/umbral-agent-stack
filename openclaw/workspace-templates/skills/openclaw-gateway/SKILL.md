@@ -241,6 +241,27 @@ Para definir **múltiples agentes** en un mismo Gateway:
 - **`identity`**: nombre, emoji, avatar; `ackReaction` y `mentionPatterns` se pueden derivar de emoji/name.
 - **`groupChat.mentionPatterns`**: patrones regex para activar al agente en grupos (ej. `["@openclaw", "openclaw"]`).
 
+#### Política de modelos VPS Umbral — Azure-only + forbidden fallbacks
+
+Contrato repo-side: [`config/editorial-model.yaml`](../../../../config/editorial-model.yaml)
+(enforcement vivo: `~/.openclaw/openclaw.json` en la VPS + `editorial_model_guard.py`).
+Política MP1 "Azure-only" aplicada en la VPS el 2026-07-04
+(evidencia `openclaw-azure-only-policy-2026-07-04.md`).
+
+- **Primary requerido:** `azure-openai-responses/gpt-5.5` (agentes editoriales:
+  `rick-orchestrator`, `rick-linkedin-writer`, `rick-communication-director`,
+  `rick-qa`, `main`).
+- **Fallback permitido** SOLO tras fallo explícito y logueado (nunca silencioso):
+  `azure-openai-responses/gpt-5.4`.
+- **Forbidden fallbacks** — NUNCA configurarlos en `model.fallbacks` de esos
+  agentes ni dejar que el failover los resuelva en silencio:
+  - `openai-codex/gpt-5.4`
+  - `google/gemini-2.5-flash`
+  - `google-vertex/gemini-2.5-flash`
+- Mismatch de modelo ⇒ `fail_explicit` (el pipeline corta, no degrada).
+  Al editar `agents.list[].model` o `agents.defaults.model` en la VPS,
+  contrastar SIEMPRE contra `config/editorial-model.yaml` antes del restart.
+
 ### Bindings (routing)
 
 Orden de coincidencia (**most-specific wins**):

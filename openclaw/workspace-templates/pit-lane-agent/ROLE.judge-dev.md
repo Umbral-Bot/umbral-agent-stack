@@ -33,7 +33,17 @@ Para CADA lane, en tu workdir aislado
 3. **Corré sus propios tests** (el `command` del `test_report.json` de la
    lane). ¿Pasan? → `own_tests_passed`.
 4. **Evaluá contra el deliverable_spec** funcional punto por punto
-   → `meets_functional_spec`.
+   → `meets_functional_spec`. **REGLA DURA (postmortem pit-dev-ifc-viewer):**
+   `true` SOLO con un **input real** — un fixture de test del propio
+   deliverable (p.ej. `mini-site.ifc` de 4.4 KB), un `curl` HTTP 200 o sus
+   tests offline en verde NO cumplen el spec funcional. Si el spec procesa
+   archivos/datos, conseguí o pedí un input representativo (>100 KB si es un
+   IFC) y verificá el resultado de verdad (elementos parseados, render, no un
+   fallback degradado). Si `true`, registrá `functional_evidence` en el
+   scorecard: `{"real_input_used": true, "input_description": "<qué input,
+   tamaño, qué observaste>"}` — sin eso el scorecard es INVÁLIDO y no cuenta.
+   Si solo pudiste probar con fixtures: `meets_functional_spec: false` y
+   contá en `evidence` qué faltó.
 5. **Puntuá la rúbrica** 0-1 por criterio: `funcionalidad`, `robustez`, `dx`,
    `docs`, `testabilidad` (los pesos los aplica el agregador desde el spec).
 

@@ -17,15 +17,30 @@ record on disk and emits a single ``token_ledger.yaml``:
   ``tokens`` block degrades to ``source: not_reported_by_github_copilot_cli``
   unless a future audit event carries a populated ``tokens`` object.
 
-The collector is strictly read-only: it never mutates runtime state, never
-prints secrets/PAT material (only numeric usage, model names and correlation
-ids are read), and tolerates missing files by emitting warnings instead of
-crashing.
+The collector is strictly read-only against runtime state: it never mutates
+OpenClaw/broker files, never prints secrets/PAT material (only numeric usage,
+model names and correlation ids are read), and tolerates missing files by
+emitting warnings instead of crashing. The only writes are the ledger YAML
+itself and — with ``--update-outcome`` — the ``budget`` block of
+``pit/<pit_id>/outcome/pit_outcome_report.yaml`` (billing truth, quality gate
+post ``pit-dev-ifc-viewer``: a PIT-DEV tournament must not close "green"
+while reporting ``tokens_total: not_reported``).
+
+USD estimation (documented formula)
+-----------------------------------
+``usd = (input*rate_in + cache_read*rate_cache + output*rate_out) / 1e6``
+
+Rates are USD per 1M tokens. The default table is a conservative
+GPT-5.x-class blend (``pricing_source: default_gpt5_class_per_mtok_v1``);
+override per run with ``--usd-per-mtok-input/--usd-per-mtok-cache-read/
+--usd-per-mtok-output`` (``pricing_source: cli_override``). This is an
+*estimate from tokens*, not provider billing — the ledger and the outcome
+record ``pricing_source`` so nobody confuses it with an invoice.
 
 Exit codes
 ----------
 ``0``  collector ran and wrote the YAML (warnings allowed).
-``2``  ``pit_id`` is invalid, or the output could not be written.
+``2``  ``pit_id`` is invalid, or the output/outcome could not be written.
 """
 
 from __future__ import annotations
@@ -46,6 +61,22 @@ except ImportError:  # pragma: no cover - exercised only without the dep
 
 PIT_ID_RE = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
 NOT_REPORTED = "not_reported_by_github_copilot_cli"
+
+# Billing truth (post pit-dev-ifc-viewer): value written to the outcome when
+# the collector finds NO token data at all. The PIT-DEV deliver gate fails
+# closed on it — better an honest "not_reported" than a fake 0.
+TOKENS_NOT_REPORTED = "not_reported"
+
+# USD per 1M tokens — conservative GPT-5.x-class blend (documented formula in
+# the module docstring). Override via CLI flags; pricing_source records which
+# table produced the estimate.
+DEFAULT_PRICING_PER_MTOK: Dict[str, float] = {
+    "input": 1.25,
+    "cache_read": 0.125,
+    "output": 10.0,
+}
+DEFAULT_PRICING_SOURCE = "default_gpt5_class_per_mtok_v1"
+CLI_PRICING_SOURCE = "cli_override"
 
 # Audit decisions that mean the broker actually executed against Docker (a
 # "real" call) rather than a gated / dry-run no-op.
@@ -424,6 +455,30 @@ def load_lane_budgets(vault_root: Path, pit_id: str) -> Dict[str, Optional[float
 
 
 # ---------------------------------------------------------------------------
+# USD estimation (billing truth)
+# ---------------------------------------------------------------------------
+def estimate_usd(
+    input_tokens: int,
+    output_tokens: int,
+    cache_read_tokens: int,
+    pricing_per_mtok: Optional[Dict[str, float]] = None,
+) -> float:
+    """USD estimate from token counts — documented formula (module docstring).
+
+    ``usd = (input*rate_in + cache_read*rate_cache + output*rate_out) / 1e6``.
+    Estimation from tokens, NOT provider billing.
+    """
+
+    rates = pricing_per_mtok or DEFAULT_PRICING_PER_MTOK
+    usd = (
+        _safe_int(input_tokens) * float(rates.get("input", 0.0))
+        + _safe_int(cache_read_tokens) * float(rates.get("cache_read", 0.0))
+        + _safe_int(output_tokens) * float(rates.get("output", 0.0))
+    ) / 1_000_000
+    return round(usd, 4)
+
+
+# ---------------------------------------------------------------------------
 # Ledger assembly
 # ---------------------------------------------------------------------------
 def build_ledger(
@@ -433,36 +488,71 @@ def build_ledger(
     budgets: Optional[Dict[str, Optional[float]]] = None,
     warnings: Optional[List[str]] = None,
     sources: Optional[Dict[str, Any]] = None,
+    pricing_per_mtok: Optional[Dict[str, float]] = None,
+    pricing_source: str = DEFAULT_PRICING_SOURCE,
 ) -> Dict[str, Any]:
     budgets = budgets or {}
     warnings = warnings or []
+    pricing = pricing_per_mtok or DEFAULT_PRICING_PER_MTOK
     lane_ids = sorted(set(openclaw_lanes) | set(copilot_lanes) | set(budgets))
 
     lanes_out: Dict[str, Any] = {}
     openclaw_total = 0
     copilot_calls_total = 0
+    total_input = total_output = total_cache = total_tokens = 0
+    usd_estimated_total = 0.0
     for lane_id in lane_ids:
         oc = {**_empty_openclaw(), **openclaw_lanes.get(lane_id, {})}
         cc = {**_empty_copilot(), **copilot_lanes.get(lane_id, {})}
         openclaw_total += _safe_int(oc.get("total"))
         copilot_calls_total += _safe_int(cc.get("calls"))
+
+        lane_input = _safe_int(oc.get("input"))
+        lane_output = _safe_int(oc.get("output"))
+        lane_cache = _safe_int(oc.get("cache_read"))
+        lane_total = _safe_int(oc.get("total"))
+        cc_tokens = cc.get("tokens") or {}
+        if cc_tokens.get("source") != NOT_REPORTED:
+            lane_input += _safe_int(cc_tokens.get("input"))
+            lane_output += _safe_int(cc_tokens.get("output"))
+            lane_total += _safe_int(cc_tokens.get("total"))
+        lane_usd = estimate_usd(lane_input, lane_output, lane_cache, pricing)
+
+        total_input += lane_input
+        total_output += lane_output
+        total_cache += lane_cache
+        total_tokens += lane_total
+        usd_estimated_total = round(usd_estimated_total + lane_usd, 4)
+
         lanes_out[lane_id] = {
             "openclaw": oc,
             "copilot_cli": cc,
             "budget_usd_allocated": budgets.get(lane_id),
-            "budget_usd_estimated": None,
+            "budget_usd_estimated": lane_usd,
         }
 
     ledger: Dict[str, Any] = {
         "pit_id": pit_id,
         "generated_at_utc": _now_iso(),
-        "schema_version": 1,
+        "schema_version": 2,
         "lanes": lanes_out,
         "tournament_total": {
             "openclaw_total": openclaw_total,
             "copilot_cli_calls": copilot_calls_total,
+            "tokens": {
+                "input": total_input,
+                "output": total_output,
+                "cache_read": total_cache,
+                "total": total_tokens,
+            },
+            "usd_estimated_total": usd_estimated_total,
             "lanes": len(lanes_out),
             "notes": list(dict.fromkeys(warnings)),
+        },
+        "pricing": {
+            "source": pricing_source,
+            "usd_per_mtok": dict(pricing),
+            "formula": "usd = (input*rate_in + cache_read*rate_cache + output*rate_out) / 1e6",
         },
     }
     if sources is not None:
@@ -472,6 +562,72 @@ def build_ledger(
 
 def default_output_path(vault_root: Path, pit_id: str) -> Path:
     return vault_root / "pit" / pit_id / "metrics" / "token_ledger.yaml"
+
+
+def default_outcome_path(vault_root: Path, pit_id: str) -> Path:
+    return vault_root / "pit" / pit_id / "outcome" / "pit_outcome_report.yaml"
+
+
+def ledger_has_token_data(ledger: Dict[str, Any]) -> bool:
+    """True when at least one lane reported real token usage (>0)."""
+
+    total = ledger.get("tournament_total") or {}
+    tokens = total.get("tokens") or {}
+    return _safe_int(tokens.get("total")) > 0
+
+
+def update_outcome_budget(
+    outcome_path: Path,
+    ledger: Dict[str, Any],
+    ledger_rel_path: str,
+) -> Dict[str, Any]:
+    """Populate billing truth in the outcome report ``budget`` block.
+
+    With real token data: ``tokens_total`` (int), ``usd_estimated_spent``
+    (documented estimate), ``pricing_source`` and the ``token_ledger`` path.
+    Without any token data: ``tokens_total: not_reported`` (honest fail-closed
+    marker — the PIT-DEV deliver gate rejects it) and ``usd_estimated_spent``
+    is left untouched. ``budget_usd`` (the CEILING David authorised) is never
+    modified. Raises ``ValueError`` if the outcome is missing/unparseable.
+    """
+
+    if yaml is None:  # pragma: no cover - dependency guaranteed in project
+        raise ValueError("pyyaml required to update the outcome report")
+    if not outcome_path.is_file():
+        raise ValueError(f"outcome_missing:{outcome_path}")
+    try:
+        raw = yaml.safe_load(outcome_path.read_text(encoding="utf-8"))
+    except yaml.YAMLError as exc:
+        raise ValueError(f"outcome_unparseable:{exc}") from exc
+    if not isinstance(raw, dict):
+        raise ValueError(f"outcome_not_a_mapping:{outcome_path}")
+
+    budget = raw.get("budget")
+    if not isinstance(budget, dict):
+        budget = {}
+        raw["budget"] = budget
+
+    total = ledger.get("tournament_total") or {}
+    tokens = total.get("tokens") or {}
+    pricing = ledger.get("pricing") or {}
+    if ledger_has_token_data(ledger):
+        budget["tokens_total"] = _safe_int(tokens.get("total"))
+        budget["tokens_input"] = _safe_int(tokens.get("input"))
+        budget["tokens_output"] = _safe_int(tokens.get("output"))
+        budget["tokens_cache_read"] = _safe_int(tokens.get("cache_read"))
+        budget["usd_estimated_spent"] = float(total.get("usd_estimated_total") or 0.0)
+        budget["pricing_source"] = str(pricing.get("source") or DEFAULT_PRICING_SOURCE)
+    else:
+        # Honest marker: no data is NOT zero spend. usd_estimated_spent stays.
+        budget["tokens_total"] = TOKENS_NOT_REPORTED
+        budget["pricing_source"] = str(pricing.get("source") or DEFAULT_PRICING_SOURCE)
+    budget["token_ledger"] = ledger_rel_path
+
+    outcome_path.write_text(
+        yaml.safe_dump(raw, sort_keys=False, allow_unicode=True, default_flow_style=False),
+        encoding="utf-8",
+    )
+    return budget
 
 
 def dump_yaml(data: Dict[str, Any]) -> str:
@@ -494,7 +650,36 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--audit-root", default=DEFAULT_AUDIT_ROOT, help="Copilot CLI audit root.")
     parser.add_argument("--output", default=None, help="Output YAML path (default: <vault>/pit/<pit_id>/metrics/token_ledger.yaml).")
     parser.add_argument("--stdout", action="store_true", help="Also print the ledger YAML to stdout.")
+    parser.add_argument(
+        "--update-outcome",
+        action="store_true",
+        help="Populate budget.tokens_total / usd_estimated_spent / pricing_source in "
+        "pit/<pit_id>/outcome/pit_outcome_report.yaml (billing truth; PIT-DEV deliver gate).",
+    )
+    parser.add_argument("--usd-per-mtok-input", type=float, default=None,
+                        help=f"Override input rate (USD per 1M tokens; default {DEFAULT_PRICING_PER_MTOK['input']}).")
+    parser.add_argument("--usd-per-mtok-cache-read", type=float, default=None,
+                        help=f"Override cache-read rate (default {DEFAULT_PRICING_PER_MTOK['cache_read']}).")
+    parser.add_argument("--usd-per-mtok-output", type=float, default=None,
+                        help=f"Override output rate (default {DEFAULT_PRICING_PER_MTOK['output']}).")
     return parser
+
+
+def resolve_pricing(args: argparse.Namespace) -> Tuple[Dict[str, float], str]:
+    """Rate table + pricing_source from CLI overrides (default: documented blend)."""
+
+    overrides = {
+        "input": args.usd_per_mtok_input,
+        "cache_read": args.usd_per_mtok_cache_read,
+        "output": args.usd_per_mtok_output,
+    }
+    if all(value is None for value in overrides.values()):
+        return dict(DEFAULT_PRICING_PER_MTOK), DEFAULT_PRICING_SOURCE
+    pricing = dict(DEFAULT_PRICING_PER_MTOK)
+    for key, value in overrides.items():
+        if value is not None:
+            pricing[key] = float(value)
+    return pricing, CLI_PRICING_SOURCE
 
 
 def run(args: argparse.Namespace) -> int:
@@ -506,6 +691,7 @@ def run(args: argparse.Namespace) -> int:
     vault_root = Path(args.vault_root).expanduser()
     openclaw_root = Path(args.openclaw_root).expanduser()
     audit_root = Path(args.audit_root).expanduser()
+    pricing, pricing_source = resolve_pricing(args)
 
     warnings: List[str] = []
     openclaw_lanes, oc_warn = collect_openclaw(openclaw_root, pit_id)
@@ -524,7 +710,14 @@ def run(args: argparse.Namespace) -> int:
     }
 
     ledger = build_ledger(
-        pit_id, openclaw_lanes, copilot_lanes, budgets, warnings=warnings, sources=sources
+        pit_id,
+        openclaw_lanes,
+        copilot_lanes,
+        budgets,
+        warnings=warnings,
+        sources=sources,
+        pricing_per_mtok=pricing,
+        pricing_source=pricing_source,
     )
 
     output_path = Path(args.output).expanduser() if args.output else default_output_path(vault_root, pit_id)
@@ -536,11 +729,31 @@ def run(args: argparse.Namespace) -> int:
         print(f"error: cannot write output {output_path}: {exc}", file=sys.stderr)
         return 2
 
+    total = ledger["tournament_total"]
     print(f"# pit token ledger -> {output_path}")
-    print(f"# lanes={len(ledger['lanes'])} openclaw_total={ledger['tournament_total']['openclaw_total']} "
-          f"copilot_cli_calls={ledger['tournament_total']['copilot_cli_calls']} warnings={len(warnings)}")
-    for note in ledger["tournament_total"]["notes"]:
+    print(f"# lanes={len(ledger['lanes'])} openclaw_total={total['openclaw_total']} "
+          f"copilot_cli_calls={total['copilot_cli_calls']} "
+          f"usd_estimated_total={total['usd_estimated_total']} "
+          f"pricing_source={ledger['pricing']['source']} warnings={len(warnings)}")
+    for note in total["notes"]:
         print(f"# warning: {note}")
+
+    if args.update_outcome:
+        outcome_path = default_outcome_path(vault_root, pit_id)
+        try:
+            rel = output_path.relative_to(vault_root)
+        except ValueError:
+            rel = output_path
+        try:
+            budget = update_outcome_budget(outcome_path, ledger, str(rel))
+        except (ValueError, OSError) as exc:
+            print(f"error: cannot update outcome budget: {exc}", file=sys.stderr)
+            return 2
+        print(f"# outcome budget updated -> {outcome_path}")
+        print(f"# budget.tokens_total={budget.get('tokens_total')} "
+              f"usd_estimated_spent={budget.get('usd_estimated_spent')} "
+              f"pricing_source={budget.get('pricing_source')}")
+
     if args.stdout:
         print(text)
     return 0

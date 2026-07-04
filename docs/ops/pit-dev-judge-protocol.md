@@ -1,13 +1,15 @@
 # PIT-DEV — Protocolo de jueces ejecutores (judge-dev)
 
-- **Status:** v1 (PIT-DEV FASE 4) — 2026-07-03.
+- **Status:** v2 (hardening postmortem `pit-dev-ifc-viewer`) — 2026-07-04.
+  v1 (PIT-DEV FASE 4) — 2026-07-03.
 - **Decisión David (visión §4):** al cierre de lanes, jueces subagentes
   (supervisados por seguridad) **instalan, ejecutan y evalúan** cada
   deliverable contra una rúbrica ejecutable.
 - **Plantilla de rol:** [`ROLE.judge-dev.md`](../../openclaw/workspace-templates/pit-lane-agent/ROLE.judge-dev.md).
-- **Schema del scorecard:** [`judge-scorecard.schema.json`](../../openclaw/workspace-templates/pit-vault/templates/judge-scorecard.schema.json).
+- **Schema del scorecard:** [`judge-scorecard.schema.json`](../../openclaw/workspace-templates/pit-vault/templates/judge-scorecard.schema.json) (v2).
 - **Primitivas ejecutables:** `validate_scorecard` / `collect_scorecards` /
   `weighted_score` / `aggregate_ranking` en [`pit_dev_core.py`](../../scripts/pit/pit_dev_core.py).
+- **Postmortem que originó el v2:** [`pit-dev-ifc-viewer-postmortem-2026-07-04.md`](pit-dev-ifc-viewer-postmortem-2026-07-04.md).
 
 ---
 
@@ -31,7 +33,14 @@ modifica in-place):
 1. ¿**Instala limpio**? (siguiendo el README del deliverable) → `installed_clean`
 2. ¿**Corre**? (arranca/responde) → `ran`
 3. ¿**Pasa sus propios tests**? (re-ejecuta el `command` del `test_report.json`) → `own_tests_passed`
-4. ¿**Cumple el spec funcional**? (`deliverable_spec` punto por punto) → `meets_functional_spec`
+4. ¿**Cumple el spec funcional**? (`deliverable_spec` punto por punto)
+   → `meets_functional_spec`. **Regla dura v2 (postmortem
+   `pit-dev-ifc-viewer`):** `true` SOLO con **input real** — un fixture del
+   propio deliverable (`mini-site.ifc`, 4.4 KB), un `curl` HTTP 200 o sus
+   tests offline en verde NO son verificación funcional. Si es `true`, el
+   scorecard DEBE incluir `functional_evidence: {real_input_used: true,
+   input_description: "<input, tamaño, qué se observó>"}` — sin eso
+   `validate_scorecard` lo invalida y no cuenta para el ranking.
 5. Puntúa **criterios 0-1**: `funcionalidad`, `robustez`, `dx`, `docs`,
    `testabilidad` — los **pesos viven en el spec** (`rubric_weights`), no en el
    scorecard.

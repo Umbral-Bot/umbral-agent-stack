@@ -134,7 +134,7 @@ def _full_chain(vault: Path) -> Path:
             (scorecards / f"{judge_id}--{lane_id}.json").write_text(
                 json.dumps(
                     {
-                        "schema_version": 1,
+                        "schema_version": 2,
                         "pit_id": PIT_ID,
                         "lane_id": lane_id,
                         "judge_id": judge_id,
@@ -142,6 +142,12 @@ def _full_chain(vault: Path) -> Path:
                         "ran": True,
                         "own_tests_passed": True,
                         "meets_functional_spec": True,
+                        # Hardening post pit-dev-ifc-viewer: true exige
+                        # evidencia de input real en el scorecard.
+                        "functional_evidence": {
+                            "real_input_used": True,
+                            "input_description": "input real 2MB verificado end-to-end",
+                        },
                         "criteria": {
                             "funcionalidad": 0.9,
                             "robustez": 0.8,

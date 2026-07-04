@@ -503,7 +503,13 @@ def security_verdict_state(vault_path: str | Path, pit_id: str) -> dict[str, Any
 
 
 def validate_scorecard(scorecard: dict[str, Any], vault: Path) -> str:
-    """Valida un judge scorecard: jsonschema si está + checks duros siempre."""
+    """Valida un judge scorecard: jsonschema si está + checks duros siempre.
+
+    Hardening post ``pit-dev-ifc-viewer`` (jueces laxos): un
+    ``meets_functional_spec: true`` exige ``functional_evidence`` con
+    ``real_input_used: true`` y descripción del input real probado. Fixture
+    de test + HTTP 200 + tests offline NO son evidencia funcional.
+    """
     if not isinstance(scorecard, dict):
         raise ValueError("scorecard must be a JSON object")
     criteria = scorecard.get("criteria")
@@ -521,6 +527,25 @@ def validate_scorecard(scorecard: dict[str, Any], vault: Path) -> str:
     for flag in ("installed_clean", "ran", "own_tests_passed", "meets_functional_spec"):
         if not isinstance(scorecard.get(flag), bool):
             raise ValueError(f"scorecard.{flag} must be a boolean")
+
+    if scorecard.get("meets_functional_spec") is True:
+        evidence = scorecard.get("functional_evidence")
+        if not isinstance(evidence, dict):
+            raise ValueError(
+                "functional_evidence required when meets_functional_spec is true "
+                "(hardening post pit-dev-ifc-viewer)"
+            )
+        if evidence.get("real_input_used") is not True:
+            raise ValueError(
+                "functional_evidence.real_input_used must be true when "
+                "meets_functional_spec is true (fixture/synthetic input does not count)"
+            )
+        description = str(evidence.get("input_description") or "").strip()
+        if not description:
+            raise ValueError(
+                "functional_evidence.input_description required when "
+                "meets_functional_spec is true"
+            )
 
     schema_path = _find_template(vault, JUDGE_SCORECARD_SCHEMA_NAME)
     try:

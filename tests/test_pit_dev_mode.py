@@ -214,7 +214,7 @@ def _complete_dev_lane(vault: Path, lane_id: str) -> None:
 
 def _scorecard(lane_id: str, judge_id: str, *, score: float = 0.8) -> dict:
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "pit_id": PIT_ID,
         "lane_id": lane_id,
         "judge_id": judge_id,
@@ -222,6 +222,11 @@ def _scorecard(lane_id: str, judge_id: str, *, score: float = 0.8) -> dict:
         "ran": True,
         "own_tests_passed": True,
         "meets_functional_spec": True,
+        # Hardening post pit-dev-ifc-viewer: true exige evidencia de input real.
+        "functional_evidence": {
+            "real_input_used": True,
+            "input_description": "IFC real 2.4MB (hospital.ifc) — 128 elementos parseados, render OK",
+        },
         "criteria": {
             "funcionalidad": score,
             "robustez": score,
@@ -682,6 +687,38 @@ class TestScorecards:
         with pytest.raises(ValueError, match="docs"):
             dev_core.validate_scorecard(card, vault)
 
+    # Hardening post pit-dev-ifc-viewer: jueces laxos — meets_functional_spec
+    # true sin evidencia de input REAL invalida el scorecard.
+    def test_meets_spec_true_without_evidence_raises(self, tmp_path):
+        vault = _make_vault(tmp_path)
+        card = _scorecard("lane-alpha", "judge-1")
+        del card["functional_evidence"]
+        with pytest.raises(ValueError, match="functional_evidence required"):
+            dev_core.validate_scorecard(card, vault)
+
+    def test_meets_spec_true_with_synthetic_input_raises(self, tmp_path):
+        vault = _make_vault(tmp_path)
+        card = _scorecard("lane-alpha", "judge-1")
+        card["functional_evidence"]["real_input_used"] = False
+        with pytest.raises(ValueError, match="real_input_used must be true"):
+            dev_core.validate_scorecard(card, vault)
+
+    def test_meets_spec_true_without_description_raises(self, tmp_path):
+        vault = _make_vault(tmp_path)
+        card = _scorecard("lane-alpha", "judge-1")
+        card["functional_evidence"]["input_description"] = "   "
+        with pytest.raises(ValueError, match="input_description required"):
+            dev_core.validate_scorecard(card, vault)
+
+    def test_meets_spec_false_needs_no_evidence(self, tmp_path):
+        """Un scorecard honesto (spec no cumplido, solo fixture) sigue válido."""
+        vault = _make_vault(tmp_path)
+        card = _scorecard("lane-alpha", "judge-1")
+        card["meets_functional_spec"] = False
+        del card["functional_evidence"]
+        method = dev_core.validate_scorecard(card, vault)
+        assert method in ("jsonschema", "builtin-only")
+
     def test_collect_scorecards_separates_valid_from_invalid(self, tmp_path):
         vault = _make_vault(tmp_path)
         _write_scorecard(vault, "lane-alpha", "judge-1")
@@ -948,6 +985,12 @@ class TestDevRunner:
         ids = {entry["id"] for entry in config["agents"]["list"]}
         assert ids == {"main"}
         assert metrics["deregistration"]["entries_removed"] == 5
+        # token ledger (billing truth): el runner deja el ledger en el vault
+        ledger = metrics["token_ledger"]
+        assert ledger["ok"] is True
+        ledger_path = Path(ledger["path"])
+        assert ledger_path.is_file()
+        assert ledger_path == vault / "pit" / PIT_ID / "metrics" / "token_ledger.yaml"
 
     def test_flagged_lane_excluded_from_judges_by_default(self, tmp_path):
         vault = _make_vault(tmp_path)

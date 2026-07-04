@@ -246,7 +246,7 @@ Cada lane se despacha como `copilot_cli.run` con metadata PIT completa (correlac
 
 ### Comms
 
-Resumen a David ≤ 12 líneas (veredicto + estado de lanes + blockers). Payloads, audit JSONL y respuestas completas van a evidencia/vault, no al chat.
+Aplica la política global (§ *Política de comunicación Rick → David (Telegram)*): sin progreso granular durante el torneo; Telegram solo en INICIO / BLOQUEO / CIERRE. Si David pide status explícitamente: resumen ≤ 12 líneas (veredicto + estado de lanes + blockers) y se vuelve al silencio. Payloads, audit JSONL y respuestas completas van a evidencia/vault, no al chat.
 
 Doc operativa: [`docs/ops/pit-p5-broker-enforce-20260622.md`](../../../../docs/ops/pit-p5-broker-enforce-20260622.md).
 
@@ -328,6 +328,8 @@ Kill + desregistro SIEMPRE al cierre (todos los efímeros del torneo: lanes, sec
 
 ### Rendición a David (cierre — plantilla ≤15 líneas)
 
+Este es el mensaje de **CIERRE** — el único reporte espontáneo de fin de torneo (política §Comms):
+
 ```text
 TORNEO PIT-DEV · <pit_id>
 Estado: cerrado · Winner: <lane_id> (gate David: <frase/pending>)
@@ -339,24 +341,56 @@ vs torneo anterior: <mejor/peor en costo/tiempo, 1 línea>
 Deliverable winner: pit/<pit_id>/lanes/<lane>/deliverable/ (instala: <sí/no> · tests: <N pass>)
 Mejoras registradas: <n> propuestas → handoff mejora continua §5
 Deck: <link Drive | pending gate>
+Deliverable zip: <link Drive | pending gate>
 Próximo paso propuesto: <1 línea — requiere tu autorización>
 ```
 
 ---
 
+## Política de comunicación Rick → David (Telegram)
+
+Regla dura para **todos los modos** (v1 producto, v2 broker, v3 dev):
+
+- Rick **NO envía progreso granular** por Telegram durante el torneo: nada de
+  "lane completada", "judge-1 listo", scorecards parciales, paths del vault ni
+  métricas intermedias — **salvo que David pregunte explícitamente por status**
+  (respuesta puntual ≤12 líneas y se vuelve al silencio).
+- Rick **SÍ** envía Telegram **solo** en estos 3 momentos:
+  1. **INICIO** — "Torneo `<pit_id>` arrancado" (1 mensaje corto, tras el gate
+     literal `ok, arranca`).
+  2. **BLOQUEO** — error que detiene el torneo, permiso/credencial faltante,
+     gate ambiguo que requiere decisión de David, o `EGRESS_FLAGGED` grave.
+  3. **CIERRE** — rendición final ≤15 líneas (plantilla §Rendición a David) +
+     links Drive (deck + zip deliverable en PIT-DEV) (+ link Notion cuando
+     exista, fase 2).
+- **Todo lo demás → vault + evidencia, no chat**: `pit/<pit_id>/…` y
+  `~/.coord-ag-evidence/…` guardan el detalle trazable; Telegram queda
+  reservado a señal accionable.
+
+La misma política vive en el rol del orquestador
+([`rick-orchestrator/ROLE.md`](../../../workspace-agent-overrides/rick-orchestrator/ROLE.md) §Communication policy).
+
+---
+
 ## Post-torneo
 
-1. Outcome report → `pit/<pit_id>/outcome/pit_outcome_report.yaml`.
-2. **Entrega Telegram** (deck ejecutivo en Drive) → sección siguiente.
-3. Handoff mejora continua (improvement-supervisor) — propuestas documentadas, **no** auto-merge de prompts: [`pit-handoff-mejora-continua.md`](../../../../docs/ops/pit-handoff-mejora-continua.md).
-4. Archivar: mover `pit/<pit_id>/` → `archive/<pit_id>/` (lo hace Rick).
-5. Índice de procesos + checklist PIT-7: [`pit-process-index.md`](../../../../docs/ops/pit-process-index.md).
+**Orden canónico de entrega (obligatorio antes de declarar el torneo "terminado")** — en PIT-DEV lo hace cumplir `pit_deliver_telegram_pack.py` (fail-closed):
+
+1. **Outcome report** → `pit/<pit_id>/outcome/pit_outcome_report.yaml` (+ deck borrador con [`pit_build_outcome_deck.py`](../../../../scripts/pit/pit_build_outcome_deck.py)).
+2. **Trazabilidad PASS** (PIT-DEV): fase `--phase traceability` corrida y `TRACE_COMPLETE` (`pit/<pit_id>/traceability/report.md`). Con `TRACE_GAPS` NO hay entrega: informe a Rick → mejora continua.
+3. **Gate David sobre el winner**: `david_gate` con la frase literal registrada en el outcome. Cualquier valor vacío o que **empiece con** `pending` (prefijo, no igualdad exacta) sigue siendo pending → no hay entrega.
+4. **Drive upload** (deliver pack, sección siguiente): deck ejecutivo **+ zip del deliverable winner (PIT-DEV)** a `GOOGLE_DRIVE_PIT_FOLDER_ID`.
+5. **Telegram CIERRE** — único mensaje espontáneo de fin (política §Comms): rendición ≤15 líneas + links Drive.
+6. **(fase 2) Notion publish** — subpágina con el resumen + links; hoy es un hook documentado (`notion_publish_stub`, `notion_page_url: null` en el pack), NO implementado.
+7. Handoff mejora continua (improvement-supervisor) — propuestas documentadas, **no** auto-merge de prompts: [`pit-handoff-mejora-continua.md`](../../../../docs/ops/pit-handoff-mejora-continua.md).
+8. Archivar: mover `pit/<pit_id>/` → `archive/<pit_id>/` (lo hace Rick).
+9. Índice de procesos + checklist PIT-7: [`pit-process-index.md`](../../../../docs/ops/pit-process-index.md).
 
 ---
 
 ## Entrega Telegram post-torneo (PIT-TG-DRIVE)
 
-Tras judge + outcome report + gate David (winner cerrado, `david_gate` ≠ pending):
+Tras judge + outcome report + gate David (winner cerrado, `david_gate` sin prefijo `pending`; en PIT-DEV además trazabilidad `TRACE_COMPLETE`):
 
 1. Rick (o el operador) corre el deliver pack contra el vault:
 
@@ -366,10 +400,13 @@ Tras judge + outcome report + gate David (winner cerrado, `david_gate` ≠ pendi
 
    El script construye el deck (`pit/<pit_id>/deliverables/<pit_id>-outcome-deck.pptx`,
    builder [`pit_build_outcome_deck.py`](../../../../scripts/pit/pit_build_outcome_deck.py)),
-   lo sube a la carpeta Drive compartida Rick↔David (Worker task
+   en PIT-DEV **verifica trazabilidad** (`TRACE_COMPLETE`, fail-closed) y **zipea el
+   deliverable winner** (`pit/<pit_id>/deliverables/<pit_id>-<winner>-deliverable.zip`),
+   sube deck (+ zip) a la carpeta Drive compartida Rick↔David (Worker task
    `google_drive.upload_file`) y escribe
-   `pit/<pit_id>/deliverables/telegram_pack.json` con `summary_lines[]` listos.
-   Veredicto: `PIT_DELIVER_PACK_OK | drive_url=…` (setup en
+   `pit/<pit_id>/deliverables/telegram_pack.json` con `summary_lines[]` listos
+   (+ `notion_page_url: null`, hook fase 2).
+   Veredicto: `PIT_DELIVER_PACK_OK | drive_url=… [| deliverable_zip_url=…]` (setup en
    [`pit-telegram-drive-deliverables-runbook.md`](../../../../docs/ops/pit-telegram-drive-deliverables-runbook.md)).
 
 2. Rick envía por Telegram la plantilla fija (≤12 líneas + link Drive — formato
@@ -394,11 +431,13 @@ Tras judge + outcome report + gate David (winner cerrado, `david_gate` ≠ pendi
 
 Reglas duras:
 
-- **NUNCA** `sendDocument`/`sendPhoto` del `.pptx` por Telegram en v1 — solo el link Drive.
+- **NUNCA** `sendDocument`/`sendPhoto` del `.pptx` **ni del `.zip`** por Telegram — solo links Drive.
 - Si Drive no está configurado (`PIT_DELIVER_PACK_FAIL | reason=drive_not_configured`):
   fallback texto + MC judge hint (comportamiento actual). Rick **no inventa** links.
 - Si el upload falla: reportar `PIT_DELIVER_PACK_FAIL` + motivo; sin link no hay mensaje "con deck".
-- El deck va SOLO a `GOOGLE_DRIVE_PIT_FOLDER_ID` (carpeta compartida); el prototipo HTML
+- PIT-DEV sin `TRACE_COMPLETE` (`traceability_report_missing` / `traceability_gaps:<lista>`)
+  o sin deliverable winner (`winner_deliverable_missing`) ⇒ FAIL, no hay entrega parcial.
+- El deck y el zip van SOLO a `GOOGLE_DRIVE_PIT_FOLDER_ID` (carpeta compartida); el prototipo HTML
   sigue en túnel + Mission Control — nunca URL pública.
 
 ---

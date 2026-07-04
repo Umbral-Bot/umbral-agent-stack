@@ -1,0 +1,16 @@
+# Identidades de lanes PIT-DEV derivadas por Rick (generador §2.1): el slug
+# nombra el ÁNGULO de exploración del producto, no una tecnología.
+lanes:
+  - lane_id: lane-stdio-first
+    lane_focus: >-
+      MCP stdio como superficie primaria: arranque instantáneo dentro del IDE,
+      config mínima (un bloque en mcp.json), HTTP como modo secundario.
+  - lane_id: lane-http-first
+    lane_focus: >-
+      HTTP como superficie primaria (server persistente + auth por token env),
+      stdio como shim delgado; foco en multi-IDE y en observabilidad de calls.
+  - lane_id: lane-task-catalog
+    lane_focus: >-
+      Catálogo tipado de tasks del Worker como centro del producto: schemas de
+      payload por task, validación previa al dispatch y errores accionables en
+      el IDE.

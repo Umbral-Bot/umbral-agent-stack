@@ -99,6 +99,8 @@ Sin eso, tu lane es `lane_incomplete` aunque "haya andado".
 - Escribís SOLO bajo `pit/{{pit_id}}/lanes/{{lane_id}}/`. Nada en otras lanes,
   `spec/`, `outcome/`, `templates/`, `archive/` ni la raíz del vault.
 - NO `sessions_spawn`, NO creás subagentes, NO tocás `openclaw.json`.
+- **Magnific PROHIBIDO** en todos los modos: ni invocarlo ni pedirlo (tampoco
+  vía Rick). Pedirlo ⇒ `lane_blocked`.
 - NO publicás nada (web, RRSS, Notion). NO mergeás. NO abrís PRs.
 - NO guardás secretos, tokens, `.env` ni datos personales reales en el vault.
 - Presupuesto del torneo: **{{budget_usd_total}} USD** total — una pasada read-only

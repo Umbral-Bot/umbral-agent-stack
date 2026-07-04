@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Umbral-Bot/umbral-agent-stack/openclaw/workspace-templates/pit-vault/templates/judge-scorecard.schema.json",
+  "title": "PIT-DEV Judge Scorecard v1",
+  "description": "Scorecard de UN juez ejecutor sobre UNA lane de un torneo PIT-DEV. Cada juez instala/ejecuta el deliverable en su workdir aislado (pit/<pit_id>/judge/<judge_id>/<lane_id>/) y escribe pit/<pit_id>/judge/scorecards/<judge_id>--<lane_id>.json. El ranking agregado NO decide: Rick consolida y David da el gate de winner. Protocolo: docs/ops/pit-dev-judge-protocol.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "pit_id",
+    "lane_id",
+    "judge_id",
+    "installed_clean",
+    "ran",
+    "own_tests_passed",
+    "meets_functional_spec",
+    "criteria"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "pit_id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$" },
+    "lane_id": { "type": "string", "pattern": "^lane-[a-z0-9][a-z0-9-]{1,63}$" },
+    "judge_id": { "type": "string", "pattern": "^judge-[a-z0-9][a-z0-9-]{0,63}$" },
+    "installed_clean": {
+      "description": "¿El deliverable instala limpio en el workdir aislado del juez?",
+      "type": "boolean"
+    },
+    "ran": {
+      "description": "¿El deliverable corre (arranca/responde) tras la instalación?",
+      "type": "boolean"
+    },
+    "own_tests_passed": {
+      "description": "¿Pasan los tests propios del deliverable (re-ejecutados por el juez)?",
+      "type": "boolean"
+    },
+    "meets_functional_spec": {
+      "description": "¿Cumple el deliverable_spec funcional del pit_spec?",
+      "type": "boolean"
+    },
+    "criteria": {
+      "description": "Rúbrica ejecutable: score 0-1 por criterio. Los PESOS viven en el pit_spec (rubric_weights), no acá.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["funcionalidad", "robustez", "dx", "docs", "testabilidad"],
+      "properties": {
+        "funcionalidad": { "type": "number", "minimum": 0, "maximum": 1 },
+        "robustez": { "type": "number", "minimum": 0, "maximum": 1 },
+        "dx": { "type": "number", "minimum": 0, "maximum": 1 },
+        "docs": { "type": "number", "minimum": 0, "maximum": 1 },
+        "testabilidad": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "workdir": {
+      "description": "Workdir aislado donde el juez instaló/ejecutó (relativo al vault).",
+      "type": ["string", "null"],
+      "default": null
+    },
+    "egress_file": {
+      "description": "Egress declarado por el juez (supervisión security), relativo al vault: pit/<pit_id>/judge/<judge_id>/egress.jsonl.",
+      "type": ["string", "null"],
+      "default": null
+    },
+    "evidence": {
+      "description": "Notas/logs de la evaluación (comandos corridos, fallos observados).",
+      "type": ["string", "null"],
+      "default": null
+    }
+  }
+}

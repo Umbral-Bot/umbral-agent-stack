@@ -1,0 +1,37 @@
+# pit_spec v3 — PIT-DEV (developer product tournament)
+# Primer caso de uso canónico (docs/ops/pit-dev-mode-vision-2026-07-03.md §6):
+# torneo "API/MCP para manejar umbral-agent-stack desde IDEs (Cursor/VS Code)".
+# budget_usd / iteration_count / repo_ref son input de David — sin defaults.
+schema_version: 3
+mode: dev
+pit_id: pit-dev-mcp-ide
+title: "API/MCP para manejar umbral-agent-stack desde IDEs"
+problem_statement: >-
+  Operar umbral-agent-stack (tasks del Worker, estado, health) desde el IDE
+  requiere hoy curl manual + conocer los endpoints; no hay una superficie
+  MCP/API pensada para Cursor/VS Code.
+deliverable_spec: >-
+  Servidor MCP (stdio + HTTP) que exponga las tasks del Worker de
+  umbral-agent-stack a IDEs (Cursor/VS Code): listar tasks disponibles,
+  despachar una task con payload validado, consultar estado/resultado, y
+  health del Worker. Instalable con `pip install -e .` dentro del
+  deliverable, con tests propios ejecutables offline (mock del Worker),
+  README con setup para ambos IDEs y sin secretos hardcodeados (el token se
+  lee de env).
+repo_ref: "REPLACE_WITH_PINNED_TAG_OR_COMMIT"
+lane_count: 3
+iteration_count: 4
+budget_usd: 150
+judge_count: 2
+rubric_weights:
+  funcionalidad: 2.0
+  robustez: 1.5
+  dx: 1.0
+  docs: 1.0
+  testabilidad: 1.5
+security_monitor: required
+traceability: required
+vault: umbral-pit-vault
+notes: >-
+  Ejemplo canónico PIT-DEV. Reemplazar repo_ref por el tag/commit pinneado
+  antes del gate; las lanes trabajan sobre el snapshot, nunca sobre main vivo.

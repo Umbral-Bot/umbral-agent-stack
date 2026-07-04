@@ -1,8 +1,10 @@
 # PIT — Generación visual con Magnific (4:3)
 
-- **Status:** v1 (PIT-1 spec) — 2026-06-09.
-- **Decisión canónica:** `aspect_ratio: "4:3"` es el **default Magnific de Umbral** para mockups y hero del prototipo PIT — alineado con editorial LinkedIn y blog hero editorial ([`umbral-bim-magnific-visual-style-v1.md`](umbral-bim-magnific-visual-style-v1.md)).
-- **Contrato:** campo `visual_generation` del pit_spec ([schema](../schemas/pit-spec-v1.schema.json)).
+- **Status:** v2 (PIT-DEV FASE 6) — 2026-07-03. Regla dura global: **Magnific
+  PROHIBIDO para toda lane/juez/subagente efímero en TODOS los modos**. Solo
+  Rick, fuera de las lanes, post-judge, si el torneo lo pide en spec.
+- **Decisión canónica:** `aspect_ratio: "4:3"` es el **default Magnific de Umbral** para el deck ejecutivo del torneo — alineado con editorial LinkedIn y blog hero editorial ([`umbral-bim-magnific-visual-style-v1.md`](umbral-bim-magnific-visual-style-v1.md)).
+- **Contrato:** campo `visual_generation` del pit_spec v1 ([schema](../schemas/pit-spec-v1.schema.json)). El spec v3 (PIT-DEV) NO tiene `visual_generation`: el visual del deck es decisión de Rick post-judge, fuera del spec de lanes.
 
 ---
 
@@ -20,15 +22,27 @@ El validador (`scripts/pit/pit_spec_validate.py`) aplica el default `4:3` cuando
 
 ## 2. Gate de generación (cuándo)
 
-Un visual Magnific solo puede pedirse cuando la tarjeta de la lane está en columna **Prototype** del kanban, **o** cuando la hipótesis de la iteración ya está validada (`hypothesis.validated: true` en el kpi_pack anterior).
+**Regla dura (FASE 6, 2026-07-03):** ningún agente efímero (lane, juez,
+security, traceability) puede **solicitar ni invocar** Magnific, en ningún
+modo. Pedirlo ⇒ `lane_blocked`. Los gates de columna de v1 quedan obsoletos
+como vía de lane: no hay vía de lane.
 
-Nunca en `Research`/`Hypothesis`: el visual ilustra un prototipo que existe, no reemplaza la validación. Genera evidencia, no humo.
+Magnific solo se usa **post-judge**, por Rick, para el deck ejecutivo del
+torneo (flujo PIT-TG-DRIVE) — y solo si el spec v1 lo habilitó
+(`visual_generation.enabled: true`). Genera evidencia visual del cierre, no
+material de iteración.
 
 ## 3. Broker (quién)
 
-- Las lanes **no** llaman a Magnific directo: piden el visual a **Rick (broker)** con `{lane_id, iteración, concepto, aspect_ratio, style_ref}`.
-- Rick valida el gate de columna, ejecuta la generación y devuelve la URL del asset.
-- Esto concentra gasto, credenciales y rate limits en un solo punto (mismo patrón broker del roadmap [`copilot-cli-autonomy-vision-roadmap.md`](../copilot-cli-autonomy-vision-roadmap.md)).
+- **Solo Rick**, fuera de las lanes. Las lanes ya no piden visuales — ni
+  directo ni vía broker.
+- Rick decide post-judge si el deck lleva visuales, ejecuta la generación y
+  registra las URLs en los deliverables del torneo.
+- Esto concentra gasto, credenciales y rate limits en un solo punto (mismo
+  patrón broker del roadmap [`copilot-cli-autonomy-vision-roadmap.md`](../copilot-cli-autonomy-vision-roadmap.md)).
+- Defensa en profundidad: el registro de efímeros del runner añade
+  `tools.deny: ["magnific", "magnific*"]` a cada agente efímero
+  (`scripts/pit/pit_tournament_run.py::register_ephemeral_agents`).
 
 ## 4. Dónde quedan los assets (sin autopublicación)
 
@@ -41,7 +55,7 @@ Nunca en `Research`/`Hypothesis`: el visual ilustra un prototipo que existe, no 
 | Pregunta | Respuesta |
 |---|---|
 | ¿Ratio default? | **4:3** (canónico Umbral: editorial LinkedIn, blog hero, PIT) |
-| ¿Quién genera? | Rick broker — lanes nunca directo |
-| ¿Cuándo? | columna Prototype o hipótesis validada |
-| ¿Dónde queda? | `kpi_pack.visual_assets` / prototype-meta del vault |
+| ¿Quién genera? | SOLO Rick — lanes/jueces/subagentes JAMÁS (ni pedir; regla FASE 6) |
+| ¿Cuándo? | post-judge, para el deck ejecutivo, si el spec lo habilitó |
+| ¿Dónde queda? | deliverables del torneo (deck) — nunca material de iteración de lane |
 | ¿Se publica? | No. Sin autopublicación; reuso editorial = pipeline editorial aparte |

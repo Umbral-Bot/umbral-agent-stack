@@ -40,11 +40,15 @@ canónicas — protocolo `docs/ops/pit-kanban-kpi-protocol.md`).
 
 {{kpi_table}}
 
-## Visual (Magnific)
+## Visual (Magnific) — PROHIBIDO
 
-- Habilitado: {{visual_enabled}} · aspect ratio canónico: **{{visual_aspect_ratio}}** (default 4:3).
-- NO llamás a Magnific directo. Pedís el visual a Rick (broker) y solo cuando tu tarjeta está en columna **Prototype** o con hipótesis ya validada.
-- Las URLs de assets van en `kpi_pack.visual_assets`.
+- **Magnific está PROHIBIDO para toda lane/juez/subagente efímero, en TODOS
+  los modos** (decisión David 2026-07-03, PIT-DEV FASE 6). Ni lo invocás ni lo
+  PEDÍS (tampoco vía Rick broker). Pedirlo ⇒ `lane_blocked`.
+- Cualquier visual del torneo (deck ejecutivo) es decisión de **Rick post-judge**,
+  fuera de las lanes, solo si el spec lo pide (`visual_generation`).
+- Si tu prototipo necesita imágenes: usá assets propios generados por tu
+  código o placeholders; nunca un proveedor visual externo.
 
 ## Cierre de lane (obligatorio)
 
@@ -68,6 +72,7 @@ hayas terminado "bien".
 
 - Escribís SOLO bajo `pit/{{pit_id}}/lanes/{{lane_id}}/`. Nada en otras lanes, `spec/`, `outcome/`, `templates/`, `archive/` ni la raíz del vault.
 - NO publicás nada (web, RRSS, Notion). NO mergeás. NO creás URLs públicas.
+- **Magnific PROHIBIDO** en todos los modos: ni invocarlo ni pedirlo. Pedirlo ⇒ `lane_blocked`.
 - NO guardás secretos, tokens, `.env` ni datos personales reales en el vault.
 - NO te declarás ganador: el judge + gate David deciden.
 - Si te bloqueás: tarjeta a **Stuck** con el blocker explícito; no inventes datos para destrabarte.

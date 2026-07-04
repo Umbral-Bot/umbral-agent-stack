@@ -51,6 +51,6 @@ Heredados al prompt vía plantilla; el generador **no** los puede omitir:
 - Cierre con las tres líneas literales `PROTOTYPE_URL=` / `KPI_PACK=` / `FULFILLMENT=`.
 - Preview por túnel + Mission Control; **nunca** URL pública.
 - Personas sintéticas siempre etiquetadas.
-- Magnific solo vía Rick broker y con gate de columna Prototype.
+- **Magnific PROHIBIDO** (regla dura FASE 6, todos los modos): ni invocarlo ni pedirlo — pedirlo ⇒ `lane_blocked`. El registro añade `tools.deny` explícito.
 - No merge, no publicar, no tocar Notion, no tocar otros lanes ni `templates/`/`archive/`.
 - Sin secretos en el vault (reglas de `pit_vault_check.py`).

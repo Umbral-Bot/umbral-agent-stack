@@ -676,6 +676,28 @@ def _claim_comment_processing(r: redis.Redis, comment_id: str) -> bool:
     return bool(r.set(key, "1", nx=True, ex=PROCESSED_COMMENT_TTL_SEC))
 
 
+def _is_comment_processed(r: redis.Redis, comment_id: str) -> bool:
+    if not comment_id:
+        return False
+    key = f"{REDIS_KEY_PROCESSED_COMMENT_PREFIX}{comment_id}"
+    return r.exists(key) == 1
+
+
+def _filter_unprocessed_comments(
+    r: redis.Redis,
+    comments: list[dict],
+) -> tuple[list[dict], int]:
+    unprocessed: list[dict] = []
+    skipped = 0
+    for comment in comments:
+        comment_id = str(comment.get("id") or "").strip()
+        if comment_id and _is_comment_processed(r, comment_id):
+            skipped += 1
+            continue
+        unprocessed.append(comment)
+    return unprocessed, skipped
+
+
 def _extract_item_text(item: dict, *names: str) -> str:
     """Extract a select/status/rich_text value from a read_database item.
 
@@ -1530,10 +1552,16 @@ def _do_poll(
         last_ts = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
         r.set(REDIS_KEY_LAST_TS, last_ts)
 
-    comments = _collect_candidate_comments(wc, last_ts, limit=20)
+    raw_comments = _collect_candidate_comments(wc, last_ts, limit=20)
+    comments, already_processed_count = _filter_unprocessed_comments(r, raw_comments)
     latest_dt = _parse_notion_datetime(last_ts) or datetime.min.replace(tzinfo=timezone.utc)
 
-    logger.info("Notion poll retrieved %d comments since %s", len(comments), last_ts)
+    logger.info(
+        "Notion poll retrieved %d actionable comments since %s (%d already processed skipped)",
+        len(comments),
+        last_ts,
+        already_processed_count,
+    )
 
     bot_user_id = _resolve_bot_user_id()
 
@@ -1554,10 +1582,14 @@ def _do_poll(
             logger.debug(
                 "Skipping bot-authored comment %s (author guard)", (comment_id or "?")[:8]
             )
+            if comment_id:
+                _claim_comment_processing(r, comment_id)
             continue
         # B2 Capa 2 (defense-in-depth): ECHO_PREFIX. Cubre el caso de bot_user_id
         # no resoluble y replies de smart_reply (que siempre prefijan "Rick:").
         if text.startswith(ECHO_PREFIX):
+            if comment_id:
+                _claim_comment_processing(r, comment_id)
             continue
         if not _claim_comment_processing(r, comment_id):
             logger.info("Skipping already processed comment %s", comment_id[:8])

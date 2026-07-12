@@ -1,4 +1,8 @@
-"""Stage 6 — multi-platform variant dispatcher (skeleton, Wave 1 design).
+"""DEPRECATED/ARCHIVED: Stage 6 multi-platform dispatcher skeleton.
+
+Archived in b0004 because it is design-only and has no runtime caller. The
+active Stage 6 is ``scripts/discovery/stage6_llm_combinator.py``. Keep this
+module as recovery evidence for the Wave 1 multi-platform contract only.
 
 Fan-out from a single (candidate, angle) pair to multiple platform variants.
 
@@ -22,7 +26,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 # Make ``scripts/`` importable so we can pull lib.variants without installing.
-_REPO_ROOT = Path(__file__).resolve().parents[2]
+_REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(_REPO_ROOT / "scripts" / "discovery") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "scripts" / "discovery"))
 

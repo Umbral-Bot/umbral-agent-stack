@@ -13,6 +13,10 @@ source the value is read from the page gate; for an explicit payload the caller
 must set it. Anything else returns ``ok=False`` with ``would_publish=False`` and
 performs **no network call**.
 
+When a Notion page has the v2 ``Selección imagen`` property, its visual gate
+must also be ready. Legacy pages without that property keep their historical
+image behavior.
+
 Only the blog blob + canonical URL are produced here. LinkedIn/X are never
 auto-published (see docs/ops/notion-blog-linkedin-v3-content-model.md).
 
@@ -37,6 +41,7 @@ logger = logging.getLogger("worker.tasks.editorial_publish")
 # Fields the Azure Function requires (content_hash is auto-computed if missing).
 _REQUIRED_POST_FIELDS = ("slug", "title", "body_markdown", "notion_page_id")
 _SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+_VISUAL_ALT_RE = re.compile(r"^Alt ([1-5])$")
 _DEFAULT_AUTHOR = "David Moreira"
 _DEFAULT_CANONICAL_BASE = "https://umbralbim.io"
 
@@ -140,14 +145,109 @@ def _page_title(page: Dict[str, Any]) -> str:
     return ""
 
 
+def _clean_string(value: Any) -> str:
+    return value.strip() if isinstance(value, str) else ""
+
+
+def _evaluate_notion_visual_gate(
+    page: Dict[str, Any], prop_map: Dict[str, str]
+) -> tuple[str, Dict[str, Any]]:
+    """Resolve the Notion hero and report whether the v2 visual gate is ready."""
+    props = page.get("properties") or {}
+    if not isinstance(props, dict):
+        props = {}
+
+    canonical_url = _clean_string(
+        _flatten_notion_prop(props.get("Visual asset URL"))
+    )
+    legacy_prop = prop_map.get("hero_image_url")
+    legacy_url = _clean_string(
+        _flatten_notion_prop(props.get(legacy_prop)) if legacy_prop else None
+    )
+    selection_property_present = "Selección imagen" in props
+    selection = _clean_string(
+        _flatten_notion_prop(props.get("Selección imagen"))
+    ) or None
+    state = _clean_string(
+        _flatten_notion_prop(props.get("Estado imagen"))
+    ) or None
+
+    detail: Dict[str, Any] = {
+        "selection_property_present": selection_property_present,
+        "selection": selection,
+        "state": state,
+        "ready": True,
+        "reason": "legacy_compatible",
+        "selected_property": None,
+        "selected_url": "",
+        "canonical_url": canonical_url,
+        "hero_source": "none",
+    }
+
+    if not selection_property_present:
+        hero_image_url = canonical_url or legacy_url
+        detail["hero_source"] = (
+            "visual_asset_url"
+            if canonical_url
+            else ("legacy_hero" if legacy_url else "none")
+        )
+        return hero_image_url, detail
+
+    if selection == "Sin imagen":
+        detail.update(
+            ready=True,
+            reason="explicit_no_image",
+            hero_source="none",
+        )
+        return "", detail
+
+    match = _VISUAL_ALT_RE.fullmatch(selection or "")
+    if not match:
+        reason = {
+            None: "selection_missing",
+            "Pendiente": "selection_pending",
+            "Regenerar": "regeneration_requested",
+        }.get(selection, "selection_invalid")
+        detail.update(ready=False, reason=reason)
+        return "", detail
+
+    selected_property = f"imagen_alt_{match.group(1)}_url"
+    selected_url = _clean_string(
+        _flatten_notion_prop(props.get(selected_property))
+    )
+    detail.update(
+        selected_property=selected_property,
+        selected_url=selected_url,
+    )
+
+    if not selected_url:
+        detail.update(ready=False, reason="selected_alt_url_missing")
+        return "", detail
+    if state != "Seleccionada":
+        detail.update(ready=False, reason="image_state_not_selected")
+        return "", detail
+    if canonical_url and canonical_url != selected_url:
+        detail.update(ready=False, reason="canonical_url_mismatch")
+        return "", detail
+
+    if canonical_url:
+        detail.update(reason="selected_canonical", hero_source="visual_asset_url")
+        return canonical_url, detail
+
+    detail.update(reason="selected_alt_transition", hero_source="selected_alt")
+    return selected_url, detail
+
+
 def _build_payload_from_notion(
     notion_page_id: str, prop_map: Dict[str, str]
-) -> Dict[str, Any]:
+) -> tuple[Dict[str, Any], Dict[str, Any]]:
     """Read a Publicaciones page and map its properties to post fields.
 
-    Best-effort: the Publicaciones schema is not versioned in this repo, so
-    property names are configurable. Long bodies that live in the page body
-    rather than a ``Copy Blog`` property are out of scope for v1 (documented).
+    Core property names remain configurable. The visual selection uses the
+    versioned v2 schema in
+    ``docs/ops/notion-publicaciones-v2-visual-gates-schema.md``. Long bodies
+    that live in the page body rather than a ``Copy Blog`` property are out of
+    scope for v1 (documented).
     """
     from .. import notion_client
 
@@ -160,20 +260,22 @@ def _build_payload_from_notion(
             return None
         return _flatten_notion_prop(props.get(name))
 
+    hero_image_url, visual_gate = _evaluate_notion_visual_gate(page, prop_map)
+
     payload: Dict[str, Any] = {
         "notion_page_id": str(page.get("id") or notion_page_id),
         "slug": read("slug") or "",
         "title": read("title") or _page_title(page),
         "body_markdown": read("body_markdown") or "",
         "excerpt": read("excerpt") or "",
-        "hero_image_url": read("hero_image_url") or "",
+        "hero_image_url": hero_image_url,
         "tags": read("tags") or [],
         "published_at": read("published_at") or "",
         "canonical_url": read("canonical_url") or "",
         "autorizar_publicacion": _as_bool(read("autorizar_publicacion")),
         "aprobado_contenido": _as_bool(read("aprobado_contenido")),
     }
-    return payload
+    return payload, visual_gate
 
 
 def _normalize_payload(raw: Dict[str, Any]) -> Dict[str, Any]:
@@ -300,7 +402,7 @@ def _maybe_write_back(notion_page_id: str, published_url: str, prop_name: str) -
         from .. import notion_client
 
         notion_client.update_page_properties(
-            page_id=notion_page_id,
+            page_id_or_url=notion_page_id,
             properties={prop_name: {"url": published_url}},
         )
         return {"ok": True, "property": prop_name}
@@ -364,24 +466,66 @@ def _maybe_index_rag(
 
 
 # ---------------------------------------------------------------------------
-# Visual asset resolution (deliverable F — stub, schema not in repo)
+# Visual asset resolution (Publicaciones visual schema v2)
 # ---------------------------------------------------------------------------
 
 
 def resolve_visual_asset_urls(
     notion_page: Dict[str, Any], selection: Optional[List[str]] = None
 ) -> Dict[str, str]:
-    """STUB (F): map `Selección imagen` → `imagen_alt_N_url`.
+    """Resolve the v2 visual selection into publish-ready image URLs.
 
-    The Publicaciones visual-asset schema is not versioned in this repo yet, so
-    this is a documented no-op placeholder. See
-    docs/ops/notion-blog-linkedin-v3-content-model.md §"Visual assets" for the
-    intended mapping. Tracked by a skipped test in tests/test_editorial_publish.py.
+    ``Selección imagen`` is the human-owned Notion Select with values
+    ``Alt 1`` ... ``Alt 5`` or ``Sin imagen``. Non-empty
+    ``imagen_alt_N_url`` properties are preserved as candidates only when an
+    ``Alt N`` selection resolves to a non-empty URL; the chosen one is also
+    exposed as ``hero_image_url``. Missing, pending, ``Sin imagen``, or
+    incomplete selections degrade cleanly to ``{}``.
+
+    ``selection`` is retained for compatibility with callers that already
+    flatten a select/relation to a list. The first resolvable ``Alt N`` in list
+    order wins deterministically. When it is omitted, the function reads
+    ``Selección imagen`` from ``notion_page``. The function is pure and
+    performs no Notion writes.
     """
-    # TODO(editorial-v3): read `Selección imagen` + imagen_alt_N_url properties
-    # and return {"hero_image_url": ..., "imagen_alt_1_url": ...} once the
-    # Publicaciones visual schema is confirmed.
-    return {}
+    if not isinstance(notion_page, dict):
+        return {}
+    props = notion_page.get("properties") or {}
+    if not isinstance(props, dict):
+        return {}
+
+    assets: Dict[str, str] = {}
+    for alt_number in range(1, 6):
+        prop_name = f"imagen_alt_{alt_number}_url"
+        raw_url = _flatten_notion_prop(props.get(prop_name))
+        if isinstance(raw_url, str) and raw_url.strip():
+            assets[prop_name] = raw_url.strip()
+
+    if selection is None:
+        selected_values: List[Any] = [
+            _flatten_notion_prop(props.get("Selección imagen"))
+        ]
+    elif isinstance(selection, list):
+        selected_values = selection
+    else:
+        selected_values = []
+
+    selected_prop = ""
+    for value in selected_values:
+        if not isinstance(value, str):
+            continue
+        match = _VISUAL_ALT_RE.fullmatch(value.strip())
+        if not match:
+            continue
+        candidate_prop = f"imagen_alt_{match.group(1)}_url"
+        if candidate_prop in assets:
+            selected_prop = candidate_prop
+            break
+
+    if not selected_prop:
+        return {}
+
+    return {"hero_image_url": assets[selected_prop], **assets}
 
 
 # ---------------------------------------------------------------------------
@@ -422,6 +566,7 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
     skip_rag_index = bool(input_data.get("skip_rag_index", False))
 
     # 1) Resolve source + raw payload.
+    visual_gate: Optional[Dict[str, Any]] = None
     if isinstance(explicit_payload, dict):
         source = "payload"
         raw = dict(explicit_payload)
@@ -429,7 +574,7 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
         content_approved = _as_bool(raw.get("aprobado_contenido")) if "aprobado_contenido" in raw else True
     elif notion_page_id:
         source = "notion"
-        raw = _build_payload_from_notion(notion_page_id, prop_map)
+        raw, visual_gate = _build_payload_from_notion(notion_page_id, prop_map)
         authorized = _as_bool(raw.get("autorizar_publicacion"))
         content_approved = _as_bool(raw.get("aprobado_contenido"))
     else:
@@ -439,6 +584,13 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
     post = _normalize_payload(raw)
     if not post.get("canonical_url"):
         post["canonical_url"] = _canonical_url(post["slug"])
+
+    gates: Dict[str, Any] = {
+        "autorizar_publicacion": authorized,
+        "aprobado_contenido": content_approved,
+    }
+    if visual_gate is not None:
+        gates["visual_asset"] = visual_gate
 
     # 3) HARD GATE — never publish without autorizar_publicacion=true (and, when
     #    coming from Notion, aprobado_contenido=true). No network on failure.
@@ -453,10 +605,22 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
             "would_publish": False,
             "source": source,
             "slug": post["slug"],
-            "gates": {
-                "autorizar_publicacion": authorized,
-                "aprobado_contenido": content_approved,
-            },
+            "gates": gates,
+        }
+
+    if visual_gate is not None and not visual_gate["ready"]:
+        logger.info(
+            "Editorial publish blocked by visual gate slug=%s reason=%s",
+            post["slug"],
+            visual_gate["reason"],
+        )
+        return {
+            "ok": False,
+            "error": "visual_asset_not_ready",
+            "would_publish": False,
+            "source": source,
+            "slug": post["slug"],
+            "gates": gates,
         }
 
     # 4) Build the function payload (drop worker-side gate fields).
@@ -473,6 +637,7 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
             "published_url": post["canonical_url"],
             "content_hash": post["content_hash"],
             "payload": function_payload,
+            "gates": gates,
             "rag_indexed": False,
             "rag_skipped_reason": "dry_run",
         }
@@ -487,6 +652,7 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
             "would_publish": True,
             "source": source,
             "slug": post["slug"],
+            "gates": gates,
         }
     _validate_function_url(url)
 
@@ -505,6 +671,7 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
         "blob_path": data.get("blob_path") or f"posts/{post['slug']}.json",
         "index_updated": data.get("index_updated"),
         "content_hash": data.get("content_hash") or post["content_hash"],
+        "gates": gates,
     }
     if not ok:
         response["error"] = data.get("error") or "function_error"

@@ -76,7 +76,7 @@ La combinación debe hacer que el post final sea más claro, más aterrizado o m
 
 ### Implementación
 
-Stage 6 (`scripts/discovery/stage6_aec_combine.py`) — **stub LLM** hoy. Contrato I/O documentado en `INPUTS.md` y `OUTPUTS.md`. Sin implementación deterministica posible (requiere juicio sobre "puente real").
+Stage 6 (`scripts/discovery/stage6_llm_combinator.py`) — implementación LLM real y única invocada por el cron de discovery. Lee el top-N rankeado (con fallback a promovidos), propone 3–5 ideas y persiste drafts en `state.sqlite.proposals`. Los contratos stub anteriores quedan recuperables en `scripts/discovery/_archived/`; la selección canónica requiere firma MP-D2 de David antes del merge.
 
 ## Criterio 3 — agregar visión de David y alineación comercial
 

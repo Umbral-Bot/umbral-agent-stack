@@ -1,6 +1,6 @@
 # INPUTS — Contrato de entrada `rick-linkedin-writer`
 
-> **Status:** design-only. Define qué consume el agente en cada Stage. Implementación viva: `scripts/discovery/stage5_rank_candidates.py` (Stage 5) y `scripts/discovery/stage6_aec_combine.py` (Stage 6 stub).
+> **Status:** contrato operativo parcial. Implementación viva: `scripts/discovery/stage5_rank_candidates.py` (Stage 5) y `scripts/discovery/stage6_llm_combinator.py` (Stage 6). Los contratos stub previos están archivados en `scripts/discovery/_archived/`.
 
 ## Stage 5 — Ranking determinístico (input)
 
@@ -61,9 +61,11 @@ buckets:
 
 El "perfil David" se materializa via los buckets `core_aec`, `adyacente`, `voz_david` en `config/aec_keywords.yaml`. **No hay archivo de perfil separado**: cualquier ajuste de calibración pasa por editar el YAML.
 
-## Stage 6 — Combinación AEC (input)
+## Stage 6 legacy — contrato del stub archivado
 
-> **Stub hoy. Documentado para que la fase LLM tenga contrato claro.**
+> **No es el input del runtime actual.** Se conserva como referencia del stub
+> archivado. El combinador canónico propuesto lee directamente el top-N desde
+> `state.sqlite.discovered_items` y cae a promovidos recientes si no hay ranks.
 
 ### 1. Top-N de Stage 5
 

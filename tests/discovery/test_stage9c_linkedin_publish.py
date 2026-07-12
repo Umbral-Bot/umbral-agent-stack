@@ -24,6 +24,11 @@ def _stub_guard_dependencies(monkeypatch):
     dry-run/idempotency contracts in test_stage9c_dry_run.py /
     test_stage9c_idempotency.py.
     """
+    monkeypatch.setenv("PUBLISH_ENABLED", "true")
+    monkeypatch.setenv("DRY_RUN", "false")
+    monkeypatch.setenv("MAX_POSTS", "1")
+    monkeypatch.setenv("MAX_POSTS_PER_DAY", "1")
+
     gmod = types.ModuleType("scripts.discovery.lib.gates")
 
     def _ev(_p, _d):
@@ -224,6 +229,55 @@ def _mock_httpx_post(monkeypatch, *, status_code=201,
     client.post.return_value = resp
     monkeypatch.setattr(mod.httpx, "Client", lambda *a, **kw: client)
     return client
+
+
+def test_publish_one_missing_publish_enabled_blocks_before_gates_and_http(
+    state_db, monkeypatch, tmp_path,
+):
+    """S9c must wire fail-closed runtime flags into the publish guard."""
+    mod.ensure_publish_columns(state_db)
+    _insert_draft(state_db, status="draft_ready")
+
+    # Isolate the master switch as the only runtime block reason.
+    monkeypatch.delenv("PUBLISH_ENABLED", raising=False)
+    monkeypatch.setenv("DRY_RUN", "false")
+    monkeypatch.setenv("MAX_POSTS", "1")
+    ops_log_path = tmp_path / "ops_log.jsonl"
+    monkeypatch.setenv("OPS_LOG_PATH", str(ops_log_path))
+
+    gates = sys.modules["scripts.discovery.lib.gates"]
+    gate_eval = MagicMock(
+        side_effect=AssertionError("editorial gates must not run"),
+    )
+    monkeypatch.setattr(gates, "evaluate_gates", gate_eval)
+
+    post_ugc = MagicMock(
+        side_effect=AssertionError("LinkedIn HTTP must not run"),
+    )
+    notify_blocked = MagicMock()
+    monkeypatch.setattr(mod, "post_ugc", post_ugc)
+    monkeypatch.setattr(mod, "_notify_blocked", notify_blocked)
+    monkeypatch.setattr(mod, "log_event", MagicMock())
+
+    row = mod.read_publishable(state_db, limit=1)[0]
+    status, msg = mod.publish_one(
+        row=row,
+        state_db=state_db,
+        author_urn="urn:li:person:rick",
+        access_token="AT-fake",
+        dry_run=False,
+        notion_fetcher=lambda pid: {"id": pid},
+    )
+
+    assert status == "blocked"
+    assert "publish_disabled" in msg
+    gate_eval.assert_not_called()
+    post_ugc.assert_not_called()
+    notify_blocked.assert_called_once_with("PAGE", ["publish_disabled"])
+    entries = [json.loads(line) for line in ops_log_path.read_text().splitlines()]
+    assert [entry["event"] for entry in entries] == [
+        "publish_guard.runtime_block"
+    ]
 
 
 def test_publish_one_success_marks_published(state_db, monkeypatch):

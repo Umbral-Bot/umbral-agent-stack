@@ -1,4 +1,4 @@
-"""Tests for Stage 6 multi-platform dispatcher (skeleton)."""
+"""Recovery tests for the archived Stage 6 multi-platform skeleton."""
 from __future__ import annotations
 
 import json
@@ -13,7 +13,9 @@ import pytest
 import importlib.util
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DISPATCHER_PATH = REPO_ROOT / "scripts" / "discovery" / "stage6_generate_variants.py"
+DISPATCHER_PATH = (
+    REPO_ROOT / "scripts" / "discovery" / "_archived" / "stage6_generate_variants.py"
+)
 FIXTURES_PATH = REPO_ROOT / "tests" / "discovery" / "fixtures" / "synthetic_candidates.json"
 
 

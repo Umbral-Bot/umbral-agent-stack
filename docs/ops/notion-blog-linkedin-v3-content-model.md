@@ -44,7 +44,7 @@ map or update the defaults in
 | `slug` | `Slug` | rich_text / url | lowercase kebab-case |
 | `body_markdown` | `Copy Blog` | rich_text | canonical body (see limitation) |
 | `excerpt` | `Bajada` | rich_text | short summary / dek |
-| `hero_image_url` | `Hero Image` | url / files | lead image |
+| `hero_image_url` | `Visual asset URL` / selección visual v2 | url | `Alt N` resolves from `imagen_alt_N_url`; legacy `Hero Image` remains a fallback |
 | `tags` | `Tags` | multi_select | |
 | `published_at` | `Fecha publicación` | date | defaults to now |
 | `canonical_url` / write-back | `published_url` | url | filled after publish |
@@ -71,7 +71,7 @@ when sharing the company post.
 > explicit `payload` to the Worker task in that case, or paste the body into
 > `Copy Blog`.
 
-## Visual assets (deliverable F — spec, stub in code)
+## Visual assets (deliverable F — implemented)
 
 Goal: derive the post's image URLs from the editorial selection so the operator
 doesn't paste URLs by hand.
@@ -90,12 +90,30 @@ Intended mapping:
 2. Set `hero_image_url` = that URL.
 3. Carry the remaining `imagen_alt_N_url` as gallery candidates (future).
 
-Status: **stubbed**. `resolve_visual_asset_urls()` in
+Status: **implemented** against the versioned
+[`Publicaciones` visual schema v2](notion-publicaciones-v2-visual-gates-schema.md).
+`resolve_visual_asset_urls()` in
 [`worker/tasks/editorial_publish.py`](../../worker/tasks/editorial_publish.py)
-returns `{}` and is marked TODO until the `Publicaciones` visual schema is
-versioned. A skipped test documents the target behavior
-(`tests/test_editorial_publish.py::TestVisualAssets`). Until then, set
-`hero_image_url` directly (property `Hero Image`) or in the explicit payload.
+reads the exact `Alt 1` ... `Alt 5` options, carries non-empty alternative URLs,
+and gives the selected URL priority as `hero_image_url`. Missing, pending,
+`Sin imagen`, and incomplete selections return `{}` from the resolver. The
+publish handler additionally enforces this Notion-only gate:
+
+| Notion visual state | Publish behavior |
+|---|---|
+| `Selección imagen` property absent | Legacy-compatible: prefer `Visual asset URL`, then configured `Hero Image` |
+| Select empty, `Pendiente`, or `Regenerar` | Block with `visual_asset_not_ready` before the Azure Function call |
+| `Alt N` without `imagen_alt_N_url` | Block |
+| `Alt N` with `Estado imagen` other than `Seleccionada` | Block |
+| `Alt N` with non-empty `Visual asset URL` different from the selected alt | Block as `canonical_url_mismatch` |
+| Valid `Alt N`, canonical URL empty | Allow transition using the selected `imagen_alt_N_url` |
+| Valid `Alt N`, canonical URL matching | Use `Visual asset URL` |
+| `Sin imagen` | Explicit approval; publish with an empty hero |
+
+The response exposes the decision under `gates.visual_asset`; those diagnostics
+are never included in the Azure Function payload. Explicit payload sources do
+not use this visual gate. Tests live in
+`tests/test_editorial_publish.py::TestVisualAssets`.
 
 ## Operator flow (happy path)
 
@@ -103,7 +121,7 @@ versioned. A skipped test documents the target behavior
 2. David sets `aprobado_contenido = true`, then `autorizar_publicacion = true`.
 3. Telegram order "ok publica" → operator triggers the Worker task
    `web.publish_editorial_post` with the `notion_page_id`.
-4. Worker validates gates → calls the Azure Function → blog is live at
+4. Worker validates editorial + visual gates → calls the Azure Function → blog is live at
    `umbralbim.io/noticias/:slug`.
 5. `published_url` is written back / injected into the social copies.
 6. Operator manually posts the LinkedIn (David), LinkedIn (empresa) and X copies.

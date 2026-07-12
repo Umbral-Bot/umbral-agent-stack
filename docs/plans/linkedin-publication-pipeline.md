@@ -243,7 +243,7 @@ Este plan no implementa esa herramienta. Solo declara el requisito futuro.
 | Etapa 0 — leer catálogo Referentes | ✅ runtime real | `scripts/discovery/stage1_load_referentes.py`; audit 006 |
 | Etapa 1 — descubrir publicaciones | ⚠️ parcial (2/5 canales productivos) | `docs/audits/2026-05-08-pipeline-editorial-gap-analysis.md` (cobertura 14/26 = 53.8%) |
 | Etapa 2 — ranking de candidatos | ✅ heurístico determinístico (Stage 5 v0) | `scripts/discovery/stage5_rank_candidates.py`; `tests/discovery/test_stage5_ranking.py` (10 tests green) |
-| Etapa 3 — combinación AEC | ⏸ stub (Fase LLM, próximo PR) | `scripts/discovery/stage6_aec_combine.py` (raise `NotImplementedError`) |
+| Etapa 3 — combinación AEC | 🟡 implementación real; canónico propuesto b0004 pendiente de firma MP-D2 | `scripts/discovery/stage6_llm_combinator.py`; legacy recuperable en `scripts/discovery/_archived/` |
 | Etapa 4 — push a Notion (Stage 4) | ✅ runtime real | `reports/stage4-push-*-commit*.json` |
 | Etapa 5 — selección humana | 🟡 contrato definido, sin trigger | sección §6, decisiones abiertas §9 |
 | Etapa 6 — voice pass / copy LinkedIn | ⏸ no implementado (Fase LLM) | `rick-communication-director` skills declaradas |

@@ -8,7 +8,7 @@ Base: `29897de3c3047bb84c5d0d0d533d32fa3b41d15e` (`origin/main`)
 
 Branch: `codex/p3-editorial-sanitize-b0004`
 
-PR: **PENDIENTE DE CREAR** — debe quedar draft / `do-not-merge` hasta review de David.
+PR: [#523 — DO NOT MERGE · P3 editorial gates + repo sanitation](https://github.com/Umbral-Bot/umbral-agent-stack/pull/523) — **draft** hasta review de David.
 
 ## Alcance y guardrails
 
@@ -128,7 +128,7 @@ Los resultados no verdes son preexistentes y se reprodujeron en el checkout base
 
 | PR | Estado | Merge gate |
 |---|---|---|
-| PENDIENTE | draft / `do-not-merge` | review David + firma MP-D2 antes del archivado S6 |
+| [#523](https://github.com/Umbral-Bot/umbral-agent-stack/pull/523) | **draft** / `do-not-merge` | review David + firma MP-D2 antes del archivado S6 |
 
 ## Veredicto
 

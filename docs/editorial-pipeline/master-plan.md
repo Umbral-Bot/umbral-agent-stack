@@ -32,7 +32,7 @@
 | **S3** | (parte de "Etapa 1") | `scripts/discovery/stage3_promote.py` | ✅ runtime real | `promovido_a_candidato_at` set |
 | **S4** | Etapa 4 | `scripts/discovery/stage4_push_notion.py` | ✅ runtime real | páginas en `📰 Publicaciones` |
 | **S5** | Etapa 2 | `scripts/discovery/stage5_rank_candidates.py` | ✅ heurístico determinístico v0 | score [0,1] por candidato |
-| **S6** | Etapa 3 | `scripts/discovery/stage6_llm_combinator.py` | 🟡 canónico propuesto en b0004; firma David pendiente | propuestas combinadas |
+| **S6** | Etapa 3 | `scripts/discovery/stage6_llm_combinator.py` | ✅ canónico (firmado 2026-07-12) | propuestas combinadas |
 | **S7** | (no doc) | `scripts/discovery/stage7_publish_drafts.py` | ✅ runtime real | drafts en `📰 Publicaciones` |
 | **S7.5** | Etapa 6 (voice pass) | `scripts/discovery/stage7_5_copy_writer.py` (FROZEN) + `stage7_5_post_review_comment.py` | ✅ runtime real (FROZEN Ola 1) | `Copy LinkedIn` rich_text + `Estado=Revisión pendiente` + review comment |
 | **S8** | Etapa 9 | `scripts/discovery/stage8_image_generator.py` | ⚠️ existe (no aspiracional) | hero image |
@@ -120,11 +120,23 @@ manual; see the b0004 [S6 archive dossier](../../scripts/discovery/_archived/REA
 
 > Update 2026-05-08 (branch `wave1.5-integration`): tras integrar H1+H2+H3+H4+H5+H6, dos de las 5 decisiones quedaron resueltas en código. Las 3 restantes siguen abiertas para Wave 2.
 
+> Update 2026-07-12: MP-D2 quedó cerrada tras la verificación independiente del memo exec-fable b0004 y el merge del PR #523. Hay 3 decisiones resueltas; D4 y D5 continúan abiertas.
+
 1. **D1 — Romper o mantener colapso S0+S1.** **RESUELTO.** Wave 1 (H2 #397) implementó el split en dos scripts independientes:
    - `scripts/discovery/stage0_load_referentes.py` (lectura Referentes → `referentes_snapshot`).
    - `scripts/discovery/stage1_discover_signals.py` (descubrimiento por canal → `signals_raw`).
    Verificado en smoke run de `wave1.5-integration` (ver [`reports/2026-05-08-wave1_5-smoke.md`](../../reports/2026-05-08-wave1_5-smoke.md)).
-2. **D2 — Canónico de S6.** **PROPUESTA b0004 PREPARADA; NO RATIFICADA.** El barrido acotado S5→S7 confirma que `scripts/vps/discovery-publish-cron.sh` invoca `stage6_llm_combinator.py`; no hay invocador runtime para el stub `stage6_aec_combine.py` ni para el skeleton `stage6_generate_variants.py`. b0004 deja el combinador como canónico propuesto y mueve los otros dos a [`scripts/discovery/_archived/`](../../scripts/discovery/_archived/README.md), con recuperación documentada. **Gate:** PR `do-not-merge` hasta firma explícita de David. **Owner decisión:** David.
+2. **D2 — Canónico de S6.** **CERRADA — RESUELTO 2026-07-12 (memo exec-fable b0004 + PR #523).**
+   Verificación independiente: `scripts/vps/discovery-publish-cron.sh` invoca
+   únicamente `stage6_llm_combinator.py` tras Stage 4; no existe invocador
+   runtime para `stage6_aec_combine.py` (stub, `NotImplementedError`
+   incondicional, cero tests) ni para `stage6_generate_variants.py`
+   (skeleton Wave 1, `stub-wave2`, sin generación real fuera de LinkedIn/S7.5).
+   **Canónico: `stage6_llm_combinator.py`.** Los otros dos se archivan
+   (no se borran) en `scripts/discovery/_archived/` con dossier de
+   recuperación — ver
+   [`scripts/discovery/_archived/README.md`](../../scripts/discovery/_archived/README.md).
+   **Owner decisión:** David (firmado 2026-07-12).
 3. **D3 — Gate de aprobación pre-S9c.** **RESUELTO.** H6 (#399) implementó `scripts/discovery/lib/publish_guard.assert_can_publish` que evalúa los 6 gates (incluyendo `aprobado_contenido` y `autorizar_publicacion`) antes de cualquier POST a LinkedIn. Verificado con 3 escenarios sintéticos (pass / blocked-gate / blocked-dup) — ver [`reports/2026-05-08-wave1_5-stage10-dryrun.md`](../../reports/2026-05-08-wave1_5-stage10-dryrun.md).
 4. **D4 — Naming canónico ("Etapa N" vs "Stage M").** **ABIERTO — postponed Wave 2.** Wave 1.5 no tocó nomenclatura. Sigue conviviendo "Etapa 0..9" (doc histórica) con "Stage 0..11" (código nuevo). **Owner decisión:** David.
 5. **D5 — Política de imagen S8.** **ABIERTO — postponed Wave 2.** Wave 1.5 no tocó S8. Sigue sin definirse si `stage8_image_generator.py` es producción o experimento, ni cuándo dispara. **Owner decisión:** David.
@@ -135,7 +147,7 @@ Detalle completo en [`docs/audits/2026-05-08-wave1_5-integration-report.md`](../
 
 - Contratos nuevos formalizados en Wave 1.5: hashes ([`./hash-contract.md`](./hash-contract.md)), SQLite ([`./sqlite-policy.md`](./sqlite-policy.md)), helpers Notion ([`./notion-helpers-policy.md`](./notion-helpers-policy.md)).
 - Stage 7.5 verificado FROZEN (`git diff main wave1.5-integration -- scripts/discovery/stage7_5_*` = 0).
-- Ambigüedad **Canal vs Formato** (carrusel/video) detectada en H5 → postponed Wave 2 junto con D2.
+- Ambigüedad **Canal vs Formato** (carrusel/video) detectada en H5 → postponed Wave 2; MP-D2 quedó cerrada el 2026-07-12.
 
 ## 8. Anti-patterns observados (NO REPETIR)
 
@@ -143,7 +155,7 @@ Detalle completo en [`docs/audits/2026-05-08-wave1_5-integration-report.md`](../
 
 1. **Falsa atribución de runtime.** Documentar un script como "✅ runtime real" cuando el archivo no existe (caso `stage1_load_referentes.py`).
 2. **Drift de naming sin reconciliar.** Doc usa "Etapa N", código usa "Stage M", sin tabla de equivalencia → confusión sistémica.
-3. **Duplicación de stages sin marcar canónico.** S6 llegó a tener tres archivos; b0004 prepara la consolidación, pendiente de firma MP-D2.
+3. **Duplicación de stages sin marcar canónico.** RESUELTO 2026-07-12 — S6 tenía tres archivos; ahora uno canónico + dos archivados con dossier.
 4. **Tratar artefactos históricos (CAND-002/003/004) como fixtures.** Son calibración manual, no spec.
 5. **Documentar publicación (S9c) como "futura" cuando el script ya existe y posteo real es técnicamente posible.** Riesgo de bypass accidental del gate.
 6. **Crear nuevas DBs Notion en lugar de reutilizar `📰 Publicaciones`.** Regla dura Ola 1: NO crear superficies.
@@ -153,7 +165,7 @@ Detalle completo en [`docs/audits/2026-05-08-wave1_5-integration-report.md`](../
 
 - **Hilo 2 — Stage 1 Discovery Spec.** Stub: [`docs/editorial-pipeline/stage1-discovery-spec.md`](./stage1-discovery-spec.md). Decidir D1.
 - **Hilo 4 — Notion Schema.** Stub: [`docs/editorial-pipeline/notion-schema.md`](./notion-schema.md). Documentar 45 props `📰 Publicaciones` + 10 cols canales `👤 Referentes`.
-- **Hilo S6:** David debe firmar o rechazar la propuesta D2 de b0004 antes de mergear el archivado.
+- **Hilo S6:** CERRADO 2026-07-12 — David ratificó `stage6_llm_combinator.py` como canónico; los otros dos scripts permanecen recuperables en `_archived/`.
 - **Hilo Publicación (futuro):** decidir D3.
 
 ## 10. Referencias

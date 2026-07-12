@@ -54,7 +54,7 @@ Validators:
 Wave 1 deja únicamente el contrato. Wave 2 conectará:
 
 ```
-stage6_generate_variants.py
+_archived/stage6_generate_variants.py  # referencia de diseño, no runtime
     └── (variant, angle) ──► build_visual_brief() ──► VisualBrief
                                                           │
                                                           ▼

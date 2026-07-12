@@ -1,6 +1,8 @@
 # Stage 6 — Multi-platform Variants Spec (Wave 1 design)
 
-> **Status:** DESIGN ONLY. Multi-plataforma hoy = **schema + dispatcher esqueleto, NO runtime**. Solo LinkedIn (Stage 7.5) está activo en runtime.
+> **Status:** ARCHIVED DESIGN. El dispatcher esqueleto se conserva en
+> `scripts/discovery/_archived/stage6_generate_variants.py`; no es Stage 6
+> runtime. Solo LinkedIn (Stage 7.5) está activo para estas variantes.
 
 ## Stage 7.5 — FROZEN
 
@@ -15,11 +17,11 @@
 
 Stage 7.5 vuelve a ser editable cuando:
 
-1. Se requiera generar variantes para una plataforma distinta de LinkedIn y la abstracción no pueda colocarse fuera (en `lib/variants.py` o `stage6_generate_variants.py`).
+1. Se requiera generar variantes para una plataforma distinta de LinkedIn y la abstracción no pueda colocarse fuera de `lib/variants.py` o de un stage nuevo con nombre no ambiguo.
 2. Aparezca un ajuste de voz / hard-reject que no sea resoluble vía cambio de prompt en `prompts/stage7_5/`.
 3. Cambien los campos de Notion `📰 Publicaciones` consumidos por el writer (Hilo 4).
 
-Mientras ninguna de las tres se cumpla, todo cambio de comportamiento multi-plataforma se hace en archivos nuevos (`lib/variants.py`, `stage6_generate_variants.py`, `stage7_*` específico de plataforma). Stage 7.5 no se toca.
+Mientras ninguna de las tres se cumpla, todo cambio de comportamiento multi-plataforma se hace en archivos nuevos (`lib/variants.py` o `stage7_*` específico de plataforma). El skeleton archivado es solo referencia; Stage 7.5 no se toca.
 
 ---
 
@@ -59,7 +61,7 @@ Modelos Pydantic en [`scripts/discovery/lib/variants.py`](../../scripts/discover
 
 ## Dispatcher Stage 6 — esqueleto
 
-[`scripts/discovery/stage6_generate_variants.py`](../../scripts/discovery/stage6_generate_variants.py)
+[`scripts/discovery/_archived/stage6_generate_variants.py`](../../scripts/discovery/_archived/stage6_generate_variants.py)
 
 ```
 generate_variants(candidate, angle, platforms) -> {platform: VariantBase}
@@ -71,7 +73,7 @@ generate_variants(candidate, angle, platforms) -> {platform: VariantBase}
 
 **CLI:**
 ```
-python scripts/discovery/stage6_generate_variants.py \
+python scripts/discovery/_archived/stage6_generate_variants.py \
     --candidate-id SYN-AECO-001 \
     --platforms linkedin,x,blog \
     --dry-run

@@ -1,4 +1,8 @@
-"""Stage 6 — Combinación AEC (stub LLM).
+"""DEPRECATED/ARCHIVED: Stage 6 — Combinación AEC (stub LLM).
+
+Archived in b0004 after ``stage6_llm_combinator.py`` was identified as the
+only Stage 6 implementation wired by the discovery cron. Keep this file only
+as historical contract/recovery evidence; do not invoke it from active flows.
 
 > **STUB.** Implementación pospuesta a fase LLM (próximo PR).
 

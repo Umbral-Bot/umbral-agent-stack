@@ -24,6 +24,30 @@ changes. The main deltas vs. Wave 1.5 are: a shared connection setup with
   idempotent on the smoke run (re-applied 0001 and 0002 to a non-empty
   DB; both `exit_code = 0`).
 
+### 1.1 Known disconnected `discovered_items` spine
+
+The repository also contains an older pipeline that uses the same default
+`state.sqlite` path but a separate schema:
+
+- `stage2_ingest.py` creates and fills `discovered_items` directly from its
+  own RSS/RSSHub fetch;
+- `stage3_promote.py`, `stage4_push_notion.py`,
+  `stage5_rank_candidates.py`, and `stage6_llm_combinator.py` consume that
+  table;
+- S1/S2 Wave 2 instead write `signals_raw` and `signals_verified`.
+
+There is no static `INSERT ... SELECT`, adapter, or dispatcher/cron step that
+promotes `signals_raw`/`signals_verified` into `discovered_items`. Sharing a
+SQLite filename does not connect the schemas. The current
+`discovery-publish-cron.sh` begins with a `discovered_items` backfill/Stage 4,
+then invokes Stage 6; it does not run S0/S1/S2 or Stage 5, and leaves Stage 7
+manual.
+
+**b0004 verdict:** the spines remain disconnected. No minimal wiring is
+applied here because the two Stage 2 implementations have different source
+and schema contracts; choosing a conversion boundary requires an explicit
+pipeline design decision rather than a mechanical patch.
+
 ## 2. PRAGMAs (observed live)
 
 On a freshly-initialised DB after both migrations:

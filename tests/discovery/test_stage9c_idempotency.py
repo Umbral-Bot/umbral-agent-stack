@@ -24,6 +24,14 @@ import pytest
 from scripts.discovery import stage9c_linkedin_publish as mod
 
 
+@pytest.fixture(autouse=True)
+def _enable_runtime_publish_flags(monkeypatch):
+    monkeypatch.setenv("PUBLISH_ENABLED", "true")
+    monkeypatch.setenv("DRY_RUN", "false")
+    monkeypatch.setenv("MAX_POSTS", "1")
+    monkeypatch.setenv("MAX_POSTS_PER_DAY", "1")
+
+
 def _make_table(db: Path) -> None:
     conn = sqlite3.connect(db)
     conn.execute(

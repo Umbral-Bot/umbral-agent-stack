@@ -12,7 +12,7 @@ Covers:
 - success path: headers (function key + worker token), POST body, response mapping
 - function-not-configured + HTTP error handling
 - Notion-source success + published_url write-back
-- visual-asset stub (deliverable F) — skipped pending schema
+- visual-asset resolution from the versioned Publicaciones v2 schema
 
 Run with:
     WORKER_TOKEN=test python -m pytest tests/test_editorial_publish.py -v
@@ -353,10 +353,12 @@ class TestNotionSource:
         assert body["title"] == "Post desde Notion"
         assert body["tags"] == ["BIM"]
 
-    @patch("worker.notion_client.update_page_properties")
+    @patch("worker.notion_client.update_page_properties", autospec=True)
     @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
     @patch("worker.notion_client.get_page")
-    def test_notion_write_back(self, mock_get_page, mock_urlopen, mock_update):
+    def test_notion_write_back_uses_real_update_signature(
+        self, mock_get_page, mock_urlopen, mock_update
+    ):
         mock_get_page.return_value = _notion_page()
         mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
         result = handle_web_publish_editorial_post(
@@ -367,7 +369,277 @@ class TestNotionSource:
         )
         assert result["ok"] is True
         assert result["notion_write_back"]["ok"] is True
-        mock_update.assert_called_once()
+        mock_update.assert_called_once_with(
+            page_id_or_url="22222222-2222-2222-2222-222222222222",
+            properties={
+                "published_url": {
+                    "url": "https://umbralbim.io/noticias/ia-en-coordinacion-bim"
+                }
+            },
+        )
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    @patch("worker.notion_client.get_page")
+    def test_notion_visual_selection_overrides_legacy_hero(
+        self, mock_get_page, mock_urlopen
+    ):
+        page = _notion_page()
+        page["properties"].update(
+            {
+                "Selección imagen": {
+                    "type": "select",
+                    "select": {"name": "Alt 2"},
+                },
+                "imagen_alt_2_url": {
+                    "type": "url",
+                    "url": "https://cdn.umbralbim.io/heroes/selected-alt-2.jpg",
+                },
+                "Estado imagen": {
+                    "type": "select",
+                    "select": {"name": "Seleccionada"},
+                },
+                "Visual asset URL": {"type": "url", "url": None},
+            }
+        )
+        mock_get_page.return_value = page
+        mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
+
+        result = handle_web_publish_editorial_post(
+            {"notion_page_id": "22222222-2222-2222-2222-222222222222"}
+        )
+
+        assert result["ok"] is True
+        body = json.loads(mock_urlopen.call_args[0][0].data.decode("utf-8"))
+        assert body["hero_image_url"] == (
+            "https://cdn.umbralbim.io/heroes/selected-alt-2.jpg"
+        )
+        assert "gates" not in body
+        assert "visual_asset" not in body
+        visual_gate = result["gates"]["visual_asset"]
+        assert visual_gate["ready"] is True
+        assert visual_gate["reason"] == "selected_alt_transition"
+        assert visual_gate["hero_source"] == "selected_alt"
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    @patch("worker.notion_client.get_page")
+    def test_notion_sin_imagen_clears_legacy_hero(
+        self, mock_get_page, mock_urlopen
+    ):
+        page = _notion_page()
+        page["properties"]["Selección imagen"] = {
+            "type": "select",
+            "select": {"name": "Sin imagen"},
+        }
+        mock_get_page.return_value = page
+        mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
+
+        result = handle_web_publish_editorial_post(
+            {"notion_page_id": "22222222-2222-2222-2222-222222222222"}
+        )
+
+        assert result["ok"] is True
+        body = json.loads(mock_urlopen.call_args[0][0].data.decode("utf-8"))
+        assert body["hero_image_url"] == ""
+        assert result["gates"]["visual_asset"]["reason"] == "explicit_no_image"
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    @patch("worker.notion_client.get_page")
+    def test_legacy_page_prefers_visual_asset_url_over_hero_image(
+        self, mock_get_page, mock_urlopen
+    ):
+        page = _notion_page()
+        page["properties"]["Visual asset URL"] = {
+            "type": "url",
+            "url": "https://cdn.umbralbim.io/heroes/canonical.jpg",
+        }
+        mock_get_page.return_value = page
+        mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
+
+        result = handle_web_publish_editorial_post(
+            {"notion_page_id": "22222222-2222-2222-2222-222222222222"}
+        )
+
+        assert result["ok"] is True
+        body = json.loads(mock_urlopen.call_args[0][0].data.decode("utf-8"))
+        assert body["hero_image_url"] == (
+            "https://cdn.umbralbim.io/heroes/canonical.jpg"
+        )
+        visual_gate = result["gates"]["visual_asset"]
+        assert visual_gate["selection_property_present"] is False
+        assert visual_gate["reason"] == "legacy_compatible"
+        assert visual_gate["hero_source"] == "visual_asset_url"
+
+    @pytest.mark.parametrize(
+        ("selection", "expected_reason"),
+        [
+            (None, "selection_missing"),
+            ("Pendiente", "selection_pending"),
+            ("Regenerar", "regeneration_requested"),
+        ],
+    )
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    @patch("worker.notion_client.get_page")
+    def test_visual_gate_blocks_unready_selection(
+        self,
+        mock_get_page,
+        mock_urlopen,
+        selection,
+        expected_reason,
+    ):
+        page = _notion_page()
+        page["properties"]["Selección imagen"] = {
+            "type": "select",
+            "select": {"name": selection} if selection is not None else None,
+        }
+        mock_get_page.return_value = page
+
+        result = handle_web_publish_editorial_post(
+            {"notion_page_id": "22222222-2222-2222-2222-222222222222"}
+        )
+
+        assert result["ok"] is False
+        assert result["error"] == "visual_asset_not_ready"
+        assert result["would_publish"] is False
+        assert result["gates"]["visual_asset"]["reason"] == expected_reason
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    @patch("worker.notion_client.get_page")
+    def test_visual_gate_blocks_selected_alt_without_url(
+        self, mock_get_page, mock_urlopen
+    ):
+        page = _notion_page()
+        page["properties"].update(
+            {
+                "Selección imagen": {
+                    "type": "select",
+                    "select": {"name": "Alt 2"},
+                },
+                "Estado imagen": {
+                    "type": "select",
+                    "select": {"name": "Seleccionada"},
+                },
+            }
+        )
+        mock_get_page.return_value = page
+
+        result = handle_web_publish_editorial_post(
+            {"notion_page_id": "22222222-2222-2222-2222-222222222222"}
+        )
+
+        assert result["error"] == "visual_asset_not_ready"
+        visual_gate = result["gates"]["visual_asset"]
+        assert visual_gate["reason"] == "selected_alt_url_missing"
+        assert visual_gate["selected_property"] == "imagen_alt_2_url"
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    @patch("worker.notion_client.get_page")
+    def test_visual_gate_blocks_alt_until_state_is_selected(
+        self, mock_get_page, mock_urlopen
+    ):
+        page = _notion_page()
+        page["properties"].update(
+            {
+                "Selección imagen": {
+                    "type": "select",
+                    "select": {"name": "Alt 2"},
+                },
+                "imagen_alt_2_url": {
+                    "type": "url",
+                    "url": "https://cdn.umbralbim.io/heroes/alt-2.jpg",
+                },
+                "Estado imagen": {
+                    "type": "select",
+                    "select": {"name": "Listo para selección"},
+                },
+            }
+        )
+        mock_get_page.return_value = page
+
+        result = handle_web_publish_editorial_post(
+            {"notion_page_id": "22222222-2222-2222-2222-222222222222"}
+        )
+
+        assert result["error"] == "visual_asset_not_ready"
+        assert result["gates"]["visual_asset"]["reason"] == (
+            "image_state_not_selected"
+        )
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    @patch("worker.notion_client.get_page")
+    def test_visual_gate_blocks_canonical_url_mismatch(
+        self, mock_get_page, mock_urlopen
+    ):
+        page = _notion_page()
+        page["properties"].update(
+            {
+                "Selección imagen": {
+                    "type": "select",
+                    "select": {"name": "Alt 2"},
+                },
+                "imagen_alt_2_url": {
+                    "type": "url",
+                    "url": "https://cdn.umbralbim.io/heroes/alt-2.jpg",
+                },
+                "Estado imagen": {
+                    "type": "select",
+                    "select": {"name": "Seleccionada"},
+                },
+                "Visual asset URL": {
+                    "type": "url",
+                    "url": "https://cdn.umbralbim.io/heroes/stale-alt-1.jpg",
+                },
+            }
+        )
+        mock_get_page.return_value = page
+
+        result = handle_web_publish_editorial_post(
+            {"notion_page_id": "22222222-2222-2222-2222-222222222222"}
+        )
+
+        assert result["error"] == "visual_asset_not_ready"
+        visual_gate = result["gates"]["visual_asset"]
+        assert visual_gate["reason"] == "canonical_url_mismatch"
+        assert visual_gate["selected_url"].endswith("/alt-2.jpg")
+        assert visual_gate["canonical_url"].endswith("/stale-alt-1.jpg")
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    @patch("worker.notion_client.get_page")
+    def test_visual_gate_uses_matching_canonical_url(
+        self, mock_get_page, mock_urlopen
+    ):
+        selected_url = "https://cdn.umbralbim.io/heroes/alt-2.jpg"
+        page = _notion_page()
+        page["properties"].update(
+            {
+                "Selección imagen": {
+                    "type": "select",
+                    "select": {"name": "Alt 2"},
+                },
+                "imagen_alt_2_url": {"type": "url", "url": selected_url},
+                "Estado imagen": {
+                    "type": "select",
+                    "select": {"name": "Seleccionada"},
+                },
+                "Visual asset URL": {"type": "url", "url": selected_url},
+            }
+        )
+        mock_get_page.return_value = page
+        mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
+
+        result = handle_web_publish_editorial_post(
+            {"notion_page_id": "22222222-2222-2222-2222-222222222222"}
+        )
+
+        assert result["ok"] is True
+        body = json.loads(mock_urlopen.call_args[0][0].data.decode("utf-8"))
+        assert body["hero_image_url"] == selected_url
+        visual_gate = result["gates"]["visual_asset"]
+        assert visual_gate["reason"] == "selected_canonical"
+        assert visual_gate["hero_source"] == "visual_asset_url"
 
 
 # ======================================================================
@@ -471,15 +743,130 @@ class TestRagHook:
 
 
 # ======================================================================
-# Deliverable F — visual asset stub (schema not in repo yet)
+# Deliverable F — visual asset resolution (Publicaciones schema v2)
 # ======================================================================
 
 
 class TestVisualAssets:
-    def test_stub_returns_empty(self):
-        assert resolve_visual_asset_urls({}, ["a", "b"]) == {}
+    def test_missing_properties_returns_empty(self):
+        assert resolve_visual_asset_urls({}) == {}
 
-    @pytest.mark.skip(reason="Publicaciones visual schema not versioned in repo (editorial-v3 TODO)")
+    def test_no_selection_returns_empty_even_with_candidates(self):
+        page = {
+            "properties": {
+                "imagen_alt_1_url": {
+                    "type": "url",
+                    "url": "https://cdn.umbralbim.io/alt-1.jpg",
+                }
+            }
+        }
+
+        assert resolve_visual_asset_urls(page) == {}
+
+    def test_pending_selection_returns_empty(self):
+        page = {
+            "properties": {
+                "Selección imagen": {
+                    "type": "select",
+                    "select": {"name": "Pendiente"},
+                },
+                "imagen_alt_1_url": {
+                    "type": "url",
+                    "url": "https://cdn.umbralbim.io/alt-1.jpg",
+                },
+            }
+        }
+
+        assert resolve_visual_asset_urls(page) == {}
+
+    def test_null_selection_returns_empty(self):
+        page = {
+            "properties": {
+                "Selección imagen": {"type": "select", "select": None},
+                "imagen_alt_1_url": {
+                    "type": "url",
+                    "url": "https://cdn.umbralbim.io/alt-1.jpg",
+                },
+            }
+        }
+
+        assert resolve_visual_asset_urls(page) == {}
+
     def test_resolve_visual_asset_urls_from_selection(self):
-        page = {"properties": {"Selección imagen": {"type": "select", "select": {"name": "alt_2"}}}}
-        assert resolve_visual_asset_urls(page) == {"hero_image_url": "https://.../imagen_alt_2_url"}
+        page = {
+            "properties": {
+                "Selección imagen": {
+                    "type": "select",
+                    "select": {"name": "Alt 2"},
+                },
+                "imagen_alt_1_url": {
+                    "type": "url",
+                    "url": "https://cdn.umbralbim.io/alt-1.jpg",
+                },
+                "imagen_alt_2_url": {
+                    "type": "url",
+                    "url": "https://cdn.umbralbim.io/alt-2.jpg",
+                },
+                "imagen_alt_3_url": {"type": "url", "url": None},
+            }
+        }
+
+        assert resolve_visual_asset_urls(page) == {
+            "hero_image_url": "https://cdn.umbralbim.io/alt-2.jpg",
+            "imagen_alt_1_url": "https://cdn.umbralbim.io/alt-1.jpg",
+            "imagen_alt_2_url": "https://cdn.umbralbim.io/alt-2.jpg",
+        }
+
+    def test_multiple_selection_uses_first_resolvable_alt_in_order(self):
+        page = {
+            "properties": {
+                "imagen_alt_1_url": {
+                    "type": "url",
+                    "url": "https://cdn.umbralbim.io/alt-1.jpg",
+                },
+                "imagen_alt_3_url": {
+                    "type": "url",
+                    "url": "https://cdn.umbralbim.io/alt-3.jpg",
+                },
+            }
+        }
+
+        assert resolve_visual_asset_urls(
+            page, ["Pendiente", "Alt 2", "Alt 3", "Alt 1"]
+        ) == {
+            "hero_image_url": "https://cdn.umbralbim.io/alt-3.jpg",
+            "imagen_alt_1_url": "https://cdn.umbralbim.io/alt-1.jpg",
+            "imagen_alt_3_url": "https://cdn.umbralbim.io/alt-3.jpg",
+        }
+
+    def test_selected_url_property_absent_returns_empty(self):
+        page = {
+            "properties": {
+                "Selección imagen": {
+                    "type": "select",
+                    "select": {"name": "Alt 2"},
+                },
+                "imagen_alt_1_url": {
+                    "type": "url",
+                    "url": "https://cdn.umbralbim.io/alt-1.jpg",
+                },
+            }
+        }
+
+        assert resolve_visual_asset_urls(page) == {}
+
+    def test_sin_imagen_returns_empty_without_candidates(self):
+        page = {
+            "properties": {
+                "Selección imagen": {
+                    "type": "select",
+                    "select": {"name": "Sin imagen"},
+                },
+                "imagen_alt_1_url": {
+                    "type": "url",
+                    "url": "https://cdn.umbralbim.io/alt-1.jpg",
+                },
+            }
+        }
+
+        assert resolve_visual_asset_urls(page) == {}

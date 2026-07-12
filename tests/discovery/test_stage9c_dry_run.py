@@ -31,6 +31,10 @@ from scripts.discovery import stage9c_linkedin_publish as mod
 
 @pytest.fixture(autouse=True)
 def _fail_fast_no_linkedin(monkeypatch):
+    monkeypatch.setenv("PUBLISH_ENABLED", "true")
+    monkeypatch.setenv("DRY_RUN", "false")
+    monkeypatch.setenv("MAX_POSTS", "1")
+    monkeypatch.setenv("MAX_POSTS_PER_DAY", "1")
     monkeypatch.setattr(
         mod.httpx, "Client",
         lambda *a, **kw: pytest.fail("httpx.Client must not be invoked"),

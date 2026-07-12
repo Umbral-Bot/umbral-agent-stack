@@ -103,9 +103,9 @@ WHERE url_canonica = ?;
 | 3 | YAML config malformado |
 | 4 | Error de escritura en commit mode |
 
-## Stage 6 — Combinación AEC
+## Stage 6 legacy — salida del stub archivado
 
-### Output esperado (cuando se implemente)
+### Output histórico (no runtime)
 
 **Path:** `reports/stage6-combine-{timestamp}.json`
 
@@ -143,7 +143,7 @@ Output: payload tipo `editorial-candidate-payload` (ver `rick-linkedin-writer/RO
 |---|---|---|---|
 | Stage 5 dry-run | ❌ | ❌ | ✅ `reports/stage5-*.json` |
 | Stage 5 commit | ✅ (3 columnas) | ❌ | ✅ `reports/stage5-*.json` |
-| Stage 6 (futuro) | ❌ | ❌ | ✅ `reports/stage6-*.json` |
+| Stage 6 legacy archivado | ❌ | ❌ | ✅ solo si se ejecuta el recovery smoke |
 | Stage 7 (futuro) | ❌ | ✅ (con human gate) | ✅ `reports/stage7-*.json` |
 
 ## Garantías

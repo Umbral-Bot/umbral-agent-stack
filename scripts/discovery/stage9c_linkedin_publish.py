@@ -40,6 +40,7 @@ import logging
 import httpx
 
 from scripts.discovery import stage9b_linkedin_oauth as oauth
+from scripts.discovery.lib.publish_flags import PublishFlags
 from scripts.discovery.lib.publish_guard import (
     PublishBlockedError,
     assert_can_publish,
@@ -367,7 +368,10 @@ def publish_one(
     db_conn = sqlite3.connect(state_db)
     try:
         try:
-            assert_can_publish(notion_page, content_hash, db_conn)
+            flags = PublishFlags.from_env()
+            assert_can_publish(
+                notion_page, content_hash, db_conn, flags=flags,
+            )
         except PublishBlockedError as e:
             reasons = e.reasons
             logger.warning(

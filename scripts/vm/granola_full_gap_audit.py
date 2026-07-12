@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 """Granola Full Gap Audit — Windows VM standalone script.
 
-**DEPRECATED FOR CONTENT CLASSIFICATION.**
-This script classifies "has_content" using cache-v6.json inline fields only.
+**DEPRECATED: LEGACY CACHE-V6 AUDIT; DO NOT USE AS THE INTAKE SPINE.**
+
+Granola intake must migrate to the supported ``granola.db``/Granola API path.
+This script does not implement that migration and must not be used to claim
+that the current intake is complete or healthy.
+
+It was originally deprecated for content classification because it classifies
+"has_content" using cache-v6.json inline fields only.
 Granola stores real content (summaries, transcripts) in its private API,
 NOT in cache inline fields. Result: 100% false negative rate on content
 detection — all meetings appear as "non-recordings" even when they have

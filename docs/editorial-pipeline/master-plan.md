@@ -32,7 +32,7 @@
 | **S3** | (parte de "Etapa 1") | `scripts/discovery/stage3_promote.py` | ✅ runtime real | `promovido_a_candidato_at` set |
 | **S4** | Etapa 4 | `scripts/discovery/stage4_push_notion.py` | ✅ runtime real | páginas en `📰 Publicaciones` |
 | **S5** | Etapa 2 | `scripts/discovery/stage5_rank_candidates.py` | ✅ heurístico determinístico v0 | score [0,1] por candidato |
-| **S6** | Etapa 3 | `scripts/discovery/stage6_aec_combine.py` (stub) y `scripts/discovery/stage6_llm_combinator.py` | ⚠️ duplicado, stub + real | propuestas combinadas |
+| **S6** | Etapa 3 | `scripts/discovery/stage6_llm_combinator.py` | 🟡 canónico propuesto en b0004; firma David pendiente | propuestas combinadas |
 | **S7** | (no doc) | `scripts/discovery/stage7_publish_drafts.py` | ✅ runtime real | drafts en `📰 Publicaciones` |
 | **S7.5** | Etapa 6 (voice pass) | `scripts/discovery/stage7_5_copy_writer.py` (FROZEN) + `stage7_5_post_review_comment.py` | ✅ runtime real (FROZEN Ola 1) | `Copy LinkedIn` rich_text + `Estado=Revisión pendiente` + review comment |
 | **S8** | Etapa 9 | `scripts/discovery/stage8_image_generator.py` | ⚠️ existe (no aspiracional) | hero image |
@@ -48,12 +48,16 @@
 > **Update 2026-06-06:** la experiencia de producción confirmada por David vive en `docs/editorial-pipeline/production-flow-v2-2026-06-06.md` (fuente de verdad de gates y canales). Resumen de cambios sobre los "Gates humanos" de abajo: **Gate 1 "Texto aprobado"** dispara generación de imágenes (Magnific) → David **elige imagen** → **Gate 2 "Autorizar publicación"** → **confirmación final por Telegram**. La edición de David en Notion es la versión final (no re-QA). Canales auto v1: LinkedIn empresa (API, `ADR-009`), Blog (Ghost), X (API de pago), Newsletter (plataforma TBD). Las restricciones "Ola 1" de §0 (no publicar) siguen vigentes hasta que la implementación de v2 esté lista y aprobada.
 
 ```
-S2 ingest → S3 promote (SQLite) → S4 push → S5 rank → S6 combine (stub/LLM)
+S2 ingest → S3 promote (SQLite) → S4 push → S5 rank → S6 combine (LLM)
         → S7 drafts (Notion) → S7.5 copy LinkedIn (FROZEN) → S8 image
         → S9 draft payload → [GATE humano David] → S9b OAuth → S9c publish [PROHIBIDO Ola 1]
                                                                               ↑
                                                                   SX dashboard (transversal)
 ```
+
+This diagram is the stage topology, not a claim of one automatic chain. The
+current discovery cron invokes S6 after S4, does not invoke S5, and leaves S7
+manual; see the b0004 [S6 archive dossier](../../scripts/discovery/_archived/README.md).
 
 ### Gates humanos
 
@@ -120,7 +124,7 @@ S2 ingest → S3 promote (SQLite) → S4 push → S5 rank → S6 combine (stub/L
    - `scripts/discovery/stage0_load_referentes.py` (lectura Referentes → `referentes_snapshot`).
    - `scripts/discovery/stage1_discover_signals.py` (descubrimiento por canal → `signals_raw`).
    Verificado en smoke run de `wave1.5-integration` (ver [`reports/2026-05-08-wave1_5-smoke.md`](../../reports/2026-05-08-wave1_5-smoke.md)).
-2. **D2 — Canónico de S6.** **ABIERTO — postponed Wave 2.** H5 (#395) introdujo `scripts/discovery/lib/variants.py` y `stage6_generate_variants.py` como capa nueva, pero los dos `stage6_*.py` históricos (`aec_combine` y `llm_combinator`) no se renombraron ni borraron. Decidir en Wave 2 cuál queda y cuál se archiva. **Owner decisión:** David.
+2. **D2 — Canónico de S6.** **PROPUESTA b0004 PREPARADA; NO RATIFICADA.** El barrido acotado S5→S7 confirma que `scripts/vps/discovery-publish-cron.sh` invoca `stage6_llm_combinator.py`; no hay invocador runtime para el stub `stage6_aec_combine.py` ni para el skeleton `stage6_generate_variants.py`. b0004 deja el combinador como canónico propuesto y mueve los otros dos a [`scripts/discovery/_archived/`](../../scripts/discovery/_archived/README.md), con recuperación documentada. **Gate:** PR `do-not-merge` hasta firma explícita de David. **Owner decisión:** David.
 3. **D3 — Gate de aprobación pre-S9c.** **RESUELTO.** H6 (#399) implementó `scripts/discovery/lib/publish_guard.assert_can_publish` que evalúa los 6 gates (incluyendo `aprobado_contenido` y `autorizar_publicacion`) antes de cualquier POST a LinkedIn. Verificado con 3 escenarios sintéticos (pass / blocked-gate / blocked-dup) — ver [`reports/2026-05-08-wave1_5-stage10-dryrun.md`](../../reports/2026-05-08-wave1_5-stage10-dryrun.md).
 4. **D4 — Naming canónico ("Etapa N" vs "Stage M").** **ABIERTO — postponed Wave 2.** Wave 1.5 no tocó nomenclatura. Sigue conviviendo "Etapa 0..9" (doc histórica) con "Stage 0..11" (código nuevo). **Owner decisión:** David.
 5. **D5 — Política de imagen S8.** **ABIERTO — postponed Wave 2.** Wave 1.5 no tocó S8. Sigue sin definirse si `stage8_image_generator.py` es producción o experimento, ni cuándo dispara. **Owner decisión:** David.
@@ -139,7 +143,7 @@ Detalle completo en [`docs/audits/2026-05-08-wave1_5-integration-report.md`](../
 
 1. **Falsa atribución de runtime.** Documentar un script como "✅ runtime real" cuando el archivo no existe (caso `stage1_load_referentes.py`).
 2. **Drift de naming sin reconciliar.** Doc usa "Etapa N", código usa "Stage M", sin tabla de equivalencia → confusión sistémica.
-3. **Duplicación de stages sin marcar canónico.** S6 tiene dos archivos sin que la doc indique cuál vale.
+3. **Duplicación de stages sin marcar canónico.** S6 llegó a tener tres archivos; b0004 prepara la consolidación, pendiente de firma MP-D2.
 4. **Tratar artefactos históricos (CAND-002/003/004) como fixtures.** Son calibración manual, no spec.
 5. **Documentar publicación (S9c) como "futura" cuando el script ya existe y posteo real es técnicamente posible.** Riesgo de bypass accidental del gate.
 6. **Crear nuevas DBs Notion en lugar de reutilizar `📰 Publicaciones`.** Regla dura Ola 1: NO crear superficies.
@@ -149,7 +153,7 @@ Detalle completo en [`docs/audits/2026-05-08-wave1_5-integration-report.md`](../
 
 - **Hilo 2 — Stage 1 Discovery Spec.** Stub: [`docs/editorial-pipeline/stage1-discovery-spec.md`](./stage1-discovery-spec.md). Decidir D1.
 - **Hilo 4 — Notion Schema.** Stub: [`docs/editorial-pipeline/notion-schema.md`](./notion-schema.md). Documentar 45 props `📰 Publicaciones` + 10 cols canales `👤 Referentes`.
-- **Hilo S6 (futuro):** decidir D2.
+- **Hilo S6:** David debe firmar o rechazar la propuesta D2 de b0004 antes de mergear el archivado.
 - **Hilo Publicación (futuro):** decidir D3.
 
 ## 10. Referencias

@@ -1,0 +1,341 @@
+# Inventario machine-readable — higiene repos Windows + VPS
+# Fecha: 2026-07-13 · Fuente: fable (b0004) · Modo: READ-ONLY (cero mutaciones)
+# Plan asociado: docs/audits/repo-hygiene-plan-windows-vps__2026-07-13__b0004__src-fable.md
+# Cobertura: 100% de las 15 rutas del audit Cursor (.audit-clones-temp.json 2026-07-13)
+# Metodo: inventario git determinista + 10 agentes de analisis por checkout +
+#         10 verificadores adversariales independientes (1 refutacion aceptada e integrada)
+# Sin secretos: solo paths, shas, conteos y veredictos (nunca valores de .env).
+
+meta:
+  date: "2026-07-13"
+  origin_main: 2f797091  # PR #525 mergeado
+  canonical_hub: 'C:\GitHub\umbral-agent-stack'
+  prior_gates:
+    - "G-WH-1 firmado por David 2026-07-03 (modelo canonico Windows, Pass 9)"
+    - "Pass 8 rescates ejecutados (PRs #496-#500)"
+    - "Fase A Windows ejecutada 2026-07-03 (PRs #506/#507): 15 dirs en C:\\GitHub\\_archive\\uas + WHY.md"
+    - "Fase B VPS ejecutada 2026-07-03 (PR #505): home VPS = 1 checkout canonico + ~/archive/uas"
+  pending_gates:
+    - "G-WH-2: borrado fisico de C:\\GitHub\\_archive\\uas (ventana 30 dias, ~2026-08-02)"
+    - "G-WH-VPS-2: borrado fisico de ~/archive/uas VPS"
+    - "Desenredo codex->coordinador (declarado en cierre Fase A, commit a5487202) — ver plan §H4"
+
+totals:
+  checkouts_vivos: 15
+  worktrees_prunable_metadata: 12   # dry-run 2026-07-13; match 1:1 con Fase A
+  ramas_locales_canonico: 216       # antes de crear fable/repo-hygiene-plan-20260713
+  ramas_locales_merged_origin_main: 118
+  ramas_locales_no_merged: 98
+  ramas_locales_con_commits_unpushed: 81  # re-verificado 3 veces (fable + 2 agentes)
+  ramas_remotas: 252
+  ramas_remotas_merged_origin_main: 27
+  ramas_remotas_no_merged: 223
+  stashes_windows_total: 15  # canonico 5 + codex 4 (compartidos con coordinador) + copilot 4 + claude 2
+  hallazgo_fuera_de_censo: "~16 worktrees del CLI de Codex en C:\\Users\\david\\.codex\\worktrees\\* + 1 en Temp (pr269) — hijos del clone codex, NO estaban en el audit Cursor"
+
+# ============================================================
+# CHECKOUTS (15 = cobertura completa del audit Cursor)
+# recommendation: KEEP_CANONICAL | KEEP_AGENT | ARCHIVE | REMOVE_METADATA | REMOVE_DIR
+# verified: veredicto del verificador adversarial independiente
+# ============================================================
+checkouts:
+
+  - path: 'C:\GitHub\umbral-agent-stack'
+    kind: repo-principal (hub)
+    branch: cursor/rick-voice-capitalize-mvp  # al inicio de esta corrida
+    head: e5d650c5
+    vs_main: "contenida en origin/main (mergeada via PR #525); el '+15' del audit era vs upstream obsoleto"
+    upstream_gone: false
+    dirty: [".audit-clones-temp.json (untracked, JSON del audit Cursor — desechable tras este plan)"]
+    stashes: 5
+    stash_findings:
+      - "stash@{0} 2026-07-13 'wip-unrelated': UNICO Y VALIOSO — docs/11-roadmap-next-steps.md +23 lineas, backlog P2 'Migracion RAG: Azure Cognitive Search Basic -> pgvector' (~USD 73/mes ahorro). NO existe en origin/main ni en HEAD. RESCATAR EN H1."
+      - "stash@{1} 'pre-rescue-pass8': superseded (absorbido por 26fde561 Pass 8A)"
+      - "stash@{2} 'cursor-local-pre-merge' 2026-03: stale (scripts/vps reescritos en main)"
+      - "stash@{3} 'temp' 2026-03: 100% superseded (3 archivos identicos en main)"
+      - "stash@{4} 'board y tasks locales' 2026-03: stale (R16 cerrada)"
+    unique_commits: "81 ramas locales con commits unpushed viven en este object store (ver branches_local)"
+    recommendation: KEEP_CANONICAL
+    notes: "Hub Windows (G-WH-1: superficie Cursor lead). Post-plan: volver a main --ff-only."
+
+  - path: 'C:\GitHub\.tmp-cvia3-deploy'
+    kind: full-clone temporal
+    branch: main
+    head: b4768d36
+    vs_main: "behind 217, 0 ahead"
+    dirty: []
+    stashes: 0
+    local_branches: 1
+    unique_commits: "ninguno — verify amplio: 253 ref tips todos en canonico, fsck sin unreachable, reflog con 2 commits locales (2b40cf00/475c7a53) ambos pushed y mergeados"
+    recommendation: REMOVE_DIR
+    verified: "no refutado (verify adversarial completo)"
+    prerequisites:
+      - "ningun proceso con handle/cwd dentro de la ruta al ejecutar (H4)"
+    notes: "Clone de deploy c-via-3 (mayo). Escapo del censo Fase A por prefijo .tmp-*."
+
+  - path: 'C:\GitHub\.tmp-gd52-adr-scopes'
+    kind: worktree del canonico
+    branch: copilot/docs-gd52-adr-scopes
+    head: 6cd6c389
+    vs_main: "divergido (-158 +1); commit unico 6cd6c389 con patch-id IDENTICO a 1187eaa9 ya en main (#438)"
+    dirty: []
+    unique_commits: "ninguno (patch-equivalente en main; ademas pushed a origin)"
+    recommendation: REMOVE_DIR
+    verified: "no refutado"
+    prerequisites:
+      - "ejecutar como 'git -C canonico worktree remove' (no rm crudo)"
+      - "rama local borrable despues solo con -D (squash => no ancestro sha) reutilizando la evidencia patch-id"
+    notes: "Cerrado el ciclo: contenido en main via #438."
+
+  - path: 'C:\GitHub\.tmp-o16-2-047'
+    kind: full-clone temporal
+    branch: copilot/feat-o16-2-047-gap-closure
+    head: 0aff027f
+    vs_main: "divergido (-232 +2); tip = origin/copilot/feat-o16-2-047-gap-closure (respaldado)"
+    dirty: []
+    stashes: 0
+    local_branches: 2
+    unique_commits: "ninguno — verify: rev-list --all --not --remotes = 0; 65 ignorados = solo __pycache__/.pytest_cache"
+    recommendation: REMOVE_DIR
+    verified: "no refutado"
+    prerequisites:
+      - "decision GitHub pendiente (no bloqueante del dir): mergear o cerrar la rama remota o16-2-047 (2 commits 2026-05-14 no mergeados)"
+    notes: "Escapo del censo Fase A (.tmp-*)."
+
+  - path: 'C:\GitHub\.tmp-uas-feat-vps-policy'
+    kind: full-clone temporal
+    branch: feat/vps-repo-policy-ensure-main
+    head: fd93da5b
+    vs_main: "0 ahead — rama MERGEADA a main via PR #423 (735b0ba0, 2026-05-20)"
+    dirty: []
+    stashes: 0
+    local_branches: 2
+    unique_commits: "ninguno — verify: fsck hallo 1 commit unreachable (04cfbef) que es borrador pre-amend de a98e7b00 ya mergeado"
+    recommendation: REMOVE_DIR
+    verified: "no refutado"
+    prerequisites: []
+    notes: "Su contenido (gate ensure-main-for-run) vive en main — insumo directo de H6."
+
+  - path: 'C:\GitHub\umbral-agent-stack-antigravity'
+    kind: full-clone agente
+    branch: antigravity/001-rick-recommendations
+    head: 6915f291
+    vs_main: "divergido (-1494 +465), historia pre-rewrite; rama pushed"
+    dirty: []
+    stashes: 0
+    local_branches: 15
+    unique_commits: "1 rama con 1 commit unpushed (feat/antigravity-scheduled-tasks @ 7fc145b2) VERIFICADO superseded blob-a-blob por PR #26 en main (10/12 blobs identicos, 2 restantes supersets en main). Reflogs auditados: 0 commits reflog-only."
+    recommendation: KEEP_AGENT
+    verified: "veredicto de datos: REMOVE_DIR seria seguro (0 perdida); se mantiene KEEP por G-WH-1 (superficie Antigravity CONGELADA)"
+    prerequisites:
+      - "si David decide consolidar: elegible directo para ARCHIVE/REMOVE en G-WH-2 sin rescate previo (bundle opcional del sha 7fc145b2)"
+    notes: "Clone congelado desde marzo. La decision KEEP vs REMOVE es organizativa, no de datos."
+
+  - path: 'C:\GitHub\umbral-agent-stack-b0004'
+    kind: worktree del canonico
+    branch: codex/docs-mpd2-closeout-b0004
+    head: 0da5756b
+    vs_main: "1 commit unpushed con patch-id IDENTICO a ac16876b ya en main (#524); diff de arboles VACIO"
+    upstream_gone: true
+    dirty: []
+    unique_commits: "ninguno (verificado patch-id + diff de arboles)"
+    recommendation: REMOVE_DIR
+    verified: "no refutado"
+    prerequisites:
+      - "PATH EXACTO: 'git worktree remove C:/GitHub/umbral-agent-stack-b0004' — NUNCA glob por prefijo (el hermano vivo -b0004-oauth comparte prefijo)"
+      - "rama borrable despues solo con -D (patch-equivalente, no ancestro sha) y solo tras remover el worktree"
+    notes: "Regla de oro G-WH-1: worktree se borra al mergear — este ya mergeo (#523/#524)."
+
+  - path: 'C:\GitHub\umbral-agent-stack-b0004-oauth'
+    kind: worktree del canonico
+    branch: codex/audit-openclaw-foundry-oauth-migration-20260713
+    head: 9cc200a7
+    vs_main: "SQUASH-MERGEADO HOY: git diff 2f797091 9cc200a7 = vacio; patch-id identico — origin/main ES el squash de esta rama (#525)"
+    dirty: []
+    unique_commits: "ninguno; rama ademas pushed a origin"
+    recommendation: REMOVE_DIR
+    verified: "no refutado (worktree pristino incluso en ignorados)"
+    prerequisites:
+      - "confirmar con David que la sesion del agente b0004-oauth termino (commit de hoy 11:21; el seguimiento del APPLY OAuth en VPS sigue en task 2026-07-12-001, que no depende de este worktree)"
+      - "re-verificar status --porcelain --ignored=matching inmediatamente antes del remove; si aparece algo, abortar"
+    notes: "Cambio vs plan preliminar: era KEEP hasta merge — el merge (#525) ocurrio hoy mismo."
+
+  - path: 'C:\GitHub\umbral-agent-stack-claude'
+    kind: full-clone agente
+    branch: claude/feat-pit-2b-spawn
+    head: 47db09a7
+    vs_main: "divergido (-81 +1), upstream gone; commit unico patch-equivalente en main (git cherry '-')"
+    dirty: []
+    stashes: 2
+    stash_findings:
+      - "stash@{0} 'wip pre-pit1' 2026-06-09: UNICO — docs/ops/claude-code-azure-editorial-blog-megaprompt.md (163 lineas) NO existe en origin/main ni en historial alguno. RESCATAR EN H1."
+      - "stash@{1}: solo .claude/settings.local.json — desechable"
+    local_branches: 18
+    unique_commits: "2 ramas con 1 unpushed c/u, ambas patch-equivalentes a main; 6 commits dangling todos verificados superseded/triviales"
+    recommendation: KEEP_AGENT
+    verified: "veredicto de datos: REMOVE_DIR seguro POST-rescate del stash@{0}; se mantiene KEEP por G-WH-1 (canonico superficie Claude Code)"
+    prerequisites:
+      - "H1: rescatar stash@{0} (megaprompt editorial blog)"
+      - "luego checkout main --ff-only (accion G-WH-1)"
+      - "si se consolidara en el futuro: bundle con NOMBRES de rama (bundle con shas crudos falla: 'Refusing to create empty bundle')"
+
+  - path: 'C:\GitHub\umbral-agent-stack-codex'
+    kind: full-clone agente — PADRE git de 26 worktrees
+    branch: codex/granola-raw-intake-batch
+    head: 70ba2ac5
+    vs_main: "divergido (-1494 +701) pero 0 commits fuera de remotes (todo en origin/codex/granola-raw-intake-batch)"
+    dirty: []
+    stashes: 4
+    stash_findings:
+      - "los 4 stashes contienen blobs que no existen en NINGUNA ref (verificado log --all --find-object): contenido unico aunque probablemente superseded — triage H1-U4"
+    local_branches: 25
+    dependents:
+      - "C:/GitHub/umbral-agent-stack-codex-coordinador (worktree 'umbral-agent-stack-main-review')"
+      - "C:/GitHub/umbral-agent-stack-codex-pit-v2-contract (prunable — dir archivado en Fase A)"
+      - "~16 worktrees CLI Codex en C:/Users/david/.codex/worktrees/* (f8a-*, f8g-*, copilot-cli-*, detached @ 3b10d7e mayoria)"
+      - "C:/Users/david/AppData/Local/Temp/pr269-worktree (detached)"
+    unique_commits: "5 ramas con 10 unpushed; 9/10 patch-id-identicos a main (PRs #173/#174/#337 etc.); UNICO real: d754a669 handoff copilot-cli F8A-F8G version larga 317 lineas (main tiene consolidado de 78) — solo vive en rama local codex/f8g-pin-gpt55-high-effort"
+    recommendation: KEEP_AGENT
+    verified: "estructuralmente critico — borrar rompe 26 worktrees"
+    prerequisites:
+      - "H1: triage de los 4 stashes; opcional rescatar d754a669 (handoff largo) si se quiere la version completa"
+      - "H4: desenredo codex<->coordinador ANTES de cualquier archive (opciones A/B/C en plan)"
+    notes: "El 'fosil granola' resulto ser el hub de worktrees del CLI de Codex — hallazgo que amplia el desenredo declarado en Fase A."
+
+  - path: 'C:\GitHub\umbral-agent-stack-codex-coordinador'
+    kind: linked-worktree (padre = umbral-agent-stack-codex)
+    branch: codex/editorial-linkedin-smoke-rescue
+    head: 46aa07c3
+    vs_main: "behind 186, 0 ahead propios"
+    dirty_verified:  # veredicto tras REFUTACION adversarial aceptada
+      - "M x8 (editorial-agent-flow, gold-set, 2 ROLE.md, CALIBRATION, 3 SKILL.md): REDUNDANTE VERIFICADO — diff byte-identico al stash compartido S2-RESCUE-01 (sha1 55b72ab9) y contenido en main (CAL-008/009/010 'rescate coordinador 2026-05-30'); 5/8 working copies byte-identicas a origin/main"
+      - "?? docs/ops/editorial-publicaciones-human-review-contract.md: COPIA UNICA — 174 lineas vs 38 en main; 129 lineas no-vacias existen SOLO aqui (el analisis inicial invirtio el diff; REFUTADO y corregido). RESCATAR EN H1 (maxima prioridad)."
+      - "?? docs/ops/editorial-linkedin-quality-smoke-tests.md: subset estricto de main (0 lineas propias) — redundante"
+      - "?? .agents/tasks/2026-07-12-001-...oauth-only-urgent.md: blob identico al tracked en main — redundante"
+      - "?? scripts/export-vscode-config.ps1: UNICO (251 lineas, sin rastro en historia de ambos repos). RESCATAR EN H1."
+      - "?? 4 png + .playwright-mcp/: artefactos de sesion — descarte firmado"
+      - ".env IGNORADO (3136 bytes, 2026-04-23): contiene 4 claves AZURE_OPENAI_* que NO estan en el .env del codex ni del canonico — PRESERVAR LOCALMENTE en H1 (nunca commitear); un worktree remove --force lo destruiria"
+    stashes: "4 (compartidos con codex — sobreviven a cualquier remocion del worktree)"
+    unique_commits: "0 propios; las 5 ramas con unpushed del ref-store compartido se evaluan en el clone codex"
+    recommendation: KEEP_AGENT
+    verified: "REFUTADO el REMOVE_DIR inicial por 2 artefactos unicos (contract 174-lineas + .env); ademas G-WH-1 lo designa canonico Codex. KEEP + rescate H1 corregido."
+    prerequisites:
+      - "H1-U1 corregido: rescatar human-review-contract (174 lineas) + export-vscode-config.ps1 + preservar .env local; verificar (no re-capturar) los 8 M redundantes"
+      - "post-H1: checkout main --ff-only (accion G-WH-1)"
+
+  - path: 'C:\GitHub\umbral-agent-stack-copilot'
+    kind: full-clone agente
+    branch: main
+    head: 82a314f7
+    vs_main: "behind 5"
+    dirty_verified:
+      - "M docs/15-model-quota-policy.md (+7/-1): VALIOSO — bloque 'Estado operativo vigente 2026-07-04 post-MP1 OPENCLAW_AZURE_ONLY=YES' ausente de main. RESCATAR EN H1."
+      - "?? docs/audits/azure-foundry-capacity-openclaw-sync-2026-07-04.md (121 lineas): NO en main. RESCATAR EN H1 (candidato directo a PR docs)."
+      - "?? graphify-out/ (63MB artefactos generados): desechable; EXCLUIDO del rescate (megaprompt graphify)"
+    stashes: 4
+    stash_findings:
+      - "stash@{0} 2026-06-12: VALIOSO — tabla 'Cola de torneos (David — no perder)' en docs/ops/pit-process-index.md, ausente de main. RESCATAR EN H1."
+    local_branches: 17
+    unique_commits: "RIESGO ALTO: backup/local-untracked-2026-04-29 @ 684b2758 (22 archivos, +1216 lineas: .claude/ agents+hooks+skills+settings, scripts prueba Azure audio/Foundry, 1 .wav) NO existe en ningun remote NI en el canonico — unico punto de existencia. Otras 2 ramas unpushed verificadas squash-merged (PR #515, PR #28)."
+    recommendation: KEEP_AGENT
+    unique_commit_risk: high
+    prerequisites:
+      - "H2 PRIORITARIO: push de respaldo de backup/local-untracked-2026-04-29 (o bundle) — single point of failure hoy"
+      - "H1-U2: rescatar quota-policy diff + audit azure-foundry + stash cola-torneos; luego pull --ff-only"
+    notes: "G-WH-1: canonico superficie Copilot Windows. Workspace activo."
+
+  - path: 'C:\Users\david\.cursor\worktrees\umbral-agent-stack\reo'  # + wah + weo (identicos)
+    kind: worktrees del canonico (generados por Cursor) — UNIDAD UNICA
+    branch: "(detached HEAD)"
+    head: bce0754c
+    vs_main: "behind 1429; bce0754c ancestro de origin/main — 0 commits en riesgo"
+    dirty_verified:
+      - "byte-identicos entre los 3 (hash diff 7894d8f5, hash status 3dad3771, untracked identicos)"
+      - "TODO superseded por main: get_db_parent.py y setup_notion_tasks_db.py blobs identicos a main; runbook solo ruido CRLF; quota-policy de feb superado por reescritura 2026-03-08 (aplicarlo seria regresion); .env.example re-encoding superado; update.zip = 18 entradas todas byte-identicas (modulo CRLF) a blobs de origin/main; vps_pub_key.txt clave publica; worker_*.txt logs"
+    unique_commits: "ninguno (refs y stashes viven en el canonico y sobreviven)"
+    recommendation: REMOVE_DIR  # aplica a reo, wah y weo
+    verified: "no refutado (verify byte-nivel completo)"
+    prerequisites:
+      - "H1-U3 minimo: guardar 1 copia del patch por registro (opcional — todo verificado superseded)"
+      - "si 'worktree remove --force' falla con 'directory in use': git fsmonitor--daemon stop dentro de cada worktree primero"
+      - "remover via git worktree remove --force desde el canonico, path exacto por cada uno"
+
+# ============================================================
+# METADATOS PRUNABLE (H0 — sin gate)
+# ============================================================
+worktrees_prunable_metadata:
+  evidencia: "git worktree prune --dry-run -v (2026-07-13): 12 entradas, todas 'gitdir file points to non-existent location'"
+  causa: "dirs movidos a C:\\GitHub\\_archive\\uas en Fase A (Move-Item no actualiza gitdir)"
+  entries: [umbral-agent-stack-cand001-v31, umbral-agent-stack-p2c-egress-repo, umbral-agent-stack-pit-closure,
+            umbral-agent-stack-pit-p10, umbral-agent-stack-pit-p3, umbral-agent-stack-pit-p5,
+            umbral-agent-stack-pit-p6, umbral-agent-stack-pit-readiness, umbralbim-didactic-fortnight,
+            umbralbim-legendary-dollop, umbralbim-stunning-fiesta, _wt-editorial-pr-492]
+  recommendation: REMOVE_METADATA
+  task: .agents/tasks/2026-07-13-001-fable-repo-hygiene-h0-worktree-prune.md
+  nota_secundaria: "el clone codex tiene su propio prunable (umbral-agent-stack-codex-pit-v2-contract) — incluir en H0 un prune tambien en ese repo"
+
+# ============================================================
+# RAMAS LOCALES (canonico) — triage verificado por agente juez
+# ============================================================
+branches_local:
+  merged_origin_main:
+    count: 118
+    accion: "H3 delete (excluir main; lista datada en scratch del plan)"
+  no_merged_pushed:
+    count: 17
+    accion: "H3 delete opcional (contenido respaldado en origin)"
+  con_commits_unpushed:
+    count: 81
+    triage:
+      rescue_high:  # contenido unico verificado ausente de main — respaldar en H2 SI o SI
+        - { name: antigravity/sync-uncommitted-changes, date: 2026-04-29, why: "1154 lineas unicas: equipo codegen completo (skills code-architect/debugger/implementer/reviewer/scribe + doc diseno + runbook + teams.yaml)" }
+        - { name: rick/editorial-linkedin-writer-flow, date: 2026-05-05, why: "12 commits: LINKEDIN_WRITING_RULES.md 1626 lineas + skill linkedin-post-writer + workspace rick-linkedin-writer + docs CAND-003/004 — corpus no absorbido por main" }
+        - { name: codex/wip-granola-v2-snapshot-2026-04-30, date: 2026-04-30, why: "snapshot deliberado de rescate (4 commits); superset de rick/windows-dirty-rescue-2026-04-27" }
+      rescue_medium:  # revisar diff antes de decidir (6)
+        - feat/ux1-noise-reduction        # el gate que retira SIGUE en main; requiere rework
+        - audit-2026-03-quick-wins        # guardrails + perfil-david; era V1
+        - codex/notion-v2-drift-cleanup
+        - rick/vps                        # 1 commit docs; patch-id YA en origin/rick/vps@56820573 (respaldado remoto)
+        - copilot/feat-o8a-granola-length-instrumentation
+        - copilot/fix-notion-poll-comments-timeout  # confirmar timeout actual antes de descartar
+      rescue_low_superseded:
+        count: 72
+        familias:
+          - "ramas [gone] con squash-merge verificado por subject/PR en main (#200 #296 #444 #448 #458-465 #488 #490 #492 #523 #524 + merge granola c2fa4884)"
+          - "integraciones R14-R16 de marzo (PRs #69-#81 mergeados)"
+          - "13 clonicas missing/regression-test-coverage de abril sobre guardrails granola V1 deprecados (6aa0e42d)"
+          - "artefactos efimeros de torneo (rick/t/fcb2f1bc/*)"
+          - "pr-313-recover / pr-315-recover: RESUELTAS — contenido byte-identico re-aterrizado en main tras el force-push 2026-05-06; su ahead ~1060 es historia pre-rewrite"
+          - "pr-101 == claude/090-implementar-notion-bitacora (misma punta 1b84997f): tratar juntas"
+  ramas_rescue_fuera_del_canonico:  # ampliacion H2 descubierta por el workflow
+    - { repo: copilot, name: backup/local-untracked-2026-04-29, risk: HIGH, why: "22 archivos +1216 lineas en ningun otro lugar" }
+    - { repo: codex, name: codex/f8g-pin-gpt55-high-effort, risk: low, why: "d754a669 handoff largo 317 lineas (main tiene consolidado 78)" }
+
+# ============================================================
+# RAMAS REMOTAS — NO se propone delete sin checklist PR (H5)
+# ============================================================
+branches_remote:
+  merged_origin_main:
+    count: 27
+    nota: "incluye ramas de PRs de higiene ya mergeados; EXCLUIR SIEMPRE rescue/* de cualquier delete"
+  no_merged:
+    count: 223
+    por_prefijo: { rick: 59, codex: 40, cursor: 30, feat: 26, copilot: 25, copilot-vps: 9, tournament: 6, rescue: 5, docs: 4, antigravity: 4, fix: 3, claude: 3, otros: 9 }
+    protegidas: "5 rescue/* (material Pass 8 + Fase B VPS) + origin/rick/vps (deuda VPS-P1-3: 141 commits sin auditar)"
+
+# ============================================================
+# VPS (documental — esta corrida no toco la VPS)
+# ============================================================
+vps:
+  checkout_canonico: "~/umbral-agent-stack (main, pull --ff-only) — formalizado en Fase B VPS 2026-07-03"
+  estado_reportado_2026_07_13: "dirty + detras de main (drift re-aparecido en 10 dias)"
+  gate_existente: "scripts/vps/ensure-main-for-run.sh (PR #423): bloqueante en 10 wrappers cron + supervisor + full-stack-up"
+  gaps_detectados:
+    - "6 crons SIN gate: health-check, notion-curate, openclaw-runtime-snapshot, dashboard-rick, openclaw-panel, granola-gap-check"
+    - "gate bloquea en silencio (solo log /tmp) — sin alerta ni runbook de remediacion; con VPS dirty los crons gated estan saltandose HOY"
+    - "no existe politica escrita worktree-only para APPLY (el APPLY OAuth uso worktree por improvisacion; la task 2026-07-12-001 instruye pull directo sin check de dirty)"
+    - "docs/62 L435 nota stale que niega la existencia del gate (falsa desde #423); §7.1 contradice el modelo main-pinned"
+    - "docs/rick-instrucciones-vps-rama-rick.md referenciado desde docs/66 L181 NO existe (link roto)"
+    - "hook block-deployed-repo-writes.sh es local-VPS y gitignored (no versionado)"
+  rick_vps: "local Windows 39c1399f: patch-id ya en origin/rick/vps@56820573 (respaldado). origin/rick/vps @ 12679890: 141 commits divergentes sin auditar (VPS-P1-3, fuera de alcance)"
+  no_tocar: "~/.openclaw fuera de alcance de este programa"

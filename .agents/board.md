@@ -21,6 +21,22 @@
 
 > Auditoría 006: 17 clones Windows (objetivo 5), 4 rescates, 5 hilos activos. MEGAPROMPT VPS listo post-main.
 
+## Programa higiene repos Windows + VPS (b0004, 2026-07-13)
+
+Plan: [`docs/audits/repo-hygiene-plan-windows-vps__2026-07-13__b0004__src-fable.md`](../docs/audits/repo-hygiene-plan-windows-vps__2026-07-13__b0004__src-fable.md) ·
+Inventario: [`docs/audits/data/repo-hygiene-inventory-2026-07-13.yaml`](../docs/audits/data/repo-hygiene-inventory-2026-07-13.yaml) ·
+Continuación de G-WH-1 (Fase A ejecutada #506/#507) y Fase B VPS (#505). Veredicto: `REPO_HYGIENE_PLAN_READY | phases=7 | destructive_pending_approval`.
+
+| ID | Fase | Tarea | Agente | Destructivo | Estado |
+|----|------|-------|--------|-------------|--------|
+| 2026-07-13-001 | H0 | Prune metadatos 12 worktrees huérfanos (restos Fase A) | fable | no | assigned |
+| 2026-07-13-002 | H1 | Rescate dirty (coordinador/copilot/trio Cursor) + 15 stashes — captura sin borrar | copilot | no | pending (GO David) |
+| — | H2 | Respaldo ramas locales con commits únicos (82 RESCUE → push/bundle) | copilot | no | pendiente GO |
+| — | H3 | Delete ramas locales merged (117) + superadas verificadas | copilot | **sí** | pendiente GO |
+| — | H4 | Remoción checkouts verificados (trio Cursor, `.tmp-*`, b0004 post-merge) + desenredo codex→coordinador | copilot | **sí** | pendiente GO |
+| — | H5 | Limpieza ramas remotas (28 merged; 223 no-merged solo con checklist PR) | david+copilot | **sí** | pendiente GO |
+| — | H6 | Política VPS formal: main limpio ff-only + worktree-only para APPLY | copilot-vps+david | mixto | pendiente firma |
+
 ## Estado del sistema (actualizado 2026-03-07 — auditoría en vivo)
 
 | Aspecto | Estado |

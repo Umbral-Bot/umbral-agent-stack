@@ -1,6 +1,12 @@
 # 15 — Política Multi-Modelo y Cuotas
 
-> Estado operativo validado el 2026-03-08:
+> **Estado operativo vigente (2026-07-04 — post-MP1 `OPENCLAW_AZURE_ONLY=YES`):**
+> - OpenClaw usa exclusivamente Azure AI Foundry (`cursor-api-david`, eastus2): primary `azure/gpt-5.5` (2 517 K-TPM) y fallback único `azure/gpt-5.4` (5 000 K-TPM). Cadenas `openai/*` y `google/*` eliminadas.
+> - `gpt-5.4-pro` es Responses-API-only en Azure (`chatCompletion: false`) — fuera del catálogo OpenClaw.
+> - `gpt-4.1`, `gpt-5.2-chat` y `Kimi-K2.5` siguen desplegados y sanos en Azure (api-key), pero fuera de las cadenas OpenClaw (los perfiles OAuth locales estaban muertos).
+> - Cero 429 en 7 días; capacidad OK sin bump. Ver [docs/audits/azure-foundry-capacity-openclaw-sync-2026-07-04.md](audits/azure-foundry-capacity-openclaw-sync-2026-07-04.md).
+
+> Estado operativo histórico validado el 2026-03-08:
 > - Claude quedó deshabilitado temporalmente en la VPS con `UMBRAL_DISABLE_CLAUDE=true`.
 > - El runtime estable de OpenClaw quedó en Gemini 2.5 Flash para `main` y subagentes.
 > - Los modelos OpenAI disponibles por API key en la VPS son vía Azure AI Foundry (`gpt-4.1`, `gpt-5.2-chat`, `Kimi-K2.5`), no vía `OPENAI_API_KEY` nativa.

@@ -1,13 +1,13 @@
 ---
 id: "2026-07-13-001"
 title: "Higiene repos H0 — prune de metadatos de worktrees huérfanos (solo metadatos, cero borrado de archivos)"
-status: assigned
+status: done
 assigned_to: fable
 created_by: fable
 priority: medium
 sprint: b0004
 created_at: 2026-07-13T17:30:00Z
-updated_at: 2026-07-13T17:30:00Z
+updated_at: 2026-07-13T19:35:00Z
 ---
 
 ## Objetivo
@@ -77,12 +77,12 @@ git -C C:\GitHub\umbral-agent-stack-codex worktree prune -v
 
 ## Criterios de aceptación
 
-- [ ] `git worktree prune -v` ejecutado sin errores.
-- [ ] `git worktree list` muestra solo: canónico + `.tmp-gd52-adr-scopes` +
+- [x] `git worktree prune -v` ejecutado sin errores.
+- [x] `git worktree list` muestra solo: canónico + `.tmp-gd52-adr-scopes` +
       `umbral-agent-stack-b0004` + `umbral-agent-stack-b0004-oauth` +
       `reo` + `wah` + `weo` (7 entradas).
-- [ ] Cero archivos modificados/borrados fuera de `.git\worktrees\`.
-- [ ] Log actualizado en esta tarea con la salida del comando.
+- [x] Cero archivos modificados/borrados fuera de `.git\worktrees\`.
+- [x] Log actualizado en esta tarea con la salida del comando.
 
 ## Log
 
@@ -90,3 +90,41 @@ git -C C:\GitHub\umbral-agent-stack-codex worktree prune -v
 Tarea creada como parte del plan H0–H6. Dry-run verificado (12 entradas,
 match 1:1 con Fase A). Pendiente de ejecución — H0 está clasificada
 `destructive: false` y no requiere gate de David según la matriz del plan.
+
+### [fable] 2026-07-13 19:35 — EJECUTADO
+
+PR #526 mergeado (squash `0ab0d3d5`) antes de correr H0, según lo pedido.
+
+**Paso 1** (`fetch` + `checkout main` + `pull --ff-only`): bloqueado en el
+primer intento — `main` estaba marcado como checked-out en el worktree
+fantasma `C:\GitHub\umbral-agent-stack-pit-p10` (uno de los 12 objetivos
+exactos de este prune; su directorio ya no existe, movido a `_archive\uas`
+en Fase A). Circular por diseño: no se podía hacer `checkout main` hasta
+podar ese fantasma. Se procedió con `worktree prune` estando en la rama
+`fable/repo-hygiene-plan-20260713` (operación de metadatos, independiente
+de la rama activa), y se reintentó `checkout main` + `pull --ff-only`
+después — esta vez OK (fast-forward 68 commits, `48632d88` → `0ab0d3d5`).
+
+**Paso 2**: confirmado — plan H0–H6 y esta tarea presentes en `main` local
+(`git cat-file -e main:<path>` ambos OK).
+
+**Paso 3** (`worktree list` antes): 19 entradas — 7 vivas + 12 fantasma
+(match exacto con el inventario del plan).
+
+**Paso 4** (`worktree prune -n -v`): 12 líneas `Removing worktrees/... gitdir
+file points to non-existent location` — idéntico al dry-run de la corrida de
+análisis (2026-07-13 tarde), cero drift.
+
+**Paso 5** (`worktree prune -v`): ejecutado, mismas 12 entradas removidas.
+
+**Paso 6** (`worktree list` después): **7 entradas, 0 prunable** —
+`C:\GitHub\umbral-agent-stack` (main), `.tmp-gd52-adr-scopes`,
+`umbral-agent-stack-b0004`, `umbral-agent-stack-b0004-oauth`,
+`reo`/`wah`/`weo` (Cursor). Coincide exactamente con el criterio de
+aceptación.
+
+**Verificado:** cero archivos modificados/borrados fuera de
+`.git\worktrees\`; ningún worktree vivo tocado; sin `branch -D`, sin
+`clean`, sin `reset`; VPS no tocada; fases H1–H6 no iniciadas.
+
+**Veredicto:** `REPO_HYGIENE_H0_OK | pruned=12 | worktrees_live=7`

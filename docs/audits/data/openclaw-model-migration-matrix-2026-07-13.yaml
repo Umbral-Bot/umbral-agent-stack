@@ -1,0 +1,584 @@
+schema_version: 1
+generated_at: "2026-07-13T15:30:00Z"
+source: codex
+run_id: b0004
+repo_baseline: e5d650c5
+vps:
+  hostname: srv1431451
+  user: rick
+  openclaw_version: 2026.6.10
+  audited_at: "2026-07-13T15:03:10Z"
+mode: read_only
+verdict: MIGRATION_PLAN_READY
+target_state:
+  openclaw: oauth_discriminated
+  worker: needs_contract_change
+  gemini: removed_from_active_llm_routing
+  stage8: magnific_only
+
+evidence_labels:
+  repo: versioned configuration or code
+  vps_live: sanitized read-only runtime observation
+  inference: conclusion derived from repo and live evidence
+
+current_auth:
+  public_model_prefix: openai
+  effective_transport: azure_openai_custom_provider
+  endpoint_host: cursor-api-david.openai.azure.com
+  provider_auth: api-key
+  oauth_profiles: 0
+  api_key_profiles: 1
+  api_key_material: literal_present_not_copied
+  oauth_verified: false
+  native_codex_route_eligible: false
+  reason: custom Azure endpoint and authored api-key provider shadow the native route
+
+catalog_observed:
+  auth_shape: api_key_not_oauth
+  configured:
+    - openai/gpt-5.6-sol
+    - openai/gpt-5.5
+    - openai/gpt-5.4
+    - openai/gpt-5.3-codex
+  known_but_not_oauth_verified:
+    - openai/gpt-5.4-mini
+    - openai/gpt-5.4-nano
+    - openai/o3-mini
+    - openai/o4-mini
+  not_observed_live:
+    - openai/gpt-5.6-terra
+    - openai/gpt-5.6-luna
+  gate: rerun catalog after openai OAuth device-code login
+
+target_defaults:
+  primary: openai/gpt-5.5
+  fallbacks:
+    - openai/gpt-5.4
+  allowlist_required:
+    - openai/gpt-5.6-sol
+    - openai/gpt-5.5
+    - openai/gpt-5.4
+    - openai/gpt-5.3-codex
+  allowlist_conditional:
+    - openai/gpt-5.4-mini
+  forbidden_active_prefixes:
+    - azure-openai-responses/
+    - openai-codex/
+    - google/
+    - google-vertex/
+
+legacy_foundry_catalog:
+  - id: gpt-4.1
+    reasoning: false
+    context_window: 128000
+    max_tokens: 32768
+    target: openai/gpt-5.3-codex
+    equivalence: upgrade
+  - id: gpt-5.2-chat
+    reasoning: false
+    context_window: 400000
+    max_tokens: 65536
+    target: openai/gpt-5.5
+    equivalence: upgrade
+  - id: kimi-k2.5
+    reasoning: false
+    context_window: 200000
+    max_tokens: 8192
+    target: null
+    equivalence: retire_or_documented_n8n_exception
+  - id: gpt-5.4
+    reasoning: true
+    context_window: 400000
+    max_tokens: 16384
+    target: openai/gpt-5.5
+    equivalence: upgrade
+  - id: gpt-5.5
+    reasoning: true
+    context_window: 400000
+    max_tokens: 16384
+    target: openai/gpt-5.6-sol
+    equivalence: upgrade
+  - id: gpt-5.4-pro
+    reasoning: true
+    context_window: 400000
+    max_tokens: 16384
+    target: openai/gpt-5.6-sol
+    equivalence: upgrade
+
+migrations:
+  - surface: openclaw_agent
+    id: main
+    evidence: [repo, vps_live]
+    source_paths:
+      - docs/audits/openclaw-gpt-5.5-promotion-20260607.md
+      - ~/.openclaw/openclaw.json.bak.1
+    foundry_ref: azure-openai-responses/gpt-5.5
+    foundry_config:
+      thinking: xhigh
+      fallbacks: [azure-openai-responses/gpt-5.4, azure-openai-responses/kimi-k2.5, azure-openai-responses/gpt-5.2-chat]
+    role_need: flagship_reasoning
+    volume: medium
+    oauth_target: openai/gpt-5.6-sol
+    oauth_fallbacks: [openai/gpt-5.5, openai/gpt-5.4]
+    thinking: xhigh
+    equivalence: upgrade
+    gates: [oauth_profile_usable, gpt_5_6_sol_visible_in_oauth_catalog]
+
+  - surface: openclaw_agent
+    id: rick-orchestrator
+    evidence: [repo, vps_live]
+    source_paths: [openclaw/workspace-agent-overrides/rick-orchestrator/ROLE.md]
+    foundry_ref: azure-openai-responses/gpt-5.5
+    foundry_config: {thinking: xhigh, fallback: azure-openai-responses/gpt-5.4}
+    role_need: heavy_planning
+    volume: medium
+    oauth_target: openai/gpt-5.6-sol
+    oauth_fallbacks: [openai/gpt-5.5, openai/gpt-5.4]
+    thinking: xhigh
+    equivalence: upgrade
+    gates: [oauth_profile_usable, gpt_5_6_sol_visible_in_oauth_catalog]
+
+  - surface: openclaw_agent
+    id: rick-delivery
+    evidence: [repo, vps_live]
+    source_paths: [openclaw/workspace-agent-overrides/rick-delivery/ROLE.md]
+    foundry_ref: azure-openai-responses/gpt-5.5
+    foundry_config: {thinking: xhigh, legacy_primary: azure-openai-responses/gpt-5.4}
+    role_need: scoped_coding
+    volume: medium
+    oauth_target: openai/gpt-5.3-codex
+    oauth_fallbacks: [openai/gpt-5.4]
+    thinking: medium
+    equivalence: intentional_downgrade
+    gates: [oauth_profile_usable]
+
+  - surface: openclaw_agent
+    id: rick-qa
+    evidence: [repo, vps_live]
+    source_paths: [openclaw/workspace-agent-overrides/rick-qa/ROLE.md]
+    foundry_ref: azure-openai-responses/gpt-5.5
+    foundry_config: {thinking: xhigh, fallback: azure-openai-responses/gpt-5.4}
+    role_need: heavy_editorial_qa
+    volume: medium
+    oauth_target: openai/gpt-5.6-sol
+    oauth_fallbacks: [openai/gpt-5.5, openai/gpt-5.4]
+    thinking: xhigh
+    equivalence: upgrade
+    gates: [oauth_profile_usable, gpt_5_6_sol_visible_in_oauth_catalog]
+
+  - surface: openclaw_agent
+    id: rick-ops
+    evidence: [repo, vps_live]
+    source_paths: [docs/openclaw-config-reference-2026-03.json5]
+    foundry_ref: azure-openai-responses/gpt-5.5
+    foundry_config: {thinking: xhigh, fallback: azure-openai-responses/gpt-5.4}
+    role_need: operations_light
+    volume: high
+    oauth_target: openai/gpt-5.4-mini
+    oauth_target_if_unavailable: openai/gpt-5.3-codex
+    oauth_fallbacks: [openai/gpt-5.3-codex]
+    thinking: low
+    equivalence: intentional_downgrade
+    gates: [mini_visible_in_oauth_catalog]
+
+  - surface: openclaw_agent
+    id: rick-communication-director
+    evidence: [repo, vps_live]
+    source_paths: [openclaw/workspace-agent-overrides/rick-communication-director/ROLE.md]
+    foundry_ref: azure-openai-responses/gpt-5.5
+    foundry_config: {thinking: xhigh, fallback: azure-openai-responses/gpt-5.4}
+    role_need: heavy_editorial_voice
+    volume: low_medium
+    oauth_target: openai/gpt-5.6-sol
+    oauth_fallbacks: [openai/gpt-5.5, openai/gpt-5.4]
+    thinking: xhigh
+    equivalence: upgrade
+    gates: [oauth_profile_usable, gpt_5_6_sol_visible_in_oauth_catalog]
+
+  - surface: openclaw_agent
+    id: rick-linkedin-writer
+    evidence: [repo, vps_live]
+    source_paths: [openclaw/workspace-agent-overrides/rick-linkedin-writer/ROLE.md]
+    foundry_ref: azure-openai-responses/gpt-5.5
+    foundry_config: {thinking: xhigh, stages: [S6, S7]}
+    role_need: heavy_editorial_writing
+    volume: medium
+    oauth_target: openai/gpt-5.6-sol
+    oauth_fallbacks: [openai/gpt-5.5, openai/gpt-5.4]
+    thinking: xhigh
+    equivalence: upgrade
+    gates: [oauth_profile_usable, gpt_5_6_sol_visible_in_oauth_catalog]
+
+  - surface: openclaw_agent
+    id: rick-tracker
+    evidence: [repo, vps_live]
+    source_paths:
+      - openclaw/workspace-agent-overrides/rick-tracker/ROLE.md
+      - docs/openclaw-config-reference-2026-03.json5
+    foundry_ref: azure-openai-responses/gpt-5.5
+    foundry_config: {thinking: medium, legacy_fallback: google/gemini-3-flash-preview}
+    role_need: tracking_classification
+    volume: high
+    oauth_target: openai/gpt-5.4-mini
+    oauth_target_if_unavailable: openai/gpt-5.3-codex
+    oauth_fallbacks: [openai/gpt-5.3-codex]
+    thinking: low
+    equivalence: intentional_downgrade
+    gates: [mini_visible_in_oauth_catalog]
+
+  - surface: cron
+    id: 6b5dd638-4998-457f-91bf-be4fc8e58a53
+    name: Seguimiento cada 30 min — Proyecto embudo/Drive
+    evidence: [vps_live]
+    foundry_ref: inherited_from_rick_ops
+    role_need: tracking
+    volume: high
+    oauth_target: openai/gpt-5.4-mini
+    oauth_target_if_unavailable: openai/gpt-5.3-codex
+    thinking: low
+    equivalence: intentional_downgrade
+    gates: [mini_visible_in_oauth_catalog]
+
+  - surface: cron
+    id: ffde9eab-c89f-4bf7-9d5d-39366ebd0e19
+    name: SIM — recolección señales (cada 6h)
+    evidence: [vps_live]
+    foundry_ref: inherited_from_main
+    role_need: extraction_light
+    volume: high
+    oauth_target: openai/gpt-5.3-codex
+    thinking: low
+    equivalence: intentional_downgrade
+    gates: [oauth_profile_usable]
+
+  - surface: cron
+    id: 978d3d6e-86f9-4447-a624-7ad3fd15bae3
+    name: SIM — discovery web por keywords (Tavily, cada 12h)
+    evidence: [vps_live]
+    foundry_ref: inherited_from_main
+    role_need: research_synthesis
+    volume: medium
+    oauth_target: openai/gpt-5.5
+    thinking: medium
+    equivalence: upgrade
+    gates: [oauth_profile_usable]
+
+  - surface: cron
+    id: b444bc68-48e3-4406-8997-5854a20771e4
+    name: SIM — Google Trends RSS (cada 12h)
+    evidence: [vps_live]
+    foundry_ref: inherited_from_main
+    role_need: classification_light
+    volume: high
+    oauth_target: openai/gpt-5.4-mini
+    oauth_target_if_unavailable: openai/gpt-5.3-codex
+    thinking: low
+    equivalence: intentional_downgrade
+    gates: [mini_visible_in_oauth_catalog]
+
+  - surface: cron
+    id: 31adc1a1-db9c-4722-93fe-7922177bfe16
+    name: Investigación Profunda Mercado AECO (Tavily) - 2 días
+    evidence: [vps_live]
+    foundry_ref: inherited_from_main
+    role_need: heavy_research
+    volume: low_medium
+    oauth_target: openai/gpt-5.6-sol
+    thinking: xhigh
+    equivalence: upgrade
+    gates: [oauth_profile_usable, gpt_5_6_sol_visible_in_oauth_catalog]
+
+  - surface: cron
+    id: 8c06fcf1-4014-401a-a5be-22aeef4c0571
+    name: Briefing matutino
+    evidence: [vps_live]
+    foundry_ref: azure-openai-responses/gpt-5.5
+    foundry_config: {schedule: "30 7 * * 1-5", timezone: America/Santiago}
+    role_need: scheduled_digest
+    volume: low
+    oauth_target: openai/gpt-5.5
+    oauth_fallbacks: [openai/gpt-5.4]
+    thinking: high
+    equivalence: exact
+    gates: [oauth_profile_usable, allowlist_updated]
+
+  - surface: editorial_contract
+    id: editorial_model_guard
+    evidence: [repo]
+    source_paths:
+      - config/editorial-model.yaml
+      - scripts/editorial/editorial_model_guard.py
+      - docs/editorial-pipeline/editorial-model-contract.md
+    foundry_ref: azure-openai-responses/gpt-5.5
+    role_need: heavy_editorial_text
+    volume: medium
+    oauth_target: openai/gpt-5.6-sol
+    oauth_fallbacks: [openai/gpt-5.5]
+    thinking: xhigh
+    equivalence: upgrade
+    gates: [atomic_contract_guard_role_update, one_post_e2e_dry_run]
+
+  - surface: editorial_stage
+    id: S6_stage6_llm_combinator
+    evidence: [repo]
+    source_paths: [scripts/discovery/stage6_llm_combinator.py]
+    foundry_ref: openclaw/main_resolved_to_foundry
+    role_need: synthesis
+    volume: medium
+    oauth_target: openclaw/main_resolved_to_openai_oauth
+    equivalence: transport_change
+    gates: [main_oauth_smoke]
+
+  - surface: editorial_stage
+    id: S7_stage7_publish_drafts
+    evidence: [repo]
+    source_paths: [scripts/discovery/stage7_publish_drafts.py]
+    foundry_ref: null
+    role_need: deterministic_notion_draft
+    volume: medium
+    oauth_target: null
+    equivalence: no_llm
+    gates: []
+
+  - surface: editorial_stage
+    id: S7_5_copy_writer
+    evidence: [repo]
+    source_paths: [scripts/discovery/stage7_5_copy_writer.py]
+    foundry_ref: openclaw/main_resolved_to_foundry
+    role_need: heavy_editorial_writing
+    volume: medium
+    oauth_target: openclaw/main_resolved_to_openai_oauth
+    equivalence: transport_change
+    gates: [editorial_guard_updated, one_post_e2e_dry_run]
+
+  - surface: editorial_stage
+    id: S8_stage8_image_generator
+    evidence: [repo]
+    source_paths:
+      - scripts/discovery/stage8_image_generator.py
+      - docs/editorial-pipeline/production-flow-v2-2026-06-06.md
+    foundry_ref: google/gemini-3-pro-image-preview
+    foundry_config: {provider: google_image, aspect_ratio: "3:2"}
+    role_need: image_generation
+    volume: low
+    oauth_target: null
+    image_target: magnific
+    equivalence: provider_replacement
+    gates: [magnific_oauth_or_rest_ready, human_image_selection, no_google_direct]
+
+  - surface: editorial_stage
+    id: S9_stage9_linkedin_draft
+    evidence: [repo]
+    source_paths: [scripts/discovery/stage9_linkedin_draft.py]
+    foundry_ref: null
+    role_need: deterministic_payload
+    volume: medium
+    oauth_target: null
+    equivalence: no_llm
+    gates: []
+
+  - surface: dispatcher_routing
+    id: coding_general_ms_stack
+    evidence: [repo]
+    source_paths: [config/quota_policy.yaml, dispatcher/model_router.py, dispatcher/service.py]
+    foundry_ref: azure_foundry
+    foundry_config: {worker_model: gpt-5.4}
+    role_need: text_and_coding
+    volume: medium
+    oauth_target: openclaw_oauth
+    oauth_model_by_task: [openai/gpt-5.3-codex, openai/gpt-5.5]
+    equivalence: contract_change
+    gates: [worker_gateway_proxy_implemented]
+
+  - surface: dispatcher_routing
+    id: writing_research_critical_light
+    evidence: [repo]
+    source_paths: [config/quota_policy.yaml]
+    foundry_ref: azure_foundry_and_gemini_fallbacks
+    role_need: mixed
+    volume: high
+    oauth_target: openclaw_oauth_discriminated
+    equivalence: contract_change
+    gates: [gemini_removed, task_specific_models]
+
+  - surface: worker_task
+    id: llm.generate
+    evidence: [repo]
+    source_paths: [worker/tasks/llm.py]
+    foundry_ref: azure_foundry
+    foundry_config:
+      aliases:
+        azure_foundry: gpt-5.4
+        azure_gpt_41: gpt-4.1
+        azure_gpt_52: gpt-5.2-chat
+        kimi_azure: Kimi-K2.5
+      api_version: 2024-12-01-preview
+    role_need: generic_text
+    volume: medium
+    oauth_target: openclaw_gateway_local
+    equivalence: contract_change
+    gates: [do_not_read_oauth_store, worker_e2e_dry_run]
+
+  - surface: worker_task
+    id: tournament
+    evidence: [repo]
+    source_paths: [worker/tasks/tournament.py, worker/tasks/github_tournament.py]
+    foundry_ref: azure_foundry
+    foundry_config: {default_models: [azure_foundry]}
+    role_need: batch_reasoning
+    volume: low_bursty
+    oauth_target: explicit_model_per_lane
+    equivalence: contract_change
+    gates: [budget_policy, no_foundry_default]
+
+  - surface: worker_task
+    id: rag.query_answer
+    evidence: [repo]
+    source_paths: [worker/tasks/rag.py]
+    foundry_ref: azure_foundry
+    role_need: grounded_answer
+    volume: medium
+    oauth_target: openclaw_gateway_local
+    oauth_model: openai/gpt-5.5
+    equivalence: transport_change
+    gates: [worker_gateway_proxy_implemented]
+
+  - surface: worker_task
+    id: rag_embeddings
+    evidence: [repo]
+    source_paths: [worker/rag/indexer.py, worker/rag/retriever.py]
+    foundry_ref: text-embedding-3-large_azure_deployment
+    role_need: embeddings
+    volume: batch
+    oauth_target: null
+    equivalence: gap
+    proposed_action: pause_vector_and_hybrid_or_design_separate_embedding_provider
+    gates: [embedding_architecture_decision]
+
+  - surface: worker_task
+    id: azure.audio.generate
+    evidence: [repo]
+    source_paths: [worker/tasks/azure_audio.py]
+    foundry_ref: gpt-realtime
+    foundry_config: {api_version: 2025-04-01-preview, auth: api-key}
+    role_need: realtime_tts
+    volume: low
+    oauth_target: null
+    equivalence: gap
+    proposed_action: separate_voice_architecture_gate
+    gates: [realtime_requires_platform_api_key_or_non_openai_tts]
+
+  - surface: n8n
+    id: kimi_api_resource
+    evidence: [repo, vps_live]
+    source_paths: [docs/kimi-recurso-n8n.md]
+    foundry_ref: azure-openai-responses/kimi-k2.5
+    foundry_config: {auth: api-key, usage_evidence: documented_not_versioned_workflow}
+    role_need: automation_legacy
+    volume: unknown
+    oauth_target: null
+    equivalence: decision_required
+    proposed_action: retire_unless_live_workflow_is_proven_and_david_ratifies_exception
+    gates: [n8n_live_inventory]
+
+  - surface: copilot_agent
+    id: byok_agent
+    evidence: [repo]
+    source_paths: [copilot_agent/agent.py, copilot_agent/__main__.py]
+    foundry_ref: gpt-5.4_via_AZURE_OPENAI
+    foundry_config: {auth: api-key, default_model: gpt-5.4}
+    role_need: published_agent_text
+    volume: unknown
+    oauth_target: openclaw_gateway_local
+    equivalence: contract_change
+    proposed_action: proxy_through_openclaw_or_deprecate_byok_agent
+    gates: [owner_and_runtime_usage_inventory]
+
+  - surface: team_workflow
+    id: data_team
+    evidence: [repo]
+    source_paths: [config/team_workflows.yaml]
+    foundry_ref: google/gemini-2.5-flash
+    role_need: light_data_tasks
+    volume: medium
+    oauth_target: openai/gpt-5.4-mini
+    oauth_target_if_unavailable: openai/gpt-5.3-codex
+    thinking: low
+    equivalence: provider_replacement
+    gates: [mini_visible_in_oauth_catalog]
+
+  - surface: worker_backend
+    id: research_web_gemini_grounded
+    evidence: [repo]
+    source_paths: [worker/research_backends.py, worker/tasks/research.py, scripts/web_discovery.py]
+    foundry_ref: google/gemini-2.5-flash_with_google_search
+    role_need: web_retrieval_and_synthesis
+    volume: medium
+    oauth_target: openai/gpt-5.5_via_openclaw_web_search
+    oauth_target_if_tools_unavailable: tavily_retrieval_plus_openai/gpt-5.5_synthesis
+    equivalence: gap_until_tooling_verified
+    gates: [openai_web_search_tool_smoke_or_tavily_contract]
+
+  - surface: worker_task
+    id: google.audio.generate
+    evidence: [repo]
+    source_paths: [worker/tasks/google_audio.py, openclaw/workspace-templates/skills/google-audio-generation/SKILL.md]
+    foundry_ref: google/gemini-2.5-flash-preview-tts
+    role_need: text_to_speech
+    volume: low
+    oauth_target: null
+    equivalence: gap
+    proposed_action: select_approved_non_google_voice_provider_in_separate_gate
+    gates: [voice_provider_decision]
+
+  - surface: legacy_reinjection
+    id: scripts_and_workspace_templates
+    evidence: [repo]
+    source_paths:
+      - scripts/ops/patch-openclaw-voice-fallbacks.py
+      - scripts/vps/patch-openclaw-gpt55-xhigh.py
+      - scripts/vps/patch-openclaw-oauth-only.py
+      - openclaw/workspace-templates/skills/openclaw-gateway/SKILL.md
+      - openclaw/workspace-templates/skills/llm-generate/SKILL.md
+      - openclaw/workspace-templates/skills/rag-knowledge/SKILL.md
+      - openclaw/workspace-templates/skills/tournament/SKILL.md
+    foundry_ref: azure_openai_and_gemini_legacy_defaults
+    role_need: prevent_regression
+    volume: not_applicable
+    oauth_target: canonical_openai_oauth_templates
+    equivalence: documentation_and_script_migration
+    gates: [deprecate_or_rewrite_before_reuse]
+
+  - surface: runtime_env
+    id: gateway_dispatcher_worker
+    evidence: [vps_live]
+    foundry_ref: AZURE_OPENAI_and_KIMI_AZURE_variable_names
+    foundry_config: {values: not_copied, processes: [openclaw-gateway, openclaw-dispatcher, umbral-worker]}
+    role_need: credential_cleanup
+    volume: not_applicable
+    oauth_target: openai_auth_profile_in_agent_store
+    equivalence: secret_lifecycle_change
+    gates: [oauth_cutover_pass, authorized_env_cleanup, key_rotation]
+
+stop_conditions:
+  - vps_repo_dirty_or_not_synced
+  - no_explicit_david_authorization_for_runtime_writes
+  - no_usable_openai_oauth_profile
+  - gpt_5_6_sol_not_visible_for_main
+  - patch_would_leave_custom_azure_openai_provider
+  - config_validation_fails
+  - gateway_fails_after_restart
+  - secret_would_be_printed
+  - stage8_still_calls_google_direct
+
+pass_criteria:
+  - openai_oauth_profiles_at_least_1
+  - openai_api_key_not_effective_for_agent_turns
+  - no_azure_openai_responses_refs_in_live_config_or_crons
+  - no_openai_codex_legacy_refs
+  - main_primary_is_openai_gpt_5_6_sol
+  - all_agents_and_crons_match_this_matrix
+  - editorial_guard_matches_oauth_contract
+  - worker_text_uses_openclaw_gateway_oauth
+  - stage8_is_magnific_only
+  - embedding_and_realtime_gaps_are_disabled_or_separately_resolved

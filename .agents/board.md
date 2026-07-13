@@ -29,8 +29,8 @@ Continuación de G-WH-1 (Fase A ejecutada #506/#507) y Fase B VPS (#505). Veredi
 
 | ID | Fase | Tarea | Agente | Destructivo | Estado |
 |----|------|-------|--------|-------------|--------|
-| 2026-07-13-001 | H0 | Prune metadatos 12 worktrees huérfanos (restos Fase A) | fable | no | assigned |
-| 2026-07-13-002 | H1 | Rescate dirty (coordinador/copilot/trio Cursor) + 15 stashes — captura sin borrar | copilot | no | pending (GO David) |
+| 2026-07-13-001 | H0 | Prune metadatos 12 worktrees huérfanos (restos Fase A) | fable | no | ✅ done — `REPO_HYGIENE_H0_OK \| pruned=12 \| worktrees_live=7` |
+| 2026-07-13-002 | H1 | Rescate dirty (coordinador/copilot/trio Cursor) — captura sin borrar | fable | no | ✅ done — `REPO_HYGIENE_H1_OK \| rescued=4 \| discarded=9 \| pending_human=1`. Ramas `rescue/copilot-dirty-2026-07-13` + `rescue/coordinador-dirty-2026-07-13` pusheadas. Stashes canónico/claude y codex/* compartidos quedaron fuera de este GO (pendientes de una H1 futura) |
 | — | H2 | Respaldo ramas locales con commits únicos (82 RESCUE → push/bundle) | copilot | no | pendiente GO |
 | — | H3 | Delete ramas locales merged (117) + superadas verificadas | copilot | **sí** | pendiente GO |
 | — | H4 | Remoción checkouts verificados (trio Cursor, `.tmp-*`, b0004 post-merge) + desenredo codex→coordinador | copilot | **sí** | pendiente GO |

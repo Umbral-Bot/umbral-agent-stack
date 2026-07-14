@@ -8,6 +8,9 @@
 # Exit codes:
 #   0 = no issues
 #   2 = recent gaps detected (requires review)
+#   3 = intake stale — MAX(Fecha) older than GRANOLA_GAP_STALE_DAYS (default 10);
+#       this is the freshness guard that catches a silently dead intake, which
+#       the "issues within 7 days" check alone could not see.
 #   1 = script error
 set -euo pipefail
 
@@ -33,6 +36,8 @@ set -e
 
 if [ $EXIT_CODE -eq 2 ]; then
     echo "$(date '+%Y-%m-%d %H:%M:%S') WARNING: Recent gaps detected. See $JSON_OUTPUT"
+elif [ $EXIT_CODE -eq 3 ]; then
+    echo "$(date '+%Y-%m-%d %H:%M:%S') STALE: Granola intake looks dead — MAX(Fecha) past freshness threshold. See $JSON_OUTPUT"
 elif [ $EXIT_CODE -eq 0 ]; then
     echo "$(date '+%Y-%m-%d %H:%M:%S') OK: No recent gaps."
 else

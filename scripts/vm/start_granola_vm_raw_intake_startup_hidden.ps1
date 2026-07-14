@@ -84,5 +84,16 @@ try {
   exit 1
 }
 
+# Propagate the launcher's real exit code (it now blocks and returns the
+# Python process result). Without this, a failing intake would still surface as
+# LastTaskResult: 0 when Task Scheduler runs the boot path — the same masking
+# bug the launcher fix (spec b0004) removes.
+$launcherExit = $LASTEXITCODE
+if ($launcherExit -ne 0) {
+  "[$(Get-Date -Format "yyyy-MM-dd HH:mm:ss")] startup intake launcher exited with code $launcherExit" |
+    Out-File -FilePath $startupLog -Encoding UTF8 -Append
+  exit $launcherExit
+}
+
 "[$(Get-Date -Format "yyyy-MM-dd HH:mm:ss")] startup check completed" |
   Out-File -FilePath $startupLog -Encoding UTF8 -Append

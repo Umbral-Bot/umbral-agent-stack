@@ -1,3 +1,12 @@
+# Launcher for the Granola VM raw intake.
+#
+# Observability fix (spec b0004): previously this used `Start-Process -PassThru`
+# without `-Wait` and only printed the PID, so it always returned 0 to Task
+# Scheduler even when the Python process failed immediately. That is how a dead
+# intake stayed invisible (LastTaskResult: 0). We now block on the process with
+# `-Wait` and propagate its real exit code, so the *next* failure surfaces at
+# once. Verify the propagation mechanism with:
+#   scripts/vm/verify_granola_wrapper_exitcode.ps1
 $ErrorActionPreference = "Stop"
 
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
@@ -39,6 +48,15 @@ $process = Start-Process `
   -WindowStyle Hidden `
   -RedirectStandardOutput $stdoutLog `
   -RedirectStandardError $stderrLog `
-  -PassThru
+  -PassThru `
+  -Wait
 
+if ($null -eq $process) {
+  Write-Error "granola_vm_raw_intake failed to start"
+  exit 1
+}
+
+$exitCode = $process.ExitCode
 Write-Output "granola_vm_raw_intake_pid=$($process.Id)"
+Write-Output "granola_vm_raw_intake_exit=$exitCode"
+exit $exitCode

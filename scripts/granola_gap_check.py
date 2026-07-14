@@ -10,9 +10,10 @@ compatible with both shapes so schema changes do not produce a vacuous OK.
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -25,6 +26,14 @@ DATE_FIELD_CANDIDATES = ("Fecha", "Date")
 TRACEABILITY_FIELD_CANDIDATES = ("Trazabilidad", "Traceability")
 STATUS_FIELD_CANDIDATES = ("Estado", "Status")
 _DATE_PREFIX_RE = re.compile(r"^\d{4}-\d{2}-\d{2}")
+
+# Freshness guard: independent of the 7-day "issues" window, alert when the
+# most recent ``Fecha`` in the raw DB is older than this many days. This is the
+# signal that was structurally missing when the intake stalled unnoticed for
+# 69 days (spec b0004): the old check only looked at issues *inside* a 7-day
+# window, so a dead intake produced a vacuous OK.
+DEFAULT_STALE_AFTER_DAYS = 10
+STALE_ENV_VAR = "GRANOLA_GAP_STALE_DAYS"
 
 
 def _date_prefix(value: Any) -> str:
@@ -155,6 +164,7 @@ def build_gap_report(
     *,
     now: datetime | None = None,
     recent_days: int = 7,
+    stale_after_days: int = DEFAULT_STALE_AFTER_DAYS,
 ) -> dict[str, Any]:
     now = now or datetime.now(timezone.utc)
     if now.tzinfo is None:
@@ -166,6 +176,7 @@ def build_gap_report(
 
     issues: list[dict[str, Any]] = []
     skipped_no_date = 0
+    max_date = ""  # newest Fecha seen (ISO YYYY-MM-DD; lexicographic max is valid)
     for item in items:
         if not isinstance(item, dict):
             continue
@@ -176,6 +187,8 @@ def build_gap_report(
         if not date_str:
             skipped_no_date += 1
             continue
+        if date_str > max_date:
+            max_date = date_str
 
         traceability = _first_text(props, schema, TRACEABILITY_FIELD_CANDIDATES)
         status = _first_status(props, schema)
@@ -203,14 +216,60 @@ def build_gap_report(
                 }
             )
 
+    freshness_days: int | None = None
+    stale = False
+    stale_reason = ""
+    if not max_date:
+        # No dated rows at all: cannot prove freshness, so do not report a
+        # vacuous OK. An empty/undated raw DB is itself a red flag for intake.
+        stale = True
+        stale_reason = "no_dated_items"
+    else:
+        freshness_days = (now.date() - date.fromisoformat(max_date)).days
+        if freshness_days > stale_after_days:
+            stale = True
+            stale_reason = "max_date_older_than_threshold"
+
     return {
         "timestamp": now.isoformat(),
         "recent_cutoff": recent_cutoff,
         "total_pages": len(items),
         "recent_issues": len(issues),
         "skipped_no_date": skipped_no_date,
+        "max_date": max_date,
+        "freshness_days": freshness_days,
+        "stale_after_days": stale_after_days,
+        "stale": stale,
+        "stale_reason": stale_reason,
         "issues": issues,
     }
+
+
+def exit_code_for_report(report: dict[str, Any]) -> int:
+    """Map a gap report to a process exit code for the VPS cron wrapper.
+
+    0 = healthy, 2 = recent content gaps (existing behavior),
+    3 = intake stale / freshness alert (new). Recent gaps take precedence when
+    both would apply, though in practice they are mutually exclusive: a recent
+    gap requires an item dated within the 7-day window, which keeps MAX(Fecha)
+    fresher than the (>=10-day) staleness threshold.
+    """
+    if report.get("recent_issues"):
+        return 2
+    if report.get("stale"):
+        return 3
+    return 0
+
+
+def _stale_after_days_from_env() -> int:
+    raw = os.environ.get(STALE_ENV_VAR)
+    if raw is None:
+        return DEFAULT_STALE_AFTER_DAYS
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return DEFAULT_STALE_AFTER_DAYS
+    return value if value > 0 else DEFAULT_STALE_AFTER_DAYS
 
 
 def main() -> int:
@@ -223,9 +282,9 @@ def main() -> int:
 
     try:
         raw = notion_client.read_database(db_id, max_items=200)
-        report = build_gap_report(raw)
+        report = build_gap_report(raw, stale_after_days=_stale_after_days_from_env())
         print(json.dumps(report, ensure_ascii=False, indent=2))
-        return 2 if report["recent_issues"] else 0
+        return exit_code_for_report(report)
     except Exception as exc:
         print(json.dumps({"error": str(exc)}, ensure_ascii=False))
         return 1

@@ -37,6 +37,12 @@ Continuación de G-WH-1 (Fase A ejecutada #506/#507) y Fase B VPS (#505). Veredi
 | — | H5 | Limpieza ramas remotas (28 merged; 223 no-merged solo con checklist PR) | david+copilot | **sí** | pendiente GO |
 | — | H6 | Política VPS formal: main limpio ff-only + worktree-only para APPLY | copilot-vps+david | mixto | pendiente firma |
 
+
+## P1.1 Granola (2026-07-14)
+
+| ID | Tarea | Agente | Estado |
+|----|-------|--------|--------|
+| 2026-07-14-001 | VPS readiness deploy main #530+#531 + env check — **NO smoke Notion** | copilot-vps | assigned |
 ## Estado del sistema (actualizado 2026-03-07 — auditoría en vivo)
 
 | Aspecto | Estado |

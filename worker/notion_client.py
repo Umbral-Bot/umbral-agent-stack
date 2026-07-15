@@ -6,9 +6,11 @@ Uses httpx for HTTP requests. All IDs come from environment variables
 via worker.config — never hardcoded.
 """
 
+import concurrent.futures
 import json
 import logging
 import re
+import time
 from datetime import datetime, timezone
 from typing import Any
 
@@ -22,6 +24,8 @@ NOTION_BASE_URL = "https://api.notion.com/v1"
 TIMEOUT = 60.0
 NOTION_BLOCK_APPEND_LIMIT = 100
 NOTION_APPEND_TEXT_BUDGET = 8000
+MAX_429_RETRIES = 4
+REPLACE_BLOCKS_DELETE_CONCURRENCY = 4
 
 
 # ---------------------------------------------------------------------------
@@ -49,6 +53,46 @@ def _check_response(resp: httpx.Response, context: str) -> dict[str, Any]:
             f"Notion API error ({resp.status_code}) during {context}: {detail}"
         )
     return resp.json()
+
+
+def _request_with_backoff(
+    client: httpx.Client,
+    method: str,
+    url: str,
+    *,
+    context: str,
+    headers: dict[str, str],
+    json_body: dict[str, Any] | None = None,
+    params: dict[str, Any] | None = None,
+    max_retries: int = MAX_429_RETRIES,
+) -> dict[str, Any]:
+    """Issue one Notion API call, retrying on 429 with exponential backoff.
+
+    Mirrors scripts/discovery/stage4_push_notion.py::NotionClient._request —
+    same doubling-delay-from-1s convention, kept separate here since this
+    module has no shared low-level HTTP client class. Honors Notion's
+    ``Retry-After`` header when present.
+    """
+    delay = 1.0
+    resp: httpx.Response | None = None
+    for attempt in range(max_retries + 1):
+        resp = client.request(method, url, headers=headers, json=json_body, params=params)
+        if resp.status_code != 429:
+            return _check_response(resp, context)
+        if attempt >= max_retries:
+            break
+        retry_after = resp.headers.get("Retry-After")
+        try:
+            wait_s = float(retry_after) if retry_after else delay
+        except ValueError:
+            wait_s = delay
+        logger.warning(
+            "Notion %s got 429, retrying in %.1fs (attempt %d/%d)",
+            context, wait_s, attempt + 1, max_retries,
+        )
+        time.sleep(wait_s)
+        delay *= 2
+    return _check_response(resp, context)
 
 
 def _extract_notion_page_id(page_id_or_url: str) -> str:
@@ -1875,13 +1919,30 @@ def append_blocks_to_page(
 def replace_blocks_in_page(
     page_id: str,
     blocks: list[dict[str, Any]],
+    *,
+    delete_concurrency: int = REPLACE_BLOCKS_DELETE_CONCURRENCY,
 ) -> dict[str, Any]:
     """
     Replace all top-level blocks in a Notion page with a new set.
 
+    Notion has no bulk-delete endpoint — removing the old blocks means one
+    DELETE call per existing block. For pages with a large legacy block
+    count (e.g. hundreds of granular bullet-point notes from an earlier
+    summary pass) that used to be done fully sequentially, which could take
+    long enough to exceed any reasonable caller timeout even with nothing
+    actually wrong — while leaving the page in an inconsistent state if it
+    got cut off partway (some blocks deleted, none of the new content
+    written yet). Deletes now run with limited concurrency
+    (``delete_concurrency`` workers) and every individual call retries on
+    HTTP 429 with backoff, so a big legacy page finishes in a small fraction
+    of the previous wall-clock time and a transient rate-limit no longer
+    aborts the whole operation.
+
     Args:
         page_id: The page to rewrite.
         blocks: New blocks to leave as the full page body.
+        delete_concurrency: Max concurrent DELETE requests while clearing
+            the page's existing blocks.
 
     Returns:
         {"blocks_replaced": N, "blocks_removed": M, "page_id": "..."}
@@ -1900,35 +1961,48 @@ def replace_blocks_in_page(
             params = {"page_size": 100}
             if next_cursor:
                 params["start_cursor"] = next_cursor
-            resp = client.get(
+            data = _request_with_backoff(
+                client,
+                "GET",
                 f"{NOTION_BASE_URL}/blocks/{page_id}/children",
+                context="list blocks for replace",
                 headers=_headers(),
                 params=params,
             )
-            data = _check_response(resp, "list blocks for replace")
             existing_blocks.extend(data.get("results", []))
             if not data.get("has_more"):
                 break
             next_cursor = data.get("next_cursor")
 
-        for eb in existing_blocks:
+        def _delete_one(eb: dict[str, Any]) -> None:
             bid = eb.get("id")
             if not bid:
-                continue
-            resp = client.delete(
+                return
+            _request_with_backoff(
+                client,
+                "DELETE",
                 f"{NOTION_BASE_URL}/blocks/{bid}",
+                context="delete blocks for replace",
                 headers=_headers(),
             )
-            _check_response(resp, "delete blocks for replace")
+
+        if existing_blocks:
+            workers = max(1, delete_concurrency)
+            with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
+                # list(...) forces any worker exception to surface here,
+                # aborting the caller instead of failing silently.
+                list(pool.map(_delete_one, existing_blocks))
 
         for i in range(0, len(blocks), 100):
             chunk = blocks[i : i + 100]
-            resp = client.patch(
+            _request_with_backoff(
+                client,
+                "PATCH",
                 f"{NOTION_BASE_URL}/blocks/{page_id}/children",
+                context="replace blocks",
                 headers=_headers(),
-                json={"children": chunk},
+                json_body={"children": chunk},
             )
-            _check_response(resp, "replace blocks")
 
     logger.info(
         "Replaced %d blocks in page %s (removed %d)",

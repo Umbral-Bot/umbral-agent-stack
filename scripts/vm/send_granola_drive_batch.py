@@ -57,11 +57,16 @@ def select_items(
 
 
 def post_task(worker_url: str, worker_token: str, payload: dict[str, Any]) -> Any:
+    # Generous read timeout: updating a Notion page with a large legacy
+    # block count (hundreds of blocks from an earlier summary pass) makes
+    # many sequential Notion API calls server-side. worker/notion_client.py
+    # now deletes those concurrently with 429 backoff, but a defensive
+    # margin here avoids a client-side read timeout masking a real result.
     resp = requests.post(
         f"{worker_url}/run",
         json={"task": "granola.process_transcript", "input": payload},
         headers={"Authorization": f"Bearer {worker_token}", "Content-Type": "application/json"},
-        timeout=180,
+        timeout=600,
     )
     resp.raise_for_status()
     return resp.json()

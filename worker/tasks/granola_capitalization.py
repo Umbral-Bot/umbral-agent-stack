@@ -454,6 +454,8 @@ def _property_nonempty(page: dict[str, Any], name: str) -> bool:
         return bool(prop.get("url"))
     if ptype == "date":
         return bool((prop.get("date") or {}).get("start"))
+    if ptype == "relation":
+        return bool(prop.get("relation"))
     if ptype == "checkbox":
         return True
     return False

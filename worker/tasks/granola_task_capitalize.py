@@ -1,5 +1,5 @@
 """
-granola.capitalize_task_from_raw — deterministic raw -> Tarea capitalization (P1).
+granola.capitalize_task_from_raw — deterministic raw -> Tarea capitalization (P1 + P1.1).
 
 Implements the B path of the hybrid capitalization plan
 (``docs/plans/granola-capitalization-hybrid-plan-2026-07-16.md``): the Worker as
@@ -11,18 +11,30 @@ Hard properties of this handler:
 
 - **0 LLM calls.** Everything is property comparison over data already present.
 - **dry_run=True by default.** A dry run performs reads only and reports the
-  exact action it *would* take (create/update/review/error), the exact
-  properties it would write, and why — it never claims a capitalization
-  happened.
+  exact action it *would* take, the exact properties it would write, and why —
+  it never claims a capitalization happened.
 - **Human tasks binding only.** Writes go exclusively to
   ``config.NOTION_HUMAN_TASKS_DB_ID`` (Registro de Tareas y Proximas Acciones).
   ``NOTION_TASKS_DB_ID`` (a different, stack-operational DB) is never read here.
 - **Fail closed.** Missing binding, missing raw, wrong source DB, wrong
   ``Destino canonico``, unticked gate, thin evidence, invalid Trazabilidad or
   ambiguous dedup all stop the run before any write.
-- **Safe dedup.** 0 exact title matches -> create; 1 match -> update only when
-  the caller passes ``expected_task_page_id`` matching that page; 2+ matches
-  -> review. No semantic matching, ever.
+- **Canonical identity by ``URL artefacto`` (P1.1).** When the raw already
+  points to a canonical task via ``URL artefacto``, that identity has absolute
+  priority over title dedup: planning a ``create`` is structurally impossible,
+  and the update still requires ``expected_task_page_id`` matching the observed
+  task (fail closed with the observed candidate otherwise). Title dedup never
+  overrides an explicit identity.
+- **Safe, idempotent update (P1.1).** On an existing task, human-editable
+  fields (Nombre, Estado, Prioridad, Fecha objetivo, Notas, Origen, Dominio,
+  relations) are NEVER overwritten by defaults. Only fields explicitly
+  allowlisted via ``update_fields`` (with explicit input values) are patched,
+  plus safe technical fills of empty fields (``URL fuente``). With
+  ``update_fields=[]`` the update degrades to a verified no-op: the task is not
+  touched and only the raw is reconciled/closed against the observed task.
+- **Safe dedup (create path only).** 0 exact title matches -> create; 1 match
+  -> update only with matching ``expected_task_page_id``; 2+ matches -> review.
+  No semantic matching, ever.
 - **Anti-Comgrap guard.** If the raw carries structured commercial signals
   (Cliente/Partner relation + Reunión/Llamada + project signal), converting it
   into a loose task requires the explicit input ``human_confirmed_task=true``;
@@ -42,8 +54,10 @@ only lengths and property names.
 from __future__ import annotations
 
 import logging
+import re
 from datetime import datetime, timezone
 from typing import Any, Dict
+from urllib.parse import urlparse
 
 from .. import config, notion_client
 from .granola import (
@@ -60,6 +74,7 @@ from .granola import (
 from .granola_capitalization import (
     ExpectedCapitalization,
     RelationExpectation,
+    _property_nonempty,
     append_capitalization_traceability,
     verify_task_capitalization,
 )
@@ -70,6 +85,54 @@ logger = logging.getLogger("worker.tasks.granola_task_capitalize")
 CAPITALIZATION_MODE = "worker_task_from_raw_v1"
 _ANTI_COMGRAP_SESSION_TYPES = {"Reunión", "Llamada", "Reunion"}
 _NOTION_RICH_TEXT_CHUNK = 2000
+_NOTION_URL_HOST_MARKERS = ("notion.so", "notion.site", "notion.com")
+
+# P1.1 — human-editable fields on an EXISTING task. None of these is ever
+# written on an update unless the caller allowlists the field in
+# ``update_fields`` AND provides an explicit input value for it. Defaults
+# (e.g. Estado="Pendiente") only ever apply to a brand-new task (create path).
+_UPDATE_FIELD_SPECS: Dict[str, Dict[str, Any]] = {
+    "Nombre": {
+        "input_keys": ("task_name",),
+        "candidates": ["Nombre", "Name", "Title"],
+        "types": {"title"},
+    },
+    "Estado": {
+        "input_keys": ("estado", "status"),
+        "candidates": ["Estado", "Status"],
+        "types": {"select", "status", "rich_text"},
+    },
+    "Prioridad": {
+        "input_keys": ("priority", "prioridad"),
+        "candidates": ["Prioridad", "Priority"],
+        "types": {"select", "status", "rich_text"},
+    },
+    "Fecha objetivo": {
+        "input_keys": ("due_date", "target_date"),
+        "candidates": ["Fecha objetivo", "Due date", "Target date"],
+        "types": {"date"},
+    },
+    "Notas": {
+        "input_keys": ("notes", "notas"),
+        "candidates": ["Notas", "Notes"],
+        "types": {"rich_text"},
+    },
+    "Origen": {
+        "input_keys": ("origin", "origen"),
+        "candidates": ["Origen", "Source"],
+        "types": {"select", "status", "rich_text"},
+    },
+    "Dominio": {
+        "input_keys": ("dominio", "domain"),
+        "candidates": ["Dominio", "Domain"],
+        "types": {"select", "status", "rich_text"},
+    },
+    "Proyecto": {
+        "input_keys": ("project_page_id",),
+        "candidates": ["Proyecto", "Project"],
+        "types": {"relation"},
+    },
+}
 
 
 # ---------------------------------------------------------------------------
@@ -95,6 +158,34 @@ def _normalize_notion_id(value: str | None) -> str:
     return (value or "").replace("-", "").strip().lower()
 
 
+def _hex_to_uuid(hex32: str) -> str:
+    h = hex32.lower()
+    return f"{h[0:8]}-{h[8:12]}-{h[12:16]}-{h[16:20]}-{h[20:32]}"
+
+
+def _extract_page_id_from_notion_url(url: str) -> str:
+    """Extract and normalize a Notion page id from a Notion URL.
+
+    Returns "" when the URL is not a well-formed Notion page URL — the caller
+    must treat that as an invalid canonical pointer, never fall through to a
+    create.
+    """
+    parsed = urlparse((url or "").strip())
+    if parsed.scheme not in ("http", "https"):
+        return ""
+    host = (parsed.netloc or "").lower()
+    if not any(marker in host for marker in _NOTION_URL_HOST_MARKERS):
+        return ""
+    segments = [segment for segment in (parsed.path or "").split("/") if segment]
+    if not segments:
+        return ""
+    tail = segments[-1].replace("-", "").lower()
+    match = re.search(r"([0-9a-f]{32})$", tail)
+    if not match:
+        return ""
+    return _hex_to_uuid(match.group(1))
+
+
 def _checkbox_is_true(page_data: Dict[str, Any], *names: str) -> bool:
     properties = page_data.get("properties") or {}
     for name in names:
@@ -102,6 +193,15 @@ def _checkbox_is_true(page_data: Dict[str, Any], *names: str) -> bool:
         if isinstance(prop, dict) and prop.get("type") == "checkbox":
             return bool(prop.get("checkbox"))
     return False
+
+
+def _url_property_value(page_data: Dict[str, Any], *names: str) -> str:
+    properties = page_data.get("properties") or {}
+    for name in names:
+        prop = properties.get(name)
+        if isinstance(prop, dict) and prop.get("type") == "url":
+            return str(prop.get("url") or "").strip()
+    return ""
 
 
 def _chunked_rich_text_payload(text: str) -> Dict[str, Any]:
@@ -296,7 +396,114 @@ def _run_preflight(
 
 
 # ---------------------------------------------------------------------------
-# Phase 2 — plan (reads only)
+# Phase 2a — canonical identity by URL artefacto (P1.1; reads only)
+# ---------------------------------------------------------------------------
+
+
+def _resolve_canonical_identity(
+    *,
+    page_data: Dict[str, Any],
+    expected_task_page_id: str,
+) -> Dict[str, Any]:
+    """Resolve the canonical task identity declared by the raw's ``URL artefacto``.
+
+    Contract (P1.1):
+
+    - Empty ``URL artefacto`` -> ``{"source": "none"}`` (create path via dedup).
+    - Non-empty ``URL artefacto`` NEVER falls through to create. It resolves to
+      either an authorized ``update`` (expected_task_page_id matches the
+      observed task in the human tasks DB) or a fail-closed ``review`` that
+      returns the observed candidate without writing anything.
+    - Titles never replace an explicit identity.
+    """
+    url_artefacto = _url_property_value(page_data, "URL artefacto", "URL artifact")
+    if not url_artefacto:
+        return {"source": "none"}
+
+    identity: Dict[str, Any] = {"source": "url_artefacto", "url_artefacto": url_artefacto}
+
+    extracted_id = _extract_page_id_from_notion_url(url_artefacto)
+    if not extracted_id:
+        return {
+            **identity,
+            "action": "review",
+            "reason": "canonical_identity_invalid_url",
+            "motivo_revision": "Bloqueo técnico",
+            "detail": (
+                "URL artefacto is set but is not a parseable Notion page URL. "
+                "A raw with a canonical pointer can never plan a create; fix the "
+                "pointer or clear it deliberately after human review."
+            ),
+        }
+    identity["extracted_page_id"] = extracted_id
+
+    try:
+        task_page = notion_client.get_page(extracted_id)
+    except Exception as exc:  # noqa: BLE001 — refusal, no write happened
+        return {
+            **identity,
+            "action": "review",
+            "reason": "canonical_identity_inaccessible",
+            "motivo_revision": "Bloqueo técnico",
+            "detail": (
+                f"URL artefacto points to a page that could not be re-read "
+                f"({type(exc).__name__}: {str(exc)[:160]}). Possible legacy residue "
+                "or sharing gap — requires human review, never a create."
+            ),
+        }
+
+    parent = task_page.get("parent") or {}
+    parent_db = _normalize_notion_id(str(parent.get("database_id") or ""))
+    if parent_db != _normalize_notion_id(config.NOTION_HUMAN_TASKS_DB_ID):
+        return {
+            **identity,
+            "action": "review",
+            "reason": "canonical_identity_wrong_database",
+            "motivo_revision": "Bloqueo técnico",
+            "detail": (
+                "URL artefacto points outside Registro de Tareas y Proximas "
+                "Acciones (possibly a legacy artifact or another surface). "
+                "This flow only updates human tasks — requires human review."
+            ),
+        }
+
+    observed = {
+        "task_page_id": str(task_page.get("id") or extracted_id),
+        "task_title": _extract_title_from_page(task_page),
+        "task_url": str(task_page.get("url") or "").strip(),
+    }
+    identity["observed_candidate"] = observed
+
+    expected_norm = _normalize_notion_id(expected_task_page_id)
+    if not expected_norm:
+        return {
+            **identity,
+            "action": "review",
+            "reason": "canonical_identity_requires_confirmation",
+            "motivo_revision": "Ambigüedad de match",
+            "detail": (
+                "URL artefacto identifies an existing canonical task. Updating it "
+                "requires a second call with expected_task_page_id set to the "
+                "observed candidate — implicit confirmation is forbidden."
+            ),
+        }
+    if expected_norm != _normalize_notion_id(observed["task_page_id"]):
+        return {
+            **identity,
+            "action": "review",
+            "reason": "canonical_identity_mismatch",
+            "motivo_revision": "Ambigüedad de match",
+            "detail": (
+                "expected_task_page_id does not match the task identified by "
+                "URL artefacto. Resolve the contradiction by hand; nothing was written."
+            ),
+        }
+
+    return {**identity, "action": "update", "task_page": task_page, **observed}
+
+
+# ---------------------------------------------------------------------------
+# Phase 2b — plan (reads only)
 # ---------------------------------------------------------------------------
 
 
@@ -385,8 +592,10 @@ def _build_task_properties(
     raw_title: str,
     raw_date: str,
 ) -> tuple[Dict[str, Any], list[str], list[str]]:
-    """Schema-driven task properties. Relations are only ever propagated from
-    the raw or taken from explicit input IDs — never inferred."""
+    """Schema-driven task properties for a BRAND-NEW task (create path only —
+    defaults like Estado=Pendiente never apply to an existing task). Relations
+    are only ever propagated from the raw or taken from explicit input IDs —
+    never inferred."""
     properties: Dict[str, Any] = {}
     used_fields: list[str] = []
 
@@ -437,6 +646,101 @@ def _build_task_properties(
         )
 
     return properties, used_fields, project_ids
+
+
+def _plan_safe_update(
+    *,
+    schema: Dict[str, str],
+    task_page: Dict[str, Any],
+    input_data: Dict[str, Any],
+    update_fields: list[str],
+    raw_url: str,
+) -> Dict[str, Any]:
+    """Plan a conservative, idempotent patch for an EXISTING task (P1.1).
+
+    Rules:
+
+    - Human-editable fields are written ONLY when allowlisted in
+      ``update_fields`` AND an explicit input value exists. Defaults never
+      overwrite; an existing Estado is never degraded implicitly.
+    - Safe technical fill: ``URL fuente`` is patched only when observed empty.
+    - Empty patch -> ``update_noop_verified`` (task untouched; the raw is
+      reconciled/closed against the observed task).
+    """
+    unknown = [field for field in update_fields if field not in _UPDATE_FIELD_SPECS]
+    if unknown:
+        return {
+            "action": "error",
+            "reason": "invalid_update_fields",
+            "detail": (
+                f"Unknown update_fields entries: {unknown}. "
+                f"Allowed: {sorted(_UPDATE_FIELD_SPECS)}."
+            ),
+        }
+
+    patch: Dict[str, Any] = {}
+    patch_reasons: Dict[str, str] = {}
+    used_fields: list[str] = []
+    explicit_new_title: str | None = None
+    explicit_project_ids: list[str] = []
+
+    for field in update_fields:
+        spec = _UPDATE_FIELD_SPECS[field]
+        value: Any = None
+        for key in spec["input_keys"]:
+            candidate = input_data.get(key)
+            if candidate not in (None, "", []):
+                value = candidate
+                break
+        if value in (None, "", []):
+            return {
+                "action": "error",
+                "reason": "update_field_without_explicit_value",
+                "detail": (
+                    f"'{field}' is allowlisted in update_fields but no explicit "
+                    f"input value was provided ({'/'.join(spec['input_keys'])}). "
+                    "Defaults never overwrite an existing task."
+                ),
+            }
+        prop_name = _set_schema_property(
+            patch, schema, list(spec["candidates"]), value,
+            expected_types=set(spec["types"]), used_fields=used_fields,
+        )
+        if prop_name:
+            patch_reasons[prop_name] = "explicit_update_fields_allowlist"
+            if field == "Nombre":
+                explicit_new_title = str(value)
+            if field == "Proyecto":
+                explicit_project_ids = _relation_ids(value)
+
+    # Safe technical fill: URL fuente only when observed empty on the task.
+    url_prop = _schema_property_name(schema, ["URL fuente", "Source URL", "URL", "Link"], {"url", "rich_text"})
+    if url_prop and url_prop not in patch and raw_url:
+        if not _property_nonempty(task_page, url_prop):
+            _set_schema_property(
+                patch, schema, [url_prop], raw_url,
+                expected_types={"url", "rich_text"}, used_fields=used_fields,
+            )
+            if url_prop in patch:
+                patch_reasons[url_prop] = "safe_fill_empty_technical_field"
+
+    preserved: list[str] = []
+    for spec in _UPDATE_FIELD_SPECS.values():
+        prop_name = _schema_property_name(schema, list(spec["candidates"]), set(spec["types"]))
+        if prop_name and prop_name not in patch and _property_nonempty(task_page, prop_name):
+            preserved.append(prop_name)
+    if url_prop and url_prop not in patch and _property_nonempty(task_page, url_prop):
+        preserved.append(url_prop)
+
+    return {
+        "action": "update_safe_patch" if patch else "update_noop_verified",
+        "patch": patch,
+        "patch_reasons": patch_reasons,
+        "preserved_fields": sorted(set(preserved)),
+        "fields_used": used_fields,
+        "explicit_new_title": explicit_new_title,
+        "explicit_project_ids": explicit_project_ids,
+    }
 
 
 def _build_raw_close_properties(
@@ -525,16 +829,28 @@ def handle_granola_capitalize_task_from_raw(input_data: Dict[str, Any]) -> Dict[
         dry_run (bool, default TRUE): reads only; report the exact plan.
         human_confirmed_task (bool, default false): required when the raw carries
             structured commercial signals (anti-Comgrap guard).
-        expected_task_page_id (str, optional): required to authorize an update
-            when exactly one exact-title match exists.
-        task_name (str, optional): task title; defaults to the raw title.
-        estado / priority / due_date / origin / project_page_id (optional):
-            explicit task fields; nothing else is inferred.
+        expected_task_page_id (str, optional): required to authorize an update —
+            both when ``URL artefacto`` identifies the canonical task (P1.1) and
+            when exactly one exact-title match exists (create path dedup).
+        update_fields (list[str], default []): explicit allowlist of
+            human-editable fields to patch on an EXISTING task. Allowed names:
+            Nombre, Estado, Prioridad, Fecha objetivo, Notas, Origen, Dominio,
+            Proyecto. Each allowlisted field requires its explicit input value
+            (task_name / estado / priority / due_date / notes / origin /
+            dominio / project_page_id). With [] the update is a verified no-op
+            on the task plus a safe reconciliation of the raw.
+        task_name (str, optional): task title. Create path: defaults to the raw
+            title. Update path: only written when "Nombre" is allowlisted.
+        estado / priority / due_date / notes / origin / dominio /
+        project_page_id (optional): explicit values. On create they seed the
+            new task; on update they are ignored unless allowlisted.
         min_evidence_chars (int, optional): evidence threshold override.
         processed_at (str, optional): ISO override for Trazabilidad (tests).
 
-    Returns a structured decision. ``capitalized=True`` only ever appears on a
-    non-dry-run whose post-write re-read passed verification.
+    Returns a structured decision with ``action`` in {create, update_noop_verified,
+    update_safe_patch, review, error} and ``canonical_identity_source`` in
+    {url_artefacto, title_dedup, new}. ``capitalized=True`` only ever appears on
+    a non-dry-run whose post-write re-read passed verification.
     """
     transcript_page_id = str(
         input_data.get("transcript_page_id")
@@ -549,6 +865,14 @@ def handle_granola_capitalize_task_from_raw(input_data: Dict[str, Any]) -> Dict[
     human_confirmed_task = _as_bool(input_data.get("human_confirmed_task"), False)
     expected_task_page_id = str(input_data.get("expected_task_page_id") or "").strip()
     min_evidence_chars = int(input_data.get("min_evidence_chars") or DEFAULT_MIN_STABLE_CHARS)
+
+    update_fields_raw = input_data.get("update_fields")
+    if update_fields_raw is None:
+        update_fields: list[str] = []
+    elif isinstance(update_fields_raw, list):
+        update_fields = [str(field).strip() for field in update_fields_raw if str(field).strip()]
+    else:
+        raise ValueError("'update_fields' must be a list of field names")
 
     # ---- Phase 1: preflight -------------------------------------------------
     preflight = _run_preflight(
@@ -586,46 +910,164 @@ def handle_granola_capitalize_task_from_raw(input_data: Dict[str, Any]) -> Dict[
     )
     task_name = str(input_data.get("task_name") or "").strip() or raw_title
 
-    # ---- Phase 2: plan (dedup + payloads, reads only) ------------------------
+    # ---- Phase 2a: canonical identity (URL artefacto wins over titles) -------
+    identity = _resolve_canonical_identity(
+        page_data=page_data, expected_task_page_id=expected_task_page_id
+    )
     schema = _load_tasks_db_schema()
-    dedup = _dedup_by_exact_title(
-        schema=schema, task_name=task_name, expected_task_page_id=expected_task_page_id
-    )
-    if dedup["action"] == "review":
-        return _result(
-            ok=False,
-            action="review",
-            dry_run=dry_run,
-            reason=dedup["reason"],
-            transcript_page_id=transcript_page_id,
-            preflight=preflight["checks"],
-            motivo_revision=dedup["motivo_revision"],
-            dedup={"matches": dedup["matches"], "detail": dedup.get("detail", "")},
-            planned_raw_close=_build_review_close_plan(
-                motivo=dedup["motivo_revision"], reason=dedup["reason"], detail=dedup.get("detail", "")
-            ),
+
+    canonical_identity_source = "new"
+    target_task_page: Dict[str, Any] | None = None
+    target_task_page_id = ""
+    dedup_report: Dict[str, Any]
+
+    if identity["source"] == "url_artefacto":
+        canonical_info = {
+            "url_artefacto": identity.get("url_artefacto", ""),
+            "extracted_page_id": identity.get("extracted_page_id", ""),
+            "observed_candidate": identity.get("observed_candidate"),
+        }
+        if identity["action"] == "review":
+            return _result(
+                ok=False,
+                action="review",
+                dry_run=dry_run,
+                reason=identity["reason"],
+                transcript_page_id=transcript_page_id,
+                preflight=preflight["checks"],
+                motivo_revision=identity["motivo_revision"],
+                canonical_identity_source="url_artefacto",
+                canonical_identity=canonical_info,
+                detail=identity.get("detail"),
+                planned_raw_close=_build_review_close_plan(
+                    motivo=identity["motivo_revision"],
+                    reason=identity["reason"],
+                    detail=identity.get("detail"),
+                ),
+            )
+        canonical_identity_source = "url_artefacto"
+        target_task_page = identity["task_page"]
+        target_task_page_id = identity["task_page_id"]
+        dedup_report = {
+            "skipped": True,
+            "reason": "canonical_identity_from_url_artefacto_has_priority_over_title_dedup",
+            "target_task_page_id": target_task_page_id,
+        }
+    else:
+        # ---- Phase 2b: title dedup (create path only) -------------------------
+        dedup = _dedup_by_exact_title(
+            schema=schema, task_name=task_name, expected_task_page_id=expected_task_page_id
         )
+        if dedup["action"] == "review":
+            return _result(
+                ok=False,
+                action="review",
+                dry_run=dry_run,
+                reason=dedup["reason"],
+                transcript_page_id=transcript_page_id,
+                preflight=preflight["checks"],
+                motivo_revision=dedup["motivo_revision"],
+                canonical_identity_source="title_dedup",
+                dedup={"matches": dedup["matches"], "detail": dedup.get("detail", "")},
+                planned_raw_close=_build_review_close_plan(
+                    motivo=dedup["motivo_revision"], reason=dedup["reason"], detail=dedup.get("detail", "")
+                ),
+            )
+        if dedup["action"] == "create":
+            canonical_identity_source = "new"
+            dedup_report = {"matches": dedup["matches"], "target_task_page_id": ""}
+        else:
+            canonical_identity_source = "title_dedup"
+            target_task_page_id = dedup["target_task_page_id"]
+            try:
+                target_task_page = notion_client.get_page(target_task_page_id)
+            except Exception as exc:  # noqa: BLE001 — refusal, no write happened
+                return _result(
+                    ok=False,
+                    action="review",
+                    dry_run=dry_run,
+                    reason="target_task_not_accessible",
+                    transcript_page_id=transcript_page_id,
+                    preflight=preflight["checks"],
+                    motivo_revision="Bloqueo técnico",
+                    canonical_identity_source="title_dedup",
+                    detail=f"{type(exc).__name__}: {str(exc)[:200]}",
+                    planned_raw_close=_build_review_close_plan(
+                        motivo="Bloqueo técnico",
+                        reason="target_task_not_accessible",
+                        detail=str(exc)[:200],
+                    ),
+                )
+            dedup_report = {"matches": dedup["matches"], "target_task_page_id": target_task_page_id}
 
-    task_properties, task_fields_used, project_ids = _build_task_properties(
-        schema=schema,
-        page_data=page_data,
-        input_data=input_data,
-        task_name=task_name,
-        raw_url=raw_url,
-        raw_title=raw_title,
-        raw_date=raw_date,
-    )
-
+    is_update = target_task_page is not None
+    raw_schema = _page_schema_from_page(page_data)
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     processed_at = str(input_data.get("processed_at") or "").strip() or (
         datetime.now(timezone.utc).isoformat(timespec="seconds")
     )
     source_value = _extract_select_value(page_data, "Fuente", "Source") or "granola"
+
+    # ---- Phase 2c: build the concrete plan -----------------------------------
+    if is_update:
+        update_plan = _plan_safe_update(
+            schema=schema,
+            task_page=target_task_page,
+            input_data=input_data,
+            update_fields=update_fields,
+            raw_url=raw_url,
+        )
+        if update_plan["action"] == "error":
+            return _result(
+                ok=False,
+                action="error",
+                dry_run=dry_run,
+                reason=update_plan["reason"],
+                transcript_page_id=transcript_page_id,
+                preflight=preflight["checks"],
+                canonical_identity_source=canonical_identity_source,
+                detail=update_plan["detail"],
+            )
+        action_label = update_plan["action"]
+        task_patch: Dict[str, Any] = update_plan["patch"]
+        observed_task_title = _extract_title_from_page(target_task_page) or task_name
+        expected_task_title = update_plan["explicit_new_title"] or observed_task_title
+        canonical_target_name = expected_task_title
+        task_properties: Dict[str, Any] = task_patch
+        task_fields_used: list[str] = update_plan["fields_used"]
+        expected_project_ids: list[str] = update_plan["explicit_project_ids"]
+        update_plan_report = {
+            "preserved_fields": update_plan["preserved_fields"],
+            "patch_fields": sorted(task_patch.keys()),
+            "patch_reasons": update_plan["patch_reasons"],
+        }
+        canonical_identity_report = {
+            "task_page_id": target_task_page_id,
+            "task_title": observed_task_title,
+            "task_url": str(target_task_page.get("url") or "").strip(),
+        }
+    else:
+        action_label = "create"
+        task_properties, task_fields_used, expected_project_ids = _build_task_properties(
+            schema=schema,
+            page_data=page_data,
+            input_data=input_data,
+            task_name=task_name,
+            raw_url=raw_url,
+            raw_title=raw_title,
+            raw_date=raw_date,
+        )
+        expected_task_title = task_name
+        canonical_target_name = task_name
+        update_plan_report = None
+        canonical_identity_report = None
+
     trace = append_capitalization_traceability(
         preflight["existing_traceability"],
         source=source_value,
         capitalization_mode=CAPITALIZATION_MODE,
         canonical_target_type="task",
-        canonical_target_name=task_name,
+        canonical_target_name=canonical_target_name,
         processed_at=processed_at,
     )
     if not trace.ok:
@@ -638,6 +1080,7 @@ def handle_granola_capitalize_task_from_raw(input_data: Dict[str, Any]) -> Dict[
             transcript_page_id=transcript_page_id,
             preflight=preflight["checks"],
             motivo_revision="Bloqueo técnico",
+            canonical_identity_source=canonical_identity_source,
             detail=trace.error.as_dict() if trace.error else {},
             planned_raw_close=_build_review_close_plan(
                 motivo="Bloqueo técnico",
@@ -645,9 +1088,6 @@ def handle_granola_capitalize_task_from_raw(input_data: Dict[str, Any]) -> Dict[
                 detail=trace.error.as_dict() if trace.error else {},
             ),
         )
-
-    raw_schema = _page_schema_from_page(page_data)
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     if dry_run:
         planned_close, _ = _build_raw_close_properties(
@@ -658,14 +1098,17 @@ def handle_granola_capitalize_task_from_raw(input_data: Dict[str, Any]) -> Dict[
         )
         return _result(
             ok=True,
-            action=dedup["action"],
+            action=action_label,
             dry_run=True,
             reason="dry_run_plan_only",
             transcript_page_id=transcript_page_id,
             capitalized=False,
             preflight=preflight["checks"],
-            dedup={"matches": dedup["matches"], "target_task_page_id": dedup.get("target_task_page_id", "")},
-            task_name=task_name,
+            canonical_identity_source=canonical_identity_source,
+            canonical_identity=canonical_identity_report,
+            dedup=dedup_report,
+            task_name=expected_task_title,
+            update_plan=update_plan_report,
             planned_task_properties=task_properties,
             planned_task_fields=task_fields_used,
             planned_raw_close=planned_close,
@@ -679,14 +1122,16 @@ def handle_granola_capitalize_task_from_raw(input_data: Dict[str, Any]) -> Dict[
 
     # ---- Phase 3: execute ----------------------------------------------------
     try:
-        if dedup["action"] == "create":
+        if action_label == "create":
             write_result = notion_client.create_database_page(
                 config.NOTION_HUMAN_TASKS_DB_ID, properties=task_properties
             )
             task_page_id = str(write_result.get("page_id") or "")
-        else:
-            task_page_id = dedup["target_task_page_id"]
+        elif task_properties:  # update_safe_patch
+            task_page_id = target_task_page_id
             notion_client.update_page_properties(task_page_id, properties=task_properties)
+        else:  # update_noop_verified — the task is deliberately untouched
+            task_page_id = target_task_page_id
     except Exception as exc:  # noqa: BLE001 — task write failed; raw untouched
         return _result(
             ok=False,
@@ -695,6 +1140,7 @@ def handle_granola_capitalize_task_from_raw(input_data: Dict[str, Any]) -> Dict[
             reason="task_write_failed",
             transcript_page_id=transcript_page_id,
             preflight=preflight["checks"],
+            canonical_identity_source=canonical_identity_source,
             detail=f"{type(exc).__name__}: {str(exc)[:300]}",
             note="El raw no fue modificado; la fila sigue gateada y puede reintentarse.",
         )
@@ -730,29 +1176,30 @@ def handle_granola_capitalize_task_from_raw(input_data: Dict[str, Any]) -> Dict[
             transcript_page_id=transcript_page_id,
             capitalized=False,
             preflight=preflight["checks"],
+            canonical_identity_source=canonical_identity_source,
             task={"page_id": task_page_id},
             technical_review_close_applied=review_close_applied,
             detail=detail,
         )
 
     expected_relations: list[RelationExpectation] = []
-    if project_ids:
+    if expected_project_ids:
         task_project_prop = _schema_property_name(schema, ["Proyecto", "Project"], {"relation"})
         if task_project_prop:
             expected_relations.append(
                 RelationExpectation(
                     page="task",
                     property_name=task_project_prop,
-                    expected_ids=tuple(project_ids),
+                    expected_ids=tuple(expected_project_ids),
                 )
             )
 
     expected = ExpectedCapitalization(
-        task_title=task_name,
+        task_title=expected_task_title,
         ingest_lines_before=trace.preserved_lines,
         capitalization_mode=CAPITALIZATION_MODE,
         canonical_target_type="task",
-        canonical_target_name=task_name,
+        canonical_target_name=canonical_target_name,
         processed_at=processed_at,
         expected_relations=tuple(expected_relations),
     )
@@ -761,14 +1208,17 @@ def handle_granola_capitalize_task_from_raw(input_data: Dict[str, Any]) -> Dict[
     if verification.ok:
         return _result(
             ok=True,
-            action=dedup["action"],
+            action=action_label,
             dry_run=False,
             reason="verified_by_reread",
             transcript_page_id=transcript_page_id,
             capitalized=True,
             preflight=preflight["checks"],
-            dedup={"matches": dedup["matches"]},
-            task={"page_id": task_page_id, "url": real_task_url, "title": task_name},
+            canonical_identity_source=canonical_identity_source,
+            canonical_identity=canonical_identity_report,
+            dedup=dedup_report,
+            update_plan=update_plan_report,
+            task={"page_id": task_page_id, "url": real_task_url, "title": expected_task_title},
             verification=verification.as_dict(),
         )
 
@@ -788,7 +1238,8 @@ def handle_granola_capitalize_task_from_raw(input_data: Dict[str, Any]) -> Dict[
         transcript_page_id=transcript_page_id,
         capitalized=False,
         preflight=preflight["checks"],
-        task={"page_id": task_page_id, "url": real_task_url, "title": task_name},
+        canonical_identity_source=canonical_identity_source,
+        task={"page_id": task_page_id, "url": real_task_url, "title": expected_task_title},
         verification=verification.as_dict(),
         technical_review_close_applied=review_close_applied,
         detail="La relectura no confirmó el estado esperado; no se declara éxito (regla anti 'log miente').",

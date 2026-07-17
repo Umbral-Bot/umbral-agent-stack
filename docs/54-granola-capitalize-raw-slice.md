@@ -106,13 +106,42 @@ Referencia viva del contrato: `openclaw/workspace-templates/skills/granola-pipel
 - Claves de ingest que deben sobrevivir si ya existen:
   `granola_document_id`, `source_updated_at`, `source_url`, `ingest_path`,
   `content_hash`, `char_count`, `segment_count`, `truncation_detected`,
-  `ingested_at`, `reconciled_at`.
-- La capitalizacion si puede anexar: `capitalization_mode`,
-  `canonical_target_type`, `canonical_target_name`, `canonical_target_url`,
-  `processed_at`.
+  `ingested_at`, `reconciled_at`, `shared_folder_path`, `sha1`.
+- La capitalizacion si puede anexar: `source`, `capitalization_mode`,
+  `canonical_target_type`, `canonical_target_name`, `processed_at`.
+- **`canonical_target_url` NO pertenece a `Trazabilidad` bajo ninguna
+  circunstancia.** Corrige una inconsistencia previa de este documento: el
+  prompt V2.1.1 del agente Notion (`notion-governance/prompts/agents/review-capitalizacion-v2.1.md`)
+  prohibe explicitamente escribir URLs, mentions o links en cualquier valor de
+  `Trazabilidad` porque Notion los convierte automaticamente en
+  `<mention-page>` y rompe el formato `clave=valor`. La URL del canonico final
+  vive **exclusivamente** en la propiedad `URL artefacto` (tipo `url`) de la
+  pagina raw. Ningun handler ni skill debe emitir `canonical_target_url=` en
+  `Trazabilidad`.
 - Queda **prohibido** escribir frases tipo `Residuo legacy descartado`
   sobre trazabilidad que contiene claves de ingest. Eso borra la
   reconciliacion que garantiza `docs/78-granola-transcript-finality-reconciliation.md`.
+- Helper determinista de referencia (P0, sin Notion, sin LLM):
+  `worker/tasks/granola_capitalization.append_capitalization_traceability()`
+  preserva las lineas de ingest existentes byte a byte y reconcilia
+  (no duplica) el bloque de capitalizacion en reintentos. Ver
+  `docs/plans/granola-capitalization-hybrid-plan-2026-07-16.md` (paquete P0).
+
+### 6.1.1-bis Verify-after-write es bloqueante
+
+Ninguna corrida futura de capitalizacion raw -> Tarea puede declarar exito a
+partir de la respuesta de un `update_page_properties`/`create_database_page`.
+El unico criterio valido es una **relectura real** posterior: releer la
+pagina raw y la tarea creada/actualizada y comparar campo a campo (titulo,
+`URL artefacto` == URL real de la tarea, `Destino canonico`, `Estado`,
+`Estado agente`, `Accion agente`, `Procesar con agente`, propiedades V2
+obligatorias, lineas de ingest de `Trazabilidad` intactas y en orden,
+relaciones si fueron proporcionadas). Si la relectura no confirma cada punto,
+no se declara `Capitalizado`; se repara y se relee, o se cierra como `Error`/
+`Revision requerida`. Esto traduce a codigo la regla del prompt V2.1
+"Prohibicion de declaracion falsa de exito", tras el patron "log miente"
+observado en el piloto Notion (Haiku 4.5, 3/5 items). Helper determinista de
+referencia (P0): `worker/tasks/granola_capitalization.verify_task_capitalization()`.
 
 ### 6.1.2 Reuniones comerciales / oportunidades (project-first)
 

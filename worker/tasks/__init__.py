@@ -91,6 +91,7 @@ from .granola import (
     handle_granola_process_transcript,
     handle_granola_create_followup,
 )
+from .granola_task_capitalize import handle_granola_capitalize_task_from_raw
 from .google_calendar import (
     handle_google_calendar_create_event,
     handle_google_calendar_list_events,
@@ -233,6 +234,7 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "granola.promote_curated_session": handle_granola_promote_curated_session,
     "granola.process_transcript": handle_granola_process_transcript,
     "granola.create_followup": handle_granola_create_followup,
+    "granola.capitalize_task_from_raw": handle_granola_capitalize_task_from_raw,
     "google.calendar.create_event": handle_google_calendar_create_event,
     "google.calendar.list_events": handle_google_calendar_list_events,
     "google_drive.upload_file": handle_google_drive_upload_file,

@@ -172,22 +172,44 @@ PROHIBIDO: afirmar cualquier cosa sobre MI stack concreto; fuentes de baja calid
 
 ---
 
-## Prompt 9 — Claude Code / Fable (sesión de consolidación, cuando David tenga las respuestas)
+## Prompt 9 — Claude Code / Fable (consolidación FILE-BASED, fail-closed) — v2 2026-07-17
 
 ```text
 SYNC
 cd C:\GitHub\umbral-agent-stack
-git fetch origin && git checkout claude/plan-sys-diag-openclaw-worksystem-2026-07-17 && git pull
+git fetch origin && git checkout claude/plan-sys-diag-openclaw-worksystem-2026-07-17 && git pull --ff-only
 
-ROL: Sos el consolidador del diagnóstico total Umbral. Insumos: (1) docs/plans/sys-diag-openclaw-worksystem-plan-2026-07-17.md; (2) docs/audits/sys-diag-openclaw-inventory-draft-2026-07-17.md (inventario propio con evidencia VPS/repo); (3) las respuestas multi-IA que pego a continuación de este prompt (ChatGPT, Notion AI, Cursor, Codex, GitHub Copilot, Copilot VPS, M365 si aplica, Perplexity).
+ROL: Sos el consolidador del diagnóstico total Umbral. Los insumos NO se pegan en el chat: viven versionados en docs/audits/sys-diag-inputs/2026-07-17/ (01-chatgpt-work.md … 08-perplexity-research.md, 10-n8n.md, ui-evidence-claude-cursor-threads.md, README.md con manifest+hashes), más docs/plans/sys-diag-openclaw-worksystem-plan-2026-07-17.md y docs/audits/sys-diag-openclaw-inventory-draft-2026-07-17.md.
 
-TAREA:
-1. Validación cruzada: donde una IA contradiga la evidencia VPS/repo del inventario, gana la evidencia observable; anotá el conflicto. Para clones/ramas/hilos: cruzá SIEMPRE contra el inventario git/gh del doc de auditoría (sección "Higiene de repos, clones y ramas") — la correspondencia clone↔hilo se valida con evidencia git (rama, último commit, dirty) + captura UI si existe, NUNCA solo por el nombre del hilo; sin captura, mantené [UI_EVIDENCE_PENDING].
-2. Fusioná todo en la matriz de consolidación (Fuente → Hallazgo → Etiqueta → Impacto en sistema de trabajo → Recomendación KEEP/FIX/DISABLE/DELETE/IMPLEMENT/DEFER → Esfuerzo → Dependencias → Riesgo), deduplicando por superficie.
-3. Actualizá el inventario draft a FINAL: docs/audits/sys-diag-openclaw-inventory-final-<fecha>.md, con las oportunidades re-priorizadas (quick wins / apalancamiento / retiros / nuevas / anti-recomendaciones).
-4. Proponeme un plan de ejecución por tandas (cada tanda ≤1 sesión, reversible, con gate humano), SIN implementar nada todavía.
-5. Commit docs-only en la misma rama; preguntame antes de abrir PR.
-REGLAS: sin fixes de código; sin deploy; sin gastar créditos Notion; taxonomía y etiquetas de evidencia del plan §2-§3; español.
+FASE 0 — VALIDACIÓN FAIL-CLOSED (antes de cualquier análisis):
+1. Verificá el manifest del README: cada archivo esperado existe y su SHA-256 actual coincide con el registrado (recalculá con sha256sum). Mismatch => actualizá el manifest solo si el contenido es ingesta legítima posterior; si no podés explicarlo, ABORT y reportá.
+2. ABORT/DEFER (no consolidar, reportar qué falta) si: 10-n8n.md sigue PENDING_CAPTURE; o 08-perplexity no está COMPLETE; o cualquier archivo 01–07 sigue PENDING_PASTE o no existe.
+3. Excepción única: ui-evidence puede seguir pendiente — consolidás igual pero TODA correspondencia clone↔hilo mantiene [UI_EVIDENCE_PENDING] y no habilita acciones sobre esos clones.
+
+PRECEDENCIA DE EVIDENCIA (para conflictos): (1) runtime/API live fechada > (2) estado Git/GitHub observable > (3) repo en SHA identificado > (4) contrato de governance > (5) UI fechada > (6) memoria/correo/inferencia. OJO: la precedencia no sustituye análisis — dos fuentes pueden estar midiendo dimensiones distintas (ej.: salud técnica de un cron vs su valor para David; catálogo de handlers vs buffer de ejecuciones). Antes de declarar "conflicto", verificá que midan lo mismo.
+
+EJES SEPARADOS por hallazgo (nunca colapsarlos en una sola etiqueta):
+- runtime_status: HEALTHY | DEGRADED | BROKEN | UNKNOWN
+- work_value: KEEP | FIX | DISABLE | DELETE | IMPLEMENT | DEFER | UNKNOWN
+Y por hallazgo: fecha, fuente(s), nivel de confianza (alta/media/baja), evidencia-vs-inferencia, e impacto en el sistema de trabajo real de David.
+
+CONTRADICTION LEDGER: tabla afirmación A | afirmación B | explicación | evidencia ganadora o UNRESOLVED. Arrancá de las 12 contradicciones pre-registradas en el README de inputs y sumá las que surjan.
+
+REGLAS DURAS:
+- NO declarar DELETE solo por antigüedad, ausencia de caller versionado o rama no mergeada (contraejemplo: skills solo-live).
+- PROTEGIDOS (DO_NOT_TOUCH en recomendaciones ejecutables): working trees dirty (notion-governance, codex-coordinador, etc.); ramas rescue #528/#529; worktrees OAuth/replay; clones marcados DO_NOT_TOUCH en S14; n8n hasta export/respaldo; cualquier secreto detectado.
+- URGENCIAS DE SEGURIDAD — tratarlas como sección separada, sin imprimir ningún valor: (a) contraseña en texto plano en vm_script.ps1; (b) fingerprint parcial Google Vertex expuesto por CLI; (c) /health sin auth + publicación de inventario interno en Notion.
+- Etiquetas con evidencia insuficiente (p.ej. ACTIVE_HEALTHY de Notion AI sin ver triggers) se degradan a UNKNOWN, no se heredan.
+- Vacíos de fuentes PARTIAL (Cursor tool-blocked) no se leen como "no existe".
+
+PRODUCIR (docs-only, en la rama):
+1. docs/audits/sys-diag-openclaw-inventory-final-<fecha>.md — inventario final (dos ejes + confianza + fuentes).
+2. Contradiction ledger (sección del final o archivo propio).
+3. Mapa del sistema de trabajo real de David (cruce S13 + inputs 1/2/7).
+4. Roadmap priorizado + propuestas de paquetes chicos y reversibles (cada uno ≤1 sesión, con gate humano).
+5. Lista explícita de decisiones que requieren GO de David.
+
+PROHIBIDO: implementar, limpiar, borrar, rotar secretos, reiniciar, desplegar, gastar créditos Notion. Commit docs-only en la rama; preguntame antes de tocar el PR #541. Todo en español.
 ```
 
 ---
@@ -210,15 +232,18 @@ PROHIBIDO: inventar, ejecutar, exponer API keys.
 
 ## Registro de devoluciones
 
-| # | Destinatario | Pegado | Respuesta guardada en |
+Destino canónico: `docs/audits/sys-diag-inputs/2026-07-17/` (manifest + SHA-256 en su README.md). Actualizado 2026-07-17 (staging).
+
+| # | Destinatario | Estado | Respuesta guardada en |
 |---|-------------|--------|----------------------|
-| 1 | ChatGPT | ☐ | |
-| 2 | Notion AI | ☐ | |
-| 3 | Cursor | ☐ | |
-| 4 | Codex | ☐ | |
-| 5 | GitHub Copilot | ☐ | |
-| 6 | Copilot VPS | ☐ | |
-| 7 | M365 Copilot | ☐ (opcional) | |
-| 8 | Perplexity | ☐ | |
-| 9 | Claude Code (consolidación) | ☐ (al final) | |
-| 10 | n8n/Make/Linear MCP | ☐ (n8n: PRIMERA tanda; Make/Linear opcionales) | |
+| 1 | ChatGPT | ejecutado por David — **PENDING_PASTE** | `sys-diag-inputs/2026-07-17/01-chatgpt-work.md` |
+| 2 | Notion AI | ejecutado por David — **PENDING_PASTE** | `…/02-notion-ai.md` |
+| 3 | Cursor | ejecutado (parcial, tool-blocked) — **PENDING_PASTE** | `…/03-cursor.md` |
+| 4 | Codex | ejecutado por David — **PENDING_PASTE** | `…/04-codex.md` |
+| 5 | GitHub Copilot | ejecutado por David — **PENDING_PASTE** | `…/05-github-copilot-windows-azure.md` |
+| 6 | Copilot VPS | ejecutado por David — **PENDING_PASTE** | `…/06-copilot-vps.md` |
+| 7 | M365 Copilot | ejecutado por David — **PENDING_PASTE** | `…/07-m365-copilot.md` |
+| 8 | Perplexity | ☑ **COMPLETE** (ingerido verbatim desde Drive) | `…/08-perplexity-research.md` |
+| 9 | Claude Code (consolidación file-based) | pendiente — fail-closed hasta completar 01–07 y 10 | produce `inventory-final` |
+| 10 | n8n MCP (PRIMERA tanda; Make/Linear opcionales) | **PENDING_CAPTURE** | `…/10-n8n.md` |
+| UI | Pantallazos hilos Claude/Cursor/Codex | **UI_EVIDENCE_PENDING** (no bloquea, mantiene marca) | `…/ui-evidence-claude-cursor-threads.md` |

@@ -275,3 +275,32 @@ class TestAutoApproveQuota:
         decision = router.select_model("coding", quota_state=quota_state)
         assert decision.model == "gemini_pro"
         assert decision.reason == "fallback_under_restrict"
+
+    def test_shipped_config_default_requires_approval(self, quota_tracker):
+        """A2 guardrail: the on-disk config/quota_policy.yaml that runtime loads
+        must ship with auto_approve_quota=false, so an all-over-restrict LLM task
+        requires human approval (ADR-004 gate). This reads the real file via the
+        same loader the dispatcher uses — not a monkeypatched flag."""
+        from dispatcher.model_router import _load_quota_policy
+
+        _routing, _providers, auto_approve = _load_quota_policy()
+        assert auto_approve is False, (
+            "config/quota_policy.yaml must ship auto_approve_quota=false "
+            "(true would let tasks consume over `restrict` without approval)"
+        )
+
+        # And the router built from that config blocks an all-over-restrict task.
+        router = ModelRouter(quota_tracker)
+        assert router.auto_approve_quota is False
+        quota_state = {
+            "claude_pro": 0.95,
+            "gemini_pro": 0.97,
+            "gemini_flash": 0.98,
+            "gemini_flash_lite": 0.99,
+            "gemini_vertex": 0.96,
+            "claude_opus": 0.85,
+            "claude_haiku": 0.96,
+        }
+        decision = router.select_model("coding", quota_state=quota_state)
+        assert decision.requires_approval is True
+        assert decision.reason == "quota_exceeded"

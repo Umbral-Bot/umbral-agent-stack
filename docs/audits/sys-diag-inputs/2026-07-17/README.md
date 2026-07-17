@@ -2,7 +2,7 @@
 
 Evidencia documental de la captura multi-IA definida en `docs/plans/sys-diag-capture-prompts-2026-07-17.md`. Regla madre: **preservar verbatim, no resumir, no corregir, no resolver contradicciones en la ingesta**. La consolidación es exclusiva del Prompt 9 (file-based, fail-closed) y NO se ejecutó aún.
 
-Gate: `SYS_DIAG_INPUTS_STAGED` (parcial — ver manifest: 01–08 ingeridos verbatim; 10 = `PENDING_CAPTURE`; UI = `UI_EVIDENCE_PENDING`). Ingesta de 01–07 hecha por el orquestador (Cursor) extrayendo el pegado verbatim de David desde el transcript del hilo (evento línea 4342), sin resumir ni corregir; escaneo de secretos = 0 valores reales (todas las IAs sanitizaron en origen: fingerprint omitido, password no reproducida, env sólo por nombre).
+Gate: `SYS_DIAG_INPUTS_STAGED` — **COMPLETO** para consolidación: 01–08 ingeridos verbatim y 10-n8n capturado (2026-07-17); única pendiente = UI (`UI_EVIDENCE_PENDING`, no bloqueante por diseño del Prompt 9). Ingesta de 01–07 hecha por el orquestador (Cursor) extrayendo el pegado verbatim de David desde el transcript del hilo (evento línea 4342), sin resumir ni corregir; escaneo de secretos = 0 valores reales (todas las IAs sanitizaron en origen: fingerprint omitido, password no reproducida, env sólo por nombre).
 
 ## Reglas de ingesta aplicadas
 
@@ -23,7 +23,7 @@ Gate: `SYS_DIAG_INPUTS_STAGED` (parcial — ver manifest: 01–08 ingeridos verb
 | 06 | Copilot VPS (GO MIN) | `06-copilot-vps.md` | **COMPLETE** | 2026-07-17 | ingerido verbatim por orquestador (Cursor) desde transcript | `b6965f284a6c0470ef8106d67a252b3cb7c0802b949e203259ecd2e8451660e6` | runtime ACTIVE_DEGRADED (GOOGLE_API_KEY ausente); fingerprint parcial Vertex por CLI (valor omitido); env sólo por nombre |
 | 07 | M365 Copilot / Graph | `07-m365-copilot.md` | **COMPLETE_WITH_CONNECTOR_LIMITS** | 2026-07-17 | ingerido verbatim por orquestador (Cursor) desde transcript | `f60359ddd69ae2de4e7e79a851917c2a1ced64598499e68f1531a91abe111b0e` | sin acceso a Notion/Google Drive/run-history de Power Automate y n8n |
 | 08 | Perplexity Pro (research externo) | `08-perplexity-research.md` | **COMPLETE** | 2026-07-17 (fuente mtime 12:20 ET) | OK — copiado verbatim de Drive | `cae19eec22413af48c847f932f5010b2fc3df93008d99cb8ffe8d10f3b5aff7d` | investigación externa pura; no describe el stack de David (por diseño) |
-| 10 | n8n (MCP/UI) | `10-n8n.md` | **PENDING_CAPTURE** | 2026-07-17 | no capturado (regla: no auditar n8n en esta misión) | `3be8edb67f736e470bcba5effae4fc4015d9842ff175b76b73d5a658df3cf3e4` | n8n vivo en VPS sin export canónico en git |
+| 10 | n8n (SSH sqlite ro) | `10-n8n.md` | **COMPLETE** | 2026-07-17 ~16:15 UTC | capturado read-only por Claude Code vía SSH (sqlite mode=ro, cero ejecuciones/exports) | `611dc75caeb854ca5cad4803b9c4c2dc8802d0df73f044b3d44e9e95c80fe998` | 7 workflows TODOS inactivos (stubs marzo, 2 nodos c/u), 0 ejecuciones retenidas, 2 credenciales SMTP por nombre; bind `*:5678` filtrado por firewall; riesgo de pérdida reevaluado a BAJO |
 | UI | Pantallazos hilos Claude/Cursor/Codex | `ui-evidence-claude-cursor-threads.md` | **UI_EVIDENCE_PENDING** | 2026-07-17 | pendiente David | `db5312d6f01c2b7f8dcf736545d6cdf6d386769fec977016f3d00c439f7462f9` | sin capturas, correspondencia clone↔hilo NO confirmada |
 
 Fuente exacta del input 8 (para trazabilidad): `G:\Mi unidad\04_Recursos\Referencias e Investigacion\Investigacion\Perplexity\Umbral Agent Stack\Investigación  mejores prácticas multi-agente 2025-2026.md` (32.145 bytes, 144 líneas, escaneo de secretos: 0).
@@ -50,6 +50,6 @@ Fuente exacta del input 8 (para trazabilidad): `G:\Mi unidad\04_Recursos\Referen
 ## Ciclo de vida
 
 1. ~~David pega devoluciones 1–7~~ → **HECHO**: el orquestador (Cursor) extrajo el pegado verbatim de David desde el transcript y volcó 01–07 con estados y hashes actualizados.
-2. Se captura n8n (Prompt 10, primera tanda) → `10-n8n.md`.
+2. ~~Se captura n8n~~ → **HECHO** (2026-07-17, SSH sqlite read-only): 7 workflows todos inactivos (stubs de marzo), 0 ejecuciones retenidas → riesgo de pérdida reevaluado a BAJO; export canónico queda como higiene, no como urgencia.
 3. Pantallazos de hilos → `ui-evidence-claude-cursor-threads.md` (puede quedar pendiente sin bloquear, manteniendo `[UI_EVIDENCE_PENDING]`).
 4. Prompt 9 (versión file-based de `docs/plans/sys-diag-capture-prompts-2026-07-17.md`) valida manifest+hashes y consolida. **Fail-closed**: sin n8n, sin Perplexity completo o con archivos faltantes → abort/defer.

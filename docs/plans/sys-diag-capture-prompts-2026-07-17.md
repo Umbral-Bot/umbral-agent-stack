@@ -245,5 +245,5 @@ Destino canónico: `docs/audits/sys-diag-inputs/2026-07-17/` (manifest + SHA-256
 | 7 | M365 Copilot | ☑ **COMPLETE_WITH_CONNECTOR_LIMITS** (ingerido verbatim) | `…/07-m365-copilot.md` |
 | 8 | Perplexity | ☑ **COMPLETE** (ingerido verbatim desde Drive) | `…/08-perplexity-research.md` |
 | 9 | Claude Code (consolidación file-based) | pendiente — fail-closed hasta completar 01–07 y 10 | produce `inventory-final` |
-| 10 | n8n MCP (PRIMERA tanda; Make/Linear opcionales) | **PENDING_CAPTURE** | `…/10-n8n.md` |
+| 10 | n8n (capturado por SSH sqlite ro; Make/Linear opcionales) | ☑ **COMPLETE** — 7 workflows todos inactivos, 0 ejecuciones | `…/10-n8n.md` |
 | UI | Pantallazos hilos Claude/Cursor/Codex | **UI_EVIDENCE_PENDING** (no bloquea, mantiene marca) | `…/ui-evidence-claude-cursor-threads.md` |

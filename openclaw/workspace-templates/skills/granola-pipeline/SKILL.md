@@ -194,12 +194,21 @@ Son normativas y no negociables.
   - `truncation_detected`
   - `ingested_at`
   - `reconciled_at`
+  - `shared_folder_path`
+  - `sha1`
 - Claves que la capitalizacion si puede anexar:
+  - `source`
   - `capitalization_mode` (por ejemplo `bridge_item`, `project+task+deliverable`, `partial`)
   - `canonical_target_type`
   - `canonical_target_name`
-  - `canonical_target_url`
   - `processed_at`
+- **`canonical_target_url` NO pertenece a `Trazabilidad` bajo ninguna
+  circunstancia** — corrige una version previa de esta guia. El prompt V2.1.1
+  del agente Notion (`notion-governance/prompts/agents/review-capitalizacion-v2.1.md`)
+  prohibe explicitamente escribir URLs, mentions o links en cualquier valor de
+  `Trazabilidad`: Notion los convierte automaticamente en `<mention-page>` y
+  rompe el formato `clave=valor`. La URL del canonico final vive
+  **exclusivamente** en la propiedad `URL artefacto` de la pagina raw.
 - **Prohibido explicitamente** emitir una trazabilidad nueva que contenga
   frases tipo `Residuo legacy descartado` cuando ese residuo incluye claves
   de ingest. Esa accion borra evidencia y rompe la reconciliacion de PR
@@ -208,6 +217,25 @@ Son normativas y no negociables.
 - Si se detecta que un campo de trazabilidad de ingest desaparecio entre una
   corrida y otra, la capitalizacion cuenta como parcial y la pagina raw debe
   quedar en estado revisable, no `Procesada`.
+- Helper determinista de referencia (P0, sin Notion, sin LLM):
+  `worker/tasks/granola_capitalization.append_capitalization_traceability()`.
+  Preserva byte a byte las lineas de ingest existentes y reconcilia
+  (no duplica) el bloque de capitalizacion en reintentos.
+
+### G1-bis. Verify-after-write es bloqueante (P0)
+
+Ninguna capitalizacion raw -> Tarea puede declarar exito a partir de la
+respuesta del write. El unico criterio valido es una relectura real posterior
+de la pagina raw y de la tarea, comparando campo a campo: titulo, `URL
+artefacto` == URL real de la tarea, `Destino canonico`, `Estado`, `Estado
+agente`, `Accion agente`, `Procesar con agente`, propiedades V2 obligatorias,
+lineas de ingest de `Trazabilidad` intactas y en orden, y relaciones si fueron
+proporcionadas. Si la relectura no confirma todo, no se declara
+`Capitalizado`. Helper determinista de referencia (P0):
+`worker/tasks/granola_capitalization.verify_task_capitalization()`. Este
+helper traduce a codigo la regla "Prohibicion de declaracion falsa de exito"
+del prompt V2.1, tras el patron "log miente" observado en el piloto Notion
+(ver `docs/plans/granola-capitalization-hybrid-plan-2026-07-16.md`).
 
 ### G2. Reuniones comerciales / oportunidades (project-first)
 

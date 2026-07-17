@@ -243,9 +243,14 @@ Ademas, al 2026-03-27 ese contrato sigue bloqueado por acceso:
 
 ## 7.1 Task determinista V2: `granola.capitalize_task_from_raw` (P1)
 
-> Estado: **implementado en codigo, NO desplegado** (2026-07-17). Primer write
-> live requiere un gate explicito de David (plan hibrido, paquete P1 fase
-> piloto). El poller sigue pausado (`CAP_POLLER_PAUSED`) y no invoca esta task.
+> Estado: P1 desplegado (2026-07-17, worker VPS); **P1.1 (identidad canonica
+> por `URL artefacto` + update seguro) implementado en codigo, NO desplegado.**
+> Primer write live (`dry_run=false`) requiere un gate explicito de David
+> fila a fila. El poller sigue pausado (`CAP_POLLER_PAUSED`) y no invoca esta
+> task. Origen de P1.1: el dry-run live r2 (2026-07-17) demostro que el dedup
+> por titulo raw planificaba `create` duplicado sobre filas cuya tarea
+> canonica ya existia via `URL artefacto`, y que el plan update por defecto
+> habria sobrescrito campos humanos (Nombre/Estado/Notas) de la tarea.
 
 Motor B del plan hibrido (`docs/plans/granola-capitalization-hybrid-plan-2026-07-16.md`):
 capitalizacion determinista raw -> Tarea, 0 LLM, con verify-after-write
@@ -265,10 +270,39 @@ bloqueante. Handler: `worker/tasks/granola_task_capitalize.py`.
   pertenece a `Transcripciones Granola`; `Destino canonico=Tarea`;
   `Procesar con agente=true`; evidencia suficiente en el cuerpo;
   `Trazabilidad` valida segun el contrato P0 (formato `clave=valor` limpio).
-- **Dedup seguro por titulo exacto:** 0 matches -> create; 1 match -> update
-  **solo** si el caller pasa `expected_task_page_id` igual al match (prohibido
-  actualizar por inferencia); 2+ matches -> Revision requerida. Nunca hay
-  matching semantico.
+- **Identidad canonica por `URL artefacto` (P1.1).** Si el raw ya tiene
+  `URL artefacto` no vacia, esa identidad manda y el dedup por titulo **no se
+  consulta** (los titulos nunca reemplazan una identidad explicita). La task
+  extrae el page_id de la URL, relee esa pagina y valida que exista y
+  pertenezca exactamente a `NOTION_HUMAN_TASKS_DB_ID`. Con `URL artefacto`
+  valida es **estructuralmente imposible planificar un create** (el hallazgo
+  del dry-run r2: titulo raw != titulo canonico habria duplicado la tarea).
+  Ademas el update exige `expected_task_page_id` igual a la tarea observada:
+  sin el, la salida es Revision requerida (`canonical_identity_requires_confirmation`)
+  devolviendo el candidato observado para confirmarlo en una segunda llamada.
+  URL invalida, inaccesible, apuntando a otra DB, o contradiciendo el expected
+  -> Revision requerida (`canonical_identity_*`), cero writes.
+- **Dedup seguro por titulo exacto (solo camino create, `URL artefacto`
+  vacia):** 0 matches -> create; 1 match -> update **solo** si el caller pasa
+  `expected_task_page_id` igual al match (prohibido actualizar por
+  inferencia); 2+ matches -> Revision requerida. Nunca hay matching semantico.
+- **Update seguro e idempotente (P1.1).** Sobre una tarea existente, los
+  campos editables por humanos (`Nombre`, `Estado`, `Prioridad`,
+  `Fecha objetivo`, `Notas`, `Origen`, `Dominio`, relaciones `Proyecto`)
+  **nunca se sobrescriben por defaults**: un `Estado` existente jamas se
+  degrada al default del raw. Solo se escriben campos allowlisted
+  explicitamente via `update_fields=[...]` con su valor explicito en el input
+  (allowlist sin valor -> error fail-closed; nombre de campo desconocido ->
+  error). Unico patch tecnico automatico: rellenar `URL fuente` **solo si esta
+  vacia** en la tarea observada. Con `update_fields=[]` (default y modo
+  recomendado para el piloto) la accion degrada a **`update_noop_verified`**:
+  la tarea no se toca y solo se cierra/reconcilia el raw (flags, `URL
+  artefacto`, Trazabilidad) contra la tarea observada, con verify-after-write
+  igual de bloqueante. Las acciones posibles son `create`,
+  `update_safe_patch`, `update_noop_verified`, `review` y `error`, y el output
+  incluye `canonical_identity_source` (`url_artefacto` | `title_dedup` |
+  `new`) y `update_plan` con `preserved_fields`, `patch_fields` y
+  `patch_reasons` (que escribiria y por que; que preserva).
 - **Confirmacion anti-Comgrap:** si el raw trae senales comerciales
   estructuradas (`Cliente/Partner relacionado` presente + `Tipo propuesto`
   Reunion/Llamada + senal de proyecto en `Proyecto`/`Proyecto relacionado`),

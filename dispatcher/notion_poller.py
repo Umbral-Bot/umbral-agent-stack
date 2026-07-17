@@ -140,9 +140,42 @@ CLASSIFIED_TTL_SEC = 24 * 60 * 60
 CLASSIFY_FAIL_TTL_SEC = 30 * 60  # 30 min backoff on failure
 V2_CLASSIFY_BATCH_LIMIT = 3
 V2_SCAN_LIMIT = 10
-_V2_ESTADO_AGENTE_DONE = {"Procesada", "Revision requerida"}
-# V2 property names that indicate classification already happened
+
+# P2a: the V2 classify scan is DEFAULT OFF and fail-closed. It caused the
+# 2026-07-16 incident (rows silently marked classified as `?/?/?` while the
+# Worker had no live LLM provider, scanning rows without the human gate) that
+# forced CAP_POLLER_PAUSED. Only these explicit truthy values enable it; any
+# other value — including absence — keeps it disabled while Control Room /
+# review targets / smart replies keep running normally.
+V2_CLASSIFY_ENV_FLAG = "NOTION_POLLER_ENABLE_V2_CLASSIFY"
+_TRUTHY_ENV_VALUES = {"1", "true", "yes", "on"}
+_V2_ESTADO_TERMINAL = {"Procesada", "Archivada", "Error"}
+_V2_CLASSIFICATION_FIELDS = ("dominio", "tipo", "destino", "resumen")
 _V2_CLASSIFIED_FIELD_NAMES = {"Dominio propuesto", "Tipo propuesto", "Destino canonico", "Resumen agente"}
+_V2_DISABLED_LOG_STATE = {"logged": False}
+
+
+def _v2_classify_enabled() -> bool:
+    """Return True only for an explicit truthy NOTION_POLLER_ENABLE_V2_CLASSIFY."""
+    return os.environ.get(V2_CLASSIFY_ENV_FLAG, "").strip().lower() in _TRUTHY_ENV_VALUES
+
+
+def _log_v2_disabled_once() -> None:
+    """One INFO line per process, DEBUG afterwards — clear but not noisy."""
+    if not _V2_DISABLED_LOG_STATE["logged"]:
+        logger.info(
+            "V2 classify scan disabled (default; set %s=true to enable). "
+            "Control Room / review / smart replies unaffected.",
+            V2_CLASSIFY_ENV_FLAG,
+        )
+        _V2_DISABLED_LOG_STATE["logged"] = True
+    else:
+        logger.debug("V2 classify scan disabled (%s not truthy)", V2_CLASSIFY_ENV_FLAG)
+
+
+def _reset_v2_disabled_log() -> None:
+    """Test-only helper."""
+    _V2_DISABLED_LOG_STATE["logged"] = False
 
 
 def _parse_notion_datetime(value: str | None) -> datetime | None:
@@ -355,12 +388,16 @@ def _claim_comment_processing(r: redis.Redis, comment_id: str) -> bool:
     return bool(r.set(key, "1", nx=True, ex=PROCESSED_COMMENT_TTL_SEC))
 
 
-def _extract_estado_agente(item: dict) -> str:
-    """Extract Estado agente value from a read_database item, defensively."""
+def _extract_item_text(item: dict, *names: str) -> str:
+    """Extract a select/status/rich_text value from a read_database item.
+
+    Defensive against both the Worker's flattened shape (plain scalars) and
+    raw Notion property dicts.
+    """
     props = item.get("properties") or {}
-    for key in ("Estado agente",):
+    for key in names:
         prop = props.get(key)
-        if not prop:
+        if prop is None:
             continue
         if isinstance(prop, str):
             return prop.strip()
@@ -368,44 +405,104 @@ def _extract_estado_agente(item: dict) -> str:
             continue
         ptype = prop.get("type", "")
         if ptype == "select":
-            sel = prop.get("select") or {}
-            return (sel.get("name") or "").strip()
+            return (((prop.get("select") or {}).get("name")) or "").strip()
         if ptype == "status":
-            st = prop.get("status") or {}
-            return (st.get("name") or "").strip()
+            return (((prop.get("status") or {}).get("name")) or "").strip()
         if ptype == "rich_text":
             parts = prop.get("rich_text") or []
             return "".join(rt.get("plain_text", "") for rt in parts).strip()
     return ""
 
 
-def _has_v2_classification_fields(item: dict) -> bool:
-    """Check if a page already has V2 classification fields populated."""
+def _extract_item_checkbox(item: dict, *names: str) -> bool:
+    """Extract a checkbox value from a read_database item (flattened or raw)."""
     props = item.get("properties") or {}
-    for field_name in _V2_CLASSIFIED_FIELD_NAMES:
-        prop = props.get(field_name)
-        if not prop:
+    for key in names:
+        prop = props.get(key)
+        if prop is None:
             continue
+        if isinstance(prop, bool):
+            return prop
         if isinstance(prop, str):
-            return True
-        if not isinstance(prop, dict):
-            continue
-        ptype = prop.get("type", "")
-        value = ""
-        if ptype == "select":
-            value = ((prop.get("select") or {}).get("name") or "").strip()
-        elif ptype == "status":
-            value = ((prop.get("status") or {}).get("name") or "").strip()
-        elif ptype == "rich_text":
-            parts = prop.get("rich_text") or []
-            value = "".join(rt.get("plain_text", "") for rt in parts).strip()
-        if value:
-            return True
+            return prop.strip().lower() in _TRUTHY_ENV_VALUES
+        if isinstance(prop, dict) and prop.get("type") == "checkbox":
+            return bool(prop.get("checkbox"))
     return False
 
 
+def _extract_estado_agente(item: dict) -> str:
+    """Kept for backwards compatibility; delegates to the generic extractor."""
+    return _extract_item_text(item, "Estado agente")
+
+
+def _has_v2_classification_fields(item: dict) -> bool:
+    """True when the row already has ALL four V2 classification fields set."""
+    return all(
+        bool(_extract_item_text(item, field_name))
+        for field_name in _V2_CLASSIFIED_FIELD_NAMES
+    )
+
+
+def _v2_row_eligible(item: dict) -> tuple[bool, str]:
+    """P2a human-gate eligibility for the V2 classify scan.
+
+    A row is NEVER classified just for being among the first N rows. It must
+    carry the explicit human gate and a pending/reprocess-compatible state.
+    """
+    if item.get("archived") is True:
+        return False, "archived"
+    if not _extract_item_checkbox(item, "Procesar con agente"):
+        return False, "gate_unticked"
+    estado = _extract_item_text(item, "Estado")
+    if estado in _V2_ESTADO_TERMINAL:
+        return False, "estado_terminal"
+    if _has_v2_classification_fields(item):
+        return False, "already_classified"
+    estado_agente = _extract_item_text(item, "Estado agente")
+    if estado_agente in ("", "Pendiente"):
+        return True, ""
+    if estado_agente == "Revision requerida" and _extract_item_checkbox(
+        item, "Reprocesar tras revisión", "Reprocesar tras revision"
+    ):
+        return True, ""
+    return False, "estado_agente_not_pending"
+
+
+def _classification_result_complete(result: dict | None) -> tuple[bool, str]:
+    """Strict success validation for a granola.classify_raw response.
+
+    Success requires non-empty, non-placeholder values for all four V2 fields.
+    Anything else (error key, empty/partial classification, `?` placeholders)
+    is an honest failure: no success checkpoint, normal retry via backoff.
+    """
+    if not isinstance(result, dict):
+        return False, "non_dict_response"
+    payload = result.get("result") if isinstance(result.get("result"), dict) else result
+    error = result.get("error") or payload.get("error")
+    if error:
+        return False, f"worker_error: {str(error)[:160]}"
+    classification = payload.get("classification")
+    if not isinstance(classification, dict) or not classification:
+        return False, "empty_classification"
+    missing = [
+        field
+        for field in _V2_CLASSIFICATION_FIELDS
+        if not str(classification.get(field) or "").strip()
+        or str(classification.get(field)).strip() == "?"
+    ]
+    if missing:
+        return False, "incomplete_fields: " + ",".join(missing)
+    return True, ""
+
+
 def _classify_pending_granola_pages(wc: WorkerClient, r: redis.Redis) -> None:
-    """Scan Granola DB for unclassified pages and invoke classify_raw on them."""
+    """Scan Granola DB for human-gated pending rows and classify them.
+
+    P2a contract: only rows with `Procesar con agente=true` and a
+    pending/reprocess-compatible state are ever considered; a classification
+    only checkpoints as success when the result carries the four complete V2
+    fields. Failures log honestly and back off — never a fake `?/?/?` success.
+    """
     granola_db_id = os.environ.get("NOTION_GRANOLA_DB_ID", "").strip()
     if not granola_db_id:
         return
@@ -420,81 +517,74 @@ def _classify_pending_granola_pages(wc: WorkerClient, r: redis.Redis) -> None:
         return
 
     items = _extract_read_database_items(resp)
-    if not items:
-        return
-
-    classified_count = 0
-    skipped_count = 0
-    error_count = 0
+    scanned = len(items)
+    eligible = 0
+    classified = 0
+    skipped_gate = 0
+    errors = 0
 
     for item in items:
-        if classified_count >= V2_CLASSIFY_BATCH_LIMIT:
+        if classified >= V2_CLASSIFY_BATCH_LIMIT:
             break
 
         page_id = str(item.get("page_id") or item.get("id") or "").strip()
         if not page_id:
+            skipped_gate += 1
             continue
 
-        # Redis dedup: already classified this cycle?
+        is_eligible, gate_reason = _v2_row_eligible(item)
+        if not is_eligible:
+            skipped_gate += 1
+            logger.debug("V2 classify: page %s skipped (%s)", page_id[:8], gate_reason)
+            continue
+        eligible += 1
+
         redis_key = f"{REDIS_KEY_CLASSIFIED_PREFIX}{page_id}"
-        if r.exists(redis_key):
-            skipped_count += 1
-            continue
-
-        # Redis backoff: recently failed classification?
         fail_key = f"{REDIS_KEY_CLASSIFY_FAIL_PREFIX}{page_id}"
-        if r.exists(fail_key):
-            skipped_count += 1
+        if r.exists(redis_key) or r.exists(fail_key):
+            skipped_gate += 1
             continue
 
-        # Property check: already classified by a prior run?
-        estado = _extract_estado_agente(item)
-        if estado in _V2_ESTADO_AGENTE_DONE:
-            r.set(redis_key, "1", ex=CLASSIFIED_TTL_SEC)
-            skipped_count += 1
-            continue
-
-        # V2 field check: already has classification data?
-        if _has_v2_classification_fields(item):
-            r.set(redis_key, "1", ex=CLASSIFIED_TTL_SEC)
-            skipped_count += 1
-            continue
-
-        # Classify this page
         try:
             result = wc.run("granola.classify_raw", {"page_id": page_id})
-            ok = isinstance(result, dict) and not result.get("error")
-            if ok:
-                r.set(redis_key, "1", ex=CLASSIFIED_TTL_SEC)
-                classified_count += 1
-                classification = (result.get("result") or result).get("classification") or {}
-                logger.info(
-                    "V2 classify: page %s → %s/%s/%s",
-                    page_id[:8],
-                    classification.get("dominio", "?"),
-                    classification.get("tipo", "?"),
-                    classification.get("destino", "?"),
-                )
-            else:
-                error_count += 1
-                r.set(fail_key, "1", ex=CLASSIFY_FAIL_TTL_SEC)
-                logger.warning(
-                    "V2 classify: page %s returned error (backoff %ds): %s",
-                    page_id[:8],
-                    CLASSIFY_FAIL_TTL_SEC,
-                    (result or {}).get("error", "unknown"),
-                )
         except Exception:
-            error_count += 1
+            errors += 1
             r.set(fail_key, "1", ex=CLASSIFY_FAIL_TTL_SEC)
-            logger.warning("V2 classify: page %s call failed (backoff %ds)", page_id[:8], CLASSIFY_FAIL_TTL_SEC, exc_info=True)
+            logger.warning(
+                "V2 classify: page %s call failed (backoff %ds)",
+                page_id[:8], CLASSIFY_FAIL_TTL_SEC, exc_info=True,
+            )
+            continue
 
-    total_scanned = classified_count + skipped_count + error_count
-    if total_scanned > 0:
-        logger.info(
-            "V2 classify scan: %d scanned, %d classified, %d skipped, %d errors",
-            total_scanned, classified_count, skipped_count, error_count,
-        )
+        complete, failure_reason = _classification_result_complete(result)
+        if complete:
+            payload = result.get("result") if isinstance(result.get("result"), dict) else result
+            classification = payload.get("classification") or {}
+            r.set(redis_key, "1", ex=CLASSIFIED_TTL_SEC)
+            classified += 1
+            logger.info(
+                "V2 classify: page %s -> %s/%s/%s",
+                page_id[:8],
+                classification.get("dominio"),
+                classification.get("tipo"),
+                classification.get("destino"),
+            )
+        else:
+            errors += 1
+            r.set(fail_key, "1", ex=CLASSIFY_FAIL_TTL_SEC)
+            logger.warning(
+                "V2 classify: page %s did NOT classify (%s) — no success checkpoint, backoff %ds",
+                page_id[:8], failure_reason, CLASSIFY_FAIL_TTL_SEC,
+            )
+
+    metrics_line = (
+        f"V2 classify scan: v2_classify_enabled=True scanned={scanned} "
+        f"eligible={eligible} classified={classified} skipped_gate={skipped_gate} errors={errors}"
+    )
+    if scanned > 0:
+        logger.info(metrics_line)
+    else:
+        logger.debug(metrics_line)
 
 
 def _do_poll(
@@ -583,11 +673,15 @@ def _do_poll(
         r.set(REDIS_KEY_LAST_TS, latest_ts)
         logger.info("Notion poll advanced last_ts from %s to %s", last_ts, latest_ts)
 
-    # V2: classify pending Granola raw pages
-    try:
-        _classify_pending_granola_pages(wc, r)
-    except Exception:
-        logger.warning("V2 classify scan failed", exc_info=True)
+    # V2: classify pending Granola raw pages — DEFAULT OFF (P2a fail-closed).
+    # Control Room / review targets / smart replies above never depend on this.
+    if _v2_classify_enabled():
+        try:
+            _classify_pending_granola_pages(wc, r)
+        except Exception:
+            logger.warning("V2 classify scan failed (general cycle unaffected)", exc_info=True)
+    else:
+        _log_v2_disabled_once()
 
 
 def main():
@@ -621,6 +715,11 @@ def main():
     queue = TaskQueue(r)
     scheduler = TaskScheduler(r)
     wc = WorkerClient(base_url=worker_url, token=worker_token)
+
+    if _v2_classify_enabled():
+        logger.info("V2 classify scan ENABLED (%s is truthy).", V2_CLASSIFY_ENV_FLAG)
+    else:
+        logger.info("V2 classify scan disabled (default off; %s not truthy).", V2_CLASSIFY_ENV_FLAG)
 
     if args.once:
         logger.info("Notion poller --once (cron mode, worker=%s).", worker_url)

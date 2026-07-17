@@ -5,6 +5,22 @@ Notion Poller Daemon — runs the poller every 60s on the VPS.
 Writes PID to /tmp/notion_poller.pid, logs to /tmp/notion_poller.log.
 Handles SIGTERM gracefully (cleans up PID file and exits).
 
+Logging (Tanda A / sys-diag 2026-07-17):
+    The log is written by a SINGLE RotatingFileHandler (bounded size +
+    retention). Previously the daemon used a FileHandler *and* a StreamHandler
+    (→ stderr); combined with the cron wrapper's ``>> notion_poller.log 2>&1``
+    that redirected stderr into the *same* file, every log line was written
+    twice and the file grew unbounded (~102 MB observed). Dropping the
+    StreamHandler removes the duplication; RotatingFileHandler bounds the size.
+    The cron wrapper now sends the process's stdout/stderr to a separate boot
+    log so the RotatingFileHandler is the sole writer of LOG_FILE and rotation
+    is not defeated by an external append fd.
+
+Env (all optional):
+    NOTION_POLLER_LOG_FILE        Log path (default: /tmp/notion_poller.log)
+    NOTION_POLLER_LOG_MAX_BYTES   Rotate at this size (default: 10485760 = 10 MB)
+    NOTION_POLLER_LOG_BACKUPS     Rotated files to keep (default: 5)
+
 Usage:
     PYTHONPATH=. python3 scripts/vps/notion-poller-daemon.py
 """
@@ -15,20 +31,44 @@ import os
 import signal
 import sys
 import time
+from logging.handlers import RotatingFileHandler
 
 PID_FILE = "/tmp/notion_poller.pid"
-LOG_FILE = "/tmp/notion_poller.log"
+LOG_FILE = os.environ.get("NOTION_POLLER_LOG_FILE", "/tmp/notion_poller.log")
 POLL_INTERVAL = 60  # seconds
 
-# Logging to file + stderr
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    handlers=[
-        logging.FileHandler(LOG_FILE),
-        logging.StreamHandler(),
-    ],
-)
+_LOG_MAX_BYTES = int(os.environ.get("NOTION_POLLER_LOG_MAX_BYTES", str(10 * 1024 * 1024)))
+_LOG_BACKUPS = int(os.environ.get("NOTION_POLLER_LOG_BACKUPS", "5"))
+_LOG_FORMAT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+
+
+def _configure_logging(log_file: str = LOG_FILE) -> None:
+    """Install a single bounded RotatingFileHandler on the root logger.
+
+    Idempotent: safe to call more than once (e.g. if an imported module also
+    configures logging) — it removes any pre-existing root handlers first, so
+    the daemon never accumulates duplicate handlers on re-init.
+    """
+    root = logging.getLogger()
+    for h in list(root.handlers):
+        root.removeHandler(h)
+        try:
+            h.close()
+        except Exception:  # noqa: BLE001 — closing a handler must never crash startup
+            pass
+    handler = RotatingFileHandler(
+        log_file,
+        maxBytes=_LOG_MAX_BYTES,
+        backupCount=_LOG_BACKUPS,
+        encoding="utf-8",
+        delay=True,  # open on first emit — keeps module import filesystem-free
+    )
+    handler.setFormatter(logging.Formatter(_LOG_FORMAT))
+    root.addHandler(handler)
+    root.setLevel(logging.INFO)
+
+
+_configure_logging()
 logger = logging.getLogger("notion_poller_daemon")
 
 _running = True

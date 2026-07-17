@@ -236,10 +236,72 @@ Ademas, al 2026-03-27 ese contrato sigue bloqueado por acceso:
 - tampoco ve la DB humana de tareas
 - por eso `granola.capitalize_raw` debe seguir siendo conservadora y operar solo sobre superficies tecnicas o compartidas explicitamente
 
+> Nota 2026-07-16: la parte de acceso quedo obsoleta — la integracion Rick ya
+> LEE la DB humana de tareas (`NOTION_HUMAN_TASKS_DB_ID`, verificado read-only
+> en VPS; ver plan hibrido §1.2). El camino V2 raw -> Tarea es el del §7.1; la
+> capa curada V1 sigue retirada.
+
+## 7.1 Task determinista V2: `granola.capitalize_task_from_raw` (P1)
+
+> Estado: **implementado en codigo, NO desplegado** (2026-07-17). Primer write
+> live requiere un gate explicito de David (plan hibrido, paquete P1 fase
+> piloto). El poller sigue pausado (`CAP_POLLER_PAUSED`) y no invoca esta task.
+
+Motor B del plan hibrido (`docs/plans/granola-capitalization-hybrid-plan-2026-07-16.md`):
+capitalizacion determinista raw -> Tarea, 0 LLM, con verify-after-write
+bloqueante. Handler: `worker/tasks/granola_task_capitalize.py`.
+
+### Contrato
+
+- **`dry_run=true` por defecto.** Sin `dry_run=false` explicito la task solo
+  lee y devuelve el plan exacto (accion propuesta create/update/review/error,
+  propiedades exactas a escribir, dedup observado, cierre planificado del raw,
+  preview de Trazabilidad). Un dry-run nunca declara capitalizacion.
+- **Binding humano exclusivo.** Escribe solo en `NOTION_HUMAN_TASKS_DB_ID`
+  (Registro de Tareas y Proximas Acciones). `NOTION_TASKS_DB_ID` (DB operativa
+  del stack, distinta) esta prohibido en este flujo; si falta el binding
+  humano la task falla cerrada sin ningun write.
+- **Preflight fail-closed** (cualquier fallo = sin writes): el raw existe y
+  pertenece a `Transcripciones Granola`; `Destino canonico=Tarea`;
+  `Procesar con agente=true`; evidencia suficiente en el cuerpo;
+  `Trazabilidad` valida segun el contrato P0 (formato `clave=valor` limpio).
+- **Dedup seguro por titulo exacto:** 0 matches -> create; 1 match -> update
+  **solo** si el caller pasa `expected_task_page_id` igual al match (prohibido
+  actualizar por inferencia); 2+ matches -> Revision requerida. Nunca hay
+  matching semantico.
+- **Confirmacion anti-Comgrap:** si el raw trae senales comerciales
+  estructuradas (`Cliente/Partner relacionado` presente + `Tipo propuesto`
+  Reunion/Llamada + senal de proyecto en `Proyecto`/`Proyecto relacionado`),
+  convertirlo en Tarea exige el input explicito `human_confirmed_task=true`;
+  sin el, la salida es Revision requerida (`Duda de clasificación`). No se
+  analizan keywords del transcript ni se reclasifica con LLM.
+- **Relaciones solo propagadas:** la relacion `Proyecto` de la tarea sale de
+  `Proyecto relacionado` del raw o de un `project_page_id` explicito. Nunca
+  se infiere ni se hace matching CRM.
+- **Verify-after-write obligatorio y bloqueante** (G1-bis): tras escribir, la
+  task relee la tarea y el raw y verifica con
+  `granola_capitalization.verify_task_capitalization()`. Exito solo con
+  `verification.ok=true`. Si la verificacion falla: no se declara exito, el
+  raw queda en `Revision requerida` + `Motivo revisión=Bloqueo técnico` +
+  `Procesar con agente=false`, y el resultado lista los mismatches observados
+  (no lo intentado).
+- **Cierre de exito del raw:** `Estado=Procesada`, `Estado agente=Procesada`,
+  `Accion agente=Capitalizado`, `Procesar con agente=false`,
+  `Estado revisión=No aplica`, `URL artefacto` = URL real (releida) de la
+  tarea, Trazabilidad = ingest intacto + bloque de capitalizacion anexado via
+  P0 (`capitalization_mode=worker_task_from_raw_v1`, sin URL).
+- Las salidas de revision pre-write **no escriben nada** (ni siquiera el
+  estado de revision): devuelven el cierre propuesto en `planned_raw_close`
+  para que un humano/orquestador lo aplique. El unico write en ruta de fallo
+  es el cierre tecnico post-write cuando la verificacion falla.
+
 ## 8. Referencias
 
 - `worker/tasks/granola.py`
+- `worker/tasks/granola_task_capitalize.py` (P1 — `granola.capitalize_task_from_raw`)
+- `worker/tasks/granola_capitalization.py` (P0 — helpers append/verify)
 - `scripts/run_worker_task.py`
+- `docs/plans/granola-capitalization-hybrid-plan-2026-07-16.md`
 - `docs/50-granola-notion-pipeline.md`
 - `docs/53-granola-raw-curated-promotion-plan.md`
 - `docs/56-granola-promote-curated-session.md`

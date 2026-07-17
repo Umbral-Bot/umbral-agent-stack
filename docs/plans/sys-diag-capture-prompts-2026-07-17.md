@@ -236,13 +236,13 @@ Destino canónico: `docs/audits/sys-diag-inputs/2026-07-17/` (manifest + SHA-256
 
 | # | Destinatario | Estado | Respuesta guardada en |
 |---|-------------|--------|----------------------|
-| 1 | ChatGPT | ejecutado por David — **PENDING_PASTE** | `sys-diag-inputs/2026-07-17/01-chatgpt-work.md` |
-| 2 | Notion AI | ejecutado por David — **PENDING_PASTE** | `…/02-notion-ai.md` |
-| 3 | Cursor | ejecutado (parcial, tool-blocked) — **PENDING_PASTE** | `…/03-cursor.md` |
-| 4 | Codex | ejecutado por David — **PENDING_PASTE** | `…/04-codex.md` |
-| 5 | GitHub Copilot | ejecutado por David — **PENDING_PASTE** | `…/05-github-copilot-windows-azure.md` |
-| 6 | Copilot VPS | ejecutado por David — **PENDING_PASTE** | `…/06-copilot-vps.md` |
-| 7 | M365 Copilot | ejecutado por David — **PENDING_PASTE** | `…/07-m365-copilot.md` |
+| 1 | ChatGPT | ☑ **COMPLETE** (ingerido verbatim por orquestador desde transcript) | `sys-diag-inputs/2026-07-17/01-chatgpt-work.md` |
+| 2 | Notion AI | ☑ **COMPLETE_WITH_VISIBILITY_LIMITS** (ingerido verbatim) | `…/02-notion-ai.md` |
+| 3 | Cursor | ☑ **PARTIAL_TOOL_BLOCKED** (ingerido verbatim; hook fail-closed) | `…/03-cursor.md` |
+| 4 | Codex | ☑ **COMPLETE** (ingerido verbatim) | `…/04-codex.md` |
+| 5 | GitHub Copilot | ☑ **COMPLETE_WITH_VISIBILITY_LIMITS** (ingerido verbatim) | `…/05-github-copilot-windows-azure.md` |
+| 6 | Copilot VPS | ☑ **COMPLETE** (ingerido verbatim) | `…/06-copilot-vps.md` |
+| 7 | M365 Copilot | ☑ **COMPLETE_WITH_CONNECTOR_LIMITS** (ingerido verbatim) | `…/07-m365-copilot.md` |
 | 8 | Perplexity | ☑ **COMPLETE** (ingerido verbatim desde Drive) | `…/08-perplexity-research.md` |
 | 9 | Claude Code (consolidación file-based) | pendiente — fail-closed hasta completar 01–07 y 10 | produce `inventory-final` |
 | 10 | n8n MCP (PRIMERA tanda; Make/Linear opcionales) | **PENDING_CAPTURE** | `…/10-n8n.md` |

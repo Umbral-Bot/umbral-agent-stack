@@ -771,3 +771,284 @@ def test_resolve_bot_user_id_malformed_json_returns_none(_clear_bot_cache, caplo
     assert "ECHO_PREFIX" in caplog.text
     # Token MUST NOT appear in the log message under any circumstance.
     assert "secret_xxx" not in caplog.text
+
+
+# ---------------------------------------------------------------------------
+# P2a: V2 classify isolation — default-off flag, human gate, strict validation
+# ---------------------------------------------------------------------------
+
+from dispatcher.notion_poller import (  # noqa: E402
+    CLASSIFIED_TTL_SEC,
+    _classification_result_complete,
+    _classify_pending_granola_pages,
+    _reset_v2_disabled_log,
+    _v2_classify_enabled,
+    _v2_row_eligible,
+)
+
+_P2A_BASE_ENV = {
+    "NOTION_CONTROL_ROOM_PAGE_ID": "",
+    "NOTION_DELIVERABLES_DB_ID": "",
+    "NOTION_PROJECTS_DB_ID": "",
+    "NOTION_CURATED_SESSIONS_DB_ID": "",
+    "NOTION_GRANOLA_DB_ID": "granola-db",
+}
+
+
+def _gated_row(page_id="row-1", **props):
+    base = {
+        "Procesar con agente": True,
+        "Estado": "Pendiente",
+        "Estado agente": "Pendiente",
+    }
+    base.update(props)
+    return {"page_id": page_id, "properties": base}
+
+
+def _redis_mock():
+    r = MagicMock()
+    r.exists.return_value = False
+    r.set.return_value = True
+    return r
+
+
+def _complete_classify_result():
+    return {
+        "ok": True,
+        "result": {
+            "classification": {
+                "dominio": "Operacion",
+                "tipo": "Reunión",
+                "destino": "Tarea",
+                "resumen": "Resumen corto valido.",
+            }
+        },
+    }
+
+
+class TestV2FlagParsing:
+    @pytest.mark.parametrize("value", ["1", "true", "TRUE", "yes", "on", " True "])
+    def test_explicit_truthy_enables(self, value):
+        with patch.dict("os.environ", {"NOTION_POLLER_ENABLE_V2_CLASSIFY": value}, clear=False):
+            assert _v2_classify_enabled() is True
+
+    @pytest.mark.parametrize("value", ["", "0", "false", "no", "off", "junk", "enable", "si"])
+    def test_everything_else_disables(self, value):
+        with patch.dict("os.environ", {"NOTION_POLLER_ENABLE_V2_CLASSIFY": value}, clear=False):
+            assert _v2_classify_enabled() is False
+
+    def test_absent_flag_disables(self, monkeypatch):
+        monkeypatch.delenv("NOTION_POLLER_ENABLE_V2_CLASSIFY", raising=False)
+        assert _v2_classify_enabled() is False
+
+
+class TestV2DefaultOffInDoPoll:
+    def _run_do_poll(self, wc, env_extra):
+        queue = MagicMock()
+        scheduler = MagicMock()
+        r = _redis_mock()
+        r.get.return_value = "2026-07-17T09:00:00+00:00"
+        env = dict(_P2A_BASE_ENV)
+        env.update(env_extra)
+        with patch.dict("os.environ", env, clear=False):
+            _do_poll(wc, queue, r, scheduler)
+        return r
+
+    def test_flag_absent_no_granola_read_no_classify(self, monkeypatch, caplog):
+        monkeypatch.delenv("NOTION_POLLER_ENABLE_V2_CLASSIFY", raising=False)
+        _reset_v2_disabled_log()
+        wc = MagicMock()
+        wc.notion_poll_comments.return_value = {"ok": True, "result": {"comments": []}}
+        with caplog.at_level("INFO", logger="dispatcher.notion_poller"):
+            self._run_do_poll(wc, {})
+        # No wc.run at all: review targets empty AND granola scan disabled.
+        assert wc.run.call_count == 0
+        assert "V2 classify scan disabled" in caplog.text
+
+    def test_flag_false_zero_query_zero_classify(self):
+        wc = MagicMock()
+        wc.notion_poll_comments.return_value = {"ok": True, "result": {"comments": []}}
+        self._run_do_poll(wc, {"NOTION_POLLER_ENABLE_V2_CLASSIFY": "false"})
+        for call in wc.run.call_args_list:
+            task = call.args[0] if call.args else call.kwargs.get("task", "")
+            assert task != "granola.classify_raw"
+            assert task != "notion.read_database"
+
+    @patch("dispatcher.notion_poller.handle_smart_reply")
+    def test_control_room_still_processed_with_v2_off(self, mock_smart):
+        wc = MagicMock()
+        wc.notion_poll_comments.return_value = {
+            "ok": True,
+            "result": {
+                "comments": [
+                    {
+                        "id": "c-p2a",
+                        "created_time": "2026-07-17T10:00:00.000Z",
+                        "created_by": "user-x",
+                        "text": "hola necesito ayuda con un reporte",
+                    }
+                ]
+            },
+        }
+        self._run_do_poll(wc, {"NOTION_POLLER_ENABLE_V2_CLASSIFY": "false"})
+        mock_smart.assert_called_once()
+
+    def test_p11b_rows_never_touched_with_flag_off(self):
+        """Regression: with the flag off the Granola DB is never even read,
+        so no P1.1b raw row can be scanned/classified/marked."""
+        wc = MagicMock()
+        wc.notion_poll_comments.return_value = {"ok": True, "result": {"comments": []}}
+        r = self._run_do_poll(wc, {"NOTION_POLLER_ENABLE_V2_CLASSIFY": "0"})
+        assert wc.run.call_count == 0
+        for call in r.set.call_args_list:
+            key = call.args[0] if call.args else ""
+            assert not str(key).startswith("umbral:notion_poller:classified:")
+
+    def test_classify_exception_does_not_break_cycle(self):
+        """With the flag ON, a scan blow-up must not stop the general cycle."""
+        wc = MagicMock()
+        wc.notion_poll_comments.return_value = {"ok": True, "result": {"comments": []}}
+        wc.run.side_effect = RuntimeError("granola read exploded")
+        r = self._run_do_poll(wc, {"NOTION_POLLER_ENABLE_V2_CLASSIFY": "true"})
+        # last_ts checkpoint logic still ran (cycle completed).
+        assert r.get.called
+
+
+class TestV2RowEligibility:
+    def test_gate_unticked_skips(self):
+        ok, reason = _v2_row_eligible(_gated_row(**{"Procesar con agente": False}))
+        assert ok is False and reason == "gate_unticked"
+
+    def test_gated_pending_is_eligible(self):
+        ok, reason = _v2_row_eligible(_gated_row())
+        assert ok is True
+
+    @pytest.mark.parametrize("estado", ["Procesada", "Archivada", "Error"])
+    def test_terminal_estado_skips(self, estado):
+        ok, reason = _v2_row_eligible(_gated_row(Estado=estado))
+        assert ok is False and reason == "estado_terminal"
+
+    def test_archived_page_skips(self):
+        row = _gated_row()
+        row["archived"] = True
+        ok, reason = _v2_row_eligible(row)
+        assert ok is False and reason == "archived"
+
+    def test_estado_agente_procesada_skips(self):
+        ok, reason = _v2_row_eligible(_gated_row(**{"Estado agente": "Procesada"}))
+        assert ok is False and reason == "estado_agente_not_pending"
+
+    def test_revision_requerida_needs_reprocesar(self):
+        ok, _ = _v2_row_eligible(_gated_row(**{"Estado agente": "Revision requerida"}))
+        assert ok is False
+        ok, _ = _v2_row_eligible(
+            _gated_row(**{"Estado agente": "Revision requerida", "Reprocesar tras revisión": True})
+        )
+        assert ok is True
+
+    def test_already_classified_fields_skip(self):
+        ok, reason = _v2_row_eligible(
+            _gated_row(
+                **{
+                    "Dominio propuesto": "Operacion",
+                    "Tipo propuesto": "Reunión",
+                    "Destino canonico": "Tarea",
+                    "Resumen agente": "ya clasificada",
+                }
+            )
+        )
+        assert ok is False and reason == "already_classified"
+
+
+class TestV2StrictValidation:
+    def test_complete_result_is_success(self):
+        ok, _ = _classification_result_complete(_complete_classify_result())
+        assert ok is True
+
+    @pytest.mark.parametrize(
+        "result",
+        [
+            None,
+            {},
+            {"error": "LLM call failed: GOOGLE_API_KEY not configured"},
+            {"ok": True, "result": {"classification": {}}},
+            {"ok": True, "result": {"classification": {"dominio": "Operacion"}}},
+            {"ok": True, "result": {"classification": {
+                "dominio": "?", "tipo": "?", "destino": "?", "resumen": "?"}}},
+            {"ok": True, "result": {"classification": {
+                "dominio": "Operacion", "tipo": "Reunión", "destino": "Tarea", "resumen": ""}}},
+            {"ok": True, "result": {"error": "boom", "classification": {
+                "dominio": "Operacion", "tipo": "Reunión", "destino": "Tarea", "resumen": "x"}}},
+        ],
+    )
+    def test_incomplete_or_error_is_failure(self, result):
+        ok, reason = _classification_result_complete(result)
+        assert ok is False
+        assert reason
+
+
+class TestV2ScanBehavior:
+    def _run_scan(self, items, classify_result=None, classify_exc=None):
+        wc = MagicMock()
+
+        def _run(task, payload):
+            if task == "notion.read_database":
+                return {"ok": True, "result": {"items": items}}
+            if task == "granola.classify_raw":
+                if classify_exc:
+                    raise classify_exc
+                return classify_result
+            raise AssertionError(f"unexpected task {task}")
+
+        wc.run.side_effect = _run
+        r = _redis_mock()
+        with patch.dict("os.environ", {"NOTION_GRANOLA_DB_ID": "granola-db"}, clear=False):
+            _classify_pending_granola_pages(wc, r)
+        return wc, r
+
+    def _classify_calls(self, wc):
+        return [c for c in wc.run.call_args_list if c.args and c.args[0] == "granola.classify_raw"]
+
+    def test_ungated_rows_never_classified(self):
+        wc, r = self._run_scan([_gated_row(**{"Procesar con agente": False})])
+        assert self._classify_calls(wc) == []
+        r.set.assert_not_called()
+
+    def test_gated_pending_row_is_classified_and_checkpointed(self):
+        wc, r = self._run_scan([_gated_row()], classify_result=_complete_classify_result())
+        assert len(self._classify_calls(wc)) == 1
+        r.set.assert_called_once_with(
+            "umbral:notion_poller:classified:row-1", "1", ex=CLASSIFIED_TTL_SEC
+        )
+
+    @pytest.mark.parametrize(
+        "bad_result",
+        [
+            {"error": "no provider"},
+            {"ok": True, "result": {"classification": {}}},
+            {"ok": True, "result": {"classification": {
+                "dominio": "?", "tipo": "?", "destino": "?", "resumen": "?"}}},
+        ],
+    )
+    def test_incomplete_result_no_success_checkpoint(self, bad_result, caplog):
+        with caplog.at_level("WARNING", logger="dispatcher.notion_poller"):
+            wc, r = self._run_scan([_gated_row()], classify_result=bad_result)
+        # Only the fail/backoff key — NEVER the classified key.
+        assert r.set.call_count == 1
+        key = r.set.call_args.args[0]
+        assert key.startswith("umbral:notion_poller:classify_fail:")
+        assert "did NOT classify" in caplog.text
+
+    def test_classify_exception_sets_backoff_not_success(self):
+        wc, r = self._run_scan([_gated_row()], classify_exc=RuntimeError("timeout"))
+        assert r.set.call_count == 1
+        assert r.set.call_args.args[0].startswith("umbral:notion_poller:classify_fail:")
+
+    def test_metrics_line_logged(self, caplog):
+        items = [_gated_row("row-a"), _gated_row("row-b", **{"Procesar con agente": False})]
+        with caplog.at_level("INFO", logger="dispatcher.notion_poller"):
+            self._run_scan(items, classify_result=_complete_classify_result())
+        assert (
+            "v2_classify_enabled=True scanned=2 eligible=1 classified=1 skipped_gate=1 errors=0"
+            in caplog.text
+        )

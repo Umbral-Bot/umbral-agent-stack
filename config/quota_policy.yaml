@@ -2,8 +2,13 @@
 #
 # auto_approve_quota: cuando todos los providers superan restrict,
 # aprobar automáticamente en lugar de bloquear la tarea.
-# Si es false (default), se requiere aprobación humana.
-auto_approve_quota: true
+# Si es false (default), se requiere aprobación humana (gate ADR-004).
+# 2026-07-17 (Tanda A / A2): restaurado a false — el valor true anulaba el
+# gate de cuota permitiendo consumo sobre `restrict` sin aprobación humana,
+# en contra de ADR-004. Consumido por dispatcher/model_router.py:103 y
+# aplicado en dispatcher/service.py:655 (bloquea tareas LLM con
+# requires_approval).
+auto_approve_quota: false
 
 # Inventario real de modelos disponibles:
 #

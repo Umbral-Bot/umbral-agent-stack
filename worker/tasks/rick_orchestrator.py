@@ -14,7 +14,6 @@ Out of scope v0 (defer task 033 post-Vertex-Fase-1 2026-05-14):
 """
 from __future__ import annotations
 
-import json
 import logging
 import os
 from typing import Any, Dict
@@ -30,6 +29,23 @@ _DEFAULT_WORKER_URL = "http://127.0.0.1:8088"
 _HTTP_TIMEOUT_SECONDS = 5.0
 _REPLY_MAX_CHARS = 1800
 
+# A3 (Tanda A / sys-diag 2026-07-17): David-facing replies must NOT leak the
+# internal Worker catalog. The `/health` payload includes tasks_registered (the
+# full handler list), tasks_in_memory, ts, etc. — internal telemetry that
+# governance (notion-governance-runtime, reglas 1/3/6) forbids in Control Room.
+# The reply now surfaces only a stable human summary. All automated replies of
+# this route carry the "Rick:" prefix so the poller's ECHO_PREFIX anti-loop
+# guard (dispatcher/notion_poller.py) always covers them.
+RICK_REPLY_PREFIX = "Rick:"
+
+
+def _with_prefix(text: str) -> str:
+    """Ensure the reply starts with the Rick: anti-loop prefix, without duplicating it."""
+    stripped = text.lstrip()
+    if stripped.startswith(RICK_REPLY_PREFIX):
+        return text
+    return f"{RICK_REPLY_PREFIX} {text}"
+
 
 def _classify_command(text: str) -> str:
     """Classify the user's intent. v0: only /health."""
@@ -41,29 +57,52 @@ def _classify_command(text: str) -> str:
     return "unknown"
 
 
+def _summarize_llm_status(payload: Dict[str, Any]) -> str:
+    """Best-effort, non-sensitive LLM status from a /health payload.
+
+    The v0.4.0 /health does not expose an LLM field, so default to 'desconocido'.
+    If a future /health adds a boolean/string LLM flag, surface it coarsely
+    without echoing provider names, keys or config."""
+    for key in ("llm", "llm_status", "llm_ok"):
+        if key in payload:
+            val = payload[key]
+            if isinstance(val, bool):
+                return "operativo" if val else "degradado"
+            if isinstance(val, str) and val.strip():
+                return val.strip().lower()[:24]
+    return "desconocido"
+
+
 def _format_health_reply(payload: Dict[str, Any]) -> str:
-    """Format /health JSON for human-readable Notion reply."""
-    pretty = json.dumps(payload, indent=2, ensure_ascii=False, sort_keys=True)
-    if len(pretty) > _REPLY_MAX_CHARS:
-        pretty = pretty[: _REPLY_MAX_CHARS - 20] + "\n…(truncated)"
-    return f"Worker /health response:\n```json\n{pretty}\n```"
+    """Stable human summary of worker health — NO internal catalog/config/URLs.
+
+    Surfaces only: overall OK/degraded, handler count, LLM status. Deliberately
+    omits tasks_registered (the handler list), tasks_in_memory, ts and any other
+    internal field."""
+    ok = bool(payload.get("ok"))
+    registered = payload.get("tasks_registered")
+    n_handlers = len(registered) if isinstance(registered, (list, tuple, dict)) else None
+    handlers_part = f"{n_handlers} handlers" if n_handlers is not None else "handlers n/d"
+    llm_part = f"LLM {_summarize_llm_status(payload)}"
+    estado = "OK" if ok else "degradado"
+    return _with_prefix(f"Worker {estado} · {handlers_part} · {llm_part}")
 
 
 def _format_unknown_reply(text: str) -> str:
-    snippet = (text or "")[:200]
-    return (
+    return _with_prefix(
         "Comando no reconocido en triage v0. "
         "Comandos disponibles: `/health`. "
-        "Razonamiento libre y comandos extendidos: pendiente task 033 (post Vertex Fase 1, 2026-05-14). "
-        f"\n\nTexto recibido: `{snippet}`"
+        "Razonamiento libre y comandos extendidos: pendiente task 033 (post Vertex Fase 1, 2026-05-14)."
     )
 
 
 def _format_health_error_reply(error: str) -> str:
-    return (
-        "No pude consultar el worker /health (gap honesto, SOUL Regla 22).\n"
-        f"Error: `{error[:300]}`\n"
-        "Posibles causas: worker reiniciando, puerto 8088 no escuchando, timeout."
+    # Keep the error class only; do not echo internal URLs/ports/config to David.
+    err_class = (error.split(":", 1)[0] or "error").strip()[:60]
+    return _with_prefix(
+        "No pude consultar el estado del worker ahora (gap honesto, SOUL Regla 22). "
+        f"Tipo de error: `{err_class}`. "
+        "Posibles causas: worker reiniciando o no disponible temporalmente."
     )
 
 

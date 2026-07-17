@@ -117,10 +117,18 @@ Si X ≠ Y, esa divergencia ES el hallazgo principal del reporte.
 El coordinador O16.2 NO escribe a Notion (no tiene scope). Los writes a Notion los hace
 solo el writer Granola operacional o un hilo coordinador notion-governance específico.
 
-## Mailbox protocol entre hilos
+## Coordinación entre hilos (`.agents/tasks`)
 
-Si un hilo necesita coordinación con otro hilo (ej: O16.2 necesita esperar que RRSS
-termine un deploy compartido), debe dejar mensaje en `.agents/mailbox/` con:
+> Actualizado 2026-07-17 (sys-diag): la coordinación primaria entre hilos es
+> **`.agents/tasks/`** + `.agents/board.md`, que es lo que los agentes usan hoy.
+> `.agents/mailbox/` es **legado** — el directorio ni siquiera existe en el árbol
+> actual; no lo uses como fuente operativa. El bloque de abajo se conserva solo
+> como referencia histórica del formato de mensaje.
+
+Si un hilo necesita coordinación con otro hilo (ej: esperar que otro termine un
+deploy compartido), crea una tarea en `.agents/tasks/` (y anótala en
+`.agents/board.md`) con el estado de bloqueo y la señal de desbloqueo. Formato
+mínimo del cuerpo:
 
 ```yaml
 from: coord-o16
@@ -129,8 +137,15 @@ date: 2026-05-10
 type: coordination
 action: wait_for
 detail: "Esperar fin de deploy ACA Job stage7_5 antes de tocar CAE cae-umbral-agents-prod"
-unblock_signal: "git push de rrss-wave2a/* a main + reply mailbox"
+unblock_signal: "git push de rrss-wave2a/* a main + reply en la task"
 ```
+
+<details><summary>Legado: mailbox protocol (no operativo)</summary>
+
+Versiones anteriores dejaban el mensaje en `.agents/mailbox/`. Ese directorio no
+existe; migrado a `.agents/tasks/`.
+
+</details>
 
 ## Antipatrones bloqueados
 

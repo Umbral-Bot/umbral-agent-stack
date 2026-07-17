@@ -32,5 +32,11 @@ load_openclaw_env "$HOME/.config/openclaw/env"
 export PYTHONPATH="$PWD"
 
 echo "$(date '+%Y-%m-%d %H:%M:%S') Starting Notion Poller daemon..."
-nohup python3 scripts/vps/notion-poller-daemon.py >> /tmp/notion_poller.log 2>&1 &
+# Tanda A (sys-diag 2026-07-17): send the daemon's own stdout/stderr to a
+# SEPARATE boot log, NOT /tmp/notion_poller.log. The daemon logs to
+# /tmp/notion_poller.log via a RotatingFileHandler (sole writer); redirecting
+# the process fds here would (a) duplicate every line and (b) hold an append
+# fd on the pre-rotation inode, defeating rotation. The boot log only captures
+# uncaught tracebacks/prints from startup.
+nohup python3 scripts/vps/notion-poller-daemon.py >> /tmp/notion_poller_boot.log 2>&1 &
 echo "$(date '+%Y-%m-%d %H:%M:%S') Daemon started (pid=$!)."

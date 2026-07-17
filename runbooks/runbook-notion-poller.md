@@ -1,9 +1,13 @@
 # Runbook — Notion Poller (Control Room + scan V2 Granola)
 
-> Estado 2026-07-17: **poller PAUSADO en VPS** (`CAP_POLLER_PAUSED`, contencion del
-> plan hibrido). El aislamiento P2a del scan V2 esta **implementado en codigo, NO
-> desplegado**. Este runbook describe como reactivar Control Room dejando la
-> clasificacion V2 apagada por defecto.
+> Estado 2026-07-17 (post sys-diag): **poller ACTIVO en VPS, solo Control Room**.
+> El daemon corre por el watchdog (verificado: PID vivo relanzado tras el deploy
+> P2a #540). La **clasificacion V2 de Granola esta APAGADA por defecto**
+> (`NOTION_POLLER_ENABLE_V2_CLASSIFY` ausente = fail-closed) y, cuando se
+> habilita, opera bajo **gate humano** (`Procesar con agente=true`). Este runbook
+> describe la topologia actual, el flag P2a y los procedimientos de
+> reactivacion/rollback. El estado anterior (`CAP_POLLER_PAUSED`) quedo superado;
+> se conserva el procedimiento de restauracion abajo por si el daemon se detiene.
 
 ## Topologia real (VPS)
 
@@ -12,6 +16,14 @@
 - **Daemon persistente**: `scripts/vps/notion-poller-daemon.py` → loop de 60 s sobre
   `dispatcher/notion_poller._do_poll` (PID en `/tmp/notion_poller.pid`, log en
   `/tmp/notion_poller.log`). Maneja SIGTERM limpio.
+  - **Logging (Tanda A 2026-07-17)**: el log lo escribe un unico
+    `RotatingFileHandler` (default 10 MB × 5 backups, configurable con
+    `NOTION_POLLER_LOG_MAX_BYTES` / `NOTION_POLLER_LOG_BACKUPS` /
+    `NOTION_POLLER_LOG_FILE`). El wrapper del cron manda el stdout/stderr del
+    proceso a `/tmp/notion_poller_boot.log` (no al log rotado) para no duplicar
+    lineas ni pelear con la rotacion. Antes el log crecia sin limite (~102 MB) y
+    duplicaba cada linea (FileHandler + StreamHandler→stderr redirigido al mismo
+    archivo). **El efecto vive solo tras el deploy de este cambio** (A4-live).
 - Cada ciclo hace: scheduler → comentarios de Control Room + review targets →
   rick-mention / smart replies → **scan V2 de clasificacion Granola (solo si esta
   habilitado por flag; default OFF)**.

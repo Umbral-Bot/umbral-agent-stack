@@ -1,7 +1,7 @@
 # Prompts multi-IA — captura para diagnóstico total Umbral (2026-07-17)
 
 Compañero de: `docs/plans/sys-diag-openclaw-worksystem-plan-2026-07-17.md`
-Uso: David copia cada prompt en la IA indicada, en el orden de la sección "Orden de pegado" del plan (§5). Cada respuesta se guarda tal cual (archivo .md o pegada en la sesión de consolidación — prompt 9). **Ningún prompt debe ejecutar acciones: todos son de lectura/inventario.**
+Uso: David copia cada prompt en la IA indicada, en el orden de la sección "Orden de pegado" del plan (§5). **El prompt 10-n8n va en la PRIMERA tanda**: n8n corre en la VPS con workflows que no existen en ningún repo (riesgo de pérdida). Cada respuesta se guarda tal cual (archivo .md o pegada en la sesión de consolidación — prompt 9). **Ningún prompt debe ejecutar acciones: todos son de lectura/inventario.**
 
 Reglas comunes ya embebidas en cada prompt: no inventar (UNKNOWN si no hay acceso), no secretos/PII, taxonomía `ACTIVE_HEALTHY|ACTIVE_DEGRADED|ACTIVE_NOISY|OBSOLETE|ORPHAN|DRIFT_REPO_VPS|NEVER_SHIPPED|DUPLICATE|SECURITY_RISK|COST_RISK|UNKNOWN`, y oportunidades ligadas al sistema de trabajo real (no wishlist).
 
@@ -81,7 +81,7 @@ TAREA — tabla markdown por sección, con evidencia path:línea o hash de commi
 1. ADRs (docs/adr/): número | decisión | ¿el código actual la respeta? | etiqueta (ACTIVE_HEALTHY/DRIFT_REPO_VPS/OBSOLETE).
 2. DEUDA TÉCNICA: TODOs/FIXMEs/hacks relevantes en dispatcher/, worker/, scripts/ | riesgo real | esfuerzo.
 3. HANDLERS/FEATURES NUNCA ACTIVADOS: código mergeado que ningún cron/config/flag invoca (buscá flags default-off, tasks sin caller, p.ej. en copilot_agent/, mission_control/, evals/) | etiqueta NEVER_SHIPPED.
-4. PRs/RAMAS ABANDONADAS: ramas remotas sin merge > 30 días | qué contienen | KEEP/DELETE.
+4. PRs/RAMAS: cruzá `gh pr list --state open` + `git branch -r --no-merged origin/main` (dato de contexto: hay ~239 ramas remotas sin merge y 1 solo PR abierto). Para las ~20 ramas remotas más recientes sin merge: qué contienen | ¿su contenido ya llegó a main por otra vía? (MERGED_REMOTE_ONLY) | etiqueta ACTIVE/STALE/MERGED_REMOTE_ONLY/ORPHAN_LOCAL/UNKNOWN | recomendación KEEP/PR/ARCHIVE/DELETE_CANDIDATE. NO borres ni cierres nada.
 5. FOUNDRY/OAUTH: configs de Azure Foundry y OAuth Codex en el repo (docs/42, docs/43, env.example, gateway) | ¿el Worker puede heredar el OAuth del gateway hoy? | qué falta según el código.
 6. CONSISTENCIA: contradicciones entre docs/ y código actual (docs que describen features retiradas).
 
@@ -100,6 +100,7 @@ TAREA — YAML estricto:
 extensiones_vscode: [{nombre, ¿relacionada_a_umbral?, etiqueta}]  # solo las relevantes a agentes/IA/Azure
 actions_workflows: [{repo, workflow, trigger, ultima_corrida_estado, etiqueta}]  # org Umbral-Bot y repos de David
 entornos_github: [{repo, environments/secrets POR NOMBRE, etiqueta}]  # jamás valores
+ramas_y_prs: [{repo, ramas_remotas_sin_merge_conteo, prs_abiertos: [{num, rama, edad}], ramas_stale_top5, etiqueta ACTIVE/STALE/MERGED_REMOTE_ONLY/UNKNOWN}]  # org Umbral-Bot: umbral-agent-stack, notion-governance, umbral-bot; solo inventario, NO cerrar/borrar nada
 azure_vinculado: [{recurso, para_qué, ¿activo?, etiqueta}]  # subscripciones/recursos visibles desde acá; si no ves Azure, UNKNOWN
 scripts_locales: [{path, propósito, última_modificación, etiqueta}]  # scripts sueltos en el Windows de David que toquen Umbral (tareas programadas de Windows incluidas: schtasks /query si podés)
 oportunidades: [3-5 concretas ligadas a lo visto]
@@ -126,6 +127,7 @@ worker: curl -fsS localhost:8088/health → familias de tasks y conteo
 logs_48h: últimos errores de worker/poller/gateway (journalctl --user o logs/) sanitizados → [{origen, error, frecuencia}]
 env_nombres: nombres presentes en ~/.config/openclaw/env y el env del worker → marcá presencia/ausencia de GOOGLE_API_KEY, ANTHROPIC_API_KEY, UMBRAL_DISABLE_CLAUDE, NOTION_POLLER_ENABLE_V2_CLASSIFY, AZURE_*, OPENAI_*
 drift: cd ~/umbral-agent-stack && git log --oneline -3 ; git status --short → ¿producción corre main limpio?
+clones_vps: ls -d ~/umbral-agent-stack* /tmp/*clean* /tmp/*-clean 2>/dev/null; por cada clone/worktree en la VPS: {path, rama, dirty sí/no, último commit+fecha, ¿quién lo usa?, etiqueta ACTIVE/STALE/ORPHAN_LOCAL/DIRTY_HIGH_RISK/UNKNOWN, recomendación KEEP/ARCHIVE/DELETE_CANDIDATE/DO_NOT_TOUCH}  # NO borres ni muevas nada
 skills_drift: diff -rq ~/.openclaw/workspace/skills ~/umbral-agent-stack/openclaw/workspace-templates/skills | head -40
 redis_claves: redis-cli --scan --pattern '*cursor*' | head -20 (solo nombres; sin GET de contenido)
 oportunidades: [3-5 retiros/arreglos concretos según lo observado]
@@ -180,7 +182,7 @@ git fetch origin && git checkout claude/plan-sys-diag-openclaw-worksystem-2026-0
 ROL: Sos el consolidador del diagnóstico total Umbral. Insumos: (1) docs/plans/sys-diag-openclaw-worksystem-plan-2026-07-17.md; (2) docs/audits/sys-diag-openclaw-inventory-draft-2026-07-17.md (inventario propio con evidencia VPS/repo); (3) las respuestas multi-IA que pego a continuación de este prompt (ChatGPT, Notion AI, Cursor, Codex, GitHub Copilot, Copilot VPS, M365 si aplica, Perplexity).
 
 TAREA:
-1. Validación cruzada: donde una IA contradiga la evidencia VPS/repo del inventario, gana la evidencia observable; anotá el conflicto.
+1. Validación cruzada: donde una IA contradiga la evidencia VPS/repo del inventario, gana la evidencia observable; anotá el conflicto. Para clones/ramas/hilos: cruzá SIEMPRE contra el inventario git/gh del doc de auditoría (sección "Higiene de repos, clones y ramas") — la correspondencia clone↔hilo se valida con evidencia git (rama, último commit, dirty) + captura UI si existe, NUNCA solo por el nombre del hilo; sin captura, mantené [UI_EVIDENCE_PENDING].
 2. Fusioná todo en la matriz de consolidación (Fuente → Hallazgo → Etiqueta → Impacto en sistema de trabajo → Recomendación KEEP/FIX/DISABLE/DELETE/IMPLEMENT/DEFER → Esfuerzo → Dependencias → Riesgo), deduplicando por superficie.
 3. Actualizá el inventario draft a FINAL: docs/audits/sys-diag-openclaw-inventory-final-<fecha>.md, con las oportunidades re-priorizadas (quick wins / apalancamiento / retiros / nuevas / anti-recomendaciones).
 4. Proponeme un plan de ejecución por tandas (cada tanda ≤1 sesión, reversible, con gate humano), SIN implementar nada todavía.
@@ -192,7 +194,7 @@ REGLAS: sin fixes de código; sin deploy; sin gastar créditos Notion; taxonomí
 
 ## Prompt 10 — Opcional: n8n / Make / Linear vía MCP
 
-*(Captura 2026-07-17: **n8n SÍ corre en la VPS** — systemd user `n8n.service` activo desde 2026-06-23 — y el repo tiene 0 workflows exportados, así que la parte n8n de este prompt SÍ hace falta (vía MCP n8n o UI). Make: sin señal viva (sim-to-make roto por env ausente) — David decide. Linear: integración congelada desde marzo — David decide.)*
+*(Captura 2026-07-17: **n8n SÍ corre en la VPS** — systemd user `n8n.service` activo desde 2026-06-23 — y el repo tiene 0 workflows exportados: lo que corra ahí es irrecuperable desde git. Por eso la parte n8n de este prompt va en la **PRIMERA tanda** (vía MCP n8n o UI). Make: sin señal viva (sim-to-make roto por env ausente) — David decide. Linear: integración congelada desde marzo — David decide.)*
 
 ```text
 ROL: Auditor read-only de [n8n | Make | Linear] vía tus conectores. Solo inventario; no actives, no edites, no ejecutes workflows/escenarios.
@@ -219,4 +221,4 @@ PROHIBIDO: inventar, ejecutar, exponer API keys.
 | 7 | M365 Copilot | ☐ (opcional) | |
 | 8 | Perplexity | ☐ | |
 | 9 | Claude Code (consolidación) | ☐ (al final) | |
-| 10 | n8n/Make/Linear MCP | ☐ (opcional) | |
+| 10 | n8n/Make/Linear MCP | ☐ (n8n: PRIMERA tanda; Make/Linear opcionales) | |

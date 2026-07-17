@@ -28,12 +28,15 @@ Alcance: **solo docs + captura read-only + prompts multi-IA. Sin fixes, sin depl
 | S11 | n8n / Make / Power Automate | docs 37/39/60, procesos VPS, prompts | repo + VPS + prompts |
 | S12 | Mailbox legacy / `.agents` board / Linear | repo `.agents/`, docs 30/34/67 | repo |
 | S13 | Sistema de trabajo real de David (ritmos, gates, superficies canónicas) | notion-governance + AGENTS/SOUL/PROTOCOL + capturas multi-IA | repos + Fase 1C |
+| S14 | Higiene de repos, clones, worktrees y ramas en `C:\GitHub` (umbral-agent-stack*, notion-governance*, umbral-bot*, `.tmp-*`, `_wt*`) + hilos/agentes propietarios | git status/branch/worktree + `gh pr list` read-only; capturas UI de hilos Claude Code = `[UI_EVIDENCE_PENDING]` si faltan | local + David |
 
 ## 2. Taxonomía de hallazgos (obligatoria en todo entregable)
 
 `ACTIVE_HEALTHY` | `ACTIVE_DEGRADED` | `ACTIVE_NOISY` | `OBSOLETE` | `ORPHAN` | `DRIFT_REPO_VPS` | `NEVER_SHIPPED` | `DUPLICATE` | `SECURITY_RISK` | `COST_RISK` | `UNKNOWN`
 
 Reglas: una etiqueta primaria por hallazgo (secundarias entre paréntesis); `UNKNOWN` es legítimo y preferible a inventar; toda etiqueta exige evidencia citada (comando+salida, path+línea, o "contrato gov").
+
+Sub-taxonomía para S14 (higiene git): `ACTIVE | STALE | MERGED_REMOTE_ONLY | ORPHAN_LOCAL | DIRTY_HIGH_RISK | CONFLICT_RISK | UNKNOWN`, con recomendación por hallazgo `KEEP | COMMIT_SEPARATELY | PR | ARCHIVE | IGNORE | DELETE_CANDIDATE | DO_NOT_TOUCH`. Regla dura S14: **cero** borrado/stash/reset/checkout destructivo/cierre de PR/eliminación de ramas durante el diagnóstico; distinguir trabajo real (D-19, QW-2, P10-SEC63, auditorías) de basura potencial (`.audit-*`, `.tmp-*`, evidencia no gitignored); la correspondencia clone↔hilo sin captura UI se marca `[UI_EVIDENCE_PENDING]`, nunca se inventa.
 
 ## 3. Fuentes de verdad a cruzar
 
@@ -61,16 +64,16 @@ Etiquetado de evidencia obligatorio: `[VPS evidencia]` / `[repo inferencia]` / `
 
 ## 5. Orden de ejecución de la captura
 
-1. **Ya (esta sesión, sin David):** captura VPS read-only (S1–S7, S10–S12 parte repo) + síntesis fuentes locales (S13 parcial) → inventario draft.
-2. **David, primera tanda (independientes, en paralelo):** prompts 6 (Copilot VPS, valida mi captura), 2 (Notion AI), 1 (ChatGPT).
+1. **Ya (esta sesión, sin David):** captura VPS read-only (S1–S7, S10–S12 parte repo) + síntesis fuentes locales (S13 parcial) + inventario git/gh de clones y ramas (S14) → inventario draft.
+2. **David, primera tanda (independientes, en paralelo):** prompt 10-n8n (**adelantado**: n8n corre en VPS con workflows sin export canónico en repo — riesgo de pérdida), 6 (Copilot VPS, valida mi captura), 2 (Notion AI), 1 (ChatGPT).
 3. **David, segunda tanda:** 4 (Codex), 5 (GitHub Copilot), 3 (Cursor), 7 (M365 si aplica).
 4. **David, tercera tanda:** 8 (Perplexity — no depende de nada, puede ir cuando quiera).
-5. **Cierre:** David pega todas las respuestas en una sesión nueva con el prompt 9 → consolidación final (paquete siguiente).
+5. **Cierre:** David pega todas las respuestas en una sesión nueva con el prompt 9 → consolidación final (paquete siguiente), cruzando contra el inventario git/gh de S14 (no contra nombres de hilos).
 
 ## 6. Criterios PASS/FAIL
 
 **Del diagnóstico (Fase 1):**
-- PASS: todo ítem del checklist S1–S12 tiene etiqueta taxonómica + evidencia o `UNKNOWN` explícito; SIM Daily Report identificado (generador, causa del fail, recomendación KEEP/FIX/DISABLE); triage v0 documentado; skills drift cuantificado; ≥9 prompts listos.
+- PASS: todo ítem del checklist S1–S14 tiene etiqueta taxonómica + evidencia o `UNKNOWN` explícito; SIM Daily Report identificado (generador, causa del fail, recomendación KEEP/FIX/DISABLE); triage v0 documentado incluyendo la reconciliación de métricas del reply `/health` (tasks_registered vs tasks_in_memory); skills drift cuantificado; inventario de clones/ramas con etiquetas o gaps `[UI_EVIDENCE_PENDING]`; ≥9 prompts listos.
 - FAIL: cualquier "verificado" sin evidencia (SOUL §18); cualquier fix aplicado; cualquier crédito Notion AI gastado por el stack.
 
 **Del cruce con work system:**
@@ -91,6 +94,6 @@ Etiquetado de evidencia obligatorio: `[VPS evidencia]` / `[repo inferencia]` / `
 1. Este plan → gate `SYS_DIAG_PLAN_READY`.
 2. `docs/plans/sys-diag-capture-prompts-2026-07-17.md` — ≥9 prompts listos para pegar.
 3. `docs/audits/sys-diag-openclaw-inventory-draft-2026-07-17.md` — inventario propio con taxonomía + matriz de consolidación (sección D) + oportunidades (sección E).
-4. Commit en rama; PR solo-docs opcional (requiere confirmación de David).
+4. Commit en rama; PR solo-docs (confirmado por David 2026-07-17) → gate `SYS_DIAG_DOCS_PR_READY` con el PR abierto (sin merge; base de la consolidación con prompt 9).
 5. Resumen operativo a David: orden de pegado (≤10 líneas).
 → gate `SYS_DIAG_CAPTURE_READY` cuando 2+3 estén completos.

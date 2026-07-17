@@ -18,11 +18,31 @@ import pytest
 from worker.models import TaskEnvelope, Team, TaskType
 from worker.tasks import TASK_HANDLERS
 from worker.tasks.rick_orchestrator import (
+    RICK_REPLY_PREFIX,
     _classify_command,
+    _format_health_error_reply,
     _format_health_reply,
     _format_unknown_reply,
+    _with_prefix,
     handle_rick_orchestrator_triage,
 )
+
+
+# Fields that must NEVER appear in a David-facing reply (internal catalog/telemetry).
+_LEAK_MARKERS = (
+    "tasks_registered",
+    "tasks_in_memory",
+    "```json",
+    "Worker /health response",
+    "notion.write_transcript",  # a real handler name — proves no catalog echo
+    "127.0.0.1",
+    ":8088",
+)
+
+
+def _assert_no_leak(text: str) -> None:
+    for marker in _LEAK_MARKERS:
+        assert marker not in text, f"reply leaked internal marker: {marker!r}"
 
 
 # ---------------------------------------------------------------------------
@@ -101,21 +121,66 @@ def test_classify_command_unknown(text: str) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_format_health_reply_includes_real_payload_keys() -> None:
-    reply = _format_health_reply({"ok": True, "version": "0.4.0", "ts": 123})
-    assert "Worker /health response" in reply
-    assert '"ok"' in reply and "true" in reply
-    assert '"version"' in reply and "0.4.0" in reply
+def test_format_health_reply_sane_is_summary_without_catalog() -> None:
+    """A3: healthy reply is a stable human summary, NOT the raw /health payload."""
+    payload = {
+        "ok": True,
+        "version": "0.4.0",
+        "ts": 123,
+        "tasks_in_memory": 445,
+        "tasks_registered": ["ping", "notion.write_transcript", "llm.generate"],
+    }
+    reply = _format_health_reply(payload)
+    assert reply.startswith(RICK_REPLY_PREFIX)
+    assert "Worker OK" in reply
+    assert "3 handlers" in reply  # count only, never the names
+    _assert_no_leak(reply)
+
+
+def test_format_health_reply_degraded() -> None:
+    """A3: ok=false renders as 'degradado', still no catalog leak."""
+    payload = {"ok": False, "tasks_registered": ["ping"], "llm": False}
+    reply = _format_health_reply(payload)
+    assert "Worker degradado" in reply
+    assert "LLM degradado" in reply
+    assert "1 handlers" in reply
+    _assert_no_leak(reply)
+
+
+def test_format_health_reply_llm_field_summarized_coarsely() -> None:
+    payload = {"ok": True, "tasks_registered": [], "llm_ok": True}
+    reply = _format_health_reply(payload)
+    assert "LLM operativo" in reply
+    _assert_no_leak(reply)
+
+
+def test_format_health_error_reply_hides_internals() -> None:
+    """A3: health error surfaces only the error class, no URL/port/config."""
+    reply = _format_health_error_reply("ConnectError: Connection refused to http://127.0.0.1:8088")
+    assert reply.startswith(RICK_REPLY_PREFIX)
+    assert "gap honesto" in reply.lower()
+    assert "ConnectError" in reply
+    _assert_no_leak(reply)
+
+
+def test_with_prefix_is_idempotent() -> None:
+    """A3 anti-loop: prefix applied once, never duplicated."""
+    once = _with_prefix("Worker OK · 3 handlers · LLM desconocido")
+    twice = _with_prefix(once)
+    assert once == twice
+    assert once.count(RICK_REPLY_PREFIX) == 1
+    # An already-prefixed string is left untouched.
+    assert _with_prefix("Rick: hola").count(RICK_REPLY_PREFIX) == 1
 
 
 def test_format_unknown_reply_is_honest_gap() -> None:
     reply = _format_unknown_reply("@rick hacé algo raro")
+    assert reply.startswith(RICK_REPLY_PREFIX)
     # Debe declarar el gap explícitamente — NO inventar respuesta.
     assert "no reconocido" in reply.lower()
     assert "/health" in reply
     assert "task 033" in reply  # referencia explícita a la deuda
-    # NO debe contener JSON falso simulando /health.
-    assert "Worker /health response" not in reply
+    _assert_no_leak(reply)
 
 
 # ---------------------------------------------------------------------------
@@ -146,12 +211,13 @@ def test_triage_health_command_returns_json_and_posts_reply(
     assert result["reply_comment_id"] == "newCmt123"
     assert result["health"] == {"ok": True, "version": "0.4.0", "ts": 1}
     assert result["error"] is None
-    # Reply posteado al page_id del envelope.
+    # Reply posteado al page_id del envelope, saneado y con prefijo anti-loop.
     mock_notion.add_comment.assert_called_once()
     kwargs = mock_notion.add_comment.call_args.kwargs
     assert kwargs["page_id"] == "pageABC"
-    assert "Worker /health response" in kwargs["text"]
-    assert "0.4.0" in kwargs["text"]
+    assert kwargs["text"].startswith(RICK_REPLY_PREFIX)
+    assert "Worker OK" in kwargs["text"]
+    _assert_no_leak(kwargs["text"])
 
 
 @patch("worker.tasks.rick_orchestrator.notion_client")
@@ -174,9 +240,10 @@ def test_triage_unknown_command_returns_honest_gap(
     # Self-call al worker NO debe ocurrir para comandos unknown.
     mock_httpx_client.assert_not_called()
     posted_text = mock_notion.add_comment.call_args.kwargs["text"]
+    assert posted_text.startswith(RICK_REPLY_PREFIX)
     assert "no reconocido" in posted_text.lower()
     # NO inventa JSON ni respuesta falsa.
-    assert "Worker /health response" not in posted_text
+    _assert_no_leak(posted_text)
 
 
 @patch("worker.tasks.rick_orchestrator.notion_client")
@@ -200,11 +267,12 @@ def test_triage_health_self_call_failure_returns_honest_error(
     assert result["health"] is None
     assert result["error"] is not None
     assert "ConnectError" in result["error"]
-    # Reply se postea con el error REAL, no con JSON inventado.
+    # Reply se postea con el tipo de error REAL, saneado (sin URL/puerto/config).
     posted_text = mock_notion.add_comment.call_args.kwargs["text"]
+    assert posted_text.startswith(RICK_REPLY_PREFIX)
     assert "gap honesto" in posted_text.lower()
-    assert "ConnectError" in posted_text or "Connection refused" in posted_text
-    assert "Worker /health response" not in posted_text
+    assert "ConnectError" in posted_text
+    _assert_no_leak(posted_text)
 
 
 @patch("worker.tasks.rick_orchestrator.notion_client")

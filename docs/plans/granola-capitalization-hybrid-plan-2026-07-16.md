@@ -8,6 +8,18 @@ Gate de este documento: **`CAP_HYBRID_PLAN_READY`**
 
 ---
 
+## 0-bis. GOs de David (2026-07-16, posteriores al plan)
+
+David aprobó el plan y emitió estas decisiones. Prevalecen sobre las recomendaciones originales donde difieran:
+
+1. **Poller: PAUSADO (contención inmediata) — gate `CAP_POLLER_PAUSED`.** Ejecutado el 2026-07-16 ~21:57 -04: línea del cron comentada con marcador `CAP_POLLER_PAUSED` + daemon detenido con SIGTERM (shutdown limpio, PID file removido). Evidencia before/after en `~/.coord-ag-evidence/CAP_POLLER_PAUSED/` (crontab.before.txt / crontab.after.txt / README.txt). Corrección al as-is §1.3: el poller real en VPS es **cron-watchdog cada 5 min + daemon persistente** (`notion-poller-daemon.py`, loop interno de 60 s), no un cron `--once`; por eso la pausa requirió ambos pasos. Reversión: descomentar la línea 4 del crontab — el watchdog relanza el daemon solo. Efecto colateral asumido: mientras esté pausado no hay poll de comentarios de Control Room ni smart replies desde Notion (Telegram no se afecta).
+2. **Camino LLM barato (P2): Rick + GPT-5.6 Luna vía OAuth ChatGPT.** NO se restaura `GOOGLE_API_KEY` del Worker en este paquete. Resuelve la Decisión abierta #1 (supersede la recomendación Gemini): cuando se emita P2, su diseño debe rutear la clasificación propositora por OpenClaw (Rick + Luna) en vez de `llm.generate` del Worker, manteniendo los mismos gates (`Procesar con agente`, escalate-to-review, golden set ≥8/10, 0 comercial→Tarea).
+3. **P4 (notion-governance): diferido** hasta que David resuelva el working tree sucio (D-19/QW-2/P10-SEC63).
+4. **PR solo-docs del plan: aprobado y abierto** (sin código de implementación; P0/P1 siguen sin empezar).
+5. **Notion Workers (`@notionhq/workers`): descartado como motor de capitalización.** A lo sumo, tools auxiliares en un paquete futuro explícito; no forma parte de la arquitectura B/C de este plan.
+
+---
+
 ## 0. Pregunta que responde este plan
 
 Tras el piloto V2.1/V2.1.1 (notion-governance PR #16, squash `ebf7d417`):
@@ -214,7 +226,7 @@ raw (Transcripciones   │ (A) CLASIFICACIÓN                            │
 
 ## 6. Decisiones abiertas (máx 5, con recomendación)
 
-1. **Proveedor LLM para el clasificador VPS.** Opciones: restaurar `GOOGLE_API_KEY` (Gemini Flash) / configurar Azure OpenAI keys / dejar P2 sin LLM (solo clasificación manual+Kimi). **Recomendación: restaurar `GOOGLE_API_KEY`** — ya integrado en `llm.py`, costo por fila despreciable, y desbloquea también `composite.research_report` que hoy falla por lo mismo.
+1. **Proveedor LLM para el clasificador VPS.** ~~Opciones: restaurar `GOOGLE_API_KEY` (Gemini Flash) / configurar Azure OpenAI keys / dejar P2 sin LLM~~ **RESUELTA por GO de David (§0-bis #2): Rick + GPT-5.6 Luna vía OAuth ChatGPT; no se restaura `GOOGLE_API_KEY` en este paquete.** Nota residual: `composite.research_report` sigue sin proveedor en el Worker; si duele, es un pendiente aparte, no de este plan.
 2. **¿P1 escribe relaciones Cliente/Partner en el raw?** **Recomendación: no** — P1 solo propaga relaciones ya presentes; el matching CRM queda en Kimi manual (donde demostró 0 errores) o en un P2+ con match exacto-único por nombre y fallback a vacío.
 3. **Disparador de P1 fase 2.** ¿Poller gated automático o solo manual indefinidamente? **Recomendación: manual hasta cerrar `CAP_P1_TASK_SLICE_PASS`, luego poller gated** (la query respeta `Procesar con agente=true`, que sigue siendo un click humano por fila — el volumen lo pone David/Rick, no un trigger).
 4. **Destino=Proyecto en el motor UAS.** El binding a Asesorías & Proyectos existe en la VPS y hay un slice update-only (`update_commercial_project_from_curated_session`), pero el registry declara `verified_live_no_runtime_write_path`. **Recomendación: fuera de alcance de este plan** — todo Destino=Proyecto queda en Revisión requerida (camino C); si más adelante duele, se diseña un paquete propio con su gate y cambio de registry primero (registry antes que código, no al revés).

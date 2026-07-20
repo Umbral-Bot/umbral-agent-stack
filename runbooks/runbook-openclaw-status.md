@@ -14,9 +14,23 @@ openclaw status --all
 
 ## Estado de modelos
 
+> ⚠️ **secret-output-guard (B2):** `openclaw models status` re-emite un
+> fingerprint parcial de la credencial Google Vertex en cada corrida. Un prefijo
+> enmascarado basta para correlacionar en audit logs y queda en transcripts.
+> **Nunca** captures su salida cruda a chat/logs/evidencia: filtrala siempre por
+> el redactor reproducible del repo.
+
 ```bash
-openclaw models status
+# Salida saneada (fingerprints parciales → [REDACTED]):
+openclaw models status 2>&1 | python3 ~/umbral-agent-stack/scripts/vps/secret_output_filter.py
 ```
+
+El filtro (`scripts/vps/secret_output_filter.py`, con test en
+`tests/test_secret_output_filter.py`) reemplaza valores tipo credencial por
+`[REDACTED]` sin tocar el texto normal (nombres de perfil, model ids,
+timestamps). No lee el auth store ni rota nada — es defensa conductual sobre la
+salida visible. Ver la skill `secret-output-guard` ("Tool-emitted partial
+leaks") y `docs/plans/tanda-b-security-execution-plan-2026-07-19.md` §B2.
 
 ## Logs recientes
 

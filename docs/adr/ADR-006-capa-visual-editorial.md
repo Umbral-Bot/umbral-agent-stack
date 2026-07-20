@@ -128,6 +128,24 @@ Rechazada. Re-sellers con data residency incierta y ToS que pueden no cubrir uso
 | Licencia AI excluida de protección legal Freepik | Baja | Medio | Nunca generar con prompts que incluyan nombres, marcas o personajes; guardar log de prompts |
 | Suspensión de cuenta por UI automation (UA-13) | **Eliminado** | — | API-first elimina este riesgo; UI automation prohibida |
 
+## Contención B4 (2026-07-20)
+
+`scripts/discovery/stage8_image_generator.py` todavía llama a Google/Gemini
+directo (`worker.tasks.google_image.handle_google_image_generate`), proveedor
+**superado** por Magnific en el update 2026-06-06. Mientras el adapter Magnific
+no esté cableado in-repo (MCP / OAuth pendiente), stage8 queda **contenido
+fail-closed** por `scripts/discovery/lib/image_provider_guard.py`:
+
+- la llamada directa a Google solo corre si **ambos** flags están activos:
+  `RICK_STAGE8_IMAGE_PROVIDER=google` **y** `RICK_STAGE8_GOOGLE_IMAGE_ENABLED=true`
+  (ambos default off);
+- con el default (`magnific`, no cableado) stage8 degrada a **no-op documentado**:
+  salta la propuesta, no llama a Google y **no** la marca `failed` (evita el
+  retry-churn de 24 h).
+
+Así una invocación manual/accidental nunca dispara el proveedor superado. Ver
+`docs/plans/tanda-b-security-execution-plan-2026-07-19.md` §5.
+
 ## Fuentes Perplexity
 
 - **UA-11**: `Perplexity/Umbral Agent Stack/11_ Evaluación Visual Nano Banana vs Freepik/capa-visual-rick-v1.md` — comparativa completa, pricing, licencias, riesgos, arquitectura visual

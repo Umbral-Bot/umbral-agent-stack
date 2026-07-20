@@ -213,6 +213,19 @@ def test_mark_failed_truncates_long_error(state_db):
 
 # ---------- publish_one ----------
 
+def _enable_org_publish(monkeypatch) -> str:
+    """Put the module in B4 org-publish-enabled mode and return the org URN.
+
+    Satisfies all three ``linkedin_org_guard`` criteria so the real POST path
+    is exercised: Company endpoint (/rest/posts), org author URN, enable flag
+    on. The org guard itself is unit-tested in test_linkedin_org_guard.py; here
+    we neutralise it so the HTTP/state mechanics remain covered.
+    """
+    monkeypatch.setenv("RICK_LINKEDIN_ORG_PUBLISH_ENABLED", "true")
+    monkeypatch.setattr(mod, "LINKEDIN_UGC_PATH", "/rest/posts")
+    return "urn:li:organization:123456"
+
+
 def _mock_httpx_post(monkeypatch, *, status_code=201,
                      post_urn="urn:li:share:abc123",
                      body=None):
@@ -283,11 +296,13 @@ def test_publish_one_missing_publish_enabled_blocks_before_gates_and_http(
 def test_publish_one_success_marks_published(state_db, monkeypatch):
     mod.ensure_publish_columns(state_db)
     pid = _insert_draft(state_db, status="draft_ready")
+    # B4: a real POST is only reachable in org-publish-enabled mode.
+    author_urn = _enable_org_publish(monkeypatch)
     client = _mock_httpx_post(monkeypatch, post_urn="urn:li:share:888")
     row = mod.read_publishable(state_db, limit=1)[0]
     status, msg = mod.publish_one(
         row=row, state_db=state_db,
-        author_urn="urn:li:person:rick",
+        author_urn=author_urn,
         access_token="AT-fake", dry_run=False,
     )
     assert status == "published"
@@ -295,13 +310,43 @@ def test_publish_one_success_marks_published(state_db, monkeypatch):
     # The POSTed payload must have NO meta keys + correct author.
     sent_payload = client.post.call_args.kwargs["json"]
     assert all(not k.startswith("_") for k in sent_payload)
-    assert sent_payload["author"] == "urn:li:person:rick"
+    assert sent_payload["author"] == author_urn
     # Headers must contain X-Restli-Protocol-Version + Bearer auth.
     headers = client.post.call_args.kwargs["headers"]
     assert headers["X-Restli-Protocol-Version"] == "2.0.0"
     assert headers["Authorization"].startswith("Bearer ")
     # DB updated
     assert mod.is_already_published(state_db, pid) is True
+
+
+def test_publish_one_org_guard_blocks_personal_post(
+    state_db, monkeypatch,
+):
+    """B4 containment: default posture (personal endpoint/author, no flag) must
+    block the real POST with all three reason codes and never touch HTTP."""
+    mod.ensure_publish_columns(state_db)
+    _insert_draft(state_db, status="draft_ready")
+    # Default posture: legacy /v2/ugcPosts, personal author, flag unset.
+    monkeypatch.delenv("RICK_LINKEDIN_ORG_PUBLISH_ENABLED", raising=False)
+    monkeypatch.setattr(mod, "log_event", MagicMock())
+    post_ugc = MagicMock(
+        side_effect=AssertionError("LinkedIn HTTP must not run"),
+    )
+    monkeypatch.setattr(mod, "post_ugc", post_ugc)
+
+    row = mod.read_publishable(state_db, limit=1)[0]
+    status, msg = mod.publish_one(
+        row=row, state_db=state_db,
+        author_urn="urn:li:person:rick",
+        access_token="AT-fake", dry_run=False,
+        notion_fetcher=lambda pid: {"id": pid},
+    )
+    assert status == "blocked"
+    assert "org_publish_blocked" in msg
+    assert "endpoint_not_company_posts" in msg
+    assert "author_not_organization_urn" in msg
+    assert "org_publish_flag_disabled" in msg
+    post_ugc.assert_not_called()
 
 
 def test_publish_one_skips_already_published(state_db, monkeypatch):
@@ -326,6 +371,7 @@ def test_publish_one_skips_already_published(state_db, monkeypatch):
 def test_publish_one_http_400_marks_failed(state_db, monkeypatch):
     mod.ensure_publish_columns(state_db)
     pid = _insert_draft(state_db, status="draft_ready")
+    author_urn = _enable_org_publish(monkeypatch)
     _mock_httpx_post(
         monkeypatch, status_code=400,
         body={"message": "Field 'specificContent' invalid", "status": 400},
@@ -333,7 +379,7 @@ def test_publish_one_http_400_marks_failed(state_db, monkeypatch):
     row = mod.read_publishable(state_db, limit=1)[0]
     status, msg = mod.publish_one(
         row=row, state_db=state_db,
-        author_urn="urn:li:person:rick",
+        author_urn=author_urn,
         access_token="AT-fake", dry_run=False,
     )
     assert status == "failed"
@@ -428,6 +474,8 @@ def test_main_refreshes_expired_token(
     """When access_token is expired, main() must call refresh internally."""
     mod.ensure_publish_columns(state_db)
     _insert_draft(state_db, status="draft_ready")
+    # B4: a real POST is only reachable in org-publish-enabled mode.
+    author_urn = _enable_org_publish(monkeypatch)
     tokens_path = tmp_path / "linkedin-tokens.json"
     # Already expired.
     tokens_path.write_text(json.dumps({
@@ -435,7 +483,7 @@ def test_main_refreshes_expired_token(
         "access_token_expires_at": "2020-01-01T00:00:00+00:00",
         "refresh_token_expires_at": "2099-01-01T00:00:00+00:00",
         "obtained_at": "2020-01-01T00:00:00+00:00",
-        "member_urn": "urn:li:person:rick",
+        "member_urn": author_urn,
     }))
     monkeypatch.setenv("LINKEDIN_CLIENT_ID", "id")
     monkeypatch.setenv("LINKEDIN_CLIENT_SECRET", "secret")

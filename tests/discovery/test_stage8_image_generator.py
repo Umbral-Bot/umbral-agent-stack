@@ -228,6 +228,11 @@ def test_process_proposal_happy_path_marks_ok(
     state_db, published_proposal, tmp_path, monkeypatch
 ):
     mod.ensure_image_columns(state_db)
+    # B4: the direct Google path is contained by default; enable it explicitly
+    # to exercise the generation → Notion mechanics. Guard unit-tested in
+    # test_image_provider_guard.py.
+    monkeypatch.setenv("RICK_STAGE8_IMAGE_PROVIDER", "google")
+    monkeypatch.setenv("RICK_STAGE8_GOOGLE_IMAGE_ENABLED", "true")
     # patch the proposal id to match table row id=1
     published_proposal["id"] = 1
 
@@ -325,9 +330,12 @@ def test_attach_image_skips_url_prop_when_missing_in_schema(
 # --------------------------------------------------------------------------
 
 def test_process_proposal_failure_marks_failed(
-    state_db, published_proposal, tmp_path
+    state_db, published_proposal, tmp_path, monkeypatch
 ):
     mod.ensure_image_columns(state_db)
+    # B4: enable the direct Google path so the handler runs and can fail.
+    monkeypatch.setenv("RICK_STAGE8_IMAGE_PROVIDER", "google")
+    monkeypatch.setenv("RICK_STAGE8_GOOGLE_IMAGE_ENABLED", "true")
     published_proposal["id"] = 2
 
     def fake_handle(_payload):
@@ -361,3 +369,80 @@ def test_process_proposal_failure_marks_failed(
     assert "gemini boom" in (row[1] or "")
     # Notion client must NOT have been touched (failure occurred at gen step).
     client.upload_file.assert_not_called()
+
+
+# --------------------------------------------------------------------------
+# Test 9 — B4 containment: default provider is a documented no-op (no Google)
+# --------------------------------------------------------------------------
+
+def test_process_proposal_contained_by_default_is_noop(
+    state_db, published_proposal, tmp_path, monkeypatch
+):
+    """Default provider (magnific, not wired) → documented no-op skip:
+    no direct Google call, and the proposal is NOT marked failed."""
+    mod.ensure_image_columns(state_db)
+    published_proposal["id"] = 1
+    # Default posture: no RICK_STAGE8_* flags → provider magnific → contained.
+    monkeypatch.delenv("RICK_STAGE8_IMAGE_PROVIDER", raising=False)
+    monkeypatch.delenv("RICK_STAGE8_GOOGLE_IMAGE_ENABLED", raising=False)
+    monkeypatch.setattr(mod, "log_event", MagicMock())
+
+    fake_handle = MagicMock()
+    client = MagicMock(spec=mod.NotionClient)
+
+    with patch(
+        "worker.tasks.google_image.handle_google_image_generate", fake_handle
+    ):
+        res = mod.process_proposal(
+            client=client,
+            db_path=state_db,
+            proposal=published_proposal,
+            image_dir=tmp_path / "img",
+            model="m",
+            size="1024x1024",
+            schema_props={"Visual asset URL": "url"},
+            dry_run=False,
+        )
+
+    assert res.get("skipped") == "image_provider_contained"
+    assert res["reason"] == "magnific_not_wired"
+    # The Google handler must never be called (guard runs before the import).
+    fake_handle.assert_not_called()
+    client.upload_file.assert_not_called()
+    # NOT marked failed — documented no-op (avoids the 24 h retry churn).
+    conn = sqlite3.connect(state_db)
+    row = conn.execute(
+        "SELECT image_status FROM proposals WHERE id=1"
+    ).fetchone()
+    conn.close()
+    assert row[0] is None
+
+
+def test_process_proposal_google_direct_blocked_without_enable_flag(
+    state_db, published_proposal, tmp_path, monkeypatch
+):
+    """Selecting provider=google without the enable flag stays contained."""
+    mod.ensure_image_columns(state_db)
+    published_proposal["id"] = 1
+    monkeypatch.setenv("RICK_STAGE8_IMAGE_PROVIDER", "google")
+    monkeypatch.delenv("RICK_STAGE8_GOOGLE_IMAGE_ENABLED", raising=False)
+    monkeypatch.setattr(mod, "log_event", MagicMock())
+
+    fake_handle = MagicMock()
+    client = MagicMock(spec=mod.NotionClient)
+    with patch(
+        "worker.tasks.google_image.handle_google_image_generate", fake_handle
+    ):
+        res = mod.process_proposal(
+            client=client,
+            db_path=state_db,
+            proposal=published_proposal,
+            image_dir=tmp_path / "img",
+            model="m",
+            size="1024x1024",
+            schema_props={"Visual asset URL": "url"},
+            dry_run=False,
+        )
+    assert res.get("skipped") == "image_provider_contained"
+    assert res["reason"] == "google_direct_disabled"
+    fake_handle.assert_not_called()

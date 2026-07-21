@@ -3,6 +3,19 @@
 Reads ``proposals.linkedin_draft_payload`` rows produced by
 ``stage9_linkedin_draft.py`` and POSTs each to LinkedIn.
 
+B4 containment (fail-closed) — ADR-009 / ADR-006
+------------------------------------------------
+A **real** POST is gated by
+``scripts.discovery.lib.linkedin_org_guard.assert_org_publish_allowed``: it is
+permitted only when the endpoint is the Company Posts API (``/rest/posts``),
+the author is an ``urn:li:organization:*`` URN, and
+``RICK_LINKEDIN_ORG_PUBLISH_ENABLED`` is truthy (default off). This module
+still targets the legacy personal endpoint (``/v2/ugcPosts``), so the guard
+**always blocks the real POST** until the ``editorial.publish.linkedin_org``
+handler exists — leaving ``--dry-run`` as the only path and preventing an
+accidental manual publish under the personal identity. See
+``docs/plans/tanda-b-security-execution-plan-2026-07-19.md`` §5.
+
 Pipeline per row:
   1. Skip if ``linkedin_status='published'`` (idempotent).
   2. Strip every meta key (``_endpoint``, ``_offline_draft``, ``_built_at``,
@@ -40,6 +53,10 @@ import logging
 import httpx
 
 from scripts.discovery import stage9b_linkedin_oauth as oauth
+from scripts.discovery.lib.linkedin_org_guard import (
+    OrgPublishBlockedError,
+    assert_org_publish_allowed,
+)
 from scripts.discovery.lib.publish_flags import PublishFlags
 from scripts.discovery.lib.publish_guard import (
     PublishBlockedError,
@@ -400,6 +417,28 @@ def publish_one(
                 reasons_blocked=[],
             )
             return "skipped", "dry-run"
+
+        # ---- B4 containment: LinkedIn Company-page org-publish guard ----
+        # Fail-closed. A real POST needs ALL of: endpoint == /rest/posts,
+        # author == urn:li:organization:*, RICK_LINKEDIN_ORG_PUBLISH_ENABLED.
+        # This module still targets the personal endpoint (LINKEDIN_UGC_PATH),
+        # so until editorial.publish.linkedin_org lands this ALWAYS blocks the
+        # real POST. See ADR-009 / ADR-006.
+        try:
+            assert_org_publish_allowed(
+                endpoint=LINKEDIN_UGC_PATH, author_urn=author_urn,
+            )
+        except OrgPublishBlockedError as e:
+            logger.warning(
+                "stage9c.org_publish_blocked proposal_id=%s reasons=%s",
+                pid, e.reasons,
+            )
+            log_event(
+                "stage9c.org_publish_blocked",
+                proposal_id=pid, page_id=notion_page_id,
+                content_hash=content_hash, reasons=e.reasons,
+            )
+            return "blocked", f"org_publish_blocked={e.reasons}"
 
         try:
             status_code, post_urn, body = post_ugc(

@@ -1,11 +1,25 @@
 """Stage 8: hero image generator for Publicaciones drafts.
 
+B4 containment (fail-closed) — ADR-006
+--------------------------------------
+ADR-006 (update 2026-06-06) superseded the Vertex/Gemini provider with
+**Magnific**. Image generation is gated by
+``scripts.discovery.lib.image_provider_guard.assert_generation_allowed``: the
+direct Google/Gemini call runs **only** when
+``RICK_STAGE8_IMAGE_PROVIDER=google`` *and*
+``RICK_STAGE8_GOOGLE_IMAGE_ENABLED=true`` (both default off). Otherwise stage8
+degrades to a **documented no-op** (the proposal is skipped, not marked
+failed, and no Google call is made) until the Magnific adapter is wired. See
+``docs/plans/tanda-b-security-execution-plan-2026-07-19.md`` §5.
+
 For each proposal that already has a Notion page (created by Stage 7) and
 no image yet, this script:
 
 1. Builds a visual prompt from the proposal's titular + ángulo + disciplinas.
-2. Generates an image via Gemini (in-process, reuses
-   ``worker.tasks.google_image.handle_google_image_generate``).
+2. Generates an image via the active provider (contained by default; the
+   legacy in-process Gemini path via
+   ``worker.tasks.google_image.handle_google_image_generate`` runs only when
+   explicitly re-enabled — see the B4 containment note above).
 3. Saves the bytes locally under ``~/.cache/rick-discovery/images/``.
 4. Uploads the file to Notion via the 2025-09-03 ``/file_uploads`` API
    (single-part flow).
@@ -60,6 +74,11 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+
+from scripts.discovery.lib.image_provider_guard import (
+    ImageProviderContained,
+    assert_generation_allowed,
+)
 
 # --------------------------------------------------------------------------
 # Constants
@@ -291,9 +310,16 @@ def generate_image(
 ) -> Path:
     """Generate one image and return the local path.
 
+    B4 containment: :func:`assert_generation_allowed` runs BEFORE the Google
+    handler is imported, so the direct Google/Gemini call is blocked unless
+    ``RICK_STAGE8_IMAGE_PROVIDER=google`` and ``RICK_STAGE8_GOOGLE_IMAGE_ENABLED``
+    are both set. Otherwise it raises :class:`ImageProviderContained` (ADR-006).
+
     Imports the Worker handler lazily so unit tests that don't need network
     can stub it without touching the heavyweight import chain.
     """
+    assert_generation_allowed()
+
     from worker.tasks.google_image import handle_google_image_generate
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -525,13 +551,35 @@ def process_proposal(
         raise RuntimeError("client is required when dry_run=False")
 
     try:
-        local_path = generate_image(
-            prompt,
-            output_dir=image_dir,
-            proposal_id=pid,
-            model=model,
-            size=size,
-        )
+        try:
+            local_path = generate_image(
+                prompt,
+                output_dir=image_dir,
+                proposal_id=pid,
+                model=model,
+                size=size,
+            )
+        except ImageProviderContained as exc:
+            # B4 documented no-op: no provider ran, no Google call. Do NOT mark
+            # the proposal failed (containment is expected, not an error —
+            # avoids the 24 h failed-retry churn). See ADR-006.
+            log_event(
+                "stage8.image_provider_contained",
+                proposal_id=pid,
+                page_id=page_id,
+                reason=exc.reason,
+            )
+            logger.warning(
+                "stage8.image_provider_contained proposal_id=%s reason=%s",
+                pid, exc.reason,
+            )
+            return {
+                "proposal_id": pid,
+                "page_id": page_id,
+                "skipped": "image_provider_contained",
+                "reason": exc.reason,
+            }
+
         log_event(
             "stage8.image_generated",
             proposal_id=pid,
@@ -693,6 +741,7 @@ def main(argv: list[str] | None = None) -> int:
 
     n_ok = 0
     n_fail = 0
+    n_skipped = 0
     try:
         for prop in proposals:
             res = process_proposal(
@@ -711,6 +760,13 @@ def main(argv: list[str] | None = None) -> int:
                     f"FAIL proposal_id={res['proposal_id']}: {res['error']}",
                     file=sys.stderr,
                 )
+            elif res.get("skipped"):
+                # B4 containment no-op (e.g. provider contained). Not a failure.
+                n_skipped += 1
+                print(
+                    f"SKIP proposal_id={res['proposal_id']} "
+                    f"{res['skipped']} reason={res.get('reason')}"
+                )
             else:
                 n_ok += 1
                 if args.dry_run:
@@ -727,8 +783,8 @@ def main(argv: list[str] | None = None) -> int:
         if client is not None:
             client.close()
 
-    log_event("stage8.run_end", n_ok=n_ok, n_fail=n_fail)
-    print(f"Done. ok={n_ok} fail={n_fail}")
+    log_event("stage8.run_end", n_ok=n_ok, n_fail=n_fail, n_skipped=n_skipped)
+    print(f"Done. ok={n_ok} fail={n_fail} skipped={n_skipped}")
     return 0 if n_fail == 0 else 4
 
 

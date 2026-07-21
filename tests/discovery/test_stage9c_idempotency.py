@@ -126,6 +126,11 @@ def test_successful_post_calls_register_published(
     )
     _insert(db_path, text="alpha post")
 
+    # B4: a real POST is only reachable in org-publish-enabled mode
+    # (guard unit-tested in test_linkedin_org_guard.py).
+    monkeypatch.setenv("RICK_LINKEDIN_ORG_PUBLISH_ENABLED", "true")
+    monkeypatch.setattr(mod, "LINKEDIN_UGC_PATH", "/rest/posts")
+
     # Mock the actual HTTP call → 201 Created.
     def fake_post_ugc(*, payload, access_token, client=None):
         return 201, "urn:li:share:9999", {"id": "urn:li:share:9999"}
@@ -135,7 +140,7 @@ def test_successful_post_calls_register_published(
     row = mod.read_publishable(db_path, limit=1)[0]
     status, msg = mod.publish_one(
         row=row, state_db=db_path,
-        author_urn="urn:li:person:rick",
+        author_urn="urn:li:organization:123456",
         access_token="AT-fake", dry_run=False,
         notion_fetcher=lambda pid: {"id": pid},
         dedup_module=fake_dedup,

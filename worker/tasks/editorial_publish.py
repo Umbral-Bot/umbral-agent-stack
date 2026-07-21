@@ -17,8 +17,14 @@ When a Notion page has the v2 ``Selección imagen`` property, its visual gate
 must also be ready. Legacy pages without that property keep their historical
 image behavior.
 
-Only the blog blob + canonical URL are produced here. LinkedIn/X are never
-auto-published (see docs/ops/notion-blog-linkedin-v3-content-model.md).
+Only the blog blob + canonical URL are produced here: this handler never
+auto-publishes LinkedIn or X (see
+docs/ops/notion-blog-linkedin-v3-content-model.md). LinkedIn publishing lives
+in a *separate* script (scripts/discovery/stage9c_linkedin_publish.py), which
+is itself contained fail-closed — it blocks every real POST until the ADR-009
+Company-page handler ``editorial.publish.linkedin_org`` exists (see
+docs/plans/tanda-b-security-execution-plan-2026-07-19.md §5). So "no auto-
+publish to LinkedIn/X" is true both here and, by containment, in stage9c.
 
 Network call uses ``urllib`` (no extra deps), mirroring ``make_webhook`` so tests
 patch ``worker.tasks.editorial_publish.urllib.request.urlopen``.

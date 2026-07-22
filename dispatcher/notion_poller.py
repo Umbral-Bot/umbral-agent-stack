@@ -141,6 +141,16 @@ CLASSIFY_FAIL_TTL_SEC = 30 * 60  # 30 min backoff on failure
 V2_CLASSIFY_BATCH_LIMIT = 3
 V2_SCAN_LIMIT = 10
 
+# Promote scan constants (P2.1 — Shortlist Aprobar -> Publicaciones).
+# See docs/ops/editorial-roadmap-norte-p1-p3-2026-07-22.md row P2.1 and
+# docs/ops/editorial-norte-hitl-contract-2026-07-22.md §4/§6.
+REDIS_KEY_PROMOTED_PREFIX = "umbral:notion_poller:promoted:"
+REDIS_KEY_PROMOTE_FAIL_PREFIX = "umbral:notion_poller:promote_fail:"
+PROMOTED_TTL_SEC = 24 * 60 * 60
+PROMOTE_FAIL_TTL_SEC = 30 * 60  # 30 min backoff on failure
+PROMOTE_BATCH_LIMIT = 3
+PROMOTE_SCAN_LIMIT = 10
+
 # P2a: the V2 classify scan is DEFAULT OFF and fail-closed. It caused the
 # 2026-07-16 incident (rows silently marked classified as `?/?/?` while the
 # Worker had no live LLM provider, scanning rows without the human gate) that
@@ -176,6 +186,41 @@ def _log_v2_disabled_once() -> None:
 def _reset_v2_disabled_log() -> None:
     """Test-only helper."""
     _V2_DISABLED_LOG_STATE["logged"] = False
+
+
+# P2.1: the promote scan (Shortlist Aprobar -> Publicaciones) is DEFAULT OFF
+# and fail-closed, mirroring the V2 classify scan above. Only these explicit
+# truthy values enable it; any other value — including absence — keeps it
+# disabled while Control Room / review targets / smart replies / V2 classify
+# keep running normally. Even when enabled, the actual gate re-check and the
+# Notion write happen inside the Worker task
+# (editorial.promote_shortlist_approval, ADR-011 #1) — this scan only decides
+# which Shortlist pages to ask Worker/core to (re-)evaluate.
+PROMOTE_ENV_FLAG = "NOTION_POLLER_ENABLE_PROMOTE"
+_PROMOTE_DISABLED_LOG_STATE = {"logged": False}
+
+
+def _promote_enabled() -> bool:
+    """Return True only for an explicit truthy NOTION_POLLER_ENABLE_PROMOTE."""
+    return os.environ.get(PROMOTE_ENV_FLAG, "").strip().lower() in _TRUTHY_ENV_VALUES
+
+
+def _log_promote_disabled_once() -> None:
+    """One INFO line per process, DEBUG afterwards — clear but not noisy."""
+    if not _PROMOTE_DISABLED_LOG_STATE["logged"]:
+        logger.info(
+            "Promote scan disabled (default; set %s=true to enable). "
+            "Control Room / review / smart replies / V2 classify unaffected.",
+            PROMOTE_ENV_FLAG,
+        )
+        _PROMOTE_DISABLED_LOG_STATE["logged"] = True
+    else:
+        logger.debug("Promote scan disabled (%s not truthy)", PROMOTE_ENV_FLAG)
+
+
+def _reset_promote_disabled_log() -> None:
+    """Test-only helper."""
+    _PROMOTE_DISABLED_LOG_STATE["logged"] = False
 
 
 def _parse_notion_datetime(value: str | None) -> datetime | None:
@@ -587,6 +632,107 @@ def _classify_pending_granola_pages(wc: WorkerClient, r: redis.Redis) -> None:
         logger.debug(metrics_line)
 
 
+def _promote_approved_shortlist_rows(wc: WorkerClient, r: redis.Redis) -> None:
+    """Scan Shortlist for Aprobar rows and ask Worker/core to promote each.
+
+    P2.1 contract: a row is a *candidate* here only if its flattened snapshot
+    shows `Resultado revisión == "Aprobar"` and an empty `promovido_a`
+    relation. This function never writes to Notion — it only calls the
+    `editorial.promote_shortlist_approval` Worker task, which re-fetches the
+    page and re-validates the gate before writing (fail-closed; avoids acting
+    on a stale scan snapshot). Redis here only dedupes *scan attempts* across
+    poll cycles, not the actual promotion (that idempotency lives in the
+    Worker task via `promovido_a` / `origen_alternativa`).
+    """
+    shortlist_ds_id = os.environ.get("NOTION_SHORTLIST_DS_ID", "").strip()
+    if not shortlist_ds_id:
+        return
+
+    try:
+        resp = wc.run(
+            "notion.read_database",
+            {"database_id_or_url": shortlist_ds_id, "max_items": PROMOTE_SCAN_LIMIT},
+        )
+    except Exception:
+        logger.warning("Promote scan: failed to read Shortlist DB", exc_info=True)
+        return
+
+    items = _extract_read_database_items(resp)
+    scanned = len(items)
+    eligible = 0
+    promoted = 0
+    skipped = 0
+    errors = 0
+
+    for item in items:
+        if promoted >= PROMOTE_BATCH_LIMIT:
+            break
+
+        page_id = str(item.get("page_id") or item.get("id") or "").strip()
+        if not page_id:
+            skipped += 1
+            continue
+
+        resultado = _extract_item_text(item, "Resultado revisión")
+        if resultado != "Aprobar":
+            skipped += 1
+            continue
+
+        promovido_a = (item.get("properties") or {}).get("promovido_a")
+        if promovido_a:
+            skipped += 1
+            continue
+
+        eligible += 1
+
+        redis_key = f"{REDIS_KEY_PROMOTED_PREFIX}{page_id}"
+        fail_key = f"{REDIS_KEY_PROMOTE_FAIL_PREFIX}{page_id}"
+        if r.exists(redis_key) or r.exists(fail_key):
+            skipped += 1
+            continue
+
+        try:
+            result = wc.run(
+                "editorial.promote_shortlist_approval",
+                {"shortlist_page_id": page_id},
+            )
+        except Exception:
+            errors += 1
+            r.set(fail_key, "1", ex=PROMOTE_FAIL_TTL_SEC)
+            logger.warning(
+                "Promote scan: page %s call failed (backoff %ds)",
+                page_id[:8], PROMOTE_FAIL_TTL_SEC, exc_info=True,
+            )
+            continue
+
+        ok = bool(result.get("ok")) if isinstance(result, dict) else False
+        if ok:
+            r.set(redis_key, "1", ex=PROMOTED_TTL_SEC)
+            promoted += 1
+            logger.info(
+                "Promote scan: shortlist page %s -> publicacion %s (created=%s)",
+                page_id[:8],
+                str(result.get("publicacion_page_id") or "")[:8],
+                result.get("created"),
+            )
+        else:
+            errors += 1
+            r.set(fail_key, "1", ex=PROMOTE_FAIL_TTL_SEC)
+            logger.warning(
+                "Promote scan: page %s did NOT promote (%s) — no success checkpoint, backoff %ds",
+                page_id[:8], (result or {}).get("error"), PROMOTE_FAIL_TTL_SEC,
+            )
+
+    metrics_line = (
+        f"Promote scan: promote_enabled=True scanned={scanned} eligible={eligible} "
+        f"promoted={promoted} skipped={skipped} errors={errors}"
+    )
+    if scanned > 0:
+        logger.info(metrics_line)
+    else:
+        logger.debug(metrics_line)
+
+
 def _do_poll(
     wc: WorkerClient,
     queue: TaskQueue,
@@ -683,6 +829,16 @@ def _do_poll(
     else:
         _log_v2_disabled_once()
 
+    # P2.1: promote approved Shortlist rows to Publicaciones — DEFAULT OFF
+    # (fail-closed). Everything above never depends on this.
+    if _promote_enabled():
+        try:
+            _promote_approved_shortlist_rows(wc, r)
+        except Exception:
+            logger.warning("Promote scan failed (general cycle unaffected)", exc_info=True)
+    else:
+        _log_promote_disabled_once()
+
 
 def main():
     import argparse
@@ -720,6 +876,11 @@ def main():
         logger.info("V2 classify scan ENABLED (%s is truthy).", V2_CLASSIFY_ENV_FLAG)
     else:
         logger.info("V2 classify scan disabled (default off; %s not truthy).", V2_CLASSIFY_ENV_FLAG)
+
+    if _promote_enabled():
+        logger.info("Promote scan ENABLED (%s is truthy).", PROMOTE_ENV_FLAG)
+    else:
+        logger.info("Promote scan disabled (default off; %s not truthy).", PROMOTE_ENV_FLAG)
 
     if args.once:
         logger.info("Notion poller --once (cron mode, worker=%s).", worker_url)

@@ -1,0 +1,298 @@
+# Alternativas / Shortlist — Notion Database Schema Spec
+#
+# Mirrors the LIVE Notion DB created 2026-07-22 by David + Notion AI (P1 of
+# docs/ops/editorial-roadmap-norte-p1-p3-2026-07-22.md). Unlike
+# publicaciones.schema.yaml (drafted before the DB existed), this file is a
+# READ-ONLY MIRROR of a database that already exists in Notion — Notion is the
+# source of truth; this file exists for validation, drift-detection, and
+# future tooling (P2 poller/dedupe/writer scripts). It does NOT create,
+# recreate, or modify the live DB. Schema changes remain solo-David
+# (ADR-007 §44); this file is updated to follow live changes, never the
+# reverse.
+#
+# Field list transcribed from
+# docs/ops/editorial-norte-hitl-contract-2026-07-22.md §6 (the P1 checklist
+# David executed). If a live field is renamed/added/removed in Notion without
+# updating this file, treat this file as stale until re-synced.
+#
+# Decision context:
+#   - HÍBRIDO schema (contract §6): fan-in of competing alternatives that
+#     mostly die; promotes (unidirectional, single-event) to Publicaciones on
+#     HITL-1 `Aprobar`. Publicaciones' linear state machine is not reused here.
+#   - HITL-1 four outputs: Archivar / Observar / Descartar / Aprobar
+#     (contract §4). Archivar != Descartar (Descartar feeds the negative-example
+#     learning loop, fila D — AUSENTE / P2.5, not cabled yet).
+#   - Source rule (contract §3): fuente_pieza_url must be the concrete item
+#     URL, never an org home/landing page.
+#   - `Observar` uses native Notion comments as the feedback channel — no
+#     dedicated field.
+
+database:
+  name: Alternativas / Shortlist
+  version: 0.1.0
+  status: live
+  owner: "David (schema) / Rick (data, via Worker per ADR-011 #1)"
+  mirrors_contract: docs/ops/editorial-norte-hitl-contract-2026-07-22.md#6-recomendación-de-schema-híbrido-proposed---decide-david
+
+  live_binding:
+    notion_page_url: https://app.notion.com/p/978766172abe46c9989bdcc031ea65c3
+    data_source: collection://5d9ca959-1783-4b99-af59-a0ca535fff08
+    parent_page_name: Sistema Editorial Rick
+    parent_page_url: https://app.notion.com/p/5894ba351e2749729077ca971fd9f52a
+    created: 2026-07-22
+    created_by: David + Notion AI (P1, manual setup — see rick-editorial ROLE.md
+      "Notion AI may support manual setup of pages/DBs, but does not
+      participate in recurring editorial operations")
+    verified: 2026-07-22 (David-reported IDs; not independently queried via
+      Notion API in this PR — docs/schema-only, no Notion API calls made)
+
+  description: >
+    Superficie V1 de curado: alternativas propuestas por Rick (arco narrativo +
+    pie de estructura de discurso + fuente-pieza, contrato §3), revisadas por
+    David vía HITL-1 (contrato §4). Al `Aprobar`, promueve (write vía
+    Worker/core, ADR-011 #1) una fila a Publicaciones. Co-ubicada con
+    Publicaciones bajo el mismo parent (decisión D1, locked 2026-07-22).
+
+# ---------------------------------------------------------------------------
+# Properties
+# ---------------------------------------------------------------------------
+
+properties:
+
+  # -- Identity --
+
+  - name: Título
+    type: title
+    required: true
+    description: Título/ángulo de la alternativa.
+
+  - name: alternativa_id
+    type: rich_text
+    required: true
+    description: >
+      ID estable de la alternativa. Usado para correlación y como llave de
+      promoción hacia Publicaciones.origen_alternativa.
+
+  - name: topic_key
+    type: rich_text
+    required: false
+    description: >
+      Tema normalizado para dedupe de candidato vs backlog (contrato §5.J,
+      fila J de la matriz de brecha). Distinto de la idempotencia de publish
+      (content_hash / idempotency_key en Publicaciones).
+
+  # -- Contrato de la Alternativa V1 (contrato §3, P0.2) --
+
+  - name: arco_narrativo
+    type: rich_text
+    required: true
+    description: >
+      Arco narrativo — trayectoria de la pieza (de qué parte, qué tensiona, a
+      dónde llega). Reemplaza a `recommended_angle` único como requisito
+      mínimo. OBLIGATORIO: si falta, rick-qa rechaza la alternativa.
+
+  - name: estructura_discurso
+    type: rich_text
+    required: true
+    description: >
+      Pie de estructura de discurso usado, formato por defecto (cambiable,
+      pero debe declararse el efectivamente usado):
+      "Estructura de discurso usada: [hipótesis, introducción, argumento 1,
+      argumento 2, contraargumento, contra-contraargumento, conclusión]".
+      OBLIGATORIO: si falta, rick-qa rechaza la alternativa.
+
+  - name: premisa
+    type: rich_text
+    required: false
+    description: Tesis condensada en 1-2 frases operativas.
+
+  # -- Source (contrato §3, regla fuente-pieza) --
+
+  - name: fuente_pieza_url
+    type: url
+    required: true
+    description: >
+      URL directa de la PIEZA concreta (item_url) — NUNCA la home/feed de la
+      organización. Una home/landing es contextual_reference,
+      public_citable=false (editorial-source-attribution-policy.md reglas
+      #5/#6/#7). Ejemplo negativo real: CAND-OLA3-03 usó buildingsmart.org
+      (home) — no conforme.
+
+  - name: fuente_tipo
+    type: select
+    required: false
+    description: Clasificación de la fuente (editorial-source-attribution-policy.md).
+    options:
+      - name: primary_source
+      - name: original_article
+      - name: official_doc
+      - name: analysis_source
+      - name: discovery_source
+      - name: contextual_reference
+    validation:
+      allowed_values:
+        [primary_source, original_article, official_doc, analysis_source,
+         discovery_source, contextual_reference]
+
+  - name: fuente_discovery_url
+    type: url
+    required: false
+    description: >
+      Home/feed de descubrimiento — trace interno, no citable en copy
+      público. Distinto de fuente_pieza_url (fila arriba).
+
+  # -- Classification / scoring --
+
+  - name: canal_sugerido
+    type: select
+    required: false
+    description: Canal sugerido para esta alternativa.
+    options:
+      - name: blog
+      - name: linkedin
+      - name: x
+      - name: newsletter
+    validation:
+      allowed_values: [blog, linkedin, x, newsletter]
+
+  - name: score_alineacion
+    type: number
+    required: false
+    description: Score compuesto 0-100.
+
+  # -- HITL-1 (contrato §4) --
+
+  - name: Resultado revisión
+    type: select
+    required: false
+    description: >
+      Salida de HITL-1 sobre esta alternativa. Archivar = terminal neutro (no
+      señal negativa, no promueve). Observar = en revisión, David deja
+      comentarios nativos de Notion (bucle pre-aprobación, distinto del gate
+      post-aprobación de Publicaciones). Descartar = terminal + señal
+      negativa (ver ejemplo_negativo/error_kind/motivo_descarte). Aprobar =
+      promueve a Publicaciones y dispara V2.
+    options:
+      - name: Pendiente
+        color: default
+      - name: Archivar
+        color: gray
+      - name: Observar
+        color: yellow
+      - name: Descartar
+        color: red
+      - name: Aprobar
+        color: green
+    validation:
+      allowed_values: [Pendiente, Archivar, Observar, Descartar, Aprobar]
+    default: Pendiente
+
+  - name: motivo_descarte
+    type: rich_text
+    required: false
+    description: Requerido si `Resultado revisión = Descartar`.
+
+  - name: ejemplo_negativo
+    type: checkbox
+    required: false
+    description: >
+      Marca captura de negativo para el loop de aprendizaje (fila D de la
+      matriz de brecha — AUSENTE, contrato §4; cableado del consumo por
+      rick-qa/generación es P2.5, no cableado aún).
+    default: false
+
+  - name: error_kind
+    type: multi_select
+    required: false
+    description: >
+      Tipo de fallo que alimenta QA/generación cuando ejemplo_negativo=true.
+      Opciones no enumeradas en el contrato ni en la evidencia live de esta
+      PR — poblar empíricamente conforme P2.5 capture tipos de fallo reales;
+      no inventar un enum cerrado aquí.
+    options: []
+
+  # -- Dedupe (contrato §5.J, fila J) --
+
+  - name: dedupe_status
+    type: select
+    required: false
+    description: >
+      Resultado de consultar el backlog de Publicaciones (filas Borrador y
+      Publicado) por topic_key antes de registrar la alternativa. Distinto de
+      la idempotencia de publish.
+    options:
+      - name: nuevo
+      - name: duplicado_borrador
+      - name: duplicado_publicado
+    validation:
+      allowed_values: [nuevo, duplicado_borrador, duplicado_publicado]
+
+  # -- Relations --
+
+  - name: publicacion_relacionada
+    type: relation
+    required: false
+    description: Fila existente en Publicaciones detectada por dedupe (si aplica).
+    relation_database: Publicaciones
+
+  - name: promovido_a
+    type: relation
+    required: false
+    description: >
+      Fila creada en Publicaciones al `Aprobar` (promoción unidireccional,
+      single-event; write vía Worker/core, ADR-011 #1). Vacía hasta que P2.1
+      (poller Aprobar→promueve) esté cableado.
+    relation_database: Publicaciones
+
+  # -- Observar (contrato §4) --
+  # Sin campo dedicado: David deja comentarios nativos de Notion sobre la
+  # página de la alternativa cuando Resultado revisión = Observar. Poller
+  # opcional para estructurar el feedback es P2 (no especificado aún).
+
+# ---------------------------------------------------------------------------
+# Relación con Publicaciones (back-link)
+# ---------------------------------------------------------------------------
+
+promotion:
+  target_database: Publicaciones
+  target_schema: notion/schemas/publicaciones.schema.yaml
+  trigger: Resultado revisión == Aprobar
+  writer: "Worker/core (ADR-011 #1) — n8n nunca escribe Notion directo"
+  back_link_field_on_target: origen_alternativa
+  cabled: false
+  note: >
+    P2.1 (poller Aprobar→promueve) no está cableado. Este archivo documenta
+    el contrato de promoción (contrato §4, §6); no implementa runtime.
+
+# ---------------------------------------------------------------------------
+# Recommended views (contract §6 does not specify views; proposed for parity
+# with Publicaciones' recommended_views — not enforced, not created live here)
+# ---------------------------------------------------------------------------
+
+recommended_views:
+  - name: Pendientes de revisión
+    type: table
+    filter: "Resultado revisión == Pendiente"
+    sort: Última edición desc
+    description: Cola de HITL-1 para David.
+
+  - name: Aprobadas (promoción)
+    type: table
+    filter: "Resultado revisión == Aprobar"
+    sort: Última edición desc
+    description: Alternativas aprobadas; verificar promovido_a se llenó (P2.1).
+
+  - name: Negativos (loop de aprendizaje)
+    type: table
+    filter: "ejemplo_negativo == true"
+    sort: Última edición desc
+    description: Insumo para rick-qa/generación (P2.5, no cableado aún).
+
+# ---------------------------------------------------------------------------
+# References
+# ---------------------------------------------------------------------------
+# - Contrato: docs/ops/editorial-norte-hitl-contract-2026-07-22.md §3, §4, §6
+# - Roadmap: docs/ops/editorial-roadmap-norte-p1-p3-2026-07-22.md (P1, P2.1, P2.5)
+# - Snapshot live: docs/ops/editorial-shortlist-p1-live-snapshot-2026-07-22.md
+# - Publicaciones: notion/schemas/publicaciones.schema.yaml
+# - Fuente attribution: docs/ops/editorial-source-attribution-policy.md

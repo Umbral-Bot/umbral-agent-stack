@@ -13,10 +13,23 @@
 #   - Two human gates: aprobado_contenido, autorizar_publicacion
 #   - Assets inline (visual briefs inside Publicaciones)
 #   - Referentes as discovery signal, not primary source
+#   - [2026-07-22] P1 norte (David + Notion AI, live): added origen_alternativa
+#     (relation -> Alternativas / Shortlist) + listo_rrss (checkbox, Fila I = B).
+#     See docs/ops/editorial-norte-hitl-contract-2026-07-22.md §6 and
+#     notion/schemas/alternativas-shortlist.schema.yaml. Neither field's writer
+#     is cabled yet (P2.1 promotion poller, P2.7 RRSS injection).
+#
+# KNOWN DRIFT (2026-07-22, not resolved here): David's live evidence for this
+# PR names the live parent page "Sistema Editorial Rick"
+# (https://app.notion.com/p/5894ba351e2749729077ca971fd9f52a), which does not
+# match `parent_policy.recommended_parent` below ("Sistema Editorial
+# Automatizado Umbral"). Left as-is — unclear if this is a rename of the same
+# page or two different pages; confirm with David before changing
+# recommended_parent.
 
 database:
   name: Publicaciones
-  version: 0.1.0
+  version: 0.2.0
   status: draft
   owner: Rick / Umbral BIM
 
@@ -245,6 +258,22 @@ properties:
     required: false
     description: Fecha/hora de publicación efectiva.
 
+  # -- RRSS post-publish (Fila I = B, sin autopublish) --
+  # Ver docs/ops/editorial-norte-hitl-contract-2026-07-22.md §5.I y
+  # docs/ops/editorial-publicaciones-human-review-contract.md §Postcondiciones.
+
+  - name: listo_rrss
+    type: checkbox
+    required: false
+    description: >
+      Estado terminal RRSS bajo Fila I = B.  Se marca true tras publish_success
+      del blog, una vez inyectados published_url y el copy de Notion en las
+      copies por canal.  El post a LinkedIn/X lo hace un humano
+      (manual/semi-auto); el código nunca autopublica RRSS.  Añadido en Notion
+      2026-07-22 (P1, David + Notion AI).  Cableado del writer (post-publish)
+      es P2.7 — no cableado aún.
+    default: false
+
   # -- Visual assets (inline, no separate DB in v1) --
 
   - name: Visual brief
@@ -279,6 +308,18 @@ properties:
       Self-relation para variantes/copies.  El blog post original
       es padre; LinkedIn/X/newsletter son variantes hijas.
     relation_database: Publicaciones
+
+  - name: origen_alternativa
+    type: relation
+    required: false
+    description: >
+      Back-link a la fila de origen en `Alternativas / Shortlist` (schema:
+      alternativas-shortlist.schema.yaml).  Se llena cuando la fila fue
+      promovida por el HITL-1 `Aprobar` (contrato §4, §6).  Vacío para filas
+      creadas antes de la BD Shortlist o fuera del flujo de promoción.
+      Añadido en Notion 2026-07-22 (P1, David + Notion AI).  El writer del
+      poller de promoción (P2.1) que lo completa no está cableado aún.
+    relation_database: Alternativas / Shortlist
 
   - name: Proyecto
     type: rich_text

@@ -1,0 +1,12 @@
+{
+  "name": "umbral-worker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Bridge OpenClaw agent tools to the Umbral Worker HTTP API.",
+  "type": "module",
+  "openclaw": {
+    "extensions": [
+      "./dist/index.js"
+    ]
+  }
+}

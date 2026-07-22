@@ -7,6 +7,14 @@ Proposed — 2026-06-06
 > Deriva del flujo confirmado en `docs/editorial-pipeline/production-flow-v2-2026-06-06.md`.
 > Modifica `docs/specs/sistema-editorial-rick-v1.md` §3 (LinkedIn Company Page sale de "fuera de alcance") y §8.2 (canal LinkedIn pasa de perfil personal HITL a cuenta empresa vía API).
 
+> **⚠️ Nota P0 (norte 2026-07-22 — Fila I = B):** el POST automático a la Company
+> Page que propone este ADR queda **diferido**. Bajo el norte editorial 2026-07-22,
+> las RRSS no se autopublican (LinkedIn ToS §3.1.26; `ADR-010` §29): el sistema
+> inyecta el link del blog + copy y deja estado `listo_rrss` para post **humano**.
+> Este ADR revive (Fila I = A) solo si David lo decide **y** LinkedIn aprueba el
+> access review de Community Management API. Ver
+> `docs/ops/editorial-norte-hitl-contract-2026-07-22.md` §5.I y §7.
+
 ## Contexto
 
 El diseño previo (spec v1 §3, §8.2) publicaba en LinkedIn **perfil personal** con HITL manual, y dejaba la **Company Page fuera de alcance** ("requiere CMA + entidad legal").

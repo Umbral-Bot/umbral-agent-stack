@@ -12,6 +12,12 @@ La decisión afecta qué canales se automatizan completamente, cuáles requieren
 
 ## Decisión
 
+> **⚠️ Nota P0 (norte 2026-07-22):** el **blog** migra de Ghost a Azure Blob +
+> Function (`ADR-010`, más nuevo, 2026-06-08): la "automatización completa (v1)"
+> de abajo queda **superseded** en plataforma y pasa a **publish por tarea Worker
+> gate-checked**. Los canales **LinkedIn/X permanecen HITL/manual (Fila I = B)**,
+> reafirmando el HITL de abajo. Ver `docs/ops/editorial-norte-hitl-contract-2026-07-22.md` §7.
+
 ### Blog: Ghost self-hosted — automatización completa (v1)
 
 - **Plataforma v1**: Ghost self-hosted en VPS existente.

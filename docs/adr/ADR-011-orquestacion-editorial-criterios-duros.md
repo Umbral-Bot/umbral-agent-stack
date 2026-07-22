@@ -245,6 +245,7 @@ Lo que este ADR **no resuelve** y queda explícitamente fuera de alcance. Cada u
 - **ADR-002** (`ADR-002-notion-vs-queue.md`): por qué Notion es la queue/hub canónico de tareas, lo que justifica el monopolio de writes en core.
 - **ADR-005** (`ADR-005-publicacion-multicanal.md`): qué canales se publican y con qué HITL, alimenta los casos del árbol §Criterios duros.
 - **ADR-007** (`ADR-007-notion-como-hub-editorial.md`): estructura de Notion como hub editorial, refuerza la regla "Notion writes son monopolio core".
+- **Contrato norte editorial 2026-07-22** (`docs/ops/editorial-norte-hitl-contract-2026-07-22.md`): propone una BD Shortlist híbrida que promueve a `Publicaciones` al Aprobar; la promoción y todo write de Notion son monopolio del Worker/core (regla #1 de este ADR), nunca n8n ni MCP del orquestador.
 - **Plan Q2-2026 O17** (`notion-governance/docs/roadmap/12-q2-2026-platform-first-plan.md`): item raíz que originó esta tarea.
 - **`worker/n8n_client.py`** (en runtime): cliente HTTP que core usa para invocar workflows n8n. No se modifica en este ADR; solo se documenta su rol.
 - **UA-14** (`Perplexity/Umbral Agent Stack/14_ Orquestación Editorial con Make n8n y Cron/UA-14-orquestacion-editorial.md`): investigación previa que sustentó ADR-008.

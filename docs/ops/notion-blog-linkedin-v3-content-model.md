@@ -30,6 +30,20 @@ Hard rules:
 - LinkedIn/X are **never auto-published** by the code in this repo. Only the blog
   blob + canonical URL are produced automatically.
 
+## Norte 2026-07-22 — V1 outline vs V2 long copy, RRSS = Opción B
+
+> See `editorial-norte-hitl-contract-2026-07-22.md`.
+
+- **V1 (alternatives):** short outline per alternative (narrative arc +
+  discourse-structure footer + concrete-piece source URL), for human choice —
+  **not** final copy.
+- **V2 (post-approval):** full long `Copy Blog` (~CAND-001, 350-500+ words) +
+  final per-channel copies. Mind the `Copy Blog` rich_text size limit (below).
+- **RRSS = Opción B (Fila I):** the blog auto-publishes after gates; LinkedIn/X
+  receive the injected `published_url` + Notion copy and a `listo_rrss` state,
+  then a human posts (manual/semi-auto). This reaffirms the channel rules above —
+  social is never auto-published (LinkedIn ToS §3.1.26).
+
 ## Publicaciones DB — fields used by the publish step
 
 The `Publicaciones` DB schema is owned by David (ADR-007: only David changes

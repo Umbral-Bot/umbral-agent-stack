@@ -100,6 +100,23 @@ Por cada item:
 
 ---
 
+## 6.1 HITL-1: cuatro salidas + contrato de alternativa (P0, 2026-07-22)
+
+> Contrato canonico: `docs/ops/editorial-norte-hitl-contract-2026-07-22.md` §3-§4.
+
+La shortlist/alternativas del norte 2026-07-22 exige, por alternativa: arco
+narrativo, pie de estructura de discurso explicito y fuente = URL de la pieza
+concreta (no home). La revision humana (HITL-1) tiene **cuatro salidas**:
+
+- **Archivar** — no procede; se conserva como historial neutro (≠ Descartar).
+- **Observar** — sigue en revision; comentarios de Notion sugieren cambios.
+- **Descartar** — no procede + registra ejemplo negativo (loop de aprendizaje).
+- **Aprobar** — procede y dispara la produccion V2.
+
+Estados y loop de aprendizaje son contrato; implementacion en fases posteriores.
+
+---
+
 ## 7. Piezas candidatas iniciales
 
 ### Newsletter

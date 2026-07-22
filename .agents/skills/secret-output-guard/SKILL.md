@@ -1,3 +1,12 @@
+---
+name: secret-output-guard
+description: >-
+  Guardrail conductual cross-repo que previene exposición de tokens, secrets y
+  API keys en outputs de agentes. Usar antes de commitear, publicar retros,
+  escribir mailbox, pegar salida de az/gh/kubectl/curl, o generar cualquier
+  output visible. Motivada por incidente AF-1k.16i1c (gate-token leak).
+---
+
 # Skill: secret-output-guard
 
 ## Purpose
@@ -121,12 +130,12 @@ Cuando el repo tenga >50 commits con outputs estructurados, evaluar instalar `gi
 
 Esta skill vive en 4 ubicaciones que deben coincidir byte-a-byte:
 
-1. `~/.copilot/skills/secret-output-guard/SKILL.md` — canonical (esta copia)
-2. `~/.codex/skills/secret-output-guard/SKILL.md`
-3. `<umbral-agent-stack>/.agents/skills/secret-output-guard/SKILL.md`
-4. `<notion-governance>/.agents/skills/secret-output-guard/SKILL.md`
+1. `<notion-governance>/.agents/skills/secret-output-guard/SKILL.md` — **canonical** (SoT del script `check_skill_mirrors.py`)
+2. `~/.copilot/skills/secret-output-guard/SKILL.md`
+3. `~/.codex/skills/secret-output-guard/SKILL.md`
+4. `<umbral-agent-stack>/.agents/skills/secret-output-guard/SKILL.md`
 
-(`<notion-governance>/skills/secret-output-guard/SKILL.md` es un **stub-pointer**, NO una copia mirror — no editar.)
+(`<notion-governance>/skills/secret-output-guard/SKILL.md` y `notion-governance-skills/secret-output-guard/SKILL.md` en umbral-skills-registry son **stub-pointer**, NO copias mirror — no editar.)
 
 Para detectar drift:
 ```powershell
@@ -138,4 +147,4 @@ Para sincronizar mirrors drifteadas desde la canonical:
 python C:\GitHub\umbral-agent-stack\scripts\maintenance\check_skill_mirrors.py --fix
 ```
 
-**Origen:** O7c (2026-05-08). Después de F-INC-001 + O7c se descubrió que las copias en los repos habían drifteado silenciosamente (notion-governance: 1943B vs canonical 5650B; umbral-agent-stack: 3350B). El script `check_skill_mirrors.py` previene recurrencia.
+**Origen:** O7c (2026-05-08). Después de F-INC-001 + O7c se descubrió que las copias en los repos habían drifteado silenciosamente. El script `check_skill_mirrors.py` previene recurrencia.

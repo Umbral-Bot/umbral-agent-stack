@@ -27,6 +27,16 @@ Backward-compatible: no cambia pipeline v1; añade precondiciones de artefacto.
 Rick no escribe copy en Notion sin ledger (C2) y revision log (C3) cuando el flujo versioning está activo.
 Los gates `aprobado_contenido` y `autorizar_publicacion` son solo de David.
 
+## Postcondiciones de publicación (Fila I = B)
+
+Tras el publish del blog (Azure, [ADR-010 §Gates](../adr/ADR-010-azure-editorial-blog-cms.md)), el sistema:
+
+1. Inyecta `published_url` + copy de Notion en las copies de RRSS.
+2. Marca **`listo_rrss` (checkbox en Publicaciones) = true** — estado terminal RRSS.
+3. **No** publica en LinkedIn/X: el post lo hace un humano (manual/semi-auto).
+
+Bajo Fila I = B el código nunca autopublica RRSS. Ver contrato norte [§5.I](editorial-norte-hitl-contract-2026-07-22.md).
+
 ## Sensibilidad editorial (preventivo)
 
 Aplicar en revision humana y en generacion (ver CAL-007 en `director-comunicacion-umbral/CALIBRATION.md`):

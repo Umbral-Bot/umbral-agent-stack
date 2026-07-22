@@ -38,7 +38,8 @@ P4    Optimizaciones / deuda (en paralelo donde no dependa)
 puente HITL-2 (P2.6) y la inyección `listo_rrss` (P2.7) depende de que la BD exista.
 P0.5 y P4 pueden avanzar sin esperar a David.
 
-**Decisiones abiertas para David** (no bloquean el plan; son inputs a P1/P2): ver §7.
+**Decisiones de David** (LOCKED 2026-07-22, D1–D4): ver §7. Los nits P0.5 N1–N4
+quedan **aplicados** en el PR docs-only de este paquete.
 
 ---
 
@@ -50,30 +51,33 @@ P0.5 y P4 pueden avanzar sin esperar a David.
 
 | ID | Nit | Archivo(s) | Edición exacta propuesta | Criterio done |
 |----|-----|-----------|--------------------------|---------------|
-| **N1** | `listo_rrss` no aparece en el checklist de Publicaciones | [editorial-publicaciones-human-review-contract.md](editorial-publicaciones-human-review-contract.md) | Añadir bloque **"Postcondiciones de publicación (Fila I = B)"**: tras publish del blog, el sistema inyecta `published_url` + copy en las copies RRSS y marca estado **`listo_rrss`**; el post a LinkedIn/X es **humano** (no autopublish). Referencia cruzada a contrato §5.I. | El doc nombra `listo_rrss` como estado terminal RRSS bajo B |
-| **N2** | Contrato cita **ADR-010 por línea** (frágil a shifts) | [contrato §5.F/§5.H/§5.I/§7](editorial-norte-hitl-contract-2026-07-22.md) + [gap-matrix](editorial-gap-matrix-norte-2026-07-22.md) | Reemplazar `ADR-010:29` → **`ADR-010 §Contexto` ("El código nunca autopublica RRSS")**; `ADR-010:39,72` → **`ADR-010 §Gates`** (handler fail-closed) / **`§Contexto` (secuencia blog→RRSS)**. Mismo criterio shift-immune que ya se aplicó a ADR-005/production-flow-v2 en el PR. | 0 citas `ADR-010:<línea>` en contrato y gap-matrix |
-| **N3** | production-flow-v2 **§5 (cuerpo) contradice la Nota P0** del encabezado | [production-flow-v2-2026-06-06.md §5](../editorial-pipeline/production-flow-v2-2026-06-06.md) | La Nota P0 vive arriba; el lector que aterriza en §5 ve "Automático vía API" para LinkedIn empresa y X sin marca inline. Añadir en esas 2 celdas: **"⚠️ superseded → Fila I = B (no autopublish; ver Nota P0 y contrato §5.I)"**. | Celdas §5 de LinkedIn empresa y X marcadas inline |
-| **N4** | **Telegram vs "check imagen = publish"** — ambigüedad de disparo | [contrato §5.H](editorial-norte-hitl-contract-2026-07-22.md) | **Decisión de David** (§7 de esta hoja): ¿el disparo automático de publish exige `confirmación Telegram "ok publica"` como 3ª condición **dura**, o basta `Estado imagen = Seleccionada ∧ autorizar_publicacion = true` (Telegram = sólo aviso)? production-flow-v2 §3.4 hoy la marca **obligatoria**. Tras la decisión, anotar §5.H sin ambigüedad. | §5.H declara el disparo canónico sin lectura doble |
+| **N1** ✅ | `listo_rrss` no aparece en el checklist de Publicaciones | [editorial-publicaciones-human-review-contract.md](editorial-publicaciones-human-review-contract.md) | Añadir bloque **"Postcondiciones de publicación (Fila I = B)"**: tras publish del blog, el sistema inyecta `published_url` + copy en las copies RRSS y marca estado **`listo_rrss`**; el post a LinkedIn/X es **humano** (no autopublish). Referencia cruzada a contrato §5.I. | El doc nombra `listo_rrss` como estado terminal RRSS bajo B |
+| **N2** ✅ | Contrato + gap-matrix citan **ADR-010 por línea** (frágil a shifts) | [contrato §5.F/§5.H/§5.I/§7](editorial-norte-hitl-contract-2026-07-22.md) + [gap-matrix](editorial-gap-matrix-norte-2026-07-22.md) | Reemplazar `ADR-010:29` → **`ADR-010 §Contexto` ("El código nunca autopublica RRSS")**; `ADR-010:39,72` → **`ADR-010 §Gates`** (handler fail-closed) / **`§Contexto` (secuencia blog→RRSS)**. Mismo criterio shift-immune que ya se aplicó a ADR-005/production-flow-v2 en el PR. | 0 citas `ADR-010:<línea>` en contrato y gap-matrix |
+| **N3** ✅ | production-flow-v2 **§5 (cuerpo) contradice la Nota P0** del encabezado | [production-flow-v2-2026-06-06.md §5](../editorial-pipeline/production-flow-v2-2026-06-06.md) | La Nota P0 vive arriba; el lector que aterriza en §5 ve "Automático vía API" para LinkedIn empresa y X sin marca inline. Añadir en esas 2 celdas: **"⚠️ superseded → Fila I = B (no autopublish; ver Nota P0 y contrato §5.I)"**. | Celdas §5 de LinkedIn empresa y X marcadas inline |
+| **N4** ✅ | **Telegram vs "check imagen = publish"** — disparo | [contrato §5.H](editorial-norte-hitl-contract-2026-07-22.md) | **D3 (locked):** Telegram "ok publica" es **condición DURA** — el disparo exige `Estado imagen = Seleccionada ∧ autorizar_publicacion = true ∧ Telegram`. Anotado en §5.H sin ambigüedad (coherente con production-flow-v2 §3.4). | §5.H declara el disparo canónico sin lectura doble |
 
-**Nota de scope:** esta hoja **no aplica** N1–N4; los especifica listos para un PR
-docs-only de seguimiento (o para agruparlos con la actualización de schemas de P1.4).
+**Nota de scope:** N1–N4 quedan **aplicados** en este PR docs-only (2026-07-22).
+Ninguno toca schema/runtime/gates/publish.
 
 ---
 
 ## 2. P1 — Schema Notion (checklist paso a paso para David)
 
-> **Sólo David** ejecuta P1.1–P1.3 (creación/cambio de schema, ADR-007). Claude sólo
-> actualiza los `.yaml` del repo **después** (P1.4), reflejando lo creado. Ningún
-> agente escribe en Notion en esta fase.
+> **David + Notion AI** ejecutan P1.1–P1.3: el schema se crea/edita **a mano en la
+> UI de Notion, asistido por Notion AI** (setup manual, no operación recurrente),
+> bajo ADR-007 (schema = solo David). **NO lo crea el Worker:** el Worker escribe
+> **datos** en runtime (P2), nunca schema; Notion AI no participa en operaciones
+> editoriales recurrentes ([rick-editorial/ROLE.md](../../openclaw/workspace-agent-overrides/rick-editorial/ROLE.md)).
+> Claude sólo actualiza los `.yaml` del repo **después** (P1.4), espejando lo creado.
+> Ningún agente escribe filas en Notion en esta fase.
 
 ### P1.1 — Crear BD **"Alternativas / Shortlist"** (superficie V1)
 
 - **Nombre exacto sugerido:** `Alternativas / Shortlist`
-- **Parent:** ⚠️ **decisión abierta (§7-D1)** — el prompt de misión indica *"Sistema
-  Editorial Rick"*, pero [publicaciones.schema.yaml](../../notion/schemas/publicaciones.schema.yaml)
-  fija `recommended_parent: Sistema Editorial Automatizado Umbral`. **Recomendación:**
-  co-ubicar la Shortlist bajo el **mismo parent que Publicaciones** para que la
-  relación `promovido_a` viva en el mismo espacio. David confirma el nombre real.
+- **Parent (D1, locked):** co-ubicada con **Publicaciones** (mismo parent) para que
+  la relación `promovido_a` viva en el mismo espacio. Confirmar el **nombre exacto**
+  del parent vivo de Publicaciones al crearla (el schema del repo apunta a
+  `Sistema Editorial Automatizado Umbral`).
 - **Propiedades** (tipo + opciones de select) — copiar del bloque **§5** de este doc.
 
 ### P1.2 — Adición mínima a **Publicaciones** (sólo David)
@@ -81,7 +85,7 @@ docs-only de seguimiento (o para agruparlos con la actualización de schemas de 
 | Campo nuevo | Tipo | Uso |
 |-------------|------|-----|
 | `origen_alternativa` | relation → `Alternativas / Shortlist` | Back-link de la fila promovida a su alternativa de origen |
-| `listo_rrss` | checkbox **o** opción de status | Estado terminal RRSS bajo Fila I = B (blog publicado, link+copy inyectados, post humano pendiente). **Decisión §7-D2:** checkbox aparte vs. nueva opción en `Estado`. Recomendación: **checkbox** (`Estado` se queda lineal para el blog; `listo_rrss` es marca lateral de RRSS) |
+| `listo_rrss` | **checkbox** (D2, locked) | Estado terminal RRSS bajo Fila I = B (blog publicado, link+copy inyectados, post humano pendiente). `Estado` se queda lineal para el blog; `listo_rrss` es marca lateral de RRSS |
 
 > **Nada más cambia en Publicaciones.** El resto del schema se reusa tal cual.
 
@@ -124,7 +128,7 @@ docs-only de seguimiento (o para agruparlos con la actualización de schemas de 
 | **P2.3** | **Copy Blog largo + medios + `Copy LinkedIn empresa`** | [apply_publication_copy.py](../../scripts/editorial/apply_publication_copy.py) (extender) | P1 (columna `Copy LinkedIn empresa`); ancla CAND-001 | Límite `rich_text` de `Copy Blog` (Notion ~2k) trunca cuerpos largos | Copy Blog ~350-500+ palabras vía **body de página o payload explícito al Worker**; copies por canal presentes; `Copy LinkedIn empresa` escrita (no consumida por código) |
 | **P2.4** | **Dedupe de candidato vs backlog** | [scripts/discovery/lib/notion_publicaciones.py](../../scripts/discovery/lib/notion_publicaciones.py) + helper nuevo | P1 (`topic_key`, `dedupe_status`, `publicacion_relacionada`) | Falsos positivos/negativos de match de tema | Antes de registrar alternativa, consulta backlog (`Borrador`+`Publicado`) y marca `dedupe_status` + relación si aplica. **Distinto** de la idempotencia de publish |
 | **P2.5** | **Loop Descartar / negativos (aprendizaje)** — fila D, la **AUSENTE** | captura de `ejemplo_negativo` + `error_kind` + `motivo_descarte` → realimenta QA/generación | P1 (esos 3 campos en Shortlist) | Loop que no cierra (se captura pero no se consume) | Al `Descartar`, se persiste el negativo estructurado y `rick-qa`/generación lo consultan para no repetir el fallo |
-| **P2.6** | **Puente HITL-2 → publish blog** | evento Notion→Worker (n8n/webhook, write vía core); [worker/tasks/editorial_publish.py](../../worker/tasks/editorial_publish.py) ya fail-closed | **N4 decidido** (Telegram), gates existentes | Disparo por check de imagen suelto (¡no basta!) | Trigger exige `Estado imagen = Seleccionada` **∧** `autorizar_publicacion = true` **∧** (Telegram según N4). Publish a Azure ([ADR-010](../adr/ADR-010-azure-editorial-blog-cms.md)) sólo con gates abiertos |
+| **P2.6** | **Puente HITL-2 → publish blog** | evento Notion→Worker (n8n/webhook, write vía core); [worker/tasks/editorial_publish.py](../../worker/tasks/editorial_publish.py) ya fail-closed | **D3 (locked):** Telegram dura; gates existentes | Disparo por check de imagen suelto (¡no basta!) | Trigger exige `Estado imagen = Seleccionada` **∧** `autorizar_publicacion = true` **∧** Telegram "ok publica" (D3, dura). Publish a Azure ([ADR-010 §Gates](../adr/ADR-010-azure-editorial-blog-cms.md)) sólo con gates abiertos |
 | **P2.7** | **Inyección `published_url` + `listo_rrss` (NO autopublish LI/X)** | extensión post-publish de [editorial_publish.py](../../worker/tasks/editorial_publish.py) | P1 (`listo_rrss`), P2.6 | Cruzar la línea a autopublish RRSS (**prohibido**, [ADR-010 §Contexto](../adr/ADR-010-azure-editorial-blog-cms.md)) | Tras publish OK: inyecta `published_url`+copy en copies RRSS, marca `listo_rrss`; **cero** llamadas a API LinkedIn/X |
 | **P2.8** | **Activar/ajustar `rick-editorial` ROLE/payload a contrato V1** | [rick-editorial/ROLE.md](../../openclaw/workspace-agent-overrides/rick-editorial/ROLE.md) + [payload template](rick-editorial-candidate-payload-template.md) | P1 (Shortlist), contrato §3 | Rick produce sin arco/estructura → `rick-qa` rechaza | Payload V1 exige `arco_narrativo`, `estructura_discurso`, `fuente_pieza_url` (no home); alineado a campos Shortlist; activación con GO David + PR aparte |
 
@@ -141,7 +145,7 @@ docs-only de seguimiento (o para agruparlos con la actualización de schemas de 
 | **P3.2** | HITL-1: las 4 salidas (Archivar/Observar/Descartar/Aprobar) | P1, P2.1, P2.5 | Cada salida produce su efecto de sistema; `Aprobar` promueve; `Descartar` captura negativo |
 | **P3.3** | V2: copy largo + 5 imágenes tras Aprobar | P2.2, P2.3 | Copy ancla ~CAND-001; 5 `imagen_alt_*_url`; sin exceder rich_text |
 | **P3.4** | Dedupe: candidato duplicado detectado | P2.4 | `dedupe_status = duplicado_*` con relación correcta |
-| **P3.5** | HITL-2 → publish blog **dry-run** | P2.6 | `would_publish` respeta doble gate (+Telegram según N4); `dry_run` no toca Azure |
+| **P3.5** | HITL-2 → publish blog **dry-run** | P2.6 | `would_publish` respeta el **triple gate** (imagen ∧ autorizar ∧ Telegram, D3); `dry_run` no toca Azure |
 | **P3.6** | RRSS = B: `published_url` + `listo_rrss`, **sin** post RRSS | P2.7 | Estado `listo_rrss`; cero llamadas LinkedIn/X |
 | **P3.7** | Publish real (blog) | **GO David** + Worker | 1 post en Azure, idempotente; `published_url` real inyectado |
 
@@ -154,7 +158,7 @@ docs-only de seguimiento (o para agruparlos con la actualización de schemas de 
 
 ```text
 BD: Alternativas / Shortlist
-Parent: <confirmar — recomendado: mismo parent que Publicaciones>
+Parent: mismo parent que Publicaciones (D1, locked — confirmar nombre exacto del parent vivo)
 
 CAMPOS:
 - Título                     (title)      → título/ángulo de la alternativa
@@ -182,7 +186,7 @@ CAMPOS:
 
 ADICIÓN MÍNIMA A "Publicaciones" (solo David):
 - origen_alternativa         (relation → Alternativas / Shortlist) → back-link
-- listo_rrss                 (checkbox | opción de status)         → estado terminal RRSS (Fila I = B)
+- listo_rrss                 (checkbox)                            → estado terminal RRSS (Fila I = B) [D2, locked]
 
 NO TOCAR EN PUBLICACIONES:
 - máquina de estados lineal, gates existentes, columnas de imagen (5),
@@ -213,14 +217,14 @@ NO TOCAR EN PUBLICACIONES:
 
 ---
 
-## 7. Decisiones abiertas para David (inputs, no bloqueantes del plan)
+## 7. Decisiones de David — **LOCKED 2026-07-22**
 
-| # | Decisión | Opciones | Recomendación |
-|---|----------|----------|---------------|
-| **D1** | **Parent de la BD Shortlist** | (a) `Sistema Editorial Rick` (prompt misión) · (b) `Sistema Editorial Automatizado Umbral` (parent de Publicaciones) | **(b)** co-ubicar con Publicaciones; confirmar el nombre real del parent vivo |
-| **D2** | **`listo_rrss`: forma** | (a) checkbox lateral · (b) nueva opción en `Estado` | **(a)** checkbox — mantiene `Estado` lineal para blog |
-| **D3** | **N4 — Telegram en el disparo de publish** | (a) Telegram "ok publica" = 3ª condición dura · (b) basta `autorizar_publicacion=true`, Telegram = aviso | **(a)** coherente con production-flow-v2 §3.4; confirmar |
-| **D4** | **Fila I** | queda en **B** (no autopublish) | Mantener B; A requiere PR aparte + access review LinkedIn |
+| # | Decisión | Resolución |
+|---|----------|-----------|
+| **D1** | Parent de la BD Shortlist | **Co-ubicada con Publicaciones** (mismo parent). Confirmar el nombre exacto del parent vivo al crear la BD |
+| **D2** | `listo_rrss`: forma | **Checkbox** en Publicaciones (mantiene `Estado` lineal para el blog) |
+| **D3** | Telegram en el disparo HITL-2 | **Condición DURA:** `Estado imagen = Seleccionada ∧ autorizar_publicacion = true ∧ Telegram "ok publica"` |
+| **D4** | Fila I | **B** — sin autopublish RRSS (A = PR aparte + access review LinkedIn) |
 
 ---
 

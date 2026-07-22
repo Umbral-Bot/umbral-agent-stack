@@ -143,17 +143,20 @@ Notas:
 ### H — HITL-2 → publish blog (Azure, ADR-010)
 - David elige imagen(es), marca `autorizar_publicacion` y confirma por Telegram
   ("ok publica"). El blog se publica automáticamente a Azure ([ADR-010](../adr/ADR-010-azure-editorial-blog-cms.md)).
-- **Disparo:** el check de imagen **no** basta por sí solo. El trigger de publish
-  debe exigir `Estado imagen = Seleccionada` **∧** `autorizar_publicacion = true`
-  (∧ confirmación Telegram). Un puente Notion-evento→Worker (n8n/webhook, write
-  vía core) es P2 (hoy el publish es tarea de Worker invocada por el operador).
+- **Disparo (D3 — David 2026-07-22, condición DURA):** el check de imagen **no**
+  basta por sí solo. El trigger de publish exige las **tres** condiciones, ninguna
+  opcional: `Estado imagen = Seleccionada` **∧** `autorizar_publicacion = true`
+  **∧** confirmación Telegram "ok publica" (coherente con
+  [production-flow-v2 §3.4](../editorial-pipeline/production-flow-v2-2026-06-06.md)).
+  Un puente Notion-evento→Worker (n8n/webhook, write vía core) es P2 (hoy el
+  publish es tarea de Worker invocada por el operador).
 
 ### I — RRSS = **OPCIÓN B** (no autopublish)
 > **Fila I aplicada: B.** El norte deseado (autopublish LinkedIn+X tras HITL-2)
 > **choca** con contrato vinculante y ToS y queda **ajustado a B**.
 
 - **Regla canónica:** el código **nunca autopublica RRSS**
-  ([ADR-010:29](../adr/ADR-010-azure-editorial-blog-cms.md)). LinkedIn requiere
+  ([ADR-010 §Contexto](../adr/ADR-010-azure-editorial-blog-cms.md)). LinkedIn requiere
   HITL obligatorio (LinkedIn ToS §3.1.26, [ADR-005 §LinkedIn](../adr/ADR-005-publicacion-multicanal.md));
   X es asistido (David publica), API directa diferida a v2 ([ADR-005 §X](../adr/ADR-005-publicacion-multicanal.md)).
 - **Qué hace el sistema (B):** publica el blog → inyecta `published_url` +
@@ -228,7 +231,11 @@ bidireccional continua.
 | Comentarios `Observar` | (comentarios nativos) | Canal de sugerencias en `Observar` (sin campo dedicado) |
 
 **Adición mínima a Publicaciones** (solo David): `origen_alternativa` (relation →
-Shortlist) como back-link. El resto de Publicaciones no cambia.
+Shortlist) como back-link **y** `listo_rrss` (checkbox, decisión D2) — estado
+terminal RRSS bajo Fila I = B (blog publicado, `published_url` + copy inyectados,
+post LinkedIn/X **humano** pendiente; ver §5.I y
+[human-review-contract §Postcondiciones](editorial-publicaciones-human-review-contract.md)).
+El resto de Publicaciones no cambia.
 
 ---
 
@@ -239,7 +246,7 @@ Shortlist) como back-link. El resto de Publicaciones no cambia.
 | 1 | Editar invalida el gate **vs** edición = verdad final | **La edición de David en Notion es la verdad final; editar NO revierte la aprobación** ([production-flow-v2 §3.2 regla 2 + §7](../editorial-pipeline/production-flow-v2-2026-06-06.md)). | Invariante `gate_invalidation_on_comment` / `aprobado_contenido` "si David comenta tras aprobar se invalida" ([notion/schemas/publicaciones.schema.yaml:400-404](../../notion/schemas/publicaciones.schema.yaml)) — **superseded** para el flujo V2. **Residual de seguridad:** si un *agente* (Rick) regenera contenido tras la aprobación, eso **sí** resetea el gate (no las ediciones de David). El bucle "Observar + comentarios" del HITL-1 (§4) es **pre-aprobación**, distinto de este. |
 | 2 | ADR-005 blog "automatización completa" (Ghost) **vs** ADR-010 operador/Worker-trigger (Azure) | **[ADR-010](../adr/ADR-010-azure-editorial-blog-cms.md): Azure Blob + Function; publish por tarea Worker gate-checked tras gates + Telegram.** | [ADR-005 §Blog](../adr/ADR-005-publicacion-multicanal.md) "Ghost — automatización completa (v1)" — plataforma y matiz de auto-scheduling **superseded** por ADR-010 (más nuevo: 2026-06-08). |
 | 3 | Rename de gates spec-only + drift S4→Publicaciones | **Claves de campo canónicas = `aprobado_contenido` / `autorizar_publicacion`** (schema + código). "Texto aprobado" / "Autorizar publicación" ([production-flow-v2 §4](../editorial-pipeline/production-flow-v2-2026-06-06.md)) son **etiquetas de UI** que mapean a esas claves. **S4 escribe en la DB de discovery `📰 Publicaciones de Referentes`** (no la editorial `📰 Publicaciones`; esa la escribe S7). Fuente de verdad: `scripts/discovery/stage4_push_notion.py:2,8` + `discovery-publish-cron.sh:68`. | [master-plan.md:33](../editorial-pipeline/master-plan.md) "S4 → páginas en `📰 Publicaciones`" = **drift/ambiguo** (lee como la editorial; el código apunta a "Publicaciones de Referentes"). |
-| 4 | production-flow-v2 §5 "Automático vía API (LinkedIn/X)" **vs** ADR-005/010 "nunca autopublica RRSS" | **Fila I = B** (David 2026-07-22 + ToS §3.1.26 + [ADR-010:29](../adr/ADR-010-azure-editorial-blog-cms.md)): blog auto tras gate; RRSS = inyección de link + `listo_rrss` + post humano. | [production-flow-v2 §5](../editorial-pipeline/production-flow-v2-2026-06-06.md) "LinkedIn empresa / X = Automático vía API" — **superseded a B**. También [ADR-009](../adr/ADR-009-linkedin-company-api.md) (Company Page auto vía API) queda **diferido** bajo B (revive con Fila I = A + access review LinkedIn). |
+| 4 | production-flow-v2 §5 "Automático vía API (LinkedIn/X)" **vs** ADR-005/010 "nunca autopublica RRSS" | **Fila I = B** (David 2026-07-22 + ToS §3.1.26 + [ADR-010 §Contexto](../adr/ADR-010-azure-editorial-blog-cms.md)): blog auto tras gate; RRSS = inyección de link + `listo_rrss` + post humano. | [production-flow-v2 §5](../editorial-pipeline/production-flow-v2-2026-06-06.md) "LinkedIn empresa / X = Automático vía API" — **superseded a B**. También [ADR-009](../adr/ADR-009-linkedin-company-api.md) (Company Page auto vía API) queda **diferido** bajo B (revive con Fila I = A + access review LinkedIn). |
 
 ---
 

@@ -93,9 +93,9 @@ David no pega prompts en ninguna herramienta. Su único panel de control de cont
 
 | Canal | Modo | Estado / Requisito |
 |-------|------|--------------------|
-| **LinkedIn (cuenta empresa)** | Automático vía API | Community Management / Marketing API, scope `w_organization_social`, David admin de la página, **access review de LinkedIn** pendiente. Ver `ADR-009`. |
+| **LinkedIn (cuenta empresa)** | ~~Automático vía API~~ → **manual (Fila I = B)** | ⚠️ **Superseded → Fila I = B** (no autopublish; el post es humano — ver Nota P0 arriba + [contrato §5.I](../ops/editorial-norte-hitl-contract-2026-07-22.md)). Community Management / Marketing API, scope `w_organization_social`, David admin de la página, **access review de LinkedIn** pendiente (sólo revive con Fila I = A). Ver `ADR-009`. |
 | **Blog (Ghost)** | Automático | Integración Ghost (JWT admin). Ya diseñado en spec v1 §8.1. |
-| **X** | Automático vía API | API v2 de pago (David confirma que la paga). Adapter pendiente. Cambia el estado previo "manual v1". |
+| **X** | ~~Automático vía API~~ → **manual (Fila I = B)** | ⚠️ **Superseded → Fila I = B** (no autopublish; sin publisher X hoy — ver Nota P0 arriba + [contrato §5.I](../ops/editorial-norte-hitl-contract-2026-07-22.md)). API v2 de pago (David confirma que la paga). Adapter pendiente. |
 | **Newsletter** | Automático | **Herramienta TBD** (Ghost members vs Substack vs otra). Bloqueante menor: definir plataforma. |
 
 > La cuenta **personal** de LinkedIn queda **diferida** (se decide más adelante). v1 = empresa.

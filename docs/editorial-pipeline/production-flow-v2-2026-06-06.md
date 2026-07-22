@@ -4,6 +4,12 @@
 > **Reemplaza/actualiza:** la secuencia de gates de `docs/specs/sistema-editorial-rick-v1.md` §6, los gates de `docs/editorial-pipeline/master-plan.md` §2, el proveedor visual de `docs/adr/ADR-006-capa-visual-editorial.md`, y el alcance de canales de `docs/adr/ADR-008-orquestacion-editorial.md`.
 > **Confirmado en sesión:** 2026-06-06 (respuestas estructuradas de David).
 > **Owner experiencia:** David · **Implementación:** Rick (OpenClaw) + Agent Stack (Worker/Dispatcher) + n8n (bordes).
+>
+> **⚠️ Ajuste P0 (norte 2026-07-22):** este doc sigue canónico salvo el **§5
+> "Automático vía API" para LinkedIn/X**, que queda **superseded → Fila I = B**
+> (no autopublish RRSS; LinkedIn ToS §3.1.26 + `ADR-010` §29). La regla de gates y
+> "la edición en Notion es la verdad final" (§3.2) permanece vigente. Ver
+> `docs/ops/editorial-norte-hitl-contract-2026-07-22.md` §5.I y §7.
 
 ---
 

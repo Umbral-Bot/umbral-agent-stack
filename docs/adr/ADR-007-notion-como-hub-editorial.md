@@ -91,6 +91,14 @@ Rechazada. Sin rich text para contenido editorial. Sin sistema de estados tipado
 
 Considerada pero diferida. Modelo donde Notion gestiona el flujo humano y una DB PostgreSQL maneja la capa de automatización. Overhead de sincronización alto para v1. Viable si los rate limits de Notion se vuelven un cuello de botella real.
 
+> **Nota P0 (norte 2026-07-22, Proposed — sin crear DB aquí):** el norte editorial
+> propone un **híbrido acotado** distinto del de arriba: una BD **Shortlist**
+> (alternativas V1 + HITL-1 de 4 salidas) en Notion que **promueve
+> unidireccionalmente** una fila a `Publicaciones` al `Aprobar` — no una DB
+> PostgreSQL ni sync bidireccional continuo (que es lo que esta alternativa
+> difería). Decisión y schema: **solo David** (§Gobernanza). Contrato y campos
+> propuestos: `docs/ops/editorial-norte-hitl-contract-2026-07-22.md` §6.
+
 ## Consecuencias
 
 ### Positivas

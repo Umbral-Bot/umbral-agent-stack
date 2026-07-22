@@ -21,16 +21,20 @@ Usar una tabla compacta cuando ayude.
 |---|---|---|---|---|---|---:|---|---|
 
 ### 4. Shortlist
-Presentar 3-5 cards rankeadas.
+Presentar 3-5 cards rankeadas. Cada card es una **alternativa** y debe declarar
+arco narrativo, estructura de discurso (pie explicito) y fuente = URL de la pieza
+concreta (no home). Contrato: `docs/ops/editorial-norte-hitl-contract-2026-07-22.md` §3.
 
 #### 1. [Item title]
 - **source:**
 - **published:**
-- **link:**
+- **link (pieza concreta, no home):**
 - **score:**
 - **confidence:**
 - **why it fits David:**
 - **why now:**
+- **arco narrativo:**
+- **estructura de discurso usada:** `[hipotesis, introduccion, argumento 1, argumento 2, contraargumento, contra-contraargumento, conclusion]`  (default; declarar el usado)
 - **angle options:**
 - **risks or gaps:**
 - **recommended next step:**

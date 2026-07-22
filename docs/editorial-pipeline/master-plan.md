@@ -42,6 +42,14 @@
 | **SX** | (transversal) | `scripts/discovery/stageX_pipeline_dashboard.py` | ✅ runtime real | subpage Notion `📊 Pipeline Editorial — Métricas` |
 
 > Drift detallado: ver [`docs/audits/2026-05-08-editorial-drift-audit.md`](../audits/2026-05-08-editorial-drift-audit.md).
+>
+> **⚠️ Aclaración P0 (norte 2026-07-22):** la fila **S4** de arriba dice "páginas
+> en `📰 Publicaciones`", pero el runtime real (`scripts/discovery/stage4_push_notion.py`
+> línea 2: *"push … to Notion DB '📰 Publicaciones de Referentes'"*; cron
+> `scripts/vps/discovery-publish-cron.sh:68`) escribe en la **DB de discovery
+> `📰 Publicaciones de Referentes`**, no en la editorial `📰 Publicaciones` (esa la
+> escribe **S7**). Tratar el código/cron como fuente de verdad. Ver
+> `docs/ops/editorial-norte-hitl-contract-2026-07-22.md` §7.
 
 ## 2. Flujo end-to-end
 

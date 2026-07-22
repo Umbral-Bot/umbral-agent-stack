@@ -159,6 +159,27 @@ Estados sugeridos:
 
 ---
 
+## 5.1 Contrato Alternativa V1 — arco + estructura de discurso + fuente-pieza (P0, 2026-07-22)
+
+> Contrato canonico: `docs/ops/editorial-norte-hitl-contract-2026-07-22.md` §3.
+
+Cuando el sistema presente **alternativas** para decision humana (no articulo
+final), cada alternativa debe declarar ademas de los campos §5:
+
+- **arco narrativo** — la trayectoria de la pieza (de que parte, que tensiona, a
+  donde llega). No basta un `recommended_angle` suelto.
+- **estructura de discurso** — linea explicita y obligatoria; formato por defecto
+  (cambiable, pero se declara el usado):
+  `Estructura de discurso usada: [hipotesis, introduccion, argumento 1, argumento 2, contraargumento, contra-contraargumento, conclusion]`
+- **fuente = URL de la pieza concreta** (`item_url`), nunca la home/feed de la
+  organizacion (una home es `contextual_reference`, no citable; ver
+  `docs/ops/editorial-source-attribution-policy.md`).
+
+`rick-qa` rechaza la alternativa si falta el pie de estructura de discurso o si la
+fuente citada es una home en vez de la pieza.
+
+---
+
 ## 6. Shortlist y seleccion humana
 
 Antes de derivar contenido, el sistema debe producir una shortlist con:

@@ -66,6 +66,15 @@ When a referente produces content through an organization:
 - Example: cite "The B1M" not "Fred Mills"; cite "DeepLearning.AI" or "The Batch" not "Andrew Ng"; cite "Aelion" not "Ivan Gomez".
 - Exception: when the person IS the primary source (e.g., an author's own research paper, a CEO's direct statement about their company).
 
+### 7. Concrete-Piece URL Required (no org home as cited source)
+
+The citable source of an editorial candidate/alternative must be the **URL of the
+concrete piece** (`item_url`: the specific article, report, video, or post), never
+the organization's home page or feed. An org home/landing is `contextual_reference`,
+`public_citable: false` (see rules #5/#6). `rick-qa` must reject an alternative whose
+cited source is a home URL (e.g. `buildingsmart.org`) instead of the concrete piece.
+Enforced per the norte contract: `docs/ops/editorial-norte-hitl-contract-2026-07-22.md` §3.
+
 ## Source Classification Schema
 
 Every source used in a source-driven candidate must be classified:

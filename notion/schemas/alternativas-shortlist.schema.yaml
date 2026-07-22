@@ -164,7 +164,7 @@ properties:
 
   - name: Resultado revisión
     type: select
-    required: true
+    required: false
     description: >
       Salida de HITL-1 sobre esta alternativa. Archivar = terminal neutro (no
       señal negativa, no promueve). Observar = en revisión, David deja

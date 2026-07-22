@@ -48,7 +48,7 @@
 > línea 2: *"push … to Notion DB '📰 Publicaciones de Referentes'"*; cron
 > `scripts/vps/discovery-publish-cron.sh:68`) escribe en la **DB de discovery
 > `📰 Publicaciones de Referentes`**, no en la editorial `📰 Publicaciones` (esa la
-> escribe **S7**). Tratar el código/cron como fuente de verdad. Ver
+> escribe **S7**). La misma corrección aplica a las otras menciones de "S4 → `📰 Publicaciones`" de este doc (§3 tabla de DBs, línea ~82; §4 línea ~98). Tratar el código/cron como fuente de verdad. Ver
 > `docs/ops/editorial-norte-hitl-contract-2026-07-22.md` §7.
 
 ## 2. Flujo end-to-end

@@ -31,7 +31,7 @@ database:
   name: Alternativas / Shortlist
   version: 0.1.0
   status: live
-  owner: David (schema) / Rick (data, via Worker per ADR-011 #1)
+  owner: "David (schema) / Rick (data, via Worker per ADR-011 #1)"
   mirrors_contract: docs/ops/editorial-norte-hitl-contract-2026-07-22.md#6-recomendación-de-schema-híbrido-proposed---decide-david
 
   live_binding:
@@ -257,7 +257,7 @@ promotion:
   target_database: Publicaciones
   target_schema: notion/schemas/publicaciones.schema.yaml
   trigger: Resultado revisión == Aprobar
-  writer: Worker/core (ADR-011 #1) — n8n nunca escribe Notion directo
+  writer: "Worker/core (ADR-011 #1) — n8n nunca escribe Notion directo"
   back_link_field_on_target: origen_alternativa
   cabled: false
   note: >

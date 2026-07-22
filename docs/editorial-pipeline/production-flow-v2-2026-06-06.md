@@ -7,7 +7,7 @@
 >
 > **⚠️ Ajuste P0 (norte 2026-07-22):** este doc sigue canónico salvo el **§5
 > "Automático vía API" para LinkedIn/X**, que queda **superseded → Fila I = B**
-> (no autopublish RRSS; LinkedIn ToS §3.1.26 + `ADR-010` §29). La regla de gates y
+> (no autopublish RRSS; LinkedIn ToS §3.1.26 + `ADR-010` §Contexto). La regla de gates y
 > "la edición en Notion es la verdad final" (§3.2) permanece vigente. Ver
 > `docs/ops/editorial-norte-hitl-contract-2026-07-22.md` §5.I y §7.
 

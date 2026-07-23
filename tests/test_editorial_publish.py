@@ -207,6 +207,90 @@ class TestAuthorizationGate:
 
 
 # ======================================================================
+# P2.6 / D3 (locked): the third hard gate — Telegram "ok publica"
+# confirmation, asserted via telegram_confirmed. See
+# docs/ops/editorial-hitl2-publish-bridge-p26-2026-07-23.md.
+# ======================================================================
+
+
+class TestTelegramConfirmationGate:
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_payload_source_blocks_without_telegram_confirmed(self, mock_urlopen):
+        # authorized + approved are both true, but telegram_confirmed is
+        # omitted — must still block, with no network call.
+        result = handle_web_publish_editorial_post({"payload": _authorized_payload()})
+        assert result["ok"] is False
+        assert result["error"] == "telegram_confirmation_missing"
+        assert result["would_publish"] is False
+        assert result["gates"]["telegram_confirmed"] is False
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_payload_source_blocks_with_telegram_confirmed_false(self, mock_urlopen):
+        result = handle_web_publish_editorial_post(
+            {"payload": _authorized_payload(), "telegram_confirmed": False}
+        )
+        assert result["ok"] is False
+        assert result["error"] == "telegram_confirmation_missing"
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    @patch("worker.notion_client.get_page")
+    def test_notion_source_blocks_without_telegram_confirmed(self, mock_get_page, mock_urlopen):
+        # Notion-side gates (autorizar_publicacion/aprobado_contenido) both
+        # true, but telegram_confirmed still isn't inferred from anywhere.
+        mock_get_page.return_value = _notion_page()
+        result = handle_web_publish_editorial_post(
+            {"notion_page_id": "22222222-2222-2222-2222-222222222222"}
+        )
+        assert result["ok"] is False
+        assert result["error"] == "telegram_confirmation_missing"
+        assert result["gates"]["telegram_confirmed"] is False
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_visual_or_authorization_gate_blocks_before_telegram_check(self, mock_urlopen):
+        # Order matters for diagnostics: an unauthorized payload must report
+        # publication_not_authorized, not telegram_confirmation_missing, even
+        # though telegram_confirmed is also missing here.
+        result = handle_web_publish_editorial_post(
+            {"payload": _authorized_payload(autorizar_publicacion=False)}
+        )
+        assert result["error"] == "publication_not_authorized"
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_dry_run_still_blocked_without_telegram_confirmed(self, mock_urlopen):
+        result = handle_web_publish_editorial_post(
+            {"payload": _authorized_payload(), "dry_run": True}
+        )
+        assert result["ok"] is False
+        assert result["error"] == "telegram_confirmation_missing"
+        assert result["would_publish"] is False
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_all_three_gates_true_dry_run_succeeds(self, mock_urlopen):
+        result = handle_web_publish_editorial_post(
+            {"payload": _authorized_payload(), "dry_run": True, "telegram_confirmed": True}
+        )
+        assert result["ok"] is True
+        assert result["would_publish"] is True
+        assert result["gates"]["telegram_confirmed"] is True
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_all_three_gates_true_live_publishes(self, mock_urlopen):
+        mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
+        result = handle_web_publish_editorial_post(
+            {"payload": _authorized_payload(), "telegram_confirmed": True}
+        )
+        assert result["ok"] is True
+        assert result["published"] is True
+        mock_urlopen.assert_called_once()
+
+
+# ======================================================================
 # dry_run + content_hash
 # ======================================================================
 
@@ -215,7 +299,9 @@ class TestDryRunAndHash:
     @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
     def test_dry_run_no_network(self, mock_urlopen):
         payload = _authorized_payload()
-        result = handle_web_publish_editorial_post({"payload": payload, "dry_run": True})
+        result = handle_web_publish_editorial_post(
+            {"payload": payload, "dry_run": True, "telegram_confirmed": True}
+        )
         assert result["ok"] is True
         assert result["would_publish"] is True
         assert result["dry_run"] is True
@@ -229,7 +315,9 @@ class TestDryRunAndHash:
     @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
     def test_content_hash_autocomputed(self, mock_urlopen):
         payload = _authorized_payload()
-        result = handle_web_publish_editorial_post({"payload": payload, "dry_run": True})
+        result = handle_web_publish_editorial_post(
+            {"payload": payload, "dry_run": True, "telegram_confirmed": True}
+        )
         expected = _content_hash(payload["body_markdown"], payload["title"], payload["excerpt"])
         assert result["content_hash"] == expected
         assert result["payload"]["content_hash"] == expected
@@ -237,14 +325,16 @@ class TestDryRunAndHash:
     @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
     def test_explicit_content_hash_preserved(self, mock_urlopen):
         payload = _authorized_payload(content_hash="0" * 64)
-        result = handle_web_publish_editorial_post({"payload": payload, "dry_run": True})
+        result = handle_web_publish_editorial_post(
+            {"payload": payload, "dry_run": True, "telegram_confirmed": True}
+        )
         assert result["content_hash"] == "0" * 64
 
     @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
     def test_canonical_base_override(self, mock_urlopen, monkeypatch):
         monkeypatch.setenv("EDITORIAL_BLOG_CANONICAL_BASE_URL", "https://staging.umbralbim.io/")
         result = handle_web_publish_editorial_post(
-            {"payload": _authorized_payload(), "dry_run": True}
+            {"payload": _authorized_payload(), "dry_run": True, "telegram_confirmed": True}
         )
         assert result["published_url"] == "https://staging.umbralbim.io/noticias/ia-en-coordinacion-bim"
 
@@ -258,7 +348,9 @@ class TestSuccessPath:
     @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
     def test_success_posts_and_maps_response(self, mock_urlopen):
         mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
-        result = handle_web_publish_editorial_post({"payload": _authorized_payload()})
+        result = handle_web_publish_editorial_post(
+            {"payload": _authorized_payload(), "telegram_confirmed": True}
+        )
 
         assert result["ok"] is True
         assert result["published"] is True
@@ -270,7 +362,7 @@ class TestSuccessPath:
     @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
     def test_request_headers_and_body(self, mock_urlopen):
         mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
-        handle_web_publish_editorial_post({"payload": _authorized_payload()})
+        handle_web_publish_editorial_post({"payload": _authorized_payload(), "telegram_confirmed": True})
 
         req = mock_urlopen.call_args[0][0]
         assert req.method == "POST"
@@ -288,7 +380,7 @@ class TestSuccessPath:
     def test_no_worker_token_header_when_unset(self, mock_urlopen, monkeypatch):
         monkeypatch.delenv("WORKER_TOKEN", raising=False)
         mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
-        handle_web_publish_editorial_post({"payload": _authorized_payload()})
+        handle_web_publish_editorial_post({"payload": _authorized_payload(), "telegram_confirmed": True})
         req = mock_urlopen.call_args[0][0]
         assert req.get_header("X-worker-token") is None
 
@@ -302,7 +394,9 @@ class TestConfigAndErrors:
     @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
     def test_function_url_not_configured(self, mock_urlopen, monkeypatch):
         monkeypatch.delenv("EDITORIAL_BLOG_FUNCTION_URL", raising=False)
-        result = handle_web_publish_editorial_post({"payload": _authorized_payload()})
+        result = handle_web_publish_editorial_post(
+            {"payload": _authorized_payload(), "telegram_confirmed": True}
+        )
         assert result["ok"] is False
         assert result["error"] == "not_configured"
         mock_urlopen.assert_not_called()
@@ -310,14 +404,18 @@ class TestConfigAndErrors:
     def test_http_error_url_rejected(self, monkeypatch):
         monkeypatch.setenv("EDITORIAL_BLOG_FUNCTION_URL", "http://evil.example.com/api/publish")
         with pytest.raises(ValueError, match="https"):
-            handle_web_publish_editorial_post({"payload": _authorized_payload()})
+            handle_web_publish_editorial_post(
+                {"payload": _authorized_payload(), "telegram_confirmed": True}
+            )
 
     @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
     def test_function_http_error(self, mock_urlopen):
         mock_urlopen.side_effect = urllib.error.HTTPError(
             FUNCTION_URL, 400, "Bad Request", {}, BytesIO(b'{"ok":false,"error":"invalid_payload"}')
         )
-        result = handle_web_publish_editorial_post({"payload": _authorized_payload()})
+        result = handle_web_publish_editorial_post(
+            {"payload": _authorized_payload(), "telegram_confirmed": True}
+        )
         assert result["ok"] is False
         assert result["status_code"] == 400
         assert result["error"] == "invalid_payload"
@@ -326,7 +424,9 @@ class TestConfigAndErrors:
     def test_function_connection_error(self, mock_urlopen):
         mock_urlopen.side_effect = urllib.error.URLError("refused")
         with pytest.raises(RuntimeError, match="connection failed"):
-            handle_web_publish_editorial_post({"payload": _authorized_payload()})
+            handle_web_publish_editorial_post(
+                {"payload": _authorized_payload(), "telegram_confirmed": True}
+            )
 
 
 # ======================================================================
@@ -343,7 +443,7 @@ class TestNotionSource:
             200, _ok_function_body(published_url="https://umbralbim.io/noticias/post-desde-notion")
         )
         result = handle_web_publish_editorial_post(
-            {"notion_page_id": "22222222-2222-2222-2222-222222222222"}
+            {"notion_page_id": "22222222-2222-2222-2222-222222222222", "telegram_confirmed": True}
         )
         assert result["ok"] is True
         assert result["source"] == "notion"
@@ -365,6 +465,7 @@ class TestNotionSource:
             {
                 "notion_page_id": "22222222-2222-2222-2222-222222222222",
                 "write_back_to_notion": True,
+                "telegram_confirmed": True,
             }
         )
         assert result["ok"] is True
@@ -405,7 +506,7 @@ class TestNotionSource:
         mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
 
         result = handle_web_publish_editorial_post(
-            {"notion_page_id": "22222222-2222-2222-2222-222222222222"}
+            {"notion_page_id": "22222222-2222-2222-2222-222222222222", "telegram_confirmed": True}
         )
 
         assert result["ok"] is True
@@ -434,7 +535,7 @@ class TestNotionSource:
         mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
 
         result = handle_web_publish_editorial_post(
-            {"notion_page_id": "22222222-2222-2222-2222-222222222222"}
+            {"notion_page_id": "22222222-2222-2222-2222-222222222222", "telegram_confirmed": True}
         )
 
         assert result["ok"] is True
@@ -456,7 +557,7 @@ class TestNotionSource:
         mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
 
         result = handle_web_publish_editorial_post(
-            {"notion_page_id": "22222222-2222-2222-2222-222222222222"}
+            {"notion_page_id": "22222222-2222-2222-2222-222222222222", "telegram_confirmed": True}
         )
 
         assert result["ok"] is True
@@ -631,7 +732,7 @@ class TestNotionSource:
         mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
 
         result = handle_web_publish_editorial_post(
-            {"notion_page_id": "22222222-2222-2222-2222-222222222222"}
+            {"notion_page_id": "22222222-2222-2222-2222-222222222222", "telegram_confirmed": True}
         )
 
         assert result["ok"] is True
@@ -655,7 +756,9 @@ class TestRagHook:
         mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
         mock_rag.return_value = {"indexed": 1, "chunks": 2, "documents": 1, "errors": []}
 
-        result = handle_web_publish_editorial_post({"payload": _authorized_payload()})
+        result = handle_web_publish_editorial_post(
+            {"payload": _authorized_payload(), "telegram_confirmed": True}
+        )
 
         assert result["ok"] is True
         assert result["rag_indexed"] is True
@@ -674,7 +777,9 @@ class TestRagHook:
     @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
     def test_skipped_when_env_missing(self, mock_urlopen, mock_rag):
         mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
-        result = handle_web_publish_editorial_post({"payload": _authorized_payload()})
+        result = handle_web_publish_editorial_post(
+            {"payload": _authorized_payload(), "telegram_confirmed": True}
+        )
 
         assert result["ok"] is True  # publish stays ok
         assert result["rag_indexed"] is False
@@ -688,7 +793,7 @@ class TestRagHook:
         _set_rag_env(monkeypatch)
         mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
         result = handle_web_publish_editorial_post(
-            {"payload": _authorized_payload(), "skip_rag_index": True}
+            {"payload": _authorized_payload(), "skip_rag_index": True, "telegram_confirmed": True}
         )
         assert result["ok"] is True
         assert result["rag_indexed"] is False
@@ -701,7 +806,7 @@ class TestRagHook:
         _set_rag_env(monkeypatch)
         mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
         result = handle_web_publish_editorial_post(
-            {"payload": _authorized_payload(), "index_after_publish": False}
+            {"payload": _authorized_payload(), "index_after_publish": False, "telegram_confirmed": True}
         )
         assert result["rag_indexed"] is False
         assert result["rag_skipped_reason"] == "index_after_publish_false"
@@ -714,7 +819,9 @@ class TestRagHook:
         monkeypatch.setenv("EDITORIAL_RAG_INDEX_NAME", "umbral-editorial-staging")
         mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
         mock_rag.return_value = {"indexed": 1, "chunks": 1, "documents": 1, "errors": []}
-        result = handle_web_publish_editorial_post({"payload": _authorized_payload()})
+        result = handle_web_publish_editorial_post(
+            {"payload": _authorized_payload(), "telegram_confirmed": True}
+        )
         assert result["rag_index_name"] == "umbral-editorial-staging"
         assert mock_rag.call_args[0][0]["index_name"] == "umbral-editorial-staging"
 
@@ -724,7 +831,9 @@ class TestRagHook:
         _set_rag_env(monkeypatch)
         mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
         mock_rag.side_effect = RuntimeError("search down")
-        result = handle_web_publish_editorial_post({"payload": _authorized_payload()})
+        result = handle_web_publish_editorial_post(
+            {"payload": _authorized_payload(), "telegram_confirmed": True}
+        )
         assert result["ok"] is True  # publish already happened; RAG is best-effort
         assert result["rag_indexed"] is False
         assert "search down" in result["rag_error"]
@@ -734,7 +843,7 @@ class TestRagHook:
     def test_dry_run_skips_rag(self, mock_urlopen, mock_rag, monkeypatch):
         _set_rag_env(monkeypatch)
         result = handle_web_publish_editorial_post(
-            {"payload": _authorized_payload(), "dry_run": True}
+            {"payload": _authorized_payload(), "dry_run": True, "telegram_confirmed": True}
         )
         assert result["rag_indexed"] is False
         assert result["rag_skipped_reason"] == "dry_run"

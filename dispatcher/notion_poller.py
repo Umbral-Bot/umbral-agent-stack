@@ -176,6 +176,21 @@ NEGATIVE_FAIL_TTL_SEC = 30 * 60  # 30 min backoff on failure
 NEGATIVE_BATCH_LIMIT = 3
 NEGATIVE_SCAN_LIMIT = 10
 
+# P2.6: HITL-2 publish-readiness scan (Publicaciones rows where the two
+# Notion-side D3 conditions — Estado imagen=Seleccionada and
+# autorizar_publicacion=true — are both met). This scan NEVER publishes: it
+# always calls web.publish_editorial_post with dry_run=True and never asserts
+# telegram_confirmed, so the third D3 condition (Telegram "ok publica") stays
+# unmet and the handler's own hard gate blocks every call this scan makes.
+# Purely observability — logs which rows are ready pending the Telegram
+# confirmation an external bridge (n8n workflow, operator) would supply. See
+# docs/ops/editorial-roadmap-norte-p1-p3-2026-07-22.md row P2.6 and
+# docs/ops/editorial-norte-hitl-contract-2026-07-22.md §5.H/D3.
+REDIS_KEY_HITL2_NOTIFIED_PREFIX = "umbral:notion_poller:hitl2_notified:"
+HITL2_NOTIFIED_TTL_SEC = 60 * 60  # 1h — just reduces log noise, not correctness
+HITL2_BATCH_LIMIT = 3
+HITL2_SCAN_LIMIT = 10
+
 # P2a: the V2 classify scan is DEFAULT OFF and fail-closed. It caused the
 # 2026-07-16 incident (rows silently marked classified as `?/?/?` while the
 # Worker had no live LLM provider, scanning rows without the human gate) that
@@ -310,6 +325,38 @@ def _log_negative_capture_disabled_once() -> None:
 def _reset_negative_capture_disabled_log() -> None:
     """Test-only helper."""
     _NEGATIVE_CAPTURE_DISABLED_LOG_STATE["logged"] = False
+
+
+# P2.6: the HITL-2 publish-readiness scan is DEFAULT OFF and fail-closed,
+# mirroring the scans above. It never publishes for real (see the constants
+# comment above) — the flag only controls whether the observability logging
+# runs at all.
+HITL2_SCAN_ENV_FLAG = "NOTION_POLLER_ENABLE_HITL2_SCAN"
+_HITL2_SCAN_DISABLED_LOG_STATE = {"logged": False}
+
+
+def _hitl2_scan_enabled() -> bool:
+    """Return True only for an explicit truthy NOTION_POLLER_ENABLE_HITL2_SCAN."""
+    return os.environ.get(HITL2_SCAN_ENV_FLAG, "").strip().lower() in _TRUTHY_ENV_VALUES
+
+
+def _log_hitl2_scan_disabled_once() -> None:
+    """One INFO line per process, DEBUG afterwards — clear but not noisy."""
+    if not _HITL2_SCAN_DISABLED_LOG_STATE["logged"]:
+        logger.info(
+            "HITL-2 readiness scan disabled (default; set %s=true to enable). "
+            "Control Room / review / smart replies / V2 classify / promote / dedupe / "
+            "negative-capture unaffected.",
+            HITL2_SCAN_ENV_FLAG,
+        )
+        _HITL2_SCAN_DISABLED_LOG_STATE["logged"] = True
+    else:
+        logger.debug("HITL-2 readiness scan disabled (%s not truthy)", HITL2_SCAN_ENV_FLAG)
+
+
+def _reset_hitl2_scan_disabled_log() -> None:
+    """Test-only helper."""
+    _HITL2_SCAN_DISABLED_LOG_STATE["logged"] = False
 
 
 # Magnific scan constants (P2.2 — Publicaciones rows promoted by P2.1 get 5
@@ -1083,6 +1130,109 @@ def _capture_negative_shortlist_rows(wc: WorkerClient, r: redis.Redis) -> None:
         logger.debug(metrics_line)
 
 
+def _scan_hitl2_publish_readiness(wc: WorkerClient, r: redis.Redis) -> None:
+    """Log which Publicaciones rows are ready pending Telegram confirmation (P2.6).
+
+    Pre-filters on the two Notion-side D3 conditions
+    (``Estado imagen == "Seleccionada"`` and ``autorizar_publicacion``) using
+    the cheap flattened scan snapshot, then asks the real handler
+    (``web.publish_editorial_post``, dry_run=True, telegram_confirmed
+    deliberately omitted) to confirm — re-validating live, fail-closed, same
+    as every other scan in this module. This function NEVER sets
+    ``telegram_confirmed`` and NEVER passes ``dry_run=False``, so it can never
+    trigger a real publish; a row that's genuinely ready comes back
+    ``ok=False, error="telegram_confirmation_missing"``, which this scan logs
+    as the "waiting on Telegram" signal an external bridge (n8n workflow,
+    operator) would act on — it never writes to Notion itself.
+    """
+    publicaciones_db_id = os.environ.get("NOTION_PUBLICACIONES_DB_ID", "").strip()
+    if not publicaciones_db_id:
+        return
+
+    try:
+        resp = wc.run(
+            "notion.read_database",
+            {"database_id_or_url": publicaciones_db_id, "max_items": HITL2_SCAN_LIMIT},
+        )
+    except Exception:
+        logger.warning("HITL-2 readiness scan: failed to read Publicaciones DB", exc_info=True)
+        return
+
+    items = _extract_read_database_items(resp)
+    scanned = len(items)
+    eligible = 0
+    ready_pending_telegram = 0
+    not_ready = 0
+    skipped = 0
+    errors = 0
+
+    for item in items:
+        if ready_pending_telegram + not_ready >= HITL2_BATCH_LIMIT:
+            break
+
+        page_id = str(item.get("page_id") or item.get("id") or "").strip()
+        if not page_id:
+            skipped += 1
+            continue
+
+        if item.get("archived") is True:
+            skipped += 1
+            continue
+
+        if _extract_item_text(item, "Estado imagen") != "Seleccionada":
+            skipped += 1
+            continue
+
+        if not _extract_item_checkbox(item, "autorizar_publicacion"):
+            skipped += 1
+            continue
+
+        redis_key = f"{REDIS_KEY_HITL2_NOTIFIED_PREFIX}{page_id}"
+        if r.exists(redis_key):
+            skipped += 1
+            continue
+
+        eligible += 1
+
+        try:
+            result = wc.run(
+                "web.publish_editorial_post",
+                {"notion_page_id": page_id, "dry_run": True},
+            )
+        except Exception:
+            errors += 1
+            logger.warning(
+                "HITL-2 readiness scan: page %s dry-run call failed", page_id[:8], exc_info=True,
+            )
+            continue
+
+        error = (result or {}).get("error") if isinstance(result, dict) else None
+        if error == "telegram_confirmation_missing":
+            ready_pending_telegram += 1
+            r.set(redis_key, "1", ex=HITL2_NOTIFIED_TTL_SEC)
+            logger.info(
+                "HITL-2 readiness scan: page %s READY pending Telegram \"ok publica\" confirmation",
+                page_id[:8],
+            )
+        else:
+            not_ready += 1
+            r.set(redis_key, "1", ex=HITL2_NOTIFIED_TTL_SEC)
+            logger.info(
+                "HITL-2 readiness scan: page %s not actually ready (error=%s)",
+                page_id[:8], error,
+            )
+
+    metrics_line = (
+        f"HITL-2 readiness scan: hitl2_scan_enabled=True scanned={scanned} eligible={eligible} "
+        f"ready_pending_telegram={ready_pending_telegram} not_ready={not_ready} "
+        f"skipped={skipped} errors={errors}"
+    )
+    if scanned > 0:
+        logger.info(metrics_line)
+    else:
+        logger.debug(metrics_line)
+
+
 # States the *automatic* scan must never re-trigger: already produced
 # results, already in flight, or `Error` — which the handler still accepts
 # as an eligible manual retry (CLI script / dry-run), but which the scan
@@ -1342,6 +1492,18 @@ def _do_poll(
     else:
         _log_negative_capture_disabled_once()
 
+    # P2.6: log Publicaciones rows ready pending Telegram "ok publica" (HITL-2
+    # / D3) — DEFAULT OFF (fail-closed). Never publishes for real (always
+    # dry_run=True, never asserts telegram_confirmed). Independent of
+    # everything above.
+    if _hitl2_scan_enabled():
+        try:
+            _scan_hitl2_publish_readiness(wc, r)
+        except Exception:
+            logger.warning("HITL-2 readiness scan failed (general cycle unaffected)", exc_info=True)
+    else:
+        _log_hitl2_scan_disabled_once()
+
     # P2.2: generate Magnific image variants for promoted rows — DEFAULT OFF
     # (fail-closed). Everything above never depends on this. Runs last: each
     # call can take minutes, and this must never delay Control Room / review
@@ -1406,6 +1568,11 @@ def main():
         logger.info("Negative-capture scan ENABLED (%s is truthy).", NEGATIVE_CAPTURE_ENV_FLAG)
     else:
         logger.info("Negative-capture scan disabled (default off; %s not truthy).", NEGATIVE_CAPTURE_ENV_FLAG)
+
+    if _hitl2_scan_enabled():
+        logger.info("HITL-2 readiness scan ENABLED (%s is truthy).", HITL2_SCAN_ENV_FLAG)
+    else:
+        logger.info("HITL-2 readiness scan disabled (default off; %s not truthy).", HITL2_SCAN_ENV_FLAG)
 
     if _magnific_enabled():
         logger.info("Magnific scan ENABLED (%s is truthy).", MAGNIFIC_ENV_FLAG)

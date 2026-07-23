@@ -17,6 +17,15 @@ When a Notion page has the v2 ``Selección imagen`` property, its visual gate
 must also be ready. Legacy pages without that property keep their historical
 image behavior.
 
+P2.6 / D3 (locked, docs/ops/editorial-norte-hitl-contract-2026-07-22.md §5.H):
+the HITL-2 trigger requires a THIRD, equally hard condition — a Telegram "ok
+publica" confirmation, asserted via the ``telegram_confirmed`` input. This
+handler never infers it (nothing in this repo parses inbound Telegram
+messages, see docs/ops/editorial-hitl2-publish-bridge-p26-2026-07-23.md) — an
+external bridge (n8n workflow, operator) must have verified the reply and pass
+``telegram_confirmed=True`` explicitly. Omitting it fails closed exactly like
+the other two gates, for every source (``payload`` or ``notion_page_id``).
+
 Only the blog blob + canonical URL are produced here: this handler never
 auto-publishes LinkedIn or X (see
 docs/ops/notion-blog-linkedin-v3-content-model.md). LinkedIn publishing lives
@@ -545,6 +554,12 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
     Input (one of ``payload`` / ``notion_page_id`` is required):
         payload (dict): explicit post fields + ``autorizar_publicacion`` gate.
         notion_page_id (str): read post fields + gates from a Publicaciones page.
+        telegram_confirmed (bool, default False): the third HITL-2/D3 gate
+            (docs/ops/editorial-norte-hitl-contract-2026-07-22.md §5.H) — must
+            be explicitly asserted true by the caller (an n8n bridge or
+            operator that verified a Telegram "ok publica" reply); this
+            handler never infers it from Notion or anywhere else. Required
+            regardless of source (``payload`` or ``notion_page_id``).
         dry_run (bool, default False): validate + build, do not call the network.
         write_back_to_notion (bool, default False): persist published_url to Notion.
         notion_prop_map (dict, optional): override Notion property names.
@@ -564,6 +579,7 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
     explicit_payload = input_data.get("payload")
     notion_page_id = str(input_data.get("notion_page_id") or "").strip()
     dry_run = bool(input_data.get("dry_run", False))
+    telegram_confirmed = _as_bool(input_data.get("telegram_confirmed"))
     timeout = int(input_data.get("timeout", 30))
     if not (1 <= timeout <= 120):
         raise ValueError("'timeout' must be between 1 and 120 seconds")
@@ -594,6 +610,7 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
     gates: Dict[str, Any] = {
         "autorizar_publicacion": authorized,
         "aprobado_contenido": content_approved,
+        "telegram_confirmed": telegram_confirmed,
     }
     if visual_gate is not None:
         gates["visual_asset"] = visual_gate
@@ -623,6 +640,25 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
         return {
             "ok": False,
             "error": "visual_asset_not_ready",
+            "would_publish": False,
+            "source": source,
+            "slug": post["slug"],
+            "gates": gates,
+        }
+
+    # 3.5) HITL-2 / D3 (locked, docs/ops/editorial-norte-hitl-contract-2026-07-22.md
+    #    §5.H): the publish trigger requires THREE conditions, none optional —
+    #    Estado imagen=Seleccionada (visual gate above) AND autorizar_publicacion
+    #    (above) AND a Telegram "ok publica" confirmation. Nothing in this repo
+    #    parses inbound Telegram messages, so `telegram_confirmed` is never
+    #    inferred — it must be asserted explicitly by whatever external bridge
+    #    (n8n workflow, operator) has verified the Telegram reply. Fail-closed
+    #    by default: omitting it blocks publish exactly like the other two.
+    if not telegram_confirmed:
+        logger.info("Editorial publish blocked by Telegram confirmation gate slug=%s", post["slug"])
+        return {
+            "ok": False,
+            "error": "telegram_confirmation_missing",
             "would_publish": False,
             "source": source,
             "slug": post["slug"],

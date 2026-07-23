@@ -151,6 +151,19 @@ PROMOTE_FAIL_TTL_SEC = 30 * 60  # 30 min backoff on failure
 PROMOTE_BATCH_LIMIT = 3
 PROMOTE_SCAN_LIMIT = 10
 
+# P2.4: dedupe-of-candidate scan (Shortlist rows missing dedupe_status ->
+# ask Worker/core to consult the Publicaciones backlog). Independent of the
+# promote scan above: a row is evaluated once, regardless of its
+# `Resultado revisión` — dedupe is a pre-registration signal for HITL-1, not a
+# gate on promotion. See docs/ops/editorial-roadmap-norte-p1-p3-2026-07-22.md
+# row P2.4 and docs/ops/editorial-norte-hitl-contract-2026-07-22.md §5.J.
+REDIS_KEY_DEDUPED_PREFIX = "umbral:notion_poller:deduped:"
+REDIS_KEY_DEDUPE_FAIL_PREFIX = "umbral:notion_poller:dedupe_fail:"
+DEDUPED_TTL_SEC = 24 * 60 * 60
+DEDUPE_FAIL_TTL_SEC = 30 * 60  # 30 min backoff on failure
+DEDUPE_BATCH_LIMIT = 3
+DEDUPE_SCAN_LIMIT = 10
+
 # P2a: the V2 classify scan is DEFAULT OFF and fail-closed. It caused the
 # 2026-07-16 incident (rows silently marked classified as `?/?/?` while the
 # Worker had no live LLM provider, scanning rows without the human gate) that
@@ -221,6 +234,38 @@ def _log_promote_disabled_once() -> None:
 def _reset_promote_disabled_log() -> None:
     """Test-only helper."""
     _PROMOTE_DISABLED_LOG_STATE["logged"] = False
+
+
+# P2.4: the dedupe scan (Shortlist candidate vs Publicaciones backlog) is
+# DEFAULT OFF and fail-closed, mirroring the promote scan above. Even when
+# enabled, the actual backlog query and the Notion write happen inside the
+# Worker task (editorial.dedupe_candidate_vs_backlog, ADR-011 #1) — this scan
+# only decides which Shortlist pages still need a dedupe verdict.
+DEDUPE_ENV_FLAG = "NOTION_POLLER_ENABLE_DEDUPE"
+_DEDUPE_DISABLED_LOG_STATE = {"logged": False}
+
+
+def _dedupe_enabled() -> bool:
+    """Return True only for an explicit truthy NOTION_POLLER_ENABLE_DEDUPE."""
+    return os.environ.get(DEDUPE_ENV_FLAG, "").strip().lower() in _TRUTHY_ENV_VALUES
+
+
+def _log_dedupe_disabled_once() -> None:
+    """One INFO line per process, DEBUG afterwards — clear but not noisy."""
+    if not _DEDUPE_DISABLED_LOG_STATE["logged"]:
+        logger.info(
+            "Dedupe scan disabled (default; set %s=true to enable). "
+            "Control Room / review / smart replies / V2 classify / promote unaffected.",
+            DEDUPE_ENV_FLAG,
+        )
+        _DEDUPE_DISABLED_LOG_STATE["logged"] = True
+    else:
+        logger.debug("Dedupe scan disabled (%s not truthy)", DEDUPE_ENV_FLAG)
+
+
+def _reset_dedupe_disabled_log() -> None:
+    """Test-only helper."""
+    _DEDUPE_DISABLED_LOG_STATE["logged"] = False
 
 
 # Magnific scan constants (P2.2 — Publicaciones rows promoted by P2.1 get 5
@@ -793,6 +838,101 @@ def _promote_approved_shortlist_rows(wc: WorkerClient, r: redis.Redis) -> None:
         logger.debug(metrics_line)
 
 
+def _dedupe_pending_shortlist_rows(wc: WorkerClient, r: redis.Redis) -> None:
+    """Scan Shortlist for rows missing `dedupe_status` and evaluate each (P2.4).
+
+    A row is a *candidate* here only if its flattened snapshot shows an empty
+    `dedupe_status` — independent of `Resultado revisión`, since dedupe is
+    meant to run before/alongside HITL-1 review, not only after Aprobar. This
+    function never writes to Notion — it only calls the
+    `editorial.dedupe_candidate_vs_backlog` Worker task, which re-fetches the
+    page and re-queries the Publicaciones backlog before writing (fail-closed;
+    avoids acting on a stale scan snapshot). Redis here only dedupes *scan
+    attempts* across poll cycles, not the dedupe verdict itself (that
+    idempotency lives in the Worker task via `dedupe_status`).
+    """
+    shortlist_ds_id = os.environ.get("NOTION_SHORTLIST_DS_ID", "").strip()
+    if not shortlist_ds_id:
+        return
+
+    try:
+        resp = wc.run(
+            "notion.read_database",
+            {"database_id_or_url": shortlist_ds_id, "max_items": DEDUPE_SCAN_LIMIT},
+        )
+    except Exception:
+        logger.warning("Dedupe scan: failed to read Shortlist DB", exc_info=True)
+        return
+
+    items = _extract_read_database_items(resp)
+    scanned = len(items)
+    eligible = 0
+    evaluated = 0
+    skipped = 0
+    errors = 0
+
+    for item in items:
+        if evaluated >= DEDUPE_BATCH_LIMIT:
+            break
+
+        page_id = str(item.get("page_id") or item.get("id") or "").strip()
+        if not page_id:
+            skipped += 1
+            continue
+
+        if _extract_item_text(item, "dedupe_status"):
+            skipped += 1
+            continue
+
+        eligible += 1
+
+        redis_key = f"{REDIS_KEY_DEDUPED_PREFIX}{page_id}"
+        fail_key = f"{REDIS_KEY_DEDUPE_FAIL_PREFIX}{page_id}"
+        if r.exists(redis_key) or r.exists(fail_key):
+            skipped += 1
+            continue
+
+        try:
+            result = wc.run(
+                "editorial.dedupe_candidate_vs_backlog",
+                {"shortlist_page_id": page_id},
+            )
+        except Exception:
+            errors += 1
+            r.set(fail_key, "1", ex=DEDUPE_FAIL_TTL_SEC)
+            logger.warning(
+                "Dedupe scan: page %s call failed (backoff %ds)",
+                page_id[:8], DEDUPE_FAIL_TTL_SEC, exc_info=True,
+            )
+            continue
+
+        ok = bool(result.get("ok")) if isinstance(result, dict) else False
+        if ok:
+            r.set(redis_key, "1", ex=DEDUPED_TTL_SEC)
+            evaluated += 1
+            logger.info(
+                "Dedupe scan: shortlist page %s -> dedupe_status=%s",
+                page_id[:8],
+                result.get("dedupe_status"),
+            )
+        else:
+            errors += 1
+            r.set(fail_key, "1", ex=DEDUPE_FAIL_TTL_SEC)
+            logger.warning(
+                "Dedupe scan: page %s did NOT evaluate (%s) — no success checkpoint, backoff %ds",
+                page_id[:8], (result or {}).get("error"), DEDUPE_FAIL_TTL_SEC,
+            )
+
+    metrics_line = (
+        f"Dedupe scan: dedupe_enabled=True scanned={scanned} eligible={eligible} "
+        f"evaluated={evaluated} skipped={skipped} errors={errors}"
+    )
+    if scanned > 0:
+        logger.info(metrics_line)
+    else:
+        logger.debug(metrics_line)
+
+
 # States the *automatic* scan must never re-trigger: already produced
 # results, already in flight, or `Error` — which the handler still accepts
 # as an eligible manual retry (CLI script / dry-run), but which the scan
@@ -1030,6 +1170,17 @@ def _do_poll(
     else:
         _log_promote_disabled_once()
 
+    # P2.4: dedupe Shortlist candidates against the Publicaciones backlog —
+    # DEFAULT OFF (fail-closed). Independent of promote; everything above
+    # never depends on this.
+    if _dedupe_enabled():
+        try:
+            _dedupe_pending_shortlist_rows(wc, r)
+        except Exception:
+            logger.warning("Dedupe scan failed (general cycle unaffected)", exc_info=True)
+    else:
+        _log_dedupe_disabled_once()
+
     # P2.2: generate Magnific image variants for promoted rows — DEFAULT OFF
     # (fail-closed). Everything above never depends on this. Runs last: each
     # call can take minutes, and this must never delay Control Room / review
@@ -1084,6 +1235,11 @@ def main():
         logger.info("Promote scan ENABLED (%s is truthy).", PROMOTE_ENV_FLAG)
     else:
         logger.info("Promote scan disabled (default off; %s not truthy).", PROMOTE_ENV_FLAG)
+
+    if _dedupe_enabled():
+        logger.info("Dedupe scan ENABLED (%s is truthy).", DEDUPE_ENV_FLAG)
+    else:
+        logger.info("Dedupe scan disabled (default off; %s not truthy).", DEDUPE_ENV_FLAG)
 
     if _magnific_enabled():
         logger.info("Magnific scan ENABLED (%s is truthy).", MAGNIFIC_ENV_FLAG)

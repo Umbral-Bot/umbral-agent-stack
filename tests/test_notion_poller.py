@@ -1625,3 +1625,156 @@ class TestNegativeCaptureScanBehavior:
 
     def test_disabled_log_helper_resets_without_error(self):
         _reset_negative_capture_disabled_log()
+
+
+# ---------------------------------------------------------------------------
+# P2.6: HITL-2 publish-readiness scan — default-off flag, Estado
+# imagen=Seleccionada ∧ autorizar_publicacion pre-filter, always dry_run=True
+# and never asserts telegram_confirmed (so it can never publish for real).
+# See docs/ops/editorial-roadmap-norte-p1-p3-2026-07-22.md row P2.6.
+# ---------------------------------------------------------------------------
+
+from dispatcher.notion_poller import (  # noqa: E402
+    HITL2_NOTIFIED_TTL_SEC,
+    _hitl2_scan_enabled,
+    _reset_hitl2_scan_disabled_log,
+    _scan_hitl2_publish_readiness,
+)
+
+
+def _hitl2_ready_row(page_id="pub-1", **props):
+    base = {
+        "Estado imagen": "Seleccionada",
+        "autorizar_publicacion": True,
+    }
+    base.update(props)
+    return {"page_id": page_id, "properties": base}
+
+
+class TestHitl2ScanFlagParsing:
+    @pytest.mark.parametrize("value", ["1", "true", "TRUE", "yes", "on", " True "])
+    def test_explicit_truthy_enables(self, value):
+        with patch.dict("os.environ", {"NOTION_POLLER_ENABLE_HITL2_SCAN": value}, clear=False):
+            assert _hitl2_scan_enabled() is True
+
+    @pytest.mark.parametrize("value", ["", "0", "false", "no", "off", "junk", "enable", "si"])
+    def test_everything_else_disables(self, value):
+        with patch.dict("os.environ", {"NOTION_POLLER_ENABLE_HITL2_SCAN": value}, clear=False):
+            assert _hitl2_scan_enabled() is False
+
+    def test_absent_env_disables(self, monkeypatch):
+        monkeypatch.delenv("NOTION_POLLER_ENABLE_HITL2_SCAN", raising=False)
+        assert _hitl2_scan_enabled() is False
+
+
+class TestHitl2ScanBehavior:
+    def _run_scan(self, items, publish_result=None, publish_exc=None, publicaciones_db_id="pub-db"):
+        wc = MagicMock()
+
+        def _run(task, payload):
+            if task == "notion.read_database":
+                return {"ok": True, "result": {"items": items}}
+            if task == "web.publish_editorial_post":
+                assert payload.get("dry_run") is True
+                assert "telegram_confirmed" not in payload
+                if publish_exc:
+                    raise publish_exc
+                return publish_result
+            raise AssertionError(f"unexpected task {task}")
+
+        wc.run.side_effect = _run
+        r = _redis_mock()
+        with patch.dict("os.environ", {"NOTION_PUBLICACIONES_DB_ID": publicaciones_db_id or ""}, clear=False):
+            _scan_hitl2_publish_readiness(wc, r)
+        return wc, r
+
+    def _publish_calls(self, wc):
+        return [c for c in wc.run.call_args_list if c.args and c.args[0] == "web.publish_editorial_post"]
+
+    def test_no_db_configured_is_noop(self):
+        wc, r = self._run_scan([_hitl2_ready_row()], publicaciones_db_id="")
+        assert wc.run.call_count == 0
+        r.set.assert_not_called()
+
+    def test_rows_not_estado_imagen_seleccionada_are_skipped(self):
+        wc, r = self._run_scan([_hitl2_ready_row(**{"Estado imagen": "Generando"})])
+        assert self._publish_calls(wc) == []
+        r.set.assert_not_called()
+
+    def test_rows_without_autorizar_publicacion_are_skipped(self):
+        wc, r = self._run_scan([_hitl2_ready_row(autorizar_publicacion=False)])
+        assert self._publish_calls(wc) == []
+        r.set.assert_not_called()
+
+    def test_archived_rows_are_skipped(self):
+        row = _hitl2_ready_row()
+        row["archived"] = True
+        wc, r = self._run_scan([row])
+        assert self._publish_calls(wc) == []
+        r.set.assert_not_called()
+
+    def test_ready_row_calls_publish_dry_run_and_checkpoints(self, caplog):
+        with caplog.at_level("INFO", logger="dispatcher.notion_poller"):
+            wc, r = self._run_scan(
+                [_hitl2_ready_row()],
+                publish_result={"ok": False, "error": "telegram_confirmation_missing", "would_publish": False},
+            )
+        assert len(self._publish_calls(wc)) == 1
+        assert self._publish_calls(wc)[0].args[1] == {"notion_page_id": "pub-1", "dry_run": True}
+        r.set.assert_called_once_with(
+            "umbral:notion_poller:hitl2_notified:pub-1", "1", ex=HITL2_NOTIFIED_TTL_SEC
+        )
+        assert "READY pending Telegram" in caplog.text
+
+    def test_not_actually_ready_row_still_checkpoints_with_different_log(self, caplog):
+        # Pre-filter matched (Estado imagen + autorizar_publicacion), but the
+        # real handler found something else missing (e.g. aprobado_contenido).
+        with caplog.at_level("INFO", logger="dispatcher.notion_poller"):
+            wc, r = self._run_scan(
+                [_hitl2_ready_row()],
+                publish_result={"ok": False, "error": "publication_not_authorized"},
+            )
+        assert len(self._publish_calls(wc)) == 1
+        r.set.assert_called_once()
+        assert "not actually ready" in caplog.text
+
+    def test_publish_call_exception_does_not_checkpoint(self):
+        wc, r = self._run_scan([_hitl2_ready_row()], publish_exc=RuntimeError("worker unreachable"))
+        assert len(self._publish_calls(wc)) == 1
+        r.set.assert_not_called()
+
+    def test_already_notified_row_is_skipped_without_recall(self):
+        wc = MagicMock()
+        wc.run.side_effect = lambda task, payload: (
+            {"ok": True, "result": {"items": [_hitl2_ready_row()]}}
+            if task == "notion.read_database"
+            else (_ for _ in ()).throw(AssertionError("should not call publish"))
+        )
+        r = _redis_mock()
+        r.exists.return_value = True
+        with patch.dict("os.environ", {"NOTION_PUBLICACIONES_DB_ID": "pub-db"}, clear=False):
+            _scan_hitl2_publish_readiness(wc, r)
+        assert self._publish_calls(wc) == []
+
+    def test_batch_limit_caps_calls_per_cycle(self):
+        rows = [_hitl2_ready_row(page_id=f"row-{i}") for i in range(5)]
+        wc, r = self._run_scan(
+            rows,
+            publish_result={"ok": False, "error": "telegram_confirmation_missing"},
+        )
+        assert len(self._publish_calls(wc)) == 3  # HITL2_BATCH_LIMIT
+
+    def test_never_passes_dry_run_false_or_telegram_confirmed(self):
+        # Redundant with the assertions inside _run_scan's fake wc.run, but
+        # spelled out explicitly since this is the core safety invariant of
+        # the whole scan (it may never trigger a real publish).
+        wc, r = self._run_scan(
+            [_hitl2_ready_row()],
+            publish_result={"ok": False, "error": "telegram_confirmation_missing"},
+        )
+        call = self._publish_calls(wc)[0]
+        assert call.args[1]["dry_run"] is True
+        assert "telegram_confirmed" not in call.args[1]
+
+    def test_disabled_log_helper_resets_without_error(self):
+        _reset_hitl2_scan_disabled_log()

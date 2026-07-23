@@ -109,6 +109,10 @@ def build_worker_copy_payload(payload: dict, page_id: str) -> dict:
     whoever eventually merges this into a real publish call must flip
     ``autorizar_publicacion``/``aprobado_contenido`` to ``True`` in the dict
     itself; there is no Notion checkbox in this path that does it for them.
+    As of P2.6 (D3, docs/ops/editorial-norte-hitl-contract-2026-07-22.md §5.H)
+    the handler also requires a third, top-level (not nested in this payload)
+    ``telegram_confirmed=True`` input — a Telegram "ok publica" confirmation
+    this script never asserts either.
     """
     return {
         "notion_page_id": page_id,
@@ -127,7 +131,10 @@ def build_worker_copy_payload(payload: dict, page_id: str) -> dict:
             "is the explicit-payload path: editorial_publish.py never reads a "
             "Notion checkbox for it, so whoever merges this into a real "
             "publish call must flip both fields to true in this dict "
-            "themselves — do not do so without a separate, explicit go-ahead."
+            "themselves — do not do so without a separate, explicit go-ahead. "
+            "As of P2.6 (D3) the task call also needs a top-level "
+            "telegram_confirmed=True (sibling to 'payload', not in this dict) "
+            "asserting a verified Telegram 'ok publica' reply."
         ),
     }
 

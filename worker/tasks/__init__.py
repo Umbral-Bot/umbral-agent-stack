@@ -165,6 +165,7 @@ from .editorial_publish import (
     handle_web_unpublish_editorial_post,
 )
 from .editorial_promote import handle_editorial_promote_shortlist_approval
+from .magnific import handle_magnific_generate_variants
 
 # Each handler: (input: dict) -> dict
 TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
@@ -287,4 +288,5 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "web.publish_editorial_post": handle_web_publish_editorial_post,
     "web.unpublish_editorial_post": handle_web_unpublish_editorial_post,
     "editorial.promote_shortlist_approval": handle_editorial_promote_shortlist_approval,
+    "magnific.generate_variants": handle_magnific_generate_variants,
 }

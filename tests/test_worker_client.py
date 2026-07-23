@@ -62,3 +62,21 @@ def test_run_sends_optional_internal_caller_header():
 
     headers = http_client.post.call_args.kwargs["headers"]
     assert headers["X-Umbral-Caller"] == "script.verify_stack_vps"
+
+
+def test_run_timeout_override_applies_only_to_that_call():
+    response = MagicMock()
+    response.raise_for_status.return_value = None
+    response.json.return_value = {"ok": True}
+
+    http_client = MagicMock()
+    http_client.__enter__.return_value = http_client
+    http_client.post.return_value = response
+
+    with patch("client.worker_client.httpx.Client", return_value=http_client) as mock_client_cls:
+        wc = WorkerClient(base_url="http://worker.local", token="test-token", timeout=30.0)
+        wc.run("magnific.generate_variants", {"publicacion_page_id": "p-1"}, timeout=600.0)
+        wc.run("ping", {})
+
+    assert mock_client_cls.call_args_list[0].kwargs["timeout"] == 600.0
+    assert mock_client_cls.call_args_list[1].kwargs["timeout"] == 30.0

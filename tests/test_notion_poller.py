@@ -1184,3 +1184,162 @@ class TestPromoteScanBehavior:
 
     def test_disabled_log_helper_resets_without_error(self):
         _reset_promote_disabled_log()
+
+
+# ---------------------------------------------------------------------------
+# P2.2 — Magnific scan (Publicaciones rows promoted by P2.1 -> 5 image variants)
+# See docs/ops/editorial-roadmap-norte-p1-p3-2026-07-22.md row P2.2.
+# ---------------------------------------------------------------------------
+
+from dispatcher.notion_poller import (  # noqa: E402
+    MAGNIFIC_CALL_TIMEOUT_SEC,
+    MAGNIFIC_FAIL_TTL_SEC,
+    MAGNIFIC_TTL_SEC,
+    _generate_magnific_variants_for_pending_rows,
+    _magnific_enabled,
+    _reset_magnific_disabled_log,
+)
+
+
+def _promoted_row(page_id="pub-1", **props):
+    base = {
+        "origen_alternativa": ["shortlist-1"],
+        "Estado imagen": "No aplica",
+    }
+    base.update(props)
+    return {"page_id": page_id, "properties": base}
+
+
+class TestMagnificFlagParsing:
+    @pytest.mark.parametrize("value", ["1", "true", "TRUE", "yes", "on", " True "])
+    def test_explicit_truthy_enables(self, value):
+        with patch.dict("os.environ", {"NOTION_POLLER_ENABLE_MAGNIFIC": value}, clear=False):
+            assert _magnific_enabled() is True
+
+    @pytest.mark.parametrize("value", ["", "0", "false", "no", "off", "junk", "enable", "si"])
+    def test_everything_else_disables(self, value):
+        with patch.dict("os.environ", {"NOTION_POLLER_ENABLE_MAGNIFIC": value}, clear=False):
+            assert _magnific_enabled() is False
+
+    def test_absent_env_disables(self, monkeypatch):
+        monkeypatch.delenv("NOTION_POLLER_ENABLE_MAGNIFIC", raising=False)
+        assert _magnific_enabled() is False
+
+
+class TestMagnificScanBehavior:
+    def _run_scan(self, items, magnific_result=None, magnific_exc=None, publicaciones_db_id="pub-db"):
+        wc = MagicMock()
+
+        def _run(task, payload, timeout=None):
+            if task == "notion.read_database":
+                return {"ok": True, "result": {"items": items}}
+            if task == "magnific.generate_variants":
+                if magnific_exc:
+                    raise magnific_exc
+                return magnific_result
+            raise AssertionError(f"unexpected task {task}")
+
+        wc.run.side_effect = _run
+        r = _redis_mock()
+        with patch.dict("os.environ", {"NOTION_PUBLICACIONES_DB_ID": publicaciones_db_id or ""}, clear=False):
+            _generate_magnific_variants_for_pending_rows(wc, r)
+        return wc, r
+
+    def _magnific_calls(self, wc):
+        return [
+            c for c in wc.run.call_args_list if c.args and c.args[0] == "magnific.generate_variants"
+        ]
+
+    def test_no_publicaciones_db_id_configured_is_noop(self):
+        wc, r = self._run_scan([_promoted_row()], publicaciones_db_id="")
+        assert wc.run.call_count == 0
+        r.set.assert_not_called()
+
+    def test_rows_without_origen_alternativa_are_never_generated(self):
+        wc, r = self._run_scan([_promoted_row(**{"origen_alternativa": []})])
+        assert self._magnific_calls(wc) == []
+        r.set.assert_not_called()
+
+    @pytest.mark.parametrize("estado", ["Listo para selección", "Seleccionada", "Generando"])
+    def test_already_done_states_are_skipped(self, estado):
+        wc, r = self._run_scan([_promoted_row(**{"Estado imagen": estado})])
+        assert self._magnific_calls(wc) == []
+        r.set.assert_not_called()
+
+    def test_error_state_is_never_auto_retried_by_the_scan(self):
+        """Regression guard: Error must require an explicit human/system
+        action to leave (e.g. Selección imagen = Regenerar -> Regeneración
+        pedida), never the automatic scan on its flat 30-min backoff — else a
+        persistently-failing prompt burns credits forever."""
+        wc, r = self._run_scan([_promoted_row(**{"Estado imagen": "Error"})])
+        assert self._magnific_calls(wc) == []
+        r.set.assert_not_called()
+
+    def test_regeneracion_pedida_is_scan_eligible(self):
+        wc, r = self._run_scan(
+            [_promoted_row(**{"Estado imagen": "Regeneración pedida"})],
+            magnific_result={"ok": True, "generated": 5, "requested": 5},
+        )
+        assert len(self._magnific_calls(wc)) == 1
+
+    def test_eligible_row_is_generated_and_checkpointed(self):
+        wc, r = self._run_scan(
+            [_promoted_row()],
+            magnific_result={"ok": True, "generated": 5, "requested": 5},
+        )
+        calls = self._magnific_calls(wc)
+        assert len(calls) == 1
+        assert calls[0].args[1] == {"publicacion_page_id": "pub-1"}
+        assert calls[0].kwargs["timeout"] == MAGNIFIC_CALL_TIMEOUT_SEC
+        r.set.assert_called_once_with(
+            "umbral:notion_poller:magnific:pub-1", "1", ex=MAGNIFIC_TTL_SEC
+        )
+
+    def test_handler_noop_skip_does_not_checkpoint_as_generated(self):
+        wc, r = self._run_scan(
+            [_promoted_row()],
+            magnific_result={"ok": True, "skipped": True, "reason": "in_progress"},
+        )
+        assert len(self._magnific_calls(wc)) == 1
+        r.set.assert_not_called()
+
+    def test_worker_reported_failure_sets_backoff_not_success(self, caplog):
+        with caplog.at_level("WARNING", logger="dispatcher.notion_poller"):
+            wc, r = self._run_scan(
+                [_promoted_row()],
+                magnific_result={"ok": False, "error": "estado_imagen_not_eligible"},
+            )
+        assert r.set.call_count == 1
+        key = r.set.call_args.args[0]
+        assert key.startswith("umbral:notion_poller:magnific_fail:")
+        assert r.set.call_args.kwargs == {"ex": MAGNIFIC_FAIL_TTL_SEC}
+        assert "did NOT generate" in caplog.text
+
+    def test_magnific_call_exception_sets_backoff(self):
+        wc, r = self._run_scan([_promoted_row()], magnific_exc=RuntimeError("worker unreachable"))
+        assert r.set.call_count == 1
+        assert r.set.call_args.args[0].startswith("umbral:notion_poller:magnific_fail:")
+
+    def test_already_checkpointed_row_is_skipped_without_recall(self):
+        wc = MagicMock()
+        wc.run.side_effect = lambda task, payload, timeout=None: (
+            {"ok": True, "result": {"items": [_promoted_row()]}}
+            if task == "notion.read_database"
+            else (_ for _ in ()).throw(AssertionError("should not call magnific"))
+        )
+        r = _redis_mock()
+        r.exists.return_value = True
+        with patch.dict("os.environ", {"NOTION_PUBLICACIONES_DB_ID": "pub-db"}, clear=False):
+            _generate_magnific_variants_for_pending_rows(wc, r)
+        assert self._magnific_calls(wc) == []
+
+    def test_batch_limit_caps_generations_per_cycle(self):
+        rows = [_promoted_row(page_id=f"row-{i}") for i in range(5)]
+        wc, r = self._run_scan(
+            rows,
+            magnific_result={"ok": True, "generated": 5, "requested": 5},
+        )
+        assert len(self._magnific_calls(wc)) == 1  # MAGNIFIC_BATCH_LIMIT
+
+    def test_disabled_log_helper_resets_without_error(self):
+        _reset_magnific_disabled_log()

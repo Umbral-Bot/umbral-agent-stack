@@ -103,7 +103,12 @@ def build_worker_copy_payload(payload: dict, page_id: str) -> dict:
     belong to the blog-metadata step, not this copy script, and must be
     merged in by the caller before invoking
     ``handle_web_publish_editorial_post``. Gates are hardcoded false here as
-    defense in depth — only David flips them, in Notion.
+    defense in depth: per that handler's own contract, an explicit ``payload``
+    is never gate-checked against the live Notion page — "for an explicit
+    payload the caller must set it" (worker/tasks/editorial_publish.py). So
+    whoever eventually merges this into a real publish call must flip
+    ``autorizar_publicacion``/``aprobado_contenido`` to ``True`` in the dict
+    itself; there is no Notion checkbox in this path that does it for them.
     """
     return {
         "notion_page_id": page_id,
@@ -118,8 +123,11 @@ def build_worker_copy_payload(payload: dict, page_id: str) -> dict:
             "Partial payload (copy step only). Merge slug/title/tags/excerpt "
             "from the blog metadata step before calling "
             "worker.tasks.editorial_publish.handle_web_publish_editorial_post "
-            "with this dict as 'payload'. Gates are intentionally false; only "
-            "David flips them in Notion."
+            "with this dict as 'payload'. Gates are intentionally false. This "
+            "is the explicit-payload path: editorial_publish.py never reads a "
+            "Notion checkbox for it, so whoever merges this into a real "
+            "publish call must flip both fields to true in this dict "
+            "themselves — do not do so without a separate, explicit go-ahead."
         ),
     }
 
@@ -208,12 +216,29 @@ def load_publication_copy(publication_id: str, copy_dir: Path) -> dict:
     return yaml.safe_load(path.read_text(encoding="utf-8"))
 
 
-def build_properties(payload: dict) -> dict:
+def build_properties(payload: dict, *, skip_oversized_copy_blog: bool = False) -> dict:
+    """Build the Notion property patch for the copy fields.
+
+    ``skip_oversized_copy_blog`` matters only when ``copy_blog`` overflows the
+    rich_text property limit: with it False (default), that overflow raises
+    ``RichTextOverflowError`` so a plain run fails loudly instead of silently
+    truncating. With it True — the caller is using one of the V2 escape
+    hatches (``--write-body`` / ``--emit-worker-payload``), which deliver the
+    full body some other way — the ``Copy Blog`` property is simply omitted
+    from the patch rather than raising, since the escape hatch is the actual
+    delivery path for that content.
+    """
     props: dict = {
         "Copy LinkedIn": {"rich_text": _chunks(payload["copy_linkedin"].strip(), guard_property_limit=True)},
-        "Copy Blog": {"rich_text": _chunks(payload["copy_blog"].strip(), guard_property_limit=True)},
         "Copy X": {"rich_text": _chunks(payload["copy_x"].strip(), guard_property_limit=True)},
     }
+    try:
+        props["Copy Blog"] = {
+            "rich_text": _chunks(payload["copy_blog"].strip(), guard_property_limit=True)
+        }
+    except RichTextOverflowError:
+        if not skip_oversized_copy_blog:
+            raise
     if payload.get("copy_linkedin_empresa"):
         props["Copy LinkedIn empresa"] = {
             "rich_text": _chunks(payload["copy_linkedin_empresa"].strip(), guard_property_limit=True)
@@ -304,11 +329,18 @@ def main() -> int:
             print(f"MODEL_VERIFY_FAIL: {exc}", file=sys.stderr)
             return 3
 
+    escape_hatch_requested = args.write_body or bool(args.emit_worker_payload)
     try:
-        properties = build_properties(payload)
+        properties = build_properties(payload, skip_oversized_copy_blog=escape_hatch_requested)
     except RichTextOverflowError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 5
+
+    if escape_hatch_requested and "Copy Blog" not in properties:
+        print(
+            "NOTE: Copy Blog property skipped (content exceeds the rich_text property "
+            "limit); the full body is delivered via --write-body/--emit-worker-payload instead"
+        )
 
     marker = f"{_BODY_MARKER_PREFIX} — trace_id: {payload.get('trace_id') or args.publication_id}"
     body_blocks = build_copy_blog_body_blocks(payload["copy_blog"].strip(), marker) if args.write_body else []

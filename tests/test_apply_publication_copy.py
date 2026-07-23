@@ -59,6 +59,24 @@ def test_build_properties_raises_on_oversized_blog():
         apc.build_properties(payload)
 
 
+def test_build_properties_skip_oversized_omits_copy_blog_instead_of_raising():
+    # The whole point of --write-body / --emit-worker-payload is to still
+    # succeed when Copy Blog overflows the property limit — this must not
+    # raise, and must simply leave "Copy Blog" out of the property patch
+    # (the full body is delivered via the escape hatch instead).
+    payload = dict(_load_cand001(), copy_blog="x" * 300_000)
+    props = apc.build_properties(payload, skip_oversized_copy_blog=True)
+    assert "Copy Blog" not in props
+    assert "Copy LinkedIn" in props
+    assert "Copy X" in props
+
+
+def test_build_properties_skip_oversized_keeps_copy_blog_when_it_fits():
+    payload = _load_cand001()
+    props = apc.build_properties(payload, skip_oversized_copy_blog=True)
+    assert "Copy Blog" in props
+
+
 # ---------------------------------------------------------------------------
 # Copy LinkedIn empresa (P2.3)
 # ---------------------------------------------------------------------------
@@ -208,12 +226,17 @@ def test_main_dry_run_emits_worker_payload(monkeypatch, capsys, tmp_path):
     assert "WORKER_PAYLOAD_WRITTEN" in out
 
 
-def test_main_dry_run_rejects_oversized_blog(monkeypatch, capsys, tmp_path):
+def _write_oversized_copy_yaml(tmp_path) -> Path:
     oversized = dict(_load_cand001(), copy_blog="x " * 200_000)
     copy_dir = tmp_path
     (copy_dir / "cand-oversize-final-copy.yaml").write_text(
         yaml.safe_dump(oversized, allow_unicode=True), encoding="utf-8"
     )
+    return copy_dir
+
+
+def test_main_dry_run_rejects_oversized_blog_without_escape_hatch(monkeypatch, capsys, tmp_path):
+    copy_dir = _write_oversized_copy_yaml(tmp_path)
     monkeypatch.setattr(
         "sys.argv",
         [
@@ -228,3 +251,50 @@ def test_main_dry_run_rejects_oversized_blog(monkeypatch, capsys, tmp_path):
     assert exit_code == 5
     err = capsys.readouterr().err
     assert "rich_text chunks" in err
+
+
+def test_main_dry_run_oversized_blog_succeeds_with_write_body(monkeypatch, capsys, tmp_path):
+    # Regression: build_properties() used to run its property-limit guard
+    # unconditionally before main() ever looked at --write-body, so an
+    # oversized body always failed with exit 5 even with the escape hatch
+    # requested — defeating the whole point of --write-body. This must now
+    # succeed: the oversized Copy Blog property is skipped, not raised.
+    copy_dir = _write_oversized_copy_yaml(tmp_path)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "apply_publication_copy.py",
+            "--publication-id", "CAND-OVERSIZE",
+            "--copy-dir", str(copy_dir),
+            "--dry-run",
+            "--skip-model-verify",
+            "--write-body",
+        ],
+    )
+    exit_code = apc.main()
+    out = capsys.readouterr().out
+    assert exit_code == 0
+    assert "NOTE: Copy Blog property skipped" in out
+    assert "DRY_RUN write_body blocks=" in out
+
+
+def test_main_dry_run_oversized_blog_succeeds_with_emit_worker_payload(monkeypatch, capsys, tmp_path):
+    copy_dir = _write_oversized_copy_yaml(tmp_path)
+    out_path = tmp_path / "worker-payload.json"
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "apply_publication_copy.py",
+            "--publication-id", "CAND-OVERSIZE",
+            "--copy-dir", str(copy_dir),
+            "--dry-run",
+            "--skip-model-verify",
+            "--emit-worker-payload", str(out_path),
+        ],
+    )
+    exit_code = apc.main()
+    out = capsys.readouterr().out
+    assert exit_code == 0
+    assert "NOTE: Copy Blog property skipped" in out
+    data = json.loads(out_path.read_text(encoding="utf-8"))
+    assert len(data["body_markdown"]) > 190_000  # full, untruncated body

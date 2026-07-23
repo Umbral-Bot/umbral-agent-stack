@@ -164,6 +164,18 @@ DEDUPE_FAIL_TTL_SEC = 30 * 60  # 30 min backoff on failure
 DEDUPE_BATCH_LIMIT = 3
 DEDUPE_SCAN_LIMIT = 10
 
+# P2.5: negative-example capture scan (Shortlist rows marked Descartar with
+# ejemplo_negativo still false -> ask Worker/core to validate + persist the
+# negative example). Fila D of the gap matrix (previously AUSENTE). See
+# docs/ops/editorial-roadmap-norte-p1-p3-2026-07-22.md row P2.5 and
+# docs/ops/editorial-norte-hitl-contract-2026-07-22.md §4.
+REDIS_KEY_NEGATIVE_CAPTURED_PREFIX = "umbral:notion_poller:negative_captured:"
+REDIS_KEY_NEGATIVE_FAIL_PREFIX = "umbral:notion_poller:negative_fail:"
+NEGATIVE_CAPTURED_TTL_SEC = 24 * 60 * 60
+NEGATIVE_FAIL_TTL_SEC = 30 * 60  # 30 min backoff on failure
+NEGATIVE_BATCH_LIMIT = 3
+NEGATIVE_SCAN_LIMIT = 10
+
 # P2a: the V2 classify scan is DEFAULT OFF and fail-closed. It caused the
 # 2026-07-16 incident (rows silently marked classified as `?/?/?` while the
 # Worker had no live LLM provider, scanning rows without the human gate) that
@@ -266,6 +278,38 @@ def _log_dedupe_disabled_once() -> None:
 def _reset_dedupe_disabled_log() -> None:
     """Test-only helper."""
     _DEDUPE_DISABLED_LOG_STATE["logged"] = False
+
+
+# P2.5: the negative-example capture scan is DEFAULT OFF and fail-closed,
+# mirroring the promote/dedupe scans above. Even when enabled, the actual
+# validation and Notion write happen inside the Worker task
+# (editorial.capture_negative_example, ADR-011 #1) — this scan only decides
+# which Shortlist pages still need capture.
+NEGATIVE_CAPTURE_ENV_FLAG = "NOTION_POLLER_ENABLE_NEGATIVE_CAPTURE"
+_NEGATIVE_CAPTURE_DISABLED_LOG_STATE = {"logged": False}
+
+
+def _negative_capture_enabled() -> bool:
+    """Return True only for an explicit truthy NOTION_POLLER_ENABLE_NEGATIVE_CAPTURE."""
+    return os.environ.get(NEGATIVE_CAPTURE_ENV_FLAG, "").strip().lower() in _TRUTHY_ENV_VALUES
+
+
+def _log_negative_capture_disabled_once() -> None:
+    """One INFO line per process, DEBUG afterwards — clear but not noisy."""
+    if not _NEGATIVE_CAPTURE_DISABLED_LOG_STATE["logged"]:
+        logger.info(
+            "Negative-capture scan disabled (default; set %s=true to enable). "
+            "Control Room / review / smart replies / V2 classify / promote / dedupe unaffected.",
+            NEGATIVE_CAPTURE_ENV_FLAG,
+        )
+        _NEGATIVE_CAPTURE_DISABLED_LOG_STATE["logged"] = True
+    else:
+        logger.debug("Negative-capture scan disabled (%s not truthy)", NEGATIVE_CAPTURE_ENV_FLAG)
+
+
+def _reset_negative_capture_disabled_log() -> None:
+    """Test-only helper."""
+    _NEGATIVE_CAPTURE_DISABLED_LOG_STATE["logged"] = False
 
 
 # Magnific scan constants (P2.2 — Publicaciones rows promoted by P2.1 get 5
@@ -937,6 +981,108 @@ def _dedupe_pending_shortlist_rows(wc: WorkerClient, r: redis.Redis) -> None:
         logger.debug(metrics_line)
 
 
+def _capture_negative_shortlist_rows(wc: WorkerClient, r: redis.Redis) -> None:
+    """Scan Shortlist for Descartar rows missing `ejemplo_negativo` (P2.5).
+
+    A row is a *candidate* here only if its flattened snapshot shows
+    `Resultado revisión == "Descartar"` and a falsy `ejemplo_negativo`. This
+    function never writes to Notion — it only calls the
+    `editorial.capture_negative_example` Worker task, which re-fetches the
+    page and re-validates the gate (and `motivo_descarte` presence) before
+    writing (fail-closed; avoids acting on a stale scan snapshot). Redis here
+    only dedupes *scan attempts* across poll cycles, not the capture itself
+    (that idempotency lives in the Worker task via `ejemplo_negativo`).
+    """
+    shortlist_ds_id = os.environ.get("NOTION_SHORTLIST_DS_ID", "").strip()
+    if not shortlist_ds_id:
+        return
+
+    try:
+        resp = wc.run(
+            "notion.read_database",
+            {"database_id_or_url": shortlist_ds_id, "max_items": NEGATIVE_SCAN_LIMIT},
+        )
+    except Exception:
+        logger.warning("Negative-capture scan: failed to read Shortlist DB", exc_info=True)
+        return
+
+    items = _extract_read_database_items(resp)
+    scanned = len(items)
+    eligible = 0
+    captured = 0
+    skipped = 0
+    errors = 0
+
+    for item in items:
+        if captured >= NEGATIVE_BATCH_LIMIT:
+            break
+
+        page_id = str(item.get("page_id") or item.get("id") or "").strip()
+        if not page_id:
+            skipped += 1
+            continue
+
+        if item.get("archived") is True:
+            skipped += 1
+            continue
+
+        if _extract_item_text(item, "Resultado revisión") != "Descartar":
+            skipped += 1
+            continue
+
+        if _extract_item_checkbox(item, "ejemplo_negativo"):
+            skipped += 1
+            continue
+
+        redis_key = f"{REDIS_KEY_NEGATIVE_CAPTURED_PREFIX}{page_id}"
+        fail_key = f"{REDIS_KEY_NEGATIVE_FAIL_PREFIX}{page_id}"
+        if r.exists(redis_key) or r.exists(fail_key):
+            skipped += 1
+            continue
+
+        eligible += 1
+
+        try:
+            result = wc.run(
+                "editorial.capture_negative_example",
+                {"shortlist_page_id": page_id},
+            )
+        except Exception:
+            errors += 1
+            r.set(fail_key, "1", ex=NEGATIVE_FAIL_TTL_SEC)
+            logger.warning(
+                "Negative-capture scan: page %s call failed (backoff %ds)",
+                page_id[:8], NEGATIVE_FAIL_TTL_SEC, exc_info=True,
+            )
+            continue
+
+        ok = bool(result.get("ok")) if isinstance(result, dict) else False
+        if ok:
+            r.set(redis_key, "1", ex=NEGATIVE_CAPTURED_TTL_SEC)
+            captured += 1
+            logger.info(
+                "Negative-capture scan: shortlist page %s captured=%s",
+                page_id[:8],
+                result.get("captured"),
+            )
+        else:
+            errors += 1
+            r.set(fail_key, "1", ex=NEGATIVE_FAIL_TTL_SEC)
+            logger.warning(
+                "Negative-capture scan: page %s did NOT capture (%s) — no success checkpoint, backoff %ds",
+                page_id[:8], (result or {}).get("error"), NEGATIVE_FAIL_TTL_SEC,
+            )
+
+    metrics_line = (
+        f"Negative-capture scan: negative_capture_enabled=True scanned={scanned} "
+        f"eligible={eligible} captured={captured} skipped={skipped} errors={errors}"
+    )
+    if scanned > 0:
+        logger.info(metrics_line)
+    else:
+        logger.debug(metrics_line)
+
+
 # States the *automatic* scan must never re-trigger: already produced
 # results, already in flight, or `Error` — which the handler still accepts
 # as an eligible manual retry (CLI script / dry-run), but which the scan
@@ -1185,6 +1331,17 @@ def _do_poll(
     else:
         _log_dedupe_disabled_once()
 
+    # P2.5: capture negative-example metadata for Descartar'd Shortlist rows —
+    # DEFAULT OFF (fail-closed). Independent of promote/dedupe; everything
+    # above never depends on this.
+    if _negative_capture_enabled():
+        try:
+            _capture_negative_shortlist_rows(wc, r)
+        except Exception:
+            logger.warning("Negative-capture scan failed (general cycle unaffected)", exc_info=True)
+    else:
+        _log_negative_capture_disabled_once()
+
     # P2.2: generate Magnific image variants for promoted rows — DEFAULT OFF
     # (fail-closed). Everything above never depends on this. Runs last: each
     # call can take minutes, and this must never delay Control Room / review
@@ -1244,6 +1401,11 @@ def main():
         logger.info("Dedupe scan ENABLED (%s is truthy).", DEDUPE_ENV_FLAG)
     else:
         logger.info("Dedupe scan disabled (default off; %s not truthy).", DEDUPE_ENV_FLAG)
+
+    if _negative_capture_enabled():
+        logger.info("Negative-capture scan ENABLED (%s is truthy).", NEGATIVE_CAPTURE_ENV_FLAG)
+    else:
+        logger.info("Negative-capture scan disabled (default off; %s not truthy).", NEGATIVE_CAPTURE_ENV_FLAG)
 
     if _magnific_enabled():
         logger.info("Magnific scan ENABLED (%s is truthy).", MAGNIFIC_ENV_FLAG)

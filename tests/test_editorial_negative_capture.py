@@ -189,3 +189,64 @@ def test_update_failure_returns_ok_false():
         result = handle_editorial_capture_negative_example({"shortlist_page_id": "shortlist-1"})
 
     assert result["ok"] is False
+
+
+def test_dry_run_and_shortlist_page_id_present_in_every_error_branch():
+    """Regression: every branch must carry dry_run + shortlist_page_id, per
+    the function's own Returns: docstring — found missing in the code-comment
+    compliance pass of /code-review on PR #558 (same bug class fixed for the
+    sibling editorial_dedupe.py in #557)."""
+    from worker.tasks.editorial_negative_capture import handle_editorial_capture_negative_example
+
+    missing_id = handle_editorial_capture_negative_example({"dry_run": True})
+    assert missing_id["dry_run"] is True
+    assert missing_id["shortlist_page_id"] == ""
+
+    with patch("worker.tasks.editorial_negative_capture.notion_client") as mock_nc:
+        mock_nc.get_page.side_effect = RuntimeError("boom")
+        get_page_failure = handle_editorial_capture_negative_example(
+            {"shortlist_page_id": "shortlist-1", "dry_run": True}
+        )
+    assert get_page_failure["dry_run"] is True
+    assert get_page_failure["shortlist_page_id"] == "shortlist-1"
+
+    with patch("worker.tasks.editorial_negative_capture.notion_client") as mock_nc:
+        mock_nc.get_page.return_value = _shortlist_page(resultado_revision="Pendiente")
+        not_discarded = handle_editorial_capture_negative_example(
+            {"shortlist_page_id": "shortlist-1", "dry_run": True}
+        )
+    assert not_discarded["dry_run"] is True
+
+    with patch("worker.tasks.editorial_negative_capture.notion_client") as mock_nc:
+        mock_nc.get_page.return_value = _shortlist_page(motivo_descarte="")
+        no_motivo = handle_editorial_capture_negative_example(
+            {"shortlist_page_id": "shortlist-1", "dry_run": True}
+        )
+    assert no_motivo["dry_run"] is True
+
+    with patch("worker.tasks.editorial_negative_capture.notion_client") as mock_nc:
+        mock_nc.get_page.return_value = _shortlist_page()
+        mock_nc.update_page_properties.side_effect = RuntimeError("boom")
+        update_failure = handle_editorial_capture_negative_example({"shortlist_page_id": "shortlist-1"})
+    assert update_failure["dry_run"] is False
+
+
+def test_error_key_is_none_on_every_success_branch():
+    from worker.tasks.editorial_negative_capture import handle_editorial_capture_negative_example
+
+    with patch("worker.tasks.editorial_negative_capture.notion_client") as mock_nc:
+        mock_nc.get_page.return_value = _shortlist_page(ejemplo_negativo=True)
+        already_captured = handle_editorial_capture_negative_example({"shortlist_page_id": "shortlist-1"})
+    assert already_captured["error"] is None
+
+    with patch("worker.tasks.editorial_negative_capture.notion_client") as mock_nc:
+        mock_nc.get_page.return_value = _shortlist_page()
+        dry_run_result = handle_editorial_capture_negative_example(
+            {"shortlist_page_id": "shortlist-1", "dry_run": True}
+        )
+    assert dry_run_result["error"] is None
+
+    with patch("worker.tasks.editorial_negative_capture.notion_client") as mock_nc:
+        mock_nc.get_page.return_value = _shortlist_page()
+        captured = handle_editorial_capture_negative_example({"shortlist_page_id": "shortlist-1"})
+    assert captured["error"] is None

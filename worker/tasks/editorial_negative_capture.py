@@ -90,20 +90,33 @@ def handle_editorial_capture_negative_example(input_data: Dict[str, Any]) -> Dic
             would be written, without calling Notion to write anything.
 
     Returns:
-        {"ok": bool, "captured": bool, "already_captured": bool,
-         "motivo_descarte": str|None, "error_kind": list[str],
-         "shortlist_page_id": str, "dry_run": bool, "error": str|None}
+        Every branch: {"ok": bool, "shortlist_page_id": str, "dry_run": bool}.
+        Error branches (``ok`` False) add ``"error": str``; some also add
+        context fields (e.g. ``resultado_revision``) but never fabricate the
+        success-only fields below before they're actually known.
+        Success branches (``ok`` True) add ``"error": None`` plus
+        ``"captured": bool, "already_captured": bool,
+        "motivo_descarte": str, "error_kind": list[str]``.
     """
+    dry_run = bool(input_data.get("dry_run", False))
     shortlist_page_id = (input_data.get("shortlist_page_id") or "").strip()
     if not shortlist_page_id:
-        return {"ok": False, "error": "'shortlist_page_id' is required", "shortlist_page_id": shortlist_page_id}
-
-    dry_run = bool(input_data.get("dry_run", False))
+        return {
+            "ok": False,
+            "error": "'shortlist_page_id' is required",
+            "shortlist_page_id": shortlist_page_id,
+            "dry_run": dry_run,
+        }
 
     try:
         page = notion_client.get_page(shortlist_page_id)
     except Exception as e:
-        return {"ok": False, "error": f"Failed to read shortlist page: {e}", "shortlist_page_id": shortlist_page_id}
+        return {
+            "ok": False,
+            "error": f"Failed to read shortlist page: {e}",
+            "shortlist_page_id": shortlist_page_id,
+            "dry_run": dry_run,
+        }
 
     fields = _read_shortlist_fields(page)
 
@@ -113,11 +126,13 @@ def handle_editorial_capture_negative_example(input_data: Dict[str, Any]) -> Dic
             "error": "not_discarded",
             "resultado_revision": fields["resultado_revision"],
             "shortlist_page_id": shortlist_page_id,
+            "dry_run": dry_run,
         }
 
     if fields["ejemplo_negativo"]:
         return {
             "ok": True,
+            "error": None,
             "dry_run": dry_run,
             "captured": False,
             "already_captured": True,
@@ -132,11 +147,13 @@ def handle_editorial_capture_negative_example(input_data: Dict[str, Any]) -> Dic
             "ok": False,
             "error": "motivo_descarte_missing",
             "shortlist_page_id": shortlist_page_id,
+            "dry_run": dry_run,
         }
 
     if dry_run:
         return {
             "ok": True,
+            "error": None,
             "dry_run": True,
             "would_capture": True,
             "captured": False,
@@ -152,10 +169,16 @@ def handle_editorial_capture_negative_example(input_data: Dict[str, Any]) -> Dic
             properties={"ejemplo_negativo": {"checkbox": True}},
         )
     except Exception as e:
-        return {"ok": False, "error": str(e), "shortlist_page_id": shortlist_page_id}
+        return {
+            "ok": False,
+            "error": str(e),
+            "shortlist_page_id": shortlist_page_id,
+            "dry_run": False,
+        }
 
     return {
         "ok": True,
+        "error": None,
         "dry_run": False,
         "captured": True,
         "already_captured": False,

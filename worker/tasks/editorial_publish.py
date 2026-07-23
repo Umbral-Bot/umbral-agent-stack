@@ -480,13 +480,21 @@ def inject_rrss_copies_and_mark_ready(
         page = notion_client.get_page(notion_page_id)
     except Exception as exc:
         logger.warning("RRSS injection: failed to read page %s: %s", notion_page_id, exc)
-        return {"ok": False, "error": str(exc), "notion_page_id": notion_page_id, "dry_run": dry_run}
+        return {
+            "ok": False,
+            "error": str(exc),
+            "notion_page_id": notion_page_id,
+            "dry_run": dry_run,
+            "already_ready": False,
+            "injected_channels": [],
+        }
 
     props = page.get("properties") or {}
     listo_rrss_prop = prop_map.get("listo_rrss", "listo_rrss")
     if _flatten_notion_prop(props.get(listo_rrss_prop)):
         return {
             "ok": True,
+            "error": None,
             "dry_run": dry_run,
             "already_ready": True,
             "injected_channels": [],
@@ -502,6 +510,8 @@ def inject_rrss_copies_and_mark_ready(
             "error": "published_url_missing",
             "notion_page_id": notion_page_id,
             "dry_run": dry_run,
+            "already_ready": False,
+            "injected_channels": [],
         }
 
     updated_properties: Dict[str, Any] = {}
@@ -526,6 +536,7 @@ def inject_rrss_copies_and_mark_ready(
     if dry_run:
         return {
             "ok": True,
+            "error": None,
             "dry_run": True,
             "would_inject": True,
             "already_ready": False,
@@ -540,7 +551,14 @@ def inject_rrss_copies_and_mark_ready(
         )
     except Exception as exc:
         logger.warning("RRSS injection: failed to write page %s: %s", notion_page_id, exc)
-        return {"ok": False, "error": str(exc), "notion_page_id": notion_page_id, "dry_run": dry_run}
+        return {
+            "ok": False,
+            "error": str(exc),
+            "notion_page_id": notion_page_id,
+            "dry_run": dry_run,
+            "already_ready": False,
+            "injected_channels": [],
+        }
 
     logger.info(
         "RRSS injection: page %s listo_rrss=true injected_channels=%s",
@@ -549,6 +567,7 @@ def inject_rrss_copies_and_mark_ready(
     )
     return {
         "ok": True,
+        "error": None,
         "dry_run": False,
         "already_ready": False,
         "injected_channels": injected_channels,
@@ -569,11 +588,18 @@ def handle_editorial_inject_rrss_ready(input_data: Dict[str, Any]) -> Dict[str, 
 
     Returns: see ``inject_rrss_copies_and_mark_ready``.
     """
+    dry_run = bool(input_data.get("dry_run", False))
     notion_page_id = str(input_data.get("notion_page_id") or "").strip()
     if not notion_page_id:
-        return {"ok": False, "error": "'notion_page_id' is required", "notion_page_id": notion_page_id}
+        return {
+            "ok": False,
+            "error": "'notion_page_id' is required",
+            "notion_page_id": notion_page_id,
+            "dry_run": dry_run,
+            "already_ready": False,
+            "injected_channels": [],
+        }
 
-    dry_run = bool(input_data.get("dry_run", False))
     prop_map = {**_DEFAULT_NOTION_PROP_MAP, **(input_data.get("notion_prop_map") or {})}
 
     return inject_rrss_copies_and_mark_ready(notion_page_id, prop_map, dry_run=dry_run)

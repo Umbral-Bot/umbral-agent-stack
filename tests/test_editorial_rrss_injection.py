@@ -184,6 +184,57 @@ def test_update_failure_returns_ok_false():
     assert result["ok"] is False
 
 
+def test_every_branch_includes_error_already_ready_and_injected_channels():
+    """Regression: found via /code-review on PR #560 (same bug class fixed
+    for editorial_dedupe.py in #557 and editorial_negative_capture.py in
+    #558) — every branch must carry the full shape, error=None on success."""
+    _REQUIRED_KEYS = {"ok", "error", "dry_run", "already_ready", "injected_channels", "notion_page_id"}
+
+    with patch("worker.notion_client.get_page") as mock_get_page, patch("worker.notion_client.update_page_properties"):
+        # get_page failure
+        mock_get_page.side_effect = RuntimeError("boom")
+        r1 = inject_rrss_copies_and_mark_ready("pub-1", _DEFAULT_NOTION_PROP_MAP, published_url="https://x")
+        assert _REQUIRED_KEYS <= r1.keys()
+        assert r1["error"] == "boom"
+
+    with patch("worker.notion_client.get_page") as mock_get_page, patch("worker.notion_client.update_page_properties"):
+        # already_ready
+        mock_get_page.return_value = _publicaciones_page(listo_rrss=True)
+        r2 = inject_rrss_copies_and_mark_ready("pub-1", _DEFAULT_NOTION_PROP_MAP, published_url="https://x")
+        assert _REQUIRED_KEYS <= r2.keys()
+        assert r2["error"] is None
+
+    with patch("worker.notion_client.get_page") as mock_get_page, patch("worker.notion_client.update_page_properties"):
+        # published_url_missing
+        mock_get_page.return_value = _publicaciones_page(published_url=None)
+        r3 = inject_rrss_copies_and_mark_ready("pub-1", _DEFAULT_NOTION_PROP_MAP)
+        assert _REQUIRED_KEYS <= r3.keys()
+
+    with patch("worker.notion_client.get_page") as mock_get_page, patch("worker.notion_client.update_page_properties"):
+        # dry_run success
+        mock_get_page.return_value = _publicaciones_page()
+        r4 = inject_rrss_copies_and_mark_ready(
+            "pub-1", _DEFAULT_NOTION_PROP_MAP, published_url="https://x", dry_run=True
+        )
+        assert _REQUIRED_KEYS <= r4.keys()
+        assert r4["error"] is None
+
+    with patch("worker.notion_client.get_page") as mock_get_page, patch("worker.notion_client.update_page_properties") as mock_update:
+        # update failure
+        mock_get_page.return_value = _publicaciones_page()
+        mock_update.side_effect = RuntimeError("write boom")
+        r5 = inject_rrss_copies_and_mark_ready("pub-1", _DEFAULT_NOTION_PROP_MAP, published_url="https://x")
+        assert _REQUIRED_KEYS <= r5.keys()
+        assert r5["error"] == "write boom"
+
+    with patch("worker.notion_client.get_page") as mock_get_page, patch("worker.notion_client.update_page_properties"):
+        # real success
+        mock_get_page.return_value = _publicaciones_page()
+        r6 = inject_rrss_copies_and_mark_ready("pub-1", _DEFAULT_NOTION_PROP_MAP, published_url="https://x")
+        assert _REQUIRED_KEYS <= r6.keys()
+        assert r6["error"] is None
+
+
 # ---------------------------------------------------------------------------
 # handle_editorial_inject_rrss_ready
 # ---------------------------------------------------------------------------
@@ -193,6 +244,17 @@ def test_handler_requires_notion_page_id():
     result = handle_editorial_inject_rrss_ready({})
     assert result["ok"] is False
     assert "notion_page_id" in result["error"]
+
+
+def test_handler_missing_notion_page_id_still_includes_dry_run():
+    # Regression: found via /code-review on PR #560 — this early-return
+    # branch used to omit dry_run even though every other branch of
+    # inject_rrss_copies_and_mark_ready always includes it.
+    result = handle_editorial_inject_rrss_ready({"dry_run": True})
+    assert result["dry_run"] is True
+
+    result_default = handle_editorial_inject_rrss_ready({})
+    assert result_default["dry_run"] is False
 
 
 def test_handler_reads_published_url_from_notion_and_injects():

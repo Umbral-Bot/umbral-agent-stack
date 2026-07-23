@@ -164,6 +164,7 @@ from .editorial_publish import (
     handle_web_publish_editorial_post,
     handle_web_unpublish_editorial_post,
 )
+from .editorial_promote import handle_editorial_promote_shortlist_approval
 
 # Each handler: (input: dict) -> dict
 TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
@@ -285,4 +286,5 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "rick.orchestrator.triage": handle_rick_orchestrator_triage,
     "web.publish_editorial_post": handle_web_publish_editorial_post,
     "web.unpublish_editorial_post": handle_web_unpublish_editorial_post,
+    "editorial.promote_shortlist_approval": handle_editorial_promote_shortlist_approval,
 }

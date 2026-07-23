@@ -60,6 +60,9 @@ NOTION_REPORTS_ARCHIVE_PAGE_ID: str | None = os.environ.get("NOTION_REPORTS_ARCH
 NOTION_CURATED_SESSIONS_DB_ID: str | None = os.environ.get("NOTION_CURATED_SESSIONS_DB_ID")
 NOTION_HUMAN_TASKS_DB_ID: str | None = os.environ.get("NOTION_HUMAN_TASKS_DB_ID")
 NOTION_COMMERCIAL_PROJECTS_DB_ID: str | None = os.environ.get("NOTION_COMMERCIAL_PROJECTS_DB_ID")
+# Publicaciones DB (classic database id, e.g. from its page URL) — used by
+# editorial.promote_shortlist_approval (P2.1) to create/query draft rows.
+NOTION_PUBLICACIONES_DB_ID: str | None = os.environ.get("NOTION_PUBLICACIONES_DB_ID")
 NOTION_API_VERSION: str = os.environ.get("NOTION_API_VERSION", "2022-06-28")
 
 # Granola pipeline

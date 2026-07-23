@@ -259,10 +259,18 @@ promotion:
   trigger: Resultado revisión == Aprobar
   writer: "Worker/core (ADR-011 #1) — n8n nunca escribe Notion directo"
   back_link_field_on_target: origen_alternativa
-  cabled: false
+  cabled: true
+  cabled_since: 2026-07-22
+  implementation:
+    poller_scan: dispatcher/notion_poller.py::_promote_approved_shortlist_rows
+      (env flag NOTION_POLLER_ENABLE_PROMOTE, default off)
+    worker_task: worker/tasks/editorial_promote.py::handle_editorial_promote_shortlist_approval
+      (task name editorial.promote_shortlist_approval)
   note: >
-    P2.1 (poller Aprobar→promueve) no está cableado. Este archivo documenta
-    el contrato de promoción (contrato §4, §6); no implementa runtime.
+    P2.1 (poller Aprobar→promueve) está cableado: el poller sólo decide qué
+    filas escanear (env-gated, default off); el write real (fail-closed,
+    re-valida el gate antes de escribir) vive en el Worker task. Ver
+    docs/ops/editorial-promote-p21-poller-2026-07-22.md.
 
 # ---------------------------------------------------------------------------
 # Recommended views (contract §6 does not specify views; proposed for parity
@@ -280,7 +288,9 @@ recommended_views:
     type: table
     filter: "Resultado revisión == Aprobar"
     sort: Última edición desc
-    description: Alternativas aprobadas; verificar promovido_a se llenó (P2.1).
+    description: >
+      Alternativas aprobadas; verificar promovido_a se llenó (P2.1, cableado
+      — requiere NOTION_POLLER_ENABLE_PROMOTE=true en el poller).
 
   - name: Negativos (loop de aprendizaje)
     type: table

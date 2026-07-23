@@ -317,8 +317,9 @@ properties:
       alternativas-shortlist.schema.yaml).  Se llena cuando la fila fue
       promovida por el HITL-1 `Aprobar` (contrato §4, §6).  Vacío para filas
       creadas antes de la BD Shortlist o fuera del flujo de promoción.
-      Añadido en Notion 2026-07-22 (P1, David + Notion AI).  El writer del
-      poller de promoción (P2.1) que lo completa no está cableado aún.
+      Añadido en Notion 2026-07-22 (P1, David + Notion AI).  El writer de
+      promoción (P2.1, worker/tasks/editorial_promote.py) está cableado desde
+      2026-07-22 — ver docs/ops/editorial-promote-p21-poller-2026-07-22.md.
     relation_database: Alternativas / Shortlist
 
   - name: Proyecto

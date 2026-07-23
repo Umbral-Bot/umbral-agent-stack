@@ -80,9 +80,26 @@ prompt sincronizado con Enmienda V2.1.1 + GO explicito. Entonces:
 el daemon (`pkill -TERM -f "notion-poller-daemon[.]py"`; el watchdog lo relanza con
 el env nuevo). **Gotcha**: el patron `[.]py` evita que pkill se auto-mate por SSH.
 
+## Flag P2.1 — `NOTION_POLLER_ENABLE_PROMOTE` (Shortlist Aprobar -> Publicaciones)
+
+> Detalle completo: `docs/ops/editorial-promote-p21-poller-2026-07-22.md`.
+
+| Valor | Efecto |
+|---|---|
+| ausente \ `""` \ `false` \ `0` \ cualquier cosa no-truthy | **Scan de promocion apagado (default)**. El resto del poller funciona normal; el poller no lee la BD Shortlist ni llama `editorial.promote_shortlist_approval`. Log 1 vez por proceso: "Promote scan disabled". |
+| `true` / `1` / `yes` / `on` (explicito) | Scan activo: busca filas `Resultado revision = Aprobar` sin `promovido_a` y pide al Worker que las (re-)evalue. Requiere ademas `NOTION_SHORTLIST_DS_ID` (poller) y `NOTION_PUBLICACIONES_DB_ID` (Worker) configurados. |
+
+El poller nunca escribe a Notion en este scan — el write real (fail-closed,
+re-valida el gate antes de escribir) vive en
+`worker/tasks/editorial_promote.py::handle_editorial_promote_shortlist_approval`
+(ADR-011 #1: Notion writes son monopolio de Worker/core). Metricas por ciclo:
+`Promote scan: promote_enabled=True scanned=N eligible=N promoted=N skipped=N errors=N`.
+
 ## Rollback
 
 - Apagar solo V2: quitar/poner en false el flag + relanzar daemon (mismo pkill).
+- Apagar solo el scan de promocion P2.1: quitar/poner en false
+  `NOTION_POLLER_ENABLE_PROMOTE` + relanzar daemon (mismo pkill).
 - Pausa total (volver a CAP_POLLER_PAUSED): re-comentar la linea del cron con el
   marcador + `pkill -TERM -f "notion-poller-daemon[.]py"`; verificar
   "Notion Poller daemon stopped." en el log y ausencia de PID file.
@@ -91,5 +108,7 @@ el env nuevo). **Gotcha**: el patron `[.]py` evita que pkill se auto-mate por SS
 
 - `dispatcher/notion_poller.py` · `tests/test_notion_poller.py`
 - `docs/adr/ADR-010-notion-poller-cursor-checkpoint.md`
+- `worker/tasks/editorial_promote.py` · `tests/test_editorial_promote.py`
+- `docs/ops/editorial-promote-p21-poller-2026-07-22.md` (P2.1, detalle completo)
 - `docs/plans/granola-capitalization-hybrid-plan-2026-07-16.md` (§1.3, §5 P2)
 - Evidencia pausa: `~/.coord-ag-evidence/CAP_POLLER_PAUSED/` (VPS)

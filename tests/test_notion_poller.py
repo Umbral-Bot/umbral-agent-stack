@@ -1052,3 +1052,135 @@ class TestV2ScanBehavior:
             "v2_classify_enabled=True scanned=2 eligible=1 classified=1 skipped_gate=1 errors=0"
             in caplog.text
         )
+
+
+# ---------------------------------------------------------------------------
+# P2.1: promote scan isolation — default-off flag, Aprobar/promovido_a gate,
+# idempotent hand-off to editorial.promote_shortlist_approval (Worker/core).
+# See docs/ops/editorial-roadmap-norte-p1-p3-2026-07-22.md row P2.1.
+# ---------------------------------------------------------------------------
+
+from dispatcher.notion_poller import (  # noqa: E402
+    PROMOTE_FAIL_TTL_SEC,
+    PROMOTED_TTL_SEC,
+    _promote_approved_shortlist_rows,
+    _promote_enabled,
+    _reset_promote_disabled_log,
+)
+
+
+def _approved_row(page_id="shortlist-1", **props):
+    base = {
+        "Resultado revisión": "Aprobar",
+        "promovido_a": [],
+    }
+    base.update(props)
+    return {"page_id": page_id, "properties": base}
+
+
+class TestPromoteFlagParsing:
+    @pytest.mark.parametrize("value", ["1", "true", "TRUE", "yes", "on", " True "])
+    def test_explicit_truthy_enables(self, value):
+        with patch.dict("os.environ", {"NOTION_POLLER_ENABLE_PROMOTE": value}, clear=False):
+            assert _promote_enabled() is True
+
+    @pytest.mark.parametrize("value", ["", "0", "false", "no", "off", "junk", "enable", "si"])
+    def test_everything_else_disables(self, value):
+        with patch.dict("os.environ", {"NOTION_POLLER_ENABLE_PROMOTE": value}, clear=False):
+            assert _promote_enabled() is False
+
+    def test_absent_env_disables(self, monkeypatch):
+        monkeypatch.delenv("NOTION_POLLER_ENABLE_PROMOTE", raising=False)
+        assert _promote_enabled() is False
+
+
+class TestPromoteScanBehavior:
+    def _run_scan(self, items, promote_result=None, promote_exc=None, shortlist_ds_id="shortlist-ds"):
+        wc = MagicMock()
+
+        def _run(task, payload):
+            if task == "notion.read_database":
+                return {"ok": True, "result": {"items": items}}
+            if task == "editorial.promote_shortlist_approval":
+                if promote_exc:
+                    raise promote_exc
+                return promote_result
+            raise AssertionError(f"unexpected task {task}")
+
+        wc.run.side_effect = _run
+        r = _redis_mock()
+        with patch.dict("os.environ", {"NOTION_SHORTLIST_DS_ID": shortlist_ds_id or ""}, clear=False):
+            _promote_approved_shortlist_rows(wc, r)
+        return wc, r
+
+    def _promote_calls(self, wc):
+        return [
+            c for c in wc.run.call_args_list if c.args and c.args[0] == "editorial.promote_shortlist_approval"
+        ]
+
+    def test_no_shortlist_ds_id_configured_is_noop(self):
+        wc, r = self._run_scan([_approved_row()], shortlist_ds_id="")
+        assert wc.run.call_count == 0
+        r.set.assert_not_called()
+
+    def test_pending_rows_are_never_promoted(self):
+        wc, r = self._run_scan([_approved_row(**{"Resultado revisión": "Pendiente"})])
+        assert self._promote_calls(wc) == []
+        r.set.assert_not_called()
+
+    def test_already_promoted_rows_are_skipped(self):
+        wc, r = self._run_scan([_approved_row(promovido_a=["pub-1"])])
+        assert self._promote_calls(wc) == []
+        r.set.assert_not_called()
+
+    def test_approved_unpromoted_row_is_promoted_and_checkpointed(self):
+        wc, r = self._run_scan(
+            [_approved_row()],
+            promote_result={"ok": True, "created": True, "publicacion_page_id": "pub-new"},
+        )
+        assert len(self._promote_calls(wc)) == 1
+        assert self._promote_calls(wc)[0].args[1] == {"shortlist_page_id": "shortlist-1"}
+        r.set.assert_called_once_with(
+            "umbral:notion_poller:promoted:shortlist-1", "1", ex=PROMOTED_TTL_SEC
+        )
+
+    def test_worker_reported_failure_sets_backoff_not_success(self, caplog):
+        with caplog.at_level("WARNING", logger="dispatcher.notion_poller"):
+            wc, r = self._run_scan(
+                [_approved_row()],
+                promote_result={"ok": False, "error": "not_approved"},
+            )
+        assert r.set.call_count == 1
+        key = r.set.call_args.args[0]
+        assert key.startswith("umbral:notion_poller:promote_fail:")
+        assert r.set.call_args.kwargs == {"ex": PROMOTE_FAIL_TTL_SEC}
+        assert "did NOT promote" in caplog.text
+
+    def test_promote_call_exception_sets_backoff(self):
+        wc, r = self._run_scan([_approved_row()], promote_exc=RuntimeError("worker unreachable"))
+        assert r.set.call_count == 1
+        assert r.set.call_args.args[0].startswith("umbral:notion_poller:promote_fail:")
+
+    def test_already_checkpointed_row_is_skipped_without_recall(self):
+        wc = MagicMock()
+        wc.run.side_effect = lambda task, payload: (
+            {"ok": True, "result": {"items": [_approved_row()]}}
+            if task == "notion.read_database"
+            else (_ for _ in ()).throw(AssertionError("should not call promote"))
+        )
+        r = _redis_mock()
+        r.exists.return_value = True
+        with patch.dict("os.environ", {"NOTION_SHORTLIST_DS_ID": "shortlist-ds"}, clear=False):
+            _promote_approved_shortlist_rows(wc, r)
+        assert self._promote_calls(wc) == []
+
+    def test_batch_limit_caps_promotions_per_cycle(self):
+        rows = [_approved_row(page_id=f"row-{i}") for i in range(5)]
+        wc, r = self._run_scan(
+            rows,
+            promote_result={"ok": True, "created": True, "publicacion_page_id": "pub-new"},
+        )
+        assert len(self._promote_calls(wc)) == 3  # PROMOTE_BATCH_LIMIT
+
+    def test_disabled_log_helper_resets_without_error(self):
+        _reset_promote_disabled_log()

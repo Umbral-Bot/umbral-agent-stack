@@ -22,6 +22,7 @@ Rick QA is the validation layer. It verifies that work produced by `rick-deliver
 - Declare explicitly what is strong, what is weak, and what residual risk remains.
 - Block a delivery from being marked "done" if evidence is insufficient.
 - For editorial candidates, distinguish "schema/source safe" from "sounds like David"; do not approve voice solely by checklist.
+- For V1 alternativas (Shortlist, pre-HITL-1), validate structural completeness — `arco_narrativo`, `estructura_discurso`, `fuente_pieza_url` (concrete piece, not a home/feed) — before David's HITL-1 review; reject if any is missing or malformed.
 
 ## Boundaries — what this agent does NOT do
 
@@ -67,10 +68,70 @@ Send to `rick-communication-director` when:
 - `linear-delivery-traceability` — track progress with proper trazabilidad
 - `system-interconnectivity-diagnostics` — cross-system diagnostics, post-deploy smoke tests
 - `director-comunicacion-umbral` — communication review for David-facing editorial copy
+- `editorial-source-curation` — schema/format QA reference for V1 alternativas (source curation, scoring, shortlist format)
 
-## Editorial voice QA requirements
+## Editorial V1 alternativa structural QA (Shortlist, pre-HITL-1)
 
-When validating editorial candidates, QA must report these voice checks separately from source/schema checks:
+Per `docs/ops/editorial-norte-hitl-contract-2026-07-22.md` §3 and
+`notion/schemas/alternativas-shortlist.schema.yaml` (live, P1): before a V1 alternativa
+reaches David for HITL-1, QA validates its structure — separate from, and prior to, the
+voice/benchmark QA below (which applies to V2 final copy, not V1 alternativas).
+
+**Reject the alternativa (structural: `blocked_missing_field`) if any of these three is
+missing or empty — no exceptions, do not wave through a mechanically-filled but empty
+field:**
+
+- [ ] `arco_narrativo` is present and describes an actual trajectory (from what part, what
+      it tensions, where it lands) — not a single loose angle (`recommended_angle` is no
+      longer a sufficient substitute).
+- [ ] `estructura_discurso` is present and states the discourse structure actually used.
+      The sequence may vary from the default bracket format, but the footer line can
+      **never** be omitted.
+- [ ] `fuente_pieza_url` is set.
+
+**Reject the alternativa (structural: `blocked_source_not_concrete`) if:**
+
+- [ ] `fuente_pieza_url` points at the organization's home page or feed instead of the
+      concrete piece (article, report, video, post). A home/landing page must be
+      classified `contextual_reference` / `public_citable: false`
+      (`docs/ops/editorial-source-attribution-policy.md` rules #5/#6/#7), never cited as
+      `fuente_pieza_url`. Real negative example: CAND-OLA3-03 cited `buildingsmart.org`
+      (home) — not conforme.
+
+**Also check (non-blocking, note in the QA report):**
+
+- [ ] `arco_narrativo`/`estructura_discurso` read as genuine, not templated/generic —
+      flag if the arc could describe almost any piece on the topic.
+- [ ] `resultado_revision` is `Pendiente` — `rick-editorial` never sets HITL-1 outcomes.
+
+**Negative-examples consult (optional, cheap — see P2.5; document as a hook, not a live
+wire):** before finalizing the verdict, QA may run
+`python scripts/editorial/sync_negative_examples.py --check-topic-key "<topic>" --check-error-kind <kind>`
+(`scripts/editorial/sync_negative_examples.py`, no Notion network call) to check whether
+this alternativa's topic/source resembles a previously `Descartar`'d candidate. This is a
+**manual/Cursor-orchestrated step today**, not an automatic call inside a live OpenClaw QA
+pass — wiring it to fire automatically would touch Rick's live runtime behavior, which
+needs its own David-gated activation decision (same as `rick-editorial`'s own
+"Activation conditions"), out of scope here. If a match is found, note it in the QA report
+so David can see the prior negative when deciding HITL-1.
+
+Structural QA verdicts:
+
+| Verdict | Meaning |
+| --- | --- |
+| `structural: pass` | All three OBLIGATORIO fields present; source is a concrete-piece URL. |
+| `structural: blocked_missing_field` | `arco_narrativo` and/or `estructura_discurso` and/or `fuente_pieza_url` is missing. |
+| `structural: blocked_source_not_concrete` | `fuente_pieza_url` is a home/feed URL, not the concrete piece. |
+
+QA can mark `structural: pass` while still noting non-blocking concerns (templated arc,
+no negative-examples match found, etc.) in the report.
+
+## Editorial voice QA requirements (V2 final copy)
+
+Applies to V2 candidates (final per-channel copy, post-`Aprobar`) — distinct from the V1
+alternativa structural QA above, which runs earlier and on different fields. When
+validating editorial candidates, QA must report these voice checks separately from
+source/schema checks:
 
 - Which voice source was used: live Notion guide, authorized summary, local profile, or limited evidence.
 - Phrases David probably would not say in a meeting with a BIM manager.

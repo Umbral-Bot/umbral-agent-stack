@@ -4,9 +4,12 @@
 
 ## Purpose
 
-Template for manually simulating `rick-editorial` output before the agent is active. This prepares candidate records for `Publicaciones` without writing to Notion automatically.
+Template for manually simulating `rick-editorial` output before the agent is active. Covers
+both pipeline stages: the **V1 alternativa** (Shortlist, pre-HITL-1) and the **V2 candidate**
+(Publicaciones, post-`Aprobar`) — without writing to Notion automatically.
 
-The output contract spec lives in `openclaw/workspace-agent-overrides/rick-editorial/ROLE.md`. This template is the practical, fill-in-the-blanks version for creating CAND-001 and subsequent candidates.
+The output contract spec lives in `openclaw/workspace-agent-overrides/rick-editorial/ROLE.md`.
+This template is the practical, fill-in-the-blanks version for both stages.
 
 ## Safety
 
@@ -14,11 +17,56 @@ The output contract spec lives in `openclaw/workspace-agent-overrides/rick-edito
 - No Rick runtime activation.
 - No Notion writes from this template.
 - Human gates remain false.
-- David reviews before approval.
-- `rick-qa` validates before any candidate is considered ready for review.
+- David reviews before approval (V2) / decides HITL-1 (V1: Archivar/Observar/Descartar/Aprobar).
+- `rick-qa` validates before any alternativa/candidate is considered ready for review.
 - `content_hash` and `idempotency_key` remain empty until content is approved.
 
-## Payload
+## V1 Alternativa Payload (Shortlist, pre-HITL-1)
+
+Per `docs/ops/editorial-norte-hitl-contract-2026-07-22.md` §3 — the three fields marked
+**OBLIGATORIO** are hard requirements; `rick-qa` rejects the alternativa if any is missing, or
+if `fuente_pieza_url` is a home/feed URL instead of the concrete piece.
+
+```yaml
+Título: ""                     # título/ángulo de la alternativa
+alternativa_id: ""             # ID estable — correlación / promoción a Publicaciones
+topic_key: ""                  # tema normalizado, para dedupe (P2.4) — opcional pero recomendado
+
+# --- OBLIGATORIO ---
+arco_narrativo: ""             # trayectoria de la pieza (de qué parte, qué tensiona, a dónde
+                                # llega) — NO un ángulo suelto
+estructura_discurso: ""        # "Estructura de discurso usada: [hipótesis, introducción,
+                                #  argumento 1, argumento 2, contraargumento,
+                                #  contra-contraargumento, conclusión]" (secuencia puede variar,
+                                #  pero el pie nunca puede omitirse)
+fuente_pieza_url: ""           # URL de la PIEZA concreta (item_url) — NUNCA la home/feed
+# --- fin OBLIGATORIO ---
+
+premisa: ""                    # tesis condensada en 1-2 frases operativas
+fuente_tipo: ""                # primary_source | original_article | official_doc |
+                                # analysis_source | discovery_source | contextual_reference
+fuente_discovery_url: ""       # home/feed de descubrimiento — trace interno, NO citable
+canal_sugerido: ""             # blog | linkedin | x | newsletter
+score_alineacion: 0            # 0-100
+resultado_revision: Pendiente  # Pendiente | Archivar | Observar | Descartar | Aprobar (David, HITL-1)
+trace_id: ""
+```
+
+### Required QA Checklist (V1 Alternativa)
+
+Before handing an alternativa to `rick-qa` or David for HITL-1:
+
+- [ ] `arco_narrativo` is present and describes an actual trajectory, not a single loose angle. **OBLIGATORIO.**
+- [ ] `estructura_discurso` is present with the discourse structure actually used. **OBLIGATORIO.**
+- [ ] `fuente_pieza_url` is the concrete-piece URL, never a home/feed page. **OBLIGATORIO.**
+- [ ] `resultado_revision` is `Pendiente` — never set by `rick-editorial`.
+- [ ] Optional but recommended: consult the negative-examples store
+      (`python scripts/editorial/sync_negative_examples.py --check-topic-key "<topic>" --check-error-kind <kind>`)
+      to check whether this alternativa's topic/source resembles a previously `Descartar`'d
+      candidate — see the negative-examples-log hook note below.
+- [ ] Ready for HITL-1, not for promotion or publication.
+
+## V2 Candidate Payload (Publicaciones, post-`Aprobar`)
 
 ```yaml
 # --- Identity ---
@@ -97,7 +145,7 @@ system:
   idempotency_key: ""          # derived from canal + content_hash + page_id
 ```
 
-## Required QA Checklist
+### Required QA Checklist (V2 Candidate)
 
 Before handing a candidate to `rick-qa` or David:
 
@@ -118,18 +166,40 @@ Before handing a candidate to `rick-qa` or David:
 - [ ] Voice validation reports phrases David probably would not say.
 - [ ] Ready for David review, not ready for publication.
 
+## Negative-examples-log hook (optional, cheap — see P2.5)
+
+`scripts/editorial/sync_negative_examples.py` (P2.5) already provides a working,
+Notion-network-free consult path over previously `Descartar`'d alternativas:
+
+```bash
+python scripts/editorial/sync_negative_examples.py \
+  --check-topic-key "<candidate topic>" --check-error-kind <error_kind if known>
+```
+
+This is documented here as a **manual/Cursor-orchestrated step** for `rick-qa` (or
+whoever validates a V1 alternativa) to run before finalizing a verdict — it is **not**
+wired to fire automatically inside Rick's live QA pass. Automatic invocation during a
+live OpenClaw run would require touching Rick's actual runtime behavior, which is a
+separate, David-gated activation decision (same pattern as `rick-editorial`'s own
+"Activation conditions" below) — out of scope for this docs/prompt-alignment package.
+
 ## Usage
 
-1. Copy the payload template above.
-2. Fill in the fields for the candidate.
+1. Copy the relevant payload template above (V1 alternativa or V2 candidate).
+2. Fill in the fields.
 3. Save as a local file or structured document for review.
-4. Hand to `rick-qa` (or manually validate using the QA checklist).
-5. Once validated, register manually in Notion `Publicaciones` DB.
+4. Hand to `rick-qa` (or manually validate using the matching QA checklist) — optionally
+   consulting the negative-examples-log hook above for a V1 alternativa.
+5. V1: David decides HITL-1 (Archivar/Observar/Descartar/Aprobar) on the alternativa.
+   V2: once validated, register manually in Notion `Publicaciones` DB.
 6. Re-run read-only audit after registration.
 
 ## References
 
 - Output contract spec: `openclaw/workspace-agent-overrides/rick-editorial/ROLE.md`
+- Contract (V1 alternativa fields, HITL-1): `docs/ops/editorial-norte-hitl-contract-2026-07-22.md` §3, §4
+- Shortlist schema (live): `notion/schemas/alternativas-shortlist.schema.yaml`
 - Publicaciones schema: `notion/schemas/publicaciones.schema.yaml`
+- Negative-examples store (P2.5): `docs/ops/editorial-negative-loop-p25-2026-07-23.md`
 - Test records: `docs/ops/notion-publicaciones-test-records.md`
 - Setup runbook: `docs/ops/notion-publicaciones-setup-runbook.md`

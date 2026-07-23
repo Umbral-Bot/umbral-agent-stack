@@ -48,9 +48,11 @@ fuente_tipo: ""                # primary_source | original_article | official_do
 fuente_discovery_url: ""       # home/feed de descubrimiento — trace interno, NO citable
 canal_sugerido: ""             # blog | linkedin | x | newsletter
 score_alineacion: 0            # 0-100
-resultado_revision: Pendiente  # Pendiente | Archivar | Observar | Descartar | Aprobar (David, HITL-1)
-trace_id: ""
+"Resultado revisión": Pendiente  # Pendiente | Archivar | Observar | Descartar | Aprobar (David, HITL-1)
 ```
+
+Note: no `trace_id` field on the Shortlist schema — that field belongs to the V2
+Publicaciones payload below, not V1.
 
 ### Required QA Checklist (V1 Alternativa)
 
@@ -59,7 +61,7 @@ Before handing an alternativa to `rick-qa` or David for HITL-1:
 - [ ] `arco_narrativo` is present and describes an actual trajectory, not a single loose angle. **OBLIGATORIO.**
 - [ ] `estructura_discurso` is present with the discourse structure actually used. **OBLIGATORIO.**
 - [ ] `fuente_pieza_url` is the concrete-piece URL, never a home/feed page. **OBLIGATORIO.**
-- [ ] `resultado_revision` is `Pendiente` — never set by `rick-editorial`.
+- [ ] `Resultado revisión` is `Pendiente` — never set by `rick-editorial`.
 - [ ] Optional but recommended: consult the negative-examples store
       (`python scripts/editorial/sync_negative_examples.py --check-topic-key "<topic>" --check-error-kind <kind>`)
       to check whether this alternativa's topic/source resembles a previously `Descartar`'d

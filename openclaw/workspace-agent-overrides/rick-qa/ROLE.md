@@ -102,7 +102,7 @@ field:**
 
 - [ ] `arco_narrativo`/`estructura_discurso` read as genuine, not templated/generic —
       flag if the arc could describe almost any piece on the topic.
-- [ ] `resultado_revision` is `Pendiente` — `rick-editorial` never sets HITL-1 outcomes.
+- [ ] `Resultado revisión` is `Pendiente` — `rick-editorial` never sets HITL-1 outcomes.
 
 **Negative-examples consult (optional, cheap — see P2.5; document as a hook, not a live
 wire):** before finalizing the verdict, QA may run

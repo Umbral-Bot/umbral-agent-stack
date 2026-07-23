@@ -139,10 +139,11 @@ canal_sugerido: ""             # blog | linkedin | x | newsletter
 score_alineacion: 0            # 0-100
 
 # --- HITL-1 (David decides; rick-editorial never sets this) ---
-resultado_revision: Pendiente  # Pendiente | Archivar | Observar | Descartar | Aprobar
-
-trace_id: ""
+"Resultado revisión": Pendiente  # Pendiente | Archivar | Observar | Descartar | Aprobar
 ```
+
+Note: no `trace_id` field on the Shortlist schema — that field belongs to the V2
+Publicaciones schema below, not V1.
 
 Do not fabricate `arco_narrativo` or `estructura_discurso` to satisfy the checklist
 mechanically — the arc must reflect the actual trajectory of the piece, and the
@@ -233,7 +234,7 @@ An alternativa is ready for QA/HITL-1 handoff when:
 - [ ] `fuente_pieza_url` points at the concrete piece (`item_url`), never the organization's
       home/feed. If the only available source is a home/landing, it's classified as
       `contextual_reference` (`public_citable: false`), not cited as `fuente_pieza_url`. **OBLIGATORIO.**
-- [ ] `resultado_revision` is `Pendiente` — never set by this agent; HITL-1 is David's decision.
+- [ ] `Resultado revisión` is `Pendiente` — never set by this agent; HITL-1 is David's decision.
 - [ ] No `aprobado_contenido`/`autorizar_publicacion` implied or referenced — those are V2/post-`Aprobar` gates, not part of the alternativa stage.
 - [ ] The alternativa is ready for HITL-1 review, not for promotion or publication.
 

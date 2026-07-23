@@ -196,7 +196,19 @@ DRY_RUN: no Notion call (emit-worker-payload)
 
 ## G) Puente HITL-2 → publish blog (D3 triple gate, dry_run)
 
-Dos invocaciones directas de `handle_web_publish_editorial_post`:
+Dos invocaciones directas de `handle_web_publish_editorial_post`, ambas
+usando `payload` explícito (no `notion_page_id`). **Nota importante:**
+`visual_gate` (`Estado imagen=Seleccionada`) solo se calcula cuando la
+fuente es `notion_page_id` (`_build_payload_from_notion`) — con `payload`
+explícito, `visual_gate` es siempre `None` y ese chequeo se salta por
+completo (confirmado leyendo `worker/tasks/editorial_publish.py`, bloque
+`if visual_gate is not None and not visual_gate["ready"]:`). Por eso el
+`gates` dict de esta evidencia solo trae `autorizar_publicacion` +
+`aprobado_contenido` + `telegram_confirmed` — el smoke de abajo cubre
+específicamente los otros dos gates del triple D3
+(`autorizar_publicacion` ∧ `telegram_confirmed`) más el comportamiento
+`dry_run`/fail-closed; **no ejercita el gate visual**, que requeriría una
+invocación vía `notion_page_id` con una página Notion mockeada.
 
 **G.1 — `telegram_confirmed` omitido (debe bloquear):**
 
@@ -219,11 +231,14 @@ $ python scripts/editorial/trigger_hitl2_publish.py --notion-page-id smoke-pub-0
 ERROR: WORKER_URL and WORKER_TOKEN required (env or ~/.config/openclaw/env)
 ```
 
-**Veredicto: PASS** — el gate D3 (`Estado imagen=Seleccionada` ∧
-`autorizar_publicacion` ∧ `telegram_confirmed`) bloquea correctamente si
-falta cualquiera de los tres; en `dry_run` no se hizo ninguna llamada de
-red (`_post_to_function` nunca se invocó, confirmado por el propio código:
-`dry_run` retorna antes del paso 5).
+**Veredicto: PASS** — de los tres gates D3, este smoke (fuente `payload`)
+confirma que `autorizar_publicacion` ∧ `telegram_confirmed` bloquean
+correctamente si falta cualquiera de los dos, y que en `dry_run` no se hizo
+ninguna llamada de red (`_post_to_function` nunca se invocó, confirmado por
+el propio código: `dry_run` retorna antes del paso 5). El tercer gate
+(`Estado imagen=Seleccionada`, vía `notion_page_id`) queda como pendiente
+de un smoke futuro con página Notion mockeada — no se afirma haberlo
+ejercitado aquí.
 
 ## H) Inyección RRSS + `listo_rrss` (dry_run)
 

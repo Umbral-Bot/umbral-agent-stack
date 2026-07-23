@@ -117,6 +117,7 @@ class WorkerClient:
         task: str,
         input_data: Optional[Dict[str, Any]] = None,
         envelope: Optional[Dict[str, Any]] = None,
+        timeout: Optional[float] = None,
     ) -> Dict[str, Any]:
         """
         POST /run — execute a task on the worker.
@@ -126,6 +127,10 @@ class WorkerClient:
             input_data: Task input payload.
             envelope: Full task envelope. When provided, merges task_id, team,
                       task_type, and trace_id into the payload for end-to-end tracing.
+            timeout: Optional per-call timeout override in seconds. Defaults to
+                     the client's configured `self.timeout`. Use for tasks known
+                     to run long (e.g. sequential external-API generation) that
+                     share a `WorkerClient` instance with fast calls.
 
         Returns:
             Response dict with "ok", "task", "result" keys.
@@ -134,11 +139,12 @@ class WorkerClient:
             httpx.HTTPStatusError: On 4xx/5xx after all retries.
         """
         payload = self._build_run_payload(task, input_data, envelope)
+        effective_timeout = self.timeout if timeout is None else timeout
         last_exc: Optional[Exception] = None
 
         for attempt in range(1, self.retries + 2):  # retries + 1 initial attempt
             try:
-                with httpx.Client(timeout=self.timeout) as client:
+                with httpx.Client(timeout=effective_timeout) as client:
                     resp = client.post(
                         f"{self.base_url}/run",
                         headers=self._headers(),

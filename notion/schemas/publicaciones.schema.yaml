@@ -299,6 +299,112 @@ properties:
       requiere revisión humana antes de usar.
     default: false
 
+  # -- Visual v2: selección de imagen Magnific (docs/ops/notion-publicaciones-v2-visual-gates-schema.md) --
+  # Live en Notion desde 2026-06-06 (David + Notion AI, Fase A). Documentado
+  # aquí por primera vez en P2.2 (2026-07-23), que cablea el writer de
+  # imagen_alt_*_url / imagen_cantidad / imagen_generada_at / imagen_error /
+  # Estado imagen=Generando|Listo para selección|Error. `Selección imagen`
+  # sigue siendo exclusivamente David (worker/tasks/magnific.py nunca la
+  # toca); `Visual asset URL` la copia
+  # scripts/editorial/sync_visual_asset_from_selection.py al elegir.
+
+  - name: Selección imagen
+    type: select
+    required: false
+    description: >
+      Gate humano entre texto e imagen final. Sólo David la escribe.
+    options:
+      - name: Pendiente
+        color: gray
+        description: Sin elección; o imágenes aún no listas (default)
+      - name: Alt 1
+        color: blue
+      - name: Alt 2
+        color: blue
+      - name: Alt 3
+        color: blue
+      - name: Alt 4
+        color: purple
+        description: Reserva (imagen_cantidad >= 4)
+      - name: Alt 5
+        color: purple
+        description: Reserva (imagen_cantidad >= 5)
+      - name: Regenerar
+        color: orange
+        description: Pedir nuevas variantes
+      - name: Sin imagen
+        color: yellow
+        description: Publicar sin hero (excepción explícita)
+
+  - name: Estado imagen
+    type: select
+    required: false
+    description: >
+      Estado de máquina para Rick/Worker. Escrito por
+      worker/tasks/magnific.py (P2.2, Generando/Listo para selección/Error)
+      y por scripts/editorial/sync_visual_asset_from_selection.py
+      (Seleccionada).
+    options:
+      - name: No aplica
+        description: Gate 1 no pasado; sin brief visual (default)
+      - name: Pendiente generación
+        description: Esperando Magnific
+      - name: Generando
+        description: images_generate en curso (P2.2 interim state)
+      - name: Listo para selección
+        description: URLs en columnas; David puede elegir
+      - name: Seleccionada
+        description: Visual asset URL ya copiada
+      - name: Regeneración pedida
+        description: David eligió Regenerar
+      - name: Error
+        description: Ver imagen_error
+
+  - name: imagen_cantidad
+    type: number
+    required: false
+    description: >
+      Cuántas alternativas están activas (N real, hasta 5). Escrito por
+      worker/tasks/magnific.py.
+
+  - name: imagen_alt_1_url
+    type: url
+    required: false
+    description: URL final alternativa 1 (Magnific/CDN). Escrito por worker/tasks/magnific.py.
+
+  - name: imagen_alt_2_url
+    type: url
+    required: false
+    description: URL final alternativa 2. Escrito por worker/tasks/magnific.py.
+
+  - name: imagen_alt_3_url
+    type: url
+    required: false
+    description: URL final alternativa 3. Escrito por worker/tasks/magnific.py.
+
+  - name: imagen_alt_4_url
+    type: url
+    required: false
+    description: URL final alternativa 4 (reserva). Escrito por worker/tasks/magnific.py.
+
+  - name: imagen_alt_5_url
+    type: url
+    required: false
+    description: URL final alternativa 5 (reserva). Escrito por worker/tasks/magnific.py.
+
+  - name: imagen_generada_at
+    type: date
+    required: false
+    description: Timestamp de la última generación. Escrito por worker/tasks/magnific.py.
+
+  - name: imagen_error
+    type: rich_text
+    required: false
+    description: >
+      Último error Magnific, si Estado imagen = Error. Escrito por
+      worker/tasks/magnific.py.
+    max_length: 2000
+
   # -- Relations --
 
   - name: Publicación padre

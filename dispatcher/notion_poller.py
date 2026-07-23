@@ -223,6 +223,66 @@ def _reset_promote_disabled_log() -> None:
     _PROMOTE_DISABLED_LOG_STATE["logged"] = False
 
 
+# Magnific scan constants (P2.2 — Publicaciones rows promoted by P2.1 get 5
+# image variants generated). See docs/ops/editorial-roadmap-norte-p1-p3-2026-07-22.md
+# row P2.2 and docs/ops/editorial-magnific-p22-poller-2026-07-23.md.
+REDIS_KEY_MAGNIFIC_PREFIX = "umbral:notion_poller:magnific:"
+REDIS_KEY_MAGNIFIC_FAIL_PREFIX = "umbral:notion_poller:magnific_fail:"
+MAGNIFIC_TTL_SEC = 24 * 60 * 60
+MAGNIFIC_FAIL_TTL_SEC = 30 * 60  # 30 min backoff on failure
+# Each promoted row costs up to 5 sequential external-API calls (minutes, not
+# seconds) — keep the per-cycle batch small regardless of scan volume.
+MAGNIFIC_BATCH_LIMIT = 1
+MAGNIFIC_SCAN_LIMIT = 10
+# The shared `wc` used elsewhere in _do_poll has a short default timeout
+# (WorkerClient default 30s) tuned for fast calls; magnific.generate_variants
+# can take several minutes (5 sequential Mystic submit+poll cycles). Override
+# per-call via WorkerClient.run(..., timeout=...) rather than raising the
+# shared client's timeout for every other (fast) task.
+#
+# Sizing: worker/tasks/magnific.py's own worst-case *sleep* budget alone is
+# DEFAULT_VARIANT_COUNT(5) x _MAX_POLL_ATTEMPTS(40) x _POLL_INTERVAL_SEC(3s)
+# = 600s, before counting any of the ~205 real HTTP round trips (5 submits +
+# up to 200 polls) each attempt implies. Using exactly 600s here would leave
+# zero margin and could time out work that is still legitimately in progress
+# server-side. Keep a generous multiple instead of the bare theoretical floor
+# — if worker/tasks/magnific.py's constants change, revisit this alongside it.
+MAGNIFIC_CALL_TIMEOUT_SEC = 1200.0
+
+# P2.2: the magnific scan is DEFAULT OFF and fail-closed, mirroring the
+# promote scan above. Only these explicit truthy values enable it; any other
+# value — including absence — keeps it disabled while everything else in the
+# poller keeps running normally. Even when enabled, the actual eligibility
+# re-check and every Notion write happen inside the Worker task
+# (magnific.generate_variants, ADR-011 #1) — this scan only decides which
+# Publicaciones rows to ask Worker/core to (re-)evaluate.
+MAGNIFIC_ENV_FLAG = "NOTION_POLLER_ENABLE_MAGNIFIC"
+_MAGNIFIC_DISABLED_LOG_STATE = {"logged": False}
+
+
+def _magnific_enabled() -> bool:
+    """Return True only for an explicit truthy NOTION_POLLER_ENABLE_MAGNIFIC."""
+    return os.environ.get(MAGNIFIC_ENV_FLAG, "").strip().lower() in _TRUTHY_ENV_VALUES
+
+
+def _log_magnific_disabled_once() -> None:
+    """One INFO line per process, DEBUG afterwards — clear but not noisy."""
+    if not _MAGNIFIC_DISABLED_LOG_STATE["logged"]:
+        logger.info(
+            "Magnific scan disabled (default; set %s=true to enable). "
+            "Control Room / review / smart replies / V2 classify / promote scan unaffected.",
+            MAGNIFIC_ENV_FLAG,
+        )
+        _MAGNIFIC_DISABLED_LOG_STATE["logged"] = True
+    else:
+        logger.debug("Magnific scan disabled (%s not truthy)", MAGNIFIC_ENV_FLAG)
+
+
+def _reset_magnific_disabled_log() -> None:
+    """Test-only helper."""
+    _MAGNIFIC_DISABLED_LOG_STATE["logged"] = False
+
+
 def _parse_notion_datetime(value: str | None) -> datetime | None:
     raw = (value or "").strip()
     if not raw:
@@ -733,6 +793,137 @@ def _promote_approved_shortlist_rows(wc: WorkerClient, r: redis.Redis) -> None:
         logger.debug(metrics_line)
 
 
+# States the *automatic* scan must never re-trigger: already produced
+# results, already in flight, or `Error` — which the handler still accepts
+# as an eligible manual retry (CLI script / dry-run), but which the scan
+# excludes deliberately. Without this, a persistently-failing row (e.g. a
+# prompt that always trips Magnific's content filter) would be retried
+# forever on the flat 30-min backoff with no cap, burning credits on every
+# retry. Moving a row out of `Error` for an automatic re-attempt requires an
+# explicit human/system action (e.g. `Selección imagen = Regenerar`, a
+# separate reaction not implemented by this package) that lands it in
+# `Regeneración pedida` instead — which *is* scan-eligible.
+_MAGNIFIC_SCAN_SKIP_STATES = {"Listo para selección", "Seleccionada", "Generando", "Error"}
+
+
+def _generate_magnific_variants_for_pending_rows(wc: WorkerClient, r: redis.Redis) -> None:
+    """Scan Publicaciones for rows promoted by P2.1 that still need images.
+
+    P2.2 contract: a row is a *candidate* here only if it carries a non-empty
+    `origen_alternativa` back-link (i.e. it was promoted by P2.1's Aprobar
+    flow — roadmap dependency "P2.1 dispara tras Aprobar") and its flattened
+    `Estado imagen` snapshot is not in `_MAGNIFIC_SCAN_SKIP_STATES` (already
+    `Listo para selección` / `Seleccionada` / `Generando`, or `Error` — the
+    scan deliberately never auto-retries a failed row; see that constant's
+    comment). This function never writes to Notion — it only calls the
+    `magnific.generate_variants` Worker task, which re-fetches the page and
+    re-validates the state machine before writing (fail-closed; avoids
+    acting on a stale scan snapshot). Redis here only dedupes *scan
+    attempts* across poll cycles, not the actual generation (that idempotency
+    lives in the Worker task via `Estado imagen`).
+
+    Each call can take minutes (up to 5 sequential external-API round trips),
+    so the batch limit is intentionally 1 and the call uses an extended
+    per-call timeout (see MAGNIFIC_CALL_TIMEOUT_SEC) rather than the shared
+    client's default.
+    """
+    publicaciones_db_id = os.environ.get("NOTION_PUBLICACIONES_DB_ID", "").strip()
+    if not publicaciones_db_id:
+        return
+
+    try:
+        resp = wc.run(
+            "notion.read_database",
+            {"database_id_or_url": publicaciones_db_id, "max_items": MAGNIFIC_SCAN_LIMIT},
+        )
+    except Exception:
+        logger.warning("Magnific scan: failed to read Publicaciones DB", exc_info=True)
+        return
+
+    items = _extract_read_database_items(resp)
+    scanned = len(items)
+    eligible = 0
+    generated = 0
+    skipped = 0
+    errors = 0
+
+    for item in items:
+        if generated >= MAGNIFIC_BATCH_LIMIT:
+            break
+
+        page_id = str(item.get("page_id") or item.get("id") or "").strip()
+        if not page_id:
+            skipped += 1
+            continue
+
+        origen_alternativa = (item.get("properties") or {}).get("origen_alternativa")
+        if not origen_alternativa:
+            skipped += 1
+            continue
+
+        estado_imagen = _extract_item_text(item, "Estado imagen")
+        if estado_imagen in _MAGNIFIC_SCAN_SKIP_STATES:
+            skipped += 1
+            continue
+
+        eligible += 1
+
+        redis_key = f"{REDIS_KEY_MAGNIFIC_PREFIX}{page_id}"
+        fail_key = f"{REDIS_KEY_MAGNIFIC_FAIL_PREFIX}{page_id}"
+        if r.exists(redis_key) or r.exists(fail_key):
+            skipped += 1
+            continue
+
+        try:
+            result = wc.run(
+                "magnific.generate_variants",
+                {"publicacion_page_id": page_id},
+                timeout=MAGNIFIC_CALL_TIMEOUT_SEC,
+            )
+        except Exception:
+            errors += 1
+            r.set(fail_key, "1", ex=MAGNIFIC_FAIL_TTL_SEC)
+            logger.warning(
+                "Magnific scan: page %s call failed (backoff %ds)",
+                page_id[:8], MAGNIFIC_FAIL_TTL_SEC, exc_info=True,
+            )
+            continue
+
+        ok = bool(result.get("ok")) if isinstance(result, dict) else False
+        skipped_noop = bool(result.get("skipped")) if isinstance(result, dict) else False
+        if ok and skipped_noop:
+            # Handler-level idempotency (already Generando / already done) —
+            # not a scan error, but also not a fresh generation to checkpoint
+            # against the batch limit.
+            skipped += 1
+            continue
+        if ok:
+            r.set(redis_key, "1", ex=MAGNIFIC_TTL_SEC)
+            generated += 1
+            logger.info(
+                "Magnific scan: publicacion %s -> %s/%s variants written",
+                page_id[:8],
+                result.get("generated"),
+                result.get("requested"),
+            )
+        else:
+            errors += 1
+            r.set(fail_key, "1", ex=MAGNIFIC_FAIL_TTL_SEC)
+            logger.warning(
+                "Magnific scan: page %s did NOT generate (%s) — no success checkpoint, backoff %ds",
+                page_id[:8], (result or {}).get("error"), MAGNIFIC_FAIL_TTL_SEC,
+            )
+
+    metrics_line = (
+        f"Magnific scan: magnific_enabled=True scanned={scanned} eligible={eligible} "
+        f"generated={generated} skipped={skipped} errors={errors}"
+    )
+    if scanned > 0:
+        logger.info(metrics_line)
+    else:
+        logger.debug(metrics_line)
+
+
 def _do_poll(
     wc: WorkerClient,
     queue: TaskQueue,
@@ -839,6 +1030,18 @@ def _do_poll(
     else:
         _log_promote_disabled_once()
 
+    # P2.2: generate Magnific image variants for promoted rows — DEFAULT OFF
+    # (fail-closed). Everything above never depends on this. Runs last: each
+    # call can take minutes, and this must never delay Control Room / review
+    # targets / smart replies / V2 classify / promote scan.
+    if _magnific_enabled():
+        try:
+            _generate_magnific_variants_for_pending_rows(wc, r)
+        except Exception:
+            logger.warning("Magnific scan failed (general cycle unaffected)", exc_info=True)
+    else:
+        _log_magnific_disabled_once()
+
 
 def main():
     import argparse
@@ -881,6 +1084,11 @@ def main():
         logger.info("Promote scan ENABLED (%s is truthy).", PROMOTE_ENV_FLAG)
     else:
         logger.info("Promote scan disabled (default off; %s not truthy).", PROMOTE_ENV_FLAG)
+
+    if _magnific_enabled():
+        logger.info("Magnific scan ENABLED (%s is truthy).", MAGNIFIC_ENV_FLAG)
+    else:
+        logger.info("Magnific scan disabled (default off; %s not truthy).", MAGNIFIC_ENV_FLAG)
 
     if args.once:
         logger.info("Notion poller --once (cron mode, worker=%s).", worker_url)

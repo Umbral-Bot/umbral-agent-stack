@@ -65,6 +65,13 @@ NOTION_COMMERCIAL_PROJECTS_DB_ID: str | None = os.environ.get("NOTION_COMMERCIAL
 NOTION_PUBLICACIONES_DB_ID: str | None = os.environ.get("NOTION_PUBLICACIONES_DB_ID")
 NOTION_API_VERSION: str = os.environ.get("NOTION_API_VERSION", "2022-06-28")
 
+# Magnific REST API key (x-magnific-api-key header) — used by
+# magnific.generate_variants (P2.2) to generate image variants via the Mystic
+# endpoint. Headless/API-key fallback documented in
+# docs/ops/magnific-editorial-setup-2026-06-06.md, distinct from the
+# interactive MCP OAuth path used by Rick/Cursor.
+MAGNIFIC_API_KEY: str | None = os.environ.get("MAGNIFIC_API_KEY")
+
 # Granola pipeline
 ENLACE_NOTION_USER_ID: str | None = os.environ.get("ENLACE_NOTION_USER_ID")
 

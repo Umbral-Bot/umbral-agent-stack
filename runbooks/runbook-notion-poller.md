@@ -95,11 +95,36 @@ re-valida el gate antes de escribir) vive en
 (ADR-011 #1: Notion writes son monopolio de Worker/core). Metricas por ciclo:
 `Promote scan: promote_enabled=True scanned=N eligible=N promoted=N skipped=N errors=N`.
 
+## Flag P2.2 — `NOTION_POLLER_ENABLE_MAGNIFIC` (Publicaciones promovidas -> 5 imagenes)
+
+> Detalle completo: `docs/ops/editorial-magnific-p22-poller-2026-07-23.md`.
+> **Bloqueante actual: `MAGNIFIC_API_KEY` no esta configurada en ningun entorno**
+> (VPS secrets / `~/.config/openclaw/env`) — habilitar este flag sin esa
+> credencial hace que cada fila candidata falle con backoff (30 min), sin
+> escribir nada en Notion (fail-closed por diseno).
+
+| Valor | Efecto |
+|---|---|
+| ausente \ `""` \ `false` \ `0` \ cualquier cosa no-truthy | **Scan de generacion Magnific apagado (default)**. El resto del poller funciona normal; el poller no lee la BD Publicaciones para este scan ni llama `magnific.generate_variants`. Log 1 vez por proceso: "Magnific scan disabled". |
+| `true` / `1` / `yes` / `on` (explicito) | Scan activo: busca filas de Publicaciones con `origen_alternativa` no vacio (promovidas por P2.1) y `Estado imagen` fuera de `{Listo para selección, Seleccionada, Generando, Error}`, y pide al Worker que las (re-)evalue. **`Error` queda deliberadamente excluido del scan automatico** (no se reintenta solo; requiere accion humana/explicita, ej. `Selección imagen = Regenerar` -> `Regeneración pedida`, que si es scan-elegible) — evita reintentos infinitos con gasto de creditos en una fila que falla siempre. Requiere ademas `NOTION_PUBLICACIONES_DB_ID` (poller y Worker) y `MAGNIFIC_API_KEY` (Worker) configurados. |
+
+El poller nunca escribe a Notion en este scan — el write real (fail-closed,
+re-valida el estado antes de escribir) vive en
+`worker/tasks/magnific.py::handle_magnific_generate_variants` (ADR-011 #1).
+Cada fila candidata puede tardar minutos (hasta 5 llamadas Magnific
+secuenciales submit+poll); el batch por ciclo es intencionalmente 1
+(`MAGNIFIC_BATCH_LIMIT`) y la llamada al Worker usa un timeout extendido
+(`MAGNIFIC_CALL_TIMEOUT_SEC`, 1200s) distinto del timeout corto del resto del
+poller. Metricas por ciclo:
+`Magnific scan: magnific_enabled=True scanned=N eligible=N generated=N skipped=N errors=N`.
+
 ## Rollback
 
 - Apagar solo V2: quitar/poner en false el flag + relanzar daemon (mismo pkill).
 - Apagar solo el scan de promocion P2.1: quitar/poner en false
   `NOTION_POLLER_ENABLE_PROMOTE` + relanzar daemon (mismo pkill).
+- Apagar solo el scan de generacion Magnific P2.2: quitar/poner en false
+  `NOTION_POLLER_ENABLE_MAGNIFIC` + relanzar daemon (mismo pkill).
 - Pausa total (volver a CAP_POLLER_PAUSED): re-comentar la linea del cron con el
   marcador + `pkill -TERM -f "notion-poller-daemon[.]py"`; verificar
   "Notion Poller daemon stopped." en el log y ausencia de PID file.

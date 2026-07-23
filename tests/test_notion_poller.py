@@ -1343,3 +1343,144 @@ class TestMagnificScanBehavior:
 
     def test_disabled_log_helper_resets_without_error(self):
         _reset_magnific_disabled_log()
+
+
+# ---------------------------------------------------------------------------
+# P2.4: dedupe scan isolation — default-off flag, dedupe_status-empty gate
+# (independent of Resultado revisión), idempotent hand-off to
+# editorial.dedupe_candidate_vs_backlog (Worker/core).
+# See docs/ops/editorial-roadmap-norte-p1-p3-2026-07-22.md row P2.4.
+# ---------------------------------------------------------------------------
+
+from dispatcher.notion_poller import (  # noqa: E402
+    DEDUPE_FAIL_TTL_SEC,
+    DEDUPED_TTL_SEC,
+    _dedupe_enabled,
+    _dedupe_pending_shortlist_rows,
+    _reset_dedupe_disabled_log,
+)
+
+
+def _pending_dedupe_row(page_id="shortlist-1", **props):
+    base = {"dedupe_status": ""}
+    base.update(props)
+    return {"page_id": page_id, "properties": base}
+
+
+class TestDedupeFlagParsing:
+    @pytest.mark.parametrize("value", ["1", "true", "TRUE", "yes", "on", " True "])
+    def test_explicit_truthy_enables(self, value):
+        with patch.dict("os.environ", {"NOTION_POLLER_ENABLE_DEDUPE": value}, clear=False):
+            assert _dedupe_enabled() is True
+
+    @pytest.mark.parametrize("value", ["", "0", "false", "no", "off", "junk", "enable", "si"])
+    def test_everything_else_disables(self, value):
+        with patch.dict("os.environ", {"NOTION_POLLER_ENABLE_DEDUPE": value}, clear=False):
+            assert _dedupe_enabled() is False
+
+    def test_absent_env_disables(self, monkeypatch):
+        monkeypatch.delenv("NOTION_POLLER_ENABLE_DEDUPE", raising=False)
+        assert _dedupe_enabled() is False
+
+
+class TestDedupeScanBehavior:
+    def _run_scan(self, items, dedupe_result=None, dedupe_exc=None, shortlist_ds_id="shortlist-ds"):
+        wc = MagicMock()
+
+        def _run(task, payload):
+            if task == "notion.read_database":
+                return {"ok": True, "result": {"items": items}}
+            if task == "editorial.dedupe_candidate_vs_backlog":
+                if dedupe_exc:
+                    raise dedupe_exc
+                return dedupe_result
+            raise AssertionError(f"unexpected task {task}")
+
+        wc.run.side_effect = _run
+        r = _redis_mock()
+        with patch.dict("os.environ", {"NOTION_SHORTLIST_DS_ID": shortlist_ds_id or ""}, clear=False):
+            _dedupe_pending_shortlist_rows(wc, r)
+        return wc, r
+
+    def _dedupe_calls(self, wc):
+        return [
+            c for c in wc.run.call_args_list if c.args and c.args[0] == "editorial.dedupe_candidate_vs_backlog"
+        ]
+
+    def test_no_shortlist_ds_id_configured_is_noop(self):
+        wc, r = self._run_scan([_pending_dedupe_row()], shortlist_ds_id="")
+        assert wc.run.call_count == 0
+        r.set.assert_not_called()
+
+    def test_already_evaluated_rows_are_skipped(self):
+        wc, r = self._run_scan([_pending_dedupe_row(dedupe_status="nuevo")])
+        assert self._dedupe_calls(wc) == []
+        r.set.assert_not_called()
+
+    def test_archived_rows_are_skipped(self):
+        row = _pending_dedupe_row()
+        row["archived"] = True
+        wc, r = self._run_scan([row])
+        assert self._dedupe_calls(wc) == []
+        r.set.assert_not_called()
+
+    def test_pending_row_is_evaluated_regardless_of_resultado_revision(self):
+        # Dedupe must not depend on Resultado revisión — it runs before/
+        # alongside HITL-1, not only after Aprobar.
+        wc, r = self._run_scan(
+            [_pending_dedupe_row(**{"Resultado revisión": "Pendiente"})],
+            dedupe_result={"ok": True, "dedupe_status": "nuevo"},
+        )
+        assert len(self._dedupe_calls(wc)) == 1
+
+    def test_pending_row_is_evaluated_and_checkpointed(self):
+        wc, r = self._run_scan(
+            [_pending_dedupe_row()],
+            dedupe_result={"ok": True, "dedupe_status": "nuevo"},
+        )
+        assert len(self._dedupe_calls(wc)) == 1
+        assert self._dedupe_calls(wc)[0].args[1] == {"shortlist_page_id": "shortlist-1"}
+        r.set.assert_called_once_with(
+            "umbral:notion_poller:deduped:shortlist-1", "1", ex=DEDUPED_TTL_SEC
+        )
+
+    def test_worker_reported_failure_sets_backoff_not_success(self, caplog):
+        with caplog.at_level("WARNING", logger="dispatcher.notion_poller"):
+            wc, r = self._run_scan(
+                [_pending_dedupe_row()],
+                dedupe_result={"ok": False, "error": "some_error"},
+            )
+        assert r.set.call_count == 1
+        key = r.set.call_args.args[0]
+        assert key.startswith("umbral:notion_poller:dedupe_fail:")
+        assert r.set.call_args.kwargs == {"ex": DEDUPE_FAIL_TTL_SEC}
+        assert "did NOT evaluate" in caplog.text
+
+    def test_dedupe_call_exception_sets_backoff(self):
+        wc, r = self._run_scan([_pending_dedupe_row()], dedupe_exc=RuntimeError("worker unreachable"))
+        assert r.set.call_count == 1
+        assert r.set.call_args.args[0].startswith("umbral:notion_poller:dedupe_fail:")
+
+    def test_already_checkpointed_row_is_skipped_without_recall(self):
+        wc = MagicMock()
+        wc.run.side_effect = lambda task, payload: (
+            {"ok": True, "result": {"items": [_pending_dedupe_row()]}}
+            if task == "notion.read_database"
+            else (_ for _ in ()).throw(AssertionError("should not call dedupe"))
+        )
+        r = _redis_mock()
+        r.exists.return_value = True
+        with patch.dict("os.environ", {"NOTION_SHORTLIST_DS_ID": "shortlist-ds"}, clear=False):
+            _dedupe_pending_shortlist_rows(wc, r)
+        assert self._dedupe_calls(wc) == []
+
+    def test_batch_limit_caps_evaluations_per_cycle(self):
+        rows = [_pending_dedupe_row(page_id=f"row-{i}") for i in range(5)]
+        wc, r = self._run_scan(
+            rows,
+            dedupe_result={"ok": True, "dedupe_status": "nuevo"},
+        )
+        assert len(self._dedupe_calls(wc)) == 3  # DEDUPE_BATCH_LIMIT
+
+    def test_disabled_log_helper_resets_without_error(self):
+        _reset_dedupe_disabled_log()

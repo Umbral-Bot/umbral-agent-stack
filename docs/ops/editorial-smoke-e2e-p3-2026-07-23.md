@@ -185,14 +185,18 @@ documentó desde P2.2.
 $ python scripts/editorial/apply_publication_copy.py --publication-id CAND-001 --dry-run \
     --skip-model-verify --write-body --emit-worker-payload <tmp>.json
 VALIDATION_OK
-WARNING: 'copy_linkedin_empresa' ausente (opcional)
-WORKER_PAYLOAD_WRITTEN <tmp>.json
-DRY_RUN: no Notion call (write-body)
-DRY_RUN: no Notion call (emit-worker-payload)
+  warn: linkedin_empresa: missing copy_linkedin_empresa (P2.3, optional for now)
+WORKER_PAYLOAD_WRITTEN path=<tmp>.json
+DRY_RUN page_id=34b5f443-fb5c-81dd-8338-cb0b46699250 props=['Copy LinkedIn', 'Copy X', 'Copy Blog', 'trace_id', 'Comentarios revisión']
+DRY_RUN write_body blocks=19 marker='Copy Blog (V2 canonical body) — trace_id: CAND-001-v3.1-human-editorial-sensitivity-fix' (idempotency vs existing page blocks not checked in dry-run, no Notion call)
+VALIDATION_OK gates=unchanged (dry-run, no Notion call)
 ```
 
-**Veredicto: PASS** — cero llamadas a Notion, ambas escape-hatches
-(`--write-body`/`--emit-worker-payload`, fix de P2.3) funcionan.
+**Veredicto: PASS** — cero llamadas a Notion (confirmado por las líneas
+`DRY_RUN ... no Notion call`), ambas escape-hatches
+(`--write-body`/`--emit-worker-payload`, fix de P2.3) funcionan; el warning
+de `copy_linkedin_empresa` ausente es esperado (P2.3 lo trata como
+opcional).
 
 ## G) Puente HITL-2 → publish blog (D3 triple gate, dry_run)
 

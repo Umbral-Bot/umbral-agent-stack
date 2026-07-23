@@ -852,6 +852,110 @@ class TestRagHook:
 
 
 # ======================================================================
+# P2.7 / Fila I = B — post-publish RRSS injection hook
+# (inject_rrss_after_publish). See
+# docs/ops/editorial-rrss-injection-p27-2026-07-23.md.
+# ======================================================================
+
+
+class TestRrssInjectionHook:
+    @patch("worker.notion_client.update_page_properties")
+    @patch("worker.notion_client.get_page")
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_off_by_default_no_injection_attempted(self, mock_urlopen, mock_get_page, mock_update):
+        mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
+        result = handle_web_publish_editorial_post(
+            {"payload": _authorized_payload(), "telegram_confirmed": True}
+        )
+        assert result["ok"] is True
+        assert "rrss_injection" not in result
+        mock_get_page.assert_not_called()
+        mock_update.assert_not_called()
+
+    @patch("worker.notion_client.update_page_properties")
+    @patch("worker.notion_client.get_page")
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_enabled_injects_using_the_just_published_url(self, mock_urlopen, mock_get_page, mock_update):
+        mock_urlopen.return_value = FakeHTTPResponse(
+            200, _ok_function_body(published_url="https://umbralbim.io/noticias/ia-en-coordinacion-bim")
+        )
+        mock_get_page.return_value = {
+            "id": "pub-1",
+            "properties": {
+                "Copy LinkedIn": {"type": "rich_text", "rich_text": [{"plain_text": "Un teaser."}]},
+                "Copy X": {"type": "rich_text", "rich_text": []},
+                "Copy LinkedIn empresa": {"type": "rich_text", "rich_text": []},
+                "listo_rrss": {"type": "checkbox", "checkbox": False},
+            },
+        }
+
+        result = handle_web_publish_editorial_post(
+            {
+                "payload": _authorized_payload(),
+                "telegram_confirmed": True,
+                "inject_rrss_after_publish": True,
+            }
+        )
+
+        assert result["ok"] is True
+        assert result["rrss_injection"]["ok"] is True
+        assert result["rrss_injection"]["injected_channels"] == ["copy_linkedin"]
+        props = mock_update.call_args.kwargs["properties"]
+        assert props["Copy LinkedIn"]["rich_text"][0]["text"]["content"].endswith(
+            "https://umbralbim.io/noticias/ia-en-coordinacion-bim"
+        )
+        assert props["listo_rrss"] == {"checkbox": True}
+
+    @patch("worker.notion_client.update_page_properties")
+    @patch("worker.notion_client.get_page")
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_injection_failure_never_fails_the_publish(self, mock_urlopen, mock_get_page, mock_update):
+        mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
+        mock_get_page.side_effect = RuntimeError("Notion down")
+
+        result = handle_web_publish_editorial_post(
+            {
+                "payload": _authorized_payload(),
+                "telegram_confirmed": True,
+                "inject_rrss_after_publish": True,
+            }
+        )
+
+        assert result["ok"] is True  # publish already happened; injection is best-effort
+        assert result["rrss_injection"]["ok"] is False
+
+    @patch("worker.notion_client.update_page_properties")
+    @patch("worker.notion_client.get_page")
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_not_attempted_on_blocked_publish(self, mock_urlopen, mock_get_page, mock_update):
+        # telegram_confirmed omitted -> blocked before ever reaching the hook.
+        result = handle_web_publish_editorial_post(
+            {"payload": _authorized_payload(), "inject_rrss_after_publish": True}
+        )
+        assert result["ok"] is False
+        assert "rrss_injection" not in result
+        mock_get_page.assert_not_called()
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.notion_client.update_page_properties")
+    @patch("worker.notion_client.get_page")
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_not_attempted_on_dry_run(self, mock_urlopen, mock_get_page, mock_update):
+        result = handle_web_publish_editorial_post(
+            {
+                "payload": _authorized_payload(),
+                "telegram_confirmed": True,
+                "dry_run": True,
+                "inject_rrss_after_publish": True,
+            }
+        )
+        assert result["ok"] is True
+        assert "rrss_injection" not in result
+        mock_get_page.assert_not_called()
+        mock_urlopen.assert_not_called()
+
+
+# ======================================================================
 # Deliverable F — visual asset resolution (Publicaciones schema v2)
 # ======================================================================
 

@@ -191,6 +191,22 @@ HITL2_NOTIFIED_TTL_SEC = 60 * 60  # 1h — just reduces log noise, not correctne
 HITL2_BATCH_LIMIT = 3
 HITL2_SCAN_LIMIT = 10
 
+# P2.7: RRSS-injection backfill scan (Publicaciones rows already Publicado
+# with a published_url but listo_rrss still false — Fila I = B). Unlike the
+# P2.6 scan above, this one DOES write to Notion once enabled (via
+# editorial.inject_rrss_ready): it injects published_url into the per-channel
+# RRSS copies and marks listo_rrss=true. It never calls any LinkedIn/X API —
+# the actual RRSS post stays manual. Covers rows published before this
+# feature existed, or via a publish call that had inject_rrss_after_publish
+# off. See docs/ops/editorial-roadmap-norte-p1-p3-2026-07-22.md row P2.7 and
+# docs/ops/editorial-norte-hitl-contract-2026-07-22.md §5.I.
+REDIS_KEY_RRSS_INJECTED_PREFIX = "umbral:notion_poller:rrss_injected:"
+REDIS_KEY_RRSS_FAIL_PREFIX = "umbral:notion_poller:rrss_fail:"
+RRSS_INJECTED_TTL_SEC = 24 * 60 * 60
+RRSS_FAIL_TTL_SEC = 30 * 60  # 30 min backoff on failure
+RRSS_BATCH_LIMIT = 3
+RRSS_SCAN_LIMIT = 10
+
 # P2a: the V2 classify scan is DEFAULT OFF and fail-closed. It caused the
 # 2026-07-16 incident (rows silently marked classified as `?/?/?` while the
 # Worker had no live LLM provider, scanning rows without the human gate) that
@@ -357,6 +373,37 @@ def _log_hitl2_scan_disabled_once() -> None:
 def _reset_hitl2_scan_disabled_log() -> None:
     """Test-only helper."""
     _HITL2_SCAN_DISABLED_LOG_STATE["logged"] = False
+
+
+# P2.7: the RRSS-injection backfill scan is DEFAULT OFF and fail-closed,
+# mirroring the scans above. Unlike the P2.6 scan, this one DOES write to
+# Notion once enabled (editorial.inject_rrss_ready) — never to LinkedIn/X.
+RRSS_INJECTION_ENV_FLAG = "NOTION_POLLER_ENABLE_RRSS_INJECTION"
+_RRSS_INJECTION_DISABLED_LOG_STATE = {"logged": False}
+
+
+def _rrss_injection_enabled() -> bool:
+    """Return True only for an explicit truthy NOTION_POLLER_ENABLE_RRSS_INJECTION."""
+    return os.environ.get(RRSS_INJECTION_ENV_FLAG, "").strip().lower() in _TRUTHY_ENV_VALUES
+
+
+def _log_rrss_injection_disabled_once() -> None:
+    """One INFO line per process, DEBUG afterwards — clear but not noisy."""
+    if not _RRSS_INJECTION_DISABLED_LOG_STATE["logged"]:
+        logger.info(
+            "RRSS-injection scan disabled (default; set %s=true to enable). "
+            "Control Room / review / smart replies / V2 classify / promote / dedupe / "
+            "negative-capture / HITL-2 readiness unaffected.",
+            RRSS_INJECTION_ENV_FLAG,
+        )
+        _RRSS_INJECTION_DISABLED_LOG_STATE["logged"] = True
+    else:
+        logger.debug("RRSS-injection scan disabled (%s not truthy)", RRSS_INJECTION_ENV_FLAG)
+
+
+def _reset_rrss_injection_disabled_log() -> None:
+    """Test-only helper."""
+    _RRSS_INJECTION_DISABLED_LOG_STATE["logged"] = False
 
 
 # Magnific scan constants (P2.2 — Publicaciones rows promoted by P2.1 get 5
@@ -652,6 +699,8 @@ def _extract_item_text(item: dict, *names: str) -> str:
         if ptype == "rich_text":
             parts = prop.get("rich_text") or []
             return "".join(rt.get("plain_text", "") for rt in parts).strip()
+        if ptype == "url":
+            return (prop.get("url") or "").strip()
     return ""
 
 
@@ -1233,6 +1282,112 @@ def _scan_hitl2_publish_readiness(wc: WorkerClient, r: redis.Redis) -> None:
         logger.debug(metrics_line)
 
 
+def _inject_rrss_for_published_rows(wc: WorkerClient, r: redis.Redis) -> None:
+    """Backfill Fila I = B (published_url + listo_rrss) for Published rows (P2.7).
+
+    A row is a *candidate* here only if its flattened snapshot shows
+    ``Estado == "Publicado"``, a non-empty ``published_url``, and a falsy
+    ``listo_rrss``. This function never writes to Notion itself — it only
+    calls the ``editorial.inject_rrss_ready`` Worker task, which re-fetches
+    the page and re-validates before writing (fail-closed; avoids acting on a
+    stale scan snapshot). Redis here only dedupes *scan attempts* across poll
+    cycles, not the injection itself (that idempotency lives in the Worker
+    task via ``listo_rrss``). Never calls any LinkedIn/X API.
+    """
+    publicaciones_db_id = os.environ.get("NOTION_PUBLICACIONES_DB_ID", "").strip()
+    if not publicaciones_db_id:
+        return
+
+    try:
+        resp = wc.run(
+            "notion.read_database",
+            {"database_id_or_url": publicaciones_db_id, "max_items": RRSS_SCAN_LIMIT},
+        )
+    except Exception:
+        logger.warning("RRSS-injection scan: failed to read Publicaciones DB", exc_info=True)
+        return
+
+    items = _extract_read_database_items(resp)
+    scanned = len(items)
+    eligible = 0
+    injected = 0
+    skipped = 0
+    errors = 0
+
+    for item in items:
+        if injected >= RRSS_BATCH_LIMIT:
+            break
+
+        page_id = str(item.get("page_id") or item.get("id") or "").strip()
+        if not page_id:
+            skipped += 1
+            continue
+
+        if item.get("archived") is True:
+            skipped += 1
+            continue
+
+        if _extract_item_text(item, "Estado") != "Publicado":
+            skipped += 1
+            continue
+
+        if not _extract_item_text(item, "published_url"):
+            skipped += 1
+            continue
+
+        if _extract_item_checkbox(item, "listo_rrss"):
+            skipped += 1
+            continue
+
+        redis_key = f"{REDIS_KEY_RRSS_INJECTED_PREFIX}{page_id}"
+        fail_key = f"{REDIS_KEY_RRSS_FAIL_PREFIX}{page_id}"
+        if r.exists(redis_key) or r.exists(fail_key):
+            skipped += 1
+            continue
+
+        eligible += 1
+
+        try:
+            result = wc.run(
+                "editorial.inject_rrss_ready",
+                {"notion_page_id": page_id},
+            )
+        except Exception:
+            errors += 1
+            r.set(fail_key, "1", ex=RRSS_FAIL_TTL_SEC)
+            logger.warning(
+                "RRSS-injection scan: page %s call failed (backoff %ds)",
+                page_id[:8], RRSS_FAIL_TTL_SEC, exc_info=True,
+            )
+            continue
+
+        ok = bool(result.get("ok")) if isinstance(result, dict) else False
+        if ok:
+            r.set(redis_key, "1", ex=RRSS_INJECTED_TTL_SEC)
+            injected += 1
+            logger.info(
+                "RRSS-injection scan: page %s injected_channels=%s",
+                page_id[:8],
+                (result or {}).get("injected_channels"),
+            )
+        else:
+            errors += 1
+            r.set(fail_key, "1", ex=RRSS_FAIL_TTL_SEC)
+            logger.warning(
+                "RRSS-injection scan: page %s did NOT inject (%s) — no success checkpoint, backoff %ds",
+                page_id[:8], (result or {}).get("error"), RRSS_FAIL_TTL_SEC,
+            )
+
+    metrics_line = (
+        f"RRSS-injection scan: rrss_injection_enabled=True scanned={scanned} eligible={eligible} "
+        f"injected={injected} skipped={skipped} errors={errors}"
+    )
+    if scanned > 0:
+        logger.info(metrics_line)
+    else:
+        logger.debug(metrics_line)
+
+
 # States the *automatic* scan must never re-trigger: already produced
 # results, already in flight, or `Error` — which the handler still accepts
 # as an eligible manual retry (CLI script / dry-run), but which the scan
@@ -1504,6 +1659,17 @@ def _do_poll(
     else:
         _log_hitl2_scan_disabled_once()
 
+    # P2.7: backfill published_url + listo_rrss for already-Published rows —
+    # DEFAULT OFF (fail-closed). Never calls LinkedIn/X. Independent of
+    # everything above.
+    if _rrss_injection_enabled():
+        try:
+            _inject_rrss_for_published_rows(wc, r)
+        except Exception:
+            logger.warning("RRSS-injection scan failed (general cycle unaffected)", exc_info=True)
+    else:
+        _log_rrss_injection_disabled_once()
+
     # P2.2: generate Magnific image variants for promoted rows — DEFAULT OFF
     # (fail-closed). Everything above never depends on this. Runs last: each
     # call can take minutes, and this must never delay Control Room / review
@@ -1573,6 +1739,11 @@ def main():
         logger.info("HITL-2 readiness scan ENABLED (%s is truthy).", HITL2_SCAN_ENV_FLAG)
     else:
         logger.info("HITL-2 readiness scan disabled (default off; %s not truthy).", HITL2_SCAN_ENV_FLAG)
+
+    if _rrss_injection_enabled():
+        logger.info("RRSS-injection scan ENABLED (%s is truthy).", RRSS_INJECTION_ENV_FLAG)
+    else:
+        logger.info("RRSS-injection scan disabled (default off; %s not truthy).", RRSS_INJECTION_ENV_FLAG)
 
     if _magnific_enabled():
         logger.info("Magnific scan ENABLED (%s is truthy).", MAGNIFIC_ENV_FLAG)

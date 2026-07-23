@@ -29,7 +29,8 @@ No confundir ambos: `worker/tasks/editorial_dedupe.py` **no** toca
 ## Qué hace
 
 1. `dispatcher/notion_poller.py::_dedupe_pending_shortlist_rows` escanea
-   (opt-in) la BD **Alternativas / Shortlist** buscando filas con
+   (opt-in) la BD **Alternativas / Shortlist** buscando filas no archivadas
+   (`archived != true`, mismo check que el scan V2 classify) con
    `dedupe_status` vacío — **sin condicionar por `Resultado revisión`**: el
    dedupe corre antes o en paralelo a HITL-1, no sólo tras `Aprobar` (eso es
    P2.1, un flujo independiente y paralelo, no encadenado).

@@ -171,8 +171,27 @@ def test_already_evaluated_is_idempotent_noop():
     assert result["already_evaluated"] is True
     assert result["dedupe_status"] == "nuevo"
     assert result["matched_publicacion_page_id"] == "prior-match"
+    assert result["shortlist_page_id"] == "shortlist-1"
+    assert "matched_publicacion_url" in result
     mock_nc.query_database.assert_not_called()
     mock_nc.update_page_properties.assert_not_called()
+
+
+def test_requires_shortlist_page_id_includes_it_in_response():
+    from worker.tasks.editorial_dedupe import handle_editorial_dedupe_candidate_vs_backlog
+
+    result = handle_editorial_dedupe_candidate_vs_backlog({})
+    assert "shortlist_page_id" in result
+
+
+def test_no_db_configured_includes_shortlist_page_id():
+    from worker.tasks.editorial_dedupe import handle_editorial_dedupe_candidate_vs_backlog
+
+    with patch("worker.tasks.editorial_dedupe.config") as mock_cfg:
+        mock_cfg.NOTION_PUBLICACIONES_DB_ID = None
+        result = handle_editorial_dedupe_candidate_vs_backlog({"shortlist_page_id": "shortlist-1"})
+
+    assert result["shortlist_page_id"] == "shortlist-1"
 
 
 def test_dry_run_queries_backlog_but_does_not_write():
@@ -212,6 +231,7 @@ def test_writes_nuevo_when_no_match():
         result = handle_editorial_dedupe_candidate_vs_backlog({"shortlist_page_id": "shortlist-1"})
 
     assert result["ok"] is True
+    assert result["dry_run"] is False
     assert result["dedupe_status"] == "nuevo"
     assert result["matched_publicacion_page_id"] is None
     mock_nc.query_database.assert_called_once_with(

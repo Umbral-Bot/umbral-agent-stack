@@ -186,11 +186,15 @@ def handle_editorial_dedupe_candidate_vs_backlog(input_data: Dict[str, Any]) -> 
     """
     shortlist_page_id = (input_data.get("shortlist_page_id") or "").strip()
     if not shortlist_page_id:
-        return {"ok": False, "error": "'shortlist_page_id' is required"}
+        return {"ok": False, "error": "'shortlist_page_id' is required", "shortlist_page_id": shortlist_page_id}
 
     db_id = config.NOTION_PUBLICACIONES_DB_ID
     if not db_id:
-        return {"ok": False, "error": "NOTION_PUBLICACIONES_DB_ID not configured on server"}
+        return {
+            "ok": False,
+            "error": "NOTION_PUBLICACIONES_DB_ID not configured on server",
+            "shortlist_page_id": shortlist_page_id,
+        }
 
     dry_run = bool(input_data.get("dry_run", False))
 
@@ -204,9 +208,11 @@ def handle_editorial_dedupe_candidate_vs_backlog(input_data: Dict[str, Any]) -> 
     if candidate["dedupe_status"]:
         return {
             "ok": True,
+            "dry_run": dry_run,
             "dedupe_status": candidate["dedupe_status"],
             "already_evaluated": True,
             "matched_publicacion_page_id": (candidate["publicacion_relacionada"] or [None])[0],
+            "matched_publicacion_url": None,
             "shortlist_page_id": shortlist_page_id,
         }
 
@@ -243,6 +249,7 @@ def handle_editorial_dedupe_candidate_vs_backlog(input_data: Dict[str, Any]) -> 
 
     return {
         "ok": True,
+        "dry_run": False,
         "dedupe_status": dedupe_status,
         "already_evaluated": False,
         "matched_publicacion_page_id": matched_page_id,

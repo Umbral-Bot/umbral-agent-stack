@@ -1417,6 +1417,13 @@ class TestDedupeScanBehavior:
         assert self._dedupe_calls(wc) == []
         r.set.assert_not_called()
 
+    def test_archived_rows_are_skipped(self):
+        row = _pending_dedupe_row()
+        row["archived"] = True
+        wc, r = self._run_scan([row])
+        assert self._dedupe_calls(wc) == []
+        r.set.assert_not_called()
+
     def test_pending_row_is_evaluated_regardless_of_resultado_revision(self):
         # Dedupe must not depend on Resultado revisión — it runs before/
         # alongside HITL-1, not only after Aprobar.

@@ -880,17 +880,21 @@ def _dedupe_pending_shortlist_rows(wc: WorkerClient, r: redis.Redis) -> None:
             skipped += 1
             continue
 
-        if _extract_item_text(item, "dedupe_status"):
+        if item.get("archived") is True:
             skipped += 1
             continue
 
-        eligible += 1
+        if _extract_item_text(item, "dedupe_status"):
+            skipped += 1
+            continue
 
         redis_key = f"{REDIS_KEY_DEDUPED_PREFIX}{page_id}"
         fail_key = f"{REDIS_KEY_DEDUPE_FAIL_PREFIX}{page_id}"
         if r.exists(redis_key) or r.exists(fail_key):
             skipped += 1
             continue
+
+        eligible += 1
 
         try:
             result = wc.run(

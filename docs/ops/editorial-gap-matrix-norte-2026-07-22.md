@@ -7,7 +7,9 @@
 
 ## Resumen
 
-De 11 filas del norte: **0 OK · 9 PARCIAL · 1 AUSENTE (D) · 1 CONTRATO_OPUESTO (I)**.
+De 11 filas del norte (estado original del diagnóstico read-only 2026-07-22;
+fila D pasó de AUSENTE a PARCIAL con la implementación P2.5, ver abajo): **0
+OK · 10 PARCIAL · 0 AUSENTE · 1 CONTRATO_OPUESTO (I)**.
 Solo la "cola" del pipeline está cableada: publish **Blog**→Azure ([ADR-010](../adr/ADR-010-azure-editorial-blog-cms.md), doble gate),
 gate visual read-only (`resolve_visual_asset_urls`), discovery→**Referentes** (no
 Publicaciones) y dashboard. La mitad "pre-aprobación" (alternativas con arco + pie
@@ -21,7 +23,7 @@ prácticamente greenfield.
 | **A** Curado + alternativas V1 | PARCIAL | Regla fuente-pieza existe pero no se aplica; **pie de estructura de discurso + arco = AUSENTE**; superficie de alternativas no definida | [67:133-149](../67-editorial-source-curation.md), [scoring-schema.md:12-13](../../openclaw/workspace-templates/skills/editorial-source-curation/references/scoring-schema.md), [attribution-policy:92](editorial-source-attribution-policy.md) |
 | **B** HITL-1 Archivar | PARCIAL | Solo `Descartado`; no hay Archivar≠Descartar | [schema:148,382](../../notion/schemas/publicaciones.schema.yaml) |
 | **C** HITL-1 Observar | PARCIAL | `Revisión pendiente` + comentarios nativos; sin salida "Observar" nombrada; loop de comentarios solo post-aprobación | [schema:132,400](../../notion/schemas/publicaciones.schema.yaml) |
-| **D** HITL-1 Descartar + aprendizaje | **AUSENTE** ✔ | Descarta pero no captura ejemplo negativo ni realimenta | [schema:148](../../notion/schemas/publicaciones.schema.yaml), [editorial-agent-flow.md:173](editorial-agent-flow.md) |
+| **D** HITL-1 Descartar + aprendizaje | PARCIAL (era **AUSENTE**) | Captura implementada en P2.5 (poller+handler, DEFAULT OFF) + store local consultable (`find_similar_negatives`); falta habilitar en producción y cablear el consumo en el prompt de `rick-qa` (P2.8-style, GO David aparte) | [editorial_negative_capture.py](../../worker/tasks/editorial_negative_capture.py), [sync_negative_examples.py](../../scripts/editorial/sync_negative_examples.py), [editorial-negative-loop-p25-2026-07-23.md](editorial-negative-loop-p25-2026-07-23.md) |
 | **E** HITL-1 Aprobar → dispara V2 | PARCIAL | Gate existe; disparo de V2 al aprobar = "Cron futuro" | [v2-visual-gates:281,285](notion-publicaciones-v2-visual-gates-schema.md) |
 | **F** V2 Copy Blog largo + medios | PARCIAL | Columnas `Copy *` + `apply_publication_copy.py` (manual, extendido en P2.3: `--write-body`/`--emit-worker-payload` resuelven el límite rich_text; `Copy LinkedIn empresa` escrita si el YAML la trae); falta que David cree la columna viva (P1) y que Rick produzca el campo en runtime | [v3:66-97](notion-blog-linkedin-v3-content-model.md), [apply_publication_copy.py](../../scripts/editorial/apply_publication_copy.py), [roadmap P2.3](editorial-roadmap-norte-p1-p3-2026-07-22.md) |
 | **G** V2 cinco imágenes | PARCIAL | `Alt 1..5` + selección + resolver read-only cableados; **generación Magnific NO cableada** | [sync_visual_asset_from_selection.py:22](../../scripts/editorial/sync_visual_asset_from_selection.py), [magnific-editorial-setup:116,118](magnific-editorial-setup-2026-06-06.md) |

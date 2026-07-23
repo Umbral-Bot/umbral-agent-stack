@@ -1484,3 +1484,144 @@ class TestDedupeScanBehavior:
 
     def test_disabled_log_helper_resets_without_error(self):
         _reset_dedupe_disabled_log()
+
+
+# ---------------------------------------------------------------------------
+# P2.5: negative-example capture scan isolation — default-off flag,
+# Descartar/ejemplo_negativo gate, idempotent hand-off to
+# editorial.capture_negative_example (Worker/core). Fila D of the gap matrix
+# (previously AUSENTE). See
+# docs/ops/editorial-roadmap-norte-p1-p3-2026-07-22.md row P2.5.
+# ---------------------------------------------------------------------------
+
+from dispatcher.notion_poller import (  # noqa: E402
+    NEGATIVE_CAPTURED_TTL_SEC,
+    NEGATIVE_FAIL_TTL_SEC,
+    _capture_negative_shortlist_rows,
+    _negative_capture_enabled,
+    _reset_negative_capture_disabled_log,
+)
+
+
+def _discarded_row(page_id="shortlist-1", **props):
+    base = {
+        "Resultado revisión": "Descartar",
+        "ejemplo_negativo": False,
+    }
+    base.update(props)
+    return {"page_id": page_id, "properties": base}
+
+
+class TestNegativeCaptureFlagParsing:
+    @pytest.mark.parametrize("value", ["1", "true", "TRUE", "yes", "on", " True "])
+    def test_explicit_truthy_enables(self, value):
+        with patch.dict("os.environ", {"NOTION_POLLER_ENABLE_NEGATIVE_CAPTURE": value}, clear=False):
+            assert _negative_capture_enabled() is True
+
+    @pytest.mark.parametrize("value", ["", "0", "false", "no", "off", "junk", "enable", "si"])
+    def test_everything_else_disables(self, value):
+        with patch.dict("os.environ", {"NOTION_POLLER_ENABLE_NEGATIVE_CAPTURE": value}, clear=False):
+            assert _negative_capture_enabled() is False
+
+    def test_absent_env_disables(self, monkeypatch):
+        monkeypatch.delenv("NOTION_POLLER_ENABLE_NEGATIVE_CAPTURE", raising=False)
+        assert _negative_capture_enabled() is False
+
+
+class TestNegativeCaptureScanBehavior:
+    def _run_scan(self, items, capture_result=None, capture_exc=None, shortlist_ds_id="shortlist-ds"):
+        wc = MagicMock()
+
+        def _run(task, payload):
+            if task == "notion.read_database":
+                return {"ok": True, "result": {"items": items}}
+            if task == "editorial.capture_negative_example":
+                if capture_exc:
+                    raise capture_exc
+                return capture_result
+            raise AssertionError(f"unexpected task {task}")
+
+        wc.run.side_effect = _run
+        r = _redis_mock()
+        with patch.dict("os.environ", {"NOTION_SHORTLIST_DS_ID": shortlist_ds_id or ""}, clear=False):
+            _capture_negative_shortlist_rows(wc, r)
+        return wc, r
+
+    def _capture_calls(self, wc):
+        return [
+            c for c in wc.run.call_args_list if c.args and c.args[0] == "editorial.capture_negative_example"
+        ]
+
+    def test_no_shortlist_ds_id_configured_is_noop(self):
+        wc, r = self._run_scan([_discarded_row()], shortlist_ds_id="")
+        assert wc.run.call_count == 0
+        r.set.assert_not_called()
+
+    def test_non_discarded_rows_are_never_captured(self):
+        wc, r = self._run_scan([_discarded_row(**{"Resultado revisión": "Pendiente"})])
+        assert self._capture_calls(wc) == []
+        r.set.assert_not_called()
+
+    def test_already_captured_rows_are_skipped(self):
+        wc, r = self._run_scan([_discarded_row(ejemplo_negativo=True)])
+        assert self._capture_calls(wc) == []
+        r.set.assert_not_called()
+
+    def test_archived_rows_are_skipped(self):
+        row = _discarded_row()
+        row["archived"] = True
+        wc, r = self._run_scan([row])
+        assert self._capture_calls(wc) == []
+        r.set.assert_not_called()
+
+    def test_discarded_uncaptured_row_is_captured_and_checkpointed(self):
+        wc, r = self._run_scan(
+            [_discarded_row()],
+            capture_result={"ok": True, "captured": True},
+        )
+        assert len(self._capture_calls(wc)) == 1
+        assert self._capture_calls(wc)[0].args[1] == {"shortlist_page_id": "shortlist-1"}
+        r.set.assert_called_once_with(
+            "umbral:notion_poller:negative_captured:shortlist-1", "1", ex=NEGATIVE_CAPTURED_TTL_SEC
+        )
+
+    def test_worker_reported_failure_sets_backoff_not_success(self, caplog):
+        with caplog.at_level("WARNING", logger="dispatcher.notion_poller"):
+            wc, r = self._run_scan(
+                [_discarded_row()],
+                capture_result={"ok": False, "error": "motivo_descarte_missing"},
+            )
+        assert r.set.call_count == 1
+        key = r.set.call_args.args[0]
+        assert key.startswith("umbral:notion_poller:negative_fail:")
+        assert r.set.call_args.kwargs == {"ex": NEGATIVE_FAIL_TTL_SEC}
+        assert "did NOT capture" in caplog.text
+
+    def test_capture_call_exception_sets_backoff(self):
+        wc, r = self._run_scan([_discarded_row()], capture_exc=RuntimeError("worker unreachable"))
+        assert r.set.call_count == 1
+        assert r.set.call_args.args[0].startswith("umbral:notion_poller:negative_fail:")
+
+    def test_already_checkpointed_row_is_skipped_without_recall(self):
+        wc = MagicMock()
+        wc.run.side_effect = lambda task, payload: (
+            {"ok": True, "result": {"items": [_discarded_row()]}}
+            if task == "notion.read_database"
+            else (_ for _ in ()).throw(AssertionError("should not call capture"))
+        )
+        r = _redis_mock()
+        r.exists.return_value = True
+        with patch.dict("os.environ", {"NOTION_SHORTLIST_DS_ID": "shortlist-ds"}, clear=False):
+            _capture_negative_shortlist_rows(wc, r)
+        assert self._capture_calls(wc) == []
+
+    def test_batch_limit_caps_captures_per_cycle(self):
+        rows = [_discarded_row(page_id=f"row-{i}") for i in range(5)]
+        wc, r = self._run_scan(
+            rows,
+            capture_result={"ok": True, "captured": True},
+        )
+        assert len(self._capture_calls(wc)) == 3  # NEGATIVE_BATCH_LIMIT
+
+    def test_disabled_log_helper_resets_without_error(self):
+        _reset_negative_capture_disabled_log()

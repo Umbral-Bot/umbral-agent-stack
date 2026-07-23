@@ -1778,3 +1778,147 @@ class TestHitl2ScanBehavior:
 
     def test_disabled_log_helper_resets_without_error(self):
         _reset_hitl2_scan_disabled_log()
+
+
+# ---------------------------------------------------------------------------
+# P2.7: RRSS-injection backfill scan — default-off flag, Estado=Publicado ∧
+# published_url present ∧ listo_rrss falsy pre-filter, real writes via
+# editorial.inject_rrss_ready once enabled (never LinkedIn/X). See
+# docs/ops/editorial-roadmap-norte-p1-p3-2026-07-22.md row P2.7.
+# ---------------------------------------------------------------------------
+
+from dispatcher.notion_poller import (  # noqa: E402
+    RRSS_FAIL_TTL_SEC,
+    RRSS_INJECTED_TTL_SEC,
+    _inject_rrss_for_published_rows,
+    _reset_rrss_injection_disabled_log,
+    _rrss_injection_enabled,
+)
+
+
+def _published_row(page_id="pub-1", **props):
+    base = {
+        "Estado": "Publicado",
+        "published_url": "https://umbralbim.io/noticias/x",
+        "listo_rrss": False,
+    }
+    base.update(props)
+    return {"page_id": page_id, "properties": base}
+
+
+class TestRrssInjectionFlagParsing:
+    @pytest.mark.parametrize("value", ["1", "true", "TRUE", "yes", "on", " True "])
+    def test_explicit_truthy_enables(self, value):
+        with patch.dict("os.environ", {"NOTION_POLLER_ENABLE_RRSS_INJECTION": value}, clear=False):
+            assert _rrss_injection_enabled() is True
+
+    @pytest.mark.parametrize("value", ["", "0", "false", "no", "off", "junk", "enable", "si"])
+    def test_everything_else_disables(self, value):
+        with patch.dict("os.environ", {"NOTION_POLLER_ENABLE_RRSS_INJECTION": value}, clear=False):
+            assert _rrss_injection_enabled() is False
+
+    def test_absent_env_disables(self, monkeypatch):
+        monkeypatch.delenv("NOTION_POLLER_ENABLE_RRSS_INJECTION", raising=False)
+        assert _rrss_injection_enabled() is False
+
+
+class TestRrssInjectionScanBehavior:
+    def _run_scan(self, items, inject_result=None, inject_exc=None, publicaciones_db_id="pub-db"):
+        wc = MagicMock()
+
+        def _run(task, payload):
+            if task == "notion.read_database":
+                return {"ok": True, "result": {"items": items}}
+            if task == "editorial.inject_rrss_ready":
+                if inject_exc:
+                    raise inject_exc
+                return inject_result
+            raise AssertionError(f"unexpected task {task}")
+
+        wc.run.side_effect = _run
+        r = _redis_mock()
+        with patch.dict("os.environ", {"NOTION_PUBLICACIONES_DB_ID": publicaciones_db_id or ""}, clear=False):
+            _inject_rrss_for_published_rows(wc, r)
+        return wc, r
+
+    def _inject_calls(self, wc):
+        return [c for c in wc.run.call_args_list if c.args and c.args[0] == "editorial.inject_rrss_ready"]
+
+    def test_no_db_configured_is_noop(self):
+        wc, r = self._run_scan([_published_row()], publicaciones_db_id="")
+        assert wc.run.call_count == 0
+        r.set.assert_not_called()
+
+    def test_rows_not_publicado_are_skipped(self):
+        wc, r = self._run_scan([_published_row(Estado="Borrador")])
+        assert self._inject_calls(wc) == []
+        r.set.assert_not_called()
+
+    def test_rows_without_published_url_are_skipped(self):
+        wc, r = self._run_scan([_published_row(published_url="")])
+        assert self._inject_calls(wc) == []
+        r.set.assert_not_called()
+
+    def test_rows_already_listo_rrss_are_skipped(self):
+        wc, r = self._run_scan([_published_row(listo_rrss=True)])
+        assert self._inject_calls(wc) == []
+        r.set.assert_not_called()
+
+    def test_archived_rows_are_skipped(self):
+        row = _published_row()
+        row["archived"] = True
+        wc, r = self._run_scan([row])
+        assert self._inject_calls(wc) == []
+        r.set.assert_not_called()
+
+    def test_eligible_row_is_injected_and_checkpointed(self):
+        wc, r = self._run_scan(
+            [_published_row()],
+            inject_result={"ok": True, "injected_channels": ["copy_linkedin"]},
+        )
+        assert len(self._inject_calls(wc)) == 1
+        assert self._inject_calls(wc)[0].args[1] == {"notion_page_id": "pub-1"}
+        r.set.assert_called_once_with(
+            "umbral:notion_poller:rrss_injected:pub-1", "1", ex=RRSS_INJECTED_TTL_SEC
+        )
+
+    def test_worker_reported_failure_sets_backoff_not_success(self, caplog):
+        with caplog.at_level("WARNING", logger="dispatcher.notion_poller"):
+            wc, r = self._run_scan(
+                [_published_row()],
+                inject_result={"ok": False, "error": "published_url_missing"},
+            )
+        assert r.set.call_count == 1
+        key = r.set.call_args.args[0]
+        assert key.startswith("umbral:notion_poller:rrss_fail:")
+        assert r.set.call_args.kwargs == {"ex": RRSS_FAIL_TTL_SEC}
+        assert "did NOT inject" in caplog.text
+
+    def test_inject_call_exception_sets_backoff(self):
+        wc, r = self._run_scan([_published_row()], inject_exc=RuntimeError("worker unreachable"))
+        assert r.set.call_count == 1
+        assert r.set.call_args.args[0].startswith("umbral:notion_poller:rrss_fail:")
+
+    def test_already_checkpointed_row_is_skipped_without_recall(self):
+        wc = MagicMock()
+        wc.run.side_effect = lambda task, payload: (
+            {"ok": True, "result": {"items": [_published_row()]}}
+            if task == "notion.read_database"
+            else (_ for _ in ()).throw(AssertionError("should not call inject"))
+        )
+        r = _redis_mock()
+        r.exists.return_value = True
+        with patch.dict("os.environ", {"NOTION_PUBLICACIONES_DB_ID": "pub-db"}, clear=False):
+            _inject_rrss_for_published_rows(wc, r)
+        assert self._inject_calls(wc) == []
+
+    def test_batch_limit_caps_injections_per_cycle(self):
+        rows = [_published_row(page_id=f"row-{i}") for i in range(5)]
+        wc, r = self._run_scan(
+            rows,
+            inject_result={"ok": True, "injected_channels": []},
+        )
+        assert len(self._inject_calls(wc)) == 3  # RRSS_BATCH_LIMIT
+
+    def test_disabled_log_helper_resets_without_error(self):
+        _reset_rrss_injection_disabled_log()

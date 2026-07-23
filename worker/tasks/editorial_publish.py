@@ -74,6 +74,12 @@ _DEFAULT_NOTION_PROP_MAP: Dict[str, str] = {
     "canonical_url": "published_url",
     "autorizar_publicacion": "autorizar_publicacion",
     "aprobado_contenido": "aprobado_contenido",
+    # Fila I = B (P2.7) — RRSS link injection + terminal state, never used by
+    # the publish payload itself (Azure never sees these).
+    "copy_linkedin": "Copy LinkedIn",
+    "copy_x": "Copy X",
+    "copy_linkedin_empresa": "Copy LinkedIn empresa",
+    "listo_rrss": "listo_rrss",
 }
 
 # Fields that are worker-side gates and must NOT be forwarded to the function.
@@ -427,6 +433,153 @@ def _maybe_write_back(notion_page_id: str, published_url: str, prop_name: str) -
 
 
 # ---------------------------------------------------------------------------
+# Fila I = B (P2.7) — post-publish RRSS link injection + listo_rrss
+# ---------------------------------------------------------------------------
+
+_RRSS_COPY_FIELDS = ("copy_linkedin", "copy_x", "copy_linkedin_empresa")
+
+
+def _rt_chunks(text: str, size: int = 1900) -> List[Dict[str, Any]]:
+    if not text:
+        return [{"text": {"content": ""}}]
+    return [{"text": {"content": text[i : i + size]}} for i in range(0, len(text), size)]
+
+
+def inject_rrss_copies_and_mark_ready(
+    notion_page_id: str,
+    prop_map: Dict[str, str],
+    *,
+    published_url: Optional[str] = None,
+    dry_run: bool = False,
+) -> Dict[str, Any]:
+    """Fila I = B (docs/ops/editorial-norte-hitl-contract-2026-07-22.md §5.I):
+    after a successful blog publish, inject ``published_url`` into each
+    per-channel RRSS copy that doesn't already contain it, and mark
+    ``listo_rrss = true`` — the terminal RRSS state under Fila I = B. The
+    actual LinkedIn/X **post** stays manual (Fila I = B, ADR-010 §Contexto);
+    this function makes **zero** calls to any social API — only Notion
+    rich_text/checkbox properties.
+
+    Fail-closed + idempotent, mirroring the P2.1/P2.4/P2.5 pattern: re-fetches
+    the page live (never trusts a caller-supplied snapshot), no-ops
+    (``already_ready=True``) if ``listo_rrss`` is already true, and is also
+    idempotent per-channel — a copy that already contains ``published_url``
+    (e.g. a previous partial run) is left untouched rather than appending the
+    link a second time.
+
+    ``published_url`` may be passed explicitly (the inline post-publish hook
+    already has it from the just-completed Azure call) or omitted, in which
+    case it's read from the page's own ``canonical_url`` property (the
+    standalone/backfill task path) — required either way; a page with no
+    ``published_url`` anywhere fails closed rather than injecting an empty
+    link.
+    """
+    from .. import notion_client
+
+    try:
+        page = notion_client.get_page(notion_page_id)
+    except Exception as exc:
+        logger.warning("RRSS injection: failed to read page %s: %s", notion_page_id, exc)
+        return {"ok": False, "error": str(exc), "notion_page_id": notion_page_id, "dry_run": dry_run}
+
+    props = page.get("properties") or {}
+    listo_rrss_prop = prop_map.get("listo_rrss", "listo_rrss")
+    if _flatten_notion_prop(props.get(listo_rrss_prop)):
+        return {
+            "ok": True,
+            "dry_run": dry_run,
+            "already_ready": True,
+            "injected_channels": [],
+            "notion_page_id": notion_page_id,
+        }
+
+    resolved_url = (published_url or "").strip() or _clean_string(
+        _flatten_notion_prop(props.get(prop_map.get("canonical_url", "published_url")))
+    )
+    if not resolved_url:
+        return {
+            "ok": False,
+            "error": "published_url_missing",
+            "notion_page_id": notion_page_id,
+            "dry_run": dry_run,
+        }
+
+    updated_properties: Dict[str, Any] = {}
+    injected_channels: List[str] = []
+    for field in _RRSS_COPY_FIELDS:
+        prop_name = prop_map.get(field)
+        if not prop_name:
+            continue
+        current_text = _flatten_notion_prop(props.get(prop_name)) or ""
+        if not current_text.strip():
+            continue  # nothing to inject the link into
+        if resolved_url in current_text:
+            continue  # already injected (idempotent per-channel)
+        new_text = f"{current_text.rstrip()}\n\n{resolved_url}"
+        updated_properties[prop_name] = {"rich_text": _rt_chunks(new_text)}
+        injected_channels.append(field)
+
+    canonical_url_prop = prop_map.get("canonical_url", "published_url")
+    updated_properties[canonical_url_prop] = {"url": resolved_url}
+    updated_properties[listo_rrss_prop] = {"checkbox": True}
+
+    if dry_run:
+        return {
+            "ok": True,
+            "dry_run": True,
+            "would_inject": True,
+            "already_ready": False,
+            "injected_channels": injected_channels,
+            "notion_page_id": notion_page_id,
+        }
+
+    try:
+        notion_client.update_page_properties(
+            page_id_or_url=notion_page_id,
+            properties=updated_properties,
+        )
+    except Exception as exc:
+        logger.warning("RRSS injection: failed to write page %s: %s", notion_page_id, exc)
+        return {"ok": False, "error": str(exc), "notion_page_id": notion_page_id, "dry_run": dry_run}
+
+    logger.info(
+        "RRSS injection: page %s listo_rrss=true injected_channels=%s",
+        notion_page_id[:8],
+        injected_channels,
+    )
+    return {
+        "ok": True,
+        "dry_run": False,
+        "already_ready": False,
+        "injected_channels": injected_channels,
+        "notion_page_id": notion_page_id,
+    }
+
+
+def handle_editorial_inject_rrss_ready(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Fila I = B post-publish hook (P2.7), standalone/backfill entry point:
+    inject ``published_url`` into RRSS copies + mark ``listo_rrss = true``
+    for an already-published Publicaciones row.
+
+    Input:
+        notion_page_id (str, required): Publicaciones page id (or URL).
+        dry_run (bool, optional): preview without writing.
+        notion_prop_map (dict, optional): override Notion property names.
+
+    Returns: see ``inject_rrss_copies_and_mark_ready``.
+    """
+    notion_page_id = str(input_data.get("notion_page_id") or "").strip()
+    if not notion_page_id:
+        return {"ok": False, "error": "'notion_page_id' is required", "notion_page_id": notion_page_id}
+
+    dry_run = bool(input_data.get("dry_run", False))
+    prop_map = {**_DEFAULT_NOTION_PROP_MAP, **(input_data.get("notion_prop_map") or {})}
+
+    return inject_rrss_copies_and_mark_ready(notion_page_id, prop_map, dry_run=dry_run)
+
+
+# ---------------------------------------------------------------------------
 # Task B — post-publish RAG indexing (reuses worker/tasks/rag.py)
 # ---------------------------------------------------------------------------
 
@@ -569,6 +722,15 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
             after a successful publish. Skips (publish stays ok) when the
             AZURE_SEARCH_* / AZURE_OPENAI_* env is missing.
         skip_rag_index (bool, default False): force-skip the RAG indexing hook.
+        inject_rrss_after_publish (bool, default False): Fila I = B (P2.7) —
+            after a successful publish, inject ``published_url`` into the
+            per-channel RRSS copies and mark ``listo_rrss = true`` (best-
+            effort; never fails the publish). Default off, mirroring
+            ``write_back_to_notion``'s own default-False caution for a new
+            Notion write path; the standalone task
+            ``editorial.inject_rrss_ready`` covers the same row later if this
+            was off at publish time. Never calls any LinkedIn/X API — the
+            actual RRSS post stays manual (Fila I = B).
 
     Returns a dict with ``ok``. ``ok=False`` + ``would_publish=False`` means the
     gate blocked publication (no network call was made).
@@ -737,6 +899,16 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
             skip_rag_index=skip_rag_index,
         )
     )
+
+    # 8) Fila I = B (P2.7): inject published_url into RRSS copies + mark
+    #    listo_rrss=true (best-effort; never fails the publish, and never
+    #    calls any LinkedIn/X API — see inject_rrss_copies_and_mark_ready).
+    if input_data.get("inject_rrss_after_publish"):
+        response["rrss_injection"] = inject_rrss_copies_and_mark_ready(
+            post["notion_page_id"],
+            prop_map,
+            published_url=response["published_url"],
+        )
 
     return response
 

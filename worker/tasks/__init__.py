@@ -161,6 +161,7 @@ from .pit_runner import (
 from .copilot_cli import handle_copilot_cli_run
 from .rick_orchestrator import handle_rick_orchestrator_triage
 from .editorial_publish import (
+    handle_editorial_inject_rrss_ready,
     handle_web_publish_editorial_post,
     handle_web_unpublish_editorial_post,
 )
@@ -292,5 +293,6 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "editorial.promote_shortlist_approval": handle_editorial_promote_shortlist_approval,
     "editorial.dedupe_candidate_vs_backlog": handle_editorial_dedupe_candidate_vs_backlog,
     "editorial.capture_negative_example": handle_editorial_capture_negative_example,
+    "editorial.inject_rrss_ready": handle_editorial_inject_rrss_ready,
     "magnific.generate_variants": handle_magnific_generate_variants,
 }

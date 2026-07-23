@@ -28,11 +28,108 @@ from scripts.editorial.validate_editorial_copy import (  # noqa: E402
 NOTION_VERSION = "2022-06-28"
 DEFAULT_COPY_DIR = _REPO_ROOT / "evals" / "editorial"
 
+# Notion's documented per-property rich_text limits: each object's
+# text.content maxes at 2000 chars, and the array itself maxes at 100 items.
+# P2.3 (docs/ops/editorial-norte-hitl-contract-2026-07-22.md §5.F): a
+# ~350-500+ word Copy Blog fits comfortably under this, but the guard exists
+# so a future, much longer body fails loudly instead of silently overflowing
+# the property — see build_copy_blog_body_blocks / build_worker_copy_payload
+# for the two documented escape hatches.
+_NOTION_RICH_TEXT_MAX_ITEMS = 100
+_BODY_MARKER_PREFIX = "Copy Blog (V2 canonical body)"
 
-def _chunks(text: str, size: int = 1900) -> list[dict]:
+
+class RichTextOverflowError(RuntimeError):
+    """Content needs more rich_text chunks than Notion's property array allows."""
+
+
+def _chunks(text: str, size: int = 1900, *, guard_property_limit: bool = False) -> list[dict]:
     if not text:
         return [{"type": "text", "text": {"content": ""}}]
-    return [{"type": "text", "text": {"content": text[i : i + size]}} for i in range(0, len(text), size)]
+    chunks = [{"type": "text", "text": {"content": text[i : i + size]}} for i in range(0, len(text), size)]
+    if guard_property_limit and len(chunks) > _NOTION_RICH_TEXT_MAX_ITEMS:
+        raise RichTextOverflowError(
+            f"{len(text)} chars split into {len(chunks)} rich_text chunks, over "
+            f"Notion's {_NOTION_RICH_TEXT_MAX_ITEMS}-item property limit; use "
+            "--write-body (page body blocks) and/or --emit-worker-payload instead "
+            "of the Copy Blog property for this content"
+        )
+    return chunks
+
+
+def _paragraph_blocks(text: str) -> list[dict]:
+    paragraphs = [p.strip() for p in text.strip().split("\n\n") if p.strip()]
+    return [
+        {"object": "block", "type": "paragraph", "paragraph": {"rich_text": _chunks(p, size=1900)}}
+        for p in paragraphs
+    ]
+
+
+def build_copy_blog_body_blocks(text: str, marker: str) -> list[dict]:
+    """V2 escape hatch #1 — write the long-form body as page blocks.
+
+    Bypasses the ``Copy Blog`` *property* rich_text limit entirely, since page
+    body blocks have no comparable per-page cap (see
+    docs/ops/notion-blog-linkedin-v3-content-model.md §Limitation and
+    ADR-010 §Negativas). Prefixing with ``marker`` (a callout block) makes a
+    re-run idempotent: callers should skip appending when the marker is
+    already present among the page's existing children.
+    """
+    blocks: list[dict] = [
+        {
+            "object": "block",
+            "type": "callout",
+            "callout": {
+                "rich_text": [{"type": "text", "text": {"content": marker}}],
+                "icon": {"type": "emoji", "emoji": "\U0001F5D2"},
+            },
+        },
+        {"object": "block", "type": "divider", "divider": {}},
+    ]
+    blocks.extend(_paragraph_blocks(text))
+    return blocks
+
+
+def build_worker_copy_payload(payload: dict, page_id: str) -> dict:
+    """V2 escape hatch #2 — an explicit ``payload`` for the Worker task.
+
+    ``worker/tasks/editorial_publish.py`` already accepts an explicit
+    ``payload`` dict as an alternative to reading Notion properties
+    (``_build_payload_from_notion``); feeding it ``body_markdown`` directly
+    means the publish step never re-reads ``Copy Blog`` back through the
+    rich_text property, so the property's size limit cannot truncate it.
+
+    This is a **partial** payload (copy step only): slug/title/tags/excerpt
+    belong to the blog-metadata step, not this copy script, and must be
+    merged in by the caller before invoking
+    ``handle_web_publish_editorial_post``. Gates are hardcoded false here as
+    defense in depth: per that handler's own contract, an explicit ``payload``
+    is never gate-checked against the live Notion page — "for an explicit
+    payload the caller must set it" (worker/tasks/editorial_publish.py). So
+    whoever eventually merges this into a real publish call must flip
+    ``autorizar_publicacion``/``aprobado_contenido`` to ``True`` in the dict
+    itself; there is no Notion checkbox in this path that does it for them.
+    """
+    return {
+        "notion_page_id": page_id,
+        "trace_id": payload.get("trace_id"),
+        "body_markdown": payload["copy_blog"].strip(),
+        "slug": str(payload.get("slug") or ""),
+        "title": str(payload.get("title") or ""),
+        "excerpt": str(payload.get("excerpt") or ""),
+        "autorizar_publicacion": False,
+        "aprobado_contenido": False,
+        "_note": (
+            "Partial payload (copy step only). Merge slug/title/tags/excerpt "
+            "from the blog metadata step before calling "
+            "worker.tasks.editorial_publish.handle_web_publish_editorial_post "
+            "with this dict as 'payload'. Gates are intentionally false. This "
+            "is the explicit-payload path: editorial_publish.py never reads a "
+            "Notion checkbox for it, so whoever merges this into a real "
+            "publish call must flip both fields to true in this dict "
+            "themselves — do not do so without a separate, explicit go-ahead."
+        ),
+    }
 
 
 def _notion_headers(api_key: str) -> dict[str, str]:
@@ -64,6 +161,54 @@ def _patch_page(api_key: str, page_id: str, properties: dict) -> dict:
         return json.load(resp)
 
 
+def _list_block_children(api_key: str, block_id: str) -> list[dict]:
+    results: list[dict] = []
+    cursor: str | None = None
+    while True:
+        url = f"https://api.notion.com/v1/blocks/{block_id}/children?page_size=100"
+        if cursor:
+            url += f"&start_cursor={cursor}"
+        req = urllib.request.Request(url, headers=_notion_headers(api_key))
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            data = json.load(resp)
+        results.extend(data.get("results", []))
+        if not data.get("has_more"):
+            break
+        cursor = data.get("next_cursor")
+    return results
+
+
+def _append_block_children(api_key: str, block_id: str, blocks: list[dict]) -> None:
+    for i in range(0, len(blocks), 100):
+        chunk = blocks[i : i + 100]
+        body = json.dumps({"children": chunk}).encode()
+        req = urllib.request.Request(
+            f"https://api.notion.com/v1/blocks/{block_id}/children",
+            data=body,
+            headers=_notion_headers(api_key),
+            method="PATCH",
+        )
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            json.load(resp)
+
+
+def _block_plain_text(block: dict) -> str:
+    btype = block.get("type")
+    content = block.get(btype) if btype else None
+    if not isinstance(content, dict):
+        return ""
+    rich_text = content.get("rich_text", [])
+    if not isinstance(rich_text, list):
+        return ""
+    return "".join(
+        rt.get("plain_text") or (rt.get("text") or {}).get("content", "") for rt in rich_text
+    )
+
+
+def body_marker_present(children: list[dict], marker: str) -> bool:
+    return any(marker in _block_plain_text(b) for b in children)
+
+
 def load_publication_copy(publication_id: str, copy_dir: Path) -> dict:
     path = copy_dir / f"{publication_id.lower()}-final-copy.yaml"
     if not path.is_file():
@@ -71,12 +216,33 @@ def load_publication_copy(publication_id: str, copy_dir: Path) -> dict:
     return yaml.safe_load(path.read_text(encoding="utf-8"))
 
 
-def build_properties(payload: dict) -> dict:
+def build_properties(payload: dict, *, skip_oversized_copy_blog: bool = False) -> dict:
+    """Build the Notion property patch for the copy fields.
+
+    ``skip_oversized_copy_blog`` matters only when ``copy_blog`` overflows the
+    rich_text property limit: with it False (default), that overflow raises
+    ``RichTextOverflowError`` so a plain run fails loudly instead of silently
+    truncating. With it True — the caller is using one of the V2 escape
+    hatches (``--write-body`` / ``--emit-worker-payload``), which deliver the
+    full body some other way — the ``Copy Blog`` property is simply omitted
+    from the patch rather than raising, since the escape hatch is the actual
+    delivery path for that content.
+    """
     props: dict = {
-        "Copy LinkedIn": {"rich_text": _chunks(payload["copy_linkedin"].strip())},
-        "Copy Blog": {"rich_text": _chunks(payload["copy_blog"].strip())},
-        "Copy X": {"rich_text": _chunks(payload["copy_x"].strip())},
+        "Copy LinkedIn": {"rich_text": _chunks(payload["copy_linkedin"].strip(), guard_property_limit=True)},
+        "Copy X": {"rich_text": _chunks(payload["copy_x"].strip(), guard_property_limit=True)},
     }
+    try:
+        props["Copy Blog"] = {
+            "rich_text": _chunks(payload["copy_blog"].strip(), guard_property_limit=True)
+        }
+    except RichTextOverflowError:
+        if not skip_oversized_copy_blog:
+            raise
+    if payload.get("copy_linkedin_empresa"):
+        props["Copy LinkedIn empresa"] = {
+            "rich_text": _chunks(payload["copy_linkedin_empresa"].strip(), guard_property_limit=True)
+        }
     if payload.get("trace_id"):
         props["trace_id"] = {"rich_text": _chunks(payload["trace_id"])}
     if payload.get("comentarios_revision"):
@@ -109,6 +275,29 @@ def main() -> int:
         help="Verify rick-communication-director uses GPT-5.5",
     )
     parser.add_argument("--skip-model-verify", action="store_true")
+    parser.add_argument(
+        "--write-body",
+        action="store_true",
+        help=(
+            "Also append the long Copy Blog text as page body blocks (V2 escape "
+            "hatch #1 for the rich_text property limit; idempotent per page via "
+            "a trace_id marker block, see build_copy_blog_body_blocks)"
+        ),
+    )
+    parser.add_argument(
+        "--force-body-append",
+        action="store_true",
+        help="With --write-body: append even if the marker block is already present",
+    )
+    parser.add_argument(
+        "--emit-worker-payload",
+        type=Path,
+        help=(
+            "Write a partial explicit-payload JSON (V2 escape hatch #2: full "
+            "body_markdown, bypasses the Copy Blog property entirely) for "
+            "worker/tasks/editorial_publish.py's 'payload' input"
+        ),
+    )
     args = parser.parse_args()
 
     payload = load_publication_copy(args.publication_id, args.copy_dir)
@@ -140,10 +329,37 @@ def main() -> int:
             print(f"MODEL_VERIFY_FAIL: {exc}", file=sys.stderr)
             return 3
 
-    properties = build_properties(payload)
+    escape_hatch_requested = args.write_body or bool(args.emit_worker_payload)
+    try:
+        properties = build_properties(payload, skip_oversized_copy_blog=escape_hatch_requested)
+    except RichTextOverflowError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 5
+
+    if escape_hatch_requested and "Copy Blog" not in properties:
+        print(
+            "NOTE: Copy Blog property skipped (content exceeds the rich_text property "
+            "limit); the full body is delivered via --write-body/--emit-worker-payload instead"
+        )
+
+    marker = f"{_BODY_MARKER_PREFIX} — trace_id: {payload.get('trace_id') or args.publication_id}"
+    body_blocks = build_copy_blog_body_blocks(payload["copy_blog"].strip(), marker) if args.write_body else []
+
+    if args.emit_worker_payload:
+        worker_payload = build_worker_copy_payload(payload, page_id)
+        args.emit_worker_payload.parent.mkdir(parents=True, exist_ok=True)
+        args.emit_worker_payload.write_text(
+            json.dumps(worker_payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        )
+        print(f"WORKER_PAYLOAD_WRITTEN path={args.emit_worker_payload}")
 
     if args.dry_run:
         print(f"DRY_RUN page_id={page_id} props={list(properties)}")
+        if args.write_body:
+            print(
+                f"DRY_RUN write_body blocks={len(body_blocks)} marker={marker!r} "
+                "(idempotency vs existing page blocks not checked in dry-run, no Notion call)"
+            )
         print("VALIDATION_OK gates=unchanged (dry-run, no Notion call)")
         return 0
 
@@ -163,6 +379,15 @@ def main() -> int:
     assert_gates_unchanged(props_before, after["properties"])
     print(f"APPLIED page_id={page_id} trace_id={payload.get('trace_id')}")
     print("gates unchanged: aprobado_contenido=false autorizar_publicacion=false")
+
+    if args.write_body:
+        existing_children = _list_block_children(api_key, page_id)
+        if not args.force_body_append and body_marker_present(existing_children, marker):
+            print(f"BODY_SKIP_ALREADY_PRESENT marker={marker!r}")
+        else:
+            _append_block_children(api_key, page_id, body_blocks)
+            print(f"BODY_APPENDED blocks={len(body_blocks)} marker={marker!r}")
+
     return 0
 
 

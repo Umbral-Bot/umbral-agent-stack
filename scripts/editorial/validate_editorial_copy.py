@@ -87,6 +87,12 @@ def validate_copy_text(
                 result.ok = False
                 result.errors.append("LinkedIn abre con pregunta; preferir afirmativa (ALT 1)")
 
+    if channel == "linkedin_empresa":
+        lo, hi = channel_cfg["linkedin_empresa"]["longitud_objetivo_chars"]
+        n = len(text.strip())
+        if n < lo or n > hi + 200:
+            result.warnings.append(f"LinkedIn empresa longitud {n} fuera de objetivo [{lo},{hi}]")
+
     return result
 
 
@@ -114,6 +120,19 @@ def validate_publication_payload(payload: dict[str, Any]) -> ValidationResult:
             merged.ok = False
         merged.errors.extend(f"{channel}: {e}" for e in r.errors)
         merged.warnings.extend(f"{channel}: {w}" for w in r.warnings)
+
+    # copy_linkedin_empresa is P2.3 (Copy LinkedIn empresa), optional for
+    # backward compat with payloads written before this column existed
+    # (e.g. the CAND-001 anchor) — missing is a warning, not a hard failure.
+    copy_linkedin_empresa = payload.get("copy_linkedin_empresa", "")
+    if not copy_linkedin_empresa:
+        merged.warnings.append("linkedin_empresa: missing copy_linkedin_empresa (P2.3, optional for now)")
+    else:
+        r = validate_copy_text(copy_linkedin_empresa, channel="linkedin_empresa")
+        if not r.ok:
+            merged.ok = False
+        merged.errors.extend(f"linkedin_empresa: {e}" for e in r.errors)
+        merged.warnings.extend(f"linkedin_empresa: {w}" for w in r.warnings)
 
     blog = payload.get("copy_blog", "")
     if tesis and "gobernanza" not in blog.lower() and "desorden" not in blog.lower():

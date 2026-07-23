@@ -24,6 +24,13 @@ linkedin:
     Un equipo BIM puede sumar un agente que revise modelos antes de definir
     qué cuenta como una revisión válida.
 
+linkedin_empresa:
+  gancho: texto sugerido para *compartir* el post de la empresa, no un teaser nuevo
+  longitud_objetivo_chars: [250, 500]
+  respiracion: párrafos breves para feed
+  requiere_link_blog: true
+  nota: no consumido por código (P2.3); copy manual para el operador, distinto de `linkedin` (teaser de David)
+
 blog:
   estructura: clara sin relleno
   parrafo: una idea nueva por párrafo

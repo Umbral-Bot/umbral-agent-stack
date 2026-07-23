@@ -79,11 +79,38 @@ when sharing the company post.
 | X copy | `Copy X` | no (manual) |
 | Blog body | `Copy Blog` | **yes** (publish) |
 
+`scripts/editorial/apply_publication_copy.py` writes `Copy LinkedIn empresa`
+whenever the local copy YAML sets `copy_linkedin_empresa` (missing is a
+validation warning, not a hard failure, so existing anchors like CAND-001 keep
+applying without it until Rick starts producing the field). The live Notion
+column itself is created by David in P1 — see
+[editorial-roadmap-norte-p1-p3-2026-07-22.md P2.3](editorial-roadmap-norte-p1-p3-2026-07-22.md).
+
 > Limitation (v1): `Copy Blog` read as a rich_text property has Notion's
-> per-property size limits. Very long bodies that live in the page **body**
+> per-property size limits (2000 chars per rich_text object, 100 objects per
+> property — roughly 200k chars before the property itself would need more
+> chunks than Notion allows). Very long bodies that live in the page **body**
 > (blocks) instead of a property are out of scope for the automatic read; use an
 > explicit `payload` to the Worker task in that case, or paste the body into
 > `Copy Blog`.
+>
+> **P2.3 resolution:** `apply_publication_copy.py` now offers both escape
+> hatches named above, so the operator picks whichever fits:
+> - `--write-body` appends the full `copy_blog` text as page **body** blocks
+>   (paragraphs behind a callout+divider marker, idempotent per `trace_id` —
+>   a re-run skips instead of duplicating). Independent of the `Copy Blog`
+>   *property* write, which still happens too (best-effort, chunked, and now
+>   guarded: it raises `RichTextOverflowError` instead of silently truncating
+>   if the text would need more than 100 rich_text chunks).
+> - `--emit-worker-payload PATH` writes a partial JSON payload (`body_markdown`
+>   full text + `notion_page_id`/`trace_id`, gates hardcoded `false`) shaped for
+>   `worker/tasks/editorial_publish.py`'s explicit `payload` input — the Worker
+>   never re-reads `Copy Blog` back through the property in that path, so the
+>   property limit cannot truncate it. It is **partial**: slug/title/tags/
+>   excerpt belong to the blog-metadata step and must be merged in before a
+>   real publish call.
+> - Anchor test: CAND-001's ~500-word body fits well under the property limit
+>   on its own; both hatches exist for when a future body doesn't.
 
 ## Visual assets (deliverable F — implemented)
 
@@ -139,6 +166,33 @@ not use this visual gate. Tests live in
    `umbralbim.io/noticias/:slug`.
 5. `published_url` is written back / injected into the social copies.
 6. Operator manually posts the LinkedIn (David), LinkedIn (empresa) and X copies.
+
+## V2 copy step — how to dry-run (P2.3)
+
+Before step 1 above, `scripts/editorial/apply_publication_copy.py` writes the
+approved copy (blog + per-channel) from a local YAML
+(`evals/editorial/{publication-id}-final-copy.yaml`) into `Publicaciones`.
+Gates are never touched by this script in any mode.
+
+```bash
+# Property-only (existing v1 behavior): validate + preview, no Notion call.
+python scripts/editorial/apply_publication_copy.py \
+  --publication-id CAND-001 --dry-run --skip-model-verify
+
+# V2: also preview the page-body-blocks escape hatch (long Copy Blog, no
+# property size risk) and emit a partial Worker payload (full body_markdown,
+# gates hardcoded false) — still no Notion call.
+python scripts/editorial/apply_publication_copy.py \
+  --publication-id CAND-001 --dry-run --skip-model-verify \
+  --write-body \
+  --emit-worker-payload evals/editorial/cand-001-worker-payload.json
+```
+
+Drop `--dry-run` (and export `NOTION_API_KEY`) to actually write. `--write-body`
+is idempotent: a re-run skips the body append if its `trace_id` marker block is
+already present on the page (pass `--force-body-append` to override). See
+[§Limitation](#new-column--copy-linkedin-empresa) above for when to reach for
+`--write-body` / `--emit-worker-payload` versus the plain property write.
 
 ## References
 

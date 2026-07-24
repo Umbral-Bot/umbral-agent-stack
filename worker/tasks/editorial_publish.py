@@ -74,6 +74,11 @@ _DEFAULT_NOTION_PROP_MAP: Dict[str, str] = {
     "canonical_url": "published_url",
     "autorizar_publicacion": "autorizar_publicacion",
     "aprobado_contenido": "aprobado_contenido",
+    # N1 / B1 Telegram bridge — the opaque id written by
+    # editorial_promote as ``shortlist-<alternativa_id>``. Used only to resolve
+    # a Publicaciones row read-only when a caller sends ``publication_id``
+    # instead of ``notion_page_id``; never forwarded to the Azure payload.
+    "publication_id": "publication_id",
     # Fila I = B (P2.7) — RRSS link injection + terminal state, never used by
     # the publish payload itself (Azure never sees these).
     "copy_linkedin": "Copy LinkedIn",
@@ -297,6 +302,86 @@ def _build_payload_from_notion(
         "aprobado_contenido": _as_bool(read("aprobado_contenido")),
     }
     return payload, visual_gate
+
+
+# Fallback Publicaciones property holding the ``publication_id`` value. Kept as a
+# module constant so the resolver still works when a caller passes a partial
+# ``notion_prop_map`` that doesn't include the key.
+_PUBLICATION_ID_PROP_DEFAULT = "publication_id"
+
+
+def _resolve_publication_id_to_page_id(
+    publication_id: str, prop_map: Dict[str, str]
+) -> Dict[str, Any]:
+    """Resolve a Publicaciones ``publication_id`` to its Notion page id (read-only).
+
+    N1 / B1 — Telegram bridge
+    (docs/ops/n8n-notion-integration-proposal-post-smoke-2026-07-24.md §2.B1a):
+    David texts ``ok publica <publication_id>``; an n8n workflow may forward that
+    opaque id instead of a Notion page id, and the Worker resolves it here by
+    querying the Publicaciones database for the row whose ``publication_id``
+    property equals it (the value ``editorial_promote`` writes as
+    ``shortlist-<alternativa_id>``, worker/tasks/editorial_promote.py).
+
+    Strictly **read-only** (Notion schema GET + query POST only — never a write)
+    and **fail-closed**: returns ``{"ok": False, "error": ...}`` (never raises,
+    never publishes, never guesses a page) for every non-unique outcome:
+
+      - empty id                              → ``publication_id_empty``
+      - ``NOTION_PUBLICACIONES_DB_ID`` unset  → ``publicaciones_db_not_configured``
+      - Notion read failed                    → ``publication_id_lookup_error``
+      - no row matches                        → ``publication_id_not_found``
+      - more than one row matches             → ``publication_id_ambiguous``
+      - matched row has no page id            → ``publication_id_no_page_id``
+
+    A miss must block publication (the D3 gate downstream never runs), never
+    fall back to a page.
+    """
+    pub_id = (publication_id or "").strip()
+    if not pub_id:
+        return {"ok": False, "error": "publication_id_empty"}
+
+    from .. import config, notion_client
+
+    db_id = (getattr(config, "NOTION_PUBLICACIONES_DB_ID", None) or "").strip()
+    if not db_id:
+        return {"ok": False, "error": "publicaciones_db_not_configured"}
+
+    prop_name = prop_map.get("publication_id") or _PUBLICATION_ID_PROP_DEFAULT
+    notion_filter = {"property": prop_name, "rich_text": {"equals": pub_id}}
+    try:
+        result = notion_client.read_database(db_id, max_items=5, filter=notion_filter)
+    except Exception as exc:  # network / auth / bad filter — fail closed, no publish
+        logger.warning(
+            "publication_id resolution failed pub_id=%s err=%s", pub_id, exc
+        )
+        return {
+            "ok": False,
+            "error": "publication_id_lookup_error",
+            "detail": str(exc)[:200],
+        }
+
+    items = result.get("items") or []
+    # Notion ``rich_text: {equals}`` is already exact, but re-verify the flattened
+    # value defensively (guards against a mislabeled prop type or a filter the API
+    # widened) — the id must match exactly, trimmed.
+    matches = [
+        item
+        for item in items
+        if str((item.get("properties") or {}).get(prop_name) or "").strip() == pub_id
+    ]
+    if not matches:
+        return {"ok": False, "error": "publication_id_not_found"}
+    if len(matches) > 1:
+        return {
+            "ok": False,
+            "error": "publication_id_ambiguous",
+            "match_count": len(matches),
+        }
+    page_id = str(matches[0].get("page_id") or "").strip()
+    if not page_id:
+        return {"ok": False, "error": "publication_id_no_page_id"}
+    return {"ok": True, "notion_page_id": page_id}
 
 
 def _normalize_payload(raw: Dict[str, Any]) -> Dict[str, Any]:
@@ -730,9 +815,15 @@ def resolve_visual_asset_urls(
 def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, Any]:
     """Publish a blog post to Azure Blob via the editorial-publish function.
 
-    Input (one of ``payload`` / ``notion_page_id`` is required):
+    Input (one of ``payload`` / ``notion_page_id`` / ``publication_id`` is required):
         payload (dict): explicit post fields + ``autorizar_publicacion`` gate.
         notion_page_id (str): read post fields + gates from a Publicaciones page.
+        publication_id (str): N1 / B1 (Telegram bridge) — the opaque Publicaciones
+            id from David's "ok publica <publication_id>" message. Resolved
+            read-only to a ``notion_page_id`` BEFORE any gate runs (fail-closed on
+            miss/ambiguity; never guesses a page); ignored when ``payload`` or
+            ``notion_page_id`` is provided. It never relaxes the D3 gate below.
+            See docs/ops/n8n-notion-integration-proposal-post-smoke-2026-07-24.md §2.B1a.
         telegram_confirmed (bool, default False): the third HITL-2/D3 gate
             (docs/ops/editorial-norte-hitl-contract-2026-07-22.md §5.H) — must
             be explicitly asserted true by the caller (an n8n bridge or
@@ -766,6 +857,7 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
 
     explicit_payload = input_data.get("payload")
     notion_page_id = str(input_data.get("notion_page_id") or "").strip()
+    publication_id = str(input_data.get("publication_id") or "").strip()
     dry_run = bool(input_data.get("dry_run", False))
     telegram_confirmed = _as_bool(input_data.get("telegram_confirmed"))
     timeout = int(input_data.get("timeout", 30))
@@ -774,6 +866,41 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
     prop_map = {**_DEFAULT_NOTION_PROP_MAP, **(input_data.get("notion_prop_map") or {})}
     index_after_publish = bool(input_data.get("index_after_publish", True))
     skip_rag_index = bool(input_data.get("skip_rag_index", False))
+
+    # 0) N1 / B1 — resolve publication_id → notion_page_id (read-only, fail-closed)
+    #    BEFORE any gate runs. n8n may forward EITHER an already-resolved
+    #    notion_page_id OR the opaque publication_id from David's "ok publica
+    #    <publication_id>"; only the latter needs resolving. An explicit payload
+    #    or notion_page_id takes precedence and skips the lookup. A resolution
+    #    miss blocks here (would_publish=False, no network) — it never falls
+    #    through to a page, and it never relaxes the D3 gate below.
+    trace: Dict[str, Any] = {}
+    if publication_id and not notion_page_id and not isinstance(explicit_payload, dict):
+        resolution = _resolve_publication_id_to_page_id(publication_id, prop_map)
+        if not resolution.get("ok"):
+            logger.info(
+                "Editorial publish blocked resolving publication_id=%s error=%s",
+                publication_id, resolution.get("error"),
+            )
+            blocked = {
+                "ok": False,
+                "error": resolution["error"],
+                "would_publish": False,
+                "source": "publication_id",
+                "publication_id": publication_id,
+                "gates": {
+                    "autorizar_publicacion": False,
+                    "aprobado_contenido": False,
+                    "telegram_confirmed": telegram_confirmed,
+                },
+            }
+            if "match_count" in resolution:
+                blocked["match_count"] = resolution["match_count"]
+            if "detail" in resolution:
+                blocked["detail"] = resolution["detail"]
+            return blocked
+        notion_page_id = resolution["notion_page_id"]
+        trace["publication_id"] = publication_id
 
     # 1) Resolve source + raw payload.
     visual_gate: Optional[Dict[str, Any]] = None
@@ -817,6 +944,7 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
             "source": source,
             "slug": post["slug"],
             "gates": gates,
+            **trace,
         }
 
     if visual_gate is not None and not visual_gate["ready"]:
@@ -832,6 +960,7 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
             "source": source,
             "slug": post["slug"],
             "gates": gates,
+            **trace,
         }
 
     # 3.5) HITL-2 / D3 (locked, docs/ops/editorial-norte-hitl-contract-2026-07-22.md
@@ -851,6 +980,7 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
             "source": source,
             "slug": post["slug"],
             "gates": gates,
+            **trace,
         }
 
     # 4) Build the function payload (drop worker-side gate fields).
@@ -870,6 +1000,7 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
             "gates": gates,
             "rag_indexed": False,
             "rag_skipped_reason": "dry_run",
+            **trace,
         }
 
     # 5) Call the Azure Function.
@@ -883,6 +1014,7 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
             "source": source,
             "slug": post["slug"],
             "gates": gates,
+            **trace,
         }
     _validate_function_url(url)
 
@@ -902,6 +1034,7 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
         "index_updated": data.get("index_updated"),
         "content_hash": data.get("content_hash") or post["content_hash"],
         "gates": gates,
+        **trace,
     }
     if not ok:
         response["error"] = data.get("error") or "function_error"

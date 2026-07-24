@@ -28,6 +28,7 @@ import pytest
 
 from worker.tasks.editorial_publish import (
     _content_hash,
+    _resolve_publication_id_to_page_id,
     handle_web_publish_editorial_post,
     resolve_visual_asset_urls,
 )
@@ -1083,3 +1084,249 @@ class TestVisualAssets:
         }
 
         assert resolve_visual_asset_urls(page) == {}
+
+
+# ======================================================================
+# N1 / B1 — publication_id -> notion_page_id resolution (Telegram bridge)
+# ======================================================================
+
+
+def _pub_lookup(
+    publication_id: str = "shortlist-abc",
+    page_id: str = "22222222-2222-2222-2222-222222222222",
+    count: int = 1,
+) -> Dict[str, Any]:
+    """Fake worker.notion_client.read_database result for the resolver."""
+    item = {
+        "page_id": page_id,
+        "title": "Post desde Notion",
+        "properties": {"publication_id": publication_id},
+    }
+    return {"items": [dict(item) for _ in range(count)], "count": count}
+
+
+class TestPublicationIdResolution:
+    """N1: the Worker resolves publication_id -> notion_page_id read-only,
+    fail-closed, and never lets that path relax the D3 gate."""
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    @patch("worker.notion_client.get_page")
+    @patch("worker.notion_client.read_database")
+    def test_resolves_and_publishes_dry_run(
+        self, mock_read_db, mock_get_page, mock_urlopen, monkeypatch
+    ):
+        monkeypatch.setattr("worker.config.NOTION_PUBLICACIONES_DB_ID", "db-pubs-1")
+        mock_read_db.return_value = _pub_lookup("shortlist-abc")
+        mock_get_page.return_value = _notion_page()
+
+        result = handle_web_publish_editorial_post(
+            {
+                "publication_id": "shortlist-abc",
+                "dry_run": True,
+                "telegram_confirmed": True,
+            }
+        )
+
+        assert result["ok"] is True
+        assert result["would_publish"] is True
+        assert result["source"] == "notion"
+        assert result["publication_id"] == "shortlist-abc"
+        mock_read_db.assert_called_once_with(
+            "db-pubs-1",
+            max_items=5,
+            filter={
+                "property": "publication_id",
+                "rich_text": {"equals": "shortlist-abc"},
+            },
+        )
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    @patch("worker.notion_client.get_page")
+    @patch("worker.notion_client.read_database")
+    def test_resolution_still_enforces_d3_gate(
+        self, mock_read_db, mock_get_page, mock_urlopen, monkeypatch
+    ):
+        # publication_id resolves to a fully authorized page, but without
+        # telegram_confirmed the D3 gate must still block -- resolution is not a
+        # bypass.
+        monkeypatch.setattr("worker.config.NOTION_PUBLICACIONES_DB_ID", "db-pubs-1")
+        mock_read_db.return_value = _pub_lookup("shortlist-abc")
+        mock_get_page.return_value = _notion_page()
+
+        result = handle_web_publish_editorial_post(
+            {"publication_id": "shortlist-abc", "dry_run": True}
+        )
+
+        assert result["ok"] is False
+        assert result["error"] == "telegram_confirmation_missing"
+        assert result["would_publish"] is False
+        assert result["publication_id"] == "shortlist-abc"
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    @patch("worker.notion_client.get_page")
+    @patch("worker.notion_client.read_database")
+    def test_not_found_fails_closed(
+        self, mock_read_db, mock_get_page, mock_urlopen, monkeypatch
+    ):
+        monkeypatch.setattr("worker.config.NOTION_PUBLICACIONES_DB_ID", "db-pubs-1")
+        mock_read_db.return_value = {"items": [], "count": 0}
+
+        result = handle_web_publish_editorial_post(
+            {"publication_id": "shortlist-missing", "telegram_confirmed": True}
+        )
+
+        assert result["ok"] is False
+        assert result["error"] == "publication_id_not_found"
+        assert result["would_publish"] is False
+        assert result["source"] == "publication_id"
+        assert result["publication_id"] == "shortlist-missing"
+        mock_get_page.assert_not_called()
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    @patch("worker.notion_client.read_database")
+    def test_ambiguous_fails_closed(self, mock_read_db, mock_urlopen, monkeypatch):
+        monkeypatch.setattr("worker.config.NOTION_PUBLICACIONES_DB_ID", "db-pubs-1")
+        mock_read_db.return_value = _pub_lookup("shortlist-dup", count=2)
+
+        result = handle_web_publish_editorial_post(
+            {"publication_id": "shortlist-dup", "telegram_confirmed": True}
+        )
+
+        assert result["ok"] is False
+        assert result["error"] == "publication_id_ambiguous"
+        assert result["match_count"] == 2
+        assert result["would_publish"] is False
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    @patch("worker.notion_client.read_database")
+    def test_db_not_configured_fails_closed(
+        self, mock_read_db, mock_urlopen, monkeypatch
+    ):
+        monkeypatch.setattr("worker.config.NOTION_PUBLICACIONES_DB_ID", "")
+
+        result = handle_web_publish_editorial_post(
+            {"publication_id": "shortlist-abc", "telegram_confirmed": True}
+        )
+
+        assert result["ok"] is False
+        assert result["error"] == "publicaciones_db_not_configured"
+        assert result["would_publish"] is False
+        mock_read_db.assert_not_called()
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    @patch("worker.notion_client.read_database")
+    def test_lookup_error_fails_closed(self, mock_read_db, mock_urlopen, monkeypatch):
+        monkeypatch.setattr("worker.config.NOTION_PUBLICACIONES_DB_ID", "db-pubs-1")
+        mock_read_db.side_effect = RuntimeError("Notion API error (503)")
+
+        result = handle_web_publish_editorial_post(
+            {"publication_id": "shortlist-abc", "telegram_confirmed": True}
+        )
+
+        assert result["ok"] is False
+        assert result["error"] == "publication_id_lookup_error"
+        assert result["would_publish"] is False
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    @patch("worker.notion_client.get_page")
+    @patch("worker.notion_client.read_database")
+    def test_notion_page_id_takes_precedence(
+        self, mock_read_db, mock_get_page, mock_urlopen, monkeypatch
+    ):
+        # Both ids present -> notion_page_id wins, the resolver is never called.
+        monkeypatch.setattr("worker.config.NOTION_PUBLICACIONES_DB_ID", "db-pubs-1")
+        mock_get_page.return_value = _notion_page()
+
+        result = handle_web_publish_editorial_post(
+            {
+                "notion_page_id": "22222222-2222-2222-2222-222222222222",
+                "publication_id": "shortlist-abc",
+                "dry_run": True,
+                "telegram_confirmed": True,
+            }
+        )
+
+        assert result["ok"] is True
+        assert result["source"] == "notion"
+        assert "publication_id" not in result
+        mock_read_db.assert_not_called()
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    @patch("worker.notion_client.read_database")
+    def test_payload_takes_precedence(self, mock_read_db, mock_urlopen, monkeypatch):
+        monkeypatch.setattr("worker.config.NOTION_PUBLICACIONES_DB_ID", "db-pubs-1")
+
+        result = handle_web_publish_editorial_post(
+            {
+                "payload": _authorized_payload(),
+                "publication_id": "shortlist-abc",
+                "dry_run": True,
+                "telegram_confirmed": True,
+            }
+        )
+
+        assert result["ok"] is True
+        assert result["source"] == "payload"
+        mock_read_db.assert_not_called()
+        mock_urlopen.assert_not_called()
+
+    # --- direct resolver unit tests -----------------------------------------
+
+    def test_resolver_empty_id(self):
+        assert _resolve_publication_id_to_page_id("  ", {}) == {
+            "ok": False,
+            "error": "publication_id_empty",
+        }
+
+    @patch("worker.notion_client.read_database")
+    def test_resolver_defensive_reverify_mismatch(self, mock_read_db, monkeypatch):
+        # If Notion ever returns a row whose flattened publication_id doesn't
+        # actually equal the query, the defensive re-check drops it -> not_found.
+        monkeypatch.setattr("worker.config.NOTION_PUBLICACIONES_DB_ID", "db-pubs-1")
+        mock_read_db.return_value = _pub_lookup("shortlist-OTHER")
+
+        result = _resolve_publication_id_to_page_id(
+            "shortlist-abc", {"publication_id": "publication_id"}
+        )
+
+        assert result == {"ok": False, "error": "publication_id_not_found"}
+
+    @patch("worker.notion_client.read_database")
+    def test_resolver_no_page_id(self, mock_read_db, monkeypatch):
+        monkeypatch.setattr("worker.config.NOTION_PUBLICACIONES_DB_ID", "db-pubs-1")
+        mock_read_db.return_value = _pub_lookup("shortlist-abc", page_id="")
+
+        result = _resolve_publication_id_to_page_id("shortlist-abc", {})
+
+        assert result == {"ok": False, "error": "publication_id_no_page_id"}
+
+    @patch("worker.notion_client.read_database")
+    def test_resolver_honors_prop_map_override(self, mock_read_db, monkeypatch):
+        monkeypatch.setattr("worker.config.NOTION_PUBLICACIONES_DB_ID", "db-pubs-1")
+        mock_read_db.return_value = {
+            "items": [
+                {"page_id": "p1", "properties": {"pub_id_custom": "shortlist-abc"}}
+            ],
+            "count": 1,
+        }
+
+        result = _resolve_publication_id_to_page_id(
+            "shortlist-abc", {"publication_id": "pub_id_custom"}
+        )
+
+        assert result == {"ok": True, "notion_page_id": "p1"}
+        mock_read_db.assert_called_once_with(
+            "db-pubs-1",
+            max_items=5,
+            filter={
+                "property": "pub_id_custom",
+                "rich_text": {"equals": "shortlist-abc"},
+            },
+        )

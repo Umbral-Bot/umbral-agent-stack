@@ -21,8 +21,12 @@ versionada.
 
 | Archivo | Borde | Estado en este pack | Qué hace |
 |---|---|---|---|
-| [`workflows/telegram-ok-publica-b1.json`](workflows/telegram-ok-publica-b1.json) | **B1 / N1** | **INACTIVE** — espera GO David | Telegram Trigger → doble allowlist (chat_id + from.id) → parse `ok publica <publication_id>` → `POST /enqueue` `web.publish_editorial_post` con `telegram_confirmed:true`. Sin match → reply corto y STOP. |
-| [`workflows/worker-health-cron-b3.json`](workflows/worker-health-cron-b3.json) | **B3 / N3-lite** | **INACTIVE** — espera GO David | Schedule (15 min) → `GET /health` del Worker → si falla tras reintentos, alerta Telegram a David. Nada más (sin scan HITL-2, ver N3b). |
+| [`workflows/telegram-ok-publica-b1.json`](workflows/telegram-ok-publica-b1.json) | **B1 / N1** | **ACTIVO con bot TEST** desde 2026-07-25 (smoke PASS) | Telegram Trigger → doble allowlist (chat_id + from.id) → parse `ok publica <publication_id>` → `POST /enqueue` `web.publish_editorial_post` con `telegram_confirmed:true`. Sin match → reply corto y STOP. |
+| [`workflows/worker-health-cron-b3.json`](workflows/worker-health-cron-b3.json) | **B3 / N3-lite** | **ACTIVO con bot TEST** (smoke PASS previo) | Schedule (15 min) → `GET /health` del Worker → si falla tras reintentos, alerta Telegram a David. Nada más (sin scan HITL-2, ver N3b). |
+
+> **El sufijo `(INACTIVE)` en el *nombre* de ambos workflows quedó obsoleto** — se
+> conserva para no forzar otro ciclo import/publish/restart. El estado real es el
+> de la tabla de arriba y el campo `active` de cada JSON. Renombrar es follow-up.
 
 Runbook de activación (WEBHOOK_URL/TLS, timezone, backup encryption key, alta de
 credenciales, import y GO por bot de test): [docs/ops/n8n-n0-foundations-runbook-2026-07-24.md](../../docs/ops/n8n-n0-foundations-runbook-2026-07-24.md).

@@ -56,6 +56,66 @@ curl -sI https://<dominio-n8n>/    # 200/302 con cert válido
 > distintos, cada uno con su credencial `telegramApi`. Activar B1 primero con el
 > bot de test.
 
+### 1.1 Implementado 2026-07-25 — camino B (Caddy + Let's Encrypt)
+
+Se evaluaron los dos caminos y se eligió **B**:
+
+- **A (Tailscale Funnel) — descartado.** El tailnet existe y el nodo tiene cert
+  propio (`*.ts.net`), pero el atributo `funnel` **no está en la policy del
+  tailnet**, así que habilitarlo exige editar el ACL en la consola admin de
+  Tailscale (checkpoint humano). Además `tailscale serve` ya está ocupado por el
+  gateway OpenClaw en `:18789`, y superponer Funnel ahí arriesga publicarlo.
+  Cloudflare Tunnel quedó fuera por la misma razón: `cloudflared` no está
+  instalado y haría falta login de la cuenta CF.
+- **B (elegido) — sin comprar dominio y sin checkpoint.** Hostinger ya asigna al
+  VPS el hostname público `srv1431451.hstgr.cloud`, con **A y AAAA apuntando a
+  este host**. Además `hstgr.cloud` está en la *Public Suffix List*, así que Let's
+  Encrypt lo trata como dominio registrado propio (cupo de rate-limit propio, sin
+  competir con el resto de los VPS Hostinger).
+
+Piezas:
+
+| Pieza | Dónde | Nota |
+|---|---|---|
+| Proxy TLS | `/etc/caddy/Caddyfile` (Caddy 2.11.4, systemd `caddy.service`) | cert LE automático + renovación |
+| Env de n8n | `~/.config/systemd/user/n8n.service.d/10-https.conf` | `WEBHOOK_URL`, `N8N_HOST`, `N8N_PROTOCOL`, `N8N_LISTEN_ADDRESS`, `N8N_PROXY_HOPS` |
+| ufw | `80/tcp` + `443/tcp` (v4 y v6) | única apertura nueva; el resto sigue en deny |
+
+**Surface público mínimo.** Caddy publica **solo `/webhook*`**; todo lo demás
+responde `404`. La UI de n8n **no** se expone: la instancia tiene
+`userManagement.isInstanceOwnerSetUp=false` (sin dueño ni login), así que
+publicarla dejaría que cualquiera la reclame con el wizard de owner. Acceso a la
+UI por túnel SSH:
+
+```bash
+ssh -L 5678:127.0.0.1:5678 rick@srv1431451.hstgr.cloud   # -> http://localhost:5678
+```
+
+En el mismo movimiento n8n dejó de escuchar en `*:5678` (todas las interfaces,
+incluida la pública) y pasó a `127.0.0.1` vía `N8N_LISTEN_ADDRESS`.
+
+> **El `webhookId` real no se commitea.** El export del repo conserva
+> `REPLACE_ON_IMPORT_TELEGRAM_WEBHOOK` a propósito: n8n deriva el secret de
+> Telegram como `` `${workflowId}_${nodeId}` `` (`getSecretToken()` en
+> `n8n-nodes-base/dist/nodes/Telegram/GenericFunctions.js`), y ambos ids están en
+> el JSON versionado. Si además se publicara el `webhookId`, cualquiera con acceso
+> al repo podría forjar updates contra el endpoint público. La ruta real vive solo
+> en el VPS.
+
+### 1.2 n8n 2.10 corre la versión **publicada**, no el draft
+
+n8n 2.x separa *draft* de *published*: `workflow_entity.activeVersionId` apunta a
+la versión que realmente ejecuta, y al arrancar loguea
+`Processed N draft workflows, M published workflows`. Guardar cambios en la UI
+(o `import:workflow`) toca el **draft**; hasta publicar, el runtime sigue con la
+versión vieja — incluido el re-vinculado de credenciales. Por eso `update:workflow`
+quedó **deprecado**:
+
+```bash
+n8n publish:workflow --id=<workflowId>     # publica la versión actual
+systemctl --user restart n8n               # el CLI avisa: no aplica con n8n corriendo
+```
+
 ---
 
 ## 2. `GENERIC_TIMEZONE`  **[VPS — GO David]**
@@ -192,12 +252,12 @@ flags `NOTION_POLLER_ENABLE_*` acá.
 
 ## 9. Checklist de lo que David debe completar (nombres, no valores)
 
-- [ ] Reverse proxy VPS: `WEBHOOK_URL` + TLS + websockets (§1)
-- [ ] `GENERIC_TIMEZONE=America/Santiago` confirmado en VPS (§2)
+- [x] Reverse proxy VPS: `WEBHOOK_URL` + TLS (§1, §1.1 — Caddy+LE 2026-07-25)
+- [x] `GENERIC_TIMEZONE=America/Santiago` confirmado en VPS (§2)
 - [ ] Backup off-VPS de `N8N_ENCRYPTION_KEY` verificado (§3)
-- [ ] Credencial `Umbral Worker Bearer (WORKER_TOKEN)` (`httpBearerAuth`) (§4)
-- [ ] Credencial `Telegram Bot — Umbral Editorial (TEST)` (`telegramApi`) (§4)
+- [x] Credencial `Umbral Worker Bearer (WORKER_TOKEN)` (`httpBearerAuth`) (§4)
+- [x] Credencial `Telegram Bot — Umbral Editorial (TEST)` (`telegramApi`) (§4)
 - [ ] (luego) Credencial `Telegram Bot — Umbral Editorial (PROD)` (§4)
-- [ ] Env vars n8n: `WORKER_URL`, `TELEGRAM_ALLOWED_CHAT_ID`, `TELEGRAM_ALLOWED_USER_ID` (§4)
-- [ ] Confirmar reachability n8n→Worker `curl $WORKER_URL/health` (§5)
-- [ ] Import B1 + B3, smoke con bot de test, GO por borde (§6)
+- [x] Env vars n8n: `WORKER_URL`, `TELEGRAM_ALLOWED_CHAT_ID`, `TELEGRAM_ALLOWED_USER_ID` (§4)
+- [x] Confirmar reachability n8n→Worker `curl $WORKER_URL/health` (§5)
+- [x] Import B1 + B3, smoke con bot de test (2026-07-25 PASS; ver §1.1)

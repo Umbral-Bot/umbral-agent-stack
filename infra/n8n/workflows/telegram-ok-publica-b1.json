@@ -1,6 +1,6 @@
 {
   "name": "B1 — Telegram 'ok publica' → Worker /enqueue (INACTIVE)",
-  "active": false,
+  "active": true,
   "nodes": [
     {
       "parameters": {
@@ -118,8 +118,8 @@
         "resource": "message",
         "operation": "sendMessage",
         "chatId": "={{ $('Telegram Trigger (ok publica)').item.json.message.chat.id }}",
-        "text": "={{ '✅ Encolado publish. task_id: ' + ($json.task_id || '(sin id)') }}",
-        "additionalFields": { "appendAttribution": false }
+        "text": "={{ '✅ Encolado publish. task_id: ' + String($json.task_id || '(sin id)').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }}",
+        "additionalFields": { "appendAttribution": false, "parse_mode": "HTML" }
       },
       "id": "b1000000-0000-4000-8000-000000000006",
       "name": "Reply: encolado",
@@ -139,7 +139,7 @@
         "operation": "sendMessage",
         "chatId": "={{ $('Telegram Trigger (ok publica)').item.json.message.chat.id }}",
         "text": "⚠️ /enqueue falló tras reintentos. El Worker no confirmó el encolado; revisá el VPS. (Este aviso NO publica nada; el gate D3 sigue cerrado.)",
-        "additionalFields": { "appendAttribution": false }
+        "additionalFields": { "appendAttribution": false, "parse_mode": "HTML" }
       },
       "id": "b1000000-0000-4000-8000-000000000007",
       "name": "Alert: Worker no respondió",
@@ -158,8 +158,8 @@
         "resource": "message",
         "operation": "sendMessage",
         "chatId": "={{ $('Telegram Trigger (ok publica)').item.json.message.chat.id }}",
-        "text": "No entendí. Formato exacto: ok publica <publication_id>",
-        "additionalFields": { "appendAttribution": false }
+        "text": "No entendí. Formato exacto: ok publica &lt;publication_id&gt;",
+        "additionalFields": { "appendAttribution": false, "parse_mode": "HTML" }
       },
       "id": "b1000000-0000-4000-8000-000000000008",
       "name": "Reply: formato no reconocido",

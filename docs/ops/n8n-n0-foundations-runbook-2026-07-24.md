@@ -183,6 +183,39 @@ personal **antes** de activar cualquier borde, y anotar la ubicación (no el
 valor) en el gestor. Procedimiento de restore probado = pendiente DR (ADR-011
 §Deuda técnica 5).
 
+### 3.1 Fuente localizada + backup off-VPS verificado — 2026-07-26
+
+**Fuente única de verdad: `/home/rick/.n8n/config`** (perms `600`, owner
+`rick:rick`, 56 bytes). JSON con una sola clave, `encryptionKey`. No hay otra
+copia operativa en el VPS:
+
+- **no** está en el env del proceso n8n (`/proc/<pid>/environ` no trae
+  `N8N_ENCRYPTION_KEY`);
+- `grep -rl N8N_ENCRYPTION_KEY /etc /opt` → sin resultados;
+- el drop-in `~/.config/systemd/user/n8n.service.d/override.conf` sólo
+  **menciona** el nombre en un comentario (§2/§4); no define el valor;
+- n8n corre nativo bajo el usuario `rick` (`systemd --user`, `HOME=/home/rick`),
+  por eso lee `~/.n8n/config` sin env var explícita.
+
+Lectura por parte de David, desde su terminal local (la salida nunca pasa por
+logs de agente ni por el repo):
+
+```bash
+ssh rick@<vps> 'cat ~/.n8n/config'    # copiar el valor de encryptionKey a la bóveda
+```
+
+**Estado: backup off-VPS VERIFICADO — 2026-07-26, bóveda tipo gestor de
+contraseñas personal (Bitwarden), confirmado por David.** El valor no se pegó en
+git, PR, informes ni logs. Restore esperado: escribir el JSON en
+`~/.n8n/config` con perms `600` y reiniciar `systemctl --user restart n8n`
+(procedimiento **no** ensayado todavía → sigue pendiente el DR de ADR-011
+§Deuda técnica 5).
+
+> Higiene pendiente (no bloquea): `~/.n8n/backups/database.sqlite.pre-owner-setup-20260725`
+> es una copia de la DB de n8n con las credenciales cifradas dentro. Mientras
+> exista en el VPS, es material sensible en reposo. Cuando David esté cómodo con
+> el estado actual: borrarlo, o moverlo off-VPS cifrado.
+
 ---
 
 ## 4. Alta de credenciales en n8n del VPS (nombres, no valores)  **[VPS — GO David]**
@@ -284,7 +317,7 @@ flags `NOTION_POLLER_ENABLE_*` acá.
 
 - [x] Reverse proxy VPS: `WEBHOOK_URL` + TLS (§1, §1.1 — Caddy+LE 2026-07-25)
 - [x] `GENERIC_TIMEZONE=America/Santiago` confirmado en VPS (§2)
-- [ ] Backup off-VPS de `N8N_ENCRYPTION_KEY` verificado (§3)
+- [x] Backup off-VPS de `N8N_ENCRYPTION_KEY` verificado (§3, §3.1 — Bitwarden 2026-07-26)
 - [x] Credencial `Umbral Worker Bearer (WORKER_TOKEN)` (`httpBearerAuth`) (§4)
 - [x] Credencial `Telegram Bot — Umbral Editorial (TEST)` (`telegramApi`) (§4)
 - [ ] (luego) Credencial `Telegram Bot — Umbral Editorial (PROD)` (§4)

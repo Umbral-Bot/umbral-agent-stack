@@ -94,6 +94,36 @@ ssh -L 5678:127.0.0.1:5678 rick@srv1431451.hstgr.cloud   # -> http://localhost:5
 En el mismo movimiento n8n dejó de escuchar en `*:5678` (todas las interfaces,
 incluida la pública) y pasó a `127.0.0.1` vía `N8N_LISTEN_ADDRESS`.
 
+#### Owner setup (pack 2) — 2026-07-25, por túnel SSH
+
+Comando canónico del túnel, **desde la máquina con browser, no desde el VPS**:
+
+```bash
+ssh -L 5678:127.0.0.1:5678 rick@srv1431451.hstgr.cloud   # -> http://localhost:5678
+```
+
+- **Bloqueo encontrado.** La instancia no estaba «sin dueño esperando el wizard» sino
+  *medio-reclamada*: `hasInstanceOwner()` (`dist/services/ownership.service.js`) da true si
+  el owner shell tiene `password` **o** `lastActiveAt` no nulos, y la Public API key
+  `rick-auto` (creada 2026-03-06, la consume `worker/n8n_client.py`) le escribía
+  `lastActiveAt` vía `LastActiveAtService`. Resultado: wizard suprimido
+  (`showSetupOnFirstLoad=false` → caés en `/signin`), `POST /rest/owner/setup` → 400
+  *«Instance owner already setup»*, y nadie podía loguearse porque email/password eran NULL.
+- **Destrabe:** `systemctl --user stop n8n` → `n8n user-management:reset` → start. Con 1
+  usuario y 1 proyecto personal ya dueño de los 9 workflows y las 4 credenciales, el resto
+  del comando es no-op; `activeVersionId` de B1/B3 quedó byte-idéntico contra el backup
+  `~/.n8n/backups/database.sqlite.pre-owner-setup-20260725`.
+- **Owner completado 2026-07-25** por David en su browser a través del túnel (email y
+  password se tipean sólo ahí: no pasan por chat, log ni git). Post: `isInstanceOwnerSetUp=true`,
+  wizard cerrado (`showSetupOnFirstLoad=false`), `POST /rest/owner/setup` → 400, y `/rest/*`
+  exige login (401 sin cookie). B1/B3 siguieron `active=1` y `/webhook*` OK en todo momento.
+- `showSetupOnFirstLoad` se recalcula por request en `getSettings()`, así que tras el reset
+  no hace falta reiniciar — pero sí que nadie use la API key entre el reset y el submit del
+  wizard, o `lastActiveAt` se reescribe y el submit vuelve a dar 400.
+- Ojo con la ventana: entre el reset y el submit el wizard **sí** es reclamable por
+  cualquiera que alcance el loopback. Lo único que lo tapa es el 404 de Caddy en `/`, que
+  no se toca. Hacer los dos pasos seguidos.
+
 > **El `webhookId` real no se commitea.** El export del repo conserva
 > `REPLACE_ON_IMPORT_TELEGRAM_WEBHOOK` a propósito: n8n deriva el secret de
 > Telegram como `` `${workflowId}_${nodeId}` `` (`getSecretToken()` en

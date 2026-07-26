@@ -26,6 +26,16 @@ external bridge (n8n workflow, operator) must have verified the reply and pass
 ``telegram_confirmed=True`` explicitly. Omitting it fails closed exactly like
 the other two gates, for every source (``payload`` or ``notion_page_id``).
 
+Gate order (B1 Telegram bridge): the D3 gates are evaluated BEFORE the post
+fields are normalized, so an "ok publica <publication_id>" aimed at a row that
+is simply not authorized yet (Borrador, gates false, Slug still empty) returns a
+structured refusal rather than raising over the empty slug. A raise there would
+mark the worker task failed and post a "Tarea fallida" comment in Control Room
+for an ordinary not-authorized state. Once every gate opens, a row still missing
+slug/title/body/notion_page_id likewise returns ``missing_required_fields``
+(``ok=False``, ``would_publish=False``) instead of raising. Reordering never
+weakens a gate: content is validated strictly, just later.
+
 Only the blog blob + canonical URL are produced here: this handler never
 auto-publishes LinkedIn or X (see
 docs/ops/notion-blog-linkedin-v3-content-model.md). LinkedIn publishing lives
@@ -384,28 +394,47 @@ def _resolve_publication_id_to_page_id(
     return {"ok": True, "notion_page_id": page_id}
 
 
+def _missing_required_fields(raw: Any) -> List[str]:
+    """Report which ``_REQUIRED_POST_FIELDS`` are empty — without raising.
+
+    Same emptiness rule as ``_normalize_payload`` (which delegates here, so the
+    two can never drift), but returned as data. The handler uses it *after* the
+    D3 gates to answer "the gates opened, but this row isn't publishable yet"
+    with a structured ``missing_required_fields`` response instead of a
+    ``ValueError`` — a raise there would mark the worker task failed and post a
+    "Tarea fallida" comment in Control Room for what is really a
+    not-ready-yet row.
+    """
+    if not isinstance(raw, dict):
+        return list(_REQUIRED_POST_FIELDS)
+    present = {
+        "slug": str(raw.get("slug") or "").strip(),
+        "title": str(raw.get("title") or "").strip(),
+        "body_markdown": str(raw.get("body_markdown") or "").strip(),
+        "notion_page_id": str(raw.get("notion_page_id") or "").strip(),
+    }
+    return [field for field in _REQUIRED_POST_FIELDS if not present.get(field)]
+
+
 def _normalize_payload(raw: Dict[str, Any]) -> Dict[str, Any]:
-    """Validate + normalize a post payload (from either source)."""
+    """Validate + normalize a post payload (from either source).
+
+    Strict by design — raises ``ValueError`` on malformed input. Callers that
+    must not fail the task (the handler's post-gate path) pre-check with
+    ``_missing_required_fields`` and return structured data instead.
+    """
     if not isinstance(raw, dict):
         raise ValueError("'payload' must be an object")
+
+    missing = _missing_required_fields(raw)
+    if missing:
+        raise ValueError(f"missing required field(s): {', '.join(missing)}")
 
     slug = str(raw.get("slug") or "").strip()
     title = str(raw.get("title") or "").strip()
     body_markdown = str(raw.get("body_markdown") or "")
     notion_page_id = str(raw.get("notion_page_id") or "").strip()
 
-    missing = [
-        f
-        for f, v in (
-            ("slug", slug),
-            ("title", title),
-            ("body_markdown", body_markdown.strip()),
-            ("notion_page_id", notion_page_id),
-        )
-        if not v
-    ]
-    if missing:
-        raise ValueError(f"missing required field(s): {', '.join(missing)}")
     if not _SLUG_RE.match(slug):
         raise ValueError("'slug' must be lowercase kebab-case (a-z, 0-9, hyphens)")
 
@@ -849,8 +878,25 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
             was off at publish time. Never calls any LinkedIn/X API — the
             actual RRSS post stays manual (Fila I = B).
 
-    Returns a dict with ``ok``. ``ok=False`` + ``would_publish=False`` means the
-    gate blocked publication (no network call was made).
+    Returns a dict with ``ok``. ``ok=False`` + ``would_publish=False`` means
+    publication was declined before any network call, with ``error`` one of:
+
+        publication_not_authorized  — autorizar_publicacion / aprobado_contenido
+        visual_asset_not_ready      — v2 visual gate (see the gate detail)
+        telegram_confirmation_missing — the third D3 leg
+        missing_required_fields     — gates opened but slug/title/body/
+                                      notion_page_id are still empty; the list
+                                      is in ``missing_fields``
+    The four above are the post-source decline codes; each carries ``slug``
+    (``None`` when the row has none yet) and ``notion_page_id``, so a caller can
+    identify the row without a slug. The B1 resolver declines earlier and with
+    its own shape — ``publication_id_empty`` / ``_not_found`` / ``_ambiguous`` /
+    ``_lookup_error`` / ``_no_page_id`` plus ``publicaciones_db_not_configured``,
+    carrying ``publication_id`` instead (no row is known yet to name).
+
+    A ``ValueError`` is reserved for genuinely malformed input (no source, bad
+    timeout, non-kebab slug, ``tags`` not a list) — never for a gate state or an
+    unfinished row, which would surface to David as a failed task.
     """
     if not isinstance(input_data, dict):
         raise ValueError("input must be a JSON object")
@@ -915,12 +961,23 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
         authorized = _as_bool(raw.get("autorizar_publicacion"))
         content_approved = _as_bool(raw.get("aprobado_contenido"))
     else:
-        raise ValueError("provide either 'payload' (dict) or 'notion_page_id' (str)")
+        raise ValueError(
+            "provide 'payload' (dict) or 'notion_page_id' (str) or "
+            "'publication_id' (str)"
+        )
 
-    # 2) Normalize/validate the post fields (raises ValueError on malformed input).
-    post = _normalize_payload(raw)
-    if not post.get("canonical_url"):
-        post["canonical_url"] = _canonical_url(post["slug"])
+    # 2) Row identity for the gate stage. The D3 gates below run BEFORE
+    #    normalization, so a row whose content fields are still empty must be
+    #    identifiable without a slug: fall back to the ids the caller gave us.
+    #    Reported ids come from ``raw`` alone, so they never contradict
+    #    ``missing_fields``; the log ref may additionally fall back to the
+    #    caller's own ids, which is diagnostics, not contract.
+    raw_slug = str(raw.get("slug") or "").strip()
+    raw_notion_page_id = str(raw.get("notion_page_id") or "").strip()
+    row_ref = (
+        raw_slug or publication_id or raw_notion_page_id or notion_page_id
+        or "<unidentified>"
+    )
 
     gates: Dict[str, Any] = {
         "autorizar_publicacion": authorized,
@@ -930,38 +987,43 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
     if visual_gate is not None:
         gates["visual_asset"] = visual_gate
 
-    # 3) HARD GATE — never publish without autorizar_publicacion=true (and, when
-    #    coming from Notion, aprobado_contenido=true). No network on failure.
-    if not authorized or not content_approved:
-        logger.info(
-            "Editorial publish blocked by gate slug=%s authorized=%s approved=%s",
-            post["slug"], authorized, content_approved,
-        )
+    def _blocked(error: str) -> Dict[str, Any]:
+        """Structured, non-raising decline for every gate/content check below."""
         return {
             "ok": False,
-            "error": "publication_not_authorized",
+            "error": error,
             "would_publish": False,
             "source": source,
-            "slug": post["slug"],
+            "slug": raw_slug or None,
+            "notion_page_id": raw_notion_page_id or None,
             "gates": gates,
             **trace,
         }
 
+    # 3) HARD GATE — never publish without autorizar_publicacion=true (and, when
+    #    coming from Notion, aprobado_contenido=true). No network on failure.
+    #
+    #    Evaluated BEFORE _normalize_payload on purpose (B1 Telegram bridge): an
+    #    "ok publica <publication_id>" for a row that is merely un-gated — a
+    #    Borrador with autorizar_publicacion=false and an empty Slug — must come
+    #    back as a structured refusal, not as a ValueError over the missing slug.
+    #    The raise would mark the worker task failed and drop a "Tarea fallida"
+    #    comment in Control Room for a perfectly normal "not authorized yet".
+    #    Content validation therefore waits until every gate has opened (step 4).
+    if not authorized or not content_approved:
+        logger.info(
+            "Editorial publish blocked by gate ref=%s authorized=%s approved=%s",
+            row_ref, authorized, content_approved,
+        )
+        return _blocked("publication_not_authorized")
+
     if visual_gate is not None and not visual_gate["ready"]:
         logger.info(
-            "Editorial publish blocked by visual gate slug=%s reason=%s",
-            post["slug"],
+            "Editorial publish blocked by visual gate ref=%s reason=%s",
+            row_ref,
             visual_gate["reason"],
         )
-        return {
-            "ok": False,
-            "error": "visual_asset_not_ready",
-            "would_publish": False,
-            "source": source,
-            "slug": post["slug"],
-            "gates": gates,
-            **trace,
-        }
+        return _blocked("visual_asset_not_ready")
 
     # 3.5) HITL-2 / D3 (locked, docs/ops/editorial-norte-hitl-contract-2026-07-22.md
     #    §5.H): the publish trigger requires THREE conditions, none optional —
@@ -972,18 +1034,30 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
     #    (n8n workflow, operator) has verified the Telegram reply. Fail-closed
     #    by default: omitting it blocks publish exactly like the other two.
     if not telegram_confirmed:
-        logger.info("Editorial publish blocked by Telegram confirmation gate slug=%s", post["slug"])
-        return {
-            "ok": False,
-            "error": "telegram_confirmation_missing",
-            "would_publish": False,
-            "source": source,
-            "slug": post["slug"],
-            "gates": gates,
-            **trace,
-        }
+        logger.info("Editorial publish blocked by Telegram confirmation gate ref=%s", row_ref)
+        return _blocked("telegram_confirmation_missing")
 
-    # 4) Build the function payload (drop worker-side gate fields).
+    # 4) Every gate opened — only now validate the post content. Missing
+    #    slug/title/body/notion_page_id is a not-ready row, not a task failure:
+    #    return it structured (ok=False, would_publish=False) so the bridge can
+    #    tell David what's missing without the exception notifier firing.
+    #    Malformed-but-present input (bad slug shape, tags not a list) still
+    #    raises from _normalize_payload — that is a caller bug, not a gate state.
+    missing_fields = _missing_required_fields(raw)
+    if missing_fields:
+        logger.info(
+            "Editorial publish blocked by missing fields ref=%s missing=%s",
+            row_ref, ",".join(missing_fields),
+        )
+        blocked = _blocked("missing_required_fields")
+        blocked["missing_fields"] = missing_fields
+        return blocked
+
+    post = _normalize_payload(raw)
+    if not post.get("canonical_url"):
+        post["canonical_url"] = _canonical_url(post["slug"])
+
+    # 5) Build the function payload (drop worker-side gate fields).
     function_payload = {k: v for k, v in post.items() if k not in _GATE_FIELDS}
 
     if dry_run:
@@ -1003,7 +1077,7 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
             **trace,
         }
 
-    # 5) Call the Azure Function.
+    # 6) Call the Azure Function.
     url = _function_url()
     if not url:
         return {
@@ -1042,7 +1116,7 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
             response["detail"] = result["error_body"][:500]
         return response
 
-    # 6) Optional best-effort write-back of published_url to Notion.
+    # 7) Optional best-effort write-back of published_url to Notion.
     if input_data.get("write_back_to_notion") and source == "notion":
         response["notion_write_back"] = _maybe_write_back(
             post["notion_page_id"],
@@ -1050,7 +1124,7 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
             prop_map.get("canonical_url", "published_url"),
         )
 
-    # 7) Task B — post-publish RAG indexing (best-effort; never fails the publish).
+    # 8) Task B — post-publish RAG indexing (best-effort; never fails the publish).
     response.update(
         _maybe_index_rag(
             post,
@@ -1059,7 +1133,7 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
         )
     )
 
-    # 8) Fila I = B (P2.7): inject published_url into RRSS copies + mark
+    # 9) Fila I = B (P2.7): inject published_url into RRSS copies + mark
     #    listo_rrss=true (best-effort; never fails the publish, and never
     #    calls any LinkedIn/X API — see inject_rrss_copies_and_mark_ready).
     if input_data.get("inject_rrss_after_publish"):

@@ -28,6 +28,7 @@ import pytest
 
 from worker.tasks.editorial_publish import (
     _content_hash,
+    _missing_required_fields,
     _resolve_publication_id_to_page_id,
     handle_web_publish_editorial_post,
     resolve_visual_asset_urls,
@@ -151,14 +152,31 @@ class TestInputValidation:
         with pytest.raises(ValueError, match="payload.*or.*notion_page_id"):
             handle_web_publish_editorial_post({})
 
-    def test_missing_required_fields(self):
-        with pytest.raises(ValueError, match="missing required field"):
-            handle_web_publish_editorial_post({"payload": {"autorizar_publicacion": True}})
+    def test_no_source_message_mentions_publication_id(self):
+        # The B1 bridge may send publication_id instead of notion_page_id, so
+        # the "no source" message has to name it too.
+        with pytest.raises(ValueError, match="publication_id"):
+            handle_web_publish_editorial_post({})
+
+    def test_missing_required_fields_is_structured_not_a_raise(self):
+        # Gates open, content still empty -> structured refusal, no ValueError
+        # (a raise would mark the task failed). Full coverage in
+        # TestGatesBeforeNormalize.
+        result = handle_web_publish_editorial_post(
+            {"payload": {"autorizar_publicacion": True}, "telegram_confirmed": True}
+        )
+        assert result["ok"] is False
+        assert result["error"] == "missing_required_fields"
 
     def test_bad_slug(self):
+        # A present-but-malformed slug is a caller bug, not a gate state: it
+        # still raises (all three gates open here so normalization is reached).
         with pytest.raises(ValueError, match="slug.*kebab-case"):
             handle_web_publish_editorial_post(
-                {"payload": _authorized_payload(slug="Not A Slug")}
+                {
+                    "payload": _authorized_payload(slug="Not A Slug"),
+                    "telegram_confirmed": True,
+                }
             )
 
     def test_bad_timeout(self):
@@ -1330,3 +1348,318 @@ class TestPublicationIdResolution:
                 "rich_text": {"equals": "shortlist-abc"},
             },
         )
+
+
+# ======================================================================
+# D3 gates BEFORE _normalize_payload
+#
+# Smoke B1 / CAND-001 replay: "ok publica <publication_id>" resolved fine, but
+# the row was a Borrador (autorizar_publicacion=false, Slug empty) and the
+# handler raised ValueError over the missing slug *before* reading the gates —
+# so the worker marked the task failed and the exception notifier dropped a
+# "Tarea fallida" comment in Control Room for an ordinary not-authorized state.
+#
+# Contract now: gates first, structured refusals, no raise on any gate state or
+# unfinished row. Malformed-but-present input still raises (see test_bad_slug).
+# ======================================================================
+
+
+def _borrador_page(
+    *,
+    authorized: bool = False,
+    approved: bool = False,
+    slug: str = "",
+    title: str = "Candidato sin publicar",
+    body: str = "",
+) -> Dict[str, Any]:
+    """A Publicaciones row that is NOT publish-ready: empty Slug/Copy Blog."""
+    def _rt(value: str) -> Dict[str, Any]:
+        return {"type": "rich_text", "rich_text": [{"plain_text": value}] if value else []}
+
+    return {
+        "id": "33333333-3333-3333-3333-333333333333",
+        "properties": {
+            "Title": {"type": "title", "title": [{"plain_text": title}]},
+            "Slug": _rt(slug),
+            "Copy Blog": _rt(body),
+            "autorizar_publicacion": {"type": "checkbox", "checkbox": authorized},
+            "aprobado_contenido": {"type": "checkbox", "checkbox": approved},
+        },
+    }
+
+
+class TestGatesBeforeNormalize:
+    # --- gates block first, even with nothing to normalize -----------------
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    @patch("worker.notion_client.get_page")
+    @patch("worker.notion_client.read_database")
+    def test_cand001_publication_id_borrador_blocks_without_raising(
+        self, mock_read_db, mock_get_page, mock_urlopen, monkeypatch
+    ):
+        # The exact smoke failure: resolver OK -> page_id, gates false, no slug.
+        monkeypatch.setattr("worker.config.NOTION_PUBLICACIONES_DB_ID", "db-pubs-1")
+        mock_read_db.return_value = _pub_lookup("shortlist-cand-001")
+        mock_get_page.return_value = _borrador_page()
+
+        result = handle_web_publish_editorial_post(
+            {"publication_id": "shortlist-cand-001", "telegram_confirmed": True}
+        )
+
+        assert result["ok"] is False
+        assert result["error"] == "publication_not_authorized"
+        assert result["would_publish"] is False
+        assert result["source"] == "notion"
+        assert result["slug"] is None  # slug is optional on the gate path
+        assert result["notion_page_id"] == "33333333-3333-3333-3333-333333333333"
+        assert result["publication_id"] == "shortlist-cand-001"
+        assert result["gates"]["autorizar_publicacion"] is False
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    @patch("worker.notion_client.get_page")
+    def test_notion_source_borrador_blocks_without_raising(
+        self, mock_get_page, mock_urlopen
+    ):
+        mock_get_page.return_value = _borrador_page()
+
+        result = handle_web_publish_editorial_post(
+            {
+                "notion_page_id": "33333333-3333-3333-3333-333333333333",
+                "telegram_confirmed": True,
+            }
+        )
+
+        assert result["ok"] is False
+        assert result["error"] == "publication_not_authorized"
+        assert result["slug"] is None
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_payload_source_unauthorized_without_slug_blocks(self, mock_urlopen):
+        result = handle_web_publish_editorial_post(
+            {
+                "payload": {"autorizar_publicacion": False, "title": "Borrador"},
+                "telegram_confirmed": True,
+            }
+        )
+
+        assert result["ok"] is False
+        assert result["error"] == "publication_not_authorized"
+        assert result["source"] == "payload"
+        assert result["slug"] is None
+        assert result["notion_page_id"] is None
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    @patch("worker.notion_client.get_page")
+    def test_visual_gate_blocks_before_normalize_with_empty_slug(
+        self, mock_get_page, mock_urlopen
+    ):
+        page = _borrador_page(authorized=True, approved=True)
+        page["properties"]["Selección imagen"] = {
+            "type": "select",
+            "select": {"name": "Pendiente"},
+        }
+        mock_get_page.return_value = page
+
+        result = handle_web_publish_editorial_post(
+            {
+                "notion_page_id": "33333333-3333-3333-3333-333333333333",
+                "telegram_confirmed": True,
+            }
+        )
+
+        assert result["ok"] is False
+        assert result["error"] == "visual_asset_not_ready"
+        assert result["gates"]["visual_asset"]["reason"] == "selection_pending"
+        assert result["slug"] is None
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    @patch("worker.notion_client.get_page")
+    def test_telegram_gate_blocks_before_normalize_with_empty_slug(
+        self, mock_get_page, mock_urlopen
+    ):
+        mock_get_page.return_value = _borrador_page(authorized=True, approved=True)
+
+        result = handle_web_publish_editorial_post(
+            {"notion_page_id": "33333333-3333-3333-3333-333333333333"}
+        )
+
+        assert result["ok"] is False
+        assert result["error"] == "telegram_confirmation_missing"
+        assert result["gates"]["telegram_confirmed"] is False
+        assert result["slug"] is None
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    @patch("worker.notion_client.get_page")
+    def test_authorization_is_reported_before_missing_fields(
+        self, mock_get_page, mock_urlopen
+    ):
+        # Both are wrong (no authorization AND no content). The gate answer is
+        # the actionable one for David, so it must win.
+        mock_get_page.return_value = _borrador_page()
+
+        result = handle_web_publish_editorial_post(
+            {
+                "notion_page_id": "33333333-3333-3333-3333-333333333333",
+                "telegram_confirmed": True,
+            }
+        )
+
+        assert result["error"] == "publication_not_authorized"
+        assert "missing_fields" not in result
+        mock_urlopen.assert_not_called()
+
+    # --- gates open, content still missing -> structured, not a raise ------
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    @patch("worker.notion_client.get_page")
+    def test_gates_true_empty_slug_returns_missing_required_fields(
+        self, mock_get_page, mock_urlopen
+    ):
+        mock_get_page.return_value = _borrador_page(
+            authorized=True, approved=True, body="## Cuerpo\n\nContenido."
+        )
+
+        result = handle_web_publish_editorial_post(
+            {
+                "notion_page_id": "33333333-3333-3333-3333-333333333333",
+                "telegram_confirmed": True,
+            }
+        )
+
+        assert result["ok"] is False
+        assert result["error"] == "missing_required_fields"
+        assert result["missing_fields"] == ["slug"]
+        assert result["would_publish"] is False
+        assert result["source"] == "notion"
+        assert result["slug"] is None
+        assert result["notion_page_id"] == "33333333-3333-3333-3333-333333333333"
+        assert result["gates"]["autorizar_publicacion"] is True
+        assert result["gates"]["telegram_confirmed"] is True
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_missing_fields_lists_every_empty_field(self, mock_urlopen):
+        result = handle_web_publish_editorial_post(
+            {
+                "payload": {"autorizar_publicacion": True, "aprobado_contenido": True},
+                "telegram_confirmed": True,
+            }
+        )
+
+        assert result["error"] == "missing_required_fields"
+        assert result["missing_fields"] == [
+            "slug",
+            "title",
+            "body_markdown",
+            "notion_page_id",
+        ]
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_missing_fields_blocks_dry_run_too(self, mock_urlopen):
+        result = handle_web_publish_editorial_post(
+            {
+                "payload": _authorized_payload(slug=""),
+                "telegram_confirmed": True,
+                "dry_run": True,
+            }
+        )
+
+        assert result["ok"] is False
+        assert result["error"] == "missing_required_fields"
+        assert result["missing_fields"] == ["slug"]
+        assert "payload" not in result  # nothing was built for the function
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.notion_client.update_page_properties")
+    @patch("worker.tasks.rag.handle_rag_index")
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_missing_fields_never_triggers_a_side_effect(
+        self, mock_urlopen, mock_rag, mock_update
+    ):
+        result = handle_web_publish_editorial_post(
+            {
+                "payload": _authorized_payload(slug=""),
+                "telegram_confirmed": True,
+                "write_back_to_notion": True,
+                "inject_rrss_after_publish": True,
+            }
+        )
+
+        assert result["error"] == "missing_required_fields"
+        mock_urlopen.assert_not_called()
+        mock_rag.assert_not_called()
+        mock_update.assert_not_called()
+
+    # --- gates open + complete row -> the normal path is untouched ---------
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    @patch("worker.notion_client.get_page")
+    def test_gates_true_valid_slug_dry_run_succeeds(self, mock_get_page, mock_urlopen):
+        mock_get_page.return_value = _notion_page()
+
+        result = handle_web_publish_editorial_post(
+            {
+                "notion_page_id": "22222222-2222-2222-2222-222222222222",
+                "telegram_confirmed": True,
+                "dry_run": True,
+            }
+        )
+
+        assert result["ok"] is True
+        assert result["would_publish"] is True
+        assert result["slug"] == "post-desde-notion"
+        assert "missing_fields" not in result
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    @patch("worker.notion_client.get_page")
+    @patch("worker.notion_client.read_database")
+    def test_publication_id_gates_true_valid_slug_publishes(
+        self, mock_read_db, mock_get_page, mock_urlopen, monkeypatch
+    ):
+        # The happy B1 leg: same entry point as CAND-001, but a ready row.
+        monkeypatch.setattr("worker.config.NOTION_PUBLICACIONES_DB_ID", "db-pubs-1")
+        mock_read_db.return_value = _pub_lookup("shortlist-ready")
+        mock_get_page.return_value = _notion_page()
+        mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
+
+        result = handle_web_publish_editorial_post(
+            {"publication_id": "shortlist-ready", "telegram_confirmed": True}
+        )
+
+        assert result["ok"] is True
+        assert result["published"] is True
+        assert result["publication_id"] == "shortlist-ready"
+        mock_urlopen.assert_called_once()
+
+
+class TestMissingRequiredFieldsHelper:
+    def test_complete_payload_reports_nothing(self):
+        assert _missing_required_fields(_authorized_payload()) == []
+
+    def test_reports_in_declared_field_order(self):
+        assert _missing_required_fields({}) == [
+            "slug",
+            "title",
+            "body_markdown",
+            "notion_page_id",
+        ]
+
+    def test_whitespace_only_body_counts_as_missing(self):
+        assert _missing_required_fields(_authorized_payload(body_markdown="   \n")) == [
+            "body_markdown"
+        ]
+
+    def test_non_dict_reports_everything(self):
+        assert _missing_required_fields(None) == [
+            "slug",
+            "title",
+            "body_markdown",
+            "notion_page_id",
+        ]

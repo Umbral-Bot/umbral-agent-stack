@@ -887,11 +887,14 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
         missing_required_fields     — gates opened but slug/title/body/
                                       notion_page_id are still empty; the list
                                       is in ``missing_fields``
-        publication_id_*            — the B1 resolver failed closed
+    The four above are the post-source decline codes; each carries ``slug``
+    (``None`` when the row has none yet) and ``notion_page_id``, so a caller can
+    identify the row without a slug. The B1 resolver declines earlier and with
+    its own shape — ``publication_id_empty`` / ``_not_found`` / ``_ambiguous`` /
+    ``_lookup_error`` / ``_no_page_id`` plus ``publicaciones_db_not_configured``,
+    carrying ``publication_id`` instead (no row is known yet to name).
 
-    Every one of those carries ``slug`` (``None`` when the row has none yet) and
-    ``notion_page_id``, so a caller can identify the row without a slug. A
-    ``ValueError`` is reserved for genuinely malformed input (no source, bad
+    A ``ValueError`` is reserved for genuinely malformed input (no source, bad
     timeout, non-kebab slug, ``tags`` not a list) — never for a gate state or an
     unfinished row, which would surface to David as a failed task.
     """
@@ -985,7 +988,7 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
         gates["visual_asset"] = visual_gate
 
     def _blocked(error: str) -> Dict[str, Any]:
-        """Structured, non-raising block — the only way this handler declines."""
+        """Structured, non-raising decline for every gate/content check below."""
         return {
             "ok": False,
             "error": error,

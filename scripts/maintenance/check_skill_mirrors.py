@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check that user-level canonical skills match their repo mirrors.
+"""Check registry-owned skills against their repo-level mirrors.
 
 Usage:
     python scripts/maintenance/check_skill_mirrors.py [--fix]
@@ -7,15 +7,15 @@ Usage:
 Without --fix: report drift and exit non-zero on mismatch.
 With --fix:    overwrite each drifted mirror from its canonical source.
 
-Origin: O7c (2026-05-08). After F-INC-001 + O7c we discovered repo mirrors of
-secret-output-guard had silently drifted from the canonical user-level copy
-(notion-governance was 1943B vs canonical 5650B; umbral-agent-stack was
-3350B). This script prevents recurrence.
+Origin: O7c (2026-05-08). ADR 10 / E1 (2026-07-27) reactivated
+umbral-skills-registry as the source of truth and removed every user-level
+destination from this checker. User-level releases belong exclusively to the
+registry's tools/ship_skill.py gate.
 
-Add a new entry to MIRRORED_SKILLS when a skill is required to stay in sync
-across repo mirrors. Stub-pointer mirrors (files that intentionally only
-reference the canonical, like notion-governance/skills/secret-output-guard/
-SKILL.md) must NOT be listed here.
+This script intentionally maintains only repo mirrors of secret-output-guard.
+Content hashes normalize line endings so CRLF/LF checkout policy does not create
+false semantic drift. ``--fix`` remains explicit and can never write under a
+user home directory.
 """
 from __future__ import annotations
 
@@ -26,11 +26,11 @@ import shutil
 import sys
 from pathlib import Path
 
-HOME = Path.home()
 SCRIPT_PATH = Path(__file__).resolve()
 DEFAULT_UMBRAL_AGENT_STACK_REPO = SCRIPT_PATH.parents[2]
 UMBRAL_AGENT_STACK_ENV = "UMBRAL_AGENT_STACK_REPO"
 NOTION_GOVERNANCE_ENV = "NOTION_GOVERNANCE_REPO"
+UMBRAL_SKILLS_REGISTRY_ENV = "UMBRAL_SKILLS_REGISTRY_REPO"
 
 
 def _resolved_path(path_text: str) -> Path:
@@ -97,71 +97,73 @@ def resolve_notion_governance_repo(umbral_agent_stack_repo: Path) -> Path:
         f"{NOTION_GOVERNANCE_ENV}=<repo-root>. Checked: {checked_text}"
     )
 
-_NOTION_GOV_MIRRORED = [
-    "agents-canonical-registry",
-    "notion-context-routing",
-    "notion-contextual-email-draft",
-    "notion-duplicate-consolidation",
-    "notion-normalize-page",
-    "notion-page-audit",
-    "notion-session-capitalization",
-    "notion-system-card",
-]
+
+def resolve_umbral_skills_registry_repo(umbral_agent_stack_repo: Path) -> Path:
+    override = os.environ.get(UMBRAL_SKILLS_REGISTRY_ENV)
+    if override:
+        candidates = [_resolved_path(override)]
+    else:
+        candidates = [
+            umbral_agent_stack_repo.parent / "umbral-skills-registry",
+            Path.home() / "umbral-skills-registry",
+        ]
+        windows_repo = _windows_github_repo("umbral-skills-registry")
+        if windows_repo is not None:
+            candidates.append(windows_repo)
+
+    checked = _unique_paths([path.resolve() for path in candidates])
+    for repo in checked:
+        canonical = (
+            repo
+            / "notion-governance-skills"
+            / "secret-output-guard"
+            / "SKILL.md"
+        )
+        if canonical.is_file() and (repo / "tools" / "ship_skill.py").is_file():
+            return repo
+
+    checked_text = "; ".join(str(path) for path in checked)
+    if override:
+        raise RuntimeError(
+            f"{UMBRAL_SKILLS_REGISTRY_ENV} was set but does not contain the "
+            f"secret-output-guard canonical and tools/ship_skill.py: {checked_text}"
+        )
+    raise RuntimeError(
+        "Could not locate umbral-skills-registry. Set "
+        f"{UMBRAL_SKILLS_REGISTRY_ENV}=<repo-root>. Checked: {checked_text}"
+    )
 
 
 def build_mirrored_skills() -> dict[Path, list[Path]]:
     umbral_agent_stack_repo = resolve_umbral_agent_stack_repo()
     notion_governance_repo = resolve_notion_governance_repo(umbral_agent_stack_repo)
-    notion_gov_skills = notion_governance_repo / ".agents" / "skills"
-
-    # Canonical repo paths resolve differently on Windows and the VPS; the
-    # mirror contract stays byte-for-byte identical. --fix remains explicit.
-    mirrored_skills: dict[Path, list[Path]] = {
-        notion_gov_skills / "secret-output-guard" / "SKILL.md": [
-            HOME / ".copilot" / "skills" / "secret-output-guard" / "SKILL.md",
-            HOME / ".codex" / "skills" / "secret-output-guard" / "SKILL.md",
+    registry_repo = resolve_umbral_skills_registry_repo(umbral_agent_stack_repo)
+    canonical = (
+        registry_repo
+        / "notion-governance-skills"
+        / "secret-output-guard"
+        / "SKILL.md"
+    )
+    return {
+        canonical: [
+            notion_governance_repo
+            / ".agents"
+            / "skills"
+            / "secret-output-guard"
+            / "SKILL.md",
             umbral_agent_stack_repo
             / ".agents"
             / "skills"
             / "secret-output-guard"
             / "SKILL.md",
-        ],
-    }
-
-    # Skills owned by notion-governance that are mirrored to ~/.codex (and
-    # sometimes ~/.copilot). Auto-built below to keep the entry list compact.
-    for name in _NOTION_GOV_MIRRORED:
-        mirrored_skills[notion_gov_skills / name / "SKILL.md"] = [
-            HOME / ".codex" / "skills" / name / "SKILL.md",
         ]
-
-    # notion-governance-expert: 3-way (also lives in ~/.copilot)
-    mirrored_skills[
-        notion_gov_skills / "notion-governance-expert" / "SKILL.md"
-    ] = [
-        HOME / ".codex" / "skills" / "notion-governance-expert" / "SKILL.md",
-        HOME / ".copilot" / "skills" / "notion-governance-expert" / "SKILL.md",
-    ]
-
-    # C8-C1d-b (2026-05-27): cursor-hooks-sync and q-friday-retro are mirrored
-    # only into ~/.codex. ~/.copilot is intentionally out of scope for these two
-    # because they are not confirmed cross-cutting skills (secret-output-guard
-    # remains the separate cross-cutting case handled above). The canonical
-    # source for both lives in notion-governance. q-friday-retro is the canonical
-    # name; any legacy q2-friday-retro mirror is corrected by --fix from the
-    # canonical.
-    mirrored_skills[notion_gov_skills / "cursor-hooks-sync" / "SKILL.md"] = [
-        HOME / ".codex" / "skills" / "cursor-hooks-sync" / "SKILL.md",
-    ]
-    mirrored_skills[notion_gov_skills / "q-friday-retro" / "SKILL.md"] = [
-        HOME / ".codex" / "skills" / "q-friday-retro" / "SKILL.md",
-    ]
-
-    return mirrored_skills
+    }
 
 
 def sha256_prefix(path: Path) -> str:
-    h = hashlib.sha256(path.read_bytes()).hexdigest()
+    text = path.read_bytes().decode("utf-8")
+    normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+    h = hashlib.sha256(normalized.encode("utf-8")).hexdigest()
     return h[:12].upper()
 
 

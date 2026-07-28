@@ -126,25 +126,29 @@ Documentar explícitamente (no silenciar sin justificación):
 
 Cuando el repo tenga >50 commits con outputs estructurados, evaluar instalar `gitleaks` como pre-commit hook (`policies/05` §"Live agent contract changes" implica formalizar esto en `pre-commit-config.yaml`).
 
-## Cómo verificar que las copias mirror están en sync
+## Topología canónica y transición E1
 
-Esta skill vive en 4 ubicaciones que deben coincidir byte-a-byte:
+Desde 2026-07-27, la fuente canónica de esta skill es
+`umbral-skills-registry/notion-governance-skills/secret-output-guard/`. GitHub
+`origin/main` se actualiza antes que cualquier superficie y los deploys user-level se
+escriben exclusivamente mediante el gate `tools/ship_skill.py` del registry.
 
-1. `<notion-governance>/.agents/skills/secret-output-guard/SKILL.md` — **canonical** (SoT del script `check_skill_mirrors.py`)
-2. `~/.copilot/skills/secret-output-guard/SKILL.md`
-3. `~/.codex/skills/secret-output-guard/SKILL.md`
-4. `<umbral-agent-stack>/.agents/skills/secret-output-guard/SKILL.md`
+Existe temporalmente un writer legacy en
+`umbral-agent-stack/scripts/maintenance/check_skill_mirrors.py`: todavía toma
+`notion-governance/.agents/skills/secret-output-guard/SKILL.md` como fuente y puede
+copiarla hacia `~/.copilot`, `~/.codex` y el mirror repo-level de
+`umbral-agent-stack`. En el momento de la decisión H1b, las cuatro copias completas
+tenían el mismo contenido normalizado (`a5085d…f459`); la única diferencia observada
+era LF frente a CRLF.
 
-(`<notion-governance>/skills/secret-output-guard/SKILL.md` y `notion-governance-skills/secret-output-guard/SKILL.md` en umbral-skills-registry son **stub-pointer**, NO copias mirror — no editar.)
+El seguimiento **E1** debe reapuntar ese checker al registry y retirarle los destinos
+user-level, conservándolo solo para los mirrors repo-level que todavía lo necesiten.
+Hasta cerrar E1, no usar `--fix` como mecanismo de despliegue. David aceptó que E1 no
+es una urgencia operativa inmediata, pero debe cerrarse antes del próximo cambio de
+contenido de esta skill. Un `--fix` previo a E1 podría revertir esta declaración de
+topología aunque el cuerpo operativo del guardrail siga siendo equivalente.
 
-Para detectar drift:
-```powershell
-python C:\GitHub\umbral-agent-stack\scripts\maintenance\check_skill_mirrors.py
-```
+## Cross-references
 
-Para sincronizar mirrors drifteadas desde la canonical:
-```powershell
-python C:\GitHub\umbral-agent-stack\scripts\maintenance\check_skill_mirrors.py --fix
-```
-
-**Origen:** O7c (2026-05-08). Después de F-INC-001 + O7c se descubrió que las copias en los repos habían drifteado silenciosamente. El script `check_skill_mirrors.py` previene recurrencia.
+- Friday retro: [`q-friday-retro`](../q-friday-retro/SKILL.md) aplica este guardrail
+  antes de commitear la retro.

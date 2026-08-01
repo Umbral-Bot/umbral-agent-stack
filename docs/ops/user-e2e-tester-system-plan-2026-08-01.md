@@ -38,7 +38,7 @@ PLAN = "map existing E2E assets to reuse"). Este doc es exactamente ese prompt P
 | 11 | Matriz de brecha | `docs/ops/editorial-gap-matrix-norte-2026-07-22.md` | 0 OK / 10 PARCIAL / 1 ajustada — qué está cableado de verdad |
 | 12 | Smoke E2E P3 | `docs/ops/editorial-smoke-e2e-p3-2026-07-23.md` | 8 tramos dry-run con mocks, 128 tests; **cero red real**; matriz de disposición §I |
 | 13 | Runbook n8n N0 | `docs/ops/n8n-n0-foundations-runbook-2026-07-24.md` | B1/B3 TEST, allowlist, acceso UI solo por túnel SSH, anti-forja de webhooks |
-| 13b | Estado n8n + exports | `infra/n8n/README.md`, `infra/n8n/workflows/telegram-ok-publica-b1.json` | Estado vigente: **B1/B3 ACTIVOS con bot TEST desde 2026-07-25 (smoke PASS)**; el sufijo "(INACTIVE)" en nombres quedó obsoleto; el export versionado es fuente de verdad e incluye los 3 replies de B1 |
+| 13b | Estado n8n + exports | `infra/n8n/README.md`, `infra/n8n/workflows/telegram-ok-publica-b1.json` | Estado vigente: **B1 ACTIVO con bot TEST desde 2026-07-25 (smoke PASS); B3 ACTIVO con bot TEST (smoke PASS previo, sin fecha pinneada)**; el sufijo "(INACTIVE)" en nombres quedó obsoleto; el export versionado es fuente de verdad e incluye los 3 replies de B1 |
 | 14 | Flujo editorial canónico | `docs/ops/editorial-agent-flow.md` | Pasos 1-10 y responsabilidades por agente (curación → QA → gates humanos) |
 | 15 | SOUL de Rick | `openclaw/workspace-templates/SOUL.md` | Reglas base (Personalidad + comunicación, sin numerar) + Reglas 4-21 (18 numeradas; R1-R3 no existen) — oráculos conversacionales observables |
 | 16 | Deuda frescura / auth | `docs/35-google-calendar-token-setup.md`, `docs/ops/gd52-reoauth-runbook.md`, `docs/ops/auth-lifecycle-tracking.md`, `docs/ops/notion-poll-comments-sev1-triage-2026-05-05.md` | Ventanas de caducidad, SEV-1 de silencio, cadencias del runtime |
@@ -62,7 +62,7 @@ Cuando ese informe aterrice, los packs F3 lo consumen como entrada de triage —
 | openclaw-vps-operator + /vps + /e2e | Catálogo de causas raíz para triage; SLAs implícitos; plantilla de cierre (estado real, drift, credencial vs bug) | Toda superficie es SSH/admin — nada de esto es rol usuario; /e2e es pytest, no experiencia |
 | notion-governance-runtime | Checklist de lectura: qué debe ver David (sin trace_id, sin acuses vacíos, español natural) → oráculos de UX verificables leyendo | No define rol lector formal (token/alcance de un tester de solo-lectura) |
 | Contrato norte + gap matrix + smoke P3 | Happy path A-I completo; nombres exactos de campos (`Resultado revisión`, gates, `Estado imagen`); qué es exclusivo de David; qué ya se probó dry-run (no re-probar lógica interna) | Todo fue mocks: nadie recorrió el sistema vivo como usuario; gate visual D3 sin ejercitar; Shortlist DB puede no existir aún; SLAs de espera sin definir |
-| Runbook n8n N0 + `infra/n8n/README.md` | Contrato B1 exacto: `ok publica <publication_id>` desde chat allowlisted; los 3 replies documentados en el export JSON ("✅ Encolado publish. task_id: …", fallo de `/enqueue`, "formato no reconocido"); B3 = alerta única; estado vigente B1/B3 ACTIVO con bot TEST (2026-07-25, smoke PASS) | Handle del bot TEST no documentado (la credencial se nombra, el @handle no); el happy path no es ejercitable por el tester (la frase es el gate de David, §2.2/§3.1); verificación "se encoló" es admin (Executions) |
+| Runbook n8n N0 + `infra/n8n/README.md` | Contrato B1 exacto: `ok publica <publication_id>` desde chat allowlisted; los 3 replies documentados en el export JSON — texto real enviado al usuario: "✅ Encolado publish. task_id: …", fallo de `/enqueue`, y para no-match **"No entendí. Formato exacto: ok publica <publication_id>"** (el string "formato no reconocido" es solo el *nombre del nodo*, no el reply); B3 = alerta única; estado vigente B1 ACTIVO con bot TEST desde 2026-07-25 (smoke PASS), B3 ACTIVO (smoke PASS previo) | Handle del bot TEST no documentado (la credencial se nombra, el @handle no); el happy path no es ejercitable por el tester (la frase es el gate de David, §2.2/§3.1); verificación "se encoló" es admin (Executions) |
 | SOUL.md (reglas base + R4-R21) | Oráculos conversacionales observables: ejecuta antes de excusarse (reglas base), honestidad ante errores de tools (R9), benchmark = artefacto persistido (R13), "verificado" solo con evidencia (R18), voz (R21) | Es contrato del lado Rick; no define qué pregunta el usuario para gatillar cada regla — la suite de sondas hay que diseñarla (F2) |
 | Docs frescura/auth | Ventanas de caducidad (access ~1h; refresh app Testing ~7d); calendar único válido = primary de David; precedente de fallo silencioso (SEV-1 2026-05-05: silencio prolongado sin alarma); cadencias (poller Notion 60s, supervisor 5min, health 30min) | Síntoma lado-usuario de auth rota **indocumentado** (¿error, silencio o dato stale?); "memoria stale" conversacional sin baseline; sin alerta proactiva de expiry |
 | Precedente browser | Playwright typed validado sobre web moderna real (2026-03-10); persistent context para sesiones; política CAPTCHA → pausa + David | Cero precedente de web.telegram.org / QR / 2FA; la infra validada es el plano de ejecución de Rick (usarla = bypass); tooling del tester local sin decidir |
@@ -128,7 +128,7 @@ fuentes citadas por Rick y los perfiles públicos LinkedIn/X de Umbral (solo par
 que NO hubo autopublish).
 
 **Puede**: enviar mensajes a Rick como David (sondas conversacionales); leer Notion (MCP lectura
-o browser); leer calendar UI; comparar y cronometrar (SLAs §2.4); capturar evidencia; declarar
+o browser); leer calendar UI; comparar y cronometrar (ventanas de espera §2.4); capturar evidencia; declarar
 PASS/PARTIAL/FAIL/BLOCKED **por caso** con `[E]`.
 
 **NUNCA** (además de §1.3): no es admin del Worker ni orquestador ni Rick; no abre gates; no
@@ -143,7 +143,7 @@ frase-gate, la envía **David en persona** con un candidato desechable designado
 | Superficie | Rol usuario (tester) | Rol admin (fuera del tester) |
 |------------|----------------------|------------------------------|
 | Telegram — bot de Rick (OpenClaw, polling) | ✅ conversar como David (web.telegram.org / Desktop con la sesión de David) | config `dm_policy`, journalctl, reinicios |
-| Telegram — bot B1/B3 TEST (webhook n8n) | ✅ solo sondas *negativas* sintácticas (ver §3.1 fail-closed y §4 P1b, requiere GO): texto no-matching → esperar "formato no reconocido". El happy path "ok publica <id>" **queda fuera por defecto** — es la frase-gate de David (anti-patrón 4) | importar/activar workflows, ver Executions, credenciales de bots |
+| Telegram — bot B1/B3 TEST (webhook n8n) | ✅ solo sondas *negativas* sintácticas (ver §3.1 fail-closed y §4 P1b, requiere GO): texto no-matching → esperar el reply literal "No entendí. Formato exacto: ok publica <publication_id>". El happy path "ok publica <id>" **queda fuera por defecto** — es la frase-gate de David (anti-patrón 4) | importar/activar workflows, ver Executions, credenciales de bots |
 | Notion | ✅ lectura (MCP read o browser): estados, gates en false, campos del contrato, comentarios; ✅ cronometrar apariciones | cualquier write (Worker); cambios de schema (solo David) |
 | Linear | ✅ lectura como David: contraste de sondas R4/R13 (¿existe el proyecto/issue que Rick cita?) | crear/editar issues, updates, estados |
 | RRSS públicas (LinkedIn/X de Umbral) | ✅ lectura pública, solo para verificar **no-autopublish** (Fila I=B) | nada — no existe superficie admin legítima aquí (el post RRSS es manual de David) |
@@ -218,8 +218,9 @@ Hereda el contrato de cursor-orchestrator y lo especializa:
 **Fail-closed (el sistema debe negarse; el tester verifica la negativa):**
 
 - Pedirle a Rick contenido publicado sin gates → esperar negativa/estado Borrador, gates false.
-- (P1b, con GO) texto no-matching al bot B1 TEST → "formato no reconocido", y en Notion **nada
-  cambió**.
+- (P1b, con GO) texto no-matching al bot B1 TEST → reply literal "No entendí. Formato exacto:
+  ok publica <publication_id>" (texto del nodo en el export versionado; "formato no
+  reconocido" es solo el nombre interno del nodo), y en Notion **nada cambió**.
 - Verificar Fila I=B: tras un publish real (si alguna vez ocurre en ventana de observación),
   `listo_rrss=true` + `published_url` inyectado y **cero** post automático en LinkedIn/X.
 - El caso límite "ok publica" real queda **excluido**: es la frase-gate de David. Si un pack
@@ -232,7 +233,7 @@ Diseño de familia de sondas (se ejecutan en P3, no ahora):
 
 | Sonda | Pregunta a Rick | Fuente de contraste | Señal |
 |-------|-----------------|---------------------|-------|
-| Agenda hoy/semana | "¿qué tengo agendado hoy/esta semana?" | calendar UI del primary de David | eventos faltantes/sobrantes/desfasados; **eventos que David no tiene = bug de identidad** (`primary` de Rick, docs/35 L94-95) |
+| Agenda hoy/semana | "¿qué tengo agendado hoy/esta semana?" | calendar UI del primary de David | eventos faltantes/sobrantes/desfasados; **eventos que David no tiene = bug de identidad** (`primary` de Rick, docs/35 §4 "Calendario compartido permitido") |
 | Evento fresco | David crea un evento trivial en calendar UI (acción de usuario real, suya) → minutos después el tester pregunta | calendar UI | mide frescura + auth viva; si auth caducó: documentar por fin el síntoma lado-usuario (error explícito vs silencio vs dato stale — hoy indocumentado) |
 | Estado editorial | "¿cómo va el pipeline editorial / qué candidatas hay?" | Notion Publicaciones/Shortlist por lectura | drift entre lo narrado y las filas/estados reales |
 | Proyecto activo | "¿en qué quedó <proyecto>?" | Notion proyecto + Linear (lectura) | R4/R13/R14 SOUL: trazabilidad real vs relato |
@@ -262,7 +263,7 @@ Criterios de GO para capitalizar en skill (todos, no alguno):
    menos un PASS legítimo — una suite que todo lo aprueba o todo lo reprueba no se capitaliza.
 3. Fronteras del rol estables tras la experiencia (ninguna violación de §1.3 ni ampliación
    improvisada de superficies durante las corridas).
-4. Decisión crear-vs-actualizar tomada con la tabla de §5.
+4. Decisión crear-vs-actualizar tomada con los criterios de §5.
 5. GO explícito de David (la capitalización pasa por `skills-capitalize`, que ya exige leer el
    canónico y clasificar solape antes de escribir).
 
@@ -280,9 +281,9 @@ Ningún pack se emite sin GO de David sobre este plan.
 
 | Pack | Contenido | Ejecuta | David hace | Gate único |
 |------|-----------|---------|------------|------------|
-| **P0 — Smoke de lectura y precondiciones** | Confirmar estado real hoy: leer Publicaciones/Shortlist (¿existe la DB?), leer Control Room, verificar que el contrato de campos coincide con lo vivo; registrar en el playbook el estado B1/B3 documentado (**ACTIVO con bot TEST desde 2026-07-25**, `infra/n8n/README.md` — solo David confirma si el estado vivo cambió desde entonces); decidir herramienta de browser del tester (§6, pregunta 5); escribir el playbook v0 con casos+oráculos+ventanas | Claude local (MCP Notion lectura) | Confirmar handle del bot B1 TEST (el de Rick ya está documentado: `@Rick_lot_bot`) y que B1/B3 siguen como documenta el repo | `USER_E2E_P0_READ_PASS` |
+| **P0 — Smoke de lectura y precondiciones** | Confirmar estado real hoy: leer Publicaciones/Shortlist (¿existe la DB?), leer Control Room, verificar que el contrato de campos coincide con lo vivo; registrar en el playbook el estado B1/B3 documentado (B1 **ACTIVO con bot TEST desde 2026-07-25**, B3 ACTIVO con smoke PASS previo sin fecha, `infra/n8n/README.md` — solo David confirma si el estado vivo cambió desde entonces); decidir herramienta de browser del tester (§6, pregunta 5); escribir el playbook v0 con casos+oráculos+ventanas | Claude local (MCP Notion lectura) | Confirmar handle del bot B1 TEST (el de Rick ya está documentado: `@Rick_lot_bot`) y que B1/B3 siguen como documenta el repo | `USER_E2E_P0_READ_PASS` |
 | **P1 — Sondas Telegram a Rick** | Suite congelada de sondas conversacionales (SOUL R9/R13/R14/R18/R21, silencio, honestidad ante tool errors); transcripts verbatim; ventanas 60s×2 | Claude local con browser sobre web.telegram.org (sesión de David) | Login QR una vez; decidir política de datos de prueba | `USER_E2E_P1_TELEGRAM_PASS` |
-| **P1b (opcional, GO aparte) — Sonda negativa B1 TEST** | Solo caso negativo sintáctico ("formato no reconocido"); verificación de no-efecto por lectura Notion | ídem P1 | GO explícito (toca un borde n8n activo); confirmar bot TEST | `USER_E2E_P1B_B1_NEG_PASS` |
+| **P1b (opcional, GO aparte) — Sonda negativa B1 TEST** | Solo caso negativo sintáctico: oráculo = reply literal "No entendí. Formato exacto: ok publica <publication_id>"; verificación de no-efecto por lectura Notion | ídem P1 | GO explícito (toca un borde n8n activo); confirmar bot TEST | `USER_E2E_P1B_B1_NEG_PASS` |
 | **P2 — Verificación Notion** | Contrastar cada afirmación de Rick de P1 contra filas/estados/gates reales; checklist del contrato norte §5/§6 por lectura; UX governance (sin trace_id, sin acuses vacíos) | Claude local (MCP lectura) | — | `USER_E2E_P2_NOTION_VERIFY_PASS` |
 | **P3 — Contraste de fuentes** | Sondas de frescura §3.2 (calendar UI, piezas fuente); documentar el síntoma lado-usuario de auth rota si aparece | Claude local browser; evento fresco lo crea David | Crear 1 evento trivial; sesión Google ya logueada | `USER_E2E_P3_FRESHNESS_PASS` |
 | **P4 — Retro + decisión skill** | Consolidar REPORTs, evaluar criterios §3.4, proponer crear-vs-actualizar (§5); si GO → `skills-capitalize` | Claude local | Decisión binaria crear/actualizar | `USER_E2E_P4_DECISION_PASS` (gate de decisión: su `[E]` son los REPORTs consolidados) |
@@ -333,10 +334,11 @@ que nunca corrió.
 1. Handle del bot B1 TEST — no documentado en el repo (la credencial se nombra
    "Telegram Bot — Umbral Editorial (TEST)" pero no su @handle; el de Rick sí está
    documentado: `@Rick_lot_bot`, docs/ops/rick-voice-telegram-mvp-runbook.md).
-2. Confirmar que B1/B3 siguen como documenta el repo (ACTIVOS con bot TEST desde 2026-07-25,
-   `infra/n8n/README.md`) — confirmación de estado vivo, no conflicto documental.
+2. Confirmar que B1/B3 siguen como documenta el repo (B1 ACTIVO con bot TEST desde 2026-07-25
+   con smoke PASS; B3 ACTIVO con smoke PASS previo, `infra/n8n/README.md`) — confirmación de
+   estado vivo, no conflicto documental.
 3. Política de datos de prueba (§3.4) — única decisión de fondo.
 4. ¿P1b (sonda negativa B1) entra en el primer ciclo o se difiere hasta migrar B1 a bot PROD?
 5. Herramienta de browser del tester local (Claude in Chrome / Playwright local / otra) —
    se decide en P0, antes de P1; restricciones ya fijadas: sesión persistente tipo
-   storageState, runner secuencial, logins solo humanos (§2.3).
+   storageState y logins solo humanos (§2.3), runner secuencial (§1.3 anti-patrón 12).

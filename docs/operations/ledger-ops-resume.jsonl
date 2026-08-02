@@ -1,0 +1,11 @@
+{"ts":"2026-08-01T12:40","pkg":"PKG-OPS-RESUME","frente":"ops-resume","dest":"notion-ai","evento":"EMITIDO","ev":"","nota":"PARALELO pack-ops-resume discovery home+Notion"}
+{"ts":"2026-08-01T12:40","pkg":"PKG-OPS-RESUME","frente":"ops-resume","dest":"claude","evento":"EMITIDO","ev":"","nota":"PARALELO pack-ops-resume discovery clones+hilos"}
+{"ts":"2026-08-01T12:40","pkg":"PKG-OPS-RESUME","frente":"ops-resume","dest":"codex","evento":"EMITIDO","ev":"","nota":"PARALELO pack-ops-resume discovery clones+hilos"}
+{"ts":"2026-08-01T19:14","pkg":"PKG-OPS-RESUME","frente":"ops-resume","dest":"codex","evento":"REPORTADO","ev":"47ffcae1","nota":"HOME=SPLIT; MC link secondary; PAUSED/RESUMED"}
+{"ts":"2026-08-01T19:14","pkg":"PKG-OPS-RESUME","frente":"ops-resume","dest":"codex","evento":"PASS","ev":"OPS_RESUME_CODEX_DISCOVERY_PASS","nota":"discovery read-only NO_PUSH"}
+{"ts":"2026-08-01T19:14","pkg":"PKG-OPS-RESUME","frente":"ops-resume","dest":"notion-ai","evento":"REPORTADO","ev":"","nota":"CREATE DB bajo Sistemas; ADAPT Dashboard Operativo"}
+{"ts":"2026-08-01T19:14","pkg":"PKG-OPS-RESUME","frente":"ops-resume","dest":"notion-ai","evento":"PASS","ev":"OPS_RESUME_NOTION_DISCOVERY_PASS","nota":"REUSE=NO ADAPT=parcial CREATE=SI"}
+{"ts":"2026-08-01T19:14","pkg":"PKG-OPS-RESUME","frente":"ops-resume","dest":"claude","evento":"REPORTADO","ev":"47ffcae1","nota":"HOME=UAS first; Notion defer; ledgers untracked gap"}
+{"ts":"2026-08-01T19:14","pkg":"PKG-OPS-RESUME","frente":"ops-resume","dest":"claude","evento":"PASS","ev":"OPS_RESUME_CLAUDE_DISCOVERY_PASS","nota":"wf_519726f3; NO_PUSH"}
+{"ts":"2026-08-02T00:41","pkg":"PKG-OPS-RESUME","frente":"ops-resume","dest":"cursor","evento":"PASS","ev":"GO_SPLIT_FASEADO","nota":"David SI; Fase A maquina UAS; Notion B diferida"}
+{"ts":"2026-08-02T00:41","pkg":"PKG-OPS-RESUME-A1","frente":"ops-resume","dest":"claude","evento":"EMITIDO","ev":"","nota":"generador reingreso + ledger tracked + runbook"}

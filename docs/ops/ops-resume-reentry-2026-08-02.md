@@ -67,7 +67,11 @@ carpeta se ignoran sin error.
 - Cada bloque `=== frente ===` agrupa por `pkg`, y cada fila es la
   **última línea del ledger** para ese `(frente, pkg, dest)` — el estado
   vigente, no el historial completo.
-- `[CERRADO]` = evento terminal (`PASS|FAIL|BLOCKED|NO_ACK|CERRADO`).
+- `[CERRADO]` = evento terminal (`PASS|FAIL|CERRADO`). `BLOCKED`/`NO_ACK` se
+  muestran como **abiertos** a propósito — ver
+  "Clasificación terminal/abierto" en `docs/operations/README.md` para la
+  razón (desviación deliberada del enum literal de la misión original, para
+  no esconder paquetes bloqueados).
 - `[STALE>Nh]` = quedó en `EMITIDO`/`ACK` sin evento posterior por más de N
   horas — señal de "pelota perdida", no un hecho verificado (ver
   limitaciones abajo).

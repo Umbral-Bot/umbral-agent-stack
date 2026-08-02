@@ -40,6 +40,26 @@ Ciclo de vida del **paquete** (no son eventos, son estados narrados en la spec):
 `PENDING → EMITIDO → ACK → EN-CURSO → REPORTADO → CERRADO`, con `SIN_ACK`/`BLOCKED`
 como estados marcados explícitamente.
 
+### Clasificación terminal/abierto en el generador (desviación deliberada del enum literal)
+
+`scripts/ops_resume_board.py` trata `evento` así:
+
+- **Terminal** (`[CERRADO]`, no cuenta como "abierta"): `PASS | FAIL | CERRADO`.
+- **Abierto** (cuenta como pelota pendiente): `EMITIDO | ACK | REPORTADO | REEMISION | PENDING | DEPLOYED | BLOCKED | NO_ACK` (+ `PAUSED|RESUMED` propuestos).
+
+Esto **no** coincide con una lectura literal del enum que trae la misión
+PKG-OPS-RESUME-A1 (`terminal = PASS|FAIL|BLOCKED|NO_ACK`). Se corrigió a propósito
+tras un `/code-review` sobre el propio PR: `reference-bitacora.md`
+(`umbral-skills-registry/skills/cursor-orchestrator`) es explícito en que
+`SIN_ACK`/`BLOCKED` son "estados marcados, **no como silencio**" — la intención
+de la spec es que un paquete bloqueado siga visible como algo que necesita
+decisión, no que desaparezca del conteo de abiertas ni se pinte como cerrado.
+Tratarlos como terminales volvía invisible exactamente el caso de uso que este
+generador existe para resolver ("pelota de David"). Si Cursor/David prefieren
+la lectura literal del enum original, es un cambio de una línea en
+`TERMINAL_EVENTS`/`OPEN_EVENTS` — señalarlo explícitamente en vez de reabrir
+el paquete.
+
 ## Drift real observado (por qué el generador es tolerante)
 
 Los ledgers reales de otros programas (`umbral-bot-cursor`, `visor-ifc`, `PruebaBack`)

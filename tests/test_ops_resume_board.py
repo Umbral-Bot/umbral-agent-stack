@@ -187,6 +187,22 @@ def test_build_board_marks_terminal_events(tmp_path):
     assert balls[0].stale is False  # PASS no dispara staleness aunque sea viejo
 
 
+def test_build_board_treats_blocked_as_open_not_terminal(tmp_path):
+    # BLOCKED/NO_ACK son "estados marcados, no silencio" (reference-bitacora.md):
+    # deben seguir contando como abiertos, no desaparecer bajo [CERRADO].
+    write_ledger(tmp_path, "repo-a", "ledger-alpha.jsonl", [event(evento="BLOCKED")])
+    balls, _ = board.build_board(tmp_path, stale_hours=24, now=datetime(2026, 8, 1, 12, 0, 0))
+    assert balls[0].is_terminal is False
+    assert balls[0].is_known_event is True
+
+
+def test_build_board_treats_no_ack_as_open_not_terminal(tmp_path):
+    write_ledger(tmp_path, "repo-a", "ledger-alpha.jsonl", [event(evento="NO_ACK")])
+    balls, _ = board.build_board(tmp_path, stale_hours=24, now=datetime(2026, 8, 1, 12, 0, 0))
+    assert balls[0].is_terminal is False
+    assert balls[0].is_known_event is True
+
+
 def test_build_board_marks_unknown_event_as_drift(tmp_path):
     write_ledger(tmp_path, "repo-a", "ledger-alpha.jsonl", [event(evento="DEPLOY_STARTED")])
     balls, _ = board.build_board(tmp_path, stale_hours=24, now=datetime(2026, 8, 1, 12, 0, 0))
@@ -259,6 +275,14 @@ def test_infer_next_falls_back_to_heuristic_when_no_nota():
 def test_infer_next_unknown_event_says_drift():
     result = board.infer_next("MERGED_DEPLOYED", "codex", "")
     assert "drift" in result.lower()
+
+
+@pytest.mark.parametrize("evento", ["PASS", "FAIL", "BLOCKED", "NO_ACK", "CERRADO"])
+def test_infer_next_terminal_and_open_marked_events_never_say_drift(evento):
+    # Todo evento reconocido por el schema (terminal o abierto) debe tener su
+    # propia heuristica; solo eventos fuera del enum caen en "posible drift".
+    result = board.infer_next(evento, "codex", "")
+    assert "drift" not in result.lower()
 
 
 # ---------------------------------------------------------------------------

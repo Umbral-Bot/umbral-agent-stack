@@ -30,7 +30,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-TERMINAL_EVENTS = {"PASS", "FAIL", "BLOCKED", "NO_ACK", "CERRADO"}
+# BLOCKED/NO_ACK se tratan como ABIERTOS, no terminales. reference-bitacora.md
+# (umbral-skills-registry/skills/cursor-orchestrator) es explicito: "SIN_ACK y
+# BLOCKED como estados marcados, no como silencio" — el objetivo es que sigan
+# visibles como pelota pendiente de decision, no que desaparezcan del conteo
+# de abiertas ni se muestren con el flag [CERRADO]. Codificarlos como
+# terminales (lectura literal del enum PKG-OPS-RESUME-A1) los haria invisibles
+# en el exacto tablero pensado para surfacear "pelotas de David" — documentado
+# como desviacion deliberada en docs/ops/ops-resume-reentry-2026-08-02.md.
+TERMINAL_EVENTS = {"PASS", "FAIL", "CERRADO"}
 OPEN_EVENTS = {
     "EMITIDO",
     "ACK",
@@ -38,6 +46,8 @@ OPEN_EVENTS = {
     "REEMISION",
     "PENDING",
     "DEPLOYED",
+    "BLOCKED",
+    "NO_ACK",
     "PAUSED",  # propuesta, ver docs/operations/README.md
     "RESUMED",  # propuesta, ver docs/operations/README.md
 }
@@ -159,8 +169,13 @@ def infer_next(evento: str, dest: str, nota: str) -> str:
         "REEMISION": "reemitido, esperando ACK",
         "PENDING": "pendiente de iniciar",
         "DEPLOYED": "desplegado, esperando verificación",
+        "BLOCKED": "bloqueado, requiere decisión explícita",
+        "NO_ACK": "sin ACK, requiere reemisión o cierre",
         "PAUSED": "pausado, esperando RESUMED",
         "RESUMED": "retomado",
+        "PASS": "cerrado en verde",
+        "FAIL": "cerrado en rojo",
+        "CERRADO": "cerrado",
     }
     return heuristics.get(evento, "evento no reconocido por el schema (posible drift)")
 

@@ -73,9 +73,11 @@ la lista real es:
 | **2026-05-08** | **Desarrollar plan Iniciativa 1 — Observatorio BIM en Mercado Público** | **Alta** ← 2ª de Rick |
 | **2026-05-27** | **Preparar contenido de las 2 sesiones iniciales Copilot 365 — WSP España** | Media ← 3ª de Rick |
 
-La respuesta de Rick saltó tres tareas más antiguas y abiertas — una de ellas incluso
-de prioridad **Alta** (la propuesta económica Konstruedu, 16-abr) — sin mencionarlas ni
-declarar el criterio de exclusión.
+La respuesta de Rick saltó **5 tareas más antiguas y abiertas** que quedan intercaladas
+entre sus 3 picks (3 antes de la primera, 2 entre la primera y la segunda) — **3 de esas
+5 son prioridad Alta**, no una sola: la propuesta económica Konstruedu (16-abr), la
+propuesta de Formación Copilot 365 WSP (30-abr) y la Masterclass Konstruedu (7-may) —
+sin mencionarlas ni declarar el criterio de exclusión.
 
 **Quién "miente"**: nadie inventa datos (SOUL R9/R18 se cumplen — todo lo dicho es
 verificable), pero el marco "3 más urgentes" es engañoso si el criterio real no es
@@ -85,9 +87,13 @@ deberían estar `Hecha` pero nadie actualizó Notion — en ese caso el dato est
 no la respuesta de Rick; (b) el filtro real que usa el skill de tareas de Rick pondera
 `Dominio`/`Origen` o hace deduplicación no documentada; (c) la selección final la hace
 un paso de LLM sobre un conjunto más amplio de filas, no un `ORDER BY` estricto, lo que
-explicaría por qué la lista cambió de una corrida a otra (el diag 2026-08-01 reportó un
-tercer ítem distinto, la Konstruedu de 16-abr, en vez de la Copilot WSP de 27-may que
-apareció en esta corrida — mismo patrón: 2 de 3 coinciden, 1 varía).
+explicaría por qué la lista cambió de una corrida a otra: el diag 2026-08-01 reportó
+Konstruedu (16-abr), Comgrap (20-abr) y "WSP" (30-abr, la tarea "Enviar propuesta —
+Formación… Copilot 365"); esta corrida reportó Comgrap (20-abr), Observatorio BIM
+(8-may) y otro "WSP" distinto (27-may, la tarea "Preparar contenido de las 2 sesiones
+iniciales"). **Solo 1 de los 3 ítems coincide entre ambas corridas** (Comgrap): el "WSP"
+de cada una nombra una tarea real pero *diferente* pese a compartir cliente — no es
+la misma fila repetida.
 
 No corresponde al tester resolver cuál hipótesis es cierta — exige inspeccionar el
 código/prompt del skill de tareas (lane operador) o preguntarle a David si esas 3

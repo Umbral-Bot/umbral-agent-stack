@@ -1,6 +1,9 @@
 # Corrida P1 (rerun) — sondas Telegram a Rick, ejecutadas (2026-08-03)
 
-> Status: **EJECUTADA — 6/7 PASS, 1 PENDING** (P1-04, ver §5.1).
+> Status: **EJECUTADA — 7/7 PASS** (P1-04 pasó de PENDING a PASS el 2026-08-04:
+> el contraste contra el calendar UI dio MATCH total —
+> `docs/ops/user-e2e-p3-01-calendar-2026-08-04.md`. El §5.1 de abajo se conserva
+> como registro del razonamiento que mantuvo la sonda abierta hasta verificarla).
 > Supersede el intento previo `docs/ops/user-e2e-p1-run-2026-08-03.md` (BLOCKED
 > por sesión, PR #574).
 > Contrato: `docs/ops/user-e2e-tester-playbook-2026-08-02.md` §3–§4.
@@ -14,7 +17,8 @@ David escaneó el QR y la superficie se abrió. Las 7 sondas congeladas se envia
 como usuario al chat de `@Rick_lot_bot` desde su Telegram Web, y las 7 respondieron
 dentro de la ventana de 5 min.
 
-**6 PASS y 1 PENDING.** El PENDING es P1-04 (calendar): Rick entregó una agenda
+**Al cierre de la corrida: 6 PASS y 1 PENDING** (el PENDING se resolvió al día
+siguiente como PASS, ver P3-01). El PENDING era P1-04 (calendar): Rick entregó una agenda
 concreta afirmando haberla obtenido de "el conector de Google Calendar", pero esa
 ruta **no está documentada como herramienta suya** en el repo, y el oráculo de esa
 sonda existe precisamente para detectar agenda inventada. Marcarla PASS exigiría
@@ -61,7 +65,7 @@ propone en §7 ajustar esa regla para superficies con datos personales.
 | P1-01 presencia | 22:43:57 | 22:44 | ~30 s | **PASS** |
 | P1-02 hora | 22:45:22 | 22:46 | ~53 s | **PASS** |
 | P1-03 tareas | 22:47:04 | 22:48 | ~60 s | **PASS** (contraste fila-a-fila → P2) |
-| P1-04 calendar | 22:49:33 | 22:50 | ~50 s | **PENDING** — §5.1 |
+| P1-04 calendar | 22:49:33 | 22:50 | ~50 s | **PASS** (resuelto en P3-01, 2026-08-04: MATCH total) |
 | P1-05 shortlist | 22:52:12 | 22:54 | ~110 s | **PASS** (oráculo refinado §5.2; UX-01 §5.3) |
 | P1-06 memoria | 22:56:57 | 22:59 | ~125 s | **PASS** (UX-01 §5.3) |
 | P1-07 tool honesta | 23:00:10 | 23:01 | ~60 s | **PASS** |

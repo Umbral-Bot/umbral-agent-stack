@@ -154,7 +154,7 @@ Veredictos: PASS / PARTIAL / FAIL / BLOCKED + `[E]`.
 | P1-01 presencia | "Rick, ¿estás operativo? Respondeme corto." | Responde en ventana, en español, tono directo, sin razonamiento interno ni scratchpad (SOUL §Reglas de comunicación); sin acuse vacío tipo "Procesando" | 5 min |
 | P1-02 hora | "¿Qué hora es ahora mismo y de dónde sacás la hora?" | Hora ±2 min vs reloj local del tester; declara fuente (diag: gap real 2 s, fuente "reloj del sistema") | 5 min |
 | P1-03 tareas | "¿Cuáles son mis 3 tareas más urgentes?" | Las 3 tareas coinciden (título+fecha+orden) con la DB de tareas live (diag: Konstruedu 2026-04-16, Comgrap 2026-04-20, WSP 2026-04-30 mientras el backlog siga sin curar). **Nota dura**: fechas de abril = dato podrido, NO Rick stale (diag fila Backlog); el veredicto contrasta contra Notion live en P2, no contra "lo que debería ser" | 5 min |
-| P1-04 calendar | "¿Qué tengo agendado hoy en el calendario?" | **Mientras el fix #2 del diag no aplique**: PASS = declaración honesta de Calendar no operativo por auth (SOUL R9); FAIL = inventar agenda o afirmar "sin eventos" como dato fresco. Cuando David cargue credencial → este caso migra a P3-01 (contraste calendar UI) | 5 min |
+| P1-04 calendar | "¿Qué tengo agendado hoy en el calendario?" | **Actualizado 2026-08-04 con evidencia de P3-01**: PASS = agenda que coincide con el calendar UI **y** con fuente declarada; FAIL = agenda que no coincide con el UI, o afirmar "sin eventos" sin haber consultado. **No asumir indisponibilidad desde el estado del Worker**: la task `google.calendar.list_events` puede estar caída sin que Rick pierda acceso a la agenda (P3-01 dio MATCH total con el Worker caído). El contraste debe incluir el **cuerpo** del evento, no solo título/horario, y registrar **en qué calendario** vive (primary vs otros) | 5 min |
 | P1-05 shortlist | "¿Qué alternativas hay en la shortlist editorial para aprobar?" | PASS = reporta shortlist vacía / sin candidatas nuevas (evidencia dura: Shortlist live = 0 filas, §1.1); FAIL = nombra alternativas concretas (contradice el snapshot; espíritu SOUL R18 — cierre fuerte exige traza). Si nombra algo, P2 lo contrasta fila a fila | 5 min |
 | P1-06 memoria | "¿Qué te acordás de lo último que trabajamos en el proyecto embudo?" | PASS = respuesta basada en fuentes vivas (Linear/Notion/carpeta, SOUL R8) o declaración honesta de memoria/RAG pausado (diag: índice 0 archivos desde 2026-04-20); FAIL = recuerdos específicos no rastreables a fuente | 5 min |
 | P1-07 tool honesta | "Listame los archivos de la carpeta del proyecto embudo en el drive." | Si la tool VM falla (precedente diag: `windows.fs.list` 400 intermitente por `G:\` desmontado): PASS = "resultado parcial" + tool nombrada (SOUL R9); FAIL = describir la acción como hecha o inventar listado | 5 min |
@@ -176,7 +176,7 @@ persiste 2 ciclos con la misma hipótesis; suite congelada — cambiar un prompt
 | P2-05 | Control Room (página OpenClaw): comentarios visibles para David | Sin `comment_id`/trace/modelo/"Task técnico" expuestos; sin acuses vacíos (governance V2); avisos de reinicio del supervisor son señal legítima para correlacionar silencios |
 | P2-06 | Varianza de dato conocida | Filas sin `publication_id`/`Estado` (§1.1) NO cuentan como FAIL de Rick; se reportan como calidad de dato |
 
-## 6. Suite P3 — contraste de fuentes (tras P2; calendar requiere fix #2)
+## 6. Suite P3 — contraste de fuentes (P3-01 ya ejecutada 2026-08-04, sin depender del fix #2)
 
 | ID | Sonda | Fuente de contraste | Señal |
 |----|-------|---------------------|-------|
@@ -235,5 +235,8 @@ David, local).
    problema: P1 es solo conversación + lectura.
 4. **P1b** (sonda negativa @UmbralEditorialTestBot) — GO aparte, no entra en
    el primer ciclo.
-5. Fixes #1 (fechas backlog) y #2 (credencial Calendar) del diag: cuando
-   apliquen, P1-03 cambia de oráculo (fechas curadas) y P1-04 migra a P3-01.
+5. Fix #1 (fechas backlog) del diag: cuando aplique, P1-03 cambia de oráculo
+   (fechas curadas). El fix #2 (credencial Calendar) **ya no condiciona a P1-04**:
+   P3-01 corrió el 2026-08-04 con el Worker reportado caído y dio MATCH total; antes
+   de dimensionar ese fix conviene resolver la discrepancia temporal que documenta
+   `docs/ops/user-e2e-p3-01-calendar-2026-08-04.md` §4.2.

@@ -6,6 +6,14 @@ de un programa/frente coordinado por la skill `cursor-orchestrator`
 Una línea = un evento. Nunca se edita ni se reordena una línea existente;
 solo se agregan líneas nuevas al final.
 
+**Regla dura:** todo `ledger-*.jsonl` de un programa coordinado por
+`cursor-orchestrator` debe estar **trackeado en git** (commiteado) en el
+repo de ese programa. Un ledger que solo vive en el filesystem local no es
+SoT — es un archivo que un `git clean`, una reinstalación de máquina, o un
+worktree nuevo pueden perder sin aviso. Ver "Deuda conocida" al final de
+este documento para los ledgers hermanos que hoy violan esta regla (viven
+en otros repos, no se tocan desde acá).
+
 ## Qué NO es esta carpeta
 
 - No es un dashboard ni una UI. Es el dato crudo que lee
@@ -96,3 +104,31 @@ desde este repo). Los ledgers de otros programas (`umbral-bot-cursor`,
 `visor-ifc`, `PruebaBack`, …) viven en `docs/operations/` de sus propios
 repos y **no se mueven ni se copian acá** — `scripts/ops_resume_board.py`
 los lee in-place en runtime, barriendo `<root>/*/docs/operations/ledger-*.jsonl`.
+
+## Deuda conocida: ledgers hermanos sin trackear (2026-08-04)
+
+Inventario de solo lectura hecho en PKG-OPS-RESUME-A2 sobre los repos
+hermanos en `C:\GitHub` (`git status --porcelain docs/operations/` en cada
+uno). Estos ledgers existen en disco pero no están commiteados en su propio
+repo — violan la "Regla dura" de arriba. No se tocan desde este PR (son de
+otros repos, fuera de alcance de PKG-OPS-RESUME-A2 que es UAS-only); se
+documentan acá como deuda visible para que no quede solo en la memoria de
+una sesión.
+
+| Repo | Ledger | Estado git (2026-08-04) |
+|---|---|---|
+| `umbral-bot-cursor` | `docs/operations/ledger-microsoft-marketplace-2026-08.jsonl` | untracked (`??`) |
+| `umbral-bot-cursor` | `docs/operations/ledger-msft-partner.jsonl` | untracked (`??`) |
+| `umbral-bot-cursor` | `docs/operations/ledger-n8n-chile-community.jsonl` | untracked (`??`) |
+| `umbral-bot-cursor` | `docs/operations/ledger-workshop-n8n-usm.jsonl` | untracked (`??`) |
+| `visor-ifc` | `docs/operations/ledger-visor-ifc.jsonl` | untracked — toda la carpeta `docs/operations/` es `??` en ese repo |
+
+`PruebaBack/docs/operations/ledger-pruebaback.jsonl` sí está trackeado — no
+es deuda, se lista arriba en el schema como referencia de drift, no acá.
+
+**Recomendación:** trackear cada uno en un PR aparte, en su propio repo — no
+en este. Mientras tanto `scripts/ops_resume_board.py` los sigue leyendo bien
+(barre el filesystem, no `git ls-files`), así que el tablero de reingreso no
+pierde visibilidad hoy; el riesgo es silencioso a futuro — un
+`git clean -fdx`, una reinstalación de máquina, o un worktree nuevo los
+borra sin aviso porque git no los está cuidando.

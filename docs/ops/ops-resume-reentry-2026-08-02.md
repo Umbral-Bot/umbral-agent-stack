@@ -80,6 +80,31 @@ carpeta se ignoran sin error.
   `PENDING`, `DEPLOYED`, `DEPLOY_STARTED`, `MERGED`, `MERGED_DEPLOYED`). No
   se descarta la fila — se muestra igual, marcada.
 
+## Cadencia de escritura del ledger (PREP-A2, 2026-08-04)
+
+Este runbook lee `docs/operations/ledger-*.jsonl` para generar el tablero.
+El tablero solo sirve si el ledger se escribe **cuando el evento ocurre**,
+no reconstruido de memoria días después. Regla de cadencia:
+
+1. **Al EMITIR un paquete, integrar un reporte, o cerrar un gate** (`PASS`,
+   `FAIL`, `BLOCKED`, `NO_ACK`, `REEMISION`) — append 1 línea al ledger del
+   programa correspondiente en ese momento, no al final de la sesión ni en
+   una sesión posterior.
+2. **Commitear el ledger en el mismo PR/ciclo cuando sea posible.** Un
+   ledger editado solo en el filesystem local (sin commit) no es SoT — es el
+   mismo riesgo que dejar cambios solo en `git stash`: se pierde sin aviso
+   ante un `git clean`, una reinstalación de máquina, o un worktree nuevo.
+   Si el paquete todavía no cierra, commitear igual el evento
+   `EMITIDO`/`ACK`/`REPORTADO` apenas ocurre; el evento de cierre puede ir
+   en un commit posterior dentro del mismo PR.
+3. **Antes de retomar tras una pausa**, correr el generador (ver "Cómo
+   correr el script" arriba) — no confiar en memoria ni en
+   `.agents/board.md`.
+4. **Notion (Fase B) será espejo, no fuente.** Cuando Fase B active la
+   sincronización a Notion, ese dashboard **lee** de estos ledgers — nunca
+   al revés. Ante cualquier discrepancia entre Notion y un `ledger-*.jsonl`,
+   el ledger manda.
+
 ## Delimitación (qué NO es esto)
 
 | Superficie | Qué es | Por qué esto no la reemplaza |

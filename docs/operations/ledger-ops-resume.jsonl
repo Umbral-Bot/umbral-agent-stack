@@ -9,3 +9,8 @@
 {"ts":"2026-08-01T19:14","pkg":"PKG-OPS-RESUME","frente":"ops-resume","dest":"claude","evento":"PASS","ev":"OPS_RESUME_CLAUDE_DISCOVERY_PASS","nota":"wf_519726f3; NO_PUSH"}
 {"ts":"2026-08-02T00:41","pkg":"PKG-OPS-RESUME","frente":"ops-resume","dest":"cursor","evento":"PASS","ev":"GO_SPLIT_FASEADO","nota":"David SI; Fase A maquina UAS; Notion B diferida"}
 {"ts":"2026-08-02T00:41","pkg":"PKG-OPS-RESUME-A1","frente":"ops-resume","dest":"claude","evento":"EMITIDO","ev":"","nota":"generador reingreso + ledger tracked + runbook"}
+{"ts":"2026-08-02T05:11","pkg":"PKG-OPS-RESUME-A1","frente":"ops-resume","dest":"claude","evento":"REPORTADO","ev":"PR#572","nota":"retroactivo (backfill A2): ops_resume_board.py + ledger + runbook"}
+{"ts":"2026-08-02T05:12","pkg":"PKG-OPS-RESUME-A1","frente":"ops-resume","dest":"claude","evento":"PASS","ev":"28b4be9","nota":"retroactivo (backfill A2): PR#572 mergeado a main"}
+{"ts":"2026-08-04T02:36","pkg":"PKG-OPS-RESUME-A2","frente":"ops-resume","dest":"claude","evento":"EMITIDO","ev":"","nota":"PREP-A ledgers tracked + cadence runbook"}
+{"ts":"2026-08-04T06:48","pkg":"PKG-OPS-RESUME-A2","frente":"ops-resume","dest":"claude","evento":"ACK","ev":"claude/pkg-ops-resume-a2-20260804@d9fa5bb","nota":"cadencia runbook + README deuda ledgers hermanos + backfill A1"}
+{"ts":"2026-08-04T06:55","pkg":"PKG-OPS-RESUME-A2","frente":"ops-resume","dest":"claude","evento":"REPORTADO","ev":"PR#577","nota":"runbook cadencia + README regla dura/deuda + backfill A1; 37/37 tests verdes; CODE_PASS, pendiente merge David/Cursor"}

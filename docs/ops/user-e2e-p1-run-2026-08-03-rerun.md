@@ -277,10 +277,12 @@ Datos nuevos que P2 debe contrastar contra Notion/Linear live:
 
 ## 7. Pendientes
 
-1. **P3-01 (calendar UI) sube de prioridad**: resuelve el PENDING de P1-04 y decide si
-   hay una ruta de calendar no documentada o una fabricación de fuente.
+1. ~~P3-01 (calendar UI)~~ — **hecha el 2026-08-04**: MATCH total, P1-04 = PASS
+   (`docs/ops/user-e2e-p3-01-calendar-2026-08-04.md`). Descartada la fabricación de
+   fuente; queda abierta una discrepancia temporal para el lane operador (§4.2 de ese doc).
 2. P2 (verificación Notion) con la lista de §5.4 — ejecutable ya.
-3. Lane operador: UX-01 (configuración de streams del gateway), drift Linear.
+3. Lane operador: UX-01 (configuración de streams del gateway), drift Linear, y los
+   logs del turno 22:49 para cerrar §4.2 de P3-01.
 4. Playbook: refinar el oráculo P1-05 (§5.2); ajustar §8 para superficies con datos
    personales (transcript verbatim obligatorio; screenshot solo si puede recortarse
    sin exponer terceros, o se entrega fuera del repo).

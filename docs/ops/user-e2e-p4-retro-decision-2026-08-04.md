@@ -10,11 +10,13 @@
 
 Cinco packs de experiencia (P0, P1 —dos intentos—, P2, P3-01) corrieron, se
 documentaron y pasaron `/code-review` con hallazgos reales corregidos en cada uno.
-Los criterios de GO del plan §3.4 se evalúan con honestidad en §3: **4 de 5 se
-cumplen con holgura; el criterio 1 ("roadmap P0→P3 completo") es PARCIAL** — el gate
-único que el roadmap definió (`USER_E2E_P3_FRESHNESS_PASS`) está satisfecho, pero 3 de
-las 4 sub-sondas que el playbook desarrolló operacionalmente para esa suite (P3-02,
-P3-03, P3-04) no corrieron.
+Los criterios de GO del plan §3.4 se evalúan con honestidad en §3, criterio por
+criterio: **2 CUMPLIDOS (2 y 3), 1 PARCIAL (1), 1 condicionado a que el 1 se cierre
+(4), 1 explícitamente pendiente (5 — es la propia decisión que este pack le pide a
+David)**. El criterio 1 ("roadmap P0→P3 completo") es PARCIAL — el gate único que el
+roadmap definió (`USER_E2E_P3_FRESHNESS_PASS`) está satisfecho, pero 3 de las 4
+sub-sondas que el playbook desarrolló operacionalmente para esa suite (P3-02, P3-03,
+P3-04) no corrieron.
 
 El plan es explícito: los criterios de GO son "todos, no alguno" (§3.4). Por eso la
 recomendación de este doc es **diferir el GO de capitalización** hasta cerrar como
@@ -77,9 +79,12 @@ donde aplicó):
 1. **UX-01**: errores crudos de herramienta al canal de David (P1 rerun §5.3).
 2. **Selección de "urgencia" incompleta**: P1-03 nombra 3 tareas reales pero omite 5
    abiertas más antiguas, 3 de ellas Alta (P2 §4.1).
-3. **Anomalía CAND-001**: `Publicado` con `autorizar_publicacion=false`, y su Decision
-   Brief pedía explícitamente no marcar `aprobado_contenido` (que sí quedó en `true`)
-   (P0 §1.1; ampliada en P1 rerun §6).
+3. **Anomalía CAND-001**: `Publicado` con `autorizar_publicacion=false` (anotada ya en
+   P0 §1.1); ampliada en el intento 1 de P1 (`user-e2e-p1-run-2026-08-03.md` §6) al
+   abrir el Decision Brief de la fila: pide explícitamente no marcar
+   `aprobado_contenido` ni `autorizar_publicacion`, y el primero sí quedó en `true` —
+   solo ese gate contradice el brief; `autorizar_publicacion=false` en realidad lo
+   cumple.
 4. **Discrepancia temporal de calendar**: la misma task figura fallida y respondiendo
    el mismo día sin explicación verificada (P3-01 §4.2).
 5. **Drift Linear**: UMB-39 `In Progress` dentro de un proyecto en `Backlog` — real,
@@ -87,14 +92,17 @@ donde aplicó):
 
 PASS legítimos con evidencia dura:
 
-1. Rick honesto ante degradaciones (RAG caído, Drive desmontado) sin que se le
-   pregunte — declarado y no inventado (P1 rerun, 4 de 7 sondas).
+1. Rick honesto ante degradaciones (RAG/memoria caído, Drive desmontado) sin que se
+   le pregunte — declarado y no inventado (P1 rerun, 3 de 7 sondas: P1-03, P1-06,
+   P1-07; ver §5.4 de ese doc).
 2. Rick se niega a sustituir una fuente caída por una parecida (P1-07, "no voy a
    confundirte...").
 3. Calendar UI confirma un dato que solo vivía en el *cuerpo* del evento, no en el
    título — descarta fabricación de forma no trivial (P3-01 §3).
-4. Shortlist vacía confirmada por dos fuentes independientes (lo que Rick dijo + la
-   lectura directa por MCP) (P2 §4.2).
+4. Shortlist vacía confirmada por dos fuentes independientes: el snapshot P0 (MCP,
+   `COUNT(*)=0`) y la respuesta de Rick en P1-05, que además distinguió correctamente
+   que las candidatas que sí nombró viven en Publicaciones, no en Shortlist
+   (`user-e2e-p1-run-2026-08-03-rerun.md` §5.2; re-verificado en P2 §4.2 y P2-04).
 
 No es una suite que todo lo aprueba ni todo lo reprueba: hay PASS con reservas
 explícitas (P1-04 pasó de PENDING a PASS solo tras P3-01, no por default) y NOTE que
@@ -111,10 +119,13 @@ David), nunca ejecutó smokes admin.
 Dos notas operativas menores, **fuera del dominio protegido**, sin relación con la
 frontera usuario/admin que el plan cuida:
 
-- El MCP de Notion usado en P2 (`2978aa59…`) fue distinto del mencionado en P0 (el
-  original se desconectó entre sesiones); la *acción* siguió siendo lectura MCP, ya
-  autorizada por F1 §2.2 — no es una ampliación de superficie, es un cambio de
-  implementación del mismo acceso.
+- El MCP de Notion usado en P2 (`2978aa59…`) es distinto del mencionado en el plan/F1
+  §2.2 al autorizar la superficie ("MCP read o browser"); ningún doc de P0 fija un
+  connector ID específico, así que no hay una comparación documentada "antes/después"
+  que hacer — solo la constancia de que la sesión de P2 usó un conector MCP distinto
+  al que otras sesiones de este mismo programa mencionaron en su momento (contexto de
+  runtime, no registrado en ningún doc previo). La *acción* siguió siendo lectura MCP,
+  ya autorizada por F1 §2.2 — no es una ampliación de superficie.
 - Un sub-agente de `/code-review` en el pack P2 ejecutó `git checkout main` en el
   working tree al terminar su revisión; se detectó y se volvió a la rama del pack
   antes de tocar el archivo, sin pérdida de trabajo. Es un incidente de higiene git

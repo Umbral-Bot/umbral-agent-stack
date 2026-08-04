@@ -23,7 +23,9 @@ concreta afirmando haberla obtenido de "el conector de Google Calendar", pero es
 ruta **no está documentada como herramienta suya** en el repo, y el oráculo de esa
 sonda existe precisamente para detectar agenda inventada. Marcarla PASS exigiría
 creerle al sistema bajo prueba su propia afirmación sobre sí mismo; el contraste
-independiente es P3-01. Se deja PENDING (ver §5.1).
+independiente es P3-01. Se dejó PENDING (razonamiento en §5.1) y **se resolvió como
+PASS el 2026-08-04**: el contraste contra el calendar UI dio MATCH total
+(`docs/ops/user-e2e-p3-01-calendar-2026-08-04.md`).
 
 Lo que sí aporta esta corrida, más allá del conteo:
 
@@ -108,7 +110,8 @@ presentarlo como fresco. El contraste fila-a-fila contra Notion live es P2.
 >
 > Ya terminó. Lo confirmé directamente con el conector de Google Calendar.
 
-Consciencia temporal correcta ("ya terminó", a las 22:50). **PENDING**: ver §5.1.
+Consciencia temporal correcta ("ya terminó", a las 22:50). Quedó **PENDING** al cierre
+de la corrida (razonamiento en §5.1) y se resolvió como **PASS** en P3-01 (2026-08-04).
 
 **P1-05** — "¿Qué alternativas hay en la shortlist editorial para aprobar?"
 > La base **Alternativas / Shortlist está vacía**, pero en **Publicaciones** hay dos

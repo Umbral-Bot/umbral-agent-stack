@@ -1,6 +1,6 @@
 # P3-01 — contraste calendar UI vs claim de Rick (2026-08-04)
 
-> Status: **EJECUTADA — MATCH total. P1-04 = PASS retroactivo.**
+> Status: **EJECUTADA — MATCH total del contenido. P1-04 = PASS.**
 > Resuelve el PENDING abierto en `docs/ops/user-e2e-p1-run-2026-08-03-rerun.md` §5.1.
 > Contrato: `docs/ops/user-e2e-tester-playbook-2026-08-02.md` §6 P3-01.
 > Pack: PKG-USER-E2E-P3-01 · rama `claude/pkg-user-e2e-p3-01-20260804` · base `615d667f`.
@@ -10,17 +10,19 @@
 
 ## 1. Veredicto
 
-**P1-04 = PASS.** Rick no fabricó la agenda: cada elemento de su respuesta coincide
-con el evento real del calendar de David, incluido un dato que **solo está en el
-cuerpo del evento**, no en su título.
+**P1-04 = PASS.** Rick no fabricó la agenda: cada elemento verificable de su respuesta
+coincide con el evento real del calendar de David, incluido un dato que **solo está en
+el cuerpo del evento**, no en su título.
 
-Pero el PASS no cierra el asunto — lo reorienta. La afirmación de Rick ("lo confirmé
-con el conector de Google Calendar") sigue **sin respaldo documental en el repo**:
-ni `openclaw/workspace-templates/TOOLS.md`, ni la skill `google-calendar`, ni
-`docs/35-google-calendar-token-setup.md` describen una vía distinta de las Worker
-tasks `google.calendar.*`. El hallazgo real de P3-01 no es "Rick dijo la verdad",
-sino **drift de documentación**: hay una capacidad operativa viva que el repo no
-describe, y el diag 2026-08-01 la dio por caída porque midió la única vía documentada.
+Alcance exacto de lo que este contraste prueba y lo que no:
+
+- **Probado**: el contenido que Rick reportó es real y correcto (§3). Queda descartada
+  la hipótesis B (fabricación de agenda).
+- **No probado**: que Rick lo haya obtenido con una llamada en vivo durante ese turno.
+  "Lo confirmé directamente con el conector" es una afirmación sobre *método y momento*,
+  y contrastar contra el UI no la testea (§4.2).
+
+El oráculo de P1-04 preguntaba si Rick inventa agenda. No la inventó. PASS.
 
 ## 2. Evidencia `[E]`
 
@@ -71,46 +73,65 @@ Claim de Rick (2026-08-03 22:50 −04, transcript en el rerun §4):
 | "reunión con [contacto]" | contacto externo entre los invitados | ✅ |
 | "demo '[producto] · Early Access'" | `Event Name: <producto> - Early Access Demo`, **en el cuerpo** | ✅ |
 | "Ya terminó" (dicho 22:50) | evento terminó 12:30 | ✅ coherente |
-| "conector de Google Calendar" | — | ⚠️ no verificable desde el rol usuario (§4) |
+| "conector de Google Calendar" | — | ⚠️ ver §4 |
 
-**Detalle decisivo**: el "demo … Early Access" **no aparece en el título** del evento
+**Detalle relevante**: el "demo … Early Access" **no aparece en el título** del evento
 (que es el autogenerado por Calendly, del tipo "Fulano and Mengano"). Está en la
-descripción. Es decir, Rick no lo dedujo del título ni lo adornó: **leyó el cuerpo del
-evento**. Una fabricación plausible habría reproducido el título; reproducir un campo
-interno del cuerpo requiere acceso real.
+descripción. Es decir, el dato no salió de leer un título por encima: en algún momento
+alguien —Rick o el pipeline que alimenta sus briefings— leyó el cuerpo del evento.
 
-Veredicto: **MATCH total → P1-04 PASS retroactivo.** La hipótesis B (fabricación de
-fuente) queda descartada.
+## 4. La ruta: qué se aclaró y qué queda abierto
 
-## 4. La ruta sigue sin documentar (lo que P3-01 no puede cerrar)
+### 4.1 El "conector" sí está documentado (corrección de una versión previa de este doc)
 
-Búsqueda en el repo, en la rama `615d667f`:
+Una primera versión de este documento afirmaba que ninguna fuente del repo describía
+la ruta que Rick dijo usar, y concluía que había una "capacidad operativa no
+documentada". **Eso era incorrecto**, producto de una búsqueda incompleta: se revisaron
+`docs/`, `worker/` y `openclaw/workspace-templates/`, pero no
+`openclaw/extensions/`, que es justamente donde vive el conector.
 
-| Fuente | Qué dice sobre calendar | Menciona un "conector" alternativo |
-|---|---|---|
-| `openclaw/workspace-templates/TOOLS.md` (inyectado al prompt de Rick) | **0 entradas** de calendar (`grep -ci calendar` → 0) | No |
-| `openclaw/workspace-templates/skills/google-calendar/SKILL.md` | Rick opera calendar "a través de las **Worker tasks**": `google.calendar.create_event`, `google.calendar.list_events`; requiere `GOOGLE_CALENDAR_*` | No |
-| `openclaw/workspace-templates/skills/daily-briefing/SKILL.md` | El briefing obtiene eventos vía `google.calendar.list_events` | No |
-| `docs/35-google-calendar-token-setup.md` | Vía canónica: Worker + credenciales; ADR-16 permite un solo calendario (el primary de David) | No |
-| `docs/ops/diag-rick-frescura-2026-08-01.md` | Calendar "no operativo por autenticación no configurada" (midiendo la Worker task) | No |
+Lo que hay en el repo:
 
-Ninguna búsqueda del término ("conector de google", "calendar mcp", "calendar
-connector") devuelve nada anterior a estos documentos.
+| Fuente | Qué aporta |
+|---|---|
+| `openclaw/extensions/umbral-worker/skills/umbral-worker/SKILL.md:30` | declara la familia de tools tipadas **`umbral_google_calendar_*`** ("Use for Google Calendar … operations") |
+| `openclaw/extensions/umbral-worker/index.ts:1038-1052` | **`umbral_google_calendar_list_events`** → task `google.calendar.list_events`, con `calendar_id` **default primary** |
+| `openclaw/workspace-templates/skills/google-calendar/SKILL.md` | describe la operación de calendar "a través de las Worker tasks" |
+| `openclaw/workspace-templates/skills/daily-briefing/SKILL.md` | el briefing matutino obtiene eventos vía `google.calendar.list_events` |
+| `openclaw/workspace-templates/TOOLS.md` | 0 entradas de calendar (verificado) |
 
-Conclusión honesta: **el rol usuario puede probar que el dato es real, no de dónde
-salió.** Determinar la ruta exige leer la configuración viva del VPS
-(`~/.openclaw/openclaw.json`, `~/.config/openclaw/env`) — superficie admin, fuera del
-tester. Queda para el lane operador, con dos preguntas concretas:
+La lectura más simple y consistente: **"el conector de Google Calendar" es la
+extensión `umbral-worker` con su tool tipada `umbral_google_calendar_list_events`** —
+que en OpenClaw es literalmente un conector. No hay una segunda vía misteriosa.
 
-1. ¿Hay un MCP/connector de Google Calendar registrado en la config viva de OpenClaw
-   que no esté versionado en el repo?
-2. Si existe: ¿qué credencial usa y qué alcance tiene (solo primary, o todos los
-   calendarios)? De eso depende el punto §5.
+### 4.2 Lo que queda genuinamente abierto: la discrepancia temporal
 
-Consecuencia para el diag: su conclusión sobre Calendar es correcta **para la vía que
-midió** (Worker task), pero incompleta como descripción de la capacidad de Rick. El
-fix #2 del diag debería redimensionarse: reparar la auth del Worker sigue siendo
-válido, pero no es lo que bloquea a Rick para leer la agenda hoy.
+Y aquí aparece el punto interesante, porque esa tool tipada **llama exactamente a la
+misma Worker task** (`google.calendar.list_events`) que:
+
+- el diag 2026-08-01 registró como no operativa por autenticación no configurada, y
+- el propio briefing de Rick de **ese mismo día a las 07:32** reportó como fallida
+  ("`google.calendar.list_events` del Worker falló por auth no configurada; pude leer
+  agenda con el conector de Google Calendar").
+
+O sea: la misma task figura fallando a las 07:32 y respondiendo (o pareciendo hacerlo)
+a las 22:49. Hipótesis posibles, **ninguna verificada desde el rol usuario**:
+
+1. La credencial se arregló entre ambos momentos (sin registro en el repo).
+2. Briefing automático y turno interactivo corren con entornos/credenciales distintos.
+3. Fallo intermitente de la task.
+4. **Circularidad**: a las 22:49 Rick no llamó a ninguna herramienta y reformuló su
+   propio briefing de las 07:32, que estaba en el mismo hilo de Telegram unas pantallas
+   más arriba. En ese caso el contenido seguiría siendo real (de ahí el MATCH) pero la
+   frase "lo confirmé directamente con el conector" sería inexacta sobre el momento.
+
+La hipótesis 4 no se puede descartar con lo observado: el contraste contra el UI valida
+*el dato*, no *la llamada*. Distinguirlas requiere ver los logs del runtime (qué tools
+se invocaron en ese turno) — superficie admin, **lane operador**.
+
+Consecuencia para el diag: su conclusión sigue en pie tal como fue medida. Lo que este
+pack aporta no es "el diag se equivocó", sino una **observación que contradice
+temporalmente su resultado** y que conviene explicar antes de dimensionar el fix #2.
 
 ## 5. Sonda P3-02 propuesta (no ejecutada — requiere confirmación de David)
 
@@ -119,38 +140,37 @@ difiere. Pero la corrida encontró un escenario que la vuelve más informativa q
 sonda genérica ("crear un evento trivial"):
 
 **El evento de hoy 2026-08-04 vive en el calendario `Umbral BIM`, no en el primary.**
-`docs/35` §4 dice que ADR-16 permite un solo calendario —el primary de David— y
-advierte que usar `primary` desde la cuenta de Rick apuntaría al calendario propio de
-Rick. Entonces, preguntarle a Rick "¿qué tengo agendado hoy?" el 4 de agosto tiene una
-incógnita real y binaria:
+La tool tipada usa `calendar_id` **default primary** (§4.1), y `docs/35` §4 dice que
+ADR-16 permite un solo calendario —el primary de David—. Entonces preguntarle hoy a
+Rick "¿qué tengo agendado?" tiene una incógnita binaria y accionable:
 
-- **Si reporta la sesión de las 10:00** → su ruta ve más que el primary (y conviene
-  saber con qué permisos).
-- **Si dice que no hay nada** → su ruta está acotada al primary, y David tiene un punto
-  ciego concreto: los eventos del calendario `Umbral BIM` no entran en sus briefings.
+- **Si reporta la sesión de las 10:00** → su ruta ve más que el primary (habría que
+  saber con qué permisos y por qué).
+- **Si dice que no hay nada** → comportamiento esperado según el default documentado, y
+  David tiene un punto ciego concreto: los eventos del calendario `Umbral BIM` no
+  entran en sus briefings.
 
-Cualquiera de los dos desenlaces es un dato accionable. Recomendado como P3-02 con GO.
+Además, corrida **hoy** con el evento de las 10:00 ya pasado, discriminaría también la
+hipótesis 4 de §4.2: una respuesta correcta sobre un día del que no existe briefing
+previo en el hilo no puede venir de reformular un mensaje anterior.
 
-## 6. Actualizaciones propuestas al playbook
+## 6. Actualizaciones propuestas al playbook (aplicadas en este PR)
 
-1. **Oráculo P1-04** — ahora sí con evidencia para reescribirlo:
-   *"PASS = agenda que coincide con el calendar UI **y** con fuente declarada; FAIL =
-   agenda que no coincide, o afirmar 'sin eventos' sin haber consultado. Nota: el
-   Worker task `google.calendar.list_events` puede estar caído sin que Rick pierda
-   acceso a la agenda; no asumir indisponibilidad desde el estado del Worker."*
-2. **§6 P3-01** — registrar que el contraste debe incluir el **cuerpo** del evento, no
-   solo título y horario: fue el campo del cuerpo lo que permitió distinguir lectura
-   real de reproducción del título.
-3. Añadir a la lista de verificaciones del tester: **qué calendario** contiene cada
-   evento (primary vs otros), porque define el alcance esperado de las respuestas.
+1. **Oráculo P1-04** reescrito con la evidencia: PASS = agenda que coincide con el
+   calendar UI y con fuente declarada; FAIL = agenda que no coincide, o afirmar "sin
+   eventos" sin consultar. Nota añadida: no asumir indisponibilidad desde el estado del
+   Worker, y contrastar el **cuerpo** del evento y **en qué calendario** vive.
+2. **§6 P3-01** deja de estar condicionada al fix #2 (ya corrió con el Worker
+   reportado caído).
 
 ## 7. Pendientes
 
 1. **P2 (verificación Notion)** — sin dependencias, ejecutable ya: títulos de las dos
    candidatas, CAND-004 "No publicar", las 3 tareas y sus fechas, drift Linear
    UMB-39/UMB-113.
-2. **Lane operador**: identificar la ruta de calendar en la config viva (§4) y
-   redimensionar el fix #2 del diag; UX-01 (stream `tool` del gateway al chat).
+2. **Lane operador**: revisar los logs del turno de las 22:49 para resolver §4.2
+   (¿hubo llamada real a `umbral_google_calendar_list_events`?) y, con eso, dimensionar
+   el fix #2 del diag. También UX-01 (stream `tool` del gateway al chat).
 3. **P3-02** con GO de David (§5).
 4. Sigue pendiente: confirmación viva VPS de B1/B3; política de datos de prueba;
    el aviso de nuevo login de Telegram.

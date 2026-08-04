@@ -176,7 +176,7 @@ persiste 2 ciclos con la misma hipótesis; suite congelada — cambiar un prompt
 | P2-05 | Control Room (página OpenClaw): comentarios visibles para David | Sin `comment_id`/trace/modelo/"Task técnico" expuestos; sin acuses vacíos (governance V2); avisos de reinicio del supervisor son señal legítima para correlacionar silencios |
 | P2-06 | Varianza de dato conocida | Filas sin `publication_id`/`Estado` (§1.1) NO cuentan como FAIL de Rick; se reportan como calidad de dato |
 
-## 6. Suite P3 — contraste de fuentes (tras P2; calendar requiere fix #2)
+## 6. Suite P3 — contraste de fuentes (P3-01 ya ejecutada 2026-08-04, sin depender del fix #2)
 
 | ID | Sonda | Fuente de contraste | Señal |
 |----|-------|---------------------|-------|
@@ -235,5 +235,8 @@ David, local).
    problema: P1 es solo conversación + lectura.
 4. **P1b** (sonda negativa @UmbralEditorialTestBot) — GO aparte, no entra en
    el primer ciclo.
-5. Fixes #1 (fechas backlog) y #2 (credencial Calendar) del diag: cuando
-   apliquen, P1-03 cambia de oráculo (fechas curadas) y P1-04 migra a P3-01.
+5. Fix #1 (fechas backlog) del diag: cuando aplique, P1-03 cambia de oráculo
+   (fechas curadas). El fix #2 (credencial Calendar) **ya no condiciona a P1-04**:
+   P3-01 corrió el 2026-08-04 con el Worker reportado caído y dio MATCH total; antes
+   de dimensionar ese fix conviene resolver la discrepancia temporal que documenta
+   `docs/ops/user-e2e-p3-01-calendar-2026-08-04.md` §4.2.

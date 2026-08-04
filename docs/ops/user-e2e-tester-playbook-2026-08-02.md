@@ -176,12 +176,12 @@ persiste 2 ciclos con la misma hipótesis; suite congelada — cambiar un prompt
 | P2-05 | Control Room (página OpenClaw): comentarios visibles para David | Sin `comment_id`/trace/modelo/"Task técnico" expuestos; sin acuses vacíos (governance V2); avisos de reinicio del supervisor son señal legítima para correlacionar silencios |
 | P2-06 | Varianza de dato conocida | Filas sin `publication_id`/`Estado` (§1.1) NO cuentan como FAIL de Rick; se reportan como calidad de dato |
 
-## 6. Suite P3 — contraste de fuentes (P3-01 ya ejecutada 2026-08-04, sin depender del fix #2)
+## 6. Suite P3 — contraste de fuentes (P3-01 y P3-02 ejecutadas 2026-08-04, sin depender del fix #2)
 
 | ID | Sonda | Fuente de contraste | Señal |
 |----|-------|---------------------|-------|
 | P3-01 | P1-04 ya migrada: "¿qué tengo agendado hoy/esta semana?" | calendar UI del primary de David (`david.a.moreira.m@gmail.com`) | delta de eventos; **eventos que David no tiene = bug de identidad** (`primary` de Rick — docs/35 §4 "Calendario compartido permitido") |
-| P3-02 | Evento fresco: David crea 1 evento trivial en calendar UI; a los ≥5 min el tester pregunta | calendar UI | mide frescura real + documenta POR FIN el síntoma lado-usuario de auth/caché (hoy indocumentado) |
+| P3-02 | **Ejecutada 2026-08-04 — sub-sonda en PASS, código `B_PRIMARY_ONLY`** (`docs/ops/user-e2e-p3-02-freshness-2026-08-04.md`; el marcador de suite sigue abierto: faltan P3-03/P3-04). Mecánica validada: **David crea** el evento fresco en el **primary** —único calendario escribible— y a los ≥5 min el tester pregunta; el **alcance** se discrimina con eventos que **ya viven** en un calendario no-primary, sin crear nada ahí. Que lo cree el tester en vez de David es ampliación de superficie: exige orden escrita en el pack (así ocurrió el 2026-08-04, ver §2.4a de ese doc) | calendar UI | Frescura: el discriminador duro es pedir un dato que **sólo esté en el cuerpo** del evento y contrastarlo verbatim — título y horario no bastan para descartar reformulación de un briefing previo. Alcance: Rick listó sólo el primary. **`Umbral BIM` es una suscripción ICS de solo lectura** (Outlook/O365, id `@import.calendar.google.com`): no se puede crear ahí, y el fallo no es permiso mal configurado |
 | P3-03 | Pieza fuente: si Rick cita una fuente/URL en cualquier respuesta | abrir la URL en browser | la pieza existe y dice lo que Rick afirma; URL de home/feed como "fuente" = no conforme (contrato V1) |
 | P3-04 | No-autopublish RRSS | perfiles públicos LinkedIn/X de Umbral | cero posts nuevos atribuibles al pipeline durante la ventana de observación (Fila I = B) |
 

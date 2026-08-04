@@ -89,18 +89,28 @@ no reconstruido de memoria días después. Regla de cadencia:
 1. **Al EMITIR un paquete, integrar un reporte, o cerrar un gate** (`PASS`,
    `FAIL`, `BLOCKED`, `NO_ACK`, `REEMISION`) — append 1 línea al ledger del
    programa correspondiente en ese momento, no al final de la sesión ni en
-   una sesión posterior.
-2. **Commitear el ledger en el mismo PR/ciclo cuando sea posible.** Un
+   una sesión posterior. Única excepción: backfill explícito de eventos que
+   ya ocurrieron y quedaron fuera del ledger (como el de `PKG-OPS-RESUME-A1`
+   hecho en PKG-OPS-RESUME-A2) — se permite, pero la `nota` debe decir
+   `retroactivo` y el `ts` debe ser el del evento real, no el de la sesión
+   que lo backfillea.
+2. **Nunca marcar `PASS`/`FAIL`/`CERRADO` antes de que el hecho sea cierto**
+   (ej. un PR mergeado, no solo abierto). `scripts/ops_resume_board.py`
+   trata esos eventos como terminales y los oculta del tablero — un `PASS`
+   prematuro esconde exactamente la "pelota de David" que este runbook
+   existe para mostrar. Mientras el gate es solo `*_CODE_PASS` (código/docs
+   listos, merge humano pendiente), el evento correcto es `REPORTADO`.
+3. **Commitear el ledger en el mismo PR/ciclo cuando sea posible.** Un
    ledger editado solo en el filesystem local (sin commit) no es SoT — es el
    mismo riesgo que dejar cambios solo en `git stash`: se pierde sin aviso
    ante un `git clean`, una reinstalación de máquina, o un worktree nuevo.
    Si el paquete todavía no cierra, commitear igual el evento
    `EMITIDO`/`ACK`/`REPORTADO` apenas ocurre; el evento de cierre puede ir
    en un commit posterior dentro del mismo PR.
-3. **Antes de retomar tras una pausa**, correr el generador (ver "Cómo
+4. **Antes de retomar tras una pausa**, correr el generador (ver "Cómo
    correr el script" arriba) — no confiar en memoria ni en
    `.agents/board.md`.
-4. **Notion (Fase B) será espejo, no fuente.** Cuando Fase B active la
+5. **Notion (Fase B) será espejo, no fuente.** Cuando Fase B active la
    sincronización a Notion, ese dashboard **lee** de estos ledgers — nunca
    al revés. Ante cualquier discrepancia entre Notion y un `ledger-*.jsonl`,
    el ledger manda.

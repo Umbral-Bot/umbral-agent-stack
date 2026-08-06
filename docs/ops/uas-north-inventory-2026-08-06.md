@@ -5,6 +5,10 @@
 > cero escritura en Notion, VPS o registry de skills.
 > **Estado:** este documento **no es** el norte. Es el inventario que permite escribirlo
 > y la propuesta de dónde vivirá. La ejecución de cierres es otro pack, tras GO.
+>
+> **→ El norte ya existe: [uas-north-canonical-2026-08-06.md](uas-north-canonical-2026-08-06.md)**
+> (PKG-UAS-NORTH-CANON-DRAFT, 2026-08-06). Este inventario queda como su evidencia:
+> las tablas A–D y la cola de cierre §8 siguen vigentes y no se reabren aquí.
 
 ## 0. Método, y qué NO está verificado aquí
 

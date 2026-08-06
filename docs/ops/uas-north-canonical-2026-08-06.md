@@ -245,7 +245,7 @@ cambia nada de lo que David ve cada mañana.
 | # | Ítem | Dueño |
 |---|---|---|
 | P1.1 | ~~**SoT de `openclaw-vps-operator`** (§8)~~ → **DONE** 2026-08-06 (#15 registry + #584/#585 UAS; smoke user SoT PASS) | — |
-| P1.2 | **30 ramas huérfanas** + **26 worktrees Codex** + 2 clones removibles | Claude local (con GO) |
+| P1.2 | ~~30 huérfanas + 26 worktrees Codex + 2 clones~~ → **PARTIAL** 2026-08-06 ([uas-p1-2-branch-wt-2026-08-06.md](uas-p1-2-branch-wt-2026-08-06.md)): worktrees Codex DONE (43→9, cero pérdida) y 90 huérfanas inventariadas (58 sin merge-base con main — hallazgo nuevo); **KILL de ramas mergeadas BLOQUEADO**: alcance real es 191 candidatas, no ~87 (el inventario solo cubría 4 prefijos) — espera decisión de alcance de David | Claude local (con GO) |
 | P1.3 | **2 clones hermanos con WIP sin rescatar**: `-copilot` (doc de auditoría untracked), `-codex-coordinador` (5 archivos que tocan ROLE de `rick-qa`) | Claude local (con GO) |
 | P1.4 | **UX-01** — investigar por qué el stream `tool` del gateway llega crudo al canal | Lane operador |
 

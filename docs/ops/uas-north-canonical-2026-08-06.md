@@ -245,7 +245,7 @@ cambia nada de lo que David ve cada mañana.
 | # | Ítem | Dueño |
 |---|---|---|
 | P1.1 | ~~**SoT de `openclaw-vps-operator`** (§8)~~ → **DONE** 2026-08-06 (#15 registry + #584/#585 UAS; smoke user SoT PASS) | — |
-| P1.2 | ~~30 huérfanas + 26 worktrees Codex + 2 clones + KILL mergeadas~~ → MERGED_KILL **DONE** (192/192, [uas-p1-2-merged-kill-2026-08-06.md](uas-p1-2-merged-kill-2026-08-06.md)) + worktrees Codex **DONE** (43→9). Huérfanas: **classify DONE, deletes PENDING** ([uas-p1-2-orphan-32-classify-2026-08-06.md](uas-p1-2-orphan-32-classify-2026-08-06.md)) — de las 32 con merge-base: 28 KILL / 1 RESCUE / 3 KEEP, propuesta lista, espera GO de David para ejecutar. Las 58 sin merge-base siguen sin tocar (cherry-pick puntual, no lote) | Claude local (con GO) |
+| P1.2 | ~~30 huérfanas + 26 worktrees Codex + 2 clones + KILL mergeadas~~ → MERGED_KILL **DONE** (192/192, #589) + worktrees Codex **DONE** (43→9) + huérfanas-con-merge-base **KILL DONE** (28/28, 0 fallidas, [uas-p1-2-orphan-kill28-2026-08-06.md](uas-p1-2-orphan-kill28-2026-08-06.md)). **PENDING**: RESCUE de 2 docs (`rescue/copilot-dirty-2026-07-13` — azure-foundry quota policy), 3 KEEP sin decidir (`codex/docs-pit-v2-contract`, `rescue/coordinador-dirty-2026-07-13`, `rick/stage7_5-multiformat`), y las 58 sin merge-base (cherry-pick puntual, no lote) | Claude local (con GO) |
 | P1.3 | **2 clones hermanos con WIP sin rescatar**: `-copilot` (doc de auditoría untracked), `-codex-coordinador` (5 archivos que tocan ROLE de `rick-qa`) | Claude local (con GO) |
 | P1.4 | **UX-01** — investigar por qué el stream `tool` del gateway llega crudo al canal | Lane operador |
 

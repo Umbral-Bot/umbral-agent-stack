@@ -245,7 +245,7 @@ cambia nada de lo que David ve cada mañana.
 | # | Ítem | Dueño |
 |---|---|---|
 | P1.1 | ~~**SoT de `openclaw-vps-operator`** (§8)~~ → **DONE** 2026-08-06 (#15 registry + #584/#585 UAS; smoke user SoT PASS) | — |
-| P1.2 | ~~30 huérfanas + 26 worktrees Codex + 2 clones + KILL mergeadas~~ → **DONE** en el eje MERGED_KILL 2026-08-06 ([uas-p1-2-merged-kill-2026-08-06.md](uas-p1-2-merged-kill-2026-08-06.md)): 192/192 ramas con PR mergeado borradas en origin, 0 fallidas, alcance A (todo origin) autorizado por David. Worktrees Codex DONE desde el pack anterior (43→9). **Sigue PARTIAL** en huérfanas: 90 inventariadas ([uas-p1-2-branch-wt-2026-08-06.md](uas-p1-2-branch-wt-2026-08-06.md)), cero KILL/rescate — 58 sin merge-base con main necesitan cherry-pick puntual, 32 con diffstat real esperan decisión caso a caso | Claude local (con GO) |
+| P1.2 | ~~30 huérfanas + 26 worktrees Codex + 2 clones + KILL mergeadas~~ → MERGED_KILL **DONE** (192/192, [uas-p1-2-merged-kill-2026-08-06.md](uas-p1-2-merged-kill-2026-08-06.md)) + worktrees Codex **DONE** (43→9). Huérfanas: **classify DONE, deletes PENDING** ([uas-p1-2-orphan-32-classify-2026-08-06.md](uas-p1-2-orphan-32-classify-2026-08-06.md)) — de las 32 con merge-base: 28 KILL / 1 RESCUE / 3 KEEP, propuesta lista, espera GO de David para ejecutar. Las 58 sin merge-base siguen sin tocar (cherry-pick puntual, no lote) | Claude local (con GO) |
 | P1.3 | **2 clones hermanos con WIP sin rescatar**: `-copilot` (doc de auditoría untracked), `-codex-coordinador` (5 archivos que tocan ROLE de `rick-qa`) | Claude local (con GO) |
 | P1.4 | **UX-01** — investigar por qué el stream `tool` del gateway llega crudo al canal | Lane operador |
 

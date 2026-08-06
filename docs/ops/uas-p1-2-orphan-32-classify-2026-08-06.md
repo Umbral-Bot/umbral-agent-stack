@@ -35,6 +35,14 @@ idéntico, superado (main más evolucionado), o genuinamente ausente.
 
 ## 2. Tabla completa
 
+> **Nota de exactitud (post-verificación independiente):** la columna `ahead/behind` se calculó en un
+> punto de esta sesión y `main` avanzó 2 commits después (los PR #588/#589 mergeando en paralelo);
+> el `behind` de ~17 filas quedó desactualizado en exactamente 2 (p. ej. una fila muestra `1/349`
+> cuando el valor real pasó a ser `1/351`). **No afecta ningún veredicto** — cada etiqueta se decidió
+> con el diffstat de contenido y la verificación puntual de paths citada en "Evidencia", no con el
+> conteo ahead/behind. Re-computar la columna para las 32 quedaría obsoleto de nuevo en el próximo
+> commit a `main`; no se hizo por no ser el dato que sostiene la clasificación.
+
 | Rama | Etiqueta | ahead/behind | Diff | Evidencia | Paths clave |
 |---|---|---|---|---|---|
 | `codex/cand-prod001-stage2` | **KILL** | 2/165 | 3 files, +770 | `main` tiene `docs/ops/cand-prod001-decision-brief.md` (mismo candidato CAND-001, mismo backfill 2026-06-07) — el payload/intake/benchmark crudo de esta rama es la data de trabajo detrás de esa decisión ya cerrada | `docs/ops/cand-prod001-{payload,source-intake}.md`, `.../variants-benchmark-*` |

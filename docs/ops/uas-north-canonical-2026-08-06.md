@@ -218,10 +218,12 @@ Las referencias solo se propagan desde **`<slug>/references/`**, nunca desde lay
 plano en la raíz del slug. El tool siempre funcionó así; la creencia contraria costó
 7 días de copias manuales que además quedaban fuera del drift-gate.
 
-### 4.4 Deuda estructural: `openclaw-vps-operator` no tiene SoT
+### 4.4 ~~Deuda estructural: `openclaw-vps-operator` no tiene SoT~~ → CERRADA
 
-Detalle y propuesta en §8. En una línea: **existen dos skills con el mismo `name:` y
-alcance distinto**, ninguna en el registry, y ninguna cubre la re-auth de §1.
+Ciclo completo 2026-08-06: registry [#15](https://github.com/Umbral-Bot/umbral-skills-registry/pull/15)
+(SoT 0.1.0 + refs diagnose/mutate/auth) → UAS stubs [#584](https://github.com/Umbral-Bot/umbral-agent-stack/pull/584)
+→ smoke SoT user + delete stubs [#585](https://github.com/Umbral-Bot/umbral-agent-stack/pull/585)
+(`918dbe6d`). Detalle histórico en §8.
 
 ---
 
@@ -242,7 +244,7 @@ cambia nada de lo que David ve cada mañana.
 
 | # | Ítem | Dueño |
 |---|---|---|
-| P1.1 | **SoT de `openclaw-vps-operator`** (§8) — bloquea capitalizar los aprendizajes de §1 | Claude local |
+| P1.1 | ~~**SoT de `openclaw-vps-operator`** (§8)~~ → **DONE** 2026-08-06 (#15 registry + #584/#585 UAS; smoke user SoT PASS) | — |
 | P1.2 | **30 ramas huérfanas** + **26 worktrees Codex** + 2 clones removibles | Claude local (con GO) |
 | P1.3 | **2 clones hermanos con WIP sin rescatar**: `-copilot` (doc de auditoría untracked), `-codex-coordinador` (5 archivos que tocan ROLE de `rick-qa`) | Claude local (con GO) |
 | P1.4 | **UX-01** — investigar por qué el stream `tool` del gateway llega crudo al canal | Lane operador |
@@ -366,7 +368,7 @@ atribuir autoría sin PID o log** — `mtime` es correlación.
 
 ## 8. Propuesta — SoT única para `openclaw-vps-operator`
 
-*(Propuesta. Cero escritura al registry en este pack; requiere GO aparte.)*
+*(Ejecutada 2026-08-06. Esta sección queda como registro del plan; el estado vivo es §4.4 CERRADA / P1.1 DONE.)*
 
 ### 8.1 El problema no es el que parecía
 
@@ -424,18 +426,17 @@ mismo trabajo, no dos skills.
 
 ### 8.3 Plan de deprecación de la divergente
 
-Cinco pasos, ninguno destructivo hasta el último, y el último con GO propio:
+Cinco pasos ejecutados (estado al cierre):
 
-| # | Paso | Reversible |
+| # | Paso | Estado |
 |---|---|---|
-| 1 | Crear el slug en el registry con `SKILL.md` + 3 referencias, `version: 0.1.0`, `manifest.notes` citando el origen de cada bloque y las fechas de ambas copias | Sí — nada se borra |
-| 2 | Ship a los hosts habilitados; verificar que las referencias se propagan desde `references/` (§4.3) y que ningún host queda con dos skills del mismo `name:` | Sí |
-| 3 | Reemplazar **ambas** copias en UAS por un puntero de 3 líneas al slug del registry (no borrar el archivo: dejar el stub) | Sí |
-| 4 | Correr un smoke real: una tarea de diagnóstico VPS y una de mutación con rollback, comprobando que la skill que carga es la del registry | Sí |
-| 5 | Recién entonces, borrar los stubs si David lo prefiere limpio | **Requiere GO propio** |
+| 1 | Crear el slug en el registry (`0.1.0` + 3 refs) | **DONE** — registry PR #15 |
+| 2 | Ship a hosts habilitados (`~/.claude`, `~/.cursor`, `~/.codex`) | **DONE** — post-merge #15 |
+| 3 | Stubs en UAS (puntero al SoT) | **DONE** — UAS PR #584 (`a16b5b54`) |
+| 4 | Smoke: runtime carga SoT user (no stub repo); trampa `models status` / `reference-auth` | **DONE** — `OPENCLAW_VPS_STUBS_SMOKE_PASS=Y` en PKG-UAS-OPENCLAW-STUBS-CLOSE |
+| 5 | Borrar stubs locales en UAS | **DONE** — UAS PR #585 (`918dbe6d`); SoT user intacto |
 
-**Sin GO no se ejecuta ninguno.** El paso 1 ya implica escritura al registry, que este
-pack tiene explícitamente prohibida.
+Ciclo norte SoT: **#582 inventario → #583 norte → #15 registry → #584 stubs → #585 delete**.
 
 ### 8.4 Qué NO se propone
 

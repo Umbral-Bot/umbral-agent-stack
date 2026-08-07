@@ -26,14 +26,34 @@
 
 Leído el script completo (251 líneas). **Sin hallazgos.**
 
-- No hay tokens, API keys, passwords ni URLs con credenciales embebidas.
+- No hay tokens, API keys, passwords ni URLs con credenciales embebidas **en el script**.
 - El propio script **excluye explícitamente** credenciales de lo que exporta: *"Las credenciales
   (.claude/.credentials.json, tokens, .env) NO se exportan. Configurá las credenciales manualmente
   en la notebook."* (línea 229-230 del script).
 - Usa `$env:COMPUTERNAME` y `$env:USERPROFILE` solo como referencias de entorno en tiempo de
   ejecución (para el nombre del ZIP y las rutas de copia), no como valores literales en el
   archivo.
-- No se necesitó redacción — se trae el contenido tal cual, sin cambios.
+
+### 3.1 Hallazgo del `/code-review` posterior (no era secreto embebido, pero sí gap de exactitud)
+
+Un agente de revisión (tras el chequeo de elegibilidad) encontró que el script exporta
+`vscode-user\mcp.json`, y ese archivo de configuración de servidores MCP **puede contener tokens
+inline** en bloques `env`/`headers` — contradiciendo la nota "las credenciales NO se exportan"
+del propio README generado. No es un secreto *incrustado en el script* (el script en sí no
+contiene ningún valor), sino un archivo del usuario que el script sí copia. Corregido con una
+nota adicional en el `RESTORE-README.md` que el script genera, aclarando que `mcp.json` puede
+tener tokens y debe revisarse antes de mover el ZIP fuera de las propias máquinas — no se quitó
+la funcionalidad (seguir exportando MCP config es intencional y útil), solo se corrigió la
+promesa inexacta.
+
+El mismo agente encontró un bug de portabilidad real: `Join-String -Separator` (línea ~155 original)
+es un cmdlet de PowerShell 6.2+/7+ que **no existe en Windows PowerShell 5.1** (el intérprete por
+defecto de Windows) — verificado empíricamente corriendo `Get-Command Join-String` en ambos. El
+script fallaría a mitad de camino si se corre con `powershell.exe` en vez de `pwsh`. Corregido
+reemplazando por el operador `-join`, disponible desde PowerShell 3.0.
+
+No se necesitó redacción de nada preexistente — ambos cambios son correcciones/adiciones, el
+contenido rescatado original no se alteró más allá de esto.
 
 ## 4. Confirmación de exclusión
 

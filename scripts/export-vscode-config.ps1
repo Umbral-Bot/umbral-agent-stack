@@ -152,7 +152,7 @@ $installScript = @"
 #   .\install-extensions.ps1
 
 `$extensions = @(
-$($extensions | ForEach-Object { "    `"$_`"" } | Join-String -Separator "`n")
+$(($extensions | ForEach-Object { "    `"$_`"" }) -join "`n")
 )
 
 foreach (`$ext in `$extensions) {
@@ -228,6 +228,9 @@ Verificá que los binarios/servicios MCP estén instalados en la notebook.
 ## Notas
 - Las credenciales (.claude/.credentials.json, tokens, .env) NO se exportan.
   Configurá las credenciales manualmente en la notebook.
+- `vscode-user\mcp.json` SÍ se exporta y puede contener tokens/API keys inline
+  de servidores MCP remotos (bearer tokens en bloques `env`/`headers`). Revisá
+  ese archivo antes de mover el ZIP fuera de tus propias máquinas.
 - Si usás Settings Sync de VS Code, podés sincronizar settings.json y
   extensiones automáticamente con tu cuenta de GitHub/Microsoft.
 "@

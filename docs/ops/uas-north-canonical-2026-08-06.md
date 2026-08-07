@@ -270,7 +270,7 @@ enfoque descartado en R14 a favor de `enrich_bitacora_page` —
 [uas-p1-2-fossil3-exec-20260807.md](uas-p1-2-fossil3-exec-20260807.md)). Residual fuera del eje:
 `rick/stage7_5-multiformat` KEEP_INDEFINITE (decisión de producto previa, sin tocar). **Las 90
 ramas huérfanas originales de P1.2 quedan 100% resueltas** | Claude local (con GO) |
-| P1.3 | **clone-wip eval DONE** (2026-08-07): los 14 paths con contenido real en `-copilot` (3) y `-codex-coordinador` (11) son `DISCARD_SAFE` — todo subsumido en main (rescates P1.2 PR #592/#595 + rescates editoriales previos 2026-05-30 + rediseño Fase 2/ADR-010 HITL). Sin `RESCUE_SELECTIVE`. **EXEC PENDING GO por fila** (limpiar working tree de ambos clones — sin urgencia, nada se pierde) — [uas-p1-3-clone-wip-eval-20260807.md](uas-p1-3-clone-wip-eval-20260807.md) | Claude local (con GO) |
+| P1.3 | **DISCARD DONE** (2026-08-07, GO "GO DISCARD"): working tree de ambos clones hermanos limpiado según eval previa (14/14 paths `DISCARD_SAFE`, 0 `RESCUE`). `-copilot` clean @ `origin/main` (rama `main`); `-codex-coordinador` clean @ `origin/main` (HEAD detached — la rama `main` de ese clone está en uso por otro worktree Codex, no tocado). Rama vieja `codex/editorial-linkedin-smoke-rescue` intacta sin borrar. **Eje P1.3 cerrado** — [uas-p1-3-clone-wip-eval-20260807.md](uas-p1-3-clone-wip-eval-20260807.md) · [uas-p1-3-clone-wip-discard-20260807.md](uas-p1-3-clone-wip-discard-20260807.md) | Claude local (con GO) |
 | P1.4 | **UX-01** — investigar por qué el stream `tool` del gateway llega crudo al canal | Lane operador |
 
 ### P2 — sanea sin urgencia

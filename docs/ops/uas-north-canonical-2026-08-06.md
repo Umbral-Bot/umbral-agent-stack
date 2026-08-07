@@ -257,10 +257,13 @@ diferidos (`DEFERRED_PRODUCT`) + rama borrada; fila 5 `codex/notion-governance-v
 V1 archivados + README de pivote + rama borrada; #58 `windows-dirty-rescue` borrada (subsumida por
 fila 1) —
 [uas-p1-2-orphan58-cherry25-exec-20260807.md](uas-p1-2-orphan58-cherry25-exec-20260807.md)) —
-**fila 4 STOP parcial**: hook `.claude/hooks/block-deployed-repo-writes.sh` gitignoreado
-explícitamente en `main` (`.gitignore:78`, "VPS local-only, differ per environment"); no se forzó
-`git add -f` sin GO, rama fuente `rick/test-github-mvp-smoke` sigue viva a la espera de decisión de
-David | Claude local (con GO) |
+**fila 4 ARCHIVE+KILL DONE** (GO "aplica… opción d": hook archivado byte-idéntico bajo
+`docs/archive/hooks-block-deployed-repo-writes-2026-04/` + README; **sin** `git add -f` ni wire en
+`.claude/settings.json`; rama `rick/test-github-mvp-smoke` borrada —
+[uas-p1-2-orphan58-cherry4-archive-kill-20260807.md](uas-p1-2-orphan58-cherry4-archive-kill-20260807.md)).
+**Eje CHERRY P1.2 cerrado** (5/5 + #58). Residual: FOSSIL/KEEP
+(`cursor/power-bi-libraries-formats-5c1b`, `cursor/regression-test-coverage-b904`,
+`feat/bitacora-populate`) + `rick/stage7_5-multiformat` KEEP_INDEFINITE | Cursor local (GO David) |
 | P1.3 | **2 clones hermanos con WIP sin rescatar**: `-copilot` (doc de auditoría untracked), `-codex-coordinador` (5 archivos que tocan ROLE de `rick-qa`) | Claude local (con GO) |
 | P1.4 | **UX-01** — investigar por qué el stream `tool` del gateway llega crudo al canal | Lane operador |
 

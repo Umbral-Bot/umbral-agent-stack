@@ -248,7 +248,10 @@ cambia nada de lo que David ve cada mañana.
 | P1.2 | ~~30 huérfanas + 26 worktrees Codex + 2 clones + KILL mergeadas~~ → MERGED_KILL **DONE** (192/192, #589) + worktrees Codex **DONE** (43→9) + huérfanas-con-merge-base **KILL DONE** (28/28, #591) + **RESCUE1 DONE** (2 docs, #592) + **fila 1 (PIT) ARCHIVE_DOCS_ONLY DONE** (#594) + **fila 2 RESCUE_SELECTIVE DONE** (#595) + **fila 3 ARCHIVE DONE** (runbook + report JSON multiformato archivados HISTÓRICO en `main`, [uas-p1-2-keep3-archive-runbook-2026-08-06.md](uas-p1-2-keep3-archive-runbook-2026-08-06.md); `stage7_5_copy_writer.py` de producción confirmado diff 0; rama `rick/stage7_5-multiformat` KEEP_INDEFINITE, conserva writer/evaluator/tests sin mergear) + **orphan58 analyze DONE** (58/58 reconfirmadas sin merge-base, 49 KILL_SAFE / 5 CHERRY_CANDIDATE / 4 KEEP_FOSSIL, [uas-p1-2-orphan58-analyze-capx-20260806.md](uas-p1-2-orphan58-analyze-capx-20260806.md); capitalización `pkg-receiver-protocol` 0.3.4→0.4.0 shipeada) + **KILL49 DONE** (49/49 borradas en origin, 0 fallidas, 9 protegidas — 5 CHERRY_CANDIDATE + 4 KEEP_FOSSIL — confirmadas vivas con SHA intacto, [uas-p1-2-orphan58-kill49-20260807.md](uas-p1-2-orphan58-kill49-20260807.md)). **Eje P1.2**: cherry-pick de las 5 CHERRY_CANDIDATE — **cherry5 brief DONE** (evaluación path a path
 con recomendación por fila: 1 KILL_BRANCH, 3 ARCHIVE_DOCS_ONLY, 1 RESCUE_SELECTIVE + 1
 DEFER_PRODUCT, [uas-p1-2-orphan58-cherry5-20260807.md](uas-p1-2-orphan58-cherry5-20260807.md)) —
-ejecución (RESCUE/ARCHIVE/KILL real) queda `PENDING` GO de David por fila | Claude local (con GO) |
+**fila 1 KILL DONE** (`codex/wip-granola-v2-snapshot-2026-04-30` borrada en origin, GO "1 KILL" de
+David; #58 `windows-dirty-rescue` sigue KEEP_FOSSIL, no se borró sin GO aparte pese a subsunción de
+contenido — [uas-p1-2-orphan58-cherry1-kill-20260807.md](uas-p1-2-orphan58-cherry1-kill-20260807.md)) —
+filas 2–5 quedan `PENDING` GO de David | Claude local (con GO) |
 | P1.3 | **2 clones hermanos con WIP sin rescatar**: `-copilot` (doc de auditoría untracked), `-codex-coordinador` (5 archivos que tocan ROLE de `rick-qa`) | Claude local (con GO) |
 | P1.4 | **UX-01** — investigar por qué el stream `tool` del gateway llega crudo al canal | Lane operador |
 

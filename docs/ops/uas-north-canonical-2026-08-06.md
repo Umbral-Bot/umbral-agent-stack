@@ -249,9 +249,18 @@ cambia nada de lo que David ve cada mañana.
 con recomendación por fila: 1 KILL_BRANCH, 3 ARCHIVE_DOCS_ONLY, 1 RESCUE_SELECTIVE + 1
 DEFER_PRODUCT, [uas-p1-2-orphan58-cherry5-20260807.md](uas-p1-2-orphan58-cherry5-20260807.md)) —
 **fila 1 KILL DONE** (`codex/wip-granola-v2-snapshot-2026-04-30` borrada en origin, GO "1 KILL" de
-David; #58 `windows-dirty-rescue` sigue KEEP_FOSSIL, no se borró sin GO aparte pese a subsunción de
-contenido — [uas-p1-2-orphan58-cherry1-kill-20260807.md](uas-p1-2-orphan58-cherry1-kill-20260807.md)) —
-filas 2–5 quedan `PENDING` GO de David | Claude local (con GO) |
+David — [uas-p1-2-orphan58-cherry1-kill-20260807.md](uas-p1-2-orphan58-cherry1-kill-20260807.md)) +
+**filas 2/3/5 + #58 EXEC DONE** (GO "acepta recomendaciones del orquestador": fila 2
+`rick/editorial-linkedin-writer-flow` archivada 21 paths + rama borrada; fila 3
+`antigravity/sync-uncommitted-changes` 3 docs archivados + 5 skills `code-*`/`teams.yaml`
+diferidos (`DEFERRED_PRODUCT`) + rama borrada; fila 5 `codex/notion-governance-v1-contract` 6 paths
+V1 archivados + README de pivote + rama borrada; #58 `windows-dirty-rescue` borrada (subsumida por
+fila 1) —
+[uas-p1-2-orphan58-cherry25-exec-20260807.md](uas-p1-2-orphan58-cherry25-exec-20260807.md)) —
+**fila 4 STOP parcial**: hook `.claude/hooks/block-deployed-repo-writes.sh` gitignoreado
+explícitamente en `main` (`.gitignore:78`, "VPS local-only, differ per environment"); no se forzó
+`git add -f` sin GO, rama fuente `rick/test-github-mvp-smoke` sigue viva a la espera de decisión de
+David | Claude local (con GO) |
 | P1.3 | **2 clones hermanos con WIP sin rescatar**: `-copilot` (doc de auditoría untracked), `-codex-coordinador` (5 archivos que tocan ROLE de `rick-qa`) | Claude local (con GO) |
 | P1.4 | **UX-01** — investigar por qué el stream `tool` del gateway llega crudo al canal | Lane operador |
 

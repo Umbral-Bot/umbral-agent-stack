@@ -263,7 +263,12 @@ fila 1) —
 [uas-p1-2-orphan58-cherry4-archive-kill-20260807.md](uas-p1-2-orphan58-cherry4-archive-kill-20260807.md)).
 **Eje CHERRY P1.2 cerrado** (5/5 + #58). Residual: FOSSIL/KEEP
 (`cursor/power-bi-libraries-formats-5c1b`, `cursor/regression-test-coverage-b904`,
-`feat/bitacora-populate`) + `rick/stage7_5-multiformat` KEEP_INDEFINITE | Cursor local (GO David) |
+`feat/bitacora-populate`) + `rick/stage7_5-multiformat` KEEP_INDEFINITE. **fossil3 eval DONE**
+(2 `RESCUE_SELECTIVE` — doc Power BI único, 4 tests de seguridad ausentes en `main` — + 1
+`KILL_BRANCH` — bitácora populate, enfoque descartado en R14 a favor de `enrich_bitacora_page` —,
+recomendaciones con evidencia,
+[uas-p1-2-fossil3-eval-20260807.md](uas-p1-2-fossil3-eval-20260807.md)); ejecución `PENDING` GO de
+David por fila | Claude local (con GO) |
 | P1.3 | **2 clones hermanos con WIP sin rescatar**: `-copilot` (doc de auditoría untracked), `-codex-coordinador` (5 archivos que tocan ROLE de `rick-qa`) | Claude local (con GO) |
 | P1.4 | **UX-01** — investigar por qué el stream `tool` del gateway llega crudo al canal | Lane operador |
 

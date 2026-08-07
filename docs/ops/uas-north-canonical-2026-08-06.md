@@ -277,8 +277,8 @@ ramas huérfanas originales de P1.2 quedan 100% resueltas** | Claude local (con 
 
 | # | Ítem | Dueño |
 |---|---|---|
-| P2.1 | Decidir **#541** (20+ días, docs-only, `+2692/-0`): mergear como registro o cerrar por superado | **David** |
-| P2.2 | Releer **#521** contra §1 → mergear con addendum o cerrar por superado | Claude local + GO |
+| P2.1 | ~~Decidir **#541**~~ → **DONE** 2026-08-07: mergeado como registro HISTÓRICO (`470706c9`, inventario/plan/inputs sys-diag 2026-07-17). Cifras S14 de ramas quedan superadas por P1.2. Rama head borrada. | — |
+| P2.2 | ~~Releer **#521**~~ → **DONE** 2026-08-07: mergeado como registro HISTÓRICO (`d12da293`, audit models.json hygiene 2026-07-04). Auth vigente: §1 de este norte. Rama head borrada. | — |
 | P2.3 | Marcar vigencia en ~330 docs de `ops`+`audits` (header `CANONICO\|HISTORICO`, sin borrar) | Claude local (con GO) |
 | P2.4 | **Anomalía CAND-001** y **drift Linear UMB-39** | David / lane operador |
 | P2.5 | Fixes 3–6 de [diag-rick-frescura-2026-08-01.md](diag-rick-frescura-2026-08-01.md): alinear `model_router` (declara providers inexistentes, 65 warnings/día), aprobar o desactivar el nodo VM (679 pairings fallidos/día), cortar el ruido de escalación a Linear, reactivar RAG (apagado desde ~abril) | Lane operador |

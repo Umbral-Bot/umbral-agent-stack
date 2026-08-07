@@ -261,14 +261,15 @@ fila 1) —
 `docs/archive/hooks-block-deployed-repo-writes-2026-04/` + README; **sin** `git add -f` ni wire en
 `.claude/settings.json`; rama `rick/test-github-mvp-smoke` borrada —
 [uas-p1-2-orphan58-cherry4-archive-kill-20260807.md](uas-p1-2-orphan58-cherry4-archive-kill-20260807.md)).
-**Eje CHERRY P1.2 cerrado** (5/5 + #58). Residual: FOSSIL/KEEP
-(`cursor/power-bi-libraries-formats-5c1b`, `cursor/regression-test-coverage-b904`,
-`feat/bitacora-populate`) + `rick/stage7_5-multiformat` KEEP_INDEFINITE. **fossil3 eval DONE**
-(2 `RESCUE_SELECTIVE` — doc Power BI único, 4 tests de seguridad ausentes en `main` — + 1
-`KILL_BRANCH` — bitácora populate, enfoque descartado en R14 a favor de `enrich_bitacora_page` —,
-recomendaciones con evidencia,
-[uas-p1-2-fossil3-eval-20260807.md](uas-p1-2-fossil3-eval-20260807.md)); ejecución `PENDING` GO de
-David por fila | Claude local (con GO) |
+**Eje CHERRY P1.2 cerrado** (5/5 + #58). **fossil3 EXEC DONE** (GO "go a todo lo que indicas en
+orden": `cursor/regression-test-coverage-b904` — 4 tests de seguridad rescatados a
+`tests/test_security_regression.py`, 19/19 PASS, rama borrada; `cursor/power-bi-libraries-formats-5c1b`
+— doc único rescatado a `docs/63-powerbi-librerias-formatos-pbix-pbip.md` con nota de vigencia
+2026-08-07 verificada vía blog oficial de Microsoft, rama borrada; `feat/bitacora-populate` — KILL,
+enfoque descartado en R14 a favor de `enrich_bitacora_page` —
+[uas-p1-2-fossil3-exec-20260807.md](uas-p1-2-fossil3-exec-20260807.md)). Residual fuera del eje:
+`rick/stage7_5-multiformat` KEEP_INDEFINITE (decisión de producto previa, sin tocar). **Las 90
+ramas huérfanas originales de P1.2 quedan 100% resueltas** | Claude local (con GO) |
 | P1.3 | **2 clones hermanos con WIP sin rescatar**: `-copilot` (doc de auditoría untracked), `-codex-coordinador` (5 archivos que tocan ROLE de `rick-qa`) | Claude local (con GO) |
 | P1.4 | **UX-01** — investigar por qué el stream `tool` del gateway llega crudo al canal | Lane operador |
 

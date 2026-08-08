@@ -4,9 +4,11 @@
 > base `fd0c962` (`origin/main` al momento del checkout)
 > **Ejecutado por:** Claude, Remote-SSH sobre `/home/rick/umbral-agent-stack` (host `srv1431451`,
 > usuario `rick`) — confirmado antes de tocar nada.
-> **Estado: FASE 1 (inventario) completa. FASE 2–4 NO ejecutadas — sin cita explícita de
-> "GO VPS HYGIENE" en esta conversación.** Este documento es el inventario + clasificación que
-> el pack pide como insumo previo al GO, no un cierre.
+> **Estado: FASE 1 (inventario) completa. FASE 2–4 EJECUTADAS** el mismo día bajo
+> PKG-UAS-P1-VPS-HYGIENE-EXEC (rama `claude/pkg-uas-p1-vps-hygiene-exec-20260807`, base
+> `e07a5c1` = tip de `main` tras mergear este PR de Fase 1). GO citado textual: *"GO VPS
+> HYGIENE"* + *"GO A LO MAS RECOMENDABLE E HIGENICO Y ROBUSTO, ANALIZA Y DECIDE"* (David,
+> 2026-08-07). Ver §"Fase 2/3 — ejecutado" más abajo para el detalle before/after.
 
 ## 0. Contexto que evita duplicar trabajo
 
@@ -159,25 +161,124 @@ tocó el zombi `openai:umbral-rick` (prohibido explícitamente por el pack).
 | 25 stashes del canónico | **DEFER** | no abiertos en detalle en este pack; requiere pack de higiene de stashes dedicado |
 | `~/rclone`, `~/umbral-pit-vault`, `~/umbral-bot-2`, `~/umbral-obsidian-vault*` | **KEEP** (fuera de scope) | proyectos separados, no residuo de umbral-agent-stack |
 
+## Fase 2/3 — ejecutado (PKG-UAS-P1-VPS-HYGIENE-EXEC, 2026-08-07)
+
+GO citado textual (evidencia en `~/.coord-ag-evidence/uas-p1-vps-hygiene-exec-20260807/AUTHZ.txt`):
+*"GO VPS HYGIENE"* + *"GO A LO MAS RECOMENDABLE E HIGENICO Y ROBUSTO, ANALIZA Y DECIDE"*
+(David, 2026-08-07). Rama `claude/pkg-uas-p1-vps-hygiene-exec-20260807`, base `e07a5c1`.
+Allowlist cerrada — solo lo listado abajo, todo lo demás quedó BLOCKED/DEFER.
+
+### A — DISCARD_SAFE
+
+| Ítem | Antes | Después | Evidencia |
+|---|---|---|---|
+| Crontab: 4 líneas comentadas muertas (`DISABLED_TANDA_A_2026_07_17` ×3, `B1-paused` ×1) | 18 líneas | 14 líneas activas, diff exacto = solo esas 4 | `crontab.bak` / `crontab.new`, diff limpio (nada más tocado) |
+| `~/.npm` cache global | 6.5G | 838M | `npm-cache-before.txt` / `npm-cache-after.txt` |
+
+### B — MUTATE_WITH_BACKUP (OpenClaw)
+
+Backup `openclaw.json` → `openclaw.json.bak` (md5 verificado idéntico antes de editar).
+
+**P3.2 — 2/3 aplicados, 1/3 explícitamente sin tocar:**
+- `plugins.load.paths`: entrada redundante → `[]`. **Aplicado.**
+- `plugins.entries.umbral-tournament-github`: clave borrada completa. **Aplicado.**
+- `gateway.trustedProxies`: **sin tocar**, prohibido explícito del pack (B5).
+
+Método real: `openclaw doctor --fix` (incluso con `--yes` y wrapeado en `script -qfc` para
+TTY real) resultó tener un radio de acción mucho mayor al autorizado — llegó a intentar
+levantar un servidor MCP externo no relacionado (`mcp-remote https://mcp.magnific.com`) como
+parte de un chequeo de bundle, dejando 3 procesos huérfanos que hubo que matar a mano tras
+interrumpir el intento. Se abandonó esa vía y se aplicó una **edición JSON quirúrgica**
+verificada por round-trip (`json.load`→`json.dump` sin edits daba diff cero contra el
+original) — el diff resultante contra el backup son EXACTAMENTE los 2 cambios de arriba,
+nada más. El propio gateway confirmó en su log que reconoció los cambios correctos
+(`[reload] config change detected; evaluating reload (plugins.load.paths,
+plugins.entries.umbral-tournament-github)`) y se reinició limpio solo (SIGUSR1,
+`shutdown completed cleanly`, `NRestarts=1`, sin crash-loop) — comportamiento esperado de su
+propio hot-reload, no la regla de rollback disparándose. Detalle completo en
+`doctor-fix.txt` (evidencia).
+
+**999 transcripts huérfanos — NO ejecutado, DEFER documentado.** Se intentó reconstruir la
+lógica de "huérfano" desde `sessions.json` (`usageFamilySessionIds` + `sessionFile`) y dio
+**2024** archivos sin referencia, no 999 — una discrepancia de más del doble contra lo que
+`doctor` reportó, señal de que la lógica exacta de la herramienta no es replicable a mano de
+forma confiable. Renombrar por una lógica propia que diverge tanto viola la regla de "sin
+improvisar fuera de lista" del pack. Queda sin ejecutar.
+
+**B6 confirmado cumplido:** no se corrió `sessions cleanup --enforce`; no se tocaron los
+dirs `pit-*`; no se tocó `~/.openclaw/workspace/umbral-agent-stack`; no se tocó el zombi
+`openai:umbral-rick`; `~/archive/uas/` intacto (gate `G-WH-VPS-2` no citado, no reabierto).
+
+Gateway: **`active (running)`**, `NRestarts=1` (el reload esperado), estable.
+
+### C — `/tmp` worktrees
+
+**C1 — oauth (descartados, no rescatados):** `openclaw-oauth-apply-wt` y
+`openclaw-oauth-only-urgent-wt` — confirmado HEAD de ambos como ancestro de `origin/main`
+(commits ya mergeados, ramas ya borradas de origin). Dirty = solo notas de tracking sobre un
+task (`.agents/tasks/2026-07-12-001-...md`), capturado en evidencia y descartado sin
+rescatar (regla del pack: "Dirty = solo notas de task → descartar dirty"). `git worktree
+remove --force` ×2 + `git branch -D` de las 2 ramas fósiles locales.
+
+**C2 — hb (rescatados vía PR, luego podados):** `wt-candidate` (commit `0d70b67`,
+2026-07-09, "fix(notion): dedupe bot poller comments before action log") y
+`wt-replay-on-origin` (staged, sin commit) contenían el **mismo fix exacto** — confirmado
+por comparación función por función (`_is_comment_processed`, `_filter_unprocessed_comments`
++ 3 tests idénticos en ambos). Clasificación: `wt-candidate` = **UNIQUE** (no está en
+`origin/main`), `wt-replay-on-origin` = **SUBSUMED** por el mismo contenido — un solo rescate
+cubre los dos.
+
+Cherry-pick de `0d70b67` sobre `origin/main` actual (rama `claude/rescue-notion-poller-hb-20260713`)
+con conflicto de merge por drift del archivo (`dispatcher/notion_poller.py` creció de ~1073 a
+1793 líneas desde julio) — resuelto preservando todo el contenido nuevo de `main` e
+insertando las 2 funciones + 3 tests del fix en su lugar correspondiente. **222/222 tests de
+`test_notion_poller.py` pasan** tras el resolve. Commit `709f211`, push, PR abierto **sin
+merge**: **[PR #611](https://github.com/Umbral-Bot/umbral-agent-stack/pull/611)** — el PR
+deja explícito que necesita revisión funcional independiente antes de ir a `main` (esto es
+higiene de residuos git, no una aprobación de que el fix siga vigente).
+
+Tras la captura + PR: ambos worktrees podados (`git worktree remove --force` ×2). El
+directorio padre `/tmp/rick-hb-20260713-0143/` quedó con 13 archivos de notas de
+investigación sueltas (no son worktrees git, ~13KB) — **fuera del allowlist C2, no
+tocados**, listado guardado en evidencia.
+
+**C3:** worktree `rick-delivery/umbral-agent-stack-poller-hardening` — no tocado, como
+exige el pack.
+
+### D — Resultado en disco/estado
+
+| Métrica | Antes (Fase 1) | Después (Fase 2/3) |
+|---|---|---|
+| `df -h /` uso | 45G/96G (47%) | 40G/96G (42%) |
+| `~/.npm` | 6.5G | 838M |
+| Crontab líneas | 18 (14 activas + 4 muertas) | 14 (todas activas) |
+| Worktrees registrados en canónico | 11 | 8 (−2 oauth, −2 hb, +0 — `archive/uas` intacto) |
+| Ramas locales fósiles | — | −2 (`rick/openclaw-oauth-apply-20260713`, `rick/openclaw-oauth-only-urgent-20260713`) |
+| `plugins.load.paths` | 1 entrada redundante | `[]` |
+| `plugins.entries` | incluía `umbral-tournament-github` (stale) | removida |
+| `gateway.trustedProxies` | sin configurar | **sin configurar** (intacto, prohibido tocar) |
+| Gateway | active, 1d17h uptime | active, `NRestarts=1` (reload esperado por el propio fix) |
+
 ## Gate
 
 **`UAS_P1_VPS_HYGIENE_PASS = PARTIAL`**
 
-Fase 1 (inventario, solo lectura) — **completa**, evidencia en este documento. Fase 2
-(discard safe), Fase 3 (mutate OpenClaw) y Fase 4 (repo runtime) — **no ejecutadas**: esta
-conversación no contiene la cita explícita "GO VPS HYGIENE" que el pack exige antes de mutar
-o borrar nada. Nada fue borrado, movido, ni reiniciado. `openclaw doctor` corrió sin `--fix`.
+Justificación: A y C completos según allowlist; B logra 2/3 de P3.2 (trustedProxies
+correctamente intacto por regla dura, no es una falla) pero el archivado de los 999
+transcripts huérfanos **no se ejecutó** — la discrepancia 2024 vs 999 en la reconstrucción
+manual de la lógica de "huérfano" es evidencia real de que replicarla a mano no es seguro,
+así que se dejó sin tocar en vez de arriesgar un rename incorrecto sobre casi 2000 archivos.
+Todo lo demás del allowlist se ejecutó con evidencia. `~/archive/uas/`, `trustedProxies`,
+zombi `openai:umbral-rick`, dirs `pit-*` y `sessions cleanup --enforce` quedaron intactos
+como exige el pack — cero excepciones ahí.
 
-**Pendiente de David, con la lista de arriba como insumo:**
-1. Confirmar GO explícito para ejecutar los `DISCARD_SAFE` (cache npm, comentarios de
-   crontab) y los `MUTATE_WITH_BACKUP` (P3.2 vía `doctor --fix` + backup previo de
-   `openclaw.json`; archivado de los 999 transcripts).
-2. Decidir rescate vs descarte de los 2 worktrees `/tmp/rick-hb-20260713-0143/*` (código no
-   mergeado, parece bugfix real del poller de Notion).
-3. Si corresponde citar gate `G-WH-VPS-2` para `~/archive/uas/`, hacerlo en un pack aparte —
-   no se re-abre aquí.
-4. `trustedProxies`: aclarar si "configurar" significa fijar loopback explícito (mutate
-   trivial) o exponer a una red — en ese caso, DEFER por regla dura del pack.
+**PRs de este ciclo:**
+- [#610](https://github.com/Umbral-Bot/umbral-agent-stack/pull/610) — Fase 1 inventario, **mergeado**.
+- [#611](https://github.com/Umbral-Bot/umbral-agent-stack/pull/611) — rescate del fix del poller de Notion, **abierto, sin merge** (requiere revisión funcional aparte).
+- Esta rama (`claude/pkg-uas-p1-vps-hygiene-exec-20260807`, acta Fase 2/3) — PR abierto **sin merge**, ver commit de este documento.
 
-No hubo `git push` de esta rama todavía — se hace junto con este commit, sin abrir PR hasta
-que el gate sea `Y` o David indique lo contrario.
+**Pendiente de David:**
+1. Decidir si el archivado de los 999 transcripts se hace en un pack aparte con más
+   visibilidad de la lógica real de `doctor`, o si se acepta dejarlos como están.
+2. Revisar y decidir merge de [PR #611](https://github.com/Umbral-Bot/umbral-agent-stack/pull/611) (fix real, no higiene).
+3. Mergear el PR de este documento cuando corresponda — sin self-merge.

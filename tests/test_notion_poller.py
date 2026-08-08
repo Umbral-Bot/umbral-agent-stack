@@ -182,7 +182,7 @@ def test_do_poll_advances_last_ts_from_worker_envelope(mock_handle_smart_reply):
     scheduler = MagicMock()
     r = MagicMock()
     r.get.return_value = "2026-03-16T20:00:00+00:00"
-    r.set.side_effect = [True, "OK"]
+    r.set.side_effect = [True, True, "OK"]
 
     with patch.dict(
         "os.environ",
@@ -623,6 +623,59 @@ def test_do_poll_skips_bot_reply_without_rick_prefix(mock_smart, _clear_bot_cach
 
 
 @patch("dispatcher.notion_poller.handle_smart_reply")
+def test_do_poll_claims_bot_reply_at_last_ts_to_prevent_loop(mock_smart, _clear_bot_cache):
+    """Bot-authored comments equal to last_ts must be marked processed.
+
+    Notion can return comments whose created_time is exactly equal to the stored
+    checkpoint. Since that does not advance last_ts, author-guard skips must still
+    be claimed or the same bot comments are fetched forever.
+    """
+    wc = MagicMock()
+    wc.run.side_effect = [{"ok": True, "result": {"items": []}}, {"ok": True, "result": {"items": []}}]
+    wc.notion_poll_comments.return_value = {
+        "ok": True,
+        "result": {
+            "comments": [
+                {
+                    "id": "c-bot-loop",
+                    "created_time": "2026-07-02T18:30:00.000Z",
+                    "created_by": "bot-from-env",
+                    "text": "SIM Daily Report (2026-07-02 18:30 UTC)",
+                }
+            ]
+        },
+    }
+    queue = MagicMock(); scheduler = MagicMock(); r = MagicMock()
+    r.get.return_value = "2026-07-02T18:30:00+00:00"
+    r.set.return_value = True
+
+    with patch.dict(
+        "os.environ",
+        {
+            "NOTION_BOT_USER_ID": "bot-from-env",
+            "NOTION_CONTROL_ROOM_PAGE_ID": "",
+            "NOTION_DELIVERABLES_DB_ID": "",
+            "NOTION_PROJECTS_DB_ID": "",
+            "NOTION_CURATED_SESSIONS_DB_ID": "",
+            "NOTION_GRANOLA_DB_ID": "",
+        },
+        clear=False,
+    ):
+        _do_poll(wc, queue, r, scheduler)
+
+    mock_smart.assert_not_called()
+    r.set.assert_any_call(
+        "umbral:notion_poller:processed_comment:c-bot-loop",
+        "1",
+        nx=True,
+        ex=86400,
+    )
+    assert not any(
+        call.args[0] == "umbral:notion_poller:last_ts" for call in r.set.call_args_list
+    )
+
+
+@patch("dispatcher.notion_poller.handle_smart_reply")
 def test_do_poll_skips_bot_reply_with_rick_prefix(mock_smart, _clear_bot_cache):
     """B2: a bot reply that DOES start with 'Rick:' is skipped by the author guard
     (would also be caught by ECHO_PREFIX; both layers active)."""
@@ -701,6 +754,55 @@ def test_do_poll_fallback_echo_prefix_when_bot_id_unresolvable(mock_smart, _clea
         _do_poll(wc, queue, r, scheduler)
 
     mock_smart.assert_not_called()
+
+
+@patch("dispatcher.notion_poller.handle_smart_reply")
+def test_do_poll_claims_echo_prefix_at_last_ts_to_prevent_loop(mock_smart, _clear_bot_cache):
+    """Echo-prefix fallback skips should also be claimed when created_time == last_ts."""
+    wc = MagicMock()
+    wc.run.side_effect = [{"ok": True, "result": {"items": []}}, {"ok": True, "result": {"items": []}}]
+    wc.notion_poll_comments.return_value = {
+        "ok": True,
+        "result": {
+            "comments": [
+                {
+                    "id": "c-echo-loop",
+                    "created_time": "2026-07-02T18:30:00.000Z",
+                    "created_by": "unknown-bot",
+                    "text": "Rick: respuesta propia",
+                }
+            ]
+        },
+    }
+    queue = MagicMock(); scheduler = MagicMock(); r = MagicMock()
+    r.get.return_value = "2026-07-02T18:30:00+00:00"
+    r.set.return_value = True
+
+    with patch.dict(
+        "os.environ",
+        {
+            "NOTION_BOT_USER_ID": "",
+            "NOTION_API_KEY": "",
+            "NOTION_CONTROL_ROOM_PAGE_ID": "",
+            "NOTION_DELIVERABLES_DB_ID": "",
+            "NOTION_PROJECTS_DB_ID": "",
+            "NOTION_CURATED_SESSIONS_DB_ID": "",
+            "NOTION_GRANOLA_DB_ID": "",
+        },
+        clear=False,
+    ):
+        _do_poll(wc, queue, r, scheduler)
+
+    mock_smart.assert_not_called()
+    r.set.assert_any_call(
+        "umbral:notion_poller:processed_comment:c-echo-loop",
+        "1",
+        nx=True,
+        ex=86400,
+    )
+    assert not any(
+        call.args[0] == "umbral:notion_poller:last_ts" for call in r.set.call_args_list
+    )
 
 
 @patch("dispatcher.notion_poller.handle_smart_reply")
@@ -1922,3 +2024,46 @@ class TestRrssInjectionScanBehavior:
 
     def test_disabled_log_helper_resets_without_error(self):
         _reset_rrss_injection_disabled_log()
+
+
+@patch("dispatcher.notion_poller.handle_smart_reply")
+def test_do_poll_filters_already_processed_before_actionable_count(mock_smart, _clear_bot_cache, caplog):
+    """Already-claimed bot/echo comments should not count as actionable on later cycles."""
+    wc = MagicMock()
+    wc.run.side_effect = [{"ok": True, "result": {"items": []}}, {"ok": True, "result": {"items": []}}]
+    wc.notion_poll_comments.return_value = {
+        "ok": True,
+        "result": {
+            "comments": [
+                {
+                    "id": "c-bot-loop",
+                    "created_time": "2026-07-02T18:30:00.000Z",
+                    "created_by": "bot-from-env",
+                    "text": "SIM Daily Report (2026-07-02 18:30 UTC)",
+                }
+            ]
+        },
+    }
+    queue = MagicMock(); scheduler = MagicMock(); r = MagicMock()
+    r.get.return_value = "2026-07-02T18:30:00+00:00"
+    r.exists.return_value = True
+    r.set.return_value = True
+
+    with patch.dict(
+        "os.environ",
+        {
+            "NOTION_BOT_USER_ID": "bot-from-env",
+            "NOTION_CONTROL_ROOM_PAGE_ID": "",
+            "NOTION_DELIVERABLES_DB_ID": "",
+            "NOTION_PROJECTS_DB_ID": "",
+            "NOTION_CURATED_SESSIONS_DB_ID": "",
+            "NOTION_GRANOLA_DB_ID": "",
+        },
+        clear=False,
+    ):
+        with caplog.at_level("INFO", logger="dispatcher.notion_poller"):
+            _do_poll(wc, queue, r, scheduler)
+
+    mock_smart.assert_not_called()
+    assert "0 actionable comments" in caplog.text
+    assert "1 already processed skipped" in caplog.text

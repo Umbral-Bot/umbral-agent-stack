@@ -282,3 +282,76 @@ como exige el pack — cero excepciones ahí.
    visibilidad de la lógica real de `doctor`, o si se acepta dejarlos como están.
 2. Revisar y decidir merge de [PR #611](https://github.com/Umbral-Bot/umbral-agent-stack/pull/611) (fix real, no higiene).
 3. Mergear el PR de este documento cuando corresponda — sin self-merge.
+
+## Transcripts huérfanos — cierre del residual (PKG-UAS-P1-VPS-TRANSCRIPTS, 2026-08-08)
+
+GO citado: *"go con el siguiente"* (David, 2026-08-08), tras lista residual del orquestador
+(1º ítem = transcripts OpenClaw). Evidencia:
+`~/.coord-ag-evidence/uas-p1-vps-transcripts-20260808/`. Rama
+`claude/pkg-uas-p1-vps-transcripts-20260808`, base `ad71801` (incluye el deploy #611, sin
+redeploy).
+
+**F1 — `openclaw doctor` de solo lectura:** conteo actual **1005 orphan transcript files**
+en `~/.openclaw/agents/main/sessions` (wording idéntico a ayer, +6 vs los 999 originales —
+crecimiento normal de actividad).
+
+**F2 — descubrimiento del CLI oficial:** `openclaw sessions cleanup --dry-run [--agent
+<id>|--all-agents] [--json]` es el comando real y acotado (no `doctor --fix`, que sigue
+teniendo el problema de radio de acción ya documentado ayer). No interactivo, no toca
+plugins/red/config. Detalle completo en `cli-discovery.md` (evidencia).
+
+Dry-run `--agent main --json`:
+```json
+"unreferencedArtifacts": {
+  "scannedFiles": 3294, "removedFiles": 2107,
+  "freedBytes": 370093651, "olderThanMs": 2592000000
+}
+```
+
+**F4 — decisión: NO se ejecuta `--enforce`.** El comando existe y tiene `--dry-run` (vía
+"A" en la letra), pero **su comportamiento real falla la condición explícita del pack**
+("solo rename/archive, no delete hard"). Verificado con 3 señales independientes:
+1. El JSON usa vocabulario `removedFiles`/`freedBytes` — consistente con liberación real
+   de disco, no con un rename.
+2. `openclaw docs` → la documentación oficial viva
+   (`docs.openclaw.ai/reference/session-management-compaction`) dice textual: *"Explicit
+   deletion is different: it writes and verifies a compressed transcript archive
+   (`*.jsonl.deleted.<timestamp>.zst`...) before removing the deleted session's rows."*
+   — es decir, el archivado-por-rename que `doctor` promete pertenece al código de
+   **deleción explícita vía API**, no al de **poda automática de artefactos huérfanos**
+   (`sessions cleanup`), que la misma doc describe sin ninguna copia recuperable.
+3. Los 13 archivos `*.deleted.*` que ya existen en disco pertenecen a ese otro flujo, no
+   son evidencia de que esta poda vaya a producir más.
+
+**Conclusión:** el texto de `openclaw doctor` ("archive them safely by renaming") es
+impreciso respecto al comportamiento real de la única vía oficial disponible — es delete
+permanente sin backup. No existe flag en `sessions cleanup` para forzar rename en vez de
+delete. No se ejecutó nada destructivo; ni siquiera se probó en un agente chico como
+experimento, para no mutar nada fuera de lo explícitamente autorizado.
+
+**Dimensionamiento completo (solo lectura, `--dry-run --all-agents`)**, para que la
+decisión de David sea informada más allá del alcance original de `main`:
+
+| Agente | Escaneados | A remover (delete real) | Bytes |
+|---|---:|---:|---:|
+| `main` | 3294 | 2107 | 370.1 MB |
+| `rick-orchestrator` | 5138 | 4961 | 546.4 MB |
+| `rick-ops` | 14139 | 9341 | 977.5 MB |
+| `rick-tracker` | 36 | 7 | 70.4 MB |
+| `rick-linkedin-writer` | 24 | 6 | 27.6 MB |
+| `rick-communication-director` | 25 | 4 | 17.1 MB |
+| `rick-delivery` | 29 | 3 | 0.4 MB |
+| `rick-qa` | 370 | 3 | 0.4 MB |
+| **Total** | **23005** | **16432** | **~2.01 GB** |
+
+Sin presión de disco (42% usado, 57G libres) — nada de esto es urgente por espacio.
+
+**Gate: `UAS_P1_VPS_TRANSCRIPTS_PASS = PARTIAL`.** Fase 1 completa (doctor readonly + CLI
+discovery + dry-run de dimensionamiento, todo solo lectura). Se detuvo antes de mutar por
+evidencia real de que la única vía oficial es más destructiva de lo que el pack autorizaba
+— exactamente el caso "aceptable y preferible a improvisar" que el pack contempla. Gateway
+sin tocar (`active`, `NRestarts=1`, sin cambios desde el pack anterior).
+
+**Pendiente de David:** decidir con los números reales de arriba si autoriza el delete
+permanente (y con qué alcance — ¿solo `main`, ~370MB? ¿todos los agentes, ~2GB?), sabiendo
+que no es reversible y que no hay presión de disco que lo urja.

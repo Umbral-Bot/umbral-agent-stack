@@ -66,6 +66,11 @@ David**, no algo que se dispare solo por tiempo transcurrido. La "GO VPS HYGIENE
 este pack **no** cita G-WH-VPS-2 — así que los 8 ítems de `~/archive/uas/` (3 clones + 6
 worktrees registrados, ~964M) quedan **BLOCKED** en este pack, no re-evaluados de cero.
 
+> **Update 2026-08-08:** `~/archive/uas` fue **eliminado definitivamente** bajo gate
+> `G-WH-VPS-2` (citado explícitamente por David) en PKG-UAS-P1-VPS-RESIDUALS. Detalle
+> completo, re-verificación independiente de las 8 ramas y rescates en
+> [uas-p1-vps-residuals-20260808.md](uas-p1-vps-residuals-20260808.md).
+
 ## B. Disco
 
 `df -h /`: **96G total, 45G usados, 52G libres (47%)** — sin presión de espacio, esto es
@@ -77,7 +82,7 @@ higiene de orden, no rescate de disco lleno.
 | `~/.openclaw/npm/projects` | 5.1G | node_modules por proyecto de plugins (codex, etc.) — regenerable en teoría, pero es dependencia de runtime activo, no cache pura |
 | `~/.npm` (cache global de npm del usuario) | 6.5G | **cache real, clásico "regenerable obvio"** — candidato limpio para `npm cache clean` |
 | `~/.cache` | 1.7G | cache genérica (pip, etc.), no inventariada archivo por archivo |
-| `~/archive/uas` | 964M | **BLOCKED** — ver A.5 |
+| `~/archive/uas` | 964M | **DELETED 2026-08-08** bajo `G-WH-VPS-2` — ver A.5 y [uas-p1-vps-residuals-20260808.md](uas-p1-vps-residuals-20260808.md) |
 | `~/umbral-agent-stack` | 617M | canónico, KEEP obvio |
 | `~/exec-diag-2026-07` | 125M | captura de diagnóstico de julio, ya tiene subcarpeta `archive/` propia (2026-08-02) — no evaluado a fondo si su contenido ya está capturado en `docs/audits/sys-diag-inputs/2026-07-17/`; **DEFER**, no urgente por tamaño |
 | `~/rclone`, `~/umbral-pit-vault`, `~/umbral-bot-2`, `~/umbral-obsidian-vault*` | <100M c/u | proyectos separados, fuera del scope de este pack (no son clones de umbral-agent-stack ni residuo de higiene VPS); vistos, no tocados |
@@ -151,13 +156,13 @@ tocó el zombi `openai:umbral-rick` (prohibido explícitamente por el pack).
 | `/tmp/openclaw-oauth-{apply,only-urgent}-wt` (2 worktrees) | **DEFER** | commit ya mergeado + rama ya borrada de origin, pero dirty (notas de task) — regla del pack: dirty = no discard sin listar, ya listado aquí |
 | `/tmp/rick-hb-20260713-0143/wt-candidate` (dedupe fix no mergeado) | **DEFER** | código real no presente en `origin/main` — decisión de rescate (cherry-pick) vs descarte le corresponde a David |
 | `/tmp/rick-hb-20260713-0143/wt-replay-on-origin` (staged: fix loop bot/echo) | **DEFER** | mismo criterio — parece un bugfix real (evita reprocesar comentarios en loop), nunca aterrizado |
-| `~/archive/uas/*` (3 clones + 6 worktrees, ~964M) | **BLOCKED** | gate propio `G-WH-VPS-2` no citado en este GO — ver A.5 |
+| `~/archive/uas/*` (3 clones + 6 worktrees, ~964M) | **DELETED 2026-08-08** | gate `G-WH-VPS-2` citado en PKG-UAS-P1-VPS-RESIDUALS — ver [uas-p1-vps-residuals-20260808.md](uas-p1-vps-residuals-20260808.md) |
 | ~22 dirs `pit-*` huérfanos en `~/.openclaw/agents` (<15M total) | **BLOCKED** | sistema de torneos en HOLD ([[project_pit_tournaments_archived]]) — doctor los marca removibles pero la decisión de producto está pausada |
 | No command owner configurado | **DEFER** (fuera de scope) | hallazgo de postura de seguridad, no de residuo — se cita para David, no se ejecuta aquí |
 | `~/.openclaw/agents/{main,rick-orchestrator,...}` (8 dirs, 8.9G) | **KEEP** | agentes activos en `agents.list` |
 | Canónico `/home/rick/umbral-agent-stack` | **KEEP** | en uso, procesos worker/mission_control corriendo desde ahí |
 | Worktree `rick-delivery/umbral-agent-stack-poller-hardening` | **KEEP** | feature en curso, limpio |
-| 6 worktrees `rick/copilot-cli-*` dentro de `archive/uas` | **BLOCKED** (subsumido en A.5) | ya gateados |
+| 6 worktrees `rick/copilot-cli-*` dentro de `archive/uas` | **DELETED 2026-08-08** (subsumido en A.5) | removidos junto con el resto de `archive/uas` bajo `G-WH-VPS-2` |
 | 25 stashes del canónico | **DEFER** | no abiertos en detalle en este pack; requiere pack de higiene de stashes dedicado |
 | `~/rclone`, `~/umbral-pit-vault`, `~/umbral-bot-2`, `~/umbral-obsidian-vault*` | **KEEP** (fuera de scope) | proyectos separados, no residuo de umbral-agent-stack |
 

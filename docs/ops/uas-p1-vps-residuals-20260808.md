@@ -112,6 +112,14 @@ fallo silencioso. **No se corrigió en este pack** (fuera del allowlist A/B/C) �
 flaggeó como tarea aparte (`spawn_task`, `task_f4bdfe21`) y el stash se mantiene **KEEP**
 (no se dropeó, ya que contiene el fix correcto — chmod +x — listo para aplicar).
 
+> **Update 2026-08-08 — FIXED este pack:** PKG-UAS-VPS-CRON-CHMOD aplicó el fix real (no
+> el stash a ciegas — se reprodujo limpio en repo): `git update-index --chmod=+x` en
+> ambos scripts (índice `100644`→`100755`) + `chmod +x` en el filesystem del VPS
+> (desbloquea el cron de inmediato, sin esperar merge). `bash -n` OK en ambos; no se
+> ejecutó el cron completo (ninguno tiene `--dry-run` y ambos escriben a Notion). El
+> stash `KEEP` original (`auto-stash-before-p11-pull`) sigue sin dropear hasta confirmar
+> el fix corriendo sano en la próxima ventana de cron. PR sin merge.
+
 ---
 
 ## Fase C — Calendar: borrar eventos E2E probe

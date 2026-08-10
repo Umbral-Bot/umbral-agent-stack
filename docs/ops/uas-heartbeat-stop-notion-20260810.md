@@ -83,10 +83,31 @@ compactar/rotar esa sesión (`openclaw sessions compact` o reset) para que el hi
 no compita con la instrucción — mutación aparte, con su propio GO. Mientras tanto el
 cleanup del panel archiva cualquier página que se escape, cada 6h.
 
+## Verify cerrado + Plan B descartado (PKG-UAS-HEARTBEAT-PLAN-B, 2026-08-10)
+
+El pack Plan B (GO *"go plan B"*) llegó a Fase 1 (diagnose) y **se detuvo antes de
+mutar: la premisa quedó refutada por la evidencia fresca.** Cronología UTC:
+
+| Hora | Evento |
+|---|---|
+| 16:33 | El heartbeat publica página Notion — **pre-edit** (la única live del día) |
+| 16:47 | Aterriza el edit de `HEARTBEAT.md` (este pack) |
+| 17:33 | Ciclo 1 post-edit: report local **sí**, página Notion **no** |
+| 17:52 | El sweep #620 ve 1 página "2026-08-10" y la atribuye **erróneamente** al ciclo 17:33 (era la de 16:33 — no se verificó la hora del `created_time`); esa lectura falsa motivó el GO del Plan B |
+| 18:33 | Ciclo 2 post-edit: report local **sí**, página Notion **no** |
+
+Testigo que blinda la conclusión: la página de 16:33 **seguía viva** al momento del
+diagnose → ningún cleanup/refresh corrió desde antes de 16:33 → si los ciclos 17:33 o
+18:33 hubieran publicado, sus páginas estarían visibles. No están.
+
+**El edit funcionó desde el primer ciclo.** La sesión `bd35d75c` quedó **intacta**
+(compactarla habría descartado 181k tokens de contexto operativo del tracker sin
+necesidad). La página remanente de 16:33 la archiva el cron del panel (22:20 UTC).
+
 ## Gate
 
-**`UAS_HEARTBEAT_STOP_NOTION_PASS = PARTIAL`** — productor localizado con cita,
-backup verificado (md5), edit aplicado en live + repo (sync-safe), docs/PR. El verify
-vivo queda pendiente del próximo :33 (criterio explícito del pack para PARTIAL).
-Pasa a **Y** cuando dos heartbeats consecutivos no produzcan páginas nuevas y el
-reporte local siga generándose.
+**`UAS_HEARTBEAT_STOP_NOTION_PASS = Y`** — criterio cumplido: 2 heartbeats
+consecutivos post-edit (17:33, 18:33 UTC) sin páginas nuevas + reporte local
+generándose. Plan B: **descartado con evidencia, sin mutación**
+(`UAS_HEARTBEAT_PLAN_B_PASS = Y` por la vía de "verify 0 Notion nuevas + report local
+OK", con la aclaración de que el compact no fue necesario).

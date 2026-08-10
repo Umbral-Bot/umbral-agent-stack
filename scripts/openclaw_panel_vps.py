@@ -53,8 +53,9 @@ _RESIDUAL_CHILD_PAGE_PREFIXES = (
     # Control Room (telemetria que la gobernanza pide mantener fuera de la vista
     # de David). El cleanup las archiva (reversible en Notion); el productor se
     # trata aparte. Diagnostico: docs/ops/uas-panel-residual-diag-20260809.md
-    "Heartbeat Rick — ",
-    "Heartbeat Rick - ",
+    # El titulo aparecio con tres variantes (em-dash, hyphen y sin guion en la
+    # ventana 08-03/04), asi que el prefijo no exige separador.
+    "Heartbeat Rick ",
 )
 SUMMARY_HEADING = "Resumen ejecutivo"
 SUMMARY_TABLE_HEADING = "Lectura rápida"

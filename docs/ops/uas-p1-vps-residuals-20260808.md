@@ -119,6 +119,18 @@ flaggeó como tarea aparte (`spawn_task`, `task_f4bdfe21`) y el stash se mantien
 > ejecutó el cron completo (ninguno tiene `--dry-run` y ambos escriben a Notion). El
 > stash `KEEP` original (`auto-stash-before-p11-pull`) sigue sin dropear hasta confirmar
 > el fix corriendo sano en la próxima ventana de cron. PR sin merge.
+>
+> **Update 2026-08-09 — VERIFICADO y cerrado:** PKG-UAS-VPS-CRON-VERIFY (PR #615 ya
+> mergeado, `33d1f03`) confirmó `PASS_NO_PERM_DENIED` en ambos logs —
+> `/tmp/dashboard_rick_cron.log` (1148 líneas, última falla en la 1121, 27 líneas
+> limpias después — múltiples corridas horarias sin fallo) y
+> `/tmp/openclaw_panel_cron.log` (191 líneas, última falla en la 186, 5 corridas de 6h
+> limpias después). El stash `auto-stash-before-p11-pull` (chmod-only, ya redundante
+> contra `main`) fue **dropeado** — quedaron 17 stashes `KEEP`, ninguno más tocado.
+> Nota aparte sin relación al bug de permisos: las corridas exitosas de
+> `openclaw-panel` muestran `residual_child_pages` creciendo (154→178) en
+> `validation.ok=false` — problema de limpieza de páginas en el panel de Notion, no
+> tocado aquí, fuera de scope.
 
 ---
 

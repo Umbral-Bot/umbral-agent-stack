@@ -821,3 +821,56 @@ def test_trigger_openclaw_panel_refresh_marks_dirty_when_panel_not_ready(monkeyp
     assert result["triggered"] is False
     assert result["reason"] == "openclaw_panel_not_ready"
     assert not (tmp_path / "dirty.json").exists()
+
+
+def test_cleanup_openclaw_residuals_archives_heartbeat_rick_pages(monkeypatch):
+    """Regresion diag 2026-08-09: el heartbeat de rick-tracker publica una pagina
+    "Heartbeat Rick — <ts> UTC" por hora en Control Room; el cleanup debe archivarlas
+    (ambas variantes de guion: em-dash actual y hyphen de los reports viejos)."""
+    archived = []
+    deleted = []
+    monkeypatch.setattr(openclaw_panel_vps, "_archive_pages", lambda page_ids: archived.extend(page_ids))
+    monkeypatch.setattr(openclaw_panel_vps, "_delete_blocks", lambda block_ids: deleted.extend(block_ids))
+
+    cleaned = openclaw_panel_vps._cleanup_openclaw_residuals(
+        [
+            {"id": "keep-1", "type": "child_page", "child_page": {"title": "Dashboard Rick"}},
+            {"id": "keep-2", "type": "child_page", "child_page": {"title": "Alertas del Supervisor"}},
+            {"id": "hb-1", "type": "child_page", "child_page": {"title": "Heartbeat Rick — 2026-08-09 21:33 UTC"}},
+            {"id": "hb-2", "type": "child_page", "child_page": {"title": "Heartbeat Rick - 2026-07-25 21:33 CLT"}},
+        ]
+    )
+
+    assert archived == ["hb-1", "hb-2"]
+    assert deleted == []
+    assert cleaned == 2
+
+
+def test_cleanup_openclaw_residuals_keeps_unmatched_content_pages(monkeypatch):
+    """Las paginas de contenido legitimo movidas a Control Room (Bitacora, Shortlist,
+    etc.) NO matchean prefijos y NO deben archivarse — son decision humana."""
+    archived = []
+    monkeypatch.setattr(openclaw_panel_vps, "_archive_pages", lambda page_ids: archived.extend(page_ids))
+    monkeypatch.setattr(openclaw_panel_vps, "_delete_blocks", lambda block_ids: None)
+
+    cleaned = openclaw_panel_vps._cleanup_openclaw_residuals(
+        [
+            {"id": "keep-3", "type": "child_page", "child_page": {"title": "Bitácora Plan Q2-2026"}},
+            {"id": "keep-4", "type": "child_page", "child_page": {"title": "Shortlist editorial guiada — Fases A y B"}},
+            {"id": "keep-5", "type": "child_page", "child_page": {"title": "📊 Pipeline Editorial — Métricas"}},
+        ]
+    )
+
+    assert archived == []
+    assert cleaned == 0
+
+
+def test_dashboard_rick_title_is_not_a_residual_prefix_match():
+    """Guardia: "Dashboard Rick" (pagina allowed) no debe matchear ningun prefijo
+    residual — un prefijo demasiado corto (p. ej. "Dashboard Rick") archivaria la
+    navegacion canonica."""
+    allowed_block = {"id": "nav", "type": "child_page", "child_page": {"title": "Dashboard Rick"}}
+    assert openclaw_panel_vps._is_residual_child_page(allowed_block) is False
+    for prefix in openclaw_panel_vps._RESIDUAL_CHILD_PAGE_PREFIXES:
+        assert not "Dashboard Rick".startswith(prefix)
+        assert not "Alertas del Supervisor".startswith(prefix)

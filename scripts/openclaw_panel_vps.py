@@ -49,6 +49,12 @@ SUPERVISOR_ALERT_PAGE_ID = (os.environ.get("NOTION_SUPERVISOR_ALERT_PAGE_ID") or
 _RESIDUAL_CHILD_PAGE_PREFIXES = (
     "OODA Weekly Report - ",
     "[improvement] Workflow: self_improvement_cycle",
+    # Heartbeat de rick-tracker: desde 2026-08-01 publica una pagina por hora en
+    # Control Room (telemetria que la gobernanza pide mantener fuera de la vista
+    # de David). El cleanup las archiva (reversible en Notion); el productor se
+    # trata aparte. Diagnostico: docs/ops/uas-panel-residual-diag-20260809.md
+    "Heartbeat Rick — ",
+    "Heartbeat Rick - ",
 )
 SUMMARY_HEADING = "Resumen ejecutivo"
 SUMMARY_TABLE_HEADING = "Lectura rápida"

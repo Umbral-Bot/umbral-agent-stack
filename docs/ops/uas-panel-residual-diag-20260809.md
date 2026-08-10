@@ -116,6 +116,41 @@ no de este repo — por eso va en pack aparte con su propio GO.
 Los 4 residuales de contenido (Bitácora, SIM Daily, Métricas, Shortlist) también
 esperan decisión: ¿moverlos a su lugar canónico, allowlistearlos, o archivarlos a mano?
 
+## Deploy y drenaje ejecutado (PKG-UAS-PANEL-DEPLOY-617, 2026-08-10)
+
+GO citado: *"GO sí"* (David, 2026-08-10) — merge #617 (`2c20b99`) = aprobar el drenaje.
+Evidencia: `~/.coord-ag-evidence/uas-panel-deploy-617-20260810/`.
+
+**El grueso del drenaje ocurrió solo antes del deploy formal:** el cron del panel corre
+desde el working tree del canónico, que había quedado en la rama del pack #617 (con el
+fix) tras el diagnóstico — las corridas nocturnas de 00:20/06:20 archivaron ~157
+Heartbeats. El deploy formal (pull `main` @ `2c20b99` + corrida controlada
+`--trigger deploy.617`) drenó el resto:
+
+| Punto | residual_child_pages | de los cuales Heartbeat |
+|---|---|---|
+| Diagnóstico (2026-08-09) | 182 | 178 |
+| Before deploy (2026-08-10) | 25 | 5 (+16 ocultos, ver abajo) |
+| Tras corrida 1 | 20 | 0 matcheables… |
+| Tras fix v2 + corrida 2 | **4** | **0 (todas las variantes)** |
+
+**Hallazgo del deploy — tercera variante de título:** 16 páginas de la ventana
+2026-08-03/04 usaban `Heartbeat Rick 2026-08-0X …` **sin guion** — no matcheaban
+ninguno de los 2 prefijos con guion del fix #617. Fix v2 (este pack): el prefijo se
+consolidó a `"Heartbeat Rick "` (sin exigir separador — cubre em-dash, hyphen y
+sin-guion). Test actualizado con las 3 variantes; 25/25 pasan. La guardia
+anti-regresión confirma que `Dashboard Rick` / `Alertas del Supervisor` no pueden
+matchear.
+
+**Estado final verificado:** `residual_child_pages = 4` — exactamente las 4 páginas de
+contenido legítimo (Bitácora, SIM Daily, Métricas, Shortlist; prohibido archivarlas,
+intactas). Allowed nav 2/2 intactos. `validation.ok` sigue `false` solo por esas 4 —
+estado honesto hasta que David decida su destino. `cleaned_blocks=16` en la corrida
+final. rick-tracker sigue produciendo ~1 página/hora (pack productor pendiente); el
+cleanup ahora las archiva en cada ciclo de 6h, cualquiera sea la variante del título.
+
+**Gate deploy: `UAS_PANEL_DEPLOY_617_PASS = Y`.**
+
 ## Gate
 
 **`UAS_PANEL_RESIDUAL_DIAG_PASS = Y`** — Fase 1 completa con causa compuesta B+A y

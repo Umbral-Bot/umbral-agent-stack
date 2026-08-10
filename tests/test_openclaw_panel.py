@@ -824,9 +824,10 @@ def test_trigger_openclaw_panel_refresh_marks_dirty_when_panel_not_ready(monkeyp
 
 
 def test_cleanup_openclaw_residuals_archives_heartbeat_rick_pages(monkeypatch):
-    """Regresion diag 2026-08-09: el heartbeat de rick-tracker publica una pagina
-    "Heartbeat Rick — <ts> UTC" por hora en Control Room; el cleanup debe archivarlas
-    (ambas variantes de guion: em-dash actual y hyphen de los reports viejos)."""
+    """Regresion diag 2026-08-09/10: el heartbeat de rick-tracker publica una pagina
+    "Heartbeat Rick <ts>" por hora en Control Room; el cleanup debe archivarlas en sus
+    TRES variantes reales de titulo (em-dash actual, hyphen de reports viejos, y sin
+    guion — ventana 2026-08-03/04)."""
     archived = []
     deleted = []
     monkeypatch.setattr(openclaw_panel_vps, "_archive_pages", lambda page_ids: archived.extend(page_ids))
@@ -838,12 +839,13 @@ def test_cleanup_openclaw_residuals_archives_heartbeat_rick_pages(monkeypatch):
             {"id": "keep-2", "type": "child_page", "child_page": {"title": "Alertas del Supervisor"}},
             {"id": "hb-1", "type": "child_page", "child_page": {"title": "Heartbeat Rick — 2026-08-09 21:33 UTC"}},
             {"id": "hb-2", "type": "child_page", "child_page": {"title": "Heartbeat Rick - 2026-07-25 21:33 CLT"}},
+            {"id": "hb-3", "type": "child_page", "child_page": {"title": "Heartbeat Rick 2026-08-03 15:33 UTC"}},
         ]
     )
 
-    assert archived == ["hb-1", "hb-2"]
+    assert archived == ["hb-1", "hb-2", "hb-3"]
     assert deleted == []
-    assert cleaned == 2
+    assert cleaned == 3
 
 
 def test_cleanup_openclaw_residuals_keeps_unmatched_content_pages(monkeypatch):

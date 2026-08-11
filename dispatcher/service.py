@@ -26,7 +26,7 @@ from dispatcher.queue import TaskQueue
 from dispatcher.quota_tracker import QuotaTracker
 from dispatcher.router import TeamRouter
 from dispatcher.team_config import get_team_capabilities
-from dispatcher.task_routing import task_requires_vm
+from dispatcher.task_routing import normalize_envelope_identity, task_requires_vm
 from client.worker_client import WorkerClient
 from infra.error_classification import classify_error
 from infra.ops_logger import ops_log
@@ -618,6 +618,16 @@ def _run_worker(
         envelope = queue.dequeue(timeout=2)
         if not envelope:
             continue
+
+        identity_fixes = normalize_envelope_identity(envelope)
+        if identity_fixes:
+            logger.warning(
+                "[worker %d] Envelope normalizado para task %s (%s): %s",
+                worker_id,
+                envelope.get("task_id", "?"),
+                envelope.get("task", "?"),
+                "; ".join(identity_fixes),
+            )
 
         task_id = envelope["task_id"]
         team = envelope.get("team", "system")

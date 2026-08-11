@@ -7,11 +7,11 @@ description: Alinear cualquier trabajo sobre Notion, Granola, smart replies, tas
 
 ## Objetivo
 
-Forzar que Claude trate Notion como el espacio de trabajo de David y no como un log interno del sistema, alineando cualquier cambio o diagnóstico contra la gobernanza viva disponible en `/home/rick/notion-governance-git`.
+Forzar que Claude trate Notion como el espacio de trabajo de David y no como un log interno del sistema, alineando cualquier cambio o diagnóstico contra la gobernanza viva del repo GitHub `Umbral-Bot/notion-governance` (no hay clone local en la VPS; ver R5 de `docs/runbooks/cross-thread-vps-concurrency.md`).
 
 ## Superficies de referencia
 
-- Gobernanza viva: `/home/rick/notion-governance-git`
+- Gobernanza viva: repo GitHub `Umbral-Bot/notion-governance` (sin clone local en VPS)
 - Runtime/deploy reference: `/home/rick/umbral-agent-stack`
 - Clean working copy: `/home/rick/umbral-agent-stack-main-clean`
 

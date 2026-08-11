@@ -9,8 +9,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from worker.models import TaskType, Team
-
 _VM_REQUIRED_PREFIXES = (
     "windows.",
     "browser.",
@@ -37,8 +35,19 @@ _LOCAL_ONLY_PREFIXES = (
 )
 
 
-_VALID_TEAM_VALUES = {member.value for member in Team}
-_VALID_TASK_TYPE_VALUES = {member.value for member in TaskType}
+# Valores validos del contrato TaskEnvelope (SoT: worker/models/__init__.py,
+# enums Team y TaskType). Duplicados aca a proposito: la unit del dispatcher
+# corre con python3 de sistema SIN pydantic, e importar worker.models arrastra
+# pydantic al import-graph (rompio el arranque el 2026-08-11). El test
+# test_normalize_sets_match_worker_enums garantiza que no driftean.
+_VALID_TEAM_VALUES = {
+    "marketing", "advisory", "improvement", "lab", "system", "rick-orchestrator",
+}
+_VALID_TASK_TYPE_VALUES = {
+    "coding", "writing", "research", "critical", "ms_stack", "general", "triage",
+}
+_TEAM_FALLBACK = "system"
+_TASK_TYPE_FALLBACK = "general"
 
 
 def normalize_envelope_identity(envelope: Dict[str, Any]) -> List[str]:
@@ -54,12 +63,12 @@ def normalize_envelope_identity(envelope: Dict[str, Any]) -> List[str]:
     fixes: List[str] = []
     team = envelope.get("team")
     if team is not None and team not in _VALID_TEAM_VALUES:
-        envelope["team"] = Team.SYSTEM.value
-        fixes.append(f"team '{team}' -> '{Team.SYSTEM.value}'")
+        envelope["team"] = _TEAM_FALLBACK
+        fixes.append(f"team '{team}' -> '{_TEAM_FALLBACK}'")
     task_type = envelope.get("task_type")
     if task_type is not None and task_type not in _VALID_TASK_TYPE_VALUES:
-        envelope["task_type"] = TaskType.GENERAL.value
-        fixes.append(f"task_type '{task_type}' -> '{TaskType.GENERAL.value}'")
+        envelope["task_type"] = _TASK_TYPE_FALLBACK
+        fixes.append(f"task_type '{task_type}' -> '{_TASK_TYPE_FALLBACK}'")
     return fixes
 
 

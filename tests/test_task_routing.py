@@ -76,3 +76,16 @@ class TestNormalizeEnvelopeIdentity:
         assert envelope['team'] == 'rick-orchestrator'
         assert envelope['task_type'] == 'general'
         assert len(fixes) == 1
+
+
+def test_normalize_sets_match_worker_enums():
+    """Guardia anti-drift: los sets locales del dispatcher (sin pydantic) deben
+    ser identicos a los enums del contrato del worker."""
+    from worker.models import TaskType, Team
+
+    from dispatcher import task_routing
+
+    assert task_routing._VALID_TEAM_VALUES == {m.value for m in Team}
+    assert task_routing._VALID_TASK_TYPE_VALUES == {m.value for m in TaskType}
+    assert task_routing._TEAM_FALLBACK in task_routing._VALID_TEAM_VALUES
+    assert task_routing._TASK_TYPE_FALLBACK in task_routing._VALID_TASK_TYPE_VALUES

@@ -76,15 +76,14 @@ def task_requires_vm(team_requires_vm: bool, task: str) -> bool:
     """
     Decide si una task debe ir a la VM.
 
-    Reglas:
-    - si el equipo no requiere VM, nunca forzar VM
+    Reglas (contrato ajustado 2026-08-11, PKG-UAS-VM-ROUTE-WINDOWS):
     - si la task es local-only, quedarse en VPS aunque el equipo base use VM
-    - si la task coincide con prefijos explicitos de VM, usar VM
-    - fallback: respetar el requires_vm del equipo
+    - si la task coincide con prefijos explicitos de VM (windows./browser./gui.),
+      ir a la VM SIEMPRE, aunque el equipo no requiera VM — antes el early-return
+      por equipo dejaba windows.* del cron (team normalizado a system) en el
+      worker Linux, que solo puede responder "Solo disponible en Windows"
+    - para tasks sin prefijo conocido, respetar el requires_vm del equipo
     """
-    if not team_requires_vm:
-        return False
-
     for prefix in _LOCAL_ONLY_PREFIXES:
         if task.startswith(prefix):
             return False

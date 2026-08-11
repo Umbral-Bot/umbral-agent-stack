@@ -7,7 +7,13 @@ from dispatcher.task_routing import task_requires_vm
     ('team_requires_vm', 'task', 'expected'),
     [
         (False, 'research.web', False),
-        (False, 'windows.fs.list', False),
+        # Contrato 2026-08-11 (PKG-UAS-VM-ROUTE-WINDOWS): los prefijos de VM
+        # fuerzan VM aunque el equipo no la requiera — el cron con team
+        # normalizado a system debe llegar a pcrick, no al worker Linux.
+        (False, 'windows.fs.list', True),
+        (False, 'browser.navigate', True),
+        (False, 'gui.screenshot', True),
+        (False, 'custom.task', False),
         (True, 'research.web', False),
         (True, 'llm.generate', False),
         (True, 'composite.research_report', False),
@@ -20,6 +26,24 @@ from dispatcher.task_routing import task_requires_vm
 )
 def test_task_requires_vm(team_requires_vm, task, expected):
     assert task_requires_vm(team_requires_vm, task) is expected
+
+
+def test_normalized_cron_envelope_routes_to_vm():
+    """Caso rick-ops end-to-end: el envelope ops/cron se normaliza a
+    system/general y aun asi windows.fs.list debe rutear a la VM."""
+    from dispatcher.task_routing import normalize_envelope_identity
+
+    envelope = {
+        'schema_version': '0.1',
+        'team': 'ops',
+        'task_type': 'cron',
+        'task': 'windows.fs.list',
+        'input': {'path': 'G:\\Mi unidad\\Rick-David\\Proyecto-Embudo-Ventas', 'limit': 50},
+    }
+    normalize_envelope_identity(envelope)
+    assert envelope['team'] == 'system'
+    # team system no requiere VM, pero el prefijo windows. la fuerza
+    assert task_requires_vm(False, envelope['task']) is True
 
 
 class TestNormalizeEnvelopeIdentity:

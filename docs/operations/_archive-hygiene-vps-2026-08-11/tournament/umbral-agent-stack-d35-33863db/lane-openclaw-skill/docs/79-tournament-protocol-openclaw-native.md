@@ -1,0 +1,277 @@
+# 79 — Tournament Protocol (OpenClaw-native)
+
+- **Status:** Draft v1 — formato estándar tournament 1-issue → N-branches → 1-winner sobre primitivas nativas OpenClaw.
+- **Date:** 2026-05-06
+- **Closes:** O7 → checkbox "Definir formato tournament estándar" (Plan Q2-2026 línea ~468).
+- **Built on:** [`docs/adr/tournament-on-openclaw-primitives.md`](adr/tournament-on-openclaw-primitives.md) (ADR commit `aecc68c`, Decision A — Wrapper-only).
+- **Implemented by (pending, ~12-15h):** skill `multi-agent-tournament-orchestrator` (a crear en `~/.openclaw/skills/`).
+- **Related:** [`docs/architecture/tournament-protocol.md`](architecture/tournament-protocol.md) — launch point G-D1b (standalone/main). [`docs/69-tournament-over-branches-runbook.md`](69-tournament-over-branches-runbook.md) — handler legacy `github.orchestrate_tournament` (fallback LLM-puro).
+
+---
+
+## 1. Por qué este protocolo
+
+OpenClaw 2026.5.3-1 expone `sessions_spawn` + `/subagents` + el patrón `parallel-specialist-lanes` con cobertura ≥ 80 % de lo que un tournament necesita (ver ADR §2-§4). El protocolo evita reimplementar spawn/isolation/concurrency/cleanup en Python y deja al wrapper sólo: pre-flight, render del task body por lane, recolección de PRs, aplicación de rubric, merge del winner, soft-close de losers.
+
+**Fuera de scope de este doc:** detalles de cómo `sessions_spawn` aísla el runtime, cómo se hace push-completion, o cómo se calcula `runTimeoutSeconds` desde `usd_budget_cap`. Eso vive en el ADR §2 y §5.
+
+---
+
+## 2. Contrato del tournament
+
+Un tournament es una unidad atómica con:
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `tournament_id` | str | Slug derivado de `<repo>-<issue_number>-<short_sha>` (8 chars). Ej. `umbral-agent-stack-321-7752e42`. Se usa en branch naming + PR title prefix + Mission Control update key. |
+| `issue_id` | str | `<owner>/<repo>#<number>` o `LIN-<id>` para Linear. Una sola fuente de verdad por tournament. |
+| `lanes` | list | 2–5 lanes. Cada lane es una `{specialty, agent_id, task_template, model?, runTimeoutSeconds?}` (ver §3). |
+| `winner_rubric` | str (markdown) | Texto que el orchestrator (depth-1) usa para decidir. Vive en el SKILL.md del lane-class, no en el código. |
+| `usd_budget_cap` | float (opcional) | El wrapper lo traduce a `runTimeoutSeconds` por lane usando el costo del modelo del lane (ADR §5 paso 2). |
+| `cleanup_policy` | enum | `keep-losers` (default v1) \| `soft-close` \| `hard-delete` (no usar en v1). |
+
+**Invariantes:**
+
+1. **N entre 2 y 5.** Más allá de 5 viola `agents.defaults.subagents.maxChildrenPerAgent: 5`. Si necesitás más, abrí dos tournaments paralelos sobre el mismo issue (anti-patrón en v1).
+2. **Cada lane es un agente distinto.** No se puede tener dos lanes con el mismo `agent_id` (rompe la metáfora "specialist lane" y duplica transcript path).
+3. **El spawn parent es `main` en sesión standalone (G-D1b).** El wrapper corre en `main` con `sessions_spawn` disponible. **No** lanzar desde `rick-orchestrator` nested (ISSUE-001 filtra spawn). Ver [`docs/architecture/tournament-protocol.md`](architecture/tournament-protocol.md).
+4. **El branch base es siempre `main` actualizado.** Pre-flight aborta si el repo tiene worktree dirty o si `git fetch origin main` no es fast-forward.
+5. **Una lane sólo está completa con branch pusheado + PR URL verificada.** Un subagent puede reportar `finalStatus=success`, pero el wrapper debe tratar la lane como `lane_incomplete` si no existe `pr_url` válido y verificable con `gh pr view`.
+
+---
+
+## 3. Lane spec
+
+```yaml
+lane:
+  specialty: backend-typescript        # slug, identifica al lane en métricas + branch name
+  agent_id: rick-delivery              # debe estar en allowAgents del orchestrator
+  task_template: |
+    # Tarea: <issue_title>
+    Issue: <issue_url>
+    Branch: tournament/<tournament_id>/lane-<specialty>
+    Specialty focus: <prompt-specifico-de-este-lane>
+
+    Contract (read-only invariants):
+      - NO modificás otros lanes, NO mergeás vos mismo.
+      - Worktree aislado por lane (torneos >=2 lanes): tournament_lane.create_branch con input.use_worktree=true (RC-4, ver §4.3).
+      - Último paso de tooling = umbral_tournament_open_pr (plugin D3.6), ANTES de cualquier `gh pr create` manual de fallback.
+      - Al terminar: branch pusheado + PR abierto vía umbral_tournament_open_pr
+        (fallback shell: git push -u origin <branch> y gh pr create --title "[tournament:<tournament_id>:<specialty>]" --body-file <body>).
+      - Anunciá de vuelta: PR URL + diff stats + checks status.
+      - La última línea del announce debe ser literal: PR_URL=https://github.com/Umbral-Bot/umbral-agent-stack/pull/<n>
+  model: gpt-5-mini                    # opcional; default lane agent's model
+  runTimeoutSeconds: 1800              # opcional; el wrapper puede sobrescribir vía usd_budget_cap
+```
+
+**Lane convention de branch:** `tournament/<tournament_id>/lane-<specialty>`. Sin excepciones (parser de métricas asume este formato).
+
+**Lane convention de PR title:** `[tournament:<tournament_id>:<specialty>] <issue_title>`. Permite filtrar con `gh pr list --search "[tournament:<tournament_id>:"`.
+
+---
+
+## 4. Flujo end-to-end
+
+```
+USER → main (standalone entry — G-D1b; NOT nested rick-orchestrator)
+        │
+        │  /skills run multi-agent-tournament-orchestrator <tournament_spec.yaml>
+        ▼
+   Pre-flight (wrapper)
+     ├── standalone session + sessions_spawn available?     ← ISSUE-001 / G-D1b
+     ├── git status clean? + main fast-forward?
+     ├── allowAgents cubre todos los lanes?
+     ├── agents.defaults.subagents.maxSpawnDepth >= 2?
+     └── usd_budget_cap → runTimeoutSeconds por lane
+        │
+        ▼
+   sessions_spawn × N (depth 0 → depth 1 lane agents)
+     ├── lane-backend-typescript (rick-delivery)    ─┐
+     ├── lane-python              (rick-delivery)    │  paralelo, isolated
+     └── lane-no-code             (rick-ops)        ─┘
+        │
+        │  cada lane:
+        │   1. crear branch tournament/<id>/lane-<specialty>
+        │   2. implementar
+        │   3. push branch
+        │   4. gh pr create
+        │   5. announce-back: { pr_url, diff_stats, checks_status } + línea final PR_URL=https://...
+        ▼
+   Push-completion (nativo) → orchestrator junta los N announces
+        │
+        ▼
+   Winner pick (orchestrator turn, aplica winner_rubric)
+     ├── gh pr merge <winner> --squash
+     └── for loser in losers:
+           gh pr close --comment "tournament loser, kept for forensic"
+           (NO se borra el branch en v1; cleanup_policy=keep-losers)
+        │
+        ▼
+   Cleanup
+     ├── /subagents kill all (sólo los hijos no-anunciados, si los hay)
+     └── auto-archive nativo a 60min se encarga del resto
+        │
+        ▼
+   Métricas → Notion + Linear
+     ├── leer: openclaw tasks list --runtime subagent --json
+     ├── leer: gh pr view --json para cada PR
+     └── post: 1 update Notion "Mission Control" + 1 comentario Linear
+```
+
+---
+
+## 4.1 Phase collect: lane completion gate
+
+Durante collect, el wrapper no debe inferir completion desde el estado del subagent. La regla de verdad es:
+
+```text
+lane_complete = branch_pushed && pr_url_present && gh_pr_view_ok
+```
+
+Checklist por lane:
+
+1. Buscar announce-back con `pr_url`.
+2. Verificar que el branch remoto `tournament/<tournament_id>/lane-<specialty>` existe.
+3. Ejecutar `gh pr view <pr_url> --json url,headRefName,title,mergeable,statusCheckRollup`.
+4. Confirmar que `headRefName` coincide con el branch de la lane y que el título empieza con `[tournament:<tournament_id>:<specialty>]`.
+5. Si cualquier paso falla, registrar `lane_incomplete` aunque el subagent haya terminado con `finalStatus=success`.
+
+Un tournament puede pasar a judge sólo con lanes completas. Para v1, abortar si hay menos de 2 PRs válidos; con 2+ PRs válidos, las lanes sin PR quedan excluidas de `lanes_completed` y se reportan como incompletas en métricas.
+
+**VEREDICTO torneo (operativo):**
+
+- `M1_D3x_TOURNAMENT_OK` — `pr_count >= 2`, spawn evidenciado, métricas en issue.
+- `M1_D3x_TOURNAMENT_PARTIAL` — spawn OK pero `pr_count < 2`; ver §4.2 rescate.
+- Parent **nunca** hace `gh pr merge` del winner (Copilot Windows + autorización David).
+
+---
+
+## 4.2 Lane rescue (sin segundo torneo)
+
+Si collect reporta lane con commits locales y sin PR (causa típica: compactación de sesión antes de push):
+
+1. Registrar en `final-metrics.json` → `lanes[].status: NO_PR` + `cause`.
+2. David: `autorizo rescate lane <specialty> D3.x`.
+3. Push + `gh pr create` desde la rama existente (Copilot-VPS).
+4. Judge cuando existan ≥2 PRs abiertos con prefijo `[tournament:...]`.
+
+Retro: [`docs/ops/d3-tournament-retro-2026-06-02.md`](ops/d3-tournament-retro-2026-06-02.md).
+
+---
+
+## 4.3 Worktree por lane (obligatorio en torneos ≥2 lanes)
+
+Tras **RC-4** (retro D3.4), en todo torneo con **≥2 lanes** cada lane trabaja en un **git worktree aislado**, no en el clone compartido. Evita el riesgo D3.3: una lane hace `git checkout` de su rama delivery mientras otra lane sigue editando el mismo worktree.
+
+- **Helper:** [`scripts/openclaw/tournament-lane-worktree.sh`](../scripts/openclaw/tournament-lane-worktree.sh) `create <repo_path> <tournament_id> <specialty>` crea `~/.coord-ag-evidence/worktrees/<tournament_id>/lane-<specialty>` sobre la rama `tournament/<tournament_id>/lane-<specialty>` desde `origin/main`. Idempotente; `remove` no borra la rama (keep-losers).
+- **Worker:** `tournament_lane.create_branch` con `input.use_worktree=true` delega en el helper y devuelve `worktree_path` (+ `worktree_verdict`) en el resultado, para collect y evidencia.
+- **Clone compartido:** permanece en `main` limpio; el parent restaura/colecta sin pelear por el worktree.
+- **Cleanup:** `tournament-lane-worktree.sh remove <repo_path> <tournament_id> <specialty>` (refuses si hay cambios sin commitear, salvo `TOURNAMENT_WORKTREE_FORCE=1`).
+
+Torneos de 1 lane (smoke) pueden omitir el worktree; el flujo estándar lo usa.
+
+### 4.3.1 Ejemplo — Lane closeout (announce)
+
+El `worktree_path` que devuelve `tournament_lane.create_branch`
+(`input.use_worktree=true`) viaja hasta el announce-back de cierre de la lane, de
+modo que el parent audita el aislamiento RC-4 sin inspeccionar el filesystem. La
+skill `tournament-github-cli` (§8) cierra con este JSON, seguido en la **última
+línea** por el literal `PR_URL=` en solitario:
+
+```json
+{
+  "specialty": "openclaw-skill",
+  "branch": "tournament/<tournament_id>/lane-openclaw-skill",
+  "worktree_path": "~/.coord-ag-evidence/worktrees/<tournament_id>/lane-openclaw-skill",
+  "diff_stats": "+1 -0",
+  "checks_status": "pending",
+  "tooling": "plugin"
+}
+```
+
+```text
+PR_URL=https://github.com/Umbral-Bot/umbral-agent-stack/pull/123
+```
+
+Esa última línea literal es la que el parent parsea en el gate de completitud
+(§4.1); el campo `worktree_path` evidencia el aislamiento por lane (§4.3, v1.1
+post-PR #467).
+
+---
+
+## 5. Pre-conditions (chequeadas por el wrapper)
+
+Las 3 del ADR §7, copiadas como gate del skill:
+
+1. `agents.defaults.subagents.maxSpawnDepth >= 2` en `~/.openclaw/openclaw.json`. **VPS (2026-06-01): ✅ `2` en disco y runtime efectivo** (gates G-D1a + G-D1a-RESTART; evidencia `~/.coord-ag-evidence/G-D1a/`). Sin esto el primer tournament no corre.
+2. Cada `agent_id` de los lanes tiene `tools.profile: "coding"` (necesario para `git`/`gh`).
+3. `gh auth status` green dentro del workspace de cada lane (hoy: OK como user `rick`, token `UmbralBIM`).
+
+---
+
+## 6. Métricas mínimas v1
+
+Por tournament (post-merge), el wrapper emite:
+
+```json
+{
+  "tournament_id": "umbral-agent-stack-321-7752e42",
+  "issue_id": "Umbral-Bot/umbral-agent-stack#321",
+  "lanes_total": 3,
+  "lanes_completed": 3,
+  "lane_incomplete": 0,
+  "lanes_pr_mergeable": 2,
+  "winner_specialty": "backend-typescript",
+  "time_to_first_pr_seconds": 412,
+  "time_to_winner_seconds": 1840,
+  "tokens_total": 78421,
+  "usd_estimated": 0.42
+}
+```
+
+Fuente nativa: `openclaw tasks list --runtime subagent --json` (timing + tokens) + `gh pr view --json` (mergeable + checks).
+
+No hay agregación cross-tournament en v1. Eso es post-MVP.
+
+---
+
+## 7. Smoke test mandatorio antes del primer tournament real
+
+El primer PR del wrapper **debe** incluir un end-to-end smoke contra un issue trivial (ej. typo en doc). Criterios de aceptación del smoke:
+
+- [ ] `tournament_id` generado y consistente en branch + PR title + métricas.
+- [ ] N=2 lanes paralelos, ambos producen PR.
+- [ ] Orchestrator picks winner aplicando rubric (rubric trivial para smoke: "PR con menos líneas modificadas").
+- [ ] Winner mergeado a `main` vía `gh pr merge --squash`.
+- [ ] Loser cerrado con comentario, branch preservado.
+- [ ] Métricas posteadas a Notion Mission Control.
+- [ ] `/subagents kill all` no encuentra hijos vivos al final.
+
+**El primer tournament real (post-smoke)** será sobre un issue de O1 hardening, decidido por David. No se ejecuta tournament sobre nada antes del smoke.
+
+---
+
+## 8. Open items (no bloquean v1)
+
+- Aggregator cross-tournament (dashboard de % winners por specialty/lane). Post-MVP.
+- Soporte `cleanup_policy: hard-delete` (borrar branches losers automáticamente). Requiere política explícita de retención de evidencia forense; postergado.
+- Tournaments anidados (orchestrator dispara sub-orchestrators). Bloqueado por `maxSpawnDepth: 2`. No hay caso de uso v1.
+- Integración con `github.orchestrate_tournament` legacy: el handler Python queda como fallback LLM-puro (sin código real, sólo discovery/develop/debate/judge). Si en algún momento se quiere tournament sin código, se invoca el handler directamente, no este protocolo.
+
+---
+
+## 10. Post-three-tournaments retro (D3.4)
+
+- **Date:** 2026-06-02
+- **Doc:** [`docs/ops/d3-tournament-retro-2026-06-02.md`](ops/d3-tournament-retro-2026-06-02.md)
+- **Architecture updates:** [`docs/architecture/tournament-protocol.md`](architecture/tournament-protocol.md) §6–§7
+
+---
+
+## 9. Referencias
+
+- ADR: [`docs/adr/tournament-on-openclaw-primitives.md`](adr/tournament-on-openclaw-primitives.md) (commit `aecc68c`).
+- Spike task: [`.agents/tasks/2026-05-06-014-copilot-vps-spike-openclaw-subagents-tournament.md`](../.agents/tasks/2026-05-06-014-copilot-vps-spike-openclaw-subagents-tournament.md).
+- Plan Q2-2026: [`notion-governance/docs/roadmap/12-q2-2026-platform-first-plan.md`](https://github.com/Umbral-Bot/notion-governance/blob/main/docs/roadmap/12-q2-2026-platform-first-plan.md) → O7.
+- OpenClaw native docs (en VPS): `/home/rick/.npm-global/lib/node_modules/openclaw/docs/tools/subagents.md` + `…/concepts/parallel-specialist-lanes.md`.
+- Skill governance: `openclaw-vps-operator` (para el flip de `maxSpawnDepth`).

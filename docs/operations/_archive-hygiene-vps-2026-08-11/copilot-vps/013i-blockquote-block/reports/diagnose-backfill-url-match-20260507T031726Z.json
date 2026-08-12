@@ -1,0 +1,311 @@
+{
+  "started": "2026-05-07T03:17:22Z",
+  "pending_total": 19,
+  "match_counts": {
+    "exact": 0,
+    "canonical": 3,
+    "loose": 0,
+    "basename_only": 0,
+    "no_match": 16
+  },
+  "rows": [
+    {
+      "sqlite_id": 31,
+      "referente": "Rodrigo Rojo",
+      "canal": "rss",
+      "titulo": "🎙️ Nuevo Episodio: ¿La universidad ya no sirve para esto?",
+      "sqlite_url_canonica": "https://www.rojo.me/nuevo-episodio-la-universidad-ya-no-sirve-para-esto",
+      "match_bucket": "canonical",
+      "exact_hit": null,
+      "canonical_hit": "https://www.rojo.me/nuevo-episodio-la-universidad-ya-no-sirve-para-esto/",
+      "loose_hit": "https://www.rojo.me/nuevo-episodio-la-universidad-ya-no-sirve-para-esto/",
+      "same_basename_in_feed": [
+        {
+          "feed_url": "https://www.rojo.me/nuevo-episodio-la-universidad-ya-no-sirve-para-esto/",
+          "channel": "rss"
+        }
+      ],
+      "feed_items_total": 15,
+      "feed_errors": []
+    },
+    {
+      "sqlite_id": 32,
+      "referente": "Rodrigo Rojo",
+      "canal": "rss",
+      "titulo": "🫨 Quisiera Ser Yo - Resumen Resumido 179",
+      "sqlite_url_canonica": "https://www.rojo.me/resumen-resumido-179",
+      "match_bucket": "canonical",
+      "exact_hit": null,
+      "canonical_hit": "https://www.rojo.me/resumen-resumido-179/",
+      "loose_hit": "https://www.rojo.me/resumen-resumido-179/",
+      "same_basename_in_feed": [
+        {
+          "feed_url": "https://www.rojo.me/resumen-resumido-179/",
+          "channel": "rss"
+        }
+      ],
+      "feed_items_total": 15,
+      "feed_errors": []
+    },
+    {
+      "sqlite_id": 33,
+      "referente": "Rodrigo Rojo",
+      "canal": "rss",
+      "titulo": "🎙️ Nuevo Episodio: Si la IA es tan buena, ¿para qué servimos los humanos?",
+      "sqlite_url_canonica": "https://www.rojo.me/nuevo-episodio-si-la-ia-es-tan-buena-para-que-servimos-los-humanos",
+      "match_bucket": "canonical",
+      "exact_hit": null,
+      "canonical_hit": "https://www.rojo.me/nuevo-episodio-si-la-ia-es-tan-buena-para-que-servimos-los-humanos/",
+      "loose_hit": "https://www.rojo.me/nuevo-episodio-si-la-ia-es-tan-buena-para-que-servimos-los-humanos/",
+      "same_basename_in_feed": [
+        {
+          "feed_url": "https://www.rojo.me/nuevo-episodio-si-la-ia-es-tan-buena-para-que-servimos-los-humanos/",
+          "channel": "rss"
+        }
+      ],
+      "feed_items_total": 15,
+      "feed_errors": []
+    },
+    {
+      "sqlite_id": 51,
+      "referente": "Alex Freberg",
+      "canal": "youtube",
+      "titulo": "Switching to Mac after 10 years as a Microsoft User",
+      "sqlite_url_canonica": "https://www.youtube.com/watch?v=o2ehgG2VrsY",
+      "match_bucket": "no_match",
+      "exact_hit": null,
+      "canonical_hit": null,
+      "loose_hit": null,
+      "same_basename_in_feed": [],
+      "feed_items_total": 0,
+      "feed_errors": [
+        "HTTP 404"
+      ]
+    },
+    {
+      "sqlite_id": 52,
+      "referente": "Alex Freberg",
+      "canal": "youtube",
+      "titulo": "Learn ETL Pipelines in Databricks in Under 1 Hour | Data Engineering in Databric",
+      "sqlite_url_canonica": "https://www.youtube.com/watch?v=Vht4hoRHEek",
+      "match_bucket": "no_match",
+      "exact_hit": null,
+      "canonical_hit": null,
+      "loose_hit": null,
+      "same_basename_in_feed": [],
+      "feed_items_total": 0,
+      "feed_errors": [
+        "HTTP 404"
+      ]
+    },
+    {
+      "sqlite_id": 81,
+      "referente": "Nate Gentile",
+      "canal": "youtube",
+      "titulo": "Adiós Windows. Me paso a LINUX para SIEMPRE",
+      "sqlite_url_canonica": "https://www.youtube.com/watch?v=9Gr2QjvSQ-I",
+      "match_bucket": "no_match",
+      "exact_hit": null,
+      "canonical_hit": null,
+      "loose_hit": null,
+      "same_basename_in_feed": [],
+      "feed_items_total": 0,
+      "feed_errors": []
+    },
+    {
+      "sqlite_id": 82,
+      "referente": "Nate Gentile",
+      "canal": "youtube",
+      "titulo": "Monté el PC de BATMAN dentro de una Batcueva REAL",
+      "sqlite_url_canonica": "https://www.youtube.com/watch?v=3LnNwS6rqk8",
+      "match_bucket": "no_match",
+      "exact_hit": null,
+      "canonical_hit": null,
+      "loose_hit": null,
+      "same_basename_in_feed": [],
+      "feed_items_total": 0,
+      "feed_errors": []
+    },
+    {
+      "sqlite_id": 111,
+      "referente": "Daniel Shiffman",
+      "canal": "youtube",
+      "titulo": "Voice Chatbot (Coding Challenge 188)",
+      "sqlite_url_canonica": "https://www.youtube.com/watch?v=s2jm2Z22ibA",
+      "match_bucket": "no_match",
+      "exact_hit": null,
+      "canonical_hit": null,
+      "loose_hit": null,
+      "same_basename_in_feed": [],
+      "feed_items_total": 0,
+      "feed_errors": [
+        "HTTP 404"
+      ]
+    },
+    {
+      "sqlite_id": 141,
+      "referente": "Milos Temerinski",
+      "canal": "youtube",
+      "titulo": "Numbering Tool in Revit | Rule-Based Numbering in Revit Tutorial",
+      "sqlite_url_canonica": "https://www.youtube.com/watch?v=TQsBnsKZtuo",
+      "match_bucket": "no_match",
+      "exact_hit": null,
+      "canonical_hit": null,
+      "loose_hit": null,
+      "same_basename_in_feed": [],
+      "feed_items_total": 0,
+      "feed_errors": []
+    },
+    {
+      "sqlite_id": 142,
+      "referente": "Milos Temerinski",
+      "canal": "youtube",
+      "titulo": "Am I Faster than Revit AI?",
+      "sqlite_url_canonica": "https://www.youtube.com/watch?v=npmoS_dqAho",
+      "match_bucket": "no_match",
+      "exact_hit": null,
+      "canonical_hit": null,
+      "loose_hit": null,
+      "same_basename_in_feed": [],
+      "feed_items_total": 0,
+      "feed_errors": []
+    },
+    {
+      "sqlite_id": 261,
+      "referente": "Andrew Ng",
+      "canal": "youtube",
+      "titulo": "Build Interactive Agents with Generative UI",
+      "sqlite_url_canonica": "https://www.youtube.com/watch?v=J26M-cpFG-M",
+      "match_bucket": "no_match",
+      "exact_hit": null,
+      "canonical_hit": null,
+      "loose_hit": null,
+      "same_basename_in_feed": [],
+      "feed_items_total": 0,
+      "feed_errors": [
+        "HTTP 404"
+      ]
+    },
+    {
+      "sqlite_id": 262,
+      "referente": "Andrew Ng",
+      "canal": "youtube",
+      "titulo": "Become an AI power user 🌟 new course from Andrew Ng",
+      "sqlite_url_canonica": "https://www.youtube.com/watch?v=FNfIMnpz-ZY",
+      "match_bucket": "no_match",
+      "exact_hit": null,
+      "canonical_hit": null,
+      "loose_hit": null,
+      "same_basename_in_feed": [],
+      "feed_items_total": 0,
+      "feed_errors": [
+        "HTTP 404"
+      ]
+    },
+    {
+      "sqlite_id": 291,
+      "referente": "Fred Mills",
+      "canal": "youtube",
+      "titulo": "Why Nobody Wants the Chrysler Building",
+      "sqlite_url_canonica": "https://www.youtube.com/watch?v=Vr_Wd2ZucZA",
+      "match_bucket": "no_match",
+      "exact_hit": null,
+      "canonical_hit": null,
+      "loose_hit": null,
+      "same_basename_in_feed": [],
+      "feed_items_total": 0,
+      "feed_errors": [
+        "HTTP 404"
+      ]
+    },
+    {
+      "sqlite_id": 292,
+      "referente": "Fred Mills",
+      "canal": "youtube",
+      "titulo": "Why the Jeddah Tower Won't Be One Kilometre Tall",
+      "sqlite_url_canonica": "https://www.youtube.com/watch?v=vVfEs9wrW98",
+      "match_bucket": "no_match",
+      "exact_hit": null,
+      "canonical_hit": null,
+      "loose_hit": null,
+      "same_basename_in_feed": [],
+      "feed_items_total": 0,
+      "feed_errors": [
+        "HTTP 404"
+      ]
+    },
+    {
+      "sqlite_id": 293,
+      "referente": "Fred Mills",
+      "canal": "youtube",
+      "titulo": "The US Megaproject You’ve (Probably) Never Heard Of",
+      "sqlite_url_canonica": "https://www.youtube.com/watch?v=A0lQPphWTkQ",
+      "match_bucket": "no_match",
+      "exact_hit": null,
+      "canonical_hit": null,
+      "loose_hit": null,
+      "same_basename_in_feed": [],
+      "feed_items_total": 0,
+      "feed_errors": [
+        "HTTP 404"
+      ]
+    },
+    {
+      "sqlite_id": 351,
+      "referente": "Bernard Marr",
+      "canal": "youtube",
+      "titulo": "Is AI Coming For Your Job?",
+      "sqlite_url_canonica": "https://www.youtube.com/watch?v=zO8EPWmTnVQ",
+      "match_bucket": "no_match",
+      "exact_hit": null,
+      "canonical_hit": null,
+      "loose_hit": null,
+      "same_basename_in_feed": [],
+      "feed_items_total": 10,
+      "feed_errors": []
+    },
+    {
+      "sqlite_id": 352,
+      "referente": "Bernard Marr",
+      "canal": "youtube",
+      "titulo": "What AI Really Is, Explained Simply",
+      "sqlite_url_canonica": "https://www.youtube.com/watch?v=NGq0pdR0s2U",
+      "match_bucket": "no_match",
+      "exact_hit": null,
+      "canonical_hit": null,
+      "loose_hit": null,
+      "same_basename_in_feed": [],
+      "feed_items_total": 10,
+      "feed_errors": []
+    },
+    {
+      "sqlite_id": 353,
+      "referente": "Bernard Marr",
+      "canal": "youtube",
+      "titulo": "The Future Of Google Search, Maps And AI Agents",
+      "sqlite_url_canonica": "https://www.youtube.com/watch?v=27bLTrhZ4Mg",
+      "match_bucket": "no_match",
+      "exact_hit": null,
+      "canonical_hit": null,
+      "loose_hit": null,
+      "same_basename_in_feed": [],
+      "feed_items_total": 10,
+      "feed_errors": []
+    },
+    {
+      "sqlite_id": 408,
+      "referente": "José Luis Crespo",
+      "canal": "youtube",
+      "titulo": "¿Existen Fisuras en el Universo?",
+      "sqlite_url_canonica": "https://www.youtube.com/watch?v=1PIbKMyFMAY",
+      "match_bucket": "no_match",
+      "exact_hit": null,
+      "canonical_hit": null,
+      "loose_hit": null,
+      "same_basename_in_feed": [],
+      "feed_items_total": 0,
+      "feed_errors": []
+    }
+  ],
+  "finished": "2026-05-07T03:17:26Z"
+}

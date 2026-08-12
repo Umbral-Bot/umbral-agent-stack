@@ -1,0 +1,110 @@
+{
+  "overall_pass": true,
+  "run_started_at": "2026-05-07T01:00:48Z",
+  "run_finished_at": "2026-05-07T01:01:03Z",
+  "mode": "commit",
+  "database_id": "e6817ec4-698a-4f0f-bbc8-fedcf4e52472",
+  "data_source_id": "dc833f1f-07d9-49d0-82ec-fdfad1c808c4",
+  "schema_observed": [
+    "Canal",
+    "Claim principal",
+    "Comentarios revisión",
+    "Copy Blog",
+    "Copy LinkedIn",
+    "Copy Newsletter",
+    "Copy X",
+    "Creado por",
+    "Creado por sistema",
+    "Estado",
+    "Etapa audiencia",
+    "Fecha publicación",
+    "Fuente primaria",
+    "Fuente referente",
+    "Fuentes confiables",
+    "Notas",
+    "Premisa",
+    "Prioridad",
+    "Proyecto",
+    "Publicación padre",
+    "Repo reference",
+    "Responsable revisión",
+    "Resumen fuente",
+    "Tipo de contenido",
+    "Título",
+    "Visual asset URL",
+    "Visual brief",
+    "aprobado_contenido",
+    "autorizar_publicacion",
+    "canal_publicado",
+    "content_hash",
+    "error_kind",
+    "gate_invalidado",
+    "idempotency_key",
+    "platform_post_id",
+    "publication_id",
+    "publication_url",
+    "publish_error",
+    "published_at",
+    "published_url",
+    "trace_id",
+    "visual_hitl_required",
+    "Ángulo editorial",
+    "Última edición",
+    "Última revisión humana"
+  ],
+  "schema_valid": true,
+  "schema_issues": [],
+  "limit": 5,
+  "rate_limit_sleep_ms": 350,
+  "summary": {
+    "pending_total": 20,
+    "considered": 5,
+    "created": 5,
+    "skipped_existing": 0,
+    "would_create": 0,
+    "errored": 0,
+    "retries_429": 0
+  },
+  "samples": {
+    "created": [
+      {
+        "sqlite_id": 31,
+        "url_canonica": "https://www.rojo.me/nuevo-episodio-la-universidad-ya-no-sirve-para-esto",
+        "titulo": "🎙️ Nuevo Episodio: ¿La universidad ya no sirve para esto?",
+        "notion_page_id": "3595f443-fb5c-816b-8970-c7be73118f1a",
+        "notion_url": "https://www.notion.so/Nuevo-Episodio-La-universidad-ya-no-sirve-para-esto-3595f443fb5c816b8970c7be73118f1a"
+      },
+      {
+        "sqlite_id": 33,
+        "url_canonica": "https://www.rojo.me/nuevo-episodio-si-la-ia-es-tan-buena-para-que-servimos-los-humanos",
+        "titulo": "🎙️ Nuevo Episodio: Si la IA es tan buena, ¿para qué servimos",
+        "notion_page_id": "3595f443-fb5c-817e-8f17-ebcd2d88be56",
+        "notion_url": "https://www.notion.so/Nuevo-Episodio-Si-la-IA-es-tan-buena-para-qu-servimos-los-humanos-3595f443fb5c817e8f17ebcd2d88be56"
+      },
+      {
+        "sqlite_id": 32,
+        "url_canonica": "https://www.rojo.me/resumen-resumido-179",
+        "titulo": "🫨 Quisiera Ser Yo - Resumen Resumido 179",
+        "notion_page_id": "3595f443-fb5c-8100-ab5f-c7e80512e925",
+        "notion_url": "https://www.notion.so/Quisiera-Ser-Yo-Resumen-Resumido-179-3595f443fb5c8100ab5fc7e80512e925"
+      },
+      {
+        "sqlite_id": 1,
+        "url_canonica": "https://www.storytellingwithdata.com/blog/swdchallenge-human-ai",
+        "titulo": "#SWDchallenge: human + AI",
+        "notion_page_id": "3595f443-fb5c-8177-9fac-d45e6013b036",
+        "notion_url": "https://www.notion.so/SWDchallenge-human-AI-3595f443fb5c81779facd45e6013b036"
+      },
+      {
+        "sqlite_id": 408,
+        "url_canonica": "https://www.youtube.com/watch?v=1PIbKMyFMAY",
+        "titulo": "¿Existen Fisuras en el Universo?",
+        "notion_page_id": "3595f443-fb5c-8122-af4b-d55812ae388c",
+        "notion_url": "https://www.notion.so/Existen-Fisuras-en-el-Universo-3595f443fb5c8122af4bd55812ae388c"
+      }
+    ],
+    "skipped_existing": [],
+    "would_create": [],
+    "errored": []
+  }
+}

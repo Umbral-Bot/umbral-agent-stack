@@ -1,0 +1,685 @@
+{
+  "pkg": "PKG-HYGIENE-VPS-P5",
+  "date": "2026-08-11",
+  "base_origin_main": "66564a20dbbd9167fce764e4089b9d3bd5d5d413",
+  "method": {
+    "mechanical": "ancestor check + git cherry (patch-id) + blob-identity + git log origin/main --find-object=<blob> por archivo (anti-squash: ahead != unique)",
+    "judgment": "workflow 20 agentes (10 jueces por familia + refutadores adversariales de todo veredicto SUBSUMED), solo git read-only",
+    "export": "todos los archivos never-in-main exportados a docs/operations/_archive-hygiene-vps-2026-08-11/ ANTES de borrar (119 + 1 de commit colgante); scan de secretos limpio"
+  },
+  "branches": {
+    "claude/pkg-uas-deploy-dispatcher-625-20260811": {
+      "class": "SAFE_DROP",
+      "action": "deleted",
+      "sha": "19a12ec",
+      "ahead": 1,
+      "behind": 2,
+      "reason": "merge-PR head; 3/3 blobs en historia de main; cherry_plus=0"
+    },
+    "claude/pkg-uas-fossil-disc-plus-20260811": {
+      "class": "SAFE_DROP",
+      "action": "deleted",
+      "sha": "483ac18",
+      "ahead": 1,
+      "behind": 3,
+      "reason": "merge-PR head #625; 5/5 blobs en historia de main; cherry_plus=0"
+    },
+    "claude/pkg-uas-vm-route-windows-20260811": {
+      "class": "SAFE_DROP",
+      "action": "deleted",
+      "sha": "eed8588",
+      "ahead": 1,
+      "behind": 1,
+      "reason": "merge-PR head (squash 66564a2); 3/3 blobs identicos"
+    },
+    "copilot-vps/029-stage5-deterministic-ranking": {
+      "class": "SAFE_DROP",
+      "action": "deleted",
+      "sha": "65e902a",
+      "ahead": 1,
+      "behind": 460,
+      "reason": "PR #351 mergeado; 12/12 blobs en historia de main"
+    },
+    "copilot-vps/052-aeco-kb-build-blocked-pat-scope": {
+      "class": "SAFE_DROP",
+      "action": "deleted",
+      "sha": "ac1973a",
+      "ahead": 1,
+      "behind": 388,
+      "reason": "1/1 blob en historia de main"
+    },
+    "copilot-vps/f8g-verify-canonical-pin-2026-05-08": {
+      "class": "SAFE_DROP",
+      "action": "deleted",
+      "sha": "a3b2c7c",
+      "ahead": 2,
+      "behind": 388,
+      "reason": "4/4 blobs en historia de main"
+    },
+    "pr351": {
+      "class": "SAFE_DROP",
+      "action": "deleted",
+      "sha": "65e902a",
+      "ahead": 1,
+      "behind": 460,
+      "reason": "duplicado de copilot-vps/029 (65e902a); PR #351 mergeado"
+    },
+    "reconciliation/align-runtime": {
+      "class": "SAFE_DROP",
+      "action": "deleted",
+      "sha": "e1aca46",
+      "ahead": 727,
+      "behind": 1597,
+      "reason": "anti-squash: ahead 727 pero diff vacio vs merge-base, cherry_plus=0 (544 equivalentes)"
+    },
+    "rick/stage7_5-copy-writer": {
+      "class": "SAFE_DROP",
+      "action": "deleted",
+      "sha": "10aff96",
+      "ahead": 1,
+      "behind": 382,
+      "reason": "3/3 blobs en historia de main"
+    },
+    "rick/stage7_5-notion-ux": {
+      "class": "SAFE_DROP",
+      "action": "deleted",
+      "sha": "d3c4810",
+      "ahead": 2,
+      "behind": 382,
+      "reason": "12/12 blobs en historia de main"
+    },
+    "rick/stage7_5-source-verify": {
+      "class": "SAFE_DROP",
+      "action": "deleted",
+      "sha": "bdb9d41",
+      "ahead": 2,
+      "behind": 376,
+      "reason": "8/8 blobs en historia de main"
+    },
+    "rick/stage9bc-linkedin-publish": {
+      "class": "SAFE_DROP",
+      "action": "deleted",
+      "sha": "28443df",
+      "ahead": 2,
+      "behind": 388,
+      "reason": "5/5 blobs en historia de main"
+    },
+    "rick/stage7_5-multiformat": {
+      "class": "KEEP",
+      "action": "kept (gobernado)",
+      "sha": "a263539",
+      "ahead": 7,
+      "behind": 376,
+      "never_in_main_files": [
+        "docs/discovery/stage7_5-multiformat-runbook.md",
+        "prompts/rick/blog-system.md",
+        "prompts/rick/blog-user.md",
+        "prompts/rick/linkedin-share-system.md",
+        "prompts/rick/linkedin-share-user.md",
+        "prompts/rick/linkedin-standalone-system.md",
+        "prompts/rick/linkedin-standalone-user.md",
+        "scripts/discovery/eval_stage7_5_copy.py",
+        "scripts/discovery/run_stage7_5_multiformat_real.py",
+        "scripts/discovery/stage7_5_copy_writer.py",
+        "tests/discovery/fixtures/stage7_5_golden_copies.json",
+        "tests/discovery/fixtures/stage7_5_proposals.json",
+        "tests/discovery/test_stage7_5_multiformat.py"
+      ],
+      "note": "KEEP por mandato del pack (remote origin vivo)"
+    },
+    "rick-delivery/poller-healthcheck-hardening": {
+      "class": "KEEP",
+      "action": "kept (gobernado)",
+      "sha": "b7f8e41",
+      "ahead": 19,
+      "behind": 490,
+      "never_in_main_files": [
+        ".agents/board.md",
+        ".agents/tasks/2026-05-07-001-post-auth-push.sh",
+        ".agents/tasks/2026-05-07-001-pr-draft.md",
+        ".agents/tasks/2026-05-07-001-rick-delivery-notion-poller-healthcheck-hardening.md"
+      ],
+      "note": "KEEP por mandato del pack (worktree poller-hardening, limpio)"
+    },
+    "copilot-vps/013g-markdown-annotations-and-url-canonical": {
+      "class": "SUBSUMED_DOCS",
+      "action": "delete (SUBSUMED)",
+      "sha": "808ec80",
+      "ahead": 3,
+      "behind": 526,
+      "never_in_main_files": [
+        ".agents/tasks/2026-05-07-013g-fix-markdown-render-and-url-match.md",
+        "reports/backfill-content-20260507T031851Z.json",
+        "reports/backfill-content-20260507T032025Z.json",
+        "reports/diagnose-backfill-url-match-20260507T031726Z.json",
+        "scripts/discovery/html_to_notion_blocks.py",
+        "tests/test_html_to_notion_blocks.py"
+      ],
+      "judge_rationale": "Lo nunca-mergeado son fósiles (task-log 013g, 3 reports de ejecución) más estados INTERMEDIOS de html_to_notion_blocks.py y su test, totalmente contenidos en la historia de la rama posterior 013i, cuya versión final sí mergeó a main vía el rollup cc0803b (#334). Nada con valor vigente propio.",
+      "judge_evidence": "git merge-base --is-ancestor copilot-vps/013g-... copilot-vps/013h-... → SI (013g es ancestro directo de 013h y por transitividad de 013i). git rev-parse '013g:scripts/discovery/html_to_notion_blocks.py' → ccdb200; git log copilot-vps/013i-blockquote-block --find-object=ccdb200 → lo encuentra en 691f197 feat(013-G) (introducción) y 61b6f09 feat(013-H) (reemplazo), o sea el blob vive en la historia de 013i. Igual para el test cf0569c. git rev-parse 'origin/main:scripts/discovery/html_to_notion_blocks.py' → 56ac515 == versión final de 013i, mergeada en cc0803b 'feat(013-G+H+I): rollup G+H+I render fixes into main (#334)'. tests/test_stage4_push_notion.py del branch (9ff11a2) también está en main tip. git diff --name-status origin/main...013g -- reports .agents/tasks → solo task .md y reports/*.json de runs del 2026-05-07.",
+      "adversarial_verify": {
+        "refuted": false,
+        "reason": "Verificado: git merge-base --is-ancestor confirma 013g ancestro estricto de 013h y 013i, así que todo su contenido vive en la historia de 013i; sus archivos de código finales son blob-idénticos al tip de origin/main vía rollup cc0803b #334 (html_to_notion_blocks 56ac515, diagnose_backfill_url_match 3d74536, rerender_pages 76dbd64, backfill ef507b8). Lo único never-in-main es la variante del task-log con sección 'Resultado' (leída completa: diagnóstico RSSHub-404/feed-health del 2026-05-07 y conclusión 'no es URL canonical') más reports de run. Esa conclusión no quedó huérfana: el script de diagnóstico mergeó a main y main atacó el problema YouTube en 013-J (58efcf6, #336). Task-logs .agents/tasks son fósiles por definición y ya están exportados. Sin valor vigente perdido."
+      }
+    },
+    "copilot-vps/013h-nested-inline-divider-image-link": {
+      "class": "SUBSUMED_DOCS",
+      "action": "delete (SUBSUMED)",
+      "sha": "093ef12",
+      "ahead": 5,
+      "behind": 526,
+      "never_in_main_files": [
+        ".agents/tasks/2026-05-07-013g-fix-markdown-render-and-url-match.md",
+        ".agents/tasks/2026-05-07-013h-fix-nested-inline-and-divider-and-image-link.md",
+        "reports/backfill-content-20260507T031851Z.json",
+        "reports/backfill-content-20260507T032025Z.json",
+        "reports/diagnose-backfill-url-match-20260507T031726Z.json",
+        "scripts/discovery/html_to_notion_blocks.py",
+        "scripts/discovery/quality_gate_grep_blocks.py",
+        "tests/test_html_to_notion_blocks.py"
+      ],
+      "judge_rationale": "Mismo patrón que 013g: fósiles (2 task .md, 3 reports) más versiones INTERMEDIAS de html_to_notion_blocks.py, quality_gate_grep_blocks.py y el test, todas contenidas en la historia de 013i; las versiones finales de 013i (56ac515 / eed8336 / 10f6a13) son exactamente las del tip de origin/main vía el rollup cc0803b (#334).",
+      "judge_evidence": "git merge-base --is-ancestor copilot-vps/013h-... copilot-vps/013i-blockquote-block → SI (013h tip 093ef12 aparece literalmente en git log de 013i). Blobs de 013h: html_to_notion_blocks.py=caad124, quality_gate_grep_blocks.py=e827a06, test=d0400fb; git log copilot-vps/013i-blockquote-block --find-object=<blob> los localiza a los tres dentro de la historia de 013i (introducidos en 61b6f09/093ef12, reemplazados en 4134d6c feat(013-I)). git rev-parse de main tip confirma que las versiones sucesoras de 013i son las vivas en main (cc0803b rollup).",
+      "adversarial_verify": {
+        "refuted": false,
+        "reason": "Verificado: 013h (tip 093ef12) es ancestro estricto de 013i, todo contenido en su historia. Leí completa la versión branch del task-log 013h (93 líneas, puro 'Resultado': 29/29 tests, page IDs Notion round-2, qa-grep 0 hits) — main conserva el spec de 202 líneas y el código resultante blob-idéntico al tip (quality_gate_grep_blocks eed8336, html_to_notion_blocks versión sucesora 56ac515, test 10f6a13, todos vía cc0803b #334 cuyo mensaje resume explícitamente los fixes de H). Los deltas never-in-main son registro de ejecución (fósiles, exportados), no decisiones sin capturar. Veredicto aguanta."
+      }
+    },
+    "copilot-vps/013i-blockquote-block": {
+      "class": "SUBSUMED_DOCS",
+      "action": "delete (SUBSUMED)",
+      "sha": "05fd6f7",
+      "ahead": 7,
+      "behind": 526,
+      "never_in_main_files": [
+        ".agents/tasks/2026-05-07-013g-fix-markdown-render-and-url-match.md",
+        ".agents/tasks/2026-05-07-013h-fix-nested-inline-and-divider-and-image-link.md",
+        "reports/backfill-content-20260507T031851Z.json",
+        "reports/backfill-content-20260507T032025Z.json",
+        "reports/diagnose-backfill-url-match-20260507T031726Z.json"
+      ],
+      "judge_rationale": "Lo único nunca-mergeado son 2 task-logs .agents/tasks y 3 reports de ejecución — fósiles puros ya exportados al respaldo. Todo su código (html_to_notion_blocks.py, quality_gate_grep_blocks.py, test, stage4_push_notion.py) está en la historia de main: los tres primeros son idénticos blob-a-blob al tip actual de main, y su stage4_push_notion.py (099cc77) entró en cc0803b y luego evolucionó legítimamente con 7713108 feat(037) (#356).",
+      "judge_evidence": "git rev-parse comparado: 013i html_to_notion_blocks.py=56ac515, quality_gate=eed8336, test_html=10f6a13, test_stage4=9ff11a2 — los cuatro EXACTOS en origin/main tip. stage4_push_notion.py=099cc77 presente en cc0803b (git rev-parse cc0803b:scripts/discovery/stage4_push_notion.py → 099cc77), superado en main por d285eb6 vía 7713108 'feat(037): stage4 --update-existing (#356)'. git diff --name-status origin/main...013i muestra además diferencias vs main tip (p.ej. backfill_content_for_promoted.py) pero esas versiones sí estuvieron en la historia de main (main las retiró después por higiene propia); el never_in_main mecánico ya lo confirmó: solo 2 task .md + 3 reports.",
+      "adversarial_verify": {
+        "refuted": false,
+        "reason": "Auditoría blob-a-blob de los 30 paths del diff origin/main...013i: 7 archivos de código/tests blob-idénticos al tip de main; los demás (stage4_push_notion 099cc77, stage2_ingest 33812e9, pyproject 9ec11e4) existieron en la historia de main y fueron superados legítimamente por 7713108 #356, 9a0f3bb #350 y 58efcf6 #336; los reports que sí estuvieron en main los retiró el propio main en su commit de higiene 8cde9a9 (decisión deliberada, no pérdida). Never-in-main confirmado = solo 2 variantes de task-log + 3 JSON de run (inspeccionados: raw run data del 2026-05-07). El blockquote de 013-I está vivo en main (rollup cc0803b menciona 'quote block' y el blob es idéntico). Nada sustantivo se pierde al borrar."
+      }
+    },
+    "copilot-vps/stage4-013e-execution-2026-05-07": {
+      "class": "SUBSUMED_DOCS",
+      "action": "delete (SUBSUMED)",
+      "sha": "a36c2d5",
+      "ahead": 1,
+      "behind": 531,
+      "never_in_main_files": [
+        "reports/stage4-push-20260507T010037Z.json",
+        "reports/stage4-push-20260507T010048Z.json",
+        "scripts/discovery/stage4_push_notion.py",
+        "tests/test_stage4_push_notion.py"
+      ],
+      "judge_rationale": "Su código único (stage4_push_notion.py versión 013-E y su test) es una implementación DELIBERADAMENTE revertida: 013-F la hizo rollback (archivó las 5 páginas Notion creadas, cerró el PR #323 sin merge) y reescribió Stage 4 desde cero retargeteado a Publicaciones de Referentes; ese rollback+reescritura mergeó a main (patch-id idéntico) y la reescritura es el ancestro directo del stage4_push_notion.py vivo hoy. Es exactamente 'un fix que main resolvió de forma equivalente por otro commit'. Los 2 reports restantes son fósiles de ejecución.",
+      "judge_evidence": "git show 08cebdb --stat: el commit 'feat(013-F): rollback 013-E' documenta 'archived 5 Notion pages from 013-E run', 'closed PR #323 without merge', y añade un stage4_push_notion.py NUEVO de 545 líneas para la DB '📰 Publicaciones de Referentes'. git patch-id --stable: 08cebdb (rama) y 12f4cd8 (main, PR #325) → 8821717b... idéntico, o sea el rollback mergeó por squash. git diff --stat 7247b6f (blob 013-E) vs 099cc77 (blob 013-F): 986 líneas cambiadas — reescritura, no evolución. git log origin/main -- scripts/discovery/stage4_push_notion.py: 12f4cd8 → cc0803b → 7713108, cadena viva que nunca incluyó la versión 013-E. git diff --name-status origin/main...rama -- reports → solo 2 reports/stage4-push-20260507T0100*.json (dry-run/commit del run revertido).",
+      "adversarial_verify": {
+        "refuted": false,
+        "reason": "El rollback deliberado quedó corroborado al máximo: git patch-id --stable de 08cebdb (rama) y 12f4cd8 (main, PR #325) da idéntico 8821717b..., y el mensaje de 12f4cd8 documenta 'archived 5 Notion pages from 013-E run', 'closed PR #323 without merge'; el task-log 013-F en main dice que las páginas de 013-E se crearon 'en la DB equivocada'. El stage4_push_notion.py de 013-E (7247b6f) vs el de 013-F (099cc77) es reescritura de 986 líneas (430+/556-), y el linaje vivo en main (12f4cd8 → cc0803b → 7713108) nunca contuvo la versión 013-E. Es una implementación abandonada a propósito por apuntar al destino equivocado — encaja exacto en 'fix que main resolvió de forma equivalente por otro commit'. Los 4 archivos never-in-main (script, test del script revertido, 2 reports del run revertido) no tienen valor vigente."
+      }
+    },
+    "copilot/docs-editorial-master-plan": {
+      "class": "SUBSUMED_DOCS",
+      "action": "delete (SUBSUMED)",
+      "sha": "29ab772",
+      "ahead": 3,
+      "behind": 354,
+      "never_in_main_files": [
+        "docs/editorial-pipeline/master-plan.md",
+        "docs/editorial-pipeline/stage1-discovery-spec.md",
+        "scripts/discovery/lib/__init__.py",
+        "scripts/discovery/lib/dedup.py",
+        "scripts/discovery/lib/notion_read.py",
+        "scripts/discovery/lib/publish_guard.py"
+      ],
+      "judge_rationale": "Wave 1 H1+H5+H4 drafts que fueron integrados via la rama wave1.5-integration y aterrizaron en main como squash d835122 'feat(editorial-pipeline): merge Wave 1.5 integration'. El reporte de integracion mergeado en main documenta explicitamente 'merge H1 (#394) copilot/docs-editorial-master-plan — sin conflictos'. Los blobs never_in_main son estados intermedios: master-plan.md de main es el draft evolucionado (D1/D2/D3 resueltas, updates 2026-06-06/07-12/07-22; solo se elimino la redaccion obsoleta de decisiones abiertas), stage1-discovery-spec.md era un STUB explicito reemplazado por el spec real Wave1 H2, lib/__init__.py de main es la union textual de las variantes de ambas ramas, dedup.py de main es superset puro (+16 lineas), y notion_read.py/publish_guard.py son estados H4 superados por las versiones H2/H6 que gano la integracion documentada. Ninguna decision del draft quedo sin capturar en main.",
+      "judge_evidence": "git merge-base origin/main copilot/docs-editorial-master-plan = f43f200; git cherry mostro 3 commits no mergeados (beda891, 04dcb96, 29ab772). git rev-parse: master-plan.md blob c1cdb38 en rama vs a24a812 en main; git diff copilot/docs-editorial-master-plan origin/main -- docs/editorial-pipeline/master-plan.md mostro solo adiciones/resoluciones del lado de main (D1 RESUELTO H2 #397, D2 CERRADA 2026-07-12 memo b0004 + PR #523, D3 RESUELTO H6 #399); las lineas eliminadas son solo la seccion '5 ABIERTAS' reemplazada por las resoluciones. git diff ... -- stage1-discovery-spec.md | grep '^-' mostro que todo lo eliminado es el placeholder STUB ('status: STUB — pendiente Hilo 2'); git show origin/main:docs/editorial-pipeline/stage1-discovery-spec.md arranca 'Stage 0 / Stage 1 — Discovery Spec (Wave1 H2)' con D1 decidida. git show de lib/__init__.py en rama/main: docstring de main = union de ambas variantes. git diff copilot/docs-editorial-master-plan d835122 -- scripts/discovery/lib/dedup.py = 16 insertions, 0 deletions (superset puro); publish_guard.py y notion_read.py muestran rewrite al contrato gates mergeado (REASON_CODES vs GATE_NAMES viejos). git show d835122:docs/audits/2026-05-08-wave1_5-integration-report.md documenta fase 1 'merge H1 (#394) copilot/docs-editorial-master-plan sin conflictos' y fase 9 merge de H5 (stage6 skeleton, luego archivado en _archived/ por PR #523). git cat-file -p d835122 = un solo parent (squash), lo que explica por que los blobs draft nunca aparecen en la historia de main pese a la integracion documentada.",
+      "adversarial_verify": {
+        "refuted": false,
+        "reason": "Recompute independiente del never_in_main (git rev-list --objects origin/main, 12841 objetos) coincide con el clasificador: solo 6 blobs. Ataqué cada uno sin encontrar valor vigente perdido. (1) master-plan.md: el diff hacia main elimina únicamente la redacción '5 ABIERTAS'; D1/D2/D3 aparecen RESUELTAS y D4/D5 siguen documentadas como abiertas con owner David — ninguna decisión se pierde. (2) stage1-discovery-spec.md es un STUB autodeclarado cuyo índice esperado está íntegramente materializado en el spec real de main (schemas SQLite, dedup hash, fetch policy, source_status); además referencia el DS id afc8d960 conocido como stale/404. (3) __init__.py: el docstring de main es la concatenación literal de ambas variantes (verificado leyendo los tres). (4) dedup.py: en el squash d835122 main era superset textual puro — 16 inserciones, 0 borrados (conteo grep de líneas '-' = 0); la evolución posterior (publication_content_hash Wave 2.A #402) preserva el INSERT original en la rama else. (5) notion_read.py: las 4 props extra (Otros canales, Plataformas, Idioma, Categoría) se parsean pero nada las consume — fan_out_channels y la derivación activo/pausado/excluido son idénticas a main; esas props ya están documentadas en docs/plans/linkedin-publication-pipeline.md de main y leídas por scripts/discovery/audit_referentes_quality.py de main. (6) publish_guard.py: su GATE_NAMES (aprobado_imagen/voz/fuente/validacion_humana) contradice el gates.py de su propio árbol (blob 1ff0025, idéntico al de main, que implementa el contrato REASON_CODES que el publish_guard de main sí respeta); el flujo de assert_can_publish es idéntico y los conceptos de aprobación de imagen/voz sobreviven evolucionados en el production-flow v2 de main. El reporte de integración mergeado documenta PR #394 'Reemplazar por wave1.5-integration'. Todo el contenido ya está exportado a respaldo. SUBSUMED_DOCS se sostiene."
+      }
+    },
+    "copilot/docs-notion-schema-gates": {
+      "class": "SUBSUMED_DOCS",
+      "action": "delete (SUBSUMED)",
+      "sha": "185cf97",
+      "ahead": 2,
+      "behind": 354,
+      "never_in_main_files": [
+        "docs/editorial-pipeline/master-plan.md",
+        "docs/editorial-pipeline/stage1-discovery-spec.md",
+        "scripts/discovery/lib/__init__.py"
+      ],
+      "judge_rationale": "Subset estricto de la anterior en su contenido never_in_main: master-plan.md y stage1-discovery-spec.md son blob-identicos a los de copilot/docs-editorial-master-plan (mismos drafts H1 superados por main), y su variante de lib/__init__.py esta subsumida textualmente en el docstring union de main. Su payload sustantivo (gates.py, notion_publicaciones.py, notion-schema.md expandido, tests, audit) SI aterrizo en main por blob exacto (no figura en never_in_main). El reporte Wave 1.5 mergeado en main documenta explicitamente el merge de esta rama como H4 (#396), con el unico conflicto (notion-schema.md) resuelto conservando H4. Nada unico vigente queda fuera de main.",
+      "judge_evidence": "git merge-base = f43f200 (mismo que la otra rama); git cherry origin/main copilot/docs-notion-schema-gates = 2 commits (8838c4a, 185cf97). git rev-parse confirmo blobs identicos entre ambas ramas para master-plan.md (c1cdb38) y stage1-discovery-spec.md (64c1cca) — los mismos drafts ya evaluados como superados por main (a24a812 / 2ba6574). lib/__init__.py: rama B blob b2c7a76 ('Pure helper libraries... Hilo 6 Stage 10 publisher'), rama A blob 5aa36cd ('Pure Python helpers — no I/O outside SQLite'), main blob 438c2d6 = concatenacion literal de ambos textos. git show --stat 185cf97 muestra que gates.py, notion_publicaciones.py, tests/lib/* van en el mismo commit y NO estan en never_in_main (aterrizaron por blob exacto en main). git show d835122:docs/audits/2026-05-08-wave1_5-integration-report.md fase 2: 'merge H4 (#396) copilot/docs-notion-schema-gates — conflicto en notion-schema.md resuelto (kept H4)', smoke pytest tests/lib/ 30 passed.",
+      "adversarial_verify": {
+        "refuted": false,
+        "reason": "Recompute independiente confirma que su never_in_main son solo 3 blobs: master-plan.md (c1cdb38) y stage1-discovery-spec.md (64c1cca) blob-idénticos a los de la otra rama (mismo análisis: draft superado y STUB reemplazado por el spec real), más su variante de lib/__init__.py (b2c7a76) cuyo texto aparece verbatim como primera parte del docstring unión de main (verificado leyendo los tres archivos). Su payload sustantivo aterrizó en main por blob exacto — gates.py 1ff0025 (git rev-parse origin/main:scripts/discovery/lib/gates.py = mismo blob que la rama), notion_publicaciones.py 7529960, notion-schema.md ab3fec6, tests/lib/* — ninguno figura en mi never_in_main recalculado. El reporte de integración en main (d835122, single-parent squash verificado con cat-file) documenta 'merge H4 (#396) copilot/docs-notion-schema-gates — conflicto en notion-schema.md resuelto (kept H4)' y dispone el PR #396 como 'Reemplazar por wave1.5-integration'. No existe contenido único vigente fuera de main. SUBSUMED_DOCS se sostiene."
+      }
+    },
+    "copilot/feat-s0-s1-discovery": {
+      "class": "SUBSUMED_DOCS",
+      "action": "delete (SUBSUMED)",
+      "sha": "c07ea22",
+      "ahead": 3,
+      "behind": 354,
+      "never_in_main_files": [
+        "scripts/discovery/lib/__init__.py"
+      ],
+      "judge_rationale": "El unico archivo never_in_main es scripts/discovery/lib/__init__.py: un docstring de 4 lineas cuyo texto esta integramente contenido (palabra por palabra) dentro del docstring evolucionado que main tiene hoy para ese mismo archivo. Los otros 10 archivos de la rama (stage0/stage1, notion_read.py, migracion 0001, 4 archivos de tests, spec y smoke report) aterrizaron en main por blob exacto via el merge de Wave 1.5 (d835122) y su hardening posterior (cd4d2d9 #437). Estado intermedio totalmente subsumido.",
+      "judge_evidence": "git merge-base origin/main copilot/feat-s0-s1-discovery = f43f200 (mismo fork point las 3 ramas). git diff --stat origin/main...copilot/feat-s0-s1-discovery = 11 archivos, solo adds. Por cada archivo clave: git log origin/main --find-object=$(git rev-parse copilot/feat-s0-s1-discovery:FILE) encontro el blob en main — stage1_discover_signals.py y stage0_load_referentes.py en cd4d2d9 y d835122; test_stage0_stage1_extra.py y stage1-discovery-spec.md en d835122. git show de lib/__init__.py en rama vs main: la rama dice 'Pure Python helpers — no I/O outside SQLite — shared across stages.' y main contiene exactamente esa frase dentro de un docstring mas largo que ademas documenta la regla no-HTTP/no-Notion-writes.",
+      "adversarial_verify": {
+        "refuted": false,
+        "reason": "Veredicto aguanta. Re-derive el set never_in_main independientemente (git rev-parse BRANCH:FILE + git log origin/main --find-object por los 11 archivos): 10 archivos blob-exactos en main (d835122 Wave 1.5, cd4d2d9 #437) y ademas verificados PRESENTES en origin/main HEAD hoy (cerrando el hueco 'aterrizo y luego se borro'). El unico never_in_main es scripts/discovery/lib/__init__.py: docstring de 4 lineas cuya frase 'Pure Python helpers — no I/O outside SQLite — shared across stages.' aparece palabra por palabra dentro del docstring actual de main, que ademas agrega la regla no-HTTP/no-Notion-writes. Tambien revise estados intermedios de commits (no solo el tip): el unico blob intermedio never-in-main (stage1_discover_signals.py @ 32ca8e2, marcado [WIP]) esta estrictamente superado por la version del tip que si aterrizo. Cero contenido con valor vigente se pierde."
+      }
+    },
+    "copilot/feat-s2-source-verification": {
+      "class": "SUBSUMED_DOCS",
+      "action": "delete (SUBSUMED)",
+      "sha": "379d4cb",
+      "ahead": 2,
+      "behind": 354,
+      "never_in_main_files": [
+        "scripts/discovery/lib/__init__.py",
+        "scripts/discovery/lib/dedup.py"
+      ],
+      "judge_rationale": "Rama autodeclarada borrador: commit 28b7fb7 'feat(wave1-h3): S2 source verification & dedup (DRAFT — DO NOT MERGE)'. Los dos archivos never_in_main son estados anteriores superados: lib/__init__.py es el mismo docstring corto subsumido por el de main, y lib/dedup.py es la version pre-Wave-2.A — el diff rama→main es puramente aditivo en semantica (main agrega compute_source_content_hash, el parametro opcional publication_content_hash y el alias de contrato Wave 1.5 Fix, conservando el INSERT original de la rama como rama else de back-compat). Los otros 7 archivos (stage2_verify_sources.py, migracion 0002, 3 tests, spec, smoke report) estan en main por blob exacto.",
+      "judge_evidence": "git log --oneline copilot/feat-s2-source-verification muestra 28b7fb7 con 'DRAFT — DO NOT MERGE' en el subject. git diff --stat origin/main...rama = 9 archivos. --find-object por blob: stage2_verify_sources.py y test_stage2_verify_sources.py en cd4d2d9; test_dedup.py, spec, migracion 0002 y test_source_verifier_compat.py en d835122. git diff copilot/feat-s2-source-verification origin/main -- scripts/discovery/lib/dedup.py: solo lineas '+' salvo el bloque INSERT de 5 lineas que main preserva identico dentro del else (callers legacy); main añade publication_content_hash + alias compute_source_content_hash. Nada de la rama se pierde en main.",
+      "adversarial_verify": {
+        "refuted": false,
+        "reason": "Veredicto aguanta. Confirme 'DRAFT — DO NOT MERGE' en el subject de 28b7fb7. Los 7 archivos no-never estan blob-exactos en main y presentes en HEAD. De los 2 never_in_main: lib/__init__.py es el mismo docstring subsumido; lib/dedup.py lo verifique con git diff rama→main completo — es puramente aditivo: main conserva VERBATIM el INSERT de 5 lineas de la rama como rama else de back-compat, y solo añade publication_content_hash (opcional, Wave 2.A #402), ensure_publication_hash_column y el alias compute_source_content_hash con su docstring de contrato. Ninguna funcion, test ni semantica de la rama falta en main. Sin estados intermedios never-in-main distintos del tip. Nada refutable."
+      }
+    },
+    "copilot/feat-s10-publish-guard": {
+      "class": "SUBSUMED_DOCS",
+      "action": "delete (SUBSUMED)",
+      "sha": "51b3895",
+      "ahead": 3,
+      "behind": 354,
+      "never_in_main_files": [
+        "docs/editorial-pipeline/master-plan.md",
+        "docs/editorial-pipeline/stage1-discovery-spec.md",
+        "scripts/discovery/lib/__init__.py",
+        "scripts/discovery/stage9c_linkedin_publish.py",
+        "tests/discovery/test_stage9c_idempotency.py"
+      ],
+      "judge_rationale": "El nucleo del publish-guard SI esta en main: el blob exacto de scripts/discovery/lib/publish_guard.py de esta rama aparece en la historia de main (59f9ea7), igual que gates.py, notion_publicaciones.py y test_publish_guard.py (d835122) y test_stage9c_dry_run.py (8dc8e26 #523). Los 5 never_in_main son todos estados anteriores superados: (1) stage9c_linkedin_publish.py — el stage9c de main conserva integro el bloque '6 gates BEFORE any POST' con assert_can_publish (linea 389) y lo evoluciona añadiendo el guard B4 linkedin_org_guard e inyeccion dedup_module; lo unico que 'pierde' main de la rama son 4 lineas triviales (docstring reescrito, lazy-import reemplazado por inyeccion). (2) test_stage9c_idempotency.py — main tiene el MISMO archivo evolucionado: el diff solo añade un fixture autouse de publish flags y la adaptacion B4 org-publish; la cobertura de idempotencia de la rama esta completa en main. (3) master-plan.md — main tiene la misma doc con las decisiones D1/D2/D3 marcadas RESUELTAS y updates 2026-06-06/2026-07-12; la version de la rama es el borrador anterior con D1-D5 abiertas. (4) stage1-discovery-spec.md — la rama trae el STUB de 68 lineas ('status: STUB — pendiente Hilo 2'); main tiene el spec completo de 136 lineas. (5) lib/__init__.py — draft de docstring cuyo contenido esta fusionado en el docstring superset de main.",
+      "judge_evidence": "--find-object por blob: publish_guard.py → 59f9ea7 'feat(wave2a/405): publish_flags helper + emergency-stop runbook + tests'; gates.py, notion_publicaciones.py, test_publish_guard.py → d835122; test_stage9c_dry_run.py → 8dc8e26 (#523); los 5 never_in_main → NOT FOUND, confirmando el set. git show origin/main:scripts/discovery/stage9c_linkedin_publish.py | grep gate/guard: conserva '# ---- Stage 10 publish guard: 6 gates BEFORE any POST ----' (linea 380), assert_can_publish (lineas 63 y 389) y añade linkedin_org_guard B4 (linea 421). git diff rama→main del stage9c: solo 4 lineas '-' (docstring de publish_one, llamada assert_can_publish reubicada con mas args, lazy import de dedup sustituido por dedup_module). git diff rama→main de test_stage9c_idempotency.py: solo adds (fixture publish flags, RICK_LINKEDIN_ORG_PUBLISH_ENABLED, author urn:li:organization) sobre los mismos tests. git diff rama→main de master-plan.md: main marca D1 RESUELTO (split S0/S1 de #397), D2 CERRADA 2026-07-12 (PR #523), D3 RESUELTO (publish_guard.assert_can_publish de H6 #399) — es decir, main documenta que lo que esta rama proponia ya aterrizo por otras vias.",
+      "adversarial_verify": {
+        "refuted": false,
+        "reason": "Veredicto aguanta tras el ataque mas profundo. (1) stage9c: el diff rama→main solo pierde 4 lineas sustantivas y cada una esta cubierta: el docstring 'Return (status, message). Status: published | skipped | failed | blocked.' aparece verbatim como primera linea del docstring actual (linea 355), assert_can_publish sigue llamado con flags añadidos (linea 389), el bloque '6 gates BEFORE any POST' sobrevive (linea 380), y el lazy-import de dedup fue reemplazado por inyeccion dedup_module documentada con fallback lazy. (2) test_stage9c_idempotency.py: main conserva todos los tests; las unicas lineas '-' son la firma vieja de install_fake_dedup y el author urn:li:person, adaptadas para B4 org-publish. (3) master-plan.md: main rastrea las 5 decisiones — verifique que D4 y D5 figuran explicitamente 'ABIERTO — postponed Wave 2' (lineas 149-150), asi que ninguna decision abierta del borrador se pierde; update 2026-07-12 confirma 3 resueltas (D1/D2/D3). (4) stage1-discovery-spec.md STUB de 68 lineas: superado por el spec completo de main que resuelve D1; sus hechos sustantivos (cobertura 14/26=53.8%, falsa atribucion stage1_load_referentes.py) estan en docs mergeadas: gap-analysis lineas 16/95 y drift-audit lineas 28-69. (5) lib/__init__.py: main es superset exacto (version de la rama + frase fusionada). Ademas: los 18 archivos restantes blob-exactos en main Y presentes en HEAD; el unico blob intermedio never-in-main (notion-schema.md @ 8838c4a) es borrador superado por el tip que aterrizo en d835122."
+      }
+    },
+    "rick-delivery/fix-notion-poller-bot-loop-combined": {
+      "class": "SUBSUMED_DOCS",
+      "action": "delete (SUBSUMED)",
+      "sha": "0d70b67",
+      "ahead": 1,
+      "behind": 107,
+      "never_in_main_files": [
+        "dispatcher/notion_poller.py",
+        "tests/test_notion_poller.py"
+      ],
+      "judge_rationale": "El commit unico de la rama (0d70b67 'dedupe bot poller comments before action log') fue rescatado y mergeado a main como PR #611 (ad71801, 2026-08-07, mensaje: 'Rescate hb: claim bot/echo comments at last_ts to prevent poller loop'). El cambio de dispatcher/notion_poller.py es linea-por-linea identico; los tests de main son un superset estricto (mismos tests + uno adicional). El blob difiere solo porque main crecio ~1000 lineas (pollers editoriales P2.x) entre julio y agosto, desplazando offsets.",
+      "judge_evidence": "git log --oneline origin/main -- dispatcher/notion_poller.py mostro ad71801 'fix(notion): dedupe bot poller comments before action log (#611)' (mismo titulo que 0d70b67). git diff 0d70b67~1..0d70b67 -- dispatcher/notion_poller.py vs git diff ad71801~1..ad71801 -- dispatcher/notion_poller.py: filtrando solo lineas +/- con grep, diff reporto identidad total (POLLER +/- LINES IDENTICAL; solo cambian headers de hunk @@ -532 vs @@ -1554 por drift de offsets). Para tests/test_notion_poller.py el mismo metodo mostro identidad salvo 1 linea en blanco extra en main, y main agrega ademas test_do_poll_filters_already_processed_before_actionable_count. git show origin/main:dispatcher/notion_poller.py confirma la logica viva en lineas 1583-1593.",
+      "adversarial_verify": {
+        "refuted": false,
+        "reason": "Verificacion independiente confirma subsuncion total. git cherry muestra 0d70b67 como unico commit no mergeado y git diff --stat 29897de..branch confirma que solo toca dispatcher/notion_poller.py y tests/test_notion_poller.py. Comparando solo lineas +/- de git diff 0d70b67~1..0d70b67 contra git diff ad71801~1..ad71801 (PR #611 en main): el diff del poller es byte-identico, y el de tests difiere unicamente en 1 linea en blanco extra en main. La logica (claim en author-guard y ECHO_PREFIX, _filter_unprocessed_comments, conteo actionable) esta viva en origin/main:dispatcher/notion_poller.py ~lineas 1560-1595. Nota menor: el test extra test_do_poll_filters_already_processed_before_actionable_count ya estaba en 0d70b67 (no es adicion exclusiva de main), lo que refuerza la subsuncion. Nada unico se pierde al borrar la rama."
+      }
+    },
+    "rick-delivery/fix-notion-poller-bot-skip-loop": {
+      "class": "SUBSUMED_DOCS",
+      "action": "delete (SUBSUMED)",
+      "sha": "2de2fe1",
+      "ahead": 1,
+      "behind": 107,
+      "never_in_main_files": [
+        "dispatcher/notion_poller.py",
+        "tests/test_notion_poller.py"
+      ],
+      "judge_rationale": "El commit unico (2de2fe1 'claim skipped notion bot comments', 2026-07-02) es un subconjunto estricto del fix combinado 0d70b67, que a su vez mergeo a main via PR #611 (ad71801). Sus 4 lineas de codigo (claim del comment en el skip por author-guard y en el skip por ECHO_PREFIX) estan verbatim en el main vivo, y sus 2 tests existen con el mismo nombre en las adiciones de #611. Nada unico queda en la rama.",
+      "judge_evidence": "git diff 2de2fe1~1..2de2fe1 -- dispatcher/notion_poller.py muestra 4 lineas anadidas: 'if comment_id: _claim_comment_processing(r, comment_id)' antes de cada continue (author guard y ECHO_PREFIX). git show origin/main:dispatcher/notion_poller.py | grep confirma esas mismas lineas vivas en main (lineas 1583-1593, tras 'Skipping bot-authored comment ... (author guard)' y 'if text.startswith(ECHO_PREFIX):'). Los nombres de test anadidos por la rama (test_do_poll_claims_bot_reply_at_last_ts_to_prevent_loop y test_do_poll_claims_echo_prefix_at_last_ts_to_prevent_loop) aparecen ambos en git diff ad71801~1..ad71801 -- tests/test_notion_poller.py.",
+      "adversarial_verify": {
+        "refuted": false,
+        "reason": "Verificacion independiente confirma que 2de2fe1 es subconjunto verbatim estricto de 0d70b67 (mergeado a main via PR #611/ad71801). Sus 4 lineas de poller ('if comment_id: _claim_comment_processing(r, comment_id)' antes de cada continue) aparecen identicas dentro del diff de 0d70b67 y en el main vivo (~lineas 1585-1593). Sus 103 lineas de tests anadidas son un prefijo verbatim exacto de las 145 del combined (diff reporta solo '103a104,145': el combined solo agrega un test adicional encima); ninguna asercion, fixture o caso borde existe solo en esta rama. Ambos nombres de test estan en origin/main:tests/test_notion_poller.py (lineas 626 y 760). git diff --stat 29897de..branch confirma que no hay otros archivos. Nada unico se pierde al borrar la rama."
+      }
+    },
+    "tournament/umbral-agent-stack-375-fa19920/lane-docs-explanatory": {
+      "class": "SUBSUMED_DOCS",
+      "action": "delete (SUBSUMED)",
+      "sha": "155d4f0",
+      "ahead": 1,
+      "behind": 391,
+      "never_in_main_files": [
+        "README.md"
+      ],
+      "judge_rationale": "Losing lane of tournament 375. Its single unmerged commit is the same README.md comment-alignment fix that the winning lane (docs-concise) merged into main as PR #376, plus one extra explanatory note line — exactly the 'explanatory' flourish the judge rejected by picking the concise lane. Main resolved the fix equivalently; the residual delta is a cosmetic doc note for a repo-tree convention, with the file already exported to backup.",
+      "judge_evidence": "git log --oneline origin/main..tournament/umbral-agent-stack-375-fa19920/lane-docs-explanatory → only 155d4f0 'docs: align comment spacing in repo structure tree + add convention note'. git show 155d4f0 -- README.md → aligns 'notion_client.py #  ' to '#   ' and adds line '> Comentarios alineados con `#` + 3 espacios...'. git log origin/main --grep='umbral-agent-stack-375' → 57ac306 'docs: align comment spacing ... [docs-concise] (#376)' and 2bc58f6 report torneo verde (#378). git show 57ac306 -- README.md → identical alignment hunk (same file/line) merged to main. git grep 'Comentarios alineados' origin/main -- README.md → exit 1 (only the rejected note line is absent from main); git show origin/main:README.md lines 175-200 confirms the aligned tree is live.",
+      "adversarial_verify": {
+        "refuted": false,
+        "reason": "SUBSUMED_DOCS confirmed. Single unmerged commit 155d4f0 touches only README.md (+2/-2). The alignment hunk is byte-identical to what main already has via the winning lane (57ac306, PR #376; verified with git show 57ac306 -- README.md and git show origin/main:README.md lines 175-200). The only residual is the one-line note '> Comentarios alineados con `#` + 3 espacios...' — a verbalization of a convention already visible in main's aligned tree, deliberately rejected when the judge picked the concise lane — plus a cosmetic blank-line removal after the heading. git grep 'Comentarios alineados' origin/main -- README.md exits 1, confirming only the rejected flourish is absent. No feature code, scaffold, fix, or uncaptured decision exists; the file is already exported to backup."
+      }
+    },
+    "tournament/umbral-agent-stack-d35-33863db/lane-openclaw-skill": {
+      "class": "SUBSUMED_DOCS",
+      "action": "delete (SUBSUMED)",
+      "sha": "ca6b86b",
+      "ahead": 1,
+      "behind": 195,
+      "never_in_main_files": [
+        "docs/79-tournament-protocol-openclaw-native.md"
+      ],
+      "judge_rationale": "Losing lane of tournament d35. Its single unmerged commit adds a 'Lane closeout announce' example (§4.3.1, JSON format) to docs/79; the winning lane (docs-only) merged the same example into main via PR #468 as §4.1.1 — same semantic content (worktree_path for RC-4 isolation, diff_stats, checks, literal PR_URL= last line, parent completeness-gate parse). Only section number and text-vs-JSON rendering differ. The doc covers the PIT/tournament system archived 2026-07-22 (HOLD), so the formatting variant has no vigent value.",
+      "judge_evidence": "git log --oneline origin/main..tournament/umbral-agent-stack-d35-33863db/lane-openclaw-skill → only ca6b86b 'tournament(openclaw-skill): add Lane closeout announce example (§4.3.1)'. git show ca6b86b -- docs/79-tournament-protocol-openclaw-native.md → +27 lines: §4.3.1 with JSON announce {specialty, branch, worktree_path, diff_stats, checks_status, tooling} + PR_URL= literal line. git log origin/main --grep='umbral-agent-stack-d35' → 6944558 Merge PR #468 from tournament/...-d35-.../lane-docs-only ('Add Lane closeout example block (docs §4.1.1)', +19 lines same file). git show origin/main:docs/79-tournament-protocol-openclaw-native.md lines 140-172 → §4.1.1 example present in main with worktree_path, diff_stats, checks, PR_URL= last line and the same gate explanation.",
+      "adversarial_verify": {
+        "refuted": false,
+        "reason": "SUBSUMED_DOCS confirmed after attacking all three lane-unique details. (1) The JSON announce format (specialty/diff_stats/checks_status/tooling + literal PR_URL= last line) is already in main at openclaw/workspace-templates/skills/tournament-github-cli/SKILL.md §8 'Announce-back JSON + PR_URL line' (lines 121-137) — the very §8 the lane's text cites. (2) worktree_path in the closeout announce, the parent completeness-gate parse, and the RC-4 isolation audit are in main's docs/79 §4.1.1 (winning lane, PR #468 merge 6944558), which even adds gh pr view verification the losing lane lacks. (3) tournament_lane.create_branch with input.use_worktree=true returning worktree_path is in main's docs/79 lines 57 and 186 (§4.3). The only residual is a formatting/placement variant (worktree_path as a JSON field vs SKILL.md's head_ref; §4.3.1 vs §4.1.1), with no new decision. The subsystem is moreover ARCHIVED/HOLD in main (docs/ops/pit-tournaments-archived-2026-07-22.md; skills.entries.tournament-github-cli enabled:false), so the variant has no vigent value beyond the export already made."
+      }
+    },
+    "rick/stage7_5-integration": {
+      "class": "SUBSUMED_DOCS",
+      "action": "delete (SUBSUMED)",
+      "sha": "5d8cf31",
+      "ahead": 2,
+      "behind": 376,
+      "never_in_main_files": [
+        "scripts/discovery/stage7_5_copy_writer.py",
+        "tests/discovery/test_stage7_5_copy_writer.py"
+      ],
+      "judge_rationale": "Ambos commits propios aterrizaron en main via PR #385 (e0efe0f rebasado como 6e9cd24) y el fix 5d8cf31 esta verbatim en el writer de main (fallback importlib). Los 2 blobs never-in-main (writer/test) son estados intermedios exactos contenidos en la historia de rick/stage7_5-voice-v4 (integration es ancestro estricto), cuya linea rebasada se mergeo como PR #390. Nada unico se pierde al borrar la rama.",
+      "judge_evidence": "git log f808edb..origin/main --grep=stage7_5 -> c5265a4 'Merge pull request #385 from Umbral-Bot/rick/stage7_5-integration' con 6e9cd24 (mismo subject que e0efe0f). git log origin/main --find-object=10f3bfdd (runbook-real.md, blob identico de integration) -> introducido por 6e9cd24. git show origin/main:scripts/discovery/stage7_5_copy_writer.py | grep spec_from_file_location/ModuleNotFoundError -> lineas 411-429 contienen verbatim el patch de 5d8cf31; grep -c ESTADO_LIVE_MAP -> 3 en writer, 9 en test (contenido de e0efe0f presente). git merge-base --is-ancestor rick/stage7_5-integration rick/stage7_5-voice-v4 -> TRUE (los commits e0efe0f/5d8cf31 y sus blobs bde47d29/641b23d9 siguen alcanzables desde voice-v4). Nota: git log rick/stage7_5-multiformat --find-object para los 3 blobs dio negativo, pero la subsuncion real es via main (PR #385) + voice-v4.",
+      "adversarial_verify": {
+        "refuted": false,
+        "reason": "Verdict aguanta. Diff directo tip->main de los 2 blobs never-in-main: las unicas lineas exclusivas del tip son (a) el fallback importlib viejo, superado en main por un superset estricto (mismo codigo + registro en sys.modules, llegado via ad838eb/PR #390); (b) bloques de cache y resolucion de source URL que main reestructuro en el retry loop pero conserva funcionalmente (cache_get/cache_put en lineas 578/593/1051-1069 del writer de main; Fuente primaria/referente en 440-442, 922-924, 987-989); (c) un string de test renombrado ('No En revisión option' -> 'No Revisión pendiente option') — test_estado_option_missing existe en main con la misma asercion (notion_estado_option_missing:Revisión pendiente). Verificado ademas que el blob del runbook (10f3bfdd) entro identico via 6e9cd24 (PR #385). Unica debilidad del rationale original: apoyarse en 'contenido en voice-v4' es circular porque voice-v4 tambien se borra — pero la subsuncion directa via main se sostiene sola, asi que no cambia el veredicto."
+      }
+    },
+    "rick/stage7_5-voice-v2": {
+      "class": "SUBSUMED_DOCS",
+      "action": "delete (SUBSUMED)",
+      "sha": "9a06ad9",
+      "ahead": 4,
+      "behind": 376,
+      "never_in_main_files": [
+        "docs/discovery/rick-linkedin-voice.md",
+        "prompts/rick/linkedin-copy-system.md",
+        "reports/stage7_5_eval_v3_t06.json",
+        "reports/stage7_5_eval_v3_t08.json",
+        "reports/stage7_5_eval_v3_t095.json",
+        "scripts/discovery/eval_stage7_5_copy.py",
+        "scripts/discovery/source_verifier.py",
+        "tests/discovery/fixtures/stage7_5_golden_copies.json",
+        "tests/discovery/fixtures/stage7_5_proposals.json",
+        "tests/discovery/test_eval_stage7_5_copy.py",
+        "tests/discovery/test_source_verifier.py"
+      ],
+      "judge_rationale": "El bloque grande (source verifier) se mergeo a main via PR #387 con blobs identicos o casi (config yaml, source-verification.md y archive/linkedin-copy-system-v1.md identicos; source_verifier.py delta 12 lineas y test 27 lineas por evolucion posterior de main). El resto (prompt v2, R13-R16, scoring ponderado, doc v2) fue superado de forma equivalente por la linea voice-v3 que main mergeo en PR #390: el evaluator de main implementa exactamente las 6 dimensiones de la tabla del doc v2 (technical_clarity, operational_criteria, david_voice_fit, low_repetition, organizational_sensitivity, source_verifiability) con pesos, V3_HR1_BATCH_REPETITION cubre R13/R16, la dimension organizational_sensitivity cubre R14, R17 quedo como hard rule, y el prompt de main veta las muletillas ('Mi lectura es simple'). Los 3 reports eval_v3 son fosiles de ejecucion. Los fixtures organizacionales F7-F10 son harness del diseno v2 descartado: tanto la linea v3 mergeada como multiformat (KEEP) extendieron fixtures eligiendo deliberadamente otros F7-F10; ya estan en el backup.",
+      "judge_evidence": "git ls-tree origin/main | grep source_verifier -> config/source_verifier.yaml, scripts/discovery/source_verifier.py, tests/discovery/test_source_verifier.py presentes (commit 2819af7 = PR #387, mismo subject que 87fdaa6 de la rama). git diff rick/stage7_5-voice-v2 origin/main -- <14 archivos> -> config yaml, docs/discovery/source-verification.md y prompts/rick/archive/linkedin-copy-system-v1.md NO aparecen en el diff (identicos); source_verifier.py 12 lineas, test 27. git show origin/main:scripts/discovery/eval_stage7_5_copy.py -> dims technical_clarity/operational_criteria/david_voice_fit/low_repetition/organizational_sensitivity/source_verifiability con weights (lineas 855-872), V3_HR1_BATCH_REPETITION (linea 1061), chequeo 'Mi lectura es simple' (lineas 296/309), HARD_RULES incluye R17. git show origin/main:prompts/rick/linkedin-copy-system.md -> muletillas vetadas linea 114, sensibilidad organizacional linea 166. git diff voice-v2..main -- docs/discovery/rick-linkedin-voice.md -> main quedo en v1 pero todo el contenido operativo del changelog v2 (dims, pesos, caps de muletilla) vive en el evaluator/prompt mergeados. Fixtures: main tiene F1-F6; multiformat tiene F7-F10 distintos (openbim/mep/genai/isobim), no los organizacionales de v2. git log rick/stage7_5-multiformat --find-object=<blob> para los 13 blobs tip -> todos negativos (la subsuncion es via main #387 + #390, no via multiformat).",
+      "adversarial_verify": {
+        "refuted": false,
+        "reason": "Verdicto aguanta tras atacar el hueco que el rationale original salto (R15) y las fixtures. R15 (balance pedagogico) esta cubierto por V3_HR4_CONFRONTATIONAL_NO_PEDAGOGY en main, promovido de soft a HARD — mas fuerte que v2. source_verifier.py/test: el delta vs main es exactamente el fix posterior de main al parsing arXiv YYMM (regex ^/abs/(\\d{2})(\\d{2}) con validacion de mes); la copia de v2 contiene el bug de anio que main corrigio — es un estado estrictamente anterior, no un fix perdido. R14: _score_organizational_sensitivity de main es una evolucion de 5 senales (actor/change/tool+process/human_limits/no_blame) mas rica que los 13 tokens de v2. R13/R16 batch: V3_HR1 de main es superset (ngram + moderated_phrase + deteccion de hook duplicado, todo hard). Prompt v2: cada regla sustantiva (anti-plantilla, cupo de muletillas incl. 'Mi lectura es simple' y variantes, aterrizaje organizacional, allowlist hashtags, limites de longitud) esta en el prompt v3 de main reforzada con ejemplos negativos y checklist de salida. Fixtures F7-F10 organizacionales: atadas al schema golden v2 descartado (R14_org_tokens etc.) y su namespace de IDs fue reutilizado con otro contenido por multiformat (KEEP: F7-openbim/F8-mep/F9-genai/F10-isobim) — revivirlas colisiona; ya estan en el backup. Los 206 lineas de test v2 llaman apply_batch_rules/VOICE_DIMENSIONS: 0 hits en el evaluator de main, harness inejecutable del diseno descartado. Los 3 reports son sweeps de temperatura del scorer v2 descartado (scoring_version:'v2') — fosiles. El changelog del doc v2 es narrativa historica cuyo contenido operativo vive en el evaluator/prompt mergeados y cuyo texto esta en el backup."
+      }
+    },
+    "rick/stage7_5-voice-v4": {
+      "class": "SUBSUMED_DOCS",
+      "action": "delete (SUBSUMED)",
+      "sha": "2625b45",
+      "ahead": 7,
+      "behind": 376,
+      "never_in_main_files": [
+        "scripts/discovery/eval_stage7_5_copy.py",
+        "scripts/discovery/stage7_5_copy_writer.py",
+        "tests/discovery/test_stage7_5_copy_writer.py"
+      ],
+      "judge_rationale": "La rama entera se mergeo a main como PR #390 (el merge commit f43f200 nombra literalmente a rick/stage7_5-voice-v4); la linea del PR son los mismos 5 commits voice-v3 rebasados sobre main post-#387, 3 de ellos patch-equivalentes segun git cherry. Los 3 blobs never-in-main (eval, writer, test) son estados pre-rebase: comparando el tip contra el arbol mergeado, lo unico 'perdido' es la tupla HARD_RULES sin R17 (main la tiene mas nueva, con R17) y una linea de test adaptada — puro churn de rebase. El report voice_v3 aterrizo en main con blob identico.",
+      "judge_evidence": "git log f808edb..origin/main --grep=stage7_5 -> f43f200 'Merge pull request #390 from Umbral-Bot/rick/stage7_5-voice-v4'; git log f43f200^1..f43f200^2 -> ad838eb/63c9906/697776b/8db9033/27217d8, mismos subjects que 2625b45/56c119e/2f8a748/03ebab9/e64c32d. git cherry origin/main rick/stage7_5-voice-v4 f808edb -> '-' (equivalente en main) para e64c32d, 2f8a748, 2625b45. git diff rick/stage7_5-voice-v4 f43f200^2 -- <los 3 archivos never-in-main> | grep '^-' -> solo 2 lineas reales perdidas: HARD_RULES=(R1..R11) sin R17 (superada: main agrega R17 tras #387) y una variante de linea en el test; el writer no pierde ninguna linea. git log origin/main --find-object=94582be (reports/stage7_5_voice_v3_eval.json del tip) -> presente via ad838eb (blob identico en main). git log rick/stage7_5-multiformat --find-object para los 3 blobs -> negativo, pero irrelevante: la subsuncion es directa en main via PR #390.",
+      "adversarial_verify": {
+        "refuted": false,
+        "reason": "Verdicto aguanta con margen. f43f200 (PR #390) nombra literalmente la rama y sus 5 commits son rebases con mismos subjects (ad838eb/63c9906/697776b/8db9033/27217d8 = 2625b45/56c119e/2f8a748/03ebab9/e64c32d); git cherry marca 3 de 7 patch-equivalentes. Diff completo del tip vs f43f200^2 sobre los 3 archivos never-in-main: exactamente 2 lineas exclusivas del tip — HARD_RULES sin R17 (main tiene la tupla con R17, superset) y el titular de test renombrado; todo lo demas del diff son adiciones que la version mergeada tiene y el tip no (gate de source verifier, tests test_source_gate_*, flag --skip-source-verify). reports/stage7_5_voice_v3_eval.json y el smoke artifact estan blob-identicos en main. Nada con valor vigente se pierde al borrar."
+      }
+    },
+    "tournament/umbral-agent-stack-440-462ef1c1/lane-backup-impl": {
+      "class": "SUBSUMED_DOCS",
+      "action": "delete (SUBSUMED)",
+      "sha": "77b8ca8",
+      "ahead": 1,
+      "behind": 254,
+      "never_in_main_files": [
+        "docs/08-operations-runbook.md",
+        "docs/ops/registry-backup-alert-runbook.md",
+        "infra/registry_backup_alert.py",
+        "scripts/__init__.py",
+        "scripts/registry/__init__.py",
+        "scripts/registry/check_backup_alert.py",
+        "tests/fixtures/registry_backup_alert/alert_two_days/registry-backup-2026-05-30.txt",
+        "tests/fixtures/registry_backup_alert/alert_two_days/registry-backup-2026-05-31.txt",
+        "tests/fixtures/registry_backup_alert/alert_two_days/registry-backup-2026-06-01.txt",
+        "tests/fixtures/registry_backup_alert/clear_success_breaks_streak/registry-backup-2026-05-30.txt",
+        "tests/fixtures/registry_backup_alert/clear_success_breaks_streak/registry-backup-2026-05-31.txt",
+        "tests/fixtures/registry_backup_alert/clear_success_breaks_streak/registry-backup-2026-06-01.txt",
+        "tests/fixtures/registry_backup_alert/malformed_logs_ignored/registry-backup-2026-05-31.txt",
+        "tests/fixtures/registry_backup_alert/malformed_logs_ignored/registry-backup-2026-06-01.txt",
+        "tests/fixtures/registry_backup_alert/malformed_logs_ignored/registry-backup-2026-06-02.txt",
+        "tests/test_registry_backup_alert.py"
+      ],
+      "judge_rationale": "Losing tournament lane for issue 440 (O2 backup alerts). Main resolved the exact same need equivalently via another commit: 2fe5853 'feat: add registry backup failure alert (#444)' ships the same 2-consecutive-day registry backup failure detector (scripts/registry/registry_backup_alert.py, 172 lines, anchored to the real runner's run-*.log transcripts from notion-governance/scripts/daily-registry-backup.ps1), the same runbook path docs/ops/registry-backup-alert-runbook.md, the same test path tests/test_registry_backup_alert.py, and the same env override UMBRAL_REGISTRY_BACKUP_LOG_DIR. The lane's alternative implementation (infra/registry_backup_alert.py + scripts/registry/check_backup_alert.py, broader .txt/.log filename heuristics) is a competing intermediate that lost; even its extra doc pointer in docs/08-operations-runbook.md is covered by main's own 'Registry backup alert (O2 post-MVP)' section (lines 96-98). No vigente value beyond what merged; files already exported to backup.",
+      "judge_evidence": "git log --oneline origin/main..<branch> -> single commit 77b8ca8 'feat(registry): alert on consecutive backup failures'. git log origin/main -i --grep='backup.*alert' -> 2fe5853 'feat: add registry backup failure alert (#444)' and 6eba9bb 'Add D3.2 tournament spec for O2 backup alerts issue 440'. git ls-tree origin/main scripts/registry/ -> registry_backup_alert.py exists. git show --stat 2fe5853 -> same paths docs/ops/registry-backup-alert-runbook.md + tests/test_registry_backup_alert.py + fixtures. git show origin/main:scripts/registry/registry_backup_alert.py -> same detector semantics and UMBRAL_REGISTRY_BACKUP_LOG_DIR env. git show origin/main:docs/08-operations-runbook.md | grep registry -> lines 96-98 canonical pointer section already present.",
+      "adversarial_verify": {
+        "refuted": false,
+        "reason": "Verdict holds under adversarial review. Verified: single unmerged commit 77b8ca8 (merge-base 462ef1c1); main's 2fe5853 (#444) implements the identical alert contract — latest-run-per-day reduction, 2-consecutive-daily-failures trigger, UMBRAL_REGISTRY_BACKUP_LOG_DIR override, same runbook/test paths — anchored to the real runner's run-YYYY-MM-DDTHHmmss.log format. Attack angles that failed: (1) lane's broader heuristics (.txt support, fallback env REGISTRY_BACKUP_LOG_DIR, recursive rglob, mtime fallback, max-files cap) are features of the losing competing implementation, not unmet needs — git grep over origin/main shows zero references to infra/registry_backup_alert, check_backup_alert, or the fallback env var; (2) the check_backup_alert.py CLI wrapper is redundant — main's script has its own argparse main() with --log-dir; (3) the lane runbook is an operational subset of main's 97-line runbook (main adds scheduler install detail, exit-code table, failure-class response steps, CI contract; lane's only unique bits are trivial: 'history tab' mention, exit code 1 vs main's 2); (4) the docs/08-operations-runbook.md pointer is covered by main's own 'Registry backup alert (O2 post-MVP)' section at lines 96-98; (5) test scenarios are equivalent and the lane tests import the losing infra module so they cannot transfer. Files are exported to backup; nothing vigente is lost by deleting the branch."
+      }
+    },
+    "tournament/umbral-agent-stack-440-462ef1c1/lane-backup-qa": {
+      "class": "SUBSUMED_DOCS",
+      "action": "delete (SUBSUMED)",
+      "sha": "815851d",
+      "ahead": 1,
+      "behind": 254,
+      "never_in_main_files": [
+        "docs/ops/registry-backup-alert-runbook.md",
+        "infra/registry_backup_alert.py",
+        "scripts/__init__.py",
+        "scripts/registry/__init__.py",
+        "scripts/registry/check_backup_alert.py",
+        "tests/fixtures/registry_backup_alert/alert_two_days/registry-backup-2026-05-30.txt",
+        "tests/fixtures/registry_backup_alert/alert_two_days/registry-backup-2026-05-31.txt",
+        "tests/fixtures/registry_backup_alert/alert_two_days/registry-backup-2026-06-01.txt",
+        "tests/fixtures/registry_backup_alert/clear_success_breaks_streak/registry-backup-2026-05-30.txt",
+        "tests/fixtures/registry_backup_alert/clear_success_breaks_streak/registry-backup-2026-05-31.txt",
+        "tests/fixtures/registry_backup_alert/clear_success_breaks_streak/registry-backup-2026-06-01.txt",
+        "tests/fixtures/registry_backup_alert/malformed_logs_ignored/registry-backup-2026-05-31.txt",
+        "tests/fixtures/registry_backup_alert/malformed_logs_ignored/registry-backup-2026-06-01.txt",
+        "tests/fixtures/registry_backup_alert/malformed_logs_ignored/registry-backup-2026-06-02.txt",
+        "tests/test_registry_backup_alert.py"
+      ],
+      "judge_rationale": "Same losing tournament lane content as lane-backup-impl for issue 440: git diff between the two lanes touches ONLY docs/08-operations-runbook.md (impl adds a 4-line pointer; qa lacks it) — the 15 never_in_main files are otherwise the identical feature tree. Everything that distinguishes it is subsumed by main's merged equivalent 2fe5853 (#444): same detector, same runbook path, same test path, same env var. Nothing unique beyond what impl carries, and impl itself is subsumed.",
+      "judge_evidence": "git diff --stat lane-backup-qa lane-backup-impl -> 'docs/08-operations-runbook.md | 4 ++++' only; full diff is the 4-line 'Registry backup failure alert' pointer. git show --stat 815851d -> same 15-file tree as impl minus that doc edit. git merge-base origin/main <branch> -> 462ef1c1 (both lanes fork from same base). Main equivalence evidence identical to lane-backup-impl: 2fe5853 (#444) + origin/main:scripts/registry/registry_backup_alert.py + docs/ops/registry-backup-alert-runbook.md in main.",
+      "adversarial_verify": {
+        "refuted": false,
+        "reason": "Verdict holds. Mechanically confirmed the qa lane is a strict subset of lane-backup-impl: git diff --stat lane-backup-qa lane-backup-impl touches only docs/08-operations-runbook.md (4-line pointer present in impl, absent in qa); commit 815851d carries the identical 15-file tree otherwise (same author, same timestamp 02:08:43). Both lanes fork from 462ef1c1. Since every distinguishing byte of this branch also exists in lane-backup-impl, and lane-backup-impl itself withstood refutation (main's 2fe5853/#444 equivalently resolves issue 440 with the production-anchored detector, runbook, and tests), there is no independent content here that could be lost. Not refuted."
+      }
+    },
+    "tournament/umbral-agent-stack-445-d5f34a07/lane-sync-delivery": {
+      "class": "SUBSUMED_DOCS",
+      "action": "delete (SUBSUMED)",
+      "sha": "9741e7c",
+      "ahead": 1,
+      "behind": 250,
+      "never_in_main_files": [
+        "docs/ops/sync-skills-adapters-runbook.md",
+        "scripts/sync_skills_adapters.py",
+        "scripts/sync_skills_to_vps.py",
+        "tests/test_sync_skills_adapters.py"
+      ],
+      "judge_rationale": "Intermediate state of code totally contained in a posterior merged lane of the SAME tournament. Main merged da8eba8 '[tournament:umbral-agent-stack-445-d5f34a07:sync-qa] O3 D3.3 — sync_skills platform adapters (Codex + Cursor dry-run) (#446)', whose first squashed bullet is literally 'feat: add codex and cursor skill sync adapters' — the same title as this branch's only commit 9741e7c. Main's versions are strict supersets/refinements of the branch: sync_skills_adapters.py in main = branch +12/-3 (tolerant frontmatter handling, same class/function skeleton), tests differ by 1 relaxed assertion, runbook by 17 diff-lines of doc alignment, sync_skills_to_vps.py by 2 diff-lines. Zero vigente value not already in main.",
+      "judge_evidence": "git log --oneline origin/main..<branch> -> single commit 9741e7c. git log --all --source -- scripts/sync_skills_adapters.py -> da8eba8 on refs/heads/main (PR #446, sync-qa lane of tournament 445-d5f34a07) and 9741e7c on this branch. git log -1 --format=%b da8eba8 -> squashed bullets start with 'feat: add codex and cursor skill sync adapters' then QA-only refinements. diff branch:scripts/sync_skills_adapters.py vs origin/main -> 12 insertions/3 deletions in main (superset); grep of class/def signatures identical. diff of tests -> 1 line ('assert metadata[\"parse_error\"] == ...' relaxed to truthy). diff sync_skills_to_vps.py -> 2 lines. diff runbook -> 17 lines.",
+      "adversarial_verify": {
+        "refuted": false,
+        "reason": "Verdict holds — this is the cleanest subsumption of the three. Verified: single unmerged commit 9741e7c; main's da8eba8 (PR #446) is the winning sync-qa lane of the SAME tournament (445-d5f34a07) and its first squashed bullet is literally this branch's commit title ('feat: add codex and cursor skill sync adapters'). Full git diff <branch> origin/main across all 4 files shows main strictly extends the branch baseline with zero branch-only content: sync_skills_adapters.py +12/-3 in main's favor (richer parse_error messages replacing the generic sentinel, prefixed plan_to_text lines, execute-summary print); sync_skills_to_vps.py +1 (resolve_platforms re-export); tests +1/-1 (assertion relaxed to truthy); runbook +10/-2 (documents tolerant frontmatter fallback and the compatibility entrypoint). The branch's only 'unique' text — the runbook line 'malformed SKILL.md frontmatter fails fast' — contradicted the branch's own graceful-fallback code, i.e. it was a doc bug main fixed, not a lost decision. Every hunk is main adding on top; nothing vigente exists outside main."
+      }
+    },
+    "copilot/feat-o16-infra-base": {
+      "class": "SUBSUMED_DOCS",
+      "action": "delete (SUBSUMED)",
+      "sha": "e875b1c",
+      "ahead": 1,
+      "behind": 536,
+      "never_in_main_files": [
+        ".gitignore",
+        "docs/adr/ADR-011-2026-05-06-codegen-backend-stage-gate.md",
+        "docs/architecture/17-areas-gerencias-agentes-subagentes-model.md",
+        "infra/azure/README.md",
+        "infra/azure/ai-search.bicep",
+        "infra/azure/appinsights.bicep",
+        "infra/azure/budget.bicep",
+        "infra/azure/container-apps.bicep",
+        "infra/azure/cosmos.bicep",
+        "infra/azure/document-intelligence.bicep",
+        "infra/azure/keyvault.bicep",
+        "infra/azure/main.bicep",
+        "infra/azure/service-bus.bicep",
+        "infra/azure/storage.bicep"
+      ],
+      "judge_rationale": "Single commit e875b1c (2026-05-06) = PR #321. Main contains a formal per-file analysis of this exact PR (docs/ops/pr-decision-block-2026-07-03.md, commit f379ec3) and later executed its recommendation: the 2 unique pieces (ADR codegen stage-gate + runbook off-sponsorship) were rescued into main via PR #510 (commit 701fcc6, 2026-07-03), and everything else was declared superseded. Verified content-level: (1) ADR-011 branch == main's docs/adr/ADR-013-codegen-backend-stage-gate.md verbatim except renumbering header + rescue note ('Renumerado desde ADR-011 al rescatarlo del PR #321'), so its documentary value IS preserved in main; (2) the runbook azure-off-sponsorship-2026-07-30.md is blob-identical in main (hence not in never_in_main); (3) docs/architecture/17-areas-*.md in main is a later, richer ADR-017 rewrite (85a0215, same day, Status Accepted vs branch's Planned draft) — branch version is a superseded earlier draft; (4) the flat infra/azure/*.bicep scaffold (11 files) was rewritten one day later by main's O16.1 Bicep+AVM scaffold e03f926 (task 039, infra/azure/modules/ layout + deploy scripts), then actually smoke-deployed (tasks 040-044, commit 1044adc '10 resources + 10 budgets in rg-umbral-agents-prod') and extended by O16.2 — the branch scaffold is an intermediate state fully superseded, covering the same services (storage, cosmos, keyvault, service-bus, ai-search, document-intelligence, budgets, container-apps, appinsights/LAW); (5) .gitignore variant's only addition (infra/azure/*.json) is covered equivalently-or-better in main's current .gitignore (infra/azure/main.json + deploy-*-output.json + reports hygiene). Nothing vigente remains only on this branch; files are additionally backed up per the export step.",
+      "judge_evidence": "git cherry origin/main copilot/feat-o16-infra-base -> only +e875b1c. git show --stat e875b1c -> 15 files, +1161 (matches PR #321 '+1161' in main's decision doc). git show f379ec3 -> docs/ops/pr-decision-block-2026-07-03.md with per-file table for #321: ADR-011 UNICO, runbook UNICO, 17-areas 'Superseded (85a0215+4117dfb)', infra/azure/*.bicep 'Superseded (main evolucionó a infra/azure/modules/)'. git log origin/main --grep='#321' -> ae34e08 Merge PR #510 'rescue/windows/pr321-adr-runbook-2026-07' + 701fcc6 'docs(rescue): ADR-013 ... renum. de ADR-011 ... from PR #321'. diff <(git show e875b1c:docs/adr/ADR-011-...) <(git show origin/main:docs/adr/ADR-013-codegen-backend-stage-gate.md) -> only header renumber + 3-line rescue note. git cat-file -e origin/main:docs/runbooks/azure-off-sponsorship-2026-07-30.md -> present, diff vs branch -> identical. diff of 17-areas doc -> main version is later ADR-017 'Accepted' rewrite superseding branch's 'Planned' draft. git ls-tree -r origin/main infra/azure/ -> full modules/ AVM layout + deploy/what-if scripts; git log -1 e03f926 -> 2026-05-07 'O16.1 scaffold Bicep+AVM (task 039)' (one day after branch), plus 674202f/32a92b3/18e680e/73de437/1044adc real deploys. diff .gitignore branch vs main -> branch's infra/azure/*.json line replaced in main by infra/azure/main.json + deploy-*-output.json.",
+      "adversarial_verify": {
+        "refuted": false,
+        "reason": "Adversarial re-verification confirms the SUBSUMED_DOCS verdict; no never-merged content with vigente value survives scrutiny. Independently re-run evidence: (1) `git cherry origin/main copilot/feat-o16-infra-base` -> only +e875b1c (single commit, 15 files, +1161 = PR #321). (2) Main formally adjudicated this exact PR: docs/ops/pr-decision-block-2026-07-03.md (f379ec3) contains a per-file table for #321 declaring 2 piezas UNICAS and the rest superseded, with David's explicit authorization documented ('David autorizó en el segundo mensaje... rescates 421/418/321') and execution logged ('#321 RESCATADO + CERRADO, Rescue PR #510 merged'). (3) Both unique pieces verifiably landed: `diff <(git show branch:docs/adr/ADR-011-...) <(git show origin/main:docs/adr/ADR-013-codegen-backend-stage-gate.md)` -> only header renumber + 3-line rescue note; the runbook azure-off-sponsorship-2026-07-30.md is blob-identical in main (`git diff origin/main branch -- <file>` empty). (4) Strongest refutation candidate — the 17-areas draft's governance rules — fails: main's docs/architecture/17-areas-gerencias-agentes-subagentes-model.md (ADR-017, Status Accepted) carries every substantive rule of the branch draft: §5 'Reglas duras (routing + governance)' with the Supabase/Azure/Notion routing table, the full Forbidden list (VM persistentes, escritura directa a Supabase, subagents profundidad > 2), smoke metrics, and links to the canonical handoff in notion-governance; the branch's 'Planned' draft adds nothing decision-bearing. (5) Second candidate — the 11-file flat Bicep scaffold — fails: main's infra/azure (rewritten one day later, e03f926 2026-05-07, task 039) covers every service the branch scaffolded (appinsights -> modules/log-analytics.bicep emitting appInsightsConnectionString; container-apps -> container-apps-env; budget -> budget-alerts with 9 per-service + total; plus storage, cosmos, key-vault, service-bus, ai-search, document-intelligence) and, unlike the branch scaffold which explicitly states 'No az deployment has run', was actually deployed (674202f/32a92b3/18e680e/73de437 culminating in 1044adc '10 resources + 10 budgets in rg-umbral-agents-prod') and later extended (aeco-kb pipeline jobs, editorial-blog). (6) The branch README's only distinctive argument — its anti-AVM rationale — was an alternative main explicitly rejected: main's README decision table records 'IaC tool: Bicep + AVM' with justification; a rejected alternative is not an uncaptured decision. (7) .gitignore: the branch's single added line `infra/azure/*.json` is covered equivalently-or-better in main (`infra/azure/main.json` + `infra/azure/deploy-*-output.json` + the reports/*.json hygiene block). Everything never-merged is either rescued verbatim into main, a superseded earlier draft of a richer Accepted doc, or an undeployed intermediate scaffold replaced by a deployed successor — and the files are additionally captured by the export backup. Deleting the branch loses nothing vigente."
+      }
+    },
+    "codex/cand-prod001-stage2": {
+      "class": "UNIQUE_REAL",
+      "action": "kept (SUBSUMED refutado por verificador adversarial -> UNIQUE_REAL)",
+      "sha": "71ea7ad",
+      "ahead": 1,
+      "behind": 205,
+      "never_in_main_files": [
+        "docs/ops/cand-prod001-payload.md",
+        "docs/ops/cand-prod001-source-intake.md"
+      ],
+      "judge_rationale": "Los dos docs never-in-main son artefactos de ejecucion STAGE2 de un soak editorial design-only (2026-06-06): el propio payload declara 'NO copy final, NO publish, NO Notion write, NO gates' y 'gateway_execution: false'. La tesis que contienen ('Trazabilidad y cierre de decisiones antes de escalar IA en flujos BIM', ISO 19650/BCF) SI esta capturada en main: docs/ops/editorial-production-soak-2026-06-05.md la define como tema de CAND-PROD-001 (linea 46), y main tiene docs/ops/cand-prod001-decision-brief.md como cierre del candidato. El ciclo editorial fue superado por Ola-3 (julio 2026): docs/ops/ola3-editorial-5-pitches-2026-07-20.md incluso retoma el angulo ISO 19650/puerta de decision en PITCH-OLA3-05 marcado 'usar ahora', y existe docs/ops/candidates/ola3-pitch02-*. Ademas, la pasada de higiene previa mergeada en main (uas-p1-2-orphan-32-classify-2026-08-06.md, linea 48) ya clasifico esta rama como KILL. Es un borrador/ejecucion superado por lo que si mergeo; el texto crudo queda en el backup.",
+      "judge_evidence": "git log origin/main..codex/cand-prod001-stage2 → 1 commit (71ea7ad, 2026-06-06, +452 lineas en docs/ops/cand-prod001-{payload,source-intake}.md). git show origin/main:docs/ops/editorial-production-soak-2026-06-05.md | grep -i trazabilidad → linea 46: '| CAND-PROD-001 | Trazabilidad y cierre de decisiones antes de escalar IA en flujos BIM |' (misma tesis). git show origin/main:docs/ops/cand-prod001-decision-brief.md → cierre del candidato (backfill 2026-06-07, rescatado en commit 849128f). git show origin/main:docs/ops/ola3-editorial-5-pitches-2026-07-20.md | grep 19650 → PITCH-OLA3-05 con referente ISO 19650, veredicto 'usar ahora'. git grep uas-p1-2-orphan-32-classify → linea 48: 'codex/cand-prod001-stage2 | KILL | ... data de trabajo detras de esa decision ya cerrada'. git grep 'SOAK-EDIT-2026-06-06' origin/main → sin hits (el run id nunca aterrizo, consistente con soak design-only nunca activado).",
+      "adversarial_verify": {
+        "refuted": true,
+        "reason": "La subsuncion de los 2 docs stage2 en si es correcta (verifique: tesis en editorial-production-soak-2026-06-05.md linea 46, cierre en cand-prod001-decision-brief.md, supersede Ola-3, KILL previo en uas-p1-2-orphan-32-classify linea 48, SOAK-EDIT-2026-06-06 sin hits en main). Pero el veredicto omite que el KILL previo que cita fue scoped sobre '3 files, +770' incluyendo 'variants-benchmark-*', y ese tercer archivo NO esta ni en main ni en el export: vive solo en el commit a85563b8 ('docs: CAND-PROD-001 stage3 variants and repo benchmark', +318 lineas — decision brief operativo, tabla dedup vs CAND-002/003 y 3 variantes LinkedIn completas V1-V3), hijo directo del tip 71ea7ad (git cat-file -p a85563b8 → parent 71ea7ad; git merge-base --is-ancestor 71ea7ad a85563b8 → YES). Ese commit es hoy inalcanzable desde TODA ref local: git branch --contains a85563b8 → vacio; git log --branches --remotes --tags --pretty=%H | grep a85563b8... → 0; el remote que lo preservaba (push Pass-8 2026-07-03, doc 08-rescue-candidates.md) esta [gone]. git log origin/main -- 'docs/ops/cand-prod001-variants*' → vacio (nunca mergeo). El export never_in_main se computo sobre la rama (tip 71ea7ad) y no lo cubre. Main SI conserva el artefacto gemelo de CAND-002 (cand-002-variants-benchmark-20260605.md), o sea esta clase de artefacto tiene valor reconocido. Borrar la rama ahora cierra el ultimo ancla practica para rescatar a85563b8 antes de que gc lo pode. Accion minima antes de cualquier KILL: exportar git show a85563b8:docs/ops/cand-prod001-variants-benchmark-20260606.md al backup; hasta entonces, conservar (UNIQUE_REAL / pendiente decision humana)."
+      }
+    },
+    "coord-ag-2a/build-push-aeco-source-crawler": {
+      "class": "SUBSUMED_DOCS",
+      "action": "delete (SUBSUMED)",
+      "sha": "cd9f225",
+      "ahead": 1,
+      "behind": 346,
+      "never_in_main_files": [
+        ".agents/tasks/2026-05-10-coord-ag-2a-build-push-aeco-source-crawler-pinned.md"
+      ],
+      "judge_rationale": "Unico contenido never-in-main: un task log .agents/tasks (252 lineas) que es puro reporte de ejecucion de un build+push puntual (tag pinned o16.2-2e66dda a GHCR, digests locales==remotos, VEREDICTO PASS). Su propio frontmatter dice 'do_not_merge: true' y 'status: done-vps-side' — el autor mismo lo marco como no-mergeable. La infra real que ese build empaqueta vive evolucionada en main (infra/azure/modules/aeco-source-crawler-job.bicep, infra/docker/aeco-source-crawler/, y el task log 048-o16-2-aeco-source-crawler.md esta en main junto a otros 278 task logs). El follow-up (Coord Ag 2B, update ACA Job) era de David en Windows, fuera de esta rama. Encaja literalmente en la definicion de fosil (task-log .agents/tasks / report de ejecucion); la pasada previa de higiene ya lo clasifico KILL.",
+      "judge_evidence": "git log origin/main..coord-ag-2a/build-push-aeco-source-crawler → 1 commit (cd9f225, 2026-05-10, +252 en .agents/tasks/2026-05-10-coord-ag-2a-build-push-aeco-source-crawler-pinned.md). git show cd9f225 → frontmatter 'do_not_merge: true', 'status: done-vps-side'; cuerpo = reporte con HEAD=2e66dda, TAG=o16.2-2e66dda, LOCAL_DIGEST==REMOTE_DIGEST sha256:ce04d7f5..., VEREDICTO PASS, y log raw de docker build/push. git ls-tree origin/main → infra/azure/modules/aeco-source-crawler-job.bicep, infra/docker/aeco-source-crawler/{Dockerfile,entrypoint.sh} y .agents/tasks/2026-05-08-048-o16-2-aeco-source-crawler.md presentes en main. git show origin/main:docs/ops/uas-p1-2-orphan-32-classify-2026-08-06.md linea 50: 'coord-ag-2a/build-push-aeco-source-crawler | KILL | Log de un build+push puntual; la infra real ... ya vive en main, evolucionada'.",
+      "adversarial_verify": {
+        "refuted": false,
+        "reason": "Lei el archivo completo (git show cd9f225:.agents/tasks/2026-05-10-coord-ag-2a-build-push-aeco-source-crawler-pinned.md): es 100% reporte de ejecucion de un build+push puntual — frontmatter 'do_not_merge: true' y 'status: done-vps-side', reporte con HEAD/TAG/digests identicos local==remoto sha256:ce04d7f5..., VEREDICTO PASS, y ~150 lineas de log raw de docker build/push (mayormente 'Waiting'/'Pushed'). El unico dato accionable (comando az containerapp job update para Coord Ag 2B) era un handoff a David en Windows ya ejecutado en mayo 2026 y la referencia (rg-umbral-agents-prod, imagen pinned) vive en la infra de main. Verifique con git ls-tree origin/main: infra/azure/modules/aeco-source-crawler-job.bicep, infra/docker/aeco-source-crawler/{Dockerfile,entrypoint.sh} y .agents/tasks/2026-05-08-048-o16-2-aeco-source-crawler.md presentes (main tiene 279 task logs). Sin decisiones ni codigo; fosil puro, ya exportado. El veredicto SUBSUMED_DOCS aguanta."
+      }
+    },
+    "copilot-vps/052-aeco-kb-pushed-visibility-manual": {
+      "class": "SUBSUMED_DOCS",
+      "action": "delete (SUBSUMED)",
+      "sha": "67845e5",
+      "ahead": 1,
+      "behind": 387,
+      "never_in_main_files": [
+        ".agents/tasks/2026-05-08-052-copilot-vps-build-push-aeco-kb-images-ghcr.md"
+      ],
+      "judge_rationale": "El estado final del task log en esta rama (67845e5) y el estado que SI esta en la historia de main (b9a585a, 'task(052): pushes 6/6 OK, blocked-on-visibility-only') registran exactamente los mismos hechos operativos: push 6/6 OK con los mismos 3 digests remotos identicos byte a byte, visibility PATCH bloqueado con HTTP 404 x3 por falta de scope admin:packages en el PAT, y la misma accion manual requerida a David (toggle visibility en browser o regenerar PAT). El delta de la rama solo agrega detalle redundante: la ejecucion del pull anonimo (0/3 unauthorized — confirma lo que la version de main ya afirma, que los packages siguen privados), la confirmacion de scopes via header x-oauth-scopes, URLs directas a settings de cada package, y pids extra del runtime. No hay decision ni informacion operativa que main no capture de forma equivalente — es el caso 'fix/estado que main resolvio de forma equivalente por otro commit'. La pasada previa de higiene tambien lo clasifico KILL (junto con su rama hermana 052-aeco-kb-build-blocked-pat-scope).",
+      "judge_evidence": "git log origin/main -- .agents/tasks/2026-05-08-052-copilot-vps-build-push-aeco-kb-images-ghcr.md → b9a585a (en main; verificado con git merge-base --is-ancestor) es el ultimo commit de main sobre el archivo y su blob (da1cc068) es el estado en main HEAD. diff <(git show b9a585a:FILE) <(git show 67845e5:FILE) → mismos 3 digests (43e5a859..., d8ae1237..., 680cca04...), misma causa raiz (404 por falta de admin:packages), misma accion para David; deltas: status 'in_progress' vs 'blocked', pull anonimo ejecutado 0/3 unauthorized (redundante: ambos afirman packages privados), header x-oauth-scopes, 3 URLs de settings, pids worker/dispatcher/poller. git show origin/main:docs/ops/uas-p1-2-orphan-32-classify-2026-08-06.md lineas 51-52: ambas ramas 052 clasificadas KILL como snapshots del mismo task-log que main ya registra.",
+      "adversarial_verify": {
+        "refuted": false,
+        "reason": "Reproduje el diff exacto: diff <(git show b9a585a:FILE) <(git show 67845e5:FILE) sobre .agents/tasks/2026-05-08-052-copilot-vps-build-push-aeco-kb-images-ghcr.md. Verifique que b9a585a esta en main (git merge-base --is-ancestor → YES) y que su blob (da1cc068) == estado en origin/main HEAD. Ambas versiones registran los mismos hechos operativos: push 6/6 OK con los mismos 3 digests remotos byte a byte (43e5a859..., d8ae1237..., 680cca04...), misma causa raiz del bloqueo (HTTP 404 x3 por falta de admin:packages en el PAT classic), misma accion manual para David (toggle visibility en Danger Zone o regenerar PAT). Los deltas de la rama son confirmaciones redundantes: pull anonimo post-logout 0/3 unauthorized (confirma lo que main ya afirma — packages privados hasta el toggle), header x-oauth-scopes, 3 URLs directas de settings (main trae la ruta de navegacion equivalente), pids extra. Matiz que no cambia el veredicto: el snapshot de la rama (18:40Z) es posterior al de main (18:21Z), al reves de lo que decia el classify previo — pero el veredicto atacado alega equivalencia, no orden, y eso se sostiene. Es estado operativo de mayo 2026 ya resuelto (el pipeline aeco siguio operando contra GHCR en main). Nada vigente mas alla del export."
+      }
+    },
+    "docs/openclaw-vps-operator-agent": {
+      "class": "SUBSUMED_DOCS",
+      "action": "delete (SUBSUMED)",
+      "sha": "555f4e5",
+      "ahead": 3,
+      "behind": 338,
+      "never_in_main_files": [
+        ".agents/custom-agents/operador-openclaw-vps.agent.md"
+      ],
+      "judge_rationale": "La rama es el estado intermedio exacto de lo que mergeo PR #417. El SKILL.md hermano aterrizo en main con blob identico, y el agent.md nunca-en-main aterrizo movido a .github/agents/operador-openclaw-vps.agent.md con el cuerpo 100% identico; las unicas diferencias son frontmatter que el merge descarto deliberadamente ('Simplifica frontmatter (quita model hardcoded y disable-model-invocation) por compatibilidad', segun el propio mensaje del merge): description larga vs corta, `model: 'Claude Opus 4.7'` (pin hoy obsoleto) y `disable-model-invocation: false`. Nada del contenido operativo quedo fuera de main.",
+      "judge_evidence": "git log --oneline origin/main..docs/openclaw-vps-operator-agent -> 3 commits (555f4e5, 41a4022, fd2fd01), los mismos 3 mensajes que aparecen como bullets en el merge squash ef053c3 'docs(agents): add Operador OpenClaw VPS custom agent (#417)'. git log origin/main --find-object=9eebe726 (blob del SKILL.md de la rama) -> aparece en ef053c3, o sea el SKILL.md mergeo identico. git show --stat ef053c3 -> agrega .agents/skills/openclaw-vps-operator/SKILL.md (170 lineas, igual que la rama) + .github/agents/operador-openclaw-vps.agent.md (145 vs 147 de la rama). git diff docs/openclaw-vps-operator-agent:.agents/custom-agents/operador-openclaw-vps.agent.md ef053c3:.github/agents/operador-openclaw-vps.agent.md -> SOLO 4 lineas de frontmatter (description acortada, se quitan model y disable-model-invocation); cuerpo identico incluida la seccion de token budget. Nota: main luego stubbeo/retiro las copias locales via a16b5b5 (#584) y 918dbe6 (#585) hacia el registry SoT, reforzando que el estado de la rama esta superado.",
+      "adversarial_verify": {
+        "refuted": false,
+        "reason": "Verificado: la rama agrega solo 2 archivos vs merge-base 5f2d84e. El blob del SKILL.md esta byte-identico en la historia de main (git log --find-object lo ubica en ef053c3 y luego a16b5b5). El agent.md difiere del mergeado .github/agents/operador-openclaw-vps.agent.md SOLO en 4 lineas de frontmatter. Ataque probado: si la description larga descartada contenia decisiones no capturadas — no: cada exclusion de alcance ('NO opera Azure, Foundry, Notion, n8n, RRSS, O16.2 ni clientes Windows'), la jerarquia con Coordinador de Agentes y el rol de ChatGPT como consultor aparecen verbatim en el cuerpo mergeado (lineas 31-33, 73, 93, 134 del propio archivo). El pin 'Claude Opus 4.7' y disable-model-invocation:false fueron descartados deliberadamente por el merge (compatibilidad VS Code, segun mensaje de ef053c3) y hoy son obsoletos. Ademas main evoluciono el agente despues (38e07f8 governance sync) y migro el skill al registry SoT (#584/#585), asi que el estado de la rama esta doblemente superado. Nada vigente se pierde."
+      }
+    },
+    "rick-delivery/editorial-contract-paths": {
+      "class": "UNIQUE_REAL",
+      "action": "kept (UNIQUE_REAL, export hecho, pendiente decision David)",
+      "sha": "9ce91dc",
+      "ahead": 1,
+      "behind": 107,
+      "never_in_main_files": [
+        "docs/ops/editorial-publicaciones-human-review-contract.md"
+      ],
+      "judge_rationale": "El delta es chico (3 lineas) pero sigue siendo correcto y main nunca lo incorporo en forma equivalente: expande C1 del contrato editorial apuntando a las claves de enforcement del benchmark yaml y a los paths de calibracion (CALIBRATION.md) y QA (rick-qa/ROLE.md). Verifique que los 3 paths referenciados y las 3 claves yaml existen en origin/main hoy, o sea la clarificacion sigue vigente. Main reviso el mismo archivo al menos dos veces despues (agrego 'Postcondiciones Fila I = B' y 'Sensibilidad editorial') sin capturar este cross-reference; la unica mencion a CALIBRATION.md en main es para CAL-007 en otra seccion y con otro proposito, y rick-qa/ROLE.md no aparece en el contrato de main. Es un micro-mejora de doc no aterrizada, no un borrador superado -> conservador: UNIQUE_REAL.",
+      "judge_evidence": "git log --oneline origin/main..rick-delivery/editorial-contract-paths -> solo 9ce91dc 'docs: clarify editorial contract artifact paths' (+3 lineas en docs/ops/editorial-publicaciones-human-review-contract.md, expandiendo el bullet C1 con fail_automatico_si_aparece/flags_revision_obligatoria/reglas_cuantitativas + paths CALIBRATION.md y rick-qa/ROLE.md). git diff origin/main rick-delivery/editorial-contract-paths -- <archivo> -> la rama agrega esas 3 lineas y le falta la seccion 'Postcondiciones (Fila I = B)' que main agrego despues (evolucion ortogonal, no supersede). git cat-file -e origin/main:{openclaw/workspace-templates/skills/director-comunicacion-umbral/CALIBRATION.md, openclaw/workspace-agent-overrides/rick-qa/ROLE.md, evals/editorial/benchmark-umbral-voice-v1.yaml} -> los 3 OK. grep en origin/main:evals/editorial/benchmark-umbral-voice-v1.yaml -> las 3 claves existen (lineas 18/37/43). grep CALIBRATION|rick-qa en el contrato de main -> solo 'CAL-007 en director-comunicacion-umbral/CALIBRATION.md' (seccion sensibilidad), cero mencion a rick-qa."
+    },
+    "rick/foundry-1-audit-script": {
+      "class": "SUBSUMED_DOCS",
+      "action": "delete (SUBSUMED)",
+      "sha": "3aebd21",
+      "ahead": 1,
+      "behind": 338,
+      "never_in_main_files": [
+        "artifacts/coord-ag-3c/foundry-1/run-foundry-1-audit.ps1"
+      ],
+      "judge_rationale": "Fosil de ejecucion: script PowerShell one-shot (164 lineas, read-only, evidencia a C:\\GitHub\\.coord-ag-evidence\\foundry-1\\) para que David auditara el deployment 'GPT 5.5' en Azure desde Windows (mayo 2026, task coord-ag-3c/foundry-1). Su proposito quedo cumplido y documentado en main: docs/audits/foundry-gpt-5.5-audit-20260606.md contiene el audit real ejecutado (deployment gpt-5.5 Succeeded, endpoints, api-version, capacity) — main resolvio la necesidad de forma equivalente. Ademas la ruta Foundry quedo abandonada: main documenta la migracion Foundry -> OpenAI OAuth (PR #525, analisis 2026-07-13) y gpt-5.6-sol corre live via OAuth desde 2026-07-22. El script no tiene uso vigente y su contenido ya va al backup.",
+      "judge_evidence": "git show --stat 3aebd21 -> unico commit ahead, agrega artifacts/coord-ag-3c/foundry-1/run-foundry-1-audit.ps1 (164 lineas; audit read-only az cognitiveservices + smoke max_tokens=8). git ls-tree -r origin/main | grep -i coord-ag -> vacio (el dir de artefactos de esa task nunca mergeo; es superficie de evidencia, no de codigo). git ls-tree -r origin/main | grep -i foundry -> docs/audits/foundry-gpt-5.5-audit-20260606.md (audit ejecutado: 'Audit read-only (Copilot Windows)... Deployment gpt-5.5... Provisioning state Succeeded', mismas verificaciones que automatiza el ps1) y docs/audits/openclaw-foundry-to-oauth-migration-analysis__2026-07-13__b0004__src-codex.md. git log origin/main --grep foundry -i -> 2f79709 'docs: audit Foundry to OpenAI OAuth migration (#525)'. Memoria del proyecto: gpt-5.6-sol LIVE via OAuth desde 2026-07-22 -> el flujo de activacion Foundry que este audit servia esta superado.",
+      "adversarial_verify": {
+        "refuted": false,
+        "reason": "Verificado: unico commit 3aebd21, unico archivo artifacts/coord-ag-3c/foundry-1/run-foundry-1-audit.ps1 (lei las 164 lineas). Es un audit one-shot read-only keyed al match regex '5[._-]5' para la task coord-ag-3c de mayo 2026. Ataque probado: si el script conserva valor como tooling vigente — no: docs/audits/foundry-gpt-5.5-audit-20260606.md en main documenta el audit YA ejecutado con hallazgos MAS precisos que los supuestos del script (el ps1 asume chat/completions con api-version 2024-12-01-preview; el audit real determino Responses API en el host openai.azure.com con 2025-04-01-preview confirmada en smoke), o sea el script quedo no solo cumplido sino corregido por la ejecucion documentada. La ruta Foundry fue abandonada despues (2f79709 / PR #525 migracion a OAuth; gpt-5.6-sol live via OAuth desde 2026-07-22). Ningun path artifacts/coord-ag* mergeo jamas a main (superficie de evidencia, no de codigo). El unico valor residual seria como plantilla generica de audit Azure, marginal y ya preservado en el export de backup. Fosil de ejecucion; el veredicto aguanta."
+      }
+    },
+    "umbralbim-copilot-feat-p10-openclaw-broker": {
+      "class": "SUBSUMED_DOCS",
+      "action": "delete (SUBSUMED)",
+      "sha": "9ef1e5f",
+      "ahead": 1,
+      "behind": 171,
+      "never_in_main_files": [
+        "docs/ops/pit-p10-openclaw-broker-runbook.md"
+      ],
+      "judge_rationale": "La rama entera mergeo como PR #488: de los 12 archivos del tip, 11 estan identicos en historia de main, y el unico nunca-en-main (docs/ops/pit-p10-openclaw-broker-runbook.md) es un borrador estrictamente anterior del runbook mergeado — la version de main es exactamente la de la rama MAS la seccion 7.1 'Refire results 2026-06-22' (55 lineas agregadas, cero lineas de la rama eliminadas). Estado intermedio totalmente contenido en el commit mergeado. Ademas PIT esta disabled+archived desde 2026-07-22 (HOLD hasta GO de David), asi que no hay valor vigente residual en el borrador.",
+      "judge_evidence": "git log --oneline origin/main -- docs/ops/pit-p10-openclaw-broker-runbook.md -> 48632d8 'feat(pit): P10 OpenClaw broker orchestration bridge (#488)' (mismo titulo que el tip de la rama 9ef1e5f). git diff --name-status 9ef1e5f 48632d8 -> UN solo archivo difiere: el runbook (M), confirmando que los otros 11 mergearon byte-identicos. git diff --stat 9ef1e5f 48632d8 -> runbook +55/-0. git diff 9ef1e5f origin/main -- <runbook> | grep '^-' (sin header) -> vacio: todo el contenido del blob de la rama (285ce5f) esta contenido en el de main (eb41ed0); lo agregado en main es la seccion '7.1 Refire results — 2026-06-22 §6.2 read-only probe' con los resultados reales del run (openclaw_total=133,378, gap del collector, gates). Memoria del proyecto: PIT archivado 2026-07-22, runtime en HOLD.",
+      "adversarial_verify": {
+        "refuted": false,
+        "reason": "Verificado y es el caso mas solido: git diff --name-status 9ef1e5f 48632d8 muestra que los ARBOLES COMPLETOS del tip de la rama y del commit mergeado de PR #488 difieren en exactamente un archivo (docs/ops/pit-p10-openclaw-broker-runbook.md), con --stat +55/-0; grep de lineas '-' en ese diff devuelve 0, o sea la version de main es superconjunto estricto de la de la rama (agrega la seccion 7.1 'Refire results 2026-06-22' con los resultados reales: PIT_SPAWN_FIRED 3, lanes con HTTP 200 al worker, cierre del auth gap). git merge-base --is-ancestor confirma que 48632d8 esta en la historia de origin/main. Los 12 archivos que la rama toca vs su merge-base (broker py/sh, specs yaml, ROLE template, tests) estan byte-identicos en main o estrictamente contenidos. Cero contenido perdido; ademas PIT esta disabled+archived desde 2026-07-22 en HOLD, sin valor vigente residual en el borrador del runbook."
+      }
+    }
+  },
+  "dangling_rescue": {
+    "commit": "a85563b8a6aede3704fde34a8ff1884dc0753715",
+    "parent": "71ea7ad (tip codex/cand-prod001-stage2)",
+    "file": "docs/ops/cand-prod001-variants-benchmark-20260606.md (318 lineas)",
+    "exported_to": "docs/operations/_archive-hygiene-vps-2026-08-11/_dangling-commits/a85563b8/",
+    "found_by": "refutador adversarial (verify:fossil-logs)"
+  },
+  "stashes": {
+    "count": 14,
+    "disposition": "KEEP todos (sin GO de David)"
+  },
+  "worktrees": [
+    "/home/rick/umbral-agent-stack (main)",
+    "/home/rick/.openclaw/workspaces/rick-delivery/umbral-agent-stack-poller-hardening (rick-delivery/poller-healthcheck-hardening, KEEP, limpio)"
+  ],
+  "transcripts_openclaw": {
+    "path": "~/.openclaw",
+    "size": "16G (agents 9.2G)",
+    "action": "solo inventario, NO tocado (banca)"
+  }
+}

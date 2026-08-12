@@ -1,0 +1,89 @@
+# ==============================
+# Umbral Agent Stack - .gitignore
+# ==============================
+
+# === SECRETS & CREDENTIALS ===
+.env
+*.env
+!env.template
+openclaw/env
+**/auth-profiles.json
+**/sessions/
+**/*.bak
+
+# === OpenClaw state ===
+.openclaw/
+/.openclaw/
+
+# === Logs ===
+*.log
+logs/
+service_out.txt
+test_out.txt
+worker_out.txt
+worker_err.txt
+
+# === Deployment artifacts ===
+update.zip
+vps_pub_key.txt
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+venv/
+.venv/
+env/
+!infra/env/
+!infra/env/**
+.pytest_cache/
+/.pytest_tmp*/
+/pytest_tmp*/
+*.egg-info/
+dist/
+build/
+*.egg
+
+# === Node / npm ===
+node_modules/
+npm-debug.log*
+
+# === IDE ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# === OS ===
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# === Docker ===
+docker-compose.override.yml
+
+# === VPS local-only surfaces ===
+# These files exist on the VPS but are not part of the canonical shared repo.
+# .claude/ and .agents/ contain Claude Code session config and hooks that
+# differ per environment. The audit snapshot is runtime-generated data.
+.claude/CLAUDE.md
+.claude/settings.json
+.claude/hooks/block-deployed-repo-writes.sh
+.agents/board.md
+docs/audits/notion-curation-snapshot-2026-03-16.json
+
+# === Misc ===
+*.tmp
+*.bak
+*.orig
+err.txt
+test.txt
+reports/runtime/generated/
+# Copilot CLI capability — F4: audit logs and per-run artifacts
+# (see docs/copilot-cli-capability-design.md). Production output, not
+# committed; F3 evidence under docs/ stays tracked.
+reports/copilot-cli/
+artifacts/copilot-cli/
+infra/azure/*.json

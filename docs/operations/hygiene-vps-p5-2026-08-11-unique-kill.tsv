@@ -1,0 +1,4 @@
+# PKG-HYGIENE-VPS-P5-KILL — GO David 2026-08-11 — 2026-08-12T01:22:50Z
+# base origin/main=66564a20dbbd9167fce764e4089b9d3bd5d5d413 ; formato: SHA<TAB>rama<TAB>clase<TAB>razon
+71ea7ad605dc9d87eff18c2050883b35f8b031f6	codex/cand-prod001-stage2	UNIQUE_REAL_KILLED	UNIQUE_REAL kill con GO; docs stage2 + benchmark colgante a85563b8 exportados en _archive-hygiene-vps-2026-08-11
+9ce91dccd2decb43eeef5de73ed6ba4016fead35	rick-delivery/editorial-contract-paths	UNIQUE_REAL_KILLED	UNIQUE_REAL kill con GO; delta 3 lineas contrato editorial exportado en _archive-hygiene-vps-2026-08-11

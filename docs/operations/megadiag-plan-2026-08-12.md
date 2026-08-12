@@ -15,7 +15,8 @@ Existe un mega-diagnóstico previo del 2026-05-20 (rama origin
 `C:\GitHub\_archive\workspace-hygiene-2026-08-11\nga-megadiag\`). **Es histórico, no
 estado actual**: describe un workspace pre-higiene (6 repos multi-root, conflicto UU en
 `supervisor.sh`, clone copilot divergido 944/1289, arco O16 recién cerrado). Todo eso fue
-barrido por los packs 1–4 Windows + P5 VPS del paso 1 (2026-08-11). De la semilla se
+barrido por los packs 1–4 Windows (2026-08-11) + P5 VPS (cerrado 2026-08-12 según
+ledger) del paso 1. De la semilla se
 reutiliza **solo la forma**, que demostró funcionar:
 
 - inventario por superficie con tabla path/branch/dirty/stashes/acción,
@@ -29,8 +30,9 @@ Ningún hallazgo de mayo se copia como hecho: todo se re-observa.
 ### Qué cambió desde mayo (por qué se replanifica)
 
 - Paso 1 (higiene) CASI CERRADO: origin UAS = `main` + `rick/stage7_5-multiformat`
-  (KEEP); clones Windows y VPS reducidos a canónicos; ~800 ramas locales clasificadas y
-  eliminadas con evidencia; exports en `C:\GitHub\_archive\workspace-hygiene-2026-08-11\`.
+  (KEEP); clones Windows y VPS reducidos a canónicos; ~960 ramas locales clasificadas y
+  eliminadas con evidencia (packs 2–4: 100+25, 587+137, 68+6; P5 VPS: 37+2); exports en
+  `C:\GitHub\_archive\workspace-hygiene-2026-08-11\`.
 - Paso 2 (capitalize) CERRADO: pkg-receiver 0.5.0, openclaw-vps-operator 0.1.1,
   skills-capitalize 0.1.10, cursor-orchestrator 0.9.0 (registry @ `d5dda4d`).
 - El problema ya no es "dónde está el trabajo perdido" (eso lo respondió el paso 1);
@@ -74,7 +76,7 @@ uniforme: tabla de filas `ítem | estado observado | evidencia | ¿pide decisió
 | # | Eje | Pregunta que responde | Evidencia mínima [E] |
 |---|---|---|---|
 | E1 | **Workspace y git post-higiene** | ¿Se cumple el criterio de cierre del paso 1 y qué residual queda (dirty WIP, forge 70 dirty, stashes KEEP, 58 huérfanas sin merge-base, heads de otros repos)? | `git status -sb` + `stash list` + `worktree list` por clon canónico; `ls C:\GitHub` vs lista esperada de 47; `git ls-remote --heads` por repo |
-| E2 | **Runtime VPS** | ¿Qué servicios corren, con qué versión, sanos o degradados, y qué consume disco? | `systemctl --user status` (Active/PID, sin Environment), `/health` de worker/dispatcher, `openclaw status --all`, `crontab -l` redactado, `du -sh` de transcripts/ops_log |
+| E2 | **Runtime VPS** | ¿Qué servicios corren, con qué versión, sanos o degradados, y qué consume disco? | `systemctl --user status` (Active/PID, sin Environment), `curl /health` del worker (127.0.0.1:8088, único endpoint verificado; dispatcher solo por systemctl salvo que la ejecución descubra endpoint propio), `openclaw status --all`, `crontab -l` redactado, `du -sh` de transcripts/ops_log |
 | E3 | **Contratos, CI y tests** | ¿Qué gates automáticos existen, cuáles están rojos y por qué (empezando por Publicaciones 0.2.0 vs fixtures)? | `gh run list` últimas corridas por workflow + log del job rojo; inventario `.github/workflows/` + suites de test y su último resultado local |
 | E4 | **Skills y drift repo↔runtime** | ¿Qué versiones canónicas del registry están realmente cargadas en cada runtime (VPS OpenClaw, Windows Claude/Cursor/Codex) y dónde hay drift? | tabla slug → versión canónica (`umbral-skills-registry` @ tip) vs versión desplegada (path + frontmatter en cada runtime); el drift 42/86 de julio se re-mide, no se hereda |
 | E5 | **Superficies Notion + n8n** | ¿Qué superficies/workflows están vivos y gobernados (V2) vs muertos o en modo TEST olvidado? | lectura MCP: estado del poller Control Room, últimas ejecuciones de B1/B3 en n8n, bot TEST vs prod, páginas canónicas con timestamp de última escritura |

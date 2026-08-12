@@ -1,0 +1,15 @@
+# PKG-HYGIENE-VPS-P5 — stash inventory 2026-08-11 — disposicion: KEEP todos (sin GO de David)
+stash@{2026-06-02 11:04:07 -0400}: On main: d3.3-preflight-local-log 2026-06-02T11:04:07-04:00
+stash@{2026-06-02 00:35:09 -0400}: On main: copilot-vps-pre-o15-skills-sync-2026-06-02
+stash@{2026-05-20 14:00:50 -0400}: On main: pre-pr423-deploy 2026-05-20 fork-fase-a + scripts-experimentales
+stash@{2026-05-08 18:20:50 -0400}: WIP on copilot/docs-editorial-master-plan: 29ab772 docs(wave1-h4): notion schema audit + lib/gates + read-only models
+stash@{2026-05-08 08:57:49 -0400}: On rick/stage7_5-integration: integration-wip-canonical-helper-wire-2026-05-08
+stash@{2026-05-08 05:12:22 -0400}: On rick/stage7_5-voice-v2: voice-v2-multiformat-WIP-pre-source-verify-2026-05-08
+stash@{2026-05-08 05:06:52 -0400}: On rick/stage7_5-integration: voice-v2 wip recovery 2026-05-08
+stash@{2026-05-07 16:50:03 -0400}: On main: vps-deploy-035-pre-pull-20260507T205002Z
+stash@{2026-05-07 14:22:57 -0400}: WIP on main: 9cf9c01 task(031): diagnose POST /run 400 rick.orchestrator.triage (smoke O15.1b 2026-05-07T16:25Z PASS PARCIAL — canal Notion end-to-end OK, FAIL downstream worker /run); read-only diagnosis, NO restart, hipotesis HA-HD, requires capturar payload+response+model routing precedence
+stash@{2026-05-07 00:45:04 -0400}: On rick/f8e-progressive-copilot-capability-ladder-2026-05-07: stash-pre-015-rick-ceo-from-f8e-branch
+stash@{2026-05-07 00:09:19 -0400}: On copilot-vps/013h-nested-inline-divider-image-link: stash-pre-013h-switch-to-main-for-O9-task
+stash@{2026-05-06 20:17:17 -0400}: On main: copilot-vps-stash-stage4-2026-05-07
+stash@{2026-05-05 23:31:17 -0400}: On main: stash-pre-task-012-rerun-2
+stash@{2026-05-05 18:47:17 -0400}: WIP on main: 4b4b70a Merge pull request #292 from Umbral-Bot/codex/f7-5a-vps-deploy-task-2026-05-05

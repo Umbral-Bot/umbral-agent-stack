@@ -1,0 +1,2 @@
+[2026-05-31T02:00:01] Starting daily registry backup
+this file lost its status line after rotation

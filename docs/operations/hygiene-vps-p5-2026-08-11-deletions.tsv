@@ -1,0 +1,39 @@
+# PKG-HYGIENE-VPS-P5 — deletions log — 2026-08-11T23:59:44Z
+# base origin/main=66564a20dbbd9167fce764e4089b9d3bd5d5d413 ; formato: SHA<TAB>rama<TAB>clase<TAB>razon
+19a12ec29f75700e23be175fb890b90a30861275	claude/pkg-uas-deploy-dispatcher-625-20260811	SAFE_DROP	merge-PR head; 3/3 blobs en historia de main; cherry_plus=0
+483ac18aae435481c0c882dc78d9cf3d3d290c75	claude/pkg-uas-fossil-disc-plus-20260811	SAFE_DROP	merge-PR head (#625); 5/5 blobs en historia de main; cherry_plus=0
+eed858866abbd4c2b6d51ccafafbf8443c6d0a55	claude/pkg-uas-vm-route-windows-20260811	SAFE_DROP	merge-PR head (squash 66564a2); 3/3 blobs identicos en main; cherry_plus=0
+65e902a0fa923523a618f82903643370ea61c67e	copilot-vps/029-stage5-deterministic-ranking	SAFE_DROP	PR #351 mergeado; 12/12 blobs en historia de main (stage6_aec_combine.py mergeado y luego borrado deliberadamente)
+ac1973a552d3186b43042660545f0b305a766d1b	copilot-vps/052-aeco-kb-build-blocked-pat-scope	SAFE_DROP	1/1 blob en historia de main
+a3b2c7cf58ea09e7c77749387360dcfa25d506db	copilot-vps/f8g-verify-canonical-pin-2026-05-08	SAFE_DROP	4/4 blobs en historia de main
+65e902a0fa923523a618f82903643370ea61c67e	pr351	SAFE_DROP	duplicado exacto de copilot-vps/029 (65e902a); PR #351 mergeado
+e1aca46cc6e3c50532a9373a0ab08882c9cc75c1	reconciliation/align-runtime	SAFE_DROP	anti-squash confirmado: ahead 727 pero diff vacio vs merge-base y cherry_plus=0 (544 patches equivalentes en main)
+10aff9693be4167f65a49be0fc98358d1d78df94	rick/stage7_5-copy-writer	SAFE_DROP	3/3 blobs en historia de main
+d3c4810177b2dfe4be7ce18e18a99080b69e2513	rick/stage7_5-notion-ux	SAFE_DROP	12/12 blobs en historia de main
+bdb9d4124772ddaed5b131b6c84ec72ab77fff05	rick/stage7_5-source-verify	SAFE_DROP	8/8 blobs en historia de main
+28443df217b7168b5893191580e361c52429e660	rick/stage9bc-linkedin-publish	SAFE_DROP	5/5 blobs en historia de main
+cd9f225b69d338e8b179e63f57a5f80836825094	coord-ag-2a/build-push-aeco-source-crawler	SUBSUMED_DOCS	task-log fosil de build/push ya ejecutado; export hecho
+808ec80557466fdb2063d7f5a3ff863a0c009c3e	copilot-vps/013g-markdown-annotations-and-url-canonical	SUBSUMED_DOCS	intermedios contenidos en historia de 013i; codigo final en main via rollup #334; fosiles exportados
+093ef12b1c0948b113de1510447339cffff76ff9	copilot-vps/013h-nested-inline-divider-image-link	SUBSUMED_DOCS	intermedios contenidos en historia de 013i; codigo final en main via rollup #334; fosiles exportados
+05fd6f7088e8bec39ed9aee7e33442fc199d6e63	copilot-vps/013i-blockquote-block	SUBSUMED_DOCS	codigo integro en historia de main (#334, #356); solo task-logs+reports never-in-main, exportados
+67845e5d7d9e90108760a5f8bfe91ceedc2dd255	copilot-vps/052-aeco-kb-pushed-visibility-manual	SUBSUMED_DOCS	task-log fosil (estado final de log ya cerrado); export hecho
+a36c2d53dbffe2f6655f7ec897a3eb426ac08a18	copilot-vps/stage4-013e-execution-2026-05-07	SUBSUMED_DOCS	rollback deliberado por 013-F (PR #325, patch-id identico); reports fosiles exportados
+29ab772a5778423a862f1017406844fe5f08a499	copilot/docs-editorial-master-plan	SUBSUMED_DOCS	drafts wave1 integrados via Wave 1.5 (d835122); deltas sin decisiones vigentes; export hecho
+185cf976412ca948d0ee89fb515d98fe44990bab	copilot/docs-notion-schema-gates	SUBSUMED_DOCS	subset de docs-editorial-master-plan; mismo supersede Wave 1.5
+e875b1c4202e3e9e0dea88e6a10169d1cafd8000	copilot/feat-o16-infra-base	SUBSUMED_DOCS	PR #321 adjudicado formalmente en main (pr-decision-block-2026-07-03) y piezas unicas rescatadas via PR #510; bicep exportado
+c07ea222c2debc6b434d5f998a76ea0c4ab3f011	copilot/feat-s0-s1-discovery	SUBSUMED_DOCS	10/11 blobs en main HEAD; docstring restante contenido palabra a palabra en main
+51b38955a2f3c7d9fcab9bc413d9c24b79d49796	copilot/feat-s10-publish-guard	SUBSUMED_DOCS	publish-guard y stage9c evolucionados en main via ramas mergeadas; drafts exportados
+379d4cb1d588e3ef0935531423982e6a0738a18c	copilot/feat-s2-source-verification	SUBSUMED_DOCS	draft DO-NOT-MERGE; S2 y dedup viven evolucionados en main; export hecho
+555f4e592e004ac6e771d674e0b9844aea7a0dd7	docs/openclaw-vps-operator-agent	SUBSUMED_DOCS	mergeado via PR #417 como .github/agents/operador-openclaw-vps.agent.md (cuerpo identico); frontmatter descartado deliberadamente y hoy obsoleto
+0d70b670b5f4f250d023b44aeeb441750ae07f5b	rick-delivery/fix-notion-poller-bot-loop-combined	SUBSUMED_DOCS	rescatado y mergeado a main como PR #611 (ad71801) linea por linea
+2de2fe132303b4ca5cc37e28d7278ff644c596af	rick-delivery/fix-notion-poller-bot-skip-loop	SUBSUMED_DOCS	subsumido por el mismo PR #611; variante anterior del mismo fix
+3aebd2142d36811cc1f0c5725a326ebd286cf71f	rick/foundry-1-audit-script	SUBSUMED_DOCS	audit ya ejecutado y documentado en main (docs/audits/foundry-gpt-5.5-audit-20260606.md); ruta Foundry abandonada (OAuth #525); ps1 exportado
+5d8cf3165a706eec1e88c9d14c67a72d9ac24bfb	rick/stage7_5-integration	SUBSUMED_DOCS	commits aterrizados via PR #385/#390; blobs intermedios contenidos en historia de voice-v4
+9a06ad94541f1358eddac892189623a6426a32d7	rick/stage7_5-voice-v2	SUBSUMED_DOCS	estados intermedios de la cadena voice; contenido preservado en main y en KEEP multiformat; reports exportados
+2625b455d8d78b35d8b2688fc9f02fbc837acd84	rick/stage7_5-voice-v4	SUBSUMED_DOCS	superset en main via PR #390 y en KEEP multiformat; export hecho
+155d4f021fd5a0ee00df7582e908caece4c44749	tournament/umbral-agent-stack-375-fa19920/lane-docs-explanatory	SUBSUMED_DOCS	lane perdedora; ganadora mergeo #376 con hunk identico
+77b8ca898d2a72582dd85d8206560b9baa9aa79d	tournament/umbral-agent-stack-440-462ef1c1/lane-backup-impl	SUBSUMED_DOCS	main implemento contrato identico via 2fe5853 (#444); lane exportada
+815851d2a817148ea45d1e6f158a43cc2bd9989a	tournament/umbral-agent-stack-440-462ef1c1/lane-backup-qa	SUBSUMED_DOCS	misma feature que lane-impl; subsumida por 2fe5853 (#444); export hecho
+9741e7cecf82992970d7ad2c8ce2b3e8efeac7e5	tournament/umbral-agent-stack-445-d5f34a07/lane-sync-delivery	SUBSUMED_DOCS	lane de torneo; veredicto SUBSUMED confirmado por refutador; adapters exportados
+ca6b86be2668f07dd3f2a97423a1d9844fe3d331	tournament/umbral-agent-stack-d35-33863db/lane-openclaw-skill	SUBSUMED_DOCS	delta doc de protocolo PIT (archivado 2026-07-22); export hecho
+9ef1e5fc79dcc723055de5773f9cfe27b48bc8b8	umbralbim-copilot-feat-p10-openclaw-broker	SUBSUMED_DOCS	PR #488 mergeado; runbook de main es superset estricto (+seccion 7.1); resto byte-identico

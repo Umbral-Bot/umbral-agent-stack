@@ -46,7 +46,7 @@ class TestSchemaLoads:
         assert schema["database"]["name"] == "Publicaciones"
 
     def test_database_version(self, schema):
-        assert schema["database"]["version"] == "0.1.0"
+        assert schema["database"]["version"] == "0.2.0"
 
     def test_database_status_draft(self, schema):
         assert schema["database"]["status"] == "draft"

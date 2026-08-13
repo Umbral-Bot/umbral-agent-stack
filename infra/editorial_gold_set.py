@@ -17,7 +17,10 @@ except ImportError:
 
 
 # ---------------------------------------------------------------------------
-# Valid enums (must match gold-set.schema.json)
+# Valid enums (must match gold-set.schema.json — cruzado en
+# tests/test_editorial_gold_set.py::TestEnumsMatchSchema).
+# VALID_AUDIENCE_STAGES espeja ademas el select `Etapa audiencia` de la DB
+# Publicaciones (notion/schemas/publicaciones.schema.yaml).
 # ---------------------------------------------------------------------------
 
 VALID_INPUT_TYPES = frozenset({
@@ -36,6 +39,7 @@ VALID_AUDIENCE_STAGES = frozenset({
     "consideration",
     "trust",
     "conversion",
+    "retention",
 })
 
 VALID_SOURCE_POLICIES = frozenset({

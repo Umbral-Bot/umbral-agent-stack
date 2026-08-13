@@ -9,11 +9,14 @@ from pathlib import Path
 import pytest
 
 from infra.editorial_gold_set import (
+    VALID_AUDIENCE_STAGES,
     VALID_CHANNELS,
     VALID_INPUT_TYPES,
+    VALID_SOURCE_POLICIES,
     load_dimensions,
     load_gold_set,
     load_schema,
+    load_yaml_file,
     summarize_gold_set,
     validate_dimension_weights,
     validate_gold_set_cases,
@@ -23,6 +26,7 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 _GOLD_SET_PATH = _REPO_ROOT / "evals" / "editorial" / "gold-set-minimum.yaml"
 _DIMENSIONS_PATH = _REPO_ROOT / "evals" / "editorial" / "dimensions.yaml"
 _SCHEMA_PATH = _REPO_ROOT / "evals" / "editorial" / "gold-set.schema.json"
+_NOTION_SCHEMA_PATH = _REPO_ROOT / "notion" / "schemas" / "publicaciones.schema.yaml"
 
 
 # ---------------------------------------------------------------------------
@@ -264,6 +268,55 @@ class TestSummary:
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
+
+
+class TestEnumsMatchSchema:
+    """`infra/editorial_gold_set.py` declara "Valid enums (must match
+    gold-set.schema.json)", pero hasta ahora nada verificaba esa igualdad: los
+    dos lados se podían separar en silencio. Es justo lo que había pasado con
+    `retention`, que vivía en la base de Publicaciones y faltaba en ambos.
+    """
+
+    @pytest.mark.parametrize("frozen, pointer", [
+        (VALID_INPUT_TYPES, ("input_type", "enum")),
+        (VALID_AUDIENCE_STAGES, ("audience_stage", "enum")),
+        (VALID_SOURCE_POLICIES, ("source_policy", "enum")),
+        (VALID_CHANNELS, ("target_channels", "items", "enum")),
+    ], ids=["input_type", "audience_stage", "source_policy", "target_channels"])
+    def test_frozenset_matches_json_enum(self, schema, frozen, pointer):
+        node = schema["properties"][pointer[0]]
+        for key in pointer[1:]:
+            node = node[key]
+        assert len(node) == len(set(node)), (
+            f"{pointer[0]}: el enum de gold-set.schema.json tiene valores repetidos "
+            f"({node}), lo que lo vuelve un JSON Schema invalido."
+        )
+        assert frozen == set(node), (
+            f"{pointer[0]}: el frozenset de infra/editorial_gold_set.py y el enum de "
+            f"gold-set.schema.json divergen. Solo en Python: {sorted(frozen - set(node))}; "
+            f"solo en el JSON: {sorted(set(node) - frozen)}."
+        )
+
+    def test_audience_stages_match_notion_schema(self):
+        """La tercera punta del triangulo: el select `Etapa audiencia` de la DB
+        Publicaciones. Es la que origino el desfase de `retention` — vivia en la
+        base y faltaba en las otras dos — y hasta ahora ningun test la cruzaba.
+        Se lee el YAML versionado del repo, no la base viva.
+        """
+        notion_schema = load_yaml_file(_NOTION_SCHEMA_PATH)
+        options = {
+            option["name"]
+            for prop in notion_schema["properties"]
+            if prop["name"] == "Etapa audiencia"
+            for option in prop["options"]
+        }
+        assert options, "no se encontro la propiedad 'Etapa audiencia' en el schema de Notion"
+        assert VALID_AUDIENCE_STAGES == options, (
+            "VALID_AUDIENCE_STAGES y el select 'Etapa audiencia' de "
+            f"{_NOTION_SCHEMA_PATH.name} divergen. Solo en el gold-set: "
+            f"{sorted(VALID_AUDIENCE_STAGES - options)}; solo en Notion: "
+            f"{sorted(options - VALID_AUDIENCE_STAGES)}."
+        )
 
 
 class TestCLI:

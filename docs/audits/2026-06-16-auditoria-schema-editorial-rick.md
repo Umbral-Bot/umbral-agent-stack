@@ -6,6 +6,22 @@
 
 **Estado de los 9 artículos**: NO EXISTEN en el repositorio actual. Esta auditoría es **preventiva** antes de su generación.
 
+> **Nota de cierre — 2026-08-13 (PKG-MACRO-P5-L1-T4).** `audience_stage` admite **cinco**
+> valores, no cuatro: `awareness | consideration | trust | conversion | **retention**`.
+> La opción `retention` existía en la base viva de Publicaciones desde antes de mayo; el
+> schema local se alineó en 0.3.0 (PKG-MACRO-P5-L1-T3, GO de David = opción A: el spec sigue
+> a la base y la opción NO se borra de Notion), y este paquete cierra el desfase que quedaba
+> en las dos superficies que esta auditoría declara **fuente de verdad para enums**:
+> `infra/editorial_gold_set.py` y `evals/editorial/gold-set.schema.json`, que hasta hoy
+> rechazaban una pieza `retention` como `invalid audience_stage`.
+>
+> Qué cambia y qué no en este documento: las **listas prescriptivas** («usar estos valores»),
+> los checklists y el **prompt copiable de §13** pasan a cinco valores, porque son lo que se
+> sigue usando. Las **mediciones del 2026-06-16 quedan intactas** —incluidos los bloques que
+> citan el código tal como estaba ese día— para que la auditoría siga contando lo que
+> encontró. El conflicto `cold/warm/hot` de la spec v1 **no se reabre aquí**: sigue abierto y
+> fuera del alcance de este paquete.
+
 ---
 
 ## 1. Resumen Ejecutivo
@@ -26,7 +42,7 @@
 
 | Riesgo | Severidad | Acción |
 |--------|-----------|--------|
-| `audience_stage`: spec dice `cold/hot`, código valida `awareness/trust` | 🔴 CRÍTICA | Usar valores del **código** (`awareness`, `consideration`, `trust`, `conversion`). Ignorar spec v1.md |
+| `audience_stage`: spec dice `cold/hot`, código valida `awareness/trust` | 🔴 CRÍTICA | Usar valores del **código** (`awareness`, `consideration`, `trust`, `conversion`, `retention` desde 2026-08-13). Ignorar spec v1.md |
 | 9 artículos generados con valores de spec antiguo | 🔴 CRÍTICA | Validar contra código en `infra/editorial_gold_set.py`, no contra docs |
 | `planbim.cl` usado como fuente primaria | 🟡 MEDIA | NO usar. Reemplazar por fuentes vigentes (CORFO, MINVU, buildingSMART, etc.) |
 | Frontmatter markdown SIN validación local | 🟡 MEDIA | Copilot debe validar antes de escribir Notion. No confiar en Notion API como gate único |
@@ -40,7 +56,7 @@
 
 | Orden | Fuente | Ubicación | Estado | Conflictos | ✓ Usar para |
 |-------|--------|-----------|--------|-----------|------------|
-| **1** | **Código validador** | `infra/editorial_gold_set.py` | VIVO, activo | `audience_stage`: usa `awareness|consideration|trust|conversion` | **FUENTE DE VERDAD PARA ENUMS** |
+| **1** | **Código validador** | `infra/editorial_gold_set.py` | VIVO, activo | `audience_stage`: usa `awareness|consideration|trust|conversion` — **+ `retention` desde 2026-08-13** | **FUENTE DE VERDAD PARA ENUMS** |
 | **2** | **Spec v1** | `docs/specs/sistema-editorial-rick-v1.md` | PROPUESTO | `audience_stage`: dice `cold|warm|hot` (CONFLICTO) | Flujos, gates, decisiones producto |
 | **3** | **Schema YAML Notion** | `notion/schemas/publicaciones.schema.yaml` | draft | Menciona `awareness` pero también `cold/warm/hot` | Estructura Notion DB |
 | **4** | **ADRs** | `docs/adr/ADR-005/-008/-010/-011` | Accepted | Complementan spec v1 | Decisiones arquitectónicas |
@@ -69,7 +85,10 @@ audience_stage: consideration  # NO "warm"
 audience_stage: trust         # NO "hot"
 ```
 
-**RESOLUCIÓN**: El **código es la autoridad**. Use `awareness`, `consideration`, `trust`, `conversion`.
+**RESOLUCIÓN**: El **código es la autoridad**. Use `awareness`, `consideration`, `trust`, `conversion`, `retention`.
+
+_(El bloque de código de arriba cita el validador tal como estaba el 2026-06-16, con cuatro
+valores; `retention` se sumó el 2026-08-13 — ver la nota de cierre al principio.)_
 
 ---
 
@@ -87,11 +106,11 @@ audience_stage: trust         # NO "hot"
 | **series** | ✅ Sí (spec §5) | Parcial | ❌ No (opcional) | Texto libre (nombre serie) | ✅ Alto | Notion select o rich text | Opcional. "Observatorio Umbral BIM" para 9 artículos |
 | **category** | ✅ Sí (spec implícito via tags) | Parcial | ❌ No | Texto libre | ✅ Alto | Notion multi-select | Opcional. Tags preferido |
 | **tags** | ✅ Sí (spec §11) | ✅ (worker: `list[str]`) | ✅ Sí (≥1) | Texto libre, lista | ✅ Alto | Notion multi-select | Mínimo 1 tag. Texto libre, idioma flexible |
-| **audience** (sinónimo de audience_stage) | ✅ Sí (spec §5) | ❌ NO (usa `audience_stage`) | ✅ Sí | ⚠️ **CONFLICTO**: Spec dice `cold/warm/hot` | ❌ **USAR CÓDIGO** | Notion select | **CRÍTICO**: Usar `awareness`, `consideration`, `trust`, `conversion` (del código) |
+| **audience** (sinónimo de audience_stage) | ✅ Sí (spec §5) | ❌ NO (usa `audience_stage`) | ✅ Sí | ⚠️ **CONFLICTO**: Spec dice `cold/warm/hot` | ❌ **USAR CÓDIGO** | Notion select | **CRÍTICO**: Usar `awareness`, `consideration`, `trust`, `conversion`, `retention` (del código) |
 | **objective** | ✅ Sí (spec §5, §10.1) | Parcial | ✅ Sí | `autoridad \| enablement \| validacion \| activacion \| memoria` | ✅ Medio | Notion select | Valores predefinidos |
 | **cta_type** | ✅ Sí (spec §10.1) | Parcial | ✅ Sí (o `no_cta_reason` si none) | `none \| conversacion \| validacion_problema \| recurso \| diagnostico \| discovery \| producto \| educacion` | ✅ Medio | Notion select | Valores predefinidos. Rate-limiting aplicado |
 | **cta_strength** | ✅ Sí (spec §5) | Parcial | ✅ Sí | `none \| soft \| medium \| strong` | ✅ Bajo | Notion select | Valores rígidos. Reglas en spec §10.3 |
-| **audience_stage** | ✅ Sí (spec §5) | ✅ **CÓDIGO** | ✅ Sí | **`awareness \| consideration \| trust \| conversion`** | ❌ **RÍGIDO EN CÓDIGO** | Notion select | **USAR VALORES DEL CÓDIGO, no de spec** |
+| **audience_stage** | ✅ Sí (spec §5) | ✅ **CÓDIGO** | ✅ Sí | **`awareness \| consideration \| trust \| conversion \| retention`** | ❌ **RÍGIDO EN CÓDIGO** | Notion select | **USAR VALORES DEL CÓDIGO, no de spec** (`retention` desde 2026-08-13) |
 | **evidence_density** | ✅ Sí (spec §5) | Parcial | ✅ Sí | `low \| med \| high` | ✅ Bajo | Notion select | Valores rígidos |
 | **funnel_stage** | ✅ Sí (spec §5, §10.5) | Parcial | ✅ Sí | `memory \| enablement \| validation \| activation` | ✅ Bajo | Notion select | Valores rígidos (mapean a §10.5 capas) |
 | **commercial_intent** | ✅ Sí (spec §5) | Parcial | ✅ Sí | `none \| low \| med \| high` | ✅ Bajo | Notion select | Valores rígidos |
@@ -122,11 +141,12 @@ Tabla de mapping (De valores humanos o antiguos → Valores del código):
 | `consideration` | ✅ VÁLIDO | *uso directo* |
 | `trust` | ✅ VÁLIDO | *uso directo* |
 | `conversion` | ✅ VÁLIDO | *uso directo* |
+| `retention` | ✅ VÁLIDO (desde 2026-08-13) | *uso directo* |
 | `TOFU` (top-of-funnel) | N/A | → `awareness` |
 | `MOFU` (mid-of-funnel) | N/A | → `consideration` |
 | `BOFU` (bottom-of-funnel) | N/A | → `trust` o `conversion` |
 
-**Acción**: Reemplazar en todos los 9 artículos los valores `cold/warm/hot` (si aparecen) por `awareness/consideration/trust/conversion`.
+**Acción**: Reemplazar en todos los 9 artículos los valores `cold/warm/hot` (si aparecen) por `awareness/consideration/trust/conversion`, según el mapping de arriba. (`retention` es válido desde 2026-08-13, pero ningún valor de `cold/warm/hot` mapea a él: se elige a propósito, no por conversión automática.)
 
 ### 4.2 Otros mappings idiomáticos
 
@@ -249,7 +269,7 @@ secondary_channels: [blog]
 series: Observatorio Umbral BIM
 category: Automatización
 tags: [BIM, IA, Procesos, Automatización]
-audience: awareness                          # ← USAR CÓDIGO: awareness/consideration/trust/conversion
+audience: awareness                          # ← USAR CÓDIGO: awareness/consideration/trust/conversion/retention
 objective: autoridad
 cta_type: conversacion
 cta_strength: soft
@@ -280,7 +300,7 @@ hashtags: "#BIM #IA #Automatización #AEC"
 
 - [ ] `slug`: Lowercase kebab-case, <60 chars, único
 - [ ] `title`: <120 chars
-- [ ] `audience_stage`: Uno de: `awareness|consideration|trust|conversion` (**NO** `cold/warm/hot`)
+- [ ] `audience_stage`: Uno de: `awareness|consideration|trust|conversion|retention` (**NO** `cold/warm/hot`)
 - [ ] `cta_type`, `cta_strength`: Valores de spec §10.1
 - [ ] Si `featured_image_url` existe: `featured_image_alt` presente y <125 chars
 - [ ] Si `cta_type ≠ none`: `cta_text` y `cta_destination` lleños
@@ -326,9 +346,9 @@ tags: [BIM, fact-check-needed]
 
 | Archivo | Línea(s) | Conflicto | Acción |
 |---------|----------|----------|--------|
-| `docs/specs/sistema-editorial-rick-v1.md` | 99 | `audience_stage: cold/warm/hot` vs código | Actualizar a `awareness|consideration|trust|conversion` o marcar como DEPRECATED |
-| `notion/schemas/publicaciones.schema.yaml` | (opciones) | Menciona `cold/warm/hot` | Actualizar opciones a código |
-| `evals/editorial/gold-set.schema.json` | 58-62 | Enum correctos (`awareness|consideration|trust|conversion`) | OK. Mantener como fuente de verdad |
+| `docs/specs/sistema-editorial-rick-v1.md` | 99 | `audience_stage: cold/warm/hot` vs código | Actualizar a `awareness|consideration|trust|conversion|retention` o marcar como DEPRECATED — **sigue abierto** |
+| `notion/schemas/publicaciones.schema.yaml` | (opciones) | Menciona `cold/warm/hot` | Actualizar opciones a código — **hecho** 2026-08-13 para `retention` (schema 0.3.0, PKG-MACRO-P5-L1-T3); el `cold/warm/hot` sigue abierto |
+| `evals/editorial/gold-set.schema.json` | 58-62 | Enum correctos (`awareness|consideration|trust|conversion`) | OK. Mantener como fuente de verdad — **enum ampliado** el 2026-08-13 con `retention` (PKG-MACRO-P5-L1-T4) |
 
 ### 9.2 Código sin validadores
 
@@ -381,7 +401,7 @@ tags: [BIM, fact-check-needed]
 **Recomendación**: Mantener en **`draft`** hasta que:
 
 1. ✅ Frontmatter completo y válido
-2. ✅ `audience_stage` en `awareness|consideration|trust|conversion` (NO `cold/warm/hot`)
+2. ✅ `audience_stage` en `awareness|consideration|trust|conversion|retention` (NO `cold/warm/hot`)
 3. ✅ Sin `planbim.cl` o fuentes no verificables
 4. ✅ `featured_image_alt` presente si hay imagen
 5. ✅ `tags` ≥ 1
@@ -402,14 +422,14 @@ Cuando generes los 9 artículos, sigue ESTE prompt:
 
 **Fuente de Verdad**: 
 - Validar todos los valores de frontmatter contra infra/editorial_gold_set.py
-- audience_stage: USAR awareness|consideration|trust|conversion (NO cold/warm/hot)
+- audience_stage: USAR awareness|consideration|trust|conversion|retention (NO cold/warm/hot)
 - Otros campos: Ver tabla de §3 de 00_auditoria_schema_rick_cursor.md
 
 **Checklist de Frontmatter** (por cada artículo):
 1. title: <120 chars
 2. slug: lowercase kebab-case <60 chars
 3. status: draft (David marca ready_for_review)
-4. audience_stage: awareness | consideration | trust | conversion
+4. audience_stage: awareness | consideration | trust | conversion | retention
 5. cta_type: none | conversacion | validacion_problema | recurso | diagnostico | discovery | producto | educacion
 6. cta_strength: none | soft | medium | strong
 7. evidence_density: low | med | high
@@ -482,7 +502,7 @@ Cuando generes los 9 artículos, sigue ESTE prompt:
 
 ### 16.2 Acciones inmediatas ANTES de generar 9 artículos
 
-1. ✅ **Actualizar spec v1.md**: Reemplazar `audience_stage: cold/warm/hot` por `awareness|consideration|trust|conversion`
+1. ✅ **Actualizar spec v1.md**: Reemplazar `audience_stage: cold/warm/hot` por `awareness|consideration|trust|conversion|retention`
 2. ✅ **Actualizar schema YAML Notion**: Sincronizar enums con código
 3. ✅ **Agregar validador de frontmatter YAML**: Script local que valide contra editorial_gold_set.py antes de Notion write
 4. ✅ **Documentar mapping**: `cold→awareness`, `warm→consideration`, `hot→trust/conversion`

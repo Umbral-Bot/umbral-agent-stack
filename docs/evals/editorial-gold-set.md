@@ -102,11 +102,15 @@ Total: 1.00
 
 ## Key decisions
 
-- **10 cases, not 50.** This is a minimum viable set.  More cases can
+- **A minimum viable set, not an exhaustive one.**  More cases can
   be added incrementally as the system matures.
-- **No conversion stage yet.** The gold set covers awareness,
-  consideration, and trust.  Conversion cases will come when the CTA
-  funnel is more mature.
+- **Not every audience stage has a case yet.** `audience_stage` accepts
+  five values — `awareness`, `consideration`, `trust`, `conversion` and
+  `retention` (added 2026-08-13, mirroring the `Etapa audiencia` select of
+  the Publicaciones DB).  The gold set only exercises the first three;
+  `conversion` and `retention` cases will come when the CTA funnel is more
+  mature.  Nothing fails while they are missing — the coverage shows up in
+  the CLI summary as `Audience stages`.
 - **All cases require human gate.** In initial phases, no content
   publishes without human approval.
 - **Dimensions are weighted, not equal.** Strategic fit and audience

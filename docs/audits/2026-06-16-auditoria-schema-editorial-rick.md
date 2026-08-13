@@ -42,7 +42,7 @@
 
 | Riesgo | Severidad | Acción |
 |--------|-----------|--------|
-| `audience_stage`: spec dice `cold/hot`, código valida `awareness/trust` | 🔴 CRÍTICA | Usar valores del **código** (`awareness`, `consideration`, `trust`, `conversion`). Ignorar spec v1.md |
+| `audience_stage`: spec dice `cold/hot`, código valida `awareness/trust` | 🔴 CRÍTICA | Usar valores del **código** (`awareness`, `consideration`, `trust`, `conversion`, `retention` desde 2026-08-13). Ignorar spec v1.md |
 | 9 artículos generados con valores de spec antiguo | 🔴 CRÍTICA | Validar contra código en `infra/editorial_gold_set.py`, no contra docs |
 | `planbim.cl` usado como fuente primaria | 🟡 MEDIA | NO usar. Reemplazar por fuentes vigentes (CORFO, MINVU, buildingSMART, etc.) |
 | Frontmatter markdown SIN validación local | 🟡 MEDIA | Copilot debe validar antes de escribir Notion. No confiar en Notion API como gate único |

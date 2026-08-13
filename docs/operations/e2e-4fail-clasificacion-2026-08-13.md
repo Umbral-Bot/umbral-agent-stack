@@ -246,3 +246,86 @@ evidencia de T2; no bloqueó, pero el gap queda pendiente de reparar.
 `OPENCLAW_GATEWAY_TOKEN` sigue sin cargarse en el worker, no hubo restart de
 `umbral-worker`/`openclaw-dispatcher`/n8n, la identidad zombi `umbral-rick`
 sigue presente. Evidencia en `~/.coord-ag-evidence/pkg-macro-p5-l2-t3/`.
+
+---
+
+## 8. Cableado de `openclaw_proxy` — capas 1 y 2 (PKG-MACRO-P5-L2-T4, 2026-08-13)
+
+**Autorización citada de David:** "A — las dos capas en el mismo pack, orden
+2→1 (flag, después token, restart worker, 4 tests). Elegida 2026-08-13
+post-T3." Prohibido explícito: `quota_policy.yaml`, `UMBRAL_DEFAULT_MODEL`,
+`DEFAULT_MODEL`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`, Azure/Foundry, editar
+`openclaw.json`, restart de gateway/n8n, `--force`, borrar la zombi
+`umbral-rick`.
+
+### 8.1 Preflight
+
+Journal de `openclaw-gateway` (15 min previos): 0 coincidencias de
+`auth_permanent`/`refresh_token_invalidated` — capa 3 seguía cerrada, no hubo
+regresión. `EnvironmentFile` de `umbral-worker`: `~/.config/openclaw/env`
+(primario), `copilot-cli.env`, `copilot-cli-secrets.env`. `EnvironmentFile` de
+`openclaw-dispatcher`: el **mismo** archivo primario que el worker — un solo
+archivo cubre ambos units, sin duplicar. Backup de los tres archivos del
+worker antes de tocar nada (permisos 600, en la evidencia del pack).
+
+### 8.2 Capa 2 — `UMBRAL_DISABLE_CLAUDE`
+
+`true` → `false`, explícito, en la única línea donde vivía (`~/.config/openclaw/env`).
+No se dejó comentado ni ambiguo.
+
+### 8.3 Capa 1 — `OPENCLAW_GATEWAY_TOKEN`
+
+Copiado desde `gateway.auth.token` de `~/.openclaw/openclaw.json` (leído, no
+editado) hacia una línea nueva en `~/.config/openclaw/env`. Lectura a
+variable de shell → escritura → `unset` inmediato; cero `echo`/`cat`/log del
+valor en ningún paso. Verificado post-hoc: `copilot-cli.env` y
+`copilot-cli-secrets.env` quedaron byte-idénticos al backup (`diff -q`).
+
+### 8.4 Restart y verificación
+
+`systemctl --user restart umbral-worker` y `openclaw-dispatcher` (comparten el
+archivo parchado). `openclaw-gateway` **no tocado** —
+`ActiveEnterTimestamp` idéntico antes/después (`2026-08-12 12:34:19 -04`).
+`ActiveEnterTimestamp` de `umbral-worker`: `2026-07-25 21:30:38` →
+`2026-08-13 17:26:23` (cambió, confirma restart real, no cache). Mismo salto
+en `openclaw-dispatcher`. Los tres units `active` post-restart.
+
+`GET /providers/status` (sin secretos):
+
+```
+configured:   ["openclaw_proxy"]
+unconfigured: [azure_foundry, claude_haiku, claude_opus, claude_pro,
+               gemini_flash, gemini_flash_lite, gemini_pro, gemini_vertex]
+```
+
+`openclaw_proxy` pasó a `configured: true`. **El cableado cumplió.**
+
+### 8.5 Los 4 tests (`scripts/e2e_validation.py`, sin `--notion`)
+
+Los 4 siguen en **FAIL**, pero ya no por credencial/flag ausente — por una
+capa distinta y explícitamente fuera de alcance de este pack:
+
+| Test | Resultado | Causa |
+|---|---|---|
+| `llm.generate` | FAIL | `RuntimeError: GOOGLE_API_KEY not configured` — sin modelo explícito usa `DEFAULT_MODEL=gemini-2.5-pro`, no pasa por `openclaw_proxy` |
+| `composite.research` | FAIL | `ValueError: ... status=blocked: None` — derivado de `llm.generate` (§2, ya documentado en T1) |
+| `R8: Routing coding` | FAIL | `ValueError: No effective configured route for coding` — `quota_policy.yaml` no incluye `openclaw_proxy` en ninguna cadena |
+| `R8: Routing research` | FAIL | ídem, sobre la cadena `research` |
+
+Resto de la suite (contexto, no gate): 11/17 PASS, 3 SKIP (sin API keys de
+OpenAI/Google/Vertex — esperado), 6 FAIL total (incluye dos tests de
+Anthropic/Claude, también fuera de alcance).
+
+### 8.6 Veredicto y rollback
+
+Por instrucción explícita del pack: si `configured=sí` pero los 4 fallan por
+ruteo/Gemini, **no hay rollback automático** — el cableado cumplió su objetivo
+y se documenta el bloqueo de la capa siguiente. Se dejó el env como quedó
+(`UMBRAL_DISABLE_CLAUDE=false`, `OPENCLAW_GATEWAY_TOKEN` presente).
+
+**`P5_L2_PROXY_WIRED = Y`.** Gate de los 4 tests: **BLOCKED, capa ruteo**
+(`quota_policy.yaml` no tiene `openclaw_proxy` en ninguna cadena de fallback)
++ **capa default-model** (`llm.generate` sin modelo explícito depende de
+`GOOGLE_API_KEY`, ausente). Ninguna de las dos se tocó — ambas están en la
+lista de prohibidos de este pack. Evidencia completa en
+`~/.coord-ag-evidence/pkg-macro-p5-l2-t4/`.

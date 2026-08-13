@@ -117,6 +117,31 @@ Si X ≠ Y, esa divergencia ES el hallazgo principal del reporte.
 El coordinador O16.2 NO escribe a Notion (no tiene scope). Los writes a Notion los hace
 solo el writer Granola operacional o un hilo coordinador notion-governance específico.
 
+### R8 — Checkout main al cerrar un PKG (salvo WIP_IN_PLACE)
+
+Simétrico a R4, pero al **cierre** en vez de al inicio. Por bug observado 2026-08-13
+(PKG-MACRO-P5-L1-T1): la VPS quedó fuera de `main`, en la rama de trabajo del PKG
+anterior (`claude/macro-megadiag-f2-20260812`), después de cerrar ese PKG. Como
+`ensure-main-for-run.sh` exige `branch == main` (Gate 1), esto bloqueó
+scheduled-tasks / e2e / OODA hasta que un hilo posterior lo notó y restauró main.
+
+Regla: al terminar cualquier PKG en este checkout (`~/umbral-agent-stack` en la VPS),
+el hilo debe devolver el repo a `main`, salvo que declare explícitamente
+`WIP_IN_PLACE`.
+
+- Si el checkout terminó tracked-clean (o solo con untracked ignorables):
+  ```bash
+  git fetch origin && git checkout main && git merge --ff-only origin/main
+  ```
+- Si terminó dirty de un frente ajeno no inventariado o en curso: declarar
+  `WIP_IN_PLACE` en el reporte de cierre, dejar la rama como está, y NO forzar el
+  checkout ni el `reset --hard`.
+- El "push" de este cierre suele ser sobre el **estado del clone**, no sobre el
+  repo remoto: si el único cambio fue `checkout main` + `ff-only` (nada nuevo que
+  subir a GitHub), repórtalo como `NO_PUSH` del repo — no lo confundas con un push
+  de código. `PUSH_CONFIRMED` aplica solo cuando el cierre incluyó un commit/branch
+  nuevo efectivamente empujado a origin.
+
 ## Coordinación entre hilos (`.agents/tasks`)
 
 > Actualizado 2026-07-17 (sys-diag): la coordinación primaria entre hilos es

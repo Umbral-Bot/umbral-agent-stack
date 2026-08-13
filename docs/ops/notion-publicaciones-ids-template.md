@@ -95,7 +95,9 @@ Type: source-driven (first)
 - Vista "Pendiente de aprobación" usa filtro AND avanzado por limitación de Notion.
 - `Proyecto` es `rich_text` tanto en schema como en Notion (decisión v1; relación diferida a v1.1/v2).
 - `Tipo de contenido` alineado: schema y Notion usan las mismas 7 opciones v1.
-- `Etapa audiencia` tiene opción extra `retention` en Notion (INFO, no bloqueante).
+- `Etapa audiencia` alineado desde 2026-08-13: el schema 0.3.0 declara las 5
+  opciones que tiene Notion, incluida `retention` (antes figuraba aquí como
+  opción extra INFO).
 
 ## Notas
 

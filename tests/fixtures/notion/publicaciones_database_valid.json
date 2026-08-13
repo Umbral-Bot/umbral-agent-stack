@@ -38,7 +38,8 @@
           {"name": "awareness"},
           {"name": "consideration"},
           {"name": "trust"},
-          {"name": "conversion"}
+          {"name": "conversion"},
+          {"name": "retention"}
         ]
       }
     },

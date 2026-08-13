@@ -57,7 +57,7 @@
     },
     "audience_stage": {
       "type": "string",
-      "enum": ["awareness", "consideration", "trust", "conversion"]
+      "enum": ["awareness", "consideration", "trust", "conversion", "retention"]
     },
     "source_policy": {
       "type": "string",

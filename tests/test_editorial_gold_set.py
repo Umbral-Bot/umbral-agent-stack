@@ -9,8 +9,10 @@ from pathlib import Path
 import pytest
 
 from infra.editorial_gold_set import (
+    VALID_AUDIENCE_STAGES,
     VALID_CHANNELS,
     VALID_INPUT_TYPES,
+    VALID_SOURCE_POLICIES,
     load_dimensions,
     load_gold_set,
     load_schema,
@@ -264,6 +266,30 @@ class TestSummary:
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
+
+
+class TestEnumsMatchSchema:
+    """`infra/editorial_gold_set.py` declara "Valid enums (must match
+    gold-set.schema.json)", pero hasta ahora nada verificaba esa igualdad: los
+    dos lados se podían separar en silencio. Es justo lo que había pasado con
+    `retention`, que vivía en la base de Publicaciones y faltaba en ambos.
+    """
+
+    @pytest.mark.parametrize("frozen, pointer", [
+        (VALID_INPUT_TYPES, ("input_type", "enum")),
+        (VALID_AUDIENCE_STAGES, ("audience_stage", "enum")),
+        (VALID_SOURCE_POLICIES, ("source_policy", "enum")),
+        (VALID_CHANNELS, ("target_channels", "items", "enum")),
+    ])
+    def test_frozenset_matches_json_enum(self, schema, frozen, pointer):
+        node = schema["properties"][pointer[0]]
+        for key in pointer[1:]:
+            node = node[key]
+        assert frozen == set(node), (
+            f"{pointer[0]}: el frozenset de infra/editorial_gold_set.py y el enum de "
+            f"gold-set.schema.json divergen. Solo en Python: {sorted(frozen - set(node))}; "
+            f"solo en el JSON: {sorted(set(node) - frozen)}."
+        )
 
 
 class TestCLI:

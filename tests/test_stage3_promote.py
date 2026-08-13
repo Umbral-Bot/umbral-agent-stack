@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -191,12 +191,15 @@ class TestOrderEligible:
 
 def _run(db: Path, tmp_path: Path, *extra) -> tuple[int, dict]:
     out = tmp_path / f"report-{len(list(tmp_path.glob('report-*.json')))}.json"
+    # Reloj congelado en NOW, igual que los tests de classify(): las fechas del
+    # fixture son absolutas, así que con el reloj real la ventana de 90d vence
+    # por calendario y los asserts dejan de medir la promoción.
     rc = s3.main([
         "--sqlite", str(db),
         "--max-age-days", "90",
         "--output", str(out),
         *extra,
-    ])
+    ], clock=lambda: NOW)
     return rc, json.loads(out.read_text())
 
 
@@ -259,6 +262,23 @@ class TestRun:
         assert r2["summary"]["pending_total"] == 0
         assert r2["summary"]["eligible"] == 0
         assert r2["summary"]["promoted_this_run"] == 0
+
+    def test_default_clock_is_real_time(self, tmp_path: Path):
+        # Cubre el default de producción (sin clock=). Fechas relativas al reloj
+        # real a propósito: este test no puede vencer por calendario.
+        db = _make_db(tmp_path)
+        recent = datetime.now(timezone.utc) - timedelta(days=1)
+        _insert(db, url_canonica="https://a.com/recent",
+                publicado_en=recent.strftime("%Y-%m-%dT%H:%M:%SZ"))
+        out = tmp_path / "report-default-clock.json"
+        rc = s3.main([
+            "--sqlite", str(db),
+            "--max-age-days", "90",
+            "--output", str(out),
+        ])
+        assert rc == 0
+        report = json.loads(out.read_text())
+        assert report["summary"]["eligible"] == 1
 
     def test_consistency_eligible_plus_discarded_equals_pending(self, tmp_path: Path):
         db = _make_db(tmp_path)

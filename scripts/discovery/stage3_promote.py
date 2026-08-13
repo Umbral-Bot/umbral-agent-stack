@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
-from typing import Iterable
+from typing import Callable, Iterable
 
 ELIGIBLE_CHANNELS = frozenset({"youtube", "rss"})
 DISCARD_REASONS = (
@@ -334,8 +334,10 @@ def _iso(dt: datetime) -> str:
     return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def run(args: argparse.Namespace) -> int:
-    started = _now_utc()
+def run(args: argparse.Namespace, *, clock: Callable[[], datetime] = _now_utc) -> int:
+    """Ejecuta stage 3. ``clock`` permite corridas deterministas (tests,
+    reprocesos con fecha fija); por defecto usa el reloj real UTC."""
+    started = clock()
     conn = open_sqlite(args.sqlite)
     try:
         assert_schema(conn)
@@ -351,12 +353,12 @@ def run(args: argparse.Namespace) -> int:
         mode = "commit" if args.commit else "dry-run"
         promoted_count = 0
         if args.commit and selected:
-            now_iso = _iso(_now_utc())
+            now_iso = _iso(clock())
             promoted_count = mark_promoted(
                 conn, (c.item.url_canonica for c in selected), now_iso
             )
 
-        finished = _now_utc()
+        finished = clock()
         report = build_report(
             classifications=classifications,
             selected=selected,
@@ -380,10 +382,11 @@ def run(args: argparse.Namespace) -> int:
     return 0 if report["overall_pass"] else 1
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None, *,
+         clock: Callable[[], datetime] = _now_utc) -> int:
     args = parse_args(argv if argv is not None else sys.argv[1:])
     try:
-        return run(args)
+        return run(args, clock=clock)
     except Stage3Error as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return 2

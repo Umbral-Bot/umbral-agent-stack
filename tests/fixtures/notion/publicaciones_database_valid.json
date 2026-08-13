@@ -81,6 +81,45 @@
     "Última edición": {"id": "p23", "type": "last_edited_time", "last_edited_time": {}},
     "trace_id": {"id": "p24", "type": "rich_text", "rich_text": {}},
     "Notas": {"id": "p25", "type": "rich_text", "rich_text": {}},
-    "Premisa": {"id": "p26", "type": "rich_text", "rich_text": {}}
+    "Premisa": {"id": "p26", "type": "rich_text", "rich_text": {}},
+    "listo_rrss": {"id": "p27", "type": "checkbox", "checkbox": {}},
+    "Selección imagen": {
+      "id": "p28", "type": "select",
+      "select": {
+        "options": [
+          {"name": "Pendiente", "color": "gray"},
+          {"name": "Alt 1", "color": "blue"},
+          {"name": "Alt 2", "color": "green"},
+          {"name": "Alt 3", "color": "yellow"},
+          {"name": "Alt 4", "color": "orange"},
+          {"name": "Alt 5", "color": "purple"},
+          {"name": "Regenerar", "color": "pink"},
+          {"name": "Sin imagen", "color": "red"}
+        ]
+      }
+    },
+    "Estado imagen": {
+      "id": "p29", "type": "select",
+      "select": {
+        "options": [
+          {"name": "No aplica", "color": "gray"},
+          {"name": "Pendiente generación", "color": "brown"},
+          {"name": "Generando", "color": "yellow"},
+          {"name": "Listo para selección", "color": "blue"},
+          {"name": "Seleccionada", "color": "green"},
+          {"name": "Regeneración pedida", "color": "orange"},
+          {"name": "Error", "color": "red"}
+        ]
+      }
+    },
+    "imagen_cantidad": {"id": "p30", "type": "number", "number": {"format": "number"}},
+    "imagen_alt_1_url": {"id": "p31", "type": "url", "url": {}},
+    "imagen_alt_2_url": {"id": "p32", "type": "url", "url": {}},
+    "imagen_alt_3_url": {"id": "p33", "type": "url", "url": {}},
+    "imagen_alt_4_url": {"id": "p34", "type": "url", "url": {}},
+    "imagen_alt_5_url": {"id": "p35", "type": "url", "url": {}},
+    "imagen_generada_at": {"id": "p36", "type": "date", "date": {}},
+    "imagen_error": {"id": "p37", "type": "rich_text", "rich_text": {}},
+    "origen_alternativa": {"id": "p38", "type": "relation", "relation": {"database_id": "some-id"}}
   }
 }

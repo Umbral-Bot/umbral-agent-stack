@@ -100,3 +100,54 @@ La corrida analizada es la del cron (2026-08-13 06:00 -04 = 10:00 UTC),
 re-ejecutar el e2e a mano: los 4 FAIL persisten con el checkout ya devuelto a
 `main` y `ensure-main-for-run` pasando. Descarta que fueran un artefacto del
 gate.
+
+---
+
+## 6. Resultado de la sonda al gateway (PKG-MACRO-P5-L2-T2, 2026-08-13)
+
+§3 dejaba el estado del gateway como **declarado, no probado**, y nombraba la
+sonda real como primer paso de cualquier fix por la vía `openclaw_proxy`. Se
+corrió. **Falla.**
+
+**El login de OpenAI del gateway está invalidado de forma permanente.** El
+journal del propio `openclaw-gateway` (no `models status`) registra:
+
+```
+(auth_permanent). Re-authenticate with:
+    openclaw models auth login --provider openai --force
+OAuth token refresh failed for openai:
+    OpenAI Codex token refresh failed (401): "code": "refresh_token_invalidated"
+"message": "Your session has ended. Please log in again."
+```
+
+La entrada es de las **16:23:08 -04** y la sonda corrió a las **16:24:38**: es
+una señal viva de un pedido real fallado, no un rastro histórico. Un `POST
+/v1/chat/completions` contra `127.0.0.1:18789` devuelve `401 unauthorized`
+(rechazo del gateway al cliente); el oráculo concluyente es el journal.
+
+### Consecuencia para el plan de fix
+
+La opción **A** (cablear `openclaw_proxy`: cargar `OPENCLAW_GATEWAY_TOKEN` en el
+worker y apagar `UMBRAL_DISABLE_CLAUDE`) **no habría funcionado**, y el modo de
+fallo habría sido peor que el actual: el worker habría alcanzado el gateway y el
+gateway no alcanza a OpenAI, así que los mismos 4 tests fallarían un nivel más
+adentro, ahora con una config mutada de por medio.
+
+Quedan **tres capas** apiladas, no dos:
+
+| # | Capa | Estado |
+|---|---|---|
+| 1 | Credenciales de provider ausentes en el worker (§2.1) | abierta |
+| 2 | `UMBRAL_DISABLE_CLAUDE=true` apaga `claude_*` + `openclaw_proxy` (§2.2) | abierta |
+| 3 | **Login OpenAI del gateway invalidado** (`refresh_token_invalidated`) | abierta — **bloquea la vía A** |
+
+El orden correcto es 3 → 2 → 1: re-autenticar el provider `openai` en el gateway
+(`reference-auth.md` de `openclaw-vps-operator`; ojo con `--force` después de un
+login limpio) y recién entonces cablear el worker. La vía B (`gemini` / `azure`
+con API key propia) no depende de la capa 3 y sigue disponible.
+
+**Este pack no mutó nada:** la sonda es el gate del paquete y falló, así que no
+se tocó el env del worker, ni el unit, ni el gateway. Verificado al cierre:
+`UMBRAL_DISABLE_CLAUDE` sigue en `true`, `OPENCLAW_GATEWAY_TOKEN` sigue ausente
+y el worker sigue con el mismo `ActiveEnterTimestamp` del 2026-07-25 (no hubo
+restart). Evidencia en `~/.coord-ag-evidence/pkg-macro-p5-l2-t2/`.

@@ -13,12 +13,14 @@ from scripts.editorial.editorial_model_guard import (
     is_editorial_model_allowed,
 )
 from scripts.editorial.validate_editorial_copy import (
+    validate_copy_text,
     validate_publication_file,
     validate_publication_payload,
 )
 
 _REPO = Path(__file__).resolve().parent.parent
 _CAND001 = _REPO / "evals" / "editorial" / "cand-001-final-copy.yaml"
+_CIERRE = "Primero claridad. Después velocidad."
 
 
 def test_editorial_model_allows_gpt55():
@@ -63,3 +65,81 @@ def test_fail_automatico_detected():
     bad["copy_linkedin"] = "Ahí aparece el problema con amplificar todo."
     result = validate_publication_payload(bad)
     assert not result.ok
+
+
+# ---------------------------------------------------------------------------
+# Contrato de canal (PKG-MACRO-P5-L1-T6)
+#
+# `newsletter` entró a VALID_CHANNELS en #639 y el validador de copy seguía
+# siendo un pipeline de tres canales: el chequeo del cierre canónico estaba
+# guardado por `channel in ("linkedin", "blog", "x")`, así que una pieza de
+# newsletter lo saltaba sin error ni warning.
+# ---------------------------------------------------------------------------
+
+
+def test_newsletter_sin_cierre_canonico_ya_no_pasa_callado():
+    result = validate_copy_text("Cuerpo de newsletter sin el cierre.", channel="newsletter")
+    assert any("cierre canónico" in w for w in result.warnings), result.warnings
+
+
+def test_newsletter_con_cierre_canonico_no_avisa():
+    result = validate_copy_text(f"Cuerpo de newsletter. {_CIERRE}", channel="newsletter")
+    assert not any("cierre canónico" in w for w in result.warnings), result.warnings
+
+
+def test_canal_desconocido_es_error():
+    result = validate_copy_text(f"Texto cualquiera. {_CIERRE}", channel="tiktok")
+    assert not result.ok
+    assert any("canal sin criterios" in e and "tiktok" in e for e in result.errors), result.errors
+
+
+def test_canal_nuevo_hereda_el_chequeo_de_cierre():
+    # El default es "requiere cierre": un canal sin criterios acumula el error
+    # de canal Y el aviso de cierre, en vez de salir limpio como antes.
+    result = validate_copy_text("Texto sin cierre.", channel="tiktok")
+    assert not result.ok
+    assert any("cierre canónico" in w for w in result.warnings), result.warnings
+
+
+def test_linkedin_empresa_sigue_exento_del_cierre():
+    # Único bloque con requiere_cierre_canonico: false — acompaña al post de la
+    # empresa, no es pieza propia. Sin el opt-out, invertir el default lo habría
+    # empezado a marcar.
+    result = validate_copy_text("Texto para compartir el post.", channel="linkedin_empresa")
+    assert not any("cierre canónico" in w for w in result.warnings), result.warnings
+
+
+def _cand001_payload() -> dict:
+    return dict(yaml.safe_load(_CAND001.read_text(encoding="utf-8")))
+
+
+def test_payload_que_declara_newsletter_exige_copy_newsletter():
+    payload = _cand001_payload()
+    payload["canal"] = "newsletter"
+    result = validate_publication_payload(payload)
+    assert not result.ok
+    assert "missing copy_newsletter" in result.errors
+
+
+def test_payload_que_declara_newsletter_en_target_channels_tambien_lo_exige():
+    payload = _cand001_payload()
+    payload["target_channels"] = ["blog", "newsletter"]
+    result = validate_publication_payload(payload)
+    assert not result.ok
+    assert "missing copy_newsletter" in result.errors
+
+
+def test_payload_sin_declarar_newsletter_solo_avisa():
+    # CAND-001 se escribió antes de que el canal existiera: no puede romperse.
+    result = validate_publication_payload(_cand001_payload())
+    assert result.ok, result.errors
+    assert any("missing copy_newsletter" in w for w in result.warnings), result.warnings
+
+
+def test_copy_newsletter_presente_se_valida_como_los_demas():
+    payload = _cand001_payload()
+    payload["target_channels"] = ["newsletter"]
+    payload["copy_newsletter"] = "Ahí aparece el problema con amplificar todo."
+    result = validate_publication_payload(payload)
+    assert not result.ok
+    assert any(e.startswith("newsletter: fail_automatico") for e in result.errors), result.errors

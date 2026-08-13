@@ -42,6 +42,13 @@ def _phrase_hits(text: str, phrases: list[str]) -> list[str]:
     return hits
 
 
+def _channel_blocks(channel_cfg: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """Bloques de canal del YAML. Las claves meta (`schema_version`,
+    `regla_voz_umbral`) no son dicts, así que se filtran solas y un canal nuevo
+    queda reconocido con solo agregar su bloque."""
+    return {k: v for k, v in channel_cfg.items() if isinstance(v, dict)}
+
+
 def validate_copy_text(
     text: str,
     *,
@@ -51,6 +58,16 @@ def validate_copy_text(
     result = ValidationResult(ok=True)
     benchmark = _load_yaml(_BENCHMARK_PATH)["benchmark_editorial_umbral"]["umbral_de_paso"]
     channel_cfg = _load_yaml(_CHANNEL_PATH)
+    blocks = _channel_blocks(channel_cfg)
+
+    # Un canal sin criterios no se puede validar contra su canal: antes caía
+    # fuera de todos los `if` y devolvía OK, que es peor que fallar.
+    if channel not in blocks:
+        result.ok = False
+        result.errors.append(
+            f"canal sin criterios en channel-criteria-v1.yaml: {channel!r} "
+            f"(declarados: {sorted(blocks)})"
+        )
 
     literal_fails = [
         p for p in benchmark["fail_automatico_si_aparece"]
@@ -71,9 +88,13 @@ def validate_copy_text(
         result.ok = False
         result.errors.append(f"amplificar/repetición {amp_count} > {max_amp}")
 
+    # Por defecto todo canal lleva cierre canónico; el bloque que no lo lleve
+    # tiene que decirlo. Con la lista al revés (los tres que sí lo llevaban),
+    # cada canal nuevo se saltaba el chequeo sin que nadie lo notara.
     cierre_canonico = "Primero claridad. Después velocidad."
-    if channel in ("linkedin", "blog", "x") and cierre_canonico not in text:
-        result.warnings.append("cierre canónico ausente o incompleto")
+    if blocks.get(channel, {}).get("requiere_cierre_canonico", True):
+        if cierre_canonico not in text:
+            result.warnings.append("cierre canónico ausente o incompleto")
 
     if channel == "linkedin":
         lo, hi = channel_cfg["linkedin"]["longitud_objetivo_chars"]
@@ -96,18 +117,48 @@ def validate_copy_text(
     return result
 
 
+_PIECE_CHANNELS: tuple[tuple[str, str], ...] = (
+    ("linkedin", "copy_linkedin"),
+    ("blog", "copy_blog"),
+    ("x", "copy_x"),
+    ("newsletter", "copy_newsletter"),
+)
+
+_CHANNEL_DECLARATION_KEYS = ("canal", "canal_publicado", "target_channels", "channels")
+
+
+def _declared_channels(payload: dict[str, Any]) -> set[str]:
+    """Canales que el payload dice tener como destino, mirando las claves que
+    usan las distintas superficies (`canal` en Notion, `target_channels` en el
+    gold-set)."""
+    declared: set[str] = set()
+    for key in _CHANNEL_DECLARATION_KEYS:
+        value = payload.get(key)
+        if isinstance(value, str):
+            declared.add(value.strip().lower())
+        elif isinstance(value, (list, tuple, set)):
+            declared.update(str(v).strip().lower() for v in value)
+    return declared
+
+
 def validate_publication_payload(payload: dict[str, Any]) -> ValidationResult:
     merged = ValidationResult(ok=True)
     tesis = payload.get("tesis_canonica", "")
     cierre = payload.get("cierre_canonico", "")
+    declared = _declared_channels(payload)
 
-    for channel, key in (
-        ("linkedin", "copy_linkedin"),
-        ("blog", "copy_blog"),
-        ("x", "copy_x"),
-    ):
+    for channel, key in _PIECE_CHANNELS:
         copy = payload.get(key, "")
         if not copy:
+            # `newsletter` se habilitó después de los payloads existentes
+            # (CAND-001 no lo trae): falta = warning, salvo que el propio
+            # payload declare ese canal como destino, y entonces es error.
+            if channel == "newsletter" and channel not in declared:
+                merged.warnings.append(
+                    f"newsletter: missing {key} (canal habilitado 2026-08-13, "
+                    "opcional mientras el payload no lo declare como destino)"
+                )
+                continue
             merged.ok = False
             merged.errors.append(f"missing {key}")
             continue
@@ -138,16 +189,17 @@ def validate_publication_payload(payload: dict[str, Any]) -> ValidationResult:
     if tesis and "gobernanza" not in blog.lower() and "desorden" not in blog.lower():
         merged.warnings.append("blog: verificar tesis canónica explícita")
 
-    for copy in (payload.get("copy_linkedin", ""), payload.get("copy_blog", ""), payload.get("copy_x", "")):
+    # Un solo recorrido de las piezas presentes para los dos chequeos que
+    # siguen: antes eran dos tuplas fijas más, y cada canal nuevo obligaba a
+    # acordarse de las tres.
+    present = [(label, payload.get(key, "")) for label, key in _PIECE_CHANNELS if payload.get(key)]
+
+    for _label, copy in present:
         if re.search(r"\d{2,}%|\d{4}|\bISO\b|\bestudio\b", copy, re.I):
             merged.warnings.append("posible dato/estudio no verificado en pieza de opinión")
 
     if cierre:
-        for label, copy in (
-            ("linkedin", payload.get("copy_linkedin", "")),
-            ("blog", payload.get("copy_blog", "")),
-            ("x", payload.get("copy_x", "")),
-        ):
+        for label, copy in present:
             if cierre not in copy:
                 merged.warnings.append(f"{label}: cierre canónico no encontrado literal")
 

@@ -32,7 +32,7 @@ VALID_INPUT_TYPES = frozenset({
     "cta_variant",
 })
 
-VALID_CHANNELS = frozenset({"linkedin", "blog", "x"})
+VALID_CHANNELS = frozenset({"linkedin", "blog", "x", "newsletter"})
 
 VALID_AUDIENCE_STAGES = frozenset({
     "awareness",

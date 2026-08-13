@@ -111,6 +111,11 @@ Total: 1.00
   `conversion` and `retention` cases will come when the CTA funnel is more
   mature.  Nothing fails while they are missing — the coverage shows up in
   the CLI summary as `Audience stages`.
+- **Same for channels.** `target_channels` accepts four values — `blog`,
+  `linkedin`, `x` and `newsletter` (added 2026-08-13, mirroring the `Canal`
+  select of the Publicaciones DB; the earlier "newsletter is v2" scope call
+  was lifted).  No case targets `newsletter` yet, so the `Channels` line of
+  the CLI summary still lists three.
 - **All cases require human gate.** In initial phases, no content
   publishes without human approval.
 - **Dimensions are weighted, not equal.** Strategic fit and audience

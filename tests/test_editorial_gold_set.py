@@ -297,25 +297,31 @@ class TestEnumsMatchSchema:
             f"solo en el JSON: {sorted(set(node) - frozen)}."
         )
 
-    def test_audience_stages_match_notion_schema(self):
-        """La tercera punta del triangulo: el select `Etapa audiencia` de la DB
-        Publicaciones. Es la que origino el desfase de `retention` — vivia en la
-        base y faltaba en las otras dos — y hasta ahora ningun test la cruzaba.
-        Se lee el YAML versionado del repo, no la base viva.
+    @pytest.mark.parametrize("frozen, notion_property", [
+        (VALID_AUDIENCE_STAGES, "Etapa audiencia"),
+        (VALID_CHANNELS, "Canal"),
+    ], ids=["audience_stage", "channels"])
+    def test_frozenset_matches_notion_select(self, frozen, notion_property):
+        """La tercera punta del triangulo: los selects de la DB Publicaciones.
+        Es el lado que origino los dos desfases de esta cadena — `retention` y
+        `newsletter` vivian en la base y faltaban en el gold-set — y el que
+        ningun test cruzaba. Se lee el YAML versionado del repo, no la base viva.
         """
         notion_schema = load_yaml_file(_NOTION_SCHEMA_PATH)
         options = {
             option["name"]
             for prop in notion_schema["properties"]
-            if prop["name"] == "Etapa audiencia"
+            if prop["name"] == notion_property
             for option in prop["options"]
         }
-        assert options, "no se encontro la propiedad 'Etapa audiencia' en el schema de Notion"
-        assert VALID_AUDIENCE_STAGES == options, (
-            "VALID_AUDIENCE_STAGES y el select 'Etapa audiencia' de "
+        assert options, (
+            f"no se encontro la propiedad '{notion_property}' (o no tiene options) "
+            f"en {_NOTION_SCHEMA_PATH.name}"
+        )
+        assert frozen == options, (
+            f"el gold-set y el select '{notion_property}' de "
             f"{_NOTION_SCHEMA_PATH.name} divergen. Solo en el gold-set: "
-            f"{sorted(VALID_AUDIENCE_STAGES - options)}; solo en Notion: "
-            f"{sorted(options - VALID_AUDIENCE_STAGES)}."
+            f"{sorted(frozen - options)}; solo en Notion: {sorted(options - frozen)}."
         )
 
 

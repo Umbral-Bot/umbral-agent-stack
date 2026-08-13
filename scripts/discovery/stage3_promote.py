@@ -336,8 +336,16 @@ def _iso(dt: datetime) -> str:
 
 def run(args: argparse.Namespace, *, clock: Callable[[], datetime] = _now_utc) -> int:
     """Ejecuta stage 3. ``clock`` permite corridas deterministas (tests,
-    reprocesos con fecha fija); por defecto usa el reloj real UTC."""
-    started = clock()
+    reprocesos con fecha fija); por defecto usa el reloj real UTC.
+
+    Lo que devuelva ``clock`` se normaliza a UTC: ``classify`` resta contra
+    fechas aware y ``_iso`` estampa una 'Z' literal, así que un reloj naive
+    reventaría y uno en otro huso grabaría timestamps mal etiquetados.
+    """
+    def tick() -> datetime:
+        return _to_utc(clock())
+
+    started = tick()
     conn = open_sqlite(args.sqlite)
     try:
         assert_schema(conn)
@@ -353,12 +361,12 @@ def run(args: argparse.Namespace, *, clock: Callable[[], datetime] = _now_utc) -
         mode = "commit" if args.commit else "dry-run"
         promoted_count = 0
         if args.commit and selected:
-            now_iso = _iso(clock())
+            now_iso = _iso(tick())
             promoted_count = mark_promoted(
                 conn, (c.item.url_canonica for c in selected), now_iso
             )
 
-        finished = clock()
+        finished = tick()
         report = build_report(
             classifications=classifications,
             selected=selected,

@@ -241,11 +241,15 @@ class TestRun:
         assert report["summary"]["promoted_this_run"] == 3
 
         conn = sqlite3.connect(db)
-        n = conn.execute(
-            "SELECT COUNT(*) FROM discovered_items WHERE promovido_a_candidato_at IS NOT NULL"
-        ).fetchone()[0]
+        stamps = [r[0] for r in conn.execute(
+            "SELECT promovido_a_candidato_at FROM discovered_items "
+            "WHERE promovido_a_candidato_at IS NOT NULL"
+        )]
         conn.close()
-        assert n == 3
+        assert len(stamps) == 3
+        # El timestamp grabado sale del clock inyectado, no del reloj real:
+        # sin esto, revertir esa línea a _now_utc() pasaría inadvertido.
+        assert set(stamps) == {NOW.strftime("%Y-%m-%dT%H:%M:%SZ")}
 
     def test_idempotent_commit(self, tmp_path: Path):
         db = _make_db(tmp_path)
@@ -264,21 +268,36 @@ class TestRun:
         assert r2["summary"]["promoted_this_run"] == 0
 
     def test_default_clock_is_real_time(self, tmp_path: Path):
-        # Cubre el default de producción (sin clock=). Fechas relativas al reloj
-        # real a propósito: este test no puede vencer por calendario.
+        # Cubre el default de producción (sin clock=) por el camino commit, que
+        # es el único que graba un timestamp. Fechas relativas al reloj real a
+        # propósito: este test no puede vencer por calendario.
         db = _make_db(tmp_path)
         recent = datetime.now(timezone.utc) - timedelta(days=1)
         _insert(db, url_canonica="https://a.com/recent",
                 publicado_en=recent.strftime("%Y-%m-%dT%H:%M:%SZ"))
-        out = tmp_path / "report-default-clock.json"
+        out = tmp_path / "default-clock.json"
+        before = datetime.now(timezone.utc)
         rc = s3.main([
             "--sqlite", str(db),
             "--max-age-days", "90",
             "--output", str(out),
+            "--commit",
         ])
+        after = datetime.now(timezone.utc)
         assert rc == 0
         report = json.loads(out.read_text())
         assert report["summary"]["eligible"] == 1
+        assert report["summary"]["promoted_this_run"] == 1
+
+        conn = sqlite3.connect(db)
+        stamp = conn.execute(
+            "SELECT promovido_a_candidato_at FROM discovered_items"
+        ).fetchone()[0]
+        conn.close()
+        # Sin inyección, el timestamp es real: aware, UTC y dentro de la corrida.
+        written = datetime.strptime(stamp, "%Y-%m-%dT%H:%M:%SZ").replace(
+            tzinfo=timezone.utc)
+        assert before.replace(microsecond=0) <= written <= after
 
     def test_consistency_eligible_plus_discarded_equals_pending(self, tmp_path: Path):
         db = _make_db(tmp_path)

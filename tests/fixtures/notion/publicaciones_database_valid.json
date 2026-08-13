@@ -1,4 +1,5 @@
 {
+  "_comment": "Snapshot esperado de la DB Publicaciones. Debe declarar TODAS las propiedades de notion/schemas/publicaciones.schema.yaml: si el schema sube de version y esto no se refresca, el auditor pasa a WARN (missing_property) y test_notion_readonly_audit se cae en cadena. Refrescar leyendo la base viva (MCP Notion / infra.notion_readonly_audit.fetch_database_metadata_readonly) y copiando nombre, type y options de cada propiedad; los ids son placeholders locales.",
   "object": "database",
   "id": "fixture-publicaciones-valid",
   "title": [{"type": "text", "text": {"content": "Publicaciones"}}],

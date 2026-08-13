@@ -83,7 +83,7 @@ class TestPlanStructure:
         assert plan["database"]["name"] == "Publicaciones"
 
     def test_database_version(self, plan: dict) -> None:
-        assert plan["database"]["version"] == "0.2.0"
+        assert plan["database"]["version"] == "0.3.0"
 
     def test_dry_run_flag(self, plan: dict) -> None:
         assert plan["dry_run"] is True

@@ -131,7 +131,7 @@ This Hilo created **no** Notion properties, **no** select options,
 | Create `idempotency_key` if missing | not needed — already exists as text | **dropped** |
 | Align YAML schema with the 17 live extras | YAML spec drifted vs live; YAML edit only, no Notion change | **deferred** to a future read-only PR |
 | Convert `Proyecto` text → relation | requires canonical projects DB | deferred (already noted in YAML spec) |
-| Document `retention` option on `Etapa audiencia` in YAML | YAML edit only | deferred |
+| Document `retention` option on `Etapa audiencia` in YAML | YAML edit only | **hecho** 2026-08-13 — schema 0.3.0 (PKG-MACRO-P5-L1-T3) |
 
 ## Audit hygiene
 

@@ -312,7 +312,7 @@ class TestEnumsMatchSchema:
             option["name"]
             for prop in notion_schema["properties"]
             if prop["name"] == notion_property
-            for option in prop["options"]
+            for option in prop.get("options", [])
         }
         assert options, (
             f"no se encontro la propiedad '{notion_property}' (o no tiene options) "

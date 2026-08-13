@@ -172,7 +172,10 @@ Tabla de mapping (De valores humanos o antiguos → Valores del código):
 - ✅ `status`: máquina de estado fija. No acepta valores custom.
 - ✅ `slug`: regex obligatorio `^[a-z0-9]+(?:-[a-z0-9]+)*$`. No acepta spaces, tildes ni mayúsculas.
 - ✅ `audience_stage`: validador en código rechaza valores fuera de set fijo. **NO FLEXIBLE**.
-- ✅ `primary_channel`: solo `blog`, `linkedin`, `x` en v1. `newsletter` preparado para v2.
+- ✅ `primary_channel`: los 4 del select `Canal` (`blog`, `linkedin`, `x`, `newsletter`).
+  El «solo 3 en v1 / `newsletter` para v2» rigió hasta el 2026-08-13, cuando el GO de
+  David lo levantó y `VALID_CHANNELS` sumó `newsletter` — ver la fila de §3 y la nota de
+  cierre al principio.
 - ✅ `cta_strength`: solo 4 valores (`none|soft|medium|strong`).
 - ✅ `cta_type`: 8 valores predefinidos. Sin personalizaciones.
 - ✅ `evidence_density`: 3 valores (`low|med|high`). Binning fijo.

@@ -143,3 +143,32 @@ def test_copy_newsletter_presente_se_valida_como_los_demas():
     result = validate_publication_payload(payload)
     assert not result.ok
     assert any(e.startswith("newsletter: fail_automatico") for e in result.errors), result.errors
+
+
+def test_canal_se_normaliza_como_lo_hace_el_payload():
+    # Los canales llegan de selects de Notion y de YAML a mano; el lookup y
+    # _declared_channels tienen que tratar el mismo dato igual.
+    for channel in ("Newsletter", " newsletter ", "NEWSLETTER"):
+        result = validate_copy_text(f"Cuerpo. {_CIERRE}", channel=channel)
+        assert result.ok, (channel, result.errors)
+
+
+def test_canal_declarado_en_shape_notion_tambien_exige_copy():
+    # Sin coerción del {"select": {"name": ...}} el gate falla abierto: no ve el
+    # canal declarado y degrada el error a warning.
+    payload = _cand001_payload()
+    payload["canal"] = {"select": {"name": "newsletter"}}
+    result = validate_publication_payload(payload)
+    assert not result.ok
+    assert "missing copy_newsletter" in result.errors
+
+
+def test_build_properties_mapea_copy_newsletter():
+    from scripts.editorial.apply_publication_copy import build_properties
+
+    payload = _cand001_payload()
+    assert "Copy Newsletter" not in build_properties(payload)
+
+    payload["copy_newsletter"] = f"Cuerpo de la newsletter. {_CIERRE}"
+    props = build_properties(payload)
+    assert "Copy Newsletter" in props, sorted(props)

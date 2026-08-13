@@ -60,12 +60,18 @@ def validate_copy_text(
     channel_cfg = _load_yaml(_CHANNEL_PATH)
     blocks = _channel_blocks(channel_cfg)
 
+    # Los canales llegan de selects de Notion y de payloads escritos a mano, así
+    # que se normalizan igual que en `_declared_channels`; el mensaje conserva el
+    # valor original para que se vea qué se pasó.
+    raw_channel = channel
+    channel = channel.strip().lower() if isinstance(channel, str) else channel
+
     # Un canal sin criterios no se puede validar contra su canal: antes caía
     # fuera de todos los `if` y devolvía OK, que es peor que fallar.
     if channel not in blocks:
         result.ok = False
         result.errors.append(
-            f"canal sin criterios en channel-criteria-v1.yaml: {channel!r} "
+            f"canal sin criterios en channel-criteria-v1.yaml: {raw_channel!r} "
             f"(declarados: {sorted(blocks)})"
         )
 
@@ -127,18 +133,35 @@ _PIECE_CHANNELS: tuple[tuple[str, str], ...] = (
 _CHANNEL_DECLARATION_KEYS = ("canal", "canal_publicado", "target_channels", "channels")
 
 
+def _coerce_channel_names(value: Any) -> list[str]:
+    """Nombres de canal desde cualquiera de los shapes en que llegan: string
+    plano, lista, o el `{"select": {"name": ...}}` / `{"name": ...}` crudo de
+    Notion. Sin esto el gate falla abierto justo con props de Notion."""
+    if value is None:
+        return []
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, dict):
+        if "select" in value:
+            return _coerce_channel_names(value["select"])
+        if "name" in value:
+            return _coerce_channel_names(value["name"])
+        if "multi_select" in value:
+            return _coerce_channel_names(value["multi_select"])
+        return []
+    if isinstance(value, (list, tuple, set)):
+        return [name for item in value for name in _coerce_channel_names(item)]
+    return [str(value)]
+
+
 def _declared_channels(payload: dict[str, Any]) -> set[str]:
     """Canales que el payload dice tener como destino, mirando las claves que
     usan las distintas superficies (`canal` en Notion, `target_channels` en el
     gold-set)."""
     declared: set[str] = set()
     for key in _CHANNEL_DECLARATION_KEYS:
-        value = payload.get(key)
-        if isinstance(value, str):
-            declared.add(value.strip().lower())
-        elif isinstance(value, (list, tuple, set)):
-            declared.update(str(v).strip().lower() for v in value)
-    return declared
+        declared.update(n.strip().lower() for n in _coerce_channel_names(payload.get(key)))
+    return declared - {""}
 
 
 def validate_publication_payload(payload: dict[str, Any]) -> ValidationResult:

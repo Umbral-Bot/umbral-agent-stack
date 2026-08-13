@@ -250,6 +250,12 @@ def build_properties(payload: dict, *, skip_oversized_copy_blog: bool = False) -
         props["Copy LinkedIn empresa"] = {
             "rich_text": _chunks(payload["copy_linkedin_empresa"].strip(), guard_property_limit=True)
         }
+    # Sin esto, un payload que pasa el gate de newsletter perdía el copy en
+    # silencio: el validador lo exige y aquí no se escribía a ninguna columna.
+    if payload.get("copy_newsletter"):
+        props["Copy Newsletter"] = {
+            "rich_text": _chunks(payload["copy_newsletter"].strip(), guard_property_limit=True)
+        }
     if payload.get("trace_id"):
         props["trace_id"] = {"rich_text": _chunks(payload["trace_id"])}
     if payload.get("comentarios_revision"):

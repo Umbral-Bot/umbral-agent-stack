@@ -151,3 +151,98 @@ se tocó el env del worker, ni el unit, ni el gateway. Verificado al cierre:
 `UMBRAL_DISABLE_CLAUDE` sigue en `true`, `OPENCLAW_GATEWAY_TOKEN` sigue ausente
 y el worker sigue con el mismo `ActiveEnterTimestamp` del 2026-07-25 (no hubo
 restart). Evidencia en `~/.coord-ag-evidence/pkg-macro-p5-l2-t2/`.
+
+---
+
+## 7. Re-auth del gateway OpenAI (PKG-MACRO-P5-L2-T3, 2026-08-13)
+
+**Autorización citada de David:** "A — re-auth del gateway openai. Elegida
+2026-08-13 post-T2. Este pack es SOLO capa 3." Prohibido explícito: cablear
+`openclaw_proxy`, tocar `UMBRAL_DISABLE_CLAUDE`, cargar `OPENCLAW_GATEWAY_TOKEN`
+en el worker, restart de `umbral-worker`. Nada de eso se tocó.
+
+### 7.1 Diagnóstico pre-reauth
+
+`journalctl --user -u openclaw-gateway --since "30 min ago"` mostró la misma
+firma que §6, sin remediar: `auth_permanent` + `refresh_token_invalidated` a
+las 16:23:07-08 -04, repetida para `openai/gpt-5.6-sol`, `openai/gpt-5.5` y
+`openai/gpt-5.4` (los tres candidatos de fallback agotados).
+
+Identidades `openai` antes del re-auth (agent `main`, cero tokens):
+
+| # | Perfil | Expira (declarado) | Estado |
+|---|---|---|---|
+| 1 | `openai:david.a.moreira.m@gmail.com` | 2026-08-23T04:06:31.919Z | "vivo" según estado local — **falso**, ver regla dura 2 |
+| 2 | `openai:umbral-rick` | 2026-08-12T18:23:38.683Z | expirado + disabled — zombi |
+
+### 7.2 Re-auth headless (device-code, sin `--force`)
+
+`script -qfc "openclaw models auth login --provider openai --device-code" /dev/null`.
+Primer código expiró antes de que David pudiera completarlo en el browser (el
+poller se cerró solo, sin quedar huérfano); segundo intento confirmado por
+David. El login **refrescó el perfil existente** `openai:david.a.moreira.m@gmail.com`
+en vez de crear un tercero — mismo nombre de cuenta OAuth, así que no hizo
+falta `--force`. CLI: `Updated config: ~/.openclaw/openclaw.json` con backup
+automático propio (`.bak`), no una edición manual del archivo.
+
+Identidades después del re-auth:
+
+| # | Perfil | Expira (declarado) | Rol |
+|---|---|---|---|
+| 1 | `openai:david.a.moreira.m@gmail.com` | 2026-08-23T21:09:06.062Z (refrescado) | activa |
+| 2 | `openai:umbral-rick` | 2026-08-12T18:23:38.683Z | zombi — **no borrada**, según instrucción |
+
+`openclaw models auth order set --provider openai --agent main
+openai:david.a.moreira.m@gmail.com openai:umbral-rick` — override confirmado:
+nueva primero, zombi segunda.
+
+### 7.3 Sonda real post-login (oráculo = journal, no `models status`)
+
+Nota de método: la misión pedía el token del gateway "leído del env vivo". No
+existe ninguna variable `OPENCLAW_GATEWAY_TOKEN` — ni en `~/.config/openclaw/env`,
+ni en `~/.openclaw/gateway.systemd.env`, ni en el `environ` real del proceso
+gateway. El único campo que gobierna el Bearer de `/v1/chat/completions` es
+`gateway.auth.token` en `~/.openclaw/openclaw.json` (config live). Se leyó en
+runtime a una variable de shell, se usó una vez, se hizo `unset` de inmediato;
+nunca se imprimió ni se logueó.
+
+- Intento 1, `model=openai/gpt-5.6-sol` → `HTTP 400` (`Invalid model. Use
+  openclaw or openclaw/<agentId>`) — el Bearer **sí fue aceptado** (no 401):
+  el gateway hace su propio ruteo de modelo internamente.
+- Intento 2, `model=openclaw/main` → `HTTP 200`, completion real
+  (`finish_reason=stop`, respuesta "pong", `usage.total_tokens=27557`).
+- Journal, ventana exacta 17:13:35–17:14:20 -04: **0 coincidencias** de
+  `auth_permanent`, `refresh_token_invalidated` o `401`. Sanity extendida desde
+  17:07 (momento del re-auth): igual, 0 coincidencias, contra las múltiples de
+  16:23:07-08 pre-reauth.
+
+**PASS.** La completion no cayó por `refresh_token_invalidated` y el journal de
+esa ventana no registra `auth_permanent`.
+
+### 7.4 Estado de las tres capas (actualiza §6)
+
+| # | Capa | Estado |
+|---|---|---|
+| 1 | Credenciales de provider ausentes en el worker (§2.1) | abierta — fuera de alcance de este pack |
+| 2 | `UMBRAL_DISABLE_CLAUDE=true` apaga `claude_*` + `openclaw_proxy` (§2.2) | abierta — fuera de alcance de este pack |
+| 3 | Login OpenAI del gateway invalidado | **cerrada** — re-auth confirmado con sonda real |
+
+**`P5_L2_GATEWAY_AUTH = Y`**. Capas 1 y 2 siguen bloqueando la vía A del
+worker; recién con las tres cerradas tiene sentido cablear `openclaw_proxy`.
+
+### 7.5 Gap detectado (Repo dice / VPS muestra)
+
+`CLAUDE.md` y este mismo pack citan
+`.claude/skills/openclaw-vps-operator/SKILL.md` y su
+`references/reference-auth.md` como fuente de la regla dura 2 y del
+procedimiento de re-auth (incl. el fallback fifo §3 para cuando el prompt no
+drena por `script -qfc`). Ninguno de los dos existe hoy en el repo ni en
+`~/.claude/skills` — quedaron fuera en la higiene del 2026-08-11
+(`docs/operations/_archive-hygiene-vps-2026-08-11/`). Este pack se ejecutó con
+las instrucciones explícitas del PKG y la regla dura 2 ya confirmada por la
+evidencia de T2; no bloqueó, pero el gap queda pendiente de reparar.
+
+**Cero mutación fuera de capa 3:** `UMBRAL_DISABLE_CLAUDE` sigue en `true`,
+`OPENCLAW_GATEWAY_TOKEN` sigue sin cargarse en el worker, no hubo restart de
+`umbral-worker`/`openclaw-dispatcher`/n8n, la identidad zombi `umbral-rick`
+sigue presente. Evidencia en `~/.coord-ag-evidence/pkg-macro-p5-l2-t3/`.

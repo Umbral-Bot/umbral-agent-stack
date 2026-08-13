@@ -94,14 +94,17 @@ dimensions:
     weight: 0.08
     description: >
       El contenido respeta las reglas del canal destino (LinkedIn:
-      hook+tesis+CTA; blog: estructura larga con H2s; X: conciso).
+      hook+tesis+CTA; blog: estructura larga con H2s; X: conciso;
+      newsletter: email-first con CTA final).
     good: >
       LinkedIn: hook en 2 líneas, tesis única, CTA de uno de los 5 tipos
       permitidos.  Blog: estructura H2, intro contextual, CTA al final.
-      X: conciso, sin perder rigor.
+      X: conciso, sin perder rigor.  Newsletter: asunto y preheader que
+      sostienen la tesis, cuerpo de 400-700 palabras, CTA al final.
     bad: >
       Copia directa del blog a LinkedIn.  Post largo sin estructura.
-      X con párrafos de blog.
+      X con párrafos de blog.  Newsletter que reusa el blog sin asunto
+      propio ni CTA.
 
   - id: cta_quality
     name: Calidad del CTA

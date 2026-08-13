@@ -192,6 +192,12 @@ DRY_RUN write_body blocks=19 marker='Copy Blog (V2 canonical body) — trace_id:
 VALIDATION_OK gates=unchanged (dry-run, no Notion call)
 ```
 
+> El stdout de arriba es el de la corrida del 2026-07-23 y se deja intacto. Desde
+> el 2026-08-13 (PKG-MACRO-P5-L1-T6) esta misma corrida emite **un `warn:` más**
+> — `newsletter: missing copy_newsletter` — porque `cand-001-final-copy.yaml` no
+> declara ese canal ni trae el copy. Sigue siendo `VALIDATION_OK`: el aviso es
+> informativo y solo pasa a error si el payload declara newsletter como destino.
+
 **Veredicto: PASS** — cero llamadas a Notion (confirmado por las líneas
 `DRY_RUN ... no Notion call`), ambas escape-hatches
 (`--write-body`/`--emit-worker-payload`, fix de P2.3) funcionan; el warning

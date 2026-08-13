@@ -29,7 +29,12 @@ linkedin_empresa:
   longitud_objetivo_chars: [250, 500]
   respiracion: párrafos breves para feed
   requiere_link_blog: true
-  nota: no consumido por código (P2.3); copy manual para el operador, distinto de `linkedin` (teaser de David)
+  requiere_cierre_canonico: false
+  nota: >-
+    No consumido por código (P2.3); copy manual para el operador, distinto de
+    `linkedin` (teaser de David). No lleva cierre canónico porque acompaña al
+    post de la empresa, no es una pieza propia: por eso es el único bloque que
+    desactiva `requiere_cierre_canonico`.
 
 blog:
   estructura: clara sin relleno
@@ -53,3 +58,36 @@ x:
     - una condición operativa
     - un cierre
   sin_adornos: true
+
+# Habilitado el 2026-08-13 (PKG-MACRO-P5-L1-T6). Nada de esto es nuevo: la voz
+# sale de `regla_voz_umbral` y la forma de `blog`; las cotas ya estaban
+# versionadas como NEWSLETTER_MIN_WORDS / MAX_WORDS / SUBJECT_MAX / PREHEADER_MAX
+# en scripts/discovery/lib/variants.py y como fila Newsletter en
+# docs/editorial-pipeline/stage6-multiplatform-spec.md. No se invento ninguna cifra.
+newsletter:
+  formato: email-first
+  estructura: clara sin relleno
+  parrafo: una idea nueva por párrafo
+  componentes:
+    - subject_line
+    - preheader
+    - cuerpo
+    - CTA final
+  longitud_objetivo_palabras: [400, 700]
+  subject_line_max_chars: 60
+  preheader_max_chars: 90
+  escenas_aec:
+    - modelo
+    - interferencias
+    - clash
+    - RFI
+    - entregable
+    - revisión
+    - trazabilidad
+    - versión del modelo
+    - aprobación humana
+  tono: opinión operativa, no paper ni consultoría
+  nota: >-
+    Las cotas de palabras y de subject/preheader las aplica hoy
+    `NewsletterVariant` (scripts/discovery/lib/variants.py); el validador de copy
+    todavía no las mide, solo declara el contrato del canal.

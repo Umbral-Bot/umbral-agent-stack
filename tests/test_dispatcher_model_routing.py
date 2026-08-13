@@ -67,13 +67,9 @@ def quota_tracker(redis_client, provider_config):
 @pytest.fixture(autouse=True)
 def provider_env(monkeypatch):
     # Ensure ModelRouter considers these providers configured during tests.
-    # Task 042: strip UMBRAL_DISABLE_CLAUDE leaked from ~/.config/openclaw/env
-    # via worker.config import-time hook (conftest pre-imports worker.config).
-    # PKG-MACRO-P5-L2-T5: same leak now applies to OPENCLAW_GATEWAY_TOKEN
-    # (wired in T4) — strip it too, or openclaw_proxy silently becomes an
-    # available fallback in the all-restricted/quota-exceeded tests below.
-    monkeypatch.delenv("UMBRAL_DISABLE_CLAUDE", raising=False)
-    monkeypatch.delenv("OPENCLAW_GATEWAY_TOKEN", raising=False)
+    # UMBRAL_DISABLE_CLAUDE / OPENCLAW_GATEWAY_TOKEN leak stripping is
+    # handled by the shared autouse fixture in tests/conftest.py
+    # (_strip_openclaw_proxy_env_leaks).
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
     monkeypatch.setenv("GOOGLE_API_KEY", "test")
     monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://example.test")

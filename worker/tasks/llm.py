@@ -73,6 +73,9 @@ MODEL_ALIASES = {
     "claude_pro":    "claude-sonnet-4-6",
     "claude_opus":   "claude-opus-4-6",
     "claude_haiku":  "claude-haiku-4-5",
+    # --- OpenClaw Gateway Proxy (OPENCLAW_GATEWAY_TOKEN — mismo alias que
+    # dispatcher/model_router.py's fallback_chain y PROVIDER_MODEL_MAP) ---
+    "openclaw_proxy": "claude-sonnet-4-6",
     # --- Google AI Studio (GOOGLE_API_KEY) ---
     "gemini_pro":       GEMINI_PRO_MODEL,
     "gemini_flash":     GEMINI_FLASH_MODEL,
@@ -100,7 +103,7 @@ def _default_model() -> str:
     (Gemini, requiere GOOGLE_API_KEY).
     """
     if not _claude_disabled() and os.environ.get("OPENCLAW_GATEWAY_TOKEN", "").strip():
-        return "claude-sonnet-4-6"
+        return MODEL_ALIASES["claude_pro"]
     return DEFAULT_MODEL
 
 

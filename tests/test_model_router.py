@@ -47,20 +47,14 @@ def quota_tracker(redis_client, provider_config):
 def _set_provider_env_vars(monkeypatch):
     """Simula que los providers principales están configurados.
 
-    Task 042: also strip UMBRAL_DISABLE_CLAUDE because worker.config loads
-    ~/.config/openclaw/env at import time, leaking the production VPS setting
-    (UMBRAL_DISABLE_CLAUDE=true) into the test process and breaking Claude
-    routing tests.
-
-    PKG-MACRO-P5-L2-T5: same leak now applies to OPENCLAW_GATEWAY_TOKEN (wired
-    in T4) — without stripping it, openclaw_proxy shows up as configured with
-    quota_state defaulting to 0.0 (not in any test's explicit quota_state dict),
-    which silently changes fallback selection in the auto-approve/quota-exceeded
-    tests below. Tests for openclaw_proxy routing set it back explicitly
-    (see TestOpenclawProxyRouting).
+    UMBRAL_DISABLE_CLAUDE / OPENCLAW_GATEWAY_TOKEN leak stripping is handled
+    by the shared autouse fixture in tests/conftest.py
+    (_strip_openclaw_proxy_env_leaks) — without it, openclaw_proxy would show
+    up as configured with quota_state defaulting to 0.0 (not in any test's
+    explicit quota_state dict), silently changing fallback selection in the
+    auto-approve/quota-exceeded tests below. Tests for openclaw_proxy routing
+    set the token back explicitly (see TestOpenclawProxyRouting).
     """
-    monkeypatch.delenv("UMBRAL_DISABLE_CLAUDE", raising=False)
-    monkeypatch.delenv("OPENCLAW_GATEWAY_TOKEN", raising=False)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
     monkeypatch.setenv("GOOGLE_API_KEY", "goog-test")
     monkeypatch.setenv("GOOGLE_API_KEY_RICK_UMBRAL", "goog-vertex-test")

@@ -50,6 +50,22 @@ def _reset_rate_limiter():
 
 
 @pytest.fixture(autouse=True)
+def _strip_openclaw_proxy_env_leaks(monkeypatch):
+    """PKG-MACRO-P5-L2-T5: worker.config._load_openclaw_env() (see module
+    docstring above, Task 040) also ingests UMBRAL_DISABLE_CLAUDE and, since
+    PKG-MACRO-P5-L2-T4, a real OPENCLAW_GATEWAY_TOKEN from
+    ~/.config/openclaw/env into every test process. That leaks the VPS's live
+    Claude-routing state into tests, silently flipping "Claude native" /
+    "no provider configured" assertions to resolve via openclaw_proxy instead.
+
+    Strip both by default here (centralizes what used to be duplicated across
+    5 test files); tests that need either present set it back explicitly via
+    monkeypatch.setenv in the test body."""
+    monkeypatch.delenv("UMBRAL_DISABLE_CLAUDE", raising=False)
+    monkeypatch.delenv("OPENCLAW_GATEWAY_TOKEN", raising=False)
+
+
+@pytest.fixture(autouse=True)
 def _sync_worker_token():
     """Keep worker.config.WORKER_TOKEN AND worker.app.WORKER_TOKEN pinned to
     the test value. worker.app does `from .config import WORKER_TOKEN`, which

@@ -246,6 +246,33 @@ class TestDetectProviderClaude:
         }):
             assert _detect_provider("gpt-5.2") == "azure_foundry"
 
+    def test_openclaw_proxy_alias_resolves_to_claude(self):
+        """PKG-MACRO-P5-L2-T5: MODEL_ALIASES["openclaw_proxy"] must exist —
+        config/quota_policy.yaml's fallback_chain and dispatcher's
+        ModelRouter/PROVIDER_MODEL_MAP can legitimately hand the worker a bare
+        "openclaw_proxy" as `selected_model` (the same alias pattern every
+        other provider key in MODEL_ALIASES supports); without an entry it
+        silently fell through _detect_provider's catch-all to "gemini"."""
+        from worker.tasks.llm import MODEL_ALIASES, _resolve_model_alias
+        assert "openclaw_proxy" in MODEL_ALIASES
+        assert _resolve_model_alias("openclaw_proxy") == "claude-sonnet-4-6"
+
+    @patch("worker.tasks.llm.trace_llm_call")
+    @patch("worker.tasks.llm.urllib.request.urlopen")
+    def test_selected_model_openclaw_proxy_routes_through_gateway(self, mock_urlopen, mock_trace):
+        """End-to-end: selected_model="openclaw_proxy" (no "model" key — the
+        Dispatcher's documented backward-compat shape) with ONLY
+        OPENCLAW_GATEWAY_TOKEN configured must reach the gateway, not raise
+        GOOGLE_API_KEY not configured."""
+        from worker.tasks.llm import handle_llm_generate
+        mock_urlopen.return_value = _mock_urlopen_ok("via gateway")
+        env = _env_without("ANTHROPIC_API_KEY", "GOOGLE_API_KEY")
+        env["OPENCLAW_GATEWAY_TOKEN"] = "tok"
+        with patch.dict(os.environ, env, clear=True):
+            result = handle_llm_generate({"prompt": "hola", "selected_model": "openclaw_proxy"})
+        assert result["provider"] == "openclaw_proxy"
+        assert result["text"] == "via gateway"
+
 
 # ---------------------------------------------------------------------------
 # handle_llm_generate integration — openclaw_proxy

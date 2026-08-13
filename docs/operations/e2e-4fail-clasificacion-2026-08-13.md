@@ -444,3 +444,76 @@ para decisión de David:
 
 Evidencia completa (incl. journal del crash, sin secretos) en
 `~/.coord-ag-evidence/pkg-macro-p5-l2-t5/`.
+
+### 9.4 `/code-review` (xhigh, 10 ángulos + verify + sweep) — hallazgo de seguridad más grave que el incidente
+
+Corrido sobre el diff de código de este pack (no sobre la acta). 22 candidatos
+generados, **0 refutados** — 20 CONFIRMED/PLAUSIBLE + 2 del sweep, reportados
+como 15 findings priorizados vía `ReportFindings`. Se aplicaron los fixes
+seguros y de bajo riesgo antes de abrir el PR; el resto queda documentado
+para decisión de David.
+
+**El hallazgo más importante no es de código — es de alcance.** `_default_model()`
+no solo afecta a `llm.generate`/`composite.research` (lo que este pack
+probó): también gobierna, sin cambio de código propio, dos rutas que
+**nunca pasan por el Dispatcher/ModelRouter** porque llaman `/run` directo:
+
+- `dispatcher/smart_reply.py::_do_llm_generate` — **respuestas y planes de
+  smart-reply de Notion Control Room que ve David.**
+- `scripts/daily_digest.py::generate_llm_summary` — el resumen del digest
+  diario.
+- `worker/tasks/composite.py` (`_generate_queries`,
+  `_generate_report_with_retry`) — ya cubierto en §9.1-9.3.
+
+Las tres rutas omiten `model`/`selected_model` (son las únicas en todo el
+repo que lo hacen, junto a un puñado de llamadas de test), así que con
+`OPENCLAW_GATEWAY_TOKEN` presente (ya está, desde T4) las tres **cambian de
+Gemini a Claude-vía-`openclaw_proxy` en producción, ahora mismo, sin que
+nadie lo haya pedido para ellas específicamente** — y heredan el mismo
+camino pesado y frágil (`openclaw/main`, turno de agente completo) que
+**ya tumbó el gateway compartido** en §9.2. Cero tracking de cuota en las
+tres (`QuotaTracker.record_usage` nunca se llama en este camino). Cero
+cobertura de test.
+
+Además: en `~/.openclaw/openclaw.json`, el agente `main` (el que
+`OPENCLAW_GATEWAY_AGENT` usa por default) tiene `model.primary =
+"openai/gpt-5.6-sol"` — **cero proveedores Anthropic configurados**. O sea
+que hoy, literalmente, `provider: "openclaw_proxy"` en la respuesta **no
+significa que Claude generó el texto** — lo generó GPT-5.6-sol, y
+`trace_llm_call`/`ops_log.llm_usage`/`/providers/status` lo registran como
+si fuera Claude, sin ningún chequeo.
+
+**Fixes aplicados (seguros, no cambian el alcance de `_default_model()`):**
+
+| Archivo | Fix |
+|---|---|
+| `worker/tasks/llm.py` | `MODEL_ALIASES["openclaw_proxy"]` agregado — sin esto, `selected_model="openclaw_proxy"` literal (mismo patrón de alias que `claude_pro`/`gemini_flash`) caía silenciosamente a Gemini vía el catch-all de `_detect_provider` y tiraba `GOOGLE_API_KEY not configured` |
+| `worker/tasks/llm.py` | `_default_model()` ahora lee `MODEL_ALIASES["claude_pro"]` en vez de un literal hardcodeado duplicado |
+| `tests/conftest.py` + 5 archivos | Fuga de `OPENCLAW_GATEWAY_TOKEN`/`UMBRAL_DISABLE_CLAUDE` (mismo patrón que "Task 042") centralizada en un fixture `autouse` compartido, en vez de duplicada 6 veces (2 sitios ya habían divergido dentro de este mismo diff) |
+| `tests/test_openclaw_proxy.py` | 2 tests nuevos cubriendo el fix de `MODEL_ALIASES` end-to-end |
+
+`pytest tests/` tras los fixes: **4790 passed** (2 más que en §9.1, por los
+tests nuevos), mismos 3 fallos pre-existentes de `test_pit_*` deseleccionados.
+
+**No corregidos en este pack (documentados, `ReportFindings` con
+`outcome=skipped`):** el alcance de `_default_model()` sobre
+`smart_reply.py`/`daily_digest.py`/`composite.py` (requiere una decisión de
+producto, no un fix mecánico); el mismatch `provider/model` cuando el
+agente del gateway corre un modelo distinto al pedido; el hijack silencioso
+de `claude_pro`/`opus`/`haiku` cuando `ANTHROPIC_API_KEY` también esté
+configurado (late, no activo hoy); duplicación de `PROVIDER_MODEL_MAP` en
+3 lugares; `DEFAULT_ROUTING` en Python sin `openclaw_proxy`; ineficiencias
+preexistentes de `QuotaTracker` (fuera de los archivos de este pack).
+
+**Recomendación urgente para David:** el riesgo de crash del gateway
+compartido (§9.2) ya no es solo "mi e2e run lo tumbó" — es un riesgo
+**activo y continuo** cada vez que alguien dispara un smart-reply, el
+digest diario, o `composite.research_report`, sin que este pack lo haya
+pedido para esos tres casos. Antes del próximo uso real de cualquiera de
+esas tres rutas, decidir entre: (a) revertir el alcance de
+`_default_model()` a solo los casos explícitamente autorizados (acotarlo
+por `task_type`/caller en vez de global), (b) agregar al gateway un agente
+liviano dedicado a completions (fuera de alcance de este pack, requiere
+`openclaw.json`), o (c) aceptar el riesgo conscientemente. Esta prohibido
+tocar `UMBRAL_DISABLE_CLAUDE`/`OPENCLAW_GATEWAY_TOKEN` en este pack, así
+que no se revirtió nada del env — la decisión queda pendiente.

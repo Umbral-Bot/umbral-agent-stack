@@ -33,24 +33,12 @@ def _headers_lower(req):
     return {k.lower(): v for k, v in req.header_items()}
 
 
-@pytest.fixture(autouse=True)
-def _strip_vps_env_leaks(monkeypatch):
-    """Task 042: worker.config._load_openclaw_env() runs at conftest import
-    time and ingests ~/.config/openclaw/env. On the VPS dev box this loads
-    UMBRAL_DISABLE_CLAUDE=true, which short-circuits every Claude routing
-    test in worker.tasks.llm._detect_provider before the assertion runs.
-
-    PKG-MACRO-P5-L2-T5: since ~/.config/openclaw/env now also carries a real
-    OPENCLAW_GATEWAY_TOKEN (wired in T4), the same leak makes _detect_provider
-    prefer openclaw_proxy over ANTHROPIC_API_KEY in every "Claude native" test.
-
-    Strip both by default; tests that explicitly need either set use
-    monkeypatch.setenv inside the test body (e.g.
-    test_detect_provider_claude_respects_disable_flag,
-    test_handle_llm_generate_defaults_to_openclaw_proxy_with_token).
-    """
-    monkeypatch.delenv("UMBRAL_DISABLE_CLAUDE", raising=False)
-    monkeypatch.delenv("OPENCLAW_GATEWAY_TOKEN", raising=False)
+# UMBRAL_DISABLE_CLAUDE / OPENCLAW_GATEWAY_TOKEN leak stripping is handled by
+# the shared autouse fixture in tests/conftest.py
+# (_strip_openclaw_proxy_env_leaks). Tests that need either set use
+# monkeypatch.setenv inside the test body (e.g.
+# test_detect_provider_claude_respects_disable_flag,
+# test_handle_llm_generate_defaults_to_openclaw_proxy_with_token).
 
 
 def test_handle_llm_generate_requires_prompt():

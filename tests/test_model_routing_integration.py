@@ -67,8 +67,13 @@ def _set_provider_env_vars(monkeypatch):
     ~/.config/openclaw/env at import time and the VPS env file has
     UMBRAL_DISABLE_CLAUDE=true, which leaks into tests and breaks Claude
     routing assertions.
+
+    PKG-MACRO-P5-L2-T5: same leak now applies to OPENCLAW_GATEWAY_TOKEN
+    (wired in T4) — strip it too, or openclaw_proxy silently becomes an
+    available fallback in the quota-exceeded/blocked tests below.
     """
     monkeypatch.delenv("UMBRAL_DISABLE_CLAUDE", raising=False)
+    monkeypatch.delenv("OPENCLAW_GATEWAY_TOKEN", raising=False)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
     monkeypatch.setenv("GOOGLE_API_KEY", "goog-test")
     monkeypatch.setenv("GOOGLE_API_KEY_RICK_UMBRAL", "goog-vertex-test")

@@ -90,6 +90,20 @@ def _claude_disabled() -> bool:
     return value in {"1", "true", "yes", "on"}
 
 
+def _default_model() -> str:
+    """
+    Modelo a usar cuando el input no trae `model` ni `selected_model`.
+
+    Si hay OPENCLAW_GATEWAY_TOKEN configurado y Claude no está deshabilitado,
+    preferimos Claude vía el gateway (_detect_provider resuelve openclaw_proxy).
+    Sin token (o con Claude deshabilitado), se mantiene el default histórico
+    (Gemini, requiere GOOGLE_API_KEY).
+    """
+    if not _claude_disabled() and os.environ.get("OPENCLAW_GATEWAY_TOKEN", "").strip():
+        return "claude-sonnet-4-6"
+    return DEFAULT_MODEL
+
+
 def handle_llm_generate(input_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Generate text using Gemini/OpenAI/Anthropic.
@@ -112,7 +126,7 @@ def handle_llm_generate(input_data: Dict[str, Any]) -> Dict[str, Any]:
     requested_model = str(
         input_data.get("model")
         or input_data.get("selected_model")
-        or DEFAULT_MODEL
+        or _default_model()
     ).strip()
     model = _resolve_model_alias(requested_model)
     provider = _detect_provider(model, requested_alias=requested_model)
@@ -699,6 +713,7 @@ def _call_openclaw_proxy(
     Variables de entorno:
         OPENCLAW_GATEWAY_TOKEN — Bearer token para auth del gateway (requerido)
         OPENCLAW_GATEWAY_URL   — URL base del gateway (default: http://localhost:18789)
+        OPENCLAW_GATEWAY_AGENT — agent id del gateway a invocar (default: main)
     """
     token = os.environ.get("OPENCLAW_GATEWAY_TOKEN", "").strip()
     if not token:
@@ -707,13 +722,21 @@ def _call_openclaw_proxy(
     base_url = os.environ.get("OPENCLAW_GATEWAY_URL", "http://localhost:18789").strip().rstrip("/")
     url = f"{base_url}/v1/chat/completions"
 
+    # El endpoint OpenAI-compatible del gateway hace su propio ruteo de modelo
+    # interno y solo acepta "openclaw" o "openclaw/<agentId>" como valor de
+    # `model` — rechaza con 400 cualquier otro string (verificado en vivo,
+    # PKG-MACRO-P5-L2-T3). El modelo solicitado (p.ej. claude-sonnet-4-6) se
+    # preserva igual en la respuesta devuelta por esta función.
+    agent_id = os.environ.get("OPENCLAW_GATEWAY_AGENT", "main").strip() or "main"
+    gateway_model = f"openclaw/{agent_id}"
+
     messages: list = []
     if system_prompt:
         messages.append({"role": "system", "content": system_prompt})
     messages.append({"role": "user", "content": prompt})
 
     payload = json.dumps({
-        "model": model,
+        "model": gateway_model,
         "messages": messages,
         "max_tokens": max_tokens,
         "temperature": temperature,

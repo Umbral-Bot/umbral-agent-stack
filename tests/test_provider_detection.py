@@ -101,7 +101,11 @@ class TestGetConfiguredProviders:
         """All providers detected when all env vars are set."""
         # Task 042: strip UMBRAL_DISABLE_CLAUDE leaked from ~/.config/openclaw/env
         # via worker.config import-time hook in conftest.
+        # PKG-MACRO-P5-L2-T5: same leak now applies to OPENCLAW_GATEWAY_TOKEN
+        # (wired in T4) — strip it, this test's "complete env" is intentionally
+        # openclaw_proxy-less (Anthropic native + Azure + Gemini only).
         monkeypatch.delenv("UMBRAL_DISABLE_CLAUDE", raising=False)
+        monkeypatch.delenv("OPENCLAW_GATEWAY_TOKEN", raising=False)
         monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
         monkeypatch.setenv("GOOGLE_API_KEY", "goog-test")
         monkeypatch.setenv("GOOGLE_API_KEY_RICK_UMBRAL", "goog-vertex")
@@ -188,6 +192,10 @@ class TestModelRouterProviderSkipping:
         monkeypatch.delenv("AZURE_OPENAI_API_KEY", raising=False)
         monkeypatch.delenv("GOOGLE_API_KEY_RICK_UMBRAL", raising=False)
         monkeypatch.delenv("GOOGLE_CLOUD_PROJECT_RICK_UMBRAL", raising=False)
+        # PKG-MACRO-P5-L2-T5: openclaw_proxy is now in every fallback_chain
+        # (config/quota_policy.yaml) — for this "truly no provider configured"
+        # case, OPENCLAW_GATEWAY_TOKEN must be absent too.
+        monkeypatch.delenv("OPENCLAW_GATEWAY_TOKEN", raising=False)
 
         router = ModelRouter(quota_tracker)
         decision = router.select_model("coding")

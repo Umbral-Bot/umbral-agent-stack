@@ -57,6 +57,13 @@ providers:
     warn: 0.85
     restrict: 0.95
 
+  # --- OpenClaw Gateway Proxy (Claude vía gateway local, OPENCLAW_GATEWAY_TOKEN) ---
+  openclaw_proxy:
+    limit_requests: 200
+    window_seconds: 18000   # 5h
+    warn: 0.80
+    restrict: 0.90
+
   # --- Google Gemini Pro (AI Studio, customtools — mejor Gemini) ---
   gemini_pro:
     limit_requests: 500
@@ -88,22 +95,22 @@ providers:
 routing:
   coding:
     preferred: azure_foundry
-    fallback_chain: [claude_pro, gemini_pro, gemini_flash]
+    fallback_chain: [claude_pro, gemini_pro, gemini_flash, openclaw_proxy]
   general:
     preferred: azure_foundry
-    fallback_chain: [claude_pro, gemini_pro, gemini_flash]
+    fallback_chain: [claude_pro, gemini_pro, gemini_flash, openclaw_proxy]
   ms_stack:
     preferred: azure_foundry
-    fallback_chain: [claude_pro, gemini_pro]
+    fallback_chain: [claude_pro, gemini_pro, openclaw_proxy]
   writing:
     preferred: claude_pro
-    fallback_chain: [azure_foundry, gemini_pro]
+    fallback_chain: [azure_foundry, gemini_pro, openclaw_proxy]
   research:
     preferred: gemini_pro
-    fallback_chain: [azure_foundry, gemini_vertex, claude_pro, gemini_flash]
+    fallback_chain: [azure_foundry, gemini_vertex, claude_pro, gemini_flash, openclaw_proxy]
   critical:
     preferred: claude_opus
-    fallback_chain: [azure_foundry, claude_pro, gemini_pro]
+    fallback_chain: [azure_foundry, claude_pro, gemini_pro, openclaw_proxy]
   light:
     preferred: gemini_flash
-    fallback_chain: [gemini_flash_lite, azure_foundry, claude_haiku]
+    fallback_chain: [gemini_flash_lite, azure_foundry, claude_haiku, openclaw_proxy]

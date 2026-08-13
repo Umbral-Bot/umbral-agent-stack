@@ -40,11 +40,17 @@ def _strip_vps_env_leaks(monkeypatch):
     UMBRAL_DISABLE_CLAUDE=true, which short-circuits every Claude routing
     test in worker.tasks.llm._detect_provider before the assertion runs.
 
-    Strip the var by default; tests that explicitly need it set use
-    monkeypatch.setenv inside the test body
-    (e.g. test_detect_provider_claude_respects_disable_flag).
+    PKG-MACRO-P5-L2-T5: since ~/.config/openclaw/env now also carries a real
+    OPENCLAW_GATEWAY_TOKEN (wired in T4), the same leak makes _detect_provider
+    prefer openclaw_proxy over ANTHROPIC_API_KEY in every "Claude native" test.
+
+    Strip both by default; tests that explicitly need either set use
+    monkeypatch.setenv inside the test body (e.g.
+    test_detect_provider_claude_respects_disable_flag,
+    test_handle_llm_generate_defaults_to_openclaw_proxy_with_token).
     """
     monkeypatch.delenv("UMBRAL_DISABLE_CLAUDE", raising=False)
+    monkeypatch.delenv("OPENCLAW_GATEWAY_TOKEN", raising=False)
 
 
 def test_handle_llm_generate_requires_prompt():
@@ -53,10 +59,47 @@ def test_handle_llm_generate_requires_prompt():
 
 
 def test_handle_llm_generate_requires_google_key(monkeypatch):
+    """Sin OPENCLAW_GATEWAY_TOKEN, el default histórico (Gemini) sigue aplicando."""
     monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("OPENCLAW_GATEWAY_TOKEN", raising=False)
 
     with pytest.raises(RuntimeError, match="GOOGLE_API_KEY not configured"):
         handle_llm_generate({"prompt": "Resume tendencias de mercado BIM"})
+
+
+def test_handle_llm_generate_defaults_to_openclaw_proxy_with_token(monkeypatch):
+    """PKG-MACRO-P5-L2-T5: sin model/selected_model, con OPENCLAW_GATEWAY_TOKEN
+    presente y Claude no deshabilitado, el default cae en Claude vía openclaw_proxy.
+    No pega al gateway real: se mockea urllib.request.urlopen (PROVIDERS ata la
+    función _call_openclaw_proxy por referencia directa, así que un patch sobre
+    el nombre del módulo no la intercepta — hay que mockear un nivel más abajo,
+    igual que el resto de los tests de este archivo)."""
+    monkeypatch.setenv("OPENCLAW_GATEWAY_TOKEN", "gw-test-token")
+
+    fake_payload = {
+        "choices": [{"message": {"content": "OK via proxy"}}],
+        "usage": {"prompt_tokens": 5, "completion_tokens": 3, "total_tokens": 8},
+    }
+    with patch(
+        "worker.tasks.llm.urllib.request.urlopen",
+        return_value=_DummyResponse(fake_payload),
+    ) as mock_urlopen:
+        result = handle_llm_generate({"prompt": "hola"})
+
+    assert result["provider"] == "openclaw_proxy"
+    assert result["model"] == "claude-sonnet-4-6"
+    assert result["text"] == "OK via proxy"
+    assert result["usage"]["total_tokens"] == 8
+
+    req = mock_urlopen.call_args.args[0]
+    assert req.full_url == "http://localhost:18789/v1/chat/completions"
+    headers = _headers_lower(req)
+    assert headers["authorization"] == "Bearer gw-test-token"
+    body = json.loads(req.data.decode("utf-8"))
+    # El gateway solo acepta "openclaw"/"openclaw/<agentId>" como model —
+    # NUNCA el nombre real del modelo Anthropic (ver _call_openclaw_proxy).
+    assert body["model"] == "openclaw/main"
+    assert body["messages"][0] == {"role": "user", "content": "hola"}
 
 
 @pytest.mark.parametrize(

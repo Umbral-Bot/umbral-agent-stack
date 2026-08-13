@@ -169,17 +169,38 @@ class TestCallOpenclawProxy:
         assert body["temperature"] == 0.3
 
     @patch("worker.tasks.llm.urllib.request.urlopen")
-    def test_model_forwarded_in_payload(self, mock_urlopen):
+    def test_gateway_receives_openclaw_routing_alias_not_raw_model(self, mock_urlopen):
+        """PKG-MACRO-P5-L2-T5: el gateway (endpoint OpenAI-compatible) hace su
+        propio ruteo de modelo interno y rechaza con 400 cualquier `model` que
+        no sea "openclaw" o "openclaw/<agentId>" (verificado en vivo contra
+        127.0.0.1:18789). El payload saliente NUNCA debe llevar el nombre real
+        del modelo Anthropic — eso solo se preserva en el valor de retorno
+        (ver test_successful_call: result["model"])."""
         from worker.tasks.llm import _call_openclaw_proxy
         mock_urlopen.return_value = _mock_urlopen_ok("ok")
-        with patch.dict(os.environ, {"OPENCLAW_GATEWAY_TOKEN": "tok"}):
+        with patch.dict(os.environ, {"OPENCLAW_GATEWAY_TOKEN": "tok"}, clear=False):
+            os.environ.pop("OPENCLAW_GATEWAY_AGENT", None)
             _call_openclaw_proxy(
                 prompt="Hola", model="anthropic/claude-opus-4-6",
                 max_tokens=1024, temperature=0.7, system_prompt="",
             )
         req_obj = mock_urlopen.call_args[0][0]
         body = json.loads(req_obj.data.decode())
-        assert body["model"] == "anthropic/claude-opus-4-6"
+        assert body["model"] == "openclaw/main"
+
+    @patch("worker.tasks.llm.urllib.request.urlopen")
+    def test_gateway_agent_env_var_overrides_default(self, mock_urlopen):
+        from worker.tasks.llm import _call_openclaw_proxy
+        mock_urlopen.return_value = _mock_urlopen_ok("ok")
+        env = {"OPENCLAW_GATEWAY_TOKEN": "tok", "OPENCLAW_GATEWAY_AGENT": "rick-communication-director"}
+        with patch.dict(os.environ, env):
+            _call_openclaw_proxy(
+                prompt="Hola", model="anthropic/claude-opus-4-6",
+                max_tokens=1024, temperature=0.7, system_prompt="",
+            )
+        req_obj = mock_urlopen.call_args[0][0]
+        body = json.loads(req_obj.data.decode())
+        assert body["model"] == "openclaw/rick-communication-director"
 
 
 # ---------------------------------------------------------------------------

@@ -101,7 +101,7 @@ valores; `retention` se sumó el 2026-08-13 — ver la nota de cierre al princip
 | **status** | ✅ Sí | ✅ (worker) | ✅ Sí | `draft \| ready_for_review \| content_approved \| publish_authorized \| scheduled \| published \| archived` | ❌ Máquina de estado | Notion status type | Sigue transiciones. Rick no toca `ready_for_review`→`content_approved` (David humano) |
 | **author** | ✅ Sí | ✅ (worker) | ❌ No (default: "David Moreira") | Texto libre | ✅ Alto | Rich text | Generalmente "David Moreira". Permite otros autores |
 | **publication_type** o **tipo_pieza** | ✅ Sí (spec §5) | Parcial (spec example) | ✅ Sí | `tecnico_corto \| reflexivo \| producto \| post_mortem \| caso_estudio \| tutorial \| opinion \| recap \| docencia \| respuesta_publica` | ✅ Medio (valores predefinidos) | Notion select | Usar valores predefinidos. El código NO valida esto en gold-set (gap) |
-| **primary_channel** o **canal** | ✅ Sí (spec §5) | ✅ (code: `linkedin\|blog\|x`) | ✅ Sí | `blog \| linkedin \| x \| newsletter` (newsletter: preparado pero v2) | ✅ Medio | Notion select | Valores fijos. Solo `blog`, `linkedin`, `x` en v1 |
+| **primary_channel** o **canal** | ✅ Sí (spec §5) | ✅ (code: `linkedin\|blog\|x` al 2026-06-16) | ✅ Sí | `blog \| linkedin \| x \| newsletter` | ✅ Medio | Notion select | **Los 4 desde 2026-08-13**: el «solo 3 en v1 / newsletter para v2» se levantó por GO de David (misma higiene que `retention`), y `VALID_CHANNELS` ya acepta `newsletter` |
 | **secondary_channels** | ✅ Sí (spec §5) | Parcial | ❌ No (opcional) | Subset de canales primarios | ✅ Medio | Notion multi-select | Opcional. Valor default: none |
 | **series** | ✅ Sí (spec §5) | Parcial | ❌ No (opcional) | Texto libre (nombre serie) | ✅ Alto | Notion select o rich text | Opcional. "Observatorio Umbral BIM" para 9 artículos |
 | **category** | ✅ Sí (spec implícito via tags) | Parcial | ❌ No | Texto libre | ✅ Alto | Notion multi-select | Opcional. Tags preferido |
@@ -172,7 +172,10 @@ Tabla de mapping (De valores humanos o antiguos → Valores del código):
 - ✅ `status`: máquina de estado fija. No acepta valores custom.
 - ✅ `slug`: regex obligatorio `^[a-z0-9]+(?:-[a-z0-9]+)*$`. No acepta spaces, tildes ni mayúsculas.
 - ✅ `audience_stage`: validador en código rechaza valores fuera de set fijo. **NO FLEXIBLE**.
-- ✅ `primary_channel`: solo `blog`, `linkedin`, `x` en v1. `newsletter` preparado para v2.
+- ✅ `primary_channel`: los 4 del select `Canal` (`blog`, `linkedin`, `x`, `newsletter`).
+  El «solo 3 en v1 / `newsletter` para v2» rigió hasta el 2026-08-13, cuando el GO de
+  David lo levantó y `VALID_CHANNELS` sumó `newsletter` — ver la fila de §3 y la nota de
+  cierre al principio.
 - ✅ `cta_strength`: solo 4 valores (`none|soft|medium|strong`).
 - ✅ `cta_type`: 8 valores predefinidos. Sin personalizaciones.
 - ✅ `evidence_density`: 3 valores (`low|med|high`). Binning fijo.

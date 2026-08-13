@@ -19,14 +19,15 @@
 #     notion/schemas/alternativas-shortlist.schema.yaml. Neither field's writer
 #     is cabled yet (P2.1 promotion poller, P2.7 RRSS injection).
 #   - [2026-08-13] 0.2.0 -> 0.3.0. Added option `retention` to Etapa audiencia.
-#     The option already existed in the live Notion DB; the spec was the side
-#     that lagged, so the auditor reported it as extra_options (severity=info,
-#     invisible in CI). GO de David = A: el YAML se alinea a la base viva, la
-#     opción NO se borra de Notion. Nada se escribió en Notion en este cambio.
-#     Evidencia live: data source dc833f1f-07d9-49d0-82ec-fdfad1c808c4, lectura
-#     read-only por MCP, `Etapa audiencia` = awareness / consideration / trust /
-#     conversion / retention (color purple). Detectado en el review de #636
-#     (PKG-MACRO-P5-L1-T2); cerrado por PKG-MACRO-P5-L1-T3.
+#     The option already existed in the live Notion DB (drift on record since
+#     the 2026-05-08 audit); the spec was the side that lagged, so the auditor
+#     reported it as extra_options — severity=info, which keeps the verdict at
+#     PASS and made it invisible in CI. David's GO = A: align the YAML to live,
+#     do NOT remove the option from Notion. Nothing was written to Notion.
+#     Live evidence: data source dc833f1f-07d9-49d0-82ec-fdfad1c808c4, read-only
+#     MCP fetch, `Etapa audiencia` = awareness / consideration / trust /
+#     conversion / retention (color purple). Surfaced by the review of #636
+#     (PKG-MACRO-P5-L1-T2); closed by PKG-MACRO-P5-L1-T3.
 #
 # KNOWN DRIFT (2026-07-22, not resolved here): David's live evidence for this
 # PR names the live parent page "Sistema Editorial Rick"

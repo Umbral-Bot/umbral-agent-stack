@@ -239,6 +239,55 @@ class TestAuditExtra:
         assert "Deprecated flag" in extra_fields
 
 
+class TestSelectOptionDrift:
+    """Cobertura de las dos ramas de drift de opciones de select.
+
+    Hasta 2026-08-13 la opción `retention` de `Etapa audiencia` era el único
+    caso real de extra_options en los fixtures, y al alinearla en el schema
+    0.3.0 ninguna prueba volvía a ejercitar estas dos ramas. Son exactamente
+    las que dejaron ese drift invisible en CI durante meses: extra_options
+    puntúa `info` (no rompe el verdict) y missing_options puntúa `warning`.
+    """
+
+    def _with_options(self, actual: dict, options: list[str]) -> dict:
+        clone = json.loads(json.dumps(actual))
+        clone["properties"]["Etapa audiencia"]["select"]["options"] = [
+            {"name": name} for name in options
+        ]
+        return clone
+
+    def test_extra_option_is_info_and_keeps_pass(self, schema: dict, valid_actual: dict) -> None:
+        actual = self._with_options(
+            valid_actual,
+            ["awareness", "consideration", "trust", "conversion", "retention", "loyalty"],
+        )
+        diffs = compare_schema_to_database(schema, actual)
+        extra = [d for d in diffs if d["issue"] == "extra_options"]
+        assert len(extra) == 1
+        assert extra[0]["severity"] == "info"
+        assert "loyalty" in extra[0]["detail"]
+        # Severity info => el verdict global sigue en PASS: por eso un drift de
+        # este tipo no se ve en CI y hay que buscarlo a propósito.
+        assert build_audit_report(str(SCHEMA_PATH), "fixture", diffs)["verdict"] == "PASS"
+
+    def test_missing_option_is_warning_and_downgrades_verdict(
+        self, schema: dict, valid_actual: dict
+    ) -> None:
+        actual = self._with_options(
+            valid_actual, ["awareness", "consideration", "trust", "conversion"]
+        )
+        diffs = compare_schema_to_database(schema, actual)
+        missing = [d for d in diffs if d["issue"] == "missing_options"]
+        assert len(missing) == 1
+        assert missing[0]["severity"] == "warning"
+        assert "retention" in missing[0]["detail"]
+        assert build_audit_report(str(SCHEMA_PATH), "fixture", diffs)["verdict"] == "WARN"
+
+    def test_valid_fixture_has_no_option_drift(self, schema: dict, valid_actual: dict) -> None:
+        diffs = compare_schema_to_database(schema, valid_actual)
+        assert [d for d in diffs if d["issue"] in {"extra_options", "missing_options"}] == []
+
+
 # ---------------------------------------------------------------------------
 # Formatters
 # ---------------------------------------------------------------------------

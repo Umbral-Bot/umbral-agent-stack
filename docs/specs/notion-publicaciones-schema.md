@@ -48,14 +48,14 @@ locally for validation, tooling, and future provisioning.
 ## Running validation
 
 ```bash
-python scripts/validate_notion_schema.py
+PYTHONPATH=. python scripts/validate_notion_schema.py
 ```
 
-Output:
+Output (corrida real 2026-08-13, schema 0.3.0):
 ```
 Schema: notion/schemas/publicaciones.schema.yaml
-  Database: Publicaciones v0.1.0 (draft)
-  Properties: 22 (5 required)
+  Database: Publicaciones v0.3.0 (draft)
+  Properties: 39 (7 required)
   ...
   Invariants: 7
   Recommended views: 5

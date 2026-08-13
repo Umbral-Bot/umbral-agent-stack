@@ -13,6 +13,14 @@
 - Live read-only audit executed 2026-04-22 (3rd run, post-schema alignment): **PASS** (0 blockers, 0 warnings, 19 info). Schema aligned with v1 decisions: `Proyecto` as rich_text, `Tipo de contenido` with Notion's canonical options. See [`notion-publicaciones-last-audit.md`](notion-publicaciones-last-audit.md).
 - First manual test record **TEST-001** created in Notion (2026-04-22). Post-record audit: **PASS** (0B/0W/19I) — record creation does not affect schema audit. See [`notion-publicaciones-test-records.md`](notion-publicaciones-test-records.md).
 
+> **Los conteos de arriba son de la corrida del 2026-04-22 y quedaron atrás.**
+> El schema 0.3.0 (2026-08-13) declara la opción `retention` de `Etapa
+> audiencia`, que entonces se reportaba como el único `extra_options`: el
+> veredicto sigue siendo PASS pero el total baja de 19 a 18 info. Derivado, no
+> medido contra la base viva. [`notion-publicaciones-last-audit.md`](notion-publicaciones-last-audit.md)
+> es un artefacto **generado** y sigue pre-0.3.0: regenerarlo con el comando de
+> abajo (necesita `NOTION_API_KEY`) en vez de editarlo a mano.
+
 ---
 
 ## Recommended live audit command

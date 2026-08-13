@@ -80,7 +80,7 @@ trace_id: ""
 estado: Borrador
 canal: ""                      # blog | linkedin | x | newsletter
 tipo_de_contenido: ""          # blog_post | linkedin_post | x_post | newsletter | carousel | visual_asset | thread
-etapa_audiencia: ""            # awareness | consideration | trust | conversion | (empty)
+etapa_audiencia: ""            # awareness | consideration | trust | conversion | retention | (empty)
 prioridad: ""                  # (if applicable)
 
 # --- Editorial content ---

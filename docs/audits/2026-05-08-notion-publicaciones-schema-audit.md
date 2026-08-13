@@ -25,6 +25,9 @@
 - `idempotency_key` already exists as `text` → no new property proposed.
 - Live DB has 45 properties; YAML schema spec lists ~28 → 17 extras live.
 - 1 select-option drift on `Etapa audiencia` (`retention` extra in live).
+  <br>_Cerrado el 2026-08-13 — schema 0.3.0 declara `retention`; ver la fila
+  correspondiente en ## Proposals. La medición de arriba es la del 2026-05-08 y
+  se deja intacta._
 - 0 type mismatches on master-plan fields.
 - 0 missing master-plan fields.
 

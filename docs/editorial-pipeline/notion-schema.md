@@ -41,7 +41,7 @@ Each row = one Notion property. `Author` codes:
 | 3 | `Canal` | `select` | `blog`, `linkedin`, `x`, `newsletter` | yes for publish | H, S4 | Target channel for this variant. |
 | 4 | `canal_publicado` | `select` | `blog`, `linkedin`, `x`, `newsletter` | post-publish | S10 | Set after publish_success only. |
 | 5 | `Tipo de contenido` | `select` | `linkedin_post`, `blog_post`, `x_post`, `newsletter`, `carousel`, `visual_asset`, `thread` | yes | H, S4 | — |
-| 6 | `Etapa audiencia` | `select` | `awareness`, `consideration`, `trust`, `conversion`, `retention` | no | H | Alineado: YAML 0.3.0 declara las 5 (2026-08-13). |
+| 6 | `Etapa audiencia` | `select` | `awareness`, `consideration`, `trust`, `conversion`, `retention` | no | H | Aligned: YAML 0.3.0 declares all 5 (2026-08-13). |
 | 7 | `Prioridad` | `select` | `alta`, `media`, `baja` | no | H | Not in local YAML schema (extra). |
 | 8 | `Estado` | `status` | `Idea`, `Borrador`, `Revisión pendiente`, `Aprobado`, `Autorizado`, `Publicando`, `Publicado`, `Descartado` | yes | H + S7/S10 | Pipeline state machine. |
 | 9 | **`aprobado_contenido`** | `checkbox` | default `false` | **yes (gate)** | **H only** | Gate 1. Never written by agents. |
@@ -117,9 +117,11 @@ schema-shaping work required for Stage 10.
 - `Repo reference`, `Resumen fuente`, `Premisa`, `Claim principal`,
   `Publicación padre`, `Creado por sistema` — editorial / lineage metadata.
 
-> La opción `retention` de `Etapa audiencia` figuraba aquí como drift contra el
-> YAML local. Salió de la lista el 2026-08-13: el schema 0.3.0 declara las 5
-> opciones, alineado a la base viva (GO de David = A, no se tocó Notion).
+- `Etapa audiencia` — the property itself is not among the master-plan §3
+  fields reconciled above, so it belongs in this list. Its `retention` option
+  used to be flagged here as drift against the local YAML; that drift is closed
+  since 2026-08-13 (schema 0.3.0 declares all 5 options, aligned to live —
+  David's GO = A, nothing was written to Notion).
 
 ## 4. Contrato gates S9→S10
 

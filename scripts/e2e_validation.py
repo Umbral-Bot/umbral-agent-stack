@@ -254,9 +254,14 @@ def _worker_payload(status_data: Dict[str, Any]) -> Dict[str, Any]:
     result = status_data.get("result")
     if not isinstance(result, dict):
         return {}
-    inner = result.get("result")
-    if isinstance(inner, dict) and all(k in result for k in _WORKER_ENVELOPE_MARKERS):
-        return inner
+    # "¿es el sobre?" se decide SOLO por los marcadores, nunca por el tipo del
+    # payload de adentro: si se exigiera que el inner fuera dict, un handler que
+    # devuelve una lista caería al return de abajo y el caller recibiría el sobre
+    # entero — o sea el bug de T11 de vuelta, en silencio y justo en el caso que
+    # este helper dice cubrir.
+    if "result" in result and all(k in result for k in _WORKER_ENVELOPE_MARKERS):
+        inner = result["result"]
+        return inner if isinstance(inner, dict) else {}
     return result
 
 
@@ -367,6 +372,11 @@ def test_composite_research(base_url: str, token: str) -> str:
     if status != "done":
         raise ValueError(f"composite.research_report terminó en status={status}: {status_data.get('error')}")
     report = _worker_payload(status_data).get("report", "")
+    # T12: sin este guard, "reporte 0 chars" se reporta como PASS — que es
+    # exactamente lo que pasó en T11 mientras el unwrap estaba roto. El largo
+    # sólo es una métrica honesta si un reporte vacío falla.
+    if not report:
+        raise ValueError("composite.research_report terminó done pero sin reporte (0 chars)")
     return f"status=done, reporte {len(report)} chars"
 
 

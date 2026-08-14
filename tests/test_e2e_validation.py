@@ -321,6 +321,18 @@ class TestWorkerPayloadUnwrap(unittest.TestCase):
         self.assertEqual(_worker_payload({"status": "failed"}), {})
         self.assertEqual(_worker_payload({"result": "texto plano"}), {})
 
+    def test_envelope_with_non_dict_inner_never_leaks_the_envelope(self):
+        """El sobre se reconoce por los marcadores, no por el tipo del inner.
+
+        Si "¿es el sobre?" dependiera de que el inner fuera dict, un handler que
+        devuelve una lista haría que el caller recibiera el sobre entero y leyera
+        report='' / model='?' — el bug de T11 de vuelta, en silencio.
+        """
+        for inner in (["a", "b"], "texto", 42, None):
+            payload = _worker_payload(_status_envelope(inner))
+            self.assertEqual(payload, {}, f"inner={inner!r} filtró el sobre")
+            self.assertNotIn("trace_id", payload)
+
 
 # El unwrap ingenuo que había antes de T12 y que producía el FAIL de aserción.
 # Se usa para MUTAR el helper en los tests de abajo: si una función deja de
@@ -352,7 +364,13 @@ class TestAffectedTestsUseTheUnwrap(unittest.TestCase):
         status = _status_envelope({"model": "anthropic/claude-sonnet-4-6", "provider": "openclaw_proxy"})
         with self._patch_routing(), patch("scripts.e2e_validation._enqueue_and_wait", return_value=status):
             detail = e2e_routing_coding("http://w", "tok")
-        self.assertIn("actual=anthropic/claude-sonnet-4-6", detail)
+        # assertEqual y no assertIn: llegar hasta acá ya implica que el modelo
+        # coincidió (si no, la función habría levantado), así que un assertIn
+        # sobre "actual=" no agregaría señal. Fijar el string completo sí.
+        self.assertEqual(
+            detail,
+            "expected=anthropic/claude-sonnet-4-6, actual=anthropic/claude-sonnet-4-6",
+        )
 
     def test_routing_coding_fails_without_the_unwrap(self):
         status = _status_envelope({"model": "anthropic/claude-sonnet-4-6", "provider": "openclaw_proxy"})
@@ -369,7 +387,13 @@ class TestAffectedTestsUseTheUnwrap(unittest.TestCase):
         status = _status_envelope({"model": "anthropic/claude-sonnet-4-6", "provider": "openclaw_proxy"})
         with self._patch_routing(), patch("scripts.e2e_validation._enqueue_and_wait", return_value=status):
             detail = e2e_routing_research("http://w", "tok")
-        self.assertIn("actual=anthropic/claude-sonnet-4-6", detail)
+        # assertEqual y no assertIn: llegar hasta acá ya implica que el modelo
+        # coincidió (si no, la función habría levantado), así que un assertIn
+        # sobre "actual=" no agregaría señal. Fijar el string completo sí.
+        self.assertEqual(
+            detail,
+            "expected=anthropic/claude-sonnet-4-6, actual=anthropic/claude-sonnet-4-6",
+        )
 
     def test_routing_research_fails_without_the_unwrap(self):
         status = _status_envelope({"model": "anthropic/claude-sonnet-4-6", "provider": "openclaw_proxy"})
@@ -388,13 +412,25 @@ class TestAffectedTestsUseTheUnwrap(unittest.TestCase):
             detail = e2e_composite("http://w", "tok")
         self.assertIn("19459 chars", detail)
 
-    def test_composite_reports_zero_without_the_unwrap(self):
-        """El síntoma exacto de T11: PASS pero 'reporte 0 chars'."""
+    def test_composite_fails_loudly_without_the_unwrap(self):
+        """El síntoma de T11 era PASS con 'reporte 0 chars'. Ahora eso es FAIL.
+
+        Con el unwrap ingenuo el reporte se lee vacío; el guard de no-vacío
+        convierte ese falso verde en un error visible.
+        """
         status = _status_envelope({"report": "x" * 19459, "stats": {"total_sources": 15}})
         with patch("scripts.e2e_validation._enqueue_and_wait", return_value=status), \
                 patch("scripts.e2e_validation._worker_payload", _naive_unwrap):
-            detail = e2e_composite("http://w", "tok")
-        self.assertIn("0 chars", detail)
+            with self.assertRaises(ValueError) as ctx:
+                e2e_composite("http://w", "tok")
+        self.assertIn("0 chars", str(ctx.exception))
+
+    def test_composite_empty_report_is_not_a_pass(self):
+        """Un done sin reporte tiene que fallar, aunque el unwrap esté sano."""
+        status = _status_envelope({"report": "", "stats": {"total_sources": 0}})
+        with patch("scripts.e2e_validation._enqueue_and_wait", return_value=status):
+            with self.assertRaises(ValueError):
+                e2e_composite("http://w", "tok")
 
 
 if __name__ == "__main__":

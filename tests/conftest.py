@@ -82,3 +82,41 @@ def _sync_worker_token():
         wapp.WORKER_TOKEN = _TEST_TOKEN
     except Exception:
         pass
+
+
+# ── Shape del sobre del worker (PKG-MACRO-P5-L3-T1) ─────────────────
+# Vivía duplicado en test_e2e_validation.py, test_task_result.py y (por import
+# test-a-test) test_sim_to_make.py. Como el helper subió a client/, el fixture
+# sube con él: un cambio real del shape se toca en un solo lugar.
+
+def worker_status_envelope(payload) -> dict:
+    """Lo que devuelve GET /task/<id>/status: el sobre del worker dentro de result.
+
+    El dispatcher guarda en Redis el sobre completo (dispatcher/queue.py:243),
+    así que el payload del handler queda un nivel más adentro que en POST /run.
+    """
+    return {
+        "task_id": "e2e-1234",
+        "status": "done",
+        "task": "llm.generate",
+        "team": "lab",
+        "result": {
+            "ok": True,
+            "task_id": "e2e-1234",
+            "task": "llm.generate",
+            "team": "lab",
+            "trace_id": "trace-1234",
+            "result": payload,
+        },
+        "error": None,
+    }
+
+
+def worker_run_envelope(payload) -> dict:
+    """Lo que devuelve POST /run (y WorkerClient.run): un solo nivel de result."""
+    return {"ok": True, "task_id": "e2e-1234", "task": "llm.generate", "result": payload}
+
+
+def naive_unwrap(response) -> dict:
+    """El unwrap ingenuo previo a T12. Sólo para MUTAR el helper en los tests."""
+    return response.get("result", {})

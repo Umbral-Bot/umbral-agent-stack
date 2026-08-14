@@ -62,6 +62,8 @@ def _load_env() -> None:
 
 import httpx
 
+from client.task_result import worker_payload
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
@@ -227,42 +229,14 @@ def _enqueue_and_wait(
     raise TimeoutError(f"Task {task_id} did not reach a terminal state")
 
 
-# PKG-MACRO-P5-L2-T12: los dos endpoints NO devuelven el mismo shape.
-#   POST /run              -> {ok, task_id, task, team, trace_id, result:{...}}
-#   GET  /task/<id>/status -> {status, result:{ok, task_id, task, ..., result:{...}}}
-# El dispatcher guarda en Redis el SOBRE COMPLETO que le devolvió el worker
-# (dispatcher/queue.py:243 mete el envelope entero en envelope["result"]), así
-# que sobre un status el payload del handler queda un nivel más adentro. Leer
-# result["model"] ahí devuelve None y el test reporta "?" aunque el runtime
-# haya hecho todo bien — es exactamente el FAIL de aserción de T11 (acta §15).
+# PKG-MACRO-P5-L3-T1: el unwrap que T12 estrenó acá subió a client/task_result.py,
+# porque el mismo desajuste vive en sim_to_make y en el dispatcher y no merecía un
+# cuarto copy-paste. La lógica NO cambió: mismo criterio, mismos marcadores.
 #
-# El unwrap tiene que ser ESTRICTO. Hay handlers cuyo payload propio ya trae un
-# "result" anidado — granola devuelve {followup_type, result:{task_id, ...}} —
-# y un criterio laxo ("¿tiene un result dict adentro?") se comería un nivel de
-# más justo ahí. Por eso se exige el juego completo de marcadores que el worker
-# SIEMPRE pone en el sobre (worker/app.py:729-735) y que ningún payload de
-# handler tiene junto.
-_WORKER_ENVELOPE_MARKERS = ("ok", "task_id", "task")
-
-
-def _worker_payload(status_data: Dict[str, Any]) -> Dict[str, Any]:
-    """Devuelve el payload del handler, venga o no envuelto en el sobre del worker.
-
-    Es pass-through respecto de la forma: aplicado a una respuesta de POST /run
-    (que no tiene el nivel extra) devuelve el mismo dict, no un segundo unwrap.
-    """
-    result = status_data.get("result")
-    if not isinstance(result, dict):
-        return {}
-    # "¿es el sobre?" se decide SOLO por los marcadores, nunca por el tipo del
-    # payload de adentro: si se exigiera que el inner fuera dict, un handler que
-    # devuelve una lista caería al return de abajo y el caller recibiría el sobre
-    # entero — o sea el bug de T11 de vuelta, en silencio y justo en el caso que
-    # este helper dice cubrir.
-    if "result" in result and all(k in result for k in _WORKER_ENVELOPE_MARKERS):
-        inner = result["result"]
-        return inner if isinstance(inner, dict) else {}
-    return result
+# El alias privado se conserva a propósito: _worker_payload es el nombre que
+# parchean los tests de mutación de T12 (tests/test_e2e_validation.py), que son
+# los que prueban que las tres funciones de abajo dependen realmente del unwrap.
+_worker_payload = worker_payload
 
 
 def _get_provider_status(base_url: str, token: str) -> Dict[str, Any]:

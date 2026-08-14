@@ -207,16 +207,38 @@ primero como blob idéntico.
 
 ### 7.4 Si alguna vez hay que volver
 
-La llave es el SHA. Mientras el objeto siga en el repo:
+Hay tres caminos, de más a menos robusto (PKG-MACRO-P5-S75-T3 agregó el
+primero):
 
-```bash
-git branch <nombre> a263539884627ea12184ca540ea7200f1fc739c2
-```
+1. **`stage7_5.bundle`**, en el archive — historia completa, no depende de
+   ningún clone ni de GitHub. Verificado el 2026-08-14 clonándolo: devuelve
+   `a2635398` intacto, con el writer de la rama en sus 52.069 B.
+   ```bash
+   git clone /home/rick/_archive/stage7_5-multiformat-20260814/stage7_5.bundle stage7_5-recuperado
+   ```
+2. **Los 12 archivos de `files/`** — el contenido, sin historia. Siempre sirve.
+3. **El objeto suelto**, si este VPS todavía lo tiene: `git branch <n> a2635398`.
 
-GitHub también permite restaurar ramas borradas recientemente desde la UI. Pero
-antes de tirar de esa cuerda: esto se cerró por decisión de producto, y el
-inventario de arriba sigue valiendo — traer el writer o el evaluator de vuelta
-sigue costando 4 funciones a mano y 809 líneas de reconciliación.
+### 7.5 El pin local (PKG-MACRO-P5-S75-T3, 2026-08-14)
+
+Tras el kill, `a2635398` quedó **sin una sola ref que lo contuviera** —
+verificado: `git for-each-ref --contains` devolvía 0. El objeto seguía ahí, pero
+a merced del primer `git gc`. Este pack cerró esa ventana con dos medidas
+independientes:
+
+- **Tag local** `archive/stage7_5-multiformat-20260814` → `a2635398`, que ancla
+  el objeto contra la poda. **No está en `origin`, a propósito**: el kill fue
+  una decisión de producto y no tiene sentido dejar el experimento colgando de
+  una ref pública. `git ls-remote --tags origin` devuelve **0 tags**, y
+  `--heads` sigue devolviendo **sólo `main`**.
+- **Bundle** al lado del archive, que es el que realmente importa: el tag vive
+  en este clone y se pierde con él; el bundle no.
+
+Hay además una **copia 2 en Windows** (bundle + tag local), así que el rescate
+no depende de un solo disco.
+
+Ninguna de las dos toca `origin`. Traer el writer o el evaluator de vuelta sigue
+costando lo que decía §3: 4 funciones a mano y 809 líneas de reconciliación.
 
 ---
 

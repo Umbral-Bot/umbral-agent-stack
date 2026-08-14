@@ -38,7 +38,7 @@ def _headers_lower(req):
 # (_strip_openclaw_proxy_env_leaks). Tests that need either set use
 # monkeypatch.setenv inside the test body (e.g.
 # test_detect_provider_claude_respects_disable_flag,
-# test_handle_llm_generate_defaults_to_openclaw_proxy_with_token).
+# test_handle_llm_generate_without_model_never_uses_gateway).
 
 
 def test_handle_llm_generate_requires_prompt():
@@ -55,14 +55,40 @@ def test_handle_llm_generate_requires_google_key(monkeypatch):
         handle_llm_generate({"prompt": "Resume tendencias de mercado BIM"})
 
 
-def test_handle_llm_generate_defaults_to_openclaw_proxy_with_token(monkeypatch):
-    """PKG-MACRO-P5-L2-T5: sin model/selected_model, con OPENCLAW_GATEWAY_TOKEN
-    presente y Claude no deshabilitado, el default cae en Claude vía openclaw_proxy.
-    No pega al gateway real: se mockea urllib.request.urlopen (PROVIDERS ata la
-    función _call_openclaw_proxy por referencia directa, así que un patch sobre
-    el nombre del módulo no la intercepta — hay que mockear un nivel más abajo,
-    igual que el resto de los tests de este archivo)."""
+def test_handle_llm_generate_without_model_never_uses_gateway(monkeypatch):
+    """PKG-MACRO-P5-L2-T7 (recorte): aunque OPENCLAW_GATEWAY_TOKEN esté presente
+    y Claude no esté deshabilitado, un input SIN `model` ni `selected_model` NO
+    debe ir al gateway — sigue el camino histórico (Gemini/DEFAULT_MODEL).
+
+    Este es el test que protege a los callers que llegan sin modelo
+    (`dispatcher/smart_reply.py`, `scripts/daily_digest.py`,
+    `worker/tasks/composite.py`): mandarlos al gateway costaba ~36s y ~27k
+    tokens de prompt por llamada contra `openclaw/main`, que es el agente
+    por defecto de este código, y podía saturarlo (acta §7.3, §9.2, §11).
+
+    UMBRAL_DISABLE_CLAUDE se fija explícitamente en "false" (no se delega al
+    fixture de conftest): si llegara truthy, el test pasaría por el motivo
+    equivocado — con Claude deshabilitado cualquier default cae en Gemini, y
+    el guard dejaría de probar el recorte."""
     monkeypatch.setenv("OPENCLAW_GATEWAY_TOKEN", "gw-test-token")
+    monkeypatch.setenv("UMBRAL_DISABLE_CLAUDE", "false")
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+
+    with patch("worker.tasks.llm.urllib.request.urlopen") as mock_urlopen:
+        with pytest.raises(RuntimeError, match="GOOGLE_API_KEY not configured"):
+            handle_llm_generate({"prompt": "hola"})
+
+    # Lo importante no es solo el error: es que NUNCA se abrió una conexión.
+    mock_urlopen.assert_not_called()
+
+
+def test_handle_llm_generate_selected_model_openclaw_proxy_uses_gateway(monkeypatch):
+    """Contrapartida del recorte: cuando el dispatcher SÍ inyecta
+    selected_model=openclaw_proxy (vía ModelRouter, p.ej. R8 coding/research),
+    la llamada sí debe ir al gateway."""
+    monkeypatch.setenv("OPENCLAW_GATEWAY_TOKEN", "gw-test-token")
+    monkeypatch.setenv("UMBRAL_DISABLE_CLAUDE", "false")
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
 
     fake_payload = {
         "choices": [{"message": {"content": "OK via proxy"}}],
@@ -72,12 +98,13 @@ def test_handle_llm_generate_defaults_to_openclaw_proxy_with_token(monkeypatch):
         "worker.tasks.llm.urllib.request.urlopen",
         return_value=_DummyResponse(fake_payload),
     ) as mock_urlopen:
-        result = handle_llm_generate({"prompt": "hola"})
+        result = handle_llm_generate(
+            {"prompt": "hola", "selected_model": "openclaw_proxy"}
+        )
 
     assert result["provider"] == "openclaw_proxy"
     assert result["model"] == "claude-sonnet-4-6"
     assert result["text"] == "OK via proxy"
-    assert result["usage"]["total_tokens"] == 8
 
     req = mock_urlopen.call_args.args[0]
     assert req.full_url == "http://localhost:18789/v1/chat/completions"

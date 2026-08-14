@@ -368,3 +368,103 @@ class TestProvidersDict:
         from worker.tasks.llm import PROVIDERS
         for p in ("gemini", "vertex", "azure_foundry", "openai", "anthropic"):
             assert p in PROVIDERS, f"Provider '{p}' missing from PROVIDERS dict"
+
+
+# ---------------------------------------------------------------------------
+# PKG-MACRO-P5-L2-T7 — recorte del default: los callers sin modelo NO van al gateway
+# ---------------------------------------------------------------------------
+class TestDefaultScopedAwayFromGateway:
+    """Fija el recorte de T7 sobre los callers REALES que no pasan por el
+    ModelRouter del dispatcher. Antes de T7, con OPENCLAW_GATEWAY_TOKEN
+    presente (que es el estado vivo del VPS desde T4), estos caminos se
+    reenrutaban solos al gateway: ~36s y ~27k tokens de prompt por llamada
+    (medición real contra `openclaw/main`, §7.3/§9.2), con riesgo de
+    saturarlo — ya lo tumbó una vez.
+
+    Los tests piden el payload a las funciones REALES (no a un literal
+    copiado a mano), así que si alguien le agrega un `model` a cualquiera de
+    los tres callers, estos tests fallan."""
+
+    def test_composite_report_payload_has_no_model_key(self):
+        """Guardia estructural sobre `_build_report_generation_payload`: hoy no
+        manda ninguna clave que seleccione modelo, así que cae en DEFAULT_MODEL.
+
+        Se miran SOLO las claves que deciden el modelo — no todos los valores:
+        el payload lleva metadata de tracing (`_source`, que en runtime vale
+        "openclaw_gateway") que no tiene nada que ver con el ruteo.
+
+        Si alguien agrega acá un passthrough del modelo ruteado por el
+        dispatcher (`composite.` sí está en LLM_TASK_PREFIXES, así que sería
+        legítimo), este test va a fallar — a propósito: que sea una decisión
+        consciente, no un accidente, porque hoy manda composite al gateway."""
+        from worker.tasks.composite import _build_report_generation_payload
+        payload = _build_report_generation_payload(
+            topic="t", research_data="d", language="es"
+        )
+        assert "model" not in payload
+        assert "selected_model" not in payload
+
+    @patch("worker.tasks.llm.urllib.request.urlopen")
+    def test_composite_report_generation_never_hits_gateway(self, mock_urlopen):
+        """El payload real de composite.research_report, con el token presente,
+        no debe abrir NINGUNA conexión al gateway."""
+        from worker.tasks.composite import _build_report_generation_payload
+        from worker.tasks.llm import handle_llm_generate
+
+        payload = _build_report_generation_payload(
+            topic="proptech", research_data="datos", language="es"
+        )
+        env = _env_without("GOOGLE_API_KEY")
+        env["OPENCLAW_GATEWAY_TOKEN"] = "tok"
+        env.pop("UMBRAL_DISABLE_CLAUDE", None)
+        with patch.dict(os.environ, env, clear=True):
+            with pytest.raises(RuntimeError, match="GOOGLE_API_KEY not configured"):
+                handle_llm_generate(payload)
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.tasks.composite.handle_research_web")
+    @patch("worker.tasks.llm.urllib.request.urlopen")
+    def test_composite_query_generation_never_hits_gateway(self, mock_urlopen, _mock_web):
+        """`_generate_queries` arma su payload inline (no vía un builder), así
+        que se lo ejercita de verdad — es la PRIMERA llamada LLM del pipeline."""
+        from worker.tasks.composite import _generate_queries
+
+        env = _env_without("GOOGLE_API_KEY")
+        env["OPENCLAW_GATEWAY_TOKEN"] = "tok"
+        env.pop("UMBRAL_DISABLE_CLAUDE", None)
+        with patch.dict(os.environ, env, clear=True):
+            # Falla o devuelve fallback, pero NUNCA debe tocar el gateway.
+            try:
+                _generate_queries("proptech", 3)
+            except Exception:
+                pass
+        mock_urlopen.assert_not_called()
+
+    def test_smart_reply_real_caller_sends_no_model(self):
+        """Vincula el guard al caller REAL: dispatcher/smart_reply.py::
+        _do_llm_generate. Si alguien le agrega un `model`, esto falla."""
+        from unittest.mock import MagicMock
+        from dispatcher.smart_reply import _do_llm_generate
+
+        wc = MagicMock()
+        wc.run.return_value = {"result": {"text": "ok"}}
+        _do_llm_generate(wc, prompt="Respondé a David.", system="Sos Rick.")
+
+        task, payload = wc.run.call_args.args[0], wc.run.call_args.args[1]
+        assert task == "llm.generate"
+        assert "model" not in payload
+        assert "selected_model" not in payload
+
+    def test_daily_digest_real_caller_sends_no_model(self):
+        """Idem para scripts/daily_digest.py::generate_llm_summary."""
+        from unittest.mock import MagicMock
+        from scripts.daily_digest import generate_llm_summary
+
+        wc = MagicMock()
+        wc.run.return_value = {"result": {"text": "resumen"}}
+        generate_llm_summary("reporte", wc)
+
+        task, payload = wc.run.call_args.args[0], wc.run.call_args.args[1]
+        assert task == "llm.generate"
+        assert "model" not in payload
+        assert "selected_model" not in payload

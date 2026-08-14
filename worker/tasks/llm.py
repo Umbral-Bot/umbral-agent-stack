@@ -93,20 +93,6 @@ def _claude_disabled() -> bool:
     return value in {"1", "true", "yes", "on"}
 
 
-def _default_model() -> str:
-    """
-    Modelo a usar cuando el input no trae `model` ni `selected_model`.
-
-    Si hay OPENCLAW_GATEWAY_TOKEN configurado y Claude no está deshabilitado,
-    preferimos Claude vía el gateway (_detect_provider resuelve openclaw_proxy).
-    Sin token (o con Claude deshabilitado), se mantiene el default histórico
-    (Gemini, requiere GOOGLE_API_KEY).
-    """
-    if not _claude_disabled() and os.environ.get("OPENCLAW_GATEWAY_TOKEN", "").strip():
-        return MODEL_ALIASES["claude_pro"]
-    return DEFAULT_MODEL
-
-
 def handle_llm_generate(input_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Generate text using Gemini/OpenAI/Anthropic.
@@ -121,6 +107,31 @@ def handle_llm_generate(input_data: Dict[str, Any]) -> Dict[str, Any]:
 
     Returns:
         {"text": "...", "model": "...", "usage": {...}}
+
+    Nota sobre el default (PKG-MACRO-P5-L2-T7): cuando el input no trae
+    `model` ni `selected_model`, se usa DEFAULT_MODEL (Gemini) — NUNCA el
+    gateway. Mandar esas llamadas al gateway costaba ~36s y ~27k tokens de
+    prompt cada una (medición real contra `openclaw/main`, que es el agente
+    que este código usa por defecto), con riesgo de saturarlo — ya lo tumbó
+    una vez. Ver acta docs/operations/e2e-4fail-clasificacion-2026-08-13.md
+    §7.3, §9.2 y §11.
+
+    Quién llega sin modelo, exactamente:
+      - `dispatcher/smart_reply.py::_do_llm_generate` y
+        `scripts/daily_digest.py::generate_llm_summary` llaman al Worker por
+        HTTP directo, sin pasar por el ModelRouter del dispatcher.
+      - `worker/tasks/composite.py` es distinto: `composite.` SÍ está en
+        `LLM_TASK_PREFIXES` (dispatcher/service.py), así que el dispatcher le
+        inyecta `model`, pero `handle_composite_research_report` no lo lee y
+        sus sub-llamadas arman payloads nuevos sin modelo. O sea: pasa por el
+        router y descarta la decisión (comportamiento pre-existente).
+
+    `openclaw_proxy` se sigue usando cuando el caller pide explícitamente un
+    modelo/alias Claude u `openclaw_proxy`, o cuando el dispatcher inyecta
+    `selected_model` vía ModelRouter — que hoy, con `openclaw_proxy` como
+    único provider configurado y presente en las 7 `fallback_chain`, es
+    TODA tarea `llm.*`/`composite.*` encolada, no sólo R8 coding/research.
+    Este recorte cierra las rutas directas, no la encolada.
     """
     prompt = str(input_data.get("prompt", "")).strip()
     if not prompt:
@@ -129,7 +140,7 @@ def handle_llm_generate(input_data: Dict[str, Any]) -> Dict[str, Any]:
     requested_model = str(
         input_data.get("model")
         or input_data.get("selected_model")
-        or _default_model()
+        or DEFAULT_MODEL
     ).strip()
     model = _resolve_model_alias(requested_model)
     provider = _detect_provider(model, requested_alias=requested_model)

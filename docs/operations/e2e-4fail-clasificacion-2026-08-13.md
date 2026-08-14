@@ -625,9 +625,12 @@ La opción (b) de §9.4 está **empíricamente descartada**. Quedan:
   del gateway a `smart_reply` (Notion, David-facing), `daily_digest` y
   `composite.research_report`. Es un cambio de código acotado, testeable, y
   ataca directamente el riesgo de §9.4.
-- **(c)** Aceptar conscientemente que esas tres rutas paguen ~32s y ~12.8k
-  tokens por llamada, con el riesgo de saturación del gateway compartido ya
-  demostrado en §9.2.
+- **(c)** Aceptar conscientemente que esas tres rutas paguen el costo del
+  turno de agente, con el riesgo de saturación del gateway compartido ya
+  demostrado en §9.2. Ojo con el número: como el agente `completions` se
+  revirtió (§10.4), esas rutas usarían `openclaw/main`, que se midió en
+  **~36s y ~27.5k tokens** (§7.3) — no los ~33s/12.8k de la tabla de arriba,
+  que son del agente que ya no existe.
 
 Una tercera vía que este pack no exploró (fuera de su autorización): darle
 al worker una API key propia de algún provider (`gemini`/`azure`) para
@@ -636,3 +639,149 @@ al worker una API key propia de algún provider (`gemini`/`azure`) para
 
 Evidencia completa (4 sondas, journal, diff de keys sin secretos) en
 `~/.coord-ag-evidence/pkg-macro-p5-l2-t6/`.
+
+---
+
+## 11. Recorte del default — cierre del riesgo de §9.4 (PKG-MACRO-P5-L2-T7, 2026-08-13)
+
+**Autorización citada de David:** "A — acotar `_default_model()` por caller:
+smart-reply, digest y composite NO van al gateway. El ruteo yaml del PR
+puede quedar. Pack de recorte en #645 antes de mergear. Elegida 2026-08-13
+post-T6 (B empíricamente descartada)."
+
+**`P5_L2_DEFAULT_SCOPED = Y`.** El riesgo concreto que §9.4 marcó como
+*urgente* — que `smart_reply` (Notion, David-facing), `daily_digest` y
+`composite` se reenrutaran solos al gateway sin que nadie lo pidiera —
+queda cerrado en código, con guards que se verificaron no-vacíos. El PR
+#645 pasa a ser seguro de mergear. Lo que **no** cierra este pack (y no
+pretendía): el camino encolado por el dispatcher, que sigue resolviendo a
+`openclaw_proxy` para toda tarea LLM — ver §11.2, punto 2.
+
+### 11.1 Seguridad live primero
+
+Antes de tocar nada, el `umbral-worker` seguía corriendo en memoria el
+código de T5 — es decir, con el default global todavía activo. Se
+reiniciaron `umbral-worker` y `openclaw-dispatcher` **desde el checkout
+`main`** (que no tiene `_default_model()`), para descargarlo del proceso
+vivo antes de empezar. `ActiveEnterTimestamp` 18:00:32 → **22:07:31**;
+`openclaw-gateway` **no se tocó** (sigue en 20:43:17, el restart de T6).
+
+### 11.2 El recorte
+
+`_default_model()` **eliminada**. `handle_llm_generate` vuelve al default
+histórico:
+
+```python
+requested_model = str(
+    input_data.get("model")
+    or input_data.get("selected_model")
+    or DEFAULT_MODEL          # Gemini — nunca el gateway
+).strip()
+```
+
+`openclaw_proxy` se usa ahora sólo cuando alguien lo pide explícitamente
+(un `model`/alias Claude u `openclaw_proxy`) o cuando el dispatcher inyecta
+`selected_model` vía ModelRouter. Los tres callers que llegaban sin modelo
+— `dispatcher/smart_reply.py::_do_llm_generate` (Notion, David-facing),
+`scripts/daily_digest.py::generate_llm_summary` y
+`worker/tasks/composite.py` (`_generate_queries` y
+`_generate_report_with_retry`) — vuelven al camino Gemini-sin-modelo, que
+es donde estaban antes de T5.
+
+**Dos precisiones que el `/code-review` de este pack corrigió sobre el
+borrador de esta misma sección** — ambas importan para decidir qué sigue:
+
+1. **`composite` sí pasa por el ModelRouter.** `LLM_TASK_PREFIXES =
+   ("llm.", "composite.")` (`dispatcher/service.py:61`), así que el
+   dispatcher **sí** le inyecta `model` a `composite.research_report`. Lo
+   que pasa es que `handle_composite_research_report` nunca lo lee y sus
+   dos sub-llamadas arman payloads nuevos sin modelo: **pasa por el router
+   y descarta la decisión**. Eso es pre-existente (está igual en `main`,
+   T5 sólo lo enmascaraba) y el recorte lo restaura tal cual — pero no es
+   cierto, como decía el borrador, que "no pase por el router".
+2. **El recorte cierra las rutas directas, no la encolada.** Con
+   `openclaw_proxy` como **único** provider configurado y presente en las
+   7 `fallback_chain` (cambio del PR que se conserva), **toda** tarea
+   `llm.*`/`composite.*` encolada sigue resolviendo a `openclaw_proxy` —
+   no sólo R8 `coding`/`research`. Verificado en el env vivo:
+
+   ```
+   configured: ['openclaw_proxy']
+   coding/critical/general/light/ms_stack/research/writing -> ['openclaw_proxy']
+   ```
+
+   O sea: el riesgo de §9.4 (los tres callers directos, incluido el
+   David-facing) **queda cerrado**; el camino encolado por el dispatcher
+   **no**, y sigue apuntando al mismo gateway de §9.2. No es una regresión
+   de este pack (es el estado de `main` + el ruteo yaml que David pidió
+   conservar), pero conviene tenerlo explícito antes de mergear.
+
+**Se conservó todo lo demás del PR** (nada de esto dependía del default
+global): los `fallback_chain` de `quota_policy.yaml`, el fix del payload
+`openclaw/<agent>`, `MODEL_ALIASES["openclaw_proxy"]`, los mapas
+sincronizados de `worker/app.py`, y el fixture de fuga de env en
+`conftest.py`. `_claude_disabled()` sigue en uso desde `_detect_provider`
+(no quedó código muerto).
+
+### 11.3 Tests
+
+- `test_handle_llm_generate_defaults_to_openclaw_proxy_with_token` (que
+  afirmaba el comportamiento ahora recortado) → reescrito como
+  **`test_handle_llm_generate_without_model_never_uses_gateway`**: con el
+  token presente y sin `model`, no sólo espera el error de Gemini —
+  además exige `mock_urlopen.assert_not_called()`, o sea que **no se abrió
+  ninguna conexión** al gateway.
+- Nuevo **`test_handle_llm_generate_selected_model_openclaw_proxy_uses_gateway`**:
+  la contrapartida, `selected_model="openclaw_proxy"` sí llega al gateway.
+- Nueva clase **`TestDefaultScopedAwayFromGateway`** (5 tests) que se ata a
+  los callers **reales**, no a literales copiados a mano — esto también salió
+  del `/code-review`, que detectó que el borrador afirmaba "callers reales"
+  cuando dos de los tres eran un dict escrito en el test:
+  - `composite`: usa el propio `_build_report_generation_payload()` y, aparte,
+    ejercita `_generate_queries()` (que arma su payload inline y no tenía
+    guardia), ambos con `urlopen.assert_not_called()`.
+  - `smart_reply` y `daily_digest`: invocan las funciones de producción
+    (`_do_llm_generate`, `generate_llm_summary`) con un `WorkerClient`
+    mockeado y afirman sobre el payload **que ellas realmente construyen**.
+    Si alguien le agrega un `model` a cualquiera de las dos, el test falla.
+  - La guardia estructural sobre el payload de composite se acotó: no
+    prohíbe `selected_model` en general (composite sí está ruteado y algún
+    día podría legítimamente reenviarlo), sino hardcodear un modelo de
+    gateway/Claude.
+
+**Verificación de que los guards no son vacíos:** se revirtió el recorte a
+mano y se corrió la suite — 3 de los tests nuevos **fallan** con el recorte
+revertido y pasan con él aplicado. Además `UMBRAL_DISABLE_CLAUDE` se fija
+explícito en los tests de `test_llm_handler.py` (si llegara truthy, el guard
+pasaría por el motivo equivocado).
+
+`pytest tests/`: **4796 passed**, 6 skipped, 2 xfailed. Mismos 3 fallos
+pre-existentes de `test_pit_*` deseleccionados (`pydantic` faltante en un
+subproceso, ajenos a este pack).
+
+**Cero sondas al gateway y cero e2e en este pack**, por instrucción
+explícita — el e2e completo fue justamente lo que lo tumbó en §9.2.
+
+### 11.4 Estado de las capas
+
+| # | Capa | Estado |
+|---|---|---|
+| 1 | Credenciales de provider ausentes en el worker (§2.1) | **abierta** |
+| 2 | `UMBRAL_DISABLE_CLAUDE` (§2.2) | cerrada en T4 (`false`) |
+| 3 | Login OpenAI del gateway (§6) | cerrada en T3 |
+| — | Reruteo silencioso al gateway, **rutas directas** (§9.4) | **cerrada acá** |
+| — | Camino **encolado** por el dispatcher → gateway | **abierta** (ver §11.2, punto 2) |
+
+Los 4 tests del e2e **siguen fallando**. Este pack no los arregla — saca a
+los tres callers directos del camino peligroso. Matiz sobre la causa, que
+el `/code-review` precisó: no es sólo "capa 1". Para `llm.generate` suelto
+sí (no hay credencial propia). Para `composite.research_report` hay algo
+más: el router **sí** elige un provider configurado (`openclaw_proxy`) y
+composite **descarta** esa decisión, así que cae en Gemini y muere por
+`GOOGLE_API_KEY not configured`. Cargar una key de Gemini lo taparía sin
+arreglar el descarte.
+
+La vía que arreglaría los 4 sin depender del gateway sigue siendo la "vía
+B" de §6/§10.5: una API key propia (`gemini`/`azure`) para el worker.
+
+Evidencia en `~/.coord-ag-evidence/pkg-macro-p5-l2-t7/`.

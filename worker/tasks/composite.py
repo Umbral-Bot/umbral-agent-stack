@@ -10,7 +10,12 @@ import time
 from typing import Any, Dict, List, Optional, Tuple
 
 from .research import handle_research_web
-from .llm import handle_llm_generate
+from .llm import (
+    PROXY_COMPOSITE_TIMEOUT_S,
+    PROXY_MIN_TIMEOUT_S,
+    PROXY_QUERYGEN_TIMEOUT_S,
+    handle_llm_generate,
+)
 
 logger = logging.getLogger("worker.tasks.composite")
 _ACTIVE_CONTEXT: Dict[str, str] = {}
@@ -55,9 +60,15 @@ REPORT_USER_PROMPT = (
 #     casi todo overhead fijo (setup del turno + ~27k tokens de prompt del
 #     propio agente), no generación.
 #   - Con max_tokens=4096 la generación agregaba ~4000 tokens y empujaba el
-#     turno por encima de 119s. Con 1000, agrega ~1000 → se espera ~50-70s.
+#     turno por encima de 119s. Con 1000 se esperaba ~50-70s.
 #   - research_data real a depth=quick: 9.945 chars (15 fuentes, snippets de
 #     500 chars). standard ≈ 16.5k, deep ≈ 33k.
+#
+# CORRECCIÓN T10 (FASE 0, medición sin corte): esa expectativa de 50-70s era
+# optimista. El turno de reporte con max_tokens=1000 tarda **158.2s** reales,
+# y el task completo 205.6s. O sea: el SHRINK bajó el costo pero el objetivo
+# de <90s nunca se alcanzó, y por eso T10 ensancha la ventana en vez de seguir
+# achicando el pedido (GO de David: WINDOW). Ver acta §14.
 REPORT_MAX_TOKENS = 1000
 # 12.000 chars ≈ 3.000 tokens. Elegido para que `quick` (9.945) entre COMPLETO
 # —es la forma que corre el e2e— y para acotar `deep` (33k → 12k), que es el
@@ -126,6 +137,49 @@ def _count_source_lines(research_data: str) -> int:
     return research_data.count("- **[")
 
 
+# Presupuesto de tiempo del task, en monotonic. Lo setea el handler al entrar.
+_BUDGET: Dict[str, float] = {}
+
+# Margen que se le deja al dispatcher para recibir la respuesta y cerrar.
+BUDGET_SAFETY_MARGIN_S = 20.0
+
+
+def _remaining_budget_s() -> Optional[float]:
+    """Cuánto tiempo queda del presupuesto que dio el dispatcher, o None.
+
+    T10: sin esto, el timeout del reporte era un techo fijo que se comparaba
+    contra la ventana del dispatcher como si el reporte arrancara en t=0. No
+    arranca: viene después de query-gen + research (~47s medidos). Con techos
+    fijos la suma se pasaba de la ventana y dejaba turnos huérfanos corriendo
+    en el gateway. Acá se reparte lo que QUEDA, así que la invariante
+    `preámbulo + reporte < ventana` se cumple por construcción."""
+    total = _BUDGET.get("task_timeout_s")
+    started = _BUDGET.get("started_at")
+    if not total or started is None:
+        return None
+    return total - (time.monotonic() - started) - BUDGET_SAFETY_MARGIN_S
+
+
+def _proxy_timeout_for(ceiling_s: float) -> float:
+    """Techo, acotado por lo que quede del presupuesto.
+
+    OJO con el piso: NO se usa `max(PISO, restante)` a ciegas. Si ya queda
+    menos que el piso, devolver el piso volvería a desbordar la ventana — el
+    turno arrancaría condenado a quedar huérfano, que es justo lo que este
+    pack elimina. Quien llama tiene que chequear `_has_budget_for_a_call()`
+    antes y no llamar si no alcanza."""
+    remaining = _remaining_budget_s()
+    if remaining is None:
+        return ceiling_s
+    return max(0.0, min(ceiling_s, remaining))
+
+
+def _has_budget_for_a_call() -> bool:
+    """¿Queda tiempo suficiente como para que valga la pena intentar?"""
+    remaining = _remaining_budget_s()
+    return remaining is None or remaining >= PROXY_MIN_TIMEOUT_S
+
+
 def _build_report_generation_payload(
     *,
     topic: str,
@@ -145,6 +199,10 @@ def _build_report_generation_payload(
         "_source": _ACTIVE_CONTEXT.get("source"),
         "_source_kind": _ACTIVE_CONTEXT.get("source_kind"),
         "_usage_component": "composite.research_report.report_generation",
+        # T10 (WINDOW): ~158s medidos (FASE 0), muy por encima del default de
+        # 105s del proxy. Techo propio, PERO acotado por lo que quede de la
+        # ventana del dispatcher — el reporte arranca después del preámbulo.
+        "_proxy_timeout_s": _proxy_timeout_for(PROXY_COMPOSITE_TIMEOUT_S),
     }
     payload.update(_routed_model_fields())
     return payload
@@ -175,6 +233,16 @@ def _generate_report_with_retry(
         language=language,
     )
     last_error: Optional[Exception] = None
+
+    if not _has_budget_for_a_call():
+        # T10: sin presupuesto, NO se arranca el turno. Arrancarlo dejaría un
+        # turno huérfano corriendo en el gateway después de que el dispatcher
+        # ya se rindió. Se falla acá y el handler cae al reporte degradado.
+        raise ReportGenerationError(
+            "sin presupuesto de tiempo para generar el reporte "
+            f"(quedan {_remaining_budget_s():.0f}s, mínimo {PROXY_MIN_TIMEOUT_S:.0f}s)",
+            attempts=0,
+        )
 
     for attempt in range(1, REPORT_GENERATION_MAX_ATTEMPTS + 1):
         try:
@@ -212,6 +280,9 @@ def _generate_queries(topic: str, n: int) -> List[str]:
             "_source": _ACTIVE_CONTEXT.get("source"),
             "_source_kind": _ACTIVE_CONTEXT.get("source_kind"),
             "_usage_component": "composite.research_report.query_generation",
+            # T10: antes esta llamada no tenía override y se quedaba con los
+            # 105s del default — el peor caso que hacía desbordar la ventana.
+            "_proxy_timeout_s": _proxy_timeout_for(PROXY_QUERYGEN_TIMEOUT_S),
             **_routed_model_fields(),
         })
     except Exception as exc:
@@ -310,6 +381,18 @@ def handle_composite_research_report(input_data: Dict[str, Any]) -> Dict[str, An
         value = str(input_data.get(key, "") or "").strip()
         if value:
             _ACTIVE_CONTEXT[target] = value
+
+    # T10 (WINDOW): arranca el reloj del presupuesto. `_task_timeout_s` lo
+    # inyecta el dispatcher; si no está (llamada directa al worker), las
+    # sub-llamadas usan sus techos fijos.
+    _BUDGET.clear()
+    _BUDGET["started_at"] = time.monotonic()
+    try:
+        budget = float(input_data.get("_task_timeout_s") or 0)
+    except (TypeError, ValueError):
+        budget = 0.0
+    if budget > 0:
+        _BUDGET["task_timeout_s"] = budget
 
     depth = input_data.get("depth", "standard")
     language = input_data.get("language", "es")

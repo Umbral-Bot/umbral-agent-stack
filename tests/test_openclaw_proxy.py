@@ -500,3 +500,58 @@ class TestTextGoesThroughProxy:
         assert task == "llm.generate"
         assert "model" not in payload
         assert "selected_model" not in payload
+
+
+# ---------------------------------------------------------------------------
+# PKG-MACRO-P5-L2-T10 — WINDOW: timeout del proxy por llamada
+# ---------------------------------------------------------------------------
+class TestProxyTimeoutWindow:
+    """El urlopen contra el gateway va SIEMPRE por debajo del timeout de su
+    caller (regla T8). Como los callers no son todos iguales, el valor es por
+    llamada y no global: subir el default a 225s dejaría a smart_reply (120s)
+    cortando antes que el proxy — el anti-patrón que T8 arregló."""
+
+    @patch("worker.tasks.llm.urllib.request.urlopen")
+    def test_default_timeout_is_used_when_no_override(self, mock_urlopen):
+        from worker.tasks.llm import _call_openclaw_proxy, PROXY_DEFAULT_TIMEOUT_S
+        mock_urlopen.return_value = _mock_urlopen_ok("ok")
+        with patch.dict(os.environ, {"OPENCLAW_GATEWAY_TOKEN": "tok"}):
+            _call_openclaw_proxy(
+                prompt="Hola", model="anthropic/claude-sonnet-4-6",
+                max_tokens=16, temperature=0.7, system_prompt="",
+            )
+        assert mock_urlopen.call_args.kwargs["timeout"] == PROXY_DEFAULT_TIMEOUT_S
+
+    @patch("worker.tasks.llm.urllib.request.urlopen")
+    def test_composite_payload_carries_the_wide_window(self, mock_urlopen):
+        """El payload real de composite pide la ventana ancha, y esa ventana
+        llega hasta el urlopen."""
+        from worker.tasks.composite import _build_report_generation_payload
+        from worker.tasks.llm import handle_llm_generate, PROXY_COMPOSITE_TIMEOUT_S
+
+        mock_urlopen.return_value = _mock_urlopen_ok("reporte")
+        payload = _build_report_generation_payload(
+            topic="t", research_data="d", language="es"
+        )
+        assert payload["_proxy_timeout_s"] == PROXY_COMPOSITE_TIMEOUT_S
+
+        env = _env_without("GOOGLE_API_KEY")
+        env["OPENCLAW_GATEWAY_TOKEN"] = "tok"
+        env["UMBRAL_DISABLE_CLAUDE"] = "false"
+        with patch.dict(os.environ, env, clear=True):
+            handle_llm_generate(payload)
+        assert mock_urlopen.call_args.kwargs["timeout"] == PROXY_COMPOSITE_TIMEOUT_S
+
+    @patch("worker.tasks.llm.urllib.request.urlopen")
+    def test_plain_llm_generate_keeps_the_default_window(self, mock_urlopen):
+        """Una llm.generate normal (smart_reply/digest) NO hereda la ventana
+        ancha: sigue con el default, por debajo de sus 120s."""
+        from worker.tasks.llm import handle_llm_generate, PROXY_DEFAULT_TIMEOUT_S
+
+        mock_urlopen.return_value = _mock_urlopen_ok("ok")
+        env = _env_without("GOOGLE_API_KEY")
+        env["OPENCLAW_GATEWAY_TOKEN"] = "tok"
+        env["UMBRAL_DISABLE_CLAUDE"] = "false"
+        with patch.dict(os.environ, env, clear=True):
+            handle_llm_generate({"prompt": "hola"})
+        assert mock_urlopen.call_args.kwargs["timeout"] == PROXY_DEFAULT_TIMEOUT_S

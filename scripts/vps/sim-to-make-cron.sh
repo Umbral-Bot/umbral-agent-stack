@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# RETIRADO del instalador de cron el 2026-08-14 (Q8): no reinstalar en crontab. Se conserva para correr a mano; ver docs/operations/sim-cron-retired-2026-08-14.md
 # SIM â†’ Make.com pipeline cron wrapper.
 # Runs after each SIM report (9:00, 15:00, 21:00 UTC).
 # Enqueues composite.research_report, polls result, sends to Make.com webhook.

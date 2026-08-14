@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# RETIRADO del instalador de cron el 2026-08-14 (Q8): no reinstalar en crontab. Se conserva para correr a mano; ver docs/operations/sim-cron-retired-2026-08-14.md
 # SIM Daily Report Cron
 # Cron recomendado: 30 8,14,20 * * * bash ~/umbral-agent-stack/scripts/vps/sim-report-cron.sh
 set -euo pipefail

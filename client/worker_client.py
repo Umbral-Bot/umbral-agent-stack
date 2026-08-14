@@ -118,6 +118,7 @@ class WorkerClient:
         input_data: Optional[Dict[str, Any]] = None,
         envelope: Optional[Dict[str, Any]] = None,
         timeout: Optional[float] = None,
+        retries: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
         POST /run — execute a task on the worker.
@@ -131,6 +132,13 @@ class WorkerClient:
                      the client's configured `self.timeout`. Use for tasks known
                      to run long (e.g. sequential external-API generation) that
                      share a `WorkerClient` instance with fast calls.
+            retries: Optional per-call retry override. Defaults to the client's
+                     configured `self.retries`. Pass 0 for long tasks whose
+                     retry would pile up expensive work instead of recovering
+                     (PKG-MACRO-P5-L2-T10: a composite report turn is ~158s, so
+                     retrying it 2x stacks ~8 min of gateway load and is what
+                     amplified the OOM in acta §12.4). Does NOT change the
+                     client default, so ping/notion keep their retries.
 
         Returns:
             Response dict with "ok", "task", "result" keys.
@@ -140,9 +148,10 @@ class WorkerClient:
         """
         payload = self._build_run_payload(task, input_data, envelope)
         effective_timeout = self.timeout if timeout is None else timeout
+        effective_retries = self.retries if retries is None else max(0, retries)
         last_exc: Optional[Exception] = None
 
-        for attempt in range(1, self.retries + 2):  # retries + 1 initial attempt
+        for attempt in range(1, effective_retries + 2):  # retries + 1 initial attempt
             try:
                 with httpx.Client(timeout=effective_timeout) as client:
                     resp = client.post(
@@ -154,11 +163,11 @@ class WorkerClient:
                     return resp.json()
             except (httpx.ConnectError, httpx.ReadTimeout, httpx.WriteTimeout) as exc:
                 last_exc = exc
-                if attempt <= self.retries:
+                if attempt <= effective_retries:
                     logger.warning(
                         "Attempt %d/%d failed (%s), retrying in %.1fs...",
                         attempt,
-                        self.retries + 1,
+                        effective_retries + 1,
                         type(exc).__name__,
                         self.retry_delay,
                     )

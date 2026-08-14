@@ -1097,3 +1097,180 @@ entra cómodo en ese presupuesto. Las salidas reales, en orden de honestidad:
    sólo composite.
 
 Evidencia en `~/.coord-ag-evidence/pkg-macro-p5-l2-t9/`.
+
+---
+
+## 14. WINDOW — se midió cuánto tarda de verdad y se ensanchó la ventana (PKG-MACRO-P5-L2-T10, 2026-08-14)
+
+**GO citado de David (2026-08-14):** WINDOW. No bajar más `max_tokens`. No
+partir el reporte en N llamadas. No Azure. No Gemini. Composite **NO** a cron.
+
+Los packs T8 y T9 dimensionaron a ojo y erraron dos veces. Este empieza al
+revés: **primero medir, después fijar constantes.**
+
+### 14.1 FASE 0 — la corrida sin corte `[E]`
+
+Método: `POST` directo al worker (**no** por la cola, para que el redespacho
+no contaminara la medida), una sola llamada, sin retries, y el `urlopen` del
+proxy subido **temporalmente** a 300s para que nada truncara el número.
+Gateway **no** tocado.
+
+| Métrica | Valor |
+|---|---|
+| HTTP | **200** — el reporte se generó **completo** |
+| `generation_time_ms` (turno de reporte) | **158.171 s** |
+| `research_time_ms` | 8.028 s |
+| wall del task (curl) | **205.6 s** |
+| reporte | **21.462 chars**, 4 secciones |
+| `total_sources` / `sources_sent_to_model` | 15 / 15 (`quick` no se trunca: consistente) |
+| `report_generation_attempts` | 1 |
+| RSS pico del gateway | 1.467 MB (STOP estaba en 2 GB) |
+| `MainPID` / `NRestarts` | 3436104 / 1 — **sin cambio** |
+
+**Es término, no corte.** En T9 el `104847` era el timeout de 105s cortando;
+este **158.2 s** es la duración de verdad. Ese es el dato que faltaba.
+
+> Nota de método: el journal del gateway sólo emite `durationMs` en líneas de
+> `lane task error`. Como este turno **terminó bien**, no dejó ninguna. Las
+> entradas de esa ventana (`durationMs=63092/13155`, error "Bad Request") son
+> de `lane=session:agent:rick-delivery:main` — **tráfico ajeno**, de otro
+> agente. Por eso el oráculo acá es el del worker, no el journal.
+
+### 14.2 FASE 1 — la aritmética, y dónde me aparté de la instrucción
+
+La instrucción decía `T = durationMs_real/1000 + 30`. Con el turno de reporte
+(158.2) eso da **188 s** — y el task completo tarda **205.6 s**, así que 188
+lo **cortaría**. El dispatcher espera la **tarea entera**, no sólo el turno.
+Así que dimensioné con el wall:
+
+Primera versión (la que el `/code-review` tumbó, ver §14.5):
+
+```
+205.6 s + 30 s = 235.6  →  T_dispatcher = 240 s
+240 − 15                →  T_proxy      = 225 s     ← MAL
+```
+
+**Versión final**, con la cuenta correcta: el urlopen del reporte **no arranca
+en t=0**, arranca después del preámbulo. Lo que hay que acotar es la *suma*:
+
+```
+ventana del dispatcher                       = 300 s  (techo autorizado)
+techo query-gen  (medido 39.4 s)             =  90 s
+techo reporte    (medido 158.2 s)            = 190 s
+peor caso encadenado: 90 + 190               = 280 s  <  300 ✓
+```
+
+Y para que la invariante valga **siempre** —no sólo en el caso típico— el
+reporte no usa un techo fijo sino **lo que queda del presupuesto**: el
+dispatcher inyecta su ventana en `_task_timeout_s` y composite reparte. Si ya
+no queda tiempo, **no arranca el turno** y falla rápido al reporte degradado,
+en vez de dejar un huérfano corriendo en el gateway.
+
+| | valor | debe ser < | ✓ |
+|---|---|---|---|
+| turno real medido | 158.2 s | techo reporte 190 s | ✓ |
+| query-gen medido | 39.4 s | techo query-gen 90 s | ✓ |
+| **peor caso encadenado** | **280 s** | **dispatcher 300 s** | ✓ |
+| wall real medido | 205.6 s | dispatcher 300 s | ✓ |
+| proxy default | 105 s | caller normal 120 s | ✓ |
+
+**El timeout del proxy quedó por llamada, no global** — y acá también me
+aparté de la letra ("subirlo a `T_proxy`", en singular). Subir el global
+habría dejado a `smart_reply`/`daily_digest` (120 s) **cortando antes que el
+proxy**, que es exactamente el anti-patrón que §12 arregló. Entonces:
+`PROXY_DEFAULT_TIMEOUT_S = 105` para todos, y composite manda su propio
+`_proxy_timeout_s`. Mismo espíritu (que no corte), sin romper la invariante
+para los demás.
+
+### 14.3 Los dos multiplicadores, cerrados
+
+| Multiplicador | Antes | Ahora |
+|---|---|---|
+| Retries HTTP del `WorkerClient` | 2 → hasta 3 intentos de ~3.5 min c/u | **`retries=0`** sólo para `composite.*` (`run()` ganó override por llamada; los defaults de ping/notion **no** se tocan) |
+| Re-encolado del dispatcher por timeout | hasta 2 re-encolas, cada una abriendo turnos nuevos | **no se re-encola** en timeout de `composite.*`. `ConnectError` **sí** sigue reintentando: worker caído ≠ LLM lento |
+
+También se corrigieron dos comentarios que habían quedado viejos: el de
+`service.py` decía "composite tarda 30-60s" (son ~205 s) y el de `composite.py`
+esperaba "~50-70s" tras el SHRINK (son ~158 s).
+
+### 14.4 Tests `[E]`
+
+`pytest tests/`: **4815 passed**, 6 skipped, 2 xfailed. Deselect de los 3
+`test_pit_*` pre-existentes (`ModuleNotFoundError: pydantic` en un subproceso,
+ajenos a este pack y rojos también en `main`).
+
+Siete tests nuevos en `test_dispatcher_resilience.py` + tres en
+`test_openclaw_proxy.py`. Los 24 tests de resiliencia previos siguen verdes
+(el cambio no toca al resto de las tareas, y hay un test que lo fija).
+
+**Verificados por mutación** (lección de §13.5, donde un test mío no probaba
+nada):
+- revertir el no-reenqueue → fallan `test_composite_timeout_does_not_reenqueue`
+  y `test_composite_write_timeout_does_not_reenqueue`;
+- sacar el override de ventana → falla
+  `test_composite_uses_its_own_timeout_and_zero_retries`.
+
+### 14.5 Lo que encontró el `/code-review` — y por qué importa
+
+Dos hallazgos CONFIRMED, los dos míos, los dos corregidos en este mismo PR.
+
+**1. Mi invariante estaba mal planteada.** Yo comparaba
+`timeout_del_reporte < ventana_del_dispatcher` (225 < 240) y lo daba por bueno.
+Pero el urlopen del reporte **arranca después del preámbulo**, no en t=0:
+
+| caso | cuenta | vs ventana 240 s |
+|---|---|---|
+| típico | 47.4 (preámbulo medido) + 225 = **272.4 s** | **desborda +32.4 s** |
+| peor | 105 (query-gen sin acotar) + 8 + 225 = **338 s** | **desborda +98 s** |
+
+Ese desborde es precisamente el modo de fallo que este pack viene a matar: el
+dispatcher se rinde, pero el hilo del worker **no se cancela**
+(`run_in_executor`), así que el turno sigue vivo en el gateway. Un huérfano
+más, del mismo tipo que llevó al OOM de §12.4.
+
+Y lo peor: **mi test pasaba igual**, porque afirmaba sólo `225 < 240`. Falsa
+confianza — la misma clase de defecto que §13.5. Corregido en tres frentes:
+ventana a 300 s, techos que suman 280 s, presupuesto dinámico, y un test que
+ahora fija **la suma del peor caso** (verificado por mutación: con los
+valores viejos, falla).
+
+**2. El e2e se rendía antes que el runtime.** `test_composite_research`
+poleaba 90 × 2 s = **180 s**, por debajo de los 205.6 s que yo mismo acababa
+de medir. O sea: el WINDOW podía funcionar y el e2e lo iba a reportar como
+FAIL, y el reflejo natural habría sido ensanchar el runtime para perseguir un
+deadline que vivía en el test. Subido a 170 × 2 s = 340 s (> la ventana del
+dispatcher, que es contra lo que hay que dimensionar, no contra el wall
+medido). Hay un test que ata las dos cosas.
+
+### 14.6 Live de verificación — por el dispatcher, que es donde dolía `[E]`
+
+Una sola corrida, **encolada** (no POST directo), después del código:
+
+| | valor |
+|---|---|
+| `status` | **done** — wall 201.1 s, reporte de **18.467 chars** |
+| `generation_time_ms` | 154.191 s |
+| `report_generation_attempts` | 1 |
+| **ejecuciones de composite** | **1** (en T8 fueron 8: el pile-up) |
+| **re-encolas por timeout** | **0** |
+| gateway `MainPID` / `NRestarts` | 3436104 / 1 — **sin cambio** |
+| RSS pico | 748 MB (vs 3.5 GB del OOM de §12.4) |
+
+Consistente con FASE 0 (205.6 s directo vs 201.1 s encolado): el camino por
+la cola no agrega costo material.
+
+**La latencia sigue en ~200 s, y en este pack eso es aceptable** — no era el
+gate. Lo que cambió es que ahora **termina** en vez de expirar y apilarse.
+
+### 14.7 Estado
+
+**`P5_L2_COMPOSITE_WINDOW = Y`.** Los dos multiplicadores cerrados, la
+escalera de timeouts correcta (y verificada por mutación), el presupuesto
+acotado por construcción, y una corrida encolada que termina con el gateway
+intacto.
+
+Sigue en pie lo de siempre: **composite NO va a cron**. Que una corrida
+aislada funcione no dice nada sobre varias en paralelo, y el gateway sigue
+siendo compartido y con historial de OOM.
+
+Evidencia en `~/.coord-ag-evidence/pkg-macro-p5-l2-t10/`.

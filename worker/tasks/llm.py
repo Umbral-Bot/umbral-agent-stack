@@ -59,6 +59,27 @@ AZURE_OPENAI_DEFAULT_API_VERSION = "2024-12-01-preview"
 # Vertex AI: {REGION}-aiplatform.googleapis.com
 VERTEX_DEFAULT_REGION = "us-central1"
 
+# ── PKG-MACRO-P5-L2-T10 (WINDOW) ────────────────────────────────────────
+# Timeout del urlopen contra el gateway. SIEMPRE por debajo del timeout del
+# caller (regla T8), por eso es por llamada y no global: subir el default a la
+# ventana de composite dejaría a smart_reply (120s) cortando ANTES que el
+# proxy, que es justo el anti-patrón que T8 arregló.
+PROXY_DEFAULT_TIMEOUT_S = 105.0
+
+# Techos de composite. OJO con cómo se leen: NO se comparan contra la ventana
+# del dispatcher "a secas". El urlopen del reporte NO arranca en t=0 — arranca
+# después del preámbulo (query-gen + research, ~47s medidos en FASE 0). La
+# invariante real es:
+#     preámbulo + timeout_del_reporte  <  ventana_del_dispatcher
+# La primera versión de este pack comparaba sólo 225 < 240 y desbordaba +32s
+# en el caso típico y +98s en el peor (query-gen sin acotar), dejando turnos
+# huérfanos en el gateway — justo el pile-up que este pack viene a matar.
+# Por eso el reporte usa el presupuesto QUE QUEDA (ver composite.py), y estos
+# son techos, no valores fijos.
+PROXY_QUERYGEN_TIMEOUT_S = 90.0    # medido 39.4s; techo con margen
+PROXY_COMPOSITE_TIMEOUT_S = 190.0  # medido 158.2s; techo con margen
+PROXY_MIN_TIMEOUT_S = 30.0         # piso: por debajo de esto no vale la pena intentar
+
 # Router aliases → modelos reales.
 # Cada alias mapea a un nombre de modelo concreto que el provider entiende.
 MODEL_ALIASES = {
@@ -171,6 +192,14 @@ def handle_llm_generate(input_data: Dict[str, Any]) -> Dict[str, Any]:
     system_prompt = str(input_data.get("system", ""))
 
     provider_fn = PROVIDERS.get(provider, _call_gemini)
+    # T10: sólo el proxy acepta un timeout por llamada; el resto de los
+    # providers conserva su firma. Lo manda quien sabe cuánto va a tardar
+    # (hoy composite, vía `_proxy_timeout_s` en su payload de reporte).
+    provider_kwargs: Dict[str, Any] = {}
+    if provider == "openclaw_proxy":
+        override = input_data.get("_proxy_timeout_s")
+        if override:
+            provider_kwargs["timeout_s"] = float(override)
     t0 = time.monotonic()
     result = provider_fn(
         prompt=prompt,
@@ -178,6 +207,7 @@ def handle_llm_generate(input_data: Dict[str, Any]) -> Dict[str, Any]:
         max_tokens=max_tokens,
         temperature=temperature,
         system_prompt=system_prompt,
+        **provider_kwargs,
     )
     duration_ms = (time.monotonic() - t0) * 1000.0
 
@@ -741,6 +771,7 @@ def _call_openclaw_proxy(
     max_tokens: int,
     temperature: float,
     system_prompt: str,
+    timeout_s: float = PROXY_DEFAULT_TIMEOUT_S,
 ) -> Dict[str, Any]:
     """
     Claude vía OpenClaw gateway corriendo en la misma VPS (puerto 18789).
@@ -787,15 +818,14 @@ def _call_openclaw_proxy(
         },
     )
     try:
-        # T8: subido de 90s a 105s — deliberadamente POR DEBAJO de los 120s de
-        # los callers (e2e, smart_reply, daily_digest, dispatcher WorkerClient),
-        # no igual. Con el timeout interno == el externo, el caller siempre
-        # gana la carrera y el worker nunca llega a devolver su propio error
-        # descriptivo; encima el hilo del handler no se cancela al desconectarse
-        # el cliente (worker/app.py usa run_in_executor), así que el turno
-        # queda huérfano corriendo en el gateway. Con margen, el error sale del
-        # worker con causa clara y el caller lo recibe dentro de su ventana.
-        with urllib.request.urlopen(req, timeout=105) as resp:
+        # T8/T10: el timeout interno va SIEMPRE por debajo del de su caller. Si
+        # fueran iguales el caller gana la carrera, el worker nunca devuelve su
+        # error descriptivo, y —peor— el hilo del handler no se cancela al
+        # desconectarse el cliente (worker/app.py usa run_in_executor), así que
+        # el turno queda huérfano corriendo en el gateway.
+        #   caller normal (smart_reply/digest/e2e = 120s) -> 105s de default
+        #   composite (dispatcher = 240s)                 -> 225s vía override
+        with urllib.request.urlopen(req, timeout=timeout_s) as resp:
             data = json.loads(resp.read().decode())
     except urllib.error.HTTPError as exc:
         body_str = _safe_http_error_body(exc)

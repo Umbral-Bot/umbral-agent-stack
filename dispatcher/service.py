@@ -60,6 +60,28 @@ PROVIDER_MODEL_MAP: Dict[str, str] = {
 # Tareas LLM que reciben inyección de modelo
 LLM_TASK_PREFIXES = ("llm.", "composite.")
 
+# ── PKG-MACRO-P5-L2-T10 (WINDOW) ────────────────────────────────────────
+# `composite.*` no entra en la ventana de 120s del resto. Medido en FASE 0 con
+# una corrida SIN corte (POST directo al worker, urlopen subido a 300s para no
+# truncar la medida): el task completo tarda **205.6s** de punta a punta
+# (research 8.0s + turno de reporte 158.2s + orquestación).
+#
+# Se usa el wall del task COMPLETO, no sólo el turno de reporte: el dispatcher
+# espera la tarea entera, así que dimensionar con los 158s del turno (=188s) la
+# cortaría a mitad de camino.
+#
+# 300s (techo autorizado), no 240. El /code-review de este mismo pack mostró
+# que 240 no dejaba lugar al peor caso: el reporte arranca DESPUÉS del
+# preámbulo (query-gen + research), así que la cuenta que importa es
+# `preámbulo + reporte`, no el reporte solo. Con techos de 90s (query-gen) y
+# 190s (reporte) + margen, 300 cierra; 240 desbordaba. El worker recibe esta
+# ventana en `_task_timeout_s` y reparte lo que queda entre sus sub-llamadas.
+COMPOSITE_TASK_TIMEOUT_S = 300.0
+# retries=0 en esa llamada: reintentar una tarea de ~3.5 min no recupera nada,
+# apila carga en el gateway compartido. Es el primer multiplicador de los dos
+# que causaron el OOM del acta §12.4 (el otro es el re-encolado de abajo).
+COMPOSITE_TASK_RETRIES = 0
+
 CALLBACK_TIMEOUT_SECONDS = 10.0
 CALLBACK_RETRY_DELAY_SECONDS = 5
 
@@ -593,9 +615,12 @@ def _run_worker(
     """Worker thread: local WorkerClient siempre; VM WorkerClient solo si WORKER_URL_VM está definido."""
     r = redis.Redis(connection_pool=pool, decode_responses=True)
     queue = TaskQueue(r)
-    # Timeout 120s: composite tasks (composite.research_report) do multiple
-    # sequential API calls (LLM + research) that reliably take 30-60s.
-    # The default 30s caused 100% failure rate on those tasks.
+    # Timeout 120s para tareas normales. OJO, el comentario viejo decía "composite
+    # tarda 30-60s": eso quedó viejo. PKG-MACRO-P5-L2-T10 midió una corrida sin
+    # corte y composite.research_report tarda ~205s de punta a punta (el turno de
+    # reporte solo, ~158s), porque va por openclaw_proxy y el endpoint del gateway
+    # es un turno de agente, no un completion. Por eso composite NO usa estos 120s
+    # sino COMPOSITE_TASK_TIMEOUT_S (ver más abajo), con retries=0.
     wc_local = WorkerClient(base_url=worker_url, token=worker_token, timeout=120.0)
     wc_vm = WorkerClient(base_url=worker_url_vm, token=worker_token, timeout=120.0) if worker_url_vm else None
     # GUI tasks (interactive automation) use a separate port on the VM (default 8089)
@@ -646,6 +671,7 @@ def _run_worker(
 
         # S4: selección de modelo por task_type y cuotas
         is_llm_task = any(task.startswith(p) for p in LLM_TASK_PREFIXES)
+        is_composite_task = task.startswith("composite.")
         decision = model_router.select_model(task_type)
         if is_llm_task and decision.reason == "no_configured_provider":
             reason = "no_configured_provider"
@@ -710,7 +736,16 @@ def _run_worker(
         ).start()
         t_start = time.time()
         try:
-            result = wc.run(task, input_data, envelope=envelope)
+            # WINDOW (T10): composite necesita su propia ventana y CERO retries.
+            # El resto de las tareas se queda con el default del cliente (120s / 2).
+            if is_composite_task:
+                result = wc.run(
+                    task, input_data, envelope=envelope,
+                    timeout=COMPOSITE_TASK_TIMEOUT_S,
+                    retries=COMPOSITE_TASK_RETRIES,
+                )
+            else:
+                result = wc.run(task, input_data, envelope=envelope)
             duration_ms = (time.time() - t_start) * 1000
             queue.complete_task(task_id, result)
             model_router.quota.record_usage(selected_model)
@@ -741,7 +776,23 @@ def _run_worker(
             is_connect_error = isinstance(e, httpx.ConnectError)
             retry_count = envelope.get("retry_count", 0)
 
-            if is_timeout and retry_count < 2:
+            if is_timeout and is_composite_task:
+                # WINDOW (T10): un timeout de composite NO se re-encola.
+                # Este era el segundo multiplicador del OOM (acta §12.4): el
+                # dispatcher redespachaba la tarea cada ~2 min, cada redespacho
+                # abría turnos de agente nuevos de >100s en el gateway, y la
+                # tarea nunca convergía. Reintentar algo que tarda ~3.5 min no
+                # lo recupera, sólo apila carga sobre un gateway compartido.
+                # Se deja fallar por el mismo camino que retry_count agotado.
+                # OJO: esto es sólo para TIMEOUT. Un ConnectError (worker caído,
+                # no LLM lento) sigue reintentando más abajo, que es lo correcto.
+                logger.warning(
+                    "[worker %d] Composite task %s timed out after %.0fs — NO se re-encola "
+                    "(evita pile-up en el gateway, acta §12.4/§14)",
+                    worker_id, task_id, duration_ms / 1000.0,
+                )
+
+            elif is_timeout and retry_count < 2:
                 # Re-enqueue with incremented retry_count
                 envelope["retry_count"] = retry_count + 1
                 envelope["status"] = "queued"

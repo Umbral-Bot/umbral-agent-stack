@@ -322,9 +322,12 @@ def test_composite_research(base_url: str, token: str) -> str:
             "topic": "tendencias proptech 2026",
             "depth": "quick",
         },
-        # T8: composite encadena VARIAS llamadas LLM (queries + reporte), cada
-        # una un turno de agente de ~36s. 20x1.5s=30s no alcanzaba ni para una.
-        poll_attempts=90,
+        # T10: la ventana de poll tiene que cubrir la ventana del DISPATCHER
+        # (300s), no sólo el wall medido (205.6s). Si el cliente se rinde
+        # antes, un WINDOW que funcionó se reporta como FAIL y el reflejo es
+        # ensanchar el runtime para perseguir un deadline que vive en el test.
+        # 170 x 2s = 340s > 300s. (T8 dejó 90x2=180s, que ya no alcanza.)
+        poll_attempts=170,
         poll_interval_s=2.0,
     )
     status = status_data.get("status", "")

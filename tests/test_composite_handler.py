@@ -354,3 +354,54 @@ class TestReportShrink:
         sent = composite._count_source_lines(composite._truncate_research_data(data))
         assert sent < 25, "este fixture debe recortarse"
         assert sent > 0
+
+    def test_budget_shrinks_the_report_window_as_time_passes(self):
+        """T10: el reporte usa lo que QUEDA del presupuesto, no un techo fijo.
+        Sin esto, preámbulo + techo se pasaba de la ventana del dispatcher y
+        dejaba turnos huérfanos en el gateway."""
+        import time as _t
+        from worker.tasks import composite
+        from worker.tasks.llm import PROXY_COMPOSITE_TIMEOUT_S
+
+        try:
+            # Recién arrancado: el techo manda.
+            composite._BUDGET.clear()
+            composite._BUDGET["task_timeout_s"] = 300.0
+            composite._BUDGET["started_at"] = _t.monotonic()
+            assert composite._proxy_timeout_for(PROXY_COMPOSITE_TIMEOUT_S) == PROXY_COMPOSITE_TIMEOUT_S
+
+            # Ya consumido: manda lo que queda, y nunca se pasa de la ventana.
+            composite._BUDGET["started_at"] = _t.monotonic() - 200.0
+            got = composite._proxy_timeout_for(PROXY_COMPOSITE_TIMEOUT_S)
+            assert got < PROXY_COMPOSITE_TIMEOUT_S
+            assert 200.0 + got <= 300.0
+        finally:
+            composite._BUDGET.clear()
+
+    def test_no_budget_left_means_no_call_at_all(self):
+        """Si no queda presupuesto NO se arranca el turno: arrancarlo dejaría
+        un huérfano corriendo después de que el dispatcher se rindió."""
+        import time as _t
+        from worker.tasks import composite
+
+        try:
+            composite._BUDGET.clear()
+            composite._BUDGET["task_timeout_s"] = 300.0
+            composite._BUDGET["started_at"] = _t.monotonic() - 295.0
+            assert composite._has_budget_for_a_call() is False
+            with pytest.raises(composite.ReportGenerationError, match="sin presupuesto"):
+                composite._generate_report_with_retry(
+                    topic="t", research_data="d", language="es"
+                )
+        finally:
+            composite._BUDGET.clear()
+
+    def test_direct_call_without_budget_uses_the_ceilings(self):
+        """Llamada directa al worker (sin dispatcher): no hay presupuesto que
+        repartir, así que valen los techos fijos."""
+        from worker.tasks import composite
+        from worker.tasks.llm import PROXY_COMPOSITE_TIMEOUT_S
+
+        composite._BUDGET.clear()
+        assert composite._has_budget_for_a_call() is True
+        assert composite._proxy_timeout_for(PROXY_COMPOSITE_TIMEOUT_S) == PROXY_COMPOSITE_TIMEOUT_S

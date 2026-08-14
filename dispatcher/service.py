@@ -28,6 +28,7 @@ from dispatcher.router import TeamRouter
 from dispatcher.team_config import get_team_capabilities
 from dispatcher.task_routing import normalize_envelope_identity, task_requires_vm
 from client.worker_client import WorkerClient
+from client.task_result import worker_payload
 from infra.error_classification import classify_error
 from infra.ops_logger import ops_log
 
@@ -342,7 +343,11 @@ def _notify_linear_completion(
     body_lines = [f"{emoji} **Tarea `{task}` {'completada' if success else 'fallida'}**"]
 
     if success and result is not None:
-        summary = str(result)[:400] if not isinstance(result, dict) else str(result.get("result", result))[:400]
+        # worker_payload sobre la respuesta de wc.run(). El `or result` preserva
+        # el fallback de antes: si el payload no es dict o viene vacío, se
+        # resume el sobre entero en vez de mostrar "{}" y perder el contenido.
+        _payload = worker_payload(result) if isinstance(result, dict) else {}
+        summary = str(_payload or result)[:400]
         body_lines += ["", f"**Resultado:**\n```\n{summary}\n```"]
     elif error:
         body_lines += ["", f"**Error:**\n```\n{error[:400]}\n```"]
@@ -584,13 +589,12 @@ def _escalate_failure_to_linear(
             },
         )
         issue_id = None
-        result = (resp or {}).get("result", {})
-        if isinstance(result, dict):
-            issue = result.get("issue", {})
-            if isinstance(issue, dict):
-                issue_id = issue.get("id")
-            if not issue_id:
-                issue_id = result.get("id") or result.get("issue_id")
+        result = worker_payload(resp or {})
+        issue = result.get("issue", {})
+        if isinstance(issue, dict):
+            issue_id = issue.get("id")
+        if not issue_id:
+            issue_id = result.get("id") or result.get("issue_id")
         if issue_id:
             envelope["linear_issue_id"] = issue_id
         logger.info("[escalation] Linear issue created for failed task %s (issue=%s)", task_id, issue_id)
@@ -760,7 +764,8 @@ def _run_worker(
                 input_summary=_input_summary,
                 **ops_context,
             )
-            _result_summary = str(result.get("result", result))[:300] if isinstance(result, dict) else str(result)[:300]
+            _payload = worker_payload(result) if isinstance(result, dict) else {}
+            _result_summary = str(_payload or result)[:300]
             threading.Thread(
                 target=_notion_upsert,
                 args=(wc_local, task_id, "done", team, task),

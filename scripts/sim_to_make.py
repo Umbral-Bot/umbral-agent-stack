@@ -9,7 +9,10 @@ Uso:
     python scripts/sim_to_make.py                           # topic por defecto
     python scripts/sim_to_make.py --topic "IA generativa en real estate"
     python scripts/sim_to_make.py --dry-run                 # no envía a Make
-    python scripts/sim_to_make.py --timeout 180             # 3 min polling
+    python scripts/sim_to_make.py --timeout 400             # ventana de polling más amplia
+
+Exit codes: 0 ok · 1 config · 2 enqueue · 3 polling · 4 task failed
+            5 Make.com · 6 done pero sin reporte
 """
 
 from __future__ import annotations
@@ -30,6 +33,7 @@ if str(repo_root) not in sys.path:
     sys.path.insert(0, str(repo_root))
 
 from client.worker_client import WorkerClient  # noqa: E402
+from client.task_result import worker_payload  # noqa: E402
 
 logger = logging.getLogger("sim_to_make")
 logging.basicConfig(
@@ -40,7 +44,12 @@ logging.basicConfig(
 
 DEFAULT_TOPIC = "mercado inmobiliario BIM"
 DEFAULT_POLL_INTERVAL = 10  # seconds
-DEFAULT_TIMEOUT = 120  # seconds
+# PKG-MACRO-P5-L3-T1: un composite mide ~200s de wall (acta §14/§15) y el
+# dispatcher le da una ventana de 300s. Con los 120s de antes el poll se rendía
+# antes de que el payload existiera, aunque el unwrap estuviera bien. Misma
+# cuenta que el e2e: la ventana del cliente tiene que CUBRIR la del dispatcher,
+# no el wall medido, o un WINDOW que funcionó se reporta como timeout.
+DEFAULT_TIMEOUT = 340  # seconds (> 300 del dispatcher; el e2e usa 170 x 2s)
 
 
 # ======================================================================
@@ -208,13 +217,27 @@ def main() -> int:
         return 4
 
     # --- Extract result ---
-    task_result = result.get("result", {})
+    # worker_payload y no result.get("result"): sobre un status, ese nivel es el
+    # SOBRE del worker, no el payload del handler (client/task_result.py). Leerlo
+    # mal no explota — devuelve '' — y este script mandaba ese '' a Make.com con
+    # exit 0. Ese era el bug.
+    task_result = worker_payload(result)
+    report = task_result.get("report", "")
+    if not report:
+        logger.error("Task %s terminó %s pero sin reporte: no se envía nada a Make.com", task_id, status)
+        print(
+            f"ERROR: task {task_id} terminó {status} pero el reporte vino vacío. "
+            "No se envía a Make.com.",
+            file=sys.stderr,
+        )
+        return 6
+
     make_payload = {
         "task_id": task_id,
         "topic": args.topic,
         "depth": args.depth,
         "status": status,
-        "report": task_result.get("report", ""),
+        "report": report,
         "sources_count": len(task_result.get("sources", [])),
         "sources": task_result.get("sources", [])[:20],
         "queries": task_result.get("queries", []),
@@ -236,8 +259,9 @@ def main() -> int:
     # --- Step 3: Send to Make.com ---
     try:
         resp = send_to_make(wc, webhook_url, make_payload)
-        ok = resp.get("result", {}).get("ok", False)
-        sc = resp.get("result", {}).get("status_code", "?")
+        make_result = worker_payload(resp)
+        ok = make_result.get("ok", False)
+        sc = make_result.get("status_code", "?")
         logger.info("Make.com response: ok=%s, status_code=%s", ok, sc)
         print(f"Sent to Make.com: ok={ok}, status_code={sc}")
         return 0 if ok else 5

@@ -47,12 +47,14 @@ def quota_tracker(redis_client, provider_config):
 def _set_provider_env_vars(monkeypatch):
     """Simula que los providers principales están configurados.
 
-    Task 042: also strip UMBRAL_DISABLE_CLAUDE because worker.config loads
-    ~/.config/openclaw/env at import time, leaking the production VPS setting
-    (UMBRAL_DISABLE_CLAUDE=true) into the test process and breaking Claude
-    routing tests.
+    UMBRAL_DISABLE_CLAUDE / OPENCLAW_GATEWAY_TOKEN leak stripping is handled
+    by the shared autouse fixture in tests/conftest.py
+    (_strip_openclaw_proxy_env_leaks) — without it, openclaw_proxy would show
+    up as configured with quota_state defaulting to 0.0 (not in any test's
+    explicit quota_state dict), silently changing fallback selection in the
+    auto-approve/quota-exceeded tests below. Tests for openclaw_proxy routing
+    set the token back explicitly (see TestOpenclawProxyRouting).
     """
-    monkeypatch.delenv("UMBRAL_DISABLE_CLAUDE", raising=False)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
     monkeypatch.setenv("GOOGLE_API_KEY", "goog-test")
     monkeypatch.setenv("GOOGLE_API_KEY_RICK_UMBRAL", "goog-vertex-test")
@@ -204,6 +206,45 @@ class TestUmbralDefaultModel:
         }
         decision = router.select_model("coding", quota_state=quota_state)
         assert decision.model != "gemini_pro" or decision.requires_approval is True
+
+
+class TestOpenclawProxyRouting:
+    """PKG-MACRO-P5-L2-T5: openclaw_proxy agregado al final de cada fallback_chain
+    (config/quota_policy.yaml). Con SOLO OPENCLAW_GATEWAY_TOKEN configurado (sin
+    Anthropic/Google/Azure), debe ser el único provider disponible y por lo tanto
+    el preferred efectivo — has_configured_route pasa a True."""
+
+    @pytest.fixture
+    def only_openclaw_proxy_env(self, monkeypatch):
+        monkeypatch.delenv("UMBRAL_DISABLE_CLAUDE", raising=False)
+        monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+        monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+        monkeypatch.delenv("GOOGLE_API_KEY_RICK_UMBRAL", raising=False)
+        monkeypatch.delenv("GOOGLE_CLOUD_PROJECT_RICK_UMBRAL", raising=False)
+        monkeypatch.delenv("AZURE_OPENAI_ENDPOINT", raising=False)
+        monkeypatch.delenv("AZURE_OPENAI_API_KEY", raising=False)
+        monkeypatch.setenv("OPENCLAW_GATEWAY_TOKEN", "test-gateway-token")
+
+    def test_coding_routes_to_openclaw_proxy(self, quota_tracker, only_openclaw_proxy_env):
+        router = ModelRouter(quota_tracker)
+        route = router.get_effective_route("coding")
+        assert route["has_configured_route"] is True
+        assert route["preferred"] == "openclaw_proxy"
+
+    def test_research_routes_to_openclaw_proxy(self, quota_tracker, only_openclaw_proxy_env):
+        router = ModelRouter(quota_tracker)
+        route = router.get_effective_route("research")
+        assert route["has_configured_route"] is True
+        assert route["preferred"] == "openclaw_proxy"
+
+    def test_openclaw_proxy_disabled_when_claude_disabled(self, quota_tracker, only_openclaw_proxy_env, monkeypatch):
+        """UMBRAL_DISABLE_CLAUDE=true también apaga openclaw_proxy (model_router.py:45):
+        con Claude deshabilitado y ningún otro provider configurado, no hay ruta."""
+        monkeypatch.setenv("UMBRAL_DISABLE_CLAUDE", "true")
+        router = ModelRouter(quota_tracker)
+        route = router.get_effective_route("coding")
+        assert route["has_configured_route"] is False
+        assert route["preferred"] is None
 
 
 class TestAutoApproveQuota:

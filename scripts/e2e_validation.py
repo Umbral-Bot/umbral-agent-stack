@@ -187,8 +187,11 @@ def _enqueue_and_wait(
     team: str,
     task_type: str,
     input_data: Dict[str, Any],
-    poll_attempts: int = 15,
-    poll_interval_s: float = 1.0,
+    # PKG-MACRO-P5-L2-T8: las tareas LLM van por openclaw_proxy, cuyo endpoint
+    # es un turno de agente (~36s medidos, acta §7.3/§10). 15 intentos x 1s
+    # expiraban siempre. 60 x 2s = 120s de ventana.
+    poll_attempts: int = 60,
+    poll_interval_s: float = 2.0,
 ) -> Dict[str, Any]:
     queued = _request_json(
         "POST",
@@ -294,7 +297,14 @@ def test_llm_generate(base_url: str, token: str) -> str:
                 "temperature": 0.3,
             },
         },
-        timeout=25.0,
+        # T8: turno de agente vía openclaw_proxy, ~36s medidos. 25s cortaba.
+        # retries=0 a propósito: con el default (2) un timeout dispararía
+        # 3 turnos de agente de 120s encima del mismo gateway (363s y hasta
+        # 3 turnos vivos a la vez, porque el worker no cancela el hilo al
+        # desconectarse el cliente). Esa ráfaga es justo lo que tumbó al
+        # gateway en §9.2.
+        timeout=120.0,
+        retries=0,
     )
     text = data.get("result", {}).get("text", "")
     return f"{len(text)} chars generados"
@@ -312,8 +322,10 @@ def test_composite_research(base_url: str, token: str) -> str:
             "topic": "tendencias proptech 2026",
             "depth": "quick",
         },
-        poll_attempts=20,
-        poll_interval_s=1.5,
+        # T8: composite encadena VARIAS llamadas LLM (queries + reporte), cada
+        # una un turno de agente de ~36s. 20x1.5s=30s no alcanzaba ni para una.
+        poll_attempts=90,
+        poll_interval_s=2.0,
     )
     status = status_data.get("status", "")
     if status != "done":
@@ -437,7 +449,9 @@ def test_multi_model_openai(base_url: str, token: str) -> str:
 
 def test_multi_model_anthropic(base_url: str, token: str) -> str:
     """12. POST /run llm.generate with model=claude-3-haiku-20240307 (requires ANTHROPIC_API_KEY)."""
-    with httpx.Client(timeout=30.0) as c:
+    # T8: sin ANTHROPIC_API_KEY este modelo Claude sale por openclaw_proxy
+    # (turno de agente, ~36s), no por la API nativa. 30s cortaba.
+    with httpx.Client(timeout=120.0) as c:
         resp = c.post(
             f"{base_url}/run",
             headers=_make_headers(token),
@@ -546,7 +560,10 @@ def test_claude_provider(base_url: str, token: str) -> str:
                 "max_tokens": 20,
             },
         },
-        timeout=30.0,
+        # T8: sale por openclaw_proxy (turno de agente, ~36s). 30s cortaba.
+        # retries=0: ver la nota en test_llm_generate (evita 3 turnos vivos).
+        timeout=120.0,
+        retries=0,
     )
     text = data.get("result", {}).get("text", "")
     provider = data.get("result", {}).get("provider", "?")

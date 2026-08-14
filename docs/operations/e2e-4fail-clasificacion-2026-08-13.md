@@ -329,3 +329,632 @@ y se documenta el bloqueo de la capa siguiente. Se dejó el env como quedó
 `GOOGLE_API_KEY`, ausente). Ninguna de las dos se tocó — ambas están en la
 lista de prohibidos de este pack. Evidencia completa en
 `~/.coord-ag-evidence/pkg-macro-p5-l2-t4/`.
+
+---
+
+## 9. Ruteo + default al proxy — código, y un incidente real (PKG-MACRO-P5-L2-T5, 2026-08-13)
+
+**Autorización citada de David:** "C — yaml + default al proxy en el mismo
+pack, para los 4 tests por la vía openclaw_proxy." Constraint duro: generación
+de imagen = Magnific vía MCP (no tocado en este pack).
+
+### 9.1 Cambios de código (probados, correctos)
+
+- `config/quota_policy.yaml`: `openclaw_proxy` agregado al **final** de
+  `fallback_chain` en las 7 `task_types`, sin tocar ningún `preferred`. Bloque
+  `providers.openclaw_proxy` nuevo (mismo orden de magnitud que `claude_pro`).
+- `worker/tasks/llm.py`: `handle_llm_generate` ahora usa `_default_model()`
+  cuando el input no trae `model` ni `selected_model` — con
+  `OPENCLAW_GATEWAY_TOKEN` presente y Claude no deshabilitado, cae en
+  `claude-sonnet-4-6` (→ `openclaw_proxy` vía `_detect_provider`); sin token,
+  el default histórico (Gemini) sigue igual.
+- **Bug encontrado y corregido** (no estaba en el alcance original, pero
+  bloqueaba todo lo demás): `_call_openclaw_proxy` reenviaba el `model`
+  solicitado (p.ej. `claude-sonnet-4-6`) tal cual al gateway. El endpoint
+  `/v1/chat/completions` del gateway hace su **propio** ruteo interno de
+  modelo y devuelve `400 Invalid model. Use openclaw or openclaw/<agentId>`
+  para cualquier otro valor — verificado en vivo contra `127.0.0.1:18789`
+  (mismo patrón que T3 §7.3). Corregido: el payload saliente ahora usa
+  `openclaw/<agent>` (`OPENCLAW_GATEWAY_AGENT`, default `main`); el `model`
+  solicitado se sigue preservando en el valor de retorno.
+- `worker/app.py`: `_PROVIDER_MODELS` no tenía entrada para `openclaw_proxy`,
+  así que `/providers/status` reportaba `effective_model="unknown"` para
+  `coding`/`research` aunque `has_configured_route` ya fuera `true` —
+  inconsistente con `dispatcher/service.py:PROVIDER_MODEL_MAP`, que sí lo
+  tiene (`anthropic/claude-sonnet-4-6`). Agregado, ambos mapas ahora coinciden
+  — necesario para que `R8: Routing coding/research` puedan comparar
+  `expected_model` contra el `model` real que devuelve la tarea.
+- Efecto colateral encontrado y corregido: `~/.config/openclaw/env` ya trae un
+  `OPENCLAW_GATEWAY_TOKEN` real desde T4, y varios archivos de test importan
+  `worker.config` (que lo carga) sin aislarlo — 17 tests en 5 archivos
+  (`test_model_router.py`, `test_llm_handler.py`,
+  `test_model_routing_integration.py`, `test_dispatcher_model_routing.py`,
+  `test_provider_detection.py`) empezaban a resolver `openclaw_proxy` en vez
+  de `anthropic`/`quota_exceeded` por la fuga. Mismo patrón que el leak de
+  `UMBRAL_DISABLE_CLAUDE` ya documentado ahí como "Task 042" — extendido para
+  cubrir también `OPENCLAW_GATEWAY_TOKEN`.
+- `pytest tests/test_model_router.py tests/test_llm_handler.py -v`: **72
+  passed**. Suite completa (`pytest tests/`, excluyendo 3 fallos
+  pre-existentes y no relacionados en `test_pit_*` por `ModuleNotFoundError:
+  pydantic` en un subproceso — confirmado que fallan igual sin este pack
+  aplicado): **4788 passed, 6 skipped, 2 xfailed**.
+
+### 9.2 Live: ruteo confirmado, pero incidente real del gateway
+
+Restart de `umbral-worker` + `openclaw-dispatcher` (gateway intacto, timestamp
+sin cambios en ese momento). `GET /providers/status` post-restart:
+
+```
+configured: ["openclaw_proxy"]
+coding:    has_configured_route=true, effective_preferred=openclaw_proxy, effective_model=anthropic/claude-sonnet-4-6
+research:  has_configured_route=true, effective_preferred=openclaw_proxy, effective_model=anthropic/claude-sonnet-4-6
+```
+
+El ruteo (paso 1) y el default (paso 2) funcionan exactamente como se pidió.
+Pero al correr `scripts/e2e_validation.py` real (sin `--notion`), el tráfico
+concurrente hacia `openclaw_proxy` — que invoca `openclaw/main`, el agente
+**completo** de producción (spawnea sub-procesos `codex app-server` por
+invocación, ~30–160s y ~27K prompt tokens por llamada, visto ya en T3 §7.3
+para un simple "ping") — **tumbó el gateway compartido**, que systemd
+reinició solo (`NRestarts=4`, PID nuevo, `ActiveEnterTimestamp` saltó de
+2026-08-12 12:34:19 —estable >24h— a 2026-08-13 18:05:38). No se corrió
+`systemctl restart openclaw-gateway` en ningún momento.
+
+Causa: el lane `main` del gateway tiene concurrencia limitada
+(`activeAhead=4 activeNow=3 queueBehind=1`, visto en journal). Este pack
+disparó ~6-7 llamadas casi simultáneas vía `openclaw_proxy`
+(`llm.generate`, `composite.research` ×2 subllamadas, `R8: Claude provider`,
+`R8: Routing coding`, `R8: Routing research`), que compitieron por esos slots
+contra tráfico real de producción — incluido al menos un cron interrumpido
+(`lane=cron-nested ... codex app-server client closed before turn completed`).
+27 líneas de `ClientDisconnectError`/`codex app-server client closed`/`lane
+wait exceeded` en la ventana 18:00–18:06 (evidencia, sin secretos).
+
+Resultado del e2e run: los 4 tests siguen en FAIL, pero ya no por
+config/ruteo/Gemini — por timeouts y `500 OpenClaw gateway unreachable`
+durante la ventana de crash+respawn.
+
+Post-incidente (verificado read-only): `umbral-worker`, `openclaw-dispatcher`
+y `openclaw-gateway` los tres `active`, `curl /health` del worker con
+`ok=true`. **No se repitió el e2e run** — repetirlo arriesga otro crash del
+gateway compartido que usa David en producción.
+
+### 9.3 Veredicto
+
+**`P5_L2_ROUTE_AND_DEFAULT = BLOCKED`** — pero **capa capacidad/confiabilidad
+del gateway**, no la capa ruteo/Gemini que preveía la misión original. El
+código (ruteo + default + fix del payload + consistencia de mapas) es
+correcto y está probado con 149+ tests unitarios nuevos/actualizados. El
+riesgo no está en el cableado — está en usar `openclaw_proxy` (hoy: único
+modelo disponible es el agente completo `openclaw/main`) como backend de
+`llm.generate` a la escala de tráfico concurrente real.
+
+**Sin rollback automático** del env (`UMBRAL_DISABLE_CLAUDE=false`,
+`OPENCLAW_GATEWAY_TOKEN` presente) ni del código: ambos son correctos y están
+probados: el peligro es de *uso a escala*, no de *cableado incorrecto*. Queda
+para decisión de David:
+
+- (a) agregar al gateway un agente liviano dedicado a completions (fuera de
+  alcance/prohibido en este pack — requiere editar `openclaw.json`), o
+- (b) no usar `openclaw_proxy` como default de `llm.generate` sin modelo
+  explícito hasta que exista esa vía liviana (revertir solo `_default_model()`
+  en `worker/tasks/llm.py`, dejando el ruteo de `quota_policy.yaml` y el fix
+  de `_call_openclaw_proxy` — ambos correctos independientemente de esta
+  decisión).
+
+Evidencia completa (incl. journal del crash, sin secretos) en
+`~/.coord-ag-evidence/pkg-macro-p5-l2-t5/`.
+
+### 9.4 `/code-review` (xhigh, 10 ángulos + verify + sweep) — hallazgo de seguridad más grave que el incidente
+
+Corrido sobre el diff de código de este pack (no sobre la acta). 22 candidatos
+generados, **0 refutados** — 20 CONFIRMED/PLAUSIBLE + 2 del sweep, reportados
+como 15 findings priorizados vía `ReportFindings`. Se aplicaron los fixes
+seguros y de bajo riesgo antes de abrir el PR; el resto queda documentado
+para decisión de David.
+
+**El hallazgo más importante no es de código — es de alcance.** `_default_model()`
+no solo afecta a `llm.generate`/`composite.research` (lo que este pack
+probó): también gobierna, sin cambio de código propio, dos rutas que
+**nunca pasan por el Dispatcher/ModelRouter** porque llaman `/run` directo:
+
+- `dispatcher/smart_reply.py::_do_llm_generate` — **respuestas y planes de
+  smart-reply de Notion Control Room que ve David.**
+- `scripts/daily_digest.py::generate_llm_summary` — el resumen del digest
+  diario.
+- `worker/tasks/composite.py` (`_generate_queries`,
+  `_generate_report_with_retry`) — ya cubierto en §9.1-9.3.
+
+Las tres rutas omiten `model`/`selected_model` (son las únicas en todo el
+repo que lo hacen, junto a un puñado de llamadas de test), así que con
+`OPENCLAW_GATEWAY_TOKEN` presente (ya está, desde T4) las tres **cambian de
+Gemini a Claude-vía-`openclaw_proxy` en producción, ahora mismo, sin que
+nadie lo haya pedido para ellas específicamente** — y heredan el mismo
+camino pesado y frágil (`openclaw/main`, turno de agente completo) que
+**ya tumbó el gateway compartido** en §9.2. Cero tracking de cuota en las
+tres (`QuotaTracker.record_usage` nunca se llama en este camino). Cero
+cobertura de test.
+
+Además: en `~/.openclaw/openclaw.json`, el agente `main` (el que
+`OPENCLAW_GATEWAY_AGENT` usa por default) tiene `model.primary =
+"openai/gpt-5.6-sol"` — **cero proveedores Anthropic configurados**. O sea
+que hoy, literalmente, `provider: "openclaw_proxy"` en la respuesta **no
+significa que Claude generó el texto** — lo generó GPT-5.6-sol, y
+`trace_llm_call`/`ops_log.llm_usage`/`/providers/status` lo registran como
+si fuera Claude, sin ningún chequeo.
+
+**Fixes aplicados (seguros, no cambian el alcance de `_default_model()`):**
+
+| Archivo | Fix |
+|---|---|
+| `worker/tasks/llm.py` | `MODEL_ALIASES["openclaw_proxy"]` agregado — sin esto, `selected_model="openclaw_proxy"` literal (mismo patrón de alias que `claude_pro`/`gemini_flash`) caía silenciosamente a Gemini vía el catch-all de `_detect_provider` y tiraba `GOOGLE_API_KEY not configured` |
+| `worker/tasks/llm.py` | `_default_model()` ahora lee `MODEL_ALIASES["claude_pro"]` en vez de un literal hardcodeado duplicado |
+| `tests/conftest.py` + 5 archivos | Fuga de `OPENCLAW_GATEWAY_TOKEN`/`UMBRAL_DISABLE_CLAUDE` (mismo patrón que "Task 042") centralizada en un fixture `autouse` compartido, en vez de duplicada 6 veces (2 sitios ya habían divergido dentro de este mismo diff) |
+| `tests/test_openclaw_proxy.py` | 2 tests nuevos cubriendo el fix de `MODEL_ALIASES` end-to-end |
+
+`pytest tests/` tras los fixes: **4790 passed** (2 más que en §9.1, por los
+tests nuevos), mismos 3 fallos pre-existentes de `test_pit_*` deseleccionados.
+
+**No corregidos en este pack (documentados, `ReportFindings` con
+`outcome=skipped`):** el alcance de `_default_model()` sobre
+`smart_reply.py`/`daily_digest.py`/`composite.py` (requiere una decisión de
+producto, no un fix mecánico); el mismatch `provider/model` cuando el
+agente del gateway corre un modelo distinto al pedido; el hijack silencioso
+de `claude_pro`/`opus`/`haiku` cuando `ANTHROPIC_API_KEY` también esté
+configurado (late, no activo hoy); duplicación de `PROVIDER_MODEL_MAP` en
+3 lugares; `DEFAULT_ROUTING` en Python sin `openclaw_proxy`; ineficiencias
+preexistentes de `QuotaTracker` (fuera de los archivos de este pack).
+
+**Recomendación urgente para David:** el riesgo de crash del gateway
+compartido (§9.2) ya no es solo "mi e2e run lo tumbó" — es un riesgo
+**activo y continuo** cada vez que alguien dispara un smart-reply, el
+digest diario, o `composite.research_report`, sin que este pack lo haya
+pedido para esos tres casos. Antes del próximo uso real de cualquiera de
+esas tres rutas, decidir entre: (a) revertir el alcance de
+`_default_model()` a solo los casos explícitamente autorizados (acotarlo
+por `task_type`/caller en vez de global), (b) agregar al gateway un agente
+liviano dedicado a completions (fuera de alcance de este pack, requiere
+`openclaw.json`), o (c) aceptar el riesgo conscientemente. Esta prohibido
+tocar `UMBRAL_DISABLE_CLAUDE`/`OPENCLAW_GATEWAY_TOKEN` en este pack, así
+que no se revirtió nada del env — la decisión queda pendiente.
+
+> **Actualización (T6, §10): la opción (b) fue probada y NO funciona.**
+> Ver §10. Quedan (a) y (c).
+
+---
+
+## 10. Agente liviano en el gateway — probado y descartado (PKG-MACRO-P5-L2-T6, 2026-08-13)
+
+**Autorización citada de David:** "B — agregar en el gateway un agente
+liviano solo para completions (toca `openclaw.json`; el default global de
+`_default_model` puede quedar, pero ya no usa el turno completo de Rick).
+Elegida 2026-08-13 post-T5." Restart de `openclaw-gateway` autorizado en
+este pack (el único de L2 que lo autoriza), con backup + rollback.
+
+**Resultado: `P5_L2_COMPLETIONS_AGENT = BLOCKED`.** El agente se creó y
+funcionó — pero *no es liviano*, y no puede serlo: el costo no está en cómo
+se configure el agente, está en el endpoint del gateway.
+
+### 10.1 Qué se construyó
+
+Alta vía el CLI documentado (`openclaw agents add completions
+--non-interactive --workspace … --model openai/gpt-5.4-mini --json`), que
+reportó `bindings.added: []` — **cero bindings de canal**. Workspace nuevo y
+vacío (`~/.openclaw/workspaces/completions`), verificado antes del alta; no
+se copió el de `main`. Endurecimiento posterior por patch JSON sobre el
+mismo schema (`agents.list`):
+
+| Requisito del pack | Cómo se cumplió |
+|---|---|
+| Sin bindings de canal | `Routing rules: 0` confirmado por `openclaw agents list` |
+| Sin heartbeat autónomo | Sin clave `heartbeat`. **Verificado leyendo el runtime** (`isHeartbeatEnabledForAgent` + `hasExplicitHeartbeatAgents`): como ya hay agentes con heartbeat explícito, el heartbeat aplica *sólo* a esos — un agente sin la clave queda fuera. No es una suposición |
+| `skipBootstrap` | El schema **no** lo permite per-agent (`additionalProperties: false`, lo rechazó el validador). `agents.defaults.skipBootstrap` ya es `true` → se hereda |
+| Tools de exec/edit/write DENY | `profile: minimal` + `deny` de 13 grupos. El journal confirma **26 tools removidas**: `exec`, `edit`, `write`, `read`, `apply_patch`, `web_fetch`, `web_search`, `subagents`, `cron`, `message`, `nodes`, `image`, `tts`, … |
+| Provider ya autenticado | `openai/gpt-5.4-mini` (el más liviano del provider `openai` que ya autentica el gateway). No se inventó ningún Anthropic |
+
+Dos errores de schema los atrapó el **validador del propio runtime**
+(`openclaw config validate`), no se adivinó nada: `subagents.maxSpawnDepth`
+es sólo válido en `defaults` (reemplazado por `subagents.allowAgents: []`),
+y `skipBootstrap` no es válido per-agent (removido).
+
+### 10.2 Las sondas — 4 mediciones secuenciales, nunca concurrentes
+
+| # | Config | Timeout | Resultado |
+|---|---|---|---|
+| S1 | runtime `codex` | 20s | HTTP 000 (timeout) — inconcluso, ¿cold start? |
+| S2 | runtime `codex` | 60s | **HTTP 200 en 33.3s**, respuesta correcta. `prompt_tokens=12825` para un prompt de 5 palabras |
+| S3 | runtime `openclaw` | 30s | HTTP 000. El journal revela la causa oculta: `[bundle-mcp] failed to start server "magnific" … timed out after 30000ms` |
+| S4 | runtime `openclaw` + `deny: bundle-mcp` | 20s | HTTP 000, pero magnific ya no aparece en el journal (el deny per-agent funcionó). Server-side: `durationMs=32593` |
+
+S2 ya cumple por sí sola el criterio BLOCKED que fijó el pack (30s+ **y**
+10k+ tokens). S3 y S4 sirvieron para descartar la hipótesis de que la culpa
+fuera del MCP.
+
+**Magnific no se tocó** (prohibido): el fix de S4 fue denegar `bundle-mcp`
+*a nivel del agente*, no deshabilitar el servidor MCP.
+
+### 10.3 Diagnóstico: no es configurable
+
+El costo no viene del modelo, ni del runtime, ni de las tools, ni de MCP:
+
+- Modelo más liviano disponible (`gpt-5.4-mini`): no alcanza.
+- Runtime `codex` (subproceso) **y** runtime interno `openclaw`: ambos ~32-33s.
+- `profile: minimal` con 26 tools removidas: no alcanza.
+- `bundle-mcp` denegado: elimina 30s de arranque de MCP y **aun así son ~32s**.
+
+Es la maquinaria de **turno de agente** del gateway en sí (system prompt de
+~12.8k tokens + orquestación) la que cuesta ~32s por llamada, se configure
+como se configure el agente. El endpoint `/v1/chat/completions` del gateway
+**no expone completions puras**: todo pasa por un turno de agente.
+
+Comparación con T3 §7.3 (sonda a `openclaw/main`): 36s / 27.5k tokens →
+ahora 33s / 12.8k tokens. Mejora del ~53% en tokens, pero **sigue siendo un
+turno de agente**, no un completion.
+
+### 10.4 Rollback y estado final
+
+Por la regla del pack ("si 1-3 fallan, STOP y rollback json"):
+`openclaw.json` restaurado desde el backup y gateway reiniciado.
+Verificado: el archivo quedó **idéntico byte a byte** al backup pre-pack
+(`diff` vacío), los 8 agentes originales intactos, `completions` ya no
+existe, `openclaw config validate` → `Config valid`, y
+gateway/worker/dispatcher los tres `active` con `NRestarts=0` (los restarts
+fueron explícitos y limpios, no crash loops).
+
+**Los pasos 4 y 5 no se ejecutaron** — la misión lo prohíbe explícitamente
+cuando la sonda da BLOCKED ("no sigas al env"). En consecuencia:
+`OPENCLAW_GATEWAY_AGENT` **sigue sin definirse** en el env del worker, el
+default en `worker/tasks/llm.py` **sigue siendo `main`**, y
+`umbral-worker`/`openclaw-dispatcher` no se reiniciaron en este pack
+(conservan el `ActiveEnterTimestamp` de T5).
+
+**Residuo conocido, no limpiado a propósito:**
+`~/.openclaw/agents/completions/` (109 MB, incluye los transcripts de sesión
+de las 4 sondas) y `~/.openclaw/workspaces/completions/` (vacío). Quedan
+**inertes** — `openclaw.json` ya no los referencia. No se borraron porque
+implicaría podar transcripts (prohibido en este pack) y es irreversible.
+Comando documentado si David quiere limpiarlos:
+`openclaw agents delete completions`.
+
+### 10.5 Qué queda para decidir
+
+La opción (b) de §9.4 está **empíricamente descartada**. Quedan:
+
+- **(a)** Acotar el alcance de `_default_model()` a los casos explícitamente
+  autorizados (por `task_type`/caller en vez de global), sacando del camino
+  del gateway a `smart_reply` (Notion, David-facing), `daily_digest` y
+  `composite.research_report`. Es un cambio de código acotado, testeable, y
+  ataca directamente el riesgo de §9.4.
+- **(c)** Aceptar conscientemente que esas tres rutas paguen el costo del
+  turno de agente, con el riesgo de saturación del gateway compartido ya
+  demostrado en §9.2. Ojo con el número: como el agente `completions` se
+  revirtió (§10.4), esas rutas usarían `openclaw/main`, que se midió en
+  **~36s y ~27.5k tokens** (§7.3) — no los ~33s/12.8k de la tabla de arriba,
+  que son del agente que ya no existe.
+
+Una tercera vía que este pack no exploró (fuera de su autorización): darle
+al worker una API key propia de algún provider (`gemini`/`azure`) para
+`llm.generate`, que no depende del gateway en absoluto — es la "vía B" que
+§6 ya mencionaba como disponible e independiente de la capa 3.
+
+Evidencia completa (4 sondas, journal, diff de keys sin secretos) en
+`~/.coord-ag-evidence/pkg-macro-p5-l2-t6/`.
+
+---
+
+## 11. Recorte del default — cierre del riesgo de §9.4 (PKG-MACRO-P5-L2-T7, 2026-08-13)
+
+**Autorización citada de David:** "A — acotar `_default_model()` por caller:
+smart-reply, digest y composite NO van al gateway. El ruteo yaml del PR
+puede quedar. Pack de recorte en #645 antes de mergear. Elegida 2026-08-13
+post-T6 (B empíricamente descartada)."
+
+**`P5_L2_DEFAULT_SCOPED = Y`.** El riesgo concreto que §9.4 marcó como
+*urgente* — que `smart_reply` (Notion, David-facing), `daily_digest` y
+`composite` se reenrutaran solos al gateway sin que nadie lo pidiera —
+queda cerrado en código, con guards que se verificaron no-vacíos. El PR
+#645 pasa a ser seguro de mergear. Lo que **no** cierra este pack (y no
+pretendía): el camino encolado por el dispatcher, que sigue resolviendo a
+`openclaw_proxy` para toda tarea LLM — ver §11.2, punto 2.
+
+### 11.1 Seguridad live primero
+
+Antes de tocar nada, el `umbral-worker` seguía corriendo en memoria el
+código de T5 — es decir, con el default global todavía activo. Se
+reiniciaron `umbral-worker` y `openclaw-dispatcher` **desde el checkout
+`main`** (que no tiene `_default_model()`), para descargarlo del proceso
+vivo antes de empezar. `ActiveEnterTimestamp` 18:00:32 → **22:07:31**;
+`openclaw-gateway` **no se tocó** (sigue en 20:43:17, el restart de T6).
+
+### 11.2 El recorte
+
+`_default_model()` **eliminada**. `handle_llm_generate` vuelve al default
+histórico:
+
+```python
+requested_model = str(
+    input_data.get("model")
+    or input_data.get("selected_model")
+    or DEFAULT_MODEL          # Gemini — nunca el gateway
+).strip()
+```
+
+`openclaw_proxy` se usa ahora sólo cuando alguien lo pide explícitamente
+(un `model`/alias Claude u `openclaw_proxy`) o cuando el dispatcher inyecta
+`selected_model` vía ModelRouter. Los tres callers que llegaban sin modelo
+— `dispatcher/smart_reply.py::_do_llm_generate` (Notion, David-facing),
+`scripts/daily_digest.py::generate_llm_summary` y
+`worker/tasks/composite.py` (`_generate_queries` y
+`_generate_report_with_retry`) — vuelven al camino Gemini-sin-modelo, que
+es donde estaban antes de T5.
+
+**Dos precisiones que el `/code-review` de este pack corrigió sobre el
+borrador de esta misma sección** — ambas importan para decidir qué sigue:
+
+1. **`composite` sí pasa por el ModelRouter.** `LLM_TASK_PREFIXES =
+   ("llm.", "composite.")` (`dispatcher/service.py:61`), así que el
+   dispatcher **sí** le inyecta `model` a `composite.research_report`. Lo
+   que pasa es que `handle_composite_research_report` nunca lo lee y sus
+   dos sub-llamadas arman payloads nuevos sin modelo: **pasa por el router
+   y descarta la decisión**. Eso es pre-existente (está igual en `main`,
+   T5 sólo lo enmascaraba) y el recorte lo restaura tal cual — pero no es
+   cierto, como decía el borrador, que "no pase por el router".
+2. **El recorte cierra las rutas directas, no la encolada.** Con
+   `openclaw_proxy` como **único** provider configurado y presente en las
+   7 `fallback_chain` (cambio del PR que se conserva), **toda** tarea
+   `llm.*`/`composite.*` encolada sigue resolviendo a `openclaw_proxy` —
+   no sólo R8 `coding`/`research`. Verificado en el env vivo:
+
+   ```
+   configured: ['openclaw_proxy']
+   coding/critical/general/light/ms_stack/research/writing -> ['openclaw_proxy']
+   ```
+
+   O sea: el riesgo de §9.4 (los tres callers directos, incluido el
+   David-facing) **queda cerrado**; el camino encolado por el dispatcher
+   **no**, y sigue apuntando al mismo gateway de §9.2. No es una regresión
+   de este pack (es el estado de `main` + el ruteo yaml que David pidió
+   conservar), pero conviene tenerlo explícito antes de mergear.
+
+**Se conservó todo lo demás del PR** (nada de esto dependía del default
+global): los `fallback_chain` de `quota_policy.yaml`, el fix del payload
+`openclaw/<agent>`, `MODEL_ALIASES["openclaw_proxy"]`, los mapas
+sincronizados de `worker/app.py`, y el fixture de fuga de env en
+`conftest.py`. `_claude_disabled()` sigue en uso desde `_detect_provider`
+(no quedó código muerto).
+
+### 11.3 Tests
+
+- `test_handle_llm_generate_defaults_to_openclaw_proxy_with_token` (que
+  afirmaba el comportamiento ahora recortado) → reescrito como
+  **`test_handle_llm_generate_without_model_never_uses_gateway`**: con el
+  token presente y sin `model`, no sólo espera el error de Gemini —
+  además exige `mock_urlopen.assert_not_called()`, o sea que **no se abrió
+  ninguna conexión** al gateway.
+- Nuevo **`test_handle_llm_generate_selected_model_openclaw_proxy_uses_gateway`**:
+  la contrapartida, `selected_model="openclaw_proxy"` sí llega al gateway.
+- Nueva clase **`TestDefaultScopedAwayFromGateway`** (5 tests) que se ata a
+  los callers **reales**, no a literales copiados a mano — esto también salió
+  del `/code-review`, que detectó que el borrador afirmaba "callers reales"
+  cuando dos de los tres eran un dict escrito en el test:
+  - `composite`: usa el propio `_build_report_generation_payload()` y, aparte,
+    ejercita `_generate_queries()` (que arma su payload inline y no tenía
+    guardia), ambos con `urlopen.assert_not_called()`.
+  - `smart_reply` y `daily_digest`: invocan las funciones de producción
+    (`_do_llm_generate`, `generate_llm_summary`) con un `WorkerClient`
+    mockeado y afirman sobre el payload **que ellas realmente construyen**.
+    Si alguien le agrega un `model` a cualquiera de las dos, el test falla.
+  - La guardia estructural sobre el payload de composite se acotó: no
+    prohíbe `selected_model` en general (composite sí está ruteado y algún
+    día podría legítimamente reenviarlo), sino hardcodear un modelo de
+    gateway/Claude.
+
+**Verificación de que los guards no son vacíos:** se revirtió el recorte a
+mano y se corrió la suite — 3 de los tests nuevos **fallan** con el recorte
+revertido y pasan con él aplicado. Además `UMBRAL_DISABLE_CLAUDE` se fija
+explícito en los tests de `test_llm_handler.py` (si llegara truthy, el guard
+pasaría por el motivo equivocado).
+
+`pytest tests/`: **4796 passed**, 6 skipped, 2 xfailed. Mismos 3 fallos
+pre-existentes de `test_pit_*` deseleccionados (`pydantic` faltante en un
+subproceso, ajenos a este pack).
+
+**Cero sondas al gateway y cero e2e en este pack**, por instrucción
+explícita — el e2e completo fue justamente lo que lo tumbó en §9.2.
+
+### 11.4 Estado de las capas
+
+| # | Capa | Estado |
+|---|---|---|
+| 1 | Credenciales de provider ausentes en el worker (§2.1) | **abierta** |
+| 2 | `UMBRAL_DISABLE_CLAUDE` (§2.2) | cerrada en T4 (`false`) |
+| 3 | Login OpenAI del gateway (§6) | cerrada en T3 |
+| — | Reruteo silencioso al gateway, **rutas directas** (§9.4) | **cerrada acá** |
+| — | Camino **encolado** por el dispatcher → gateway | **abierta** (ver §11.2, punto 2) |
+
+Los 4 tests del e2e **siguen fallando**. Este pack no los arregla — saca a
+los tres callers directos del camino peligroso. Matiz sobre la causa, que
+el `/code-review` precisó: no es sólo "capa 1". Para `llm.generate` suelto
+sí (no hay credencial propia). Para `composite.research_report` hay algo
+más: el router **sí** elige un provider configurado (`openclaw_proxy`) y
+composite **descarta** esa decisión, así que cae en Gemini y muere por
+`GOOGLE_API_KEY not configured`. Cargar una key de Gemini lo taparía sin
+arreglar el descarte.
+
+La vía que arreglaría los 4 sin depender del gateway sigue siendo la "vía
+B" de §6/§10.5: una API key propia (`gemini`/`azure`) para el worker.
+
+Evidencia en `~/.coord-ag-evidence/pkg-macro-p5-l2-t7/`.
+
+> **Actualización (T8, §12): David eligió lo contrario a la "vía B".** El
+> texto va por OAuth de ChatGPT vía gateway, **sin Gemini**. §11 se revierte
+> en su parte de default; lo demás (timeouts, guards de callers) se conserva
+> y se amplía. Ver §12.
+
+---
+
+## 12. El texto va por OAuth de ChatGPT — default al proxy + timeouts (PKG-MACRO-P5-L2-T8, 2026-08-14)
+
+**Autorización citada de David:** "ChatGPT OAuth vía gateway por ahora. Subir
+timeouts. Sin Gemini. Azure Foundry más adelante SOLO si hay mucha
+concurrencia; preferencia = quedarse en OAuth. Imagen = Magnific MCP."
+(2026-08-14)
+
+**`P5_L2_CHATGPT_OAUTH = Y`** para el texto en general — **`llm.generate` y
+las dos rutas R8 andan por OAuth vía gateway**, que es exactamente lo pedido.
+`composite.research_report` queda **BLOCKED por capacidad**.
+
+> ⚠️ **Con una advertencia que no se puede leer por encima:** durante la
+> verificación live el gateway compartido **murió por OOM** (3.5 GB, restart
+> automático de systemd) por el loop de redespacho de `composite`, no por las
+> tres pruebas que pasan. Se recuperó solo y quedó `active`. Ver §12.4 y
+> §12.5 antes de habilitar `composite.research_report` en cron o en cualquier
+> ruta automática.
+
+### 12.1 Qué cambió
+
+| Cambio | Detalle |
+|---|---|
+| Default al proxy | `_default_model()` vuelve, pero ahora devuelve el alias `openclaw_proxy`. Sin `model` ni `selected_model` → gateway. |
+| **Sin fallback mudo a Gemini** | Si falta `OPENCLAW_GATEWAY_TOKEN` (o `UMBRAL_DISABLE_CLAUDE` está activo), **no** se cae a Gemini: se lanza un error que nombra lo que falta. Un fallback silencioso mandaría tráfico a un provider que David descartó y el síntoma aparecería como `GOOGLE_API_KEY not configured`, que apunta al lugar equivocado. |
+| Timeouts ≥ 90s | e2e `llm.generate` 25s → **120s**; poll de `_enqueue_and_wait` 15×1s → **60×2s**; poll de composite 20×1.5s → **90×2s**; `smart_reply._LLM_TIMEOUT` 20s → **120s**; `daily_digest` 30s (default) → **120s**; R8 Claude/anthropic 30s → **120s**; `urlopen` del proxy 90s → **105s** (subido, nunca bajado — y a propósito *por debajo* de los 120s de los callers, ver §12.6). |
+| `_LLM_TIMEOUT` **no se usaba** | Hallazgo lateral: la constante existía en `smart_reply.py` pero no se pasaba a `wc.run()`, así que el timeout real era el default de `WorkerClient` (30s). Ahora se pasa de verdad. |
+| Retries acotados | Los dos tests e2e que pegan al gateway pasan `retries=0`. Con el default (2), un timeout disparaba 3 turnos de agente de 120s sobre el mismo gateway (363s, hasta 3 vivos a la vez) — la ráfaga de §9.2. |
+| composite honra el ruteo | `handle_composite_research_report` propaga `model`/`selected_model` (vía `_ACTIVE_CONTEXT`, igual que la metadata de tracing) a sus dos sub-llamadas. Cierra el descarte que §11.2 documentó. |
+
+`DEFAULT_MODEL` (Gemini) queda como constante para quien pida Gemini
+explícitamente; ya no es el default de nadie.
+
+### 12.2 Etiqueta vs realidad — importante
+
+El worker reporta `provider="openclaw_proxy"` y `model="claude-sonnet-4-6"`,
+pero **el modelo real lo elige el gateway**, no este código. Hoy el agente
+`main` del gateway tiene `model.primary = openai/gpt-5.6-sol` y **cero
+proveedores Anthropic** (§9.4). O sea: la respuesta la genera GPT vía la
+sesión OAuth de ChatGPT — que es justamente lo que David pidió — pero la
+etiqueta dice Claude. No es un bug introducido acá; es la consecuencia de
+usar `openclaw_proxy` como puente y ya estaba señalado en §9.4. Vale
+tenerlo presente al leer `ops_log`/`trace_llm_call`.
+
+### 12.3 Tests
+
+`pytest tests/`: **4799 passed**, 6 skipped, 2 xfailed (mismos 3 fallos
+pre-existentes de `test_pit_*` deseleccionados). Los guards de T7 se
+invirtieron a propósito, porque la orden cambió:
+
+- `test_handle_llm_generate_without_model_uses_the_proxy` — con token y sin
+  modelo, **sí** va al proxy (invierte el guard de T7).
+- `test_handle_llm_generate_without_token_fails_asking_for_the_proxy` y
+  `..._claude_disabled_fails_without_falling_back` — sin token / con el flag
+  activo, falla nombrando lo que falta y **no** abre conexión a Gemini.
+- `test_no_gemini_call_when_token_present` — guard explícito de "sin
+  Gemini": aun con `GOOGLE_API_KEY` presente, la URL de salida es el gateway
+  y nunca `googleapis.com`.
+- `test_composite_honours_dispatcher_routed_model` — el passthrough nuevo.
+
+### 12.4 Las 4 pruebas live (de a una, pausa ≥10s, nunca el e2e completo)
+
+| # | Prueba | Resultado | Latencia |
+|---|---|---|---|
+| 1 | `llm.generate` | **PASS** — `provider=openclaw_proxy`, 169 chars, 27.330 prompt tokens | **35.2s** |
+| 2 | `composite.research_report` | **FAIL** (capacidad) | no converge |
+| 3 | R8 routing `coding` | **PASS** — `status=done` | **53.7s** |
+| 4 | R8 routing `research` | **PASS** — `status=done` | **38.6s** |
+
+Los tres que pasan confirman la medición de §7.3: ~35-54s por turno de
+agente, ~27k tokens de prompt. Antes de este pack morían por timeout a los
+20/25/30s.
+
+**Corrección importante — el gateway SÍ se cayó, por OOM.** Un borrador de
+esta sección decía "el gateway aguantó, `NRestarts=0` sin cambio de principio
+a fin". **Eso era falso**, y el error fue mío: verifiqué `NRestarts` *antes*
+del evento, no al final. Lo que pasó de verdad:
+
+```
+02:02:25  composite encolado; arranca el loop de redespacho (~cada 2 min)
+02:02–02:18  8 redespachos, cada uno abriendo turnos de agente en el gateway
+02:18:50  systemd: "A process of this unit has been killed by the OOM killer"
+          "Failed with result 'oom-kill'" — 3.5G memory peak, 25min 44s CPU
+02:18:58  systemd: "Scheduled restart job, restart counter is at 1"
+02:19:0x  gateway arranca de nuevo solo y recupera (active, MainPID nuevo)
+```
+
+Estado final verificado: `openclaw-gateway` **active**, `NRestarts=1`,
+`MainPID=3436104` — se recuperó solo, sin intervención. Las tres latencias
+que pasan se midieron **antes** del OOM, así que esos resultados siguen
+siendo válidos.
+
+Lo que esto cambia en la conclusión: el pile-up de composite (§12.5) no es
+sólo desperdicio de tiempo — **agotó la memoria del gateway compartido y lo
+mató**. Es el mismo final que §9.2, por otro camino: allá fue una ráfaga
+concurrente del e2e completo, acá fue un loop de redespacho sostenido de una
+sola tarea. Las pausas y el "de a una" evitaron el crash *de las tres pruebas
+que pasan*, pero no alcanzan si una tarea puede reencolarse sola para
+siempre.
+
+### 12.5 Por qué composite no pasa, y el agravante que apareció
+
+No es auth, ni ruteo, ni config: **una sola llamada suya excede los 120s**.
+El journal del gateway marca `durationMs=119867 / 119877 / 119881` — agota
+exactamente el timeout que subí. El prompt de generación de reporte lleva
+todo el `research_data` + `max_tokens=4096`, y ese turno de agente tarda más
+que eso.
+
+**Agravante encontrado (no lo causa este pack):** el dispatcher **redespacha
+la misma tarea cada ~2 min** (02:02:25, 02:04:27, 02:06:28, 02:08:28…).
+Cada redespacho arranca un composite nuevo que vuelve a pegarle al gateway:
+la tarea nunca termina y el gateway recibe tráfico sin fin. Se cortó
+reiniciando worker+dispatcher al cerrar el pack.
+
+Por eso **subir más el timeout no es la respuesta obvia**: si el timeout
+supera la ventana de redespacho (~2 min), se garantiza pile-up — varias
+corridas de la misma tarea vivas a la vez contra el mismo gateway, que es
+la receta de §9.2. Opciones reales para composite, en orden de menor a
+mayor cambio:
+
+1. **Achicar el turno**: bajar `max_tokens` del reporte y/o recortar el
+   `research_data` que se le manda, para que la llamada entre en la ventana.
+2. **Alinear redespacho y timeout**: subir la ventana de redespacho del
+   dispatcher por encima del timeout, para que no haya dos corridas vivas.
+3. **Streaming o partición**: generar el reporte por secciones (varias
+   llamadas cortas) en vez de una sola larga.
+4. Azure Foundry para esta tarea puntual — pero David dijo *sólo si hay
+   mucha concurrencia*, y esto es latencia de una llamada, no concurrencia.
+
+### 12.6 Lo que encontró el `/code-review` (y una advertencia sobre el review mismo)
+
+**Aviso de honestidad sobre el review:** corrió *parcial*. 12 de 20 agentes
+murieron con `529 Overloaded` (falla del lado del servidor, no del diff), así
+que de 5 ángulos sólo 2 quedaron completamente verificados
+(default-correctness y timeout-coherence). Los ángulos de tests, del
+passthrough de composite y de exactitud del acta **no** llegaron a correr.
+Lo que sí corrió encontró dos cosas reales, ya corregidas:
+
+1. **`scripts/daily_digest.py` se me había quedado afuera.** Construye su
+   `WorkerClient()` con el default de **30s** y llama `llm.generate` sin
+   modelo — o sea que con el default nuevo (proxy, ~35s) el digest habría
+   expirado **siempre**, y con `retries=2` habría dejado **3 turnos de agente
+   huérfanos** corriendo en el gateway por cada corrida. Subí timeouts en
+   `e2e_validation.py` y `smart_reply.py` y me salté este caller, que es
+   justamente uno de los tres que §9.4 había señalado. Corregido: pasa
+   `timeout=120s`.
+2. **Multiplicación por retries.** `_request_json` en el e2e trae
+   `retries=2` por default: 120s × 3 = 363s y hasta 3 turnos vivos en
+   paralelo (el worker **no** cancela el hilo del handler cuando el cliente
+   se desconecta — usa `run_in_executor`). Eso fabrica exactamente la ráfaga
+   de §9.2. Corregido con `retries=0` en los dos tests que pegan al gateway.
+3. **Margen interno/externo.** Había puesto el `urlopen` del proxy en 120s,
+   *igual* que todos los callers — con lo cual el caller siempre gana la
+   carrera, el worker nunca alcanza a devolver su propio error descriptivo, y
+   el turno queda huérfano. Corregido a **105s**: sigue arriba de los 90s
+   originales (nunca se bajó) pero ahora deja margen, así el error sale del
+   worker con causa clara dentro de la ventana del caller.
+
+El review también señaló, y vale registrarlo aunque no se toca acá: una sola
+expiración del lado del caller puede costar hasta **9 turnos** de gateway,
+porque se multiplican `WorkerClient.retries=2` × el re-enqueue del dispatcher
+(`service.py`, `retry_count < 2`). Es la misma familia de problema que el
+pile-up de §12.5 y conviene atacarlo junto con eso.
+
+Evidencia (journal, latencias, sin secretos) en
+`~/.coord-ag-evidence/pkg-macro-p5-l2-t8/`.

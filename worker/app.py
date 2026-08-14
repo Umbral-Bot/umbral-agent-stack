@@ -1013,6 +1013,10 @@ _PROVIDER_MODELS = {
     "claude_pro":       "claude-sonnet-4-6",
     "claude_opus":      "claude-opus-4-6",
     "claude_haiku":     "claude-haiku-4-5",
+    # Mismo alias que dispatcher/service.py:PROVIDER_MODEL_MAP["openclaw_proxy"] —
+    # deben quedar sincronizados para que effective_model coincida con el
+    # `model` que realmente devuelve una tarea enrutada por openclaw_proxy.
+    "openclaw_proxy":   "anthropic/claude-sonnet-4-6",
     "gemini_pro":       "gemini-2.5-pro",
     "gemini_flash":     "gemini-2.5-flash",
     "gemini_flash_lite": "gemini-2.5-flash-lite",

@@ -53,7 +53,12 @@ def _get_workflow_engine(wc: WorkerClient) -> WorkflowEngine:
 
 ECHO_PREFIX = "Rick:"
 _RESEARCH_TIMEOUT = 15.0  # seconds for research.web call
-_LLM_TIMEOUT = 20.0       # seconds for llm.generate call
+# llm.generate va por openclaw_proxy → el endpoint del gateway es un TURNO DE
+# AGENTE, no un completion: ~36s medidos (acta §7.3/§10). 20s cortaba siempre.
+# PKG-MACRO-P5-L2-T8: subido a 120s y —importante— efectivamente pasado a
+# wc.run(); antes esta constante no se usaba en ningún lado y el timeout real
+# era el default de WorkerClient (30s).
+_LLM_TIMEOUT = 120.0      # seconds for llm.generate call (agent turn via gateway)
 _MAX_RESEARCH_RESULTS = 3
 
 # ── System prompt for answer synthesis ──────────────────────────
@@ -715,7 +720,7 @@ def _do_llm_generate(wc: WorkerClient, prompt: str, system: str) -> Optional[str
             "system": system,
             "max_tokens": 800,
             "temperature": 0.5,
-        })
+        }, timeout=_LLM_TIMEOUT)
         text = result.get("result", {}).get("text", "")
         if text:
             logger.info("LLM generated %d chars", len(text))

@@ -169,17 +169,38 @@ class TestCallOpenclawProxy:
         assert body["temperature"] == 0.3
 
     @patch("worker.tasks.llm.urllib.request.urlopen")
-    def test_model_forwarded_in_payload(self, mock_urlopen):
+    def test_gateway_receives_openclaw_routing_alias_not_raw_model(self, mock_urlopen):
+        """PKG-MACRO-P5-L2-T5: el gateway (endpoint OpenAI-compatible) hace su
+        propio ruteo de modelo interno y rechaza con 400 cualquier `model` que
+        no sea "openclaw" o "openclaw/<agentId>" (verificado en vivo contra
+        127.0.0.1:18789). El payload saliente NUNCA debe llevar el nombre real
+        del modelo Anthropic — eso solo se preserva en el valor de retorno
+        (ver test_successful_call: result["model"])."""
         from worker.tasks.llm import _call_openclaw_proxy
         mock_urlopen.return_value = _mock_urlopen_ok("ok")
-        with patch.dict(os.environ, {"OPENCLAW_GATEWAY_TOKEN": "tok"}):
+        with patch.dict(os.environ, {"OPENCLAW_GATEWAY_TOKEN": "tok"}, clear=False):
+            os.environ.pop("OPENCLAW_GATEWAY_AGENT", None)
             _call_openclaw_proxy(
                 prompt="Hola", model="anthropic/claude-opus-4-6",
                 max_tokens=1024, temperature=0.7, system_prompt="",
             )
         req_obj = mock_urlopen.call_args[0][0]
         body = json.loads(req_obj.data.decode())
-        assert body["model"] == "anthropic/claude-opus-4-6"
+        assert body["model"] == "openclaw/main"
+
+    @patch("worker.tasks.llm.urllib.request.urlopen")
+    def test_gateway_agent_env_var_overrides_default(self, mock_urlopen):
+        from worker.tasks.llm import _call_openclaw_proxy
+        mock_urlopen.return_value = _mock_urlopen_ok("ok")
+        env = {"OPENCLAW_GATEWAY_TOKEN": "tok", "OPENCLAW_GATEWAY_AGENT": "rick-communication-director"}
+        with patch.dict(os.environ, env):
+            _call_openclaw_proxy(
+                prompt="Hola", model="anthropic/claude-opus-4-6",
+                max_tokens=1024, temperature=0.7, system_prompt="",
+            )
+        req_obj = mock_urlopen.call_args[0][0]
+        body = json.loads(req_obj.data.decode())
+        assert body["model"] == "openclaw/rick-communication-director"
 
 
 # ---------------------------------------------------------------------------
@@ -224,6 +245,33 @@ class TestDetectProviderClaude:
             "AZURE_OPENAI_API_KEY": "ak",
         }):
             assert _detect_provider("gpt-5.2") == "azure_foundry"
+
+    def test_openclaw_proxy_alias_resolves_to_claude(self):
+        """PKG-MACRO-P5-L2-T5: MODEL_ALIASES["openclaw_proxy"] must exist —
+        config/quota_policy.yaml's fallback_chain and dispatcher's
+        ModelRouter/PROVIDER_MODEL_MAP can legitimately hand the worker a bare
+        "openclaw_proxy" as `selected_model` (the same alias pattern every
+        other provider key in MODEL_ALIASES supports); without an entry it
+        silently fell through _detect_provider's catch-all to "gemini"."""
+        from worker.tasks.llm import MODEL_ALIASES, _resolve_model_alias
+        assert "openclaw_proxy" in MODEL_ALIASES
+        assert _resolve_model_alias("openclaw_proxy") == "claude-sonnet-4-6"
+
+    @patch("worker.tasks.llm.trace_llm_call")
+    @patch("worker.tasks.llm.urllib.request.urlopen")
+    def test_selected_model_openclaw_proxy_routes_through_gateway(self, mock_urlopen, mock_trace):
+        """End-to-end: selected_model="openclaw_proxy" (no "model" key — the
+        Dispatcher's documented backward-compat shape) with ONLY
+        OPENCLAW_GATEWAY_TOKEN configured must reach the gateway, not raise
+        GOOGLE_API_KEY not configured."""
+        from worker.tasks.llm import handle_llm_generate
+        mock_urlopen.return_value = _mock_urlopen_ok("via gateway")
+        env = _env_without("ANTHROPIC_API_KEY", "GOOGLE_API_KEY")
+        env["OPENCLAW_GATEWAY_TOKEN"] = "tok"
+        with patch.dict(os.environ, env, clear=True):
+            result = handle_llm_generate({"prompt": "hola", "selected_model": "openclaw_proxy"})
+        assert result["provider"] == "openclaw_proxy"
+        assert result["text"] == "via gateway"
 
 
 # ---------------------------------------------------------------------------
@@ -320,3 +368,135 @@ class TestProvidersDict:
         from worker.tasks.llm import PROVIDERS
         for p in ("gemini", "vertex", "azure_foundry", "openai", "anthropic"):
             assert p in PROVIDERS, f"Provider '{p}' missing from PROVIDERS dict"
+
+
+# ---------------------------------------------------------------------------
+# PKG-MACRO-P5-L2-T8 — el texto va por el proxy (OAuth de ChatGPT), sin Gemini
+# ---------------------------------------------------------------------------
+class TestTextGoesThroughProxy:
+    """T8 invierte el recorte de T7 por decisión de David (2026-08-14): el
+    texto sale por la sesión de ChatGPT (OAuth) que vive en el gateway, vía
+    `openclaw_proxy`. Sin Gemini.
+
+    Lo que T7 protegía sigue importando, pero se resuelve con timeouts (≥90s,
+    también en este pack) y no disparando en ráfaga, no sacando el tráfico del
+    gateway.
+
+    Los tests usan las funciones REALES, no literales copiados a mano."""
+
+    @patch("worker.tasks.llm.urllib.request.urlopen")
+    def test_composite_report_generation_uses_proxy(self, mock_urlopen):
+        """El payload real de composite, sin modelo inyectado, va al proxy."""
+        from worker.tasks.composite import _build_report_generation_payload
+        from worker.tasks.llm import handle_llm_generate
+
+        mock_urlopen.return_value = _mock_urlopen_ok("reporte")
+        payload = _build_report_generation_payload(
+            topic="proptech", research_data="datos", language="es"
+        )
+        env = _env_without("GOOGLE_API_KEY")
+        env["OPENCLAW_GATEWAY_TOKEN"] = "tok"
+        env["UMBRAL_DISABLE_CLAUDE"] = "false"
+        with patch.dict(os.environ, env, clear=True):
+            result = handle_llm_generate(payload)
+
+        assert result["provider"] == "openclaw_proxy"
+        body = json.loads(mock_urlopen.call_args[0][0].data.decode())
+        assert body["model"] == "openclaw/main"
+
+    @patch("worker.tasks.llm.urllib.request.urlopen")
+    def test_composite_honours_dispatcher_routed_model(self, mock_urlopen):
+        """T8 paso 3: si el dispatcher inyectó un modelo, composite lo HONRA
+        (antes lo descartaba y sus sub-llamadas caían en el default)."""
+        from worker.tasks import composite
+
+        mock_urlopen.return_value = _mock_urlopen_ok("reporte")
+        composite._ACTIVE_CONTEXT.clear()
+        composite._ACTIVE_CONTEXT["model"] = "anthropic/claude-sonnet-4-6"
+        composite._ACTIVE_CONTEXT["selected_model"] = "openclaw_proxy"
+        try:
+            payload = composite._build_report_generation_payload(
+                topic="t", research_data="d", language="es"
+            )
+            assert payload["model"] == "anthropic/claude-sonnet-4-6"
+            assert payload["selected_model"] == "openclaw_proxy"
+        finally:
+            composite._ACTIVE_CONTEXT.clear()
+
+    def test_composite_without_routed_model_sends_no_model_key(self):
+        """Sin inyección del dispatcher (llamada directa, no encolada), el
+        payload no lleva modelo y aplica el default de handle_llm_generate."""
+        from worker.tasks import composite
+
+        composite._ACTIVE_CONTEXT.clear()
+        payload = composite._build_report_generation_payload(
+            topic="t", research_data="d", language="es"
+        )
+        assert "model" not in payload
+        assert "selected_model" not in payload
+
+    @patch("worker.tasks.composite.handle_research_web")
+    @patch("worker.tasks.llm.urllib.request.urlopen")
+    def test_composite_query_generation_uses_proxy(self, mock_urlopen, _mock_web):
+        """`_generate_queries` arma su payload inline; se lo ejercita de verdad
+        porque es la PRIMERA llamada LLM del pipeline."""
+        from worker.tasks.composite import _generate_queries
+
+        mock_urlopen.return_value = _mock_urlopen_ok("1. una\n2. dos\n3. tres")
+        env = _env_without("GOOGLE_API_KEY")
+        env["OPENCLAW_GATEWAY_TOKEN"] = "tok"
+        env["UMBRAL_DISABLE_CLAUDE"] = "false"
+        with patch.dict(os.environ, env, clear=True):
+            _generate_queries("proptech", 3)
+
+        mock_urlopen.assert_called()
+        body = json.loads(mock_urlopen.call_args[0][0].data.decode())
+        assert body["model"] == "openclaw/main"
+
+    @patch("worker.tasks.llm.urllib.request.urlopen")
+    def test_no_gemini_call_when_token_present(self, mock_urlopen):
+        """Guard explícito de la decisión 'sin Gemini': ninguna llamada por
+        defecto puede terminar en generativelanguage.googleapis.com."""
+        from worker.tasks.llm import handle_llm_generate
+
+        mock_urlopen.return_value = _mock_urlopen_ok("ok")
+        env = _env_without()
+        env["OPENCLAW_GATEWAY_TOKEN"] = "tok"
+        env["UMBRAL_DISABLE_CLAUDE"] = "false"
+        env["GOOGLE_API_KEY"] = "no-deberia-usarse"
+        with patch.dict(os.environ, env, clear=True):
+            result = handle_llm_generate({"prompt": "hola"})
+
+        assert result["provider"] == "openclaw_proxy"
+        url = mock_urlopen.call_args[0][0].full_url
+        assert "googleapis.com" not in url
+        assert "18789" in url
+
+    def test_smart_reply_real_caller_sends_no_model(self):
+        """Vincula el guard al caller REAL: dispatcher/smart_reply.py::
+        _do_llm_generate. Si alguien le agrega un `model`, esto falla."""
+        from unittest.mock import MagicMock
+        from dispatcher.smart_reply import _do_llm_generate
+
+        wc = MagicMock()
+        wc.run.return_value = {"result": {"text": "ok"}}
+        _do_llm_generate(wc, prompt="Respondé a David.", system="Sos Rick.")
+
+        task, payload = wc.run.call_args.args[0], wc.run.call_args.args[1]
+        assert task == "llm.generate"
+        assert "model" not in payload
+        assert "selected_model" not in payload
+
+    def test_daily_digest_real_caller_sends_no_model(self):
+        """Idem para scripts/daily_digest.py::generate_llm_summary."""
+        from unittest.mock import MagicMock
+        from scripts.daily_digest import generate_llm_summary
+
+        wc = MagicMock()
+        wc.run.return_value = {"result": {"text": "resumen"}}
+        generate_llm_summary("reporte", wc)
+
+        task, payload = wc.run.call_args.args[0], wc.run.call_args.args[1]
+        assert task == "llm.generate"
+        assert "model" not in payload
+        assert "selected_model" not in payload

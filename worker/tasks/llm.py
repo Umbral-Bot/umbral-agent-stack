@@ -73,6 +73,9 @@ MODEL_ALIASES = {
     "claude_pro":    "claude-sonnet-4-6",
     "claude_opus":   "claude-opus-4-6",
     "claude_haiku":  "claude-haiku-4-5",
+    # --- OpenClaw Gateway Proxy (OPENCLAW_GATEWAY_TOKEN — mismo alias que
+    # dispatcher/model_router.py's fallback_chain y PROVIDER_MODEL_MAP) ---
+    "openclaw_proxy": "claude-sonnet-4-6",
     # --- Google AI Studio (GOOGLE_API_KEY) ---
     "gemini_pro":       GEMINI_PRO_MODEL,
     "gemini_flash":     GEMINI_FLASH_MODEL,
@@ -90,6 +93,39 @@ def _claude_disabled() -> bool:
     return value in {"1", "true", "yes", "on"}
 
 
+def _default_model() -> str:
+    """
+    Modelo por defecto cuando el input no trae `model` ni `selected_model`.
+
+    Decisión de David (2026-08-14): el texto va por la sesión de ChatGPT
+    (OAuth) que vive en el gateway, vía `openclaw_proxy`. **Sin Gemini.**
+
+    Si falta el token del gateway (o Claude está deshabilitado por flag), NO
+    caemos a Gemini de callado: fallamos pidiendo exactamente lo que falta.
+    Un fallback silencioso a Gemini sería peor que un error — mandaría el
+    tráfico a un provider que David descartó, y el síntoma aparecería como
+    "GOOGLE_API_KEY not configured", que apunta al lugar equivocado.
+
+    Ojo con la etiqueta: esto devuelve el alias `openclaw_proxy`, que el
+    worker reporta como `provider="openclaw_proxy"` — pero **el modelo real
+    lo elige el gateway**, no este código (hoy su primary es OAuth de OpenAI,
+    no Anthropic). Ver acta §12.
+    """
+    if _claude_disabled():
+        raise RuntimeError(
+            "No hay modelo por defecto: UMBRAL_DISABLE_CLAUDE está activo y "
+            "deshabilita openclaw_proxy, que es la vía de texto configurada. "
+            "Pasá un `model` explícito o desactivá el flag."
+        )
+    if not os.environ.get("OPENCLAW_GATEWAY_TOKEN", "").strip():
+        raise RuntimeError(
+            "No hay modelo por defecto: falta OPENCLAW_GATEWAY_TOKEN, que es "
+            "lo que habilita openclaw_proxy (la vía de texto configurada). "
+            "Cargá el token del gateway o pasá un `model` explícito."
+        )
+    return "openclaw_proxy"
+
+
 def handle_llm_generate(input_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Generate text using Gemini/OpenAI/Anthropic.
@@ -104,6 +140,19 @@ def handle_llm_generate(input_data: Dict[str, Any]) -> Dict[str, Any]:
 
     Returns:
         {"text": "...", "model": "...", "usage": {...}}
+
+    Default (PKG-MACRO-P5-L2-T8, decisión de David 2026-08-14): sin `model`
+    ni `selected_model` se usa `openclaw_proxy` — la sesión de ChatGPT (OAuth)
+    que vive en el gateway. **Sin Gemini.** Ver `_default_model()`.
+
+    Costo a tener en cuenta: el endpoint del gateway no es un completion puro,
+    es un turno de agente (~36s y ~27k tokens de prompt contra `openclaw/main`,
+    medido en §7.3/§10). Por eso los timeouts de la cadena se subieron a ≥90s
+    en este mismo pack — y por eso conviene no dispararle en ráfaga: en §9.2
+    una corrida e2e concurrente lo tumbó.
+
+    `DEFAULT_MODEL` (Gemini) queda como constante para quien pida Gemini
+    explícitamente; ya no es el default de esta función.
     """
     prompt = str(input_data.get("prompt", "")).strip()
     if not prompt:
@@ -112,7 +161,7 @@ def handle_llm_generate(input_data: Dict[str, Any]) -> Dict[str, Any]:
     requested_model = str(
         input_data.get("model")
         or input_data.get("selected_model")
-        or DEFAULT_MODEL
+        or _default_model()
     ).strip()
     model = _resolve_model_alias(requested_model)
     provider = _detect_provider(model, requested_alias=requested_model)
@@ -699,6 +748,7 @@ def _call_openclaw_proxy(
     Variables de entorno:
         OPENCLAW_GATEWAY_TOKEN — Bearer token para auth del gateway (requerido)
         OPENCLAW_GATEWAY_URL   — URL base del gateway (default: http://localhost:18789)
+        OPENCLAW_GATEWAY_AGENT — agent id del gateway a invocar (default: main)
     """
     token = os.environ.get("OPENCLAW_GATEWAY_TOKEN", "").strip()
     if not token:
@@ -707,13 +757,21 @@ def _call_openclaw_proxy(
     base_url = os.environ.get("OPENCLAW_GATEWAY_URL", "http://localhost:18789").strip().rstrip("/")
     url = f"{base_url}/v1/chat/completions"
 
+    # El endpoint OpenAI-compatible del gateway hace su propio ruteo de modelo
+    # interno y solo acepta "openclaw" o "openclaw/<agentId>" como valor de
+    # `model` — rechaza con 400 cualquier otro string (verificado en vivo,
+    # PKG-MACRO-P5-L2-T3). El modelo solicitado (p.ej. claude-sonnet-4-6) se
+    # preserva igual en la respuesta devuelta por esta función.
+    agent_id = os.environ.get("OPENCLAW_GATEWAY_AGENT", "main").strip() or "main"
+    gateway_model = f"openclaw/{agent_id}"
+
     messages: list = []
     if system_prompt:
         messages.append({"role": "system", "content": system_prompt})
     messages.append({"role": "user", "content": prompt})
 
     payload = json.dumps({
-        "model": model,
+        "model": gateway_model,
         "messages": messages,
         "max_tokens": max_tokens,
         "temperature": temperature,
@@ -729,7 +787,15 @@ def _call_openclaw_proxy(
         },
     )
     try:
-        with urllib.request.urlopen(req, timeout=90) as resp:
+        # T8: subido de 90s a 105s — deliberadamente POR DEBAJO de los 120s de
+        # los callers (e2e, smart_reply, daily_digest, dispatcher WorkerClient),
+        # no igual. Con el timeout interno == el externo, el caller siempre
+        # gana la carrera y el worker nunca llega a devolver su propio error
+        # descriptivo; encima el hilo del handler no se cancela al desconectarse
+        # el cliente (worker/app.py usa run_in_executor), así que el turno
+        # queda huérfano corriendo en el gateway. Con margen, el error sale del
+        # worker con causa clara y el caller lo recibe dentro de su ventana.
+        with urllib.request.urlopen(req, timeout=105) as resp:
             data = json.loads(resp.read().decode())
     except urllib.error.HTTPError as exc:
         body_str = _safe_http_error_body(exc)

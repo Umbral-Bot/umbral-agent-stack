@@ -98,10 +98,14 @@ class TestGetConfiguredProviders:
         assert "azure_foundry" not in providers
 
     def test_detects_all_with_complete_env(self, monkeypatch):
-        """All providers detected when all env vars are set."""
-        # Task 042: strip UMBRAL_DISABLE_CLAUDE leaked from ~/.config/openclaw/env
-        # via worker.config import-time hook in conftest.
-        monkeypatch.delenv("UMBRAL_DISABLE_CLAUDE", raising=False)
+        """All providers detected when all env vars are set.
+
+        UMBRAL_DISABLE_CLAUDE / OPENCLAW_GATEWAY_TOKEN leak stripping is
+        handled by the shared autouse fixture in tests/conftest.py
+        (_strip_openclaw_proxy_env_leaks) — this test's "complete env" is
+        intentionally openclaw_proxy-less (Anthropic native + Azure + Gemini
+        only).
+        """
         monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
         monkeypatch.setenv("GOOGLE_API_KEY", "goog-test")
         monkeypatch.setenv("GOOGLE_API_KEY_RICK_UMBRAL", "goog-vertex")
@@ -188,6 +192,11 @@ class TestModelRouterProviderSkipping:
         monkeypatch.delenv("AZURE_OPENAI_API_KEY", raising=False)
         monkeypatch.delenv("GOOGLE_API_KEY_RICK_UMBRAL", raising=False)
         monkeypatch.delenv("GOOGLE_CLOUD_PROJECT_RICK_UMBRAL", raising=False)
+        # OPENCLAW_GATEWAY_TOKEN (openclaw_proxy is now in every
+        # fallback_chain, config/quota_policy.yaml) is stripped by the shared
+        # autouse fixture in tests/conftest.py
+        # (_strip_openclaw_proxy_env_leaks) — required for this "truly no
+        # provider configured" case to hold.
 
         router = ModelRouter(quota_tracker)
         decision = router.select_model("coding")

@@ -74,7 +74,7 @@ def _build_report_generation_payload(
     research_data: str,
     language: str,
 ) -> Dict[str, Any]:
-    return {
+    payload: Dict[str, Any] = {
         "prompt": REPORT_USER_PROMPT.format(topic=topic, research_data=research_data),
         "system": REPORT_SYSTEM_PROMPT.format(language=language),
         "max_tokens": 4096,
@@ -84,6 +84,21 @@ def _build_report_generation_payload(
         "_source": _ACTIVE_CONTEXT.get("source"),
         "_source_kind": _ACTIVE_CONTEXT.get("source_kind"),
         "_usage_component": "composite.research_report.report_generation",
+    }
+    payload.update(_routed_model_fields())
+    return payload
+
+
+def _routed_model_fields() -> Dict[str, str]:
+    """Modelo elegido por el ModelRouter del dispatcher, si lo hay.
+
+    T8: antes se descartaba y las sub-llamadas caían siempre en el default.
+    Si el dispatcher no inyectó nada (llamada directa, sin encolar), devuelve
+    {} y `handle_llm_generate` aplica su propio default."""
+    return {
+        key: _ACTIVE_CONTEXT[key]
+        for key in ("model", "selected_model")
+        if _ACTIVE_CONTEXT.get(key)
     }
 
 
@@ -136,6 +151,7 @@ def _generate_queries(topic: str, n: int) -> List[str]:
             "_source": _ACTIVE_CONTEXT.get("source"),
             "_source_kind": _ACTIVE_CONTEXT.get("source_kind"),
             "_usage_component": "composite.research_report.query_generation",
+            **_routed_model_fields(),
         })
     except Exception as exc:
         raise RuntimeError(f"Query generation LLM call failed: {exc}") from exc
@@ -223,6 +239,12 @@ def handle_composite_research_report(input_data: Dict[str, Any]) -> Dict[str, An
         ("_task_type", "task_type"),
         ("_source", "source"),
         ("_source_kind", "source_kind"),
+        # PKG-MACRO-P5-L2-T8: `composite.` está en LLM_TASK_PREFIXES, así que
+        # el dispatcher YA inyecta model/selected_model para esta tarea — pero
+        # hasta ahora se descartaban acá y las sub-llamadas caían en el default.
+        # Se propagan por _ACTIVE_CONTEXT igual que la metadata de tracing.
+        ("model", "model"),
+        ("selected_model", "selected_model"),
     ):
         value = str(input_data.get(key, "") or "").strip()
         if value:

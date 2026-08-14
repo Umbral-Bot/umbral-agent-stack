@@ -1274,3 +1274,111 @@ aislada funcione no dice nada sobre varias en paralelo, y el gateway sigue
 siendo compartido y con historial de OOM.
 
 Evidencia en `~/.coord-ag-evidence/pkg-macro-p5-l2-t10/`.
+
+---
+
+## 15. CLOSEOUT — los 4 tests sobre main, y un desajuste que llevaba 5 meses escondido (PKG-MACRO-P5-L2-T11, 2026-08-14)
+
+**GO citado de David (2026-08-14):** CLOSEOUT secuencial. No concurrencia. No
+atacar el piso de ~27k tokens. Composite **NO** a cron. No Gemini. No Azure.
+
+Este pack no cambia código: corre los 4 tests originales de §1 **uno a uno**
+sobre `main` con el WINDOW ya mergeado, y sella el resultado.
+
+**`P5_L2_E2E = BLOCKED`** — pero por una capa que no es ninguna de las que
+veníamos persiguiendo. **El runtime pasó los cuatro.** Lo que falla es la
+aserción de dos tests.
+
+### 15.1 Resultados
+
+| # | Test | Resultado | Elapsed | RSS pico | ΔNRestarts |
+|---|---|---|---|---|---|
+| a | `test_llm_generate` | **PASS** | 35.3 s | 905 MB | 0 |
+| b | `test_routing_coding_selects_claude` | **FAIL\*** | 36.6 s | 906 MB | 0 |
+| c | `test_routing_research_selects_gemini` | **FAIL\*** | 39.2 s | 924 MB | 0 |
+| d | `test_composite_research` | **PASS** | 206.6 s | 941 MB | 0 |
+
+**\* FAIL de aserción, no de runtime.**
+
+Método: las 4 funciones llamadas **una a una** (nunca `run_e2e_suite`, que
+dispara `notion.add_comment` y providers Gemini/Claude/Vertex), pausa ≥12 s
+entre cada una, RSS muestreado cada 5 s. `worker`+`dispatcher` reiniciados
+desde el tip; gateway **no** tocado.
+
+### 15.2 composite: el WINDOW se sostiene
+
+| | |
+|---|---|
+| `status` | **done**, 206.6 s |
+| **ejecuciones** | **1** |
+| **re-encolas** | **0** |
+| reporte real | **19.459 chars** |
+| `stats` | `total_sources=15`, `sources_sent_to_model=15`, `research_time_ms=7279`, `generation_time_ms=160966`, `report_generation_attempts=1` |
+
+Consistente con T10 (201.1 s / 18.467 chars). El pile-up no volvió.
+
+### 15.3 Por qué fallan b y c — con la evidencia al lado
+
+El runtime hizo **exactamente lo que el test esperaba**. Leído del status de
+cada tarea:
+
+| test | task | status | `model` real | `provider` |
+|---|---|---|---|---|
+| b | `bb6bfa6e…` | done | `anthropic/claude-sonnet-4-6` | `openclaw_proxy` |
+| c | `be414971…` | done | `anthropic/claude-sonnet-4-6` | `openclaw_proxy` |
+
+…que es literalmente el `effective_model` contra el que comparan. El problema
+es de **shape**: los dos endpoints no devuelven lo mismo.
+
+```
+POST /run              → {ok, task, result: {text, model, provider, usage}}
+GET  /task/<id>/status → {status, result: {ok, task, result: {text, model, …}}}
+```
+
+El status **envuelve el sobre completo** del worker, así que el modelo vive en
+`result.result.model`. El test lee `status_data["result"]["model"]` → `None`
+→ `"?"` → `ValueError: Expected …, got=?`.
+
+El mismo desajuste está en composite: lee `result["report"]` (0 chars) cuando
+el reporte real está en `result.result.report` (19.459 chars). Ahí **no** rompe
+el test —sólo chequea `status == "done"`— pero el `detail` que imprime
+("reporte 0 chars") es engañoso.
+
+### 15.4 De cuándo viene: no es de esta cadena
+
+`git log -S` sobre esas líneas apunta a **`a5cd0d0`, 2026-03-22** — casi cinco
+meses antes de T1. Está presente en `98d9a954`, el commit base de toda la
+cadena P5-L2 (4 ocurrencias). **No lo introdujeron T8, T9 ni T10.**
+
+> **Matiz sobre mis propios reportes previos:** en §12.4 di R8 coding y R8
+> research como PASS. Los corrí con `curl` verificando `status=done` —
+> **no ejercité la aserción del test**. Este pack corre las funciones reales
+> por primera vez, y ahí apareció. Los PASS de §12.4 describen el runtime
+> correctamente; lo que no probaron fue el test.
+
+### 15.5 Qué no se hizo, a propósito
+
+**No se parcheó el test.** El pack autoriza tocar código sólo si el fallo es un
+bug de T10, y no lo es. El fix es un one-liner evidente (leer `result.result`),
+pero toca el script que corre el **cron de validación**, así que merece su
+propio pack con `/code-review` — no un parche al pasar dentro de un CLOSEOUT.
+
+### 15.6 Estado
+
+| Capa | Estado |
+|---|---|
+| Auth del gateway (§6, §7) | cerrada |
+| Ruteo + default al proxy (§8, §12) | cerrada |
+| Reruteo silencioso, rutas directas (§9.4, §11) | cerrada |
+| Ventana + pile-up de composite (§14) | cerrada — se sostiene acá |
+| **Aserción del e2e (`result.result`)** | **abierta** — única que queda |
+
+**Runtime: 4/4.** **Suite: 2/4**, por el desajuste de arriba.
+
+Salud durante todo el pack: `MainPID=3436104` y `NRestarts=1` **sin cambio** en
+las cuatro corridas; RSS 887 → 941 MB pico, lejos de los 2 GB de STOP; cero
+OOM; cero concurrencia.
+
+Y lo de siempre, explícito: **composite sigue FUERA de cron.**
+
+Evidencia en `~/.coord-ag-evidence/pkg-macro-p5-l2-t11/`.

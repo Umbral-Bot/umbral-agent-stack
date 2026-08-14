@@ -802,7 +802,14 @@ concurrencia; preferencia = quedarse en OAuth. Imagen = Magnific MCP."
 
 **`P5_L2_CHATGPT_OAUTH = Y`** para el texto en general — **`llm.generate` y
 las dos rutas R8 andan por OAuth vía gateway**, que es exactamente lo pedido.
-`composite.research_report` queda **BLOCKED por capacidad** (§12.4).
+`composite.research_report` queda **BLOCKED por capacidad**.
+
+> ⚠️ **Con una advertencia que no se puede leer por encima:** durante la
+> verificación live el gateway compartido **murió por OOM** (3.5 GB, restart
+> automático de systemd) por el loop de redespacho de `composite`, no por las
+> tres pruebas que pasan. Se recuperó solo y quedó `active`. Ver §12.4 y
+> §12.5 antes de habilitar `composite.research_report` en cron o en cualquier
+> ruta automática.
 
 ### 12.1 Qué cambió
 
@@ -858,10 +865,32 @@ Los tres que pasan confirman la medición de §7.3: ~35-54s por turno de
 agente, ~27k tokens de prompt. Antes de este pack morían por timeout a los
 20/25/30s.
 
-**El gateway aguantó**: `NRestarts=0` y `MainPID=3364591` **sin cambio** de
-principio a fin, `ActiveEnterTimestamp` intacto, cero `lane wait exceeded`.
-La diferencia con §9.2 (donde el e2e completo lo tumbó) es el método: de a
-una y con pausas, no en ráfaga.
+**Corrección importante — el gateway SÍ se cayó, por OOM.** Un borrador de
+esta sección decía "el gateway aguantó, `NRestarts=0` sin cambio de principio
+a fin". **Eso era falso**, y el error fue mío: verifiqué `NRestarts` *antes*
+del evento, no al final. Lo que pasó de verdad:
+
+```
+02:02:25  composite encolado; arranca el loop de redespacho (~cada 2 min)
+02:02–02:18  8 redespachos, cada uno abriendo turnos de agente en el gateway
+02:18:50  systemd: "A process of this unit has been killed by the OOM killer"
+          "Failed with result 'oom-kill'" — 3.5G memory peak, 25min 44s CPU
+02:18:58  systemd: "Scheduled restart job, restart counter is at 1"
+02:19:0x  gateway arranca de nuevo solo y recupera (active, MainPID nuevo)
+```
+
+Estado final verificado: `openclaw-gateway` **active**, `NRestarts=1`,
+`MainPID=3436104` — se recuperó solo, sin intervención. Las tres latencias
+que pasan se midieron **antes** del OOM, así que esos resultados siguen
+siendo válidos.
+
+Lo que esto cambia en la conclusión: el pile-up de composite (§12.5) no es
+sólo desperdicio de tiempo — **agotó la memoria del gateway compartido y lo
+mató**. Es el mismo final que §9.2, por otro camino: allá fue una ráfaga
+concurrente del e2e completo, acá fue un loop de redespacho sostenido de una
+sola tarea. Las pausas y el "de a una" evitaron el crash *de las tres pruebas
+que pasan*, pero no alcanzan si una tarea puede reencolarse sola para
+siempre.
 
 ### 12.5 Por qué composite no pasa, y el agravante que apareció
 

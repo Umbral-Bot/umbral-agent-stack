@@ -1382,3 +1382,137 @@ OOM; cero concurrencia.
 Y lo de siempre, explícito: **composite sigue FUERA de cron.**
 
 Evidencia en `~/.coord-ag-evidence/pkg-macro-p5-l2-t11/`.
+
+---
+
+## 16. UNWRAP — la última capa: P5-L2 cierra en verde (PKG-MACRO-P5-L2-T12, 2026-08-14)
+
+**GO de David (orquestador):** UNWRAP. Un helper, no tres one-liners copiados.
+Tras este pack se cierra P5-L2. No concurrencia. Composite NO a cron.
+
+§15 dejó una sola capa abierta: la aserción. El runtime pasaba los cuatro tests
+y la suite reportaba 2/4 porque dos endpoints no devuelven el mismo shape. Este
+pack cierra eso y nada más.
+
+### 16.1 El desajuste, con la línea exacta que lo produce
+
+```
+POST /run              → {ok, task_id, task, team, trace_id, result:{model, report, ...}}
+GET  /task/<id>/status → {status, result:{ok, task_id, task, ..., result:{model, report, ...}}}
+```
+
+El worker devuelve un sobre (`worker/app.py:729-735`). `WorkerClient.run()` pasa
+ese sobre entero, y `dispatcher/queue.py:243` lo guarda tal cual:
+
+```python
+envelope["result"] = result      # ← `result` ya ES el sobre del worker
+```
+
+Así que sobre un status el payload del handler queda **un nivel más adentro**.
+Leer `result["model"]` ahí da `None` → el test imprime `?`. No hay nada roto en
+el runtime: está leyendo el lugar equivocado.
+
+### 16.2 El helper, y por qué es estricto
+
+Un solo `_worker_payload(status_data)` en `scripts/e2e_validation.py`, usado en
+las tres funciones que pasan por `_enqueue_and_wait` (routing coding, routing
+research, composite). Los lectores de `POST /run` no se tocaron: ya leen bien.
+
+El criterio **no** puede ser "¿tiene un `result` dict adentro?". Hay handlers
+cuyo payload propio ya trae un `result` anidado — `granola` devuelve
+`{followup_type, result:{task_id, ...}}` — y un unwrap laxo se comería un nivel
+de más justo ahí. Se exige el juego completo de marcadores que el worker
+**siempre** pone en el sobre y que ningún handler tiene junto: `ok` + `task_id`
++ `task`. Verificado recorriendo con AST todos los `return {...}` de
+`worker/tasks/`: **ningún handler devuelve los tres**.
+
+Aplicado a una respuesta de `POST /run` el helper es pass-through: no hay
+segundo unwrap.
+
+### 16.3 Lo que encontró el `/code-review`
+
+8 hallazgos. **5 eran de este diff y se corrigieron en el mismo PR:**
+
+1. **El helper devolvía el sobre cuando el payload del handler no era dict.** La
+   condición mezclaba dos preguntas: *¿es el sobre?* y *¿el inner es dict?*. Un
+   handler que devuelva lista o string caía al `return` de abajo y el caller
+   recibía `{ok, task_id, task, trace_id, result:[...]}` → `report=''`,
+   `model='?'`. **El bug de T11 de vuelta, en silencio, justo en el caso que el
+   helper decía cubrir.** Ahora la detección depende sólo de los marcadores.
+2. **`test_composite_research` seguía dando PASS con "reporte 0 chars".**
+   `_run_test` marca `passed=True` con que la función retorne. El largo del
+   reporte sólo es una métrica honesta si el vacío falla. Sin ese guard, la
+   próxima regresión del shape se vuelve a colar como verde en el cron de las
+   06:00 — que es *exactamente* lo que pasó durante cinco meses.
+3. Un `result` corrupto pasaba de `AttributeError` ruidoso a `{}` silencioso.
+   Queda el `{}`, pero ya ninguna de las tres funciones puede reportar verde
+   sobre datos corruptos.
+4. Faltaba el caso *inner no-dict* en los tests: era la rama del hallazgo 1 y
+   pasaba los 24 tests sin hacer ruido.
+5. Los asserts positivos de routing eran casi tautológicos: llegar al `assertIn`
+   ya implicaba que el modelo había coincidido. Pasan a `assertEqual` sobre el
+   string completo.
+
+**3 quedaron fuera del alcance ordenado** y van al siguiente pack:
+
+- **`scripts/sim_to_make.py:211` tiene el mismo bug, contra un webhook externo.**
+  Encola por `/enqueue`, pollea el status y lee `result.result` como si fuera el
+  payload → manda `report=''` y `sources_count=0` a Make.com y devuelve exit 0.
+  Es el mismo defecto que el e2e, pero acá no falla un assert: **manda datos
+  vacíos a un sistema externo en silencio.**
+- El helper es local al script mientras el shape pertenece al contrato
+  worker/dispatcher. Ya conviven **cuatro** variantes ad-hoc del mismo unwrap
+  (`dispatcher/service.py:345` y `:763`, `sim_to_make.py:211`, y este).
+- `test_llm_generate` también da PASS con 0 chars. La orden decía no tocarlo.
+
+### 16.4 Mutación: 4 de 4
+
+Ninguna guarda es vacua — se verificó mutando el **fuente**, no sólo por patch:
+
+| Mutación | Resultado |
+|---|---|
+| M1 — helper degradado al unwrap ingenuo pre-T12 | 7 failed |
+| M2 — detección de sobre atada al tipo del inner | 1 failed (el test nuevo) |
+| M3 — sin el guard de reporte no-vacío | 2 failed |
+| M4 — unwrap laxo, sin marcadores | 1 failed (caso granola) |
+
+`pytest`: **4831 passed**, 6 skipped, 2 xfailed. Deselect de 3 `test_pit_*`
+ajenos (PIT archivado); verificado que fallan igual sobre `main` sin este diff.
+
+### 16.5 Live: sólo b y c
+
+Composite **no** se re-corrió: ya está `[E]` en §15 y son ~200s de turno.
+
+| test | resultado | elapsed | RSS pico | ΔNRestarts |
+|---|---|---|---|---|
+| b) `test_routing_coding_selects_claude` | **PASS** | 36.7 s | 731 MB | 0 |
+| c) `test_routing_research_selects_gemini` | **PASS** | 36.5 s | 782 MB | 0 |
+
+Los dos: `expected=anthropic/claude-sonnet-4-6, actual=anthropic/claude-sonnet-4-6`.
+
+El dato que cierra el argumento: **elapsed T11 → T12 fue 36.6 → 36.7 s y 39.2 →
+36.5 s.** El runtime era idéntico en los dos packs. Lo único que cambió es dónde
+mira el test.
+
+### 16.6 Estado
+
+| Capa | Estado |
+|---|---|
+| Auth del gateway (§6, §7) | cerrada |
+| Ruteo + default al proxy (§8, §12) | cerrada |
+| Reruteo silencioso, rutas directas (§9.4, §11) | cerrada |
+| Ventana + pile-up de composite (§14) | cerrada |
+| Aserción del e2e (`result.result`) | **cerrada acá** |
+
+**`P5_L2_E2E = Y`**, con la evidencia repartida en dos packs, cada uno midiendo
+lo suyo: **el runtime de los 4 en §15 (T11)** — incluido composite, 206.6 s, 1
+ejecución, 0 re-encolas, 19.459 chars — **y la aserción de b y c acá (T12)**.
+
+Salud: `MainPID=3436104` y `NRestarts=1` sin cambio; RSS 637 → 782 MB pico,
+lejos de los 2 GB de STOP; cero OOM; cero concurrencia; gateway nunca reiniciado.
+
+Y lo de siempre, explícito: **composite sigue FUERA de cron.** Que la suite esté
+verde no cambia que un turno de composite son ~200 s sobre un gateway
+compartido; habilitarlo en cron es una decisión aparte, y no se tomó.
+
+Evidencia en `~/.coord-ag-evidence/pkg-macro-p5-l2-t12/`.

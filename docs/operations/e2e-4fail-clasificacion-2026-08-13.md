@@ -517,3 +517,122 @@ liviano dedicado a completions (fuera de alcance de este pack, requiere
 `openclaw.json`), o (c) aceptar el riesgo conscientemente. Esta prohibido
 tocar `UMBRAL_DISABLE_CLAUDE`/`OPENCLAW_GATEWAY_TOKEN` en este pack, así
 que no se revirtió nada del env — la decisión queda pendiente.
+
+> **Actualización (T6, §10): la opción (b) fue probada y NO funciona.**
+> Ver §10. Quedan (a) y (c).
+
+---
+
+## 10. Agente liviano en el gateway — probado y descartado (PKG-MACRO-P5-L2-T6, 2026-08-13)
+
+**Autorización citada de David:** "B — agregar en el gateway un agente
+liviano solo para completions (toca `openclaw.json`; el default global de
+`_default_model` puede quedar, pero ya no usa el turno completo de Rick).
+Elegida 2026-08-13 post-T5." Restart de `openclaw-gateway` autorizado en
+este pack (el único de L2 que lo autoriza), con backup + rollback.
+
+**Resultado: `P5_L2_COMPLETIONS_AGENT = BLOCKED`.** El agente se creó y
+funcionó — pero *no es liviano*, y no puede serlo: el costo no está en cómo
+se configure el agente, está en el endpoint del gateway.
+
+### 10.1 Qué se construyó
+
+Alta vía el CLI documentado (`openclaw agents add completions
+--non-interactive --workspace … --model openai/gpt-5.4-mini --json`), que
+reportó `bindings.added: []` — **cero bindings de canal**. Workspace nuevo y
+vacío (`~/.openclaw/workspaces/completions`), verificado antes del alta; no
+se copió el de `main`. Endurecimiento posterior por patch JSON sobre el
+mismo schema (`agents.list`):
+
+| Requisito del pack | Cómo se cumplió |
+|---|---|
+| Sin bindings de canal | `Routing rules: 0` confirmado por `openclaw agents list` |
+| Sin heartbeat autónomo | Sin clave `heartbeat`. **Verificado leyendo el runtime** (`isHeartbeatEnabledForAgent` + `hasExplicitHeartbeatAgents`): como ya hay agentes con heartbeat explícito, el heartbeat aplica *sólo* a esos — un agente sin la clave queda fuera. No es una suposición |
+| `skipBootstrap` | El schema **no** lo permite per-agent (`additionalProperties: false`, lo rechazó el validador). `agents.defaults.skipBootstrap` ya es `true` → se hereda |
+| Tools de exec/edit/write DENY | `profile: minimal` + `deny` de 13 grupos. El journal confirma **26 tools removidas**: `exec`, `edit`, `write`, `read`, `apply_patch`, `web_fetch`, `web_search`, `subagents`, `cron`, `message`, `nodes`, `image`, `tts`, … |
+| Provider ya autenticado | `openai/gpt-5.4-mini` (el más liviano del provider `openai` que ya autentica el gateway). No se inventó ningún Anthropic |
+
+Dos errores de schema los atrapó el **validador del propio runtime**
+(`openclaw config validate`), no se adivinó nada: `subagents.maxSpawnDepth`
+es sólo válido en `defaults` (reemplazado por `subagents.allowAgents: []`),
+y `skipBootstrap` no es válido per-agent (removido).
+
+### 10.2 Las sondas — 4 mediciones secuenciales, nunca concurrentes
+
+| # | Config | Timeout | Resultado |
+|---|---|---|---|
+| S1 | runtime `codex` | 20s | HTTP 000 (timeout) — inconcluso, ¿cold start? |
+| S2 | runtime `codex` | 60s | **HTTP 200 en 33.3s**, respuesta correcta. `prompt_tokens=12825` para un prompt de 5 palabras |
+| S3 | runtime `openclaw` | 30s | HTTP 000. El journal revela la causa oculta: `[bundle-mcp] failed to start server "magnific" … timed out after 30000ms` |
+| S4 | runtime `openclaw` + `deny: bundle-mcp` | 20s | HTTP 000, pero magnific ya no aparece en el journal (el deny per-agent funcionó). Server-side: `durationMs=32593` |
+
+S2 ya cumple por sí sola el criterio BLOCKED que fijó el pack (30s+ **y**
+10k+ tokens). S3 y S4 sirvieron para descartar la hipótesis de que la culpa
+fuera del MCP.
+
+**Magnific no se tocó** (prohibido): el fix de S4 fue denegar `bundle-mcp`
+*a nivel del agente*, no deshabilitar el servidor MCP.
+
+### 10.3 Diagnóstico: no es configurable
+
+El costo no viene del modelo, ni del runtime, ni de las tools, ni de MCP:
+
+- Modelo más liviano disponible (`gpt-5.4-mini`): no alcanza.
+- Runtime `codex` (subproceso) **y** runtime interno `openclaw`: ambos ~32-33s.
+- `profile: minimal` con 26 tools removidas: no alcanza.
+- `bundle-mcp` denegado: elimina 30s de arranque de MCP y **aun así son ~32s**.
+
+Es la maquinaria de **turno de agente** del gateway en sí (system prompt de
+~12.8k tokens + orquestación) la que cuesta ~32s por llamada, se configure
+como se configure el agente. El endpoint `/v1/chat/completions` del gateway
+**no expone completions puras**: todo pasa por un turno de agente.
+
+Comparación con T3 §7.3 (sonda a `openclaw/main`): 36s / 27.5k tokens →
+ahora 33s / 12.8k tokens. Mejora del ~53% en tokens, pero **sigue siendo un
+turno de agente**, no un completion.
+
+### 10.4 Rollback y estado final
+
+Por la regla del pack ("si 1-3 fallan, STOP y rollback json"):
+`openclaw.json` restaurado desde el backup y gateway reiniciado.
+Verificado: el archivo quedó **idéntico byte a byte** al backup pre-pack
+(`diff` vacío), los 8 agentes originales intactos, `completions` ya no
+existe, `openclaw config validate` → `Config valid`, y
+gateway/worker/dispatcher los tres `active` con `NRestarts=0` (los restarts
+fueron explícitos y limpios, no crash loops).
+
+**Los pasos 4 y 5 no se ejecutaron** — la misión lo prohíbe explícitamente
+cuando la sonda da BLOCKED ("no sigas al env"). En consecuencia:
+`OPENCLAW_GATEWAY_AGENT` **sigue sin definirse** en el env del worker, el
+default en `worker/tasks/llm.py` **sigue siendo `main`**, y
+`umbral-worker`/`openclaw-dispatcher` no se reiniciaron en este pack
+(conservan el `ActiveEnterTimestamp` de T5).
+
+**Residuo conocido, no limpiado a propósito:**
+`~/.openclaw/agents/completions/` (109 MB, incluye los transcripts de sesión
+de las 4 sondas) y `~/.openclaw/workspaces/completions/` (vacío). Quedan
+**inertes** — `openclaw.json` ya no los referencia. No se borraron porque
+implicaría podar transcripts (prohibido en este pack) y es irreversible.
+Comando documentado si David quiere limpiarlos:
+`openclaw agents delete completions`.
+
+### 10.5 Qué queda para decidir
+
+La opción (b) de §9.4 está **empíricamente descartada**. Quedan:
+
+- **(a)** Acotar el alcance de `_default_model()` a los casos explícitamente
+  autorizados (por `task_type`/caller en vez de global), sacando del camino
+  del gateway a `smart_reply` (Notion, David-facing), `daily_digest` y
+  `composite.research_report`. Es un cambio de código acotado, testeable, y
+  ataca directamente el riesgo de §9.4.
+- **(c)** Aceptar conscientemente que esas tres rutas paguen ~32s y ~12.8k
+  tokens por llamada, con el riesgo de saturación del gateway compartido ya
+  demostrado en §9.2.
+
+Una tercera vía que este pack no exploró (fuera de su autorización): darle
+al worker una API key propia de algún provider (`gemini`/`azure`) para
+`llm.generate`, que no depende del gateway en absoluto — es la "vía B" que
+§6 ya mencionaba como disponible e independiente de la capa 3.
+
+Evidencia completa (4 sondas, journal, diff de keys sin secretos) en
+`~/.coord-ag-evidence/pkg-macro-p5-l2-t6/`.

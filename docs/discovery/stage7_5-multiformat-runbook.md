@@ -12,6 +12,12 @@
 >
 > Status original de la rama: feature branch `rick/stage7_5-multiformat`. **DO NOT MERGE** until
 > human review. Date generated: 2026-05-08.
+>
+> **Actualización 2026-08-14:** la rama `rick/stage7_5-multiformat` **fue borrada**
+> (GO de David, Q13 cerrado por kill). El rescate de los 12 archivos únicos vive fuera
+> del repo en `/home/rick/_archive/stage7_5-multiformat-20260814/`; el SHA archivado es
+> `a2635398`. Detalle y motivo en
+> [docs/operations/stage7_5-decision-2026-08-14.md](../operations/stage7_5-decision-2026-08-14.md).
 
 This runbook documents the multi-format extension of the Stage 7.5 copy
 pipeline introduced in commits `3bfd5b3 → 02f934a` on

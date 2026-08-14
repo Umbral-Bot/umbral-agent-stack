@@ -149,6 +149,78 @@ orquestador con David, antes del 2026-08-27.
 
 ---
 
-Evidencia en `~/.coord-ag-evidence/pkg-macro-p5-s75-t1/`. Worktree de lectura
-eliminado al cerrar el pack; la rama `rick/stage7_5-multiformat` quedó en
-`a2635398`, intacta.
+## 7. SENTENCIA: kill (PKG-MACRO-P5-S75-T2, 2026-08-14)
+
+**GO de David, literal: «go kill».** No se quiere el pipeline multiformato de
+vuelta. **Q13 queda cerrado por kill, no por merge** — que era la otra mitad de
+la disyuntiva que fijó la entrevista del 2026-08-13.
+
+La decisión coincide con la recomendación de §6, pero conviene dejar claro cuál
+fue el motivo real: **producto, no deuda técnica.** La rama funcionaba — 31/31
+tests en el worktree — y se mata igual, porque `main` eligió otro pipeline hace
+tres meses y nadie quiere el multiformato de vuelta. No se mata porque estuviera
+rota.
+
+### 7.1 Orden de ejecución
+
+El export fue **antes** del delete, y el delete no se disparó hasta tener el
+INDEX verificado 12/12 contra los blobs de git:
+
+1. Probe: `a263539884627ea12184ca540ea7200f1fc739c2` confirmado en `origin`, sin
+   worktrees que la tuvieran.
+2. Export de los 12 UNIQUE_REAL a `/home/rick/_archive/stage7_5-multiformat-20260814/`,
+   extraídos con `git show a2635398:<path>` — desde el blob, no desde un
+   checkout que pudiera estar sucio. INDEX verificado: **12/12**, sha y bytes
+   coincidentes.
+3. Recién entonces `git push origin --delete`.
+
+### 7.2 Qué se archivó
+
+`/home/rick/_archive/stage7_5-multiformat-20260814/` — **fuera del repo, no
+commiteado**. `files/` con la estructura de paths original, `INDEX.txt` con path
++ blob sha + bytes, y un `README.txt` con la llave de rescate.
+
+Los 12: los 6 prompts `FORMATS`, `run_stage7_5_multiformat_real.py`,
+`test_stage7_5_multiformat.py`, los dos fixtures, y las versiones **de la rama**
+de `stage7_5_copy_writer.py` (1.433 L) y `eval_stage7_5_copy.py` (564 L).
+
+Que sean las de la rama se verificó por símbolo, no por confianza: el export
+tiene **0** ocurrencias de `generate_copy_with_voice_retry` (voice-v3, sólo en
+`main`) y **1** de `generate_format` (`FORMATS`, sólo en la rama).
+
+> El `README.txt` del archive advierte lo mismo que §3, porque quien lo abra
+> dentro de un año no va a tener este contexto: **esos dos archivos no son
+> reemplazos de los de `main`.** Copiarlos encima revierte producción.
+
+No se archivaron el report json ni el runbook: los dos ya viven en `main`, el
+primero como blob idéntico.
+
+### 7.3 Estado posterior
+
+| Verificación | Resultado |
+|---|---|
+| `ls-remote origin rick/stage7_5-multiformat` | **vacío** |
+| `origin/main` | `ada162c3` — sin moverse |
+| `poller-hardening` | `b7f8e411`, intacto (local-only, nunca estuvo en `origin`) |
+| Stashes | 14 |
+| `a2635398` en el clone local | sigue resoluble |
+
+### 7.4 Si alguna vez hay que volver
+
+La llave es el SHA. Mientras el objeto siga en el repo:
+
+```bash
+git branch <nombre> a263539884627ea12184ca540ea7200f1fc739c2
+```
+
+GitHub también permite restaurar ramas borradas recientemente desde la UI. Pero
+antes de tirar de esa cuerda: esto se cerró por decisión de producto, y el
+inventario de arriba sigue valiendo — traer el writer o el evaluator de vuelta
+sigue costando 4 funciones a mano y 809 líneas de reconciliación.
+
+---
+
+Evidencia en `~/.coord-ag-evidence/pkg-macro-p5-s75-t1/` (inventario) y
+`~/.coord-ag-evidence/pkg-macro-p5-s75-t2/` (sentencia). El worktree de lectura
+del inventario se eliminó al cerrar aquel pack; la rama
+`rick/stage7_5-multiformat` se borró en éste, tras el export.

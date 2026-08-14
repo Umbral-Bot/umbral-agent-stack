@@ -1516,3 +1516,116 @@ verde no cambia que un turno de composite son ~200 s sobre un gateway
 compartido; habilitarlo en cron es una decisión aparte, y no se tomó.
 
 Evidencia en `~/.coord-ag-evidence/pkg-macro-p5-l2-t12/`.
+
+---
+
+## 17. Coda de L2 — el mismo bug, en un lugar donde nadie miraba (PKG-MACRO-P5-L3-T1, 2026-08-14)
+
+**GO de David (orquestador):** primer ítem del bloque post-L2. No concurrencia.
+Composite NO a cron. No POST real a Make. No re-correr composite live.
+
+§16 cerró el unwrap en el e2e y dejó anotado que el mismo desajuste vivía en
+`scripts/sim_to_make.py`. Esto es esa coda: misma familia de bug, distinto
+final. En el e2e fallaba un assert y se veía. Acá no fallaba nada.
+
+### 17.1 Lo que hacía sim_to_make
+
+Encola un `composite.research_report`, poolea `GET /task/<id>/status` y leía
+`result["result"]` como si fuera el payload del handler. Sobre un status ese
+nivel es el **sobre del worker**, así que `report` salía `''` y
+`sources_count` `0` — y el script mandaba eso al webhook de Make.com
+**devolviendo exit 0**. Un pipeline verde entregando nada.
+
+Y un segundo bug encima, que lo habría tapado igual: `DEFAULT_TIMEOUT = 120`.
+Un composite mide ~200 s de wall y el dispatcher le da 300 s de ventana, así que
+el poll se rendía **antes de que el payload existiera**, aunque el unwrap
+estuviera bien. Ahora son 340 s, con la misma cuenta que el e2e: la ventana del
+cliente cubre la del **dispatcher**, no el wall medido.
+
+### 17.2 El helper sube a `client/`
+
+`client/task_result.py` — `worker_payload()` + `WORKER_ENVELOPE_MARKERS`.
+Criterio idéntico al de T12, palabra por palabra: desenvuelve sólo si el
+`result` trae `ok`+`task_id`+`task` juntos **y** la clave `result`; inner
+no-dict → `{}`; `granola` es pass-through. Sólo lee: el wrap de `queue.py:243`
+no se toca.
+
+Callers migrados:
+
+| Dónde | Estaba | Ahora |
+|---|---|---|
+| `scripts/e2e_validation.py` | el helper original de T12 | import + alias `_worker_payload` |
+| `scripts/sim_to_make.py:224` | **roto** — mandaba `''` a Make | `worker_payload` + guard |
+| `dispatcher/service.py:349` | resumen para Linear | `worker_payload`, truncado igual |
+| `dispatcher/service.py:767` | resumen para Notion | idem |
+| `dispatcher/service.py:592` | issue id de Linear | calzaba exacto |
+
+El alias privado en el e2e se conserva **a propósito**: es el nombre que
+parchean los tests de mutación de T12, que son los que prueban que las tres
+funciones dependen realmente del unwrap. Los 26 siguen verdes sin relajar una
+sola aserción.
+
+**Guard nuevo**: si tras el unwrap el reporte está vacío, `sim_to_make` no llama
+a Make y sale 6. Dry-run tampoco finge éxito. Es la misma lección que §16 le
+aplicó a composite: el largo del reporte sólo es una métrica honesta si el vacío
+falla.
+
+### 17.3 Lo que encontró el `/code-review`
+
+10 hallazgos. **El más serio era mío y repetía la lección de T10.**
+
+Mi test del timeout assertaba `>= 340` — un **literal** — cuando el docstring
+decía proteger otra cosa: que la ventana del cliente cubra la del dispatcher. Si
+`COMPOSITE_TASK_TIMEOUT_S` subiera a 600, `sim_to_make` quedaría en 340 < 600, el
+poll volvería a rendirse antes de tiempo, y el test seguiría **verde**. Es
+exactamente el error de §14: un invariante que compara números sueltos en vez de
+las dos magnitudes reales. Ahora importa la constante y compara contra ella.
+
+Y hubo uno que escribí **mientras arreglaba los otros**: al cubrir el resumen del
+dispatcher, mi test assertaba que apareciera `"informe real"` en el comentario
+— pero ese texto también aparece cuando se vuelca el sobre entero, y el fixture
+que usé no tenía `trace_id`. La mutación pasaba 66/66. Reanclado a `task_id`,
+que sólo existe en el sobre.
+
+El resto: `--timeout` seguía pudiendo reintroducir la ventana corta desde la CLI
+(ahora avisa; no se clampea, porque si el operador pide una ventana corta esa es
+su decisión — lo que no puede ser es silenciosa); los dos resúmenes del
+dispatcher no los fijaba ningún test y son salida visible para David; un leak de
+patchers que podía contaminar toda la suite; un alias muerto; un test que pasaba
+con `sim_to_make.py` borrado del repo; el fixture del sobre duplicado en tres
+archivos, que subió a `conftest.py` junto con el helper.
+
+**No corregido**: `dispatcher/smart_reply.py` (4 lecturas a mano). Hoy son
+**correctas** — shape `POST /run`, un solo nivel — así que es inconsistencia, no
+bug. La orden enumeraba los call sites y smart_reply no estaba.
+
+### 17.4 Mutación: 8 de 8
+
+| Mutación | Resultado |
+|---|---|
+| M7 — el dispatcher ensancha su ventana a 600 s | 1 failed |
+| M8 — sin el warning de ventana corta | 1 failed |
+| M9 — dispatcher sin el fallback `or result` | 4 failed |
+| M10 — dispatcher sin unwrap | 1 failed *(tras reanclar)* |
+| M11 — helper → unwrap ingenuo pre-T12 | 13 failed |
+| M12 — unwrap laxo, sin marcadores | 3 failed |
+| M13 — `sim_to_make` sin el guard de no-vacío | 3 failed |
+
+(M1–M6 de la primera vuelta siguen cazando.)
+
+`pytest`: **4853 passed**, 6 skipped, 2 xfailed. Deselect de 3 `test_pit_*`
+ajenos (PIT archivado).
+
+### 17.5 Estado
+
+`P5_L3_SIM_UNWRAP = Y`. Cero red viva: ningún test de este pack encola un
+composite, y no se hizo un solo POST a Make.com. Composite no se re-corrió: su
+runtime ya está `[E]` en §15.
+
+Y lo de siempre, explícito: **composite sigue FUERA de cron — y `sim_to_make`
+tampoco entra.** Que el script ahora diga la verdad no lo vuelve un candidato a
+correr solo; sigue siendo ~200 s de composite contra un gateway compartido, y
+ahora además puede salir 6, que es justamente lo que uno no quiere descubrir por
+un mail de cron.
+
+Evidencia en `~/.coord-ag-evidence/pkg-macro-p5-l3-t1/`.

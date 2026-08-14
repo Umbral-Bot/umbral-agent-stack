@@ -22,6 +22,7 @@ contrato de Redis ni el wrap de ``queue.py``.
 
 from __future__ import annotations
 
+from collections.abc import Mapping as _MappingABC
 from typing import Any, Dict, Mapping
 
 # Las tres llaves que el worker pone SIEMPRE en el sobre y que ningún payload
@@ -49,7 +50,9 @@ def worker_payload(response: Mapping[str, Any]) -> Dict[str, Any]:
     devuelve una lista haría que el caller recibiera el sobre entero — o sea el
     bug de T11 de vuelta, en silencio y justo en el caso que este helper cubre.
     """
-    if not isinstance(response, Mapping):
+    # collections.abc y no typing.Mapping: typing.Mapping es un alias deprecado
+    # desde 3.9 y su isinstance depende de que siga delegando __instancecheck__.
+    if not isinstance(response, _MappingABC):
         return {}
     result = response.get("result")
     if not isinstance(result, dict):

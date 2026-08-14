@@ -34,6 +34,7 @@ if str(repo_root) not in sys.path:
 
 from client.worker_client import WorkerClient  # noqa: E402
 from client.task_result import worker_payload  # noqa: E402
+from dispatcher.service import COMPOSITE_TASK_TIMEOUT_S  # noqa: E402
 
 logger = logging.getLogger("sim_to_make")
 logging.basicConfig(
@@ -49,7 +50,7 @@ DEFAULT_POLL_INTERVAL = 10  # seconds
 # antes de que el payload existiera, aunque el unwrap estuviera bien. Misma
 # cuenta que el e2e: la ventana del cliente tiene que CUBRIR la del dispatcher,
 # no el wall medido, o un WINDOW que funcionó se reporta como timeout.
-DEFAULT_TIMEOUT = 340  # seconds (> 300 del dispatcher; el e2e usa 170 x 2s)
+DEFAULT_TIMEOUT = 340  # seconds (> COMPOSITE_TASK_TIMEOUT_S; el e2e usa 170 x 2s)
 
 
 # ======================================================================
@@ -178,6 +179,17 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true", help="No envía a Make.com; imprime resultado")
     parser.add_argument("--language", default="es", help="Idioma del reporte (default: es)")
     args = parser.parse_args()
+
+    # Subir el default no alcanza: --timeout sigue aceptando cualquier valor, y
+    # por debajo de la ventana del dispatcher el poll se rinde antes de que el
+    # payload exista. No se clampea (la orden del operador manda), pero que no
+    # sea silencioso.
+    if args.timeout <= COMPOSITE_TASK_TIMEOUT_S:
+        logger.warning(
+            "--timeout %ss no cubre la ventana del dispatcher (%ss): el poll puede "
+            "rendirse antes de que el composite termine, dejando el turno huérfano.",
+            args.timeout, COMPOSITE_TASK_TIMEOUT_S,
+        )
 
     # --- Validate env ---
     webhook_url = os.environ.get("MAKE_WEBHOOK_SIM_URL", "").strip()

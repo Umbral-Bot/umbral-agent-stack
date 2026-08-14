@@ -4,6 +4,9 @@ Estos casos venían de tests/test_e2e_validation.py (T12). Al subir el helper a
 client/ suben con él, porque son del CONTRATO, no del script que lo estrenó.
 Los de test_e2e_validation.py quedan igual: allá prueban que las tres funciones
 del e2e dependen del unwrap, que es otra cosa.
+
+Los fixtures del sobre viven en tests/conftest.py, no acá: son los mismos que
+usan test_e2e_validation.py y test_sim_to_make.py.
 """
 
 from __future__ import annotations
@@ -11,30 +14,8 @@ from __future__ import annotations
 import unittest
 
 from client.task_result import WORKER_ENVELOPE_MARKERS, worker_payload
-
-
-def status_envelope(payload) -> dict:
-    """Lo que devuelve GET /task/<id>/status: el sobre del worker adentro de result."""
-    return {
-        "task_id": "e2e-1234",
-        "status": "done",
-        "task": "llm.generate",
-        "team": "lab",
-        "result": {
-            "ok": True,
-            "task_id": "e2e-1234",
-            "task": "llm.generate",
-            "team": "lab",
-            "trace_id": "trace-1234",
-            "result": payload,
-        },
-        "error": None,
-    }
-
-
-def run_envelope(payload) -> dict:
-    """Lo que devuelve POST /run (y WorkerClient.run): un solo nivel de result."""
-    return {"ok": True, "task_id": "e2e-1234", "task": "llm.generate", "result": payload}
+from tests.conftest import worker_run_envelope as run_envelope
+from tests.conftest import worker_status_envelope as status_envelope
 
 
 class TestWorkerPayload(unittest.TestCase):

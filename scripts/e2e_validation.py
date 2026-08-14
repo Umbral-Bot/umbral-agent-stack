@@ -62,7 +62,7 @@ def _load_env() -> None:
 
 import httpx
 
-from client.task_result import WORKER_ENVELOPE_MARKERS, worker_payload
+from client.task_result import worker_payload
 
 logging.basicConfig(
     level=logging.INFO,
@@ -233,10 +233,9 @@ def _enqueue_and_wait(
 # porque el mismo desajuste vive en sim_to_make y en el dispatcher y no merecía un
 # cuarto copy-paste. La lógica NO cambió: mismo criterio, mismos marcadores.
 #
-# El alias privado se conserva a propósito: es el nombre que parchean los tests
-# de mutación de T12 (tests/test_e2e_validation.py), que son los que prueban que
-# las tres funciones de abajo dependen realmente del unwrap.
-_WORKER_ENVELOPE_MARKERS = WORKER_ENVELOPE_MARKERS
+# El alias privado se conserva a propósito: _worker_payload es el nombre que
+# parchean los tests de mutación de T12 (tests/test_e2e_validation.py), que son
+# los que prueban que las tres funciones de abajo dependen realmente del unwrap.
 _worker_payload = worker_payload
 
 

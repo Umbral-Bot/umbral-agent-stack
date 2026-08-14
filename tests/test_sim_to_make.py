@@ -11,11 +11,14 @@ Ningún test de acá toca la red: se mockean enqueue/poll/send.
 
 from __future__ import annotations
 
+import contextlib
 import unittest
 from unittest.mock import MagicMock, patch
 
 import scripts.sim_to_make as sim
-from tests.test_task_result import status_envelope
+from client.task_result import worker_payload
+from dispatcher.service import COMPOSITE_TASK_TIMEOUT_S
+from tests.conftest import naive_unwrap, worker_status_envelope as status_envelope
 
 REPORT = "x" * 19459
 SOURCES = [{"url": f"https://e.test/{i}", "title": f"s{i}"} for i in range(15)]
@@ -30,38 +33,37 @@ COMPOSITE_PAYLOAD = {
 }
 
 
-def _naive_extract(status_data):
-    """Cómo se leía antes de este pack. Se usa para mutar el helper."""
-    return status_data.get("result", {})
+class TestUsesTheSharedHelper(unittest.TestCase):
 
+    def test_sim_does_not_keep_its_own_copy_of_the_unwrap(self):
+        """El punto del pack: un helper, no un cuarto copy-paste."""
+        self.assertIs(sim.worker_payload, worker_payload)
 
-class TestPayloadExtraction(unittest.TestCase):
-    """El status envuelto estilo T11 tiene que rendir reporte y fuentes reales."""
+    def test_the_old_read_would_have_returned_an_empty_report(self):
+        """Documenta el bug, anclado al helper real y no sólo a un fixture.
 
-    def test_wrapped_status_yields_the_real_report_and_sources(self):
-        payload = sim.worker_payload(status_envelope(COMPOSITE_PAYLOAD))
-        self.assertEqual(len(payload.get("report", "")), 19459)
-        self.assertGreater(len(payload.get("sources", [])), 0)
-        self.assertEqual(len(payload["sources"]), 15)
+        El mismo status: por el helper rinde 19.459 chars; leído al nivel viejo
+        rinde '' y lo que aparece ahí es el sobre del worker.
+        """
+        wrapped = status_envelope(COMPOSITE_PAYLOAD)
+        self.assertEqual(len(worker_payload(wrapped).get("report", "")), 19459)
 
-    def test_the_old_read_returns_an_empty_report(self):
-        """Documenta el bug: al nivel viejo hay un sobre, no el payload."""
-        old = _naive_extract(status_envelope(COMPOSITE_PAYLOAD))
+        old = naive_unwrap(wrapped)
         self.assertEqual(old.get("report", ""), "")
-        self.assertEqual(old.get("sources", []), [])
-        # Y lo que sí hay ahí es el sobre del worker, que es la prueba del desajuste.
         self.assertIn("trace_id", old)
 
 
 class TestPollingWindow(unittest.TestCase):
 
     def test_default_timeout_covers_the_dispatcher_window(self):
-        """120s se rendían antes de que el payload existiera, con el unwrap sano.
+        """La ventana del cliente tiene que cubrir la del DISPATCHER, no el wall.
 
-        La ventana del cliente tiene que cubrir la del DISPATCHER (300s), no el
-        wall medido (~200s), o un WINDOW que funcionó se reporta como timeout.
+        Se compara contra COMPOSITE_TASK_TIMEOUT_S y no contra el literal 340:
+        si mañana el dispatcher ensancha su ventana, un assert sobre el número
+        seguiría verde con sim_to_make ya rindiéndose antes de tiempo. Es la
+        lección de T10 — el invariante tiene que mirar las dos magnitudes.
         """
-        self.assertGreaterEqual(sim.DEFAULT_TIMEOUT, 340)
+        self.assertGreater(sim.DEFAULT_TIMEOUT, COMPOSITE_TASK_TIMEOUT_S)
 
 
 class TestMainGuards(unittest.TestCase):
@@ -71,22 +73,20 @@ class TestMainGuards(unittest.TestCase):
         env = {"MAKE_WEBHOOK_SIM_URL": "https://hook.invalid/x", **(env or {})}
         sent = MagicMock(return_value={"ok": True, "task_id": "t", "task": "make.post_webhook",
                                        "result": {"ok": True, "status_code": 200}})
-        stack = [
-            patch.object(sim, "WorkerClient", MagicMock()),
-            patch.object(sim, "enqueue_research", MagicMock(return_value="task-abc")),
-            patch.object(sim, "poll_task_status", MagicMock(return_value=poll_result)),
-            patch.object(sim, "send_to_make", sent),
-            patch.dict("os.environ", env, clear=False),
-            patch("sys.argv", ["sim_to_make.py", *argv]),
-            *extra_patches,
-        ]
-        for ctx in stack:
-            ctx.start()
-        try:
+        # ExitStack y no un for/start suelto: si un patcher falla al arrancar,
+        # los ya activos se deshacen igual en vez de contaminar la suite entera.
+        with contextlib.ExitStack() as stack:
+            for ctx in (
+                patch.object(sim, "WorkerClient", MagicMock()),
+                patch.object(sim, "enqueue_research", MagicMock(return_value="task-abc")),
+                patch.object(sim, "poll_task_status", MagicMock(return_value=poll_result)),
+                patch.object(sim, "send_to_make", sent),
+                patch.dict("os.environ", env, clear=False),
+                patch("sys.argv", ["sim_to_make.py", *argv]),
+                *extra_patches,
+            ):
+                stack.enter_context(ctx)
             return sim.main(), sent
-        finally:
-            for ctx in reversed(stack):
-                ctx.stop()
 
     def test_happy_path_sends_the_real_report(self):
         code, sent = self._run_main(status_envelope(COMPOSITE_PAYLOAD), [])
@@ -114,6 +114,16 @@ class TestMainGuards(unittest.TestCase):
         self.assertEqual(code, 0)
         sent.assert_not_called()
 
+    def test_short_timeout_warns_that_it_does_not_cover_the_window(self):
+        """Subir el default no alcanza: --timeout sigue pudiendo bajarlo."""
+        with self.assertLogs(sim.logger, level="WARNING") as logs:
+            code, _ = self._run_main(status_envelope(COMPOSITE_PAYLOAD), ["--timeout", "120"])
+        self.assertEqual(code, 0)
+        self.assertTrue(
+            any("no cubre la ventana del dispatcher" in m for m in logs.output),
+            f"no se avisó de la ventana corta: {logs.output}",
+        )
+
     def test_without_the_helper_the_run_fails_instead_of_sending_empty(self):
         """MUTACIÓN: si la extracción vuelve a result.get('result'), no se manda nada.
 
@@ -123,7 +133,7 @@ class TestMainGuards(unittest.TestCase):
         code, sent = self._run_main(
             status_envelope(COMPOSITE_PAYLOAD),
             [],
-            extra_patches=[patch.object(sim, "worker_payload", _naive_extract)],
+            extra_patches=[patch.object(sim, "worker_payload", naive_unwrap)],
         )
         self.assertNotEqual(code, 0)
         sent.assert_not_called()

@@ -14,7 +14,11 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+import unittest
+
+import dispatcher.service as service
 from dispatcher.service import _escalate_failure_to_linear
+from tests.conftest import worker_run_envelope
 from worker.sanitize import sanitize_input
 
 
@@ -280,3 +284,54 @@ class TestEscalateResilience:
             error="some error",
         )
         mock_wc.run.assert_called_once()
+
+
+# ── Resumen del resultado en las notificaciones (PKG-MACRO-P5-L3-T1) ──
+# Las dos líneas que arman el resumen (service.py:349 para Linear, :767 para
+# Notion) pasaron a usar worker_payload. Es salida visible para David, así que
+# los cinco casos quedan fijados: cuatro preservan exactamente lo de antes y el
+# quinto es el único cambio deliberado.
+
+class TestResultSummaryUnwrap(unittest.TestCase):
+
+    def _comment_for(self, result):
+        wc = MagicMock()
+        envelope = {"linear_issue_id": "LIN-1", "task": "composite.research_report", "team": "lab"}
+        service._notify_linear_completion(wc, envelope, True, result=result)
+        wc.run.assert_called_once()
+        return wc.run.call_args[0][1]["comment"]
+
+    def test_payload_is_summarized_not_the_envelope(self):
+        """El caso que importa: se resume el payload, no el sobre que lo envuelve.
+
+        El assert va contra `task_id`, que sólo existe en el sobre: mirar que
+        aparezca el texto del reporte no alcanza, porque también aparece cuando
+        se vuelca el sobre entero.
+        """
+        comment = self._comment_for(worker_run_envelope({"report": "informe real", "sources": 3}))
+        self.assertIn("informe real", comment)
+        self.assertNotIn("task_id", comment)
+
+    def test_envelope_without_result_key_is_summarized_whole(self):
+        """Preservado: sin clave result, se resume lo que haya."""
+        self.assertIn("algo", self._comment_for({"algo": "suelto"}))
+
+    def test_non_dict_result_is_stringified(self):
+        """Preservado: un result no-dict se sigue mostrando tal cual."""
+        self.assertIn("texto plano", self._comment_for("texto plano"))
+
+    def test_non_dict_payload_keeps_its_content(self):
+        """Preservado: si el payload no es dict, no se pierde su contenido.
+
+        worker_payload devuelve {} ahí; el `or result` evita que el comentario
+        quede en "{}" y se resume el sobre, que es donde vive el texto.
+        """
+        self.assertIn("contenido", self._comment_for(worker_run_envelope("contenido")))
+
+    def test_empty_payload_falls_back_to_the_envelope(self):
+        """ÚNICO cambio deliberado: antes decía "{}", ahora resume el sobre.
+
+        Un "{}" a secas no le dice nada a nadie; el sobre al menos trae el task.
+        """
+        comment = self._comment_for(worker_run_envelope({}))
+        self.assertIn("llm.generate", comment)

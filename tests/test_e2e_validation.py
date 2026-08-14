@@ -14,11 +14,15 @@ from scripts.e2e_validation import (
     ValidationResult,
     SuiteResult,
     _run_test,
+    _worker_payload,
     format_results,
 )
 from scripts.e2e_validation import test_worker_vps_health as e2e_health
 from scripts.e2e_validation import test_ping as e2e_ping
 from scripts.e2e_validation import test_scheduled_list as e2e_scheduled_list
+from scripts.e2e_validation import test_composite_research as e2e_composite
+from scripts.e2e_validation import test_routing_coding_selects_claude as e2e_routing_coding
+from scripts.e2e_validation import test_routing_research_selects_gemini as e2e_routing_research
 
 # Import smoke test functions
 from scripts.smoke_test import (
@@ -249,6 +253,148 @@ class TestSmokeQuota(unittest.TestCase):
         ok, detail = smoke_quota("http://localhost:8088", "tok")
         self.assertTrue(ok)
         self.assertIn("SKIP", detail)
+
+
+# ── UNWRAP (PKG-MACRO-P5-L2-T12) ────────────────────────────────
+
+
+def _status_envelope(payload: dict) -> dict:
+    """El shape REAL que devuelve GET /task/<id>/status (medido en T11).
+
+    El dispatcher guarda el sobre completo del worker dentro de result, así que
+    el payload del handler queda dos niveles adentro.
+    """
+    return {
+        "task_id": "e2e-1234",
+        "status": "done",
+        "task": "llm.generate",
+        "team": "lab",
+        "result": {
+            "ok": True,
+            "task_id": "e2e-1234",
+            "task": "llm.generate",
+            "team": "lab",
+            "trace_id": "trace-1234",
+            "result": payload,
+        },
+        "error": None,
+    }
+
+
+def _run_envelope(payload: dict) -> dict:
+    """El shape de POST /run: un solo nivel de result, sin el sobre extra."""
+    return {"ok": True, "task_id": "e2e-1234", "task": "llm.generate", "result": payload}
+
+
+class TestWorkerPayloadUnwrap(unittest.TestCase):
+    """_worker_payload desenvuelve el sobre del worker sin comerse un nivel de más."""
+
+    def test_status_envelope_yields_inner_model_and_report(self):
+        wrapped = _status_envelope({"model": "anthropic/claude-sonnet-4-6", "report": "x" * 19459})
+        payload = _worker_payload(wrapped)
+        self.assertEqual(payload.get("model"), "anthropic/claude-sonnet-4-6")
+        self.assertEqual(len(payload.get("report", "")), 19459)
+        # Y no quedó el sobre: las llaves del envelope no deben sobrevivir.
+        self.assertNotIn("trace_id", payload)
+
+    def test_run_envelope_is_pass_through(self):
+        """POST /run ya viene con un solo nivel: no debe haber segundo unwrap."""
+        payload = _worker_payload(_run_envelope({"text": "hola", "model": "m", "provider": "openclaw_proxy"}))
+        self.assertEqual(payload, {"text": "hola", "model": "m", "provider": "openclaw_proxy"})
+
+    def test_handler_payload_with_its_own_result_is_not_unwrapped(self):
+        """Regresión: granola devuelve {followup_type, result:{...}}.
+
+        Un criterio laxo ("tiene un result dict adentro") se comería ese nivel y
+        devolvería el interior del handler en lugar del payload. El sobre del
+        worker se reconoce por ok+task_id+task juntos, que ningún handler pone.
+        """
+        granola = {"followup_type": "reminder", "result": {"task_id": "n-1", "due_date": "2026-08-20"}}
+        # a) vía POST /run: el payload no es un sobre → pass-through intacto
+        self.assertEqual(_worker_payload(_run_envelope(granola)), granola)
+        # b) vía status: se pela UN solo nivel, el del worker
+        self.assertEqual(_worker_payload(_status_envelope(granola)), granola)
+
+    def test_missing_or_non_dict_result_is_empty_dict(self):
+        """Una task fallida no trae result: devolver {} y no explotar con None."""
+        self.assertEqual(_worker_payload({"status": "failed", "result": None}), {})
+        self.assertEqual(_worker_payload({"status": "failed"}), {})
+        self.assertEqual(_worker_payload({"result": "texto plano"}), {})
+
+
+# El unwrap ingenuo que había antes de T12 y que producía el FAIL de aserción.
+# Se usa para MUTAR el helper en los tests de abajo: si una función deja de
+# depender de _worker_payload, el test de mutación lo detecta (lección T9/T10).
+def _naive_unwrap(status_data: dict) -> dict:
+    return status_data.get("result", {})
+
+
+class TestAffectedTestsUseTheUnwrap(unittest.TestCase):
+    """Las 3 funciones que leen GET /task/status pasan con el shape real de T11.
+
+    Cada caso viene con su mutación: reemplazando _worker_payload por el unwrap
+    ingenuo pre-T12, el test DEBE fallar. Sin eso, un assert que pase por otra
+    razón no probaría nada.
+    """
+
+    ROUTE = {"effective_model": "anthropic/claude-sonnet-4-6"}
+
+    def _patch_routing(self):
+        return patch.multiple(
+            "scripts.e2e_validation",
+            _get_provider_status=MagicMock(return_value={"routing": {}}),
+            _get_effective_route=MagicMock(return_value=self.ROUTE),
+        )
+
+    # -- b) routing coding ---------------------------------------
+
+    def test_routing_coding_reads_inner_model(self):
+        status = _status_envelope({"model": "anthropic/claude-sonnet-4-6", "provider": "openclaw_proxy"})
+        with self._patch_routing(), patch("scripts.e2e_validation._enqueue_and_wait", return_value=status):
+            detail = e2e_routing_coding("http://w", "tok")
+        self.assertIn("actual=anthropic/claude-sonnet-4-6", detail)
+
+    def test_routing_coding_fails_without_the_unwrap(self):
+        status = _status_envelope({"model": "anthropic/claude-sonnet-4-6", "provider": "openclaw_proxy"})
+        with self._patch_routing(), \
+                patch("scripts.e2e_validation._enqueue_and_wait", return_value=status), \
+                patch("scripts.e2e_validation._worker_payload", _naive_unwrap):
+            with self.assertRaises(ValueError) as ctx:
+                e2e_routing_coding("http://w", "tok")
+        self.assertIn("got=?", str(ctx.exception))
+
+    # -- c) routing research -------------------------------------
+
+    def test_routing_research_reads_inner_model(self):
+        status = _status_envelope({"model": "anthropic/claude-sonnet-4-6", "provider": "openclaw_proxy"})
+        with self._patch_routing(), patch("scripts.e2e_validation._enqueue_and_wait", return_value=status):
+            detail = e2e_routing_research("http://w", "tok")
+        self.assertIn("actual=anthropic/claude-sonnet-4-6", detail)
+
+    def test_routing_research_fails_without_the_unwrap(self):
+        status = _status_envelope({"model": "anthropic/claude-sonnet-4-6", "provider": "openclaw_proxy"})
+        with self._patch_routing(), \
+                patch("scripts.e2e_validation._enqueue_and_wait", return_value=status), \
+                patch("scripts.e2e_validation._worker_payload", _naive_unwrap):
+            with self.assertRaises(ValueError) as ctx:
+                e2e_routing_research("http://w", "tok")
+        self.assertIn("got=?", str(ctx.exception))
+
+    # -- d) composite --------------------------------------------
+
+    def test_composite_reports_the_real_report_length(self):
+        status = _status_envelope({"report": "x" * 19459, "stats": {"total_sources": 15}})
+        with patch("scripts.e2e_validation._enqueue_and_wait", return_value=status):
+            detail = e2e_composite("http://w", "tok")
+        self.assertIn("19459 chars", detail)
+
+    def test_composite_reports_zero_without_the_unwrap(self):
+        """El síntoma exacto de T11: PASS pero 'reporte 0 chars'."""
+        status = _status_envelope({"report": "x" * 19459, "stats": {"total_sources": 15}})
+        with patch("scripts.e2e_validation._enqueue_and_wait", return_value=status), \
+                patch("scripts.e2e_validation._worker_payload", _naive_unwrap):
+            detail = e2e_composite("http://w", "tok")
+        self.assertIn("0 chars", detail)
 
 
 if __name__ == "__main__":

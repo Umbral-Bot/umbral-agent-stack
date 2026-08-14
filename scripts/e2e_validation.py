@@ -227,6 +227,39 @@ def _enqueue_and_wait(
     raise TimeoutError(f"Task {task_id} did not reach a terminal state")
 
 
+# PKG-MACRO-P5-L2-T12: los dos endpoints NO devuelven el mismo shape.
+#   POST /run              -> {ok, task_id, task, team, trace_id, result:{...}}
+#   GET  /task/<id>/status -> {status, result:{ok, task_id, task, ..., result:{...}}}
+# El dispatcher guarda en Redis el SOBRE COMPLETO que le devolvió el worker
+# (dispatcher/queue.py:243 mete el envelope entero en envelope["result"]), así
+# que sobre un status el payload del handler queda un nivel más adentro. Leer
+# result["model"] ahí devuelve None y el test reporta "?" aunque el runtime
+# haya hecho todo bien — es exactamente el FAIL de aserción de T11 (acta §15).
+#
+# El unwrap tiene que ser ESTRICTO. Hay handlers cuyo payload propio ya trae un
+# "result" anidado — granola devuelve {followup_type, result:{task_id, ...}} —
+# y un criterio laxo ("¿tiene un result dict adentro?") se comería un nivel de
+# más justo ahí. Por eso se exige el juego completo de marcadores que el worker
+# SIEMPRE pone en el sobre (worker/app.py:729-735) y que ningún payload de
+# handler tiene junto.
+_WORKER_ENVELOPE_MARKERS = ("ok", "task_id", "task")
+
+
+def _worker_payload(status_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Devuelve el payload del handler, venga o no envuelto en el sobre del worker.
+
+    Es pass-through respecto de la forma: aplicado a una respuesta de POST /run
+    (que no tiene el nivel extra) devuelve el mismo dict, no un segundo unwrap.
+    """
+    result = status_data.get("result")
+    if not isinstance(result, dict):
+        return {}
+    inner = result.get("result")
+    if isinstance(inner, dict) and all(k in result for k in _WORKER_ENVELOPE_MARKERS):
+        return inner
+    return result
+
+
 def _get_provider_status(base_url: str, token: str) -> Dict[str, Any]:
     return _request_json(
         "GET",
@@ -333,7 +366,7 @@ def test_composite_research(base_url: str, token: str) -> str:
     status = status_data.get("status", "")
     if status != "done":
         raise ValueError(f"composite.research_report terminó en status={status}: {status_data.get('error')}")
-    report = status_data.get("result", {}).get("report", "")
+    report = _worker_payload(status_data).get("report", "")
     return f"status=done, reporte {len(report)} chars"
 
 
@@ -649,7 +682,7 @@ def test_routing_coding_selects_claude(base_url: str, token: str) -> str:
     status = status_data.get("status", "")
     if status != "done":
         raise ValueError(f"routing coding terminó en status={status}: {status_data.get('error')}")
-    model = status_data.get("result", {}).get("model", "?")
+    model = _worker_payload(status_data).get("model", "?")
     if model != expected_model:
         raise ValueError(f"Expected coding model={expected_model}, got={model}")
     return f"expected={expected_model}, actual={model}"
@@ -677,7 +710,7 @@ def test_routing_research_selects_gemini(base_url: str, token: str) -> str:
     status = status_data.get("status", "")
     if status != "done":
         raise ValueError(f"routing research terminó en status={status}: {status_data.get('error')}")
-    model = status_data.get("result", {}).get("model", "?")
+    model = _worker_payload(status_data).get("model", "?")
     if model != expected_model:
         raise ValueError(f"Expected research model={expected_model}, got={model}")
     return f"expected={expected_model}, actual={model}"

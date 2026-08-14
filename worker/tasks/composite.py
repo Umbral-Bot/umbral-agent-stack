@@ -43,7 +43,33 @@ REPORT_USER_PROMPT = (
     "---\n\nResearch Data:\n\n{research_data}"
 )
 
-REPORT_GENERATION_MAX_ATTEMPTS = 3
+# ── PKG-MACRO-P5-L2-T9 (SHRINK, autorizado por David 2026-08-14) ────────
+# Objetivo: que la llamada de generación de reporte termine en <90s, por
+# debajo del urlopen del proxy (105s) y de la ventana de redespacho del
+# dispatcher (~2 min). Antes tardaba >119s, agotaba el timeout, reintentaba,
+# y el redespacho apilaba corridas hasta matar el gateway por OOM (acta §12.4).
+#
+# De dónde salen los números (medidos, no estimados):
+#   - Turno de agente vía openclaw_proxy con salida mínima: ~35s con
+#     max_tokens=100 → 34 tokens generados (T8 live). O sea que ~35s es
+#     casi todo overhead fijo (setup del turno + ~27k tokens de prompt del
+#     propio agente), no generación.
+#   - Con max_tokens=4096 la generación agregaba ~4000 tokens y empujaba el
+#     turno por encima de 119s. Con 1000, agrega ~1000 → se espera ~50-70s.
+#   - research_data real a depth=quick: 9.945 chars (15 fuentes, snippets de
+#     500 chars). standard ≈ 16.5k, deep ≈ 33k.
+REPORT_MAX_TOKENS = 1000
+# 12.000 chars ≈ 3.000 tokens. Elegido para que `quick` (9.945) entre COMPLETO
+# —es la forma que corre el e2e— y para acotar `deep` (33k → 12k), que es el
+# que hacía crecer el prompt ~8k tokens sobre la línea base del agente.
+REPORT_RESEARCH_DATA_MAX_CHARS = 12_000
+REPORT_TRUNCATION_NOTICE = "\n\n[... research data truncado por límite de tamaño ...]"
+
+# T9: 3 → 1. El reintento tras timeout era el multiplicador que llevó al OOM:
+# cada intento abría un turno nuevo de >119s en el gateway, y encima el
+# dispatcher redespachaba la tarea entera. Con el turno ya achicado no hace
+# falta reintentar: si falla, que falle rápido y visible.
+REPORT_GENERATION_MAX_ATTEMPTS = 1
 REPORT_GENERATION_BACKOFF_SECONDS = 1.0
 
 
@@ -68,6 +94,38 @@ def _is_retryable_report_generation_error(exc: Exception) -> bool:
     return any(marker in text for marker in retry_markers)
 
 
+def _truncate_research_data(research_data: str) -> str:
+    """Acota el research_data que se le manda al modelo (T9).
+
+    Corta en el último salto de línea antes del límite cuando hay uno cerca,
+    para no partir una fuente por la mitad y dejar una URL colgada.
+
+    OJO — esto descarta fuentes que el modelo nunca va a ver. Quién llega acá:
+    `quick` (~9.9k chars) entra completo, pero `standard` —que es el **default**
+    del task— se recorta (≈20 de 25 fuentes) y `deep` bastante más (≈20 de 50).
+    Por eso el resultado expone `sources_sent_to_model`: sin ese dato el sobre
+    diría `total_sources: 25` al lado de un reporte escrito con 20."""
+    if len(research_data) <= REPORT_RESEARCH_DATA_MAX_CHARS:
+        return research_data
+    cut = research_data[:REPORT_RESEARCH_DATA_MAX_CHARS]
+    last_newline = cut.rfind("\n")
+    # Sólo respetamos el corte por línea si no nos hace perder demasiado.
+    if last_newline > REPORT_RESEARCH_DATA_MAX_CHARS * 0.8:
+        cut = cut[:last_newline]
+    logger.info(
+        "research_data truncado: %d → %d chars (límite %d)",
+        len(research_data), len(cut), REPORT_RESEARCH_DATA_MAX_CHARS,
+    )
+    return cut + REPORT_TRUNCATION_NOTICE
+
+
+def _count_source_lines(research_data: str) -> int:
+    """Cuántas líneas de fuente hay en un bloque de research_data.
+
+    `_format_research_data` emite una línea por fuente con el prefijo `- **[`."""
+    return research_data.count("- **[")
+
+
 def _build_report_generation_payload(
     *,
     topic: str,
@@ -75,9 +133,12 @@ def _build_report_generation_payload(
     language: str,
 ) -> Dict[str, Any]:
     payload: Dict[str, Any] = {
-        "prompt": REPORT_USER_PROMPT.format(topic=topic, research_data=research_data),
+        "prompt": REPORT_USER_PROMPT.format(
+            topic=topic,
+            research_data=_truncate_research_data(research_data),
+        ),
         "system": REPORT_SYSTEM_PROMPT.format(language=language),
-        "max_tokens": 4096,
+        "max_tokens": REPORT_MAX_TOKENS,
         "temperature": 0.5,
         "_task_id": _ACTIVE_CONTEXT.get("task_id"),
         "_task_type": _ACTIVE_CONTEXT.get("task_type"),
@@ -308,6 +369,13 @@ def handle_composite_research_report(input_data: Dict[str, Any]) -> Dict[str, An
         "queries_used": queries,
         "stats": {
             "total_sources": len(sources),
+            # T9: cuántas de esas fuentes le llegaron REALMENTE al modelo. Con
+            # el cap de research_data pueden no ser todas (`standard`, que es
+            # el default, ya recorta). Sin este dato el sobre afirmaría
+            # `total_sources: 25` junto a un reporte escrito con 20.
+            "sources_sent_to_model": _count_source_lines(
+                _truncate_research_data(research_data)
+            ),
             "research_time_ms": research_time_ms,
             "generation_time_ms": generation_time_ms,
             "report_generation_attempts": max(report_generation_attempts, 1),

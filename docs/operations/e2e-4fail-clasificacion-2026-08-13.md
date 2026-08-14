@@ -958,3 +958,142 @@ pile-up de §12.5 y conviene atacarlo junto con eso.
 
 Evidencia (journal, latencias, sin secretos) en
 `~/.coord-ag-evidence/pkg-macro-p5-l2-t8/`.
+
+---
+
+## 13. SHRINK de composite — el gateway sobrevive, la latencia no baja lo suficiente (PKG-MACRO-P5-L2-T9, 2026-08-14)
+
+**Autorización citada de David:** "SHRINK — achicar el turno de composite:
+bajar `max_tokens` (hoy 4096) y recortar `research_data`. Una sola llamada,
+más barata. No partir en N llamadas. No Azure. Composite NO a cron hasta que
+esto pase." (2026-08-14)
+
+**`P5_L2_COMPOSITE_SHRUNK = BLOCKED`.** El modo de fallo mejoró mucho — el
+gateway **sobrevivió** esta vez — pero el objetivo de latencia (<90s) **no se
+alcanzó**: el turno sigue por encima de 105s. Composite queda **sin habilitar
+en cron**, como pidió David.
+
+### 13.1 Los números salieron de medir, no de estimar
+
+Antes de tocar nada se midió el `research_data` real corriendo `_do_research`
++ `_format_research_data` con el mismo shape del e2e:
+
+| depth | queries × resultados | fuentes | chars | ≈ tokens |
+|---|---|---|---|---|
+| `quick` | 3 × 5 | 15 | **9.945** | ~2.5k |
+| `standard` | 5 × 5 | 25 | ~16.5k | ~4k |
+| `deep` | 10 × 5 | 50 | ~33k | ~8k |
+
+(Los snippets vienen capados a 500 chars por el buscador, así que el tamaño
+escala casi lineal con la cantidad de fuentes.)
+
+Y de §12.4: `llm.generate` con `max_tokens=100` generó 34 tokens en **35.2s**.
+O sea que **~35s es overhead fijo** del turno de agente (setup + los ~27k
+tokens de prompt que el propio agente arrastra), no generación. El que
+empujaba el reporte por encima de 119s era el `max_tokens=4096`.
+
+### 13.2 Qué se cambió
+
+| Constante | Antes | Ahora | Por qué |
+|---|---|---|---|
+| `REPORT_MAX_TOKENS` | 4096 | **1000** | El lever principal: ~4000 tokens de salida eran el grueso del turno |
+| `REPORT_RESEARCH_DATA_MAX_CHARS` | (no existía) | **12.000** | `quick` (9.945) entra completo; acota `standard` y `deep` — ver la advertencia de §13.5 |
+| `REPORT_GENERATION_MAX_ATTEMPTS` | 3 | **1** | El reintento era el multiplicador que llevó al OOM: cada intento abría un turno nuevo de >119s |
+
+El truncado corta en el salto de línea previo, para no partir una fuente por
+la mitad y dejar una URL colgada.
+
+### 13.3 Live: una sola corrida, con el gateway vigilado
+
+`task_id=2e54f1a5…`, `topic` corto, `depth=quick`. Baseline del gateway:
+`MainPID=3436104`, `NRestarts=1`, RSS 653 MB.
+
+**Lo que mejoró — y es mucho:**
+
+| | T8 (antes) | T9 (ahora) |
+|---|---|---|
+| Intentos de reporte | 3 (retry storm) | **1** — el journal muestra una sola línea de fallo |
+| RSS pico del gateway | **3.5 GB** → OOM | **1.003 MB** (~3.5× menos) |
+| Gateway | **murió** (OOM 02:18:50, `NRestarts` 0→1) | **sobrevivió**: `NRestarts=1` y `MainPID` **sin cambio** |
+
+**Lo que no mejoró:**
+
+- El turno de reporte **sigue excediendo los 105s**. Journal del gateway:
+  `durationMs=104847`. Worker: `LLM report generation failed: OpenClaw proxy
+  request failed: timed out`.
+- **Cuidado con leer mal ese número**: 104.8s no es lo que tarda el turno —
+  es donde lo **cortó** mi `urlopen` de 105s. La duración real es >105s,
+  desconocida.
+- **La truncación no se activó**: `quick` son 9.945 chars y el cap es 12.000.
+  Para `quick`, el único lever activo fue `max_tokens`, y bajarlo de 4096 a
+  1000 **no alcanzó**. El cap sólo protege a `standard`/`deep`.
+- El **redespacho del dispatcher sigue**: composite se ejecutó 2 veces en 8
+  min. No se tocó (no estaba autorizado) y sigue siendo un amplificador.
+
+Por el criterio de STOP del propio pack (`durationMs ≥ 100s`) se cortó ahí:
+no se reintentó y **no se corrieron las otras 3 pruebas**.
+
+### 13.4 Qué haría falta para el próximo intento
+
+Con overhead fijo ~35s y el turno todavía >105s con `max_tokens=1000`, la
+generación de ≤1000 tokens está costando >70s → **<14 tokens/s**. Para entrar
+en 90s haría falta del orden de **700 tokens** de salida.
+
+**Pero eso es extrapolación de un turno que fue cortado, no medido hasta el
+final.** Antes de volver a bajar el número a ojo conviene **medir una corrida
+sin corte** (timeout alto, una sola, fuera de horario) para conocer la tasa
+real de generación. Sin ese dato, bajar a 700-800 es otra apuesta — y ya
+llevamos dos.
+
+### 13.5 Lo que corrigió el `/code-review` (dos cosas mías)
+
+**1. El cap recorta el depth por *defecto*, no sólo los grandes.** Justifiqué
+el número 12.000 diciendo que `quick` entra completo "porque es la forma que
+corre el e2e" — y me quedé ahí. Pero el default del task es
+`standard` (`depth = input_data.get("depth", "standard")`), y **standard sí se
+recorta**. Medido:
+
+| depth | fuentes | chars | líneas que ve el modelo |
+|---|---|---|---|
+| `quick` | 15 | 8.699 | **15/15** (intacto) |
+| `standard` (**default**) | 25 | 14.499 | **20/25** |
+| `deep` | 50 | 28.999 | **20/50** |
+
+Peor: `sources` y `stats.total_sources` se calculan sobre los datos **sin**
+recortar, así que el sobre decía `total_sources: 25` al lado de un reporte
+escrito con 20 fuentes — y el prompt le pide al modelo citar fuentes inline,
+o sea que sólo puede citar las que vio. `scripts/sim_to_make.py` reenvía ese
+`sources_count` a Make tal cual.
+
+Corregido con lo más barato que es honesto: `stats.sources_sent_to_model`,
+que dice cuántas fuentes llegaron **de verdad** al modelo. No se cambió el
+cap ni el contrato — sólo se dejó de afirmar algo que no era cierto.
+
+**2. Uno de mis tests nuevos no probaba nada.** El que decía verificar que el
+recorte no parte una línea afirmaba
+`body.endswith("\n") or body.endswith("s")` sobre datos hechos de líneas de
+"s": pasaba **igual con la heurística de corte desactivada**. Lo verifiqué
+mutando el código y confirmando que seguía en verde. Reescrito para afirmar
+la propiedad real (toda línea que sobrevive está entera) y **re-verificado
+por mutación**: ahora falla si se saca la heurística. Se agregó además el
+caso sin saltos de línea, que antes no estaba cubierto.
+
+`pytest tests/`: **4805 passed**, 6 skipped, 2 xfailed.
+
+### 13.6 Qué haría falta para el próximo intento
+
+Vale decirlo claro: **el problema de fondo no es el tamaño del pedido, es que
+el endpoint del gateway no es un completion sino un turno de agente** con
+~35s de piso y ~14 tok/s de techo. Un reporte de 4 secciones con citas no
+entra cómodo en ese presupuesto. Las salidas reales, en orden de honestidad:
+
+1. **Aceptar un reporte más corto** (~700 tokens ≈ 500 palabras) y verificar
+   que el resultado le sirva a David. Es la continuación directa del SHRINK.
+2. **Aceptar que composite tarde ~2 min** y arreglar la ventana de redespacho
+   del dispatcher para que no apile — o sea, atacar el amplificador en vez de
+   la latencia.
+3. Revisar por qué el agente del gateway arrastra ~27k tokens de prompt en
+   cada turno: si eso bajara, baja el piso de 35s para **todo** el stack, no
+   sólo composite.
+
+Evidencia en `~/.coord-ag-evidence/pkg-macro-p5-l2-t9/`.

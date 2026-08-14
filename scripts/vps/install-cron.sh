@@ -57,8 +57,13 @@ fi
 # reinstalar, que era justamente el agujero.
 # Los wrappers scripts/vps/sim-*.sh no se borran: quedan como historico y se
 # pueden correr a mano. Esto solo los saca del cron.
+# sim-daily-cron.sh nunca estuvo en este instalador (se instalaba A MANO, ver
+# audit 2026-07-17), y justamente por eso entra al filtro: es el mas propenso a
+# volver por la puerta de atras.
+# Nota: al reescribir se pasa por `awk NF`, asi que tambien se caen las lineas
+# en blanco del crontab. Mismo criterio que el bloque de dashboard de arriba.
 sim_before="$(crontab -l 2>/dev/null || true)"
-sim_after="$(printf '%s\n' "$sim_before" | grep -vF "sim-report-cron.sh" | grep -vF "sim-to-make-cron.sh" || true)"
+sim_after="$(printf '%s\n' "$sim_before" | grep -vF "sim-report-cron.sh" | grep -vF "sim-to-make-cron.sh" | grep -vF "sim-daily-cron.sh" || true)"
 if [ "$sim_before" != "$sim_after" ]; then
     printf '%s\n' "$sim_after" | awk 'NF' | crontab -
     echo "SIM cron entries removed (retirado 2026-08-14, Q8 - no reinstalar)."

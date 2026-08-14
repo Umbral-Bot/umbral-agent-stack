@@ -371,74 +371,106 @@ class TestProvidersDict:
 
 
 # ---------------------------------------------------------------------------
-# PKG-MACRO-P5-L2-T7 — recorte del default: los callers sin modelo NO van al gateway
+# PKG-MACRO-P5-L2-T8 — el texto va por el proxy (OAuth de ChatGPT), sin Gemini
 # ---------------------------------------------------------------------------
-class TestDefaultScopedAwayFromGateway:
-    """Fija el recorte de T7 sobre los callers REALES que no pasan por el
-    ModelRouter del dispatcher. Antes de T7, con OPENCLAW_GATEWAY_TOKEN
-    presente (que es el estado vivo del VPS desde T4), estos caminos se
-    reenrutaban solos al gateway: ~36s y ~27k tokens de prompt por llamada
-    (medición real contra `openclaw/main`, §7.3/§9.2), con riesgo de
-    saturarlo — ya lo tumbó una vez.
+class TestTextGoesThroughProxy:
+    """T8 invierte el recorte de T7 por decisión de David (2026-08-14): el
+    texto sale por la sesión de ChatGPT (OAuth) que vive en el gateway, vía
+    `openclaw_proxy`. Sin Gemini.
 
-    Los tests piden el payload a las funciones REALES (no a un literal
-    copiado a mano), así que si alguien le agrega un `model` a cualquiera de
-    los tres callers, estos tests fallan."""
+    Lo que T7 protegía sigue importando, pero se resuelve con timeouts (≥90s,
+    también en este pack) y no disparando en ráfaga, no sacando el tráfico del
+    gateway.
 
-    def test_composite_report_payload_has_no_model_key(self):
-        """Guardia estructural sobre `_build_report_generation_payload`: hoy no
-        manda ninguna clave que seleccione modelo, así que cae en DEFAULT_MODEL.
-
-        Se miran SOLO las claves que deciden el modelo — no todos los valores:
-        el payload lleva metadata de tracing (`_source`, que en runtime vale
-        "openclaw_gateway") que no tiene nada que ver con el ruteo.
-
-        Si alguien agrega acá un passthrough del modelo ruteado por el
-        dispatcher (`composite.` sí está en LLM_TASK_PREFIXES, así que sería
-        legítimo), este test va a fallar — a propósito: que sea una decisión
-        consciente, no un accidente, porque hoy manda composite al gateway."""
-        from worker.tasks.composite import _build_report_generation_payload
-        payload = _build_report_generation_payload(
-            topic="t", research_data="d", language="es"
-        )
-        assert "model" not in payload
-        assert "selected_model" not in payload
+    Los tests usan las funciones REALES, no literales copiados a mano."""
 
     @patch("worker.tasks.llm.urllib.request.urlopen")
-    def test_composite_report_generation_never_hits_gateway(self, mock_urlopen):
-        """El payload real de composite.research_report, con el token presente,
-        no debe abrir NINGUNA conexión al gateway."""
+    def test_composite_report_generation_uses_proxy(self, mock_urlopen):
+        """El payload real de composite, sin modelo inyectado, va al proxy."""
         from worker.tasks.composite import _build_report_generation_payload
         from worker.tasks.llm import handle_llm_generate
 
+        mock_urlopen.return_value = _mock_urlopen_ok("reporte")
         payload = _build_report_generation_payload(
             topic="proptech", research_data="datos", language="es"
         )
         env = _env_without("GOOGLE_API_KEY")
         env["OPENCLAW_GATEWAY_TOKEN"] = "tok"
-        env.pop("UMBRAL_DISABLE_CLAUDE", None)
+        env["UMBRAL_DISABLE_CLAUDE"] = "false"
         with patch.dict(os.environ, env, clear=True):
-            with pytest.raises(RuntimeError, match="GOOGLE_API_KEY not configured"):
-                handle_llm_generate(payload)
-        mock_urlopen.assert_not_called()
+            result = handle_llm_generate(payload)
+
+        assert result["provider"] == "openclaw_proxy"
+        body = json.loads(mock_urlopen.call_args[0][0].data.decode())
+        assert body["model"] == "openclaw/main"
+
+    @patch("worker.tasks.llm.urllib.request.urlopen")
+    def test_composite_honours_dispatcher_routed_model(self, mock_urlopen):
+        """T8 paso 3: si el dispatcher inyectó un modelo, composite lo HONRA
+        (antes lo descartaba y sus sub-llamadas caían en el default)."""
+        from worker.tasks import composite
+
+        mock_urlopen.return_value = _mock_urlopen_ok("reporte")
+        composite._ACTIVE_CONTEXT.clear()
+        composite._ACTIVE_CONTEXT["model"] = "anthropic/claude-sonnet-4-6"
+        composite._ACTIVE_CONTEXT["selected_model"] = "openclaw_proxy"
+        try:
+            payload = composite._build_report_generation_payload(
+                topic="t", research_data="d", language="es"
+            )
+            assert payload["model"] == "anthropic/claude-sonnet-4-6"
+            assert payload["selected_model"] == "openclaw_proxy"
+        finally:
+            composite._ACTIVE_CONTEXT.clear()
+
+    def test_composite_without_routed_model_sends_no_model_key(self):
+        """Sin inyección del dispatcher (llamada directa, no encolada), el
+        payload no lleva modelo y aplica el default de handle_llm_generate."""
+        from worker.tasks import composite
+
+        composite._ACTIVE_CONTEXT.clear()
+        payload = composite._build_report_generation_payload(
+            topic="t", research_data="d", language="es"
+        )
+        assert "model" not in payload
+        assert "selected_model" not in payload
 
     @patch("worker.tasks.composite.handle_research_web")
     @patch("worker.tasks.llm.urllib.request.urlopen")
-    def test_composite_query_generation_never_hits_gateway(self, mock_urlopen, _mock_web):
-        """`_generate_queries` arma su payload inline (no vía un builder), así
-        que se lo ejercita de verdad — es la PRIMERA llamada LLM del pipeline."""
+    def test_composite_query_generation_uses_proxy(self, mock_urlopen, _mock_web):
+        """`_generate_queries` arma su payload inline; se lo ejercita de verdad
+        porque es la PRIMERA llamada LLM del pipeline."""
         from worker.tasks.composite import _generate_queries
 
+        mock_urlopen.return_value = _mock_urlopen_ok("1. una\n2. dos\n3. tres")
         env = _env_without("GOOGLE_API_KEY")
         env["OPENCLAW_GATEWAY_TOKEN"] = "tok"
-        env.pop("UMBRAL_DISABLE_CLAUDE", None)
+        env["UMBRAL_DISABLE_CLAUDE"] = "false"
         with patch.dict(os.environ, env, clear=True):
-            # Falla o devuelve fallback, pero NUNCA debe tocar el gateway.
-            try:
-                _generate_queries("proptech", 3)
-            except Exception:
-                pass
-        mock_urlopen.assert_not_called()
+            _generate_queries("proptech", 3)
+
+        mock_urlopen.assert_called()
+        body = json.loads(mock_urlopen.call_args[0][0].data.decode())
+        assert body["model"] == "openclaw/main"
+
+    @patch("worker.tasks.llm.urllib.request.urlopen")
+    def test_no_gemini_call_when_token_present(self, mock_urlopen):
+        """Guard explícito de la decisión 'sin Gemini': ninguna llamada por
+        defecto puede terminar en generativelanguage.googleapis.com."""
+        from worker.tasks.llm import handle_llm_generate
+
+        mock_urlopen.return_value = _mock_urlopen_ok("ok")
+        env = _env_without()
+        env["OPENCLAW_GATEWAY_TOKEN"] = "tok"
+        env["UMBRAL_DISABLE_CLAUDE"] = "false"
+        env["GOOGLE_API_KEY"] = "no-deberia-usarse"
+        with patch.dict(os.environ, env, clear=True):
+            result = handle_llm_generate({"prompt": "hola"})
+
+        assert result["provider"] == "openclaw_proxy"
+        url = mock_urlopen.call_args[0][0].full_url
+        assert "googleapis.com" not in url
+        assert "18789" in url
 
     def test_smart_reply_real_caller_sends_no_model(self):
         """Vincula el guard al caller REAL: dispatcher/smart_reply.py::

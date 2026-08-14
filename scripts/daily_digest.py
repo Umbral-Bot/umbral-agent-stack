@@ -288,6 +288,10 @@ def build_plain_report(
 # LLM-enhanced summary
 # ======================================================================
 
+# T8: llm.generate va por openclaw_proxy = turno de agente (~35s medidos,
+# acta §7.3/§12). El default de WorkerClient (30s) no alcanza.
+_LLM_TIMEOUT = 120.0
+
 DIGEST_SYSTEM_PROMPT = (
     "Eres Rick, asistente de David. Genera un resumen ejecutivo breve y "
     "accionable del reporte de actividad diaria. Mantén el formato con "
@@ -316,7 +320,12 @@ def generate_llm_summary(
             "system": DIGEST_SYSTEM_PROMPT,
             "max_tokens": 512,
             "temperature": 0.5,
-        })
+        # PKG-MACRO-P5-L2-T8: llm.generate sale por openclaw_proxy, cuyo
+        # endpoint es un turno de agente (~35s medidos). El WorkerClient de
+        # este script se construye con el default de 30s, así que sin este
+        # override el digest expiraba SIEMPRE y, con retries=2, dejaba 3
+        # turnos de agente huérfanos corriendo en el gateway por corrida.
+        }, timeout=_LLM_TIMEOUT)
         text = (resp.get("result") or {}).get("text", "")
         if not text:
             logger.warning("LLM returned empty text")

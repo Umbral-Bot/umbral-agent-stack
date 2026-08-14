@@ -785,3 +785,147 @@ La vía que arreglaría los 4 sin depender del gateway sigue siendo la "vía
 B" de §6/§10.5: una API key propia (`gemini`/`azure`) para el worker.
 
 Evidencia en `~/.coord-ag-evidence/pkg-macro-p5-l2-t7/`.
+
+> **Actualización (T8, §12): David eligió lo contrario a la "vía B".** El
+> texto va por OAuth de ChatGPT vía gateway, **sin Gemini**. §11 se revierte
+> en su parte de default; lo demás (timeouts, guards de callers) se conserva
+> y se amplía. Ver §12.
+
+---
+
+## 12. El texto va por OAuth de ChatGPT — default al proxy + timeouts (PKG-MACRO-P5-L2-T8, 2026-08-14)
+
+**Autorización citada de David:** "ChatGPT OAuth vía gateway por ahora. Subir
+timeouts. Sin Gemini. Azure Foundry más adelante SOLO si hay mucha
+concurrencia; preferencia = quedarse en OAuth. Imagen = Magnific MCP."
+(2026-08-14)
+
+**`P5_L2_CHATGPT_OAUTH = Y`** para el texto en general — **`llm.generate` y
+las dos rutas R8 andan por OAuth vía gateway**, que es exactamente lo pedido.
+`composite.research_report` queda **BLOCKED por capacidad** (§12.4).
+
+### 12.1 Qué cambió
+
+| Cambio | Detalle |
+|---|---|
+| Default al proxy | `_default_model()` vuelve, pero ahora devuelve el alias `openclaw_proxy`. Sin `model` ni `selected_model` → gateway. |
+| **Sin fallback mudo a Gemini** | Si falta `OPENCLAW_GATEWAY_TOKEN` (o `UMBRAL_DISABLE_CLAUDE` está activo), **no** se cae a Gemini: se lanza un error que nombra lo que falta. Un fallback silencioso mandaría tráfico a un provider que David descartó y el síntoma aparecería como `GOOGLE_API_KEY not configured`, que apunta al lugar equivocado. |
+| Timeouts ≥ 90s | e2e `llm.generate` 25s → **120s**; poll de `_enqueue_and_wait` 15×1s → **60×2s**; poll de composite 20×1.5s → **90×2s**; `smart_reply._LLM_TIMEOUT` 20s → **120s**; `daily_digest` 30s (default) → **120s**; R8 Claude/anthropic 30s → **120s**; `urlopen` del proxy 90s → **105s** (subido, nunca bajado — y a propósito *por debajo* de los 120s de los callers, ver §12.6). |
+| `_LLM_TIMEOUT` **no se usaba** | Hallazgo lateral: la constante existía en `smart_reply.py` pero no se pasaba a `wc.run()`, así que el timeout real era el default de `WorkerClient` (30s). Ahora se pasa de verdad. |
+| Retries acotados | Los dos tests e2e que pegan al gateway pasan `retries=0`. Con el default (2), un timeout disparaba 3 turnos de agente de 120s sobre el mismo gateway (363s, hasta 3 vivos a la vez) — la ráfaga de §9.2. |
+| composite honra el ruteo | `handle_composite_research_report` propaga `model`/`selected_model` (vía `_ACTIVE_CONTEXT`, igual que la metadata de tracing) a sus dos sub-llamadas. Cierra el descarte que §11.2 documentó. |
+
+`DEFAULT_MODEL` (Gemini) queda como constante para quien pida Gemini
+explícitamente; ya no es el default de nadie.
+
+### 12.2 Etiqueta vs realidad — importante
+
+El worker reporta `provider="openclaw_proxy"` y `model="claude-sonnet-4-6"`,
+pero **el modelo real lo elige el gateway**, no este código. Hoy el agente
+`main` del gateway tiene `model.primary = openai/gpt-5.6-sol` y **cero
+proveedores Anthropic** (§9.4). O sea: la respuesta la genera GPT vía la
+sesión OAuth de ChatGPT — que es justamente lo que David pidió — pero la
+etiqueta dice Claude. No es un bug introducido acá; es la consecuencia de
+usar `openclaw_proxy` como puente y ya estaba señalado en §9.4. Vale
+tenerlo presente al leer `ops_log`/`trace_llm_call`.
+
+### 12.3 Tests
+
+`pytest tests/`: **4799 passed**, 6 skipped, 2 xfailed (mismos 3 fallos
+pre-existentes de `test_pit_*` deseleccionados). Los guards de T7 se
+invirtieron a propósito, porque la orden cambió:
+
+- `test_handle_llm_generate_without_model_uses_the_proxy` — con token y sin
+  modelo, **sí** va al proxy (invierte el guard de T7).
+- `test_handle_llm_generate_without_token_fails_asking_for_the_proxy` y
+  `..._claude_disabled_fails_without_falling_back` — sin token / con el flag
+  activo, falla nombrando lo que falta y **no** abre conexión a Gemini.
+- `test_no_gemini_call_when_token_present` — guard explícito de "sin
+  Gemini": aun con `GOOGLE_API_KEY` presente, la URL de salida es el gateway
+  y nunca `googleapis.com`.
+- `test_composite_honours_dispatcher_routed_model` — el passthrough nuevo.
+
+### 12.4 Las 4 pruebas live (de a una, pausa ≥10s, nunca el e2e completo)
+
+| # | Prueba | Resultado | Latencia |
+|---|---|---|---|
+| 1 | `llm.generate` | **PASS** — `provider=openclaw_proxy`, 169 chars, 27.330 prompt tokens | **35.2s** |
+| 2 | `composite.research_report` | **FAIL** (capacidad) | no converge |
+| 3 | R8 routing `coding` | **PASS** — `status=done` | **53.7s** |
+| 4 | R8 routing `research` | **PASS** — `status=done` | **38.6s** |
+
+Los tres que pasan confirman la medición de §7.3: ~35-54s por turno de
+agente, ~27k tokens de prompt. Antes de este pack morían por timeout a los
+20/25/30s.
+
+**El gateway aguantó**: `NRestarts=0` y `MainPID=3364591` **sin cambio** de
+principio a fin, `ActiveEnterTimestamp` intacto, cero `lane wait exceeded`.
+La diferencia con §9.2 (donde el e2e completo lo tumbó) es el método: de a
+una y con pausas, no en ráfaga.
+
+### 12.5 Por qué composite no pasa, y el agravante que apareció
+
+No es auth, ni ruteo, ni config: **una sola llamada suya excede los 120s**.
+El journal del gateway marca `durationMs=119867 / 119877 / 119881` — agota
+exactamente el timeout que subí. El prompt de generación de reporte lleva
+todo el `research_data` + `max_tokens=4096`, y ese turno de agente tarda más
+que eso.
+
+**Agravante encontrado (no lo causa este pack):** el dispatcher **redespacha
+la misma tarea cada ~2 min** (02:02:25, 02:04:27, 02:06:28, 02:08:28…).
+Cada redespacho arranca un composite nuevo que vuelve a pegarle al gateway:
+la tarea nunca termina y el gateway recibe tráfico sin fin. Se cortó
+reiniciando worker+dispatcher al cerrar el pack.
+
+Por eso **subir más el timeout no es la respuesta obvia**: si el timeout
+supera la ventana de redespacho (~2 min), se garantiza pile-up — varias
+corridas de la misma tarea vivas a la vez contra el mismo gateway, que es
+la receta de §9.2. Opciones reales para composite, en orden de menor a
+mayor cambio:
+
+1. **Achicar el turno**: bajar `max_tokens` del reporte y/o recortar el
+   `research_data` que se le manda, para que la llamada entre en la ventana.
+2. **Alinear redespacho y timeout**: subir la ventana de redespacho del
+   dispatcher por encima del timeout, para que no haya dos corridas vivas.
+3. **Streaming o partición**: generar el reporte por secciones (varias
+   llamadas cortas) en vez de una sola larga.
+4. Azure Foundry para esta tarea puntual — pero David dijo *sólo si hay
+   mucha concurrencia*, y esto es latencia de una llamada, no concurrencia.
+
+### 12.6 Lo que encontró el `/code-review` (y una advertencia sobre el review mismo)
+
+**Aviso de honestidad sobre el review:** corrió *parcial*. 12 de 20 agentes
+murieron con `529 Overloaded` (falla del lado del servidor, no del diff), así
+que de 5 ángulos sólo 2 quedaron completamente verificados
+(default-correctness y timeout-coherence). Los ángulos de tests, del
+passthrough de composite y de exactitud del acta **no** llegaron a correr.
+Lo que sí corrió encontró dos cosas reales, ya corregidas:
+
+1. **`scripts/daily_digest.py` se me había quedado afuera.** Construye su
+   `WorkerClient()` con el default de **30s** y llama `llm.generate` sin
+   modelo — o sea que con el default nuevo (proxy, ~35s) el digest habría
+   expirado **siempre**, y con `retries=2` habría dejado **3 turnos de agente
+   huérfanos** corriendo en el gateway por cada corrida. Subí timeouts en
+   `e2e_validation.py` y `smart_reply.py` y me salté este caller, que es
+   justamente uno de los tres que §9.4 había señalado. Corregido: pasa
+   `timeout=120s`.
+2. **Multiplicación por retries.** `_request_json` en el e2e trae
+   `retries=2` por default: 120s × 3 = 363s y hasta 3 turnos vivos en
+   paralelo (el worker **no** cancela el hilo del handler cuando el cliente
+   se desconecta — usa `run_in_executor`). Eso fabrica exactamente la ráfaga
+   de §9.2. Corregido con `retries=0` en los dos tests que pegan al gateway.
+3. **Margen interno/externo.** Había puesto el `urlopen` del proxy en 120s,
+   *igual* que todos los callers — con lo cual el caller siempre gana la
+   carrera, el worker nunca alcanza a devolver su propio error descriptivo, y
+   el turno queda huérfano. Corregido a **105s**: sigue arriba de los 90s
+   originales (nunca se bajó) pero ahora deja margen, así el error sale del
+   worker con causa clara dentro de la ventana del caller.
+
+El review también señaló, y vale registrarlo aunque no se toca acá: una sola
+expiración del lado del caller puede costar hasta **9 turnos** de gateway,
+porque se multiplican `WorkerClient.retries=2` × el re-enqueue del dispatcher
+(`service.py`, `retry_count < 2`). Es la misma familia de problema que el
+pile-up de §12.5 y conviene atacarlo junto con eso.
+
+Evidencia (journal, latencias, sin secretos) en
+`~/.coord-ag-evidence/pkg-macro-p5-l2-t8/`.

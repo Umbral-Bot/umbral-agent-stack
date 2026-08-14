@@ -93,6 +93,39 @@ def _claude_disabled() -> bool:
     return value in {"1", "true", "yes", "on"}
 
 
+def _default_model() -> str:
+    """
+    Modelo por defecto cuando el input no trae `model` ni `selected_model`.
+
+    Decisión de David (2026-08-14): el texto va por la sesión de ChatGPT
+    (OAuth) que vive en el gateway, vía `openclaw_proxy`. **Sin Gemini.**
+
+    Si falta el token del gateway (o Claude está deshabilitado por flag), NO
+    caemos a Gemini de callado: fallamos pidiendo exactamente lo que falta.
+    Un fallback silencioso a Gemini sería peor que un error — mandaría el
+    tráfico a un provider que David descartó, y el síntoma aparecería como
+    "GOOGLE_API_KEY not configured", que apunta al lugar equivocado.
+
+    Ojo con la etiqueta: esto devuelve el alias `openclaw_proxy`, que el
+    worker reporta como `provider="openclaw_proxy"` — pero **el modelo real
+    lo elige el gateway**, no este código (hoy su primary es OAuth de OpenAI,
+    no Anthropic). Ver acta §12.
+    """
+    if _claude_disabled():
+        raise RuntimeError(
+            "No hay modelo por defecto: UMBRAL_DISABLE_CLAUDE está activo y "
+            "deshabilita openclaw_proxy, que es la vía de texto configurada. "
+            "Pasá un `model` explícito o desactivá el flag."
+        )
+    if not os.environ.get("OPENCLAW_GATEWAY_TOKEN", "").strip():
+        raise RuntimeError(
+            "No hay modelo por defecto: falta OPENCLAW_GATEWAY_TOKEN, que es "
+            "lo que habilita openclaw_proxy (la vía de texto configurada). "
+            "Cargá el token del gateway o pasá un `model` explícito."
+        )
+    return "openclaw_proxy"
+
+
 def handle_llm_generate(input_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Generate text using Gemini/OpenAI/Anthropic.
@@ -108,30 +141,18 @@ def handle_llm_generate(input_data: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         {"text": "...", "model": "...", "usage": {...}}
 
-    Nota sobre el default (PKG-MACRO-P5-L2-T7): cuando el input no trae
-    `model` ni `selected_model`, se usa DEFAULT_MODEL (Gemini) — NUNCA el
-    gateway. Mandar esas llamadas al gateway costaba ~36s y ~27k tokens de
-    prompt cada una (medición real contra `openclaw/main`, que es el agente
-    que este código usa por defecto), con riesgo de saturarlo — ya lo tumbó
-    una vez. Ver acta docs/operations/e2e-4fail-clasificacion-2026-08-13.md
-    §7.3, §9.2 y §11.
+    Default (PKG-MACRO-P5-L2-T8, decisión de David 2026-08-14): sin `model`
+    ni `selected_model` se usa `openclaw_proxy` — la sesión de ChatGPT (OAuth)
+    que vive en el gateway. **Sin Gemini.** Ver `_default_model()`.
 
-    Quién llega sin modelo, exactamente:
-      - `dispatcher/smart_reply.py::_do_llm_generate` y
-        `scripts/daily_digest.py::generate_llm_summary` llaman al Worker por
-        HTTP directo, sin pasar por el ModelRouter del dispatcher.
-      - `worker/tasks/composite.py` es distinto: `composite.` SÍ está en
-        `LLM_TASK_PREFIXES` (dispatcher/service.py), así que el dispatcher le
-        inyecta `model`, pero `handle_composite_research_report` no lo lee y
-        sus sub-llamadas arman payloads nuevos sin modelo. O sea: pasa por el
-        router y descarta la decisión (comportamiento pre-existente).
+    Costo a tener en cuenta: el endpoint del gateway no es un completion puro,
+    es un turno de agente (~36s y ~27k tokens de prompt contra `openclaw/main`,
+    medido en §7.3/§10). Por eso los timeouts de la cadena se subieron a ≥90s
+    en este mismo pack — y por eso conviene no dispararle en ráfaga: en §9.2
+    una corrida e2e concurrente lo tumbó.
 
-    `openclaw_proxy` se sigue usando cuando el caller pide explícitamente un
-    modelo/alias Claude u `openclaw_proxy`, o cuando el dispatcher inyecta
-    `selected_model` vía ModelRouter — que hoy, con `openclaw_proxy` como
-    único provider configurado y presente en las 7 `fallback_chain`, es
-    TODA tarea `llm.*`/`composite.*` encolada, no sólo R8 coding/research.
-    Este recorte cierra las rutas directas, no la encolada.
+    `DEFAULT_MODEL` (Gemini) queda como constante para quien pida Gemini
+    explícitamente; ya no es el default de esta función.
     """
     prompt = str(input_data.get("prompt", "")).strip()
     if not prompt:
@@ -140,7 +161,7 @@ def handle_llm_generate(input_data: Dict[str, Any]) -> Dict[str, Any]:
     requested_model = str(
         input_data.get("model")
         or input_data.get("selected_model")
-        or DEFAULT_MODEL
+        or _default_model()
     ).strip()
     model = _resolve_model_alias(requested_model)
     provider = _detect_provider(model, requested_alias=requested_model)
@@ -766,7 +787,15 @@ def _call_openclaw_proxy(
         },
     )
     try:
-        with urllib.request.urlopen(req, timeout=90) as resp:
+        # T8: subido de 90s a 105s — deliberadamente POR DEBAJO de los 120s de
+        # los callers (e2e, smart_reply, daily_digest, dispatcher WorkerClient),
+        # no igual. Con el timeout interno == el externo, el caller siempre
+        # gana la carrera y el worker nunca llega a devolver su propio error
+        # descriptivo; encima el hilo del handler no se cancela al desconectarse
+        # el cliente (worker/app.py usa run_in_executor), así que el turno
+        # queda huérfano corriendo en el gateway. Con margen, el error sale del
+        # worker con causa clara y el caller lo recibe dentro de su ventana.
+        with urllib.request.urlopen(req, timeout=105) as resp:
             data = json.loads(resp.read().decode())
     except urllib.error.HTTPError as exc:
         body_str = _safe_http_error_body(exc)

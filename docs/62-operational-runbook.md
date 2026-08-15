@@ -126,12 +126,17 @@ Si el aviso del supervisor sigue fallando con 200 desde el Worker pero no ves el
 | `*/15 min` | `quota-guard-cron.sh` | Guard de cuota Claude (fallback si excedida) |
 | `*/30 min` | `health-check.sh` | Health check Redis/Worker/Dispatcher |
 | `* * * * *` | `scheduled-tasks-cron.sh` | Procesar tareas programadas (Redis sorted set) |
-| `0 8,14,20` | `sim-daily-cron.sh` | SIM research (Gemini grounded primario + Tavily fallback) |
-| `30 8,14,20` | `sim-report-cron.sh` | SIM report (LLM + Notion) |
-| `0 9,15,21` | `sim-to-make-cron.sh` | SIM → Make.com pipeline |
+| ~~`0 8,14,20`~~ | ~~`sim-daily-cron.sh`~~ | **RETIRADO 2026-08-14 (Q8)** — no reinstalar |
+| ~~`30 8,14,20`~~ | ~~`sim-report-cron.sh`~~ | **RETIRADO 2026-08-14 (Q8)** — no reinstalar |
+| ~~`0 9,15,21`~~ | ~~`sim-to-make-cron.sh`~~ | **RETIRADO 2026-08-14 (Q8)** — no reinstalar |
 | `0 22` | `daily-digest-cron.sh` | Digest diario (Redis → LLM → Notion) |
 | `0 6` | `e2e-validation-cron.sh` | E2E validation + Notion |
 | `0 7 lunes` | `ooda-report-cron.sh` | OODA weekly report |
+
+> **SIM está retirado del cron** desde el 2026-08-14 (Q8). `install-cron.sh` ya no
+> lo instala y además lo strippea si alguien re-corre el instalador. Los wrappers se
+> conservan para correr a mano. **No reinstalar en crontab** — ver
+> [operations/sim-cron-retired-2026-08-14.md](operations/sim-cron-retired-2026-08-14.md).
 
 Instalar/actualizar crons:
 

@@ -115,6 +115,16 @@ no reconstruido de memoria días después. Regla de cadencia:
    al revés. Ante cualquier discrepancia entre Notion y un `ledger-*.jsonl`,
    el ledger manda.
 
+> **Actualización 2026-08-20 — el cierre no tiene dueño:** los dos únicos
+> cierres del frente hasta ahora (A1 y A2) entraron al ledger como backfill
+> retroactivo. Causa estructural: el evento `PASS` nace en el merge, que
+> ejecuta Cursor/David *después* de que el PR del paquete quedó cerrado, y la
+> regla 3 no le asigna dueño a ese append. Interinamente: el append del
+> cierre es de quien mergea; si no ocurre, la primera sesión que detecte el
+> merge lo backfillea (nota `retroactivo`, `ts` real del merge). Fix durable
+> pendiente: un check post-merge en CI que cruce el tag `PKG-*` del commit
+> contra el último evento del ledger y avise si falta el terminal.
+
 ## Delimitación (qué NO es esto)
 
 | Superficie | Qué es | Por qué esto no la reemplaza |

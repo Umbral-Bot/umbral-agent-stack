@@ -115,6 +115,10 @@ otros repos, fuera de alcance de PKG-OPS-RESUME-A2 que es UAS-only); se
 documentan acá como deuda visible para que no quede solo en la memoria de
 una sesión.
 
+> **Actualización 2026-08-20:** esta tabla quedó parcialmente superada — 2 de
+> los 5 ya están trackeados en su repo y aparecieron deudores nuevos. Estado
+> vivo: ver el re-inventario al final de la sección.
+
 | Repo | Ledger | Estado git (2026-08-04) |
 |---|---|---|
 | `umbral-bot-cursor` | `docs/operations/ledger-microsoft-marketplace-2026-08.jsonl` | untracked (`??`) |
@@ -133,19 +137,29 @@ pierde visibilidad hoy; el riesgo es silencioso a futuro — un
 `git clean -fdx`, una reinstalación de máquina, o un worktree nuevo los
 borra sin aviso porque git no los está cuidando.
 
-### Re-chequeo 2026-08-20 (solo lectura, mismos repos)
+### Re-inventario 2026-08-20 (solo lectura, censo completo)
 
-Dos de los cinco ya fueron trackeados en su propio repo; tres siguen en deuda:
+A diferencia del inventario original, este censo barre **todos** los repos de
+`C:\GitHub` con `docs/operations/ledger-*.jsonl` y cruza cada archivo contra
+el remoto de su repo (refs `origin/*` locales del día) — un re-chequeo
+limitado a los 5 originales nunca podría ver deudores nuevos. Resultado: de
+los 5 originales, 2 ya están trackeados; hay 4 deudores nuevos que la tabla
+de 2026-08-04 no cubría.
 
-| Repo | Ledger | Estado git (2026-08-20) |
+| Repo (remoto) | Ledger | Estado (2026-08-20) |
 |---|---|---|
-| `umbral-bot-cursor` | `ledger-microsoft-marketplace-2026-08.jsonl` | **tracked** (con cambios locales ` M` sin commitear) |
-| `umbral-bot-cursor` | `ledger-msft-partner.jsonl` | untracked (`??`) — deuda vigente |
-| `umbral-bot-cursor` | `ledger-n8n-chile-community.jsonl` | untracked (`??`) — deuda vigente |
-| `umbral-bot-cursor` | `ledger-workshop-n8n-usm.jsonl` | untracked (`??`) — deuda vigente |
-| `visor-ifc` | `ledger-visor-ifc.jsonl` | **tracked** (con cambios locales ` M` sin commitear) |
+| `umbral-bot-2` | `docs/operations/ledger-microsoft-marketplace-2026-08.jsonl` | **tracked** en `origin/main`; el clone cursor acumula semanas de líneas sin commitear (` M`) |
+| `umbral-bot-2` | `docs/operations/ledger-sii-tributario-2026-08.jsonl` | **tracked** en `origin/main`; el clone cursor mantiene una copia `??` divergente (124 líneas de diferencia) — split-brain a reconciliar |
+| `umbral-bot-2` | `docs/operations/ledger-msft-partner.jsonl` | untracked (`??`, solo working tree del clone cursor) |
+| `umbral-bot-2` | `docs/operations/ledger-n8n-chile-community.jsonl` | untracked (`??`, solo working tree del clone cursor) |
+| `umbral-bot-2` | `docs/operations/ledger-workshop-n8n-usm.jsonl` | untracked (`??`, solo working tree del clone cursor) |
+| `umbral-bot-2` | `docs/operations/ledger-postulaciones-2026-08.jsonl` | untracked (`??`) — **nuevo** desde 2026-08-04 |
+| `visor-ifc` | `docs/operations/ledger-visor-ifc.jsonl` | **tracked** en `origin/master`; el clone acumula semanas de líneas sin commitear (` M`), una de ellas con schema ajeno (`actor`/`event`) |
+| `dynamo-mcp` | `docs/operations/ledger-dyn-mcp-tester.jsonl` | untracked — **nuevo**; la carpeta entera es `??` y el ledger está activo (líneas de hoy) |
+| `umbral-agent-stack` | `docs/operations/ledger-macro-hygiene-2026-08-11.jsonl` | untracked (`??`) en el working tree del clone canónico — deuda en el propio repo que define esta regla |
 
-La recomendación no cambia: los tres untracked se trackean en PR aparte en su
-propio repo. Los dos tracked-con-` M` tienen líneas nuevas sin commitear —
-válido a mitad de ciclo, pero la cadencia del runbook pide commitearlas en el
-mismo PR/ciclo del evento, no dejarlas acumular solo en el filesystem.
+La recomendación de arriba sigue vigente para los 6 untracked, cada uno en su
+propio repo. Dos avisos que no son "mitad de ciclo": los backlogs locales de
+`marketplace` y `visor-ifc` abarcan semanas y ciclos ya cerrados; y antes de
+commitear el de `visor-ifc`, revisar su línea de schema ajeno — el ledger es
+append-only, una vez commiteada no se corrige.

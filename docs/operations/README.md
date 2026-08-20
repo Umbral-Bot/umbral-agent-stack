@@ -132,3 +132,20 @@ en este. Mientras tanto `scripts/ops_resume_board.py` los sigue leyendo bien
 pierde visibilidad hoy; el riesgo es silencioso a futuro — un
 `git clean -fdx`, una reinstalación de máquina, o un worktree nuevo los
 borra sin aviso porque git no los está cuidando.
+
+### Re-chequeo 2026-08-20 (solo lectura, mismos repos)
+
+Dos de los cinco ya fueron trackeados en su propio repo; tres siguen en deuda:
+
+| Repo | Ledger | Estado git (2026-08-20) |
+|---|---|---|
+| `umbral-bot-cursor` | `ledger-microsoft-marketplace-2026-08.jsonl` | **tracked** (con cambios locales ` M` sin commitear) |
+| `umbral-bot-cursor` | `ledger-msft-partner.jsonl` | untracked (`??`) — deuda vigente |
+| `umbral-bot-cursor` | `ledger-n8n-chile-community.jsonl` | untracked (`??`) — deuda vigente |
+| `umbral-bot-cursor` | `ledger-workshop-n8n-usm.jsonl` | untracked (`??`) — deuda vigente |
+| `visor-ifc` | `ledger-visor-ifc.jsonl` | **tracked** (con cambios locales ` M` sin commitear) |
+
+La recomendación no cambia: los tres untracked se trackean en PR aparte en su
+propio repo. Los dos tracked-con-` M` tienen líneas nuevas sin commitear —
+válido a mitad de ciclo, pero la cadencia del runbook pide commitearlas en el
+mismo PR/ciclo del evento, no dejarlas acumular solo en el filesystem.

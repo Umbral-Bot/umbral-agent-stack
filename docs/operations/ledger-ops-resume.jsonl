@@ -15,3 +15,4 @@
 {"ts":"2026-08-04T06:48","pkg":"PKG-OPS-RESUME-A2","frente":"ops-resume","dest":"claude","evento":"ACK","ev":"claude/pkg-ops-resume-a2-20260804@d9fa5bb","nota":"cadencia runbook + README deuda ledgers hermanos + backfill A1"}
 {"ts":"2026-08-04T06:55","pkg":"PKG-OPS-RESUME-A2","frente":"ops-resume","dest":"claude","evento":"REPORTADO","ev":"PR#577","nota":"runbook cadencia + README regla dura/deuda + backfill A1; 37/37 tests verdes; CODE_PASS, pendiente merge David/Cursor"}
 {"ts":"2026-08-04T07:26","pkg":"PKG-OPS-RESUME-A2","frente":"ops-resume","dest":"claude","evento":"PASS","ev":"22192dde","nota":"retroactivo (backfill 2026-08-20): PR#577 mergeado a main"}
+{"ts":"2026-08-20T15:50","pkg":"PKG-OPS-RESUME-A2","frente":"ops-resume","dest":"cursor","evento":"PASS","ev":"a0477f16","nota":"PR#655 mergeado; backfill+reinventario; CODE_PASS cerrado"}

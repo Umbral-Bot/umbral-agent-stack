@@ -2,7 +2,7 @@
 
 Cada archivo `ledger-<programa>.jsonl` en esta carpeta es el ledger append-only
 de un programa/frente coordinado por la skill `cursor-orchestrator`
-(`umbral-skills-registry/skills/cursor-orchestrator/reference-bitacora.md`).
+(`umbral-skills-registry/skills/cursor-orchestrator/references/reference-bitacora.md`).
 Una línea = un evento. Nunca se edita ni se reordena una línea existente;
 solo se agregan líneas nuevas al final.
 
@@ -79,13 +79,19 @@ menos un ledger real — el generador las cuenta y las salta, nunca aborta.
 
 ## Campos opcionales por línea (contrato cursor-orchestrator 0.11.0, 2026-08-20)
 
+> Antes esta sección era § «Extensión de schema propuesta (PROPUESTA, no
+> vigente)» — el registry la cita con ese nombre como origen del contrato.
+> Renombrada 2026-08-21 (PKG-OPS-RESUME-GEN) al quedar adoptada.
+
 Estos campos nacieron como propuesta en el discovery de PKG-OPS-RESUME
-(Codex + Claude, 2026-08-01) y fueron **adoptados como contrato vigente** en
-`cursor-orchestrator` 0.11.0 (PREP-B, `umbral-skills-registry`, GO David).
-Son opcionales y backward-compatible: una línea vieja sin ellos sigue siendo
-válida. Definición canónica en
+(Codex + Claude, 2026-08-01; `PAUSED`/`RESUMED` fue propuesta original de
+Codex) y fueron **adoptados como contrato vigente** en `cursor-orchestrator`
+0.11.0 (PREP-B, `umbral-skills-registry`, GO David). Son opcionales y
+backward-compatible: una línea vieja sin ellos sigue siendo válida.
+Definición canónica en
 `umbral-skills-registry/skills/cursor-orchestrator/references/reference-bitacora.md`;
-este README solo describe cómo los trata el generador.
+cualquier cambio al contrato es bump de versión + PR en ese registry — este
+repo no lo edita. Este README solo describe cómo los trata el generador.
 
 | Campo | Tipo | Qué es (según el contrato) |
 |---|---|---|
@@ -105,16 +111,32 @@ entraron al enum en 0.11.0; el generador los trata como abiertos.
 infiere.** Cada pelota del `--json` trae **siempre** las 6 claves
 `event_id`, `thread`, `tipo`, `gate_state`, `next`, `links`:
 
-- Se copian tal cual desde la **línea vigente** (la última por
-  `(frente, pkg, dest)`); no se heredan de líneas anteriores del mismo paquete.
-- String ausente, `null` o de otro tipo → `""`. No se coacciona ni se inventa.
-- `links`: lista → se conservan solo los elementos string no vacíos; string
-  único → lista de 1; ausente o de otro tipo → `[]`.
+- Se copian desde la **línea vigente** por `(frente, pkg, dest)`: la de `ts`
+  mayor; a `ts` igual (ACK y REPORTADO en el mismo minuto es común), la leída
+  después — más abajo en el archivo. No se heredan ni se mezclan opcionales
+  de líneas anteriores del mismo paquete.
+- String: se copia **tal cual, sin recortar**, si la fuente trae un string no
+  vacío ni solo-espacios. Ausente, `null`, en blanco o de otro tipo → `""`.
+  No se coacciona (un número no se convierte en string) ni se inventa.
+- `links`: lista → se conservan solo los strings no vacíos, **recortados**
+  (son URLs); string único no vacío → lista de 1; ausente o de otro tipo →
+  `[]`.
+- **"No vino" y "vino mal" se distinguen.** Si un opcional viene con tipo que
+  el contrato no admite (p. ej. `next` como lista — caso real en
+  `ledger-n8n-chile-community.jsonl`), se descarta a vacío **y** se nombra en
+  `opcionales_descartados` (lista por pelota, normalmente `[]`);
+  `meta.optionals_type_mismatch` suma esos descartes sobre **todas** las
+  líneas leídas (no solo las vigentes). Misma filosofía que
+  `DRIFT` y `events_skipped_malformed`: marcar, nunca esconder.
 - `next` (emitido por la fuente) y `next_inferido` (heurística local: `nota` si
   hay, si no una frase genérica por `evento`) son **campos separados**. El
   generador nunca copia `next_inferido` a `next`; un `next` vacío se queda
   vacío. El espejo Notion (`Next`) consume `next`, no `next_inferido` — por
   eso sigue vacío mientras los ledgers no lo emitan.
+- El **tablero humano** (sin `--json`) sigue mostrando solo `next_inferido`;
+  los 6 opcionales viven en `--json`, que es lo que consume el espejo.
+- Un ledger con bytes no-UTF-8 (writer ANSI) ya no aborta el tablero: se
+  decodifica con reemplazo (`U+FFFD`, que varios ledgers reales ya traen).
 
 ## Ledgers de otros repos
 

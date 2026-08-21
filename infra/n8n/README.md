@@ -12,6 +12,17 @@ y está gobernado por
 > instancia **Cloud/personal**, no al VPS — sirve para *autoría/validación*,
 > nunca como runtime del pipeline (§2.B5).
 
+## RRSS-vía-n8n: cerrado (2026-08-21, Q10)
+
+La instancia n8n del VPS solo tiene **B1 y B3** — los 4 workflows editoriales
+y los 2 SIM que E-p11 (2026-08-12) encontró `active=false` y sin versionar
+(stubs de 2 nodos, marzo 2026, nunca ejecutados) fueron exportados y borrados
+del VPS el 2026-08-21 [PKG-MACRO-P5-Q10-T1]. Exports scrubbed en
+[`archive/killed-2026-08-21/`](archive/killed-2026-08-21/) (no en
+`workflows/` — ver anti-patrón #1 más abajo). RRSS-vía-n8n queda cerrado como
+binaria: no se reconstruye, no se reactiva. Detalle:
+[docs/operations/q10-n8n-killed-2026-08-21.md](../../docs/operations/q10-n8n-killed-2026-08-21.md).
+
 ## Qué vive acá
 
 `workflows/*.json` — export literal (formato Import/Export de la UI de n8n) de

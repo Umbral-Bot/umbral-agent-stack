@@ -1,0 +1,20 @@
+INDEX — n8n-killed-20260821 (PKG-MACRO-P5-Q10-T1)
+Origen: n8n VPS self-hosted 127.0.0.1:5678, export vía CLI 'n8n export:workflow --id=<id> --pretty'
+Exportado: 2026-08-21T20:14:12Z UTC
+Scrub: Y (grep apiKey|password|oauthTokenData|accessToken|refreshToken|secret|token → 0 matches en los 7 archivos)
+
+id                                       nombre                                                                 active  bytes  sha256
+ydOLYZcq8aJnX6Sg                         Laboral Gate Humano - Shortlist y Preparación                         false    2870  f4f7ee77b0d674e31ab79a4b12cd34850062d929bcce3c18744a847b4dc74146
+  path: infra/n8n/archive/killed-2026-08-21/ydOLYZcq8aJnX6Sg.json
+UhbnM6bUAG86Trgw                         Editorial Multicanal Prep - Sistema Editorial Automatizado Umbral      false    2796  9e958fd7ee95a682da318b3706b776bd119190272dbfe7460df94fe6e2d60e70
+  path: infra/n8n/archive/killed-2026-08-21/UhbnM6bUAG86Trgw.json
+b1ba0c1d-3a56-44b7-aac7-63e8561e979f     Reporte Ejecutivo Diario                                               false    2431  0a4199250e4fd77e1fa5da0e6a9a17a1f4e7c71514ebc8b01dbe639e1e5aaf2e
+  path: infra/n8n/archive/killed-2026-08-21/b1ba0c1d-3a56-44b7-aac7-63e8561e979f.json
+qLnjqF2iJdOnVH5U                         Editorial Shortlist - Sistema Editorial Automatizado Umbral            false    2628  a157b9a655ced5d5259ac06be88309684377f4ecd7a7bc225aa5d04aefe2dc61
+  path: infra/n8n/archive/killed-2026-08-21/qLnjqF2iJdOnVH5U.json
+11b62f9c-7328-42de-af43-7fe219cf083f     SIM Diario - Embudo                                                    false    2465  070a0834474773527376cc97255d61c7aea404393e6a0a97de069c9128002183
+  path: infra/n8n/archive/killed-2026-08-21/11b62f9c-7328-42de-af43-7fe219cf083f.json
+8zzOGYhzzKTnRdJz                         Correo de prueba diario 08:00                                          false    2910  ae64e65d5357f020537fbbe62e4131085a4bf53064a69797946d188cb4413245
+  path: infra/n8n/archive/killed-2026-08-21/8zzOGYhzzKTnRdJz.json
+fGrPzz61czmkSrxj                         Editorial Gate de Aprobación - Sistema Editorial Automatizado Umbral  false    2663  3914b282068e9bba5e0d1a468ca64b37fbd5860424c0fcae322f174b1eb074d7
+  path: infra/n8n/archive/killed-2026-08-21/fGrPzz61czmkSrxj.json

@@ -1,5 +1,14 @@
 # 60 — Pipeline de Automatización RRSS con n8n
 
+> **HISTÓRICO / CERRADO 2026-08-21 [PKG-MACRO-P5-Q10-T1]:** Q10 = A. No se
+> construye ni se reactiva el pipeline RRSS por n8n — RRSS-vía-n8n queda
+> cerrado como binaria. El camino vivo para editorial es Worker + HITL
+> editorial (otra fila del reconteo, `docs/62` §7). Los 4 workflows
+> editoriales que este diseño había dejado como stubs sin versionar en el n8n
+> del VPS fueron exportados y borrados — ver
+> [closeout](operations/q10-n8n-killed-2026-08-21.md). Lo de abajo queda como
+> diseño histórico, no reescrito.
+
 > Diseño del pipeline de captura, filtrado, transformación, revisión humana y publicación multi-canal de contenido para redes sociales de David Moreira.
 
 **Estado:** Diseño (pendiente validación por David)

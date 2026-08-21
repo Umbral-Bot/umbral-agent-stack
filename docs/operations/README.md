@@ -40,7 +40,7 @@ Una línea JSON por evento:
 | `pkg`    | Id del paquete (`PKG-…`).                                              |
 | `frente` | Slug del frente/programa.                                              |
 | `dest`   | Destinatario del evento (`cursor`, `claude`, `codex`, `notion-ai`, …). En la práctica también aparece `"claude+codex"` para paquetes con fan-out paralelo a un solo destinatario compuesto. |
-| `evento` | Uno de: `EMITIDO \| ACK \| REPORTADO \| PASS \| FAIL \| BLOCKED \| NO_ACK \| REEMISION`. `CERRADO` puede aparecer como cierre explícito de paquete. |
+| `evento` | Uno de: `EMITIDO \| ACK \| REPORTADO \| PASS \| FAIL \| BLOCKED \| NO_ACK \| REEMISION \| PAUSED \| RESUMED` (`PAUSED`/`RESUMED` desde cursor-orchestrator 0.11.0, 2026-08-20). `CERRADO` puede aparecer como cierre explícito de paquete. |
 | `ev`     | Evidencia mínima: SHA / PR / run id / gate marker. Puede ser `""`.      |
 | `nota`   | ≤120 chars, sin secretos.                                              |
 
@@ -53,7 +53,7 @@ como estados marcados explícitamente.
 `scripts/ops_resume_board.py` trata `evento` así:
 
 - **Terminal** (`[CERRADO]`, no cuenta como "abierta"): `PASS | FAIL | CERRADO`.
-- **Abierto** (cuenta como pelota pendiente): `EMITIDO | ACK | REPORTADO | REEMISION | PENDING | DEPLOYED | BLOCKED | NO_ACK` (+ `PAUSED|RESUMED` propuestos).
+- **Abierto** (cuenta como pelota pendiente): `EMITIDO | ACK | REPORTADO | REEMISION | PENDING | DEPLOYED | BLOCKED | NO_ACK | PAUSED | RESUMED`.
 
 Esto **no** coincide con una lectura literal del enum que trae la misión
 PKG-OPS-RESUME-A1 (`terminal = PASS|FAIL|BLOCKED|NO_ACK`). Se corrigió a propósito
@@ -77,25 +77,44 @@ los trata como eventos "abiertos" y los marca `DRIFT` en el tablero en vez de
 descartarlos. También hay líneas malformadas (comillas escapadas rotas) en al
 menos un ledger real — el generador las cuenta y las salta, nunca aborta.
 
-## Extensión de schema propuesta (PROPUESTA, no vigente)
+## Campos opcionales por línea (contrato cursor-orchestrator 0.11.0, 2026-08-20)
 
-Estos campos/eventos aparecieron en discovery (Codex + Claude, PKG-OPS-RESUME,
-2026-08-01) como útiles para el generador, pero **no están en la spec canónica**
-de `cursor-orchestrator` todavía. Se documentan acá como propuesta; requieren
-bump de versión y PR en `umbral-skills-registry` antes de considerarse parte
-del contrato (este repo no edita ese registry):
+Estos campos nacieron como propuesta en el discovery de PKG-OPS-RESUME
+(Codex + Claude, 2026-08-01) y fueron **adoptados como contrato vigente** en
+`cursor-orchestrator` 0.11.0 (PREP-B, `umbral-skills-registry`, GO David).
+Son opcionales y backward-compatible: una línea vieja sin ellos sigue siendo
+válida. Definición canónica en
+`umbral-skills-registry/skills/cursor-orchestrator/references/reference-bitacora.md`;
+este README solo describe cómo los trata el generador.
 
-- `event_id` — id único por línea, para deduplicar reemisiones.
-- `thread` — hilo/conversación de origen, para trazar de vuelta al chat que emitió el evento.
-- `tipo` — categoría del paquete (discovery / implementación / fix / diagnóstico).
-- `gate_state` — estado del gate asociado, si el evento lo dispara.
-- `next` — próxima acción explícita (hoy se infiere heurísticamente desde `nota`/`evento`).
-- `links` — URLs (PR, doc) asociadas al evento.
-- Eventos `PAUSED` / `RESUMED` — para paquetes suspendidos sin ser `BLOCKED` (propuesta original de Codex en discovery).
+| Campo | Tipo | Qué es (según el contrato) |
+|---|---|---|
+| `event_id` | string | id único por línea; dedupe de reemisiones. |
+| `thread` | string | hilo/conversación de origen. |
+| `tipo` | string (enum corto) | `discovery` / `implementación` / `fix` / `diagnóstico` — vocabulario del evento, **no** la propiedad Notion `Tipo`. |
+| `gate_state` | string | estado del gate que el evento dispara (p. ej. `X_CODE_PASS`). |
+| `next` | string | próxima acción **emitida por la fuente**. |
+| `links` | lista de strings | URLs (PR, doc, evidencia) asociadas al evento. |
 
-`scripts/ops_resume_board.py` ya reconoce `PAUSED`/`RESUMED` como eventos
-"abiertos" de forma adelantada (no rompe si aparecen), pero no los emite ni
-los exige.
+Eventos `PAUSED` / `RESUMED` (paquete suspendido sin ser `BLOCKED`) también
+entraron al enum en 0.11.0; el generador los trata como abiertos.
+
+### Cómo los trata `scripts/ops_resume_board.py` (PKG-OPS-RESUME-GEN, 2026-08-21)
+
+**Passthrough literal: el generador los pasa si vienen, no los exige ni los
+infiere.** Cada pelota del `--json` trae **siempre** las 6 claves
+`event_id`, `thread`, `tipo`, `gate_state`, `next`, `links`:
+
+- Se copian tal cual desde la **línea vigente** (la última por
+  `(frente, pkg, dest)`); no se heredan de líneas anteriores del mismo paquete.
+- String ausente, `null` o de otro tipo → `""`. No se coacciona ni se inventa.
+- `links`: lista → se conservan solo los elementos string no vacíos; string
+  único → lista de 1; ausente o de otro tipo → `[]`.
+- `next` (emitido por la fuente) y `next_inferido` (heurística local: `nota` si
+  hay, si no una frase genérica por `evento`) son **campos separados**. El
+  generador nunca copia `next_inferido` a `next`; un `next` vacío se queda
+  vacío. El espejo Notion (`Next`) consume `next`, no `next_inferido` — por
+  eso sigue vacío mientras los ledgers no lo emitan.
 
 ## Ledgers de otros repos
 

@@ -11,6 +11,13 @@ Este script SOLO LEE. No escribe en ningún ledger, no toca Notion, no toca
 Mission Control ni board.md. Ver docs/operations/README.md para el schema y
 docs/ops/ops-resume-reentry-2026-08-02.md para el runbook completo.
 
+Campos opcionales del contrato cursor-orchestrator 0.11.0 (`event_id`, `thread`,
+`tipo`, `gate_state`, `next`, `links`): se hace passthrough LITERAL desde la
+línea JSONL vigente hacia cada pelota y hacia `--json`. Si la fuente no los
+trae, salen vacíos ("" / []). Nunca se infieren; en particular `next` (emitido
+por la fuente) y `next_inferido` (heurística local) son campos separados y
+este script jamás copia uno en el otro.
+
 Uso:
     python scripts/ops_resume_board.py                    # tablero humano, root = carpeta padre de este repo
     python scripts/ops_resume_board.py --json              # salida JSON
@@ -25,7 +32,7 @@ import argparse
 import json
 import subprocess
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -48,11 +55,16 @@ OPEN_EVENTS = {
     "DEPLOYED",
     "BLOCKED",
     "NO_ACK",
-    "PAUSED",  # propuesta, ver docs/operations/README.md
-    "RESUMED",  # propuesta, ver docs/operations/README.md
+    "PAUSED",  # contrato cursor-orchestrator 0.11.0 (2026-08-20)
+    "RESUMED",  # contrato cursor-orchestrator 0.11.0 (2026-08-20)
 }
 # Solo estos eventos disparan el chequeo de staleness (spec del paquete PKG-OPS-RESUME-A1).
 STALE_TRIGGER_EVENTS = {"EMITIDO", "ACK"}
+
+# Opcionales por línea (cursor-orchestrator 0.11.0). Passthrough literal: el
+# generador los PASA si vienen, no los EXIGE ni los infiere.
+OPTIONAL_STRING_FIELDS = ("event_id", "thread", "tipo", "gate_state", "next")
+OPTIONAL_LIST_FIELDS = ("links",)
 
 LEDGER_GLOB = "*/docs/operations/ledger-*.jsonl"
 DEFAULT_STALE_HOURS = 24
@@ -71,6 +83,13 @@ class LedgerEvent:
     evento: str
     ev: str
     nota: str
+    # Opcionales 0.11.0 — vacíos si la línea fuente no los trae.
+    event_id: str = ""
+    thread: str = ""
+    tipo: str = ""
+    gate_state: str = ""
+    next: str = ""
+    links: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -88,6 +107,34 @@ class BallState:
     is_known_event: bool
     stale: bool
     next_inferido: str
+    # Opcionales 0.11.0, copiados literales desde la línea vigente. `next` es
+    # lo que EMITIÓ la fuente; `next_inferido` es la heurística local de arriba.
+    # Son campos distintos a propósito: ninguno rellena al otro.
+    event_id: str = ""
+    thread: str = ""
+    tipo: str = ""
+    gate_state: str = ""
+    next: str = ""
+    links: List[str] = field(default_factory=list)
+
+
+def optional_str(data: Dict[str, Any], key: str) -> str:
+    """Passthrough literal de un opcional string: se copia solo si la fuente
+    trae un string; ausente, null o de otro tipo → "" (no se inventa ni se
+    coacciona)."""
+    value = data.get(key)
+    return value if isinstance(value, str) else ""
+
+
+def normalize_links(value: Any) -> List[str]:
+    """`links` del contrato es lista de strings (URLs). Tolerancia mínima sin
+    inferir: un string único se envuelve en lista de 1; dentro de una lista se
+    conservan solo los elementos string no vacíos; cualquier otra forma → []."""
+    if isinstance(value, str):
+        return [value] if value.strip() else []
+    if isinstance(value, list):
+        return [item for item in value if isinstance(item, str) and item.strip()]
+    return []
 
 
 def parse_ts(raw: Optional[str]) -> Optional[datetime]:
@@ -152,6 +199,12 @@ def load_events(ledger_path: Path, repo_root: Path) -> Tuple[List[LedgerEvent], 
                 evento=str(data.get("evento") or "").strip().upper(),
                 ev=str(data.get("ev") or ""),
                 nota=str(data.get("nota") or ""),
+                event_id=optional_str(data, "event_id"),
+                thread=optional_str(data, "thread"),
+                tipo=optional_str(data, "tipo"),
+                gate_state=optional_str(data, "gate_state"),
+                next=optional_str(data, "next"),
+                links=normalize_links(data.get("links")),
             )
         )
     return events, skipped
@@ -242,6 +295,12 @@ def build_board(
                 is_known_event=is_known,
                 stale=stale,
                 next_inferido=infer_next(ev.evento, ev.dest, ev.nota),
+                event_id=ev.event_id,
+                thread=ev.thread,
+                tipo=ev.tipo,
+                gate_state=ev.gate_state,
+                next=ev.next,
+                links=list(ev.links),
             )
         )
 
@@ -295,6 +354,13 @@ def _ball_to_dict(b: BallState) -> Dict[str, Any]:
         "evento_conocido": b.is_known_event,
         "stale": b.stale,
         "next_inferido": b.next_inferido,
+        # Opcionales 0.11.0 — SIEMPRE presentes; vacíos si la fuente no los trajo.
+        "event_id": b.event_id,
+        "thread": b.thread,
+        "tipo": b.tipo,
+        "gate_state": b.gate_state,
+        "next": b.next,
+        "links": list(b.links),
     }
 
 

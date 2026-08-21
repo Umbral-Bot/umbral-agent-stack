@@ -396,3 +396,152 @@ def test_main_does_not_call_gh_without_with_prs_flag(tmp_path, monkeypatch):
     monkeypatch.setattr(subprocess, "run", fail_if_called)
     rc = board.main(["--root", str(tmp_path), "--json", "--now", "2026-08-01T12:00:00Z"])
     assert rc == 0
+
+
+# ---------------------------------------------------------------------------
+# Opcionales 0.11.0 (event_id, thread, tipo, gate_state, next, links) —
+# passthrough literal, nunca inferidos. PKG-OPS-RESUME-GEN.
+# ---------------------------------------------------------------------------
+
+OPTIONAL_KEYS = ("event_id", "thread", "tipo", "gate_state", "next", "links")
+
+NOW = datetime(2026, 8, 21, 12, 0, 0)
+
+
+def _single_ball_dict(tmp_path, line):
+    write_ledger(tmp_path, "repo-a", "ledger-alpha.jsonl", [line])
+    balls, meta = board.build_board(tmp_path, stale_hours=24, now=NOW)
+    assert len(balls) == 1
+    parsed = json.loads(board.render_json(balls, meta))
+    return balls[0], parsed["pelotas"][0]
+
+
+def test_old_line_without_optionals_yields_all_six_keys_empty(tmp_path):
+    # Línea vieja (schema 2026-07-28): las 6 claves tienen que estar igual,
+    # vacías — el consumidor (espejo Notion) nunca debe hacer .get() a ciegas.
+    ball, d = _single_ball_dict(tmp_path, event(evento="REPORTADO", nota="algo"))
+    for key in OPTIONAL_KEYS:
+        assert key in d
+    assert d["event_id"] == ""
+    assert d["thread"] == ""
+    assert d["tipo"] == ""
+    assert d["gate_state"] == ""
+    assert d["next"] == ""
+    assert d["links"] == []
+    assert ball.links == []
+
+
+def test_line_with_all_six_optionals_is_copied_literally(tmp_path):
+    line = event(
+        evento="RESUMED",
+        nota="",
+        event_id="e1a4f4",
+        thread="claude/pkg-ops-resume-schema-20260820",
+        tipo="implementación",
+        gate_state="OPS_RESUME_SCHEMA_CODE_PASS",
+        next="continuar implementación",
+        links=["https://example.com/pr/123", "https://example.com/doc"],
+    )
+    ball, d = _single_ball_dict(tmp_path, line)
+    assert d["event_id"] == "e1a4f4"
+    assert d["thread"] == "claude/pkg-ops-resume-schema-20260820"
+    assert d["tipo"] == "implementación"
+    assert d["gate_state"] == "OPS_RESUME_SCHEMA_CODE_PASS"
+    assert d["next"] == "continuar implementación"
+    assert d["links"] == ["https://example.com/pr/123", "https://example.com/doc"]
+    # RESUMED sigue siendo evento abierto y conocido (ya lo era antes del contrato).
+    assert ball.is_terminal is False
+    assert ball.is_known_event is True
+
+
+def test_paused_with_optionals_stays_open_and_passes_through(tmp_path):
+    line = event(evento="PAUSED", nota="esperando insumo externo", next="retomar tras respuesta de David")
+    ball, d = _single_ball_dict(tmp_path, line)
+    assert ball.is_terminal is False
+    assert ball.is_known_event is True
+    assert d["evento"] == "PAUSED"
+    assert d["next"] == "retomar tras respuesta de David"
+
+
+def test_next_from_source_is_separate_from_next_inferido(tmp_path):
+    # `next` viene de la fuente; `next_inferido` es la heurística local (= nota
+    # si hay nota). Son campos distintos y NO se copian entre sí.
+    line = event(evento="ACK", nota="nota de la fuente", next="paso emitido por la fuente")
+    ball, d = _single_ball_dict(tmp_path, line)
+    assert d["next"] == "paso emitido por la fuente"
+    assert d["next_inferido"] == "nota de la fuente"
+    assert d["next"] != d["next_inferido"]
+    assert ball.next_inferido == board.infer_next("ACK", "claude", "nota de la fuente")
+
+
+def test_empty_next_is_not_filled_from_heuristic(tmp_path):
+    # Sin `next` en la fuente, la heurística sigue viviendo SOLO en next_inferido.
+    ball, d = _single_ball_dict(tmp_path, event(evento="ACK", nota=""))
+    assert d["next"] == ""
+    assert d["next_inferido"] != ""  # heurística presente...
+    assert "REPORTADO" in d["next_inferido"]  # ...y es la de ACK
+    assert ball.next == ""
+
+
+def test_links_single_string_is_wrapped_into_list(tmp_path):
+    _, d = _single_ball_dict(tmp_path, event(links="https://example.com/pr/9"))
+    assert d["links"] == ["https://example.com/pr/9"]
+
+
+@pytest.mark.parametrize("bad", [42, {"url": "x"}, True, None, ""])
+def test_links_non_list_non_string_becomes_empty_list(tmp_path, bad):
+    _, d = _single_ball_dict(tmp_path, event(links=bad))
+    assert d["links"] == []
+
+
+def test_links_list_keeps_only_non_empty_strings():
+    assert board.normalize_links(["https://a", 7, "", None, "https://b"]) == ["https://a", "https://b"]
+
+
+@pytest.mark.parametrize("key", ["event_id", "thread", "tipo", "gate_state", "next"])
+def test_optional_string_non_string_value_becomes_empty(tmp_path, key):
+    # Passthrough literal: si no es string no se coacciona ni se inventa.
+    _, d = _single_ball_dict(tmp_path, event(**{key: 123}))
+    assert d[key] == ""
+
+
+def test_optional_string_null_becomes_empty(tmp_path):
+    _, d = _single_ball_dict(tmp_path, event(event_id=None, next=None))
+    assert d["event_id"] == ""
+    assert d["next"] == ""
+
+
+def test_latest_line_wins_for_optionals_too(tmp_path):
+    # Los opcionales se toman de la línea VIGENTE, no se acumulan de líneas previas.
+    write_ledger(
+        tmp_path,
+        "repo-a",
+        "ledger-alpha.jsonl",
+        [
+            event(evento="EMITIDO", ts="2026-08-20T09:10", event_id="e1", thread="t1", links=["https://old"]),
+            event(evento="ACK", ts="2026-08-20T11:05", event_id="e2"),
+        ],
+    )
+    balls, meta = board.build_board(tmp_path, stale_hours=24, now=NOW)
+    d = json.loads(board.render_json(balls, meta))["pelotas"][0]
+    assert d["evento"] == "ACK"
+    assert d["event_id"] == "e2"
+    assert d["thread"] == ""  # la línea ACK no lo trae → vacío, no heredado
+    assert d["links"] == []
+
+
+def test_main_json_end_to_end_includes_optional_keys(tmp_path, capsys):
+    write_ledger(tmp_path, "repo-a", "ledger-alpha.jsonl", [event(evento="PASS", gate_state="X_PASS")])
+    rc = board.main(["--root", str(tmp_path), "--json", "--now", "2026-08-21T12:00:00Z"])
+    assert rc == 0
+    d = json.loads(capsys.readouterr().out)["pelotas"][0]
+    for key in OPTIONAL_KEYS:
+        assert key in d
+    assert d["gate_state"] == "X_PASS"
+
+
+def test_events_from_helper_defaults_keep_optionals_empty():
+    # LedgerEvent construido sin opcionales (como hacen los tests viejos) sigue válido.
+    events, _ = _events_from([event(evento="EMITIDO")])
+    assert events[0].event_id == ""
+    assert events[0].links == []

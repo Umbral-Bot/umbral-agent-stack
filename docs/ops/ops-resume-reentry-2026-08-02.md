@@ -79,6 +79,11 @@ carpeta se ignoran sin error.
   (`docs/operations/README.md` documenta los valores drift ya vistos:
   `PENDING`, `DEPLOYED`, `DEPLOY_STARTED`, `MERGED`, `MERGED_DEPLOYED`). No
   se descarta la fila — se muestra igual, marcada.
+- `--json` incluye siempre los 6 opcionales del contrato cursor-orchestrator
+  0.11.0 (`event_id`, `thread`, `tipo`, `gate_state`, `next`, `links`),
+  copiados literales de la línea vigente y vacíos si la fuente no los trae.
+  `next_inferido` sigue siendo un campo aparte (heurística local); `Next` en
+  Notion se alimenta de `next`, nunca de `next_inferido` — no se infiere.
 
 ## Cadencia de escritura del ledger (PREP-A2, 2026-08-04)
 
@@ -142,7 +147,8 @@ no reconstruido de memoria días después. Regla de cadencia:
   asume que lo que no tiene zona ya está en esa misma escala — puede haber
   unas horas de error. Es una señal de alerta para mirar, no un hecho
   verificado.
-- **Solo entiende el schema `{ts, pkg, frente, dest, evento, ev, nota}`.**
+- **Solo entiende el schema `{ts, pkg, frente, dest, evento, ev, nota}`** (+
+  los 6 opcionales 0.11.0 en passthrough).
   En el barrido real de 2026-08-02 sobre `C:\GitHub` apareció al menos un
   ledger (`umbral-bot-cursor/docs/operations/ledger-microsoft-marketplace-2026-08.jsonl`)
   con un schema distinto (`package`/`event`/`agent` en vez de

@@ -17,8 +17,6 @@
 # Maintenance rule: adding a test here requires verifying it passes
 # end-to-end on `main` first. Removing a test is always safe.
 
-tests/test_tournament_handler.py
-tests/test_github_tournament.py
 tests/test_github.py
 tests/test_alert_manager.py
 tests/test_env_loader.py

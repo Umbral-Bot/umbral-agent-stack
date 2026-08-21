@@ -441,32 +441,38 @@ Los handlers `github.*` implementan guardrails: rechazan push a main, exigen pre
 
 Referencia: [docs/34-rick-github-token-setup.md](34-rick-github-token-setup.md) y [docs/28-rick-github-workflow.md](28-rick-github-workflow.md).
 
-### 7.0.1 Orquestación multi-rama (tournament over branches)
+### 7.0.1 ~~Orquestación multi-rama (tournament over branches)~~ — RETIRADO 2026-08-20
 
-El handler `github.orchestrate_tournament` compone `tournament.run` con `github.create_branch` para comparar múltiples enfoques en ramas independientes:
+> **RETIRADO [PKG-MACRO-P5-PIT-T1], 2026-08-20:** el worker **ya no registra**
+> `github.orchestrate_tournament`, `tournament.run`, `tournament_lane.*` ni
+> `pit.*` — los módulos que los implementaban se borraron. Lo de abajo es
+> histórico; no reinstalar a mano leyendo este runbook (lección CRON-T1). Ver
+> [closeout](operations/pit-worker-tasks-retired-2026-08-20.md).
 
-1. Preflight → worktree limpio requerido.
-2. Tournament LLM (discovery → develop → debate → judge).
-3. Crea ramas `rick/t/{id}/{a,b,c,...}` por cada enfoque con artefactos y cambios de código.
-4. Validación por modo configurado (`python_ast_lint`, `pytest_target`, o `none`).
-5. Eligibilidad: solo contestants que pasan validación son elegibles para ganar.
-6. Rejudge: si el ganador original no pasó validación, el juez re-evalúa entre los elegibles.
-7. Si hay ganador elegible, cherry-pick a `rick/t/{id}/final`.
-8. Retorna a la rama base.
-
-Convención de ramas: `rick/t/{8-hex}/{label}` donde label es `a`-`e` o `final`.
-
-**Modos de validación (Phase 2):**
-
-| Modo | Descripción |
-|------|-------------|
-| `none` | Sin validación (default) |
-| `python_ast_lint` | Análisis estático puro: `ast.parse` + visitor. No ejecuta código |
-| `pytest_target` | Ejecuta pytest dentro de Docker sandbox (`--network=none --read-only --cap-drop=ALL --user 10001:10001`). Requiere imagen `umbral-sandbox-pytest` construida con `worker/sandbox/refresh.sh` |
-
-**Eligibilidad:** El resultado incluye `eligibility_block` con `passed_ids`, `failed_ids`, `forced_escalate`, y `reason`. Si todos fallan validación, se fuerza ESCALATE aunque haya un ganador del juez.
-
-Si el juez retorna `ESCALATE` (o se fuerza por eligibilidad), no se crea rama final — Rick debe escalar la decisión a David con la tabla comparativa.
+> El handler `github.orchestrate_tournament` componía `tournament.run` con `github.create_branch` para comparar múltiples enfoques en ramas independientes:
+>
+> 1. Preflight → worktree limpio requerido.
+> 2. Tournament LLM (discovery → develop → debate → judge).
+> 3. Crea ramas `rick/t/{id}/{a,b,c,...}` por cada enfoque con artefactos y cambios de código.
+> 4. Validación por modo configurado (`python_ast_lint`, `pytest_target`, o `none`).
+> 5. Eligibilidad: solo contestants que pasan validación son elegibles para ganar.
+> 6. Rejudge: si el ganador original no pasó validación, el juez re-evalúa entre los elegibles.
+> 7. Si hay ganador elegible, cherry-pick a `rick/t/{id}/final`.
+> 8. Retorna a la rama base.
+>
+> Convención de ramas: `rick/t/{8-hex}/{label}` donde label es `a`-`e` o `final`.
+>
+> **Modos de validación (Phase 2):**
+>
+> | Modo | Descripción |
+> |------|-------------|
+> | `none` | Sin validación (default) |
+> | `python_ast_lint` | Análisis estático puro: `ast.parse` + visitor. No ejecuta código |
+> | `pytest_target` | Ejecuta pytest dentro de Docker sandbox (`--network=none --read-only --cap-drop=ALL --user 10001:10001`). Requiere imagen `umbral-sandbox-pytest` construida con `worker/sandbox/refresh.sh` |
+>
+> **Eligibilidad:** El resultado incluye `eligibility_block` con `passed_ids`, `failed_ids`, `forced_escalate`, y `reason`. Si todos fallan validación, se fuerza ESCALATE aunque haya un ganador del juez.
+>
+> Si el juez retorna `ESCALATE` (o se fuerza por eligibilidad), no se crea rama final — Rick debe escalar la decisión a David con la tabla comparativa.
 
 ### 7.0.2 Configuración VPS: repo único para runtime y cambios de Rick
 

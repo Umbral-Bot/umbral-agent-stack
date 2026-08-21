@@ -123,7 +123,6 @@ from .gui import (
     handle_gui_list_windows,
     handle_gui_activate_window,
 )
-from .tournament import handle_tournament_run
 from .rag import (
     handle_rag_ensure_index,
     handle_rag_index,
@@ -143,20 +142,6 @@ from .github import (
     handle_github_create_branch,
     handle_github_commit_and_push,
     handle_github_open_pr,
-)
-from .github_tournament import handle_github_orchestrate_tournament
-from .tournament_lane_github import (
-    handle_tournament_lane_preflight,
-    handle_tournament_lane_create_branch,
-    handle_tournament_lane_commit_and_push,
-    handle_tournament_lane_open_pr,
-    handle_tournament_lane_verify_pr,
-)
-from .pit_runner import (
-    handle_pit_preflight,
-    handle_pit_lane_init,
-    handle_pit_iteration_close,
-    handle_pit_lane_announce,
 )
 from .copilot_cli import handle_copilot_cli_run
 from .rick_orchestrator import handle_rick_orchestrator_triage
@@ -261,7 +246,6 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "gui.hotkey": handle_gui_hotkey,
     "gui.list_windows": handle_gui_list_windows,
     "gui.activate_window": handle_gui_activate_window,
-    "tournament.run": handle_tournament_run,
     "rag.ensure_index": handle_rag_ensure_index,
     "rag.index": handle_rag_index,
     "rag.search": handle_rag_search,
@@ -276,16 +260,6 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "github.create_branch": handle_github_create_branch,
     "github.commit_and_push": handle_github_commit_and_push,
     "github.open_pr": handle_github_open_pr,
-    "github.orchestrate_tournament": handle_github_orchestrate_tournament,
-    "tournament_lane.preflight": handle_tournament_lane_preflight,
-    "tournament_lane.create_branch": handle_tournament_lane_create_branch,
-    "tournament_lane.commit_and_push": handle_tournament_lane_commit_and_push,
-    "tournament_lane.open_pr": handle_tournament_lane_open_pr,
-    "tournament_lane.verify_pr": handle_tournament_lane_verify_pr,
-    "pit.preflight": handle_pit_preflight,
-    "pit.lane_init": handle_pit_lane_init,
-    "pit.iteration_close": handle_pit_iteration_close,
-    "pit.lane_announce": handle_pit_lane_announce,
     "copilot_cli.run": handle_copilot_cli_run,
     "rick.orchestrator.triage": handle_rick_orchestrator_triage,
     "web.publish_editorial_post": handle_web_publish_editorial_post,

@@ -158,7 +158,7 @@ The supervisor relies on and produces observability via the Phase 6A structured 
 - **Emits** (once activated, not now) structured events under `event_type` values beginning with `supervisor.` — e.g., `supervisor.ambiguity_signal`, `supervisor.resolution`, `supervisor.noop`.
 - **Fields** under `fields` are restricted to the `_SAFE_SUPERVISOR_FIELD_KEYS` whitelist in `infra/ops_logger.py`. The supervisor must not propose adding raw-text keys to that whitelist.
 - **Top-level fields** of the record are stable: `ts`, `event`, `event_type`, `team`, `task_id`, `task_type`, `outcome`, `severity`, `fields`.
-- **Monitor consumption:** `scripts/monitor_supervisor_observability.py` reads `ops_log.jsonl` directly and aggregates by `event_type`, `outcome`, `team`, `severity`. The supervisor must produce events consistent with that aggregation.
+- **Monitor consumption:** the dedicated monitor script (`scripts/monitor_supervisor_observability.py`) was retired 2026-08-21 [PKG-MACRO-P5-Q9-T1] — fase 6 never activated, no cron ever read it (see `docs/operations/q9-fase6-f8a-acotado-2026-08-21.md`). A monitor reading `ops_log.jsonl` directly, if reintroduced, must aggregate by `event_type`, `outcome`, `team`, `severity`; the supervisor must produce events consistent with that aggregation.
 - **Expected recommendation levels:** `PASS_MONITORING`, `WATCH`, `INVESTIGATE`, `ROLLBACK_RECOMMENDED` (see `docs/76` section 3). Under design-only, `WATCH` with 0 events and 0 safety flags is the healthy baseline.
 
 The supervisor does not emit raw logs, does not write to journald directly from its own scope, and does not bypass the sink.
@@ -247,7 +247,7 @@ These examples illustrate expected behavior. They are not runtime fixtures.
 ### 15.4 No-traffic / watch observation case
 
 - **Input:** Over a 60 m / 24 h / 48 h window, no ambiguous improvement traffic arrives.
-- **Expected supervisor behavior:** nothing to observe. No events emitted. `scripts/monitor_supervisor_observability.py` reports `WATCH`. Safety flags all zero. The `WATCH` state is the healthy baseline while traffic is absent and must not be interpreted as a failure or as implicit approval to activate. Per `docs/77` precondition #4, advancing to `PASS_MONITORING` requires either real structured events or an explicit David waiver.
+- **Expected supervisor behavior:** nothing to observe. No events emitted. A monitor reading `ops_log.jsonl` would report `WATCH` (describes the expected signal shape — the dedicated script was retired 2026-08-21, see `docs/operations/q9-fase6-f8a-acotado-2026-08-21.md`). Safety flags all zero. The `WATCH` state is the healthy baseline while traffic is absent and must not be interpreted as a failure or as implicit approval to activate. Per `docs/77` precondition #4, advancing to `PASS_MONITORING` requires either real structured events or an explicit David waiver.
 
 ---
 

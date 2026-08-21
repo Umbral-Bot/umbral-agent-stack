@@ -354,14 +354,13 @@ def test_sink_drops_unknown_field_keys_and_non_supervisor_event_types(
     assert "should be dropped" not in blob
 
 
-# ── 9. No forbidden imports in router or monitor script ────────────
+# ── 9. No forbidden imports in router or ops logger ────────────────
 
 
 @pytest.mark.parametrize(
     "relative_path",
     [
         "dispatcher/router.py",
-        "scripts/monitor_supervisor_observability.py",
         "infra/ops_logger.py",
     ],
 )

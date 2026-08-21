@@ -1,5 +1,10 @@
 # Improvement Supervisor — Phase 6B Activation Readiness Plan
 
+> **HISTÓRICO / RETIRADO 2026-08-21 [PKG-MACRO-P5-Q9-T1]:** la fase 6 nunca
+> ancló y el monitor dedicado (`scripts/monitor_supervisor_observability.py`)
+> salió del repo — la observability integrada en `dispatcher/router.py` sigue
+> viva. Ver [closeout](operations/q9-fase6-f8a-acotado-2026-08-21.md).
+
 > **DO NOT APPLY ANYTHING FROM THIS DOCUMENT IN THIS PR.** This is a docs/readiness hardening document only. It does not activate the supervisor, does not register an OpenClaw agent, does not flip any config, and does not wire any runtime path. Every instruction that would affect runtime behavior, configuration, or OpenClaw state is labeled future/manual and requires explicit David approval before execution.
 >
 > **Scope of this PR:** documentation + ROLE.md hardening. Nothing else.

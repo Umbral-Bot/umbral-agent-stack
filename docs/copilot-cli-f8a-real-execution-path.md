@@ -1,5 +1,11 @@
 # F8A — Real Execution Path Behind L1-L5
 
+> **CONGELADO 2026-08-21 [PKG-MACRO-P5-Q9-T1]:** sin smoke recurrente.
+> Reactivar por caso de uso puntual con GO explícito de David. Esto congela
+> el smoke recurrente de F8a, no el handler — `copilot_cli.run` sigue
+> registrado en el worker. Ver
+> [closeout](operations/q9-fase6-f8a-acotado-2026-08-21.md).
+
 **Date:** 2026-05-05
 **Status:** PR-only implementation. No runtime activation by Codex.
 **Owner:** Codex implements; Copilot-VPS verifies runtime after merge.

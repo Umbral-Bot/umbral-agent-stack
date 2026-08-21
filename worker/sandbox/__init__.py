@@ -14,10 +14,11 @@ inside an ephemeral Docker container:
   resolve a safe validation target from an input ``target_file`` and
   clean up afterwards.
 
-Slice 7b-infra intentionally does NOT wire any of this into
-``handle_github_orchestrate_tournament`` or ``_run_contestant_validation``.
-Runtime behaviour is unchanged. A follow-up slice (7b-runner) will
-consume these primitives to add the real ``pytest_target`` mode.
+Slice 7b-infra intentionally does NOT wire any of this into a runner.
+The tournament/PIT worker tasks that were the original intended
+consumer were retired in PKG-MACRO-P5-PIT-T1 (2026-08-20; see
+``docs/operations/pit-worker-tasks-retired-2026-08-20.md``). Runtime
+behaviour here is unchanged and these primitives remain unconsumed.
 """
 
 from .workspace import (

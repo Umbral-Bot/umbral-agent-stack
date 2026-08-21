@@ -14,11 +14,9 @@ tiers:
       - "research.web"
       - "rag.search"
       - "rag.query"
-      - "tournament.run"
     blocked_tasks: []           # empty = whitelist mode (only allowed_tasks)
     features:
       rag: true
-      tournament: true
       notion: false
       linear: false
       windows: false
@@ -47,7 +45,6 @@ tiers:
       - "client.get"             # admin only
     features:
       rag: true
-      tournament: true
       notion: true
       linear: true
       windows: false
@@ -69,7 +66,6 @@ tiers:
       - "client.get"             # admin only
     features:
       rag: true
-      tournament: true
       notion: true
       linear: true
       windows: true

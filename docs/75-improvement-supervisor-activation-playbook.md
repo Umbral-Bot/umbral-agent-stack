@@ -1,5 +1,10 @@
 # Improvement Supervisor Activation Playbook
 
+> **HISTÓRICO / RETIRADO 2026-08-21 [PKG-MACRO-P5-Q9-T1]:** la fase 6 nunca
+> ancló y el monitor dedicado (`scripts/monitor_supervisor_observability.py`)
+> salió del repo — la observability integrada en `dispatcher/router.py` sigue
+> viva. Ver [closeout](operations/q9-fase6-f8a-acotado-2026-08-21.md).
+
 > **Status: Design/ops document only.** This playbook does not change runtime behavior, does not activate any agent, and does not modify dispatcher routing. No code, config, or OpenClaw changes are included. David approval is required before any runtime activation.
 
 ## 1. Purpose

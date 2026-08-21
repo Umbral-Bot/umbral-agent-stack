@@ -1,5 +1,11 @@
 # Supervisor Observability Monitoring
 
+> **HISTÓRICO / RETIRADO 2026-08-21 [PKG-MACRO-P5-Q9-T1]:** la fase 6 nunca
+> ancló y el monitor dedicado que documenta este runbook
+> (`scripts/monitor_supervisor_observability.py`) salió del repo — la
+> observability integrada en `dispatcher/router.py` sigue viva. Ver
+> [closeout](operations/q9-fase6-f8a-acotado-2026-08-21.md).
+
 > Runbook for the Phase 5/6A supervisor observability monitoring tool. Use during the 24h monitoring window (per `docs/75`) and for ongoing health checks of the supervisor observability wiring.
 
 ## 1. Purpose

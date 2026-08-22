@@ -1,0 +1,110 @@
+[
+  {
+    "updatedAt": "2026-03-10T03:30:41.225Z",
+    "createdAt": "2026-03-10T03:30:41.225Z",
+    "id": "ydOLYZcq8aJnX6Sg",
+    "name": "Laboral Gate Humano - Shortlist y Preparación",
+    "description": null,
+    "active": false,
+    "isArchived": false,
+    "nodes": [
+      {
+        "id": "manual-trigger",
+        "name": "Manual Trigger",
+        "type": "n8n-nodes-base.manualTrigger",
+        "typeVersion": 1,
+        "position": [
+          240,
+          280
+        ],
+        "parameters": {}
+      },
+      {
+        "id": "set-context",
+        "name": "Set Contexto Laboral",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          520,
+          280
+        ],
+        "parameters": {
+          "mode": "manual",
+          "assignments": {
+            "assignments": [
+              {
+                "name": "project",
+                "type": "string",
+                "value": "Sistema Automatizado de Búsqueda y Postulación Laboral"
+              },
+              {
+                "name": "stage",
+                "type": "string",
+                "value": "approval-gate"
+              },
+              {
+                "name": "status",
+                "type": "string",
+                "value": "waiting-human-approval"
+              },
+              {
+                "name": "next_action",
+                "type": "string",
+                "value": "Preparar CV, correo o carta solo si David aprueba oportunidades específicas"
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Manual Trigger": {
+        "main": [
+          [
+            {
+              "node": "Set Contexto Laboral",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1",
+      "callerPolicy": "workflowsFromSameOwner",
+      "availableInMCP": false
+    },
+    "staticData": null,
+    "meta": null,
+    "pinData": null,
+    "versionId": "dbb863e6-78e4-4989-88dd-95706b1a2087",
+    "activeVersionId": null,
+    "versionCounter": 1,
+    "triggerCount": 0,
+    "tags": [],
+    "shared": [
+      {
+        "updatedAt": "2026-03-10T03:30:41.227Z",
+        "createdAt": "2026-03-10T03:30:41.227Z",
+        "role": "workflow:owner",
+        "workflowId": "ydOLYZcq8aJnX6Sg",
+        "projectId": "R4zcsHsgldr3cEXv",
+        "project": {
+          "updatedAt": "2026-07-26T02:22:08.006Z",
+          "createdAt": "2026-03-03T15:29:17.744Z",
+          "id": "R4zcsHsgldr3cEXv",
+          "name": "David Moreira <david.moreira@butic.es>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "creatorId": "f56a3cb2-4632-4f57-9e79-b0f57cc3f048"
+        }
+      }
+    ],
+    "versionMetadata": {
+      "name": null,
+      "description": null
+    }
+  }
+]

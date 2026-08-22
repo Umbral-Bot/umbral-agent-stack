@@ -1,0 +1,93 @@
+[
+  {
+    "updatedAt": "2026-03-03T16:50:32.005Z",
+    "createdAt": "2026-03-03T16:50:32.005Z",
+    "id": "b1ba0c1d-3a56-44b7-aac7-63e8561e979f",
+    "name": "Reporte Ejecutivo Diario",
+    "description": null,
+    "active": false,
+    "isArchived": false,
+    "nodes": [
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "cronExpression",
+                "expression": "30 19 * * *"
+              }
+            ]
+          }
+        },
+        "id": "Cron_REP",
+        "name": "Cron Reporte Diario",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          240,
+          280
+        ]
+      },
+      {
+        "parameters": {
+          "command": "cd /home/rick/umbral-agent-stack && source .venv/bin/activate && export $(grep -v '^#' ~/.config/openclaw/env | xargs) && PYTHONPATH=. python scripts/dashboard_report_vps.py"
+        },
+        "id": "Exec_REP",
+        "name": "Actualizar Dashboard Rick",
+        "type": "n8n-nodes-base.executeCommand",
+        "typeVersion": 1,
+        "position": [
+          540,
+          280
+        ]
+      }
+    ],
+    "connections": {
+      "Cron Reporte Diario": {
+        "main": [
+          [
+            {
+              "node": "Actualizar Dashboard Rick",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1"
+    },
+    "staticData": null,
+    "meta": {},
+    "pinData": null,
+    "versionId": "3cec41f6-a2c5-4c99-8a63-6a9f1177ebc3",
+    "activeVersionId": null,
+    "versionCounter": 1,
+    "triggerCount": 0,
+    "tags": [],
+    "shared": [
+      {
+        "updatedAt": "2026-03-03T16:50:32.008Z",
+        "createdAt": "2026-03-03T16:50:32.008Z",
+        "role": "workflow:owner",
+        "workflowId": "b1ba0c1d-3a56-44b7-aac7-63e8561e979f",
+        "projectId": "R4zcsHsgldr3cEXv",
+        "project": {
+          "updatedAt": "2026-07-26T02:22:08.006Z",
+          "createdAt": "2026-03-03T15:29:17.744Z",
+          "id": "R4zcsHsgldr3cEXv",
+          "name": "David Moreira <david.moreira@butic.es>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "creatorId": "f56a3cb2-4632-4f57-9e79-b0f57cc3f048"
+        }
+      }
+    ],
+    "versionMetadata": {
+      "name": null,
+      "description": null
+    }
+  }
+]

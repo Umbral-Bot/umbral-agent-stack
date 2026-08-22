@@ -1,0 +1,93 @@
+[
+  {
+    "updatedAt": "2026-03-03T16:50:22.344Z",
+    "createdAt": "2026-03-03T16:50:22.344Z",
+    "id": "11b62f9c-7328-42de-af43-7fe219cf083f",
+    "name": "SIM Diario - Embudo",
+    "description": null,
+    "active": false,
+    "isArchived": false,
+    "nodes": [
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "cronExpression",
+                "expression": "0 9 * * *"
+              }
+            ]
+          }
+        },
+        "id": "Cron_SIM",
+        "name": "Cron SIM Diario",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          240,
+          280
+        ]
+      },
+      {
+        "parameters": {
+          "command": "cd /home/rick/.openclaw/workspace/proyectos/venta-servicios-embudo && set -a && source ~/.config/openclaw/env && set +a && node src/collector_minimal.mjs --config src/config.json && node src/google_trends_rss.mjs CL && node src/tavily_discovery.mjs"
+        },
+        "id": "Exec_SIM",
+        "name": "Ejecutar SIM",
+        "type": "n8n-nodes-base.executeCommand",
+        "typeVersion": 1,
+        "position": [
+          520,
+          280
+        ]
+      }
+    ],
+    "connections": {
+      "Cron SIM Diario": {
+        "main": [
+          [
+            {
+              "node": "Ejecutar SIM",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1"
+    },
+    "staticData": null,
+    "meta": {},
+    "pinData": null,
+    "versionId": "8e0a78ef-afdd-4904-9c87-5bffffb83d95",
+    "activeVersionId": null,
+    "versionCounter": 1,
+    "triggerCount": 0,
+    "tags": [],
+    "shared": [
+      {
+        "updatedAt": "2026-03-03T16:50:22.346Z",
+        "createdAt": "2026-03-03T16:50:22.346Z",
+        "role": "workflow:owner",
+        "workflowId": "11b62f9c-7328-42de-af43-7fe219cf083f",
+        "projectId": "R4zcsHsgldr3cEXv",
+        "project": {
+          "updatedAt": "2026-07-26T02:22:08.006Z",
+          "createdAt": "2026-03-03T15:29:17.744Z",
+          "id": "R4zcsHsgldr3cEXv",
+          "name": "David Moreira <david.moreira@butic.es>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "creatorId": "f56a3cb2-4632-4f57-9e79-b0f57cc3f048"
+        }
+      }
+    ],
+    "versionMetadata": {
+      "name": null,
+      "description": null
+    }
+  }
+]

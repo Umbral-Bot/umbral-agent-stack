@@ -1,0 +1,109 @@
+[
+  {
+    "updatedAt": "2026-03-06T08:23:27.731Z",
+    "createdAt": "2026-03-06T08:23:27.731Z",
+    "id": "8zzOGYhzzKTnRdJz",
+    "name": "Correo de prueba diario 08:00",
+    "description": null,
+    "active": false,
+    "isArchived": false,
+    "nodes": [
+      {
+        "id": "schedule-node",
+        "name": "Todos los días 08:00",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          240,
+          280
+        ],
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "cronExpression",
+                "expression": "0 8 * * *"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "email-node",
+        "name": "Enviar correo de prueba",
+        "type": "n8n-nodes-base.emailSend",
+        "typeVersion": 2.1,
+        "position": [
+          480,
+          280
+        ],
+        "parameters": {
+          "fromEmail": "rick.asistente@gmail.com",
+          "toEmail": "david.a.moreira.m@gmail.com",
+          "subject": "Correo de prueba diario - {{ $now.toFormat(\"yyyy-MM-dd\") }}",
+          "emailType": "text",
+          "message": "Hola David,\n\nEste es el correo de prueba automático del día {{ $now.toFormat(\"yyyy-MM-dd\") }} a las 08:00.\n\nSistema operativo ✅\n\n— Rick"
+        },
+        "credentials": {
+          "smtp": {
+            "id": "9yWcqeFludrkUNAw",
+            "name": "Gmail SMTP - rick.asistente"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Todos los días 08:00": {
+        "main": [
+          [
+            {
+              "node": "Enviar correo de prueba",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1",
+      "callerPolicy": "workflowsFromSameOwner",
+      "availableInMCP": false
+    },
+    "staticData": {
+      "node:Todos los días 08:00": {
+        "recurrenceRules": []
+      }
+    },
+    "meta": null,
+    "pinData": null,
+    "versionId": "0769b865-3030-409b-b930-045f4fbae869",
+    "activeVersionId": null,
+    "versionCounter": 5,
+    "triggerCount": 1,
+    "tags": [],
+    "shared": [
+      {
+        "updatedAt": "2026-03-06T08:23:27.733Z",
+        "createdAt": "2026-03-06T08:23:27.733Z",
+        "role": "workflow:owner",
+        "workflowId": "8zzOGYhzzKTnRdJz",
+        "projectId": "R4zcsHsgldr3cEXv",
+        "project": {
+          "updatedAt": "2026-07-26T02:22:08.006Z",
+          "createdAt": "2026-03-03T15:29:17.744Z",
+          "id": "R4zcsHsgldr3cEXv",
+          "name": "David Moreira <david.moreira@butic.es>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "creatorId": "f56a3cb2-4632-4f57-9e79-b0f57cc3f048"
+        }
+      }
+    ],
+    "versionMetadata": {
+      "name": null,
+      "description": null
+    }
+  }
+]

@@ -1,0 +1,110 @@
+[
+  {
+    "updatedAt": "2026-03-09T19:53:55.825Z",
+    "createdAt": "2026-03-09T19:53:55.825Z",
+    "id": "UhbnM6bUAG86Trgw",
+    "name": "Editorial Multicanal Prep - Sistema Editorial Automatizado Umbral",
+    "description": null,
+    "active": false,
+    "isArchived": false,
+    "nodes": [
+      {
+        "id": "manual-trigger",
+        "name": "Manual Trigger",
+        "type": "n8n-nodes-base.manualTrigger",
+        "typeVersion": 1,
+        "position": [
+          240,
+          280
+        ],
+        "parameters": {}
+      },
+      {
+        "id": "set-channels",
+        "name": "Set Channels",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          520,
+          280
+        ],
+        "parameters": {
+          "mode": "manual",
+          "assignments": {
+            "assignments": [
+              {
+                "name": "project",
+                "type": "string",
+                "value": "Sistema Editorial Automatizado Umbral"
+              },
+              {
+                "name": "stage",
+                "type": "string",
+                "value": "multichannel-prep"
+              },
+              {
+                "name": "channels",
+                "type": "string",
+                "value": "LinkedIn,X,Blog,Newsletter"
+              },
+              {
+                "name": "status",
+                "type": "string",
+                "value": "draft-manual"
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Manual Trigger": {
+        "main": [
+          [
+            {
+              "node": "Set Channels",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1",
+      "callerPolicy": "workflowsFromSameOwner",
+      "availableInMCP": false
+    },
+    "staticData": null,
+    "meta": null,
+    "pinData": null,
+    "versionId": "68996448-8687-491e-a24b-7b46c0533a7d",
+    "activeVersionId": null,
+    "versionCounter": 1,
+    "triggerCount": 0,
+    "tags": [],
+    "shared": [
+      {
+        "updatedAt": "2026-03-09T19:53:55.833Z",
+        "createdAt": "2026-03-09T19:53:55.833Z",
+        "role": "workflow:owner",
+        "workflowId": "UhbnM6bUAG86Trgw",
+        "projectId": "R4zcsHsgldr3cEXv",
+        "project": {
+          "updatedAt": "2026-07-26T02:22:08.006Z",
+          "createdAt": "2026-03-03T15:29:17.744Z",
+          "id": "R4zcsHsgldr3cEXv",
+          "name": "David Moreira <david.moreira@butic.es>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "creatorId": "f56a3cb2-4632-4f57-9e79-b0f57cc3f048"
+        }
+      }
+    ],
+    "versionMetadata": {
+      "name": null,
+      "description": null
+    }
+  }
+]

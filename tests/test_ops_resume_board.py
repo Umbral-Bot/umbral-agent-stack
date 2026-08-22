@@ -551,8 +551,19 @@ def test_normalize_links_single_string_is_wrapped_and_trimmed():
     assert board.normalize_links("  https://example.com/pr/9 ") == ["https://example.com/pr/9"]
 
 
-def test_normalize_links_list_keeps_only_non_blank_strings_trimmed():
-    assert board.normalize_links(["https://a", 7, "", "   ", None, " https://b "]) == ["https://a", "https://b"]
+def test_normalize_links_list_with_only_strings_keeps_non_blank_trimmed():
+    # Forma válida (todos string): filtra blancos, recorta URLs. No es mismatch.
+    assert board.normalize_links(["https://a", "", "   ", " https://b "]) == ["https://a", "https://b"]
+
+
+def test_normalize_links_list_with_any_non_string_item_becomes_empty():
+    # Un solo ítem no-string invalida TODO el campo — nunca keep parcial.
+    # Antes: normalize_links devolvía ["https://a"] mientras
+    # optional_type_mismatches ya marcaba "links" como mismatch (flag y
+    # payload contradictorios). PKG-OPS-RESUME-GEN2.
+    assert board.normalize_links(["https://a", 7]) == []
+    assert board.normalize_links([7, "https://a"]) == []
+    assert board.normalize_links(["https://a", None]) == []
 
 
 def test_optional_type_mismatches_names_wrong_typed_fields_only():
@@ -561,11 +572,20 @@ def test_optional_type_mismatches_names_wrong_typed_fields_only():
         "thread": None,  # null → ausente, no mismatch
         "tipo": 5,  # número → mismatch
         "next": ["paso 1", "paso 2"],  # lista donde va string → mismatch (caso real)
-        "links": ["https://a", 7],  # ítem no-string → mismatch
+        "links": ["https://a", 7],  # ítem no-string → mismatch de TODO el campo
     }
     assert board.optional_type_mismatches(data) == ["tipo", "next", "links"]
     assert board.optional_type_mismatches({}) == []
     assert board.optional_type_mismatches({"links": "https://solo"}) == []  # string único es tolerado
+    assert board.optional_type_mismatches({"links": ["https://a", "https://b"]}) == []  # todos string, no mismatch
+
+
+def test_links_mismatch_flag_and_payload_never_disagree(tmp_path):
+    # El bug que PKG-OPS-RESUME-GEN2 corrige: mismatch ⇒ vacío, siempre.
+    _, d, meta = _single_ball_dict(tmp_path, event(evento="ACK", links=["https://a", 7]))
+    assert d["links"] == []
+    assert d["opcionales_descartados"] == ["links"]
+    assert meta["optionals_type_mismatch"] == 1
 
 
 def test_wrong_typed_optional_is_dropped_but_named_and_counted(tmp_path):
@@ -575,6 +595,28 @@ def test_wrong_typed_optional_is_dropped_but_named_and_counted(tmp_path):
     assert d["links"] == []
     assert d["opcionales_descartados"] == ["next", "links"]
     assert meta["optionals_type_mismatch"] == 2
+
+
+def test_meta_optionals_type_mismatch_counts_only_vigente_mismatch(tmp_path):
+    # Línea vieja Y vigente con `next` mal tipado, misma clave: el mismatch de
+    # la vieja (ya superada) NO debe contarse; el de la vigente SI. Un solo
+    # test que discrimina ambas direcciones: si contara todo daría 2, si no
+    # contara nada daría 0 — solo "solo vigente" da 1.
+    write_ledger(
+        tmp_path,
+        "repo-a",
+        "ledger-alpha.jsonl",
+        [
+            event(evento="EMITIDO", ts="2026-08-20T09:10", next=["paso viejo mal tipado"]),
+            event(evento="ACK", ts="2026-08-20T11:05", next=["paso nuevo mal tipado"]),
+        ],
+    )
+    balls, meta = board.build_board(tmp_path, stale_hours=24, now=NOW)
+    d = json.loads(board.render_json(balls, meta))["pelotas"][0]
+    assert d["evento"] == "ACK"
+    assert d["next"] == ""
+    assert d["opcionales_descartados"] == ["next"]
+    assert meta["optionals_type_mismatch"] == 1
 
 
 def test_ledger_with_non_utf8_bytes_does_not_abort_the_board(tmp_path):

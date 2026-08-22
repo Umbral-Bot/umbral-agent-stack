@@ -132,22 +132,41 @@ def optional_str(data: Dict[str, Any], key: str) -> str:
     return value if isinstance(value, str) and value.strip() else ""
 
 
-def normalize_links(value: Any) -> List[str]:
-    """`links` del contrato es lista de strings (URLs). Tolerancia mínima sin
-    inferir: un string único no vacío se envuelve en lista de 1; dentro de una
-    lista se conservan solo los strings no vacíos, recortados (son URLs);
-    cualquier otra forma → []."""
+def _list_field_type_ok(value: Any) -> bool:
+    """Fuente única de verdad de si `value` tiene una FORMA válida para un
+    campo lista (string único, o lista donde CADA ítem es string) — sin
+    importar contenido vacío. La usan `normalize_links` y
+    `optional_type_mismatches` para no divergir: un ítem no-string en la
+    lista es mismatch de TODO el campo, no un keep parcial."""
     if isinstance(value, str):
-        value = [value]
-    if not isinstance(value, list):
+        return True
+    if isinstance(value, list):
+        return all(isinstance(item, str) for item in value)
+    return False
+
+
+def normalize_links(value: Any) -> List[str]:
+    """`links` del contrato es lista de strings (URLs). Un string único se
+    envuelve en lista de 1. Si la forma no es válida (`_list_field_type_ok`
+    -- p. ej. CUALQUIER ítem no-string), el campo entero es mismatch de tipo
+    → `[]` (ver `optional_type_mismatches`, que marca "links" en el mismo
+    caso: nunca hay keep parcial de una lista con forma inválida). Con forma
+    válida: strings vacíos/solo-espacios se filtran (normalización de
+    presencia, no mismatch); el resto se recorta (son URLs)."""
+    if not _list_field_type_ok(value):
         return []
-    return [item.strip() for item in value if isinstance(item, str) and item.strip()]
+    if isinstance(value, str):
+        cleaned = value.strip()
+        return [cleaned] if cleaned else []
+    return [item.strip() for item in value if item.strip()]
 
 
 def optional_type_mismatches(data: Dict[str, Any]) -> List[str]:
     """Nombres de opcionales que la fuente trae con un tipo que el contrato no
-    admite (string esperado y vino lista/número/bool; `links` con algo que no
-    es string ni lista, o con ítems no-string). Ausente o null NO es mismatch."""
+    admite (string esperado y vino lista/número/bool; campo-lista con algo que
+    no es string ni lista, o con CUALQUIER ítem no-string). Ausente o null NO
+    es mismatch — la regla de listas es la misma que usa `normalize_links`
+    (`_list_field_type_ok`), a propósito: flag y payload no pueden divergir."""
     bad: List[str] = []
     for key in OPTIONAL_STRING_FIELDS:
         value = data.get(key)
@@ -155,9 +174,9 @@ def optional_type_mismatches(data: Dict[str, Any]) -> List[str]:
             bad.append(key)
     for key in OPTIONAL_LIST_FIELDS:
         value = data.get(key)
-        if value is None or isinstance(value, str):
+        if value is None:
             continue
-        if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
+        if not _list_field_type_ok(value):
             bad.append(key)
     return bad
 
@@ -335,7 +354,9 @@ def build_board(
         "ledger_count": len(ledger_paths),
         "events_total": len(all_events),
         "events_skipped_malformed": total_skipped,
-        "optionals_type_mismatch": sum(len(ev.opcionales_descartados) for ev in all_events),
+        # Solo pelotas VIGENTES (no todas las líneas leídas) — refleja el
+        # tablero actual, no el histórico del ledger.
+        "optionals_type_mismatch": sum(len(b.opcionales_descartados) for b in balls),
         "stale_hours": stale_hours,
         "generated_at": now.isoformat(),
     }

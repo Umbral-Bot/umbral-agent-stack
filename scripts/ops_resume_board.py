@@ -11,6 +11,10 @@ Este script SOLO LEE. No escribe en ningún ledger, no toca Notion, no toca
 Mission Control ni board.md. Ver docs/operations/README.md para el schema y
 docs/ops/ops-resume-reentry-2026-08-02.md para el runbook completo.
 
+Opcionales del contrato cursor-orchestrator 0.11.0 (`OPTIONAL_FIELDS`):
+passthrough literal desde la línea vigente hacia cada pelota y `--json`, sin
+inferir. Reglas exactas en docs/operations/README.md § «Campos opcionales».
+
 Uso:
     python scripts/ops_resume_board.py                    # tablero humano, root = carpeta padre de este repo
     python scripts/ops_resume_board.py --json              # salida JSON
@@ -25,7 +29,7 @@ import argparse
 import json
 import subprocess
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -48,11 +52,20 @@ OPEN_EVENTS = {
     "DEPLOYED",
     "BLOCKED",
     "NO_ACK",
-    "PAUSED",  # propuesta, ver docs/operations/README.md
-    "RESUMED",  # propuesta, ver docs/operations/README.md
+    "PAUSED",  # contrato cursor-orchestrator 0.11.0 (2026-08-20)
+    "RESUMED",  # contrato cursor-orchestrator 0.11.0 (2026-08-20)
 }
 # Solo estos eventos disparan el chequeo de staleness (spec del paquete PKG-OPS-RESUME-A1).
 STALE_TRIGGER_EVENTS = {"EMITIDO", "ACK"}
+
+# Opcionales por línea (cursor-orchestrator 0.11.0). Passthrough literal: el
+# generador los PASA si vienen, no los EXIGE ni los infiere. Estas tuplas
+# DIRIGEN load_events / build_board / _ball_to_dict: agregar un campo acá es
+# lo único que hace falta para que viaje de la línea JSONL al --json (más el
+# atributo con default en LedgerEvent y BallState).
+OPTIONAL_STRING_FIELDS = ("event_id", "thread", "tipo", "gate_state", "next")
+OPTIONAL_LIST_FIELDS = ("links",)
+OPTIONAL_FIELDS = OPTIONAL_STRING_FIELDS + OPTIONAL_LIST_FIELDS
 
 LEDGER_GLOB = "*/docs/operations/ledger-*.jsonl"
 DEFAULT_STALE_HOURS = 24
@@ -71,6 +84,17 @@ class LedgerEvent:
     evento: str
     ev: str
     nota: str
+    # Opcionales 0.11.0 — vacíos si la línea fuente no los trae.
+    event_id: str = ""
+    thread: str = ""
+    tipo: str = ""
+    gate_state: str = ""
+    next: str = ""
+    links: List[str] = field(default_factory=list)
+    # Opcionales presentes en la fuente pero con tipo incorrecto (p. ej. `next`
+    # como lista): se descartan a vacío Y se nombran acá, para que "no vino"
+    # y "vino mal" sean distinguibles en el --json (filosofía: marcar, no esconder).
+    opcionales_descartados: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -88,6 +112,54 @@ class BallState:
     is_known_event: bool
     stale: bool
     next_inferido: str
+    # Opcionales 0.11.0 (passthrough literal de la línea vigente; `next` es
+    # distinto de `next_inferido`, ver README). `opcionales_descartados` = los
+    # que vinieron con tipo incorrecto.
+    event_id: str = ""
+    thread: str = ""
+    tipo: str = ""
+    gate_state: str = ""
+    next: str = ""
+    links: List[str] = field(default_factory=list)
+    opcionales_descartados: List[str] = field(default_factory=list)
+
+
+def optional_str(data: Dict[str, Any], key: str) -> str:
+    """Passthrough literal de un opcional string: se copia tal cual (sin
+    recortar) solo si la fuente trae un string no vacío ni solo-espacios;
+    ausente, null, en blanco o de otro tipo → "" (no se inventa ni se coacciona)."""
+    value = data.get(key)
+    return value if isinstance(value, str) and value.strip() else ""
+
+
+def normalize_links(value: Any) -> List[str]:
+    """`links` del contrato es lista de strings (URLs). Tolerancia mínima sin
+    inferir: un string único no vacío se envuelve en lista de 1; dentro de una
+    lista se conservan solo los strings no vacíos, recortados (son URLs);
+    cualquier otra forma → []."""
+    if isinstance(value, str):
+        value = [value]
+    if not isinstance(value, list):
+        return []
+    return [item.strip() for item in value if isinstance(item, str) and item.strip()]
+
+
+def optional_type_mismatches(data: Dict[str, Any]) -> List[str]:
+    """Nombres de opcionales que la fuente trae con un tipo que el contrato no
+    admite (string esperado y vino lista/número/bool; `links` con algo que no
+    es string ni lista, o con ítems no-string). Ausente o null NO es mismatch."""
+    bad: List[str] = []
+    for key in OPTIONAL_STRING_FIELDS:
+        value = data.get(key)
+        if value is not None and not isinstance(value, str):
+            bad.append(key)
+    for key in OPTIONAL_LIST_FIELDS:
+        value = data.get(key)
+        if value is None or isinstance(value, str):
+            continue
+        if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
+            bad.append(key)
+    return bad
 
 
 def parse_ts(raw: Optional[str]) -> Optional[datetime]:
@@ -124,7 +196,10 @@ def load_events(ledger_path: Path, repo_root: Path) -> Tuple[List[LedgerEvent], 
     except ValueError:
         repo_name = ledger_path.parent.parent.parent.name
     try:
-        text = ledger_path.read_text(encoding="utf-8-sig")
+        # errors="replace": un byte no-UTF-8 (ledger escrito en ANSI por un
+        # writer PowerShell viejo) no puede tumbar el tablero entero — se
+        # muestra con U+FFFD, que es lo que ya traen algunos ledgers reales.
+        text = ledger_path.read_bytes().decode("utf-8-sig", errors="replace")
     except OSError:
         return events, skipped
     for line_no, raw_line in enumerate(text.splitlines(), start=1):
@@ -152,6 +227,9 @@ def load_events(ledger_path: Path, repo_root: Path) -> Tuple[List[LedgerEvent], 
                 evento=str(data.get("evento") or "").strip().upper(),
                 ev=str(data.get("ev") or ""),
                 nota=str(data.get("nota") or ""),
+                opcionales_descartados=optional_type_mismatches(data),
+                **{key: optional_str(data, key) for key in OPTIONAL_STRING_FIELDS},
+                **{key: normalize_links(data.get(key)) for key in OPTIONAL_LIST_FIELDS},
             )
         )
     return events, skipped
@@ -181,10 +259,11 @@ def infer_next(evento: str, dest: str, nota: str) -> str:
 
 
 def latest_by_key(events: List[LedgerEvent]) -> Dict[Tuple[str, str, str], LedgerEvent]:
-    """Estado vigente por (frente, pkg, dest normalizado). Los ledgers son
-    append-only, así que dentro de un mismo archivo el orden de lectura ya es
-    cronológico; solo se usa ts para desempatar cuando hace falta comparar
-    entre archivos distintos."""
+    """Estado vigente por (frente, pkg, dest normalizado). Gana el `ts` mayor;
+    a `ts` igual (frecuente: ACK y REPORTADO en el mismo minuto) gana la línea
+    leída DESPUÉS — dentro de un archivo, la más abajo (append-only); entre
+    archivos, el que `discover_ledgers` ordena último. Los opcionales viajan
+    con la línea ganadora, nunca se mezclan entre líneas."""
     latest: Dict[Tuple[str, str, str], LedgerEvent] = {}
     for ev in events:
         key = (ev.frente, ev.pkg, ev.dest.strip().lower() or "(sin-dest)")
@@ -242,6 +321,9 @@ def build_board(
                 is_known_event=is_known,
                 stale=stale,
                 next_inferido=infer_next(ev.evento, ev.dest, ev.nota),
+                opcionales_descartados=list(ev.opcionales_descartados),
+                **{key: getattr(ev, key) for key in OPTIONAL_STRING_FIELDS},
+                **{key: list(getattr(ev, key)) for key in OPTIONAL_LIST_FIELDS},
             )
         )
 
@@ -253,6 +335,7 @@ def build_board(
         "ledger_count": len(ledger_paths),
         "events_total": len(all_events),
         "events_skipped_malformed": total_skipped,
+        "optionals_type_mismatch": sum(len(ev.opcionales_descartados) for ev in all_events),
         "stale_hours": stale_hours,
         "generated_at": now.isoformat(),
     }
@@ -295,6 +378,9 @@ def _ball_to_dict(b: BallState) -> Dict[str, Any]:
         "evento_conocido": b.is_known_event,
         "stale": b.stale,
         "next_inferido": b.next_inferido,
+        # Opcionales 0.11.0 — SIEMPRE presentes; vacíos si la fuente no los trajo.
+        **{key: getattr(b, key) for key in OPTIONAL_FIELDS},
+        "opcionales_descartados": b.opcionales_descartados,
     }
 
 

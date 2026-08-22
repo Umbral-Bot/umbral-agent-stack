@@ -2,7 +2,7 @@
 
 Cada archivo `ledger-<programa>.jsonl` en esta carpeta es el ledger append-only
 de un programa/frente coordinado por la skill `cursor-orchestrator`
-(`umbral-skills-registry/skills/cursor-orchestrator/reference-bitacora.md`).
+(`umbral-skills-registry/skills/cursor-orchestrator/references/reference-bitacora.md`).
 Una línea = un evento. Nunca se edita ni se reordena una línea existente;
 solo se agregan líneas nuevas al final.
 
@@ -40,7 +40,7 @@ Una línea JSON por evento:
 | `pkg`    | Id del paquete (`PKG-…`).                                              |
 | `frente` | Slug del frente/programa.                                              |
 | `dest`   | Destinatario del evento (`cursor`, `claude`, `codex`, `notion-ai`, …). En la práctica también aparece `"claude+codex"` para paquetes con fan-out paralelo a un solo destinatario compuesto. |
-| `evento` | Uno de: `EMITIDO \| ACK \| REPORTADO \| PASS \| FAIL \| BLOCKED \| NO_ACK \| REEMISION`. `CERRADO` puede aparecer como cierre explícito de paquete. |
+| `evento` | Uno de: `EMITIDO \| ACK \| REPORTADO \| PASS \| FAIL \| BLOCKED \| NO_ACK \| REEMISION \| PAUSED \| RESUMED` (`PAUSED`/`RESUMED` desde cursor-orchestrator 0.11.0, 2026-08-20). `CERRADO` puede aparecer como cierre explícito de paquete. |
 | `ev`     | Evidencia mínima: SHA / PR / run id / gate marker. Puede ser `""`.      |
 | `nota`   | ≤120 chars, sin secretos.                                              |
 
@@ -53,7 +53,7 @@ como estados marcados explícitamente.
 `scripts/ops_resume_board.py` trata `evento` así:
 
 - **Terminal** (`[CERRADO]`, no cuenta como "abierta"): `PASS | FAIL | CERRADO`.
-- **Abierto** (cuenta como pelota pendiente): `EMITIDO | ACK | REPORTADO | REEMISION | PENDING | DEPLOYED | BLOCKED | NO_ACK` (+ `PAUSED|RESUMED` propuestos).
+- **Abierto** (cuenta como pelota pendiente): `EMITIDO | ACK | REPORTADO | REEMISION | PENDING | DEPLOYED | BLOCKED | NO_ACK | PAUSED | RESUMED`.
 
 Esto **no** coincide con una lectura literal del enum que trae la misión
 PKG-OPS-RESUME-A1 (`terminal = PASS|FAIL|BLOCKED|NO_ACK`). Se corrigió a propósito
@@ -77,25 +77,66 @@ los trata como eventos "abiertos" y los marca `DRIFT` en el tablero en vez de
 descartarlos. También hay líneas malformadas (comillas escapadas rotas) en al
 menos un ledger real — el generador las cuenta y las salta, nunca aborta.
 
-## Extensión de schema propuesta (PROPUESTA, no vigente)
+## Campos opcionales por línea (contrato cursor-orchestrator 0.11.0, 2026-08-20)
 
-Estos campos/eventos aparecieron en discovery (Codex + Claude, PKG-OPS-RESUME,
-2026-08-01) como útiles para el generador, pero **no están en la spec canónica**
-de `cursor-orchestrator` todavía. Se documentan acá como propuesta; requieren
-bump de versión y PR en `umbral-skills-registry` antes de considerarse parte
-del contrato (este repo no edita ese registry):
+> Antes esta sección era § «Extensión de schema propuesta (PROPUESTA, no
+> vigente)» — el registry la cita con ese nombre como origen del contrato.
+> Renombrada 2026-08-21 (PKG-OPS-RESUME-GEN) al quedar adoptada.
 
-- `event_id` — id único por línea, para deduplicar reemisiones.
-- `thread` — hilo/conversación de origen, para trazar de vuelta al chat que emitió el evento.
-- `tipo` — categoría del paquete (discovery / implementación / fix / diagnóstico).
-- `gate_state` — estado del gate asociado, si el evento lo dispara.
-- `next` — próxima acción explícita (hoy se infiere heurísticamente desde `nota`/`evento`).
-- `links` — URLs (PR, doc) asociadas al evento.
-- Eventos `PAUSED` / `RESUMED` — para paquetes suspendidos sin ser `BLOCKED` (propuesta original de Codex en discovery).
+Estos campos nacieron como propuesta en el discovery de PKG-OPS-RESUME
+(Codex + Claude, 2026-08-01; `PAUSED`/`RESUMED` fue propuesta original de
+Codex) y fueron **adoptados como contrato vigente** en `cursor-orchestrator`
+0.11.0 (PREP-B, `umbral-skills-registry`, GO David). Son opcionales y
+backward-compatible: una línea vieja sin ellos sigue siendo válida.
+Definición canónica en
+`umbral-skills-registry/skills/cursor-orchestrator/references/reference-bitacora.md`;
+cualquier cambio al contrato es bump de versión + PR en ese registry — este
+repo no lo edita. Este README solo describe cómo los trata el generador.
 
-`scripts/ops_resume_board.py` ya reconoce `PAUSED`/`RESUMED` como eventos
-"abiertos" de forma adelantada (no rompe si aparecen), pero no los emite ni
-los exige.
+| Campo | Tipo | Qué es (según el contrato) |
+|---|---|---|
+| `event_id` | string | id único por línea; dedupe de reemisiones. |
+| `thread` | string | hilo/conversación de origen. |
+| `tipo` | string (enum corto) | `discovery` / `implementación` / `fix` / `diagnóstico` — vocabulario del evento, **no** la propiedad Notion `Tipo`. |
+| `gate_state` | string | estado del gate que el evento dispara (p. ej. `X_CODE_PASS`). |
+| `next` | string | próxima acción **emitida por la fuente**. |
+| `links` | lista de strings | URLs (PR, doc, evidencia) asociadas al evento. |
+
+Eventos `PAUSED` / `RESUMED` (paquete suspendido sin ser `BLOCKED`) también
+entraron al enum en 0.11.0; el generador los trata como abiertos.
+
+### Cómo los trata `scripts/ops_resume_board.py` (PKG-OPS-RESUME-GEN, 2026-08-21)
+
+**Passthrough literal: el generador los pasa si vienen, no los exige ni los
+infiere.** Cada pelota del `--json` trae **siempre** las 6 claves
+`event_id`, `thread`, `tipo`, `gate_state`, `next`, `links`:
+
+- Se copian desde la **línea vigente** por `(frente, pkg, dest)`: la de `ts`
+  mayor; a `ts` igual (ACK y REPORTADO en el mismo minuto es común), la leída
+  después — más abajo en el archivo. No se heredan ni se mezclan opcionales
+  de líneas anteriores del mismo paquete.
+- String: se copia **tal cual, sin recortar**, si la fuente trae un string no
+  vacío ni solo-espacios. Ausente, `null`, en blanco o de otro tipo → `""`.
+  No se coacciona (un número no se convierte en string) ni se inventa.
+- `links`: lista → se conservan solo los strings no vacíos, **recortados**
+  (son URLs); string único no vacío → lista de 1; ausente o de otro tipo →
+  `[]`.
+- **"No vino" y "vino mal" se distinguen.** Si un opcional viene con tipo que
+  el contrato no admite (p. ej. `next` como lista — caso real en
+  `ledger-n8n-chile-community.jsonl`), se descarta a vacío **y** se nombra en
+  `opcionales_descartados` (lista por pelota, normalmente `[]`);
+  `meta.optionals_type_mismatch` suma esos descartes sobre **todas** las
+  líneas leídas (no solo las vigentes). Misma filosofía que
+  `DRIFT` y `events_skipped_malformed`: marcar, nunca esconder.
+- `next` (emitido por la fuente) y `next_inferido` (heurística local: `nota` si
+  hay, si no una frase genérica por `evento`) son **campos separados**. El
+  generador nunca copia `next_inferido` a `next`; un `next` vacío se queda
+  vacío. El espejo Notion (`Next`) consume `next`, no `next_inferido` — por
+  eso sigue vacío mientras los ledgers no lo emitan.
+- El **tablero humano** (sin `--json`) sigue mostrando solo `next_inferido`;
+  los 6 opcionales viven en `--json`, que es lo que consume el espejo.
+- Un ledger con bytes no-UTF-8 (writer ANSI) ya no aborta el tablero: se
+  decodifica con reemplazo (`U+FFFD`, que varios ledgers reales ya traen).
 
 ## Ledgers de otros repos
 

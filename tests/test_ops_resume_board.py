@@ -364,12 +364,22 @@ def test_fetch_open_prs_parses_success(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 
 def test_main_json_end_to_end(tmp_path, capsys):
-    write_ledger(tmp_path, "repo-a", "ledger-alpha.jsonl", [event(evento="PASS")])
+    write_ledger(tmp_path, "repo-a", "ledger-alpha.jsonl", [event(evento="PASS", gate_state="X_PASS")])
     rc = board.main(["--root", str(tmp_path), "--json", "--now", "2026-08-01T12:00:00Z"])
     assert rc == 0
     out = capsys.readouterr().out
     parsed = json.loads(out)
     assert parsed["meta"]["ledger_count"] == 1
+    # Los 6 opcionales 0.11.0 viajan hasta el --json del CLI (passthrough literal).
+    ball = parsed["pelotas"][0]
+    assert {k: ball[k] for k in board.OPTIONAL_FIELDS} == {
+        "event_id": "",
+        "thread": "",
+        "tipo": "",
+        "gate_state": "X_PASS",
+        "next": "",
+        "links": [],
+    }
 
 
 def test_main_human_end_to_end(tmp_path, capsys):
@@ -396,3 +406,195 @@ def test_main_does_not_call_gh_without_with_prs_flag(tmp_path, monkeypatch):
     monkeypatch.setattr(subprocess, "run", fail_if_called)
     rc = board.main(["--root", str(tmp_path), "--json", "--now", "2026-08-01T12:00:00Z"])
     assert rc == 0
+
+
+# ---------------------------------------------------------------------------
+# Opcionales 0.11.0 (event_id, thread, tipo, gate_state, next, links) —
+# passthrough literal, nunca inferidos. PKG-OPS-RESUME-GEN.
+# ---------------------------------------------------------------------------
+
+NOW = datetime(2026, 8, 21, 12, 0, 0)
+
+EMPTY_OPTIONALS = {"event_id": "", "thread": "", "tipo": "", "gate_state": "", "next": "", "links": []}
+
+
+def _single_ball_dict(tmp_path, line):
+    write_ledger(tmp_path, "repo-a", "ledger-alpha.jsonl", [line])
+    balls, meta = board.build_board(tmp_path, stale_hours=24, now=NOW)
+    assert len(balls) == 1
+    parsed = json.loads(board.render_json(balls, meta))
+    return balls[0], parsed["pelotas"][0], parsed["meta"]
+
+
+def test_optional_fields_constant_is_the_contract_list():
+    # La tupla del módulo DIRIGE load/copy/emit: si cambia, cambia el --json.
+    assert board.OPTIONAL_FIELDS == ("event_id", "thread", "tipo", "gate_state", "next", "links")
+
+
+def test_old_line_without_optionals_yields_all_six_keys_empty(tmp_path):
+    # Línea vieja (schema 2026-07-28): las 6 claves están igual, vacías — el
+    # consumidor (espejo Notion) nunca debe hacer .get() a ciegas.
+    ball, d, meta = _single_ball_dict(tmp_path, event(evento="REPORTADO", nota="algo"))
+    assert {k: d[k] for k in board.OPTIONAL_FIELDS} == EMPTY_OPTIONALS
+    assert d["opcionales_descartados"] == []
+    assert meta["optionals_type_mismatch"] == 0
+    assert ball.links == []
+
+
+def test_line_with_all_six_optionals_is_copied_literally(tmp_path):
+    line = event(
+        evento="RESUMED",
+        nota="",
+        event_id="e1a4f4",
+        thread="claude/pkg-ops-resume-schema-20260820",
+        tipo="implementación",
+        gate_state="OPS_RESUME_SCHEMA_CODE_PASS",
+        next="continuar implementación",
+        links=["https://example.com/pr/123", "https://example.com/doc"],
+    )
+    _, d, _ = _single_ball_dict(tmp_path, line)
+    assert {k: d[k] for k in board.OPTIONAL_FIELDS} == {
+        "event_id": "e1a4f4",
+        "thread": "claude/pkg-ops-resume-schema-20260820",
+        "tipo": "implementación",
+        "gate_state": "OPS_RESUME_SCHEMA_CODE_PASS",
+        "next": "continuar implementación",
+        "links": ["https://example.com/pr/123", "https://example.com/doc"],
+    }
+    assert d["opcionales_descartados"] == []
+
+
+@pytest.mark.parametrize("evento", ["PAUSED", "RESUMED"])
+def test_paused_and_resumed_are_open_known_events(tmp_path, evento):
+    # Entraron al enum en cursor-orchestrator 0.11.0; siguen siendo abiertos.
+    ball, d, _ = _single_ball_dict(tmp_path, event(evento=evento, next="retomar tras respuesta de David"))
+    assert ball.is_terminal is False
+    assert ball.is_known_event is True
+    assert d["next"] == "retomar tras respuesta de David"
+
+
+def test_next_from_source_is_separate_from_next_inferido(tmp_path):
+    # `next` viene de la fuente; `next_inferido` es la heurística local (= nota
+    # si hay nota). Son campos distintos y NO se copian entre sí.
+    _, d, _ = _single_ball_dict(tmp_path, event(evento="ACK", nota="nota de la fuente", next="paso emitido por la fuente"))
+    assert d["next"] == "paso emitido por la fuente"
+    assert d["next_inferido"] == "nota de la fuente"
+
+
+def test_empty_next_is_not_filled_from_heuristic(tmp_path):
+    # Sin `next` en la fuente, la heurística sigue viviendo SOLO en next_inferido.
+    ball, d, _ = _single_ball_dict(tmp_path, event(evento="ACK", nota=""))
+    assert d["next"] == ""
+    assert "REPORTADO" in d["next_inferido"]  # heurística de ACK presente, aparte
+    assert ball.next == ""
+
+
+def test_latest_line_wins_for_optionals_too(tmp_path):
+    # Los opcionales se toman de la línea VIGENTE, no se acumulan de líneas previas.
+    write_ledger(
+        tmp_path,
+        "repo-a",
+        "ledger-alpha.jsonl",
+        [
+            event(evento="EMITIDO", ts="2026-08-20T09:10", event_id="e1", thread="t1", links=["https://old"]),
+            event(evento="ACK", ts="2026-08-20T11:05", event_id="e2"),
+        ],
+    )
+    balls, meta = board.build_board(tmp_path, stale_hours=24, now=NOW)
+    d = json.loads(board.render_json(balls, meta))["pelotas"][0]
+    assert d["evento"] == "ACK"
+    assert d["event_id"] == "e2"
+    assert d["thread"] == ""  # la línea ACK no lo trae → vacío, no heredado
+    assert d["links"] == []
+
+
+def test_equal_ts_tie_goes_to_the_line_read_later(tmp_path):
+    # Caso real: ACK y REPORTADO en el mismo minuto. Gana la línea de más abajo,
+    # y sus opcionales viajan con ella (los de la anterior NO se mezclan).
+    write_ledger(
+        tmp_path,
+        "repo-a",
+        "ledger-alpha.jsonl",
+        [
+            event(evento="ACK", ts="2026-08-21T10:48", thread="t-ack", links=["https://ack"]),
+            event(evento="REPORTADO", ts="2026-08-21T10:48", gate_state="X_CODE_PASS"),
+        ],
+    )
+    balls, meta = board.build_board(tmp_path, stale_hours=24, now=NOW)
+    d = json.loads(board.render_json(balls, meta))["pelotas"][0]
+    assert d["evento"] == "REPORTADO"
+    assert d["gate_state"] == "X_CODE_PASS"
+    assert d["thread"] == ""
+    assert d["links"] == []
+
+
+# --- helpers puros: optional_str / normalize_links / optional_type_mismatches
+
+
+@pytest.mark.parametrize("value", [123, 1.5, True, ["x"], {"k": "v"}, None, "", "   "])
+def test_optional_str_non_string_null_or_blank_becomes_empty(value):
+    # Passthrough literal: no se coacciona ni se inventa; en blanco = ausente.
+    assert board.optional_str({"next": value}, "next") == ""
+
+
+def test_optional_str_keeps_string_verbatim_without_trimming():
+    assert board.optional_str({"thread": " hilo con espacios "}, "thread") == " hilo con espacios "
+    assert board.optional_str({}, "thread") == ""
+
+
+@pytest.mark.parametrize("bad", [42, {"url": "x"}, True, None, "", "   ", [None, 7]])
+def test_normalize_links_non_list_non_string_or_blank_becomes_empty(bad):
+    assert board.normalize_links(bad) == []
+
+
+def test_normalize_links_single_string_is_wrapped_and_trimmed():
+    assert board.normalize_links("  https://example.com/pr/9 ") == ["https://example.com/pr/9"]
+
+
+def test_normalize_links_list_keeps_only_non_blank_strings_trimmed():
+    assert board.normalize_links(["https://a", 7, "", "   ", None, " https://b "]) == ["https://a", "https://b"]
+
+
+def test_optional_type_mismatches_names_wrong_typed_fields_only():
+    data = {
+        "event_id": "ok",  # string → bien
+        "thread": None,  # null → ausente, no mismatch
+        "tipo": 5,  # número → mismatch
+        "next": ["paso 1", "paso 2"],  # lista donde va string → mismatch (caso real)
+        "links": ["https://a", 7],  # ítem no-string → mismatch
+    }
+    assert board.optional_type_mismatches(data) == ["tipo", "next", "links"]
+    assert board.optional_type_mismatches({}) == []
+    assert board.optional_type_mismatches({"links": "https://solo"}) == []  # string único es tolerado
+
+
+def test_wrong_typed_optional_is_dropped_but_named_and_counted(tmp_path):
+    # "No vino" y "vino mal" tienen que ser distinguibles en el --json.
+    _, d, meta = _single_ball_dict(tmp_path, event(evento="ACK", next=["paso 1", "paso 2"], links=42))
+    assert d["next"] == ""
+    assert d["links"] == []
+    assert d["opcionales_descartados"] == ["next", "links"]
+    assert meta["optionals_type_mismatch"] == 2
+
+
+def test_ledger_with_non_utf8_bytes_does_not_abort_the_board(tmp_path):
+    # Un writer ANSI (PowerShell viejo) no puede tumbar el tablero entero: se
+    # decodifica con reemplazo (U+FFFD, que ya aparece en ledgers reales).
+    ledger_dir = tmp_path / "repo-a" / "docs" / "operations"
+    ledger_dir.mkdir(parents=True)
+    path = ledger_dir / "ledger-alpha.jsonl"
+    raw = json.dumps(event(evento="ACK", tipo="implementación"), ensure_ascii=False) + "\n"
+    path.write_bytes(raw.encode("cp1252"))
+    events, skipped = board.load_events(path, tmp_path)
+    assert skipped == 0
+    assert len(events) == 1
+    assert events[0].tipo.startswith("implementaci")
+    assert "\ufffd" in events[0].tipo
+
+
+def test_events_from_helper_defaults_keep_optionals_empty():
+    # LedgerEvent construido sin opcionales (como hacen los tests viejos) sigue válido.
+    events, _ = _events_from([event(evento="EMITIDO")])
+    assert events[0].event_id == ""
+    assert events[0].links == []
+    assert events[0].opcionales_descartados == []

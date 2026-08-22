@@ -3,7 +3,10 @@
 Estado: Fase A del SPLIT faseado que David aprobó 2026-08-02 (`GO_SPLIT_FASEADO`,
 ver `docs/operations/ledger-ops-resume.jsonl`). Fase A = SoT máquina en UAS
 (este runbook + `scripts/ops_resume_board.py`). Fase B (vista humana en Notion)
-está diferida — no forma parte de este documento ni de este PR.
+está **live desde 2026-08-21** (`PKG-OPS-RESUME-B-LIVE`/`B-LOAD`, contrato en
+`notion-governance/docs/architecture/ops-resume-human-projection-contract-2026-08-02.md`)
+como espejo de solo lectura de estos ledgers; este documento sigue siendo la
+Fase A (máquina) y no describe ni opera ese espejo.
 
 ## Por qué existe esto
 
@@ -79,6 +82,11 @@ carpeta se ignoran sin error.
   (`docs/operations/README.md` documenta los valores drift ya vistos:
   `PENDING`, `DEPLOYED`, `DEPLOY_STARTED`, `MERGED`, `MERGED_DEPLOYED`). No
   se descarta la fila — se muestra igual, marcada.
+- `--json` incluye siempre los 6 opcionales del contrato cursor-orchestrator
+  0.11.0 (`event_id`, `thread`, `tipo`, `gate_state`, `next`, `links`) en
+  passthrough literal, más `opcionales_descartados` por pelota. `Next` en
+  Notion se alimenta de `next`, nunca de `next_inferido`. Reglas exactas:
+  `docs/operations/README.md` § «Campos opcionales».
 
 ## Cadencia de escritura del ledger (PREP-A2, 2026-08-04)
 
@@ -131,7 +139,7 @@ no reconstruido de memoria días después. Regla de cadencia:
 |---|---|---|
 | `.agents/board.md` | Tablero manual por sprint | Es exactamente el patrón que falló (stale, mantenido a mano). Este generador no lo actualiza ni lo lee; queda como está hasta que David decida qué hacer con él. |
 | Mission Control (`mission_control/`, :8089) | Dashboard read-only sobre **runtime VPS** (OpenClaw, Redis, PIT vault) | Lee estado de ejecución de agentes en la VPS, no el ledger de paquetes/frentes de este repo. Es un link secundario runtime-only según el GO de David — no el home del tablero de reingreso. |
-| OpenClaw / Control Room (Notion) | Runtime cockpit humano de Rick | Fase B diferida. Este generador no escribe en Notion ni sustituye esa superficie. |
+| OpenClaw / Control Room (Notion) | Runtime cockpit humano de Rick | Distinto del espejo `Ops Resume — proyección humana` (Fase B, live 2026-08-21, lee el `--json`). Este generador no escribe en Notion ni sustituye ninguna de las dos superficies. |
 | `docs/operations/ledger-*.jsonl` | **Fuente de verdad de este tablero** | Es lo único que este script lee. Append-only, nunca se edita a mano salvo para agregar líneas. |
 
 ## Limitaciones conocidas (honestas)
@@ -142,7 +150,8 @@ no reconstruido de memoria días después. Regla de cadencia:
   asume que lo que no tiene zona ya está en esa misma escala — puede haber
   unas horas de error. Es una señal de alerta para mirar, no un hecho
   verificado.
-- **Solo entiende el schema `{ts, pkg, frente, dest, evento, ev, nota}`.**
+- **Solo entiende el schema `{ts, pkg, frente, dest, evento, ev, nota}`** (+
+  los 6 opcionales 0.11.0 en passthrough).
   En el barrido real de 2026-08-02 sobre `C:\GitHub` apareció al menos un
   ledger (`umbral-bot-cursor/docs/operations/ledger-microsoft-marketplace-2026-08.jsonl`)
   con un schema distinto (`package`/`event`/`agent` en vez de
@@ -150,7 +159,8 @@ no reconstruido de memoria días después. Regla de cadencia:
   esas filas caen en `(sin-frente)/(sin-pkg)` marcadas `DRIFT`, visibles pero
   sin agrupar bien. No se intentó normalizar ese schema alterno en este PR
   (fuera de alcance); si se vuelve común, es candidato a una propuesta de
-  schema como las de `docs/operations/README.md`.
+  schema vía PR en `umbral-skills-registry` (cursor-orchestrator), como pasó
+  con los opcionales 0.11.0.
 - **`--with-prs` es best-effort y depende de `gh` autenticado localmente.**
   Si falla (sin red, sin `gh`, repo sin remoto), el tablero lo reporta como
   "gap honesto" por repo y sigue mostrando el resto — nunca aborta.

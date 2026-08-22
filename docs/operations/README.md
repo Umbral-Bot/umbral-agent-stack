@@ -105,7 +105,7 @@ repo no lo edita. Este README solo describe cómo los trata el generador.
 Eventos `PAUSED` / `RESUMED` (paquete suspendido sin ser `BLOCKED`) también
 entraron al enum en 0.11.0; el generador los trata como abiertos.
 
-### Cómo los trata `scripts/ops_resume_board.py` (PKG-OPS-RESUME-GEN, 2026-08-21)
+### Cómo los trata `scripts/ops_resume_board.py` (PKG-OPS-RESUME-GEN, 2026-08-21; ajustado en PKG-OPS-RESUME-GEN2, 2026-08-22)
 
 **Passthrough literal: el generador los pasa si vienen, no los exige ni los
 infiere.** Cada pelota del `--json` trae **siempre** las 6 claves
@@ -118,17 +118,18 @@ infiere.** Cada pelota del `--json` trae **siempre** las 6 claves
 - String: se copia **tal cual, sin recortar**, si la fuente trae un string no
   vacío ni solo-espacios. Ausente, `null`, en blanco o de otro tipo → `""`.
   No se coacciona (un número no se convierte en string) ni se inventa.
-- `links`: lista **de puros strings** → se conservan los no vacíos,
-  **recortados** (son URLs); string único no vacío → lista de 1; **cualquier
-  ítem no-string invalida todo el campo** (no hay keep parcial) → `[]`.
+- `links`: forma válida = string único, o lista donde **todos** los ítems
+  son strings (puede ser `[]`). Con forma válida: se conservan los strings no
+  vacíos, **recortados** (son URLs); string único no vacío → lista de 1.
 - **"No vino" y "vino mal" se distinguen.** Si un opcional viene con tipo que
-  el contrato no admite (p. ej. `next` como lista, o `links` con un ítem
-  no-string — casos reales en `ledger-n8n-chile-community.jsonl`), se
-  descarta a vacío **y** se nombra en `opcionales_descartados` (lista por
-  pelota, normalmente `[]`); `meta.optionals_type_mismatch` suma esos
-  descartes solo de las **pelotas vigentes** del tablero (mismo alcance que
-  el resto de `meta`), no del histórico completo del ledger. Misma filosofía
-  que `DRIFT` y `events_skipped_malformed`: marcar, nunca esconder.
+  el contrato no admite (p. ej. `next` como lista — caso real en
+  `ledger-n8n-chile-community.jsonl`; o `links` con **cualquier** ítem
+  no-string, que invalida todo el campo, sin keep parcial), se descarta a
+  vacío **y** se nombra en `opcionales_descartados` (lista por pelota,
+  normalmente `[]`); `meta.optionals_type_mismatch` suma esos descartes solo
+  de las **pelotas vigentes** del tablero — a diferencia de `events_total` /
+  `events_skipped_malformed`, que sí cubren el histórico completo de líneas
+  leídas. Misma filosofía que `DRIFT`: marcar, nunca esconder.
 - `next` (emitido por la fuente) y `next_inferido` (heurística local: `nota` si
   hay, si no una frase genérica por `evento`) son **campos separados**. El
   generador nunca copia `next_inferido` a `next`; un `next` vacío se queda

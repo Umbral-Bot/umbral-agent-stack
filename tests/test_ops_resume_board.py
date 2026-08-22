@@ -597,30 +597,23 @@ def test_wrong_typed_optional_is_dropped_but_named_and_counted(tmp_path):
     assert meta["optionals_type_mismatch"] == 2
 
 
-def test_meta_optionals_type_mismatch_counts_only_vigente_balls_not_all_events(tmp_path):
-    # Línea vieja con next mal tipado + línea vigente limpia de la misma clave:
-    # la pelota vigente no debe cargar el mismatch de una línea ya superada.
+def test_meta_optionals_type_mismatch_counts_only_vigente_mismatch(tmp_path):
+    # Línea vieja Y vigente con `next` mal tipado, misma clave: el mismatch de
+    # la vieja (ya superada) NO debe contarse; el de la vigente SI. Un solo
+    # test que discrimina ambas direcciones: si contara todo daría 2, si no
+    # contara nada daría 0 — solo "solo vigente" da 1.
     write_ledger(
         tmp_path,
         "repo-a",
         "ledger-alpha.jsonl",
         [
             event(evento="EMITIDO", ts="2026-08-20T09:10", next=["paso viejo mal tipado"]),
-            event(evento="ACK", ts="2026-08-20T11:05"),
+            event(evento="ACK", ts="2026-08-20T11:05", next=["paso nuevo mal tipado"]),
         ],
     )
     balls, meta = board.build_board(tmp_path, stale_hours=24, now=NOW)
     d = json.loads(board.render_json(balls, meta))["pelotas"][0]
     assert d["evento"] == "ACK"
-    assert d["opcionales_descartados"] == []
-    assert meta["optionals_type_mismatch"] == 0
-
-
-def test_meta_optionals_type_mismatch_counts_vigente_mismatch(tmp_path):
-    # Si la línea VIGENTE (no una vieja) trae el tipo incorrecto, sí cuenta.
-    write_ledger(tmp_path, "repo-a", "ledger-alpha.jsonl", [event(evento="ACK", next=["paso 1"])])
-    balls, meta = board.build_board(tmp_path, stale_hours=24, now=NOW)
-    d = json.loads(board.render_json(balls, meta))["pelotas"][0]
     assert d["next"] == ""
     assert d["opcionales_descartados"] == ["next"]
     assert meta["optionals_type_mismatch"] == 1

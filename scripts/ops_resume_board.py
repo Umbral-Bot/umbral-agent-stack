@@ -146,19 +146,17 @@ def _list_field_type_ok(value: Any) -> bool:
 
 
 def normalize_links(value: Any) -> List[str]:
-    """`links` del contrato es lista de strings (URLs). Un string único se
-    envuelve en lista de 1. Si la forma no es válida (`_list_field_type_ok`
-    -- p. ej. CUALQUIER ítem no-string), el campo entero es mismatch de tipo
-    → `[]` (ver `optional_type_mismatches`, que marca "links" en el mismo
-    caso: nunca hay keep parcial de una lista con forma inválida). Con forma
-    válida: strings vacíos/solo-espacios se filtran (normalización de
-    presencia, no mismatch); el resto se recorta (son URLs)."""
+    """Passthrough de un campo-lista (hoy solo `links`, URLs). Un string
+    único se trata como lista de 1. Si la forma no es válida
+    (`_list_field_type_ok` -- p. ej. CUALQUIER ítem no-string), el campo
+    entero es mismatch de tipo → `[]` (ver `optional_type_mismatches`, que
+    marca el campo en el mismo caso: nunca hay keep parcial de una lista con
+    forma inválida). Con forma válida: strings vacíos/solo-espacios se
+    filtran (normalización de presencia, no mismatch); el resto se recorta."""
     if not _list_field_type_ok(value):
         return []
-    if isinstance(value, str):
-        cleaned = value.strip()
-        return [cleaned] if cleaned else []
-    return [item.strip() for item in value if item.strip()]
+    items = [value] if isinstance(value, str) else value
+    return [item.strip() for item in items if item.strip()]
 
 
 def optional_type_mismatches(data: Dict[str, Any]) -> List[str]:

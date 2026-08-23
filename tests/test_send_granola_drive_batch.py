@@ -3,11 +3,12 @@ Tests for scripts/vm/send_granola_drive_batch.py (P1.1b Phase 4 sender).
 """
 
 import os
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from scripts.vm.send_granola_drive_batch import (
+    post_task,
     resolve_worker_config,
     run_batch,
     select_items,
@@ -128,3 +129,23 @@ class TestRunBatch:
             mock_post.return_value = {"page_id": "flat-page", "url": "https://notion.so/flat"}
             results = run_batch(items, worker_url="http://x", worker_token="t", execute=True)
         assert results[0]["page_id"] == "flat-page"
+
+
+class TestPostTaskErrors:
+    def test_error_body_survives_into_the_exception(self):
+        """The worker puts the real cause in the body; raise_for_status() ate it."""
+        resp = MagicMock()
+        resp.status_code = 500
+        resp.text = '{"detail":"Task failed: Notion API error (401) ... token is invalid."}'
+        with patch("scripts.vm.send_granola_drive_batch.requests.post", return_value=resp):
+            with pytest.raises(RuntimeError) as excinfo:
+                post_task("http://worker", "tok", {"title": "x"})
+        assert "401" in str(excinfo.value)
+        assert "500" in str(excinfo.value)
+
+    def test_success_still_returns_the_parsed_body(self):
+        resp = MagicMock()
+        resp.status_code = 200
+        resp.json.return_value = {"result": {"page_id": "p1"}}
+        with patch("scripts.vm.send_granola_drive_batch.requests.post", return_value=resp):
+            assert post_task("http://worker", "tok", {"title": "x"}) == {"result": {"page_id": "p1"}}

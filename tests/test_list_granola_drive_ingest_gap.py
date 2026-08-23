@@ -4,7 +4,13 @@ Tests for scripts/list_granola_drive_ingest_gap.py (P1.1b Phase 1 gap-check).
 
 import pytest
 
-from scripts.list_granola_drive_ingest_gap import apply_manual_overrides, classify_gap, summarize
+from scripts.list_granola_drive_ingest_gap import (
+    NOTION_LENGTH_TOLERANCE,
+    apply_manual_overrides,
+    classify_gap,
+    summarize,
+)
+from scripts.vm.granola_drive_md_ingest import expected_notion_length
 
 
 def _drive(title, normalized_title, date, relative_path, sha1, filename=None):
@@ -220,3 +226,95 @@ class TestSummarize:
         ]
         summary = summarize(classified)
         assert summary == {"create": 2, "update_transcript": 1, "skip": 1, "review_ambiguous": 1}
+
+
+class TestAlreadyIngestedLength:
+    """A renamed / duplicated Drive file must not become a daily no-op rewrite.
+
+    Drive-side renames and ``... (2).md`` copies re-enter the folder under a
+    new ``shared_folder_path``, so tiers 1/2 stop recognizing them and they
+    fall through to title+date. Before this tier they classified as
+    ``update_transcript`` on every single run of the recurring feeder.
+    """
+
+    def _pair(self, char_count, stored_length):
+        drive = [
+            {
+                "filename": "Sesión de seguimiento WSP (2).md",
+                "relative_path": "Granola/Sesión de seguimiento WSP (2).md",
+                "sha1": "new-sha",
+                "parsed": {
+                    "title": "Sesión de seguimiento WSP",
+                    "normalized_title": "sesion de seguimiento wsp",
+                    "date": "2026-06-30",
+                    "char_count": char_count,
+                },
+            }
+        ]
+        notion = [
+            _notion(
+                "Sesión de seguimiento WSP",
+                "sesion de seguimiento wsp",
+                "2026-06-30",
+                fuente="granola_drive_md",
+                shared_folder_path="Granola/Sesión de seguimiento WSP.md",
+                sha1="old-sha",
+            )
+        ]
+        notion[0]["longitud_notion"] = stored_length
+        return drive, notion
+
+    def test_skips_when_the_page_already_stores_this_exact_transcript(self):
+        drive, notion = self._pair(90481, 90558)
+        result = classify_gap(drive, notion)
+        assert result[0]["action"] == "skip"
+        assert result[0]["match_strategy"] == "normalized_title_date_length_match"
+
+    def test_tolerates_the_trailing_newline_notion_trims(self):
+        drive, notion = self._pair(1000, expected_notion_length(1000) - 1)
+        assert classify_gap(drive, notion)[0]["action"] == "skip"
+
+    def test_a_real_content_change_still_updates(self):
+        drive, notion = self._pair(90481, 3600)
+        result = classify_gap(drive, notion)
+        assert result[0]["action"] == "update_transcript"
+        assert result[0]["match_strategy"] == "normalized_title_date"
+
+    def test_a_length_just_outside_tolerance_still_updates(self):
+        drive, notion = self._pair(1000, expected_notion_length(1000) + NOTION_LENGTH_TOLERANCE + 1)
+        assert classify_gap(drive, notion)[0]["action"] == "update_transcript"
+
+    def test_a_page_with_no_recorded_length_still_updates(self):
+        drive, notion = self._pair(90481, 0)
+        assert classify_gap(drive, notion)[0]["action"] == "update_transcript"
+
+    def test_a_page_with_a_junk_length_still_updates(self):
+        drive, notion = self._pair(90481, 0)
+        notion[0]["longitud_notion"] = "n/a"
+        assert classify_gap(drive, notion)[0]["action"] == "update_transcript"
+
+    def test_a_drive_file_with_no_char_count_still_updates(self):
+        drive, notion = self._pair(0, 90558)
+        assert classify_gap(drive, notion)[0]["action"] == "update_transcript"
+
+    def test_length_never_rescues_a_path_match_whose_sha_changed(self):
+        # Tier 2 has a real sha1 disagreement: the file genuinely changed, and
+        # length equality must not talk us out of rewriting it.
+        drive = [
+            {
+                "filename": "x.md",
+                "relative_path": "Granola/x.md",
+                "sha1": "new",
+                "parsed": {
+                    "title": "X",
+                    "normalized_title": "x",
+                    "date": "2026-06-30",
+                    "char_count": 1000,
+                },
+            }
+        ]
+        notion = [_notion("X", "x", "2026-06-30", shared_folder_path="Granola/x.md", sha1="old")]
+        notion[0]["longitud_notion"] = expected_notion_length(1000)
+        result = classify_gap(drive, notion)
+        assert result[0]["action"] == "update_transcript"
+        assert result[0]["match_strategy"] == "shared_folder_path_changed"

@@ -17,6 +17,10 @@ Match criterion (documented, per the P1.1b spec):
    ``worker/tasks/granola.py::_find_existing_raw_candidate`` tiers 7/8 —
    accent/case-folded title, exact ``YYYY-MM-DD`` date), matched only when
    exactly one existing page qualifies:
+   - if that page's ``Longitud Notion`` already equals what this feeder would
+     store (within ``NOTION_LENGTH_TOLERANCE``) -> ``skip``: the transcript is
+     already there, and the file only re-surfaced because it was renamed or
+     duplicated in Drive under a new ``shared_folder_path``.
    - if that page's existing content looks summary-only (short "Longitud
      Notion" and/or ``Fuente`` in {"granola", "granola_mcp"} without a prior
      Drive ingest) -> ``update_transcript`` (attach the verbatim transcript)
@@ -45,13 +49,47 @@ from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any
 
+from scripts.vm.granola_drive_md_ingest import expected_notion_length
+
 NEAR_DUPLICATE_THRESHOLD = 0.84
+
+# ``Longitud Notion`` vs the length this feeder would store. Notion trims a
+# trailing newline, so an already-ingested transcript lands 1 char short; the
+# P1.1b closeout verified every one of its 95 writes against this same +/-2
+# window.
+NOTION_LENGTH_TOLERANCE = 2
 
 
 def _title_ratio(a: str, b: str) -> float:
     if not a or not b:
         return 0.0
     return SequenceMatcher(None, a, b).ratio()
+
+
+def _already_holds_this_transcript(
+    notion_record: dict[str, Any],
+    char_count: int,
+) -> bool:
+    """True when a matched page already stores this exact transcript.
+
+    Drive-side renames and ``... (2).md`` copies re-enter the folder under a
+    new ``shared_folder_path``, so tiers 1/2 can no longer recognize them and
+    they fall through to title+date. Left there they would classify as
+    ``update_transcript`` on EVERY run of a recurring feeder and re-write
+    hundreds of Notion blocks for no content change. Length is only trusted as
+    an identity signal because it is combined with an exact normalized-title
+    AND exact-date match; a false positive costs a skipped no-op write, a
+    false negative costs a daily rewrite.
+    """
+    if char_count <= 0:
+        return False
+    try:
+        stored = int(notion_record.get("longitud_notion") or 0)
+    except (TypeError, ValueError):
+        return False
+    if stored <= 0:
+        return False
+    return abs(stored - expected_notion_length(char_count)) <= NOTION_LENGTH_TOLERANCE
 
 
 def classify_gap(
@@ -75,6 +113,7 @@ def classify_gap(
         date = str(parsed.get("date") or "")
         relative_path = str(drive.get("relative_path") or "")
         file_sha1 = str(drive.get("sha1") or "")
+        char_count = int(parsed.get("char_count") or 0)
 
         entry: dict[str, Any] = {
             "filename": drive.get("filename"),
@@ -117,13 +156,21 @@ def classify_gap(
             if len(date_matches) == 1:
                 match = date_matches[0]
                 entry["matched_page"] = {"page_id": match.get("page_id"), "url": match.get("url")}
-                entry["action"] = "update_transcript"
-                entry["match_strategy"] = "normalized_title_date"
-                fuente = str(match.get("fuente") or "")
-                if fuente and fuente != "granola_drive_md":
+                if _already_holds_this_transcript(match, char_count):
+                    entry["action"] = "skip"
+                    entry["match_strategy"] = "normalized_title_date_length_match"
                     entry["notes"].append(
-                        f"existing page fuente={fuente!r} (likely summary/other source) — verbatim transcript will be attached"
+                        "matched page already stores a transcript of this exact length "
+                        "(likely a renamed/duplicated Drive file) — nothing to write"
                     )
+                else:
+                    entry["action"] = "update_transcript"
+                    entry["match_strategy"] = "normalized_title_date"
+                    fuente = str(match.get("fuente") or "")
+                    if fuente and fuente != "granola_drive_md":
+                        entry["notes"].append(
+                            f"existing page fuente={fuente!r} (likely summary/other source) — verbatim transcript will be attached"
+                        )
             elif len(title_matches) == 1 and not date:
                 match = title_matches[0]
                 entry["matched_page"] = {"page_id": match.get("page_id"), "url": match.get("url")}

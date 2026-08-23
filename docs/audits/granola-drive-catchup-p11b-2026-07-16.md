@@ -1,5 +1,14 @@
 # Granola Drive Catch-up (P1.1b) — Closeout Snapshot — 2026-07-16
 
+> **One-shot, no recurrente.** Este documento cierra un catch-up de 95 archivos
+> ejecutado a mano en 13 lotes; los drivers por lote nunca se commitearon y nada
+> de esto vuelve a correr solo. La recurrencia se construyó recién el
+> 2026-08-23 en `docs/operations/q11-granola-drive-feeder-2026-08-23.md`
+> (`scripts/vm/granola_drive_feeder.py` + Scheduled Task de Windows). Entre
+> ambas fechas entraron 12 archivos nuevos a Drive y **ninguno** llegó a Notion.
+> El pendiente "smoke BIM Forum - Automatización" anotado más abajo quedó
+> detectado por ese feeder, tal como este cierre anticipó.
+
 ## Objetivo
 
 Ingerir en la DB raw canónica `Transcripciones Granola` los transcripts que

@@ -2,14 +2,17 @@
 Tests for scripts/vm/granola_drive_md_ingest.py (P1.1b Drive transcript feeder).
 """
 
+import json
 import textwrap
 
 import pytest
 
 from scripts.vm.granola_drive_md_ingest import (
+    _emit,
     build_content,
     build_inventory,
     build_payload,
+    expected_notion_length,
     list_drive_transcript_files,
     parse_drive_transcript_md,
     parse_meeting_date_header,
@@ -261,3 +264,32 @@ class TestSha1:
 
     def test_differs_for_different_content(self):
         assert sha1_of_text("abc") != sha1_of_text("abd")
+
+
+class TestExpectedNotionLength:
+    def test_matches_the_length_of_what_build_content_stores(self):
+        parsed = {"transcript": "Them: hola\nMe: chau"}
+        assert expected_notion_length(len(parsed["transcript"])) == len(build_content(parsed))
+
+    def test_empty_transcript_is_header_only(self):
+        assert expected_notion_length(0) == len(build_content({"transcript": ""}))
+
+    def test_negative_count_does_not_underflow(self):
+        assert expected_notion_length(-5) == expected_notion_length(0)
+
+    def test_grows_one_for_one_with_the_transcript(self):
+        assert expected_notion_length(1001) - expected_notion_length(1000) == 1
+
+
+class TestEmit:
+    def test_writes_utf8_to_a_file(self, tmp_path):
+        # Windows' console default (cp1252) cannot encode this; writing the
+        # file explicitly as UTF-8 is what keeps a scheduled run from dying
+        # mid-dump on a transcript that contains an emoji.
+        out = tmp_path / "inv.json"
+        _emit({"records": ["reunión 📌 会議"]}, str(out))
+        assert json.loads(out.read_text(encoding="utf-8"))["records"] == ["reunión 📌 会議"]
+
+    def test_falls_back_to_stdout_when_no_output_given(self, capsys):
+        _emit({"count": 1}, None)
+        assert json.loads(capsys.readouterr().out)["count"] == 1

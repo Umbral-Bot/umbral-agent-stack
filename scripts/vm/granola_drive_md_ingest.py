@@ -251,6 +251,20 @@ def build_content(parsed: dict[str, Any]) -> str:
     return _CONTENT_HEADER
 
 
+def expected_notion_length(char_count: int) -> int:
+    """Length ``Longitud Notion`` should carry once ``char_count`` chars are stored.
+
+    The stored content is ``_CONTENT_HEADER`` + a blank line + the verbatim
+    transcript (see ``build_content``), so a page that already holds this exact
+    transcript reports ``len(header) + 2 + char_count``. Callers must compare
+    with a small tolerance: Notion trims a trailing newline, the +/-1
+    discrepancy documented in the P1.1b closeout.
+    """
+    if char_count <= 0:
+        return len(_CONTENT_HEADER)
+    return len(_CONTENT_HEADER) + 2 + int(char_count)
+
+
 def build_payload(
     parsed: dict[str, Any],
     *,
@@ -320,7 +334,24 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--root", help="Drive folder to walk (default: the P1.1b Granola folder)")
     parser.add_argument("--default-year", type=int, default=2026, help="Year to assume for 'Date: Mon Day' headers")
     parser.add_argument("--limit", type=int, default=0, help="Only process the first N files (0 = all)")
+    parser.add_argument(
+        "--output",
+        help=(
+            "Write the JSON to this path as UTF-8 instead of stdout. Needed on "
+            "Windows, whose default console encoding (cp1252) cannot encode the "
+            "emoji/CJK characters real transcripts contain."
+        ),
+    )
     return parser
+
+
+def _emit(document: dict[str, Any], output: str | None) -> None:
+    """Write ``document`` as JSON to ``output`` (UTF-8) or to stdout."""
+    text = json.dumps(document, ensure_ascii=False, indent=2)
+    if output:
+        Path(output).write_text(text, encoding="utf-8")
+        return
+    print(text)
 
 
 def main() -> int:
@@ -333,14 +364,14 @@ def main() -> int:
         payload = build_payload(
             parsed, relative_path=f"Granola/{path.name}", file_sha1=sha1_of_text(text)
         )
-        print(json.dumps({"parsed": parsed, "payload": payload}, ensure_ascii=False, indent=2))
+        _emit({"parsed": parsed, "payload": payload}, args.output)
         return 0
 
     root = Path(args.root or DEFAULT_DRIVE_ROOT)
     records = build_inventory(root, default_year=args.default_year)
     if args.limit and args.limit > 0:
         records = records[: args.limit]
-    print(json.dumps({"count": len(records), "records": records}, ensure_ascii=False, indent=2))
+    _emit({"count": len(records), "records": records}, args.output)
     return 0
 
 

@@ -35,9 +35,11 @@ versionada.
 | [`workflows/telegram-ok-publica-b1.json`](workflows/telegram-ok-publica-b1.json) | **B1 / N1** | **ACTIVO con bot TEST** desde 2026-07-25 (smoke PASS) | Telegram Trigger → doble allowlist (chat_id + from.id) → parse `ok publica <publication_id>` → `POST /enqueue` `web.publish_editorial_post` con `telegram_confirmed:true`. Sin match → reply corto y STOP. |
 | [`workflows/worker-health-cron-b3.json`](workflows/worker-health-cron-b3.json) | **B3 / N3-lite** | **ACTIVO con bot TEST** (smoke PASS previo) | Schedule (15 min) → `GET /health` del Worker → si falla tras reintentos, alerta Telegram a David. Nada más (sin scan HITL-2, ver N3b). |
 
-> **El sufijo `(INACTIVE)` en el *nombre* de ambos workflows quedó obsoleto** — se
-> conserva para no forzar otro ciclo import/publish/restart. El estado real es el
-> de la tabla de arriba y el campo `active` de cada JSON. Renombrar es follow-up.
+> **El sufijo `(INACTIVE)` en el *nombre* se sacó (2026-08-22, [PKG-MACRO-P5-T8-T1](../../docs/operations/t8-n8n-b1b3-rename-2026-08-22.md))** —
+> mentía: ambos estaban `active=true` desde antes. Rename vía la API REST
+> documentada de la instancia (la CLI no tiene verbo de rename), sin tocar
+> nodos, credenciales, cron ni webhook. `active` de cada JSON ahora coincide
+> con el live.
 
 Runbook de activación (WEBHOOK_URL/TLS, timezone, backup encryption key, alta de
 credenciales, import y GO por bot de test): [docs/ops/n8n-n0-foundations-runbook-2026-07-24.md](../../docs/ops/n8n-n0-foundations-runbook-2026-07-24.md).
@@ -46,15 +48,24 @@ credenciales, import y GO por bot de test): [docs/ops/n8n-n0-foundations-runbook
 
 1. **Naming**: `<borde-o-función>-<código>.json` en kebab-case, prefijo por
    borde cuando aplica (`telegram-ok-publica-b1`, `worker-health-cron-b3`).
-2. **Cómo exportar** (manual): en la UI del VPS, abrir el workflow →
-   menú `⋯` → **Download**. Reemplazar el `.json` acá y abrir PR. (Export
-   nocturno automatizado documentado en el runbook §"Export a git".)
-3. **`active` refleja el estado real** del workflow al momento del export. Este
-   pack ship-ea ambos con `active:false` a propósito (nada productivo hasta GO).
+2. **Cómo exportar**: manual, en la UI del VPS (abrir el workflow → menú `⋯`
+   → **Download**), o vía CLI (`n8n export:workflow --id=<id> --pretty`,
+   usado en [PKG-MACRO-P5-T8-T1](../../docs/operations/t8-n8n-b1b3-rename-2026-08-22.md)
+   por no requerir sesión de UI). Ambos producen JSON válido para este repo;
+   el formato de indentado difiere. Reemplazar el `.json` acá y abrir PR.
+   (Export nocturno automatizado documentado en el runbook §"Export a git".)
+3. **`active` refleja el estado real** del workflow al momento del export. El
+   pack N0 original (2026-07-24) shippeó ambos con `active:false` a propósito
+   (nada productivo hasta GO); desde entonces ambos pasaron a `active:true`
+   con bot TEST — ver tabla arriba.
 4. **Credenciales por NOMBRE, jamás por valor** (anti-patrón #6). En el JSON las
    credenciales aparecen como `{ "id": "...", "name": "<nombre legible>" }` —
    solo `id` + `name`, **cero secretos**. En import, un humano re-vincula la
-   credencial real. Los `id` de este pack son `REPLACE_ON_IMPORT`.
+   credencial real. Los `id` acá son siempre `REPLACE_ON_IMPORT` — un export
+   crudo de la CLI trae los `id` reales de la instancia; hay que volver a
+   sustituirlos antes de commitear (no son secretos, pero un import a otra
+   instancia con esos `id` reales apuntaría a una credencial equivocada o
+   inexistente en vez de forzar el relink humano).
 5. **URLs por variable de entorno** (anti-patrón #7): los nodos usan
    `={{ $env.WORKER_URL }}/...`, nunca `127.0.0.1:8088` hardcodeado. Ver
    `.env.example` y el runbook para las env vars de n8n.

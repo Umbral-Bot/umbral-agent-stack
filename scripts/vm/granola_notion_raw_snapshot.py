@@ -11,8 +11,9 @@ The per-page parsing is NOT reimplemented here. It delegates to
 ``worker/tasks/granola.py::_build_existing_raw_candidate`` — the same function
 the worker itself uses at execute time to decide what an existing page is — so
 the feeder's pre-classification cannot silently disagree with the authority.
-Only two display-level fields the worker does not expose are read directly off
-the page properties: ``Fuente`` and ``Longitud Notion``.
+The one extra field is ``fuente``, read with the worker's own
+``_extract_select_value`` so a column typed ``select``/``status``/``rich_text``
+all resolve the same way the write side wrote it.
 
 Pagination is mandatory: the DB crossed 100 pages during P1.1b, and a
 single un-paged query would silently under-report existing pages and make the
@@ -41,15 +42,20 @@ import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from worker.tasks.granola import _build_existing_raw_candidate  # noqa: E402
+from worker.tasks.granola import (  # noqa: E402
+    _build_existing_raw_candidate,
+    _extract_select_value,
+)
 
 NOTION_BASE_URL = "https://api.notion.com/v1"
-NOTION_API_VERSION = "2022-06-28"
+# Same default and same env override as worker/config.py, so an env-driven
+# version bump reaches this script too instead of silently leaving it behind.
+NOTION_API_VERSION = os.environ.get("NOTION_API_VERSION", "2022-06-28")
 TIMEOUT = 60.0
 PAGE_SIZE = 100
-# The DB held 134 pages on 2026-08-23 and grows by a handful a week. This is a
-# runaway-loop backstop, not an expected ceiling -- exceeding it raises.
-MAX_PAGES = 100
+# Counts REQUESTS, not rows: 100 requests x page_size 100 is 10k rows, against
+# a DB holding 134 on 2026-08-23. A runaway-cursor backstop, not a ceiling.
+MAX_REQUESTS = 100
 
 
 def resolve_notion_config(
@@ -78,27 +84,12 @@ def _headers(api_key: str) -> dict[str, str]:
     }
 
 
-def _select_name(properties: dict[str, Any], name: str) -> str:
-    prop = properties.get(name) or {}
-    select = prop.get("select") or {}
-    return str(select.get("name") or "")
-
-
-def _number(properties: dict[str, Any], name: str) -> int:
-    prop = properties.get(name) or {}
-    value = prop.get("number")
-    try:
-        return int(value or 0)
-    except (TypeError, ValueError):
-        return 0
-
-
 def build_record(page: dict[str, Any]) -> dict[str, Any]:
     """Map one raw Notion page object onto a gap-check ``notion_records`` item."""
     record = _build_existing_raw_candidate(page)
-    properties = page.get("properties") or {}
-    record["fuente"] = _select_name(properties, "Fuente") or _select_name(properties, "Source")
-    record["longitud_notion"] = _number(properties, "Longitud Notion")
+    # The worker's own reader, not a narrower copy: it also accepts the column
+    # typed as ``status`` or ``rich_text``, both of which the write side emits.
+    record["fuente"] = _extract_select_value(page, "Fuente", "Source")
     return record
 
 
@@ -111,7 +102,7 @@ def fetch_pages(
 ) -> list[dict[str, Any]]:
     """Page the whole DB and return every raw page object.
 
-    Raises if Notion errors out or if the cursor walk exceeds ``MAX_PAGES``
+    Raises if Notion errors out or if the cursor walk exceeds ``MAX_REQUESTS``
     requests -- a partial snapshot is worse than none, because the gap-check
     would read the missing pages as "not in Notion" and propose duplicates.
     """
@@ -123,9 +114,9 @@ def fetch_pages(
 
     try:
         while True:
-            if requests_made >= MAX_PAGES:
+            if requests_made >= MAX_REQUESTS:
                 raise RuntimeError(
-                    f"Notion pagination exceeded {MAX_PAGES} requests -- refusing to "
+                    f"Notion pagination exceeded {MAX_REQUESTS} requests -- refusing to "
                     "write a possibly truncated snapshot."
                 )
             body: dict[str, Any] = {"page_size": page_size}
@@ -148,7 +139,13 @@ def fetch_pages(
                 break
             cursor = data.get("next_cursor")
             if not cursor:
-                break
+                # has_more with no cursor: the walk cannot continue and the
+                # snapshot is short. Returning it would make the gap-check read
+                # the missing pages as "not in Notion" and propose duplicates.
+                raise RuntimeError(
+                    "Notion reported has_more with no next_cursor -- refusing to "
+                    "write a truncated snapshot."
+                )
     finally:
         if owns_client:
             client.close()

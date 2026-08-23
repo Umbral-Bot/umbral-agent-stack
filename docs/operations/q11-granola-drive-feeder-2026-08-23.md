@@ -67,7 +67,7 @@ sólo 3.600 caracteres (resumen AI); el archivo trae 29.877 verbatim.
 **96 skip** — 94 ya ingeridos y sin cambios + 2 que este pack rescató de un
 falso positivo (abajo).
 
-### Hallazgo: renombres en Drive generaban reescrituras diarias
+### Hallazgo: renombres en Drive reaparecían como update en cada corrida
 
 Dos archivos clasificaban `update_transcript` sin tener nada que actualizar:
 
@@ -76,15 +76,25 @@ Dos archivos clasificaban `update_transcript` sin tener nada que actualizar:
 - `Sesión de seguimiento WSP (2).md` — copia `(2)` de uno ya ingerido.
 
 Al cambiar el nombre cambia `shared_folder_path`, así que los tiers 1/2 (ruta +
-sha1) dejan de reconocerlos para siempre y caen a título+fecha, que sólo sabe
-decir "actualizá". En un one-shot eso costaba dos reescrituras; en un feeder
-diario costaría **dos reescrituras de cientos de bloques, todos los días**.
+sha1 juntos) dejan de reconocerlos para siempre y caen a título+fecha, que sólo
+sabe decir "actualizá". En un one-shot eso costaba dos ítems de más; en un feeder
+diario reaparecen **todos los días**.
 
-Se agregó un tier explícito: si la página emparejada por título+fecha exacta ya
-tiene `Longitud Notion` igual a lo que este feeder escribiría (±2, la tolerancia
-que P1.1b verificó en sus 95 escrituras), la acción es `skip` con
-`match_strategy=normalized_title_date_length_match`. Nunca aplica sobre un match
-por ruta con sha1 distinto — ahí el contenido cambió de verdad.
+Tier nuevo, `sha1_different_path`: **mismos bytes bajo otra ruta → `skip`**. El
+`sha1` es el del texto del archivo, que un renombre no cambia, así que identifica
+el caso de forma exacta — sin ventana de tolerancia y sin depender de ninguna
+propiedad de display. Una página escrita desde otra fuente (un resumen AI) no
+tiene `sha1`, así que este tier no puede saltearla nunca.
+
+> **Corrección sobre el costo.** La primera versión de este pack usaba
+> `Longitud Notion` como proxy de identidad y justificaba el tier diciendo que
+> sin él se reescribirían "cientos de bloques por día". Eso era falso:
+> `compare_metrics` devuelve `identical_hash_and_char_count` y
+> `decide_reconciliation` resuelve `noop` antes de tocar un solo bloque
+> (`worker/tasks/granola_finality.py`). El costo real es más chico y más
+> aburrido — dos round-trips desperdiciados por día y un reporte de gap que
+> miente sobre cuánto falta. El tier sigue valiendo la pena por eso, no por el
+> daño que yo había afirmado.
 
 ## Recurrencia
 
@@ -168,16 +178,43 @@ sigue siendo una decisión humana aparte
 | `scripts/vm/granola_drive_feeder.py` | **nuevo** — orquestador recurrente |
 | `scripts/vm/granola_notion_raw_snapshot.py` | **nuevo** — snapshot paginado de la DB raw |
 | `scripts/vm/register_granola_drive_feeder_task.ps1` | **nuevo** — registro de la Scheduled Task |
-| `scripts/list_granola_drive_ingest_gap.py` | tier `normalized_title_date_length_match` |
-| `scripts/vm/granola_drive_md_ingest.py` | `--output` (UTF-8) + `expected_notion_length()` |
+| `scripts/list_granola_drive_ingest_gap.py` | tier `sha1_different_path` |
+| `scripts/vm/granola_drive_md_ingest.py` | `--output` (UTF-8) + `resolve_meeting_date()` + prefijo de ruta derivado de la carpeta |
 | `scripts/vm/send_granola_drive_batch.py` | `post_task` conserva el body del error |
 
 `--output` no es cosmético: el dump a stdout revienta en Windows
 (`UnicodeEncodeError`, cp1252) apenas un transcript trae un emoji — con 108
-archivos reales, revienta. Una corrida agendada moría ahí.
+archivos reales, revienta. Una corrida agendada moría ahí. El feeder además
+fuerza UTF-8 en sus propios `stdout`/`stderr`, porque sus líneas de FAIL
+imprimen nombres de archivo acentuados.
 
-Tests: 40 nuevos (`tests/test_granola_drive_feeder.py`, más los agregados a los
-tests de ingest / gap / sender).
+### Lo que encontró el `/code-review`
+
+Siete ángulos en paralelo sobre el diff. Lo que cambió a raíz de eso:
+
+| Hallazgo | Corrección |
+|---|---|
+| `DEFAULT_YEAR = 2026` hardcodeado en un job **recurrente** | En enero 2027 estamparía 2026 en cada transcript, y título+fecha resolvería a la reunión del año pasado: sobreescritura, no alta. Ahora `resolve_meeting_date()` deriva el año del mtime del archivo, con rollback para reuniones de diciembre pegadas en enero |
+| El tier usaba longitud como proxy de identidad | Reemplazado por `sha1` exacto (arriba). Elimina de paso la dependencia de `Longitud Notion`, que el worker escribe como `number` **o** `rich_text` y bajo tres nombres distintos — cualquiera de esas variantes desactivaba el tier en silencio |
+| El tier no miraba `fuente` | Una página `granola_mcp` de longitud parecida quedaba `skip` para siempre y perdía el transcript. Con `sha1` no puede pasar: esas páginas no tienen `sha1` |
+| Import top-level rompió el CLI del gap-check | `python scripts/list_granola_drive_ingest_gap.py` moría con `ModuleNotFoundError`. El tier `sha1` no necesita ese import; el CLI volvió a andar |
+| La guarda fallaba **abierta** en `create` | `bool(result.get("matched_existing"))` leía "el worker no contestó" como "confirmado, no existe". Ahora una clave ausente es desacuerdo |
+| La guarda no miraba **qué** página emparejó el worker | Su ladder es más ancha que la del gap-check; podían resolver páginas distintas y el execute sobreescribía una que nadie eligió |
+| No se verificaba que el dry-run **fuera** dry-run | Si el worker no confirma `dry_run=true`, el POST #1 pudo ser una escritura y el #2 sería la segunda |
+| `main()` sin manejo de errores | `G:\` sin montar al arrancar dejaba traceback y **cero** reporte. Ahora siempre queda un `run-*.json`, y el reporte se flushea después de cada ítem |
+| Snapshot vacío = "creá todo" | Un snapshot vacío o con la forma equivocada ahora aborta |
+| Transcript que no parsea | Si Granola cambia la etiqueta `Transcript:`, un `.md` grande parsea a vacío y el update reemplazaría la página por 76 caracteres. Se excluye y se reporta |
+| Cap negativo = ilimitado | `--max-creates -1` habilitaba un drenaje completo desatendido. Se clampea |
+| Exit 1 por una guarda que funcionó | Un ítem "declined" ponía la tarea en rojo todos los días. Ahora sólo los errores reales fallan la corrida |
+| `written` contaba POSTs, no escrituras | Ahora excluye `noop`/`defer` |
+| Prefijo `Granola/` hardcodeado | Con `--root` apuntando a una copia, las claves de dedup colisionaban con las de producción. Se deriva del nombre de la carpeta |
+| `.ps1`: `-EnvFile` documentado pero inexistente | Eliminado; se documenta el mecanismo real y por qué `LogonType Interactive` es obligatorio (Drive monta `G:\` por sesión interactiva) |
+| `.ps1`: `-At '08:30'` + `-StartWhenAvailable` | Registrar a las 3pm disparaba una corrida `--execute` desatendida a los minutos. Ahora se ancla a la próxima ocurrencia |
+| Bodies de error a disco sin redactar | `_redact()` enmascara bearer tokens antes de que un error llegue al reporte o a la terminal |
+
+Tests: 87 nuevos (`tests/test_granola_drive_feeder.py`,
+`tests/test_granola_notion_raw_snapshot.py`, más los agregados a ingest / gap /
+sender).
 
 ## Pendiente
 

@@ -47,8 +47,8 @@ import argparse
 import hashlib
 import json
 import re
-import sys
 import unicodedata
+from datetime import date as _date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -109,6 +109,36 @@ def parse_meeting_date_header(value: str, *, default_year: int) -> str:
         return f"{default_year:04d}-{month:02d}-{day:02d}"
     except ValueError:
         return ""
+
+
+# A meeting cannot have happened meaningfully after the day the transcript was
+# pasted. A few days of slack absorbs Drive sync lag and clock skew.
+_FUTURE_DATE_SLACK_DAYS = 7
+
+
+def resolve_meeting_date(date_raw: str, *, pasted_on: _date) -> str:
+    """Parse a year-less ``Date: Mon Day`` header against the file's paste date.
+
+    Granola's plain-text export omits the year, so the year has to come from
+    somewhere else. A fixed constant is wrong for anything that runs more than
+    once: a recurring feeder carrying ``default_year=2026`` stamps 2026 onto a
+    transcript pasted in 2027, and title+date matching then points at LAST
+    year's page for the same recurring meeting -- an overwrite, not a create.
+
+    The file's own paste date is the signal we have. December meetings pasted
+    in January would land in the future under that year, so a date more than
+    ``_FUTURE_DATE_SLACK_DAYS`` ahead of the paste date rolls back one year.
+    """
+    parsed = parse_meeting_date_header(date_raw, default_year=pasted_on.year)
+    if not parsed:
+        return ""
+    try:
+        candidate = _date.fromisoformat(parsed)
+    except ValueError:
+        return ""
+    if (candidate - pasted_on).days > _FUTURE_DATE_SLACK_DAYS:
+        return parse_meeting_date_header(date_raw, default_year=pasted_on.year - 1)
+    return parsed
 
 
 def parse_participants(value: str) -> list[str]:
@@ -251,20 +281,6 @@ def build_content(parsed: dict[str, Any]) -> str:
     return _CONTENT_HEADER
 
 
-def expected_notion_length(char_count: int) -> int:
-    """Length ``Longitud Notion`` should carry once ``char_count`` chars are stored.
-
-    The stored content is ``_CONTENT_HEADER`` + a blank line + the verbatim
-    transcript (see ``build_content``), so a page that already holds this exact
-    transcript reports ``len(header) + 2 + char_count``. Callers must compare
-    with a small tolerance: Notion trims a trailing newline, the +/-1
-    discrepancy documented in the P1.1b closeout.
-    """
-    if char_count <= 0:
-        return len(_CONTENT_HEADER)
-    return len(_CONTENT_HEADER) + 2 + int(char_count)
-
-
 def build_payload(
     parsed: dict[str, Any],
     *,
@@ -303,19 +319,35 @@ def build_payload(
     return payload
 
 
-def build_inventory(root: Path, *, default_year: int) -> list[dict[str, Any]]:
-    """Walk ``root`` and return one parsed+payload-ready record per eligible file."""
+def build_inventory(root: Path, *, default_year: int | None = None) -> list[dict[str, Any]]:
+    """Walk ``root`` and return one parsed+payload-ready record per eligible file.
+
+    ``default_year=None`` (the default) resolves each file's year from its own
+    modification time -- see ``resolve_meeting_date``. Pass an explicit year
+    only to reproduce a historical run; a fixed year in a recurring job
+    misdates every transcript once the calendar rolls over.
+    """
     records: list[dict[str, Any]] = []
+    # The dedup key stored in Notion is derived from the folder name, not
+    # hardcoded: pointing --root at a copy ("Granola-backup") must not produce
+    # keys that collide with the production pages' shared_folder_path.
+    prefix = root.name or "Granola"
     for path in list_drive_transcript_files(root):
+        stat = path.stat()
         text = path.read_text(encoding="utf-8", errors="replace")
-        parsed = parse_drive_transcript_md(text, path.name, default_year=default_year)
-        relative_path = f"Granola/{path.name}"
+        if default_year is None:
+            pasted_on = datetime.fromtimestamp(stat.st_mtime).date()
+            parsed = parse_drive_transcript_md(text, path.name, default_year=pasted_on.year)
+            parsed["date"] = resolve_meeting_date(parsed["date_raw"], pasted_on=pasted_on)
+        else:
+            parsed = parse_drive_transcript_md(text, path.name, default_year=default_year)
+        relative_path = f"{prefix}/{path.name}"
         file_sha1 = sha1_of_text(text)
         records.append(
             {
                 "filename": path.name,
                 "relative_path": relative_path,
-                "size_bytes": path.stat().st_size,
+                "size_bytes": stat.st_size,
                 "sha1": file_sha1,
                 "parsed": parsed,
                 "payload": build_payload(
@@ -332,7 +364,15 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--input", help="Path to a single .md file to parse")
     parser.add_argument("--root", help="Drive folder to walk (default: the P1.1b Granola folder)")
-    parser.add_argument("--default-year", type=int, default=2026, help="Year to assume for 'Date: Mon Day' headers")
+    parser.add_argument(
+        "--default-year",
+        type=int,
+        default=None,
+        help=(
+            "Year to assume for 'Date: Mon Day' headers. Default: derive per file "
+            "from its modification time (correct across a year boundary)."
+        ),
+    )
     parser.add_argument("--limit", type=int, default=0, help="Only process the first N files (0 = all)")
     parser.add_argument(
         "--output",
@@ -360,9 +400,15 @@ def main() -> int:
     if args.input:
         path = Path(args.input)
         text = path.read_text(encoding="utf-8", errors="replace")
-        parsed = parse_drive_transcript_md(text, path.name, default_year=args.default_year)
+        pasted_on = datetime.fromtimestamp(path.stat().st_mtime).date()
+        year = args.default_year if args.default_year is not None else pasted_on.year
+        parsed = parse_drive_transcript_md(text, path.name, default_year=year)
+        if args.default_year is None:
+            parsed["date"] = resolve_meeting_date(parsed["date_raw"], pasted_on=pasted_on)
         payload = build_payload(
-            parsed, relative_path=f"Granola/{path.name}", file_sha1=sha1_of_text(text)
+            parsed,
+            relative_path=f"{path.parent.name or 'Granola'}/{path.name}",
+            file_sha1=sha1_of_text(text),
         )
         _emit({"parsed": parsed, "payload": payload}, args.output)
         return 0

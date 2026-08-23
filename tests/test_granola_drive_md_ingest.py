@@ -4,6 +4,7 @@ Tests for scripts/vm/granola_drive_md_ingest.py (P1.1b Drive transcript feeder).
 
 import json
 import textwrap
+from datetime import date
 
 import pytest
 
@@ -12,10 +13,10 @@ from scripts.vm.granola_drive_md_ingest import (
     build_content,
     build_inventory,
     build_payload,
-    expected_notion_length,
     list_drive_transcript_files,
     parse_drive_transcript_md,
     parse_meeting_date_header,
+    resolve_meeting_date,
     parse_participants,
     sha1_of_text,
 )
@@ -238,12 +239,16 @@ class TestBuildInventory:
         (tmp_path / "Indice_Transcripciones_Locales_2026-05-21.md").write_text(
             "x" * 200, encoding="utf-8"
         )
-        (tmp_path / "Comgrap Dynamo - Comgrap - Carcel.md").write_text(
+        # Named "Granola" on purpose: the relative_path prefix now follows the
+        # folder name, and "Granola/" is what the production pages carry.
+        root = tmp_path / "Granola"
+        root.mkdir()
+        (root / "Comgrap Dynamo - Comgrap - Carcel.md").write_text(
             SAMPLE_MD, encoding="utf-8"
         )
-        (tmp_path / "BIM Forum 3.md").write_text(SAMPLE_MD_NO_PARTICIPANTS, encoding="utf-8")
+        (root / "BIM Forum 3.md").write_text(SAMPLE_MD_NO_PARTICIPANTS, encoding="utf-8")
 
-        records = build_inventory(tmp_path, default_year=2026)
+        records = build_inventory(root, default_year=2026)
 
         assert len(records) == 2
         by_filename = {r["filename"]: r for r in records}
@@ -266,21 +271,6 @@ class TestSha1:
         assert sha1_of_text("abc") != sha1_of_text("abd")
 
 
-class TestExpectedNotionLength:
-    def test_matches_the_length_of_what_build_content_stores(self):
-        parsed = {"transcript": "Them: hola\nMe: chau"}
-        assert expected_notion_length(len(parsed["transcript"])) == len(build_content(parsed))
-
-    def test_empty_transcript_is_header_only(self):
-        assert expected_notion_length(0) == len(build_content({"transcript": ""}))
-
-    def test_negative_count_does_not_underflow(self):
-        assert expected_notion_length(-5) == expected_notion_length(0)
-
-    def test_grows_one_for_one_with_the_transcript(self):
-        assert expected_notion_length(1001) - expected_notion_length(1000) == 1
-
-
 class TestEmit:
     def test_writes_utf8_to_a_file(self, tmp_path):
         # Windows' console default (cp1252) cannot encode this; writing the
@@ -293,3 +283,48 @@ class TestEmit:
     def test_falls_back_to_stdout_when_no_output_given(self, capsys):
         _emit({"count": 1}, None)
         assert json.loads(capsys.readouterr().out)["count"] == 1
+
+
+class TestResolveMeetingDate:
+    """A recurring feeder cannot carry a hardcoded year.
+
+    Granola omits the year from its ``Date:`` header. P1.1b hardcoded 2026
+    because every file it touched was from 2026; a job that runs every day
+    stamps a stale year onto every transcript the moment the calendar rolls
+    over, and title+date matching then resolves to LAST year's page for the
+    same recurring meeting -- an overwrite, not a create.
+    """
+
+    def test_uses_the_year_the_file_was_pasted(self):
+        assert resolve_meeting_date("Mar 30", pasted_on=date(2027, 4, 2)) == "2027-03-30"
+
+    def test_rolls_back_a_december_meeting_pasted_in_january(self):
+        assert resolve_meeting_date("Dec 28", pasted_on=date(2027, 1, 4)) == "2026-12-28"
+
+    def test_tolerates_drive_sync_lag_of_a_few_days(self):
+        # Sync can stamp the file slightly before the header's own date.
+        assert resolve_meeting_date("Mar 30", pasted_on=date(2027, 3, 28)) == "2027-03-30"
+
+    def test_unparseable_header_stays_empty(self):
+        assert resolve_meeting_date("sometime last week", pasted_on=date(2027, 1, 4)) == ""
+
+    def test_empty_header_stays_empty(self):
+        assert resolve_meeting_date("", pasted_on=date(2027, 1, 4)) == ""
+
+
+class TestInventoryPathPrefix:
+    def test_prefix_comes_from_the_folder_not_a_constant(self, tmp_path):
+        # Pointing --root at a copy must not mint dedup keys that collide with
+        # the production pages' stored shared_folder_path.
+        backup = tmp_path / "Granola-backup"
+        backup.mkdir()
+        (backup / "BIM Forum 3.md").write_text(SAMPLE_MD_NO_PARTICIPANTS, encoding="utf-8")
+        record = build_inventory(backup, default_year=2026)[0]
+        assert record["relative_path"] == "Granola-backup/BIM Forum 3.md"
+        assert record["payload"]["shared_folder_path"] == "Granola-backup/BIM Forum 3.md"
+
+    def test_production_folder_keeps_the_historical_prefix(self, tmp_path):
+        prod = tmp_path / "Granola"
+        prod.mkdir()
+        (prod / "BIM Forum 3.md").write_text(SAMPLE_MD_NO_PARTICIPANTS, encoding="utf-8")
+        assert build_inventory(prod)[0]["relative_path"] == "Granola/BIM Forum 3.md"

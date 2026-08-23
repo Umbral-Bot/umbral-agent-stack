@@ -1,36 +1,33 @@
 """
 Tests for the recurring Drive->Notion Granola feeder (Q11-T1).
 
-Covers the three things the one-shot P1.1b flow never needed: per-run caps,
-the worker-verdict guard before any write, and the Notion snapshot pagination
-that a daily run depends on.
+Covers what the one-shot P1.1b flow never needed: per-run caps, the guard that
+must hold before any write, and the end-to-end ``main()`` wiring whose exit
+code is the Scheduled Task's only health signal.
 """
 
 import json
 
-import httpx
 import pytest
 
 from scripts.vm.granola_drive_feeder import (
+    _redact,
+    default_state_dir,
+    drop_unparsed_transcripts,
+    load_notion_records,
+    main,
     run_item,
     select_items,
     worker_verdict_agrees,
 )
-from scripts.vm.granola_notion_raw_snapshot import (
-    MAX_PAGES,
-    build_record,
-    build_snapshot,
-    fetch_pages,
-    resolve_notion_config,
-)
 
 
-def _item(relative_path, action="create"):
+def _item(relative_path, action="create", page_id=""):
     return {
         "relative_path": relative_path,
         "action": action,
         "match_strategy": "",
-        "matched_page": None,
+        "matched_page": {"page_id": page_id} if page_id else None,
         "payload": {"title": relative_path, "content": "x", "dry_run": True},
     }
 
@@ -49,7 +46,7 @@ class TestSelectItems:
         assert [i["action"] for i in selected] == ["create", "create", "update_transcript"]
         assert len(deferred) == 3
 
-    def test_preserves_order_so_a_backlog_drains_oldest_first(self):
+    def test_preserves_batch_order_so_the_backlog_drains_deterministically(self):
         batch = [_item(f"Granola/c{i}.md") for i in range(5)]
         selected, deferred = select_items(batch, max_creates=2, max_updates=0)
         assert [i["relative_path"] for i in selected] == ["Granola/c0.md", "Granola/c1.md"]
@@ -66,25 +63,61 @@ class TestSelectItems:
         assert len(deferred) == 2
 
     def test_zero_cap_selects_nothing(self):
-        batch = [_item("Granola/a.md")]
-        selected, deferred = select_items(batch, max_creates=0, max_updates=0)
+        selected, deferred = select_items([_item("Granola/a.md")], max_creates=0, max_updates=0)
         assert selected == []
         assert len(deferred) == 1
 
+    def test_a_negative_cap_is_clamped_not_read_as_unlimited(self):
+        """One stray -1 must not turn a bounded daily job into a backlog drain."""
+        batch = [_item(f"Granola/c{i}.md") for i in range(5)]
+        selected, deferred = select_items(batch, max_creates=-1, max_updates=-5)
+        assert selected == []
+        assert len(deferred) == 5
+
 
 class TestWorkerVerdict:
+    """The guard returns "" for agreement, or a reason string that blocks the write."""
+
     def test_create_agrees_when_worker_matched_nothing(self):
-        assert worker_verdict_agrees("create", {"matched_existing": False}) is True
+        assert worker_verdict_agrees("create", {"matched_existing": False}) == ""
 
     def test_create_disagrees_when_worker_found_a_page(self):
-        assert worker_verdict_agrees("create", {"matched_existing": True}) is False
+        assert worker_verdict_agrees("create", {"matched_existing": True})
+
+    def test_a_missing_key_blocks_a_create_instead_of_approving_it(self):
+        # bool(None) is False, so reading this with .get would turn "the worker
+        # never answered" into "confirmed, nothing exists" and write a duplicate.
+        assert "omitted matched_existing" in worker_verdict_agrees("create", {})
+
+    def test_a_missing_key_blocks_an_update_too(self):
+        assert "omitted matched_existing" in worker_verdict_agrees("update_transcript", {})
 
     def test_update_agrees_only_when_worker_matched(self):
-        assert worker_verdict_agrees("update_transcript", {"matched_existing": True}) is True
-        assert worker_verdict_agrees("update_transcript", {"matched_existing": False}) is False
+        assert worker_verdict_agrees("update_transcript", {"matched_existing": True}) == ""
+        assert worker_verdict_agrees("update_transcript", {"matched_existing": False})
+
+    def test_update_blocked_when_the_worker_resolved_a_different_page(self):
+        # The worker's ladder is wider than the gap-check's (granola_document_id,
+        # source_url, export_signature), so the two can land on different pages.
+        reason = worker_verdict_agrees(
+            "update_transcript",
+            {"matched_existing": True, "page_id": "other-page"},
+            expected_page_id="our-page",
+        )
+        assert "different page" in reason
+
+    def test_update_agrees_when_both_resolved_the_same_page(self):
+        assert (
+            worker_verdict_agrees(
+                "update_transcript",
+                {"matched_existing": True, "page_id": "p1"},
+                expected_page_id="p1",
+            )
+            == ""
+        )
 
     def test_unknown_action_never_agrees(self):
-        assert worker_verdict_agrees("skip", {"matched_existing": True}) is False
+        assert worker_verdict_agrees("skip", {"matched_existing": True})
 
 
 class _FakeWorker:
@@ -105,159 +138,310 @@ class _FakeWorker:
         return {"result": self.execute_result}
 
 
+def _dry(**overrides):
+    base = {"matched_existing": False, "reconciliation_action": "create", "dry_run": True}
+    base.update(overrides)
+    return base
+
+
 class TestRunItem:
     def test_dry_run_mode_never_sends_a_write(self, monkeypatch):
-        fake = _FakeWorker({"matched_existing": False, "reconciliation_action": "create"})
+        fake = _FakeWorker(_dry())
         monkeypatch.setattr("scripts.vm.granola_drive_feeder.post_task", fake)
         row = run_item(_item("Granola/a.md"), worker_url="u", worker_token="t", execute=False)
-        assert row["ok"] is True
+        assert row["error"] == ""
         assert row["executed"] is False
-        assert len(fake.calls) == 1
-        assert fake.calls[0]["dry_run"] is True
+        assert [c["dry_run"] for c in fake.calls] == [True]
 
     def test_execute_writes_after_a_matching_dry_run(self, monkeypatch):
         fake = _FakeWorker(
-            {"matched_existing": False, "reconciliation_action": "create"},
+            _dry(),
             {"page_id": "p1", "url": "https://notion.so/p1", "reconciliation_action": "create"},
         )
         monkeypatch.setattr("scripts.vm.granola_drive_feeder.post_task", fake)
         row = run_item(_item("Granola/a.md"), worker_url="u", worker_token="t", execute=True)
         assert row["executed"] is True
+        assert row["written"] is True
         assert row["page_id"] == "p1"
         assert [c["dry_run"] for c in fake.calls] == [True, False]
 
     def test_create_whose_dry_run_matched_an_existing_page_is_not_written(self, monkeypatch):
-        fake = _FakeWorker({"matched_existing": True, "reconciliation_action": "reconcile"})
+        fake = _FakeWorker(_dry(matched_existing=True, reconciliation_action="reconcile"))
         monkeypatch.setattr("scripts.vm.granola_drive_feeder.post_task", fake)
         row = run_item(_item("Granola/a.md"), worker_url="u", worker_token="t", execute=True)
-        assert row["ok"] is False
+        assert row["declined"]
         assert row["executed"] is False
-        assert "disagrees" in row["error"]
         # The guard has to stop BEFORE the write, not report it afterwards.
         assert len(fake.calls) == 1
+
+    def test_a_noop_verdict_skips_the_pointless_second_round_trip(self, monkeypatch):
+        fake = _FakeWorker(_dry(matched_existing=True, reconciliation_action="noop"))
+        monkeypatch.setattr("scripts.vm.granola_drive_feeder.post_task", fake)
+        row = run_item(
+            _item("Granola/a.md", "update_transcript", page_id="p1"),
+            worker_url="u",
+            worker_token="t",
+            execute=True,
+        )
+        assert "noop" in row["declined"]
+        assert len(fake.calls) == 1
+
+    def test_refuses_to_continue_if_the_worker_did_not_honour_dry_run(self, monkeypatch):
+        # If POST #1 was not a dry run it may already have written; POST #2
+        # would then be a second write.
+        fake = _FakeWorker(_dry(dry_run=False))
+        monkeypatch.setattr("scripts.vm.granola_drive_feeder.post_task", fake)
+        row = run_item(_item("Granola/a.md"), worker_url="u", worker_token="t", execute=True)
+        assert "dry_run" in row["error"]
+        assert len(fake.calls) == 1
+
+    def test_a_worker_noop_on_execute_is_not_counted_as_written(self, monkeypatch):
+        fake = _FakeWorker(_dry(), {"page_id": "p1", "reconciliation_action": "noop"})
+        monkeypatch.setattr("scripts.vm.granola_drive_feeder.post_task", fake)
+        row = run_item(_item("Granola/a.md"), worker_url="u", worker_token="t", execute=True)
+        assert row["executed"] is True
+        assert row["written"] is False
 
     def test_a_failing_dry_run_is_reported_not_raised(self, monkeypatch):
         fake = _FakeWorker({}, raise_on=1)
         monkeypatch.setattr("scripts.vm.granola_drive_feeder.post_task", fake)
         row = run_item(_item("Granola/a.md"), worker_url="u", worker_token="t", execute=True)
-        assert row["ok"] is False
         assert "dry-run failed" in row["error"]
 
     def test_a_failing_write_is_reported_not_raised(self, monkeypatch):
-        fake = _FakeWorker({"matched_existing": False}, raise_on=2)
+        fake = _FakeWorker(_dry(), raise_on=2)
         monkeypatch.setattr("scripts.vm.granola_drive_feeder.post_task", fake)
         row = run_item(_item("Granola/a.md"), worker_url="u", worker_token="t", execute=True)
-        assert row["ok"] is False
-        assert row["executed"] is False
         assert "execute failed" in row["error"]
+        assert row["executed"] is False
 
 
-def _notion_page(page_id, title, date, *, fuente="granola_drive_md", length=100, traceability=""):
-    return {
-        "id": page_id,
-        "url": f"https://notion.so/{page_id}",
-        "properties": {
-            "Nombre": {"type": "title", "title": [{"plain_text": title}]},
-            "Fecha": {"type": "date", "date": {"start": date}},
-            "Fuente": {"type": "select", "select": {"name": fuente}},
-            "Longitud Notion": {"type": "number", "number": length},
-            "Trazabilidad": {"type": "rich_text", "rich_text": [{"plain_text": traceability}]},
-        },
-    }
+class TestRedact:
+    def test_masks_a_bearer_token(self):
+        assert "secretvalue" not in _redact("Authorization: Bearer secretvalue123")
+
+    def test_masks_a_labelled_token(self):
+        assert "abcdefgh12345" not in _redact('{"token": "abcdefgh12345"}')
+
+    def test_leaves_an_ordinary_error_message_intact(self):
+        message = "Notion API error (401) API token is invalid."
+        assert _redact(message) == message
+
+    def test_handles_empty_input(self):
+        assert _redact("") == ""
 
 
-class TestSnapshot:
-    def test_record_carries_the_fields_the_gap_check_reads(self):
-        page = _notion_page(
-            "p1",
-            "BIM Forum",
-            "2026-07-13",
-            fuente="granola_mcp",
-            length=3600,
-            traceability="shared_folder_path=Granola/BIM Forum.md\nsha1=abc",
+class TestUnparsedTranscriptGuard:
+    """An empty transcript must never be sent as an update.
+
+    The parser only recognizes a line that is exactly ``Transcript:``. If
+    Granola relabels its export, a large .md parses to an empty body and the
+    payload becomes a single 76-char header -- which, sent as an update the
+    worker matches, replaces a full meeting page with that header.
+    """
+
+    def test_drops_an_item_whose_transcript_did_not_parse(self):
+        selected = [_item("Granola/a.md", "update_transcript")]
+        drive = {"Granola/a.md": {"parsed": {"char_count": 0}}}
+        ok, unparsed = drop_unparsed_transcripts(selected, drive)
+        assert ok == []
+        assert len(unparsed) == 1
+
+    def test_keeps_an_item_with_a_real_transcript(self):
+        selected = [_item("Granola/a.md", "update_transcript")]
+        drive = {"Granola/a.md": {"parsed": {"char_count": 4200}}}
+        ok, unparsed = drop_unparsed_transcripts(selected, drive)
+        assert len(ok) == 1
+        assert unparsed == []
+
+    def test_an_item_missing_from_the_inventory_is_dropped_not_sent(self):
+        ok, unparsed = drop_unparsed_transcripts([_item("Granola/ghost.md")], {})
+        assert ok == []
+        assert len(unparsed) == 1
+
+
+class TestLoadNotionRecords:
+    def test_reads_a_valid_snapshot(self, tmp_path):
+        path = tmp_path / "snap.json"
+        path.write_text(json.dumps({"records": [{"page_id": "p1"}]}), encoding="utf-8")
+        assert load_notion_records(str(path)) == [{"page_id": "p1"}]
+
+    def test_tolerates_a_utf8_bom(self, tmp_path):
+        # PowerShell 5.1's Out-File -Encoding utf8 writes one.
+        path = tmp_path / "snap.json"
+        path.write_text(json.dumps({"records": [{"page_id": "p1"}]}), encoding="utf-8-sig")
+        assert load_notion_records(str(path)) == [{"page_id": "p1"}]
+
+    def test_an_empty_snapshot_is_refused_not_read_as_create_everything(self, tmp_path):
+        path = tmp_path / "snap.json"
+        path.write_text(json.dumps({"records": []}), encoding="utf-8")
+        with pytest.raises(RuntimeError, match="no records"):
+            load_notion_records(str(path))
+
+    def test_a_wrong_shaped_file_is_refused(self, tmp_path):
+        path = tmp_path / "snap.json"
+        path.write_text(json.dumps({"pages": [{"page_id": "p1"}]}), encoding="utf-8")
+        with pytest.raises(RuntimeError, match="not a snapshot"):
+            load_notion_records(str(path))
+
+    def test_a_bare_list_is_refused_rather_than_crashing(self, tmp_path):
+        path = tmp_path / "snap.json"
+        path.write_text(json.dumps([{"page_id": "p1"}]), encoding="utf-8")
+        with pytest.raises(RuntimeError, match="not a snapshot"):
+            load_notion_records(str(path))
+
+
+class TestDefaultStateDir:
+    def test_prefers_localappdata(self, monkeypatch):
+        monkeypatch.setenv("LOCALAPPDATA", r"C:\Users\x\AppData\Local")
+        assert "AppData" in str(default_state_dir())
+
+    def test_falls_back_to_the_windows_temp_names_not_posix_tmpdir(self, monkeypatch):
+        monkeypatch.delenv("LOCALAPPDATA", raising=False)
+        monkeypatch.delenv("TMPDIR", raising=False)
+        monkeypatch.setenv("TEMP", r"C:\Temp")
+        # Falling through to "." would drop run reports into the process CWD,
+        # which the Scheduled Task sets to the repo checkout.
+        assert str(default_state_dir()).startswith(r"C:\Temp")
+
+
+SAMPLE_MD = """Meeting Title: Reunion de prueba
+Date: Mar 30
+Meeting participants: David, Otro
+
+Transcript:
+
+Them: hola
+Me: chau
+"""
+
+
+def _write_drive(tmp_path):
+    root = tmp_path / "Granola"
+    root.mkdir()
+    (root / "Reunion de prueba.md").write_text(SAMPLE_MD + "x" * 200, encoding="utf-8")
+    return root
+
+
+class TestMain:
+    """``main()``'s exit code is the Scheduled Task's only health signal."""
+
+    def _argv(self, monkeypatch, *args):
+        monkeypatch.setattr("sys.argv", ["granola_drive_feeder.py", *args])
+
+    def test_offline_run_reports_the_gap_and_exits_clean(self, tmp_path, monkeypatch):
+        root = _write_drive(tmp_path)
+        snap = tmp_path / "snap.json"
+        snap.write_text(
+            json.dumps({"records": [{"page_id": "p1", "normalized_title": "otra", "date": "2020-01-01"}]}),
+            encoding="utf-8",
         )
-        record = build_record(page)
-        assert record["page_id"] == "p1"
-        assert record["normalized_title"] == "bim forum"
-        assert record["date"] == "2026-07-13"
-        assert record["fuente"] == "granola_mcp"
-        assert record["longitud_notion"] == 3600
-        assert record["shared_folder_path"] == "Granola/BIM Forum.md"
-        assert record["sha1"] == "abc"
+        state = tmp_path / "state"
+        self._argv(
+            monkeypatch,
+            "--root", str(root),
+            "--notion-pages", str(snap),
+            "--skip-worker",
+            "--state-dir", str(state),
+        )
+        assert main() == 0
+        reports = list(state.glob("run-*.json"))
+        assert len(reports) == 1
+        report = json.loads(reports[0].read_text(encoding="utf-8"))
+        assert report["drive_files"] == 1
+        assert report["summary"]["create"] == 1
+        assert report["fatal_error"] == ""
 
-    def test_missing_length_becomes_zero_not_none(self):
-        page = _notion_page("p1", "X", "2026-01-01")
-        page["properties"]["Longitud Notion"]["number"] = None
-        assert build_record(page)["longitud_notion"] == 0
+    def test_a_missing_drive_root_still_leaves_a_run_report(self, tmp_path, monkeypatch):
+        # Google Drive mounts G:\ lazily; a task firing at logon can beat it.
+        # Without a report the operator sees only Task Scheduler's 0x1.
+        state = tmp_path / "state"
+        self._argv(
+            monkeypatch,
+            "--root", str(tmp_path / "does-not-exist"),
+            "--skip-worker",
+            "--state-dir", str(state),
+        )
+        assert main() == 1
+        report = json.loads(next(state.glob("run-*.json")).read_text(encoding="utf-8"))
+        assert "FileNotFoundError" in report["fatal_error"]
 
-    def test_snapshot_shape_matches_the_gap_check_contract(self):
-        snapshot = build_snapshot([_notion_page("p1", "X", "2026-01-01")])
-        assert snapshot["count"] == 1
-        assert isinstance(snapshot["records"], list)
-        json.dumps(snapshot)  # must stay serializable
+    def test_an_empty_snapshot_aborts_instead_of_creating_everything(self, tmp_path, monkeypatch):
+        root = _write_drive(tmp_path)
+        snap = tmp_path / "snap.json"
+        snap.write_text(json.dumps({"records": []}), encoding="utf-8")
+        state = tmp_path / "state"
+        self._argv(
+            monkeypatch,
+            "--root", str(root),
+            "--notion-pages", str(snap),
+            "--skip-worker",
+            "--state-dir", str(state),
+        )
+        assert main() == 1
+        report = json.loads(next(state.glob("run-*.json")).read_text(encoding="utf-8"))
+        assert "no records" in report["fatal_error"]
 
-    def test_fetch_pages_follows_the_cursor_to_the_end(self):
-        batches = [
-            {"results": [_notion_page("p1", "A", "2026-01-01")], "has_more": True, "next_cursor": "c1"},
-            {"results": [_notion_page("p2", "B", "2026-01-02")], "has_more": False},
-        ]
-        seen_cursors = []
+    def test_a_declined_item_does_not_fail_the_run(self, tmp_path, monkeypatch):
+        # A permanently red Scheduled Task trains its operator to ignore it.
+        root = _write_drive(tmp_path)
+        snap = tmp_path / "snap.json"
+        snap.write_text(json.dumps({"records": [{"page_id": "p1"}]}), encoding="utf-8")
+        state = tmp_path / "state"
+        fake = _FakeWorker(_dry(matched_existing=True, reconciliation_action="reconcile"))
+        monkeypatch.setattr("scripts.vm.granola_drive_feeder.post_task", fake)
+        monkeypatch.setenv("WORKER_URL", "http://worker")
+        monkeypatch.setenv("WORKER_TOKEN", "t")
+        self._argv(
+            monkeypatch,
+            "--root", str(root),
+            "--notion-pages", str(snap),
+            "--state-dir", str(state),
+        )
+        assert main() == 0
+        report = json.loads(next(state.glob("run-*.json")).read_text(encoding="utf-8"))
+        assert report["results"][0]["declined"]
+        assert report["results"][0]["executed"] is False
 
-        def handler(request):
-            body = json.loads(request.content)
-            seen_cursors.append(body.get("start_cursor"))
-            return httpx.Response(200, json=batches[len(seen_cursors) - 1])
+    def test_a_worker_error_fails_the_run(self, tmp_path, monkeypatch):
+        root = _write_drive(tmp_path)
+        snap = tmp_path / "snap.json"
+        snap.write_text(json.dumps({"records": [{"page_id": "p1"}]}), encoding="utf-8")
+        state = tmp_path / "state"
+        monkeypatch.setattr(
+            "scripts.vm.granola_drive_feeder.post_task", _FakeWorker({}, raise_on=1)
+        )
+        monkeypatch.setenv("WORKER_URL", "http://worker")
+        monkeypatch.setenv("WORKER_TOKEN", "t")
+        self._argv(
+            monkeypatch,
+            "--root", str(root),
+            "--notion-pages", str(snap),
+            "--state-dir", str(state),
+        )
+        assert main() == 1
 
-        client = httpx.Client(transport=httpx.MockTransport(handler))
-        pages = fetch_pages("key", "db", client=client)
-        assert [p["id"] for p in pages] == ["p1", "p2"]
-        assert seen_cursors == [None, "c1"]
+    def test_report_is_flushed_before_the_worker_loop(self, tmp_path, monkeypatch):
+        """A run killed mid-loop must not take the classification with it."""
+        root = _write_drive(tmp_path)
+        snap = tmp_path / "snap.json"
+        snap.write_text(json.dumps({"records": [{"page_id": "p1"}]}), encoding="utf-8")
+        state = tmp_path / "state"
 
-    def test_fetch_pages_raises_on_a_notion_error_instead_of_returning_partial(self):
-        def handler(request):
-            return httpx.Response(401, text='{"code":"unauthorized"}')
+        seen = {}
 
-        client = httpx.Client(transport=httpx.MockTransport(handler))
-        with pytest.raises(RuntimeError, match="401"):
-            fetch_pages("key", "db", client=client)
+        def explode(url, token, payload):
+            seen["report_existed"] = any(state.glob("run-*.json"))
+            raise RuntimeError("killed")
 
-    def test_fetch_pages_refuses_an_endless_cursor_walk(self):
-        def handler(request):
-            return httpx.Response(200, json={"results": [], "has_more": True, "next_cursor": "c"})
-
-        client = httpx.Client(transport=httpx.MockTransport(handler))
-        with pytest.raises(RuntimeError, match="pagination exceeded"):
-            fetch_pages("key", "db", client=client)
-        assert MAX_PAGES > 0
-
-    def test_stops_when_has_more_is_true_but_no_cursor_is_given(self):
-        def handler(request):
-            return httpx.Response(200, json={"results": [], "has_more": True})
-
-        client = httpx.Client(transport=httpx.MockTransport(handler))
-        assert fetch_pages("key", "db", client=client) == []
-
-
-class TestResolveNotionConfig:
-    def test_reads_env_when_no_args(self, monkeypatch):
-        monkeypatch.setenv("NOTION_API_KEY", "k")
-        monkeypatch.setenv("NOTION_GRANOLA_DB_ID", "d")
-        assert resolve_notion_config() == ("k", "d")
-
-    def test_explicit_args_win_over_env(self, monkeypatch):
-        monkeypatch.setenv("NOTION_API_KEY", "k")
-        monkeypatch.setenv("NOTION_GRANOLA_DB_ID", "d")
-        assert resolve_notion_config("k2", "d2") == ("k2", "d2")
-
-    def test_missing_key_fails_loud(self, monkeypatch):
-        monkeypatch.delenv("NOTION_API_KEY", raising=False)
-        monkeypatch.delenv("NOTION_TOKEN", raising=False)
-        monkeypatch.setenv("NOTION_GRANOLA_DB_ID", "d")
-        with pytest.raises(RuntimeError, match="NOTION_API_KEY"):
-            resolve_notion_config()
-
-    def test_missing_database_id_fails_loud(self, monkeypatch):
-        monkeypatch.setenv("NOTION_API_KEY", "k")
-        monkeypatch.delenv("NOTION_GRANOLA_DB_ID", raising=False)
-        with pytest.raises(RuntimeError, match="NOTION_GRANOLA_DB_ID"):
-            resolve_notion_config()
+        monkeypatch.setattr("scripts.vm.granola_drive_feeder.post_task", explode)
+        monkeypatch.setenv("WORKER_URL", "http://worker")
+        monkeypatch.setenv("WORKER_TOKEN", "t")
+        self._argv(
+            monkeypatch,
+            "--root", str(root),
+            "--notion-pages", str(snap),
+            "--state-dir", str(state),
+        )
+        main()
+        assert seen["report_existed"] is True

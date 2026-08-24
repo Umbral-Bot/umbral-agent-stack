@@ -13,11 +13,13 @@ import pytest
 from scripts.vm.granola_drive_feeder import (
     _redact,
     default_state_dir,
+    drop_excluded,
     drop_unparsed_transcripts,
     load_notion_records,
     main,
     run_item,
     select_items,
+    transcript_shrink_reason,
     worker_verdict_agrees,
 )
 
@@ -214,6 +216,243 @@ class TestRunItem:
         row = run_item(_item("Granola/a.md"), worker_url="u", worker_token="t", execute=True)
         assert "execute failed" in row["error"]
         assert row["executed"] is False
+
+
+def _recon(previous_chars, new_chars):
+    """A dry-run reconciliation block carrying the two lengths that matter."""
+    return {
+        "previous_metrics": {"char_count": previous_chars},
+        "new_metrics": {"char_count": new_chars},
+    }
+
+
+class TestTranscriptShrinkReason:
+    """An update may grow a page or leave it alone. It may not gut it.
+
+    ``replace_blocks_in_page`` deletes every existing block before writing the
+    new ones, and ``decide_reconciliation`` calls any metric difference
+    "reconcile" -- shorter or longer alike. Nothing under this function refuses
+    a shrink, so this is where a summary landing on a full transcript stops.
+    """
+
+    def test_a_create_is_never_blocked(self):
+        # A create has no page to overwrite, whatever the metrics say.
+        assert transcript_shrink_reason("create", {"reconciliation": _recon(30000, 500)}) == ""
+
+    def test_growth_passes(self):
+        # The one real update in the Q11 backlog: an AI summary page (3,600
+        # chars) replaced by the 29,877-char verbatim transcript.
+        assert transcript_shrink_reason("update_transcript", {"reconciliation": _recon(3600, 29877)}) == ""
+
+    def test_an_identical_length_passes(self):
+        assert transcript_shrink_reason("update_transcript", {"reconciliation": _recon(29877, 29877)}) == ""
+
+    def test_a_small_shrink_inside_the_tolerance_passes(self):
+        # A re-paste that normalizes whitespace must not need a human.
+        assert transcript_shrink_reason("update_transcript", {"reconciliation": _recon(10000, 9500)}) == ""
+
+    def test_a_summary_replacing_a_transcript_is_blocked(self):
+        reason = transcript_shrink_reason("update_transcript", {"reconciliation": _recon(29877, 3600)})
+        assert "29877" in reason and "3600" in reason
+
+    def test_a_shrink_just_past_the_tolerance_is_blocked(self):
+        assert transcript_shrink_reason("update_transcript", {"reconciliation": _recon(10000, 8999)})
+
+    def test_missing_reconciliation_is_a_refusal_not_a_pass(self):
+        # Fail-open here loses a transcript, so an absent block blocks.
+        assert transcript_shrink_reason("update_transcript", {})
+
+    def test_missing_metrics_are_a_refusal_not_a_pass(self):
+        assert transcript_shrink_reason("update_transcript", {"reconciliation": {}})
+
+    def test_a_non_numeric_char_count_is_a_refusal(self):
+        result = {"reconciliation": {"previous_metrics": {"char_count": "many"}, "new_metrics": {"char_count": 10}}}
+        assert transcript_shrink_reason("update_transcript", result)
+
+    def test_a_page_with_no_recorded_length_cannot_shrink(self):
+        # previous=0 means there is nothing to lose, not "shrink to zero".
+        assert transcript_shrink_reason("update_transcript", {"reconciliation": _recon(0, 500)}) == ""
+
+    def test_the_tolerance_is_configurable(self):
+        result = {"reconciliation": _recon(10000, 7000)}
+        assert transcript_shrink_reason("update_transcript", result, tolerance=0.5) == ""
+        assert transcript_shrink_reason("update_transcript", result, tolerance=0.0)
+
+
+class TestShrinkGuardContractWithTheWorker:
+    """The guard reads a shape the worker owns. Pin the seam, not a mock of it.
+
+    ``transcript_shrink_reason`` reaches into
+    ``reconciliation.previous_metrics.char_count`` -- keys produced by
+    ``worker.tasks.granola_finality.decide_reconciliation`` and forwarded
+    verbatim by ``granola.process_transcript``'s dry-run branch. If those keys
+    are ever renamed, every hand-written ``_recon()`` above keeps passing while
+    the live guard starts declining every update as "omitted metrics". So this
+    test builds the dict with the worker's own function.
+    """
+
+    def _decision(self, previous_chars, new_content):
+        from worker.tasks.granola_finality import decide_reconciliation
+
+        return decide_reconciliation(
+            existing={"char_count": previous_chars, "content_hash": "old"},
+            new_content=new_content,
+            source_updated_at="",
+        ).as_dict()
+
+    def test_a_real_decision_blocks_a_real_shrink(self):
+        decision = self._decision(30000, "Them: resumen corto.")
+        reason = transcript_shrink_reason("update_transcript", {"reconciliation": decision})
+        assert "30000" in reason
+
+    def test_a_real_decision_lets_a_real_growth_through(self):
+        decision = self._decision(3600, "Them: " + "palabra " * 5000)
+        assert transcript_shrink_reason("update_transcript", {"reconciliation": decision}) == ""
+
+
+class TestRunItemShrinkGuard:
+    def _shrinking_update(self):
+        return _item("Granola/a.md", "update_transcript", page_id="p1")
+
+    def _dry_shrink(self):
+        return _dry(
+            matched_existing=True,
+            reconciliation_action="reconcile",
+            reconciliation=_recon(29877, 3600),
+        )
+
+    def test_a_shrinking_update_is_declined_before_the_write(self, monkeypatch):
+        fake = _FakeWorker(self._dry_shrink())
+        monkeypatch.setattr("scripts.vm.granola_drive_feeder.post_task", fake)
+        row = run_item(self._shrinking_update(), worker_url="u", worker_token="t", execute=True)
+        assert "shrink" in row["declined"]
+        assert row["written"] is False
+        # The guard has to stop BEFORE the write, not report it afterwards.
+        assert len(fake.calls) == 1
+
+    def test_allow_shrink_lets_an_operator_override_it(self, monkeypatch):
+        fake = _FakeWorker(
+            self._dry_shrink(),
+            {"page_id": "p1", "reconciliation_action": "reconcile"},
+        )
+        monkeypatch.setattr("scripts.vm.granola_drive_feeder.post_task", fake)
+        row = run_item(
+            self._shrinking_update(),
+            worker_url="u",
+            worker_token="t",
+            execute=True,
+            allow_shrink=True,
+        )
+        assert row["declined"] == ""
+        assert row["written"] is True
+        assert len(fake.calls) == 2
+
+    def test_a_growing_update_still_writes(self, monkeypatch):
+        fake = _FakeWorker(
+            _dry(
+                matched_existing=True,
+                reconciliation_action="reconcile",
+                reconciliation=_recon(3600, 29877),
+            ),
+            {"page_id": "p1", "reconciliation_action": "reconcile"},
+        )
+        monkeypatch.setattr("scripts.vm.granola_drive_feeder.post_task", fake)
+        row = run_item(self._shrinking_update(), worker_url="u", worker_token="t", execute=True)
+        assert row["declined"] == ""
+        assert row["written"] is True
+
+    def test_a_create_is_unaffected_by_the_guard(self, monkeypatch):
+        fake = _FakeWorker(
+            _dry(reconciliation=_recon(99999, 10)),
+            {"page_id": "p1", "reconciliation_action": "create"},
+        )
+        monkeypatch.setattr("scripts.vm.granola_drive_feeder.post_task", fake)
+        row = run_item(_item("Granola/a.md"), worker_url="u", worker_token="t", execute=True)
+        assert row["declined"] == ""
+        assert row["written"] is True
+
+    def test_the_compared_lengths_land_on_the_row(self, monkeypatch):
+        fake = _FakeWorker(
+            _dry(matched_existing=True, reconciliation_action="reconcile", reconciliation=_recon(3600, 29877)),
+            {"page_id": "p1", "reconciliation_action": "reconcile"},
+        )
+        monkeypatch.setattr("scripts.vm.granola_drive_feeder.post_task", fake)
+        row = run_item(self._shrinking_update(), worker_url="u", worker_token="t", execute=True)
+        assert row["dry_run_previous_chars"] == 3600
+        assert row["dry_run_new_chars"] == 29877
+
+    def test_an_unverifiable_comparison_is_visible_in_the_row(self, monkeypatch):
+        """A legacy page with no Trazabilidad reports 0, and the write proceeds.
+
+        Refusing it would block the pipeline's whole purpose -- attaching a
+        verbatim transcript to a page that only holds an AI summary -- so the
+        run report has to show the 0 instead of the guard hiding it.
+        """
+        fake = _FakeWorker(
+            _dry(matched_existing=True, reconciliation_action="reconcile", reconciliation=_recon(0, 29877)),
+            {"page_id": "p1", "reconciliation_action": "reconcile"},
+        )
+        monkeypatch.setattr("scripts.vm.granola_drive_feeder.post_task", fake)
+        row = run_item(self._shrinking_update(), worker_url="u", worker_token="t", execute=True)
+        assert row["declined"] == ""
+        assert row["written"] is True
+        assert row["dry_run_previous_chars"] == 0
+
+    def test_a_dry_run_pass_is_also_blocked_so_the_report_shows_it(self, monkeypatch):
+        # Without --execute the item would never be written anyway, but the run
+        # report is the only place David sees WHY -- so it must say "shrink",
+        # not stay silent until the day someone passes --execute.
+        fake = _FakeWorker(self._dry_shrink())
+        monkeypatch.setattr("scripts.vm.granola_drive_feeder.post_task", fake)
+        row = run_item(self._shrinking_update(), worker_url="u", worker_token="t", execute=False)
+        assert "shrink" in row["declined"]
+
+
+class TestDropExcluded:
+    """An operator holding one file back for one run -- listed, never silent."""
+
+    def test_matches_a_bare_filename(self):
+        selected = [_item("Granola/a.md"), _item("Granola/b.md")]
+        ok, held = drop_excluded(selected, {"a.md"})
+        assert [i["relative_path"] for i in ok] == ["Granola/b.md"]
+        assert [i["relative_path"] for i in held] == ["Granola/a.md"]
+
+    def test_matches_the_full_relative_path(self):
+        ok, held = drop_excluded([_item("Granola/a.md")], {"Granola/a.md"})
+        assert ok == []
+        assert len(held) == 1
+
+    def test_an_empty_exclusion_set_changes_nothing(self):
+        selected = [_item("Granola/a.md"), _item("Granola/b.md")]
+        ok, held = drop_excluded(selected, set())
+        assert len(ok) == 2
+        assert held == []
+
+    def test_an_exclusion_that_matches_nothing_is_harmless(self):
+        ok, held = drop_excluded([_item("Granola/a.md")], {"ghost.md"})
+        assert len(ok) == 1
+        assert held == []
+
+    def test_an_excluded_item_does_not_spend_a_cap_slot(self):
+        """Order matters: filter, then cap.
+
+        Capping first would let a held-back file consume one of the run's ten
+        create slots and push a perfectly good transcript into tomorrow.
+        """
+        batch = [_item(f"Granola/c{i}.md") for i in range(11)]
+        batch, held = drop_excluded(batch, {"c3.md"})
+        selected, deferred = select_items(batch, max_creates=10, max_updates=10)
+        assert len(held) == 1
+        assert len(selected) == 10
+        assert deferred == []
+        assert "Granola/c3.md" not in [i["relative_path"] for i in selected]
+
+    def test_a_name_with_accents_and_spaces_matches(self):
+        # Every real Granola filename looks like this.
+        name = "Granola/Reunión Post konstruedu con Rolando.md"
+        ok, held = drop_excluded([_item(name)], {"Reunión Post konstruedu con Rolando.md"})
+        assert ok == []
+        assert len(held) == 1
 
 
 class TestRedact:

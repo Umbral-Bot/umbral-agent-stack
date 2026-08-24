@@ -220,3 +220,79 @@ class TestSummarize:
         ]
         summary = summarize(classified)
         assert summary == {"create": 2, "update_transcript": 1, "skip": 1, "review_ambiguous": 1}
+
+
+class TestRenamedOrCopiedInDrive:
+    """A rename or a "(2)" copy must not become a daily no-op update.
+
+    Changing the filename changes ``shared_folder_path``, so tiers 1/2 stop
+    recognizing a file this feeder already ingested and it falls through to
+    title+date, which can only say "update". ``sha1`` is the sha1 of the file
+    TEXT, which a rename does not touch, so it identifies the case exactly.
+    """
+
+    def _pair(self, drive_sha, notion_sha, *, fuente="granola_drive_md"):
+        drive = [
+            _drive(
+                "Sesión de seguimiento WSP",
+                "sesion de seguimiento wsp",
+                "2026-06-30",
+                "Granola/Sesión de seguimiento WSP (2).md",
+                drive_sha,
+            )
+        ]
+        notion = [
+            _notion(
+                "Sesión de seguimiento WSP",
+                "sesion de seguimiento wsp",
+                "2026-06-30",
+                fuente=fuente,
+                shared_folder_path="Granola/Sesión de seguimiento WSP.md",
+                sha1=notion_sha,
+            )
+        ]
+        return drive, notion
+
+    def test_identical_bytes_under_a_new_name_are_skipped(self):
+        result = classify_gap(*self._pair("same-sha", "same-sha"))
+        assert result[0]["action"] == "skip"
+        assert result[0]["match_strategy"] == "sha1_different_path"
+        assert result[0]["matched_page"]["page_id"] == "p1"
+
+    def test_the_note_says_where_those_bytes_already_live(self):
+        result = classify_gap(*self._pair("same-sha", "same-sha"))
+        assert any("Sesión de seguimiento WSP.md" in n for n in result[0]["notes"])
+
+    def test_a_real_content_change_still_updates(self):
+        result = classify_gap(*self._pair("new-sha", "old-sha"))
+        assert result[0]["action"] == "update_transcript"
+        assert result[0]["match_strategy"] == "normalized_title_date"
+
+    def test_never_skips_a_page_from_another_source(self):
+        """A summary-only page carries no sha1, so it can never match this tier.
+
+        This is the BIM Forum - Automatización case: a granola_mcp page holding
+        a 3.600-char AI summary that must receive the 29.877-char verbatim
+        transcript. Skipping it would lose that transcript permanently.
+        """
+        result = classify_gap(*self._pair("some-sha", "", fuente="granola_mcp"))
+        assert result[0]["action"] == "update_transcript"
+        assert any("granola_mcp" in n for n in result[0]["notes"])
+
+    def test_a_drive_file_with_no_sha1_never_matches_a_page_with_no_sha1(self):
+        # Both empty must not compare equal into a bogus skip.
+        result = classify_gap(*self._pair("", ""))
+        assert result[0]["action"] == "update_transcript"
+
+    def test_an_exact_path_match_still_wins_over_the_sha1_tier(self):
+        drive = [_drive("X", "x", "2026-06-30", "Granola/x.md", "same")]
+        notion = [_notion("X", "x", "2026-06-30", shared_folder_path="Granola/x.md", sha1="same")]
+        result = classify_gap(drive, notion)
+        assert result[0]["match_strategy"] == "shared_folder_path_sha1"
+
+    def test_sha1_never_rescues_a_path_match_whose_bytes_changed(self):
+        drive = [_drive("X", "x", "2026-06-30", "Granola/x.md", "new")]
+        notion = [_notion("X", "x", "2026-06-30", shared_folder_path="Granola/x.md", sha1="old")]
+        result = classify_gap(drive, notion)
+        assert result[0]["action"] == "update_transcript"
+        assert result[0]["match_strategy"] == "shared_folder_path_changed"

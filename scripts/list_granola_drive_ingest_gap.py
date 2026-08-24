@@ -13,6 +13,10 @@ Match criterion (documented, per the P1.1b spec):
    same feeder on a prior run).
 2. ``shared_folder_path`` equal but ``sha1`` differs -> ``update_transcript``
    (the file changed since a prior run of this feeder ingested it).
+2b. ``sha1`` equal under a DIFFERENT ``shared_folder_path`` -> ``skip``: the
+   same bytes came back because the Drive file was renamed or copied
+   (``... (2).md``). Byte identity is exact, so this needs no tolerance window
+   and no display property.
 3. Otherwise, **normalized title + date** (mirroring
    ``worker/tasks/granola.py::_find_existing_raw_candidate`` tiers 7/8 —
    accent/case-folded title, exact ``YYYY-MM-DD`` date), matched only when
@@ -104,6 +108,33 @@ def classify_gap(
             else:
                 entry["action"] = "update_transcript"
                 entry["match_strategy"] = "shared_folder_path_changed"
+            results.append(entry)
+            continue
+
+        # Tier 2b: same bytes, different path.
+        #
+        # A rename or a "... (2).md" copy in Drive changes shared_folder_path,
+        # so tiers 1/2 stop recognizing a file this feeder already ingested and
+        # it falls through to title+date, which can only ever say "update".
+        # Left there, a recurring feeder re-proposes those files forever.
+        # ``sha1`` is the sha1 of the file text, which a rename does not change,
+        # so it identifies the case exactly -- no tolerance window, and no
+        # reliance on a human-editable display property. A page written from a
+        # different source (an AI summary, say) carries no sha1 at all, so this
+        # tier can never skip one.
+        sha1_matches = [
+            n for n in notion_records if file_sha1 and n.get("sha1") == file_sha1
+        ]
+        if sha1_matches:
+            match = sha1_matches[0]
+            entry["en_notion"] = True
+            entry["matched_page"] = {"page_id": match.get("page_id"), "url": match.get("url")}
+            entry["action"] = "skip"
+            entry["match_strategy"] = "sha1_different_path"
+            entry["notes"].append(
+                "identical bytes already ingested as "
+                f"{match.get('shared_folder_path')!r} -- Drive-side rename or copy"
+            )
             results.append(entry)
             continue
 

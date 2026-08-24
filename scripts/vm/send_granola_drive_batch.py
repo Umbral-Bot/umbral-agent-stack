@@ -68,7 +68,14 @@ def post_task(worker_url: str, worker_token: str, payload: dict[str, Any]) -> An
         headers={"Authorization": f"Bearer {worker_token}", "Content-Type": "application/json"},
         timeout=600,
     )
-    resp.raise_for_status()
+    if resp.status_code >= 400:
+        # raise_for_status() drops the body, which is where the worker puts the
+        # real cause ("Notion API error (401)...", a schema complaint, ...).
+        # An unattended feeder run whose report only says "500" is unactionable.
+        raise RuntimeError(
+            f"worker returned {resp.status_code} for granola.process_transcript: "
+            f"{resp.text[:400]}"
+        )
     return resp.json()
 
 

@@ -12,6 +12,15 @@
     and writes nothing. Pass -Execute to register a task that actually writes,
     still bounded by -MaxCreates / -MaxUpdates per run.
 
+    -Exclude holds named files back from every run. The caps alone cannot
+    express "everything except these": the selection is filename-ordered, so a
+    file the completeness audit flagged as something other than a clean
+    verbatim transcript gets picked up on whichever morning the alphabet
+    reaches it. `granola_drive_transcript_audit.py` prints the exact list. The
+    feeder aborts if an exclusion names no file in the Drive folder, so a typo
+    here fails the task loudly instead of quietly writing the file it was
+    meant to hold back.
+
     Credentials are never written into the task definition. The task inherits
     the user's environment, so NOTION_API_KEY, NOTION_GRANOLA_DB_ID,
     WORKER_URL and WORKER_TOKEN must exist as USER-level environment variables
@@ -36,6 +45,11 @@
     .\register_granola_drive_feeder_task.ps1 -Execute -MaxCreates 10
 
 .EXAMPLE
+    # real ingest, holding back what the completeness audit did not clear
+    .\register_granola_drive_feeder_task.ps1 -Execute -MaxCreates 10 -MaxUpdates 1 `
+        -Exclude 'Conecta 3 -USM.md', 'workshop embudo inteligente.md'
+
+.EXAMPLE
     # inspect what is registered, then remove it
     Get-ScheduledTask -TaskName 'UmbralGranolaDriveFeeder'
     Unregister-ScheduledTask -TaskName 'UmbralGranolaDriveFeeder' -Confirm:$false
@@ -50,6 +64,7 @@ param(
     [int]$MaxCreates = 10,
     [ValidateRange(0, 500)]
     [int]$MaxUpdates = 10,
+    [string[]]$Exclude = @(),
     [string]$PythonExe = '',
     [string]$RepoRoot = '',
     [switch]$WhatIfOnly
@@ -86,6 +101,19 @@ $argList = @(
     '--max-creates', $MaxCreates,
     '--max-updates', $MaxUpdates
 )
+foreach ($name in $Exclude) {
+    $trimmed = $name.Trim()
+    if (-not $trimmed) { continue }
+    # A Windows filename cannot contain a double quote, so quoting each name is
+    # unambiguous. A caller passing one anyway would silently split the
+    # argument, and the feeder would then abort every morning on an exclusion
+    # that matched nothing -- so refuse it here, at registration time.
+    if ($trimmed.Contains('"')) {
+        throw "Exclusion '$trimmed' contains a double quote and cannot be quoted into a Scheduled Task argument."
+    }
+    $argList += '--exclude'
+    $argList += "`"$trimmed`""
+}
 if ($Execute) { $argList += '--execute' }
 
 $arguments = $argList -join ' '

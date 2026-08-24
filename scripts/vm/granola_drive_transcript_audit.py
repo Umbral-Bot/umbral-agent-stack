@@ -50,6 +50,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from scripts.vm.granola_drive_md_ingest import (  # noqa: E402
     DEFAULT_DRIVE_ROOT,
+    FLATTENED_LINE_CHARS,
     _TRANSCRIPT_HEADER_RE,
     build_inventory,
 )
@@ -69,9 +70,6 @@ SUMMARY_MAX_CHARS = 6000
 MIN_VERBATIM_TURNS = 6
 # A body this short is not a meeting transcript whatever its shape.
 MIN_VERBATIM_CHARS = 2000
-# One line this long means the paste lost its newlines, not that one person
-# talked for hours.
-FLATTENED_LINE_CHARS = 5000
 
 VERBATIM = "VERBATIM"
 VERBATIM_FLATTENED = "VERBATIM_APLANADO"
@@ -79,8 +77,20 @@ SUMMARY_ONLY = "SOLO_RESUMEN"
 EMPTY = "VACIO"
 UNCERTAIN = "DUDOSO"
 
-# The classes the feeder may execute. Everything else needs a human first.
-EXECUTABLE_CLASSES = frozenset({VERBATIM})
+# The classes the feeder may execute.
+#
+# ``VERBATIM_APLANADO`` is in the set. It was not, and holding it back turned
+# out to be the wrong call: the four files it stranded are webinars Granola
+# recorded as one long ``Them:`` turn, because one person was talking. Their
+# bodies are complete -- 15k to 73k characters, ~100 characters per sentence,
+# no interior speaker labels to recover (``unflatten_transcript`` returns them
+# unchanged, and there is nothing in the file for it to work with). Refusing
+# them meant a real meeting never reached Notion over a shape that is not a
+# defect.
+#
+# ``SOLO_RESUMEN``, ``VACIO`` and ``DUDOSO`` stay out: those are bodies that
+# are short or unrecognized, i.e. content that may genuinely be missing.
+EXECUTABLE_CLASSES = frozenset({VERBATIM, VERBATIM_FLATTENED})
 
 
 def classify(

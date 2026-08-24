@@ -532,6 +532,9 @@ def drop_excluded(
 
     Matching accepts either the bare filename or the full ``Granola/<name>``
     relative path, because the audit prints one and the gap report the other.
+
+    Callers must pair this with ``unmatched_exclusions`` and abort on a
+    non-empty result -- see that function for why.
     """
     if not excluded:
         return list(selected), []
@@ -545,6 +548,41 @@ def drop_excluded(
         else:
             ok.append(item)
     return ok, held
+
+
+def unmatched_exclusions(
+    drive_records: list[dict[str, Any]],
+    excluded: set[str],
+) -> list[str]:
+    """Return the requested exclusions that name no file in the Drive folder.
+
+    An ``--exclude`` is a *hold this back* instruction, so a typo failing
+    silently fails open in the write direction: the operator believes a file is
+    held, the run writes it, and Notion is changed in a way nobody chose. The
+    same typo in a filter that only *selects* would cost nothing, which is why
+    this asymmetry is worth an abort rather than a warning.
+
+    Real Granola filenames are the exact shape that makes this likely: accents,
+    double spaces, and at least one comma.
+
+    Checked against the Drive INVENTORY, not against the batch. An exclusion
+    whose file exists but has already been ingested is merely redundant, and
+    the standing ``--exclude`` on the Scheduled Task is precisely that: the day
+    the held-back file is finally ingested it leaves the batch, and a
+    batch-scoped check would fail the task every morning from then on.
+    """
+    if not excluded:
+        return []
+    known: set[str] = set()
+    for record in drive_records:
+        relative_path = str(record.get("relative_path") or "")
+        if relative_path:
+            known.add(relative_path)
+            known.add(relative_path.split("/")[-1])
+        filename = str(record.get("filename") or "")
+        if filename:
+            known.add(filename)
+    return sorted(name for name in excluded if name not in known)
 
 
 def _brief(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -605,7 +643,21 @@ def main() -> int:
         # not spend one of the run's ten create slots and push a perfectly good
         # transcript into tomorrow.
         batch, unparsed = drop_unparsed_transcripts(batch, drive_by_path)
-        batch, excluded = drop_excluded(batch, set(args.exclude or []))
+        # Stripped, because these routinely arrive pasted out of a file or a
+        # report and carry a trailing CR or space. That is not a typo, and the
+        # abort below should fire on real ones, not on whitespace.
+        requested_exclusions = {
+            name.strip() for name in (args.exclude or []) if name.strip()
+        }
+        missing = unmatched_exclusions(drive_records, requested_exclusions)
+        if missing:
+            raise RuntimeError(
+                "--exclude matched nothing: "
+                + ", ".join(repr(name) for name in missing)
+                + " -- refusing to run, because a mistyped exclusion silently "
+                "writes the file it was meant to hold back"
+            )
+        batch, excluded = drop_excluded(batch, requested_exclusions)
         selected, deferred = select_items(
             batch, max_creates=args.max_creates, max_updates=args.max_updates
         )

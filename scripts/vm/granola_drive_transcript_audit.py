@@ -221,11 +221,16 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--only",
-        default="",
+        action="append",
+        default=[],
+        metavar="FILENAME",
         help=(
-            "Comma-separated filenames to audit (the rest still parse, so the "
-            "classification is identical to a full run). Use it to audit exactly "
-            "the files a gap report selected."
+            "Audit just this file (repeatable). One filename per flag, never a "
+            "comma-separated list -- real Granola filenames contain commas. A "
+            "name that matches nothing aborts the run: an audit that quietly "
+            "reports on fewer files than asked is worse than no audit. The rest "
+            "of the folder still parses, so the classification is identical to "
+            "a full run."
         ),
     )
     parser.add_argument("--json", action="store_true", help="Emit JSON instead of a table")
@@ -251,7 +256,16 @@ def main() -> int:
     rows = audit_root(root, default_year=args.default_year)
 
     if args.only:
-        wanted = {name.strip() for name in args.only.split(",") if name.strip()}
+        wanted = {name.strip() for name in args.only if name.strip()}
+        missing = sorted(wanted - {row["filename"] for row in rows})
+        if missing:
+            print(
+                "--only matched nothing: "
+                + ", ".join(repr(name) for name in missing)
+                + " -- refusing to report on a smaller set than was asked for.",
+                file=sys.stderr,
+            )
+            return 1
         rows = [row for row in rows if row["filename"] in wanted]
 
     if args.json:

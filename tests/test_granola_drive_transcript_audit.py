@@ -227,6 +227,38 @@ class TestCli:
         doc = json.loads(capsys.readouterr().out)
         assert [row["filename"] for row in doc["rows"]] == ["b.md"]
 
+    def test_only_is_repeatable_and_never_split_on_commas(self, tmp_path, monkeypatch, capsys):
+        """The bug this replaces: `--only "a,b.md,c.md"` split a real filename.
+
+        `BIM Forum - GT política, regulación y mandantes.md` contains a comma,
+        so a comma-separated --only silently audited 10 of 11 requested files
+        and reported the result as if it were complete.
+        """
+        comma_name = "BIM Forum - GT política, regulación y mandantes.md"
+        self._write(tmp_path, comma_name, _turns(30))
+        self._write(tmp_path, "otra.md", _turns(30))
+        monkeypatch.setattr(
+            "sys.argv",
+            [
+                "audit", "--root", str(tmp_path), "--json", "--default-year", "2026",
+                "--only", comma_name,
+                "--only", "otra.md",
+            ],
+        )
+        assert main() == 0
+        doc = json.loads(capsys.readouterr().out)
+        assert sorted(row["filename"] for row in doc["rows"]) == sorted([comma_name, "otra.md"])
+
+    def test_an_only_that_matches_nothing_aborts(self, tmp_path, monkeypatch, capsys):
+        # Reporting on fewer files than asked, silently, is worse than no audit.
+        self._write(tmp_path, "a.md", _turns(30))
+        monkeypatch.setattr(
+            "sys.argv",
+            ["audit", "--root", str(tmp_path), "--json", "--only", "ghost.md", "--default-year", "2026"],
+        )
+        assert main() == 1
+        assert "matched nothing" in capsys.readouterr().err
+
     def test_the_table_renders_without_content(self, tmp_path):
         body = f"Them: {SECRET}\nMe: ok"
         rows = [audit_record(_record(body), "Transcript:\n" + body)]

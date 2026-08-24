@@ -20,6 +20,7 @@ from scripts.vm.granola_drive_feeder import (
     run_item,
     select_items,
     transcript_shrink_reason,
+    unmatched_exclusions,
     worker_verdict_agrees,
 )
 
@@ -428,7 +429,9 @@ class TestDropExcluded:
         assert len(ok) == 2
         assert held == []
 
-    def test_an_exclusion_that_matches_nothing_is_harmless(self):
+    def test_an_exclusion_that_matches_nothing_leaves_the_item_in(self):
+        # drop_excluded itself stays a pure filter; catching the typo is
+        # unmatched_exclusions' job, and main() aborts on it.
         ok, held = drop_excluded([_item("Granola/a.md")], {"ghost.md"})
         assert len(ok) == 1
         assert held == []
@@ -453,6 +456,51 @@ class TestDropExcluded:
         ok, held = drop_excluded([_item(name)], {"Reunión Post konstruedu con Rolando.md"})
         assert ok == []
         assert len(held) == 1
+
+
+def _drive(filename):
+    """One inventory record, the shape build_inventory emits."""
+    return {"filename": filename, "relative_path": "Granola/" + filename}
+
+
+class TestUnmatchedExclusions:
+    """A mistyped --exclude fails OPEN: the file it was meant to hold back gets
+    written. Real Granola filenames make the typo likely -- accents, double
+    spaces, and at least one comma."""
+
+    def test_a_matching_exclusion_reports_nothing_missing(self):
+        assert unmatched_exclusions([_drive("a.md")], {"a.md"}) == []
+
+    def test_the_full_relative_path_also_counts_as_matched(self):
+        assert unmatched_exclusions([_drive("a.md")], {"Granola/a.md"}) == []
+
+    def test_a_typo_is_reported(self):
+        assert unmatched_exclusions([_drive("a.md")], {"ghost.md"}) == ["ghost.md"]
+
+    def test_reports_every_miss_not_just_the_first(self):
+        missing = unmatched_exclusions([_drive("a.md")], {"x.md", "y.md", "a.md"})
+        assert missing == ["x.md", "y.md"]
+
+    def test_no_exclusions_requested_reports_nothing(self):
+        assert unmatched_exclusions([_drive("a.md")], set()) == []
+
+    def test_an_exclusion_for_an_already_ingested_file_is_redundant_not_a_typo(self):
+        """The Scheduled Task's standing --exclude has to survive its own success.
+
+        Checking against the batch instead of the inventory would fail the task
+        every morning from the day the held-back file is finally ingested, moves
+        to ``skip``, and leaves the batch.
+        """
+        assert unmatched_exclusions([_drive("a.md")], {"a.md"}) == []
+
+    def test_a_name_that_matches_no_drive_file_at_all_is_a_typo(self):
+        assert unmatched_exclusions([], {"a.md"}) == ["a.md"]
+
+    def test_a_real_granola_filename_with_a_comma_matches(self):
+        # The name that exposed this: a comma-splitting filter silently
+        # dropped it, so it was audited as if it did not exist.
+        name = "BIM Forum - GT política, regulación y mandantes.md"
+        assert unmatched_exclusions([_drive(name)], {name}) == []
 
 
 class TestRedact:
@@ -620,6 +668,123 @@ class TestMain:
         assert main() == 1
         report = json.loads(next(state.glob("run-*.json")).read_text(encoding="utf-8"))
         assert "no records" in report["fatal_error"]
+
+    def test_a_mistyped_exclusion_aborts_before_any_worker_call(self, tmp_path, monkeypatch):
+        """Fail closed. A typo here writes the file it was meant to hold back."""
+        root = _write_drive(tmp_path)
+        snap = tmp_path / "snap.json"
+        snap.write_text(
+            json.dumps({"records": [{"page_id": "p1", "normalized_title": "otra", "date": "2020-01-01"}]}),
+            encoding="utf-8",
+        )
+        state = tmp_path / "state"
+        calls = []
+        monkeypatch.setattr(
+            "scripts.vm.granola_drive_feeder.post_task",
+            lambda *a, **k: calls.append(a) or {"result": {}},
+        )
+        self._argv(
+            monkeypatch,
+            "--root", str(root),
+            "--notion-pages", str(snap),
+            "--state-dir", str(state),
+            "--exclude", "no-existe.md",
+            "--execute",
+        )
+        assert main() == 1
+        report = json.loads(next(state.glob("run-*.json")).read_text(encoding="utf-8"))
+        assert "--exclude matched nothing" in report["fatal_error"]
+        assert "no-existe.md" in report["fatal_error"]
+        assert calls == []
+
+    def test_an_exclusion_for_a_file_already_in_notion_does_not_fail_the_task(
+        self, tmp_path, monkeypatch
+    ):
+        """The standing --exclude on the daily task must survive its own success.
+
+        Once the held-back file is finally ingested it becomes a ``skip`` and
+        leaves the batch. A batch-scoped check would then fail the Scheduled
+        Task every morning; the check is inventory-scoped so it does not.
+        """
+        root = _write_drive(tmp_path)
+        name = next(root.glob("*.md")).name
+        snap = tmp_path / "snap.json"
+        # A Notion page that already matches the one Drive file -> skip, so the
+        # batch is empty while the file is still very much on disk.
+        snap.write_text(
+            json.dumps(
+                {
+                    "records": [
+                        {
+                            "page_id": "p1",
+                            "normalized_title": "x",
+                            "date": "2020-01-01",
+                            "shared_folder_path": "Granola/" + name,
+                            "sha1": "does-not-match",
+                        }
+                    ]
+                }
+            ),
+            encoding="utf-8",
+        )
+        state = tmp_path / "state"
+        self._argv(
+            monkeypatch,
+            "--root", str(root),
+            "--notion-pages", str(snap),
+            "--skip-worker",
+            "--state-dir", str(state),
+            "--exclude", name,
+        )
+        assert main() == 0
+        report = json.loads(next(state.glob("run-*.json")).read_text(encoding="utf-8"))
+        assert report["fatal_error"] == ""
+
+    def test_an_exclusion_pasted_with_a_trailing_cr_still_matches(self, tmp_path, monkeypatch):
+        """These arrive pasted out of a CRLF file or an acta. Not a typo."""
+        root = _write_drive(tmp_path)
+        snap = tmp_path / "snap.json"
+        snap.write_text(
+            json.dumps({"records": [{"page_id": "p1", "normalized_title": "otra", "date": "2020-01-01"}]}),
+            encoding="utf-8",
+        )
+        state = tmp_path / "state"
+        name = next(root.glob("*.md")).name
+        self._argv(
+            monkeypatch,
+            "--root", str(root),
+            "--notion-pages", str(snap),
+            "--skip-worker",
+            "--state-dir", str(state),
+            "--exclude", name + chr(13),
+        )
+        assert main() == 0
+        report = json.loads(next(state.glob("run-*.json")).read_text(encoding="utf-8"))
+        assert report["fatal_error"] == ""
+        assert [i["relative_path"] for i in report["excluded"]] == ["Granola/" + name]
+
+    def test_an_exclusion_that_matches_lets_the_run_proceed(self, tmp_path, monkeypatch):
+        root = _write_drive(tmp_path)
+        snap = tmp_path / "snap.json"
+        snap.write_text(
+            json.dumps({"records": [{"page_id": "p1", "normalized_title": "otra", "date": "2020-01-01"}]}),
+            encoding="utf-8",
+        )
+        state = tmp_path / "state"
+        name = next(root.glob("*.md")).name
+        self._argv(
+            monkeypatch,
+            "--root", str(root),
+            "--notion-pages", str(snap),
+            "--skip-worker",
+            "--state-dir", str(state),
+            "--exclude", name,
+        )
+        assert main() == 0
+        report = json.loads(next(state.glob("run-*.json")).read_text(encoding="utf-8"))
+        assert report["fatal_error"] == ""
+        assert [i["relative_path"] for i in report["excluded"]] == ["Granola/" + name]
+        assert report["selected"] == []
 
     def test_a_declined_item_does_not_fail_the_run(self, tmp_path, monkeypatch):
         # A permanently red Scheduled Task trains its operator to ignore it.

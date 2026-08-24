@@ -83,9 +83,16 @@ class TestClassify:
     def test_a_body_below_the_length_floor_is_not_verbatim(self):
         assert classify(has_header=True, turns=30, body_chars=900, longest_line_chars=40) != VERBATIM
 
-    def test_only_verbatim_is_executable(self):
+    def test_complete_bodies_are_executable_incomplete_ones_are_not(self):
+        """A flattened body is complete content, so it may be ingested.
+
+        Holding it back stranded four webinars Granola recorded as one long
+        ``Them:`` turn -- one speaker, nothing to split on. What stays out is
+        content that may genuinely be missing: short, empty, or unrecognized.
+        """
         assert VERBATIM in EXECUTABLE_CLASSES
-        for other in (VERBATIM_FLATTENED, SUMMARY_ONLY, EMPTY, UNCERTAIN):
+        assert VERBATIM_FLATTENED in EXECUTABLE_CLASSES
+        for other in (SUMMARY_ONLY, EMPTY, UNCERTAIN):
             assert other not in EXECUTABLE_CLASSES
 
 
@@ -177,23 +184,28 @@ class TestNotExecutable:
     def _row(self, filename, klass):
         return {"filename": filename, "class": klass}
 
-    def test_lists_everything_that_is_not_clean_verbatim(self):
+    def test_lists_only_what_may_be_missing_content(self):
         rows = [
             self._row("ok.md", VERBATIM),
             self._row("flat.md", VERBATIM_FLATTENED),
             self._row("short.md", SUMMARY_ONLY),
         ]
-        assert not_executable(rows) == ["flat.md", "short.md"]
+        assert not_executable(rows) == ["short.md"]
 
     def test_an_all_verbatim_folder_holds_nothing_back(self):
         assert not_executable([self._row("ok.md", VERBATIM)]) == []
         assert exclude_hint([self._row("ok.md", VERBATIM)]) == ""
 
+    def test_a_flattened_file_is_no_longer_held_back(self):
+        rows = [self._row("Conecta 3 -USM.md", VERBATIM_FLATTENED)]
+        assert not_executable(rows) == []
+        assert exclude_hint(rows) == ""
+
     def test_the_hint_quotes_names_with_spaces_and_accents(self):
         # Every real Granola filename has both; an unquoted hint would be
         # useless to paste.
-        rows = [self._row("Conecta 3 -USM.md", VERBATIM_FLATTENED)]
-        assert exclude_hint(rows) == '--exclude "Conecta 3 -USM.md"'
+        rows = [self._row("Reunión con MArcos  - Butic.md", SUMMARY_ONLY)]
+        assert exclude_hint(rows) == '--exclude "Reunión con MArcos  - Butic.md"'
 
 
 class TestCli:

@@ -9,6 +9,7 @@ from datetime import date
 import pytest
 
 from scripts.vm.granola_drive_md_ingest import (
+    FLATTENED_LINE_CHARS,
     _emit,
     build_content,
     build_inventory,
@@ -19,6 +20,8 @@ from scripts.vm.granola_drive_md_ingest import (
     resolve_meeting_date,
     parse_participants,
     sha1_of_text,
+    turn_labels_in,
+    unflatten_transcript,
 )
 
 
@@ -328,3 +331,115 @@ class TestInventoryPathPrefix:
         prod.mkdir()
         (prod / "BIM Forum 3.md").write_text(SAMPLE_MD_NO_PARTICIPANTS, encoding="utf-8")
         assert build_inventory(prod)[0]["relative_path"] == "Granola/BIM Forum 3.md"
+
+
+def _long(words):
+    """Filler long enough to push a line past the flattening threshold."""
+    return "palabra " * words
+
+
+class TestTurnLabelsIn:
+    def test_granolas_two_labels_are_always_present(self):
+        # A body flattened onto ONE line offers at most one line-start label to
+        # learn from, so the canonical pair cannot be learned -- only assumed.
+        assert {"Me", "Them"} <= turn_labels_in("")
+        assert {"Me", "Them"} <= turn_labels_in("Them: todo en una sola linea")
+
+    def test_learns_real_names_used_as_labels(self):
+        labels = turn_labels_in("Rolando: hola\nDavid: que tal")
+        assert {"Rolando", "David"} <= labels
+
+    def test_ignores_a_colon_that_is_not_at_line_start(self):
+        assert "Entonces" not in turn_labels_in("Me: mira, Entonces: no es etiqueta")
+
+
+class TestUnflattenTranscript:
+    def test_a_single_giant_line_becomes_one_line_per_turn(self):
+        flat = "Them: " + _long(900) + " Me: " + _long(900) + " Them: " + _long(900)
+        assert len(flat) >= FLATTENED_LINE_CHARS
+        out = unflatten_transcript(flat)
+        starts = [ln.split(":")[0] for ln in out.splitlines() if ln.strip()]
+        assert starts == ["Them", "Me", "Them"]
+
+    def test_the_split_only_moves_whitespace(self):
+        """No transcript may lose a character to the repair."""
+        flat = "Them: " + _long(700) + " Me: " + _long(700)
+        out = unflatten_transcript(flat)
+        assert "".join(out.split()) == "".join(flat.split())
+
+    def test_an_already_multiline_paste_comes_back_identical(self):
+        already = "Them: hola\nMe: que tal\nThem: bien"
+        assert unflatten_transcript(already) == already
+
+    def test_a_long_line_without_labels_comes_back_unchanged(self):
+        """A webinar Granola recorded as one long turn has nothing to split on.
+
+        This is the shape of the four files that were stranded: complete
+        bodies, one speaker, no interior labels. The repair must not pretend
+        otherwise.
+        """
+        monologue = "Them: " + _long(4000)
+        assert len(monologue) >= FLATTENED_LINE_CHARS
+        assert unflatten_transcript(monologue) == monologue
+
+    def test_a_short_summary_is_never_touched(self):
+        # Below the threshold nothing is inspected at all, so a summary cannot
+        # be dressed up as a multi-turn transcript.
+        short = "Them: resumen breve. Me: otro fragmento. Them: y otro."
+        assert unflatten_transcript(short) == short
+
+    def test_prose_colons_inside_a_giant_line_are_not_split_on(self):
+        flat = (
+            "Them: " + _long(500) + " Entonces: mira esto " + _long(500)
+            + " https://ejemplo.cl/x " + _long(500)
+        )
+        out = unflatten_transcript(flat)
+        assert out.count("\n") == 0
+
+    def test_a_learned_label_is_recovered_mid_line(self):
+        flat = "Rolando: hola\nDavid: " + _long(900) + " Rolando: " + _long(900)
+        out = unflatten_transcript(flat)
+        starts = [ln.split(":")[0] for ln in out.splitlines() if ln.strip()]
+        assert starts == ["Rolando", "David", "Rolando"]
+
+    def test_only_the_long_lines_are_rewritten(self):
+        short_line = "Me: corto Them: tambien corto"
+        flat = "Them: " + _long(900) + " Me: " + _long(900)
+        out = unflatten_transcript(short_line + "\n" + flat)
+        assert out.splitlines()[0] == short_line
+
+    def test_an_empty_body_is_returned_as_is(self):
+        assert unflatten_transcript("") == ""
+
+    def test_an_indented_line_does_not_gain_a_leading_blank_line(self):
+        # The whitespace run this consumes has to be BETWEEN turns. A line's own
+        # leading indentation is not a turn boundary.
+        flat = "  Me: " + _long(900) + " Them: " + _long(900)
+        out = unflatten_transcript(flat)
+        assert not out.startswith(chr(10))
+        assert out.splitlines()[0].startswith("  Me:")
+        assert len(out.splitlines()) == 2
+
+    def test_repairing_twice_changes_nothing_the_second_time(self):
+        flat = "Them: " + _long(900) + " Me: " + _long(900) + " Them: " + _long(900)
+        once = unflatten_transcript(flat)
+        assert unflatten_transcript(once) == once
+
+    def test_the_threshold_is_configurable(self):
+        text = "Them: hola Me: que tal"
+        assert unflatten_transcript(text, threshold=10) == "Them: hola\nMe: que tal"
+
+
+class TestParseAppliesTheRepair:
+    def test_a_flattened_paste_parses_into_turns(self):
+        flat = "Them: " + _long(900) + " Me: " + _long(900)
+        text = "Meeting Title: Reunion\nDate: Aug 1\n\nTranscript:\n\n" + flat
+        parsed = parse_drive_transcript_md(text, "x.md", default_year=2026)
+        assert len(parsed["transcript"].splitlines()) == 2
+        # char_count follows the repaired body, since that is what gets written.
+        assert parsed["char_count"] == len(parsed["transcript"])
+
+    def test_an_ordinary_paste_is_unaffected(self):
+        parsed = parse_drive_transcript_md(SAMPLE_MD, "x.md", default_year=2026)
+        assert parsed["transcript"].splitlines()[0].startswith("Me:")
+        assert len(parsed["transcript"].splitlines()) == 2

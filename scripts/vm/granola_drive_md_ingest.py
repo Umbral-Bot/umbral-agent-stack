@@ -74,6 +74,21 @@ _MONTHS = {
 
 _CONTENT_HEADER = "> Transcripcion verbatim capturada por Granola, pegada manualmente en Drive."
 
+# One body line this long means the paste lost its newlines, not that one person
+# talked for hours without pausing. Shared with the completeness audit so both
+# layers draw the line in the same place.
+FLATTENED_LINE_CHARS = 5000
+
+# Granola's own two speaker labels. Always in the split vocabulary even when a
+# file shows neither at line start -- a body flattened onto ONE line offers at
+# most one line-start label to learn from.
+_CANONICAL_TURN_LABELS = ("Me", "Them")
+
+# A label that has already proven itself by starting a line somewhere in this
+# same file. Deliberately narrow: a closed vocabulary is what keeps the split
+# from shredding ordinary prose at every "Entonces:" or "https:".
+_LINE_START_LABEL_RE = re.compile(r"^[ \t]{0,4}([^\s:][^:\n]{0,40}?):[ \t]")
+
 
 def _normalize_lookup_text(value: str) -> str:
     """Mirror of worker/tasks/granola.py::_normalize_lookup_text.
@@ -139,6 +154,68 @@ def resolve_meeting_date(date_raw: str, *, pasted_on: _date) -> str:
     if (candidate - pasted_on).days > _FUTURE_DATE_SLACK_DAYS:
         return parse_meeting_date_header(date_raw, default_year=pasted_on.year - 1)
     return parsed
+
+
+def turn_labels_in(text: str) -> set[str]:
+    """Labels that start at least one line of ``text``, plus Granola's own two.
+
+    The learned half is what lets a transcript using real names instead of
+    ``Me``/``Them`` be repaired too; the canonical half is what makes a body
+    flattened onto a single line repairable at all.
+    """
+    labels = set(_CANONICAL_TURN_LABELS)
+    for line in text.splitlines():
+        match = _LINE_START_LABEL_RE.match(line)
+        if match:
+            labels.add(match.group(1).strip())
+    return {label for label in labels if label}
+
+
+def unflatten_transcript(text: str, *, threshold: int = FLATTENED_LINE_CHARS) -> str:
+    """Put back the line breaks a paste lost, when it clearly lost them.
+
+    Granola's export is one turn per line. Some pastes arrive with every turn
+    concatenated onto one enormous line, which leaves the body complete but
+    unreadable, and makes any turn-count check read a whole meeting as a single
+    paragraph.
+
+    Only lines at or over ``threshold`` are touched, and only where a label
+    from this file's own vocabulary (``turn_labels_in``) appears mid-line. Both
+    limits are deliberate: a body that was never flattened comes back
+    byte-identical, and prose can never be shredded at an ordinary colon
+    because the vocabulary is closed.
+
+    Nothing but whitespace changes -- the run of spaces before a recovered
+    label becomes a newline -- so no transcript can lose content here.
+
+    This cannot invent structure that is not in the file. A webinar Granola
+    recorded as one long ``Them:`` turn has no interior labels to split on and
+    comes back unchanged; that body is complete, just genuinely one turn.
+    """
+    if not text:
+        return text
+    lines = text.splitlines()
+    if not any(len(line) >= threshold for line in lines):
+        return text
+
+    labels = sorted(turn_labels_in(text), key=len, reverse=True)
+    if not labels:
+        return text
+    # ``(?<=\S)`` keeps this strictly mid-line: without it, a line that merely
+    # starts with indented "  Me: ..." would have its own leading spaces turned
+    # into a newline, prepending a blank line to the body for no reason.
+    pattern = re.compile(
+        r"(?<=\S)[ \t]+(?=(?:"
+        + "|".join(re.escape(label) for label in labels)
+        + r"):[ \t])"
+    )
+
+    repaired: list[str] = []
+    for line in lines:
+        if len(line) >= threshold:
+            line = pattern.sub("\n", line)
+        repaired.append(line)
+    return "\n".join(repaired)
 
 
 def parse_participants(value: str) -> list[str]:
@@ -231,7 +308,10 @@ def parse_drive_transcript_md(text: str, filename: str, *, default_year: int) ->
     while transcript_lines and not transcript_lines[-1].strip():
         transcript_lines.pop()
 
-    transcript = "\n".join(transcript_lines)
+    # Repaired here, not at the audit or the feeder, so every consumer -- the
+    # gap classification, the completeness audit, and the body actually written
+    # to Notion -- sees the same turns.
+    transcript = unflatten_transcript("\n".join(transcript_lines))
     resolved_title = title or fallback_title or "Reunion sin titulo"
 
     return {

@@ -17,7 +17,7 @@ P1.1b scripts -- it does not reimplement any of them::
     build_granola_drive_ingest_batch.py  emit worker payloads  -> batch
     send_granola_drive_batch.py::post_task   talk to the worker
 
-...and adds the three things a one-shot never needed:
+...and adds the four things a one-shot never needed:
 
 1. **Dry-run by default.** ``--execute`` is the only way to write, and the
    per-run caps still apply when it is passed.
@@ -29,6 +29,11 @@ P1.1b scripts -- it does not reimplement any of them::
 3. **Bounded work.** ``--max-creates`` / ``--max-updates`` keep one scheduled
    run from swallowing an entire backlog unattended. The rest is listed in
    the run report, not silently dropped.
+4. **No shrinking updates.** An update whose incoming transcript is materially
+   shorter than the page it would replace is declined (``--allow-shrink`` to
+   override). That is the shape a summary -- or a paste that stopped halfway --
+   takes when it lands on top of a full transcript, and nothing below this
+   layer refuses it.
 
 It runs on THIS Windows machine, because ``G:\\`` only exists here -- the VPS
 cannot see the Drive folder at all. Register it with
@@ -155,6 +160,78 @@ def select_items(
     return selected, deferred
 
 
+# An update that SHRINKS the page is how a summary -- or a half-finished paste --
+# replaces a full transcript. Nothing below refuses it: ``replace_blocks_in_page``
+# deletes every existing block before writing the new ones, and
+# ``decide_reconciliation`` reads any metric difference as "reconcile", shorter
+# or longer alike. So the refusal has to live here.
+#
+# The tolerance absorbs the small, benign deltas (a re-paste that normalizes
+# whitespace, a content header that changed length); it is not a budget for
+# losing paragraphs.
+TRANSCRIPT_SHRINK_TOLERANCE = 0.10
+
+
+def transcript_shrink_reason(
+    action: str,
+    result: dict[str, Any],
+    *,
+    tolerance: float = TRANSCRIPT_SHRINK_TOLERANCE,
+) -> str:
+    """Return "" when this update may proceed, else why the shrink blocks it.
+
+    Only ``update_transcript`` can destroy content -- a ``create`` has nothing to
+    overwrite -- so every other action passes straight through.
+
+    A missing metrics *block* is a refusal, not a pass: reading an absent
+    ``previous_metrics`` as "nothing was there" would fail open in exactly the
+    direction that loses a transcript.
+
+    A present block whose ``previous`` length is ``0`` is different, and is
+    allowed. That length comes from the page's ``Trazabilidad`` blob, which the
+    36 legacy ``Fuente=granola`` pages never carried (97 of 134 pages on
+    2026-08-24 have one; every page this feeder wrote does). Refusing those
+    would block the pipeline's whole reason to exist -- attaching a verbatim
+    transcript to a page that only holds an AI summary. ``run_item`` records
+    both numbers on the row instead, so a run report shows when the comparison
+    could not actually be made.
+    """
+    if action != "update_transcript":
+        return ""
+
+    reconciliation = result.get("reconciliation")
+    if not isinstance(reconciliation, dict):
+        return "worker dry-run omitted reconciliation metrics"
+
+    previous = reconciliation.get("previous_metrics")
+    new = reconciliation.get("new_metrics")
+    if not isinstance(previous, dict) or not isinstance(new, dict):
+        return "worker dry-run omitted transcript metrics"
+
+    def _chars(metrics: dict[str, Any]) -> int:
+        try:
+            return int(metrics.get("char_count") or 0)
+        except (TypeError, ValueError):
+            return -1
+
+    previous_chars = _chars(previous)
+    new_chars = _chars(new)
+    if previous_chars < 0 or new_chars < 0:
+        return "worker dry-run reported a non-numeric char_count"
+    if previous_chars <= 0:
+        # Nothing on the page to lose (or the page never recorded a length).
+        return ""
+
+    floor = previous_chars * (1.0 - max(0.0, tolerance))
+    if new_chars >= floor:
+        return ""
+    return (
+        f"transcript would shrink {previous_chars} -> {new_chars} chars "
+        f"(below the {int(round(tolerance * 100))}% tolerance) -- refusing to "
+        "overwrite a longer page with a shorter one"
+    )
+
+
 def worker_verdict_agrees(
     action: str,
     result: dict[str, Any],
@@ -203,6 +280,7 @@ def run_item(
     worker_url: str,
     worker_token: str,
     execute: bool,
+    allow_shrink: bool = False,
 ) -> dict[str, Any]:
     """Dry-run one item, then write it only if ``execute`` and the worker agrees.
 
@@ -235,6 +313,17 @@ def run_item(
     row["dry_run_matched_existing"] = dry.get("matched_existing")
     row["worker_match_strategy"] = dry.get("match_strategy", "")
 
+    # The two lengths the shrink guard compares, recorded whether or not it
+    # fires: a previous length of 0 means the comparison could not be made (a
+    # legacy page with no Trazabilidad blob), and a run report that only showed
+    # refusals would hide that.
+    dry_reconciliation = dry.get("reconciliation")
+    if isinstance(dry_reconciliation, dict):
+        for label, key in (("previous", "previous_metrics"), ("new", "new_metrics")):
+            metrics = dry_reconciliation.get(key)
+            if isinstance(metrics, dict):
+                row[f"dry_run_{label}_chars"] = metrics.get("char_count")
+
     # The worker echoes dry_run back precisely so a caller can prove the
     # request was honoured. If it did not come back True, POST #1 may have been
     # a real write and POST #2 would be a second one.
@@ -253,6 +342,12 @@ def run_item(
         # the same thing.
         row["declined"] = "worker reconciliation_action=noop -- nothing to write"
         return row
+
+    if not allow_shrink:
+        shrink = transcript_shrink_reason(action, dry)
+        if shrink:
+            row["declined"] = shrink
+            return row
 
     if not execute:
         return row
@@ -331,6 +426,27 @@ def build_arg_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--exclude",
+        action="append",
+        default=[],
+        metavar="FILENAME",
+        help=(
+            "Hold this file back from this run (repeatable). Accepts the bare "
+            "filename or the 'Granola/<name>' path. Use it to run only what the "
+            "completeness audit approved; the item is listed in the report, not "
+            "dropped silently."
+        ),
+    )
+    parser.add_argument(
+        "--allow-shrink",
+        action="store_true",
+        help=(
+            "Let an update replace a longer transcript with a shorter one. Off by "
+            "default: a shrink is how a summary or a half-finished paste destroys a "
+            "full transcript, and no layer below this one refuses it."
+        ),
+    )
+    parser.add_argument(
         "--skip-worker",
         action="store_true",
         help="Stop after the gap report (no worker calls at all). Useful to inspect a backlog offline.",
@@ -401,6 +517,36 @@ def drop_unparsed_transcripts(
     return ok, unparsed
 
 
+def drop_excluded(
+    selected: list[dict[str, Any]],
+    excluded: set[str],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Split off items an operator held back for this run.
+
+    The completeness audit (``granola_drive_transcript_audit.py``) can flag a
+    file as something other than a clean verbatim transcript -- a body that is
+    complete but flattened onto one line, say. That is a judgement call about
+    one run, not a permanent property of the file, so it belongs in a CLI flag
+    rather than in a guard: blocking every non-pristine file outright would
+    mean a real meeting never reaches Notion at all.
+
+    Matching accepts either the bare filename or the full ``Granola/<name>``
+    relative path, because the audit prints one and the gap report the other.
+    """
+    if not excluded:
+        return list(selected), []
+    ok: list[dict[str, Any]] = []
+    held: list[dict[str, Any]] = []
+    for item in selected:
+        relative_path = str(item.get("relative_path") or "")
+        filename = relative_path.split("/")[-1]
+        if relative_path in excluded or filename in excluded:
+            held.append(item)
+        else:
+            ok.append(item)
+    return ok, held
+
+
 def _brief(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return [{"relative_path": i["relative_path"], "action": i["action"]} for i in items]
 
@@ -417,6 +563,8 @@ def main() -> int:
     report: dict[str, Any] = {
         "timestamp": stamp,
         "execute": bool(args.execute),
+        "allow_shrink": bool(args.allow_shrink),
+        "excluded_requested": list(args.exclude or []),
         "fatal_error": "",
         "results": [],
     }
@@ -452,11 +600,15 @@ def main() -> int:
         gap_items = classify_gap(drive_records, notion_records)
         summary = summarize(gap_items)
         batch = build_batch(drive_records, gap_items)
+        drive_by_path = {r["relative_path"]: r for r in drive_records}
+        # Filter BEFORE the caps, not after: an item that cannot be sent must
+        # not spend one of the run's ten create slots and push a perfectly good
+        # transcript into tomorrow.
+        batch, unparsed = drop_unparsed_transcripts(batch, drive_by_path)
+        batch, excluded = drop_excluded(batch, set(args.exclude or []))
         selected, deferred = select_items(
             batch, max_creates=args.max_creates, max_updates=args.max_updates
         )
-        drive_by_path = {r["relative_path"]: r for r in drive_records}
-        selected, unparsed = drop_unparsed_transcripts(selected, drive_by_path)
 
         report.update(
             {
@@ -468,6 +620,7 @@ def main() -> int:
                 "selected": _brief(selected),
                 "deferred": _brief(deferred),
                 "unparsed_transcript": _brief(unparsed),
+                "excluded": _brief(excluded),
                 # review_ambiguous never enters the batch, so without this it
                 # would exist only as an integer in `summary` -- the one class
                 # of item that needs a human, invisible in the run record.
@@ -489,6 +642,7 @@ def main() -> int:
                         worker_url=worker_url,
                         worker_token=worker_token,
                         execute=args.execute,
+                        allow_shrink=bool(args.allow_shrink),
                     )
                 )
                 flush_report()
@@ -513,6 +667,7 @@ def main() -> int:
                 "deferred": len(report["deferred"]),
                 "review_ambiguous": len(report["review_ambiguous"]),
                 "unparsed_transcript": len(report["unparsed_transcript"]),
+                "excluded": len(report["excluded"]),
                 "written": written,
                 "declined": len(declined),
                 "failed": len(failed),

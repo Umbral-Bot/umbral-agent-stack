@@ -18,6 +18,10 @@ Notes:
 - Required ``Título`` is the only Notion-mandatory property in this DB.
 - Other props (Estado, Canal, Prioridad, etc.) are left to defaults; user
   refines manually after first review.
+- ``fuentes_urls[0]`` must be the concrete piece, never an org home page or
+  feed (docs/ops/editorial-source-attribution-policy.md #7). A proposal
+  whose first source is a home/feed URL is marked failed (not silently
+  created without a source, not silently re-ranked to a different fuente).
 """
 from __future__ import annotations
 
@@ -33,6 +37,8 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+
+from scripts.discovery.lib.url_classify import is_home_or_feed_url
 
 DEFAULT_STATE_DB = Path.home() / ".cache" / "rick-discovery" / "state.sqlite"
 DEFAULT_OPS_LOG = Path.home() / ".config" / "umbral" / "ops_log.jsonl"
@@ -194,6 +200,12 @@ def build_page_payload(
     if schema.get("Resumen fuente") == "rich_text" and hook:
         props["Resumen fuente"] = {"rich_text": _rt(hook)}
     if schema.get("Fuente primaria") == "url" and fuentes:
+        if is_home_or_feed_url(fuentes[0]):
+            raise ValueError(
+                f"fuente_primaria_is_home_or_feed: {fuentes[0]!r} is an "
+                f"organization home page or feed, not the concrete piece "
+                f"(docs/ops/editorial-source-attribution-policy.md #7)"
+            )
         props["Fuente primaria"] = {"url": fuentes[0]}
     if schema.get("Creado por sistema") == "checkbox":
         props["Creado por sistema"] = {"checkbox": True}
@@ -280,15 +292,15 @@ def main(argv: list[str] | None = None) -> int:
 
         ok, fail = 0, 0
         for prop in proposals:
-            payload = build_page_payload(
-                proposal=prop, data_source_id=ds_id, schema=schema
-            )
-            if args.dry_run:
-                print(f"[dry-run] proposal_id={prop['id']} titular={prop['titular'][:80]!r} "
-                      f"props={list(payload['properties'].keys())} blocks={len(payload['children'])}")
-                ok += 1
-                continue
             try:
+                payload = build_page_payload(
+                    proposal=prop, data_source_id=ds_id, schema=schema
+                )
+                if args.dry_run:
+                    print(f"[dry-run] proposal_id={prop['id']} titular={prop['titular'][:80]!r} "
+                          f"props={list(payload['properties'].keys())} blocks={len(payload['children'])}")
+                    ok += 1
+                    continue
                 page_id = create_page(client, payload)
                 mark_proposal_published(state_db, prop["id"], page_id)
                 log_event("stage7.page.created",

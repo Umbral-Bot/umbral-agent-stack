@@ -17,7 +17,9 @@ Reason codes (stable, ordered):
 1. ``aprobado_contenido_missing``
 2. ``autorizar_publicacion_missing``
 3. ``gate_invalidado_active``
-4. ``fuente_primaria_missing``
+4. ``fuente_primaria_missing`` (also fires when the URL is present but is
+   an organization home page or feed rather than the concrete piece — see
+   :mod:`.url_classify`)
 5. ``plataforma_no_seleccionada``
 6. ``contenido_duplicado``
 """
@@ -27,6 +29,8 @@ from __future__ import annotations
 from typing import Callable
 
 from pydantic import BaseModel, Field
+
+from .url_classify import is_home_or_feed_url
 
 
 # Stable order of the 6 contract gates. Used by :func:`can_publish` to keep
@@ -68,7 +72,11 @@ class GatesStatus(BaseModel):
     )
     fuente_primaria_ok: bool = Field(
         default=False,
-        description="Primary source URL present and (caller-asserted) reachable.",
+        description=(
+            "Primary source URL present, (caller-asserted) reachable, and NOT "
+            "an organization home page or feed — must be the concrete piece "
+            "(item_url). See docs/ops/editorial-source-attribution-policy.md #7."
+        ),
     )
     plataforma_seleccionada: bool = Field(
         default=False,
@@ -170,7 +178,7 @@ def evaluate_gates(
     invalidado = _coerce_checkbox(props.get("gate_invalidado"))
 
     fuente_primaria = _coerce_url(props.get("Fuente primaria"))
-    fuente_ok = bool(fuente_primaria)
+    fuente_ok = bool(fuente_primaria) and not is_home_or_feed_url(fuente_primaria)
 
     canal = _coerce_select(props.get("Canal"))
     plataforma_ok = canal in _VALID_CHANNELS

@@ -83,6 +83,35 @@ def test_gate4_fuente_primaria_blocks():
     assert reasons == ["fuente_primaria_missing"]
 
 
+def test_gate4_fuente_primaria_blocks_org_home_page():
+    """Real regression, PKG-MACRO-P5-Q12-T3: CAND-OLA3-03 had
+    Fuente primaria = https://www.buildingsmart.org/ (the bare org home
+    page) and passed this gate before this fix. It must not pass now."""
+    page = _happy_page()
+    page["Fuente primaria"] = "https://www.buildingsmart.org/"
+    allowed, reasons = can_publish(evaluate_gates(page, _never_dup))
+    assert allowed is False
+    assert reasons == ["fuente_primaria_missing"]
+
+
+def test_gate4_fuente_primaria_blocks_feed_url():
+    page = _happy_page()
+    page["Fuente primaria"] = "https://blog.example.com/feed"
+    allowed, reasons = can_publish(evaluate_gates(page, _never_dup))
+    assert allowed is False
+    assert reasons == ["fuente_primaria_missing"]
+
+
+def test_gate4_fuente_primaria_allows_concrete_item_on_same_domain():
+    """Same domain as the negative example, but the actual piece URL — the
+    gate is structural, not a domain blocklist."""
+    page = _happy_page()
+    page["Fuente primaria"] = "https://www.buildingsmart.org/ifc-4-3-approved-as-a-final-standard/"
+    allowed, reasons = can_publish(evaluate_gates(page, _never_dup))
+    assert allowed is True
+    assert reasons == []
+
+
 def test_gate5_plataforma_blocks():
     page = _happy_page()
     page["Canal"] = "telegram"  # not in {blog, linkedin, x, newsletter}

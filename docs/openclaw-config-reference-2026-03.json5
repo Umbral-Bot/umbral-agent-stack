@@ -86,7 +86,20 @@
         "model": "openai-codex/gpt-5.4"
       },
       { "id": "rick-tracker", "name": "Rick Tracker", "workspace": "/home/rick/.openclaw/workspace", "model": "google/gemini-2.5-flash" },
-      { "id": "rick-ops", "name": "Rick Ops", "workspace": "/home/rick/.openclaw/workspace", "model": "openai-codex/gpt-5.3-codex" }
+      { "id": "rick-ops", "name": "Rick Ops", "workspace": "/home/rick/.openclaw/workspace", "model": "openai-codex/gpt-5.3-codex" },
+      // Added 2026-08-25 (PKG-MACRO-P5-Q12-T4, David GO). Deliberately uses
+      // today's live provider-key naming ("openai/gpt-5.5"), NOT this file's
+      // frozen 2026-03-era "azure-openai-responses" naming above (models.providers,
+      // ~line 22) — that provider was removed live on 2026-07-12 (see
+      // docs/audits/openclaw-oauth-only-revert-2026-07-12.md). This file is a
+      // point-in-time reference snapshot, not re-synced against every later live
+      // change; this one entry is the exception, added post-hoc for this package.
+      {
+        "id": "rick-editorial",
+        "name": "Rick Editorial",
+        "workspace": "/home/rick/.openclaw/workspaces/rick-editorial",
+        "model": "openai/gpt-5.5"
+      }
     ]
   },
   "tools": { "web": { "search": { "enabled": false }, "fetch": { "enabled": false } } },

@@ -28,12 +28,21 @@ Contract (do not weaken):
   gates (`aprobado_contenido`, `autorizar_publicacion`) false — this handler
   never opens a gate, never publishes, never writes copy/images (those are
   P2.2/P2.3, separate packages).
+- `fuente_pieza_url` must be the concrete piece, never an org home page or
+  feed (docs/ops/editorial-source-attribution-policy.md #7 — real negative
+  example: CAND-OLA3-03 promoted with `buildingsmart.org`, the bare home
+  page). When present but classified as home/feed, promotion is refused
+  outright (`error: fuente_pieza_url_is_home_or_feed`) rather than silently
+  dropping the field — the upstream Shortlist row needs a human fix, not a
+  Publicaciones row missing its source.
 """
 
 from __future__ import annotations
 
 import logging
 from typing import Any, Dict, List
+
+from scripts.discovery.lib.url_classify import is_home_or_feed_url
 
 from .. import config, notion_client
 
@@ -179,6 +188,16 @@ def handle_editorial_promote_shortlist_approval(input_data: Dict[str, Any]) -> D
             "publicacion_page_id": fields["promovido_a"][0],
             "shortlist_page_id": shortlist_page_id,
         }
+
+    fuente_pieza_url = fields.get("fuente_pieza_url") or ""
+    if fuente_pieza_url:
+        if is_home_or_feed_url(fuente_pieza_url):
+            return {
+                "ok": False,
+                "error": "fuente_pieza_url_is_home_or_feed",
+                "fuente_pieza_url": fuente_pieza_url,
+                "shortlist_page_id": shortlist_page_id,
+            }
 
     props = _build_publicacion_properties(shortlist_page_id, fields)
 

@@ -88,6 +88,82 @@ def test_page_payload_includes_required_props():
     assert types.count("bulleted_list_item") == 2
 
 
+def test_page_payload_rejects_home_page_fuente():
+    """Real regression, PKG-MACRO-P5-Q12-T3: CAND-OLA3-03 got Fuente primaria
+    = https://www.buildingsmart.org/ (the bare org home page) via a
+    different writer than this script, but stage7 had the identical
+    unguarded `fuentes[0]` write and would have let the same bug through."""
+    proposal = {
+        "id": 1, "titular": "Mi titular", "hook": "Hook frase",
+        "angulo": "Por que importa", "fuentes_urls": ["https://www.buildingsmart.org/"],
+        "disciplinas": ["BIM"], "ts": 12345,
+    }
+    with pytest.raises(ValueError, match="fuente_primaria_is_home_or_feed"):
+        mod.build_page_payload(proposal=proposal, data_source_id="DS-1", schema=SCHEMA)
+
+
+def test_page_payload_accepts_concrete_piece_on_same_domain():
+    proposal = {
+        "id": 1, "titular": "Mi titular", "hook": "Hook frase",
+        "angulo": "Por que importa",
+        "fuentes_urls": ["https://www.buildingsmart.org/ifc-4-3-approved-as-a-final-standard/"],
+        "disciplinas": ["BIM"], "ts": 12345,
+    }
+    payload = mod.build_page_payload(proposal=proposal, data_source_id="DS-1", schema=SCHEMA)
+    assert payload["properties"]["Fuente primaria"]["url"] == (
+        "https://www.buildingsmart.org/ifc-4-3-approved-as-a-final-standard/"
+    )
+
+
+def test_home_page_fuente_marks_proposal_failed_not_published(tmp_path: Path, monkeypatch):
+    """End-to-end: main() must not create a page and must not silently skip
+    — last_error records why, so a human sees it needs a real source. Uses
+    its own isolated state DB with a single proposal (not the shared
+    `state_db` fixture, which seeds unrelated pending proposals too)."""
+    monkeypatch.setenv("NOTION_API_KEY", "test-key")
+
+    db = tmp_path / "state.sqlite"
+    conn = sqlite3.connect(db)
+    conn.execute(
+        """CREATE TABLE proposals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            titular TEXT NOT NULL, hook TEXT, angulo TEXT,
+            fuentes_urls TEXT NOT NULL, disciplinas TEXT NOT NULL,
+            score REAL, ts INTEGER NOT NULL,
+            status TEXT NOT NULL DEFAULT 'draft',
+            notion_page_id TEXT, last_error TEXT
+        )"""
+    )
+    conn.execute(
+        "INSERT INTO proposals (titular, hook, angulo, fuentes_urls, disciplinas, "
+        "score, ts, status) VALUES (?,?,?,?,?,?,?,?)",
+        ("Home page fuente", "h", "a", json.dumps(["https://www.buildingsmart.org/"]),
+         json.dumps(["BIM"]), 0.9, 100, "draft"),
+    )
+    conn.commit()
+    conn.close()
+
+    fake_client = MagicMock()
+    fake_client.get.side_effect = [
+        {"data_sources": [{"id": "DS-X", "name": "Publicaciones"}]},
+        {"properties": {k: {"type": v} for k, v in SCHEMA.items()}},
+    ]
+    monkeypatch.setattr(mod, "NotionClient", lambda token: fake_client)
+
+    rc = mod.main(["--state-db", str(db), "--status", "draft"])
+
+    assert rc == 1
+    fake_client.post.assert_not_called()
+    conn = sqlite3.connect(db)
+    row = conn.execute(
+        "SELECT status, notion_page_id, last_error FROM proposals WHERE titular='Home page fuente'"
+    ).fetchone()
+    conn.close()
+    assert row[0] == "draft"  # unchanged — mark_proposal_failed only records last_error
+    assert row[1] is None
+    assert "fuente_primaria_is_home_or_feed" in row[2]
+
+
 def test_schema_detected_from_live_query(monkeypatch):
     client = MagicMock()
     client.get.side_effect = [

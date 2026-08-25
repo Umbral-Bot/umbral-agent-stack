@@ -114,6 +114,90 @@ def test_already_promoted_is_idempotent_noop():
     mock_nc.update_page_properties.assert_not_called()
 
 
+def test_fuente_pieza_url_home_page_blocks_promotion():
+    """Real regression: CAND-OLA3-03 promoted with buildingsmart.org (the
+    bare org home page) instead of the concrete piece. This must now be
+    refused, not silently promoted with a bad source."""
+    from worker.tasks.editorial_promote import handle_editorial_promote_shortlist_approval
+
+    with patch("worker.tasks.editorial_promote.config") as mock_cfg, patch(
+        "worker.tasks.editorial_promote.notion_client"
+    ) as mock_nc:
+        mock_cfg.NOTION_PUBLICACIONES_DB_ID = "pub-db"
+        mock_nc.get_page.return_value = _shortlist_page(
+            fuente_pieza_url="https://www.buildingsmart.org/"
+        )
+
+        result = handle_editorial_promote_shortlist_approval({"shortlist_page_id": "shortlist-1"})
+
+    assert result["ok"] is False
+    assert result["error"] == "fuente_pieza_url_is_home_or_feed"
+    assert result["fuente_pieza_url"] == "https://www.buildingsmart.org/"
+    mock_nc.query_database.assert_not_called()
+    mock_nc.create_database_page.assert_not_called()
+    mock_nc.update_page_properties.assert_not_called()
+
+
+def test_fuente_pieza_url_feed_url_blocks_promotion():
+    from worker.tasks.editorial_promote import handle_editorial_promote_shortlist_approval
+
+    with patch("worker.tasks.editorial_promote.config") as mock_cfg, patch(
+        "worker.tasks.editorial_promote.notion_client"
+    ) as mock_nc:
+        mock_cfg.NOTION_PUBLICACIONES_DB_ID = "pub-db"
+        mock_nc.get_page.return_value = _shortlist_page(
+            fuente_pieza_url="https://blog.example.com/feed"
+        )
+
+        result = handle_editorial_promote_shortlist_approval({"shortlist_page_id": "shortlist-1"})
+
+    assert result["ok"] is False
+    assert result["error"] == "fuente_pieza_url_is_home_or_feed"
+    mock_nc.create_database_page.assert_not_called()
+
+
+def test_fuente_pieza_url_home_page_blocks_dry_run_too():
+    from worker.tasks.editorial_promote import handle_editorial_promote_shortlist_approval
+
+    with patch("worker.tasks.editorial_promote.config") as mock_cfg, patch(
+        "worker.tasks.editorial_promote.notion_client"
+    ) as mock_nc:
+        mock_cfg.NOTION_PUBLICACIONES_DB_ID = "pub-db"
+        mock_nc.get_page.return_value = _shortlist_page(
+            fuente_pieza_url="https://www.buildingsmart.org/"
+        )
+
+        result = handle_editorial_promote_shortlist_approval(
+            {"shortlist_page_id": "shortlist-1", "dry_run": True}
+        )
+
+    assert result["ok"] is False
+    assert result["error"] == "fuente_pieza_url_is_home_or_feed"
+
+
+def test_fuente_pieza_url_concrete_piece_still_promotes():
+    """The item-URL sibling of the buildingsmart.org negative example
+    (docs/ops/candidates/ola3-pitch02-...) — a specific article path on the
+    same domain must NOT be blocked by the guard."""
+    from worker.tasks.editorial_promote import handle_editorial_promote_shortlist_approval
+
+    with patch("worker.tasks.editorial_promote.config") as mock_cfg, patch(
+        "worker.tasks.editorial_promote.notion_client"
+    ) as mock_nc:
+        mock_cfg.NOTION_PUBLICACIONES_DB_ID = "pub-db"
+        mock_nc.get_page.return_value = _shortlist_page(
+            fuente_pieza_url="https://www.buildingsmart.org/ifc-4-3-approved-as-a-final-standard/"
+        )
+        mock_nc.query_database.return_value = []
+        mock_nc.create_database_page.return_value = {"page_id": "pub-new", "url": "https://notion.so/pub-new"}
+
+        result = handle_editorial_promote_shortlist_approval({"shortlist_page_id": "shortlist-1"})
+
+    assert result["ok"] is True
+    assert result["created"] is True
+    mock_nc.create_database_page.assert_called_once()
+
+
 def test_dry_run_previews_without_writes():
     from worker.tasks.editorial_promote import handle_editorial_promote_shortlist_approval
 

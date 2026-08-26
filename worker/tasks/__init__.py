@@ -151,6 +151,7 @@ from .editorial_publish import (
     handle_web_unpublish_editorial_post,
 )
 from .editorial_promote import handle_editorial_promote_shortlist_approval
+from .editorial_create_shortlist import handle_editorial_create_shortlist_alternativa
 from .editorial_dedupe import handle_editorial_dedupe_candidate_vs_backlog
 from .editorial_negative_capture import handle_editorial_capture_negative_example
 from .magnific import handle_magnific_generate_variants
@@ -265,6 +266,7 @@ TASK_HANDLERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "web.publish_editorial_post": handle_web_publish_editorial_post,
     "web.unpublish_editorial_post": handle_web_unpublish_editorial_post,
     "editorial.promote_shortlist_approval": handle_editorial_promote_shortlist_approval,
+    "editorial.create_shortlist_alternativa": handle_editorial_create_shortlist_alternativa,
     "editorial.dedupe_candidate_vs_backlog": handle_editorial_dedupe_candidate_vs_backlog,
     "editorial.capture_negative_example": handle_editorial_capture_negative_example,
     "editorial.inject_rrss_ready": handle_editorial_inject_rrss_ready,

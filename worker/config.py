@@ -65,6 +65,12 @@ NOTION_COMMERCIAL_PROJECTS_DB_ID: str | None = os.environ.get("NOTION_COMMERCIAL
 # by editorial.dedupe_candidate_vs_backlog (P2.4) to query the Borrador/
 # Publicado backlog for a topic/source match.
 NOTION_PUBLICACIONES_DB_ID: str | None = os.environ.get("NOTION_PUBLICACIONES_DB_ID")
+
+# Alternativas / Shortlist DB (classic database id — NOT the collection://
+# data-source id; see notion/schemas/alternativas-shortlist.schema.yaml).
+# Already used by dispatcher/notion_poller.py's promotion scan; also used by
+# editorial.create_shortlist_alternativa (P1) to create/dedupe V1 rows.
+NOTION_SHORTLIST_DS_ID: str | None = os.environ.get("NOTION_SHORTLIST_DS_ID")
 NOTION_API_VERSION: str = os.environ.get("NOTION_API_VERSION", "2022-06-28")
 
 # Magnific REST API key (x-magnific-api-key header) — used by

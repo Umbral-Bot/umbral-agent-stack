@@ -106,6 +106,10 @@ None of the four can create a brand-new row in the Shortlist/Alternativas DB fro
 
 Per this package's own contingency ("if there's no worker task... do not create a duplicate — write minimal CODE + tests... OR report BLOCKED with the identified gap"), this reports as **`BLOCKED_SHORTLIST_WRITE_TASK_MISSING`** rather than writing new Notion-write infrastructure under time pressure inside an already-large activation package. See the closing REPORT for the full evidence trail and the follow-up recommendation.
 
+### T5 follow-up — the gap is closed
+
+`PKG-MACRO-P5-Q12-T5` implemented `editorial.create_shortlist_alternativa` (`worker/tasks/editorial_create_shortlist.py`), the task this section identified as missing: creates one V1 row in the Shortlist DB, always `Resultado revisión = Pendiente`, fail-closed on `fuente_pieza_url` via the same `is_home_or_feed_url` guard, idempotent by `alternativa_id`. HITL-1 is now actually reachable — David can act on a Shortlist row a worker call creates. See `notion/schemas/alternativas-shortlist.schema.yaml`'s `creation:` section for the implementation record and T5's own REPORT for the CODE/E2E outcome.
+
 ## Prohibitions still in effect
 
 Unchanged from ROLE.md's Boundaries and Human gates sections: no publish, no `aprobado_contenido`, no `autorizar_publicacion`, no Notion writes (direct or via MCP), no cron/automation, no Notion AI for editorial decisions. Activation only grants read + payload-production capability; every write path still requires either the Worker (`ADR-011`) or an authorized human/operator action.

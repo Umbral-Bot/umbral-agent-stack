@@ -44,7 +44,13 @@ database:
       "Notion AI may support manual setup of pages/DBs, but does not
       participate in recurring editorial operations")
     verified: 2026-07-22 (David-reported IDs; not independently queried via
-      Notion API in this PR — docs/schema-only, no Notion API calls made)
+      Notion API in this PR — docs/schema-only, no Notion API calls made).
+      Independently re-verified live 2026-08-25 (PKG-MACRO-P5-Q12-T5) via
+      `notion_client.read_database("978766172abe46c9989bdcc031ea65c3")`:
+      title "Alternativas / Shortlist" confirmed, 0 rows, and every property
+      name/type below matches this file exactly (including select option
+      values for Resultado revisión, fuente_tipo, canal_sugerido,
+      dedupe_status, error_kind).
 
   description: >
     Superficie V1 de curado: alternativas propuestas por Rick (arco narrativo +
@@ -248,6 +254,35 @@ properties:
   # Sin campo dedicado: David deja comentarios nativos de Notion sobre la
   # página de la alternativa cuando Resultado revisión = Observar. Poller
   # opcional para estructurar el feedback es P2 (no especificado aún).
+
+# ---------------------------------------------------------------------------
+# Creación de filas V1 (registro pre-HITL-1)
+# ---------------------------------------------------------------------------
+
+creation:
+  trigger: rick-editorial produce una V1 alternativa completa (arco_narrativo,
+    estructura_discurso, fuente_pieza_url no home/feed)
+  writer: "Worker/core (ADR-011 #1) — rick-editorial no tiene umbral_worker_enqueue/
+    umbral_worker_run (Phase 1, PKG-MACRO-P5-Q12-T4); un operador autorizado
+    llama esta task con el payload que rick-editorial produjo"
+  resultado_revision_on_create: Pendiente
+  cabled: true
+  cabled_since: 2026-08-25
+  implementation:
+    worker_task: worker/tasks/editorial_create_shortlist.py::handle_editorial_create_shortlist_alternativa
+      (task name editorial.create_shortlist_alternativa)
+    env: NOTION_SHORTLIST_DS_ID (worker/config.py — mismo binding classic-id ya
+      usado por dispatcher/notion_poller.py para el scan de promoción)
+    guard: scripts/discovery/lib/url_classify.py::is_home_or_feed_url sobre
+      fuente_pieza_url (reutilizado, no reescrito — mismo guard que
+      editorial_promote.py/gates.py/stage7_publish_drafts.py)
+    idempotency: por alternativa_id (rich_text equals) — segunda llamada con el
+      mismo alternativa_id devuelve already_exists, no duplica
+  note: >
+    Cierra la brecha identificada en PKG-MACRO-P5-Q12-T4: hasta entonces no
+    existía ninguna task capaz de crear una fila nueva en esta DB — solo
+    editorial.promote_shortlist_approval, que exige una fila ya existente con
+    Resultado revisión = Aprobar. Ver docs/ops/rick-editorial-agent.md.
 
 # ---------------------------------------------------------------------------
 # Relación con Publicaciones (back-link)

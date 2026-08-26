@@ -183,6 +183,24 @@ T9 cierra las cuatro con artefactos durables, no solo con un prompt de una sesi�
 
 **`P5_Q12_EDITORIAL_MODEL_SOL = Y`** · **`P5_Q12_V2_COPY_R4_LIVE = Y`**. Sigue abierto por diseño: sin imagen, gates cerrados, nada publicado.
 
+### T10 — brief visual escrito, generación BLOCKED por env
+
+David dio GO para pasar a imagen (5 variantes, elige después, nadie publica). El brief se escribió; la generación **no pudo correr** por falta de credencial, y eso quedó como BLOCKED honesto en vez de forzarse.
+
+**Preflight** (read-only): fila en `Borrador`, tres gates en `false`, `Fuente primaria` = pieza IDS, `Copy Blog` r4 presente (2785 chars), y todos los campos de imagen vacíos — `Estado imagen` sin setear, es decir elegible. `magnific.generate_variants` cargada en el worker. `NOTION_POLLER_ENABLE_MAGNIFIC` y `NOTION_POLLER_ENABLE_PROMOTE` confirmados ausentes (chequeo por conteo, sin dump de env).
+
+**Fase 2 — Visual brief.** Lo produjo `rick-editorial` (Sol), no Claude. Se le pasó explícitamente que **no repitiera** el sufijo anti-slop de ADR-006, porque `_build_prompt` lo concatena solo cuando el prompt sale del `Visual brief` (`worker/tasks/magnific.py:119-129`): duplicarlo habría inflado el prompt sin aportar nada. **Ojo, no es incondicional:** si se pasa un `prompt` explícito por input, `_build_prompt` retorna en la primera línea y **se saltea el sufijo entero** — quien override-ee el prompt para retocar wording tiene que incluir el anti-slop a mano o pierde la guarda de ADR-006. El brief describe una escena AECO concreta (oficina técnica junto a obra, monitor con modelo BIM seccionado, tres paneles del mismo elemento con propiedades completas / nombres distintos / campos vacíos), figura humana solo parcial y de espaldas, sin marcas de terceros, `sin texto legible`, 4:3 con zona de respiro. Verificado contra las reglas antes de escribirlo. Se escribió **solo** la propiedad `Visual brief` sobre la fila `3c85f443-fb5c-818c-8464-ca2da6571a6c` (Publicaciones; no confundir con la Shortlist `3c85f443-fb5c-8118-97e8-c8f2d5f52ae7`, que difiere en un segmento del medio) vía worker, `task_id fdbd9f20-5bab-479a-aa0e-8c7b6ca85162`; no se tocó copy ni gates.
+
+**Fase 3 — dry-run.** `task_id 7c236bf3-8a6e-4ac0-8896-15e6f14567b4` → `would_generate: true`, `count: 5`, `aspect_ratio classic_4_3`, `resolution 2k`, `model realism`, y el prompt derivado = brief + sufijo anti-slop. Cero llamadas a Magnific, cero escrituras.
+
+**Fase 3 — live: BLOCKED.** `MAGNIFIC_API_KEY` está **ausente** del server (`grep -c '^MAGNIFIC_API_KEY=' ~/.config/openclaw/env` → `0`). No se seteó: no había GO puntual para esa credencial, y el pack lo prohíbe explícitamente. Tampoco se usó el MCP de Magnific como bypass — las URLs a Notion las escribe el Worker (ADR-011) — ni se encendió el poller.
+
+Se corrió igual el live para dejar evidencia dura: `task_id e8417dde-1993-4dba-af81-1218d17df48a`, `2026-08-26T20:39:57Z` → `ok: false`, `error: MAGNIFIC_API_KEY not configured on server`. **La task falla cerrada antes de cualquier escritura** (`_magnific_headers()` levanta antes del write interino de `Generando`), y se verificó leyendo la página después: `Estado imagen` sigue vacío — **no** quedó en `Error` ni `Generando` —, `imagen_error` vacío, las cinco `imagen_alt_*_url` en `None`, `Selección imagen` y `Visual asset URL` sin setear, gates en `false` y copy r4 intacto. Esa garantía no es una anécdota de esta corrida: la fija el test de regresión `tests/test_magnific.py::test_no_api_key_configured_blocks_before_any_write`, que afirma `update_page_properties.assert_not_called()`. Si alguien hoistea el write interino por encima del chequeo de credencial, ese test lo atrapa.
+
+La fila queda limpia y elegible para reintentar, **pero setear la credencial no alcanza por sí solo**: `worker/config.py:81` toma `MAGNIFIC_API_KEY` como snapshot a nivel de módulo, en el import, y el handler lee `config.MAGNIFIC_API_KEY` (no `os.environ`) en cada llamada. Agregar la línea al env **sin reiniciar `umbral-worker` devuelve exactamente el mismo error**, y es fácil leerlo como "la key está mal" y volver a editar el env en vez de reiniciar. Es el mismo procedimiento que ya hizo falta en T6 para `NOTION_SHORTLIST_DS_ID`. Orden correcto para el reintento: (1) GO de David para la credencial, (2) agregar la línea al env, (3) `systemctl --user restart umbral-worker`, (4) confirmar en `/health`, (5) recién entonces re-enqueue con `dry_run:false`.
+
+**`P5_Q12_VISUAL_VARIANTS_LIVE = BLOCKED`** — capa **env/config**, variable exacta `MAGNIFIC_API_KEY`. Todo lo demás del camino quedó listo: brief escrito, prompt derivado verificado, task cargada, fila elegible. HITL-2 (elegir imagen, marcar casillas, Telegram) no es este pack.
+
 
 ## Prohibitions still in effect
 

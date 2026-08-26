@@ -122,6 +122,19 @@ David GO (2026-08-26): set `NOTION_SHORTLIST_DS_ID` on the live server (single l
 
 **`P5_Q12_SHORTLIST_CREATE_E2E_LIVE = Y`.**
 
+### T7 — HITL-1 → promote live: the draft row exists in Publicaciones
+
+David performed HITL-1 himself on 2026-08-26, setting `Resultado revisión = Aprobar` — observed at preflight with the Shortlist row's `last_edited_time` at `2026-08-26T14:50:00Z`, before this package wrote anything. (That timestamp is now `15:13:00Z`: the promote itself writes `promovido_a` back to the same row, so it no longer reads as David's edit time. The `Aprobar` value is his; the later bump is ours.) Preflight re-verified that live and independently before acting: `Aprobar`, `fuente_pieza_url` = the concrete IDS piece, `promovido_a` still empty, `is_home_or_feed_url(...) = False`. `NOTION_POLLER_ENABLE_PROMOTE` remained absent throughout — the promotion was a deliberate one-shot worker call by an authorized operator (Claude via `POST /enqueue`), never the poller and never `rick-editorial`.
+
+- **Dry-run**: `task_id 5b6050be-7fce-4990-b11e-ea2ae803b2a0` → `would_promote:true`, preview showed `Estado: Borrador`, both gates `false`, `Fuente primaria` = the IDS piece. Zero writes.
+- **Live promote**: `task_id 615d4ac2-9cb9-49cf-8fe8-059dd4420cfd`, `2026-08-26T15:13:27Z` → `created:true`, `publicacion_page_id 3c85f443-fb5c-818c-8464-ca2da6571a6c` (Notion `created_time 2026-08-26T15:13:00Z` — same minute, consistent identity).
+- **New Publicaciones row, read back read-only**: `Estado = Borrador`; `Fuente primaria` = the concrete IDS piece (**not** the home page — the defect this whole Q12 thread started from is corrected in this new row); `origen_alternativa → 3c85f443-fb5c-8118-97e8-c8f2d5f52ae7`; `aprobado_contenido = false`; `autorizar_publicacion = false`; `Creado por sistema = true`; `Canal = blog`; `Tipo de contenido = blog_post`; `publication_id = shortlist-CAND-OLA3-03-SHORTLIST-V1`. All copy fields (`Copy Blog`/`LinkedIn`/`X`/`Newsletter`) empty, `Estado imagen` unset, `published_url` unset — **this package deliberately writes no copy**; V2 drafting is separate work.
+- **Back-link**: the Shortlist row's `promovido_a` now points at the new Publicaciones page.
+- **Idempotency**: second live enqueue of the same `shortlist_page_id` → `task_id 9f958e1a-99f8-445d-a1bd-d989d1a36d72`, `already_promoted:true`, same `publicacion_page_id`, no duplicate. Queried Publicaciones by `origen_alternativa` → exactly 1 linked row.
+- **The old `CAND-OLA3-03` was NOT touched**: `3a55f443-fb5c-81d1-b1f6-fe1b95dfd336` re-read after everything — `Fuente primaria` still the home page, `origen_alternativa` still `[]`, `last_edited_time` still `2026-07-22T07:31:00Z` (a month before this work began, proving no write reached it). That legacy row remains unfixed and out of scope; the corrected source lives in the new row, not in it.
+
+**`P5_Q12_PROMOTE_E2E_LIVE = Y`.** Still open downstream, by design: no copy written, no image, both human gates closed, nothing published.
+
 ## Prohibitions still in effect
 
 Unchanged from ROLE.md's Boundaries and Human gates sections: no publish, no `aprobado_contenido`, no `autorizar_publicacion`, no Notion writes (direct or via MCP), no cron/automation, no Notion AI for editorial decisions. Activation only grants read + payload-production capability; every write path still requires either the Worker (`ADR-011`) or an authorized human/operator action.

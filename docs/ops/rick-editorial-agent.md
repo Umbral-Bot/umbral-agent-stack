@@ -108,7 +108,19 @@ Per this package's own contingency ("if there's no worker task... do not create 
 
 ### T5 follow-up — the gap is closed
 
-`PKG-MACRO-P5-Q12-T5` implemented `editorial.create_shortlist_alternativa` (`worker/tasks/editorial_create_shortlist.py`), the task this section identified as missing: creates one V1 row in the Shortlist DB, always `Resultado revisión = Pendiente`, fail-closed on `fuente_pieza_url` via the same `is_home_or_feed_url` guard, idempotent by `alternativa_id`. HITL-1 is now actually reachable — David can act on a Shortlist row a worker call creates. See `notion/schemas/alternativas-shortlist.schema.yaml`'s `creation:` section for the implementation record and T5's own REPORT for the CODE/E2E outcome.
+`PKG-MACRO-P5-Q12-T5` implemented `editorial.create_shortlist_alternativa` (`worker/tasks/editorial_create_shortlist.py`), the task this section identified as missing: creates one V1 row in the Shortlist DB, always `Resultado revisión = Pendiente`, fail-closed on `fuente_pieza_url` via the same `is_home_or_feed_url` guard, idempotent by `alternativa_id`. HITL-1 is now actually reachable — David can act on a Shortlist row a worker call creates. See `notion/schemas/alternativas-shortlist.schema.yaml`'s `creation:` section for the implementation record and T5's own REPORT for the CODE/E2E outcome (`BLOCKED_SHORTLIST_WRITE_TASK_MISSING` → `NOTION_SHORTLIST_DS_ID` still absent from the live server env at T5 close).
+
+### T6 — E2E live: the V1 row exists in Notion
+
+David GO (2026-08-26): set `NOTION_SHORTLIST_DS_ID` on the live server (single line appended to `~/.config/openclaw/env`, backed up first; `NOTION_POLLER_ENABLE_PROMOTE` left untouched/unset), restarted `umbral-worker`, and ran the full E2E cycle for real via `POST /enqueue` (operator: Claude; `rick-editorial` never enqueues).
+
+- **Dry-run**: `task_id 7c0fbfe5-8a4c-423a-8d49-11d30e24e292` — `ok:true, would_create:true`, preview showed `Resultado revisión: Pendiente`.
+- **Live create**: `task_id 60d3c07e-4807-4333-bbc5-fd321626b8fc`, `2026-08-26T02:03:48Z` → `created:true`, `shortlist_page_id 3c85f443-fb5c-8118-97e8-c8f2d5f52ae7` (Notion `created_time: 2026-08-26T02:03:00Z` — same minute as the enqueue, consistent identity). Read back (read-only): `fuente_pieza_url` = the concrete IDS piece, `Resultado revisión = Pendiente`, `promovido_a = []`. Shortlist DB: 0 → 1 row.
+- **Negative control**: `task_id 05534c22-79ad-4d22-969b-5e5c40f041f6`, home URL `https://www.buildingsmart.org/` → `fuente_pieza_url_is_home_or_feed`, no row created (DB stayed at 1).
+- **Idempotency**: second live call, same `alternativa_id` → `task_id 35511953-fef6-4584-8fa7-310e15bbf258`, `already_exists:true`, same `shortlist_page_id` — no duplicate (DB stayed at 1).
+- **Publicaciones untouched**: `CAND-OLA3-03` (`3a55f443-fb5c-81d1-b1f6-fe1b95dfd336`) re-read after all of the above — `Fuente primaria` is still the home page, `origen_alternativa` still `[]`. Nothing was promoted, approved, or archived. HITL-1 (`Resultado revisión = Aprobar` on the new Shortlist row) is David's decision, next, in Notion — not part of this package.
+
+**`P5_Q12_SHORTLIST_CREATE_E2E_LIVE = Y`.**
 
 ## Prohibitions still in effect
 

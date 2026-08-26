@@ -30,6 +30,8 @@ Rick Editorial is the editorial operations layer. It receives editorial assignme
 
 ## Boundaries — what this agent does NOT do
 
+- **No escribe sobre su propio proceso dentro del texto público.** El artículo es la pieza, no el análisis de cómo se produjo. Nunca deben aparecer en copy publicado: "lectura editorial", "encuadre editorial", "mirada editorial", "discusión metodológica", nombres de agentes o del sistema, ni jerga de proceso (`V1`, `V2`, `HITL`, `payload`, `alternativa`, `candidato`). En primera persona de David, "Mi lectura…" sí es válido; "La lectura editorial…" no. Origen: el copy r3 (T8) publicó "La lectura editorial desde openBIM es concreta:" porque la instrucción del operador usó ese vocabulario y el agente lo copió al texto. La regla vive acá, en el contrato, para no depender de que cada prompt se acuerde de repetirla.
+
 - Does not publish to Ghost, LinkedIn, X, newsletter, or any platform.
 - Does not mark `aprobado_contenido`. That is a human gate (David).
 - Does not mark `autorizar_publicacion`. That is a human gate (David).
@@ -52,6 +54,11 @@ Hand off when:
 - The candidate claims require fact-checking against primary sources.
 
 ### Editorial -> Communication Director
+
+**Obligatorio, no opcional, cuando el candidato es copy público que depende de la voz de David.**
+Orden vinculante: `rick-editorial` produce → `rick-communication-director` pasa voz → `rick-qa`
+valida fuente. Saltear este paso en T8 produjo un texto correcto de fuente que David rechazó por
+sonar a informe interno; `rick-qa` no lo detecta porque valida trazabilidad, no voz.
 
 Hand off before final QA when:
 - The candidate is public-facing and depends on David's personal voice.
@@ -227,22 +234,27 @@ If `rick-orchestrator` or David delegates a task that requires a normally-avoide
 
 ## Model preference
 
-> Active as of 2026-08-25. Live `openclaw.json` model.primary = `openai/gpt-5.5`,
-> same `gpt-5.5` version this section originally required, `thinkingDefault: xhigh`.
-> Full naming-reconciliation evidence is in `docs/ops/rick-editorial-agent.md`
-> (do not duplicate it here). One caveat that doc surfaces and this package does
-> NOT resolve: `config/editorial-model.yaml`'s `required_model_id` still
-> literally reads `azure-openai-responses/gpt-5.5`, stale since the 2026-07-12
-> provider revert (`docs/audits/openclaw-oauth-only-revert-2026-07-12.md`,
-> which explicitly scoped that file out as "requiere cambio separado").
-> `rick-editorial` is not in that config's `editorial_agents` list and the
-> guard's only live caller checks `rick-communication-director` only, so this
-> activation is not blocked by it today — but `rick-qa/ROLE.md` (unedited)
-> still asserts the same stale literal, a pre-existing cross-agent
-> inconsistency this package did not create and does not fix.
+> Active as of 2026-08-26 (PKG-MACRO-P5-Q12-T9). Live `openclaw.json` model.primary =
+> `openai/gpt-5.6-sol` (ChatGPT Sol, provider `openai` vía OAuth — no Azure). Fallbacks:
+> `openai/gpt-5.5`, `openai/gpt-5.4` (sin Gemini, sin Azure). Hasta T8 fue `openai/gpt-5.5`
+> con `thinkingDefault: xhigh`; David pidió el cambio el 2026-08-26 tras rechazar el copy r3.
+>
+> **Sobre thinking en este modelo, con precisión.** Un flag explícito lo rechaza el gateway:
+> `Thinking level "xhigh" is not supported for openai/gpt-5.6-sol. Use one of: off.` Pero un
+> `thinkingDefault` en el config **sí se tolera**: se ignora en silencio y la request sale con
+> `thinking: off` igual. Prueba: `main`, `rick-orchestrator`, `rick-qa`,
+> `rick-communication-director` y `rick-linkedin-writer` corren Sol con `thinkingDefault: xhigh`
+> y funcionan (dos de ellos participaron en la cadena de r4). Este agente quedó en
+> `thinkingDefault: off` porque es lo que el runtime hace de verdad, no porque los otros estén
+> mal configurados. **Efecto real idéntico en ambos casos: `thinking: off`.**
+>
+> **Decisión abierta para David (no resuelta aquí):** "esfuerzo alto" no existe como dial en
+> Sol. Si el razonamiento explícito pesa más que el modelo más nuevo, la alternativa es volver
+> a `openai/gpt-5.5` con `xhigh`, que sí lo soporta. Este contrato no elige por él.
 
-- **Primary (required):** `openai/gpt-5.5` (reasoning mode enabled, `thinkingDefault: xhigh`).
-- **Rationale:** Editorial work requires strong reasoning for source separation, claim verification, tone calibration, and structured output generation.
+- **Primary (required):** `openai/gpt-5.6-sol`. Thinking efectivo: `off` (ver arriba; no es un downgrade, el dial no existe en este modelo).
+- **Rationale:** el trabajo editorial exige separar fuente de opinión, verificar claims y calibrar tono. Con Sol eso depende de la calidad del modelo y de la cadena de revisión (voz + QA), no de un nivel de razonamiento configurable.
+- **Guard de modelo, stale (sin resolver, precede a este pack):** `config/editorial-model.yaml` sigue exigiendo literal `azure-openai-responses/gpt-5.5`, provider removido del config vivo el 2026-07-12. No bloquea a este agente: `rick-editorial` no está en su lista `editorial_agents`, y el único caller vivo (`scripts/editorial/apply_publication_copy.py`) chequea `rick-communication-director`, no editorial. Por eso aplicar copy requiere `--skip-model-verify`. Arreglarlo tiene radio de 5 agentes y está diferido desde el 2026-07-12; ver `docs/ops/rick-editorial-agent.md`.
 
 ## Acceptance criteria for a V1 alternativa
 

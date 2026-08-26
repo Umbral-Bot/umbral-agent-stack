@@ -1,32 +1,41 @@
 # V2 copy — Shortlist CAND-OLA3-03-SHORTLIST-V1 (HITL-1 Aprobar por David, 2026-08-26)
-# Producida por rick-editorial (3 rondas), aprobada por rick-qa.
+# Ronda 4: rick-editorial (openai/gpt-5.6-sol) -> pasada de voz de rick-communication-director
+# (corrigió) -> rick-qa (aprobó trazabilidad de fuente).
 #
 # Apply:
 #   python scripts/editorial/apply_publication_copy.py \
 #     --publication-id shortlist-CAND-OLA3-03-SHORTLIST-V1 --write-body --skip-model-verify
-# (`notion_page_id` de abajo ya fija la página; no hace falta --page-id.
-#  `--skip-model-verify` es necesario mientras config/editorial-model.yaml siga pidiendo
-#  el provider `azure-openai-responses`, removido del config vivo el 2026-07-12.)
+# (`notion_page_id` ya fija la página. `--skip-model-verify` sigue haciendo falta mientras
+#  config/editorial-model.yaml pida el provider `azure-openai-responses`, removido del
+#  config vivo el 2026-07-12.)
 #
-# NOTA 1 — `Copy LinkedIn empresa` NO existe como columna en la DB Publicaciones live
-# (verificado 2026-08-26: Notion 400 "Copy LinkedIn empresa is not a property that exists").
-# Crear columnas es decisión de David (ADR-007 §44), así que el texto aprobado se conserva
-# abajo en `pending_columns`, que el script y el validador ignoran por completo.
-# NOTA 2 — por eso mismo, cada corrida imprime `warn: linkedin_empresa: missing
-# copy_linkedin_empresa`. Es esperado, NO significa que falte el copy: está en
-# `pending_columns.copy_linkedin_empresa`, ya redactado y revisado. No lo regeneres.
+# CUIDADO con el body: el marcador de --write-body embebe el `trace_id`. Cambiar el trace_id
+# y re-correr NO reemplaza el body anterior, lo APILA (dos cuerpos en la página). El script no
+# tiene lever para esto: `--force-body-append` empeora el problema, no lo evita.
+# PROCEDIMIENTO OBLIGATORIO si cambiás el trace_id (así se hizo r3 -> r4):
+#   1. GET /v1/blocks/<page_id>/children y confirmar que TODOS los bloques son el body viejo
+#      (callout con el marcador + divider + párrafos; nada ajeno que se pierda al borrar).
+#   2. DELETE /v1/blocks/<id> uno por uno; confirmar que la página queda en 0 bloques.
+#   3. Recién entonces correr el Apply de arriba.
+#   4. Verificar al cierre: exactamente 1 bloque callout con el marcador.
+#
+# NOTA — `Copy LinkedIn empresa` NO existe como columna en la DB Publicaciones live
+# (Notion 400 verificado 2026-08-26). Crear columnas es de David (ADR-007 §44), así que el
+# texto aprobado vive en `pending_columns`, que script y validador ignoran. Por eso cada
+# corrida imprime `warn: linkedin_empresa: missing copy_linkedin_empresa`: es esperado y NO
+# significa que falte el copy. No lo regeneres.
 #
 # Gates: NUNCA setear aprobado_contenido / autorizar_publicacion desde automatización.
 
 publication_id: shortlist-CAND-OLA3-03-SHORTLIST-V1
 notion_page_id: 3c85f443-fb5c-818c-8464-ca2da6571a6c
-trace_id: PKG-MACRO-P5-Q12-T8-v2-copy-r3
+trace_id: PKG-MACRO-P5-Q12-T9-v2-copy-r4
 claim_type: opinión con fuente primaria
 fuente_primaria: https://raw.githubusercontent.com/buildingSMART/IDS/development/Documentation/UserManual/README.md
 canal: blog
 
-# Nota: `fuente_primaria`, `claim_type` y `canal` son metadatos del payload; el script
-# NO los escribe como propiedades. `Fuente primaria` en Notion la dejó el promote (T7).
+# `fuente_primaria`, `claim_type` y `canal` son metadatos del payload; el script NO los
+# escribe como propiedades. `Fuente primaria` en Notion la dejó el promote (T7).
 
 tesis_canonica: >-
   Automatizar sin acordar primero qué información debe existir no elimina el criterio:
@@ -34,46 +43,49 @@ tesis_canonica: >-
 cierre_canonico: Primero claridad. Después velocidad.
 
 comentarios_revision: >-
-  Copy V2 generada y revisada en tres rondas. La primera se descartó por una URL de fuente
-  incorrecta, una frase vetada por la guía de estilo y longitudes fuera de objetivo. La segunda
-  se rechazó en revisión editorial porque atribuía a la fuente afirmaciones que no sostiene. Esta
-  versión limita las afirmaciones técnicas a lo que documenta el manual de buildingSMART y deja
-  openBIM como encuadre editorial. Pendiente: el copy de LinkedIn empresa está redactado y
+  Cuarta versión del copy. La anterior era correcta de fuente pero sonaba a informe interno,
+  no a David: hablaba del propio análisis dentro del artículo. Esta versión abre con una escena
+  de obra, pasó una revisión de voz dedicada y mantiene los claims técnicos dentro de lo que
+  documenta el manual de buildingSMART. Pendiente: el copy de LinkedIn empresa está redactado y
   revisado, pero esta base no tiene la columna donde guardarlo.
 
 copy_blog: |
-  Automatizar un flujo de información sin acordar primero qué información debe existir no elimina el criterio. Lo mueve a otro lugar: a plantillas distintas, revisiones manuales tardías, modelos que parecen completos pero no responden a la decisión que tienen que sostener.
+  Alguien pide un modelo para revisar una entrega. Llegan tres versiones. Una incluye las propiedades esperadas, otra usa nombres distintos y la tercera deja campos vacíos. Los archivos abren, pero nadie puede responder con rapidez cuál cumple lo solicitado. El flujo estaba preparado para mover información, no para comprobarla.
 
-  En una coordinación de proyecto, el problema rara vez aparece como una gran discusión metodológica. Aparece cuando alguien necesita validar si un elemento aplica a cierto control, si debe traer una propiedad específica, si ese dato está definido como requisito y si puede comprobarse contra el modelo. La automatización deja de ser una promesa abstracta y se vuelve una pregunta previa: qué dato se espera, para qué caso, bajo qué condición y cómo se comprueba.
+  Automatizar en esas condiciones no resuelve el problema. Las decisiones terminan repartidas entre plantillas, scripts y revisiones, y cada equipo define por su cuenta qué dato necesita. El proceso corre más rápido, pero los modelos se siguen revisando con reglas distintas.
 
-  La lectura editorial desde openBIM es concreta: antes de automatizar, conviene ordenar los criterios de información que sostienen el flujo. El manual de buildingSMART para IDS permite bajar esa idea a un terreno verificable. IDS se presenta allí como un estándar de buildingSMART para especificar y comprobar requisitos simples de información en modelos IFC. Esa definición alcanza para cambiar la conversación: el foco pasa de pedir información en términos generales a describir requisitos que puedan revisarse de manera explícita.
+  Antes de conectar herramientas, el equipo tiene que acordar cuatro cosas: qué información debe existir, sobre qué elementos, bajo qué condición y para qué revisión. No alcanza con pedir que el modelo venga completo. Hay que definir qué significa completo para la decisión que sigue.
 
-  El manual también muestra una estructura clave. Una especificación IDS separa aplicabilidad y requisitos. Primero define a qué entidades o casos aplica una exigencia. Después declara qué información debe cumplir esa parte del modelo. Esa distinción evita mezclar el alcance del control con el contenido esperado. En la práctica, ayuda a formular preguntas más limpias: sobre qué elementos corre esta regla, qué propiedad o clasificación se espera, qué condición debe cumplirse y cómo se revisa.
+  IDS permite dejar esos requisitos por escrito y comprobarlos en el modelo. El manual de buildingSMART lo presenta como un estándar para especificar y comprobar requisitos simples de información en modelos IFC. Su alcance es acotado y útil: expresar requisitos que luego puedan revisarse contra un modelo.
 
-  Otro punto relevante del manual es que existen herramientas de creación y de comprobación de IDS de distintos proveedores. Eso no reemplaza el trabajo de criterio, pero muestra que los requisitos pueden salir del documento informal y entrar en una forma que permite comprobación. La responsabilidad sigue estando en definir bien qué se pide, por qué se pide y a qué decisión sirve.
+  Para preparar una comprobación con IDS hay que separar dos preguntas que suelen mezclarse. La aplicabilidad determina a qué entidades o casos corresponde una especificación. Los requisitos establecen qué información debe cumplir esa parte del modelo. Primero se define qué elementos se van a revisar. Después, qué se espera encontrar.
 
-  Por eso, antes de conectar más herramientas, conviene mirar el punto donde se define el criterio. Si cada equipo interpreta los requisitos a su manera, la automatización acelera diferencias que ya estaban instaladas. Si los requisitos se expresan con especificaciones que distinguen aplicabilidad y requisitos, el flujo puede empezar a apoyarse en controles más claros.
+  En una revisión, esa separación evita pedidos generales. En lugar de decir que todos los equipos deben completar una propiedad, se puede precisar sobre qué elementos aplica, cuál es la propiedad requerida y qué condición debe cumplir. Así, cada participante revisa los mismos elementos con la misma regla.
+
+  El manual también señala que existen herramientas de creación y de comprobación de IDS de distintos proveedores. La herramienta puede ayudar a redactar o revisar una especificación, pero antes el equipo tiene que acordar qué se pide y por qué ese dato es necesario.
+
+  El orden es simple. Primero se define el criterio. Luego se expresa el requisito. Después se comprueba el modelo. Recién entonces tiene sentido automatizar pasos del flujo con una base más clara.
+
+  En un flujo openBIM, coordinar información exige acuerdos explícitos entre quienes la producen y quienes la revisan. IDS permite trabajar una parte precisa de ese desafío: especificar y comprobar requisitos simples de información en modelos IFC. No resuelve por sí mismo la coordinación, pero obliga a definir mejor qué queremos controlar.
 
   Fuente: https://raw.githubusercontent.com/buildingSMART/IDS/development/Documentation/UserManual/README.md
   Primero claridad. Después velocidad.
 
 copy_linkedin: |
-  Antes de automatizar un flujo de información en proyectos, conviene acordar qué información debe existir, para qué decisión y bajo qué validación.
+  Recibir un modelo no significa que esté listo para revisar. Si nadie definió qué información debe contener, sobre qué elementos y bajo qué condición, la automatización mueve la inconsistencia más rápido.
 
-  Mi lectura desde openBIM es simple: el criterio tiene que estar antes que la conexión entre herramientas. El manual de buildingSMART presenta IDS como un estándar para especificar y comprobar requisitos simples de información en modelos IFC. También ordena cada especificación separando aplicabilidad y requisitos, y registra herramientas de creación y comprobación de distintos proveedores.
+  Mi lectura desde coordinación es directa: el criterio va primero. IDS, estándar de buildingSMART, permite especificar y comprobar requisitos simples de información en modelos IFC. Para hacerlo, separa aplicabilidad y requisitos. Además, existen herramientas de creación y comprobación de distintos proveedores.
 
   Fuente: https://raw.githubusercontent.com/buildingSMART/IDS/development/Documentation/UserManual/README.md
   Primero claridad. Después velocidad.
 
 copy_x: |
-  Automatizar sin acordar primero qué información debe existir desplaza el criterio a decisiones inconsistentes. IDS ayuda a especificar y comprobar requisitos simples de información en modelos IFC.
+  Automatizar sin acordar qué información debe existir hace que los modelos se revisen más rápido, pero con reglas distintas. IDS permite especificar y comprobar requisitos simples de información en modelos IFC.
   Primero claridad. Después velocidad.
 
-# Redactado y aprobado, NO aplicado: falta la columna en Notion (ver NOTA 1).
-# Anidado aquí a propósito — ninguna clave dentro de `pending_columns` es leída
-# por apply_publication_copy.py ni por validate_editorial_copy.py.
+# Redactado y aprobado, NO aplicado: falta la columna en Notion (ver NOTA).
 pending_columns:
   copy_linkedin_empresa: |
-    Automatizar flujos de información exige criterios claros: qué datos deben existir, cuándo aplican y cómo se comprueban. En el artículo completo en el blog revisamos IDS, estándar de buildingSMART para especificar y comprobar requisitos simples de información en modelos IFC, separar aplicabilidad y requisitos, y trabajar con herramientas de creación y comprobación de distintos proveedores.
+    Un modelo puede abrir correctamente y aun así no contener la información necesaria para una revisión. IDS permite especificar y comprobar requisitos simples de información en modelos IFC, separando los elementos a los que aplica cada control de los requisitos que deben cumplir. En el artículo completo mostramos cómo llevar este orden a una entrega.
 
     Fuente: https://raw.githubusercontent.com/buildingSMART/IDS/development/Documentation/UserManual/README.md

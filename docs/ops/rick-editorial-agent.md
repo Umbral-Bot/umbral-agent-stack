@@ -201,6 +201,29 @@ La fila queda limpia y elegible para reintentar, **pero setear la credencial no 
 
 **`P5_Q12_VISUAL_VARIANTS_LIVE = BLOCKED`** — capa **env/config**, variable exacta `MAGNIFIC_API_KEY`. Todo lo demás del camino quedó listo: brief escrito, prompt derivado verificado, task cargada, fila elegible. HITL-2 (elegir imagen, marcar casillas, Telegram) no es este pack.
 
+### T11 — búsqueda de la credencial: no está la API key REST (y el OAuth del MCP tampoco quedó completado)
+
+David indicó que la `MAGNIFIC_API_KEY` ya estaba en la VPS y pidió engancharla al worker. **Se buscó a fondo y no está.** Lo que sí está en la VPS es una credencial de Magnific, pero de **otro tipo**, y no sirve para este camino.
+
+**Dónde se buscó** (por NOMBRE de variable, nunca por patrón de token, y sin imprimir valores):
+
+- Los tres `EnvironmentFile` que carga `umbral-worker` según systemd: `~/.config/openclaw/env`, `~/.config/openclaw/copilot-cli.env`, `~/.config/openclaw/copilot-cli-secrets.env` → ninguno tiene la línea.
+- `~/.openclaw/.env`, `~/.env`, `<repo>/.env`, `<repo>/.env.*`, `~/.config/openclaw/backups/env.*`, `~/.config/openclaw/*.env`.
+- `.env.example` y `openclaw/env.template` del repo: en ambos la línea está **comentada** y con marcador de plantilla — `CHANGE_ME_MAGNIFIC_API_KEY` en el primero, `xxx` en el segundo. Plantilla, no credencial.
+- Barrido de `/home/rick` y `/etc` (74.165 archivos, excluyendo `.git`, `node_modules`, `.venv`, caches y transcripciones) buscando una asignación real `MAGNIFIC_API_KEY=<valor>`: **cero resultados**.
+- `~/.openclaw/openclaw.json`: no menciona el nombre de la variable.
+
+**Lo que sí existe, y por qué no aplica.** `openclaw.json` tiene un server MCP `magnific` cuyo campo `auth` es literalmente la palabra `oauth` (5 caracteres), no una key, y sus `args` no contienen nada con forma de secreto. Y el camino MCP tampoco está realmente disponible: bajo `~/.mcp-auth/` hay **20 registros de cliente** (`d26f403b*_client_info.json`) para ese server y **cero** `*_tokens.json` — de ningún server. Es decir, existe un *registro de cliente* OAuth, no una credencial de usuario utilizable: el OAuth nunca se completó. Así que el MCP no era una alternativa que se descartó por ADR-011 solamente; tampoco habría funcionado. Eso concuerda con `docs/ops/magnific-editorial-setup-2026-06-06.md`, que lo dice explícito en su encabezado: *"Magnific MCP … (OAuth cuenta Magnific; **sin API key en MCP**)"*, y trata la REST key como un camino aparte: *"Fallback producción (sin MCP OAuth): API key REST en `~/.config/openclaw/env` como `MAGNIFIC_API_KEY` + script Worker."*.
+
+Son dos credenciales distintas para dos caminos distintos: el worker (`worker/tasks/magnific.py`) manda el header `x-magnific-api-key`, que es REST y **no** se deriva de un token OAuth de MCP. Usar el MCP para generar sería justamente el bypass del Worker que ADR-011 prohíbe (las URLs a Notion las escribe el Worker), así que no se hizo.
+
+**No se tocó nada.** Sin key instalable, no se modificó `~/.config/openclaw/env`, no se reinició el worker, no se corrió generación, no se encendió ningún poller. La fila `3c85f443-fb5c-818c-8464-ca2da6571a6c` se releyó al cierre para no darlo por sentado: `last_edited_time` sigue en `2026-08-26T20:39:00Z`, exactamente donde la dejó T10 — `Visual brief` presente (464 chars), `Estado imagen` vacío (elegible), `imagen_error` vacío, las cinco `imagen_alt_*_url` en `None`, `Estado = Borrador`, los tres gates en `false`, `Fuente primaria` y copy r4 (`trace_id …-r4`) intactos.
+
+**Observación aparte, preexistente y fuera de alcance de este pack:** ese mismo directorio acumula **1.442** archivos `*_code_verifier_*.txt` huérfanos repartidos en 21 carpetas `mcp-remote-*`, **117 de ellos escritos hoy**, con cero tokens completados nunca. Eso apunta a un reintento de OAuth que falla en bucle y crece sin límite. No se tocó acá — no es la credencial que este pack buscaba y arreglarlo es trabajo aparte.
+
+**`P5_Q12_VISUAL_VARIANTS_LIVE = BLOCKED`** (sin cambio respecto de T10) — capa **env/config**. Para desbloquear hace falta que David consiga la API key REST desde su cuenta Magnific y la instale; **no se le pidió pegarla al chat**. Para desbloquear se sigue **el mismo orden de 5 pasos ya escrito en T10 más arriba**, que empieza por el GO puntual de David para la credencial y **no** se repite acá para que no diverjan. Los dos puntos que más se prestan a confusión: la línea debe llevar un valor real (`MAGNIFIC_API_KEY=<valor>`; vacía falla igual, el handler hace `(… or "").strip()` y levanta), y **sin reiniciar el worker** `worker/config.py` sigue con `None` y devuelve el error idéntico, que se lee como "la key está mal".
+
+
 
 ## Prohibitions still in effect
 

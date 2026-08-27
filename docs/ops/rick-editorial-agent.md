@@ -223,6 +223,29 @@ Son dos credenciales distintas para dos caminos distintos: el worker (`worker/ta
 
 **`P5_Q12_VISUAL_VARIANTS_LIVE = BLOCKED`** (sin cambio respecto de T10) — capa **env/config**. Para desbloquear hace falta que David consiga la API key REST desde su cuenta Magnific y la instale; **no se le pidió pegarla al chat**. Para desbloquear se sigue **el mismo orden de 5 pasos ya escrito en T10 más arriba**, que empieza por el GO puntual de David para la credencial y **no** se repite acá para que no diverjan. Los dos puntos que más se prestan a confusión: la línea debe llevar un valor real (`MAGNIFIC_API_KEY=<valor>`; vacía falla igual, el handler hace `(… or "").strip()` y levanta), y **sin reiniciar el worker** `worker/config.py` sigue con `None` y devuelve el error idéntico, que se lee como "la key está mal".
 
+### T12 — las 5 variantes existen
+
+David consiguió la API key REST, la puso él mismo en `~/.config/openclaw/env` y reinició el worker. Verificado antes de tocar nada, sin leer el valor: la asignación existe (`len=34`, no placeholder), y el worker vivo es **PID 1648574**, arrancado a las `11:09:42 -04`, **~9 segundos después** del mtime del env (`11:09:33 -04`; ambos hora local, el resto de los timestamps de esta sección son UTC) — o sea que el snapshot de `worker/config.py` ya incluye la credencial y **no hizo falta reiniciar de nuevo**. `NOTION_POLLER_ENABLE_MAGNIFIC` sigue **ausente** (0 asignaciones, chequeo por conteo).
+
+Preflight de la fila: `Borrador`, tres gates en `false`, `Estado imagen` vacío (elegible), `Visual brief` de T10 presente (464 chars), copy r4 intacto.
+
+**Dry-run** (`task_id c4b5aa22-0c67-498b-98e8-efb302f158ad`): `would_generate: true`, `count 5`, `classic_4_3` / `2k` / `realism`, prompt de 795 chars terminando en el sufijo anti-slop — confirmando que salió del `Visual brief` y **no** se pisó con un `prompt` explícito, que habría salteado el sufijo (la trampa documentada en T10). Cero créditos.
+
+**Live** (`task_id be7924a1-eff4-4733-8e32-23e0e5573d61`, `2026-08-27T15:14:09Z` → `15:16:07Z`, **117,5 s**): `generated: 5/5`, `error: None`, `Estado imagen = Listo para selección`.
+
+**Read-back independiente**: `imagen_alt_1_url` … `imagen_alt_5_url` las cinco pobladas (CDN de Magnific/Freepik), `imagen_cantidad = 5`, `imagen_generada_at = 2026-08-27`, `imagen_error` vacío, `last_edited 15:16` — consistente con el `task_id` y su timestamp. Sin tocar lo que es de David: `Selección imagen` **sin setear**, `Visual asset URL` **sin setear**. Intactos: `Estado = Borrador`, los tres gates en `false`, `Fuente primaria` (pieza IDS), `Copy Blog` r4 (2785 chars, `trace_id …-r4`), `Visual brief`, `published_url` sin setear.
+
+**⚠️ Las 5 URLs son links firmados que caducan en ~1 hora — el hallazgo más importante de T12.**
+El handler guarda la URL del CDN **tal cual, sin descargar ni re-hostear** (`worker/tasks/magnific.py:346`), y esas URLs traen `?token=exp=<epoch>~hmac=…`. Medido sobre la fila: las cinco expiran entre `16:14:35Z` y `16:16:05Z`, o sea ~60 min después de generarlas. La caducidad **se aplica de verdad**: `HEAD` sobre la URL vigente devuelve `200 image/png`; la misma URL con un `exp` pasado devuelve `403`.
+
+Eso choca de frente con HITL-2, que es una acción humana en escala de horas o días: si David abre la fila mañana, las cinco vistas previas van a ser `403` mientras `Estado imagen` sigue diciendo `Listo para selección`. Y si elige antes de notarlo, `scripts/editorial/sync_visual_asset_from_selection.py` copia `imagen_alt_N_url` **verbatim** a `Visual asset URL`, con lo cual el link muerto pasa a ser el asset de portada de la publicación.
+
+Segunda trampa encadenada: con `Estado imagen = Listo para selección` la fila **ya no es elegible** para regenerar — ese valor está en `_ALREADY_DONE_STATES` (`worker/tasks/magnific.py:75`), así que un reintento ingenuo se saltea en silencio. Recuperarse exige resetear el estado a mano y volver a gastar créditos.
+
+Nada de esto está documentado en `magnific-editorial-setup-2026-06-06.md` ni en `editorial-magnific-p22-poller-2026-07-23.md`. **No se arregló acá** (re-hostear las imágenes es infraestructura nueva y necesita su propio GO); queda levantado para decidir.
+
+**`P5_Q12_VISUAL_VARIANTS_LIVE = Y`** — las cinco variantes se generaron y quedaron escritas por el Worker, que es lo que el gate pedía. Con la salvedad de arriba: el artefacto es perecedero. Lo que sigue abierto es HITL-2 y es de David: elegir Alt 1–5, marcar las casillas y la confirmación por Telegram. Nada de eso se tocó acá, y el post no está publicado.
+
 
 
 ## Prohibitions still in effect

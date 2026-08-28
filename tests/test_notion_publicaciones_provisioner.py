@@ -4,9 +4,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
-from unittest import mock
 
 import pytest
 
@@ -83,7 +81,7 @@ class TestPlanStructure:
         assert plan["database"]["name"] == "Publicaciones"
 
     def test_database_version(self, plan: dict) -> None:
-        assert plan["database"]["version"] == "0.3.0"
+        assert plan["database"]["version"] == "0.4.0"
 
     def test_dry_run_flag(self, plan: dict) -> None:
         assert plan["dry_run"] is True

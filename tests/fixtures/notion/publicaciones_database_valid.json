@@ -122,6 +122,12 @@
     "imagen_alt_5_url": {"id": "p35", "type": "url", "url": {}},
     "imagen_generada_at": {"id": "p36", "type": "date", "date": {}},
     "imagen_error": {"id": "p37", "type": "rich_text", "rich_text": {}},
-    "origen_alternativa": {"id": "p38", "type": "relation", "relation": {"database_id": "some-id"}}
+    "origen_alternativa": {"id": "p38", "type": "relation", "relation": {"database_id": "some-id"}},
+    "HITL Drive": {"id": "p39", "type": "url", "url": {}},
+    "imagen_alt_1_magnific_url": {"id": "p40", "type": "url", "url": {}},
+    "imagen_alt_2_magnific_url": {"id": "p41", "type": "url", "url": {}},
+    "imagen_alt_3_magnific_url": {"id": "p42", "type": "url", "url": {}},
+    "imagen_alt_4_magnific_url": {"id": "p43", "type": "url", "url": {}},
+    "imagen_alt_5_magnific_url": {"id": "p44", "type": "url", "url": {}}
   }
 }

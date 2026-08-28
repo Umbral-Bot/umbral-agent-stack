@@ -12,7 +12,6 @@ from infra.notion_schema import (
     load_schema,
     summarize_schema,
     validate_database_metadata,
-    validate_invariants,
     validate_properties,
     validate_schema,
     validate_state_machine,
@@ -46,7 +45,7 @@ class TestSchemaLoads:
         assert schema["database"]["name"] == "Publicaciones"
 
     def test_database_version(self, schema):
-        assert schema["database"]["version"] == "0.3.0"
+        assert schema["database"]["version"] == "0.4.0"
 
     def test_database_status_draft(self, schema):
         assert schema["database"]["status"] == "draft"
@@ -108,6 +107,20 @@ class TestProperties:
         assert "Visual brief" in names
         assert "Visual asset URL" in names
         assert "visual_hitl_required" in names
+
+    def test_has_editorial_hitl_drive_columns_already_live(self, schema):
+        props = {prop["name"]: prop for prop in schema["properties"]}
+        expected = {
+            "HITL Drive",
+            "imagen_alt_1_magnific_url",
+            "imagen_alt_2_magnific_url",
+            "imagen_alt_3_magnific_url",
+            "imagen_alt_4_magnific_url",
+            "imagen_alt_5_magnific_url",
+        }
+
+        assert expected <= props.keys()
+        assert all(props[name]["type"] == "url" for name in expected)
 
     def test_no_separate_assets_db_property(self, schema):
         """Assets are inline — no relation to a separate Assets DB."""

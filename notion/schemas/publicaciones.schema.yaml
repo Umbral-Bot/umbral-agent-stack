@@ -28,6 +28,8 @@
 #     MCP fetch, `Etapa audiencia` = awareness / consideration / trust /
 #     conversion / retention (color purple). Surfaced by the review of #636
 #     (PKG-MACRO-P5-L1-T2); closed by PKG-MACRO-P5-L1-T3.
+#   - [2026-08-28] 0.3.0 -> 0.4.0. Aligned the six already-live governed
+#     editorial Drive/Magnific locator URL properties. Nothing was written live.
 #
 # KNOWN DRIFT (2026-07-22, not resolved here): David's live evidence for this
 # PR names the live parent page "Sistema Editorial Rick"
@@ -39,7 +41,7 @@
 
 database:
   name: Publicaciones
-  version: 0.3.0
+  version: 0.4.0
   status: draft
   owner: Rick / Umbral BIM
 
@@ -292,7 +294,7 @@ properties:
     required: false
     description: >
       Brief del asset visual.  Debe especificar estilo, dimensiones,
-      canal, herramienta (Freepik API/MCP, nunca UI automation).
+      canal y herramienta (Magnific REST, nunca UI automation).
       HITL obligatorio si hay personas o marcas.
     max_length: 2000
 
@@ -300,7 +302,10 @@ properties:
     type: url
     required: false
     description: >
-      URL del asset visual generado (después de producción).
+      URL durable de la alternativa seleccionada para la fase visual siguiente.
+      Se copia desde imagen_alt_N_url y apunta al archivo persistido en Google
+      Drive, nunca al CDN temporal ni al locator de creación de Magnific. El
+      overlay T18 final queda fuera de este contrato.
 
   - name: visual_hitl_required
     type: checkbox
@@ -318,6 +323,9 @@ properties:
   # sigue siendo exclusivamente David (worker/tasks/magnific.py nunca la
   # toca); `Visual asset URL` la copia
   # scripts/editorial/sync_visual_asset_from_selection.py al elegir.
+  # Desde HITL Drive (2026-08-28), imagen_alt_*_url contiene enlaces durables
+  # de Drive. HITL Drive y los cinco imagen_alt_*_magnific_url ya existen live;
+  # este schema los documenta sin crear ni borrar propiedades en Notion.
 
   - name: Selección imagen
     type: select
@@ -363,7 +371,7 @@ properties:
       - name: Generando
         description: images_generate en curso (P2.2 interim state)
       - name: Listo para selección
-        description: URLs en columnas; David puede elegir
+        description: Cinco URLs durables de Drive en columnas; David puede elegir
       - name: Seleccionada
         description: Visual asset URL ya copiada
       - name: Regeneración pedida
@@ -378,41 +386,95 @@ properties:
       Cuántas alternativas están activas (N real, hasta 5). Escrito por
       worker/tasks/magnific.py.
 
+  - name: HITL Drive
+    type: url
+    required: false
+    description: >
+      webViewLink durable de la subcarpeta Drive de esta generación. Escrito
+      por worker/tasks/magnific.py antes de Estado imagen=Listo para selección.
+
   - name: imagen_alt_1_url
     type: url
     required: false
-    description: URL final alternativa 1 (Magnific/CDN). Escrito por worker/tasks/magnific.py.
+    description: >
+      webViewLink durable del archivo Drive alt-1.png. Escrito por
+      worker/tasks/magnific.py; nunca contiene el CDN temporal de Magnific.
+
+  - name: imagen_alt_1_magnific_url
+    type: url
+    required: false
+    description: >
+      Locator oficial de la creación Magnific para la alternativa 1, sólo si
+      el API lo entrega. Queda vacío si no existe; nunca se construye por inferencia.
 
   - name: imagen_alt_2_url
     type: url
     required: false
-    description: URL final alternativa 2. Escrito por worker/tasks/magnific.py.
+    description: >
+      webViewLink durable del archivo Drive alt-2.png. Escrito por
+      worker/tasks/magnific.py.
+
+  - name: imagen_alt_2_magnific_url
+    type: url
+    required: false
+    description: >
+      Locator oficial de la creación Magnific para la alternativa 2, sólo si
+      el API lo entrega. Queda vacío si no existe; nunca se construye por inferencia.
 
   - name: imagen_alt_3_url
     type: url
     required: false
-    description: URL final alternativa 3. Escrito por worker/tasks/magnific.py.
+    description: >
+      webViewLink durable del archivo Drive alt-3.png. Escrito por
+      worker/tasks/magnific.py.
+
+  - name: imagen_alt_3_magnific_url
+    type: url
+    required: false
+    description: >
+      Locator oficial de la creación Magnific para la alternativa 3, sólo si
+      el API lo entrega. Queda vacío si no existe; nunca se construye por inferencia.
 
   - name: imagen_alt_4_url
     type: url
     required: false
-    description: URL final alternativa 4 (reserva). Escrito por worker/tasks/magnific.py.
+    description: >
+      webViewLink durable del archivo Drive alt-4.png (reserva). Escrito por
+      worker/tasks/magnific.py.
+
+  - name: imagen_alt_4_magnific_url
+    type: url
+    required: false
+    description: >
+      Locator oficial de la creación Magnific para la alternativa 4, sólo si
+      el API lo entrega. Queda vacío si no existe; nunca se construye por inferencia.
 
   - name: imagen_alt_5_url
     type: url
     required: false
-    description: URL final alternativa 5 (reserva). Escrito por worker/tasks/magnific.py.
+    description: >
+      webViewLink durable del archivo Drive alt-5.png (reserva). Escrito por
+      worker/tasks/magnific.py.
+
+  - name: imagen_alt_5_magnific_url
+    type: url
+    required: false
+    description: >
+      Locator oficial de la creación Magnific para la alternativa 5, sólo si
+      el API lo entrega. Queda vacío si no existe; nunca se construye por inferencia.
 
   - name: imagen_generada_at
     type: date
     required: false
-    description: Timestamp de la última generación. Escrito por worker/tasks/magnific.py.
+    description: >
+      Timestamp de la última generación persistida 5/5 en Drive. Escrito por
+      worker/tasks/magnific.py.
 
   - name: imagen_error
     type: rich_text
     required: false
     description: >
-      Último error Magnific, si Estado imagen = Error. Escrito por
+      Último error Magnific o Drive, si Estado imagen = Error. Escrito por
       worker/tasks/magnific.py.
     max_length: 2000
 
@@ -580,9 +642,10 @@ invariants:
 
   - name: no_separate_assets_db_v1
     description: >
-      Assets visuales se gestionan inline en Publicaciones (campos
-      Visual brief, Visual asset URL, visual_hitl_required).
-      DB separada de assets es decisión diferida a v1.1/v2.
+      Metadatos y gates visuales se gestionan inline en Publicaciones (campos
+      Visual brief, Visual asset URL, visual_hitl_required, HITL Drive e
+      imagen_alt_*_url); los PNG viven en Drive gobernado. Una DB Notion
+      separada de assets es decisión diferida a v1.1/v2.
 
   - name: referente_is_discovery_not_source
     description: >

@@ -16,6 +16,7 @@ from worker.tasks import TASK_HANDLERS
 from worker.tasks import google_drive as gd
 
 FOLDER = "folder-pit-123"
+EDITORIAL_FOLDER = "folder-editorial-test"
 
 
 class _Call:
@@ -66,6 +67,7 @@ class FakeService:
 @pytest.fixture()
 def drive_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("GOOGLE_DRIVE_PIT_FOLDER_ID", FOLDER)
+    monkeypatch.setenv("GOOGLE_DRIVE_EDITORIAL_HITL_FOLDER_ID", EDITORIAL_FOLDER)
     monkeypatch.setenv("GOOGLE_DRIVE_OAUTH_CLIENT_ID", "client-id")
     monkeypatch.setenv("GOOGLE_DRIVE_OAUTH_CLIENT_SECRET", "client-secret")
     monkeypatch.setenv("GOOGLE_DRIVE_OAUTH_REFRESH_TOKEN", "refresh-token")
@@ -135,6 +137,229 @@ def test_upload_file_folder_guard_mismatch(
         gd.handle_google_drive_upload_file(
             {"local_path": str(local_file), "drive_folder_id": "otra-carpeta"}
         )
+
+
+def test_editorial_folder_guard_is_isolated_from_pit(
+    monkeypatch: pytest.MonkeyPatch, drive_env: None
+) -> None:
+    assert gd._resolve_folder_id(None, destination="pit") == FOLDER
+    assert (
+        gd._resolve_folder_id(None, destination="editorial_hitl")
+        == EDITORIAL_FOLDER
+    )
+    with pytest.raises(ValueError, match="GOOGLE_DRIVE_EDITORIAL_HITL_FOLDER_ID"):
+        gd._resolve_folder_id(FOLDER, destination="editorial_hitl")
+    with pytest.raises(ValueError, match="GOOGLE_DRIVE_PIT_FOLDER_ID"):
+        gd._resolve_folder_id(EDITORIAL_FOLDER, destination="pit")
+
+
+def test_editorial_readiness_reports_missing_without_values(
+    monkeypatch: pytest.MonkeyPatch, drive_env: None
+) -> None:
+    monkeypatch.delenv("GOOGLE_DRIVE_EDITORIAL_HITL_FOLDER_ID")
+
+    readiness = gd.editorial_hitl_drive_readiness("publication-safe")
+
+    assert readiness["ready"] is False
+    assert readiness["logical_path"] == "publication-safe/YYYYMMDD-HHmm"
+    assert readiness["missing"] == ["GOOGLE_DRIVE_EDITORIAL_HITL_FOLDER_ID"]
+    assert EDITORIAL_FOLDER not in repr(readiness)
+
+
+def test_editorial_root_must_not_reuse_pit_root(
+    monkeypatch: pytest.MonkeyPatch, drive_env: None
+) -> None:
+    monkeypatch.setenv("GOOGLE_DRIVE_EDITORIAL_HITL_FOLDER_ID", FOLDER)
+
+    readiness = gd.editorial_hitl_drive_readiness("publication-safe")
+
+    assert readiness["ready"] is False
+    assert readiness["configuration_error"] == "editorial_root_reuses_pit_root"
+    with pytest.raises(ValueError, match="must differ"):
+        gd._resolve_folder_id(None, destination="editorial_hitl")
+
+
+class EditorialFakeFiles:
+    def __init__(self) -> None:
+        self.get_calls: list[dict[str, Any]] = []
+        self.list_calls: list[dict[str, Any]] = []
+        self.create_calls: list[dict[str, Any]] = []
+        self._get_result = {
+            "id": EDITORIAL_FOLDER,
+            "mimeType": gd.DRIVE_FOLDER_MIME,
+            "trashed": False,
+            "capabilities": {"canAddChildren": True},
+        }
+        self._list_results = [{"files": []}, {"files": []}]
+        self._create_results = [
+            {
+                "id": "publication-folder",
+                "name": "publication-safe",
+                "mimeType": gd.DRIVE_FOLDER_MIME,
+                "parents": [EDITORIAL_FOLDER],
+                "webViewLink": "https://drive.google.com/drive/folders/publication-folder",
+            },
+            {
+                "id": "run-folder",
+                "name": "20260828-1200",
+                "mimeType": gd.DRIVE_FOLDER_MIME,
+                "parents": ["publication-folder"],
+                "webViewLink": "https://drive.google.com/drive/folders/run-folder",
+            },
+            *[
+                {
+                    "id": f"file-{index}",
+                    "name": f"alt-{index}.png",
+                    "parents": ["run-folder"],
+                    "webViewLink": f"https://drive.google.com/file/d/file-{index}/view",
+                    "webContentLink": f"https://drive.google.com/uc?id=file-{index}",
+                    "size": "16",
+                }
+                for index in range(1, 6)
+            ],
+        ]
+
+    def get(self, **kwargs: Any) -> _Call:
+        self.get_calls.append(kwargs)
+        return _Call(self._get_result)
+
+    def list(self, **kwargs: Any) -> _Call:
+        self.list_calls.append(kwargs)
+        return _Call(self._list_results.pop(0))
+
+    def create(self, **kwargs: Any) -> _Call:
+        self.create_calls.append(kwargs)
+        return _Call(self._create_results.pop(0))
+
+
+def test_editorial_preflight_only_reads_the_allowlisted_root(
+    monkeypatch: pytest.MonkeyPatch, drive_env: None
+) -> None:
+    files = EditorialFakeFiles()
+    permissions = FakePermissions()
+    service = FakeService(files, permissions)
+    monkeypatch.setattr(gd, "_get_drive_credentials", lambda: object())
+    monkeypatch.setattr(gd, "_build_drive_service", lambda creds: service)
+
+    context = gd.prepare_editorial_hitl_drive()
+
+    assert isinstance(context, gd.EditorialHitlDriveContext)
+    assert files.get_calls[0]["fileId"] == EDITORIAL_FOLDER
+    assert files.list_calls == []
+    assert files.create_calls == []
+    assert permissions.list_calls == []
+    assert permissions.create_calls == []
+
+
+def test_editorial_persistence_creates_guarded_hierarchy_and_five_pngs(
+    monkeypatch: pytest.MonkeyPatch, drive_env: None
+) -> None:
+    files = EditorialFakeFiles()
+    service = FakeService(files, FakePermissions())
+    monkeypatch.setattr(gd, "_get_drive_credentials", lambda: object())
+    monkeypatch.setattr(gd, "_build_drive_service", lambda creds: service)
+    monkeypatch.setattr(gd, "_media_bytes_upload", lambda data, mime: (data, mime))
+
+    context = gd.prepare_editorial_hitl_drive()
+    result = gd.persist_editorial_hitl_images(
+        context,
+        publication_id="publication-safe",
+        run_stamp="20260828-1200",
+        png_images=[b"\x89PNG\r\n\x1a\nimage" for _ in range(5)],
+    )
+
+    assert result["folder_web_view_link"].endswith("/run-folder")
+    assert files.get_calls == [
+        {
+            "fileId": EDITORIAL_FOLDER,
+            "fields": "id,mimeType,trashed,capabilities(canAddChildren)",
+            "supportsAllDrives": True,
+        }
+    ]
+    assert [item["name"] for item in result["files"]] == [
+        "alt-1.png",
+        "alt-2.png",
+        "alt-3.png",
+        "alt-4.png",
+        "alt-5.png",
+    ]
+    assert all(item["web_view_link"].startswith("https://drive.google.com/") for item in result["files"])
+    assert files.create_calls[0]["body"]["parents"] == [EDITORIAL_FOLDER]
+    assert files.create_calls[1]["body"]["parents"] == ["publication-folder"]
+    assert all(
+        call["body"]["parents"] == ["run-folder"]
+        for call in files.create_calls[2:]
+    )
+    assert all(
+        call["media_body"][1] == "image/png" for call in files.create_calls[2:]
+    )
+    assert service.permissions().list_calls == []
+    assert service.permissions().create_calls == []
+
+
+def test_editorial_preflight_requires_permission_to_add_children(
+    monkeypatch: pytest.MonkeyPatch, drive_env: None
+) -> None:
+    files = EditorialFakeFiles()
+    files._get_result["capabilities"] = {"canAddChildren": False}
+    service = FakeService(files, FakePermissions())
+    monkeypatch.setattr(gd, "_get_drive_credentials", lambda: object())
+    monkeypatch.setattr(gd, "_build_drive_service", lambda creds: service)
+
+    with pytest.raises(ValueError, match="does not allow creating child"):
+        gd.prepare_editorial_hitl_drive()
+
+    assert files.list_calls == []
+    assert files.create_calls == []
+
+
+def test_editorial_persistence_rejects_forged_context_before_drive_calls(
+    drive_env: None,
+) -> None:
+    files = EditorialFakeFiles()
+    context = gd.EditorialHitlDriveContext(
+        service=FakeService(files, FakePermissions()),
+        root_folder_id=FOLDER,
+    )
+
+    with pytest.raises(ValueError, match="GOOGLE_DRIVE_EDITORIAL_HITL_FOLDER_ID"):
+        gd.persist_editorial_hitl_images(
+            context,
+            publication_id="publication-safe",
+            run_stamp="20260828-1200",
+            png_images=[b"\x89PNG\r\n\x1a\nimage" for _ in range(5)],
+        )
+
+    assert files.list_calls == []
+    assert files.create_calls == []
+
+
+@pytest.mark.parametrize(
+    "png_images",
+    [
+        [b"\x89PNG\r\n\x1a\nimage" for _ in range(4)],
+        [b"not-a-png" for _ in range(5)],
+    ],
+)
+def test_editorial_persistence_rejects_invalid_batch_before_drive_writes(
+    monkeypatch: pytest.MonkeyPatch,
+    drive_env: None,
+    png_images: list[bytes],
+) -> None:
+    files = EditorialFakeFiles()
+    service = FakeService(files, FakePermissions())
+    context = gd.EditorialHitlDriveContext(service=service, root_folder_id=EDITORIAL_FOLDER)
+
+    with pytest.raises(ValueError):
+        gd.persist_editorial_hitl_images(
+            context,
+            publication_id="publication-safe",
+            run_stamp="20260828-1200",
+            png_images=png_images,
+        )
+
+    assert files.list_calls == []
+    assert files.create_calls == []
 
 
 def test_upload_file_requires_auth_env(

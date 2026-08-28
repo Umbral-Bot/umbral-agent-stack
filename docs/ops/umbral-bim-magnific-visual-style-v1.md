@@ -33,9 +33,10 @@ con gate de columna Prototype, sin autopublicación. Detalle operativo en
 
 Hasta tener el style guide completo (pendiente de curación David), reglas vigentes:
 
-- **Contexto AECO real:** obra, oficina técnica, modelos BIM en pantalla; nada de stock genérico de oficinas corporativas.
-- **Sin texto incrustado** generado por el modelo (el copy va aparte; overlay solo vía `text_overlay` controlado).
-- **Sin logos** de terceros ni marcas de software identificables; sin rostros reconocibles.
+- **Default editorial:** ilustración isométrica, deliberadamente no fotorealista; no recrear una obra ni una oficina técnica y no introducir cascos o monitores fotorealistas.
+- **Sin personas ni rostros**, sin logos/lockups ni marcas de software identificables.
+- **Sin texto ni letras incrustadas** generados por el modelo (el copy va aparte; overlay solo vía `text_overlay` controlado).
+- **Paleta por defecto:** turquesa/cian/menta sobre navy-carbón. Un brief explícito puede indicar otra paleta y tiene precedencia.
 - **`style_ref`:** los specs (editorial `VisualBrief`, PIT `visual_generation.style_ref`) pueden apuntar a una referencia de estilo concreta; si es null, aplica este doc.
 
 ## 4. Gobernanza

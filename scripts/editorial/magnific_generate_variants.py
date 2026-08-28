@@ -29,8 +29,25 @@ sys.path.insert(0, str(_REPO_ROOT))
 from client.worker_client import WorkerClient  # noqa: E402
 
 _DEFAULT_DRY_RUN_TIMEOUT_SEC = 30.0
-# Real generation is up to 5 sequential Magnific submit+poll cycles.
-_DEFAULT_GENERATE_TIMEOUT_SEC = 600.0
+# Real generation is up to 5 sequential Magnific submit+poll cycles. Match
+# the production poller's margin: the 600s sleep budget excludes HTTP time.
+_DEFAULT_GENERATE_TIMEOUT_SEC = 1200.0
+
+
+def _redact_result_for_output(result: object) -> object:
+    """Return a CLI-safe copy without signed URLs or upstream diagnostics."""
+    if not isinstance(result, dict):
+        return result
+    safe = dict(result)
+    if "urls" in safe:
+        urls = safe["urls"]
+        if isinstance(urls, list):
+            safe["urls"] = ["[REDACTED_URL]" for _ in urls]
+        else:
+            safe["urls"] = "[REDACTED_URL]"
+    if safe.get("error"):
+        safe["error"] = "[REDACTED_DIAGNOSTIC]"
+    return safe
 
 
 def _load_env_vars(env_path: str | None = None) -> dict[str, str]:
@@ -68,9 +85,20 @@ def main() -> int:
     parser.add_argument("--page-id", required=True, help="Publicaciones page id or URL")
     parser.add_argument("--dry-run", action="store_true", help="Verify eligibility + preview prompt only, no writes")
     parser.add_argument("--count", type=int, default=None, help="Variants to generate (1-5, default 5)")
-    parser.add_argument("--aspect-ratio", default=None, help="Magnific aspect_ratio enum (default classic_4_3)")
-    parser.add_argument("--resolution", default=None, help="Magnific resolution enum: 1k|2k|4k (default 2k)")
-    parser.add_argument("--model", default=None, help="Magnific Mystic model enum (default realism)")
+    parser.add_argument(
+        "--aspect-ratio", default=None, help="Magnific aspect_ratio enum (default 4:3)"
+    )
+    parser.add_argument(
+        "--resolution", default=None, help="Magnific resolution enum: 1K|2K|4K (default 2K)"
+    )
+    parser.add_argument(
+        "--model",
+        default=None,
+        help=(
+            "Magnific model alias (default nano-banana-pro-flash / Nano Banana 2; "
+            "explicit nano-banana-pro or mystic/realism also supported)"
+        ),
+    )
     parser.add_argument("--prompt", default=None, help="Explicit prompt override")
     parser.add_argument("--timeout", type=float, default=None, help="Override the HTTP timeout in seconds")
     args = parser.parse_args()
@@ -95,11 +123,11 @@ def main() -> int:
     try:
         response = wc.run("magnific.generate_variants", input_data, timeout=timeout)
     except Exception as e:
-        print(f"ERROR: Worker call failed: {e}", file=sys.stderr)
+        print(f"ERROR: Worker call failed ({type(e).__name__})", file=sys.stderr)
         return 4
 
     result = response.get("result", response) if isinstance(response, dict) else response
-    print(json.dumps(result, indent=2, ensure_ascii=False))
+    print(json.dumps(_redact_result_for_output(result), indent=2, ensure_ascii=False))
 
     if not isinstance(result, dict):
         print("MAGNIFIC_ERROR unexpected_response_shape", file=sys.stderr)
@@ -108,9 +136,9 @@ def main() -> int:
     if not result.get("ok"):
         error = str(result.get("error") or "")
         if "MAGNIFIC_API_KEY" in error:
-            print(f"MAGNIFIC_BLOCKED missing_credential: {error}", file=sys.stderr)
+            print("MAGNIFIC_BLOCKED missing_credential", file=sys.stderr)
             return 6
-        print(f"MAGNIFIC_ERROR {error}", file=sys.stderr)
+        print("MAGNIFIC_ERROR worker_reported_failure", file=sys.stderr)
         return 1
 
     if result.get("dry_run"):

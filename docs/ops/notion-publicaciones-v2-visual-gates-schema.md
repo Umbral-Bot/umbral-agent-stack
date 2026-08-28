@@ -91,7 +91,7 @@ flowchart LR
    - `Selección imagen` ∈ {`Alt 1`…`Alt 5`, `Sin imagen`}
    - `Estado imagen` = `Seleccionada` (o `Sin imagen` con `Visual asset URL` vacío permitido)
 3. Al cambiar `Selección imagen` a `Alt N`, Worker copia `imagen_alt_N_url` → `Visual asset URL` y pone `Estado imagen` = `Seleccionada`.
-4. Al elegir `Regenerar`: Worker pone `Estado imagen` = `Regeneración pedida`, `Selección imagen` = `Pendiente`, limpia `imagen_alt_*_url` y encola Rick.
+4. Al elegir `Regenerar` desde `Listo para selección` o `Error`: Worker pone `Estado imagen` = `Regeneración pedida`, `Selección imagen` = `Pendiente` y encola la generación. Conserva `imagen_alt_*_url` hasta completar las 5 alternativas nuevas; sólo un éxito 5/5 reemplaza el conjunto completo. `Seleccionada` y `Generando` no se interrumpen.
 5. Body de página (`Imágenes candidatas`): **preview humano**; la verdad para publish son las columnas URL.
 
 ### Mapeo CAND-001 (migración manual one-off)
@@ -290,7 +290,7 @@ Cuando el Notion Poller detecte:
 |--------|--------|
 | `aprobado_contenido` false → true | Encolar generación Magnific si `Estado imagen` = `No aplica` o `Pendiente generación` |
 | `Selección imagen` → `Alt N` | `Visual asset URL` = `imagen_alt_N_url`; `Estado imagen` = `Seleccionada` |
-| `Selección imagen` → `Regenerar` | Reset URLs + `Estado imagen` = `Regeneración pedida` + encolar Rick |
+| `Selección imagen` → `Regenerar` desde `Listo para selección`/`Error` | Conservar URLs previas + `Estado imagen` = `Regeneración pedida` + `Selección imagen` = `Pendiente` + encolar Rick |
 | `autorizar_publicacion` true + gates OK | Notificar Rick/Telegram para confirmación final |
 
 ---

@@ -411,6 +411,7 @@ def _reset_rrss_injection_disabled_log() -> None:
 # row P2.2 and docs/ops/editorial-magnific-p22-poller-2026-07-23.md.
 REDIS_KEY_MAGNIFIC_PREFIX = "umbral:notion_poller:magnific:"
 REDIS_KEY_MAGNIFIC_FAIL_PREFIX = "umbral:notion_poller:magnific_fail:"
+REDIS_KEY_MAGNIFIC_REGEN_ATTEMPT_PREFIX = "umbral:notion_poller:magnific_regen_attempt:"
 MAGNIFIC_TTL_SEC = 24 * 60 * 60
 MAGNIFIC_FAIL_TTL_SEC = 30 * 60  # 30 min backoff on failure
 # Each promoted row costs up to 5 sequential external-API calls (minutes, not
@@ -419,7 +420,7 @@ MAGNIFIC_BATCH_LIMIT = 1
 MAGNIFIC_SCAN_LIMIT = 10
 # The shared `wc` used elsewhere in _do_poll has a short default timeout
 # (WorkerClient default 30s) tuned for fast calls; magnific.generate_variants
-# can take several minutes (5 sequential Mystic submit+poll cycles). Override
+# can take several minutes (5 sequential Flash submit+poll cycles). Override
 # per-call via WorkerClient.run(..., timeout=...) rather than raising the
 # shared client's timeout for every other (fast) task.
 #
@@ -1410,17 +1411,12 @@ def _inject_rrss_for_published_rows(wc: WorkerClient, r: redis.Redis) -> None:
         logger.debug(metrics_line)
 
 
-# States the *automatic* scan must never re-trigger: already produced
-# results, already in flight, or `Error` — which the handler still accepts
-# as an eligible manual retry (CLI script / dry-run), but which the scan
-# excludes deliberately. Without this, a persistently-failing row (e.g. a
-# prompt that always trips Magnific's content filter) would be retried
-# forever on the flat 30-min backoff with no cap, burning credits on every
-# retry. Moving a row out of `Error` for an automatic re-attempt requires an
-# explicit human/system action (e.g. `Selección imagen = Regenerar`, a
-# separate reaction not implemented by this package) that lands it in
-# `Regeneración pedida` instead — which *is* scan-eligible.
+# States the automatic scan must never re-trigger on their own: already
+# produced/selected results, an in-flight run, or Error. The explicit human
+# command `Selección imagen = Regenerar` is the narrow exception for ready or
+# error rows; the Worker consumes that command before spending credits.
 _MAGNIFIC_SCAN_SKIP_STATES = {"Listo para selección", "Seleccionada", "Generando", "Error"}
+_MAGNIFIC_REGENERATE_STATES = {"Listo para selección", "Error"}
 
 
 def _generate_magnific_variants_for_pending_rows(wc: WorkerClient, r: redis.Redis) -> None:
@@ -1429,10 +1425,10 @@ def _generate_magnific_variants_for_pending_rows(wc: WorkerClient, r: redis.Redi
     P2.2 contract: a row is a *candidate* here only if it carries a non-empty
     `origen_alternativa` back-link (i.e. it was promoted by P2.1's Aprobar
     flow — roadmap dependency "P2.1 dispara tras Aprobar") and its flattened
-    `Estado imagen` snapshot is not in `_MAGNIFIC_SCAN_SKIP_STATES` (already
-    `Listo para selección` / `Seleccionada` / `Generando`, or `Error` — the
-    scan deliberately never auto-retries a failed row; see that constant's
-    comment). This function never writes to Notion — it only calls the
+    `Estado imagen` snapshot is not in `_MAGNIFIC_SCAN_SKIP_STATES`, unless a
+    ready/error row carries the explicit `Selección imagen = Regenerar`
+    command. `Seleccionada` and `Generando` remain non-eligible. This function
+    never writes to Notion — it only calls the
     `magnific.generate_variants` Worker task, which re-fetches the page and
     re-validates the state machine before writing (fail-closed; avoids
     acting on a stale scan snapshot). Redis here only dedupes *scan
@@ -1454,18 +1450,21 @@ def _generate_magnific_variants_for_pending_rows(wc: WorkerClient, r: redis.Redi
             {"database_id_or_url": publicaciones_db_id, "max_items": MAGNIFIC_SCAN_LIMIT},
         )
     except Exception:
-        logger.warning("Magnific scan: failed to read Publicaciones DB", exc_info=True)
+        # Never echo Worker diagnostics: they can contain credentials or
+        # time-limited asset URLs from an upstream response.
+        logger.warning("Magnific scan: failed to read Publicaciones DB")
         return
 
     items = _extract_read_database_items(resp)
     scanned = len(items)
     eligible = 0
+    attempted = 0
     generated = 0
     skipped = 0
     errors = 0
 
     for item in items:
-        if generated >= MAGNIFIC_BATCH_LIMIT:
+        if attempted >= MAGNIFIC_BATCH_LIMIT:
             break
 
         page_id = str(item.get("page_id") or item.get("id") or "").strip()
@@ -1479,7 +1478,12 @@ def _generate_magnific_variants_for_pending_rows(wc: WorkerClient, r: redis.Redi
             continue
 
         estado_imagen = _extract_item_text(item, "Estado imagen")
-        if estado_imagen in _MAGNIFIC_SCAN_SKIP_STATES:
+        seleccion_imagen = _extract_item_text(item, "Selección imagen")
+        regeneration_requested = (
+            seleccion_imagen == "Regenerar"
+            and estado_imagen in _MAGNIFIC_REGENERATE_STATES
+        )
+        if estado_imagen in _MAGNIFIC_SCAN_SKIP_STATES and not regeneration_requested:
             skipped += 1
             continue
 
@@ -1487,10 +1491,28 @@ def _generate_magnific_variants_for_pending_rows(wc: WorkerClient, r: redis.Redi
 
         redis_key = f"{REDIS_KEY_MAGNIFIC_PREFIX}{page_id}"
         fail_key = f"{REDIS_KEY_MAGNIFIC_FAIL_PREFIX}{page_id}"
-        if r.exists(redis_key) or r.exists(fail_key):
+        regen_attempt_key = f"{REDIS_KEY_MAGNIFIC_REGEN_ATTEMPT_PREFIX}{page_id}"
+        if regeneration_requested:
+            # A new human command supersedes old success/failure checkpoints,
+            # but receives its own short-lived attempt marker. If the Worker
+            # is unreachable or fails before consuming Regenerar in Notion,
+            # the marker makes the advertised 30m backoff real instead of
+            # hammering every poll cycle. A successful/no-op call removes it;
+            # Notion then exposes Pendiente/non-Regenerar on the next scan.
+            if r.exists(regen_attempt_key):
+                skipped += 1
+                continue
+            # A human command starts a new generation epoch. Remove stale
+            # checkpoints before the Worker consumes Regenerar; otherwise a
+            # failure on the following Generando write could leave
+            # `Regeneración pedida` blocked by the old 24-hour success key.
+            r.delete(redis_key, fail_key)
+            r.set(regen_attempt_key, "1", ex=MAGNIFIC_FAIL_TTL_SEC)
+        elif r.exists(redis_key) or r.exists(fail_key):
             skipped += 1
             continue
 
+        attempted += 1
         try:
             result = wc.run(
                 "magnific.generate_variants",
@@ -1502,7 +1524,7 @@ def _generate_magnific_variants_for_pending_rows(wc: WorkerClient, r: redis.Redi
             r.set(fail_key, "1", ex=MAGNIFIC_FAIL_TTL_SEC)
             logger.warning(
                 "Magnific scan: page %s call failed (backoff %ds)",
-                page_id[:8], MAGNIFIC_FAIL_TTL_SEC, exc_info=True,
+                page_id[:8], MAGNIFIC_FAIL_TTL_SEC,
             )
             continue
 
@@ -1512,9 +1534,13 @@ def _generate_magnific_variants_for_pending_rows(wc: WorkerClient, r: redis.Redi
             # Handler-level idempotency (already Generando / already done) —
             # not a scan error, but also not a fresh generation to checkpoint
             # against the batch limit.
+            if regeneration_requested:
+                r.delete(regen_attempt_key)
             skipped += 1
             continue
         if ok:
+            if regeneration_requested:
+                r.delete(regen_attempt_key)
             r.set(redis_key, "1", ex=MAGNIFIC_TTL_SEC)
             generated += 1
             logger.info(
@@ -1527,8 +1553,8 @@ def _generate_magnific_variants_for_pending_rows(wc: WorkerClient, r: redis.Redi
             errors += 1
             r.set(fail_key, "1", ex=MAGNIFIC_FAIL_TTL_SEC)
             logger.warning(
-                "Magnific scan: page %s did NOT generate (%s) — no success checkpoint, backoff %ds",
-                page_id[:8], (result or {}).get("error"), MAGNIFIC_FAIL_TTL_SEC,
+                "Magnific scan: page %s did NOT generate — no success checkpoint, backoff %ds",
+                page_id[:8], MAGNIFIC_FAIL_TTL_SEC,
             )
 
     metrics_line = (

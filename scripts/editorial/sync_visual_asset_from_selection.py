@@ -13,8 +13,8 @@ import os
 import re
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
-from pathlib import Path
 from typing import Any
 
 NOTION_VERSION = "2022-06-28"
@@ -100,7 +100,55 @@ def _read_state(props: dict) -> dict[str, Any]:
 
 
 def _valid_https(url: str | None) -> bool:
-    return bool(url and url.startswith("https://") and "app.magnific.com" not in url)
+    """Accept only durable Google Drive links, never provider/CDN locators."""
+    if not url:
+        return False
+    try:
+        parsed = urllib.parse.urlsplit(url)
+        return bool(
+            parsed.scheme.lower() == "https"
+            and (parsed.hostname or "").lower() == "drive.google.com"
+            and parsed.port is None
+            and parsed.username is None
+            and parsed.password is None
+            and parsed.path
+            and parsed.path != "/"
+        )
+    except ValueError:
+        return False
+
+
+def _safe_state_summary(state: dict[str, Any]) -> dict[str, Any]:
+    """Build a useful status report without emitting external URLs or row IDs."""
+    alt_num = _parse_alt(state.get("seleccion_imagen"))
+    variant_count = state.get("imagen_cantidad")
+    if (
+        not isinstance(variant_count, int)
+        or isinstance(variant_count, bool)
+        or not 0 <= variant_count <= 5
+    ):
+        variant_count = None
+    known_image_states = {
+        "Pendiente",
+        "Regeneración pedida",
+        "Generando",
+        "Listo para selección",
+        "Seleccionada",
+        "Error",
+    }
+    estado = state.get("estado_imagen")
+    return {
+        "selection_alt": alt_num,
+        "selection_supported": alt_num is not None,
+        "image_state": estado if estado in known_image_states else "unknown",
+        "visual_asset_is_drive": _valid_https(state.get("visual_asset_url")),
+        "imagen_cantidad": variant_count,
+        "aprobado_contenido": state.get("aprobado_contenido"),
+        "autorizar_publicacion": state.get("autorizar_publicacion"),
+        "available_drive_alts": [
+            n for n, url in state.get("alt_urls", {}).items() if _valid_https(url)
+        ],
+    }
 
 
 def main() -> int:
@@ -121,11 +169,15 @@ def main() -> int:
         print("ERROR: NOTION_API_KEY required", file=sys.stderr)
         return 2
 
-    page = _get_page(api_key, args.page_id)
+    try:
+        page = _get_page(api_key, args.page_id)
+    except Exception:
+        print("ERROR: Notion page read failed", file=sys.stderr)
+        return 6
     props = page["properties"]
     state = _read_state(props)
 
-    print(json.dumps(state, indent=2, ensure_ascii=False))
+    print(json.dumps(_safe_state_summary(state), indent=2, ensure_ascii=False))
 
     if args.report_only:
         return 0
@@ -143,7 +195,7 @@ def main() -> int:
     hero_url = state["alt_urls"].get(alt_num)
     if not _valid_https(hero_url):
         print(
-            f"BLOCKED: {url_prop} missing or not direct HTTPS: {hero_url!r}",
+            f"BLOCKED: {url_prop} missing or not a durable Google Drive URL",
             file=sys.stderr,
         )
         return 4
@@ -160,18 +212,26 @@ def main() -> int:
         return 5
 
     if args.dry_run:
-        print(f"DRY_RUN would patch: {list(patch)} hero={hero_url}")
+        print(f"DRY_RUN alt={alt_num} would_patch={list(patch)}")
         return 0
 
     before_auth = _checkbox(props.get("autorizar_publicacion"))
-    _patch_page(api_key, args.page_id, patch)
-    after = _get_page(api_key, args.page_id)
+    try:
+        _patch_page(api_key, args.page_id, patch)
+        after = _get_page(api_key, args.page_id)
+    except Exception:
+        print("ERROR: Notion selection sync failed", file=sys.stderr)
+        return 6
     after_auth = _checkbox(after["properties"].get("autorizar_publicacion"))
     if before_auth is not after_auth:
-        raise RuntimeError("autorizar_publicacion changed unexpectedly")
+        print("ERROR: autorizar_publicacion changed unexpectedly", file=sys.stderr)
+        return 6
 
     final = _read_state(after["properties"])
-    print(f"SYNC_OK alt={alt_num} visual_asset_url={final['visual_asset_url']}")
+    if final["visual_asset_url"] != hero_url or not _valid_https(final["visual_asset_url"]):
+        print("ERROR: selected durable Drive asset did not persist", file=sys.stderr)
+        return 6
+    print(f"SYNC_OK alt={alt_num} durable_asset_copied=true")
     return 0
 
 

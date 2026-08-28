@@ -1,9 +1,9 @@
 # Publicaciones — Schema v2 (gates visuales + limpieza)
 
-> **Estado:** DISEÑO APROBADO PARA IMPLEMENTAR EN NOTION  
+> **Estado:** COLUMNAS LIVE; PERSISTENCIA HITL DRIVE EN CONTRATO DE CÓDIGO
 > **DB:** `📰 Publicaciones` · ID `e6817ec4698a4f0fbbc8fedcf4e52472`  
 > **Flujo canónico:** `docs/editorial-pipeline/production-flow-v2-2026-06-06.md`  
-> **Fecha:** 2026-06-06
+> **Actualizado:** 2026-08-28
 
 ---
 
@@ -13,7 +13,7 @@
 
 | Fase | Qué | Por qué |
 |------|-----|---------|
-| **A — Ahora** | Crear columnas de imagen + vista HITL | Desbloquea CAND-001 y automatización sin romper registros |
+| **A — Completada** | Columnas de imagen + vista HITL live | Desbloquea automatización sin romper registros |
 | **B — Soak** | Rick rellena URLs; David usa desplegable | Valida contrato antes de borrar nada |
 | **C — Después** | Ocultar/renombrar/merge duplicados | Requiere migrar datos y actualizar vistas; riesgo bajo si se hace con calma |
 
@@ -26,14 +26,15 @@ No borrar columnas en Fase A. En Notion, ocultar ≠ eliminar.
 ### Principio
 
 - **Un solo desplegable humano** (`Selección imagen`) con opciones fijas hasta 5 alternativas.
-- **URLs por alternativa** en columnas separadas (legibles por Worker/Poller sin parsear el body).
+- **URLs durables Drive por alternativa** en columnas separadas; los locators Magnific viven en propiedades distintas.
 - **Estado de máquina** para Rick/Worker (`Estado imagen`).
-- **URL canónica de publicación** en `Visual asset URL` (copiada automáticamente al elegir).
+- **URL seleccionada durable pre-T18** en `Visual asset URL` (copiada automáticamente al elegir; el overlay final es una fase posterior).
 
 ```mermaid
 flowchart LR
-  G1["aprobado_contenido = true"] --> GEN["Rick: Magnific N alts"]
-  GEN --> FILL["Rick: imagen_alt_*_url + imagen_cantidad"]
+  G1["aprobado_contenido = true"] --> GEN["Worker: Magnific 5/5"]
+  GEN --> DRIVE["Persistir 5 PNG en Drive"]
+  DRIVE --> FILL["Patch atómico: HITL Drive + URLs"]
   FILL --> READY["Estado imagen = Listo para selección"]
   READY --> SEL["David: Selección imagen = Alt N"]
   SEL --> COPY["Worker: Visual asset URL = imagen_alt_N_url"]
@@ -48,15 +49,13 @@ flowchart LR
 | `Selección imagen` | Select | Ver §2.1 | **David** | Gate humano entre texto e imagen final |
 | `Estado imagen` | Select | Ver §2.2 | Rick / Worker | Automatización y vistas |
 | `imagen_cantidad` | Number | 0–5 | Rick | Cuántas alts están activas (N real) |
-| `imagen_alt_1_url` | URL | — | Rick | URL final alt 1 (Magnific/CDN) |
-| `imagen_alt_2_url` | URL | — | Rick | URL final alt 2 |
-| `imagen_alt_3_url` | URL | — | Rick | URL final alt 3 |
-| `imagen_alt_4_url` | URL | — | Rick | URL final alt 4 (reserva) |
-| `imagen_alt_5_url` | URL | — | Rick | URL final alt 5 (reserva) |
-| `imagen_generada_at` | Date | — | Rick / auto | Timestamp última generación |
-| `imagen_error` | Rich text | — | Rick / Worker | Último error Magnific (si aplica) |
+| `HITL Drive` | URL | — | Worker | `webViewLink` de la subcarpeta de generación |
+| `imagen_alt_1_url`…`imagen_alt_5_url` | URL | — | Worker | `webViewLink` durable de cada PNG Drive |
+| `imagen_alt_1_magnific_url`…`imagen_alt_5_magnific_url` | URL | — | Worker | Locator oficial Magnific opcional; nunca inferido |
+| `imagen_generada_at` | Date | — | Worker | Timestamp de generación persistida 5/5 |
+| `imagen_error` | Rich text | — | Worker | Último error Magnific o Drive (si aplica) |
 
-**Existente, reutilizar:** `Visual brief`, `Visual asset URL` (URL **seleccionada** para publish).
+**Existente, reutilizar:** `Visual brief`, `Visual asset URL` (candidata durable **seleccionada** pre-T18).
 
 #### §2.1 Opciones `Selección imagen`
 
@@ -78,7 +77,7 @@ flowchart LR
 | `No aplica` | default | Gate 1 no pasado; sin brief visual |
 | `Pendiente generación` | Worker/Rick tras Gate 1 | Esperando Magnific |
 | `Generando` | Rick | `images_generate` en curso |
-| `Listo para selección` | Rick | URLs en columnas; David puede elegir |
+| `Listo para selección` | Worker | Cinco URLs Drive durables en columnas; David puede elegir |
 | `Seleccionada` | Worker | `Visual asset URL` ya copiada |
 | `Regeneración pedida` | Worker | David eligió `Regenerar` |
 | `Error` | Rick/Worker | Ver `imagen_error` |
@@ -90,22 +89,24 @@ flowchart LR
    - `aprobado_contenido = true`
    - `Selección imagen` ∈ {`Alt 1`…`Alt 5`, `Sin imagen`}
    - `Estado imagen` = `Seleccionada` (o `Sin imagen` con `Visual asset URL` vacío permitido)
-3. Al cambiar `Selección imagen` a `Alt N`, Worker copia `imagen_alt_N_url` → `Visual asset URL` y pone `Estado imagen` = `Seleccionada`.
-4. Al elegir `Regenerar` desde `Listo para selección` o `Error`: Worker pone `Estado imagen` = `Regeneración pedida`, `Selección imagen` = `Pendiente` y encola la generación. Conserva `imagen_alt_*_url` hasta completar las 5 alternativas nuevas; sólo un éxito 5/5 reemplaza el conjunto completo. `Seleccionada` y `Generando` no se interrumpen.
-5. Body de página (`Imágenes candidatas`): **preview humano**; la verdad para publish son las columnas URL.
+3. Al cambiar `Selección imagen` a `Alt N`, Worker copia la URL Drive durable de `imagen_alt_N_url` → `Visual asset URL` y pone `Estado imagen` = `Seleccionada`.
+4. `Listo para selección` exige Magnific 5/5 y persistencia Drive 5/5. El patch final reemplaza juntos `HITL Drive`, las cinco URLs durables, locators disponibles, cantidad y fecha.
+5. Si Drive falla, Worker pone `Error`, conserva el conjunto anterior y mantiene el marcador de intento; no publica un resultado parcial ni regasta Magnific en cada ciclo del poller.
+6. Al elegir `Regenerar` desde `Listo para selección` o `Error`: Worker pone `Estado imagen` = `Regeneración pedida`, `Selección imagen` = `Pendiente` y encola la generación. Conserva las URLs previas hasta completar las 5 alternativas nuevas. `Seleccionada` y `Generando` no se interrumpen.
+7. Body de página (`Imágenes candidatas`): **preview humano**; la verdad para publish son las columnas URL.
 
-### Mapeo CAND-001 (migración manual one-off)
+### Mapeo CAND-001 (histórico; no reejecutar)
 
 Tras Fase A, en la fila CAND-001:
 
-1. Pegar las 3 URLs Magnific en `imagen_alt_1_url`, `imagen_alt_2_url`, `imagen_alt_3_url`.
+1. Persistir las 3 alternativas históricas en Drive y usar sus URLs durables en `imagen_alt_1_url`, `imagen_alt_2_url`, `imagen_alt_3_url`.
 2. `imagen_cantidad` = 3.
 3. `Estado imagen` = `Listo para selección`.
 4. David elige en `Selección imagen` → Worker copia a `Visual asset URL`.
 
 ---
 
-## 3. Auditoría de columnas actuales (45 props)
+## 3. Auditoría de columnas actuales (51 props)
 
 ### Mantener visibles (operación diaria)
 
@@ -115,7 +116,7 @@ Tras Fase A, en la fila CAND-001:
 | Editorial | `Premisa`, `Claim principal`, `Ángulo editorial`, `Copy LinkedIn`, `Copy Blog`, `Copy X`, `Copy Newsletter` |
 | Fuentes | `Fuente primaria`, `Fuente referente`, `Fuentes confiables`, `Resumen fuente` |
 | Gates v2 | `aprobado_contenido`, `autorizar_publicacion` |
-| Visual v2 | `Selección imagen`, `Estado imagen`, `imagen_cantidad`, `imagen_alt_*_url`, `Visual brief`, `Visual asset URL` |
+| Visual v2 | `Selección imagen`, `Estado imagen`, `imagen_cantidad`, `HITL Drive`, `imagen_alt_*_url`, `imagen_alt_*_magnific_url`, `Visual brief`, `Visual asset URL` |
 | Publish | `content_hash`, `idempotency_key`, `trace_id`, `platform_post_id`, `publication_url`, `Fecha publicación`, `publish_error`, `error_kind` |
 | Ops | `Prioridad`, `Repo reference`, `Proyecto` |
 
@@ -155,7 +156,7 @@ Tras Fase A, en la fila CAND-001:
 | Vista | Tipo | Filtro | Columnas visibles |
 |-------|------|--------|-------------------|
 | **HITL — Revisión** | Table | `Estado` ≠ Publicado, Descartado | Título, Estado, aprobado_contenido, Selección imagen, autorizar_publicacion |
-| **Imágenes pendientes** | Table | `Estado imagen` = Listo para selección | Título, imagen_cantidad, Selección imagen, Visual asset URL |
+| **Imágenes pendientes** | Table | `Estado imagen` = Listo para selección | Título, imagen_cantidad, HITL Drive, Selección imagen, Visual asset URL |
 | **Pipeline** | Board | group `Estado` | (existente) |
 | **Errores publish** | Table | `publish_error` not empty | Título, error_kind, publish_error |
 
@@ -167,7 +168,7 @@ Tras Fase A, en la fila CAND-001:
 |------------|-------------|----------------|
 | **Notion AI** | Crear/editar **propiedades**, **opciones Select**, **vistas** (columnas visibles, filtros, orden) | Escribir valores en filas, body de páginas, gates, URLs, fuentes, imágenes |
 | **Rick (OpenClaw VPS)** | Magnific, props visuales, Decision Brief en body, `Repo reference`, fuentes (según tipo pieza) | Marcar `aprobado_contenido` ni `autorizar_publicacion` |
-| **Worker / scripts (`umbral-agent-stack`)** | Poller, copiar `imagen_alt_N_url` → `Visual asset URL`, idempotencia, publish adapters | Gates humanos |
+| **Worker / scripts (`umbral-agent-stack`)** | Poller, persistencia Drive 5/5, copiar `imagen_alt_N_url` → `Visual asset URL`, idempotencia, publish adapters | Gates humanos |
 | **David** | Gates, `Selección imagen`, edición final del texto | — |
 
 > **Regla David (2026-06-06):** si hace falta poblar datos, **Rick o el stack en VPS** — nunca Notion AI manual sobre registros.
@@ -187,6 +188,10 @@ Publish adapters leen **solo columnas**, no el body.
 ## 6. Prompts para Notion AI (solo esquema)
 
 ### Prompt A — Fase A (crear columnas) ✅ ejecutado
+
+> Registro histórico: no volver a ejecutar. ADR-007 mantiene las propiedades
+> existentes; las seis propiedades HITL Drive posteriores ya están live y sólo se
+> alinean en el schema versionado, sin crear ni borrar columnas desde este paquete.
 
 ```text
 En la base de datos "📰 Publicaciones" (ID e6817ec4698a4f0fbbc8fedcf4e52472), agrega estas propiedades nuevas sin eliminar ni renombrar ninguna existente:
@@ -226,18 +231,21 @@ Solo si David confirmó que la migración VPS de published_url → publication_u
 
 ---
 
-## 7. Poblado de datos — Rick (Telegram)
+## 7. Poblado de datos — Rick (histórico; no reejecutar)
+
+El bloque siguiente registra el backfill anterior al contrato Drive. Sus enlaces
+de exportación ya no son fuente canónica y no debe usarse para regenerar filas.
 
 ```text
 Tarea: backfill CAND-001 en 📰 Publicaciones (page 34b5f443-fb5c-81dd-8338-cb0b46699250). NO marcar aprobado_contenido ni autorizar_publicacion.
 
-1) Magnific: recupera URLs exportables de creaciones SOC0YEmUb8, YVwuf7LWeC, nTUEa7wYQD (creations_get). Si Alt 1 CDN falla (504 pikaso), regenera solo esa alt.
+1) Flujo retirado: no usar exports temporales Magnific como URLs canónicas. Persistir cada PNG en Drive según el runbook HITL.
 
 2) Props Notion:
    - imagen_cantidad = 3
    - Estado imagen = "Listo para selección"
    - Selección imagen = "Pendiente"
-   - imagen_alt_1_url, imagen_alt_2_url, imagen_alt_3_url = URLs estables
+   - imagen_alt_1_url, imagen_alt_2_url, imagen_alt_3_url = URLs Drive durables
    - imagen_generada_at = hoy
    - imagen_error = texto si Alt 1 sigue rota
 
@@ -282,14 +290,14 @@ Migración de duplicados (`published_url` → `publication_url`): **script VPS**
 
 ---
 
-## 9. Contrato Worker (siguiente implementación)
+## 9. Contrato Worker
 
 Cuando el Notion Poller detecte:
 
 | Evento | Acción |
 |--------|--------|
-| `aprobado_contenido` false → true | Encolar generación Magnific si `Estado imagen` = `No aplica` o `Pendiente generación` |
-| `Selección imagen` → `Alt N` | `Visual asset URL` = `imagen_alt_N_url`; `Estado imagen` = `Seleccionada` |
+| `aprobado_contenido` false → true | Encolar Magnific 5/5 + persistencia Drive en el mismo tick si `Estado imagen` = `No aplica` o `Pendiente generación` |
+| `Selección imagen` → `Alt N` | `Visual asset URL` = URL Drive de `imagen_alt_N_url`; `Estado imagen` = `Seleccionada` |
 | `Selección imagen` → `Regenerar` desde `Listo para selección`/`Error` | Conservar URLs previas + `Estado imagen` = `Regeneración pedida` + `Selección imagen` = `Pendiente` + encolar Rick |
 | `autorizar_publicacion` true + gates OK | Notificar Rick/Telegram para confirmación final |
 
@@ -298,6 +306,7 @@ Cuando el Notion Poller detecte:
 ## 10. Referencias
 
 - `docs/editorial-pipeline/production-flow-v2-2026-06-06.md`
+- `docs/ops/editorial-hitl-drive-2026-08-28.md`
 - `docs/ops/magnific-editorial-setup-2026-06-06.md`
 - `docs/audits/2026-05-08-notion-publicaciones-schema-audit.md`
 - `scripts/discovery/lib/gates.py` (nombres API actuales: `aprobado_contenido`, `autorizar_publicacion`)

@@ -1,17 +1,20 @@
-"""Tasks: Google Drive upload handlers (PIT-TG-DRIVE).
+"""Tasks and helpers for guarded Google Drive uploads.
 
 - google_drive.upload_file: upload a local file to the shared PIT Drive folder
   and return the shareable links (webViewLink / webContentLink).
 - google_drive.upload_presentation: optional build step (delegates to
   document.create_presentation) + upload in one call.
+- Editorial HITL helpers: preflight the separately allowlisted editorial root,
+  create a ``publication_id/YYYYMMDD-HHmm`` hierarchy, and persist five PNGs.
 
 Auth (OAuth refresh token, cuenta Rick — scope drive.file recomendado):
   GOOGLE_DRIVE_OAUTH_CLIENT_ID + GOOGLE_DRIVE_OAUTH_CLIENT_SECRET +
   GOOGLE_DRIVE_OAUTH_REFRESH_TOKEN
 
-Folder guard: uploads go ONLY to GOOGLE_DRIVE_PIT_FOLDER_ID (env). If the
-caller passes a drive_folder_id it must match the configured folder — no
-arbitrary destinations from task input.
+Folder guard: every destination has its own configured root. Public PIT tasks
+always use ``GOOGLE_DRIVE_PIT_FOLDER_ID``; editorial helpers always use
+``GOOGLE_DRIVE_EDITORIAL_HITL_FOLDER_ID``. A caller cannot cross those roots,
+and editorial uploads only use child IDs created or resolved by this module.
 
 Optional post-upload share: GOOGLE_DRIVE_SHARE_WITH (email David) gets a
 reader permission, idempotently (no re-share, no notification email).
@@ -23,18 +26,50 @@ docs/ops/pit-telegram-drive-deliverables-runbook.md for setup.
 from __future__ import annotations
 
 import importlib
+import io
 import logging
 import mimetypes
 import os
+import re
 import tempfile
-from typing import Any, Dict, Optional
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Any, Dict, Optional, Sequence
+from urllib.parse import urlparse
 
 logger = logging.getLogger("worker.tasks.google_drive")
 
 DRIVE_SCOPES = ["https://www.googleapis.com/auth/drive.file"]
 DEFAULT_PPTX_MIME = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+DRIVE_FOLDER_MIME = "application/vnd.google-apps.folder"
+PNG_MIME = "image/png"
 
 _UPLOAD_FIELDS = "id,name,size,parents,webViewLink,webContentLink"
+_FOLDER_FIELDS = "id,name,mimeType,parents,webViewLink,trashed"
+_DRIVE_DESTINATION_ENVS = {
+    "pit": "GOOGLE_DRIVE_PIT_FOLDER_ID",
+    "editorial_hitl": "GOOGLE_DRIVE_EDITORIAL_HITL_FOLDER_ID",
+}
+_DRIVE_OAUTH_ENVS = (
+    "GOOGLE_DRIVE_OAUTH_CLIENT_ID",
+    "GOOGLE_DRIVE_OAUTH_CLIENT_SECRET",
+    "GOOGLE_DRIVE_OAUTH_REFRESH_TOKEN",
+)
+_PUBLICATION_ID_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
+_RUN_STAMP_RE = re.compile(r"\d{8}-\d{4}")
+_PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
+
+
+@dataclass(frozen=True, repr=False)
+class EditorialHitlDriveContext:
+    """Prepared Drive service and its verified editorial root.
+
+    ``repr=False`` deliberately keeps the allowlisted folder ID out of routine
+    diagnostics. Instances are created only by :func:`prepare_editorial_hitl_drive`.
+    """
+
+    service: Any
+    root_folder_id: str
 
 
 # ---------------------------------------------------------------------------
@@ -47,9 +82,9 @@ def _get_drive_credentials() -> Any:
 
     Raises ``ValueError`` with a setup hint when env or deps are missing.
     """
-    client_id = os.environ.get("GOOGLE_DRIVE_OAUTH_CLIENT_ID")
-    client_secret = os.environ.get("GOOGLE_DRIVE_OAUTH_CLIENT_SECRET")
-    refresh_token = os.environ.get("GOOGLE_DRIVE_OAUTH_REFRESH_TOKEN")
+    client_id = (os.environ.get("GOOGLE_DRIVE_OAUTH_CLIENT_ID") or "").strip()
+    client_secret = (os.environ.get("GOOGLE_DRIVE_OAUTH_CLIENT_SECRET") or "").strip()
+    refresh_token = (os.environ.get("GOOGLE_DRIVE_OAUTH_REFRESH_TOKEN") or "").strip()
     if not (client_id and client_secret and refresh_token):
         raise ValueError(
             "Google Drive auth not configured. Set GOOGLE_DRIVE_OAUTH_CLIENT_ID + "
@@ -98,26 +133,348 @@ def _media_file_upload(local_path: str, mime_type: str) -> Any:
     return http_mod.MediaFileUpload(local_path, mimetype=mime_type, resumable=False)
 
 
+def _media_bytes_upload(data: bytes, mime_type: str) -> Any:
+    """Wrap ``MediaIoBaseUpload`` for an in-memory binary payload."""
+    try:
+        http_mod = importlib.import_module("googleapiclient.http")
+    except ImportError as exc:
+        raise ValueError(
+            "google-api-python-client is required for Google Drive upload. "
+            "Install with: pip install google-api-python-client"
+        ) from exc
+    return http_mod.MediaIoBaseUpload(
+        io.BytesIO(data), mimetype=mime_type, resumable=False
+    )
+
+
 # ---------------------------------------------------------------------------
 # Folder guard + share
 # ---------------------------------------------------------------------------
 
 
-def _resolve_folder_id(requested: Optional[str]) -> str:
-    """Resolve the destination folder, enforcing the PIT-folder-only guard."""
-    configured = (os.environ.get("GOOGLE_DRIVE_PIT_FOLDER_ID") or "").strip()
+def _resolve_folder_id(
+    requested: Optional[str], *, destination: str = "pit"
+) -> str:
+    """Resolve one configured root without allowing cross-destination writes.
+
+    The default remains ``pit`` for backward compatibility with the public
+    ``google_drive.upload_*`` task handlers. Editorial callers must opt into
+    the separate, fixed ``editorial_hitl`` destination.
+    """
+    env_name = _DRIVE_DESTINATION_ENVS.get(destination)
+    if env_name is None:
+        raise ValueError("unknown Google Drive destination")
+    configured = (os.environ.get(env_name) or "").strip()
     if not configured:
+        if destination == "pit":
+            raise ValueError(
+                "GOOGLE_DRIVE_PIT_FOLDER_ID is not set - uploads are restricted "
+                "to the shared PIT folder. See "
+                "docs/ops/pit-telegram-drive-deliverables-runbook.md."
+            )
         raise ValueError(
-            "GOOGLE_DRIVE_PIT_FOLDER_ID is not set — uploads are restricted to the "
-            "shared PIT folder. See docs/ops/pit-telegram-drive-deliverables-runbook.md."
+            f"{env_name} is not set - uploads are restricted to its configured root."
         )
-    requested = (requested or "").strip()
+    requested = str(requested or "").strip()
+    if destination == "editorial_hitl":
+        pit_root = (os.environ.get("GOOGLE_DRIVE_PIT_FOLDER_ID") or "").strip()
+        if pit_root and configured == pit_root:
+            raise ValueError(
+                "Editorial HITL Drive root must differ from GOOGLE_DRIVE_PIT_FOLDER_ID"
+            )
     if requested and requested != configured:
+        if destination == "pit":
+            raise ValueError(
+                "drive_folder_id does not match GOOGLE_DRIVE_PIT_FOLDER_ID - uploads "
+                "are restricted to the configured shared PIT folder."
+            )
         raise ValueError(
-            "drive_folder_id does not match GOOGLE_DRIVE_PIT_FOLDER_ID — uploads are "
-            "restricted to the configured shared PIT folder."
+            f"drive_folder_id does not match {env_name} - uploads are restricted "
+            "to the configured destination root."
         )
     return configured
+
+
+def editorial_hitl_drive_readiness(publication_id: str) -> Dict[str, Any]:
+    """Return a dry-run-safe readiness summary without contacting Drive.
+
+    Only variable *names* are returned when configuration is incomplete. No
+    OAuth values or folder IDs are exposed.
+    """
+    clean_publication_id = str(publication_id or "").strip()
+    missing = [
+        name
+        for name in (
+            "GOOGLE_DRIVE_EDITORIAL_HITL_FOLDER_ID",
+            *_DRIVE_OAUTH_ENVS,
+        )
+        if not (os.environ.get(name) or "").strip()
+    ]
+    editorial_root = (
+        os.environ.get("GOOGLE_DRIVE_EDITORIAL_HITL_FOLDER_ID") or ""
+    ).strip()
+    pit_root = (os.environ.get("GOOGLE_DRIVE_PIT_FOLDER_ID") or "").strip()
+    roots_are_distinct = not pit_root or editorial_root != pit_root
+    return {
+        "ready": (
+            not missing
+            and roots_are_distinct
+            and bool(_PUBLICATION_ID_RE.fullmatch(clean_publication_id))
+        ),
+        "missing": missing,
+        "configuration_error": (
+            None if roots_are_distinct else "editorial_root_reuses_pit_root"
+        ),
+        "logical_path": f"{clean_publication_id or '<publication_id>'}/YYYYMMDD-HHmm",
+    }
+
+
+def _validate_drive_item(
+    item: Any,
+    *,
+    expected_parent_id: str,
+    expected_name: str,
+    expected_mime_type: Optional[str] = None,
+    require_web_view_link: bool = True,
+) -> Dict[str, Any]:
+    """Validate Drive metadata without echoing IDs or links in errors."""
+    if not isinstance(item, dict):
+        raise ValueError("Google Drive returned invalid item metadata")
+    item_id = str(item.get("id") or "").strip()
+    parents = item.get("parents")
+    if not item_id:
+        raise ValueError("Google Drive item metadata is missing an id")
+    if not isinstance(parents, list) or parents != [expected_parent_id]:
+        raise ValueError("Google Drive item landed outside its guarded parent")
+    if str(item.get("name") or "") != expected_name:
+        raise ValueError("Google Drive item name does not match the requested name")
+    if expected_mime_type and item.get("mimeType") != expected_mime_type:
+        raise ValueError("Google Drive item has an unexpected mime type")
+    if item.get("trashed") is True:
+        raise ValueError("Google Drive item is trashed")
+    if require_web_view_link:
+        _validate_web_view_link(item.get("webViewLink"))
+    return item
+
+
+def _validate_web_view_link(value: Any) -> str:
+    """Require the HTTPS browser-view link returned by Drive itself."""
+    link = str(value or "").strip()
+    parsed = urlparse(link)
+    if parsed.scheme.lower() != "https" or (parsed.hostname or "").lower() != "drive.google.com":
+        raise ValueError("Google Drive item is missing a valid webViewLink")
+    return link
+
+
+def _escape_drive_query_literal(value: str) -> str:
+    """Escape a value embedded in a Drive v3 ``q`` string literal."""
+    return value.replace("\\", "\\\\").replace("'", "\\'")
+
+
+def _find_or_create_child_folder(
+    service: Any, *, parent_id: str, name: str
+) -> Dict[str, Any]:
+    """Resolve one app-visible child folder or create it under ``parent_id``."""
+    escaped_parent = _escape_drive_query_literal(parent_id)
+    escaped_name = _escape_drive_query_literal(name)
+    try:
+        found = (
+            service.files()
+            .list(
+                q=(
+                    f"'{escaped_parent}' in parents and name = '{escaped_name}' "
+                    f"and mimeType = '{DRIVE_FOLDER_MIME}' and trashed = false"
+                ),
+                spaces="drive",
+                fields=f"files({_FOLDER_FIELDS})",
+                pageSize=2,
+                supportsAllDrives=True,
+                includeItemsFromAllDrives=True,
+            )
+            .execute()
+        )
+    except Exception as exc:
+        raise ValueError("Editorial HITL Drive folder lookup failed") from exc
+
+    if not isinstance(found, dict):
+        raise ValueError("Google Drive returned invalid folder lookup metadata")
+    matches = found.get("files", [])
+    if not isinstance(matches, list):
+        raise ValueError("Google Drive returned invalid folder lookup metadata")
+    if len(matches) > 1:
+        raise ValueError("Editorial HITL Drive folder path is ambiguous")
+    if matches:
+        return _validate_drive_item(
+            matches[0],
+            expected_parent_id=parent_id,
+            expected_name=name,
+            expected_mime_type=DRIVE_FOLDER_MIME,
+        )
+
+    try:
+        created = (
+            service.files()
+            .create(
+                body={
+                    "name": name,
+                    "mimeType": DRIVE_FOLDER_MIME,
+                    "parents": [parent_id],
+                },
+                fields=_FOLDER_FIELDS,
+                supportsAllDrives=True,
+            )
+            .execute()
+        )
+    except Exception as exc:
+        raise ValueError("Editorial HITL Drive folder creation failed") from exc
+    return _validate_drive_item(
+        created,
+        expected_parent_id=parent_id,
+        expected_name=name,
+        expected_mime_type=DRIVE_FOLDER_MIME,
+    )
+
+
+def prepare_editorial_hitl_drive() -> EditorialHitlDriveContext:
+    """Build credentials/service and probe the allowlisted root read-only.
+
+    Call this before spending Magnific credits. The probe refreshes OAuth as
+    needed and proves the configured item exists and is a non-trashed folder;
+    it does not create, share, or modify anything.
+    """
+    root_folder_id = _resolve_folder_id(None, destination="editorial_hitl")
+    creds = _get_drive_credentials()
+    service = _build_drive_service(creds)
+    try:
+        root = (
+            service.files()
+            .get(
+                fileId=root_folder_id,
+                fields="id,mimeType,trashed,capabilities(canAddChildren)",
+                supportsAllDrives=True,
+            )
+            .execute()
+        )
+    except Exception as exc:
+        raise ValueError("Editorial HITL Drive root preflight failed") from exc
+    if not isinstance(root, dict) or str(root.get("id") or "").strip() != root_folder_id:
+        raise ValueError("Editorial HITL Drive root preflight returned unexpected metadata")
+    if root.get("mimeType") != DRIVE_FOLDER_MIME or root.get("trashed") is True:
+        raise ValueError("Editorial HITL Drive root is not an active folder")
+    capabilities = root.get("capabilities")
+    if not isinstance(capabilities, dict) or capabilities.get("canAddChildren") is not True:
+        raise ValueError("Editorial HITL Drive root does not allow creating child folders")
+    return EditorialHitlDriveContext(service=service, root_folder_id=root_folder_id)
+
+
+def _validate_editorial_path(publication_id: str, run_stamp: str) -> tuple[str, str]:
+    clean_publication_id = str(publication_id or "").strip()
+    clean_run_stamp = str(run_stamp or "").strip()
+    if not _PUBLICATION_ID_RE.fullmatch(clean_publication_id):
+        raise ValueError("publication_id is not safe for an editorial Drive folder")
+    if not _RUN_STAMP_RE.fullmatch(clean_run_stamp):
+        raise ValueError("run_stamp must use YYYYMMDD-HHmm")
+    try:
+        datetime.strptime(clean_run_stamp, "%Y%m%d-%H%M")
+    except ValueError as exc:
+        raise ValueError("run_stamp must be a valid YYYYMMDD-HHmm timestamp") from exc
+    return clean_publication_id, clean_run_stamp
+
+
+def persist_editorial_hitl_images(
+    context: EditorialHitlDriveContext,
+    *,
+    publication_id: str,
+    run_stamp: str,
+    png_images: Sequence[bytes],
+) -> Dict[str, Any]:
+    """Persist exactly five PNG variants under the guarded editorial root.
+
+    The returned links are Drive-provided ``webViewLink`` values. Permissions
+    are inherited from the editorial root; this helper never creates direct
+    file or folder permissions.
+    """
+    if not isinstance(context, EditorialHitlDriveContext):
+        raise ValueError("editorial Drive context must come from preflight")
+    _resolve_folder_id(context.root_folder_id, destination="editorial_hitl")
+    clean_publication_id, clean_run_stamp = _validate_editorial_path(
+        publication_id, run_stamp
+    )
+    if isinstance(png_images, (str, bytes, bytearray)):
+        images: list[Any] = []
+    else:
+        try:
+            images = list(png_images)
+        except TypeError as exc:
+            raise ValueError("editorial HITL image batch must be iterable") from exc
+    if len(images) != 5:
+        raise ValueError("editorial HITL persistence requires exactly 5 PNG images")
+
+    normalized_images: list[bytes] = []
+    for image in images:
+        try:
+            data = bytes(image)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("editorial HITL image payload must be bytes") from exc
+        if not data.startswith(_PNG_SIGNATURE):
+            raise ValueError("editorial HITL image payload is not a PNG")
+        normalized_images.append(data)
+
+    publication_folder = _find_or_create_child_folder(
+        context.service,
+        parent_id=context.root_folder_id,
+        name=clean_publication_id,
+    )
+    run_folder = _find_or_create_child_folder(
+        context.service,
+        parent_id=publication_folder["id"],
+        name=clean_run_stamp,
+    )
+    run_folder_id = run_folder["id"]
+
+    persisted: list[Dict[str, Any]] = []
+    seen_file_ids: set[str] = set()
+    for index, data in enumerate(normalized_images, start=1):
+        filename = f"alt-{index}.png"
+        media = _media_bytes_upload(data, PNG_MIME)
+        try:
+            created = (
+                context.service.files()
+                .create(
+                    body={"name": filename, "parents": [run_folder_id]},
+                    media_body=media,
+                    fields=_UPLOAD_FIELDS,
+                    supportsAllDrives=True,
+                )
+                .execute()
+            )
+        except Exception as exc:
+            raise ValueError(f"Editorial HITL Drive upload failed for alt-{index}") from exc
+        created = _validate_drive_item(
+            created,
+            expected_parent_id=run_folder_id,
+            expected_name=filename,
+        )
+        file_id = created["id"]
+        if file_id in seen_file_ids:
+            raise ValueError("Google Drive returned duplicate file metadata")
+        seen_file_ids.add(file_id)
+        persisted.append(
+            {
+                "name": filename,
+                "web_view_link": _validate_web_view_link(created.get("webViewLink")),
+                "web_content_link": str(created.get("webContentLink") or "").strip(),
+                "size_bytes": len(data),
+            }
+        )
+
+    logger.info("[google_drive.editorial_hitl] persisted 5 PNG variants")
+    return {
+        "ok": True,
+        "logical_path": f"{clean_publication_id}/{clean_run_stamp}",
+        "folder_web_view_link": _validate_web_view_link(run_folder.get("webViewLink")),
+        "files": persisted,
+    }
 
 
 def _ensure_reader_permission(service: Any, file_id: str, email: str) -> Dict[str, Any]:

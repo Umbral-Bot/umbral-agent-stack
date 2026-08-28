@@ -4,15 +4,71 @@ imagen). See worker/tasks/magnific.py and
 docs/ops/editorial-roadmap-norte-p1-p3-2026-07-22.md row P2.2.
 """
 
+import io
 from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
+from PIL import Image
 
 
 FLASH_ENDPOINT = "https://api.magnific.com/v1/ai/text-to-image/nano-banana-pro-flash"
 PRO_ENDPOINT = "https://api.magnific.com/v1/ai/text-to-image/nano-banana-pro"
 MYSTIC_ENDPOINT = "https://api.magnific.com/v1/ai/mystic"
+
+
+def _durable_drive_urls():
+    return [
+        f"https://drive.google.com/file/d/test-alt-{index}/view"
+        for index in range(1, 6)
+    ]
+
+
+def _image_bytes(image_format: str) -> bytes:
+    output = io.BytesIO()
+    Image.new("RGB", (4, 3), color=(10, 20, 30)).save(output, format=image_format)
+    return output.getvalue()
+
+
+@pytest.fixture(autouse=True)
+def _governed_drive_boundary(monkeypatch):
+    """Keep handler tests hermetic while exercising its Drive transaction."""
+    from worker.tasks import magnific
+
+    for name, value in {
+        "GOOGLE_DRIVE_EDITORIAL_HITL_FOLDER_ID": "editorial-root-test",
+        "GOOGLE_DRIVE_OAUTH_CLIENT_ID": "oauth-client-test",
+        "GOOGLE_DRIVE_OAUTH_CLIENT_SECRET": "oauth-secret-test",
+        "GOOGLE_DRIVE_OAUTH_REFRESH_TOKEN": "oauth-refresh-test",
+    }.items():
+        monkeypatch.setenv(name, value)
+
+    def _prepare():
+        required = (
+            "GOOGLE_DRIVE_EDITORIAL_HITL_FOLDER_ID",
+            "GOOGLE_DRIVE_OAUTH_CLIENT_ID",
+            "GOOGLE_DRIVE_OAUTH_CLIENT_SECRET",
+            "GOOGLE_DRIVE_OAUTH_REFRESH_TOKEN",
+        )
+        import os
+
+        missing = [name for name in required if not os.getenv(name, "").strip()]
+        if missing:
+            raise RuntimeError("Missing required Drive configuration: " + ", ".join(missing))
+        return object()
+
+    def _persist(_context, _publication_id, variants):
+        assert len(variants) == 5
+        return {
+            "folder_web_view_link": "https://drive.google.com/drive/folders/test-run",
+            "files": [
+                {"name": f"alt-{index}.png", "web_view_link": url}
+                for index, url in enumerate(_durable_drive_urls(), start=1)
+            ],
+        }
+
+    monkeypatch.setattr(magnific, "_prepare_editorial_drive", _prepare)
+    monkeypatch.setattr(magnific, "_persist_generated_variants_to_drive", _persist)
 
 
 def _title_prop(text):
@@ -34,6 +90,8 @@ def _publicacion_page(
     visual_brief="",
     estado_imagen="No aplica",
     seleccion_imagen="Pendiente",
+    publication_id="shortlist-local",
+    imagen_error="",
 ):
     return {
         "id": page_id,
@@ -43,8 +101,18 @@ def _publicacion_page(
             "Visual brief": _rich_text_prop(visual_brief),
             "Estado imagen": _select_prop(estado_imagen),
             "Selección imagen": _select_prop(seleccion_imagen),
+            "publication_id": _rich_text_prop(publication_id),
+            "imagen_error": _rich_text_prop(imagen_error),
         },
     }
+
+
+def _variant(task_id: str, export_url: str):
+    variant = MagicMock()
+    variant.task_id = task_id
+    variant.export_url = export_url
+    variant.magnific_url = None
+    return variant
 
 
 def _mystic_submit_response(task_id):
@@ -103,6 +171,22 @@ def test_invalid_count_rejected(count):
     )
     assert result["ok"] is False
     assert "count" in result["error"]
+
+
+def test_production_rejects_non_five_count_before_read_or_credits():
+    from worker.tasks.magnific import handle_magnific_generate_variants
+
+    with patch("worker.tasks.magnific.notion_client") as mock_nc, patch(
+        "worker.tasks.magnific.httpx.Client"
+    ) as mock_http:
+        result = handle_magnific_generate_variants(
+            {"publicacion_page_id": "pub-1", "count": 1}
+        )
+
+    assert result["ok"] is False
+    assert "exactly 5" in result["error"]
+    mock_nc.get_page.assert_not_called()
+    mock_http.assert_not_called()
 
 
 def test_no_api_key_configured_blocks_before_any_write():
@@ -194,12 +278,243 @@ def test_dry_run_previews_without_writes_or_http_calls():
     assert result["aspect_ratio"] == "4:3"
     assert result["resolution"] == "2K"
     assert result["use_google_search_tool"] is False
+    assert result["would_persist_drive"] is True
+    assert result["drive_logical_path"] == "shortlist-local/YYYYMMDD-HHmm"
     assert "IFC 4.3 en infraestructura lineal" in result["prompt"]
     assert "ilustración editorial isométrica no fotoreal" in result["prompt"]
     assert "SIN obra" in result["prompt"]
     assert "Contexto AECO real" not in result["prompt"]
     mock_nc.update_page_properties.assert_not_called()
     mock_httpx_client_cls.assert_not_called()
+
+
+def test_missing_editorial_drive_config_blocks_before_writes_or_magnific(
+    monkeypatch,
+):
+    from worker.tasks.magnific import handle_magnific_generate_variants
+
+    monkeypatch.delenv("GOOGLE_DRIVE_EDITORIAL_HITL_FOLDER_ID", raising=False)
+    with patch("worker.tasks.magnific.config") as mock_cfg, patch(
+        "worker.tasks.magnific.notion_client"
+    ) as mock_nc, patch("worker.tasks.magnific.httpx.Client") as mock_http, patch(
+        "worker.tasks.magnific._prepare_editorial_drive"
+    ) as prepare_drive:
+        mock_cfg.MAGNIFIC_API_KEY = "key-123"
+        mock_nc.get_page.return_value = _publicacion_page()
+
+        result = handle_magnific_generate_variants({"publicacion_page_id": "pub-1"})
+
+    assert result["ok"] is False
+    assert "GOOGLE_DRIVE_EDITORIAL_HITL_FOLDER_ID" in result["error"]
+    mock_nc.update_page_properties.assert_not_called()
+    mock_http.assert_not_called()
+    prepare_drive.assert_not_called()
+
+
+def test_already_generated_noop_does_not_require_drive_metadata():
+    from worker.tasks.magnific import handle_magnific_generate_variants
+
+    with patch("worker.tasks.magnific.notion_client") as mock_nc, patch(
+        "worker.tasks.magnific.httpx.Client"
+    ) as mock_http, patch(
+        "worker.tasks.magnific._prepare_editorial_drive"
+    ) as prepare_drive:
+        mock_nc.get_page.return_value = _publicacion_page(
+            estado_imagen="Seleccionada", publication_id=""
+        )
+
+        result = handle_magnific_generate_variants({"publicacion_page_id": "pub-1"})
+
+    assert result["ok"] is True
+    assert result["skipped"] is True
+    mock_nc.update_page_properties.assert_not_called()
+    mock_http.assert_not_called()
+    prepare_drive.assert_not_called()
+
+
+def test_missing_publication_id_blocks_before_writes_or_magnific():
+    from worker.tasks.magnific import handle_magnific_generate_variants
+
+    with patch("worker.tasks.magnific.config") as mock_cfg, patch(
+        "worker.tasks.magnific.notion_client"
+    ) as mock_nc, patch("worker.tasks.magnific.httpx.Client") as mock_http:
+        mock_cfg.MAGNIFIC_API_KEY = "key-123"
+        mock_nc.get_page.return_value = _publicacion_page(publication_id="")
+
+        result = handle_magnific_generate_variants({"publicacion_page_id": "pub-1"})
+
+    assert result["ok"] is False
+    assert "publication_id" in result["error"]
+    mock_nc.update_page_properties.assert_not_called()
+    mock_http.assert_not_called()
+
+
+def test_unsafe_publication_id_blocks_before_writes_or_credits():
+    from worker.tasks.magnific import handle_magnific_generate_variants
+
+    with patch("worker.tasks.magnific.config") as mock_cfg, patch(
+        "worker.tasks.magnific.notion_client"
+    ) as mock_nc, patch("worker.tasks.magnific.httpx.Client") as mock_http:
+        mock_cfg.MAGNIFIC_API_KEY = "key-123"
+        mock_nc.get_page.return_value = _publicacion_page(publication_id="../outside")
+
+        result = handle_magnific_generate_variants({"publicacion_page_id": "pub-1"})
+
+    assert result["ok"] is False
+    assert "not safe" in result["error"]
+    mock_nc.update_page_properties.assert_not_called()
+    mock_http.assert_not_called()
+
+
+def test_editorial_drive_root_reusing_pit_blocks_before_writes_or_credits(
+    monkeypatch,
+):
+    from worker.tasks.magnific import handle_magnific_generate_variants
+
+    monkeypatch.setenv("GOOGLE_DRIVE_PIT_FOLDER_ID", "same-root")
+    monkeypatch.setenv("GOOGLE_DRIVE_EDITORIAL_HITL_FOLDER_ID", "same-root")
+    with patch("worker.tasks.magnific.config") as mock_cfg, patch(
+        "worker.tasks.magnific.notion_client"
+    ) as mock_nc, patch("worker.tasks.magnific.httpx.Client") as mock_http, patch(
+        "worker.tasks.magnific._prepare_editorial_drive"
+    ) as prepare_drive:
+        mock_cfg.MAGNIFIC_API_KEY = "key-123"
+        mock_nc.get_page.return_value = _publicacion_page()
+
+        result = handle_magnific_generate_variants({"publicacion_page_id": "pub-1"})
+
+    assert result["ok"] is False
+    assert "distinct from the PIT root" in result["error"]
+    mock_nc.update_page_properties.assert_not_called()
+    mock_http.assert_not_called()
+    prepare_drive.assert_not_called()
+
+
+def test_drive_preflight_without_add_children_aborts_before_writes_or_credits():
+    from worker.tasks.magnific import handle_magnific_generate_variants
+
+    with patch("worker.tasks.magnific.config") as mock_cfg, patch(
+        "worker.tasks.magnific.notion_client"
+    ) as mock_nc, patch("worker.tasks.magnific.httpx.Client") as mock_http, patch(
+        "worker.tasks.magnific._prepare_editorial_drive",
+        side_effect=ValueError("root does not allow creating child folders"),
+    ):
+        mock_cfg.MAGNIFIC_API_KEY = "key-123"
+        mock_nc.get_page.return_value = _publicacion_page()
+
+        result = handle_magnific_generate_variants({"publicacion_page_id": "pub-1"})
+
+    assert result["ok"] is False
+    assert "preflight failed" in result["error"]
+    mock_nc.update_page_properties.assert_not_called()
+    mock_http.assert_not_called()
+
+
+def test_complete_generation_persists_drive_before_ready_and_keeps_locator_empty():
+    from worker.tasks.magnific import handle_magnific_generate_variants
+
+    exports = [f"https://cdn.example.test/export-{index}.png" for index in range(1, 6)]
+    variants = [_variant(f"task-{index}", exports[index - 1]) for index in range(1, 6)]
+    durable = [f"https://drive.google.com/file/d/durable-{index}/view" for index in range(1, 6)]
+    persisted = {
+        "folder_web_view_link": "https://drive.google.com/drive/folders/run-folder",
+        "files": [
+            {"name": f"alt-{index}.png", "web_view_link": durable[index - 1]}
+            for index in range(1, 6)
+        ],
+    }
+    with patch("worker.tasks.magnific.config") as mock_cfg, patch(
+        "worker.tasks.magnific.notion_client"
+    ) as mock_nc, patch(
+        "worker.tasks.magnific._generate_one_variant", side_effect=variants
+    ), patch(
+        "worker.tasks.magnific._prepare_editorial_drive", create=True, return_value=object()
+    ), patch(
+        "worker.tasks.magnific._persist_generated_variants_to_drive",
+        create=True,
+        return_value=persisted,
+    ) as persist:
+        mock_cfg.MAGNIFIC_API_KEY = "key-123"
+        mock_nc.get_page.return_value = _publicacion_page()
+
+        result = handle_magnific_generate_variants({"publicacion_page_id": "pub-1"})
+
+    assert result["ok"] is True
+    persist.assert_called_once()
+    final_props = mock_nc.update_page_properties.call_args_list[-1].kwargs["properties"]
+    assert final_props["HITL Drive"] == {
+        "url": "https://drive.google.com/drive/folders/run-folder"
+    }
+    for index, drive_url in enumerate(durable, start=1):
+        assert final_props[f"imagen_alt_{index}_url"] == {"url": drive_url}
+        assert final_props[f"imagen_alt_{index}_magnific_url"] == {"url": None}
+    assert not any(export in repr(final_props) for export in exports)
+
+
+def test_drive_failure_after_five_magnific_results_preserves_previous_alts():
+    from worker.tasks.magnific import handle_magnific_generate_variants
+
+    variants = [
+        _variant(f"task-{index}", f"https://cdn.example.test/export-{index}.png")
+        for index in range(1, 6)
+    ]
+    with patch("worker.tasks.magnific.config") as mock_cfg, patch(
+        "worker.tasks.magnific.notion_client"
+    ) as mock_nc, patch(
+        "worker.tasks.magnific._generate_one_variant", side_effect=variants
+    ), patch(
+        "worker.tasks.magnific._prepare_editorial_drive", create=True, return_value=object()
+    ), patch(
+        "worker.tasks.magnific._persist_generated_variants_to_drive",
+        create=True,
+        side_effect=RuntimeError("Drive upload failed"),
+    ):
+        mock_cfg.MAGNIFIC_API_KEY = "key-123"
+        mock_nc.get_page.return_value = _publicacion_page(estado_imagen="Error")
+
+        result = handle_magnific_generate_variants({"publicacion_page_id": "pub-1"})
+
+    assert result["ok"] is False
+    assert result["generated"] == 5
+    assert result["persisted_drive"] is False
+    final_props = mock_nc.update_page_properties.call_args_list[-1].kwargs["properties"]
+    assert final_props["Estado imagen"] == {"select": {"name": "Error"}}
+    assert not any(key.startswith("imagen_alt_") for key in final_props)
+    assert "HITL Drive" not in final_props
+    assert final_props["imagen_error"]["rich_text"][0]["text"]["content"].startswith(
+        "DRIVE_PERSISTENCE_AFTER_GENERATION:"
+    )
+
+
+@pytest.mark.parametrize(
+    "error_prefix",
+    [
+        "DRIVE_PERSISTENCE_AFTER_GENERATION:",
+        "DRIVE_PERSISTED_NOTION_WRITE_FAILED:",
+    ],
+)
+def test_paid_persistence_error_does_not_auto_regenerate(error_prefix):
+    from worker.tasks.magnific import handle_magnific_generate_variants
+
+    with patch("worker.tasks.magnific.config") as mock_cfg, patch(
+        "worker.tasks.magnific.notion_client"
+    ) as mock_nc, patch("worker.tasks.magnific.httpx.Client") as mock_http, patch(
+        "worker.tasks.magnific._prepare_editorial_drive"
+    ) as prepare_drive:
+        mock_cfg.MAGNIFIC_API_KEY = "key-123"
+        mock_nc.get_page.return_value = _publicacion_page(
+            estado_imagen="Error",
+            imagen_error=f"{error_prefix} retry requires a human command",
+        )
+
+        result = handle_magnific_generate_variants({"publicacion_page_id": "pub-1"})
+
+    assert result["ok"] is True
+    assert result["skipped"] is True
+    assert result["reason"] == "manual_regeneration_required_after_persistence_failure"
+    mock_nc.update_page_properties.assert_not_called()
+    mock_http.assert_not_called()
+    prepare_drive.assert_not_called()
 
 
 def test_visual_brief_yaml_uses_scene_and_avoid_without_metadata_in_prompt():
@@ -546,7 +861,8 @@ def test_generates_five_variants_and_writes_notion():
     assert result["ok"] is True
     assert result["generated"] == 5
     assert result["requested"] == 5
-    assert result["urls"] == urls
+    assert result["urls"] == _durable_drive_urls()
+    assert result["persisted_drive"] is True
     assert result["estado_imagen"] == "Listo para selección"
 
     assert http_client.post.call_count == 5
@@ -565,8 +881,12 @@ def test_generates_five_variants_and_writes_notion():
     final_props = final_call.kwargs["properties"]
     assert final_props["Estado imagen"] == {"select": {"name": "Listo para selección"}}
     assert final_props["imagen_cantidad"] == {"number": 5}
-    for i, url in enumerate(urls, start=1):
+    for i, url in enumerate(_durable_drive_urls(), start=1):
         assert final_props[f"imagen_alt_{i}_url"] == {"url": url}
+        assert final_props[f"imagen_alt_{i}_magnific_url"] == {"url": None}
+    assert final_props["HITL Drive"] == {
+        "url": "https://drive.google.com/drive/folders/test-run"
+    }
 
     for call in http_client.post.call_args_list:
         assert call.args[0] == FLASH_ENDPOINT
@@ -587,8 +907,13 @@ def test_explicit_mystic_override_keeps_legacy_endpoint_and_payload():
     from worker.tasks.magnific import handle_magnific_generate_variants
 
     patcher, http_client = _patch_httpx_client(
-        [_mystic_submit_response("task-1")],
-        [_mystic_poll_completed_response("https://cdn.magnific.com/img-1.png")],
+        [_mystic_submit_response(f"task-{index}") for index in range(1, 6)],
+        [
+            _mystic_poll_completed_response(
+                f"https://cdn.magnific.com/img-{index}.png", f"task-{index}"
+            )
+            for index in range(1, 6)
+        ],
     )
     with patch("worker.tasks.magnific.config") as mock_cfg, patch(
         "worker.tasks.magnific.notion_client"
@@ -597,7 +922,7 @@ def test_explicit_mystic_override_keeps_legacy_endpoint_and_payload():
         mock_nc.get_page.return_value = _publicacion_page(estado_imagen="Pendiente generación")
 
         result = handle_magnific_generate_variants(
-            {"publicacion_page_id": "pub-1", "count": 1, "model": "mystic"}
+            {"publicacion_page_id": "pub-1", "model": "mystic"}
         )
 
     assert result["ok"] is True
@@ -608,7 +933,8 @@ def test_explicit_mystic_override_keeps_legacy_endpoint_and_payload():
     assert post_call.kwargs["json"]["resolution"] == "2k"
     assert "use_google_search_tool" not in post_call.kwargs["json"]
     final_props = mock_nc.update_page_properties.call_args_list[-1].kwargs["properties"]
-    assert not any(value == {"url": None} for value in final_props.values())
+    for index in range(1, 6):
+        assert final_props[f"imagen_alt_{index}_magnific_url"] == {"url": None}
 
 
 @pytest.mark.parametrize(
@@ -713,7 +1039,7 @@ def test_regenerar_from_listo_transitions_then_generates_without_early_url_clear
         "select": {"name": "Generando"}
     }
     assert not any(key.startswith("imagen_alt_") for key in generating_call.kwargs["properties"])
-    for i, url in enumerate(urls, start=1):
+    for i, url in enumerate(_durable_drive_urls(), start=1):
         assert success_call.kwargs["properties"][f"imagen_alt_{i}_url"] == {"url": url}
 
 
@@ -741,10 +1067,15 @@ def test_regenerar_transition_write_failure_aborts_before_magnific_call():
 def test_final_notion_write_failure_recovers_row_to_error_without_clearing_urls():
     from worker.tasks.magnific import handle_magnific_generate_variants
 
-    generated_url = "https://cdn.magnific.com/img-1.png"
+    generated_urls = [
+        f"https://cdn.magnific.com/img-{index}.png" for index in range(1, 6)
+    ]
     patcher, _http_client = _patch_httpx_client(
-        [_mystic_submit_response("task-1")],
-        [_mystic_poll_completed_response(generated_url)],
+        [_mystic_submit_response(f"task-{index}") for index in range(1, 6)],
+        [
+            _mystic_poll_completed_response(url, f"task-{index}")
+            for index, url in enumerate(generated_urls, start=1)
+        ],
     )
     with patch("worker.tasks.magnific.config") as mock_cfg, patch(
         "worker.tasks.magnific.notion_client"
@@ -760,18 +1091,17 @@ def test_final_notion_write_failure_recovers_row_to_error_without_clearing_urls(
             None,
         ]
 
-        result = handle_magnific_generate_variants(
-            {"publicacion_page_id": "pub-1", "count": 1}
-        )
+        result = handle_magnific_generate_variants({"publicacion_page_id": "pub-1"})
 
     assert result["ok"] is False
-    assert result["generated"] == 1
+    assert result["generated"] == 5
+    assert result["persisted_drive"] is True
     assert "fake-secret-value" not in result["error"]
     assert "https://cdn.example.test" not in result["error"]
     assert mock_nc.update_page_properties.call_count == 3
     final_props = mock_nc.update_page_properties.call_args_list[1].kwargs["properties"]
     recovery_props = mock_nc.update_page_properties.call_args_list[2].kwargs["properties"]
-    assert final_props["imagen_alt_1_url"] == {"url": generated_url}
+    assert final_props["imagen_alt_1_url"] == {"url": _durable_drive_urls()[0]}
     assert recovery_props["Estado imagen"] == {"select": {"name": "Error"}}
     assert not any(key.startswith("imagen_alt_") for key in recovery_props)
 
@@ -795,7 +1125,7 @@ def test_interim_write_never_clears_existing_urls():
         # run before landing in Error (imagen_cantidad=2 in Notion already).
         mock_nc.get_page.return_value = _publicacion_page(estado_imagen="Error")
 
-        result = handle_magnific_generate_variants({"publicacion_page_id": "pub-1", "count": 1})
+        result = handle_magnific_generate_variants({"publicacion_page_id": "pub-1"})
 
     assert result["ok"] is False
     interim_call, final_call = mock_nc.update_page_properties.call_args_list
@@ -815,9 +1145,9 @@ def test_partial_failure_writes_error_state_not_listo():
         _mystic_submit_response("task-3"),
     ]
     get_effects = [
-        _mystic_poll_completed_response(urls[0]),
-        _mystic_poll_completed_response(urls[1]),
-        _mystic_poll_failed_response(),
+        _mystic_poll_completed_response(urls[0], "task-1"),
+        _mystic_poll_completed_response(urls[1], "task-2"),
+        _mystic_poll_failed_response("task-3"),
     ]
     patcher, http_client = _patch_httpx_client(post_effects, get_effects)
 
@@ -832,6 +1162,8 @@ def test_partial_failure_writes_error_state_not_listo():
     assert result["ok"] is False
     assert "alt_3" in result["error"]
     assert result["generated"] == 2
+    assert result["persisted_drive"] is False
+    assert "urls" not in result
 
     interim_call, final_call = mock_nc.update_page_properties.call_args_list
     final_props = final_call.kwargs["properties"]
@@ -855,7 +1187,7 @@ def test_app_magnific_com_url_is_rejected_as_failure():
         mock_cfg.MAGNIFIC_API_KEY = "key-123"
         mock_nc.get_page.return_value = _publicacion_page(estado_imagen="No aplica")
 
-        result = handle_magnific_generate_variants({"publicacion_page_id": "pub-1", "count": 1})
+        result = handle_magnific_generate_variants({"publicacion_page_id": "pub-1"})
 
     assert result["ok"] is False
     assert "alt_1" in result["error"]
@@ -865,6 +1197,118 @@ def test_app_magnific_com_url_is_rejected_as_failure():
 # ---------------------------------------------------------------------------
 # Low-level Mystic client behavior (submit/poll error paths)
 # ---------------------------------------------------------------------------
+
+
+def test_download_export_png_requires_direct_https_png():
+    from worker.tasks.magnific import _download_export_png
+
+    response = MagicMock()
+    response.headers = {}
+    response.iter_bytes.return_value = iter([_image_bytes("PNG")])
+    response.raise_for_status.return_value = None
+    client = MagicMock()
+    client.__enter__.return_value = client
+    client.__exit__.return_value = False
+    client.stream.return_value.__enter__.return_value = response
+
+    with patch("worker.tasks.magnific.httpx.Client", return_value=client) as client_cls:
+        content = _download_export_png(
+            "https://cdn.magnific.com/export.png?signature=temporary"
+        )
+
+    assert content.startswith(b"\x89PNG")
+    assert client_cls.call_args.kwargs["follow_redirects"] is False
+
+
+def test_download_export_png_converts_documented_jpeg_export_to_png():
+    from worker.tasks.magnific import _download_export_png
+
+    response = MagicMock()
+    response.headers = {}
+    response.iter_bytes.return_value = iter([_image_bytes("JPEG")])
+    response.raise_for_status.return_value = None
+    client = MagicMock()
+    client.__enter__.return_value = client
+    client.__exit__.return_value = False
+    client.stream.return_value.__enter__.return_value = response
+
+    with patch("worker.tasks.magnific.httpx.Client", return_value=client):
+        content = _download_export_png("https://ai-statics.freepik.com/export.jpg")
+
+    assert content.startswith(b"\x89PNG\r\n\x1a\n")
+    with Image.open(io.BytesIO(content)) as image:
+        assert image.format == "PNG"
+        assert image.size == (4, 3)
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "http://cdn.magnific.com/export.png",
+        "https://app.magnific.com/creations/example",
+        "https://127.0.0.1/export.png",
+        "https://[::1]/export.png",
+        "https://user@cdn.magnific.com/export.png",
+        "https://cdn.magnific.com:444/export.png",
+        "https://internal-host/export.png",
+    ],
+)
+def test_download_export_png_rejects_non_export_locator_before_http(url):
+    from worker.tasks.magnific import _download_export_png
+
+    with patch("worker.tasks.magnific.httpx.Client") as client_cls, pytest.raises(
+        RuntimeError, match="approved HTTPS export"
+    ):
+        _download_export_png(url)
+
+    client_cls.assert_not_called()
+
+
+def test_download_export_png_redacts_signed_url_from_error():
+    from worker.tasks.magnific import _download_export_png
+
+    client = MagicMock()
+    client.__enter__.return_value = client
+    client.__exit__.return_value = False
+    client.stream.side_effect = RuntimeError(
+        "failed https://cdn.example.test/export.png?signature=sensitive"
+    )
+    with patch("worker.tasks.magnific.httpx.Client", return_value=client), pytest.raises(
+        RuntimeError
+    ) as exc_info:
+        _download_export_png("https://cdn.example.test/export.png?signature=sensitive")
+
+    assert "cdn.example.test" not in str(exc_info.value)
+    assert "sensitive" not in str(exc_info.value)
+    assert exc_info.value.__cause__ is None
+
+
+def test_download_export_png_stops_stream_at_size_limit():
+    from worker.tasks.magnific import _download_export_png
+
+    consumed: list[int] = []
+
+    def chunks():
+        for index, chunk in enumerate((b"1234", b"56", b"must-not-be-read"), start=1):
+            consumed.append(index)
+            yield chunk
+
+    response = MagicMock()
+    response.headers = {}
+    response.raise_for_status.return_value = None
+    response.iter_bytes.return_value = chunks()
+    client = MagicMock()
+    client.__enter__.return_value = client
+    client.__exit__.return_value = False
+    client.stream.return_value.__enter__.return_value = response
+
+    with patch("worker.tasks.magnific.httpx.Client", return_value=client), patch(
+        "worker.tasks.magnific._MAX_EXPORT_BYTES", 5
+    ), pytest.raises(RuntimeError, match="download size limit") as exc_info:
+        _download_export_png("https://cdn.example.test/export.png")
+
+    assert consumed == [1, 2]
+    assert exc_info.value.__cause__ is None
 
 
 def test_submit_missing_task_id_raises():
@@ -986,7 +1430,9 @@ def test_poll_exhausts_attempts_and_raises_with_elapsed_time():
 
     resp = MagicMock()
     resp.raise_for_status.return_value = None
-    resp.json.return_value = {"data": {"status": "IN_PROGRESS", "generated": []}}
+    resp.json.return_value = {
+        "data": {"task_id": "task-x", "status": "IN_PROGRESS", "generated": []}
+    }
     http_client = MagicMock()
     http_client.__enter__.return_value = http_client
     http_client.__exit__.return_value = False
@@ -1009,7 +1455,9 @@ def test_poll_completed_without_generated_url_raises():
 
     resp = MagicMock()
     resp.raise_for_status.return_value = None
-    resp.json.return_value = {"data": {"status": "COMPLETED", "generated": []}}
+    resp.json.return_value = {
+        "data": {"task_id": "task-1", "status": "COMPLETED", "generated": []}
+    }
     http_client = MagicMock()
     http_client.__enter__.return_value = http_client
     http_client.__exit__.return_value = False
@@ -1023,11 +1471,37 @@ def test_poll_completed_without_generated_url_raises():
             _poll_mystic("task-1")
 
 
+def test_poll_rejects_mismatched_task_identifier():
+    from worker.tasks.magnific import _poll_mystic
+
+    resp = MagicMock()
+    resp.raise_for_status.return_value = None
+    resp.json.return_value = {
+        "data": {
+            "task_id": "different-task",
+            "status": "COMPLETED",
+            "generated": ["https://cdn.magnific.com/image.png"],
+        }
+    }
+    http_client = MagicMock()
+    http_client.__enter__.return_value = http_client
+    http_client.__exit__.return_value = False
+    http_client.get.return_value = resp
+
+    with patch("worker.tasks.magnific.config") as mock_cfg, patch(
+        "worker.tasks.magnific.httpx.Client", return_value=http_client
+    ):
+        mock_cfg.MAGNIFIC_API_KEY = "key-123"
+        with pytest.raises(RuntimeError, match="identifier did not match"):
+            _poll_mystic("task-1")
+
+
 @pytest.mark.parametrize(
     ("generated", "message"),
     [
         ("https://cdn.magnific.com/image.png", "invalid generated shape"),
         (["not-a-url"], "invalid generated URL"),
+        (["http://cdn.magnific.com/image.png"], "invalid generated URL"),
         (["https://APP.MAGNIFIC.COM/creations/abc"], "not a direct export"),
     ],
 )

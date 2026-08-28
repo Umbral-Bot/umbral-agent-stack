@@ -33,17 +33,18 @@ Contract (do not weaken):
   A run that produces fewer than requested because of an upstream failure is
   reported as `Estado imagen = Error` with `imagen_error` set — never a false
   `Listo para selección` with a partial set.
-- Proves Notion write access (writes the interim `Estado imagen = Generando`
-  state) before spending any Magnific credits. If that write fails, aborts
-  before calling Magnific at all.
-- Never destructively clears `imagen_alt_*_url`. A failed run writes no image
-  slots at all, preserving the prior set atomically. A complete production
-  5/5 success overwrites all five; a smaller manual success overwrites only
-  the slots it generated and never emits `url: null` for the remainder.
+- Proves both governed Drive readiness and Notion write access before spending
+  any Magnific credits. A successful run persists all five PNGs to Drive in
+  the same tick before writing `Estado imagen = Listo para selección`.
+- Never destructively clears `imagen_alt_*_url`. A failed generation or Drive
+  persistence writes no image slots at all, preserving the prior set
+  atomically. Only durable Drive `webViewLink` values reach those slots.
 """
 
 from __future__ import annotations
 
+import io
+import ipaddress
 import logging
 import re
 import time
@@ -54,8 +55,10 @@ from urllib.parse import urlparse
 
 import httpx
 import yaml
+from PIL import Image, UnidentifiedImageError
 
 from .. import config, notion_client
+from . import google_drive
 
 logger = logging.getLogger("worker.tasks.magnific")
 
@@ -77,6 +80,9 @@ MAX_PROMPT_CHARS = 3000
 
 _SUBMIT_TIMEOUT_SEC = 30.0
 _POLL_TIMEOUT_SEC = 20.0
+_DOWNLOAD_TIMEOUT_SEC = 60.0
+_MAX_EXPORT_BYTES = 50 * 1024 * 1024
+_MAX_EXPORT_PIXELS = 50_000_000
 _POLL_INTERVAL_SEC = 3.0
 _MAX_POLL_ATTEMPTS = 40  # ~2 minutes per variant at the interval above
 _MAX_HTTP_503_RETRIES = 2
@@ -87,6 +93,10 @@ _IN_PROGRESS_STATES = {"Generando"}
 _ALREADY_DONE_STATES = {"Listo para selección", "Seleccionada"}
 _ELIGIBLE_STATES = {"", "No aplica", "Pendiente generación", "Error", "Regeneración pedida", None}
 _REGENERABLE_STATES = {"Listo para selección", "Error"}
+_NON_RETRYABLE_ERROR_PREFIXES = (
+    "DRIVE_PERSISTENCE_AFTER_GENERATION:",
+    "DRIVE_PERSISTED_NOTION_WRITE_FAILED:",
+)
 
 _ANTI_SLOP_SUFFIX = (
     "ilustración editorial isométrica no fotoreal; sin personas; sin rostros; "
@@ -156,6 +166,20 @@ class _GenerationTarget:
     mystic_model: Optional[str] = None
 
 
+@dataclass(frozen=True)
+class _GeneratedVariant:
+    """One paid Magnific result before governed Drive persistence.
+
+    Magnific's documented Flash API does not expose a public review permalink,
+    so ``magnific_url`` deliberately stays empty unless a future documented
+    response supplies one directly. Never derive an app URL from ``task_id``.
+    """
+
+    task_id: str
+    export_url: str
+    magnific_url: Optional[str] = None
+
+
 def _flatten_prop(prop: Any) -> Any:
     """Flatten a single raw Notion property value (as returned by get_page)."""
     if not isinstance(prop, dict):
@@ -181,11 +205,13 @@ def _read_publicacion_fields(page: Dict[str, Any]) -> Dict[str, Any]:
         return _flatten_prop(props.get(name))
 
     return {
+        "publication_id": get("publication_id"),
         "titulo": get("Título"),
         "premisa": get("Premisa"),
         "visual_brief": get("Visual brief"),
         "estado_imagen": get("Estado imagen"),
         "seleccion_imagen": get("Selección imagen"),
+        "imagen_error": get("imagen_error"),
     }
 
 
@@ -366,6 +392,31 @@ def _safe_httpx_error_body(exc: httpx.HTTPStatusError) -> str:
         return ""
 
 
+def _is_approved_export_url(value: Any) -> bool:
+    """Reject non-HTTPS and obvious internal/credentialed SSRF destinations."""
+    try:
+        parsed = urlparse(str(value or "").strip())
+        hostname = (parsed.hostname or "").lower().rstrip(".")
+        port = parsed.port
+    except ValueError:
+        return False
+    if (
+        parsed.scheme.lower() != "https"
+        or not hostname
+        or parsed.username is not None
+        or parsed.password is not None
+        or port not in {None, 443}
+        or hostname == "localhost"
+        or hostname.endswith((".localhost", ".local", ".internal"))
+    ):
+        return False
+    try:
+        return ipaddress.ip_address(hostname).is_global
+    except ValueError:
+        # Public export hosts are DNS names; reject unqualified/internal names.
+        return "." in hostname
+
+
 def _safe_error_text(value: Any, limit: int = 300) -> str:
     """Keep diagnostics useful without persisting signed URLs or credentials."""
     text = " ".join(str(value or "").split())
@@ -460,7 +511,7 @@ def _submit_generation(
     return str(task_id)
 
 
-def _poll_generation(task_id: str, target: _GenerationTarget) -> str:
+def _poll_generation(task_id: str, target: _GenerationTarget) -> _GeneratedVariant:
     url = f"{target.endpoint}/{task_id}"
     started = time.monotonic()
     for _attempt in range(_MAX_POLL_ATTEMPTS):
@@ -473,6 +524,11 @@ def _poll_generation(task_id: str, target: _GenerationTarget) -> str:
             data = resp.json()
         payload = (data or {}).get("data") or {}
         status = payload.get("status")
+        response_task_id = str(payload.get("task_id") or "").strip()
+        if response_task_id != task_id:
+            raise RuntimeError(
+                f"Magnific {target.label} task response identifier did not match the requested task"
+            )
         if status == "COMPLETED":
             generated = payload.get("generated") or []
             if not isinstance(generated, list):
@@ -489,7 +545,7 @@ def _poll_generation(task_id: str, target: _GenerationTarget) -> str:
                 )
             parsed_url = urlparse(url_value)
             hostname = (parsed_url.hostname or "").lower()
-            if parsed_url.scheme.lower() not in {"http", "https"} or not hostname:
+            if not _is_approved_export_url(url_value):
                 raise RuntimeError(
                     f"Magnific {target.label} task {task_id} returned an invalid generated URL"
                 )
@@ -500,7 +556,7 @@ def _poll_generation(task_id: str, target: _GenerationTarget) -> str:
                     f"Magnific {target.label} task {task_id} returned an app.magnific.com URL, "
                     "not a direct export"
                 )
-            return url_value
+            return _GeneratedVariant(task_id=task_id, export_url=url_value)
         if status == "FAILED":
             error = _safe_error_text(payload.get("error") or "upstream task failed", 200)
             raise RuntimeError(f"Magnific {target.label} task {task_id} FAILED: {error}")
@@ -533,7 +589,7 @@ def _submit_mystic(prompt: str, aspect_ratio: str, resolution: str, model: str) 
 
 def _poll_mystic(task_id: str) -> str:
     """Compatibility wrapper retained for legacy callers/tests."""
-    return _poll_generation(task_id, _mystic_target())
+    return _poll_generation(task_id, _mystic_target()).export_url
 
 
 def _generate_one_variant(
@@ -541,9 +597,138 @@ def _generate_one_variant(
     aspect_ratio: str,
     resolution: str,
     target: _GenerationTarget,
-) -> str:
+) -> _GeneratedVariant:
     task_id = _submit_generation(prompt, aspect_ratio, resolution, target)
     return _poll_generation(task_id, target)
+
+
+def _coerce_generated_variant(value: Any) -> _GeneratedVariant:
+    """Normalize test/legacy adapters while keeping production structured."""
+    if isinstance(value, _GeneratedVariant):
+        return value
+    if isinstance(value, str):
+        return _GeneratedVariant(task_id="", export_url=value)
+    task_id = str(getattr(value, "task_id", "") or "").strip()
+    export_url = str(getattr(value, "export_url", "") or "").strip()
+    magnific_url = getattr(value, "magnific_url", None)
+    if not export_url:
+        raise RuntimeError("Magnific generation result did not contain an export URL")
+    return _GeneratedVariant(
+        task_id=task_id,
+        export_url=export_url,
+        magnific_url=str(magnific_url).strip() if magnific_url else None,
+    )
+
+
+def _prepare_editorial_drive() -> Any:
+    """Run the read-only governed Drive preflight before any paid request."""
+    return google_drive.prepare_editorial_hitl_drive()
+
+
+def _normalize_export_as_png(content: bytes) -> bytes:
+    """Decode one bounded static image and re-encode a real PNG payload."""
+    if not content or len(content) > _MAX_EXPORT_BYTES:
+        raise RuntimeError("Magnific export image size is outside the allowed range")
+    try:
+        with Image.open(io.BytesIO(content)) as image:
+            width, height = image.size
+            if width <= 0 or height <= 0 or width * height > _MAX_EXPORT_PIXELS:
+                raise RuntimeError("Magnific export image dimensions are outside the allowed range")
+            if int(getattr(image, "n_frames", 1)) != 1:
+                raise RuntimeError("Magnific export must be a static image")
+            image.load()
+            target_mode = (
+                "RGBA"
+                if image.mode in {"RGBA", "LA"} or "transparency" in image.info
+                else "RGB"
+            )
+            normalized = image.convert(target_mode)
+            output = io.BytesIO()
+            normalized.save(output, format="PNG")
+    except RuntimeError:
+        raise
+    except (UnidentifiedImageError, OSError, ValueError):
+        raise RuntimeError("Magnific export was not a decodable static image") from None
+    png = output.getvalue()
+    if not png.startswith(b"\x89PNG\r\n\x1a\n") or len(png) > _MAX_EXPORT_BYTES:
+        raise RuntimeError("Normalized Magnific PNG is outside the allowed range")
+    return png
+
+
+def _download_export_png(export_url: str) -> bytes:
+    """Download one ephemeral export and normalize PNG/JPEG/WebP to PNG."""
+    parsed = urlparse(export_url)
+    hostname = (parsed.hostname or "").lower()
+    if not _is_approved_export_url(export_url) or (
+        hostname == "app.magnific.com" or hostname.endswith(".app.magnific.com")
+    ):
+        raise RuntimeError("Magnific export locator is not an approved HTTPS export URL")
+    try:
+        # Redirects are deliberately disabled: following an upstream-provided
+        # redirect would widen the network destination beyond the verified URL.
+        with httpx.Client(timeout=_DOWNLOAD_TIMEOUT_SEC, follow_redirects=False) as client:
+            with client.stream("GET", export_url) as response:
+                response.raise_for_status()
+                declared_size = response.headers.get("Content-Length")
+                if declared_size is not None and int(declared_size) > _MAX_EXPORT_BYTES:
+                    raise RuntimeError("Magnific export exceeded the download size limit")
+                chunks = bytearray()
+                for chunk in response.iter_bytes():
+                    chunks.extend(chunk)
+                    if len(chunks) > _MAX_EXPORT_BYTES:
+                        raise RuntimeError("Magnific export exceeded the download size limit")
+                content = bytes(chunks)
+    except Exception as exc:
+        raise RuntimeError(
+            f"Failed to download Magnific export: {_safe_error_text(exc)}"
+        ) from None
+    return _normalize_export_as_png(content)
+
+
+def _persist_generated_variants_to_drive(
+    drive_context: Any,
+    publication_id: str,
+    variants: List[_GeneratedVariant],
+) -> Dict[str, Any]:
+    if len(variants) != DEFAULT_VARIANT_COUNT:
+        raise RuntimeError("Drive persistence requires exactly five generated variants")
+    png_images = [_download_export_png(variant.export_url) for variant in variants]
+    run_stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M")
+    return google_drive.persist_editorial_hitl_images(
+        drive_context,
+        publication_id=publication_id,
+        run_stamp=run_stamp,
+        png_images=png_images,
+    )
+
+
+def _is_durable_drive_link(value: Any) -> bool:
+    parsed = urlparse(str(value or "").strip())
+    return parsed.scheme.lower() == "https" and (parsed.hostname or "").lower() == "drive.google.com"
+
+
+def _validated_drive_result(result: Any) -> tuple[str, List[str]]:
+    if not isinstance(result, dict):
+        raise RuntimeError("Drive persistence returned an invalid result")
+    folder_link = str(result.get("folder_web_view_link") or "").strip()
+    if not _is_durable_drive_link(folder_link):
+        raise RuntimeError("Drive persistence did not return a durable folder webViewLink")
+    raw_files = result.get("files")
+    if not isinstance(raw_files, list) or len(raw_files) != DEFAULT_VARIANT_COUNT:
+        raise RuntimeError("Drive persistence did not return exactly five files")
+    files_by_name: Dict[str, str] = {}
+    for raw_file in raw_files:
+        if not isinstance(raw_file, dict):
+            raise RuntimeError("Drive persistence returned invalid file metadata")
+        name = str(raw_file.get("name") or "").strip()
+        link = str(raw_file.get("web_view_link") or "").strip()
+        if name in files_by_name or not _is_durable_drive_link(link):
+            raise RuntimeError("Drive persistence returned invalid durable file metadata")
+        files_by_name[name] = link
+    expected_names = [f"alt-{index}.png" for index in range(1, DEFAULT_VARIANT_COUNT + 1)]
+    if set(files_by_name) != set(expected_names):
+        raise RuntimeError("Drive persistence returned an unexpected file set")
+    return folder_link, [files_by_name[name] for name in expected_names]
 
 
 def _today_date() -> str:
@@ -560,9 +745,8 @@ def handle_magnific_generate_variants(input_data: Dict[str, Any]) -> Dict[str, A
         dry_run (bool, optional): if True, verify eligibility and return the
             prompt/params that would be used, without calling Magnific or
             writing to Notion.
-        count (int, optional): variants to generate, 1-5. Default 5 (the
-            contract count — see roadmap risk "conteo 3 vs 5"). Lower values
-            exist for manual/testing use, not for production scans.
+        count (int, optional): variants to preview in dry-run, 1-5. A real run
+            is fail-closed unless the count is exactly 5.
         prompt (str, optional): explicit prompt override. Default: derived
             from `Visual brief.scene` + `avoid`, else `Título` + `Premisa`,
             plus the ADR-006 anti-slop suffix. Raw Visual brief YAML is never
@@ -591,6 +775,12 @@ def handle_magnific_generate_variants(input_data: Dict[str, Any]) -> Dict[str, A
         return {"ok": False, "error": "'count' must be an integer", "publicacion_page_id": page_id}
     if count < 1 or count > 5:
         return {"ok": False, "error": "'count' must be between 1 and 5", "publicacion_page_id": page_id}
+    if not dry_run and count != DEFAULT_VARIANT_COUNT:
+        return {
+            "ok": False,
+            "error": "Production Magnific generation requires exactly 5 variants",
+            "publicacion_page_id": page_id,
+        }
     override_prompt = input_data.get("prompt")
 
     try:
@@ -603,16 +793,30 @@ def handle_magnific_generate_variants(input_data: Dict[str, Any]) -> Dict[str, A
         }
 
     fields = _read_publicacion_fields(page)
+    publication_id = str(fields.get("publication_id") or "").strip()
     estado = fields["estado_imagen"]
     regeneration_requested = (
         fields.get("seleccion_imagen") == "Regenerar" and estado in _REGENERABLE_STATES
     )
+    prior_error = str(fields.get("imagen_error") or "").strip()
 
     if estado in _IN_PROGRESS_STATES:
         return {
             "ok": True,
             "skipped": True,
             "reason": "in_progress",
+            "estado_imagen": estado,
+            "publicacion_page_id": page_id,
+        }
+    if (
+        estado == "Error"
+        and prior_error.startswith(_NON_RETRYABLE_ERROR_PREFIXES)
+        and not regeneration_requested
+    ):
+        return {
+            "ok": True,
+            "skipped": True,
+            "reason": "manual_regeneration_required_after_persistence_failure",
             "estado_imagen": estado,
             "publicacion_page_id": page_id,
         }
@@ -629,6 +833,13 @@ def handle_magnific_generate_variants(input_data: Dict[str, Any]) -> Dict[str, A
             "ok": False,
             "error": f"estado_imagen_not_eligible: {estado!r}",
             "estado_imagen": estado,
+            "publicacion_page_id": page_id,
+        }
+
+    if not publication_id:
+        return {
+            "ok": False,
+            "error": "Publicaciones.publication_id is required for governed Drive persistence",
             "publicacion_page_id": page_id,
         }
 
@@ -658,7 +869,7 @@ def handle_magnific_generate_variants(input_data: Dict[str, Any]) -> Dict[str, A
             "estado_imagen": estado,
             "publicacion_page_id": page_id,
         }
-
+    drive_readiness = google_drive.editorial_hitl_drive_readiness(publication_id)
     if dry_run:
         return {
             "ok": True,
@@ -671,8 +882,26 @@ def handle_magnific_generate_variants(input_data: Dict[str, Any]) -> Dict[str, A
             "model": target.model,
             "endpoint": target.endpoint,
             "use_google_search_tool": False if target.engine == "flash" else None,
+            "would_persist_drive": bool(drive_readiness.get("ready")),
+            "drive_logical_path": drive_readiness.get("logical_path"),
+            "drive_missing_config": list(drive_readiness.get("missing") or []),
+            "drive_configuration_error": drive_readiness.get("configuration_error"),
             "regeneration_requested": regeneration_requested,
             "estado_imagen": estado,
+            "publicacion_page_id": page_id,
+        }
+
+    if not drive_readiness.get("ready"):
+        missing = list(drive_readiness.get("missing") or [])
+        if missing:
+            detail = "missing " + ", ".join(str(name) for name in missing)
+        elif drive_readiness.get("configuration_error"):
+            detail = "editorial Drive root must be distinct from the PIT root"
+        else:
+            detail = "publication_id is not safe for the governed Drive path"
+        return {
+            "ok": False,
+            "error": f"Editorial Drive is not ready: {detail}",
             "publicacion_page_id": page_id,
         }
 
@@ -681,6 +910,14 @@ def handle_magnific_generate_variants(input_data: Dict[str, Any]) -> Dict[str, A
     except RuntimeError as e:
         return {"ok": False, "error": str(e), "publicacion_page_id": page_id}
 
+    try:
+        drive_context = _prepare_editorial_drive()
+    except Exception as e:
+        return {
+            "ok": False,
+            "error": f"Editorial Drive preflight failed: {_safe_error_text(e)}",
+            "publicacion_page_id": page_id,
+        }
     if regeneration_requested:
         transition_props: Dict[str, Any] = {
             "Estado imagen": {"select": {"name": "Regeneración pedida"}},
@@ -715,12 +952,14 @@ def handle_magnific_generate_variants(input_data: Dict[str, Any]) -> Dict[str, A
             "publicacion_page_id": page_id,
         }
 
-    urls: List[str] = []
+    variants: List[_GeneratedVariant] = []
     failure: Optional[str] = None
     for idx in range(1, count + 1):
         try:
-            url = _generate_one_variant(prompt, aspect_ratio, resolution, target)
-            urls.append(url)
+            variant = _coerce_generated_variant(
+                _generate_one_variant(prompt, aspect_ratio, resolution, target)
+            )
+            variants.append(variant)
             logger.info("Magnific variant %d/%d generated for page %s", idx, count, page_id[:8])
         except Exception as e:
             failure = f"alt_{idx}: {_safe_error_text(e, 200)}"
@@ -729,12 +968,12 @@ def handle_magnific_generate_variants(input_data: Dict[str, Any]) -> Dict[str, A
             )
             break
 
-    if failure or len(urls) < count:
+    if failure or len(variants) < count:
         # Preserve the prior image set atomically. A partial retry may have
         # produced paid URLs, but mixing them with older slots would make
         # imagen_cantidad/date lie and would overwrite reviewed alternatives.
-        # Report the partial URLs to the caller, while Notion changes only to
-        # Error metadata. A complete production 5/5 replaces all five below.
+        # Do not expose ephemeral export URLs to the caller. Notion changes
+        # only to Error metadata; a complete production 5/5 replaces all five.
         error_props: Dict[str, Any] = {
             "Estado imagen": {"select": {"name": "Error"}},
             "imagen_error": {
@@ -756,25 +995,71 @@ def handle_magnific_generate_variants(input_data: Dict[str, Any]) -> Dict[str, A
         return {
             "ok": False,
             "error": failure or "incomplete_generation",
-            "generated": len(urls),
+            "generated": len(variants),
             "requested": count,
-            "urls": urls,
+            "persisted_drive": False,
+            "publicacion_page_id": page_id,
+        }
+
+    try:
+        persisted = _persist_generated_variants_to_drive(
+            drive_context,
+            publication_id,
+            variants,
+        )
+        folder_link, durable_urls = _validated_drive_result(persisted)
+    except Exception as e:
+        drive_failure = (
+            "DRIVE_PERSISTENCE_AFTER_GENERATION: "
+            f"Drive persistence failed after 5/5 generation: {_safe_error_text(e)}"
+        )
+        drive_error_props: Dict[str, Any] = {
+            "Estado imagen": {"select": {"name": "Error"}},
+            "imagen_error": {
+                "rich_text": [{"text": {"content": drive_failure[:2000]}}]
+            },
+        }
+        try:
+            notion_client.update_page_properties(
+                page_id_or_url=page_id, properties=drive_error_props
+            )
+        except Exception as write_error:
+            logger.warning(
+                "Failed to write Drive Error state for page %s: %s",
+                page_id[:8],
+                _safe_error_text(write_error),
+            )
+        return {
+            "ok": False,
+            "error": drive_failure,
+            "generated": len(variants),
+            "requested": count,
+            "persisted_drive": False,
             "publicacion_page_id": page_id,
         }
 
     props: Dict[str, Any] = {
-        f"imagen_alt_{i}_url": {"url": u} for i, u in enumerate(urls, start=1)
+        f"imagen_alt_{i}_url": {"url": durable_url}
+        for i, durable_url in enumerate(durable_urls, start=1)
     }
-    props["imagen_cantidad"] = {"number": len(urls)}
+    props.update(
+        {
+            f"imagen_alt_{i}_magnific_url": {"url": None}
+            for i in range(1, DEFAULT_VARIANT_COUNT + 1)
+        }
+    )
+    props["HITL Drive"] = {"url": folder_link}
+    props["imagen_cantidad"] = {"number": len(durable_urls)}
     props["imagen_generada_at"] = {"date": {"start": _today_date()}}
     props["Estado imagen"] = {"select": {"name": "Listo para selección"}}
-    # Never clear a prior slot. Production's complete 5/5 run naturally
-    # overwrites all five; a smaller manual run must not erase the remainder.
+    # Never clear a prior slot. The complete governed 5/5 run overwrites all
+    # five atomically in the same Notion property update.
     try:
         notion_client.update_page_properties(page_id_or_url=page_id, properties=props)
     except Exception as e:
         write_error = (
-            f"Generated {len(urls)} variants but failed to write results: "
+            "DRIVE_PERSISTED_NOTION_WRITE_FAILED: "
+            f"Persisted {len(durable_urls)} variants but failed to write results: "
             f"{_safe_error_text(e)}"
         )
         # Do not strand the row in the interim `Generando` state forever.
@@ -799,18 +1084,25 @@ def handle_magnific_generate_variants(input_data: Dict[str, Any]) -> Dict[str, A
         return {
             "ok": False,
             "error": write_error,
-            "generated": len(urls),
+            "generated": len(variants),
             "requested": count,
-            "urls": urls,
+            "urls": durable_urls,
+            "persisted_drive": True,
             "publicacion_page_id": page_id,
         }
 
-    logger.info("Magnific: %d/%d variants written for page %s", len(urls), count, page_id[:8])
+    logger.info(
+        "Magnific: %d/%d durable variants written for page %s",
+        len(durable_urls),
+        count,
+        page_id[:8],
+    )
     return {
         "ok": True,
-        "generated": len(urls),
+        "generated": len(variants),
         "requested": count,
-        "urls": urls,
+        "urls": durable_urls,
+        "persisted_drive": True,
         "model": target.model,
         "endpoint": target.endpoint,
         "estado_imagen": "Listo para selección",

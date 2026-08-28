@@ -3,15 +3,13 @@
 > **Estado:** código + tests implementados, **DEFAULT OFF** (fail-closed).
 > Cablea el paquete P2.2 del
 > [roadmap norte](editorial-roadmap-norte-p1-p3-2026-07-22.md) §3. No abre
-> gates humanos, no publica, no toca `Selección imagen` / `Visual asset URL`
-> / copy — eso es David / `sync_visual_asset_from_selection.py` / P2.3.
+> gates humanos, no publica, no toca `Visual asset URL` / copy. El único write
+> sobre `Selección imagen` consume el comando humano `Regenerar` y lo devuelve
+> a `Pendiente`; David sigue siendo quien decide ese gate.
 >
-> **Bloqueante para producción: `MAGNIFIC_API_KEY` no está configurada en
-> ningún entorno** (VPS secrets / `~/.config/openclaw/env`). El código está
-> listo, probado (mocks) y puede correr en `dry_run` hoy mismo sin la
-> credencial; lo que no puede hacerse sin ella es una generación real ni
-> activar el scan (`NOTION_POLLER_ENABLE_MAGNIFIC=true`) en producción — ver
-> §Gap de credencial abajo.
+> Este documento describe el contrato de código. El estado de credenciales,
+> deploy y smoke live se verifica por separado; este paquete no escribe Notion
+> live, no despliega VPS y no habilita `NOTION_POLLER_ENABLE_MAGNIFIC`.
 
 ## Qué hace
 
@@ -19,43 +17,57 @@
    escanea (opt-in) la BD **Publicaciones** buscando filas con
    `origen_alternativa` no vacío (promovidas por P2.1 tras `Aprobar`) y
    `Estado imagen` fuera de `{Listo para selección, Seleccionada, Generando,
-   Error}`. **`Error` queda deliberadamente excluido del scan automático**
-   (ver §Costo y reintentos) — el handler sigue aceptándolo como reintento
-   manual explícito (CLI/dry-run), pero el scan nunca lo re-selecciona solo.
+   Error}`. La excepción explícita es `Selección imagen = Regenerar`: una fila
+   en `Listo para selección` o `Error` vuelve a ser candidata y el pedido
+   humano también prevalece sobre checkpoints Redis anteriores. Sin ese
+   comando, `Error` nunca se auto-reintenta (ver §Costo y reintentos).
 2. Por cada candidata (máximo 1 por ciclo — ver §Costo), llama al task
    Worker/core `magnific.generate_variants`
    ([worker/tasks/magnific.py](../../worker/tasks/magnific.py)), que:
    1. Re-lee la página Publicaciones en vivo (fail-closed — nunca confía en
       el snapshot del scan para decidir si generar/escribir).
-   2. Si `Estado imagen` ya es `Generando`, `Listo para selección` o
-      `Seleccionada`, no-op idempotente (`ok=true, skipped=true`).
-   3. Si no, construye el prompt (desde `Visual brief`, o `Título` +
-      `Premisa` si está vacío) con el sufijo anti-slop de
-      [ADR-006](../adr/ADR-006-capa-visual-editorial.md) y el aspect ratio
-      canónico Umbral `classic_4_3` (4:3, ver
-      [umbral-bim-magnific-visual-style-v1.md](umbral-bim-magnific-visual-style-v1.md)).
-   4. Escribe el estado interino `Estado imagen = Generando` — **sin tocar**
+   2. Si ve `Selección imagen = Regenerar` en una fila lista o con error,
+      consume el comando con un write dedicado: `Estado imagen = Regeneración
+      pedida` + `Selección imagen = Pendiente`. No toca URLs en esa transición.
+   3. Fuera de ese caso, si `Estado imagen` ya es `Generando`, `Listo para
+      selección` o `Seleccionada`, hace no-op idempotente
+      (`ok=true, skipped=true`).
+   4. Parsea `Visual brief` como YAML: si existe `scene`, el prompt base es su
+      valor más `avoid`; nunca envía las claves `style`, `model`, `trace_id`,
+      `publication_id`, `style_ref`, `vignette`, `aspect_ratio` o `resolution`
+      como texto. Si no hay `scene` (incluido YAML inválido), usa `Título` +
+      `Premisa`. Agrega el sufijo editorial isométrico de
+      [ADR-006](../adr/ADR-006-capa-visual-editorial.md), limitado junto al
+      prompt a 3.000 caracteres.
+   5. Escribe el estado interino `Estado imagen = Generando` — **sin tocar**
       `imagen_alt_*_url` — antes de gastar créditos Magnific, para probar
       que el write a Notion funciona. Deliberadamente no limpia URLs
       previas: un intento anterior puede haber producido variantes válidas
       (créditos ya gastados) antes de fallar a mitad de camino, y un
       reintento que también falla no debe destruirlas (ver §Costo).
-   5. Genera hasta 5 variantes secuenciales vía la API REST de Magnific
-      (Mystic, `POST/GET https://api.magnific.com/v1/ai/mystic`, header
-      `x-magnific-api-key`) — el fallback headless documentado en
+   6. Genera hasta 5 variantes secuenciales vía la API REST de Magnific. El
+      default editorial es **Nano Banana Pro Flash / Nano Banana 2**:
+      `POST /v1/ai/text-to-image/nano-banana-pro-flash` y poll
+      `GET /v1/ai/text-to-image/nano-banana-pro-flash/{task-id}`, header
+      `x-magnific-api-key`, `aspect_ratio=4:3`, `resolution=2K` y
+      `use_google_search_tool=false`. El JSON oficial usa
+      `data.task_id/status/generated`. Nano Banana Pro y Mystic/realism sólo
+      se usan mediante override explícito — el fallback headless está
+      documentado en
       [magnific-editorial-setup-2026-06-06.md](magnific-editorial-setup-2026-06-06.md),
       distinto del MCP interactivo con OAuth que usa Rick/Cursor.
-   6. Si las 5 se generan: escribe `imagen_alt_1_url`…`imagen_alt_5_url`,
+      En Mystic, los ratios canónicos se traducen a sus enums oficiales y
+      tanto ratio como resolución (`1k|2k|4k`) se validan fail-closed.
+   7. Si las 5 se generan: escribe `imagen_alt_1_url`…`imagen_alt_5_url`,
       `imagen_cantidad=5`, `imagen_generada_at=hoy`, `Estado imagen = Listo
-      para selección` — y limpia cualquier slot sobrante si `count < 5`
-      (override manual; el flujo de producción siempre pide 5).
-   7. Si alguna falla (o el conteo queda por debajo de lo pedido): escribe
-      **sólo** las URLs que sí se generaron *en este intento* (no toca los
-      slots que no le correspondieron), `imagen_cantidad=N real`, `Estado
-      imagen = Error`, `imagen_error` con el detalle — **nunca** una falsa
-      `Listo para selección` con menos de las variantes pedidas, y **nunca**
-      destruye URLs válidas de un intento previo (riesgo nombrado en el
-      roadmap: "conteo 3 vs 5").
+      para selección`. Nunca escribe `url: null`; un override manual con
+      `count < 5` tampoco borra slots previos.
+   8. Si alguna falla (o el conteo queda por debajo de lo pedido): preserva
+      atómicamente todo el set anterior en Notion y escribe únicamente
+      `Estado imagen = Error` + `imagen_error`. La respuesta del Worker informa
+      las URLs parciales al caller, pero no mezcla alternativas nuevas/viejas,
+      no falsea `imagen_cantidad`/`imagen_generada_at` y **nunca** declara una
+      falsa `Listo para selección` (riesgo "conteo 3 vs 5").
 
 El poller **nunca escribe a Notion directamente** — sólo decide qué filas
 pedirle al Worker que (re-)evalúe (ADR-011 #1: Notion writes son monopolio de
@@ -71,16 +83,16 @@ deuda documentada, no repetida aquí).
 
 ## Qué NO hace (por diseño — alcance estricto de P2.2)
 
-- No marca `Selección imagen` ni `Visual asset URL` — eso es David +
-  `scripts/editorial/sync_visual_asset_from_selection.py`.
+- No elige `Alt N`, no marca el gate humano por David y no toca `Visual asset
+  URL`. Sólo consume `Regenerar` → `Pendiente`; la copia de una alternativa
+  elegida sigue en `scripts/editorial/sync_visual_asset_from_selection.py`.
 - No abre `aprobado_contenido` ni `autorizar_publicacion`.
 - No escribe ni lee copy (Copy Blog/LinkedIn/X) — P2.3.
-- No implementa la reacción a `Selección imagen = Regenerar` (limpiar URLs +
-  encolar) descrita en
-  [notion-publicaciones-v2-visual-gates-schema.md §9](notion-publicaciones-v2-visual-gates-schema.md) —
-  ese es un handler distinto, fuera de este paquete. Este paquete sí es
-  **elegible** para correr cuando `Estado imagen = Regeneración pedida` ya
-  fue puesto por otro proceso.
+- La reacción a `Selección imagen = Regenerar` **sí está dentro del contrato**:
+  el poller la encola aun desde `Listo para selección`/`Error`, y el Worker
+  escribe `Regeneración pedida` + `Pendiente` antes de generar. Conserva las
+  URLs existentes hasta un éxito completo 5/5; no ejecuta el reset destructivo
+  de versiones antiguas del contrato.
 - No dispara con el trigger antiguo (`aprobado_contenido` false→true) del
   doc de 2026-06-06 §9 — el contrato vigente
   ([§5.G](editorial-norte-hitl-contract-2026-07-22.md)) dispara "tras
@@ -98,44 +110,39 @@ deuda documentada, no repetida aquí).
   intentos × 3s = 600s, sin contar latencia real de red en ~205 requests
   (5 submits + hasta 200 polls). 1200s da margen; si las constantes de
   `worker/tasks/magnific.py` cambian, revisar este valor junto con ellas.
+- **HTTP 503 se reintenta con backoff exponencial acotado** (dos reintentos,
+  1s/2s) tanto en submit como en poll. Otros estados HTTP fallan cerrados y
+  sus diagnósticos se redactan antes de persistir o loguear.
 - **`Error` nunca se reintenta solo**: el scan excluye explícitamente ese
-  estado (ver §Qué hace, paso 1). Sin esta exclusión, una fila que falla de
-  forma persistente (ej. un prompt que siempre dispara el filtro NSFW de
-  Magnific) se reintentaría cada 30 min indefinidamente, gastando créditos
-  sin límite. Sacarla de `Error` requiere una acción explícita (humana o de
-  otro paquete) — hoy, en la práctica, sólo un reintento manual vía el
-  script CLI o `curl` directo al Worker.
+  estado. Sin esta exclusión, una fila que falla de forma persistente se
+  reintentaría cada 30 min indefinidamente. La excepción es una acción humana
+  inequívoca: `Selección imagen = Regenerar`. Ese comando salta checkpoints
+  viejos, pero el poller crea un marcador de intento propio por 30 min antes
+  de invocar al Worker. Si el Worker no llega a consumir el comando, ese
+  marcador evita un retry storm; se elimina al recibir éxito/no-op.
 - **Ningún reintento destruye resultados previos**: el write interino
-  `Generando` no limpia `imagen_alt_*_url`, y un fallo parcial sólo escribe
-  los slots que ese intento produjo — nunca borra URLs válidas (créditos ya
-  gastados) que un intento anterior haya dejado. Ver los tests
+  `Regeneración pedida`/`Pendiente` y el write `Generando` no limpian
+  `imagen_alt_*_url`; un fallo parcial no escribe alts, conteo ni fecha, y ni
+  siquiera un éxito manual con `count < 5` emite `url: null`. Las cinco URLs
+  de producción se reemplazan juntas únicamente con un éxito 5/5. Ver los tests
   `test_interim_write_never_clears_existing_urls` en
   `tests/test_magnific.py`.
+- **Un fallo del write final no deja `Generando` permanente**: el Worker
+  intenta recuperar la fila a `Estado imagen = Error` con un write separado
+  que sólo toca estado/diagnóstico y nunca limpia alternativas anteriores.
 
-## Gap de credencial (bloqueante de producción)
+## Credencial y activación live
 
-`MAGNIFIC_API_KEY` (header `x-magnific-api-key`, API REST de Magnific/Mystic)
-**no existe hoy** en `.env.example`, `openclaw/env.template` real, ni se
-encontró referencia a un valor cargado en VPS secrets. Estado previo
-(`docs/ops/magnific-editorial-setup-2026-06-06.md` §Pendientes): "OAuth
-Magnific completado en OpenClaw VPS (o REST fallback)" seguía pendiente.
+`MAGNIFIC_API_KEY` (header `x-magnific-api-key`) es requisito del Worker para
+una generación real y debe vivir sólo en el entorno seguro del runtime. Este
+contrato no presupone ni expone su valor, y este paquete no audita su presencia
+actual ni cambia configuración live.
 
-**Qué falta exactamente para pasar a producción:**
-
-- [E1] Obtener una API key de Magnific/Freepik con el header
-  `x-magnific-api-key` (cuenta Magnific de David, plan con créditos
-  suficientes — confirmar `account_balance` antes de habilitar el scan).
-- [E2] Cargar `MAGNIFIC_API_KEY` en `~/.config/openclaw/env` (VPS) — el mismo
-  archivo que ya tiene `NOTION_API_KEY`, `WORKER_TOKEN`, etc.
-- [E3] Confirmar que el Worker (`umbral-worker.service`) relee ese env al
-  reiniciar (mismo procedimiento que cualquier otra var de `worker/config.py`).
-- [E4] Sólo entonces: `NOTION_POLLER_ENABLE_MAGNIFIC=true` + relanzar el
-  daemon del poller (ver runbook).
-
-Sin `MAGNIFIC_API_KEY`, el handler responde `ok=false` con el error
-`MAGNIFIC_API_KEY not configured...` **antes de escribir nada en Notion**
-(fail-closed) — no hay riesgo de corrupción de estado por habilitar el flag
-sin la credencial, sólo backoff de 30 min por fila sin progreso.
+Antes de activar producción hay que verificar, en un paquete de deploy/live
+separado: credencial disponible para el Worker, balance suficiente, Worker con
+el nuevo código, `NOTION_PUBLICACIONES_DB_ID` correcto y GO explícito para
+`NOTION_POLLER_ENABLE_MAGNIFIC=true`. Sin la key, el handler responde
+`ok=false` **antes de cualquier write a Notion** (fail-closed).
 
 ## Flags / env vars (todas fail-closed por ausencia)
 
@@ -143,7 +150,7 @@ sin la credencial, sólo backoff de 30 min por fila sin progreso.
 |---|---|---|---|
 | `NOTION_POLLER_ENABLE_MAGNIFIC` | dispatcher (poller) | off | Habilita el scan. Sin esto, el poller nunca lee Publicaciones para este scan — el resto del poller no se ve afectado. |
 | `NOTION_PUBLICACIONES_DB_ID` | dispatcher (poller) + Worker | vacío | ID clásico de la página/DB "Publicaciones" (ya usado por P2.1). Sin esto, el scan es no-op y el handler responde `ok=false`. |
-| `MAGNIFIC_API_KEY` | Worker | vacío | Header `x-magnific-api-key` para la API REST de Magnific. **Sin esto, el handler responde `ok=false` antes de cualquier write** — ver §Gap de credencial. |
+| `MAGNIFIC_API_KEY` | Worker | sin default | Header `x-magnific-api-key` para la API REST de Magnific. **Sin esto, el handler responde `ok=false` antes de cualquier write** — ver §Credencial y activación live. |
 
 ## Cómo correr un dry-run
 
@@ -165,10 +172,15 @@ export WORKER_URL=http://127.0.0.1:8088 WORKER_TOKEN=xxx
 python scripts/editorial/magnific_generate_variants.py --page-id <page_id> --dry-run
 ```
 
+La CLI usa el mismo timeout de 1200s del poller y redacta las URLs generadas y
+el diagnóstico upstream de su salida; las URLs operativas quedan en Notion.
+
 Respuestas esperadas:
-- Fila elegible: `{"ok": true, "dry_run": true, "would_generate": true, "prompt": "...", "aspect_ratio": "classic_4_3", ...}`.
+- Fila elegible: `{"ok": true, "dry_run": true, "would_generate": true, "model": "nano-banana-pro-flash", "endpoint": "https://api.magnific.com/v1/ai/text-to-image/nano-banana-pro-flash", "aspect_ratio": "4:3", "resolution": "2K", ...}`.
 - Fila ya en curso: `{"ok": true, "skipped": true, "reason": "in_progress", ...}`.
 - Fila ya lista/seleccionada: `{"ok": true, "skipped": true, "already_generated": true, ...}`.
+- Fila lista/error con `Selección imagen = Regenerar`: elegible; en `dry_run`
+  informa `"regeneration_requested": true` sin escribir.
 - Sin `MAGNIFIC_API_KEY` y `dry_run` **no** seteado: `{"ok": false, "error": "MAGNIFIC_API_KEY not configured..."}` (no llama a Notion para escribir nada).
 
 El **scan del poller** no tiene su propio modo dry-run — sólo decide qué
@@ -180,7 +192,7 @@ elegible que encuentre.
 
 ## Cómo habilitar el scan real (staging/producción, requiere GO + credencial)
 
-1. Completar §Gap de credencial (E1-E3).
+1. Completar la verificación separada de §Credencial y activación live.
 2. Confirmar `NOTION_PUBLICACIONES_DB_ID` configurado (ya debería estarlo
    desde P2.1).
 3. Setear `NOTION_POLLER_ENABLE_MAGNIFIC=true` en el entorno del poller
@@ -203,18 +215,22 @@ elegible que encuentre.
   requerido, `count` inválido, sin `MAGNIFIC_API_KEY` (bloquea antes de
   cualquier write), idempotencia (`Generando` en curso, ya `Listo para
   selección`/`Seleccionada`), estado no elegible, `Regeneración pedida` sí
-  elegible, `dry_run` (sin llamadas HTTP), fallo del write interino aborta
-  antes de llamar a Magnific, generación completa de 5 variantes (writes
-  correctos e interino sin tocar URLs), fallo parcial → `Estado imagen =
-  Error` sin falso "Listo" y sin destruir URLs previas
+  elegible, default/aliases Flash-Pro-Mystic, parser YAML `scene` + `avoid`
+  sin metadatos en el prompt, límite de 3.000 caracteres, `dry_run` (sin
+  llamadas HTTP), payload/endpoint Flash exactos, override Mystic explícito,
+  traducción/validación de enums Mystic,
+  consumo ordenado de `Regenerar`, fallo del write interino antes de créditos,
+  generación completa de 5 variantes (writes correctos e interino sin tocar
+  URLs), fallo parcial → `Estado imagen = Error` sin falso "Listo" y sin destruir URLs previas
   (`test_interim_write_never_clears_existing_urls`), rechazo de URL
-  `app.magnific.com`; más los casos de bajo nivel del cliente Mystic
+  `app.magnific.com`; más los casos de bajo nivel del cliente REST/Mystic
   (`task_id` faltante, `HTTPStatusError` en submit/poll, agotamiento de
   intentos de poll, `COMPLETED` sin URL).
 - `tests/test_notion_poller.py::TestMagnificFlagParsing` /
   `TestMagnificScanBehavior` — scan: flag default-off, filtrado
   `origen_alternativa`/`Estado imagen` (incluyendo que `Error` nunca se
-  auto-reintenta y que `Regeneración pedida` sí es scan-elegible), no-op del
+  auto-reintenta sin comando, que `Regenerar` desde listo/error sí encola aun
+  con checkpoint Redis, y que `Regeneración pedida` es scan-elegible), no-op del
   handler no cuenta como generación, backoff en fallo/excepción, límite de
   batch (1), checkpoint Redis.
 - `tests/test_worker_client.py::test_run_timeout_override_applies_only_to_that_call` —
@@ -227,6 +243,7 @@ elegible que encuentre.
 - Roadmap: [editorial-roadmap-norte-p1-p3-2026-07-22.md](editorial-roadmap-norte-p1-p3-2026-07-22.md) fila P2.2
 - Estado de máquina / nombres de propiedad: [notion-publicaciones-v2-visual-gates-schema.md](notion-publicaciones-v2-visual-gates-schema.md)
 - Setup Magnific (MCP + REST fallback, OAuth pendiente): [magnific-editorial-setup-2026-06-06.md](magnific-editorial-setup-2026-06-06.md)
+- API oficial Nano Banana Pro Flash: [overview](https://docs.magnific.com/api-reference/text-to-image/nano-banana-pro-flash/overview), [POST Create Image](https://docs.magnific.com/api-reference/text-to-image/nano-banana-pro-flash/generate), [GET Task by ID](https://docs.magnific.com/api-reference/text-to-image/nano-banana-pro-flash/task-by-id)
 - Anti-slop / estilo visual: [ADR-006](../adr/ADR-006-capa-visual-editorial.md), [umbral-bim-magnific-visual-style-v1.md](umbral-bim-magnific-visual-style-v1.md)
 - Sibling P2.1 (promoción, mismo patrón poller+handler): [editorial-promote-p21-poller-2026-07-22.md](editorial-promote-p21-poller-2026-07-22.md)
 - Schema mirror: [notion/schemas/publicaciones.schema.yaml](../../notion/schemas/publicaciones.schema.yaml)

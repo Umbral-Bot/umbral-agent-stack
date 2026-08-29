@@ -1,0 +1,29 @@
+version: 2
+central_fact: Automatizar una comprobación antes de acordar qué información se exige, sobre qué elementos y bajo qué condición no crea un criterio común.
+ignored_consequence: El proceso hace que el objeto parezca cada vez más terminado mientras conserva y oculta la fragilidad de origen.
+core_metaphor: El mismo objeto técnico atraviesa una evolución cosmética; empieza crudo, gana orden y brillo, y termina impecable por fuera pero débil por dentro.
+invariants:
+  - el mismo objeto y la misma transformación aparecen en las cinco alternativas
+  - la apariencia mejora mientras la validez no mejora
+  - el fallo terminal siempre queda visible
+variation_axes:
+  - axis: cantidad de estados
+    direction: mostrar tres estados horizontales con ritmo claro y mucho aire de hero
+  - axis: ritmo de progresión
+    direction: mostrar cuatro estados con una transición más gradual hacia la fragilidad
+  - axis: encuadre
+    direction: acercar la cámara y contrastar solamente el estado inicial y el terminal
+  - axis: trayectoria espacial
+    direction: disponer tres estados en diagonal ascendente como una falsa curva de progreso
+  - axis: revelado de la debilidad
+    direction: seccionar solamente el estado terminal para revelar un interior todavía indefinido
+negative_prohibitions:
+  - no mostrar un criterio compartido que resuelva la escena
+  - no mostrar una validación correcta ni un resultado salvador
+  - no introducir un lado de solución o antes y después reparado
+avoid:
+  - texto incrustado
+  - marcas o interfaces reconocibles
+engine: pro
+aspect_ratio: "4:3"
+resolution: 2K

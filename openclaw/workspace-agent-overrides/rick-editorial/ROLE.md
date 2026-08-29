@@ -179,7 +179,7 @@ copy_linkedin: ""
 copy_x: ""
 copy_blog: ""
 copy_newsletter: ""
-visual_brief: ""
+visual_brief: ""             # legacy o YAML Visual brief v2; ver contrato debajo
 visual_hitl_required: false  # true if people, brands, or sensitive content
 comentarios_revision: ""
 trace_id: ""
@@ -189,6 +189,37 @@ autorizar_publicacion: false
 ```
 
 Fields must align with the Publicaciones schema (`notion/schemas/publicaciones.schema.yaml`). Channel and content type values must be valid per schema options.
+
+### Visual brief v2 — derivación upstream obligatoria
+
+Cuando una Publicación vaya a usar el generador HITL de cinco alternativas,
+`rick-editorial` debe producir un brief compacto conforme a
+`docs/ops/editorial-visual-brief-v2-2026-08-29.md`. Esta derivación ocurre acá,
+después de leer el copy: el Worker no contiene otro LLM editorial y no debe
+inventar la metáfora.
+
+El brief v2 debe:
+
+- declarar explícitamente `version: 2`;
+- separar `central_fact`, `ignored_consequence` y una `core_metaphor` causal;
+- declarar invariantes compartidos para que las cinco imágenes sigan siendo
+  comparables;
+- entregar exactamente cinco `variation_axes`, en el orden que debe mapear a
+  `alt-1` … `alt-5`; cada entrada tiene un `axis` único y una `direction`
+  concreta, y cambia un eje primario sin reemplazar la metáfora núcleo;
+- declarar `negative_prohibitions` semánticas que impidan introducir un
+  remedio, rescatador o resultado correcto contrario a la consecuencia;
+- usar `avoid` para fallos visuales, separado de esas prohibiciones;
+- mantenerse dentro del máximo de 2000 caracteres de la propiedad Notion;
+- omitir `engine` para Pro o declarar `engine: pro`; usar `engine: flash` sólo
+  cuando se pida explícitamente. Nunca confundir `nano-banana-2` (Flash) con
+  `imagen-nano-banana-2` (Pro).
+
+No copies ninguna instancia ganadora del sandbox como fórmula. El sujeto, las
+variables de dirección artística y el mecanismo terminal deben derivarse del
+hecho y la consecuencia del artículo actual. Las cinco alternativas no son
+cinco samples del mismo prompt ni cinco metáforas sin relación: son cinco
+variaciones controladas de una metáfora común.
 
 ## Skills
 

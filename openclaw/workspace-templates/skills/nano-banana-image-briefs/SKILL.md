@@ -54,6 +54,38 @@ Convert an approved draft into image briefs that another ChatGPT instance can us
 
 If details are missing, make conservative assumptions from the approved draft and label them clearly. Do not block waiting for perfect inputs unless the request is impossible.
 
+## Worker Visual brief v2 mode
+
+When the destination is the editorial Worker task
+`magnific.generate_variants`, this mode overrides the generic three-direction
+workflow below. Produce **one compact YAML brief with exactly five controlled
+variation axes**, following
+`docs/ops/editorial-visual-brief-v2-2026-08-29.md`.
+
+Derive it in this order:
+
+1. State the central fact or behavior in the approved copy.
+2. State the visible consequence of ignoring that fact. Prefer representing
+   the consequence; do not add a solution merely to make an explanatory
+   before/after diagram.
+3. Invent one core metaphor as subject + initial condition + transformation +
+   terminal contradiction/failure.
+4. Declare the semantic invariants shared by all five alternatives.
+5. Derive exactly five variations. Each has a unique `axis` and a concrete
+   `direction`; change one primary art-direction variable while keeping the
+   metaphor, causality, subject, and consequence fixed.
+6. Add semantic `negative_prohibitions` that explicitly exclude a rescuing
+   device, corrected result, or other contradiction of the consequence. Keep
+   ordinary visual failure modes in `avoid`.
+7. Omit `engine` or use `engine: pro`. Use `engine: flash` only when explicitly
+   requested. The Worker owns alias resolution and appends the current
+   anti-slop/palette suffix; never duplicate that suffix in the brief.
+
+The YAML must fit the Notion `Visual brief` maximum of 2000 characters. Never
+store five complete prompts in Notion. Never reuse an example's objects,
+sequence, camera, or weakness mechanism as a universal template: derive those
+values from the current copy.
+
 
 
 ## Required inputs
@@ -556,7 +588,9 @@ Use this exact top-level structure:
 
 
 
-If the user needs a faster or reusable output skeleton, use the template in `references/image-brief-template.md`.
+For the Worker v2 contract, start from
+`references/visual-brief-v2.yaml`. Replace every placeholder from the current
+copy; the file defines structure, not creative content.
 
 
 

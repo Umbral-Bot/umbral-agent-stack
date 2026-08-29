@@ -1,0 +1,24 @@
+version: 2
+central_fact: "<hecho o comportamiento central del copy>"
+ignored_consequence: "<consecuencia visible de ignorarlo>"
+core_metaphor: "<sujeto + condición inicial + transformación + fallo terminal>"
+invariants:
+  - "<constante semántica compartida>"
+variation_axes:
+  - axis: "<eje primario 1>"
+    direction: "<tratamiento concreto para alt-1>"
+  - axis: "<eje primario 2>"
+    direction: "<tratamiento concreto para alt-2>"
+  - axis: "<eje primario 3>"
+    direction: "<tratamiento concreto para alt-3>"
+  - axis: "<eje primario 4>"
+    direction: "<tratamiento concreto para alt-4>"
+  - axis: "<eje primario 5>"
+    direction: "<tratamiento concreto para alt-5>"
+negative_prohibitions:
+  - "<remedio, rescatador o resultado correcto que no debe aparecer>"
+avoid:
+  - "<fallo visual a excluir>"
+engine: pro
+aspect_ratio: "4:3"
+resolution: 2K

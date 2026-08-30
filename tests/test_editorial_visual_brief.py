@@ -257,6 +257,47 @@ def test_offline_second_domain_preview_has_zero_external_calls():
         for term in c7_case_terms
         for prompt in result["prompts"]
     )
+    # HITL 2026-08-30 composition defaults hold on the second domain too:
+    # two confronted states of the same subject, in close-up.
+    assert all("dos estados" in prompt for prompt in result["prompts"])
+    assert all("primer plano" in prompt for prompt in result["prompts"])
     notion_read.assert_not_called()
     notion_write.assert_not_called()
     http_client.assert_not_called()
+
+
+def test_openbim_fixture_encodes_hitl_composition_preferences():
+    """Pin the preference-aligned example brief (HITL 2026-08-30).
+
+    The Worker stays generic; the preference lives in the derivation layer.
+    This test only keeps the canonical example fixture honest: two confronted
+    states in close-up, polish and flaw escalating together, and no
+    progression/cutaway as base composition.
+    """
+
+    import yaml
+
+    fixture = (
+        Path(__file__).parent
+        / "fixtures"
+        / "editorial"
+        / "visual_brief_v2_openbim.yaml"
+    )
+    text = fixture.read_text(encoding="utf-8")
+    assert len(text) <= 2000, "brief must fit the Notion property limit"
+
+    brief = yaml.safe_load(text)
+    parsed, prompts = build_visual_brief_v2_prompts(
+        brief, anti_slop_suffix="ANTI-SLOP-SENTINEL", max_prompt_chars=3000
+    )
+
+    assert parsed.engine == "pro"
+    assert len(prompts) == len(set(prompts)) == 5
+    assert all("dos estados" in prompt for prompt in prompts)
+    assert all("primer plano" in prompt for prompt in prompts)
+    # The final human pick (alt-4 of the variation round): showroom polish and
+    # flaw evidence escalate together, kept here as the fourth controlled axis.
+    assert "ironía de producto" in prompts[3]
+    axis_names = [variation.axis for variation in parsed.variation_axes]
+    assert "cantidad de estados" not in axis_names
+    assert "trayectoria espacial" not in axis_names

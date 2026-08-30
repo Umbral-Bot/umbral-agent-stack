@@ -92,6 +92,39 @@ Rick hace la derivación semántica; el Worker puede validar forma, cantidad y
 unicidad, no juzgar por sí solo si una dirección cambia realmente un único eje.
 Ese juicio sigue siendo QA/HITL y se prueba además con un segundo dominio.
 
+## Preferencias compositivas HITL (2026-08-30)
+
+Dos rondas de selección humana sobre `CAND-OLA3-03` (`publication_id`
+`shortlist-CAND-OLA3-03-SHORTLIST-V1`) fijaron defaults compositivos para la
+capa de derivación:
+
+- La tanda live `20260830-0511` (los cinco ejes del fixture openBIM previo)
+  la ganó `alt-3` — eje `encuadre`: primer plano contrastando sólo el estado
+  inicial y el terminal. Perdieron tres estados con aire de hero, cuatro
+  estados graduales, la diagonal ascendente y la sección del estado terminal.
+- La tanda de variaciones ancladas a esa `alt-3` la ganó la alternativa de
+  ironía de producto: acabado aún más de vitrina en el estado pulido con el
+  defecto de origen aún más visible, a la vez. Perdieron más aire, un vacío
+  interior más profundo, el cutaway y el crop más cerrado.
+
+Destilado en tres reglas de forma: dos estados del mismo objeto enfrentados en
+primer plano como composición base; acabado cosmético y evidencia del defecto
+escalando juntos; revelado por daño orgánico visible, no por corte técnico.
+
+Consecuencia por capa:
+
+- las preferencias viven en la capa de derivación:
+  `openclaw/workspace-agent-overrides/rick-editorial/ROLE.md` y la skill
+  `openclaw/workspace-templates/skills/nano-banana-image-briefs/`;
+- el parser y el ensamblador del Worker **no cambian**: siguen genéricos y
+  sin plantilla, exactamente como define este contrato;
+- los fixtures de prueba se realinearon como ejemplos conformes a la
+  preferencia; siguen siendo evidencia/entrada de prueba, no templates
+  runtime.
+
+Son defaults de forma, no de contenido, y ceden ante una instrucción explícita
+de David para un candidato concreto.
+
 ## Engine y trampa de aliases
 
 | Campo v2 | Modelo canónico | Endpoint |

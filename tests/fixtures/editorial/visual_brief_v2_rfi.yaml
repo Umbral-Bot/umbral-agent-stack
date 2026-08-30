@@ -1,26 +1,27 @@
 version: 2
 central_fact: Acelerar el envío de RFIs sin acordar responsable, contexto mínimo y condición de cierre sólo mueve preguntas, no las resuelve.
-ignored_consequence: Una consulta ambigua se replica entre equipos, gana apariencia de proceso y vuelve más tarde como una cola mayor de decisiones pendientes.
-core_metaphor: Una misma ficha ámbar sin destino entra en una red neumática muy ordenada; cada desvío la duplica y la devuelve a una cola más larga sin alcanzar un receptor.
+ignored_consequence: Una consulta ambigua gana apariencia de trámite terminado mientras sigue sin destinatario y su pendiente crece.
+core_metaphor: La misma ficha ámbar en dos estados enfrentados en primer plano; la original arrugada y sin destino junto a su copia replastificada impecable, que sigue sin destinatario y exhibe aún más sellos de pendiente bajo el plástico nuevo.
 invariants:
-  - la misma ficha ámbar es el origen de todas las copias
-  - ningún ramal termina en un receptor
-  - cada vuelta aumenta la cola pendiente
+  - los mismos dos estados de la misma ficha llenan el encuadre en las cinco alternativas
+  - ningún estado tiene destinatario asignado
+  - la marca de pendiente queda visible en ambos estados y más evidente en el replastificado
 variation_axes:
-  - axis: longitud de cola
-    direction: mostrar una ficha al entrar y cinco copias pendientes acumuladas al salir
-  - axis: cámara
-    direction: usar una vista cenital amplia que revele el recorrido completo de la ficha
-  - axis: geometría del recorrido
-    direction: convertir el circuito en una espiral ascendente que parece progreso pero regresa al inicio
-  - axis: punto débil
-    direction: concentrar la falla en un relevo abierto entre dos tramos donde la ficha queda suspendida
-  - axis: método de revelado
-    direction: usar una bandeja transparente que exhiba el volumen de fichas idénticas sin destino
+  - axis: aire y fondo
+    direction: dar apenas más aire neutro alrededor de las dos fichas sin abrir el plano
+  - axis: profundidad del pendiente
+    direction: oscurecer el casillero de destinatario vacío de la copia hasta leerse como ausencia profunda
+  - axis: propagación del pendiente
+    direction: multiplicar los sellos de pendiente sobre el plástico nuevo de la copia
+  - axis: ironía de trámite
+    direction: exagerar el acabado impecable y el brillo del plástico de la copia mientras el pendiente gana protagonismo
+  - axis: encuadre
+    direction: cerrar todavía más el encuadre hasta que las dos fichas ocupen casi todo el cuadro
 negative_prohibitions:
   - no mostrar una respuesta que llega
   - no mostrar una persona o insignia que asume responsabilidad
   - no mostrar check verde, cierre exitoso ni destino resuelto
+  - no agregar estados intermedios ni convertir el contraste en progresión
 avoid:
   - texto legible incrustado
   - dashboards, interfaces de software o diagramas de flujo

@@ -32,11 +32,13 @@
    3. Fuera de ese caso, si `Estado imagen` ya es `Generando`, `Listo para
       selección` o `Seleccionada`, hace no-op idempotente
       (`ok=true, skipped=true`).
-   4. Parsea `Visual brief` como YAML: si existe `scene`, el prompt base es su
-      valor más `avoid`; nunca envía las claves `style`, `model`, `trace_id`,
-      `publication_id`, `style_ref`, `vignette`, `aspect_ratio` o `resolution`
-      como texto. Si no hay `scene` (incluido YAML inválido), usa `Título` +
-      `Premisa`. Agrega el sufijo editorial isométrico de
+   4. Parsea `Visual brief` como YAML. En legacy/v1, si existe `scene`, el
+      prompt base es su valor más `avoid`; nunca envía las claves `style`,
+      `model`, `trace_id`, `publication_id`, `style_ref`, `vignette`,
+      `aspect_ratio` o `resolution` como texto. Si no hay `scene` (incluido
+      YAML legacy inválido), usa `Título` + `Premisa`. Un brief que declara
+      v2 valida el contrato y construye cinco prompts controlados; si su YAML
+      es inválido, falla cerrado antes de generar. Agrega el sufijo editorial isométrico de
       [ADR-006](../adr/ADR-006-capa-visual-editorial.md), limitado junto al
       prompt a 3.000 caracteres.
    5. Escribe el estado interino `Estado imagen = Generando` — **sin tocar**
@@ -46,13 +48,17 @@
       (créditos ya gastados) antes de fallar a mitad de camino, y un
       reintento que también falla no debe destruirlas (ver §Costo).
    6. Genera hasta 5 variantes secuenciales vía la API REST de Magnific. El
-      default editorial es **Nano Banana Pro Flash / Nano Banana 2**:
+      camino legacy/v1 conserva como default **Nano Banana Pro Flash / Nano
+      Banana 2**:
       `POST /v1/ai/text-to-image/nano-banana-pro-flash` y poll
       `GET /v1/ai/text-to-image/nano-banana-pro-flash/{task-id}`, header
       `x-magnific-api-key`, `aspect_ratio=4:3`, `resolution=2K` y
-      `use_google_search_tool=false`. El JSON oficial usa
-      `data.task_id/status/generated`. Nano Banana Pro y Mystic/realism sólo
-      se usan mediante override explícito — el fallback headless está
+      `use_google_search_tool=false`. Un Visual brief v2 explícito usa por
+      default **Nano Banana Pro**, también con
+      `use_google_search_tool=false`; Flash sigue disponible mediante
+      `engine: flash`. Mystic/realism sólo se usa mediante override explícito
+      y no recibe ese campo. El JSON oficial usa
+      `data.task_id/status/generated`. El fallback headless está
       documentado en
       [magnific-editorial-setup-2026-06-06.md](magnific-editorial-setup-2026-06-06.md),
       distinto del MCP interactivo con OAuth que usa Rick/Cursor.
@@ -105,10 +111,12 @@ deuda documentada, no repetida aquí).
   hasta 5 llamadas Magnific secuenciales (minutos, no segundos); un batch
   mayor arriesgaría bloquear el resto del poller (Control Room, review,
   smart replies) detrás de una cola larga de generación.
-- **Timeout del Worker call = 1200s** (`MAGNIFIC_CALL_TIMEOUT_SEC`, en el
-  poller): el piso teórico de sólo-sleep del handler es 5 variantes × 40
-  intentos × 3s = 600s, sin contar latencia real de red en ~205 requests
-  (5 submits + hasta 200 polls). 1200s da margen; si las constantes de
+- **Timeout del Worker call = 2400s** (`MAGNIFIC_CALL_TIMEOUT_SEC`, en el
+  poller): v2/Pro tiene un techo conservador de 120 intentos × 3s por
+  variante, cuyo piso de sólo-sleep es 5 × 120 × 3s = 1800s. No es una
+  medición de latencia Pro: deja margen para ~605 requests (5 submits + hasta
+  600 polls), descargas y Drive. Legacy/v1 Flash y Mystic conservan 40 × 3s
+  por variante (600s de sleep para cinco). Si las constantes de
   `worker/tasks/magnific.py` cambian, revisar este valor junto con ellas.
 - **HTTP 503 se reintenta con backoff exponencial acotado** (dos reintentos,
   1s/2s) tanto en submit como en poll. Otros estados HTTP fallan cerrados y
@@ -172,11 +180,14 @@ export WORKER_URL=http://127.0.0.1:8088 WORKER_TOKEN=xxx
 python scripts/editorial/magnific_generate_variants.py --page-id <page_id> --dry-run
 ```
 
-La CLI usa el mismo timeout de 1200s del poller y redacta las URLs generadas y
-el diagnóstico upstream de su salida; las URLs operativas quedan en Notion.
+La CLI usa 30s para el dry-run y el mismo timeout de 2400s del poller para la
+generación real. Redacta las URLs generadas y el diagnóstico upstream de su
+salida; las URLs operativas quedan en Notion.
 
 Respuestas esperadas:
-- Fila elegible: `{"ok": true, "dry_run": true, "would_generate": true, "model": "nano-banana-pro-flash", "endpoint": "https://api.magnific.com/v1/ai/text-to-image/nano-banana-pro-flash", "aspect_ratio": "4:3", "resolution": "2K", ...}`.
+- Fila legacy/v1 elegible: `{"ok": true, "dry_run": true, "would_generate": true, "model": "nano-banana-pro-flash", "endpoint": "https://api.magnific.com/v1/ai/text-to-image/nano-banana-pro-flash", "aspect_ratio": "4:3", "resolution": "2K", ...}`.
+- Fila Visual brief v2 elegible: devuelve `model=nano-banana-pro`, cinco
+  `prompts` controlados y `use_google_search_tool=false`.
 - Fila ya en curso: `{"ok": true, "skipped": true, "reason": "in_progress", ...}`.
 - Fila ya lista/seleccionada: `{"ok": true, "skipped": true, "already_generated": true, ...}`.
 - Fila lista/error con `Selección imagen = Regenerar`: elegible; en `dry_run`
@@ -215,9 +226,11 @@ elegible que encuentre.
   requerido, `count` inválido, sin `MAGNIFIC_API_KEY` (bloquea antes de
   cualquier write), idempotencia (`Generando` en curso, ya `Listo para
   selección`/`Seleccionada`), estado no elegible, `Regeneración pedida` sí
-  elegible, default/aliases Flash-Pro-Mystic, parser YAML `scene` + `avoid`
+  elegible, default v1 Flash/default v2 Pro y aliases Flash-Pro-Mystic,
+  parser YAML `scene` + `avoid`
   sin metadatos en el prompt, límite de 3.000 caracteres, `dry_run` (sin
-  llamadas HTTP), payload/endpoint Flash exactos, override Mystic explícito,
+  llamadas HTTP), payload/endpoint Flash y Pro exactos, override Mystic
+  explícito,
   traducción/validación de enums Mystic,
   consumo ordenado de `Regenerar`, fallo del write interino antes de créditos,
   generación completa de 5 variantes (writes correctos e interino sin tocar

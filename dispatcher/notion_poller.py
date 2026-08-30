@@ -420,18 +420,18 @@ MAGNIFIC_BATCH_LIMIT = 1
 MAGNIFIC_SCAN_LIMIT = 10
 # The shared `wc` used elsewhere in _do_poll has a short default timeout
 # (WorkerClient default 30s) tuned for fast calls; magnific.generate_variants
-# can take several minutes (5 sequential Flash submit+poll cycles). Override
+# can take several minutes (5 sequential Flash or Pro submit+poll cycles). Override
 # per-call via WorkerClient.run(..., timeout=...) rather than raising the
 # shared client's timeout for every other (fast) task.
 #
 # Sizing: worker/tasks/magnific.py's own worst-case *sleep* budget alone is
-# DEFAULT_VARIANT_COUNT(5) x _MAX_POLL_ATTEMPTS(40) x _POLL_INTERVAL_SEC(3s)
-# = 600s, before counting any of the ~205 real HTTP round trips (5 submits +
-# up to 200 polls) each attempt implies. Using exactly 600s here would leave
-# zero margin and could time out work that is still legitimately in progress
-# server-side. Keep a generous multiple instead of the bare theoretical floor
-# — if worker/tasks/magnific.py's constants change, revisit this alongside it.
-MAGNIFIC_CALL_TIMEOUT_SEC = 1200.0
+# DEFAULT_VARIANT_COUNT(5) x _PRO_MAX_POLL_ATTEMPTS(120) x
+# _POLL_INTERVAL_SEC(3s) = 1800s for Visual brief v2/Pro, before counting any
+# of the ~605 real HTTP round trips (5 submits + up to 600 polls), downloads,
+# and Drive persistence. The legacy Flash budget remains 5 x 40 x 3s = 600s.
+# Keep margin above the Pro sleep floor; if worker/tasks/magnific.py's
+# constants change, revisit this alongside them.
+MAGNIFIC_CALL_TIMEOUT_SEC = 2400.0
 
 # P2.2: the magnific scan is DEFAULT OFF and fail-closed, mirroring the
 # promote scan above. Only these explicit truthy values enable it; any other

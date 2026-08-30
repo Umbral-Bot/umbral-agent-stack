@@ -48,7 +48,40 @@ def test_v2_activation_is_explicit_and_legacy_versions_stay_legacy():
 def test_raw_v2_marker_survives_a_later_yaml_syntax_error():
     assert raw_declares_visual_brief_v2("version: 2\nvariation_axes: [broken")
     assert raw_declares_visual_brief_v2("\"version\": 'v2'\ninvalid: [")
+    assert raw_declares_visual_brief_v2(
+        "    version: 2\n    variation_axes: [broken"
+    )
+    assert raw_declares_visual_brief_v2(
+        "```yaml\n    version: 2\n    variation_axes: [broken\n```"
+    )
+    assert raw_declares_visual_brief_v2(
+        "---\n    version: 2\n    variation_axes: [broken"
+    )
+    assert raw_declares_visual_brief_v2(
+        "# visual brief\n    version: 2\n    variation_axes: [broken"
+    )
+    assert raw_declares_visual_brief_v2(
+        "```yaml\n    version: 2\n    variation_axes: [broken"
+    )
+    assert raw_declares_visual_brief_v2(
+        '{"version": 2, "variation_axes": [broken}'
+    )
+    assert raw_declares_visual_brief_v2(
+        '{"scene": "x", "version": 2, "variation_axes": [broken}'
+    )
+    assert raw_declares_visual_brief_v2(
+        '--- {"scene": "x", "version": "v2", "variation_axes": [broken}'
+    )
+    assert raw_declares_visual_brief_v2('{"version": 2')
+    assert raw_declares_visual_brief_v2('{"scene": "x", "version": 2')
+    assert raw_declares_visual_brief_v2(
+        '--- {"scene": "x", "version": "v2"'
+    )
     assert not raw_declares_visual_brief_v2("scene: legacy\navoid: [broken")
+    assert not raw_declares_visual_brief_v2("metadata:\n  version: 2")
+    assert not raw_declares_visual_brief_v2(
+        '{"metadata": {"version": 2}, "scene": "legacy"}'
+    )
 
 
 def test_v2_builds_five_distinct_prompts_with_one_controlled_axis_each():
@@ -108,13 +141,11 @@ def test_v2_requires_explicit_negative_prohibitions():
         parse_visual_brief_v2(brief)
 
 
-def test_v2_long_inputs_keep_axis_prohibitions_and_suffix_inside_limit():
+def test_v2_long_prefix_keeps_fixed_tail_and_suffix_inside_limit():
     brief = deepcopy(_brief_v2())
     brief["central_fact"] = "fact " * 1500
     brief["ignored_consequence"] = "consequence " * 1500
     brief["core_metaphor"] = "metaphor " * 1500
-    brief["negative_prohibitions"] = ["NO-RESCUER " * 500]
-    brief["avoid"] = ["AVOID-SENTINEL " * 500]
 
     _, prompts = build_visual_brief_v2_prompts(
         brief, anti_slop_suffix="ANTI-SLOP-SENTINEL", max_prompt_chars=3000
@@ -123,8 +154,70 @@ def test_v2_long_inputs_keep_axis_prohibitions_and_suffix_inside_limit():
     assert len(prompts) == 5
     assert all(len(prompt) <= 3000 for prompt in prompts)
     assert all("direction-sentinel-" in prompt for prompt in prompts)
-    assert all("NO-RESCUER" in prompt for prompt in prompts)
+    assert all("no rescue device" in prompt for prompt in prompts)
     assert all(prompt.endswith("ANTI-SLOP-SENTINEL") for prompt in prompts)
+
+
+def test_v2_preserves_complete_prefix_fields_when_the_full_prompt_fits():
+    brief = deepcopy(_brief_v2())
+    brief["core_metaphor"] = ("metaphor-detail " * 36) + "END-METAPHOR"
+    brief["ignored_consequence"] = (
+        "consequence-detail " * 20
+    ) + "END-CONSEQUENCE"
+    brief["central_fact"] = ("central-fact-detail " * 15) + "END-CENTRAL-FACT"
+
+    _, prompts = build_visual_brief_v2_prompts(
+        brief, anti_slop_suffix="ANTI-SLOP-SENTINEL", max_prompt_chars=3000
+    )
+
+    assert all(len(prompt) <= 3000 for prompt in prompts)
+    assert all("END-METAPHOR" in prompt for prompt in prompts)
+    assert all("END-CONSEQUENCE" in prompt for prompt in prompts)
+    assert all("END-CENTRAL-FACT" in prompt for prompt in prompts)
+
+
+def test_v2_preserves_five_long_prohibitions_and_complete_lists_when_they_fit():
+    brief = deepcopy(_brief_v2())
+    brief["invariants"] = [
+        f"INVARIANT-{index} " + ("shared-detail " * 12) + f"END-INVARIANT-{index}"
+        for index in range(1, 3)
+    ]
+    brief["negative_prohibitions"] = [
+        f"PROHIBITION-{index} " + ("semantic-detail " * 5) + f"END-PROHIBITION-{index}"
+        for index in range(1, 6)
+    ]
+    brief["avoid"] = [
+        f"AVOID-{index} " + ("visual-detail " * 10) + f"END-AVOID-{index}"
+        for index in range(1, 3)
+    ]
+
+    _, prompts = build_visual_brief_v2_prompts(
+        brief, anti_slop_suffix="ANTI-SLOP-SENTINEL", max_prompt_chars=3000
+    )
+
+    assert len(prompts) == 5
+    assert all(len(prompt) <= 3000 for prompt in prompts)
+    complete_items = (
+        brief["invariants"]
+        + brief["negative_prohibitions"]
+        + brief["avoid"]
+    )
+    for prompt in prompts:
+        for item in complete_items:
+            assert item in prompt
+
+
+def test_v2_fails_closed_when_complete_fixed_tail_does_not_fit():
+    brief = deepcopy(_brief_v2())
+    brief["negative_prohibitions"] = [
+        f"PROHIBITION-{index} " + ("semantic-detail " * 20)
+        for index in range(1, 6)
+    ]
+
+    with pytest.raises(VisualBriefV2Error, match="constraints exceed"):
+        build_visual_brief_v2_prompts(
+            brief, anti_slop_suffix="ANTI-SLOP-SENTINEL", max_prompt_chars=500
+        )
 
 
 def test_offline_second_domain_preview_has_zero_external_calls():

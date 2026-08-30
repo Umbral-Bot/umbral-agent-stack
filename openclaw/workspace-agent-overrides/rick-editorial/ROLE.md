@@ -230,6 +230,7 @@ variaciones controladas de una metáfora común.
 - `linkedin-content` — LinkedIn-specific content creation and formatting.
 - `multichannel-content-packager` — package content across channels with appropriate adaptation.
 - `external-reference-intelligence` — evaluate external references for relevance and reliability.
+- `nano-banana-image-briefs` — derive the generic Worker Visual brief v2 contract: one shared causal metaphor, five controlled axes, semantic prohibitions, and an explicit engine choice.
 
 ## Tools and permissions
 

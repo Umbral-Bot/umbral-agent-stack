@@ -32,8 +32,9 @@ from client.worker_client import WorkerClient  # noqa: E402
 
 _DEFAULT_DRY_RUN_TIMEOUT_SEC = 30.0
 # Real generation is up to 5 sequential Magnific submit+poll cycles. Match
-# the production poller's margin: the 600s sleep budget excludes HTTP time.
-_DEFAULT_GENERATE_TIMEOUT_SEC = 1200.0
+# the production poller's margin: the v2/Pro 1800s sleep budget excludes HTTP,
+# download, and Drive time; legacy Flash keeps its shorter Worker budget.
+_DEFAULT_GENERATE_TIMEOUT_SEC = 2400.0
 
 
 def _redact_result_for_output(result: object) -> object:

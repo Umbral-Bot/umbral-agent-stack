@@ -2,9 +2,10 @@
 Task: magnific.generate_variants — P2.2 Magnific 5 alternativas de imagen.
 
 Generates image variants for a `Publicaciones` row via Magnific's REST API.
-The editorial default is Nano Banana Pro Flash (also known as Nano Banana 2),
-while Nano Banana Pro and the legacy Mystic/realism path remain explicit
-overrides. The REST surface is the headless/API-key path documented as the
+Legacy/unversioned briefs default to Nano Banana Pro Flash (also known as Nano
+Banana 2); explicit Visual brief v2 defaults to Nano Banana Pro. The legacy
+Mystic/realism path remains an explicit override. The REST surface is the
+headless/API-key path documented as the
 Worker fallback in docs/ops/magnific-editorial-setup-2026-06-06.md, distinct
 from the interactive MCP OAuth path used by Rick/Cursor. Results are written
 back per:
@@ -86,6 +87,7 @@ _MAX_EXPORT_BYTES = 50 * 1024 * 1024
 _MAX_EXPORT_PIXELS = 50_000_000
 _POLL_INTERVAL_SEC = 3.0
 _MAX_POLL_ATTEMPTS = 40  # ~2 minutes per variant at the interval above
+_PRO_MAX_POLL_ATTEMPTS = 120  # ~6 minutes per Pro variant at the same interval
 _MAX_HTTP_503_RETRIES = 2
 _HTTP_503_RETRY_BASE_SEC = 1.0
 
@@ -223,13 +225,19 @@ def _parse_visual_brief(raw_brief: Any) -> Dict[str, Any]:
     so malformed YAML and non-mapping values deliberately fall back to the
     row's Título + Premisa instead of becoming an error or a raw prompt.
     """
-    text = str(raw_brief or "").strip()
+    if editorial_visual_brief.raw_declares_visual_brief_v2(raw_brief):
+        text = editorial_visual_brief.normalize_visual_brief_text(raw_brief)
+    else:
+        # Preserve legacy/v1 parsing exactly: historically ``strip`` removes
+        # indentation only from the first line, so an indented legacy block
+        # falls back to Título + Premisa rather than changing its prompt.
+        text = str(raw_brief or "").strip()
+        if text.startswith("```") and text.endswith("```"):
+            lines = text.splitlines()
+            if len(lines) >= 2:
+                text = "\n".join(lines[1:-1]).strip()
     if not text:
         return {}
-    if text.startswith("```") and text.endswith("```"):
-        lines = text.splitlines()
-        if len(lines) >= 2:
-            text = "\n".join(lines[1:-1]).strip()
     try:
         # BaseLoader is intentionally used instead of SafeLoader here: both
         # are non-executable loaders, but BaseLoader preserves scalars as
@@ -503,7 +511,7 @@ def _submit_generation(
         "aspect_ratio": aspect_ratio,
         "resolution": resolution,
     }
-    if target.engine == "flash":
+    if target.engine in {"flash", "pro"}:
         payload["use_google_search_tool"] = False
     elif target.engine == "mystic":
         payload["model"] = target.mystic_model or "realism"
@@ -531,7 +539,10 @@ def _submit_generation(
 def _poll_generation(task_id: str, target: _GenerationTarget) -> _GeneratedVariant:
     url = f"{target.endpoint}/{task_id}"
     started = time.monotonic()
-    for _attempt in range(_MAX_POLL_ATTEMPTS):
+    max_attempts = (
+        _PRO_MAX_POLL_ATTEMPTS if target.engine == "pro" else _MAX_POLL_ATTEMPTS
+    )
+    for _attempt in range(max_attempts):
         with httpx.Client(timeout=_POLL_TIMEOUT_SEC) as client:
             resp = _request_with_503_retry(
                 lambda: client.get(url, headers=_magnific_headers()),
@@ -585,7 +596,7 @@ def _poll_generation(task_id: str, target: _GenerationTarget) -> _GeneratedVaria
     elapsed = time.monotonic() - started
     raise RuntimeError(
         f"Magnific {target.label} task {task_id} did not complete within {elapsed:.0f}s "
-        f"({_MAX_POLL_ATTEMPTS} attempts)"
+        f"({max_attempts} attempts)"
     )
 
 
@@ -994,7 +1005,9 @@ def handle_magnific_generate_variants(input_data: Dict[str, Any]) -> Dict[str, A
             "resolution": resolution,
             "model": target.model,
             "endpoint": target.endpoint,
-            "use_google_search_tool": False if target.engine == "flash" else None,
+            "use_google_search_tool": (
+                False if target.engine in {"flash", "pro"} else None
+            ),
             "would_persist_drive": bool(drive_readiness.get("ready")),
             "drive_logical_path": drive_readiness.get("logical_path"),
             "drive_missing_config": list(drive_readiness.get("missing") or []),

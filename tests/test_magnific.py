@@ -9,6 +9,7 @@ from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
+import yaml
 from PIL import Image
 
 
@@ -848,6 +849,40 @@ def test_v1_remains_one_prompt_five_flash_samples():
     assert "prompt_strategy" not in result
 
 
+@pytest.mark.parametrize(
+    "legacy_brief",
+    [
+        "    scene: LEGACY-SCENE-SENTINEL\n    avoid:\n      - LEGACY-AVOID-SENTINEL",
+        "```yaml\n    scene: LEGACY-SCENE-SENTINEL\n    avoid:\n      - LEGACY-AVOID-SENTINEL\n```",
+    ],
+)
+def test_indented_legacy_yaml_keeps_historical_title_premise_fallback(
+    legacy_brief,
+):
+    from worker.tasks.magnific import handle_magnific_generate_variants
+
+    with patch("worker.tasks.magnific.notion_client") as mock_nc:
+        mock_nc.get_page.return_value = _publicacion_page(
+            titulo="TITLE-FALLBACK-SENTINEL",
+            premisa="PREMISE-FALLBACK-SENTINEL",
+            visual_brief=legacy_brief,
+        )
+
+        result = handle_magnific_generate_variants(
+            {"publicacion_page_id": "pub-1", "dry_run": True}
+        )
+
+    assert result["ok"] is True
+    assert result["model"] == "nano-banana-pro-flash"
+    assert result["endpoint"] == FLASH_ENDPOINT
+    assert "TITLE-FALLBACK-SENTINEL" in result["prompt"]
+    assert "PREMISE-FALLBACK-SENTINEL" in result["prompt"]
+    assert "LEGACY-SCENE-SENTINEL" not in result["prompt"]
+    assert "LEGACY-AVOID-SENTINEL" not in result["prompt"]
+    assert "visual_brief_version" not in result
+    mock_nc.update_page_properties.assert_not_called()
+
+
 def test_v2_dry_run_defaults_to_pro_and_returns_five_controlled_prompts():
     from worker.tasks.magnific import handle_magnific_generate_variants
 
@@ -867,6 +902,7 @@ def test_v2_dry_run_defaults_to_pro_and_returns_five_controlled_prompts():
     assert result["prompt_strategy"] == "five_controlled_prompts"
     assert result["model"] == "nano-banana-pro"
     assert result["endpoint"] == PRO_ENDPOINT
+    assert result["use_google_search_tool"] is False
     assert "prompt" not in result
     assert len(result["prompts"]) == len(set(result["prompts"])) == 5
     for index, prompt in enumerate(result["prompts"], start=1):
@@ -874,6 +910,77 @@ def test_v2_dry_run_defaults_to_pro_and_returns_five_controlled_prompts():
         assert "no rescue device" in prompt
         assert "ilustración editorial isométrica no fotoreal" in prompt
     mock_nc.update_page_properties.assert_not_called()
+    mock_http.assert_not_called()
+
+
+def test_uniformly_indented_v2_yaml_stays_on_the_pro_path():
+    from worker.tasks.magnific import handle_magnific_generate_variants
+
+    indented_v2 = "\n".join(
+        f"    {line}" for line in _visual_brief_v2().splitlines()
+    )
+    with patch("worker.tasks.magnific.notion_client") as mock_nc:
+        mock_nc.get_page.return_value = _publicacion_page(visual_brief=indented_v2)
+
+        result = handle_magnific_generate_variants(
+            {"publicacion_page_id": "pub-1", "dry_run": True}
+        )
+
+    assert result["ok"] is True
+    assert result["visual_brief_version"] == 2
+    assert result["model"] == "nano-banana-pro"
+    assert result["endpoint"] == PRO_ENDPOINT
+    assert result["use_google_search_tool"] is False
+    assert len(result["prompts"]) == 5
+    assert "prompt" not in result
+
+
+def test_v2_handler_preserves_complete_lists_within_the_notion_contract():
+    from worker.tasks.magnific import handle_magnific_generate_variants
+
+    brief = yaml.load(_visual_brief_v2(), Loader=yaml.BaseLoader)
+    brief["invariants"] = [
+        f"INVARIANT-{index} " + ("shared-detail " * 12) + f"END-INVARIANT-{index}"
+        for index in range(1, 3)
+    ]
+    brief["negative_prohibitions"] = [
+        f"PROHIBITION-{index} " + ("semantic-detail " * 5) + f"END-PROHIBITION-{index}"
+        for index in range(1, 6)
+    ]
+    brief["avoid"] = [
+        f"AVOID-{index} " + ("visual-detail " * 10) + f"END-AVOID-{index}"
+        for index in range(1, 3)
+    ]
+    raw_brief = yaml.safe_dump(
+        brief, allow_unicode=True, sort_keys=False, width=4096
+    )
+    assert len("; ".join(brief["invariants"])) > 300
+    assert len("; ".join(brief["negative_prohibitions"])) > 420
+    assert len("; ".join(brief["avoid"])) > 260
+    assert len(raw_brief) <= 2000
+
+    with patch("worker.tasks.magnific.notion_client") as mock_nc, patch(
+        "worker.tasks.magnific._generate_one_variant"
+    ) as mock_generate, patch("worker.tasks.magnific.httpx.Client") as mock_http:
+        mock_nc.get_page.return_value = _publicacion_page(visual_brief=raw_brief)
+
+        result = handle_magnific_generate_variants(
+            {"publicacion_page_id": "pub-1", "dry_run": True}
+        )
+
+    assert result["ok"] is True
+    assert result["visual_brief_version"] == 2
+    assert len(result["prompts"]) == 5
+    complete_items = (
+        brief["invariants"]
+        + brief["negative_prohibitions"]
+        + brief["avoid"]
+    )
+    for prompt in result["prompts"]:
+        for item in complete_items:
+            assert item in prompt
+    mock_nc.update_page_properties.assert_not_called()
+    mock_generate.assert_not_called()
     mock_http.assert_not_called()
 
 
@@ -983,10 +1090,28 @@ def test_v2_rejects_brief_larger_than_notion_contract():
     mock_nc.update_page_properties.assert_not_called()
 
 
-def test_malformed_explicit_v2_fails_closed_instead_of_using_legacy_flash():
+@pytest.mark.parametrize(
+    "malformed_v2",
+    [
+        "version: 2\nvariation_axes: [broken",
+        "    version: 2\n    variation_axes: [broken",
+        "```yaml\n    version: 2\n    variation_axes: [broken\n```",
+        "---\n    version: 2\n    variation_axes: [broken",
+        "# visual brief\n    version: 2\n    variation_axes: [broken",
+        "```yaml\n    version: 2\n    variation_axes: [broken",
+        '{"version": 2, "variation_axes": [broken}',
+        '{"scene": "x", "version": 2, "variation_axes": [broken}',
+        '--- {"scene": "x", "version": "v2", "variation_axes": [broken}',
+        '{"version": 2',
+        '{"scene": "x", "version": 2',
+        '--- {"scene": "x", "version": "v2"',
+    ],
+)
+def test_malformed_explicit_v2_fails_closed_instead_of_using_legacy_flash(
+    malformed_v2,
+):
     from worker.tasks.magnific import handle_magnific_generate_variants
 
-    malformed_v2 = "version: 2\nvariation_axes: [broken"
     with patch("worker.tasks.magnific.notion_client") as mock_nc, patch(
         "worker.tasks.magnific._generate_one_variant"
     ) as mock_generate:
@@ -1000,6 +1125,9 @@ def test_malformed_explicit_v2_fails_closed_instead_of_using_legacy_flash():
 
     assert result["ok"] is False
     assert result["error"] == "Visual brief v2 is not valid YAML"
+    assert "prompt" not in result
+    assert "model" not in result
+    assert "endpoint" not in result
     mock_nc.update_page_properties.assert_not_called()
     mock_generate.assert_not_called()
 
@@ -1608,6 +1736,36 @@ def test_submit_missing_task_id_raises():
             _submit_mystic("a prompt", "classic_4_3", "2k", "realism")
 
 
+def test_pro_submit_disables_google_search_without_mystic_model_field():
+    from worker.tasks.magnific import (
+        _resolve_generation_target,
+        _submit_generation,
+    )
+
+    response = _mystic_submit_response("task-pro")
+    http_client = MagicMock()
+    http_client.__enter__.return_value = http_client
+    http_client.__exit__.return_value = False
+    http_client.post.return_value = response
+
+    with patch("worker.tasks.magnific.config") as mock_cfg, patch(
+        "worker.tasks.magnific.httpx.Client", return_value=http_client
+    ):
+        mock_cfg.MAGNIFIC_API_KEY = "key-123"
+        task_id = _submit_generation(
+            "a controlled prompt",
+            "4:3",
+            "2K",
+            _resolve_generation_target("nano-banana-pro"),
+        )
+
+    assert task_id == "task-pro"
+    post_call = http_client.post.call_args
+    assert post_call.args[0] == PRO_ENDPOINT
+    assert post_call.kwargs["json"]["use_google_search_tool"] is False
+    assert "model" not in post_call.kwargs["json"]
+
+
 def test_submit_http_status_error_is_wrapped():
     from worker.tasks.magnific import _submit_mystic
 
@@ -1728,6 +1886,35 @@ def test_poll_exhausts_attempts_and_raises_with_elapsed_time():
     assert http_client.get.call_count == 3
 
 
+@pytest.mark.parametrize(
+    ("model", "expected_attempts"),
+    [("nano-banana-pro", 4), ("nano-banana-pro-flash", 2), ("mystic", 2)],
+)
+def test_poll_budget_is_extended_only_for_pro(model, expected_attempts):
+    from worker.tasks.magnific import _poll_generation, _resolve_generation_target
+
+    resp = MagicMock()
+    resp.raise_for_status.return_value = None
+    resp.json.return_value = {
+        "data": {"task_id": "task-budget", "status": "IN_PROGRESS", "generated": []}
+    }
+    http_client = MagicMock()
+    http_client.__enter__.return_value = http_client
+    http_client.__exit__.return_value = False
+    http_client.get.return_value = resp
+
+    with patch("worker.tasks.magnific.config") as mock_cfg, patch(
+        "worker.tasks.magnific.httpx.Client", return_value=http_client
+    ), patch("worker.tasks.magnific.time.sleep", return_value=None), patch(
+        "worker.tasks.magnific._MAX_POLL_ATTEMPTS", 2
+    ), patch("worker.tasks.magnific._PRO_MAX_POLL_ATTEMPTS", 4):
+        mock_cfg.MAGNIFIC_API_KEY = "key-123"
+        with pytest.raises(RuntimeError, match=f"{expected_attempts} attempts"):
+            _poll_generation("task-budget", _resolve_generation_target(model))
+
+    assert http_client.get.call_count == expected_attempts
+
+
 def test_poll_completed_without_generated_url_raises():
     from worker.tasks.magnific import _poll_mystic
 
@@ -1821,4 +2008,4 @@ def test_cli_redacts_signed_urls_and_error_diagnostics():
     assert safe["urls"] == ["[REDACTED_URL]"]
     assert safe["error"] == "[REDACTED_DIAGNOSTIC]"
     assert result["urls"][0].startswith("https://")
-    assert _DEFAULT_GENERATE_TIMEOUT_SEC == 1200.0
+    assert _DEFAULT_GENERATE_TIMEOUT_SEC == 2400.0

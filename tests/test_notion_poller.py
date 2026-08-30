@@ -1529,6 +1529,7 @@ class TestMagnificScanBehavior:
         calls = self._magnific_calls(wc)
         assert len(calls) == 1
         assert calls[0].args[1] == {"publicacion_page_id": "pub-1"}
+        assert MAGNIFIC_CALL_TIMEOUT_SEC == 2400.0
         assert calls[0].kwargs["timeout"] == MAGNIFIC_CALL_TIMEOUT_SEC
         r.set.assert_called_once_with(
             "umbral:notion_poller:magnific:pub-1", "1", ex=MAGNIFIC_TTL_SEC

@@ -10,6 +10,7 @@ briefs to their existing one-prompt/five-sample path.
 from __future__ import annotations
 
 import re
+import textwrap
 from dataclasses import dataclass
 from typing import Any, Mapping, Sequence
 
@@ -22,6 +23,10 @@ MAX_VISUAL_BRIEF_V2_CHARS = 2000
 
 _RAW_V2_DECLARATION_RE = re.compile(
     r'''(?im)^(?:version|["']version["'])\s*:\s*'''
+    r'''(?:2|v2|["']2["']|["']v2["'])\s*(?:#.*)?$'''
+)
+_RAW_V2_FLOW_ENTRY_RE = re.compile(
+    r'''(?is)^\s*(?:version|["']version["'])\s*:\s*'''
     r'''(?:2|v2|["']2["']|["']v2["'])\s*(?:#.*)?$'''
 )
 
@@ -67,8 +72,121 @@ def raw_declares_visual_brief_v2(raw_brief: Any) -> bool:
     spending five calls through the legacy Flash path.
     """
 
-    text = str(raw_brief or "").lstrip("\ufeff")
-    return bool(_RAW_V2_DECLARATION_RE.search(text))
+    text = normalize_visual_brief_text(raw_brief)
+    flow_candidate = "\n".join(
+        line
+        for line in text.splitlines()
+        if line.strip()
+        and not line.lstrip().startswith(("#", "%"))
+        and line.strip() not in {"---", "..."}
+    ).lstrip()
+    return bool(
+        _RAW_V2_DECLARATION_RE.search(text)
+        or _root_flow_mapping_declares_v2(flow_candidate)
+    )
+
+
+def _root_flow_mapping_declares_v2(text: str) -> bool:
+    """Find a v2 key anywhere in a root flow mapping, even if its tail is invalid."""
+
+    candidate = re.sub(r"^---(?:\s+|$)", "", text.lstrip(), count=1).lstrip()
+    if not candidate.startswith("{"):
+        return False
+
+    curly_depth = 1
+    square_depth = 0
+    quote = ""
+    entry_start = 1
+    index = 1
+    while index < len(candidate):
+        char = candidate[index]
+        if quote:
+            if quote == '"' and char == "\\":
+                index += 2
+                continue
+            if char == quote:
+                if (
+                    quote == "'"
+                    and index + 1 < len(candidate)
+                    and candidate[index + 1] == "'"
+                ):
+                    index += 2
+                    continue
+                quote = ""
+            index += 1
+            continue
+
+        if char in {'"', "'"}:
+            quote = char
+        elif char == "{":
+            curly_depth += 1
+        elif char == "}":
+            if curly_depth == 1 and square_depth == 0:
+                return bool(
+                    _RAW_V2_FLOW_ENTRY_RE.match(candidate[entry_start:index])
+                )
+            curly_depth = max(1, curly_depth - 1)
+        elif char == "[":
+            square_depth += 1
+        elif char == "]":
+            square_depth = max(0, square_depth - 1)
+        elif char == "," and curly_depth == 1 and square_depth == 0:
+            if _RAW_V2_FLOW_ENTRY_RE.match(candidate[entry_start:index]):
+                return True
+            entry_start = index + 1
+        index += 1
+    return bool(
+        curly_depth == 1
+        and square_depth == 0
+        and not quote
+        and _RAW_V2_FLOW_ENTRY_RE.match(candidate[entry_start:])
+    )
+
+
+def _dedent_yaml_payload(text: str) -> str:
+    """Dedent YAML content while ignoring column-zero comments/directives."""
+
+    lines = text.splitlines()
+    significant_indents = []
+    for line in lines:
+        stripped = line.lstrip()
+        if (
+            not stripped
+            or stripped.startswith(("#", "%"))
+            or stripped in {"---", "..."}
+        ):
+            continue
+        significant_indents.append(len(line) - len(stripped))
+    margin = min(significant_indents, default=0)
+    if margin:
+        lines = [
+            line[margin:]
+            if len(line) - len(line.lstrip()) >= margin
+            else line
+            for line in lines
+        ]
+    return "\n".join(lines)
+
+
+def normalize_visual_brief_text(raw_brief: Any) -> str:
+    """Normalize transport indentation without changing the YAML contract.
+
+    Notion/CLI callers can supply a uniformly indented block or a fenced YAML
+    block.  Dedenting here keeps an explicit top-level v2 marker top-level for
+    both parsing and fail-closed raw detection, while the column-zero detector
+    still ignores a nested ``version`` key in a legacy document.
+    """
+
+    text = _dedent_yaml_payload(
+        textwrap.dedent(str(raw_brief or "").lstrip("\ufeff"))
+    ).strip()
+    lines = text.splitlines()
+    if lines and lines[0].lstrip().startswith("```"):
+        lines = lines[1:]
+        if lines and lines[-1].lstrip().startswith("```"):
+            lines = lines[:-1]
+        text = _dedent_yaml_payload("\n".join(lines)).strip()
+    return text
 
 
 def _required_text(brief: Mapping[str, Any], key: str) -> str:
@@ -171,12 +289,12 @@ def parse_visual_brief_v2(brief: Mapping[str, Any]) -> VisualBriefV2:
     )
 
 
-def _clip(value: str, limit: int) -> str:
-    return " ".join(value.split())[:limit].rstrip()
+def _compact(value: str) -> str:
+    return " ".join(value.split())
 
 
-def _join_items(items: Sequence[str], limit: int) -> str:
-    return _clip("; ".join(items), limit)
+def _join_items(items: Sequence[str]) -> str:
+    return "; ".join(_compact(item) for item in items)
 
 
 def _sentence(value: str) -> str:
@@ -197,28 +315,31 @@ def build_visual_brief_v2_prompts(
     """
 
     parsed = parse_visual_brief_v2(brief)
-    common_parts = [
-        f"Metáfora núcleo: {_sentence(_clip(parsed.core_metaphor, 520))}",
-        (
-            "Consecuencia de ignorar el hecho central: "
-            f"{_sentence(_clip(parsed.ignored_consequence, 300))}"
-        ),
-        f"Hecho central: {_sentence(_clip(parsed.central_fact, 260))}",
-    ]
+    common = " ".join(
+        [
+            f"Metáfora núcleo: {_sentence(_compact(parsed.core_metaphor))}",
+            (
+                "Consecuencia de ignorar el hecho central: "
+                f"{_sentence(_compact(parsed.ignored_consequence))}"
+            ),
+            f"Hecho central: {_sentence(_compact(parsed.central_fact))}",
+        ]
+    )
+
+    invariants_clause = ""
     if parsed.invariants:
-        common_parts.append(
+        invariants_clause = (
             "Invariantes compartidos: "
-            f"{_sentence(_join_items(parsed.invariants, 300))}"
+            f"{_sentence(_join_items(parsed.invariants))}"
         )
-    common = " ".join(common_parts)
 
     negative_clause = (
         "Prohibiciones negativas: "
-        f"{_sentence(_join_items(parsed.negative_prohibitions, 420))}"
+        f"{_sentence(_join_items(parsed.negative_prohibitions))}"
     )
     avoid_clause = ""
     if parsed.avoid:
-        avoid_clause = f"Evitar: {_sentence(_join_items(parsed.avoid, 260))}"
+        avoid_clause = f"Evitar: {_sentence(_join_items(parsed.avoid))}"
     suffix = " ".join(str(anti_slop_suffix or "").split()).strip()
 
     prompts: list[str] = []
@@ -230,12 +351,18 @@ def build_visual_brief_v2_prompts(
         )
         variation_clause = (
             f"Alternativa {index}: cambia únicamente el eje "
-            f"'{_clip(variation.axis, 120)}': "
-            f"{_sentence(_clip(variation.direction, 560))} {invariant_clause}"
+            f"'{_compact(variation.axis)}': "
+            f"{_sentence(_compact(variation.direction))} {invariant_clause}"
         )
         fixed_tail = " ".join(
             part
-            for part in (variation_clause, negative_clause, avoid_clause, suffix)
+            for part in (
+                invariants_clause,
+                variation_clause,
+                negative_clause,
+                avoid_clause,
+                suffix,
+            )
             if part
         )
         prefix_budget = max_prompt_chars - len(fixed_tail) - 1

@@ -256,7 +256,7 @@ El primer slice de implementación agrega `config/supervisors.yaml` y `dispatche
 - `rick-orchestrator`: `subagent-result-integration`, `linear-issue-triage`, `linear-delivery-traceability`, `agent-handoff-governance`, `external-reference-intelligence`, `director-comunicacion-umbral`
 - `rick-delivery`: `linear-delivery-traceability`, `notion-project-registry`, `competitive-funnel-benchmark`, `editorial-source-curation`
 - `rick-qa`: `linear-project-auditor`, `linear-delivery-traceability`, `system-interconnectivity-diagnostics`, `director-comunicacion-umbral`
-- `rick-editorial`: `editorial-source-curation`, `editorial-voice-profile`, `director-comunicacion-umbral`, `community-pain-to-linkedin-engine`, `linkedin-content`, `multichannel-content-packager`, `external-reference-intelligence`
+- `rick-editorial`: `editorial-source-curation`, `editorial-voice-profile`, `director-comunicacion-umbral`, `community-pain-to-linkedin-engine`, `linkedin-content`, `multichannel-content-packager`, `external-reference-intelligence`, `nano-banana-image-briefs`
 - `rick-communication-director`: `director-comunicacion-umbral`, `editorial-voice-profile`, `marca-personal-david`, `linkedin-content`, `publication-gatekeeper`
 - `rick-tracker`: `editorial-source-curation`
 - `rick-ops`: `n8n-editorial-orchestrator`, `browser-automation-vm`, `windows`

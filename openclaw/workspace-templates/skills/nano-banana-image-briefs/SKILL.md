@@ -86,6 +86,24 @@ store five complete prompts in Notion. Never reuse an example's objects,
 sequence, camera, or weakness mechanism as a universal template: derive those
 values from the current copy.
 
+### HITL-confirmed composition defaults (2026-08-30)
+
+Two consecutive human selection rounds on the live pipeline fixed these
+composition defaults. They constrain form, not content — subject, flaw, and
+mechanism still derive from the current copy. Depart from them only on an
+explicit request for a specific candidate:
+
+- Build the core metaphor as **two states of the same subject in direct
+  close-up contrast** (initial vs. terminal). Three-or-more-state
+  progressions, spatial trajectories (diagonals, spirals), and airy hero
+  shots lost both rounds; at most one exploratory axis may revisit them, and
+  they must never be the base composition.
+- Make cosmetic polish and flaw evidence **escalate together**: the improved
+  state looks more showroom-finished while its original flaw becomes more
+  visible at the same time. Keeping the flaw merely constant underperforms.
+- Reveal the flaw as **visible organic damage**, not a clean technical
+  cutaway/section or a diagram.
+
 
 
 ## Required inputs

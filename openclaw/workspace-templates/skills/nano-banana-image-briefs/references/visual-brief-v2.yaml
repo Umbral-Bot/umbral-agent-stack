@@ -1,7 +1,9 @@
 version: 2
 central_fact: "<hecho o comportamiento central del copy>"
 ignored_consequence: "<consecuencia visible de ignorarlo>"
-core_metaphor: "<sujeto + condición inicial + transformación + fallo terminal>"
+# Default HITL 2026-08-30: la metáfora se compone como dos estados del mismo
+# sujeto enfrentados en primer plano, con acabado y defecto escalando juntos.
+core_metaphor: "<sujeto + estado inicial vs estado terminal en primer plano + defecto de origen visible en ambos>"
 invariants:
   - "<constante semántica compartida>"
 variation_axes:

@@ -221,6 +221,28 @@ hecho y la consecuencia del artículo actual. Las cinco alternativas no son
 cinco samples del mismo prompt ni cinco metáforas sin relación: son cinco
 variaciones controladas de una metáfora común.
 
+#### Preferencias compositivas confirmadas por HITL (2026-08-30)
+
+Dos rondas consecutivas de selección humana sobre `CAND-OLA3-03` (tanda live
+`20260830-0511` y su tanda de variaciones ancladas a la ganadora) fijaron
+estos defaults compositivos para la metáfora núcleo. Son forma, no contenido:
+el sujeto, el defecto y el mecanismo siguen derivándose del copy actual, y
+sólo se apartan si David lo pide explícitamente para un candidato.
+
+1. **Dos estados del mismo objeto, enfrentados en primer plano.** El contraste
+   directo inicial vs. terminal ganó las dos rondas; perdieron las
+   progresiones de tres o cuatro estados, las trayectorias espaciales
+   (diagonales, espirales) y las tomas amplias con aire de hero. Esas
+   composiciones pueden aparecer a lo sumo en *un* eje explorador, nunca como
+   base de la metáfora.
+2. **El acabado cosmético y la evidencia del defecto escalan juntos.** No
+   alcanza con conservar el defecto: el estado "mejorado" debe verse más
+   producto de vitrina y, a la vez, su defecto de origen más visible. Esa
+   ironía simultánea fue el criterio de la elección final.
+3. **Defecto orgánico a la vista, no corte técnico.** El revelado por daño
+   irregular visible ganó sobre secciones/cutaways limpios. Derivar el
+   revelado como deterioro, no como diagrama.
+
 ## Skills
 
 - `editorial-source-curation` — curate, normalize, and rank sources before deriving content.

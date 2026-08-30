@@ -12,6 +12,8 @@ see docs/ops/editorial-magnific-p22-poller-2026-07-23.md).
 Usage:
     export WORKER_URL=http://127.0.0.1:8088 WORKER_TOKEN=xxx
     python scripts/editorial/magnific_generate_variants.py --page-id <id> --dry-run
+    python scripts/editorial/magnific_generate_variants.py --page-id <id> \
+      --dry-run --preview-only --visual-brief-file brief-v2.yaml
     python scripts/editorial/magnific_generate_variants.py --page-id <id>
 """
 
@@ -84,6 +86,22 @@ def main() -> int:
     )
     parser.add_argument("--page-id", required=True, help="Publicaciones page id or URL")
     parser.add_argument("--dry-run", action="store_true", help="Verify eligibility + preview prompt only, no writes")
+    parser.add_argument(
+        "--preview-only",
+        action="store_true",
+        help=(
+            "With --dry-run, preview prompts even when the row is already generated; "
+            "never writes or calls Magnific"
+        ),
+    )
+    parser.add_argument(
+        "--visual-brief-file",
+        default=None,
+        help=(
+            "UTF-8 Visual brief YAML override; requires --dry-run --preview-only "
+            "and never modifies the row"
+        ),
+    )
     parser.add_argument("--count", type=int, default=None, help="Variants to generate (1-5, default 5)")
     parser.add_argument(
         "--aspect-ratio", default=None, help="Magnific aspect_ratio enum (default 4:3)"
@@ -103,7 +121,25 @@ def main() -> int:
     parser.add_argument("--timeout", type=float, default=None, help="Override the HTTP timeout in seconds")
     args = parser.parse_args()
 
+    if args.preview_only and not args.dry_run:
+        parser.error("--preview-only requires --dry-run")
+    if args.visual_brief_file and not (args.dry_run and args.preview_only):
+        parser.error("--visual-brief-file requires --dry-run --preview-only")
+
     input_data: dict = {"publicacion_page_id": args.page_id, "dry_run": args.dry_run}
+    if args.preview_only:
+        input_data["preview_only"] = True
+    if args.visual_brief_file:
+        try:
+            input_data["visual_brief_override"] = Path(
+                args.visual_brief_file
+            ).read_text(encoding="utf-8")
+        except OSError as exc:
+            print(
+                f"ERROR: could not read Visual brief file ({type(exc).__name__})",
+                file=sys.stderr,
+            )
+            return 2
     if args.count is not None:
         input_data["count"] = args.count
     if args.aspect_ratio:

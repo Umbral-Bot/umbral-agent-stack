@@ -107,6 +107,37 @@ def _publicacion_page(
     }
 
 
+def _visual_brief_v2(engine=None):
+    engine_line = f"engine: {engine}\n" if engine else ""
+    return f"""\
+version: 2
+central_fact: A workflow repeats the premise it receives.
+ignored_consequence: The result looks finished while its weak premise spreads.
+core_metaphor: One paper vessel crosses the same accelerating current.
+invariants:
+  - the same vessel remains the subject
+  - the terminal weakness stays visible
+variation_axes:
+  - axis: state count
+    direction: use direction-sentinel-1
+  - axis: camera distance
+    direction: use direction-sentinel-2
+  - axis: spatial trajectory
+    direction: use direction-sentinel-3
+  - axis: weakness location
+    direction: use direction-sentinel-4
+  - axis: reveal method
+    direction: use direction-sentinel-5
+negative_prohibitions:
+  - no rescue device
+  - no corrected result
+avoid:
+  - embedded words
+{engine_line}aspect_ratio: 4:3
+resolution: 2K
+"""
+
+
 def _variant(task_id: str, export_url: str):
     variant = MagicMock()
     variant.task_id = task_id
@@ -786,6 +817,253 @@ resolution: 1K
     assert result["endpoint"] == PRO_ENDPOINT
     assert result["aspect_ratio"] == "16:9"
     assert result["resolution"] == "4K"
+
+
+def test_v1_remains_one_prompt_five_flash_samples():
+    from worker.tasks.magnific import handle_magnific_generate_variants
+
+    visual_brief = "scene: A legacy paper workflow\navoid:\n  - embedded words"
+    generated = [
+        _variant(f"task-{index}", f"https://cdn.magnific.com/v1-{index}.png")
+        for index in range(1, 6)
+    ]
+    with patch("worker.tasks.magnific.config") as mock_cfg, patch(
+        "worker.tasks.magnific.notion_client"
+    ) as mock_nc, patch(
+        "worker.tasks.magnific._generate_one_variant", side_effect=generated
+    ) as mock_generate:
+        mock_cfg.MAGNIFIC_API_KEY = "key-123"
+        mock_nc.get_page.return_value = _publicacion_page(visual_brief=visual_brief)
+
+        result = handle_magnific_generate_variants({"publicacion_page_id": "pub-1"})
+
+    prompts = [call.args[0] for call in mock_generate.call_args_list]
+    targets = [call.args[3] for call in mock_generate.call_args_list]
+    assert result["ok"] is True
+    assert len(prompts) == 5
+    assert len(set(prompts)) == 1
+    assert prompts[0].startswith("A legacy paper workflow Evitar: embedded words.")
+    assert all(target.model == "nano-banana-pro-flash" for target in targets)
+    assert "visual_brief_version" not in result
+    assert "prompt_strategy" not in result
+
+
+def test_v2_dry_run_defaults_to_pro_and_returns_five_controlled_prompts():
+    from worker.tasks.magnific import handle_magnific_generate_variants
+
+    with patch("worker.tasks.magnific.notion_client") as mock_nc, patch(
+        "worker.tasks.magnific.httpx.Client"
+    ) as mock_http:
+        mock_nc.get_page.return_value = _publicacion_page(
+            visual_brief=_visual_brief_v2()
+        )
+
+        result = handle_magnific_generate_variants(
+            {"publicacion_page_id": "pub-1", "dry_run": True}
+        )
+
+    assert result["ok"] is True
+    assert result["visual_brief_version"] == 2
+    assert result["prompt_strategy"] == "five_controlled_prompts"
+    assert result["model"] == "nano-banana-pro"
+    assert result["endpoint"] == PRO_ENDPOINT
+    assert "prompt" not in result
+    assert len(result["prompts"]) == len(set(result["prompts"])) == 5
+    for index, prompt in enumerate(result["prompts"], start=1):
+        assert f"direction-sentinel-{index}" in prompt
+        assert "no rescue device" in prompt
+        assert "ilustración editorial isométrica no fotoreal" in prompt
+    mock_nc.update_page_properties.assert_not_called()
+    mock_http.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("engine", "expected_model", "expected_endpoint"),
+    [
+        ("pro", "nano-banana-pro", PRO_ENDPOINT),
+        ("nano-banana-pro", "nano-banana-pro", PRO_ENDPOINT),
+        ("imagen-nano-banana-2", "nano-banana-pro", PRO_ENDPOINT),
+        ("flash", "nano-banana-pro-flash", FLASH_ENDPOINT),
+        ("nano-banana-pro-flash", "nano-banana-pro-flash", FLASH_ENDPOINT),
+        ("nano-banana-2", "nano-banana-pro-flash", FLASH_ENDPOINT),
+    ],
+)
+def test_v2_engine_field_preserves_pro_flash_alias_distinction(
+    engine, expected_model, expected_endpoint
+):
+    from worker.tasks.magnific import handle_magnific_generate_variants
+
+    with patch("worker.tasks.magnific.notion_client") as mock_nc:
+        mock_nc.get_page.return_value = _publicacion_page(
+            visual_brief=_visual_brief_v2(engine)
+        )
+
+        result = handle_magnific_generate_variants(
+            {"publicacion_page_id": "pub-1", "dry_run": True}
+        )
+
+    assert result["ok"] is True
+    assert result["model"] == expected_model
+    assert result["endpoint"] == expected_endpoint
+
+
+def test_v2_production_uses_five_distinct_prompts_and_keeps_drive_transaction():
+    from worker.tasks.magnific import handle_magnific_generate_variants
+
+    generated = [
+        _variant(f"task-{index}", f"https://cdn.magnific.com/v2-{index}.png")
+        for index in range(1, 6)
+    ]
+    with patch("worker.tasks.magnific.config") as mock_cfg, patch(
+        "worker.tasks.magnific.notion_client"
+    ) as mock_nc, patch(
+        "worker.tasks.magnific._generate_one_variant", side_effect=generated
+    ) as mock_generate:
+        mock_cfg.MAGNIFIC_API_KEY = "key-123"
+        mock_nc.get_page.return_value = _publicacion_page(
+            visual_brief=_visual_brief_v2(), estado_imagen="Pendiente generación"
+        )
+
+        result = handle_magnific_generate_variants({"publicacion_page_id": "pub-1"})
+
+    prompts = [call.args[0] for call in mock_generate.call_args_list]
+    targets = [call.args[3] for call in mock_generate.call_args_list]
+    assert result["ok"] is True
+    assert result["generated"] == 5
+    assert len(prompts) == len(set(prompts)) == 5
+    assert all(target.model == "nano-banana-pro" for target in targets)
+    final_props = mock_nc.update_page_properties.call_args_list[-1].kwargs["properties"]
+    assert final_props["HITL Drive"] == {
+        "url": "https://drive.google.com/drive/folders/test-run"
+    }
+    for index, url in enumerate(_durable_drive_urls(), start=1):
+        assert final_props[f"imagen_alt_{index}_url"] == {"url": url}
+    assert final_props["Estado imagen"] == {"select": {"name": "Listo para selección"}}
+
+
+def test_v2_rejects_single_prompt_override_and_non_five_count():
+    from worker.tasks.magnific import handle_magnific_generate_variants
+
+    with patch("worker.tasks.magnific.notion_client") as mock_nc:
+        mock_nc.get_page.return_value = _publicacion_page(
+            visual_brief=_visual_brief_v2()
+        )
+
+        prompt_result = handle_magnific_generate_variants(
+            {
+                "publicacion_page_id": "pub-1",
+                "dry_run": True,
+                "prompt": "collapse all variants",
+            }
+        )
+        count_result = handle_magnific_generate_variants(
+            {"publicacion_page_id": "pub-1", "dry_run": True, "count": 4}
+        )
+
+    assert prompt_result["ok"] is False
+    assert "single prompt override" in prompt_result["error"]
+    assert count_result["ok"] is False
+    assert "exactly 5" in count_result["error"]
+    mock_nc.update_page_properties.assert_not_called()
+
+
+def test_v2_rejects_brief_larger_than_notion_contract():
+    from worker.tasks.magnific import handle_magnific_generate_variants
+
+    oversized = _visual_brief_v2() + ("# padding\n" * 300)
+    with patch("worker.tasks.magnific.notion_client") as mock_nc:
+        mock_nc.get_page.return_value = _publicacion_page(visual_brief=oversized)
+
+        result = handle_magnific_generate_variants(
+            {"publicacion_page_id": "pub-1", "dry_run": True}
+        )
+
+    assert result["ok"] is False
+    assert "2000-character" in result["error"]
+    mock_nc.update_page_properties.assert_not_called()
+
+
+def test_malformed_explicit_v2_fails_closed_instead_of_using_legacy_flash():
+    from worker.tasks.magnific import handle_magnific_generate_variants
+
+    malformed_v2 = "version: 2\nvariation_axes: [broken"
+    with patch("worker.tasks.magnific.notion_client") as mock_nc, patch(
+        "worker.tasks.magnific._generate_one_variant"
+    ) as mock_generate:
+        mock_nc.get_page.return_value = _publicacion_page(
+            visual_brief=malformed_v2
+        )
+
+        result = handle_magnific_generate_variants(
+            {"publicacion_page_id": "pub-1", "dry_run": True}
+        )
+
+    assert result["ok"] is False
+    assert result["error"] == "Visual brief v2 is not valid YAML"
+    mock_nc.update_page_properties.assert_not_called()
+    mock_generate.assert_not_called()
+
+
+def test_v2_preview_only_reads_done_row_but_has_zero_side_effects():
+    from worker.tasks.magnific import handle_magnific_generate_variants
+
+    with patch("worker.tasks.magnific.notion_client") as mock_nc, patch(
+        "worker.tasks.magnific._magnific_headers"
+    ) as mock_headers, patch(
+        "worker.tasks.magnific._generate_one_variant"
+    ) as mock_generate, patch(
+        "worker.tasks.magnific._prepare_editorial_drive"
+    ) as mock_prepare_drive, patch(
+        "worker.tasks.magnific._persist_generated_variants_to_drive"
+    ) as mock_persist, patch(
+        "worker.tasks.magnific.httpx.Client"
+    ) as mock_http:
+        mock_nc.get_page.return_value = _publicacion_page(
+            visual_brief="scene: legacy", estado_imagen="Listo para selección"
+        )
+
+        result = handle_magnific_generate_variants(
+            {
+                "publicacion_page_id": "pub-1",
+                "dry_run": True,
+                "preview_only": True,
+                "visual_brief_override": _visual_brief_v2(),
+            }
+        )
+
+    assert result["ok"] is True
+    assert result["preview_only"] is True
+    assert result["hypothetical_preview"] is True
+    assert result["row_eligible"] is False
+    assert result["would_generate"] is False
+    assert len(result["prompts"]) == 5
+    mock_nc.get_page.assert_called_once_with("pub-1")
+    mock_nc.update_page_properties.assert_not_called()
+    mock_headers.assert_not_called()
+    mock_generate.assert_not_called()
+    mock_prepare_drive.assert_not_called()
+    mock_persist.assert_not_called()
+    mock_http.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "unsafe_input",
+    [
+        {"preview_only": True},
+        {"visual_brief_override": "version: 2"},
+    ],
+)
+def test_preview_controls_without_dry_run_fail_before_notion_read(unsafe_input):
+    from worker.tasks.magnific import handle_magnific_generate_variants
+
+    with patch("worker.tasks.magnific.notion_client") as mock_nc:
+        result = handle_magnific_generate_variants(
+            {"publicacion_page_id": "pub-1", **unsafe_input}
+        )
+
+    assert result["ok"] is False
+    assert "dry_run=true" in result["error"]
+    mock_nc.get_page.assert_not_called()
 
 
 def test_unknown_model_alias_fails_closed_without_writes_or_http():

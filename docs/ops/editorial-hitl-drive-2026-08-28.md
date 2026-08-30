@@ -67,6 +67,11 @@ compartida/abierta para ese cliente OAuth.
 `--dry-run` no llama Magnific ni Drive. Reporta `would_persist_drive`, el path
 lógico y la disponibilidad booleana de la configuración, sin imprimir valores.
 
+Visual brief v2 conserva esta misma frontera de persistencia. Su contrato de
+cinco prompts distintos, default Pro, retrocompatibilidad v1 y preview sin
+efectos está en
+[`editorial-visual-brief-v2-2026-08-29.md`](editorial-visual-brief-v2-2026-08-29.md).
+
 ## Ciclo atómico 5/5
 
 1. Validar credenciales, root editorial allowlisteado, capacidad
@@ -131,6 +136,7 @@ poller Magnific.
 ## Referencias
 
 - `docs/ops/notion-publicaciones-v2-visual-gates-schema.md`
+- `docs/ops/editorial-visual-brief-v2-2026-08-29.md`
 - `docs/ops/editorial-magnific-p22-poller-2026-07-23.md`
 - `docs/ops/pit-telegram-drive-deliverables-runbook.md`
 - `notion/schemas/publicaciones.schema.yaml`

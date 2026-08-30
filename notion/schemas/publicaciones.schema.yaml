@@ -293,9 +293,12 @@ properties:
     type: rich_text
     required: false
     description: >
-      Brief del asset visual.  Debe especificar estilo, dimensiones,
-      canal y herramienta (Magnific REST, nunca UI automation).
-      HITL obligatorio si hay personas o marcas.
+      Brief del asset visual.  Briefs legacy/v1 conservan scene + avoid.
+      Visual brief v2 usa el contrato compacto y versionado de
+      docs/ops/editorial-visual-brief-v2-2026-08-29.md: campos semanticos
+      comunes + cinco ejes, expandidos por el Worker a cinco prompts.
+      Magnific siempre por REST, nunca UI automation. HITL obligatorio si
+      hay personas o marcas.
     max_length: 2000
 
   - name: Visual asset URL

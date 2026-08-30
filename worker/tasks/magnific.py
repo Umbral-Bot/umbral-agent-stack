@@ -58,6 +58,7 @@ import yaml
 from PIL import Image, UnidentifiedImageError
 
 from .. import config, notion_client
+from . import editorial_visual_brief
 from . import google_drive
 
 logger = logging.getLogger("worker.tasks.magnific")
@@ -330,6 +331,22 @@ def _resolve_generation_target(value: Any) -> _GenerationTarget:
         "Unsupported Magnific model alias. Use Nano Banana 2/Flash, "
         "Nano Banana Pro, or explicit Mystic/realism."
     )
+
+
+def _resolve_v2_generation_target(value: Any) -> _GenerationTarget:
+    """Resolve the v2 engine vocabulary without changing legacy aliases."""
+
+    alias = _normalize_model_alias(value)
+    if alias == "pro":
+        alias = "nano-banana-pro"
+    elif alias == "flash":
+        alias = "nano-banana-pro-flash"
+    target = _resolve_generation_target(alias)
+    if target.engine not in {"pro", "flash"}:
+        raise ValueError(
+            "Visual brief v2 engine must be Pro or explicit Flash"
+        )
+    return target
 
 
 def _normalize_generation_params(
@@ -745,8 +762,14 @@ def handle_magnific_generate_variants(input_data: Dict[str, Any]) -> Dict[str, A
         dry_run (bool, optional): if True, verify eligibility and return the
             prompt/params that would be used, without calling Magnific or
             writing to Notion.
-        count (int, optional): variants to preview in dry-run, 1-5. A real run
-            is fail-closed unless the count is exactly 5.
+        preview_only (bool, optional): dry-run-only mode that previews prompts
+            even when the row is already generated. It never bypasses the
+            Notion read and never enables writes or image calls.
+        visual_brief_override (str, optional): dry-run-only YAML used instead
+            of the row's Visual brief. Intended for falsifiable previews
+            against a real row without modifying it.
+        count (int, optional): variants to preview in a legacy dry-run, 1-5.
+            A real run and every Visual brief v2 run require exactly 5.
         prompt (str, optional): explicit prompt override. Default: derived
             from `Visual brief.scene` + `avoid`, else `Título` + `Premisa`,
             plus the ADR-006 anti-slop suffix. Raw Visual brief YAML is never
@@ -756,7 +779,9 @@ def handle_magnific_generate_variants(input_data: Dict[str, Any]) -> Dict[str, A
             to "classic_4_3".
         resolution (str, optional): Magnific resolution enum ("1K"/"2K"/"4K").
         model (str, optional): Nano Banana Flash/Pro alias, or explicit
-            "mystic"/"realism". Default "nano-banana-pro-flash".
+            "mystic"/"realism". Legacy/v1 default is
+            "nano-banana-pro-flash"; Visual brief v2 defaults to
+            "nano-banana-pro" and may declare an explicit `engine`.
 
     Returns:
         {"ok": bool, "generated": int, "requested": int, "urls": [...],
@@ -768,6 +793,20 @@ def handle_magnific_generate_variants(input_data: Dict[str, Any]) -> Dict[str, A
         return {"ok": False, "error": "'publicacion_page_id' is required"}
 
     dry_run = bool(input_data.get("dry_run", False))
+    preview_only = bool(input_data.get("preview_only", False))
+    has_visual_brief_override = "visual_brief_override" in input_data
+    if preview_only and not dry_run:
+        return {
+            "ok": False,
+            "error": "'preview_only' requires dry_run=true",
+            "publicacion_page_id": page_id,
+        }
+    if has_visual_brief_override and not dry_run:
+        return {
+            "ok": False,
+            "error": "'visual_brief_override' is allowed only with dry_run=true",
+            "publicacion_page_id": page_id,
+        }
     try:
         raw_count = input_data["count"] if "count" in input_data else DEFAULT_VARIANT_COUNT
         count = int(raw_count)
@@ -800,7 +839,7 @@ def handle_magnific_generate_variants(input_data: Dict[str, Any]) -> Dict[str, A
     )
     prior_error = str(fields.get("imagen_error") or "").strip()
 
-    if estado in _IN_PROGRESS_STATES:
+    if not preview_only and estado in _IN_PROGRESS_STATES:
         return {
             "ok": True,
             "skipped": True,
@@ -809,7 +848,8 @@ def handle_magnific_generate_variants(input_data: Dict[str, Any]) -> Dict[str, A
             "publicacion_page_id": page_id,
         }
     if (
-        estado == "Error"
+        not preview_only
+        and estado == "Error"
         and prior_error.startswith(_NON_RETRYABLE_ERROR_PREFIXES)
         and not regeneration_requested
     ):
@@ -820,7 +860,11 @@ def handle_magnific_generate_variants(input_data: Dict[str, Any]) -> Dict[str, A
             "estado_imagen": estado,
             "publicacion_page_id": page_id,
         }
-    if estado in _ALREADY_DONE_STATES and not regeneration_requested:
+    if (
+        not preview_only
+        and estado in _ALREADY_DONE_STATES
+        and not regeneration_requested
+    ):
         return {
             "ok": True,
             "skipped": True,
@@ -828,7 +872,11 @@ def handle_magnific_generate_variants(input_data: Dict[str, Any]) -> Dict[str, A
             "estado_imagen": estado,
             "publicacion_page_id": page_id,
         }
-    if estado not in _ELIGIBLE_STATES and not regeneration_requested:
+    if (
+        not preview_only
+        and estado not in _ELIGIBLE_STATES
+        and not regeneration_requested
+    ):
         return {
             "ok": False,
             "error": f"estado_imagen_not_eligible: {estado!r}",
@@ -843,10 +891,77 @@ def handle_magnific_generate_variants(input_data: Dict[str, Any]) -> Dict[str, A
             "publicacion_page_id": page_id,
         }
 
-    visual_brief = _parse_visual_brief(fields.get("visual_brief"))
+    if has_visual_brief_override:
+        fields = dict(fields)
+        fields["visual_brief"] = input_data.get("visual_brief_override")
+    raw_visual_brief = fields.get("visual_brief")
+    visual_brief = _parse_visual_brief(raw_visual_brief)
+    raw_declares_v2 = editorial_visual_brief.raw_declares_visual_brief_v2(
+        raw_visual_brief
+    )
+    is_v2 = editorial_visual_brief.is_visual_brief_v2(visual_brief)
+    if raw_declares_v2 and not is_v2:
+        return {
+            "ok": False,
+            "error": "Visual brief v2 is not valid YAML",
+            "estado_imagen": estado,
+            "publicacion_page_id": page_id,
+        }
+    prompt_plan: List[str]
+    parsed_v2: Optional[editorial_visual_brief.VisualBriefV2] = None
+    if is_v2:
+        if len(str(raw_visual_brief or "")) > editorial_visual_brief.MAX_VISUAL_BRIEF_V2_CHARS:
+            return {
+                "ok": False,
+                "error": "Visual brief v2 exceeds the 2000-character Notion contract",
+                "estado_imagen": estado,
+                "publicacion_page_id": page_id,
+            }
+        if count != editorial_visual_brief.V2_VARIANT_COUNT:
+            return {
+                "ok": False,
+                "error": "Visual brief v2 requires exactly 5 variants",
+                "estado_imagen": estado,
+                "publicacion_page_id": page_id,
+            }
+        if override_prompt and str(override_prompt).strip():
+            return {
+                "ok": False,
+                "error": "Visual brief v2 does not allow a single prompt override",
+                "estado_imagen": estado,
+                "publicacion_page_id": page_id,
+            }
+        try:
+            parsed_v2, prompt_plan = (
+                editorial_visual_brief.build_visual_brief_v2_prompts(
+                    visual_brief,
+                    anti_slop_suffix=_ANTI_SLOP_SUFFIX,
+                    max_prompt_chars=MAX_PROMPT_CHARS,
+                )
+            )
+        except editorial_visual_brief.VisualBriefV2Error as e:
+            return {
+                "ok": False,
+                "error": str(e),
+                "estado_imagen": estado,
+                "publicacion_page_id": page_id,
+            }
+        model_value = (
+            input_data.get("model")
+            if input_data.get("model") is not None
+            and str(input_data.get("model")).strip()
+            else parsed_v2.engine or editorial_visual_brief.V2_DEFAULT_ENGINE
+        )
+    else:
+        prompt = _build_prompt(fields, override_prompt, visual_brief)
+        prompt_plan = [prompt] * count
+        model_value = _config_value(input_data, visual_brief, "model", DEFAULT_MODEL)
+
     try:
-        target = _resolve_generation_target(
-            _config_value(input_data, visual_brief, "model", DEFAULT_MODEL)
+        target = (
+            _resolve_v2_generation_target(model_value)
+            if is_v2
+            else _resolve_generation_target(model_value)
         )
         aspect_ratio, resolution = _normalize_generation_params(
             target,
@@ -861,8 +976,7 @@ def handle_magnific_generate_variants(input_data: Dict[str, Any]) -> Dict[str, A
             "publicacion_page_id": page_id,
         }
 
-    prompt = _build_prompt(fields, override_prompt, visual_brief)
-    if len(prompt) < 2:
+    if any(len(prompt) < 2 for prompt in prompt_plan):
         return {
             "ok": False,
             "error": "Magnific prompt must contain between 2 and 3000 characters",
@@ -871,12 +985,11 @@ def handle_magnific_generate_variants(input_data: Dict[str, Any]) -> Dict[str, A
         }
     drive_readiness = google_drive.editorial_hitl_drive_readiness(publication_id)
     if dry_run:
-        return {
+        result = {
             "ok": True,
             "dry_run": True,
-            "would_generate": True,
+            "would_generate": not preview_only,
             "count": count,
-            "prompt": prompt,
             "aspect_ratio": aspect_ratio,
             "resolution": resolution,
             "model": target.model,
@@ -890,6 +1003,26 @@ def handle_magnific_generate_variants(input_data: Dict[str, Any]) -> Dict[str, A
             "estado_imagen": estado,
             "publicacion_page_id": page_id,
         }
+        if is_v2:
+            result.update(
+                {
+                    "visual_brief_version": editorial_visual_brief.VISUAL_BRIEF_V2_VERSION,
+                    "prompt_strategy": editorial_visual_brief.V2_PROMPT_STRATEGY,
+                    "prompts": prompt_plan,
+                    "variation_axes": [
+                        variation.axis for variation in parsed_v2.variation_axes
+                    ],
+                    "preview_only": preview_only,
+                    "hypothetical_preview": preview_only,
+                    "row_eligible": bool(
+                        estado in _ELIGIBLE_STATES or regeneration_requested
+                    ),
+                }
+            )
+        else:
+            # Preserve the established v1 dry-run response shape.
+            result["prompt"] = prompt_plan[0]
+        return result
 
     if not drive_readiness.get("ready"):
         missing = list(drive_readiness.get("missing") or [])
@@ -954,7 +1087,7 @@ def handle_magnific_generate_variants(input_data: Dict[str, Any]) -> Dict[str, A
 
     variants: List[_GeneratedVariant] = []
     failure: Optional[str] = None
-    for idx in range(1, count + 1):
+    for idx, prompt in enumerate(prompt_plan, start=1):
         try:
             variant = _coerce_generated_variant(
                 _generate_one_variant(prompt, aspect_ratio, resolution, target)
@@ -1105,6 +1238,14 @@ def handle_magnific_generate_variants(input_data: Dict[str, Any]) -> Dict[str, A
         "persisted_drive": True,
         "model": target.model,
         "endpoint": target.endpoint,
+        **(
+            {
+                "visual_brief_version": editorial_visual_brief.VISUAL_BRIEF_V2_VERSION,
+                "prompt_strategy": editorial_visual_brief.V2_PROMPT_STRATEGY,
+            }
+            if is_v2
+            else {}
+        ),
         "estado_imagen": "Listo para selección",
         "publicacion_page_id": page_id,
     }

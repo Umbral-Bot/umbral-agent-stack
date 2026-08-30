@@ -111,7 +111,7 @@ copy_blog: ""
 copy_newsletter: ""
 
 # --- Visual ---
-visual_brief: ""
+visual_brief: ""              # legacy o YAML v2; docs/ops/editorial-visual-brief-v2-2026-08-29.md
 visual_hitl_required: false    # true if people, brands, or sensitive content
 
 # --- Review ---
@@ -162,6 +162,9 @@ Before handing a candidate to `rick-qa` or David:
 - [ ] No referentes cited as public authorities in copy when they are not the original source.
 - [ ] No unsupported factual claims without a primary source.
 - [ ] `visual_hitl_required` is explicitly set (true if people/brands/sensitive content).
+- [ ] Si usa Visual brief v2: declara hecho, consecuencia, metáfora núcleo,
+      cinco ejes únicos y prohibiciones; cabe en 2000 caracteres y deja
+      `engine` omitido/`pro` salvo pedido explícito de Flash.
 - [ ] `trace_id` is set for trazabilidad.
 - [ ] If public copy is involved, `communication_review` is present or explicitly marked not required.
 - [ ] Public copy does not use `escalacion` as a noun.

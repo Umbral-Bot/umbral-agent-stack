@@ -71,7 +71,15 @@ campos de curado existentes ([docs/67 §5](../67-editorial-source-curation.md),
 
 1. **Arco narrativo** — no un ángulo suelto: la trayectoria de la pieza (de qué
    parte, qué tensiona, a dónde llega). Reemplaza al `recommended_angle` único
-   como requisito mínimo por alternativa.
+   como requisito mínimo por alternativa. Se lee como historia: un lector que
+   no conoce el pipeline debe poder seguirlo. **No** incrusta etiquetas de
+   etapa del sistema (`claim`, `tesis editorial`, `HITL`, `V1`, `V2`,
+   `payload`). Si hace falta separar lo que dice la fuente de lo que afirma
+   la editorial, eso va en las frases (nombrar la fuente, nombrar el aterrizaje),
+   no como rótulos. Ejemplo negativo: `CAND-WLCA-01-SHORTLIST-V1` (2026-08-31)
+   metió "claim respaldado por RICS" y "tesis editorial propia" en el arco —
+   la trayectoria era correcta; las etiquetas eran metadata de proceso.
+   `rick-qa` rechaza con `blocked_arco_process_metadata`.
 
 2. **Pie de estructura de discurso** — línea explícita y obligatoria. Formato por
    defecto (cambiable, pero **debe declararse el efectivamente usado**):
@@ -80,8 +88,11 @@ campos de curado existentes ([docs/67 §5](../67-editorial-source-curation.md),
    Estructura de discurso usada: [hipótesis, introducción, argumento 1, argumento 2, contraargumento, contra-contraargumento, conclusión]
    ```
 
-   La lista puede variar (otra secuencia discursiva válida), pero **nunca** puede
-   omitirse: si falta, `rick-qa` rechaza la alternativa.
+   La lista puede variar (otra secuencia discursiva válida; p. ej. `claim de
+   fuente → brecha operativa → tesis editorial → aplicación`), pero **nunca**
+   puede omitirse: si falta, `rick-qa` rechaza la alternativa. **Acá sí van las
+   etiquetas.** El pie declara el mapa; no recuenta el arco después de los dos
+   puntos.
 
 3. **Fuente = URL de la pieza concreta** — la fuente citable de cada alternativa
    es la **URL directa del ítem** (`item_url`), nunca la home/feed de la

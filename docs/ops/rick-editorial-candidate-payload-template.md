@@ -33,12 +33,14 @@ alternativa_id: ""             # ID estable — correlación / promoción a Publ
 topic_key: ""                  # tema normalizado, para dedupe (P2.4) — opcional pero recomendado
 
 # --- OBLIGATORIO ---
-arco_narrativo: ""             # trayectoria de la pieza (de qué parte, qué tensiona, a dónde
-                                # llega) — NO un ángulo suelto
+arco_narrativo: ""             # trayectoria en prosa (de qué parte, qué tensiona, a dónde
+                                # llega) — NO un ángulo suelto; NO etiquetas de proceso
+                                #   (claim / tesis editorial / HITL / V1)
 estructura_discurso: ""        # "Estructura de discurso usada: [hipótesis, introducción,
                                 #  argumento 1, argumento 2, contraargumento,
                                 #  contra-contraargumento, conclusión]" (secuencia puede variar,
-                                #  pero el pie nunca puede omitirse)
+                                #  pero el pie nunca puede omitirse). Acá SÍ van las etiquetas.
+                                #  No recontar el arco después de los dos puntos.
 fuente_pieza_url: ""           # URL de la PIEZA concreta (item_url) — NUNCA la home/feed
 # --- fin OBLIGATORIO ---
 
@@ -58,8 +60,8 @@ Publicaciones payload below, not V1.
 
 Before handing an alternativa to `rick-qa` or David for HITL-1:
 
-- [ ] `arco_narrativo` is present and describes an actual trajectory, not a single loose angle. **OBLIGATORIO.**
-- [ ] `estructura_discurso` is present with the discourse structure actually used. **OBLIGATORIO.**
+- [ ] `arco_narrativo` is present and describes an actual trajectory, not a single loose angle, and without process-stage labels. **OBLIGATORIO.**
+- [ ] `estructura_discurso` is present with the labelled discourse structure actually used (map, not a retelling of the arc). **OBLIGATORIO.**
 - [ ] `fuente_pieza_url` is the concrete-piece URL, never a home/feed page. **OBLIGATORIO.**
 - [ ] `Resultado revisión` is `Pendiente` — never set by `rick-editorial`.
 - [ ] Optional but recommended: consult the negative-examples store

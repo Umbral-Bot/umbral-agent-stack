@@ -105,7 +105,8 @@ Por cada item:
 > Contrato canonico: `docs/ops/editorial-norte-hitl-contract-2026-07-22.md` §3-§4.
 
 La shortlist/alternativas del norte 2026-07-22 exige, por alternativa: arco
-narrativo, pie de estructura de discurso explicito y fuente = URL de la pieza
+narrativo (trayectoria en prosa, sin etiquetas de proceso), pie de estructura de
+discurso explicito (ahi si van las etiquetas) y fuente = URL de la pieza
 concreta (no home). La revision humana (HITL-1) tiene **cuatro salidas**:
 
 - **Archivar** — no procede; se conserva como historial neutro (≠ Descartar).

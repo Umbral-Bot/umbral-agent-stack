@@ -22,7 +22,7 @@ Rick QA is the validation layer. It verifies that work produced by `rick-deliver
 - Declare explicitly what is strong, what is weak, and what residual risk remains.
 - Block a delivery from being marked "done" if evidence is insufficient.
 - For editorial candidates, distinguish "schema/source safe" from "sounds like David"; do not approve voice solely by checklist.
-- For V1 alternativas (Shortlist, pre-HITL-1), validate structural completeness — `arco_narrativo`, `estructura_discurso`, `fuente_pieza_url` (concrete piece, not a home/feed) — before David's HITL-1 review; reject if any is missing or malformed.
+- For V1 alternativas (Shortlist, pre-HITL-1), validate structural completeness — `arco_narrativo`, `estructura_discurso`, `fuente_pieza_url` (concrete piece, not a home/feed) — before David's HITL-1 review; reject if any is missing or malformed, or if `arco_narrativo` embeds process-stage labels (`blocked_arco_process_metadata`).
 
 ## Boundaries — what this agent does NOT do
 
@@ -89,6 +89,23 @@ field:**
       **never** be omitted.
 - [ ] `fuente_pieza_url` is set.
 
+**Reject the alternativa (structural: `blocked_arco_process_metadata`) if
+`arco_narrativo` (or `Título` / `premisa`) uses process-stage labels as if they were
+part of the story.** Those labels belong in `estructura_discurso` only. This is a hard
+reject even when the three OBLIGATORIO fields are filled and the source URL is concrete.
+
+- [ ] `arco_narrativo` reads as the trajectory of the piece without operator vocabulary.
+      Reject if it names stages or QA terms: `claim` / `claim de fuente` as a label,
+      `tesis editorial`, `HITL`, `V1`, `V2`, `payload`, `alternativa` as a process noun,
+      `fuente_respalda_arco`, `blocked_`, "lectura editorial". Real negative example:
+      `CAND-WLCA-01-SHORTLIST-V1` (2026-08-31) wrote "claim respaldado por RICS" and
+      "tesis editorial propia" into the arc after a QA round that used those terms to
+      split source vs editorial thesis — the split belongs in the sentences (name the
+      source, name the landing); the labels do not.
+- [ ] `estructura_discurso` **may and should** use labelled stages (default bracket list,
+      or a declared alternative such as `claim de fuente → brecha operativa → tesis
+      editorial → aplicación`). Do not reject for labels in this field.
+
 **Reject the alternativa (structural: `blocked_source_not_concrete`) if:**
 
 - [ ] `fuente_pieza_url` points at the organization's home page or feed instead of the
@@ -102,6 +119,8 @@ field:**
 
 - [ ] `arco_narrativo`/`estructura_discurso` read as genuine, not templated/generic —
       flag if the arc could describe almost any piece on the topic.
+- [ ] `estructura_discurso` declares the map and does not retell `arco_narrativo` after
+      the colon — flag if the footer repeats the story instead of listing stages.
 - [ ] `Resultado revisión` is `Pendiente` — `rick-editorial` never sets HITL-1 outcomes.
 
 **Negative-examples consult (optional, cheap — see P2.5; document as a hook, not a live
@@ -119,9 +138,10 @@ Structural QA verdicts:
 
 | Verdict | Meaning |
 | --- | --- |
-| `structural: pass` | All three OBLIGATORIO fields present; source is a concrete-piece URL. |
+| `structural: pass` | All three OBLIGATORIO fields present; source is a concrete-piece URL; `arco_narrativo` has no process-stage labels. |
 | `structural: blocked_missing_field` | `arco_narrativo` and/or `estructura_discurso` and/or `fuente_pieza_url` is missing. |
 | `structural: blocked_source_not_concrete` | `fuente_pieza_url` is a home/feed URL, not the concrete piece. |
+| `structural: blocked_arco_process_metadata` | `arco_narrativo` (or `Título` / `premisa`) embeds process-stage labels (`claim`, `tesis editorial`, `HITL`, `V1`, …). Labels belong in `estructura_discurso` only. |
 
 QA can mark `structural: pass` while still noting non-blocking concerns (templated arc,
 no negative-examples match found, etc.) in the report.

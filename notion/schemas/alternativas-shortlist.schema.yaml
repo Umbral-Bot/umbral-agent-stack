@@ -94,8 +94,10 @@ properties:
     required: true
     description: >
       Arco narrativo — trayectoria de la pieza (de qué parte, qué tensiona, a
-      dónde llega). Reemplaza a `recommended_angle` único como requisito
-      mínimo. OBLIGATORIO: si falta, rick-qa rechaza la alternativa.
+      dónde llega), en prosa, sin etiquetas de proceso (`claim`, `tesis
+      editorial`, HITL, V1). Reemplaza a `recommended_angle` único como
+      requisito mínimo. OBLIGATORIO: si falta, o si embebe metadata de
+      proceso, rick-qa rechaza la alternativa.
 
   - name: estructura_discurso
     type: rich_text
@@ -105,7 +107,9 @@ properties:
       pero debe declararse el efectivamente usado):
       "Estructura de discurso usada: [hipótesis, introducción, argumento 1,
       argumento 2, contraargumento, contra-contraargumento, conclusión]".
-      OBLIGATORIO: si falta, rick-qa rechaza la alternativa.
+      Las etiquetas de etapa pertenecen a este campo, no al arco. Declarar
+      el mapa; no recontar el arco. OBLIGATORIO: si falta, rick-qa rechaza
+      la alternativa.
 
   - name: premisa
     type: rich_text

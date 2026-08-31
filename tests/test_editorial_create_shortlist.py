@@ -163,6 +163,32 @@ def test_concrete_piece_dry_run_previews_pendiente_without_writes():
     mock_nc.create_database_page.assert_not_called()
 
 
+def test_dry_run_includes_cadena_tesis_when_provided():
+    from worker.tasks.editorial_create_shortlist import (
+        handle_editorial_create_shortlist_alternativa,
+    )
+
+    cadena = (
+        "Evidencia (fuente): la pieza pide medir carbono de ciclo de vida.\n"
+        "Inferencia (brecha): eso queda lejos del diseño cotidiano.\n"
+        "Salto editorial: los equipos BIM pueden usar el modelo como puente.\n"
+        "No afirmado: que la fuente prescriba un flujo BIM."
+    )
+    with patch("worker.tasks.editorial_create_shortlist.config") as mock_cfg, patch(
+        "worker.tasks.editorial_create_shortlist.notion_client"
+    ) as mock_nc:
+        mock_cfg.NOTION_SHORTLIST_DS_ID = _DS_ID
+        result = handle_editorial_create_shortlist_alternativa(
+            _valid_input(dry_run=True, cadena_tesis=cadena)
+        )
+
+    assert result["ok"] is True
+    preview = result["properties_preview"]["cadena_tesis"]["rich_text"][0]["text"]["content"]
+    assert preview.startswith("Evidencia (fuente):")
+    assert "Salto editorial:" in preview
+    mock_nc.query_database.assert_not_called()
+
+
 def test_concrete_piece_creates_row_with_resultado_revision_pendiente():
     from worker.tasks.editorial_create_shortlist import (
         handle_editorial_create_shortlist_alternativa,

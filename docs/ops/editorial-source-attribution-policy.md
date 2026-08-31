@@ -51,6 +51,8 @@ If a claim is presented as evidence (not opinion or hypothesis), it must be trac
 - The signal can be used as **inspiration** or framed as an **editorial hypothesis**.
 - It must NOT be presented as a cited factual claim.
 - It must be clearly marked in the extraction matrix as `inferencia` or `hipotesis`.
+  On V1 Shortlist that matrix is the property `cadena_tesis` (four labelled lines:
+  Evidencia / Inferencia / Salto editorial / No afirmado).
 
 ### 5. Contextual References
 

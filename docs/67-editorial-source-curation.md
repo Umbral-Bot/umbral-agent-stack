@@ -175,10 +175,14 @@ final), cada alternativa debe declarar ademas de los campos §5:
 - **fuente = URL de la pieza concreta** (`item_url`), nunca la home/feed de la
   organizacion (una home es `contextual_reference`, no citable; ver
   `docs/ops/editorial-source-attribution-policy.md`).
+- **cadena de la tesis** — cuatro lineas: evidencia de fuente, inferencia de
+  brecha, salto editorial, no afirmado. La premisa es el salto condensado
+  sin voz de operador.
 
 `rick-qa` rechaza la alternativa si falta el pie de estructura de discurso, si la
-fuente citada es una home en vez de la pieza, o si el arco embebe metadata de
-proceso (`blocked_arco_process_metadata`; ver contrato §3).
+fuente citada es una home en vez de la pieza, si el arco o la premisa embebe
+metadata de proceso (`blocked_arco_process_metadata`), o si `cadena_tesis`
+falta o esta malformada (`blocked_cadena_tesis`; ver contrato §3).
 
 ---
 

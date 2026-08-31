@@ -101,7 +101,16 @@ campos de curado existentes ([docs/67 §5](../67-editorial-source-curation.md),
    reglas #5/#6/#7). Ejemplo negativo real: CAND-OLA3-03 usó
    `buildingsmart.org` (home) como fuente — **no conforme**.
 
-Estas tres exigencias se propagan a: [docs/67](../67-editorial-source-curation.md),
+4. **Cadena de la tesis** (`cadena_tesis`, 2026-08-31) — árbol lineal para que
+   David u otro agente valide cómo se formuló el salto editorial. No es una
+   DB nueva ni una relation de Notion. Cuatro líneas, en este orden:
+   `Evidencia (fuente):` / `Inferencia (brecha):` / `Salto editorial:` /
+   `No afirmado:`. Evidencia tiene que poder sostenerse con `fuente_pieza_url`.
+   El salto no puede colarse en Evidencia. `premisa` es el salto condensado
+   sin voz de operador (`la editorial propone`, `proponemos`). Si falta o
+   está malformado, `rick-qa` rechaza con `blocked_cadena_tesis`.
+
+Estas exigencias se propagan a: [docs/67](../67-editorial-source-curation.md),
 [docs/68](../68-editorial-phase-1-manual.md),
 [shortlist-format.md](../../openclaw/workspace-templates/skills/editorial-source-curation/references/shortlist-format.md),
 la SKILL `editorial-source-curation`, y el payload/ROLE de `rick-editorial`
@@ -226,7 +235,8 @@ bidireccional continua.
 | `topic_key` | rich_text | Tema normalizado para dedupe (fila J) |
 | `arco_narrativo` | rich_text | Arco narrativo (obligatorio, §3) |
 | `estructura_discurso` | rich_text | Pie de estructura de discurso usado (obligatorio, §3) |
-| `premisa` | rich_text | Tesis condensada 1-2 frases |
+| `premisa` | rich_text | Tesis condensada 1-2 frases (salto, sin voz de operador) |
+| `cadena_tesis` | rich_text | Árbol evidencia / inferencia / salto / no afirmado (obligatorio en V1 nuevas, §3.4) |
 | `fuente_pieza_url` | url | URL de la PIEZA concreta (obligatorio, no home) |
 | `fuente_tipo` | select | primary_source / original_article / official_doc / analysis_source / discovery_source / contextual_reference |
 | `fuente_discovery_url` | url | Home/feed de descubrimiento — trace interno, no citable |

@@ -50,13 +50,15 @@ database:
       title "Alternativas / Shortlist" confirmed, 0 rows, and every property
       name/type below matches this file exactly (including select option
       values for Resultado revisión, fuente_tipo, canal_sugerido,
-      dedupe_status, error_kind).
+      dedupe_status, error_kind). Property `cadena_tesis` (rich_text) added
+      live 2026-08-31 (David GO; ADD COLUMN on collection
+      5d9ca959-1783-4b99-af59-a0ca535fff08).
 
   description: >
     Superficie V1 de curado: alternativas propuestas por Rick (arco narrativo +
-    pie de estructura de discurso + fuente-pieza, contrato §3), revisadas por
-    David vía HITL-1 (contrato §4). Al `Aprobar`, promueve (write vía
-    Worker/core, ADR-011 #1) una fila a Publicaciones. Co-ubicada con
+    pie de estructura de discurso + cadena de la tesis + fuente-pieza, contrato
+    §3), revisadas por David vía HITL-1 (contrato §4). Al `Aprobar`, promueve
+    (write vía Worker/core, ADR-011 #1) una fila a Publicaciones. Co-ubicada con
     Publicaciones bajo el mismo parent (decisión D1, locked 2026-07-22).
 
 # ---------------------------------------------------------------------------
@@ -114,7 +116,21 @@ properties:
   - name: premisa
     type: rich_text
     required: false
-    description: Tesis condensada en 1-2 frases operativas.
+    description: >
+      Tesis condensada en 1-2 frases operativas — misma sustancia que
+      `cadena_tesis` "Salto editorial", sin voz de operador (`la editorial
+      propone`, `proponemos`, `tesis editorial`).
+
+  - name: cadena_tesis
+    type: rich_text
+    required: false
+    description: >
+      Árbol lineal de cómo se formuló el salto editorial (HITL / QA).
+      Cuatro líneas obligatorias en este orden: "Evidencia (fuente):",
+      "Inferencia (brecha):", "Salto editorial:", "No afirmado:".
+      Live property added 2026-08-31 (David GO; MCP ADD COLUMN).
+      Vacío en filas anteriores a esa fecha. QA rechaza nuevas V1
+      malformadas (`blocked_cadena_tesis`).
 
   # -- Source (contrato §3, regla fuente-pieza) --
 

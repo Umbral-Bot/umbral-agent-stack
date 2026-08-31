@@ -106,8 +106,9 @@ Por cada item:
 
 La shortlist/alternativas del norte 2026-07-22 exige, por alternativa: arco
 narrativo (trayectoria en prosa, sin etiquetas de proceso), pie de estructura de
-discurso explicito (ahi si van las etiquetas) y fuente = URL de la pieza
-concreta (no home). La revision humana (HITL-1) tiene **cuatro salidas**:
+discurso explicito (ahi si van las etiquetas), cadena de la tesis (evidencia /
+inferencia / salto / no afirmado) y fuente = URL de la pieza concreta (no home).
+La revision humana (HITL-1) tiene **cuatro salidas**:
 
 - **Archivar** — no procede; se conserva como historial neutro (≠ Descartar).
 - **Observar** — sigue en revision; comentarios de Notion sugieren cambios.

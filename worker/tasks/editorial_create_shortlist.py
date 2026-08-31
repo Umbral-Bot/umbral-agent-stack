@@ -81,6 +81,8 @@ def _build_shortlist_properties(input_data: Dict[str, Any]) -> Dict[str, Any]:
         props["topic_key"] = {"rich_text": _rt(input_data["topic_key"], 200)}
     if input_data.get("premisa"):
         props["premisa"] = {"rich_text": _rt(input_data["premisa"], 500)}
+    if input_data.get("cadena_tesis"):
+        props["cadena_tesis"] = {"rich_text": _rt(input_data["cadena_tesis"], 2000)}
     if input_data.get("fuente_tipo"):
         props["fuente_tipo"] = {"select": {"name": input_data["fuente_tipo"]}}
     if input_data.get("fuente_discovery_url"):
@@ -100,7 +102,7 @@ def handle_editorial_create_shortlist_alternativa(input_data: Dict[str, Any]) ->
     Input:
         alternativa_id, titulo, arco_narrativo, estructura_discurso,
         fuente_pieza_url (str, required).
-        topic_key, premisa, fuente_tipo, fuente_discovery_url,
+        topic_key, premisa, cadena_tesis, fuente_tipo, fuente_discovery_url,
         canal_sugerido (str, optional), score_alineacion (number, optional).
         dry_run (bool, optional): validate every guard and return
             properties_preview without calling Notion.

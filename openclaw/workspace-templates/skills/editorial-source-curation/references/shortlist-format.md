@@ -35,6 +35,8 @@ concreta (no home). Contrato: `docs/ops/editorial-norte-hitl-contract-2026-07-22
 - **why now:**
 - **arco narrativo:** (trayectoria en prosa; sin etiquetas de proceso — no "claim", no "tesis editorial")
 - **estructura de discurso usada:** `[hipotesis, introduccion, argumento 1, argumento 2, contraargumento, contra-contraargumento, conclusion]`  (default; declarar el usado; acá sí van las etiquetas; no recontar el arco)
+- **cadena de la tesis:** `Evidencia (fuente):` / `Inferencia (brecha):` / `Salto editorial:` / `No afirmado:`
+- **premisa:** salto condensado, sin "la editorial propone"
 - **angle options:**
 - **risks or gaps:**
 - **recommended next step:**

@@ -22,7 +22,7 @@ Rick QA is the validation layer. It verifies that work produced by `rick-deliver
 - Declare explicitly what is strong, what is weak, and what residual risk remains.
 - Block a delivery from being marked "done" if evidence is insufficient.
 - For editorial candidates, distinguish "schema/source safe" from "sounds like David"; do not approve voice solely by checklist.
-- For V1 alternativas (Shortlist, pre-HITL-1), validate structural completeness — `arco_narrativo`, `estructura_discurso`, `fuente_pieza_url` (concrete piece, not a home/feed) — before David's HITL-1 review; reject if any is missing or malformed, or if `arco_narrativo` embeds process-stage labels (`blocked_arco_process_metadata`).
+- For V1 alternativas (Shortlist, pre-HITL-1), validate structural completeness — `arco_narrativo`, `estructura_discurso`, `cadena_tesis`, `fuente_pieza_url` (concrete piece, not a home/feed) — before David's HITL-1 review; reject if any is missing or malformed, if `arco_narrativo`/`premisa` embed process-stage labels or operator voice (`blocked_arco_process_metadata`), or if `cadena_tesis` is missing/malformed (`blocked_cadena_tesis`).
 
 ## Boundaries — what this agent does NOT do
 
@@ -105,6 +105,15 @@ reject even when the three OBLIGATORIO fields are filled and the source URL is c
 - [ ] `estructura_discurso` **may and should** use labelled stages (default bracket list,
       or a declared alternative such as `claim de fuente → brecha operativa → tesis
       editorial → aplicación`). Do not reject for labels in this field.
+- [ ] `premisa` restates the editorial salto without operator voice. Reject the same
+      stage labels and phrases such as "la editorial propone", "proponemos",
+      "como tesis editorial".
+
+**Reject the alternativa (structural: `blocked_cadena_tesis`) if `cadena_tesis` is
+missing, lacks the four prefixes in order, or smuggles the salto into Evidencia.**
+The four prefixes: `Evidencia (fuente):` / `Inferencia (brecha):` / `Salto editorial:` /
+`No afirmado:`. Evidencia must be supportable by `fuente_pieza_url`. Do not apply
+`blocked_arco_process_metadata` to `cadena_tesis` — labelled audit language belongs there.
 
 **Reject the alternativa (structural: `blocked_source_not_concrete`) if:**
 
@@ -138,10 +147,11 @@ Structural QA verdicts:
 
 | Verdict | Meaning |
 | --- | --- |
-| `structural: pass` | All three OBLIGATORIO fields present; source is a concrete-piece URL; `arco_narrativo` has no process-stage labels. |
+| `structural: pass` | OBLIGATORIO fields present; source is a concrete-piece URL; `arco_narrativo`/`premisa` have no process-stage labels or operator voice; `cadena_tesis` has the four labelled lines. |
 | `structural: blocked_missing_field` | `arco_narrativo` and/or `estructura_discurso` and/or `fuente_pieza_url` is missing. |
 | `structural: blocked_source_not_concrete` | `fuente_pieza_url` is a home/feed URL, not the concrete piece. |
-| `structural: blocked_arco_process_metadata` | `arco_narrativo` (or `Título` / `premisa`) embeds process-stage labels (`claim`, `tesis editorial`, `HITL`, `V1`, …). Labels belong in `estructura_discurso` only. |
+| `structural: blocked_arco_process_metadata` | `arco_narrativo` (or `Título` / `premisa`) embeds process-stage labels or operator voice (`claim`, `tesis editorial`, `la editorial propone`, `HITL`, `V1`, …). Labels belong in `estructura_discurso`; the decision tree belongs in `cadena_tesis`. |
+| `structural: blocked_cadena_tesis` | `cadena_tesis` missing, missing a required prefix, or Evidencia restates the salto. |
 
 QA can mark `structural: pass` while still noting non-blocking concerns (templated arc,
 no negative-examples match found, etc.) in the report.

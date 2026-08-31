@@ -98,6 +98,7 @@ def _read_shortlist_fields(page: Dict[str, Any]) -> Dict[str, Any]:
         "resultado_revision": get("Resultado revisión"),
         "promovido_a": get("promovido_a") or [],
         "premisa": get("premisa"),
+        "cadena_tesis": get("cadena_tesis"),
         "arco_narrativo": get("arco_narrativo"),
         "estructura_discurso": get("estructura_discurso"),
         "fuente_pieza_url": get("fuente_pieza_url"),
@@ -133,8 +134,10 @@ def _build_publicacion_properties(shortlist_page_id: str, fields: Dict[str, Any]
         notes_parts.append(f"Arco narrativo: {fields['arco_narrativo']}")
     if fields.get("estructura_discurso"):
         notes_parts.append(f"Estructura de discurso: {fields['estructura_discurso']}")
+    if fields.get("cadena_tesis"):
+        notes_parts.append(f"Cadena de la tesis: {fields['cadena_tesis']}")
     if notes_parts:
-        props["Notas"] = {"rich_text": _rt("\n\n".join(notes_parts), 2000)}
+        props["Notas"] = {"rich_text": _rt("\n\n".join(notes_parts), 4000)}
 
     return props
 

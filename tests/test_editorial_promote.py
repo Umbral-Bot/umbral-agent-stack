@@ -38,6 +38,7 @@ def _shortlist_page(
     premisa="Tesis condensada.",
     arco_narrativo="De X a Y tensionando Z.",
     estructura_discurso="Estructura de discurso usada: [hipótesis, ...]",
+    cadena_tesis="",
     fuente_pieza_url="https://example.com/piece",
     canal_sugerido="blog",
 ):
@@ -51,6 +52,7 @@ def _shortlist_page(
             "premisa": _rich_text_prop(premisa),
             "arco_narrativo": _rich_text_prop(arco_narrativo),
             "estructura_discurso": _rich_text_prop(estructura_discurso),
+            "cadena_tesis": _rich_text_prop(cadena_tesis),
             "fuente_pieza_url": _url_prop(fuente_pieza_url),
             "canal_sugerido": _select_prop(canal_sugerido),
         },
@@ -228,7 +230,12 @@ def test_creates_publicacion_and_writes_back_relation():
         "worker.tasks.editorial_promote.notion_client"
     ) as mock_nc:
         mock_cfg.NOTION_PUBLICACIONES_DB_ID = "pub-db"
-        mock_nc.get_page.return_value = _shortlist_page()
+        mock_nc.get_page.return_value = _shortlist_page(
+            cadena_tesis=(
+                "Evidencia (fuente): X.\nInferencia (brecha): Y.\n"
+                "Salto editorial: Z.\nNo afirmado: W."
+            )
+        )
         mock_nc.query_database.return_value = []
         mock_nc.create_database_page.return_value = {
             "page_id": "new-pub-page",
@@ -259,6 +266,7 @@ def test_creates_publicacion_and_writes_back_relation():
     assert props["Fuente primaria"] == {"url": "https://example.com/piece"}
     assert "Arco narrativo" in props["Notas"]["rich_text"][0]["text"]["content"]
     assert "Estructura de discurso" in props["Notas"]["rich_text"][0]["text"]["content"]
+    assert "Cadena de la tesis" in props["Notas"]["rich_text"][0]["text"]["content"]
 
     mock_nc.update_page_properties.assert_called_once_with(
         page_id_or_url="shortlist-1",

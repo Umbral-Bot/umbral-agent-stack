@@ -42,9 +42,11 @@ estructura_discurso: ""        # "Estructura de discurso usada: [hipótesis, int
                                 #  pero el pie nunca puede omitirse). Acá SÍ van las etiquetas.
                                 #  No recontar el arco después de los dos puntos.
 fuente_pieza_url: ""           # URL de la PIEZA concreta (item_url) — NUNCA la home/feed
+cadena_tesis: ""               # Evidencia (fuente): / Inferencia (brecha): /
+                                # Salto editorial: / No afirmado:
 # --- fin OBLIGATORIO ---
 
-premisa: ""                    # tesis condensada en 1-2 frases operativas
+premisa: ""                    # salto condensado, SIN "la editorial propone"
 fuente_tipo: ""                # primary_source | original_article | official_doc |
                                 # analysis_source | discovery_source | contextual_reference
 fuente_discovery_url: ""       # home/feed de descubrimiento — trace interno, NO citable
@@ -63,6 +65,8 @@ Before handing an alternativa to `rick-qa` or David for HITL-1:
 - [ ] `arco_narrativo` is present and describes an actual trajectory, not a single loose angle, and without process-stage labels. **OBLIGATORIO.**
 - [ ] `estructura_discurso` is present with the labelled discourse structure actually used (map, not a retelling of the arc). **OBLIGATORIO.**
 - [ ] `fuente_pieza_url` is the concrete-piece URL, never a home/feed page. **OBLIGATORIO.**
+- [ ] `cadena_tesis` has the four labelled lines; evidencia does not restate the salto. **OBLIGATORIO.**
+- [ ] `premisa` restates the salto without operator voice. **OBLIGATORIO si se llena.**
 - [ ] `Resultado revisión` is `Pendiente` — never set by `rick-editorial`.
 - [ ] Optional but recommended: consult the negative-examples store
       (`python scripts/editorial/sync_negative_examples.py --check-topic-key "<topic>" --check-error-kind <kind>`)

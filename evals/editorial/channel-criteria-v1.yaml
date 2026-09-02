@@ -14,6 +14,20 @@ regla_voz_umbral:
   - No inventar datos, cifras, normas, benchmarks ni estudios en piezas de opinión sin fuente primaria.
   - 'Cierre preferente para esta línea editorial: "Primero claridad. Después velocidad."'
 
+# Contrato de cierre (2026-09-02). Vale para todo canal que lleve cierre
+# canónico y lo aplica `scripts/editorial/validate_editorial_copy.py` como
+# error, no como aviso. Origen: el post live
+# `bim-carbono-ciclo-de-vida-diseno`, donde la dirección de RICS quedó cruda y
+# el eslogan pegado a ella al final de un muro de párrafos.
+cierre_y_fuente:
+  fuente_como_hipervinculo: true          # [texto](url), nunca la URL cruda
+  cierre_canonico_ultimo: true            # el eslogan es la última línea
+  separacion_antes_del_cierre: linea_en_blanco_o_hr
+  ejemplo: |
+    Fuente: [RICS, Whole Life Carbon Assessment](https://www.rics.org/...)
+
+    Primero claridad. Después velocidad.
+
 linkedin:
   gancho: concreto
   longitud_objetivo_chars: [500, 700]
@@ -39,6 +53,16 @@ linkedin_empresa:
 blog:
   estructura: clara sin relleno
   parrafo: una idea nueva por párrafo
+  # Formato de lectura (2026-09-02). El cuerpo es markdown: H2, blockquote y hr
+  # son bienvenidos, no defectos. Los subtítulos son operativos (la mesa de
+  # revisión, la metodología frente al trabajo cotidiano, cómo empezar), nunca
+  # jerga de proceso.
+  formato_markdown:
+    h2_subtitulos: [2, 4]
+    blockquote: una sola cita, tomada del propio texto
+    hr_permitido: true
+    parrafos: cortos, con aire entre bloques
+    prohibido_en_subtitulos: [HITL, V1, V2, payload, alternativa, candidato]
   escenas_aec:
     - modelo
     - interferencias

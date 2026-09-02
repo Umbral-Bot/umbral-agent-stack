@@ -18,6 +18,7 @@ Run with:
     WORKER_TOKEN=test python -m pytest tests/test_editorial_publish.py -v
 """
 
+import base64
 import json
 import urllib.error
 from io import BytesIO
@@ -118,7 +119,7 @@ def _clean_env(monkeypatch):
     monkeypatch.setenv("WORKER_TOKEN", "wt-456")
     monkeypatch.delenv("EDITORIAL_BLOG_CANONICAL_BASE_URL", raising=False)
     # RAG hook env off by default → deterministic skip unless a test sets it.
-    for _k in (*_RAG_ENV, "EDITORIAL_RAG_INDEX_NAME"):
+    for _k in (*_RAG_ENV, "EDITORIAL_RAG_INDEX_NAME", "EDITORIAL_BLOG_ASSET_UPLOAD"):
         monkeypatch.delenv(_k, raising=False)
 
 
@@ -1663,3 +1664,241 @@ class TestMissingRequiredFieldsHelper:
             "body_markdown",
             "notion_page_id",
         ]
+
+
+# ======================================================================
+# Hero asset — a Drive share link is a viewer page, never an image
+# ======================================================================
+
+DRIVE_HERO = "https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWxYz012345/view?usp=drivesdk"
+_PNG = b"\x89PNG\r\n\x1a\n" + b"fake-bytes"
+
+
+def _drive_hero_payload(**overrides: Any) -> Dict[str, Any]:
+    return _authorized_payload(hero_image_url=DRIVE_HERO, **overrides)
+
+
+class TestHeroAsset:
+    """The blog never receives a Drive URL as its hero, and never silently
+    publishes without one: it either ships the downloaded PNG or declines."""
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_drive_hero_without_asset_sink_declines_before_network(self, mock_urlopen):
+        result = handle_web_publish_editorial_post(
+            {"payload": _drive_hero_payload(), "telegram_confirmed": True}
+        )
+        assert result["ok"] is False
+        assert result["error"] == "hero_asset_sink_unavailable"
+        assert result["would_publish"] is False
+        assert result["hero_asset"]["input_hero"] == "drive"
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_publish_without_hero_strips_the_drive_url(self, mock_urlopen):
+        mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
+        result = handle_web_publish_editorial_post(
+            {
+                "payload": _drive_hero_payload(),
+                "telegram_confirmed": True,
+                "publish_without_hero": True,
+            }
+        )
+        assert result["ok"] is True
+        sent = json.loads(mock_urlopen.call_args[0][0].data.decode("utf-8"))
+        assert sent["hero_image_url"] == ""
+        assert "drive.google.com" not in json.dumps(sent)
+        assert result["hero_asset"]["stripped"] is True
+        assert result["hero_asset"]["stripped_reason"] == "drive_hero_without_asset_sink"
+
+    @patch("worker.tasks.google_drive.download_drive_png", return_value=_PNG)
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_asset_sink_ships_the_png_and_never_the_link(
+        self, mock_urlopen, mock_download, monkeypatch
+    ):
+        monkeypatch.setenv("EDITORIAL_BLOG_ASSET_UPLOAD", "true")
+        hero_url = "https://cdn.umbralbim.io/editorial-posts/assets/ia-en-coordinacion-bim.png"
+        mock_urlopen.return_value = FakeHTTPResponse(
+            200, _ok_function_body(hero_image_url=hero_url)
+        )
+        result = handle_web_publish_editorial_post(
+            {"payload": _drive_hero_payload(), "telegram_confirmed": True}
+        )
+        assert result["ok"] is True
+        mock_download.assert_called_once_with(DRIVE_HERO)
+        sent = json.loads(mock_urlopen.call_args[0][0].data.decode("utf-8"))
+        assert sent["hero_image_url"] == ""
+        assert "drive.google.com" not in json.dumps(sent)
+        assert base64.b64decode(sent["hero_image_png_base64"]) == _PNG
+        assert result["hero_image_url"] == hero_url
+        assert result["hero_asset"]["download"] == "ok"
+
+    @patch(
+        "worker.tasks.google_drive.download_drive_png",
+        side_effect=ValueError("Downloaded editorial hero is not a PNG"),
+    )
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_download_failure_is_explicit_not_silent(
+        self, mock_urlopen, _mock_download, monkeypatch
+    ):
+        monkeypatch.setenv("EDITORIAL_BLOG_ASSET_UPLOAD", "1")
+        result = handle_web_publish_editorial_post(
+            {"payload": _drive_hero_payload(), "telegram_confirmed": True}
+        )
+        assert result["ok"] is False
+        assert result["error"] == "hero_image_download_failed"
+        assert result["would_publish"] is False
+        assert "not a PNG" in result["hero_asset"]["download_error"]
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_public_https_hero_is_forwarded_untouched(self, mock_urlopen):
+        mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
+        result = handle_web_publish_editorial_post(
+            {"payload": _authorized_payload(), "telegram_confirmed": True}
+        )
+        assert result["ok"] is True
+        sent = json.loads(mock_urlopen.call_args[0][0].data.decode("utf-8"))
+        assert sent["hero_image_url"] == "https://cdn.umbralbim.io/heroes/ia-bim.jpg"
+        assert "hero_image_png_base64" not in sent
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_dry_run_previews_the_decline(self, mock_urlopen):
+        result = handle_web_publish_editorial_post(
+            {
+                "payload": _drive_hero_payload(),
+                "telegram_confirmed": True,
+                "dry_run": True,
+            }
+        )
+        assert result["ok"] is False
+        assert result["error"] == "hero_asset_sink_unavailable"
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.tasks.google_drive.download_drive_png", return_value=_PNG)
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_dry_run_verifies_the_hero_without_shipping_it(
+        self, mock_urlopen, mock_download, monkeypatch
+    ):
+        monkeypatch.setenv("EDITORIAL_BLOG_ASSET_UPLOAD", "true")
+        result = handle_web_publish_editorial_post(
+            {
+                "payload": _drive_hero_payload(),
+                "telegram_confirmed": True,
+                "dry_run": True,
+            }
+        )
+        assert result["ok"] is True
+        assert result["hero_asset"]["download"] == "ok"
+        mock_download.assert_called_once_with(DRIVE_HERO)
+        # Verified, not shipped: the readiness check performs no publish call
+        # and never carries the image in its preview.
+        assert "hero_image_png_base64" not in result["payload"]
+        mock_urlopen.assert_not_called()
+
+    @patch(
+        "worker.tasks.google_drive.download_drive_png",
+        side_effect=ValueError("Google Drive download failed for the editorial hero"),
+    )
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_dry_run_surfaces_a_broken_hero(self, mock_urlopen, _mock_download, monkeypatch):
+        monkeypatch.setenv("EDITORIAL_BLOG_ASSET_UPLOAD", "true")
+        result = handle_web_publish_editorial_post(
+            {
+                "payload": _drive_hero_payload(),
+                "telegram_confirmed": True,
+                "dry_run": True,
+            }
+        )
+        assert result["ok"] is False
+        assert result["error"] == "hero_image_download_failed"
+        mock_urlopen.assert_not_called()
+
+    @patch("worker.tasks.google_drive.download_drive_png", return_value=_PNG)
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_function_that_ignores_the_asset_is_not_a_success(
+        self, mock_urlopen, _mock_download, monkeypatch
+    ):
+        # A build without the assets route drops the unknown key and answers 200.
+        monkeypatch.setenv("EDITORIAL_BLOG_ASSET_UPLOAD", "true")
+        mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
+        result = handle_web_publish_editorial_post(
+            {"payload": _drive_hero_payload(), "telegram_confirmed": True}
+        )
+        assert result["ok"] is False
+        assert result["error"] == "hero_asset_not_stored"
+        assert result["published"] is True
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_legacy_http_hero_keeps_publishing(self, mock_urlopen):
+        # Only Drive links take the new path; a legacy http hero is untouched.
+        mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
+        result = handle_web_publish_editorial_post(
+            {
+                "payload": _authorized_payload(hero_image_url="http://cdn.example.com/h.jpg"),
+                "telegram_confirmed": True,
+            }
+        )
+        assert result["ok"] is True
+        sent = json.loads(mock_urlopen.call_args[0][0].data.decode("utf-8"))
+        assert sent["hero_image_url"] == "http://cdn.example.com/h.jpg"
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    @patch("worker.notion_client.get_page")
+    def test_notion_alt_selection_reaches_the_hero_decline(
+        self, mock_get_page, mock_urlopen
+    ):
+        # End to end from the v2 visual gate: Alt 4 resolves to the Drive
+        # canonical, which must never be forwarded to the blog.
+        page = _notion_page()
+        page["properties"].update(
+            {
+                "Selección imagen": {"type": "select", "select": {"name": "Alt 4"}},
+                "Estado imagen": {"type": "select", "select": {"name": "Seleccionada"}},
+                "imagen_alt_4_url": {"type": "url", "url": DRIVE_HERO},
+                "Visual asset URL": {"type": "url", "url": DRIVE_HERO},
+            }
+        )
+        mock_get_page.return_value = page
+        result = handle_web_publish_editorial_post(
+            {
+                "notion_page_id": "22222222-2222-2222-2222-222222222222",
+                "telegram_confirmed": True,
+            }
+        )
+        assert result["ok"] is False
+        assert result["error"] == "hero_asset_sink_unavailable"
+        assert result["gates"]["visual_asset"]["ready"] is True
+        mock_urlopen.assert_not_called()
+
+    def test_worker_and_function_share_the_same_png_cap(self):
+        # Cross-process contract: the worker must not send what the function
+        # rejects. Both constants live in different deployables.
+        import re as _re
+        from pathlib import Path as _Path
+
+        from worker.tasks.google_drive import MAX_EDITORIAL_HERO_PNG_BYTES
+
+        source = _Path("functions/editorial-publish/function_app.py").read_text(
+            encoding="utf-8"
+        )
+        match = _re.search(r"MAX_HERO_PNG_BYTES = (\d+) \* 1024 \* 1024", source)
+        assert match, "function_app.py no longer declares MAX_HERO_PNG_BYTES"
+        assert int(match.group(1)) * 1024 * 1024 == MAX_EDITORIAL_HERO_PNG_BYTES
+
+    @patch("worker.tasks.editorial_publish.urllib.request.urlopen")
+    def test_body_markdown_is_forwarded_verbatim(self, mock_urlopen):
+        mock_urlopen.return_value = FakeHTTPResponse(200, _ok_function_body())
+        body = (
+            "## Uno\n\nTexto.\n\n> Una cita.\n\n---\n\n"
+            "Fuente: [RICS](https://www.rics.org/x)\n\n"
+            "Primero claridad. Después velocidad."
+        )
+        handle_web_publish_editorial_post(
+            {
+                "payload": _authorized_payload(body_markdown=body),
+                "telegram_confirmed": True,
+            }
+        )
+        sent = json.loads(mock_urlopen.call_args[0][0].data.decode("utf-8"))
+        assert sent["body_markdown"] == body
+        assert "<br" not in sent["body_markdown"]

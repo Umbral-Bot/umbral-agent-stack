@@ -430,6 +430,16 @@ A candidate is ready for QA handoff when:
 - [ ] `canal` and `tipo_de_contenido` are valid per schema.
 - [ ] If David-facing copy is involved, communication review is complete or explicitly marked as pending.
 - [ ] Public copy avoids unnatural terms flagged by the communication director, including `escalacion` as a noun.
+- [ ] `copy_blog` is markdown with reading format: 2 to 4 short operational `##`
+      subtitles (never process jargon in a subtitle), one single `>` quote taken
+      from a sentence already in the text, short paragraphs, `---` allowed.
+- [ ] Every piece closes in this order: a `Fuente:` line whose address is a
+      markdown hyperlink with visible text, never a bare URL, then a blank line
+      or `---`, then the canonical slogan alone as the last line. The slogan is
+      a brand sign-off, not the continuation of the argument, and never shares a
+      paragraph with the source. Enforced by
+      `scripts/editorial/validate_editorial_copy.py`; QA fails the piece
+      otherwise.
 - [ ] The candidate is ready for QA validation, not for publication.
 
 ## Activation conditions

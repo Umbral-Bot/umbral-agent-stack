@@ -78,13 +78,24 @@ def test_fail_automatico_detected():
 
 
 def test_newsletter_sin_cierre_canonico_ya_no_pasa_callado():
+    # Desde 2026-09-02 el cierre es contrato duro: falta = error, no aviso.
     result = validate_copy_text("Cuerpo de newsletter sin el cierre.", channel="newsletter")
-    assert any("cierre canónico" in w for w in result.warnings), result.warnings
+    assert not result.ok
+    assert any("cierre canónico" in e for e in result.errors), result.errors
 
 
 def test_newsletter_con_cierre_canonico_no_avisa():
-    result = validate_copy_text(f"Cuerpo de newsletter. {_CIERRE}", channel="newsletter")
+    # El cierre va solo en su propia última línea, separado por una línea en
+    # blanco: compartir línea con el cuerpo es justamente lo que se corrigió.
+    result = validate_copy_text(f"Cuerpo de newsletter.\n\n{_CIERRE}", channel="newsletter")
+    assert result.ok, result.errors
     assert not any("cierre canónico" in w for w in result.warnings), result.warnings
+
+
+def test_newsletter_con_cierre_pegado_al_cuerpo_falla():
+    result = validate_copy_text(f"Cuerpo de newsletter.\n{_CIERRE}", channel="newsletter")
+    assert not result.ok
+    assert any("pegado" in e for e in result.errors), result.errors
 
 
 def test_canal_desconocido_es_error():
@@ -95,10 +106,10 @@ def test_canal_desconocido_es_error():
 
 def test_canal_nuevo_hereda_el_chequeo_de_cierre():
     # El default es "requiere cierre": un canal sin criterios acumula el error
-    # de canal Y el aviso de cierre, en vez de salir limpio como antes.
+    # de canal Y el del cierre, en vez de salir limpio como antes.
     result = validate_copy_text("Texto sin cierre.", channel="tiktok")
     assert not result.ok
-    assert any("cierre canónico" in w for w in result.warnings), result.warnings
+    assert any("cierre canónico" in e for e in result.errors), result.errors
 
 
 def test_linkedin_empresa_sigue_exento_del_cierre():

@@ -13,6 +13,116 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 _BENCHMARK_PATH = _REPO_ROOT / "evals" / "editorial" / "benchmark-umbral-voice-v1.yaml"
 _CHANNEL_PATH = _REPO_ROOT / "evals" / "editorial" / "channel-criteria-v1.yaml"
 
+CIERRE_CANONICO = "Primero claridad. Después velocidad."
+
+# A source line is the "Fuente:" row that closes every piece. The URL there must
+# be a markdown hyperlink with visible text, never the bare address: a raw URL
+# reads as a paste, breaks on LinkedIn, and glues itself to the closing slogan.
+_SOURCE_LINE_RE = re.compile(r"^\s*fuente\s*:\s*(?P<rest>.+?)\s*$", re.IGNORECASE)
+_MD_LINK_RE = re.compile(r"\[(?P<text>[^\]]+)\]\((?P<url>https?://[^)\s]+)\)")
+_RAW_URL_RE = re.compile(r"(?<![(\]])\bhttps?://[^\s)\]]+")
+_HR_RE = re.compile(r"^\s*(?:-{3,}|\*{3,}|_{3,})\s*$")
+_H2_RE = re.compile(r"^\s*##\s+\S")
+_BLOCKQUOTE_RE = re.compile(r"^\s*>\s*\S")
+_FENCE_RE = re.compile(r"^\s*(?:```|~~~)")
+
+
+def _blog_structure_counts(text: str) -> tuple[int, int]:
+    """Count H2 headings and blockquote *blocks*, ignoring fenced code.
+
+    A four-line quote is one quote, and a ``##`` inside a fenced code block is a
+    code sample, not a subtitle: counting either naively turns a correct piece
+    into a warning QA learns to ignore.
+    """
+    h2 = 0
+    quote_blocks = 0
+    in_fence = False
+    in_quote = False
+    for line in text.splitlines():
+        if _FENCE_RE.match(line):
+            in_fence = not in_fence
+            in_quote = False
+            continue
+        if in_fence:
+            continue
+        if _H2_RE.match(line):
+            h2 += 1
+        if _BLOCKQUOTE_RE.match(line):
+            if not in_quote:
+                quote_blocks += 1
+            in_quote = True
+        elif not line.strip():
+            in_quote = False
+    return h2, quote_blocks
+
+
+def _closing_and_link_findings(text: str, *, requires_cierre: bool) -> tuple[list[str], list[str]]:
+    """Enforce the closing contract: hyperlinked source, then the slogan alone.
+
+    Returns ``(errors, warnings)``. Three rules, all learned from the live
+    `bim-carbono-ciclo-de-vida-diseno` post (2026-09-02), where the raw RICS
+    address and the brand slogan ran together at the end of a wall of text:
+
+    1. the ``Fuente:`` line carries ``[texto](url)``, never a bare address;
+    2. the canonical slogan is the last non-empty line of the piece;
+    3. at least one blank line or a markdown ``hr`` separates the slogan from
+       whatever precedes it, so it reads as a brand sign-off and not as the
+       continuation of the argument.
+    """
+    errors: list[str] = []
+    warnings: list[str] = []
+    lines = text.splitlines()
+    non_empty = [(i, ln) for i, ln in enumerate(lines) if ln.strip()]
+
+    source_urls: set[str] = set()
+    for _, line in non_empty:
+        m = _SOURCE_LINE_RE.match(line)
+        if not m:
+            continue
+        rest = m.group("rest")
+        linked = _MD_LINK_RE.findall(rest)
+        for raw in _RAW_URL_RE.findall(rest):
+            errors.append(
+                f"URL cruda en la línea Fuente ({raw[:60]}...); usar [texto](url)"
+            )
+        for _text, url in linked:
+            source_urls.add(url)
+
+    # The same source address pasted bare anywhere else is the identical defect.
+    normalized_sources = {u.rstrip("/") for u in source_urls}
+    for _, line in non_empty:
+        if _SOURCE_LINE_RE.match(line):
+            continue
+        for raw in _RAW_URL_RE.findall(line):
+            if raw.rstrip("/") in normalized_sources:
+                errors.append(f"URL de fuente cruda fuera de un hipervínculo ({raw[:60]}...)")
+
+    if not requires_cierre:
+        return errors, warnings
+
+    if CIERRE_CANONICO not in text:
+        errors.append("cierre canónico ausente o incompleto")
+        return errors, warnings
+
+    if not non_empty:
+        errors.append("cierre canónico ausente o incompleto")
+        return errors, warnings
+
+    last_idx, last_line = non_empty[-1]
+    if CIERRE_CANONICO not in last_line:
+        errors.append("el cierre canónico no es la última línea de la pieza")
+        return errors, warnings
+    if last_line.strip() != CIERRE_CANONICO:
+        warnings.append("el cierre canónico comparte línea con otro texto")
+
+    if len(non_empty) > 1:
+        gap = lines[last_idx - 1] if last_idx > 0 else ""
+        if gap.strip() and not _HR_RE.match(gap):
+            errors.append(
+                "cierre canónico pegado al bloque anterior; falta línea en blanco o hr"
+            )
+    return errors, warnings
+
 
 @dataclass
 class ValidationResult:
@@ -97,10 +207,28 @@ def validate_copy_text(
     # Por defecto todo canal lleva cierre canónico; el bloque que no lo lleve
     # tiene que decirlo. Con la lista al revés (los tres que sí lo llevaban),
     # cada canal nuevo se saltaba el chequeo sin que nadie lo notara.
-    cierre_canonico = "Primero claridad. Después velocidad."
-    if blocks.get(channel, {}).get("requiere_cierre_canonico", True):
-        if cierre_canonico not in text:
-            result.warnings.append("cierre canónico ausente o incompleto")
+    #
+    # Desde 2026-09-02 el cierre es contrato duro, no un aviso: ausente, fuera
+    # del final o pegado al bloque Fuente bloquea la pieza, igual que una URL
+    # de fuente sin hipervínculo.
+    closing_errors, closing_warnings = _closing_and_link_findings(
+        text,
+        requires_cierre=blocks.get(channel, {}).get("requiere_cierre_canonico", True),
+    )
+    if closing_errors:
+        result.ok = False
+        result.errors.extend(closing_errors)
+    result.warnings.extend(closing_warnings)
+
+    # H2, blockquote y hr son formato de lectura permitido (y esperado en blog):
+    # nada de lo anterior los penaliza. Sólo se avisa cuando se van del rango
+    # del contrato para que QA lo mire, sin bloquear piezas históricas.
+    if channel == "blog":
+        h2_count, quote_blocks = _blog_structure_counts(text)
+        if not 2 <= h2_count <= 4:
+            result.warnings.append(f"blog: {h2_count} subtítulos H2 fuera del rango [2,4]")
+        if quote_blocks > 1:
+            result.warnings.append(f"blog: {quote_blocks} citas; el contrato pide una sola")
 
     if channel == "linkedin":
         lo, hi = channel_cfg["linkedin"]["longitud_objetivo_chars"]

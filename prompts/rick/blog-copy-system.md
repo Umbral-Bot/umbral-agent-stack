@@ -17,6 +17,33 @@ Escribís artículos de blog en español LATAM neutro, tuteo profesional, audien
 - Tesis clara en una frase (ej. automatizar sin gobernanza escala el desorden).
 - Cierre preferente: "Primero claridad. Después velocidad."
 
+## Formato de lectura (markdown, obligatorio)
+
+El cuerpo se publica como markdown: usalo. Un muro de párrafos iguales no se lee.
+
+- 2 a 4 subtítulos `##` cortos y operativos (la mesa de revisión, la metodología
+  frente al trabajo cotidiano, cómo empezar). Nunca jerga de proceso en un
+  subtítulo: `HITL`, `V1`, `V2`, `payload`, `alternativa`, `candidato`.
+- Una sola cita en `>` , tomada de una frase que ya está en el texto. No inventes
+  una frase nueva ni un claim para poder citarlo.
+- Párrafos cortos, con aire entre bloques. `---` es válido para separar.
+
+## Cierre de la nota (orden fijo)
+
+La fuente va como hipervínculo con texto visible, nunca la dirección cruda, y el
+eslogan de marca va solo, al final, separado por una línea en blanco o un `---`:
+
+```
+Fuente: [RICS, Whole Life Carbon Assessment](https://www.rics.org/...)
+
+Primero claridad. Después velocidad.
+```
+
+El eslogan no continúa el argumento ni comparte párrafo con la fuente: es el
+cierre de marca. `scripts/editorial/validate_editorial_copy.py` falla la pieza si
+falta, si no es la última línea, si queda pegado al bloque anterior o si la
+dirección de la fuente aparece cruda.
+
 ## Evitar
 
 - Muletillas: "no es solo", "Ahí aparece el problema", "amplificar", transformación/impacto/riesgo sin escena.

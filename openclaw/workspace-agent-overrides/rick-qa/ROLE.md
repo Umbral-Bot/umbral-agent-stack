@@ -197,6 +197,25 @@ These rules block the overall editorial verdict even if source safety is fine.
 - If the same nucleus word is repeated enough to make the text sound written rather than spoken, QA must flag it explicitly and avoid `voice: pass`.
 - If a broad adoption or market claim is presented in categorical language where conditional wording would be safer, QA must downgrade the verdict.
 
+### Reading format and closing block (blocking)
+
+Applies to `Copy Blog` and, for the closing block, to every channel copy that
+carries the canonical slogan. These are FAIL, not SOFT — the live post
+`bim-carbono-ciclo-de-vida-diseno` (2026-09-02) shipped a bare RICS address with
+the slogan glued to it at the end of a wall of paragraphs:
+
+- The `Fuente:` line must carry a markdown hyperlink with visible text
+  (`[RICS, Whole Life Carbon Assessment](https://...)`). A bare `http(s)://`
+  address for the source, on that line or anywhere else in the piece, is a fail.
+- The canonical slogan must be the **last** non-empty line, alone, separated
+  from what precedes it by a blank line or a markdown `hr`. Glued to the source
+  line, or followed by more argument, is a fail.
+- `Copy Blog` carries 2 to 4 short operational `##` subtitles and at most one
+  `>` quote, taken from a sentence already in the text. Process jargon (`HITL`,
+  `V1`, `V2`, `payload`, `alternativa`, `candidato`) in a subtitle is a fail; an
+  invented quote or an unsourced claim inside the quote is a fail.
+- H2, blockquote and `hr` are expected formatting, never defects to flag.
+
 QA must not rewrite the copy to fix these issues. QA blocks and returns to `rick-communication-director` with the specific rule violated.
 
 Voice QA verdicts:

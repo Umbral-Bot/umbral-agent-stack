@@ -20,6 +20,8 @@ tested in ``tests/test_editorial_function_shared.py``.
 
 from __future__ import annotations
 
+import base64
+import binascii
 import json
 import logging
 import os
@@ -44,6 +46,9 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
 
 INDEX_BLOB = "index.json"
 POSTS_PREFIX = "posts"
+ASSETS_PREFIX = "assets"
+PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
+MAX_HERO_PNG_BYTES = 12 * 1024 * 1024
 _INDEX_MAX_RETRIES = 5
 
 
@@ -124,6 +129,60 @@ def _json_content_settings():
 
     # short cache; the SPA can also bust with ?v=content_hash
     return ContentSettings(content_type="application/json; charset=utf-8", cache_control="public, max-age=60")
+
+
+def _png_content_settings():
+    from azure.storage.blob import ContentSettings
+
+    # Heroes are immutable per publish: a new body means a new content_hash and
+    # a fresh upload, so a long cache is safe and keeps the SPA fast.
+    return ContentSettings(content_type="image/png", cache_control="public, max-age=31536000")
+
+
+def _write_hero_asset(container_client, slug: str, png: bytes) -> str:
+    """Store the hero PNG next to the post JSON and return its blob path.
+
+    The canonical HITL-2 asset stays in Google Drive; this is the servable copy.
+    A Drive ``/view`` link is a viewer page, not an image, so the worker sends
+    the bytes and the blog serves them from its own container.
+    """
+    blob_path = f"{ASSETS_PREFIX}/{slug}.png"
+    blob = container_client.get_blob_client(blob_path)
+    blob.upload_blob(png, overwrite=True, content_settings=_png_content_settings())
+    return blob_path
+
+
+def _hero_asset_url(blob_path: str, *, cdn_base: str, container: str) -> str:
+    """Public https URL for a stored asset, CDN first, storage account second."""
+    if cdn_base:
+        return f"{cdn_base.rstrip('/')}/{container}/{blob_path}"
+    account = _env("EDITORIAL_BLOG_STORAGE_ACCOUNT")
+    if not account:
+        return ""
+    return f"https://{account}.blob.core.windows.net/{container}/{blob_path}"
+
+
+def _decode_hero_png(payload: Dict[str, Any]) -> Optional[bytes]:
+    """Validate and decode ``hero_image_png_base64``; fail closed on garbage."""
+    raw = payload.get("hero_image_png_base64")
+    if raw in (None, ""):
+        return None
+    if not isinstance(raw, str):
+        raise PayloadError("'hero_image_png_base64' must be a base64 string")
+    # Checked on the encoded string first: decoding a 200 MB body just to reject
+    # it is how a consumption-plan worker gets OOM-killed instead of answering
+    # 400. Base64 inflates by 4/3, so this bound is exact enough to be safe.
+    if len(raw) > (MAX_HERO_PNG_BYTES // 3 + 1) * 4 + 4:
+        raise PayloadError(f"hero PNG over the {MAX_HERO_PNG_BYTES} byte cap")
+    try:
+        png = base64.b64decode(raw, validate=True)
+    except (binascii.Error, ValueError) as exc:
+        raise PayloadError("'hero_image_png_base64' is not valid base64") from exc
+    if not png.startswith(PNG_SIGNATURE):
+        raise PayloadError("'hero_image_png_base64' is not a PNG")
+    if len(png) > MAX_HERO_PNG_BYTES:
+        raise PayloadError(f"hero PNG over the {MAX_HERO_PNG_BYTES} byte cap")
+    return png
 
 
 def _read_index(container_client) -> Tuple[Optional[list], Optional[str]]:
@@ -268,18 +327,48 @@ def publish_editorial_post(req: func.HttpRequest) -> func.HttpResponse:
     cdn_base = _env("EDITORIAL_BLOG_CDN_BASE_URL")
 
     try:
+        # The hero arrives as bytes, not as a link: a Drive share URL is a viewer
+        # page and renders nothing as a blog hero. Decoded before the document is
+        # built so a malformed image is a 400, never a post with a broken hero.
+        hero_png = _decode_hero_png(payload if isinstance(payload, dict) else {})
         doc = build_post_document(payload, canonical_base_url=canonical_base, now=now_iso())
     except PayloadError as exc:
         return _json_response({"ok": False, "error": "invalid_payload", "detail": str(exc)}, 400)
 
     slug = doc["slug"]
+    hero_blob_path = None
+    container_client = None
     try:
         container_client = _get_container_client()
         _ensure_container(container_client)
+        if hero_png is not None:
+            hero_blob_path = _write_hero_asset(container_client, slug, hero_png)
+            hero_url = _hero_asset_url(
+                hero_blob_path,
+                cdn_base=cdn_base,
+                container=_env("EDITORIAL_BLOG_CONTAINER", "editorial-posts"),
+            )
+            if not hero_url:
+                return _json_response(
+                    {
+                        "ok": False,
+                        "error": "hero_asset_url_unresolvable",
+                        "detail": "set EDITORIAL_BLOG_CDN_BASE_URL or EDITORIAL_BLOG_STORAGE_ACCOUNT",
+                    },
+                    500,
+                )
+            doc["hero_image_url"] = hero_url
         blob_path = _write_post(container_client, slug, doc)
         index_updated = _upsert_index_with_retry(container_client, index_entry_from_post(doc))
     except Exception as exc:  # noqa: BLE001 — surface a clean 500 to the worker
         logger.exception("editorial publish failed for slug=%s", slug)
+        # The hero landed but the post did not: drop the orphan so the container
+        # never holds an image no published document points at.
+        if hero_blob_path and container_client is not None:
+            try:
+                container_client.get_blob_client(hero_blob_path).delete_blob()
+            except Exception:  # noqa: BLE001 — cleanup is best effort
+                logger.warning("orphan hero cleanup failed for %s", hero_blob_path)
         return _json_response({"ok": False, "error": "storage_error", "detail": str(exc)}, 500)
 
     container_name = _env("EDITORIAL_BLOG_CONTAINER", "editorial-posts")
@@ -296,6 +385,8 @@ def publish_editorial_post(req: func.HttpRequest) -> func.HttpResponse:
             "slug": slug,
             "content_hash": doc["content_hash"],
             "public_json_url": public_json_url,
+            "hero_image_url": doc["hero_image_url"],
+            "hero_blob_path": hero_blob_path,
         },
         200,
     )

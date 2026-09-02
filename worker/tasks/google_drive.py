@@ -477,6 +477,77 @@ def persist_editorial_hitl_images(
     }
 
 
+# ---------------------------------------------------------------------------
+# Download (editorial hero) — the mirror of persist_editorial_hitl_images
+# ---------------------------------------------------------------------------
+
+# The HITL-2 winner lives in Drive as ``.../file/d/<id>/view``: a viewer page,
+# not an image. Publishing that link as a blog hero renders nothing, so the
+# publish path has to fetch the actual bytes. Everything here is read-only and
+# fail-closed: an id it cannot parse, a body that is not a PNG, or a file over
+# the cap raises instead of returning something half-usable.
+MAX_EDITORIAL_HERO_PNG_BYTES = 12 * 1024 * 1024
+
+_DRIVE_FILE_PATH_RE = re.compile(r"/file/d/([A-Za-z0-9_-]{10,})")
+_DRIVE_ID_QUERY_RE = re.compile(r"[?&]id=([A-Za-z0-9_-]{10,})")
+_DRIVE_BARE_ID_RE = re.compile(r"^[A-Za-z0-9_-]{10,}$")
+
+
+def extract_drive_file_id(file_ref: str) -> str:
+    """Return the Drive file id behind a share URL, or the bare id itself.
+
+    Accepts ``https://drive.google.com/file/d/<id>/view?usp=drivesdk``,
+    ``https://drive.google.com/uc?id=<id>`` and a raw id. Anything else raises:
+    guessing an id from an unknown shape is how a publish ends up fetching the
+    wrong file.
+    """
+    ref = str(file_ref or "").strip()
+    if not ref:
+        raise ValueError("Drive file reference is empty")
+    if _DRIVE_BARE_ID_RE.match(ref):
+        return ref
+    for pattern in (_DRIVE_FILE_PATH_RE, _DRIVE_ID_QUERY_RE):
+        match = pattern.search(ref)
+        if match:
+            return match.group(1)
+    raise ValueError("Unrecognized Google Drive file reference")
+
+
+def download_drive_png(
+    file_ref: str, *, max_bytes: int = MAX_EDITORIAL_HERO_PNG_BYTES
+) -> bytes:
+    """Download one Drive file and return its bytes, PNG-validated.
+
+    Uses the same OAuth app that created the HITL batch, so it can only reach
+    files that app owns — the ``drive.file`` scope that already governs
+    ``persist_editorial_hitl_images``.
+    """
+    file_id = extract_drive_file_id(file_ref)
+    service = _build_drive_service(_get_drive_credentials())
+    try:
+        data = (
+            service.files()
+            .get_media(fileId=file_id, supportsAllDrives=True)
+            .execute()
+        )
+    except Exception as exc:
+        raise ValueError("Google Drive download failed for the editorial hero") from exc
+    try:
+        payload = bytes(data)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Google Drive returned a non-binary body") from exc
+    if not payload:
+        raise ValueError("Google Drive returned an empty file")
+    if not payload.startswith(_PNG_SIGNATURE):
+        raise ValueError("Downloaded editorial hero is not a PNG")
+    if len(payload) > max_bytes:
+        raise ValueError(
+            f"Editorial hero PNG is {len(payload)} bytes, over the {max_bytes} cap"
+        )
+    logger.info("[google_drive.editorial_hero] downloaded %d bytes", len(payload))
+    return payload
+
+
 def _ensure_reader_permission(service: Any, file_id: str, email: str) -> Dict[str, Any]:
     """Grant ``email`` reader access to ``file_id`` idempotently."""
     email_lc = email.strip().lower()

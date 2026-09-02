@@ -227,7 +227,14 @@ def test_main_dry_run_emits_worker_payload(monkeypatch, capsys, tmp_path):
 
 
 def _write_oversized_copy_yaml(tmp_path) -> Path:
-    oversized = dict(_load_cand001(), copy_blog="x " * 200_000)
+    # Keeps the closing contract (hyperlinked source + slogan alone, 2026-09-02)
+    # so this exercises the rich_text overflow path and nothing else.
+    base = _load_cand001()
+    body = "x " * 200_000 + (
+        "\n\nFuente: [buildingSMART, IDS](https://example.org/ids)"
+        "\n\nPrimero claridad. Después velocidad."
+    )
+    oversized = dict(base, copy_blog=body)
     copy_dir = tmp_path
     (copy_dir / "cand-oversize-final-copy.yaml").write_text(
         yaml.safe_dump(oversized, allow_unicode=True), encoding="utf-8"

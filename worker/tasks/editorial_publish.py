@@ -51,6 +51,7 @@ patch ``worker.tasks.editorial_publish.urllib.request.urlopen``.
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 import logging
@@ -68,6 +69,16 @@ _REQUIRED_POST_FIELDS = ("slug", "title", "body_markdown", "notion_page_id")
 _SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 _VISUAL_ALT_RE = re.compile(r"^Alt ([1-5])$")
 _DEFAULT_AUTHOR = "David Moreira"
+
+# A Drive share link is a viewer page, never an image: forwarding one as
+# ``hero_image_url`` publishes a hero that renders nothing (live post
+# `bim-carbono-ciclo-de-vida-diseno`, 2026-09-02). The canonical HITL-2 asset
+# stays in Drive — Notion keeps pointing there — but the blog gets a copy it
+# can actually serve, so the publish path downloads the PNG and hands it to the
+# function, which writes it next to the post JSON.
+_DRIVE_HOSTS = frozenset(
+    {"drive.google.com", "docs.google.com", "drive.usercontent.google.com"}
+)
 _DEFAULT_CANONICAL_BASE = "https://umbralbim.io"
 
 # Default Publicaciones property names → post fields. Override per call via
@@ -837,6 +848,125 @@ def resolve_visual_asset_urls(
 
 
 # ---------------------------------------------------------------------------
+# Hero asset — Drive link in, servable image out (never a Drive URL)
+# ---------------------------------------------------------------------------
+
+
+def _is_drive_url(url: str) -> bool:
+    host = (urlparse(url or "").hostname or "").lower()
+    return host in _DRIVE_HOSTS
+
+
+def _asset_upload_enabled() -> bool:
+    """Whether the deployed function accepts ``hero_image_png_base64``.
+
+    Off by default: the worker must not assume a function build it cannot see.
+    Turning it on without deploying the asset route would publish a post whose
+    hero silently never lands, which is the failure this whole path exists to
+    remove.
+    """
+    return (os.environ.get("EDITORIAL_BLOG_ASSET_UPLOAD") or "").strip().lower() in {
+        "1", "true", "yes", "on",
+    }
+
+
+def _prepare_hero_asset(
+    post: Dict[str, Any], input_data: Dict[str, Any], *, dry_run: bool
+) -> Dict[str, Any]:
+    """Turn the resolved hero into something the blog can actually serve.
+
+    Three outcomes, never a fourth:
+
+    - the hero is already a non-Drive ``https`` image → forwarded untouched;
+    - the hero is a Drive link and the function accepts assets → the PNG is
+      downloaded (fail-closed) and shipped as ``hero_image_png_base64`` for the
+      function to store next to the post JSON;
+    - neither of the above → the publish is **declined**, unless the caller
+      explicitly passes ``publish_without_hero=True``, in which case the hero is
+      dropped to an empty string and the reason is recorded. A Drive URL is
+      never forwarded, and nothing here fails silently.
+    """
+    hero = str(post.get("hero_image_url") or "").strip()
+    detail: Dict[str, Any] = {
+        "input_hero": "drive" if _is_drive_url(hero) else ("https" if hero else "none"),
+        "asset_upload_enabled": _asset_upload_enabled(),
+        "download": "not_needed",
+        "sink": "not_needed",
+        "stripped": False,
+    }
+    allow_missing = _as_bool(input_data.get("publish_without_hero"))
+
+    if not hero:
+        return {"ok": True, "hero_image_url": "", "png_base64": None, "detail": detail}
+
+    if not _is_drive_url(hero):
+        # Anything already hosted outside Drive keeps its historical behaviour:
+        # this path exists to stop forwarding *Drive viewer links*, not to add a
+        # new decline for legacy rows whose Hero Image is plain http.
+        detail["sink"] = "already_public"
+        return {"ok": True, "hero_image_url": hero, "png_base64": None, "detail": detail}
+
+    # From here on the hero is a Drive link, so it cannot be forwarded as-is.
+    if not _asset_upload_enabled():
+        detail["sink"] = "unavailable"
+        if allow_missing:
+            detail["stripped"] = True
+            detail["stripped_reason"] = "drive_hero_without_asset_sink"
+            return {
+                "ok": True,
+                "hero_image_url": "",
+                "png_base64": None,
+                "detail": detail,
+            }
+        return {
+            "ok": False,
+            "error": "hero_asset_sink_unavailable",
+            "hero_image_url": "",
+            "png_base64": None,
+            "detail": detail,
+        }
+
+    try:
+        from .google_drive import download_drive_png
+
+        png = download_drive_png(hero)
+    except Exception as exc:  # noqa: BLE001 — surfaced as an explicit decline
+        logger.warning("Editorial hero download failed: %s", exc)
+        detail["download"] = "failed"
+        detail["download_error"] = str(exc)[:200]
+        if allow_missing:
+            detail["stripped"] = True
+            detail["stripped_reason"] = "hero_download_failed"
+            return {
+                "ok": True,
+                "hero_image_url": "",
+                "png_base64": None,
+                "detail": detail,
+            }
+        return {
+            "ok": False,
+            "error": "hero_image_download_failed",
+            "hero_image_url": "",
+            "png_base64": None,
+            "detail": detail,
+        }
+
+    detail["download"] = "ok"
+    detail["bytes"] = len(png)
+    detail["sink"] = "function_asset"
+    if dry_run:
+        # The fetch above is the point of the readiness check: a hero that cannot
+        # be downloaded must fail here, not on the live run. Nothing is shipped.
+        return {"ok": True, "hero_image_url": "", "png_base64": None, "detail": detail}
+    return {
+        "ok": True,
+        "hero_image_url": "",
+        "png_base64": base64.b64encode(png).decode("ascii"),
+        "detail": detail,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Public handler
 # ---------------------------------------------------------------------------
 
@@ -1057,8 +1187,24 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
     if not post.get("canonical_url"):
         post["canonical_url"] = _canonical_url(post["slug"])
 
+    # 4.5) Hero asset. The Notion canonical stays in Drive; the blog never gets
+    #      a Drive link. Declines here are explicit and pre-network.
+    hero_asset = _prepare_hero_asset(post, input_data, dry_run=dry_run)
+    gates["hero_asset"] = hero_asset["detail"]
+    if not hero_asset["ok"]:
+        logger.info(
+            "Editorial publish blocked by hero asset ref=%s error=%s",
+            row_ref, hero_asset["error"],
+        )
+        blocked = _blocked(hero_asset["error"])
+        blocked["hero_asset"] = hero_asset["detail"]
+        return blocked
+    post["hero_image_url"] = hero_asset["hero_image_url"]
+
     # 5) Build the function payload (drop worker-side gate fields).
     function_payload = {k: v for k, v in post.items() if k not in _GATE_FIELDS}
+    if hero_asset["png_base64"]:
+        function_payload["hero_image_png_base64"] = hero_asset["png_base64"]
 
     if dry_run:
         return {
@@ -1070,8 +1216,12 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
             "blob_path": f"posts/{post['slug']}.json",
             "published_url": post["canonical_url"],
             "content_hash": post["content_hash"],
-            "payload": function_payload,
+            "payload": {
+                k: (f"<{len(v)} base64 chars>" if k == "hero_image_png_base64" else v)
+                for k, v in function_payload.items()
+            },
             "gates": gates,
+            "hero_asset": hero_asset["detail"],
             "rag_indexed": False,
             "rag_skipped_reason": "dry_run",
             **trace,
@@ -1107,6 +1257,8 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
         "blob_path": data.get("blob_path") or f"posts/{post['slug']}.json",
         "index_updated": data.get("index_updated"),
         "content_hash": data.get("content_hash") or post["content_hash"],
+        "hero_image_url": data.get("hero_image_url") or post["hero_image_url"],
+        "hero_asset": hero_asset["detail"],
         "gates": gates,
         **trace,
     }
@@ -1114,6 +1266,20 @@ def handle_web_publish_editorial_post(input_data: Dict[str, Any]) -> Dict[str, A
         response["error"] = data.get("error") or "function_error"
         if "error_body" in result:
             response["detail"] = result["error_body"][:500]
+        return response
+
+    # The hero PNG travelled, so the function must say where it landed. A build
+    # without the assets route drops the unknown key and answers 200: without
+    # this check the worker would report a clean publish for a post whose hero
+    # silently never existed — the exact failure this path removes.
+    if hero_asset["png_base64"] and not data.get("hero_image_url"):
+        response["ok"] = False
+        response["published"] = True
+        response["error"] = "hero_asset_not_stored"
+        response["detail"] = (
+            "the function accepted the post but echoed no hero_image_url; "
+            "deploy the assets route or unset EDITORIAL_BLOG_ASSET_UPLOAD"
+        )
         return response
 
     # 7) Optional best-effort write-back of published_url to Notion.

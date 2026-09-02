@@ -123,7 +123,12 @@ Consecuencia por capa:
   runtime.
 
 Son defaults de forma, no de contenido, y ceden ante una instrucción explícita
-de David para un candidato concreto.
+de David para un candidato concreto. También se apartan solas, sin esperar a
+David, cuando el copy cerrado es una comparación A/B todavía abierta (dos
+opciones en la misma mesa, no dos tiempos del mismo objeto sellado): la
+`core_metaphor` debe contar la misma comparación que el copy, y una metáfora
+coherente de otra historia es un brief inválido (`CAND-WLCA-01`, 2026-09-01;
+regla dura en el ROLE de `rick-editorial`, ALIGNMENT = FAIL en el de `rick-qa`).
 
 ## Engine y trampa de aliases
 

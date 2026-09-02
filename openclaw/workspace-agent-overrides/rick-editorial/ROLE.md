@@ -268,13 +268,52 @@ hecho y la consecuencia del artículo actual. Las cinco alternativas no son
 cinco samples del mismo prompt ni cinco metáforas sin relación: son cinco
 variaciones controladas de una metáfora común.
 
+**Regla dura — la metáfora es la misma comparación que el copy.**
+`core_metaphor` tiene que contar exactamente la comparación que cuenta el copy
+cerrado de esa Publicación: mismos dos términos, mismo momento de la decisión
+y misma consecuencia. Una metáfora internamente coherente pero que narra otra
+historia (por ejemplo, el cierre o el deterioro de un solo objeto cuando el
+post compara dos opciones todavía abiertas) es un **brief inválido**, aunque
+cumpla el contrato de forma, aunque produzca cinco imágenes bellas y aunque
+ganara una ronda HITL anterior. Antes de derivar ejes, escribí en una línea
+qué compara el copy y verificá que `central_fact`, `ignored_consequence` y
+`core_metaphor` comparan exactamente eso. Origen: `CAND-WLCA-01` (2026-09-01):
+la tanda Pro `20260902-0205` representaba bien su metáfora de vitrina y esa
+metáfora no era el post (dos opciones de fachada abiertas; el carbono como
+diferencia de materia). QA trata esta desalineación como FAIL, no como SOFT.
+
+**No literalizar «vitrina».** La palabra describe un acabado (aspecto de
+producto de exhibición), no un objeto: nunca la traduzcas a una caja, cubo,
+campana o pecera de vidrio alrededor del edificio o la maqueta, ni a un
+invernadero o recinto transparente. Si el copy no habla de encierro, ningún
+eje ni prohibición debe introducir uno.
+
 #### Preferencias compositivas confirmadas por HITL (2026-08-30)
 
 Dos rondas consecutivas de selección humana sobre `CAND-OLA3-03` (tanda live
 `20260830-0511` y su tanda de variaciones ancladas a la ganadora) fijaron
-estos defaults compositivos para la metáfora núcleo. Son forma, no contenido:
-el sujeto, el defecto y el mecanismo siguen derivándose del copy actual, y
-sólo se apartan si David lo pide explícitamente para un candidato.
+estos defaults compositivos. Son **forma heredada de ese candidato**, no
+contenido: el sujeto, el defecto y el mecanismo siguen derivándose del copy
+actual, y las preferencias sólo valen mientras el copy cuente la misma clase
+de historia que `CAND-OLA3-03` (un mismo objeto que cambia entre un estado
+inicial y uno terminal).
+
+**Se apartan solas, sin esperar a David**, cuando el copy es una comparación
+A/B todavía abierta: dos opciones que compiten en la misma mesa, no dos
+tiempos del mismo objeto sellado. En ese caso no uses «vitrina + defecto» ni
+«daño orgánico» como metáfora, porque cuentan cierre y deterioro, y el post
+cuenta elección. De los tres puntos de abajo se hereda siempre la
+**composición** (primer plano, dos piezas comparables a la misma escala
+enfrentadas, sin toma hero como base: a lo sumo en un eje explorador, como
+dice el punto 1) y se apaga en un A/B abierto el **contenido** (mismo objeto
+en dos tiempos, vitrina + defecto, daño orgánico). Se conserva también, venga
+de donde venga la metáfora: sin personas, sin texto/cifras/logos, sin cortes
+ni diagramas. Usá «vitrina + daño orgánico» como metáfora únicamente cuando el
+copy sea realmente eso (un objeto que se termina de sellar con su defecto
+adentro), y aun así sin literalizar la vitrina como caja de vidrio. Una
+instrucción explícita de David para un candidato concreto manda por encima de
+estos defaults de forma, nunca de la regla dura de alineación: la metáfora
+sigue teniendo que contar la comparación del copy, y QA la falla igual.
 
 1. **Dos estados del mismo objeto, enfrentados en primer plano.** El contraste
    directo inicial vs. terminal ganó las dos rondas; perdieron las

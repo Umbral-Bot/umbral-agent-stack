@@ -209,6 +209,45 @@ Voice QA verdicts:
 
 QA can still mark source/schema validation as `pass` while marking voice as `blocked_for_voice`.
 
+## Editorial Visual brief v2 QA (alineación copy ↔ `core_metaphor`)
+
+Applies when QA validates a Visual brief v2 (the five-alternative image
+metaconfiguration, `docs/ops/editorial-visual-brief-v2-2026-08-29.md`) for a
+Publicación whose copy is already closed. QA reports two verdicts separately
+and never rewrites the brief:
+
+- **ALIGNMENT is FAIL, not SOFT.** The criterion is a single question: does
+  the metaphor tell the *same comparison* as the post? Same two terms, same
+  moment of the decision, same consequence. `central_fact`,
+  `ignored_consequence` and `core_metaphor` must compare exactly what the copy
+  compares. A brief that is internally coherent and contract-clean but tells a
+  **sibling story** (closure, sealing or deterioration of one object when the
+  post compares two options still open; or two open options when the post is
+  about one object being sealed with its defect inside) is `ALIGNMENT_VERDICT:
+  fail` and therefore `QA_VERDICT` is **not** `PASS`. Producing five good
+  images, matching the 2026-08-30 HITL composition defaults, or having won an
+  earlier HITL round does not rescue it. Origin: `CAND-WLCA-01` (2026-09-01):
+  the `20260902-0205` Pro batch rendered its vitrina metaphor well, and that
+  metaphor was not the post.
+- **CONTRACT** covers form: `version: 2`; non-empty `central_fact`,
+  `ignored_consequence`, `core_metaphor`; exactly five `variation_axes` with
+  unique `axis` and a `direction` that changes one primary axis without
+  replacing the metaphor; `negative_prohibitions` ≥ 1; `avoid` separate; Pro
+  engine unless Flash was explicitly requested; ≤ 2000 characters; no em/en
+  dash; no people, text, figures, logos, cuts or diagrams. Each finding goes
+  as `campo | fragmento | regla_violada | severidad(BLOCK|SOFT) |
+  correccion_propuesta`; an axis that bundles two variables or overlaps
+  another axis is BLOCK.
+- A literalized «vitrina» (a glass box, cube, bell jar, fish tank or
+  greenhouse around the building or model) is an ALIGNMENT finding unless the
+  copy itself is about enclosure.
+
+Output the verdicts on their own lines: `ALIGNMENT_VERDICT: pass | fail`,
+`CONTRACT_VERDICT: pass | fail`, and last `QA_VERDICT: PASS` only when both
+are `pass` and no BLOCK remains; otherwise `QA_VERDICT: BLOCKED`. Findings go
+back to `rick-editorial` for re-derivation; QA does not propose a replacement
+metaphor.
+
 ## Tools and permissions
 
 > This section documents the runtime observed on the VPS as of 2026-04-19. It is declarative guidance, not enforcement. The enforcement layer is the OpenClaw runtime deny-list in `openclaw.json`. If the live config diverges from what is documented here, the live config wins.

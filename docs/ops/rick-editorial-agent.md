@@ -248,6 +248,10 @@ Nada de esto está documentado en `magnific-editorial-setup-2026-06-06.md` ni en
 
 
 
+### T13 — arco_narrativo: paréntesis de estrategia, no andamiaje de proceso (2026-09-03)
+
+David aprobó el 2026-09-03 el formato de `arco_narrativo` (PKG-EDITORIAL-V1-ARCO-PARENS-SOT-1): el CUERPO del campo es la historia de la pieza; las alusiones a estrategia interna (de qué parte, qué tensiona, a dónde llega) van entre paréntesis **después** de la frase que etiquetan — `(punto de partida: …)`, `(tensión: …)`, `(cierre: …)`. El `Right` anterior de `ROLE.md` enseñaba justo el andamiaje que ahora queda prohibido (`Parte de que RICS… Tensiona la distancia… Llega a que los equipos BIM…`), y por eso `CAND-IA-FLUJOS-AEC-SHORTLIST-V1` (2026-09-03) pasó `rick-qa` con ese mismo andamiaje sin etiquetas y el arco seguía ilegible como historia. Se actualizó `ROLE.md` (`rick-editorial` y `rick-qa`), el contrato §3, la plantilla de payload, `shortlist-format.md`, `SKILL.md` de `editorial-source-curation` y `docs/67` §5.1 con el mismo criterio. No se tocó `cadena_tesis` (ahí las etiquetas son el formato exigido). El rewrite en vivo de esa misma fila de Shortlist queda para el siguiente paquete, post-merge.
+
 ## Prohibitions still in effect
 
 Unchanged from ROLE.md's Boundaries and Human gates sections: no publish, no `aprobado_contenido`, no `autorizar_publicacion`, no Notion writes (direct or via MCP), no cron/automation, no Notion AI for editorial decisions. Activation only grants read + payload-production capability; every write path still requires either the Worker (`ADR-011`) or an authorized human/operator action.

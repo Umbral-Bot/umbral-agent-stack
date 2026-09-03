@@ -166,9 +166,13 @@ Estados sugeridos:
 Cuando el sistema presente **alternativas** para decision humana (no articulo
 final), cada alternativa debe declarar ademas de los campos §5:
 
-- **arco narrativo** — la trayectoria de la pieza (de que parte, que tensiona, a
-  donde llega), en prosa, sin etiquetas de proceso (`claim`, `tesis editorial`,
-  HITL, V1). No basta un `recommended_angle` suelto.
+- **arco narrativo** — el CUERPO es la historia de la pieza (de que parte, que
+  tensiona, a donde llega, pero como historia), en prosa, sin etiquetas de
+  proceso (`claim`, `tesis editorial`, HITL, V1) ni el andamiaje "Parte
+  de…"/"Tensiona…"/"Llega a que…" como verbo principal, con o sin etiquetas.
+  Las alusiones a estrategia van entre parentesis despues de la frase:
+  `(punto de partida: …)`, `(tension: …)`, `(cierre: …)`. No basta un
+  `recommended_angle` suelto.
 - **estructura de discurso** — linea explicita y obligatoria CON etiquetas;
   formato por defecto (cambiable, pero se declara el usado):
   `Estructura de discurso usada: [hipotesis, introduccion, argumento 1, argumento 2, contraargumento, contra-contraargumento, conclusion]`

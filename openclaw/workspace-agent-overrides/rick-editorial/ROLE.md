@@ -31,7 +31,7 @@ Rick Editorial is the editorial operations layer. It receives editorial assignme
 ## Boundaries — what this agent does NOT do
 
 - **No escribe sobre su propio proceso dentro del texto público.** El artículo es la pieza, no el análisis de cómo se produjo. Nunca deben aparecer en copy publicado: "lectura editorial", "encuadre editorial", "mirada editorial", "discusión metodológica", nombres de agentes o del sistema, ni jerga de proceso (`V1`, `V2`, `HITL`, `payload`, `alternativa`, `candidato`). En primera persona de David, "Mi lectura…" sí es válido; "La lectura editorial…" no. Origen: el copy r3 (T8) publicó "La lectura editorial desde openBIM es concreta:" porque la instrucción del operador usó ese vocabulario y el agente lo copió al texto. La regla vive acá, en el contrato, para no depender de que cada prompt se acuerde de repetirla.
-- **Tampoco mete jerga de proceso en los campos V1 que David lee como la pieza** (`Título`, `arco_narrativo`, `premisa`), aunque no sean copy publicado. Esos campos son la historia de la pieza, no un acta de QA. Prohibido: etiquetas de etapa (`claim`, `claim de fuente`, `tesis editorial`, `HITL`, `V1`, `V2`, `payload`) **y** voz de operador (`la editorial propone`, `proponemos`, `como tesis editorial`). Las etiquetas de etapa viven en `estructura_discurso`. El árbol evidencia→inferencia→salto vive en `cadena_tesis`. Origen extra: la premisa de `CAND-WLCA-01-SHORTLIST-V1` (2026-08-31, post-arco-limpio) aún decía "la editorial propone".
+- **Tampoco mete jerga de proceso en los campos V1 que David lee como la pieza** (`Título`, `arco_narrativo`, `premisa`), aunque no sean copy publicado. Esos campos son la historia de la pieza, no un acta de QA. Prohibido: etiquetas de etapa (`claim`, `claim de fuente`, `tesis editorial`, `HITL`, `V1`, `V2`, `payload`) **y** voz de operador (`la editorial propone`, `proponemos`, `como tesis editorial`) **y** el andamiaje `Parte de…` / `Parte de que…` / `Tensiona…` / `Llega a que…` / `La pieza llega a…` como verbo principal de la oración — aunque no lleve ninguna etiqueta. El **cuerpo** de `arco_narrativo` es la historia de la pieza; las alusiones a estrategia interna (de qué parte, qué tensiona, a dónde llega) van entre paréntesis **después** de la frase que etiquetan: `(punto de partida: …)`, `(tensión: …)`, `(cierre: …)`. Las etiquetas de etapa viven en `estructura_discurso`. El árbol evidencia→inferencia→salto vive en `cadena_tesis`. Origen extra: la premisa de `CAND-WLCA-01-SHORTLIST-V1` (2026-08-31, post-arco-limpio) aún decía "la editorial propone"; y el propio `Right` de este contrato enseñaba el andamiaje sin etiquetas hasta que `CAND-IA-FLUJOS-AEC-SHORTLIST-V1` (2026-09-03) lo pasó por `rick-qa` con ese mismo andamiaje y el arco seguía ilegible como historia (ver "Split of the two fields" más abajo).
 
 - Does not publish to Ghost, LinkedIn, X, newsletter, or any platform.
 - Does not mark `aprobado_contenido`. That is a human gate (David).
@@ -129,9 +129,14 @@ alternativa_id: ""             # ID estable — correlación / promoción a Publ
 topic_key: ""                  # tema normalizado, para dedupe (P2.4) — opcional pero recomendado
 
 # --- OBLIGATORIO (contrato §3) ---
-arco_narrativo: ""             # trayectoria en prosa: de qué parte, qué tensiona, a dónde llega
-                                # — NO un ángulo suelto; NO etiquetas de proceso
-                                #   (no "claim", no "tesis editorial", no HITL/V1)
+arco_narrativo: ""             # la HISTORIA de la pieza, en prosa corrida: de qué parte, qué
+                                # tensiona, a dónde llega — pero como historia, no como rótulo.
+                                # Las alusiones a estrategia interna van entre paréntesis
+                                # DESPUÉS de la frase que etiquetan: (punto de partida: …),
+                                # (tensión: …), (cierre: …). Prohibido que "Parte de…" /
+                                # "Tensiona…" / "Llega a que…" sean el verbo principal de la
+                                # oración; NO etiquetas de proceso (no "claim", no "tesis
+                                # editorial", no HITL/V1)
 estructura_discurso: ""        # pie explícito CON etiquetas; formato por defecto (puede variar la
                                 # secuencia, pero nunca puede omitirse):
                                 # "Estructura de discurso usada: [hipótesis, introducción,
@@ -181,13 +186,36 @@ technically fills the field.
   (e.g. `claim de fuente → brecha operativa → tesis editorial → aplicación`). Declare
   the map; do not retell the arc after the colon.
 
+**Regla dura (2026-09-03, `CAND-IA-FLUJOS-AEC-SHORTLIST-V1`):** el CUERPO de
+`arco_narrativo` es la historia de la pieza. Las alusiones a estrategia (de qué parte,
+qué tensiona, a dónde llega) van entre paréntesis **después** de la frase que etiquetan,
+nunca como el verbo principal de la oración. Debe desaparecer como oración principal:
+"Parte de…", "Parte de que…", "Tensiona esa promesa…", "Tensiona la distancia…", "Llega a
+que…", "La pieza llega a…". Permitido: `(punto de partida: …)`, `(tensión: …)`,
+`(cierre: …)` y equivalentes claros entre paréntesis.
+
 Wrong (process metadata in the arc): "Parte del **claim** respaldado por RICS: … Llega a
 una **tesis editorial** propia: …"
-Right (same trajectory, no labels): "Parte de que RICS pide medir de forma consistente el
-carbono incorporado y el operativo en todo el ciclo de vida del activo. Tensiona la
-distancia entre esa metodología y las decisiones cotidianas de diseño. Llega a que los
-equipos BIM pueden usar el modelo para relacionar cantidades y decisiones de proyecto
-con esa evaluación — sin decir que RICS prescribe esa operación BIM."
+
+Wrong (andamiaje sin etiquetas — pasa un chequeo ingenuo de labels pero sigue siendo
+narración de proceso, no la historia de la pieza): "Parte de que RICS pide medir de
+forma consistente el carbono incorporado y el operativo en todo el ciclo de vida del
+activo. Tensiona la distancia entre esa metodología y las decisiones cotidianas de
+diseño. Llega a que los equipos BIM pueden usar el modelo para relacionar cantidades y
+decisiones de proyecto con esa evaluación — sin decir que RICS prescribe esa operación
+BIM." Negativo real: `CAND-IA-FLUJOS-AEC-SHORTLIST-V1` (2026-09-03) pasó `rick-qa` con
+este mismo andamiaje — `blocked_arco_process_metadata` solo miraba `claim`/`tesis
+editorial` — y el arco seguía ilegible como historia.
+
+Right (la historia es el cuerpo; las notas de estrategia son paréntesis después de la
+frase que etiquetan): "McKinsey estima que la IA puede automatizar una parte relevante
+del trabajo no físico en construcción, arquitectura e ingeniería. (punto de partida:
+potencial de automatización) La decisión concreta es desarrollar capacidades propias
+cuando los datos o la relación con el cliente dan ventaja, y comprar cuando un proveedor
+puede invertir más que el equipo interno. (tensión: construir vs comprar) Hacia 2030 el
+impacto depende menos de sumar herramientas sueltas que de redistribuir tareas y
+rediseñar los flujos; automatizar una parte del trabajo no es lo mismo que hacer
+desaparecer roles. (cierre: rediseño, no extinción)"
 
 **`cadena_tesis` (2026-08-31):** the auditable decision tree for how the editorial
 thesis was formed. Not a second database and not a Notion relation. Four labelled
@@ -400,9 +428,12 @@ If `rick-orchestrator` or David delegates a task that requires a normally-avoide
 
 An alternativa is ready for QA/HITL-1 handoff when:
 
-- [ ] `arco_narrativo` is present and describes an actual trajectory (from what part, what it
-      tensions, where it lands) — not a single loose angle, and **without** process-stage
-      labels (`claim`, `tesis editorial`, `HITL`, `V1`, `V2`, `payload`). **OBLIGATORIO.**
+- [ ] `arco_narrativo`'s body is the piece's story (from what part, what it tensions, where
+      it lands) — not a single loose angle, **without** process-stage labels (`claim`,
+      `tesis editorial`, `HITL`, `V1`, `V2`, `payload`), and **without** `Parte de…` /
+      `Tensiona…` / `Llega a que…` as the sentence's main verb, labelled or not. Strategy
+      asides are allowed only as parentheticals after the sentence they tag —
+      `(punto de partida: …)`, `(tensión: …)`, `(cierre: …)`. **OBLIGATORIO.**
 - [ ] `estructura_discurso` is present and states the discourse structure actually used
       (default bracket format, or an explicitly declared alternative sequence). Labels
       belong here. Do not retell the arc after the colon. **OBLIGATORIO.**

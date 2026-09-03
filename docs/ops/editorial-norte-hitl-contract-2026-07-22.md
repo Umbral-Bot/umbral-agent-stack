@@ -69,17 +69,23 @@ Cada alternativa presentada en la etapa V1 **debe** declarar, además de los
 campos de curado existentes ([docs/67 §5](../67-editorial-source-curation.md),
 [scoring-schema.md](../../openclaw/workspace-templates/skills/editorial-source-curation/references/scoring-schema.md)):
 
-1. **Arco narrativo** — no un ángulo suelto: la trayectoria de la pieza (de qué
-   parte, qué tensiona, a dónde llega). Reemplaza al `recommended_angle` único
-   como requisito mínimo por alternativa. Se lee como historia: un lector que
-   no conoce el pipeline debe poder seguirlo. **No** incrusta etiquetas de
-   etapa del sistema (`claim`, `tesis editorial`, `HITL`, `V1`, `V2`,
-   `payload`). Si hace falta separar lo que dice la fuente de lo que afirma
-   la editorial, eso va en las frases (nombrar la fuente, nombrar el aterrizaje),
-   no como rótulos. Ejemplo negativo: `CAND-WLCA-01-SHORTLIST-V1` (2026-08-31)
-   metió "claim respaldado por RICS" y "tesis editorial propia" en el arco —
-   la trayectoria era correcta; las etiquetas eran metadata de proceso.
-   `rick-qa` rechaza con `blocked_arco_process_metadata`.
+1. **Arco narrativo** — no un ángulo suelto: el CUERPO es la historia de la
+   pieza (de qué parte, qué tensiona, a dónde llega, pero como historia, no
+   como rótulo). Reemplaza al `recommended_angle` único como requisito mínimo
+   por alternativa. Se lee como historia: un lector que no conoce el pipeline
+   debe poder seguirlo. **No** incrusta etiquetas de etapa del sistema
+   (`claim`, `tesis editorial`, `HITL`, `V1`, `V2`, `payload`) **ni** usa el
+   andamiaje `Parte de…` / `Parte de que…` / `Tensiona…` / `Llega a que…` /
+   `La pieza llega a…` como verbo principal de la oración, con o sin
+   etiquetas. Las alusiones a estrategia interna van entre paréntesis
+   **después** de la frase que etiquetan: `(punto de partida: …)`,
+   `(tensión: …)`, `(cierre: …)`. Ejemplo negativo: `CAND-WLCA-01-SHORTLIST-V1`
+   (2026-08-31) metió "claim respaldado por RICS" y "tesis editorial propia"
+   en el arco — la trayectoria era correcta; las etiquetas eran metadata de
+   proceso. Ejemplo negativo adicional: `CAND-IA-FLUJOS-AEC-SHORTLIST-V1`
+   (2026-09-03) usó el andamiaje `Parte de.../Tensiona.../Llega a que...` sin
+   ninguna etiqueta y pasó QA igual — el arco seguía ilegible como historia.
+   `rick-qa` rechaza ambos casos con `blocked_arco_process_metadata`.
 
 2. **Pie de estructura de discurso** — línea explícita y obligatoria. Formato por
    defecto (cambiable, pero **debe declararse el efectivamente usado**):

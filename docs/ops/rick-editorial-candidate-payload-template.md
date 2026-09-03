@@ -33,9 +33,12 @@ alternativa_id: ""             # ID estable — correlación / promoción a Publ
 topic_key: ""                  # tema normalizado, para dedupe (P2.4) — opcional pero recomendado
 
 # --- OBLIGATORIO ---
-arco_narrativo: ""             # trayectoria en prosa (de qué parte, qué tensiona, a dónde
-                                # llega) — NO un ángulo suelto; NO etiquetas de proceso
-                                #   (claim / tesis editorial / HITL / V1)
+arco_narrativo: ""             # la HISTORIA de la pieza en prosa (de qué parte, qué tensiona,
+                                # a dónde llega, pero como historia) — NO un ángulo suelto; NO
+                                # etiquetas de proceso (claim / tesis editorial / HITL / V1);
+                                # NO "Parte de…"/"Tensiona…"/"Llega a que…" como verbo
+                                # principal. Estrategia va entre paréntesis DESPUÉS de la
+                                # frase: (punto de partida: …), (tensión: …), (cierre: …)
 estructura_discurso: ""        # "Estructura de discurso usada: [hipótesis, introducción,
                                 #  argumento 1, argumento 2, contraargumento,
                                 #  contra-contraargumento, conclusión]" (secuencia puede variar,
@@ -62,7 +65,7 @@ Publicaciones payload below, not V1.
 
 Before handing an alternativa to `rick-qa` or David for HITL-1:
 
-- [ ] `arco_narrativo` is present and describes an actual trajectory, not a single loose angle, and without process-stage labels. **OBLIGATORIO.**
+- [ ] `arco_narrativo`'s body is the piece's story, not a single loose angle, without process-stage labels, and without `Parte de…`/`Tensiona…`/`Llega a que…` as the sentence's main verb (labelled or not). Strategy asides only as parentheticals after the sentence: `(punto de partida: …)`, `(tensión: …)`, `(cierre: …)`. **OBLIGATORIO.**
 - [ ] `estructura_discurso` is present with the labelled discourse structure actually used (map, not a retelling of the arc). **OBLIGATORIO.**
 - [ ] `fuente_pieza_url` is the concrete-piece URL, never a home/feed page. **OBLIGATORIO.**
 - [ ] `cadena_tesis` has the four labelled lines; evidencia does not restate the salto. **OBLIGATORIO.**

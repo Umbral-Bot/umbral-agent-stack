@@ -33,7 +33,7 @@ concreta (no home). Contrato: `docs/ops/editorial-norte-hitl-contract-2026-07-22
 - **confidence:**
 - **why it fits David:**
 - **why now:**
-- **arco narrativo:** (trayectoria en prosa; sin etiquetas de proceso — no "claim", no "tesis editorial")
+- **arco narrativo:** (el CUERPO es la historia de la pieza, en prosa; sin etiquetas de proceso — no "claim", no "tesis editorial" — y sin "Parte de…"/"Tensiona…"/"Llega a que…" como verbo principal; estrategia va entre paréntesis después de la frase: `(punto de partida: …)`, `(tensión: …)`, `(cierre: …)`)
 - **estructura de discurso usada:** `[hipotesis, introduccion, argumento 1, argumento 2, contraargumento, contra-contraargumento, conclusion]`  (default; declarar el usado; acá sí van las etiquetas; no recontar el arco)
 - **cadena de la tesis:** `Evidencia (fuente):` / `Inferencia (brecha):` / `Salto editorial:` / `No afirmado:`
 - **premisa:** salto condensado, sin "la editorial propone"

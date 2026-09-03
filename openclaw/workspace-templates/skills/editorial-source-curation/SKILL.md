@@ -34,7 +34,7 @@ Trabajar siempre en dos fases separadas:
 - Distinguir hechos de la fuente, interpretacion editorial y recomendacion.
 - Pedir una sola aclaracion solo cuando falte una pieza critica para puntuar. Si no, trabajar con supuestos explicitos.
 - No redactar post, thread, newsletter, carrusel ni guion antes de que David elija uno o mas items del shortlist.
-- Cada alternativa del shortlist debe declarar **arco narrativo** (trayectoria en prosa, sin etiquetas de proceso), **estructura de discurso** (pie explicito CON etiquetas), **cadena de la tesis** (evidencia / inferencia / salto / no afirmado) y **fuente = URL de la pieza concreta** (nunca la home/feed de la organizacion). Ver `docs/ops/editorial-norte-hitl-contract-2026-07-22.md` §3.
+- Cada alternativa del shortlist debe declarar **arco narrativo** (el CUERPO es la historia de la pieza en prosa, sin etiquetas de proceso ni "Parte de…"/"Tensiona…"/"Llega a que…" como verbo principal; estrategia solo entre parentesis despues de la frase: `(punto de partida: …)`, `(tension: …)`, `(cierre: …)`), **estructura de discurso** (pie explicito CON etiquetas), **cadena de la tesis** (evidencia / inferencia / salto / no afirmado) y **fuente = URL de la pieza concreta** (nunca la home/feed de la organizacion). Ver `docs/ops/editorial-norte-hitl-contract-2026-07-22.md` §3.
 
 ## Baseline editorial
 Antes de puntuar, fijar o inferir estas tres referencias:

@@ -91,7 +91,10 @@ field:**
 
 **Reject the alternativa (structural: `blocked_arco_process_metadata`) if
 `arco_narrativo` (or `Título` / `premisa`) uses process-stage labels as if they were
-part of the story.** Those labels belong in `estructura_discurso` only. This is a hard
+part of the story, OR uses `Parte de…` / `Parte de que…` / `Tensiona…` / `Llega a que…`
+/ `La pieza llega a…` as the sentence's main verb — with or without labels.** Those
+labels belong in `estructura_discurso` only, and strategy asides belong in parentheses
+**after** the sentence they tag, never as the sentence's own verb. This is a hard
 reject even when the three OBLIGATORIO fields are filled and the source URL is concrete.
 
 - [ ] `arco_narrativo` reads as the trajectory of the piece without operator vocabulary.
@@ -102,6 +105,17 @@ reject even when the three OBLIGATORIO fields are filled and the source URL is c
       "tesis editorial propia" into the arc after a QA round that used those terms to
       split source vs editorial thesis — the split belongs in the sentences (name the
       source, name the landing); the labels do not.
+- [ ] `arco_narrativo` does not use the `Parte de…` / `Tensiona…` / `Llega a que…`
+      scaffolding as the sentence's main verb, even when no process label is present —
+      this is still process narration, not the piece's story. **Permitted:** the same
+      content as a parenthetical strategy aside placed after the sentence it tags —
+      `(punto de partida: …)`, `(tensión: …)`, `(cierre: …)` or clear equivalents. Real
+      negative: `CAND-IA-FLUJOS-AEC-SHORTLIST-V1` (2026-09-03) passed structural QA
+      under the pre-2026-09-03 check (which only looked for `claim`/`tesis editorial`
+      labels) while using this exact scaffolding as prose, and the arc stayed illegible
+      as a story. Do not apply this scaffolding rejection to `cadena_tesis` — there the
+      four labelled lines (`Evidencia (fuente):` / `Inferencia (brecha):` / `Salto
+      editorial:` / `No afirmado:`) are the required format, not process metadata.
 - [ ] `estructura_discurso` **may and should** use labelled stages (default bracket list,
       or a declared alternative such as `claim de fuente → brecha operativa → tesis
       editorial → aplicación`). Do not reject for labels in this field.
@@ -150,7 +164,7 @@ Structural QA verdicts:
 | `structural: pass` | OBLIGATORIO fields present; source is a concrete-piece URL; `arco_narrativo`/`premisa` have no process-stage labels or operator voice; `cadena_tesis` has the four labelled lines. |
 | `structural: blocked_missing_field` | `arco_narrativo` and/or `estructura_discurso` and/or `fuente_pieza_url` is missing. |
 | `structural: blocked_source_not_concrete` | `fuente_pieza_url` is a home/feed URL, not the concrete piece. |
-| `structural: blocked_arco_process_metadata` | `arco_narrativo` (or `Título` / `premisa`) embeds process-stage labels or operator voice (`claim`, `tesis editorial`, `la editorial propone`, `HITL`, `V1`, …). Labels belong in `estructura_discurso`; the decision tree belongs in `cadena_tesis`. |
+| `structural: blocked_arco_process_metadata` | `arco_narrativo` (or `Título` / `premisa`) embeds process-stage labels or operator voice (`claim`, `tesis editorial`, `la editorial propone`, `HITL`, `V1`, …), OR uses `Parte de…`/`Tensiona…`/`Llega a que…` as the sentence's main verb (labelled or not). Labels belong in `estructura_discurso`; strategy asides belong in parentheses after the sentence they tag (`(punto de partida: …)`, `(tensión: …)`, `(cierre: …)`); the decision tree belongs in `cadena_tesis`, which this rejection does not apply to. |
 | `structural: blocked_cadena_tesis` | `cadena_tesis` missing, missing a required prefix, or Evidencia restates the salto. |
 
 QA can mark `structural: pass` while still noting non-blocking concerns (templated arc,

@@ -772,6 +772,7 @@ def _call_openclaw_proxy(
     temperature: float,
     system_prompt: str,
     timeout_s: float = PROXY_DEFAULT_TIMEOUT_S,
+    agent_id: str | None = None,
 ) -> Dict[str, Any]:
     """
     Claude vía OpenClaw gateway corriendo en la misma VPS (puerto 18789).
@@ -780,6 +781,10 @@ def _call_openclaw_proxy(
         OPENCLAW_GATEWAY_TOKEN — Bearer token para auth del gateway (requerido)
         OPENCLAW_GATEWAY_URL   — URL base del gateway (default: http://localhost:18789)
         OPENCLAW_GATEWAY_AGENT — agent id del gateway a invocar (default: main)
+
+    ``agent_id`` permite que un handler gobernado invoque un ROLE concreto sin
+    mutar el entorno global del Worker.  Si se omite, conserva exactamente el
+    comportamiento histórico basado en ``OPENCLAW_GATEWAY_AGENT``.
     """
     token = os.environ.get("OPENCLAW_GATEWAY_TOKEN", "").strip()
     if not token:
@@ -793,8 +798,12 @@ def _call_openclaw_proxy(
     # `model` — rechaza con 400 cualquier otro string (verificado en vivo,
     # PKG-MACRO-P5-L2-T3). El modelo solicitado (p.ej. claude-sonnet-4-6) se
     # preserva igual en la respuesta devuelta por esta función.
-    agent_id = os.environ.get("OPENCLAW_GATEWAY_AGENT", "main").strip() or "main"
-    gateway_model = f"openclaw/{agent_id}"
+    resolved_agent_id = (
+        str(agent_id or "").strip()
+        or os.environ.get("OPENCLAW_GATEWAY_AGENT", "main").strip()
+        or "main"
+    )
+    gateway_model = f"openclaw/{resolved_agent_id}"
 
     messages: list = []
     if system_prompt:

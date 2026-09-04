@@ -47,17 +47,24 @@ Conflictos resueltos). En todo lo no marcado, production-flow-v2 sigue vigente.
   3. David elige por alternativa una de cuatro salidas:
        Archivar · Observar · Descartar · Aprobar
 
-[V2 — automático tras Aprobar, produce Rick]  (§5.F, §5.G)
-  4. Copy Blog largo (ancla CAND-001, ~350-500+ palabras) + copys definitivos
-     por canal (blog / LinkedIn David / LinkedIn empresa / X)
-  5. Generar 5 alternativas de imagen → subir a Notion
+[V2 COPY + BRIEF — automático tras Aprobar, produce Rick]  (§5.F)
+  4. Promover el Borrador y producir Copy Blog largo (ancla CAND-001,
+     ~350-500+ palabras), Copy LinkedIn, Copy X, Copy Newsletter y
+     Visual brief v2 en la misma fila de Publicaciones
+
+[HITL DEL BRIEF — humano, sobre la fila promovida]  (§5.F)
+  5. David lee Copy* + Visual brief y aprueba u observa ese input; las
+     observaciones se dejan como comentarios de la página
+
+[V2 IMÁGENES — sólo después del HITL del brief]  (§5.G)
+  6. Generar 5 alternativas de imagen → subir a Notion
 
 [HITL-2 — humano]  (§5.H)
-  6. David elige imagen(es) + marca autorización + confirmación final Telegram
+  7. David elige imagen(es) + marca autorización + confirmación final Telegram
 
 [PUBLICACIÓN]  (§5.H, §5.I, Fila I = B)
-  7. Blog: publica automáticamente a Azure (ADR-010) tras gates + confirmación
-  8. RRSS: se inyecta el link del blog + copy de Notion; queda en estado
+  8. Blog: publica automáticamente a Azure (ADR-010) tras gates + confirmación
+  9. RRSS: se inyecta el link del blog + copy de Notion; queda en estado
      `listo_rrss`; el post a LinkedIn/X es MANUAL/semi-automático (no autopublish)
 ```
 
@@ -135,7 +142,7 @@ brecha filas B–E). Definiciones contractuales:
 | **Archivar** | No procede, pero se conserva como historial neutro. | Estado terminal `Archivar`, distinto de `Descartar`. No es señal negativa. No promueve a Publicaciones. |
 | **Observar** | Sigue en revisión; David deja **comentarios de Notion** para sugerir cambios. | Estado `Observar`; Rick puede iterar la alternativa según los comentarios. Bucle pre-aprobación (distinto del gate post-aprobación, §7 conflicto 1). |
 | **Descartar** | No procede **y** registra un **ejemplo negativo**. | Estado terminal `Descartar` + `motivo_descarte` + captura de error → realimenta QA/generación para no repetir el fallo (loop de aprendizaje). Contrato aquí; implementación en P2. |
-| **Aprobar** | Procede y **dispara V2**. | Marca la alternativa como aprobada y **promueve** una fila a Publicaciones (§6); dispara la generación V2 (copy largo + 5 imágenes). |
+| **Aprobar** | Procede y **dispara la entrada de V2**. | Marca la alternativa como aprobada, **promueve** una fila a Publicaciones (§6) y habilita la producción por Rick de Copy Blog, Copy LinkedIn, Copy X, Copy Newsletter y Visual brief v2. **No genera imágenes**: las cinco variantes quedan después del HITL del brief (§5.F/G). |
 
 Notas:
 - **Descartar ≠ Archivar.** Archivar es neutro (parkear); Descartar es señal
@@ -155,13 +162,26 @@ Notas:
   Resolver el límite `rich_text` de `Copy Blog` (usar body de página o payload
   explícito al Worker; ver [ADR-010](../adr/ADR-010-azure-editorial-blog-cms.md)
   Negativas y [notion-blog-linkedin-v3-content-model.md](notion-blog-linkedin-v3-content-model.md) §Limitation).
-- **Copys por canal**: `Copy Blog` (consumido por publish), `Copy LinkedIn`
-  (David), `Copy LinkedIn empresa`, `Copy X` (manuales, ver Fila I = B).
+- **Copys por canal**: Rick (`ROLE rick-editorial`) produce `Copy Blog`
+  (consumido por publish), `Copy LinkedIn`, `Copy X` y `Copy Newsletter`, junto
+  con `Visual brief` v2, en la **misma fila promovida** de Publicaciones.
+- **HITL del brief**: David lee los cuatro `Copy*` + `Visual brief` en esa fila
+  y aprueba u observa ese input. `Observar` se expresa mediante **comentarios
+  nativos de esa página**; este contrato no agrega una columna para el feedback.
+  Un select dedicado al brief queda para un GO futuro de schema por David
+  (ADR-007); este paquete no lo crea ni lo presupone.
+- La producción de copy/brief no abre `aprobado_contenido` ni
+  `autorizar_publicacion`, no publica y no llama a Magnific.
 
 ### G — Cinco alternativas de imagen
-- **5** variantes generadas por Rick (Magnific) tras Aprobar, subidas a Notion
-  como `imagen_alt_1_url`…`imagen_alt_5_url`, con `Selección imagen`
+- **5** variantes generadas por Rick (Magnific) **sólo después del HITL del
+  brief**, subidas a Notion como `imagen_alt_1_url`…`imagen_alt_5_url`, con `Selección imagen`
   (`Pendiente` → `Alt 1`…`Alt 5` / `Regenerar` / `Sin imagen`) y `Estado imagen`.
+- Aprobar en Shortlist no es autorización para generar imágenes. El scan de
+  Magnific permanece `DEFAULT OFF` y, como defensa adicional, omite toda fila
+  cuyo `Visual brief` esté vacío. La futura señal estructurada de aprobación
+  del brief requiere GO de schema de David; este paquete no crea ese select ni
+  enciende la automatización de imágenes.
 - La **selección** ya está cableada read-only en el Worker; la **generación**
   (`scripts/editorial/magnific_generate_variants.py`) es P2 (hoy TODO/OAuth
   pendiente). Estandarizar el conteo en **5** (no 3).
@@ -281,7 +301,8 @@ El resto de Publicaciones no cambia.
 
 - No crea ni modifica la DB de Notion (Shortlist ni Publicaciones) — eso es P1,
   solo David ([ADR-007](../adr/ADR-007-notion-como-hub-editorial.md)).
-- No abre gates, no publica, no genera copy final, no simula a Rick.
+- No abre gates ni publica. El copy/brief lo produce Rick tras Aprobar; las
+  imágenes permanecen separadas hasta el HITL del brief.
 - No reactiva stage8/stage9c (fail-closed por Ola-guards).
 - No autoriza autopublish LinkedIn/X (Fila I = B).
 
@@ -289,10 +310,11 @@ El resto de Publicaciones no cambia.
 
 - **P1 (David):** aprobar/crear la BD Shortlist (§6) + `origen_alternativa` en
   Publicaciones; actualizar `notion/schemas/*` + ADR-007.
-- **P2 (Codex/Worker):** poller Aprobar→promueve; generador Magnific de 5
-  imágenes + OAuth; writer de copy largo/por-canal + `Copy LinkedIn empresa`;
-  dedupe de candidato; puente HITL-2; captura de negativos (loop D); inyección
-  de link + `listo_rrss` (NO autopublish).
+- **P2 (Codex/Worker):** poller Aprobar→promueve; Rick produce Copy Blog,
+  Copy LinkedIn, Copy X, Copy Newsletter + Visual brief; tras el HITL del brief,
+  generador Magnific de 5 imágenes + OAuth; dedupe de candidato; puente HITL-2;
+  captura de negativos (loop D); inyección de link + `listo_rrss`
+  (NO autopublish).
 - **P3:** smoke end-to-end por fase en dry-run / gates=false.
 
 ## Referencias

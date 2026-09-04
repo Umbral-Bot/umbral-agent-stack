@@ -26,8 +26,10 @@ Contract (do not weaken):
   creating a new one.
 - The new Publicaciones row is always created in `Borrador` with both human
   gates (`aprobado_contenido`, `autorizar_publicacion`) false — this handler
-  never opens a gate, never publishes, never writes copy/images (those are
-  P2.2/P2.3, separate packages).
+  never opens a gate, never publishes, and never writes copy, Visual brief, or
+  images. The independently default-off post-promotion copy/brief scan is a
+  separate package and re-validates the new row before asking `rick-editorial`
+  to produce those fields; image generation remains downstream of brief HITL.
 - `fuente_pieza_url` must be the concrete piece, never an org home page or
   feed (docs/ops/editorial-source-attribution-policy.md #7 — real negative
   example: CAND-OLA3-03 promoted with `buildingsmart.org`, the bare home
@@ -145,6 +147,10 @@ def _build_publicacion_properties(shortlist_page_id: str, fields: Dict[str, Any]
 def handle_editorial_promote_shortlist_approval(input_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Promote one approved Shortlist row into a Publicaciones draft (P2.1).
+
+    This handler stops at the empty Borrador: it does not write copy, Visual
+    brief, or images. The independently flagged post-promotion scan invokes a
+    separate Worker task for copy/brief production.
 
     Input:
         shortlist_page_id (str, required): Notion page id (or URL) of the

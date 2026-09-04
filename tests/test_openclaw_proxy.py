@@ -202,6 +202,20 @@ class TestCallOpenclawProxy:
         body = json.loads(req_obj.data.decode())
         assert body["model"] == "openclaw/rick-communication-director"
 
+    @patch("worker.tasks.llm.urllib.request.urlopen")
+    def test_explicit_agent_id_overrides_global_route_without_mutating_env(self, mock_urlopen):
+        from worker.tasks.llm import _call_openclaw_proxy
+        mock_urlopen.return_value = _mock_urlopen_ok("ok")
+        env = {"OPENCLAW_GATEWAY_TOKEN": "tok", "OPENCLAW_GATEWAY_AGENT": "main"}
+        with patch.dict(os.environ, env):
+            _call_openclaw_proxy(
+                prompt="Hola", model="rick-editorial", max_tokens=1024,
+                temperature=0.2, system_prompt="", agent_id="rick-editorial",
+            )
+            assert os.environ["OPENCLAW_GATEWAY_AGENT"] == "main"
+        body = json.loads(mock_urlopen.call_args[0][0].data.decode())
+        assert body["model"] == "openclaw/rick-editorial"
+
 
 # ---------------------------------------------------------------------------
 # _detect_provider — Claude routing

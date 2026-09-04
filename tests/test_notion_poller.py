@@ -1289,6 +1289,243 @@ class TestPromoteScanBehavior:
 
 
 # ---------------------------------------------------------------------------
+# Post-P2.1 — governed Rick copy + Visual brief scan.
+# ---------------------------------------------------------------------------
+
+from dispatcher.notion_poller import (  # noqa: E402
+    REDIS_KEY_V2_COPY_BRIEF_ATTEMPT_PREFIX,
+    REDIS_KEY_V2_COPY_BRIEF_PREFIX,
+    V2_COPY_BRIEF_ATTEMPT_TTL_SEC,
+    V2_COPY_BRIEF_CALL_TIMEOUT_SEC,
+    V2_COPY_BRIEF_TTL_SEC,
+    _produce_v2_copy_brief_for_pending_rows,
+    _reset_v2_copy_brief_disabled_log,
+    _v2_copy_brief_enabled,
+    _v2_copy_brief_row_eligible,
+)
+
+
+def _copy_brief_row(page_id="pub-copy-1", **props):
+    base = {
+        "Estado": "Borrador",
+        "origen_alternativa": ["shortlist-1"],
+        "Copy Blog": "",
+        "Visual brief": "",
+        "aprobado_contenido": False,
+        "autorizar_publicacion": False,
+    }
+    base.update(props)
+    return {"page_id": page_id, "properties": base}
+
+
+class TestV2CopyBriefFlagParsing:
+    @pytest.mark.parametrize("value", ["1", "true", "TRUE", "yes", "on", " True "])
+    def test_explicit_truthy_enables(self, value):
+        with patch.dict(
+            "os.environ", {"NOTION_POLLER_ENABLE_V2_COPY_BRIEF": value}, clear=False
+        ):
+            assert _v2_copy_brief_enabled() is True
+
+    @pytest.mark.parametrize("value", ["", "0", "false", "no", "off", "junk", "enable", "si"])
+    def test_everything_else_disables(self, value):
+        with patch.dict(
+            "os.environ", {"NOTION_POLLER_ENABLE_V2_COPY_BRIEF": value}, clear=False
+        ):
+            assert _v2_copy_brief_enabled() is False
+
+    def test_absent_env_disables(self, monkeypatch):
+        monkeypatch.delenv("NOTION_POLLER_ENABLE_V2_COPY_BRIEF", raising=False)
+        assert _v2_copy_brief_enabled() is False
+
+    def test_disabled_log_is_emitted_once(self, caplog):
+        from dispatcher import notion_poller
+
+        _reset_v2_copy_brief_disabled_log()
+        with caplog.at_level("INFO", logger="dispatcher.notion_poller"):
+            notion_poller._log_v2_copy_brief_disabled_once()
+            notion_poller._log_v2_copy_brief_disabled_once()
+        records = [
+            record for record in caplog.records
+            if "NOTION_POLLER_ENABLE_V2_COPY_BRIEF" in record.getMessage()
+        ]
+        assert len(records) == 1
+
+
+class TestV2CopyBriefEligibility:
+    def test_exact_contract_is_eligible(self):
+        assert _v2_copy_brief_row_eligible(_copy_brief_row()) == (True, "")
+
+    @pytest.mark.parametrize(
+        "properties",
+        [
+            {"Estado": "Publicado"},
+            {"origen_alternativa": []},
+            {"Copy Blog": "ya escrito"},
+            {"Visual brief": "ya escrito"},
+            {"aprobado_contenido": True},
+            {"autorizar_publicacion": True},
+        ],
+    )
+    def test_any_failed_gate_is_ineligible(self, properties):
+        eligible, reason = _v2_copy_brief_row_eligible(_copy_brief_row(**properties))
+        assert eligible is False
+        assert reason
+
+    @pytest.mark.parametrize(
+        "mutation",
+        [
+            lambda row: row["properties"].pop("aprobado_contenido"),
+            lambda row: row["properties"].__setitem__(
+                "autorizar_publicacion", {"type": "checkbox", "checkbox": "false"}
+            ),
+            lambda row: row["properties"].__setitem__("Visual brief", None),
+        ],
+    )
+    def test_missing_or_malformed_property_fails_closed(self, mutation):
+        row = _copy_brief_row()
+        mutation(row)
+        assert _v2_copy_brief_row_eligible(row)[0] is False
+
+
+class TestV2CopyBriefScanBehavior:
+    def _run_scan(self, items, *, task_result=None, claim=True, publicaciones_db_id="pub-db"):
+        wc = MagicMock()
+
+        def _run(task, payload, timeout=None, retries=None):
+            if task == "notion.read_database":
+                return {"ok": True, "result": {"items": items}}
+            if task == "editorial.produce_copy_brief":
+                return task_result
+            raise AssertionError(f"unexpected task {task}")
+
+        wc.run.side_effect = _run
+        r = _redis_mock()
+        r.set.side_effect = lambda key, *_args, **kwargs: (
+            claim if str(key).startswith(REDIS_KEY_V2_COPY_BRIEF_ATTEMPT_PREFIX) else True
+        )
+        with patch.dict(
+            "os.environ", {"NOTION_PUBLICACIONES_DB_ID": publicaciones_db_id}, clear=False
+        ):
+            _produce_v2_copy_brief_for_pending_rows(wc, r)
+        return wc, r
+
+    @staticmethod
+    def _copy_calls(wc):
+        return [
+            call for call in wc.run.call_args_list
+            if call.args and call.args[0] == "editorial.produce_copy_brief"
+        ]
+
+    def test_eligible_row_calls_worker_with_id_only_and_checkpoints_verified_result(self):
+        result = {
+            "ok": True,
+            "result": {
+                "ok": True,
+                "updated": True,
+                "producer": "rick-editorial",
+                "written_fields": [
+                    "Copy Blog", "Copy LinkedIn", "Copy X", "Copy Newsletter", "Visual brief"
+                ],
+            },
+        }
+        wc, r = self._run_scan([_copy_brief_row()], task_result=result)
+
+        read_call = wc.run.call_args_list[0]
+        assert read_call.args[1]["filter"]["and"] == [
+            {"property": "Estado", "status": {"equals": "Borrador"}},
+            {"property": "origen_alternativa", "relation": {"is_not_empty": True}},
+            {"property": "Copy Blog", "rich_text": {"is_empty": True}},
+            {"property": "Visual brief", "rich_text": {"is_empty": True}},
+            {"property": "aprobado_contenido", "checkbox": {"equals": False}},
+            {"property": "autorizar_publicacion", "checkbox": {"equals": False}},
+        ]
+        copy_call = self._copy_calls(wc)[0]
+        assert copy_call.args[1] == {"publicacion_page_id": "pub-copy-1"}
+        assert copy_call.kwargs == {"timeout": V2_COPY_BRIEF_CALL_TIMEOUT_SEC, "retries": 0}
+        r.set.assert_any_call(
+            f"{REDIS_KEY_V2_COPY_BRIEF_ATTEMPT_PREFIX}pub-copy-1",
+            "1", nx=True, ex=V2_COPY_BRIEF_ATTEMPT_TTL_SEC,
+        )
+        r.set.assert_any_call(
+            f"{REDIS_KEY_V2_COPY_BRIEF_PREFIX}pub-copy-1",
+            "1", ex=V2_COPY_BRIEF_TTL_SEC,
+        )
+
+    def test_atomic_attempt_claim_prevents_duplicate_worker_call(self):
+        wc, r = self._run_scan([_copy_brief_row()], claim=False)
+        assert self._copy_calls(wc) == []
+        r.set.assert_called_once_with(
+            f"{REDIS_KEY_V2_COPY_BRIEF_ATTEMPT_PREFIX}pub-copy-1",
+            "1", nx=True, ex=V2_COPY_BRIEF_ATTEMPT_TTL_SEC,
+        )
+
+    def test_http_success_with_inner_failure_never_gets_success_checkpoint(self):
+        wc, r = self._run_scan(
+            [_copy_brief_row()],
+            task_result={"ok": True, "result": {"ok": False, "error": "rejected"}},
+        )
+        assert len(self._copy_calls(wc)) == 1
+        success_calls = [
+            call for call in r.set.call_args_list
+            if str(call.args[0]).startswith(REDIS_KEY_V2_COPY_BRIEF_PREFIX)
+            and not str(call.args[0]).startswith(REDIS_KEY_V2_COPY_BRIEF_ATTEMPT_PREFIX)
+        ]
+        assert success_calls == []
+
+    def test_ineligible_scan_snapshot_never_calls_worker(self):
+        wc, r = self._run_scan([_copy_brief_row(**{"Visual brief": "ocupado"})])
+        assert self._copy_calls(wc) == []
+        r.set.assert_not_called()
+
+    def test_copy_brief_flag_off_never_dispatches_worker_task(self):
+        wc = MagicMock()
+        wc.notion_poll_comments.return_value = {"ok": True, "result": {"comments": []}}
+        r = _redis_mock()
+        r.get.return_value = "2026-09-04T12:00:00+00:00"
+        with (
+            patch.dict(
+                "os.environ",
+                {"NOTION_POLLER_ENABLE_V2_COPY_BRIEF": "false"},
+                clear=False,
+            ),
+            patch("dispatcher.notion_poller._produce_v2_copy_brief_for_pending_rows") as scan,
+        ):
+            _do_poll(wc, MagicMock(), r, MagicMock())
+        scan.assert_not_called()
+        assert all(
+            not call.args or call.args[0] != "editorial.produce_copy_brief"
+            for call in wc.run.call_args_list
+        )
+
+    def test_copy_brief_scan_runs_immediately_after_promote_in_same_tick(self):
+        events = []
+        wc = MagicMock()
+        wc.notion_poll_comments.return_value = {"ok": True, "result": {"comments": []}}
+        r = _redis_mock()
+        r.get.return_value = "2026-09-04T12:00:00+00:00"
+        with (
+            patch.dict(
+                "os.environ",
+                {
+                    "NOTION_POLLER_ENABLE_PROMOTE": "true",
+                    "NOTION_POLLER_ENABLE_V2_COPY_BRIEF": "true",
+                },
+                clear=True,
+            ),
+            patch(
+                "dispatcher.notion_poller._promote_approved_shortlist_rows",
+                side_effect=lambda *_args: events.append("promote"),
+            ),
+            patch(
+                "dispatcher.notion_poller._produce_v2_copy_brief_for_pending_rows",
+                side_effect=lambda *_args: events.append("copy_brief"),
+            ),
+        ):
+            _do_poll(wc, MagicMock(), r, MagicMock())
+        assert events == ["promote", "copy_brief"]
+
+
+# ---------------------------------------------------------------------------
 # P2.2 — Magnific scan (Publicaciones rows promoted by P2.1 -> 5 image variants)
 # See docs/ops/editorial-roadmap-norte-p1-p3-2026-07-22.md row P2.2.
 # ---------------------------------------------------------------------------
@@ -1307,6 +1544,7 @@ from dispatcher.notion_poller import (  # noqa: E402
 def _promoted_row(page_id="pub-1", **props):
     base = {
         "origen_alternativa": ["shortlist-1"],
+        "Visual brief": "version: 2\nbrief listo para HITL",
         "Estado imagen": "No aplica",
     }
     base.update(props)
@@ -1371,6 +1609,29 @@ class TestMagnificScanBehavior:
 
     def test_rows_without_origen_alternativa_are_never_generated(self):
         wc, r = self._run_scan([_promoted_row(**{"origen_alternativa": []})])
+        assert self._magnific_calls(wc) == []
+        r.set.assert_not_called()
+
+    @pytest.mark.parametrize("visual_brief", ["", "   "])
+    def test_empty_visual_brief_is_never_generated(self, visual_brief):
+        wc, r = self._run_scan(
+            [_promoted_row(**{"Visual brief": visual_brief})]
+        )
+        assert self._magnific_calls(wc) == []
+        r.set.assert_not_called()
+
+    def test_regenerar_cannot_bypass_empty_visual_brief_defense(self):
+        wc, r = self._run_scan(
+            [
+                _promoted_row(
+                    **{
+                        "Visual brief": "",
+                        "Estado imagen": "Listo para selección",
+                        "Selección imagen": "Regenerar",
+                    }
+                )
+            ]
+        )
         assert self._magnific_calls(wc) == []
         r.set.assert_not_called()
 

@@ -151,6 +151,17 @@ PROMOTE_FAIL_TTL_SEC = 30 * 60  # 30 min backoff on failure
 PROMOTE_BATCH_LIMIT = 3
 PROMOTE_SCAN_LIMIT = 10
 
+# Post-P2.1 V2 copy + Visual brief scan.  Redis separates the durable success
+# checkpoint from the atomic, short-lived attempt claim: the latter prevents
+# concurrent ticks from starting two expensive Rick turns for the same row.
+REDIS_KEY_V2_COPY_BRIEF_PREFIX = "umbral:notion_poller:v2_copy_brief:"
+REDIS_KEY_V2_COPY_BRIEF_ATTEMPT_PREFIX = "umbral:notion_poller:v2_copy_brief_attempt:"
+V2_COPY_BRIEF_TTL_SEC = 24 * 60 * 60
+V2_COPY_BRIEF_ATTEMPT_TTL_SEC = 30 * 60
+V2_COPY_BRIEF_BATCH_LIMIT = 1
+V2_COPY_BRIEF_SCAN_LIMIT = 10
+V2_COPY_BRIEF_CALL_TIMEOUT_SEC = 360.0
+
 # P2.4: dedupe-of-candidate scan (Shortlist rows missing dedupe_status ->
 # ask Worker/core to consult the Publicaciones backlog). Independent of the
 # promote scan above: a row is evaluated once, regardless of its
@@ -277,6 +288,39 @@ def _log_promote_disabled_once() -> None:
 def _reset_promote_disabled_log() -> None:
     """Test-only helper."""
     _PROMOTE_DISABLED_LOG_STATE["logged"] = False
+
+
+# Post-promotion V2 copy + Visual brief production is independently DEFAULT
+# OFF.  The Worker re-fetches/revalidates the Publicaciones row and invokes the
+# OpenClaw rick-editorial ROLE; this is not the generic llm.generate path.
+V2_COPY_BRIEF_ENV_FLAG = "NOTION_POLLER_ENABLE_V2_COPY_BRIEF"
+_V2_COPY_BRIEF_DISABLED_LOG_STATE = {"logged": False}
+
+
+def _v2_copy_brief_enabled() -> bool:
+    """Return True only for an explicit truthy V2 copy/brief flag."""
+    return os.environ.get(V2_COPY_BRIEF_ENV_FLAG, "").strip().lower() in _TRUTHY_ENV_VALUES
+
+
+def _log_v2_copy_brief_disabled_once() -> None:
+    """One INFO line per process, DEBUG afterwards."""
+    if not _V2_COPY_BRIEF_DISABLED_LOG_STATE["logged"]:
+        logger.info(
+            "V2 copy/brief scan disabled (default; set %s=true to enable). "
+            "Promotion and every other poller path are unaffected.",
+            V2_COPY_BRIEF_ENV_FLAG,
+        )
+        _V2_COPY_BRIEF_DISABLED_LOG_STATE["logged"] = True
+    else:
+        logger.debug(
+            "V2 copy/brief scan disabled (%s not truthy)",
+            V2_COPY_BRIEF_ENV_FLAG,
+        )
+
+
+def _reset_v2_copy_brief_disabled_log() -> None:
+    """Test-only helper."""
+    _V2_COPY_BRIEF_DISABLED_LOG_STATE["logged"] = False
 
 
 # P2.4: the dedupe scan (Shortlist candidate vs Publicaciones backlog) is
@@ -743,6 +787,88 @@ def _extract_item_checkbox(item: dict, *names: str) -> bool:
     return False
 
 
+def _strict_scan_property(item: dict, name: str, expected_type: str) -> tuple[bool, object]:
+    """Read one flattened/raw property without treating malformed data as empty.
+
+    The generic extractors intentionally return empty/false defaults.  That is
+    unsuitable for the copy/brief gate: a missing checkbox must fail closed,
+    not look like an explicit ``false`` human gate.
+    """
+    props = item.get("properties")
+    if not isinstance(props, dict) or name not in props:
+        return False, None
+    prop = props.get(name)
+
+    # Normal ``notion.read_database`` output is already flattened.
+    if expected_type in {"status", "rich_text"} and isinstance(prop, str):
+        return True, prop.strip()
+    if expected_type == "checkbox" and isinstance(prop, bool):
+        return True, prop
+    if expected_type == "relation" and isinstance(prop, list):
+        relation_ids = [
+            str((value.get("id") if isinstance(value, dict) else value) or "").strip()
+            for value in prop
+            if str((value.get("id") if isinstance(value, dict) else value) or "").strip()
+        ]
+        return True, relation_ids
+
+    # Tests and defensive callers may supply raw Notion property objects.
+    if not isinstance(prop, dict) or prop.get("type") != expected_type:
+        return False, None
+    if expected_type in {"status", "rich_text"}:
+        return True, _extract_item_text(item, name)
+    if expected_type == "checkbox":
+        value = prop.get("checkbox")
+        return (isinstance(value, bool), value if isinstance(value, bool) else None)
+    if expected_type == "relation":
+        relation = prop.get("relation")
+        if not isinstance(relation, list):
+            return False, None
+        return True, [
+            str(value.get("id") or "").strip()
+            for value in relation
+            if isinstance(value, dict) and str(value.get("id") or "").strip()
+        ]
+    return False, None
+
+
+def _v2_copy_brief_row_eligible(item: dict) -> tuple[bool, str]:
+    """Strict scan snapshot gate for post-promotion copy/brief production."""
+    if not isinstance(item, dict):
+        return False, "invalid_item"
+    if item.get("archived") is True or item.get("in_trash") is True:
+        return False, "archived"
+
+    expected = {
+        "Estado": "status",
+        "origen_alternativa": "relation",
+        "Copy Blog": "rich_text",
+        "Visual brief": "rich_text",
+        "aprobado_contenido": "checkbox",
+        "autorizar_publicacion": "checkbox",
+    }
+    values: dict[str, object] = {}
+    for name, expected_type in expected.items():
+        valid, value = _strict_scan_property(item, name, expected_type)
+        if not valid:
+            return False, f"invalid_property:{name}"
+        values[name] = value
+
+    if values["Estado"] != "Borrador":
+        return False, "estado_not_borrador"
+    if not values["origen_alternativa"]:
+        return False, "origen_alternativa_empty"
+    if str(values["Copy Blog"] or "").strip():
+        return False, "copy_blog_not_empty"
+    if str(values["Visual brief"] or "").strip():
+        return False, "visual_brief_not_empty"
+    if values["aprobado_contenido"] is not False:
+        return False, "aprobado_contenido_not_false"
+    if values["autorizar_publicacion"] is not False:
+        return False, "autorizar_publicacion_not_false"
+    return True, ""
+
+
 def _extract_estado_agente(item: dict) -> str:
     """Kept for backwards compatibility; delegates to the generic extractor."""
     return _extract_item_text(item, "Estado agente")
@@ -994,6 +1120,165 @@ def _promote_approved_shortlist_rows(wc: WorkerClient, r: redis.Redis) -> None:
     metrics_line = (
         f"Promote scan: promote_enabled=True scanned={scanned} eligible={eligible} "
         f"promoted={promoted} skipped={skipped} errors={errors}"
+    )
+    if scanned > 0:
+        logger.info(metrics_line)
+    else:
+        logger.debug(metrics_line)
+
+
+_V2_COPY_BRIEF_WRITTEN_FIELDS = {
+    "Copy Blog",
+    "Copy LinkedIn",
+    "Copy X",
+    "Copy Newsletter",
+    "Visual brief",
+}
+
+
+def _v2_copy_brief_result_status(response: dict | None) -> str:
+    """Classify a WorkerClient response as updated, skipped or error.
+
+    ``WorkerClient.run`` wraps the handler payload in ``result``.  Requiring
+    the inner ``ok`` + ``updated`` markers prevents an HTTP-level success from
+    being checkpointed as content success when the handler failed closed.
+    """
+    if not isinstance(response, dict):
+        return "error"
+    payload = response
+    if isinstance(response.get("result"), dict):
+        if response.get("ok") is not True:
+            return "error"
+        payload = response["result"]
+    if payload.get("ok") is not True:
+        return "error"
+    if payload.get("skipped") is True:
+        return "skipped"
+    written_fields = payload.get("written_fields")
+    if (
+        payload.get("updated") is True
+        and payload.get("producer") == "rick-editorial"
+        and isinstance(written_fields, list)
+        and set(written_fields) == _V2_COPY_BRIEF_WRITTEN_FIELDS
+    ):
+        return "updated"
+    return "error"
+
+
+def _produce_v2_copy_brief_for_pending_rows(wc: WorkerClient, r: redis.Redis) -> None:
+    """Scan eligible Publicaciones drafts and ask Worker/Rick for copy+brief.
+
+    The Notion filter prevents old rows from starving a newly promoted draft;
+    the local strict gate still validates every returned snapshot.  This
+    dispatcher function never writes Notion and passes no copy, gates or image
+    instruction to the Worker.  Redis claims scan attempts atomically; actual
+    correctness and the final Notion PATCH live in the Worker handler.
+    """
+    publicaciones_db_id = os.environ.get("NOTION_PUBLICACIONES_DB_ID", "").strip()
+    if not publicaciones_db_id:
+        return
+
+    notion_filter = {
+        "and": [
+            {"property": "Estado", "status": {"equals": "Borrador"}},
+            {"property": "origen_alternativa", "relation": {"is_not_empty": True}},
+            {"property": "Copy Blog", "rich_text": {"is_empty": True}},
+            {"property": "Visual brief", "rich_text": {"is_empty": True}},
+            {"property": "aprobado_contenido", "checkbox": {"equals": False}},
+            {"property": "autorizar_publicacion", "checkbox": {"equals": False}},
+        ]
+    }
+    try:
+        response = wc.run(
+            "notion.read_database",
+            {
+                "database_id_or_url": publicaciones_db_id,
+                "max_items": V2_COPY_BRIEF_SCAN_LIMIT,
+                "filter": notion_filter,
+            },
+        )
+    except Exception:
+        logger.warning("V2 copy/brief scan: failed to read Publicaciones DB")
+        return
+
+    items = _extract_read_database_items(response)
+    scanned = len(items)
+    eligible = 0
+    attempted = 0
+    updated = 0
+    skipped = 0
+    errors = 0
+
+    for item in items:
+        if attempted >= V2_COPY_BRIEF_BATCH_LIMIT:
+            break
+        page_id = str(item.get("page_id") or item.get("id") or "").strip()
+        if not page_id:
+            skipped += 1
+            continue
+
+        is_eligible, reason = _v2_copy_brief_row_eligible(item)
+        if not is_eligible:
+            skipped += 1
+            logger.debug(
+                "V2 copy/brief scan: page %s skipped (%s)",
+                page_id[:8],
+                reason,
+            )
+            continue
+        eligible += 1
+
+        success_key = f"{REDIS_KEY_V2_COPY_BRIEF_PREFIX}{page_id}"
+        attempt_key = f"{REDIS_KEY_V2_COPY_BRIEF_ATTEMPT_PREFIX}{page_id}"
+        if r.exists(success_key):
+            skipped += 1
+            continue
+        claimed = r.set(
+            attempt_key,
+            "1",
+            nx=True,
+            ex=V2_COPY_BRIEF_ATTEMPT_TTL_SEC,
+        )
+        if not claimed:
+            skipped += 1
+            continue
+
+        attempted += 1
+        try:
+            result = wc.run(
+                "editorial.produce_copy_brief",
+                {"publicacion_page_id": page_id},
+                timeout=V2_COPY_BRIEF_CALL_TIMEOUT_SEC,
+                retries=0,
+            )
+        except Exception:
+            errors += 1
+            logger.warning(
+                "V2 copy/brief scan: page %s call failed (attempt backoff %ds)",
+                page_id[:8],
+                V2_COPY_BRIEF_ATTEMPT_TTL_SEC,
+            )
+            continue
+
+        outcome = _v2_copy_brief_result_status(result)
+        if outcome == "updated":
+            r.set(success_key, "1", ex=V2_COPY_BRIEF_TTL_SEC)
+            updated += 1
+            logger.info("V2 copy/brief scan: page %s updated by rick-editorial", page_id[:8])
+        elif outcome == "skipped":
+            skipped += 1
+            logger.info("V2 copy/brief scan: Worker revalidation skipped page %s", page_id[:8])
+        else:
+            errors += 1
+            logger.warning(
+                "V2 copy/brief scan: Worker rejected page %s (attempt backoff %ds)",
+                page_id[:8],
+                V2_COPY_BRIEF_ATTEMPT_TTL_SEC,
+            )
+
+    metrics_line = (
+        f"V2 copy/brief scan: enabled=True scanned={scanned} eligible={eligible} "
+        f"attempted={attempted} updated={updated} skipped={skipped} errors={errors}"
     )
     if scanned > 0:
         logger.info(metrics_line)
@@ -1422,13 +1707,14 @@ _MAGNIFIC_REGENERATE_STATES = {"Listo para selección", "Error"}
 def _generate_magnific_variants_for_pending_rows(wc: WorkerClient, r: redis.Redis) -> None:
     """Scan Publicaciones for rows promoted by P2.1 that still need images.
 
-    P2.2 contract: a row is a *candidate* here only if it carries a non-empty
-    `origen_alternativa` back-link (i.e. it was promoted by P2.1's Aprobar
-    flow — roadmap dependency "P2.1 dispara tras Aprobar") and its flattened
-    `Estado imagen` snapshot is not in `_MAGNIFIC_SCAN_SKIP_STATES`, unless a
-    ready/error row carries the explicit `Selección imagen = Regenerar`
-    command. `Seleccionada` and `Generando` remain non-eligible. This function
-    never writes to Notion — it only calls the
+    P2.2 contract: a row is a *candidate* here only after Rick has persisted a
+    non-empty `Visual brief` and it carries a non-empty `origen_alternativa`
+    back-link. Presence is only a pre-brief defense, not an approval signal:
+    this scan remains default-off until a future David-approved brief-HITL
+    signal exists. Its flattened `Estado imagen` snapshot must also not be in
+    `_MAGNIFIC_SCAN_SKIP_STATES`, unless a ready/error row carries the explicit
+    `Selección imagen = Regenerar` command. `Seleccionada` and `Generando`
+    remain non-eligible. This function never writes to Notion — it only calls the
     `magnific.generate_variants` Worker task, which re-fetches the page and
     re-validates the state machine before writing (fail-closed; avoids
     acting on a stale scan snapshot). Redis here only dedupes *scan
@@ -1474,6 +1760,12 @@ def _generate_magnific_variants_for_pending_rows(wc: WorkerClient, r: redis.Redi
 
         origen_alternativa = (item.get("properties") or {}).get("origen_alternativa")
         if not origen_alternativa:
+            skipped += 1
+            continue
+
+        # Defense in depth: promotion alone must never spend image credits.
+        # The Visual brief is produced/reviewed in the preceding stage.
+        if not _extract_item_text(item, "Visual brief").strip():
             skipped += 1
             continue
 
@@ -1683,6 +1975,18 @@ def _do_poll(
     else:
         _log_promote_disabled_once()
 
+    # Post-P2.1: produce the four copy fields + Visual brief v2 on the promoted
+    # Borrador — independently DEFAULT OFF.  Placement immediately after the
+    # promote scan lets a newly created row be picked up in this same tick if
+    # Notion exposes it, otherwise naturally in the next tick.
+    if _v2_copy_brief_enabled():
+        try:
+            _produce_v2_copy_brief_for_pending_rows(wc, r)
+        except Exception:
+            logger.warning("V2 copy/brief scan failed (general cycle unaffected)", exc_info=True)
+    else:
+        _log_v2_copy_brief_disabled_once()
+
     # P2.4: dedupe Shortlist candidates against the Publicaciones backlog —
     # DEFAULT OFF (fail-closed). Independent of promote; everything above
     # never depends on this.
@@ -1728,8 +2032,9 @@ def _do_poll(
     else:
         _log_rrss_injection_disabled_once()
 
-    # P2.2: generate Magnific image variants for promoted rows — DEFAULT OFF
-    # (fail-closed). Everything above never depends on this. Runs last: each
+    # P2.2: generate Magnific image variants for rows with a Visual brief —
+    # DEFAULT OFF (fail-closed; brief presence is not HITL approval).
+    # Everything above never depends on this. Runs last: each
     # call can take minutes, and this must never delay Control Room / review
     # targets / smart replies / V2 classify / promote scan.
     if _magnific_enabled():
@@ -1782,6 +2087,14 @@ def main():
         logger.info("Promote scan ENABLED (%s is truthy).", PROMOTE_ENV_FLAG)
     else:
         logger.info("Promote scan disabled (default off; %s not truthy).", PROMOTE_ENV_FLAG)
+
+    if _v2_copy_brief_enabled():
+        logger.info("V2 copy/brief scan ENABLED (%s is truthy).", V2_COPY_BRIEF_ENV_FLAG)
+    else:
+        logger.info(
+            "V2 copy/brief scan disabled (default off; %s not truthy).",
+            V2_COPY_BRIEF_ENV_FLAG,
+        )
 
     if _dedupe_enabled():
         logger.info("Dedupe scan ENABLED (%s is truthy).", DEDUPE_ENV_FLAG)

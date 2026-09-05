@@ -65,6 +65,7 @@ def _request_with_backoff(
     json_body: dict[str, Any] | None = None,
     params: dict[str, Any] | None = None,
     max_retries: int = MAX_429_RETRIES,
+    retry_transport: bool = False,
 ) -> dict[str, Any]:
     """Issue one Notion API call, retrying on 429 with exponential backoff.
 
@@ -72,11 +73,33 @@ def _request_with_backoff(
     same doubling-delay-from-1s convention, kept separate here since this
     module has no shared low-level HTTP client class. Honors Notion's
     ``Retry-After`` header when present.
+
+    Read-only operations may opt into transient transport retries. They share
+    the same retry budget and backoff; writes keep transport retries disabled
+    because a lost response does not mean the write was not applied.
     """
     delay = 1.0
     resp: httpx.Response | None = None
     for attempt in range(max_retries + 1):
-        resp = client.request(method, url, headers=headers, json=json_body, params=params)
+        try:
+            resp = client.request(method, url, headers=headers, json=json_body, params=params)
+        except (
+            httpx.ConnectError,
+            httpx.ConnectTimeout,
+            httpx.ReadTimeout,
+            httpx.RemoteProtocolError,
+            httpx.ReadError,
+            httpx.WriteError,
+        ) as exc:
+            if not retry_transport or attempt >= max_retries:
+                raise
+            logger.warning(
+                "Notion %s got %s, retrying in %.1fs (attempt %d/%d)",
+                context, type(exc).__name__, delay, attempt + 1, max_retries,
+            )
+            time.sleep(delay)
+            delay *= 2
+            continue
         if resp.status_code != 429:
             return _check_response(resp, context)
         if attempt >= max_retries:
@@ -927,21 +950,27 @@ def read_database(
     max_items = max(1, min(int(max_items), 100))
 
     with httpx.Client(timeout=TIMEOUT) as client:
-        db_resp = client.get(
+        db_data = _request_with_backoff(
+            client,
+            "GET",
             f"{NOTION_BASE_URL}/databases/{database_id}",
+            context="read_database metadata",
             headers=_headers(),
+            retry_transport=True,
         )
-        db_data = _check_response(db_resp, "read_database metadata")
 
         query_body: dict[str, Any] = {"page_size": max_items}
         if filter:
             query_body["filter"] = filter
-        rows_resp = client.post(
+        rows_data = _request_with_backoff(
+            client,
+            "POST",
             f"{NOTION_BASE_URL}/databases/{database_id}/query",
+            context="read_database query",
             headers=_headers(),
-            json=query_body,
+            json_body=query_body,
+            retry_transport=True,
         )
-        rows_data = _check_response(rows_resp, "read_database query")
 
     title = _plain_text_from_rich_text(db_data.get("title"))
     schema: dict[str, str] = {}

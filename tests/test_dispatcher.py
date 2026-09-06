@@ -8,6 +8,7 @@ Run with:
 """
 
 import json
+import logging
 import os
 import uuid
 from unittest.mock import MagicMock, patch
@@ -170,6 +171,39 @@ class TestTaskQueue:
 
 
 class TestHealthMonitor:
+    @pytest.mark.parametrize("worker_url", [None, "", " \t\n "], ids=["unset", "empty", "blank"])
+    def test_disabled_monitor_never_polls(self, worker_url, caplog):
+        on_vm_back = MagicMock()
+        on_level_change = MagicMock()
+        with (
+            patch("dispatcher.health.httpx.get") as mock_get,
+            patch("dispatcher.health.threading.Thread") as mock_thread,
+            caplog.at_level(logging.INFO, logger="dispatcher.health"),
+        ):
+            hm = HealthMonitor(
+                worker_url=worker_url,
+                worker_token="test",
+                on_vm_back=on_vm_back,
+                on_level_change=on_level_change,
+            )
+            hm.start()
+            hm.start()
+            for _ in range(hm.failure_threshold + 1):
+                assert hm.check_once() is False
+            hm.stop()
+
+        mock_get.assert_not_called()
+        mock_thread.assert_not_called()
+        on_vm_back.assert_not_called()
+        on_level_change.assert_not_called()
+        assert hm.vm_online is False
+        assert hm.level == SystemLevel.PARTIAL
+        assert hm.status["last_check"] is None
+        assert hm.status["consecutive_failures"] == 0
+        assert [(r.levelno, r.getMessage()) for r in caplog.records if r.name == "dispatcher.health"] == [
+            (logging.INFO, "VM health monitor disabled (no WORKER_URL_VM)")
+        ]
+
     def test_initial_state(self):
         hm = HealthMonitor(
             worker_url="http://localhost:8088",
@@ -273,11 +307,83 @@ class TestHealthMonitor:
 
 
 # ---------------------------------------------------------------------------
+# Dispatcher startup tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "vm_url",
+    [None, "", " \t\n ", "http://vm.example:8088"],
+    ids=["unset", "empty", "blank", "configured"],
+)
+def test_service_vm_health_monitor_startup(vm_url, monkeypatch, redis_client):
+    from dispatcher import service
+
+    if vm_url is None:
+        monkeypatch.delenv("WORKER_URL_VM", raising=False)
+    else:
+        monkeypatch.setenv("WORKER_URL_VM", vm_url)
+    monkeypatch.delenv("WORKER_URL_VM_GUI", raising=False)
+    monkeypatch.setenv("DISPATCHER_WORKERS", "0")
+    monkeypatch.setenv("WORKER_URL", "http://localhost:8088")
+
+    with (
+        patch.object(service, "_acquire_dispatcher_instance_lock") as mock_lock,
+        patch.object(service.redis.ConnectionPool, "from_url"),
+        patch.object(service.redis, "Redis", return_value=redis_client),
+        patch.object(service, "TeamRouter", wraps=TeamRouter) as router_factory,
+        patch.object(service, "load_quota_policy", return_value=({}, {})),
+        patch.object(service, "QuotaTracker"),
+        patch.object(service, "ModelRouter"),
+        patch.object(service, "WorkerClient"),
+        patch.object(service, "AlertManager"),
+        patch("dispatcher.health.httpx.get") as mock_get,
+        patch("dispatcher.health.threading.Thread") as mock_thread,
+    ):
+        mock_get.return_value.status_code = 200
+        mock_get.return_value.json.return_value = {"ok": True, "version": "test"}
+        service.main()
+
+    hm = router_factory.call_args.kwargs["health"]
+    assert isinstance(hm, HealthMonitor)
+    mock_lock.return_value.release.assert_called_once()
+    if vm_url and vm_url.strip():
+        mock_get.assert_called_once_with(f"{vm_url}/health", timeout=10.0)
+        mock_thread.assert_called_once()
+        mock_thread.return_value.start.assert_called_once()
+        mock_thread.return_value.join.assert_called_once()
+        assert hm.vm_online is True
+        assert hm.level == SystemLevel.NORMAL
+    else:
+        mock_get.assert_not_called()
+        mock_thread.assert_not_called()
+        assert hm.vm_online is False
+        assert hm.level == SystemLevel.PARTIAL
+        assert hm.status["last_check"] is None
+
+
+# ---------------------------------------------------------------------------
 # TeamRouter tests
 # ---------------------------------------------------------------------------
 
 
 class TestTeamRouter:
+    @pytest.mark.parametrize(
+        ("team", "task", "expected_action"),
+        [("improvement", "eval", "blocked"), ("lab", "eval", "blocked"), ("marketing", "write_post", "enqueued")],
+    )
+    def test_dispatch_with_disabled_monitor(self, queue, team, task, expected_action):
+        health = HealthMonitor(worker_url=None, worker_token="test")
+        router = TeamRouter(queue=queue, health=health)
+        result = router.dispatch({
+            "task_id": str(uuid.uuid4()),
+            "team": team,
+            "task": task,
+            "input": {},
+        })
+        assert result["action"] == expected_action
+        assert result["system_level"] == "partial"
+
     def test_dispatch_normal(self, redis_client, sample_envelope):
         queue = TaskQueue(redis_client)
         health = MagicMock()

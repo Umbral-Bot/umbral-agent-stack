@@ -19,6 +19,8 @@
 - Equipos con `requires_vm: true` (improvement, lab) → **Worker VM** si `WORKER_URL_VM` está definido y la VM está online; si la VM está caída, la tarea se **bloquea** hasta que vuelva (o podés no definir `WORKER_URL_VM` y esas tareas irían al Worker local en modo degradado si en el futuro se soporta).
 - Sin `WORKER_URL_VM`: todo va al Worker local (VPS 100 % autosuficiente; improvement/lab se bloquean si no hay VM).
 
+Si `WORKER_URL_VM` está ausente, vacío o solo contiene espacios, el HealthMonitor queda desactivado en nivel `PARTIAL` (`vm_online=False`), sin hilo ni sondeos HTTP a la VM o a una URL dummy como `127.0.0.1:1`, y emite un único log INFO de desactivación.
+
 ## Configuración en la VPS
 
 ### 1. Worker local siempre activo

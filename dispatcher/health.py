@@ -36,7 +36,7 @@ class HealthMonitor:
 
     def __init__(
         self,
-        worker_url: str,
+        worker_url: Optional[str],
         worker_token: str,
         check_interval: int = 60,
         failure_threshold: int = 3,
@@ -45,14 +45,14 @@ class HealthMonitor:
     ):
         """
         Args:
-            worker_url: URL base del worker (e.g. http://100.109.16.40:8088)
+            worker_url: URL base del worker; None o blank desactiva el monitor
             worker_token: Bearer token para autenticar
             check_interval: segundos entre checks (default 60)
             failure_threshold: checks fallidos para declarar VM offline (default 3)
             on_level_change: callback(old_level, new_level) cuando cambia nivel
             on_vm_back: callback() cuando VM vuelve a estar online
         """
-        self.worker_url = worker_url.rstrip("/")
+        self.worker_url = (worker_url or "").strip().rstrip("/")
         self.worker_token = worker_token
         self.check_interval = check_interval
         self.failure_threshold = failure_threshold
@@ -60,12 +60,15 @@ class HealthMonitor:
         self.on_vm_back = on_vm_back
 
         self._consecutive_failures = 0
-        self._level = SystemLevel.NORMAL
+        self._level = SystemLevel.NORMAL if self.worker_url else SystemLevel.PARTIAL
         self._vm_online = False  # pessimistic init; check_once() in start() sets real state
         self._running = False
         self._thread: Optional[threading.Thread] = None
         self._last_check: Optional[float] = None
         self._last_worker_version: Optional[str] = None
+
+        if not self.worker_url:
+            logger.info("VM health monitor disabled (no WORKER_URL_VM)")
 
     @property
     def level(self) -> SystemLevel:
@@ -91,6 +94,8 @@ class HealthMonitor:
         """
         Ejecuta un health check. Retorna True si el worker respondió OK.
         """
+        if not self.worker_url:
+            return False
         self._last_check = time.time()
         try:
             resp = httpx.get(
@@ -157,7 +162,7 @@ class HealthMonitor:
 
     def start(self):
         """Inicia el monitor en un thread de background."""
-        if self._running:
+        if not self.worker_url or self._running:
             return
         # Synchronous initial check so VM state is accurate before first dequeue
         self.check_once()
@@ -172,6 +177,8 @@ class HealthMonitor:
 
     def stop(self):
         """Detiene el monitor."""
+        if not self.worker_url:
+            return
         self._running = False
         if self._thread:
             self._thread.join(timeout=self.check_interval + 5)

@@ -899,9 +899,8 @@ def main():
     hm: Optional[HealthMonitor] = None
 
     # HealthMonitor vigila la VM (si hay WORKER_URL_VM); si no hay VM, vm_online queda False
-    hm_url = worker_url_vm if worker_url_vm else "http://127.0.0.1:1"
     hm = HealthMonitor(
-        worker_url=hm_url,
+        worker_url=worker_url_vm,
         worker_token=worker_token,
         check_interval=10,
         failure_threshold=2,

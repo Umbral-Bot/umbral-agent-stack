@@ -1,6 +1,13 @@
 # Editorial model contract — GPT-5.5 via OpenClaw
 
-Estado: **CANÓNICO** para producción editorial Rick/UmbralBIM (2026-06-29).
+Estado: **BASE HISTÓRICA** del contrato y guard de cinco agentes (2026-06-29).
+
+**Rick editorial, actualización 2026-09-13:** está activo como productor desde T4
+y su selección se rige por `openclaw/workspace-agent-overrides/rick-editorial/ROLE.md`.
+David pidió `openai/gpt-6-astra` con esfuerzo `medium` para ese agente
+(`PKG-EDITORIAL-ASTRA6-MEDIUM-20260913`); ver T14 en `docs/ops/rick-editorial-agent.md`
+para alcance y criterio de verificación real. El contenido heredado de abajo no
+autoriza sobrescribir esa asignación ni afirma que Azure siga desplegado.
 
 ## Requisito
 
@@ -39,7 +46,8 @@ Deben tener `model.primary = azure-openai-responses/gpt-5.5`:
 - `rick-qa`
 - `main` (default gateway para `stage7_5_copy_writer`)
 
-`rick-editorial` permanece design-only; orchestrator + communication-director cubren redacción.
+En la versión de junio, `rick-editorial` era design-only. Esa condición quedó
+superada por su activación T4; no pertenece a la lista de cinco agentes de este guard.
 
 ## Guardrail repo-side
 

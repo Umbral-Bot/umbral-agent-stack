@@ -252,6 +252,40 @@ Nada de esto está documentado en `magnific-editorial-setup-2026-06-06.md` ni en
 
 David aprobó el 2026-09-03 el formato de `arco_narrativo` (PKG-EDITORIAL-V1-ARCO-PARENS-SOT-1): el CUERPO del campo es la historia de la pieza; las alusiones a estrategia interna (de qué parte, qué tensiona, a dónde llega) van entre paréntesis **después** de la frase que etiquetan — `(punto de partida: …)`, `(tensión: …)`, `(cierre: …)`. El `Right` anterior de `ROLE.md` enseñaba justo el andamiaje que ahora queda prohibido (`Parte de que RICS… Tensiona la distancia… Llega a que los equipos BIM…`), y por eso `CAND-IA-FLUJOS-AEC-SHORTLIST-V1` (2026-09-03) pasó `rick-qa` con ese mismo andamiaje sin etiquetas y el arco seguía ilegible como historia. Se actualizó `ROLE.md` (`rick-editorial` y `rick-qa`), el contrato §3, la plantilla de payload, `shortlist-format.md`, `SKILL.md` de `editorial-source-curation` y `docs/67` §5.1 con el mismo criterio. No se tocó `cadena_tesis` (ahí las etiquetas son el formato exigido). El rewrite en vivo de esa misma fila de Shortlist queda para el siguiente paquete, post-merge.
 
+### T14 — Astra 6 con esfuerzo medium (2026-09-13)
+
+David pidió cambiar Rick editorial a Astra 6 con esfuerzo `medium`
+(`PKG-EDITORIAL-ASTRA6-MEDIUM-20260913`). El baseline vivo confirmado fue
+`openai/gpt-5.6-sol` y `thinkingDefault: off`; T9 se conserva arriba como historia.
+
+La configuración aplicada es `openai/gpt-6-astra` con `thinkingDefault: medium`, exclusivamente
+para `rick-editorial`. En la instalación OpenClaw 2026.9.3 inspeccionada el esquema vivo es `agents.entries`,
+con catálogo, política de modelos y runtime Codex por agente. No aplicar los
+scripts históricos que reescriben todo el roster ni cambiar el default global.
+
+La ruta de Worker envía `openclaw/rick-editorial`. Su argumento Python `model`
+solo aparece como etiqueta de salida: cambiar esa etiqueta no selecciona un modelo.
+La aceptación exige una llamada nueva por esa ruta sin override efímero y evidencia
+del modelo y esfuerzo efectivos en el backend. Config válida o una respuesta que
+diga “soy Astra” no bastan.
+
+La habilitación se realizó en dos etapas: registrar Astra en el catálogo y política
+del agente, probar Astra/medium, y solo después cambiar primary y esfuerzo por
+defecto. La primera sonda (`28fc8e3f-fa3a-4b19-a1ba-d84683f2c2e3`) confirmó
+`gpt-6-astra` y `reasoning_effort: medium` en metadata nativa del backend
+(`01a09aed-670b-7732-83f7-2600b1e93e2b`). Una lectura independiente del coordinador
+confirma primary Astra, medium, fallbacks 5.5/5.4 conservados y configuración ajena
+a `rick-editorial` idéntica al backup.
+
+Evidencia de ejecución y cierre: directorio VPS
+`/home/rick/.coord-ag-evidence/pkg-editorial-astra6-medium-20260913/` y acta
+canónica `docs/operations/editorial-astra6-medium-2026-09-13.md`. La prueba de ruta
+ordinaria y sus metadatos efectivos se consignan en ese cierre; este documento no
+sustituye esos recibos.
+
+El ROLE declara la nueva preferencia. La revisión de voz, QA, herramientas, gates,
+otros agentes y configuración editorial automática conservan su alcance anterior.
+
 ## Prohibitions still in effect
 
 Unchanged from ROLE.md's Boundaries and Human gates sections: no publish, no `aprobado_contenido`, no `autorizar_publicacion`, no Notion writes (direct or via MCP), no cron/automation, no Notion AI for editorial decisions. Activation only grants read + payload-production capability; every write path still requires either the Worker (`ADR-011`) or an authorized human/operator action.

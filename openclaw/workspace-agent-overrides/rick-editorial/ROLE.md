@@ -402,26 +402,26 @@ If `rick-orchestrator` or David delegates a task that requires a normally-avoide
 
 ## Model preference
 
-> Active as of 2026-08-26 (PKG-MACRO-P5-Q12-T9). Live `openclaw.json` model.primary =
-> `openai/gpt-5.6-sol` (ChatGPT Sol, provider `openai` vía OAuth — no Azure). Fallbacks:
-> `openai/gpt-5.5`, `openai/gpt-5.4` (sin Gemini, sin Azure). Hasta T8 fue `openai/gpt-5.5`
-> con `thinkingDefault: xhigh`; David pidió el cambio el 2026-08-26 tras rechazar el copy r3.
->
-> **Sobre thinking en este modelo, con precisión.** Un flag explícito lo rechaza el gateway:
-> `Thinking level "xhigh" is not supported for openai/gpt-5.6-sol. Use one of: off.` Pero un
-> `thinkingDefault` en el config **sí se tolera**: se ignora en silencio y la request sale con
-> `thinking: off` igual. Prueba: `main`, `rick-orchestrator`, `rick-qa`,
-> `rick-communication-director` y `rick-linkedin-writer` corren Sol con `thinkingDefault: xhigh`
-> y funcionan (dos de ellos participaron en la cadena de r4). Este agente quedó en
-> `thinkingDefault: off` porque es lo que el runtime hace de verdad, no porque los otros estén
-> mal configurados. **Efecto real idéntico en ambos casos: `thinking: off`.**
->
-> **Decisión abierta para David (no resuelta aquí):** "esfuerzo alto" no existe como dial en
-> Sol. Si el razonamiento explícito pesa más que el modelo más nuevo, la alternativa es volver
-> a `openai/gpt-5.5` con `xhigh`, que sí lo soporta. Este contrato no elige por él.
+David requested **Astra 6 with medium reasoning** on 2026-09-13
+(`PKG-EDITORIAL-ASTRA6-MEDIUM-20260913`). This supersedes this agent's Sol/off
+preference from T9; that historical activation remains in
+`docs/ops/rick-editorial-agent.md`.
 
-- **Primary (required):** `openai/gpt-5.6-sol`. Thinking efectivo: `off` (ver arriba; no es un downgrade, el dial no existe en este modelo).
-- **Rationale:** el trabajo editorial exige separar fuente de opinión, verificar claims y calibrar tono. Con Sol eso depende de la calidad del modelo y de la cadena de revisión (voz + QA), no de un nivel de razonamiento configurable.
+- **Primary (required):** `openai/gpt-6-astra`.
+- **Reasoning effort (required):** `medium`.
+- **Scope:** `rick-editorial` only. The communication director, QA, other agents,
+  global defaults, tools and human gates retain their existing configuration.
+- **Runtime authority:** the live OpenClaw configuration and observed backend
+  metadata determine execution. The inspected OpenClaw 2026.9.3 installation uses
+  `agents.entries["rick-editorial"]`; older `agents.list` instructions must not
+  be copied blindly. Model availability, the per-agent allow policy, the runtime
+  mapping for the selected route and `thinkingDefault` must permit this selection.
+- **Verification:** invoke the normal `openclaw/rick-editorial` route without a
+  temporary model or effort override. Confirm Astra and medium from backend
+  metadata or trace. The Python wrapper's returned `model` label and the agent's
+  own statement are not proof. Report a fallback or unsupported effort explicitly.
+- **Editorial quality:** keep the communication-director and QA review chain;
+  changing the author model does not remove those reviews.
 - **Guard de modelo, stale (sin resolver, precede a este pack):** `config/editorial-model.yaml` sigue exigiendo literal `azure-openai-responses/gpt-5.5`, provider removido del config vivo el 2026-07-12. No bloquea a este agente: `rick-editorial` no está en su lista `editorial_agents`, y el único caller vivo (`scripts/editorial/apply_publication_copy.py`) chequea `rick-communication-director`, no editorial. Por eso aplicar copy requiere `--skip-model-verify`. Arreglarlo tiene radio de 5 agentes y está diferido desde el 2026-07-12; ver `docs/ops/rick-editorial-agent.md`.
 
 ## Acceptance criteria for a V1 alternativa

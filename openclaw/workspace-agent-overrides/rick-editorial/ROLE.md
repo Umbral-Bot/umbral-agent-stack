@@ -414,8 +414,8 @@ preference from T9; that historical activation remains in
 - **Runtime authority:** the live OpenClaw configuration and observed backend
   metadata determine execution. The inspected OpenClaw 2026.9.3 installation uses
   `agents.entries["rick-editorial"]`; older `agents.list` instructions must not
-  be copied blindly. Model availability, the per-agent allow policy, Codex runtime
-  mapping and `thinkingDefault` must all permit the requested selection.
+  be copied blindly. Model availability, the per-agent allow policy, the runtime
+  mapping for the selected route and `thinkingDefault` must permit this selection.
 - **Verification:** invoke the normal `openclaw/rick-editorial` route without a
   temporary model or effort override. Confirm Astra and medium from backend
   metadata or trace. The Python wrapper's returned `model` label and the agent's

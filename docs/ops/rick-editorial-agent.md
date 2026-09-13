@@ -260,7 +260,7 @@ David pidió cambiar Rick editorial a Astra 6 con esfuerzo `medium`
 
 La configuración aplicada es `openai/gpt-6-astra` con `thinkingDefault: medium`, exclusivamente
 para `rick-editorial`. En la instalación OpenClaw 2026.9.3 inspeccionada el esquema vivo es `agents.entries`,
-con catálogo, política de modelos y runtime Codex por agente. No aplicar los
+con catálogo y política de modelos por agente. No aplicar los
 scripts históricos que reescriben todo el roster ni cambiar el default global.
 
 La ruta de Worker envía `openclaw/rick-editorial`. Su argumento Python `model`
@@ -276,6 +276,14 @@ defecto. La primera sonda (`28fc8e3f-fa3a-4b19-a1ba-d84683f2c2e3`) confirmó
 (`01a09aed-670b-7732-83f7-2600b1e93e2b`). Una lectura independiente del coordinador
 confirma primary Astra, medium, fallbacks 5.5/5.4 conservados y configuración ajena
 a `rick-editorial` idéntica al backup.
+
+La ruta habitual Worker sin override respondió correctamente
+(`chatcmpl_87840d32-a34b-40c1-8bda-3cc682c3d19f`, sesión
+`2948db2a-40a6-4db1-8829-b9a88c352cd8`). Su traza nativa confirma
+`gpt-6-astra`, `thinkLevel: medium`, evento `thinking_level_change: medium` y
+terminación exitosa. Esta ruta HTTP conserva su harness OpenClaw
+(`openai-chatgpt-responses`); la sonda CLI utiliza Codex. No se cambió el transporte
+para seleccionar el modelo. El gateway mantuvo el PID 4140147, sin reinicio.
 
 Evidencia de ejecución y cierre: directorio VPS
 `/home/rick/.coord-ag-evidence/pkg-editorial-astra6-medium-20260913/` y acta

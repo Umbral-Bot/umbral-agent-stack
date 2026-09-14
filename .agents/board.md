@@ -1,6 +1,6 @@
 # Agent Board — Umbral Agent Stack
 
-> Última actualización: 2026-07-03 por **cursor** (post-merge #496 + G-WH-1)
+> Encabezado histórico: actualizado 2026-07-03 por **cursor** (post-merge #496 + G-WH-1). Este archivo también incluye entradas posteriores (p. ej. 2026-07-13 y 2026-07-14); la fecha del encabezado no revalida el tablero completo (HIGIENE-01/R1).
 > Sprint activo: **workspace-hygiene Pass 8** + Graphify #495 + Rick voz 004 + Notion MCP 005
 > **Coordinación:** **Cursor** lead.
 

@@ -90,7 +90,10 @@ class InteractiveTests(unittest.TestCase):
         m = launcher.job.read_json(manifest_path)
         m["package"] = "C:\\Users\\Rick\\job á & b"
         m["supervisor"] = "C:\\Users\\Rick\\my tools\\pcrick_interactive.py"
-        xml = ET.fromstring(launcher.task_xml(m, "ignored"))
+        xml_bytes = launcher.task_xml(m, "ignored")
+        self.assertFalse(xml_bytes.lstrip().startswith(b"<?xml"))
+        self.assertNotIn("encoding=", xml_bytes.decode("utf-8"))
+        xml = ET.fromstring(xml_bytes.decode("utf-8"))
         ns = {"t": "http://schemas.microsoft.com/windows/2004/02/mit/task"}
         self.assertEqual(xml.findtext("t:Actions/t:Exec/t:Arguments", namespaces=ns), subprocess.list2cmdline([m["supervisor"], "supervise", "--manifest", str(Path(m["package"]) / "manifest.json")]))
         self.assertEqual(xml.findtext("t:Settings/t:ExecutionTimeLimit", namespaces=ns), "PT0S")

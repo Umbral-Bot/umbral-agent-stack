@@ -222,13 +222,18 @@ $taskName = 'Umbral-PCRick-<hash-devuelto-en-el-plan>'
 if (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue) {
   throw 'TASK_EXISTS_REVIEW_BEFORE_CHANGE'
 }
-Register-ScheduledTask -TaskName $taskName -Xml (Get-Content -LiteralPath C:/encargo/prepared/task.xml -Raw)
+Register-ScheduledTask -TaskName $taskName -Xml (Get-Content -LiteralPath C:/encargo/prepared/task.xml -Raw -Encoding UTF8)
 # El inicio es otro paso deliberado, después de cotejar solicitud/perfil/lease/origen:
 # Start-ScheduledTask -TaskName $taskName
 ```
 
 El XML usa el SID de Rick, `InteractiveToken`, `HighestAvailable`, `IgnoreNew`,
 cero triggers y `ExecutionTimeLimit=PT0S`. No introduce polling ni un daemon.
+Se guarda UTF-8 sin declaración de codificación: el cmdlet recibe texto Unicode
+y Windows rechaza una declaración UTF-8 dentro de ese BSTR (HRESULT0x8004131a).
+Para un paquete anterior ya materializado, conservar sus bytes y pasar
+`([xml](Get-Content -LiteralPath <task.xml> -Raw -Encoding UTF8)).DocumentElement.OuterXml`
+como `-Xml`, documentando esa normalización y sin reemplazar una Task existente.
 Rick debe tener sesión iniciada; no equivale a habilitar ejecución sin sesión.
 No hay un límite externo que mate el proceso al vencer la observación del
 supervisor (720s por defecto). Entonces registra `TIMEOUT_UNRECONCILED` y continúa

@@ -226,7 +226,10 @@ def supervise(manifest_path):
     if manifest_path.name != "manifest.json":
         raise job.JobError("MANIFEST_LOCATION_CHANGED")
     context = windows_context()
-    check_context(context, interactive=True)
+    identity_manifest = job.read_json(manifest_path)
+    if not isinstance(identity_manifest, dict) or not isinstance(identity_manifest.get("target_sid"), str):
+        raise job.JobError("MANIFEST_IDENTITY_INVALID")
+    check_context(context, interactive=True, sid=identity_manifest["target_sid"])
     package = manifest_path.parent
     attempt_id = uuid.uuid4().hex
     attempt = package / "task-attempts" / attempt_id
@@ -264,10 +267,18 @@ def supervise(manifest_path):
     except Exception as exc:
         if isinstance(exc, job.JobError):
             record["diagnostic_code"] = str(exc)
-        checkpoint("FAILED_UNRECONCILED" if process is not None else "FAILED_BEFORE_LAUNCH", type(exc).__name__)
+        try:
+            checkpoint("FAILED_UNRECONCILED" if process is not None else "FAILED_BEFORE_LAUNCH", type(exc).__name__)
+        except Exception:
+            # Disk/ACL failures may also prevent the error receipt. The last
+            # checkpoint is uncertain; do not abandon a live child because of it.
+            pass
+        return 1
+    finally:
+        # Includes failed RUNNING/error checkpoints after a successful Popen.
+        # The existing runner remains the admission/receipt authority throughout.
         if process is not None and process.poll() is None:
             process.wait()
-        return 1
 
 
 def main(argv=None):

@@ -106,8 +106,9 @@ class InteractiveTests(unittest.TestCase):
         for change in ({"host": "TARRO"}, {"user": "David"}, {"session_id": 0}, {"elevated": False}, {"sid": "S-1-5-21-1-2-3-1002"}):
             with self.subTest(change=change), patch.object(launcher, "windows_context", return_value={**self.ctx, **change}), patch.object(launcher.subprocess, "Popen") as popen:
                 with self.assertRaises(launcher.job.JobError):
-                    launcher.validate_manifest(manifest)
+                    launcher.supervise(manifest)
                 popen.assert_not_called()
+                self.assertFalse((self.package / "task-attempts").exists())
 
     def test_profile_hash_drift_and_missing_hash_never_launch(self):
         manifest = self.prepared()
@@ -170,6 +171,34 @@ class InteractiveTests(unittest.TestCase):
         self.assertEqual(record["state"], "FAILED_BEFORE_LAUNCH")
         self.assertEqual(record["error_type"], "OSError")
         self.assertNotIn("sensitive", json.dumps(record))
+
+    def test_repeated_checkpoint_failure_after_spawn_still_waits_for_live_child(self):
+        manifest = self.prepared()
+        child = Mock(pid=3333, returncode=None)
+        child.poll.return_value = None
+        started = False
+        original = launcher.atomic_json
+        def spawn(*args, **kwargs):
+            nonlocal started
+            started = True
+            return child
+        def atomic(path, value):
+            if started:
+                raise OSError("fixture receipt write unavailable")
+            return original(path, value)
+        def wait():
+            child.returncode = 0
+            child.poll.return_value = 0
+        child.wait.side_effect = wait
+        with patch.object(launcher.subprocess, "Popen", side_effect=spawn) as popen, patch.object(launcher, "atomic_json", side_effect=atomic), patch.object(launcher.job.Registry, "close") as close:
+            self.assertEqual(launcher.supervise(manifest), 1)
+            popen.assert_called_once()
+            child.wait.assert_called_once_with()
+            close.assert_not_called()
+        child.kill.assert_not_called()
+        child.terminate.assert_not_called()
+        self.assertEqual(self.records()[0]["state"], "ADMISSION_PENDING")
+        self.assertFalse(self.registry.exists())
 
     def policy(self):
         config = self.base / "config.toml"

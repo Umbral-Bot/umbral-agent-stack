@@ -204,6 +204,16 @@ reescrito por un administrador local. Conservar la evidencia del transporte y
 del commit revisado en el PKG canónico. El preparador tampoco demuestra que un
 perfil full-access no use GUI: si el encargo la necesita, `gui=true` y un operador.
 
+Añadir `--input C:/caso/input.json --input C:/caso/result.json` para fijar archivos
+del caso o salidas revisadas que una continuación usará como entrada. Son archivos
+locales existentes, con rutas absolutas normalizadas y sin duplicados; no se
+aceptan directorios, rutas relativas o UNC. Se conservan como `input_pins` en el
+manifiesto, fuera del contrato estricto de solicitud. Un cambio, archivo faltante
+o hash omitido bloquea el lanzamiento. El recibo del supervisor fija el hash del
+manifiesto revisado. La comprobación ocurre antes de lanzar; no impide que el
+propio trabajo modifique un archivo después. Usar copias/snapshots para entradas
+que deban permanecer inmutables durante todo el encargo.
+
 El plan devuelve `task_name`. Después de revisar el XML y la autorización del PKG,
 registrar explícitamente desde PCRick elevado, sin reemplazar tareas existentes:
 

@@ -232,6 +232,43 @@ class InteractiveTests(unittest.TestCase):
         with self.assertRaisesRegex(launcher.job.JobError, "PACK_HASH_CHANGED"):
             launcher.validate_manifest(manifest)
 
+    def test_case_and_continuation_inputs_are_pinned_outside_request_contract(self):
+        case = self.workspace / "input.json"
+        previous = self.workspace / "result.json"
+        case.write_text('{"case":"fixture"}', encoding="utf-8")
+        previous.write_text('{"continuation":"prior-reviewed-result"}', encoding="utf-8")
+        manifest = self.prepared(input_paths=[str(case), str(previous)])
+        m = launcher.job.read_json(manifest)
+        self.assertEqual(len(m["input_pins"]), 2)
+        self.assertEqual(set(launcher.job.read_json(self.package / "request.json")), set(self.req))
+        launcher.validate_manifest(manifest)
+        previous.write_text('{"continuation":"changed"}', encoding="utf-8")
+        with patch.object(launcher.subprocess, "Popen") as popen:
+            self.assertEqual(launcher.supervise(manifest), 1)
+            popen.assert_not_called()
+        self.assertEqual(self.records()[0]["diagnostic_code"], "INPUT_PIN_CHANGED")
+        self.assertEqual(self.records()[0]["state"], "FAILED_BEFORE_LAUNCH")
+        self.assertFalse(self.registry.exists())
+
+    def test_input_paths_reject_relative_network_directory_and_normalized_duplicates(self):
+        case = self.workspace / "input.json"
+        case.write_text("fixture", encoding="utf-8")
+        for paths in (["input.json"], ["//server/share/input.json"], [str(self.workspace)],
+                      [str(case), str(self.workspace / ".." / "workspace" / "input.json")]):
+            with self.subTest(paths=paths), self.assertRaises(launcher.job.JobError):
+                launcher.prepare(self.req, self.profile, **self.kw, input_paths=paths, write=True)
+            self.assertFalse(self.package.exists())
+
+    def test_input_pins_cannot_be_omitted_from_expected_hash_set(self):
+        case = self.workspace / "input.json"
+        case.write_text("fixture", encoding="utf-8")
+        manifest = self.prepared(input_paths=[str(case)])
+        m = launcher.job.read_json(manifest)
+        del m["expected_sha256"][str(case.resolve())]
+        manifest.write_bytes(launcher.job.json_bytes(m))
+        with self.assertRaisesRegex(launcher.job.JobError, "MANIFEST_HASH_SET_INVALID"):
+            launcher.validate_manifest(manifest)
+
 
 if __name__ == "__main__":
     unittest.main()

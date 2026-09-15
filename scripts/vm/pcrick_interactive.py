@@ -21,7 +21,7 @@ import pcrick_job as job
 
 MANIFEST_FIELDS = {"schema", "job_id", "package", "runner", "registry", "request",
                    "profile", "python", "pythonw", "supervisor", "target_sid",
-                   "timeout_seconds", "expected_sha256", "mcp_selection"}
+                   "timeout_seconds", "expected_sha256", "mcp_selection", "input_pins"}
 
 
 def windows_context():
@@ -78,6 +78,21 @@ def absolute_path(value):
     return str(Path(value).resolve())
 
 
+def pin_inputs(paths):
+    """Optional case/continuation inputs belong to the package, not request schema."""
+    if not isinstance(paths, list) or len(paths) > 1000:
+        raise job.JobError("INPUT_PATHS_INVALID")
+    selected, seen = [], set()
+    for value in paths:
+        path = str(job.real_path(absolute_path(value)))
+        normalized = os.path.normcase(path)
+        if normalized in seen:
+            raise job.JobError("INPUT_PATH_DUPLICATE")
+        seen.add(normalized)
+        selected.append({"path": path, "sha256": job.digest_file(path)})
+    return selected
+
+
 def selected_profile(profile, policy):
     """Codex 0.154 accepts simple ID overrides; reject ambiguous key syntax."""
     if policy is None:
@@ -130,12 +145,13 @@ def task_xml(manifest, task_name):
     return ET.tostring(root, encoding="utf-8", xml_declaration=True)
 
 
-def prepare(request, profile, *, package, registry, pythonw, timeout_seconds=720, mcp_policy=None, write=False):
+def prepare(request, profile, *, package, registry, pythonw, timeout_seconds=720, mcp_policy=None, input_paths=None, write=False):
     context = windows_context()
     check_context(context)
     req = job.validated_request(request)  # exact existing contract, before ANY write
     profile = job.validated_profile(profile, req["runner"])
     profile, policy = selected_profile(profile, mcp_policy)
+    inputs = pin_inputs([] if input_paths is None else input_paths)
     package, registry = absolute_path(package), absolute_path(registry)
     if package == registry or Path(package).is_relative_to(registry) or Path(registry).is_relative_to(package):
         raise job.JobError("PACKAGE_REGISTRY_OVERLAP")
@@ -153,11 +169,13 @@ def prepare(request, profile, *, package, registry, pythonw, timeout_seconds=720
     expected = {path: job.digest_bytes(data) for path, data in files.items()}
     for path in [runner, supervisor, python, pythonw, req["prompt_path"], *[s["path"] for s in req["skills"]], *([policy["config_path"]] if policy else [])]:
         expected[path] = job.digest_file(path)
+    for item in inputs:
+        expected[item["path"]] = item["sha256"]
     manifest = {"schema": 1, "job_id": req["job_id"], "package": package, "runner": runner,
                 "registry": registry, "request": str(Path(package) / "request.json"),
                 "profile": str(Path(package) / "profile.json"), "python": python, "pythonw": pythonw,
                 "supervisor": supervisor, "target_sid": context["sid"], "timeout_seconds": timeout_seconds,
-                "expected_sha256": expected, "mcp_selection": policy}
+                "expected_sha256": expected, "mcp_selection": policy, "input_pins": inputs}
     name = "Umbral-PCRick-" + job.digest_bytes(req["job_id"].encode())[:24]
     files[str(Path(package) / "manifest.json")] = job.json_bytes(manifest)
     files[str(Path(package) / "task.xml")] = task_xml(manifest, name)
@@ -206,6 +224,12 @@ def validate_manifest(path):
     expected = m["expected_sha256"]
     required = {m[k] for k in ("request", "profile", "runner", "supervisor", "python", "pythonw")}
     required |= {req["prompt_path"], *[s["path"] for s in req["skills"]]}
+    inputs = m["input_pins"]
+    if not isinstance(inputs, list) or any(not isinstance(i, dict) or set(i) != {"path", "sha256"} for i in inputs):
+        raise job.JobError("INPUT_PINS_INVALID")
+    if pin_inputs([i["path"] for i in inputs]) != inputs:
+        raise job.JobError("INPUT_PIN_CHANGED")
+    required |= {i["path"] for i in inputs}
     policy = m["mcp_selection"]
     if policy is not None:
         if not isinstance(policy, dict) or not isinstance(policy.get("config_path"), str):
@@ -248,6 +272,7 @@ def supervise(manifest_path):
         checkpoint("VALIDATING")
         m, context = validate_manifest(manifest_path)
         record["job_id"] = m["job_id"]
+        record["manifest_sha256"] = job.digest_file(manifest_path)
         argv = [m["python"], m["runner"], "--root", m["registry"], "run", "--request", m["request"], "--profile", m["profile"]]
         atomic_json(attempt / "command.json", {"argv": argv})
         checkpoint("ADMISSION_PENDING")
@@ -289,6 +314,7 @@ def main(argv=None):
         prep.add_argument("--" + arg, required=True)
     prep.add_argument("--timeout-seconds", type=int, default=720)
     prep.add_argument("--mcp-policy")
+    prep.add_argument("--input", action="append", default=[], dest="input_paths", help="Existing absolute local case/continuation input to hash-pin; repeatable")
     prep.add_argument("--write", action="store_true")
     run = sub.add_parser("supervise")
     run.add_argument("--manifest", required=True)
@@ -298,7 +324,7 @@ def main(argv=None):
             return supervise(args.manifest)
         result = prepare(job.read_json(args.request), job.read_json(args.profile), package=args.package,
                          registry=args.registry, pythonw=args.pythonw, timeout_seconds=args.timeout_seconds,
-                         mcp_policy=job.read_json(args.mcp_policy) if args.mcp_policy else None, write=args.write)
+                         mcp_policy=job.read_json(args.mcp_policy) if args.mcp_policy else None, input_paths=args.input_paths, write=args.write)
         print(json.dumps(result, indent=2))
         return 0
     except Exception as exc:

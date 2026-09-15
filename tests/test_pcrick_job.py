@@ -229,6 +229,50 @@ class PCRickJobTests(unittest.TestCase):
         path.write_text('{"type":"system","session_id":"session-one"}\n', encoding="utf-8")
         self.assertEqual(job.session_from_log(path, "claude"), "session-one")
 
+    def test_agy_session_schema_observed_in_windows_cli_1_2_3(self):
+        # Synthetic IDs with the structure observed in real AGY init/result.
+        path = self.base / "agy.jsonl"
+        init = {"event": "init", "conversation_id": "agy-session-one",
+                "init": {"cwd": str(self.workspace), "permission_mode": "always-proceed"}}
+        result = {"event": "result", "result": {"conversation_id": "agy-session-one",
+                  "status": "SUCCESS", "num_turns": 2}}
+        for events in ([init], [result], [init, result, result]):
+            with self.subTest(events=events):
+                path.write_text("\n".join(json.dumps(e) for e in events), encoding="utf-8")
+                self.assertEqual(job.session_from_log(path, "antigravity"), "agy-session-one")
+
+    def test_agy_ambiguous_or_missing_session_stays_unknown(self):
+        path = self.base / "agy.jsonl"
+        cases = [
+            [{"event": "init", "conversation_id": "first"},
+             {"event": "result", "result": {"conversation_id": "second", "status": "SUCCESS"}}],
+            [{"event": "result", "result": {"conversation_id": "", "status": "ERROR",
+              "error": "authentication failed or timed out", "num_turns": 0}}],
+            [{"event": "result", "result": None}],
+            [{"event": "result", "result": ["not-a-session-record"]}],
+            [{"event": "init", "conversation_id": {"invalid": "shape"}}],
+            [{"event": "init", "conversation_id": "invalid session"}],
+            [{"event": "step_update", "step_update": {"conversation_id": "not-terminal"}},
+             {"event": "agent_response", "conversation_id": "not-a-known-event"}],
+        ]
+        for events in cases:
+            with self.subTest(events=events):
+                path.write_text("\n".join(json.dumps(e) for e in events), encoding="utf-8")
+                self.assertIsNone(job.session_from_log(path, "antigravity"))
+
+    def test_agy_subprocess_receipt_records_native_session(self):
+        req = dict(self.req, runner="antigravity")
+        profile = {"runner": "antigravity", "input_mode": "stdin", "argv": [sys.executable, "-c",
+            "import sys,pathlib,json; sys.stdin.read(); pathlib.Path('effects.txt').write_text('once\\n'); "
+            "print(json.dumps({'event':'init','conversation_id':'agy-fixture'})); "
+            "print(json.dumps({'event':'result','result':{'conversation_id':'agy-fixture','status':'SUCCESS'}}))"]}
+        receipt = job.submit(self.registry, req, profile)
+        self.assertEqual(receipt["state"], "PROCESS_EXITED")
+        self.assertEqual(receipt["session_id"], "agy-fixture")
+        self.assertEqual(receipt["exit_code"], 0)
+        self.assertEqual(receipt["outputs_after"][0]["state"], "PRESENT")
+        self.assertEqual(receipt["acceptance"], "NOT_REVIEWED")
+
     def test_async_start_has_durable_status_without_daemon(self):
         receipt = job.submit(self.registry, self.req, self.profile, background=True)
         self.assertIn(receipt["state"], {"RESERVED", "STARTING", "RUNNING", "PROCESS_EXITED"})

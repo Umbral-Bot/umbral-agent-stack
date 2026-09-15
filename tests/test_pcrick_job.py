@@ -36,6 +36,7 @@ class PCRickJobTests(unittest.TestCase):
             "prompt_path": str(self.prompt), "prompt_sha256": job.digest_bytes(self.prompt.read_bytes()),
             "skills_commit": "a" * 40, "skills": [{"name": "fixture", "path": str(self.skill), "sha256": job.digest_bytes(self.skill.read_bytes())}],
             "acceptance": "Output artifact is reviewed independently.", "gui": False,
+            "outputs": ["effects.txt"],
         }
         self.profile = {"runner": "codex", "input_mode": "stdin", "argv": [sys.executable, "-c",
             "import sys,pathlib,json; p=sys.stdin.read(); f=pathlib.Path('effects.txt'); "
@@ -66,6 +67,9 @@ class PCRickJobTests(unittest.TestCase):
         self.assertEqual(first["session_id"], "fixture-thread")
         self.assertEqual(first["acceptance"], "NOT_REVIEWED")
         self.assertTrue(first["resources"])
+        self.assertEqual(first["outputs_before"][0]["state"], "MISSING")
+        self.assertEqual(first["outputs_after"][0]["state"], "PRESENT")
+        self.assertEqual(first["outputs_after"][0]["sha256"], job.digest_file(self.workspace / "effects.txt"))
 
     def test_stdout_body_not_returned_in_receipt(self):
         receipt = job.submit(self.registry, self.req, self.profile)
@@ -194,6 +198,14 @@ class PCRickJobTests(unittest.TestCase):
         for change in ({"target_host": "not-this-host"}, {"target_user": "not-this-user"}):
             with self.subTest(change=change), self.assertRaises(job.JobError):
                 self.reserve(dict(self.req, **change))
+
+    def test_output_escape_rejected_and_missing_output_not_hidden(self):
+        with self.assertRaisesRegex(job.JobError, "OUTPUT_PATH_INVALID"):
+            self.reserve(dict(self.req, outputs=["../outside.txt"]))
+        receipt = job.submit(self.registry, dict(self.req, outputs=["not-created.txt"]), self.profile)
+        self.assertEqual(receipt["exit_code"], 0)
+        self.assertEqual(receipt["outputs_after"][0]["state"], "MISSING")
+        self.assertEqual(receipt["acceptance"], "NOT_REVIEWED")
 
     def test_last_arg_mode_closes_stdin(self):
         profile = {"runner": "codex", "input_mode": "last_arg", "argv": [sys.executable, "-c", "import sys; assert sys.stdin.read()==''; assert sys.argv[-1].startswith('Return'); print('ok')"]}

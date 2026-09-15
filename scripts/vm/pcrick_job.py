@@ -84,7 +84,7 @@ def validated_request(raw):
     if not isinstance(raw, dict):
         raise JobError("REQUEST_INVALID")
     required = {"job_id", "requester", "owner", "runner", "workspace", "prompt_path",
-                "prompt_sha256", "skills_commit", "skills", "acceptance", "gui", "target_host", "target_user"}
+                "prompt_sha256", "skills_commit", "skills", "acceptance", "gui", "target_host", "target_user", "outputs"}
     if set(raw) != required:
         raise JobError("REQUEST_FIELDS_INVALID")
     req = dict(raw)
@@ -108,6 +108,13 @@ def validated_request(raw):
         raise JobError("PROMPT_HASH_REQUIRED")
     req["workspace"] = str(real_path(req["workspace"], directory=True))
     req["prompt_path"] = str(real_path(req["prompt_path"]))
+    if not isinstance(req["outputs"], list) or not 1 <= len(req["outputs"]) <= 1000:
+        raise JobError("OUTPUTS_REQUIRED")
+    for name in req["outputs"]:
+        if not isinstance(name, str) or not name or "\x00" in name or Path(name).is_absolute() or ".." in Path(name).parts or name == ".":
+            raise JobError("OUTPUT_PATH_INVALID")
+    if len(set(req["outputs"])) != len(req["outputs"]):
+        raise JobError("OUTPUT_PATH_DUPLICATE")
     seen = set()
     selected = []
     for skill in req["skills"]:
@@ -135,6 +142,24 @@ def verify_inputs(req):
         if digest_file(skill["path"]) != skill["sha256"]:
             raise JobError("SKILL_CHANGED")
     return prompt
+
+
+def artifact_inventory(workspace, names):
+    root = Path(workspace).resolve(strict=True)
+    result = []
+    for name in names:
+        path = (root / name).resolve()
+        item = {"relative_path": name}
+        if not path.is_relative_to(root):
+            item["state"] = "OUTSIDE_WORKSPACE"
+        elif not path.exists():
+            item["state"] = "MISSING"
+        elif not path.is_file():
+            item["state"] = "NOT_FILE"
+        else:
+            item.update(state="PRESENT", sha256=digest_file(path), bytes=path.stat().st_size)
+        result.append(item)
+    return result
 
 
 class Registry:
@@ -219,6 +244,7 @@ class Registry:
                        "origin_authentication": "EXTERNAL_TRANSPORT_REQUIRED",
                        "spec_sha256": spec_hash, "profile_sha256": profile_hash,
                        "prompt_sha256": req["prompt_sha256"], "skills_commit": req["skills_commit"],
+                       "outputs_before": artifact_inventory(req["workspace"], req["outputs"]),
                        "session_id": None, "exit_code": None, "acceptance": "NOT_REVIEWED"}
             cx.execute("INSERT INTO jobs VALUES(?,?,?,?,?,?,?,?)", (job, spec, spec_hash, req["owner"], 1, "RESERVED", nonce, json_bytes(receipt).decode()))
             cx.executemany("INSERT INTO resources VALUES(?,?)", [(r, job) for r in resources])
@@ -320,7 +346,8 @@ def execute(registry, request, profile, nonce):
                 for name in ("stdout.log", "stderr.log")}
         # No claim that exit 0 means the desired artifact/tools succeeded.
         registry.transition(job, nonce, {"RUNNING"}, "PROCESS_EXITED", {"exit_code": process.returncode, "exited_at": utc(), "logs": logs,
-                                                                     "session_id": session_from_log(outdir / "stdout.log", request["runner"])})
+                                                                     "session_id": session_from_log(outdir / "stdout.log", request["runner"]),
+                                                                     "outputs_after": artifact_inventory(request["workspace"], request["outputs"])})
     except Exception as exc:
         registry.transition(job, nonce, {"STARTING", "RUNNING"}, "UNKNOWN", {"error_type": type(exc).__name__, "observed_at": utc()})
     return registry.status(job)

@@ -43,6 +43,8 @@ Cada solicitud JSON contiene exactamente:
 - `prompt_path`, `prompt_sha256`: prompt UTF-8 local, máximo1MB, sin secretos.
 - `skills_commit`: SHA Git completo. `skills`: lista de `{name,path,sha256}`.
 - `acceptance`: criterio observable, que no se deduce del exitcode.
+- `outputs`: rutas relativas esperadas dentro del workspace. El recibo conserva
+  existencia/hash/tamaño antes y después, sin confundir archivo previo con producido.
 - `gui`: booleano; reservar escritorio global si este encargo va a usarlo.
 
 El perfil local contiene solo `{runner, argv, input_mode}`. `argv` es una lista

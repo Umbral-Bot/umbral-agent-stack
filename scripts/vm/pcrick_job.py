@@ -401,7 +401,14 @@ def session_from_log(path, runner):
                 value = event.get("thread_id")
             if runner == "claude" and event.get("type") in {"system", "result"}:
                 value = event.get("session_id")
-            # Antigravity schema must first be observed in the installed CLI.
+            # AGY 1.2.3 emits event/init at the top level and a nested result.
+            # Never take a conversation ID from prose or arbitrary tool output.
+            if runner == "antigravity" and event.get("event") == "init":
+                value = event.get("conversation_id")
+            if runner == "antigravity" and event.get("event") == "result":
+                result = event.get("result")
+                if isinstance(result, dict):
+                    value = result.get("conversation_id")
             if isinstance(value, str) and IDENT.fullmatch(value):
                 ids.add(value)
     return next(iter(ids)) if len(ids) == 1 else None

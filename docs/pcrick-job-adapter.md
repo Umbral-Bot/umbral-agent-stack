@@ -162,3 +162,124 @@ red, VM, Worker ni servicios. No equivale a las seis rutas de aceptación.
 Este componente se revisa y despliega como archivo desde una revisión fijada;
 primero una ruta útil C23 y después las restantes. No exige completar la flota
 para avanzar con la ruta pertinente. No modifica la política de Editorial.
+
+## Paquete Interactive mantenido y tarea manual
+
+`scripts/vm/pcrick_interactive.py` reemplaza el Python generado por cada agente
+con un único preparador/supervisor mantenido. Se ejecuta en **PCRick como Rick**;
+la preparación puede usar su sesión SSH, pero el supervisor exige además sesión
+interactiva distinta de 0, elevación y el SID fijado al preparar. No configura
+cuentas, transporte, permisos globales ni credenciales. Sus dependencias son
+`pcrick_job.py` en la misma carpeta y Python3.11+ con `python.exe`/`pythonw.exe`.
+
+Preparar primero el JSON de solicitud con **exactamente** los campos del contrato
+anterior, sin `schema`, `model`, `argv` u otros campos añadidos. El perfil tiene
+solamente `runner`, `argv`, `input_mode`. Usar un serializador JSON (por ejemplo
+`json.dumps` o `ConvertTo-Json`) o rutas `C:/Users/Rick/...`; no generar código
+Python que incruste rutas `C:\Users` en literales. El prompt y las skills deben
+existir con sus hashes reales. Los flags de la CLI deben corresponder a la versión
+efectivamente instalada. Para Antigravity con `last_arg`, dejar `-p` como último
+argumento del perfil: el runner añade el prompt después.
+
+```powershell
+# Solo lectura: valida contrato, archivos, identidad y presenta archivos/Task previstos.
+python C:/ruta-fijada/scripts/vm/pcrick_interactive.py prepare `
+  --request C:/encargo/request-source.json --profile C:/encargo/profile-source.json `
+  --package C:/encargo/prepared --registry C:/registro-compartido `
+  --pythonw C:/ruta-observada/Python313/pythonw.exe
+```
+
+Repetir con `--write` materializa `request.json`, `profile.json`, `manifest.json`
+y `task.xml`; **no registra, inicia ni admite** el trabajo. El directorio preparado
+debe ser nuevo, incluso si el encargo aún no fue admitido. Ante un error parcial
+conservar la evidencia y preparar otra ubicación después de revisar el estado;
+no sobrescribir el paquete usado por una ejecución. Mantenerlo fuera del registro
+SQLite, con ACL privadas para Rick/SYSTEM, y fijar una revisión de scripts que no
+se actualice mientras la tarea esté pendiente o activa.
+
+La manifestación fija hashes de solicitud, perfil, runner, supervisor, intérpretes,
+prompt y skills. El supervisor vuelve a validar el contrato y los hashes antes
+de lanzar. Los hashes detectan cambios accidentales; no autentican un manifiesto
+reescrito por un administrador local. Conservar la evidencia del transporte y
+del commit revisado en el PKG canónico. El preparador tampoco demuestra que un
+perfil full-access no use GUI: si el encargo la necesita, `gui=true` y un operador.
+
+El plan devuelve `task_name`. Después de revisar el XML y la autorización del PKG,
+registrar explícitamente desde PCRick elevado, sin reemplazar tareas existentes:
+
+```powershell
+$taskName = 'Umbral-PCRick-<hash-devuelto-en-el-plan>'
+if (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue) {
+  throw 'TASK_EXISTS_REVIEW_BEFORE_CHANGE'
+}
+Register-ScheduledTask -TaskName $taskName -Xml (Get-Content -LiteralPath C:/encargo/prepared/task.xml -Raw)
+# El inicio es otro paso deliberado, después de cotejar solicitud/perfil/lease/origen:
+# Start-ScheduledTask -TaskName $taskName
+```
+
+El XML usa el SID de Rick, `InteractiveToken`, `HighestAvailable`, `IgnoreNew`,
+cero triggers y `ExecutionTimeLimit=PT0S`. No introduce polling ni un daemon.
+Rick debe tener sesión iniciada; no equivale a habilitar ejecución sin sesión.
+No hay un límite externo que mate el proceso al vencer la observación del
+supervisor (720s por defecto). Entonces registra `TIMEOUT_UNRECONCILED` y continúa
+esperando; si termina, registra `PROCESS_EXITED_AFTER_TIMEOUT`. Nunca mata, cierra,
+libera leases o reintenta automáticamente. Un proceso que no termina requiere
+reconciliación manual, no una espera tomada como éxito.
+
+Cada invocación conserva `task-attempts/<uuid>/{supervisor.json,command.json,
+stdout.json,stderr.txt}`. Las actualizaciones del supervisor se escriben de forma
+atómica, con PID propio y PID observado del runner; un PID no demuestra liveness.
+Los fallos de validación dentro del contexto permitido quedan registrados como
+`FAILED_BEFORE_LAUNCH`, sin admitir. Una sesión/identidad no autorizada falla antes
+de escribir esos logs. Un fallo anterior a abrir el manifiesto o falta de permiso
+de escritura requiere revisar el resultado de la Task y su contexto.
+
+La repetición usa los mismos archivos y el mismo `job_id`, con una carpeta de
+intento nueva. El supervisor invoca **`pcrick_job.py run`**, cuya admisión SQLite
+devuelve el recibo existente y evita una segunda ejecución del modelo. No añade
+otro lock, TTL ni mecanismo de cierre. Conservar las salidas privadas y consultar
+`pcrick_job.py status` antes de decidir recuperación o cierre; el proceso terminado
+no demuestra aceptación del resultado ni cierre de la reserva de skills.
+
+### Selección opcional de MCP por ejecución Codex
+
+`prepare --mcp-policy C:/encargo/mcp-policy.json` acepta exactamente:
+
+```json
+{
+  "observed_servers": ["Revit", "node_repl"],
+  "enabled_servers": [],
+  "config_path": "C:/Users/Rick/.codex/config.toml",
+  "config_sha256": "<sha256-real-del-archivo-revisado>"
+}
+```
+
+Solo para `codex.exe` nativo. Para cada ID observado no seleccionado, antepone
+los argumentos separados `-c`, `mcp_servers.ID.enabled=false`, conservando el
+resto del perfil y sus permisos. No fuerza a encender servidores globalmente
+deshabilitados. Rechaza IDs con puntos/comillas/espacios y overrides MCP previos
+ambiguos. El archivo de configuración se fija por hash y se coteja antes de
+lanzar. No modifica globales ni arranca MCP para preparar el paquete.
+
+La serialización se verificó con Codex0.154 usando únicamente `mcp list --json`
+y un `CODEX_HOME` temporal sin auth ni ejecutables MCP válidos: IDs simples y
+`enabled=false` son aceptados; `mcp_servers={}` no elimina tablas heredadas y
+las comillas incrustadas en IDs no sirven para este override. Revalidar con la
+versión de destino al actualizar. La lista observada es responsabilidad del
+operador: debe incluir las capas pertinentes del cwd/proyecto. No garantiza
+desactivar servidores de plugins, políticas administradas o nuevos IDs no
+inventariados. Es reducción de ruido de inicio, no una restricción de permisos
+del agente. Referencia: [configuración oficial](https://learn.chatgpt.com/docs/config-file/config-reference)
+y [MCP oficial](https://learn.chatgpt.com/docs/extend/mcp?surface=cli).
+
+```text
+python tests/test_pcrick_interactive.py -v
+python tests/test_pcrick_job.py -v
+```
+
+Estas pruebas son offline. Verifican plan sin escrituras/dispatch, esquemas
+exactos, JSON/XML con rutas Windows, inmutabilidad, SID/sesión/elevación, drift,
+PIDs, replay delegado, timeout sin kill/close y argumentos MCP. La suite del
+runner comprueba la deduplicación real mediante procesos de fixture. Una Task
+real, la supervivencia después de desconectar el transporte y los resultados
+de cada CLI se acreditan por separado antes de declarar una ruta operativa.

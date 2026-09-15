@@ -87,13 +87,21 @@ Un error incierto produce `UNKNOWN` con tipo de error, conservando la reserva.
 Una interrupción puede dejar el último estado observado, incluso RUNNING.
 No hay expiración automática ni liberación por PID ausente/antiguo.
 
+El último control de reserva, la creación efectiva del proceso y el recibo de
+PID comparten una transacción. Si un cierre reconciliado gana antes, el
+supervisor pendiente no lanza nada; si el lanzamiento gana, el cierre espera a
+que se registre el proceso. STARTING se persiste previamente: una interrupción
+tras lanzar conserva la incertidumbre y no habilita una repetición automática.
+
 La transacción SQLite reserva workspace (incluidos solapes padre/hijo) y, si
 corresponde, `gui:<host>`. Dos trabajos CLI en carpetas independientes pueden
 coexistir. Los procesos o herramientas que no usan este registro no quedan
 bloqueados mágicamente: inventariar trabajo externo y respetar un solo operador
 GUI sigue siendo necesario, incluido RustDesk/TeamViewer y `gui.*`.
 
-La salida y el error se conservan en `jobs/<id>/stdout.log` y `stderr.log`.
+La salida y el error se conservan en `jobs/<sha256-id>/stdout.log` y `stderr.log`.
+El ID exacto se hashea para evitar alias de nombres y diferencias de mayúsculas
+en Windows; el recibo mantiene el ID humano original.
 El recibo expone rutas/hash, usuario/host/PID, fechas, sesión cuando se observa,
 exitcode y `acceptance=NOT_REVIEWED`. No publica el contenido de logs. Estos
 logs pueden contener datos de trabajo: deben mantenerse privados y sanearse

@@ -261,6 +261,32 @@ class Registry:
             cx.execute("UPDATE jobs SET state=?,receipt=? WHERE id=?", (state, json_bytes(receipt).decode(), job))
             self.event(cx, job, state, details)
 
+    def launch(self, job, nonce, spawn):
+        """Serialize the final admission check, actual spawn and PID receipt.
+
+        STARTING was committed before this transaction, so a crash/DB error
+        after Popen never makes the same job eligible for another launch.
+        close() either wins before this transaction (no spawn), or waits until
+        this process has been launched and recorded. There is no late launch
+        after CLOSED released a resource.
+        """
+        with self.transaction() as cx:
+            row = cx.execute("SELECT * FROM jobs WHERE id=?", (job,)).fetchone()
+            if row is None or row["nonce"] != nonce or row["state"] != "STARTING":
+                raise JobError("STALE_EXECUTION")
+            process = spawn()
+            details = {"pid": process.pid, "launched_at": utc()}
+            receipt = json.loads(row["receipt"])
+            receipt.update(details)
+            cx.execute("UPDATE jobs SET state='RUNNING',receipt=? WHERE id=?", (json_bytes(receipt).decode(), job))
+            self.event(cx, job, "RUNNING", details)
+        return process
+
+    def job_dir(self, job_id):
+        # SQLite IDs are case-sensitive while NTFS usually is not. Hashing the
+        # exact ID also avoids DOS device names and trailing-dot aliases.
+        return self.root / "jobs" / digest_bytes(job_id.encode("utf-8"))
+
     def close(self, job, owner, generation, evidence, *, reconciled=False):
         """Operator attests result/process-tree reconciliation; no auto-unlock."""
         path = real_path(evidence)
@@ -326,7 +352,7 @@ def execute(registry, request, profile, nonce):
     except JobError:
         # Duplicate child or old generation: never execute.
         return registry.status(job)
-    outdir = registry.root / "jobs" / job
+    outdir = registry.job_dir(job)
     try:
         outdir.mkdir(parents=True, exist_ok=True)
         if validated_request(request) != request:  # also checks host/user and resolved paths
@@ -338,9 +364,9 @@ def execute(registry, request, profile, nonce):
             argv.append(prompt.decode("utf-8-sig"))
         flags = getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
         with (outdir / "stdout.log").open("xb") as stdout, (outdir / "stderr.log").open("xb") as stderr:
-            process = subprocess.Popen(argv, cwd=request["workspace"], stdin=subprocess.PIPE if mode == "stdin" else subprocess.DEVNULL,
-                                       stdout=stdout, stderr=stderr, shell=False, creationflags=flags)
-            registry.transition(job, nonce, {"STARTING"}, "RUNNING", {"pid": process.pid, "launched_at": utc()})
+            process = registry.launch(job, nonce, lambda: subprocess.Popen(
+                argv, cwd=request["workspace"], stdin=subprocess.PIPE if mode == "stdin" else subprocess.DEVNULL,
+                stdout=stdout, stderr=stderr, shell=False, creationflags=flags))
             process.communicate(input=prompt if mode == "stdin" else None)
         logs = {name: {"path": str(outdir / name), "sha256": digest_file(outdir / name)}
                 for name in ("stdout.log", "stderr.log")}
@@ -349,7 +375,11 @@ def execute(registry, request, profile, nonce):
                                                                      "session_id": session_from_log(outdir / "stdout.log", request["runner"]),
                                                                      "outputs_after": artifact_inventory(request["workspace"], request["outputs"])})
     except Exception as exc:
-        registry.transition(job, nonce, {"STARTING", "RUNNING"}, "UNKNOWN", {"error_type": type(exc).__name__, "observed_at": utc()})
+        try:
+            registry.transition(job, nonce, {"STARTING", "RUNNING"}, "UNKNOWN", {"error_type": type(exc).__name__, "observed_at": utc()})
+        except JobError as stale:
+            if str(stale) != "STALE_EXECUTION":
+                raise
     return registry.status(job)
 
 
@@ -385,13 +415,13 @@ def submit(registry, request, profile, *, background=False):
         return registry.status(req["job_id"])
     if not background:
         return execute(registry, req, profile, nonce)
-    outdir = registry.root / "jobs" / req["job_id"]
-    outdir.mkdir(parents=True, exist_ok=True)
+    outdir = registry.job_dir(req["job_id"])
     bootstrap = outdir / "bootstrap.json"
-    with bootstrap.open("xb") as stream:
-        stream.write(json_bytes({"request": req, "profile": profile, "nonce": nonce}))
     flags = (getattr(subprocess, "CREATE_NO_WINDOW", 0) | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)) if os.name == "nt" else 0
     try:
+        outdir.mkdir(parents=True, exist_ok=True)
+        with bootstrap.open("xb") as stream:
+            stream.write(json_bytes({"request": req, "profile": profile, "nonce": nonce}))
         child = subprocess.Popen([sys.executable, str(Path(__file__).resolve()), "--root", str(registry.root), "_execute", "--bootstrap", str(bootstrap)],
                                  stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                                  creationflags=flags, start_new_session=os.name != "nt", close_fds=True)

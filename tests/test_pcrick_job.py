@@ -7,8 +7,11 @@ from pathlib import Path
 import sqlite3
 import sys
 import tempfile
+import threading
 import time
+from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 MODULE = Path(__file__).resolve().parents[1] / "scripts/vm/pcrick_job.py"
 spec = importlib.util.spec_from_file_location("pcrick_job", MODULE)
@@ -237,6 +240,77 @@ class PCRickJobTests(unittest.TestCase):
             time.sleep(0.05)
         self.assertEqual(receipt["state"], "PROCESS_EXITED")
         self.assertEqual((self.workspace / "effects.txt").read_text(), "once\n")
+
+    def test_reconciled_close_before_spawn_fences_pending_supervisor(self):
+        _, nonce = self.reserve()
+        original_launch = self.registry.launch
+        def close_first_then_launch(job_id, supplied_nonce, spawn):
+            self.registry.close(job_id, "rick-grok", 1, str(self.proof), reconciled=True)
+            return original_launch(job_id, supplied_nonce, spawn)
+        with patch.object(self.registry, "launch", side_effect=close_first_then_launch), patch.object(job.subprocess, "Popen") as spawn:
+            result = job.execute(self.registry, self.req, self.profile, nonce)
+        spawn.assert_not_called()
+        self.assertEqual(result["state"], "CLOSED")
+        self.assertFalse((self.workspace / "effects.txt").exists())
+
+    def test_spawn_and_pid_receipt_hold_same_fence_against_close(self):
+        _, nonce = self.reserve()
+        self.registry.transition(self.req["job_id"], nonce, {"RESERVED"}, "STARTING", {})
+        entered = threading.Event()
+        allow_spawn_return = threading.Event()
+        close_started = threading.Event()
+        def spawn():
+            entered.set()
+            self.assertTrue(allow_spawn_return.wait(5))
+            return SimpleNamespace(pid=777)
+        def close():
+            close_started.set()
+            self.registry.close(self.req["job_id"], "rick-grok", 1, str(self.proof), reconciled=True)
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            launched = pool.submit(self.registry.launch, self.req["job_id"], nonce, spawn)
+            self.assertTrue(entered.wait(5))
+            closed = pool.submit(close)
+            self.assertTrue(close_started.wait(5))
+            time.sleep(0.1)
+            self.assertFalse(closed.done())
+            allow_spawn_return.set()
+            self.assertEqual(launched.result(5).pid, 777)
+            closed.result(5)
+        result = self.registry.status(self.req["job_id"])
+        self.assertEqual(result["pid"], 777)
+        self.assertEqual(result["state"], "CLOSED")
+
+    def test_case_different_ids_use_distinct_log_directories(self):
+        first_req = dict(self.req, job_id="Route-Case")
+        second_req = self.new_request("second-workspace")
+        second_req["job_id"] = "route-case"
+        first = job.submit(self.registry, first_req, self.profile)
+        second = job.submit(self.registry, second_req, self.profile)
+        self.assertEqual(first["state"], "PROCESS_EXITED")
+        self.assertEqual(second["state"], "PROCESS_EXITED")
+        self.assertNotEqual(first["logs"]["stdout.log"]["path"].casefold(), second["logs"]["stdout.log"]["path"].casefold())
+
+    def test_bootstrap_directory_failure_has_durable_unknown_receipt(self):
+        directory = self.registry.job_dir(self.req["job_id"])
+        directory.parent.mkdir(parents=True, exist_ok=True)
+        directory.write_text("pre-existing fixture obstruction", encoding="utf-8")
+        with patch.object(job.subprocess, "Popen") as spawn:
+            result = job.submit(self.registry, self.req, self.profile, background=True)
+        spawn.assert_not_called()
+        self.assertEqual(result["state"], "UNKNOWN")
+        self.assertTrue(result["resources"])
+        self.assertEqual(result["error_type"], "FileExistsError")
+
+    def test_bootstrap_exclusive_write_failure_has_durable_unknown_receipt(self):
+        directory = self.registry.job_dir(self.req["job_id"])
+        directory.mkdir(parents=True)
+        bootstrap = directory / "bootstrap.json"
+        bootstrap.write_text("pre-existing fixture", encoding="utf-8")
+        with patch.object(job.subprocess, "Popen") as spawn:
+            result = job.submit(self.registry, self.req, self.profile, background=True)
+        spawn.assert_not_called()
+        self.assertEqual(result["state"], "UNKNOWN")
+        self.assertEqual(bootstrap.read_text(encoding="utf-8"), "pre-existing fixture")
 
 
 if __name__ == "__main__":

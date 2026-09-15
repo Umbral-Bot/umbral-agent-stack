@@ -142,7 +142,9 @@ def task_xml(manifest, task_name):
     add(action, "Command", manifest["pythonw"])
     add(action, "Arguments", subprocess.list2cmdline([manifest["supervisor"], "supervise", "--manifest", str(Path(manifest["package"]) / "manifest.json")]))
     add(action, "WorkingDirectory", manifest["package"])
-    return ET.tostring(root, encoding="utf-8", xml_declaration=True)
+    # Register-ScheduledTask receives a Unicode BSTR. An encoding='utf-8'
+    # declaration in that string produces HRESULT 0x8004131a on Windows.
+    return ET.tostring(root, encoding="utf-8", xml_declaration=False)
 
 
 def prepare(request, profile, *, package, registry, pythonw, timeout_seconds=720, mcp_policy=None, input_paths=None, write=False):

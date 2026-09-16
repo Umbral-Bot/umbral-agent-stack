@@ -32,7 +32,8 @@ def _tempdir(test: unittest.TestCase) -> Path:
 
 class BuildSshArgvTests(unittest.TestCase):
     """The local ssh invocation must be a plain argv list, never a shell
-    string built by local interpolation."""
+    string built by local interpolation. This is a local-execution
+    guarantee only: the remote shell still interprets remote_command."""
 
     def test_structured_argv_flags_are_discrete_elements(self):
         argv = dispatch.build_ssh_argv(
@@ -57,15 +58,34 @@ class BuildSshArgvTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             dispatch.build_ssh_argv(host="h", port=1, user="u", remote_command="")
 
-    def test_malicious_remote_command_never_reaches_a_local_shell(self):
-        """The whole point of never using shell=True locally: a
-        remote_command full of shell metacharacters must be handed to the
-        (fake) ssh binary as ONE untouched argv element and never
-        interpreted by a LOCAL shell on the VPS. A real local shell
-        (`shell=True` or manual string interpolation) would treat `;` as a
-        command separator and actually run `touch <canary>`; our fixture
-        process is not a shell at all, so proving the canary was never
-        created proves no local shell ever saw this string."""
+    def test_joining_with_spaces_does_not_preserve_argument_boundaries(self):
+        """Pins the documented sharp edge: the CLI joins the trailing tokens
+        with a single space, so an argument that contains spaces is NOT kept
+        whole -- the remote shell sees several tokens. Asserted here so the
+        wrapper is never read as argv-preserving."""
+        args = dispatch.parse_args(
+            ["--host", "h", "--port", "1", "--user", "u", "--", "echo", "hola mundo"]
+        )
+        self.assertEqual(args.remote_command, ["echo", "hola mundo"])
+        argv = dispatch.build_ssh_argv(
+            host="h", port=1, user="u", remote_command=" ".join(args.remote_command),
+        )
+        self.assertEqual(argv[-1], "echo hola mundo")
+
+    def test_remote_command_metacharacters_never_reach_a_local_shell(self):
+        """Scope check, not a sanitization claim. A remote_command full of
+        shell metacharacters must be handed to the (fake) ssh binary as ONE
+        untouched argv element and never interpreted by a LOCAL shell on the
+        VPS. A real local shell (`shell=True` or manual string
+        interpolation) would treat `;` as a command separator and actually
+        run `touch <canary>`; our fixture process is not a shell at all, so
+        proving the canary was never created proves no local shell ever saw
+        this string.
+
+        This proves NOTHING about the remote side. remote_command is a
+        trusted, pre-formatted string and the remote Windows shell does
+        interpret it, by design (see the module docstring). The wrapper
+        offers no protection there, and this test asserts none."""
         canary = _tempdir(self) / "should-not-exist.txt"
         dangerous = f"echo hi; touch {canary}; echo pwned"
         argv = dispatch.build_ssh_argv(
@@ -74,7 +94,10 @@ class BuildSshArgvTests(unittest.TestCase):
         # Our own local argv must carry the dangerous string as ONE element.
         self.assertEqual(argv[-1], dangerous)
         dispatch.run_dispatch(argv)
-        self.assertFalse(canary.exists(), "a local shell interpreted the remote command -- injection!")
+        self.assertFalse(
+            canary.exists(),
+            "a LOCAL shell on the VPS interpreted the remote command -- local injection!",
+        )
 
 
 class RunDispatchExitCodeTests(unittest.TestCase):

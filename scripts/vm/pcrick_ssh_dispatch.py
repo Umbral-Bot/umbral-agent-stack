@@ -32,16 +32,34 @@ Usage:
     pcrick_ssh_dispatch.py --host 127.0.0.1 --port 22024 --user rick \\
         --connect-timeout 8 -- whoami "&&" hostname
 
-The trailing arguments are joined with a plain space into the single command
-string ssh forwards to the remote shell -- this is ssh's own normal
-single-string command interface (the remote host's shell is what actually
-interprets it, exactly as when a person types ``ssh host "a && b"`` by
-hand). This script never re-parses or re-executes that string itself: the
-LOCAL ssh invocation is always built as a plain argv list and run without a
-local shell (no ``shell=True``, no local string interpolation anywhere in
-this script), so the remote command's content -- including shell
-metacharacters meant for the *remote* host -- can never affect what runs
-*locally* on the VPS.
+remote_command contract -- read this before passing anything through it:
+
+1. It is a TRUSTED, PRE-FORMATTED remote command, not untrusted input. ssh
+   hands the string to the remote Windows shell on PCRick and that shell
+   DOES interpret it (``&&``, ``;``, quoting, redirection, expansion). This
+   script offers no protection whatsoever against that remote
+   interpretation, and does not try to: this is ssh's own normal
+   single-string command interface, exactly as when a person types
+   ``ssh host "a && b"`` by hand. Never build this string out of untrusted
+   data.
+
+2. The one guarantee this script does make is narrower: no LOCAL shell is
+   involved on the VPS. The local ssh invocation is always built as a plain
+   argv list and run without a shell (no ``shell=True``, no local string
+   interpolation anywhere in this script), so the remote command's content
+   -- including shell metacharacters meant for the *remote* host -- cannot
+   execute anything locally on the VPS. That is the whole of the
+   protection; it does not extend to the remote side.
+
+3. Argument boundaries are NOT preserved. The trailing arguments are joined
+   with a plain space (``" ".join(...)``) into the single command string ssh
+   accepts, so an argument that itself contains spaces is effectively split
+   into several tokens by the time the remote shell sees it: passing
+   ``-- echo "hola mundo"`` arrives remotely as ``echo hola mundo``. If the
+   remote command needs an argument containing spaces, quote it explicitly
+   for the REMOTE shell inside the token itself, e.g.
+   ``-- echo '"hola mundo"'``. Do not rely on local argv splitting to carry
+   that boundary across.
 """
 from __future__ import annotations
 
@@ -67,9 +85,12 @@ def build_ssh_argv(
 ) -> list[str]:
     """Build the ssh argv as a plain list -- no local shell string is ever
     built or interpreted. ``remote_command`` is passed through verbatim as
-    the single argv element ssh hands to the remote shell (ssh's own
-    protocol always takes the remote command as one string; this function
-    does not re-quote or re-split it, since it is not local shell input)."""
+    the single argv element ssh hands to the remote shell: this function
+    does not quote, escape or re-split it, so the caller owns whatever
+    quoting the REMOTE shell needs and must treat the string as trusted,
+    pre-formatted remote input (see the module docstring). Not building a
+    local shell string only rules out local execution on the VPS; it says
+    nothing about how the remote shell will interpret the string."""
     if not remote_command:
         raise ValueError("remote_command must be a non-empty string")
     return [
@@ -133,7 +154,15 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument(
         "remote_command",
         nargs=argparse.REMAINDER,
-        help="Remote command argv, e.g. -- whoami '&&' hostname",
+        help=(
+            "Trusted, pre-formatted remote command, e.g. -- whoami '&&' hostname. "
+            "These tokens are joined with a single space into the one command string "
+            "ssh sends, so argument boundaries are NOT preserved: an argument "
+            "containing spaces is split into several tokens by the remote shell. "
+            "Quote for the remote shell yourself (e.g. -- echo '\"hola mundo\"'). "
+            "The remote Windows shell does interpret this string; the only thing "
+            "this wrapper guarantees is that no LOCAL shell is used on the VPS."
+        ),
     )
     args = parser.parse_args(argv)
     if args.remote_command[:1] == ["--"]:

@@ -345,3 +345,109 @@ PIDs, replay delegado, timeout sin kill/close y argumentos MCP. La suite del
 runner comprueba la deduplicación real mediante procesos de fixture. Una Task
 real, la supervivencia después de desconectar el transporte y los resultados
 de cada CLI se acreditan por separado antes de declarar una ruta operativa.
+
+## Ruta Rick VPS → Codex en PCRick: contrato operativo
+
+Aceptada el 2026-09-17 (T2 pasa de 3/6 a 4/6) con los jobs `T2-IDE-CODEX-05`
+(artefacto) y `T2-IDE-CODEX-06` (continuación), más la repetición deduplicada del
+primero. La evidencia vive en el PKG `PKG-T2-IDE-ROUTES-REMEDIATION-20260916`.
+Estas reglas son condiciones de la ruta, no recomendaciones: una ejecución que
+incumpla cualquiera no acredita la ruta aunque produzca el archivo.
+
+### Por qué Interactive y no el SSH directo
+
+El transporte SSH entra en la **sesión 0** (logon de red, LogonType 3). Desde ahí
+Codex0.154 no puede escribir con sandbox:
+
+- con `[windows] sandbox = "elevated"` (el valor que trae `config.toml` en PCRick)
+  el ayudante del sandbox no se establece: `timed out after 15000ms connecting
+  runner pipe-in`;
+- con `-c windows.sandbox="unelevated"` el turno corre, lee y razona, pero es un
+  sandbox de **token restringido** (texto del propio binario: `windows unelevated
+  restricted-token sandbox ...`): toda escritura falla (`Failed to write file`) y
+  los procesos hijos terminan con `0xC0000142` (STATUS_DLL_INIT_FAILED).
+
+Con la misma configuración, el mismo workspace, el mismo fixture y el mismo prompt,
+el paquete Interactive (sesión 1) escribe el artefacto. La confianza del proyecto
+no era la causa y Defender tampoco: sin reglas ASR, con Controlled Folder Access
+desactivado, sin exclusiones y sin eventos de bloqueo en el log
+`Windows Defender/Operational` durante la corrida.
+
+### Reglas
+
+1. **Ejecución mediante `InteractiveToken`.** Codex con escritura se lanza
+   solamente con el paquete de `pcrick_interactive.py`. El SSH prepara, registra,
+   inicia y observa; no ejecuta `pcrick_job.py run` para esta ruta.
+2. **Sesión interactiva de Rick disponible.** Antes de iniciar, comprobar que Rick
+   tiene sesión iniciada en una sesión distinta de 0 (por ejemplo `explorer.exe`
+   del usuario). Si no la hay, clasificar `BLOCKED_SESSION`. No cambiar el tipo de
+   logon de la Task ni guardar credenciales para sortearlo.
+3. **Sandbox explícito `workspace-write`.** El job inicial pasa
+   `-s workspace-write`. `codex exec resume` no acepta `-s` ni `-C`: la
+   continuación usa `-c sandbox_mode="workspace-write"` y el cwd lo fija el
+   adaptador con `Popen(cwd=workspace)`. Ambos pasan `--strict-config` y
+   `-c approval_policy="never"`.
+4. **Nunca depender del `danger-full-access` global.** El `config.toml` de PCRick
+   declara `sandbox_mode = "danger-full-access"` como valor por defecto; un perfil
+   sin sandbox explícito lo hereda y debe rechazarse en revisión. Tampoco se usan
+   `-s danger-full-access`, `--dangerously-bypass-approvals-and-sandbox` ni
+   `windows.sandbox="unelevated"` (este último no puede escribir).
+5. **Task temporal, trazable y eliminada al cerrar.** Nombre
+   `Umbral-PCRick-<sha256(job_id)[:24]>` devuelto por el plan, registrado solo si
+   no existe, cero triggers. Inventariar las tareas `Umbral*` antes y después. Al
+   cerrar, exportar la definición registrada con `Export-ScheduledTask`, conservarla
+   con su hash y luego `Unregister-ScheduledTask` **solo** de esa tarea. No se
+   modifican tareas existentes.
+6. **Recibo, continuación y deduplicación obligatorios.**
+   - *Recibo:* `outputs_before` MISSING y `outputs_after` PRESENT con hash; el
+     contenido se coteja contra la rúbrica. `exit_code 0` sin artefacto es FAIL.
+   - *Deduplicación:* volver a iniciar la misma Task. Debe aparecer un intento
+     nuevo en `task-attempts/`, el recibo debe ser idéntico (mismo `pid` y mismos
+     timestamps) y `stdout.log` y el artefacto deben conservar su `mtime`.
+   - *Continuación:* `job_id` nuevo, mismo workspace, `codex exec resume
+     <thread_id>`; nunca `--last`, que resuelve por recencia. El prompt prohíbe leer
+     archivos y ofrece una salida explícita (`SIN_MEMORIA`) si no hay memoria. Se
+     acredita con el mismo `session_id` en el recibo, el artefacto correcto y cero
+     items `command_execution` en el log estructurado.
+   - *Orden:* job N → deduplicación → `close` con evidencia → job N+1. El recurso
+     `workspace:` queda reservado hasta `close`.
+
+### Perfiles de referencia
+
+```json
+{"runner": "codex", "input_mode": "last_arg",
+ "argv": ["C:\\...\\codex-win32-x64\\vendor\\x86_64-pc-windows-msvc\\bin\\codex.exe",
+          "exec", "--strict-config",
+          "-c", "approval_policy=\"never\"",
+          "-s", "workspace-write",
+          "--skip-git-repo-check",
+          "-C", "<workspace>", "--json"]}
+```
+
+```json
+{"runner": "codex", "input_mode": "last_arg",
+ "argv": ["C:\\...\\codex.exe", "exec", "resume", "--strict-config",
+          "-c", "approval_policy=\"never\"",
+          "-c", "sandbox_mode=\"workspace-write\"",
+          "--skip-git-repo-check", "--json", "<thread_id>"]}
+```
+
+### Hechos de configuración verificados con Codex0.154
+
+- `windows.sandbox` **sí** admite override por `-c`; valores válidos `elevated` y
+  `unelevated` (`unknown variant ..., expected elevated or unelevated`).
+- `projects.<ruta>.trust_level` **no** admite override por `-c`
+  (`unknown configuration field`). No hace falta: con la configuración de usuario
+  cargada, Codex añade por sí mismo `[projects.'<cwd>'] trust_level = "trusted"`
+  a `config.toml` durante la corrida. Es un efecto persistente de la CLI; registrar
+  el hash de `config.toml` antes y después para distinguirlo de cambios propios.
+- `--ignore-user-config` elimina a la vez el sandbox elevado, la confianza y el
+  resto de la configuración; no sirve como corrección de esta ruta.
+
+### Despacho desde el agente de origen
+
+El turno de Rick VPS debe ejecutar un comando corto que apunte a un archivo de
+despacho revisado. No pedir al modelo que copie cargas largas en base64: en una
+corrida, una carga de 4928 caracteres llegó con una letra perdida
+(`Register-ScheduedTask`) y el paso falló sin efectos. El fallo se conservó como
+evidencia.

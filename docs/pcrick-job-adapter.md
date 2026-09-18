@@ -61,8 +61,55 @@ reales deben pasar un trabajo local y una reanudación antes de declararse listo
 
 ## Invocación sobre el transporte existente
 
-Comandos de destino; el transporte autenticado decide cómo entregar los dos
-JSON y ejecutar Python, con rutas cotejadas y hashes antes de admitir:
+**Lado VPS (origen):** el transporte autenticado es el túnel SSH reverso
+permanente en `127.0.0.1:22024`. Para invocarlo desde un turno real de un
+agente (`openclaw_direct__exec` u otro mecanismo de exec del runtime),
+**usar siempre `scripts/vm/pcrick_ssh_dispatch.py`**, nunca `ssh` directo ni
+`bash -c 'ssh ...'` ad hoc:
+
+```text
+python3 scripts/vm/pcrick_ssh_dispatch.py \
+  --host 127.0.0.1 --port 22024 --user rick --connect-timeout 8 \
+  -- python scripts/vm/pcrick_job.py --root <registro-local> start --request <encargo.json> --profile <perfil-cli.json>
+```
+
+Este wrapper existe por un motivo concreto y ya diagnosticado (T2,
+2026-09-16): el supervisor de OpenClaw (`service-child-group-anchor`, ver
+`node_modules/openclaw/dist/process/supervisor/service-child-group-anchor.js`)
+sigue el proceso raíz que despacha mediante un descriptor de linaje extra. Si
+ese proceso raíz hace `exec` directo hacia `ssh`, OpenSSH cierra ese
+descriptor al iniciar (higiene propia de OpenSSH, no un error), y el
+supervisor —sin forma de distinguirlo de un árbol de procesos realmente
+huérfano— manda `SIGTERM` a los ~100ms. `pcrick_ssh_dispatch.py` evita esto
+sin desactivar la supervisión ni usar `setsid`: lanza `ssh` como hijo real
+vía `subprocess.Popen` (nunca `exec`), permaneciendo vivo como proceso padre
+mientras `ssh` corre, y propaga su exit code, señales y salida reales. Ver el
+docstring del script y `tests/test_pcrick_ssh_dispatch.py` para el
+diagnóstico completo y las pruebas de regresión.
+
+**Contrato de `remote_command` (leer antes de usarlo).** Lo que va después de
+`--` es un **comando remoto de confianza y ya preformateado**, no un dato de
+usuario. El wrapper no sanea nada de cara al lado remoto: `ssh` entrega ese
+texto tal cual al shell de Windows en PCRick y **ese shell sí lo interpreta**
+(`&&`, `;`, redirecciones, comillas, expansión). No construir nunca ese
+string a partir de entrada no confiable. Lo único que el wrapper sí garantiza
+es más acotado: en la VPS **no se usa ningún shell local** (nunca
+`shell=True`, nunca interpolación de strings; el `argv` de `ssh` se arma como
+lista), así que el contenido no puede ejecutar nada localmente en la VPS. Esa
+es toda la protección que hay y no cubre la interpretación remota.
+
+**Los argumentos sobrantes se unen con un espacio simple** (`" ".join(...)`)
+para formar el único string de comando que `ssh` acepta, de modo que **no se
+preservan los límites de argumentos**: un argumento que contenga espacios se
+parte de hecho en varios tokens al llegar al shell remoto (`-- echo "hola
+mundo"` llega como `echo hola mundo`). Si el comando remoto necesita un
+argumento con espacios, hay que citarlo explícitamente para el shell **remoto**
+dentro del propio token (p. ej. `-- echo '"hola mundo"'`), no confiar en la
+separación de argv local.
+
+Comandos de destino (lado PCRick, ejecutados por el wrapper de arriba); el
+transporte autenticado decide cómo entregar los dos JSON y ejecutar Python,
+con rutas cotejadas y hashes antes de admitir:
 
 ```text
 python scripts/vm/pcrick_job.py --root <registro-local> start --request <encargo.json> --profile <perfil-cli.json>

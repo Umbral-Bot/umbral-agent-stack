@@ -24,8 +24,16 @@ UMBRAL_MON_STATE_DIR="${UMBRAL_MON_STATE_DIR:-$HOME/.config/umbral/monitor}"
 # había mucho que contar.
 UMBRAL_NOTION_MAX_CHARS="${UMBRAL_NOTION_MAX_CHARS:-1900}"
 
-# Ventana de silencio por alerta repetida, en segundos.
+# Ventana de silencio por alerta repetida, en segundos. Es la PRIMERA ventana:
+# si el mismo estado persiste, cada reaviso la duplica hasta el tope de abajo.
 UMBRAL_ALERT_COOLDOWN_S="${UMBRAL_ALERT_COOLDOWN_S:-3600}"
+
+# Tope del retroceso exponencial. Un estado degradado que ya esta registrado en
+# un incidente abierto no debe avisar cada hora indefinidamente: eso desensibiliza
+# a quien lo lee, que es como se pierde el aviso que si importa. Medido el
+# 2026-09-18: el aviso "responde solo por fallback" era CIERTO y aun asi genero 4
+# comentarios en Notion en cuatro horas sobre una condicion ya conocida.
+UMBRAL_ALERT_BACKOFF_MAX_S="${UMBRAL_ALERT_BACKOFF_MAX_S:-86400}"
 
 # -----------------------------------------------------------------
 # umbral_load_env — carga ~/.config/openclaw/env sin volcarlo.
@@ -132,15 +140,31 @@ umbral_should_alert() {
   mkdir -p "$UMBRAL_MON_STATE_DIR"
   local f="$UMBRAL_MON_STATE_DIR/${monitor}.alert"
   local now; now=$(date +%s)
+  local reavisos=0 ventana="$UMBRAL_ALERT_COOLDOWN_S"
   if [ -f "$f" ]; then
-    local prev_fp prev_ts
+    local prev_fp prev_ts prev_n
     prev_fp=$(sed -n '1p' "$f" 2>/dev/null || true)
     prev_ts=$(sed -n '2p' "$f" 2>/dev/null || echo 0)
-    if [ "$prev_fp" = "$fp" ] && [ $(( now - prev_ts )) -lt "$UMBRAL_ALERT_COOLDOWN_S" ]; then
-      return 1
+    prev_n=$(sed -n '3p' "$f" 2>/dev/null || echo 0)
+    case "$prev_n" in ''|*[!0-9]*) prev_n=0 ;; esac
+    if [ "$prev_fp" = "$fp" ]; then
+      # Mismo estado: la ventana se duplica en cada reaviso, hasta el tope.
+      reavisos=$prev_n
+      local i=0
+      while [ "$i" -lt "$reavisos" ] && [ "$ventana" -lt "$UMBRAL_ALERT_BACKOFF_MAX_S" ]; do
+        ventana=$(( ventana * 2 )); i=$(( i + 1 ))
+      done
+      [ "$ventana" -gt "$UMBRAL_ALERT_BACKOFF_MAX_S" ] && ventana="$UMBRAL_ALERT_BACKOFF_MAX_S"
+      if [ $(( now - prev_ts )) -lt "$ventana" ]; then
+        return 1
+      fi
+      reavisos=$(( reavisos + 1 ))
+    else
+      # Estado distinto: se avisa ya y el retroceso vuelve a empezar.
+      reavisos=0
     fi
   fi
-  printf '%s\n%s\n' "$fp" "$now" > "$f"
+  printf '%s\n%s\n%s\n' "$fp" "$now" "$reavisos" > "$f"
   return 0
 }
 

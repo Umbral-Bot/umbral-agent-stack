@@ -367,3 +367,46 @@ class TestBateriaDeValidacion:
         texto = (REPO / "scripts" / "vps" / "bateria-canario.sh").read_text(encoding="utf-8")
         assert "UMBRAL_MON_STATE_DIR=" in texto and "UMBRAL_OPS_LOG_DIR=" in texto
         assert "127.0.0.1" in texto
+
+
+class TestRetrocesoExponencial:
+    """Un estado degradado ya registrado en un incidente abierto no debe avisar
+    cada hora indefinidamente: eso desensibiliza a quien lo lee, que es como se
+    pierde el aviso que sí importa. Medido el 2026-09-18: el aviso «responde solo
+    por fallback» era CIERTO y aun así generó 4 comentarios en Notion en cuatro
+    horas sobre una condición ya conocida."""
+
+    def test_la_ventana_se_duplica_en_cada_reaviso(self, state_dir):
+        env = {**state_dir, "UMBRAL_ALERT_COOLDOWN_S": "10", "UMBRAL_ALERT_BACKOFF_MAX_S": "1000"}
+        # Primer aviso: pasa y deja reavisos=0.
+        r = run_bash('umbral_should_alert mon h && echo A1', env)
+        assert "A1" in r.stdout
+        f = Path(state_dir["UMBRAL_MON_STATE_DIR"]) / "mon.alert"
+        lineas = f.read_text(encoding="utf-8").splitlines()
+        assert lineas[2] == "0"
+        # Con la ventana vencida vuelve a avisar y el contador sube.
+        r = run_bash('UMBRAL_ALERT_COOLDOWN_S=0 umbral_should_alert mon h && echo A2',
+                     {**env, "UMBRAL_ALERT_COOLDOWN_S": "0"})
+        assert "A2" in r.stdout
+        assert f.read_text(encoding="utf-8").splitlines()[2] == "1"
+
+    def test_un_estado_nuevo_reinicia_el_retroceso(self, state_dir):
+        env = {**state_dir, "UMBRAL_ALERT_COOLDOWN_S": "0"}
+        run_bash('umbral_should_alert mon h1', env)
+        run_bash('umbral_should_alert mon h1', env)
+        f = Path(state_dir["UMBRAL_MON_STATE_DIR"]) / "mon.alert"
+        assert int(f.read_text(encoding="utf-8").splitlines()[2]) >= 1
+        run_bash('umbral_should_alert mon h2-distinta', env)
+        assert f.read_text(encoding="utf-8").splitlines()[2] == "0"
+
+    def test_el_tope_existe_y_no_es_infinito(self):
+        texto = LIB.read_text(encoding="utf-8")
+        assert "UMBRAL_ALERT_BACKOFF_MAX_S" in texto
+        linea = next(l for l in texto.splitlines() if l.startswith("UMBRAL_ALERT_BACKOFF_MAX_S="))
+        assert ":-86400}" in linea, "el tope por defecto debe ser 24 h"
+
+    def test_sigue_silenciando_dentro_de_la_ventana(self, state_dir):
+        env = {**state_dir, "UMBRAL_ALERT_COOLDOWN_S": "3600"}
+        r = run_bash('umbral_should_alert mon h >/dev/null; '
+                     'umbral_should_alert mon h && echo AVISA || echo CALLA', env)
+        assert "CALLA" in r.stdout

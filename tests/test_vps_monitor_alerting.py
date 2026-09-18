@@ -322,3 +322,48 @@ class TestCanarioBajoCron:
         assert r.returncode == 2
         assert "ENTORNO" in r.stdout
         assert "no pudo generar texto" not in r.stdout
+
+
+class TestCriterioDeSaludDelCanario:
+    """La salud es el éxito ESTRUCTURAL del turno y el proveedor utilizado.
+    El token literal es evidencia adicional, nunca el único criterio: tomarlo
+    como tal produjo un falso negativo el 2026-09-18 (el agente respondió bien
+    y el canario declaró «no puede generar texto»)."""
+
+    def test_evalua_estructura_y_no_solo_el_token(self):
+        texto = (REPO / "scripts" / "vps" / "canary-inference.sh").read_text(encoding="utf-8")
+        assert 'result") == "success"' in texto, "debe exigir un candidato con éxito"
+        assert "stopReason" in texto and "finishReason" in texto, "debe exigir cierre del turno"
+        assert "EV_ESTRUCTURA" in texto
+
+    def test_una_respuesta_sin_token_no_es_caida(self):
+        texto = (REPO / "scripts" / "vps" / "canary-inference.sh").read_text(encoding="utf-8")
+        assert "ok_sin_token" in texto
+        cierre = texto[texto.index("case \"$STATUS\" in\n  ok|ok_sin_token"):]
+        assert "exit 0" in cierre, "ok_sin_token debe salir con 0"
+
+    def test_registra_el_proveedor_utilizado(self):
+        texto = (REPO / "scripts" / "vps" / "canary-inference.sh").read_text(encoding="utf-8")
+        for campo in ('\\"provider\\"', '\\"model\\"', '\\"fallback_used\\"', '\\"token_literal\\"'):
+            assert campo in texto, f"falta {campo} en el registro"
+
+    def test_registra_el_commit_en_ejecucion(self):
+        texto = (REPO / "scripts" / "vps" / "canary-inference.sh").read_text(encoding="utf-8")
+        assert "umbral_release_sha" in texto
+
+
+class TestBateriaDeValidacion:
+    """CI en verde no basta: las dos primeras versiones del canario pasaron CI y
+    fallaron en producción (PATH de cron y token literal)."""
+
+    def test_la_bateria_existe_y_cubre_los_ocho_casos(self):
+        texto = (REPO / "scripts" / "vps" / "bateria-canario.sh").read_text(encoding="utf-8")
+        for caso in ("Entorno real de cron", "Primario sano", "Fallback sano",
+                     "Fallo duro", "Fallo blando", "Deduplicación",
+                     "Recuperación única", "no lo pisa el archivo de entorno"):
+            assert caso in texto, f"la batería no cubre: {caso}"
+
+    def test_la_bateria_no_escribe_en_produccion(self):
+        texto = (REPO / "scripts" / "vps" / "bateria-canario.sh").read_text(encoding="utf-8")
+        assert "UMBRAL_MON_STATE_DIR=" in texto and "UMBRAL_OPS_LOG_DIR=" in texto
+        assert "127.0.0.1" in texto

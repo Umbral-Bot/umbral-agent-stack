@@ -77,7 +77,11 @@ umbral_load_env() {
 # distingue ambos casos no permite saber que codigo produjo un resultado.
 # -----------------------------------------------------------------
 umbral_release_sha() {
-  local d; d="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+  # Este archivo vive en <raiz>/scripts/vps/lib/, asi que la raiz esta tres
+  # niveles arriba. Con dos se apuntaba a <raiz>/scripts y el RELEASE_SHA nunca
+  # se encontraba: todo evento se registraba como "arbol-de-trabajo:desconocido"
+  # aunque corriera desde un release.
+  local d; d="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
   if [ -f "$d/RELEASE_SHA" ]; then
     cat "$d/RELEASE_SHA"
   else

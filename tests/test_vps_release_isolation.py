@@ -179,3 +179,31 @@ class TestRegistroDelCommit:
         for f in ("health-check.sh", "canary-inference.sh"):
             texto = (REPO / "scripts" / "vps" / f).read_text(encoding="utf-8")
             assert "umbral_release_sha" in texto, f"{f} no registra el commit en ejecución"
+
+
+class TestResolucionDelReleaseSha:
+    """El helper vive en <raíz>/scripts/vps/lib/: la raíz está TRES niveles
+    arriba. Con dos, apuntaba a <raíz>/scripts, nunca encontraba RELEASE_SHA y
+    todo evento se registraba como «arbol-de-trabajo» aunque corriera desde un
+    release — justo el dato que el registro existe para dar."""
+
+    def test_detecta_el_sha_cuando_corre_desde_un_release(self, tmp_path):
+        rel = tmp_path / "rel"
+        (rel / "scripts" / "vps" / "lib").mkdir(parents=True)
+        origen = REPO / "scripts" / "vps" / "lib" / "umbral_alerting.sh"
+        destino = rel / "scripts" / "vps" / "lib" / "umbral_alerting.sh"
+        destino.write_text(origen.read_text(encoding="utf-8"), encoding="utf-8")
+        (rel / "RELEASE_SHA").write_text("f3780e9b0458151097", encoding="utf-8")
+        r = subprocess.run(
+            ["bash", "-c", f'source "{destino}"; umbral_release_sha'],
+            capture_output=True, text=True,
+        )
+        assert r.stdout.strip() == "f3780e9b0458151097"
+
+    def test_marca_el_arbol_de_trabajo_como_tal(self):
+        r = subprocess.run(
+            ["bash", "-c", f'source "{REPO}/scripts/vps/lib/umbral_alerting.sh"; umbral_release_sha'],
+            capture_output=True, text=True,
+        )
+        assert r.stdout.strip().startswith("arbol-de-trabajo:"), \
+            "correr desde el checkout debe quedar marcado, no confundirse con un release"

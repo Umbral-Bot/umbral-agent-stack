@@ -185,9 +185,9 @@ vivo ni concede revocación de una clave SSH o de herramientas externas.
   usar el lease del receptor existente o un snapshot inmutable. El adaptador
   no instala ni actualiza skills y no garantiza inmutabilidad de una ruta que
   otro proceso pueda sobrescribir. Declarar un SHA no prueba su procedencia.
-- **Sesiones:** se captura Codex `thread.started.thread_id` y Claude
-  `system/result.session_id`, solo si hay un ID inequívoco. Antigravity queda
-  UNKNOWN hasta observar su schema real. No se usa “latest”. La continuación
+- **Sesiones:** se captura Codex `thread.started.thread_id`, Claude
+  `system/result.session_id` y Antigravity `init`/`result.conversation_id`,
+  solo si hay un ID inequívoco. No se usa “latest”. La continuación
   requiere perfil con el ID exacto, nuevo paso vinculado y comprobación del
   contexto; este corte no afirma reanudación automática de las tres CLIs.
 - **Aceptación:** exit0, archivo creado y sesión emitida son hechos distintos.
@@ -345,3 +345,246 @@ PIDs, replay delegado, timeout sin kill/close y argumentos MCP. La suite del
 runner comprueba la deduplicación real mediante procesos de fixture. Una Task
 real, la supervivencia después de desconectar el transporte y los resultados
 de cada CLI se acreditan por separado antes de declarar una ruta operativa.
+
+## Ruta Rick VPS → Codex en PCRick: contrato operativo
+
+Aceptada el 2026-09-17 (T2 pasa de 3/6 a 4/6) con los jobs `T2-IDE-CODEX-05`
+(artefacto) y `T2-IDE-CODEX-06` (continuación), más la repetición deduplicada del
+primero. La evidencia vive en el PKG `PKG-T2-IDE-ROUTES-REMEDIATION-20260916`.
+Estas reglas son condiciones de la ruta, no recomendaciones: una ejecución que
+incumpla cualquiera no acredita la ruta aunque produzca el archivo.
+
+### Por qué Interactive y no el SSH directo
+
+El transporte SSH entra en la **sesión 0** (logon de red, LogonType 3). Desde ahí
+Codex0.154 no puede escribir con sandbox:
+
+- con `[windows] sandbox = "elevated"` (el valor que trae `config.toml` en PCRick)
+  el ayudante del sandbox no se establece: `timed out after 15000ms connecting
+  runner pipe-in`;
+- con `-c windows.sandbox="unelevated"` el turno corre, lee y razona, pero todas
+  las escrituras fallaron (`Failed to write file`) y 11 de 13 procesos hijos,
+  incluidas lecturas, terminaron con `0xC0000142` (STATUS_DLL_INIT_FAILED). El
+  binario describe ese modo como un sandbox de token restringido. No se probó en
+  sesión 1.
+
+En sesión 1, con la configuración real (`elevated`), el mismo workspace, fixture y
+prompt producen el artefacto. **No fue una prueba de una sola variable**: además de
+la sesión cambiaron `windows.sandbox` (`unelevated` forzado → `elevated`) y la
+confianza del workspace, que ya existía al empezar la corrida aceptada. La
+elevación no cambió: ambas corridas eran de administrador elevado. Defender quedó
+descartado con evidencia de sistema: sin reglas ASR, con Controlled Folder Access
+desactivado, sin exclusiones y sin eventos de bloqueo en el log
+`Windows Defender/Operational` durante la corrida.
+
+### Reglas
+
+1. **Ejecución mediante `InteractiveToken`.** Codex con escritura se lanza
+   solamente con el paquete de `pcrick_interactive.py`. El SSH prepara, registra,
+   inicia y observa; no ejecuta `pcrick_job.py run` para esta ruta. La Task usa
+   `RunLevel=HighestAvailable` y el supervisor exige `elevated=true`: **el CLI corre
+   como administrador elevado**, lo que amplifica cualquier canal que el sandbox o
+   el motor de permisos no controlen.
+2. **Sesión interactiva de Rick disponible.** Antes de iniciar, comprobar que Rick
+   tiene sesión iniciada en una sesión distinta de 0 (por ejemplo `explorer.exe`
+   del usuario). Como mínimo, `supervisor.json` debe registrar `session_id` distinto
+   de 0; en la corrida aceptada de Codex esa fue la única comprobación. Si no hay
+   sesión, clasificar `BLOCKED_SESSION`. No cambiar el tipo de logon de la Task ni
+   guardar credenciales para sortearlo.
+3. **Sandbox explícito `workspace-write`.** El job inicial pasa
+   `-s workspace-write`. `codex exec resume` no acepta `-s` ni `-C`: la
+   continuación usa `-c sandbox_mode="workspace-write"` y el cwd lo fija el
+   adaptador con `Popen(cwd=workspace)`. Ambos pasan `--strict-config` y
+   `-c approval_policy="never"`. Pendiente: la salida `--json` no informa el
+   sandbox efectivo, y no se verificó en ejecución que la continuación corriera en
+   `workspace-write` (por ejemplo, con un intento de escribir fuera del workspace).
+4. **Nunca depender del `danger-full-access` global.** El `config.toml` de PCRick
+   declara `sandbox_mode = "danger-full-access"` como valor por defecto; un perfil
+   sin sandbox explícito lo hereda y debe rechazarse en revisión. Tampoco se usan
+   `-s danger-full-access`, `--dangerously-bypass-approvals-and-sandbox` ni
+   `windows.sandbox="unelevated"` (este último no pudo escribir en sesión 0).
+5. **Task temporal, trazable y eliminada al cerrar.** Nombre
+   `Umbral-PCRick-<sha256(job_id)[:24]>` devuelto por el plan, registrado solo si
+   no existe, cero triggers. Inventariar las tareas `Umbral*` antes y después. Al
+   cerrar la serie (job inicial y continuación), exportar cada definición
+   registrada con `Export-ScheduledTask`, conservarla con su hash y luego ejecutar
+   `Unregister-ScheduledTask` **solo** de esas tareas. No se modifican tareas
+   existentes.
+6. **Recibo, continuación y deduplicación obligatorios.**
+   - *Recibo:* `outputs_before` MISSING y `outputs_after` PRESENT con hash; el
+     contenido se coteja contra la rúbrica. `exit_code 0` sin artefacto es FAIL.
+   - *Deduplicación:* volver a iniciar la misma Task. Debe aparecer un intento
+     nuevo en `task-attempts/`, el recibo debe ser idéntico (mismo `pid` y mismos
+     timestamps) y `stdout.log` y el artefacto deben conservar su `mtime`.
+   - *Continuación:* `job_id` nuevo, mismo workspace, `codex exec resume
+     <thread_id>`; nunca `--last`, que resuelve por recencia. El prompt prohíbe leer
+     archivos y ofrece una salida explícita (`SIN_MEMORIA`) si no hay memoria. Se
+     acredita con el mismo `session_id` en el recibo, el artefacto correcto y cero
+     items `command_execution` en el log estructurado.
+   - *Orden:* job inicial → deduplicación → `close` con evidencia → continuación
+     → verificación → `close`. La deduplicación se exige una vez por serie, sobre el
+     job inicial. El recurso `workspace:` queda reservado hasta `close`.
+   - *Sin residuales:* cero procesos `codex.exe`, `codex-command-runner.exe` y
+     `pythonw.exe` después de cada paso.
+
+### Perfiles de referencia
+
+```json
+{"runner": "codex", "input_mode": "last_arg",
+ "argv": ["C:\\...\\codex-win32-x64\\vendor\\x86_64-pc-windows-msvc\\bin\\codex.exe",
+          "exec", "--strict-config",
+          "-c", "approval_policy=\"never\"",
+          "-s", "workspace-write",
+          "--skip-git-repo-check",
+          "-C", "<workspace>", "--json"]}
+```
+
+```json
+{"runner": "codex", "input_mode": "last_arg",
+ "argv": ["C:\\...\\codex.exe", "exec", "resume", "--strict-config",
+          "-c", "approval_policy=\"never\"",
+          "-c", "sandbox_mode=\"workspace-write\"",
+          "--skip-git-repo-check", "--json", "<thread_id>"]}
+```
+
+### Hechos de configuración verificados con Codex0.154
+
+- `windows.sandbox` **sí** admite override por `-c`; valores válidos `elevated` y
+  `unelevated` (`unknown variant ..., expected elevated or unelevated`).
+- `projects.<ruta>.trust_level` **no** admite override por `-c`
+  (`unknown configuration field`).
+- Observación, no garantía: tras una corrida con la configuración de usuario
+  cargada, `config.toml` tenía una entrada nueva `[projects.'<cwd>'] trust_level =
+  "trusted"` escrita por la CLI, sin edición manual. La corrida aceptada empezó con
+  esa entrada ya presente. **No está validada una primera corrida Interactive en un
+  workspace nuevo sin confianza previa**; hasta validarla, registrar el hash y las
+  entradas `projects` de `config.toml` antes y después de cada job.
+- `--ignore-user-config` elimina a la vez el sandbox elevado, la confianza y el
+  resto de la configuración; no sirve como corrección de esta ruta.
+
+### Despacho desde el agente de origen
+
+El turno de Rick VPS debe ejecutar un comando corto que apunte a un archivo de
+despacho revisado. No pedir al modelo que copie cargas largas en base64: en una
+corrida, una carga larga llegó con una letra perdida (`Register-ScheduedTask`) y el
+paso falló sin efectos. El fallo se conservó como evidencia. Un `-EncodedCommand`
+demasiado largo lo rechaza cmd.exe (`La línea de comandos es demasiado larga`): en
+ese caso provisionar el script en PCRick con hash e invocarlo por ruta.
+
+## Ruta Rick VPS → Antigravity en PCRick: contrato operativo
+
+Aceptada el 2026-09-17 (T2 pasa de 4/6 a 5/6) con `T2-IDE-AGY-04` (artefacto) y
+`T2-IDE-AGY-05` (continuación), sobre agy 1.2.5. Hereda las reglas 1, 2, 5 y 6 de
+la ruta Codex: InteractiveToken, sesión interactiva, Task temporal exportada y
+eliminada, y recibo, continuación y deduplicación obligatorios (con las
+precisiones de la regla 6 de abajo). Como en Codex, el CLI corre como administrador
+elevado. En sesión SSH el CLI usa almacenamiento de tokens en archivo (`Using file-based token storage because
+SSH session detected`) y no encuentra el login hecho en el escritorio.
+
+### Por qué hace falta una regla y dónde va
+
+En modo headless (`-p`) el CLI arranca con `permission_mode = request-review`. Toda
+acción que caiga en *Ask* se auto-deniega. En 1.2.4 se auto-denegó incluso la
+lectura de un archivo del propio cwd. En 1.2.5 el código añade una concesión de
+lectura por defecto para los directorios del workspace, y la escritura cae por
+defecto en *Ask* (según el desensamblado; no observado en ejecución). `--mode accept-edits` no cambia ese modo, y
+`--dangerously-skip-permissions` aprueba todas las herramientas, así que no se usa.
+La vía acotada es una **configuración temporal por proyecto**, sin tocar el
+`settings.json` global:
+
+- Archivo `~/.gemini/config/projects/<id>.json`, en protojson de
+  `exa.project_pb.Project`, UTF-8 sin BOM. El CLI lo lee con `DiscardUnknown`:
+  una clave mal escrita se ignora en silencio.
+- El proyecto se elige **solo** con `--project=<id>`, con la conversación
+  reanudada (`--conversation <id>`) o con `--new-project`, que crea uno nuevo con el
+  nombre del cwd y no se usa en esta ruta. El cwd no lo selecciona. Según el
+  desensamblado, sin prueba en ejecución, un `--project` que no resuelve cae en
+  silencio al proyecto por defecto.
+
+```json
+{
+  "id": "<job-id-en-minusculas>",
+  "name": "<job-id-en-minusculas>",
+  "projectResources": {},
+  "permissionGrants": {
+    "permissionGrants": {
+      "allow": ["read_file(C:/.../<workspace>)", "write_file(C:/.../<workspace>)"],
+      "deny": ["command(*)", "mcp(*)", "read_url(*)", "execute_url(*)",
+               "write_file(C:/.../<workspace>/.agents)", "write_file(C:/.../<workspace>/.agent)",
+               "write_file(C:/.../<workspace>/_agents)", "write_file(C:/.../<workspace>/_agent)",
+               "write_file(C:/.../<workspace>/.git)", "write_file(C:/.../<workspace>/.vscode)"]
+    },
+    "v2Migrated": true
+  }
+}
+```
+
+### Reglas propias de esta ruta
+
+1. **Rutas con unidad.** La documentación dice que en Windows se quita la unidad
+   antes de evaluar. El binario 1.2.5 convierte `\` a `/`, pero conserva la unidad
+   como volumen y exige que coincida. Escribir `C:/...`, forma validada en
+   ejecución. Según el desensamblado, sin prueba en ejecución, una regla sin unidad
+   no cubre `C:`; y si la documentación tuviera razón, cubriría la misma ruta en
+   cualquier unidad.
+2. **Directorio exacto, sin globs.** `read_file(X)` y `write_file(X)` son recursivas
+   y se comparan por componentes: no alcanzan hermanos ni el padre. `X/*` o `X/**`
+   son nombres literales. Un workspace nuevo por serie: el job inicial y su
+   continuación comparten el mismo, y ningún otro job lo reutiliza.
+3. **Cerrar la vía de hooks.** `write_file` sobre el workspace permitiría escribir
+   `.agents/hooks.json`, y los hooks ejecutan comandos sin pasar por el motor de
+   permisos. De ahí las `deny` de subcarpetas y el inventario del workspace entre
+   corridas: si hay algo además de los archivos del caso, la ruta falla. La `allow`
+   del workspace también anula la protección incorporada (*Ask*) para `.env*`,
+   `.npmrc`, `.pypirc`, `.netrc`, `.git-credentials` y `.cache` dentro de él. Usar
+   un workspace sin secretos o añadir `deny` de lectura y escritura para esos
+   nombres.
+4. **Verificar la carga antes del job.** Con el archivo escrito, `agy.exe
+   --project=<id> models` en la sesión SSH, sin autenticación ni conversación, debe
+   dejar en el log `Backend project ID updated dynamically to: <id>` y
+   `ApplyProjectPermissionGrants: stored 2 allow, 10 deny grants from project "<id>"`,
+   sin `ignoring invalid`. El comando termina con exit 1 y `Please sign in`, y eso
+   es lo esperado. Esta verificación prueba que el CLI leyó el archivo y copió las
+   listas, no que el motor las aplique: el servidor de lenguaje las lee por su
+   cuenta y, según el desensamblado, falla en silencio. `-p "/permissions"` no sirve
+   para esto en sesión 0: también exige autenticación.
+5. **Perfil sin atajos.** Job inicial: `agy.exe --project=<id> --output-format
+   stream-json --print-timeout 5m -p`. Continuación: `agy.exe --conversation <id>
+   --output-format stream-json --print-timeout 5m -p`, nunca `-c/--continue`. Sin
+   `--mode accept-edits`, para que la escritura solo pueda aprobarla la regla.
+6. **Aceptación estricta.** Además del recibo:
+   - `init.cwd` igual al workspace exacto;
+   - todos los pasos de herramienta son `view_file`/`write_to_file` con rutas dentro
+     del workspace, y `denied_actions` es nulo;
+   - el log del job muestra `Conversation using project ID: <id>` (o `resuming
+     conversation belonging to project ID: <id>` en la continuación);
+   - en el log no aparecen `soft-denying`, `Accept-edits mode: auto-approving`,
+     `Always-proceed`, `ignoring invalid`, `failed to resolve project`,
+     `dynamically resolved and registered default project`, `Failed to deserialize
+     project file`, `Unknown field` ni `missing project file` (las cinco últimas,
+     tomadas del desensamblado, son fallos que dejarían correr el job sin reglas);
+   - cero procesos `agy.exe` y `pythonw.exe` después de cada paso.
+
+   `init.permission_mode` seguirá diciendo `request-review`, y es lo esperado. La
+   lectura puede venir de la concesión por defecto del workspace; la escritura es la
+   prueba de que la regla actuó (por descarte, sin control negativo en 1.2.5).
+   **Continuación:** `--conversation <id>`, el mismo `session_id` en el recibo,
+   numeración de pasos que sigue a la del job inicial y **cero** pasos de lectura,
+   listado o búsqueda. Un solo `view_file` invalida la continuación.
+7. **Retirar al cerrar.** Registrar antes la ruta, el hash y el contenido (o su
+   ausencia). Al cerrar, conservar una copia del archivo en la evidencia y
+   eliminarlo, y verificar que `projects/`, `settings.json`, `config.json` y
+   `cache/default_project_id.txt` vuelven a su hash. `last_conversations.json` gana
+   una entrada del cwd; es una caché del CLI. Según el desensamblado, una
+   conversación reanudada después de retirar el archivo ya no tendrá esas reglas.
+
+### Riesgos que las reglas no cierran
+
+`search_web` y `find_by_name` no pasan por el motor de permisos. El CLI trae
+concesiones incorporadas de lectura y escritura para `TEMP` y para directorios
+internos bajo `~/.gemini/antigravity-cli` (`brain`, `scratch`, `knowledge`,
+`memory`, `worktrees`, `plugin_data` y otros). Los subagentes pueden abrir espacios
+`branch`/`share`. Las acciones `escalate_admin` y `custom` solo quedan bloqueadas por
+el *Ask* por defecto. Todo ello opera con token de administrador elevado. El
+confinamiento real depende también del prompt y de la auditoría paso a paso; no se
+declara aislamiento duro.

@@ -57,13 +57,39 @@ if [ -z "$OPENCLAW_BIN" ] || [ ! -x "$OPENCLAW_BIN" ]; then
   exit 2
 fi
 
-TOKEN="CANARIO-$(date -u +%Y%m%d%H%M%S)"
-PROMPT="Responde unicamente con ${TOKEN} y nada mas."
 START=$(date +%s%3N 2>/dev/null || date +%s000)
 
-# --json y sin --deliver: no se envía a ningún canal, solo se mide la capacidad.
-OUT=$(timeout 180 "$OPENCLAW_BIN" agent --agent "$AGENT" -m "$PROMPT" --json 2>&1)
-RC=$?
+# Un turno real del agente. --json y sin --deliver: no se envia a ningun canal.
+#
+# Dos clases de fallo, que NO son lo mismo:
+#   DURO  - el turno no termina (exit != 0, timeout). El stack no puede responder.
+#   BLANDO- el turno termina bien pero el modelo no devuelve el token exacto.
+#           Es no-conformidad del modelo, no incapacidad del stack. Observado el
+#           2026-09-18: el mismo agente respondio mal una vez y bien la siguiente.
+# Un fallo BLANDO se reintenta UNA sola vez. Sin ese acotado, una desobediencia
+# aislada del modelo dispara una alarma falsa, que es justo lo que este trabajo
+# existe para evitar. Un fallo DURO no se reintenta: se reporta de inmediato.
+INTENTO=0
+STATUS="fail"
+DETAIL=""
+while [ $INTENTO -lt 2 ]; do
+  INTENTO=$(( INTENTO + 1 ))
+  TOKEN="CANARIO-$(date -u +%Y%m%d%H%M%S)-${INTENTO}"
+  PROMPT="Responde unicamente con ${TOKEN} y nada mas."
+  OUT=$(timeout 180 "$OPENCLAW_BIN" agent --agent "$AGENT" -m "$PROMPT" --json 2>&1)
+  RC=$?
+  if [ $RC -eq 124 ]; then
+    DETAIL="timeout de 180 s sin respuesta"; break
+  elif [ $RC -ne 0 ]; then
+    DETAIL=$(printf '%s' "$OUT" | grep -viE '^\[(config|provider-transport-fetch)\]' | tail -3 | tr '\n' ' ')
+    [ -z "$DETAIL" ] && DETAIL="exit $RC"
+    break
+  elif printf '%s' "$OUT" | grep -qF "$TOKEN"; then
+    STATUS="ok"; DETAIL=""; break
+  else
+    DETAIL="el turno termino bien pero la respuesta no trae el token canario (intento $INTENTO de 2)"
+  fi
+done
 END=$(date +%s%3N 2>/dev/null || date +%s000)
 MS=$(( END - START ))
 
@@ -92,20 +118,7 @@ print(prov,mod,fb)
 [ -z "${MODEL:-}" ] && MODEL="desconocido"
 [ -z "${FALLBACK:-}" ] && FALLBACK="false"
 
-STATUS="fail"
-DETAIL=""
-if [ $RC -eq 124 ]; then
-  DETAIL="timeout de 180 s sin respuesta"
-elif [ $RC -ne 0 ]; then
-  DETAIL=$(printf '%s' "$OUT" | grep -viE '^\[(config|provider-transport-fetch)\]' | tail -3 | tr '\n' ' ')
-  [ -z "$DETAIL" ] && DETAIL="exit $RC"
-elif printf '%s' "$OUT" | grep -qF "$TOKEN"; then
-  STATUS="ok"
-else
-  DETAIL="respuesta sin el token canario (respuesta vacia o incorrecta)"
-fi
-
-umbral_ops_log "{\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"kind\":\"canary_inference\",\"agent\":\"$AGENT\",\"status\":\"$STATUS\",\"provider\":\"$PROVIDER\",\"model\":\"$MODEL\",\"fallback_used\":$FALLBACK,\"latency_ms\":$MS,\"detail\":$(python3 -c 'import json,sys;print(json.dumps(sys.argv[1]))' "$DETAIL")}"
+umbral_ops_log "{\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"kind\":\"canary_inference\",\"agent\":\"$AGENT\",\"status\":\"$STATUS\",\"provider\":\"$PROVIDER\",\"model\":\"$MODEL\",\"fallback_used\":$FALLBACK,\"latency_ms\":$MS,\"intentos\":$INTENTO,\"detail\":$(python3 -c 'import json,sys;print(json.dumps(sys.argv[1]))' "$DETAIL")}"
 
 if [ "$QUIET" -eq 0 ]; then
   if [ "$STATUS" = "ok" ]; then

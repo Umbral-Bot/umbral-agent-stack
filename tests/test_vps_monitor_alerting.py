@@ -322,3 +322,28 @@ class TestCanarioBajoCron:
         assert r.returncode == 2
         assert "ENTORNO" in r.stdout
         assert "no pudo generar texto" not in r.stdout
+
+
+class TestCanarioFallosBlandos:
+    """El modelo a veces no devuelve el token exacto aunque el turno vaya bien.
+    Observado el 2026-09-18: fallo una vez y acerto a la siguiente. Sin acotar,
+    una sola desobediencia dispara una alarma falsa."""
+
+    def test_distingue_fallo_duro_de_blando(self):
+        texto = (REPO / "scripts" / "vps" / "canary-inference.sh").read_text(encoding="utf-8")
+        assert "DURO" in texto and "BLANDO" in texto
+
+    def test_reintenta_exactamente_una_vez(self):
+        texto = (REPO / "scripts" / "vps" / "canary-inference.sh").read_text(encoding="utf-8")
+        assert "while [ $INTENTO -lt 2 ]" in texto, "el reintento debe estar acotado a 2 intentos"
+        assert "INTENTO=$(( INTENTO + 1 ))" in texto
+
+    def test_el_fallo_duro_no_se_reintenta(self):
+        texto = (REPO / "scripts" / "vps" / "canary-inference.sh").read_text(encoding="utf-8")
+        cuerpo = texto[texto.index("while [ $INTENTO"):texto.index("END=$(date")]
+        # timeout y exit!=0 rompen el bucle; solo el blando continua.
+        assert cuerpo.count("break") >= 3
+
+    def test_registra_cuantos_intentos_hizo(self):
+        texto = (REPO / "scripts" / "vps" / "canary-inference.sh").read_text(encoding="utf-8")
+        assert "intentos" in texto

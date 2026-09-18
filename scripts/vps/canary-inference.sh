@@ -9,14 +9,20 @@
 #
 # La sonda ejecuta un TURNO REAL del agente. No usa `capability model run`, y la
 # razón está medida: el 2026-09-18, con los perfiles OAuth de OpenAI en cooldown,
-# `capability model run` devolvía 200 por `openai/gpt-5.6-sol` usando el tercer
-# perfil (api-key `openai:default`), mientras el agente —que corre con
-# authMode=auth-profile— fallaba los tres modelos OpenAI y solo respondía por el
-# fallback de Anthropic. Una sonda por la vía del CLI habría dado verde con el
-# agente roto: exactamente el falso positivo que este trabajo existe para cerrar.
+# `capability model run` devolvía 200 por `openai/gpt-5.6-sol` usando un tercer
+# perfil de api-key, mientras el agente —que corre con authMode=auth-profile—
+# fallaba los tres modelos OpenAI y solo respondía por el fallback de Anthropic.
+# Una sonda por la vía del CLI habría dado verde con el agente roto.
 #
-# Salida: 0 canario correcto, 1 respuesta ausente o incorrecta, 2 error de entorno.
-# Escribe el resultado en la fuente canónica (ops_log.jsonl). No imprime secretos.
+# CRITERIO DE SALUD: el ÉXITO ESTRUCTURAL del turno y el proveedor utilizado.
+# El token textual es evidencia ADICIONAL de seguimiento de instrucciones, nunca
+# el único criterio: tomarlo como tal producía falsos negativos (el 2026-09-18 el
+# agente respondió bien y el canario declaró «no puede generar texto» solo porque
+# el modelo no devolvió la cadena exacta).
+#
+# Salidas: 0 turno correcto (con o sin token literal)
+#          1 el turno no completó — el stack no puede generar
+#          2 problema de ENTORNO (falta el ejecutable), no de capacidad
 #
 #   bash scripts/vps/canary-inference.sh [--agent main] [--quiet]
 # =================================================================
@@ -37,10 +43,10 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-# El binario hay que resolverlo a mano: bajo cron el PATH es minimo y `openclaw`
-# vive en ~/.npm-global/bin. Sin esto el canario reporta "no puede generar texto"
-# cuando en realidad no encuentra la herramienta — una falsa alarma que ya ocurrio
-# de verdad en la corrida de cron de las 15:00 UTC del 2026-09-18.
+# El binario se resuelve a mano: bajo cron el PATH es mínimo y `openclaw` vive en
+# ~/.npm-global/bin. Sin esto el canario reportaba «no puede generar texto» cuando
+# en realidad no encontraba la herramienta — falsa alarma real en la corrida de
+# cron de las 15:00 UTC del 2026-09-18.
 OPENCLAW_BIN="${OPENCLAW_BIN:-}"
 if [ -z "$OPENCLAW_BIN" ]; then
   if command -v openclaw >/dev/null 2>&1; then
@@ -52,8 +58,8 @@ if [ -z "$OPENCLAW_BIN" ]; then
   fi
 fi
 if [ -z "$OPENCLAW_BIN" ] || [ ! -x "$OPENCLAW_BIN" ]; then
-  echo "[ERROR] canario: no se encuentra el ejecutable 'openclaw'. Esto es un problema de ENTORNO, no de capacidad del modelo."
-  umbral_ops_log "{\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"kind\":\"canary_inference\",\"agent\":\"$AGENT\",\"status\":\"entorno\",\"detail\":\"ejecutable openclaw no encontrado\"}"
+  echo "[ERROR] canario: no se encuentra el ejecutable 'openclaw'. Es un problema de ENTORNO, no de capacidad."
+  umbral_ops_log "{\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"kind\":\"canary_inference\",\"release\":\"$(umbral_release_sha)\",\"agent\":\"$AGENT\",\"status\":\"entorno\",\"detail\":\"ejecutable openclaw no encontrado\"}"
   exit 2
 fi
 
@@ -61,36 +67,60 @@ TOKEN="CANARIO-$(date -u +%Y%m%d%H%M%S)"
 PROMPT="Responde unicamente con ${TOKEN} y nada mas."
 START=$(date +%s%3N 2>/dev/null || date +%s000)
 
-# --json y sin --deliver: no se envía a ningún canal, solo se mide la capacidad.
 OUT=$(timeout 180 "$OPENCLAW_BIN" agent --agent "$AGENT" -m "$PROMPT" --json 2>&1)
 RC=$?
 END=$(date +%s%3N 2>/dev/null || date +%s000)
 MS=$(( END - START ))
 
-# Proveedor/modelo EFECTIVOS: el último candidato de la cascada con result=success.
-read -r PROVIDER MODEL FALLBACK <<<"$(printf '%s' "$OUT" | python3 -c '
-import sys,json,re
-raw=sys.stdin.read()
-prov=mod="desconocido"; fb="false"
+# Tres hechos independientes, leídos del JSON del propio turno:
+#   1. algún candidato de la cascada terminó con result=success y proveedor;
+#   2. el turno cerró (stopReason o finishReason presente);
+#   3. hay texto de respuesta no vacío.
+EVAL=$(printf '%s' "$OUT" | TOKEN_ESPERADO="$TOKEN" python3 -c '
+import sys, json, os
+raw = sys.stdin.read()
+tok = os.environ.get("TOKEN_ESPERADO", "")
+prov = mod = "desconocido"
+fb = cerro = texto = False
 try:
-    d=json.loads(raw[raw.index("{"):raw.rindex("}")+1])
+    d = json.loads(raw[raw.index("{"):raw.rindex("}") + 1])
 except Exception:
-    print(prov,mod,fb); raise SystemExit
+    d = None
 def walk(o):
-    if isinstance(o,dict):
-        if o.get("result")=="success" and o.get("provider"): yield o
-        if "fallbackUsed" in o: yield {"_fb":bool(o["fallbackUsed"])}
-        for v in o.values(): yield from walk(v)
-    elif isinstance(o,list):
-        for v in o: yield from walk(v)
-for e in walk(d):
-    if "_fb" in e: fb="true" if e["_fb"] else "false"
-    else: prov,mod=e.get("provider","?"),e.get("model","?")
-print(prov,mod,fb)
-')"
-[ -z "${PROVIDER:-}" ] && PROVIDER="desconocido"
-[ -z "${MODEL:-}" ] && MODEL="desconocido"
-[ -z "${FALLBACK:-}" ] && FALLBACK="false"
+    global prov, mod, fb, cerro, texto
+    if isinstance(o, dict):
+        if o.get("result") == "success" and o.get("provider"):
+            prov, mod = o.get("provider", "?"), o.get("model", "?")
+        if "fallbackUsed" in o:
+            fb = bool(o["fallbackUsed"]) or fb
+        if o.get("stopReason") or o.get("finishReason"):
+            cerro = True
+        for k, v in o.items():
+            if k in ("text", "reply") and isinstance(v, str) and v.strip():
+                texto = True
+            walk(v)
+    elif isinstance(o, list):
+        for v in o:
+            walk(v)
+if d is not None:
+    walk(d)
+est = "si" if (prov != "desconocido" and cerro and texto) else "no"
+print("estructura=%s" % est)
+print("proveedor=%s" % prov)
+print("modelo=%s" % mod)
+print("fallback=%s" % str(fb).lower())
+print("token=%s" % ("si" if tok and tok in raw else "no"))
+')
+EV_ESTRUCTURA=$(printf '%s' "$EVAL" | sed -n 's/^estructura=//p')
+PROVIDER=$(printf '%s' "$EVAL" | sed -n 's/^proveedor=//p')
+MODEL=$(printf '%s' "$EVAL" | sed -n 's/^modelo=//p')
+FALLBACK=$(printf '%s' "$EVAL" | sed -n 's/^fallback=//p')
+TOKEN_OK=$(printf '%s' "$EVAL" | sed -n 's/^token=//p')
+[ -z "$EV_ESTRUCTURA" ] && EV_ESTRUCTURA="no"
+[ -z "$PROVIDER" ] && PROVIDER="desconocido"
+[ -z "$MODEL" ] && MODEL="desconocido"
+[ -z "$FALLBACK" ] && FALLBACK="false"
+[ -z "$TOKEN_OK" ] && TOKEN_OK="no"
 
 STATUS="fail"
 DETAIL=""
@@ -99,28 +129,36 @@ if [ $RC -eq 124 ]; then
 elif [ $RC -ne 0 ]; then
   DETAIL=$(printf '%s' "$OUT" | grep -viE '^\[(config|provider-transport-fetch)\]' | tail -3 | tr '\n' ' ')
   [ -z "$DETAIL" ] && DETAIL="exit $RC"
-elif printf '%s' "$OUT" | grep -qF "$TOKEN"; then
-  STATUS="ok"
+elif [ "$EV_ESTRUCTURA" = "si" ]; then
+  if [ "$TOKEN_OK" = "si" ]; then
+    STATUS="ok"
+  else
+    STATUS="ok_sin_token"
+    DETAIL="el turno fue correcto pero la respuesta no incluye el token literal"
+  fi
 else
-  DETAIL="respuesta sin el token canario (respuesta vacia o incorrecta)"
+  DETAIL="el turno no completo: sin proveedor con exito, sin cierre o sin texto de respuesta"
 fi
 
-umbral_ops_log "{\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"kind\":\"canary_inference\",\"agent\":\"$AGENT\",\"status\":\"$STATUS\",\"provider\":\"$PROVIDER\",\"model\":\"$MODEL\",\"fallback_used\":$FALLBACK,\"latency_ms\":$MS,\"detail\":$(python3 -c 'import json,sys;print(json.dumps(sys.argv[1]))' "$DETAIL")}"
+umbral_ops_log "{\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"kind\":\"canary_inference\",\"release\":\"$(umbral_release_sha)\",\"agent\":\"$AGENT\",\"status\":\"$STATUS\",\"provider\":\"$PROVIDER\",\"model\":\"$MODEL\",\"fallback_used\":$FALLBACK,\"token_literal\":\"$TOKEN_OK\",\"latency_ms\":$MS,\"detail\":$(python3 -c 'import json,sys;print(json.dumps(sys.argv[1]))' "$DETAIL")}"
 
 if [ "$QUIET" -eq 0 ]; then
-  if [ "$STATUS" = "ok" ]; then
-    if [ "$FALLBACK" = "true" ]; then
-      echo "[OK]  canario: ${PROVIDER}/${MODEL} respondio en ${MS} ms (POR FALLBACK: el primario no sirvio)"
-    else
-      echo "[OK]  canario: ${PROVIDER}/${MODEL} respondio en ${MS} ms"
-    fi
-  else
-    echo "[FAIL] canario: el agente '$AGENT' no pudo generar texto — ${DETAIL}"
-  fi
+  case "$STATUS" in
+    ok)
+      if [ "$FALLBACK" = "true" ]; then
+        echo "[OK]  canario: ${PROVIDER}/${MODEL} respondio en ${MS} ms (POR FALLBACK: el primario no sirvio)"
+      else
+        echo "[OK]  canario: ${PROVIDER}/${MODEL} respondio en ${MS} ms"
+      fi ;;
+    ok_sin_token)
+      echo "[OK]  canario: ${PROVIDER}/${MODEL} completo el turno en ${MS} ms, sin el token literal (no-conformidad del modelo, no fallo de salud)" ;;
+    *)
+      echo "[FAIL] canario: el agente '$AGENT' no pudo generar texto — ${DETAIL}" ;;
+  esac
 fi
 
-[ "$STATUS" = "ok" ] && exit 0
-# 127 = ejecutable ausente; 126 = no ejecutable. Son problemas de ENTORNO y no
-# deben contarse como "el modelo no responde".
+case "$STATUS" in
+  ok|ok_sin_token) exit 0 ;;
+esac
 { [ $RC -eq 126 ] || [ $RC -eq 127 ]; } && exit 2
 exit 1

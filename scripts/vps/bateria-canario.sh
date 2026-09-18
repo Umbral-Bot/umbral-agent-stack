@@ -1,0 +1,196 @@
+#!/usr/bin/env bash
+# =================================================================
+# bateria-canario.sh — validación del canario antes de integrarlo.
+#
+# CI en verde no basta: las pruebas unitarias no ejercitan el canario contra un
+# turno real ni bajo el entorno de cron, que es justo donde fallaron sus dos
+# primeras versiones (PATH mínimo y token literal). Esta batería cubre los ocho
+# casos exigidos, con stubs deterministas para lo que no se puede provocar a
+# voluntad en producción.
+#
+#   bash scripts/vps/bateria-canario.sh [directorio-de-salida]
+#
+# No toca producción: el estado y el ops_log van a un sandbox, y las
+# notificaciones las recibe un stub HTTP local.
+# =================================================================
+set -uo pipefail
+
+REPO_DIR="${REPO_DIR:-$HOME/umbral-agent-stack}"
+OUT_DIR="${1:-$(mktemp -d)}"
+mkdir -p "$OUT_DIR"
+SB="$OUT_DIR/sandbox"; mkdir -p "$SB/state" "$SB/ops" "$SB/bin"
+CAP="$OUT_DIR/notificaciones.jsonl"; : > "$CAP"
+OPS="$SB/ops/ops_log.jsonl"; : > "$OPS"
+
+OK=0; TOTAL=0
+pass() { OK=$((OK+1)); TOTAL=$((TOTAL+1)); echo "  [PASS] $1"; }
+fail() { TOTAL=$((TOTAL+1)); echo "  [FAIL] $1"; }
+
+export UMBRAL_MON_STATE_DIR="$SB/state"
+export UMBRAL_OPS_LOG_DIR="$SB/ops"
+
+echo "=== Batería de validación del canario ==="
+echo "utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)  salida=$OUT_DIR"
+echo
+
+# ---- stubs deterministas -----------------------------------------
+# Un turno correcto por el PRIMARIO (sin fallback).
+cat > "$SB/bin/primario-sano" <<'STUB'
+#!/usr/bin/env bash
+tok=$(printf '%s' "$*" | grep -oE 'CANARIO-[0-9]+' | head -1)
+cat <<JSON
+{"ok":true,"result":{"text":"$tok","completion":{"stopReason":"stop"},
+"routing":{"candidates":[{"provider":"openai","model":"gpt-5.6-sol","result":"success"}],"fallbackUsed":false}}}
+JSON
+STUB
+# Un turno correcto por el FALLBACK.
+cat > "$SB/bin/fallback-sano" <<'STUB'
+#!/usr/bin/env bash
+tok=$(printf '%s' "$*" | grep -oE 'CANARIO-[0-9]+' | head -1)
+cat <<JSON
+{"ok":true,"result":{"text":"$tok","completion":{"stopReason":"stop"},
+"routing":{"candidates":[{"provider":"openai","model":"gpt-5.6-sol","result":"candidate_failed"},
+{"provider":"anthropic","model":"claude-sonnet-5","result":"success"}],"fallbackUsed":true}}}
+JSON
+STUB
+# Fallo DURO: el turno no termina.
+cat > "$SB/bin/fallo-duro" <<'STUB'
+#!/usr/bin/env bash
+echo "Embedded agent failed before reply: Auth profile unavailable" >&2
+exit 1
+STUB
+# Fallo BLANDO: respuesta semanticamente correcta, sin el token literal.
+cat > "$SB/bin/fallo-blando" <<'STUB'
+#!/usr/bin/env bash
+cat <<'JSON'
+{"ok":true,"result":{"text":"Claro, aqui tienes el identificador solicitado.","completion":{"stopReason":"stop"},
+"routing":{"candidates":[{"provider":"anthropic","model":"claude-sonnet-5","result":"success"}],"fallbackUsed":true}}}
+JSON
+STUB
+chmod +x "$SB/bin"/*
+
+canario() { OPENCLAW_BIN="$1" timeout 240 bash "$REPO_DIR/scripts/vps/canary-inference.sh" 2>&1; }
+
+# ---- 1. entorno real de cron, contra el agente de verdad ----------
+echo "1. Entorno real de cron (PATH mínimo, sin variables), turno real"
+SAL=$(env -i HOME="$HOME" PATH=/usr/bin:/bin \
+      UMBRAL_MON_STATE_DIR="$SB/state" UMBRAL_OPS_LOG_DIR="$SB/ops" \
+      timeout 300 bash "$REPO_DIR/scripts/vps/canary-inference.sh" 2>&1)
+RC=$?
+echo "$SAL" > "$OUT_DIR/1-cron-real.txt"
+if [ $RC -eq 0 ] && printf '%s' "$SAL" | grep -q '\[OK\]'; then
+  pass "el canario funciona bajo cron y resuelve el binario ($(printf '%s' "$SAL" | grep -oE '[a-z]+/[a-z0-9.-]+' | head -1))"
+else
+  fail "el canario no funcionó bajo el entorno de cron (exit $RC)"
+fi
+
+# ---- 2. primario sano --------------------------------------------
+echo "2. Primario sano"
+SAL=$(canario "$SB/bin/primario-sano"); RC=$?
+echo "$SAL" > "$OUT_DIR/2-primario.txt"
+L=$(grep '"kind":"canary_inference"' "$OPS" | tail -1)
+if [ $RC -eq 0 ] && printf '%s' "$L" | grep -q '"status":"ok"' \
+   && printf '%s' "$L" | grep -q '"provider":"openai"' \
+   && printf '%s' "$L" | grep -q '"fallback_used":false'; then
+  pass "turno correcto por el primario, proveedor identificado, sin fallback"
+else
+  fail "no se reconoció el primario sano: $L"
+fi
+
+# ---- 3. fallback sano --------------------------------------------
+echo "3. Fallback sano"
+SAL=$(canario "$SB/bin/fallback-sano"); RC=$?
+echo "$SAL" > "$OUT_DIR/3-fallback.txt"
+L=$(grep '"kind":"canary_inference"' "$OPS" | tail -1)
+if [ $RC -eq 0 ] && printf '%s' "$L" | grep -q '"provider":"anthropic"' \
+   && printf '%s' "$L" | grep -q '"fallback_used":true' \
+   && printf '%s' "$SAL" | grep -q 'POR FALLBACK'; then
+  pass "turno correcto por el fallback, y queda dicho que el primario no sirvió"
+else
+  fail "no se distinguió el fallback: $L"
+fi
+
+# ---- 4. fallo duro -----------------------------------------------
+echo "4. Fallo duro (el turno no termina)"
+SAL=$(canario "$SB/bin/fallo-duro"); RC=$?
+echo "$SAL" > "$OUT_DIR/4-duro.txt"
+L=$(grep '"kind":"canary_inference"' "$OPS" | tail -1)
+if [ $RC -eq 1 ] && printf '%s' "$L" | grep -q '"status":"fail"'; then
+  pass "el fallo duro se reporta como fallo de salud (exit 1)"
+else
+  fail "el fallo duro no se reportó como tal (exit $RC): $L"
+fi
+
+# ---- 5. fallo blando ---------------------------------------------
+echo "5. Fallo blando: respuesta correcta sin el token literal"
+SAL=$(canario "$SB/bin/fallo-blando"); RC=$?
+echo "$SAL" > "$OUT_DIR/5-blando.txt"
+L=$(grep '"kind":"canary_inference"' "$OPS" | tail -1)
+if [ $RC -eq 0 ] && printf '%s' "$L" | grep -q '"status":"ok_sin_token"' \
+   && printf '%s' "$L" | grep -q '"token_literal":"no"'; then
+  pass "no se cuenta como caída: el turno fue estructuralmente correcto y queda registrada la no-conformidad"
+else
+  fail "una respuesta correcta sin token se trató como caída (exit $RC): $L"
+fi
+
+# ---- 6 y 7. deduplicación y recuperación única --------------------
+echo "6. Deduplicación   7. Recuperación única"
+STUB_PORT="${STUB_PORT:-8397}"
+python3 - "$STUB_PORT" "$CAP" <<'PY' &
+import json, sys
+from http.server import BaseHTTPRequestHandler, HTTPServer
+port, dest = int(sys.argv[1]), sys.argv[2]
+class H(BaseHTTPRequestHandler):
+    def do_POST(self):
+        n = int(self.headers.get("Content-Length", 0))
+        raw = self.rfile.read(n).decode("utf-8", "replace")
+        with open(dest, "a", encoding="utf-8") as f:
+            f.write(json.dumps({"body": raw}, ensure_ascii=False) + "\n")
+        self.send_response(200); self.end_headers(); self.wfile.write(b'{"ok":true}')
+    def do_GET(self):
+        self.send_response(200); self.end_headers(); self.wfile.write(b'{"ok":true}')
+    def log_message(self, *a): pass
+HTTPServer(("127.0.0.1", port), H).serve_forever()
+PY
+STUB_PID=$!
+trap 'kill "$STUB_PID" 2>/dev/null' EXIT
+sleep 1
+
+export UMBRAL_SKIP_CANARY=1 WORKER_TOKEN="bateria"
+hc() { WORKER_URL="http://127.0.0.1:${STUB_PORT}" GATEWAY_URL="$1" bash "$REPO_DIR/scripts/vps/health-check.sh" > "$2" 2>&1; }
+hc "http://127.0.0.1:18899" "$OUT_DIR/6a-fallo.txt"; N1=$(wc -l < "$CAP")
+hc "http://127.0.0.1:18899" "$OUT_DIR/6b-repetido.txt"; N2=$(wc -l < "$CAP")
+if [ "$N2" -eq "$N1" ] && [ "$N1" -ge 1 ] && grep -q 'silenciada' "$OUT_DIR/6b-repetido.txt"; then
+  pass "el mismo fallo no vuelve a notificar ($N1 -> $N2)"
+else
+  fail "la repetición volvió a notificar ($N1 -> $N2)"
+fi
+hc "http://127.0.0.1:${STUB_PORT}" "$OUT_DIR/7a-recuperado.txt"; N3=$(wc -l < "$CAP")
+hc "http://127.0.0.1:${STUB_PORT}" "$OUT_DIR/7b-estable.txt"; N4=$(wc -l < "$CAP")
+if [ "$N3" -gt "$N2" ] && [ "$N4" -eq "$N3" ]; then
+  pass "la recuperación se anuncia una sola vez ($N2 -> $N3 -> $N4)"
+else
+  fail "la recuperación no se anunció una sola vez ($N2 -> $N3 -> $N4)"
+fi
+unset UMBRAL_SKIP_CANARY
+
+# ---- 8. el stub no puede ser sobrescrito por el entorno real ------
+echo "8. El destino del ensayo no lo pisa el archivo de entorno"
+ENVF="$SB/env-falso"; printf 'WORKER_URL=http://produccion-real:8088\nWORKER_TOKEN=de-produccion\n' > "$ENVF"
+R=$(UMBRAL_ENV_FILE="$ENVF" WORKER_URL="http://127.0.0.1:${STUB_PORT}" bash -c '
+  source "'"$REPO_DIR"'/scripts/vps/lib/umbral_alerting.sh"
+  umbral_load_env
+  echo "URL=$WORKER_URL"')
+echo "$R" > "$OUT_DIR/8-stub-protegido.txt"
+if printf '%s' "$R" | grep -q "127.0.0.1:${STUB_PORT}"; then
+  pass "el WORKER_URL del ensayo sobrevive a la carga del entorno real"
+else
+  fail "el entorno real pisó el destino del ensayo: $R"
+fi
+
+echo
+echo "=== Resultado: $OK/$TOTAL ==="
+cp "$OPS" "$OUT_DIR/ops_log-de-la-bateria.jsonl" 2>/dev/null
+echo "Evidencia en $OUT_DIR"
+[ "$OK" -eq "$TOTAL" ] && exit 0
+exit 1

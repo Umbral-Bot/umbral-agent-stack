@@ -34,6 +34,16 @@ die() {
     exit 1
 }
 
+# Dentro de un RELEASE la puerta ya esta satisfecha por construccion: el release
+# es una copia inmutable de un commit que ya estaba en origin/main, sin .git, sin
+# rama que seguir y sin posibilidad de estar sucio. Comprobar "estoy en main y
+# limpio" ahi no tiene sentido; lo que importa es QUE commit corre, y queda
+# registrado. Ver scripts/vps/release-deploy.sh.
+if [ -f "$REPO/RELEASE_SHA" ]; then
+    log "OK: ejecutando desde release $(cat "$REPO/RELEASE_SHA" 2>/dev/null | cut -c1-12)"
+    exit 0
+fi
+
 if [ ! -d "$REPO/.git" ]; then
     log "BLOCK: $REPO is not a git checkout"
     exit 1

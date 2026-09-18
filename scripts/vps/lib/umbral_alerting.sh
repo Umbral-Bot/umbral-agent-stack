@@ -69,6 +69,23 @@ umbral_load_env() {
   return 0
 }
 
+
+# -----------------------------------------------------------------
+# umbral_release_sha — commit REALMENTE en ejecucion.
+# Devuelve el sha del release si se corre desde uno, o "arbol-de-trabajo:<sha>"
+# si se corre desde el checkout. Esa distincion es el punto: un log que no
+# distingue ambos casos no permite saber que codigo produjo un resultado.
+# -----------------------------------------------------------------
+umbral_release_sha() {
+  local d; d="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+  if [ -f "$d/RELEASE_SHA" ]; then
+    cat "$d/RELEASE_SHA"
+  else
+    local s; s="$(git -C "$d" rev-parse HEAD 2>/dev/null || echo desconocido)"
+    printf 'arbol-de-trabajo:%s' "$s"
+  fi
+}
+
 # -----------------------------------------------------------------
 # umbral_truncate <texto> [max]
 # Recorta por debajo del máximo dejando constancia de que se recortó.
@@ -208,7 +225,7 @@ umbral_alert() {
   fi
 
   local text; text=$(umbral_truncate "Rick [$sev] $title — $body")
-  umbral_ops_log "{\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"kind\":\"monitor_alert\",\"monitor\":\"$monitor\",\"severity\":\"$sev\",\"fingerprint\":\"$fp\",\"chars\":${#text}}"
+  umbral_ops_log "{\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"kind\":\"monitor_alert\",\"release\":\"$(umbral_release_sha)\",\"monitor\":\"$monitor\",\"severity\":\"$sev\",\"fingerprint\":\"$fp\",\"chars\":${#text}}"
 
   local url="${WORKER_URL:-http://127.0.0.1:8088}"
   local token="${WORKER_TOKEN:-}"

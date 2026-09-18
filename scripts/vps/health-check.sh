@@ -150,7 +150,7 @@ if [ ${#FAILURES[@]} -eq 0 ]; then
     if umbral_clear_alert health-check; then
         umbral_alert health-check "el VPS vuelve a estar sano" "Todos los chequeos pasan, incluido el canario de generacion." info || true
     fi
-    umbral_ops_log "{\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"kind\":\"health_check\",\"status\":\"ok\",\"failures\":0}"
+    umbral_ops_log "{\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"kind\":\"health_check\",\"release\":\"$(umbral_release_sha)\",\"status\":\"ok\",\"failures\":0}"
     exit 0
 fi
 
@@ -161,7 +161,7 @@ done
 
 umbral_heartbeat_write health-check
 DETALLE=$(printf '%s; ' "${FAILURES[@]}")
-umbral_ops_log "{\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"kind\":\"health_check\",\"status\":\"fail\",\"failures\":${#FAILURES[@]},\"detail\":$(python3 -c 'import json,sys;print(json.dumps(sys.argv[1]))' "$DETALLE")}"
+umbral_ops_log "{\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"kind\":\"health_check\",\"release\":\"$(umbral_release_sha)\",\"status\":\"fail\",\"failures\":${#FAILURES[@]},\"detail\":$(python3 -c 'import json,sys;print(json.dumps(sys.argv[1]))' "$DETALLE")}"
 
 # Un unico camino de aviso, deduplicado, con enfriamiento y troceado por debajo
 # del maximo de Notion. Antes habia dos ramas y ninguna funcionaba bajo cron.

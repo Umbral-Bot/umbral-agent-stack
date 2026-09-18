@@ -12,6 +12,10 @@ set -euo pipefail
 REPO_DIR="${REPO_DIR:-$HOME/umbral-agent-stack}"
 LOG_FILE="/tmp/e2e_validation.log"
 
+# shellcheck source=/dev/null
+source "$REPO_DIR/scripts/vps/lib/umbral_alerting.sh"
+umbral_load_env || true
+
 if ! REPO="$REPO_DIR" bash "$REPO_DIR/scripts/vps/ensure-main-for-run.sh"; then
     echo "[ensure-main-for-run] blocked; skipping this run" >&2
     exit 0
@@ -26,28 +30,33 @@ fi
 echo ""
 echo "=== E2E Validation â€” $(date -u +"%Y-%m-%d %H:%M UTC") ==="
 
-# Run E2E validation suite with Notion posting
+# Run E2E validation suite with Notion posting.
+#
+# `set -euo pipefail` (arriba) abortaba el script en cuanto e2e_validation.py
+# terminaba con sys.exit(1), de modo que TODO lo que sigue —la captura del codigo,
+# el [FAIL] y la alerta— era codigo inalcanzable. Medido: 29 «passed», 0 fallos
+# registrados, y dos corridas reales cerradas en 11/17. Incidente Linear UMB-276.
+# Por eso el codigo de salida se captura con set +e explicito.
+set +e
 PYTHONPATH="$REPO_DIR" python3 scripts/e2e_validation.py --notion 2>&1
-
 EXIT_CODE=$?
+set -e
 
 if [ $EXIT_CODE -eq 0 ]; then
     echo "[OK] E2E validation passed"
+    umbral_heartbeat_write e2e-validation
+    if umbral_clear_alert e2e-validation; then
+        umbral_alert e2e-validation "la suite E2E vuelve a pasar" "Recuperacion confirmada el $(date -u +'%Y-%m-%d %H:%M UTC')." info || true
+    fi
 else
     echo "[FAIL] E2E validation had failures (exit code $EXIT_CODE)"
 
-    # Post failure alert to Notion (best-effort, separate from --notion flag)
-    WORKER_URL="${WORKER_URL:-http://127.0.0.1:8088}"
-    WORKER_TOKEN="${WORKER_TOKEN:-}"
-    if [ -n "$WORKER_TOKEN" ]; then
-        ALERT="Rick: [E2E ALERT] Validation suite has failures â€” $(date -u +'%Y-%m-%d %H:%M UTC'). Check /tmp/e2e_validation.log for details."
-        curl -sf -X POST "${WORKER_URL}/run" \
-            -H "Authorization: Bearer ${WORKER_TOKEN}" \
-            -H "Content-Type: application/json" \
-            -H "X-Umbral-Caller: cron.e2e_validation" \
-            -d "{\"task\": \"notion.add_comment\", \"input\": {\"text\": \"$ALERT\"}}" \
-            > /dev/null 2>&1 && echo "(Alert posted to Notion)" || echo "(Failed to post Notion alert)"
-    fi
+    # Aviso por la libreria compartida: carga el env (antes WORKER_TOKEN llegaba
+    # vacio bajo cron), trocea por debajo del maximo de Notion y deduplica.
+    umbral_alert e2e-validation \
+        "la suite E2E tiene fallos (exit $EXIT_CODE)" \
+        "Corrida del $(date -u +'%Y-%m-%d %H:%M UTC'). Detalle en /tmp/e2e_validation.log." \
+        error || true
 fi
 
 exit $EXIT_CODE

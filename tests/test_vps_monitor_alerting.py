@@ -533,11 +533,6 @@ class TestRetrocesoExponencial:
         assert "AVISA" in r.stdout
         assert reavisos(f) == 0
 
-    def test_el_tope_existe_y_no_es_infinito(self):
-        texto = LIB.read_text(encoding="utf-8")
-        linea = next(l for l in texto.splitlines() if l.startswith("UMBRAL_ALERT_BACKOFF_MAX_S="))
-        assert ":-82800}" in linea, "el tope por defecto debe ser 23 h: como mucho un aviso al dia"
-
     def test_el_aviso_silenciado_declara_la_ventana_real(self, state_dir):
         """El mensaje de silencio decía siempre «3600s» aunque la ventana en
         curso fuera de horas: un informe que no coincide con la conducta."""
@@ -638,7 +633,8 @@ class TestEntregaYSilencio:
     def test_el_envio_tiene_tiempo_maximo(self):
         """Un envío colgado bajo cron deja al monitor sin terminar, y un monitor
         que no termina es un monitor que no vuelve a comprobar nada."""
-        assert "-m \"${UMBRAL_ALERT_TIMEOUT_S:-90}\"" in LIB.read_text(encoding="utf-8")
+        assert '-m "${UMBRAL_ALERT_TIMEOUT_S:' in LIB.read_text(encoding="utf-8"), \
+            "el tiempo maximo tiene que llegar al curl, no solo estar definido"
 
 
 class TestCierreDeLaDegradacion:

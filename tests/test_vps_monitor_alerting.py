@@ -438,13 +438,14 @@ class TestBateriaDeValidacion:
     """CI en verde no basta: las dos primeras versiones del canario pasaron CI y
     fallaron en producción (PATH de cron y token literal)."""
 
-    def test_la_bateria_existe_y_cubre_los_doce_casos(self):
+    def test_la_bateria_existe_y_cubre_los_trece_casos(self):
         texto = (REPO / "scripts" / "vps" / "bateria-canario.sh").read_text(encoding="utf-8")
         for caso in ("Entorno real de cron", "Primario sano", "Fallback sano",
                      "Fallo duro", "Fallo blando", "Deduplicación",
                      "Recuperación única", "no lo pisa el archivo de entorno",
                      "aunque falte el token literal", "cierra la degradación",
-                     "sigue siendo la misma degradación", "fallback indeterminado no cierra"):
+                     "sigue siendo la misma degradación", "fallback indeterminado no cierra",
+                     "modo de prueba no deja salir nada"):
             assert caso in texto, f"la batería no cubre: {caso}"
 
     def test_la_bateria_no_escribe_en_produccion(self):
@@ -872,3 +873,117 @@ class TestElRegistroCanonicoNoPierdeEventos:
         assert esperado > self.ESPERA / 2, (
             f"la rotación no esperó al cerrojo ({esperado:.2f}s): sustituiría el archivo "
             "mientras un monitor escribe")
+
+
+class TestModoDePruebaSinSalidaExterna:
+    """Dos veces una prueba mía terminó en la página real de David.
+
+    La primera se corrigió haciendo que el archivo de entorno no pise lo que el
+    llamador ya definió. La segunda pasó igual: dejé `WORKER_TOKEN=""` creyendo
+    que bloqueaba el envío, y no lo bloquea —un valor vacío es un valor ausente,
+    así que el entorno lo rellena, que es su comportamiento correcto—.
+
+    La lección no es «acuérdate de la precaución buena»: es que no puede
+    depender de que me acuerde. De ahí un interruptor que se comprueba antes de
+    construir nada de red."""
+
+    def test_no_sale_nada_aunque_el_destino_este_escuchando(self, state_dir, worker_stub):
+        """La prueba que importa: el stub está vivo y no recibe nada."""
+        env = {**state_dir, **worker_stub.env, "UMBRAL_ALERT_DRY_RUN": "1"}
+        r = run_bash('umbral_alert mon "titulo" "cuerpo" error; echo "rc=$?"', env)
+        assert "rc=0" in r.stdout
+        assert worker_stub.recibidas == [], "el modo de prueba dejó salir un aviso"
+        assert "MODO DE PRUEBA" in r.stdout
+
+    def test_la_maquina_de_estados_si_se_ejercita(self, state_dir, worker_stub):
+        """Sin salida externa, pero con deduplicación y retroceso reales: lo que
+        se quiere ensayar es la máquina de estados, no la red."""
+        env = {**state_dir, **worker_stub.env, "UMBRAL_ALERT_DRY_RUN": "1"}
+        run_bash('umbral_alert mon "titulo" "cuerpo" error', env)
+        assert alerta(state_dir, "mon").exists()
+        r = run_bash('umbral_alert mon "titulo" "cuerpo" error; echo "rc=$?"', env)
+        assert "rc=1" in r.stdout
+        assert worker_stub.recibidas == []
+
+    def test_puede_simularse_una_entrega_fallida(self, state_dir, worker_stub):
+        """`fallo` cubre el caso en que el aviso no sale, que es el que más
+        importa: la vía de aviso sale por el worker que se vigila."""
+        env = {**state_dir, **worker_stub.env, "UMBRAL_ALERT_DRY_RUN": "fallo"}
+        r = run_bash('umbral_alert mon "titulo" "cuerpo" error; echo "rc=$?"', env)
+        assert "rc=2" in r.stdout
+        assert not alerta(state_dir, "mon").exists(), \
+            "una entrega fallida, aunque sea simulada, no abre ventana de silencio"
+        assert worker_stub.recibidas == []
+
+    def test_lo_simulado_no_se_confunde_con_lo_emitido(self, state_dir, worker_stub):
+        """El ops_log distingue el aviso simulado del real: si no lo hiciera, una
+        corrida de prueba contaría como aviso entregado en el gate de 24 h."""
+        env = {**state_dir, **worker_stub.env, "UMBRAL_ALERT_DRY_RUN": "1"}
+        run_bash('umbral_alert mon "titulo" "cuerpo" error', env)
+        clases = [json.loads(l)["kind"]
+                  for l in ops_log(state_dir).read_text(encoding="utf-8").splitlines()]
+        assert "monitor_alert_simulado" in clases
+        assert "monitor_alert" not in clases
+
+    def test_la_notificacion_queda_anotada_para_poder_comprobarla(self, state_dir, worker_stub, tmp_path):
+        captura = tmp_path / "capturadas.jsonl"
+        env = {**state_dir, **worker_stub.env,
+               "UMBRAL_ALERT_DRY_RUN": "1", "UMBRAL_ALERT_CAPTURE": str(captura)}
+        run_bash('umbral_alert mon "el gateway no responde" "detalle largo" error', env)
+        anotada = json.loads(captura.read_text(encoding="utf-8").strip())
+        assert "el gateway no responde" in anotada["text"]
+        assert anotada["monitor"] == "mon"
+        assert anotada["severity"] == "error"
+
+
+class TestElEntornoNoPisaElDestinoDeLaPrueba:
+    """El archivo de entorno aporta valores POR DEFECTO. La cuestión es qué
+    cuenta como «no tener valor»."""
+
+    def _env_file(self, tmp_path):
+        f = tmp_path / "env"
+        f.write_text(
+            "WORKER_URL=http://produccion-real:8088\n"
+            "WORKER_TOKEN=token-de-produccion\n"
+            "UMBRAL_ALERT_DRY_RUN=0\n",
+            encoding="utf-8")
+        return f
+
+    def test_una_variable_vacia_a_proposito_no_se_rellena(self, tmp_path, state_dir):
+        """Aquí estuvo el segundo accidente: `WORKER_TOKEN=""` se tomaba por
+        ausente y el entorno lo rellenaba con el de producción."""
+        env = {**state_dir, "UMBRAL_ENV_FILE": str(self._env_file(tmp_path)),
+               "WORKER_TOKEN": ""}
+        r = run_bash('umbral_load_env; echo "TOKEN=[${WORKER_TOKEN}]"', env)
+        assert "TOKEN=[]" in r.stdout, r.stdout
+
+    def test_una_variable_ausente_de_verdad_si_se_rellena(self, tmp_path, state_dir):
+        env = {**state_dir, "UMBRAL_ENV_FILE": str(self._env_file(tmp_path))}
+        r = run_bash('unset WORKER_TOKEN; umbral_load_env; echo "TOKEN=[${WORKER_TOKEN}]"', env)
+        assert "TOKEN=[token-de-produccion]" in r.stdout
+
+    def test_el_entorno_no_puede_apagar_el_modo_de_prueba(self, tmp_path, state_dir):
+        """Ni encenderlo en producción ni apagárselo a un ensayo que lo pidió."""
+        env = {**state_dir, "UMBRAL_ENV_FILE": str(self._env_file(tmp_path)),
+               "UMBRAL_ALERT_DRY_RUN": "1"}
+        r = run_bash('umbral_load_env; umbral_en_pruebas && echo SIGUE_EN_PRUEBAS || echo APAGADO',
+                     env)
+        assert "SIGUE_EN_PRUEBAS" in r.stdout
+
+    def test_el_entorno_no_puede_encender_el_modo_de_prueba(self, tmp_path, state_dir):
+        f = tmp_path / "env"
+        f.write_text("UMBRAL_ALERT_DRY_RUN=1\n", encoding="utf-8")
+        env = {**state_dir, "UMBRAL_ENV_FILE": str(f)}
+        r = run_bash('unset UMBRAL_ALERT_DRY_RUN; umbral_load_env; '
+                     'umbral_en_pruebas && echo EN_PRUEBAS || echo PRODUCCION', env)
+        assert "PRODUCCION" in r.stdout, \
+            "un entorno olvidado no puede poner produccion en modo de prueba"
+
+    def test_en_modo_de_prueba_no_se_carga_ni_la_direccion_del_worker(self, tmp_path, state_dir):
+        """Segunda barrera: aunque algo llegara a construir un envío, no tendría
+        a dónde ni con qué."""
+        env = {**state_dir, "UMBRAL_ENV_FILE": str(self._env_file(tmp_path)),
+               "UMBRAL_ALERT_DRY_RUN": "1"}
+        r = run_bash('unset WORKER_URL WORKER_TOKEN; umbral_load_env; '
+                     'echo "URL=[${WORKER_URL:-}] TOKEN=[${WORKER_TOKEN:-}]"', env)
+        assert "URL=[] TOKEN=[]" in r.stdout, r.stdout

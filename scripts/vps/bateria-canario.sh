@@ -8,10 +8,19 @@
 # casos exigidos, más cuatro que añadió la revisión adversarial del 2026-09-19: que la
 # degradación se vea aunque la respuesta no traiga el token literal, que se
 # cierre cuando el primario vuelve, que el retroceso enganche aunque cambie el
-# modelo de reserva, y que un fallback indeterminado no cierre nada. Con stubs deterministas para lo que no se
+# modelo de reserva, que un fallback indeterminado no cierre nada, y que el
+# modo de prueba no deje salir nada ni con el destino escuchando. Con stubs deterministas para lo que no se
 # puede provocar a voluntad en producción.
 #
 #   bash scripts/vps/bateria-canario.sh [directorio-de-salida]
+#
+# Para cualquier corrida A MANO de un monitor, usa el modo de prueba:
+#
+#   UMBRAL_ALERT_DRY_RUN=1 bash scripts/vps/health-check.sh
+#
+# No hay salida externa posible con el puesto, traiga lo que traiga el archivo
+# de entorno. Vaciar WORKER_TOKEN NO sirve: un valor vacio es un valor ausente
+# y el entorno lo rellena.
 #
 # No toca producción: el estado y el ops_log van a un sandbox, y las
 # notificaciones las recibe un stub HTTP local.
@@ -269,6 +278,30 @@ if [ -f "$UMBRAL_MON_STATE_DIR/health-check-degradado.alert" ] \
   pass "sin dato no se declara recuperado: el incidente sigue abierto"
 else
   fail "un turno que no declara el fallback cerró la degradación"
+fi
+
+# ---- 13. el modo de prueba no deja salir nada ----------------------
+# La comprobacion se hace con el stub VIVO y con un entorno que apunta a
+# produccion: si el modo de prueba fuera una recomendacion en vez de una
+# barrera, aqui se veria.
+echo "13. El modo de prueba no deja salir nada, ni con el destino escuchando"
+N_ANTES=$(wc -l < "$CAP")
+ENVF2="$SB/env-produccion"
+printf 'WORKER_URL=http://127.0.0.1:%s\nWORKER_TOKEN=de-produccion\nUMBRAL_ALERT_DRY_RUN=0\n' "$STUB_PORT" > "$ENVF2"
+CAPTURA_SIM="$SB/simuladas.jsonl"
+UMBRAL_ALERT_DRY_RUN=1 UMBRAL_ALERT_CAPTURE="$CAPTURA_SIM" UMBRAL_ENV_FILE="$ENVF2" \
+  WORKER_TOKEN="" bash -c '
+    source "'"$REPO_DIR"'/scripts/vps/lib/umbral_alerting.sh"
+    umbral_load_env
+    umbral_alert mon-de-prueba "aviso que no debe salir" "cuerpo" error
+  ' > "$OUT_DIR/13-modo-prueba.txt" 2>&1
+N_DESPUES=$(wc -l < "$CAP")
+if [ "$N_DESPUES" -eq "$N_ANTES" ] \
+   && [ -s "$CAPTURA_SIM" ] \
+   && grep -q 'MODO DE PRUEBA' "$OUT_DIR/13-modo-prueba.txt"; then
+  pass "con el destino escuchando y el entorno apuntando a él, no salió nada y quedó anotado"
+else
+  fail "el modo de prueba dejó salir algo (capturas $N_ANTES -> $N_DESPUES)"
 fi
 
 echo

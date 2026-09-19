@@ -43,6 +43,32 @@ UMBRAL_ALERT_COOLDOWN_S="${UMBRAL_ALERT_COOLDOWN_S:-3600}"
 # y pasa a ser una loteria.
 UMBRAL_ALERT_BACKOFF_MAX_S="${UMBRAL_ALERT_BACKOFF_MAX_S:-82800}"
 
+# Modo de prueba SIN SALIDA EXTERNA. Cualquier valor distinto de vacio y de 0
+# lo activa; el valor "fallo" simula ademas que la entrega no sale.
+#
+# Existe porque dos veces una prueba mia termino en la pagina real de David. La
+# segunda fue asi: deje WORKER_TOKEN="" creyendo que eso bloqueaba el envio, y
+# no lo bloquea —un valor vacio es un valor ausente, asi que el archivo de
+# entorno lo rellena, que es su comportamiento correcto—. La leccion no es
+# "acuerdate de la precaucion buena": es que no puede depender de que me acuerde.
+#
+# Este interruptor se comprueba ANTES de construir nada de red. Con el puesto,
+# da igual lo que traiga el entorno: no hay salida.
+UMBRAL_ALERT_DRY_RUN="${UMBRAL_ALERT_DRY_RUN:-}"
+
+# Donde se anotan las notificaciones simuladas, una por linea, en JSON.
+UMBRAL_ALERT_CAPTURE="${UMBRAL_ALERT_CAPTURE:-}"
+
+# -----------------------------------------------------------------
+# umbral_en_pruebas — 0 si el modo de prueba esta activo.
+# -----------------------------------------------------------------
+umbral_en_pruebas() {
+  case "${UMBRAL_ALERT_DRY_RUN:-}" in
+    ''|0|no|false) return 1 ;;
+    *) return 0 ;;
+  esac
+}
+
 # -----------------------------------------------------------------
 # umbral_load_env — carga ~/.config/openclaw/env sin volcarlo.
 #
@@ -68,11 +94,26 @@ umbral_load_env() {
     esac
     line="${line#export }"
     key="${line%%=*}"
-    # Solo nombres de variable plausibles, y solo si aún no tienen valor.
+    # Solo nombres de variable plausibles.
     case "$key" in
       *[!A-Za-z0-9_]*|'') continue ;;
     esac
-    if [ -z "${!key:-}" ]; then
+    # El interruptor del modo de prueba no se toma nunca del archivo de entorno,
+    # en ninguna direccion: ni un entorno olvidado puede poner produccion en
+    # modo de prueba, ni puede apagarselo a un ensayo que lo pidio.
+    [ "$key" = "UMBRAL_ALERT_DRY_RUN" ] && continue
+    # En modo de prueba no se carga nada que sirva para salir a la red. Es la
+    # segunda barrera: la primera es que umbral_alert no llega a construir el
+    # envio.
+    if umbral_en_pruebas; then
+      case "$key" in
+        WORKER_URL|WORKER_TOKEN) continue ;;
+      esac
+    fi
+    # Solo se rellena lo que NO ESTA DEFINIDO. Una variable definida y vacia es
+    # una decision de quien llama, no un hueco: darla por ausente fue lo que
+    # convirtio un WORKER_TOKEN="" puesto a proposito en un aviso real.
+    if [ -z "${!key+definida}" ]; then
       local value="${line#*=}"
       # Quita comillas envolventes si las hay.
       case "$value" in
@@ -364,6 +405,26 @@ umbral_alert() {
   local pendiente="${UMBRAL_ALERT_PENDING_N:-0}"
   local text; text=$(umbral_truncate "Rick [$sev] $title — $body")
   local release; release=$(umbral_release_sha)
+
+  # MODO DE PRUEBA: se corta aqui, antes de mirar siquiera a donde se enviaria.
+  # Con el puesto no hay salida externa posible, traiga lo que traiga el
+  # entorno. La ventana de silencio y el retroceso SI se ejercitan, porque lo
+  # que se quiere ensayar es la maquina de estados, no la red.
+  if umbral_en_pruebas; then
+    local captura="${UMBRAL_ALERT_CAPTURE:-$UMBRAL_MON_STATE_DIR/notificaciones-simuladas.jsonl}"
+    mkdir -p "$(dirname "$captura")"
+    python3 -c 'import json,sys; print(json.dumps({"ts":sys.argv[1],"monitor":sys.argv[2],"severity":sys.argv[3],"text":sys.argv[4]}, ensure_ascii=False))' \
+      "$ts" "$monitor" "$sev" "$text" >> "$captura"
+    if [ "$UMBRAL_ALERT_DRY_RUN" = "fallo" ]; then
+      umbral_ops_log "{\"ts\":\"$ts\",\"kind\":\"monitor_alert_simulado\",\"release\":\"$release\",\"monitor\":\"$monitor\",\"severity\":\"$sev\",\"fingerprint\":\"$fp\",\"entrega\":\"simulada_fallida\"}"
+      echo "(MODO DE PRUEBA: entrega simulada como FALLIDA, no se abre ventana de silencio)"
+      return 2
+    fi
+    umbral_commit_alert "$key" "$fp" "$pendiente"
+    umbral_ops_log "{\"ts\":\"$ts\",\"kind\":\"monitor_alert_simulado\",\"release\":\"$release\",\"monitor\":\"$monitor\",\"severity\":\"$sev\",\"fingerprint\":\"$fp\",\"chars\":${#text},\"reavisos\":$pendiente,\"proxima_ventana_s\":$(umbral_alert_window "$pendiente"),\"entrega\":\"simulada\"}"
+    echo "(MODO DE PRUEBA: ${#text} caracteres anotados en $captura, sin salida externa)"
+    return 0
+  fi
 
   local url="${WORKER_URL:-http://127.0.0.1:8088}"
   local token="${WORKER_TOKEN:-}"

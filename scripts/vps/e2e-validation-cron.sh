@@ -47,7 +47,9 @@ if [ $EXIT_CODE -eq 0 ]; then
     umbral_heartbeat_write e2e-validation
     if umbral_alert_active e2e-validation; then
         RC_INFO=0
-        umbral_alert e2e-validation "la suite E2E vuelve a pasar" "Recuperacion confirmada el $(date -u +'%Y-%m-%d %H:%M UTC')." info || RC_INFO=$?
+        # Se nombra el incidente que cierra —no la fecha, que cambia siempre y
+        # haria que dos recuperaciones seguidas nunca se deduplicaran.
+        umbral_alert e2e-validation "la suite E2E vuelve a pasar" "Cierra el incidente $(umbral_alert_fingerprint e2e-validation | cut -c1-12)." info || RC_INFO=$?
         # El incidente no se cierra hasta que el aviso de recuperacion sale de
         # verdad: rc=2 es "no se pudo entregar", y entonces se conserva el
         # estado para reintentarlo en el proximo ciclo. rc=1 es "callado por

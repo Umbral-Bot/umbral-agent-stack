@@ -10,8 +10,11 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
 import textwrap
+import time
 import threading
+from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
@@ -435,12 +438,13 @@ class TestBateriaDeValidacion:
     """CI en verde no basta: las dos primeras versiones del canario pasaron CI y
     fallaron en producción (PATH de cron y token literal)."""
 
-    def test_la_bateria_existe_y_cubre_los_diez_casos(self):
+    def test_la_bateria_existe_y_cubre_los_doce_casos(self):
         texto = (REPO / "scripts" / "vps" / "bateria-canario.sh").read_text(encoding="utf-8")
         for caso in ("Entorno real de cron", "Primario sano", "Fallback sano",
                      "Fallo duro", "Fallo blando", "Deduplicación",
                      "Recuperación única", "no lo pisa el archivo de entorno",
-                     "aunque falte el token literal", "cierra la degradación"):
+                     "aunque falte el token literal", "cierra la degradación",
+                     "sigue siendo la misma degradación", "fallback indeterminado no cierra"):
             assert caso in texto, f"la batería no cubre: {caso}"
 
     def test_la_bateria_no_escribe_en_produccion(self):
@@ -677,24 +681,45 @@ JSON
         assert "umbral_alert_active health-check-degradado" in texto
         assert "umbral_clear_alert health-check-degradado" in texto
 
-    def test_abrir_un_incidente_olvida_el_aviso_de_recuperacion(self, state_dir, worker_stub):
-        """El texto del aviso de recuperación es siempre el mismo, así que su
-        huella también. Sin olvidarlo al abrir el incidente siguiente, la
-        segunda recuperación quedaba silenciada por la ventana que ganó la
-        primera — y con el retroceso, hasta un día entero. El resultado sería
-        una cadena de fallos anunciados sin ningún cierre."""
+    def test_el_aviso_de_recuperacion_dice_a_que_incidente_cierra(self, state_dir, worker_stub):
+        """Dos incidentes distintos tienen que dar dos avisos de recuperación.
+
+        El texto de la recuperación era siempre el mismo, así que su huella
+        también: la segunda quedaba silenciada por la ventana que ganó la
+        primera, y con el retroceso eso llega a ser un día entero. Una cadena de
+        fallos anunciados sin ningún cierre.
+
+        La primera corrección fue borrar el estado del aviso de recuperación al
+        abrir el incidente siguiente, y salía cara: con un servicio que oscila,
+        ninguna de las dos mitades acumulaba reavisos y el retroceso quedaba
+        anulado. Lo que distingue de verdad una recuperación de otra es el
+        incidente que cierra."""
         env = {**state_dir, **worker_stub.env}
-        run_bash('umbral_alert mon "cayo" "detalle" error', env)
-        run_bash('umbral_alert mon "ya esta sano" "todo pasa" info', env)
-        assert alerta(state_dir, "mon.info").exists()
+        run_bash('umbral_alert mon "cayo el gateway" "detalle" error', env)
+        run_bash('umbral_alert mon "ya esta sano" "Cierra el incidente A." info', env)
 
-        run_bash('umbral_clear_alert mon', env)          # lo que hace el monitor al sanar
-        run_bash('umbral_alert mon "cayo" "detalle" error', env)
-        assert not alerta(state_dir, "mon.info").exists(), \
-            "abrir un incidente debe olvidar el ultimo aviso de recuperacion"
+        run_bash('umbral_clear_alert mon', env)
+        run_bash('umbral_alert mon "cayo redis" "otro detalle" error', env)
+        r = run_bash('umbral_alert mon "ya esta sano" "Cierra el incidente B." info; echo "rc=$?"', env)
+        assert "rc=0" in r.stdout, "una recuperacion de OTRO incidente tiene que anunciarse"
 
-        r = run_bash('umbral_alert mon "ya esta sano" "todo pasa" info; echo "rc=$?"', env)
-        assert "rc=0" in r.stdout, "la segunda recuperacion tambien tiene que anunciarse"
+    def test_un_incidente_que_oscila_no_repite_su_recuperacion(self, state_dir, worker_stub):
+        """El reverso: si es el MISMO incidente el que va y viene, el aviso de
+        recuperación se deduplica y entra en el retroceso, en vez de soltar un
+        comentario por ciclo."""
+        env = {**state_dir, **worker_stub.env}
+        for _ in range(3):
+            run_bash('umbral_alert mon "cayo el gateway" "detalle" error', env)
+            run_bash('umbral_alert mon "ya esta sano" "Cierra el incidente A." info', env)
+            run_bash('umbral_clear_alert mon', env)
+        recuperaciones = [c for c in worker_stub.recibidas if "ya esta sano" in c]
+        assert len(recuperaciones) == 1, (
+            f"el mismo incidente oscilando anuncio su recuperacion {len(recuperaciones)} veces")
+
+    def test_los_monitores_nombran_el_incidente_al_recuperarse(self):
+        for script in ("health-check.sh", "e2e-validation-cron.sh"):
+            texto = (REPO / "scripts" / "vps" / script).read_text(encoding="utf-8")
+            assert "umbral_alert_fingerprint" in texto, script
 
     def test_el_tope_queda_por_debajo_de_la_cadencia_del_monitor_mas_lento(self, state_dir):
         """e2e-validation corre una vez al día. Con un tope de exactamente 24 h,
@@ -734,8 +759,116 @@ JSON
         iguales = r.stdout.split()
         assert iguales[0] == iguales[1]
 
-    def test_el_aviso_degradado_no_lleva_la_latencia(self):
+    def test_el_cuerpo_del_aviso_degradado_es_literal(self):
+        """La huella de deduplicación se calcula sobre el cuerpo. Cualquier dato
+        que cambie entre ciclos —latencia, proveedor, modelo, o el `status` que
+        alterna entre `ok` y `ok_sin_token` según si el modelo repite el token—
+        convierte cada ciclo en un «estado nuevo», reinicia el contador y anula
+        el retroceso: un aviso cada media hora para siempre, que es el ruido que
+        el cambio viene a quitar.
+
+        La regla, por eso, es simple de comprobar: en ese cuerpo no puede haber
+        sustitución de órdenes."""
         texto = (REPO / "scripts" / "vps" / "health-check.sh").read_text(encoding="utf-8")
-        bloque = texto[texto.index("health-check-degradado \\"):]
-        assert "latency_ms=[0-9]+//" in bloque[:900], \
-            "el cuerpo del aviso degradado debe quitar la latencia antes de enviarlo"
+        i = texto.index("umbral_alert health-check-degradado \\")
+        cuerpo = texto[i:texto.index("warn || true", i)]
+        assert "$(" not in cuerpo, (
+            "el cuerpo del aviso degradado no puede llevar nada que cambie entre "
+            f"ciclos:\n{cuerpo}")
+
+    def test_un_fallback_indeterminado_no_cierra_la_degradacion(self):
+        """El canario dice `desconocido` cuando el JSON del CLI no trae la clave
+        del fallback. Tomarlo por `false` haría que el monitor anunciara «el
+        primario vuelve a atender» en cuanto ese CLI externo cambie de forma."""
+        canario = (REPO / "scripts" / "vps" / "canary-inference.sh").read_text(encoding="utf-8")
+        assert 'if fb_visto else "desconocido"' in canario
+        hc = (REPO / "scripts" / "vps" / "health-check.sh").read_text(encoding="utf-8")
+        assert "fallback=desconocido" in hc, \
+            "el monitor tiene que tratar el fallback indeterminado como un caso propio"
+
+    def test_el_canario_distingue_sin_fallback_de_no_saberlo(self, tmp_path, state_dir):
+        sin_clave = """#!/usr/bin/env bash
+cat <<'JSON'
+{"ok":true,"result":{"text":"CANARIO-1","completion":{"stopReason":"stop"},
+"routing":{"candidates":[{"provider":"anthropic","model":"claude-sonnet-5","result":"success"}]}}}
+JSON
+"""
+        stub = tmp_path / "openclaw"
+        stub.write_text(sin_clave, encoding="utf-8")
+        stub.chmod(0o755)
+        r = subprocess.run(
+            ["bash", str(REPO / "scripts" / "vps" / "canary-inference.sh")],
+            capture_output=True, text=True,
+            env={**os.environ, **state_dir, "OPENCLAW_BIN": str(stub)},
+        )
+        assert "fallback=desconocido" in r.stdout, r.stdout
+
+    def test_la_recuperacion_no_declara_sano_lo_que_va_por_fallback(self):
+        """La degradación por fallback no entra en FAILURES, así que un ciclo con
+        el primario caído llegaba a la rama de recuperación y anunciaba «todos
+        los chequeos pasan, incluido el canario»: el último mensaje que le
+        constaba a un humano contradecía el estado real."""
+        texto = (REPO / "scripts" / "vps" / "health-check.sh").read_text(encoding="utf-8")
+        i = texto.index("TEXTO_RECUPERACION=")
+        bloque = texto[i - 300:i + 700]
+        assert "umbral_alert_active health-check-degradado" in bloque
+        assert "sigue dependiendo del camino de reserva" in bloque
+
+
+class TestElRegistroCanonicoNoPierdeEventos:
+    """La rotación semanal lee el `ops_log.jsonl` entero y lo sustituye
+    renombrando un temporal encima. Todo lo que se añada entre la lectura y el
+    renombrado se va con el inodo viejo: el registro canónico perdía eventos en
+    silencio, una vez por semana, y lo perdido no deja rastro. De ahí se
+    reconstruye el gate de 24 h, así que un solo ciclo perdido basta para
+    declarar fallida una ventana que fue correcta.
+
+    La carrera es probabilística —la ventana dura lo que tarde la rotación— así
+    que reproducirla no sirve como prueba: pasaría también con el fallo dentro.
+    Lo que sí se comprueba, y es determinista, es la EXCLUSIÓN MUTUA, que es la
+    propiedad de la que depende todo lo demás."""
+
+    ESPERA = 2.0
+
+    @staticmethod
+    def _con_el_cerrojo_tomado(lock: Path, segundos: float):
+        """Toma el cerrojo en un proceso aparte y lo suelta pasado el tiempo."""
+        return subprocess.Popen(
+            [sys.executable, "-c",
+             "import fcntl,sys,time\n"
+             f"f=open({str(lock)!r},'a')\n"
+             "fcntl.flock(f, fcntl.LOCK_EX)\n"
+             "print('tomado', flush=True)\n"
+             f"time.sleep({segundos})\n"],
+            stdout=subprocess.PIPE, text=True)
+
+    def test_el_aviso_espera_a_que_la_rotacion_suelte_el_cerrojo(self, tmp_path):
+        ops = tmp_path / "ops"
+        ops.mkdir()
+        tenedor = self._con_el_cerrojo_tomado(ops / "ops_log.lock", self.ESPERA)
+        assert tenedor.stdout.readline().strip() == "tomado"
+        t0 = time.monotonic()
+        run_bash('umbral_ops_log \'{"kind":"prueba"}\'', {"UMBRAL_OPS_LOG_DIR": str(ops)})
+        esperado = time.monotonic() - t0
+        tenedor.wait(timeout=30)
+        assert esperado > self.ESPERA / 2, (
+            f"el aviso no esperó al cerrojo ({esperado:.2f}s): escribiría durante la rotación")
+        assert (ops / "ops_log.jsonl").read_text(encoding="utf-8").strip()
+
+    def test_la_rotacion_espera_a_que_el_monitor_suelte_el_cerrojo(self, tmp_path):
+        ops = tmp_path / "ops"
+        ops.mkdir()
+        (ops / "ops_log.jsonl").write_text(
+            json.dumps({"ts": "2026-09-19T12:00:00Z", "kind": "ciclo"}) + "\n", encoding="utf-8")
+        tenedor = self._con_el_cerrojo_tomado(ops / "ops_log.lock", self.ESPERA)
+        assert tenedor.stdout.readline().strip() == "tomado"
+        t0 = time.monotonic()
+        r = subprocess.run([sys.executable, str(REPO / "scripts" / "ops_log_rotate.py")],
+                           env={**os.environ, "UMBRAL_OPS_LOG_DIR": str(ops)},
+                           capture_output=True, text=True)
+        esperado = time.monotonic() - t0
+        tenedor.wait(timeout=30)
+        assert r.returncode == 0, r.stderr
+        assert esperado > self.ESPERA / 2, (
+            f"la rotación no esperó al cerrojo ({esperado:.2f}s): sustituiría el archivo "
+            "mientras un monitor escribe")

@@ -125,10 +125,28 @@ else
         # cada media hora para siempre. El cuerpo describe el estado
         # CUALITATIVO; lo volatil vive en el ops_log, que no deduplica.
         echo "[WARN] el canario respondio por fallback: el proveedor primario no sirve"
+        # El cuerpo es TEXTO FIJO, y esa es la parte que importa: la huella de
+        # deduplicacion se calcula sobre el, asi que cualquier dato que cambie
+        # entre ciclos convierte cada ciclo en un "estado nuevo", reinicia el
+        # contador de reavisos y anula el retroceso exponencial. Mientras el
+        # primario esta caido, el proveedor y el modelo del camino de reserva
+        # cambian —los perfiles tienen enfriamientos independientes— y el estado
+        # del canario alterna entre ok y ok_sin_token segun si el modelo repite
+        # el token. Con esos datos dentro, el aviso saldria cada media hora para
+        # siempre, que es justo el ruido que este cambio viene a quitar.
+        #
+        # El estado CUALITATIVO es uno solo: el primario no atiende. El detalle
+        # del turno vive en ops_log.jsonl, que no deduplica.
         umbral_alert health-check-degradado \
             "el agente responde solo por fallback" \
-            "El proveedor primario no atiende; la capacidad depende del camino de reserva. $(printf '%s' "$CANARY_OUT" | grep -E '^\[CANARIO\]' | tail -1 | sed -E 's/ latency_ms=[0-9]+//')" \
+            "El proveedor primario no atiende; la capacidad depende del camino de reserva. El proveedor, el modelo y la latencia de cada turno quedan en el registro." \
             warn || true
+    elif printf '%s' "$CANARY_OUT" | grep -qE '^\[CANARIO\].*fallback=desconocido'; then
+        # Ni se abre ni se cierra: no se sabe. El canario emite "desconocido"
+        # cuando el JSON del CLI no trae la clave del fallback, y eso no puede
+        # leerse como "no hubo fallback": seria anunciar una recuperacion falsa
+        # en cuanto ese CLI externo cambie de forma.
+        echo "[WARN] el canario no pudo determinar si hubo fallback: no se toca el estado de degradacion"
     else
         # El primario vuelve a atender. La degradacion se cierra como TRANSICION,
         # igual que el fallo: nadie borraba este estado, asi que el retroceso
@@ -170,8 +188,22 @@ if [ ${#FAILURES[@]} -eq 0 ]; then
     umbral_heartbeat_write health-check
     # Aviso de recuperacion, una sola vez, como TRANSICION y no como muestreo.
     if umbral_alert_active health-check; then
+        # El texto tiene que decir la verdad de ESTE ciclo. La degradacion por
+        # fallback no entra en FAILURES, asi que un ciclo con el primario caido
+        # llega hasta aqui y anunciaba "todos los chequeos pasan, incluido el
+        # canario": el ultimo mensaje que le constaba a un humano contradecia el
+        # estado real y borraba justo la distincion entre "servicio disponible
+        # por fallback" y "primario recuperado".
+        if umbral_alert_active health-check-degradado; then
+            TEXTO_RECUPERACION="Los chequeos pasan, pero la generacion sigue dependiendo del camino de reserva: el proveedor primario no atiende."
+        else
+            TEXTO_RECUPERACION="Todos los chequeos pasan, incluido el canario de generacion por el proveedor primario."
+        fi
+        # Se nombra el incidente que cierra para que dos incidentes distintos
+        # den dos avisos y uno que oscila no repita el suyo.
+        TEXTO_RECUPERACION="$TEXTO_RECUPERACION Cierra el incidente $(umbral_alert_fingerprint health-check | cut -c1-12)."
         RC_INFO=0
-        umbral_alert health-check "el VPS vuelve a estar sano" "Todos los chequeos pasan, incluido el canario de generacion." info || RC_INFO=$?
+        umbral_alert health-check "el VPS vuelve a estar sano" "$TEXTO_RECUPERACION" info || RC_INFO=$?
         # El incidente no se cierra hasta que el aviso de recuperacion sale de
         # verdad: rc=2 es "no se pudo entregar", y entonces se conserva el
         # estado para reintentarlo en el proximo ciclo. rc=1 es "callado por

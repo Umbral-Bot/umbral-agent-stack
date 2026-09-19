@@ -222,6 +222,18 @@ umbral_commit_alert() {
 }
 
 # -----------------------------------------------------------------
+# umbral_alert_fingerprint <monitor>
+# Huella del incidente abierto, o vacio si no hay ninguno. Sirve para que el
+# aviso de RECUPERACION diga a que incidente cierra: asi dos incidentes
+# distintos producen dos avisos distintos, y un mismo incidente que oscila no
+# repite el suyo.
+# -----------------------------------------------------------------
+umbral_alert_fingerprint() {
+  local f="$UMBRAL_MON_STATE_DIR/${1}.alert"
+  [ -f "$f" ] && sed -n '1p' "$f" 2>/dev/null || true
+}
+
+# -----------------------------------------------------------------
 # umbral_alert_active <monitor>
 # 0 si el monitor está en alerta entregada (hay ventana abierta).
 # -----------------------------------------------------------------
@@ -287,8 +299,29 @@ umbral_heartbeat_stale() {
 # -----------------------------------------------------------------
 umbral_ops_log() {
   local dir="${UMBRAL_OPS_LOG_DIR:-$HOME/.config/umbral}"
+  local archivo="$dir/ops_log.jsonl"
   mkdir -p "$dir"
-  printf '%s\n' "$1" >> "$dir/ops_log.jsonl"
+  # Con cerrojo, y por un motivo concreto: la rotacion semanal
+  # (scripts/ops_log_rotate.py) lee el archivo entero y lo sustituye renombrando
+  # un temporal encima. Todo lo que se anada entre la lectura y el renombrado se
+  # va con el inodo viejo. Lo que se perderia es un ciclo del monitor en la
+  # FUENTE CANONICA, y un registro que pierde eventos en silencio no sirve para
+  # demostrar nada. El cerrojo lo comparten los dos.
+  #
+  # Si flock no estuviera disponible, se anade igual: se pierde la proteccion,
+  # nunca el evento.
+  #
+  # Se usa la forma `flock <archivo> <orden>`, que abre el cerrojo el propio
+  # flock. La forma con descriptor —exec {fd}>>...; flock $fd— NO sirve aqui:
+  # bash marca close-on-exec en los descriptores que asigna con {var}, asi que
+  # el binario flock nunca los ve, falla, y el aviso se escribe sin proteccion
+  # sin que se note. Comprobado.
+  if command -v flock >/dev/null 2>&1 \
+     && flock -w 15 "$dir/ops_log.lock" \
+          bash -c 'printf "%s\n" "$1" >> "$2"' _ "$1" "$archivo" 2>/dev/null; then
+    return 0
+  fi
+  printf '%s\n' "$1" >> "$archivo"
 }
 
 # -----------------------------------------------------------------
@@ -310,6 +343,14 @@ umbral_alert() {
   # Un aviso informativo (tipicamente la recuperacion) lleva su propio estado.
   # Si escribiera el estado de FALLO, umbral_clear_alert lo encontraria en el
   # ciclo siguiente y volveria a anunciar la recuperacion, una y otra vez.
+  #
+  # Ese estado NO se borra al abrir el incidente siguiente. Se intento, y salia
+  # caro: con un servicio que oscila, borrarlo en cada fallo impedia que ninguna
+  # de las dos mitades acumulara reavisos y el retroceso quedaba anulado —un
+  # comentario por ciclo, indefinidamente—. La forma correcta de distinguir dos
+  # recuperaciones es que el aviso diga A QUE INCIDENTE cierra: dos incidentes
+  # distintos dan cuerpos distintos y por tanto huellas distintas, mientras que
+  # un mismo incidente que oscila repite la suya y se deduplica.
   local key="$monitor"
   [ "$sev" = "info" ] && key="${monitor}.info"
 
@@ -348,13 +389,6 @@ umbral_alert() {
         -H "X-Umbral-Caller: cron.${monitor}" \
         -d "$payload" > /dev/null 2>&1; then
     umbral_commit_alert "$key" "$fp" "$pendiente"
-    # Fallo y recuperacion son las dos mitades de una misma transicion. Si al
-    # abrir un incidente sobreviviera el estado del ultimo "ya esta sano", el
-    # proximo aviso de recuperacion —cuyo texto es siempre el mismo, y por tanto
-    # su huella tambien— quedaria silenciado por la ventana que gano la vez
-    # anterior, y con el retroceso acumulado eso llega a ser un dia entero. El
-    # resultado seria una cadena de fallos anunciados sin ningun cierre.
-    [ "$sev" = "info" ] || rm -f "$UMBRAL_MON_STATE_DIR/${monitor}.info.alert"
     umbral_ops_log "{\"ts\":\"$ts\",\"kind\":\"monitor_alert\",\"release\":\"$release\",\"monitor\":\"$monitor\",\"severity\":\"$sev\",\"fingerprint\":\"$fp\",\"chars\":${#text},\"reavisos\":$pendiente,\"proxima_ventana_s\":$(umbral_alert_window "$pendiente"),\"entrega\":\"ok\"}"
     echo "(aviso enviado, ${#text} caracteres)"
     return 0

@@ -24,8 +24,24 @@ UMBRAL_MON_STATE_DIR="${UMBRAL_MON_STATE_DIR:-$HOME/.config/umbral/monitor}"
 # había mucho que contar.
 UMBRAL_NOTION_MAX_CHARS="${UMBRAL_NOTION_MAX_CHARS:-1900}"
 
-# Ventana de silencio por alerta repetida, en segundos.
+# Ventana de silencio por alerta repetida, en segundos. Es la PRIMERA ventana:
+# si el mismo estado persiste, cada reaviso la duplica hasta el tope de abajo.
 UMBRAL_ALERT_COOLDOWN_S="${UMBRAL_ALERT_COOLDOWN_S:-3600}"
+
+# Tope del retroceso exponencial: "como mucho, un aviso al dia". Un estado
+# degradado que ya esta registrado en un incidente abierto no debe avisar cada
+# hora indefinidamente: eso desensibiliza a quien lo lee, que es como se pierde
+# el aviso que si importa. Medido el 2026-09-18: el aviso "responde solo por
+# fallback" era CIERTO y aun asi genero 15 comentarios en Notion en 18,5 horas
+# sobre una condicion ya conocida.
+#
+# Son 23 h y no 24 a proposito. e2e-validation corre una vez al dia (0 6 * * *):
+# con un tope de exactamente 86400 s, la comparacion contra el ciclo del dia
+# siguiente se decide por unos segundos de deriva —lo que tarde la suite antes
+# de avisar— y el aviso se va a 48 h la mitad de las veces. El tope tiene que
+# quedar por DEBAJO de la cadencia del monitor mas lento, o deja de ser un tope
+# y pasa a ser una loteria.
+UMBRAL_ALERT_BACKOFF_MAX_S="${UMBRAL_ALERT_BACKOFF_MAX_S:-82800}"
 
 # -----------------------------------------------------------------
 # umbral_load_env — carga ~/.config/openclaw/env sin volcarlo.
@@ -122,26 +138,107 @@ umbral_fingerprint() {
 }
 
 # -----------------------------------------------------------------
+# umbral_alert_window <reavisos>
+# Ventana de silencio, en segundos, para un estado que ya se avisó <reavisos>
+# veces. Es la cadencia DOCUMENTADA del retroceso exponencial:
+#
+#   reavisos: 0     1     2     3     4      5+
+#   ventana : 1 h   2 h   4 h   8 h   16 h   23 h (tope: un aviso al dia)
+#
+# Función pura: no lee el reloj ni el disco, para que la cadencia pueda
+# comprobarse sin depender del tiempo real.
+# -----------------------------------------------------------------
+umbral_alert_window() {
+  local n="${1:-0}" ventana="$UMBRAL_ALERT_COOLDOWN_S" i=0
+  case "$n" in ''|*[!0-9]*) n=0 ;; esac
+  while [ "$i" -lt "$n" ] && [ "$ventana" -lt "$UMBRAL_ALERT_BACKOFF_MAX_S" ]; do
+    ventana=$(( ventana * 2 )); i=$(( i + 1 ))
+  done
+  [ "$ventana" -gt "$UMBRAL_ALERT_BACKOFF_MAX_S" ] && ventana="$UMBRAL_ALERT_BACKOFF_MAX_S"
+  printf '%s' "$ventana"
+}
+
+# -----------------------------------------------------------------
+# umbral_alert_reavisos <monitor>
+# Cuántas veces se ha REAVISADO ya del estado actual. 0 si no hay estado.
+# -----------------------------------------------------------------
+umbral_alert_reavisos() {
+  local f="$UMBRAL_MON_STATE_DIR/${1}.alert" n=0
+  [ -f "$f" ] && n=$(sed -n '3p' "$f" 2>/dev/null || echo 0)
+  case "$n" in ''|*[!0-9]*) n=0 ;; esac
+  printf '%s' "$n"
+}
+
+# -----------------------------------------------------------------
 # umbral_should_alert <monitor> <huella>
-# 0 = hay que avisar (estado nuevo, o venció el enfriamiento).
+# DECIDE. No escribe nada.
+# 0 = hay que avisar (estado nuevo, o venció la ventana).
 # 1 = callar (mismo estado dentro de la ventana).
-# Registra también la transición a sano para poder avisar de la RECUPERACIÓN.
+# Deja en UMBRAL_ALERT_PENDING_N el contador que habrá que guardar si —y solo
+# si— el aviso llega a ENTREGARSE.
+#
+# Decidir y guardar estaban unidos hasta el 2026-09-19: el estado de silencio se
+# escribía ANTES de intentar el envío, así que un aviso que no lograba salir
+# silenciaba igualmente el intento siguiente, y cada reintento que sí cruzaba la
+# ventana duplicaba el silencio. Como la vía de aviso sale por el worker que se
+# vigila, "no se pudo entregar" coincide exactamente con el caso en que hay que
+# insistir. Es la misma familia de fallo que el incidente UMB-276: dar por
+# avisado lo que nadie recibió.
 # -----------------------------------------------------------------
 umbral_should_alert() {
   local monitor="$1" fp="$2"
-  mkdir -p "$UMBRAL_MON_STATE_DIR"
   local f="$UMBRAL_MON_STATE_DIR/${monitor}.alert"
   local now; now=$(date +%s)
+  UMBRAL_ALERT_PENDING_N=0
   if [ -f "$f" ]; then
-    local prev_fp prev_ts
+    local prev_fp prev_ts prev_n ventana
     prev_fp=$(sed -n '1p' "$f" 2>/dev/null || true)
     prev_ts=$(sed -n '2p' "$f" 2>/dev/null || echo 0)
-    if [ "$prev_fp" = "$fp" ] && [ $(( now - prev_ts )) -lt "$UMBRAL_ALERT_COOLDOWN_S" ]; then
-      return 1
+    prev_n=$(sed -n '3p' "$f" 2>/dev/null || echo 0)
+    case "$prev_ts" in ''|*[!0-9]*) prev_ts=0 ;; esac
+    case "$prev_n" in ''|*[!0-9]*) prev_n=0 ;; esac
+    if [ "$prev_fp" = "$fp" ]; then
+      ventana=$(umbral_alert_window "$prev_n")
+      if [ $(( now - prev_ts )) -lt "$ventana" ]; then
+        return 1
+      fi
+      # Mismo estado y ventana vencida: toca reavisar, con la ventana siguiente.
+      UMBRAL_ALERT_PENDING_N=$(( prev_n + 1 ))
     fi
+    # Estado distinto: se avisa ya y el retroceso vuelve a empezar (PENDING_N=0).
   fi
-  printf '%s\n%s\n' "$fp" "$now" > "$f"
   return 0
+}
+
+# -----------------------------------------------------------------
+# umbral_commit_alert <monitor> <huella> [reavisos]
+# Abre la ventana de silencio. Se llama SOLO después de una entrega confirmada:
+# el silencio lo gana un aviso entregado, nunca un aviso intentado.
+# -----------------------------------------------------------------
+umbral_commit_alert() {
+  local monitor="$1" fp="$2" n="${3:-${UMBRAL_ALERT_PENDING_N:-0}}"
+  mkdir -p "$UMBRAL_MON_STATE_DIR"
+  printf '%s\n%s\n%s\n' "$fp" "$(date +%s)" "$n" > "$UMBRAL_MON_STATE_DIR/${monitor}.alert"
+}
+
+# -----------------------------------------------------------------
+# umbral_alert_fingerprint <monitor>
+# Huella del incidente abierto, o vacio si no hay ninguno. Sirve para que el
+# aviso de RECUPERACION diga a que incidente cierra: asi dos incidentes
+# distintos producen dos avisos distintos, y un mismo incidente que oscila no
+# repite el suyo.
+# -----------------------------------------------------------------
+umbral_alert_fingerprint() {
+  local f="$UMBRAL_MON_STATE_DIR/${1}.alert"
+  [ -f "$f" ] && sed -n '1p' "$f" 2>/dev/null || true
+}
+
+# -----------------------------------------------------------------
+# umbral_alert_active <monitor>
+# 0 si el monitor está en alerta entregada (hay ventana abierta).
+# -----------------------------------------------------------------
+umbral_alert_active() {
+  [ -f "$UMBRAL_MON_STATE_DIR/${1}.alert" ]
 }
 
 # -----------------------------------------------------------------
@@ -202,52 +299,101 @@ umbral_heartbeat_stale() {
 # -----------------------------------------------------------------
 umbral_ops_log() {
   local dir="${UMBRAL_OPS_LOG_DIR:-$HOME/.config/umbral}"
+  local archivo="$dir/ops_log.jsonl"
   mkdir -p "$dir"
-  printf '%s\n' "$1" >> "$dir/ops_log.jsonl"
+  # Con cerrojo, y por un motivo concreto: la rotacion semanal
+  # (scripts/ops_log_rotate.py) lee el archivo entero y lo sustituye renombrando
+  # un temporal encima. Todo lo que se anada entre la lectura y el renombrado se
+  # va con el inodo viejo. Lo que se perderia es un ciclo del monitor en la
+  # FUENTE CANONICA, y un registro que pierde eventos en silencio no sirve para
+  # demostrar nada. El cerrojo lo comparten los dos.
+  #
+  # Si flock no estuviera disponible, se anade igual: se pierde la proteccion,
+  # nunca el evento.
+  #
+  # Se usa la forma `flock <archivo> <orden>`, que abre el cerrojo el propio
+  # flock. La forma con descriptor —exec {fd}>>...; flock $fd— NO sirve aqui:
+  # bash marca close-on-exec en los descriptores que asigna con {var}, asi que
+  # el binario flock nunca los ve, falla, y el aviso se escribe sin proteccion
+  # sin que se note. Comprobado.
+  if command -v flock >/dev/null 2>&1 \
+     && flock -w 15 "$dir/ops_log.lock" \
+          bash -c 'printf "%s\n" "$1" >> "$2"' _ "$1" "$archivo" 2>/dev/null; then
+    return 0
+  fi
+  printf '%s\n' "$1" >> "$archivo"
 }
 
 # -----------------------------------------------------------------
 # umbral_alert <monitor> <titulo> <cuerpo> [severidad]
-# Aviso deduplicado, con enfriamiento y troceado por debajo del máximo de Notion.
-# Devuelve 0 si avisó, 1 si calló por deduplicación, 2 si no pudo enviar.
-# Nunca imprime el token.
+# Aviso deduplicado, con retroceso exponencial y troceado por debajo del máximo
+# de Notion. Devuelve 0 si se ENTREGÓ, 1 si calló por deduplicación, 2 si no
+# pudo entregarse. Nunca imprime el token.
+#
+# El orden importa: primero se intenta entregar y solo una entrega confirmada
+# abre la ventana de silencio y se registra como aviso emitido. Un intento
+# fallido se registra aparte, como lo que es, y deja el siguiente ciclo libre
+# para insistir.
 # -----------------------------------------------------------------
 umbral_alert() {
   local monitor="$1" title="$2" body="$3" sev="${4:-warn}"
   local fp; fp=$(umbral_fingerprint "$title $body")
+  local ts; ts=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
   # Un aviso informativo (tipicamente la recuperacion) lleva su propio estado.
   # Si escribiera el estado de FALLO, umbral_clear_alert lo encontraria en el
   # ciclo siguiente y volveria a anunciar la recuperacion, una y otra vez.
+  #
+  # Ese estado NO se borra al abrir el incidente siguiente. Se intento, y salia
+  # caro: con un servicio que oscila, borrarlo en cada fallo impedia que ninguna
+  # de las dos mitades acumulara reavisos y el retroceso quedaba anulado —un
+  # comentario por ciclo, indefinidamente—. La forma correcta de distinguir dos
+  # recuperaciones es que el aviso diga A QUE INCIDENTE cierra: dos incidentes
+  # distintos dan cuerpos distintos y por tanto huellas distintas, mientras que
+  # un mismo incidente que oscila repite la suya y se deduplica.
   local key="$monitor"
   [ "$sev" = "info" ] && key="${monitor}.info"
 
   if ! umbral_should_alert "$key" "$fp"; then
-    echo "(alerta silenciada: mismo estado dentro de la ventana de ${UMBRAL_ALERT_COOLDOWN_S}s)"
-    umbral_ops_log "{\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"kind\":\"monitor_alert_suppressed\",\"monitor\":\"$monitor\",\"severity\":\"$sev\",\"fingerprint\":\"$fp\"}"
+    local ventana; ventana=$(umbral_alert_window "$(umbral_alert_reavisos "$key")")
+    echo "(alerta silenciada: mismo estado dentro de la ventana de ${ventana}s)"
+    umbral_ops_log "{\"ts\":\"$ts\",\"kind\":\"monitor_alert_suppressed\",\"monitor\":\"$monitor\",\"severity\":\"$sev\",\"fingerprint\":\"$fp\",\"ventana_s\":$ventana}"
     return 1
   fi
 
+  local pendiente="${UMBRAL_ALERT_PENDING_N:-0}"
   local text; text=$(umbral_truncate "Rick [$sev] $title — $body")
-  umbral_ops_log "{\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"kind\":\"monitor_alert\",\"release\":\"$(umbral_release_sha)\",\"monitor\":\"$monitor\",\"severity\":\"$sev\",\"fingerprint\":\"$fp\",\"chars\":${#text}}"
+  local release; release=$(umbral_release_sha)
 
   local url="${WORKER_URL:-http://127.0.0.1:8088}"
   local token="${WORKER_TOKEN:-}"
   if [ -z "$token" ]; then
     echo "(sin WORKER_TOKEN tras cargar el env: no se pudo enviar el aviso)"
+    umbral_ops_log "{\"ts\":\"$ts\",\"kind\":\"monitor_alert_failed\",\"release\":\"$release\",\"monitor\":\"$monitor\",\"severity\":\"$sev\",\"fingerprint\":\"$fp\",\"motivo\":\"sin_token\"}"
     return 2
   fi
 
   local payload
   payload=$(python3 -c 'import json,sys; print(json.dumps({"task":"notion.add_comment","input":{"text":sys.argv[1]}}))' "$text")
-  if curl -sf -X POST "${url}/run" \
+  # Con tiempo maximo: un envio colgado bajo cron deja al monitor sin terminar,
+  # y un monitor que no termina es un monitor que no vuelve a comprobar nada.
+  #
+  # 90 s, no 20: worker/notion_client.py usa TIMEOUT=60.0 contra la API de
+  # Notion. Con 20 s se cortaria una entrega lenta que el worker SI va a
+  # completar, se contaria como fallida, y el ciclo siguiente la repetiria:
+  # un comentario duplicado en Notion, que es justo el ruido que se viene a
+  # quitar. El tope sigue acotado muy por debajo del ciclo de 30 min.
+  if curl -sf -m "${UMBRAL_ALERT_TIMEOUT_S:-90}" -X POST "${url}/run" \
         -H "Authorization: Bearer ${token}" \
         -H "Content-Type: application/json" \
         -H "X-Umbral-Caller: cron.${monitor}" \
         -d "$payload" > /dev/null 2>&1; then
+    umbral_commit_alert "$key" "$fp" "$pendiente"
+    umbral_ops_log "{\"ts\":\"$ts\",\"kind\":\"monitor_alert\",\"release\":\"$release\",\"monitor\":\"$monitor\",\"severity\":\"$sev\",\"fingerprint\":\"$fp\",\"chars\":${#text},\"reavisos\":$pendiente,\"proxima_ventana_s\":$(umbral_alert_window "$pendiente"),\"entrega\":\"ok\"}"
     echo "(aviso enviado, ${#text} caracteres)"
     return 0
   fi
-  echo "(fallo al enviar el aviso)"
+  umbral_ops_log "{\"ts\":\"$ts\",\"kind\":\"monitor_alert_failed\",\"release\":\"$release\",\"monitor\":\"$monitor\",\"severity\":\"$sev\",\"fingerprint\":\"$fp\",\"motivo\":\"error_de_envio\"}"
+  echo "(fallo al enviar el aviso: no se abre ventana de silencio, se reintenta en el proximo ciclo)"
   return 2
 }

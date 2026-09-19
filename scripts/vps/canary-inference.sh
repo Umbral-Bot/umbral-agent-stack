@@ -82,16 +82,18 @@ raw = sys.stdin.read()
 tok = os.environ.get("TOKEN_ESPERADO", "")
 prov = mod = "desconocido"
 fb = cerro = texto = False
+fb_visto = False   # ¿apareció la clave fallbackUsed? Ausente NO es "no hubo fallback"
 try:
     d = json.loads(raw[raw.index("{"):raw.rindex("}") + 1])
 except Exception:
     d = None
 def walk(o):
-    global prov, mod, fb, cerro, texto
+    global prov, mod, fb, cerro, texto, fb_visto
     if isinstance(o, dict):
         if o.get("result") == "success" and o.get("provider"):
             prov, mod = o.get("provider", "?"), o.get("model", "?")
         if "fallbackUsed" in o:
+            fb_visto = True
             fb = bool(o["fallbackUsed"]) or fb
         if o.get("stopReason") or o.get("finishReason"):
             cerro = True
@@ -108,7 +110,12 @@ est = "si" if (prov != "desconocido" and cerro and texto) else "no"
 print("estructura=%s" % est)
 print("proveedor=%s" % prov)
 print("modelo=%s" % mod)
-print("fallback=%s" % str(fb).lower())
+# Tri-estado a proposito. Si la clave no aparecio, no sabemos si hubo
+# fallback, y "no sabemos" no puede leerse como "no hubo": con el valor por
+# defecto en false, un cambio de forma del JSON del CLI —que es externo y ya ha
+# cambiado varias veces— haria que el monitor anunciara "el primario vuelve a
+# atender" sin que fuera cierto.
+print("fallback=%s" % (str(fb).lower() if fb_visto else "desconocido"))
 print("token=%s" % ("si" if tok and tok in raw else "no"))
 ')
 EV_ESTRUCTURA=$(printf '%s' "$EVAL" | sed -n 's/^estructura=//p')
@@ -140,7 +147,7 @@ else
   DETAIL="el turno no completo: sin proveedor con exito, sin cierre o sin texto de respuesta"
 fi
 
-umbral_ops_log "{\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"kind\":\"canary_inference\",\"release\":\"$(umbral_release_sha)\",\"agent\":\"$AGENT\",\"status\":\"$STATUS\",\"provider\":\"$PROVIDER\",\"model\":\"$MODEL\",\"fallback_used\":$FALLBACK,\"token_literal\":\"$TOKEN_OK\",\"latency_ms\":$MS,\"detail\":$(python3 -c 'import json,sys;print(json.dumps(sys.argv[1]))' "$DETAIL")}"
+umbral_ops_log "{\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"kind\":\"canary_inference\",\"release\":\"$(umbral_release_sha)\",\"agent\":\"$AGENT\",\"status\":\"$STATUS\",\"provider\":\"$PROVIDER\",\"model\":\"$MODEL\",\"fallback_used\":$([ "$FALLBACK" = "true" ] && echo true || echo false),\"fallback_determinado\":$([ "$FALLBACK" = "desconocido" ] && echo false || echo true),\"token_literal\":\"$TOKEN_OK\",\"latency_ms\":$MS,\"detail\":$(python3 -c 'import json,sys;print(json.dumps(sys.argv[1]))' "$DETAIL")}"
 
 if [ "$QUIET" -eq 0 ]; then
   case "$STATUS" in
@@ -155,6 +162,13 @@ if [ "$QUIET" -eq 0 ]; then
     *)
       echo "[FAIL] canario: el agente '$AGENT' no pudo generar texto — ${DETAIL}" ;;
   esac
+  # Linea legible por maquina, SIEMPRE, sea cual sea el estado. Quien vigile la
+  # degradacion no debe tener que reconocer una frase en prosa: el aviso "POR
+  # FALLBACK" solo se imprimia en el estado ok, de modo que un turno correcto
+  # sin el token literal ocultaba que el primario no habia servido. Es el mismo
+  # defecto que tenia el ensayo sintetico al comprobar el registro por
+  # coincidencia de texto.
+  echo "[CANARIO] status=${STATUS} provider=${PROVIDER} model=${MODEL} fallback=${FALLBACK} latency_ms=${MS}"
 fi
 
 case "$STATUS" in

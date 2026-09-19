@@ -16,6 +16,7 @@ Uso:
 """
 from __future__ import annotations
 
+import fcntl
 import json
 import os
 import sys
@@ -73,6 +74,23 @@ def rotate(log_path: Path, retention_days: int) -> dict[str, int]:
     return {"total": total, "kept": len(kept), "removed": total - len(kept)}
 
 
+def rotate_con_cerrojo(log_path: Path, retention_days: int) -> dict[str, int]:
+    """`rotate` bajo el mismo cerrojo que usan los monitores para añadir.
+
+    Sin él, todo lo que se añada entre la lectura del archivo y el renombrado
+    del temporal se va con el inodo viejo: el registro canónico pierde eventos
+    en silencio, justo una vez por semana y sin dejar rastro de lo perdido.
+    Los monitores lo toman en `umbral_ops_log` (scripts/vps/lib/umbral_alerting.sh).
+    """
+    lock_path = log_path.parent / "ops_log.lock"
+    with open(lock_path, "a", encoding="utf-8") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        try:
+            return rotate(log_path, retention_days)
+        finally:
+            fcntl.flock(lock, fcntl.LOCK_UN)
+
+
 def main() -> None:
     log_dir = Path(os.environ.get("UMBRAL_OPS_LOG_DIR", str(DEFAULT_LOG_DIR)))
     retention_days = int(os.environ.get("UMBRAL_OPS_LOG_RETENTION_DAYS", str(DEFAULT_RETENTION_DAYS)))
@@ -82,7 +100,7 @@ def main() -> None:
         print(f"No log file found at {log_path}. Nothing to do.")
         sys.exit(0)
 
-    stats = rotate(log_path, retention_days)
+    stats = rotate_con_cerrojo(log_path, retention_days)
     print(
         f"Rotation complete: {stats['total']} total, "
         f"{stats['kept']} kept, {stats['removed']} removed "

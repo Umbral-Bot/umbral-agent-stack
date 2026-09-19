@@ -5,8 +5,11 @@
 # CI en verde no basta: las pruebas unitarias no ejercitan el canario contra un
 # turno real ni bajo el entorno de cron, que es justo donde fallaron sus dos
 # primeras versiones (PATH mínimo y token literal). Esta batería cubre los ocho
-# casos exigidos, con stubs deterministas para lo que no se puede provocar a
-# voluntad en producción.
+# casos exigidos, más cuatro que añadió la revisión adversarial del 2026-09-19: que la
+# degradación se vea aunque la respuesta no traiga el token literal, que se
+# cierre cuando el primario vuelve, que el retroceso enganche aunque cambie el
+# modelo de reserva, y que un fallback indeterminado no cierre nada. Con stubs deterministas para lo que no se
+# puede provocar a voluntad en producción.
 #
 #   bash scripts/vps/bateria-canario.sh [directorio-de-salida]
 #
@@ -65,6 +68,29 @@ cat > "$SB/bin/fallo-blando" <<'STUB'
 cat <<'JSON'
 {"ok":true,"result":{"text":"Claro, aqui tienes el identificador solicitado.","completion":{"stopReason":"stop"},
 "routing":{"candidates":[{"provider":"anthropic","model":"claude-sonnet-5","result":"success"}],"fallbackUsed":true}}}
+JSON
+STUB
+# Mismo estado cualitativo que fallback-sano —el primario no sirve— pero por
+# OTRO modelo. Sirve para el caso 11: mientras el primario esta caido, los
+# perfiles tienen enfriamientos independientes y el modelo de reserva cambia de
+# un ciclo a otro.
+cat > "$SB/bin/fallback-otro-modelo" <<'STUB'
+#!/usr/bin/env bash
+tok=$(printf '%s' "$*" | grep -oE 'CANARIO-[0-9]+' | head -1)
+cat <<JSON
+{"ok":true,"result":{"text":"$tok","completion":{"stopReason":"stop"},
+"routing":{"candidates":[{"provider":"openai","model":"gpt-5.6-sol","result":"candidate_failed"},
+{"provider":"anthropic","model":"claude-haiku-4-5","result":"success"}],"fallbackUsed":true}}}
+JSON
+STUB
+# Turno correcto que NO declara si hubo fallback: el JSON del CLI es externo y
+# ya ha cambiado de forma varias veces. "No se sabe" no es "no hubo".
+cat > "$SB/bin/sin-declarar-fallback" <<'STUB'
+#!/usr/bin/env bash
+tok=$(printf '%s' "$*" | grep -oE 'CANARIO-[0-9]+' | head -1)
+cat <<JSON
+{"ok":true,"result":{"text":"$tok","completion":{"stopReason":"stop"},
+"routing":{"candidates":[{"provider":"anthropic","model":"claude-sonnet-5","result":"success"}]}}}
 JSON
 STUB
 chmod +x "$SB/bin"/*
@@ -186,6 +212,63 @@ if printf '%s' "$R" | grep -q "127.0.0.1:${STUB_PORT}"; then
   pass "el WORKER_URL del ensayo sobrevive a la carga del entorno real"
 else
   fail "el entorno real pisó el destino del ensayo: $R"
+fi
+
+# ---- 9 y 10. la degradación se ve, y se cierra cuando el primario vuelve ----
+# El stub sigue en pie desde el caso 6; el gateway apunta a él para que el único
+# motivo de aviso sea el canario.
+echo "9. La degradación se anuncia aunque falte el token literal"
+hcc() { OPENCLAW_BIN="$1" WORKER_URL="http://127.0.0.1:${STUB_PORT}" \
+        GATEWAY_URL="http://127.0.0.1:${STUB_PORT}" \
+        bash "$REPO_DIR/scripts/vps/health-check.sh" > "$2" 2>&1; }
+hcc "$SB/bin/fallo-blando" "$OUT_DIR/9-degradado.txt"
+# El aviso no puede llevar la latencia: la huella se calcula sobre el cuerpo, y
+# un valor que cambia en cada ciclo convierte cada ciclo en un "estado nuevo".
+if grep -q 'respondio por fallback' "$OUT_DIR/9-degradado.txt" \
+   && [ -f "$UMBRAL_MON_STATE_DIR/health-check-degradado.alert" ] \
+   && ! grep -q 'latency_ms' "$CAP"; then
+  pass "un turno correcto sin el token literal no oculta que el primario no sirvió, y el aviso no lleva nada volátil"
+else
+  fail "la degradación pasó inadvertida cuando la respuesta no traía el token"
+fi
+
+echo "10. El primario recuperado cierra la degradación"
+hcc "$SB/bin/primario-sano" "$OUT_DIR/10-primario-vuelve.txt"
+# El aviso se comprueba en lo que RECIBIÓ el destino, no en lo que imprimió el
+# monitor: el titulo no se echa por stdout, y comprobarlo ahi daria un fallo que
+# no existe.
+if [ ! -f "$UMBRAL_MON_STATE_DIR/health-check-degradado.alert" ] \
+   && grep -q 'primario vuelve a atender' "$CAP"; then
+  pass "al volver el primario se anuncia y se cierra el estado degradado"
+else
+  fail "el estado degradado siguió abierto tras volver el primario"
+fi
+
+# ---- 11 y 12. el retroceso engancha, y lo indeterminado no cierra nada ----
+echo "11. Una degradación que cambia de modelo sigue siendo la misma degradación"
+N_ANTES=$(grep -c 'responde solo por fallback' "$CAP" 2>/dev/null || echo 0)
+for s in fallback-sano fallback-otro-modelo fallo-blando fallback-sano; do
+  hcc "$SB/bin/$s" "$OUT_DIR/11-$s.txt"
+done
+N_DESPUES=$(grep -c 'responde solo por fallback' "$CAP" 2>/dev/null || echo 0)
+NUEVOS=$(( N_DESPUES - N_ANTES ))
+# Cuatro ciclos con proveedor, modelo y estado distintos: el estado CUALITATIVO
+# es uno solo —el primario no atiende— asi que debe avisar una vez y callar tres.
+# Si el cuerpo del aviso llevara esos datos, cada ciclo pareceria nuevo, el
+# contador volveria a cero y saldria un comentario cada media hora para siempre.
+if [ "$NUEVOS" -le 1 ]; then
+  pass "cuatro ciclos con proveedor y modelo distintos produjeron $NUEVOS aviso(s): el retroceso engancha"
+else
+  fail "el retroceso no enganchó: $NUEVOS avisos en cuatro ciclos del mismo estado"
+fi
+
+echo "12. Un fallback indeterminado no cierra la degradación"
+hcc "$SB/bin/sin-declarar-fallback" "$OUT_DIR/12-indeterminado.txt"
+if [ -f "$UMBRAL_MON_STATE_DIR/health-check-degradado.alert" ] \
+   && grep -q 'no pudo determinar si hubo fallback' "$OUT_DIR/12-indeterminado.txt"; then
+  pass "sin dato no se declara recuperado: el incidente sigue abierto"
+else
+  fail "un turno que no declara el fallback cerró la degradación"
 fi
 
 echo

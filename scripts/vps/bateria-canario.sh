@@ -5,8 +5,10 @@
 # CI en verde no basta: las pruebas unitarias no ejercitan el canario contra un
 # turno real ni bajo el entorno de cron, que es justo donde fallaron sus dos
 # primeras versiones (PATH mínimo y token literal). Esta batería cubre los ocho
-# casos exigidos, con stubs deterministas para lo que no se puede provocar a
-# voluntad en producción.
+# casos exigidos, más dos que añadió la revisión adversarial del 2026-09-19: que
+# la degradación se vea aunque la respuesta no traiga el token literal, y que se
+# cierre cuando el primario vuelve. Con stubs deterministas para lo que no se
+# puede provocar a voluntad en producción.
 #
 #   bash scripts/vps/bateria-canario.sh [directorio-de-salida]
 #
@@ -186,6 +188,33 @@ if printf '%s' "$R" | grep -q "127.0.0.1:${STUB_PORT}"; then
   pass "el WORKER_URL del ensayo sobrevive a la carga del entorno real"
 else
   fail "el entorno real pisó el destino del ensayo: $R"
+fi
+
+# ---- 9 y 10. la degradación se ve, y se cierra cuando el primario vuelve ----
+# El stub sigue en pie desde el caso 6; el gateway apunta a él para que el único
+# motivo de aviso sea el canario.
+echo "9. La degradación se anuncia aunque falte el token literal"
+hcc() { OPENCLAW_BIN="$1" WORKER_URL="http://127.0.0.1:${STUB_PORT}" \
+        GATEWAY_URL="http://127.0.0.1:${STUB_PORT}" \
+        bash "$REPO_DIR/scripts/vps/health-check.sh" > "$2" 2>&1; }
+hcc "$SB/bin/fallo-blando" "$OUT_DIR/9-degradado.txt"
+if grep -q 'respondio por fallback' "$OUT_DIR/9-degradado.txt" \
+   && [ -f "$UMBRAL_MON_STATE_DIR/health-check-degradado.alert" ]; then
+  pass "un turno correcto sin el token literal no oculta que el primario no sirvió"
+else
+  fail "la degradación pasó inadvertida cuando la respuesta no traía el token"
+fi
+
+echo "10. El primario recuperado cierra la degradación"
+hcc "$SB/bin/primario-sano" "$OUT_DIR/10-primario-vuelve.txt"
+# El aviso se comprueba en lo que RECIBIÓ el destino, no en lo que imprimió el
+# monitor: el titulo no se echa por stdout, y comprobarlo ahi daria un fallo que
+# no existe.
+if [ ! -f "$UMBRAL_MON_STATE_DIR/health-check-degradado.alert" ] \
+   && grep -q 'primario vuelve a atender' "$CAP"; then
+  pass "al volver el primario se anuncia y se cierra el estado degradado"
+else
+  fail "el estado degradado siguió abierto tras volver el primario"
 fi
 
 echo

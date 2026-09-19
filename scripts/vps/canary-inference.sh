@@ -155,6 +155,13 @@ if [ "$QUIET" -eq 0 ]; then
     *)
       echo "[FAIL] canario: el agente '$AGENT' no pudo generar texto — ${DETAIL}" ;;
   esac
+  # Linea legible por maquina, SIEMPRE, sea cual sea el estado. Quien vigile la
+  # degradacion no debe tener que reconocer una frase en prosa: el aviso "POR
+  # FALLBACK" solo se imprimia en el estado ok, de modo que un turno correcto
+  # sin el token literal ocultaba que el primario no habia servido. Es el mismo
+  # defecto que tenia el ensayo sintetico al comprobar el registro por
+  # coincidencia de texto.
+  echo "[CANARIO] status=${STATUS} provider=${PROVIDER} model=${MODEL} fallback=${FALLBACK} latency_ms=${MS}"
 fi
 
 case "$STATUS" in

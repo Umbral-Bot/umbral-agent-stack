@@ -37,7 +37,8 @@ def state_dir(tmp_path: Path) -> dict[str, str]:
     }
 
 
-H = 3600  # una hora en segundos: la unidad en que esta escrita la cadencia
+H = 3600     # una hora en segundos: la unidad en que esta escrita la cadencia
+TOPE = 82800  # el tope del retroceso: 23 h, por debajo de la cadencia diaria de e2e
 
 # Un aviso ENTREGADO: decidir y, solo entonces, abrir la ventana de silencio.
 # Es lo que hace umbral_alert cuando el envio se confirma.
@@ -434,11 +435,12 @@ class TestBateriaDeValidacion:
     """CI en verde no basta: las dos primeras versiones del canario pasaron CI y
     fallaron en producción (PATH de cron y token literal)."""
 
-    def test_la_bateria_existe_y_cubre_los_ocho_casos(self):
+    def test_la_bateria_existe_y_cubre_los_diez_casos(self):
         texto = (REPO / "scripts" / "vps" / "bateria-canario.sh").read_text(encoding="utf-8")
         for caso in ("Entorno real de cron", "Primario sano", "Fallback sano",
                      "Fallo duro", "Fallo blando", "Deduplicación",
-                     "Recuperación única", "no lo pisa el archivo de entorno"):
+                     "Recuperación única", "no lo pisa el archivo de entorno",
+                     "aunque falte el token literal", "cierra la degradación"):
             assert caso in texto, f"la batería no cubre: {caso}"
 
     def test_la_bateria_no_escribe_en_produccion(self):
@@ -468,13 +470,13 @@ class TestRetrocesoExponencial:
             "14400",   # 4 h
             "28800",   # 8 h
             "57600",   # 16 h
-            "86400",   # 24 h — tope
-            "86400",
-            "86400",
+            "82800",   # 23 h — tope: como mucho un aviso al día
+            "82800",
+            "82800",
         ], r.stdout
 
     def test_la_secuencia_completa_con_reloj_controlado(self, state_dir):
-        """1 h → 2 h → 4 h → 8 h → 16 h → tope de 24 h, recorrida de verdad.
+        """1 h → 2 h → 4 h → 8 h → 16 h → tope de 23 h, recorrida de verdad.
 
         En cada escalón se comprueban los dos bordes: un segundo antes de que
         venza la ventana el monitor calla, y al cumplirse avisa. Sin los dos
@@ -484,7 +486,7 @@ class TestRetrocesoExponencial:
         assert "AVISA" in r.stdout
         assert reavisos(f) == 0
 
-        for i, ventana in enumerate([1 * H, 2 * H, 4 * H, 8 * H, 16 * H, 24 * H, 24 * H]):
+        for i, ventana in enumerate([1 * H, 2 * H, 4 * H, 8 * H, 16 * H, TOPE, TOPE]):
             adelantar_reloj(f, ventana - 1)
             r = run_bash('umbral_should_alert mon h && echo AVISA || echo CALLA', state_dir)
             assert "CALLA" in r.stdout, f"reaviso {i}: avisó antes de cumplirse {ventana}s"
@@ -534,7 +536,7 @@ class TestRetrocesoExponencial:
     def test_el_tope_existe_y_no_es_infinito(self):
         texto = LIB.read_text(encoding="utf-8")
         linea = next(l for l in texto.splitlines() if l.startswith("UMBRAL_ALERT_BACKOFF_MAX_S="))
-        assert ":-86400}" in linea, "el tope por defecto debe ser 24 h"
+        assert ":-82800}" in linea, "el tope por defecto debe ser 23 h: como mucho un aviso al dia"
 
     def test_el_aviso_silenciado_declara_la_ventana_real(self, state_dir):
         """El mensaje de silencio decía siempre «3600s» aunque la ventana en
@@ -636,4 +638,86 @@ class TestEntregaYSilencio:
     def test_el_envio_tiene_tiempo_maximo(self):
         """Un envío colgado bajo cron deja al monitor sin terminar, y un monitor
         que no termina es un monitor que no vuelve a comprobar nada."""
-        assert "-m \"${UMBRAL_ALERT_TIMEOUT_S:-20}\"" in LIB.read_text(encoding="utf-8")
+        assert "-m \"${UMBRAL_ALERT_TIMEOUT_S:-90}\"" in LIB.read_text(encoding="utf-8")
+
+
+class TestCierreDeLaDegradacion:
+    """Hallazgos de la revisión adversarial del propio cambio. Los cinco son
+    defectos de la misma familia: un estado que nadie cierra, o una señal que se
+    reconoce por su prosa en vez de por su forma."""
+
+    STUB_FALLBACK_SIN_TOKEN = """#!/usr/bin/env bash
+cat <<'JSON'
+{"ok":true,"result":{"text":"respuesta sin el token","completion":{"stopReason":"stop"},
+"routing":{"candidates":[{"provider":"anthropic","model":"claude-sonnet-5","result":"success"}],"fallbackUsed":true}}}
+JSON
+"""
+
+    def test_el_canario_declara_el_fallback_aunque_falte_el_token(self, tmp_path, state_dir):
+        """«POR FALLBACK» solo se imprimía en el estado ok. Un turno correcto sin
+        el token literal ocultaba que el primario no había servido: el monitor
+        veía salud y la degradación no se anunciaba."""
+        stub = tmp_path / "openclaw"
+        stub.write_text(self.STUB_FALLBACK_SIN_TOKEN, encoding="utf-8")
+        stub.chmod(0o755)
+        r = subprocess.run(
+            ["bash", str(REPO / "scripts" / "vps" / "canary-inference.sh")],
+            capture_output=True, text=True,
+            env={**os.environ, **state_dir, "OPENCLAW_BIN": str(stub)},
+        )
+        assert "status=ok_sin_token" in r.stdout
+        assert "fallback=true" in r.stdout, r.stdout
+
+    def test_el_monitor_no_reconoce_la_degradacion_por_una_frase(self):
+        texto = (REPO / "scripts" / "vps" / "health-check.sh").read_text(encoding="utf-8")
+        assert "fallback=true" in texto
+        assert "grep -q 'POR FALLBACK'" not in texto
+
+    def test_el_primario_recuperado_cierra_la_degradacion(self):
+        """Nadie borraba `health-check-degradado.alert`: el retroceso acumulado
+        sobrevivía a la recuperación y podía amordazar la siguiente degradación
+        hasta el tope."""
+        texto = (REPO / "scripts" / "vps" / "health-check.sh").read_text(encoding="utf-8")
+        assert "umbral_alert_active health-check-degradado" in texto
+        assert "umbral_clear_alert health-check-degradado" in texto
+
+    def test_abrir_un_incidente_olvida_el_aviso_de_recuperacion(self, state_dir, worker_stub):
+        """El texto del aviso de recuperación es siempre el mismo, así que su
+        huella también. Sin olvidarlo al abrir el incidente siguiente, la
+        segunda recuperación quedaba silenciada por la ventana que ganó la
+        primera — y con el retroceso, hasta un día entero. El resultado sería
+        una cadena de fallos anunciados sin ningún cierre."""
+        env = {**state_dir, **worker_stub.env}
+        run_bash('umbral_alert mon "cayo" "detalle" error', env)
+        run_bash('umbral_alert mon "ya esta sano" "todo pasa" info', env)
+        assert alerta(state_dir, "mon.info").exists()
+
+        run_bash('umbral_clear_alert mon', env)          # lo que hace el monitor al sanar
+        run_bash('umbral_alert mon "cayo" "detalle" error', env)
+        assert not alerta(state_dir, "mon.info").exists(), \
+            "abrir un incidente debe olvidar el ultimo aviso de recuperacion"
+
+        r = run_bash('umbral_alert mon "ya esta sano" "todo pasa" info; echo "rc=$?"', env)
+        assert "rc=0" in r.stdout, "la segunda recuperacion tambien tiene que anunciarse"
+
+    def test_el_tope_queda_por_debajo_de_la_cadencia_del_monitor_mas_lento(self, state_dir):
+        """e2e-validation corre una vez al día. Con un tope de exactamente 24 h,
+        la comparación contra el ciclo del día siguiente se decide por unos
+        segundos de deriva y el aviso se va a 48 h la mitad de las veces: el tope
+        deja de ser un tope y pasa a ser una lotería."""
+        r = run_bash('umbral_alert_window 99', state_dir)
+        tope = int(r.stdout.strip())
+        assert tope < 86400, "el tope debe quedar por debajo de una cadencia diaria"
+        assert tope == 82800
+
+    def test_el_envio_espera_mas_que_el_cliente_de_notion_del_worker(self):
+        """Con 20 s se cortaba una entrega lenta que el worker sí iba a
+        completar: se contaba como fallida y el ciclo siguiente la repetía, con
+        un comentario duplicado en Notion."""
+        worker = (REPO / "worker" / "notion_client.py").read_text(encoding="utf-8")
+        suyo = float(next(l for l in worker.splitlines()
+                          if l.startswith("TIMEOUT")).split("=")[1].strip())
+        lib = LIB.read_text(encoding="utf-8")
+        nuestro = int(lib.split("UMBRAL_ALERT_TIMEOUT_S:-")[1].split("}")[0])
+        assert nuestro > suyo, (
+            f"el aviso espera {nuestro}s y el worker puede tardar {suyo}s contra Notion")

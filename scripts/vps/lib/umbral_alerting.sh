@@ -28,12 +28,20 @@ UMBRAL_NOTION_MAX_CHARS="${UMBRAL_NOTION_MAX_CHARS:-1900}"
 # si el mismo estado persiste, cada reaviso la duplica hasta el tope de abajo.
 UMBRAL_ALERT_COOLDOWN_S="${UMBRAL_ALERT_COOLDOWN_S:-3600}"
 
-# Tope del retroceso exponencial. Un estado degradado que ya esta registrado en
-# un incidente abierto no debe avisar cada hora indefinidamente: eso desensibiliza
-# a quien lo lee, que es como se pierde el aviso que si importa. Medido el
-# 2026-09-18: el aviso "responde solo por fallback" era CIERTO y aun asi genero 4
-# comentarios en Notion en cuatro horas sobre una condicion ya conocida.
-UMBRAL_ALERT_BACKOFF_MAX_S="${UMBRAL_ALERT_BACKOFF_MAX_S:-86400}"
+# Tope del retroceso exponencial: "como mucho, un aviso al dia". Un estado
+# degradado que ya esta registrado en un incidente abierto no debe avisar cada
+# hora indefinidamente: eso desensibiliza a quien lo lee, que es como se pierde
+# el aviso que si importa. Medido el 2026-09-18: el aviso "responde solo por
+# fallback" era CIERTO y aun asi genero 15 comentarios en Notion en 18,5 horas
+# sobre una condicion ya conocida.
+#
+# Son 23 h y no 24 a proposito. e2e-validation corre una vez al dia (0 6 * * *):
+# con un tope de exactamente 86400 s, la comparacion contra el ciclo del dia
+# siguiente se decide por unos segundos de deriva —lo que tarde la suite antes
+# de avisar— y el aviso se va a 48 h la mitad de las veces. El tope tiene que
+# quedar por DEBAJO de la cadencia del monitor mas lento, o deja de ser un tope
+# y pasa a ser una loteria.
+UMBRAL_ALERT_BACKOFF_MAX_S="${UMBRAL_ALERT_BACKOFF_MAX_S:-82800}"
 
 # -----------------------------------------------------------------
 # umbral_load_env — carga ~/.config/openclaw/env sin volcarlo.
@@ -135,7 +143,7 @@ umbral_fingerprint() {
 # veces. Es la cadencia DOCUMENTADA del retroceso exponencial:
 #
 #   reavisos: 0     1     2     3     4      5+
-#   ventana : 1 h   2 h   4 h   8 h   16 h   24 h (tope)
+#   ventana : 1 h   2 h   4 h   8 h   16 h   23 h (tope: un aviso al dia)
 #
 # Función pura: no lee el reloj ni el disco, para que la cadencia pueda
 # comprobarse sin depender del tiempo real.
@@ -328,12 +336,25 @@ umbral_alert() {
   payload=$(python3 -c 'import json,sys; print(json.dumps({"task":"notion.add_comment","input":{"text":sys.argv[1]}}))' "$text")
   # Con tiempo maximo: un envio colgado bajo cron deja al monitor sin terminar,
   # y un monitor que no termina es un monitor que no vuelve a comprobar nada.
-  if curl -sf -m "${UMBRAL_ALERT_TIMEOUT_S:-20}" -X POST "${url}/run" \
+  #
+  # 90 s, no 20: worker/notion_client.py usa TIMEOUT=60.0 contra la API de
+  # Notion. Con 20 s se cortaria una entrega lenta que el worker SI va a
+  # completar, se contaria como fallida, y el ciclo siguiente la repetiria:
+  # un comentario duplicado en Notion, que es justo el ruido que se viene a
+  # quitar. El tope sigue acotado muy por debajo del ciclo de 30 min.
+  if curl -sf -m "${UMBRAL_ALERT_TIMEOUT_S:-90}" -X POST "${url}/run" \
         -H "Authorization: Bearer ${token}" \
         -H "Content-Type: application/json" \
         -H "X-Umbral-Caller: cron.${monitor}" \
         -d "$payload" > /dev/null 2>&1; then
     umbral_commit_alert "$key" "$fp" "$pendiente"
+    # Fallo y recuperacion son las dos mitades de una misma transicion. Si al
+    # abrir un incidente sobreviviera el estado del ultimo "ya esta sano", el
+    # proximo aviso de recuperacion —cuyo texto es siempre el mismo, y por tanto
+    # su huella tambien— quedaria silenciado por la ventana que gano la vez
+    # anterior, y con el retroceso acumulado eso llega a ser un dia entero. El
+    # resultado seria una cadena de fallos anunciados sin ningun cierre.
+    [ "$sev" = "info" ] || rm -f "$UMBRAL_MON_STATE_DIR/${monitor}.info.alert"
     umbral_ops_log "{\"ts\":\"$ts\",\"kind\":\"monitor_alert\",\"release\":\"$release\",\"monitor\":\"$monitor\",\"severity\":\"$sev\",\"fingerprint\":\"$fp\",\"chars\":${#text},\"reavisos\":$pendiente,\"proxima_ventana_s\":$(umbral_alert_window "$pendiente"),\"entrega\":\"ok\"}"
     echo "(aviso enviado, ${#text} caracteres)"
     return 0

@@ -111,14 +111,30 @@ else
     echo "$CANARY_OUT"
     if [ $CANARY_RC -ne 0 ]; then
         FAILURES+=("Canario: el agente no pudo generar texto")
-    elif printf '%s' "$CANARY_OUT" | grep -q 'POR FALLBACK'; then
+    elif printf '%s' "$CANARY_OUT" | grep -qE '^\[CANARIO\].*fallback=true'; then
         # No es fallo: es degradacion. El servicio responde, pero por el camino
         # de reserva, y eso hay que saberlo antes de que se agote tambien.
+        #
+        # Se mira la marca legible por maquina y no la frase "POR FALLBACK", que
+        # solo se imprimia en el estado ok: un turno correcto sin el token
+        # literal dejaba la degradacion sin anunciar.
         echo "[WARN] el canario respondio por fallback: el proveedor primario no sirve"
         umbral_alert health-check-degradado \
             "el agente responde solo por fallback" \
-            "El proveedor primario no atiende; la capacidad depende del camino de reserva. $(printf '%s' "$CANARY_OUT" | tail -1)" \
+            "El proveedor primario no atiende; la capacidad depende del camino de reserva. $(printf '%s' "$CANARY_OUT" | grep -E '^\[CANARIO\]' | tail -1)" \
             warn || true
+    else
+        # El primario vuelve a atender. La degradacion se cierra como TRANSICION,
+        # igual que el fallo: nadie borraba este estado, asi que el retroceso
+        # acumulado sobrevivia a la recuperacion y podia amordazar la siguiente
+        # degradacion hasta el tope. Ademas, "el primario vuelve" es justo la
+        # noticia que distingue "servicio disponible por fallback" de "primario
+        # recuperado".
+        if umbral_alert_active health-check-degradado; then
+            RC_DEG=0
+            umbral_alert health-check-degradado "el proveedor primario vuelve a atender" "El canario completo el turno sin recurrir al camino de reserva." info || RC_DEG=$?
+            if [ "$RC_DEG" -ne 2 ]; then umbral_clear_alert health-check-degradado >/dev/null || true; fi
+        fi
     fi
 fi
 

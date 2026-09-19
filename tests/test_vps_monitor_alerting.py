@@ -721,3 +721,25 @@ JSON
         nuestro = int(lib.split("UMBRAL_ALERT_TIMEOUT_S:-")[1].split("}")[0])
         assert nuestro > suyo, (
             f"el aviso espera {nuestro}s y el worker puede tardar {suyo}s contra Notion")
+
+    def test_la_huella_no_soporta_numeros_pequenos_volatiles(self, state_dir):
+        """El normalizador de la huella solo neutraliza números de tres cifras o
+        más. Una latencia de dos cifras en el cuerpo del aviso haría que cada
+        ciclo pareciera un estado nuevo y avisara cada media hora para siempre;
+        por eso lo volátil no entra en el cuerpo, sino en el ops_log, que no
+        deduplica."""
+        marca = "[CANARIO] status=ok provider=anthropic model=claude-sonnet-5 fallback=true"
+        r = run_bash(f'umbral_fingerprint "{marca} latency_ms=95"; '
+                     f'umbral_fingerprint "{marca} latency_ms=87"', state_dir)
+        cortas = r.stdout.split()
+        assert cortas[0] != cortas[1], "si esto empieza a coincidir, revisa el normalizador"
+
+        r = run_bash(f'umbral_fingerprint "{marca}"; umbral_fingerprint "{marca}"', state_dir)
+        iguales = r.stdout.split()
+        assert iguales[0] == iguales[1]
+
+    def test_el_aviso_degradado_no_lleva_la_latencia(self):
+        texto = (REPO / "scripts" / "vps" / "health-check.sh").read_text(encoding="utf-8")
+        bloque = texto[texto.index("health-check-degradado \\"):]
+        assert "latency_ms=[0-9]+//" in bloque[:900], \
+            "el cuerpo del aviso degradado debe quitar la latencia antes de enviarlo"

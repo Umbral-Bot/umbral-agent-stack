@@ -118,10 +118,16 @@ else
         # Se mira la marca legible por maquina y no la frase "POR FALLBACK", que
         # solo se imprimia en el estado ok: un turno correcto sin el token
         # literal dejaba la degradacion sin anunciar.
+        #
+        # La latencia se quita del CUERPO: la huella se calcula sobre el, y el
+        # normalizador solo neutraliza numeros de tres cifras o mas. Una latencia
+        # de dos cifras haria que cada ciclo pareciera un estado nuevo y avisara
+        # cada media hora para siempre. El cuerpo describe el estado
+        # CUALITATIVO; lo volatil vive en el ops_log, que no deduplica.
         echo "[WARN] el canario respondio por fallback: el proveedor primario no sirve"
         umbral_alert health-check-degradado \
             "el agente responde solo por fallback" \
-            "El proveedor primario no atiende; la capacidad depende del camino de reserva. $(printf '%s' "$CANARY_OUT" | grep -E '^\[CANARIO\]' | tail -1)" \
+            "El proveedor primario no atiende; la capacidad depende del camino de reserva. $(printf '%s' "$CANARY_OUT" | grep -E '^\[CANARIO\]' | tail -1 | sed -E 's/ latency_ms=[0-9]+//')" \
             warn || true
     else
         # El primario vuelve a atender. La degradacion se cierra como TRANSICION,
@@ -166,10 +172,10 @@ if [ ${#FAILURES[@]} -eq 0 ]; then
     if umbral_alert_active health-check; then
         RC_INFO=0
         umbral_alert health-check "el VPS vuelve a estar sano" "Todos los chequeos pasan, incluido el canario de generacion." info || RC_INFO=$?
-    # El incidente no se cierra hasta que el aviso de recuperacion sale de
-    # verdad: rc=2 es "no se pudo entregar", y entonces se conserva el estado
-    # para reintentarlo en el proximo ciclo. rc=1 es "callado por duplicado",
-    # que significa que ya se conto.
+        # El incidente no se cierra hasta que el aviso de recuperacion sale de
+        # verdad: rc=2 es "no se pudo entregar", y entonces se conserva el
+        # estado para reintentarlo en el proximo ciclo. rc=1 es "callado por
+        # duplicado", que significa que ya se conto.
         if [ "$RC_INFO" -ne 2 ]; then umbral_clear_alert health-check >/dev/null || true; fi
     fi
     umbral_ops_log "{\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"kind\":\"health_check\",\"release\":\"$(umbral_release_sha)\",\"status\":\"ok\",\"failures\":0}"

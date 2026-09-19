@@ -198,9 +198,12 @@ hcc() { OPENCLAW_BIN="$1" WORKER_URL="http://127.0.0.1:${STUB_PORT}" \
         GATEWAY_URL="http://127.0.0.1:${STUB_PORT}" \
         bash "$REPO_DIR/scripts/vps/health-check.sh" > "$2" 2>&1; }
 hcc "$SB/bin/fallo-blando" "$OUT_DIR/9-degradado.txt"
+# El aviso no puede llevar la latencia: la huella se calcula sobre el cuerpo, y
+# un valor que cambia en cada ciclo convierte cada ciclo en un "estado nuevo".
 if grep -q 'respondio por fallback' "$OUT_DIR/9-degradado.txt" \
-   && [ -f "$UMBRAL_MON_STATE_DIR/health-check-degradado.alert" ]; then
-  pass "un turno correcto sin el token literal no oculta que el primario no sirvió"
+   && [ -f "$UMBRAL_MON_STATE_DIR/health-check-degradado.alert" ] \
+   && ! grep -q 'latency_ms' "$CAP"; then
+  pass "un turno correcto sin el token literal no oculta que el primario no sirvió, y el aviso no lleva nada volátil"
 else
   fail "la degradación pasó inadvertida cuando la respuesta no traía el token"
 fi

@@ -45,8 +45,14 @@ set -e
 if [ $EXIT_CODE -eq 0 ]; then
     echo "[OK] E2E validation passed"
     umbral_heartbeat_write e2e-validation
-    if umbral_clear_alert e2e-validation; then
-        umbral_alert e2e-validation "la suite E2E vuelve a pasar" "Recuperacion confirmada el $(date -u +'%Y-%m-%d %H:%M UTC')." info || true
+    if umbral_alert_active e2e-validation; then
+        RC_INFO=0
+        umbral_alert e2e-validation "la suite E2E vuelve a pasar" "Recuperacion confirmada el $(date -u +'%Y-%m-%d %H:%M UTC')." info || RC_INFO=$?
+    # El incidente no se cierra hasta que el aviso de recuperacion sale de
+    # verdad: rc=2 es "no se pudo entregar", y entonces se conserva el estado
+    # para reintentarlo en el proximo ciclo. rc=1 es "callado por duplicado",
+    # que significa que ya se conto.
+        if [ "$RC_INFO" -ne 2 ]; then umbral_clear_alert e2e-validation >/dev/null || true; fi
     fi
 else
     echo "[FAIL] E2E validation had failures (exit code $EXIT_CODE)"

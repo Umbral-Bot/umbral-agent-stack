@@ -147,8 +147,14 @@ if [ ${#FAILURES[@]} -eq 0 ]; then
     echo "All checks passed"
     umbral_heartbeat_write health-check
     # Aviso de recuperacion, una sola vez, como TRANSICION y no como muestreo.
-    if umbral_clear_alert health-check; then
-        umbral_alert health-check "el VPS vuelve a estar sano" "Todos los chequeos pasan, incluido el canario de generacion." info || true
+    if umbral_alert_active health-check; then
+        RC_INFO=0
+        umbral_alert health-check "el VPS vuelve a estar sano" "Todos los chequeos pasan, incluido el canario de generacion." info || RC_INFO=$?
+    # El incidente no se cierra hasta que el aviso de recuperacion sale de
+    # verdad: rc=2 es "no se pudo entregar", y entonces se conserva el estado
+    # para reintentarlo en el proximo ciclo. rc=1 es "callado por duplicado",
+    # que significa que ya se conto.
+        if [ "$RC_INFO" -ne 2 ]; then umbral_clear_alert health-check >/dev/null || true; fi
     fi
     umbral_ops_log "{\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"kind\":\"health_check\",\"release\":\"$(umbral_release_sha)\",\"status\":\"ok\",\"failures\":0}"
     exit 0

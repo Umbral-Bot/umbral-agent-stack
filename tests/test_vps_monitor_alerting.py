@@ -11,6 +11,8 @@ import json
 import os
 import subprocess
 import textwrap
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
 import pytest
@@ -33,6 +35,78 @@ def state_dir(tmp_path: Path) -> dict[str, str]:
         "UMBRAL_MON_STATE_DIR": str(d),
         "UMBRAL_OPS_LOG_DIR": str(tmp_path / "ops"),
     }
+
+
+H = 3600  # una hora en segundos: la unidad en que esta escrita la cadencia
+
+# Un aviso ENTREGADO: decidir y, solo entonces, abrir la ventana de silencio.
+# Es lo que hace umbral_alert cuando el envio se confirma.
+ENTREGADO = 'entregado() { umbral_should_alert "$1" "$2" && umbral_commit_alert "$1" "$2"; }\n'
+
+
+def alerta(state_dir: dict[str, str], monitor: str) -> Path:
+    return Path(state_dir["UMBRAL_MON_STATE_DIR"]) / f"{monitor}.alert"
+
+
+def ops_log(state_dir: dict[str, str]) -> Path:
+    return Path(state_dir["UMBRAL_OPS_LOG_DIR"]) / "ops_log.jsonl"
+
+
+def reavisos(f: Path) -> int:
+    return int(f.read_text(encoding="utf-8").split()[2])
+
+
+def adelantar_reloj(f: Path, segundos: int) -> None:
+    """Reloj controlado: atrasa la marca del estado, que es exactamente lo que
+    ve el monitor cuando pasa el tiempo. Asi la secuencia entera de ventanas se
+    recorre sin esperar 24 horas y sin meter un reloj falso en produccion."""
+    fp, ts, n = f.read_text(encoding="utf-8").split()
+    f.write_text(f"{fp}\n{int(ts) - segundos}\n{n}\n", encoding="utf-8")
+
+
+class _WorkerStub:
+    def __init__(self) -> None:
+        self.url = ""
+        self.codigo = 200
+        self.recibidas: list[str] = []
+
+    @property
+    def env(self) -> dict[str, str]:
+        return {
+            "WORKER_URL": self.url,
+            "WORKER_TOKEN": "token-de-prueba",
+            "UMBRAL_ENV_FILE": "/dev/null",
+        }
+
+
+@pytest.fixture()
+def worker_stub():
+    """Destino local del aviso, con codigo de respuesta gobernable.
+
+    Nunca sale de 127.0.0.1: el 2026-09-18 un ensayo cuyo destino acabo siendo
+    el real dejo cuatro avisos de prueba en la pagina de alertas de David."""
+    stub = _WorkerStub()
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_POST(self):
+            n = int(self.headers.get("Content-Length") or 0)
+            stub.recibidas.append(self.rfile.read(n).decode("utf-8"))
+            self.send_response(stub.codigo)
+            self.send_header("Content-Length", "2")
+            self.end_headers()
+            self.wfile.write(b"{}")
+
+        def log_message(self, *a):  # silencio en la salida de pytest
+            pass
+
+    srv = HTTPServer(("127.0.0.1", 0), Handler)
+    stub.url = f"http://127.0.0.1:{srv.server_port}"
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    try:
+        yield stub
+    finally:
+        srv.shutdown()
+        srv.server_close()
 
 
 class TestTruncado:
@@ -74,19 +148,22 @@ class TestHuella:
 
 
 class TestDeduplicacionYEnfriamiento:
+    """Avisar del mismo estado en cada ciclo convierte el monitor en ruido."""
+
     def test_primer_aviso_pasa_y_el_repetido_calla(self, state_dir):
         r = run_bash(
-            'umbral_should_alert mon huella-1 && echo PRIMERO; '
+            ENTREGADO +
+            'entregado mon huella-1 && echo PRIMERO; '
             'umbral_should_alert mon huella-1 && echo SEGUNDO || echo SILENCIADO',
             state_dir,
         )
         assert "PRIMERO" in r.stdout
         assert "SILENCIADO" in r.stdout
-        assert "SEGUNDO" not in r.stdout
 
     def test_un_estado_nuevo_rompe_el_silencio(self, state_dir):
         r = run_bash(
-            'umbral_should_alert mon huella-1 >/dev/null; '
+            ENTREGADO +
+            'entregado mon huella-1 >/dev/null; '
             'umbral_should_alert mon huella-2 && echo AVISA || echo CALLA',
             state_dir,
         )
@@ -94,22 +171,23 @@ class TestDeduplicacionYEnfriamiento:
 
     def test_vencido_el_enfriamiento_vuelve_a_avisar(self, state_dir):
         r = run_bash(
-            'umbral_should_alert mon h >/dev/null; '
+            ENTREGADO +
+            'entregado mon h >/dev/null; '
             'UMBRAL_ALERT_COOLDOWN_S=0 umbral_should_alert mon h && echo AVISA || echo CALLA',
-            {**state_dir, "UMBRAL_ALERT_COOLDOWN_S": "0"},
+            state_dir,
         )
         assert "AVISA" in r.stdout
 
     def test_la_recuperacion_se_anuncia_una_sola_vez(self, state_dir):
         r = run_bash(
-            'umbral_should_alert mon h >/dev/null; '
+            ENTREGADO +
+            'entregado mon h >/dev/null; '
             'umbral_clear_alert mon && echo RECUPERADO; '
             'umbral_clear_alert mon && echo OTRA_VEZ || echo YA_ESTABA_SANO',
             state_dir,
         )
         assert "RECUPERADO" in r.stdout
         assert "YA_ESTABA_SANO" in r.stdout
-        assert "OTRA_VEZ" not in r.stdout
 
 
 class TestLatido:
@@ -374,39 +452,188 @@ class TestRetrocesoExponencial:
     cada hora indefinidamente: eso desensibiliza a quien lo lee, que es como se
     pierde el aviso que sí importa. Medido el 2026-09-18: el aviso «responde solo
     por fallback» era CIERTO y aun así generó 4 comentarios en Notion en cuatro
-    horas sobre una condición ya conocida."""
+    horas sobre una condición ya conocida.
 
-    def test_la_ventana_se_duplica_en_cada_reaviso(self, state_dir):
-        env = {**state_dir, "UMBRAL_ALERT_COOLDOWN_S": "10", "UMBRAL_ALERT_BACKOFF_MAX_S": "1000"}
-        # Primer aviso: pasa y deja reavisos=0.
-        r = run_bash('umbral_should_alert mon h && echo A1', env)
-        assert "A1" in r.stdout
-        f = Path(state_dir["UMBRAL_MON_STATE_DIR"]) / "mon.alert"
-        lineas = f.read_text(encoding="utf-8").splitlines()
-        assert lineas[2] == "0"
-        # Con la ventana vencida vuelve a avisar y el contador sube.
-        r = run_bash('UMBRAL_ALERT_COOLDOWN_S=0 umbral_should_alert mon h && echo A2',
-                     {**env, "UMBRAL_ALERT_COOLDOWN_S": "0"})
-        assert "A2" in r.stdout
-        assert f.read_text(encoding="utf-8").splitlines()[2] == "1"
+    La cadencia se comprueba de dos maneras independientes: como función pura
+    (sin reloj) y recorriendo la secuencia completa con un reloj controlado."""
 
-    def test_un_estado_nuevo_reinicia_el_retroceso(self, state_dir):
-        env = {**state_dir, "UMBRAL_ALERT_COOLDOWN_S": "0"}
-        run_bash('umbral_should_alert mon h1', env)
-        run_bash('umbral_should_alert mon h1', env)
-        f = Path(state_dir["UMBRAL_MON_STATE_DIR"]) / "mon.alert"
-        assert int(f.read_text(encoding="utf-8").splitlines()[2]) >= 1
-        run_bash('umbral_should_alert mon h2-distinta', env)
-        assert f.read_text(encoding="utf-8").splitlines()[2] == "0"
+    def test_la_ventana_documentada_por_numero_de_reaviso(self, state_dir):
+        r = run_bash(
+            'for n in 0 1 2 3 4 5 6 20; do printf "%s " "$(umbral_alert_window $n)"; done',
+            state_dir,
+        )
+        assert r.stdout.split() == [
+            "3600",    # 1 h  — primer reaviso
+            "7200",    # 2 h
+            "14400",   # 4 h
+            "28800",   # 8 h
+            "57600",   # 16 h
+            "86400",   # 24 h — tope
+            "86400",
+            "86400",
+        ], r.stdout
+
+    def test_la_secuencia_completa_con_reloj_controlado(self, state_dir):
+        """1 h → 2 h → 4 h → 8 h → 16 h → tope de 24 h, recorrida de verdad.
+
+        En cada escalón se comprueban los dos bordes: un segundo antes de que
+        venza la ventana el monitor calla, y al cumplirse avisa. Sin los dos
+        bordes, una ventana de cero segundos pasaría la prueba igual."""
+        f = alerta(state_dir, "mon")
+        r = run_bash(ENTREGADO + 'entregado mon h && echo AVISA', state_dir)
+        assert "AVISA" in r.stdout
+        assert reavisos(f) == 0
+
+        for i, ventana in enumerate([1 * H, 2 * H, 4 * H, 8 * H, 16 * H, 24 * H, 24 * H]):
+            adelantar_reloj(f, ventana - 1)
+            r = run_bash('umbral_should_alert mon h && echo AVISA || echo CALLA', state_dir)
+            assert "CALLA" in r.stdout, f"reaviso {i}: avisó antes de cumplirse {ventana}s"
+
+            adelantar_reloj(f, 1)
+            r = run_bash(ENTREGADO + 'entregado mon h && echo AVISA || echo CALLA', state_dir)
+            assert "AVISA" in r.stdout, f"reaviso {i}: no avisó al cumplirse {ventana}s"
+            assert reavisos(f) == i + 1
+
+    def test_un_estado_nuevo_devuelve_la_ventana_a_una_hora(self, state_dir):
+        """No basta con que el contador vuelva a cero: la ventana real tiene que
+        volver a ser de una hora. Si no, una degradación distinta quedaría tapada
+        por el silencio que ganó la anterior."""
+        f = alerta(state_dir, "mon")
+        run_bash(ENTREGADO + 'entregado mon h1', state_dir)
+        for ventana in (1 * H, 2 * H):
+            adelantar_reloj(f, ventana)
+            run_bash(ENTREGADO + 'entregado mon h1', state_dir)
+        assert reavisos(f) == 2          # la ventana en curso sería de 4 h
+
+        r = run_bash(ENTREGADO + 'entregado mon h2-distinta && echo AVISA', state_dir)
+        assert "AVISA" in r.stdout, "una degradación distinta debe avisar ya"
+        assert reavisos(f) == 0
+
+        adelantar_reloj(f, 1 * H - 1)
+        r = run_bash('umbral_should_alert mon h2-distinta && echo AVISA || echo CALLA', state_dir)
+        assert "CALLA" in r.stdout
+        adelantar_reloj(f, 1)
+        r = run_bash('umbral_should_alert mon h2-distinta && echo AVISA || echo CALLA', state_dir)
+        assert "AVISA" in r.stdout, "tras un estado nuevo la ventana debe ser de 1 h otra vez"
+
+    def test_la_recuperacion_reinicia_el_retroceso(self, state_dir):
+        """Un fallo que vuelve tras una recuperación es noticia, aunque el estado
+        anterior hubiera acumulado silencio."""
+        f = alerta(state_dir, "mon")
+        run_bash(ENTREGADO + 'entregado mon h', state_dir)
+        for ventana in (1 * H, 2 * H, 4 * H):
+            adelantar_reloj(f, ventana)
+            run_bash(ENTREGADO + 'entregado mon h', state_dir)
+        assert reavisos(f) == 3
+
+        run_bash('umbral_clear_alert mon', state_dir)
+        r = run_bash(ENTREGADO + 'entregado mon h && echo AVISA || echo CALLA', state_dir)
+        assert "AVISA" in r.stdout
+        assert reavisos(f) == 0
 
     def test_el_tope_existe_y_no_es_infinito(self):
         texto = LIB.read_text(encoding="utf-8")
-        assert "UMBRAL_ALERT_BACKOFF_MAX_S" in texto
         linea = next(l for l in texto.splitlines() if l.startswith("UMBRAL_ALERT_BACKOFF_MAX_S="))
         assert ":-86400}" in linea, "el tope por defecto debe ser 24 h"
 
-    def test_sigue_silenciando_dentro_de_la_ventana(self, state_dir):
-        env = {**state_dir, "UMBRAL_ALERT_COOLDOWN_S": "3600"}
-        r = run_bash('umbral_should_alert mon h >/dev/null; '
-                     'umbral_should_alert mon h && echo AVISA || echo CALLA', env)
-        assert "CALLA" in r.stdout
+    def test_el_aviso_silenciado_declara_la_ventana_real(self, state_dir):
+        """El mensaje de silencio decía siempre «3600s» aunque la ventana en
+        curso fuera de horas: un informe que no coincide con la conducta."""
+        r = run_bash(
+            'umbral_commit_alert mon "$(umbral_fingerprint "t c")" 2; '
+            'umbral_alert mon "t" "c" error || true',
+            {**state_dir, "UMBRAL_ENV_FILE": "/dev/null"},
+        )
+        assert "14400" in r.stdout, r.stdout
+
+
+class TestEntregaYSilencio:
+    """El silencio lo gana un aviso ENTREGADO, nunca un aviso intentado.
+
+    Hasta el 2026-09-19 el estado de silencio se escribía antes de intentar el
+    envío: un aviso que no lograba salir silenciaba igualmente el ciclo
+    siguiente durante una hora, y cada reintento que cruzaba la ventana
+    duplicaba ese silencio. Como la vía de aviso sale por el worker que se
+    vigila, «no se pudo entregar» es exactamente el caso en que hay que
+    insistir. Es la misma familia de fallo que UMB-276: dar por avisado lo que
+    nadie recibió."""
+
+    def test_una_entrega_confirmada_abre_la_ventana(self, state_dir, worker_stub):
+        env = {**state_dir, **worker_stub.env}
+        r = run_bash('umbral_alert mon "titulo" "cuerpo" error; echo "rc=$?"', env)
+        assert "rc=0" in r.stdout
+        assert len(worker_stub.recibidas) == 1
+        assert alerta(state_dir, "mon").exists()
+
+        r = run_bash('umbral_alert mon "titulo" "cuerpo" error; echo "rc=$?"', env)
+        assert "rc=1" in r.stdout, "una entrega confirmada sí debe silenciar el repetido"
+        assert len(worker_stub.recibidas) == 1
+
+    def test_una_entrega_fallida_no_abre_la_ventana(self, state_dir, worker_stub):
+        worker_stub.codigo = 500
+        env = {**state_dir, **worker_stub.env}
+        r = run_bash('umbral_alert mon "titulo" "cuerpo" error; echo "rc=$?"', env)
+        assert "rc=2" in r.stdout
+        assert not alerta(state_dir, "mon").exists(), \
+            "un aviso que no se entregó no puede abrir una ventana de silencio"
+
+    def test_tras_un_fallo_de_entrega_el_siguiente_ciclo_reintenta(self, state_dir, worker_stub):
+        """La prueba que faltaba: el monitor enmudecía justo cuando el destino
+        del aviso estaba caído."""
+        worker_stub.codigo = 500
+        env = {**state_dir, **worker_stub.env}
+        run_bash('umbral_alert mon "titulo" "cuerpo" error', env)
+        assert len(worker_stub.recibidas) == 1
+
+        worker_stub.codigo = 200          # el worker vuelve
+        r = run_bash('umbral_alert mon "titulo" "cuerpo" error; echo "rc=$?"', env)
+        assert "rc=0" in r.stdout, "el intento siguiente no debe estar silenciado"
+        assert len(worker_stub.recibidas) == 2
+        assert alerta(state_dir, "mon").exists()
+
+    def test_varios_fallos_seguidos_no_acumulan_silencio(self, state_dir, worker_stub):
+        """Sin esta garantía, cada fallo de entrega duplicaba la ventana y el
+        monitor se iba callando solo hasta las 24 h sin haber avisado nunca."""
+        worker_stub.codigo = 500
+        env = {**state_dir, **worker_stub.env}
+        for _ in range(4):
+            run_bash('umbral_alert mon "titulo" "cuerpo" error', env)
+        assert len(worker_stub.recibidas) == 4, "cada ciclo debe volver a intentarlo"
+        assert not alerta(state_dir, "mon").exists()
+
+    def test_sin_token_tampoco_abre_la_ventana(self, state_dir, worker_stub):
+        env = {**state_dir, **worker_stub.env, "WORKER_TOKEN": "", "UMBRAL_ENV_FILE": "/dev/null"}
+        r = run_bash('umbral_alert mon "titulo" "cuerpo" error; echo "rc=$?"', env)
+        assert "rc=2" in r.stdout
+        assert not alerta(state_dir, "mon").exists()
+
+    def test_el_registro_distingue_entregado_de_intentado(self, state_dir, worker_stub):
+        """El ops_log anotaba `monitor_alert` aunque el envío hubiera fallado, y
+        esa línea es la que después se cuenta como «aviso emitido»."""
+        worker_stub.codigo = 500
+        env = {**state_dir, **worker_stub.env}
+        run_bash('umbral_alert mon "titulo" "cuerpo" error', env)
+        worker_stub.codigo = 200
+        run_bash('umbral_alert mon "titulo" "cuerpo" error', env)
+
+        eventos = [json.loads(l) for l in ops_log(state_dir).read_text(encoding="utf-8").splitlines()]
+        clases = [e["kind"] for e in eventos]
+        assert clases.count("monitor_alert_failed") == 1
+        assert clases.count("monitor_alert") == 1
+        fallido = next(e for e in eventos if e["kind"] == "monitor_alert_failed")
+        assert fallido["motivo"] == "error_de_envio"
+        emitido = next(e for e in eventos if e["kind"] == "monitor_alert")
+        assert emitido["entrega"] == "ok"
+
+    def test_la_recuperacion_no_se_da_por_cerrada_sin_entregarla(self):
+        """Si el aviso de recuperación no sale, el incidente sigue abierto: de
+        otro modo el último mensaje que le consta a un humano es el del fallo."""
+        for script in ("health-check.sh", "e2e-validation-cron.sh"):
+            texto = (REPO / "scripts" / "vps" / script).read_text(encoding="utf-8")
+            assert "umbral_alert_active" in texto, script
+            assert 'RC_INFO" -ne 2' in texto, script
+
+    def test_el_envio_tiene_tiempo_maximo(self):
+        """Un envío colgado bajo cron deja al monitor sin terminar, y un monitor
+        que no termina es un monitor que no vuelve a comprobar nada."""
+        assert "-m \"${UMBRAL_ALERT_TIMEOUT_S:-20}\"" in LIB.read_text(encoding="utf-8")

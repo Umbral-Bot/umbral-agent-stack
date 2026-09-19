@@ -130,42 +130,95 @@ umbral_fingerprint() {
 }
 
 # -----------------------------------------------------------------
+# umbral_alert_window <reavisos>
+# Ventana de silencio, en segundos, para un estado que ya se avisó <reavisos>
+# veces. Es la cadencia DOCUMENTADA del retroceso exponencial:
+#
+#   reavisos: 0     1     2     3     4      5+
+#   ventana : 1 h   2 h   4 h   8 h   16 h   24 h (tope)
+#
+# Función pura: no lee el reloj ni el disco, para que la cadencia pueda
+# comprobarse sin depender del tiempo real.
+# -----------------------------------------------------------------
+umbral_alert_window() {
+  local n="${1:-0}" ventana="$UMBRAL_ALERT_COOLDOWN_S" i=0
+  case "$n" in ''|*[!0-9]*) n=0 ;; esac
+  while [ "$i" -lt "$n" ] && [ "$ventana" -lt "$UMBRAL_ALERT_BACKOFF_MAX_S" ]; do
+    ventana=$(( ventana * 2 )); i=$(( i + 1 ))
+  done
+  [ "$ventana" -gt "$UMBRAL_ALERT_BACKOFF_MAX_S" ] && ventana="$UMBRAL_ALERT_BACKOFF_MAX_S"
+  printf '%s' "$ventana"
+}
+
+# -----------------------------------------------------------------
+# umbral_alert_reavisos <monitor>
+# Cuántas veces se ha REAVISADO ya del estado actual. 0 si no hay estado.
+# -----------------------------------------------------------------
+umbral_alert_reavisos() {
+  local f="$UMBRAL_MON_STATE_DIR/${1}.alert" n=0
+  [ -f "$f" ] && n=$(sed -n '3p' "$f" 2>/dev/null || echo 0)
+  case "$n" in ''|*[!0-9]*) n=0 ;; esac
+  printf '%s' "$n"
+}
+
+# -----------------------------------------------------------------
 # umbral_should_alert <monitor> <huella>
-# 0 = hay que avisar (estado nuevo, o venció el enfriamiento).
+# DECIDE. No escribe nada.
+# 0 = hay que avisar (estado nuevo, o venció la ventana).
 # 1 = callar (mismo estado dentro de la ventana).
-# Registra también la transición a sano para poder avisar de la RECUPERACIÓN.
+# Deja en UMBRAL_ALERT_PENDING_N el contador que habrá que guardar si —y solo
+# si— el aviso llega a ENTREGARSE.
+#
+# Decidir y guardar estaban unidos hasta el 2026-09-19: el estado de silencio se
+# escribía ANTES de intentar el envío, así que un aviso que no lograba salir
+# silenciaba igualmente el intento siguiente, y cada reintento que sí cruzaba la
+# ventana duplicaba el silencio. Como la vía de aviso sale por el worker que se
+# vigila, "no se pudo entregar" coincide exactamente con el caso en que hay que
+# insistir. Es la misma familia de fallo que el incidente UMB-276: dar por
+# avisado lo que nadie recibió.
 # -----------------------------------------------------------------
 umbral_should_alert() {
   local monitor="$1" fp="$2"
-  mkdir -p "$UMBRAL_MON_STATE_DIR"
   local f="$UMBRAL_MON_STATE_DIR/${monitor}.alert"
   local now; now=$(date +%s)
-  local reavisos=0 ventana="$UMBRAL_ALERT_COOLDOWN_S"
+  UMBRAL_ALERT_PENDING_N=0
   if [ -f "$f" ]; then
-    local prev_fp prev_ts prev_n
+    local prev_fp prev_ts prev_n ventana
     prev_fp=$(sed -n '1p' "$f" 2>/dev/null || true)
     prev_ts=$(sed -n '2p' "$f" 2>/dev/null || echo 0)
     prev_n=$(sed -n '3p' "$f" 2>/dev/null || echo 0)
+    case "$prev_ts" in ''|*[!0-9]*) prev_ts=0 ;; esac
     case "$prev_n" in ''|*[!0-9]*) prev_n=0 ;; esac
     if [ "$prev_fp" = "$fp" ]; then
-      # Mismo estado: la ventana se duplica en cada reaviso, hasta el tope.
-      reavisos=$prev_n
-      local i=0
-      while [ "$i" -lt "$reavisos" ] && [ "$ventana" -lt "$UMBRAL_ALERT_BACKOFF_MAX_S" ]; do
-        ventana=$(( ventana * 2 )); i=$(( i + 1 ))
-      done
-      [ "$ventana" -gt "$UMBRAL_ALERT_BACKOFF_MAX_S" ] && ventana="$UMBRAL_ALERT_BACKOFF_MAX_S"
+      ventana=$(umbral_alert_window "$prev_n")
       if [ $(( now - prev_ts )) -lt "$ventana" ]; then
         return 1
       fi
-      reavisos=$(( reavisos + 1 ))
-    else
-      # Estado distinto: se avisa ya y el retroceso vuelve a empezar.
-      reavisos=0
+      # Mismo estado y ventana vencida: toca reavisar, con la ventana siguiente.
+      UMBRAL_ALERT_PENDING_N=$(( prev_n + 1 ))
     fi
+    # Estado distinto: se avisa ya y el retroceso vuelve a empezar (PENDING_N=0).
   fi
-  printf '%s\n%s\n%s\n' "$fp" "$now" "$reavisos" > "$f"
   return 0
+}
+
+# -----------------------------------------------------------------
+# umbral_commit_alert <monitor> <huella> [reavisos]
+# Abre la ventana de silencio. Se llama SOLO después de una entrega confirmada:
+# el silencio lo gana un aviso entregado, nunca un aviso intentado.
+# -----------------------------------------------------------------
+umbral_commit_alert() {
+  local monitor="$1" fp="$2" n="${3:-${UMBRAL_ALERT_PENDING_N:-0}}"
+  mkdir -p "$UMBRAL_MON_STATE_DIR"
+  printf '%s\n%s\n%s\n' "$fp" "$(date +%s)" "$n" > "$UMBRAL_MON_STATE_DIR/${monitor}.alert"
+}
+
+# -----------------------------------------------------------------
+# umbral_alert_active <monitor>
+# 0 si el monitor está en alerta entregada (hay ventana abierta).
+# -----------------------------------------------------------------
+umbral_alert_active() {
+  [ -f "$UMBRAL_MON_STATE_DIR/${1}.alert" ]
 }
 
 # -----------------------------------------------------------------
@@ -232,13 +285,19 @@ umbral_ops_log() {
 
 # -----------------------------------------------------------------
 # umbral_alert <monitor> <titulo> <cuerpo> [severidad]
-# Aviso deduplicado, con enfriamiento y troceado por debajo del máximo de Notion.
-# Devuelve 0 si avisó, 1 si calló por deduplicación, 2 si no pudo enviar.
-# Nunca imprime el token.
+# Aviso deduplicado, con retroceso exponencial y troceado por debajo del máximo
+# de Notion. Devuelve 0 si se ENTREGÓ, 1 si calló por deduplicación, 2 si no
+# pudo entregarse. Nunca imprime el token.
+#
+# El orden importa: primero se intenta entregar y solo una entrega confirmada
+# abre la ventana de silencio y se registra como aviso emitido. Un intento
+# fallido se registra aparte, como lo que es, y deja el siguiente ciclo libre
+# para insistir.
 # -----------------------------------------------------------------
 umbral_alert() {
   local monitor="$1" title="$2" body="$3" sev="${4:-warn}"
   local fp; fp=$(umbral_fingerprint "$title $body")
+  local ts; ts=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
   # Un aviso informativo (tipicamente la recuperacion) lleva su propio estado.
   # Si escribiera el estado de FALLO, umbral_clear_alert lo encontraria en el
@@ -247,31 +306,39 @@ umbral_alert() {
   [ "$sev" = "info" ] && key="${monitor}.info"
 
   if ! umbral_should_alert "$key" "$fp"; then
-    echo "(alerta silenciada: mismo estado dentro de la ventana de ${UMBRAL_ALERT_COOLDOWN_S}s)"
-    umbral_ops_log "{\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"kind\":\"monitor_alert_suppressed\",\"monitor\":\"$monitor\",\"severity\":\"$sev\",\"fingerprint\":\"$fp\"}"
+    local ventana; ventana=$(umbral_alert_window "$(umbral_alert_reavisos "$key")")
+    echo "(alerta silenciada: mismo estado dentro de la ventana de ${ventana}s)"
+    umbral_ops_log "{\"ts\":\"$ts\",\"kind\":\"monitor_alert_suppressed\",\"monitor\":\"$monitor\",\"severity\":\"$sev\",\"fingerprint\":\"$fp\",\"ventana_s\":$ventana}"
     return 1
   fi
 
+  local pendiente="${UMBRAL_ALERT_PENDING_N:-0}"
   local text; text=$(umbral_truncate "Rick [$sev] $title — $body")
-  umbral_ops_log "{\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"kind\":\"monitor_alert\",\"release\":\"$(umbral_release_sha)\",\"monitor\":\"$monitor\",\"severity\":\"$sev\",\"fingerprint\":\"$fp\",\"chars\":${#text}}"
+  local release; release=$(umbral_release_sha)
 
   local url="${WORKER_URL:-http://127.0.0.1:8088}"
   local token="${WORKER_TOKEN:-}"
   if [ -z "$token" ]; then
     echo "(sin WORKER_TOKEN tras cargar el env: no se pudo enviar el aviso)"
+    umbral_ops_log "{\"ts\":\"$ts\",\"kind\":\"monitor_alert_failed\",\"release\":\"$release\",\"monitor\":\"$monitor\",\"severity\":\"$sev\",\"fingerprint\":\"$fp\",\"motivo\":\"sin_token\"}"
     return 2
   fi
 
   local payload
   payload=$(python3 -c 'import json,sys; print(json.dumps({"task":"notion.add_comment","input":{"text":sys.argv[1]}}))' "$text")
-  if curl -sf -X POST "${url}/run" \
+  # Con tiempo maximo: un envio colgado bajo cron deja al monitor sin terminar,
+  # y un monitor que no termina es un monitor que no vuelve a comprobar nada.
+  if curl -sf -m "${UMBRAL_ALERT_TIMEOUT_S:-20}" -X POST "${url}/run" \
         -H "Authorization: Bearer ${token}" \
         -H "Content-Type: application/json" \
         -H "X-Umbral-Caller: cron.${monitor}" \
         -d "$payload" > /dev/null 2>&1; then
+    umbral_commit_alert "$key" "$fp" "$pendiente"
+    umbral_ops_log "{\"ts\":\"$ts\",\"kind\":\"monitor_alert\",\"release\":\"$release\",\"monitor\":\"$monitor\",\"severity\":\"$sev\",\"fingerprint\":\"$fp\",\"chars\":${#text},\"reavisos\":$pendiente,\"proxima_ventana_s\":$(umbral_alert_window "$pendiente"),\"entrega\":\"ok\"}"
     echo "(aviso enviado, ${#text} caracteres)"
     return 0
   fi
-  echo "(fallo al enviar el aviso)"
+  umbral_ops_log "{\"ts\":\"$ts\",\"kind\":\"monitor_alert_failed\",\"release\":\"$release\",\"monitor\":\"$monitor\",\"severity\":\"$sev\",\"fingerprint\":\"$fp\",\"motivo\":\"error_de_envio\"}"
+  echo "(fallo al enviar el aviso: no se abre ventana de silencio, se reintenta en el proximo ciclo)"
   return 2
 }

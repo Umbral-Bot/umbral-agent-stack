@@ -16,9 +16,8 @@
 #
 #   UMBRAL_ALERT_DRY_RUN=1 bash scripts/vps/health-check.sh
 #
-# No hay salida externa posible con el puesto, traiga lo que traiga el archivo
-# de entorno. Vaciar WORKER_TOKEN NO sirve: un valor vacio es un valor ausente
-# y el entorno lo rellena.
+# No se envian alertas y estado/log/captura quedan en un sandbox. Los probes
+# y el canario del health-check siguen siendo reales; esto no es modo offline.
 #
 # Salida: 0 si los seis pasos pasan; 1 si alguno falla.
 # =================================================================

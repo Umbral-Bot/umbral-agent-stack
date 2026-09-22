@@ -18,9 +18,8 @@
 #
 #   UMBRAL_ALERT_DRY_RUN=1 bash scripts/vps/health-check.sh
 #
-# No hay salida externa posible con el puesto, traiga lo que traiga el archivo
-# de entorno. Vaciar WORKER_TOKEN NO sirve: un valor vacio es un valor ausente
-# y el entorno lo rellena.
+# No se envian alertas y estado/log/captura quedan en un sandbox. Los probes
+# y el canario del health-check siguen siendo reales; esto no es modo offline.
 #
 # No toca producción: el estado y el ops_log van a un sandbox, y las
 # notificaciones las recibe un stub HTTP local.
@@ -288,8 +287,8 @@ echo "13. El modo de prueba no deja salir nada, ni con el destino escuchando"
 N_ANTES=$(wc -l < "$CAP")
 ENVF2="$SB/env-produccion"
 printf 'WORKER_URL=http://127.0.0.1:%s\nWORKER_TOKEN=de-produccion\nUMBRAL_ALERT_DRY_RUN=0\n' "$STUB_PORT" > "$ENVF2"
-CAPTURA_SIM="$SB/simuladas.jsonl"
-UMBRAL_ALERT_DRY_RUN=1 UMBRAL_ALERT_CAPTURE="$CAPTURA_SIM" UMBRAL_ENV_FILE="$ENVF2" \
+CAPTURA_SIM="$SB/simulacion/notificaciones-simuladas.jsonl"
+UMBRAL_ALERT_DRY_RUN=1 UMBRAL_ALERT_DRY_RUN_DIR="$SB/simulacion" UMBRAL_ENV_FILE="$ENVF2" \
   WORKER_TOKEN="" bash -c '
     source "'"$REPO_DIR"'/scripts/vps/lib/umbral_alerting.sh"
     umbral_load_env

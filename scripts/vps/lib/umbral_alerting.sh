@@ -7,7 +7,7 @@
 # rota en cuatro puntos independientes. Este archivo cierra esos cuatro puntos y
 # añade deduplicación, enfriamiento y latido.
 #
-# Se usa con `source`. No ejecuta nada por sí mismo y no imprime secretos.
+# Se usa con `source`. En modo de prueba prepara su sandbox; no imprime secretos.
 #
 #   source "$(dirname "$0")/lib/umbral_alerting.sh"
 #   umbral_load_env
@@ -43,13 +43,14 @@ UMBRAL_ALERT_COOLDOWN_S="${UMBRAL_ALERT_COOLDOWN_S:-3600}"
 # y pasa a ser una loteria.
 UMBRAL_ALERT_BACKOFF_MAX_S="${UMBRAL_ALERT_BACKOFF_MAX_S:-82800}"
 
-# Modo de prueba SIN SALIDA EXTERNA. Cualquier valor distinto de vacio y de 0
-# lo activa; el valor "fallo" simula ademas que la entrega no sale.
+# Modo de prueba SIN ENVIO DE ALERTAS. Vacio, 0, no y false lo desactivan;
+# "fallo" simula ademas que la entrega no sale. No desactiva los probes de salud
+# ni la inferencia real del canario: no es un simulador del health-check entero.
 #
 # Existe porque dos veces una prueba mia termino en la pagina real de David. La
 # segunda fue asi: deje WORKER_TOKEN="" creyendo que eso bloqueaba el envio, y
-# no lo bloquea —un valor vacio es un valor ausente, asi que el archivo de
-# entorno lo rellena, que es su comportamiento correcto—. La leccion no es
+# no lo bloqueaba —la carga antigua del entorno rellenaba variables vacias—.
+# Ahora se conserva una variable definida y vacia. La leccion no es
 # "acuerdate de la precaucion buena": es que no puede depender de que me acuerde.
 #
 # Este interruptor se comprueba ANTES de construir nada de red. Con el puesto,
@@ -69,6 +70,46 @@ umbral_en_pruebas() {
   esac
 }
 
+# Una simulacion no puede comprar silencio en produccion. Se fuerzan las tres
+# rutas de escritura a un sandbox, aunque el llamador haya heredado rutas reales.
+# Sin directorio explicito se crea uno nuevo; un directorio explicito permite
+# ensayar varios pasos de la misma maquina de estados sin tocar la real.
+umbral_aislar_prueba() {
+  umbral_en_pruebas || return 0
+  local sandbox="${UMBRAL_ALERT_DRY_RUN_DIR:-}"
+  export UMBRAL_ALERT_PROD_STATE_DIR="${UMBRAL_ALERT_PROD_STATE_DIR:-$UMBRAL_MON_STATE_DIR}"
+  export UMBRAL_ALERT_PROD_OPS_DIR="${UMBRAL_ALERT_PROD_OPS_DIR:-${UMBRAL_OPS_LOG_DIR:-$HOME/.config/umbral}}"
+  local protected resolved temporary
+  if [ -z "$sandbox" ]; then
+    temporary=$(realpath -m -- "${TMPDIR:-/tmp}") || return 2
+    for protected in "$HOME/.config/umbral" "$UMBRAL_ALERT_PROD_STATE_DIR" "$UMBRAL_ALERT_PROD_OPS_DIR"; do
+      resolved=$(realpath -m -- "$protected") || return 2
+      case "$temporary/" in "$resolved/"*) echo "ERROR: TMPDIR apunta a estado productivo" >&2; return 2 ;; esac
+    done
+    sandbox=$(mktemp -d "$temporary/umbral-alert-dry-run.XXXXXXXX") || return 2
+  fi
+  sandbox=$(realpath -m -- "$sandbox") || return 2
+  for protected in "$HOME/.config/umbral" "$UMBRAL_ALERT_PROD_STATE_DIR" "$UMBRAL_ALERT_PROD_OPS_DIR"; do
+    resolved=$(realpath -m -- "$protected") || return 2
+    case "$sandbox/" in "$resolved/"*) echo "ERROR: el sandbox se solapa con estado productivo" >&2; return 2 ;; esac
+    case "$resolved/" in "$sandbox/"*) echo "ERROR: el sandbox contiene estado productivo" >&2; return 2 ;; esac
+  done
+  local child
+  for child in monitor ops notificaciones-simuladas.jsonl; do
+    resolved=$(realpath -m -- "$sandbox/$child") || return 2
+    case "$resolved" in "$sandbox/"*) ;; *) echo "ERROR: enlace fuera del sandbox de prueba" >&2; return 2 ;; esac
+  done
+  mkdir -p -m 700 "$sandbox" || return 2
+  export UMBRAL_ALERT_DRY_RUN_DIR="$sandbox"
+  export UMBRAL_MON_STATE_DIR="$sandbox/monitor"
+  export UMBRAL_OPS_LOG_DIR="$sandbox/ops"
+  export UMBRAL_ALERT_CAPTURE="$sandbox/notificaciones-simuladas.jsonl"
+}
+
+if umbral_en_pruebas; then
+  umbral_aislar_prueba || return 2
+fi
+
 # -----------------------------------------------------------------
 # umbral_load_env — carga ~/.config/openclaw/env sin volcarlo.
 #
@@ -85,6 +126,13 @@ umbral_en_pruebas() {
 # Nada se imprime ni se registra: los valores no pasan por stdout en ningún caso.
 # -----------------------------------------------------------------
 umbral_load_env() {
+  # En simulacion no se lee el archivo real ni se cargan secretos. El destino
+  # del aviso tampoco se hereda; el simulador solo trabaja en el sandbox.
+  if umbral_en_pruebas; then
+    umbral_aislar_prueba || return 2
+    unset WORKER_URL WORKER_TOKEN
+    return 0
+  fi
   local env_file="${UMBRAL_ENV_FILE:-$HOME/.config/openclaw/env}"
   [ -r "$env_file" ] || return 1
   local line key
@@ -102,14 +150,6 @@ umbral_load_env() {
     # en ninguna direccion: ni un entorno olvidado puede poner produccion en
     # modo de prueba, ni puede apagarselo a un ensayo que lo pidio.
     [ "$key" = "UMBRAL_ALERT_DRY_RUN" ] && continue
-    # En modo de prueba no se carga nada que sirva para salir a la red. Es la
-    # segunda barrera: la primera es que umbral_alert no llega a construir el
-    # envio.
-    if umbral_en_pruebas; then
-      case "$key" in
-        WORKER_URL|WORKER_TOKEN) continue ;;
-      esac
-    fi
     # Solo se rellena lo que NO ESTA DEFINIDO. Una variable definida y vacia es
     # una decision de quien llama, no un hueco: darla por ausente fue lo que
     # convirtio un WORKER_TOKEN="" puesto a proposito en un aviso real.

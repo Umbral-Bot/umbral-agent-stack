@@ -1090,7 +1090,7 @@ printf 'SANDBOX=%s\n' "$UMBRAL_ALERT_DRY_RUN_DIR"
         ("monitor/mon.beat", "umbral_heartbeat_write mon"),
         ("notificaciones-simuladas.jsonl", "umbral_alert mon titulo cuerpo error"),
     ])
-    @pytest.mark.parametrize("link_type", ["symlink", "hardlink"])
+    @pytest.mark.parametrize("link_type", ["symlink", "hardlink", "symlink-hardlink"])
     def test_archivos_enlazados_no_alteran_produccion(self, tmp_path, relative, command, link_type):
         production = tmp_path / "production.txt"
         production.write_text("contenido original\n")
@@ -1101,8 +1101,12 @@ printf 'SANDBOX=%s\n' "$UMBRAL_ALERT_DRY_RUN_DIR"
         linked.parent.mkdir(parents=True, exist_ok=True)
         if link_type == "symlink":
             linked.symlink_to(production)
-        else:
+        elif link_type == "hardlink":
             linked.hardlink_to(production)
+        else:
+            shared = sandbox / "shared"
+            shared.hardlink_to(production)
+            linked.symlink_to(shared)
         env = {k: v for k, v in os.environ.items() if not k.startswith("UMBRAL_")}
         env.update(UMBRAL_ALERT_DRY_RUN="1", UMBRAL_ALERT_DRY_RUN_DIR=str(sandbox))
         result = subprocess.run(["bash", "-c", f'set -e\nsource "{LIB}"\n{command}'],

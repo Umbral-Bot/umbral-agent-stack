@@ -120,7 +120,7 @@ umbral_ruta_escritura_prueba() {
     case "$resolved" in "$UMBRAL_ALERT_DRY_RUN_DIR/"*) ;; *)
       echo "ERROR: escritura fuera del sandbox de prueba" >&2; return 2 ;;
     esac
-    if [ -f "$path" ] && [ "$(stat -c %h -- "$path")" -gt 1 ]; then
+    if [ -f "$resolved" ] && [ "$(stat -c %h -- "$resolved")" -gt 1 ]; then
       echo "ERROR: archivo compartido por hardlink en sandbox de prueba" >&2
       return 2
     fi

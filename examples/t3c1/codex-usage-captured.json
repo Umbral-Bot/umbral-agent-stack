@@ -1,0 +1,45 @@
+{
+  "captured_at": "2026-09-22T12:12:56Z",
+  "evidence_ref": "get_usage_limits:2026-09-22T12:12:56Z",
+  "payload": {
+    "ordinaryUsageAllowed": true,
+    "rateLimitsByLimitId": {
+      "base_model_inference": {
+        "limitId": "base_model_inference",
+        "limitName": "gpt-reserve",
+        "normalModelSlug": "gpt-5.6-luna",
+        "primary": {
+          "usedPercent": 0,
+          "windowDurationMins": 10080,
+          "resetsAt": 1790613247
+        },
+        "secondary": null,
+        "credits": null,
+        "individualLimit": null,
+        "spendControlReached": null,
+        "planType": "pro",
+        "rateLimitReachedType": null
+      },
+      "codex": {
+        "limitId": "codex",
+        "limitName": null,
+        "normalModelSlug": null,
+        "primary": {
+          "usedPercent": 24,
+          "windowDurationMins": 10080,
+          "resetsAt": 1790632821
+        },
+        "secondary": null,
+        "credits": {
+          "hasCredits": false,
+          "unlimited": false,
+          "balance": "0"
+        },
+        "individualLimit": null,
+        "spendControlReached": false,
+        "planType": "pro",
+        "rateLimitReachedType": null
+      }
+    }
+  }
+}

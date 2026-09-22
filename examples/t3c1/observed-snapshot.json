@@ -1,0 +1,99 @@
+{
+  "schema_version": "t3c1.v1",
+  "now": "2026-09-22T12:12:56Z",
+  "mode": "observed",
+  "stop": false,
+  "reserve_fraction": 0.2,
+  "margin_fraction": 0.05,
+  "max_candidates": 3,
+  "routes": [
+    {
+      "route_id": "codex-tarro",
+      "product": "codex",
+      "account_ref": "tarro-codex-account",
+      "pool_id": "codex:tarro-codex-account",
+      "pool_relationships_verified": false,
+      "windows_complete": false,
+      "window_ids": [
+        "primary"
+      ],
+      "included_usage_verified": false,
+      "checks": {},
+      "stop_reason": null
+    }
+  ],
+  "observations": [
+    {
+      "observed_at": "2026-09-22T12:12:56Z",
+      "received_at": "2026-09-22T12:12:56Z",
+      "expires_at": "2026-09-22T12:17:56Z",
+      "evidence_ref": "get_usage_limits:2026-09-22T12:12:56Z",
+      "product": "codex",
+      "account_ref": "tarro-codex-account",
+      "pool_id": "codex:tarro-codex-account",
+      "window_id": "primary",
+      "source": "tool",
+      "confidence": "verified",
+      "availability": "pass",
+      "total": 100.0,
+      "remaining": 76.0,
+      "unit": "percent",
+      "resets_at": "2026-09-28T22:00:21Z",
+      "unknown_reason": null
+    }
+  ],
+  "commitments": [],
+  "candidates": [
+    {
+      "task_id": "C24-regresion",
+      "revision": "2026-09-22-recepcion-rick",
+      "owner": "rick-grok",
+      "source_ref": ".agents/tasks/2026-09-21-001-c24-t3b-capitalizacion.md",
+      "status": "done",
+      "kind": "deliverable",
+      "authorized": true,
+      "useful": true,
+      "ready": true,
+      "needs_gui": false,
+      "route_id": "codex-tarro",
+      "max_cost": null,
+      "cost_evidence_ref": null,
+      "deadline": null,
+      "next_step": "Conservar el cierre y la recepción; no repetir la GUI."
+    },
+    {
+      "task_id": "UMB-276-testigo-externo",
+      "revision": "2026-09-22-corte-vigente",
+      "owner": "rick-vps",
+      "source_ref": "https://linear.app/umbral/issue/UMB-276",
+      "status": "blocked",
+      "kind": "incident",
+      "authorized": true,
+      "useful": true,
+      "ready": false,
+      "needs_gui": false,
+      "route_id": "codex-tarro",
+      "max_cost": null,
+      "cost_evidence_ref": null,
+      "deadline": null,
+      "next_step": "Concretar host independiente, latido y canal humano; comprobar recepción antes del piloto."
+    },
+    {
+      "task_id": "registry-PR61-dynamo",
+      "revision": "2026-09-22-tarro-recibido",
+      "owner": "codex",
+      "source_ref": "https://github.com/Umbral-Bot/umbral-skills-registry/pull/61",
+      "status": "done",
+      "kind": "learning",
+      "authorized": true,
+      "useful": true,
+      "ready": true,
+      "needs_gui": false,
+      "route_id": "codex-tarro",
+      "max_cost": null,
+      "cost_evidence_ref": null,
+      "deadline": null,
+      "next_step": "No regenerar la skill ya integrada. Recepción Grok/PCRick queda como alcance separado."
+    }
+  ]
+}

@@ -22,6 +22,14 @@ La deduplicación elimina copias exactas **entre fuentes** y conserva la mayor
 multiplicidad en una fuente: dos avisos idénticos registrados en el mismo archivo
 no desaparecen. Eventos diferentes en el mismo instante tampoco se colapsan.
 
+Si dos alertas del mismo monitor comparten instante, se conserva su orden de
+línea, incluidas las ocurrencias repetidas separadas por una recuperación. Entre
+rotados numéricos, el sufijo mayor precede al menor y el activo es el más nuevo;
+el informe registra ese índice por fuente. Los solapes pueden aportar anclas de
+orden. Un orden contradictorio, o ambiguo entre fuentes externas sin precedencia
+comprobable, impide el veredicto cuando afecta al mismo monitor. Los empates de
+monitores independientes o de ciclos/canarios no exigen un orden adicional.
+
 La versión inicial existía solo como evidencia de un paquete. El 20-sep-2026
 produjo `NO_SUPERADO` porque buscaba el despliegue únicamente en el registro
 activo, después de que la rotación trasladara el inicio de la ventana al gzip.

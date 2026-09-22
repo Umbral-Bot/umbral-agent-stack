@@ -89,6 +89,59 @@ class GateRotationTests(unittest.TestCase):
         sources = gate.Registro((a, b))
         self.assertTrue(any("alarma" in x for x in gate.evaluar(sources, self.ts(), 24, self.release, True)))
 
+    def alert(self, minutes, fingerprint, severity="warn", monitor="m"):
+        return {"ts": self.ts(minutes), "kind": "monitor_alert", "release": self.release,
+                "monitor": monitor, "severity": severity, "reavisos": 0,
+                "fingerprint": fingerprint}
+
+    def test_equal_timestamp_keeps_line_order_and_repeated_occurrences(self):
+        warning = self.alert(15, "new")
+        recovery = self.alert(15, "recovery", "info")
+        suppressed = {"ts": self.ts(16), "kind": "monitor_alert_suppressed"}
+        active = self.write("ops_log.jsonl", self.fixture() +
+                            [warning, recovery, warning, suppressed])
+        sources = gate.Registro((active,))
+        self.assertEqual(gate.leer(sources, self.ts(), self.ts(1440), {"monitor_alert"}),
+                         [warning, recovery, warning])
+        self.assertEqual(gate.evaluar(sources, self.ts(), 24, self.release, True), [])
+
+    def test_rotation_tie_cannot_hide_duplicate_after_recovery(self):
+        old = self.alert(0, "old")
+        recovery = self.alert(15, "recovery", "info")
+        warning = self.alert(15, "new")
+        duplicate = self.alert(15.5, "new")
+        suppressed = {"ts": self.ts(16), "kind": "monitor_alert_suppressed"}
+        archive = self.write("external/ops_log.jsonl.1.gz", self.fixture() + [old, recovery])
+        active = self.write("ops_log.jsonl", [warning, duplicate, suppressed])
+        sources = gate.Registro((active, archive))
+        self.assertEqual(gate.leer(sources, self.ts(), self.ts(1440), {"monitor_alert"}),
+                         [old, recovery, warning, duplicate])
+        self.assertTrue(any("duplicado" in x for x in
+                            gate.evaluar(sources, self.ts(), 24, self.release, True)))
+
+    def test_external_tie_requires_order_only_for_the_same_monitor(self):
+        warning = self.alert(15, "new")
+        recovery = self.alert(15, "recovery", "info")
+        active = self.write("ops_log.jsonl", [warning])
+        external = self.write("unknown-origin.gz", [recovery])
+        with self.assertRaisesRegex(gate.RegistroInvalido, "orden ambiguo"):
+            gate.Registro((active, external))
+        # An overlapping source can supply the missing order without any new
+        # chronology configuration. Different monitors need no tie-breaker.
+        external = self.write("unknown-origin.gz", [recovery, warning])
+        self.assertEqual(gate.Registro((active, external)).events, [recovery, warning])
+        other = self.alert(15, "other", monitor="independent")
+        external = self.write("unknown-origin.gz", [other])
+        self.assertEqual(len(gate.Registro((active, external)).events), 2)
+
+    def test_conflicting_overlap_order_fails_closed(self):
+        warning = self.alert(15, "new")
+        recovery = self.alert(15, "recovery", "info")
+        active = self.write("ops_log.jsonl", [warning, recovery])
+        archive = self.write("ops_log.jsonl.1.gz", [recovery, warning])
+        with self.assertRaisesRegex(gate.RegistroInvalido, "orden contradictorio"):
+            gate.Registro((active, archive))
+
     def test_latest_deploy_is_chronological_not_file_or_line_order(self):
         deploy = self.fixture()[0]
         a = self.write("ops_log.jsonl", [{**deploy, "ts": self.ts(-10)}])

@@ -86,10 +86,91 @@ class RegistroInvalido(ValueError):
     """No se puede emitir un veredicto con una fuente ilegible o inestable."""
 
 
+def indice_rotacion(path: Path, active: Path) -> int | None:
+    """Solo la familia numérica del registro declara precedencia entre fuentes."""
+    if path == active:
+        return 0
+    prefix = active.name + "."
+    if path.name.startswith(prefix):
+        suffix = path.name[len(prefix):].removesuffix(".gz")
+        if suffix.isdigit() and int(suffix) > 0:
+            return int(suffix)
+    return None
+
+
+def ordenar_registro(records: dict, sources: list, active: Path) -> list[dict]:
+    """Conserva el orden de línea de las alertas empatadas, aun al deduplicar.
+
+    Una ocurrencia se identifica por contenido y ordinal dentro de su fuente.
+    Las copias compartidas dan anclas de orden; las rotaciones numéricas ordenan
+    las partes exclusivas. Un empate externo sin orden verificable solo bloquea
+    si afecta al estado de un mismo monitor, no por eventos independientes.
+    """
+    buckets: dict = {}
+    for path, sequence in sources:
+        for node in sequence:
+            ts = momento(records[node]["ts"])
+            buckets.setdefault(ts, {}).setdefault(path, []).append(node)
+    result = []
+    for ts, per_source in sorted(buckets.items()):
+        nodes = dict.fromkeys(node for sequence in per_source.values() for node in sequence)
+        edges = {node: set() for node in nodes}
+        monitors: dict = {}
+        for node in nodes:
+            event = records[node]
+            if event["kind"] == "monitor_alert":
+                monitors.setdefault(event.get("monitor", "?"), []).append(node)
+        for monitor, members in monitors.items():
+            member_set = set(members)
+            sequences = {path: [n for n in seq if n in member_set]
+                         for path, seq in per_source.items()}
+            for sequence in sequences.values():
+                for before, after in zip(sequence, sequence[1:]):
+                    edges[before].add(after)
+            for old_path, old in sequences.items():
+                old_index = indice_rotacion(old_path, active)
+                for new_path, new in sequences.items():
+                    new_index = indice_rotacion(new_path, active)
+                    if old_index is None or new_index is None or old_index <= new_index:
+                        continue
+                    # No ordenar de nuevo las copias solapadas: sus líneas ya
+                    # aportan las relaciones. Solo unir los extremos exclusivos.
+                    old_only = [n for n in old if n not in set(new)]
+                    new_only = [n for n in new if n not in set(old)]
+                    if old_only and new_only:
+                        edges[old_only[-1]].add(new_only[0])
+            reachable = {}
+            for node in members:
+                seen, pending = set(), list(edges[node])
+                while pending:
+                    next_node = pending.pop()
+                    if next_node not in seen:
+                        seen.add(next_node)
+                        pending.extend(edges[next_node])
+                if node in seen:
+                    raise RegistroInvalido(f"orden contradictorio de alertas: {ts.isoformat()}, monitor {monitor}")
+                reachable[node] = seen
+            for i, node in enumerate(members):
+                for other in members[i + 1:]:
+                    if other not in reachable[node] and node not in reachable[other]:
+                        raise RegistroInvalido(f"orden ambiguo entre fuentes: {ts.isoformat()}, monitor {monitor}")
+        # Orden estable para el resto: entre monitores/eventos independientes
+        # los empates no modifican los criterios del gate.
+        incoming = Counter(after for children in edges.values() for after in children)
+        while nodes:
+            node = next(n for n in nodes if not incoming[n])
+            result.append(records[node])
+            del nodes[node]
+            for after in edges[node]:
+                incoming[after] -= 1
+    return result
+
+
 @dataclass
 class Registro:
     """Snapshot de fuentes activas/rotadas, leído una vez, sin modificar archivos.
 
+    La primera ruta identifica el activo; las demás pueden ser copias rotadas.
     Elimina copias del MISMO evento entre fuentes, conservando la multiplicidad
     máxima dentro de una fuente. Dos entregas idénticas en un solo archivo siguen
     siendo dos: deduplicar el transporte no debe ocultar un aviso real duplicado.
@@ -105,6 +186,8 @@ class Registro:
         unique_paths = sorted({p.expanduser().resolve() for p in self.paths}, key=str)
         if not unique_paths:
             raise RegistroInvalido("no hay fuentes de registro")
+        active = self.paths[0].expanduser().resolve()
+        records, sources = {}, []
         for path in unique_paths:
             try:
                 with path.open("rb") as source:
@@ -117,7 +200,7 @@ class Registro:
                     raise RegistroInvalido(f"fuente cambió durante la lectura: {path}")
                 stream = gzip.GzipFile(fileobj=io.BytesIO(raw)) if path.suffix == ".gz" else io.BytesIO(raw)
                 counts: Counter[str] = Counter()
-                records = {}
+                sequence = []
                 with io.TextIOWrapper(stream, encoding="utf-8") as text:
                     for number, line in enumerate(text, 1):
                         if not line.strip():
@@ -134,19 +217,22 @@ class Registro:
                             raise RegistroInvalido(f"timestamp inválido: {path}, línea {number}") from exc
                         key = json.dumps(event, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
                         counts[key] += 1
-                        records[key] = event
+                        node = (key, counts[key])
+                        records[node] = event
+                        sequence.append(node)
                 removed = sum(min(count, maximum[key]) for key, count in counts.items())
                 self.duplicates += removed
                 for key, count in counts.items():
-                    self.events.extend([records[key]] * max(0, count - maximum[key]))
                     maximum[key] = max(maximum[key], count)
+                sources.append((path, sequence))
                 self.manifests.append({"path": str(path), "bytes": len(raw),
                                        "sha256": hashlib.sha256(raw).hexdigest(),
                                        "relevant_events": sum(counts.values()),
-                                       "overlap_removed": removed})
+                                       "overlap_removed": removed,
+                                       "rotation_index": indice_rotacion(path, active)})
             except (OSError, EOFError, UnicodeError) as exc:
                 raise RegistroInvalido(f"fuente ilegible: {path} ({type(exc).__name__})") from exc
-        self.events.sort(key=lambda event: momento(event["ts"]))
+        self.events = ordenar_registro(records, sources, active)
 
     def __str__(self):
         return ", ".join(str(p) for p in self.paths)
@@ -185,7 +271,7 @@ def clasificar_alertas(alertas: list[dict], fallidas: list[dict]) -> tuple[list[
     detalle: list[dict] = []
     problemas: list[str] = []
     estado: dict[str, tuple[str, datetime, int]] = {}
-    for e in sorted(alertas, key=lambda x: x.get("ts", "")):
+    for e in sorted(alertas, key=lambda x: momento(x["ts"])):
         mon = e.get("monitor", "?")
         info = e.get("severity") == "info"
         clave = f"{mon}.info" if info else mon

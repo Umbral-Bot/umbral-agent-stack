@@ -7,7 +7,7 @@
 # rota en cuatro puntos independientes. Este archivo cierra esos cuatro puntos y
 # añade deduplicación, enfriamiento y latido.
 #
-# Se usa con `source`. No ejecuta nada por sí mismo y no imprime secretos.
+# Se usa con `source`. En modo de prueba prepara su sandbox; no imprime secretos.
 #
 #   source "$(dirname "$0")/lib/umbral_alerting.sh"
 #   umbral_load_env
@@ -43,6 +43,90 @@ UMBRAL_ALERT_COOLDOWN_S="${UMBRAL_ALERT_COOLDOWN_S:-3600}"
 # y pasa a ser una loteria.
 UMBRAL_ALERT_BACKOFF_MAX_S="${UMBRAL_ALERT_BACKOFF_MAX_S:-82800}"
 
+# Modo de prueba SIN ENVIO DE ALERTAS. Vacio, 0, no y false lo desactivan;
+# "fallo" simula ademas que la entrega no sale. No desactiva los probes de salud
+# ni la inferencia real del canario: no es un simulador del health-check entero.
+#
+# Existe porque dos veces una prueba mia termino en la pagina real de David. La
+# segunda fue asi: deje WORKER_TOKEN="" creyendo que eso bloqueaba el envio, y
+# no lo bloqueaba —la carga antigua del entorno rellenaba variables vacias—.
+# Ahora se conserva una variable definida y vacia. La leccion no es
+# "acuerdate de la precaucion buena": es que no puede depender de que me acuerde.
+#
+# Este interruptor se comprueba ANTES de construir nada de red. Con el puesto,
+# da igual lo que traiga el entorno: no hay salida.
+UMBRAL_ALERT_DRY_RUN="${UMBRAL_ALERT_DRY_RUN:-}"
+
+# Donde se anotan las notificaciones simuladas, una por linea, en JSON.
+UMBRAL_ALERT_CAPTURE="${UMBRAL_ALERT_CAPTURE:-}"
+
+# -----------------------------------------------------------------
+# umbral_en_pruebas — 0 si el modo de prueba esta activo.
+# -----------------------------------------------------------------
+umbral_en_pruebas() {
+  case "${UMBRAL_ALERT_DRY_RUN:-}" in
+    ''|0|no|false) return 1 ;;
+    *) return 0 ;;
+  esac
+}
+
+# Una simulacion no puede comprar silencio en produccion. Se fuerzan las tres
+# rutas de escritura a un sandbox, aunque el llamador haya heredado rutas reales.
+# Sin directorio explicito se crea uno nuevo; un directorio explicito permite
+# ensayar varios pasos de la misma maquina de estados sin tocar la real.
+umbral_aislar_prueba() {
+  umbral_en_pruebas || return 0
+  local sandbox="${UMBRAL_ALERT_DRY_RUN_DIR:-}"
+  export UMBRAL_ALERT_PROD_STATE_DIR="${UMBRAL_ALERT_PROD_STATE_DIR:-$UMBRAL_MON_STATE_DIR}"
+  export UMBRAL_ALERT_PROD_OPS_DIR="${UMBRAL_ALERT_PROD_OPS_DIR:-${UMBRAL_OPS_LOG_DIR:-$HOME/.config/umbral}}"
+  local protected resolved temporary
+  if [ -z "$sandbox" ]; then
+    temporary=$(realpath -m -- "${TMPDIR:-/tmp}") || return 2
+    for protected in "$HOME/.config/umbral" "$UMBRAL_ALERT_PROD_STATE_DIR" "$UMBRAL_ALERT_PROD_OPS_DIR"; do
+      resolved=$(realpath -m -- "$protected") || return 2
+      case "$temporary/" in "$resolved/"*) echo "ERROR: TMPDIR apunta a estado productivo" >&2; return 2 ;; esac
+    done
+    sandbox=$(mktemp -d "$temporary/umbral-alert-dry-run.XXXXXXXX") || return 2
+  fi
+  sandbox=$(realpath -m -- "$sandbox") || return 2
+  for protected in "$HOME/.config/umbral" "$UMBRAL_ALERT_PROD_STATE_DIR" "$UMBRAL_ALERT_PROD_OPS_DIR"; do
+    resolved=$(realpath -m -- "$protected") || return 2
+    case "$sandbox/" in "$resolved/"*) echo "ERROR: el sandbox se solapa con estado productivo" >&2; return 2 ;; esac
+    case "$resolved/" in "$sandbox/"*) echo "ERROR: el sandbox contiene estado productivo" >&2; return 2 ;; esac
+  done
+  local child
+  for child in monitor ops notificaciones-simuladas.jsonl; do
+    resolved=$(realpath -m -- "$sandbox/$child") || return 2
+    case "$resolved" in "$sandbox/"*) ;; *) echo "ERROR: enlace fuera del sandbox de prueba" >&2; return 2 ;; esac
+  done
+  mkdir -p -m 700 "$sandbox" || return 2
+  export UMBRAL_ALERT_DRY_RUN_DIR="$sandbox"
+  export UMBRAL_MON_STATE_DIR="$sandbox/monitor"
+  export UMBRAL_OPS_LOG_DIR="$sandbox/ops"
+  export UMBRAL_ALERT_CAPTURE="$sandbox/notificaciones-simuladas.jsonl"
+}
+
+if umbral_en_pruebas; then
+  umbral_aislar_prueba || return 2
+fi
+
+# Comprueba tambien el archivo final justo antes de cada escritura: un sandbox
+# reutilizado puede contener enlaces en sus descendientes, no solo en su raiz.
+umbral_ruta_escritura_prueba() {
+  umbral_en_pruebas || return 0
+  local path resolved
+  for path in "$@"; do
+    resolved=$(realpath -m -- "$path") || return 2
+    case "$resolved" in "$UMBRAL_ALERT_DRY_RUN_DIR/"*) ;; *)
+      echo "ERROR: escritura fuera del sandbox de prueba" >&2; return 2 ;;
+    esac
+    if [ -f "$resolved" ] && [ "$(stat -c %h -- "$resolved")" -gt 1 ]; then
+      echo "ERROR: archivo compartido por hardlink en sandbox de prueba" >&2
+      return 2
+    fi
+  done
+}
+
 # -----------------------------------------------------------------
 # umbral_load_env — carga ~/.config/openclaw/env sin volcarlo.
 #
@@ -59,6 +143,13 @@ UMBRAL_ALERT_BACKOFF_MAX_S="${UMBRAL_ALERT_BACKOFF_MAX_S:-82800}"
 # Nada se imprime ni se registra: los valores no pasan por stdout en ningún caso.
 # -----------------------------------------------------------------
 umbral_load_env() {
+  # En simulacion no se lee el archivo real ni se cargan secretos. El destino
+  # del aviso tampoco se hereda; el simulador solo trabaja en el sandbox.
+  if umbral_en_pruebas; then
+    umbral_aislar_prueba || return 2
+    unset WORKER_URL WORKER_TOKEN
+    return 0
+  fi
   local env_file="${UMBRAL_ENV_FILE:-$HOME/.config/openclaw/env}"
   [ -r "$env_file" ] || return 1
   local line key
@@ -68,11 +159,18 @@ umbral_load_env() {
     esac
     line="${line#export }"
     key="${line%%=*}"
-    # Solo nombres de variable plausibles, y solo si aún no tienen valor.
+    # Solo nombres de variable plausibles.
     case "$key" in
       *[!A-Za-z0-9_]*|'') continue ;;
     esac
-    if [ -z "${!key:-}" ]; then
+    # El interruptor del modo de prueba no se toma nunca del archivo de entorno,
+    # en ninguna direccion: ni un entorno olvidado puede poner produccion en
+    # modo de prueba, ni puede apagarselo a un ensayo que lo pidio.
+    [ "$key" = "UMBRAL_ALERT_DRY_RUN" ] && continue
+    # Solo se rellena lo que NO ESTA DEFINIDO. Una variable definida y vacia es
+    # una decision de quien llama, no un hueco: darla por ausente fue lo que
+    # convirtio un WORKER_TOKEN="" puesto a proposito en un aviso real.
+    if [ -z "${!key+definida}" ]; then
       local value="${line#*=}"
       # Quita comillas envolventes si las hay.
       case "$value" in
@@ -217,6 +315,7 @@ umbral_should_alert() {
 # -----------------------------------------------------------------
 umbral_commit_alert() {
   local monitor="$1" fp="$2" n="${3:-${UMBRAL_ALERT_PENDING_N:-0}}"
+  umbral_ruta_escritura_prueba "$UMBRAL_MON_STATE_DIR/${monitor}.alert" || return 2
   mkdir -p "$UMBRAL_MON_STATE_DIR"
   printf '%s\n%s\n%s\n' "$fp" "$(date +%s)" "$n" > "$UMBRAL_MON_STATE_DIR/${monitor}.alert"
 }
@@ -249,6 +348,7 @@ umbral_alert_active() {
 umbral_clear_alert() {
   local monitor="$1"
   local f="$UMBRAL_MON_STATE_DIR/${monitor}.alert"
+  umbral_ruta_escritura_prueba "$f" || return 2
   if [ -f "$f" ]; then
     rm -f "$f"
     return 0
@@ -263,6 +363,7 @@ umbral_clear_alert() {
 # -----------------------------------------------------------------
 umbral_heartbeat_write() {
   local monitor="$1"
+  umbral_ruta_escritura_prueba "$UMBRAL_MON_STATE_DIR/${monitor}.beat" || return 2
   mkdir -p "$UMBRAL_MON_STATE_DIR"
   date +%s > "$UMBRAL_MON_STATE_DIR/${monitor}.beat"
 }
@@ -300,6 +401,7 @@ umbral_heartbeat_stale() {
 umbral_ops_log() {
   local dir="${UMBRAL_OPS_LOG_DIR:-$HOME/.config/umbral}"
   local archivo="$dir/ops_log.jsonl"
+  umbral_ruta_escritura_prueba "$archivo" "$dir/ops_log.lock" || return 2
   mkdir -p "$dir"
   # Con cerrojo, y por un motivo concreto: la rotacion semanal
   # (scripts/ops_log_rotate.py) lee el archivo entero y lo sustituye renombrando
@@ -354,6 +456,12 @@ umbral_alert() {
   local key="$monitor"
   [ "$sev" = "info" ] && key="${monitor}.info"
 
+  if umbral_en_pruebas; then
+    umbral_ruta_escritura_prueba "$UMBRAL_MON_STATE_DIR/${key}.alert" \
+      "$UMBRAL_OPS_LOG_DIR/ops_log.jsonl" "$UMBRAL_OPS_LOG_DIR/ops_log.lock" \
+      "$UMBRAL_ALERT_CAPTURE" || return 2
+  fi
+
   if ! umbral_should_alert "$key" "$fp"; then
     local ventana; ventana=$(umbral_alert_window "$(umbral_alert_reavisos "$key")")
     echo "(alerta silenciada: mismo estado dentro de la ventana de ${ventana}s)"
@@ -364,6 +472,27 @@ umbral_alert() {
   local pendiente="${UMBRAL_ALERT_PENDING_N:-0}"
   local text; text=$(umbral_truncate "Rick [$sev] $title — $body")
   local release; release=$(umbral_release_sha)
+
+  # MODO DE PRUEBA: se corta aqui, antes de mirar siquiera a donde se enviaria.
+  # Con el puesto no hay salida externa posible, traiga lo que traiga el
+  # entorno. La ventana de silencio y el retroceso SI se ejercitan, porque lo
+  # que se quiere ensayar es la maquina de estados, no la red.
+  if umbral_en_pruebas; then
+    local captura="${UMBRAL_ALERT_CAPTURE:-$UMBRAL_MON_STATE_DIR/notificaciones-simuladas.jsonl}"
+    umbral_ruta_escritura_prueba "$captura" || return 2
+    mkdir -p "$(dirname "$captura")"
+    python3 -c 'import json,sys; print(json.dumps({"ts":sys.argv[1],"monitor":sys.argv[2],"severity":sys.argv[3],"text":sys.argv[4]}, ensure_ascii=False))' \
+      "$ts" "$monitor" "$sev" "$text" >> "$captura"
+    if [ "$UMBRAL_ALERT_DRY_RUN" = "fallo" ]; then
+      umbral_ops_log "{\"ts\":\"$ts\",\"kind\":\"monitor_alert_simulado\",\"release\":\"$release\",\"monitor\":\"$monitor\",\"severity\":\"$sev\",\"fingerprint\":\"$fp\",\"entrega\":\"simulada_fallida\"}"
+      echo "(MODO DE PRUEBA: entrega simulada como FALLIDA, no se abre ventana de silencio)"
+      return 2
+    fi
+    umbral_commit_alert "$key" "$fp" "$pendiente"
+    umbral_ops_log "{\"ts\":\"$ts\",\"kind\":\"monitor_alert_simulado\",\"release\":\"$release\",\"monitor\":\"$monitor\",\"severity\":\"$sev\",\"fingerprint\":\"$fp\",\"chars\":${#text},\"reavisos\":$pendiente,\"proxima_ventana_s\":$(umbral_alert_window "$pendiente"),\"entrega\":\"simulada\"}"
+    echo "(MODO DE PRUEBA: ${#text} caracteres anotados en $captura, sin salida externa)"
+    return 0
+  fi
 
   local url="${WORKER_URL:-http://127.0.0.1:8088}"
   local token="${WORKER_TOKEN:-}"

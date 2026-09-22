@@ -438,13 +438,14 @@ class TestBateriaDeValidacion:
     """CI en verde no basta: las dos primeras versiones del canario pasaron CI y
     fallaron en producción (PATH de cron y token literal)."""
 
-    def test_la_bateria_existe_y_cubre_los_doce_casos(self):
+    def test_la_bateria_existe_y_cubre_los_trece_casos(self):
         texto = (REPO / "scripts" / "vps" / "bateria-canario.sh").read_text(encoding="utf-8")
         for caso in ("Entorno real de cron", "Primario sano", "Fallback sano",
                      "Fallo duro", "Fallo blando", "Deduplicación",
                      "Recuperación única", "no lo pisa el archivo de entorno",
                      "aunque falte el token literal", "cierra la degradación",
-                     "sigue siendo la misma degradación", "fallback indeterminado no cierra"):
+                     "sigue siendo la misma degradación", "fallback indeterminado no cierra",
+                     "modo de prueba no deja salir nada"):
             assert caso in texto, f"la batería no cubre: {caso}"
 
     def test_la_bateria_no_escribe_en_produccion(self):
@@ -872,3 +873,304 @@ class TestElRegistroCanonicoNoPierdeEventos:
         assert esperado > self.ESPERA / 2, (
             f"la rotación no esperó al cerrojo ({esperado:.2f}s): sustituiría el archivo "
             "mientras un monitor escribe")
+
+
+class TestModoDePruebaSinSalidaExterna:
+    """Dos veces una prueba mía terminó en la página real de David.
+
+    La primera se corrigió haciendo que el archivo de entorno no pise lo que el
+    llamador ya definió. La segunda pasó igual: dejé `WORKER_TOKEN=""` creyendo
+    que bloqueaba el envío, y no lo bloquea —un valor vacío es un valor ausente,
+    así que el entorno lo rellena, que es su comportamiento correcto—.
+
+    La lección no es «acuérdate de la precaución buena»: es que no puede
+    depender de que me acuerde. De ahí un interruptor que se comprueba antes de
+    construir nada de red."""
+
+    def test_no_sale_nada_aunque_el_destino_este_escuchando(self, state_dir, worker_stub):
+        """La prueba que importa: el stub está vivo y no recibe nada."""
+        env = {**state_dir, **worker_stub.env, "UMBRAL_ALERT_DRY_RUN": "1"}
+        r = run_bash('umbral_alert mon "titulo" "cuerpo" error; echo "rc=$?"', env)
+        assert "rc=0" in r.stdout
+        assert worker_stub.recibidas == [], "el modo de prueba dejó salir un aviso"
+        assert "MODO DE PRUEBA" in r.stdout
+
+    def test_la_maquina_de_estados_si_se_ejercita(self, state_dir, worker_stub):
+        """Sin salida externa, pero con deduplicación y retroceso reales: lo que
+        se quiere ensayar es la máquina de estados, no la red."""
+        sandbox = Path(state_dir["UMBRAL_MON_STATE_DIR"]).parent / "simulacion"
+        env = {**state_dir, **worker_stub.env, "UMBRAL_ALERT_DRY_RUN": "1",
+               "UMBRAL_ALERT_DRY_RUN_DIR": str(sandbox)}
+        run_bash('umbral_alert mon "titulo" "cuerpo" error', env)
+        assert (sandbox / "monitor" / "mon.alert").exists()
+        assert not alerta(state_dir, "mon").exists()
+        r = run_bash('umbral_alert mon "titulo" "cuerpo" error; echo "rc=$?"', env)
+        assert "rc=1" in r.stdout
+        assert worker_stub.recibidas == []
+
+    def test_puede_simularse_una_entrega_fallida(self, state_dir, worker_stub):
+        """`fallo` cubre el caso en que el aviso no sale, que es el que más
+        importa: la vía de aviso sale por el worker que se vigila."""
+        env = {**state_dir, **worker_stub.env, "UMBRAL_ALERT_DRY_RUN": "fallo"}
+        r = run_bash('umbral_alert mon "titulo" "cuerpo" error; echo "rc=$?"', env)
+        assert "rc=2" in r.stdout
+        assert not alerta(state_dir, "mon").exists(), \
+            "una entrega fallida, aunque sea simulada, no abre ventana de silencio"
+        assert worker_stub.recibidas == []
+
+    def test_lo_simulado_no_se_confunde_con_lo_emitido(self, state_dir, worker_stub):
+        """El ops_log distingue el aviso simulado del real: si no lo hiciera, una
+        corrida de prueba contaría como aviso entregado en el gate de 24 h."""
+        sandbox = Path(state_dir["UMBRAL_MON_STATE_DIR"]).parent / "simulacion"
+        env = {**state_dir, **worker_stub.env, "UMBRAL_ALERT_DRY_RUN": "1",
+               "UMBRAL_ALERT_DRY_RUN_DIR": str(sandbox)}
+        run_bash('umbral_alert mon "titulo" "cuerpo" error', env)
+        clases = [json.loads(l)["kind"]
+                  for l in (sandbox / "ops" / "ops_log.jsonl").read_text(encoding="utf-8").splitlines()]
+        assert "monitor_alert_simulado" in clases
+        assert "monitor_alert" not in clases
+        assert not ops_log(state_dir).exists()
+
+    def test_la_notificacion_queda_anotada_para_poder_comprobarla(self, state_dir, worker_stub, tmp_path):
+        sandbox = tmp_path / "simulacion"
+        captura = sandbox / "notificaciones-simuladas.jsonl"
+        env = {**state_dir, **worker_stub.env,
+               "UMBRAL_ALERT_DRY_RUN": "1", "UMBRAL_ALERT_DRY_RUN_DIR": str(sandbox)}
+        run_bash('umbral_alert mon "el gateway no responde" "detalle largo" error', env)
+        anotada = json.loads(captura.read_text(encoding="utf-8").strip())
+        assert "el gateway no responde" in anotada["text"]
+        assert anotada["monitor"] == "mon"
+        assert anotada["severity"] == "error"
+
+
+class TestElEntornoNoPisaElDestinoDeLaPrueba:
+    """El archivo de entorno aporta valores POR DEFECTO. La cuestión es qué
+    cuenta como «no tener valor»."""
+
+    def _env_file(self, tmp_path):
+        f = tmp_path / "env"
+        f.write_text(
+            "WORKER_URL=http://produccion-real:8088\n"
+            "WORKER_TOKEN=token-de-produccion\n"
+            "UMBRAL_ALERT_DRY_RUN=0\n",
+            encoding="utf-8")
+        return f
+
+    def test_una_variable_vacia_a_proposito_no_se_rellena(self, tmp_path, state_dir):
+        """Aquí estuvo el segundo accidente: `WORKER_TOKEN=""` se tomaba por
+        ausente y el entorno lo rellenaba con el de producción."""
+        env = {**state_dir, "UMBRAL_ENV_FILE": str(self._env_file(tmp_path)),
+               "WORKER_TOKEN": ""}
+        r = run_bash('umbral_load_env; echo "TOKEN=[${WORKER_TOKEN}]"', env)
+        assert "TOKEN=[]" in r.stdout, r.stdout
+
+    def test_una_variable_ausente_de_verdad_si_se_rellena(self, tmp_path, state_dir):
+        env = {**state_dir, "UMBRAL_ENV_FILE": str(self._env_file(tmp_path))}
+        r = run_bash('unset WORKER_TOKEN; umbral_load_env; echo "TOKEN=[${WORKER_TOKEN}]"', env)
+        assert "TOKEN=[token-de-produccion]" in r.stdout
+
+    def test_el_entorno_no_puede_apagar_el_modo_de_prueba(self, tmp_path, state_dir):
+        """Ni encenderlo en producción ni apagárselo a un ensayo que lo pidió."""
+        env = {**state_dir, "UMBRAL_ENV_FILE": str(self._env_file(tmp_path)),
+               "UMBRAL_ALERT_DRY_RUN": "1"}
+        r = run_bash('umbral_load_env; umbral_en_pruebas && echo SIGUE_EN_PRUEBAS || echo APAGADO',
+                     env)
+        assert "SIGUE_EN_PRUEBAS" in r.stdout
+
+    def test_el_entorno_no_puede_encender_el_modo_de_prueba(self, tmp_path, state_dir):
+        f = tmp_path / "env"
+        f.write_text("UMBRAL_ALERT_DRY_RUN=1\n", encoding="utf-8")
+        env = {**state_dir, "UMBRAL_ENV_FILE": str(f)}
+        r = run_bash('unset UMBRAL_ALERT_DRY_RUN; umbral_load_env; '
+                     'umbral_en_pruebas && echo EN_PRUEBAS || echo PRODUCCION', env)
+        assert "PRODUCCION" in r.stdout, \
+            "un entorno olvidado no puede poner produccion en modo de prueba"
+
+    def test_en_modo_de_prueba_no_se_carga_ni_la_direccion_del_worker(self, tmp_path, state_dir):
+        """Segunda barrera: aunque algo llegara a construir un envío, no tendría
+        a dónde ni con qué."""
+        env = {**state_dir, "UMBRAL_ENV_FILE": str(self._env_file(tmp_path)),
+               "UMBRAL_ALERT_DRY_RUN": "1"}
+        r = run_bash('unset WORKER_URL WORKER_TOKEN; umbral_load_env; '
+                     'echo "URL=[${WORKER_URL:-}] TOKEN=[${WORKER_TOKEN:-}]"', env)
+        assert "URL=[] TOKEN=[]" in r.stdout, r.stdout
+
+
+class TestAislamientoCompletoDelModoDePrueba:
+    """El modo sin POST tampoco puede alterar el silencio o el log productivo."""
+
+    def test_rutas_por_defecto_no_tocan_produccion_ni_cargan_secretos(self, tmp_path, worker_stub):
+        home = tmp_path / "home"
+        production = home / ".config" / "umbral"
+        (production / "monitor").mkdir(parents=True)
+        (production / "monitor" / "mon.alert").write_text("fp-original\n123\n5\n")
+        (production / "monitor" / "mon.beat").write_text("123\n")
+        (production / "ops_log.jsonl").write_text('{"kind":"original"}\n')
+        env_file = home / ".config" / "openclaw" / "env"
+        env_file.parent.mkdir(parents=True)
+        env_file.write_text(f"WORKER_URL={worker_stub.url}\nWORKER_TOKEN=production-placeholder\n"
+                            "CUSTOM_API_KEY=do-not-load\nUMBRAL_ALERT_DRY_RUN=0\n")
+        temporary = tmp_path / "temporary"
+        temporary.mkdir()
+
+        def snapshot():
+            return {str(p.relative_to(production)): (p.read_bytes(), p.stat().st_mtime_ns, p.stat().st_mode)
+                    for p in production.rglob("*") if p.is_file()}
+
+        before = snapshot()
+        env = {k: v for k, v in os.environ.items() if not k.startswith("UMBRAL_")}
+        env.update(HOME=str(home), TMPDIR=str(temporary), UMBRAL_ALERT_DRY_RUN="1",
+                   WORKER_URL=worker_stub.url, WORKER_TOKEN="inherited-placeholder",
+                   UMBRAL_ALERT_CAPTURE=str(production / "capture.jsonl"))
+        script = f'''set -euo pipefail
+source "{LIB}"
+umbral_load_env
+umbral_heartbeat_write mon
+umbral_clear_alert mon || true
+umbral_alert mon titulo cuerpo error
+umbral_alert mon titulo cuerpo error || test "$?" = 1
+test -z "${{WORKER_TOKEN+x}}"
+test -z "${{CUSTOM_API_KEY+x}}"
+printf 'SANDBOX=%s\n' "$UMBRAL_ALERT_DRY_RUN_DIR"
+'''
+        result = subprocess.run(["bash", "-c", script], env=env, capture_output=True, text=True)
+        assert snapshot() == before, "la prueba alteró estado, cadencia, captura o log reales"
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert worker_stub.recibidas == []
+        sandbox = Path(next(line.removeprefix("SANDBOX=") for line in result.stdout.splitlines()
+                            if line.startswith("SANDBOX=")))
+        assert sandbox.is_relative_to(temporary)
+        assert (sandbox / "monitor" / "mon.alert").is_file()
+        assert (sandbox / "monitor" / "mon.beat").is_file()
+        events = [json.loads(line)["kind"] for line in
+                  (sandbox / "ops" / "ops_log.jsonl").read_text().splitlines()]
+        assert "monitor_alert_simulado" in events
+        assert "monitor_alert" not in events
+
+    def test_no_permite_usar_produccion_como_sandbox(self, tmp_path):
+        home = tmp_path / "home"
+        production = home / ".config" / "umbral"
+        production.mkdir(parents=True)
+        env = {**os.environ, "HOME": str(home), "UMBRAL_ALERT_DRY_RUN": "1",
+               "UMBRAL_ALERT_DRY_RUN_DIR": str(production)}
+        result = subprocess.run(["bash", "-c", f'source "{LIB}"'], env=env,
+                                capture_output=True, text=True)
+        assert result.returncode == 2
+        assert list(production.iterdir()) == []
+
+    def test_no_sigue_enlace_del_sandbox_hacia_produccion(self, tmp_path):
+        production = tmp_path / "production"
+        production.mkdir()
+        sandbox = tmp_path / "sandbox"
+        sandbox.mkdir()
+        (sandbox / "ops").symlink_to(production, target_is_directory=True)
+        env = {**os.environ, "UMBRAL_ALERT_DRY_RUN": "1",
+               "UMBRAL_ALERT_DRY_RUN_DIR": str(sandbox)}
+        result = subprocess.run(["bash", "-c", f'source "{LIB}"'], env=env,
+                                capture_output=True, text=True)
+        assert result.returncode == 2
+        assert list(production.iterdir()) == []
+
+    def test_tmpdir_hostil_no_crea_sandbox_en_produccion(self, tmp_path):
+        home = tmp_path / "home"
+        production = home / ".config" / "umbral"
+        production.mkdir(parents=True)
+        env = {k: v for k, v in os.environ.items() if not k.startswith("UMBRAL_")}
+        env.update(HOME=str(home), TMPDIR=str(production), UMBRAL_ALERT_DRY_RUN="1")
+        result = subprocess.run(["bash", "-c", f'source "{LIB}"'], env=env,
+                                capture_output=True, text=True)
+        assert result.returncode == 2
+        assert list(production.iterdir()) == []
+
+    @pytest.mark.parametrize("relative,command", [
+        ("ops/ops_log.jsonl", "umbral_ops_log '{\"kind\":\"prueba\"}'"),
+        ("ops/ops_log.lock", "umbral_ops_log '{\"kind\":\"prueba\"}'"),
+        ("monitor/mon.alert", "umbral_commit_alert mon nueva 0"),
+        ("monitor/mon.alert", "umbral_clear_alert mon"),
+        ("monitor/mon.beat", "umbral_heartbeat_write mon"),
+        ("notificaciones-simuladas.jsonl", "umbral_alert mon titulo cuerpo error"),
+    ])
+    @pytest.mark.parametrize("link_type", ["symlink", "hardlink", "symlink-hardlink"])
+    def test_archivos_enlazados_no_alteran_produccion(self, tmp_path, relative, command, link_type):
+        production = tmp_path / "production.txt"
+        production.write_text("contenido original\n")
+        before = (production.read_bytes(), production.stat().st_mtime_ns)
+        sandbox = tmp_path / "sandbox"
+        sandbox.mkdir()
+        linked = sandbox / relative
+        linked.parent.mkdir(parents=True, exist_ok=True)
+        if link_type == "symlink":
+            linked.symlink_to(production)
+        elif link_type == "hardlink":
+            linked.hardlink_to(production)
+        else:
+            shared = sandbox / "shared"
+            shared.hardlink_to(production)
+            linked.symlink_to(shared)
+        env = {k: v for k, v in os.environ.items() if not k.startswith("UMBRAL_")}
+        env.update(UMBRAL_ALERT_DRY_RUN="1", UMBRAL_ALERT_DRY_RUN_DIR=str(sandbox))
+        result = subprocess.run(["bash", "-c", f'set -e\nsource "{LIB}"\n{command}'],
+                                env=env, capture_output=True, text=True)
+        assert result.returncode == 2, result.stdout + result.stderr
+        assert (production.read_bytes(), production.stat().st_mtime_ns) == before
+        assert linked.exists(), "ni siquiera debe borrar el enlace de un destino rechazado"
+
+    @pytest.mark.parametrize("redis_ok", [True, False])
+    def test_health_check_real_aisla_escrituras_y_conserva_lecturas(self, tmp_path, worker_stub, redis_ok):
+        home = tmp_path / "home"
+        production = home / ".config" / "umbral"
+        monitor = production / "monitor"
+        monitor.mkdir(parents=True)
+        (monitor / "health-check.alert").write_text("fp-original\n123\n5\n")
+        (monitor / "health-check.beat").write_text("123\n")
+        (monitor / "e2e-validation.beat").write_text(f"{int(time.time())}\n")
+        (production / "ops_log.jsonl").write_text('{"ts":"2026-09-21T00:00:00Z","kind":"original"}\n')
+        env_file = home / ".config" / "openclaw" / "env"
+        env_file.parent.mkdir(parents=True)
+        env_file.write_text(f"WORKER_URL={worker_stub.url}\nWORKER_TOKEN=production-placeholder\n"
+                            "UMBRAL_ALERT_DRY_RUN=0\n")
+        temporary = tmp_path / "temporary"
+        temporary.mkdir()
+        bin_dir = tmp_path / "bin"
+        bin_dir.mkdir()
+        probes = tmp_path / "probes.txt"
+        scripts = {
+            "redis-cli": '#!/bin/bash\necho "redis" >> "$PROBES"\necho ' + ("PONG" if redis_ok else "ERROR") + "\n",
+            "curl": '#!/bin/bash\nprintf "curl %s\\n" "$*" >> "$PROBES"\nprintf 200\n',
+            "dispatcher": '#!/bin/bash\necho "dispatcher" >> "$PROBES"\nexit 0\n',
+            "openclaw": '#!/bin/bash\necho "canary" >> "$PROBES"\necho \'{"result":"success","provider":"stub","model":"stub","stopReason":"stop","text":"respuesta","fallbackUsed":false}\'\n',
+        }
+        for name, content in scripts.items():
+            path = bin_dir / name
+            path.write_text(content)
+            path.chmod(0o755)
+
+        def snapshot():
+            return {str(p.relative_to(production)): (p.read_bytes(), p.stat().st_mtime_ns, p.stat().st_mode)
+                    for p in production.rglob("*") if p.is_file()}
+
+        before = snapshot()
+        env = {k: v for k, v in os.environ.items() if not k.startswith("UMBRAL_")}
+        env.update(HOME=str(home), TMPDIR=str(temporary), PATH=f"{bin_dir}:/usr/bin:/bin",
+                   UMBRAL_ALERT_DRY_RUN="1", WORKER_URL=worker_stub.url, WORKER_TOKEN="inherited-placeholder",
+                   UMBRAL_ALERT_CAPTURE=str(production / "capture.jsonl"), PROBES=str(probes),
+                   OPENCLAW_BIN=str(bin_dir / "openclaw"), DISPATCHER_CTL=str(bin_dir / "dispatcher"))
+        result = subprocess.run(["bash", str(REPO / "scripts/vps/health-check.sh")],
+                                env=env, capture_output=True, text=True)
+        assert result.returncode == (0 if redis_ok else 1), result.stdout + result.stderr
+        assert snapshot() == before
+        assert worker_stub.recibidas == []
+        assert "ops_log.jsonl exists (1 lines)" in result.stdout
+        assert "sin ninguna marca" not in result.stdout, "debe leer el latido real preexistente"
+        calls = probes.read_text().splitlines()
+        assert calls.count("canary") == 1 and calls.count("redis") == 1
+        assert len([call for call in calls if call.startswith("curl ")]) == 2
+        sandboxes = list(temporary.glob("umbral-alert-dry-run.*"))
+        assert len(sandboxes) == 1, "health-check y su canario deben compartir sandbox"
+        events = [json.loads(line) for line in (sandboxes[0] / "ops/ops_log.jsonl").read_text().splitlines()]
+        assert [event["kind"] for event in events].count("canary_inference") == 1
+        assert [event["kind"] for event in events].count("health_check") == 1
+        assert not any(event["kind"] == "monitor_alert" for event in events)
+        assert (sandboxes[0] / "monitor/health-check.beat").exists()
+        if not redis_ok:
+            assert any(event["kind"] == "monitor_alert_simulado" for event in events)

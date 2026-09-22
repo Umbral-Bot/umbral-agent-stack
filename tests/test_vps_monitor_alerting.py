@@ -1081,3 +1081,92 @@ printf 'SANDBOX=%s\n' "$UMBRAL_ALERT_DRY_RUN_DIR"
                                 capture_output=True, text=True)
         assert result.returncode == 2
         assert list(production.iterdir()) == []
+
+    @pytest.mark.parametrize("relative,command", [
+        ("ops/ops_log.jsonl", "umbral_ops_log '{\"kind\":\"prueba\"}'"),
+        ("ops/ops_log.lock", "umbral_ops_log '{\"kind\":\"prueba\"}'"),
+        ("monitor/mon.alert", "umbral_commit_alert mon nueva 0"),
+        ("monitor/mon.alert", "umbral_clear_alert mon"),
+        ("monitor/mon.beat", "umbral_heartbeat_write mon"),
+        ("notificaciones-simuladas.jsonl", "umbral_alert mon titulo cuerpo error"),
+    ])
+    @pytest.mark.parametrize("link_type", ["symlink", "hardlink"])
+    def test_archivos_enlazados_no_alteran_produccion(self, tmp_path, relative, command, link_type):
+        production = tmp_path / "production.txt"
+        production.write_text("contenido original\n")
+        before = (production.read_bytes(), production.stat().st_mtime_ns)
+        sandbox = tmp_path / "sandbox"
+        sandbox.mkdir()
+        linked = sandbox / relative
+        linked.parent.mkdir(parents=True, exist_ok=True)
+        if link_type == "symlink":
+            linked.symlink_to(production)
+        else:
+            linked.hardlink_to(production)
+        env = {k: v for k, v in os.environ.items() if not k.startswith("UMBRAL_")}
+        env.update(UMBRAL_ALERT_DRY_RUN="1", UMBRAL_ALERT_DRY_RUN_DIR=str(sandbox))
+        result = subprocess.run(["bash", "-c", f'set -e\nsource "{LIB}"\n{command}'],
+                                env=env, capture_output=True, text=True)
+        assert result.returncode == 2, result.stdout + result.stderr
+        assert (production.read_bytes(), production.stat().st_mtime_ns) == before
+        assert linked.exists(), "ni siquiera debe borrar el enlace de un destino rechazado"
+
+    @pytest.mark.parametrize("redis_ok", [True, False])
+    def test_health_check_real_aisla_escrituras_y_conserva_lecturas(self, tmp_path, worker_stub, redis_ok):
+        home = tmp_path / "home"
+        production = home / ".config" / "umbral"
+        monitor = production / "monitor"
+        monitor.mkdir(parents=True)
+        (monitor / "health-check.alert").write_text("fp-original\n123\n5\n")
+        (monitor / "health-check.beat").write_text("123\n")
+        (monitor / "e2e-validation.beat").write_text(f"{int(time.time())}\n")
+        (production / "ops_log.jsonl").write_text('{"ts":"2026-09-21T00:00:00Z","kind":"original"}\n')
+        env_file = home / ".config" / "openclaw" / "env"
+        env_file.parent.mkdir(parents=True)
+        env_file.write_text(f"WORKER_URL={worker_stub.url}\nWORKER_TOKEN=production-placeholder\n"
+                            "UMBRAL_ALERT_DRY_RUN=0\n")
+        temporary = tmp_path / "temporary"
+        temporary.mkdir()
+        bin_dir = tmp_path / "bin"
+        bin_dir.mkdir()
+        probes = tmp_path / "probes.txt"
+        scripts = {
+            "redis-cli": '#!/bin/bash\necho "redis" >> "$PROBES"\necho ' + ("PONG" if redis_ok else "ERROR") + "\n",
+            "curl": '#!/bin/bash\nprintf "curl %s\\n" "$*" >> "$PROBES"\nprintf 200\n',
+            "dispatcher": '#!/bin/bash\necho "dispatcher" >> "$PROBES"\nexit 0\n',
+            "openclaw": '#!/bin/bash\necho "canary" >> "$PROBES"\necho \'{"result":"success","provider":"stub","model":"stub","stopReason":"stop","text":"respuesta","fallbackUsed":false}\'\n',
+        }
+        for name, content in scripts.items():
+            path = bin_dir / name
+            path.write_text(content)
+            path.chmod(0o755)
+
+        def snapshot():
+            return {str(p.relative_to(production)): (p.read_bytes(), p.stat().st_mtime_ns, p.stat().st_mode)
+                    for p in production.rglob("*") if p.is_file()}
+
+        before = snapshot()
+        env = {k: v for k, v in os.environ.items() if not k.startswith("UMBRAL_")}
+        env.update(HOME=str(home), TMPDIR=str(temporary), PATH=f"{bin_dir}:/usr/bin:/bin",
+                   UMBRAL_ALERT_DRY_RUN="1", WORKER_URL=worker_stub.url, WORKER_TOKEN="inherited-placeholder",
+                   UMBRAL_ALERT_CAPTURE=str(production / "capture.jsonl"), PROBES=str(probes),
+                   OPENCLAW_BIN=str(bin_dir / "openclaw"), DISPATCHER_CTL=str(bin_dir / "dispatcher"))
+        result = subprocess.run(["bash", str(REPO / "scripts/vps/health-check.sh")],
+                                env=env, capture_output=True, text=True)
+        assert result.returncode == (0 if redis_ok else 1), result.stdout + result.stderr
+        assert snapshot() == before
+        assert worker_stub.recibidas == []
+        assert "ops_log.jsonl exists (1 lines)" in result.stdout
+        assert "sin ninguna marca" not in result.stdout, "debe leer el latido real preexistente"
+        calls = probes.read_text().splitlines()
+        assert calls.count("canary") == 1 and calls.count("redis") == 1
+        assert len([call for call in calls if call.startswith("curl ")]) == 2
+        sandboxes = list(temporary.glob("umbral-alert-dry-run.*"))
+        assert len(sandboxes) == 1, "health-check y su canario deben compartir sandbox"
+        events = [json.loads(line) for line in (sandboxes[0] / "ops/ops_log.jsonl").read_text().splitlines()]
+        assert [event["kind"] for event in events].count("canary_inference") == 1
+        assert [event["kind"] for event in events].count("health_check") == 1
+        assert not any(event["kind"] == "monitor_alert" for event in events)
+        assert (sandboxes[0] / "monitor/health-check.beat").exists()
+        if not redis_ok:
+            assert any(event["kind"] == "monitor_alert_simulado" for event in events)

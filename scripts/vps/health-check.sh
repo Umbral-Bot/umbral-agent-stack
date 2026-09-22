@@ -19,6 +19,13 @@ umbral_load_env || echo "[WARN] no se pudo leer el archivo de entorno"
 WORKER_URL="${WORKER_URL:-http://127.0.0.1:8088}"
 GATEWAY_URL="${GATEWAY_URL:-http://127.0.0.1:18789}"
 OPS_LOG="${UMBRAL_OPS_LOG_DIR:-$HOME/.config/umbral}/ops_log.jsonl"
+HEARTBEAT_READ_DIR="$UMBRAL_MON_STATE_DIR"
+if umbral_en_pruebas; then
+    # Los probes siguen leyendo el sistema vigilado. Solo sus nuevas marcas y
+    # la maquina de estados de alertas se escriben en el sandbox del ensayo.
+    OPS_LOG="$UMBRAL_ALERT_PROD_OPS_DIR/ops_log.jsonl"
+    HEARTBEAT_READ_DIR="$UMBRAL_ALERT_PROD_STATE_DIR"
+fi
 REPO_DIR="${REPO_DIR:-$HOME/umbral-agent-stack}"
 DISPATCHER_CTL="${DISPATCHER_CTL:-$REPO_DIR/scripts/vps/dispatcher-service.sh}"
 FAILURES=()
@@ -168,8 +175,8 @@ fi
 # ---------------------------------------------------------------
 for entry in "e2e-validation:172800"; do
     mon="${entry%%:*}"; maxage="${entry##*:}"
-    if umbral_heartbeat_stale "$mon" "$maxage"; then
-        age=$(umbral_heartbeat_age "$mon")
+    if UMBRAL_MON_STATE_DIR="$HEARTBEAT_READ_DIR" umbral_heartbeat_stale "$mon" "$maxage"; then
+        age=$(UMBRAL_MON_STATE_DIR="$HEARTBEAT_READ_DIR" umbral_heartbeat_age "$mon")
         if [ "$age" -lt 0 ]; then
             echo "[WARN] monitor '$mon' sin ninguna marca de ejecucion correcta todavia"
         else

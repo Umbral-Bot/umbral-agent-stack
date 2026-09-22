@@ -25,5 +25,9 @@ canaria siguen siendo reales. Para pruebas sin proveedores reales se usan los
 tests con stubs. El estado simulado no se mezcla con el registro canónico y no
 acredita una ventana productiva del gate.
 
+El health-check consulta el registro y los latidos preexistentes en sus rutas
+originales, en lectura. Sus nuevos eventos y latidos quedan en el sandbox;
+así, iniciar un ensayo vacío no simula por accidente la ausencia de monitores.
+
 Una variable definida y vacía permanece vacía al cargar el entorno en modo
 normal. El archivo de entorno no puede encender ni apagar el modo de prueba.

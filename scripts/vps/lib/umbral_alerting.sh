@@ -110,6 +110,23 @@ if umbral_en_pruebas; then
   umbral_aislar_prueba || return 2
 fi
 
+# Comprueba tambien el archivo final justo antes de cada escritura: un sandbox
+# reutilizado puede contener enlaces en sus descendientes, no solo en su raiz.
+umbral_ruta_escritura_prueba() {
+  umbral_en_pruebas || return 0
+  local path resolved
+  for path in "$@"; do
+    resolved=$(realpath -m -- "$path") || return 2
+    case "$resolved" in "$UMBRAL_ALERT_DRY_RUN_DIR/"*) ;; *)
+      echo "ERROR: escritura fuera del sandbox de prueba" >&2; return 2 ;;
+    esac
+    if [ -f "$path" ] && [ "$(stat -c %h -- "$path")" -gt 1 ]; then
+      echo "ERROR: archivo compartido por hardlink en sandbox de prueba" >&2
+      return 2
+    fi
+  done
+}
+
 # -----------------------------------------------------------------
 # umbral_load_env — carga ~/.config/openclaw/env sin volcarlo.
 #
@@ -298,6 +315,7 @@ umbral_should_alert() {
 # -----------------------------------------------------------------
 umbral_commit_alert() {
   local monitor="$1" fp="$2" n="${3:-${UMBRAL_ALERT_PENDING_N:-0}}"
+  umbral_ruta_escritura_prueba "$UMBRAL_MON_STATE_DIR/${monitor}.alert" || return 2
   mkdir -p "$UMBRAL_MON_STATE_DIR"
   printf '%s\n%s\n%s\n' "$fp" "$(date +%s)" "$n" > "$UMBRAL_MON_STATE_DIR/${monitor}.alert"
 }
@@ -330,6 +348,7 @@ umbral_alert_active() {
 umbral_clear_alert() {
   local monitor="$1"
   local f="$UMBRAL_MON_STATE_DIR/${monitor}.alert"
+  umbral_ruta_escritura_prueba "$f" || return 2
   if [ -f "$f" ]; then
     rm -f "$f"
     return 0
@@ -344,6 +363,7 @@ umbral_clear_alert() {
 # -----------------------------------------------------------------
 umbral_heartbeat_write() {
   local monitor="$1"
+  umbral_ruta_escritura_prueba "$UMBRAL_MON_STATE_DIR/${monitor}.beat" || return 2
   mkdir -p "$UMBRAL_MON_STATE_DIR"
   date +%s > "$UMBRAL_MON_STATE_DIR/${monitor}.beat"
 }
@@ -381,6 +401,7 @@ umbral_heartbeat_stale() {
 umbral_ops_log() {
   local dir="${UMBRAL_OPS_LOG_DIR:-$HOME/.config/umbral}"
   local archivo="$dir/ops_log.jsonl"
+  umbral_ruta_escritura_prueba "$archivo" "$dir/ops_log.lock" || return 2
   mkdir -p "$dir"
   # Con cerrojo, y por un motivo concreto: la rotacion semanal
   # (scripts/ops_log_rotate.py) lee el archivo entero y lo sustituye renombrando
@@ -435,6 +456,12 @@ umbral_alert() {
   local key="$monitor"
   [ "$sev" = "info" ] && key="${monitor}.info"
 
+  if umbral_en_pruebas; then
+    umbral_ruta_escritura_prueba "$UMBRAL_MON_STATE_DIR/${key}.alert" \
+      "$UMBRAL_OPS_LOG_DIR/ops_log.jsonl" "$UMBRAL_OPS_LOG_DIR/ops_log.lock" \
+      "$UMBRAL_ALERT_CAPTURE" || return 2
+  fi
+
   if ! umbral_should_alert "$key" "$fp"; then
     local ventana; ventana=$(umbral_alert_window "$(umbral_alert_reavisos "$key")")
     echo "(alerta silenciada: mismo estado dentro de la ventana de ${ventana}s)"
@@ -452,6 +479,7 @@ umbral_alert() {
   # que se quiere ensayar es la maquina de estados, no la red.
   if umbral_en_pruebas; then
     local captura="${UMBRAL_ALERT_CAPTURE:-$UMBRAL_MON_STATE_DIR/notificaciones-simuladas.jsonl}"
+    umbral_ruta_escritura_prueba "$captura" || return 2
     mkdir -p "$(dirname "$captura")"
     python3 -c 'import json,sys; print(json.dumps({"ts":sys.argv[1],"monitor":sys.argv[2],"severity":sys.argv[3],"text":sys.argv[4]}, ensure_ascii=False))' \
       "$ts" "$monitor" "$sev" "$text" >> "$captura"

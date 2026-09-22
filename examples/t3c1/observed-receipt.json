@@ -1,0 +1,76 @@
+{
+  "schema_version": "t3c1.v1",
+  "decision_id": "f4c44d94f7f9c0622bc68d0ecfb9d9935e0ff61d6e299d3a663d75ce0bf1720a",
+  "evaluated_at": "2026-09-22T12:12:56+00:00",
+  "mode": "observed",
+  "dispatch_allowed": false,
+  "incremental_spend_authorized_usd": 0,
+  "status": "IDLE",
+  "capacity_observations": [
+    {
+      "product": "codex",
+      "account_ref": "tarro-codex-account",
+      "pool_id": "codex:tarro-codex-account",
+      "window_id": "primary",
+      "unit": "percent",
+      "observed_remaining": 76.0,
+      "availability": "pass",
+      "confidence": "verified",
+      "source": "tool",
+      "observed_at": "2026-09-22T12:12:56+00:00",
+      "valid_until": "2026-09-22T12:17:56+00:00",
+      "fresh": true,
+      "evidence_ref": "get_usage_limits:2026-09-22T12:12:56Z"
+    }
+  ],
+  "decisions": [
+    {
+      "task_id": "C24-regresion",
+      "revision": "2026-09-22-recepcion-rick",
+      "owner": "rick-grok",
+      "route_id": "codex-tarro",
+      "status": "HOLD",
+      "reasons": [
+        "ALREADY_COMPLETED"
+      ],
+      "available_before": {},
+      "valid_until": null,
+      "evidence_refs": [
+        ".agents/tasks/2026-09-21-001-c24-t3b-capitalizacion.md"
+      ],
+      "next_step": "Conservar el cierre y la recepción; no repetir la GUI."
+    },
+    {
+      "task_id": "UMB-276-testigo-externo",
+      "revision": "2026-09-22-corte-vigente",
+      "owner": "rick-vps",
+      "route_id": "codex-tarro",
+      "status": "HOLD",
+      "reasons": [
+        "TASK_NOT_READY"
+      ],
+      "available_before": {},
+      "valid_until": null,
+      "evidence_refs": [
+        "https://linear.app/umbral/issue/UMB-276"
+      ],
+      "next_step": "Concretar host independiente, latido y canal humano; comprobar recepción antes del piloto."
+    },
+    {
+      "task_id": "registry-PR61-dynamo",
+      "revision": "2026-09-22-tarro-recibido",
+      "owner": "codex",
+      "route_id": "codex-tarro",
+      "status": "HOLD",
+      "reasons": [
+        "ALREADY_COMPLETED"
+      ],
+      "available_before": {},
+      "valid_until": null,
+      "evidence_refs": [
+        "https://github.com/Umbral-Bot/umbral-skills-registry/pull/61"
+      ],
+      "next_step": "No regenerar la skill ya integrada. Recepción Grok/PCRick queda como alcance separado."
+    }
+  ]
+}

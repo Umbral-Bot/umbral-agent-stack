@@ -27,6 +27,10 @@ ACTORS = {"rick", "rick-grok"}
 RUNNERS = {"codex", "claude", "antigravity"}
 IDENT = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,119}\Z")
 SHA = re.compile(r"[0-9a-f]{64}\Z")
+# winbase.h values; subprocess only exposes these names on Windows.
+CREATE_NEW_PROCESS_GROUP = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0x00000200)
+CREATE_NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
+CREATE_BREAKAWAY_FROM_JOB = getattr(subprocess, "CREATE_BREAKAWAY_FROM_JOB", 0x01000000)
 
 
 class JobError(ValueError):
@@ -261,6 +265,17 @@ class Registry:
             cx.execute("UPDATE jobs SET state=?,receipt=? WHERE id=?", (state, json_bytes(receipt).decode(), job))
             self.event(cx, job, state, details)
 
+    def note(self, job, kind, details):
+        """Add diagnostic receipt facts without changing state or the fence."""
+        with self.transaction() as cx:
+            row = cx.execute("SELECT receipt FROM jobs WHERE id=?", (job,)).fetchone()
+            if row is None:
+                raise JobError("JOB_NOT_FOUND")
+            receipt = json.loads(row["receipt"])
+            receipt.update(details)
+            cx.execute("UPDATE jobs SET receipt=? WHERE id=?", (json_bytes(receipt).decode(), job))
+            self.event(cx, job, kind, details)
+
     def launch(self, job, nonce, spawn):
         """Serialize the final admission check, actual spawn and PID receipt.
 
@@ -414,6 +429,26 @@ def session_from_log(path, runner):
     return next(iter(ids)) if len(ids) == 1 else None
 
 
+def spawn_bootstrap(argv, log, *, windows=os.name == "nt"):
+    """Start the detached supervisor outside the caller's Windows Job Object.
+
+    OpenSSH for Windows runs each session in a Job Object with KILL_ON_JOB_CLOSE
+    and BREAKAWAY_OK. A new process group stays in that job, so the supervisor
+    died when the SSH command returned and left RESERVED with only
+    bootstrap.json. A job without BREAKAWAY_OK rejects the flag (access denied,
+    nothing created); then the supervisor shares the caller's job and the
+    receipt says DENIED.
+    """
+    common = {"stdin": subprocess.DEVNULL, "stdout": log, "stderr": subprocess.STDOUT, "close_fds": True}
+    if not windows:
+        return subprocess.Popen(argv, start_new_session=True, **common), "NOT_WINDOWS"
+    flags = CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP
+    try:
+        return subprocess.Popen(argv, creationflags=flags | CREATE_BREAKAWAY_FROM_JOB, **common), "GRANTED"
+    except PermissionError:
+        return subprocess.Popen(argv, creationflags=flags, **common), "DENIED"
+
+
 def submit(registry, request, profile, *, background=False):
     req = validated_request(request)
     profile = validated_profile(profile, req["runner"])
@@ -424,19 +459,23 @@ def submit(registry, request, profile, *, background=False):
         return execute(registry, req, profile, nonce)
     outdir = registry.job_dir(req["job_id"])
     bootstrap = outdir / "bootstrap.json"
-    flags = (getattr(subprocess, "CREATE_NO_WINDOW", 0) | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)) if os.name == "nt" else 0
     try:
         outdir.mkdir(parents=True, exist_ok=True)
         with bootstrap.open("xb") as stream:
             stream.write(json_bytes({"request": req, "profile": profile, "nonce": nonce}))
-        child = subprocess.Popen([sys.executable, str(Path(__file__).resolve()), "--root", str(registry.root), "_execute", "--bootstrap", str(bootstrap)],
-                                 stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                                 creationflags=flags, start_new_session=os.name != "nt", close_fds=True)
-        # Reap if this caller stays alive; this optional thread never supervises
-        # the work and is not required after the launching command has exited.
-        threading.Thread(target=child.wait, daemon=True).start()
+        # Early supervisor output (status or traceback) stays with the job.
+        with (outdir / "bootstrap.log").open("xb") as log:
+            child, breakaway = spawn_bootstrap(
+                [sys.executable, str(Path(__file__).resolve()), "--root", str(registry.root), "_execute", "--bootstrap", str(bootstrap)], log)
     except Exception as exc:
         registry.transition(req["job_id"], nonce, {"RESERVED"}, "UNKNOWN", {"error_type": type(exc).__name__})
+        return registry.status(req["job_id"])
+    # Reap if this caller stays alive; this optional thread never supervises
+    # the work and is not required after the launching command has exited.
+    threading.Thread(target=child.wait, daemon=True).start()
+    # Diagnostic only, no liveness heuristic: RESERVED with a dead bootstrap_pid
+    # is an orphan to recover once with `_execute --bootstrap`, never a new start.
+    registry.note(req["job_id"], "BOOTSTRAP_SPAWNED", {"bootstrap_pid": child.pid, "bootstrap_breakaway": breakaway})
     return registry.status(req["job_id"])
 
 

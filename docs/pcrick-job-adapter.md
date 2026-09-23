@@ -117,9 +117,20 @@ python scripts/vm/pcrick_job.py --root <registro-local> status --job-id <id>
 ```
 
 `run` espera al proceso; `start` devuelve después de lanzar un supervisor. El
-supervisor no depende de un daemon nuevo. **La supervivencia tras desconexión
-SSH/nodo debe probarse en Windows real**: un Job Object de la sesión puede tener
-una política de cierre que un grupo de procesos nuevo no evite. El registro
+supervisor no depende de un daemon nuevo. OpenSSH para Windows ejecuta cada
+sesión en un Job Object con `KILL_ON_JOB_CLOSE | BREAKAWAY_OK`
+(`PowerShell/openssh-portable`, `contrib/win32/win32compat/w32-doexec.c`): un
+grupo de procesos nuevo sigue dentro y muere cuando termina el comando SSH. Así
+quedó `C25-DALUX-CLAUDE-01` en `RESERVED` solo con `bootstrap.json` (23-sep).
+Por eso `start` crea el supervisor con `CREATE_BREAKAWAY_FROM_JOB`; el recibo
+indica `bootstrap_breakaway=GRANTED`. Si el Job del llamador prohíbe salir,
+queda `DENIED`: el supervisor comparte ese Job y su vida depende de la sesión.
+El recibo de `start` también guarda `bootstrap_pid` (evento `BOOTSTRAP_SPAWNED`)
+y la salida temprana del supervisor queda en `bootstrap.log` del job. Un
+`RESERVED` cuyo `bootstrap_pid` ya no existe es una reserva huérfana: se
+recupera una sola vez con `_execute --bootstrap` síncrono del mismo ID, nunca
+con otro `start`. Las pruebas simulan el Job de sesión en Windows; **la
+supervivencia con sshd real en PCRick sigue pendiente de prueba**. El registro
 persistente evita un segundo lanzamiento; no prueba que el primero siga vivo.
 
 Usar el mismo `job_id` para recuperar una respuesta perdida; si cambió un

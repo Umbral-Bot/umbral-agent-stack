@@ -1,10 +1,13 @@
 """Offline subprocess/SQLite tests. No CLIs, cloud, VM or account required."""
+from contextlib import closing
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 import importlib.util
 import json
+import os
 from pathlib import Path
 import sqlite3
+import subprocess
 import sys
 import tempfile
 import threading
@@ -17,6 +20,33 @@ MODULE = Path(__file__).resolve().parents[1] / "scripts/vm/pcrick_job.py"
 spec = importlib.util.spec_from_file_location("pcrick_job", MODULE)
 job = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(job)
+
+KILL_ON_JOB_CLOSE, BREAKAWAY_OK = 0x2000, 0x800
+# Simulated OpenSSH-for-Windows session: join a Job Object, run the command,
+# exit. Closing the last job handle kills whatever is still inside it.
+SESSION_JOB = r"""
+import ctypes, os, subprocess, sys
+from ctypes import wintypes
+class Basic(ctypes.Structure):
+    _fields_ = [("a", ctypes.c_longlong), ("b", ctypes.c_longlong), ("LimitFlags", wintypes.DWORD),
+                ("c", ctypes.c_size_t), ("d", ctypes.c_size_t), ("e", wintypes.DWORD),
+                ("f", ctypes.c_size_t), ("g", wintypes.DWORD), ("h", wintypes.DWORD)]
+class Extended(ctypes.Structure):
+    _fields_ = [("basic", Basic), ("io", ctypes.c_ulonglong * 6)] + [(n, ctypes.c_size_t) for n in "wxyz"]
+k = ctypes.WinDLL("kernel32", use_last_error=True)
+k.CreateJobObjectW.restype = wintypes.HANDLE
+k.GetCurrentProcess.restype = wintypes.HANDLE
+k.SetInformationJobObject.argtypes = [wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD]
+k.AssignProcessToJobObject.argtypes = [wintypes.HANDLE, wintypes.HANDLE]
+handle = k.CreateJobObjectW(None, None)
+info = Extended()
+info.basic.LimitFlags = int(sys.argv[1])
+if not (handle and k.SetInformationJobObject(handle, 9, ctypes.byref(info), ctypes.sizeof(info))
+        and k.AssignProcessToJobObject(handle, k.GetCurrentProcess())):
+    raise SystemExit(ctypes.get_last_error() or 1)
+subprocess.run(sys.argv[2:], stdout=subprocess.DEVNULL)
+os._exit(0)
+"""
 
 
 class PCRickJobTests(unittest.TestCase):
@@ -355,6 +385,67 @@ class PCRickJobTests(unittest.TestCase):
         spawn.assert_not_called()
         self.assertEqual(result["state"], "UNKNOWN")
         self.assertEqual(bootstrap.read_text(encoding="utf-8"), "pre-existing fixture")
+
+    def test_bootstrap_requests_job_breakaway_and_reports_denial(self):
+        child = SimpleNamespace(pid=4242)
+        with patch.object(job.subprocess, "Popen", return_value=child) as spawn:
+            self.assertEqual(job.spawn_bootstrap(["boot"], None, windows=True), (child, "GRANTED"))
+        self.assertTrue(spawn.call_args.kwargs["creationflags"] & job.CREATE_BREAKAWAY_FROM_JOB)
+        # A job without BREAKAWAY_OK rejects the flag before creating anything.
+        with patch.object(job.subprocess, "Popen", side_effect=[PermissionError(13, "denied"), child]) as spawn:
+            self.assertEqual(job.spawn_bootstrap(["boot"], None, windows=True), (child, "DENIED"))
+        first, second = (call.kwargs["creationflags"] for call in spawn.call_args_list)
+        self.assertTrue(first & job.CREATE_BREAKAWAY_FROM_JOB)
+        self.assertFalse(second & job.CREATE_BREAKAWAY_FROM_JOB)
+        self.assertTrue(second & job.CREATE_NEW_PROCESS_GROUP)
+
+    def test_async_start_records_bootstrap_pid_and_early_log(self):
+        receipt = job.submit(self.registry, self.req, self.profile, background=True)
+        self.assertIsInstance(receipt["bootstrap_pid"], int)
+        self.assertIn(receipt["bootstrap_breakaway"], {"GRANTED", "DENIED", "NOT_WINDOWS"})
+        limit = time.monotonic() + 10
+        while time.monotonic() < limit and self.registry.status(self.req["job_id"])["state"] not in {"PROCESS_EXITED", "UNKNOWN"}:
+            time.sleep(0.05)
+        final = self.registry.status(self.req["job_id"])
+        self.assertEqual(final["state"], "PROCESS_EXITED")
+        log = self.registry.job_dir(self.req["job_id"]) / "bootstrap.log"
+        limit = time.monotonic() + 10
+        while time.monotonic() < limit and not log.read_bytes().strip():
+            time.sleep(0.05)
+        self.assertEqual(json.loads(log.read_bytes().decode("utf-8").splitlines()[-1])["state"], "PROCESS_EXITED")
+        with closing(sqlite3.connect(self.registry.db)) as cx:
+            kinds = [row[0] for row in cx.execute("SELECT kind FROM events WHERE job_id=? ORDER BY seq", (self.req["job_id"],))]
+        self.assertEqual(kinds.count("BOOTSTRAP_SPAWNED"), 1)
+
+    def start_in_session_job(self, limits):
+        request, profile = self.base / "request.json", self.base / "profile.json"
+        request.write_text(json.dumps(self.req), encoding="utf-8")
+        profile.write_text(json.dumps(self.profile), encoding="utf-8")
+        subprocess.run([sys.executable, "-c", SESSION_JOB, str(limits), sys.executable, str(MODULE),
+                        "--root", str(self.registry.root), "start", "--request", str(request), "--profile", str(profile)],
+                       check=True, timeout=60)
+        limit = time.monotonic() + 10
+        receipt = self.registry.status(self.req["job_id"])
+        while time.monotonic() < limit and receipt["state"] not in {"PROCESS_EXITED", "UNKNOWN"}:
+            time.sleep(0.1)
+            receipt = self.registry.status(self.req["job_id"])
+        return receipt
+
+    @unittest.skipUnless(os.name == "nt", "Windows Job Object semantics")
+    def test_start_survives_closing_ssh_like_session_job(self):
+        # PowerShell/openssh-portable w32-doexec.c: KILL_ON_JOB_CLOSE | BREAKAWAY_OK.
+        receipt = self.start_in_session_job(KILL_ON_JOB_CLOSE | BREAKAWAY_OK)
+        self.assertEqual(receipt["bootstrap_breakaway"], "GRANTED")
+        self.assertEqual(receipt["state"], "PROCESS_EXITED")
+        self.assertEqual((self.workspace / "effects.txt").read_text(), "once\n")
+
+    @unittest.skipUnless(os.name == "nt", "Windows Job Object semantics")
+    def test_session_job_without_breakaway_leaves_diagnosable_reservation(self):
+        receipt = self.start_in_session_job(KILL_ON_JOB_CLOSE)
+        self.assertEqual(receipt["bootstrap_breakaway"], "DENIED")
+        self.assertIsInstance(receipt["bootstrap_pid"], int)
+        self.assertNotEqual(receipt["state"], "PROCESS_EXITED")
+        self.assertTrue(receipt["resources"])
 
 
 if __name__ == "__main__":

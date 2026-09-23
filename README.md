@@ -162,8 +162,8 @@ wc.notion_poll_comments(since="2026-02-26T00:00:00Z")
 | Integration (full pipeline) | 7 tests | `PYTHONPATH=. python scripts/integration_test.py` |
 
 ```bash
-# Install dependencies
-pip install -r worker/requirements.txt
+# Install test dependencies (includes fakeredis)
+pip install -e ".[test]"
 
 # Run unit tests locally (no Redis needed — uses fakeredis)
 WORKER_TOKEN=test python -m pytest tests/ -v
@@ -219,7 +219,7 @@ PYTHONPATH=. python3 scripts/e2e_validation.py --notion
 | [bitacora-scripts](docs/bitacora-scripts.md) | **Scripts enriquecimiento Bitácora Notion** (enrich + resumen amigable) + dependencias faltantes |
 | [41-hackathon-resultado-diagnostico-real](docs/41-hackathon-resultado-diagnostico-real.md) | Hackathon: diagnóstico con datos reales (VPS/VM/Notion/Linear vivos) |
 | [43-gpt-rick-agent-azure-foundry](docs/43-gpt-rick-agent-azure-foundry.md) | Agente Gpt-Rick: endpoints Responses API / Activity Protocol, test |
-| [ADRs](docs/adr/) | **Decisiones arquitectónicas (001-004)** |
+| [ADRs](docs/adr/) | **Decisiones arquitectónicas** (estado indicado en cada documento) |
 | [02-implementation-log](docs/02-implementation-log.md) | Cronología de implementación |
 | [03-setup-vps](docs/03-setup-vps-openclaw.md) | Setup VPS + OpenClaw |
 | [05-setup-tailscale](docs/05-setup-tailscale.md) | Tailscale VPS ↔ Windows |

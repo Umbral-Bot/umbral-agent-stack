@@ -47,6 +47,7 @@ def run(tmp_path: Path, root: Path, manifest_text: str | bytes, *extra: str,
         manifest_text = manifest_text.encode("utf-8")
     manifest.write_bytes(manifest_text)
     out = tmp_path / "report.json"
+    out.unlink(missing_ok=True)  # --json-out is exclusive-create
     code = vtp.main([str(root), "--manifest", str(manifest), "--role", role,
                      "--json-out", str(out), *extra])
     report = json.loads(out.read_text(encoding="utf-8")) if out.exists() else None
@@ -145,12 +146,19 @@ def test_malformed_rows_invalid_hash_and_sizes(tmp_path):
 
 
 def test_duplicate_and_case_collision(tmp_path):
-    files = {"a.txt": b"a", "A.TXT": b"A"}
-    root = make_pkg(tmp_path, files)
-    text = manifest_for(files) + f"a.txt,1,{sha(b'a')}\n" + f".\\a.txt,1,{sha(b'a')}\n"
+    # Portable: a single file on disk, so case-insensitive filesystems (Windows,
+    # macOS) cannot overwrite one fixture with another. The collision is a
+    # manifest-level finding and must not depend on what the FS does.
+    root = make_pkg(tmp_path, {"a.txt": b"a"})
+    text = (f"ruta,bytes,sha256\na.txt,1,{sha(b'a')}\nA.TXT,1,{sha(b'a')}\n"
+            f"a.txt,1,{sha(b'a')}\n.\\a.txt,1,{sha(b'a')}\n")
     code, report = run(tmp_path, root, text)
     assert code == 1
-    assert codes(report) == ["case_collision", "duplicate_path", "duplicate_path"]
+    got = codes(report)
+    assert got.count("case_collision") == 1 and got.count("duplicate_path") == 2
+    assert "hash_mismatch" not in got and "size_mismatch" not in got
+    # Case-sensitive FS: A.TXT is simply absent; case-insensitive FS: same file.
+    assert set(got) <= {"case_collision", "duplicate_path", "missing_file"}
 
 
 @pytest.mark.parametrize("raw,rule", [
@@ -171,7 +179,8 @@ def test_escaping_paths_rejected_before_reading(tmp_path, raw, rule, monkeypatch
     assert code == 1
     assert report["findings"] == [{"code": "path_rejected", "severity": "error",
                                    "path": raw, "line": 2, "rule": rule, "detail": "not read"}]
-    assert opened == []
+    # Only the exclusive-create of the JSON report may be opened; never payload.
+    assert [Path(p).name for p in opened] == ["report.json"]
     assert "secret-outside" not in json.dumps(report)
 
 
@@ -348,3 +357,124 @@ def test_cli_subprocess_on_committed_fixture(tmp_path):
                            "--role", "student"], capture_output=True, text=True, check=False)
     assert proc.returncode == 1
     assert json.loads(proc.stdout)["status"] == "FAIL"
+
+
+# --- review round 1 regressions ---------------------------------------------
+
+class _FakeStat:
+    def __init__(self, mode, attrs=0, tag=0):
+        self.st_mode, self.st_file_attributes, self.st_reparse_tag = mode, attrs, tag
+
+
+@pytest.mark.parametrize("attrs,tag,expected", [
+    (0x400, 0xA0000003, True),   # IO_REPARSE_TAG_MOUNT_POINT (junction)
+    (0x400, 0xA000000C, True),   # IO_REPARSE_TAG_SYMLINK
+    (0x400, 0x9000001A, False),  # IO_REPARSE_TAG_CLOUD_* (Drive/OneDrive placeholder)
+    (0x400, 0x80000013, False),  # IO_REPARSE_TAG_DEDUP: regular data, not a redirect
+    (0, 0, False),
+])
+def test_is_redirect_distinguishes_name_surrogates(attrs, tag, expected):
+    import stat as st
+    assert vtp.is_redirect(_FakeStat(st.S_IFDIR | 0o755, attrs, tag)) is expected
+
+
+def _bridge_scenario(tmp_path: Path, make_link) -> tuple[int, dict, list[str]]:
+    root = make_pkg(tmp_path, {})
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "x.txt").write_bytes(b"abc")
+    make_link(str(outside), str(root / "bridge"))
+    return root
+
+
+def _assert_bridge_rejected(tmp_path, root, monkeypatch):
+    hashed: list[str] = []
+    real = vtp._sha256_file
+    monkeypatch.setattr(vtp, "_sha256_file", lambda p: (hashed.append(p), real(p))[1])
+    code, report = run(tmp_path, root, f"ruta,bytes,sha256\nbridge/x.txt,3,{ABC_SHA256}\n")
+    assert code == 1 and report["status"] == "FAIL"
+    assert report["counts"]["files_hashed"] == 0 and hashed == []
+    assert {(f["code"], f["path"]) for f in report["findings"]} == {
+        ("symlink_not_allowed", "bridge/x.txt"), ("symlink_not_allowed", "bridge")}
+
+
+@symlinks
+def test_directory_redirect_bridge_rejected_posix(tmp_path, monkeypatch):
+    root = _bridge_scenario(tmp_path, os.symlink)
+    _assert_bridge_rejected(tmp_path, root, monkeypatch)
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows junctions only")
+def test_windows_junction_bridge_rejected(tmp_path, monkeypatch):
+    import _winapi
+    root = _bridge_scenario(tmp_path, _winapi.CreateJunction)
+    _assert_bridge_rejected(tmp_path, root, monkeypatch)
+
+
+def test_resolved_path_outside_root_is_not_read(tmp_path, monkeypatch):
+    # Redirect invisible to lstat (unknown reparse type, mount): realpath guard.
+    root = make_pkg(tmp_path, {"a.txt": b"abc"})
+    real_realpath = os.path.realpath
+    monkeypatch.setattr(vtp.os.path, "realpath", lambda p, *a, **k: (
+        str(tmp_path / "elsewhere" / "a.txt") if str(p).endswith("a.txt")
+        else real_realpath(p, *a, **k)))
+    code, report = run(tmp_path, root, f"ruta,bytes,sha256\na.txt,3,{ABC_SHA256}\n")
+    assert code == 1 and report["counts"]["files_hashed"] == 0
+    assert report["findings"][0]["rule"] == "redirect_escape"
+
+
+def test_unlistable_directory_fails_inventory(tmp_path, monkeypatch):
+    root = make_pkg(tmp_path, {"hidden/undeclared.txt": b"u"})
+    real_scandir = os.scandir
+    def fake_scandir(path):
+        if os.path.basename(str(path)) == "hidden":
+            raise PermissionError(13, "Permission denied")
+        return real_scandir(path)
+    monkeypatch.setattr(vtp.os, "scandir", fake_scandir)
+    code, report = run(tmp_path, root, "ruta,bytes,sha256\n")
+    assert code == 1 and report["status"] == "FAIL"
+    assert [(f["code"], f["path"]) for f in report["findings"]] == [
+        ("inventory_incomplete", "hidden")]
+
+
+def _hardlink(src: Path, dst: Path) -> None:
+    try:
+        os.link(src, dst)
+    except (OSError, NotImplementedError) as exc:
+        pytest.skip(f"hardlinks unsupported: {exc}")
+
+
+@pytest.mark.parametrize("target", ["input", "manifest", "forbidden"])
+def test_json_out_alias_of_any_input_is_refused(tmp_path, target):
+    root = make_pkg(tmp_path, {"input.txt": b"abc"})
+    manifest = tmp_path / "m.csv"
+    manifest.write_text(f"ruta,bytes,sha256\ninput.txt,3,{ABC_SHA256}\n", encoding="utf-8")
+    forbidden = tmp_path / "forbidden.txt"
+    forbidden.write_text("privado\n", encoding="utf-8")
+    src = {"input": root / "input.txt", "manifest": manifest, "forbidden": forbidden}[target]
+    out = tmp_path / "out.json"
+    _hardlink(src, out)
+    before = {p: p.read_bytes() for p in (root / "input.txt", manifest, forbidden)}
+    code = vtp.main([str(root), "--manifest", str(manifest), "--role", "student",
+                     "--forbidden-list", str(forbidden), "--json-out", str(out)])
+    assert code == 2
+    assert {p: p.read_bytes() for p in before} == before
+
+
+def test_json_out_existing_file_refused_and_new_file_created(tmp_path):
+    root = make_pkg(tmp_path, {"input.txt": b"abc"})
+    manifest = tmp_path / "m.csv"
+    manifest.write_text(f"ruta,bytes,sha256\ninput.txt,3,{ABC_SHA256}\n", encoding="utf-8")
+    out = tmp_path / "out.json"
+    out.write_bytes(b"previous")
+    args = [str(root), "--manifest", str(manifest), "--role", "teacher", "--json-out", str(out)]
+    assert vtp.main(args) == 2 and out.read_bytes() == b"previous"
+    out.unlink()
+    assert vtp.main(args) == 0 and json.loads(out.read_bytes())["status"] == "PASS"
+
+
+def test_committed_fixture_bytes_are_lf_exact():
+    # Guards .gitattributes: autocrlf must not rewrite the synthetic payloads.
+    for p in (FIXTURES / "sano").rglob("*"):
+        if p.is_file():
+            assert b"\r\n" not in p.read_bytes(), p

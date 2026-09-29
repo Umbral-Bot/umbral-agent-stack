@@ -141,6 +141,24 @@ def _symlink_rule(link_path: str, real_root: str) -> str:
     return "symlink_internal" if _is_within(target, real_root) else "symlink_escape"
 
 
+# Windows: junctions/mount points and symlinks are *name-surrogate* reparse
+# points (they redirect to another path). Cloud placeholders (OneDrive/Drive
+# hydration, IO_REPARSE_TAG_CLOUD_*) are not name surrogates and stay allowed.
+FILE_ATTRIBUTE_REPARSE_POINT = 0x400
+REPARSE_NAME_SURROGATE_BIT = 0x20000000
+
+
+def is_redirect(st: os.stat_result) -> bool:
+    """True for a symlink, junction or other name-surrogate reparse point."""
+    if stat.S_ISLNK(st.st_mode):
+        return True
+    attrs = getattr(st, "st_file_attributes", 0) or 0
+    if not attrs & FILE_ATTRIBUTE_REPARSE_POINT:
+        return False
+    tag = getattr(st, "st_reparse_tag", 0) or 0
+    return bool(tag & REPARSE_NAME_SURROGATE_BIT)
+
+
 def load_manifest(manifest: Path, result: Result) -> list[Entry]:
     try:
         raw = manifest.read_bytes()
@@ -263,7 +281,7 @@ def verify_entry(entry: Entry, real_root: str, result: Result) -> None:
                         detail=exc.strerror or type(exc).__name__)
             )
             return
-        if stat.S_ISLNK(st.st_mode):
+        if is_redirect(st):
             result.findings.append(
                 Finding("symlink_not_allowed", path=entry.path, line=entry.line,
                         rule=_symlink_rule(current, real_root), detail="not followed")
@@ -282,6 +300,14 @@ def verify_entry(entry: Entry, real_root: str, result: Result) -> None:
         return
     if entry.size < 0:
         return  # row already reported as invalid; existence checked only
+    # Defence in depth against redirections not visible in lstat (e.g. an
+    # unknown reparse type or a mount): the resolved file must stay in root.
+    if not _is_within(os.path.realpath(current), real_root):
+        result.findings.append(
+            Finding("symlink_not_allowed", path=entry.path, line=entry.line,
+                    rule="redirect_escape", detail="resolves outside root; not read")
+        )
+        return
     try:
         actual_hash = _sha256_file(current)
     except OSError as exc:
@@ -303,24 +329,43 @@ def verify_entry(entry: Entry, real_root: str, result: Result) -> None:
         )
 
 
-def inventory(real_root: str) -> tuple[list[str], dict[str, str]]:
-    """Return (regular-ish file rel paths, symlink rel path -> rule). No reads."""
+def inventory(real_root: str, result: Result) -> tuple[list[str], dict[str, str]]:
+    """Return (file rel paths, redirect rel path -> rule). Never reads content.
+
+    Unlike os.walk, enumeration errors are not swallowed: any unlistable
+    directory or unstat-able entry becomes an ``inventory_incomplete`` finding.
+    Redirects (symlinks, junctions) are recorded and never descended into.
+    """
     files: list[str] = []
     links: dict[str, str] = {}
-    for dirpath, dirnames, filenames in os.walk(real_root, followlinks=False):
-        rel_dir = os.path.relpath(dirpath, real_root)
-        rel_dir = "" if rel_dir == "." else rel_dir.replace(os.sep, "/") + "/"
-        for name in list(dirnames):
-            full = os.path.join(dirpath, name)
-            if os.path.islink(full):
-                links[rel_dir + name] = _symlink_rule(full, real_root)
-                dirnames.remove(name)
-        for name in filenames:
-            full = os.path.join(dirpath, name)
-            if os.path.islink(full):
-                links[rel_dir + name] = _symlink_rule(full, real_root)
+    pending = [(real_root, "")]
+    while pending:
+        dirpath, rel_dir = pending.pop()
+        try:
+            with os.scandir(dirpath) as it:
+                entries = list(it)
+        except OSError as exc:
+            result.findings.append(
+                Finding("inventory_incomplete", path=rel_dir.rstrip("/") or ".",
+                        detail=f"cannot list directory: {exc.strerror or type(exc).__name__}")
+            )
+            continue
+        for entry in entries:
+            rel = rel_dir + entry.name
+            try:
+                st = entry.stat(follow_symlinks=False)
+            except OSError as exc:
+                result.findings.append(
+                    Finding("inventory_incomplete", path=rel,
+                            detail=f"cannot stat entry: {exc.strerror or type(exc).__name__}")
+                )
+                continue
+            if is_redirect(st):
+                links[rel] = _symlink_rule(entry.path, real_root)
+            elif stat.S_ISDIR(st.st_mode):
+                pending.append((entry.path, rel + "/"))
             else:
-                files.append(rel_dir + name)
+                files.append(rel)
     return sorted(files), links
 
 
@@ -398,7 +443,7 @@ def validate(root: Path, manifest: Path, role: str, forbidden: list[str],
     for entry in entries:
         verify_entry(entry, real_root, result)
 
-    files, links = inventory(real_root)
+    files, links = inventory(real_root, result)
     manifest_abs = os.path.realpath(manifest)
     manifest_rel = None
     if _is_within(manifest_abs, real_root):
@@ -484,7 +529,8 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
                    help="student mode: path whose naming hit was reviewed by a human "
                         "(never overrides explicit forbidden paths)")
     p.add_argument("--json-out", type=Path,
-                   help="write JSON here (must be outside ROOT); summary goes to stdout")
+                   help="write JSON to a NEW file outside ROOT (existing files are never "
+                        "overwritten); summary goes to stdout")
     return p.parse_args(argv)
 
 
@@ -506,8 +552,10 @@ def main(argv: list[str] | None = None) -> int:
             out_abs = os.path.realpath(args.json_out)
             if _is_within(out_abs, os.path.realpath(args.root)):
                 raise ConfigError("--json-out must be outside the package root")
-            if out_abs == os.path.realpath(args.manifest):
-                raise ConfigError("--json-out must not overwrite the manifest")
+            # Exclusive-create policy: never overwrite, so a hardlink/symlink
+            # alias of any input (inside or outside ROOT) cannot be clobbered.
+            if os.path.lexists(args.json_out):
+                raise ConfigError("--json-out already exists; refusing to overwrite")
         result = validate(args.root, args.manifest, args.role, forbidden, reviewed_ok)
     except ConfigError as exc:
         print(f"error: {exc}", file=sys.stderr)
@@ -518,7 +566,9 @@ def main(argv: list[str] | None = None) -> int:
     summary = render_summary(report)
     if args.json_out is not None:
         try:
-            args.json_out.write_text(payload, encoding="utf-8")
+            flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0)
+            with os.fdopen(os.open(args.json_out, flags, 0o644), "wb") as fh:
+                fh.write(payload.encode("utf-8"))
         except OSError as exc:
             print(f"error: cannot write --json-out: {exc.strerror or exc}", file=sys.stderr)
             return 2

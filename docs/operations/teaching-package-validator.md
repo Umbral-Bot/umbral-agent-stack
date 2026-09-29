@@ -17,8 +17,11 @@ python scripts/validate_teaching_package.py RAIZ --manifest MANIFIESTO.csv \
 ```
 
 - Sin `--json-out`: JSON a stdout, resumen legible a stderr.
-- Con `--json-out`: JSON al archivo (debe estar **fuera** de la raíz, para que el
-  informe no altere el inventario), resumen a stdout.
+- Con `--json-out`: JSON al archivo, resumen a stdout. El destino debe estar
+  **fuera** de la raíz (el informe no altera el inventario) y **no debe existir**:
+  política *exclusive-create* (`O_CREAT|O_EXCL`). Un archivo existente, sea
+  normal, symlink o hardlink de un insumo (dentro o fuera de la raíz: material,
+  manifiesto, lista de prohibidos), se rechaza con exit 2 sin tocarlo.
 
 | Exit | Significado |
 |------|-------------|
@@ -55,6 +58,7 @@ de texto normalizado (CRLF/LF), no bytes de materiales.
 | `not_regular_file` | Es carpeta o archivo especial; no se abre. |
 | `size_mismatch` / `hash_mismatch` | Tamaño o SHA-256 distintos (se informan valores esperado/real, nunca contenido). |
 | `unreadable_file` | Error de permisos/E/S. |
+| `inventory_incomplete` | No se pudo listar una carpeta o hacer `stat` de una entrada (p. ej. `PermissionError`). La enumeración incompleta **falla**: no se acredita inventario completo. |
 | `extra_file` | Archivo en disco no declarado. Solo se excluye el propio manifiesto si está dentro de la raíz; no se excluyen docs, ocultos ni carpetas. |
 | `symlink_not_allowed` | Ver política de enlaces. |
 | `student_forbidden_explicit` | (alumno) Ruta o carpeta en `--forbid`/`--forbidden-list`. |
@@ -67,11 +71,20 @@ que su archivo aparecerá además como `extra_file`.
 
 ### Política de enlaces simbólicos
 
-**Ningún enlace se sigue ni se lee**, sea interno o externo: todos producen
-`symlink_not_allowed` con `rule` = `symlink_internal` o `symlink_escape`
-(clasificado resolviendo la ruta, sin abrir el destino). Motivo: ZIP/Drive no
-preservan enlaces, así que el paquete entregado diferiría del verificado. La
-apertura final usa `O_NOFOLLOW` cuando el SO lo ofrece.
+**Ninguna redirección se sigue, se lee ni se recorre**, sea interna o externa:
+symlinks POSIX/Windows y *junctions*/mount points de Windows (reparse points
+con el bit *name-surrogate* `0x20000000`) producen `symlink_not_allowed` con
+`rule` = `symlink_internal` o `symlink_escape` (clasificado resolviendo la ruta,
+sin abrir el destino). Se comprueba en cada componente de la ruta declarada y
+durante el inventario. Motivo: ZIP/Drive no preservan enlaces, así que el
+paquete entregado diferiría del verificado.
+
+Reparse points que **no** son name-surrogate (placeholders de Drive/OneDrive
+`IO_REPARSE_TAG_CLOUD_*`, dedup) son datos regulares y se verifican normalmente.
+Defensa adicional: antes de leer, la ruta resuelta (`realpath`) debe seguir
+dentro de la raíz; si no, `rule=redirect_escape` y no se lee. La apertura final
+usa `O_NOFOLLOW` cuando el SO lo ofrece. Compatible con Python ≥ 3.11 (no usa
+`os.path.isjunction`).
 
 ### Modo alumno (`--role student`)
 
@@ -147,6 +160,13 @@ native_gui=NOT_RUN student_download=NOT_RUN (integrity only)
 - [student_forbidden_convention] docente/pauta.txt: token 'docente' starts with 'docente' teacher-only naming convention
 exit=1
 ```
+
+## Fixtures y fin de línea
+
+`tests/fixtures/teaching_package/.gitattributes` fija `* -text` solo para esos
+fixtures sintéticos, para que `core.autocrlf=true` no convierta LF→CRLF y
+cambie tamaño/SHA. El validador **no** normaliza fin de línea: hashea bytes.
+Un clon previo necesita re-checkout de esos archivos para aplicar el atributo.
 
 ## Pruebas
 

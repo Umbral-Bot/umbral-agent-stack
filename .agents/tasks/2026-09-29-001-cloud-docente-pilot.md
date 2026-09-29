@@ -6,7 +6,7 @@ assigned_to: claude
 created_by: codex
 priority: high
 created_at: "2026-09-29T00:52:00Z"
-updated_at: "2026-09-29T00:58:00Z"
+updated_at: "2026-09-29T01:02:30Z"
 ---
 
 # PKG-UAS-CLOUD-PILOT-01-20260929
@@ -62,3 +62,15 @@ Repo Umbral-Bot/umbral-agent-stack, rama de sesión `claude/cloud-docente-pilot-
 - `native_gui=NOT_RUN`, `student_download=NOT_RUN` siempre. Sin acceso a Drive/Notion/APIs/credenciales. Sin PR ni merge (lo abre Codex). No se afirma consumo de saldo promocional.
 - Límites conocidos: detección por nombres, no semántica; ventana TOCTOU mitigada con `O_NOFOLLOW`; `\` literal en nombres Linux no representable.
 
+
+### Claude — REPORT delta, ronda de reparación 1/2 (2026-09-29T01:02:30Z)
+- Revisión Codex en Windows (Python 3.13.7, pytest 9.1.1): 20 PASS, 2 FAIL, 2 skip, con 5 defectos. **Las pruebas iniciales, ejecutadas solo en Linux, no acreditaban Windows**; el REPORT anterior no debió leerse como validación multiplataforma.
+- Reloj original sin reinicio: inicio 00:54:09Z; ronda 1 entre 01:00:40Z y ~01:02:30Z (antes del límite 01:14:09Z). Rondas de reparación usadas: 1 de 2.
+- (1) Colisión de mayúsculas portable: un solo archivo en disco; el manifiesto declara `a.txt` y `A.TXT`; se afirma `case_collision` sin `hash_mismatch` en FS sensible e insensible.
+- (2) `tests/fixtures/teaching_package/.gitattributes` con `* -text` acotado a los fixtures sintéticos; sin normalizar hashes ni el validador. Prueba de guarda: los fixtures no contienen CRLF. En clones previos hay que volver a hacer checkout de esos archivos.
+- (3) `is_redirect()`: symlink o reparse point name-surrogate (bit 0x20000000: junction y symlink de Windows). Los placeholders cloud y dedup (no name-surrogate) siguen permitidos. Se aplica en cada componente de la ruta declarada y en el inventario, sin recorrer redirecciones. Guarda `realpath` antes de leer (`redirect_escape`). Compatible con Python ≥ 3.11 (sin `isjunction`). Pruebas: unitaria de tags reparse, puente con symlink de carpeta en POSIX, **junction real con `_winapi.CreateJunction` condicional a Windows** (en Linux sale skipped: no acreditada aquí) y guarda realpath simulada.
+- (4) Inventario con `os.scandir` explícito: un error de listado o de `stat` produce `inventory_incomplete` y FAIL. Prueba con `PermissionError` simulado en `hidden/`.
+- (5) `--json-out` usa exclusive-create: rechaza con exit 2 cualquier archivo existente (hardlink o symlink de insumo, dentro o fuera de la raíz, manifiesto o lista de prohibidos) y crea con `O_EXCL`. Las regresiones parametrizadas comprueban que los insumos quedan byte a byte intactos.
+- Suite en Linux, Python 3.11.15: `37 passed, 1 skipped in 0.39s` (el skip es la junction Windows).
+- CLI: sano → PASS, exit 0; defectuoso → FAIL con 6 hallazgos, exit 1; `--json-out` existente → exit 2 (`refusing to overwrite`).
+- Observación Codex registrada: la UI muestra Opus 5.5 con esfuerzo MEDIO; no afirmo esfuerzo alto. Créditos visibles 250→249 (redondeados), que no son un coste exacto. Sin PR ni merge.

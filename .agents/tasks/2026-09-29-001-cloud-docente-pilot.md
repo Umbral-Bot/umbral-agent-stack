@@ -1,12 +1,12 @@
 ---
 id: "2026-09-29-001"
 title: "Piloto supervisado Claude Cloud: verificador de paquetes docentes"
-status: assigned
+status: done
 assigned_to: claude
 created_by: codex
 priority: high
 created_at: "2026-09-29T00:52:00Z"
-updated_at: "2026-09-29T00:52:00Z"
+updated_at: "2026-09-29T00:58:00Z"
 ---
 
 # PKG-UAS-CLOUD-PILOT-01-20260929
@@ -48,4 +48,17 @@ Se reevalúan después del coste y aceptación de este piloto. No implementar fa
 ## Log
 ### Codex — preparación
 Contrato autónomo, inventario sintético y límites definidos. Material real C26 y sus verificaciones permanecen intactos. CLI local 2.1.280 autenticada claude.ai/firstParty/Max; saldo UI inicial USD250/250, semana66%, sesión1%, créditos de uso desactivados y recarga automática desactivada. La promoción es observada, no cota de coste por tarea.
+
+### Claude (Claude Code cloud) — ACK 2026-09-29T00:54:09Z
+Repo Umbral-Bot/umbral-agent-stack, rama de sesión `claude/cloud-docente-pilot-cptkre`, HEAD b4d0622 (contrato), base 97f2d87 verificada como ancestro. Runtime Linux, Python 3.11.15; pytest instalado solo en venv aislado de scratch (no se instaló el stack). Modelo configurado `claude-opus-5-5`; esfuerzo no expuesto por el runtime. Sin coste/tokens visibles.
+
+### Claude — REPORT 2026-09-29T00:58:00Z
+- Estado: **done** (completo, no parcial). Inicio 00:54:09Z, fin ~00:58Z según reloj del contenedor (dentro de 20 min). Rondas de reparación de pruebas usadas: 0 de 2.
+- Reutilización: `scripts/maintenance/check_skill_mirrors.py` revisado; hash de texto normalizado, no reutilizable para SHA-256 de bytes. Solo stdlib, sin dependencias nuevas.
+- Archivos: `scripts/validate_teaching_package.py`, `tests/test_validate_teaching_package.py`, `docs/operations/teaching-package-validator.md`, fixture sintético `tests/fixtures/teaching_package/{sano/,sano.csv}` (3 archivos, 110 bytes).
+- Política de symlinks: ninguno se sigue; interno => `symlink_internal`, externo => `symlink_escape`, ambos FAIL. Modo alumno: convención fuerte (prefijo de token), ambiguo fail-closed con `--reviewed-ok` explícito, lista explícita no anulable.
+- Pruebas: `python -m pytest tests/test_validate_teaching_package.py -q` → `24 passed in 0.27s` (incluye BOM/quoting/espacios/`\`, duplicados y colisión de mayúsculas, extra, rutas POSIX/Windows/UNC/`..` rechazadas sin `os.open`, symlink externo e interno, corrupción tamaño/hash, vector SHA-256 conocido de `abc`, fuga docente, exit 2, bytes/mtime intactos, CLI en subproceso).
+- CLI sano: `--role student` sobre fixture → `PASS`, exit 0. CLI defectuoso (copia en scratch: borrado, byte añadido, `docente/pauta.txt`, symlink a `/etc/hostname`) → `FAIL`, 6 hallazgos, exit 1. `--json-out` dentro de la raíz → exit 2. Salidas en la doc.
+- `native_gui=NOT_RUN`, `student_download=NOT_RUN` siempre. Sin acceso a Drive/Notion/APIs/credenciales. Sin PR ni merge (lo abre Codex). No se afirma consumo de saldo promocional.
+- Límites conocidos: detección por nombres, no semántica; ventana TOCTOU mitigada con `O_NOFOLLOW`; `\` literal en nombres Linux no representable.
 

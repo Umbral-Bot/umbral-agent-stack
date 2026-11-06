@@ -1,0 +1,84 @@
+# Borrador del esquema de parámetros del motor de piezas.
+# Punto de partida para la primera entrega; la sesión de laboratorio lo ajusta.
+# capa: maquetacion | imagen. fijo_por_manual: true = no es slider.
+
+version: 0.1-borrador
+parametros:
+  formato:
+    capa: maquetacion
+    tipo: opcion
+    opciones: ["1:1 1080x1080", "4:5 1080x1350", "9:16 1080x1920", "16:9 1920x1080", "linkedin 1200x627"]
+    defecto: "4:5 1080x1350"
+  modo:
+    capa: maquetacion
+    tipo: opcion
+    opciones: [claro, oscuro]
+    defecto: oscuro
+  columnas:
+    capa: maquetacion
+    tipo: entero
+    rango: [4, 12]
+    defecto: 6
+  margen_proporcional:
+    descripcion: margen exterior como fracción del lado menor, redondeado a múltiplo de 4 px
+    capa: maquetacion
+    tipo: decimal
+    rango: [0.04, 0.10]
+    defecto: 0.06
+  titulo_altura_relativa:
+    descripcion: altura de mayúscula del título respecto del alto del lienzo
+    capa: maquetacion
+    tipo: decimal
+    rango: [0.05, 0.14]
+    defecto: 0.08
+  densidad_texto:
+    descripcion: cantidad de bloques de datos (fecha, hora, lugar, cupos…)
+    capa: maquetacion
+    tipo: opcion
+    opciones: [minima, media, alta]
+    defecto: media
+  texto_minimo_px_movil:
+    descripcion: tamaño mínimo de texto de datos al verse en un celular
+    capa: maquetacion
+    tipo: entero
+    rango: [24, 40]
+    defecto: 28
+  alineacion:
+    capa: maquetacion
+    tipo: opcion
+    opciones: [izquierda, centrada]
+    defecto: izquierda
+  logo_posicion:
+    capa: maquetacion
+    tipo: opcion
+    opciones: [inferior_izquierda, inferior_derecha, superior_izquierda]
+    defecto: inferior_izquierda
+  logo_lockup:
+    capa: maquetacion
+    tipo: opcion
+    opciones: ["01 Canonico", "02 Presencia"]
+    defecto: "01 Canonico"
+    fijo_por_manual: true   # solo archivos oficiales; elegir entre ellos sí se permite
+  imagen_encaje:
+    capa: imagen
+    tipo: opcion
+    opciones: [sin_imagen, caja_alineada_grilla, sangrado_lateral, fondo_completo_con_velo]
+    defecto: sangrado_lateral
+  velo_opacidad:
+    descripcion: velo sobre la imagen para proteger la lectura del texto
+    capa: imagen
+    tipo: decimal
+    rango: [0.0, 0.85]
+    defecto: 0.55
+  imagen_fuente:
+    descripcion: referencia al catálogo de la capa de imagen (herramienta, modelo, prompt, sref, semilla)
+    capa: imagen
+    tipo: referencia
+    defecto: null
+
+reglas_fijas_manual_ub3:
+  tipografias: [Inter, JetBrains Mono]
+  dominio: umbralbim.io
+  turquesa_como_texto_sobre_claro: prohibido
+  brillos_degradados_en_corporativo: prohibido
+  espaciado_multiplo_px: 4

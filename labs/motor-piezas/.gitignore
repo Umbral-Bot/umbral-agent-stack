@@ -1,0 +1,7 @@
+# Insumos con licencia o pesados (fuentes, lockups, imágenes generadas) y salidas
+insumos/
+salida/
+*.png
+*.jpg
+*.ttf
+*.otf

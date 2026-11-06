@@ -1,0 +1,10 @@
+id: E2
+nombre: "Datos fuertes · los datos crecen y el subtítulo baja al tamaño del kicker"
+alternativa: paso2
+paso: jerarquia
+hereda: packs/E1-jerarquia-base.yaml
+decision_david: null
+valores:                    # dos niveles claros: título y datos
+  escala_valor: 1.7
+  escala_numero: 1.7
+  escala_subtitulo: 1.4     # igual al kicker: los dos siguen en el turquesa de marca

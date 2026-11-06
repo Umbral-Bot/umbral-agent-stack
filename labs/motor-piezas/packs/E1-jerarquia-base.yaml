@@ -1,0 +1,9 @@
+id: E1
+nombre: "Base · tercio (G02 2°) con más contraste abajo a la izquierda"
+alternativa: paso2
+paso: jerarquia
+hereda: packs/D2-division-tercio.yaml
+corrige: "G02 2° (David): aumentar contraste en las letras de abajo a la izquierda. El llamado y el logo quedaban a 7,1:1 sobre la parte más clara de la imagen; ahora el texto chico y el logo llegan a 10:1"
+decision_david: null
+valores:
+  contraste_sobre_imagen: 10.0

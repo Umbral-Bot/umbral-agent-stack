@@ -104,13 +104,22 @@ El contenido y el formato son entradas, no pasos. Cada galería cambia un solo p
 
 | Paso | Galería | Base | Presets | Estado |
 |---|---|---|---|---|
-| 1 · División | `galerias/G02.yaml` · Drive `01_galerias/2026-11-06_G02` | la 12° de G01 con el contraste corregido (`packs/D1`) | mitad, tercio, banda y ele (`divisiones` en el esquema) | espera la elección de David |
+| 1 · División | `galerias/G02.yaml` · Drive `01_galerias/2026-11-06_G02` | la 12° de G01 con el contraste corregido (`packs/D1`) | mitad, tercio, banda y ele (`divisiones` en el esquema) | **elegido el 2°, tercio** («se ve mejor el 2»), con más contraste abajo a la izquierda |
+| 2 · Jerarquía | `galerias/G03.yaml` · Drive `01_galerias/2026-11-06_G03` | el tercio con texto chico y logo a 10:1 (`packs/E1`) | base, datos fuertes, compacta (`pila_anclaje: abajo`) y escala mayor | espera la elección de David |
 
 Comentarios de David sobre G01 (en `decisiones.csv`):
 - **1°:** faltan ajustes de proporción y composición.
 - **12°:** destaca por su composición, pero le faltaba contraste en los textos de abajo a la izquierda (medían 4,57–6,28:1).
 
-Corrección desde el motor 0.3: el texto chico sobre imagen apunta a 7:1 (`contraste_sobre_imagen`) y usa los colores de texto claros (`colores_sobre_imagen`). Así el velo de la 12° sube de 0,71 a 0,73 en vez de tapar la imagen. G01 se generó con el motor 0.2 (consta en cada `piezas/*.json`); con el 0.3, sus piezas C solo cambian el color de ese texto chico.
+Corrección desde el motor 0.3: el texto chico sobre imagen apunta a 7:1 (`contraste_sobre_imagen`) y usa los colores de texto claros (`colores_sobre_imagen`). Así el velo de la 12° sube de 0,71 a 0,73 en vez de tapar la imagen.
+
+En G02, David volvió a pedir más contraste abajo a la izquierda en el tercio. El texto chico ya medía 7:1 o más, pero el llamado y el logo quedaban sobre la parte más clara y con más textura de la imagen. Ajustes:
+- La base del paso 2 (E1) sube el objetivo a 10:1, con un velo de 0,84.
+- El logotipo ahora cuenta para el velo como texto chico.
+
+Si 10:1 se confirma, conviene subirlo a valor por defecto.
+
+G01 se generó con el motor 0.2 (consta en cada `piezas/*.json`). Con el actual, sus zonas no cambian: solo el color del texto chico sobre imagen y la opacidad de los velos de sus piezas C.
 
 ## Cómo correr
 
@@ -123,6 +132,7 @@ python comparar_replica.py --pack packs/R1-replica-v2-01.yaml --salida salida/pr
 python galeria.py --definicion galerias/G01.yaml              # salida/G01/galeria.html
 python galeria.py --definicion galerias/G01.yaml --publicar   # copia a 07_Motor de piezas/01_galerias
 python galeria.py --definicion galerias/G02.yaml              # paso 1: divisiones (salida/G02)
+python galeria.py --definicion galerias/G03.yaml              # paso 2: jerarquía (salida/G03)
 python catalogar_imagenes.py                                   # regenera imagenes.yaml desde los PNG
 python analisis/medir_piezas.py                                # re-mide las seis elegidas
 ```

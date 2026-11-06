@@ -12,6 +12,10 @@ numero,codigo,pack,comentario_david,fecha
 11°,G01-C3,packs/C3-imagen-linkedin-oscuro-L3d.yaml,,
 12°,G01-C4,packs/C4-imagen-slide-oscuro-S2b.yaml,"la que destaco por la complejidad […] es la composición de la 12. Se ve muy bien, pero solo falta trabajar el contraste de los textos, de abajo a la izquierda. Pero en composición se ve muy bien.",2026-11-06
 1°,G02-D1,packs/D1-division-mitad.yaml,,
-2°,G02-D2,packs/D2-division-tercio.yaml,,
+2°,G02-D2,packs/D2-division-tercio.yaml,"se ve mejor el 2, pero aumentar contraste en las letras de abajo a la izquierda",2026-11-06
 3°,G02-D3,packs/D3-division-banda.yaml,,
 4°,G02-D4,packs/D4-division-ele.yaml,,
+1°,G03-E1,packs/E1-jerarquia-base.yaml,,
+2°,G03-E2,packs/E2-jerarquia-datos.yaml,,
+3°,G03-E3,packs/E3-jerarquia-compacta.yaml,,
+4°,G03-E4,packs/E4-jerarquia-escala.yaml,,

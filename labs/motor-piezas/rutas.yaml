@@ -8,7 +8,12 @@ marca: "G:/Mi unidad/02_Operacion/Entidades Propias/Umbral BIM/02_Marca e Identi
 tokens_css: "03_Sistema de Diseno/Umbral BIM Design System/colors_and_type.css"
 fuentes: "03_Sistema de Diseno/Umbral BIM Design System/fonts"
 lockups: "02_Logotipo/Exportables/Lockup"
-imagenes_mj: "06_Midjourney/03-variaciones-favoritos-2026-11-06/imagenes"
+# Insumos del Director Comercial y Marketing: solo lectura. Sus copias de lockups,
+# fuentes, vectores y favoritas MJ se comprobaron idénticas (sha256) a las fuentes
+# canónicas el 2026-11-06; lockups y fuentes se siguen leyendo de la fuente canónica.
+insumos_director: "07_Motor de piezas/00_insumos"
+generate_base: "07_Motor de piezas/00_insumos/01_codigo/generate.py"   # v2 portable: base del motor
+imagenes_mj: "07_Motor de piezas/00_insumos/05_midjourney_favoritas"
 galerias_drive: "07_Motor de piezas/01_galerias"
 
 # Fuentes de marca que se copian junto a cada salida (la licencia OFL viaja con ellas)
@@ -26,10 +31,10 @@ licencias_fuentes: [OFL-Inter.txt, OFL-JetBrainsMono.txt]
 v2_paquete: "insumos/v2-paquete/2026-11-06_ref-save-the-date_v2"
 v1_paquete: "insumos/v1-paquete/2026-11-06_ref-save-the-date"
 
-# Ilustraciones vectoriales reutilizables (activos, no valores de maquetación)
+# Ilustraciones vectoriales reutilizables (activos, no valores de maquetación). Relativas a `marca`.
 ilustraciones:
   wireframe_iso:
-    archivo: "insumos/v2-paquete/2026-11-06_ref-save-the-date_v2/vectores/wireframe-isometrico-tecnico.svg"
+    archivo: "07_Motor de piezas/00_insumos/06_vectores/wireframe-isometrico-tecnico.svg"
     origen: [300, 300]      # punto del dibujo que generate.py usa como centro
     escala_nativa: 1.55     # escala con la que generate.py exportó el vector
 

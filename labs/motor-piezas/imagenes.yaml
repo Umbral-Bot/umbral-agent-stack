@@ -1,71 +1,14 @@
 # GENERADO por catalogar_imagenes.py desde los metadatos de cada PNG.
 # No editar a mano: los campos editoriales viven en imagenes.fuente.yaml.
 # null = el archivo de origen no trae ese dato (no se inventa).
-carpeta: 06_Midjourney/03-variaciones-favoritos-2026-11-06/imagenes
+carpeta: 07_Motor de piezas/00_insumos/05_midjourney_favoritas
 imagenes:
-  mj3_V-S16b_0:
-    archivo: mj3_V-S16b_0.png
-    estilo: S16 · Pixel art (variación b)
-    usada_en_v2: 22° CAR-OSC-V-S16b
-    herramienta: Midjourney
-    modelo: v8.2
-    prompt: pixel art icon of a glowing turquoise door in a wall of code
-    parametros: --ar 1:1 --v 8.2
-    job_id: b7d1f5e6-0941-4c8d-b5a5-3590cd581baa
-    referencias_estilo:
-      sref: null
-      perfil: null
-    semilla: null
-    proporcion_pedida: '1:1'
-    tamano_px:
-    - 1024
-    - 1024
-    tipo_origen_iptc: trainedAlgorithmicMedia
-    autor: David Moreira
-    sha256: 20d21a864d22927b
-  mj3_V-S17b_0:
-    archivo: mj3_V-S17b_0.png
-    estilo: S17 · Constructivista (variación b)
-    usada_en_v2: 20° TAL-1350-OSC-V-S17b
-    herramienta: Midjourney
-    modelo: v8.2
-    prompt: constructivist poster with bold geometric shapes and robot arm building, turquoise cream charcoal
-    parametros: --ar 16:9 --v 8.2
-    job_id: 3dc9fd80-8ee3-428a-a454-4edfabb6fbd0
-    referencias_estilo:
-      sref: null
-      perfil: null
-    semilla: null
-    proporcion_pedida: '16:9'
-    tamano_px:
-    - 1456
-    - 816
-    tipo_origen_iptc: trainedAlgorithmicMedia
-    autor: David Moreira
-    sha256: ad2ea18a89f09542
-  mj3_V-S2b_0:
-    archivo: mj3_V-S2b_0.png
-    estilo: S2 · Abstracto expresivo (variación b)
-    usada_en_v2: 24° SLC-OSC-V-S2b
-    herramienta: Midjourney
-    modelo: v8.2
-    prompt: abstract expressive composition, turquoise light beams forming a building silhouette, ink
-      and charcoal texture
-    parametros: --ar 16:9 --v 8.2
-    job_id: 4b5d1d28-f7b1-47f2-b652-05ac15a1a985
-    referencias_estilo:
-      sref: null
-      perfil: null
-    semilla: null
-    proporcion_pedida: '16:9'
-    tamano_px:
-    - 1456
-    - 816
-    tipo_origen_iptc: trainedAlgorithmicMedia
-    autor: David Moreira
-    sha256: d6ff172bd3fd3a54
   mj3_V-L3d_0:
+    reproducible: false
+    motivo_no_reproducible: sin --sref, perfil ni semilla registrados; se usa como imagen fija
+    favorita: true
     archivo: mj3_V-L3d_0.png
+    posicion_favorita: 4°
     estilo: L3 · Ilustración, umbral en U (variación d)
     usada_en_v2: 17° y 21° (no elegidas)
     herramienta: Midjourney
@@ -85,8 +28,110 @@ imagenes:
     tipo_origen_iptc: trainedAlgorithmicMedia
     autor: David Moreira
     sha256: 4521886e0f6643c2
+  mj3_V-S16b_0:
+    reproducible: false
+    motivo_no_reproducible: sin --sref, perfil ni semilla registrados; se usa como imagen fija
+    favorita: true
+    archivo: mj3_V-S16b_0.png
+    posicion_favorita: 10°
+    estilo: S16 · Pixel art (variación b)
+    usada_en_v2: 22° CAR-OSC-V-S16b (elegida)
+    herramienta: Midjourney
+    modelo: v8.2
+    prompt: pixel art icon of a glowing turquoise door in a wall of code
+    parametros: --ar 1:1 --v 8.2
+    job_id: b7d1f5e6-0941-4c8d-b5a5-3590cd581baa
+    referencias_estilo:
+      sref: null
+      perfil: null
+    semilla: null
+    proporcion_pedida: '1:1'
+    tamano_px:
+    - 1024
+    - 1024
+    tipo_origen_iptc: trainedAlgorithmicMedia
+    autor: David Moreira
+    sha256: 20d21a864d22927b
+  mj3_V-S17b_0:
+    reproducible: false
+    motivo_no_reproducible: sin --sref, perfil ni semilla registrados; se usa como imagen fija
+    favorita: true
+    archivo: mj3_V-S17b_0.png
+    posicion_favorita: 12°
+    estilo: S17 · Constructivista (variación b)
+    usada_en_v2: 20° TAL-1350-OSC-V-S17b (elegida)
+    herramienta: Midjourney
+    modelo: v8.2
+    prompt: constructivist poster with bold geometric shapes and robot arm building, turquoise cream charcoal
+    parametros: --ar 16:9 --v 8.2
+    job_id: 3dc9fd80-8ee3-428a-a454-4edfabb6fbd0
+    referencias_estilo:
+      sref: null
+      perfil: null
+    semilla: null
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 1456
+    - 816
+    tipo_origen_iptc: trainedAlgorithmicMedia
+    autor: David Moreira
+    sha256: ad2ea18a89f09542
+  mj3_V-S19a_0:
+    reproducible: false
+    motivo_no_reproducible: sin --sref, perfil ni semilla registrados; se usa como imagen fija
+    favorita: true
+    archivo: mj3_V-S19a_0.png
+    posicion_favorita: 13°
+    estilo: S19 · Patrón de íconos (variación a)
+    usada_en_v2: 25° (no elegida)
+    herramienta: Midjourney
+    modelo: v8.2
+    prompt: seamless pattern thin turquoise line icons BIM cube, AI chip, nodes, ruler, code, helmet on
+      charcoal
+    parametros: --ar 16:9 --v 8.2
+    job_id: 347f4842-7a9b-4712-bdbf-e36b30fa75dd
+    referencias_estilo:
+      sref: null
+      perfil: null
+    semilla: null
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 1456
+    - 816
+    tipo_origen_iptc: trainedAlgorithmicMedia
+    autor: David Moreira
+    sha256: 6bd9ef41f870f8af
+  mj3_V-S19b_0:
+    reproducible: false
+    motivo_no_reproducible: sin --sref, perfil ni semilla registrados; se usa como imagen fija
+    favorita: true
+    archivo: mj3_V-S19b_0.png
+    posicion_favorita: 14°
+    estilo: S19 · Patrón de íconos sobre crema (variación b)
+    usada_en_v2: 18° (no elegida)
+    herramienta: Midjourney
+    modelo: v8.2
+    prompt: seamless line icon pattern on cream background, turquoise lines, BIM cube, AI chip, nodes,
+      ruler, code, helmet
+    parametros: --ar 1:1 --v 8.2
+    job_id: fd0f3ac5-f8af-4e0b-898d-3633ee4c1f5f
+    referencias_estilo:
+      sref: null
+      perfil: null
+    semilla: null
+    proporcion_pedida: '1:1'
+    tamano_px:
+    - 1024
+    - 1024
+    tipo_origen_iptc: trainedAlgorithmicMedia
+    autor: David Moreira
+    sha256: fdb15f25fe03ee7e
   mj3_V-S21a_0:
+    reproducible: false
+    motivo_no_reproducible: sin --sref, perfil ni semilla registrados; se usa como imagen fija
+    favorita: true
     archivo: mj3_V-S21a_0.png
+    posicion_favorita: 17°
     estilo: S21 · Infografía isométrica (variación a)
     usada_en_v2: 19° y 23° (no elegidas)
     herramienta: Midjourney
@@ -106,3 +151,28 @@ imagenes:
     tipo_origen_iptc: trainedAlgorithmicMedia
     autor: David Moreira
     sha256: 08b66cb063b219f3
+  mj3_V-S2b_0:
+    reproducible: false
+    motivo_no_reproducible: sin --sref, perfil ni semilla registrados; se usa como imagen fija
+    favorita: true
+    archivo: mj3_V-S2b_0.png
+    posicion_favorita: 20°
+    estilo: S2 · Abstracto expresivo (variación b)
+    usada_en_v2: 24° SLC-OSC-V-S2b (elegida)
+    herramienta: Midjourney
+    modelo: v8.2
+    prompt: abstract expressive composition, turquoise light beams forming a building silhouette, ink
+      and charcoal texture
+    parametros: --ar 16:9 --v 8.2
+    job_id: 4b5d1d28-f7b1-47f2-b652-05ac15a1a985
+    referencias_estilo:
+      sref: null
+      perfil: null
+    semilla: null
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 1456
+    - 816
+    tipo_origen_iptc: trainedAlgorithmicMedia
+    autor: David Moreira
+    sha256: d6ff172bd3fd3a54

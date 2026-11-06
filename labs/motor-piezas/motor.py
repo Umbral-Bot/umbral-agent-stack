@@ -461,7 +461,11 @@ class Compositor:
             previo = tope + self.medidas_filas(filas)['total']
         if dens['cuerpo'] and self.c.get('cuerpo'):
             previo = bloque('cuerpo', 'cuerpo', self.c['cuerpo'], v['espacio_filas_cuerpo'])
-        if cta_en_pila and dens['cta'] and self.c.get('cta') and v['cta_visible']:
+        # si el llamado no cabe en el pie y las filas van al pie, el llamado va bajo las filas
+        hay_cta = cta_en_pila and dens['cta'] and self.c.get('cta') and v['cta_visible']
+        cta_bajo_filas = bool(hay_cta and filas and ubicacion_filas == 'al_pie')
+        alto_cta = self.mod(v['espacio_filas_cuerpo']) + self.medir('cta', 'H', t['cta'])['cap'] if cta_bajo_filas else 0.0
+        if hay_cta and not cta_bajo_filas:
             previo = bloque('cta', 'cta', self.c['cta'], v['espacio_filas_cuerpo'])
         alto = previo or 0.0
         if solo_medir:
@@ -469,7 +473,7 @@ class Compositor:
             if filas and ubicacion_filas == 'columna_derecha':
                 alto = max(alto, tope_titulo_rel + self.medidas_filas(filas)['total'])
             elif filas and ubicacion_filas == 'al_pie':
-                alto += self.mod(v['espacio_subtitulo_filas']) + self.medidas_filas(filas)['total']
+                alto += self.mod(v['espacio_subtitulo_filas']) + self.medidas_filas(filas)['total'] + alto_cta
             return alto
 
         # 2. posición absoluta
@@ -506,17 +510,22 @@ class Compositor:
                 self.notas.append('filas en columna derecha: no caben en la altura disponible')
         if filas and ubicacion_filas == 'al_pie':
             m = self.medidas_filas(filas)
-            tope = zona.y2 - m['total']
+            tope = zona.y2 - m['total'] - alto_cta
             if tope < fondo + self.mod(v['espacio_subtitulo_filas']):
                 self.notas.append('filas al pie no caben bajo el título: van bajo el título')
                 tope = fondo + self.mod(v['espacio_subtitulo_filas'])
             if filas_a_grilla:
                 candidatas = [self.y_fil(j) + self.fil_h for j in range(self.M)
-                              if self.y_fil(j) + self.fil_h <= zona.y2 + 0.5]
+                              if self.y_fil(j) + self.fil_h <= zona.y2 - alto_cta + 0.5]
                 if candidatas:
                     tope = max(tope, candidatas[-1] - m['total'])
             info['fondo'] = self.bloque_filas(filas, zona.x, tope, ancho_filas)
             info['filas'] = Rect(zona.x, tope, ancho_filas, m['total'])
+            if cta_bajo_filas:
+                base = info['fondo'] + alto_cta
+                self.agregar_texto('cta', 'cta', self.c['cta'], xt, base, t['cta'], ancla)
+                self.notas.append('el llamado no cabe junto al logo: va bajo las filas')
+                info['fondo'] = base
         return info
 
     # ---------------------------------------------------------------- pie
@@ -773,18 +782,26 @@ class Compositor:
         for vl in self.velos:
             if not vl.get('fijo'):
                 grupos.setdefault(vl['grupo'], []).append(vl)
+        minimo = self.ctx.reglas['contraste_texto_minimo']
         for grupo, velos in grupos.items():
-            textos = [e for e in self.el if e['tipo'] == 'texto'
-                      and any(e['caja'].interseca(vl['rect']) for vl in velos)]
-            if not textos:
+            # (caja, color, objetivo) de cada texto sobre el velo
+            medidas = [(e['caja'], self.color_texto(e), self.contraste_objetivo(e)) for e in self.el
+                       if e['tipo'] == 'texto' and any(e['caja'].interseca(vl['rect']) for vl in velos)]
+            if self.logo is not None:
+                # el logotipo cuenta como texto chico: su «Umbral» va en la tinta del tema
+                caja = Rect(self.logo['x'], self.logo['y'], self.logo['ancho'], self.logo['alto'])
+                if any(caja.interseca(vl['rect']) for vl in velos):
+                    sobre = self.imagen is not None and caja.interseca(self.imagen['zona'])
+                    medidas.append((caja, self.rgb_opaco('tinta'),
+                                    max(minimo, self.v['contraste_sobre_imagen']) if sobre else minimo))
+            if not medidas:
                 continue
-            objetivos = sorted({self.contraste_objetivo(e) for e in textos})
+            objetivos = sorted({m[2] for m in medidas})
 
             def holgura(alfa):
                 for vl in velos:
                     vl['opacidad'] = alfa
-                return min(self.contraste_en(e['caja'], self.color_texto(e)) / self.contraste_objetivo(e)
-                           for e in textos)
+                return min(self.contraste_en(caja, rgb) / obj for caja, rgb, obj in medidas)
 
             inicial = velos[0]['opacidad']
             if holgura(inicial) >= 1:
@@ -1105,8 +1122,12 @@ class Compositor:
             zona = Rect(zona.x, reserva.y2 + m, zona.w, zona.y2 - reserva.y2 - m)
         self.zonas['texto'] = zona.a_dict()
         ubic = v['filas_ubicacion'] if v['filas_ubicacion'] != 'columna_derecha' else 'bajo_titulo'
+        abajo = v['pila_anclaje'] == 'abajo'
+        if abajo and ubic == 'al_pie':
+            ubic = 'bajo_titulo'
+            self.notas.append('pila apoyada abajo: las filas van bajo el título')
         tam = self._titulo_que_cabe(zona, ubic, cta_en_pila=not pie['cta_cabe'])
-        self.pila(zona, tam, ubic, cta_en_pila=not pie['cta_cabe'])
+        self.pila(zona, tam, ubic, cta_en_pila=not pie['cta_cabe'], anclar_abajo=abajo)
         self.colocar_pie(pie)
         if izquierda:
             self.velo(Rect(0, 0, x1 + m, self.H), 'velo-lectura')

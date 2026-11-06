@@ -16,6 +16,7 @@ version: 0.3-borrador
 fecha: 2026-11-06
 # 0.3: contraste sobre imagen (7:1 para texto chico, colores de texto claros) y presets de
 # división del paso 1 (`divisiones`, parámetro `division`). Avance paso a paso pedido por David.
+# 0.3b: pila_anclaje (paso 2), el logo cuenta para el velo, llamado bajo las filas si no cabe en el pie.
 
 formatos:
   cuadrado:  {ancho: 1080, alto: 1080, vista_css: 390, uso: "feed 1:1 (Instagram, LinkedIn)"}
@@ -308,7 +309,7 @@ parametros:
     capa: maquetacion
     nivel: principal
     tipo: decimal
-    rango: [4, 16]
+    rango: [4, 24]   # 0.3b: hasta 24 (paso 2, slides vistas en notebook)
     defecto: 11
     unidad: css
     descripcion: tamaño de la etiqueta más chica, en px CSS en el dispositivo del formato. Reemplaza a texto_minimo_px_movil de la v0.1
@@ -693,6 +694,14 @@ parametros:
     opciones: [marca, claros]
     defecto: claros
     descripcion: claros = los textos chicos sobre imagen usan los tokens de texto más claros (roles_color_sobre_imagen) para llegar a contraste_sobre_imagen sin tapar la imagen; marca = los mismos colores que sobre fondo liso
+  pila_anclaje:
+    capa: maquetacion
+    nivel: principal
+    tipo: opcion
+    opciones: [arriba, abajo]
+    defecto: arriba
+    descripcion: paso 2 · dónde se apoya el bloque de texto dentro de su zona (divisiones del paso 1). abajo agrupa kicker, título, subtítulo y filas sobre el pie y deja libre la parte alta
+    origen: "G02 2° (tercio): queda un vacío grande entre el subtítulo y las filas al pie"
   division:
     capa: maquetacion
     nivel: principal

@@ -1,0 +1,18 @@
+id: A2
+nombre: "Grilla primero · 4:5 oscuro · imagen S17b en celdas, sangrando a la derecha"
+alternativa: A
+contenido: contenido/workshop-bim-ia.yaml
+corrige: "v2 20°: la imagen deja de ser una caja suelta; ocupa celdas de la grilla y sangra al borde"
+decision_david: null
+valores:
+  proceso: A_grilla
+  formato: vertical
+  modo: oscuro
+  columnas: 6
+  filas: 10
+  columnas_texto: 3
+  columnas_titulo: 6
+  ilustracion_zona: derecha_inferior
+  imagen_fuente: mj3_V-S17b_0
+  imagen_encaje: sangrado_lateral
+  imagen_foco: [0.62, 0.5]

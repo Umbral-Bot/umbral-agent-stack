@@ -1,0 +1,27 @@
+# Campos editoriales de la capa de imagen. catalogar_imagenes.py les suma los
+# metadatos leídos del PNG y escribe imagenes.yaml.
+# El README de la exploración 03 cita «pt75u» como perfil de los favoritos de David,
+# pero el prompt embebido en los PNG no lo trae; queda anotado aquí, no como dato del archivo.
+nota_perfil: "pt75u citado en 06_Midjourney/03-variaciones-favoritos-2026-11-06/README.md; no figura en el prompt embebido"
+
+imagenes:
+  mj3_V-S16b_0:
+    archivo: mj3_V-S16b_0.png
+    estilo: "S16 · Pixel art (variación b)"
+    usada_en_v2: "22° CAR-OSC-V-S16b"
+  mj3_V-S17b_0:
+    archivo: mj3_V-S17b_0.png
+    estilo: "S17 · Constructivista (variación b)"
+    usada_en_v2: "20° TAL-1350-OSC-V-S17b"
+  mj3_V-S2b_0:
+    archivo: mj3_V-S2b_0.png
+    estilo: "S2 · Abstracto expresivo (variación b)"
+    usada_en_v2: "24° SLC-OSC-V-S2b"
+  mj3_V-L3d_0:
+    archivo: mj3_V-L3d_0.png
+    estilo: "L3 · Ilustración, umbral en U (variación d)"
+    usada_en_v2: "17° y 21° (no elegidas)"
+  mj3_V-S21a_0:
+    archivo: mj3_V-S21a_0.png
+    estilo: "S21 · Infografía isométrica (variación a)"
+    usada_en_v2: "19° y 23° (no elegidas)"

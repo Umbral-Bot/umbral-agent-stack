@@ -17,6 +17,7 @@ fecha: 2026-11-06
 # 0.3: contraste sobre imagen (7:1 para texto chico, colores de texto claros) y presets de
 # división del paso 1 (`divisiones`, parámetro `division`). Avance paso a paso pedido por David.
 # 0.3b: pila_anclaje (paso 2), el logo cuenta para el velo, llamado bajo las filas si no cabe en el pie.
+# 0.3c: paso 3 · las divisiones aceptan sangrado lateral, caja o ilustración; imagen_registro.
 
 formatos:
   cuadrado:  {ancho: 1080, alto: 1080, vista_css: 390, uso: "feed 1:1 (Instagram, LinkedIn)"}
@@ -637,6 +638,14 @@ parametros:
     tipo: par
     defecto: [0.5, 0.5]
     descripcion: punto de la imagen que el recorte mantiene visible (fracción de ancho y alto)
+  imagen_registro:
+    capa: imagen
+    nivel: componente
+    tipo: opcion
+    opciones: [parte, lienzo]
+    defecto: parte
+    descripcion: parte = la imagen se encuadra en su zona (con imagen_foco); lienzo = se encuadra como si cubriera todo el lienzo y la zona solo la recorta, así no se mueve entre presets del paso 3
+    origen: "paso 3 (2026-11-06): comparar a sangre, sangrado lateral y caja sin que cambie el encuadre"
   imagen_radio:
     capa: imagen
     nivel: componente

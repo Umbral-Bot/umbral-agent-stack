@@ -678,11 +678,14 @@ class Compositor:
         info = self.ctx.catalogo[ident]
         ruta = self.ctx.dir_mj / info['archivo']
         iw, ih = info['tamano_px']
-        k = max(zona.w / iw, zona.h / ih)
+        # con imagen_registro 'lienzo' la imagen se encuadra como si cubriera todo el lienzo y la
+        # zona solo la recorta: entre presets del paso 3 la imagen no se mueve
+        marco = Rect(0, 0, self.W, self.H) if v['imagen_registro'] == 'lienzo' else zona
+        k = max(marco.w / iw, marco.h / ih)
         dw, dh = iw * k, ih * k
         fx, fy = v['imagen_foco']
-        x = min(zona.x, max(zona.x2 - dw, zona.x + zona.w / 2 - fx * dw))
-        y = min(zona.y, max(zona.y2 - dh, zona.y + zona.h / 2 - fy * dh))
+        x = min(marco.x, max(marco.x2 - dw, marco.x + marco.w / 2 - fx * dw))
+        y = min(marco.y, max(marco.y2 - dh, marco.y + marco.h / 2 - fy * dh))
         self.imagen = {'id': ident, 'ruta': ruta, 'x': x, 'y': y, 'w': dw, 'h': dh, 'zona': zona,
                        'radio': radio, 'info': info, 'escala': k}
         self.el.append({'tipo': 'imagen'})
@@ -1005,15 +1008,17 @@ class Compositor:
         """La imagen manda: su zona con menos detalle recibe el texto, protegido por un velo plano."""
         v = self.v
         encaje = v['imagen_encaje']
+        if v['division'] != 'zona_libre':
+            preset = self.ctx.esquema['divisiones'][v['division']]
+            if encaje == 'fondo_completo_con_velo':
+                if not v['imagen_fuente']:
+                    raise ValueError('fondo_completo_con_velo necesita imagen_fuente')
+                self.imagen_en(Rect(0, 0, self.W, self.H), 0)
+            partes = getattr(self, f"_division_{preset['tipo']}")(preset)
+            self._llenar_parte(partes)
+            return
         if not v['imagen_fuente'] or encaje == 'sin_imagen':
             raise ValueError('el proceso C necesita imagen_fuente e imagen_encaje')
-        if v['division'] != 'zona_libre':
-            if encaje != 'fondo_completo_con_velo':
-                raise ValueError('las divisiones del paso 1 usan imagen_encaje: fondo_completo_con_velo')
-            self.imagen_en(Rect(0, 0, self.W, self.H), 0)
-            preset = self.ctx.esquema['divisiones'][v['division']]
-            getattr(self, f"_division_{preset['tipo']}")(preset)
-            return
         frac = v['zona_libre_fraccion']
         if encaje == 'fondo_completo_con_velo':
             self.imagen_en(Rect(0, 0, self.W, self.H), 0)
@@ -1129,10 +1134,18 @@ class Compositor:
         tam = self._titulo_que_cabe(zona, ubic, cta_en_pila=not pie['cta_cabe'])
         self.pila(zona, tam, ubic, cta_en_pila=not pie['cta_cabe'], anclar_abajo=abajo)
         self.colocar_pie(pie)
+        con_velo = v['imagen_encaje'] == 'fondo_completo_con_velo'
         if izquierda:
-            self.velo(Rect(0, 0, x1 + m, self.H), 'velo-lectura')
-        else:
+            if con_velo:
+                self.velo(Rect(0, 0, x1 + m, self.H), 'velo-lectura')
+            xi = x1 + m
+            return {'sangre': Rect(xi, 0, self.W - xi, self.H),
+                    'grilla': Rect(xi, self.caja.y, self.caja.x2 - xi, self.caja.h)}
+        if con_velo:
             self.velo(Rect(x0 - m, 0, self.W - x0 + m, self.H), 'velo-lectura')
+        xf = x0 - m
+        return {'sangre': Rect(0, 0, xf, self.H),
+                'grilla': Rect(self.caja.x, self.caja.y, xf - self.caja.x, self.caja.h)}
 
     def _division_banda(self, p: dict):
         """Imagen arriba y banda de texto abajo a todo el ancho: cabecera a la izquierda, datos a la derecha."""
@@ -1155,7 +1168,10 @@ class Compositor:
         tam = self._titulo_que_cabe(zona, 'columna_derecha', cta_en_pila=not pie['cta_cabe'], zona_filas=zona_filas)
         self.pila(zona, tam, 'columna_derecha', cta_en_pila=not pie['cta_cabe'], zona_filas=zona_filas)
         self.colocar_pie(pie)
-        self.velo(Rect(0, borde, self.W, self.H - borde), 'velo-lectura')
+        if v['imagen_encaje'] == 'fondo_completo_con_velo':
+            self.velo(Rect(0, borde, self.W, self.H - borde), 'velo-lectura')
+        return {'sangre': Rect(0, 0, self.W, borde),
+                'grilla': Rect(self.caja.x, self.caja.y, self.caja.w, borde - self.caja.y)}
 
     def _division_ele(self, p: dict):
         """Cabecera arriba a todo el ancho y datos en la columna izquierda; la imagen queda en la esquina."""
@@ -1183,8 +1199,30 @@ class Compositor:
         self.colocar_pie(pie)
         if fin > self.caja.y2 - pie['alto'] - self.mod(v['espacio_pie']) + 0.5:
             self.notas.append('ele: los datos no caben sobre el pie')
-        self.velo(Rect(0, 0, self.W, corte), 'velo-banda', grupo='velo-lectura')
-        self.velo(Rect(0, corte, x1 + m, self.H - corte), 'velo-columna', grupo='velo-lectura')
+        if v['imagen_encaje'] == 'fondo_completo_con_velo':
+            self.velo(Rect(0, 0, self.W, corte), 'velo-banda', grupo='velo-lectura')
+            self.velo(Rect(0, corte, x1 + m, self.H - corte), 'velo-columna', grupo='velo-lectura')
+        xi = x1 + m
+        return {'sangre': Rect(xi, corte, self.W - xi, self.H - corte),
+                'grilla': Rect(xi, corte, self.caja.x2 - xi, self.caja.y2 - corte)}
+
+    def _llenar_parte(self, partes: dict):
+        """Paso 3 · la imagen o la ilustración en la parte que dejó libre la división."""
+        v = self.v
+        encaje = v['imagen_encaje']
+        if encaje == 'fondo_completo_con_velo':
+            return                                   # ya está a sangre, bajo el velo
+        if encaje in ('sangrado_lateral', 'caja_alineada_grilla'):
+            if not v['imagen_fuente']:
+                raise ValueError(f'{encaje} necesita imagen_fuente')
+            if encaje == 'sangrado_lateral':
+                self.imagen_en(partes['sangre'], 0)
+            else:
+                self.imagen_en(partes['grilla'], v['imagen_radio'])
+            self.notas.append(f'imagen {encaje} en la parte libre de la división')
+        elif v['ilustracion_zona'] != 'ninguna':
+            self.ilustracion_en(partes['grilla'])
+            self.notas.append('sin imagen: la ilustración vectorial ocupa la parte libre de la división')
 
     def _proceso_libre(self):
         """Posiciones sueltas como la v2: sirve para regenerarla desde un pack."""

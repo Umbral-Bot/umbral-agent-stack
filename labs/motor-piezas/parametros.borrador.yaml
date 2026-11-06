@@ -14,7 +14,8 @@
 
 version: 0.3-borrador
 fecha: 2026-11-06
-# 0.3: contraste sobre imagen (7:1 para texto chico, colores de texto claros).
+# 0.3: contraste sobre imagen (7:1 para texto chico, colores de texto claros) y presets de
+# división del paso 1 (`divisiones`, parámetro `division`). Avance paso a paso pedido por David.
 
 formatos:
   cuadrado:  {ancho: 1080, alto: 1080, vista_css: 390, uso: "feed 1:1 (Instagram, LinkedIn)"}
@@ -89,6 +90,19 @@ lockups:
     "04": "04 Vertical Centrado"
     "05": "05 Horizontal con Bajada"
   variantes: {claro: Claro, oscuro: Oscuro, mono_blanco: Monocromo Blanco, mono_negro: Monocromo Negro}
+
+# Paso 1 · división del lienzo (proceso C: imagen a sangre y zona de lectura con velo plano).
+# Las fracciones se redondean a columnas o filas de la grilla; el borde del velo cae en una
+# línea de grilla. Si el texto no cabe en el alto que deja la división, se reduce el título.
+divisiones:
+  mitad:  {tipo: columna, lado: izquierda, fraccion: 0.5,
+           descripcion: "texto en la mitad izquierda, imagen en la otra (la 12° de G01)"}
+  tercio: {tipo: columna, lado: izquierda, fraccion: 0.3333,
+           descripcion: "texto en un tercio, la imagen manda en los otros dos"}
+  banda:  {tipo: banda, fraccion: 0.5, fraccion_cabecera: 0.5833,
+           descripcion: "imagen arriba; banda de texto en la mitad inferior: cabecera a la izquierda y datos a la derecha"}
+  ele:    {tipo: ele, fraccion_banda: 0.5, fraccion_columna: 0.3333,
+           descripcion: "cabecera arriba a todo el ancho y datos en la columna izquierda; la imagen queda abajo a la derecha"}
 
 parametros:
   # ---------------------------------------------------------------- proceso y formato
@@ -679,6 +693,14 @@ parametros:
     opciones: [marca, claros]
     defecto: claros
     descripcion: claros = los textos chicos sobre imagen usan los tokens de texto más claros (roles_color_sobre_imagen) para llegar a contraste_sobre_imagen sin tapar la imagen; marca = los mismos colores que sobre fondo liso
+  division:
+    capa: maquetacion
+    nivel: principal
+    tipo: opcion
+    opciones: [zona_libre, mitad, tercio, banda, ele]
+    defecto: zona_libre
+    descripcion: paso 1 · cómo se parte el lienzo entre texto e imagen (proceso C con imagen a sangre). zona_libre = como G01, decide la imagen con zona_libre y zona_libre_fraccion; el resto son los presets de `divisiones`
+    origen: "David, 2026-11-06: avanzar paso a paso, empezando por distintos tipos de división de la composición"
   zona_libre:
     capa: imagen
     nivel: principal

@@ -47,6 +47,23 @@ def cargar_yaml(ruta) -> dict:
     return yaml.safe_load(Path(ruta).read_text(encoding='utf-8'))
 
 
+def cargar_pack(ruta) -> dict:
+    """Lee un pack. Con `hereda: packs/X.yaml` parte de otro pack y cambia solo sus propios valores:
+    así cada preset de un paso muestra exactamente qué cambió respecto de la base."""
+    pack = cargar_yaml(ruta)
+    if not pack.get('hereda'):
+        return pack
+    padre = cargar_pack(LAB / pack['hereda'])
+    hijo = dict(pack)
+    pack = {**padre, **hijo,
+            'valores': {**(padre.get('valores') or {}), **(hijo.get('valores') or {})},
+            'roles_texto': {**(padre.get('roles_texto') or {}), **(hijo.get('roles_texto') or {})} or None}
+    for clave in ('control', 'exploracion', 'decision_david', 'corrige'):   # propios de cada pack
+        if clave not in hijo:
+            pack.pop(clave, None)
+    return pack
+
+
 def sha16(ruta: Path) -> str:
     return hashlib.sha256(Path(ruta).read_bytes()).hexdigest()[:16]
 
@@ -295,15 +312,25 @@ class Compositor:
         t = self.preparar_texto(rol, texto)
         if self.medir(rol, t, tamano)['avance'] <= ancho:
             return [t]
-        lineas, actual = [], ''
-        for palabra in t.split(' '):
-            prueba = f'{actual} {palabra}'.strip()
-            if not actual or self.medir(rol, prueba, tamano)['avance'] <= ancho:
-                actual = prueba
-            else:
-                lineas.append(actual)
-                actual = palabra
-        lineas.append(actual)
+
+        def llenar(unidades, sep):
+            lineas, actual = [], ''
+            for u in unidades:
+                prueba = f'{actual}{sep}{u}' if actual else u
+                if not actual or self.medir(rol, prueba, tamano)['avance'] <= ancho:
+                    actual = prueba
+                else:
+                    lineas.append(actual)
+                    actual = u
+            lineas.append(actual)
+            return lineas
+
+        # se corta primero en los «·»; si un tramo no cabe solo, por palabras
+        tramos = [x.strip() for x in t.split('·') if x.strip()]
+        if len(tramos) > 1 and all(self.medir(rol, x, tamano)['avance'] <= ancho for x in tramos):
+            lineas = llenar(tramos, ' · ')
+        else:
+            lineas = llenar(t.split(' '), ' ')
         lineas = [l.strip(' ·').strip() for l in lineas]
         lineas = [l for l in lineas if l]
         if len(lineas) > 1:
@@ -373,12 +400,16 @@ class Compositor:
     # ---------------------------------------------------------------- pila de texto
     def pila(self, zona: Rect, tam_titulo: float, ubicacion_filas: str, ancho_filas: float | None = None,
              anclar_abajo: bool = False, filas_a_grilla: bool = False, cta_en_pila: bool = False,
-             zona_filas: Rect | None = None, ancho_cabecera: float | None = None) -> dict:
+             zona_filas: Rect | None = None, ancho_cabecera: float | None = None,
+             solo_medir: bool = False) -> dict | float:
         """Kicker, título, subtítulo, filas y cuerpo, de arriba abajo, en `zona`.
 
         Con ubicacion_filas='columna_derecha' las filas van en `zona_filas`, con su
-        primer filete alineado a la línea de mayúscula del título.
+        primer filete alineado a la línea de mayúscula del título. Con 'aparte', la pila
+        no pone filas (las ubica quien la llama). Con solo_medir devuelve el alto que
+        ocuparía, sin agregar nada a la pieza.
         """
+        notas_antes = list(self.notas)
         v, t = self.v, self.t
         dens = self.ctx.esquema['densidades'][v['densidad_texto']]
         centrada = v['alineacion'] == 'centrada'
@@ -412,6 +443,7 @@ class Compositor:
             previo = bloque('kicker', 'kicker', self.c['kicker'], 0)
         cap_t = tam_titulo * self.cap_titulo
         tope = separar(v['espacio_kicker_titulo'])
+        tope_titulo_rel = tope
         acento = v['titulo_linea_acento'] == 'ultima'
         lineas = self.c['titulo']
         for i, linea in enumerate(lineas):
@@ -432,6 +464,13 @@ class Compositor:
         if cta_en_pila and dens['cta'] and self.c.get('cta') and v['cta_visible']:
             previo = bloque('cta', 'cta', self.c['cta'], v['espacio_filas_cuerpo'])
         alto = previo or 0.0
+        if solo_medir:
+            self.notas = notas_antes
+            if filas and ubicacion_filas == 'columna_derecha':
+                alto = max(alto, tope_titulo_rel + self.medidas_filas(filas)['total'])
+            elif filas and ubicacion_filas == 'al_pie':
+                alto += self.mod(v['espacio_subtitulo_filas']) + self.medidas_filas(filas)['total']
+            return alto
 
         # 2. posición absoluta
         y0 = zona.y + self.mod(v['pila_desplazamiento'])
@@ -951,6 +990,13 @@ class Compositor:
         encaje = v['imagen_encaje']
         if not v['imagen_fuente'] or encaje == 'sin_imagen':
             raise ValueError('el proceso C necesita imagen_fuente e imagen_encaje')
+        if v['division'] != 'zona_libre':
+            if encaje != 'fondo_completo_con_velo':
+                raise ValueError('las divisiones del paso 1 usan imagen_encaje: fondo_completo_con_velo')
+            self.imagen_en(Rect(0, 0, self.W, self.H), 0)
+            preset = self.ctx.esquema['divisiones'][v['division']]
+            getattr(self, f"_division_{preset['tipo']}")(preset)
+            return
         frac = v['zona_libre_fraccion']
         if encaje == 'fondo_completo_con_velo':
             self.imagen_en(Rect(0, 0, self.W, self.H), 0)
@@ -1014,6 +1060,110 @@ class Compositor:
                 self.velo(Rect(0, pie_y, self.W, self.H - pie_y), 'velo-pie')
         else:
             self.velo(Rect(0, arriba, self.W, self.H - arriba), 'velo-lectura')
+
+    # ---------------------------------------------------------------- paso 1 · divisiones
+    def _columnas_de(self, fraccion: float) -> int:
+        return max(2, min(self.N - 2, round(fraccion * self.N)))
+
+    def _filas_de(self, fraccion: float) -> int:
+        return max(1, min(self.M - 1, round(fraccion * self.M)))
+
+    def _titulo_que_cabe(self, zona: Rect, ubicacion_filas: str, cta_en_pila: bool = False,
+                         zona_filas: Rect | None = None) -> float:
+        """Título que cabe en el ancho y en el alto de la zona (el alto lo fija la división)."""
+        tam = self.tamano_titulo(zona.w)
+
+        def alto(t):
+            return self.pila(zona, t, ubicacion_filas, cta_en_pila=cta_en_pila, zona_filas=zona_filas,
+                             solo_medir=True)
+
+        if alto(tam) <= zona.h:
+            return tam
+        lo, hi = tam * 0.25, tam
+        for _ in range(14):
+            mid = (lo + hi) / 2
+            lo, hi = (mid, hi) if alto(mid) <= zona.h else (lo, mid)
+        nuevo = math.floor(lo * 10) / 10
+        self.notas.append(f'título reducido de {tam:.0f} a {nuevo:.0f} px para caber en {zona.h:.0f} px de alto')
+        return nuevo
+
+    def _division_columna(self, p: dict):
+        """Texto en k de N columnas y la imagen en el resto (la 12° de G01 es la mitad izquierda)."""
+        v, m = self.v, self.medianil
+        k = self._columnas_de(p['fraccion'])
+        izquierda = p['lado'] == 'izquierda'
+        c0 = 0 if izquierda else self.N - k
+        x0, x1 = self.x_col(c0), self.x_col(c0 + k - 1) + self.col_w
+        self.notas.append(f"división {v['division']}: texto en {k} de {self.N} columnas")
+        self.trama()
+        self.cruces_registro()
+        pie = self.preparar_pie(x0, x1)
+        fondo_util = self.caja.y2 - pie['alto'] - self.mod(v['espacio_pie'])
+        zona = Rect(x0, self.caja.y, x1 - x0, fondo_util - self.caja.y)
+        reserva = self.chip(ancla=zona)
+        if reserva is not None:
+            zona = Rect(zona.x, reserva.y2 + m, zona.w, zona.y2 - reserva.y2 - m)
+        self.zonas['texto'] = zona.a_dict()
+        ubic = v['filas_ubicacion'] if v['filas_ubicacion'] != 'columna_derecha' else 'bajo_titulo'
+        tam = self._titulo_que_cabe(zona, ubic, cta_en_pila=not pie['cta_cabe'])
+        self.pila(zona, tam, ubic, cta_en_pila=not pie['cta_cabe'])
+        self.colocar_pie(pie)
+        if izquierda:
+            self.velo(Rect(0, 0, x1 + m, self.H), 'velo-lectura')
+        else:
+            self.velo(Rect(x0 - m, 0, self.W - x0 + m, self.H), 'velo-lectura')
+
+    def _division_banda(self, p: dict):
+        """Imagen arriba y banda de texto abajo a todo el ancho: cabecera a la izquierda, datos a la derecha."""
+        v, m = self.v, self.medianil
+        n = self._filas_de(p['fraccion'])
+        j = self.M - n                      # primera fila de grilla de la banda
+        borde, tope = self.y_fil(j) - m, self.y_fil(j)
+        kc = self._columnas_de(p['fraccion_cabecera'])
+        self.notas.append(f"división banda: texto en las {n} filas de abajo ({n} de {self.M}); cabecera en "
+                          f"{kc} de {self.N} columnas y datos en {self.N - kc}")
+        self.trama()
+        self.cruces_registro()
+        pie = self.preparar_pie(self.caja.x, self.caja.x2)
+        fondo_util = self.caja.y2 - pie['alto'] - self.mod(v['espacio_pie'])
+        x_filas = self.x_col(kc)
+        zona = Rect(self.caja.x, tope, self.x_col(kc - 1) + self.col_w - self.caja.x, fondo_util - tope)
+        zona_filas = Rect(x_filas, tope, self.caja.x2 - x_filas, fondo_util - tope)
+        self.chip(ancla=Rect(self.caja.x, tope, self.caja.w, zona.h))
+        self.zonas['texto'] = zona.a_dict()
+        tam = self._titulo_que_cabe(zona, 'columna_derecha', cta_en_pila=not pie['cta_cabe'], zona_filas=zona_filas)
+        self.pila(zona, tam, 'columna_derecha', cta_en_pila=not pie['cta_cabe'], zona_filas=zona_filas)
+        self.colocar_pie(pie)
+        self.velo(Rect(0, borde, self.W, self.H - borde), 'velo-lectura')
+
+    def _division_ele(self, p: dict):
+        """Cabecera arriba a todo el ancho y datos en la columna izquierda; la imagen queda en la esquina."""
+        v, m = self.v, self.medianil
+        n = self._filas_de(p['fraccion_banda'])
+        corte = self.y_fil(n)               # línea de grilla donde termina la banda y empieza la columna
+        k = self._columnas_de(p['fraccion_columna'])
+        x1 = self.x_col(k - 1) + self.col_w
+        self.notas.append(f"división ele: cabecera en las {n} filas de arriba ({n} de {self.M}); datos en "
+                          f"{k} de {self.N} columnas")
+        self.trama()
+        self.cruces_registro()
+        cab = Rect(self.caja.x, self.caja.y, self.caja.w, corte - self.mod(v['espacio_subtitulo_filas']) - self.caja.y)
+        self.chip(ancla=cab)
+        self.zonas['texto'] = cab.a_dict()
+        tam = self._titulo_que_cabe(cab, 'aparte')
+        self.pila(cab, tam, 'aparte')
+        pie = self.preparar_pie(self.caja.x, x1)
+        filas = self.filas_activas()
+        fin = self.bloque_filas(filas, self.caja.x, corte, x1 - self.caja.x) if filas else corte
+        if pie['cta'] and not pie['cta_cabe']:
+            base = fin + self.mod(v['espacio_filas_cuerpo']) + pie['cta']['cap']
+            self.agregar_texto('cta', 'cta', self.c['cta'], self.caja.x, base, self.t['cta'])
+            fin = base
+        self.colocar_pie(pie)
+        if fin > self.caja.y2 - pie['alto'] - self.mod(v['espacio_pie']) + 0.5:
+            self.notas.append('ele: los datos no caben sobre el pie')
+        self.velo(Rect(0, 0, self.W, corte), 'velo-banda', grupo='velo-lectura')
+        self.velo(Rect(0, corte, x1 + m, self.H - corte), 'velo-columna', grupo='velo-lectura')
 
     def _proceso_libre(self):
         """Posiciones sueltas como la v2: sirve para regenerarla desde un pack."""
@@ -1207,7 +1357,7 @@ class Compositor:
 
 def generar_pieza(ctx: Contexto, nav: Navegador, ruta_pack: Path, dir_salida: Path, codigo: str,
                   ruta_contenido: Path | None = None) -> dict:
-    pack = cargar_yaml(ruta_pack)
+    pack = cargar_pack(ruta_pack)
     ruta_contenido = Path(ruta_contenido or LAB / pack['contenido'])
     contenido = cargar_yaml(ruta_contenido)
     comp = Compositor(ctx, nav, pack, contenido)
@@ -1292,7 +1442,7 @@ def main():
     with abrir_navegador(ctx) as nav:
         nav.preparar_medicion(ctx.css_fuentes(nav.url('fuentes', '')))
         ruta_pack = Path(a.pack)
-        codigo = a.codigo or cargar_yaml(ruta_pack).get('id', ruta_pack.stem)
+        codigo = a.codigo or cargar_pack(ruta_pack).get('id', ruta_pack.stem)
         info = generar_pieza(ctx, nav, ruta_pack, LAB / a.salida, codigo, a.contenido)
     print(json.dumps({k: info[k] for k in ('codigo', 'estado', 'reglas_rotas', 'notas', 'png')},
                      ensure_ascii=False, indent=2))

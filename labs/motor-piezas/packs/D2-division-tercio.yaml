@@ -1,0 +1,8 @@
+id: D2
+nombre: "Tercio · texto en 4 de 12 columnas, la imagen manda"
+alternativa: paso1
+paso: division
+hereda: packs/D1-division-mitad.yaml
+decision_david: null
+valores:
+  division: tercio          # lo único que cambia respecto de D1

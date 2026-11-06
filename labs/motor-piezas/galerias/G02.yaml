@@ -1,0 +1,32 @@
+id: G02
+fecha: 2026-11-06
+titulo: "Galería 02 · paso 1: división del lienzo"
+descripcion: >
+  Paso 1 de 5 (división, jerarquía, imagen o ilustración, protección del texto, pie y
+  detalles). Cuatro formas de partir el lienzo entre texto e imagen. Todo lo demás queda
+  fijo: es la 12° de G01, con la misma imagen, los mismos tamaños pedidos, los mismos
+  colores y el mismo pie. La 1° es esa 12° con el contraste corregido: los textos chicos
+  sobre imagen ahora llegan a 7:1. Cuando la división deja menos alto, el motor reduce el
+  título para que quepa; el reparto vertical y los tamaños se afinan en el paso 2.
+  Laboratorio: no publicar.
+como_elegir: >
+  Elige un número (1° a 4°) y dime qué te gusta o qué cambiarías, con tus palabras. Ese
+  preset queda fijo y pasamos al paso 2 (jerarquía).
+contenido: contenido/workshop-bim-ia.yaml
+secciones:
+  - alternativa: paso1
+    titulo: "Paso 1 · División"
+    descripcion: >
+      Cada pieza cambia solo el parámetro `division` respecto de la 1°: su pack hereda de
+      D1 y declara una sola línea. Los bordes del velo caen en líneas de la grilla de 12
+      columnas y 8 filas.
+    pasos:
+      - "1° Mitad: texto en 6 de 12 columnas, imagen en la otra mitad"
+      - "2° Tercio: texto en 4 de 12 columnas, la imagen manda en el resto"
+      - "3° Banda: imagen arriba, texto en las 4 filas de abajo (título a la izquierda, datos a la derecha)"
+      - "4° Ele: título arriba a todo el ancho, datos en la columna izquierda, imagen abajo a la derecha"
+    piezas:
+      - packs/D1-division-mitad.yaml
+      - packs/D2-division-tercio.yaml
+      - packs/D3-division-banda.yaml
+      - packs/D4-division-ele.yaml

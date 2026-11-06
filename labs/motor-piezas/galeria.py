@@ -24,7 +24,7 @@ from PIL import Image, ImageDraw, ImageFont
 LAB = Path(__file__).resolve().parent
 sys.path.insert(0, str(LAB))
 
-from motor import Contexto, abrir_navegador, cargar_yaml, generar_pieza  # noqa: E402
+from motor import Contexto, abrir_navegador, cargar_pack, cargar_yaml, generar_pieza  # noqa: E402
 from comparar_replica import comparar  # noqa: E402
 
 
@@ -38,10 +38,14 @@ def previsualizar(info: dict, dir_salida: Path, ancho: int) -> str:
 
 
 def hoja_numerada(items: list[dict], dir_salida: Path, titulo: str, fuente_ttf: Path, colores: dict) -> Path:
-    """Hoja de contacto como la 00_preview.jpg de la v2: número de posición grande + código."""
-    cols, celda, pad, rotulo, cab = 4, 420, 28, 64, 88
+    """Hoja de contacto como la 00_preview.jpg de la v2: número de posición grande + código.
+
+    Si todas las piezas son apaisadas (16:9, LinkedIn), van de a dos por fila y más grandes."""
+    apaisadas = all(it['ancho'] / it['alto'] >= 1.5 for it in items)
+    cols, celda, celda_h = (2, 860, 484) if apaisadas else (4, 420, 420)
+    pad, rotulo, cab = 28, 64, 88
     filas = math.ceil(len(items) / cols)
-    hoja = Image.new('RGB', (cols * celda + (cols + 1) * pad, cab + filas * (celda + rotulo) + (filas + 1) * pad),
+    hoja = Image.new('RGB', (cols * celda + (cols + 1) * pad, cab + filas * (celda_h + rotulo) + (filas + 1) * pad),
                      colores['fondo'])
     d = ImageDraw.Draw(hoja)
 
@@ -57,14 +61,15 @@ def hoja_numerada(items: list[dict], dir_salida: Path, titulo: str, fuente_ttf: 
     for i, it in enumerate(items):
         r, c = divmod(i, cols)
         x = pad + c * (celda + pad)
-        y = cab + pad + r * (celda + rotulo + pad)
+        y = cab + pad + r * (celda_h + rotulo + pad)
         im = Image.open(dir_salida / it['png']).convert('RGB')
-        im.thumbnail((celda, celda), Image.Resampling.LANCZOS)
-        d.rectangle([x - 1, y - 1, x + celda, y + celda], outline=colores['filete'], width=1)
-        hoja.paste(im, (x + (celda - im.width) // 2, y + (celda - im.height) // 2))
-        d.text((x, y + celda + 8), it['numero'], fill=colores['tinta'], font=f(36, 600))
-        d.text((x + 76, y + celda + 12), it['codigo'], fill=colores['acento_texto'], font=f(15, 500))
-        d.text((x + 76, y + celda + 34), it['rotulo'][:54], fill=colores['secundario'], font=f(13, 500))
+        im.thumbnail((celda, celda_h), Image.Resampling.LANCZOS)
+        d.rectangle([x - 1, y - 1, x + celda, y + celda_h], outline=colores['filete'], width=1)
+        hoja.paste(im, (x + (celda - im.width) // 2, y + (celda_h - im.height) // 2))
+        d.text((x, y + celda_h + 8), it['numero'], fill=colores['tinta'], font=f(36, 600))
+        d.text((x + 76, y + celda_h + 12), it['codigo'], fill=colores['acento_texto'], font=f(15, 500))
+        d.text((x + 76, y + celda_h + 34), it['rotulo'][:54 if not apaisadas else 110], fill=colores['secundario'],
+               font=f(13, 500))
     destino = dir_salida / '00_preview.jpg'
     hoja.save(destino, quality=90, optimize=True)
     return destino
@@ -86,7 +91,7 @@ def construir(ruta_def: Path, publicar: bool):
         for sec in defin['secciones']:
             for ruta_pack in sec['piezas']:
                 numero += 1
-                pack = cargar_yaml(LAB / ruta_pack)
+                pack = cargar_pack(LAB / ruta_pack)
                 codigo = f"{gid}-{pack['id']}"
                 info = generar_pieza(ctx, nav, LAB / ruta_pack, dir_salida, codigo,
                                      LAB / pack.get('contenido', contenido_def))
@@ -99,7 +104,7 @@ def construir(ruta_def: Path, publicar: bool):
                       f"{'; '.join(info['reglas_rotas']) or '-'}")
         controles = []
         for c in defin.get('control', []):
-            pack = cargar_yaml(LAB / c['pack'])
+            pack = cargar_pack(LAB / c['pack'])
             codigo = f"{gid}-{pack['id']}"
             info = generar_pieza(ctx, nav, LAB / c['pack'], dir_salida, codigo, LAB / pack['contenido'])
             shutil.copy2(LAB / c['pack'], dir_salida / 'packs' / Path(c['pack']).name)
@@ -108,7 +113,7 @@ def construir(ruta_def: Path, publicar: bool):
             controles.append(info)
     for info in controles:
         info['comparacion'] = comparar(ctx, LAB / next(c['pack'] for c in defin['control']
-                                                       if cargar_yaml(LAB / c['pack'])['id'] == info['pack']),
+                                                       if cargar_pack(LAB / c['pack'])['id'] == info['pack']),
                                        dir_salida, info['codigo'])
         print(f"control {info['codigo']}: delta máx {info['comparacion']['delta_max_px']} px, "
               f"píxeles {info['comparacion']['pixeles']}")
@@ -247,13 +252,13 @@ a{{color:var(--pt)}}
 <p class="desc">{_e(defin['descripcion'])}</p>
 <p class="aviso">{_e(defin['como_elegir'])}</p>
 <p class="desc">Hoja numerada: <a href="00_preview.jpg">00_preview.jpg</a> · registro: <a href="decisiones_{_e(defin['id'])}.csv">decisiones_{_e(defin['id'])}.csv</a></p>
-<table class="indice"><tr><th>°</th><th>código</th><th>proceso</th><th>formato</th><th>modo</th><th>imagen</th><th>estado</th></tr>
+<table class="indice"><tr><th>°</th><th>código</th><th>sección</th><th>formato</th><th>modo</th><th>imagen</th><th>estado</th></tr>
 {''.join(f"<tr><td><a href='#p{_e(it['numero'].rstrip('°'))}'><b>{_e(it['numero'])}</b></a></td><td><code>{_e(it['codigo'])}</code></td>"
          f"<td>{_e(it['seccion'])}</td><td>{_e(it['formato'])} {it['ancho']}×{it['alto']}</td><td>{_e(it['modo'])}</td>"
          f"<td>{_e(it['imagen']['archivo'] if it.get('imagen') else 'isometría vectorial' if any(e for e in it['derivados']['zonas'] if e == 'ilustracion') else '—')}</td>"
          f"<td>{_e(it['estado'])}</td></tr>" for it in items)}</table>
 {''.join(secciones)}
-<section><h2>Control · el motor regenera una pieza v2 elegida solo desde un pack</h2>{ctrl}</section>
+{f'<section><h2>Control · el motor regenera una pieza v2 elegida solo desde un pack</h2>{ctrl}</section>' if controles else ''}
 <p class="meta">Motor {_e(items[0]['procedencia']['motor'])} · tokens colors_and_type.css sha256 {_e(items[0]['procedencia']['tokens_css_sha256'])} ·
 lockups desde 02_Logotipo/Exportables/Lockup · fuentes Inter y JetBrains Mono (woff2 del Design System, OFL en fuentes/).</p>
 </main></body></html>"""

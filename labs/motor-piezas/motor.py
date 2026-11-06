@@ -40,7 +40,7 @@ sys.path.insert(0, str(LAB))   # solo los módulos del laboratorio (funciona tam
 import marca  # noqa: E402
 from navegador import Navegador  # noqa: E402
 
-VERSION_MOTOR = '0.2'
+VERSION_MOTOR = '0.3'
 
 
 def cargar_yaml(ruta) -> dict:
@@ -685,41 +685,82 @@ class Compositor:
     def color_texto(self, el: dict):
         return self.rgb_opaco(el['color'])
 
-    def velo(self, rect: Rect, ident: str):
+    # ---------------------------------------------------------------- texto sobre imagen
+    def es_grande(self, el: dict) -> bool:
+        """Texto grande según WCAG: 18 pt, o 14 pt desde peso 600 (en px CSS de la vista)."""
+        css = el['tamano'] / self.px_por_css
+        umbral = self.v['texto_grande_negrita_css'] if el['peso'] >= 600 else self.v['texto_grande_css']
+        return css >= umbral - 0.01
+
+    def sobre_imagen(self, el: dict) -> bool:
+        return (self.imagen is not None and el['rol'] != 'chip'
+                and el['caja'].interseca(self.imagen['zona']))
+
+    def contraste_objetivo(self, el: dict) -> float:
+        """4,5:1 (UB-3) para todo texto; contraste_sobre_imagen para el texto chico sobre imagen."""
+        minimo = self.ctx.reglas['contraste_texto_minimo']
+        if self.sobre_imagen(el) and not self.es_grande(el):
+            return max(minimo, self.v['contraste_sobre_imagen'])
+        return minimo
+
+    def aplicar_colores_sobre_imagen(self):
+        """El texto chico sobre imagen pasa a los tokens de texto más claros (si el pack lo pide)."""
+        if self.v['colores_sobre_imagen'] != 'claros' or self.imagen is None:
+            return
+        mapa = self.ctx.esquema['roles_color_sobre_imagen'][self.modo]
+        cambios = {}
+        for e in self.el:
+            if e['tipo'] == 'texto' and self.sobre_imagen(e) and not self.es_grande(e):
+                nuevo = mapa.get(e['color'])
+                if nuevo and nuevo != e['color']:
+                    cambios.setdefault(f"{e['color']} -> {nuevo}", []).append(e['id'])
+                    e['color'] = nuevo
+        for cambio, ids in cambios.items():
+            self.notas.append(f'texto chico sobre imagen, {cambio}: {", ".join(ids)}')
+
+    def velo(self, rect: Rect, ident: str, grupo: str | None = None):
+        """Velo plano. Los velos de un mismo grupo comparten opacidad y se pintan como una sola forma."""
         rgb = marca.color_rgba(self.colores['velo'])[:3]
         self.velos.append({'rect': rect, 'color': (*rgb, self.v['velo_opacidad']),
-                           'opacidad': self.v['velo_opacidad'], 'id': ident})
+                           'opacidad': self.v['velo_opacidad'], 'id': ident, 'grupo': grupo or ident})
         self.el.append({'tipo': 'velo', 'id': ident})
 
     def ajustar_velos(self):
-        """Sube cada velo lo justo para que todo texto sobre él cumpla el contraste mínimo."""
+        """Sube cada velo (o grupo de velos) lo justo para que cada texto sobre él llegue a su objetivo."""
         if not self.v['velo_auto']:
             return
-        minimo = self.ctx.reglas['contraste_texto_minimo']
         tope = self.ctx.esquema['parametros']['velo_opacidad']['rango'][1]
-        for velo in [vl for vl in self.velos if not vl.get('fijo')]:
-            textos = [e for e in self.el if e['tipo'] == 'texto' and e['caja'].interseca(velo['rect'])]
+        grupos: dict[str, list] = {}
+        for vl in self.velos:
+            if not vl.get('fijo'):
+                grupos.setdefault(vl['grupo'], []).append(vl)
+        for grupo, velos in grupos.items():
+            textos = [e for e in self.el if e['tipo'] == 'texto'
+                      and any(e['caja'].interseca(vl['rect']) for vl in velos)]
             if not textos:
                 continue
+            objetivos = sorted({self.contraste_objetivo(e) for e in textos})
 
-            def peor(alfa):
-                velo['opacidad'] = alfa
-                return min(self.contraste_en(e['caja'], self.color_texto(e)) for e in textos)
+            def holgura(alfa):
+                for vl in velos:
+                    vl['opacidad'] = alfa
+                return min(self.contraste_en(e['caja'], self.color_texto(e)) / self.contraste_objetivo(e)
+                           for e in textos)
 
-            inicial = velo['opacidad']
-            if peor(inicial) >= minimo:
+            inicial = velos[0]['opacidad']
+            if holgura(inicial) >= 1:
                 continue
             lo, hi = inicial, tope
-            if peor(hi) < minimo:
-                velo['opacidad'] = hi
-                self.notas.append(f'velo {velo["id"]}: ni con {hi:.2f} se alcanza {minimo}:1')
+            if holgura(hi) < 1:
+                self.notas.append(f'velo {grupo}: ni con {hi:.2f} se alcanza el contraste objetivo')
                 continue
             for _ in range(12):
                 mid = (lo + hi) / 2
-                lo, hi = (mid, hi) if peor(mid) < minimo else (lo, mid)
-            velo['opacidad'] = round(math.ceil(hi * 100) / 100, 2)
-            self.notas.append(f'velo {velo["id"]}: opacidad {inicial:.2f} -> {velo["opacidad"]:.2f} '
-                              f'para cumplir {minimo}:1')
+                lo, hi = (mid, hi) if holgura(mid) < 1 else (lo, mid)
+            final = round(math.ceil(hi * 100) / 100, 2)
+            holgura(final)
+            self.notas.append(f'velo {grupo}: opacidad {inicial:.2f} -> {final:.2f} para cumplir '
+                              f'{" y ".join(f"{o:g}:1" for o in objetivos)}')
 
     def zona_libre_auto(self, fraccion: float) -> tuple[str, dict]:
         """La franja de la imagen con menos detalle (gradiente medio de luminancia)."""
@@ -739,6 +780,7 @@ class Compositor:
         self.preparar_tamanos()
         self.el.append({'tipo': 'fondo'})
         getattr(self, f'_proceso_{self.v["proceso"]}')()
+        self.aplicar_colores_sobre_imagen()
         if self.v['velo_auto']:
             self.ajustar_velos()
         self.resolver_logo()
@@ -1036,6 +1078,13 @@ class Compositor:
         regla('contraste_texto', not peores,
               f'mínimo medido {min(detalle.values()):.2f}:1 (p{self.PERCENTIL_CONTRASTE} del fondo real)'
               if not peores else f'bajo {minimo}:1: {peores}')
+        chicos = [e for e in textos if self.sobre_imagen(e) and not self.es_grande(e)]
+        if chicos:
+            objetivo = self.contraste_objetivo(chicos[0])
+            bajos = [f"{e['id']} {detalle[e['id']]:.2f}:1" for e in chicos if detalle[e['id']] < objetivo - 1e-9]
+            regla('contraste_sobre_imagen', not bajos,
+                  f"textos chicos sobre imagen: mínimo {min(detalle[e['id']] for e in chicos):.2f}:1 "
+                  f"(objetivo {objetivo:g}:1)" if not bajos else f'bajo {objetivo:g}:1: {bajos}', 'calidad')
         regla('contraste_logo', lg['contraste'] >= minimo,
               f"«Umbral» {lg['relleno_texto']} sobre el fondo: {lg['contraste']:.2f}:1 (variante {lg['variante']})")
         radios_ok = (self.imagen is None or self.imagen['radio'] in (0, r['radio_bloque_px']))
@@ -1097,9 +1146,18 @@ class Compositor:
                                   f'stroke-width="{self.ctx.reglas["filete_px"]}"/>')
             elif t == 'velo':
                 vl = next(x for x in self.velos if x.get('id') == e['id'])
-                r = vl['rect']
-                partes.append(f'  <rect id="{e["id"]}" x="{f2(r.x)}" y="{f2(r.y)}" width="{f2(r.w)}" height="{f2(r.h)}" '
-                              f'fill="{marca.hex_de(vl["color"])}" fill-opacity="{vl["opacidad"]:.2f}"/>')
+                miembros = [x for x in self.velos if not x.get('fijo') and x['grupo'] == vl['grupo']]
+                if len(miembros) == 1:
+                    r = vl['rect']
+                    partes.append(f'  <rect id="{e["id"]}" x="{f2(r.x)}" y="{f2(r.y)}" width="{f2(r.w)}" '
+                                  f'height="{f2(r.h)}" fill="{marca.hex_de(vl["color"])}" '
+                                  f'fill-opacity="{vl["opacidad"]:.2f}"/>')
+                elif vl is miembros[0]:
+                    # un grupo se pinta como una sola forma: sin costura ni doble opacidad entre sus partes
+                    d = ' '.join(f"M{f2(m['rect'].x)} {f2(m['rect'].y)}h{f2(m['rect'].w)}v{f2(m['rect'].h)}"
+                                 f"h{f2(-m['rect'].w)}z" for m in miembros)
+                    partes.append(f'  <path id="{vl["grupo"]}" d="{d}" fill="{marca.hex_de(vl["color"])}" '
+                                  f'fill-opacity="{vl["opacidad"]:.2f}"/>')
             elif t == 'trama':
                 puntos = []
                 y = e['y0']

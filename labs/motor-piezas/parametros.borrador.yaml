@@ -12,8 +12,9 @@
 #   modulos = múltiplos del módulo vertical (modulo_proporcional · s, múltiplo de 4).
 # Los espacios se redondean al múltiplo de 4 px más cercano (regla UB-3).
 
-version: 0.2-borrador
+version: 0.3-borrador
 fecha: 2026-11-06
+# 0.3: contraste sobre imagen (7:1 para texto chico, colores de texto claros).
 
 formatos:
   cuadrado:  {ancho: 1080, alto: 1080, vista_css: 390, uso: "feed 1:1 (Instagram, LinkedIn)"}
@@ -32,6 +33,7 @@ roles_color:
     secundario: --ub-text-muted
     acento: --ub-primary            # relleno, filete, ícono. Nunca texto sobre claro
     acento_texto: --ub-primary-text # texto de marca sobre claro (9,63:1)
+    acento_texto_claro: --ub-primary-text
     filete: --ub-border
     trama: --ub-border-strong
     chip_fondo: --ub-warning-soft
@@ -43,12 +45,20 @@ roles_color:
     secundario: --ub-text-muted
     acento: --ub-primary
     acento_texto: --ub-primary      # Manual §03, portadas: acento #2DD4BF como texto (9,16:1). Pendiente confirmar
+    acento_texto_claro: --ub-primary-text   # #99F6E4: el token de texto de marca del tema oscuro
     filete: --ub-border
     trama: --ub-border-strong
     chip_fondo: --ub-warning-soft
     chip_texto: --ub-warning-text
     velo: --ub-bg
   fondo_portada: --ub-bg-cover      # solo con fondo_portada: true (ver reglas)
+
+# Con colores_sobre_imagen: claros, un texto chico sobre imagen cambia de rol así. Sobre la
+# imagen de la 12° de G01, 7:1 con --ub-text-muted exige un velo de 0,97 (la imagen desaparece;
+# sobre fondo sólido llega apenas a 7,24:1); con --ub-text basta 0,51.
+roles_color_sobre_imagen:
+  claro:  {secundario: tinta}
+  oscuro: {secundario: tinta, acento_texto: acento_texto_claro}
 
 # Estilo de cada rol de texto. Las familias y pesos son los del manual.
 roles_texto:
@@ -639,7 +649,36 @@ parametros:
     nivel: componente
     tipo: booleano
     defecto: true
-    descripcion: sube la opacidad hasta que todo texto sobre la imagen cumple el contraste mínimo
+    descripcion: sube la opacidad hasta que todo texto sobre la imagen cumple su contraste objetivo
+  contraste_sobre_imagen:
+    capa: imagen
+    nivel: principal
+    tipo: decimal
+    rango: [4.5, 21]
+    defecto: 7.0
+    descripcion: contraste mínimo de los textos chicos sobre imagen, medido sobre el fondo real (nivel AAA de WCAG). UB-3 fija el piso de 4,5:1, que sobre una imagen con textura no basta
+    origen: "G01 12° (David, 2026-11-06): falta contraste en los textos de abajo a la izquierda; medían 4,57–6,28:1"
+  texto_grande_css:
+    capa: imagen
+    nivel: componente
+    tipo: decimal
+    rango: [14, 48]
+    defecto: 24
+    descripcion: desde este tamaño (px CSS) un texto es grande y sobre imagen le basta 4,5:1 (WCAG, 18 pt)
+  texto_grande_negrita_css:
+    capa: imagen
+    nivel: componente
+    tipo: decimal
+    rango: [14, 48]
+    defecto: 18.67
+    descripcion: lo mismo para pesos 600 o más (WCAG, 14 pt en negrita)
+  colores_sobre_imagen:
+    capa: imagen
+    nivel: principal
+    tipo: opcion
+    opciones: [marca, claros]
+    defecto: claros
+    descripcion: claros = los textos chicos sobre imagen usan los tokens de texto más claros (roles_color_sobre_imagen) para llegar a contraste_sobre_imagen sin tapar la imagen; marca = los mismos colores que sobre fondo liso
   zona_libre:
     capa: imagen
     nivel: principal

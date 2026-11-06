@@ -1,5 +1,5 @@
 numero,codigo,pack,comentario_david,fecha
-1°,G01-A1,packs/A1-grilla-cuadrado-claro.yaml,,
+1°,G01-A1,packs/A1-grilla-cuadrado-claro.yaml,"se ve bien, le faltan algunos ajustes aún. Temas de proporciones, composición.",2026-11-06
 2°,G01-A2,packs/A2-grilla-vertical-oscuro-imagen.yaml,,
 3°,G01-A3,packs/A3-grilla-linkedin-claro.yaml,,
 4°,G01-A4,packs/A4-grilla-slide-oscuro-portada.yaml,,
@@ -10,4 +10,4 @@ numero,codigo,pack,comentario_david,fecha
 9°,G01-C1,packs/C1-imagen-cuadrado-claro-S21a.yaml,,
 10°,G01-C2,packs/C2-imagen-vertical-oscuro-S16b.yaml,,
 11°,G01-C3,packs/C3-imagen-linkedin-oscuro-L3d.yaml,,
-12°,G01-C4,packs/C4-imagen-slide-oscuro-S2b.yaml,,
+12°,G01-C4,packs/C4-imagen-slide-oscuro-S2b.yaml,"la que destaco por la complejidad […] es la composición de la 12. Se ve muy bien, pero solo falta trabajar el contraste de los textos, de abajo a la izquierda. Pero en composición se ve muy bien.",2026-11-06

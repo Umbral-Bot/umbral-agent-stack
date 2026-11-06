@@ -1,0 +1,8 @@
+id: F2
+nombre: "Sangrado lateral · la imagen solo en los dos tercios; el texto sobre fondo liso"
+alternativa: paso3
+paso: imagen
+hereda: packs/F1-imagen-sangre.yaml
+decision_david: null
+valores:
+  imagen_encaje: sangrado_lateral

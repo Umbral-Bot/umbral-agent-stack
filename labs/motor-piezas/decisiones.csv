@@ -16,6 +16,10 @@ numero,codigo,pack,comentario_david,fecha
 3°,G02-D3,packs/D3-division-banda.yaml,,
 4°,G02-D4,packs/D4-division-ele.yaml,,
 1°,G03-E1,packs/E1-jerarquia-base.yaml,,
-2°,G03-E2,packs/E2-jerarquia-datos.yaml,,
+2°,G03-E2,packs/E2-jerarquia-datos.yaml,2° Datos fuertes,2026-11-06
 3°,G03-E3,packs/E3-jerarquia-compacta.yaml,,
 4°,G03-E4,packs/E4-jerarquia-escala.yaml,,
+1°,G04-F1,packs/F1-imagen-sangre.yaml,,
+2°,G04-F2,packs/F2-imagen-lateral.yaml,,
+3°,G04-F3,packs/F3-imagen-caja.yaml,,
+4°,G04-F4,packs/F4-ilustracion.yaml,,

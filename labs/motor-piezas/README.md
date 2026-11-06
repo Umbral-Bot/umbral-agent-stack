@@ -105,7 +105,8 @@ El contenido y el formato son entradas, no pasos. Cada galería cambia un solo p
 | Paso | Galería | Base | Presets | Estado |
 |---|---|---|---|---|
 | 1 · División | `galerias/G02.yaml` · Drive `01_galerias/2026-11-06_G02` | la 12° de G01 con el contraste corregido (`packs/D1`) | mitad, tercio, banda y ele (`divisiones` en el esquema) | **elegido el 2°, tercio** («se ve mejor el 2»), con más contraste abajo a la izquierda |
-| 2 · Jerarquía | `galerias/G03.yaml` · Drive `01_galerias/2026-11-06_G03` | el tercio con texto chico y logo a 10:1 (`packs/E1`) | base, datos fuertes, compacta (`pila_anclaje: abajo`) y escala mayor | espera la elección de David |
+| 2 · Jerarquía | `galerias/G03.yaml` · Drive `01_galerias/2026-11-06_G03` | el tercio con texto chico y logo a 10:1 (`packs/E1`) | base, datos fuertes, compacta (`pila_anclaje: abajo`) y escala mayor | **elegido el 2°, datos fuertes** |
+| 3 · Imagen o ilustración | `galerias/G04.yaml` · Drive `01_galerias/2026-11-06_G04` | datos fuertes con la imagen a sangre bajo velo (`packs/F1`) | a sangre, sangrado lateral, en caja e ilustración (`imagen_encaje`, `imagen_registro: lienzo`) | espera la elección de David |
 
 Comentarios de David sobre G01 (en `decisiones.csv`):
 - **1°:** faltan ajustes de proporción y composición.
@@ -133,6 +134,7 @@ python galeria.py --definicion galerias/G01.yaml              # salida/G01/galer
 python galeria.py --definicion galerias/G01.yaml --publicar   # copia a 07_Motor de piezas/01_galerias
 python galeria.py --definicion galerias/G02.yaml              # paso 1: divisiones (salida/G02)
 python galeria.py --definicion galerias/G03.yaml              # paso 2: jerarquía (salida/G03)
+python galeria.py --definicion galerias/G04.yaml              # paso 3: imagen o ilustración (salida/G04)
 python catalogar_imagenes.py                                   # regenera imagenes.yaml desde los PNG
 python analisis/medir_piezas.py                                # re-mide las seis elegidas
 ```

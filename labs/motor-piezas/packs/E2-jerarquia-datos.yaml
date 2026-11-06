@@ -3,7 +3,7 @@ nombre: "Datos fuertes · los datos crecen y el subtítulo baja al tamaño del k
 alternativa: paso2
 paso: jerarquia
 hereda: packs/E1-jerarquia-base.yaml
-decision_david: null
+decision_david: "G03 2°, 2026-11-06: elegida para el paso 2 («2° Datos fuertes»)"
 valores:                    # dos niveles claros: título y datos
   escala_valor: 1.7
   escala_numero: 1.7

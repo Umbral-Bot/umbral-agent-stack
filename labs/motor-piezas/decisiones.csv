@@ -11,3 +11,7 @@ numero,codigo,pack,comentario_david,fecha
 10°,G01-C2,packs/C2-imagen-vertical-oscuro-S16b.yaml,,
 11°,G01-C3,packs/C3-imagen-linkedin-oscuro-L3d.yaml,,
 12°,G01-C4,packs/C4-imagen-slide-oscuro-S2b.yaml,"la que destaco por la complejidad […] es la composición de la 12. Se ve muy bien, pero solo falta trabajar el contraste de los textos, de abajo a la izquierda. Pero en composición se ve muy bien.",2026-11-06
+1°,G02-D1,packs/D1-division-mitad.yaml,,
+2°,G02-D2,packs/D2-division-tercio.yaml,,
+3°,G02-D3,packs/D3-division-banda.yaml,,
+4°,G02-D4,packs/D4-division-ele.yaml,,

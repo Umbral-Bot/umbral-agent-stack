@@ -90,6 +90,28 @@ Cada problema debe convertirse en un parámetro.
 | 4. Galería numerada | `galerias/G01.yaml` → `galeria.py`; publicada en Drive `07_Motor de piezas/01_galerias/2026-11-06_G01/` |
 | 5. Registro de decisiones | `decisiones.csv` (una fila por pieza de G01, comentario y fecha vacíos) |
 
+## Paso a paso (desde 2026-11-06)
+
+David pidió avanzar de a un paso: primero acordar los pasos y después crear presets dentro de cada uno, eligiendo antes de pasar al siguiente. Los pasos acordados, en orden:
+
+1. **División:** cómo se parte el lienzo entre texto e imagen.
+2. **Jerarquía:** cuánto pesa el título frente a las filas y el pie.
+3. **Imagen o ilustración:** a sangre, en caja o isometría.
+4. **Protección del texto:** velo, banda o color.
+5. **Pie y detalles:** logo, llamado, etiqueta y trama.
+
+El contenido y el formato son entradas, no pasos. Cada galería cambia un solo paso, con 3–4 presets sobre una base fija. Los packs del paso heredan de la base (`hereda:`) y declaran solo lo que cambia.
+
+| Paso | Galería | Base | Presets | Estado |
+|---|---|---|---|---|
+| 1 · División | `galerias/G02.yaml` · Drive `01_galerias/2026-11-06_G02` | la 12° de G01 con el contraste corregido (`packs/D1`) | mitad, tercio, banda y ele (`divisiones` en el esquema) | espera la elección de David |
+
+Comentarios de David sobre G01 (en `decisiones.csv`):
+- **1°:** faltan ajustes de proporción y composición.
+- **12°:** destaca por su composición, pero le faltaba contraste en los textos de abajo a la izquierda (medían 4,57–6,28:1).
+
+Corrección desde el motor 0.3: el texto chico sobre imagen apunta a 7:1 (`contraste_sobre_imagen`) y usa los colores de texto claros (`colores_sobre_imagen`). Así el velo de la 12° sube de 0,71 a 0,73 en vez de tapar la imagen. G01 se generó con el motor 0.2 (consta en cada `piezas/*.json`); con el 0.3, sus piezas C solo cambian el color de ese texto chico.
+
 ## Cómo correr
 
 Requisitos ya presentes en TARRO: Python 3.13 con `playwright`, `Pillow`, `numpy` y `PyYAML`, y Chrome
@@ -100,6 +122,7 @@ python motor.py pieza --pack packs/A1-grilla-cuadrado-claro.yaml --salida salida
 python comparar_replica.py --pack packs/R1-replica-v2-01.yaml --salida salida/prueba
 python galeria.py --definicion galerias/G01.yaml              # salida/G01/galeria.html
 python galeria.py --definicion galerias/G01.yaml --publicar   # copia a 07_Motor de piezas/01_galerias
+python galeria.py --definicion galerias/G02.yaml              # paso 1: divisiones (salida/G02)
 python catalogar_imagenes.py                                   # regenera imagenes.yaml desde los PNG
 python analisis/medir_piezas.py                                # re-mide las seis elegidas
 ```
@@ -115,7 +138,7 @@ comparar_replica.py    réplica contra original v2, en el mismo Chrome
 catalogar_imagenes.py  imagenes.yaml desde los metadatos de cada PNG
 parametros.borrador.yaml  esquema: formatos, roles, reglas UB-3 y parámetros
 rutas.yaml             rutas de TARRO (marca en Drive, solo lectura)
-packs/                 un pack por pieza (valores con nombre)
+packs/                 un pack por pieza (valores con nombre; `hereda:` parte de otro pack)
 contenido/             textos de ejemplo
 galerias/              definición de cada galería
 analisis/              análisis de las elegidas y de los procesos
@@ -132,6 +155,6 @@ Los insumos del Director (`07_Motor de piezas/00_insumos/`) son de solo lectura.
 ## Decisiones pendientes que el laboratorio no toma
 
 1. **Inter Display para titulares.** La v2 los dibujó con el corte Display de Inter Variable 4.001, un 3,8 % más estrecho, sin que nadie lo pidiera. El Design System solo trae el corte de texto. ¿Se suma Display o se queda la canónica?
-2. **Acento como texto en oscuro.** El motor usa `#2DD4BF` (`--ub-primary` oscuro) para kickers y números sobre carbón, como la tabla de portadas del Manual §03. El comentario del CSS dice «nunca `color: var(--ub-primary)`». ¿Se confirma o se usa `--ub-primary-text` (`#99F6E4`)?
+2. **Acento como texto en oscuro.** El motor usa `#2DD4BF` (`--ub-primary` oscuro) para kickers y números sobre carbón, como la tabla de portadas del Manual §03. El comentario del CSS dice «nunca `color: var(--ub-primary)`». ¿Se confirma o se usa `--ub-primary-text` (`#99F6E4`)? Desde el motor 0.3, el texto chico sobre imagen ya usa `#99F6E4` para llegar a 7:1; la duda sigue abierta para el texto grande y para el texto sobre fondo liso.
 3. **Vista supuesta por formato** (`vista_css`): 390 px CSS para redes y 1280 para 16:9. De ahí sale el tamaño mínimo real del texto.
 4. **Imágenes MJ ya hechas:** se tratan como fijas. El PNG sí trae prompt, `--v 8.2` y Job ID (ver `imagenes.yaml`); faltan `--sref`, perfil y semilla.

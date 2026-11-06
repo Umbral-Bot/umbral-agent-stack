@@ -28,6 +28,15 @@ from motor import Contexto, abrir_navegador, cargar_pack, cargar_yaml, generar_p
 from comparar_replica import comparar  # noqa: E402
 
 
+def copiar_pack(ruta_pack: str, destino: Path):
+    """Copia el pack y los packs de los que hereda, para que la carpeta publicada se explique sola."""
+    ruta = LAB / ruta_pack
+    while ruta is not None:
+        shutil.copy2(ruta, destino / ruta.name)
+        padre = cargar_yaml(ruta).get('hereda')
+        ruta = LAB / padre if padre else None
+
+
 def previsualizar(info: dict, dir_salida: Path, ancho: int) -> str:
     im = Image.open(dir_salida / info['png']).convert('RGB')
     alto = round(im.height * ancho / im.width)
@@ -95,7 +104,7 @@ def construir(ruta_def: Path, publicar: bool):
                 codigo = f"{gid}-{pack['id']}"
                 info = generar_pieza(ctx, nav, LAB / ruta_pack, dir_salida, codigo,
                                      LAB / pack.get('contenido', contenido_def))
-                shutil.copy2(LAB / ruta_pack, dir_salida / 'packs' / Path(ruta_pack).name)
+                copiar_pack(ruta_pack, dir_salida / 'packs')
                 info.update({'numero': f'{numero}°', 'seccion': sec['alternativa'],
                              'rotulo': f"{pack['nombre']}", 'pack_yaml': (LAB / ruta_pack).read_text(encoding='utf-8'),
                              'prev': previsualizar(info, dir_salida, 780 if info['formato'] != 'slide' else 1280)})
@@ -107,7 +116,7 @@ def construir(ruta_def: Path, publicar: bool):
             pack = cargar_pack(LAB / c['pack'])
             codigo = f"{gid}-{pack['id']}"
             info = generar_pieza(ctx, nav, LAB / c['pack'], dir_salida, codigo, LAB / pack['contenido'])
-            shutil.copy2(LAB / c['pack'], dir_salida / 'packs' / Path(c['pack']).name)
+            copiar_pack(c['pack'], dir_salida / 'packs')
             info.update({'rotulo': pack['nombre'], 'pack_yaml': (LAB / c['pack']).read_text(encoding='utf-8'),
                          'prev': previsualizar(info, dir_salida, 780)})
             controles.append(info)

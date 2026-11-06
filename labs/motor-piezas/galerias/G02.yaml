@@ -21,10 +21,10 @@ secciones:
       D1 y declara una sola línea. Los bordes del velo caen en líneas de la grilla de 12
       columnas y 8 filas.
     pasos:
-      - "1° Mitad: texto en 6 de 12 columnas, imagen en la otra mitad"
-      - "2° Tercio: texto en 4 de 12 columnas, la imagen manda en el resto"
-      - "3° Banda: imagen arriba, texto en las 4 filas de abajo (título a la izquierda, datos a la derecha)"
-      - "4° Ele: título arriba a todo el ancho, datos en la columna izquierda, imagen abajo a la derecha"
+      - "Mitad: texto en 6 de 12 columnas, imagen en la otra mitad"
+      - "Tercio: texto en 4 de 12 columnas, la imagen manda en el resto"
+      - "Banda: imagen arriba, texto en las 4 filas de abajo (título a la izquierda, datos a la derecha)"
+      - "Ele: título arriba a todo el ancho, datos en la columna izquierda, imagen abajo a la derecha"
     piezas:
       - packs/D1-division-mitad.yaml
       - packs/D2-division-tercio.yaml

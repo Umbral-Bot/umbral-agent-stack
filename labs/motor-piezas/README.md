@@ -79,3 +79,59 @@ falta ajuste espacial y decisiones de diseño gráfico.
 - Los márgenes son fijos en píxeles en todos los formatos en vez de proporcionales.
 
 Cada problema debe convertirse en un parámetro.
+
+## Primera entrega (2026-11-06)
+
+| Punto de la ficha | Dónde |
+|---|---|
+| 1. Análisis de las seis elegidas | `analisis/01_piezas-elegidas.md` (cifras en `analisis/medidas_elegidas.json`, script `analisis/medir_piezas.py`) |
+| 2. Tres alternativas de proceso | `analisis/02_alternativas-proceso.md` |
+| 3. Esquema y motor | `parametros.borrador.yaml` v0.2 · `motor.py` · control de réplica `packs/R1-replica-v2-01.yaml` + `comparar_replica.py` |
+| 4. Galería numerada | `galerias/G01.yaml` → `galeria.py`; publicada en Drive `07_Motor de piezas/01_galerias/2026-11-06_G01/` |
+| 5. Registro de decisiones | `decisiones.csv` (una fila por pieza de G01, comentario y fecha vacíos) |
+
+## Cómo correr
+
+Requisitos ya presentes en TARRO: Python 3.13 con `playwright`, `Pillow`, `numpy` y `PyYAML`, y Chrome
+instalado. Playwright usa ese Chrome; no descarga navegadores. No hace falta CairoSVG.
+
+```bash
+python motor.py pieza --pack packs/A1-grilla-cuadrado-claro.yaml --salida salida/prueba
+python comparar_replica.py --pack packs/R1-replica-v2-01.yaml --salida salida/prueba
+python galeria.py --definicion galerias/G01.yaml              # salida/G01/galeria.html
+python galeria.py --definicion galerias/G01.yaml --publicar   # copia a 07_Motor de piezas/01_galerias
+python catalogar_imagenes.py                                   # regenera imagenes.yaml desde los PNG
+python analisis/medir_piezas.py                                # re-mide las seis elegidas
+```
+
+## Estructura
+
+```
+motor.py               compone desde pack + contenido + tokens; verifica UB-3; SVG y PNG 2x
+navegador.py           Chrome sin ventana: mide texto y rasteriza con las fuentes de marca
+marca.py               tokens desde colors_and_type.css, contraste WCAG, lockups oficiales
+galeria.py             galería numerada (1°, 2°…), hoja 00_preview.jpg, decisiones_<id>.csv
+comparar_replica.py    réplica contra original v2, en el mismo Chrome
+catalogar_imagenes.py  imagenes.yaml desde los metadatos de cada PNG
+parametros.borrador.yaml  esquema: formatos, roles, reglas UB-3 y parámetros
+rutas.yaml             rutas de TARRO (marca en Drive, solo lectura)
+packs/                 un pack por pieza (valores con nombre)
+contenido/             textos de ejemplo
+galerias/              definición de cada galería
+analisis/              análisis de las elegidas y de los procesos
+insumos/  salida/      ignorados por git (paquetes extraídos y piezas generadas)
+```
+
+El motor lee la marca **en vivo** desde Drive:
+- **Colores:** `colors_and_type.css`.
+- **Logos:** `02_Logotipo/Exportables/Lockup/`.
+- **Fuentes:** woff2 del Design System, que se copian con su licencia OFL junto a cada salida.
+
+Los insumos del Director (`07_Motor de piezas/00_insumos/`) son de solo lectura. De ahí salen la base (`generate.py` portable), los vectores y las favoritas MJ. Sus copias de lockups y fuentes se comprobaron idénticas a las canónicas el 2026-11-06.
+
+## Decisiones pendientes que el laboratorio no toma
+
+1. **Inter Display para titulares.** La v2 los dibujó con el corte Display de Inter Variable 4.001, un 3,8 % más estrecho, sin que nadie lo pidiera. El Design System solo trae el corte de texto. ¿Se suma Display o se queda la canónica?
+2. **Acento como texto en oscuro.** El motor usa `#2DD4BF` (`--ub-primary` oscuro) para kickers y números sobre carbón, como la tabla de portadas del Manual §03. El comentario del CSS dice «nunca `color: var(--ub-primary)`». ¿Se confirma o se usa `--ub-primary-text` (`#99F6E4`)?
+3. **Vista supuesta por formato** (`vista_css`): 390 px CSS para redes y 1280 para 16:9. De ahí sale el tamaño mínimo real del texto.
+4. **Imágenes MJ ya hechas:** se tratan como fijas. El PNG sí trae prompt, `--v 8.2` y Job ID (ver `imagenes.yaml`); faltan `--sref`, perfil y semilla.

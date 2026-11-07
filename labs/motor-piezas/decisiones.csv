@@ -31,3 +31,7 @@ numero,codigo,pack,comentario_david,fecha
 2°,G06-J2,packs/J2-pie-sin-cruces.yaml,,
 3°,G06-J3,packs/J3-pie-boton.yaml,,
 4°,G06-J4,packs/J4-pie-trama.yaml,4,2026-11-06
+1°,G08-K1,packs/K1-formato-1x1-columna.yaml,,
+2°,G08-K2,packs/K2-formato-1x1-banda.yaml,,
+3°,G08-K3,packs/K3-formato-4x5-columna.yaml,,
+4°,G08-K4,packs/K4-formato-4x5-banda.yaml,,

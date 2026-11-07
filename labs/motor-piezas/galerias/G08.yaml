@@ -1,0 +1,36 @@
+id: G08
+fecha: 2026-11-06
+titulo: "Galería 08 · el Preset 01 en formatos de celular (1:1 y 4:5)"
+descripcion: >
+  El Preset 01 (save the date 16:9) llevado a los formatos de Instagram. En celular el texto se
+  ve casi tres veces más chico que en un notebook: el texto mínimo pasa de 14 a 11 px CSS (el
+  mínimo legible) y aun así no cabe todo el contenido junto a una imagen grande. Por eso hay dos
+  opciones por formato: la columna conserva todos los datos y deja la imagen en una franja; la
+  banda da más espacio a la imagen y deja solo la fecha. Se mantienen el sangrado lateral, el
+  color de marca, la trama en el panel y la jerarquía de datos fuertes; si los datos no caben en
+  el ancho, se achican lo justo. LinkedIn va en el paso siguiente. Laboratorio: no publicar.
+como_elegir: >
+  Elige una por formato (por ejemplo «1 y 4») y dime qué cambiarías. Con eso el Preset 01
+  queda con su versión 1:1 y 4:5.
+contenido: contenido/workshop-bim-ia.yaml
+secciones:
+  - alternativa: 1x1
+    titulo: "1:1 · cuadrado (1080×1080)"
+    descripcion: >
+      Feed de Instagram o LinkedIn, visto en el celular (390 px CSS de ancho).
+    pasos:
+      - "Columna ancha: texto en 7 de 12 columnas con todos los datos; la imagen en una franja a la derecha"
+      - "Banda: imagen arriba y texto abajo solo con la fecha; el título crece"
+    piezas:
+      - packs/K1-formato-1x1-columna.yaml
+      - packs/K2-formato-1x1-banda.yaml
+  - alternativa: 4x5
+    titulo: "4:5 · vertical (1080×1350)"
+    descripcion: >
+      Feed vertical o portada de carrusel, visto en el celular.
+    pasos:
+      - "Columna ancha: texto en 7 de 12 columnas con todos los datos; la imagen en una franja alta a la derecha"
+      - "Banda: imagen arriba y texto abajo solo con la fecha"
+    piezas:
+      - packs/K3-formato-4x5-columna.yaml
+      - packs/K4-formato-4x5-banda.yaml

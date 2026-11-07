@@ -109,6 +109,7 @@ El contenido y el formato son entradas, no pasos. Cada galería cambia un solo p
 | 3 · Imagen o ilustración | `galerias/G04.yaml` · Drive `01_galerias/2026-11-06_G04` | datos fuertes con la imagen a sangre bajo velo (`packs/F1`) | a sangre, sangrado lateral, en caja e ilustración (`imagen_encaje`, `imagen_registro: lienzo`) | **elegido el 2°, sangrado lateral** |
 | 4 · Protección del texto (color) | `galerias/G05.yaml` · Drive `01_galerias/2026-11-06_G05` (con `01_detalle.jpg`) | sangrado lateral: el texto ya va sobre fondo liso (`packs/H1`) | base, etiquetas blancas, turquesa claro y fondo de portada | **elegido el 1°, base** (etiquetas grises y turquesa #2DD4BF) |
 | 5 · Pie y detalles | `galerias/G06.yaml` · Drive `01_galerias/2026-11-06_G06` (con `01_detalle.jpg`) | color de marca sobre el panel liso (`packs/J1`) | base, sin cruces, llamado como botón (`cta_estilo`) y trama en el panel (`trama_alcance`) | **elegido el 4°, trama en el panel** |
+| Formatos · 1:1 y 4:5 | `galerias/G08.yaml` · Drive `01_galerias/2026-11-06_G08` | el Preset 01 (`packs/P01`) a 11 px CSS | columna ancha (todos los datos) y banda (solo la fecha), por formato | espera la elección de David |
 
 ### Resultado: Preset 01
 
@@ -120,6 +121,14 @@ Alcance:
 - **Sirve para** un save the date en diapositiva 16:9 vista en notebook, con una imagen fija.
 - **Para otro contenido** se cambia el archivo de `contenido/`.
 - **Falta** adaptarlo a 1:1, 4:5 y LinkedIn, y probarlo con otro contenido.
+
+### Formatos de celular (G08)
+
+En celular el texto se ve casi tres veces más chico que en un notebook. Por eso, en 1:1 y 4:5 el texto mínimo pasa de 14 a 11 px CSS, y aun así no cabe todo el contenido junto a una imagen grande. G08 ofrece dos opciones por formato:
+- **Columna ancha** (`columna_ancha`): todos los datos, con la imagen en una franja.
+- **Banda** (`banda_apilada`): la imagen arriba y solo la fecha.
+
+Si los datos no caben en el ancho, se achican lo justo (`datos_ajuste_ancho`); la fracción de cada división se puede mover con `division_fraccion`. Falta LinkedIn, el formato más apretado.
 
 Comentarios de David sobre G01 (en `decisiones.csv`):
 - **1°:** faltan ajustes de proporción y composición.
@@ -151,6 +160,7 @@ python galeria.py --definicion galerias/G04.yaml              # paso 3: imagen o
 python galeria.py --definicion galerias/G05.yaml              # paso 4: color del texto, con hoja de detalle (salida/G05)
 python galeria.py --definicion galerias/G06.yaml              # paso 5: pie y detalles (salida/G06)
 python galeria.py --definicion galerias/G07.yaml              # preset 01, el resultado (salida/G07)
+python galeria.py --definicion galerias/G08.yaml              # preset 01 en 1:1 y 4:5 (salida/G08)
 python motor.py pieza --pack packs/P01-save-the-date-slide.yaml --contenido contenido/otro.yaml --salida salida/p01
 python catalogar_imagenes.py                                   # regenera imagenes.yaml desde los PNG
 python analisis/medir_piezas.py                                # re-mide las seis elegidas

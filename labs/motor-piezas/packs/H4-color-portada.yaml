@@ -1,0 +1,8 @@
+id: H4
+nombre: "Fondo de portada · el panel en --ub-bg-cover (#1A1A2E), el azul de portadas"
+alternativa: paso4
+paso: proteccion
+hereda: packs/H1-color-base.yaml
+decision_david: null
+valores:
+  fondo_portada: true       # el manual lo permite solo en slide

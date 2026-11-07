@@ -3,6 +3,6 @@ nombre: "Sangrado lateral · la imagen solo en los dos tercios; el texto sobre f
 alternativa: paso3
 paso: imagen
 hereda: packs/F1-imagen-sangre.yaml
-decision_david: null
+decision_david: "G04 2°, 2026-11-06: elegida para el paso 3 («2° Sangrado lateral»)"
 valores:
   imagen_encaje: sangrado_lateral

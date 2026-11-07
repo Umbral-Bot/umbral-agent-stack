@@ -1,0 +1,11 @@
+id: H3
+nombre: "Turquesa claro · el acento como texto pasa a --ub-primary-text (14,7:1)"
+alternativa: paso4
+paso: proteccion
+hereda: packs/H1-color-base.yaml
+decision_david: null
+roles_texto:                # de #2DD4BF (9,9:1) a #99F6E4; ver decisión pendiente 2 del README
+  kicker: {color: acento_texto_claro}
+  subtitulo: {color: acento_texto_claro}
+  numero: {color: acento_texto_claro}
+  cta: {color: acento_texto_claro}

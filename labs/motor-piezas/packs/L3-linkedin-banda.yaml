@@ -1,0 +1,13 @@
+id: L3
+nombre: "LinkedIn · computador: banda con todos los datos (título a la izquierda, datos a la derecha)"
+alternativa: linkedin
+paso: formatos
+hereda: packs/P01-save-the-date-slide.yaml
+decision_david: null
+valores:
+  formato: linkedin
+  vista_css: 555            # a tamaño de celular los tres datos no caben en ninguna división
+  texto_minimo_css: 11
+  division: banda
+  division_fraccion: 0.625  # 5 de 8 filas para el texto; la imagen arriba
+  datos_ajuste_ancho: true

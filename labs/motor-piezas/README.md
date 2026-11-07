@@ -109,7 +109,8 @@ El contenido y el formato son entradas, no pasos. Cada galería cambia un solo p
 | 3 · Imagen o ilustración | `galerias/G04.yaml` · Drive `01_galerias/2026-11-06_G04` | datos fuertes con la imagen a sangre bajo velo (`packs/F1`) | a sangre, sangrado lateral, en caja e ilustración (`imagen_encaje`, `imagen_registro: lienzo`) | **elegido el 2°, sangrado lateral** |
 | 4 · Protección del texto (color) | `galerias/G05.yaml` · Drive `01_galerias/2026-11-06_G05` (con `01_detalle.jpg`) | sangrado lateral: el texto ya va sobre fondo liso (`packs/H1`) | base, etiquetas blancas, turquesa claro y fondo de portada | **elegido el 1°, base** (etiquetas grises y turquesa #2DD4BF) |
 | 5 · Pie y detalles | `galerias/G06.yaml` · Drive `01_galerias/2026-11-06_G06` (con `01_detalle.jpg`) | color de marca sobre el panel liso (`packs/J1`) | base, sin cruces, llamado como botón (`cta_estilo`) y trama en el panel (`trama_alcance`) | **elegido el 4°, trama en el panel** |
-| Formatos · 1:1 y 4:5 | `galerias/G08.yaml` · Drive `01_galerias/2026-11-06_G08` | el Preset 01 (`packs/P01`) a 11 px CSS | columna ancha (todos los datos) y banda (solo la fecha), por formato | espera la elección de David |
+| Formatos · 1:1 y 4:5 | `galerias/G08.yaml` · Drive `01_galerias/2026-11-06_G08` | el Preset 01 (`packs/P01`) a 11 px CSS | columna ancha (todos los datos) y banda (solo la fecha), por formato | **elegidas la 1° y la 3°: columna ancha en los dos** |
+| Formatos · LinkedIn | `galerias/G09.yaml` · Drive `01_galerias/2026-11-07_G09` | el Preset 01 (`packs/P01`) | columna para celular, columna para computador y banda para computador con todos los datos (`vista_css`) | espera la elección de David |
 
 ### Resultado: Preset 01
 
@@ -161,6 +162,7 @@ python galeria.py --definicion galerias/G05.yaml              # paso 4: color de
 python galeria.py --definicion galerias/G06.yaml              # paso 5: pie y detalles (salida/G06)
 python galeria.py --definicion galerias/G07.yaml              # preset 01, el resultado (salida/G07)
 python galeria.py --definicion galerias/G08.yaml              # preset 01 en 1:1 y 4:5 (salida/G08)
+python galeria.py --definicion galerias/G09.yaml              # preset 01 en LinkedIn (salida/G09)
 python motor.py pieza --pack packs/P01-save-the-date-slide.yaml --contenido contenido/otro.yaml --salida salida/p01
 python catalogar_imagenes.py                                   # regenera imagenes.yaml desde los PNG
 python analisis/medir_piezas.py                                # re-mide las seis elegidas
@@ -195,5 +197,5 @@ Los insumos del Director (`07_Motor de piezas/00_insumos/`) son de solo lectura.
 
 1. **Inter Display para titulares.** La v2 los dibujó con el corte Display de Inter Variable 4.001, un 3,8 % más estrecho, sin que nadie lo pidiera. El Design System solo trae el corte de texto. ¿Se suma Display o se queda la canónica?
 2. **Acento como texto en oscuro.** El motor usa `#2DD4BF` (`--ub-primary` oscuro) para kickers y números sobre carbón, como la tabla de portadas del Manual §03. El comentario del CSS dice «nunca `color: var(--ub-primary)`». ¿Se confirma o se usa `--ub-primary-text` (`#99F6E4`)? Desde el motor 0.3, el texto chico sobre imagen ya usa `#99F6E4` para llegar a 7:1; la duda sigue abierta para el texto grande y para el texto sobre fondo liso. Señal: en G05 David eligió la 1° (`#2DD4BF` sobre el panel liso) por sobre la 3° (`#99F6E4`).
-3. **Vista supuesta por formato** (`vista_css`): 390 px CSS para redes y 1280 para 16:9. De ahí sale el tamaño mínimo real del texto.
+3. **Vista supuesta por formato** (`vista_css`): 390 px CSS para redes y 1280 para 16:9. De ahí sale el tamaño mínimo real del texto. Desde el motor 0.3f el pack puede fijarla; G09 compara LinkedIn pensado para celular (390) o para computador (≈555, supuesto).
 4. **Imágenes MJ ya hechas:** se tratan como fijas. El PNG sí trae prompt, `--v 8.2` y Job ID (ver `imagenes.yaml`); faltan `--sref`, perfil y semilla.

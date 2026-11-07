@@ -1,0 +1,10 @@
+id: J4
+nombre: "Trama de puntos · la retícula de puntos de la v2, solo en el panel de texto"
+alternativa: paso5
+paso: pie
+hereda: packs/J1-pie-base.yaml
+decision_david: null
+valores:
+  trama_visible: true
+  trama_alcance: zona_texto
+  trama_opacidad_oscuro: 1.0   # con 0,28 los puntos #323841 no se ven sobre #111418

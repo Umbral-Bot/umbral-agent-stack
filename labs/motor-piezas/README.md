@@ -107,7 +107,8 @@ El contenido y el formato son entradas, no pasos. Cada galería cambia un solo p
 | 1 · División | `galerias/G02.yaml` · Drive `01_galerias/2026-11-06_G02` | la 12° de G01 con el contraste corregido (`packs/D1`) | mitad, tercio, banda y ele (`divisiones` en el esquema) | **elegido el 2°, tercio** («se ve mejor el 2»), con más contraste abajo a la izquierda |
 | 2 · Jerarquía | `galerias/G03.yaml` · Drive `01_galerias/2026-11-06_G03` | el tercio con texto chico y logo a 10:1 (`packs/E1`) | base, datos fuertes, compacta (`pila_anclaje: abajo`) y escala mayor | **elegido el 2°, datos fuertes** |
 | 3 · Imagen o ilustración | `galerias/G04.yaml` · Drive `01_galerias/2026-11-06_G04` | datos fuertes con la imagen a sangre bajo velo (`packs/F1`) | a sangre, sangrado lateral, en caja e ilustración (`imagen_encaje`, `imagen_registro: lienzo`) | **elegido el 2°, sangrado lateral** |
-| 4 · Protección del texto (color) | `galerias/G05.yaml` · Drive `01_galerias/2026-11-06_G05` (con `01_detalle.jpg`) | sangrado lateral: el texto ya va sobre fondo liso (`packs/H1`) | base, etiquetas blancas, turquesa claro y fondo de portada | espera la elección de David |
+| 4 · Protección del texto (color) | `galerias/G05.yaml` · Drive `01_galerias/2026-11-06_G05` (con `01_detalle.jpg`) | sangrado lateral: el texto ya va sobre fondo liso (`packs/H1`) | base, etiquetas blancas, turquesa claro y fondo de portada | **elegido el 1°, base** (etiquetas grises y turquesa #2DD4BF) |
+| 5 · Pie y detalles | `galerias/G06.yaml` · Drive `01_galerias/2026-11-06_G06` (con `01_detalle.jpg`) | color de marca sobre el panel liso (`packs/J1`) | base, sin cruces, llamado como botón (`cta_estilo`) y trama en el panel (`trama_alcance`) | espera la elección de David |
 
 Comentarios de David sobre G01 (en `decisiones.csv`):
 - **1°:** faltan ajustes de proporción y composición.
@@ -137,6 +138,7 @@ python galeria.py --definicion galerias/G02.yaml              # paso 1: division
 python galeria.py --definicion galerias/G03.yaml              # paso 2: jerarquía (salida/G03)
 python galeria.py --definicion galerias/G04.yaml              # paso 3: imagen o ilustración (salida/G04)
 python galeria.py --definicion galerias/G05.yaml              # paso 4: color del texto, con hoja de detalle (salida/G05)
+python galeria.py --definicion galerias/G06.yaml              # paso 5: pie y detalles (salida/G06)
 python catalogar_imagenes.py                                   # regenera imagenes.yaml desde los PNG
 python analisis/medir_piezas.py                                # re-mide las seis elegidas
 ```
@@ -169,6 +171,6 @@ Los insumos del Director (`07_Motor de piezas/00_insumos/`) son de solo lectura.
 ## Decisiones pendientes que el laboratorio no toma
 
 1. **Inter Display para titulares.** La v2 los dibujó con el corte Display de Inter Variable 4.001, un 3,8 % más estrecho, sin que nadie lo pidiera. El Design System solo trae el corte de texto. ¿Se suma Display o se queda la canónica?
-2. **Acento como texto en oscuro.** El motor usa `#2DD4BF` (`--ub-primary` oscuro) para kickers y números sobre carbón, como la tabla de portadas del Manual §03. El comentario del CSS dice «nunca `color: var(--ub-primary)`». ¿Se confirma o se usa `--ub-primary-text` (`#99F6E4`)? Desde el motor 0.3, el texto chico sobre imagen ya usa `#99F6E4` para llegar a 7:1; la duda sigue abierta para el texto grande y para el texto sobre fondo liso.
+2. **Acento como texto en oscuro.** El motor usa `#2DD4BF` (`--ub-primary` oscuro) para kickers y números sobre carbón, como la tabla de portadas del Manual §03. El comentario del CSS dice «nunca `color: var(--ub-primary)`». ¿Se confirma o se usa `--ub-primary-text` (`#99F6E4`)? Desde el motor 0.3, el texto chico sobre imagen ya usa `#99F6E4` para llegar a 7:1; la duda sigue abierta para el texto grande y para el texto sobre fondo liso. Señal: en G05 David eligió la 1° (`#2DD4BF` sobre el panel liso) por sobre la 3° (`#99F6E4`).
 3. **Vista supuesta por formato** (`vista_css`): 390 px CSS para redes y 1280 para 16:9. De ahí sale el tamaño mínimo real del texto.
 4. **Imágenes MJ ya hechas:** se tratan como fijas. El PNG sí trae prompt, `--v 8.2` y Job ID (ver `imagenes.yaml`); faltan `--sref`, perfil y semilla.

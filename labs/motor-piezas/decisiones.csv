@@ -23,7 +23,11 @@ numero,codigo,pack,comentario_david,fecha
 2°,G04-F2,packs/F2-imagen-lateral.yaml,2° Sangrado lateral,2026-11-06
 3°,G04-F3,packs/F3-imagen-caja.yaml,,
 4°,G04-F4,packs/F4-ilustracion.yaml,,
-1°,G05-H1,packs/H1-color-base.yaml,,
+1°,G05-H1,packs/H1-color-base.yaml,1,2026-11-06
 2°,G05-H2,packs/H2-color-etiquetas.yaml,,
 3°,G05-H3,packs/H3-color-acento.yaml,,
 4°,G05-H4,packs/H4-color-portada.yaml,,
+1°,G06-J1,packs/J1-pie-base.yaml,,
+2°,G06-J2,packs/J2-pie-sin-cruces.yaml,,
+3°,G06-J3,packs/J3-pie-boton.yaml,,
+4°,G06-J4,packs/J4-pie-trama.yaml,,

@@ -84,6 +84,41 @@ def hoja_numerada(items: list[dict], dir_salida: Path, titulo: str, fuente_ttf: 
     return destino
 
 
+def hoja_detalle(items: list[dict], dir_salida: Path, detalle: dict, fuente_ttf: Path, colores: dict,
+                 escala_png: float) -> Path:
+    """Recorte de la misma zona de cada pieza, lado a lado y numerado: para pasos que cambian algo
+    chico (por ejemplo, colores del texto) que en la hoja completa casi no se ve."""
+    x0, y0, x1, y1 = detalle['recorte']          # px del lienzo
+    ancho = 420
+    alto = round(ancho * (y1 - y0) / (x1 - x0))
+    pad, rotulo, cab = 28, 64, 88
+    hoja = Image.new('RGB', (len(items) * ancho + (len(items) + 1) * pad, cab + alto + rotulo + 2 * pad),
+                     colores['fondo'])
+    d = ImageDraw.Draw(hoja)
+
+    def f(tam, peso):
+        fnt = ImageFont.truetype(str(fuente_ttf), tam)
+        try:
+            fnt.set_variation_by_axes([14, peso])
+        except Exception:
+            pass
+        return fnt
+
+    d.text((pad, 28), detalle['titulo'], fill=colores['acento_texto'], font=f(28, 600))
+    for i, it in enumerate(items):
+        x, y = pad + i * (ancho + pad), cab + pad
+        im = Image.open(dir_salida / it['png']).convert('RGB')
+        k = escala_png
+        im = im.crop((round(x0 * k), round(y0 * k), round(x1 * k), round(y1 * k)))
+        hoja.paste(im.resize((ancho, alto), Image.Resampling.LANCZOS), (x, y))
+        d.rectangle([x - 1, y - 1, x + ancho, y + alto], outline=colores['filete'], width=1)
+        d.text((x, y + alto + 8), it['numero'], fill=colores['tinta'], font=f(36, 600))
+        d.text((x + 76, y + alto + 12), it['codigo'], fill=colores['acento_texto'], font=f(15, 500))
+    destino = dir_salida / '01_detalle.jpg'
+    hoja.save(destino, quality=90, optimize=True)
+    return destino
+
+
 def construir(ruta_def: Path, publicar: bool):
     ctx = Contexto()
     defin = cargar_yaml(ruta_def)
@@ -131,6 +166,8 @@ def construir(ruta_def: Path, publicar: bool):
                 'acento_texto': '--ub-primary-text', 'filete': '--ub-border'}.items()}
     ttf = ctx.marca / ctx.rutas['insumos_director'] / '02_fuentes' / 'Inter-Variable.ttf'
     hoja_numerada(items, dir_salida, f"UMBRAL BIM  ·  MOTOR DE PIEZAS  ·  {gid}  ·  LABORATORIO", ttf, colores)
+    if defin.get('detalle'):
+        hoja_detalle(items, dir_salida, defin['detalle'], ttf, colores, ctx.rutas['navegador']['escala_png'])
     (dir_salida / 'galeria.html').write_text(html_galeria(defin, items, controles, ctx), encoding='utf-8')
     with open(dir_salida / f'decisiones_{gid}.csv', 'w', newline='', encoding='utf-8') as fh:
         w = csv.writer(fh)
@@ -260,7 +297,7 @@ a{{color:var(--pt)}}
 <h1>{_e(defin['titulo'])}</h1>
 <p class="desc">{_e(defin['descripcion'])}</p>
 <p class="aviso">{_e(defin['como_elegir'])}</p>
-<p class="desc">Hoja numerada: <a href="00_preview.jpg">00_preview.jpg</a> · registro: <a href="decisiones_{_e(defin['id'])}.csv">decisiones_{_e(defin['id'])}.csv</a></p>
+<p class="desc">Hoja numerada: <a href="00_preview.jpg">00_preview.jpg</a>{' · detalle: <a href="01_detalle.jpg">01_detalle.jpg</a>' if defin.get('detalle') else ''} · registro: <a href="decisiones_{_e(defin['id'])}.csv">decisiones_{_e(defin['id'])}.csv</a></p>
 <table class="indice"><tr><th>°</th><th>código</th><th>sección</th><th>formato</th><th>modo</th><th>imagen</th><th>estado</th></tr>
 {''.join(f"<tr><td><a href='#p{_e(it['numero'].rstrip('°'))}'><b>{_e(it['numero'])}</b></a></td><td><code>{_e(it['codigo'])}</code></td>"
          f"<td>{_e(it['seccion'])}</td><td>{_e(it['formato'])} {it['ancho']}×{it['alto']}</td><td>{_e(it['modo'])}</td>"

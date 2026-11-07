@@ -20,6 +20,7 @@ fecha: 2026-11-06
 # 0.3c: paso 3 · las divisiones aceptan sangrado lateral, caja o ilustración; imagen_registro.
 # 0.3d: paso 5 · cta_estilo (llamado como botón).
 # 0.3e: formatos de celular · columna_ancha, banda_apilada, division_fraccion, datos_ajuste_ancho.
+# 0.3f: vista_css por pack (LinkedIn: celular o computador).
 
 formatos:
   cuadrado:  {ancho: 1080, alto: 1080, vista_css: 390, uso: "feed 1:1 (Instagram, LinkedIn)"}
@@ -765,6 +766,15 @@ parametros:
     defecto: arriba
     descripcion: paso 2 · dónde se apoya el bloque de texto dentro de su zona (divisiones del paso 1). abajo agrupa kicker, título, subtítulo y filas sobre el pie y deja libre la parte alta
     origen: "G02 2° (tercio): queda un vacío grande entre el subtítulo y las filas al pie"
+  vista_css:
+    capa: maquetacion
+    nivel: principal
+    tipo: decimal
+    rango: [300, 1920]
+    defecto: null
+    unidad: css
+    descripcion: ancho en px CSS con que se supone que se ve la pieza; null = el del formato (formatos.*.vista_css). Cambia el tamaño real del texto
+    origen: "decisión pendiente 3; LinkedIn (2026-11-07): celular (390) frente a computador (supuesto ≈555, el ancho del feed)"
   division:
     capa: maquetacion
     nivel: principal

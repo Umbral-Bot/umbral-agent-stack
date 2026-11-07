@@ -195,7 +195,8 @@ class Compositor:
         for rol, cambios in (pack.get('roles_texto') or {}).items():
             self.roles_texto[rol].update(cambios)
         fmt = ctx.esquema['formatos'][self.v['formato']]
-        self.W, self.H, self.vista = fmt['ancho'], fmt['alto'], fmt['vista_css']
+        # la vista supuesta (px CSS) puede venir del pack; si no, la del formato
+        self.W, self.H, self.vista = fmt['ancho'], fmt['alto'], self.v['vista_css'] or fmt['vista_css']
         self.s = min(self.W, self.H)
         self.paso4 = ctx.reglas['espaciado_multiplo_px']
         self.modo = self.v['modo']

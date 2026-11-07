@@ -19,6 +19,7 @@ fecha: 2026-11-06
 # 0.3b: pila_anclaje (paso 2), el logo cuenta para el velo, llamado bajo las filas si no cabe en el pie.
 # 0.3c: paso 3 · las divisiones aceptan sangrado lateral, caja o ilustración; imagen_registro.
 # 0.3d: paso 5 · cta_estilo (llamado como botón).
+# 0.3e: formatos de celular · columna_ancha, banda_apilada, division_fraccion, datos_ajuste_ancho.
 
 formatos:
   cuadrado:  {ancho: 1080, alto: 1080, vista_css: 390, uso: "feed 1:1 (Instagram, LinkedIn)"}
@@ -110,6 +111,11 @@ divisiones:
            descripcion: "imagen arriba; banda de texto en la mitad inferior: cabecera a la izquierda y datos a la derecha"}
   ele:    {tipo: ele, fraccion_banda: 0.5, fraccion_columna: 0.3333,
            descripcion: "cabecera arriba a todo el ancho y datos en la columna izquierda; la imagen queda abajo a la derecha"}
+  # formatos de celular (1:1, 4:5): el texto se ve casi tres veces más chico que en notebook
+  columna_ancha: {tipo: columna, lado: izquierda, fraccion: 0.5833,
+                  descripcion: "texto en 7 de 12 columnas, imagen en una franja a la derecha"}
+  banda_apilada: {tipo: banda, fraccion: 0.625, filas: debajo,
+                  descripcion: "imagen arriba y banda de texto abajo a todo el ancho, con los datos bajo el título"}
 
 parametros:
   # ---------------------------------------------------------------- proceso y formato
@@ -737,6 +743,20 @@ parametros:
     opciones: [marca, claros]
     defecto: claros
     descripcion: claros = los textos chicos sobre imagen usan los tokens de texto más claros (roles_color_sobre_imagen) para llegar a contraste_sobre_imagen sin tapar la imagen; marca = los mismos colores que sobre fondo liso
+  division_fraccion:
+    capa: maquetacion
+    nivel: principal
+    tipo: decimal
+    rango: [0.25, 0.85]
+    defecto: null
+    descripcion: cuánto del lienzo toma el texto en la división (fracción de columnas o de filas). null = la del preset de divisiones
+  datos_ajuste_ancho:
+    capa: maquetacion
+    nivel: componente
+    tipo: booleano
+    defecto: false
+    descripcion: si las filas no caben en su ancho, achica valor y número juntos (nunca por debajo de la etiqueta)
+    origen: "formatos de celular (2026-11-06): con datos fuertes a 11 px CSS, «Jueves 19 nov 2026» no cabe en 7 de 12 columnas"
   pila_anclaje:
     capa: maquetacion
     nivel: principal
@@ -749,7 +769,7 @@ parametros:
     capa: maquetacion
     nivel: principal
     tipo: opcion
-    opciones: [zona_libre, mitad, tercio, banda, ele]
+    opciones: [zona_libre, mitad, tercio, banda, ele, columna_ancha, banda_apilada]
     defecto: zona_libre
     descripcion: paso 1 · cómo se parte el lienzo entre texto e imagen (proceso C con imagen a sangre). zona_libre = como G01, decide la imagen con zona_libre y zona_libre_fraccion; el resto son los presets de `divisiones`
     origen: "David, 2026-11-06: avanzar paso a paso, empezando por distintos tipos de división de la composición"

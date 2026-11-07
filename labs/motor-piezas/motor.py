@@ -206,6 +206,7 @@ class Compositor:
         self.imagen: dict | None = None
         self.logo: dict | None = None
         self.notas: list[str] = []
+        self.notas_fijas: list[str] = []  # notas que no se descartan al medir la pila de prueba
         self.zonas: dict[str, dict] = {}
         self.fondo = None                 # raster 1x del fondo (color + imagen) para medir contraste
 
@@ -365,6 +366,20 @@ class Compositor:
         return {'alto': alto, 'cap_et': cap_et, 'cap_val': cap_val, 'cap_num': cap_num,
                 'dx_txt': dx_txt, 'ancho_min': dx_txt + ancho_txt, 'total': alto * len(filas)}
 
+    def ajustar_datos_al_ancho(self, filas: list, ancho: float):
+        """Si las filas no caben en el ancho, achica valor y número juntos, nunca por debajo de la etiqueta."""
+        if self.medidas_filas(filas)['ancho_min'] <= ancho + 0.5:
+            return
+        antes, razon = self.t['valor'], self.t['numero'] / self.t['valor']
+        lo, hi = self.t['etiqueta'], self.t['valor']
+        for _ in range(14):
+            mid = (lo + hi) / 2
+            self.t['valor'], self.t['numero'] = mid, mid * razon
+            lo, hi = (mid, hi) if self.medidas_filas(filas)['ancho_min'] <= ancho else (lo, mid)
+        lo = math.floor(lo * 10) / 10
+        self.t['valor'], self.t['numero'] = lo, math.floor(lo * razon * 10) / 10
+        self.notas_fijas.append(f'datos reducidos de {antes:.0f} a {lo:.0f} px para caber en {ancho:.0f} px')
+
     def bloque_filas(self, filas: list, x: float, y: float, ancho: float) -> float:
         """Filas numeradas con filetes y cruces. Devuelve la y del último filete."""
         v, t = self.v, self.t
@@ -418,6 +433,9 @@ class Compositor:
         filas = self.filas_activas()
         con_filas_en_pila = bool(filas) and ubicacion_filas == 'bajo_titulo'
         ancho_filas = ancho_filas or zona.w
+        if filas and v['datos_ajuste_ancho']:
+            self.ajustar_datos_al_ancho(filas, zona_filas.w if ubicacion_filas == 'columna_derecha'
+                                        and zona_filas is not None else ancho_filas)
 
         # 1. plan relativo (y = 0 es la línea de mayúscula del primer bloque)
         plan, y = [], 0.0
@@ -471,8 +489,12 @@ class Compositor:
         if hay_cta and not cta_bajo_filas:
             previo = bloque('cta', 'cta', self.c['cta'], v['espacio_filas_cuerpo'])
         alto = previo or 0.0
+        if not solo_medir and self.notas_fijas:
+            self.notas += self.notas_fijas
+            self.notas_fijas = []
         if solo_medir:
-            self.notas = notas_antes
+            self.notas = notas_antes + self.notas_fijas
+            self.notas_fijas = []
             if filas and ubicacion_filas == 'columna_derecha':
                 alto = max(alto, tope_titulo_rel + self.medidas_filas(filas)['total'])
             elif filas and ubicacion_filas == 'al_pie':
@@ -623,10 +645,15 @@ class Compositor:
         if not v['trama_visible']:
             return
         inset = v['trama_inset'] * self.margen
-        x1 = self.W - inset
+        x0, y0, x1, y1 = inset, inset, self.W - inset, self.H - inset
         if v['trama_alcance'] == 'zona_texto' and panel is not None:
-            x1 = min(x1, panel.x2 - self.medianil)
-        self.el.append({'tipo': 'trama', 'x0': inset, 'y0': inset, 'x1': x1, 'y1': self.H - inset,
+            # dentro del panel, a un medianil de los bordes que dan a la imagen
+            m = self.medianil
+            x0 = max(x0, panel.x + (m if panel.x > 0 else 0))
+            y0 = max(y0, panel.y + (m if panel.y > 0 else 0))
+            x1 = min(x1, panel.x2 - (m if panel.x2 < self.W else 0))
+            y1 = min(y1, panel.y2 - (m if panel.y2 < self.H else 0))
+        self.el.append({'tipo': 'trama', 'x0': x0, 'y0': y0, 'x1': x1, 'y1': y1,
                         'paso': self.mod(v['trama_paso']), 'r': v['trama_radio_rel'] * self.s,
                         'opacidad': v[f'trama_opacidad_{self.modo}'], 'color': 'trama'})
 
@@ -1148,7 +1175,7 @@ class Compositor:
     def _division_columna(self, p: dict):
         """Texto en k de N columnas y la imagen en el resto (la 12° de G01 es la mitad izquierda)."""
         v, m = self.v, self.medianil
-        k = self._columnas_de(p['fraccion'])
+        k = self._columnas_de(v['division_fraccion'] or p['fraccion'])
         izquierda = p['lado'] == 'izquierda'
         c0 = 0 if izquierda else self.N - k
         x0, x1 = self.x_col(c0), self.x_col(c0 + k - 1) + self.col_w
@@ -1186,23 +1213,31 @@ class Compositor:
     def _division_banda(self, p: dict):
         """Imagen arriba y banda de texto abajo a todo el ancho: cabecera a la izquierda, datos a la derecha."""
         v, m = self.v, self.medianil
-        n = self._filas_de(p['fraccion'])
+        n = self._filas_de(v['division_fraccion'] or p['fraccion'])
         j = self.M - n                      # primera fila de grilla de la banda
         borde, tope = self.y_fil(j) - m, self.y_fil(j)
-        kc = self._columnas_de(p['fraccion_cabecera'])
-        self.notas.append(f"división banda: texto en las {n} filas de abajo ({n} de {self.M}); cabecera en "
-                          f"{kc} de {self.N} columnas y datos en {self.N - kc}")
-        self.trama()
+        apilada = p.get('filas') == 'debajo'    # formatos verticales: los datos van bajo el título
+        self.trama(Rect(0, borde, self.W, self.H - borde))
         self.cruces_registro()
         pie = self.preparar_pie(self.caja.x, self.caja.x2)
         fondo_util = self.caja.y2 - pie['alto'] - self.mod(v['espacio_pie'])
-        x_filas = self.x_col(kc)
-        zona = Rect(self.caja.x, tope, self.x_col(kc - 1) + self.col_w - self.caja.x, fondo_util - tope)
-        zona_filas = Rect(x_filas, tope, self.caja.x2 - x_filas, fondo_util - tope)
+        if apilada:
+            self.notas.append(f"división {v['division']}: texto en las {n} filas de abajo ({n} de {self.M}), "
+                              f"datos bajo el título")
+            zona, zona_filas = Rect(self.caja.x, tope, self.caja.w, fondo_util - tope), None
+            ubic = v['filas_ubicacion'] if v['filas_ubicacion'] in ('bajo_titulo', 'al_pie') else 'bajo_titulo'
+        else:
+            kc = self._columnas_de(p['fraccion_cabecera'])
+            self.notas.append(f"división banda: texto en las {n} filas de abajo ({n} de {self.M}); cabecera en "
+                              f"{kc} de {self.N} columnas y datos en {self.N - kc}")
+            x_filas = self.x_col(kc)
+            zona = Rect(self.caja.x, tope, self.x_col(kc - 1) + self.col_w - self.caja.x, fondo_util - tope)
+            zona_filas = Rect(x_filas, tope, self.caja.x2 - x_filas, fondo_util - tope)
+            ubic = 'columna_derecha'
         self.chip(ancla=Rect(self.caja.x, tope, self.caja.w, zona.h))
         self.zonas['texto'] = zona.a_dict()
-        tam = self._titulo_que_cabe(zona, 'columna_derecha', cta_en_pila=not pie['cta_cabe'], zona_filas=zona_filas)
-        self.pila(zona, tam, 'columna_derecha', cta_en_pila=not pie['cta_cabe'], zona_filas=zona_filas)
+        tam = self._titulo_que_cabe(zona, ubic, cta_en_pila=not pie['cta_cabe'], zona_filas=zona_filas)
+        self.pila(zona, tam, ubic, cta_en_pila=not pie['cta_cabe'], zona_filas=zona_filas)
         self.colocar_pie(pie)
         if v['imagen_encaje'] == 'fondo_completo_con_velo':
             self.velo(Rect(0, borde, self.W, self.H - borde), 'velo-lectura')
@@ -1212,7 +1247,7 @@ class Compositor:
     def _division_ele(self, p: dict):
         """Cabecera arriba a todo el ancho y datos en la columna izquierda; la imagen queda en la esquina."""
         v, m = self.v, self.medianil
-        n = self._filas_de(p['fraccion_banda'])
+        n = self._filas_de(v['division_fraccion'] or p['fraccion_banda'])
         corte = self.y_fil(n)               # línea de grilla donde termina la banda y empieza la columna
         k = self._columnas_de(p['fraccion_columna'])
         x1 = self.x_col(k - 1) + self.col_w

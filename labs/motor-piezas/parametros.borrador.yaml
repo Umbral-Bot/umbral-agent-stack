@@ -18,6 +18,7 @@ fecha: 2026-11-06
 # división del paso 1 (`divisiones`, parámetro `division`). Avance paso a paso pedido por David.
 # 0.3b: pila_anclaje (paso 2), el logo cuenta para el velo, llamado bajo las filas si no cabe en el pie.
 # 0.3c: paso 3 · las divisiones aceptan sangrado lateral, caja o ilustración; imagen_registro.
+# 0.3d: paso 5 · cta_estilo (llamado como botón).
 
 formatos:
   cuadrado:  {ancho: 1080, alto: 1080, vista_css: 390, uso: "feed 1:1 (Instagram, LinkedIn)"}
@@ -37,6 +38,8 @@ roles_color:
     acento: --ub-primary            # relleno, filete, ícono. Nunca texto sobre claro
     acento_texto: --ub-primary-text # texto de marca sobre claro (9,63:1)
     acento_texto_claro: --ub-primary-text
+    cta_boton: --ub-primary
+    cta_boton_texto: --ub-text      # #1F2328 sobre #0FA994
     filete: --ub-border
     trama: --ub-border-strong
     chip_fondo: --ub-warning-soft
@@ -49,6 +52,8 @@ roles_color:
     acento: --ub-primary
     acento_texto: --ub-primary      # Manual §03, portadas: acento #2DD4BF como texto (9,16:1). Pendiente confirmar
     acento_texto_claro: --ub-primary-text   # #99F6E4: el token de texto de marca del tema oscuro
+    cta_boton: --ub-primary
+    cta_boton_texto: --ub-bg        # #111418 sobre #2DD4BF: 9,92:1
     filete: --ub-border
     trama: --ub-border-strong
     chip_fondo: --ub-warning-soft
@@ -516,6 +521,28 @@ parametros:
     opciones: [inferior_izquierda, inferior_derecha]
     defecto: inferior_izquierda
     descripcion: la v0.1 ofrecía superior_izquierda; queda pendiente hasta tener una pieza que lo pida
+  cta_estilo:
+    capa: maquetacion
+    nivel: principal
+    tipo: opcion
+    opciones: [texto, boton]
+    defecto: texto
+    descripcion: paso 5 · el llamado como texto o como botón (bloque de acento con el texto en el color del fondo, radio en línea de 4 px)
+    origen: "paso 5, pie y detalles (2026-11-06)"
+  cta_boton_relleno_h:
+    capa: maquetacion
+    nivel: componente
+    tipo: entero
+    rango: [1, 10]
+    defecto: 3
+    unidad: modulos
+  cta_boton_relleno_v:
+    capa: maquetacion
+    nivel: componente
+    tipo: entero
+    rango: [1, 6]
+    defecto: 2
+    unidad: modulos
   cta_visible:
     capa: maquetacion
     nivel: componente
@@ -558,6 +585,13 @@ parametros:
     nivel: componente
     tipo: booleano
     defecto: true
+  trama_alcance:
+    capa: maquetacion
+    nivel: componente
+    tipo: opcion
+    opciones: [lienzo, zona_texto]
+    defecto: lienzo
+    descripcion: zona_texto = la retícula de puntos solo en el panel de texto (divisiones en columna), no sobre la imagen
   trama_inset:
     capa: maquetacion
     nivel: componente

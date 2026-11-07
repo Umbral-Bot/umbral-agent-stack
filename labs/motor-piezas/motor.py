@@ -464,7 +464,10 @@ class Compositor:
         # si el llamado no cabe en el pie y las filas van al pie, el llamado va bajo las filas
         hay_cta = cta_en_pila and dens['cta'] and self.c.get('cta') and v['cta_visible']
         cta_bajo_filas = bool(hay_cta and filas and ubicacion_filas == 'al_pie')
-        alto_cta = self.mod(v['espacio_filas_cuerpo']) + self.medir('cta', 'H', t['cta'])['cap'] if cta_bajo_filas else 0.0
+        boton = v['cta_estilo'] == 'boton'
+        alto_cta = (self.mod(v['espacio_filas_cuerpo'])
+                    + (self.alto_boton_cta() if boton else self.medir('cta', 'H', t['cta'])['cap'])
+                    if cta_bajo_filas else 0.0)
         if hay_cta and not cta_bajo_filas:
             previo = bloque('cta', 'cta', self.c['cta'], v['espacio_filas_cuerpo'])
         alto = previo or 0.0
@@ -522,8 +525,13 @@ class Compositor:
             info['fondo'] = self.bloque_filas(filas, zona.x, tope, ancho_filas)
             info['filas'] = Rect(zona.x, tope, ancho_filas, m['total'])
             if cta_bajo_filas:
-                base = info['fondo'] + alto_cta
-                self.agregar_texto('cta', 'cta', self.c['cta'], xt, base, t['cta'], ancla)
+                if boton:
+                    h = self.alto_boton_cta()
+                    caja = self.boton_cta(xt, info['fondo'] + alto_cta - h / 2, ancla)
+                    base = caja.y2
+                else:
+                    base = info['fondo'] + alto_cta
+                    self.agregar_texto('cta', 'cta', self.c['cta'], xt, base, t['cta'], ancla)
                 self.notas.append('el llamado no cabe junto al logo: va bajo las filas')
                 info['fondo'] = base
         return info
@@ -544,8 +552,29 @@ class Compositor:
         cta = None
         if self.c.get('cta') and v['cta_visible'] and self.ctx.esquema['densidades'][v['densidad_texto']]['cta']:
             cta = self.medir('cta', self.preparar_texto('cta', self.c['cta']), self.t['cta'])
-        cabe = cta is None or ancho + 2 * self.medianil + cta['avance'] <= (x1 - x0)
+        boton = cta is not None and v['cta_estilo'] == 'boton'
+        relleno = 2 * self.mod(v['cta_boton_relleno_h']) if boton else 0.0
+        cabe = cta is None or ancho + 2 * self.medianil + cta['avance'] + relleno <= (x1 - x0)
         return {'alto': alto, 'ancho': ancho, 'cta': cta, 'cta_cabe': cabe, 'x0': x0, 'x1': x1, 'comp': comp}
+
+    def alto_boton_cta(self) -> float:
+        return self.medir('cta', 'H', self.t['cta'])['cap'] + 2 * self.mod(self.v['cta_boton_relleno_v'])
+
+    def boton_cta(self, x: float, y_centro: float, anclaje: str) -> Rect:
+        """Llamado como botón: bloque de acento con el texto en el color del fondo (cta_estilo: boton)."""
+        v = self.v
+        m = self.medir('cta', self.preparar_texto('cta', self.c['cta']), self.t['cta'])
+        ph, pv = self.mod(v['cta_boton_relleno_h']), self.mod(v['cta_boton_relleno_v'])
+        w, h = m['avance'] + 2 * ph, m['cap'] + 2 * pv
+        bx = x if anclaje == 'start' else (x - w if anclaje == 'end' else x - w / 2)
+        caja = Rect(bx, y_centro - h / 2, w, h)
+        self.el.append({'tipo': 'boton', 'caja': caja, 'radio': self.ctx.reglas['radio_en_linea_px']})
+        # cuenta como fondo al medir el contraste del texto que lleva encima
+        self.velos.append({'rect': caja, 'color': self.rgba('cta_boton'), 'fijo': True, 'id': 'cta-boton'})
+        self.agregar_texto('cta', 'cta', self.c['cta'], caja.x + w / 2, caja.y + pv + m['cap'], self.t['cta'],
+                           'middle', 'cta_boton_texto')
+        self.zonas['cta_boton'] = caja.a_dict()
+        return caja
 
     def colocar_pie(self, p: dict) -> Rect:
         v = self.v
@@ -553,7 +582,10 @@ class Compositor:
         izquierda = v['logo_posicion'] == 'inferior_izquierda'
         x = p['x0'] if izquierda else p['x1'] - p['ancho']
         self.logo = {'comp': p['comp'], 'x': x, 'y': y, 'alto': p['alto'], 'ancho': p['ancho']}
-        if p['cta'] and p['cta_cabe']:
+        if p['cta'] and p['cta_cabe'] and v['cta_estilo'] == 'boton':
+            # centrado en la línea del logo
+            self.boton_cta(p['x1'] if izquierda else p['x0'], y + p['alto'] / 2, 'end' if izquierda else 'start')
+        elif p['cta'] and p['cta_cabe']:
             base = y + p['alto'] / 2 + p['cta']['cap'] / 2
             if izquierda:
                 self.agregar_texto('cta', 'cta', self.c['cta'], p['x1'], base, self.t['cta'], 'end')
@@ -585,12 +617,16 @@ class Compositor:
         self.el.append({'tipo': 'logo'})
 
     # ---------------------------------------------------------------- decoración
-    def trama(self):
+    def trama(self, panel: Rect | None = None):
+        """Retícula de puntos. Con trama_alcance: zona_texto queda dentro del panel de texto."""
         v = self.v
         if not v['trama_visible']:
             return
         inset = v['trama_inset'] * self.margen
-        self.el.append({'tipo': 'trama', 'x0': inset, 'y0': inset, 'x1': self.W - inset, 'y1': self.H - inset,
+        x1 = self.W - inset
+        if v['trama_alcance'] == 'zona_texto' and panel is not None:
+            x1 = min(x1, panel.x2 - self.medianil)
+        self.el.append({'tipo': 'trama', 'x0': inset, 'y0': inset, 'x1': x1, 'y1': self.H - inset,
                         'paso': self.mod(v['trama_paso']), 'r': v['trama_radio_rel'] * self.s,
                         'opacidad': v[f'trama_opacidad_{self.modo}'], 'color': 'trama'})
 
@@ -846,7 +882,7 @@ class Compositor:
         self._ordenar_capas()
 
     def _ordenar_capas(self):
-        orden = ['fondo', 'imagen', 'velo', 'trama', 'cruz', 'ilustracion', 'linea', 'texto', 'logo',
+        orden = ['fondo', 'imagen', 'velo', 'trama', 'cruz', 'ilustracion', 'linea', 'boton', 'texto', 'logo',
                  'chip_fondo']
         def clave(e):
             if e['tipo'] == 'texto' and e['id'] == 'chip':
@@ -1117,7 +1153,7 @@ class Compositor:
         c0 = 0 if izquierda else self.N - k
         x0, x1 = self.x_col(c0), self.x_col(c0 + k - 1) + self.col_w
         self.notas.append(f"división {v['division']}: texto en {k} de {self.N} columnas")
-        self.trama()
+        self.trama(Rect(0, 0, x1 + m, self.H) if izquierda else None)
         self.cruces_registro()
         pie = self.preparar_pie(x0, x1)
         fondo_util = self.caja.y2 - pie['alto'] - self.mod(v['espacio_pie'])
@@ -1402,6 +1438,10 @@ class Compositor:
                 partes.append(f'  <g id="logo" data-origen={quoteattr(str(lg["ruta"]))} '
                               f'transform="translate({f2(lg["x"])},{f2(lg["y"])}) scale({lg["escala"]:.6f})">'
                               f'{lg["interior"]}</g>')
+            elif t == 'boton':
+                c = e['caja']
+                partes.append(f'  <rect id="cta-boton" x="{f2(c.x)}" y="{f2(c.y)}" width="{f2(c.w)}" height="{f2(c.h)}" '
+                              f'rx="{e["radio"]}" {self.pintura("cta_boton")}/>')
             elif t == 'chip_fondo':
                 c = e['caja']
                 partes.append(f'  <rect id="chip-fondo" x="{f2(c.x)}" y="{f2(c.y)}" width="{f2(c.w)}" height="{f2(c.h)}" '

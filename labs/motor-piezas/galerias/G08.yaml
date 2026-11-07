@@ -9,6 +9,10 @@ descripcion: >
   banda da más espacio a la imagen y deja solo la fecha. Se mantienen el sangrado lateral, el
   color de marca, la trama en el panel y la jerarquía de datos fuertes; si los datos no caben en
   el ancho, se achican lo justo. LinkedIn va en el paso siguiente. Laboratorio: no publicar.
+resumen: >
+  Dos opciones por formato. La columna conserva todos los datos y deja la imagen en una
+  franja; la banda da más espacio a la imagen y deja solo la fecha. En celular el texto
+  mínimo es de 11 px CSS.
 como_elegir: >
   Elige una por formato (por ejemplo «1 y 4») y dime qué cambiarías. Con eso el Preset 01
   queda con su versión 1:1 y 4:5.

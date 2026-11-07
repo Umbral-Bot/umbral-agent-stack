@@ -10,8 +10,10 @@ Uso: python galeria.py --definicion galerias/G01.yaml [--publicar]
 from __future__ import annotations
 
 import argparse
+import base64
 import csv
 import html
+import io
 import json
 import math
 import shutil
@@ -169,6 +171,7 @@ def construir(ruta_def: Path, publicar: bool):
     if defin.get('detalle'):
         hoja_detalle(items, dir_salida, defin['detalle'], ttf, colores, ctx.rutas['navegador']['escala_png'])
     (dir_salida / 'galeria.html').write_text(html_galeria(defin, items, controles, ctx), encoding='utf-8')
+    (dir_salida / 'alternativas.html').write_text(html_autocontenido(defin, items, dir_salida, ctx), encoding='utf-8')
     with open(dir_salida / f'decisiones_{gid}.csv', 'w', newline='', encoding='utf-8') as fh:
         w = csv.writer(fh)
         w.writerow(['numero', 'codigo', 'pack', 'comentario_david', 'fecha'])
@@ -234,6 +237,78 @@ def tarjeta(it: dict, vista: int) -> str:
   <p class="meta"><b>Pack</b> <code>{_e(it['pack_archivo'])}</code></p>
   <pre class="pack">{_e(it['pack_yaml'])}</pre>
 </article>"""
+
+
+def html_autocontenido(defin: dict, items: list[dict], dir_salida: Path, ctx: Contexto) -> str:
+    """Página de un solo archivo, con las imágenes embebidas, para comparar las alternativas en el
+    celular o mandarla por chat. Sin packs ni verificaciones: eso queda en galeria.html."""
+    t = ctx.tokens['claro']
+
+    def img(it: dict, ancho: int = 1080) -> str:
+        im = Image.open(dir_salida / it['png']).convert('RGB')
+        im = im.resize((ancho, round(im.height * ancho / im.width)), Image.Resampling.LANCZOS)
+        buf = io.BytesIO()
+        im.save(buf, 'JPEG', quality=84, optimize=True, progressive=True)
+        return base64.b64encode(buf.getvalue()).decode('ascii')
+
+    secciones = []
+    for sec in defin['secciones']:
+        propias = [it for it in items if it['seccion'] == sec['alternativa']]
+        tarjetas = []
+        for i, it in enumerate(propias):
+            desc = sec['pasos'][i] if i < len(sec.get('pasos', [])) else it['rotulo']
+            nombre, _, detalle = desc.partition(': ')
+            tarjetas.append(f"""
+      <article class="alt">
+        <div class="cab"><span class="num">{_e(it['numero'])}</span><span class="nom">{_e(nombre)}</span></div>
+        <p class="det">{_e(detalle)}</p>
+        <img src="data:image/jpeg;base64,{img(it)}" alt="{_e(it['codigo'])}" loading="lazy">
+        <p class="cod">{_e(it['codigo'])} · {it['ancho']}×{it['alto']} · {_e(it['estado'])}</p>
+      </article>""")
+        secciones.append(f"""
+    <section>
+      <h2>{_e(sec['titulo'])}</h2>
+      <p class="sub">{_e(sec.get('descripcion', '').strip())}</p>
+      <div class="rejilla">{''.join(tarjetas)}</div>
+    </section>""")
+    intro = defin.get('resumen') or defin['descripcion']
+    return f"""<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{_e(defin['titulo'])}</title>
+<style>
+:root {{ --bg:{t['--ub-bg']}; --sup:{t['--ub-surface']}; --tx:{t['--ub-text']}; --mu:{t['--ub-text-muted']};
+        --bo:{t['--ub-border']}; --pt:{t['--ub-primary-text']}; }}
+* {{ box-sizing: border-box; }}
+body {{ margin:0; background:var(--bg); color:var(--tx);
+       font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height:1.5; }}
+main {{ max-width: 1180px; margin: 0 auto; padding: 24px 16px 56px; }}
+.kicker {{ color:var(--pt); font-weight:600; letter-spacing:.12em; text-transform:uppercase; font-size:12px; margin:0; }}
+h1 {{ font-size: 26px; line-height:1.2; margin: 6px 0 8px; font-weight:600; letter-spacing:-.3px; }}
+.intro {{ color:var(--mu); margin:0 0 8px; max-width: 760px; }}
+.pide {{ background:var(--sup); border:1px solid var(--bo); border-radius:8px; padding:12px 14px; margin:16px 0 8px; }}
+h2 {{ font-size: 20px; margin: 32px 0 2px; font-weight:600; }}
+.sub {{ color:var(--mu); margin:0 0 12px; font-size:14px; }}
+.rejilla {{ display:grid; grid-template-columns: 1fr; gap: 16px; }}
+@media (min-width: 760px) {{ .rejilla {{ grid-template-columns: 1fr 1fr; }} }}
+.alt {{ background:var(--sup); border:1px solid var(--bo); border-radius:8px; padding:12px; }}
+.cab {{ display:flex; align-items:baseline; gap:10px; }}
+.num {{ font-size: 34px; font-weight:600; letter-spacing:-1px; }}
+.nom {{ font-size: 18px; font-weight:600; }}
+.det {{ color:var(--mu); margin: 2px 0 10px; font-size:14px; }}
+img {{ display:block; width:100%; height:auto; border:1px solid var(--bo); border-radius:4px; }}
+.cod {{ color:var(--mu); font-size:12px; margin:8px 0 0; font-family: "JetBrains Mono", ui-monospace, monospace; }}
+.pie {{ color:var(--mu); font-size:12px; margin-top:32px; }}
+</style></head>
+<body><main>
+  <p class="kicker">Umbral BIM · laboratorio motor de piezas · {_e(str(defin['fecha']))}</p>
+  <h1>{_e(defin['titulo'])}</h1>
+  <p class="intro">{_e(intro.strip())}</p>
+  <p class="pide">{_e(defin['como_elegir'].strip())}</p>
+  {''.join(secciones)}
+  <p class="pie">Piezas de ejemplo (fecha ficticia): no publicar. Packs, medidas y verificación UB-3 en galeria.html.</p>
+</main></body></html>
+"""
 
 
 def html_galeria(defin: dict, items: list[dict], controles: list[dict], ctx: Contexto) -> str:

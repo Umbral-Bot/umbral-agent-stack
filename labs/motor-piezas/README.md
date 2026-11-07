@@ -108,7 +108,18 @@ El contenido y el formato son entradas, no pasos. Cada galería cambia un solo p
 | 2 · Jerarquía | `galerias/G03.yaml` · Drive `01_galerias/2026-11-06_G03` | el tercio con texto chico y logo a 10:1 (`packs/E1`) | base, datos fuertes, compacta (`pila_anclaje: abajo`) y escala mayor | **elegido el 2°, datos fuertes** |
 | 3 · Imagen o ilustración | `galerias/G04.yaml` · Drive `01_galerias/2026-11-06_G04` | datos fuertes con la imagen a sangre bajo velo (`packs/F1`) | a sangre, sangrado lateral, en caja e ilustración (`imagen_encaje`, `imagen_registro: lienzo`) | **elegido el 2°, sangrado lateral** |
 | 4 · Protección del texto (color) | `galerias/G05.yaml` · Drive `01_galerias/2026-11-06_G05` (con `01_detalle.jpg`) | sangrado lateral: el texto ya va sobre fondo liso (`packs/H1`) | base, etiquetas blancas, turquesa claro y fondo de portada | **elegido el 1°, base** (etiquetas grises y turquesa #2DD4BF) |
-| 5 · Pie y detalles | `galerias/G06.yaml` · Drive `01_galerias/2026-11-06_G06` (con `01_detalle.jpg`) | color de marca sobre el panel liso (`packs/J1`) | base, sin cruces, llamado como botón (`cta_estilo`) y trama en el panel (`trama_alcance`) | espera la elección de David |
+| 5 · Pie y detalles | `galerias/G06.yaml` · Drive `01_galerias/2026-11-06_G06` (con `01_detalle.jpg`) | color de marca sobre el panel liso (`packs/J1`) | base, sin cruces, llamado como botón (`cta_estilo`) y trama en el panel (`trama_alcance`) | **elegido el 4°, trama en el panel** |
+
+### Resultado: Preset 01
+
+`packs/P01-save-the-date-slide.yaml` reúne las cinco elecciones en un solo pack plano, con el recorrido de decisiones.
+- Reproduce la pieza elegida en G06: los SVG son idénticos salvo el nombre.
+- Está publicado en Drive, en `01_galerias/2026-11-06_G07`, con la hoja `02_antes_despues.jpg` (la 12° de G01 frente al resultado).
+
+Alcance:
+- **Sirve para** un save the date en diapositiva 16:9 vista en notebook, con una imagen fija.
+- **Para otro contenido** se cambia el archivo de `contenido/`.
+- **Falta** adaptarlo a 1:1, 4:5 y LinkedIn, y probarlo con otro contenido.
 
 Comentarios de David sobre G01 (en `decisiones.csv`):
 - **1°:** faltan ajustes de proporción y composición.
@@ -139,6 +150,8 @@ python galeria.py --definicion galerias/G03.yaml              # paso 2: jerarqu�
 python galeria.py --definicion galerias/G04.yaml              # paso 3: imagen o ilustración (salida/G04)
 python galeria.py --definicion galerias/G05.yaml              # paso 4: color del texto, con hoja de detalle (salida/G05)
 python galeria.py --definicion galerias/G06.yaml              # paso 5: pie y detalles (salida/G06)
+python galeria.py --definicion galerias/G07.yaml              # preset 01, el resultado (salida/G07)
+python motor.py pieza --pack packs/P01-save-the-date-slide.yaml --contenido contenido/otro.yaml --salida salida/p01
 python catalogar_imagenes.py                                   # regenera imagenes.yaml desde los PNG
 python analisis/medir_piezas.py                                # re-mide las seis elegidas
 ```

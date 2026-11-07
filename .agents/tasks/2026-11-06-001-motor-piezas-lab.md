@@ -131,3 +131,28 @@ Rick GPT; producción solo con GO de David.
 - Cerrar #710 sin merge. Borrar la rama solo con GO.
 - Borrar en Drive `07_Motor de piezas/01_galerias/2026-11-06_G01`. No toca `00_insumos`.
 - No hubo escrituras en Notion ni en `main`.
+
+## Seguimiento 2026-11-06 · paso a paso con David
+
+Después de la primera entrega, David revisó G01 y pidió avanzar de a un paso: primero acordar los pasos y después elegir presets dentro de cada uno. La revisión con Claude del VPS y Rick GPT sigue pendiente sobre el mismo PR borrador #710, que ahora incluye este trabajo.
+
+- **Pasos acordados:** división, jerarquía, imagen o ilustración, protección del texto y pie y detalles.
+- **Galerías:** G02 a G06, una por paso, con 4 presets cada una y publicadas en `07_Motor de piezas/01_galerias/`.
+  - Elecciones de David: tercio, datos fuertes, sangrado lateral, color de marca y trama en el panel.
+  - Comentarios textuales en `labs/motor-piezas/decisiones.csv`.
+- **Resultado:** `packs/P01-save-the-date-slide.yaml`, en Drive en G07, con la hoja de antes y después.
+- **Motor 0.3:**
+  - Texto chico sobre imagen a 7:1 por defecto (10:1 en el preset), con los colores de texto claros.
+  - El velo también protege el logo.
+  - Divisiones del paso 1 y `pila_anclaje`.
+  - Encajes de imagen en las divisiones e `imagen_registro`.
+  - Llamado como botón y trama solo en el panel.
+  - Packs con `hereda:`.
+  - Hoja de detalle en la galería.
+- **Regresión:** G01 a G05 mantienen sus zonas. Con el motor actual, las piezas C de G01 solo cambian el color del texto chico sobre imagen y la opacidad de sus velos.
+- **Señal para la decisión pendiente 2:** en G05, David eligió `#2DD4BF` como texto sobre el panel liso, no `#99F6E4`.
+- **Falta:**
+  - Adaptar P01 a 1:1, 4:5 y LinkedIn, y probarlo con otro contenido.
+  - Las otras tres decisiones pendientes del README.
+  - Pasar el motor a skill por PR cuando eso esté.
+

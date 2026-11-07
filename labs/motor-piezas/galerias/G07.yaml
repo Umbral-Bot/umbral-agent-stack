@@ -1,0 +1,26 @@
+id: G07
+fecha: 2026-11-06
+titulo: "Galería 07 · Preset 01, resultado de los cinco pasos"
+descripcion: >
+  El preset P01 en un solo pack plano: tercio, datos fuertes, imagen en sangrado lateral, color
+  de marca y trama de puntos en el panel. Reproduce la pieza elegida en G06 (4°) con los mismos
+  valores que la cadena de packs D1 a J4. La hoja 02_antes_despues.jpg compara la 12° de G01,
+  el punto de partida, con el resultado. Laboratorio: no publicar.
+como_elegir: >
+  Este preset queda como el aprobado para un save the date en diapositiva 16:9. Para otro
+  contenido se cambia el archivo de contenido; para otros formatos falta adaptarlo.
+contenido: contenido/workshop-bim-ia.yaml
+secciones:
+  - alternativa: preset
+    titulo: "Preset 01 · Save the date 16:9"
+    descripcion: >
+      Recorrido de las elecciones de David (detalle en decisiones.csv y en el pack):
+    pasos:
+      - "Punto de partida: G01 12°, «la que destaco por la complejidad»"
+      - "Paso 1 · división: tercio (G02 2°), con más contraste abajo a la izquierda"
+      - "Paso 2 · jerarquía: datos fuertes (G03 2°)"
+      - "Paso 3 · imagen: sangrado lateral (G04 2°)"
+      - "Paso 4 · color: el de marca (G05 1°)"
+      - "Paso 5 · pie y detalles: trama de puntos en el panel (G06 4°)"
+    piezas:
+      - packs/P01-save-the-date-slide.yaml

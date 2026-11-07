@@ -1,0 +1,43 @@
+# Rutas de TARRO. El motor lee la marca directo desde Drive (solo lectura) y los
+# insumos pesados desde insumos/ (ignorado por git). Rutas relativas = relativas a
+# esta carpeta del laboratorio.
+
+marca: "G:/Mi unidad/02_Operacion/Entidades Propias/Umbral BIM/02_Marca e Identidad"
+
+# Relativas a `marca`
+tokens_css: "03_Sistema de Diseno/Umbral BIM Design System/colors_and_type.css"
+fuentes: "03_Sistema de Diseno/Umbral BIM Design System/fonts"
+lockups: "02_Logotipo/Exportables/Lockup"
+# Insumos del Director Comercial y Marketing: solo lectura. Sus copias de lockups,
+# fuentes, vectores y favoritas MJ se comprobaron idénticas (sha256) a las fuentes
+# canónicas el 2026-11-06; lockups y fuentes se siguen leyendo de la fuente canónica.
+insumos_director: "07_Motor de piezas/00_insumos"
+generate_base: "07_Motor de piezas/00_insumos/01_codigo/generate.py"   # v2 portable: base del motor
+imagenes_mj: "07_Motor de piezas/00_insumos/05_midjourney_favoritas"
+galerias_drive: "07_Motor de piezas/01_galerias"
+
+# Fuentes de marca que se copian junto a cada salida (la licencia OFL viaja con ellas)
+archivos_fuentes:
+  - {familia: Inter, peso: 400, archivo: Inter-Regular.woff2}
+  - {familia: Inter, peso: 500, archivo: Inter-Medium.woff2}
+  - {familia: Inter, peso: 600, archivo: Inter-SemiBold.woff2}
+  - {familia: Inter, peso: 700, archivo: Inter-Bold.woff2}
+  - {familia: JetBrains Mono, peso: 400, archivo: JetBrainsMono-Regular.woff2}
+  - {familia: JetBrains Mono, peso: 500, archivo: JetBrainsMono-Medium.woff2}
+  - {familia: JetBrains Mono, peso: 600, archivo: JetBrainsMono-SemiBold.woff2}
+licencias_fuentes: [OFL-Inter.txt, OFL-JetBrainsMono.txt]
+
+# Paquete v2 extraído del .tar.gz de Drive (04_Plantillas/02-sistema-save-the-date-v2-2026-11-06)
+v2_paquete: "insumos/v2-paquete/2026-11-06_ref-save-the-date_v2"
+v1_paquete: "insumos/v1-paquete/2026-11-06_ref-save-the-date"
+
+# Ilustraciones vectoriales reutilizables (activos, no valores de maquetación). Relativas a `marca`.
+ilustraciones:
+  wireframe_iso:
+    archivo: "07_Motor de piezas/00_insumos/06_vectores/wireframe-isometrico-tecnico.svg"
+    origen: [300, 300]      # punto del dibujo que generate.py usa como centro
+    escala_nativa: 1.55     # escala con la que generate.py exportó el vector
+
+navegador:
+  canal: chrome             # Chrome del sistema vía Playwright (no descarga navegadores)
+  escala_png: 2             # PNG a 2x, como la v2

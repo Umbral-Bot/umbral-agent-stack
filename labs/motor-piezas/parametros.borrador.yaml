@@ -1,0 +1,815 @@
+# Esquema de parámetros del motor de piezas · v0.2 (laboratorio).
+# Ajustado tras analizar las seis piezas elegidas (ver analisis/01_piezas-elegidas.md).
+#
+# Cada parámetro declara capa (maquetacion | imagen), nivel (principal = slider que
+# cambia la pieza; componente = ajuste fino con defecto razonable), tipo, opciones o
+# rango, defecto, si lo fija el manual y de qué problema sale (origen).
+#
+# Bases de medida:
+#   s     = lado menor del lienzo (px). Márgenes, medianil, módulo y logo son fracción de s.
+#   alto  = alto del lienzo. La altura de mayúscula del título es fracción del alto.
+#   css   = px CSS en el dispositivo donde se ve el formato (formatos.*.vista_css).
+#   modulos = múltiplos del módulo vertical (modulo_proporcional · s, múltiplo de 4).
+# Los espacios se redondean al múltiplo de 4 px más cercano (regla UB-3).
+
+version: 0.3-borrador
+fecha: 2026-11-06
+# 0.3: contraste sobre imagen (7:1 para texto chico, colores de texto claros) y presets de
+# división del paso 1 (`divisiones`, parámetro `division`). Avance paso a paso pedido por David.
+# 0.3b: pila_anclaje (paso 2), el logo cuenta para el velo, llamado bajo las filas si no cabe en el pie.
+# 0.3c: paso 3 · las divisiones aceptan sangrado lateral, caja o ilustración; imagen_registro.
+# 0.3d: paso 5 · cta_estilo (llamado como botón).
+# 0.3e: formatos de celular · columna_ancha, banda_apilada, division_fraccion, datos_ajuste_ancho.
+# 0.3f: vista_css por pack (LinkedIn: celular o computador).
+
+formatos:
+  cuadrado:  {ancho: 1080, alto: 1080, vista_css: 390, uso: "feed 1:1 (Instagram, LinkedIn)"}
+  vertical:  {ancho: 1080, alto: 1350, vista_css: 390, uso: "feed 4:5, portada de carrusel"}
+  historia:  {ancho: 1080, alto: 1920, vista_css: 390, uso: "historia o portada de reel 9:16"}
+  linkedin:  {ancho: 1200, alto: 627,  vista_css: 390, uso: "imagen de post con enlace (celular)"}
+  slide:     {ancho: 1920, alto: 1080, vista_css: 1280, uso: "diapositiva 16:9 vista en notebook"}
+# vista_css es una hipótesis de lectura: 390 px = ancho CSS de un celular actual;
+# 1280 px = ventana de notebook. Cambiarla cambia el tamaño mínimo real del texto.
+
+# Roles de color -> token de colors_and_type.css, por modo. Regla fija: nunca hex aquí.
+roles_color:
+  claro:
+    fondo: --ub-bg
+    tinta: --ub-text
+    secundario: --ub-text-muted
+    acento: --ub-primary            # relleno, filete, ícono. Nunca texto sobre claro
+    acento_texto: --ub-primary-text # texto de marca sobre claro (9,63:1)
+    acento_texto_claro: --ub-primary-text
+    cta_boton: --ub-primary
+    cta_boton_texto: --ub-text      # #1F2328 sobre #0FA994
+    filete: --ub-border
+    trama: --ub-border-strong
+    chip_fondo: --ub-warning-soft
+    chip_texto: --ub-warning-text
+    velo: --ub-bg
+  oscuro:
+    fondo: --ub-bg
+    tinta: --ub-text
+    secundario: --ub-text-muted
+    acento: --ub-primary
+    acento_texto: --ub-primary      # Manual §03, portadas: acento #2DD4BF como texto (9,16:1). Pendiente confirmar
+    acento_texto_claro: --ub-primary-text   # #99F6E4: el token de texto de marca del tema oscuro
+    cta_boton: --ub-primary
+    cta_boton_texto: --ub-bg        # #111418 sobre #2DD4BF: 9,92:1
+    filete: --ub-border
+    trama: --ub-border-strong
+    chip_fondo: --ub-warning-soft
+    chip_texto: --ub-warning-text
+    velo: --ub-bg
+  fondo_portada: --ub-bg-cover      # solo con fondo_portada: true (ver reglas)
+
+# Con colores_sobre_imagen: claros, un texto chico sobre imagen cambia de rol así. Sobre la
+# imagen de la 12° de G01, 7:1 con --ub-text-muted exige un velo de 0,97 (la imagen desaparece;
+# sobre fondo sólido llega apenas a 7,24:1); con --ub-text basta 0,51.
+roles_color_sobre_imagen:
+  claro:  {secundario: tinta}
+  oscuro: {secundario: tinta, acento_texto: acento_texto_claro}
+
+# Estilo de cada rol de texto. Las familias y pesos son los del manual.
+roles_texto:
+  kicker:    {familia: Inter, peso: 600, mayusculas: true,  tracking: etiqueta_tracking_em, color: acento_texto}
+  titulo:    {familia: Inter, peso: 600, mayusculas: false, tracking: titulo_tracking_em,   color: tinta}
+  subtitulo: {familia: Inter, peso: 600, mayusculas: true,  tracking: etiqueta_tracking_em, color: acento_texto}
+  etiqueta:  {familia: Inter, peso: 600, mayusculas: true,  tracking: etiqueta_tracking_em, color: secundario}
+  valor:     {familia: Inter, peso: 500, mayusculas: false, tracking: null,                 color: tinta}
+  numero:    {familia: JetBrains Mono, peso: 500, mayusculas: false, tracking: numero_tracking_em, color: acento_texto}
+  cuerpo:    {familia: Inter, peso: 400, mayusculas: false, tracking: null,                 color: secundario}
+  cta:       {familia: Inter, peso: 600, mayusculas: false, tracking: etiqueta_tracking_em, color: acento_texto}
+  chip:      {familia: Inter, peso: 500, mayusculas: true,  tracking: chip_tracking_em,     color: chip_texto}
+# Un pack puede sobrescribir un rol (p. ej. el control de réplica pinta los números como
+# la v2). Si eso rompe una regla, la verificación lo detecta y la pieza sale como exploración.
+
+# Qué bloques de contenido entran según densidad_texto.
+densidades:
+  minima: {kicker: true, subtitulo: false, filas: [minima], cuerpo: false, cta: true}
+  media:  {kicker: true, subtitulo: true,  filas: [minima, media], cuerpo: false, cta: true}
+  alta:   {kicker: true, subtitulo: true,  filas: [minima, media, alta], cuerpo: true, cta: true}
+
+lockups:
+  patron: "Umbral BIM - Lockup {composicion} - {variante}.svg"
+  composiciones:
+    "01": "01 Horizontal Canonico"
+    "02": "02 Horizontal Presencia"
+    "03": "03 Horizontal Compacto"
+    "04": "04 Vertical Centrado"
+    "05": "05 Horizontal con Bajada"
+  variantes: {claro: Claro, oscuro: Oscuro, mono_blanco: Monocromo Blanco, mono_negro: Monocromo Negro}
+
+# Paso 1 · división del lienzo (proceso C: imagen a sangre y zona de lectura con velo plano).
+# Las fracciones se redondean a columnas o filas de la grilla; el borde del velo cae en una
+# línea de grilla. Si el texto no cabe en el alto que deja la división, se reduce el título.
+divisiones:
+  mitad:  {tipo: columna, lado: izquierda, fraccion: 0.5,
+           descripcion: "texto en la mitad izquierda, imagen en la otra (la 12° de G01)"}
+  tercio: {tipo: columna, lado: izquierda, fraccion: 0.3333,
+           descripcion: "texto en un tercio, la imagen manda en los otros dos"}
+  banda:  {tipo: banda, fraccion: 0.5, fraccion_cabecera: 0.5833,
+           descripcion: "imagen arriba; banda de texto en la mitad inferior: cabecera a la izquierda y datos a la derecha"}
+  ele:    {tipo: ele, fraccion_banda: 0.5, fraccion_columna: 0.3333,
+           descripcion: "cabecera arriba a todo el ancho y datos en la columna izquierda; la imagen queda abajo a la derecha"}
+  # formatos de celular (1:1, 4:5): el texto se ve casi tres veces más chico que en notebook
+  columna_ancha: {tipo: columna, lado: izquierda, fraccion: 0.5833,
+                  descripcion: "texto en 7 de 12 columnas, imagen en una franja a la derecha"}
+  banda_apilada: {tipo: banda, fraccion: 0.625, filas: debajo,
+                  descripcion: "imagen arriba y banda de texto abajo a todo el ancho, con los datos bajo el título"}
+
+parametros:
+  # ---------------------------------------------------------------- proceso y formato
+  proceso:
+    capa: maquetacion
+    nivel: principal
+    tipo: opcion
+    opciones: [A_grilla, B_contenido, C_imagen, libre]
+    defecto: A_grilla
+    descripcion: alternativa de proceso. 'libre' reproduce la v2 (posiciones sueltas, sin grilla)
+  formato:
+    capa: maquetacion
+    nivel: principal
+    tipo: opcion
+    opciones: [cuadrado, vertical, historia, linkedin, slide]
+    defecto: vertical
+  modo:
+    capa: maquetacion
+    nivel: principal
+    tipo: opcion
+    opciones: [claro, oscuro]
+    defecto: oscuro
+  fondo_portada:
+    capa: maquetacion
+    nivel: principal
+    tipo: booleano
+    defecto: false
+    descripcion: usa --ub-bg-cover (#1A1A2E). Solo permitido en formato slide (portada)
+    origen: "12°: la portada LinkedIn oscura usa el azul de portadas de presentación"
+
+  # ---------------------------------------------------------------- grilla
+  margen_proporcional:
+    capa: maquetacion
+    nivel: principal
+    tipo: decimal
+    rango: [0.04, 0.12]
+    defecto: 0.06
+    base: s
+    descripcion: margen exterior como fracción del lado menor, redondeado a múltiplo de 4 px
+    origen: "márgenes fijos en px en todos los formatos (64 lateral y 56 inferior en la v2 1°)"
+  margen_inferior_proporcional:
+    capa: maquetacion
+    nivel: componente
+    tipo: decimal
+    rango: [0.03, 0.12]
+    defecto: null
+    base: s
+    descripcion: null = igual al margen. Existe para reproducir la v2, que usa otro margen abajo
+  columnas:
+    capa: maquetacion
+    nivel: principal
+    tipo: entero
+    rango: [4, 12]
+    defecto: 6
+  filas:
+    capa: maquetacion
+    nivel: principal
+    tipo: entero
+    rango: [4, 16]
+    defecto: 8
+    descripcion: filas de la grilla modular (proceso A)
+  medianil_proporcional:
+    capa: maquetacion
+    nivel: componente
+    tipo: decimal
+    rango: [0.01, 0.05]
+    defecto: 0.024
+    base: s
+  modulo_proporcional:
+    capa: maquetacion
+    nivel: componente
+    tipo: decimal
+    rango: [0.0037, 0.012]
+    defecto: 0.0075
+    base: s
+    descripcion: unidad del ritmo vertical (múltiplo de 4 px, mínimo 4). Los espacios se piden en módulos
+
+  # ---------------------------------------------------------------- zonas
+  columnas_texto:
+    capa: maquetacion
+    nivel: principal
+    tipo: entero
+    rango: [2, 12]
+    defecto: 4
+    descripcion: columnas que ocupa la zona de texto desde el lado de alineación (A y C)
+  columnas_titulo:
+    capa: maquetacion
+    nivel: principal
+    tipo: entero
+    rango: [0, 12]
+    defecto: 0
+    descripcion: columnas disponibles para el título (0 = las mismas que el texto). Permite un título a todo el ancho con la ilustración debajo (A)
+  filas_ubicacion:
+    capa: maquetacion
+    nivel: principal
+    tipo: opcion
+    opciones: [bajo_titulo, al_pie, columna_derecha]
+    defecto: bajo_titulo
+    descripcion: dónde van las filas de datos. al_pie llena el vacío bajo el título; columna_derecha (A y B) las pone en las columnas libres, alineadas al título, para formatos apaisados
+    origen: "1° y 20°: vacío grande en la mitad inferior"
+  ilustracion_zona:
+    capa: maquetacion
+    nivel: principal
+    tipo: opcion
+    opciones: [ninguna, auto, derecha, inferior, derecha_inferior]
+    defecto: derecha_inferior
+    descripcion: celda de grilla que ocupa la ilustración. auto = la zona libre más grande (B)
+  ilustracion_anclaje:
+    capa: maquetacion
+    nivel: principal
+    tipo: opcion
+    opciones: [zona_grilla, libre]
+    defecto: zona_grilla
+    origen: "la isometría flota sin relación con la grilla (1°, 12°)"
+  ilustracion_escala:
+    capa: maquetacion
+    nivel: componente
+    tipo: decimal
+    rango: [0.4, 1.0]
+    defecto: 0.92
+    descripcion: fracción de la zona que ocupa el dibujo (zona_grilla)
+  ilustracion_alineacion:
+    capa: maquetacion
+    nivel: componente
+    tipo: opcion
+    opciones: [centro, inferior, inferior_derecha]
+    defecto: inferior
+  ilustracion_minimo_rel:
+    capa: maquetacion
+    nivel: componente
+    tipo: decimal
+    rango: [0.1, 0.5]
+    defecto: 0.22
+    base: s
+    descripcion: si la zona libre es más chica que esto (lado menor), no se dibuja la ilustración
+    origen: "una isometría diminuta en un rincón suma ruido, no estructura"
+  ilustracion_centro_rel:
+    capa: maquetacion
+    nivel: componente
+    tipo: par
+    defecto: [0.70, 0.46]
+    descripcion: solo anclaje libre (v2). Centro del dibujo como fracción de ancho y alto
+  ilustracion_escala_libre:
+    capa: maquetacion
+    nivel: componente
+    tipo: decimal
+    rango: [0.5, 2.0]
+    defecto: 1.28
+    descripcion: solo anclaje libre (v2). Escala sobre el dibujo nativo de generate.py
+  filas_ancho_relativo:
+    capa: maquetacion
+    nivel: componente
+    tipo: decimal
+    rango: [0.3, 0.9]
+    defecto: 0.463
+    descripcion: solo proceso libre (v2). Ancho de las filas como fracción del ancho
+
+  # ---------------------------------------------------------------- tipografía
+  titulo_altura_relativa:
+    capa: maquetacion
+    nivel: principal
+    tipo: decimal
+    rango: [0.04, 0.16]
+    defecto: 0.08
+    base: alto
+    descripcion: altura de mayúscula del título respecto del alto del lienzo (tope)
+    origen: "24°: título chico en 16:9"
+  titulo_ancho_max:
+    capa: maquetacion
+    nivel: componente
+    tipo: decimal
+    rango: [0.6, 1.0]
+    defecto: 0.96
+    descripcion: la línea más larga del título no supera esta fracción del ancho de su zona (si no, se reduce)
+  titulo_tracking_em:
+    capa: maquetacion
+    nivel: componente
+    tipo: decimal
+    rango: [-0.05, 0.0]
+    defecto: -0.035
+    descripcion: v2 usa -0,035 em; el token --ub-tracking-display equivale a -0,027 em a 56 px
+  titulo_interlineado:
+    capa: maquetacion
+    nivel: componente
+    tipo: decimal
+    rango: [0.85, 1.2]
+    defecto: 0.96
+  texto_interlineado:
+    capa: maquetacion
+    nivel: componente
+    tipo: decimal
+    rango: [1.1, 1.7]
+    defecto: 1.3
+    descripcion: interlineado de kicker, subtítulo y cuerpo cuando parten línea por no caber en su zona
+  titulo_linea_acento:
+    capa: maquetacion
+    nivel: principal
+    tipo: opcion
+    opciones: [ninguna, ultima]
+    defecto: ninguna
+    descripcion: pinta la última línea del título con acento_texto (nunca --ub-primary sobre claro)
+  texto_minimo_css:
+    capa: maquetacion
+    nivel: principal
+    tipo: decimal
+    rango: [4, 24]   # 0.3b: hasta 24 (paso 2, slides vistas en notebook)
+    defecto: 11
+    unidad: css
+    descripcion: tamaño de la etiqueta más chica, en px CSS en el dispositivo del formato. Reemplaza a texto_minimo_px_movil de la v0.1
+    origen: "filas ilegibles en el celular: en la v2 1° el valor mide 7,2 px CSS y la etiqueta 4,3"
+  escala_valor:
+    capa: maquetacion
+    nivel: componente
+    tipo: decimal
+    rango: [1.0, 2.0]
+    defecto: 1.27
+    descripcion: tamaño del valor de fila = texto mínimo × escala
+  escala_numero:
+    capa: maquetacion
+    nivel: componente
+    tipo: decimal
+    rango: [1.0, 2.5]
+    defecto: 1.27
+  escala_kicker:
+    capa: maquetacion
+    nivel: componente
+    tipo: decimal
+    rango: [1.0, 1.6]
+    defecto: 1.0
+    origen: "la v2 usa cuatro tamaños casi iguales para etiquetas (12, 13, 14 y 15 px)"
+  escala_subtitulo:
+    capa: maquetacion
+    nivel: componente
+    tipo: decimal
+    rango: [1.0, 1.6]
+    defecto: 1.0
+  escala_cta:
+    capa: maquetacion
+    nivel: componente
+    tipo: decimal
+    rango: [1.0, 1.6]
+    defecto: 1.0
+  escala_cuerpo:
+    capa: maquetacion
+    nivel: componente
+    tipo: decimal
+    rango: [1.0, 2.0]
+    defecto: 1.27
+  escala_chip:
+    capa: maquetacion
+    nivel: componente
+    tipo: decimal
+    rango: [0.8, 1.2]
+    defecto: 0.9
+  etiqueta_tracking_em:
+    capa: maquetacion
+    nivel: componente
+    tipo: decimal
+    rango: [0.0, 0.2]
+    defecto: 0.12
+  numero_tracking_em:
+    capa: maquetacion
+    nivel: componente
+    tipo: decimal
+    rango: [0.0, 0.1]
+    defecto: 0.02
+  alineacion:
+    capa: maquetacion
+    nivel: principal
+    tipo: opcion
+    opciones: [izquierda, centrada]
+    defecto: izquierda
+  densidad_texto:
+    capa: maquetacion
+    nivel: principal
+    tipo: opcion
+    opciones: [minima, media, alta]
+    defecto: media
+    descripcion: qué bloques entran (ver densidades)
+  texto_ancho_max_relativo:
+    capa: maquetacion
+    nivel: componente
+    tipo: decimal
+    rango: [0.4, 1.0]
+    defecto: 0.62
+    descripcion: proceso B. Ancho máximo que puede tomar el bloque de texto, como fracción de la caja de márgenes
+
+  # ---------------------------------------------------------------- ritmo vertical (en módulos)
+  pila_desplazamiento:
+    capa: maquetacion
+    nivel: componente
+    tipo: entero
+    rango: [0, 16]
+    defecto: 0
+    unidad: modulos
+  espacio_kicker_titulo:
+    capa: maquetacion
+    nivel: componente
+    tipo: entero
+    rango: [1, 16]
+    defecto: 4
+    unidad: modulos
+  espacio_titulo_subtitulo:
+    capa: maquetacion
+    nivel: componente
+    tipo: entero
+    rango: [1, 16]
+    defecto: 5
+    unidad: modulos
+  espacio_subtitulo_filas:
+    capa: maquetacion
+    nivel: componente
+    tipo: entero
+    rango: [1, 16]
+    defecto: 6
+    unidad: modulos
+  espacio_filas_cuerpo:
+    capa: maquetacion
+    nivel: componente
+    tipo: entero
+    rango: [1, 16]
+    defecto: 5
+    unidad: modulos
+  espacio_pie:
+    capa: maquetacion
+    nivel: componente
+    tipo: entero
+    rango: [2, 16]
+    defecto: 6
+    unidad: modulos
+    descripcion: separación mínima entre el contenido y el pie (logo y llamado)
+
+  # ---------------------------------------------------------------- filas numeradas
+  fila_relleno_superior:
+    capa: maquetacion
+    nivel: componente
+    tipo: entero
+    rango: [1, 10]
+    defecto: 3
+    unidad: modulos
+  fila_separacion_interna:
+    capa: maquetacion
+    nivel: componente
+    tipo: entero
+    rango: [0, 6]
+    defecto: 1
+    unidad: modulos
+  fila_relleno_inferior:
+    capa: maquetacion
+    nivel: componente
+    tipo: entero
+    rango: [1, 10]
+    defecto: 3
+    unidad: modulos
+  fila_x_numero:
+    capa: maquetacion
+    nivel: componente
+    tipo: entero
+    rango: [0, 10]
+    defecto: 2
+    unidad: modulos
+  fila_espacio_numero_texto:
+    capa: maquetacion
+    nivel: componente
+    tipo: entero
+    rango: [1, 12]
+    defecto: 3
+    unidad: modulos
+  filas_cruces:
+    capa: maquetacion
+    nivel: componente
+    tipo: booleano
+    defecto: true
+  cruz_tamano_rel:
+    capa: maquetacion
+    nivel: componente
+    tipo: decimal
+    rango: [0.003, 0.012]
+    defecto: 0.0056
+    base: s
+
+  # ---------------------------------------------------------------- pie: logo y llamado
+  logo_composicion:
+    capa: maquetacion
+    nivel: principal
+    tipo: opcion
+    opciones: ["01", "02", "03", "04", "05"]
+    defecto: "01"
+    fijo_por_manual: true   # solo archivos oficiales; el manual dice cuándo va cada una
+  logo_variante:
+    capa: maquetacion
+    nivel: componente
+    tipo: opcion
+    opciones: [auto, claro, oscuro, mono_blanco]
+    defecto: auto
+    descripcion: auto = la que corresponde al fondo real bajo el logo (Manual §02)
+  logo_altura_relativa:
+    capa: maquetacion
+    nivel: principal
+    tipo: decimal
+    rango: [0.025, 0.08]
+    defecto: 0.041
+    base: s
+    descripcion: alto del lockup; el ancho nunca baja de 120 px (regla)
+  logo_posicion:
+    capa: maquetacion
+    nivel: principal
+    tipo: opcion
+    opciones: [inferior_izquierda, inferior_derecha]
+    defecto: inferior_izquierda
+    descripcion: la v0.1 ofrecía superior_izquierda; queda pendiente hasta tener una pieza que lo pida
+  cta_estilo:
+    capa: maquetacion
+    nivel: principal
+    tipo: opcion
+    opciones: [texto, boton]
+    defecto: texto
+    descripcion: paso 5 · el llamado como texto o como botón (bloque de acento con el texto en el color del fondo, radio en línea de 4 px)
+    origen: "paso 5, pie y detalles (2026-11-06)"
+  cta_boton_relleno_h:
+    capa: maquetacion
+    nivel: componente
+    tipo: entero
+    rango: [1, 10]
+    defecto: 3
+    unidad: modulos
+  cta_boton_relleno_v:
+    capa: maquetacion
+    nivel: componente
+    tipo: entero
+    rango: [1, 6]
+    defecto: 2
+    unidad: modulos
+  cta_visible:
+    capa: maquetacion
+    nivel: componente
+    tipo: booleano
+    defecto: true
+
+  # ---------------------------------------------------------------- chip de ejemplo
+  chip_ancla:
+    capa: maquetacion
+    nivel: componente
+    tipo: opcion
+    opciones: [caja, linea_cruces]
+    defecto: caja
+    descripcion: caja = esquina superior derecha de la caja de márgenes; linea_cruces = sobre la línea de las cruces (v2)
+    origen: "1° y 12°: la cruz de registro superior derecha pisa el chip EJEMPLO"
+  chip_relleno_h:
+    capa: maquetacion
+    nivel: componente
+    tipo: entero
+    rango: [1, 10]
+    defecto: 2
+    unidad: modulos
+  chip_relleno_v:
+    capa: maquetacion
+    nivel: componente
+    tipo: entero
+    rango: [1, 6]
+    defecto: 1
+    unidad: modulos
+  chip_tracking_em:
+    capa: maquetacion
+    nivel: componente
+    tipo: decimal
+    rango: [0.0, 0.2]
+    defecto: 0.08
+
+  # ---------------------------------------------------------------- decoración técnica
+  trama_visible:
+    capa: maquetacion
+    nivel: componente
+    tipo: booleano
+    defecto: true
+  trama_alcance:
+    capa: maquetacion
+    nivel: componente
+    tipo: opcion
+    opciones: [lienzo, zona_texto]
+    defecto: lienzo
+    descripcion: zona_texto = la retícula de puntos solo en el panel de texto (divisiones en columna), no sobre la imagen
+  trama_inset:
+    capa: maquetacion
+    nivel: componente
+    tipo: decimal
+    rango: [0.25, 1.0]
+    defecto: 1.0
+    descripcion: origen de la trama como fracción del margen (1 = alineada a la caja; la v2 usa 0,75)
+  trama_paso:
+    capa: maquetacion
+    nivel: componente
+    tipo: entero
+    rango: [2, 16]
+    defecto: 4
+    unidad: modulos
+  trama_radio_rel:
+    capa: maquetacion
+    nivel: componente
+    tipo: decimal
+    rango: [0.0005, 0.003]
+    defecto: 0.00097
+    base: s
+  trama_opacidad_claro:
+    capa: maquetacion
+    nivel: componente
+    tipo: decimal
+    rango: [0.0, 1.0]
+    defecto: 0.40
+  trama_opacidad_oscuro:
+    capa: maquetacion
+    nivel: componente
+    tipo: decimal
+    rango: [0.0, 1.0]
+    defecto: 0.28
+  cruces_registro:
+    capa: maquetacion
+    nivel: componente
+    tipo: booleano
+    defecto: true
+  cruces_inset:
+    capa: maquetacion
+    nivel: componente
+    tipo: decimal
+    rango: [0.25, 1.0]
+    defecto: 0.5
+    descripcion: distancia al borde como fracción del margen
+  cruz_registro_tamano_rel:
+    capa: maquetacion
+    nivel: componente
+    tipo: decimal
+    rango: [0.004, 0.016]
+    defecto: 0.0083
+    base: s
+
+  # ---------------------------------------------------------------- capa de imagen
+  imagen_fuente:
+    capa: imagen
+    nivel: principal
+    tipo: referencia
+    defecto: null
+    descripcion: id del catálogo imagenes.yaml (herramienta, modelo, prompt, sref, semilla, proporción)
+  imagen_encaje:
+    capa: imagen
+    nivel: principal
+    tipo: opcion
+    opciones: [sin_imagen, caja_alineada_grilla, sangrado_lateral, fondo_completo_con_velo]
+    defecto: sin_imagen
+    origen: "20°: la imagen está pegada como caja sin relación con la grilla"
+  imagen_columnas:
+    capa: imagen
+    nivel: componente
+    tipo: entero
+    rango: [1, 12]
+    defecto: 3
+    descripcion: columnas que ocupa la imagen en caja_alineada_grilla y sangrado_lateral
+  imagen_foco:
+    capa: imagen
+    nivel: componente
+    tipo: par
+    defecto: [0.5, 0.5]
+    descripcion: punto de la imagen que el recorte mantiene visible (fracción de ancho y alto)
+  imagen_registro:
+    capa: imagen
+    nivel: componente
+    tipo: opcion
+    opciones: [parte, lienzo]
+    defecto: parte
+    descripcion: parte = la imagen se encuadra en su zona (con imagen_foco); lienzo = se encuadra como si cubriera todo el lienzo y la zona solo la recorta, así no se mueve entre presets del paso 3
+    origen: "paso 3 (2026-11-06): comparar a sangre, sangrado lateral y caja sin que cambie el encuadre"
+  imagen_radio:
+    capa: imagen
+    nivel: componente
+    tipo: opcion
+    opciones: [0, 8]
+    defecto: 8
+    descripcion: 8 px en bloques (regla); 0 cuando la imagen sangra al borde
+  velo_opacidad:
+    capa: imagen
+    nivel: principal
+    tipo: decimal
+    rango: [0.0, 1.0]
+    defecto: 0.55
+    descripcion: velo plano (color de fondo) sobre la imagen; 1 = franja sólida. Sin degradado (regla UB-3)
+  velo_alcance:
+    capa: imagen
+    nivel: principal
+    tipo: opcion
+    opciones: [completo, zona_lectura]
+    defecto: zona_lectura
+    descripcion: zona_lectura = franja protegida, alineada a la grilla, que sangra al borde del lado del texto
+    origen: "24°: el título no tiene zona de lectura protegida"
+  velo_auto:
+    capa: imagen
+    nivel: componente
+    tipo: booleano
+    defecto: true
+    descripcion: sube la opacidad hasta que todo texto sobre la imagen cumple su contraste objetivo
+  contraste_sobre_imagen:
+    capa: imagen
+    nivel: principal
+    tipo: decimal
+    rango: [4.5, 21]
+    defecto: 7.0
+    descripcion: contraste mínimo de los textos chicos sobre imagen, medido sobre el fondo real (nivel AAA de WCAG). UB-3 fija el piso de 4,5:1, que sobre una imagen con textura no basta
+    origen: "G01 12° (David, 2026-11-06): falta contraste en los textos de abajo a la izquierda; medían 4,57–6,28:1"
+  texto_grande_css:
+    capa: imagen
+    nivel: componente
+    tipo: decimal
+    rango: [14, 48]
+    defecto: 24
+    descripcion: desde este tamaño (px CSS) un texto es grande y sobre imagen le basta 4,5:1 (WCAG, 18 pt)
+  texto_grande_negrita_css:
+    capa: imagen
+    nivel: componente
+    tipo: decimal
+    rango: [14, 48]
+    defecto: 18.67
+    descripcion: lo mismo para pesos 600 o más (WCAG, 14 pt en negrita)
+  colores_sobre_imagen:
+    capa: imagen
+    nivel: principal
+    tipo: opcion
+    opciones: [marca, claros]
+    defecto: claros
+    descripcion: claros = los textos chicos sobre imagen usan los tokens de texto más claros (roles_color_sobre_imagen) para llegar a contraste_sobre_imagen sin tapar la imagen; marca = los mismos colores que sobre fondo liso
+  division_fraccion:
+    capa: maquetacion
+    nivel: principal
+    tipo: decimal
+    rango: [0.25, 0.85]
+    defecto: null
+    descripcion: cuánto del lienzo toma el texto en la división (fracción de columnas o de filas). null = la del preset de divisiones
+  datos_ajuste_ancho:
+    capa: maquetacion
+    nivel: componente
+    tipo: booleano
+    defecto: false
+    descripcion: si las filas no caben en su ancho, achica valor y número juntos (nunca por debajo de la etiqueta)
+    origen: "formatos de celular (2026-11-06): con datos fuertes a 11 px CSS, «Jueves 19 nov 2026» no cabe en 7 de 12 columnas"
+  pila_anclaje:
+    capa: maquetacion
+    nivel: principal
+    tipo: opcion
+    opciones: [arriba, abajo]
+    defecto: arriba
+    descripcion: paso 2 · dónde se apoya el bloque de texto dentro de su zona (divisiones del paso 1). abajo agrupa kicker, título, subtítulo y filas sobre el pie y deja libre la parte alta
+    origen: "G02 2° (tercio): queda un vacío grande entre el subtítulo y las filas al pie"
+  vista_css:
+    capa: maquetacion
+    nivel: principal
+    tipo: decimal
+    rango: [300, 1920]
+    defecto: null
+    unidad: css
+    descripcion: ancho en px CSS con que se supone que se ve la pieza; null = el del formato (formatos.*.vista_css). Cambia el tamaño real del texto
+    origen: "decisión pendiente 3; LinkedIn (2026-11-07): celular (390) frente a computador (supuesto ≈555, el ancho del feed)"
+  division:
+    capa: maquetacion
+    nivel: principal
+    tipo: opcion
+    opciones: [zona_libre, mitad, tercio, banda, ele, columna_ancha, banda_apilada]
+    defecto: zona_libre
+    descripcion: paso 1 · cómo se parte el lienzo entre texto e imagen (proceso C con imagen a sangre). zona_libre = como G01, decide la imagen con zona_libre y zona_libre_fraccion; el resto son los presets de `divisiones`
+    origen: "David, 2026-11-06: avanzar paso a paso, empezando por distintos tipos de división de la composición"
+  zona_libre:
+    capa: imagen
+    nivel: principal
+    tipo: opcion
+    opciones: [auto, izquierda, derecha, superior, inferior]
+    defecto: auto
+    descripcion: proceso C. auto = la franja de la imagen con menos detalle medido
+  zona_libre_fraccion:
+    capa: imagen
+    nivel: componente
+    tipo: decimal
+    rango: [0.3, 0.75]
+    defecto: 0.55
+
+reglas_fijas_manual_ub3:
+  tipografias: [Inter, JetBrains Mono]
+  rasgos_opentype: '"cv11", "ss01", "ss03"'
+  peso_titulares: 600
+  dominio: umbralbim.io
+  turquesa_como_texto_sobre_claro: prohibido   # usar --ub-primary-text
+  degradados_brillos_sombras_dramaticas: prohibido
+  espaciado_multiplo_px: 4
+  filete_px: 1
+  radio_en_linea_px: 4
+  radio_bloque_px: 8
+  lockup_ancho_minimo_px: 120
+  lockups_desde: 02_Logotipo/Exportables/Lockup   # nunca una copia suelta
+  fondo_portada_solo_en: [slide]
+  negro_puro_como_fondo: prohibido
+  contraste_texto_minimo: 4.5                  # WCAG AA, medido sobre el fondo real

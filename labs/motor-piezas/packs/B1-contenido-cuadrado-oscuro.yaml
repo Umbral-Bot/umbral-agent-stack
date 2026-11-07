@@ -1,0 +1,13 @@
+id: B1
+nombre: "Contenido primero · 1:1 oscuro · el texto fija las columnas"
+alternativa: B
+contenido: contenido/workshop-bim-ia.yaml
+corrige: "v2 1° en oscuro: la medida del texto decide la grilla; la isometría toma la zona libre mayor"
+decision_david: null
+valores:
+  proceso: B_contenido
+  formato: cuadrado
+  modo: oscuro
+  columnas: 6
+  texto_ancho_max_relativo: 0.7
+  ilustracion_zona: auto

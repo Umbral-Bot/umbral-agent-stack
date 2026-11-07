@@ -1,0 +1,8 @@
+id: L2
+nombre: "LinkedIn · computador: columna en la mitad, solo la fecha"
+alternativa: linkedin
+paso: formatos
+hereda: packs/L1-linkedin-celular.yaml
+decision_david: null
+valores:
+  vista_css: 555            # supuesto: ancho del feed de LinkedIn en el computador

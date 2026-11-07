@@ -1,0 +1,13 @@
+id: L1
+nombre: "LinkedIn · celular: columna en la mitad, solo la fecha"
+alternativa: linkedin
+paso: formatos
+hereda: packs/P01-save-the-date-slide.yaml
+decision_david: null
+valores:
+  formato: linkedin
+  vista_css: 390            # pensada para el feed en el celular
+  texto_minimo_css: 11
+  division: mitad
+  densidad_texto: minima    # en 627 px de alto no caben los tres datos a tamaño de celular
+  datos_ajuste_ancho: true

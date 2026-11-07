@@ -1,0 +1,8 @@
+id: E4
+nombre: "Escala mayor · todo el texto chico crece un 29 % (14 a 18 px CSS)"
+alternativa: paso2
+paso: jerarquia
+hereda: packs/E1-jerarquia-base.yaml
+decision_david: null
+valores:                    # mismas proporciones entre roles, base más grande
+  texto_minimo_css: 18

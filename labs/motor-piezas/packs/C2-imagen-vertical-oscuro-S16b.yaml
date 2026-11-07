@@ -1,0 +1,17 @@
+id: C2
+nombre: "Imagen primero · 4:5 oscuro · puerta S16b a sangre, título arriba y velo plano uniforme"
+alternativa: C
+contenido: contenido/workshop-bim-ia.yaml
+corrige: "v2 22°: mismo lienzo completo y título grande, con velo plano uniforme (sin degradado) calculado para 4,5:1"
+decision_david: null
+valores:
+  proceso: C_imagen
+  formato: vertical
+  modo: oscuro
+  columnas: 6
+  imagen_fuente: mj3_V-S16b_0
+  imagen_encaje: fondo_completo_con_velo
+  zona_libre: superior
+  velo_opacidad: 0.35
+  trama_visible: false
+  velo_alcance: completo

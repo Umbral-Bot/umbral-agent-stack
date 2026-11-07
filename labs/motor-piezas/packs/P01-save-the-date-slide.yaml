@@ -1,0 +1,42 @@
+id: P01
+nombre: "Preset 01 · Save the date 16:9: tercio, datos fuertes, imagen lateral, color de marca y trama"
+tipo_contenido: "anuncio de evento (save the date) en diapositiva 16:9 vista en notebook, con una imagen fija"
+estado: "aprobado por David en cinco pasos, 2026-11-06"
+contenido: contenido/workshop-bim-ia.yaml
+decision_david: "G06 4°, 2026-11-06 («4»): cierra los cinco pasos"
+recorrido:      # de la 12° de G01 a este preset; cada paso está en decisiones.csv y en packs/D*–J*
+  - "punto de partida: G01 12° («la que destaco por la complejidad»; faltaba contraste abajo a la izquierda)"
+  - "paso 1 · división: tercio (G02 2°: «se ve mejor el 2», con más contraste abajo a la izquierda)"
+  - "paso 2 · jerarquía: datos fuertes (G03 2°)"
+  - "paso 3 · imagen: sangrado lateral (G04 2°)"
+  - "paso 4 · color: el de marca, etiquetas grises y turquesa #2DD4BF (G05 1°)"
+  - "paso 5 · pie y detalles: trama de puntos en el panel de texto (G06 4°)"
+valores:
+  # base
+  proceso: C_imagen
+  formato: slide
+  modo: oscuro
+  columnas: 12
+  # paso 1 · división
+  division: tercio
+  # paso 2 · jerarquía
+  titulo_altura_relativa: 0.12   # en el tercio manda el ancho de la columna (98 px)
+  texto_minimo_css: 14
+  escala_kicker: 1.4
+  escala_subtitulo: 1.4
+  escala_valor: 1.7
+  escala_numero: 1.7
+  filas_ubicacion: al_pie
+  # paso 3 · imagen
+  imagen_fuente: mj3_V-S2b_0     # imagen fija de Midjourney (no reproducible)
+  imagen_encaje: sangrado_lateral
+  imagen_registro: lienzo
+  # paso 4 · color: sin cambios de rol. Si el texto vuelve a ir sobre la imagen, rigen estas dos
+  contraste_sobre_imagen: 10.0
+  colores_sobre_imagen: claros
+  # paso 5 · pie y detalles
+  logo_composicion: "02"
+  logo_altura_relativa: 0.05
+  trama_visible: true
+  trama_alcance: zona_texto
+  trama_opacidad_oscuro: 1.0

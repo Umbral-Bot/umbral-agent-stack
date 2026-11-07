@@ -1,0 +1,11 @@
+id: K1
+nombre: "1:1 · Columna ancha: texto en 7 de 12 columnas con todos los datos, imagen en franja"
+alternativa: 1x1
+paso: formatos
+hereda: packs/P01-save-the-date-slide.yaml
+decision_david: "G08 1°, 2026-11-07: elegida para 1:1 («1 y 3»)"
+valores:
+  formato: cuadrado
+  texto_minimo_css: 11      # celular (vista 390 px CSS): el mínimo legible; en la diapositiva era 14
+  division: columna_ancha
+  datos_ajuste_ancho: true

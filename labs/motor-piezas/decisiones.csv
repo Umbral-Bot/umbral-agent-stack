@@ -1,0 +1,40 @@
+numero,codigo,pack,comentario_david,fecha
+1°,G01-A1,packs/A1-grilla-cuadrado-claro.yaml,"se ve bien, le faltan algunos ajustes aún. Temas de proporciones, composición.",2026-11-06
+2°,G01-A2,packs/A2-grilla-vertical-oscuro-imagen.yaml,,
+3°,G01-A3,packs/A3-grilla-linkedin-claro.yaml,,
+4°,G01-A4,packs/A4-grilla-slide-oscuro-portada.yaml,,
+5°,G01-B1,packs/B1-contenido-cuadrado-oscuro.yaml,,
+6°,G01-B2,packs/B2-contenido-vertical-claro-al-pie.yaml,,
+7°,G01-B3,packs/B3-contenido-linkedin-oscuro.yaml,,
+8°,G01-B4,packs/B4-contenido-slide-claro.yaml,,
+9°,G01-C1,packs/C1-imagen-cuadrado-claro-S21a.yaml,,
+10°,G01-C2,packs/C2-imagen-vertical-oscuro-S16b.yaml,,
+11°,G01-C3,packs/C3-imagen-linkedin-oscuro-L3d.yaml,,
+12°,G01-C4,packs/C4-imagen-slide-oscuro-S2b.yaml,"la que destaco por la complejidad […] es la composición de la 12. Se ve muy bien, pero solo falta trabajar el contraste de los textos, de abajo a la izquierda. Pero en composición se ve muy bien.",2026-11-06
+1°,G02-D1,packs/D1-division-mitad.yaml,,
+2°,G02-D2,packs/D2-division-tercio.yaml,"se ve mejor el 2, pero aumentar contraste en las letras de abajo a la izquierda",2026-11-06
+3°,G02-D3,packs/D3-division-banda.yaml,,
+4°,G02-D4,packs/D4-division-ele.yaml,,
+1°,G03-E1,packs/E1-jerarquia-base.yaml,,
+2°,G03-E2,packs/E2-jerarquia-datos.yaml,2° Datos fuertes,2026-11-06
+3°,G03-E3,packs/E3-jerarquia-compacta.yaml,,
+4°,G03-E4,packs/E4-jerarquia-escala.yaml,,
+1°,G04-F1,packs/F1-imagen-sangre.yaml,,
+2°,G04-F2,packs/F2-imagen-lateral.yaml,2° Sangrado lateral,2026-11-06
+3°,G04-F3,packs/F3-imagen-caja.yaml,,
+4°,G04-F4,packs/F4-ilustracion.yaml,,
+1°,G05-H1,packs/H1-color-base.yaml,1,2026-11-06
+2°,G05-H2,packs/H2-color-etiquetas.yaml,,
+3°,G05-H3,packs/H3-color-acento.yaml,,
+4°,G05-H4,packs/H4-color-portada.yaml,,
+1°,G06-J1,packs/J1-pie-base.yaml,,
+2°,G06-J2,packs/J2-pie-sin-cruces.yaml,,
+3°,G06-J3,packs/J3-pie-boton.yaml,,
+4°,G06-J4,packs/J4-pie-trama.yaml,4,2026-11-06
+1°,G08-K1,packs/K1-formato-1x1-columna.yaml,1 y 3,2026-11-07
+2°,G08-K2,packs/K2-formato-1x1-banda.yaml,,
+3°,G08-K3,packs/K3-formato-4x5-columna.yaml,1 y 3,2026-11-07
+4°,G08-K4,packs/K4-formato-4x5-banda.yaml,,
+1°,G09-L1,packs/L1-linkedin-celular.yaml,,
+2°,G09-L2,packs/L2-linkedin-computador.yaml,,
+3°,G09-L3,packs/L3-linkedin-banda.yaml,,

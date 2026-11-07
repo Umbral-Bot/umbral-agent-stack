@@ -1,0 +1,8 @@
+id: H2
+nombre: "Etiquetas blancas · FECHA, HORA y LUGAR en el color del texto (15,8:1)"
+alternativa: paso4
+paso: proteccion
+hereda: packs/H1-color-base.yaml
+decision_david: null
+roles_texto:
+  etiqueta: {color: tinta}  # de --ub-text-muted (7,2:1) a --ub-text

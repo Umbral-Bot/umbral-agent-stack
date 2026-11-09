@@ -293,6 +293,7 @@ class Compositor:
         for rol in ('kicker', 'subtitulo', 'cta', 'valor', 'numero', 'cuerpo', 'chip'):
             self.t[rol] = round(base * self.v[f'escala_{rol}'], 1)
         self.px_por_css = k
+        self.t_base = dict(self.t)
         self.cap_titulo = self.medir('titulo', 'H', 1000)['cap'] / 1000
 
     def agregar_texto(self, id_: str, rol: str, texto: str, x: float, base: float, tamano: float,
@@ -427,6 +428,11 @@ class Compositor:
         """
         notas_antes = list(self.notas)
         v, t = self.v, self.t
+        tope = v['jerarquia_tope_secundario']
+        if tope:
+            # el kicker y el subtítulo no pasan de `tope` veces el título (nunca bajo el texto mínimo)
+            for rol in ('kicker', 'subtitulo'):
+                t[rol] = max(self.t_base['etiqueta'], min(self.t_base[rol], round(tope * tam_titulo, 1)))
         dens = self.ctx.esquema['densidades'][v['densidad_texto']]
         centrada = v['alineacion'] == 'centrada'
         ancla = 'middle' if centrada else 'start'
@@ -1564,6 +1570,20 @@ def abrir_navegador(ctx: Contexto) -> Navegador:
     return nav
 
 
+def campana(ctx: Contexto, ruta_preset: Path, ruta_contenido: Path, dir_salida: Path) -> list[dict]:
+    """Un contenido, todos los formatos de un preset: la campaña sale de una vez."""
+    familia = cargar_yaml(ruta_preset)
+    infos = []
+    with abrir_navegador(ctx) as nav:
+        nav.preparar_medicion(ctx.css_fuentes(nav.url('fuentes', '')))
+        for formato, ruta_pack in familia['formatos'].items():
+            info = generar_pieza(ctx, nav, LAB / ruta_pack, dir_salida, f"{familia['id']}-{formato}", ruta_contenido)
+            infos.append(info)
+            rotas = '; '.join(info['reglas_rotas']) or '-'
+            print(f"{info['codigo']:14s} {info['estado']:12s} {info['ancho']}×{info['alto']}  {rotas}")
+    return infos
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest='orden', required=True)
@@ -1572,8 +1592,15 @@ def main():
     p.add_argument('--contenido')
     p.add_argument('--salida', default='salida/prueba')
     p.add_argument('--codigo')
+    c = sub.add_parser('campana', help='genera todos los formatos de un preset con un mismo contenido')
+    c.add_argument('--preset', required=True, help='familia de packs, p. ej. presets/P01.yaml')
+    c.add_argument('--contenido', required=True)
+    c.add_argument('--salida', default='salida/campana')
     a = ap.parse_args()
     ctx = Contexto()
+    if a.orden == 'campana':
+        campana(ctx, Path(a.preset), Path(a.contenido), LAB / a.salida)
+        return
     with abrir_navegador(ctx) as nav:
         nav.preparar_medicion(ctx.css_fuentes(nav.url('fuentes', '')))
         ruta_pack = Path(a.pack)

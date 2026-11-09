@@ -21,6 +21,7 @@ fecha: 2026-11-06
 # 0.3d: paso 5 · cta_estilo (llamado como botón).
 # 0.3e: formatos de celular · columna_ancha, banda_apilada, division_fraccion, datos_ajuste_ancho.
 # 0.3f: vista_css por pack (LinkedIn: celular o computador).
+# 0.3g: campana (un contenido, todos los formatos de un preset) y jerarquia_tope_secundario.
 
 formatos:
   cuadrado:  {ancho: 1080, alto: 1080, vista_css: 390, uso: "feed 1:1 (Instagram, LinkedIn)"}
@@ -758,6 +759,14 @@ parametros:
     defecto: false
     descripcion: si las filas no caben en su ancho, achica valor y número juntos (nunca por debajo de la etiqueta)
     origen: "formatos de celular (2026-11-06): con datos fuertes a 11 px CSS, «Jueves 19 nov 2026» no cabe en 7 de 12 columnas"
+  jerarquia_tope_secundario:
+    capa: maquetacion
+    nivel: principal
+    tipo: decimal
+    rango: [0.2, 0.8]
+    defecto: null
+    descripcion: si el título se achica (por ejemplo, por una palabra larga), el kicker y el subtítulo no pasan de esta fracción de su tamaño; nunca bajan del texto mínimo. null = sin tope
+    origen: "prueba del Preset 01 con otro contenido (2026-11-08): con «COORDINACIÓN» el título baja a 70 px y el kicker de 43 px le compite"
   pila_anclaje:
     capa: maquetacion
     nivel: principal

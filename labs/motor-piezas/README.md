@@ -164,7 +164,8 @@ David pidió seguir con otro preset y eligió un post de noticia o artículo: ki
 | 3 · Imagen | `galerias/G14.yaml` · Drive `01_galerias/2026-11-09_G14` | `packs/Q1` (= O1) | a sangre, en caja e ilustración | **elegida la 1°, a sangre** |
 | 4 · Color | `galerias/G15.yaml` · Drive `01_galerias/2026-11-09_G15` | `packs/R1` (= Q1) | base, bajada blanca y panel claro (sin azul de portadas: solo slide) | **elegida la 2°, bajada blanca** |
 | 5 · Pie y detalles | `galerias/G16.yaml` · Drive `01_galerias/2026-11-09_G16` (con `01_detalle.jpg`) | `packs/S1` (= R2) | base, sin cruces, llamado como botón y sin trama | **elegidas la 3° y la 4°: botón y sin trama** |
-| Resultado | `galerias/G17.yaml` · Drive `01_galerias/2026-11-09_G17` | `packs/P02-noticia-4x5.yaml` (familia `presets/P02.yaml`) | el preset y una prueba con otro artículo | faltan los otros formatos |
+| Resultado | `galerias/G17.yaml` · Drive `01_galerias/2026-11-09_G17` | `packs/P02-noticia-4x5.yaml` (familia `presets/P02.yaml`) | el preset y una prueba con otro artículo | listo en 4:5 |
+| Formatos | `galerias/G18.yaml` · Drive `01_galerias/2026-11-09_G18` | `packs/P02-noticia-4x5.yaml` | 1:1 (dos), 9:16, LinkedIn (computador y celular) y 16:9 | espera la elección de David |
 
 El Preset 02 queda en `packs/P02-noticia-4x5.yaml`, un pack plano con el recorrido de decisiones.
 - Reproduce la elección de G16 (SVG idéntico).
@@ -212,6 +213,7 @@ python galeria.py --definicion galerias/G14.yaml              # preset 02, paso 
 python galeria.py --definicion galerias/G15.yaml              # preset 02, paso 4: color (salida/G15)
 python galeria.py --definicion galerias/G16.yaml              # preset 02, paso 5: pie y detalles (salida/G16)
 python galeria.py --definicion galerias/G17.yaml              # preset 02, resultado y prueba (salida/G17)
+python galeria.py --definicion galerias/G18.yaml              # preset 02 en más formatos (salida/G18)
 python motor.py pieza --pack packs/P01-save-the-date-slide.yaml --contenido contenido/otro.yaml --salida salida/p01
 python catalogar_imagenes.py                                   # regenera imagenes.yaml desde los PNG
 python analisis/medir_piezas.py                                # re-mide las seis elegidas

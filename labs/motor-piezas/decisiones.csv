@@ -78,3 +78,9 @@ numero,codigo,pack,comentario_david,fecha
 4°,G16-S4,packs/S4-noticia-sin-trama.yaml,3 y 4,2026-11-09
 1°,G17-P02,packs/P02-noticia-4x5.yaml,,
 2°,G17-P02-caso,packs/P02-noticia-4x5.yaml,,
+1°,G18-T1,packs/T1-noticia-1x1-banda.yaml,,
+2°,G18-T2,packs/T2-noticia-1x1-sin-bajada.yaml,,
+3°,G18-T3,packs/T3-noticia-historia.yaml,,
+4°,G18-T4,packs/T4-noticia-linkedin-computador.yaml,,
+5°,G18-T5,packs/T5-noticia-linkedin-celular.yaml,,
+6°,G18-T6,packs/T6-noticia-slide.yaml,,

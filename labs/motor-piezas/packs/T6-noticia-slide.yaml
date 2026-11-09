@@ -1,0 +1,9 @@
+id: T6
+nombre: "16:9 · Diapositiva: banda abajo con titular y bajada, imagen arriba"
+alternativa: p02-formatos
+paso: formatos
+hereda: packs/P02-noticia-4x5.yaml
+decision_david: null
+valores:
+  formato: slide
+  texto_minimo_css: 14      # vista en notebook, como la diapositiva del Preset 01

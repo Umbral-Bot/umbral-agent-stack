@@ -1,0 +1,9 @@
+id: T2
+nombre: "1:1 · Banda en la mitad, sin bajada: el titular crece"
+alternativa: p02-formatos
+paso: formatos
+hereda: packs/P02-noticia-4x5.yaml
+decision_david: null
+valores:
+  formato: cuadrado
+  densidad_texto: media     # la bajada queda para el texto del post

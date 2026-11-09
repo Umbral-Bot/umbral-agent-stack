@@ -67,7 +67,16 @@ TOKEN="CANARIO-$(date -u +%Y%m%d%H%M%S)"
 PROMPT="Responde unicamente con ${TOKEN} y nada mas."
 START=$(date +%s%3N 2>/dev/null || date +%s000)
 
-OUT=$(timeout 180 "$OPENCLAW_BIN" agent --agent "$AGENT" -m "$PROMPT" --json 2>&1)
+# DIHR UAS D2 (2026-11-09): el canario corría DENTRO de la sesión principal del
+# agente (la de Telegram de David): cada sonda dejaba una entrada en su historial
+# y competía con su uso real (en 24 h: 35 fallos de 48 ticks; 25/25 chat.abort de
+# la sesión main coincidieron con un fallo del canario). Desde ahora la sonda usa
+# una sesión propia por agente. Flag real de `openclaw agent` 2026.10.10:
+# --session-key <key> (forma agent:<id>:<key>). Sobrescribible por entorno con
+# UMBRAL_CANARY_SESSION_KEY; no existe --light-context y no se cambia el modelo
+# porque el canario mide el primario.
+CANARY_SESSION_KEY="${UMBRAL_CANARY_SESSION_KEY:-agent:${AGENT}:canario}"
+OUT=$(timeout 180 "$OPENCLAW_BIN" agent --agent "$AGENT" --session-key "$CANARY_SESSION_KEY" -m "$PROMPT" --json 2>&1)
 RC=$?
 END=$(date +%s%3N 2>/dev/null || date +%s000)
 MS=$(( END - START ))

@@ -1,0 +1,8 @@
+id: O4
+nombre: "Titular mediano · el titular baja y la banda gana aire"
+alternativa: p02-paso2
+paso: jerarquia
+hereda: packs/O1-noticia-jerarquia-base.yaml
+decision_david: null
+valores:
+  titulo_altura_relativa: 0.06   # mayúscula del 6 % del alto (antes la llenaba la banda: 156 px)

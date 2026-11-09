@@ -159,7 +159,8 @@ David pidió seguir con otro preset y eligió un post de noticia o artículo: ki
 
 | Paso | Galería | Base | Presets | Estado |
 |---|---|---|---|---|
-| 1 · División | `galerias/G12.yaml` · Drive `01_galerias/2026-11-09_G12` | `packs/N1` (hereda la identidad de P01) | banda abajo, banda arriba (`banda_arriba`), columna ancha y a sangre bajo velo | espera la elección de David |
+| 1 · División | `galerias/G12.yaml` · Drive `01_galerias/2026-11-09_G12` | `packs/N1` (hereda la identidad de P01) | banda abajo, banda arriba (`banda_arriba`), columna ancha y a sangre bajo velo | **elegida la 1°, banda abajo** |
+| 2 · Jerarquía | `galerias/G13.yaml` · Drive `01_galerias/2026-11-09_G13` | `packs/O1` (= N1) | base, solo titular, bajada protagonista y titular mediano | espera la elección de David |
 
 Comentarios de David sobre G01 (en `decisiones.csv`):
 - **1°:** faltan ajustes de proporción y composición.
@@ -196,6 +197,7 @@ python galeria.py --definicion galerias/G09.yaml              # preset 01 en Lin
 python galeria.py --definicion galerias/G10.yaml              # familia completa y prueba con otro contenido (salida/G10)
 python galeria.py --definicion galerias/G11.yaml              # preset 01 definitivo (salida/G11)
 python galeria.py --definicion galerias/G12.yaml              # preset 02, paso 1: división (salida/G12)
+python galeria.py --definicion galerias/G13.yaml              # preset 02, paso 2: jerarquía (salida/G13)
 python motor.py pieza --pack packs/P01-save-the-date-slide.yaml --contenido contenido/otro.yaml --salida salida/p01
 python catalogar_imagenes.py                                   # regenera imagenes.yaml desde los PNG
 python analisis/medir_piezas.py                                # re-mide las seis elegidas

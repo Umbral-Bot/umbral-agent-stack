@@ -4,7 +4,7 @@ alternativa: p02-paso1
 paso: division
 hereda: packs/P01-save-the-date-slide.yaml   # misma identidad que el Preset 01: color de marca, trama, jerarquía protegida
 contenido: contenido/articulo-ejemplo.yaml
-decision_david: null
+decision_david: "G12 1°, 2026-11-09: elegida para el paso 1 del Preset 02 («1° Banda abajo»)"
 valores:
   formato: vertical         # 4:5, el feed de LinkedIn e Instagram
   texto_minimo_css: 11      # visto en el celular

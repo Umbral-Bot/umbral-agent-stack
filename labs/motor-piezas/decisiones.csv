@@ -58,7 +58,11 @@ numero,codigo,pack,comentario_david,fecha
 6°,G11-K1-web,packs/K1-formato-1x1-columna.yaml,,
 7°,G11-K3-web,packs/K3-formato-4x5-columna.yaml,,
 8°,G11-L2-web,packs/L2-linkedin-computador.yaml,,
-1°,G12-N1,packs/N1-noticia-banda-abajo.yaml,,
+1°,G12-N1,packs/N1-noticia-banda-abajo.yaml,1° Banda abajo,2026-11-09
 2°,G12-N2,packs/N2-noticia-banda-arriba.yaml,,
 3°,G12-N3,packs/N3-noticia-columna.yaml,,
 4°,G12-N4,packs/N4-noticia-sangre-velo.yaml,,
+1°,G13-O1,packs/O1-noticia-jerarquia-base.yaml,,
+2°,G13-O2,packs/O2-noticia-solo-titular.yaml,,
+3°,G13-O3,packs/O3-noticia-bajada-grande.yaml,,
+4°,G13-O4,packs/O4-noticia-titular-mediano.yaml,,

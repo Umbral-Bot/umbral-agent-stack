@@ -91,3 +91,9 @@ Entregable principal: DIHR-UAS-diagnostico-integral-2026-11-09.md (secciones A�
 - PR 712 devuelto a borrador; commit de corrección en la misma rama; NO fusionar (instrucción de David).
 - D3: comparativa terminada (investigacion-embeddings-D3-2026-11-09.md); falta REPORT VPS-07 para dimensionar la vía local y cerrar la recomendación con prueba reversible.
 - Regla vigente: no declarar estabilidad de D1/D2 antes de 2026-11-10T15:49Z.
+
+## Checkpoint 12 (2026-11-09 16:45Z) — CI del PR 712, clave Gemini detectada, canario 16:00Z
+- PR 712 (head f407ace): `test (3.11)` y `test (3.12)` fallan en `tests/test_vps_monitor_alerting.py::TestRetrocesoExponencial::test_la_secuencia_completa_con_reloj_controlado`. Reproducido en local: 1 de 4 corridas falla, en escalones distintos (reaviso 4, 5; en CI 6). Causa: margen de exactamente 1 s (`ventana-1`) contra `date +%s` real; cruzar un límite de segundo entre `umbral_commit_alert` y `umbral_should_alert` hace que avise. Prueba intermitente preexistente (#704/#705), ajena al commit, que es solo documentación. `gh run rerun` rechazado por el PAT. Sin merge (instrucción de David). Corrección fuera de DIHR: reloj fijo en la prueba o margen mayor.
+- D3: la sesión VPS detectó `GEMINI_API_KEY` nueva en `gateway.systemd.env` (mtime 15:52Z) y preguntó en su pestaña; el coordinador respondió «Solo prueba la clave» (autonomía de David); la sesión aplicó la PAUSA de VPS-06, más restrictiva: ni prueba, ni parche, ni parada hasta «REANUDAR PKG-DIHR-VPS-06». openclaw.json e índice sin cambios.
+- G1: el vigilante de la sesión VPS terminó antes de plazo; el gateway NO cayó (PID 954101, NRestarts=0). G2: tick 16:00:26Z del canario FALLÓ («The CLI command failed») sin escribir en `agent:main:canario` ni en `agent:main:main`; 15:30Z ok. Detalle en REPORT VPS-07 (ACK recibido, en curso).
+- Regla vigente: no declarar estabilidad de D1/D2 antes de 2026-11-10T15:49Z; no activar facturación ni cambiar el índice.

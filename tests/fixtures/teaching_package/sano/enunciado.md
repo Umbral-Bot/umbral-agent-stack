@@ -1,0 +1,1 @@
+Enunciado sintetico: cubicar muros.

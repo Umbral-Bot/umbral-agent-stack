@@ -157,6 +157,15 @@ Después de la primera entrega, David revisó G01 y pidió avanzar de a un paso:
   - `presets/P01.yaml` reúne los cuatro formatos; `motor.py campana` genera la campaña completa desde un contenido.
   - G10 lo probó con otro contenido (un webinar). De ahí salió la regla de jerarquía protegida, que David sumó al preset («Sí, sumarla»).
   - G11 es la familia definitiva.
+- **Preset 02 · post de noticia (2026-11-09):** David eligió el tipo de pieza.
+  - Cinco pasos en G12–G16: banda abajo, jerarquía base, imagen a sangre, bajada blanca, y llamado como botón sin trama.
+  - Resultado en G17: `packs/P02-noticia-4x5.yaml` y `presets/P02.yaml`. El contenido puede traer su propia imagen (`imagen:`).
+  - Más formatos en G18 (1:1, 9:16, LinkedIn y 16:9), a la espera de su elección.
+  - El botón es solo de este preset: David lo aclaró («no a todos, solo a ese»).
+- **CI (2026-11-09):** `test (3.12)` falló en `d714886d` por `tests/test_vps_monitor_alerting.py::TestRetrocesoExponencial::test_la_secuencia_completa_con_reloj_controlado`.
+  - Es una prueba intermitente que este PR no toca: el reloj simulado se adelanta 3599 s, pero el script compara con la hora real, y si pasa un segundo entre pasos avisa antes de tiempo.
+  - Pasó en 3.11 y en `main`. No hubo permiso para relanzar el job (el token no tiene Actions), así que se reintentó con un push.
+  - El arreglo corresponde al dueño del monitor de la VPS.
 - **Falta:**
   - La revisión de este PR (Claude del VPS y Rick GPT).
   - Dos decisiones de marca abiertas: Inter Display en titulares e imágenes MJ fijas. Las otras dos tienen señal de David: turquesa #2DD4BF como texto en oscuro y LinkedIn pensado para computador.

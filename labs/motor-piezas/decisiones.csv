@@ -70,5 +70,9 @@ numero,codigo,pack,comentario_david,fecha
 2°,G14-Q2,packs/Q2-noticia-imagen-caja.yaml,,
 3°,G14-Q3,packs/Q3-noticia-ilustracion.yaml,,
 1°,G15-R1,packs/R1-noticia-color-base.yaml,,
-2°,G15-R2,packs/R2-noticia-bajada-blanca.yaml,,
+2°,G15-R2,packs/R2-noticia-bajada-blanca.yaml,2° Bajada blanca,2026-11-09
 3°,G15-R3,packs/R3-noticia-panel-claro.yaml,,
+1°,G16-S1,packs/S1-noticia-pie-base.yaml,,
+2°,G16-S2,packs/S2-noticia-sin-cruces.yaml,,
+3°,G16-S3,packs/S3-noticia-boton.yaml,,
+4°,G16-S4,packs/S4-noticia-sin-trama.yaml,,

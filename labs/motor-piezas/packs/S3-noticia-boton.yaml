@@ -1,0 +1,8 @@
+id: S3
+nombre: "Llamado como botón · bloque turquesa con el texto en el color del fondo, junto al logo"
+alternativa: p02-paso5
+paso: pie
+hereda: packs/S1-noticia-pie-base.yaml
+decision_david: null
+valores:
+  cta_estilo: boton

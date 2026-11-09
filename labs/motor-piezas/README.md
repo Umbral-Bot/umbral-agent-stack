@@ -162,7 +162,8 @@ David pidió seguir con otro preset y eligió un post de noticia o artículo: ki
 | 1 · División | `galerias/G12.yaml` · Drive `01_galerias/2026-11-09_G12` | `packs/N1` (hereda la identidad de P01) | banda abajo, banda arriba (`banda_arriba`), columna ancha y a sangre bajo velo | **elegida la 1°, banda abajo** |
 | 2 · Jerarquía | `galerias/G13.yaml` · Drive `01_galerias/2026-11-09_G13` | `packs/O1` (= N1) | base, solo titular, bajada protagonista y titular mediano | **elegida la 1°, base** |
 | 3 · Imagen | `galerias/G14.yaml` · Drive `01_galerias/2026-11-09_G14` | `packs/Q1` (= O1) | a sangre, en caja e ilustración | **elegida la 1°, a sangre** |
-| 4 · Color | `galerias/G15.yaml` · Drive `01_galerias/2026-11-09_G15` | `packs/R1` (= Q1) | base, bajada blanca y panel claro (sin azul de portadas: solo slide) | espera la elección de David |
+| 4 · Color | `galerias/G15.yaml` · Drive `01_galerias/2026-11-09_G15` | `packs/R1` (= Q1) | base, bajada blanca y panel claro (sin azul de portadas: solo slide) | **elegida la 2°, bajada blanca** |
+| 5 · Pie y detalles | `galerias/G16.yaml` · Drive `01_galerias/2026-11-09_G16` (con `01_detalle.jpg`) | `packs/S1` (= R2) | base, sin cruces, llamado como botón y sin trama | espera la elección de David |
 
 Comentarios de David sobre G01 (en `decisiones.csv`):
 - **1°:** faltan ajustes de proporción y composición.
@@ -202,6 +203,7 @@ python galeria.py --definicion galerias/G12.yaml              # preset 02, paso 
 python galeria.py --definicion galerias/G13.yaml              # preset 02, paso 2: jerarquía (salida/G13)
 python galeria.py --definicion galerias/G14.yaml              # preset 02, paso 3: imagen (salida/G14)
 python galeria.py --definicion galerias/G15.yaml              # preset 02, paso 4: color (salida/G15)
+python galeria.py --definicion galerias/G16.yaml              # preset 02, paso 5: pie y detalles (salida/G16)
 python motor.py pieza --pack packs/P01-save-the-date-slide.yaml --contenido contenido/otro.yaml --salida salida/p01
 python catalogar_imagenes.py                                   # regenera imagenes.yaml desde los PNG
 python analisis/medir_piezas.py                                # re-mide las seis elegidas

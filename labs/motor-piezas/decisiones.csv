@@ -66,6 +66,9 @@ numero,codigo,pack,comentario_david,fecha
 2°,G13-O2,packs/O2-noticia-solo-titular.yaml,,
 3°,G13-O3,packs/O3-noticia-bajada-grande.yaml,,
 4°,G13-O4,packs/O4-noticia-titular-mediano.yaml,,
-1°,G14-Q1,packs/Q1-noticia-imagen-sangre.yaml,,
+1°,G14-Q1,packs/Q1-noticia-imagen-sangre.yaml,1° A sangre,2026-11-09
 2°,G14-Q2,packs/Q2-noticia-imagen-caja.yaml,,
 3°,G14-Q3,packs/Q3-noticia-ilustracion.yaml,,
+1°,G15-R1,packs/R1-noticia-color-base.yaml,,
+2°,G15-R2,packs/R2-noticia-bajada-blanca.yaml,,
+3°,G15-R3,packs/R3-noticia-panel-claro.yaml,,

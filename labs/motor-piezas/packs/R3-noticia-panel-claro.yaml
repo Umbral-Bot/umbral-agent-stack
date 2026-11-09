@@ -1,0 +1,8 @@
+id: R3
+nombre: "Panel claro · la banda de texto en el tema claro de la marca"
+alternativa: p02-paso4
+paso: proteccion
+hereda: packs/R1-noticia-color-base.yaml
+decision_david: null
+valores:
+  modo: claro               # fondo, textos, trama y logo pasan a los tokens del tema claro

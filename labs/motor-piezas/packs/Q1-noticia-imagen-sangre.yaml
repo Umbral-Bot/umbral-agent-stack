@@ -3,5 +3,5 @@ nombre: "Base · imagen arriba a sangre hasta los bordes (G13 1°)"
 alternativa: p02-paso3
 paso: imagen
 hereda: packs/O1-noticia-jerarquia-base.yaml
-decision_david: null
+decision_david: "G14 1°, 2026-11-09: elegida para el paso 3 del Preset 02 («1° A sangre»)"
 valores: {}

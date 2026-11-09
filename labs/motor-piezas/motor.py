@@ -499,10 +499,15 @@ class Compositor:
         cta_bajo_filas = bool(hay_cta and filas and ubicacion_filas == 'al_pie')
         boton = v['cta_estilo'] == 'boton'
         alto_cta = (self.mod(v['espacio_filas_cuerpo'])
-                    + (self.alto_boton_cta() if boton else self.medir('cta', 'H', t['cta'])['cap'])
+                    + (self.alto_boton_cta(zona.w) if boton else self.medir('cta', 'H', t['cta'])['cap'])
                     if cta_bajo_filas else 0.0)
+        cta_boton_rel = None    # tope relativo del botón cuando el llamado cierra la pila
         if hay_cta and not cta_bajo_filas:
-            previo = bloque('cta', 'cta', self.c['cta'], v['espacio_filas_cuerpo'])
+            if boton:
+                cta_boton_rel = (previo or 0.0) + self.mod(v['espacio_filas_cuerpo'])
+                previo = cta_boton_rel + self.alto_boton_cta(zona.w)
+            else:
+                previo = bloque('cta', 'cta', self.c['cta'], v['espacio_filas_cuerpo'])
         alto = previo or 0.0
         if not solo_medir and self.notas_fijas:
             self.notas += self.notas_fijas
@@ -530,12 +535,18 @@ class Compositor:
                         ((*p[:4], p[4] + corrimiento, *p[5:]) if p[1].split('-')[0] in ('cuerpo', 'cta') else p)
                         for p in plan]
                 alto += corrimiento
+                if cta_boton_rel is not None:
+                    cta_boton_rel += corrimiento
         for p in plan:
             if p[0] == 'filas':
                 self.bloque_filas(filas, zona.x, y0 + p[1], ancho_filas)
             else:
                 _, id_, rol, texto, base, tam, color = p
                 self.agregar_texto(id_, rol, texto, xt, y0 + base, tam, ancla, color)
+        if cta_boton_rel is not None:
+            # el llamado como botón también cuando no cabe junto al logo y va al final de la pila
+            self.boton_cta(xt, y0 + cta_boton_rel + self.alto_boton_cta(zona.w) / 2, ancla, zona.w)
+            self.notas.append('el llamado no cabe junto al logo: el botón va al final del bloque de texto')
         fondo = y0 + alto
         tope_titulo = next(y0 + p[4] - cap_t for p in plan if p[0] == 'texto' and p[1] == 'titulo-1')
         info = {'tope': y0, 'fondo': fondo, 'fondo_pila': fondo, 'fondo_titulo': y0 + fondo_titulo,
@@ -563,8 +574,8 @@ class Compositor:
             info['filas'] = Rect(zona.x, tope, ancho_filas, m['total'])
             if cta_bajo_filas:
                 if boton:
-                    h = self.alto_boton_cta()
-                    caja = self.boton_cta(xt, info['fondo'] + alto_cta - h / 2, ancla)
+                    h = self.alto_boton_cta(zona.w)
+                    caja = self.boton_cta(xt, info['fondo'] + alto_cta - h / 2, ancla, zona.w)
                     base = caja.y2
                 else:
                     base = info['fondo'] + alto_cta
@@ -594,22 +605,36 @@ class Compositor:
         cabe = cta is None or ancho + 2 * self.medianil + cta['avance'] + relleno <= (x1 - x0)
         return {'alto': alto, 'ancho': ancho, 'cta': cta, 'cta_cabe': cabe, 'x0': x0, 'x1': x1, 'comp': comp}
 
-    def alto_boton_cta(self) -> float:
-        return self.medir('cta', 'H', self.t['cta'])['cap'] + 2 * self.mod(self.v['cta_boton_relleno_v'])
+    def lineas_cta(self, ancho_max: float | None = None) -> list[str]:
+        """El llamado en una línea o, si el botón no cabe en `ancho_max`, partido (prefiere el «·»)."""
+        if ancho_max is None:
+            return [self.preparar_texto('cta', self.c['cta'])]
+        relleno = 2 * self.mod(self.v['cta_boton_relleno_h'])
+        return self.partir('cta', self.c['cta'], self.t['cta'], ancho_max - relleno)
 
-    def boton_cta(self, x: float, y_centro: float, anclaje: str) -> Rect:
+    def alto_boton_cta(self, ancho_max: float | None = None) -> float:
+        n = len(self.lineas_cta(ancho_max))
+        cap = self.medir('cta', 'H', self.t['cta'])['cap']
+        return (cap + (n - 1) * self.t['cta'] * self.v['texto_interlineado']
+                + 2 * self.mod(self.v['cta_boton_relleno_v']))
+
+    def boton_cta(self, x: float, y_centro: float, anclaje: str, ancho_max: float | None = None) -> Rect:
         """Llamado como botón: bloque de acento con el texto en el color del fondo (cta_estilo: boton)."""
-        v = self.v
-        m = self.medir('cta', self.preparar_texto('cta', self.c['cta']), self.t['cta'])
+        v, tam = self.v, self.t['cta']
+        lineas = self.lineas_cta(ancho_max)
+        cap = self.medir('cta', 'H', tam)['cap']
         ph, pv = self.mod(v['cta_boton_relleno_h']), self.mod(v['cta_boton_relleno_v'])
-        w, h = m['avance'] + 2 * ph, m['cap'] + 2 * pv
+        w = max(self.medir('cta', l, tam)['avance'] for l in lineas) + 2 * ph
+        h = self.alto_boton_cta(ancho_max)
         bx = x if anclaje == 'start' else (x - w if anclaje == 'end' else x - w / 2)
         caja = Rect(bx, y_centro - h / 2, w, h)
         self.el.append({'tipo': 'boton', 'caja': caja, 'radio': self.ctx.reglas['radio_en_linea_px']})
         # cuenta como fondo al medir el contraste del texto que lleva encima
         self.velos.append({'rect': caja, 'color': self.rgba('cta_boton'), 'fijo': True, 'id': 'cta-boton'})
-        self.agregar_texto('cta', 'cta', self.c['cta'], caja.x + w / 2, caja.y + pv + m['cap'], self.t['cta'],
-                           'middle', 'cta_boton_texto')
+        for i, linea in enumerate(lineas):
+            sufijo = '' if len(lineas) == 1 else f'-{i + 1}'
+            self.agregar_texto(f'cta{sufijo}', 'cta', linea, caja.x + w / 2,
+                               caja.y + pv + cap + i * tam * v['texto_interlineado'], tam, 'middle', 'cta_boton_texto')
         self.zonas['cta_boton'] = caja.a_dict()
         return caja
 
@@ -922,6 +947,7 @@ class Compositor:
             self.ajustar_velos()
         self.resolver_logo()
         self._ordenar_capas()
+        self.notas = list(dict.fromkeys(self.notas))
 
     def _ordenar_capas(self):
         orden = ['fondo', 'imagen', 'velo', 'trama', 'cruz', 'ilustracion', 'linea', 'boton', 'texto', 'logo',
@@ -1184,7 +1210,8 @@ class Compositor:
             mid = (lo + hi) / 2
             lo, hi = (mid, hi) if alto(mid) <= zona.h else (lo, mid)
         nuevo = math.floor(lo * 10) / 10
-        self.notas.append(f'título reducido de {tam:.0f} a {nuevo:.0f} px para caber en {zona.h:.0f} px de alto')
+        if tam - nuevo >= 1:
+            self.notas.append(f'título reducido de {tam:.0f} a {nuevo:.0f} px para caber en {zona.h:.0f} px de alto')
         return nuevo
 
     def _division_columna(self, p: dict):

@@ -1,0 +1,32 @@
+# DIHR UAS · Plan de pruebas de aceptación con comandos (G1–G12)
+
+Complementa la sección G del documento integral. Cada prueba indica quién la ejecuta, el comando o lectura exacta, el criterio y la evidencia que debe guardarse. Todas las pruebas son de lectura salvo donde se marca **[requiere aprobación]**: esas solo se ejecutan tras la decisión correspondiente de David. «Verificado» significa salida de comando con hora UTC guardada en `evidencia/`.
+
+| # | Prueba | Precondición | Ejecuta | Comando / lectura | Criterio PASS | Evidencia |
+|---|---|---|---|---|---|---|
+| G1 | Gateway estable tras D1 | D1 aprobado y aplicado **[requiere aprobación]** | sesión «UAS - VPS» | `systemctl --user show openclaw-gateway.service -p NRestarts,ActiveEnterTimestamp,MemoryCurrent`; `journalctl --user -u openclaw-gateway.service --since "<hora de aplicación>" \| grep -ciE "heap out of memory\|Ineffective mark-compacts"`; `ls -la ~/*.heapsnapshot ~/.openclaw/*.heapsnapshot 2>/dev/null` | En 24 h: 0 líneas OOM y NRestarts sin cambio, **o** 1 snapshot escrito antes del reinicio | salidas con hora; tamaño del snapshot |
+| G1b | Hipótesis «fuga en sesión main» (sin cambios) | ninguna | sesión «UAS - VPS» | Serie de 5 lecturas a 60 s de RSS del gateway (`ps -o rss= -p <pid>`) y tamaño de la base de sesiones; repetir tras D1 paso 1 | La pendiente MB/min baja ≥ 50 % tras compactar la sesión main; si no baja, la fuga no está en el transcript | tabla de 10 lecturas |
+| G2 | Canario aislado tras D2 | D2 aprobado; cron actualizado **[requiere aprobación]** | sesión «UAS - VPS» | `grep -c '"kind":"canary_inference"' ~/.config/umbral/ops_log.jsonl` por estado en 24 h; `openclaw sessions list --agent main` (o equivalente) para comprobar que la sesión `canary` existe y que main no recibe nuevas entradas a :03/:33 | fallos < 5 % de 48 ticks; 0 entradas nuevas del canario en la sesión main; existe sesión `canary` | ops_log filtrado; listado de sesiones |
+| G3 | Memoria tras D3 | D3 aprobado **[requiere aprobación]** | sesión «UAS - VPS» | `openclaw memory status --agent main` (llama al proveedor: solo tras aprobación); una consulta `memory_search` con un término presente en MEMORY.md | provider gemini, fuentes > 0, chunks > 0; la consulta devuelve el fragmento esperado | salida CLI |
+| G4 | Tailnet tras D4 | D4 aprobado; login de David **[requiere intervención]** | David + VPS + TARRO | En VPS: `tailscale status --json \| jq '.Self.Online, .Peer[].HostName, .Peer[].KeyExpiry'`; en TARRO (PowerShell admin): `Get-Service Tailscale; tailscale status`; en PCRick: `tailscale status` | VPS, TARRO y PCRick Online; KeyExpiry vacío o lejano; `tailscale ping pcrick` < 100 ms desde VPS | tres salidas |
+| G5 | E2E por el nodo (no requiere Tailscale) | gateway < 3 h desde reinicio; PCRick conectado; `system.execApprovals.get` leído; **[requiere aprobación]** porque `/run` escribe una tarea | VPS ejecuta; PCRick observa | ID `UAS-E2E-<UTC>-<8hex>`; `openclaw nodes invoke --node PCRick --command system.run` con script PowerShell que hace `GET /health` y `POST /run {"task":"ping","input":{"correlation_id":ID}}` al Worker local 127.0.0.1:8088 y devuelve el eco | ID presente en 4 trazas (journal VPS, log nodo PCRick, log Worker PCRick, registro privado VPS); `/run` 200 con eco exacto; < 30 s; una sola ejecución | 4 recibos + ID |
+| G6 | Secretos tras D7 | D7 aprobado **[requiere aprobación]** | David/TARRO + VPS | TARRO: `Test-Path C:\Users\david\openclaw` → False o movido a `.ssh`; VPS: `ssh-keygen -lf ~/.ssh/authorized_keys` sin la huella `SHA256:ZBeipjmQ…` si se retiró, o con ella si se decidió conservar en `.ssh`; lista fechada de secretos rotados (sin valores) | cada secreto expuesto tiene fecha de rotación; clave suelta retirada o reubicada; `env.rick-oauth.pending` aplicado o destruido | lista fechada; salidas |
+| G7 | Respaldo tras R2.2 | destino elegido | sesión «UAS - VPS» | `restic -r <repo> check --read-data-subset 1/10`; `restic restore latest --target /tmp/restore-test --include "*/main.sqlite"`; `sqlite3 /tmp/restore-test/.../main.sqlite "PRAGMA integrity_check;"` | check OK; integrity_check = ok | logs |
+| G8 | Encargo real reanudable (Q10) | V1 | owner del encargo | ficha Notion del encargo con resultado, evidencia enlazada y evento de reanudación tras pausa 24–48 h | resultado recuperable; reanudación sin repetir efectos (misma identidad de operación) | ficha + ledger |
+| G9 | Comparativa tras D6 | D6 a–d decididas | preparador PCRick + juez fresco | paquete con manifiesto (run_id, T0, corte), sorteo congelado, trazas por pieza; juez sin ver identidades | bloques con 2 candidatos sobre el mismo caso; C3 con salida; informe del juez sin NO_EVALUABLE por falta de trazas | paquete + informe |
+| G10 | Observabilidad (E1) | E1.1 implementado | coordinador | reconstruir una corrida G5 desde journal, ops_log, ledger y Notion buscando solo el `trace_id` | los 4 recibos se encuentran por id sin ayuda del operador | consulta |
+| G11 | Operación sin TARRO (E2.3+E2.4) | runner en VPS | coordinador | con TARRO y PCRick apagados: emitir paquete → runner VPS ejecuta → REPORT → Notion | ciclo completo | ledger |
+| G12 | Poller Notion tras D10 | D10 aprobado **[requiere aprobación]** | sesión «UAS - VPS» | conteo de `notion.poll_comments` en ops_log por hora antes/después; latencia de reacción a un comentario de prueba | ≤ 120 llamadas/h; reacción ≤ 90 s; 0 fallos nuevos | ops_log |
+
+## Pruebas ya ejecutables hoy (sin aprobación) y su estado
+
+| Prueba | Estado | Fuente |
+|---|---|---|
+| G1b serie de RSS y tamaño de sesión | en curso (PKG-DIHR-VPS-03 A1) | REPORT VPS-03 |
+| Correlación canario ↔ chat.abort minuto a minuto | en curso (VPS-03 A2) | REPORT VPS-03 |
+| Claves de configuración de memoria y presencia de GOOGLE_API_KEY | en curso (VPS-03 A3) | REPORT VPS-03 |
+| Huellas de authorized_keys vs clave suelta de TARRO | en curso (VPS-03 A4); huella TARRO ya obtenida: ed25519 SHA256:ZBeipjmQ… | ledger DIHR-LOCAL-TARRO-02 |
+| execApprovals del nodo PCRick (lectura) | en curso (VPS-03 A5) | REPORT VPS-03 |
+| PBIX docente C23 existe con hash reportado | **PASS** | TARRO 07:25Z: `ensayo-claude-20260917/AEC23_OBRA01_C23_docente.pbix`, 125.351 B, SHA-256 b7aefd23… |
+| Regla de firewall que abre 8088 en TARRO | **Hallazgo**: la única regla Allow para 8088 es la de la app Spotify (WindowsApps), no una regla de UAS | TARRO 07:25Z |
+| Permisos PCRick vigentes y copias de respaldo | en curso (PKG-DIHR-PCRICK-03) | REPORT PCRick-03 |

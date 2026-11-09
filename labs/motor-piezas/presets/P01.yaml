@@ -1,0 +1,10 @@
+id: P01
+nombre: "Save the date · tercio, datos fuertes, imagen lateral, color de marca y trama"
+tipo_contenido: "anuncio de evento con fecha, hora y lugar, y una imagen fija"
+estado: "aprobado por David, 2026-11-06 a 2026-11-08"
+# un pack por formato; cada uno trae su recorrido de decisiones
+formatos:
+  slide: packs/P01-save-the-date-slide.yaml       # 16:9 · tercio (G02–G06, G07)
+  cuadrado: packs/K1-formato-1x1-columna.yaml     # 1:1 · columna ancha, todos los datos (G08 1°)
+  vertical: packs/K3-formato-4x5-columna.yaml     # 4:5 · columna ancha, todos los datos (G08 3°)
+  linkedin: packs/L2-linkedin-computador.yaml     # 1200×627 · pensado para computador, solo la fecha (G09 2°)

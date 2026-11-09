@@ -36,5 +36,17 @@ numero,codigo,pack,comentario_david,fecha
 3°,G08-K3,packs/K3-formato-4x5-columna.yaml,1 y 3,2026-11-07
 4°,G08-K4,packs/K4-formato-4x5-banda.yaml,,
 1°,G09-L1,packs/L1-linkedin-celular.yaml,,
-2°,G09-L2,packs/L2-linkedin-computador.yaml,,
+2°,G09-L2,packs/L2-linkedin-computador.yaml,2,2026-11-08
 3°,G09-L3,packs/L3-linkedin-banda.yaml,,
+1°,G10-P01,packs/P01-save-the-date-slide.yaml,,
+2°,G10-K1,packs/K1-formato-1x1-columna.yaml,,
+3°,G10-K3,packs/K3-formato-4x5-columna.yaml,,
+4°,G10-L2,packs/L2-linkedin-computador.yaml,,
+5°,G10-P01-web,packs/P01-save-the-date-slide.yaml,,
+6°,G10-K1-web,packs/K1-formato-1x1-columna.yaml,,
+7°,G10-K3-web,packs/K3-formato-4x5-columna.yaml,,
+8°,G10-L2-web,packs/L2-linkedin-computador.yaml,,
+9°,G10-M1-web,packs/M1-jerarquia-protegida-p01.yaml,,
+10°,G10-M2-web,packs/M2-jerarquia-protegida-k1.yaml,,
+11°,G10-M3-web,packs/M3-jerarquia-protegida-k3.yaml,,
+12°,G10-M4-web,packs/M4-jerarquia-protegida-l2.yaml,,

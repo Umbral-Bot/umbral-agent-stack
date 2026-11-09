@@ -110,7 +110,8 @@ El contenido y el formato son entradas, no pasos. Cada galería cambia un solo p
 | 4 · Protección del texto (color) | `galerias/G05.yaml` · Drive `01_galerias/2026-11-06_G05` (con `01_detalle.jpg`) | sangrado lateral: el texto ya va sobre fondo liso (`packs/H1`) | base, etiquetas blancas, turquesa claro y fondo de portada | **elegido el 1°, base** (etiquetas grises y turquesa #2DD4BF) |
 | 5 · Pie y detalles | `galerias/G06.yaml` · Drive `01_galerias/2026-11-06_G06` (con `01_detalle.jpg`) | color de marca sobre el panel liso (`packs/J1`) | base, sin cruces, llamado como botón (`cta_estilo`) y trama en el panel (`trama_alcance`) | **elegido el 4°, trama en el panel** |
 | Formatos · 1:1 y 4:5 | `galerias/G08.yaml` · Drive `01_galerias/2026-11-06_G08` | el Preset 01 (`packs/P01`) a 11 px CSS | columna ancha (todos los datos) y banda (solo la fecha), por formato | **elegidas la 1° y la 3°: columna ancha en los dos** |
-| Formatos · LinkedIn | `galerias/G09.yaml` · Drive `01_galerias/2026-11-07_G09` | el Preset 01 (`packs/P01`) | columna para celular, columna para computador y banda para computador con todos los datos (`vista_css`) | espera la elección de David |
+| Formatos · LinkedIn | `galerias/G09.yaml` · Drive `01_galerias/2026-11-07_G09` | el Preset 01 (`packs/P01`) | columna para celular, columna para computador y banda para computador con todos los datos (`vista_css`) | **elegida la 2°: computador, solo la fecha** |
+| Prueba · otro contenido | `galerias/G10.yaml` · Drive `01_galerias/2026-11-08_G10` | la familia `presets/P01.yaml` | webinar tal cual y con `jerarquia_tope_secundario: 0.45` | espera que David decida si adopta la regla |
 
 ### Resultado: Preset 01
 
@@ -130,6 +131,25 @@ En celular el texto se ve casi tres veces más chico que en un notebook. Por eso
 - **Banda** (`banda_apilada`): la imagen arriba y solo la fecha.
 
 Si los datos no caben en el ancho, se achican lo justo (`datos_ajuste_ancho`); la fracción de cada división se puede mover con `division_fraccion`. Falta LinkedIn, el formato más apretado.
+
+### Familia y campaña
+
+`presets/P01.yaml` reúne los cuatro packs elegidos:
+- **16:9:** P01.
+- **1:1:** K1.
+- **4:5:** K3.
+- **LinkedIn:** L2.
+
+Con un archivo de contenido sale la campaña completa:
+
+```bash
+python motor.py campana --preset presets/P01.yaml --contenido contenido/webinar-ejemplo.yaml --salida salida/campana-webinar
+```
+
+Prueba con otro contenido (G10, un webinar con «COORDINACIÓN»):
+- Las cuatro piezas cumplen UB-3, sin choques, y los datos largos («Online · Microsoft Teams») se achican lo justo.
+- Hallazgo: el título baja a unos 70 px y en 1:1 y 4:5 el kicker y el subtítulo (43 px) le compiten.
+- La regla opcional `jerarquia_tope_secundario: 0.45` los limita al 45 % del título (31 px) y no cambia el 16:9. Falta que David decida si entra al preset.
 
 Comentarios de David sobre G01 (en `decisiones.csv`):
 - **1°:** faltan ajustes de proporción y composición.
@@ -163,6 +183,7 @@ python galeria.py --definicion galerias/G06.yaml              # paso 5: pie y de
 python galeria.py --definicion galerias/G07.yaml              # preset 01, el resultado (salida/G07)
 python galeria.py --definicion galerias/G08.yaml              # preset 01 en 1:1 y 4:5 (salida/G08)
 python galeria.py --definicion galerias/G09.yaml              # preset 01 en LinkedIn (salida/G09)
+python galeria.py --definicion galerias/G10.yaml              # familia completa y prueba con otro contenido (salida/G10)
 python motor.py pieza --pack packs/P01-save-the-date-slide.yaml --contenido contenido/otro.yaml --salida salida/p01
 python catalogar_imagenes.py                                   # regenera imagenes.yaml desde los PNG
 python analisis/medir_piezas.py                                # re-mide las seis elegidas
@@ -197,5 +218,5 @@ Los insumos del Director (`07_Motor de piezas/00_insumos/`) son de solo lectura.
 
 1. **Inter Display para titulares.** La v2 los dibujó con el corte Display de Inter Variable 4.001, un 3,8 % más estrecho, sin que nadie lo pidiera. El Design System solo trae el corte de texto. ¿Se suma Display o se queda la canónica?
 2. **Acento como texto en oscuro.** El motor usa `#2DD4BF` (`--ub-primary` oscuro) para kickers y números sobre carbón, como la tabla de portadas del Manual §03. El comentario del CSS dice «nunca `color: var(--ub-primary)`». ¿Se confirma o se usa `--ub-primary-text` (`#99F6E4`)? Desde el motor 0.3, el texto chico sobre imagen ya usa `#99F6E4` para llegar a 7:1; la duda sigue abierta para el texto grande y para el texto sobre fondo liso. Señal: en G05 David eligió la 1° (`#2DD4BF` sobre el panel liso) por sobre la 3° (`#99F6E4`).
-3. **Vista supuesta por formato** (`vista_css`): 390 px CSS para redes y 1280 para 16:9. De ahí sale el tamaño mínimo real del texto. Desde el motor 0.3f el pack puede fijarla; G09 compara LinkedIn pensado para celular (390) o para computador (≈555, supuesto).
+3. **Vista supuesta por formato** (`vista_css`): 390 px CSS para redes y 1280 para 16:9. De ahí sale el tamaño mínimo real del texto. Desde el motor 0.3f el pack puede fijarla; G09 compara LinkedIn pensado para celular (390) o para computador (≈555, supuesto). Señal: David eligió la de computador para el Preset 01.
 4. **Imágenes MJ ya hechas:** se tratan como fijas. El PNG sí trae prompt, `--v 8.2` y Job ID (ver `imagenes.yaml`); faltan `--sref`, perfil y semilla.

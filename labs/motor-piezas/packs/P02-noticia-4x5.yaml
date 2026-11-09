@@ -1,0 +1,46 @@
+id: P02
+nombre: "Preset 02 · Post de noticia 4:5: banda abajo, titular grande, imagen a sangre, bajada blanca y llamado como botón"
+tipo_contenido: "post de noticia o artículo (kicker, titular, bajada y llamado), sin datos de evento, con una imagen"
+estado: "aprobado por David en cinco pasos, 2026-11-09"
+contenido: contenido/articulo-ejemplo.yaml
+decision_david: "G16, 2026-11-09 («3 y 4»): cierra los cinco pasos"
+recorrido:      # cada paso está en decisiones.csv y en packs/N*–S*
+  - "base: la identidad del Preset 01 (fondo oscuro, color de marca, jerarquía protegida), en 4:5"
+  - "paso 1 · división: banda abajo, imagen arriba (G12 1°)"
+  - "paso 2 · jerarquía: base, el titular llena la banda y la bajada va debajo (G13 1°)"
+  - "paso 3 · imagen: a sangre (G14 1°)"
+  - "paso 4 · color: bajada blanca (G15 2°)"
+  - "paso 5 · pie y detalles: llamado como botón y sin trama (G16 «3 y 4»)"
+roles_texto:
+  cuerpo: {color: tinta}    # paso 4: bajada blanca (15,8:1)
+valores:
+  # base
+  proceso: C_imagen
+  formato: vertical         # 4:5, feed de LinkedIn e Instagram
+  modo: oscuro
+  columnas: 12
+  texto_minimo_css: 11      # visto en el celular
+  # paso 1 · división
+  division: banda_apilada
+  division_fraccion: 0.5
+  # paso 2 · jerarquía
+  densidad_texto: alta      # entra la bajada (cuerpo)
+  titulo_altura_relativa: 0.12   # el titular llena la banda; manda el alto que queda
+  escala_kicker: 1.4
+  escala_subtitulo: 1.4     # si el contenido trae subtítulo
+  escala_valor: 1.7         # si el contenido trae filas de datos
+  escala_numero: 1.7
+  filas_ubicacion: al_pie
+  jerarquia_tope_secundario: 0.45
+  # paso 3 · imagen
+  imagen_fuente: mj3_V-S17b_0   # la del ejemplo; cada artículo puede traer la suya en el contenido (imagen:)
+  imagen_encaje: sangrado_lateral
+  imagen_registro: parte
+  # paso 4 · color: bajada blanca (roles_texto). Si el texto fuera sobre la imagen, rigen estas dos
+  contraste_sobre_imagen: 10.0
+  colores_sobre_imagen: claros
+  # paso 5 · pie y detalles
+  logo_composicion: "02"
+  logo_altura_relativa: 0.05
+  cta_estilo: boton
+  trama_visible: false

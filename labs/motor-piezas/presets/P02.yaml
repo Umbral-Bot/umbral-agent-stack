@@ -1,0 +1,6 @@
+id: P02
+nombre: "Post de noticia · banda abajo, titular grande, imagen a sangre, bajada blanca y llamado como botón"
+tipo_contenido: "post de noticia o artículo, sin datos de evento; la imagen puede venir con el contenido (imagen:)"
+estado: "aprobado por David en 4:5, 2026-11-09; faltan los otros formatos"
+formatos:
+  vertical: packs/P02-noticia-4x5.yaml           # 4:5 · G12–G16

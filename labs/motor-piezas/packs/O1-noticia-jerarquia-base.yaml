@@ -3,5 +3,5 @@ nombre: "Base · banda abajo (G12 1°): titular, bajada, kicker y llamado"
 alternativa: p02-paso2
 paso: jerarquia
 hereda: packs/N1-noticia-banda-abajo.yaml
-decision_david: null
+decision_david: "G13 1°, 2026-11-09: elegida para el paso 2 del Preset 02 («1° Base»)"
 valores: {}

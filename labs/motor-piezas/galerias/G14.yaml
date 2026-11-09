@@ -1,0 +1,27 @@
+id: G14
+fecha: 2026-11-09
+titulo: "Galería 14 · Preset 02 (post de noticia), paso 3: imagen"
+descripcion: >
+  Paso 3 del Preset 02. Quedan fijas la banda abajo (G12 1°) y la jerarquía base (G13 1°).
+  Tres maneras de que la imagen ocupe la parte de arriba. La imagen a sangre bajo un velo ya
+  se comparó en G12 (4°) y David prefirió la banda. Laboratorio: no publicar.
+resumen: >
+  Preset 02, paso 3: cómo entra la imagen en la parte de arriba. Quedan fijas la banda abajo
+  y la jerarquía base.
+como_elegir: >
+  Elige un número (1° a 3°) y dime qué cambiarías. Ese preset queda fijo y pasamos al paso 4
+  (color).
+contenido: contenido/articulo-ejemplo.yaml
+secciones:
+  - alternativa: p02-paso3
+    titulo: "Paso 3 · Imagen (4:5, 1080×1350)"
+    descripcion: >
+      Cada pieza hereda de la 1° (Q1, que es la G13 1° sin cambios) y cambia solo imagen_encaje.
+    pasos:
+      - "A sangre: la imagen llega a los bordes de arriba y de los lados"
+      - "En caja: la imagen en un bloque alineado a la grilla, con margen y radio de 8 px"
+      - "Ilustración: la isometría vectorial de marca en lugar de la imagen"
+    piezas:
+      - packs/Q1-noticia-imagen-sangre.yaml
+      - packs/Q2-noticia-imagen-caja.yaml
+      - packs/Q3-noticia-ilustracion.yaml

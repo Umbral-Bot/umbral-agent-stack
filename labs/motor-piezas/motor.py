@@ -209,6 +209,13 @@ class Compositor:
         self.logo: dict | None = None
         self.notas: list[str] = []
         self.notas_fijas: list[str] = []  # notas que no se descartan al medir la pila de prueba
+        if contenido.get('imagen'):
+            # la imagen puede venir con el contenido: cada artículo trae la suya
+            if contenido['imagen'] not in ctx.catalogo:
+                raise ValueError(f"la imagen {contenido['imagen']!r} del contenido no está en imagenes.yaml")
+            if contenido['imagen'] != self.v['imagen_fuente']:
+                self.notas.append(f"imagen del contenido: {contenido['imagen']} (el pack traía {self.v['imagen_fuente']})")
+            self.v['imagen_fuente'] = contenido['imagen']
         self.zonas: dict[str, dict] = {}
         self.fondo = None                 # raster 1x del fondo (color + imagen) para medir contraste
 

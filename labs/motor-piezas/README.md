@@ -153,6 +153,14 @@ Prueba con otro contenido (G10, un webinar con «COORDINACIÓN»):
 - La regla `jerarquia_tope_secundario: 0.45` los limita al 45 % del título (31 px) y no cambia el 16:9. David la sumó al preset el 2026-11-09: está en el pack base P01 y la heredan los cuatro formatos.
 - Con la regla, en el workshop solo cambian 1:1 (kicker de 43 a 40 px; título de 87 a 90 px) y 4:5 (kicker de 43 a 41 px). El 16:9, LinkedIn y las cuatro piezas del webinar dan SVG idénticos a los ya vistos.
 
+### Preset 02 · post de noticia o artículo (desde 2026-11-09)
+
+David pidió seguir con otro preset y eligió un post de noticia o artículo: kicker, titular, bajada y llamado, sin fecha ni datos de evento. La base es 4:5 (feed de LinkedIn e Instagram, visto en el celular), con la identidad del Preset 01 para que las piezas se vean de una misma serie. La imagen es `mj3_V-S17b_0` (un brazo robótico construyendo), fija. Se sigue el mismo método de cinco pasos.
+
+| Paso | Galería | Base | Presets | Estado |
+|---|---|---|---|---|
+| 1 · División | `galerias/G12.yaml` · Drive `01_galerias/2026-11-09_G12` | `packs/N1` (hereda la identidad de P01) | banda abajo, banda arriba (`banda_arriba`), columna ancha y a sangre bajo velo | espera la elección de David |
+
 Comentarios de David sobre G01 (en `decisiones.csv`):
 - **1°:** faltan ajustes de proporción y composición.
 - **12°:** destaca por su composición, pero le faltaba contraste en los textos de abajo a la izquierda (medían 4,57–6,28:1).
@@ -187,6 +195,7 @@ python galeria.py --definicion galerias/G08.yaml              # preset 01 en 1:1
 python galeria.py --definicion galerias/G09.yaml              # preset 01 en LinkedIn (salida/G09)
 python galeria.py --definicion galerias/G10.yaml              # familia completa y prueba con otro contenido (salida/G10)
 python galeria.py --definicion galerias/G11.yaml              # preset 01 definitivo (salida/G11)
+python galeria.py --definicion galerias/G12.yaml              # preset 02, paso 1: división (salida/G12)
 python motor.py pieza --pack packs/P01-save-the-date-slide.yaml --contenido contenido/otro.yaml --salida salida/p01
 python catalogar_imagenes.py                                   # regenera imagenes.yaml desde los PNG
 python analisis/medir_piezas.py                                # re-mide las seis elegidas

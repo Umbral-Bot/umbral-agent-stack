@@ -1,0 +1,9 @@
+id: N3
+nombre: "Columna ancha · texto a la izquierda, imagen en franja a la derecha (como la familia P01)"
+alternativa: p02-paso1
+paso: division
+hereda: packs/N1-noticia-banda-abajo.yaml
+decision_david: null
+valores:
+  division: columna_ancha
+  division_fraccion: null

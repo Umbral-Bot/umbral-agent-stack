@@ -1,0 +1,9 @@
+id: N2
+nombre: "Banda arriba · texto arriba con el pie, imagen abajo a sangre"
+alternativa: p02-paso1
+paso: division
+hereda: packs/N1-noticia-banda-abajo.yaml
+decision_david: null
+valores:
+  division: banda_arriba
+  division_fraccion: null

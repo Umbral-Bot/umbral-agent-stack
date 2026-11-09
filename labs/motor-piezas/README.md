@@ -168,6 +168,7 @@ David pidió seguir con otro preset y eligió un post de noticia o artículo: ki
 
 El Preset 02 queda en `packs/P02-noticia-4x5.yaml`, un pack plano con el recorrido de decisiones.
 - Reproduce la elección de G16 (SVG idéntico).
+- El llamado como botón es propio del Preset 02. David lo aclaró («no a todos, solo a ese»): las elecciones de un preset no se extienden a otros, y el Preset 01 sigue con el llamado en texto.
 - Para un post de noticia, la imagen viaja con el contenido: si el archivo de contenido trae `imagen:` (un id de `imagenes.yaml`), reemplaza la del pack.
 - La prueba con otro artículo (G17, titular más largo e imagen propia) cumple UB-3. Con un titular largo, el título baja a unos 100 px y queda aire bajo la bajada.
 

@@ -10,7 +10,7 @@ recorrido:      # cada paso está en decisiones.csv y en packs/N*–S*
   - "paso 2 · jerarquía: base, el titular llena la banda y la bajada va debajo (G13 1°)"
   - "paso 3 · imagen: a sangre (G14 1°)"
   - "paso 4 · color: bajada blanca (G15 2°)"
-  - "paso 5 · pie y detalles: llamado como botón y sin trama (G16 «3 y 4»)"
+  - "paso 5 · pie y detalles: llamado como botón y sin trama (G16 «3 y 4»); el botón es solo de este preset (aclaración de David, 2026-11-09)"
 roles_texto:
   cuerpo: {color: tinta}    # paso 4: bajada blanca (15,8:1)
 valores:

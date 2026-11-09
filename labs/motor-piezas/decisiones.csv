@@ -46,7 +46,15 @@ numero,codigo,pack,comentario_david,fecha
 6°,G10-K1-web,packs/K1-formato-1x1-columna.yaml,,
 7°,G10-K3-web,packs/K3-formato-4x5-columna.yaml,,
 8°,G10-L2-web,packs/L2-linkedin-computador.yaml,,
-9°,G10-M1-web,packs/M1-jerarquia-protegida-p01.yaml,,
-10°,G10-M2-web,packs/M2-jerarquia-protegida-k1.yaml,,
-11°,G10-M3-web,packs/M3-jerarquia-protegida-k3.yaml,,
-12°,G10-M4-web,packs/M4-jerarquia-protegida-l2.yaml,,
+9°,G10-M1-web,packs/M1-jerarquia-protegida-p01.yaml,"Sí, sumarla (la regla entra al Preset 01)",2026-11-09
+10°,G10-M2-web,packs/M2-jerarquia-protegida-k1.yaml,"Sí, sumarla (la regla entra al Preset 01)",2026-11-09
+11°,G10-M3-web,packs/M3-jerarquia-protegida-k3.yaml,"Sí, sumarla (la regla entra al Preset 01)",2026-11-09
+12°,G10-M4-web,packs/M4-jerarquia-protegida-l2.yaml,"Sí, sumarla (la regla entra al Preset 01)",2026-11-09
+1°,G11-P01,packs/P01-save-the-date-slide.yaml,,
+2°,G11-K1,packs/K1-formato-1x1-columna.yaml,,
+3°,G11-K3,packs/K3-formato-4x5-columna.yaml,,
+4°,G11-L2,packs/L2-linkedin-computador.yaml,,
+5°,G11-P01-web,packs/P01-save-the-date-slide.yaml,,
+6°,G11-K1-web,packs/K1-formato-1x1-columna.yaml,,
+7°,G11-K3-web,packs/K3-formato-4x5-columna.yaml,,
+8°,G11-L2-web,packs/L2-linkedin-computador.yaml,,

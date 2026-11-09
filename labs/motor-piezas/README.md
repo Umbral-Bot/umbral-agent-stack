@@ -111,7 +111,8 @@ El contenido y el formato son entradas, no pasos. Cada galería cambia un solo p
 | 5 · Pie y detalles | `galerias/G06.yaml` · Drive `01_galerias/2026-11-06_G06` (con `01_detalle.jpg`) | color de marca sobre el panel liso (`packs/J1`) | base, sin cruces, llamado como botón (`cta_estilo`) y trama en el panel (`trama_alcance`) | **elegido el 4°, trama en el panel** |
 | Formatos · 1:1 y 4:5 | `galerias/G08.yaml` · Drive `01_galerias/2026-11-06_G08` | el Preset 01 (`packs/P01`) a 11 px CSS | columna ancha (todos los datos) y banda (solo la fecha), por formato | **elegidas la 1° y la 3°: columna ancha en los dos** |
 | Formatos · LinkedIn | `galerias/G09.yaml` · Drive `01_galerias/2026-11-07_G09` | el Preset 01 (`packs/P01`) | columna para celular, columna para computador y banda para computador con todos los datos (`vista_css`) | **elegida la 2°: computador, solo la fecha** |
-| Prueba · otro contenido | `galerias/G10.yaml` · Drive `01_galerias/2026-11-08_G10` | la familia `presets/P01.yaml` | webinar tal cual y con `jerarquia_tope_secundario: 0.45` | espera que David decida si adopta la regla |
+| Prueba · otro contenido | `galerias/G10.yaml` · Drive `01_galerias/2026-11-08_G10` | la familia `presets/P01.yaml` | webinar tal cual y con `jerarquia_tope_secundario: 0.45` | **regla adoptada** («Sí, sumarla», 2026-11-09) |
+| Preset 01 definitivo | `galerias/G11.yaml` · Drive `01_galerias/2026-11-09_G11` | `presets/P01.yaml` con la regla en el pack base | los cuatro formatos con el workshop y con el webinar | cerrado salvo comentarios de David |
 
 ### Resultado: Preset 01
 
@@ -149,7 +150,8 @@ python motor.py campana --preset presets/P01.yaml --contenido contenido/webinar-
 Prueba con otro contenido (G10, un webinar con «COORDINACIÓN»):
 - Las cuatro piezas cumplen UB-3, sin choques, y los datos largos («Online · Microsoft Teams») se achican lo justo.
 - Hallazgo: el título baja a unos 70 px y en 1:1 y 4:5 el kicker y el subtítulo (43 px) le compiten.
-- La regla opcional `jerarquia_tope_secundario: 0.45` los limita al 45 % del título (31 px) y no cambia el 16:9. Falta que David decida si entra al preset.
+- La regla `jerarquia_tope_secundario: 0.45` los limita al 45 % del título (31 px) y no cambia el 16:9. David la sumó al preset el 2026-11-09: está en el pack base P01 y la heredan los cuatro formatos.
+- Con la regla, en el workshop solo cambian 1:1 (kicker de 43 a 40 px; título de 87 a 90 px) y 4:5 (kicker de 43 a 41 px). El 16:9, LinkedIn y las cuatro piezas del webinar dan SVG idénticos a los ya vistos.
 
 Comentarios de David sobre G01 (en `decisiones.csv`):
 - **1°:** faltan ajustes de proporción y composición.
@@ -184,6 +186,7 @@ python galeria.py --definicion galerias/G07.yaml              # preset 01, el re
 python galeria.py --definicion galerias/G08.yaml              # preset 01 en 1:1 y 4:5 (salida/G08)
 python galeria.py --definicion galerias/G09.yaml              # preset 01 en LinkedIn (salida/G09)
 python galeria.py --definicion galerias/G10.yaml              # familia completa y prueba con otro contenido (salida/G10)
+python galeria.py --definicion galerias/G11.yaml              # preset 01 definitivo (salida/G11)
 python motor.py pieza --pack packs/P01-save-the-date-slide.yaml --contenido contenido/otro.yaml --salida salida/p01
 python catalogar_imagenes.py                                   # regenera imagenes.yaml desde los PNG
 python analisis/medir_piezas.py                                # re-mide las seis elegidas

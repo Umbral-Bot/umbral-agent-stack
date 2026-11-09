@@ -22,6 +22,7 @@ fecha: 2026-11-06
 # 0.3e: formatos de celular · columna_ancha, banda_apilada, division_fraccion, datos_ajuste_ancho.
 # 0.3f: vista_css por pack (LinkedIn: celular o computador).
 # 0.3g: campana (un contenido, todos los formatos de un preset) y jerarquia_tope_secundario.
+# 0.3h: Preset 02 (post de noticia) · banda_arriba (texto arriba, imagen abajo).
 
 formatos:
   cuadrado:  {ancho: 1080, alto: 1080, vista_css: 390, uso: "feed 1:1 (Instagram, LinkedIn)"}
@@ -118,6 +119,8 @@ divisiones:
                   descripcion: "texto en 7 de 12 columnas, imagen en una franja a la derecha"}
   banda_apilada: {tipo: banda, fraccion: 0.625, filas: debajo,
                   descripcion: "imagen arriba y banda de texto abajo a todo el ancho, con los datos bajo el título"}
+  banda_arriba:  {tipo: banda, lado: superior, fraccion: 0.5, filas: debajo,
+                  descripcion: "banda de texto arriba a todo el ancho, con el pie al fondo de la banda; la imagen abajo"}
 
 parametros:
   # ---------------------------------------------------------------- proceso y formato
@@ -788,7 +791,7 @@ parametros:
     capa: maquetacion
     nivel: principal
     tipo: opcion
-    opciones: [zona_libre, mitad, tercio, banda, ele, columna_ancha, banda_apilada]
+    opciones: [zona_libre, mitad, tercio, banda, ele, columna_ancha, banda_apilada, banda_arriba]
     defecto: zona_libre
     descripcion: paso 1 · cómo se parte el lienzo entre texto e imagen (proceso C con imagen a sangre). zona_libre = como G01, decide la imagen con zona_libre y zona_libre_fraccion; el resto son los presets de `divisiones`
     origen: "David, 2026-11-06: avanzar paso a paso, empezando por distintos tipos de división de la composición"

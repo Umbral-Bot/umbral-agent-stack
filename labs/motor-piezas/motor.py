@@ -58,7 +58,8 @@ def cargar_pack(ruta) -> dict:
     pack = {**padre, **hijo,
             'valores': {**(padre.get('valores') or {}), **(hijo.get('valores') or {})},
             'roles_texto': {**(padre.get('roles_texto') or {}), **(hijo.get('roles_texto') or {})} or None}
-    for clave in ('control', 'exploracion', 'decision_david', 'corrige'):   # propios de cada pack
+    for clave in ('control', 'exploracion', 'decision_david', 'corrige', 'recorrido', 'estado',
+                  'tipo_contenido'):   # propios de cada pack
         if clave not in hijo:
             pack.pop(clave, None)
     return pack
@@ -605,9 +606,9 @@ class Compositor:
         self.zonas['cta_boton'] = caja.a_dict()
         return caja
 
-    def colocar_pie(self, p: dict) -> Rect:
+    def colocar_pie(self, p: dict, y2: float | None = None) -> Rect:
         v = self.v
-        y = self.caja.y2 - p['alto']
+        y = (self.caja.y2 if y2 is None else y2) - p['alto']
         izquierda = v['logo_posicion'] == 'inferior_izquierda'
         x = p['x0'] if izquierda else p['x1'] - p['ancho']
         self.logo = {'comp': p['comp'], 'x': x, 'y': y, 'alto': p['alto'], 'ancho': p['ancho']}
@@ -1221,16 +1222,23 @@ class Compositor:
         """Imagen arriba y banda de texto abajo a todo el ancho: cabecera a la izquierda, datos a la derecha."""
         v, m = self.v, self.medianil
         n = self._filas_de(v['division_fraccion'] or p['fraccion'])
-        j = self.M - n                      # primera fila de grilla de la banda
-        borde, tope = self.y_fil(j) - m, self.y_fil(j)
+        superior = p.get('lado') == 'superior'
+        if superior:
+            # texto en las n filas de arriba, con el pie al fondo de la banda; la imagen debajo
+            corte = self.y_fil(n)
+            tope, panel, y_pie = self.caja.y, Rect(0, 0, self.W, corte), corte - m
+        else:
+            j = self.M - n                  # primera fila de grilla de la banda
+            borde, tope = self.y_fil(j) - m, self.y_fil(j)
+            panel, y_pie = Rect(0, borde, self.W, self.H - borde), self.caja.y2
         apilada = p.get('filas') == 'debajo'    # formatos verticales: los datos van bajo el título
-        self.trama(Rect(0, borde, self.W, self.H - borde))
+        self.trama(panel)
         self.cruces_registro()
         pie = self.preparar_pie(self.caja.x, self.caja.x2)
-        fondo_util = self.caja.y2 - pie['alto'] - self.mod(v['espacio_pie'])
+        fondo_util = y_pie - pie['alto'] - self.mod(v['espacio_pie'])
         if apilada:
-            self.notas.append(f"división {v['division']}: texto en las {n} filas de abajo ({n} de {self.M}), "
-                              f"datos bajo el título")
+            self.notas.append(f"división {v['division']}: texto en las {n} filas de "
+                              f"{'arriba' if superior else 'abajo'} ({n} de {self.M}), datos bajo el título")
             zona, zona_filas = Rect(self.caja.x, tope, self.caja.w, fondo_util - tope), None
             ubic = v['filas_ubicacion'] if v['filas_ubicacion'] in ('bajo_titulo', 'al_pie') else 'bajo_titulo'
         else:
@@ -1245,9 +1253,12 @@ class Compositor:
         self.zonas['texto'] = zona.a_dict()
         tam = self._titulo_que_cabe(zona, ubic, cta_en_pila=not pie['cta_cabe'], zona_filas=zona_filas)
         self.pila(zona, tam, ubic, cta_en_pila=not pie['cta_cabe'], zona_filas=zona_filas)
-        self.colocar_pie(pie)
+        self.colocar_pie(pie, y_pie)
         if v['imagen_encaje'] == 'fondo_completo_con_velo':
-            self.velo(Rect(0, borde, self.W, self.H - borde), 'velo-lectura')
+            self.velo(panel, 'velo-lectura')
+        if superior:
+            return {'sangre': Rect(0, corte, self.W, self.H - corte),
+                    'grilla': Rect(self.caja.x, corte, self.caja.w, self.caja.y2 - corte)}
         return {'sangre': Rect(0, 0, self.W, borde),
                 'grilla': Rect(self.caja.x, self.caja.y, self.caja.w, borde - self.caja.y)}
 

@@ -1,4 +1,4 @@
-<!-- Informe íntegro del subagente de lectura Notion (solo lectura, MCP Notion), sesión coordinadora local_815b91f1, 2026-11-09 ~07:45Z. Evidencia de lectura; no verificado ítem a ítem por el coordinador. -->
+<!-- Informe íntegro del subagente de lectura Notion (solo lectura, MCP Notion), sesión coordinadora local_815b91f1, 2026-11-09 06:40Z. Evidencia de lectura; no verificado ítem a ítem por el coordinador. -->
 
 # Lectura Notion · Ops Resume, Gobernanza, Dashboard Rick (solo lectura, 2026-11-09)
 

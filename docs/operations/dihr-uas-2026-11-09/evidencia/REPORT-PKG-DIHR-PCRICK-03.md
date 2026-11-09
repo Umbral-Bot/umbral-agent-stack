@@ -1,4 +1,4 @@
-# REPORT PKG-DIHR-PCRICK-03 — sesión «PCRick node pairing identity repair», 2026-11-09 06:35–06:40Z (recibido ~07:50Z)
+# REPORT PKG-DIHR-PCRICK-03 — sesión «PCRick node pairing identity repair», 2026-11-09 06:35–06:40Z (recibido 06:41Z)
 Escribió solo en ~\dihr-staging\. Texto del emisor; redacción del coordinador: ninguna (no contiene secretos).
 
 1 · Permisos (D9) — PASS (lectura y respaldo)
@@ -13,7 +13,7 @@ Escribió solo en ~\dihr-staging\. Texto del emisor; redacción del coordinador:
 - 8088: python worker (pid 6920) en 0.0.0.0. Reglas: «OpenClaw Worker 8088» y «OpenClaw-Worker-8088» (Any/Any) + regla por programa python.exe (Private y Public, cualquier puerto).
 - 445/139: System. 445 en [::]; 139 en IPs LAN y Tailscale. Sin regla de permiso habilitada encontrada; efecto depende de la política por defecto: NO PROBADO.
 - 18789 (gateway local) y 18790 (túnel): solo loopback. Regla «Node.js JavaScript Runtime» node.exe perfil Public cualquier puerto.
-- Interfaces: Ethernet 192.168.42.152/20 (Public), Ethernet 2 192.168.41.104/20 (Public), Tailscale 100.109.16.40/32 (Private).
+- Interfaces: Ethernet 192.168.x.x/20 (Public), Ethernet 2 192.168.x.x/20 (Public), Tailscale 100.109.16.40/32 (Private).
 
 3 · Worker — PASS (lectura)
 - Host de escucha fijado en código: run_openclaw_worker_service.ps1 línea 13, `--host 0.0.0.0 --port 8088`. Script en C:\GitHub\umbral-agent-stack-runtime-main\scripts\vm\ (sin seguimiento en git); NSSM lo lanza.
@@ -21,7 +21,7 @@ Escribió solo en ~\dihr-staging\. Texto del emisor; redacción del coordinador:
 - **Riesgo:** ese .env lo puede leer el grupo Usuarios y modificar «Authenticated Users».
 
 4 · Tailscale — PASS en PCRick; FAIL en VPS y TARRO
-- PCRick en línea, v1.104.5, clave válida hasta 2027-03-12. srv1431451 (VPS): offline, visto 2026-08-25T19:31Z, KeyExpiry 2026-08-25T18:30:50Z Expired. TARRO: offline, visto 2026-03-24, KeyExpiry 2026-08-31T04:37:03Z Expired. cursor: offline desde 2026-09-21, clave hasta 2027-03-12. netcheck: UDP sí, IPv4 sí, IPv6 no, DERP São Paulo 66,4 ms.
+- PCRick en línea, v1.104.5, clave válida hasta 2027-03-12. <host VPS> (VPS): offline, visto 2026-08-25T19:31Z, KeyExpiry 2026-08-25T18:30:50Z Expired. TARRO: offline, visto 2026-03-24, KeyExpiry 2026-08-31T04:37:03Z Expired. cursor: offline desde 2026-09-21, clave hasta 2027-03-12. netcheck: UDP sí, IPv4 sí, IPv6 no, DERP São Paulo 66,4 ms.
 
 5 · Nodo y túnel — PASS, con **nueva caída del gateway de la VPS**
 - Nodo único (13176); socket 54371 (a las 05:36Z era 50784): reconexión. Túnel ssh pid 5692 desde 07-nov 08:30:58Z, 0 reinicios.

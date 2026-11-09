@@ -1,4 +1,4 @@
-# REPORT PKG-DIHR-VPS-03 — sesión «UAS - VPS», ventana 2026-11-09T06:34:52Z–06:41:55Z (recibido ~07:55Z)
+# REPORT PKG-DIHR-VPS-03 — sesión «UAS - VPS», ventana 2026-11-09T06:34:52Z–06:41:55Z (recibido 06:43Z)
 Nada activo cambiado: sin drop-in, openclaw.json sha256 ccc40458… (mod 2026-11-06), crontab y canario desplegado intactos; escrituras solo en ~/dihr-staging/ (0700) y scratchpad. Texto del emisor.
 
 PASO 0 (06:34:52Z) PASS: sin logins; mismas 2 sshd notty (esta app) + túnel solo-reenvío; 0 agentes ajenos.
@@ -13,7 +13,7 @@ A2 Canario (06:35:45Z) — PASS verificación / FAIL salud: cron línea 5 «*/30
 
 A3 Embeddings (06:36:10Z) — FAIL (causa confirmada): openclaw.json solo tiene plugins.entries.memory-core={"config":{}}; NO existe memory.search ni agents.defaults.memorySearch. Esquema 2026.10.10: memory.search.provider «Defaults to "openai"». Entorno del gateway: GOOGLE_API_KEY presente (gateway.systemd.env), GEMINI_API_KEY ausente, OPENAI_API_KEY ausente. memory_index_meta_v1: provider gemini, model gemini-embedding-001, vectorDims 3072, chunkTokens 400, overlap 80, sources [memory]; 9 chunks, updated_at 2026-04-20. Último error 06:30:15Z «embedding provider "openai" is configured but unavailable».
 
-A4 SSH (06:37:38Z) — PASS: ~/.ssh/authorized_keys (0600, mod 2026-11-03), 3 líneas: ED25519 SHA256:+pfu109ct3purMdMnnw6oGLfS5euPm/G1sFeIDP46Pw «pcrick-openclaw» (DUPLICADA, 2 líneas); RSA 4096 SHA256:14yLaSA8SWjyQnVRALuWEv7Zx+Wtrd9QyCR/B65B254 «david@TARRO». Ninguna con opciones (from=, command=, no-pty): observación de seguridad.
+A4 SSH (06:37:38Z) — PASS: ~/.ssh/authorized_keys (0600, mod 2026-11-03), 3 líneas: ED25519 SHA256:+pfu109ct3pu… «pcrick-openclaw» (DUPLICADA, 2 líneas); RSA 4096 SHA256:14yLaSA8SWjy… «david@TARRO». Ninguna con opciones (from=, command=, no-pty): observación de seguridad.
 
 A5 E2E prerrequisitos (06:37:50Z) — PASS: PCRick conectado (reconectó 06:21:41Z tras el OOM). `nodes invoke … system.execApprovals.get` RECHAZADO por el gateway («use exec.approvals.node.*»), sin ejecución en PCRick. Vía de lectura `gateway call exec.approvals.node.get {nodeId}`: política en C:\Users\Rick\.openclaw\state\openclaw.sqlite#exec_approvals_config: defaults security=full, ask=off, askFallback=full, agents {} → **system.run en PCRick corre sin pedir aprobación** (no requiere aprobación nueva para la E2E; observación de seguridad).
 

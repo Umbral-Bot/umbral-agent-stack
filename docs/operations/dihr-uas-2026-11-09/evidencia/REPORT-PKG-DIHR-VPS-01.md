@@ -1,7 +1,7 @@
 # REPORT PKG-DIHR-VPS-01 — sesión «UAS - VPS» (Remote Control, bypass)
 Recibido por cross-session-message en «Control remoto de hilos Claude Code», 2026-11-09 ~05:40Z. Ventana declarada: 2026-11-09T05:35:35Z–05:38:06Z. Sin cambios productivos ni de configuración (declarado por el emisor; no verificado por el coordinador).
 
-PASO 0 (05:35:35Z) PASS: who vacío; last: último login interactivo 6-nov 16:54Z (cerrado); sshd: 2 rick@notty (esta app, desde 5-nov 01:57Z) + 1 «sshd: rick» solo-reenvío desde 7-nov 08:31Z (túnel; probable nodo PCRick; origen no verificable sin root); 0 procesos codex/cursor/copilot/aider/gemini fuera del gateway; claude: esta sesión + 3 inactivas.
+PASO 0 (05:35:35Z) PASS: who vacío; last: último login interactivo 6-nov 16:54Z (cerrado); sshd: 2 <usuario>@notty (esta app, desde 5-nov 01:57Z) + 1 «sshd: rick» solo-reenvío desde 7-nov 08:31Z (túnel; probable nodo PCRick; origen no verificable sin root); 0 procesos codex/cursor/copilot/aider/gemini fuera del gateway; claude: esta sesión + 3 inactivas.
 
 1 Gateway (05:35:48Z) — FAIL salud: activo desde 2026-11-08T21:34:26Z (8h01m), NRestarts=7, RSS 4.432 MB (cgroup 5,45 GB). Sin OOM nuevo desde 00:51Z. Heap: sin --max-old-space-size ni NODE_OPTIONS → defecto node v24.18.0 = 2.240 MB. RAM 7.940 MB total, 997 MB disponible, swap 0. Fuente: systemctl show, ps, unit, v8.getHeapStatistics, free. Riesgo (inferencia): patrón previo OOM cada 8–9 h → caída probable pronto.
 2 Nodos (05:36:03Z) — PASS: `openclaw nodes status --json`: 1 nodo, PCRick una sola vez, connected=true, paired=true, connectedAt 2026-11-08T21:35:29Z, v2026.10.10, nodeId 9650c4eb…

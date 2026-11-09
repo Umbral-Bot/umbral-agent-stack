@@ -1,4 +1,4 @@
-# REPORT PKG-DIHR-VPS-05 — sesión «UAS - VPS», 2026-11-09T15:06:22Z–15:49:54Z (recibido ~15:55Z)
+# REPORT PKG-DIHR-VPS-05 — sesión «UAS - VPS», 2026-11-09T15:06:22Z–15:49:54Z (recibido 15:51Z)
 D2 APLICADO · D1 APLICADO · D3 OMITIDO (sin clave nueva). Confirmación en la pestaña: «Sí, D2 + D1» (respondida por el coordinador con la autonomía concedida por David; decisión de David «A: todo» por chat). Texto del emisor.
 
 PASO 0 (15:06:22Z) PASS: único operador; gateway uptime 5h05m, RSS 4.671 MB, RAM disp. 490 MB. Respaldos: ~/dihr-staging/openclaw.json.bak-20261109T150622Z (ccc40458… = original) y openclaw-gateway.service.bak-20261109T150622Z (56db6ae9…).

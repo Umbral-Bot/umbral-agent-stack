@@ -1,4 +1,4 @@
-# REPORT PKG-DIHR-VPS-04 — sesión «UAS - VPS», 2026-11-09T14:29:06Z–14:53:51Z (recibido ~15:05Z)
+# REPORT PKG-DIHR-VPS-04 — sesión «UAS - VPS», 2026-11-09T14:29:06Z–14:53:51Z (recibido 14:55Z)
 Resultado: D2 NO aplicado; D3 aplicado y REVERTIDO. openclaw.json final idéntico al original. Sin D1, sin reinicios, sin cron. Texto del emisor.
 
 PASO 0 (14:29:06Z) PASS: sin logins; mismas 2 sshd notty (esta app) + túnel solo-reenvío; 0 agentes ajenos. Gateway uptime 4h27m.

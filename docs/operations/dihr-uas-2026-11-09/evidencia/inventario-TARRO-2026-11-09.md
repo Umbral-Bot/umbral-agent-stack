@@ -31,7 +31,7 @@ Modo: sin cambios en archivos, configuración, servicios ni tareas; sin autentic
 | Ítem | Resultado | Evidencia / comando | Límite |
 |---|---|---|---|
 | `~/.ssh/config` | Existe (291 B, mod. 2026-04-12). Un solo bloque: `Host vps-umbral umbral-vps` → `HostName <IP pública VPS>`, `User rick` (puerto 22) | `Get-Content` filtrado | IdentityFile no reportado por diseño |
-| `known_hosts` | 14 líneas, mod. 2026-08-04. Hosts: `[<IP redactada>]:65002`, `100.109.16.40`, `100.113.249.25`, `<IP pública VPS>`, `<IP LAN redactada>`, `github.com`, `srv1431451`, `srv1431451.hstgr.cloud` | `cut -d' ' -f1 \| sort -u` | — |
+| `known_hosts` | 14 líneas, mod. 2026-08-04. Hosts: `[<IP redactada>]:65002`, `100.109.16.40`, `100.113.249.25`, `<IP pública VPS>`, `<IP LAN redactada>`, `github.com`, `<host VPS>`, `<host VPS>` | `cut -d' ' -f1 \| sort -u` | — |
 | Otros archivos en `.ssh` | `id_rsa` (2026-02-27), `id_rsa.pub`, `known_hosts.old` | `Get-ChildItem` | Solo nombres |
 | Sesiones SSH activas | 2 procesos `ssh.exe` (pids 85580, 64436) hacia `<IP pública VPS>` usuario `rick`, iniciados 11-06 01:57Z, padre = proceso de la app Claude Desktop; túneles de control (`-T`, `-s`) de la sesión Remote Control «UAS - VPS» | `Win32_Process` CommandLine | — |
 | Clave suelta fuera de `.ssh` | `C:\Users\david\openclaw` **no es carpeta: es un archivo de 464 B con cabecera `OPENSSH PRIVATE KEY`** (ed25519), fecha 2026-02-25 23:44Z | `Get-Item`, cabecera | Contenido no copiado |

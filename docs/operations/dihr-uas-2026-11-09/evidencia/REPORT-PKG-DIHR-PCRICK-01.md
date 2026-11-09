@@ -16,14 +16,14 @@ Recibido por cross-session-message en «Control remoto de hilos Claude Code», 2
 - No hay tareas de Dispatcher ni de Grok. [Get-ScheduledTask]
 
 3 · Conectividad
-- Tailscale de PCRick en línea (100.109.16.40, pcrick.tail0b266a.ts.net).
-- VPS srv1431451: FAIL. Offline, visto por última vez el 25-08 a las 19:31Z; KeyExpiry 2026-08-25T18:30:50Z, Expired=True. Es la causa probable del corte de la ruta del worker.
+- Tailscale de PCRick en línea (100.109.16.40, pcrick.<tailnet>.ts.net).
+- VPS <host VPS>: FAIL. Offline, visto por última vez el 25-08 a las 19:31Z; KeyExpiry 2026-08-25T18:30:50Z, Expired=True. Es la causa probable del corte de la ruta del worker.
 - TARRO: FAIL. Offline; KeyExpiry 2026-08-31, Expired=True; `tailscale ping` → «peer's node key has expired».
 - cursor: offline (visto el 21-09); su clave vale hasta el 2027-03-12.
 - Notebook MSI: NO PROBADO, no está en la tailnet.
 - Alias SSH: ninguno (solo los hosts de Azure en el ssh_config de Git).
 - Puertos en escucha: sshd 0.0.0.0:22; worker 0.0.0.0:8088; gateway local 127.0.0.1:18789; túnel 127.0.0.1:18790; tailscaled 100.109.16.40:443; SMB 445/139; TeamViewer 127.0.0.1:5939.
-- Rutas: a la VPS pública por Ethernet (gw 192.168.32.1), con sesión 192.168.42.152:49693→<IP pública VPS>:22 Established. Hacia los 100.x de la VPS y de TARRO no hay ruta Tailscale; caen en la ruta por defecto.
+- Rutas: a la VPS pública por Ethernet (gw 192.168.x.x), con sesión 192.168.x.x:49693→<IP pública VPS>:22 Established. Hacia los 100.x de la VPS y de TARRO no hay ruta Tailscale; caen en la ruta por defecto.
 
 4 · Herramientas: PASS (existencia y versión)
 - claude 2.1.273; codex-cli 0.154.0; node v24.22.2; python 3.13.10 en el PATH; 3.11.9 con uvicorn 0.41.0 para el worker; git 2.53.0; openclaw 2026.10.10 (7dc3350).

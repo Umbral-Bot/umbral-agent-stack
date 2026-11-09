@@ -151,8 +151,14 @@ Después de la primera entrega, David revisó G01 y pidió avanzar de a un paso:
   - Hoja de detalle en la galería.
 - **Regresión:** G01 a G05 mantienen sus zonas. Con el motor actual, las piezas C de G01 solo cambian el color del texto chico sobre imagen y la opacidad de sus velos.
 - **Señal para la decisión pendiente 2:** en G05, David eligió `#2DD4BF` como texto sobre el panel liso, no `#99F6E4`.
+- **Formatos (2026-11-07 a 2026-11-09):**
+  - G08: 1:1 y 4:5 en columna ancha con todos los datos («1 y 3»).
+  - G09: LinkedIn pensado para computador, solo con la fecha («2»).
+  - `presets/P01.yaml` reúne los cuatro formatos; `motor.py campana` genera la campaña completa desde un contenido.
+  - G10 lo probó con otro contenido (un webinar). De ahí salió la regla de jerarquía protegida, que David sumó al preset («Sí, sumarla»).
+  - G11 es la familia definitiva.
 - **Falta:**
-  - Adaptar P01 a 1:1, 4:5 y LinkedIn, y probarlo con otro contenido.
-  - Las otras tres decisiones pendientes del README.
-  - Pasar el motor a skill por PR cuando eso esté.
+  - La revisión de este PR (Claude del VPS y Rick GPT).
+  - Dos decisiones de marca abiertas: Inter Display en titulares e imágenes MJ fijas. Las otras dos tienen señal de David: turquesa #2DD4BF como texto en oscuro y LinkedIn pensado para computador.
+  - Pasar el motor a skill por PR.
 

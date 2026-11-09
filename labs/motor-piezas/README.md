@@ -123,7 +123,7 @@ El contenido y el formato son entradas, no pasos. Cada galería cambia un solo p
 Alcance:
 - **Sirve para** un save the date en diapositiva 16:9 vista en notebook, con una imagen fija.
 - **Para otro contenido** se cambia el archivo de `contenido/`.
-- **Falta** adaptarlo a 1:1, 4:5 y LinkedIn, y probarlo con otro contenido.
+- **Formatos:** 1:1 y 4:5 (G08) y LinkedIn (G09) ya están; la familia completa vive en `presets/P01.yaml` y quedó probada con otro contenido (G10–G11).
 
 ### Formatos de celular (G08)
 

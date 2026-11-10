@@ -170,7 +170,10 @@ def construir(ruta_def: Path, publicar: bool):
     ttf = ctx.marca / ctx.rutas['insumos_director'] / '02_fuentes' / 'Inter-Variable.ttf'
     hoja_numerada(items, dir_salida, f"UMBRAL BIM  ·  MOTOR DE PIEZAS  ·  {gid}  ·  LABORATORIO", ttf, colores)
     if defin.get('detalle'):
-        hoja_detalle(items, dir_salida, defin['detalle'], ttf, colores, ctx.rutas['navegador']['escala_png'])
+        # el detalle puede limitarse a algunas secciones (las que cambian algo chico)
+        secs = defin['detalle'].get('secciones')
+        en_detalle = [it for it in items if not secs or it['seccion'] in secs]
+        hoja_detalle(en_detalle, dir_salida, defin['detalle'], ttf, colores, ctx.rutas['navegador']['escala_png'])
     (dir_salida / 'galeria.html').write_text(html_galeria(defin, items, controles, ctx), encoding='utf-8')
     (dir_salida / 'alternativas.html').write_text(html_autocontenido(defin, items, dir_salida, ctx), encoding='utf-8')
     with open(dir_salida / f'decisiones_{gid}.csv', 'w', newline='', encoding='utf-8') as fh:

@@ -23,6 +23,7 @@ fecha: 2026-11-06
 # 0.3f: vista_css por pack (LinkedIn: celular o computador).
 # 0.3g: campana (un contenido, todos los formatos de un preset) y jerarquia_tope_secundario.
 # 0.3h: Preset 02 (post de noticia) · banda_arriba (texto arriba, imagen abajo).
+# 0.3i: roles_texto.opacidad (tono entre dos tokens), pila_anclaje centro, logo arriba y botón en dos líneas junto al logo.
 
 formatos:
   cuadrado:  {ancho: 1080, alto: 1080, vista_css: 390, uso: "feed 1:1 (Instagram, LinkedIn)"}
@@ -83,6 +84,9 @@ roles_texto:
   cuerpo:    {familia: Inter, peso: 400, mayusculas: false, tracking: null,                 color: secundario}
   cta:       {familia: Inter, peso: 600, mayusculas: false, tracking: etiqueta_tracking_em, color: acento_texto}
   chip:      {familia: Inter, peso: 500, mayusculas: true,  tracking: chip_tracking_em,     color: chip_texto}
+# Un rol puede llevar `opacidad` (0–1): el texto se pinta con su token y fill-opacity. Sirve para un
+# tono entre dos tokens (p. ej. la bajada un poco más gris que el titular); el contraste se mide con
+# el color ya mezclado sobre el fondo. Sobre la imagen, el texto chico vuelve al token pleno.
 # Un pack puede sobrescribir un rol (p. ej. el control de réplica pinta los números como
 # la v2). Si eso rompe una regla, la verificación lo detecta y la pieza sale como exploración.
 
@@ -400,6 +404,15 @@ parametros:
     opciones: [minima, media, alta]
     defecto: media
     descripcion: qué bloques entran (ver densidades)
+  texto_equilibrado:
+    capa: maquetacion
+    nivel: componente
+    tipo: lista
+    defecto: null
+    descripcion: >-
+      roles de texto (p. ej. [cuerpo]) que, si se parten, reparten las palabras en líneas parejas:
+      las mismas líneas al ancho más angosto posible, como text-wrap: balance. null = corte normal
+    origen: "G19, LinkedIn con más margen (2026-11-10): la bajada quedaba en 4 líneas con «equipo.» sola al final"
   texto_ancho_max_relativo:
     capa: maquetacion
     nivel: componente
@@ -529,9 +542,12 @@ parametros:
     capa: maquetacion
     nivel: principal
     tipo: opcion
-    opciones: [inferior_izquierda, inferior_derecha]
+    opciones: [inferior_izquierda, inferior_derecha, superior_izquierda]
     defecto: inferior_izquierda
-    descripcion: la v0.1 ofrecía superior_izquierda; queda pendiente hasta tener una pieza que lo pida
+    descripcion: >-
+      superior_izquierda (solo en divisiones de columna) pone el logo arriba con el chip en su
+      misma línea y el llamado abajo, al pie de la columna; el texto queda entre los dos
+    origen: "G18, LinkedIn (2026-11-10): «les falta diseño grafico, encuanto posicion y distribución de los textos en el espacio»"
   cta_estilo:
     capa: maquetacion
     nivel: principal
@@ -554,6 +570,16 @@ parametros:
     rango: [1, 6]
     defecto: 2
     unidad: modulos
+  cta_pie_lineas_max:
+    capa: maquetacion
+    nivel: componente
+    tipo: entero
+    rango: [1, 2]
+    defecto: 1
+    descripcion: >-
+      líneas que puede tomar el botón para caber junto al logo en el pie. Con 2, si el llamado
+      no cabe en una línea, se parte y la fila del pie toma el alto del botón (el logo va centrado)
+    origen: "G18, LinkedIn (2026-11-10): el botón quedaba pegado a la bajada, lejos del pie"
   cta_visible:
     capa: maquetacion
     nivel: componente
@@ -774,9 +800,9 @@ parametros:
     capa: maquetacion
     nivel: principal
     tipo: opcion
-    opciones: [arriba, abajo]
+    opciones: [arriba, abajo, centro]
     defecto: arriba
-    descripcion: paso 2 · dónde se apoya el bloque de texto dentro de su zona (divisiones del paso 1). abajo agrupa kicker, título, subtítulo y filas sobre el pie y deja libre la parte alta
+    descripcion: paso 2 · dónde se apoya el bloque de texto dentro de su zona (divisiones del paso 1). abajo agrupa kicker, título, subtítulo y filas sobre el pie y deja libre la parte alta; centro lo pone a media altura (columna, desde G19)
     origen: "G02 2° (tercio): queda un vacío grande entre el subtítulo y las filas al pie"
   vista_css:
     capa: maquetacion

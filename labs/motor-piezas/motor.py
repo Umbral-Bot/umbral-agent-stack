@@ -151,6 +151,8 @@ def resolver_valores(esquema: dict, pack: dict) -> dict:
             errores.append(f'{k}={v!r} debe ser true/false')
         elif t == 'par' and not (isinstance(v, list) and len(v) == 2):
             errores.append(f'{k}={v!r} debe ser [a, b]')
+        elif t == 'lista' and not isinstance(v, list):
+            errores.append(f'{k}={v!r} debe ser una lista')
         if t in ('entero', 'decimal') and p.get('rango') and isinstance(v, (int, float)):
             lo, hi = p['rango']
             if not lo <= v <= hi:
@@ -279,7 +281,7 @@ class Compositor:
         r = self.roles_texto[rol]
         tracking = self.v[r['tracking']] if r.get('tracking') else 0.0
         return {'familia': r['familia'], 'peso': r['peso'], 'mayus': r['mayusculas'],
-                'tracking_em': tracking, 'color': r['color']}
+                'tracking_em': tracking, 'color': r['color'], 'opacidad': r.get('opacidad', 1.0)}
 
     def rasgos(self, familia: str) -> str:
         return self.ctx.reglas['rasgos_opentype'] if familia == 'Inter' else 'normal'
@@ -314,6 +316,8 @@ class Compositor:
         el = {'tipo': 'texto', 'id': id_, 'rol': rol, 'texto': t, 'x': x, 'y': base, 'tamano': tamano,
               'familia': e['familia'], 'peso': e['peso'], 'tracking_em': e['tracking_em'],
               'anclaje': anclaje, 'color': color or e['color'],
+              # la opacidad del rol (un tono entre dos tokens) no pasa a un color forzado
+              'opacidad': 1.0 if color else e['opacidad'],
               'caja': Rect(x0, base - m['asc'], ancho, m['asc'] + m['desc']), 'cap': m['cap']}
         self.el.append(el)
         return el
@@ -324,11 +328,11 @@ class Compositor:
         if self.medir(rol, t, tamano)['avance'] <= ancho:
             return [t]
 
-        def llenar(unidades, sep):
+        def llenar(unidades, sep, limite=ancho):
             lineas, actual = [], ''
             for u in unidades:
                 prueba = f'{actual}{sep}{u}' if actual else u
-                if not actual or self.medir(rol, prueba, tamano)['avance'] <= ancho:
+                if not actual or self.medir(rol, prueba, tamano)['avance'] <= limite:
                     actual = prueba
                 else:
                     lineas.append(actual)
@@ -341,7 +345,15 @@ class Compositor:
         if len(tramos) > 1 and all(self.medir(rol, x, tamano)['avance'] <= ancho for x in tramos):
             lineas = llenar(tramos, ' · ')
         else:
-            lineas = llenar(t.split(' '), ' ')
+            palabras = t.split(' ')
+            lineas = llenar(palabras, ' ')
+            if rol in (self.v['texto_equilibrado'] or []) and len(lineas) > 1:
+                # mismas líneas con el ancho más angosto posible: sin una palabra sola al final
+                lo, hi = ancho * 0.5, ancho
+                for _ in range(12):
+                    mid = (lo + hi) / 2
+                    lo, hi = (lo, mid) if len(llenar(palabras, ' ', mid)) <= len(lineas) else (mid, hi)
+                lineas = llenar(palabras, ' ', hi)
         lineas = [l.strip(' ·').strip() for l in lineas]
         lineas = [l for l in lineas if l]
         if len(lineas) > 1:
@@ -426,7 +438,7 @@ class Compositor:
     def pila(self, zona: Rect, tam_titulo: float, ubicacion_filas: str, ancho_filas: float | None = None,
              anclar_abajo: bool = False, filas_a_grilla: bool = False, cta_en_pila: bool = False,
              zona_filas: Rect | None = None, ancho_cabecera: float | None = None,
-             solo_medir: bool = False) -> dict | float:
+             solo_medir: bool = False, anclar_centro: bool = False) -> dict | float:
         """Kicker, título, subtítulo, filas y cuerpo, de arriba abajo, en `zona`.
 
         Con ubicacion_filas='columna_derecha' las filas van en `zona_filas`, con su
@@ -525,6 +537,9 @@ class Compositor:
         y0 = zona.y + self.mod(v['pila_desplazamiento'])
         if anclar_abajo:
             y0 = zona.y2 - alto
+        elif anclar_centro:
+            # al centro de la zona, en múltiplos de 4 px
+            y0 = zona.y + max(0.0, self.paso4 * round((zona.h - alto) / 2 / self.paso4))
         if filas_a_grilla and con_filas_en_pila:
             # la grilla manda: el bloque de filas arranca en la siguiente línea de fila
             tope_rel = next(p[1] for p in plan if p[0] == 'filas')
@@ -603,7 +618,17 @@ class Compositor:
         boton = cta is not None and v['cta_estilo'] == 'boton'
         relleno = 2 * self.mod(v['cta_boton_relleno_h']) if boton else 0.0
         cabe = cta is None or ancho + 2 * self.medianil + cta['avance'] + relleno <= (x1 - x0)
-        return {'alto': alto, 'ancho': ancho, 'cta': cta, 'cta_cabe': cabe, 'x0': x0, 'x1': x1, 'comp': comp}
+        cta_ancho, alto_fila = None, alto
+        if not cabe and boton and v['cta_pie_lineas_max'] > 1:
+            # el botón partido en líneas cabe junto al logo: la fila toma el alto del botón
+            libre = (x1 - x0) - ancho - 2 * self.medianil
+            lineas = self.partir('cta', self.c['cta'], self.t['cta'], libre - relleno)
+            if len(lineas) <= v['cta_pie_lineas_max'] and all(
+                    self.medir('cta', l, self.t['cta'])['avance'] + relleno <= libre for l in lineas):
+                cabe, cta_ancho = True, libre
+                alto_fila = max(alto, self.alto_boton_cta(libre))
+        return {'alto': alto, 'ancho': ancho, 'cta': cta, 'cta_cabe': cabe, 'x0': x0, 'x1': x1, 'comp': comp,
+                'cta_ancho': cta_ancho, 'alto_fila': alto_fila}
 
     def lineas_cta(self, ancho_max: float | None = None) -> list[str]:
         """El llamado en una línea o, si el botón no cabe en `ancho_max`, partido (prefiere el «·»)."""
@@ -640,13 +665,16 @@ class Compositor:
 
     def colocar_pie(self, p: dict, y2: float | None = None) -> Rect:
         v = self.v
-        y = (self.caja.y2 if y2 is None else y2) - p['alto']
-        izquierda = v['logo_posicion'] == 'inferior_izquierda'
+        fila = p.get('alto_fila', p['alto'])
+        # el logo va centrado en la fila del pie (la fila crece si el botón va en dos líneas)
+        y = (self.caja.y2 if y2 is None else y2) - fila / 2 - p['alto'] / 2
+        izquierda = v['logo_posicion'] != 'inferior_derecha'
         x = p['x0'] if izquierda else p['x1'] - p['ancho']
         self.logo = {'comp': p['comp'], 'x': x, 'y': y, 'alto': p['alto'], 'ancho': p['ancho']}
         if p['cta'] and p['cta_cabe'] and v['cta_estilo'] == 'boton':
             # centrado en la línea del logo
-            self.boton_cta(p['x1'] if izquierda else p['x0'], y + p['alto'] / 2, 'end' if izquierda else 'start')
+            self.boton_cta(p['x1'] if izquierda else p['x0'], y + p['alto'] / 2, 'end' if izquierda else 'start',
+                           p.get('cta_ancho'))
         elif p['cta'] and p['cta_cabe']:
             base = y + p['alto'] / 2 + p['cta']['cap'] / 2
             if izquierda:
@@ -837,7 +865,9 @@ class Compositor:
         return float(np.percentile(contrastes(rgb_texto, px), self.PERCENTIL_CONTRASTE))
 
     def color_texto(self, el: dict):
-        return self.rgb_opaco(el['color'])
+        rgb = self.rgb_opaco(el['color'])
+        a = el.get('opacidad', 1.0)
+        return rgb if a >= 1 else marca.componer((*rgb, a), self.rgba('fondo'))
 
     # ---------------------------------------------------------------- texto sobre imagen
     def es_grande(self, el: dict) -> bool:
@@ -869,6 +899,7 @@ class Compositor:
                 if nuevo and nuevo != e['color']:
                     cambios.setdefault(f"{e['color']} -> {nuevo}", []).append(e['id'])
                     e['color'] = nuevo
+                    e['opacidad'] = 1.0   # sobre la imagen, el texto chico va en el token pleno
         for cambio, ids in cambios.items():
             self.notas.append(f'texto chico sobre imagen, {cambio}: {", ".join(ids)}')
 
@@ -1214,6 +1245,31 @@ class Compositor:
             self.notas.append(f'título reducido de {tam:.0f} a {nuevo:.0f} px para caber en {zona.h:.0f} px de alto')
         return nuevo
 
+    def _columna_logo_arriba(self, pie: dict, x0: float, x1: float) -> Rect:
+        """Logo arriba a la izquierda y chip en su misma línea; el llamado abajo. Devuelve la zona del texto."""
+        v, esp = self.v, self.mod(self.v['espacio_pie'])
+        y_logo = self.caja.y
+        self.logo = {'comp': pie['comp'], 'x': x0, 'y': y_logo, 'alto': pie['alto'], 'ancho': pie['ancho']}
+        self.zonas['logo'] = Rect(x0, y_logo, pie['ancho'], pie['alto']).a_dict()
+        tope = y_logo + pie['alto']
+        if self.c.get('ejemplo'):
+            # el chip centrado en la línea del logo, a la derecha de la columna
+            mc = self.medir('chip', self.preparar_texto('chip', self.c.get('chip', 'EJEMPLO')), self.t['chip'])
+            h = mc['cap'] + 2 * self.mod(v['chip_relleno_v'])
+            reserva = self.chip(ancla=Rect(x0, y_logo + (pie['alto'] - h) / 2, x1 - x0, h))
+            tope = max(tope, reserva.y2)
+        fondo = self.caja.y2
+        if pie['cta']:
+            if v['cta_estilo'] == 'boton':
+                h = self.alto_boton_cta(x1 - x0)
+                caja = self.boton_cta(x0, self.caja.y2 - h / 2, 'start', x1 - x0)
+                fondo = caja.y
+            else:
+                cta = self.agregar_texto('cta', 'cta', self.c['cta'], x0, self.caja.y2, self.t['cta'])
+                fondo = cta['caja'].y
+            self.notas.append('logo arriba: el llamado va abajo, al pie de la columna')
+        return Rect(x0, tope + esp, x1 - x0, fondo - esp - tope - esp)
+
     def _division_columna(self, p: dict):
         """Texto en k de N columnas y la imagen en el resto (la 12° de G01 es la mitad izquierda)."""
         v, m = self.v, self.medianil
@@ -1225,20 +1281,27 @@ class Compositor:
         self.trama(Rect(0, 0, x1 + m, self.H) if izquierda else None)
         self.cruces_registro()
         pie = self.preparar_pie(x0, x1)
-        fondo_util = self.caja.y2 - pie['alto'] - self.mod(v['espacio_pie'])
-        zona = Rect(x0, self.caja.y, x1 - x0, fondo_util - self.caja.y)
-        reserva = self.chip(ancla=zona)
-        if reserva is not None:
-            zona = Rect(zona.x, reserva.y2 + m, zona.w, zona.y2 - reserva.y2 - m)
+        logo_arriba = v['logo_posicion'] == 'superior_izquierda'
+        if logo_arriba:
+            zona, cta_en_pila = self._columna_logo_arriba(pie, x0, x1), False
+        else:
+            fondo_util = self.caja.y2 - pie['alto_fila'] - self.mod(v['espacio_pie'])
+            zona = Rect(x0, self.caja.y, x1 - x0, fondo_util - self.caja.y)
+            reserva = self.chip(ancla=zona)
+            if reserva is not None:
+                zona = Rect(zona.x, reserva.y2 + m, zona.w, zona.y2 - reserva.y2 - m)
+            cta_en_pila = not pie['cta_cabe']
         self.zonas['texto'] = zona.a_dict()
         ubic = v['filas_ubicacion'] if v['filas_ubicacion'] != 'columna_derecha' else 'bajo_titulo'
         abajo = v['pila_anclaje'] == 'abajo'
         if abajo and ubic == 'al_pie':
             ubic = 'bajo_titulo'
             self.notas.append('pila apoyada abajo: las filas van bajo el título')
-        tam = self._titulo_que_cabe(zona, ubic, cta_en_pila=not pie['cta_cabe'])
-        self.pila(zona, tam, ubic, cta_en_pila=not pie['cta_cabe'], anclar_abajo=abajo)
-        self.colocar_pie(pie)
+        tam = self._titulo_que_cabe(zona, ubic, cta_en_pila=cta_en_pila)
+        self.pila(zona, tam, ubic, cta_en_pila=cta_en_pila, anclar_abajo=abajo,
+                  anclar_centro=v['pila_anclaje'] == 'centro')
+        if not logo_arriba:
+            self.colocar_pie(pie)
         con_velo = v['imagen_encaje'] == 'fondo_completo_con_velo'
         if izquierda:
             if con_velo:
@@ -1518,8 +1581,10 @@ class Compositor:
                 estilo = (f"font-family:'{e['familia']}';font-weight:{e['peso']};font-size:{f2(e['tamano'])}px;"
                           f"letter-spacing:{e['tracking_em']}em;font-feature-settings:{self.rasgos(e['familia'])}")
                 r, g, b = self.rgba(e['color'])[:3]
+                op = e.get('opacidad', 1.0)
+                opacidad = f' fill-opacity="{op:g}"' if op < 1 else ''
                 partes.append(f'  <text id="{e["id"]}" x="{f2(e["x"])}" y="{f2(e["y"])}" text-anchor="{e["anclaje"]}" '
-                              f'fill="{marca.hex_de((r, g, b))}" style={quoteattr(estilo)}>{escape(e["texto"])}</text>')
+                              f'fill="{marca.hex_de((r, g, b))}"{opacidad} style={quoteattr(estilo)}>{escape(e["texto"])}</text>')
             elif t == 'logo':
                 lg = self.logo
                 partes.append(f'  <g id="logo" data-origen={quoteattr(str(lg["ruta"]))} '

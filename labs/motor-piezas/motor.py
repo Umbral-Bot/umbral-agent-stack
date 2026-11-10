@@ -641,6 +641,12 @@ class Compositor:
         if ancho_max is None:
             return [self.preparar_texto('cta', self.c['cta'])]
         relleno = 2 * self.mod(self.v['cta_boton_relleno_h'])
+        if self.v['cta_cortar_en_punto']:
+            # una línea por tramo del «·», aunque el llamado quepa entero
+            tramos = [x.strip() for x in self.preparar_texto('cta', self.c['cta']).split('·') if x.strip()]
+            if len(tramos) > 1 and all(self.medir('cta', x, self.t['cta'])['avance'] + relleno <= ancho_max
+                                       for x in tramos):
+                return tramos
         return self.partir('cta', self.c['cta'], self.t['cta'], ancho_max - relleno)
 
     def alto_boton_cta(self, ancho_max: float | None = None) -> float:

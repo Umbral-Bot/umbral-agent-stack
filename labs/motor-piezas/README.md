@@ -169,7 +169,8 @@ David pidió seguir con otro preset y eligió un post de noticia o artículo: ki
 | Ajustes | `galerias/G19.yaml` · Drive `01_galerias/2026-11-10_G19` (con `01_detalle.jpg`) | `packs/T1`, `T4` y `T5` | tono de la bajada (blanca, 90 %, 80 % y gris de marca) y tres distribuciones del texto en LinkedIn para cada preset | **tono 3° (80 %); LinkedIn 5° con bajada y 10° sin bajada, los dos con el botón más chico** |
 | LinkedIn | `galerias/G20.yaml` · Drive `01_galerias/2026-11-10_G20` | `packs/W1` y `X3` | con bajada: el 5° ajustado y dos repartos más (columna ancha, bajada más chica); sin bajada: el 10° con el botón más chico | **con bajada la 2° (columna ancha), con los textos más separados; sin bajada la 4°, que pasa al Preset 03** |
 | Separación | `galerias/G21.yaml` · Drive `01_galerias/2026-11-10_G21` (con `01_detalle.jpg`) | `packs/Y2` | la misma separación entre «Artículo», titular, bajada y botón: 32, 36 y 40 px | **la 2° (36 px) cierra el LinkedIn del Preset 02; la 1° (32 px) pasa al sin bajada** |
-| Sin bajada | `galerias/G22.yaml` · Drive `01_galerias/2026-11-10_G22` (con `01_detalle.jpg`) | `packs/Z1` | 32 px entre los textos del LinkedIn sin bajada: botón al pie, bloque al medio y bloque abajo | espera la elección de David |
+| Sin bajada | `galerias/G22.yaml` · Drive `01_galerias/2026-11-10_G22` (con `01_detalle.jpg`) | `packs/Z1` | 32 px entre los textos del LinkedIn sin bajada: botón al pie, bloque al medio y bloque abajo | **la 1° (botón al pie), con el botón más chico** |
+| Botón | `galerias/G23.yaml` · Drive `01_galerias/2026-11-10_G23` (con `01_detalle.jpg`) | `packs/AA1` | el texto del botón un 12 % y un 24 % más chico, y un 24 % con menos relleno: 269×68, 237×61 y 229×53 px (antes 301×74) | espera la elección de David |
 
 El Preset 02 queda en `packs/P02-noticia-4x5.yaml`, un pack plano con el recorrido de decisiones.
 - Reproduce la elección de G16 (SVG idéntico).
@@ -199,6 +200,10 @@ En G21 David respondió «1= 2» y «2= 1», y lo aclaró como «2° con bajada,
 - El Preset 02 queda completo, con LinkedIn en `packs/U2` (36 px, titular de 96 px).
 - G22 lleva los 32 px al LinkedIn sin bajada (`packs/Z1`). Ahí el botón va al pie de la columna, a 77 px del titular.
 - Para igualar los tres textos, el motor 0.3j suma `cta_al_pie_columna`: con el logo arriba y `false`, el botón cierra el bloque de texto, a `espacio_cta` del titular. Con el valor por defecto, X3, W3, Z1, Y2, U2, P02, T1, T4 y T6 salen con SVG idénticos.
+
+En G22 David eligió la 1° con el botón más chico («Sin bajada · LinkedIn, piezas completas: 1 peor el boton mas pequeño»; «peor» se lee como «pero»).
+- G23 trae tres tamaños. `escala_cta` baja ahora hasta 0.6: con 0.65 el texto del botón queda en unos 7 px CSS en el celular.
+- Con el texto más chico el botón cabía en una línea, pero quedaba más ancho (481 px). El motor 0.3k suma `cta_cortar_en_punto`, que deja una línea por cada tramo del «·». Con el valor por defecto, G21 y G22 salen con SVG idénticos.
 
 Magnific (2026-11-10): `magnific-marca.md` recomienda usar Magnific One con el kit «Umbral BIM» solo para la imagen. El texto, el logo y la verificación quedan en el motor. Antes hay que corregir el kit: no tiene prohibiciones, manual ni logo vectorial.
 
@@ -247,6 +252,7 @@ python galeria.py --definicion galerias/G19.yaml              # tono de la bajad
 python galeria.py --definicion galerias/G20.yaml              # LinkedIn ajustado (salida/G20)
 python galeria.py --definicion galerias/G21.yaml              # separación del texto en LinkedIn (salida/G21)
 python galeria.py --definicion galerias/G22.yaml              # separación del LinkedIn sin bajada (salida/G22)
+python galeria.py --definicion galerias/G23.yaml              # botón más chico en el LinkedIn sin bajada (salida/G23)
 python motor.py pieza --pack packs/P01-save-the-date-slide.yaml --contenido contenido/otro.yaml --salida salida/p01
 python catalogar_imagenes.py                                   # regenera imagenes.yaml desde los PNG
 python analisis/medir_piezas.py                                # re-mide las seis elegidas

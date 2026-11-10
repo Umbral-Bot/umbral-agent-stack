@@ -25,6 +25,7 @@ fecha: 2026-11-06
 # 0.3h: Preset 02 (post de noticia) · banda_arriba (texto arriba, imagen abajo).
 # 0.3i: roles_texto.opacidad (tono entre dos tokens), pila_anclaje centro, logo arriba y botón en dos líneas junto al logo.
 # 0.3j: cta_al_pie_columna (con logo arriba, el botón puede cerrar el bloque de texto).
+# 0.3k: escala_cta baja hasta 0.6 y cta_cortar_en_punto (G22: «el boton mas pequeño»).
 
 formatos:
   cuadrado:  {ancho: 1080, alto: 1080, vista_css: 390, uso: "feed 1:1 (Instagram, LinkedIn)"}
@@ -366,7 +367,7 @@ parametros:
     capa: maquetacion
     nivel: componente
     tipo: decimal
-    rango: [0.8, 1.6]   # bajo 1 queda por debajo de texto_minimo_css (lo pidió David para el botón, G19)
+    rango: [0.6, 1.6]   # bajo 1 queda por debajo de texto_minimo_css (lo pidió David para el botón, G19 y G22)
     defecto: 1.0
   escala_cuerpo:
     capa: maquetacion
@@ -602,6 +603,13 @@ parametros:
     defecto: true
     descripcion: con logo_posicion superior_izquierda, true deja el llamado al pie de la columna; false lo pone al final del bloque de texto, a espacio_cta del título
     origen: "G21 (2026-11-10): «2= 1», la misma separación de 32 px entre los textos del LinkedIn sin bajada"
+  cta_cortar_en_punto:
+    capa: maquetacion
+    nivel: componente
+    tipo: booleano
+    defecto: false
+    descripcion: true pone el botón en una línea por cada tramo del «·» aunque quepa entero (solo cuando el botón tiene un ancho tope, como al pie de la columna)
+    origen: "G22 (2026-11-10): «1 peor el boton mas pequeño»; con el texto más chico el botón pasaba a una sola línea, más ancha"
   cta_pie_lineas_max:
     capa: maquetacion
     nivel: componente

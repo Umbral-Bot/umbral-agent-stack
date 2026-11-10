@@ -1,0 +1,10 @@
+id: AB3
+nombre: "LinkedIn sin bajada · la 2° de G23 con menos relleno en el botón"
+alternativa: sin-bajada-linkedin-boton
+paso: tamaño del botón
+hereda: packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml
+decision_david: null
+# G22, 2026-11-10: «1 peor el boton mas pequeño». Además del texto, el relleno baja un módulo.
+valores:
+  cta_boton_relleno_h: 2   # antes 3 módulos (12 px)
+  cta_boton_relleno_v: 1   # antes 2 módulos (8 px)

@@ -3,7 +3,7 @@ nombre: "LinkedIn sin bajada · la 4° de G20 con 32 px entre «Artículo» y el
 alternativa: sin-bajada-linkedin-separacion
 paso: separación del texto
 hereda: packs/Z1-noticia-linkedin-logo-arriba-boton.yaml
-decision_david: null
+decision_david: 'G22, 2026-11-10: «Sin bajada · LinkedIn, piezas completas: 1 peor el boton mas pequeño» («peor» leído como «pero»; el botón más chico va en G23)'
 # G21, 2026-11-10: «2= 1» (la separación de la 1°, 32 px, en el LinkedIn sin bajada).
 # Antes había 16 px entre «Artículo» y el titular. El botón queda al pie de la columna, como en
 # G19 10°, así que su distancia al titular no es de 32 px.

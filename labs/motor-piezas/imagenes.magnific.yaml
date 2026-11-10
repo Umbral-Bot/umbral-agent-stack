@@ -82,3 +82,44 @@ imagenes:
     - 0.6693
     - 0.8987
     fondo_imagen: '#F9F7F5'
+  mg-articulo-ia-obra-ancha-01:
+    archivo: mg-articulo-ia-obra-ancha-01.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: w4m2pvH7EI
+    enlace: https://www.magnific.com/app/creation/w4m2pvH7EI
+    kit: hu2CvqLJlt
+    plantilla: null
+    semilla: 263034
+    creditos: 180
+    prompt: 'Flat vector isometric technical illustration in a wide 21:9 frame: a long, low, single-storey
+      cut-away building frame of four equal structural bays, its long side running left to right across
+      the centre. Five rows of square columns carry cross beams spanning front to back, with floor slabs
+      in each bay and the roof and front wall cut away so the interior reads clearly. A round pipe and
+      a rectangular duct run the full length just beneath the beams, the pipe threading through each cross
+      beam. All parts are thin, uniform #074E43 and #1F2328 lines with white #FFFFFF faces and dashed
+      hidden edges. Exactly two parts are solid flat #0FA994: the floor slab of the second bay, and the
+      short pipe segment passing through the third cross beam; everything else stays unfilled. Strict
+      isometric projection with no vanishing point, flat even daylight, no shadows, glow or gradients.
+      The frame fills about 60 percent of the width, centred, on a solid #FAFAF9 field with faint grid
+      lines running to the edges. No text, letters, numbers, markers, callouts, symbols or logo.'
+    prompt_enviado: 'Isometric illustration of a long, low, single-storey cut-away building frame of four
+      bays, its long side running left to right, with a pipe and a duct along its length. Only two parts
+      are flat teal, the two parts an automated check found: one floor slab and the pipe where it passes
+      through a beam. No text, no markers, no logo.'
+    proporcion_pedida: '21:9'
+    tamano_px:
+    - 2688
+    - 1152
+    reproducible: true
+    pedido: magnific/pedidos/articulo-ia-obra-ancha.md
+    fecha: '2026-11-10'
+    sha256: ad69e61ee7bb5cb1
+    nota: imagen apaisada para las máscaras desde 2:1 (1:1 de los presets 02 y 03, 16:9); pedido del panel
+      sin créditos; 180 créditos aprobados por David («Sí, 180 créditos»)
+    objeto:
+    - 0.1112
+    - 0.2292
+    - 0.8564
+    - 0.7326
+    fondo_imagen: '#FCFBFA'

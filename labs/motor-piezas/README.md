@@ -173,6 +173,7 @@ David pidió seguir con otro preset y eligió un post de noticia o artículo: ki
 | Botón | `galerias/G23.yaml` · Drive `01_galerias/2026-11-10_G23` (con `01_detalle.jpg`) | `packs/AA1` | el texto del botón un 12 % y un 24 % más chico, y un 24 % con menos relleno: 269×68, 237×61 y 229×53 px (antes 301×74) | **la 2° (texto del botón un 24 % más chico): cierra el LinkedIn del Preset 03** |
 | Magnific | `galerias/G24.yaml` · Drive `01_galerias/2026-11-10_G24` | `presets/P02` y `P03` | piloto: los siete formatos con una imagen maestra de Magnific One con el kit (430 créditos) | **«el objeto no quedó bien posicionado respecto [...] de la mascara usadal»**: va a G25 |
 | Objeto en la máscara | `galerias/G25.yaml` · Drive `01_galerias/2026-11-10_G25` | G24 con `imagen_ajuste: objeto` | el edificio entero y centrado en cada máscara: 75 % en todas, 85 % en bandas y 75 % en columnas, 85 % en todas | **la 2° («2°, 85 y 75»), ya en el Preset 02**; el 1:1 y el 16:9 piden otra imagen, apaisada |
+| Dos imágenes | `galerias/G26.yaml` · Drive `01_galerias/2026-11-10_G26` | `contenido/articulo-magnific-dos-imagenes.yaml` | el 1:1 y el 16:9 con la imagen apaisada (180 créditos); el resto con la principal | espera el comentario de David |
 
 El Preset 02 queda en `packs/P02-noticia-4x5.yaml`, un pack plano con el recorrido de decisiones.
 - Reproduce la elección de G16 (SVG idéntico).
@@ -222,6 +223,10 @@ En G25 David eligió la 2° («2°, 85 y 75») y comentó: «entre esos se ve me
 - Al volver a generar, G17 y G19 (5°–7°) muestran la bajada al 80 %: es la decisión de G19 que pasó al pack base después de generarlas, no un cambio de este paso.
 - Para el 9:16 el objeto queda en primer plano: la imagen tiene que estar muy trabajada y contar el contenido. Es un criterio del pedido.
 
+G26 (2026-11-10): David aprobó la imagen apaisada («Sí, 180 créditos»); se gastaron 180 (saldo 239.390).
+- `mg-articulo-ia-obra-ancha-01`: un pórtico de cuatro vanos, objeto de 3,45:1 medido, dos hallazgos en turquesa (la losa aparece partida por un pilar delante). Llena las bandas: 85 % del ancho en los 1:1 y 81 % en el 16:9, antes 17–23 %. Las siete piezas cumplen UB-3.
+- Tres jueces: uno «sirve», dos «sirve con ajustes». El hallazgo de la tubería no se lee como choque (el tramo turquesa no cruza una viga), el dibujo es más grueso que el de la imagen principal y la vista es oblicua, no isométrica. Corregirlo exige otra imagen; el pedido corregido (perfiles finos como la principal, tubería continua, turquesa justo donde cruza una viga, la principal como referencia de estilo) cuesta 180 y espera el OK de David.
+
 Comentarios de David sobre G01 (en `decisiones.csv`):
 - **1°:** faltan ajustes de proporción y composición.
 - **12°:** destaca por su composición, pero le faltaba contraste en los textos de abajo a la izquierda (medían 4,57–6,28:1).
@@ -270,6 +275,7 @@ python galeria.py --definicion galerias/G22.yaml              # separación del 
 python galeria.py --definicion galerias/G23.yaml              # botón más chico en el LinkedIn sin bajada (salida/G23)
 python galeria.py --definicion galerias/G24.yaml              # piloto de Magnific One en los presets 02 y 03 (salida/G24)
 python galeria.py --definicion galerias/G25.yaml              # el objeto entero y centrado en su máscara (salida/G25)
+python galeria.py --definicion galerias/G26.yaml              # la campaña con la imagen principal y la apaisada (salida/G26)
 python pedido_magnific.py pedido --preset presets/P02.yaml --preset presets/P03.yaml --contenido contenido/articulo-ejemplo.yaml --salida magnific/pedidos/articulo-ia-obra.json   # sin créditos
 python motor.py campana --preset presets/P02.yaml --contenido contenido/prueba-magnific.yaml --salida salida/prueba-magnific   # imagen de Magnific registrada
 python motor.py pieza --pack packs/P01-save-the-date-slide.yaml --contenido contenido/otro.yaml --salida salida/p01

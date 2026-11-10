@@ -1,0 +1,8 @@
+id: V4
+nombre: "1:1 con bajada · bajada en el gris de texto de la marca (--ub-text-muted, como G15 1°)"
+alternativa: p02-tono-bajada
+paso: color de la bajada
+hereda: packs/T1-noticia-1x1-banda.yaml
+decision_david: null
+roles_texto:
+  cuerpo: {color: secundario}   # el gris del sistema; en G15 David eligió la blanca frente a este

@@ -78,9 +78,19 @@ numero,codigo,pack,comentario_david,fecha
 4°,G16-S4,packs/S4-noticia-sin-trama.yaml,3 y 4,2026-11-09
 1°,G17-P02,packs/P02-noticia-4x5.yaml,,
 2°,G17-P02-caso,packs/P02-noticia-4x5.yaml,,
-1°,G18-T1,packs/T1-noticia-1x1-banda.yaml,,
-2°,G18-T2,packs/T2-noticia-1x1-sin-bajada.yaml,,
+1°,G18-T1,packs/T1-noticia-1x1-banda.yaml,"con bajada (Preset 02) · «me gusta que esten ambas alternativas, hariuia un prset sin bajada y uno con bajada»; «al 1 le falta que la bajada este en un tono un poquiiito gris para diferenciar deltitulo»",2026-11-10
+2°,G18-T2,packs/T2-noticia-1x1-sin-bajada.yaml,"sin bajada (preset aparte) · «me gusta que esten ambas alternativas, hariuia un prset sin bajada y uno con bajada»",2026-11-10
 3°,G18-T3,packs/T3-noticia-historia.yaml,,
-4°,G18-T4,packs/T4-noticia-linkedin-computador.yaml,,
-5°,G18-T5,packs/T5-noticia-linkedin-celular.yaml,,
+4°,G18-T4,packs/T4-noticia-linkedin-computador.yaml,"con bajada (Preset 02) · «me gusta que esten ambas alternativas, hariuia un prset sin bajada y uno con bajada»; «a las alt 4 y 5 les falta diseño grafico, encuanto posicion y distribución de los textos en el espacio»",2026-11-10
+5°,G18-T5,packs/T5-noticia-linkedin-celular.yaml,"sin bajada (preset aparte) · «me gusta que esten ambas alternativas, hariuia un prset sin bajada y uno con bajada»; «a las alt 4 y 5 les falta diseño grafico, encuanto posicion y distribución de los textos en el espacio»",2026-11-10
 6°,G18-T6,packs/T6-noticia-slide.yaml,,
+1°,G19-V1,packs/V1-noticia-1x1-bajada-blanca.yaml,,
+2°,G19-V2,packs/V2-noticia-1x1-bajada-90.yaml,,
+3°,G19-V3,packs/V3-noticia-1x1-bajada-80.yaml,,
+4°,G19-V4,packs/V4-noticia-1x1-bajada-gris-marca.yaml,,
+5°,G19-W1,packs/W1-noticia-linkedin-centro.yaml,,
+6°,G19-W2,packs/W2-noticia-linkedin-arriba-abajo.yaml,,
+7°,G19-W3,packs/W3-noticia-linkedin-logo-arriba.yaml,,
+8°,G19-X1,packs/X1-noticia-linkedin-centro.yaml,,
+9°,G19-X2,packs/X2-noticia-linkedin-arriba-abajo.yaml,,
+10°,G19-X3,packs/X3-noticia-linkedin-logo-arriba.yaml,,

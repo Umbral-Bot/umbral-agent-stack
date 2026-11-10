@@ -1,6 +1,14 @@
 id: P02
-nombre: "Post de noticia · banda abajo, titular grande, imagen a sangre, bajada blanca y llamado como botón"
-tipo_contenido: "post de noticia o artículo, sin datos de evento; la imagen puede venir con el contenido (imagen:)"
-estado: "aprobado por David en 4:5, 2026-11-09; faltan los otros formatos"
+nombre: "Post de noticia con bajada · banda abajo, titular grande, imagen a sangre, bajada y llamado como botón"
+tipo_contenido: "post de noticia o artículo con bajada, sin datos de evento; la imagen puede venir con el contenido (imagen:)"
+estado: "aprobado por David en 4:5, 2026-11-09; formatos en curso (G18, G19)"
+# G18, 2026-11-10: David pidió dos presets, «uno sin bajada y uno con bajada». Éste es el con
+# bajada; el sin bajada es presets/P03.yaml. Lo elegido aquí no se extiende al P03 sin preguntar.
 formatos:
   vertical: packs/P02-noticia-4x5.yaml           # 4:5 · G12–G16
+  cuadrado: packs/T1-noticia-1x1-banda.yaml      # 1:1 · G18 1°; falta elegir el tono de la bajada (G19 1°–4°)
+  historia: packs/T3-noticia-historia.yaml       # 9:16 · G18 3°, opción única, sin comentarios de David
+  slide: packs/T6-noticia-slide.yaml             # 16:9 · G18 6°, opción única, sin comentarios de David
+pendiente:
+  linkedin: "G18 4° («les falta diseño grafico, encuanto posicion y distribución de los textos en el espacio»); opciones en G19 5°–7°"
+  tono_bajada: "«un tono un poquiiito gris» (sobre G18 1°); opciones en G19 1°–4°"

@@ -1,0 +1,7 @@
+id: V1
+nombre: "1:1 con bajada · bajada blanca, como en G18 1° (referencia)"
+alternativa: p02-tono-bajada
+paso: color de la bajada
+hereda: packs/T1-noticia-1x1-banda.yaml
+decision_david: null
+# sin cambios: la bajada en la tinta del tema (--ub-text), igual que el titular

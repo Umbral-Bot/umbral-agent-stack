@@ -1,0 +1,8 @@
+id: V3
+nombre: "1:1 con bajada · bajada un poco gris: tinta al 80 %"
+alternativa: p02-tono-bajada
+paso: color de la bajada
+hereda: packs/T1-noticia-1x1-banda.yaml
+decision_david: null
+roles_texto:
+  cuerpo: {color: tinta, opacidad: 0.8}

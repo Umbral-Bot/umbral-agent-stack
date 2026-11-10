@@ -165,13 +165,20 @@ David pidió seguir con otro preset y eligió un post de noticia o artículo: ki
 | 4 · Color | `galerias/G15.yaml` · Drive `01_galerias/2026-11-09_G15` | `packs/R1` (= Q1) | base, bajada blanca y panel claro (sin azul de portadas: solo slide) | **elegida la 2°, bajada blanca** |
 | 5 · Pie y detalles | `galerias/G16.yaml` · Drive `01_galerias/2026-11-09_G16` (con `01_detalle.jpg`) | `packs/S1` (= R2) | base, sin cruces, llamado como botón y sin trama | **elegidas la 3° y la 4°: botón y sin trama** |
 | Resultado | `galerias/G17.yaml` · Drive `01_galerias/2026-11-09_G17` | `packs/P02-noticia-4x5.yaml` (familia `presets/P02.yaml`) | el preset y una prueba con otro artículo | listo en 4:5 |
-| Formatos | `galerias/G18.yaml` · Drive `01_galerias/2026-11-09_G18` | `packs/P02-noticia-4x5.yaml` | 1:1 (dos), 9:16, LinkedIn (computador y celular) y 16:9 | espera la elección de David |
+| Formatos | `galerias/G18.yaml` · Drive `01_galerias/2026-11-09_G18` | `packs/P02-noticia-4x5.yaml` | 1:1 (dos), 9:16, LinkedIn (computador y celular) y 16:9 | **las dos alternativas: un preset con bajada (P02) y otro sin bajada (P03)**; ajustes pedidos en el 1° y en LinkedIn |
+| Ajustes | `galerias/G19.yaml` · Drive `01_galerias/2026-11-10_G19` (con `01_detalle.jpg`) | `packs/T1`, `T4` y `T5` | tono de la bajada (blanca, 90 %, 80 % y gris de marca) y tres distribuciones del texto en LinkedIn para cada preset | espera la elección de David |
 
 El Preset 02 queda en `packs/P02-noticia-4x5.yaml`, un pack plano con el recorrido de decisiones.
 - Reproduce la elección de G16 (SVG idéntico).
 - El llamado como botón es propio del Preset 02. David lo aclaró («no a todos, solo a ese»): las elecciones de un preset no se extienden a otros, y el Preset 01 sigue con el llamado en texto.
 - Para un post de noticia, la imagen viaja con el contenido: si el archivo de contenido trae `imagen:` (un id de `imagenes.yaml`), reemplaza la del pack.
 - La prueba con otro artículo (G17, titular más largo e imagen propia) cumple UB-3. Con un titular largo, el título baja a unos 100 px y queda aire bajo la bajada.
+
+Sobre G18 (2026-11-10), David quiso las dos alternativas: «me gusta que esten ambas alternativas, hariuia un prset sin bajada y uno con bajada».
+- El Preset 02 (`presets/P02.yaml`) queda **con bajada**; el nuevo Preset 03 (`presets/P03.yaml`) es el mismo post **sin bajada**. Lo que se elija para uno no pasa al otro sin preguntar.
+- Pidió dos ajustes: la bajada del 1° «en un tono un poquiiito gris para diferenciar deltitulo», y en LinkedIn (4° y 5°) más «diseño grafico, encuanto posicion y distribución de los textos en el espacio». G19 trae las opciones.
+- El sistema no tiene un token entre `--ub-text` (#ECEDEE) y `--ub-text-muted` (#9BA3AD). Para los grises intermedios, el motor 0.3i pinta el token de texto con opacidad (`roles_texto.<rol>.opacidad`, `fill-opacity` en el SVG) y mide el contraste con el color ya mezclado: 15,8 / 12,9 / 10,3 / 7,2:1.
+- Para LinkedIn, el motor suma `pila_anclaje: centro`, `logo_posicion: superior_izquierda` (logo arriba, botón abajo), `cta_pie_lineas_max` (botón en dos líneas junto al logo) y `texto_equilibrado` (líneas parejas). Con los valores por defecto, G11, G17 y G18 salen con SVG idénticos.
 
 Comentarios de David sobre G01 (en `decisiones.csv`):
 - **1°:** faltan ajustes de proporción y composición.
@@ -214,6 +221,7 @@ python galeria.py --definicion galerias/G15.yaml              # preset 02, paso 
 python galeria.py --definicion galerias/G16.yaml              # preset 02, paso 5: pie y detalles (salida/G16)
 python galeria.py --definicion galerias/G17.yaml              # preset 02, resultado y prueba (salida/G17)
 python galeria.py --definicion galerias/G18.yaml              # preset 02 en más formatos (salida/G18)
+python galeria.py --definicion galerias/G19.yaml              # tono de la bajada y LinkedIn (salida/G19)
 python motor.py pieza --pack packs/P01-save-the-date-slide.yaml --contenido contenido/otro.yaml --salida salida/p01
 python catalogar_imagenes.py                                   # regenera imagenes.yaml desde los PNG
 python analisis/medir_piezas.py                                # re-mide las seis elegidas

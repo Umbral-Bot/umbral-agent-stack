@@ -1,0 +1,11 @@
+id: W2
+nombre: "LinkedIn con bajada · el mensaje arriba; botón y logo juntos abajo"
+alternativa: p02-linkedin-distribucion
+paso: distribución del texto
+hereda: packs/T4-noticia-linkedin-computador.yaml
+decision_david: null
+valores:
+  margen_proporcional: 0.1
+  logo_altura_relativa: 0.07   # unos 44 px de alto; antes 36 (el mínimo de 120 px de ancho) y se veía chico
+  cta_pie_lineas_max: 2      # el botón en dos líneas cabe junto al logo
+  texto_equilibrado: [cuerpo]   # la bajada en líneas parejas, sin una palabra sola al final

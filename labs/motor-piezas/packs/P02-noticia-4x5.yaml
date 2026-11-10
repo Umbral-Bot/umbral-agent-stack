@@ -1,5 +1,5 @@
 id: P02
-nombre: "Preset 02 · Post de noticia 4:5: banda abajo, titular grande, imagen a sangre, bajada blanca y llamado como botón"
+nombre: "Preset 02 · Post de noticia 4:5: banda abajo, titular grande, imagen a sangre, bajada un poco gris y llamado como botón"
 tipo_contenido: "post de noticia o artículo (kicker, titular, bajada y llamado), sin datos de evento, con una imagen"
 estado: "aprobado por David en cinco pasos, 2026-11-09"
 contenido: contenido/articulo-ejemplo.yaml
@@ -11,8 +11,9 @@ recorrido:      # cada paso está en decisiones.csv y en packs/N*–S*
   - "paso 3 · imagen: a sangre (G14 1°)"
   - "paso 4 · color: bajada blanca (G15 2°)"
   - "paso 5 · pie y detalles: llamado como botón y sin trama (G16 «3 y 4»); el botón es solo de este preset (aclaración de David, 2026-11-09)"
+  - "ajuste de formatos · la bajada un poco gris: el blanco al 80 % (G19 «= 3», 2026-11-10). G17 y G18 se hicieron antes, con la bajada blanca"
 roles_texto:
-  cuerpo: {color: tinta}    # paso 4: bajada blanca (15,8:1)
+  cuerpo: {color: tinta, opacidad: 0.8}    # G19 3°: --ub-text al 80 % sobre la banda (10,3:1); antes blanca (G15 2°)
 valores:
   # base
   proceso: C_imagen

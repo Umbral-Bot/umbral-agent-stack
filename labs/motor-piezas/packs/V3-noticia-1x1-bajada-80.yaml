@@ -3,6 +3,6 @@ nombre: "1:1 con bajada · bajada un poco gris: tinta al 80 %"
 alternativa: p02-tono-bajada
 paso: color de la bajada
 hereda: packs/T1-noticia-1x1-banda.yaml
-decision_david: null
+decision_david: "G19, 2026-11-10: «= 3»"
 roles_texto:
   cuerpo: {color: tinta, opacidad: 0.8}

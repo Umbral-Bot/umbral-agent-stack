@@ -1,0 +1,8 @@
+id: Y2
+nombre: "LinkedIn con bajada · como la 1°, con la columna de texto más ancha (7 de 12): bajada en 3 líneas"
+alternativa: p02-linkedin-ajuste
+paso: distribución del texto
+hereda: packs/Y1-noticia-linkedin-centro-aire.yaml
+decision_david: null
+valores:
+  division_fraccion: 0.5833   # 7 de 12 columnas; la imagen queda más angosta

@@ -166,7 +166,8 @@ David pidió seguir con otro preset y eligió un post de noticia o artículo: ki
 | 5 · Pie y detalles | `galerias/G16.yaml` · Drive `01_galerias/2026-11-09_G16` (con `01_detalle.jpg`) | `packs/S1` (= R2) | base, sin cruces, llamado como botón y sin trama | **elegidas la 3° y la 4°: botón y sin trama** |
 | Resultado | `galerias/G17.yaml` · Drive `01_galerias/2026-11-09_G17` | `packs/P02-noticia-4x5.yaml` (familia `presets/P02.yaml`) | el preset y una prueba con otro artículo | listo en 4:5 |
 | Formatos | `galerias/G18.yaml` · Drive `01_galerias/2026-11-09_G18` | `packs/P02-noticia-4x5.yaml` | 1:1 (dos), 9:16, LinkedIn (computador y celular) y 16:9 | **las dos alternativas: un preset con bajada (P02) y otro sin bajada (P03)**; ajustes pedidos en el 1° y en LinkedIn |
-| Ajustes | `galerias/G19.yaml` · Drive `01_galerias/2026-11-10_G19` (con `01_detalle.jpg`) | `packs/T1`, `T4` y `T5` | tono de la bajada (blanca, 90 %, 80 % y gris de marca) y tres distribuciones del texto en LinkedIn para cada preset | espera la elección de David |
+| Ajustes | `galerias/G19.yaml` · Drive `01_galerias/2026-11-10_G19` (con `01_detalle.jpg`) | `packs/T1`, `T4` y `T5` | tono de la bajada (blanca, 90 %, 80 % y gris de marca) y tres distribuciones del texto en LinkedIn para cada preset | **tono 3° (80 %); LinkedIn 5° con bajada y 10° sin bajada, los dos con el botón más chico** |
+| LinkedIn | `galerias/G20.yaml` · Drive `01_galerias/2026-11-10_G20` | `packs/W1` y `X3` | con bajada: el 5° ajustado y dos repartos más (columna ancha, bajada más chica); sin bajada: el 10° con el botón más chico | espera la elección de David |
 
 El Preset 02 queda en `packs/P02-noticia-4x5.yaml`, un pack plano con el recorrido de decisiones.
 - Reproduce la elección de G16 (SVG idéntico).
@@ -179,6 +180,12 @@ Sobre G18 (2026-11-10), David quiso las dos alternativas: «me gusta que esten a
 - Pidió dos ajustes: la bajada del 1° «en un tono un poquiiito gris para diferenciar deltitulo», y en LinkedIn (4° y 5°) más «diseño grafico, encuanto posicion y distribución de los textos en el espacio». G19 trae las opciones.
 - El sistema no tiene un token entre `--ub-text` (#ECEDEE) y `--ub-text-muted` (#9BA3AD). Para los grises intermedios, el motor 0.3i pinta el token de texto con opacidad (`roles_texto.<rol>.opacidad`, `fill-opacity` en el SVG) y mide el contraste con el color ya mezclado: 15,8 / 12,9 / 10,3 / 7,2:1.
 - Para LinkedIn, el motor suma `pila_anclaje: centro`, `logo_posicion: superior_izquierda` (logo arriba, botón abajo), `cta_pie_lineas_max` (botón en dos líneas junto al logo) y `texto_equilibrado` (líneas parejas). Con los valores por defecto, G11, G17 y G18 salen con SVG idénticos.
+
+En G19 David eligió el tono 3° (la bajada al 80 %), el 5° para LinkedIn con bajada («pero ajustando tamaño de "lee el articulo.." mas mpequeño y distribuye mejor los textos») y el 10° sin bajada («pero mas pequeño el "lee el .."»).
+- El tono va en el pack base `P02-noticia-4x5.yaml`, así que lo heredan todos los formatos del Preset 02. G17 y G18 se hicieron antes, con la bajada blanca. G19 1° fija la blanca para seguir reproduciéndose igual.
+- El botón baja un 15 % (`escala_cta: 0.85`, `cta_tracking_em: 0.08`): queda en 9,4 px CSS, bajo el mínimo de 11 del laboratorio. La verificación lo marca como aviso de calidad.
+- El chip EJEMPLO es una marca de laboratorio: sale porque el contenido de prueba trae `ejemplo: true` y desaparece en una pieza real. Con `chip_ancla: pie` va en la línea del logo y no le quita alto al texto. Sobre la imagen no se lee (1,4:1), porque su fondo es semitransparente.
+- `espacio_cta` separa el botón de la bajada y `cta_junto_logo: false` lo deja al final del bloque aunque quepa junto al logo.
 
 Comentarios de David sobre G01 (en `decisiones.csv`):
 - **1°:** faltan ajustes de proporción y composición.
@@ -222,6 +229,7 @@ python galeria.py --definicion galerias/G16.yaml              # preset 02, paso 
 python galeria.py --definicion galerias/G17.yaml              # preset 02, resultado y prueba (salida/G17)
 python galeria.py --definicion galerias/G18.yaml              # preset 02 en más formatos (salida/G18)
 python galeria.py --definicion galerias/G19.yaml              # tono de la bajada y LinkedIn (salida/G19)
+python galeria.py --definicion galerias/G20.yaml              # LinkedIn ajustado (salida/G20)
 python motor.py pieza --pack packs/P01-save-the-date-slide.yaml --contenido contenido/otro.yaml --salida salida/p01
 python catalogar_imagenes.py                                   # regenera imagenes.yaml desde los PNG
 python analisis/medir_piezas.py                                # re-mide las seis elegidas

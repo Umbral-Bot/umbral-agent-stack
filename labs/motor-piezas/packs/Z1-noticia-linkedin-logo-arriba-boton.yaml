@@ -1,0 +1,11 @@
+id: Z1
+nombre: "LinkedIn sin bajada · G19 10° con el botón más chico"
+alternativa: sin-bajada-linkedin-ajuste
+paso: distribución del texto
+hereda: packs/X3-noticia-linkedin-logo-arriba.yaml
+decision_david: null
+roles_texto:
+  cta: {tracking: cta_tracking_em}
+valores:
+  escala_cta: 0.85          # el botón un 15 % más chico: 9,4 px CSS en el celular, bajo el mínimo de 11 (pedido de David)
+  cta_tracking_em: 0.08

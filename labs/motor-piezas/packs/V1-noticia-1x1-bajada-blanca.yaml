@@ -4,4 +4,5 @@ alternativa: p02-tono-bajada
 paso: color de la bajada
 hereda: packs/T1-noticia-1x1-banda.yaml
 decision_david: null
-# sin cambios: la bajada en la tinta del tema (--ub-text), igual que el titular
+roles_texto:
+  cuerpo: {color: tinta}   # explícito: desde G19 el P02 trae la bajada al 80 %; ésta sigue blanca

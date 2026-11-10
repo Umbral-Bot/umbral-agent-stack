@@ -200,6 +200,8 @@ En G21 David respondió «1= 2» y «2= 1», y lo aclaró como «2° con bajada,
 - G22 lleva los 32 px al LinkedIn sin bajada (`packs/Z1`). Ahí el botón va al pie de la columna, a 77 px del titular.
 - Para igualar los tres textos, el motor 0.3j suma `cta_al_pie_columna`: con el logo arriba y `false`, el botón cierra el bloque de texto, a `espacio_cta` del titular. Con el valor por defecto, X3, W3, Z1, Y2, U2, P02, T1, T4 y T6 salen con SVG idénticos.
 
+Magnific (2026-11-10): `magnific-marca.md` recomienda usar Magnific One con el kit «Umbral BIM» solo para la imagen. El texto, el logo y la verificación quedan en el motor. Antes hay que corregir el kit: no tiene prohibiciones, manual ni logo vectorial.
+
 Comentarios de David sobre G01 (en `decisiones.csv`):
 - **1°:** faltan ajustes de proporción y composición.
 - **12°:** destaca por su composición, pero le faltaba contraste en los textos de abajo a la izquierda (medían 4,57–6,28:1).

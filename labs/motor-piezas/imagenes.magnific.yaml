@@ -32,3 +32,41 @@ imagenes:
     sha256: 87e439cdf9a0ec00
     nota: prueba de la cadena con una imagen existente (G-SITIO-01, 2026-11-04, antes de corregir el kit);
       no es del piloto
+  mg-articulo-ia-obra-01:
+    archivo: mg-articulo-ia-obra-01.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: lJo6GJSgv9
+    enlace: https://www.magnific.com/app/creation/lJo6GJSgv9
+    kit: hu2CvqLJlt
+    plantilla: null
+    semilla: 927631
+    creditos: 180
+    prompt: 'Flat vector isometric technical illustration of the two-storey building frame in @img1, faithful
+      to its structure: two floor slabs, a grid of square columns, connecting beams and one pipe. Draw
+      every element in thin, uniform #074E43 and #1F2328 lines with white #FFFFFF faces and dashed hidden
+      edges. Fill exactly two parts with solid flat #0FA994, the two an automated check flagged: one floor
+      slab, and the short section of the pipe where it passes through a beam; everything else stays unfilled.
+      True isometric projection with no vanishing point. Compose for 16:9: the whole building sits compact
+      in the centre at about 40 percent of the width, surrounded by wide calm solid #FAFAF9 off-white
+      space. Faint construction grid lines and small crosshair nodes run from the frame to every edge.
+      Flat even daylight, no cast or drop shadows, no glow, no gradients, no highlights. The image contains
+      no text, letters, numbers, labels, logo or watermark.'
+    prompt_enviado: 'Isometric illustration of the two-storey building frame in @img1: slabs, columns,
+      beams and one pipe. Two parts are flat teal, the ones an automated check found: one floor slab and
+      the pipe where it passes through a beam. The whole building stays in the centre with wide empty
+      space around it. No text, no logo.'
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2688
+    - 1520
+    reproducible: true
+    pedido: magnific/pedidos/articulo-ia-obra.json
+    fecha: '2026-11-10'
+    sha256: 5c204b3bff37acad
+    nota: 'piloto G24 (2026-11-10): imagen final con el kit, sin plantilla; referencia de encuadre: la
+      composición 1 de la grilla de borradores WDL8IkhcXe, subida como ksMJNHs16B. Foco = centro del turquesa
+      medido.'
+    foco:
+    - 0.45
+    - 0.71

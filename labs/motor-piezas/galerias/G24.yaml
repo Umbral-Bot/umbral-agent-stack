@@ -1,0 +1,46 @@
+id: G24
+fecha: 2026-11-10
+titulo: "Galería 24 · piloto de Magnific One con el kit de marca"
+descripcion: >
+  David aprobó el piloto de 430 créditos («y si apruebo el gasto de 430 creditos en maginific»):
+  una grilla de borradores (250) y una imagen final a 2k con el kit «Umbral BIM» (180). La imagen
+  no trae texto ni logo; el motor la recorta para cada formato y pone el texto, el lockup oficial
+  y la verificación UB-3. Los presets 02 y 03 quedan como David los eligió; solo cambia la imagen.
+  Laboratorio: no publicar.
+resumen: >
+  El Preset 02 (4:5, 1:1, 9:16, 16:9 y LinkedIn) y el Preset 03 (1:1 y LinkedIn) con la misma
+  imagen maestra de Magnific One.
+como_elegir: >
+  Dime si la imagen sirve para la marca y si cambiarías algo del pedido. Con eso el motor queda
+  listo para pedir la imagen de cada artículo.
+contenido: contenido/articulo-magnific-piloto.yaml
+secciones:
+  - alternativa: p02-magnific
+    titulo: "Preset 02 · con bajada"
+    descripcion: >
+      Los cinco formatos del Preset 02 con la imagen de Magnific. Antes llevaban la ilustración de
+      Midjourney del laboratorio.
+    contenido: contenido/articulo-magnific-piloto.yaml
+    pasos:
+      - "4:5 · vertical (1080×1350)"
+      - "1:1 · cuadrado (1080×1080)"
+      - "9:16 · historia (1080×1920)"
+      - "16:9 · diapositiva (1920×1080)"
+      - "LinkedIn · imagen de enlace (1200×627)"
+    piezas:
+      - packs/P02-noticia-4x5.yaml
+      - packs/T1-noticia-1x1-banda.yaml
+      - packs/T3-noticia-historia.yaml
+      - packs/T6-noticia-slide.yaml
+      - packs/U2-noticia-linkedin-separacion-36.yaml
+  - alternativa: p03-magnific
+    titulo: "Preset 03 · sin bajada"
+    descripcion: >
+      Los dos formatos del Preset 03 con la misma imagen.
+    contenido: contenido/articulo-magnific-piloto.yaml
+    pasos:
+      - "1:1 · cuadrado (1080×1080)"
+      - "LinkedIn · imagen de enlace (1200×627)"
+    piezas:
+      - packs/T2-noticia-1x1-sin-bajada.yaml
+      - packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml

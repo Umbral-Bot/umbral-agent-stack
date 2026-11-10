@@ -171,6 +171,7 @@ David pidió seguir con otro preset y eligió un post de noticia o artículo: ki
 | Separación | `galerias/G21.yaml` · Drive `01_galerias/2026-11-10_G21` (con `01_detalle.jpg`) | `packs/Y2` | la misma separación entre «Artículo», titular, bajada y botón: 32, 36 y 40 px | **la 2° (36 px) cierra el LinkedIn del Preset 02; la 1° (32 px) pasa al sin bajada** |
 | Sin bajada | `galerias/G22.yaml` · Drive `01_galerias/2026-11-10_G22` (con `01_detalle.jpg`) | `packs/Z1` | 32 px entre los textos del LinkedIn sin bajada: botón al pie, bloque al medio y bloque abajo | **la 1° (botón al pie), con el botón más chico** |
 | Botón | `galerias/G23.yaml` · Drive `01_galerias/2026-11-10_G23` (con `01_detalle.jpg`) | `packs/AA1` | el texto del botón un 12 % y un 24 % más chico, y un 24 % con menos relleno: 269×68, 237×61 y 229×53 px (antes 301×74) | **la 2° (texto del botón un 24 % más chico): cierra el LinkedIn del Preset 03** |
+| Magnific | `galerias/G24.yaml` · Drive `01_galerias/2026-11-10_G24` | `presets/P02` y `P03` | piloto: los siete formatos con una imagen maestra de Magnific One con el kit (430 créditos) | espera el comentario de David |
 
 El Preset 02 queda en `packs/P02-noticia-4x5.yaml`, un pack plano con el recorrido de decisiones.
 - Reproduce la elección de G16 (SVG idéntico).
@@ -206,7 +207,7 @@ En G22 David eligió la 1° con el botón más chico («Sin bajada · LinkedIn, 
 - Con el texto más chico el botón cabía en una línea, pero quedaba más ancho (481 px). El motor 0.3k suma `cta_cortar_en_punto`, que deja una línea por cada tramo del «·». Con el valor por defecto, G21 y G22 salen con SVG idénticos.
 
 Magnific (2026-11-10): `magnific-marca.md` recomienda usar Magnific One con el kit «Umbral BIM» solo para la imagen. El texto, el logo y la verificación quedan en el motor. Antes hay que corregir el kit: no tiene prohibiciones, manual ni logo vectorial.
-- David estuvo de acuerdo con la propuesta. El kit quedó corregido (prohibiciones, cinco referencias isométricas, lockups SVG y plantillas solo de imagen) y `pedido_magnific.py` arma el pedido de la imagen maestra y la registra con su procedencia. El detalle y lo que falta están en `magnific-marca.md`. El piloto con créditos espera el OK de David.
+- David estuvo de acuerdo con la propuesta. El kit quedó corregido (prohibiciones, cinco referencias isométricas, lockups SVG y plantillas solo de imagen) y `pedido_magnific.py` arma el pedido de la imagen maestra y la registra con su procedencia. El detalle y lo que falta están en `magnific-marca.md`. El piloto (G24, 430 créditos aprobados y gastados) salió con las siete piezas en UB-3; el motor 0.3l suma el `foco` de cada imagen del catálogo.
 
 Comentarios de David sobre G01 (en `decisiones.csv`):
 - **1°:** faltan ajustes de proporción y composición.
@@ -254,6 +255,7 @@ python galeria.py --definicion galerias/G20.yaml              # LinkedIn ajustad
 python galeria.py --definicion galerias/G21.yaml              # separación del texto en LinkedIn (salida/G21)
 python galeria.py --definicion galerias/G22.yaml              # separación del LinkedIn sin bajada (salida/G22)
 python galeria.py --definicion galerias/G23.yaml              # botón más chico en el LinkedIn sin bajada (salida/G23)
+python galeria.py --definicion galerias/G24.yaml              # piloto de Magnific One en los presets 02 y 03 (salida/G24)
 python pedido_magnific.py pedido --preset presets/P02.yaml --preset presets/P03.yaml --contenido contenido/articulo-ejemplo.yaml --salida magnific/pedidos/articulo-ia-obra.json   # sin créditos
 python motor.py campana --preset presets/P02.yaml --contenido contenido/prueba-magnific.yaml --salida salida/prueba-magnific   # imagen de Magnific registrada
 python motor.py pieza --pack packs/P01-save-the-date-slide.yaml --contenido contenido/otro.yaml --salida salida/p01

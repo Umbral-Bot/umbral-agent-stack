@@ -840,6 +840,10 @@ class Compositor:
         k = max(marco.w / iw, marco.h / ih)
         dw, dh = iw * k, ih * k
         fx, fy = v['imagen_foco']
+        if info.get('foco') and 'imagen_foco' not in (self.pack.get('valores') or {}):
+            # la imagen trae dónde está su sujeto; un pack que fija su propio foco manda
+            fx, fy = info['foco']
+            self.notas.append(f"foco de la imagen: {fx}, {fy}")
         x = min(marco.x, max(marco.x2 - dw, marco.x + marco.w / 2 - fx * dw))
         y = min(marco.y, max(marco.y2 - dh, marco.y + marco.h / 2 - fy * dh))
         self.imagen = {'id': ident, 'ruta': ruta, 'x': x, 'y': y, 'w': dw, 'h': dh, 'zona': zona,
@@ -1699,7 +1703,11 @@ def generar_pieza(ctx: Contexto, nav: Navegador, ruta_pack: Path, dir_salida: Pa
                  'ancho_px': round(lg['ancho'], 1), 'sha256': sha16(lg['ruta'])},
         'imagen': ({k: comp.imagen['info'].get(k) for k in
                     ('archivo', 'herramienta', 'modelo', 'prompt', 'parametros', 'job_id', 'referencias_estilo',
-                     'semilla', 'proporcion_pedida', 'reproducible', 'sha256')} | {
+                     'semilla', 'proporcion_pedida', 'reproducible', 'sha256')} | (
+                    # una imagen de Magnific lleva su procedencia hasta la ficha de la pieza
+                    {k: comp.imagen['info'].get(k) for k in ('creacion', 'enlace', 'kit', 'plantilla', 'creditos',
+                                                              'prompt_enviado', 'foco', 'pedido')}
+                    if comp.imagen['info'].get('herramienta') == 'Magnific' else {}) | {
                        'encaje': comp.v['imagen_encaje']}) if comp.imagen else None,
         'procedencia': {'tokens_css_sha256': sha16(ctx.ruta_tokens), 'motor': VERSION_MOTOR,
                         'generado': datetime.now().isoformat(timespec='seconds')},

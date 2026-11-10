@@ -43,6 +43,33 @@ esperando su OK a los 430 créditos.
      presets 02 y 03 cumplen UB-3. Esa imagen se hizo para afiche, con la persona a la derecha, y en
      el 16:9 le corta la cabeza: es lo que la zona segura del pedido evita.
 
+### Piloto (G24, 2026-11-10)
+
+David aprobó el gasto: «y si apruebo el gasto de 430 creditos en maginific». Se gastaron 430 créditos
+(saldo 240.000 → 239.570): la grilla de borradores (250) y una imagen final a 2k con el kit (180).
+
+- **Pedido.** Un panel de agentes sin créditos propuso tres ideas y las juzgó con tres criterios
+  (marca, recorte, sentido). Ganó la literal: un edificio de dos pisos en corte, con solo la losa y la
+  tubería que atraviesa una viga en turquesa, «las que encontró una revisión automática».
+- **Borradores, sin kit.** Magnific One no acepta kit en el modo borrador; se pidieron con dos
+  imágenes aprobadas como referencia de estilo. Salieron 4 composiciones casi cuadradas, que
+  Magnific partió en 8 mitades: ninguna tesela tiene el edificio entero. Además parecen una lámina
+  escaneada (papel crema #F0EDE6, borde de hoja, trazo a mano, marcas de registro). Tres jueces
+  independientes lo detectaron; por eso ninguna tesela se pasó a final.
+- **Imagen final, con kit.** Se pidió directo a 2k, con la composición 1 como guía de encuadre
+  (`ksMJNHs16B`). Salió en la línea: fondo claro plano (#F9F7F5), trazo fino, retícula tenue,
+  turquesa solo en la losa y el tramo de tubería, sin texto ni logo. Magnific no devolvió su control
+  de marca automático. Registrada como `mg-articulo-ia-obra-01` en `imagenes.magnific.yaml`.
+- **Encuadre.** Magnific ignoró los márgenes pedidos: el edificio excede la zona segura en alto. El
+  motor 0.3l deja que la imagen traiga su `foco` (aquí, el centro del turquesa, 0,45 y 0,71): con
+  él, en el peor recorte (la diapositiva 16:9) se ve el 99 % del turquesa, contra el 75 % con el
+  recorte centrado.
+- **Resultado.** Las siete piezas de los presets 02 y 03 cumplen UB-3; el único aviso es el texto del
+  botón de LinkedIn bajo el mínimo móvil, pedido por David. Cada ficha de pieza lleva ahora la
+  procedencia de la imagen (creación, kit, créditos, foco y pedido).
+- **Para la próxima imagen:** saltarse la grilla de borradores (sin kit no sirve) y pedir una imagen
+  a 2k con el kit (180), con el foco medido al registrarla.
+
 ## Conclusión
 
 Magnific One es el camino para las **imágenes**: es el único modelo que aplica un kit de marca

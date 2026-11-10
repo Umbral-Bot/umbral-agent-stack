@@ -26,6 +26,7 @@ fecha: 2026-11-06
 # 0.3i: roles_texto.opacidad (tono entre dos tokens), pila_anclaje centro, logo arriba y botón en dos líneas junto al logo.
 # 0.3j: cta_al_pie_columna (con logo arriba, el botón puede cerrar el bloque de texto).
 # 0.3k: escala_cta baja hasta 0.6 y cta_cortar_en_punto (G22: «el boton mas pequeño»).
+# 0.3l: la imagen del catálogo puede traer `foco` (dónde está su sujeto); lo usa si el pack no fija imagen_foco.
 
 formatos:
   cuadrado:  {ancho: 1080, alto: 1080, vista_css: 390, uso: "feed 1:1 (Instagram, LinkedIn)"}
@@ -748,7 +749,7 @@ parametros:
     nivel: componente
     tipo: par
     defecto: [0.5, 0.5]
-    descripcion: punto de la imagen que el recorte mantiene visible (fracción de ancho y alto)
+    descripcion: punto de la imagen que el recorte mantiene visible (fracción de ancho y alto); si el pack no lo fija y la imagen del catálogo trae `foco`, manda el de la imagen (0.3l)
   imagen_registro:
     capa: imagen
     nivel: componente

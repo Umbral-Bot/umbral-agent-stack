@@ -146,7 +146,8 @@ def registrar(a):
         'plantilla': md.get('templateSlug') or a.plantilla or None,
         'semilla': md.get('seed'),
         'creditos': md.get('credits'),
-        'prompt': md.get('prompt'),
+        'prompt': md.get('prompt'),                 # el que compuso Magnific con el kit
+        'prompt_enviado': md.get('inputPrompt'),
         'proporcion_pedida': a.proporcion,
         'tamano_px': [ancho, alto],
         'reproducible': md.get('seed') is not None,
@@ -156,6 +157,8 @@ def registrar(a):
     }
     if a.nota:
         imagenes[a.id]['nota'] = a.nota
+    if a.foco:
+        imagenes[a.id]['foco'] = [float(x) for x in a.foco.split(',')]
     cabecera = ('# Imágenes de Magnific One con el kit «Umbral BIM». Las escribe pedido_magnific.py registrar.\n'
                 '# El archivo vive en 07_Motor de piezas/02_magnific; la procedencia, aquí.\n')
     ruta_cat.write_text(cabecera + yaml.safe_dump({'imagenes': imagenes}, allow_unicode=True, sort_keys=False,
@@ -179,6 +182,7 @@ def main():
     r.add_argument('--plantilla', default=PLANTILLA)
     r.add_argument('--proporcion', default=f'{PROPORCION[0]}:{PROPORCION[1]}')
     r.add_argument('--nota')
+    r.add_argument('--foco', help='x,y del sujeto en fracciones (p. ej. el centro del turquesa)')
     a = ap.parse_args()
     pedido(a) if a.orden == 'pedido' else registrar(a)
 

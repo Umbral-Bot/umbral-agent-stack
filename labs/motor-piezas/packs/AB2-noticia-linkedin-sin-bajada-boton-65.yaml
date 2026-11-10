@@ -3,7 +3,7 @@ nombre: "LinkedIn sin bajada · la 1° de G22 con el texto del botón un 24 % m�
 alternativa: sin-bajada-linkedin-boton
 paso: tamaño del botón
 hereda: packs/AA1-noticia-linkedin-sin-bajada-32.yaml
-decision_david: null
+decision_david: 'G23, 2026-11-10: «Sin bajada · LinkedIn, piezas completas : 2»'
 # G22, 2026-11-10: «1 peor el boton mas pequeño». El relleno del botón no cambia y sigue en dos
 # líneas: con el texto más chico cabía en una, más ancha.
 valores:

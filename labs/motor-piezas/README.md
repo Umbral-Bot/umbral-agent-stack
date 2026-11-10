@@ -170,7 +170,7 @@ David pidió seguir con otro preset y eligió un post de noticia o artículo: ki
 | LinkedIn | `galerias/G20.yaml` · Drive `01_galerias/2026-11-10_G20` | `packs/W1` y `X3` | con bajada: el 5° ajustado y dos repartos más (columna ancha, bajada más chica); sin bajada: el 10° con el botón más chico | **con bajada la 2° (columna ancha), con los textos más separados; sin bajada la 4°, que pasa al Preset 03** |
 | Separación | `galerias/G21.yaml` · Drive `01_galerias/2026-11-10_G21` (con `01_detalle.jpg`) | `packs/Y2` | la misma separación entre «Artículo», titular, bajada y botón: 32, 36 y 40 px | **la 2° (36 px) cierra el LinkedIn del Preset 02; la 1° (32 px) pasa al sin bajada** |
 | Sin bajada | `galerias/G22.yaml` · Drive `01_galerias/2026-11-10_G22` (con `01_detalle.jpg`) | `packs/Z1` | 32 px entre los textos del LinkedIn sin bajada: botón al pie, bloque al medio y bloque abajo | **la 1° (botón al pie), con el botón más chico** |
-| Botón | `galerias/G23.yaml` · Drive `01_galerias/2026-11-10_G23` (con `01_detalle.jpg`) | `packs/AA1` | el texto del botón un 12 % y un 24 % más chico, y un 24 % con menos relleno: 269×68, 237×61 y 229×53 px (antes 301×74) | espera la elección de David |
+| Botón | `galerias/G23.yaml` · Drive `01_galerias/2026-11-10_G23` (con `01_detalle.jpg`) | `packs/AA1` | el texto del botón un 12 % y un 24 % más chico, y un 24 % con menos relleno: 269×68, 237×61 y 229×53 px (antes 301×74) | **la 2° (texto del botón un 24 % más chico): cierra el LinkedIn del Preset 03** |
 
 El Preset 02 queda en `packs/P02-noticia-4x5.yaml`, un pack plano con el recorrido de decisiones.
 - Reproduce la elección de G16 (SVG idéntico).

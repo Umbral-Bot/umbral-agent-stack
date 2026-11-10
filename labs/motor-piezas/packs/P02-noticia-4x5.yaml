@@ -12,6 +12,7 @@ recorrido:      # cada paso está en decisiones.csv y en packs/N*–S*
   - "paso 4 · color: bajada blanca (G15 2°)"
   - "paso 5 · pie y detalles: llamado como botón y sin trama (G16 «3 y 4»); el botón es solo de este preset (aclaración de David, 2026-11-09)"
   - "ajuste de formatos · la bajada un poco gris: el blanco al 80 % (G19 «= 3», 2026-11-10). G17 y G18 se hicieron antes, con la bajada blanca"
+  - "ajuste de imagen · el objeto entero y centrado en su máscara: 85 % en las bandas y 75 % en las columnas (G25 «2°, 85 y 75», 2026-11-10). Solo actúa con imágenes que traen su objeto medido (las de Magnific); G24 y G25 fijan sus propios valores"
 roles_texto:
   cuerpo: {color: tinta, opacidad: 0.8}    # G19 3°: --ub-text al 80 % sobre la banda (10,3:1); antes blanca (G15 2°)
 valores:
@@ -37,6 +38,9 @@ valores:
   imagen_fuente: mj3_V-S17b_0   # la del ejemplo; cada artículo puede traer la suya en el contenido (imagen:)
   imagen_encaje: sangrado_lateral
   imagen_registro: parte
+  imagen_ajuste: objeto             # G25 2°: el objeto de la imagen entero y centrado en su máscara
+  imagen_objeto_ocupa: 0.85         # en las bandas (4:5, 1:1, 16:9)
+  imagen_objeto_ocupa_columna: 0.75 # en las columnas, más angostas que 1,3:1 (LinkedIn, 9:16)
   # paso 4 · color: bajada blanca (roles_texto). Si el texto fuera sobre la imagen, rigen estas dos
   contraste_sobre_imagen: 10.0
   colores_sobre_imagen: claros

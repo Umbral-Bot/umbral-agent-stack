@@ -121,13 +121,13 @@ numero,codigo,pack,comentario_david,fecha
 5°,G25-U2-o75,packs/U2-noticia-linkedin-separacion-36.yaml,,
 6°,G25-T2-o75,packs/T2-noticia-1x1-sin-bajada.yaml,,
 7°,G25-AB2-o75,packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml,,
-8°,G25-P02-o85-75,packs/P02-noticia-4x5.yaml,,
-9°,G25-T1-o85-75,packs/T1-noticia-1x1-banda.yaml,,
-10°,G25-T3-o85-75,packs/T3-noticia-historia.yaml,,
-11°,G25-T6-o85-75,packs/T6-noticia-slide.yaml,,
-12°,G25-U2-o85-75,packs/U2-noticia-linkedin-separacion-36.yaml,,
-13°,G25-T2-o85-75,packs/T2-noticia-1x1-sin-bajada.yaml,,
-14°,G25-AB2-o85-75,packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml,,
+8°,G25-P02-o85-75,packs/P02-noticia-4x5.yaml,"2°, 85 y 75",2026-11-10
+9°,G25-T1-o85-75,packs/T1-noticia-1x1-banda.yaml,"2°, 85 y 75",2026-11-10
+10°,G25-T3-o85-75,packs/T3-noticia-historia.yaml,"2°, 85 y 75",2026-11-10
+11°,G25-T6-o85-75,packs/T6-noticia-slide.yaml,"2°, 85 y 75",2026-11-10
+12°,G25-U2-o85-75,packs/U2-noticia-linkedin-separacion-36.yaml,"2°, 85 y 75",2026-11-10
+13°,G25-T2-o85-75,packs/T2-noticia-1x1-sin-bajada.yaml,"2°, 85 y 75",2026-11-10
+14°,G25-AB2-o85-75,packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml,"2°, 85 y 75",2026-11-10
 15°,G25-P02-o85,packs/P02-noticia-4x5.yaml,,
 16°,G25-T1-o85,packs/T1-noticia-1x1-banda.yaml,,
 17°,G25-T3-o85,packs/T3-noticia-historia.yaml,,

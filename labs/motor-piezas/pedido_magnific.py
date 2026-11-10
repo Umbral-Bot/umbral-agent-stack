@@ -34,7 +34,9 @@ from motor import LAB, Compositor, Contexto, abrir_navegador, cargar_pack, carga
 KIT = {'id': 'hu2CvqLJlt', 'nombre': 'Umbral BIM'}
 PLANTILLA = 'post-linkedin'          # «Imagen de artículo · 16:9, solo imagen» (el slug es el original)
 MODELO = 'magnific-one'              # el único que aplica un kit de marca
-PROPORCION = (16, 9)                 # la media geométrica de las zonas va de 0,8:1 a 3,6:1
+PROPORCION = (16, 9)                 # imagen principal: máscaras de 0,8:1 a 1,6:1
+PROPORCION_ANCHA = (21, 9)           # imagen apaisada: máscaras desde ANCHA_DESDE (1:1 en banda y 16:9)
+ANCHA_DESDE = 2.0                    # el mismo umbral que imagen_ancha_desde del motor
 CREDITOS_2K = 180                    # simulate_cost, 2026-11-10; se vuelve a simular antes de gastar
 
 
@@ -105,15 +107,17 @@ def pedido(a):
                     formatos.append({'preset': preset['id'], 'formato': formato, 'pack': ruta_pack,
                                      'zona_px': None, 'nota': 'sin zona de imagen'})
                     continue
-                v = ventana(comp, PROPORCION)
+                ancha = z['w'] / z['h'] >= ANCHA_DESDE
+                v = ventana(comp, PROPORCION_ANCHA if ancha else PROPORCION)
                 formatos.append({'preset': preset['id'], 'formato': formato, 'pack': ruta_pack,
                                  'lienzo_px': [comp.W, comp.H],
                                  'zona_px': [round(z['w']), round(z['h'])],
                                  'proporcion_zona': round(z['w'] / z['h'], 2),
+                                 'imagen': 'ancha' if ancha else 'principal',
                                  'foco': list(comp.v['imagen_foco']),
                                  'registro': comp.v['imagen_registro'],
                                  'ventana_visible': [round(x, 3) for x in v]})
-    vistas = [f['ventana_visible'] for f in formatos if f.get('zona_px')]
+    vistas = [f['ventana_visible'] for f in formatos if f.get('zona_px') and f['imagen'] == 'principal']
     if not vistas:
         raise SystemExit('ningún formato tiene zona de imagen')
     segura = [max(v[0] for v in vistas), max(v[1] for v in vistas),
@@ -140,6 +144,14 @@ def pedido(a):
         'zona_segura': {'fracciones': [round(x, 3) for x in segura],
                         'ancho_pct': round(ancho * 100), 'alto_pct': round(alto * 100)},
         'texto': texto,
+        'imagen_ancha': {
+            'formatos': [f"{f['preset']} {f['formato']} ({f['proporcion_zona']}:1)" for f in formatos
+                         if f.get('imagen') == 'ancha'],
+            'proporcion': f'{PROPORCION_ANCHA[0]}:{PROPORCION_ANCHA[1]}',
+            'objeto': 'bajo y ancho, entre 2,5:1 y 3:1, un solo grupo compacto: el motor lo pone al 85 % del alto de la banda',
+            'texto': None,
+            'nota': 'el texto lo escribe el panel de pedido; esta imagen la usa el contenido como imagen_ancha',
+        },
         'formatos': formatos,
     }
     destino = LAB / a.salida

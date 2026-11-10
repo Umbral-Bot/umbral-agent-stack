@@ -24,7 +24,7 @@ secciones:
       El edificio ocupa el 75 % de la máscara en su dimensión más justa, centrado.
     contenido: contenido/articulo-magnific-piloto.yaml
     sufijo: o75
-    valores: {imagen_ajuste: objeto, imagen_objeto_ocupa: 0.75}
+    valores: {imagen_ajuste: objeto, imagen_objeto_ocupa: 0.75, imagen_objeto_ocupa_columna: null}
     pasos: &formatos
       - "Preset 02 · 4:5"
       - "Preset 02 · 1:1"
@@ -56,6 +56,6 @@ secciones:
       El edificio ocupa el 85 % de la máscara en su dimensión más justa, centrado.
     contenido: contenido/articulo-magnific-piloto.yaml
     sufijo: o85
-    valores: {imagen_ajuste: objeto, imagen_objeto_ocupa: 0.85}
+    valores: {imagen_ajuste: objeto, imagen_objeto_ocupa: 0.85, imagen_objeto_ocupa_columna: null}
     pasos: *formatos
     piezas: *packs

@@ -21,6 +21,7 @@ secciones:
       Los cinco formatos del Preset 02 con la imagen de Magnific. Antes llevaban la ilustración de
       Midjourney del laboratorio.
     contenido: contenido/articulo-magnific-piloto.yaml
+    valores: {imagen_ajuste: cubrir}   # G24 se hizo antes de G25: la imagen cubre la máscara
     pasos:
       - "4:5 · vertical (1080×1350)"
       - "1:1 · cuadrado (1080×1080)"
@@ -38,6 +39,7 @@ secciones:
     descripcion: >
       Los dos formatos del Preset 03 con la misma imagen.
     contenido: contenido/articulo-magnific-piloto.yaml
+    valores: {imagen_ajuste: cubrir}
     pasos:
       - "1:1 · cuadrado (1080×1080)"
       - "LinkedIn · imagen de enlace (1200×627)"

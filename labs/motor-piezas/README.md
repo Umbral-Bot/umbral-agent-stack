@@ -172,7 +172,7 @@ David pidió seguir con otro preset y eligió un post de noticia o artículo: ki
 | Sin bajada | `galerias/G22.yaml` · Drive `01_galerias/2026-11-10_G22` (con `01_detalle.jpg`) | `packs/Z1` | 32 px entre los textos del LinkedIn sin bajada: botón al pie, bloque al medio y bloque abajo | **la 1° (botón al pie), con el botón más chico** |
 | Botón | `galerias/G23.yaml` · Drive `01_galerias/2026-11-10_G23` (con `01_detalle.jpg`) | `packs/AA1` | el texto del botón un 12 % y un 24 % más chico, y un 24 % con menos relleno: 269×68, 237×61 y 229×53 px (antes 301×74) | **la 2° (texto del botón un 24 % más chico): cierra el LinkedIn del Preset 03** |
 | Magnific | `galerias/G24.yaml` · Drive `01_galerias/2026-11-10_G24` | `presets/P02` y `P03` | piloto: los siete formatos con una imagen maestra de Magnific One con el kit (430 créditos) | **«el objeto no quedó bien posicionado respecto [...] de la mascara usadal»**: va a G25 |
-| Objeto en la máscara | `galerias/G25.yaml` · Drive `01_galerias/2026-11-10_G25` | G24 con `imagen_ajuste: objeto` | el edificio entero y centrado en cada máscara: 75 % en todas, 85 % en bandas y 75 % en columnas, 85 % en todas | espera la elección de David |
+| Objeto en la máscara | `galerias/G25.yaml` · Drive `01_galerias/2026-11-10_G25` | G24 con `imagen_ajuste: objeto` | el edificio entero y centrado en cada máscara: 75 % en todas, 85 % en bandas y 75 % en columnas, 85 % en todas | **la 2° («2°, 85 y 75»), ya en el Preset 02**; el 1:1 y el 16:9 piden otra imagen, apaisada |
 
 El Preset 02 queda en `packs/P02-noticia-4x5.yaml`, un pack plano con el recorrido de decisiones.
 - Reproduce la elección de G16 (SVG idéntico).
@@ -215,6 +215,12 @@ Sobre G24 David dijo: «algunos de los formatos quedaron bueni , otros no tanto,
 - El motor 0.3m suma `imagen_ajuste: objeto`: la caja del objeto (medida al registrar la imagen, `objeto` en el catálogo) va entera y centrada en la máscara, a `imagen_objeto_ocupa` (y a `imagen_objeto_ocupa_columna` en máscaras más angostas que 1,3:1). Si la imagen no cubre la máscara, su fondo (`fondo_imagen`) se extiende y la imagen se funde en él solo por los lados que caen dentro, a lo largo de todo el hueco hasta el objeto. Con el valor por defecto (`cubrir`), G21, G23 y G24 salen idénticas.
 - Una primera versión con un borde difuso corto dejaba la retícula como un rectángulo pegado en las bandas anchas; tres jueces lo detectaron y se corrigió antes de mostrarla.
 - Las galerías ahora pueden fijar `valores` por sección para probar un valor en todos los formatos sin crear un pack por formato.
+
+En G25 David eligió la 2° («2°, 85 y 75») y comentó: «entre esos se ve mejorel 2, peo por ejemplo fuciona con el los fomratos 4:5 , pero para el 1:1 queda la imagen muy apaizada, , la parte de la mascara entonces ahi seria necesario otra imagen pensada en eso,, lo mismo pasa con la 16:9 [...] el de linkedin sev e bine, el 9:16 buena composicoón se ve bien, aunque ahi el objeto tend´ria que estar muy bien trabajadouye star realcionado conelc ontenido yque queda muypri,er plano la fugura».
+- El encuadre por objeto queda en el pack base `P02-noticia-4x5.yaml` (85 % en bandas, 75 % en columnas). Solo actúa con imágenes que traen su objeto medido; G24 y G25 fijan sus propios valores para seguir reproduciéndose igual.
+- Motor 0.3n: el contenido puede traer `imagen_ancha`, la imagen para las máscaras desde `imagen_ancha_desde` (2:1): el 1:1 de los dos presets (2,05 y 2,66:1) y el 16:9 (3,64:1). `pedido_magnific.py` separa los dos grupos: la imagen principal (16:9, ahora puede usar todo el alto) y la apaisada (21:9, con un objeto bajo y ancho).
+- Al volver a generar, G17 y G19 (5°–7°) muestran la bajada al 80 %: es la decisión de G19 que pasó al pack base después de generarlas, no un cambio de este paso.
+- Para el 9:16 el objeto queda en primer plano: la imagen tiene que estar muy trabajada y contar el contenido. Es un criterio del pedido.
 
 Comentarios de David sobre G01 (en `decisiones.csv`):
 - **1°:** faltan ajustes de proporción y composición.

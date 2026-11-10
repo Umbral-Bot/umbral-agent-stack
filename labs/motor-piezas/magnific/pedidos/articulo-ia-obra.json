@@ -18,14 +18,25 @@
   "zona_segura": {
     "fracciones": [
       0.275,
-      0.256,
+      0.0,
       0.725,
-      0.744
+      1.0
     ],
     "ancho_pct": 45,
-    "alto_pct": 49
+    "alto_pct": 100
   },
-  "texto": "Article image for: «La IA entra a la obra». Qué cambia en la coordinación BIM cuando los modelos se revisan con IA, y qué sigue dependiendo del equipo. One clear subject that carries this idea. Keep the whole subject inside the central 45 percent of the width and 49 percent of the height; the rest of the frame is calm off-white with faint construction grid lines running to the edges, because the image is cropped to every format. No text, letters, numbers, labels or logos.",
+  "texto": "Article image for: «La IA entra a la obra». Qué cambia en la coordinación BIM cuando los modelos se revisan con IA, y qué sigue dependiendo del equipo. One clear subject that carries this idea. Keep the whole subject inside the central 45 percent of the width and 100 percent of the height; the rest of the frame is calm off-white with faint construction grid lines running to the edges, because the image is cropped to every format. No text, letters, numbers, labels or logos.",
+  "imagen_ancha": {
+    "formatos": [
+      "P02 cuadrado (2.66:1)",
+      "P02 slide (3.64:1)",
+      "P03 cuadrado (2.05:1)"
+    ],
+    "proporcion": "21:9",
+    "objeto": "bajo y ancho, entre 2,5:1 y 3:1, un solo grupo compacto: el motor lo pone al 85 % del alto de la banda",
+    "texto": null,
+    "nota": "el texto lo escribe el panel de pedido; esta imagen la usa el contenido como imagen_ancha"
+  },
   "formatos": [
     {
       "preset": "P02",
@@ -40,6 +51,7 @@
         663
       ],
       "proporcion_zona": 1.63,
+      "imagen": "principal",
       "foco": [
         0.5,
         0.5
@@ -65,6 +77,7 @@
         406
       ],
       "proporcion_zona": 2.66,
+      "imagen": "ancha",
       "foco": [
         0.5,
         0.5
@@ -72,9 +85,9 @@
       "registro": "parte",
       "ventana_visible": [
         0.0,
-        0.166,
+        0.061,
         1.0,
-        0.834
+        0.939
       ]
     },
     {
@@ -90,6 +103,7 @@
         1175
       ],
       "proporcion_zona": 0.92,
+      "imagen": "principal",
       "foco": [
         0.5,
         0.5
@@ -115,6 +129,7 @@
         528
       ],
       "proporcion_zona": 3.64,
+      "imagen": "ancha",
       "foco": [
         0.5,
         0.5
@@ -122,9 +137,9 @@
       "registro": "parte",
       "ventana_visible": [
         0.0,
-        0.256,
+        0.179,
         1.0,
-        0.744
+        0.821
       ]
     },
     {
@@ -140,6 +155,7 @@
         627
       ],
       "proporcion_zona": 0.8,
+      "imagen": "principal",
       "foco": [
         0.5,
         0.5
@@ -165,16 +181,17 @@
         528
       ],
       "proporcion_zona": 2.05,
+      "imagen": "ancha",
       "foco": [
         0.5,
         0.5
       ],
       "registro": "parte",
       "ventana_visible": [
+        0.062,
         0.0,
-        0.065,
-        1.0,
-        0.935
+        0.938,
+        1.0
       ]
     },
     {
@@ -190,6 +207,7 @@
         627
       ],
       "proporcion_zona": 0.94,
+      "imagen": "principal",
       "foco": [
         0.5,
         0.5

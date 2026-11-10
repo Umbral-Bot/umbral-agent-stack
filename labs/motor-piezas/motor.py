@@ -273,6 +273,8 @@ class Compositor:
             if contenido['imagen'] != self.v['imagen_fuente']:
                 self.notas.append(f"imagen del contenido: {contenido['imagen']} (el pack traía {self.v['imagen_fuente']})")
             self.v['imagen_fuente'] = contenido['imagen']
+        if contenido.get('imagen_ancha') and contenido['imagen_ancha'] not in ctx.catalogo:
+            raise ValueError(f"la imagen_ancha {contenido['imagen_ancha']!r} del contenido no está en el catálogo")
         self.zonas: dict[str, dict] = {}
         self.fondo = None                 # raster 1x del fondo (color + imagen) para medir contraste
 
@@ -871,6 +873,10 @@ class Compositor:
     def imagen_en(self, zona: Rect, radio: float):
         v = self.v
         ident = v['imagen_fuente']
+        if self.c.get('imagen_ancha') and zona.w / zona.h >= v['imagen_ancha_desde']:
+            # 0.3n: una máscara apaisada usa la imagen pensada para ella, si el contenido la trae
+            ident = self.c['imagen_ancha']
+            self.notas.append(f'máscara ancha ({zona.w / zona.h:.2f}:1): imagen apaisada {ident}')
         if ident not in self.ctx.catalogo:
             raise ValueError(f'imagen {ident!r} no está en imagenes.yaml')
         info = self.ctx.catalogo[ident]

@@ -167,6 +167,8 @@ umbral_load_env() {
     # en ninguna direccion: ni un entorno olvidado puede poner produccion en
     # modo de prueba, ni puede apagarselo a un ensayo que lo pidio.
     [ "$key" = "UMBRAL_ALERT_DRY_RUN" ] && continue
+    # El reloj de las pruebas, tampoco: ver umbral_now.
+    [ "$key" = "UMBRAL_NOW" ] && continue
     # Solo se rellena lo que NO ESTA DEFINIDO. Una variable definida y vacia es
     # una decision de quien llama, no un hueco: darla por ausente fue lo que
     # convirtio un WORKER_TOKEN="" puesto a proposito en un aviso real.
@@ -268,6 +270,29 @@ umbral_alert_reavisos() {
 }
 
 # -----------------------------------------------------------------
+# umbral_now — "ahora" de la ventana de silencio, en segundos.
+#
+# En produccion es siempre `date +%s`. UMBRAL_NOW lo fijan solo las pruebas:
+# la ventana se compara al segundo, y con el reloj real basta con que cambie
+# de segundo entre una entrega y la pregunta siguiente para que el borde
+# "un segundo antes" avise antes de tiempo (paso en CI el 2026-11-09).
+#
+# Lo leen decidir (umbral_should_alert) y sellar (umbral_commit_alert): con
+# relojes distintos, la ventana mediria la diferencia entre ellos. El latido
+# sigue en el reloj real: ninguna prueba necesita congelarlo.
+#
+# Un valor que no sea un entero se ignora. El archivo de entorno no puede
+# fijarlo (umbral_load_env): con el reloj parado, un estado ya avisado no
+# volveria a avisarse nunca.
+# -----------------------------------------------------------------
+umbral_now() {
+  case "${UMBRAL_NOW:-}" in
+    ''|*[!0-9]*) date +%s ;;
+    *) printf '%s' "$UMBRAL_NOW" ;;
+  esac
+}
+
+# -----------------------------------------------------------------
 # umbral_should_alert <monitor> <huella>
 # DECIDE. No escribe nada.
 # 0 = hay que avisar (estado nuevo, o venció la ventana).
@@ -286,7 +311,7 @@ umbral_alert_reavisos() {
 umbral_should_alert() {
   local monitor="$1" fp="$2"
   local f="$UMBRAL_MON_STATE_DIR/${monitor}.alert"
-  local now; now=$(date +%s)
+  local now; now=$(umbral_now)
   UMBRAL_ALERT_PENDING_N=0
   if [ -f "$f" ]; then
     local prev_fp prev_ts prev_n ventana
@@ -317,7 +342,7 @@ umbral_commit_alert() {
   local monitor="$1" fp="$2" n="${3:-${UMBRAL_ALERT_PENDING_N:-0}}"
   umbral_ruta_escritura_prueba "$UMBRAL_MON_STATE_DIR/${monitor}.alert" || return 2
   mkdir -p "$UMBRAL_MON_STATE_DIR"
-  printf '%s\n%s\n%s\n' "$fp" "$(date +%s)" "$n" > "$UMBRAL_MON_STATE_DIR/${monitor}.alert"
+  printf '%s\n%s\n%s\n' "$fp" "$(umbral_now)" "$n" > "$UMBRAL_MON_STATE_DIR/${monitor}.alert"
 }
 
 # -----------------------------------------------------------------

@@ -42,6 +42,7 @@ def state_dir(tmp_path: Path) -> dict[str, str]:
 
 H = 3600     # una hora en segundos: la unidad en que esta escrita la cadencia
 TOPE = 82800  # el tope del retroceso: 23 h, por debajo de la cadencia diaria de e2e
+AHORA = 1_000_000_000  # «ahora» fijo del monitor en las pruebas de ventana (UMBRAL_NOW)
 
 # Un aviso ENTREGADO: decidir y, solo entonces, abrir la ventana de silencio.
 # Es lo que hace umbral_alert cuando el envio se confirma.
@@ -63,7 +64,12 @@ def reavisos(f: Path) -> int:
 def adelantar_reloj(f: Path, segundos: int) -> None:
     """Reloj controlado: atrasa la marca del estado, que es exactamente lo que
     ve el monitor cuando pasa el tiempo. Asi la secuencia entera de ventanas se
-    recorre sin esperar 24 horas y sin meter un reloj falso en produccion."""
+    recorre sin esperar 24 horas y sin meter un reloj falso en produccion.
+
+    Solo es exacto si el «ahora» del monitor no se mueve entre dos pasos: por
+    eso quien lo usa fija UMBRAL_NOW. Con el reloj real, basta con que cambie de
+    segundo entre la entrega y la pregunta para que el borde de «un segundo
+    antes» avise antes de tiempo."""
     fp, ts, n = f.read_text(encoding="utf-8").split()
     f.write_text(f"{fp}\n{int(ts) - segundos}\n{n}\n", encoding="utf-8")
 
@@ -464,6 +470,18 @@ class TestRetrocesoExponencial:
     La cadencia se comprueba de dos maneras independientes: como función pura
     (sin reloj) y recorriendo la secuencia completa con un reloj controlado."""
 
+    @pytest.fixture(autouse=True)
+    def _ahora_fijo(self, state_dir):
+        """El «ahora» del monitor queda fijo en toda la clase: solo se mueve lo
+        que la prueba mueve con adelantar_reloj. Con el reloj real, un cambio de
+        segundo entre la entrega y la pregunta siguiente hacía avisar el borde
+        de «un segundo antes» (CI del 2026-11-09, Python 3.12).
+
+        Está lejos del reloj real a propósito: si algún paso de la ventana
+        volviera a leer el reloj real, la prueba fallaría siempre, no de vez en
+        cuando."""
+        state_dir["UMBRAL_NOW"] = str(AHORA)
+
     def test_la_ventana_documentada_por_numero_de_reaviso(self, state_dir):
         r = run_bash(
             'for n in 0 1 2 3 4 5 6 20; do printf "%s " "$(umbral_alert_window $n)"; done',
@@ -490,6 +508,8 @@ class TestRetrocesoExponencial:
         r = run_bash(ENTREGADO + 'entregado mon h && echo AVISA', state_dir)
         assert "AVISA" in r.stdout
         assert reavisos(f) == 0
+        assert f.read_text(encoding="utf-8").split()[1] == str(AHORA), \
+            "la entrega no se selló con el reloj de la prueba"
 
         for i, ventana in enumerate([1 * H, 2 * H, 4 * H, 8 * H, 16 * H, TOPE, TOPE]):
             adelantar_reloj(f, ventana - 1)
@@ -547,6 +567,31 @@ class TestRetrocesoExponencial:
             {**state_dir, "UMBRAL_ENV_FILE": "/dev/null"},
         )
         assert "14400" in r.stdout, r.stdout
+
+
+class TestRelojDeLaVentana:
+    """En producción la ventana se mide con el reloj real. UMBRAL_NOW solo lo
+    fijan las pruebas, y nada de producción puede fijarlo por accidente: con el
+    reloj parado, un estado ya avisado no volvería a avisarse nunca."""
+
+    def test_sin_reloj_de_prueba_manda_el_reloj_real(self, state_dir):
+        r = run_bash('unset UMBRAL_NOW; umbral_now', state_dir)
+        assert abs(int(r.stdout) - time.time()) < 60, r.stdout
+
+    @pytest.mark.parametrize("valor", ["", "abc", "-5", "12a"])
+    def test_un_reloj_ilegible_no_congela_la_ventana(self, state_dir, valor):
+        r = run_bash('umbral_now', {**state_dir, "UMBRAL_NOW": valor})
+        assert abs(int(r.stdout) - time.time()) < 60, r.stdout
+
+    def test_el_entorno_no_puede_fijar_el_reloj(self, tmp_path, state_dir):
+        f = tmp_path / "env"
+        # Fin de línea LF también en Windows: con CRLF el valor ya no sería un
+        # entero y la prueba pasaría aunque faltara la guarda.
+        f.write_text(f"UMBRAL_NOW={AHORA}\n", encoding="utf-8", newline="\n")
+        r = run_bash('unset UMBRAL_NOW; umbral_load_env; umbral_now',
+                     {**state_dir, "UMBRAL_ENV_FILE": str(f)})
+        assert abs(int(r.stdout) - time.time()) < 60, \
+            "un UMBRAL_NOW en el archivo de entorno no puede parar el reloj de producción"
 
 
 class TestEntregaYSilencio:

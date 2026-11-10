@@ -562,7 +562,9 @@ class Compositor:
         if cta_boton_rel is not None:
             # el llamado como botón también cuando no cabe junto al logo y va al final de la pila
             self.boton_cta(xt, y0 + cta_boton_rel + self.alto_boton_cta(zona.w) / 2, ancla, zona.w)
-            self.notas.append('el llamado no cabe junto al logo: el botón va al final del bloque de texto')
+            self.notas.append('logo arriba: el botón cierra el bloque de texto'
+                              if self.v['logo_posicion'] == 'superior_izquierda' else
+                              'el llamado no cabe junto al logo: el botón va al final del bloque de texto')
         fondo = y0 + alto
         tope_titulo = next(y0 + p[4] - cap_t for p in plan if p[0] == 'texto' and p[1] == 'titulo-1')
         info = {'tope': y0, 'fondo': fondo, 'fondo_pila': fondo, 'fondo_titulo': y0 + fondo_titulo,
@@ -1263,6 +1265,9 @@ class Compositor:
             reserva = self.chip(ancla=Rect(x0, y_logo + (pie['alto'] - h) / 2, x1 - x0, h))
             tope = max(tope, reserva.y2)
         fondo = self.caja.y2
+        if pie['cta'] and not v['cta_al_pie_columna']:
+            # el llamado cierra el bloque de texto (lo pone la pila): la zona llega hasta el margen
+            return Rect(x0, tope + esp, x1 - x0, self.caja.y2 - tope - esp)
         if pie['cta']:
             if v['cta_estilo'] == 'boton':
                 h = self.alto_boton_cta(x1 - x0)
@@ -1287,7 +1292,8 @@ class Compositor:
         pie = self.preparar_pie(x0, x1)
         logo_arriba = v['logo_posicion'] == 'superior_izquierda'
         if logo_arriba:
-            zona, cta_en_pila = self._columna_logo_arriba(pie, x0, x1), False
+            zona = self._columna_logo_arriba(pie, x0, x1)
+            cta_en_pila = bool(pie['cta']) and not v['cta_al_pie_columna']
         else:
             fondo_util = self.caja.y2 - pie['alto_fila'] - self.mod(v['espacio_pie'])
             zona = Rect(x0, self.caja.y, x1 - x0, fondo_util - self.caja.y)

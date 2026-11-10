@@ -24,6 +24,7 @@ fecha: 2026-11-06
 # 0.3g: campana (un contenido, todos los formatos de un preset) y jerarquia_tope_secundario.
 # 0.3h: Preset 02 (post de noticia) · banda_arriba (texto arriba, imagen abajo).
 # 0.3i: roles_texto.opacidad (tono entre dos tokens), pila_anclaje centro, logo arriba y botón en dos líneas junto al logo.
+# 0.3j: cta_al_pie_columna (con logo arriba, el botón puede cerrar el bloque de texto).
 
 formatos:
   cuadrado:  {ancho: 1080, alto: 1080, vista_css: 390, uso: "feed 1:1 (Instagram, LinkedIn)"}
@@ -594,6 +595,13 @@ parametros:
     defecto: true
     descripcion: false = el llamado va al final del bloque de texto aunque quepa junto al logo
     origen: "G20 2° (2026-11-10): con la columna más ancha el botón cabía junto al logo y cambiaba la distribución elegida (G19 5°)"
+  cta_al_pie_columna:
+    capa: maquetacion
+    nivel: componente
+    tipo: booleano
+    defecto: true
+    descripcion: con logo_posicion superior_izquierda, true deja el llamado al pie de la columna; false lo pone al final del bloque de texto, a espacio_cta del título
+    origen: "G21 (2026-11-10): «2= 1», la misma separación de 32 px entre los textos del LinkedIn sin bajada"
   cta_pie_lineas_max:
     capa: maquetacion
     nivel: componente

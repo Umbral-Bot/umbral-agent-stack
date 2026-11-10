@@ -15,6 +15,9 @@ insumos_director: "07_Motor de piezas/00_insumos"
 generate_base: "07_Motor de piezas/00_insumos/01_codigo/generate.py"   # v2 portable: base del motor
 imagenes_mj: "07_Motor de piezas/00_insumos/05_midjourney_favoritas"
 galerias_drive: "07_Motor de piezas/01_galerias"
+# Imágenes de Magnific One con el kit «Umbral BIM» (carpeta del laboratorio; las registra
+# pedido_magnific.py con su procedencia en imagenes.magnific.yaml)
+imagenes_magnific: "07_Motor de piezas/02_magnific"
 
 # Fuentes de marca que se copian junto a cada salida (la licencia OFL viaja con ellas)
 archivos_fuentes:

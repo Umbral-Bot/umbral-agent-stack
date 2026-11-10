@@ -1,0 +1,206 @@
+{
+  "contenido": "contenido/articulo-ejemplo.yaml",
+  "fecha": "2026-11-10",
+  "estado": "pedido sin enviar: generar gasta créditos y necesita el OK de David",
+  "magnific": {
+    "herramienta": "images_generate",
+    "modelo": "magnific-one",
+    "kit": {
+      "id": "hu2CvqLJlt",
+      "nombre": "Umbral BIM"
+    },
+    "plantilla": "post-linkedin",
+    "proporcion": "16:9",
+    "resolucion": "2k",
+    "creditos_estimados": 180,
+    "aviso": "la plantilla queda fijada en 4:5 por su canal: el pedido pide 16:9 explícito"
+  },
+  "zona_segura": {
+    "fracciones": [
+      0.275,
+      0.256,
+      0.725,
+      0.744
+    ],
+    "ancho_pct": 45,
+    "alto_pct": 49
+  },
+  "texto": "Article image for: «La IA entra a la obra». Qué cambia en la coordinación BIM cuando los modelos se revisan con IA, y qué sigue dependiendo del equipo. One clear subject that carries this idea. Keep the whole subject inside the central 45 percent of the width and 49 percent of the height; the rest of the frame is calm off-white with faint construction grid lines running to the edges, because the image is cropped to every format. No text, letters, numbers, labels or logos.",
+  "formatos": [
+    {
+      "preset": "P02",
+      "formato": "vertical",
+      "pack": "packs/P02-noticia-4x5.yaml",
+      "lienzo_px": [
+        1080,
+        1350
+      ],
+      "zona_px": [
+        1080,
+        663
+      ],
+      "proporcion_zona": 1.63,
+      "foco": [
+        0.5,
+        0.5
+      ],
+      "registro": "parte",
+      "ventana_visible": [
+        0.042,
+        0.0,
+        0.958,
+        1.0
+      ]
+    },
+    {
+      "preset": "P02",
+      "formato": "cuadrado",
+      "pack": "packs/T1-noticia-1x1-banda.yaml",
+      "lienzo_px": [
+        1080,
+        1080
+      ],
+      "zona_px": [
+        1080,
+        406
+      ],
+      "proporcion_zona": 2.66,
+      "foco": [
+        0.5,
+        0.5
+      ],
+      "registro": "parte",
+      "ventana_visible": [
+        0.0,
+        0.166,
+        1.0,
+        0.834
+      ]
+    },
+    {
+      "preset": "P02",
+      "formato": "historia",
+      "pack": "packs/T3-noticia-historia.yaml",
+      "lienzo_px": [
+        1080,
+        1920
+      ],
+      "zona_px": [
+        1080,
+        1175
+      ],
+      "proporcion_zona": 0.92,
+      "foco": [
+        0.5,
+        0.5
+      ],
+      "registro": "parte",
+      "ventana_visible": [
+        0.241,
+        0.0,
+        0.759,
+        1.0
+      ]
+    },
+    {
+      "preset": "P02",
+      "formato": "slide",
+      "pack": "packs/T6-noticia-slide.yaml",
+      "lienzo_px": [
+        1920,
+        1080
+      ],
+      "zona_px": [
+        1920,
+        528
+      ],
+      "proporcion_zona": 3.64,
+      "foco": [
+        0.5,
+        0.5
+      ],
+      "registro": "parte",
+      "ventana_visible": [
+        0.0,
+        0.256,
+        1.0,
+        0.744
+      ]
+    },
+    {
+      "preset": "P02",
+      "formato": "linkedin",
+      "pack": "packs/U2-noticia-linkedin-separacion-36.yaml",
+      "lienzo_px": [
+        1200,
+        627
+      ],
+      "zona_px": [
+        501,
+        627
+      ],
+      "proporcion_zona": 0.8,
+      "foco": [
+        0.5,
+        0.5
+      ],
+      "registro": "parte",
+      "ventana_visible": [
+        0.275,
+        0.0,
+        0.725,
+        1.0
+      ]
+    },
+    {
+      "preset": "P03",
+      "formato": "cuadrado",
+      "pack": "packs/T2-noticia-1x1-sin-bajada.yaml",
+      "lienzo_px": [
+        1080,
+        1080
+      ],
+      "zona_px": [
+        1080,
+        528
+      ],
+      "proporcion_zona": 2.05,
+      "foco": [
+        0.5,
+        0.5
+      ],
+      "registro": "parte",
+      "ventana_visible": [
+        0.0,
+        0.065,
+        1.0,
+        0.935
+      ]
+    },
+    {
+      "preset": "P03",
+      "formato": "linkedin",
+      "pack": "packs/AA1-noticia-linkedin-sin-bajada-32.yaml",
+      "lienzo_px": [
+        1200,
+        627
+      ],
+      "zona_px": [
+        592,
+        627
+      ],
+      "proporcion_zona": 0.94,
+      "foco": [
+        0.5,
+        0.5
+      ],
+      "registro": "parte",
+      "ventana_visible": [
+        0.234,
+        0.0,
+        0.766,
+        1.0
+      ]
+    }
+  ]
+}

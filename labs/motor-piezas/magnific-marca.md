@@ -5,6 +5,44 @@ magnificone creo que es el cmaino, analiza ye dstuida el mejor camniino para eso
 braindings etc enfuncion del manual de la marca». Solo lectura: no se escribió en Magnific y no se
 gastaron créditos.
 
+## Avance
+
+David, 2026-11-10: «Respectode kitlo e maginfic one y la marca estoytotalmente de acuerdo con lo
+que proopones». Con eso quedan hechos los pasos 1 a 3, sin gastar créditos. El piloto (paso 4) sigue
+esperando su OK a los 430 créditos.
+
+1. **Línea visual: isométrica plana y clara.** De las ocho imágenes con su dirección aprobada,
+   cinco son de esa línea (G-SITIO-01 y G-AFI-01 a 04, Magnific One). Las otras tres (G-SITIO-02,
+   03 y 05) son íconos de diagrama con trazo grueso, hechos con Nano Banana: quedan fuera del kit
+   para no mezclar estilos.
+2. **Kit corregido.** Antes de tocarlo se respaldó en `magnific/kit-umbral-bim-antes-2026-11-10.json`.
+   - Seis prohibiciones cargadas (las del paso 2).
+   - Las cinco imágenes como referencia. Al leerlas, Magnific sumó por su cuenta cinco colores
+     estimados a la paleta (entre ellos un turquesa #12A296 como primario) y dos reglas de afiche
+     (sujeto a la derecha, izquierda vacía). Se volvió a la paleta UB-3 de siete colores y se
+     quitaron esas dos reglas: el motor necesita el sujeto al centro.
+   - Los SVG oficiales del Lockup 01 (Claro, Oscuro y Monocromo Blanco). Se descargaron de vuelta y
+     su geometría y colores son idénticos a los de `Exportables\`.
+   - Las dos plantillas pasaron a ser solo de imagen: «Imagen de artículo · 16:9» y «Fondo vertical ·
+     9:16». El texto anterior está en el respaldo.
+   - El texto de diseño del kit dice qué lockup va sobre qué fondo.
+   - **Lo que no se pudo desde fuera de la app:** Magnific describe los tres SVG «sobre fondo negro»
+     y al Monocromo Blanco le asigna fondos oscuros. El raster antiguo sigue en el kit. Ninguna de
+     las dos cosas se puede editar con las herramientas disponibles; el texto de diseño lo aclara, y la
+     sexta prohibición impide que la imagen traiga logo. La plantilla de artículo queda en 4:5 por
+     su canal («post LinkedIn»), así que el pedido pide 16:9 explícito.
+3. **Motor conectado** (`pedido_magnific.py`, motor 0.3k).
+   - `pedido` compone cada formato de los presets, mide su zona de imagen con el mismo encuadre del
+     motor y escribe el pedido. Para los presets 02 y 03, las zonas van de 3,6:1 (slide) a 0,8:1
+     (LinkedIn con bajada): con una maestra 16:9, el sujeto debe caber en el 45 % del ancho y el 49 %
+     del alto centrales. Pedido de ejemplo: `magnific/pedidos/articulo-ia-obra.json`.
+   - `registrar` copia la imagen a `07_Motor de piezas/02_magnific` y la anota en
+     `imagenes.magnific.yaml` con creación, kit, plantilla, semilla, créditos y prompt. Un contenido
+     la usa con `imagen: <id>`.
+   - Prueba sin créditos con G-SITIO-01 (`contenido/prueba-magnific.yaml`): los siete formatos de los
+     presets 02 y 03 cumplen UB-3. Esa imagen se hizo para afiche, con la persona a la derecha, y en
+     el 16:9 le corta la cabeza: es lo que la zona segura del pedido evita.
+
 ## Conclusión
 
 Magnific One es el camino para las **imágenes**: es el único modelo que aplica un kit de marca

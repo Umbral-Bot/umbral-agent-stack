@@ -206,6 +206,7 @@ En G22 David eligió la 1° con el botón más chico («Sin bajada · LinkedIn, 
 - Con el texto más chico el botón cabía en una línea, pero quedaba más ancho (481 px). El motor 0.3k suma `cta_cortar_en_punto`, que deja una línea por cada tramo del «·». Con el valor por defecto, G21 y G22 salen con SVG idénticos.
 
 Magnific (2026-11-10): `magnific-marca.md` recomienda usar Magnific One con el kit «Umbral BIM» solo para la imagen. El texto, el logo y la verificación quedan en el motor. Antes hay que corregir el kit: no tiene prohibiciones, manual ni logo vectorial.
+- David estuvo de acuerdo con la propuesta. El kit quedó corregido (prohibiciones, cinco referencias isométricas, lockups SVG y plantillas solo de imagen) y `pedido_magnific.py` arma el pedido de la imagen maestra y la registra con su procedencia. El detalle y lo que falta están en `magnific-marca.md`. El piloto con créditos espera el OK de David.
 
 Comentarios de David sobre G01 (en `decisiones.csv`):
 - **1°:** faltan ajustes de proporción y composición.
@@ -253,6 +254,8 @@ python galeria.py --definicion galerias/G20.yaml              # LinkedIn ajustad
 python galeria.py --definicion galerias/G21.yaml              # separación del texto en LinkedIn (salida/G21)
 python galeria.py --definicion galerias/G22.yaml              # separación del LinkedIn sin bajada (salida/G22)
 python galeria.py --definicion galerias/G23.yaml              # botón más chico en el LinkedIn sin bajada (salida/G23)
+python pedido_magnific.py pedido --preset presets/P02.yaml --preset presets/P03.yaml --contenido contenido/articulo-ejemplo.yaml --salida magnific/pedidos/articulo-ia-obra.json   # sin créditos
+python motor.py campana --preset presets/P02.yaml --contenido contenido/prueba-magnific.yaml --salida salida/prueba-magnific   # imagen de Magnific registrada
 python motor.py pieza --pack packs/P01-save-the-date-slide.yaml --contenido contenido/otro.yaml --salida salida/p01
 python catalogar_imagenes.py                                   # regenera imagenes.yaml desde los PNG
 python analisis/medir_piezas.py                                # re-mide las seis elegidas

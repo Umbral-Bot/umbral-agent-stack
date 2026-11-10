@@ -1,0 +1,34 @@
+# Imágenes de Magnific One con el kit «Umbral BIM». Las escribe pedido_magnific.py registrar.
+# El archivo vive en 07_Motor de piezas/02_magnific; la procedencia, aquí.
+imagenes:
+  mg-g-sitio-01:
+    archivo: mg-g-sitio-01.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: MBgIAIRDCm
+    enlace: https://www.magnific.com/app/creation/MBgIAIRDCm
+    kit: null
+    plantilla: null
+    semilla: 141354
+    creditos: 180
+    prompt: 'Quiet technical editorial illustration in 16:9 that adapts the subject relationship of @img1:
+      a professional on the right calmly examines construction drawings beside a physical sectional building
+      model. Here a woman in her forties in a plain shirt stands at a calm studio worktable, face visible
+      in three-quarter view, holding one drawing sheet up beside the model and checking it against the
+      cut section. The model is cut open to reveal floors, stairs, slabs and columns. The entire left
+      half of the frame is a completely clean, empty field of #FAFAF9 reserved for later text. Use flat
+      vector shapes with fine, even linework in #074E43 and #1F2328, white #FFFFFF paper and model surfaces,
+      and soft neutral greys. Small flat fill accents in #0FA994 appear only on two model slabs and one
+      drawing edge. Lighting is even, flat daylight with minimal shading. Drawings carry only abstract
+      lines and hatching. Keep it entirely text-free, with no letters, numerals, labels, logos, screens,
+      gradients, glow, holograms or dramatic shadows.'
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2688
+    - 1520
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-04'
+    sha256: 87e439cdf9a0ec00
+    nota: prueba de la cadena con una imagen existente (G-SITIO-01, 2026-11-04, antes de corregir el kit);
+      no es del piloto

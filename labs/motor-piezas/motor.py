@@ -109,8 +109,21 @@ class Contexto:
         self.dir_fuentes = self.marca / self.rutas['fuentes']
         self.dir_lockups = self.marca / self.rutas['lockups']
         self.dir_mj = self.marca / self.rutas['imagenes_mj']
+        self.dir_magnific = self.marca / self.rutas['imagenes_magnific']
         self.catalogo = cargar_yaml(LAB / 'imagenes.yaml')['imagenes']
+        ruta_magnific = LAB / 'imagenes.magnific.yaml'
+        if ruta_magnific.exists():
+            # las imágenes de Magnific traen su procedencia (creación, kit, semilla, créditos)
+            extra = cargar_yaml(ruta_magnific).get('imagenes') or {}
+            repetidas = sorted(set(extra) & set(self.catalogo))
+            if repetidas:
+                raise ValueError(f'imágenes con el mismo id en los dos catálogos: {repetidas}')
+            self.catalogo.update(extra)
         self.ilustraciones = self.rutas['ilustraciones']
+
+    def ruta_imagen(self, info: dict) -> Path:
+        carpeta = self.dir_magnific if info.get('herramienta') == 'Magnific' else self.dir_mj
+        return carpeta / info['archivo']
 
     def css_fuentes(self, prefijo: str) -> str:
         return ''.join(
@@ -819,7 +832,7 @@ class Compositor:
         if ident not in self.ctx.catalogo:
             raise ValueError(f'imagen {ident!r} no está en imagenes.yaml')
         info = self.ctx.catalogo[ident]
-        ruta = self.ctx.dir_mj / info['archivo']
+        ruta = self.ctx.ruta_imagen(info)
         iw, ih = info['tamano_px']
         # con imagen_registro 'lienzo' la imagen se encuadra como si cubriera todo el lienzo y la
         # zona solo la recorta: entre presets del paso 3 la imagen no se mueve

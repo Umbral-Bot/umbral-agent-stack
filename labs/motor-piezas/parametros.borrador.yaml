@@ -365,7 +365,7 @@ parametros:
     capa: maquetacion
     nivel: componente
     tipo: decimal
-    rango: [1.0, 1.6]
+    rango: [0.8, 1.6]   # bajo 1 queda por debajo de texto_minimo_css (lo pidió David para el botón, G19)
     defecto: 1.0
   escala_cuerpo:
     capa: maquetacion
@@ -457,6 +457,23 @@ parametros:
     rango: [1, 16]
     defecto: 5
     unidad: modulos
+  espacio_cta:
+    capa: maquetacion
+    nivel: componente
+    tipo: entero
+    rango: [1, 16]
+    defecto: null
+    unidad: modulos
+    descripcion: separación entre el último texto y el llamado cuando cierra la pila. null = espacio_filas_cuerpo
+    origen: "G19 5° (2026-11-10): «distribuye mejor los textos»; el botón iba pegado a la bajada"
+  cta_tracking_em:
+    capa: maquetacion
+    nivel: componente
+    tipo: decimal
+    rango: [0.0, 0.2]
+    defecto: 0.12
+    descripcion: espaciado del llamado si un pack le asigna este tracking (roles_texto.cta.tracking); por defecto el llamado usa etiqueta_tracking_em
+    origen: "G19 (2026-11-10): «mas pequeño el \"lee el ..\"»"
   espacio_pie:
     capa: maquetacion
     nivel: componente
@@ -570,6 +587,13 @@ parametros:
     rango: [1, 6]
     defecto: 2
     unidad: modulos
+  cta_junto_logo:
+    capa: maquetacion
+    nivel: componente
+    tipo: booleano
+    defecto: true
+    descripcion: false = el llamado va al final del bloque de texto aunque quepa junto al logo
+    origen: "G20 2° (2026-11-10): con la columna más ancha el botón cabía junto al logo y cambiaba la distribución elegida (G19 5°)"
   cta_pie_lineas_max:
     capa: maquetacion
     nivel: componente
@@ -591,7 +615,7 @@ parametros:
     capa: maquetacion
     nivel: componente
     tipo: opcion
-    opciones: [caja, linea_cruces]
+    opciones: [caja, linea_cruces, pie]   # pie (columna, desde G20): en la línea del logo, a la derecha; no le quita alto al texto. Sobre la imagen no se lee: su fondo es semitransparente
     defecto: caja
     descripcion: caja = esquina superior derecha de la caja de márgenes; linea_cruces = sobre la línea de las cruces (v2)
     origen: "1° y 12°: la cruz de registro superior derecha pisa el chip EJEMPLO"

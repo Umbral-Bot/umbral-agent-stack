@@ -515,11 +515,12 @@ class Compositor:
                     if cta_bajo_filas else 0.0)
         cta_boton_rel = None    # tope relativo del botón cuando el llamado cierra la pila
         if hay_cta and not cta_bajo_filas:
+            esp_cta = v['espacio_cta'] or v['espacio_filas_cuerpo']
             if boton:
-                cta_boton_rel = (previo or 0.0) + self.mod(v['espacio_filas_cuerpo'])
+                cta_boton_rel = (previo or 0.0) + self.mod(esp_cta)
                 previo = cta_boton_rel + self.alto_boton_cta(zona.w)
             else:
-                previo = bloque('cta', 'cta', self.c['cta'], v['espacio_filas_cuerpo'])
+                previo = bloque('cta', 'cta', self.c['cta'], esp_cta)
         alto = previo or 0.0
         if not solo_medir and self.notas_fijas:
             self.notas += self.notas_fijas
@@ -627,6 +628,9 @@ class Compositor:
                     self.medir('cta', l, self.t['cta'])['avance'] + relleno <= libre for l in lineas):
                 cabe, cta_ancho = True, libre
                 alto_fila = max(alto, self.alto_boton_cta(libre))
+        if cta is not None and not v['cta_junto_logo']:
+            # el llamado cierra el bloque de texto aunque quepa junto al logo
+            cabe, cta_ancho, alto_fila = False, None, alto
         return {'alto': alto, 'ancho': ancho, 'cta': cta, 'cta_cabe': cabe, 'x0': x0, 'x1': x1, 'comp': comp,
                 'cta_ancho': cta_ancho, 'alto_fila': alto_fila}
 
@@ -1287,7 +1291,9 @@ class Compositor:
         else:
             fondo_util = self.caja.y2 - pie['alto_fila'] - self.mod(v['espacio_pie'])
             zona = Rect(x0, self.caja.y, x1 - x0, fondo_util - self.caja.y)
-            reserva = self.chip(ancla=zona)
+            # chip_ancla: pie lo pone en la línea del logo, a la derecha, y no le quita alto al texto
+            chip_al_pie = (v['chip_ancla'] == 'pie' and not (pie['cta'] and pie['cta_cabe']))
+            reserva = None if chip_al_pie else self.chip(ancla=zona)
             if reserva is not None:
                 zona = Rect(zona.x, reserva.y2 + m, zona.w, zona.y2 - reserva.y2 - m)
             cta_en_pila = not pie['cta_cabe']
@@ -1301,7 +1307,11 @@ class Compositor:
         self.pila(zona, tam, ubic, cta_en_pila=cta_en_pila, anclar_abajo=abajo,
                   anclar_centro=v['pila_anclaje'] == 'centro')
         if not logo_arriba:
-            self.colocar_pie(pie)
+            fila = self.colocar_pie(pie)
+            if chip_al_pie and self.c.get('ejemplo'):
+                mc = self.medir('chip', self.preparar_texto('chip', self.c.get('chip', 'EJEMPLO')), self.t['chip'])
+                h = mc['cap'] + 2 * self.mod(v['chip_relleno_v'])
+                self.chip(ancla=Rect(x0, fila.y + (fila.h - h) / 2, x1 - x0, h))
         con_velo = v['imagen_encaje'] == 'fondo_completo_con_velo'
         if izquierda:
             if con_velo:

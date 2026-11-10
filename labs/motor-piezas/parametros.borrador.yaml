@@ -27,6 +27,7 @@ fecha: 2026-11-06
 # 0.3j: cta_al_pie_columna (con logo arriba, el botón puede cerrar el bloque de texto).
 # 0.3k: escala_cta baja hasta 0.6 y cta_cortar_en_punto (G22: «el boton mas pequeño»).
 # 0.3l: la imagen del catálogo puede traer `foco` (dónde está su sujeto); lo usa si el pack no fija imagen_foco.
+# 0.3m: imagen_ajuste objeto (el objeto entero y centrado en su máscara), imagen_objeto_ocupa e imagen_borde_difuso.
 
 formatos:
   cuadrado:  {ancho: 1080, alto: 1080, vista_css: 390, uso: "feed 1:1 (Instagram, LinkedIn)"}
@@ -750,6 +751,36 @@ parametros:
     tipo: par
     defecto: [0.5, 0.5]
     descripcion: punto de la imagen que el recorte mantiene visible (fracción de ancho y alto); si el pack no lo fija y la imagen del catálogo trae `foco`, manda el de la imagen (0.3l)
+  imagen_ajuste:
+    capa: imagen
+    nivel: componente
+    tipo: opcion
+    opciones: [cubrir, objeto]
+    defecto: cubrir
+    descripcion: cubrir = la imagen llena la máscara y se recorta (con imagen_foco); objeto = el objeto medido de la imagen (`objeto` en el catálogo) va entero y centrado en la máscara, y si la imagen no la cubre su fondo se extiende con borde difuso
+    origen: "G24 (2026-11-10): «el objeto no quedó bien posicionado respecto del lienzo disponible para la imagen, es decir respecto de la mascara usadal»"
+  imagen_objeto_ocupa:
+    capa: imagen
+    nivel: componente
+    tipo: decimal
+    rango: [0.4, 1.0]
+    defecto: 0.75
+    descripcion: con imagen_ajuste objeto, cuánto ocupa el objeto de la máscara en su dimensión más justa (alto o ancho)
+  imagen_objeto_ocupa_columna:
+    capa: imagen
+    nivel: componente
+    tipo: decimal
+    rango: [0.4, 1.0]
+    defecto: null
+    descripcion: con imagen_ajuste objeto, el tamaño del objeto en máscaras en columna (más angostas que 1,3:1, como LinkedIn y 9:16); null = el mismo de imagen_objeto_ocupa
+    origen: "G25 (2026-11-10): los jueces vieron el 85 % bien en las bandas y apretado en las columnas"
+  imagen_borde_difuso:
+    capa: imagen
+    nivel: componente
+    tipo: decimal
+    rango: [0.2, 1.0]
+    defecto: 1.0
+    descripcion: con imagen_ajuste objeto, qué parte del hueco entre el borde de la imagen y el objeto ocupa el fundido al fondo extendido (solo en los lados que caen dentro de la máscara)
   imagen_registro:
     capa: imagen
     nivel: componente

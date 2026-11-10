@@ -8,7 +8,9 @@ motor la recorta para la zona de imagen de cada uno.
              pedido: proporción de la maestra, zona segura donde debe caber el sujeto y
              texto del pedido. No llama a Magnific ni gasta créditos.
   registrar  copia a 02_magnific una imagen ya generada y la anota con su procedencia en
-             imagenes.magnific.yaml, para que un contenido la use con `imagen: <id>`.
+             imagenes.magnific.yaml, para que un contenido la use con `imagen: <id>`. Mide además
+             el objeto (su caja) y el color del fondo, que usa `imagen_ajuste: objeto`.
+  medir      vuelve a medir el objeto y el fondo de una imagen ya registrada.
 
 Uso:
   python pedido_magnific.py pedido --preset presets/P02.yaml --preset presets/P03.yaml \\
@@ -22,10 +24,12 @@ import shutil
 from datetime import date
 from pathlib import Path
 
+import numpy as np
 import yaml
 from PIL import Image
+from scipy import ndimage
 
-from motor import LAB, Compositor, Contexto, abrir_navegador, cargar_pack, cargar_yaml, sha16
+from motor import LAB, Compositor, Contexto, abrir_navegador, cargar_pack, cargar_yaml, fondo_de_imagen, sha16
 
 KIT = {'id': 'hu2CvqLJlt', 'nombre': 'Umbral BIM'}
 PLANTILLA = 'post-linkedin'          # «Imagen de artículo · 16:9, solo imagen» (el slug es el original)
@@ -49,6 +53,40 @@ def ventana(comp, maestra: tuple[int, int]) -> tuple[float, ...]:
     x = min(mx, max(mx + mw - dw, mx + mw / 2 - fx * dw))
     y = min(my, max(my + mh - dh, my + mh / 2 - fy * dh))
     return (zx - x) / dw, (zy - y) / dh, (zx + zw - x) / dw, (zy + zh - y) / dh
+
+
+def medir_objeto(ruta: Path) -> list[float]:
+    """Caja del objeto principal (fracciones x0, y0, x1, y1): la mayor mancha de trazo firme.
+    El umbral deja fuera la retícula tenue del fondo, que si no se une al objeto y llega al borde."""
+    a = np.asarray(Image.open(ruta).convert('RGB'), dtype=float)
+    h, w = a.shape[:2]
+    borde = np.concatenate([a[:8].reshape(-1, 3), a[-8:].reshape(-1, 3), a[:, :8].reshape(-1, 3), a[:, -8:].reshape(-1, 3)])
+    tinta = np.sqrt(((a - np.median(borde, axis=0)) ** 2).sum(axis=2)) > 90
+    lab, n = ndimage.label(ndimage.binary_dilation(tinta, iterations=4))
+    if not n:
+        raise SystemExit(f'no se encontró un objeto en {ruta}')
+    mayor = int(np.argmax(ndimage.sum(np.ones_like(lab), lab, range(1, n + 1)))) + 1
+    ys, xs = np.nonzero((lab == mayor) & tinta)
+    return [round(float(v), 4) for v in (xs.min() / w, ys.min() / h, (xs.max() + 1) / w, (ys.max() + 1) / h)]
+
+
+def guardar_catalogo(imagenes: dict):
+    cabecera = ('# Imágenes de Magnific One con el kit «Umbral BIM». Las escribe pedido_magnific.py registrar.\n'
+                '# El archivo vive en 07_Motor de piezas/02_magnific; la procedencia, aquí.\n')
+    (LAB / 'imagenes.magnific.yaml').write_text(cabecera + yaml.safe_dump({'imagenes': imagenes}, allow_unicode=True,
+                                                                         sort_keys=False, width=100), encoding='utf-8')
+
+
+def medir(a):
+    ctx = Contexto()
+    imagenes = cargar_yaml(LAB / 'imagenes.magnific.yaml')['imagenes']
+    if a.id not in imagenes:
+        raise SystemExit(f'{a.id} no está en imagenes.magnific.yaml')
+    ruta = ctx.ruta_imagen(imagenes[a.id])
+    imagenes[a.id]['objeto'] = medir_objeto(ruta)
+    imagenes[a.id]['fondo_imagen'] = fondo_de_imagen(ruta)
+    guardar_catalogo(imagenes)
+    print(f"{a.id}: objeto {imagenes[a.id]['objeto']}, fondo {imagenes[a.id]['fondo_imagen']}")
 
 
 def pedido(a):
@@ -159,10 +197,9 @@ def registrar(a):
         imagenes[a.id]['nota'] = a.nota
     if a.foco:
         imagenes[a.id]['foco'] = [float(x) for x in a.foco.split(',')]
-    cabecera = ('# Imágenes de Magnific One con el kit «Umbral BIM». Las escribe pedido_magnific.py registrar.\n'
-                '# El archivo vive en 07_Motor de piezas/02_magnific; la procedencia, aquí.\n')
-    ruta_cat.write_text(cabecera + yaml.safe_dump({'imagenes': imagenes}, allow_unicode=True, sort_keys=False,
-                                                  width=100), encoding='utf-8')
+    imagenes[a.id]['objeto'] = medir_objeto(destino)
+    imagenes[a.id]['fondo_imagen'] = fondo_de_imagen(destino)
+    guardar_catalogo(imagenes)
     print(f'{a.id}: {destino} ({ancho}×{alto}) anotada en {ruta_cat.name}')
 
 
@@ -183,8 +220,10 @@ def main():
     r.add_argument('--proporcion', default=f'{PROPORCION[0]}:{PROPORCION[1]}')
     r.add_argument('--nota')
     r.add_argument('--foco', help='x,y del sujeto en fracciones (p. ej. el centro del turquesa)')
+    d = sub.add_parser('medir', help='vuelve a medir el objeto y el fondo de una imagen registrada')
+    d.add_argument('--id', required=True)
     a = ap.parse_args()
-    pedido(a) if a.orden == 'pedido' else registrar(a)
+    {'pedido': pedido, 'registrar': registrar, 'medir': medir}[a.orden](a)
 
 
 if __name__ == '__main__':

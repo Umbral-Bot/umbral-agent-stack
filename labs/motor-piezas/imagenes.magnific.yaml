@@ -32,6 +32,12 @@ imagenes:
     sha256: 87e439cdf9a0ec00
     nota: prueba de la cadena con una imagen existente (G-SITIO-01, 2026-11-04, antes de corregir el kit);
       no es del piloto
+    objeto:
+    - 0.3356
+    - 0.0
+    - 1.0
+    - 1.0
+    fondo_imagen: '#F8F8F6'
   mg-articulo-ia-obra-01:
     archivo: mg-articulo-ia-obra-01.png
     herramienta: Magnific
@@ -70,3 +76,9 @@ imagenes:
     foco:
     - 0.45
     - 0.71
+    objeto:
+    - 0.3564
+    - 0.1237
+    - 0.6693
+    - 0.8987
+    fondo_imagen: '#F9F7F5'

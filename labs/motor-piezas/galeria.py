@@ -141,7 +141,8 @@ def construir(ruta_def: Path, publicar: bool):
                 # una sección puede probar los mismos packs con otro contenido (sufijo en el código)
                 codigo = f"{gid}-{pack['id']}" + (f"-{sec['sufijo']}" if sec.get('sufijo') else '')
                 info = generar_pieza(ctx, nav, LAB / ruta_pack, dir_salida, codigo,
-                                     LAB / (sec.get('contenido') or pack.get('contenido', contenido_def)))
+                                     LAB / (sec.get('contenido') or pack.get('contenido', contenido_def)),
+                                     sec.get('valores'))
                 copiar_pack(ruta_pack, dir_salida / 'packs')
                 info.update({'numero': f'{numero}°', 'seccion': sec['alternativa'],
                              'rotulo': f"{pack['nombre']}", 'pack_yaml': (LAB / ruta_pack).read_text(encoding='utf-8'),

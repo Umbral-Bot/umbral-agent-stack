@@ -69,6 +69,48 @@ def sha16(ruta: Path) -> str:
     return hashlib.sha256(Path(ruta).read_bytes()).hexdigest()[:16]
 
 
+def fondo_de_imagen(ruta: Path) -> str:
+    """Color del fondo de una imagen: la mediana de sus bordes, para extenderlo sin costura."""
+    a = np.asarray(Image.open(ruta).convert('RGB'), dtype=float)
+    borde = np.concatenate([a[:8].reshape(-1, 3), a[-8:].reshape(-1, 3),
+                            a[:, :8].reshape(-1, 3), a[:, -8:].reshape(-1, 3)])
+    r, g, b = (int(round(c)) for c in np.median(borde, axis=0))
+    return f'#{r:02X}{g:02X}{b:02X}'
+
+
+def imagen_difusa(ruta: Path, objeto: list, lados: tuple, fraccion: float) -> Path:
+    """Copia de la imagen que se funde en su fondo por los lados indicados (izq, arr, der, aba).
+    El fundido ocupa `fraccion` del hueco entre ese borde y el objeto, así la retícula del fondo se
+    desvanece de a poco y no queda un rectángulo; el objeto nunca se toca."""
+    marca_lados = ''.join('1' if l else '0' for l in lados)
+    destino = LAB / 'salida' / '_cache_imagen' / f'{ruta.stem}-difusa-{marca_lados}-{round(fraccion * 100)}.png'
+    if destino.exists() and destino.stat().st_mtime >= ruta.stat().st_mtime:
+        return destino
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    im = Image.open(ruta).convert('RGB')
+    w, h = im.size
+    ox0, oy0, ox1, oy1 = objeto[0] * w, objeto[1] * h, objeto[2] * w, objeto[3] * h
+    xs, ys = np.arange(w) + 0.5, np.arange(h) + 0.5
+
+    def rampa(dist, hueco):
+        s = np.clip(dist / max(1.0, fraccion * hueco), 0, 1)
+        return s * s * (3 - 2 * s)
+
+    ax = np.ones(w)
+    ay = np.ones(h)
+    if lados[0]:
+        ax = ax * rampa(xs, ox0)
+    if lados[2]:
+        ax = ax * rampa(w - xs, w - ox1)
+    if lados[1]:
+        ay = ay * rampa(ys, oy0)
+    if lados[3]:
+        ay = ay * rampa(h - ys, h - oy1)
+    alfa = (ay[:, None] * ax[None, :] * 255).round().astype(np.uint8)
+    Image.fromarray(np.dstack([np.asarray(im), alfa]), 'RGBA').save(destino, optimize=True)
+    return destino
+
+
 @dataclass
 class Rect:
     x: float
@@ -836,18 +878,40 @@ class Compositor:
         iw, ih = info['tamano_px']
         # con imagen_registro 'lienzo' la imagen se encuadra como si cubriera todo el lienzo y la
         # zona solo la recorta: entre presets del paso 3 la imagen no se mueve
-        marco = Rect(0, 0, self.W, self.H) if v['imagen_registro'] == 'lienzo' else zona
-        k = max(marco.w / iw, marco.h / ih)
-        dw, dh = iw * k, ih * k
-        fx, fy = v['imagen_foco']
-        if info.get('foco') and 'imagen_foco' not in (self.pack.get('valores') or {}):
-            # la imagen trae dónde está su sujeto; un pack que fija su propio foco manda
-            fx, fy = info['foco']
-            self.notas.append(f"foco de la imagen: {fx}, {fy}")
-        x = min(marco.x, max(marco.x2 - dw, marco.x + marco.w / 2 - fx * dw))
-        y = min(marco.y, max(marco.y2 - dh, marco.y + marco.h / 2 - fy * dh))
+        relleno, ajuste = None, 'cubrir'
+        if v['imagen_ajuste'] == 'objeto' and info.get('objeto'):
+            # 0.3m: el objeto de la imagen (su caja medida) va entero y centrado en la máscara, con
+            # el tamaño pedido; si la imagen no alcanza a cubrir la máscara, su fondo se extiende
+            ajuste = 'objeto'
+            ox0, oy0, ox1, oy1 = info['objeto']
+            # en una máscara en columna (más angosta que 1,3:1) el objeto puede ir a otro tamaño
+            columna = zona.w / zona.h < 1.3 and v['imagen_objeto_ocupa_columna'] is not None
+            ocupa = v['imagen_objeto_ocupa_columna'] if columna else v['imagen_objeto_ocupa']
+            k = ocupa / max((ox1 - ox0) * iw / zona.w, (oy1 - oy0) * ih / zona.h)
+            dw, dh = iw * k, ih * k
+            x = zona.x + zona.w / 2 - (ox0 + ox1) / 2 * dw
+            y = zona.y + zona.h / 2 - (oy0 + oy1) / 2 * dh
+            # lados de la imagen que caen dentro de la máscara: solo esos se funden en el fondo
+            lados = (x > zona.x + 0.5, y > zona.y + 0.5, x + dw < zona.x2 - 0.5, y + dh < zona.y2 - 0.5)
+            if any(lados):
+                relleno = info.get('fondo_imagen') or fondo_de_imagen(ruta)
+                ruta = imagen_difusa(ruta, info['objeto'], lados, v['imagen_borde_difuso'])
+            self.notas.append(f"imagen encuadrada por su objeto: {round(100 * ocupa)} % de la máscara"
+                              + (' (máscara en columna)' if columna else '')
+                              + (f'; el fondo de la imagen ({relleno}) se extiende' if relleno else ''))
+        else:
+            marco = Rect(0, 0, self.W, self.H) if v['imagen_registro'] == 'lienzo' else zona
+            k = max(marco.w / iw, marco.h / ih)
+            dw, dh = iw * k, ih * k
+            fx, fy = v['imagen_foco']
+            if info.get('foco') and 'imagen_foco' not in (self.pack.get('valores') or {}):
+                # la imagen trae dónde está su sujeto; un pack que fija su propio foco manda
+                fx, fy = info['foco']
+                self.notas.append(f"foco de la imagen: {fx}, {fy}")
+            x = min(marco.x, max(marco.x2 - dw, marco.x + marco.w / 2 - fx * dw))
+            y = min(marco.y, max(marco.y2 - dh, marco.y + marco.h / 2 - fy * dh))
         self.imagen = {'id': ident, 'ruta': ruta, 'x': x, 'y': y, 'w': dw, 'h': dh, 'zona': zona,
-                       'radio': radio, 'info': info, 'escala': k}
+                       'radio': radio, 'info': info, 'escala': k, 'relleno': relleno, 'ajuste': ajuste}
         self.el.append({'tipo': 'imagen'})
         self.zonas['imagen'] = zona.a_dict()
         self._raster_fondo()
@@ -858,13 +922,25 @@ class Compositor:
         im = self.imagen
         if im:
             w, h = max(1, round(im['w'])), max(1, round(im['h']))
-            arr = np.asarray(Image.open(im['ruta']).convert('RGB').resize((w, h), Image.Resampling.LANCZOS),
-                             dtype=float)
             z = im['zona']
             x0, y0 = max(0, round(z.x)), max(0, round(z.y))
             x1, y1 = min(self.W, round(z.x2)), min(self.H, round(z.y2))
             ox, oy = round(im['x']), round(im['y'])
-            base[y0:y1, x0:x1] = arr[y0 - oy:y1 - oy, x0 - ox:x1 - ox]
+            if not im.get('relleno'):
+                arr = np.asarray(Image.open(im['ruta']).convert('RGB').resize((w, h), Image.Resampling.LANCZOS),
+                                 dtype=float)
+                base[y0:y1, x0:x1] = arr[y0 - oy:y1 - oy, x0 - ox:x1 - ox]
+            else:
+                # el fondo de la imagen llena la máscara y la imagen, con su borde difuso, va encima
+                base[y0:y1, x0:x1] = marca.color_rgba(im['relleno'])[:3]
+                arr = np.asarray(Image.open(im['ruta']).convert('RGBA').resize((w, h), Image.Resampling.LANCZOS),
+                                 dtype=float)
+                ix0, iy0 = max(x0, ox), max(y0, oy)
+                ix1, iy1 = min(x1, ox + w), min(y1, oy + h)
+                if ix1 > ix0 and iy1 > iy0:
+                    parte = arr[iy0 - oy:iy1 - oy, ix0 - ox:ix1 - ox]
+                    alfa = parte[..., 3:4] / 255
+                    base[iy0:iy1, ix0:ix1] = parte[..., :3] * alfa + base[iy0:iy1, ix0:ix1] * (1 - alfa)
         self.fondo = base
 
     def muestra(self, caja: Rect, velos: list | None = None) -> np.ndarray:
@@ -1570,6 +1646,10 @@ class Compositor:
                 partes.append(f'  <rect id="fondo" x="0" y="0" width="{W}" height="{H}" {self.pintura("fondo")}/>')
             elif t == 'imagen':
                 im = self.imagen
+                if im.get('relleno'):
+                    z = im['zona']
+                    partes.append(f'  <rect id="imagen-fondo" x="{f2(z.x)}" y="{f2(z.y)}" width="{f2(z.w)}" '
+                                  f'height="{f2(z.h)}" fill="{im["relleno"]}" clip-path="url(#recorte-imagen)"/>')
                 partes.append(f'  <image id="imagen" data-catalogo="{im["id"]}" x="{f2(im["x"])}" y="{f2(im["y"])}" '
                               f'width="{f2(im["w"])}" height="{f2(im["h"])}" preserveAspectRatio="none" '
                               f'clip-path="url(#recorte-imagen)" href="{prefijo_img}{im["ruta"].name}"/>')
@@ -1646,8 +1726,11 @@ class Compositor:
 # -----------------------------------------------------------------------------
 
 def generar_pieza(ctx: Contexto, nav: Navegador, ruta_pack: Path, dir_salida: Path, codigo: str,
-                  ruta_contenido: Path | None = None) -> dict:
+                  ruta_contenido: Path | None = None, valores_extra: dict | None = None) -> dict:
     pack = cargar_pack(ruta_pack)
+    if valores_extra:
+        # la galería prueba un valor en todos los formatos sin crear un pack por formato
+        pack['valores'] = {**(pack.get('valores') or {}), **valores_extra}
     ruta_contenido = Path(ruta_contenido or LAB / pack['contenido'])
     contenido = cargar_yaml(ruta_contenido)
     comp = Compositor(ctx, nav, pack, contenido)
@@ -1707,7 +1790,12 @@ def generar_pieza(ctx: Contexto, nav: Navegador, ruta_pack: Path, dir_salida: Pa
                     # una imagen de Magnific lleva su procedencia hasta la ficha de la pieza
                     {k: comp.imagen['info'].get(k) for k in ('creacion', 'enlace', 'kit', 'plantilla', 'creditos',
                                                               'prompt_enviado', 'foco', 'pedido')}
-                    if comp.imagen['info'].get('herramienta') == 'Magnific' else {}) | {
+                    if comp.imagen['info'].get('herramienta') == 'Magnific' else {}) | (
+                    {'ajuste': 'objeto', 'objeto_ocupa': comp.v['imagen_objeto_ocupa'],
+                     'objeto_ocupa_columna': comp.v['imagen_objeto_ocupa_columna'],
+                     'objeto': comp.imagen['info'].get('objeto'), 'relleno': comp.imagen['relleno'],
+                     'archivo_dibujado': comp.imagen['ruta'].name}
+                    if comp.imagen['ajuste'] == 'objeto' else {}) | {
                        'encaje': comp.v['imagen_encaje']}) if comp.imagen else None,
         'procedencia': {'tokens_css_sha256': sha16(ctx.ruta_tokens), 'motor': VERSION_MOTOR,
                         'generado': datetime.now().isoformat(timespec='seconds')},

@@ -1,7 +1,7 @@
 id: P02
 nombre: "Post de noticia con bajada · banda abajo, titular grande, imagen a sangre, bajada y llamado como botón"
 tipo_contenido: "post de noticia o artículo con bajada, sin datos de evento; la imagen puede venir con el contenido (imagen:)"
-estado: "aprobado por David en 4:5, 2026-11-09; bajada al 80 % (G19 3°); falta LinkedIn (G20)"
+estado: "aprobado por David en 4:5, 2026-11-09; bajada al 80 % (G19 3°); LinkedIn: G20 2° con más separación (G21)"
 # G18, 2026-11-10: David pidió dos presets, «uno sin bajada y uno con bajada». Éste es el con
 # bajada; el sin bajada es presets/P03.yaml. Lo elegido aquí no se extiende al P03 sin preguntar.
 formatos:
@@ -10,4 +10,4 @@ formatos:
   historia: packs/T3-noticia-historia.yaml       # 9:16 · G18 3°, opción única, sin comentarios de David
   slide: packs/T6-noticia-slide.yaml             # 16:9 · G18 6°, opción única, sin comentarios de David
 pendiente:
-  linkedin: "G19 5° elegido con ajustes («mas mpequeño y distribuye mejor los textos»); opciones en G20 1°–3°"
+  linkedin: "G20 2° elegido (columna de 7 de 12) con los cuatro textos «un poco mas separados» y a la misma distancia; opciones en G21 1°–3°"

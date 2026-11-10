@@ -3,6 +3,6 @@ nombre: "LinkedIn con bajada · como la 1°, con la columna de texto más ancha 
 alternativa: p02-linkedin-ajuste
 paso: distribución del texto
 hereda: packs/Y1-noticia-linkedin-centro-aire.yaml
-decision_david: null
+decision_david: 'G20, 2026-11-10: «1= 2, pero un poco mas separados los textos "Articulo" , "la IA.." , "Que cam.." y "Lee.." todos esos entre si con la mismasparación aumenta la un poco mas, haz variaciones  a partir de la alt2»'
 valores:
   division_fraccion: 0.5833   # 7 de 12 columnas; la imagen queda más angosta

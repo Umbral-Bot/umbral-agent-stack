@@ -1,12 +1,12 @@
 id: P03
 nombre: "Post de noticia sin bajada · como el Preset 02, con el titular solo: la bajada queda para el texto del post"
 tipo_contenido: "post de noticia o artículo sin bajada en la pieza, sin datos de evento"
-estado: "nace de G18, 2026-11-10; LinkedIn: G19 10° con el botón más chico (G20 4°)"
+estado: "nace de G18, 2026-11-10; LinkedIn aprobado en G20 4° («2= 4»)"
 # David, sobre G18: «me gusta que esten ambas alternativas, hariuia un prset sin bajada y uno con
 # bajada». Sale del Preset 02 (misma identidad, botón y sin trama) con densidad_texto: media.
 # Lo elegido para el P02 (por ejemplo, el tono de la bajada) no aplica aquí: este preset no la lleva.
 formatos:
   cuadrado: packs/T2-noticia-1x1-sin-bajada.yaml  # 1:1 · G18 2°
+  linkedin: packs/Z1-noticia-linkedin-logo-arriba-boton.yaml  # 1200×627 · G20 4°: logo arriba y botón abajo, más chico
 pendiente:
-  linkedin: "G19 10° elegido («mas pequeño el \"lee el ..\"»); el ajuste está en G20 4°"
   vertical_historia_slide: "4:5, 9:16 y 16:9 sin bajada no se han mostrado"

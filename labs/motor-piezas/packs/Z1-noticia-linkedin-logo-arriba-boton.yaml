@@ -3,7 +3,7 @@ nombre: "LinkedIn sin bajada · G19 10° con el botón más chico"
 alternativa: sin-bajada-linkedin-ajuste
 paso: distribución del texto
 hereda: packs/X3-noticia-linkedin-logo-arriba.yaml
-decision_david: null
+decision_david: 'G20, 2026-11-10: «2= 4»'
 roles_texto:
   cta: {tracking: cta_tracking_em}
 valores:

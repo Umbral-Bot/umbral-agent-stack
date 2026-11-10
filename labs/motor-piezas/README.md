@@ -167,7 +167,8 @@ David pidió seguir con otro preset y eligió un post de noticia o artículo: ki
 | Resultado | `galerias/G17.yaml` · Drive `01_galerias/2026-11-09_G17` | `packs/P02-noticia-4x5.yaml` (familia `presets/P02.yaml`) | el preset y una prueba con otro artículo | listo en 4:5 |
 | Formatos | `galerias/G18.yaml` · Drive `01_galerias/2026-11-09_G18` | `packs/P02-noticia-4x5.yaml` | 1:1 (dos), 9:16, LinkedIn (computador y celular) y 16:9 | **las dos alternativas: un preset con bajada (P02) y otro sin bajada (P03)**; ajustes pedidos en el 1° y en LinkedIn |
 | Ajustes | `galerias/G19.yaml` · Drive `01_galerias/2026-11-10_G19` (con `01_detalle.jpg`) | `packs/T1`, `T4` y `T5` | tono de la bajada (blanca, 90 %, 80 % y gris de marca) y tres distribuciones del texto en LinkedIn para cada preset | **tono 3° (80 %); LinkedIn 5° con bajada y 10° sin bajada, los dos con el botón más chico** |
-| LinkedIn | `galerias/G20.yaml` · Drive `01_galerias/2026-11-10_G20` | `packs/W1` y `X3` | con bajada: el 5° ajustado y dos repartos más (columna ancha, bajada más chica); sin bajada: el 10° con el botón más chico | espera la elección de David |
+| LinkedIn | `galerias/G20.yaml` · Drive `01_galerias/2026-11-10_G20` | `packs/W1` y `X3` | con bajada: el 5° ajustado y dos repartos más (columna ancha, bajada más chica); sin bajada: el 10° con el botón más chico | **con bajada la 2° (columna ancha), con los textos más separados; sin bajada la 4°, que pasa al Preset 03** |
+| Separación | `galerias/G21.yaml` · Drive `01_galerias/2026-11-10_G21` (con `01_detalle.jpg`) | `packs/Y2` | la misma separación entre «Artículo», titular, bajada y botón: 32, 36 y 40 px | espera la elección de David |
 
 El Preset 02 queda en `packs/P02-noticia-4x5.yaml`, un pack plano con el recorrido de decisiones.
 - Reproduce la elección de G16 (SVG idéntico).
@@ -186,6 +187,12 @@ En G19 David eligió el tono 3° (la bajada al 80 %), el 5° para LinkedIn con b
 - El botón baja un 15 % (`escala_cta: 0.85`, `cta_tracking_em: 0.08`): queda en 9,4 px CSS, bajo el mínimo de 11 del laboratorio. La verificación lo marca como aviso de calidad.
 - El chip EJEMPLO es una marca de laboratorio: sale porque el contenido de prueba trae `ejemplo: true` y desaparece en una pieza real. Con `chip_ancla: pie` va en la línea del logo y no le quita alto al texto. Sobre la imagen no se lee (1,4:1), porque su fondo es semitransparente.
 - `espacio_cta` separa el botón de la bajada y `cta_junto_logo: false` lo deja al final del bloque aunque quepa junto al logo.
+
+En G20 David eligió la 2° para LinkedIn con bajada («1= 2, pero un poco mas separados los textos "Articulo" , "la IA.." , "Que cam.." y "Lee.." todos esos entre si con la mismasparación aumenta la un poco mas, haz variaciones  a partir de la alt2») y la 4° sin bajada («2= 4»).
+- El Preset 03 suma LinkedIn con `packs/Z1`.
+- G21 no cambia el motor: iguala `espacio_kicker_titulo`, `espacio_filas_cuerpo` y `espacio_cta`. Cada espacio va de la línea base de un texto a la altura de mayúscula del siguiente (o al borde del botón).
+- Al llenar la columna, el botón quedaba más cerca del logo (24 px) que de la bajada. Por eso `espacio_pie` va 8 px por encima de la separación entre textos y el margen inferior baja a 48 px (`margen_inferior_proporcional: 0.077`).
+- Con más aire, el motor achica el titular para que quepa: 102, 96 y 86 px.
 
 Comentarios de David sobre G01 (en `decisiones.csv`):
 - **1°:** faltan ajustes de proporción y composición.
@@ -230,6 +237,7 @@ python galeria.py --definicion galerias/G17.yaml              # preset 02, resul
 python galeria.py --definicion galerias/G18.yaml              # preset 02 en más formatos (salida/G18)
 python galeria.py --definicion galerias/G19.yaml              # tono de la bajada y LinkedIn (salida/G19)
 python galeria.py --definicion galerias/G20.yaml              # LinkedIn ajustado (salida/G20)
+python galeria.py --definicion galerias/G21.yaml              # separación del texto en LinkedIn (salida/G21)
 python motor.py pieza --pack packs/P01-save-the-date-slide.yaml --contenido contenido/otro.yaml --salida salida/p01
 python catalogar_imagenes.py                                   # regenera imagenes.yaml desde los PNG
 python analisis/medir_piezas.py                                # re-mide las seis elegidas

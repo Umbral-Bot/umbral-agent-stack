@@ -1,0 +1,16 @@
+id: U3
+nombre: "LinkedIn con bajada · la 2° de G20 con la misma separación entre los cuatro textos: 40 px"
+alternativa: p02-linkedin-separacion
+paso: separación del texto
+hereda: packs/Y2-noticia-linkedin-columna-ancha.yaml
+decision_david: null
+# G20, 2026-11-10: «1= 2, pero un poco mas separados los textos "Articulo" , "la IA.." , "Que cam.." y "Lee.."
+# todos esos entre si con la mismasparación aumenta la un poco mas, haz variaciones  a partir de la alt2»
+# Cada espacio va de la línea base del texto de arriba a la altura de mayúscula (o al borde del
+# botón) del de abajo. En la 2° eran 16, 20 y 32 px.
+valores:
+  espacio_kicker_titulo: 10    # «Artículo» → titular: 40 px
+  espacio_filas_cuerpo: 10     # titular → bajada: 40 px (no hay subtítulo ni filas)
+  espacio_cta: 10              # bajada → botón: 40 px
+  espacio_pie: 12              # 48 px hasta el logo, más que entre textos: el botón no se pega al pie
+  margen_inferior_proporcional: 0.077   # 48 px abajo (antes 64): el logo baja y el titular queda en 86 px

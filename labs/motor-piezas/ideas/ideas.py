@@ -191,6 +191,7 @@ def o_pagina(a):
             ('De dónde sale', f"De {e(nombres_manantial.get(norm(f['manantial']), f['manantial']))}: {e(ev.get('referencia', ''))}. "
                               f"Pilar: {e(f['pilar'])}."),
             ('Contraargumento', e(f.get('contraargumento') or '—')),
+            ('Cuidado', e(f.get('riesgo') or '—')),
             ('En cada canal', f'<ul>{canales}</ul>'),
         ]
         cuerpo = ''.join(f'<div class="fila"><dt>{k}</dt><dd>{v}</dd></div>' for k, v in filas)

@@ -1,0 +1,480 @@
+{
+ "galeria": "I01",
+ "seccion": null,
+ "rubrica": "idea-v4",
+ "retro": false,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T17:00:17",
+ "hash_rubrica": "45ba2baa4943",
+ "hash_criterios": "5200034f52db",
+ "votos": [
+  {
+   "puntajes": {
+    "1": 8.5,
+    "2": 7.5,
+    "3": 6,
+    "4": 7
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "evidencia / cadena_tesis.evidencia",
+     "problema": "Es la alineación más fuerte. Nace de un error propio de David, documentado en la ficha de la Evaluación 5 y en su revisión del 4-nov. Lleva al marco «no es un problema de software, es de proceso» y a «la consultoría parte de la licencia disponible», y conecta con el caso estrella de OXXO, donde las licencias hicieron fracasar el primer intento con ACC. Butic/Máster está en el CV v6 y no hay cifras.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "respuesta / pilar",
+     "problema": "Que la resistencia sea «muchas veces» un permiso que falta generaliza sin datos, y el puente al pilar «La resistencia no es el problema» lo arma el agente. Conviene bajarlo a «a veces» o atarlo al caso.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "por_que_ahora",
+     "problema": "Cita anuncios externos (Microsoft, 15-oct, y Autodesk Assistant Builder) que no aparecen en la referencia. Hay que comprobarlos antes de afirmarlos. No es veto, porque no son credenciales de David.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "manantial / evidencia",
+     "problema": "La idea nace de una señal externa: Autodesk y un blog comercial de gestión documental. La experiencia de David solo la apoya. El pilar «IA sin flujo es humo», Puentes Digitales (Datos ↔ Decisiones) y el problema de la documentación de obra desactualizada encajan muy bien, pero la evidencia propia es la parte más débil.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "escena",
+     "problema": "La escena de la losa del shaft con la revisión B no lleva la marca de compuesta o ilustrativa, como sí la llevan las demás fichas, y el canal LinkedIn la usa como gancho. Leída como caso real, rompe la regla de verdad: una experiencia solo se afirma si está en un informe.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "arco / evidencia",
+     "problema": "Se apoya en el mismo análisis M05_C07 que la opción 1, así que las dos se solapan en su evidencia propia. Además, la premisa supera el largo permitido (52 palabras).",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "evidencia / riesgo",
+     "problema": "La fuente es una bitácora titulada «Planificado», con una sola columna comprobada, y lo que recoge es lo que declaró una persona. Según la regla «Planificado alimenta ideas; Informe prueba», no puede contarse como hecho sin que David confirme el registro. La ficha generaliza a partir de una sola entrevista.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "respuesta / salto",
+     "problema": "Calza con el pilar de la resistencia y con la Automatización Empática, pero se queda en gestión del cambio genérica. Le falta el mecanismo AEC concreto que pide la fórmula de voz (problema → mecanismo → resultado → límite), y «medir el proceso y no a la persona» viene del agente, no de David. Además, puede leerse como un ataque a los jóvenes.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "gancho",
+     "problema": "«Defiendo la práctica antes que la teoría» se le atribuye a David como postura, pero no figura en raíz-david (defiende/marcos). Hay que confirmarlo o reformularlo. El riesgo ya pide confirmar que el ejemplo proyectado era suyo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "salto / contraargumento",
+     "problema": "La salida (menú acotado, reglas candidatas) roza «Innovar es saber dónde duele» y «empoderar usuarios sobre crear dependencias»: si el participante escoge de una lista, no identifica su propio dolor. La evidencia es sólida, porque es un informe de David, y el marco Citizen Developer encaja. La conexión con la tesis central (la tecnología amplifica el criterio) es más indirecta.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "La opción 1 sirve. La 2 y la 4 sirven con ajustes. La 3 queda en el límite, sirve con ajustes fuertes (6): su evidencia es un registro «Planificado» con lo que declaró una persona, y su mecanismo es genérico.",
+   "resumen": "Por alineación gana la opción 1 (I01-15, «En mi cuenta funciona»). Nace de un error propio y documentado de David y lleva directo a «es un problema de proceso, no de software», a la lección de licencias y permisos del caso OXXO y al pilar de la resistencia, sin cifras ni credenciales fuera del CV v6. La opción 2 (I01-04, columna de estado) encaja de lleno con «IA sin flujo es humo» y con Datos ↔ Decisiones, pero nace de señales externas y su escena no está marcada como compuesta. La opción 4 (I01-03) tiene evidencia sólida, porque viene de un informe, pero le atribuye a David una postura que su raíz no recoge y su conexión con la tesis central es indirecta. La opción 3 (I01-10) toca bien la resistencia, pero se apoya en una sola declaración registrada como «Planificado» y se queda en gestión del cambio genérica. Ninguna activa un veto.",
+   "lente": "alineacion"
+  },
+  {
+   "puntajes": {
+    "1": 6,
+    "2": 5.5,
+    "3": 7.5,
+    "4": 8
+   },
+   "hallazgos": [
+    {
+     "opcion": "2",
+     "donde": "I01-04: título, salto («El chatbot viene después») y cierre del arco («primero el dato, después el chatbot»)",
+     "problema": "Es la que más se acerca a «criterio antes que automatizar», en su variante «ordena los datos antes de la IA». Tiene el molde «X antes que el chatbot» y la propia ficha avisa en «riesgo» de esa monotonía. Lo que la separa es el mecanismo (el agente no lee el sello de «superado») y la prueba de aceptación con un plano superado, pero el título y el cierre vuelven a la fórmula de siempre.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "I01-04 frente a I01-15: evidencia (Evaluación 5 y M05_C07, del 3 y 4 de noviembre), por_que_ahora (AU 2026 y Assistant Builder) y audiencia (CTO y BIM managers que despliegan agentes)",
+     "problema": "Las dos salen de la misma evaluación final, citan la misma coyuntura y hablan al mismo comprador. Además comparten la jugada «la falla no está donde la culpas (en el usuario o en el prompt), sino en una capa que no viste (los permisos o los datos)». La I01-04 suma el caso de «culpar al prompt», que es otra semilla del manantial, y eso la diluye y la acerca más a la I01-15.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "I01-15: respuesta («Lo que parece resistencia o falta de capacitación muchas veces es un permiso») y pilar «La resistencia no es el problema»",
+     "problema": "Repite la reinterpretación que es el núcleo de la I01-10 (lo que parece resistencia es otra cosa). La propia procedencia dice que esa lectura es una inferencia del agente. Si se quita, queda la tesis propia: en mi cuenta funciona y mínimo privilegio. Esa tesis no se repite en las otras tres y no vuelve a «criterio antes que automatizar».",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "I01-03: final de la respuesta («Las fichas vacías no hablan de desinterés…») y pilar «La resistencia no es el problema»",
+     "problema": "Es la tercera de cuatro que se apoya en el mismo pilar con la misma inversión («no es desinterés, es falta de andamiaje»). La tesis principal no necesita esa frase («lo que proyectas es lo que te van a entregar»). Conviene cambiar el pilar o dejarlo implícito.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "I01-15 e I01-03: gancho y canal de LinkedIn («Historia con error propio»), con fechas del 3-nov y del 5-nov",
+     "problema": "Son dos confesiones de error docente de la misma semana, con el mismo formato de Historia en LinkedIn, que admite una por semana. Si salen juntas o seguidas, el conjunto suena a una serie de «me equivoqué en clase», aunque las tesis sean distintas. Conviene separarlas en el calendario o mover una al blog o a una clase.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "I01-10: respuesta y salto («Antes de capacitar hay que decidir qué se mide»)",
+     "problema": "Hay un eco leve del molde «X antes que Y», pero el terreno es otro: personas, vigilancia y medición, sin herramienta ni agente. Es la única de las cuatro que no habla de una herramienta ni de un taller. Su tesis central (resistir por miedo a quedar medido) es la dueña legítima del pilar que las otras dos repiten.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "4",
+   "veredicto": "Opción 4 (I01-03) sirve: aporta lo más distinto del conjunto (diseño docente para formadores; «lo que proyectas es lo que te entregan») y no toca «criterio antes que automatizar». Opción 3 (I01-10) sirve: el único ángulo de personas y medición. Opción 1 (I01-15) sirve con ajustes: quitarle la reinterpretación de la resistencia y no publicarla junto a la 2 ni a la 4. Opción 2 (I01-04) sirve con ajustes, en el límite: es la que vuelve a «primero el dato, después la IA», y comparte fuente y coyuntura con la 1. Tiene que anclarse en el sello y en la prueba con un plano superado, sin el molde «antes que».",
+   "resumen": "Con la lente de monotonía, tres de las cuatro (1, 3 y 4) se apoyan en el pilar «La resistencia no es el problema» y repiten la misma inversión («no es resistencia, es X»). Ese movimiento es legítimo en la 3 y sobra en la 1 y en la 4. La 2 es la más cercana a «criterio/dato antes que automatizar» y además comparte la evaluación del 3-nov, AU 2026 y la misma audiencia con la 1. La 1 y la 4 son dos confesiones de error docente de la misma semana. La que más aporta al conjunto es la 4 (I01-03), seguida de cerca por la 3 (I01-10).",
+   "lente": "monotonia"
+  },
+  {
+   "puntajes": {
+    "1": 7.5,
+    "2": 7,
+    "3": 6,
+    "4": 5.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "I01-15 · hipotesis / respuesta",
+     "problema": "La primera mitad de la hipótesis («si la demo funciona con mi cuenta, está probado») casi nadie la sostiene en voz alta: se practica, pero al leerla suena a «obvio», y para TI o CTO el mínimo privilegio ya es sabido. La tensión de verdad está en la segunda mitad (la falla se culpa a la capacitación o al usuario). Conviene que la hipótesis empiece por ahí.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "I01-15 · respuesta",
+     "problema": "«Lo que parece resistencia muchas veces es un permiso que falta» va más allá de la evidencia: el caso documentado es un bloqueo de permisos en una evaluación, no una lectura equivocada de resistencia. Ese «muchas veces» infla la premisa. Mejor «a veces» o atarlo al patrón de las otras sesiones.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "I01-15 · contraargumento",
+     "problema": "La objeción es real y tiene respuesta: en una pyme no hay cuenta de prueba, el BIM manager hace todos los roles y negar el permiso en vivo cuesta la sesión. La premisa la resiste sin ceder. Es lo más fuerte de la ficha.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "I01-04 · premisa / respuesta",
+     "problema": "«El agente no ve el sello de superado» es una afirmación técnica exagerada. Si el sello es texto en el PDF, o el modelo lee la imagen, a veces lo ve. Lo defendible es que no se puede confiar en que lo pondere al recuperar el fragmento. Tal como está, un BIM manager técnico la desarma con un contraejemplo. La premisa está inflada justo en su mecanismo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "I01-04 · premisa",
+     "problema": "La postura está cerca de un lugar común («primero los datos, después la IA»). La salvan el mecanismo concreto (el estado como campo) y la prueba de aceptación con un plano superado, así que esos dos tienen que estar en la premisa, no solo en la respuesta. Además, la premisa pasa el tope: 52 palabras.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "I01-04 · contraargumento",
+     "problema": "La objeción de ISO 19650 («los estados ya están codificados») es seria y la respuesta se sostiene: el código vive en el nombre del archivo. La hipótesis («basta conectarlo; si falla, se arregla con el prompt o un modelo mejor») es creencia extendida en el segmento principal. La tensión es alta.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "I01-10 · premisa vs gancho",
+     "problema": "Hay una contradicción interna. La premisa dice que la resistencia «no se reparte por edad», pero la evidencia y el gancho dicen que resisten más los jóvenes, y eso también es reparto por edad, solo que invertido. El eje que de verdad se defiende es el tipo de miedo (quedar medido o hacerlo mal), no la edad. Así, la pieza promete una inversión generacional y defiende otra cosa.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "I01-10 · premisa",
+     "problema": "«Capacita a quien no lo necesita» infla la premisa y choca con su propio contraargumento, que reconoce que la brecha digital por edad existe. Además, la premisa generaliza desde una sola declaración no medida. El «puede resistir más» la blinda, pero la segunda frase le quita ese blindaje.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "I01-10 · hipotesis / respuesta",
+     "problema": "La hipótesis («la resistencia es generacional») es una creencia real y muy extendida en AECO, y la respuesta la tensiona con un mecanismo propio: medir el proceso y no a la persona. Como postura sirve. Falla la coherencia del eje, no la tensión.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "I01-03 · premisa / evidencia",
+     "problema": "Hay un confusor que la premisa no resuelve. En esa clase el bloque de práctica fue cero, así que la libertad con ejemplo de referencia nunca se probó en condiciones. La lectura más simple («copiaron porque no hubo tiempo») compite con «la sala entrega lo que vio» y la debilita. La premisa generaliza desde una sesión donde la condición que critica no ocurrió.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "4",
+     "donde": "I01-03 · contraargumento",
+     "problema": "Falta la objeción más fuerte, que es justamente la del tiempo. La que se presenta (el menú también se copia; se pierde la transferencia al propio caso) es real, y la respuesta no la contesta: un menú acotado no asegura la transferencia que el formador corporativo defiende.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "I01-03 · premisa / respuesta",
+     "problema": "La premisa ya trae la solución («se diseña como tal, con opciones») y la respuesta solo agrega el bloqueo del envío antes de la prueba. Es una postura y contesta la hipótesis, pero la respuesta aporta poco que la premisa no diga ya.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "Opción 1 (I01-15): sirve, 7,5. Opción 2 (I01-04): sirve, pero hay que bajar el «el agente no ve el sello» y meter el mecanismo en la premisa, 7. Opción 3 (I01-10): sirve con ajustes; la contradicción del eje edad contra tipo de miedo hay que corregirla, 6. Opción 4 (I01-03): sirve con ajustes, en el límite; la evidencia está contaminada porque no hubo tiempo de práctica, 5,5. Mejor: la 1.",
+   "resumen": "La 1 tiene la premisa más blindada: una sola tesis apoyada en un error propio documentado y una objeción real que resiste sin ceder. Conviene que la hipótesis empiece por «la falla se culpa a la capacitación», que es lo que la audiencia cree de verdad. La 2 tiene mucha tensión con una creencia extendida, pero su mecanismo está exagerado y roza el lugar común de «datos antes que IA». La 3 es contraria y potente, pero se contradice: dice que no es cosa de edad y a la vez vende que resisten los jóvenes. Además infla «capacita a quien no lo necesita». La 4 generaliza desde una clase sin práctica, y omite justo la objeción del tiempo, que es la que más la desarma.",
+   "lente": "premisa"
+  },
+  {
+   "puntajes": {
+    "1": 7.5,
+    "2": 7,
+    "3": 5,
+    "4": 6
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "riesgo / gancho",
+     "problema": "Cuenta en primera persona que en la evaluación final de Butic se dieron permisos de administrador del hub a alumnas. Es el error propio que David suele valorar (como el de OXXO), pero lo deja expuesto ante el cliente y los alumnos. David tiene que decidir si nombra el programa y aclarar qué pasó después con esos permisos.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "tema / canales.x",
+     "problema": "«En mi máquina funciona» y el mínimo privilegio son jerga de software. Un CTO o la gente de TI los reconoce al tiro, pero a un BIM manager o a un técnico no informático le pueden pasar de largo si el post no los explica. La imagen de la llave maestra salva el problema y además da un gráfico claro.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "marco / pilar / respuesta",
+     "problema": "Las conexiones con Automatización Empática («la primera frustración es no poder entrar») y con «La resistencia no es el problema» son del agente, no de David, y suenan forzadas. Además, el campo respuesta explica la analogía pero no dice qué hacer: el remedio (la cuenta ordinaria y el hito previo) solo aparece en el arco.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "premisa / riesgo",
+     "problema": "La tesis de fondo, «primero el dato, después el chatbot», ya circula mucho en el sector. Si la pieza no abre con el mecanismo del sello y con el plano superado como prueba de aceptación, cae en la idea que se entiende pero no engancha, que es justo lo que David rechazó.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "evidencia / procedencia",
+     "problema": "Se apoya sobre todo en señal de terceros: Autodesk y el blog de un proveedor documental de autoridad media. El vínculo con la experiencia de David es débil: el fallo de la evaluación final venía de parámetros, no de un estado documental, y en OXXO no hubo columnas de estado. Le falta un caso propio para cumplir el «alineado con mi trabajo».",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "escena",
+     "problema": "La escena de la losa del shaft, con la revisión B y el hormigón del jueves, es inventada y no está marcada como ilustrativa, a diferencia de otras fichas. Es la mejor imagen de la idea y conecta directo con un gráfico (el sello «SUPERADO» que el agente no ve), pero hay que rotularla como compuesta.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "premisa",
+     "problema": "La premisa tiene 52 palabras y pasa el máximo de 50.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "evidencia / premisa",
+     "problema": "Saca una tesis general («la resistencia no es generacional») de una sola declaración, no medida, registrada en una bitácora «Planificado». Choca con la regla de verdad de David: lo Planificado alimenta ideas, pero solo un Informe prueba.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "gancho",
+     "problema": "El gancho de «los jóvenes que mejor la manejaban» engancha, pero porque provoca. Se puede leer como ataque a los jóvenes o como titular sensacionalista, lejos del tono sobrio y empático de David.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "respuesta / salto",
+     "problema": "El remedio, «medir el proceso y no a la persona», es una hipótesis sin probar y no es un mecanismo propio de David. Le falta el resultado observable de su fórmula (problema → mecanismo → resultado → límite). Además, cuesta traducirla a un gráfico que conecte con la idea.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "gancho / riesgo",
+     "problema": "La masterclass del 5-nov es una fuente de patrones anónima, la excepción al veto. Contarla como «mi última masterclass», con detalles, puede identificarla y pasar del patrón anonimizado que David autorizó.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "audiencia",
+     "problema": "Apunta a docentes y formadores, el segmento de menor prioridad en LinkedIn. La escena del BIM manager que forma champions la amplía, pero la idea sigue siendo de didáctica más que de su oferta principal.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "contraargumento / pilar",
+     "problema": "El propio contraargumento debilita la tesis: dar reglas candidatas también lleva a copiar, solo que desde un menú. Además, el pilar «La resistencia no es el problema» queda traído de los pelos.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "riesgo",
+     "problema": "Mostrar una falla propia como docente, con ajustes que todavía no se prueban, puede inquietar a quien compra formación. El cierre tiene que quedar en el ajuste y no en la falla.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "Opción 1 (I01-15): sirve, es la más probable de aprobar. Opción 2 (I01-04): sirve, si la abre el mecanismo del sello y se refuerza con un caso propio. Opción 4 (I01-03): sirve con ajustes, por el riesgo de la fuente vetada y una audiencia de nicho. Opción 3 (I01-10): queda en el límite, con ajustes, porque su evidencia es débil.",
+   "resumen": "I01-15 sale de un error propio, reciente y documentado, del trabajo central de David (agentes sobre ACC y Microsoft 365 en el Máster). Su giro, «en mi cuenta funciona», se recuerda; la imagen de la llave maestra se puede dibujar, y el remedio es concreto: probar con una cuenta ordinaria. Su riesgo es exponer a Butic. I01-04 tiene la mejor escena y el gráfico más claro, el sello «superado» que el agente no lee, y calza con «IA sin flujo es humo». Pero se apoya en señal de terceros y su tesis de fondo está gastada. I01-03 tiene el estilo de David (error docente contado con honestidad), pero cuelga de una fuente que solo se puede usar como patrón anónimo y apunta a la audiencia de menor prioridad. I01-10 engancha por provocación, pero generaliza a partir de una sola declaración registrada en una bitácora «Planificado».",
+   "lente": "prediccion"
+  },
+  {
+   "puntajes": {
+    "1": 7,
+    "2": 8,
+    "3": 6.5,
+    "4": 5.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "2",
+     "donde": "gancho.texto",
+     "problema": "El gancho deja fuera lo que está en juego. La escena tiene el dato que engancha (la revisión C llegó el lunes y el hormigón se pide el jueves), pero el gancho se queda en «es la revisión superada». Sin el costo inminente, el lector ve un error de software y no una losa mal hormigonada. Conviene subir al gancho la consecuencia: plano B, hormigón el jueves.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "premisa / arco (punto de partida)",
+     "problema": "El arco abre con los anuncios de Autodesk y del proveedor, que es lo que menos engancha. Además, la tesis puede leerse como el ya gastado «ordena tus datos antes de la IA». Lo nuevo es el mecanismo («el agente no lee el sello») y usar un plano superado como prueba de aceptación, y eso tiene que ir primero: abrir con la escena del shaft y dejar la señal como respaldo. La premisa además pasa del largo (52 palabras).",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "evidencia / cadena_tesis",
+     "problema": "La advertencia central (el agente no distingue lo vigente de lo superado) viene de una fuente comercial. El caso propio de la evaluación final es un fallo de parámetros, no de estado documental, así que su relación con la tesis es lateral. No le quita enganche, pero el «lo vi yo» es débil: la escena es del agente y David tiene que reconocerla.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "respuesta",
+     "problema": "La frase que más mueve una creencia («lo que parece resistencia o falta de capacitación muchas veces es un permiso que el usuario no tiene») quedó enterrada en la respuesta. No llega ni al gancho ni al residuo. Para un BIM manager o una gerencia, «tu equipo no se resiste, no puede entrar» engancha más que el principio de mínimo privilegio.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "tema / canales.x",
+     "problema": "La traducción «en mi máquina funciona» → «en mi cuenta funciona» sorprende a un BIM manager, pero el segmento CTO/TI, que encabeza las audiencias de LinkedIn, la lee como un cliché y el mínimo privilegio como algo sabido. La sorpresa depende del lector: hay que elegir a quién se le habla y no apoyar el gancho en el chiste de software.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "gancho.texto",
+     "problema": "La confesión («mi cuenta abría todas las puertas») funciona. El detalle de «registrar la integración en el hub de ACC», en cambio, es de nicho y puede perder al lector que no usa ACC antes del giro. Conviene nombrar el bloqueo de forma genérica (acceso denegado) y dejar ACC para el desarrollo.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "evidencia / gancho",
+     "problema": "Es la sorpresa más fuerte de las cuatro (la resistencia no es generacional), pero se sostiene en una sola entrevista, declarada y no medida, de una bitácora marcada «Planificado». El gancho promete un patrón y el primer comentario («es un caso») lo desinfla. El enganche dura mientras nadie pregunte de dónde sale.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "por_que_ahora",
+     "problema": "El «por qué ahora» es débil: «los copilotos dejan más registro» es genérico y el diagnóstico tiene dos meses. No hay un disparador fresco que haga urgente la idea esta semana.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "escena / respuesta",
+     "problema": "La tensión es de gestión de personas y vale para cualquier industria, sin detalle del oficio AEC. El cierre «decide qué mides antes de capacitar» suena a moraleja. Falta anclar el miedo en una métrica concreta de oficina técnica (horas por plano, revisiones por entregable, tiempo por informe) para que no sea un post de RR. HH. genérico.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "gancho.texto",
+     "problema": "El gancho mezcla dos tesis: «defiendo la práctica antes que la teoría» (la práctica se la comió la demo) y «las fichas llegaron con el ejemplo copiado». La propia ficha pide guardar la primera para otra pieza. El contraste del gancho lleva a la tesis equivocada y diluye la idea central.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "4",
+     "donde": "premisa / audiencia",
+     "problema": "Que la sala copie el ejemplo resuelto es conocido entre docentes y formadores, que son justo su audiencia, así que les sorprende poco. A los segmentos prioritarios de LinkedIn (CTO, BIM managers, PM) les queda lateral. Engancha más la confesión del docente que la idea.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "contraargumento / respuesta",
+     "problema": "El remedio (reglas candidatas para escoger) cae ante su propio contraargumento: también se copia de la lista. La tensión queda sin resolver y los ajustes aún no se probaron, así que el cierre no tiene un resultado que contar.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "Sirven la opción 2 (8) y la 1 (7, en el umbral). La 3 sirve con ajustes (6,5): la sorpresa es fuerte, pero la base es frágil y no tiene un «por qué ahora». La 4 sirve con ajustes por poco (5,5): el gancho cruza dos tesis y la idea le sorprende poco a su propia audiencia.",
+   "resumen": "La 2 es la que más engancha: el riesgo es concreto y del oficio (el asistente cita con seguridad la revisión B y el hormigón se pide el jueves), trae un mecanismo sorprendente («el agente no lee el sello») y llega a tiempo tras AU 2026. Tiene que abrir con la escena y llevar la consecuencia al gancho. La 1 tiene una buena confesión y un buen momento, pero esconde su mejor giro: la «resistencia» es un permiso que falta. La 3 es la creencia más fuerte que se mueve, pero descansa en una sola entrevista, su tensión vale para cualquier industria y no tiene disparador actual. La 4 mezcla dos tesis en el gancho y su idea es conocida entre docentes.",
+   "lente": "enganche"
+  },
+  {
+   "puntajes": {
+    "1": 7.5,
+    "2": 8,
+    "3": 5,
+    "4": 6.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "I01-10 · respuesta, salto y marco («plan de cambio», «capacitar», «la resistencia es información de diseño»)",
+     "problema": "Está escrita en lenguaje genérico de gestión del cambio y no tiene un mecanismo de obra. «Decidir qué se mide, del proceso y no de la persona» no dice qué se hace, con qué ni en qué paso. La podría firmar cualquier consultor de RR. HH.; no suena a David hablando con un BIM manager.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "I01-10 · residuo y gancho",
+     "problema": "El residuo («Quien resiste no le teme a la IA. Le teme a lo que la IA va a contar de su trabajo») es un aforismo redondo con sonido de IA. El gancho «no la ponían los de más años, sino los jóvenes» es el giro contrario típico de LinkedIn. Además, «puede resistir más» afirma con red sobre una sola entrevista declarada.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "I01-10 · escena",
+     "problema": "La escena es de reunión de oficina, rotulada «Escena ilustrativa», y no tiene un objeto de obra (plano, RFI, partida). La ironía del ingeniero joven no pasa a una acción que se pueda comprobar.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "I01-04 · arco",
+     "problema": "El arco abre con la noticia («Autodesk acaba de atar los permisos…») y no con la escena de la losa. Además pasa a tercera persona («en su propia evaluación final David vio…»): si lo publica David, tiene que decir «vi». Se corrige reordenando: primero la revisión B y el hormigón del jueves, después la señal.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "I01-04 · premisa, X y título («chatbot»)",
+     "problema": "La premisa tiene 52 palabras y se pasa del límite. «Chatbot» suena despectivo y genérico; David habla de agente o asistente. Por lo demás, el vocabulario es justo el de un BIM manager: CDE, control documental, revisión superada, sello.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "I01-15 · respuesta, X y salto («en mi máquina funciona», «mínimo privilegio»)",
+     "problema": "El marco central es un meme de desarrolladores que trae el agente. Un BIM manager quizá no lo reconozca, y la pieza queda hablando a gente de software. David puede decir «en mi cuenta funciona» y explicarlo sin apoyarse en el chiste de programadores.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "I01-15 · premisa, salto y residuo",
+     "problema": "Acumula antítesis pulidas: «tapa la falla, no la arregla», «es una deuda, no una solución», «lo probaste con la llave maestra». Por separado funcionan; juntas suenan a frase de efecto. Conviene quedarse con una sola, y la mejor es la de la llave maestra porque es una analogía acotada.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "I01-03 · respuesta («Las fichas vacías no hablan de desinterés; hablan de un taller que…»)",
+     "problema": "La construcción «no hablan de X; hablan de Y» es retórica de IA. El gancho también abre con la postura («Defiendo la práctica antes que la teoría») antes de la escena. Mejor partir por las fichas que llegaron con el texto del ejemplo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "I01-03 · audiencia y premisa",
+     "problema": "La premisa es metadocente (cómo diseñar un taller). Con un BIM manager solo encaja por el lado de formar champions internos, y la escena de la capacitación con el aviso de RFI a Teams es lo que la sostiene. «Entrega lo que vio, no lo que se le pidió» es otra antítesis redonda.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "Todas · premisas que empiezan con «Lo que sostengo es que…»; rótulos «(Escena compuesta, no es un caso.)» y «Escena ilustrativa:»",
+     "problema": "El arranque de plantilla no es habla de David. Los rótulos internos son notas visibles (lista negra) si llegan a la pieza final. Hay que quitarlos al redactar.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "La opción 2 (I01-04) es la que más suena a David delante de un BIM manager: escena de obra con plazo (la losa del shaft, la revisión B y el hormigón del jueves), afirmaciones llanas («un agente no lee el sello») y la objeción de ISO 19650 que pondría el propio BIM manager. Necesita que el arco abra con la escena y no con Autodesk, y pasarlo a primera persona. La opción 1 queda muy cerca por el error propio contado en primera persona, pero se apoya en un meme de software y en antítesis pulidas. La 4 sirve con ajustes. La 3 está al borde por su lenguaje genérico de gestión del cambio.",
+   "resumen": "Lente VOZ. 1 (I01-15): 7,5. Error propio en primera persona y buena escena viernes/lunes; le sobran el marco «en mi máquina funciona» y las frases redondas. 2 (I01-04): 8, la mejor. Escena de obra concreta, vocabulario de CDE y control documental, cierre llano; hay que reordenar el arco (escena antes que la noticia) y quitar la tercera persona. 3 (I01-10): 5. Discurso genérico de gestión del cambio, aforismo de IA en el residuo y sin mecanismo de obra. 4 (I01-03): 6,5. Escena honesta y útil del aviso de RFI copiado, con retórica «no X; hablan de Y» y foco metadocente.",
+   "lente": "voz"
+  }
+ ]
+}

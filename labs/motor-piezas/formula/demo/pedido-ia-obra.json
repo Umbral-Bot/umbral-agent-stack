@@ -1,0 +1,128 @@
+{
+ "id": "articulo-ia-obra",
+ "contenido": "contenido/articulo-ejemplo.yaml",
+ "categoria": "hallazgo",
+ "metodo": "regla",
+ "puntajes": {
+  "hallazgo": 4.0,
+  "pendiente": 2.0
+ },
+ "confianza": null,
+ "evidencia_ruteo": [
+  "se revisan",
+  "revisan con IA"
+ ],
+ "alternativa": null,
+ "intento": 1,
+ "version": "prompt1 v1 · lexico v1",
+ "creado": "2026-11-10T22:44:38",
+ "estado": "VALIDADO",
+ "ruta": "imagen",
+ "compara": "Cuando los modelos se revisan con IA, la IA entra a la obra y señala un punto concreto de la coordinación; qué se hace con él sigue dependiendo del equipo.",
+ "evidencia": [
+  "La IA entra a la obra",
+  "cuando los modelos se revisan con IA"
+ ],
+ "sujeto": {
+  "compacto": "a short beam rebar cage with one steel sleeve across it",
+  "alargado": "a long, low beam rebar cage with one steel sleeve across it"
+ },
+ "acentos": [
+  "the steel sleeve",
+  "the stirrup"
+ ],
+ "motivo": "clash an automated model review found",
+ "relacion": "The sleeve still crosses the stirrup.",
+ "no_mostrar": [
+  {
+   "es": "la camisa movida a otra posición o el estribo cortado (el remedio)",
+   "en": "sleeve moved elsewhere or stirrup cut away"
+  },
+  {
+   "es": "marca de visto bueno o choque dado por cerrado",
+   "en": "check mark or clash shown as closed"
+  },
+  {
+   "es": "personas del equipo decidiendo o discutiendo",
+   "en": "team members deciding or discussing"
+  },
+  {
+   "es": "robot, cerebro, chip u holograma de IA",
+   "en": "robot, brain, chip or AI hologram"
+  },
+  {
+   "es": "pantalla, tableta o visor del modelo",
+   "en": "screen, tablet or model viewer"
+  },
+  {
+   "es": "lupa o haz de escaneo",
+   "en": "magnifying glass or scanning beam"
+  },
+  {
+   "es": "casco y obrero en faena",
+   "en": "hard hat and site worker"
+  }
+ ],
+ "reparo": null,
+ "avisos": [],
+ "alineacion": "PENDIENTE: la revisan rick-qa o David antes de los créditos (CAND-WLCA-01)",
+ "pedidos": [
+  {
+   "imagen": "principal",
+   "proporcion": "16:9",
+   "motor": "mg1_kit",
+   "modelo": "magnific-one",
+   "kit": "hu2CvqLJlt (Umbral BIM)",
+   "referencia_estilo": "lJo6GJSgv9",
+   "resolucion": "2k",
+   "creditos": 180,
+   "hash_cuerpo": "471d7fb751de64d9",
+   "prompt_enviado": "Isometric line illustration of a short beam rebar cage with one steel sleeve across it, whole and centred with wide empty space around it. Only two parts are flat teal, the clash an automated model review found: the steel sleeve and the stirrup it passes through. The sleeve still crosses the stirrup. No text, no markers, no logo."
+  },
+  {
+   "imagen": "principal",
+   "proporcion": "16:9",
+   "motor": "nb21_sin_kit",
+   "modelo": "nano-banana-2.1",
+   "kit": null,
+   "referencia_estilo": "lJo6GJSgv9",
+   "resolucion": "2k",
+   "creditos": 65,
+   "hash_cuerpo": "471d7fb751de64d9",
+   "prompt_enviado": "Isometric line illustration of a short beam rebar cage with one steel sleeve across it, whole and centred with wide empty space around it. Only two parts are flat teal, the clash an automated model review found: the steel sleeve and the stirrup it passes through. The sleeve still crosses the stirrup. Drawn as a flat vector isometric technical line illustration in a 16:9 frame, the subject about 45 percent of the width and half the height. Thin uniform #074E43 and #1F2328 lines, plain white #FFFFFF faces; the teal parts are filled flat #0FA994 and are the only colour. Solid #FAFAF9 off-white background with faint pale construction grid lines to the edges. Strict isometric projection, no vanishing point. Even flat daylight: no shadows, glow, gradients or highlights. Contains no text, letters, numbers, labels, markers, symbols, logo or watermark."
+  },
+  {
+   "imagen": "ancha",
+   "proporcion": "21:9",
+   "motor": "mg1_kit",
+   "modelo": "magnific-one",
+   "kit": "hu2CvqLJlt (Umbral BIM)",
+   "referencia_estilo": "lJo6GJSgv9",
+   "resolucion": "2k",
+   "creditos": 180,
+   "hash_cuerpo": "29a7712d6086d439",
+   "prompt_enviado": "Isometric line illustration: a long, low beam rebar cage with one steel sleeve across it, centred, empty margins at both ends. Only two parts are flat teal, the single clash an automated model review found, in the left third: the steel sleeve and the stirrup it passes through. The sleeve still crosses the stirrup. No text, no markers, no logo."
+  },
+  {
+   "imagen": "ancha",
+   "proporcion": "21:9",
+   "motor": "nb21_sin_kit",
+   "modelo": "nano-banana-2.1",
+   "kit": null,
+   "referencia_estilo": "lJo6GJSgv9",
+   "resolucion": "2k",
+   "creditos": 65,
+   "hash_cuerpo": "29a7712d6086d439",
+   "prompt_enviado": "Isometric line illustration: a long, low beam rebar cage with one steel sleeve across it, centred, empty margins at both ends. Only two parts are flat teal, the single clash an automated model review found, in the left third: the steel sleeve and the stirrup it passes through. The sleeve still crosses the stirrup. Drawn as a flat vector isometric technical line illustration in a wide 21:9 frame, the subject about 75 percent of the width with clear margins at both ends. Thin uniform #074E43 and #1F2328 lines, plain white #FFFFFF faces; the teal parts are filled flat #0FA994 and are the only colour. Solid #FAFAF9 off-white background with faint pale construction grid lines to the edges. Strict isometric projection, no vanishing point. Even flat daylight: no shadows, glow, gradients or highlights. Contains no text, letters, numbers, labels, markers, symbols, logo or watermark."
+  }
+ ],
+ "creditos_por_motor": {
+  "mg1_kit": 360,
+  "nb21_sin_kit": 130
+ },
+ "imagen": {
+  "tipo": "objeto",
+  "imagen_objeto_ancla": "acento"
+ },
+ "aviso": "pedido sin enviar: generar gasta créditos y necesita el OK de David"
+}

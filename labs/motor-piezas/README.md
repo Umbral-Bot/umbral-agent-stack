@@ -174,7 +174,8 @@ David pidió seguir con otro preset y eligió un post de noticia o artículo: ki
 | Magnific | `galerias/G24.yaml` · Drive `01_galerias/2026-11-10_G24` | `presets/P02` y `P03` | piloto: los siete formatos con una imagen maestra de Magnific One con el kit (430 créditos) | **«el objeto no quedó bien posicionado respecto [...] de la mascara usadal»**: va a G25 |
 | Objeto en la máscara | `galerias/G25.yaml` · Drive `01_galerias/2026-11-10_G25` | G24 con `imagen_ajuste: objeto` | el edificio entero y centrado en cada máscara: 75 % en todas, 85 % en bandas y 75 % en columnas, 85 % en todas | **la 2° («2°, 85 y 75»), ya en el Preset 02**; el 1:1 y el 16:9 piden otra imagen, apaisada |
 | Dos imágenes | `galerias/G26.yaml` · Drive `01_galerias/2026-11-10_G26` | `contenido/articulo-magnific-dos-imagenes.yaml` | el 1:1 y el 16:9 con la imagen apaisada (180 créditos); el resto con la principal | **«esa versión que hiciste quedó mucho meojr»** |
-| Dos caminos de imagen | `galerias/G27.yaml` · Drive `01_galerias/2026-11-11_G27` | contenidos `articulo-fondo-*` y `articulo-formula-*` | A fondo abstracto (A1, A2, A3 cruzada) y B fórmula de gráfico relacionado (B1, B2); 8 imágenes, 1.440 créditos | espera la elección de David |
+| Dos caminos de imagen | `galerias/G27.yaml` · Drive `01_galerias/2026-11-11_G27` | contenidos `articulo-fondo-*` y `articulo-formula-*` | A fondo abstracto (A1, A2, A3 cruzada) y B fórmula de gráfico relacionado (B1, B2); 8 imágenes, 1.440 créditos | David: «va bien encaminado»; pidió rescates, jueces, posición en la máscara, plantillas para B y Nano Banana 2.1: va a G28 |
+| Modelos y posición | `galerias/G28.yaml` · Drive `01_galerias/2026-11-11_G28` | contenidos `articulo-nb-*` y `articulo-rescate-*` | B con Magnific One y Nano Banana 2.1 (anclaje por acento); A1 y A3 con recorte óptimo; tres rescates de la biblioteca; 4 imágenes, 260 créditos | espera la elección de David |
 
 El Preset 02 queda en `packs/P02-noticia-4x5.yaml`, un pack plano con el recorrido de decisiones.
 - Reproduce la elección de G16 (SVG idéntico).
@@ -232,6 +233,14 @@ Sobre G26 David dijo: «tan pocos creditos? no estás siendom muy mesquino con o
 - G27, ronda de 1.440 créditos (saldo 237.950): camino A, fondo abstracto (patrón de elementos BIM sin sujeto, `tipo: fondo` en el catálogo, llena la máscara); camino B, la fórmula de `magnific/formula-grafico-relacionado.md`, destilada del *visual brief* v2 del repo (el choque marcado y dos recorridos abiertos). Dos variantes por camino, cada una con su principal y su apaisada.
 - Motor 0.3o: una imagen `tipo: fondo` llena la máscara aunque el pack pida encuadre por objeto, y las cruces de registro no se dibujan sobre ella (chocaban con las cruces del patrón). `pedido_magnific.py medir --percentil` saca la caja por percentiles cuando una línea de construcción suelta la alarga.
 - Jueces: B1 camino principal (cuenta el choque, pero los recorridos discontinuos se pierden en el feed y la apaisada sale peor que la principal), A1 o la cruzada A3 como fondo de reserva, A2 y B2 descartadas. G24 a G26 salen idénticas.
+
+Sobre G27 David preguntó por los recursos generados antes en Magnific y Midjourney, por cómo se define un juez y cómo se posiciona la imagen. Para el camino B pidió «un proceso tipo plantilla donde llega el brief, eso pasa por un prompt(1) que produce el prompt(2) pára ser ingresado en magnific», con plantillas que se ruteen por categoría, y una prueba de B1 en Nano Banana 2.1.
+- Biblioteca: de 363 imágenes (143 de Magnific y 220 de Midjourney), una sola sirve de fondo directo (H021) y nueve dan recortes útiles. El catálogo admite `region`, la parte útil de una imagen (motor 0.3q).
+- Posición, camino A: `imagen_recorte_fondo: optimo` prueba 441 recortes por máscara y elige el que no corta acentos turquesa, no carga turquesa de más y no cae en una zona vacía (motor 0.3p y 0.3q).
+- Posición, camino B: `imagen_objeto_ancla: acento` corre el objeto hacia donde su acento queda cerca del centro de la máscara. Los jueces vieron que llevarlo entero lo pegaba al panel; el motor 0.3r lo corre un tercio del camino (`imagen_acento_fraccion`), con 7 % de margen y nunca hacia el panel.
+- Jueces: `jueces/rubricas.yaml` (una lente por juez, en tres etapas, con vetos, agregación y calibración contra este registro) y `jueces/jueces.py` (arma los encargos y suma los votos).
+- Plantillas del camino B: `formula/` (router, prompt(1) por categoría, validación y demo sin créditos; ver `formula/README.md`).
+- G28, ronda de 260 créditos (saldo 237.690): Nano Banana 2.1 con el mismo texto de B1, sin kit, con la imagen de Magnific One como referencia de estilo. Jueces: Magnific One sigue primera; Nano Banana 2.1 queda cerca (65 créditos por imagen en vez de 180) con trazo más grueso y el choque menos legible; A1 con recorte óptimo es el mejor fondo; los rescates no sirven como fondo. G24 a G27 salen idénticas.
 
 Comentarios de David sobre G01 (en `decisiones.csv`):
 - **1°:** faltan ajustes de proporción y composición.
@@ -304,6 +313,8 @@ rutas.yaml             rutas de TARRO (marca en Drive, solo lectura)
 packs/                 un pack por pieza (valores con nombre; `hereda:` parte de otro pack)
 contenido/             textos de ejemplo
 galerias/              definición de cada galería
+formula/               camino B: router, plantillas prompt(1), validación de prompt(2) y demo
+jueces/                rúbricas por lente y armado de encargos y votos
 analisis/              análisis de las elegidas y de los procesos
 insumos/  salida/      ignorados por git (paquetes extraídos y piezas generadas)
 ```

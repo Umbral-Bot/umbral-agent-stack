@@ -6,6 +6,11 @@ umbral-agent-stack para que tengas de referencia unavance a ver si nos sirve alg
 acá)». Destilada por cuatro agentes que leyeron la capa visual editorial del repo; probada en G27
 (variantes B1 y B2).
 
+> **Desde G28 esta fórmula es una de seis plantillas.** La versión que se usa está en `../formula/`: un router
+> elige la plantilla según el contenido (hallazgo, comparación, interfaz, pendiente, transformación o evento),
+> prompt(1) escribe el prompt(2) y el código lo valida antes de gastar. Esta página queda como la primera versión,
+> la de G27, que corresponde a la plantilla «hallazgo».
+
 ## De dónde sale
 
 - **Contrato vigente:** el *visual brief* v2 (`docs/ops/editorial-visual-brief-v2-2026-08-29.md`,

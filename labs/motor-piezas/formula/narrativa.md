@@ -75,3 +75,11 @@ Plantilla del paso 3: `metaforas.md`.
   en `demo/M01-metaforas.json`.
 - La revisión de alineación y la lectura a ciegas del texto, y el voto ciego sobre las imágenes, están sellados en
   `../jueces/votos/` hasta que David elija.
+- Resultado: «n9o me gistó ninguna». A la pregunta de qué falló, David marcó solo «la idea no engancha»: el dibujo,
+  la relación con el título y la preferencia por un fondo no eran el problema.
+- Los jueces habían elegido la 1, el revisor de alineación aprobaba la 3 y la 4, y los lectores a ciegas
+  reconocieron la premisa en las cuatro imágenes. Se entendían todas y no gustó ninguna.
+- Aprendido (C51 y C52 en `../jueces/criterios-david.yaml`):
+  - que se entienda no basta: un mecanismo chico y didáctico no engancha;
+  - lo que sí enganchó fue la transformación a escala y el campo gráfico denso;
+  - aprobar una metáfora en texto no anticipa que guste en imagen.

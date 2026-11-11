@@ -375,7 +375,8 @@ def elegir(a):
     entero, para volver a aprender de él)."""
     elecciones = leer_yaml(ELECCIONES, {}) or {}
     k = clave(a.galeria, a.seccion)
-    elegidas = [int(x) for x in a.elegidas.split(',')]
+    # «ninguna» también es una respuesta: ninguna opción gana y todas cuentan como rechazadas
+    elegidas = [] if a.elegidas.strip().lower() in ('ninguna', '0', '') else [int(x) for x in a.elegidas.split(',')]
     _, ops = opciones(a.galeria, a.seccion)
     por_id = {o['id']: o for o in ops}
     if not all(e in por_id for e in elegidas):

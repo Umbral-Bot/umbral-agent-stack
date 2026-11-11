@@ -9,6 +9,7 @@
 # pasan a los jueces; quedan para no volver a probarlos igual.
 # `estado`: activo (lo dijo David o ya pasó la prueba) o «a prueba» (inferido: se mide en la próxima galería y
 # sale si baja el acierto). Lo que David dice con sus palabras entra activo; lo que se infiere, a prueba.
+# M01 cuenta como galería 29 para el orden temporal (desde/hasta G29).
 version: 1
 criterios:
 - id: C01
@@ -1126,6 +1127,46 @@ criterios:
   - galeria: G28
     cita: de la 1 a la 21, cual sería la metrafora?
     fuente: jueces/elecciones.yaml (G28) · mensaje de David del 2026-11-11
+- id: C51
+  regla: 'Que la metáfora se entienda no basta: tiene que enganchar. Un mecanismo chico y didáctico que explica
+    la premisa (un edificio que cruza un marco, una canica ante una compuerta, un desagüe fuera de la grilla, placas
+    levantadas) se lee pero no engancha. Lo que sí enganchó: una transformación a escala del oficio (la ciudad que
+    se vuelve red) y un campo gráfico denso con presencia (la retícula con losas turquesa).'
+  tipo: rechazo
+  lentes:
+  - imagen.contenido
+  - imagen.forma
+  - campana.serie
+  confianza: alta
+  estado: activo
+  desde: G29
+  hasta: G29
+  origen: dicho por David (M01, posterior a G28)
+  evidencia:
+  - galeria: M01
+    cita: n9o me gistó ninguna
+    fuente: jueces/elecciones.yaml (M01) · respuesta de David del 2026-11-11
+  - galeria: M01
+    cita: La idea no engancha
+    fuente: jueces/elecciones.yaml (M01) · respuesta de David del 2026-11-11 (opción marcada)
+- id: C52
+  regla: 'Que David apruebe una metáfora en texto no anticipa que le guste en imagen: «suenan bien a simple vista»
+    terminó en «ninguna». La elección final se hace sobre la imagen; el texto solo filtra lo que no cuenta la premisa.'
+  tipo: proceso
+  lentes:
+  - todas
+  confianza: media
+  estado: a prueba
+  desde: G29
+  hasta: G29
+  origen: 'inferido de M01: texto aprobado, imágenes rechazadas'
+  evidencia:
+  - galeria: M01
+    cita: suenan bien a simple vista
+    fuente: jueces/elecciones.yaml (M01) · respuesta de David del 2026-11-11
+  - galeria: M01
+    cita: n9o me gistó ninguna
+    fuente: jueces/elecciones.yaml (M01) · respuesta de David del 2026-11-11
 rechazados:
 - id: C46
   regla: 'Cuando todas las opciones ya cumplen el contraste y el tamaño mínimo, la más legible no gana por eso.

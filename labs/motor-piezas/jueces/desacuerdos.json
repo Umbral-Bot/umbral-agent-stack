@@ -935,5 +935,46 @@
    "oficio": "Por oficio gana la opción 4 (A1, fondos p1 y a1): isometría coherente, uniones limpias, sin artefactos y el mismo trazo fino en la principal y la apaisada. Sirve en los 7 formatos; en el 9:16 la trama no tiene protagonista, pero como es un tipo de pieza nuevo eso cuenta como señal, no como veto.\n\nLa opción 5 comparte la principal, pero su apaisada (a2) es de línea capilar con la retícula pasando por dentro de los objetos. Sirve con ajustes en T1, T6 y T2.\n\nEn el camino B, la mejor es la 1 (Magnific One). La principal está a la altura del 9:16 y sirve en P02, T3, U2 y AB2, aunque al pilar del fondo le falta el tramo inferior. La apaisada es un boceto (líneas dobles, extremo sin resolver, ejes que no son paralelos), así que T1, T6 y T2 sirven con ajustes; conviene pedir otra apaisada con variantes.\n\nNano Banana 2.1 dibuja más nítido pero con trazo más grueso, y su acento no muestra el choque:\n- Opción 2: su apaisada mezcla proyecciones y corta la tubería en tramos. Sirve con ajustes en todos los formatos.\n- Opción 3: sirve con ajustes en P02, T3, U2 y AB2, y no sirve en T1, T6 ni T2 porque su apaisada tiene un error de proyección: la losa se fuga hacia ambos lados.\n\nLos rescates no sirven tal cual:\n- Opciones 6 y 8: el recorte de G-AFI-04 arrastra la línea divisoria turquesa del original y halos de la ampliación.\n- Opción 6: además, la planta de H063 trae cotas ilegibles generadas por la IA.\n- Opción 7: H021 está fuera de la familia de trazo fino.",
    "costuras": "Lente de costuras. En las tres opciones B (1, 2 y 3) el fondo extendido no tiene escalón (0 niveles en la costura) ni rectángulo, ningún acento turquesa toca el borde y las 4 cruces no chocan con el dibujo. Sirven en los 7 formatos. Entre ellas mi lente casi no ve diferencia: elijo la 1 porque solo extiende el fondo en T6, y la 2 queda empatada.\n\nEl camino A pierde las cruces sobre la imagen en todos los formatos (motor 0.3o, contra el criterio de David). A1 (4) y R2 (7) sirven con ajustes en los 7 formatos: devolver las cruces. A3 (5) sirve con ajustes, y en T2 y T6 además corta vigas turquesa.\n\nR1 (6) y R3 (8) no sirven en vertical, historia ni en los dos LinkedIn: hay planos turquesa cortados, la máscara queda 9 a 12 % turquesa y un filete turquesa vertical se lee como costura. En cuadrados y slide sirven con ajustes.\n\nEl método de recorte óptimo, que David aún no valida, funcionó en A1 pero no evitó los cortes en A3 ni en R1/R3. No escribí archivos ni gasté créditos."
   }
+ },
+ {
+  "galeria": "M01",
+  "rubrica": "imagenes-lectura-ciega",
+  "jueces": "2",
+  "david": [],
+  "cita": "n9o me gistó ninguna",
+  "resumenes": {
+   "lectura_ciega": "1: acierta; 2: acierta; 3: acierta; 4: acierta"
+  }
+ },
+ {
+  "galeria": "M01",
+  "rubrica": "imagenes-pred-crit-a",
+  "jueces": "1",
+  "david": [],
+  "cita": "n9o me gistó ninguna",
+  "resumenes": {
+   "prediccion": "Predigo que David elige la 1. Es la única que cuenta la premisa completa como transformación visual: el volumen opaco atraviesa el marco de revisión, queda a la vista su estructura y salen tres piezas turquesa que nadie ha decidido todavía. Es el tipo de abstracción que David elogió en G28, en la línea isométrica fina y con la composición más compleja. Por formato, la principal 16:9 sirve. La apaisada 21:9 necesita ajustes: cambia de vista, el marco no se lee y el acento queda pegado al borde. Falta además asegurar que el recorte no corte las piezas turquesa. La 2 queda muy cerca: tiene la metáfora más legible (la canica espera en la compuerta) y la mejor apaisada, pero solo cuenta la decisión, no tiene relación con la obra y lleva textura de madera. La 4 funciona más como fondo de marca que como idea y le sobra turquesa. La 3 es un hecho técnico literal y no sirve tal cual."
+  }
+ },
+ {
+  "galeria": "M01",
+  "rubrica": "imagenes-pred-crit-b",
+  "jueces": "1",
+  "david": [],
+  "cita": "n9o me gistó ninguna",
+  "resumenes": {
+   "prediccion": "Predigo que David elige la 1. Es la única que cuenta la premisa como una transformación: un volumen opaco pasa por el marco de revisión, queda la estructura a la vista y salen tres piezas turquesa apartadas. Va en la línea isométrica de trazo fino sobre fondo claro con retícula y tiene una composición compleja, lo que David premió en G28 (43–49). La rival cercana es la 2: es la metáfora más nítida de «falta decidir», pero cuenta solo esa mitad, es un juguete y la madera la aparta de la línea, sobre todo en la apaisada. La 4 es más fondo que idea y carga demasiado turquesa sobre un fondo gris. La 3 dibuja un hecho técnico literal y en la principal ni se lee el desfase. Ajustes de la 1: acercar las piezas turquesa al centro para las máscaras de columna, hacer visibles los tres huecos de donde salieron y unificar la vista de la apaisada. Por formato, la 1 sirve en bandas (diapositiva 16:9 y 21:9 con 1a) y en columnas (LinkedIn, 9:16, 4:5) corre riesgo de corte. Confianza media: si David pesa más la claridad que la línea, gana la 2."
+  }
+ },
+ {
+  "galeria": "M01",
+  "rubrica": "metaforas-v1",
+  "jueces": "4",
+  "david": [],
+  "cita": "n9o me gistó ninguna",
+  "resumenes": {
+   "alineacion": "1: FAIL; 2: FAIL; 3: OK; 4: OK",
+   "lectura_ciega": "1: acierta; 2: acierta; 3: falla; 4: acierta"
+  }
  }
 ]

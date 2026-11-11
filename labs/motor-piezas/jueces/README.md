@@ -72,6 +72,14 @@ la lente de contenido pregunta por la metáfora, y el veto de marca exige que el
 Probados en la misma sesión y no adoptados por defecto: los ejemplos de elecciones anteriores en el encargo del
 predictor (`--ejemplos`) acertaron 5 y 5 de 9 en G09–G25, contra 6 y 5 sin ellos.
 
+## M01, metáforas en imagen
+
+David leyó cuatro metáforas en texto («suenan bien a simple vista») y, al verlas en imagen, no le gustó ninguna:
+«la idea no engancha». El predictor eligió la 1, el revisor de alineación aprobaba la 3 y la 4, y la lectura a
+ciegas reconoció la premisa en las cuatro. Ninguna lente mide hoy si una idea engancha. Por eso la respuesta
+«ninguna» también se registra (`elegir --elegidas ninguna`, todas en −1) y se pregunta qué falló antes de inferir
+nada.
+
 ## Archivos
 
 | Archivo | Qué es |

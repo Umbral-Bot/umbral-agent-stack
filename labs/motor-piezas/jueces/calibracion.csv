@@ -124,3 +124,7 @@ G28,pred-crit-b,False,8,6,2,0,7,-0.68
 G28,pred-crit2-a,False,8,6,2,0,7,-0.4
 G28,pred-crit2-b,False,8,6,2,0,8,-0.53
 G28,v2,False,8,6,1,0,,-0.6
+M01,imagenes-lectura-ciega,False,4,,2,0,,
+M01,imagenes-pred-crit-a,False,4,,1,0,,
+M01,imagenes-pred-crit-b,False,4,,1,0,,
+M01,metaforas-v1,False,4,,4,0,,

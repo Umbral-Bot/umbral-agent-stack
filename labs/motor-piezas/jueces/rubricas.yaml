@@ -1,13 +1,29 @@
-# Rúbricas de los jueces del motor de piezas. Cada lente es un juez independiente (un agente) que
-# mira las imágenes con un solo criterio. El código mide antes (UB-3, objeto en la máscara,
-# turquesa en el recorte, contraste) y el juez recibe esas medidas: las usa, no las rehace.
-# Pregunta de David (2026-11-11): «como se define el juez?»
+# Rúbricas de los jueces del motor de piezas · versión 2 (2026-11-11).
+# Cada lente es un juez independiente (un agente) que mira las piezas con un solo criterio. El código
+# mide antes (UB-3, contraste, objeto en la máscara, turquesa en el recorte) y el juez usa esas medidas.
+#
+# Pedido de David (2026-11-11): «la diea es que los jhuueces cada vez adopten mas mis creiterios y tu
+# busque sla forma d elqeu lo hagan, editando sus configuraciones y/o flujos». Lo que cambió de la v1
+# (jueces/historial/rubricas-v1.yaml):
+# - Cada juez recibe los criterios de David que tocan su lente (criterios-david.yaml), con su cita.
+# - Dos lentes nuevas para galerías de diseño sin imagen generada: composicion y lectura.
+# - Una lente que no aplica a la galería lo dice (no_aplica) y no cuenta en la suma.
+# - La suma se pondera con pesos.yaml: cada lente pesa según cuánto coincidió con David.
+# - Protocolo ciego: los jueces votan antes que David, el voto se sella y David elige sin verlo.
+version: 2
 
 escala: "0 a 10 por opción; 7 o más = sirve; 5 a 7 = sirve con ajustes; menos de 5 = no sirve"
 gravedad:
   alta: "impide usar la opción tal cual"
   media: "se nota a tamaño de feed; conviene corregir"
   baja: "solo se ve de cerca o es un detalle"
+
+criterios:
+  archivo: criterios-david.yaml
+  regla: >
+    Son los criterios de David, aprendidos de sus elecciones y comentarios anteriores. Mandan sobre tu
+    gusto propio, salvo que rompan una regla de marca UB-3. Si una opción cumple tu lente pero choca con
+    un criterio de David, puntúala más bajo y dilo en un hallazgo.
 
 etapas:
   imagen:            # antes de meter una imagen en piezas
@@ -24,16 +40,27 @@ etapas:
       forma:
         mira: "B: objeto entero y de una pieza, compacto en 16:9 y bajo y ancho en 21:9 (2,5:1 o más). A: sin sujeto, densidad pareja, recortable en cualquier parte"
         veto: []
-  pieza:             # la imagen ya puesta en los formatos
+  pieza:             # la pieza terminada, en sus formatos
     lentes:
       posicion:
-        mira: "objeto entero y centrado (o con el acento en su destino), márgenes parejos, no toca las marcas ni el panel de texto"
+        mira: "si hay imagen con objeto: objeto entero y centrado (o con el acento en su destino), márgenes parejos, no toca las marcas ni el panel de texto. Sin imagen con objeto: no aplica"
         veto: ["el objeto cortado por la máscara"]
       costuras:
-        mira: "el fondo extendido sin escalón de color ni rectángulo visible; ningún acento turquesa cortado en el borde; las cruces de registro no chocan con el dibujo"
+        mira: "si hay imagen extendida o recortada: el fondo extendido sin escalón de color ni rectángulo visible; ningún acento turquesa cortado en el borde; las cruces de registro no chocan con el dibujo. Si no: no aplica"
         veto: ["un parche rectangular visible a tamaño de feed"]
       jerarquia:
-        mira: "la imagen acompaña y no compite con el titular; el botón y el logo siguen legibles"
+        mira: "el orden de lectura: el titular manda, la imagen acompaña y no compite; kicker, bajada, botón y logo en su lugar y legibles"
+        veto: []
+      composicion:
+        mira: "cómo se reparte el lienzo entre texto e imagen: proporciones, división, alineaciones, aire entre bloques y equilibrio de la pieza vista entera"
+        veto: []
+      lectura:
+        mira: "lo que se lee a tamaño de feed en el celular: contraste del texto chico (sobre imagen con textura pide más que el mínimo), tamaño mínimo, separaciones parejas entre textos, tamaño del botón y del llamado"
+        veto: ["un texto que no se lee a tamaño de feed"]
+  eleccion:          # un juez que integra todo lo que se sabe de David
+    lentes:
+      prediccion:
+        mira: "qué opción elegiría David. Mira la pieza entera como la vería él en el celular y aplica todos sus criterios a la vez; las lentes parciales solo sirven si cambian esa elección. Puntúa cada opción por cuánto se acerca a lo que él elegiría"
         veto: []
   campana:           # las piezas de un artículo vistas juntas
     lentes:
@@ -45,14 +72,22 @@ etapas:
         veto: []
 
 salida:            # lo que devuelve cada juez (esquema del agente)
-  puntajes: "objeto {opcion: 0-10}"
-  hallazgos: "lista de {donde, problema, gravedad}"
-  mejor: "la opción que elige"
+  no_aplica: "true si tu lente no tiene nada que mirar en esta galería; entonces puntajes vacío"
+  puntajes: "objeto {opcion: 0-10}, con el número de opción como clave"
+  hallazgos: "lista de {opcion, donde, problema, gravedad}"
+  mejor: "el número de la opción que elige tu lente"
   veredicto: "sirve | sirve con ajustes | no sirve"
   resumen: "en castellano, corto"
 
 agregacion:
-  orden: "suma de puntajes de todas las lentes"
-  veto: "un hallazgo de gravedad alta que coincide con un veto de la lente deja la opción en «no sirve», sume lo que sume"
-  desempate: "camino B: manda la lente contenido; camino A: manda la lente marca"
-  calibracion: "comparar el ganador de los jueces con lo que eligió David en decisiones.csv; si difieren, se ajusta la rúbrica, no la elección"
+  decide: "el juez de predicción (etapa eleccion), con todos los criterios de David. En la prueba sobre 14 galerías pasadas fue el más estable (repite su elección en 13 de 14) y el que más acierta cuando ya hay criterios aprendidos"
+  lentes: "las lentes parciales no deciden: sus hallazgos y vetos se reportan como diagnóstico. Sumarlas con el mismo peso bajó el acierto de 6 a 3 de 14, porque lectura, costuras y posición empujan hacia opciones seguras y David decide sobre todo por composición"
+  veto: "un hallazgo de gravedad alta que coincide con un veto de una lente se le muestra a David junto a la opción, aunque el predictor la elija"
+  pesos: "pesos.yaml lleva el acuerdo de cada lente con David; sirve para ver qué lente lo representa mejor, no para sumar"
+
+protocolo:         # el flujo que permite aprender
+  - "1. La galería se muestra a David numerada y sin el voto de los jueces (pagina_eleccion.py)."
+  - "2. Los jueces votan antes de que David elija; el voto se sella en jueces/votos/ (jueces.py sellar). jueces.py auditar revisa que ningún juez haya abierto un registro de las elecciones: si lo hizo, su voto no vale (pasó con 7 de 28 jueces sin criterios el 2026-11-11)."
+  - "3. David elige por número, idealmente con una frase de por qué; jueces.py elegir lo anota en decisiones.csv y en elecciones.yaml."
+  - "4. jueces.py calibrar compara el voto sellado con la elección: acierto, posición de la elegida y acuerdo por lente; recalcula pesos.yaml."
+  - "5. Si fallaron, se lee su comentario y se agrega o corrige un criterio en criterios-david.yaml (con su cita) o la mirada de una lente aquí. El cambio queda en el historial y se vuelve a medir sobre las galerías pasadas antes de aceptarlo."

@@ -175,7 +175,7 @@ David pidió seguir con otro preset y eligió un post de noticia o artículo: ki
 | Objeto en la máscara | `galerias/G25.yaml` · Drive `01_galerias/2026-11-10_G25` | G24 con `imagen_ajuste: objeto` | el edificio entero y centrado en cada máscara: 75 % en todas, 85 % en bandas y 75 % en columnas, 85 % en todas | **la 2° («2°, 85 y 75»), ya en el Preset 02**; el 1:1 y el 16:9 piden otra imagen, apaisada |
 | Dos imágenes | `galerias/G26.yaml` · Drive `01_galerias/2026-11-10_G26` | `contenido/articulo-magnific-dos-imagenes.yaml` | el 1:1 y el 16:9 con la imagen apaisada (180 créditos); el resto con la principal | **«esa versión que hiciste quedó mucho meojr»** |
 | Dos caminos de imagen | `galerias/G27.yaml` · Drive `01_galerias/2026-11-11_G27` | contenidos `articulo-fondo-*` y `articulo-formula-*` | A fondo abstracto (A1, A2, A3 cruzada) y B fórmula de gráfico relacionado (B1, B2); 8 imágenes, 1.440 créditos | David: «va bien encaminado»; pidió rescates, jueces, posición en la máscara, plantillas para B y Nano Banana 2.1: va a G28 |
-| Modelos y posición | `galerias/G28.yaml` · Drive `01_galerias/2026-11-11_G28` | contenidos `articulo-nb-*` y `articulo-rescate-*` | B con Magnific One y Nano Banana 2.1 (anclaje por acento); A1 y A3 con recorte óptimo; tres rescates de la biblioteca; 4 imágenes, 260 créditos | espera la elección de David |
+| Modelos y posición | `galerias/G28.yaml` · Drive `01_galerias/2026-11-11_G28` | contenidos `articulo-nb-*` y `articulo-rescate-*` | B con Magnific One y Nano Banana 2.1 (anclaje por acento); A1 y A3 con recorte óptimo; tres rescates de la biblioteca; 4 imágenes, 260 créditos | espera la elección de David, por número; el voto de los jueces quedó sellado |
 
 El Preset 02 queda en `packs/P02-noticia-4x5.yaml`, un pack plano con el recorrido de decisiones.
 - Reproduce la elección de G16 (SVG idéntico).
@@ -239,6 +239,11 @@ Sobre G27 David preguntó por los recursos generados antes en Magnific y Midjour
 - Posición, camino A: `imagen_recorte_fondo: optimo` prueba 441 recortes por máscara y elige el que no corta acentos turquesa, no carga turquesa de más y no cae en una zona vacía (motor 0.3p y 0.3q).
 - Posición, camino B: `imagen_objeto_ancla: acento` corre el objeto hacia donde su acento queda cerca del centro de la máscara. Los jueces vieron que llevarlo entero lo pegaba al panel; el motor 0.3r lo corre un tercio del camino (`imagen_acento_fraccion`), con 7 % de margen y nunca hacia el panel.
 - Jueces: `jueces/rubricas.yaml` (una lente por juez, en tres etapas, con vetos, agregación y calibración contra este registro) y `jueces/jueces.py` (arma los encargos y suma los votos).
+
+Sobre G28 David preguntó: «los jueces se van reetroalimentando con mis elecciones?» y pidió que «los jhuueces cada vez adopten mas mis creiterios», y una G28 «de nuevo con numeros».
+- Hasta entonces no aprendían: ningún paso comparaba su voto con la elección, y la página mostraba su voto antes de que David eligiera.
+- `pagina_eleccion.py` arma la página ciega y numerada (alternativas 1 a N, piezas con su número de `decisiones.csv`), sin recomendaciones.
+- `jueces/`: voto sellado antes de la elección, auditoría de que ningún juez vio las elecciones, `elegir`, `calibrar` y 45 criterios de David con cita literal. La prueba sobre 14 galerías pasadas y lo que decide está en `jueces/README.md`.
 - Plantillas del camino B: `formula/` (router, prompt(1) por categoría, validación y demo sin créditos; ver `formula/README.md`).
 - G28, ronda de 260 créditos (saldo 237.690): Nano Banana 2.1 con el mismo texto de B1, sin kit, con la imagen de Magnific One como referencia de estilo. Jueces: Magnific One sigue primera; Nano Banana 2.1 queda cerca (65 créditos por imagen en vez de 180) con trazo más grueso y el choque menos legible; A1 con recorte óptimo es el mejor fondo; los rescates no sirven como fondo. G24 a G27 salen idénticas.
 
@@ -292,6 +297,9 @@ python galeria.py --definicion galerias/G24.yaml              # piloto de Magnif
 python galeria.py --definicion galerias/G25.yaml              # el objeto entero y centrado en su máscara (salida/G25)
 python galeria.py --definicion galerias/G26.yaml              # la campaña con la imagen principal y la apaisada (salida/G26)
 python galeria.py --definicion galerias/G27.yaml              # fondo abstracto y fórmula de gráfico relacionado (salida/G27)
+python galeria.py --definicion galerias/G28.yaml              # modelos, posición en la máscara y rescates (salida/G28)
+python pagina_eleccion.py --galeria G28 --salida <ruta.html>  # página ciega y numerada para elegir en el celular
+python jueces/jueces.py calibrar                              # votos sellados de los jueces contra las elecciones de David
 python pedido_magnific.py pedido --preset presets/P02.yaml --preset presets/P03.yaml --contenido contenido/articulo-ejemplo.yaml --salida magnific/pedidos/articulo-ia-obra.json   # sin créditos
 python motor.py campana --preset presets/P02.yaml --contenido contenido/prueba-magnific.yaml --salida salida/prueba-magnific   # imagen de Magnific registrada
 python motor.py pieza --pack packs/P01-save-the-date-slide.yaml --contenido contenido/otro.yaml --salida salida/p01

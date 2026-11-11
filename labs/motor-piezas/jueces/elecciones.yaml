@@ -1,0 +1,19 @@
+# Lo que eligió David en cada galería, en números de opción: con una sola sección, el número de la pieza
+# (1°, 2°…); con varias secciones, el de la sección. Sale de decisiones.csv y de sus mensajes. Es la
+# respuesta contra la que se calibran los votos sellados de los jueces (jueces.py calibrar).
+# Quedan fuera las galerías sin elección clara entre alternativas (G01, G07, G08, G10, G11, G17, G18,
+# G21, G24, G26, G27) y las que eligen por sección dentro de una misma página (G19, G20), por ahora.
+G02: {elegidas: [2], fecha: 2026-11-06, cita: "se ve mejor el 2, pero aumentar contraste en las letras de abajo a la izquierda"}
+G03: {elegidas: [2], fecha: 2026-11-06, cita: "sí, el 2 de todas maneras"}
+G04: {elegidas: [2], fecha: 2026-11-06, cita: "2° Sangrado lateral"}
+G05: {elegidas: [1], fecha: 2026-11-06, cita: "1"}
+G06: {elegidas: [4], fecha: 2026-11-06, cita: "4"}
+G09: {elegidas: [2], fecha: 2026-11-08, cita: "2"}
+G12: {elegidas: [1], fecha: 2026-11-09, cita: "1° Banda abajo"}
+G13: {elegidas: [1], fecha: 2026-11-09, cita: "1° Base"}
+G14: {elegidas: [1], fecha: 2026-11-09, cita: "1° A sangre"}
+G15: {elegidas: [2], fecha: 2026-11-09, cita: "2° Bajada blanca"}
+G16: {elegidas: [3, 4], fecha: 2026-11-09, cita: "3 y 4"}
+G22: {elegidas: [1], fecha: 2026-11-10, cita: "Sin bajada · LinkedIn, piezas completas: 1 peor el boton mas pequeño"}
+G23: {elegidas: [2], fecha: 2026-11-10, cita: "Sin bajada · LinkedIn, piezas completas : 2"}
+G25: {elegidas: [2], fecha: 2026-11-10, cita: "2°, 85 y 75"}

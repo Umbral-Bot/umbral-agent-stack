@@ -1,0 +1,86 @@
+{
+ "galeria": "M01",
+ "seccion": null,
+ "rubrica": "imagenes-pred-crit-b",
+ "retro": false,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T01:55:10",
+ "hash_rubrica": "ae799f118a10",
+ "hash_criterios": "c375ba4695d4",
+ "votos": [
+  {
+   "puntajes": {
+    "1": 7,
+    "2": 6,
+    "3": 3.5,
+    "4": 5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "1p (16:9), esquina inferior derecha",
+     "problema": "Las tres piezas turquesa, que son el centro de la metáfora, quedan pegadas al borde inferior derecho. El volumen opaco carga la izquierda y la diagonal va de esquina a esquina, así que el sujeto no queda al centro. En una máscara de columna (LinkedIn, 9:16, 4:5) un recorte centrado corta las piezas o el marco, lo que es grave en esos formatos. En bandas funciona.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "1p, estructura",
+     "problema": "La metáfora promete «tres huecos vacíos» de donde salieron las tres piezas, pero en la imagen todas las celdas están vacías. Se lee bien la mitad «la revisión deja a la vista y separa». La mitad «el equipo aún decide» no se ve: no se ve de dónde salió cada pieza ni que quede algo pendiente.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "1a (21:9)",
+     "problema": "Usa una vista frontal oblicua con el marco en contorno turquesa, distinta de la isométrica de 1p; es un ajuste anotado, no un veto. Como apaisada sirve: el objeto es bajo y ancho, ocupa cerca del 88 % del ancho y está centrado. Las piezas turquesa quedan a unos 5 % del borde derecho y el margen es justo. Arriba queda bastante vacío.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "metáfora (2p y 2a)",
+     "problema": "Es la metáfora más clara de «falta decidir»: la canica espera contra la compuerta frente a dos ramales. Pero solo cuenta esa mitad del titular; «la IA encuentra lo que se escapaba» no aparece. Además es un juguete fuera del mundo de la obra y no muestra una transformación, que es lo que David premió en G28.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "2p y sobre todo 2a, trazo",
+     "problema": "La veta de madera, y en la 2a un trazo más grueso con sombreado de boceto en vista oblicua no isométrica, la apartan de la línea isométrica, plana y de trazo fino. En la 2p el sujeto está centrado y compacto, así que aguanta las columnas, pero en una banda ancha quedaría chico; ahí la tapa la 2a.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "metáfora",
+     "problema": "Dibuja tal cual un hecho técnico de obra, un desagüe fuera de la grilla, que es justo lo que el criterio 49 dice que no basta. En la 3p el desfase ni siquiera se lee, porque el cuadro de radier no tiene juntas: se ve un desagüe centrado en un hueco. No se puede decir cómo el titular se convierte en idea.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "3p (16:9)",
+     "problema": "El objeto es chico y ralo, con mucho vacío alrededor; en el celular el desagüe queda reducido a un punto. La 3a (perspectiva, radier punteado) sí deja ver el desagüe cruzando juntas, pero cambia de vista.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "4p (16:9)",
+     "problema": "El fondo es gris, no claro como en las demás, y el trazo oscuro es más grueso. Las cinco placas turquesa grandes convierten el turquesa en superficie, no en acento de uno o dos elementos. Por el criterio 51, que está a prueba, se anota como ajuste.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "metáfora y 4a (21:9)",
+     "problema": "Se lee «placas levantadas, algo a la vista», pero no la revisión ni la decisión pendiente: funciona más como fondo con un gesto que como imagen relacionada. La 4a cambia de composición: pone una fila mecánica de cinco placas sobre una banda de baldosas grises en aparejo, entre dos retículas isométricas, y mezcla vistas.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "apaisadas 21:9",
+     "problema": "Las cuatro apaisadas cambian de vista o de tratamiento respecto de su principal isométrica. Es un defecto común, así que no desempata; en cada una se anota como ajuste.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve con ajustes",
+   "resumen": "Predigo que David elige la 1. Es la única que cuenta la premisa como una transformación: un volumen opaco pasa por el marco de revisión, queda la estructura a la vista y salen tres piezas turquesa apartadas. Va en la línea isométrica de trazo fino sobre fondo claro con retícula y tiene una composición compleja, lo que David premió en G28 (43–49). La rival cercana es la 2: es la metáfora más nítida de «falta decidir», pero cuenta solo esa mitad, es un juguete y la madera la aparta de la línea, sobre todo en la apaisada. La 4 es más fondo que idea y carga demasiado turquesa sobre un fondo gris. La 3 dibuja un hecho técnico literal y en la principal ni se lee el desfase. Ajustes de la 1: acercar las piezas turquesa al centro para las máscaras de columna, hacer visibles los tres huecos de donde salieron y unificar la vista de la apaisada. Por formato, la 1 sirve en bandas (diapositiva 16:9 y 21:9 con 1a) y en columnas (LinkedIn, 9:16, 4:5) corre riesgo de corte. Confianza media: si David pesa más la claridad que la línea, gana la 2.",
+   "lente": "prediccion"
+  }
+ ]
+}

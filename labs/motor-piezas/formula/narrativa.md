@@ -65,3 +65,13 @@ Plantilla del paso 3: `metaforas.md`.
   todas las imágenes (regla anti-plantilla de UAS).
 - **Pilotear antes de reescribir las seis categorías de `categorias.yaml`.**
 - **El contenido de ejemplo no trae tesis.** La premisa de la demo es una propuesta que David tiene que confirmar.
+
+## Primera ronda: M01 (2026-11-11)
+
+- Cuatro metáforas para «La IA entra a la obra»: un edificio que cruza un marco, una canica ante una compuerta, un
+  desagüe fuera de la grilla de baldosas y un campo de placas con las desalineadas levantadas.
+- David leyó el texto: «suenan bien a simple vista», y pidió las imágenes.
+- Se generaron la principal y la apaisada de cada una con Magnific One y el kit: 8 imágenes, 1.440 créditos. Detalle
+  en `demo/M01-metaforas.json`.
+- La revisión de alineación y la lectura a ciegas del texto, y el voto ciego sobre las imágenes, están sellados en
+  `../jueces/votos/` hasta que David elija.

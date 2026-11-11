@@ -794,3 +794,358 @@ imagenes:
     - 1.0
     tipo: fondo
     fondo_imagen: '#F9F9F8'
+  mg-ia-obra-m01-1p:
+    archivo: mg-ia-obra-m01-1p.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: rgpNOorxtc
+    enlace: https://www.magnific.com/app/creation/rgpNOorxtc
+    kit: hu2CvqLJlt
+    plantilla: post-linkedin
+    semilla: 21273
+    creditos: 180
+    prompt: 'Flat vector isometric line illustration, 16:9, read left to right on a solid off-white #FAFAF9
+      field. One long horizontal building runs across the centre, spanning about 70 percent of the width,
+      and passes through a slender upright rectangular frame placed slightly left of centre. Left of the
+      frame the building is a closed solid mass with plain white #FFFFFF faces and thin outlines; right
+      of the frame it opens into a clear skeleton of floor slabs, square columns and beams in thin uniform
+      #074E43 and #1F2328 lines. At the right end three empty rectangular slots remain, and three misfit
+      blocks rest on the ground beside them, filled flat turquoise #0FA994, the only solid colour in the
+      image. Strict isometric projection, no vanishing point. Flat even daylight: no shadows, glow, highlights
+      or gradients. Faint grid lines run to the edges with calm off-white margins. No text, letters, numbers,
+      markers, labels or logo anywhere.'
+    prompt_enviado: 'Isometric fine-line scene read left to right: one long building passes through a
+      slender upright rectangular frame. Left of the frame it is a closed, solid mass; right of the frame
+      it opens into a clear structure of slabs, columns and beams. At its right end three empty slots
+      remain, and the three misfit pieces rest beside them in turquoise, waiting. No text, no markers,
+      no logo.'
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2688
+    - 1520
+    reproducible: true
+    pedido: formula/demo/M01-metaforas.json
+    fecha: '2026-11-11'
+    sha256: 367f2c0de4d3134a
+    nota: M01, metáfora 1 para «La IA entra a la obra» (camino B v2); principal
+    tipo: objeto
+    objeto:
+    - 0.0718
+    - 0.1842
+    - 0.9509
+    - 0.9625
+    acento:
+    - 0.7489
+    - 0.7224
+    - 0.9464
+    - 0.9434
+    fondo_imagen: '#FAF9F7'
+  mg-ia-obra-m01-2p:
+    archivo: mg-ia-obra-m01-2p.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: w4mzRu97EI
+    enlace: https://www.magnific.com/app/creation/w4mzRu97EI
+    kit: hu2CvqLJlt
+    plantilla: post-linkedin
+    semilla: 957102
+    creditos: 180
+    prompt: 'Flat vector isometric line illustration, 16:9, in strict isometric projection with no vanishing
+      point: a wooden marble run stands on a plain tabletop, centred as one compact subject within the
+      middle 45 percent of the width and half the height. Thin uniform #074E43 and #1F2328 lines outline
+      white #FFFFFF faces, with a few sparse grain strokes suggesting wood. Open channel ramps zigzag
+      down from the upper left on slim upright posts toward the lower right. There a single white-outlined
+      marble sits stopped just before a Y-shaped fork, touching a small upright gate whose lever points
+      straight up between the two branches. The gate is the only element filled with flat turquoise #0FA994;
+      everything else stays unfilled white. Both branches continue downward, empty and open. Solid #FAFAF9
+      field with faint grey construction grid lines and crosshair nodes running to the edges. Flat even
+      daylight, no shadows, glow, gradients or highlights. No text, letters, numbers, markers, labels
+      or logo.'
+    prompt_enviado: 'Isometric line illustration: a wooden marble run stands on a plain tabletop, its
+      ramps descending in a zigzag from the upper left. At the lower right, a single marble rests stopped
+      just before a Y-shaped fork, touching a small upright gate whose lever points straight up between
+      the two branches. The gate is the only turquoise element. Both branches continue down, empty and
+      open. No text, no markers, no logo.'
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2688
+    - 1520
+    reproducible: true
+    pedido: formula/demo/M01-metaforas.json
+    fecha: '2026-11-11'
+    sha256: 5edb147fb3493146
+    nota: M01, metáfora 2 para «La IA entra a la obra» (camino B v2); principal
+    tipo: objeto
+    objeto:
+    - 0.2902
+    - 0.0868
+    - 0.7024
+    - 0.9046
+    acento:
+    - 0.5636
+    - 0.5888
+    - 0.5822
+    - 0.6901
+    fondo_imagen: '#FAF9F7'
+  mg-ia-obra-m01-3p:
+    archivo: mg-ia-obra-m01-3p.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: LwX34hrswO
+    enlace: https://www.magnific.com/app/creation/LwX34hrswO
+    kit: hu2CvqLJlt
+    plantilla: post-linkedin
+    semilla: 659053
+    creditos: 180
+    prompt: 'Flat vector isometric line illustration in true isometric projection with no vanishing point:
+      one rectangular floor slab, whole and centred in a 16:9 frame, about 45 percent of the frame width,
+      with wide calm empty space on every side. The slab top is laid with square tiles in an exact, perfectly
+      regular grid, outlined in thin uniform #074E43 lines with white #FFFFFF tile faces; the slab edge
+      shows a thin white thickness band outlined in #1F2328. Near the middle, a bare concrete square exactly
+      three tiles wide stays open as a plain unfilled face; whole tiles stop cleanly at its edge, with
+      no cut pieces. Inside it sits a round floor drain set off-centre, so it does not line up with any
+      tile joint; only its circular grate is flat #0FA994, the single coloured plane. Solid #FAFAF9 background,
+      flat even daylight, with no shadows, glow, gradients or highlights. The image contains no text,
+      numbers, markers, crosshairs, labels or logo.'
+    prompt_enviado: 'Isometric line illustration: a rectangular floor slab almost fully laid with square
+      tiles in an exact grid, whole and centred with wide empty space around it. Near the middle, a bare
+      concrete square three tiles wide stays open; whole tiles stop at its edge. Inside it sits a round
+      floor drain, offset from the tile joints. Only one part is flat teal: the drain grate. No text,
+      no markers, no logo.'
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2688
+    - 1520
+    reproducible: true
+    pedido: formula/demo/M01-metaforas.json
+    fecha: '2026-11-11'
+    sha256: 26b69eca4575f7b2
+    nota: M01, metáfora 3 para «La IA entra a la obra» (camino B v2); principal
+    tipo: objeto
+    objeto:
+    - 0.2548
+    - 0.2408
+    - 0.7626
+    - 0.7849
+    acento:
+    - 0.5197
+    - 0.5026
+    - 0.5569
+    - 0.5421
+    fondo_imagen: '#F9F9F7'
+  mg-ia-obra-m01-4p:
+    archivo: mg-ia-obra-m01-4p.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: 79hnZHzJAL
+    enlace: https://www.magnific.com/app/creation/79hnZHzJAL
+    kit: hu2CvqLJlt
+    plantilla: post-linkedin
+    semilla: 180805
+    creditos: 180
+    prompt: 'Flat vector isometric line illustration, 16:9, true axonometric projection with no vanishing
+      point, seen from a high isometric angle. A wide field of identical rectangular floor panels laid
+      edge to edge in a tight grid fills the full frame width and runs off the left and right edges, on
+      a solid #FAFAF9 off-white field. Every panel is drawn with thin uniform #1F2328 lines, filled flat
+      pale grey, lying flat and perfectly aligned. Five panels scattered evenly across the field hover
+      just above their own slots, each slightly rotated out of alignment, filled flat #0FA994 turquoise
+      with thin #074E43 outlines and a thin white edge band showing their thickness. Beneath each raised
+      panel its empty slot is a pale outlined rectangle with no fill. Turquoise appears only on those
+      five panels. Flat, even daylight: no cast shadows, drop shadows, glow, highlights or gradients.
+      No text, letters, numbers, markers, labels or logo anywhere.'
+    prompt_enviado: 'Isometric line illustration: a wide field of identical rectangular floor panels laid
+      edge to edge in a tight grid, like a building floor seen from a high isometric angle. Five scattered
+      panels hover just above their own empty slots, each slightly rotated out of alignment, drawn in
+      turquoise. Each empty slot beneath a raised panel is a pale outlined rectangle. Every other panel
+      lies flat, pale grey, perfectly aligned. No text, no markers, no logo.'
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2688
+    - 1520
+    reproducible: true
+    pedido: formula/demo/M01-metaforas.json
+    fecha: '2026-11-11'
+    sha256: 7e05644c2779e242
+    nota: M01, metáfora 4 para «La IA entra a la obra» (camino B v2); principal
+    tipo: fondo
+    fondo_imagen: '#E9E9E9'
+  mg-ia-obra-m01-1a:
+    archivo: mg-ia-obra-m01-1a.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: nVxtoXhYQD
+    enlace: https://www.magnific.com/app/creation/nVxtoXhYQD
+    kit: hu2CvqLJlt
+    plantilla: post-linkedin
+    semilla: 689366
+    creditos: 180
+    prompt: 'Flat vector isometric technical illustration in a wide 21:9 panorama, read left to right,
+      on a solid off-white #FAFAF9 field. One long, low building runs horizontally across the frame, centred
+      vertically, and passes through a slender upright rectangular frame drawn in thin #074E43 line, placed
+      slightly left of centre. Left of the frame the building is a closed solid mass with plain white
+      #FFFFFF faces and thin uniform outlines. Right of the frame it opens into a legible structure of
+      stacked floor slabs, square columns and beams in thin #074E43 and #1F2328 line work with white faces.
+      At the far right end three empty rectangular slots remain; beside them, resting on the ground with
+      open space around, sit three misfit blocks in flat turquoise #0FA994, the only solid colour. Strict
+      isometric projection, no vanishing point. Flat, even daylight: no shadows, glow, gradients or highlights.
+      Generous off-white above and below; faint grid lines run to the edges. No text, letters, numbers,
+      markers, labels or logo.'
+    prompt_enviado: 'Isometric fine-line panorama read left to right: one long building passes through
+      a slender upright rectangular frame. Left of the frame it is a closed, solid mass; right of it,
+      a clear structure of slabs, columns and beams. At its far right end three empty slots remain, and
+      the three misfit pieces rest beside them in turquoise, waiting, with open space around. No text,
+      no markers, no logo.'
+    proporcion_pedida: '21:9'
+    tamano_px:
+    - 3024
+    - 1296
+    reproducible: true
+    pedido: formula/demo/M01-metaforas.json
+    fecha: '2026-11-11'
+    sha256: 6e6a3a3513d854e0
+    nota: M01, metáfora 1 para «La IA entra a la obra» (camino B v2); apaisada, con la principal como
+      referencia de estilo
+    tipo: objeto
+    objeto:
+    - 0.0658
+    - 0.189
+    - 0.959
+    - 0.8835
+    acento:
+    - 0.8776
+    - 0.5548
+    - 0.9537
+    - 0.7137
+    fondo_imagen: '#FBF9F8'
+  mg-ia-obra-m01-2a:
+    archivo: mg-ia-obra-m01-2a.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: vQRj1kDa47
+    enlace: https://www.magnific.com/app/creation/vQRj1kDa47
+    kit: hu2CvqLJlt
+    plantilla: post-linkedin
+    semilla: 486788
+    creditos: 180
+    prompt: 'Flat vector isometric line illustration, wide 21:9 panorama: a long wooden marble run stretches
+      across a plain tabletop, its ramps descending in a gentle zigzag from left to right. Draw everything
+      in thin uniform #074E43 and #1F2328 line work with white #FFFFFF faces; suggest wood only with sparse
+      fine grain lines. At the right third, a single white marble rests stopped just before a Y-shaped
+      fork, touching a small upright gate whose lever points straight up between the two branches. The
+      gate is the only flat #0FA994 turquoise fill in the image, as in the attached doorway illustration''s
+      single teal panel; both branches continue onward, empty and open. Strict isometric projection, no
+      vanishing point. Solid flat #FAFAF9 background with faint pale-grey construction grid lines running
+      to the edges, calm space above and below, subject clear of the margins. Flat even daylight, no cast
+      shadows, glow, gradients or photorealism. No text, letters, numbers, markers, labels or logo.'
+    prompt_enviado: 'Isometric line illustration: a long wooden marble run stretches across a plain tabletop,
+      its ramps descending in a gentle zigzag from left to right. At the right third, a single marble
+      rests stopped just before a Y-shaped fork, touching a small upright gate whose lever points straight
+      up between the two branches. The gate is the only turquoise element. Both branches continue onward,
+      empty and open. No text, no markers, no logo.'
+    proporcion_pedida: '21:9'
+    tamano_px:
+    - 3024
+    - 1296
+    reproducible: true
+    pedido: formula/demo/M01-metaforas.json
+    fecha: '2026-11-11'
+    sha256: 89946e5a2d2080cb
+    nota: M01, metáfora 2 para «La IA entra a la obra» (camino B v2); apaisada, con la principal como
+      referencia de estilo
+    tipo: objeto
+    objeto:
+    - 0.0479
+    - 0.0486
+    - 0.9501
+    - 0.9221
+    acento:
+    - 0.6425
+    - 0.4452
+    - 0.6892
+    - 0.6049
+    fondo_imagen: '#FAFBFA'
+  mg-ia-obra-m01-3a:
+    archivo: mg-ia-obra-m01-3a.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: ov45Hq3829
+    enlace: https://www.magnific.com/app/creation/ov45Hq3829
+    kit: hu2CvqLJlt
+    plantilla: post-linkedin
+    semilla: 872831
+    creditos: 180
+    prompt: 'Flat vector isometric line illustration in a wide 21:9 frame, true isometric projection with
+      no vanishing point. A long, narrow corridor floor runs horizontally across the centre, about 80
+      percent of the frame width, laid with identical square tiles in an exact unbroken grid along its
+      full length, with calm empty margins at both ends and above and below. In the left third, a bare
+      concrete square exactly three tiles wide and three tiles deep stays open; whole tiles stop cleanly
+      at its edge, no cut tiles. Inside it sits one round floor drain, set deliberately off the tile joint
+      lines. Thin uniform #074E43 and #1F2328 line work, tile faces white #FFFFFF, concrete unfilled with
+      sparse fine stipple. The drain grate is the only solid fill, flat #0FA994, borrowing the single-teal-panel
+      restraint of the doorway reference. Solid #FAFAF9 background with faint construction grid lines
+      to the edges. Flat even daylight: no shadows, glow or gradients. No text, numbers, markers, labels
+      or logo.'
+    prompt_enviado: 'Isometric line illustration: a long, narrow corridor floor laid with square tiles
+      in an exact grid along its full length, centred, empty margins at both ends. In the left third,
+      a bare concrete square three tiles wide stays open; whole tiles stop at its edge. Inside it sits
+      a round floor drain, offset from the tile joints. Only one part is flat teal: the drain grate. No
+      text, no markers, no logo.'
+    proporcion_pedida: '21:9'
+    tamano_px:
+    - 3024
+    - 1296
+    reproducible: true
+    pedido: formula/demo/M01-metaforas.json
+    fecha: '2026-11-11'
+    sha256: 7ed8834d2f1b6e68
+    nota: M01, metáfora 3 para «La IA entra a la obra» (camino B v2); apaisada, con la principal como
+      referencia de estilo
+    tipo: objeto
+    objeto:
+    - 0.0
+    - 0.1644
+    - 1.0
+    - 0.8387
+    acento:
+    - 0.3294
+    - 0.4769
+    - 0.3671
+    - 0.5424
+    fondo_imagen: '#F9F8F6'
+  mg-ia-obra-m01-4a:
+    archivo: mg-ia-obra-m01-4a.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: 6AFDTDMiJO
+    enlace: https://www.magnific.com/app/creation/6AFDTDMiJO
+    kit: hu2CvqLJlt
+    plantilla: post-linkedin
+    semilla: 926266
+    creditos: 180
+    prompt: 'Flat vector isometric line illustration in a wide 21:9 panoramic frame, strict isometric
+      projection with no vanishing point. A long horizontal band of identical rectangular floor panels,
+      laid edge to edge in a tight grid, runs across the full width, centred vertically like one building
+      floor plate. Every panel lies flat and perfectly aligned, with pale grey faces and thin uniform
+      #1F2328 outlines. Five panels, evenly spaced along the band, hover just above their own slots, each
+      rotated a few degrees out of alignment, filled flat #0FA994 with a thin white edge and thin #074E43
+      outlines. Beneath each, the empty slot is a pale outlined rectangle. Solid #FAFAF9 background with
+      calm, even space above and below; faint thin construction grid lines extend to the edges. Flat even
+      daylight, no cast or drop shadows, no glow or sheen, no gradients, turquoise as the only accent.
+      No text, letters, numbers, markers, labels or logo.'
+    prompt_enviado: 'Isometric line illustration: a long panoramic field of identical rectangular floor
+      panels laid edge to edge in a tight grid, stretching across the frame like a building floor. Five
+      panels, spread along its length, hover just above their own empty slots, each slightly rotated out
+      of alignment, drawn in turquoise. Each empty slot beneath a raised panel is a pale outlined rectangle.
+      Every other panel lies flat, pale grey, perfectly aligned. No text, no markers, no logo.'
+    proporcion_pedida: '21:9'
+    tamano_px:
+    - 3024
+    - 1296
+    reproducible: true
+    pedido: formula/demo/M01-metaforas.json
+    fecha: '2026-11-11'
+    sha256: 7b8bdec57c74a5e2
+    nota: M01, metáfora 4 para «La IA entra a la obra» (camino B v2); apaisada, con la principal como
+      referencia de estilo
+    tipo: fondo
+    fondo_imagen: '#FBFBFB'

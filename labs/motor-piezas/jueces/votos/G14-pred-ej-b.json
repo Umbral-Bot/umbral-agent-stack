@@ -1,0 +1,77 @@
+{
+ "galeria": "G14",
+ "seccion": null,
+ "rubrica": "pred-ej-b",
+ "retro": true,
+ "criterios_hasta": "G14",
+ "sellado": "2026-11-11T01:09:46",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "c375ba4695d4",
+ "votos": [
+  {
+   "id": "G14-ejb-prediccion",
+   "galeria": "G14",
+   "version": "pred-ej-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 5.5,
+    "3": 4
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "borde superior e inferior de la imagen",
+     "problema": "La propia imagen trae una franja crema arriba (~60 px) y otra abajo. Por eso el «a sangre» se lee casi como una lámina con marco en el borde superior. Conviene recortar para que el bloque turquesa o negro toque el borde del lienzo.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "cruces de registro superiores",
+     "problema": "Las dos cruces de arriba caen sobre la imagen. La de la derecha se pierde sobre el turquesa y la de la izquierda queda sobre el crema. Son detalles de cerca.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "caja de la imagen",
+     "problema": "Con el margen y el radio de 8 px, la imagen queda más chica y se ve como un recuadro pegado. Al marco oscuro se suma el borde crema de la propia imagen, así que el borde queda doble. Le resta impacto en el feed frente al sangrado. En G04 David prefirió el sangrado lateral a la caja, por el mismo motivo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "mitad superior (ilustración)",
+     "problema": "Las líneas turquesa finas de la isometría pierden peso a tamaño de feed en el celular. La mitad de arriba se lee casi vacía frente a un titular de 156 px, y la pieza pierde el gancho visual de un post de noticia.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "relación título–imagen",
+     "problema": "El edificio isométrico genérico no cuenta «La IA entra a la obra»: no hay metáfora ni abstracción del titular. El brazo robótico de 1 y 2, que coloca bloques en una obra, sí la cuenta. En G04 David tampoco eligió la ilustración frente a la imagen.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "ilustración centrada",
+     "problema": "Quedan vacíos laterales amplios y los bordes de la ilustración no se alinean con la columna del texto ni con los márgenes.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1 y 2 (común)",
+     "donde": "contenido de la imagen",
+     "problema": "Hay grandes zonas de turquesa plano como fondo y una textura de grano que se aleja de la línea isométrica plana aprobada. Ambas vienen de la base G12/G13: no desempatan entre 1 y 2, y aquí solo se anotan.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas (común)",
+     "donde": "pie: logo y llamado",
+     "problema": "El texto más chico mide 11 px CSS y 7,24:1, por debajo de la referencia de 10:1. Como va sobre fondo liso oscuro y no sobre textura, se lee bien; queda solo como aviso.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Predigo la 1, a sangre. Repite lo que David eligió en G04 (sangrado frente a caja e ilustración) y en G12 (banda abajo con la imagen a sangre), y es la que más pesa en el feed. Además, el brazo robótico que coloca bloques cuenta el titular. La 2 sirve con ajustes, pero achica la imagen y la enmarca dos veces. La 3 queda débil en el celular por las líneas finas, deja la mitad de arriba casi vacía y no tiene metáfora del titular. Las medidas de texto son iguales en las tres y no desempatan. Ajuste menor para la 1: recortar la franja crema superior de la imagen."
+  }
+ ]
+}

@@ -1,0 +1,65 @@
+{
+ "galeria": "G25",
+ "seccion": null,
+ "rubrica": "pred-ej-b",
+ "retro": true,
+ "criterios_hasta": "G25",
+ "sellado": "2026-11-11T01:09:48",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "c375ba4695d4",
+ "votos": [
+  {
+   "id": "G25-ejb-prediccion",
+   "galeria": "G25",
+   "version": "pred-ej-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6,
+    "2": 7.5,
+    "3": 8
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "Bandas: 2° (T1 1:1), 4° (T6 16:9) y 6° (T2 1:1)",
+     "problema": "Al 75 %, el edificio queda chico dentro de una franja de imagen ya baja. En el celular pierde presencia y deja mucho fondo claro sin función a los lados. Está entero y centrado, pero se lee como un ícono suelto, no como una imagen a sangre.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "1° (P02), 3° (T3) y las columnas 5° y 7°",
+     "problema": "Al 75 %, la imagen no cubre la máscara. El fondo extendido con borde difuso hace que la retícula de la imagen se desvanezca antes del borde del lienzo, arriba y abajo. Se ve como un velo suave y no como un sangrado limpio.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "Columnas: 10° (T3 9:16), 12° (U2) y 14° (AB2)",
+     "problema": "Al quedar al 75 %, las columnas tienen el mismo borde difuso de la retícula y un objeto con menos fuerza que en la 3. La mezcla de tamaños hace que la serie se vea menos pareja que con el 85 % en todos los formatos.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "19° (U2, LinkedIn con bajada)",
+     "problema": "Al 85 %, el edificio queda justo en la columna: unos 95 px arriba y abajo, y unos 120 px a la derecha sobre 1254 px de alto. Está entero y no choca con las cruces, pero es el formato con menos aire.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "4°, 11° y 18° (T6, diapositiva 16:9)",
+     "problema": "Es un defecto común a todas: la franja de imagen es muy ancha y baja. Incluso al 85 %, el objeto ocupa poco más de un sexto del ancho y quedan grandes vacíos claros a los lados. Este paso no lo resuelve.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "AB2 (7°, 14° y 21°), arriba",
+     "problema": "El chip EJEMPLO, más grande que el texto del logotipo, va en la misma fila del logo y le compite. Es una marca de laboratorio y es común a todas.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "Las tres opciones corrigen la queja de G24: el edificio va entero y centrado en su máscara en todos los formatos. La diferencia es solo de tamaño. Al 85 % en todo (opción 3), el objeto tiene la presencia que David suele preferir. La imagen cubre la máscara y llega limpia al borde, sin la retícula desvanecida, y aun así conserva margen en las columnas. La mezcla (opción 2) queda cerca, pero en las columnas pierde fuerza y vuelve el borde difuso. Con el 75 % en todo (opción 1), el objeto queda chico en las bandas bajas. Defecto común a todas: la 16:9 sigue con grandes vacíos laterales."
+  }
+ ]
+}

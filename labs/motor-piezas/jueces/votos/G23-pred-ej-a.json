@@ -1,0 +1,53 @@
+{
+ "galeria": "G23",
+ "seccion": null,
+ "rubrica": "pred-ej-a",
+ "retro": true,
+ "criterios_hasta": "G23",
+ "sellado": "2026-11-11T01:09:48",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "c375ba4695d4",
+ "votos": [
+  {
+   "id": "G23-eja-prediccion",
+   "galeria": "G23",
+   "version": "pred-ej-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 8,
+    "3": 6
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "botón «LEE EL ARTÍCULO / umbralbim.io», al pie de la columna",
+     "problema": "Con el texto solo un 12 % más chico, el cambio apenas se nota en el celular. El botón sigue ancho (cerca de 270 de 600 px de la columna) y pesado, así que no responde con claridad al pedido «más pequeño».",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "interior del botón",
+     "problema": "Con un módulo menos de relleno, el texto queda pegado a los bordes del botón. La tilde de «ARTÍCULO» casi toca el borde superior, las letras rozan los lados y las dos líneas quedan apretadas entre sí. Se ve como un bloque comprimido y no como una proporción afinada.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "texto del botón",
+     "problema": "Mide 7,1 px CSS en la vista de 390 px, bajo la referencia de 11 px. Es solo un aviso: es texto de botón y la pieza de LinkedIn se piensa para computador. Lo mismo vale para la 3.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "entre el titular y el botón",
+     "problema": "El vacío entre el titular y el botón es grande, pero el botón al pie de la columna es lo que se eligió en G22 y aquí no se vuelve a discutir. El chip EJEMPLO no choca con el logo.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Lo único que cambia es el tamaño del botón. Creo que David elige la 2: el texto baja un 24 % y el relleno se mantiene, así que el botón se ve claramente más chico y todavía tiene aire dentro. En la 1 la reducción del 12 % casi no se nota y el botón sigue pesado. En la 3 el botón queda más chico, pero el texto toca los bordes y se ve apretado, un defecto de proporción que David suele notar. El contraste mide 9,9:1 en las tres y es igual en todas."
+  }
+ ]
+}

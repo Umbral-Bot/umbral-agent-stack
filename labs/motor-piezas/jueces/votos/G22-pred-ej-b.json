@@ -1,0 +1,59 @@
+{
+ "galeria": "G22",
+ "seccion": null,
+ "rubrica": "pred-ej-b",
+ "retro": true,
+ "criterios_hasta": "G22",
+ "sellado": "2026-11-11T01:09:48",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "c375ba4695d4",
+ "votos": [
+  {
+   "id": "G22-ejb-prediccion",
+   "galeria": "G22",
+   "version": "pred-ej-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7.5,
+    "2": 5,
+    "3": 7
+   },
+   "hallazgos": [
+    {
+     "opcion": "2",
+     "donde": "panel de texto, mitad inferior bajo el botón",
+     "problema": "El bloque sube y se pega al logo, y abajo queda un vacío oscuro sin función. La pieza se ve cargada arriba y el texto queda como un bloque apretado en una zona, no repartido en el panel. Además, el botón deja de cerrar la columna al pie, que en esta pieza apaisada sin bajada pesa más que la separación pareja (criterio 18, excepción).",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "panel de texto, entre el logo y «Artículo»",
+     "problema": "Cumple la separación pareja de 32 px y deja el botón al pie, pero agrupa todo en un bloque bajo con mucho aire arriba, aislado del logo. Se parece a la «Compacta apoyada abajo» que David no eligió en G03. Es solo una señal, porque aquel era otro preset. Reparte menos el espacio que la 1° (criterio 20).",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "entre el titular y el botón",
+     "problema": "La distancia entre el titular y el botón (unos 68 px) es mayor que los 32 px entre «Artículo» y el titular, así que la columna no es pareja. En esta pieza lo cubre la excepción del criterio 18, y es justo lo que David vio al elegir la 1° sin bajada en G21. Igual podría pedir el reparto parejo, como hizo en G20.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "botón «LEE EL ARTÍCULO / umbralbim.io»",
+     "problema": "Es el texto más chico: 9,3 px CSS en una vista de 390 px. Queda bajo la referencia de 11 px, pero es aviso y no veto: es texto de botón y la imagen de LinkedIn está pensada para computador.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "cruces de registro de la derecha, sobre la imagen",
+     "problema": "Las cruces de las esquinas superior e inferior derechas caen sobre el turquesa y el crema de la imagen y casi no se ven. Conviene revisar su color o su posición, sin quitarlas.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "La galería solo cambia la posición del bloque de texto; la imagen, el color y el contraste (9,92:1) son iguales en las tres. Creo que David elegiría la 1°: el panel tiene tres zonas deliberadas (el logo arriba, el kicker y el titular al centro, el botón cerrando al pie), que es lo que aceptó en G21 y lo que pide la excepción del criterio 18. La 3° queda muy cerca: logra la separación pareja de 32 px y mantiene el botón al pie, pero deja un bloque compacto abajo con mucho aire bajo el logo. Si David prioriza que los tres textos estén a la misma distancia, como pidió en G20, la elegiría a ella. La 2° no sirve: el bloque queda pegado arriba y deja un vacío sin función bajo el botón."
+  }
+ ]
+}

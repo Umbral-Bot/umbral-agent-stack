@@ -1,0 +1,78 @@
+{
+ "galeria": "G12",
+ "seccion": null,
+ "rubrica": "pred-ej-a",
+ "retro": true,
+ "criterios_hasta": "G12",
+ "sellado": "2026-11-11T01:09:45",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "c375ba4695d4",
+ "votos": [
+  {
+   "id": "G12-eja-prediccion",
+   "galeria": "G12",
+   "version": "pred-ej-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 6.5,
+    "3": 4.5,
+    "4": 4.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "franja de imagen a la derecha",
+     "problema": "El recorte de la franja deja fuera casi todo el brazo robótico: solo se ve la pinza flotando sobre bloques. Se pierde el sujeto y con él la relación entre el titular «La IA entra a la obra» y la imagen. Es el mismo problema de objeto mal posicionado en la máscara del que David ya se quejó.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "columna de texto, bajo el llamado",
+     "problema": "Queda un vacío grande sin función entre «umbralbim.io» y el logo, cerca del 35 % del alto. Además, la columna ocupa unas 7 de 12 columnas y no el tercio del Preset 01, así que la supuesta continuidad de familia no se cumple del todo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "titular",
+     "problema": "El titular baja de 221 a 107 px y pierde fuerza en el feed. Sigue mandando, pero la bajada ocupa casi tanta superficie como él.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "velo bajo el texto",
+     "problema": "Repite «a sangre bajo velo», que David descartó en G04 frente al sangrado lateral. Al 0,86 el velo se ve gris turbio y no el oscuro de marca del Preset 01, con lo que rompe la serie. Los bloques de la imagen se transparentan detrás de la bajada y del logo y compiten con ellos, aunque midan 10,19:1.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "4",
+     "donde": "pinza del brazo, detrás de «ARTÍCULO» y «La IA»",
+     "problema": "La pinza del brazo cae bajo el kicker y el titular. Además, abajo del velo aparece una franja gris de otro tono, sin función.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "pie (logo y llamado) a media altura",
+     "problema": "El pie queda en el centro del lienzo y la imagen se lee después del llamado, un orden de lectura poco natural. En el feed el post abre con un bloque oscuro de texto en vez de la ilustración, y el borde crema inferior de la imagen, con las cruces encima, cierra la pieza sin peso.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "unión entre imagen y panel",
+     "problema": "El margen crema propio de la imagen de Midjourney asoma como una tira de unos 50 px arriba y entre la imagen y el panel: la imagen no llega del todo a sangre. Es un detalle.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "logotipo «Umbral BIM» abajo a la izquierda",
+     "problema": "Este defecto es común a todas y no desempata. El texto del logotipo es el más chico de la pieza (unos 11 px CSS a 390 px), justo en el límite de lectura en el celular.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Predigo que David elige la 1. Muestra la ilustración completa, con el brazo que construye, así que la imagen sostiene el titular. El texto va sobre el panel oscuro con trama, como en el Preset 01, y el pie queda donde se espera. La 2 es la misma composición invertida: deja el llamado a media pieza y en el feed abre con texto. La 3 es la más cercana a la familia, pero el recorte pierde el brazo y deja un vacío grande bajo el llamado. La 4 vuelve al velo que David ya descartó en G04 y el gris turbio rompe la serie."
+  }
+ ]
+}

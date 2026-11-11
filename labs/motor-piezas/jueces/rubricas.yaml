@@ -1,4 +1,5 @@
-# Rúbricas de los jueces del motor de piezas · versión 3 (2026-11-11).
+# Rúbricas de los jueces del motor de piezas · versión 4 (2026-11-11).
+# v4: etapa «idea» para la fábrica de ideas (premisa, alineación, voz, enganche, monotonía).
 # v3: tras G28 la lente contenido pregunta por la metáfora y el veto de marca exige que el texto se lea a tamaño
 # de feed (la lente de marca vetó la opción que David puso como la mejor por unas cotas que no se leen).
 # Cada lente es un juez independiente (un agente) que mira las piezas con un solo criterio. El código
@@ -12,7 +13,7 @@
 # - Una lente que no aplica a la galería lo dice (no_aplica) y no cuenta en la suma.
 # - La suma se pondera con pesos.yaml: cada lente pesa según cuánto coincidió con David.
 # - Protocolo ciego: los jueces votan antes que David, el voto se sella y David elige sin verlo.
-version: 3
+version: 4
 
 escala: "0 a 10 por opción; 7 o más = sirve; 5 a 7 = sirve con ajustes; menos de 5 = no sirve"
 gravedad:
@@ -28,6 +29,23 @@ criterios:
     un criterio de David, puntúala más bajo y dilo en un hallazgo.
 
 etapas:
+  idea:              # la idea antes de cualquier metáfora (fábrica de ideas, ideas/)
+    lentes:
+      premisa:
+        mira: "¿es una postura o solo un tema? ¿la hipótesis es algo que la audiencia cree de verdad y la respuesta la tensiona? ¿hay una objeción real? Premisa blindada, no inflada"
+        veto: ["no hay postura: es un tema", "la respuesta repite la hipótesis o no la contesta"]
+      alineacion:
+        mira: "¿nace de una evidencia de David (su experiencia, un dolor de su audiencia, una señal traducida a la obra o uno de sus pilares)? ¿conecta con su tesis central y sus marcos (raiz-david.yaml)?"
+        veto: ["contradice la tesis o los principios de David", "afirma una cifra, un cliente o una credencial que el CV v6 no confirma"]
+      voz:
+        mira: "¿David diría esto en una reunión con un BIM manager? Escena de obra antes del concepto, afirmación antes que pregunta, sin la lista negra ni frases redondas"
+        veto: ["suena a texto genérico de IA o de marketing"]
+      enganche:
+        mira: "¿qué creencia mueve, qué sorpresa trae, por qué importa ahora? Una idea que se entiende pero no engancha no sirve (M01). Vale más una tensión concreta del oficio que una moraleja"
+        veto: []
+      monotonia:
+        mira: "dentro de la ronda: ¿repite la tesis de otra idea, o vuelve otra vez a «criterio antes que automatizar»?"
+        veto: []
   imagen:            # antes de meter una imagen en piezas
     lentes:
       marca:

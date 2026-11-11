@@ -1,0 +1,119 @@
+# Raíz de David: quién es, qué sostiene y cómo habla. Es la base con la que la fábrica de ideas juzga si una idea es
+# «de David». Leído el 2026-11-11 (solo lectura) del CV aprobado v6 y de las páginas de Notion que David indicó. Si las
+# fuentes chocan, manda el CV v6. Ningún dato sin fuente; nada de cifras ni credenciales que el v6 no confirma.
+#
+# Claves de fuente:
+#   CV6  CV aprobado v6 (Drive 1cwAXTttXBymiS_ZXFES_IAhYQTyQMc5S)
+#   PM   Perfil Maestro (Notion c9e921f6f553475f9ce1cfd3f121c265)
+#   MP   Mi Perfil (31b5f443fb5c80d4843ae3c2d75dcd01)
+#   OyS  Oferta y Servicios (bf87ed8acdb74326962ba40089f371de)
+#   PyO  Perfil y Oferta (cb90cbdf682140df97ebd1fe4d2898db)
+#   UB   Umbral BIM (2b45f443fb5c8008a7aaf417ec3d3835)
+#   PO   Público Objetivo · PPV Posicionamiento y Propuesta de Valor · PEC Plan de Estrategia Comercial
+#   GE   Guía Editorial y Voz de Marca · GCE Guía de Contenido Educativo · IDC Informe del perfil docente
+#   FM   Framework Metodológico · PMP Posicionamiento y Marca Personal · BLOG Blog y Newsletter
+version: 1
+leido: 2026-11-11
+
+quien:
+  titular: {texto: "ARQUITECTO | BIM | AUTOMATIZACIÓN E IA", fuente: CV6}
+  perfil: {texto: "arquitecto (UTFSM) con experiencia en coordinación BIM, automatización, diseño computacional y formación técnica para AECO; trayectoria en expansión retail, proyectos industriales y mineros, docencia y consultoría en transformación digital; fundador de Umbral BIM SpA", fuente: CV6}
+  roles_actuales:
+    - {texto: "Director del área de IA, Programación BIM y Data Science y docente principal del Máster AEC 4.0 (Butic), desde 2025", fuente: CV6}
+    - {texto: "Docente del Taller ARQ331 en la UTFSM (Rhino, Grasshopper, fabricación robotizada)", fuente: CV6}
+    - {texto: "Consultor independiente en transformación digital y BIM", fuente: CV6}
+  trayectoria_que_cuenta:
+    - {texto: "Coordinador BIM en OXXO Chile (2022–2024): ACC, Dynamo, seguimiento con Power Automate, SharePoint y Kanban entre Comercial, Operaciones, Marketing, Desarrollo Inmobiliario y Legal", fuente: CV6}
+    - {texto: "Coordinador de proyectos BIM industriales y mineros (2017–2022)", fuente: CV6}
+    - {texto: "Consultor en transformación digital para el sector gastronómico (SharePoint, Power Automate, Power Apps)", fuente: CV6}
+    - {texto: "De pintor de obra (2007–2010) a instructor BIM auxiliar en la UTFSM", fuente: CV6}
+  caso_estrella: {texto: "OXXO, contado con su error: el primer intento con ACC fracasó por las licencias y volvió a Microsoft 365. «Ahí ya no me pudieron decir que no». Lo usa como ruta canon", fuente: IDC}
+
+tesis_central: {texto: "La tecnología no reemplaza criterio profesional. Lo amplifica cuando se integra a un proceso bien diseñado.", fuente: "GE, MP, IDC"}
+mision_umbral: {texto: "Cruza al futuro sin dejar atrás tu experiencia.", fuente: UB}
+
+marcos_propios:
+  - {nombre: Automatización Empática, texto: "La mejor automatización elimina frustración, no trabajo", fuente: "PM, PPV"}
+  - {nombre: Puentes Digitales, texto: "Diseño ↔ Construcción, Datos ↔ Decisiones, Oficina ↔ Terreno", fuente: "PM, MP"}
+  - {nombre: Citizen Developer, texto: "profesionales que no son de TI construyen sus propias soluciones", fuente: "MP, PPV"}
+
+pilares_narrativos:            # PEC
+  - "La resistencia no es el problema"
+  - "Innovar no es saber código, es saber dónde duele"
+  - "No todo debe pasar por TI"
+  - "BIM no basta si no conecta datos y decisiones"
+  - "IA sin flujo es humo"
+
+defiende:
+  - {texto: "La consultoría no parte del software. Parte del proceso, la cultura, la licencia disponible y la urgencia del negocio.", fuente: OyS}
+  - {texto: "sprints antes que consultoría pesada de gran documento: discovery → mapeo → cuello de botella → capas → MVP → escalado", fuente: PM}
+  - {texto: "«Enamorarse del Problema»: seis pasos para usar LLM con poco riesgo", fuente: FM}
+  - {texto: "Empoderar usuarios sobre crear dependencias", fuente: FM}
+  - {texto: "quick wins sobre el cuello de botella y escalado progresivo", fuente: IDC}
+  - {texto: "la oferta se lee por resultado antes que por herramienta", fuente: "PyO, OyS"}
+  - {texto: "uso responsable y ético de la tecnología", fuente: CV6}
+
+critica:
+  - {texto: "Las mejores soluciones surgen de personas en terreno que crean pequeñas herramientas que van escalando, no de planes maestros externos", fuente: IDC}
+  - {texto: "No es un problema de software. Es un problema de proceso.", fuente: PPV}
+  - {texto: "el futurismo superficial, la épica tecnológica, el discurso de software sin contexto y las promesas abstractas", fuente: GE}
+
+temas_de_opinion:              # PMP
+  - democratización tecnológica
+  - integración Autodesk–Microsoft–IA
+  - del BIM a gemelos digitales accesibles
+  - IA como copiloto
+  - competencias de la Construcción 4.0
+
+problemas_que_resuelve:        # PO, PEC, OyS
+  - onboarding lento y pérdida de conocimiento
+  - búsqueda ineficiente en los CDE
+  - entregables repetitivos (memorias, especificaciones) y el dolor documental en Word y Excel
+  - RFI y retrabajo por descoordinación
+  - interoperabilidad IFC
+  - documentación de obra desactualizada
+  - falta de visibilidad de los proyectos
+  - conectar el Microsoft 365 que el cliente ya tiene
+  - formar «champions» internos
+
+audiencias:
+  linkedin:
+    texto: "canal principal, en español; pilares Expertise 2 por semana, Historia 1 y Oferta 1"
+    fuente: PEC
+    segmentos:                 # PO, en orden de prioridad
+      - empresas que quieren implementar agentes o copilotos (CTO, Head of Innovation)
+      - BIM Managers y coordinadores
+      - Project Managers y gerentes de operaciones de contratistas
+      - PYMEs AECO
+      - academia
+    mensajes:                  # PPV
+      bim_managers: "Pierdes horas en tareas repetitivas"
+      gerentes_operaciones: "No tienes visibilidad real"
+      quienes_aprenden: "La tecnología avanza más rápido que tu capacidad de adoptarla"
+  x: {texto: "ninguna fuente lo define; por ahora, la regla de UAS: una tesis, una condición operativa y un cierre", fuente: "pendiente de David"}
+  blog: {texto: "blog.umbralbim.io, más informal que la web; Expertise técnico, Historias y casos, Tendencias y opinión; newsletter con 1 artículo, 3 enlaces y 1 tip", fuente: BLOG}
+  educacion: {texto: "alumnos del Máster AEC 4.0, alumnos corporativos, ARQ331 y cursos asíncronos; quien compra busca relevancia industrial", fuente: "PO, GE, GCE"}
+
+voz:
+  tono: {texto: "directo, técnicamente preciso, ligeramente informal sin ser casual, orientado a resultados y empático con la resistencia", fuente: "PPV, PM"}
+  tono_educativo: {texto: "cercano, pero sobrio; claro y no promocional", fuente: GE}
+  formula: {texto: "Problema real → mecanismo concreto → resultado observable → límite o criterio", fuente: GE}
+  analogias: {texto: "analogías delimitadas como recurso pedagógico (oficina amoblada / terreno urbanizado / terreno vacío)", fuente: IDC}
+  densidad: {texto: "si una pieza ya es clara con menos texto, no expandir por completitud artificial", fuente: IDC}
+  prueba: "¿David diría esto en una reunión con un BIM manager?"     # director-comunicacion-umbral
+
+lista_negra:                   # GE y CALIBRATION de director-comunicacion-umbral
+  frases: ["desbloquear el potencial", "llevar al siguiente nivel", "partner estratégico", "solución integral",
+           "generar valor", "aprovechar IA", "cambio de paradigma", "en la era digital", "cabe destacar",
+           "no es solo", "revolucionar", "disruptivo", "me apasiona", "escalación", "capacidad tecnológica"]
+  muletillas: ["reales", "concretos", "herramientas", "hoy", "lo más importante", "ahora bien"]
+  otras: ["transformación digital sin decir cómo", "tríadas artificiales", "cercanía forzada", "texto inflado por IA",
+          "abrir con una pregunta", "notas internas visibles"]
+
+reglas_de_verdad:
+  - "Sin cifras de resultados (−40 % OXXO, ROI 143 %, +80 proyectos…): el CV v6 las quitó; solo con confirmación de David"
+  - "Clientes que se pueden nombrar: los del CV v6 (OXXO, Butic, UTFSM, FEDEFRUTAS, Hafnia, Geisse y Navarro); el resto, anónimo"
+  - "Credenciales que no están en el v6 (embajador n8n, ponencias, BIM Forum…) no se usan como credencial"
+  - "Konstruedu: solo como patrón anonimizado (regla de mi-contenido)"
+  - "Planificado alimenta ideas; Informe prueba (mi-contenido): una experiencia solo se afirma si está en un informe o en el CV"
+  - "No pegar fragmentos de transcripciones; se parafrasea y se cita la fuente"

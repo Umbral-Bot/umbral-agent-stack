@@ -57,6 +57,11 @@ def opciones(gid: str, seccion: int | None = None):
     """Las opciones entre las que se elige. Con una sola sección (o con --seccion), cada pieza es una
     opción y su número es el de la pieza (1°, 2°…), como lo dice David. Con varias secciones, cada
     sección es una opción (1, 2, 3…) con todas sus piezas."""
+    if gid.startswith('I'):
+        # una ronda de la fábrica de ideas (ideas/rondas/I01.json): las presentadas a David, numeradas 1..N
+        ronda = json.loads((LAB / 'ideas' / 'rondas' / f'{gid}.json').read_text(encoding='utf-8'))
+        por_id = {f['id']: f for f in ronda['fichas']}
+        return {'titulo': f"Ideas {gid}", 'descripcion': ronda.get('intro', '')},             [{'id': n, 'nombre': por_id[i]['titulo'], 'piezas': []} for n, i in enumerate(ronda.get('presentadas', []), 1)]
     if gid.startswith('M'):
         # una ronda de metáforas en texto (formula/demo/M01-metaforas.json): opciones sin piezas
         demo = LAB / 'formula' / 'demo'
